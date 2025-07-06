@@ -7,6 +7,6 @@
 #ifndef __SOC_H__
 #define __SOC_H__
 
-#include <apollo4p.h>
+#include <am_mcu_apollo.h>
 
 #endif /* __SOC_H__ */

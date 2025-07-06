@@ -1,0 +1,23 @@
+# Copyright (c) 2024 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MCTP
+	bool "Management Component Transport Protocol [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Enable the MCTP Subsystem and Module Usage
+
+if MCTP
+
+config MCTP_UART
+	bool "MCTP UART Binding"
+	depends on UART_ASYNC_API
+	help
+	  Build the MCTP UART binding to use MCTP over Zephyr's async UART
+	  interface.
+
+module = MCTP
+module-str = MCTP
+source "subsys/logging/Kconfig.template.log_config"
+
+endif

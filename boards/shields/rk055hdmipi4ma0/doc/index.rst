@@ -1,7 +1,7 @@
 .. _rk055hdmipi4ma0:
 
-RK055HDMIPI4MA0 MIPI Display
-############################
+NXP RK055HDMIPI4MA0 MIPI Display
+################################
 
 Overview
 ********
@@ -50,7 +50,7 @@ for the 40 pin FPC interface
 Programming
 ***********
 
-Set ``-DSHIELD=rk055hdmipi4ma0`` when you invoke ``west build``. For
+Set ``--shield rk055hdmipi4ma0`` when you invoke ``west build``. For
 example:
 
 .. zephyr-app-commands::
@@ -58,6 +58,9 @@ example:
    :board: mixmrt1170_evk_cm7
    :shield: rk055hdmipi4ma0
    :goals: build
+
+.. include:: ../../../nxp/common/board-footer.rst
+   :start-after: nxp-board-footer
 
 References
 **********

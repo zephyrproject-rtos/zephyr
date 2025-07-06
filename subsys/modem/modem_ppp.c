@@ -122,7 +122,7 @@ static uint8_t modem_ppp_wrap_net_pkt_byte(struct modem_ppp *ppp)
 
 	/* Writing data */
 	case MODEM_PPP_TRANSMIT_STATE_DATA:
-		net_pkt_read_u8(ppp->tx_pkt, &byte);
+		(void)net_pkt_read_u8(ppp->tx_pkt, &byte);
 		ppp->tx_pkt_fcs = modem_ppp_fcs_update(ppp->tx_pkt_fcs, byte);
 
 		if ((byte == MODEM_PPP_CODE_DELIMITER) || (byte == MODEM_PPP_CODE_ESCAPE) ||
@@ -313,6 +313,26 @@ static void modem_ppp_process_received_byte(struct modem_ppp *ppp, uint8_t byte)
 	}
 }
 
+#if CONFIG_MODEM_STATS
+static uint32_t get_transmit_buf_length(struct modem_ppp *ppp)
+{
+	return ring_buf_size_get(&ppp->transmit_rb);
+}
+
+static void advertise_transmit_buf_stats(struct modem_ppp *ppp)
+{
+	uint32_t length;
+
+	length = get_transmit_buf_length(ppp);
+	modem_stats_buffer_advertise_length(&ppp->transmit_buf_stats, length);
+}
+
+static void advertise_receive_buf_stats(struct modem_ppp *ppp, uint32_t length)
+{
+	modem_stats_buffer_advertise_length(&ppp->receive_buf_stats, length);
+}
+#endif
+
 static void modem_ppp_pipe_callback(struct modem_pipe *pipe, enum modem_pipe_event event,
 				    void *user_data)
 {
@@ -365,6 +385,10 @@ static void modem_ppp_send_handler(struct k_work *item)
 		}
 	}
 
+#if CONFIG_MODEM_STATS
+	advertise_transmit_buf_stats(ppp);
+#endif
+
 	while (!ring_buf_is_empty(&ppp->transmit_rb)) {
 		reserved_size = ring_buf_get_claim(&ppp->transmit_rb, &reserved, UINT32_MAX);
 
@@ -391,6 +415,10 @@ static void modem_ppp_process_handler(struct k_work *item)
 	if (ret < 1) {
 		return;
 	}
+
+#if CONFIG_MODEM_STATS
+	advertise_receive_buf_stats(ppp, ret);
+#endif
 
 	for (int i = 0; i < ret; i++) {
 		modem_ppp_process_received_byte(ppp, ppp->receive_buf[i]);
@@ -457,6 +485,32 @@ static struct net_stats_ppp *modem_ppp_ppp_get_stats(const struct device *dev)
 	struct modem_ppp *ppp = (struct modem_ppp *)dev->data;
 
 	return &ppp->stats;
+}
+#endif
+
+#if CONFIG_MODEM_STATS
+static uint32_t get_buf_size(struct modem_ppp *ppp)
+{
+	return ppp->buf_size;
+}
+
+static void init_buf_stats(struct modem_ppp *ppp)
+{
+	char iface_name[CONFIG_MODEM_STATS_BUFFER_NAME_SIZE - sizeof("_xx")];
+	char name[CONFIG_MODEM_STATS_BUFFER_NAME_SIZE];
+	int ret;
+	uint32_t size;
+
+	ret = net_if_get_name(ppp->iface, iface_name, sizeof(iface_name));
+	if (ret < 0) {
+		snprintk(iface_name, sizeof(iface_name), "ppp");
+	}
+
+	size = get_buf_size(ppp);
+	snprintk(name, sizeof(name), "%s_rx", iface_name);
+	modem_stats_buffer_init(&ppp->receive_buf_stats, name, size);
+	snprintk(name, sizeof(name), "%s_tx", iface_name);
+	modem_stats_buffer_init(&ppp->transmit_buf_stats, name, size);
 }
 #endif
 
@@ -535,5 +589,8 @@ int modem_ppp_init_internal(const struct device *dev)
 	k_work_init(&ppp->process_work, modem_ppp_process_handler);
 	k_fifo_init(&ppp->tx_pkt_fifo);
 
+#if CONFIG_MODEM_STATS
+	init_buf_stats(ppp);
+#endif
 	return 0;
 }

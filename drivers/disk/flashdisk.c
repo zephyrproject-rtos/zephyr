@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016 Intel Corporation.
- * Copyright (c) 2022-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +19,11 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(flashdisk, CONFIG_FLASHDISK_LOG_LEVEL);
 
+#if defined(CONFIG_FLASH_HAS_EXPLICIT_ERASE) &&	\
+	defined(CONFIG_FLASH_HAS_NO_EXPLICIT_ERASE)
+#define DISK_ERASE_RUNTIME_CHECK
+#endif
+
 struct flashdisk_data {
 	struct disk_info info;
 	struct k_mutex lock;
@@ -32,10 +37,42 @@ struct flashdisk_data {
 	off_t cached_addr;
 	bool cache_valid;
 	bool cache_dirty;
+	bool erase_required;
 };
 
 #define GET_SIZE_TO_BOUNDARY(start, block_size) \
 	(block_size - (start & (block_size - 1)))
+
+/*
+ * The default block size is used for devices not requiring erase.
+ * It defaults to 512 as this is most widely used sector size
+ * on storage devices.
+ */
+#define DEFAULT_BLOCK_SIZE	512
+
+static inline bool flashdisk_with_erase(const struct flashdisk_data *ctx)
+{
+	ARG_UNUSED(ctx);
+#if CONFIG_FLASH_HAS_EXPLICIT_ERASE
+#if CONFIG_FLASH_HAS_NO_EXPLICIT_ERASE
+	return ctx->erase_required;
+#else
+	return true;
+#endif
+#endif
+	return false;
+}
+
+static inline void flashdisk_probe_erase(struct flashdisk_data *ctx)
+{
+#if defined(DISK_ERASE_RUNTIME_CHECK)
+	ctx->erase_required =
+		flash_params_get_erase_cap(flash_get_parameters(ctx->info.dev)) &
+			FLASH_ERASE_C_EXPLICIT;
+#else
+	ARG_UNUSED(ctx);
+#endif
+}
 
 static int disk_flash_access_status(struct disk_info *disk)
 {
@@ -54,13 +91,20 @@ static int flashdisk_init_runtime(struct flashdisk_data *ctx,
 	struct flash_pages_info page;
 	off_t offset;
 
-	rc = flash_get_page_info_by_offs(ctx->info.dev, ctx->offset, &page);
-	if (rc < 0) {
-		LOG_ERR("Error %d while getting page info", rc);
-		return rc;
+	flashdisk_probe_erase(ctx);
+
+	if (IS_ENABLED(CONFIG_FLASHDISK_VERIFY_PAGE_LAYOUT) && flashdisk_with_erase(ctx)) {
+		rc = flash_get_page_info_by_offs(ctx->info.dev, ctx->offset, &page);
+		if (rc < 0) {
+			LOG_ERR("Error %d while getting page info", rc);
+			return rc;
+		}
+
+		ctx->page_size = page.size;
+	} else {
+		ctx->page_size = DEFAULT_BLOCK_SIZE;
 	}
 
-	ctx->page_size = page.size;
 	LOG_INF("Initialize device %s", ctx->info.name);
 	LOG_INF("offset %lx, sector size %zu, page size %zu, volume size %zu",
 		(long)ctx->offset, ctx->sector_size, ctx->page_size, ctx->size);
@@ -71,7 +115,7 @@ static int flashdisk_init_runtime(struct flashdisk_data *ctx,
 		return 0;
 	}
 
-	if (IS_ENABLED(CONFIG_FLASHDISK_VERIFY_PAGE_LAYOUT)) {
+	if (IS_ENABLED(CONFIG_FLASHDISK_VERIFY_PAGE_LAYOUT) && flashdisk_with_erase(ctx)) {
 		if (ctx->offset != page.start_offset) {
 			LOG_ERR("Disk %s does not start at page boundary",
 				ctx->info.name);
@@ -213,8 +257,10 @@ static int flashdisk_cache_commit(struct flashdisk_data *ctx)
 		return 0;
 	}
 
-	if (flash_erase(ctx->info.dev, ctx->cached_addr, ctx->page_size) < 0) {
-		return -EIO;
+	if (flashdisk_with_erase(ctx)) {
+		if (flash_erase(ctx->info.dev, ctx->cached_addr, ctx->page_size) < 0) {
+			return -EIO;
+		}
 	}
 
 	/* write data to flash */
@@ -389,6 +435,7 @@ static int disk_flash_access_ioctl(struct disk_info *disk, uint8_t cmd, void *bu
 	ctx = CONTAINER_OF(disk, struct flashdisk_data, info);
 
 	switch (cmd) {
+	case DISK_IOCTL_CTRL_DEINIT:
 	case DISK_IOCTL_CTRL_SYNC:
 		k_mutex_lock(&ctx->lock, K_FOREVER);
 		rc = flashdisk_cache_commit(ctx);
@@ -405,6 +452,8 @@ static int disk_flash_access_ioctl(struct disk_info *disk, uint8_t cmd, void *bu
 		*(uint32_t *)buff = ctx->page_size / ctx->sector_size;
 		k_mutex_unlock(&ctx->lock);
 		return 0;
+	case DISK_IOCTL_CTRL_INIT:
+		return disk_flash_access_init(disk);
 	default:
 		break;
 	}
@@ -482,4 +531,4 @@ static int disk_flash_init(void)
 	return err;
 }
 
-SYS_INIT(disk_flash_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(disk_flash_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

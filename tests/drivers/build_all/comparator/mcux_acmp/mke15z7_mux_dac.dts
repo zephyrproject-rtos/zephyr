@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "mke15z7_pinctrl.dtsi"
+
+&cmp0 {
+	pinctrl-0 = <&cmp0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	positive-mux-input = "IN0";
+	positive-port-input = "MUX";
+	negative-mux-input = "IN0";
+	negative-port-input = "DAC";
+
+	dac-vref-source = "VIN1";
+	dac-value = <128>;
+	dac-enable;
+};

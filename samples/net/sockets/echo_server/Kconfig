@@ -27,51 +27,6 @@ config NET_SAMPLE_IFACE2_MY_IPV4_NETMASK
 	help
 	  The value depends on your network setup.
 
-config NET_SAMPLE_IFACE2_VLAN_TAG
-	int "VLAN tag for second interface"
-	default 100
-	range 0 4094
-	depends on NET_VLAN
-	help
-	  Set VLAN (virtual LAN) tag (id) that is used in the sample
-	  application.
-
-config NET_SAMPLE_IFACE3_MY_IPV6_ADDR
-	string "My IPv6 address for third interface"
-	help
-	  The value depends on your network setup.
-
-config NET_SAMPLE_IFACE3_MY_IPV4_ADDR
-	string "My IPv4 address for third interface"
-	help
-	  The value depends on your network setup.
-
-config NET_SAMPLE_IFACE3_MY_IPV4_NETMASK
-	string "My IPv4 netmask for third interface"
-	help
-	  The value depends on your network setup.
-
-config NET_SAMPLE_IFACE3_VLAN_TAG
-	int "VLAN tag for third interface"
-	default 200
-	range 0 4094
-	depends on NET_VLAN
-	help
-	  Set VLAN (virtual LAN) tag (id) that is used in the sample
-	  application.
-
-config NET_SAMPLE_TUNNEL_PEER_ADDR
-	string "Remote IP address of the tunnel interface"
-	depends on NET_L2_IPIP
-	help
-	  Use overlay-tunnel.conf to setup the tunnel support.
-
-config NET_SAMPLE_TUNNEL_MY_ADDR
-	string "My address for tunnel interface"
-	depends on NET_L2_IPIP
-	help
-	  The value depends on your network setup.
-
 config NET_SAMPLE_PSK_HEADER_FILE
 	string "Header file containing PSK"
 	default "dummy_psk.h"
@@ -87,4 +42,29 @@ config NET_SAMPLE_CERTS_WITH_SC
 	  Enable this flag, if you are interested to run this
 	  application with signed certificates and keys.
 
+config NET_SAMPLE_WEBSOCKET_CONSOLE
+	bool "Websocket console support"
+	default y if WEBSOCKET_CONSOLE
+	help
+	  Enable this flag, if you are interested to enable websocket console.
+	  You can use the overlay-ws-console.conf to set websocket options.
+
+config NET_SAMPLE_HTTPS_SERVICE
+	bool "Enable HTTPS service for the Webconsole"
+	default y if NET_SAMPLE_WEBSOCKET_CONSOLE
+	depends on NET_SOCKETS_SOCKOPT_TLS || TLS_CREDENTIALS
+
+config NET_SAMPLE_HTTPS_SERVER_SERVICE_PORT
+	int "Port number for HTTPS service"
+	default 443
+	depends on NET_SAMPLE_HTTPS_SERVICE
+
+if USB_DEVICE_STACK_NEXT
+# Source common USB sample options used to initialize new experimental USB
+# device stack. The scope of these options is limited to USB samples in project
+# tree, you cannot use them in your own application.
+	source "samples/subsys/usb/common/Kconfig.sample_usbd"
+endif
+
+source "samples/net/common/Kconfig"
 source "Kconfig.zephyr"

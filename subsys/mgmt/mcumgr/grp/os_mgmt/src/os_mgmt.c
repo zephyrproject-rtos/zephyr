@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018-2021 mcumgr authors
- * Copyright (c) 2021-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2024 Nordic Semiconductor ASA
  * Copyright (c) 2022 Laird Connectivity
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -40,7 +40,7 @@
 
 #if defined(CONFIG_MCUMGR_GRP_OS_INFO) || defined(CONFIG_MCUMGR_GRP_OS_BOOTLOADER_INFO)
 #include <stdio.h>
-#include <version.h>
+#include <zephyr/version.h>
 #if defined(CONFIG_MCUMGR_GRP_OS_INFO)
 #include <os_mgmt_processor.h>
 #endif
@@ -55,17 +55,22 @@
 #endif
 #endif
 
+#ifdef CONFIG_MCUMGR_GRP_OS_RESET_BOOT_MODE
+#include <zephyr/retention/bootmode.h>
+#include <limits.h>
+#endif
+
 LOG_MODULE_REGISTER(mcumgr_os_grp, CONFIG_MCUMGR_GRP_OS_LOG_LEVEL);
 
-#ifdef CONFIG_REBOOT
+#if defined(CONFIG_REBOOT) && defined(CONFIG_MULTITHREADING)
 static void os_mgmt_reset_work_handler(struct k_work *work);
 
-K_WORK_DELAYABLE_DEFINE(os_mgmt_reset_work, os_mgmt_reset_work_handler);
+static K_WORK_DELAYABLE_DEFINE(os_mgmt_reset_work, os_mgmt_reset_work_handler);
 #endif
 
 /* This is passed to zcbor_map_start/end_endcode as a number of
  * expected "columns" (tid, priority, and so on)
- * The value here does not affect memory allocation is is used
+ * The value here does not affect memory allocation is used
  * to predict how big the map may be. If you increase number
  * of "columns" the taskstat sends you may need to increase the
  * value otherwise zcbor_map_end_encode may return with error.
@@ -354,12 +359,14 @@ static int os_mgmt_taskstat_read(struct smp_streamer *ctxt)
 /**
  * Command handler: os reset
  */
+#ifdef CONFIG_MULTITHREADING
 static void os_mgmt_reset_work_handler(struct k_work *work)
 {
 	ARG_UNUSED(work);
 
 	sys_reboot(SYS_REBOOT_WARM);
 }
+#endif
 
 static int os_mgmt_reset(struct smp_streamer *ctxt)
 {
@@ -371,18 +378,38 @@ static int os_mgmt_reset(struct smp_streamer *ctxt)
 	int32_t err_rc;
 	uint16_t err_group;
 
+#ifdef CONFIG_MCUMGR_GRP_OS_RESET_BOOT_MODE
+	uint32_t boot_mode = BOOT_MODE_TYPE_NORMAL;
+#endif
+
 	struct os_mgmt_reset_data reboot_data = {
 		.force = false
 	};
 
 	struct zcbor_map_decode_key_val reset_decode[] = {
 		ZCBOR_MAP_DECODE_KEY_DECODER("force", zcbor_bool_decode, &reboot_data.force),
+#ifdef CONFIG_MCUMGR_GRP_OS_RESET_BOOT_MODE
+		ZCBOR_MAP_DECODE_KEY_DECODER("boot_mode", zcbor_uint32_decode, &boot_mode),
+#endif
 	};
 
 	/* Since this is a core command, if we fail to decode the data, ignore the error and
-	 * continue with the default parameter of force being false.
+	 * continue with the default parameters.
 	 */
 	(void)zcbor_map_decode_bulk(zsd, reset_decode, ARRAY_SIZE(reset_decode), &decoded);
+
+#ifdef CONFIG_MCUMGR_GRP_OS_RESET_BOOT_MODE
+	if (zcbor_map_decode_bulk_key_found(reset_decode, ARRAY_SIZE(reset_decode), "boot_mode")) {
+		if (boot_mode > UCHAR_MAX) {
+			return MGMT_ERR_EINVAL;
+		}
+
+		reboot_data.boot_mode = (uint8_t)boot_mode;
+	} else {
+		reboot_data.boot_mode = BOOT_MODE_TYPE_NORMAL;
+	}
+#endif
+
 	status = mgmt_callback_notify(MGMT_EVT_OP_OS_MGMT_RESET, &reboot_data,
 				      sizeof(reboot_data), &err_rc, &err_group);
 
@@ -396,10 +423,39 @@ static int os_mgmt_reset(struct smp_streamer *ctxt)
 		ok = smp_add_cmd_err(zse, err_group, (uint16_t)err_rc);
 		return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 	}
+#elif defined(CONFIG_MCUMGR_GRP_OS_RESET_BOOT_MODE)
+	zcbor_state_t *zsd = ctxt->reader->zs;
+	size_t decoded;
+	uint32_t boot_mode;
+
+	struct zcbor_map_decode_key_val reset_decode[] = {
+		ZCBOR_MAP_DECODE_KEY_DECODER("boot_mode", zcbor_uint32_decode, &boot_mode),
+	};
+
+	/* Since this is a core command, if we fail to decode the data, ignore the error and
+	 * continue with the default parameters.
+	 */
+	(void)zcbor_map_decode_bulk(zsd, reset_decode, ARRAY_SIZE(reset_decode), &decoded);
+
+	if (zcbor_map_decode_bulk_key_found(reset_decode, ARRAY_SIZE(reset_decode), "boot_mode")) {
+		if (boot_mode > UCHAR_MAX) {
+			return MGMT_ERR_EINVAL;
+		}
+	}
 #endif
 
+#if defined(CONFIG_MCUMGR_GRP_OS_RESET_BOOT_MODE)
+	if (zcbor_map_decode_bulk_key_found(reset_decode, ARRAY_SIZE(reset_decode), "boot_mode")) {
+		(void)bootmode_set((uint8_t)boot_mode);
+	}
+#endif
+
+#ifdef CONFIG_MULTITHREADING
 	/* Reboot the system from the system workqueue thread. */
 	k_work_schedule(&os_mgmt_reset_work, K_MSEC(CONFIG_MCUMGR_GRP_OS_RESET_MS));
+#else
+	sys_reboot(SYS_REBOOT_WARM);
+#endif
 
 	return 0;
 }
@@ -423,22 +479,27 @@ os_mgmt_mcumgr_params(struct smp_streamer *ctxt)
 
 #if defined(CONFIG_MCUMGR_GRP_OS_BOOTLOADER_INFO)
 
-#if IS_ENABLED(CONFIG_MCUBOOT_BOOTLOADER_MODE_SINGLE_APP)
+#if defined(CONFIG_BOOTLOADER_MCUBOOT)
+#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SINGLE_APP)
 #define BOOTLOADER_MODE MCUBOOT_MODE_SINGLE_SLOT
-#elif IS_ENABLED(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_SCRATCH)
+#elif defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_SCRATCH)
 #define BOOTLOADER_MODE MCUBOOT_MODE_SWAP_USING_SCRATCH
-#elif IS_ENABLED(CONFIG_MCUBOOT_BOOTLOADER_MODE_OVERWRITE_ONLY)
+#elif defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_OVERWRITE_ONLY)
 #define BOOTLOADER_MODE MCUBOOT_MODE_UPGRADE_ONLY
-#elif IS_ENABLED(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH)
+#elif defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_OFFSET)
+#define BOOTLOADER_MODE MCUBOOT_MODE_SWAP_USING_OFFSET
+#elif defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_MOVE) || \
+defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH)
 #define BOOTLOADER_MODE MCUBOOT_MODE_SWAP_USING_MOVE
-#elif IS_ENABLED(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP)
+#elif defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP)
 #define BOOTLOADER_MODE MCUBOOT_MODE_DIRECT_XIP
-#elif IS_ENABLED(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)
+#elif defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)
 #define BOOTLOADER_MODE MCUBOOT_MODE_DIRECT_XIP_WITH_REVERT
-#elif IS_ENABLED(CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER)
+#elif defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER)
 #define BOOTLOADER_MODE MCUBOOT_MODE_FIRMWARE_LOADER
 #else
 #define BOOTLOADER_MODE -1
+#endif
 #endif
 
 static int
@@ -448,7 +509,20 @@ os_mgmt_bootloader_info(struct smp_streamer *ctxt)
 	zcbor_state_t *zsd = ctxt->reader->zs;
 	struct zcbor_string query = { 0 };
 	size_t decoded;
-	bool ok;
+	bool ok = true;
+	bool has_output = false;
+
+#if defined(CONFIG_MCUMGR_GRP_OS_BOOTLOADER_INFO_HOOK)
+	enum mgmt_cb_return status;
+	int32_t err_rc;
+	uint16_t err_group;
+	struct os_mgmt_bootloader_info_data bootloader_info_data = {
+		.zse = zse,
+		.decoded = &decoded,
+		.query = &query,
+		.has_output = &has_output
+	};
+#endif
 
 	struct zcbor_map_decode_key_val bootloader_info[] = {
 		ZCBOR_MAP_DECODE_KEY_DECODER("query", zcbor_tstr_decode, &query),
@@ -458,23 +532,46 @@ os_mgmt_bootloader_info(struct smp_streamer *ctxt)
 		return MGMT_ERR_EINVAL;
 	}
 
-	/* If no parameter is recognized then just introduce the bootloader. */
-	if (decoded == 0) {
-		ok = zcbor_tstr_put_lit(zse, "bootloader") &&
-		     zcbor_tstr_put_lit(zse, "MCUboot");
-	} else if (zcbor_map_decode_bulk_key_found(bootloader_info, ARRAY_SIZE(bootloader_info),
-		   "query") &&
-		   (sizeof("mode") - 1) == query.len &&
-		   memcmp("mode", query.value, query.len) == 0) {
+#if defined(CONFIG_MCUMGR_GRP_OS_BOOTLOADER_INFO_HOOK)
+	status = mgmt_callback_notify(MGMT_EVT_OP_OS_MGMT_BOOTLOADER_INFO, &bootloader_info_data,
+				      sizeof(bootloader_info_data), &err_rc, &err_group);
 
-		ok = zcbor_tstr_put_lit(zse, "mode") &&
-		     zcbor_int32_put(zse, BOOTLOADER_MODE);
-#if IS_ENABLED(CONFIG_MCUBOOT_BOOTLOADER_NO_DOWNGRADE)
-		ok = zcbor_tstr_put_lit(zse, "no-downgrade") &&
-		     zcbor_bool_encode(zse, true);
+	if (status != MGMT_CB_OK) {
+		if (status == MGMT_CB_ERROR_RC) {
+			return err_rc;
+		}
+
+		ok = smp_add_cmd_err(zse, err_group, (uint16_t)err_rc);
+
+		return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
+	}
 #endif
-	} else {
-		return OS_MGMT_ERR_QUERY_YIELDS_NO_ANSWER;
+
+	/* If no parameter is recognized then just introduce the bootloader. */
+	if (!has_output) {
+#if defined(CONFIG_BOOTLOADER_MCUBOOT)
+		if (decoded == 0) {
+			ok = zcbor_tstr_put_lit(zse, "bootloader") &&
+			     zcbor_tstr_put_lit(zse, "MCUboot");
+			has_output = true;
+		} else if (zcbor_map_decode_bulk_key_found(bootloader_info,
+							   ARRAY_SIZE(bootloader_info),
+			   "query") && (sizeof("mode") - 1) == query.len &&
+			   memcmp("mode", query.value, query.len) == 0) {
+
+			ok = zcbor_tstr_put_lit(zse, "mode") &&
+			     zcbor_int32_put(zse, BOOTLOADER_MODE);
+#ifdef CONFIG_MCUBOOT_BOOTLOADER_NO_DOWNGRADE
+			ok = ok && zcbor_tstr_put_lit(zse, "no-downgrade") &&
+			     zcbor_bool_encode(zse, &(bool){true});
+#endif
+			has_output = true;
+		}
+#endif
+	}
+
+	if (!has_output) {
+		ok = smp_add_cmd_err(zse, MGMT_GROUP_ID_OS, OS_MGMT_ERR_QUERY_YIELDS_NO_ANSWER);
 	}
 
 	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
@@ -836,7 +933,7 @@ static int os_mgmt_datetime_read(struct smp_streamer *ctxt)
 
 	sprintf(date_string, "%4d-%02d-%02dT%02d:%02d:%02d"
 #ifdef CONFIG_MCUMGR_GRP_OS_DATETIME_MS
-		".%d"
+		".%03d"
 #endif
 		, (uint16_t)(current_time.tm_year + RTC_DATETIME_YEAR_OFFSET),
 		(uint8_t)(current_time.tm_mon + RTC_DATETIME_MONTH_OFFSET),
@@ -1015,6 +1112,7 @@ static int os_mgmt_translate_error_code(uint16_t err)
 
 	case OS_MGMT_ERR_QUERY_YIELDS_NO_ANSWER:
 	case OS_MGMT_ERR_RTC_NOT_SET:
+	case OS_MGMT_ERR_QUERY_RESPONSE_VALUE_NOT_VALID:
 		rc = MGMT_ERR_ENOENT;
 		break;
 
@@ -1076,6 +1174,9 @@ static struct mgmt_group os_mgmt_group = {
 	.mg_group_id = MGMT_GROUP_ID_OS,
 #ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
 	.mg_translate_error = os_mgmt_translate_error_code,
+#endif
+#ifdef CONFIG_MCUMGR_GRP_ENUM_DETAILS_NAME
+	.mg_group_name = "os mgmt",
 #endif
 };
 

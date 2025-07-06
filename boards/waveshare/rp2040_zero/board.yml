@@ -1,0 +1,6 @@
+board:
+  name: rp2040_zero
+  full_name: RP2040-Zero
+  vendor: waveshare
+  socs:
+  - name: rp2040

@@ -1,7 +1,4 @@
-.. _qemu_cortex_a53:
-
-ARM Cortex-A53 Emulation (QEMU)
-###############################
+.. zephyr:board:: qemu_cortex_a53
 
 Overview
 ********
@@ -59,6 +56,8 @@ The following platform features are unsupported:
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Use this configuration to run basic Zephyr applications and kernel tests in the QEMU
 emulated environment, for example, with the :zephyr:code-sample:`synchronization` sample:
 
@@ -102,6 +101,8 @@ and shell would need to be disabled, therefore this is not directly supported.
 
 References
 **********
+
+.. target-notes::
 
 1. (ID050815) ARM® Cortex®-A Series - Programmer’s Guide for ARMv8-A
 2. (ID070919) Arm® Architecture Reference Manual - Armv8, for Armv8-A architecture profile

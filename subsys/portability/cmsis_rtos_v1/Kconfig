@@ -24,21 +24,21 @@ config CMSIS_THREAD_MAX_STACK_SIZE
 config CMSIS_TIMER_MAX_COUNT
 	int "Maximum timer count in CMSIS application"
 	default 5
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  Mention maximum number of timers in CMSIS compliant application.
 
 config CMSIS_MUTEX_MAX_COUNT
 	int "Maximum mutex count in CMSIS application"
 	default 5
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  Mention maximum number of mutexes in CMSIS compliant application.
 
 config CMSIS_SEMAPHORE_MAX_COUNT
 	int "Maximum semaphore count in CMSIS application"
 	default 5
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  Mention maximum number of semaphores in CMSIS compliant application.
 

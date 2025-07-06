@@ -15,4 +15,3 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 void ull_sync_iso_estab_done(struct node_rx_event_done *done);
 void ull_sync_iso_done(struct node_rx_event_done *done);
 void ull_sync_iso_done_terminate(struct node_rx_event_done *done);
-uint32_t ull_big_sync_delay(const struct lll_sync_iso *lll_iso);

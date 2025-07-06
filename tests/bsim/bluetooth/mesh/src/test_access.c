@@ -812,7 +812,7 @@ static void tx_transmit(bool delayable)
 		}
 
 		/* Let the receiver hit the first semaphore. */
-		k_sleep(K_SECONDS(1));
+		k_sleep(K_SECONDS(2));
 	}
 
 	PASS();

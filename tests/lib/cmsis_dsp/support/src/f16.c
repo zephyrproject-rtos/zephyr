@@ -182,7 +182,7 @@ DEFINE_TEST_VARIANT3(support_f16, arm_float_to_f16, 7, ref_f32, ref_f16, 7);
 DEFINE_TEST_VARIANT3(support_f16, arm_float_to_f16, 16, ref_f32, ref_f16, 16);
 DEFINE_TEST_VARIANT3(support_f16, arm_float_to_f16, 23, ref_f32, ref_f16, 23);
 
-static void test_arm_weighted_sum_f16(
+static void test_arm_weighted_average_f16(
 	int ref_offset, size_t length)
 {
 	const float16_t *val = (const float16_t *)in_weighted_sum_val;
@@ -195,7 +195,7 @@ static void test_arm_weighted_sum_f16(
 	zassert_not_null(output, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	/* Run test function */
-	output[0] = arm_weighted_sum_f16(val, coeff, length);
+	output[0] = arm_weighted_average_f16(val, coeff, length);
 
 	/* Validate output */
 	zassert_true(
@@ -207,8 +207,8 @@ static void test_arm_weighted_sum_f16(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT2(support_f16, arm_weighted_sum_f16, 7, 0, 7);
-DEFINE_TEST_VARIANT2(support_f16, arm_weighted_sum_f16, 16, 1, 16);
-DEFINE_TEST_VARIANT2(support_f16, arm_weighted_sum_f16, 23, 2, 23);
+DEFINE_TEST_VARIANT2(support_f16, arm_weighted_average_f16, 7, 0, 7);
+DEFINE_TEST_VARIANT2(support_f16, arm_weighted_average_f16, 16, 1, 16);
+DEFINE_TEST_VARIANT2(support_f16, arm_weighted_average_f16, 23, 2, 23);
 
 ZTEST_SUITE(support_f16, NULL, NULL, NULL, NULL, NULL);

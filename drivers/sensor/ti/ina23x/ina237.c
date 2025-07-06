@@ -388,7 +388,7 @@ static int ina237_trigger_set(const struct device *dev, const struct sensor_trig
 	return 0;
 }
 
-static const struct sensor_driver_api ina237_driver_api = {
+static DEVICE_API(sensor, ina237_driver_api) = {
 	.attr_set = ina237_attr_set,
 	.attr_get = ina237_attr_get,
 	.trigger_set = ina237_trigger_set,

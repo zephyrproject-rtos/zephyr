@@ -11,6 +11,7 @@
 # <vendor-prefix><TAB><Full name of vendor>
 
 # zephyr-keep-sorted-start
+01space	01Space
 96boards	96Boards
 aaeon	AAEON Technology Inc.
 abb	ABB
@@ -32,7 +33,9 @@ adh	AD Holdings Plc.
 adi	Analog Devices, Inc.
 advantech	Advantech Corporation
 aeroflexgaisler	Aeroflex Gaisler AB
+aesc	Aesc Silicon
 aesop	AESOP Embedded Forum
+aithinker	Ai-Thinker Co., Ltd.
 al	Annapurna Labs
 alcatel	Alcatel
 alientek	Alientek
@@ -56,6 +59,7 @@ ams	AMS AG
 amstaos	AMS-Taos Inc.
 analogix	Analogix Semiconductor, Inc.
 andestech	Andes Technology Corporation
+antmicro	Antmicro
 anvo	Anvo-Systems Dresden GmbH
 aosong	Guangzhou Aosong Electronic Co., Ltd.
 ap	Angst+Pfister
@@ -68,6 +72,7 @@ arc	Synopsys, Inc. (formerly ARC International PLC)
 archermind	ArcherMind Technology (Nanjing) Co., Ltd.
 arctic	Arctic Sand
 arcx	arcx Inc. / Archronix Inc.
+arducam	Arducam
 arduino	Arduino
 aries	Aries Embedded GmbH
 arm	ARM Ltd.
@@ -99,6 +104,7 @@ bbc	BBC
 bcdevices	Blue Clover Devices
 beacon	Compass Electronics Group, LLC
 beagle	BeagleBoard.org Foundation
+bflb	Bouffalo Lab (Nanjing) Co., Ltd.
 bhf	Beckhoff Automation GmbH & Co. KG
 bitmain	Bitmain Technologies
 blues	Blues Wireless
@@ -111,6 +117,7 @@ broadmobi	Shanghai Broadmobi Communication Technology Co.,Ltd.
 bticino	Bticino International
 buffalo	Buffalo, Inc.
 bur	B&R Industrial Automation GmbH
+bytesatwork	bytesatwork AG
 calaosystems	CALAO Systems SAS
 calxeda	Calxeda
 canaan	Canaan, Inc.
@@ -150,9 +157,11 @@ cortina	Cortina Systems, Inc.
 cosmic	Cosmic Circuits
 crane	Crane Connectivity Solutions
 creative	Creative Technology Ltd
+croxel	Croxel, Inc.
 crystalfontz	Crystalfontz America, Inc.
 csky	Hangzhou C-SKY Microsystems Co., Ltd
 csq	Shenzen Chuangsiqi Technology Co.,Ltd.
+ct	CTHINGS.CO
 cubietech	Cubietech, Ltd.
 cypress	Cypress Semiconductor Corporation
 cznic	CZ.NIC, z.s.p.o.
@@ -169,13 +178,14 @@ dfrobot	DFRobot
 dh	DH electronics GmbH
 difrnce	Shenzhen Yagu Electronic Technology Co., Ltd.
 digi	Digi International Inc.
-digilent	Diglent, Inc.
+digilent	Digilent, Inc.
 diodes	Diodes Incorporated
 dioo	Dioo Microcircuit Co., Ltd
 dlc	DLC Display Co., Ltd.
 dlg	Dialog Semiconductor
 dlink	D-Link Corporation
 dmo	Data Modul AG
+doiting	Doctors of Intelligence & Technology
 domintech	Domintech Co., Ltd.
 dongwoon	Dongwoon Anatech
 dptechnics	DPTechnics
@@ -224,6 +234,7 @@ evervision	Evervision Electronics Co. Ltd.
 exar	Exar Corporation
 excito	Excito
 ezchip	EZchip Semiconductor
+ezurio	Ezurio
 facebook	Facebook (deprecated, use meta)
 fairphone	Fairphone B.V.
 fanke	FANKE Technology Co., Ltd.
@@ -232,6 +243,7 @@ fastrax	Fastrax Oy
 fcs	Fairchild Semiconductor
 feixin	Shenzhen Feixin Photoelectic Co., Ltd
 feiyang	Shenzhen Fly Young Technology Co.,LTD.
+festo	Festo SE & Co. KG
 fii	Foxconn Industrial Internet
 fintek	Feature Integration Technology Inc.
 firefly	Firefly
@@ -242,6 +254,8 @@ friendlyarm	Guangzhou FriendlyARM Computer Tech Co., Ltd
 fsl	Freescale Semiconductor
 ftdi	Future Technology Devices International Ltd.
 fujitsu	Fujitsu Ltd.
+futaba	Futaba Corporation
+fysetc	Shenzhen Fuyuansheng Electronic Technology Co., Ltd.
 gaisler	Gaisler
 galaxycore	Galaxycore, Inc.
 gardena	GARDENA GmbH
@@ -295,6 +309,7 @@ hynitron	Hynitron
 hyundai	Hyundai Technology
 hzgrow	Hangzhou Grow Technology Co., Ltd.
 i2se	I2SE GmbH
+iar	IAR Systems AB
 ibm	International Business Machines (IBM)
 icplus	IC Plus Corp.
 idt	Integrated Device Technologies, Inc.
@@ -321,6 +336,8 @@ isee	ISEE 2007 S.L.
 isentek	Isentek Inc.
 isil	Intersil
 issi	Integrated Silicon Solutions Inc.
+ist	Innovative Sensor Technology IST AG
+istech	Integrated Solutions Technology Inc.
 ite	ITE Tech. Inc.
 itead	ITEAD Intelligent Systems Co.Ltd
 ivo	InfoVision Optoelectronics Kunshan Co. Ltd.
@@ -348,10 +365,10 @@ kontron	Kontron S&T AG
 kosagi	Sutajio Ko-Usagi PTE Ltd.
 kvaser	Kvaser
 kvg	Kverneland Group
+kws	KWS Computersysteme Gmbh
 kyo	Kyocera Corporation
 lacie	LaCie
 laird	Laird PLC
-lairdconnect	Laird Connectivity
 lamobo	Ketai Huajie Technology Co., Ltd.
 lantiq	Lantiq Semiconductor
 lattice	Lattice Semiconductor
@@ -364,12 +381,14 @@ lg	LG Corporation
 lgphilips	LG Display
 libretech	Shenzhen Libre Technology Co., Ltd
 licheepi	Lichee Pi
+lilygo	Lilygo Shenzhen Xinyuan Electronic Technology Co., Ltd
 linaro	Linaro Limited
 linksprite	LinkSprite Technologies, Inc.
 linksys	Belkin International, Inc. (Linksys)
 linutronix	Linutronix GmbH
 linux	Linux-specific binding
 linx	Linx Technologies
+liteon	LiteOn OptoElectronics
 litex	LiteX SoC builder
 lltc	Linear Technology Corporation
 logicpd	Logic PD, Inc.
@@ -379,13 +398,13 @@ lontium	Lontium Semiconductor Corporation
 loongson	Loongson Technology Corporation Limited
 lowrisc	lowRISC Community Interest Company
 lsi	LSI Corp. (LSI Logic)
-ltr	LiteOn OptoElectronics
 luatos	LuatOS Team
 lwn	Liebherr-Werk Nenzing GmbH
 lxa	Linux Automation GmbH
 m5stack	M5Stack
 macnica	Macnica Americas
 madmachine	Shenzhen FeiKaiTe Technology Co., Ltd.
+makerbase	Makerbase Co., Ltd.
 makerdiary	Shenzhen Zaowubang Technology Co., Ltd.
 mantix	Mantix Display Technology Co.,Ltd.
 mapleboard	Mapleboard.org
@@ -441,6 +460,7 @@ myir	MYIR Tech Limited
 national	National Semiconductor
 nec	NEC LCD Technologies, Ltd.
 neonode	Neonode Inc.
+neorv32	NEORV32 RISC-V Processor
 netgear	NETGEAR
 netlogic	Broadcom Corporation (formerly NetLogic Microsystems)
 netron-dy	Netron DY
@@ -455,6 +475,7 @@ nintendo	Nintendo
 nlt	NLT Technologies, Ltd.
 nokia	Nokia
 nordic	Nordic Semiconductor
+norik	Norik Systems
 noritake	Noritake Co., Inc. Electronics Division
 novtech	NovTech, Inc.
 nuclei	Nuclei System Technology
@@ -474,6 +495,7 @@ onnn	ON Semiconductor Corp.
 ontat	On Tat Industrial Company
 opalkelly	Opal Kelly Incorporated
 opencores	OpenCores.org
+openhwgroup	OpenHW Group
 openisa	open-isa.org
 openrisc	OpenRISC.io
 openthread	OpenThread.io
@@ -485,8 +507,7 @@ ortustech	Ortus Technology Co., Ltd.
 osddisplays	OSD Displays
 ouya	Ouya Inc.
 overkiz	Overkiz SAS
-ovti	OmniVision Technologies
-ovti	OmniVision Technologies Co., Ltd.
+ovti	OmniVision Technologies Inc.
 oxsemi	Oxford Semiconductor, Ltd.
 ozzmaker	OzzMaker
 panasonic	Panasonic Corporation
@@ -494,11 +515,15 @@ parade	Parade Technologies Inc.
 parallax	Parallax Inc.
 particle	Particle.io
 pda	Precision Design Associates, Inc.
+peacefair	Ningbo Peacefair Electronic Technology Co., Ltd
+peregrine	Peregrine Consultoria e Servicos
 pericom	Pericom Technology Inc.
 pervasive	Pervasive Displays, Inc.
 phicomm	PHICOMM Co., Ltd.
-phytec	PHYTEC Messtechnik GmbH
+phosense	Beijing Phosense Electronic Technology Co., Ltd.
+phytec	PHYTEC
 picochip	Picochip Ltd
+pimoroni	Pimoroni Ltd.
 pine64	Pine64
 pineriver	Shenzhen PineRiver Designs Co., Ltd.
 pixart	PixArt Imaging Inc.
@@ -551,6 +576,7 @@ renode	Antmicro's open source simulation and virtual development framework
 rervision	Shenzhen Rervision Technology Co., Ltd.
 revotics	Revolution Robotics, Inc. (Revotics)
 rex	iMX6 Rex Project
+reyax	Reyax Technology Co., Ltd.
 richtek	Richtek Technology Corporation
 ricoh	Ricoh Co. Ltd.
 rikomagic	Rikomagic Tech Corp. Ltd
@@ -563,6 +589,7 @@ ronbo	Ronbo Electronics
 ronoth	Ronoth
 roofull	Shenzhen Roofull Technology Co, Ltd
 roseapplepi	RoseapplePi.org
+ruiside	Shanghai Ruiside Electronic Technology Co., Ltd.
 ruuvi	Ruuvi Innovations Ltd (Oy)
 samsung	Samsung Semiconductor
 samtec	Samtec/Softing company
@@ -581,6 +608,7 @@ seirobotics	Shenzhen SEI Robotics Co., Ltd
 semtech	Semtech Corporation
 sensirion	Sensirion AG
 sensortek	Sensortek Technology Corporation
+sensry	sensry.io
 sff	Small Form Factor Committee
 sgd	Solomon Goldentek Display Corporation
 sgmicro	SG Micro Corp
@@ -687,7 +715,7 @@ udoo	Udoo
 ugoos	Ugoos Industrial Co., Ltd.
 ultrachip	UltraChip Inc.
 uniwest	United Western Technologies Corp (UniWest)
-up-brige-the-gap	UP Bridge the Gap
+up-bridge-the-gap	UP Bridge the Gap
 upisemi	uPI Semiconductor Corp.
 urt	United Radiant Technology Corporation
 usi	Universal Scientific Industrial Co., Ltd.
@@ -714,6 +742,7 @@ vot	Vision Optical Technology Co., Ltd.
 vxt	VXT Ltd
 wand	Wandbord (Technexion)
 waveshare	Waveshare Electronics
+wch	WinChipHead
 wd	Western Digital Corp.
 we	Würth Elektronik GmbH.
 weact	WeAct Studio
@@ -726,6 +755,7 @@ winbond	Winbond Electronics corp.
 winsen	Zhengzhou Winsen Electronics Technology Co., Ltd.
 winstar	Winstar Display Corp.
 wits	Shenzhen Merrii Technology Co., Ltd. (WITS)
+witte	Witte Technology
 wiznet	WIZnet Co., Ltd.
 wlf	Wolfson Microelectronics
 wm	Wondermedia Technologies, Inc.
@@ -756,9 +786,10 @@ yones-toptech	Yones Toptech Co., Ltd.
 ys	Shenzhen Yashi Changhua Intelligent Technology Co., Ltd.
 ysoft	Y Soft Corporation a.s.
 zarlink	Zarlink Semiconductor
+zb	Zbit Semiconductor, Inc.
 zealz	Zealz
 zeitec	ZEITEC Semiconductor Co., LTD.
-zephyr	Zephyr-specific binding
+zephyr	The Zephyr Project
 zidoo	Shenzhen Zidoo Technology Co., Ltd.
 zii	Zodiac Inflight Innovations
 zinitix	Zinitix Co., Ltd

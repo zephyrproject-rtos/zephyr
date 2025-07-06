@@ -20,6 +20,8 @@
 #define MPU9250_CHIP_ID			0x71
 #define MPU6880_CHIP_ID			0x19
 
+#define MPU6050_REG_SMPLRT_DIV		0x19
+
 #define MPU6050_REG_GYRO_CFG		0x1B
 #define MPU6050_GYRO_FS_SHIFT		3
 
@@ -80,6 +82,9 @@ struct mpu6050_data {
 
 struct mpu6050_config {
 	struct i2c_dt_spec i2c;
+	uint8_t accel_fs;
+	uint16_t gyro_fs;
+	uint8_t smplrt_div;
 #ifdef CONFIG_MPU6050_TRIGGER
 	struct gpio_dt_spec int_gpio;
 #endif /* CONFIG_MPU6050_TRIGGER */

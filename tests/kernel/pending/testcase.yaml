@@ -1,8 +1,10 @@
 tests:
-  kernel.objects:
+  kernel.pending:
     tags: kernel
-  kernel.objects.minimallibc:
+  kernel.pending.minimallibc:
     filter: CONFIG_MINIMAL_LIBC_SUPPORTED
-    tags: kernel libc
+    tags:
+      - kernel
+      - libc
     extra_configs:
       - CONFIG_MINIMAL_LIBC=y

@@ -31,6 +31,7 @@ difftime64
 div
 erf
 erfc
+errno
 exit
 exp
 fabs

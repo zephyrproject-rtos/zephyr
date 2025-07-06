@@ -7,8 +7,12 @@ menu "Memory manager settings"
 config LV_Z_BITS_PER_PIXEL
 	int "Bits per pixel"
 	default 32
+	default 32 if LV_COLOR_DEPTH_32
+	default 24 if LV_COLOR_DEPTH_24
+	default 16 if LV_COLOR_DEPTH_16
+	default 8 if LV_COLOR_DEPTH_8
+	default 1 if LV_COLOR_DEPTH_1
 	range 1 32
-	depends on LV_Z_BUFFER_ALLOC_STATIC
 	help
 	  Number of bits per pixel.
 
@@ -20,7 +24,7 @@ choice LV_Z_MEMORY_POOL
 
 	config LV_Z_MEM_POOL_HEAP_LIB_C
 	  bool "C library Heap"
-	  depends on !MINIMAL_LIBC || (MINIMAL_LIBC_MALLOC_ARENA_SIZE != 0)
+	  depends on !MINIMAL_LIBC || (COMMON_LIBC_MALLOC_ARENA_SIZE != 0)
 	  help
 		Use C library malloc and free to allocate objects on the C library heap
 
@@ -38,6 +42,15 @@ config LV_Z_MEM_POOL_SIZE
 	depends on LV_Z_MEM_POOL_SYS_HEAP
 	help
 	  Size of the memory pool in bytes
+
+config LV_Z_MEMORY_POOL_CUSTOM_SECTION
+	bool "Link memory pool to custom section"
+	depends on LV_Z_MEM_POOL_SYS_HEAP
+	help
+	  Place LVGL memory pool in custom section, with tag ".lvgl_heap".
+	  This can be used by custom linker scripts to relocate the LVGL
+	  memory pool to a custom location, such as tightly coupled or
+	  external memory.
 
 config LV_Z_VDB_SIZE
 	int "Rendering buffer size"
@@ -70,7 +83,7 @@ config LV_Z_VDB_ALIGN
 	  buffer may be accessed as a uint8_t *, uint16_t *, or uint32_t *,
 	  so buffer must be aligned to prevent unaligned memory access
 
-config LV_Z_VBD_CUSTOM_SECTION
+config LV_Z_VDB_CUSTOM_SECTION
 	bool "Link rendering buffers to custom section"
 	depends on LV_Z_BUFFER_ALLOC_STATIC
 	help
@@ -78,6 +91,13 @@ config LV_Z_VBD_CUSTOM_SECTION
 	  This can be used by custom linker scripts to relocate the LVGL
 	  rendering buffers to a custom location, such as tightly coupled or
 	  external memory.
+
+config LV_Z_MONOCHROME_CONVERSION_BUFFER
+	bool "Use intermediate conversion buffer for monochrome displays"
+	default y
+	help
+	  When using a monochrome display an intermediate buffer with LV_Z_VDB_SIZE
+	  is needed to perform the conversion.
 
 choice LV_Z_RENDERING_BUFFER_ALLOCATION
 	prompt "Rendering Buffer Allocation"

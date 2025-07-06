@@ -5,6 +5,6 @@ config PINCTRL_XLNX_ZYNQ
 	bool "Xilinx Zynq 7000 processor system MIO pin controller driver"
 	default y
 	depends on DT_HAS_XLNX_PINCTRL_ZYNQ_ENABLED
-	select SYSCON
+	depends on SYSCON
 	help
 	  Enable the Xilinx Zynq 7000 processor system MIO pin controller driver.

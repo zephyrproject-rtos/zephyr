@@ -21,7 +21,7 @@ static inline int z_vrfy_adc_channel_setup(const struct device *dev,
 	return z_impl_adc_channel_setup((const struct device *)dev,
 					&channel_cfg);
 }
-#include <syscalls/adc_channel_setup_mrsh.c>
+#include <zephyr/syscalls/adc_channel_setup_mrsh.c>
 
 static bool copy_sequence(struct adc_sequence *dst,
 			  struct adc_sequence_options *options,
@@ -66,7 +66,7 @@ static inline int z_vrfy_adc_read(const struct device *dev,
 
 	return z_impl_adc_read((const struct device *)dev, &sequence);
 }
-#include <syscalls/adc_read_mrsh.c>
+#include <zephyr/syscalls/adc_read_mrsh.c>
 
 #ifdef CONFIG_ADC_ASYNC
 static inline int z_vrfy_adc_read_async(const struct device *dev,
@@ -89,5 +89,5 @@ static inline int z_vrfy_adc_read_async(const struct device *dev,
 	return z_impl_adc_read_async((const struct device *)dev, &sequence,
 				     (struct k_poll_signal *)async);
 }
-#include <syscalls/adc_read_async_mrsh.c>
+#include <zephyr/syscalls/adc_read_async_mrsh.c>
 #endif /* CONFIG_ADC_ASYNC */

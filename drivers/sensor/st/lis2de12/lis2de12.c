@@ -303,7 +303,7 @@ static int lis2de12_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api lis2de12_driver_api = {
+static DEVICE_API(sensor, lis2de12_driver_api) = {
 	.attr_set = lis2de12_attr_set,
 #if CONFIG_LIS2DE12_TRIGGER
 	.trigger_set = lis2de12_trigger_set,
@@ -435,7 +435,7 @@ static int lis2de12_init(const struct device *dev)
 
 #define LIS2DE12_CONFIG_SPI(inst)						\
 	{									\
-		STMEMSC_CTX_SPI(&lis2de12_config_##inst.stmemsc_cfg),		\
+		STMEMSC_CTX_SPI_INCR(&lis2de12_config_##inst.stmemsc_cfg),		\
 		.stmemsc_cfg = {						\
 			.spi = SPI_DT_SPEC_INST_GET(inst, LIS2DE12_SPI_OP, 0),	\
 		},								\

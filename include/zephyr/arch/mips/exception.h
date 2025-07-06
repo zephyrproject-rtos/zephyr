@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_MIPS_EXPCEPTION_H_
-#define ZEPHYR_INCLUDE_ARCH_MIPS_EXPCEPTION_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_MIPS_EXCEPTION_H_
+#define ZEPHYR_INCLUDE_ARCH_MIPS_EXCEPTION_H_
 
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
@@ -17,7 +17,7 @@
 extern "C" {
 #endif
 
-struct __esf {
+struct arch_esf {
 	unsigned long ra;		/* return address */
 	unsigned long gp;		/* global pointer */
 
@@ -50,12 +50,10 @@ struct __esf {
 	unsigned long cause;
 };
 
-typedef struct __esf z_arch_esf_t;
-
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* ZEPHYR_INCLUDE_ARCH_MIPS_EXPCEPTION_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_MIPS_EXCEPTION_H_ */

@@ -11,3 +11,5 @@ config SOC_SERIES_APOLLO4X
 	select CPU_HAS_ARM_MPU
 	select HAS_SWO
 	select AMBIQ_HAL
+	select HAS_PM
+	select SOC_EARLY_INIT_HOOK

@@ -1,0 +1,75 @@
+# Copyright (c) 2018 Laczen
+# Copyright (c) 2024 BayLibre SAS
+
+# SPDX-License-Identifier: Apache-2.0
+
+# Zephyr Memory Storage ZMS
+
+config ZMS
+	bool "Zephyr Memory Storage"
+	select CRC
+	help
+	  Enable Zephyr Memory Storage, which is a key-value storage system designed to work with
+	  all types of non-volatile storage technologies.
+	  It supports classical on-chip NOR flash as well as new technologies like RRAM and MRAM.
+
+if ZMS
+
+config ZMS_LOOKUP_CACHE
+	bool "ZMS lookup cache"
+	help
+	  Enable ZMS cache to reduce the ZMS data lookup time.
+	  Each cache entry holds an address of the most recent allocation
+	  table entry (ATE) for all ZMS IDs that fall into that cache position.
+
+config ZMS_LOOKUP_CACHE_SIZE
+	int "ZMS lookup cache size"
+	default 128
+	range 1 65536
+	depends on ZMS_LOOKUP_CACHE
+	help
+	  Number of entries in the ZMS lookup cache.
+	  Every additional entry in cache will use 8 bytes of RAM.
+
+config ZMS_DATA_CRC
+	bool "ZMS data CRC"
+
+config ZMS_CUSTOMIZE_BLOCK_SIZE
+	bool "Customize the size of the buffer used internally for reads and writes"
+	help
+	  ZMS uses an internal buffer to read/write and compare stored data.
+	  Increasing the size of this buffer should be done carefully in order to not
+	  overflow the stack.
+	  Increasing it makes ZMS able to work with storage devices
+	  that have a larger `write-block-size` (which decreases the performance of ZMS).
+
+config ZMS_CUSTOM_BLOCK_SIZE
+	int "ZMS internal buffer size"
+	default 32
+	depends on ZMS_CUSTOMIZE_BLOCK_SIZE
+	help
+	  Changes the internal buffer size of ZMS
+
+config ZMS_LOOKUP_CACHE_FOR_SETTINGS
+	bool "ZMS Storage lookup cache optimized for settings"
+	depends on ZMS_LOOKUP_CACHE && SETTINGS_ZMS
+	help
+	  Enable usage of lookup cache based on hashes to get, the best ZMS performance,
+	  provided that the ZMS is used only for the purpose of providing the settings
+	  backend. This option should NOT be enabled if the ZMS is also written to
+	  directly, outside the settings layer.
+
+config ZMS_NO_DOUBLE_WRITE
+	bool "Avoid writing the same data again in the storage"
+	help
+	  For some memory technologies, write cycles for memory cells are limited and any
+	  unncessary writes should be avoided.
+	  Enable this config to avoid rewriting data in the storage if it already exists.
+	  This option will reduce write performance as it will need to do a research of the
+	  data in the whole storage before any write.
+
+module = ZMS
+module-str = zms
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # ZMS

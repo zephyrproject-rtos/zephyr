@@ -1,0 +1,71 @@
+# Copyright (c) 2020 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP LPTMR
+
+compatible: "nxp,lptmr"
+
+include: rtc.yaml
+
+properties:
+  reg:
+    required: true
+
+  clock-frequency:
+    required: true
+    description: Counter clock frequency
+
+  prescaler:
+    required: true
+    description: The frequency of the counter is divided by this value.
+
+  clk-source:
+    type: int
+    required: true
+    enum: [0, 1, 2, 3]
+    description: |
+      Selects the clock to be used by the LPMTR prescaler/glitch filter.
+      In time counter mode, this field selects the input clock to the prescaler.
+      In pulse counter mode, this field selects the input clock to the glitch filter.
+      The clock connections vary by device, see the device reference manual for
+      more details.
+
+  input-pin:
+    type: int
+    description: |
+      When LPTMR is in Pulse mode, this value
+      will be used to determine the "rising-edge
+      source pin" to increment the lptmr counter.
+
+  active-low:
+    type: boolean
+    description: |
+      When LPTMR is in Pulse mode, this value
+      will set the counter to active low.
+
+  resolution:
+    type: int
+    required: true
+    description: Represents the width of the counter in bits.
+
+  prescale-glitch-filter:
+    type: int
+    default: 1
+    enum: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+    description: |
+      When in prescaler mode, the counter is incremented every
+        2 ^ [prescaler-glitch-filter] clock cycles.
+      When in pulse mode, the counter is incremented every
+        2 ^ [prescaler-glitch-filter] rising edges detected
+        by the pin configured from the input-pin value.
+        Note, that the pulse mode cannot be 2 ^ 16.
+
+  timer-mode-sel:
+    type: int
+    enum: [0, 1]
+    default: 0
+    description: |
+      This value determines rather the LPTMR is configured
+      for Time-Counter mode or for Pulse mode.
+      0 <- LPTMR is configured for Time Counter Mode.
+      1 <- LPTMR is configured for Pulse Mode.

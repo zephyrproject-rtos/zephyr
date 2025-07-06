@@ -40,7 +40,7 @@ Using BlueZ with Zephyr
 ***********************
 
 The Linux Bluetooth Protocol Stack, BlueZ, comes with a very useful set of
-tools that can be used to debug and interact with Zephyr's BLE Host and
+tools that can be used to debug and interact with Zephyr's Bluetooth Host and
 Controller. In order to benefit from these tools you will need to make sure
 that you are running a recent version of the Linux Kernel and BlueZ:
 
@@ -62,7 +62,7 @@ You can then find :file:`btattach`, :file:`btmgt` and :file:`btproxy` in the
 :file:`tools/` folder and :file:`btmon` in the :file:`monitor/` folder.
 
 You'll need to enable BlueZ's experimental features so you can access its
-most recent BLE functionality. Do this by editing the file
+most recent Bluetooth functionality. Do this by editing the file
 :file:`/lib/systemd/system/bluetooth.service`
 and making sure to include the :literal:`-E` option in the daemon's execution
 start line:
@@ -160,15 +160,15 @@ building and running a sample:
 
      $ sudo ./build/zephyr/zephyr.exe --bt-dev=hci0
 
-Using a Zephyr-based BLE Controller
-===================================
+Using a Zephyr-based Bluetooth Controller
+=========================================
 
 Depending on which hardware you have available, you can choose between two
-transports when building a single-mode, Zephyr-based BLE Controller:
+transports when building a single-mode, Zephyr-based Bluetooth Controller:
 
-* UART: Use the :ref:`hci_uart <bluetooth-hci-uart-sample>` sample and follow
+* UART: Use the :zephyr:code-sample:`bluetooth_hci_uart` sample and follow
   the instructions in :ref:`bluetooth-hci-uart-qemu-posix`.
-* USB: Use the :ref:`hci_usb <bluetooth-hci-usb-sample>` sample and then
+* USB: Use the :zephyr:code-sample:`bluetooth_hci_usb` sample and then
   treat it as a Host System Bluetooth Controller (see previous section)
 
 .. _bluetooth-hci-tracing:
@@ -301,14 +301,15 @@ After following these steps the Zephyr application will be available to the Andr
 over the virtual Bluetooth controller that was bridged with Bumble. You can verify that the
 Zephyr application can communicate over Bluetooth by opening the Bluetooth settings in your
 AVD and scanning for your Zephyr application device. To test this you can build the Bluetooth
-peripheral samples such as :ref:`Peripheral HR <peripheral_hr>` or :ref:`Peripheral DIS <peripheral_dis>`
+peripheral samples such as :zephyr:code-sample:`ble_peripheral_hr` or
+:zephyr:code-sample:`ble_peripheral_dis`.
 
 .. _bluetooth_ctlr_bluez:
 
 Using Zephyr-based Controllers with BlueZ
 *****************************************
 
-If you want to test a Zephyr-powered BLE Controller using BlueZ's Bluetooth
+If you want to test a Zephyr-powered Bluetooth Controller using BlueZ's Bluetooth
 Host, you will need a few tools described in the :ref:`bluetooth_bluez` section.
 Once you have installed the tools you can then use them to interact with your
 Zephyr-based controller:

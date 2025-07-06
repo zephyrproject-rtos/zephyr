@@ -5,7 +5,6 @@ tests:
       - kernel
       - benchmark
       - userspace
-    slow: true
     filter: CONFIG_ARCH_HAS_USERSPACE
     arch_exclude:
       - posix

@@ -18,8 +18,9 @@ an Ethernet network interface.
 Prerequisites
 *************
 
-On the Linux Host, fetch the Zephyr ``net-tools`` project, which is located
-in a separate Git repository:
+On the Linux Host, find the Zephyr `net-tools`_ project, which can either be
+found in a Zephyr standard installation under the ``tools/net-tools`` directory
+or installed stand alone from its own git repository:
 
 .. code-block:: console
 
@@ -85,3 +86,5 @@ In terminal #2, type:
    :compact:
 
 Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.
+
+.. _`net-tools`: https://github.com/zephyrproject-rtos/net-tools

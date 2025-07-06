@@ -1,0 +1,24 @@
+/dts-v1/;
+#include "mpfs_icicle_common.dtsi"
+
+/ {
+	compatible = "microchip,mpfs-icicle-kit", "microchip,mpfs";
+
+	cpus {
+		cpu@0 {
+			status = "disabled";
+		};
+	};
+
+	chosen {
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,sram = &sram1;
+	};
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	clock-frequency = <150000000>;
+};

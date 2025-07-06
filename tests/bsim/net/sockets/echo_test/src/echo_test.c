@@ -78,7 +78,7 @@ static const struct bst_test_instance test_echo_client[] = {
 			      "It expects to be connected to a compatible echo server, "
 			      "waits for " STR(WAIT_TIME) " seconds, and checks how "
 			      "many packets have been exchanged correctly",
-		.test_post_init_f = test_echo_client_init,
+		.test_pre_init_f = test_echo_client_init,
 		.test_tick_f = test_echo_client_tick,
 	},
 	BSTEST_END_MARKER

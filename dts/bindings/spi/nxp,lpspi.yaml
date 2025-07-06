@@ -1,0 +1,67 @@
+# Copyright (c) 2018,2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP LPSPI controller
+
+compatible: "nxp,lpspi"
+
+include: ["spi-controller.yaml", "pinctrl-device.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  pcs-sck-delay:
+    type: int
+    description: |
+      Delay in nanoseconds from the chip select assert to the first clock
+      edge.
+      If not set, the minimum supported delay is used.
+
+  sck-pcs-delay:
+    type: int
+    description: |
+      Delay in nanoseconds from the last clock edge to the chip select
+      deassert.
+      If not set, the minimum supported delay is used.
+
+  transfer-delay:
+    type: int
+    description: |
+      Delay in nanoseconds between last SCK edge of a transfer word and the
+      first SCK edge of the next transfer word.
+      If not set, the minimum supported delay is used.
+
+  data-pin-config:
+    type: string
+    enum:
+      - "sdi-in,sdo-out"
+      - "sdi-in,sdi-out"
+      - "sdo-in,sdo-out"
+      - "sdo-in,sdi-out"
+    default: "sdi-in,sdo-out"
+    description: |
+      Configures which pins (SDO and SDI) are used for input and output data
+      during single bit transfers.
+
+  tristate-output:
+    type: boolean
+    description:
+      Configures whether or not the output data is tristated between accesses
+      (when PCS is negated). If set, the output will be tristated when PCS is negated,
+      otherwise the output line retains the last value when PCS is negated.
+
+  rx-fifo-size:
+    type: int
+    required: true
+    description: |
+      Max number of words in the RX fifo on this instance of the LPSPI.
+
+  tx-fifo-size:
+    type: int
+    required: true
+    description: |
+      Max number of words in the TX/Command fifo on this instance of the LPSPI.

@@ -7,6 +7,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci.h>
 
 static struct bt_conn *default_conn;
 
@@ -51,7 +52,7 @@ static void connected_cb(struct bt_conn *conn, uint8_t err)
 
 static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 {
-	printk("Disconnected (reason 0x%02X)\n", reason);
+	printk("Disconnected, reason 0x%02X %s\n", reason, bt_hci_err_to_str(reason));
 
 	__ASSERT(conn == default_conn, "Unexpected disconnected callback");
 
@@ -84,6 +85,10 @@ static int start_advertising(struct bt_le_ext_adv *adv)
 	return err;
 }
 
+static const struct bt_data ad[] = {
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+};
+
 int main(void)
 {
 	int err;
@@ -98,11 +103,18 @@ int main(void)
 		return err;
 	}
 
-	/* Create a non-connectable non-scannable advertising set */
-	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN_NAME, NULL, &adv);
+	/* Create a connectable advertising set */
+	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN, NULL, &adv);
 	if (err) {
 		printk("Failed to create advertising set (err %d)\n", err);
 		return err;
+	}
+
+	/* Set advertising data to have complete local name set */
+	err = bt_le_ext_adv_set_data(adv, ad, ARRAY_SIZE(ad), NULL, 0);
+	if (err) {
+		printk("Failed to set advertising data (err %d)\n", err);
+		return 0;
 	}
 
 	err = start_advertising(adv);
@@ -124,10 +136,13 @@ int main(void)
 			app_st = BT_SAMPLE_ST_CONNECTED;
 
 			printk("Initiating disconnect within 5 seconds...\n");
-			k_sleep(K_SECONDS(5));
-
-			bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
-
+			if (k_poll(&poll_evt, 1, K_SECONDS(5)) == 0) {
+				printk("Remote disconnected early...\n");
+				/* Don't clear event here as we want the loop to run immediately */
+			} else {
+				/* Connection still alive after 5 seconds, terminate it */
+				bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+			}
 		} else if (atomic_test_and_clear_bit(evt_bitmask, BT_SAMPLE_EVT_DISCONNECTED) &&
 			   app_st == BT_SAMPLE_ST_CONNECTED) {
 

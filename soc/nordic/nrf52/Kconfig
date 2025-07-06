@@ -11,6 +11,7 @@ config SOC_SERIES_NRF52X
 	imply XIP
 	select HAS_NRFX
 	select HAS_NORDIC_DRIVERS
+	select HAS_NORDIC_RAM_CTRL
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
 	select HAS_SWO
 	select HAS_POWEROFF
@@ -32,17 +33,33 @@ if SOC_SERIES_NRF52X
 
 config SOC_DCDC_NRF52X
 	bool
+	select DEPRECATED
 	help
+	  This option is deprecated, use devicetree instead. Example
+	  configuration:
+
+	  &reg/reg1 {
+	    regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+	  };
+
 	  Enable nRF52 series System on Chip DC/DC converter.
 
 config SOC_DCDC_NRF52X_HV
 	bool
 	depends on SOC_NRF52840_QIAA
+	select DEPRECATED
 	help
+	  This option is deprecated, use devicetree instead. Example
+	  configuration:
+
+	  &reg0 {
+	    status = "okay";
+	  };
+
 	  Enable nRF52 series System on Chip High Voltage DC/DC converter.
 
 config GPIO_AS_PINRESET
-	bool "[DEPRECATED] GPIO as pin reset (reset button)"
+	bool
 	select DEPRECATED
 	help
 	  This option is deprecated, use devicetree instead. Example
@@ -102,5 +119,13 @@ config NRF52_ANOMALY_109_WORKAROUND_EGU_INSTANCE
 	default 5
 	help
 	  EGU instance used by the nRF52 Anomaly 109 workaround for PWM.
+
+config NRF52_ANOMALY_219_WORKAROUND
+	bool "Anomaly 219 workaround"
+	depends on NRFX_TWIM
+	help
+	  Due to Anomaly 219 the low period of SCL clock is too short to meet
+	  the I2C specification at 400 kHz. This workaround configures the I2C
+	  frequency to 390 kHz instead of 400 kHz.
 
 endif # SOC_SERIES_NRF52X

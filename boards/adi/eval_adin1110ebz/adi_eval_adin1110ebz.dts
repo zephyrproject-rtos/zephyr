@@ -34,19 +34,19 @@
 	leds { /* Respecting pcb silkscreen naming */
 		compatible = "gpio-leds";
 		green_led: led_uC0 {
-			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
 			label = "Status uC0";
 		};
 		red_led: led_uC1 {
-			gpios = <&gpioe 2 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpioe 2 GPIO_ACTIVE_LOW>;
 			label = "Status uC1 ";
 		};
 		yellow_led: led_uC2 {
-			gpios = <&gpioe 6 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpioe 6 GPIO_ACTIVE_LOW>;
 			label = "Status uC2";
 		};
 		blue_led: led_uC3 {
-			gpios = <&gpiog 15 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpiog 15 GPIO_ACTIVE_LOW>;
 			label = "Status uC3";
 		};
 	};
@@ -54,7 +54,6 @@
 	aliases {
 		led0 = &green_led;
 		watchdog0 = &iwdg;
-		spi-flash0 = &mx25r6435f;
 		ambient-temp0 = &adt7420;
 	};
 
@@ -270,9 +269,10 @@ zephyr_udc0: &usbotg_fs {
 
 	status = "okay";
 
-	mx25r6435f: ospi-nor-flash@90000000 {
+	mx25r6435f: ospi-nor-flash@0 {
 		compatible = "st,stm32-ospi-nor";
-		reg = <0x90000000 DT_SIZE_M(8)>; /* 64 Megabits */
+		reg = <0>;
+		size = <DT_SIZE_M(64)>; /* 64 Megabits */
 		ospi-max-frequency = <DT_FREQ_M(26)>; /* for Voltage Range 2 */
 		spi-bus-width = <OSPI_QUAD_MODE>;
 		data-rate = <OSPI_STR_TRANSFER>;

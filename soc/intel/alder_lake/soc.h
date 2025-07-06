@@ -23,6 +23,10 @@
 #include <zephyr/random/random.h>
 #endif
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(acpi_hid)
+#include "../common/soc_gpio.h"
+#endif
+
 #ifdef CONFIG_GPIO_INTEL
 #include "soc_gpio.h"
 #endif

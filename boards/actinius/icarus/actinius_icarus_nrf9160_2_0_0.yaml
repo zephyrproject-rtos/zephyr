@@ -1,10 +1,9 @@
 identifier: actinius_icarus@2.0.0/nrf9160
-name: Actinius Icarus
+name: Actinius Icarus (rev. 2.0.0)
 type: mcu
 arch: arm
 toolchain:
   - gnuarmemb
-  - xtools
   - zephyr
 ram: 88
 flash: 256

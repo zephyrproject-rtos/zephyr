@@ -30,6 +30,8 @@ static struct net_if *net_iface;
 static struct net_mgmt_event_callback scan_cb;
 K_SEM_DEFINE(scan_lock, 0, 1);
 
+static bool expected_association_permitted_bit;
+
 #define EXPECTED_COORDINATOR_LQI           15U
 
 #define EXPECTED_COORDINATOR_PAN_LE        0xcd, 0xab
@@ -45,12 +47,16 @@ K_SEM_DEFINE(scan_lock, 0, 1);
 #define EXPECTED_ENDDEVICE_EXT_ADDR_STR    "08:07:06:05:04:03:02:01"
 #define EXPECTED_ENDDEVICE_SHORT_ADDR      0xaaaa
 
-static void scan_result_cb(struct net_mgmt_event_callback *cb, uint32_t mgmt_event,
+#define EXPECTED_PAYLOAD_DATA EXPECTED_ENDDEVICE_EXT_ADDR_LE
+#define EXPECTED_PAYLOAD_LEN  8
+
+static void scan_result_cb(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 			   struct net_if *iface)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	struct ieee802154_req_params *scan_ctx = ctx->scan_ctx;
 	uint8_t expected_coordinator_address[] = {EXPECTED_COORDINATOR_ADDR_BE};
+	uint8_t expected_payload_data[] = {EXPECTED_PAYLOAD_DATA};
 
 	/* No need for scan_ctx locking as we should execute exclusively. */
 
@@ -62,6 +68,12 @@ static void scan_result_cb(struct net_mgmt_event_callback *cb, uint32_t mgmt_eve
 	zassert_mem_equal(scan_ctx->addr, expected_coordinator_address, IEEE802154_EXT_ADDR_LENGTH);
 	zassert_equal(scan_ctx->lqi, EXPECTED_COORDINATOR_LQI,
 		      "Scan did not receive correct link quality indicator.");
+	zassert_equal(scan_ctx->association_permitted, expected_association_permitted_bit,
+		      "Scan did not set the association permit bit correctly.");
+
+	zassert_equal(scan_ctx->beacon_payload_len, EXPECTED_PAYLOAD_LEN,
+		      "Scan did not include the payload");
+	zassert_mem_equal(scan_ctx->beacon_payload, expected_payload_data, EXPECTED_PAYLOAD_LEN);
 
 	k_sem_give(&scan_lock);
 }
@@ -126,8 +138,10 @@ static void test_scan_shell_cmd(void)
 
 	/* The beacon placed into the RX queue will be received and handled as
 	 * soon as this command yields waiting for beacons.
+	 * Scan should be as short as possible, because after 1 second an IPv6
+	 * Router Solicitation package will be placed into the TX queue
 	 */
-	ret = shell_execute_cmd(NULL, "ieee802154 scan active 11 500");
+	ret = shell_execute_cmd(NULL, "ieee802154 scan active 11 10");
 	zassert_equal(0, ret, "Active scan failed: %d", ret);
 
 	zassert_equal(0, k_sem_take(&scan_lock, K_NO_WAIT), "Active scan: did not receive beacon.");
@@ -136,7 +150,7 @@ static void test_scan_shell_cmd(void)
 
 	if (!ieee802154_validate_frame(net_pkt_data(current_pkt), net_pkt_get_len(current_pkt),
 				       &mpdu)) {
-		NET_ERR("*** Could not parse beacon request.\n");
+		NET_ERR("*** Could not parse beacon request.");
 		ztest_test_fail();
 		goto release_frag;
 	}
@@ -179,7 +193,7 @@ static void test_associate_shell_cmd(struct ieee802154_context *ctx)
 	zassert_not_null(assoc_req);
 
 	if (!ieee802154_validate_frame(assoc_req->data, assoc_req->len, &mpdu)) {
-		NET_ERR("*** Could not parse association request.\n");
+		NET_ERR("*** Could not parse association request.");
 		ztest_test_fail();
 		goto release_frag;
 	}
@@ -189,6 +203,28 @@ static void test_associate_shell_cmd(struct ieee802154_context *ctx)
 release_frag:
 	net_pkt_frag_unref(current_pkt->frags);
 	current_pkt->frags = NULL;
+}
+
+static int create_and_receive_packet(uint8_t *beacon_pkt, size_t length)
+{
+	struct net_pkt *pkt;
+
+	pkt = net_pkt_rx_alloc_with_buffer(net_iface, length, AF_UNSPEC, 0, K_FOREVER);
+	if (!pkt) {
+		NET_ERR("*** No buffer to allocate");
+		return -1;
+	}
+
+	net_pkt_set_ieee802154_lqi(pkt, EXPECTED_COORDINATOR_LQI);
+	net_buf_add_mem(pkt->buffer, beacon_pkt, length);
+
+	/* The packet will be placed in the RX queue but not yet handled. */
+	if (net_recv_data(net_iface, pkt) < 0) {
+		NET_ERR("Recv data failed");
+		net_pkt_unref(pkt);
+		return -1;
+	}
+	return 0;
 }
 
 ZTEST(ieee802154_l2_shell, test_active_scan)
@@ -201,28 +237,27 @@ ZTEST(ieee802154_l2_shell, test_active_scan)
 		0x00, 0xc0, /* Superframe Specification: PAN coordinator + association permitted */
 		0x00, /* GTS */
 		0x00, /* Pending Addresses */
-		0x00, 0x00 /* Payload */
+		EXPECTED_PAYLOAD_DATA /* Layer 3 payload */
 	};
-	struct net_pkt *pkt;
-
-	pkt = net_pkt_rx_alloc_with_buffer(net_iface, sizeof(beacon_pkt), AF_UNSPEC, 0, K_FOREVER);
-	if (!pkt) {
-		NET_ERR("*** No buffer to allocate\n");
-		goto fail;
-	}
-
-	net_pkt_set_ieee802154_lqi(pkt, EXPECTED_COORDINATOR_LQI);
-	net_buf_add_mem(pkt->buffer, beacon_pkt, sizeof(beacon_pkt));
-
-	/* The packet will be placed in the RX queue but not yet handled. */
-	if (net_recv_data(net_iface, pkt) < 0) {
-		NET_ERR("Recv data failed");
-		net_pkt_unref(pkt);
-		goto fail;
-	}
 
 	net_mgmt_init_event_callback(&scan_cb, scan_result_cb, NET_EVENT_IEEE802154_SCAN_RESULT);
 	net_mgmt_add_event_callback(&scan_cb);
+
+	expected_association_permitted_bit = true;
+
+	if (create_and_receive_packet(beacon_pkt, sizeof(beacon_pkt)) < 0) {
+		goto fail;
+	}
+
+	test_scan_shell_cmd();
+
+	/* disable the association permit flag */
+	beacon_pkt[14] = 0x40;
+	expected_association_permitted_bit = false;
+
+	if (create_and_receive_packet(beacon_pkt, sizeof(beacon_pkt)) < 0) {
+		goto fail;
+	}
 
 	test_scan_shell_cmd();
 
@@ -253,7 +288,7 @@ ZTEST(ieee802154_l2_shell, test_associate)
 	pkt = ieee802154_create_mac_cmd_frame(net_iface, IEEE802154_CFI_ASSOCIATION_RESPONSE,
 					      &params);
 	if (!pkt) {
-		NET_ERR("*** Could not create association response\n");
+		NET_ERR("*** Could not create association response");
 		goto fail;
 	}
 
@@ -313,7 +348,7 @@ ZTEST(ieee802154_l2_shell, test_initiate_disassociation_from_enddevice)
 
 	if (!ieee802154_validate_frame(net_pkt_data(current_pkt), net_pkt_get_len(current_pkt),
 				       &mpdu)) {
-		NET_ERR("*** Could not parse disassociation notification.\n");
+		NET_ERR("*** Could not parse disassociation notification.");
 		ztest_test_fail();
 		goto release_frag;
 	}
@@ -353,7 +388,7 @@ ZTEST(ieee802154_l2_shell, test_initiate_disassociation_from_coordinator)
 	pkt = ieee802154_create_mac_cmd_frame(net_iface, IEEE802154_CFI_DISASSOCIATION_NOTIFICATION,
 					      &params);
 	if (!pkt) {
-		NET_ERR("*** Could not create association response\n");
+		NET_ERR("*** Could not create association response");
 		goto fail;
 	}
 
@@ -451,21 +486,21 @@ static void *test_setup(void)
 	k_sem_reset(&driver_lock);
 
 	if (!dev) {
-		NET_ERR("*** Could not get fake device\n");
+		NET_ERR("*** Could not get fake device");
 		return NULL;
 	}
 
 	net_iface = net_if_lookup_by_dev(dev);
 	if (!net_iface) {
-		NET_ERR("*** Could not get fake iface\n");
+		NET_ERR("*** Could not get fake iface");
 		return NULL;
 	}
 
-	NET_INFO("Fake IEEE 802.15.4 network interface ready\n");
+	NET_INFO("Fake IEEE 802.15.4 network interface ready");
 
 	current_pkt = net_pkt_rx_alloc(K_FOREVER);
 	if (!current_pkt) {
-		NET_ERR("*** No buffer to allocate\n");
+		NET_ERR("*** No buffer to allocate");
 		return false;
 	}
 

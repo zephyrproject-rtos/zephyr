@@ -18,7 +18,7 @@
 
 #include "common/bt_str.h"
 
-#include "host/testing.h"
+#include "testing.h"
 
 #include "mesh.h"
 #include "net.h"
@@ -1429,6 +1429,7 @@ static int mod_sub_va_add(const struct bt_mesh_model *model,
 		/* Tried to add existing subscription */
 		status = STATUS_SUCCESS;
 		(void)bt_mesh_va_del(va->uuid);
+		sub_addr = va->addr;
 		goto send_status;
 	}
 
@@ -1889,7 +1890,7 @@ static int mod_app_bind(const struct bt_mesh_model *model,
 	status = mod_bind(mod, key_app_idx);
 
 	if (IS_ENABLED(CONFIG_BT_TESTING) && status == STATUS_SUCCESS) {
-		bt_test_mesh_model_bound(ctx->addr, mod, key_app_idx);
+		bt_mesh_test_model_bound(ctx->addr, mod, key_app_idx);
 	}
 
 send_status:
@@ -1946,7 +1947,7 @@ static int mod_app_unbind(const struct bt_mesh_model *model,
 	status = mod_unbind(mod, key_app_idx, true);
 
 	if (IS_ENABLED(CONFIG_BT_TESTING) && status == STATUS_SUCCESS) {
-		bt_test_mesh_model_unbound(ctx->addr, mod, key_app_idx);
+		bt_mesh_test_model_unbound(ctx->addr, mod, key_app_idx);
 	}
 
 send_status:

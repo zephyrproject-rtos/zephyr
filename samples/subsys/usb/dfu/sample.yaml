@@ -6,18 +6,28 @@ common:
   arch_exclude: posix
   platform_exclude:
     - mimxrt1010_evk
-    - mimxrt1050_evk@qspi
     - mimxrt1020_evk
     - mimxrt1015_evk
-    - mimxrt1060_evk
+    - mimxrt1060_evk@A/mimxrt1062/qspi
+    - mimxrt1060_evk@B/mimxrt1062/qspi
+    - mimxrt1060_evk@C/mimxrt1062/qspi
     - sam4l_ek
-    - mimxrt1050_evk
-    - mimxrt1060_evk@hyperflash
+    - same54_xpro
+    - samr21_xpro
+    - mimxrt1050_evk/mimxrt1052/hyperflash
+    - mimxrt1050_evk/mimxrt1052/qspi
+    - mimxrt1060_evk/mimxrt1062/hyperflash
+    - mimxrt1180_evk/mimxrt1189/cm7
+    - mimxrt700_evk/mimxrt798s/cm33_cpu0
     - nucleo_f207zg
     - teensy40
     - teensy41
     - b_u585i_iot02a
     - frdm_kl25z
+    - frdm_mcxc242
+    - frdm_mcxc444
+    - frdm_mcxa153
+    - frdm_mcxa156
     - lpcxpresso55s69/lpc55s69/cpu0
     - stm32l562e_dk/stm32l562xx/ns
   depends_on: usb_device
@@ -32,4 +42,4 @@ tests:
     tags: usb
   sample.usb.dfu.permanent.download:
     tags: usb
-    extra_args: OVERLAY_CONFIG=overlay-permanent-download.conf
+    extra_args: EXTRA_CONF_FILE=overlay-permanent-download.conf

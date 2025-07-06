@@ -25,6 +25,11 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Server shall restart the accumulation of energy expended from zero
+ */
+#define BT_HRS_CONTROL_POINT_RESET_ENERGY_EXPANDED_REQ 0x01
+
 /** @brief Heart rate service callback structure */
 struct bt_hrs_cb {
 	/** @brief Heart rate notifications changed
@@ -33,6 +38,22 @@ struct bt_hrs_cb {
 	 *                if they were disabled.
 	 */
 	void (*ntf_changed)(bool enabled);
+
+	/**
+	 * @brief Heart rate control point write callback
+	 *
+	 * @note if Server supports the Energy Expended feature then application
+	 * shall implement and support @ref BT_HRS_CONTROL_POINT_RESET_ENERGY_EXPANDED_REQ
+	 * request code
+	 *
+	 * @param request control point request code
+	 *
+	 * @return 0 on successful handling of control point request
+	 * @return -ENOTSUP if not supported. It can be used to pass handling to other
+	 *         listeners in case of multiple listeners
+	 * @return other negative error codes will result in immediate error response
+	 */
+	int (*ctrl_point_write)(uint8_t request);
 
 	/** Internal member to form a list of callbacks */
 	sys_snode_t _node;

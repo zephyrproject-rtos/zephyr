@@ -10,10 +10,6 @@
 
 #include "memory.h"
 
-#ifdef CONFIG_XIP
-#error "Xtensa bootloader cannot use XIP"
-#endif
-
 /* Disable all romable LMA */
 #undef GROUP_DATA_LINK_IN
 #define GROUP_DATA_LINK_IN(vregion, lregion) > vregion
@@ -48,32 +44,17 @@ SECTIONS
     *(.stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
 
     *libarch__xtensa__core.a:xtensa_asm2_util.*(.literal .text .literal.* .text.*)
-    *liblib__libc__common.a:abort.*(.literal .text .literal.* .text.*)
-    *libdrivers__timer.a:xtensa_sys_timer.*(.literal .text .literal.* .text.*)
     *libarch__common.a:dynamic_isr.*(.literal .text .literal.* .text.*)
     *libarch__common.a:sw_isr_common.*(.literal .text .literal.* .text.*)
 
     *libapp.a:flash_map_extended.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:printk.*(.literal.printk .literal.vprintk .literal.char_out .text.printk .text.vprintk .text.char_out)
     *libzephyr.a:cbprintf_nano.*(.literal .text .literal.* .text.*)
     *libzephyr.a:cpu.*(.literal .text .literal.* .text.*)
     *libzephyr.a:mmu_hal.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:cache_hal.*(.literal .text .literal.* .text.*)
     *libzephyr.a:flash_map.*(.literal .text .literal.* .text.*)
     *libzephyr.a:esp_rom_spiflash.*(.literal .text .literal.* .text.*)
-
-    *libzephyr.a:heap.*(.literal .text .literal.* .text.*)
-
-    *libkernel.a:kheap.*(.literal .text .literal.* .text.*)
-    *libkernel.a:mempool.*(.literal .text .literal.* .text.*)
     *libkernel.a:device.*(.literal .text .literal.* .text.*)
-    *libkernel.a:timeout.*(.literal .text .literal.* .text.*)
-
-    *(.literal.bootloader_mmap .text.bootloader_mmap)
-    *(.literal.bootloader_munmap .text.bootloader_munmap)
-
     *libzephyr.a:esp_loader.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:mmu_hal.*(.literal .text .literal.* .text.*)
 
     *(.literal.esp_intr_disable .literal.esp_intr_disable.* .text.esp_intr_disable .text.esp_intr_disable.*)
     *(.literal.default_intr_handler .text.default_intr_handler .iram1.*.default_intr_handler)
@@ -90,14 +71,7 @@ SECTIONS
      * safe access to up to 16 bytes after the last real instruction, add
      * dummy bytes to ensure this
      */
-    . += 16;
-
-    _text_end = ABSOLUTE(.);
-    _etext = .;
-    . = ALIGN(4);
-    _loader_text_end = ABSOLUTE(.);
-    _iram_text_end = ABSOLUTE(.);
-    _iram_end = ABSOLUTE(.);
+    . = ALIGN(4) + 16;
   } > iram_loader_seg
 
   .iram0.vectors : ALIGN(4)
@@ -136,7 +110,6 @@ SECTIONS
     *(.entry.text)
     *(.init.literal)
     *(.init)
-    . = ALIGN (4);
     _init_end = ABSOLUTE(.);
 
     _iram_start = ABSOLUTE(.);
@@ -156,33 +129,14 @@ SECTIONS
     . = ALIGN(4);
   } > iram_seg
 
-  .dram0.data : ALIGN(16)
+  .dram.rodata :
   {
-    . = ALIGN(4);
-    __data_start = ABSOLUTE(.);
+    __rodata_region_start = ABSOLUTE(.);
 
+    . = ALIGN(4);
     #include <snippets-rodata.ld>
-
-    . = ALIGN(4);
-    #include <snippets-rwdata.ld>
     . = ALIGN(4);
 
-    *(.data)
-    *(.data.*)
-    *(.gnu.linkonce.d.*)
-    *(.data1)
-    *(.sdata)
-    *(.sdata.*)
-    *(.gnu.linkonce.s.*)
-    *(.sdata2)
-    *(.sdata2.*)
-    *(.gnu.linkonce.s2.*)
-    *libzephyr.a:mmu_hal.*(.rodata .rodata.*)
-    *libzephyr.a:rtc_clk.*(.rodata .rodata.*)
-
-    KEEP(*(.jcr))
-    *(.dram1 .dram1.*)
-    . = ALIGN(4);
     *(.rodata)
     *(.rodata.*)
 
@@ -216,16 +170,48 @@ SECTIONS
     *(.gnu.linkonce.lit4.*)
     _lit4_end = ABSOLUTE(.);
     . = ALIGN(4);
+    _thread_local_start = ABSOLUTE(.);
+    *(.tdata)
+    *(.tdata.*)
+    *(.tbss)
+    *(.tbss.*)
     *(.rodata_wlog)
     *(.rodata_wlog*)
     _thread_local_end = ABSOLUTE(.);
     . = ALIGN(4);
   } > dram_seg
 
+  #include <zephyr/linker/common-rom/common-rom-init.ld>
   #include <zephyr/linker/common-rom/common-rom-kernel-devices.ld>
   #include <zephyr/linker/common-rom/common-rom-debug.ld>
   #include <zephyr/linker/common-rom/common-rom-misc.ld>
   #include <snippets-sections.ld>
+
+  .dram0.data :
+  {
+    __data_start = ABSOLUTE(.);
+
+    . = ALIGN(4);
+    #include <snippets-rwdata.ld>
+    . = ALIGN(4);
+
+    *(.data)
+    *(.data.*)
+    *(.gnu.linkonce.d.*)
+    *(.data1)
+    *(.sdata)
+    *(.sdata.*)
+    *(.gnu.linkonce.s.*)
+    *(.sdata2)
+    *(.sdata2.*)
+    *(.gnu.linkonce.s2.*)
+    *libzephyr.a:mmu_hal.*(.rodata .rodata.*)
+    *libzephyr.a:rtc_clk.*(.rodata .rodata.*)
+
+    KEEP(*(.jcr))
+    *(.dram1 .dram1.*)
+    . = ALIGN(4);
+  } > dram_seg
 
   #include <zephyr/linker/cplusplus-rom.ld>
   #include <snippets-data-sections.ld>
@@ -239,14 +225,14 @@ SECTIONS
     . = ALIGN(8);
     *(.noinit)
     *(.noinit.*)
-    . = ALIGN(8) ;
+    . = ALIGN(8);
   } > dram_seg
 
   /* Shared RAM */
   .bss (NOLOAD):
   {
     . = ALIGN (8);
-    _bss_start = ABSOLUTE(.); /* required by bluetooth library */
+    _bss_start = ABSOLUTE(.);
     __bss_start = ABSOLUTE(.);
 
     *(.dynsbss)

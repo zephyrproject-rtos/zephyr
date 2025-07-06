@@ -1,7 +1,4 @@
-.. _qemu_cortex_m0:
-
-ARM Cortex-M0 Emulation (QEMU)
-##############################
+.. zephyr:board:: qemu_cortex_m0
 
 Overview
 ********
@@ -62,6 +59,8 @@ The following platform features are unsupported:
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Use this configuration to run basic Zephyr applications and kernel tests in the QEMU
 emulated environment, for example, with the :zephyr:code-sample:`synchronization` sample:

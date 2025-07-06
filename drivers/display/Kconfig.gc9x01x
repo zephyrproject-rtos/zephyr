@@ -5,6 +5,6 @@ config GC9X01X
 	bool "GC9X01X display driver"
 	default y
 	depends on DT_HAS_GALAXYCORE_GC9X01X_ENABLED
-	select SPI
+	select MIPI_DBI
 	help
 	  Enable driver for GC9X01X display driver.

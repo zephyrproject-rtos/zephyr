@@ -1,7 +1,4 @@
-.. _opentitan_earlgrey:
-
-OpenTitan Earl Grey
-###################
+.. zephyr:board:: opentitan_earlgrey
 
 Overview
 ********
@@ -51,13 +48,15 @@ Other hardware features are not yet supported on Zephyr porting.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 First, build and install Verilator as described in the `OpenTitan Verilator
 Setup`_ guide .
 
 Building and Flashing
 =====================
 
-Here is an example for building the :ref:`hello_world` application. The
+Here is an example for building the :zephyr:code-sample:`hello_world` application. The
 following steps were tested on OpenTitan master branch @ 6a3c2e98.
 
 .. zephyr-app-commands::

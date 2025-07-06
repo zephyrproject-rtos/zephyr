@@ -1,0 +1,54 @@
+/*
+ * Copyright (c) 2024 TOKITA Hiroshi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	sci0_default: sci0_default {
+		group1 {
+			/* rx */
+			psels = <RA_PSEL(RA_PSEL_SCI_0, 3, 1)>;
+		};
+		group2 {
+			/* tx */
+			psels = <RA_PSEL(RA_PSEL_SCI_0, 3, 2)>;
+			drive-strength = "medium";
+		};
+	};
+
+	spi1_default: spi1_default {
+		group1 {
+			/* MISO MOSI RSPCK SSL */
+			psels = <RA_PSEL(RA_PSEL_SPI, 1, 4)>,
+			<RA_PSEL(RA_PSEL_SPI, 1, 5)>,
+			<RA_PSEL(RA_PSEL_SPI, 1, 3)>,
+			<RA_PSEL(RA_PSEL_SPI, 1, 2)>;
+		};
+	};
+
+	pwm0_default: pwm0_default {
+		group1 {
+			/* GTIOC0A GTIOC0B */
+			psels = <RA_PSEL(RA_PSEL_GPT1, 4, 8)>,
+				<RA_PSEL(RA_PSEL_GPT1, 4, 7)>;
+		};
+	};
+
+	iic0_default: iic0_default {
+		group1 {
+			/* SCL0 SDA0 */
+			psels = <RA_PSEL(RA_PSEL_I2C, 0, 0)>,
+			<RA_PSEL(RA_PSEL_I2C, 4, 1)>;
+			drive-strength = "medium";
+		};
+	};
+
+	dac0_default: dac0_default {
+		group1 {
+			/* output */
+			psels = <RA_PSEL(RA_PSEL_CAC_DAC, 5, 0)>;
+			renesas,analog-enable;
+		};
+	};
+};

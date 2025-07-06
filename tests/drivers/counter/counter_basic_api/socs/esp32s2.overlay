@@ -1,0 +1,10 @@
+&timer0 {
+	status = "okay";
+	counter {
+		status = "okay";
+	};
+};
+
+&clock {
+	slow-clk-src = <ESP32_RTC_SLOW_CLK_SRC_RC_FAST_D256>;
+};

@@ -60,6 +60,7 @@ unsigned int z_smp_global_lock(void)
 
 	if (!_current->base.global_lock_count) {
 		while (!atomic_cas(&global_lock, 0, 1)) {
+			arch_spin_relax();
 		}
 	}
 
@@ -74,7 +75,7 @@ void z_smp_global_unlock(unsigned int key)
 		_current->base.global_lock_count--;
 
 		if (!_current->base.global_lock_count) {
-			atomic_clear(&global_lock);
+			(void)atomic_clear(&global_lock);
 		}
 	}
 
@@ -85,7 +86,7 @@ void z_smp_global_unlock(unsigned int key)
 void z_smp_release_global_lock(struct k_thread *thread)
 {
 	if (!thread->base.global_lock_count) {
-		atomic_clear(&global_lock);
+		(void)atomic_clear(&global_lock);
 	}
 }
 
@@ -108,7 +109,6 @@ static void wait_for_start_signal(atomic_t *start_flag)
 
 static inline void smp_init_top(void *arg)
 {
-	struct k_thread dummy_thread;
 	struct cpu_start_cb csc = arg ? *(struct cpu_start_cb *)arg : (struct cpu_start_cb){0};
 
 	/* Let start_cpu() know that this CPU has powered up. */
@@ -123,7 +123,7 @@ static inline void smp_init_top(void *arg)
 		/* Initialize the dummy thread struct so that
 		 * the scheduler can schedule actual threads to run.
 		 */
-		z_dummy_thread_init(&dummy_thread);
+		z_dummy_thread_init(&_thread_dummy);
 	}
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
@@ -247,4 +247,18 @@ bool z_smp_cpu_mobile(void)
 
 	arch_irq_unlock(k);
 	return !pinned;
+}
+
+__attribute_const__ struct k_thread *z_smp_current_get(void)
+{
+	/*
+	 * _current is a field read from _current_cpu, which can race
+	 * with preemption before it is read.  We must lock local
+	 * interrupts when reading it.
+	 */
+	unsigned int key = arch_irq_lock();
+	struct k_thread *t = _current_cpu->current;
+
+	arch_irq_unlock(key);
+	return t;
 }

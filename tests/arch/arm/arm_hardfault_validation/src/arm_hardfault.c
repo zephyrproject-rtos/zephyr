@@ -13,7 +13,7 @@
 
 static volatile int expected_reason = -1;
 
-void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
 {
 	static bool triggered_synchronous_svc;
 
@@ -25,8 +25,7 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 	}
 
 	if (reason != expected_reason) {
-		printk("Wrong crash type got %d expected %d\n", reason,
-			expected_reason);
+		printk("Wrong crash type got %d expected %d\n", reason, expected_reason);
 		k_fatal_halt(reason);
 	}
 
@@ -39,8 +38,7 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 		 * inside the current runtime error
 		 */
 		expected_reason = K_ERR_KERNEL_PANIC;
-		__ASSERT(0,
-		"Assert occurring inside kernel panic");
+		__ASSERT(0, "Assert occurring inside kernel panic");
 	}
 
 	expected_reason = -1;

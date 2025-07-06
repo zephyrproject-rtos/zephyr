@@ -28,6 +28,7 @@ class BinaryAdapterBase(DeviceAdapter, abc.ABC):
             'stderr': subprocess.STDOUT,
             'stdin': subprocess.PIPE,
             'env': self.env,
+            'cwd': device_config.app_build_dir,
         }
 
     @abc.abstractmethod
@@ -80,7 +81,7 @@ class BinaryAdapterBase(DeviceAdapter, abc.ABC):
             return
         return_code: int | None = self._process.poll()
         if return_code is None:
-            terminate_process(self._process)
+            terminate_process(self._process, self.base_timeout)
             return_code = self._process.wait(self.base_timeout)
         self._process = None
         logger.debug('Running subprocess finished with return code %s', return_code)
@@ -118,7 +119,7 @@ class NativeSimulatorAdapter(BinaryAdapterBase):
 
     def generate_command(self) -> None:
         """Set command to run."""
-        self.command = [str(self.device_config.build_dir / 'zephyr' / 'zephyr.exe')]
+        self.command = [str(self.device_config.app_build_dir / 'zephyr' / 'zephyr.exe')]
 
 
 class UnitSimulatorAdapter(BinaryAdapterBase):
@@ -126,10 +127,10 @@ class UnitSimulatorAdapter(BinaryAdapterBase):
 
     def generate_command(self) -> None:
         """Set command to run."""
-        self.command = [str(self.device_config.build_dir / 'testbinary')]
+        self.command = [str(self.device_config.app_build_dir / 'testbinary')]
 
 
 class CustomSimulatorAdapter(BinaryAdapterBase):
     def generate_command(self) -> None:
         """Set command to run."""
-        self.command = [self.west, 'build', '-d', str(self.device_config.build_dir), '-t', 'run']
+        self.command = [self.west, 'build', '-d', str(self.device_config.app_build_dir), '-t', 'run']

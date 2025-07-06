@@ -1,5 +1,3 @@
-# Silicon Labs EFR32BG22 (Blue Gecko) MCU series
-
 # Copyright (c) 2021 Sateesh Kotapati
 # SPDX-License-Identifier: Apache-2.0
 
@@ -11,7 +9,7 @@ config SOC_SERIES_EFR32BG22
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_ARM_SAU
 	select CPU_HAS_FPU
-	select HAS_SILABS_GECKO
+	select HAS_SILABS_SISDK
 	select HAS_SWO
 	select SOC_GECKO_HAS_RADIO
 	select SOC_GECKO_GPIO

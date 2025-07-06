@@ -2,8 +2,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_ZEPHYR_DSP_PRINT_FORMAT_H
-#define ZEPHYR_INCLUDE_ZEPHYR_DSP_PRINT_FORMAT_H
+#ifndef ZEPHYR_INCLUDE_DSP_PRINT_FORMAT_H_
+#define ZEPHYR_INCLUDE_DSP_PRINT_FORMAT_H_
 
 #include <inttypes.h>
 #include <stdlib.h>
@@ -13,7 +13,7 @@
  * @ingroup math_dsp
  * @defgroup math_printing Helper macros for printing Q values.
  *
- * Extends the existing inttypes headers for print formatting. Useage:
+ * Extends the existing inttypes headers for print formatting. Usage:
  * @code{c}
  * printk("Value=%" PRIq "\n", PRIq_arg(value, 6, 2));
  * @endcode
@@ -63,4 +63,4 @@ static inline int64_t ___PRIq_arg_shift(int64_t q, int shift)
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_ZEPHYR_DSP_PRINT_FORMAT_H */
+#endif /* ZEPHYR_INCLUDE_DSP_PRINT_FORMAT_H_ */

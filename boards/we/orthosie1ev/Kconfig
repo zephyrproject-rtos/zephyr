@@ -1,0 +1,6 @@
+# Copyright (c) Würth Elektronik GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 4096

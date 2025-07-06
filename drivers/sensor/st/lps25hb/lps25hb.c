@@ -46,7 +46,7 @@ static int lps25hb_sample_fetch(const struct device *dev,
 	uint8_t out[5];
 	int offset;
 
-	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_PRESS || chan == SENSOR_CHAN_ALL);
 
 	for (offset = 0; offset < sizeof(out); ++offset) {
 		if (i2c_reg_read_byte_dt(&config->i2c,
@@ -69,9 +69,14 @@ static int lps25hb_sample_fetch(const struct device *dev,
 static inline void lps25hb_press_convert(struct sensor_value *val,
 					 int32_t raw_val)
 {
-	/* val = raw_val / 40960 */
+	/* Pressure sensitivity is 4096 LSB/hPa */
+	/* Also convert hPa into kPa */
 	val->val1 = raw_val / 40960;
-	val->val2 = ((int32_t)raw_val * 1000000 / 40960) % 1000000;
+
+	/* For the decimal part use (3125 / 128) as a factor instead of
+	 * (1000000 / 40960) to avoid int32 overflow
+	 */
+	val->val2 = (raw_val % 40960) * 3125 / 128;
 }
 
 static inline void lps25hb_temp_convert(struct sensor_value *val,
@@ -102,7 +107,7 @@ static int lps25hb_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api lps25hb_api_funcs = {
+static DEVICE_API(sensor, lps25hb_api_funcs) = {
 	.sample_fetch = lps25hb_sample_fetch,
 	.channel_get = lps25hb_channel_get,
 };

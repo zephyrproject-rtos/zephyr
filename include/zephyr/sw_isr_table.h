@@ -16,6 +16,7 @@
 
 #if !defined(_ASMLANGUAGE)
 #include <zephyr/device.h>
+#include <zephyr/sys/iterable_sections.h>
 #include <zephyr/types.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/sys/util.h>
@@ -43,13 +44,91 @@ struct _isr_table_entry {
 /* The software ISR table itself, an array of these structures indexed by the
  * irq line
  */
-extern struct _isr_table_entry _sw_isr_table[];
+extern
+#ifndef CONFIG_DYNAMIC_INTERRUPTS
+const
+#endif
+struct _isr_table_entry _sw_isr_table[];
 
 struct _irq_parent_entry {
 	const struct device *dev;
+	unsigned int level;
 	unsigned int irq;
 	unsigned int offset;
 };
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+
+/* Mapping between aggregator level to order */
+#define Z_STR_L2 2ND
+#define Z_STR_L3 3RD
+/**
+ * @brief Get the Software ISR table offset Kconfig for the given aggregator level
+ *
+ * @param l Aggregator level, must be 2 or 3
+ *
+ * @return `CONFIG_2ND_LVL_ISR_TBL_OFFSET` if second level aggregator,
+ * `CONFIG_3RD_LVL_ISR_TBL_OFFSET` if third level aggregator
+ */
+#define Z_SW_ISR_TBL_KCONFIG_BY_ALVL(l) CONCAT(CONFIG_, CONCAT(Z_STR_L, l), _LVL_ISR_TBL_OFFSET)
+
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
+
+/**
+ * @brief Get an interrupt controller node's level base ISR table offset.
+ *
+ * @param node_id node identifier of the interrupt controller
+ *
+ * @return `CONFIG_2ND_LVL_ISR_TBL_OFFSET` if node_id is a second level aggregator,
+ * `CONFIG_3RD_LVL_ISR_TBL_OFFSET` if it is a third level aggregator
+ */
+#define INTC_BASE_ISR_TBL_OFFSET(node_id)                                                          \
+	Z_SW_ISR_TBL_KCONFIG_BY_ALVL(DT_INTC_GET_AGGREGATOR_LEVEL(node_id))
+
+/**
+ * @brief Get the SW ISR table offset for an instance of interrupt controller
+ *
+ * @param inst DT_DRV_COMPAT interrupt controller driver instance number
+ *
+ * @return Software ISR table offset of the interrupt controller
+ */
+#define INTC_INST_ISR_TBL_OFFSET(inst)                                                             \
+	(INTC_BASE_ISR_TBL_OFFSET(DT_DRV_INST(inst)) + (inst * CONFIG_MAX_IRQ_PER_AGGREGATOR))
+
+/**
+ * @brief Get the SW ISR table offset for a child interrupt controller
+ *
+ * @details This macro is a alternative form of the `INTC_INST_ISR_TBL_OFFSET`. This is used by
+ * pseudo interrupt controller devices that are child of a main interrupt controller device.
+ *
+ * @param node_id node identifier of the child interrupt controller
+ *
+ * @return Software ISR table offset of the child
+ */
+#define INTC_CHILD_ISR_TBL_OFFSET(node_id)                                                         \
+	(INTC_BASE_ISR_TBL_OFFSET(node_id) +                                                       \
+	 (DT_NODE_CHILD_IDX(node_id) * CONFIG_MAX_IRQ_PER_AGGREGATOR))
+
+/**
+ * @brief Register an  interrupt controller with the software ISR table
+ *
+ * @param _name Name of the interrupt controller (must be unique)
+ * @param _dev Pointer to the interrupt controller device instance
+ * @param _irq Interrupt controller IRQ number
+ * @param _offset Software ISR table offset of the interrupt controller
+ * @param _level Interrupt controller aggregator level
+ */
+#define IRQ_PARENT_ENTRY_DEFINE(_name, _dev, _irq, _offset, _level)                                \
+	static const STRUCT_SECTION_ITERABLE_ALTERNATE(intc_table, _irq_parent_entry, _name) = {   \
+		.dev = _dev,                                                                       \
+		.level = _level,                                                                   \
+		.irq = _irq,                                                                       \
+		.offset = _offset,                                                                 \
+	}
 
 /*
  * Data structure created in a special binary .intlist section for each
@@ -98,7 +177,11 @@ struct z_shared_isr_table_entry {
 
 void z_shared_isr(const void *data);
 
-extern struct z_shared_isr_table_entry z_shared_sw_isr_table[];
+extern
+#ifndef CONFIG_DYNAMIC_INTERRUPTS
+const
+#endif
+struct z_shared_isr_table_entry z_shared_sw_isr_table[];
 #endif /* CONFIG_SHARED_INTERRUPTS */
 
 /** This interrupt gets put directly in the vector table */
@@ -108,7 +191,7 @@ extern struct z_shared_isr_table_entry z_shared_sw_isr_table[];
 #define __MK_ISR_NAME(x, y) __isr_ ## x ## _irq_ ## y
 
 
-#if IS_ENABLED(CONFIG_ISR_TABLES_LOCAL_DECLARATION)
+#if defined(CONFIG_ISR_TABLES_LOCAL_DECLARATION)
 
 #define _MK_ISR_ELEMENT_NAME(func, id) __MK_ISR_ELEMENT_NAME(func, id)
 #define __MK_ISR_ELEMENT_NAME(func, id) __isr_table_entry_ ## func ## _irq_ ## id
@@ -116,8 +199,8 @@ extern struct z_shared_isr_table_entry z_shared_sw_isr_table[];
 #define _MK_IRQ_ELEMENT_NAME(func, id) __MK_ISR_ELEMENT_NAME(func, id)
 #define __MK_IRQ_ELEMENT_NAME(func, id) __irq_table_entry_ ## func ## _irq_ ## id
 
-#define _MK_ISR_SECTION_NAME(prefix, file, counter) \
-	"." Z_STRINGIFY(prefix)"."file"." Z_STRINGIFY(counter)
+#define _MK_ISR_SECTION_NAME(prefix, file, counter)                                                \
+	"." Z_STRINGIFY(prefix) "." file "." Z_STRINGIFY(counter)
 
 #define _MK_ISR_ELEMENT_SECTION(counter) _MK_ISR_SECTION_NAME(irq, __FILE__, counter)
 #define _MK_IRQ_ELEMENT_SECTION(counter) _MK_ISR_SECTION_NAME(isr, __FILE__, counter)
@@ -136,11 +219,10 @@ extern struct z_shared_isr_table_entry z_shared_sw_isr_table[];
 #define Z_ISR_DECLARE_C(irq, flags, func, param, counter) \
 	_Z_ISR_DECLARE_C(irq, flags, func, param, counter)
 
-#define _Z_ISR_DECLARE_C(irq, flags, func, param, counter)                                \
-	_Z_ISR_TABLE_ENTRY(irq, func, param, _MK_ISR_ELEMENT_SECTION(counter));           \
-	static struct _isr_list_sname Z_GENERIC_SECTION(.intList)                         \
-		__used _MK_ISR_NAME(func, counter) =                                      \
-		{irq, flags, _MK_ISR_ELEMENT_SECTION(counter)}
+#define _Z_ISR_DECLARE_C(irq, flags, func, param, counter)                                         \
+	_Z_ISR_TABLE_ENTRY(irq, func, param, _MK_ISR_ELEMENT_SECTION(counter));                    \
+	static Z_DECL_ALIGN(struct _isr_list_sname) Z_GENERIC_SECTION(.intList) __used             \
+	_MK_ISR_NAME(func, counter) = {irq, flags, {_MK_ISR_ELEMENT_SECTION(counter)}}
 
 /* Create an entry for _isr_table to be then placed by the linker.
  * An instance of struct _isr_list which gets put in the .intList
@@ -172,7 +254,7 @@ extern struct z_shared_isr_table_entry z_shared_sw_isr_table[];
 
 #define _Z_ISR_DECLARE_DIRECT_C(irq, flags, func, counter)                                         \
 	_Z_ISR_DIRECT_TABLE_ENTRY(irq, func, _MK_IRQ_ELEMENT_SECTION(counter));                    \
-	static struct _isr_list_sname Z_GENERIC_SECTION(.intList)                                  \
+	static Z_DECL_ALIGN(struct _isr_list_sname) Z_GENERIC_SECTION(.intList)                    \
 		__used _MK_ISR_NAME(func, counter) = {                                             \
 			irq,                                                                       \
 			ISR_FLAG_DIRECT | (flags),                                                 \
@@ -189,7 +271,7 @@ extern struct z_shared_isr_table_entry z_shared_sw_isr_table[];
 	Z_ISR_DECLARE_DIRECT_C(irq, flags, func, __COUNTER__)
 
 
-#else /* IS_ENABLED(CONFIG_ISR_TABLES_LOCAL_DECLARATION) */
+#else /* defined(CONFIG_ISR_TABLES_LOCAL_DECLARATION) */
 
 /* Create an instance of struct _isr_list which gets put in the .intList
  * section. This gets consumed by gen_isr_tables.py which creates the vector

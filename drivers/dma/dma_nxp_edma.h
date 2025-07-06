@@ -11,6 +11,8 @@
 #include <zephyr/irq.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/device.h>
 
 #include "fsl_edma_soc_rev2.h"
 
@@ -54,12 +56,18 @@ LOG_MODULE_REGISTER(nxp_edma);
 		    0, edma_isr,				\
 		    &channels_##inst[idx], 0)
 
+#define _EDMA_CHANNEL_PD_DEVICE_OR_NULL(idx, inst)						\
+	COND_CODE_1(CONFIG_PM_DEVICE_POWER_DOMAIN,						\
+		    (DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE_BY_IDX(inst, power_domains, idx))),	\
+		    (NULL))
+
 /* used to declare a struct edma_channel by the non-explicit macro suite */
 #define _EDMA_CHANNEL_DECLARE(idx, inst)				\
 {									\
 	.id = DT_INST_PROP_BY_IDX(inst, valid_channels, idx),		\
 	.dev = DEVICE_DT_INST_GET(inst),				\
 	.irq = DT_INST_IRQN_BY_IDX(inst, idx),				\
+	.pd_dev = _EDMA_CHANNEL_PD_DEVICE_OR_NULL(idx, inst),		\
 }
 
 /* used to declare a struct edma_channel by the explicit macro suite */
@@ -68,6 +76,7 @@ LOG_MODULE_REGISTER(nxp_edma);
 	.id = idx,							\
 	.dev = DEVICE_DT_INST_GET(inst),				\
 	.irq = DT_INST_IRQN_BY_IDX(inst, idx),				\
+	.pd_dev = _EDMA_CHANNEL_PD_DEVICE_OR_NULL(idx, inst),		\
 }
 
 /* used to create an array of channel IDs via the valid-channels property */
@@ -87,11 +96,6 @@ LOG_MODULE_REGISTER(nxp_edma);
 	COND_CODE_1(DT_NODE_HAS_PROP(DT_INST(inst, DT_DRV_COMPAT), dma_channels),	\
 		    (_EDMA_CHANNEL_ARRAY_EXPLICIT(inst)),				\
 		    (_EDMA_CHANNEL_ARRAY(inst)))
-
-#define EDMA_HAL_CFG_GET(inst)								\
-	COND_CODE_1(DT_NODE_HAS_PROP(DT_INST(inst, DT_DRV_COMPAT), hal_cfg_index),	\
-		    (s_edmaConfigs[DT_INST_PROP(inst, hal_cfg_index)]),			\
-		    (s_edmaConfigs[0]))
 
 /* used to register edma_isr for all specified interrupts */
 #define EDMA_CONNECT_INTERRUPTS(inst)				\
@@ -165,6 +169,10 @@ LOG_MODULE_REGISTER(nxp_edma);
 	 edma_chan_cyclic_produce(chan, size) :\
 	 edma_chan_cyclic_consume(chan, size))
 
+#define EDMA_CHAN_IS_ACTIVE(data, chan)\
+	(EDMA_ChannelRegRead((data)->hal_cfg, (chan)->id, EDMA_TCD_CH_CSR) &\
+	 EDMA_TCD_CH_CSR_ACTIVE_MASK)
+
 enum channel_type {
 	CHAN_TYPE_CONSUMER = 0,
 	CHAN_TYPE_PRODUCER,
@@ -176,6 +184,7 @@ enum channel_state {
 	CHAN_STATE_STARTED,
 	CHAN_STATE_STOPPED,
 	CHAN_STATE_SUSPENDED,
+	CHAN_STATE_RELEASING,
 };
 
 struct edma_channel {
@@ -183,6 +192,8 @@ struct edma_channel {
 	uint32_t id;
 	/* pointer to device representing the EDMA instance, used by edma_isr */
 	const struct device *dev;
+	/* channel power domain device */
+	const struct device *pd_dev;
 	/* current state of the channel */
 	enum channel_state state;
 	/* type of the channel (PRODUCER/CONSUMER) - only applicable to cyclic
@@ -226,52 +237,49 @@ struct edma_config {
 	bool contiguous_channels;
 };
 
-static inline int channel_change_state(struct edma_channel *chan,
-				       enum channel_state next)
+static inline bool channel_allows_transition(struct edma_channel *chan,
+					     enum channel_state next)
 {
 	enum channel_state prev = chan->state;
-
-	LOG_DBG("attempting to change state from %d to %d for channel %d", prev, next, chan->id);
 
 	/* validate transition */
 	switch (prev) {
 	case CHAN_STATE_INIT:
 		if (next != CHAN_STATE_CONFIGURED) {
-			return -EPERM;
+			return false;
 		}
 		break;
 	case CHAN_STATE_CONFIGURED:
 		if (next != CHAN_STATE_STARTED &&
-		    next != CHAN_STATE_CONFIGURED) {
-			return -EPERM;
+		    next != CHAN_STATE_CONFIGURED &&
+		    next != CHAN_STATE_RELEASING) {
+			return false;
 		}
 		break;
 	case CHAN_STATE_STARTED:
 		if (next != CHAN_STATE_STOPPED &&
 		    next != CHAN_STATE_SUSPENDED) {
-			return -EPERM;
+			return false;
 		}
 		break;
 	case CHAN_STATE_STOPPED:
-		if (next != CHAN_STATE_CONFIGURED) {
-			return -EPERM;
+		if (next != CHAN_STATE_CONFIGURED &&
+		    next != CHAN_STATE_RELEASING) {
+			return false;
 		}
 		break;
 	case CHAN_STATE_SUSPENDED:
 		if (next != CHAN_STATE_STARTED &&
 		    next != CHAN_STATE_STOPPED) {
-			return -EPERM;
+			return false;
 		}
 		break;
 	default:
 		LOG_ERR("invalid channel previous state: %d", prev);
-		return -EINVAL;
+		return false;
 	}
 
-	/* transition OK, proceed */
-	chan->state = next;
-
-	return 0;
+	return true;
 }
 
 static inline int get_transfer_type(enum dma_channel_direction dir, uint32_t *type)
@@ -417,6 +425,8 @@ static inline int edma_chan_cyclic_produce(struct edma_channel *chan,
 static inline void edma_dump_channel_registers(struct edma_data *data,
 					       uint32_t chan_id)
 {
+	uint32_t mux_reg;
+
 	LOG_DBG("dumping channel data for channel %d", chan_id);
 
 	LOG_DBG("CH_CSR: 0x%x",
@@ -431,8 +441,13 @@ static inline void edma_dump_channel_registers(struct edma_data *data,
 		EDMA_ChannelRegRead(data->hal_cfg, chan_id, EDMA_TCD_CH_PRI));
 
 	if (EDMA_HAS_MUX(data->hal_cfg)) {
-		LOG_DBG("CH_MUX: 0x%x",
-			EDMA_ChannelRegRead(data->hal_cfg, chan_id, EDMA_TCD_CH_MUX));
+		if (data->hal_cfg->flags & EDMA_HAS_MP_MUX_FLAG) {
+			mux_reg = EDMA_MP_CH_MUX;
+		} else {
+			mux_reg = EDMA_TCD_CH_MUX;
+		}
+
+		LOG_DBG("CH_MUX: 0x%x", EDMA_ChannelRegRead(data->hal_cfg, chan_id, mux_reg));
 	}
 
 	LOG_DBG("TCD_SADDR: 0x%x",
@@ -506,6 +521,13 @@ static inline int set_slast_dlast(struct dma_config *dma_cfg,
 	/* commit configuration */
 	EDMA_ChannelRegWrite(data->hal_cfg, chan_id, EDMA_TCD_SLAST_SDA, slast);
 	EDMA_ChannelRegWrite(data->hal_cfg, chan_id, EDMA_TCD_DLAST_SGA, dlast);
+
+	if (data->hal_cfg->flags & EDMA_HAS_64BIT_TCD_FLAG) {
+		EDMA_ChannelRegWrite(data->hal_cfg, chan_id, EDMA_TCD_SLAST_SDA_HIGH,
+				     slast >= 0x0 ? 0x0 : 0xffffffff);
+		EDMA_ChannelRegWrite(data->hal_cfg, chan_id, EDMA_TCD_DLAST_SGA_HIGH,
+				     dlast >= 0x0 ? 0x0 : 0xffffffff);
+	}
 
 	return 0;
 }

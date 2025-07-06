@@ -8,15 +8,10 @@ compatible: "vnd,gpio-device"
 include:
   - name: gpio-controller.yaml
   - name: base.yaml
-    property-blocklist:
-      - label
 
 properties:
   reg:
     required: true
-
-  label:
-    type: string
 
   "#gpio-cells":
     const: 2

@@ -81,7 +81,7 @@ static int as5600_initialize(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api as5600_driver_api = {
+static DEVICE_API(sensor, as5600_driver_api) = {
 	.sample_fetch = as5600_fetch,
 	.channel_get = as5600_get,
 };

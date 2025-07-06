@@ -76,7 +76,7 @@ static inline int z_vrfy_k_mutex_init(struct k_mutex *mutex)
 	K_OOPS(K_SYSCALL_OBJ_INIT(mutex, K_OBJ_MUTEX));
 	return z_impl_k_mutex_init(mutex);
 }
-#include <syscalls/k_mutex_init_mrsh.c>
+#include <zephyr/syscalls/k_mutex_init_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 static int32_t new_prio_for_inheritance(int32_t target, int32_t limit)
@@ -205,7 +205,7 @@ static inline int z_vrfy_k_mutex_lock(struct k_mutex *mutex,
 	K_OOPS(K_SYSCALL_OBJ(mutex, K_OBJ_MUTEX));
 	return z_impl_k_mutex_lock(mutex, timeout);
 }
-#include <syscalls/k_mutex_lock_mrsh.c>
+#include <zephyr/syscalls/k_mutex_lock_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 int z_impl_k_mutex_unlock(struct k_mutex *mutex)
@@ -261,7 +261,7 @@ int z_impl_k_mutex_unlock(struct k_mutex *mutex)
 	LOG_DBG("new owner of mutex %p: %p (prio: %d)",
 		mutex, new_owner, new_owner ? new_owner->base.prio : -1000);
 
-	if (new_owner != NULL) {
+	if (unlikely(new_owner != NULL)) {
 		/*
 		 * new owner is already of higher or equal prio than first
 		 * waiter since the wait queue is priority-based: no need to
@@ -289,7 +289,7 @@ static inline int z_vrfy_k_mutex_unlock(struct k_mutex *mutex)
 	K_OOPS(K_SYSCALL_OBJ(mutex, K_OBJ_MUTEX));
 	return z_impl_k_mutex_unlock(mutex);
 }
-#include <syscalls/k_mutex_unlock_mrsh.c>
+#include <zephyr/syscalls/k_mutex_unlock_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_OBJ_CORE_MUTEX

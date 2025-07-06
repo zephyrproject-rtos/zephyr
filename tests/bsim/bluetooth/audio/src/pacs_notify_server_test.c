@@ -4,11 +4,26 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/bluetooth/audio/pacs.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
+#include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/lc3.h>
+#include <zephyr/bluetooth/audio/pacs.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/logging/log_core.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util.h>
+
+#include "bstests.h"
 #include "common.h"
 
-#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pacs_notify_server_test, LOG_LEVEL_DBG);
 
 extern enum bst_result_t bst_result;
@@ -143,14 +158,24 @@ static void test_main(void)
 {
 	int err;
 	enum bt_audio_context available, available_for_conn;
-	const struct bt_data ad[] = {
-		BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
+	struct bt_le_ext_adv *ext_adv;
+	const struct bt_pacs_register_param pacs_param = {
+		.snk_pac = true,
+		.snk_loc = true,
+		.src_pac = true,
+		.src_loc = true,
 	};
 
 	LOG_DBG("Enabling Bluetooth");
 	err = bt_enable(NULL);
 	if (err != 0) {
 		FAIL("Bluetooth enable failed (err %d)", err);
+		return;
+	}
+
+	err = bt_pacs_register(&pacs_param);
+	if (err) {
+		FAIL("Could not register PACS (err %d)\n", err);
 		return;
 	}
 
@@ -176,11 +201,7 @@ static void test_main(void)
 	}
 
 	LOG_DBG("Start Advertising");
-	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
-	if (err != 0) {
-		FAIL("Advertising failed to start (err %d)", err);
-		return;
-	}
+	setup_connectable_adv(&ext_adv);
 
 	LOG_DBG("Waiting to be connected");
 	WAIT_FOR_FLAG(flag_connected);
@@ -195,24 +216,21 @@ static void test_main(void)
 	LOG_INF("Trigger changes while device is connected");
 	trigger_notifications();
 
-	/* Now wait for client to disconnect, then stop adv so it does not reconnect */
+	/* Now wait for client to disconnect */
 	LOG_DBG("Wait for client disconnect");
 	WAIT_FOR_UNSET_FLAG(flag_connected);
 	LOG_DBG("Client disconnected");
-
-	err = bt_le_adv_stop();
-	if (err != 0) {
-		FAIL("Advertising failed to stop (err %d)", err);
-		return;
-	}
 
 	LOG_INF("Trigger changes while device is disconnected");
 	trigger_notifications();
 
 	LOG_DBG("Start Advertising");
-	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
+	err = bt_le_ext_adv_start(ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
 	if (err != 0) {
-		FAIL("Advertising failed to start (err %d)", err);
+		FAIL("Failed to start advertising set (err %d)\n", err);
+
+		bt_le_ext_adv_delete(ext_adv);
+
 		return;
 	}
 
@@ -220,16 +238,13 @@ static void test_main(void)
 	WAIT_FOR_UNSET_FLAG(flag_connected);
 	LOG_DBG("Client disconnected");
 
-	err = bt_le_adv_stop();
-	if (err != 0) {
-		FAIL("Advertising failed to stop (err %d)", err);
-		return;
-	}
-
 	LOG_DBG("Start Advertising");
-	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
+	err = bt_le_ext_adv_start(ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
 	if (err != 0) {
-		FAIL("Advertising failed to start (err %d)", err);
+		FAIL("Failed to start advertising set (err %d)\n", err);
+
+		bt_le_ext_adv_delete(ext_adv);
+
 		return;
 	}
 
@@ -254,16 +269,13 @@ static void test_main(void)
 	WAIT_FOR_UNSET_FLAG(flag_connected);
 	LOG_DBG("Client disconnected");
 
-	err = bt_le_adv_stop();
-	if (err != 0) {
-		FAIL("Advertising failed to stop (err %d)", err);
-		return;
-	}
-
 	LOG_DBG("Start Advertising");
-	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
+	err = bt_le_ext_adv_start(ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
 	if (err != 0) {
-		FAIL("Advertising failed to start (err %d)", err);
+		FAIL("Failed to start advertising set (err %d)\n", err);
+
+		bt_le_ext_adv_delete(ext_adv);
+
 		return;
 	}
 
@@ -282,7 +294,7 @@ static void test_main(void)
 static const struct bst_test_instance test_pacs_notify_server[] = {
 	{
 		.test_id = "pacs_notify_server",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main,
 	},

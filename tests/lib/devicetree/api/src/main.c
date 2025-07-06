@@ -7,9 +7,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/device.h>
-#include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/gpio.h>
-#include <zephyr/drivers/mbox.h>
 
 #include <stdlib.h>
 
@@ -76,6 +74,20 @@
 #define TEST_DMA_CTLR_1 DT_NODELABEL(test_dma1)
 #define TEST_DMA_CTLR_2 DT_NODELABEL(test_dma2)
 
+#define TEST_VIDEO2           DT_NODELABEL(test_video2)
+#define TEST_VIDEO2_PORT0     DT_NODELABEL(test_video2_port0)
+#define TEST_VIDEO2_PORT0_IN0 DT_NODELABEL(test_video2_port0_in0)
+#define TEST_VIDEO2_PORT0_IN1 DT_NODELABEL(test_video2_port0_in1)
+#define TEST_VIDEO2_PORT1     DT_NODELABEL(test_video2_port1)
+#define TEST_VIDEO2_PORT1_IN  DT_NODELABEL(test_video2_port1_in)
+#define TEST_VIDEO0           DT_NODELABEL(test_video0)
+#define TEST_VIDEO0_OUT       DT_NODELABEL(test_video0_out)
+#define TEST_VIDEO0_PORT      DT_NODELABEL(test_video0_port)
+#define TEST_VIDEO1           DT_NODELABEL(test_video1)
+#define TEST_VIDEO1_OUT0      DT_NODELABEL(test_video1_out0)
+#define TEST_VIDEO1_OUT1      DT_NODELABEL(test_video1_out1)
+#define TEST_VIDEO1_PORT      DT_NODELABEL(test_video1_port)
+
 #define TEST_IO_CHANNEL_CTLR_1 DT_NODELABEL(test_adc_1)
 #define TEST_IO_CHANNEL_CTLR_2 DT_NODELABEL(test_adc_2)
 
@@ -91,6 +103,13 @@
 #define TEST_PARTITION_0 DT_PATH(test, test_mtd_ffeeddcc, flash_20000000, partitions, partition_0)
 #define TEST_PARTITION_1 DT_PATH(test, test_mtd_ffeeddcc, flash_20000000, partitions, partition_c0)
 #define TEST_PARTITION_2 DT_PATH(test, test_mtd_33221100, partitions, partition_6ff80)
+
+#define TEST_SUBPARTITION_COMBINED DT_PATH(test, test_mtd_ffeeddcc, flash_20000000, partitions, \
+					   partition_100)
+#define TEST_SUBPARTITION_0 DT_PATH(test, test_mtd_ffeeddcc, flash_20000000, partitions, \
+				    partition_100, partition_0)
+#define TEST_SUBPARTITION_1 DT_PATH(test, test_mtd_ffeeddcc, flash_20000000, partitions, \
+				    partition_100, partition_40)
 
 #define ZEPHYR_USER DT_PATH(zephyr_user)
 
@@ -110,6 +129,7 @@ ZTEST(devicetree_api, test_path_props)
 	zassert_equal(DT_PROP_LEN(TEST_DEADBEEF, compatible), 1, "");
 	zassert_true(!strcmp(DT_PROP_BY_IDX(TEST_DEADBEEF, compatible, 0),
 			     "vnd,gpio-device"), "");
+	zassert_true(!strcmp(DT_PROP_LAST(TEST_DEADBEEF, compatible), "vnd,gpio-device"), "");
 	zassert_true(DT_NODE_HAS_PROP(TEST_DEADBEEF, status), "");
 	zassert_false(DT_NODE_HAS_PROP(TEST_DEADBEEF, foobar), "");
 
@@ -127,6 +147,8 @@ ZTEST(devicetree_api, test_path_props)
 
 ZTEST(devicetree_api, test_alias_props)
 {
+	zassert_equal(DT_HAS_ALIAS(test_alias), 1, "");
+	zassert_equal(DT_HAS_ALIAS(test_alias_none), 0, "");
 	zassert_equal(DT_NUM_REGS(TEST_ALIAS), 1, "");
 	zassert_equal(DT_REG_ADDR(TEST_ALIAS), 0xdeadbeef, "");
 	zassert_equal(DT_REG_SIZE(TEST_ALIAS), 0x1000, "");
@@ -211,6 +233,99 @@ ZTEST(devicetree_api, test_any_inst_prop)
 		      1, "");
 }
 
+ZTEST(devicetree_api, test_all_inst_prop)
+{
+	zassert_equal(DT_ALL_INST_HAS_PROP_STATUS_OKAY(foo), 1, "");
+	zassert_equal(DT_ALL_INST_HAS_PROP_STATUS_OKAY(bar), 0, "");
+	zassert_equal(DT_ALL_INST_HAS_PROP_STATUS_OKAY(baz), 0, "");
+	zassert_equal(DT_ALL_INST_HAS_PROP_STATUS_OKAY(does_not_exist), 0, "");
+
+	zassert_equal(COND_CODE_1(DT_ALL_INST_HAS_PROP_STATUS_OKAY(foo),
+				  (5), (6)),
+		      5, "");
+	zassert_equal(COND_CODE_0(DT_ALL_INST_HAS_PROP_STATUS_OKAY(foo),
+				  (5), (6)),
+		      6, "");
+	zassert_equal(COND_CODE_1(DT_ALL_INST_HAS_PROP_STATUS_OKAY(baz),
+				  (5), (6)),
+		      6, "");
+	zassert_equal(COND_CODE_0(DT_ALL_INST_HAS_PROP_STATUS_OKAY(baz),
+				  (5), (6)),
+		      5, "");
+	zassert_true(IS_ENABLED(DT_ALL_INST_HAS_PROP_STATUS_OKAY(foo)), "");
+	zassert_true(!IS_ENABLED(DT_ALL_INST_HAS_PROP_STATUS_OKAY(baz)), "");
+	zassert_equal(IF_ENABLED(DT_ALL_INST_HAS_PROP_STATUS_OKAY(foo), (1)) + 1,
+		      2, "");
+	zassert_equal(IF_ENABLED(DT_ALL_INST_HAS_PROP_STATUS_OKAY(baz), (1)) + 1,
+		      1, "");
+}
+
+#undef DT_DRV_COMPAT
+ZTEST(devicetree_api, test_any_compat_inst_prop)
+{
+	zassert_equal(DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(vnd_device_with_props, foo), 1, "");
+	zassert_equal(DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(vnd_device_with_props, bar), 1, "");
+	zassert_equal(DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(vnd_device_with_props, baz), 0, "");
+	zassert_equal(DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(vnd_device_with_props, does_not_exist),
+		      0, "");
+}
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_device_with_props
+ZTEST(devicetree_api, test_any_inst_bool)
+{
+	zassert_equal(DT_ANY_INST_HAS_BOOL_STATUS_OKAY(bool_foo), 1, "");
+	zassert_equal(DT_ANY_INST_HAS_BOOL_STATUS_OKAY(bool_bar), 1, "");
+	zassert_equal(DT_ANY_INST_HAS_BOOL_STATUS_OKAY(bool_baz), 0, "");
+	zassert_equal(DT_ANY_INST_HAS_BOOL_STATUS_OKAY(does_not_exist), 0, "");
+
+	zassert_equal(COND_CODE_1(DT_ANY_INST_HAS_BOOL_STATUS_OKAY(bool_foo),
+				  (5), (6)),
+		      5, "");
+	zassert_equal(COND_CODE_0(DT_ANY_INST_HAS_BOOL_STATUS_OKAY(bool_foo),
+				  (5), (6)),
+		      6, "");
+	zassert_equal(COND_CODE_1(DT_ANY_INST_HAS_BOOL_STATUS_OKAY(bool_baz),
+				  (5), (6)),
+		      6, "");
+	zassert_equal(COND_CODE_0(DT_ANY_INST_HAS_BOOL_STATUS_OKAY(bool_baz),
+				  (5), (6)),
+		      5, "");
+	zassert_true(IS_ENABLED(DT_ANY_INST_HAS_BOOL_STATUS_OKAY(bool_foo)), "");
+	zassert_true(!IS_ENABLED(DT_ANY_INST_HAS_BOOL_STATUS_OKAY(bool_baz)), "");
+	zassert_equal(IF_ENABLED(DT_ANY_INST_HAS_BOOL_STATUS_OKAY(bool_foo), (1)) + 1,
+		      2, "");
+	zassert_equal(IF_ENABLED(DT_ANY_INST_HAS_BOOL_STATUS_OKAY(bool_baz), (1)) + 1,
+		      1, "");
+}
+
+ZTEST(devicetree_api, test_all_inst_bool)
+{
+	zassert_equal(DT_ALL_INST_HAS_BOOL_STATUS_OKAY(bool_foo), 1, "");
+	zassert_equal(DT_ALL_INST_HAS_BOOL_STATUS_OKAY(bool_bar), 0, "");
+	zassert_equal(DT_ALL_INST_HAS_BOOL_STATUS_OKAY(bool_baz), 0, "");
+	zassert_equal(DT_ALL_INST_HAS_BOOL_STATUS_OKAY(does_not_exist), 0, "");
+
+	zassert_equal(COND_CODE_1(DT_ALL_INST_HAS_BOOL_STATUS_OKAY(bool_foo),
+				  (5), (6)),
+		      5, "");
+	zassert_equal(COND_CODE_0(DT_ALL_INST_HAS_BOOL_STATUS_OKAY(bool_foo),
+				  (5), (6)),
+		      6, "");
+	zassert_equal(COND_CODE_1(DT_ALL_INST_HAS_BOOL_STATUS_OKAY(bool_baz),
+				  (5), (6)),
+		      6, "");
+	zassert_equal(COND_CODE_0(DT_ALL_INST_HAS_BOOL_STATUS_OKAY(bool_baz),
+				  (5), (6)),
+		      5, "");
+	zassert_true(IS_ENABLED(DT_ALL_INST_HAS_BOOL_STATUS_OKAY(bool_foo)), "");
+	zassert_true(!IS_ENABLED(DT_ALL_INST_HAS_BOOL_STATUS_OKAY(bool_baz)), "");
+	zassert_equal(IF_ENABLED(DT_ALL_INST_HAS_BOOL_STATUS_OKAY(bool_foo), (1)) + 1,
+		      2, "");
+	zassert_equal(IF_ENABLED(DT_ALL_INST_HAS_BOOL_STATUS_OKAY(bool_baz), (1)) + 1,
+		      1, "");
+}
+
 ZTEST(devicetree_api, test_default_prop_access)
 {
 	/*
@@ -282,6 +397,16 @@ ZTEST(devicetree_api, test_has_alias)
 	zassert_equal(DT_NODE_HAS_STATUS(DT_ALIAS(test_undef), okay), 0, "");
 }
 
+ZTEST(devicetree_api, test_node_hashes)
+{
+	zassert_str_equal(TO_STRING(DT_NODE_HASH(DT_ROOT)),
+			  "il7asoJjJEMhngUeSt4tHVu8Zxx4EFG_FDeJfL3_oPE");
+	zassert_str_equal(TO_STRING(DT_NODE_HASH(TEST_DEADBEEF)),
+			  "kPPqtBX5DX_QDQMO0_cOls2ebJMevAWHhAPY1JCKTyU");
+	zassert_str_equal(TO_STRING(DT_NODE_HASH(TEST_ABCD1234)),
+			  "Bk4fvF6o3Mgslz_xiIZaJcuwo6_IeelozwOaxtUsSos");
+}
+
 ZTEST(devicetree_api, test_inst_checks)
 {
 	zassert_equal(DT_NODE_EXISTS(DT_INST(0, vnd_gpio_device)), 1, "");
@@ -319,6 +444,10 @@ ZTEST(devicetree_api, test_has_compat)
 		   (TA_HAS_COMPAT(vnd_undefined_compat) << 1) |
 		   (TA_HAS_COMPAT(vnd_not_a_test_array_compat) << 2));
 	zassert_equal(compats, 0x3, "");
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_model1
+	zassert_true(DT_INST_NODE_HAS_COMPAT(0, zephyr_model2));
 }
 
 ZTEST(devicetree_api, test_has_status)
@@ -350,6 +479,17 @@ ZTEST(devicetree_api, test_has_status)
 		      0, "");
 	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(reserved_gpio), okay),
 		      0, "");
+}
+
+ZTEST(devicetree_api, test_has_status_okay)
+{
+	zassert_equal(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(test_gpio_1)), 1);
+
+	zassert_equal(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(test_no_status)), 1);
+
+	zassert_equal(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(disabled_gpio)), 0);
+
+	zassert_equal(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(reserved_gpio)), 0);
 }
 
 ZTEST(devicetree_api, test_bus)
@@ -465,17 +605,15 @@ ZTEST(devicetree_api, test_bus)
 	zassert_equal(DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(vnd_i2c_device, i2c), 1);
 	zassert_equal(DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(vnd_i2c_device, spi), 0);
 
-	zassert_equal(DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(vnd_gpio_expander, i2c), 1,
-		      NULL);
-	zassert_equal(DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(vnd_gpio_expander, spi), 1,
-		      NULL);
+	zassert_equal(DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(vnd_gpio_expander, i2c), 1);
+	zassert_equal(DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(vnd_gpio_expander, spi), 1);
 }
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_vendor
 
 #define VND_VENDOR "A stand-in for a real vendor which can be used in examples and tests"
-#define ZEP_VENDOR "Zephyr-specific binding"
+#define ZEP_VENDOR "The Zephyr Project"
 
 ZTEST(devicetree_api, test_vendor)
 {
@@ -536,6 +674,11 @@ ZTEST(devicetree_api, test_reg)
 	zassert_true(DT_REG_HAS_IDX(TEST_ABCD1234, 1), "");
 	zassert_false(DT_REG_HAS_IDX(TEST_ABCD1234, 2), "");
 
+	/* DT_REG_HAS_NAME */
+	zassert_true(DT_REG_HAS_NAME(TEST_ABCD1234, one), "");
+	zassert_true(DT_REG_HAS_NAME(TEST_ABCD1234, two), "");
+	zassert_false(DT_REG_HAS_NAME(TEST_ABCD1234, three), "");
+
 	/* DT_REG_ADDR_BY_IDX */
 	zassert_equal(DT_REG_ADDR_BY_IDX(TEST_ABCD1234, 0), 0xabcd1234, "");
 	zassert_equal(DT_REG_ADDR_BY_IDX(TEST_ABCD1234, 1), 0x98765432, "");
@@ -557,6 +700,11 @@ ZTEST(devicetree_api, test_reg)
 	zassert_equal(DT_REG_ADDR_BY_NAME(TEST_ABCD1234, one), 0xabcd1234, "");
 	zassert_equal(DT_REG_ADDR_BY_NAME(TEST_ABCD1234, two), 0x98765432, "");
 
+	/* DT_REG_ADDR_BY_NAME_OR */
+	zassert_equal(DT_REG_ADDR_BY_NAME_OR(TEST_ABCD1234, one, 0x10), 0xabcd1234, "");
+	zassert_equal(DT_REG_ADDR_BY_NAME_OR(TEST_ABCD1234, two, 0x11), 0x98765432, "");
+	zassert_equal(DT_REG_ADDR_BY_NAME_OR(TEST_ABCD1234, three, 0x12), 0x12, "");
+
 	/* DT_REG_ADDR_BY_NAME_U64 */
 	zassert_equal(DT_REG_ADDR_BY_NAME_U64(TEST_ABCD1234, one), 0xabcd1234, "");
 	zassert_equal(DT_REG_ADDR_BY_NAME_U64(TEST_ABCD1234, two), 0x98765432, "");
@@ -565,6 +713,11 @@ ZTEST(devicetree_api, test_reg)
 	zassert_equal(DT_REG_SIZE_BY_NAME(TEST_ABCD1234, one), 0x500, "");
 	zassert_equal(DT_REG_SIZE_BY_NAME(TEST_ABCD1234, two), 0xff, "");
 
+	/* DT_REG_SIZE_BY_NAME_OR */
+	zassert_equal(DT_REG_SIZE_BY_NAME_OR(TEST_ABCD1234, one, 0x10), 0x500, "");
+	zassert_equal(DT_REG_SIZE_BY_NAME_OR(TEST_ABCD1234, two, 0x11), 0xff, "");
+	zassert_equal(DT_REG_SIZE_BY_NAME_OR(TEST_ABCD1234, three, 0x12), 0x12, "");
+
 	/* DT_INST */
 	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 1, "");
 
@@ -572,6 +725,11 @@ ZTEST(devicetree_api, test_reg)
 	zassert_true(DT_INST_REG_HAS_IDX(0, 0), "");
 	zassert_true(DT_INST_REG_HAS_IDX(0, 1), "");
 	zassert_false(DT_INST_REG_HAS_IDX(0, 2), "");
+
+	/* DT_INST_REG_HAS_NAME */
+	zassert_true(DT_INST_REG_HAS_NAME(0, first), "");
+	zassert_true(DT_INST_REG_HAS_NAME(0, second), "");
+	zassert_false(DT_INST_REG_HAS_NAME(0, third), "");
 
 	/* DT_INST_REG_ADDR_BY_IDX */
 	zassert_equal(DT_INST_REG_ADDR_BY_IDX(0, 0), 0x9999aaaa, "");
@@ -594,6 +752,11 @@ ZTEST(devicetree_api, test_reg)
 	zassert_equal(DT_INST_REG_ADDR_BY_NAME(0, first), 0x9999aaaa, "");
 	zassert_equal(DT_INST_REG_ADDR_BY_NAME(0, second), 0xbbbbcccc, "");
 
+	/* DT_INST_REG_ADDR_BY_NAME_OR */
+	zassert_equal(DT_INST_REG_ADDR_BY_NAME_OR(0, first, 0x10), 0x9999aaaa, "");
+	zassert_equal(DT_INST_REG_ADDR_BY_NAME_OR(0, second, 0x11), 0xbbbbcccc, "");
+	zassert_equal(DT_INST_REG_SIZE_BY_NAME_OR(0, third, 0x12), 0x12, "");
+
 	/* DT_INST_REG_ADDR_BY_NAME_U64 */
 	zassert_equal(DT_INST_REG_ADDR_BY_NAME_U64(0, first), 0x9999aaaa, "");
 	zassert_equal(DT_INST_REG_ADDR_BY_NAME_U64(0, second), 0xbbbbcccc, "");
@@ -601,6 +764,11 @@ ZTEST(devicetree_api, test_reg)
 	/* DT_INST_REG_SIZE_BY_NAME */
 	zassert_equal(DT_INST_REG_SIZE_BY_NAME(0, first), 0x1000, "");
 	zassert_equal(DT_INST_REG_SIZE_BY_NAME(0, second), 0x3f, "");
+
+	/* DT_REG_SIZE_BY_NAME_OR */
+	zassert_equal(DT_INST_REG_SIZE_BY_NAME_OR(0, first, 0x10), 0x1000, "");
+	zassert_equal(DT_INST_REG_SIZE_BY_NAME_OR(0, second, 0x11), 0x3f, "");
+	zassert_equal(DT_INST_REG_SIZE_BY_NAME_OR(0, third, 0x12), 0x12, "");
 }
 
 #undef DT_DRV_COMPAT
@@ -659,7 +827,7 @@ ZTEST(devicetree_api, test_irq)
 	/* DT_IRQ_HAS_CELL_AT_IDX */
 	zassert_true(DT_IRQ_HAS_CELL_AT_IDX(TEST_IRQ, 0, irq), "");
 	zassert_true(DT_IRQ_HAS_CELL_AT_IDX(TEST_IRQ, 0, priority), "");
-	zassert_false(DT_IRQ_HAS_CELL_AT_IDX(TEST_IRQ, 0, foo), 0, "");
+	zassert_false(DT_IRQ_HAS_CELL_AT_IDX(TEST_IRQ, 0, foo), "");
 	zassert_true(DT_IRQ_HAS_CELL_AT_IDX(TEST_IRQ, 2, irq), "");
 	zassert_true(DT_IRQ_HAS_CELL_AT_IDX(TEST_IRQ, 2, priority), "");
 	zassert_false(DT_IRQ_HAS_CELL_AT_IDX(TEST_IRQ, 2, foo), "");
@@ -706,6 +874,9 @@ ZTEST(devicetree_api, test_irq)
 
 	/* DT_INST */
 	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 1, "");
+
+	/* DT_INST_NUM_IRQS */
+	zassert_equal(DT_INST_NUM_IRQS(0), 3);
 
 	/* DT_INST_IRQ_HAS_IDX */
 	zassert_equal(DT_INST_IRQ_HAS_IDX(0, 0), 1, "");
@@ -1145,27 +1316,6 @@ ZTEST(devicetree_api, test_io_channels)
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_adc_temp_sensor
-ZTEST(devicetree_api, test_io_channel_names)
-{
-	struct adc_dt_spec adc_spec;
-
-	/* ADC_DT_SPEC_GET_BY_NAME */
-	adc_spec = (struct adc_dt_spec)ADC_DT_SPEC_GET_BY_NAME(TEST_TEMP, ch1);
-	zassert_equal(adc_spec.channel_id, 10, "");
-
-	adc_spec = (struct adc_dt_spec)ADC_DT_SPEC_GET_BY_NAME(TEST_TEMP, ch2);
-	zassert_equal(adc_spec.channel_id, 20, "");
-
-	/* ADC_DT_SPEC_INST_GET_BY_NAME */
-	adc_spec = (struct adc_dt_spec)ADC_DT_SPEC_INST_GET_BY_NAME(0, ch1);
-	zassert_equal(adc_spec.channel_id, 10, "");
-
-	adc_spec = (struct adc_dt_spec)ADC_DT_SPEC_INST_GET_BY_NAME(0, ch2);
-	zassert_equal(adc_spec.channel_id, 20, "");
-}
-
-#undef DT_DRV_COMPAT
-#define DT_DRV_COMPAT vnd_adc_temp_sensor
 ZTEST(devicetree_api, test_dma)
 {
 	/* DT_DMAS_CTLR_BY_IDX */
@@ -1218,6 +1368,78 @@ ZTEST(devicetree_api, test_dma)
 	zassert_true(DT_INST_DMAS_HAS_IDX(0, 1), "");
 	zassert_false(DT_DMAS_HAS_IDX(TEST_TEMP, 2), "");
 	zassert_false(DT_INST_DMAS_HAS_IDX(0, 2), "");
+}
+
+#undef DT_DRV_COMPAT
+DT_FOREACH_STATUS_OKAY_VARGS(vnd_video_single_port, DEVICE_DT_DEFINE, NULL, NULL, NULL, NULL,
+			     POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY, NULL);
+DT_FOREACH_STATUS_OKAY_VARGS(vnd_video_multi_port, DEVICE_DT_DEFINE, NULL, NULL, NULL, NULL,
+			     POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY, NULL);
+ZTEST(devicetree_api, test_video)
+{
+	/* DT_INST_PORT_BY_ID */
+#define DT_DRV_COMPAT vnd_video_single_port
+	zassert_true(DT_SAME_NODE(DT_INST_PORT_BY_ID(0, 0),
+				  TEST_VIDEO0_PORT), "get port node of video0");
+	zassert_true(DT_SAME_NODE(DT_INST_PORT_BY_ID(1, 0), TEST_VIDEO1_PORT),
+		     "get port node of video1");
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_video_multi_port
+	zassert_true(DT_SAME_NODE(DT_INST_PORT_BY_ID(0, 0), TEST_VIDEO2_PORT0),
+		     "get port@0 node of video2");
+	zassert_true(DT_SAME_NODE(DT_INST_PORT_BY_ID(0, 1), TEST_VIDEO2_PORT1),
+		     "get port@1 node of video2");
+#undef DT_DRV_COMPAT
+
+	/* DT_INST_ENDPOINT_BY_ID */
+#define DT_DRV_COMPAT vnd_video_single_port
+	zassert_true(DT_SAME_NODE(DT_INST_ENDPOINT_BY_ID(0, 0, 0), TEST_VIDEO0_OUT),
+		     "get endpoint node of port node of video0");
+	zassert_true(DT_SAME_NODE(DT_INST_ENDPOINT_BY_ID(1, 0, 0), TEST_VIDEO1_OUT0),
+		     "get endpoint@0 node of port node of video1");
+	zassert_true(DT_SAME_NODE(DT_INST_ENDPOINT_BY_ID(1, 0, 1), TEST_VIDEO1_OUT1),
+		     "get endpoint@1 node of port node of video1");
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_video_multi_port
+	zassert_true(DT_SAME_NODE(DT_INST_ENDPOINT_BY_ID(0, 0, 0), TEST_VIDEO2_PORT0_IN0),
+		     "get endpoint@0 node of port@0 node of video2");
+	zassert_true(DT_SAME_NODE(DT_INST_ENDPOINT_BY_ID(0, 0, 1), TEST_VIDEO2_PORT0_IN1),
+		     "get endpoint@1 node of port@0 node of video2");
+	zassert_true(DT_SAME_NODE(DT_INST_ENDPOINT_BY_ID(0, 1, 0), TEST_VIDEO2_PORT1_IN),
+		     "get endpoint node of port@1 node of video2");
+#undef DT_DRV_COMPAT
+
+	/* DT_NODE_BY_ENDPOINT */
+	zassert_true(DT_SAME_NODE(DT_NODE_BY_ENDPOINT(TEST_VIDEO0_OUT),
+				  TEST_VIDEO0), "get video0 node from its endpoint");
+	zassert_true(DT_SAME_NODE(DT_NODE_BY_ENDPOINT(TEST_VIDEO1_OUT0), TEST_VIDEO1),
+		     "get video1 node from its endpoint@0");
+	zassert_true(DT_SAME_NODE(DT_NODE_BY_ENDPOINT(TEST_VIDEO1_OUT1), TEST_VIDEO1),
+		     "get video1 node from its endpoint@1");
+	zassert_true(DT_SAME_NODE(DT_NODE_BY_ENDPOINT(TEST_VIDEO2_PORT0_IN0), TEST_VIDEO2),
+		     "get video2 node from its endpoint@0 at port@0");
+	zassert_true(DT_SAME_NODE(DT_NODE_BY_ENDPOINT(TEST_VIDEO2_PORT0_IN1), TEST_VIDEO2),
+		     "get video2 node from its endpoint@1 at port@0");
+	zassert_true(DT_SAME_NODE(DT_NODE_BY_ENDPOINT(TEST_VIDEO2_PORT1_IN), TEST_VIDEO2),
+		     "get video2 node from its endpoint at port@1");
+
+	/* DT_NODE_REMOTE_DEVICE */
+#define DT_DRV_COMPAT vnd_video_single_port
+	zassert_true(DT_SAME_NODE(DT_NODE_REMOTE_DEVICE(TEST_VIDEO0_OUT), TEST_VIDEO2),
+			 "get remote device node of video0's endpoint");
+	zassert_true(DT_SAME_NODE(DT_NODE_REMOTE_DEVICE(TEST_VIDEO1_OUT0), TEST_VIDEO2),
+		     "get remote device node of video1's endpoint@0");
+	zassert_true(DT_SAME_NODE(DT_NODE_REMOTE_DEVICE(TEST_VIDEO1_OUT1), TEST_VIDEO2),
+		     "get remote device node of video1's endpoint@1");
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_video_multi_port
+	zassert_true(DT_SAME_NODE(DT_NODE_REMOTE_DEVICE(TEST_VIDEO2_PORT0_IN0), TEST_VIDEO0),
+		     "get remote device node of video2's port@0 endpoint@0");
+	zassert_true(DT_SAME_NODE(DT_NODE_REMOTE_DEVICE(TEST_VIDEO2_PORT0_IN1), TEST_VIDEO1),
+		     "get remote device node of video2's port@0 endpoint@1");
+	zassert_true(DT_SAME_NODE(DT_NODE_REMOTE_DEVICE(TEST_VIDEO2_PORT1_IN), TEST_VIDEO1),
+		     "get remote device node of video2's port@1 endpoint");
+#undef DT_DRV_COMPAT
 }
 
 #undef DT_DRV_COMPAT
@@ -1462,6 +1684,7 @@ ZTEST(devicetree_api, test_arrays)
 	zassert_equal(DT_PROP_BY_IDX(TEST_ARRAYS, a, 0), a[0], "");
 	zassert_equal(DT_PROP_BY_IDX(TEST_ARRAYS, a, 1), a[1], "");
 	zassert_equal(DT_PROP_BY_IDX(TEST_ARRAYS, a, 2), a[2], "");
+	zassert_equal(DT_PROP_LAST(TEST_ARRAYS, a), a[2], "");
 
 	zassert_equal(DT_PROP_LEN(TEST_ARRAYS, a), 3, "");
 
@@ -1561,6 +1784,18 @@ ZTEST(devicetree_api, test_foreach_status_okay)
 	val = DT_FOREACH_STATUS_OKAY_VARGS(vnd_enum_holder, MY_FN, +) 3;
 	zassert_equal(val, 5, "");
 
+#undef MY_FN
+#define MY_FN(inst, compat, operator) DT_ENUM_IDX(DT_INST(inst, compat), val) operator
+	/* This should expand to something like:
+	 *
+	 * 0 + 2 + 3
+	 *
+	 * and order of expansion doesn't matter, since we're adding
+	 * the values all up.
+	 */
+	val = DT_COMPAT_FOREACH_STATUS_OKAY_VARGS(vnd_enum_holder, MY_FN, +) 3;
+	zassert_equal(val, 5, "");
+
 	/*
 	 * Make sure DT_INST_FOREACH_STATUS_OKAY can be called from functions
 	 * using macros with side effects in the current scope.
@@ -1594,6 +1829,64 @@ ZTEST(devicetree_api, test_foreach_status_okay)
 #define BUILD_BUG_ON_EXPANSION(arg) (there is a bug in devicetree.h)
 	DT_INST_FOREACH_STATUS_OKAY_VARGS(BUILD_BUG_ON_EXPANSION, 1)
 #undef BUILD_BUG_ON_EXPANSION
+}
+
+ZTEST(devicetree_api, test_foreach_nodelabel)
+{
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_adc_temp_sensor
+#define ENTRY(nodelabel) enum_ ## nodelabel,
+#define VAR_PLUS(nodelabel, to_add) int nodelabel ## _added = enum_ ## nodelabel + to_add;
+
+	/* DT_FOREACH_NODELABEL */
+	enum {
+		DT_FOREACH_NODELABEL(DT_NODELABEL(test_nodelabel), ENTRY)
+	};
+	zassert_equal(enum_test_nodelabel, 0, "");
+	zassert_equal(enum_TEST_NODELABEL_ALLCAPS, 1, "");
+	zassert_equal(enum_test_gpio_1, 2, "");
+
+	/* DT_FOREACH_NODELABEL_VARGS */
+	DT_FOREACH_NODELABEL_VARGS(DT_NODELABEL(test_nodelabel), VAR_PLUS, 1);
+	zassert_equal(test_nodelabel_added, 1, "");
+	zassert_equal(TEST_NODELABEL_ALLCAPS_added, 2, "");
+	zassert_equal(test_gpio_1_added, 3, "");
+
+	/* DT_NODELABEL_STRING_ARRAY is tested here since it's closely related */
+	const char *nodelabels[] = DT_NODELABEL_STRING_ARRAY(DT_NODELABEL(test_nodelabel));
+
+	zassert_equal(ARRAY_SIZE(nodelabels), 3);
+	zassert_true(!strcmp(nodelabels[0], "test_nodelabel"), "");
+	zassert_true(!strcmp(nodelabels[1], "TEST_NODELABEL_ALLCAPS"), "");
+	zassert_true(!strcmp(nodelabels[2], "test_gpio_1"), "");
+
+	/* DT_NUM_NODELABELS */
+	zassert_equal(DT_NUM_NODELABELS(DT_NODELABEL(test_nodelabel)), 3, "");
+	zassert_equal(DT_NUM_NODELABELS(DT_PATH(chosen)), 0, "");
+	zassert_equal(DT_NUM_NODELABELS(DT_ROOT), 0, "");
+
+	/* DT_INST_FOREACH_NODELABEL */
+	enum {
+		DT_INST_FOREACH_NODELABEL(0, ENTRY)
+	};
+	zassert_equal(enum_test_temp_sensor, 0, "");
+
+	/* DT_INST_FOREACH_NODELABEL_VARGS */
+	DT_INST_FOREACH_NODELABEL_VARGS(0, VAR_PLUS, 1);
+	zassert_equal(test_temp_sensor_added, 1, "");
+
+	/* DT_INST_NODELABEL_STRING_ARRAY */
+	const char *inst_nodelabels[] = DT_INST_NODELABEL_STRING_ARRAY(0);
+
+	zassert_equal(ARRAY_SIZE(inst_nodelabels), 1);
+	zassert_true(!strcmp(inst_nodelabels[0], "test_temp_sensor"), "");
+
+	/* DT_INST_NUM_NODELABELS */
+	zassert_equal(DT_INST_NUM_NODELABELS(0), 1, "");
+
+#undef VAR_PLUS
+#undef ENTRY
+#undef DT_DRV_COMPAT
 }
 
 ZTEST(devicetree_api, test_foreach_prop_elem)
@@ -1789,7 +2082,7 @@ static int test_gpio_init(const struct device *dev)
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_gpio_device
 
-static const struct gpio_driver_api test_api;
+static DEVICE_API(gpio, test_api);
 
 #define TEST_GPIO_INIT(num)					\
 	static struct test_gpio_data gpio_data_##num = {	\
@@ -1882,6 +2175,57 @@ ZTEST(devicetree_api, test_enums)
 	zassert_true(DT_ENUM_HAS_VALUE(DT_NODELABEL(test_enum_int_default_0), val, 5), "");
 	zassert_false(DT_ENUM_HAS_VALUE(DT_NODELABEL(test_enum_int_default_0), val, 6), "");
 	zassert_false(DT_ENUM_HAS_VALUE(DT_NODELABEL(test_enum_int_default_0), val, 7), "");
+
+	/* DT_ENUM_IDX_BY_IDX and DT_ENUM_HAS_VALUE_BY_IDX on string-array enum */
+	zassert_equal(DT_ENUM_IDX_BY_IDX(DT_NODELABEL(test_enum_string_array), val, 0), 0);
+	zassert_equal(DT_ENUM_IDX_BY_IDX(DT_NODELABEL(test_enum_string_array), val, 1), 3);
+	zassert_equal(DT_ENUM_IDX_BY_IDX(DT_NODELABEL(test_enum_string_array), val, 2), 0);
+	zassert_true(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_string_array), val, 0, foo));
+	zassert_false(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_string_array), val, 0, bar));
+	zassert_false(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_string_array), val, 0, baz));
+	zassert_false(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_string_array), val, 0, zoo));
+	zassert_true(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_string_array), val, 1, zoo));
+	zassert_false(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_string_array), val, 1, foo));
+	zassert_false(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_string_array), val, 1, bar));
+	zassert_false(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_string_array), val, 1, baz));
+	zassert_true(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_string_array), val, 2, foo));
+	zassert_false(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_string_array), val, 2, baz));
+	zassert_false(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_string_array), val, 2, bar));
+	zassert_false(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_string_array), val, 2, zoo));
+
+	/* DT_ENUM_HAS_VALUE on string-array enum */
+	zassert_true(DT_ENUM_HAS_VALUE(DT_NODELABEL(test_enum_string_array), val, foo));
+	zassert_true(DT_ENUM_HAS_VALUE(DT_NODELABEL(test_enum_string_array), val, zoo));
+	zassert_true(DT_ENUM_HAS_VALUE(DT_NODELABEL(test_enum_string_array), val, foo));
+	zassert_false(DT_ENUM_HAS_VALUE(DT_NODELABEL(test_enum_string_array), val, baz));
+
+	/* DT_ENUM_IDX_BY_IDX and DT_ENUM_HAS_VALUE_BY_IDX on int-array enum */
+	zassert_equal(DT_ENUM_IDX_BY_IDX(DT_NODELABEL(test_enum_int_array), val, 0), 3);
+	zassert_equal(DT_ENUM_IDX_BY_IDX(DT_NODELABEL(test_enum_int_array), val, 1), 4);
+	zassert_equal(DT_ENUM_IDX_BY_IDX(DT_NODELABEL(test_enum_int_array), val, 2), 3);
+	zassert_equal(DT_ENUM_IDX_BY_IDX(DT_NODELABEL(test_enum_int_array), val, 3), 7);
+	zassert_true(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_int_array), val, 0, 4));
+	zassert_false(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_int_array), val, 0, 5));
+	zassert_false(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_int_array), val, 0, 6));
+	zassert_true(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_int_array), val, 1, 3));
+	zassert_false(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_int_array), val, 1, 0));
+	zassert_false(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_int_array), val, 1, 1));
+	zassert_true(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_int_array), val, 2, 4));
+	zassert_false(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_int_array), val, 2, 3));
+	zassert_false(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_int_array), val, 2, 7));
+	zassert_true(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_int_array), val, 3, 0));
+	zassert_false(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_int_array), val, 3, 2));
+	zassert_false(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_int_array), val, 3, 1));
+
+	/* DT_ENUM_HAS_VALUE on int-array enum */
+	zassert_true(DT_ENUM_HAS_VALUE(DT_NODELABEL(test_enum_int_array), val, 0));
+	zassert_false(DT_ENUM_HAS_VALUE(DT_NODELABEL(test_enum_int_array), val, 1));
+	zassert_false(DT_ENUM_HAS_VALUE(DT_NODELABEL(test_enum_int_array), val, 2));
+	zassert_true(DT_ENUM_HAS_VALUE(DT_NODELABEL(test_enum_int_array), val, 3));
+	zassert_true(DT_ENUM_HAS_VALUE(DT_NODELABEL(test_enum_int_array), val, 4));
+	zassert_false(DT_ENUM_HAS_VALUE(DT_NODELABEL(test_enum_int_array), val, 5));
+	zassert_false(DT_ENUM_HAS_VALUE(DT_NODELABEL(test_enum_int_array), val, 6));
+	zassert_false(DT_ENUM_HAS_VALUE(DT_NODELABEL(test_enum_int_array), val, 7));
 }
 #undef TO_MY_ENUM
 #undef TO_MY_ENUM_2
@@ -1900,6 +2244,18 @@ ZTEST(devicetree_api, test_enums_required_false)
 	zassert_equal(DT_ENUM_IDX_OR(DT_NODELABEL(test_enum_int_default_1),
 				     val, 4),
 		      4, "");
+	/* DT_ENUM_IDX_OR on string-array value */
+	zassert_equal(DT_ENUM_IDX_BY_IDX_OR(DT_NODELABEL(test_enum_string_array), val, 0, 2),
+		      0, "");
+	zassert_equal(DT_ENUM_IDX_BY_IDX_OR(DT_NODELABEL(test_enum_string_array), val, 5, 2),
+		      2, "");
+	/* DT_ENUM_IDX_OR on int-array value */
+	zassert_equal(DT_ENUM_IDX_BY_IDX_OR(DT_NODELABEL(test_enum_int_array),
+				     val, 0, 7),
+		      3, "");
+	zassert_equal(DT_ENUM_IDX_BY_IDX_OR(DT_NODELABEL(test_enum_int_array),
+				     val, 4, 7),
+		      7, "");
 }
 
 ZTEST(devicetree_api, test_inst_enums)
@@ -1918,6 +2274,29 @@ ZTEST(devicetree_api, test_inst_enums)
 	zassert_false(DT_INST_ENUM_HAS_VALUE(0, val, zero), "");
 	zassert_false(DT_INST_ENUM_HAS_VALUE(0, val, one), "");
 	zassert_false(DT_INST_ENUM_HAS_VALUE(0, val, two), "");
+
+	/* Also add tests for these:
+	 * DT_INST_ENUM_IDX_BY_IDX
+	 * DT_INST_ENUM_IDX_BY_IDX_OR
+	 * DT_INST_ENUM_HAS_VALUE_BY_IDX
+	 */
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_enum_string_array_holder
+	zassert_equal(DT_INST_ENUM_IDX_BY_IDX(0, val, 0), 0, "");
+	zassert_equal(DT_INST_ENUM_IDX_BY_IDX(0, val, 1), 3, "");
+	zassert_true(DT_INST_ENUM_HAS_VALUE_BY_IDX(0, val, 0, foo), "");
+	zassert_false(DT_INST_ENUM_HAS_VALUE_BY_IDX(0, val, 0, zoo), "");
+	zassert_true(DT_INST_ENUM_HAS_VALUE_BY_IDX(0, val, 1, zoo), "");
+	zassert_false(DT_INST_ENUM_HAS_VALUE_BY_IDX(0, val, 2, baz), "");
+	zassert_equal(DT_INST_ENUM_IDX_BY_IDX_OR(0, val, 0, 10), 0, "");
+	zassert_equal(DT_INST_ENUM_IDX_BY_IDX_OR(0, val, 4, 10), 10, "");
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_enum_int_array_holder
+	zassert_equal(DT_INST_ENUM_IDX_BY_IDX(0, val, 0), 3, "");
+	zassert_equal(DT_INST_ENUM_IDX_BY_IDX(0, val, 3), 7, "");
+	zassert_equal(DT_INST_ENUM_IDX_BY_IDX_OR(0, val, 1, 10), 4, "");
+	zassert_equal(DT_INST_ENUM_IDX_BY_IDX_OR(0, val, 123654, 10), 10, "");
 }
 
 #undef DT_DRV_COMPAT
@@ -2025,6 +2404,31 @@ ZTEST(devicetree_api, test_parent)
 	 */
 	zassert_true(DT_SAME_NODE(DT_CHILD(DT_PARENT(TEST_SPI_BUS_0), spi_33334444),
 				  TEST_SPI_BUS_0), "");
+}
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_parent_bindings
+ZTEST(devicetree_api, test_parent_nodes_list)
+{
+	/* When traversing upwards, there are no fixed attributes and labels */
+	#define TEST_FUNC(parent) { /* No operation */ }
+	#define TEST_FUNC_AND_COMMA(parent) TEST_FUNC(parent),
+
+	struct vnd_parent_binding {
+		int val;
+	};
+
+	struct vnd_parent_binding vals_a[] = {
+		DT_FOREACH_ANCESTOR(DT_NODELABEL(test_parent_a), TEST_FUNC_AND_COMMA)};
+
+	struct vnd_parent_binding vals_b[] = {
+		DT_FOREACH_ANCESTOR(DT_NODELABEL(test_parent_b), TEST_FUNC_AND_COMMA)};
+
+	zassert_equal(ARRAY_SIZE(vals_a), 3, "");
+	zassert_equal(ARRAY_SIZE(vals_b), 4, "");
+
+	#undef TEST_FUNC_AND_COMMA
+	#undef TEST_FUNC
 }
 
 #undef DT_DRV_COMPAT
@@ -2208,6 +2612,16 @@ ZTEST(devicetree_api, test_child_nodes_list_varg)
 	#undef TEST_PARENT
 	#undef TEST_FUNC_AND_COMMA
 	#undef TEST_FUNC
+}
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_child_bindings
+ZTEST(devicetree_api, test_child_nodes_number)
+{
+	zassert_equal(DT_CHILD_NUM(TEST_CHILDREN), 3, "");
+	zassert_equal(DT_INST_CHILD_NUM(0), 3, "");
+	zassert_equal(DT_CHILD_NUM_STATUS_OKAY(TEST_CHILDREN), 2, "");
+	zassert_equal(DT_INST_CHILD_NUM_STATUS_OKAY(0), 2, "");
 }
 
 ZTEST(devicetree_api, test_great_grandchild)
@@ -2733,22 +3147,8 @@ ZTEST(devicetree_api, test_pinctrl)
 	zassert_equal(DT_INST_PINCTRL_HAS_NAME(0, f_o_o2), 0, "");
 }
 
-DEVICE_DT_DEFINE(DT_NODELABEL(test_mbox), NULL, NULL, NULL, NULL, POST_KERNEL,
-		 90, NULL);
-DEVICE_DT_DEFINE(DT_NODELABEL(test_mbox_zero_cell), NULL, NULL, NULL, NULL,
-		 POST_KERNEL, 90, NULL);
-
 ZTEST(devicetree_api, test_mbox)
 {
-#undef DT_DRV_COMPAT
-#define DT_DRV_COMPAT vnd_adc_temp_sensor
-
-	const struct mbox_dt_spec channel_tx = MBOX_DT_SPEC_GET(TEST_TEMP, tx);
-	const struct mbox_dt_spec channel_rx = MBOX_DT_SPEC_GET(TEST_TEMP, rx);
-
-	zassert_equal(channel_tx.channel_id, 1, "");
-	zassert_equal(channel_rx.channel_id, 2, "");
-
 	zassert_equal(DT_MBOX_CHANNEL_BY_NAME(TEST_TEMP, tx), 1, "");
 	zassert_equal(DT_MBOX_CHANNEL_BY_NAME(TEST_TEMP, rx), 2, "");
 
@@ -2759,10 +3159,6 @@ ZTEST(devicetree_api, test_mbox)
 
 	zassert_equal(DT_MBOX_CHANNEL_BY_NAME(TEST_TEMP, tx), 1, "");
 	zassert_equal(DT_MBOX_CHANNEL_BY_NAME(TEST_TEMP, rx), 2, "");
-
-	const struct mbox_dt_spec channel_zero = MBOX_DT_SPEC_GET(TEST_TEMP, zero);
-
-	zassert_equal(channel_zero.channel_id, 0, "");
 
 	zassert_equal(DT_MBOX_CHANNEL_BY_NAME(TEST_TEMP, zero), 0, "");
 
@@ -2821,7 +3217,7 @@ ZTEST(devicetree_api, test_fixed_partitions)
 	 * Test this by way of string comparison.
 	 */
 	zassert_true(!strcmp(TO_STRING(DT_FIXED_PARTITION_ADDR(TEST_PARTITION_2)),
-			     "(__REG_IDX_0_VAL_ADDRESS + 458624)"));
+			     "(__REG_IDX_0_VAL_ADDRESSU + 458624U)"));
 	zassert_equal(DT_REG_ADDR(TEST_PARTITION_2), 458624);
 
 	/* Test that all DT_FIXED_PARTITION_ID are defined and unique. */
@@ -2840,6 +3236,34 @@ ZTEST(devicetree_api, test_fixed_partitions)
 	}
 
 #undef FIXED_PARTITION_ID_COMMA
+}
+
+ZTEST(devicetree_api, test_fixed_subpartitions)
+{
+	zassert_true(DT_FIXED_PARTITION_EXISTS(TEST_SUBPARTITION_COMBINED));
+	zassert_true(DT_FIXED_SUBPARTITION_EXISTS(TEST_SUBPARTITION_0));
+	zassert_true(DT_FIXED_SUBPARTITION_EXISTS(TEST_SUBPARTITION_1));
+
+	/* Test DT_MEM_FROM_FIXED_SUBPARTITION. */
+	zassert_true(DT_NODE_EXISTS(DT_MEM_FROM_FIXED_PARTITION(TEST_SUBPARTITION_COMBINED)));
+	zassert_true(DT_NODE_EXISTS(DT_MEM_FROM_FIXED_SUBPARTITION(TEST_SUBPARTITION_0)));
+	zassert_true(DT_NODE_EXISTS(DT_MEM_FROM_FIXED_SUBPARTITION(TEST_SUBPARTITION_1)));
+
+	/* Test DT_MTD_FROM_FIXED_SUBPARTITION. */
+	zassert_true(DT_NODE_EXISTS(DT_MTD_FROM_FIXED_PARTITION(TEST_SUBPARTITION_COMBINED)));
+	zassert_true(DT_NODE_EXISTS(DT_MTD_FROM_FIXED_SUBPARTITION(TEST_SUBPARTITION_0)));
+	zassert_true(DT_NODE_EXISTS(DT_MTD_FROM_FIXED_SUBPARTITION(TEST_SUBPARTITION_1)));
+
+	/* Test DT_FIXED_SUBPARTITION_ADDR. */
+	zassert_equal(DT_FIXED_PARTITION_ADDR(TEST_SUBPARTITION_COMBINED), 0x20000100);
+	zassert_equal(DT_FIXED_SUBPARTITION_ADDR(TEST_SUBPARTITION_0),
+		      DT_FIXED_PARTITION_ADDR(TEST_SUBPARTITION_COMBINED));
+	zassert_equal(DT_FIXED_SUBPARTITION_ADDR(TEST_SUBPARTITION_0), 0x20000100);
+	zassert_equal(DT_FIXED_SUBPARTITION_ADDR(TEST_SUBPARTITION_1), 0x20000140);
+
+	/* Check sizes match */
+	zassert_equal(DT_REG_SIZE(TEST_SUBPARTITION_COMBINED),
+		      (DT_REG_SIZE(TEST_SUBPARTITION_0) + DT_REG_SIZE(TEST_SUBPARTITION_1)));
 }
 
 ZTEST(devicetree_api, test_string_token)
@@ -3052,6 +3476,8 @@ ZTEST(devicetree_api, test_string_unquoted)
 #define XA 12.0
 #define XB 34.0
 #define XPLUS +
+#define XSTR1 "one"
+#define XSTR2 "two"
 	const double f0_expected = 0.1234;
 	const double f1_expected = 0.9e-3;
 	const double delta = 0.1e-4;
@@ -3063,6 +3489,10 @@ ZTEST(devicetree_api, test_string_unquoted)
 		       f1_expected, delta, "");
 	zassert_within(DT_STRING_UNQUOTED(DT_NODELABEL(test_str_unquoted_t), val),
 		       XA XPLUS XB, delta, "");
+	zassert_within(DT_STRING_UNQUOTED(DT_NODELABEL(test_str_unquoted_esc_t), val), XA XPLUS XB,
+		       delta, "");
+	zassert_str_equal(DT_STRING_UNQUOTED(DT_NODELABEL(test_str_unquoted_esc_s), val),
+			  "one plus two");
 	/* Test DT_STRING_UNQUOTED_OR */
 	zassert_within(DT_STRING_UNQUOTED_OR(DT_NODELABEL(test_str_unquoted_f0), val, (0.0)),
 		       f0_expected, delta, "");
@@ -3070,12 +3500,20 @@ ZTEST(devicetree_api, test_string_unquoted)
 		       f1_expected, delta, "");
 	zassert_within(DT_STRING_UNQUOTED_OR(DT_NODELABEL(test_str_unquoted_t), val, (0.0)),
 		       XA XPLUS XB, delta, "");
+	zassert_within(DT_STRING_UNQUOTED_OR(DT_NODELABEL(test_str_unquoted_esc_t), val, (0.0)),
+		       XA XPLUS XB, delta, "");
+	zassert_str_equal(DT_STRING_UNQUOTED_OR(DT_NODELABEL(test_str_unquoted_esc_s), val, "nak"),
+			  "one plus two");
 	zassert_within(DT_STRING_UNQUOTED_OR(DT_NODELABEL(test_str_unquoted_f0), nak, (0.0)),
 		       0.0, delta, "");
 	zassert_within(DT_STRING_UNQUOTED_OR(DT_NODELABEL(test_str_unquoted_f1), nak, (0.0)),
 		       0.0, delta, "");
 	zassert_within(DT_STRING_UNQUOTED_OR(DT_NODELABEL(test_str_unquoted_t), nak, (0.0)),
 		       0.0, delta, "");
+	zassert_within(DT_STRING_UNQUOTED_OR(DT_NODELABEL(test_str_unquoted_esc_t), nak, (0.0)),
+		       0.0, delta, "");
+	zassert_str_equal(DT_STRING_UNQUOTED_OR(DT_NODELABEL(test_str_unquoted_esc_s), nak, "nak"),
+			  "nak");
 	/* Test DT_INST_STRING_UNQUOTED */
 #define STRING_UNQUOTED_VAR(node_id) _CONCAT(var_, node_id)
 #define STRING_UNQUOTED_TEST_INST_EXPANSION(inst) \
@@ -3087,6 +3525,8 @@ ZTEST(devicetree_api, test_string_unquoted)
 	zassert_within(STRING_UNQUOTED_VAR(DT_NODELABEL(test_str_unquoted_f1)),
 		       f1_expected, delta, "");
 	zassert_within(STRING_UNQUOTED_VAR(DT_NODELABEL(test_str_unquoted_t)), XA XPLUS XB,
+		       delta, "");
+	zassert_within(STRING_UNQUOTED_VAR(DT_NODELABEL(test_str_unquoted_esc_t)), XA XPLUS XB,
 		       delta, "");
 
 	/* Test DT_INST_STRING_UNQUOTED_OR */
@@ -3104,15 +3544,21 @@ ZTEST(devicetree_api, test_string_unquoted)
 		       f1_expected, delta, "");
 	zassert_within(STRING_UNQUOTED_OR_VAR(DT_NODELABEL(test_str_unquoted_t))[0],
 		       XA XPLUS XB, delta, "");
+	zassert_within(STRING_UNQUOTED_OR_VAR(DT_NODELABEL(test_str_unquoted_esc_t))[0],
+		       XA XPLUS XB, delta, "");
 	zassert_within(STRING_UNQUOTED_OR_VAR(DT_NODELABEL(test_str_unquoted_f0))[1],
 		       1.0e10, delta, "");
 	zassert_within(STRING_UNQUOTED_OR_VAR(DT_NODELABEL(test_str_unquoted_f1))[1],
 		       1.0e10, delta, "");
 	zassert_within(STRING_UNQUOTED_OR_VAR(DT_NODELABEL(test_str_unquoted_t))[1],
 		       1.0e10, delta, "");
+	zassert_within(STRING_UNQUOTED_OR_VAR(DT_NODELABEL(test_str_unquoted_esc_t))[1], 1.0e10,
+		       delta, "");
 #undef XA
 #undef XB
 #undef XPLUS
+#undef XSTR1
+#undef XSTR2
 }
 
 #undef DT_DRV_COMPAT
@@ -3125,6 +3571,8 @@ ZTEST(devicetree_api, test_string_idx_unquoted)
 #define XD 78.0
 #define XPLUS +
 #define XMINUS -
+#define XSTR1  "one"
+#define XSTR2  "two"
 	const double delta = 0.1e-4;
 
 	/* DT_STRING_UNQUOTED_BY_IDX */
@@ -3154,6 +3602,11 @@ ZTEST(devicetree_api, test_string_idx_unquoted)
 		       XA XMINUS XB,  delta, "");
 	zassert_within(DT_STRING_UNQUOTED_BY_IDX(DT_NODELABEL(test_stra_unquoted_t), val, 3),
 		       XC XMINUS XD, delta, "");
+
+	zassert_within(DT_STRING_UNQUOTED_BY_IDX(DT_NODELABEL(test_stra_unquoted_esc), val, 0),
+		       XA XPLUS XB, delta, "");
+	zassert_str_equal(DT_STRING_UNQUOTED_BY_IDX(DT_NODELABEL(test_stra_unquoted_esc), val, 1),
+			  "one plus two");
 
 #define STRING_UNQUOTED_BY_IDX_VAR(node_id) _CONCAT(var_, node_id)
 #define STRING_UNQUOTED_BY_IDX_TEST_INST_EXPANSION(inst)       \
@@ -3197,6 +3650,26 @@ ZTEST(devicetree_api, test_string_idx_unquoted)
 #undef XD
 #undef XPLUS
 #undef XMINUS
+#undef XSTR1
+#undef XSTR2
+}
+
+#undef DT_DRV_COMPAT
+ZTEST(devicetree_api, test_string_escape)
+{
+	zassert_str_equal(DT_PROP(DT_NODELABEL(test_str_escape_0), val), "\a\b\f\n\r\t\v");
+	zassert_str_equal(DT_PROP(DT_NODELABEL(test_str_escape_1), val), "\'single\' \"double\"");
+	zassert_str_equal(DT_PROP(DT_NODELABEL(test_str_escape_2), val), "first\nsecond");
+	zassert_str_equal(DT_PROP(DT_NODELABEL(test_str_escape_3), val), "\x01\x7F");
+}
+
+ZTEST(devicetree_api, test_string_array_escape)
+{
+	zassert_str_equal(DT_PROP_BY_IDX(DT_NODELABEL(test_stra_escape), val, 0), "\a\b\f\n\r\t\v");
+	zassert_str_equal(DT_PROP_BY_IDX(DT_NODELABEL(test_stra_escape), val, 1),
+			  "\'single\' \"double\"");
+	zassert_str_equal(DT_PROP_BY_IDX(DT_NODELABEL(test_stra_escape), val, 2), "first\nsecond");
+	zassert_str_equal(DT_PROP_BY_IDX(DT_NODELABEL(test_stra_escape), val, 3), "\x01\x7F");
 }
 
 #undef DT_DRV_COMPAT

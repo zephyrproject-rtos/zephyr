@@ -29,13 +29,13 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
-#if DT_NODE_HAS_STATUS(DT_ALIAS(pwm_0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(pwm_0))
 #define PWM_DEV_NODE DT_ALIAS(pwm_0)
-#elif DT_NODE_HAS_STATUS(DT_ALIAS(pwm_1), okay)
+#elif DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(pwm_1))
 #define PWM_DEV_NODE DT_ALIAS(pwm_1)
-#elif DT_NODE_HAS_STATUS(DT_ALIAS(pwm_2), okay)
+#elif DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(pwm_2))
 #define PWM_DEV_NODE DT_ALIAS(pwm_2)
-#elif DT_NODE_HAS_STATUS(DT_ALIAS(pwm_3), okay)
+#elif DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(pwm_3))
 #define PWM_DEV_NODE DT_ALIAS(pwm_3)
 
 #elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_pwm)
@@ -47,11 +47,17 @@
 #elif DT_HAS_COMPAT_STATUS_OKAY(xlnx_xps_timer_1_00_a_pwm)
 #define PWM_DEV_NODE DT_INST(0, xlnx_xps_timer_1_00_a_pwm)
 
-#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_kinetis_ftm_pwm)
-#define PWM_DEV_NODE DT_INST(0, nxp_kinetis_ftm_pwm)
+#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_ftm_pwm)
+#define PWM_DEV_NODE DT_INST(0, nxp_ftm_pwm)
 
 #elif DT_HAS_COMPAT_STATUS_OKAY(intel_blinky_pwm)
 #define PWM_DEV_NODE DT_INST(0, intel_blinky_pwm)
+
+#elif DT_HAS_COMPAT_STATUS_OKAY(renesas_ra_pwm)
+#define PWM_DEV_NODE DT_INST(0, renesas_ra_pwm)
+
+#elif DT_HAS_COMPAT_STATUS_OKAY(renesas_rz_gpt_pwm)
+#define PWM_DEV_NODE DT_INST(0, renesas_rz_gpt_pwm)
 
 #else
 #error "Define a PWM device"
@@ -76,10 +82,16 @@
 #define DEFAULT_PULSE_NSEC 1000000
 #endif
 
+#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_fake_pwm)
+#include <zephyr/fff.h>
+DEFINE_FFF_GLOBALS;
+#endif
+
 #if defined CONFIG_BOARD_SAM_E70_XPLAINED
 #define DEFAULT_PWM_PORT 2 /* PWM on EXT2 connector, pin 8 */
 #elif defined CONFIG_PWM_NRFX
 #define DEFAULT_PWM_PORT 0
+#define INVALID_PWM_PORT 9
 #elif defined CONFIG_BOARD_ADAFRUIT_ITSYBITSY_M4_EXPRESS
 #define DEFAULT_PWM_PORT 2 /* TCC1/WO[2] on PA18 (D7) */
 #elif defined CONFIG_BOARD_MIMXRT685_EVK
@@ -143,17 +155,17 @@ ZTEST_USER(pwm_basic, test_pwm_nsec)
 {
 	/* Period : Pulse (2000000 : 1000000), unit (nsec). Voltage : 1.65V */
 	zassert_true(test_task(DEFAULT_PWM_PORT, DEFAULT_PERIOD_NSEC,
-				DEFAULT_PULSE_NSEC, UNIT_NSECS) == TC_PASS, NULL);
+				DEFAULT_PULSE_NSEC, UNIT_NSECS) == TC_PASS);
 	k_sleep(K_MSEC(1000));
 
 	/* Period : Pulse (2000000 : 2000000), unit (nsec). Voltage : 3.3V */
 	zassert_true(test_task(DEFAULT_PWM_PORT, DEFAULT_PERIOD_NSEC,
-				DEFAULT_PERIOD_NSEC, UNIT_NSECS) == TC_PASS, NULL);
+				DEFAULT_PERIOD_NSEC, UNIT_NSECS) == TC_PASS);
 	k_sleep(K_MSEC(1000));
 
 	/* Period : Pulse (2000000 : 0), unit (nsec). Voltage : 0V */
 	zassert_true(test_task(DEFAULT_PWM_PORT, DEFAULT_PERIOD_NSEC,
-				0, UNIT_NSECS) == TC_PASS, NULL);
+				0, UNIT_NSECS) == TC_PASS);
 	k_sleep(K_MSEC(1000));
 }
 
@@ -161,16 +173,33 @@ ZTEST_USER(pwm_basic, test_pwm_cycle)
 {
 	/* Period : Pulse (64000 : 32000), unit (cycle). Voltage : 1.65V */
 	zassert_true(test_task(DEFAULT_PWM_PORT, DEFAULT_PERIOD_CYCLE,
-				DEFAULT_PULSE_CYCLE, UNIT_CYCLES) == TC_PASS, NULL);
+				DEFAULT_PULSE_CYCLE, UNIT_CYCLES) == TC_PASS);
 	k_sleep(K_MSEC(1000));
 
 	/* Period : Pulse (64000 : 64000), unit (cycle). Voltage : 3.3V */
 	zassert_true(test_task(DEFAULT_PWM_PORT, DEFAULT_PERIOD_CYCLE,
-				DEFAULT_PERIOD_CYCLE, UNIT_CYCLES) == TC_PASS, NULL);
+				DEFAULT_PERIOD_CYCLE, UNIT_CYCLES) == TC_PASS);
 	k_sleep(K_MSEC(1000));
 
 	/* Period : Pulse (64000 : 0), unit (cycle). Voltage : 0V */
 	zassert_true(test_task(DEFAULT_PWM_PORT, DEFAULT_PERIOD_CYCLE,
-				0, UNIT_CYCLES) == TC_PASS, NULL);
+				0, UNIT_CYCLES) == TC_PASS);
 	k_sleep(K_MSEC(1000));
 }
+
+#if defined INVALID_PWM_PORT
+ZTEST_USER(pwm_basic, test_pwm_invalid_port)
+{
+	const struct device *pwm_dev = get_pwm_device();
+
+	TC_PRINT("[PWM]: %" PRIu8 ", [period]: %" PRIu32 ", [pulse]: %" PRIu32 "\n",
+		INVALID_PWM_PORT, DEFAULT_PERIOD_CYCLE, DEFAULT_PULSE_CYCLE);
+
+	zassert_true(device_is_ready(pwm_dev), "PWM device is not ready");
+
+	zassert_equal(pwm_set_cycles(pwm_dev, INVALID_PWM_PORT, DEFAULT_PERIOD_CYCLE,
+				     DEFAULT_PULSE_CYCLE, 0),
+		      -EINVAL, "Invalid PWM port\n");
+
+}
+#endif

@@ -28,15 +28,15 @@ ZTEST(stm32_syclck_config, test_sysclk_src)
 
 #if STM32_SYSCLK_SRC_PLL
 	zassert_equal(RCC_SYSCLKSOURCE_STATUS_PLLCLK, sys_clk_src,
-			"Expected sysclk src: PLL1 (0x%x). Actual: 0x%x",
+			"Expected sysclk src: PLL1 (0x%lx). Actual: 0x%x",
 			RCC_SYSCLKSOURCE_STATUS_PLLCLK, sys_clk_src);
 #elif STM32_SYSCLK_SRC_HSE
 	zassert_equal(RCC_SYSCLKSOURCE_STATUS_HSE, sys_clk_src,
-			"Expected sysclk src: HSE (0x%x). Actual: 0x%x",
+			"Expected sysclk src: HSE (0x%lx). Actual: 0x%x",
 			RCC_SYSCLKSOURCE_STATUS_HSE, sys_clk_src);
 #elif STM32_SYSCLK_SRC_HSI
 	zassert_equal(RCC_SYSCLKSOURCE_STATUS_HSI, sys_clk_src,
-			"Expected sysclk src: HSI (0x%x). Actual: 0x%x",
+			"Expected sysclk src: HSI (0x%lx). Actual: 0x%x",
 			RCC_SYSCLKSOURCE_STATUS_HSI, sys_clk_src);
 #elif STM32_SYSCLK_SRC_MSIS
 	zassert_equal(RCC_SYSCLKSOURCE_STATUS_MSI, sys_clk_src,

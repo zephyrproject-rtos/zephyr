@@ -1,0 +1,21 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&zephyr_lcdif {
+	compatible = "nxp,dcnano-lcdif";
+	version = "DC8000";
+	display-timings {
+		clock-frequency = <29333333>;
+	};
+};
+
+&zephyr_mipi_dsi {
+	/* Use lower DPHY clock since RT700 uses AUDIO pll pfd2 as source,
+	 * and its max allowed clock frequency is
+	 * 532.48 x 18 / 16 = 599.04MHz. In this case the 60fps cannot be used, use 30fps instead.
+	 */
+	phy-clock = <396000000>;
+};

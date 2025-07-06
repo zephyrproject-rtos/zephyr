@@ -30,23 +30,23 @@ static void websocket_context_cb(struct websocket_context *context,
 	char addr_local[ADDR_LEN + 7];
 	char addr_remote[ADDR_LEN + 7] = "";
 
-	net_ctx = z_get_fd_obj(context->real_sock, NULL, 0);
+	net_ctx = zvfs_get_fd_obj(context->real_sock, NULL, 0);
 	if (net_ctx == NULL) {
 		PR_ERROR("Invalid fd %d", context->real_sock);
 		return;
 	}
 
 	if ((*count) == 0) {
-		PR("     websocket/net_ctx\tIface         "
-		   "Local              \tRemote\n");
+		PR("     websocket/net_ctx  \tIface\t"
+		   "%-16s\t%-16s\n", "Local", "Remote");
 	}
 
 	get_addresses(net_ctx, addr_local, sizeof(addr_local),
 		      addr_remote, sizeof(addr_remote));
 
-	PR("[%2d] %p/%p\t%p   %16s\t%16s\n",
+	PR("[%2d] %p/%p\t%d\t%-16s\t%-16s\n",
 	   (*count) + 1, context, net_ctx,
-	   net_context_get_iface(net_ctx),
+	   net_if_get_by_iface(net_context_get_iface(net_ctx)),
 	   addr_local, addr_remote);
 
 	(*count)++;

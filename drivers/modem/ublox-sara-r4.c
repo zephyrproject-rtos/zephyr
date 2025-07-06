@@ -415,7 +415,7 @@ static ssize_t send_socket_data(void *obj,
 		if (len == 0) {
 			break;
 		}
-		mctx.iface.write(&mctx.iface, msg->msg_iov[i].iov_base, len);
+		modem_cmd_send_data_nolock(&mctx.iface, msg->msg_iov[i].iov_base, len);
 		buf_len -= len;
 	}
 
@@ -423,13 +423,8 @@ static ssize_t send_socket_data(void *obj,
 		ret = 0;
 		goto exit;
 	}
-	ret = k_sem_take(&mdata.sem_response, timeout);
 
-	if (ret == 0) {
-		ret = modem_cmd_handler_get_error(&mdata.cmd_handler_data);
-	} else if (ret == -EAGAIN) {
-		ret = -ETIMEDOUT;
-	}
+	ret = modem_cmd_handler_await(&mdata.cmd_handler_data, &mdata.sem_response, timeout);
 
 exit:
 	/* unset handler commands and ignore any errors */
@@ -486,18 +481,17 @@ static ssize_t send_cert(struct modem_socket *sock,
 		goto exit;
 	}
 
+	/* Reset response semaphore before sending data
+	 * So that we are sure that we won't use a previously pending one
+	 * And we won't miss the one that is going to be freed
+	 */
+	k_sem_reset(&mdata.sem_response);
+
 	/* slight pause per spec so that @ prompt is received */
 	k_sleep(MDM_PROMPT_CMD_DELAY);
-	mctx.iface.write(&mctx.iface, cert_data, cert_len);
+	modem_cmd_send_data_nolock(&mctx.iface, cert_data, cert_len);
 
-	k_sem_reset(&mdata.sem_response);
-	ret = k_sem_take(&mdata.sem_response, K_MSEC(1000));
-
-	if (ret == 0) {
-		ret = modem_cmd_handler_get_error(&mdata.cmd_handler_data);
-	} else if (ret == -EAGAIN) {
-		ret = -ETIMEDOUT;
-	}
+	ret = modem_cmd_handler_await(&mdata.cmd_handler_data, &mdata.sem_response, K_MSEC(1000));
 
 exit:
 	/* unset handler commands and ignore any errors */

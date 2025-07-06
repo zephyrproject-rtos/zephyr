@@ -46,6 +46,8 @@ enum display_pixel_format {
 	PIXEL_FORMAT_ARGB_8888		= BIT(3), /**< 32-bit ARGB */
 	PIXEL_FORMAT_RGB_565		= BIT(4), /**< 16-bit RGB */
 	PIXEL_FORMAT_BGR_565		= BIT(5), /**< 16-bit BGR */
+	PIXEL_FORMAT_L_8		= BIT(6), /**< 8-bit Grayscale/Luminance, equivalent to */
+						  /**< GRAY, GREY, GRAY8, Y8, R8, etc...        */
 };
 
 /**
@@ -61,7 +63,8 @@ enum display_pixel_format {
 	(((fmt & PIXEL_FORMAT_MONO10) >> 2) * 1U) +				\
 	(((fmt & PIXEL_FORMAT_ARGB_8888) >> 3) * 32U) +				\
 	(((fmt & PIXEL_FORMAT_RGB_565) >> 4) * 16U) +				\
-	(((fmt & PIXEL_FORMAT_BGR_565) >> 5) * 16U))
+	(((fmt & PIXEL_FORMAT_BGR_565) >> 5) * 16U) +				\
+	(((fmt & PIXEL_FORMAT_L_8) >> 6) * 8U))
 
 /**
  * @brief Display screen information
@@ -127,6 +130,8 @@ struct display_buffer_descriptor {
 	uint16_t height;
 	/** Number of pixels between consecutive rows in the data buffer */
 	uint16_t pitch;
+	/** Indicates that this is not the last write buffer of the frame */
+	bool frame_incomplete;
 };
 
 /**
@@ -162,6 +167,13 @@ typedef int (*display_read_api)(const struct device *dev, const uint16_t x,
 				const uint16_t y,
 				const struct display_buffer_descriptor *desc,
 				void *buf);
+
+/**
+ * @typedef display_clear
+ * @brief Callback API for clearing the screen of the display
+ * See display_clear() for argument description
+ */
+typedef int (*display_clear_api)(const struct device *dev);
 
 /**
  * @typedef display_get_framebuffer_api
@@ -217,11 +229,12 @@ typedef int (*display_set_orientation_api)(const struct device *dev,
  * @brief Display driver API
  * API which a display driver should expose
  */
-struct display_driver_api {
+__subsystem struct display_driver_api {
 	display_blanking_on_api blanking_on;
 	display_blanking_off_api blanking_off;
 	display_write_api write;
 	display_read_api read;
+	display_clear_api clear;
 	display_get_framebuffer_api get_framebuffer;
 	display_set_brightness_api set_brightness;
 	display_set_contrast_api set_contrast;
@@ -277,6 +290,26 @@ static inline int display_read(const struct device *dev, const uint16_t x,
 	}
 
 	return api->read(dev, x, y, desc, buf);
+}
+
+/**
+ * @brief Clear the screen of the display device
+ *
+ * @param dev Pointer to device structure
+ *
+ * @retval 0 on success else negative errno code.
+ * @retval -ENOSYS if not implemented.
+ */
+static inline int display_clear(const struct device *dev)
+{
+	struct display_driver_api *api =
+		(struct display_driver_api *)dev->api;
+
+	if (api->clear == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->clear(dev);
 }
 
 /**

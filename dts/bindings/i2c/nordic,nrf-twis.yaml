@@ -1,39 +1,46 @@
-# Copyright (c) 2019 Nordic Semiconductor ASA
+# Copyright (c) 2024 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  Nordic nRF family TWIS (TWI slave with EasyDMA).
+  Nordic nRF family TWIS
 
-  Note: for Zephyr users, the I2C slave API is not available for
-  these devices. See this issue for more details and a HAL-based
-  workaround:
+  The TWIS peripheral is an I2C controller which supports the I2C
+  peripheral role, and EasyDMA. TWIS shares resources with TWIM and TWI,
+  only one of them can be enabled for each peripheral instance.
+  Overwrite the compatible of the i2c node to select between TWIM/TWI
+  and TWIS, along with the pinctrl instances to select between TWIM/TWI
+  and TWIS pin functions.
 
-      https://github.com/zephyrproject-rtos/zephyr/issues/21445
+  Example:
 
-  This binding can be used for nodes which can represent TWIS
-  peripherals. A single SoC peripheral ID is often associated with
-  multiple I2C peripherals, like a TWIM and a TWIS. You can choose
-  TWIS by setting the node's "compatible" to "nordic,nrf-twis"
-  and its "status" to "okay", e.g. using an overlay file like this:
+    &pinctrl {
+            i2c2_default: i2c2_default {
+                    group1 {
+                            psels = <NRF_PSEL(TWIS_SDA, 0, 26)>,
+                                    <NRF_PSEL(TWIS_SCL, 0, 25)>;
+                            bias-pull-up;
+                    };
+            };
 
-      /* This is for TWIS0 -- change to "i2c1" for TWIS1, etc. */
-      &i2c0 {
-              compatible = "nordic,nrf-twis";
-              status = "okay";
-              /* other property settings can go here */
-      };
+            i2c2_sleep: i2c2_sleep {
+                    group1 {
+                            psels = <NRF_PSEL(TWIS_SDA, 0, 26)>,
+                                    <NRF_PSEL(TWIS_SCL, 0, 25)>;
+                            low-power-enable;
+                    };
+            };
+    };
 
-  This works on any supported SoC, for all TWIS instances.
+    &i2c2 {
+            compatible = "nordic,nrf-twis";
+            pinctrl-0 = <&i2c2_default>;
+            pinctrl-1 = <&i2c2_sleep>;
+            pinctrl-names = "default", "sleep";
+            status = "okay";
+    };
 
 compatible: "nordic,nrf-twis"
 
-include: ["nordic,nrf-twi-common.yaml", "memory-region.yaml"]
-
-properties:
-  address-0:
-    type: int
-    description: TWI slave address 0
-
-  address-1:
-    type: int
-    description: TWI slave address 1
+include:
+  - "nordic,nrf-twi-common.yaml"
+  - "memory-region.yaml"

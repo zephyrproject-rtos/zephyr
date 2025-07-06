@@ -1,0 +1,43 @@
+/*
+ * Copyright (C) 2024 EPAM Systems.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &ram;
+/delete-node/ &hscif0;
+
+/ {
+	/*
+	 * This node may differs on different setups, please check
+	 * following line in Xen boot log to set it right:
+	 * (XEN) Grant table range: 0x00000078080000-0x000000780c0000
+	 * Also, add extended region 1:
+	 * (XEN) Extended region 1: 0x40000000->0x47e00000
+	 *
+	 * Xen passes actual values for setup in domain device tree, but Zephyr
+	 * is not capable to parse and handle it in runtime.
+	 */
+	hypervisor: hypervisor@78080000 {
+		compatible = "xen,xen";
+		reg = <0x0 0x78080000 0x0 0x40000 0x0 0x40000000 0x0 0x7e00000>;
+		interrupts = <GIC_PPI 0x0 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		status = "okay";
+	};
+
+	/*
+	 * This node may differs on different setups, because Xen picks
+	 * region for Domain-0 for every specific configuration. You can
+	 * start Xen for your platform and check following log:
+	 * (XEN) Allocating 1:1 mappings for dom0:
+	 * (XEN) BANK[0] 0x00000080000000-0x00000090000000 (256MB)
+	 *
+	 * Xen passes actual values for setup in domain device tree, but Zephyr
+	 * is not capable to parse and handle it in runtime.
+	 */
+	ram: memory@80000000 {
+		device_type = "mmio-sram";
+		reg = <0x00 0x80000000 0x00 DT_SIZE_M(256)>;
+	};
+};

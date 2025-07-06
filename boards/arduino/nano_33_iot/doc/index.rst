@@ -1,17 +1,10 @@
-.. _arduino_nano_33_iot:
-
-Arduino Nano 33 IOT
-###################
+.. zephyr:board:: arduino_nano_33_iot
 
 Overview
 ********
 
 The Arduino Nano 33 IOT is a small form factor development board with USB,
 Wifi, Bluetooth, a 6 axis IMU, and secure element.
-
-.. image:: img/nano_33_iot.jpg
-     :align: center
-     :alt: Arduino Nano 33 IOT
 
 Hardware
 ********
@@ -28,43 +21,7 @@ Hardware
 Supported Features
 ==================
 
-The arduino_nano_33_iot board configuration supports the following hardware
-features:
-
-+-----------+------------+------------------------------------------+
-| Interface | Controller | Driver/Component                         |
-+===========+============+==========================================+
-| ADC       | on-chip    | Analog to digital converter              |
-+-----------+------------+------------------------------------------+
-| COUNTER   | on-chip    | Pulse counter                            |
-+-----------+------------+------------------------------------------+
-| DMA       | on-chip    | Direct memory access unit                |
-+-----------+------------+------------------------------------------+
-| Flash     | on-chip    | Can be used with LittleFS to store files |
-+-----------+------------+------------------------------------------+
-| GPIO      | on-chip    | I/O ports                                |
-+-----------+------------+------------------------------------------+
-| HWINFO    | on-chip    | Hardware info and serial number          |
-+-----------+------------+------------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller       |
-+-----------+------------+------------------------------------------+
-| PWM       | on-chip    | Pulse Width Modulation                   |
-+-----------+------------+------------------------------------------+
-| SPI       | on-chip    | Serial Peripheral Interface ports        |
-+-----------+------------+------------------------------------------+
-| SYSTICK   | on-chip    | systick                                  |
-+-----------+------------+------------------------------------------+
-| USART     | on-chip    | Serial ports                             |
-+-----------+------------+------------------------------------------+
-| USB       | on-chip    | USB device                               |
-+-----------+------------+------------------------------------------+
-| WDT       | on-chip    | Watchdog                                 |
-+-----------+------------+------------------------------------------+
-
-Other hardware features are not currently supported by Zephyr.
-
-The default configuration can be found in the Kconfig
-:zephyr_file:`boards/arduino/nano_33_iot/arduino_nano_33_iot_defconfig`.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -102,12 +59,14 @@ USB Device Port
 ===============
 
 The SAMD21 MCU has a USB device port that can be used to communicate
-with a host PC.  See the :ref:`usb-samples` sample applications for
+with a host PC.  See the :zephyr:code-sample-category:`usb` sample applications for
 more, such as the :zephyr:code-sample:`usb-cdc-acm` sample which sets up a virtual
 serial port that echos characters back to the host PC.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 The Nano 33 IOT ships the BOSSA compatible UF2 bootloader.  The
 bootloader can be entered by quickly tapping the reset button twice.
@@ -118,7 +77,7 @@ will be entered automatically when you run :code:`west flash`.
 Flashing
 ========
 
-#. Build the Zephyr kernel and the :ref:`hello_world` sample application:
+#. Build the Zephyr kernel and the :zephyr:code-sample:`hello_world` sample application:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world

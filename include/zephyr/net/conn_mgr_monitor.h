@@ -4,6 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief API for monitoring network connections and interfaces.
+ */
+
 #ifndef ZEPHYR_INCLUDE_CONN_MGR_H_
 #define ZEPHYR_INCLUDE_CONN_MGR_H_
 
@@ -16,6 +21,8 @@ extern "C" {
 /**
  * @brief Connection Manager API
  * @defgroup conn_mgr Connection Manager API
+ * @since 2.0
+ * @version 0.1.0
  * @ingroup networking
  * @{
  */

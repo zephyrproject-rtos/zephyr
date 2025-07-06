@@ -9,6 +9,8 @@ zephyr_sources(
     ${ZEPHYR_BASE}/soc/common/riscv-privileged/vector.S
 )
 
+zephyr_sources_ifdef(CONFIG_REBOOT reboot.c)
+
 zephyr_include_directories(.)
 
 set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/riscv/common/linker.ld CACHE INTERNAL "")

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  TI K3 pinctrl node.
+  TI K3 Pin Controller
 
   Pins can be configured using the following macro "K3_PINMUX(offset, value, mux_mode)".
   offset - the pin attribute register offset from the base address.

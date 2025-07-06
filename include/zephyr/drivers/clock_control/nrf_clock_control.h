@@ -8,13 +8,16 @@
 #define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_NRF_CLOCK_CONTROL_H_
 
 #include <zephyr/device.h>
-#include <hal/nrf_clock.h>
 #include <zephyr/sys/onoff.h>
 #include <zephyr/drivers/clock_control.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
+
+#include <hal/nrf_clock.h>
 
 /** @brief Clocks handled by the CLOCK peripheral.
  *
@@ -23,6 +26,9 @@ extern "C" {
 enum clock_control_nrf_type {
 	CLOCK_CONTROL_NRF_TYPE_HFCLK,
 	CLOCK_CONTROL_NRF_TYPE_LFCLK,
+#if NRF_CLOCK_HAS_HFCLK24M
+	CLOCK_CONTROL_NRF_TYPE_HFCLK24M,
+#endif
 #if NRF_CLOCK_HAS_HFCLK192M
 	CLOCK_CONTROL_NRF_TYPE_HFCLK192M,
 #endif
@@ -39,6 +45,8 @@ enum clock_control_nrf_type {
 	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_HFCLK)
 #define CLOCK_CONTROL_NRF_SUBSYS_LF \
 	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_LFCLK)
+#define CLOCK_CONTROL_NRF_SUBSYS_HF24M \
+	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_HFCLK24M)
 #define CLOCK_CONTROL_NRF_SUBSYS_HF192M \
 	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_HFCLK192M)
 #define CLOCK_CONTROL_NRF_SUBSYS_HFAUDIO \
@@ -99,7 +107,7 @@ void z_nrf_clock_calibration_force_start(void);
 
 /** @brief Return number of calibrations performed.
  *
- * Valid when @ref CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_DEBUG is set.
+ * Valid when @kconfig{CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_DEBUG} is set.
  *
  * @return Number of calibrations or -1 if feature is disabled.
  */
@@ -107,11 +115,18 @@ int z_nrf_clock_calibration_count(void);
 
 /** @brief Return number of attempts when calibration was skipped.
  *
- * Valid when @ref CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_DEBUG is set.
+ * Valid when @kconfig{CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_DEBUG} is set.
  *
  * @return Number of calibrations or -1 if feature is disabled.
  */
 int z_nrf_clock_calibration_skips_count(void);
+
+
+/** @brief Returns information if LF clock calibration is in progress.
+ *
+ * @return True if calibration is in progress, false otherwise.
+ */
+bool z_nrf_clock_calibration_is_in_progress(void);
 
 /** @brief Get onoff service for given clock subsystem.
  *
@@ -150,6 +165,243 @@ void z_nrf_clock_bt_ctlr_hf_request(void);
  * See z_nrf_clock_bt_ctlr_hf_request for details.
  */
 void z_nrf_clock_bt_ctlr_hf_release(void);
+
+/**
+ * @brief Get clock startup time
+ *
+ * @retval HFCLK startup time in microseconds
+ */
+uint32_t z_nrf_clock_bt_ctlr_hf_get_startup_time_us(void);
+
+#endif /* defined(CONFIG_CLOCK_CONTROL_NRF) */
+
+/* Specifies to use the maximum available frequency for a given clock. */
+#define NRF_CLOCK_CONTROL_FREQUENCY_MAX UINT32_MAX
+
+/* Specifies to use the maximum available accuracy for a given clock. */
+#define NRF_CLOCK_CONTROL_ACCURACY_MAX      1
+/* Specifies the required clock accuracy in parts-per-million. */
+#define NRF_CLOCK_CONTROL_ACCURACY_PPM(ppm) (ppm)
+
+/* Specifies that high precision of the clock is required. */
+#define NRF_CLOCK_CONTROL_PRECISION_HIGH    1
+/* Specifies that default precision of the clock is sufficient. */
+#define NRF_CLOCK_CONTROL_PRECISION_DEFAULT 0
+
+struct nrf_clock_spec {
+	uint32_t frequency;
+	uint16_t accuracy : 15;
+	uint16_t precision : 1;
+};
+
+__subsystem struct nrf_clock_control_driver_api {
+	struct clock_control_driver_api std_api;
+
+	int (*request)(const struct device *dev,
+		       const struct nrf_clock_spec *spec,
+		       struct onoff_client *cli);
+	int (*release)(const struct device *dev,
+		       const struct nrf_clock_spec *spec);
+	int (*cancel_or_release)(const struct device *dev,
+				 const struct nrf_clock_spec *spec,
+				 struct onoff_client *cli);
+	int (*resolve)(const struct device *dev,
+		       const struct nrf_clock_spec *req_spec,
+		       struct nrf_clock_spec *res_spec);
+	int (*get_startup_time)(const struct device *dev,
+				const struct nrf_clock_spec *spec,
+				uint32_t *startup_time_us);
+};
+
+/**
+ * @brief Request a reservation to use a given clock with specified attributes.
+ *
+ * The return value indicates the success or failure of an attempt to initiate
+ * an operation to request the clock be made available. If initiation of the
+ * operation succeeds, the result of the request operation is provided through
+ * the configured client notification method, possibly before this call returns.
+ *
+ * Note that the call to this function may succeed in a case where the actual
+ * request fails. Always check the operation completion result.
+ *
+ * @param dev pointer to the clock device structure.
+ * @param spec specification of minimal acceptable attributes, like frequency,
+ *             accuracy, and precision, required for the clock.
+ *             Value of 0 has the meaning of "default" and can be passed
+ *             instead of a given attribute if there is no strict requirement
+ *             in this regard. If there is no specific requirement for any of
+ *             the attributes, this parameter can be NULL.
+ * @param cli pointer to client state providing instructions on synchronous
+ *            expectations and how to notify the client when the request
+ *            completes. Behavior is undefined if client passes a pointer
+ *            object associated with an incomplete service operation.
+ *
+ * @retval non-negative the observed state of the on-off service associated
+ *                      with the clock machine at the time the request was
+ *                      processed (see onoff_request()), if successful.
+ * @retval -EIO if service has recorded an error.
+ * @retval -EINVAL if the function parameters are invalid or the clock
+ *                 attributes cannot be provided (e.g. the requested accuracy
+ *                 is unavailable).
+ * @retval -EAGAIN if the reference count would overflow.
+ */
+static inline
+int nrf_clock_control_request(const struct device *dev,
+			      const struct nrf_clock_spec *spec,
+			      struct onoff_client *cli)
+{
+	const struct nrf_clock_control_driver_api *api =
+		(const struct nrf_clock_control_driver_api *)dev->api;
+
+	return api->request(dev, spec, cli);
+}
+
+/**
+ * @brief Synchronously request a reservation to use a given clock with specified attributes.
+ *
+ * Function can only be called from thread context as it blocks until request is completed.
+ * @see nrf_clock_control_request().
+ *
+ * @param dev pointer to the clock device structure.
+ * @param spec See nrf_clock_control_request().
+ * @param timeout Request timeout.
+ *
+ * @retval 0 if request is fulfilled.
+ * @retval -EWOULDBLOCK if request is called from the interrupt context.
+ * @retval negative See error codes returned by nrf_clock_control_request().
+ */
+int nrf_clock_control_request_sync(const struct device *dev,
+				   const struct nrf_clock_spec *spec,
+				   k_timeout_t timeout);
+
+/**
+ * @brief Release a reserved use of a clock.
+ *
+ * @param dev pointer to the clock device structure.
+ * @param spec the same specification of the clock attributes that was used
+ *             in the reservation request (so that the clock control module
+ *             can keep track of what attributes are still requested).
+ *
+ * @retval non-negative the observed state of the on-off service associated
+ *                      with the clock machine at the time the request was
+ *                      processed (see onoff_release()), if successful.
+ * @retval -EIO if service has recorded an error.
+ * @retval -ENOTSUP if the service is not in a state that permits release.
+ */
+static inline
+int nrf_clock_control_release(const struct device *dev,
+			      const struct nrf_clock_spec *spec)
+{
+	const struct nrf_clock_control_driver_api *api =
+		(const struct nrf_clock_control_driver_api *)dev->api;
+
+	return api->release(dev, spec);
+}
+
+/**
+ * @brief Safely cancel a reservation request.
+ *
+ * It may be that a client has issued a reservation request but needs to
+ * shut down before the request has completed. This function attempts to
+ * cancel the request and issues a release if cancellation fails because
+ * the request was completed. This synchronously ensures that ownership
+ * data reverts to the client so is available for a future request.
+ *
+ * @param dev pointer to the clock device structure.
+ * @param spec the same specification of the clock attributes that was used
+ *             in the reservation request.
+ * @param cli a pointer to the same client state that was provided
+ *            when the operation to be cancelled was issued.
+ *
+ * @retval ONOFF_STATE_TO_ON if the cancellation occurred before the transition
+ *                           completed.
+ * @retval ONOFF_STATE_ON if the cancellation occurred after the transition
+ *                        completed.
+ * @retval -EINVAL if the parameters are invalid.
+ * @retval negative other errors produced by onoff_release().
+ */
+static inline
+int nrf_clock_control_cancel_or_release(const struct device *dev,
+					const struct nrf_clock_spec *spec,
+					struct onoff_client *cli)
+{
+	const struct nrf_clock_control_driver_api *api =
+		(const struct nrf_clock_control_driver_api *)dev->api;
+
+	return api->cancel_or_release(dev, spec, cli);
+}
+
+/**
+ * @brief Resolve a requested clock spec to resulting spec.
+ *
+ * @param dev Device structure.
+ * @param req_spec The requested clock specification.
+ * @param res_spec Destination for the resulting clock specification.
+ *
+ * @retval Successful if successful.
+ * @retval -errno code if failure
+ */
+static inline int nrf_clock_control_resolve(const struct device *dev,
+					    const struct nrf_clock_spec *req_spec,
+					    struct nrf_clock_spec *res_spec)
+{
+	const struct nrf_clock_control_driver_api *api =
+		(const struct nrf_clock_control_driver_api *)dev->api;
+
+	if (api->resolve == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->resolve(dev, req_spec, res_spec);
+}
+
+/**
+ * @brief Get the startup time of a clock.
+ *
+ * @param dev Device structure.
+ * @param spec Clock specification to get startup time for.
+ * @param startup_time_us Destination for startup time in microseconds.
+ *
+ * @retval Successful if successful.
+ * @retval -errno code if failure.
+ */
+static inline int nrf_clock_control_get_startup_time(const struct device *dev,
+						     const struct nrf_clock_spec *spec,
+						     uint32_t *startup_time_us)
+{
+	const struct nrf_clock_control_driver_api *api =
+		(const struct nrf_clock_control_driver_api *)dev->api;
+
+	if (api->get_startup_time == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->get_startup_time(dev, spec, startup_time_us);
+}
+
+/** @brief Request the HFXO from Zero Latency Interrupt context.
+ *
+ * Function is optimized for use in Zero Latency Interrupt context.
+ * It does not give notification when the HFXO is ready, so each
+ * user must put the request early enough to make sure the HFXO
+ * ramp-up has finished on time.
+ *
+ * This function uses reference counting so the caller must ensure
+ * that every nrf_clock_control_hfxo_request() call has a matching
+ * nrf_clock_control_hfxo_release() call.
+ */
+void nrf_clock_control_hfxo_request(void);
+
+/** @brief Release the HFXO from Zero Latency Interrupt context.
+ *
+ * Function is optimized for use in Zero Latency Interrupt context.
+ *
+ * Calls to this function must be coupled with prior calls
+ * to nrf_clock_control_hfxo_request(), because it uses basic
+ * reference counting to make sure the HFXO is released when
+ * there are no more pending requests.
+ */
+void nrf_clock_control_hfxo_release(void);
 
 #ifdef __cplusplus
 }

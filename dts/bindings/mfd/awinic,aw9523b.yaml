@@ -1,0 +1,14 @@
+# Copyright (c) 2024 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+description: Awinic AW9523B 16 multi-function LED driver and GPIO controller
+
+compatible: "awinic,aw9523b"
+
+include: i2c-device.yaml
+
+bus: aw9523b
+
+properties:
+  reg:
+    required: true

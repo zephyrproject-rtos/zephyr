@@ -24,6 +24,7 @@
 
 	leds: leds {
 		compatible = "gpio-leds";
+
 		green_led_2: led_2 {
 			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
@@ -32,6 +33,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
@@ -63,6 +65,7 @@
 	div-m = <1>;
 	mul-n = <20>;
 	div-r = <4>;
+	div-q = <8>;
 	clocks = <&clk_hsi>;
 	status = "okay";
 };
@@ -167,7 +170,7 @@ stm32_lp_tick_source: &lptim1 {
 &adc1 {
 	pinctrl-0 = <&adc1_in1_pc0>;
 	pinctrl-names = "default";
-	st,adc-clock-source = <SYNC>;
+	st,adc-clock-source = "SYNC";
 	st,adc-prescaler = <4>;
 	status = "okay";
 };
@@ -192,4 +195,11 @@ stm32_lp_tick_source: &lptim1 {
 			reg = <0x000f8000 DT_SIZE_K(32)>;
 		};
 	};
+};
+
+&rng {
+	/* Change clock source to avoid using MSI */
+	clocks = <&rcc STM32_CLOCK(AHB2, 18U)>,
+		 <&rcc STM32_SRC_PLL_Q CLK48_SEL(2)>;
+	status = "okay";
 };

@@ -128,8 +128,8 @@ static int kb1200_uart_fifo_fill(const struct device *dev, const uint8_t *tx_dat
 
 	while ((size - tx_bytes) > 0) {
 		/* Check Tx FIFO not Full*/
-		while (config->ser->SERSTS & SERSTS_TX_FULL)
-			;
+		while (config->ser->SERSTS & SERSTS_TX_FULL) {
+		}
 		/* Put a character into	Tx FIFO	*/
 		config->ser->SERTBUF = tx_data[tx_bytes];
 		tx_bytes++;
@@ -276,14 +276,13 @@ static void kb1200_uart_poll_out(const struct device *dev, unsigned char c)
 
 	/* Wait	Tx FIFO	not Full*/
 	while (config->ser->SERSTS & SER_TxFull) {
-		;
 	}
 	/* Put a character into	Tx FIFO */
 	config->ser->SERTBUF = c;
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 }
 
-static const struct uart_driver_api kb1200_uart_api = {
+static DEVICE_API(uart, kb1200_uart_api) = {
 	.poll_in = kb1200_uart_poll_in,
 	.poll_out = kb1200_uart_poll_out,
 	.err_check = kb1200_uart_err_check,
@@ -373,7 +372,7 @@ static void kb1200_uart_irq_init(void)
 		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (.irq_cfg_func = kb1200_uart_irq_init,))  \
 		.ser = (struct serial_regs *)DT_INST_REG_ADDR(n),                                  \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n)};                                        \
-	DEVICE_DT_INST_DEFINE(n, &kb1200_uart_init, NULL, &kb1200_uart_data_##n,                   \
+	DEVICE_DT_INST_DEFINE(n, kb1200_uart_init, NULL, &kb1200_uart_data_##n,                    \
 			      &kb1200_uart_config_##n, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,  \
 			      &kb1200_uart_api);
 

@@ -5,15 +5,14 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 ram: 368
 flash: 1024
 supported:
-  - arduino_gpio
   - gpio
   - netif:eth
   - memc
   - adc
   - counter
   - can
+  - usb_device
 vendor: st

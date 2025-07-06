@@ -9,9 +9,9 @@
 #include <zephyr/fs/fs.h>
 #include "lvgl_fs.h"
 #include "lv_conf.h"
-#include LV_MEM_CUSTOM_INCLUDE
+#include LV_STDLIB_INCLUDE
 
-static bool lvgl_fs_ready(struct _lv_fs_drv_t *drv)
+static bool lvgl_fs_ready(lv_fs_drv_t *drv)
 {
 	return true;
 }
@@ -53,10 +53,10 @@ static lv_fs_res_t errno_to_lv_fs_res(int err)
 	}
 }
 
-static void *lvgl_fs_open(struct _lv_fs_drv_t *drv, const char *path, lv_fs_mode_t mode)
+static void *lvgl_fs_open(lv_fs_drv_t *drv, const char *path, lv_fs_mode_t mode)
 {
 	int err;
-	int zmode = FS_O_CREATE;
+	int zmode = 0;
 	void *file;
 
 	/* LVGL is passing absolute paths without the root slash add it back
@@ -64,10 +64,14 @@ static void *lvgl_fs_open(struct _lv_fs_drv_t *drv, const char *path, lv_fs_mode
 	 */
 	path--;
 
-	zmode |= (mode & LV_FS_MODE_WR) ? FS_O_WRITE : 0;
+	zmode |= (mode & LV_FS_MODE_WR) ? FS_O_WRITE | FS_O_CREATE : 0;
 	zmode |= (mode & LV_FS_MODE_RD) ? FS_O_READ : 0;
 
-	file = LV_MEM_CUSTOM_ALLOC(sizeof(struct fs_file_t));
+	if (zmode == 0) {
+		return NULL;
+	}
+
+	file = lv_malloc(sizeof(struct fs_file_t));
 	if (!file) {
 		return NULL;
 	}
@@ -76,23 +80,23 @@ static void *lvgl_fs_open(struct _lv_fs_drv_t *drv, const char *path, lv_fs_mode
 
 	err = fs_open((struct fs_file_t *)file, path, zmode);
 	if (err) {
-		LV_MEM_CUSTOM_FREE(file);
+		lv_free(file);
 		return NULL;
 	}
 
 	return file;
 }
 
-static lv_fs_res_t lvgl_fs_close(struct _lv_fs_drv_t *drv, void *file)
+static lv_fs_res_t lvgl_fs_close(lv_fs_drv_t *drv, void *file)
 {
 	int err;
 
 	err = fs_close((struct fs_file_t *)file);
+	lv_free(file);
 	return errno_to_lv_fs_res(err);
 }
 
-static lv_fs_res_t lvgl_fs_read(struct _lv_fs_drv_t *drv, void *file, void *buf, uint32_t btr,
-				uint32_t *br)
+static lv_fs_res_t lvgl_fs_read(lv_fs_drv_t *drv, void *file, void *buf, uint32_t btr, uint32_t *br)
 {
 	int err;
 
@@ -108,8 +112,8 @@ static lv_fs_res_t lvgl_fs_read(struct _lv_fs_drv_t *drv, void *file, void *buf,
 	return errno_to_lv_fs_res(err);
 }
 
-static lv_fs_res_t lvgl_fs_write(struct _lv_fs_drv_t *drv, void *file, const void *buf,
-				 uint32_t btw, uint32_t *bw)
+static lv_fs_res_t lvgl_fs_write(lv_fs_drv_t *drv, void *file, const void *buf, uint32_t btw,
+				 uint32_t *bw)
 {
 	int err;
 
@@ -132,8 +136,7 @@ static lv_fs_res_t lvgl_fs_write(struct _lv_fs_drv_t *drv, void *file, const voi
 	return errno_to_lv_fs_res(err);
 }
 
-static lv_fs_res_t lvgl_fs_seek(struct _lv_fs_drv_t *drv, void *file, uint32_t pos,
-				lv_fs_whence_t whence)
+static lv_fs_res_t lvgl_fs_seek(lv_fs_drv_t *drv, void *file, uint32_t pos, lv_fs_whence_t whence)
 {
 	int err, fs_whence;
 
@@ -154,7 +157,7 @@ static lv_fs_res_t lvgl_fs_seek(struct _lv_fs_drv_t *drv, void *file, uint32_t p
 	return errno_to_lv_fs_res(err);
 }
 
-static lv_fs_res_t lvgl_fs_tell(struct _lv_fs_drv_t *drv, void *file, uint32_t *pos_p)
+static lv_fs_res_t lvgl_fs_tell(lv_fs_drv_t *drv, void *file, uint32_t *pos_p)
 {
 	off_t pos;
 
@@ -167,7 +170,7 @@ static lv_fs_res_t lvgl_fs_tell(struct _lv_fs_drv_t *drv, void *file, uint32_t *
 	return LV_FS_RES_OK;
 }
 
-static void *lvgl_fs_dir_open(struct _lv_fs_drv_t *drv, const char *path)
+static void *lvgl_fs_dir_open(lv_fs_drv_t *drv, const char *path)
 {
 	void *dir;
 	int err;
@@ -177,7 +180,7 @@ static void *lvgl_fs_dir_open(struct _lv_fs_drv_t *drv, const char *path)
 	 */
 	path--;
 
-	dir = LV_MEM_CUSTOM_ALLOC(sizeof(struct fs_dir_t));
+	dir = lv_malloc(sizeof(struct fs_dir_t));
 	if (!dir) {
 		return NULL;
 	}
@@ -185,14 +188,14 @@ static void *lvgl_fs_dir_open(struct _lv_fs_drv_t *drv, const char *path)
 	fs_dir_t_init((struct fs_dir_t *)dir);
 	err = fs_opendir((struct fs_dir_t *)dir, path);
 	if (err) {
-		LV_MEM_CUSTOM_FREE(dir);
+		lv_free(dir);
 		return NULL;
 	}
 
 	return dir;
 }
 
-static lv_fs_res_t lvgl_fs_dir_read(struct _lv_fs_drv_t *drv, void *dir, char *fn)
+static lv_fs_res_t lvgl_fs_dir_read(lv_fs_drv_t *drv, void *dir, char *fn, uint32_t fn_len)
 {
 	/* LVGL expects a string as return parameter but the format of the
 	 * string is not documented.
@@ -200,12 +203,12 @@ static lv_fs_res_t lvgl_fs_dir_read(struct _lv_fs_drv_t *drv, void *dir, char *f
 	return LV_FS_RES_NOT_IMP;
 }
 
-static lv_fs_res_t lvgl_fs_dir_close(struct _lv_fs_drv_t *drv, void *dir)
+static lv_fs_res_t lvgl_fs_dir_close(lv_fs_drv_t *drv, void *dir)
 {
 	int err;
 
 	err = fs_closedir((struct fs_dir_t *)dir);
-	LV_MEM_CUSTOM_FREE(dir);
+	lv_free(dir);
 	return errno_to_lv_fs_res(err);
 }
 

@@ -101,17 +101,19 @@ void z_nrf_grtc_timer_compare_int_unlock(int32_t chan, bool key);
  *
  * @param chan Channel ID.
  *
- * @retval >=0 Positive is a Value set in the compare register
+ * @param val Pointer to store the value.
+ *
+ * @retval 0 if the compare register was read successfully.
  * @retval -EAGAIN if compare for given channel is not set.
  * @retval -EPERM if either channel is unavailable or SYSCOUNTER is not running.
  */
-uint64_t z_nrf_grtc_timer_compare_read(int32_t chan);
+int z_nrf_grtc_timer_compare_read(int32_t chan, uint64_t *val);
 
 /** @brief  Set compare channel to given value.
  *
  * @param chan Channel ID.
  *
- * @param target_time Absolute target time in ticks.
+ * @param target_time Absolute target time in GRTC ticks.
  *
  * @param handler User function called in the context of the GRTC interrupt.
  *
@@ -169,6 +171,7 @@ int z_nrf_grtc_timer_capture_prepare(int32_t chan);
  *
  * @retval 0 if the timestamp was successfully caught and read.
  * @retval -EBUSY if capturing has not been triggered.
+ * @retval -EPERM if either channel is unavailable or SYSCOUNTER is not running.
  */
 int z_nrf_grtc_timer_capture_read(int32_t chan, uint64_t *captured_time);
 
@@ -185,6 +188,17 @@ int z_nrf_grtc_timer_capture_read(int32_t chan, uint64_t *captured_time);
  * @retval -EINVAL if @p wake_time_us is too low.
  */
 int z_nrf_grtc_wakeup_prepare(uint64_t wake_time_us);
+
+/** @brief Get the GRTC counter value latched at startup.
+ *
+ * @note The GRTC timer is not cleared by software at startup,
+ *	 while the system tick starts counting from zero.
+ *	 In some cases, it may be necessary to compare the system tick
+ *	 with the GRTC value — in such situations, this offset can be useful.
+ *
+ * @return GRTC value latched during system clock initialization.
+ */
+uint64_t z_nrf_grtc_timer_startup_value_get(void);
 
 /**
  * @brief       Initialize the GRTC clock timer driver from an application-

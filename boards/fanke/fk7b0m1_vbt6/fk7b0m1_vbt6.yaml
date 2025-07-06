@@ -1,11 +1,10 @@
 identifier: fk7b0m1_vbt6
-name: FANKE FK7B0M1-VBT6 board
+name: FANKE FK7B0M1-VBT6
 type: mcu
 arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 ram: 1376
 flash: 128
 supported:

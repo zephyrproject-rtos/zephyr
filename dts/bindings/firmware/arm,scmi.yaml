@@ -1,0 +1,68 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+        System Control and Management Interface (SCMI) with doorbell
+        and shared memory (SHMEM) transport.
+
+        Devicetree example:
+            #include <mem.h>
+
+            scmi_res0: memory@44611000 {
+                compatible = "arm,scmi-shmem";
+                reg = <0x44611000 0x80>;
+            };
+
+            mu5: mailbox@44610000 {
+                compatible = "nxp,mbox-imx-mu";
+                reg = <0x44610000 DT_SIZE_K(4)>;
+                interrupts = <205 0>;
+                #mbox-cells = <1>;
+            };
+
+            scmi {
+                compatible = "arm,scmi";
+                shmem = <&scmi_res0>;
+                mboxes = <&mu5 0>;
+                mbox-names = "tx";
+
+                protocol@14 {
+                    compatible = "arm,scmi-clock";
+                    reg = <0x14>;
+                    #clock-cells = <1>;
+                };
+
+                protocol@19 {
+                    compatible = "arm,scmi-pinctrl";
+                    reg = <0x19>;
+
+                    pinctrl {
+                        compatible = "nxp,imx95-pinctrl", "nxp,imx93-pinctrl";
+                    };
+                };
+            };
+
+compatible: "arm,scmi"
+
+include: [base.yaml]
+
+properties:
+  shmem:
+    type: phandle
+    required: true
+    description: |
+      Phandle to node describing TX channel shared memory area.
+      This translates to a **single** SCMI transmit channel.
+
+  mboxes:
+    required: true
+    description: |
+      List of mailbox channel specifiers. It should contain one or two specifiers:
+        1) tx - 1 mbox / 1 shmem (platform and agent use the same
+        mailbox channel for signaling)
+        2) tx_reply - 2 mbox / 1 shmem (platform and agent use different
+        mailbox channels for signaling)
+
+  mbox-names:
+    required: true
+    description: mailbox channel specifier names

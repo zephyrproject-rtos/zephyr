@@ -14,7 +14,9 @@
 #include <zephyr/device.h>
 
 struct fcb test_fcb = {0};
+#if defined(CONFIG_FCB_ALLOW_FIXED_ENDMARKER)
 struct fcb test_fcb_crc_disabled = { .f_flags = FCB_FLAGS_CRC_DISABLED };
+#endif
 
 uint8_t fcb_test_erase_value;
 
@@ -58,7 +60,7 @@ void test_fcb_wipe(void)
 	zassert_true(rc == 0, "flash area open call failure");
 
 	for (i = 0; i < ARRAY_SIZE(test_fcb_sector); i++) {
-		rc = flash_area_erase(fap, test_fcb_sector[i].fs_off,
+		rc = flash_area_flatten(fap, test_fcb_sector[i].fs_off,
 				      test_fcb_sector[i].fs_size);
 		zassert_true(rc == 0, "erase call failure");
 	}
@@ -139,7 +141,11 @@ static void fcb_pretest_4_sectors(void *data)
 
 static void fcb_pretest_crc_disabled(void *data)
 {
+#if defined(CONFIG_FCB_ALLOW_FIXED_ENDMARKER)
 	fcb_tc_pretest(2, &test_fcb_crc_disabled);
+#else
+	ztest_test_skip();
+#endif
 }
 
 /*

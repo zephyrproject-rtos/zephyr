@@ -24,14 +24,16 @@
 
 	leds: leds {
 		compatible = "gpio-leds";
+
 		green_led_0: led_0 {
-			gpios = <&gpioa 5 GPIO_ACTIVE_LOW>;
+			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
 		};
 	};
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
@@ -124,7 +126,7 @@
 &adc1 {
 	pinctrl-0 = <&adc_in0_pa0>;
 	pinctrl-names = "default";
-	st,adc-clock-source = <ASYNC>;
+	st,adc-clock-source = "ASYNC";
 	st,adc-prescaler = <4>;
 	status = "okay";
 };
@@ -145,10 +147,10 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		/* Set 2KB of storage at the end of 512KB flash */
-		storage_partition: partition@7f800 {
+		/* Set 8KB of storage at the end of 512KB flash */
+		storage_partition: partition@7e000 {
 			label = "storage";
-			reg = <0x0007f800 DT_SIZE_K(2)>;
+			reg = <0x0007e000 DT_SIZE_K(8)>;
 		};
 	};
 };

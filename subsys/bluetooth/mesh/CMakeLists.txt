@@ -13,6 +13,7 @@ zephyr_library_sources_ifdef(CONFIG_BT_MESH
     app_keys.c
     heartbeat.c
     crypto.c
+    crypto_psa.c
     access.c
     msg.c
     cfg_srv.c
@@ -113,22 +114,20 @@ zephyr_library_sources_ifdef(CONFIG_BT_MESH_SOL_PDU_RPL_CLI sol_pdu_rpl_cli.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV sol_pdu_rpl_srv.c)
 
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_BRG_CFG_CLI brg_cfg_cli.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_BRG_CFG_SRV brg_cfg_srv.c brg_cfg.c)
+
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_SOLICITATION solicitation.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_STATISTIC statistic.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_ACCESS_DELAYABLE_MSG delayable_msg.c)
 
-if (CONFIG_BT_MESH_USES_TINYCRYPT)
-    zephyr_library_sources(crypto_tc.c)
-else()
-    zephyr_library_sources(crypto_psa.c)
-endif()
-
 zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
 
-if (CONFIG_BUILD_WITH_TFM)
-  target_include_directories(${ZEPHYR_CURRENT_LIBRARY} PRIVATE
-    $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/api_ns/interface/include
-  )
-endif()
+zephyr_library_include_directories_ifdef(CONFIG_BUILD_WITH_TFM
+  $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/api_ns/interface/include
+)
+
+zephyr_library_sources_ifdef(CONFIG_BT_TESTING testing.c)

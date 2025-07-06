@@ -1,7 +1,7 @@
-.. _tfm_psa_crypto:
+.. zephyr:code-sample:: tfm_psa_crypto
+   :name: TF-M PSA crypto
 
-TF-M PSA crypto
-################
+   Use the PSA Crypto API for cryptography and device certificate signing requests.
 
 Overview
 ********
@@ -74,11 +74,13 @@ This sample will only build on a Linux or macOS development system
 
 TF-M BL2 logs
 =============
-Add the following to ``prj.conf`` to see the logs from TF-M BL2:
-   .. code-block:: bash
 
-      CONFIG_TFM_BL2=y
-      CONFIG_TFM_CMAKE_BUILD_TYPE_DEBUG=y
+Add the following to ``prj.conf`` to see the logs from TF-M BL2:
+
+.. code-block:: cfg
+
+   CONFIG_TFM_BL2=y
+   CONFIG_TFM_CMAKE_BUILD_TYPE_DEBUG=y
 
 On MPS2+ AN521:
 ===============

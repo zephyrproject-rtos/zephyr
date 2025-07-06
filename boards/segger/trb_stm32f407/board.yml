@@ -1,5 +1,6 @@
 board:
   name: segger_trb_stm32f407
+  full_name: Cortex-M Trace Reference Board V1.2
   vendor: segger
   socs:
     - name: stm32f407xx

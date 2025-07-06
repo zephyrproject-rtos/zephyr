@@ -6,10 +6,12 @@
 menuconfig LSM6DSO
 	bool "LSM6DSO I2C/SPI accelerometer and gyroscope Chip"
 	default y
-	depends on DT_HAS_ST_LSM6DSO_ENABLED
+	depends on DT_HAS_ST_LSM6DSO_ENABLED || DT_HAS_ST_LSM6DSO32_ENABLED
 	depends on ZEPHYR_HAL_ST_MODULE
-	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSO),i2c)
-	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSO),spi)
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSO),i2c) || \
+		      $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSO32),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSO),spi) || \
+		      $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSO32),spi)
 	select HAS_STMEMSC
 	select USE_STDC_LSM6DSO
 	help
@@ -29,6 +31,7 @@ config LSM6DSO_TRIGGER_NONE
 config LSM6DSO_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSO),irq-gpios)
 	select LSM6DSO_TRIGGER
 
 config LSM6DSO_TRIGGER_OWN_THREAD
@@ -56,6 +59,16 @@ config LSM6DSO_THREAD_STACK_SIZE
 	default 1024
 	help
 	  Stack size of thread used by the driver to handle interrupts.
+
+config LSM6DSO_TILT
+	bool "Tilt detection"
+	help
+	  Enable tilt detection
+
+config LSM6DSO_TAP
+	bool "Tap and Tap-Tap detection"
+	help
+	  Enable tap (single/double) detection
 
 endif # LSM6DSO_TRIGGER
 

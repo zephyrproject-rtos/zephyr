@@ -1,0 +1,6 @@
+board:
+  name: ttgo_tbeam
+  full_name: TTGO TBeam
+  vendor: lilygo
+  socs:
+  - name: esp32

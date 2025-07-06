@@ -1,5 +1,5 @@
 description: |
-  ST STM32F4 family flash memory.
+  STM32F4 flash memory.
 
 include: st,stm32-nv-flash.yaml
 

@@ -2,6 +2,7 @@ manifest:
   remotes:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
+  # zephyr-keep-sorted-start re(^\s+\- name:)
   projects:
     - name: canopennode
       revision: dec12fa3f0d790cafa8414a4c2930ea71ab72ffd
@@ -16,13 +17,13 @@ manifest:
       groups:
         - optional
     - name: lz4
-      revision: 8e303c264fc21c2116dc612658003a22e933124d
+      revision: 11b8a1e22fa651b524494e55d22b69d3d9cebcfd
       path: modules/lib/lz4
       remote: upstream
       groups:
         - optional
     - name: nanopb
-      revision: 65cbefb4695bc7af1cb733ced99618afb3586b20
+      revision: 7307ce399b81ddcb3c3a5dc862c52d4754328d38
       path: modules/lib/nanopb
       remote: upstream
       groups:
@@ -34,19 +35,19 @@ manifest:
       groups:
         - optional
     - name: sof
-      revision: c11a3185afbc8e1b2a79916de3dfefaf326d9ad1
+      revision: bc08c9c606324cfba0c104f4ffaf5dd456cb11d6
       path: modules/audio/sof
       remote: upstream
       groups:
         - optional
     - name: tf-m-tests
-      revision: 08a3158f0623a4205608a52d880b17ae394e31d2
+      revision: a286347e6a5dd37a9a5e960450ffc0260d63fb27
       path: modules/tee/tf-m/tf-m-tests
       remote: upstream
       groups:
         - optional
     - name: tflite-micro
-      revision: 1a34dcab41e7e0e667db72d6a40999c1ec9c510c
+      revision: 8d404de73acf7687831e16d88e86e4f73cfddf8e
       path: optional/modules/lib/tflite-micro
       repo-path: tflite-micro
       remote: upstream
@@ -58,9 +59,16 @@ manifest:
       remote: upstream
       groups:
         - optional
-    - name: zscilib
-      path: modules/lib/zscilib
-      revision: ee1b287d9dd07208d2cc52284240ac25bb66eae3
+    - name: zephyr-lang-rust
+      revision: dd73abc242e995784da62352fe8c70d9a6c7ac2e
+      path: modules/lang/rust
       remote: upstream
       groups:
         - optional
+    - name: zscilib
+      path: modules/lib/zscilib
+      revision: ee3c0c405087e331aad16d167b6e4ec1c3452ba9
+      remote: upstream
+      groups:
+        - optional
+# zephyr-keep-sorted-stop

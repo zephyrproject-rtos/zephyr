@@ -16,6 +16,12 @@
 	};
 
 	soc {
+		/* Accessing code RAM over AXIF - a read-only flash memory bus */
+		cram1: memory@7d900000 {
+			compatible = "mmio-sram";
+			reg = <0x7d900000 DT_SIZE_M(7)>;
+		};
+
 		stm0: stm@76a00000 {
 			compatible = "nxp,s32-sys-timer";
 			reg = <0x76a00000 0x10000>;
@@ -53,6 +59,7 @@
 			reg = <0x76800000 0x10000>;
 			interrupts = <GIC_SPI 8 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			clocks = <&clock NXP_S32_FIRC_CLK>;
+			service-mode = "fixed";
 			status = "disabled";
 		};
 
@@ -61,6 +68,7 @@
 			reg = <0x76810000 0x10000>;
 			interrupts = <GIC_SPI 9 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			clocks = <&clock NXP_S32_FIRC_CLK>;
+			service-mode = "fixed";
 			status = "disabled";
 		};
 
@@ -69,6 +77,7 @@
 			reg = <0x76a20000 0x10000>;
 			interrupts = <GIC_SPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			clocks = <&clock NXP_S32_FIRC_CLK>;
+			service-mode = "fixed";
 			status = "disabled";
 		};
 
@@ -77,6 +86,7 @@
 			reg = <0x76a30000 0x10000>;
 			interrupts = <GIC_SPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			clocks = <&clock NXP_S32_FIRC_CLK>;
+			service-mode = "fixed";
 			status = "disabled";
 		};
 
@@ -85,6 +95,7 @@
 			reg = <0x76940000 0x10000>;
 			interrupts = <GIC_SPI 12 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			clocks = <&clock NXP_S32_FIRC_CLK>;
+			service-mode = "fixed";
 			status = "disabled";
 		};
 

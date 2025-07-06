@@ -1,5 +1,5 @@
 # Copyright (c) 2024 SILA Embedded Solutions GmbH
-# SPDX -License-Identifier: Apache-2.0
+# SPDX-License-Identifier: Apache-2.0
 
 config MFD_TLE9104
 	bool "Infineon TLE9104 SPI powertrain switch"

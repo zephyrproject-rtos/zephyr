@@ -1,0 +1,15 @@
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: rzt2m_rsk/r9a07g075m24gbg/cr520
+name: Renesas Starter Kit+ for RZ/T2M
+type: mcu
+arch: arm
+ram: 2048
+toolchain:
+  - zephyr
+supported:
+  - uart
+  - gpio
+vendor: renesas

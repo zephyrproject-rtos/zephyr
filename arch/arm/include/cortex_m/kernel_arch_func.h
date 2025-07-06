@@ -20,6 +20,8 @@
 #ifndef ZEPHYR_ARCH_ARM_INCLUDE_CORTEX_M_KERNEL_ARCH_FUNC_H_
 #define ZEPHYR_ARCH_ARM_INCLUDE_CORTEX_M_KERNEL_ARCH_FUNC_H_
 
+#include <zephyr/platform/hooks.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -53,30 +55,47 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 	 */
 	z_arm_configure_static_mpu_regions();
 #endif /* CONFIG_ARM_MPU */
+
+#ifdef CONFIG_SOC_PER_CORE_INIT_HOOK
+	soc_per_core_init_hook();
+#endif /* CONFIG_SOC_PER_CORE_INIT_HOOK */
 }
 
-static ALWAYS_INLINE void
-arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
+static ALWAYS_INLINE void arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
 {
 	thread->arch.swap_return_value = value;
 }
 
 #if !defined(CONFIG_MULTITHREADING)
-extern FUNC_NORETURN void z_arm_switch_to_main_no_multithreading(
-	k_thread_entry_t main_func,
-	void *p1, void *p2, void *p3);
+extern FUNC_NORETURN void z_arm_switch_to_main_no_multithreading(k_thread_entry_t main_func,
+								 void *p1, void *p2, void *p3);
 
-#define ARCH_SWITCH_TO_MAIN_NO_MULTITHREADING \
-	z_arm_switch_to_main_no_multithreading
+#define ARCH_SWITCH_TO_MAIN_NO_MULTITHREADING z_arm_switch_to_main_no_multithreading
 
 #endif /* !CONFIG_MULTITHREADING */
 
-extern FUNC_NORETURN void z_arm_userspace_enter(k_thread_entry_t user_entry,
-					       void *p1, void *p2, void *p3,
-					       uint32_t stack_end,
-					       uint32_t stack_start);
+extern FUNC_NORETURN void z_arm_userspace_enter(k_thread_entry_t user_entry, void *p1, void *p2,
+						void *p3, uint32_t stack_end, uint32_t stack_start);
 
-extern void z_arm_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
+extern void z_arm_fatal_error(unsigned int reason, const struct arch_esf *esf);
+
+static ALWAYS_INLINE int arch_swap(unsigned int key)
+{
+	/* store off key and return value */
+	_current->arch.basepri = key;
+	_current->arch.swap_return_value = -EAGAIN;
+
+	/* set pending bit to make sure we will take a PendSV exception */
+	SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
+
+	/* clear mask or enable all irqs to take a pendsv */
+	irq_unlock(0);
+
+	/* Context switch is performed here. Returning implies the
+	 * thread has been context-switched-in again.
+	 */
+	return _current->arch.swap_return_value;
+}
 
 #endif /* _ASMLANGUAGE */
 

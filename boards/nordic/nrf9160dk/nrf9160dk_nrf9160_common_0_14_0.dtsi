@@ -4,12 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/ {
-	aliases {
-		spi-flash0 = &mx25r64;
-	};
-};
-
 &interface_to_nrf52840 {
 	gpio-map = <0 0 &gpio0 17 0>,
 		   <1 0 &gpio0 18 0>,
@@ -45,6 +39,7 @@
 &arduino_spi {
 	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>, /* D10 */
 		   <&gpio0 25 GPIO_ACTIVE_LOW>;
+
 	mx25r64: mx25r6435f@1 {
 		compatible = "jedec,spi-nor";
 		status = "disabled";

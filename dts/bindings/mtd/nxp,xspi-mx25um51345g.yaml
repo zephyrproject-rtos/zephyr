@@ -1,0 +1,8 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP XSPI MX25UM51345G
+
+compatible: "nxp,xspi-mx25um51345g"
+
+include: ["nxp,xspi-device.yaml", soc-nv-flash.yaml]

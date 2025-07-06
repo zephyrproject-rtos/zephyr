@@ -5,7 +5,7 @@
 description: |
   Cypress Interrupt Multiplex
 
-  The PSoC-6 Cortex-M0+ NVIC can handle up to 32 interrupts. This means that
+  The PSOC 6 Cortex-M0+ NVIC can handle up to 32 interrupts. This means that
   user can select up to 32 interrupts sources from the 240 possible vectors
   to be processed in the Cortex-M0+ CPU.
 
@@ -20,7 +20,7 @@ description: |
   On a general view, the below represents the Interrupt Multiplexer
   configuration and how the Cortex-M0+ NVIC sources are organized. Each
   channel chX represents a Cortex-M0+ NVIC line and it stores a vector number.
-  The vector number selects the PSoC-6 peripheral interrupt source for the
+  The vector number selects the PSOC 6 peripheral interrupt source for the
   Cortex-M0+ NVIC controller line.
 
   intmux[0] = {ch03, ch02, ch01, ch00}
@@ -31,7 +31,7 @@ description: |
   In practical terms, the Cortex-M0+ requires user to define all NVIC interrupt
   sources and the proper NVIC interrupt order. With that, the system configures
   the Cortex-M0+ Interrupt Multiplexer and interrupts can be processed.
-  More information about it at PSoC-6 Architecture Technical Reference Manual,
+  More information about it at PSOC 6 Architecture Technical Reference Manual,
   section CPU Sub System (CPUSS) Registers.
 
 
@@ -56,7 +56,7 @@ description: |
          CH   REGS  INT NUM    CH   CH/REG
   intmux[20 mod 8] |= 0x02 << (20 mod 4);
 
-  These results in Cortex-M0+ NVIC line 20 handling PSoC-6 interrupt source 2.
+  These results in Cortex-M0+ NVIC line 20 handling PSOC 6 interrupt source 2.
   The interrupt can be enabled/disabled at NVIC at line 20 as usual.
 
   Notes:

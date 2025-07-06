@@ -5,25 +5,30 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/__assert.h>
 
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/buf.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_raw.h>
+#include <zephyr/bluetooth/hci_types.h>
 
+#include "common/hci_common_internal.h"
 #include "common/bt_str.h"
 
 #include "host/conn_internal.h"
 #include "host/l2cap_internal.h"
 
-#include "utils.h"
-#include "sync.h"
-#include "bstests.h"
+#include "babblekit/testcase.h"
+#include "babblekit/flags.h"
+#include "babblekit/sync.h"
 #include "NRF_HWLowL.h"		/* for hwll_disconnect_phy(); */
+
+#include "common.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_tinyhost, LOG_LEVEL_INF);
@@ -38,13 +43,13 @@ LOG_MODULE_REGISTER(bt_tinyhost, LOG_LEVEL_INF);
 #define BT_ATT_OP_WRITE_CMD 0x52
 #define BT_L2CAP_CID_ATT    0x0004
 
-DEFINE_FLAG(is_connected);
-DEFINE_FLAG(flag_data_length_updated);
+DEFINE_FLAG_STATIC(is_connected);
+DEFINE_FLAG_STATIC(flag_data_length_updated);
 
 static K_FIFO_DEFINE(rx_queue);
 
 #define CMD_BUF_SIZE MAX(BT_BUF_EVT_RX_SIZE, BT_BUF_CMD_TX_SIZE)
-NET_BUF_POOL_FIXED_DEFINE(hci_cmd_pool, CONFIG_BT_BUF_CMD_TX_COUNT,
+NET_BUF_POOL_FIXED_DEFINE(hci_cmd_pool, BT_BUF_CMD_TX_COUNT,
 			  CMD_BUF_SIZE, 8, NULL);
 
 static K_SEM_DEFINE(cmd_sem, 1, 1);
@@ -54,7 +59,7 @@ static uint16_t conn_handle;
 static volatile uint16_t active_opcode = 0xFFFF;
 static struct net_buf *cmd_rsp;
 
-struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
+static struct net_buf *create_cmd(uint16_t opcode, uint8_t param_len)
 {
 	struct bt_hci_cmd_hdr *hdr;
 	struct net_buf *buf;
@@ -62,13 +67,11 @@ struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
 	LOG_DBG("opcode 0x%04x param_len %u", opcode, param_len);
 
 	buf = net_buf_alloc(&hci_cmd_pool, K_FOREVER);
-	ASSERT(buf, "failed allocation");
+	TEST_ASSERT(buf, "failed allocation");
 
 	LOG_DBG("buf %p", buf);
 
-	net_buf_reserve(buf, BT_BUF_RESERVE);
-
-	bt_buf_set_type(buf, BT_BUF_CMD);
+	net_buf_add_u8(buf, BT_HCI_H4_CMD);
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr->opcode = sys_cpu_to_le16(opcode);
@@ -105,14 +108,14 @@ static void handle_cmd_complete(struct net_buf *buf)
 		opcode = sys_le16_to_cpu(evt->opcode);
 
 	} else {
-		FAIL("unhandled event 0x%x", hdr->evt);
+		TEST_FAIL("unhandled event 0x%x", hdr->evt);
 	}
 
 	LOG_DBG("opcode 0x%04x status %x", opcode, status);
 
-	ASSERT(status == 0x00, "cmd status: %x", status);
+	TEST_ASSERT(status == 0x00, "cmd status: %x", status);
 
-	ASSERT(active_opcode == opcode, "unexpected opcode %x != %x", active_opcode, opcode);
+	TEST_ASSERT(active_opcode == opcode, "unexpected opcode %x != %x", active_opcode, opcode);
 
 	if (active_opcode) {
 		active_opcode = 0xFFFF;
@@ -187,8 +190,7 @@ static void handle_att_write(struct net_buf *buf)
 
 	static uint8_t ccc_write[2] = {0x03, 0x00};
 
-	ASSERT(buf->len == 2, "unexpected write length: %d\n", buf->len);
-	ASSERT(memcmp(buf->data, ccc_write, sizeof(ccc_write)) == 0, "bad data\n");
+	TEST_ASSERT(util_eq(buf->data, buf->len, ccc_write, sizeof(ccc_write)), "bad data\n");
 
 	send_write_rsp();
 }
@@ -206,7 +208,7 @@ static void handle_att(struct net_buf *buf)
 		return;
 	default:
 		LOG_HEXDUMP_ERR(buf->data, buf->len, "payload");
-		FAIL("unhandled opcode %x\n", op);
+		TEST_FAIL("unhandled opcode %x", op);
 		return;
 	}
 }
@@ -223,10 +225,9 @@ static void handle_l2cap(struct net_buf *buf)
 	LOG_HEXDUMP_DBG(buf->data, buf->len, "l2cap");
 
 	/* Make sure we don't have to recombine packets */
-	ASSERT(buf->len == hdr->len, "buflen = %d != hdrlen %d",
-	       buf->len, hdr->len);
+	TEST_ASSERT(buf->len == hdr->len, "buflen = %d != hdrlen %d", buf->len, hdr->len);
 
-	ASSERT(cid == BT_L2CAP_CID_ATT, "We only support (U)ATT");
+	TEST_ASSERT(cid == BT_L2CAP_CID_ATT, "We only support (U)ATT");
 
 	/* (U)ATT PDU */
 	handle_att(buf);
@@ -245,8 +246,7 @@ static void handle_acl(struct net_buf *buf)
 	flags = bt_acl_flags(handle);
 	handle = bt_acl_handle(handle);
 
-	ASSERT(flags == BT_ACL_START,
-	       "Fragmentation not supported");
+	TEST_ASSERT(flags == BT_ACL_START, "Fragmentation not supported");
 
 	LOG_DBG("ACL: conn %d len %d flags %d", handle, len, flags);
 	LOG_HEXDUMP_DBG(buf->data, buf->len, "HCI ACL");
@@ -258,9 +258,10 @@ static void recv(struct net_buf *buf)
 {
 	LOG_HEXDUMP_DBG(buf->data, buf->len, "HCI RX");
 
+	uint8_t type = net_buf_pull_u8(buf);
 	uint8_t code = buf->data[0];
 
-	if (bt_buf_get_type(buf) == BT_BUF_EVT) {
+	if (type == BT_HCI_H4_EVT) {
 		switch (code) {
 		case BT_HCI_EVT_CMD_COMPLETE:
 		case BT_HCI_EVT_CMD_STATUS:
@@ -287,7 +288,7 @@ static void recv(struct net_buf *buf)
 		return;
 	}
 
-	if (bt_buf_get_type(buf) == BT_BUF_ACL_IN) {
+	if (type == BT_HCI_H4_ACL) {
 		handle_acl(buf);
 		net_buf_unref(buf);
 		return;
@@ -302,11 +303,11 @@ static void send_cmd(uint16_t opcode, struct net_buf *cmd, struct net_buf **rsp)
 	LOG_DBG("opcode %x", opcode);
 
 	if (!cmd) {
-		cmd = bt_hci_cmd_create(opcode, 0);
+		cmd = create_cmd(opcode, 0);
 	}
 
 	k_sem_take(&cmd_sem, K_FOREVER);
-	ASSERT(active_opcode == 0xFFFF, "");
+	TEST_ASSERT_NO_MSG(active_opcode == 0xFFFF);
 
 	active_opcode = opcode;
 
@@ -341,7 +342,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 		struct net_buf *buf;
 
 		/* Wait until a buffer is available */
-		buf = net_buf_get(&rx_queue, K_FOREVER);
+		buf = k_fifo_get(&rx_queue, K_FOREVER);
 		recv(buf);
 	}
 }
@@ -373,9 +374,9 @@ static void read_max_data_len(uint16_t *tx_octets, uint16_t *tx_time)
 static void write_default_data_len(uint16_t tx_octets, uint16_t tx_time)
 {
 	struct bt_hci_cp_le_write_default_data_len *cp;
-	struct net_buf *buf = bt_hci_cmd_create(BT_HCI_OP_LE_WRITE_DEFAULT_DATA_LEN, sizeof(*cp));
+	struct net_buf *buf = create_cmd(BT_HCI_OP_LE_WRITE_DEFAULT_DATA_LEN, sizeof(*cp));
 
-	ASSERT(buf, "");
+	TEST_ASSERT_NO_MSG(buf);
 
 	cp = net_buf_add(buf, sizeof(*cp));
 	cp->max_tx_octets = sys_cpu_to_le16(tx_octets);
@@ -399,8 +400,8 @@ static void set_event_mask(uint16_t opcode)
 	uint64_t mask = 0U;
 
 	/* The two commands have the same length/params */
-	buf = bt_hci_cmd_create(opcode, sizeof(*cp_mask));
-	ASSERT(buf, "");
+	buf = create_cmd(opcode, sizeof(*cp_mask));
+	TEST_ASSERT_NO_MSG(buf);
 
 	/* Forward all events */
 	cp_mask = net_buf_add(buf, sizeof(*cp_mask));
@@ -417,8 +418,8 @@ static void set_random_address(void)
 
 	LOG_DBG("%s", bt_addr_str(&addr.a));
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_RANDOM_ADDRESS, sizeof(addr.a));
-	ASSERT(buf, "");
+	buf = create_cmd(BT_HCI_OP_LE_SET_RANDOM_ADDRESS, sizeof(addr.a));
+	TEST_ASSERT_NO_MSG(buf);
 
 	net_buf_add_mem(buf, &addr.a, sizeof(addr.a));
 	send_cmd(BT_HCI_OP_LE_SET_RANDOM_ADDRESS, buf, NULL);
@@ -437,15 +438,15 @@ void start_adv(void)
 	set_param.channel_map = 0x07;
 	set_param.filter_policy = BT_LE_ADV_FP_NO_FILTER;
 	set_param.type = BT_HCI_ADV_IND;
-	set_param.own_addr_type = 0x01; /* random */
+	set_param.own_addr_type = BT_HCI_OWN_ADDR_RANDOM;
 
 	/* configure */
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_PARAM, sizeof(set_param));
+	buf = create_cmd(BT_HCI_OP_LE_SET_ADV_PARAM, sizeof(set_param));
 	net_buf_add_mem(buf, &set_param, sizeof(set_param));
 	send_cmd(BT_HCI_OP_LE_SET_ADV_PARAM, buf, NULL);
 
 	/* start */
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_ENABLE, 1);
+	buf = create_cmd(BT_HCI_OP_LE_SET_ADV_ENABLE, 1);
 	net_buf_add_u8(buf, BT_HCI_LE_ADV_ENABLE);
 	send_cmd(BT_HCI_OP_LE_SET_ADV_ENABLE, buf, NULL);
 }
@@ -458,7 +459,7 @@ struct net_buf *alloc_l2cap_pdu(void)
 	uint16_t reserve;
 
 	buf = net_buf_alloc(&acl_tx_pool, K_FOREVER);
-	ASSERT(buf, "failed ACL allocation");
+	TEST_ASSERT(buf, "failed ACL allocation");
 
 	reserve = sizeof(struct bt_l2cap_hdr);
 	reserve += sizeof(struct bt_hci_acl_hdr) + BT_BUF_RESERVE;
@@ -477,7 +478,7 @@ static int send_acl(struct net_buf *buf)
 	hdr->handle = sys_cpu_to_le16(bt_acl_handle_pack(conn_handle, flags));
 	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
 
-	bt_buf_set_type(buf, BT_BUF_ACL_OUT);
+	net_buf_push_u8(buf, BT_HCI_H4_ACL);
 
 	k_sem_take(&acl_pkts, K_FOREVER);
 
@@ -493,8 +494,7 @@ static void send_l2cap_packet(struct net_buf *buf, uint16_t cid)
 	hdr->cid = sys_cpu_to_le16(cid);
 
 	/* Always entire packets, no HCI fragmentation */
-	ASSERT(buf->len <= CONFIG_BT_BUF_ACL_TX_SIZE,
-	       "Fragmentation not supported");
+	TEST_ASSERT(buf->len <= CONFIG_BT_BUF_ACL_TX_SIZE, "Fragmentation not supported");
 
 	send_acl(buf);
 }
@@ -545,7 +545,7 @@ static void init_tinyhost(void)
 
 void test_procedure_0(void)
 {
-	ASSERT(backchannel_init() == 0, "Failed to open backchannel\n");
+	TEST_ASSERT(bk_sync_init() == 0, "Failed to open backchannel");
 
 	init_tinyhost();
 
@@ -564,7 +564,7 @@ void test_procedure_0(void)
 	}
 
 	/* Wait until DUT starts sleeping */
-	backchannel_sync_wait();
+	bk_sync_wait();
 
 	/* Send some more, so DUT has some more data to process before having to
 	 * handle the disconnect.
@@ -582,30 +582,13 @@ void test_procedure_0(void)
 	hwll_disconnect_phy();
 
 	/* Pass has to be before the exit() for process to not error out */
-	PASS("Tester exit\n");
+	TEST_PASS("Tester exit");
 	bs_trace_silent_exit(0);
-}
-
-void test_tick(bs_time_t HW_device_time)
-{
-	bs_trace_debug_time(0, "Simulation ends now.\n");
-	if (bst_result != Passed) {
-		bst_result = Failed;
-		bs_trace_error("Test did not pass before simulation ended.\n");
-	}
-}
-
-void test_init(void)
-{
-	bst_ticker_set_next_tick_absolute(TEST_TIMEOUT_SIMULATED);
-	bst_result = In_progress;
 }
 
 static const struct bst_test_instance test_to_add[] = {
 	{
 		.test_id = "tester",
-		.test_pre_init_f = test_init,
-		.test_tick_f = test_tick,
 		.test_main_f = test_procedure_0,
 	},
 	BSTEST_END_MARKER,

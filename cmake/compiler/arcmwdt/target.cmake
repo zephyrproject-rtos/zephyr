@@ -30,7 +30,11 @@ set(NOSTDINC ${TOOLCHAIN_HOME}/arc/inc)
 
 # common compile options, no copyright msg, little-endian, no small data,
 # no MWDT stack checking
-list(APPEND TOOLCHAIN_C_FLAGS -Hnocopyr -HL -Hnosdata -Hoff=Stackcheck_alloca)
+list(APPEND TOOLCHAIN_C_FLAGS -Hnocopyr -HL -Hnosdata)
+
+if(CONFIG_ARC)
+  list(APPEND TOOLCHAIN_C_FLAGS -Hoff=Stackcheck_alloca)
+endif()
 
 # The MWDT compiler can replace some code with call to builtin functions.
 # We can't rely on these functions presence if we don't use MWDT libc.
@@ -38,4 +42,10 @@ list(APPEND TOOLCHAIN_C_FLAGS -Hnocopyr -HL -Hnosdata -Hoff=Stackcheck_alloca)
 # manually call __builtin_** functions even if we specify it.
 if(NOT CONFIG_ARCMWDT_LIBC)
   list(APPEND TOOLCHAIN_C_FLAGS -fno-builtin)
+endif()
+
+# The MWDT compiler requires different macro definitions for ARC and RISC-V
+# architectures. __MW_ASM_RV_MACRO__ allows to select appropriate compilation branch.
+if(CONFIG_RISCV)
+  list(APPEND TOOLCHAIN_C_FLAGS -D__MW_ASM_RV_MACRO__)
 endif()

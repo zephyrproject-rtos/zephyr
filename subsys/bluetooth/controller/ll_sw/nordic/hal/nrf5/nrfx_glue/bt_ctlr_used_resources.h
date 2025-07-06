@@ -12,30 +12,11 @@
  *       conditionally compile them based on feature Kconfig defines in those
  *       resources header file.
  */
-#ifdef DPPI_PRESENT
-#include "../radio/radio_nrf5_dppi_resources.h"
-#else
+#if defined(CONFIG_SOC_SERIES_NRF51X) || defined(CONFIG_SOC_COMPATIBLE_NRF52X)
 #include "../radio/radio_nrf5_ppi_resources.h"
-#endif
-
-#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN) || \
-	defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
-#define HAL_PALNA_GPIOTE_CHAN 0
-#define HAL_PALNA_GPIOTE_MASK BIT(HAL_PALNA_GPIOTE_CHAN)
 #else
-#define HAL_PALNA_GPIOTE_MASK 0
+#include "../radio/radio_nrf5_dppi_resources.h"
 #endif
-
-#if defined(HAL_RADIO_FEM_IS_NRF21540)
-#define HAL_PDN_GPIOTE_CHAN 1
-#define HAL_CSN_GPIOTE_CHAN 2
-#define HAL_PDN_CSN_GPIOTE_MASK (BIT(HAL_PDN_GPIOTE_CHAN) | BIT(HAL_CSN_GPIOTE_CHAN))
-#else
-#define HAL_PDN_CSN_GPIOTE_MASK 0
-#endif
-
-/* Mask with all GPIOTE channels used by the bluetooth controller. */
-#define BT_CTLR_USED_GPIOTE_CHANNELS (HAL_PALNA_GPIOTE_MASK | HAL_PDN_CSN_GPIOTE_MASK)
 
 /* Mask with all (D)PPI channels used by the bluetooth controller. */
 #define BT_CTLR_USED_PPI_CHANNELS \
@@ -97,7 +78,7 @@
 #endif
 
 #if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
-#ifdef DPPI_PRESENT
+#if !defined(CONFIG_SOC_SERIES_NRF51X) && !defined(CONFIG_SOC_COMPATIBLE_NRF52X)
 #define HAL_USED_PPI_CHANNELS_7 \
 	(BIT(HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI))
 #else

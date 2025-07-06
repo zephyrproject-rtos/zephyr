@@ -16,12 +16,20 @@ The Zephyr kernel supports multiple architectures, including:
  - ARMv7-R, ARMv8-R (Cortex-R, 32- and 64-bit)
  - Intel x86 (32- and 64-bit)
  - MIPS (MIPS32 Release 1 specification)
- - NIOS II Gen 2
+ - Renesas RX
  - RISC-V (32- and 64-bit)
  - SPARC V8
  - Tensilica Xtensa
 
 The full list of supported boards based on these architectures can be found :ref:`here <boards>`.
+
+In the context of the Zephyr OS, a :term:`subsystem` refers to a logically distinct
+part of the operating system that handles specific functionality or provides
+certain services. Subsystems can include components such as networking,
+file systems, device driver classes, power management, and communication protocols,
+among others. Each subsystem is designed to be modular and can be configured,
+customized, and extended to meet the requirements of different embedded
+applications.
 
 Licensing
 *********

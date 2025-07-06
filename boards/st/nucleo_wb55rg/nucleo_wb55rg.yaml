@@ -5,7 +5,6 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 ram: 192
 flash: 808
 supported:
@@ -22,4 +21,6 @@ supported:
   - arduino_spi
   - usb_device
   - nvs
+  - rtc
+  - usbd
 vendor: st

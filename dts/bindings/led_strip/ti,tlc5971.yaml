@@ -6,7 +6,8 @@ description: |
 
   Driver bindings for daisy chains of a TLC5971 devices using a single device
   tree node. Length of daisy chains in pixels is defined by the chain-length
-  property.
+  property. Note: chain-length must be a multiple of 4. A single TLC5971 device
+  supports 4 RGB LEDs.
 
   The color order of the TLC5971 is BGR. Applications can provide custom mappings
   using the color-mapping property.
@@ -28,23 +29,4 @@ description: |
 
 compatible: "ti,tlc5971"
 
-include: spi-device.yaml
-
-properties:
-  chain-length:
-    type: int
-    required: true
-    description: |
-      The number of RGB LEDs in the daisy-chain.
-      Must be multiple of 4. A single TLC5971 device supports 4 RGB LEDs.
-
-  color-mapping:
-    type: array
-    required: true
-    description: |
-      Channel to color mapping (or pixel order).
-      For example a BGR channel to color mapping would be
-
-         color-mapping = <LED_COLOR_ID_BLUE
-                          LED_COLOR_ID_GREEN
-                          LED_COLOR_ID_RED>;
+include: [spi-device.yaml, led-strip.yaml]

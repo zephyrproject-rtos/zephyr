@@ -5,7 +5,6 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 ram: 144
 flash: 512
 supported:
@@ -23,4 +22,5 @@ supported:
   - dma
   - usb_device
   - lptim
+  - usbd
 vendor: st

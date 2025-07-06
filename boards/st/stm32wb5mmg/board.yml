@@ -1,5 +1,6 @@
 board:
   name: stm32wb5mmg
+  full_name: STM32WB5MMG
   vendor: st
   socs:
     - name: stm32wb55xx

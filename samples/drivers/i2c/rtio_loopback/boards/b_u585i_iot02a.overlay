@@ -1,0 +1,18 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/* I2C bus pins are exposed on the STMod+.
+ *
+ *  Bus        SDA               SCL
+ *          Pin   Hdr         Pin   Hdr
+ *  i2c1    PB9   CN3:10      PB8  CN3:7
+ *  i2c2    PH5   CN2:10      PH4  CN2:7
+ *
+ * Short Pin PB9 to PH5, and PB8 to PH4, for the test to pass.
+ */
+
+/ {
+	aliases {
+		i2c-controller = &i2c1;
+		i2c-controller-target = &i2c2;
+	};
+};

@@ -6,7 +6,7 @@
 if SOC_SERIES_S32K1
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 80000000
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
 
 config NUM_IRQS
 	default 239 if CPU_CORTEX_M4
@@ -14,13 +14,6 @@ config NUM_IRQS
 
 config FPU
 	default y if CPU_HAS_FPU
-
-if !XIP
-config FLASH_SIZE
-	default 0
-config FLASH_BASE_ADDRESS
-	default 0
-endif
 
 # The S32K1xx have 8 MPU regions, which is not enough for both HW stack protection
 # and userspace. Only enable HW stack protection if userspace is not enabled.

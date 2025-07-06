@@ -1,4 +1,6 @@
 common:
+  platform_key:
+    - arch
   tags:
     - benchmark
     - kernel

@@ -33,6 +33,7 @@ static struct sx12xx_data {
 	const struct device *dev;
 	struct k_poll_signal *operation_done;
 	lora_recv_cb async_rx_cb;
+	void *async_user_data;
 	RadioEvents_t events;
 	struct lora_modem_config tx_cfg;
 	atomic_t modem_usage;
@@ -106,7 +107,8 @@ static void sx12xx_ev_rx_done(uint8_t *payload, uint16_t size, int16_t rssi,
 		/* Start receiving again */
 		Radio.Rx(0);
 		/* Run the callback */
-		dev_data.async_rx_cb(dev_data.dev, payload, size, rssi, snr);
+		dev_data.async_rx_cb(dev_data.dev, payload, size, rssi, snr,
+				   dev_data.async_user_data);
 		/* Don't run the synchronous code */
 		return;
 	}
@@ -167,6 +169,27 @@ static void sx12xx_ev_tx_timed_out(void)
 {
 	/* Just release the modem */
 	modem_release(&dev_data);
+}
+
+static void sx12xx_ev_rx_error(void)
+{
+	struct k_poll_signal *sig = dev_data.operation_done;
+
+	/* Receiving in asynchronous mode */
+	if (dev_data.async_rx_cb) {
+		/* Start receiving again */
+		Radio.Rx(0);
+		/* Don't run the synchronous code */
+		return;
+	}
+
+	/* Finish synchronous receive with error */
+	if (modem_release(&dev_data)) {
+		/* Raise signal if provided */
+		if (sig) {
+			k_poll_signal_raise(sig, -EIO);
+		}
+	}
 }
 
 int sx12xx_lora_send(const struct device *dev, uint8_t *data,
@@ -276,10 +299,15 @@ int sx12xx_lora_recv(const struct device *dev, uint8_t *data, uint8_t size,
 		return ret;
 	}
 
+	if (done.result < 0) {
+		LOG_ERR("Receive error");
+		return done.result;
+	}
+
 	return size;
 }
 
-int sx12xx_lora_recv_async(const struct device *dev, lora_recv_cb cb)
+int sx12xx_lora_recv_async(const struct device *dev, lora_recv_cb cb, void *user_data)
 {
 	/* Cancel ongoing reception */
 	if (cb == NULL) {
@@ -297,6 +325,7 @@ int sx12xx_lora_recv_async(const struct device *dev, lora_recv_cb cb)
 
 	/* Store parameters */
 	dev_data.async_rx_cb = cb;
+	dev_data.async_user_data = user_data;
 
 	/* Start reception */
 	Radio.SetMaxPayloadLength(MODEM_LORA, 255);
@@ -357,6 +386,7 @@ int sx12xx_init(const struct device *dev)
 	dev_data.dev = dev;
 	dev_data.events.TxDone = sx12xx_ev_tx_done;
 	dev_data.events.RxDone = sx12xx_ev_rx_done;
+	dev_data.events.RxError = sx12xx_ev_rx_error;
 	/* TX timeout event raises at the end of the test CW transmission */
 	dev_data.events.TxTimeout = sx12xx_ev_tx_timed_out;
 	Radio.Init(&dev_data.events);

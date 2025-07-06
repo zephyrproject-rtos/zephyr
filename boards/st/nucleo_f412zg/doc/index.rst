@@ -1,7 +1,4 @@
-.. _nucleo_f412zg_board:
-
-ST Nucleo F412ZG
-################
+.. zephyr:board:: nucleo_f412zg
 
 Overview
 ********
@@ -27,10 +24,6 @@ some highlights of the Nucleo F412ZG board:
 
 - Three user LEDs
 - Two push-buttons: USER and RESET
-
-.. image:: img/nucleo_f412zg.jpg
-   :align: center
-   :alt: Nucleo F412ZG
 
 More information about the board can be found at the `Nucleo F412ZG website`_.
 
@@ -67,34 +60,7 @@ More information about STM32F412ZG can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_412zg board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | usb                                 |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in
-:zephyr_file:`boards/st/nucleo_f412zg/nucleo_f412zg_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -155,8 +121,23 @@ Ethernet over USB is configured as the default network interface
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Nucleo F412ZG board includes an ST-LINK/V2-1 embedded debug tool interface.
-This interface is supported by the openocd version included in Zephyr SDK.
+
+Flashing
+========
+
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, OpenOCD or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
 
 
 .. _Nucleo F412ZG website:
@@ -170,3 +151,6 @@ This interface is supported by the openocd version included in Zephyr SDK.
 
 .. _STM32F412 reference manual:
    https://www.st.com/resource/en/reference_manual/dm00180369.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

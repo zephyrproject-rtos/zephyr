@@ -5,6 +5,8 @@ common:
     - native_sim/native/64
     - qemu_x86
     - qemu_x86_64
+  integration_platforms:
+    - qemu_x86
 
 tests:
   drivers.modem.modem_hl7800.interrupt_driven.build:
@@ -29,22 +31,6 @@ tests:
       - CONFIG_UART_INTERRUPT_DRIVEN=y
   drivers.modem.modem_quectel_bg9x.async.build:
     extra_args: CONF_FILE=modem_quectel_bg9x.conf
-    extra_configs:
-      - CONFIG_UART_ASYNC_API=y
-  drivers.modem.modem_gsm.interrupt_driven.build:
-    extra_args: CONF_FILE=modem_gsm.conf
-    extra_configs:
-      - CONFIG_UART_INTERRUPT_DRIVEN=y
-  drivers.modem.modem_gsm.async.build:
-    extra_args: CONF_FILE=modem_gsm.conf
-    extra_configs:
-      - CONFIG_UART_ASYNC_API=y
-  drivers.modem.modem_gsm_mux.interrupt_driven.build:
-    extra_args: CONF_FILE=modem_gsm_mux.conf
-    extra_configs:
-      - CONFIG_UART_INTERRUPT_DRIVEN=y
-  drivers.modem.modem_gsm_mux.async.build:
-    extra_args: CONF_FILE=modem_gsm_mux.conf
     extra_configs:
       - CONFIG_UART_ASYNC_API=y
   drivers.modem.modem_esp_at.interrupt_driven.build:

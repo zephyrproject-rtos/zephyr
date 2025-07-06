@@ -26,6 +26,12 @@ LOG_MODULE_REGISTER(net_ethernet_vlan, CONFIG_NET_L2_ETHERNET_LOG_LEVEL);
 #define DEBUG_RX 0
 #endif
 
+/* If the VLAN interface count is 0, then only priority tagged (tag 0)
+ * Ethernet frames can be received. In this case we do not need to
+ * allocate any memory for VLAN interfaces.
+ */
+#if CONFIG_NET_VLAN_COUNT > 0
+
 #define MAX_VLAN_NAME_LEN MIN(sizeof("VLAN-<#####>"), \
 			      CONFIG_NET_INTERFACE_NAME_LEN)
 #define MAX_VIRT_NAME_LEN MIN(sizeof("<not attached>"), \
@@ -136,7 +142,6 @@ static struct vlan_context *get_vlan_ctx(struct net_if *main_iface,
 		}
 
 		ctx = net_if_get_device(vctx->virtual_iface)->data;
-		NET_ASSERT(vctx != NULL);
 
 		if (any_tag) {
 			if (ctx->tag != NET_VLAN_TAG_UNSPEC) {
@@ -190,8 +195,8 @@ static struct vlan_context *get_vlan(struct net_if *iface,
 		goto out;
 	}
 
-	/* If the interface is virtual, then it should be be the VLAN one.
-	 * Just get the Ethernet interface it points to to get the context.
+	/* If the interface is virtual, then it should be the VLAN one.
+	 * Just get the Ethernet interface it points to get the context.
 	 */
 	ctx = get_vlan_ctx(net_virtual_get_iface(iface), vlan_tag, false);
 
@@ -215,6 +220,10 @@ struct net_if *net_eth_get_vlan_iface(struct net_if *iface, uint16_t tag)
 
 	ctx = get_vlan(iface, tag);
 	if (ctx == NULL) {
+		if (tag == NET_VLAN_TAG_PRIORITY) {
+			return iface;
+		}
+
 		return NULL;
 	}
 
@@ -336,6 +345,22 @@ uint16_t net_eth_get_vlan_tag(struct net_if *iface)
 	return tag;
 }
 
+bool net_eth_is_vlan_interface(struct net_if *iface)
+{
+	enum virtual_interface_caps caps;
+
+	if (net_if_l2(iface) != &NET_L2_GET_NAME(VIRTUAL)) {
+		return false;
+	}
+
+	caps = net_virtual_get_iface_capabilities(iface);
+	if (!(caps & VIRTUAL_INTERFACE_VLAN)) {
+		return false;
+	}
+
+	return true;
+}
+
 bool net_eth_get_vlan_status(struct net_if *iface)
 {
 	bool status = false;
@@ -423,7 +448,7 @@ int net_eth_vlan_enable(struct net_if *iface, uint16_t tag)
 			continue;
 		}
 
-		NET_DBG("[%d] Adding vlan tag %d to iface %d (%p) attached to %d (%p)",
+		NET_DBG("[%zd] Adding vlan tag %d to iface %d (%p) attached to %d (%p)",
 			i, vlan->tag, net_if_get_by_iface(vlan->iface), vlan->iface,
 			net_if_get_by_iface(iface), iface);
 
@@ -586,13 +611,29 @@ static enum net_verdict vlan_interface_recv(struct net_if *iface,
 		char str[sizeof("RX iface xx (tag xxxx)")];
 
 		snprintk(str, sizeof(str), "RX iface %d (tag %d)",
-			 net_pkt_vlan_tag(pkt),
-			 net_if_get_by_iface(iface));
+			 net_if_get_by_iface(iface),
+			 net_pkt_vlan_tag(pkt));
 
 		net_pkt_hexdump(pkt, str);
 	}
 
 	return NET_OK;
+}
+
+int vlan_alloc_buffer(struct net_if *iface, struct net_pkt *pkt,
+		      size_t size, uint16_t proto, k_timeout_t timeout)
+{
+	enum virtual_interface_caps caps;
+	int ret = 0;
+
+	caps = net_virtual_get_iface_capabilities(iface);
+	if (caps & VIRTUAL_INTERFACE_VLAN) {
+		ret = net_pkt_alloc_buffer_with_reserve(pkt, size,
+							sizeof(struct net_eth_vlan_hdr),
+							proto, timeout);
+	}
+
+	return ret;
 }
 
 static int vlan_interface_attach(struct net_if *vlan_iface,
@@ -637,3 +678,27 @@ static void vlan_iface_init(struct net_if *iface)
 
 	ctx->init_done = true;
 }
+
+#else /* CONFIG_NET_VLAN_COUNT > 0 */
+
+/* Dummy functions if VLAN is not really used. This is only needed
+ * if priority tagged frames (tag 0) are supported.
+ */
+bool net_eth_is_vlan_enabled(struct ethernet_context *ctx,
+			     struct net_if *iface)
+{
+	ARG_UNUSED(ctx);
+	ARG_UNUSED(iface);
+
+	return true;
+}
+
+struct net_if *net_eth_get_vlan_iface(struct net_if *iface, uint16_t tag)
+{
+	if (tag == NET_VLAN_TAG_PRIORITY) {
+		return iface;
+	}
+
+	return NULL;
+}
+#endif /* CONFIG_NET_VLAN_COUNT > 0 */

@@ -1,10 +1,11 @@
 # Copyright (c) 2024 Analog Devices, Inc.
+# Copyright (c) 2024 Würth Elektronik eiSos GmbH & Co. KG
 # SPDX-License-Identifier: Apache-2.0
 
 # zephyr-keep-sorted-start
-add_subdirectory_ifdef(CONFIG_ITDS wsen_itds)
-add_subdirectory_ifdef(CONFIG_WSEN_HIDS wsen_hids)
-add_subdirectory_ifdef(CONFIG_WSEN_PADS wsen_pads)
-add_subdirectory_ifdef(CONFIG_WSEN_PDUS wsen_pdus)
-add_subdirectory_ifdef(CONFIG_WSEN_TIDS wsen_tids)
+add_subdirectory_ifdef(CONFIG_WSEN_HIDS_2525020210002 wsen_hids_2525020210002)
+add_subdirectory_ifdef(CONFIG_WSEN_ITDS_2533020201601 wsen_itds_2533020201601)
+add_subdirectory_ifdef(CONFIG_WSEN_PADS_2511020213301 wsen_pads_2511020213301)
+add_subdirectory_ifdef(CONFIG_WSEN_PDUS_25131308XXXXX wsen_pdus_25131308XXXXX)
+add_subdirectory_ifdef(CONFIG_WSEN_TIDS_2521020222501 wsen_tids_2521020222501)
 # zephyr-keep-sorted-stop

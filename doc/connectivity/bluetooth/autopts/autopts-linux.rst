@@ -24,10 +24,10 @@ For running with QEMU or :ref:`native_sim <native_sim>`, see :ref:`bluetooth_qem
     :depth: 2
 
 Setup Linux
-===========
+***********
 
 Install nrftools (only required in the actual hardware test mode)
-=================================================================
+*****************************************************************
 
 Download latest nrftools (version >= 10.12.1) from site
 https://www.nordicsemi.com/Software-and-tools/Development-Tools/nRF-Command-Line-Tools/Download.
@@ -47,7 +47,7 @@ and README.md. To install the tools, double click on each .deb file or follow
 instructions from README.md.
 
 Setup Windows 10 virtual machine
-==================================
+********************************
 
 Choose and install your hypervisor like VMWare Workstation(preferred) or
 VirtualBox. On VirtualBox could be some issues, if your host has fewer than 6 CPU.
@@ -55,20 +55,48 @@ VirtualBox. On VirtualBox could be some issues, if your host has fewer than 6 CP
 Create Windows virtual machine instance. Make sure it has at least 2 cores and
 installed guest extensions.
 
-Setup tested with VirtualBox 6.1.18 and VMWare Workstation 16.1.1 Pro.
+Setup tested with VirtualBox 7.1.4 and VMWare Workstation 16.1.1 Pro.
 
 Update Windows
----------------
+==============
 
 Update Windows in:
 
 Start -> Settings -> Update & Security -> Windows Update
 
-Setup static IP
-----------------
+Setup NAT
+=========
 
-WMWare Works
-^^^^^^^^^^^^^
+It is possible to use NAT and portforwarding to setup communication between a Linux host and a
+Windows guest. This is easiest setup for VirtualBox, and does not require any static IPs to be
+configured, and will not get blocked by the Windows Firewall.
+
+VirtualBox
+----------
+
+Open virtual machine network settings. On adapter 1 you will have created by default NAT.
+Open the Port Forwarding menu an add the ports you want.
+
+
+.. image:: virtualbox_nat_1.png
+   :width: 500
+   :align: center
+
+For example setting up the following will allow you to use
+``localhost:65000`` and ``localhost:65002`` (or ``127.0.0.0:65000`` and ``127.0.0.0:65002``)
+to connect to an AutoPTS Server in Windows running on ports 65000 and 65002.
+
+.. image:: virtualbox_nat_2.png
+   :width: 500
+   :align: center
+
+Setup static IP
+===============
+
+If you cannot or do not want to use NAT it is possible to configure a static IP.
+
+VMWare Works
+------------
 
 On Linux, open Virtual Network Editor app and create network:
 
@@ -92,16 +120,19 @@ If you type 'ifconfig' in terminal, you should be able to find your host IP:
    :align: center
 
 VirtualBox
-^^^^^^^^^^^^^
+----------
+
+VirtualBox on Linux, macOS and Solaris Oracle VM VirtualBox will only allow IP addresses in
+``192.168.56.0/21`` range to be assigned to host-only adapters, so if using a static address with
+VirtualBox this is the only address range you can use.
 
 Go to:
 
-File -> Host Network Manager
+File -> Tools -> Network Manager
 
 and create network:
 
 .. image:: virtualbox_static_ip_1.png
-   :height: 400
    :width: 500
    :align: center
 
@@ -109,12 +140,11 @@ Open virtual machine network settings. On adapter 1 you will have created by def
 Add adapter 2:
 
 .. image:: virtualbox_static_ip_2.png
-   :height: 400
    :width: 500
    :align: center
 
 Windows
-^^^^^^^^
+-------
 Setup static IP on Windows virtual machine. Go to
 
 Settings -> Network & Internet -> Ethernet -> Unidentified network -> Edit
@@ -126,8 +156,9 @@ and set:
    :width: 400
    :align: center
 
+
 Install Python 3
------------------
+================
 
 Download and install latest `Python 3 <https://www.python.org/downloads/>`_ on Windows.
 Let the installer add the Python installation directory to the PATH and
@@ -144,7 +175,7 @@ disable the path length limitation.
    :align: center
 
 Install Git
-------------
+===========
 
 Download and install `Git <https://git-scm.com/downloads>`_.
 During installation enable option: Enable experimental support for pseudo
@@ -156,7 +187,7 @@ consoles. We will use Git Bash as Windows terminal.
    :align: center
 
 Install PTS 8
---------------
+=============
 
 On Windows virtual machine, install latest PTS from https://www.bluetooth.org.
 Remember to install drivers from installation directory
@@ -173,7 +204,7 @@ Remember to install drivers from installation directory
     So to capture Bluetooth events, you have to download it separately.
 
 Connect PTS dongle
---------------------
+==================
 
 With VirtualBox there should be no problem. Just find dongle in Devices -> USB and connect.
 
@@ -202,7 +233,7 @@ Write anywhere in the file following line:
 just replace 0x0a12 with Vendor number and 0x0001 with ProdID number you found earlier.
 
 Connect devices (only required in the actual hardware test mode)
-================================================================
+****************************************************************
 
 .. image:: devices_1.png
    :height: 400
@@ -215,7 +246,7 @@ Connect devices (only required in the actual hardware test mode)
    :align: center
 
 Flash board (only required in the actual hardware test mode)
-============================================================
+************************************************************
 
 On Linux, go to ~/zephyrproject. There should be already ~/zephyrproject/build
 directory. Flash board:
@@ -225,16 +256,16 @@ directory. Flash board:
     west flash
 
 Setup auto-pts project
-=======================
+**********************
 
 AutoPTS client on Linux
-------------------------
+=======================
 
 Clone auto-pts project:
 
 .. code-block::
 
-    git clone https://github.com/intel/auto-pts.git
+    git clone https://github.com/auto-pts/auto-pts.git
 
 
 Install socat, that is used to transfer BTP data stream from UART's tty file:
@@ -252,12 +283,12 @@ Install required python modules:
    pip3 install --user -r autoptsclient_requirements.txt
 
 Autopts server on Windows virtual machine
-------------------------------------------
+=========================================
 In Git Bash, clone auto-pts project repo:
 
 .. code-block::
 
-    git clone https://github.com/intel/auto-pts.git
+    git clone https://github.com/auto-pts/auto-pts.git
 
 Install required python modules:
 
@@ -270,7 +301,7 @@ Install required python modules:
 Restart virtual machine.
 
 Running AutoPTS
-================
+****************
 
 Server and client by default will run on localhost address. Run server:
 
@@ -338,15 +369,17 @@ At the first run, when Windows asks, enable connection through firewall:
    :align: center
 
 Troubleshooting
-================
+****************
 
-- "After running one test, I need to restart my Windows virtual machine to run another, because of fail verdict from APICOM in PTS logs."
+After running one test, I need to restart my Windows virtual machine to run another, because of fail verdict from APICOM in PTS logs
+====================================================================================================================================
 
 It means your virtual machine has not enough processor cores or memory. Try to add more in
 settings. Note that a host with 4 CPUs could be not enough with VirtualBox as hypervisor.
 In this case, choose rather VMWare Workstation.
 
-- "I cannot start autoptsserver-zephyr.py. I always got error:"
+I cannot start autoptsserver-zephyr.py. I always get a Python error
+===================================================================
 
 .. image:: autoptsserver_typical_error.png
    :height: 300
@@ -362,3 +395,18 @@ One or more of the following steps should help:
 - Delete temporary workspace. You will find it in auto-pts-code/workspaces/zephyr/zephyr-master/ as temp_zephyr-master. Be careful, do not remove the original one zephyr-master.pqw6.
 
 - Restart Windows virtual machine.
+
+The PTS automation window keeps opening and closing
+===================================================
+
+This indicates that it fails to capture a PTS dongle.
+If the AutoPTS server is able to find and use a PTS dongle,
+then the title of the window will show the Bluetooth address of the dongle.
+If this does not happen then ensure that the dongle is plugged in, updated and recognized by PTS.
+
+.. image:: pts_automation_window.png
+   :width: 500
+   :align: center
+
+If it still fails to run tests after this,
+please ensure that the Bluetooth Protocol Viewer is installed.

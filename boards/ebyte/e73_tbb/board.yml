@@ -1,5 +1,6 @@
 board:
   name: ebyte_e73_tbb
+  full_name: E73-TBB
   vendor: ebyte
   socs:
   - name: nrf52832

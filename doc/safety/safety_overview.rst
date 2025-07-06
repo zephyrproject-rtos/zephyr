@@ -85,6 +85,24 @@ implementation of safety-related systems that aims to reduce the risk of acciden
 overall safety. By following the standard, organizations can ensure that their safety-related
 systems are designed and implemented to the highest level of safety integrity.
 
+Why IEC 61508?
+==============
+The IEC 61508 standard was selected because it serves as a foundational functional safety standard
+applicable across various industry sectors. It provides a robust framework that can be used as
+base for specific standards for different industries. This makes IEC 61508 particularly relevant
+for Zephyr, as the operating system's versatility allows it to be effectively utilized across a
+wide range of industry sectors.
+
+The following diagram illustrates the relationship between the IEC 61508 standard and other related
+standards:
+
+.. figure:: images/IEC-61508-basis.svg
+   :align: center
+   :alt: IEC 61508 relation to other standards
+   :figclass: align-center
+
+   IEC 61508 relation to other standards
+
 Quality
 *******
 
@@ -99,7 +117,7 @@ which need to be reached to achieve an auditable code base:
 1. Basic software quality standards
 
    a. :ref:`coding_guidelines` (including: static code analysis, coding style, etc.)
-   b. Requirements and requirements tracing
+   b. :ref:`safety_requirements` and requirements tracing
    c. Test coverage
 
 2. Software architecture design principles
@@ -128,6 +146,46 @@ system.
 
 Also the **IEC 61508 standard** sets a pre-condition and recommendation towards the use of coding
 standards / guidelines to reduce likelihood of errors.
+
+The project TSC and the Safety Committee of the project agreed to implement
+a staged and incremental approach for complying with a set of coding rules (AKA
+Coding Guidelines) to improve quality and consistency of the code base. Below
+are the agreed upon stages:
+
+Stage I (COMPLETED)
+  Coding guideline rules are available to be followed and referenced,
+  but not enforced. Rules are not yet enforced in CI and pull-requests cannot be
+  blocked by reviewers/approvers due to violations.
+
+Stage II
+  Reviewers/approvers can block pull-requests due to violations of the coding guidelines
+  in pull-requests across the codebase.
+
+  Begin enforcement on a limited scope of the code base. Initially, this would be
+  the safety certification scope. For rules easily applied across codebase, we
+  should not limit compliance to initial scope. This step requires tooling,
+  CI setup and an enforcement strategy.
+
+Stage III
+  Revisit the coding guideline rules and based on experience from previous
+  stages, refine/iterate on selected rules.
+
+Stage IV
+   Expand enforcement to the wider codebase. Exceptions may be granted on some
+   areas of the codebase with a proper justification. Exception would require
+   TSC approval.
+
+.. note::
+
+    Coding guideline rules may be removed/changed at any time by filing a
+    GH issue/RFC.
+
+.. important::
+
+    **Current stage:**
+    The prerequisites to complete **Stage II** are currently being looked at:
+    The tooling is in evaluation, CI setup and `enforcement strategy
+    <https://github.com/zephyrproject-rtos/zephyr/issues/58903>`__ is being worked on.
 
 Requirements and requirements tracing
 -------------------------------------

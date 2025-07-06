@@ -599,7 +599,6 @@ static int can_stm32_init(const struct device *dev)
 	CAN_TypeDef *can = cfg->can;
 	struct can_timing timing = { 0 };
 	const struct device *clock;
-	uint32_t bank_offset;
 	int ret;
 
 	k_mutex_init(&filter_mutex);
@@ -645,10 +644,19 @@ static int can_stm32_init(const struct device *dev)
 	}
 
 	/* configure scale of filter banks < CONFIG_CAN_MAX_EXT_ID_FILTER for ext ids */
-	bank_offset = (cfg->can == cfg->master_can) ? 0 : CAN_STM32_NUM_FILTER_BANKS;
-	cfg->master_can->FMR |= CAN_FMR_FINIT;
-	cfg->master_can->FS1R |= ((1U << CONFIG_CAN_MAX_EXT_ID_FILTER) - 1) << bank_offset;
-	cfg->master_can->FMR &= ~CAN_FMR_FINIT;
+	/* We have to have set filters after initializing master CAN */
+	if (cfg->can == cfg->master_can) {
+		cfg->master_can->FMR |= CAN_FMR_FINIT;
+		cfg->master_can->FS1R |= ((1U << CONFIG_CAN_MAX_EXT_ID_FILTER) - 1);
+
+#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 1
+		/* reserve ext_id filters on slave CAN device */
+		cfg->master_can->FS1R |= ((1U << CONFIG_CAN_MAX_EXT_ID_FILTER) - 1)
+					 << CAN_STM32_NUM_FILTER_BANKS;
+#endif /* DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 1 */
+
+		cfg->master_can->FMR &= ~CAN_FMR_FINIT;
+	}
 
 	can->MCR &= ~CAN_MCR_TTCM & ~CAN_MCR_ABOM & ~CAN_MCR_AWUM &
 		    ~CAN_MCR_NART & ~CAN_MCR_RFLM & ~CAN_MCR_TXFP;
@@ -659,7 +667,7 @@ static int can_stm32_init(const struct device *dev)
 	/* Enable automatic bus-off recovery */
 	can->MCR |= CAN_MCR_ABOM;
 
-	ret = can_calc_timing(dev, &timing, cfg->common.bus_speed,
+	ret = can_calc_timing(dev, &timing, cfg->common.bitrate,
 			      cfg->common.sample_point);
 	if (ret == -EINVAL) {
 		LOG_ERR("Can't find timing for given param");
@@ -761,7 +769,7 @@ static int can_stm32_send(const struct device *dev, const struct can_frame *fram
 	const struct can_stm32_config *cfg = dev->config;
 	struct can_stm32_data *data = dev->data;
 	CAN_TypeDef *can = cfg->can;
-	uint32_t transmit_status_register = can->TSR;
+	uint32_t transmit_status_register = 0;
 	CAN_TxMailBox_TypeDef *mailbox = NULL;
 	struct can_stm32_mailbox *mb = NULL;
 
@@ -773,9 +781,6 @@ static int can_stm32_send(const struct device *dev, const struct can_frame *fram
 		    , frame->id
 		    , (frame->flags & CAN_FRAME_IDE) != 0 ? "extended" : "standard"
 		    , (frame->flags & CAN_FRAME_RTR) != 0 ? "yes" : "no");
-
-	__ASSERT_NO_MSG(callback != NULL);
-	__ASSERT(frame->dlc == 0U || frame->data != NULL, "Dataptr is null");
 
 	if (frame->dlc > CAN_MAX_DLC) {
 		LOG_ERR("DLC of %d exceeds maximum (%d)", frame->dlc, CAN_MAX_DLC);
@@ -796,6 +801,7 @@ static int can_stm32_send(const struct device *dev, const struct can_frame *fram
 	}
 
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
+	transmit_status_register = can->TSR;
 	while (!(transmit_status_register & CAN_TSR_TME)) {
 		k_mutex_unlock(&data->inst_mutex);
 		LOG_DBG("Transmit buffer full");
@@ -1065,7 +1071,7 @@ static void can_stm32_remove_rx_filter(const struct device *dev, int filter_id)
 	k_mutex_unlock(&filter_mutex);
 }
 
-static const struct can_driver_api can_api_funcs = {
+static DEVICE_API(can, can_api_funcs) = {
 	.get_capabilities = can_stm32_get_capabilities,
 	.start = can_stm32_start,
 	.stop = can_stm32_stop,

@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Arrow Electronics.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_CY8CKIT_062S2_AI
+	select SOC_CY8C624ABZI_S2D44

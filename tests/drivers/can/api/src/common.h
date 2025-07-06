@@ -163,3 +163,10 @@ extern const struct can_filter test_std_some_filter;
 void assert_frame_equal(const struct can_frame *frame1,
 			const struct can_frame *frame2,
 			uint32_t id_mask);
+
+/**
+ * @brief Common setup function for the CAN controller device under test.
+ *
+ * @param initial_mode Initial CAN controller operational mode.
+ */
+void can_common_test_setup(can_mode_t initial_mode);

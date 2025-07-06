@@ -9,7 +9,8 @@
 ##################### Audio Input Control Service #####################
 
 config BT_AICS_MAX_INSTANCE_COUNT
-	int "Audio Input Control Service max instance count [EXPERIMENTAL]"
+	int "Audio Input Control Service max instance count"
+	depends on BT_SMP
 	default 0
 	range 0 15
 	help
@@ -19,8 +20,7 @@ config BT_AICS_MAX_INSTANCE_COUNT
 config BT_AICS
 	bool # hidden
 	default y if BT_AICS_MAX_INSTANCE_COUNT > 0
-	select EXPERIMENTAL
-	select BT_GATT_DYNAMIC_DB
+	depends on BT_GATT_DYNAMIC_DB
 	help
 	  This hidden option enables support for Audio Input Control Service.
 
@@ -38,7 +38,8 @@ endif # BT_AICS
 ##################### Audio Input Control Service Client #####################
 
 config BT_AICS_CLIENT_MAX_INSTANCE_COUNT
-	int "Audio Input Control Service client max instance count [EXPERIMENTAL]"
+	int "Audio Input Control Service client max instance count"
+	depends on BT_SMP
 	default 0
 	range 0 15
 	help
@@ -48,6 +49,5 @@ config BT_AICS_CLIENT_MAX_INSTANCE_COUNT
 config BT_AICS_CLIENT
 	bool # hidden
 	default y if BT_AICS_CLIENT_MAX_INSTANCE_COUNT > 0
-	select EXPERIMENTAL
 	help
 	  This hidden option enables support for Audio Input Control Service.

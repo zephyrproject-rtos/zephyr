@@ -1,0 +1,15 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/display/ili9xxx.h>
+
+&adafruit_2_8_tft_touch_v2_ili9340 {
+	pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB565>;
+};
+
+&adafruit_2_8_tft_touch_v2_mipi_dbi {
+	/delete-property/ write-only;
+};

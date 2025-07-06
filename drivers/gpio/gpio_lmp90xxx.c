@@ -135,7 +135,7 @@ static int gpio_lmp90xxx_init(const struct device *dev)
 	return 0;
 }
 
-static const struct gpio_driver_api gpio_lmp90xxx_api = {
+static DEVICE_API(gpio, gpio_lmp90xxx_api) = {
 	.pin_configure = gpio_lmp90xxx_config,
 	.port_set_masked_raw = gpio_lmp90xxx_port_set_masked_raw,
 	.port_set_bits_raw = gpio_lmp90xxx_port_set_bits_raw,
@@ -161,7 +161,7 @@ BUILD_ASSERT(CONFIG_GPIO_LMP90XXX_INIT_PRIORITY >
 	static struct gpio_lmp90xxx_data gpio_lmp90xxx_##id##_data;	\
 									\
 	DEVICE_DT_INST_DEFINE(id,					\
-			    &gpio_lmp90xxx_init,			\
+			    gpio_lmp90xxx_init,				\
 			    NULL,					\
 			    &gpio_lmp90xxx_##id##_data,			\
 			    &gpio_lmp90xxx_##id##_cfg, POST_KERNEL,	\

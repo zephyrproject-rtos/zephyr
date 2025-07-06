@@ -1,0 +1,13 @@
+identifier: stm32f413h_disco
+name: ST STM32F413H Discovery
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - arduino_gpio
+  - arduino_serial
+  - arduino_i2c
+  - arduino_spi
+vendor: st

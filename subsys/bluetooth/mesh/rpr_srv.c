@@ -6,9 +6,9 @@
 
 #include <stdlib.h>
 #include <zephyr/sys/slist.h>
-#include <zephyr/random/random.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/crypto.h>
 #include <zephyr/bluetooth/mesh/rpr_srv.h>
 #include <common/bt_str.h>
 #include <zephyr/bluetooth/mesh/sar_cfg.h>
@@ -193,14 +193,15 @@ static void link_report_send(void)
 
 static void scan_report_schedule(void)
 {
-	uint32_t delay;
+	uint32_t delay = 0;
 
 	if (k_work_delayable_remaining_get(&srv.scan.report) ||
 	    atomic_test_bit(srv.flags, SCAN_REPORT_PENDING)) {
 		return;
 	}
 
-	delay = (sys_rand32_get() % 480) + 20;
+	(void)bt_rand(&delay, sizeof(uint32_t));
+	delay = (delay % 480) + 20;
 
 	k_work_reschedule(&srv.scan.report, K_MSEC(delay));
 }
@@ -1172,7 +1173,7 @@ static void adv_handle_ext_scan(const struct bt_le_scan_recv_info *info,
 	srv.scan.addr = *info->addr;
 	atomic_set_bit(srv.flags, SCAN_EXT_HAS_ADDR);
 
-	if (IS_ENABLED(CONFIG_BT_MESH_DEBUG_MODEL)) {
+	if (IS_ENABLED(CONFIG_BT_MESH_MODEL_LOG_LEVEL_DBG)) {
 		struct bt_uuid_128 uuid_repr = { .uuid = { BT_UUID_TYPE_128 } };
 
 		memcpy(uuid_repr.val, dev->uuid, 16);
@@ -1358,6 +1359,12 @@ static int node_refresh_link_accept(const struct prov_bearer_cb *cb,
 	return 0;
 }
 
+static void node_refresh_link_cancel(void)
+{
+	srv.refresh.cb = NULL;
+	srv.refresh.cb_data = NULL;
+}
+
 static void node_refresh_tx_complete(int err, void *cb_data)
 {
 	if (err) {
@@ -1407,6 +1414,7 @@ const struct prov_bearer pb_remote_srv = {
 	.type = BT_MESH_PROV_REMOTE,
 
 	.link_accept = node_refresh_link_accept,
+	.link_cancel = node_refresh_link_cancel,
 	.send = node_refresh_buf_send,
 	.clear_tx = node_refresh_clear_tx,
 };

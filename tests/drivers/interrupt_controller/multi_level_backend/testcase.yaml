@@ -1,0 +1,20 @@
+# Copyright (c) 2024 Meta
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - interrupt
+  filter: CONFIG_MULTI_LEVEL_INTERRUPTS
+  platform_allow:
+    - m2gl025_miv/miv
+    - qemu_riscv32/qemu_virt_riscv32
+    - qemu_riscv32/qemu_virt_riscv32/smp
+    - qemu_riscv64/qemu_virt_riscv64
+    - qemu_riscv64/qemu_virt_riscv64/smp
+    - qemu_riscv32e/qemu_virt_riscv32e
+tests:
+  interrupt_controller.intc_multi_level_backend.default: {}
+  interrupt_controller.intc_multi_level_backend.no_assert:
+    extra_configs:
+      - CONFIG_ASSERT=n

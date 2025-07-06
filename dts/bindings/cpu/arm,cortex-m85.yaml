@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: ARM Cortex-M85 CPU
+
+compatible: "arm,cortex-m85"
+
+include: arm,cortex-m.yaml

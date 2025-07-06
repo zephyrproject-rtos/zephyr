@@ -19,24 +19,13 @@ Bluetooth LE Audio
 .. toctree::
    :maxdepth: 1
 
-   audio.rst
-   bap.rst
-   cap.rst
-   coordinated_sets.rst
-   media.rst
-   microphone.rst
-   volume.rst
-   shell/bap.rst
-   shell/bap_broadcast_assistant.rst
-   shell/bap_scan_delegator.rst
-   shell/cap.rst
-   shell/ccp.rst
-   shell/csip.rst
-   shell/gmap.rst
-   shell/iso.rst
-   shell/mcp.rst
-   shell/tmap.rst
-   shell/pbp.rst
+   audio/audio.rst
+   audio/bap.rst
+   audio/cap.rst
+   audio/coordinated_sets.rst
+   audio/media.rst
+   audio/microphone.rst
+   audio/volume.rst
 
 Bluetooth LE Host
 =================

@@ -57,7 +57,7 @@ static int uart_efinix_sapphire_poll_in(const struct device *dev, unsigned char 
 	return -1;
 }
 
-static const struct uart_driver_api uart_efinix_sapphire_api = {
+static DEVICE_API(uart, uart_efinix_sapphire_api) = {
 	.poll_in = uart_efinix_sapphire_poll_in,
 	.poll_out = uart_efinix_sapphire_poll_out,
 	.err_check = NULL,

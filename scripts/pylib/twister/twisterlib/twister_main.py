@@ -3,66 +3,31 @@
 # Copyright (c) 2022 Google
 # SPDX-License-Identifier: Apache-2.0
 
-import colorama
+import argparse
 import logging
 import os
 import shutil
 import sys
 import time
 
+import colorama
 from colorama import Fore
-
-from twisterlib.testplan import TestPlan
-from twisterlib.reports import Reporting
-from twisterlib.hardwaremap import HardwareMap
 from twisterlib.coverage import run_coverage
-from twisterlib.runner import TwisterRunner
 from twisterlib.environment import TwisterEnv
+from twisterlib.hardwaremap import HardwareMap
+from twisterlib.log_helper import close_logging, setup_logging
 from twisterlib.package import Artifacts
-
-logger = logging.getLogger("twister")
-logger.setLevel(logging.DEBUG)
-
-
-def setup_logging(outdir, log_file, verbose, timestamps):
-    # create file handler which logs even debug messages
-    if log_file:
-        fh = logging.FileHandler(log_file)
-    else:
-        fh = logging.FileHandler(os.path.join(outdir, "twister.log"))
-
-    fh.setLevel(logging.DEBUG)
-
-    # create console handler with a higher log level
-    ch = logging.StreamHandler()
-
-    if verbose > 1:
-        ch.setLevel(logging.DEBUG)
-    else:
-        ch.setLevel(logging.INFO)
-
-    # create formatter and add it to the handlers
-    if timestamps:
-        formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-    else:
-        formatter = logging.Formatter("%(levelname)-7s - %(message)s")
-
-    formatter_file = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
-    ch.setFormatter(formatter)
-    fh.setFormatter(formatter_file)
-
-    # add the handlers to logger
-    logger.addHandler(ch)
-    logger.addHandler(fh)
+from twisterlib.reports import Reporting
+from twisterlib.runner import TwisterRunner
+from twisterlib.statuses import TwisterStatus
+from twisterlib.testplan import TestPlan
 
 
 def init_color(colorama_strip):
     colorama.init(strip=colorama_strip)
 
 
-def main(options):
+def twister(options: argparse.Namespace, default_options: argparse.Namespace):
     start_time = time.time()
 
     # Configure color output
@@ -73,27 +38,35 @@ def main(options):
 
     previous_results = None
     # Cleanup
-    if options.no_clean or options.only_failed or options.test_only:
+    if (
+        options.no_clean
+        or options.only_failed
+        or options.test_only
+        or options.report_summary is not None
+    ):
         if os.path.exists(options.outdir):
             print("Keeping artifacts untouched")
     elif options.last_metrics:
         ls = os.path.join(options.outdir, "twister.json")
         if os.path.exists(ls):
-            with open(ls, "r") as fp:
+            with open(ls) as fp:
                 previous_results = fp.read()
         else:
             sys.exit(f"Can't compare metrics with non existing file {ls}")
     elif os.path.exists(options.outdir):
         if options.clobber_output:
-            print("Deleting output directory {}".format(options.outdir))
+            print(f"Deleting output directory {options.outdir}")
             shutil.rmtree(options.outdir)
         else:
             for i in range(1, 100):
-                new_out = options.outdir + ".{}".format(i)
+                new_out = options.outdir + f".{i}"
                 if not os.path.exists(new_out):
-                    print("Renaming output directory to {}".format(new_out))
+                    print(f"Renaming output directory to {new_out}")
                     shutil.move(options.outdir, new_out)
                     break
+            else:
+                sys.exit(f"Too many '{options.outdir}.*' directories. Run either with --no-clean, "
+                         "or --clobber-output, or delete these directories manually.")
 
     previous_results_file = None
     os.makedirs(options.outdir, exist_ok=True)
@@ -102,10 +75,10 @@ def main(options):
         with open(previous_results_file, "w") as fp:
             fp.write(previous_results)
 
-    VERBOSE = options.verbose
-    setup_logging(options.outdir, options.log_file, VERBOSE, options.timestamps)
+    setup_logging(options.outdir, options.log_file, options.log_level, options.timestamps)
+    logger = logging.getLogger("twister")
 
-    env = TwisterEnv(options)
+    env = TwisterEnv(options, default_options)
     env.discover()
 
     hwm = HardwareMap(env)
@@ -131,34 +104,52 @@ def main(options):
         logger.error(f"{e}")
         return 1
 
-    if VERBOSE > 1:
-        # if we are using command line platform filter, no need to list every
-        # other platform as excluded, we know that already.
-        # Show only the discards that apply to the selected platforms on the
-        # command line
+    # if we are using command line platform filter, no need to list every
+    # other platform as excluded, we know that already.
+    # Show only the discards that apply to the selected platforms on the
+    # command line
 
+    if options.verbose > 0:
         for i in tplan.instances.values():
-            if i.status == "filtered":
-                if options.platform and i.platform.name not in options.platform:
+            if i.status in [TwisterStatus.SKIP,TwisterStatus.FILTER]:
+                if options.platform and not tplan.check_platform(i.platform, options.platform):
                     continue
-                logger.debug(
-                    "{:<25} {:<50} {}SKIPPED{}: {}".format(
-                        i.platform.name,
-                        i.testsuite.name,
-                        Fore.YELLOW,
-                        Fore.RESET,
-                        i.reason,
+                # Filtered tests should be visable only when verbosity > 1
+                if options.verbose < 2 and i.status == TwisterStatus.FILTER:
+                    continue
+                res = i.reason
+                if "Quarantine" in i.reason:
+                    res = "Quarantined"
+                logger.info(
+                    f"{i.platform.name:<25} {i.testsuite.name:<50}"
+                    f" {Fore.YELLOW}{i.status.upper()}{Fore.RESET}: {res}"
                     )
-                )
 
     report = Reporting(tplan, env)
     plan_file = os.path.join(options.outdir, "testplan.json")
     if not os.path.exists(plan_file):
-        report.json_report(plan_file)
+        report.json_report(plan_file, env.version)
 
     if options.save_tests:
-        report.json_report(options.save_tests)
+        report.json_report(options.save_tests, env.version)
         return 0
+
+    if options.report_summary is not None:
+        if options.report_summary < 0:
+            logger.error("The report summary value cannot be less than 0")
+            return 1
+        report.synopsis()
+        return 0
+
+    # FIXME: This is a workaround for the fact that the hardware map can be usng
+    # the short name of the platform, while the testplan is using the full name.
+    #
+    # convert platform names coming from the hardware map to the full target
+    # name.
+    # this is needed to match the platform names in the testplan.
+    for d in hwm.duts:
+        if d.platform in tplan.platform_names:
+            d.platform = tplan.get_platform(d.platform).name
 
     if options.device_testing and not options.build_only:
         print("\nDevice testing on:")
@@ -167,7 +158,7 @@ def main(options):
 
     if options.dry_run:
         duration = time.time() - start_time
-        logger.info("Completed in %d seconds" % (duration))
+        logger.info(f"Completed in {duration} seconds")
         return 0
 
     if options.short_build_path:
@@ -194,15 +185,15 @@ def main(options):
 
     duration = time.time() - start_time
 
-    if VERBOSE > 1:
+    if options.verbose > 1:
         runner.results.summary()
 
-    report.summary(runner.results, options.disable_unrecognized_section_test, duration)
+    report.summary(runner.results, duration)
 
-    coverage_completed = True
-    if options.coverage:
+    report.coverage_status = True
+    if options.coverage and not options.disable_coverage_aggregation:
         if not options.build_only:
-            coverage_completed = run_coverage(tplan, options)
+            report.coverage_status, report.coverage = run_coverage(options, tplan)
         else:
             logger.info("Skipping coverage report generation due to --build-only.")
 
@@ -223,13 +214,25 @@ def main(options):
         artifacts = Artifacts(env)
         artifacts.package()
 
-    logger.info("Run completed")
     if (
         runner.results.failed
         or runner.results.error
         or (tplan.warnings and options.warnings_as_errors)
-        or (options.coverage and not coverage_completed)
+        or (options.coverage and not report.coverage_status)
     ):
+        if env.options.quit_on_failure:
+            logger.info("twister aborted because of a failure/error")
+        else:
+            logger.info("Run completed")
         return 1
 
+    logger.info("Run completed")
     return 0
+
+
+def main(options: argparse.Namespace, default_options: argparse.Namespace):
+    try:
+        return_code = twister(options, default_options)
+    finally:
+        close_logging()
+    return return_code

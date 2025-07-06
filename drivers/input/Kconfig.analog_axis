@@ -5,8 +5,8 @@ config INPUT_ANALOG_AXIS
 	bool "ADC based analog axis input driver"
 	default y
 	depends on DT_HAS_ANALOG_AXIS_ENABLED
-	depends on ADC
 	depends on MULTITHREADING
+	select ADC
 	help
 	  ADC based analog axis input driver
 

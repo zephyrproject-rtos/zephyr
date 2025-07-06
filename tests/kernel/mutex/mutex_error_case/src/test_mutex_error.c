@@ -38,7 +38,7 @@ extern struct k_sem offload_sem;
 
 /* A call back function which is hooked in default assert handler. */
 void ztest_post_fatal_error_hook(unsigned int reason,
-		const z_arch_esf_t *pEsf)
+		const struct arch_esf *pEsf)
 
 {
 	/* check if expected error */

@@ -60,7 +60,13 @@ function(runners_yaml_append_config)
     get_runners_prop(uf2_file uf2 "${KERNEL_UF2_NAME}")
     runners_yaml_append("  uf2_file: ${uf2}")
   endif()
+  if(CONFIG_BUILD_OUTPUT_MOT)
+    get_runners_prop(mot_file mot "${KERNEL_MOT_NAME}")
+    runners_yaml_append("  mot_file: ${mot}")
+  endif()
 
+  zephyr_get(OPENOCD)
+  zephyr_get(OPENOCD_DEFAULT_PATH)
   if(CMAKE_GDB OR OPENOCD OR OPENOCD_DEFAULT_PATH)
     runners_yaml_append("  # Host tools:")
   endif()
@@ -77,8 +83,7 @@ function(runners_yaml_append_config)
   runners_yaml_append("")
 endfunction()
 
-# Save runner state in a YAML file, and put that YAML file's location
-# in the cache.
+# Save runner state in a YAML file.
 function(create_runners_yaml)
   set(runners ${ARGV})
 
@@ -96,6 +101,14 @@ function(create_runners_yaml)
   if(DEFINED BOARD_DEBUG_RUNNER)
     runners_yaml_append("\n# Default debug runner if --runner is not given.")
     runners_yaml_append("debug-runner: ${BOARD_DEBUG_RUNNER}")
+  endif()
+  if(DEFINED BOARD_SIM_RUNNER)
+    runners_yaml_append("\n# Default simulation runner if --runner is not given.")
+    runners_yaml_append("sim-runner: ${BOARD_SIM_RUNNER}")
+  endif()
+  if(DEFINED BOARD_ROBOT_RUNNER)
+    runners_yaml_append("\n# Default test runner if --runner is not given.")
+    runners_yaml_append("robot-runner: ${BOARD_ROBOT_RUNNER}")
   endif()
 
   # Sets up common runner configuration values.
@@ -120,11 +133,9 @@ function(create_runners_yaml)
     endif()
   endforeach()
 
-  # Write the final contents and set its location in the cache.
+  # Write the final contents.
   file(GENERATE OUTPUT "${runners_yaml}" CONTENT
     $<TARGET_PROPERTY:runners_yaml_props_target,yaml_contents>)
-  set(ZEPHYR_RUNNERS_YAML "${runners_yaml}" CACHE INTERNAL
-    "a configuration file for the runners Python package")
 endfunction()
 
 get_property(RUNNERS GLOBAL PROPERTY ZEPHYR_RUNNERS)
@@ -147,7 +158,7 @@ endif()
 
 # Generate the flash, debug, debugserver, attach targets within the build
 # system itself.
-foreach(target flash debug debugserver attach)
+foreach(target flash debug debugserver attach rtt)
   if(target STREQUAL flash)
     set(comment "Flashing ${BOARD}")
   elseif(target STREQUAL debug)
@@ -161,6 +172,8 @@ foreach(target flash debug debugserver attach)
     endif()
   elseif(target STREQUAL attach)
     set(comment "Debugging ${BOARD}")
+  elseif(target STREQUAL rtt)
+    set(comment "RTT ${BOARD}")
   endif()
   string(TOUPPER ${target} TARGET_UPPER)
 
@@ -183,7 +196,7 @@ foreach(target flash debug debugserver attach)
         -DDEPENDENCIES="$<TARGET_PROPERTY:${target},MANUALLY_ADDED_DEPENDENCIES>"
         -P ${CMAKE_CURRENT_LIST_DIR}/check_runner_dependencies.cmake
       COMMAND
-        ${CMAKE_COMMAND} -E env
+        ${CMAKE_COMMAND} -E env ZEPHYR_BASE=${ZEPHYR_BASE}
         ${WEST}
         ${RUNNER_VERBOSE}
         ${target}

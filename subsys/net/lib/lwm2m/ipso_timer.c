@@ -200,9 +200,10 @@ static void *cumulative_time_read_cb(uint16_t obj_inst_id,
 }
 
 static int cumulative_time_post_write_cb(uint16_t obj_inst_id,
-					 uint16_t res_id, uint16_t res_inst_id,
-					 uint8_t *data, uint16_t data_len,
-					 bool last_block, size_t total_size)
+					 uint16_t res_id,
+					 uint16_t res_inst_id, uint8_t *data,
+					 uint16_t data_len, bool last_block,
+					 size_t total_size, size_t offset)
 {
 	int i;
 
@@ -215,10 +216,10 @@ static int cumulative_time_post_write_cb(uint16_t obj_inst_id,
 	return 0;
 }
 
-static int enabled_post_write_cb(uint16_t obj_inst_id,
-				 uint16_t res_id, uint16_t res_inst_id,
-				 uint8_t *data, uint16_t data_len,
-				 bool last_block, size_t total_size)
+static int enabled_post_write_cb(uint16_t obj_inst_id, uint16_t res_id,
+				 uint16_t res_inst_id, uint8_t *data,
+				 uint16_t data_len, bool last_block,
+				 size_t total_size, size_t offset)
 {
 	int i;
 
@@ -236,9 +237,10 @@ static int enabled_post_write_cb(uint16_t obj_inst_id,
 }
 
 static int trigger_counter_post_write_cb(uint16_t obj_inst_id,
-					 uint16_t res_id, uint16_t res_inst_id,
-					 uint8_t *data, uint16_t data_len,
-					 bool last_block, size_t total_size)
+					 uint16_t res_id,
+					 uint16_t res_inst_id, uint8_t *data,
+					 uint16_t data_len, bool last_block,
+					 size_t total_size, size_t offset)
 {
 	int i;
 

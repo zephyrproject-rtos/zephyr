@@ -192,7 +192,7 @@ static void gd32_wwdgt_irq_config(const struct device *dev)
 	irq_enable(DT_INST_IRQN(0));
 }
 
-static const struct wdt_driver_api wwdgt_gd32_api = {
+static DEVICE_API(wdt, wwdgt_gd32_api) = {
 	.setup = gd32_wwdgt_setup,
 	.disable = gd32_wwdgt_disable,
 	.install_timeout = gd32_wwdgt_install_timeout,

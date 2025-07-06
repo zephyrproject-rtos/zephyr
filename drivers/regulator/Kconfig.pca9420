@@ -1,5 +1,5 @@
 # Copyright (c) 2021, NXP
-# SPDX -License-Identifier: Apache-2.0
+# SPDX-License-Identifier: Apache-2.0
 
 config REGULATOR_PCA9420
 	bool "NXP PCA9420 PMIC regulator driver"

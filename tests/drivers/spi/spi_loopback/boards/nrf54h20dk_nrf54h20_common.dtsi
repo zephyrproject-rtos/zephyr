@@ -1,0 +1,65 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	zephyr,user {
+		miso-gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
+		mosi-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&pinctrl {
+	spi130_default: spi130_default {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 0, 0)>,
+				<NRF_PSEL(SPIM_MISO, 0, 6)>,
+				<NRF_PSEL(SPIM_MOSI, 0, 7)>;
+		};
+	};
+
+	spi130_sleep: spi130_sleep {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 0, 0)>,
+				<NRF_PSEL(SPIM_MISO, 0, 6)>,
+				<NRF_PSEL(SPIM_MOSI, 0, 7)>;
+			low-power-enable;
+		};
+	};
+};
+
+&spi130 {
+	pinctrl-0 = <&spi130_default>;
+	pinctrl-1 = <&spi130_sleep>;
+	pinctrl-names = "default", "sleep";
+	overrun-character = <0x00>;
+	status = "okay";
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_K(500)>;
+	};
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(8)>;
+	};
+	cs-gpios = <&gpio7 0 0>;
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio7 {
+	status = "okay";
+	zephyr,pm-device-runtime-auto;
+};
+
+&gpiote130 {
+	status = "okay";
+};

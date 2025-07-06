@@ -10,7 +10,7 @@
 #include <zephyr/drivers/watchdog.h>
 
 #include <errno.h>
-#include <am_mcu_apollo.h>
+#include <soc.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(wdt_ambiq, CONFIG_WDT_LOG_LEVEL);
@@ -35,10 +35,13 @@ static void wdt_ambiq_isr(void *arg)
 	const struct device *dev = (const struct device *)arg;
 	struct wdt_ambiq_data *data = dev->data;
 
+#if defined(CONFIG_SOC_SERIES_APOLLO3X)
+	am_hal_wdt_int_clear();
+#else
 	uint32_t status;
-
 	am_hal_wdt_interrupt_status_get(AM_HAL_WDT_MCU, &status, false);
 	am_hal_wdt_interrupt_clear(AM_HAL_WDT_MCU, status);
+#endif
 
 	if (data->callback) {
 		data->callback(dev, 0);
@@ -51,6 +54,25 @@ static int wdt_ambiq_setup(const struct device *dev, uint8_t options)
 	struct wdt_ambiq_data *data = dev->data;
 	am_hal_wdt_config_t cfg;
 
+#if defined(CONFIG_SOC_SERIES_APOLLO3X)
+	uint32_t ui32ClockSource = AM_HAL_WDT_LFRC_CLK_DEFAULT;
+
+	if (dev_cfg->clk_freq == 128) {
+		ui32ClockSource = AM_HAL_WDT_LFRC_CLK_128HZ;
+	} else if (dev_cfg->clk_freq == 16) {
+		ui32ClockSource = AM_HAL_WDT_LFRC_CLK_16HZ;
+	} else if (dev_cfg->clk_freq == 1) {
+		ui32ClockSource = AM_HAL_WDT_LFRC_CLK_1HZ;
+	}
+	cfg.ui32Config = ui32ClockSource | _VAL2FLD(WDT_CFG_RESEN, data->reset) |
+			 AM_HAL_WDT_ENABLE_INTERRUPT;
+	cfg.ui16InterruptCount = data->timeout;
+	cfg.ui16ResetCount = data->timeout;
+	am_hal_clkgen_control(AM_HAL_CLKGEN_CONTROL_LFRC_START, 0);
+	am_hal_wdt_init(&cfg);
+	am_hal_wdt_int_enable();
+	am_hal_wdt_start();
+#else
 	if (dev_cfg->clk_freq == 128) {
 		cfg.eClockSource = AM_HAL_WDT_128HZ;
 	} else if (dev_cfg->clk_freq == 16) {
@@ -63,12 +85,13 @@ static int wdt_ambiq_setup(const struct device *dev, uint8_t options)
 	cfg.ui32InterruptValue = data->timeout;
 	cfg.bResetEnable = data->reset;
 	cfg.ui32ResetValue = data->timeout;
+#if defined(CONFIG_SOC_SERIES_APOLLO4X)
 	cfg.bAlertOnDSPReset = false;
-
+#endif
 	am_hal_wdt_config(AM_HAL_WDT_MCU, &cfg);
 	am_hal_wdt_interrupt_enable(AM_HAL_WDT_MCU, AM_HAL_WDT_INTERRUPT_MCU);
 	am_hal_wdt_start(AM_HAL_WDT_MCU, false);
-
+#endif
 	return 0;
 }
 
@@ -76,8 +99,11 @@ static int wdt_ambiq_disable(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
+#if defined(CONFIG_SOC_SERIES_APOLLO3X)
+	am_hal_wdt_halt();
+#else
 	am_hal_wdt_stop(AM_HAL_WDT_MCU);
-
+#endif
 	return 0;
 }
 
@@ -114,7 +140,11 @@ static int wdt_ambiq_feed(const struct device *dev, int channel_id)
 	ARG_UNUSED(dev);
 	ARG_UNUSED(channel_id);
 
+#if defined(CONFIG_SOC_SERIES_APOLLO3X)
+	am_hal_wdt_restart();
+#else
 	am_hal_wdt_restart(AM_HAL_WDT_MCU);
+#endif
 	LOG_DBG("Fed the watchdog");
 
 	return 0;
@@ -137,7 +167,7 @@ static int wdt_ambiq_init(const struct device *dev)
 	return 0;
 }
 
-static const struct wdt_driver_api wdt_ambiq_driver_api = {
+static DEVICE_API(wdt, wdt_ambiq_driver_api) = {
 	.setup = wdt_ambiq_setup,
 	.disable = wdt_ambiq_disable,
 	.install_timeout = wdt_ambiq_install_timeout,

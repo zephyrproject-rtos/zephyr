@@ -78,7 +78,7 @@ static unsigned int get_exception(unsigned int vector)
 /*
  * Debug exception handler.
  */
-static void z_gdb_interrupt(unsigned int vector, z_arch_esf_t *esf)
+static void z_gdb_interrupt(unsigned int vector, struct arch_esf *esf)
 {
 	debug_ctx.exception = get_exception(vector);
 
@@ -212,7 +212,7 @@ size_t arch_gdb_reg_writeone(struct gdb_ctx *ctx, uint8_t *hex, size_t hexlen,
 	return ret;
 }
 
-static __used void z_gdb_debug_isr(z_arch_esf_t *esf)
+static __used void z_gdb_debug_isr(struct arch_esf *esf)
 {
 #ifdef CONFIG_GDBSTUB_TRACE
 	printk("gdbstub:enter %s (IV_DEBUG)\n", __func__);
@@ -225,7 +225,7 @@ static __used void z_gdb_debug_isr(z_arch_esf_t *esf)
 #endif
 }
 
-static __used void z_gdb_break_isr(z_arch_esf_t *esf)
+static __used void z_gdb_break_isr(struct arch_esf *esf)
 {
 #ifdef CONFIG_GDBSTUB_TRACE
 	printk("gdbstub:enter %s (IV_BREAKPOINT)\n", __func__);

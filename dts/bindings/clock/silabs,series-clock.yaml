@@ -1,0 +1,22 @@
+# Copyright (c) 2024 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Silicon Labs Series 2 CMU (Clock Management Unit)
+
+description: |
+  Clock Management Unit for Silicon Labs Series 2+ SoCs.
+
+compatible: "silabs,series-clock"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#clock-cells":
+    const: 2
+
+clock-cells:
+  - enable
+  - branch

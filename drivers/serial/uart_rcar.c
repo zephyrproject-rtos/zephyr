@@ -515,7 +515,7 @@ void uart_rcar_isr(const struct device *dev)
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static const struct uart_driver_api uart_rcar_driver_api = {
+static DEVICE_API(uart, uart_rcar_driver_api) = {
 	.poll_in = uart_rcar_poll_in,
 	.poll_out = uart_rcar_poll_out,
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
@@ -550,7 +550,7 @@ static const struct uart_driver_api uart_rcar_driver_api = {
 		.bus_clk.module = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, module),		\
 		.bus_clk.domain = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, domain),		\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				\
-		.is_hscif = DT_NODE_HAS_COMPAT(DT_DRV_INST(n), renesas_rcar_hscif),	\
+		.is_hscif = DT_INST_NODE_HAS_COMPAT(n, renesas_rcar_hscif),	        \
 		IRQ_FUNC_INIT								\
 	}
 

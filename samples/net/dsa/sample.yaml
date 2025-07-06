@@ -9,5 +9,8 @@ common:
 tests:
   sample.net.dsa:
     build_only: true
-    platform_allow: ip_k66f
+    platform_allow:
+      - ip_k66f
+      - mimxrt1180_evk/mimxrt1189/cm33
+      - mimxrt1180_evk/mimxrt1189/cm7
     depends_on: eth

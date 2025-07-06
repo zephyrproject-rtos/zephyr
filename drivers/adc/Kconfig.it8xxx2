@@ -7,6 +7,7 @@ config ADC_ITE_IT8XXX2
 	bool "ITE IT8XXX2 ADC driver"
 	default y
 	depends on DT_HAS_ITE_IT8XXX2_ADC_ENABLED
+	select PINCTRL
 	help
 	  This option enables the ADC driver for IT8XXX2
 	  family of processors.

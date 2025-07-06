@@ -14,6 +14,8 @@ bq24190@0 {
 
 	constant-charge-current-max-microamp = <1000000>;
 	constant-charge-voltage-max-microvolt = <4208000>;
+
+	ce-gpios = <&test_gpio 0 0>;
 };
 
 max20335@1 {
@@ -37,4 +39,30 @@ bq25180@2 {
 	compatible = "ti,bq25180";
 	reg = <0x2>;
 	constant-charge-current-max-microamp = <500000>;
+	constant-charge-voltage-max-microvolt = <4200000>;
+};
+
+sbs-charger@3 {
+	compatible = "sbs,sbs-charger";
+	reg = <0x3>;
+};
+
+bq257130@4 {
+	compatible = "ti,bq25713";
+	reg = <0x4>;
+	constant-charge-current-max-microamp = <1000000>;
+	constant-charge-voltage-max-microvolt = <3800000>;
+	system-voltage-min-threshold-microvolt = <3328000>;
+};
+
+axp2101@5 {
+	compatible = "x-powers,axp2101";
+	reg = <0x5>;
+
+	charger {
+		compatible = "x-powers,axp2101-charger";
+		constant-charge-current-max-microamp = <300000>;
+		constant-charge-voltage-max-microvolt = <4200000>;
+		charge-term-current-microamp = <100000>;
+	};
 };

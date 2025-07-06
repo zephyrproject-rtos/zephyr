@@ -1,0 +1,19 @@
+# Copyright (c) 2025 Croxel Inc.
+# Copyright (c) 2025 CogniPilot Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+description: U-BLOX F9P High Precision GNSS Module
+
+compatible: "u-blox,f9p"
+
+include:
+  - uart-device.yaml
+
+properties:
+  fix-rate:
+    type: int
+    default: 1000
+    description: |
+      Initial fix-rate GNSS modem will be operating on. May be adjusted at
+      run-time through GNSS APIs. Must be greater than 50-ms.
+      Default is power-on setting.

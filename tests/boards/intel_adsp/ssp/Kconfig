@@ -7,8 +7,3 @@
 mainmenu "Dai SSP Test"
 
 source "Kconfig.zephyr"
-
-config INTEL_MN
-	bool "Use mn divider"
-	help
-	  Use MN divider.

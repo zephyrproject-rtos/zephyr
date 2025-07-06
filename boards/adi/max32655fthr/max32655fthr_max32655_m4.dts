@@ -1,0 +1,195 @@
+/*
+ * Copyright (c) 2023-2025 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <adi/max32/max32655.dtsi>
+#include <adi/max32/max32655-pinctrl.dtsi>
+#include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Analog Devices MAX32655FTHR";
+	compatible = "adi,max32655fthr";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &sram2;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led1: led_1 {
+			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
+			label = "Red LED";
+		};
+		led2: led_2 {
+			gpios = <&gpio0 19 GPIO_ACTIVE_LOW>;
+			label = "Blue LED";
+		};
+		led3: led_3 {
+			gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;
+			label = "Green LED";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		pb1: pb1 {
+			gpios = <&gpio0 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW2";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		pb2: pb2 {
+			gpios = <&gpio0 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW3";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+		pb_wakeup: pb_wakeup {
+			gpios = <&gpio3 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW
+					| MAX32_GPIO_VSEL_VDDIOH)>;
+			label = "Wakeup";
+			zephyr,code = <INPUT_KEY_WAKEUP>;
+		};
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led1;
+		led1 = &led2;
+		led2 = &led3;
+		sw0 = &pb1;
+		sw1 = &pb2;
+		watchdog0 = &wdt0;
+	};
+
+	/* Used for accessing other pins */
+	feather_header: feather_connector {
+		compatible = "adafruit-feather-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <12 0 &gpio0 31 0>,  /* SDA */
+				<13 0 &gpio0 30 0>,  /* SCL */
+				<14 0 &gpio1 9 0>,  /* GPIO */
+				<15 0 &gpio1 8 0>,  /* GPIO */
+				<16 0 &gpio0 20 0>,   /* GPIO */
+				<17 0 &gpio0 24 0>,   /* GPIO */
+				<18 0 &gpio0 25 0>,   /* GPIO */
+				<19 0 &gpio1 7 0>,   /* GPIO */
+				<20 0 &gpio1 6 0>,   /* GPIO */
+				/* 11 not connected */
+				<10 0 &gpio2 7 0>,  /* TX */
+				<9 0 &gpio2 6 0>,   /* RX */
+				<8 0 &gpio0 22 0>,   /* MISO */
+				<7 0 &gpio0 21 0>,   /* MOSI */
+				<6 0 &gpio0 23 0>,   /* SCK */
+				<5 0 &gpio2 5 0>,   /* AIN5 */
+				<4 0 &gpio2 4 0>,   /* AIN4 */
+				<3 0 &gpio2 3 0>,   /* AIN3 */
+				<2 0 &gpio2 2 0>,   /* AIN2 */
+				<1 0 &gpio2 1 0>,   /* AIN1 */
+				<0 0 &gpio2 0 0>;   /* AIN0 */
+	};
+};
+
+&uart0 {
+	pinctrl-0 = <&uart0a_tx_p0_1 &uart0a_rx_p0_0>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+	status = "okay";
+};
+
+&clk_ipo {
+	status = "okay";
+};
+
+/*
+ * ERTCO is required for counter RTC
+ */
+&clk_ertco {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&trng {
+	status = "okay";
+};
+
+&i2c2 {
+	status = "okay";
+	pinctrl-0 = <&i2c2_scl_p0_30 &i2c2_sda_p0_31>;
+	pinctrl-names = "default";
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&spi1 {
+	status = "okay";
+	pinctrl-0 = <&spi1_mosi_p0_21 &spi1_miso_p0_22 &spi1_sck_p0_23 &spi1_ss0_p0_20>;
+	pinctrl-names = "default";
+};
+
+&rtc_counter {
+	status = "okay";
+};
+
+&spi0_mosi_p0_5 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi0_miso_p0_6 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi0_sck_p0_7 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi0 {
+	status = "okay";
+	pinctrl-0 = <&spi0_mosi_p0_5 &spi0_miso_p0_6 &spi0_sck_p0_7>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio0 4 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>,
+		   <&gpio0 11 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
+
+	spi0_cs1_flash: w25q128jv@1 {
+		compatible = "jedec,spi-nor";
+		/* 134217728 bits = 16 Mbytes */
+		size = <0x8000000>;
+		reg = <1>;
+		spi-max-frequency = <10000000>;
+		jedec-id = [ef 70 18];
+		hold-gpios = <&gpio0 9 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
+		wp-gpios = <&gpio0 8 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
+		status = "okay";
+	};
+};

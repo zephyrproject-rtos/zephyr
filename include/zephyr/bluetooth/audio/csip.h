@@ -1,5 +1,10 @@
 /**
- * Copyright (c) 2021-2022 Nordic Semiconductor ASA
+ * @file
+ * @brief Bluetooth Coordinated Set Identification Profile (CSIP) APIs.
+ */
+
+/*
+ * Copyright (c) 2021-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,15 +15,29 @@
 /**
  * @brief Coordinated Set Identification Profile (CSIP)
  *
- * @defgroup bt_gatt_csip Coordinated Set Identification Profile (CSIP)
+ * @defgroup bt_csip Coordinated Set Identification Profile (CSIP)
+ *
+ * @since 3.0
+ * @version 0.8.0
  *
  * @ingroup bluetooth
  * @{
- * *
- * [Experimental] Users should note that the APIs can change as a part of ongoing development.
+ *
+ * The Coordinated Set Identification Profile (CSIP) provides procedures to discover and coordinate
+ * sets of devices.
  */
 
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,6 +46,10 @@ extern "C" {
 /** Recommended timer for member discovery */
 #define BT_CSIP_SET_COORDINATOR_DISCOVER_TIMER_VALUE        K_SECONDS(10)
 
+/**
+ * Defines the maximum number of Coordinated Set Identification service instances for the
+ * Coordinated Set Identification Set Coordinator
+ */
 #if defined(CONFIG_BT_CSIP_SET_COORDINATOR)
 #define BT_CSIP_SET_COORDINATOR_MAX_CSIS_INSTANCES CONFIG_BT_CSIP_SET_COORDINATOR_MAX_CSIS_INSTANCES
 #else
@@ -43,7 +66,7 @@ extern "C" {
 #define BT_CSIP_READ_SIRK_REQ_RSP_OOB_ONLY      0x03
 
 /** Size of the Set Identification Resolving Key (SIRK) */
-#define BT_CSIP_SET_SIRK_SIZE                   16
+#define BT_CSIP_SIRK_SIZE 16
 
 /** Size of the Resolvable Set Identifier (RSI) */
 #define BT_CSIP_RSI_SIZE                        6
@@ -122,7 +145,7 @@ struct bt_csip_set_member_register_param {
 	 * This shall be unique between different sets, and shall be the same
 	 * for each set member for each set.
 	 */
-	uint8_t set_sirk[BT_CSIP_SET_SIRK_SIZE];
+	uint8_t sirk[BT_CSIP_SIRK_SIZE];
 
 	/**
 	 * @brief Boolean to set whether the set is lockable by clients
@@ -143,7 +166,7 @@ struct bt_csip_set_member_register_param {
 	/** Pointer to the callback structure. */
 	struct bt_csip_set_member_cb *cb;
 
-#if CONFIG_BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT > 1
+#if CONFIG_BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT > 1 || defined(__DOXYGEN__)
 	/**
 	 * @brief Parent service pointer
 	 *
@@ -203,17 +226,72 @@ int bt_csip_set_member_unregister(struct bt_csip_set_member_svc_inst *svc_inst);
  * @param svc_inst  Pointer to the registered Coordinated Set Identification Service.
  * @param sirk      The new SIRK.
  */
-int bt_csip_set_member_set_sirk(struct bt_csip_set_member_svc_inst *svc_inst,
-				const uint8_t sirk[BT_CSIP_SET_SIRK_SIZE]);
+int bt_csip_set_member_sirk(struct bt_csip_set_member_svc_inst *svc_inst,
+			    const uint8_t sirk[BT_CSIP_SIRK_SIZE]);
 
 /**
- * @brief Get the SIRK of a service instance
+ * @brief Set a new size and rank for a service instance
  *
- * @param[in]  svc_inst  Pointer to the registered Coordinated Set Identification Service.
- * @param[out] sirk      Array to store the SIRK in.
+ * This function can be used to dynamically change the size and rank of a service instance.
+ * It is important to note that a set cannot have multiple devices with the same rank in a set,
+ * and it is up to the caller of this function to ensure that.
+ * Similarly, it is important that the size is updated on all devices in the set at the same time.
+ *
+ * If @kconfig{CONFIG_BT_CSIP_SET_MEMBER_SIZE_NOTIFIABLE} is enabled, this will also send a
+ * notification to all connected or bonded clients.
+ *
+ * @param svc_inst The service instance.
+ * @param size The new set size.
+ * @param rank The new rank. Ignored if the @p svc_inst is not lockable.
+ *
+ * @retval -EINVAL @p svc_inst is NULL, @p size is less than 1, @p rank is less than 1 or higher
+ *                 than @p size for a lockable @p svc_inst.
+ * @retval -EALREADY @p size and @p rank are already the provided values.
+ * @retval 0 Success.
  */
-int bt_csip_set_member_get_sirk(struct bt_csip_set_member_svc_inst *svc_inst,
-				uint8_t sirk[BT_CSIP_SET_SIRK_SIZE]);
+int bt_csip_set_member_set_size_and_rank(struct bt_csip_set_member_svc_inst *svc_inst, uint8_t size,
+					 uint8_t rank);
+
+/** Struct to hold information about a service instance */
+struct bt_csip_set_member_set_info {
+	/** The 16-octet SIRK */
+	uint8_t sirk[BT_CSIP_SIRK_SIZE];
+
+	/** The set size */
+	uint8_t set_size;
+
+	/**
+	 * @brief The rank
+	 *
+	 * May be 0 if the set is not lockable
+	 */
+	uint8_t rank;
+
+	/** Whether the set is lockable  */
+	bool lockable: 1;
+
+	/** Whether the set is currently locked */
+	bool locked: 1;
+
+	/**
+	 * @brief The address of the client that currently holds the lock
+	 *
+	 * Will be @ref BT_ADDR_LE_NONE if the server holds the lock
+	 */
+	bt_addr_le_t lock_client_addr;
+};
+
+/**
+ * @brief Get information about a service instances
+ *
+ * @param svc_inst The service instance.
+ * @param info Pointer to a struct to store the information in.
+ *
+ * @retval -EINVAL @p svc_inst or @p info is NULL.
+ * @retval 0 Success.
+ */
+int bt_csip_set_member_get_info(const struct bt_csip_set_member_svc_inst *svc_inst,
+				struct bt_csip_set_member_set_info *info);
 
 /**
  * @brief Generate the Resolvable Set Identifier (RSI) value.
@@ -247,10 +325,10 @@ struct bt_csip_set_coordinator_set_info {
 	/**
 	 * @brief The 16 octet set Set Identity Resolving Key (SIRK)
 	 *
-	 * The Set SIRK may not be exposed by the server over Bluetooth, and
+	 * The SIRK may not be exposed by the server over Bluetooth, and
 	 * may require an out-of-band solution.
 	 */
-	uint8_t set_sirk[BT_CSIP_SET_SIRK_SIZE];
+	uint8_t sirk[BT_CSIP_SIRK_SIZE];
 
 	/**
 	 * @brief The size of the set
@@ -260,7 +338,7 @@ struct bt_csip_set_coordinator_set_info {
 	uint8_t set_size;
 
 	/**
-	 * @brief The rank of the set on on the remote device
+	 * @brief The rank of the set on the remote device
 	 *
 	 * Will be 0 if not exposed by the server.
 	 */
@@ -277,6 +355,7 @@ struct bt_csip_set_coordinator_set_info {
  * (bt_csip_set_coordinator_discover()).
  */
 struct bt_csip_set_coordinator_csis_inst {
+	/** Information about the coordinated set */
 	struct bt_csip_set_coordinator_set_info info;
 
 	/** Internally used pointer value */
@@ -314,6 +393,21 @@ typedef void (*bt_csip_set_coordinator_discover_cb)(
 int bt_csip_set_coordinator_discover(struct bt_conn *conn);
 
 /**
+ * @brief Get the set member from a connection pointer
+ *
+ * Get the Coordinated Set Identification Profile Set Coordinator pointer from a connection pointer.
+ * Only Set Coordinators that have been initiated via bt_csip_set_coordinator_discover() can be
+ * retrieved.
+ *
+ * @param conn     Connection pointer.
+ *
+ * @retval Pointer to a Coordinated Set Identification Profile Set Coordinator instance
+ * @retval NULL if @p conn is NULL or if the connection has not done discovery yet
+ */
+struct bt_csip_set_coordinator_set_member *
+bt_csip_set_coordinator_set_member_by_conn(const struct bt_conn *conn);
+
+/**
  * @typedef bt_csip_set_coordinator_lock_set_cb
  * @brief Callback for locking a set across one or more devices
  *
@@ -345,6 +439,24 @@ typedef void (*bt_csip_set_coordinator_sirk_changed_cb)(
 	struct bt_csip_set_coordinator_csis_inst *inst);
 
 /**
+ * @typedef bt_csip_set_coordinator_size_changed_cb
+ * @brief Callback when the size of a set of a connected device changes.
+ *
+ * Since all devices in a set shall have the same set size value.
+ * Each connected device may send the same new size set in a notification,
+ * assuming that the remote device supports notifications of the set size.
+ *
+ * The rank of each device in the set may also change as part of this, so it is advisable to call
+ * bt_csip_set_coordinator_discover() to rediscover and read the characteristic values of the sets
+ * on each device.
+ *
+ * @param inst    The Coordinated Set Identification Service instance that was changed.
+ *                The new size is stored in the @p inst->info.size.
+ */
+typedef void (*bt_csip_set_coordinator_size_changed_cb)(
+	struct bt_conn *conn, const struct bt_csip_set_coordinator_csis_inst *inst);
+
+/**
  * @typedef bt_csip_set_coordinator_ordered_access_cb_t
  * @brief Callback for bt_csip_set_coordinator_ordered_access()
  *
@@ -363,30 +475,42 @@ typedef void (*bt_csip_set_coordinator_ordered_access_cb_t)(
 	int err, bool locked,
 	struct bt_csip_set_coordinator_set_member *member);
 
+/**
+ * @brief Struct to hold the Coordinated Set Identification Profile Set Coordinator callbacks
+ *
+ * These can be registered for usage with bt_csip_set_coordinator_register_cb().
+ */
 struct bt_csip_set_coordinator_cb {
-	/* Set callbacks */
-	bt_csip_set_coordinator_lock_set_cb             lock_set;
-	bt_csip_set_coordinator_lock_set_cb             release_set;
-	bt_csip_set_coordinator_lock_changed_cb         lock_changed;
-	bt_csip_set_coordinator_sirk_changed_cb         sirk_changed;
+	/** Callback when discovery has finished */
+	bt_csip_set_coordinator_discover_cb discover;
+	/** Callback when locking a set has finished */
+	bt_csip_set_coordinator_lock_set_cb lock_set;
+	/** Callback when unlocking a set has finished */
+	bt_csip_set_coordinator_lock_set_cb release_set;
+	/** Callback when a set's lock state has changed */
+	bt_csip_set_coordinator_lock_changed_cb lock_changed;
+	/** Callback when a set's SIRK has changed */
+	bt_csip_set_coordinator_sirk_changed_cb sirk_changed;
+	/** Callback when a set's size has changed */
+	bt_csip_set_coordinator_size_changed_cb size_changed;
+	/** Callback for the ordered access procedure */
+	bt_csip_set_coordinator_ordered_access_cb_t ordered_access;
 
-	/* Device specific callbacks */
-	bt_csip_set_coordinator_discover_cb             discover;
-	bt_csip_set_coordinator_ordered_access_cb_t     ordered_access;
-
+	/** @cond INTERNAL_HIDDEN */
 	/** Internally used field for list handling */
 	sys_snode_t _node;
+	/** @endcond */
 };
 
 /**
  * @brief Check if advertising data indicates a set member
  *
- * @param set_sirk The SIRK of the set to check against
- * @param data     The advertising data
+ * @param sirk The SIRK of the set to check against
+ * @param data The advertising data
  *
  * @return true if the advertising data indicates a set member, false otherwise
  */
-bool bt_csip_set_coordinator_is_set_member(const uint8_t set_sirk[BT_CSIP_SET_SIRK_SIZE],
+bool bt_csip_set_coordinator_is_set_member(const uint8_t sirk[BT_CSIP_SIRK_SIZE],
 					   struct bt_data *data);
 
 /**
@@ -423,7 +547,7 @@ typedef bool (*bt_csip_set_coordinator_ordered_access_t)(
  * (if present). Once this procedure is finished or an error occurs,
  * @ref bt_csip_set_coordinator_cb.ordered_access will be called.
  *
- * This procedure only works if all the members have the lock characterstic,
+ * This procedure only works if all the members have the lock characteristic,
  * and all either has rank = 0 or unique ranks.
  *
  * If any of the members are in the locked state, the procedure will be
@@ -448,6 +572,8 @@ int bt_csip_set_coordinator_ordered_access(
  *
  * The members will be locked starting from lowest rank going up.
  *
+ * @kconfig_dep{CONFIG_BT_CSIP_SET_COORDINATOR,CONFIG_BT_BONDABLE}
+ *
  * TODO: If locking fails, the already locked members will not be unlocked.
  *
  * @param members   Array of set members to lock.
@@ -465,6 +591,8 @@ int bt_csip_set_coordinator_lock(const struct bt_csip_set_coordinator_set_member
  * @brief Release an array of set members
  *
  * The members will be released starting from highest rank going down.
+ *
+ * @kconfig_dep{CONFIG_BT_CSIP_SET_COORDINATOR,CONFIG_BT_BONDABLE}
  *
  * @param members   Array of set members to lock.
  * @param count     Number of set members in @p members.

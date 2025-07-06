@@ -158,7 +158,7 @@ static int mdio_sam_initialize(const struct device *dev)
 	return retval;
 }
 
-static const struct mdio_driver_api mdio_sam_driver_api = {
+static DEVICE_API(mdio, mdio_sam_driver_api) = {
 	.read = mdio_sam_read,
 	.write = mdio_sam_write,
 	.read_c45 = mdio_sam_read_c45,

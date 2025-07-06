@@ -1,5 +1,6 @@
 board:
   name: stm3210c_eval
+  full_name: STM3210C Evaluation
   vendor: st
   socs:
     - name: stm32f107xc

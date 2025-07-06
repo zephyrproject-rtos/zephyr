@@ -1,0 +1,73 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    TI INA226 Bidirectional Current and Power Monitor.
+    The <zephyr/dt-bindings/sensor/ina226.h> file should be included in the
+    DeviceTree as it provides macros that can be used for initializing the
+    configuration registers.
+
+compatible: "ti,ina226"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  avg-count:
+    type: int
+    description: |
+      Number of samples to average (applies to all inputs).
+      Default is the power-on reset value.
+    default: 1
+    enum: [1, 4, 16, 64, 128, 256, 512, 1024]
+
+  vbus-conversion-time-us:
+    type: int
+    description: |
+      Vbus conversion time in microseconds.
+      Default is the power-on reset value.
+    default: 1100
+    enum: [140, 204, 332, 588, 1100, 2116, 4156, 8244]
+
+  vshunt-conversion-time-us:
+    type: int
+    description: |
+      Vshunt conversion time in microseconds.
+      Default is the power-on reset value.
+    default: 1100
+    enum: [140, 204, 332, 588, 1100, 2116, 4156, 8244]
+
+  operating-mode:
+    type: string
+    description: |
+      Selects mode of operation.
+      Default is the power-on reset value.
+    default: "Shunt and Bus, Continuous"
+    enum:
+      - "Power-Down (or Shutdown)"
+      - "Shunt Voltage, Triggered"
+      - "Bus Voltage, Triggered"
+      - "Shunt and Bus, Triggered"
+      - "Power-Down (or Shutdown)"
+      - "Shunt Voltage, Continuous"
+      - "Bus Voltage, Continuous"
+      - "Shunt and Bus, Continuous"
+
+  current-lsb-microamps:
+    type: int
+    required: true
+    description: |
+      Current LSB value in microAmpere.
+      This value gives the measurement resolution for current measurement.
+      Formula: current-lsb [μA] = maximum expected current [μA] / 2^15
+      Higher resolution means lower range of current measurement, vice versa.
+
+      For example, if maximum expected current is 15 [A]:
+        then, current-lsb [μA] = 15000000 [μA] / 2^15 ~= 457.763 [μA].
+
+      Note: rounded values may be used for convenience, e.g. 500uA/LSB.
+
+  rshunt-micro-ohms:
+    type: int
+    required: true
+    description: |
+      Shunt resistor value in micro-ohms.

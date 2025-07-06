@@ -1,0 +1,42 @@
+/*
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/comparator/silabs-acmp.h>
+#include <zephyr/dt-bindings/pinctrl/silabs/xg29-pinctrl.h>
+
+/ {
+	aliases {
+		test-comp = &acmp0;
+	};
+
+	zephyr,user {
+		test-gpios = <&gpioc 3 GPIO_ACTIVE_HIGH>;
+	};
+
+};
+
+&pinctrl {
+	acmp0_default: acmp0_default {
+		group0 {
+			silabs,analog-bus = <ABUS_CDODD0_ACMP0>;
+		};
+	};
+};
+
+&acmp0 {
+	pinctrl-0 = <&acmp0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	bias = <0>;
+	hysteresis-mode = "disabled";
+	accuracy-mode = "high";
+	input-range = "full";
+	input-positive = <ACMP_INPUT_PC3>;
+	input-negative = <ACMP_INPUT_VREFDIV1V25>;
+	vref-divider = <63>;
+};

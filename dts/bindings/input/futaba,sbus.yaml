@@ -1,0 +1,74 @@
+# Copyright (c) 2024 NXP Semiconductors
+# SPDX-License-Identifier: Apache-2.0
+
+title: Futaba SBUS
+
+description: |
+  SBUS is a single-wire inverted serial protocol that can be used to receive
+  analog joystick and switch inputs from RC transmitters. Since the signal is
+  inverted, you need to use an external signal inverter or set the rx-invert
+  flag on the serial controller node (if it supports pin inversion).
+
+  The binding allows mapping of up to 16 SBUS channels to Zephyr input events.
+  Each channel can be configured to generate either absolute position events
+  (for joysticks) or key events (for switches).
+
+  The following example shows how to configure 2 joysticks and a button using 5 channels:
+
+  &lpuart6 {
+    status = "okay";
+
+    sbus {
+        compatible = "futaba,sbus";
+        right_stick_x {
+            channel = <1>;
+            type = <INPUT_EV_ABS>;
+            zephyr,code = <INPUT_ABS_RX>;
+        };
+        right_stick_y {
+            channel = <2>;
+            type = <INPUT_EV_ABS>;
+            zephyr,code = <INPUT_ABS_RY>;
+        };
+        left_stick_x {
+            channel = <3>;
+            type = <INPUT_EV_ABS>;
+            zephyr,code = <INPUT_ABS_X>;
+        };
+        left_stick_y {
+            channel = <4>;
+            type = <INPUT_EV_ABS>;
+            zephyr,code = <INPUT_ABS_Y>;
+        };
+        kill_switch {
+            channel = <5>;
+            type = <INPUT_EV_KEY>;
+            zephyr,code = <INPUT_KEY_0>;
+        };
+    };
+  };
+
+compatible: "futaba,sbus"
+
+include: [base.yaml, uart-device.yaml]
+
+child-binding:
+  description: |
+    SBUS Channel to input-event-code binding
+    INPUT_EV_ABS & INPUT_EV_MSC gives raw input value
+    INPUT_EV_KEY emulates a key
+  properties:
+    channel:
+      type: int
+      required: true
+      description: |
+        SBUS input channel
+        Valid range: 1 - 16
+    type:
+      type: int
+      required: true
+      description: Input event types see INPUT_EV_CODES
+    zephyr,code:
+      type: int
+      required: true
+      description: Code to emit.

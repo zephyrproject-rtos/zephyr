@@ -22,7 +22,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 
 	switch (sleep_count) {
 	case 1:
-		/* Just  a sanity check that the system is the right state.
+		/* Just  a coherence check that the system is the right state.
 		 * Devices are suspended before SoC on PM_STATE_SUSPEND_TO_RAM, that is why
 		 * we can check the device state here.
 		 */
@@ -60,15 +60,14 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 
 const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 {
-	static const struct pm_state_info state = {
-		.state = PM_STATE_SUSPEND_TO_RAM
-	};
+	const struct pm_state_info *cpu_states;
 
-	ARG_UNUSED(cpu);
+	zassert_true(pm_state_cpu_get_all(cpu, &cpu_states) == 1,
+		     "There is no power state defined");
 
 	while (sleep_count < 3) {
 		sleep_count++;
-		return &state;
+		return &cpu_states[0];
 	}
 
 	return NULL;

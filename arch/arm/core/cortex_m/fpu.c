@@ -23,11 +23,10 @@ void z_arm_save_fp_context(struct fpu_ctx_full *buffer)
 
 	if (CONTROL & CONTROL_FPCA_Msk) {
 		/* Store caller-saved and callee-saved FP registers. */
-		__asm__ volatile(
-			"vstmia %0, {s0-s15}\n"
-			"vstmia %1, {s16-s31}\n"
-			:: "r" (buffer->caller_saved), "r" (buffer->callee_saved) :
-		);
+		__asm__ volatile("vstmia %0, {s0-s15}\n"
+				 "vstmia %1, {s16-s31}\n" ::"r"(buffer->caller_saved),
+				 "r"(buffer->callee_saved)
+				 :);
 
 		buffer->fpscr = __get_FPSCR();
 		buffer->ctx_saved = true;
@@ -55,11 +54,10 @@ void z_arm_restore_fp_context(const struct fpu_ctx_full *buffer)
 		/* Restore FP state. */
 		__set_FPSCR(buffer->fpscr);
 
-		__asm__ volatile(
-			"vldmia %0, {s0-s15}\n"
-			"vldmia %1, {s16-s31}\n"
-			:: "r" (buffer->caller_saved), "r" (buffer->callee_saved) :
-		);
+		__asm__ volatile("vldmia %0, {s0-s15}\n"
+				 "vldmia %1, {s16-s31}\n" ::"r"(buffer->caller_saved),
+				 "r"(buffer->callee_saved)
+				 :);
 	}
 #endif
 }

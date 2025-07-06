@@ -131,7 +131,7 @@ static int temp_kinetis_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api temp_kinetis_driver_api = {
+static DEVICE_API(sensor, temp_kinetis_driver_api) = {
 	.sample_fetch = temp_kinetis_sample_fetch,
 	.channel_get = temp_kinetis_channel_get,
 };
@@ -159,7 +159,7 @@ static int temp_kinetis_init(const struct device *dev)
 		},
 	};
 
-	memset(&data->buffer, 0, ARRAY_SIZE(data->buffer));
+	memset(&data->buffer, 0, sizeof(data->buffer));
 
 	if (!device_is_ready(config->adc)) {
 		LOG_ERR("ADC device is not ready");

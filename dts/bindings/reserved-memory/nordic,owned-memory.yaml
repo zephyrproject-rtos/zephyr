@@ -8,17 +8,64 @@ description: |
   will be recorded in the UICR of the compiled domain. Memory ownership and
   access is then configured for the domain at boot time, based on the UICR.
 
+  Example:
+
+    reserved-memory {
+        memory@2fc00000 {
+            compatible = "nordic,owned-memory";
+            reg = <0x2fc00000 0x1000>;
+            status = "okay";
+            nordic,access = <NRF_OWNER_ID_APPLICATION NRF_PERM_R>,
+                            <NRF_OWNER_ID_RADIOCORE NRF_PERM_W>;
+        };
+    };
+
+  A single local domain can request a memory region to be reserved on behalf of
+  multiple access owners. A single memory region shall be reserved by at most
+  one domain, by setting status "okay" on the associated node. For example, if
+  the region defined above is enabled by Application on behalf of Radiocore,
+  then the Radiocore's devicetree must set status "disabled" on that node.
+
+  Each of the different owners may have a different set of permissions granted,
+  as also shown above.
+
+  Note: one domain can also reserve memory for another domain and not itself.
+  Whichever domain has status "okay" set on the node does not need to be listed
+  as one of the access owners.
+
 compatible: "nordic,owned-memory"
 
-include: base.yaml
+include: [base.yaml, "zephyr,memory-common.yaml"]
 
 properties:
   reg:
     required: true
 
+  nordic,access:
+    type: array
+    description: |
+      Array of (owner-id, permission-flags) pairs, where:
+
+      - Owner ID represents the domain that will have access to this memory.
+        Valid values can be found in dts/common/nordic/<soc>.dtsi,
+        where they are defined as NRF_OWNER_ID_*
+
+      - Permissions are encoded as a 32-bit bitfield, using the flags found in
+        include/zephyr/dt-bindings/reserved-memory/nordic-owned-memory.h,
+        where they are defined as NRF_PERM_*
+
+        The same file defines all possible permission flag combinations.
+        For example, one can use:
+          <NRF_OWNER_ID_APPLICATION NRF_PERM_RWX>
+
+        as a shorthand for:
+          <NRF_OWNER_ID_APPLICATION (NRF_PERM_R | NRF_PERM_W | NRF_PERM_X)>
+
   owner-id:
     type: int
+    deprecated: true
     description: |
+      Deprecated, applies only if 'nordic,access' is not defined.
       Owner ID of the domain that will own this memory region. If not defined,
       the ownership will default to the domain being compiled.
 
@@ -27,20 +74,35 @@ properties:
 
   perm-read:
     type: boolean
-    description: Owner has read access to the region.
+    deprecated: true
+    description: |
+      Deprecated, applies only if 'nordic,access' is not defined.
+      Owner has read access to the region.
 
   perm-write:
     type: boolean
-    description: Owner has write access to the region.
+    deprecated: true
+    description: |
+      Deprecated, applies only if 'nordic,access' is not defined.
+      Owner has write access to the region.
 
   perm-execute:
     type: boolean
-    description: Owner can execute code from the region.
+    deprecated: true
+    description: |
+      Deprecated, applies only if 'nordic,access' is not defined.
+      Owner can execute code from the region.
 
   perm-secure:
     type: boolean
-    description: Owner has secure-only access to the region.
+    deprecated: true
+    description: |
+      Deprecated, applies only if 'nordic,access' is not defined.
+      Owner has secure-only access to the region.
 
   non-secure-callable:
     type: boolean
-    description: Memory region is used for non-secure-callable code.
+    deprecated: true
+    description: |
+      Deprecated, applies only if 'nordic,access' is not defined.
+      Memory region is used for non-secure-callable code.

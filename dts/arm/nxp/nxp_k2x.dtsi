@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Prevas A/S
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -55,7 +56,7 @@
 
 	/* Dummy pinctrl node, filled with pin mux options at board level */
 	pinctrl: pinctrl {
-		compatible = "nxp,kinetis-pinctrl";
+		compatible = "nxp,port-pinctrl";
 		status = "okay";
 	};
 
@@ -194,31 +195,31 @@
 		};
 
 		porta: pinmux@40049000 {
-			compatible = "nxp,kinetis-pinmux";
+			compatible = "nxp,port-pinmux";
 			reg = <0x40049000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 9>;
 		};
 
 		portb: pinmux@4004a000 {
-			compatible = "nxp,kinetis-pinmux";
+			compatible = "nxp,port-pinmux";
 			reg = <0x4004a000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 10>;
 		};
 
 		portc: pinmux@4004b000 {
-			compatible = "nxp,kinetis-pinmux";
+			compatible = "nxp,port-pinmux";
 			reg = <0x4004b000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 11>;
 		};
 
 		portd: pinmux@4004c000 {
-			compatible = "nxp,kinetis-pinmux";
+			compatible = "nxp,port-pinmux";
 			reg = <0x4004c000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 12>;
 		};
 
 		porte: pinmux@4004d000 {
-			compatible = "nxp,kinetis-pinmux";
+			compatible = "nxp,port-pinmux";
 			reg = <0x4004d000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 13>;
 		};
@@ -274,7 +275,7 @@
 		};
 
 		spi0: spi@4002c000 {
-			compatible = "nxp,kinetis-dspi";
+			compatible = "nxp,dspi";
 			reg = <0x4002c000 0x88>;
 			interrupts = <26 3>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 12>;
@@ -284,7 +285,7 @@
 		};
 
 		spi1: spi@4002d000 {
-			compatible = "nxp,kinetis-dspi";
+			compatible = "nxp,dspi";
 			reg = <0x4002d000 0x88>;
 			interrupts = <27 3>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 13>;
@@ -301,7 +302,7 @@
 		};
 
 		ftm0: ftm@40038000{
-			compatible = "nxp,kinetis-ftm";
+			compatible = "nxp,ftm";
 			reg = <0x40038000 0x98>;
 			interrupts = <42 0>;
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>,
@@ -311,7 +312,7 @@
 		};
 
 		ftm1: ftm@40039000{
-			compatible = "nxp,kinetis-ftm";
+			compatible = "nxp,ftm";
 			reg = <0x40039000 0x98>;
 			interrupts = <43 0>;
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>,
@@ -321,7 +322,7 @@
 		};
 
 		ftm2: ftm@4003a000{
-			compatible = "nxp,kinetis-ftm";
+			compatible = "nxp,ftm";
 			reg = <0x4003a000 0x98>;
 			interrupts = <44 0>;
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>,
@@ -331,7 +332,7 @@
 		};
 
 		ftm3: ftm@400b9000{
-			compatible = "nxp,kinetis-ftm";
+			compatible = "nxp,ftm";
 			reg = <0x400b9000 0x98>;
 			interrupts = <71 0>;
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>,
@@ -372,6 +373,14 @@
 			interrupts = <53 1>;
 			interrupt-names = "usb_otg";
 			num-bidir-endpoints = <16>;
+			status = "disabled";
+		};
+
+		usbh: usbh@40072000 {
+			compatible = "nxp,uhc-khci";
+			reg = <0x40072000 0x1000>;
+			interrupts = <53 1>;
+			interrupt-names = "usb_otg";
 			status = "disabled";
 		};
 

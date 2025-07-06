@@ -9,8 +9,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdalign.h>
+
 #include <zephyr/kernel.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/buf.h>
 
 /*
  * The unpacked structs below are used inside __packed structures that reflect
@@ -18,18 +21,17 @@
  * their members are bytes or byte arrays, the size is. They must not be padded
  * by the compiler, otherwise the on-wire packet will not map the packed
  * structure correctly.
+ *
+ * The bt_addr structs are not marked __packed because it's considered ugly by
+ * some. But here is a proof that the structs have all the properties of, and
+ * can be safely used as packed structs.
  */
 BUILD_ASSERT(sizeof(bt_addr_t) == BT_ADDR_SIZE);
+BUILD_ASSERT(alignof(bt_addr_t) == 1);
 BUILD_ASSERT(sizeof(bt_addr_le_t) == BT_ADDR_LE_SIZE);
+BUILD_ASSERT(alignof(bt_addr_le_t) == 1);
 
 #if defined(CONFIG_BT_HCI_HOST)
-/* The Bluetooth subsystem requires the Tx thread to execute at higher priority
- * than the Rx thread as the Tx thread needs to process the acknowledgements
- * before new Rx data is processed. This is a necessity to correctly detect
- * transaction violations in ATT and SMP protocols.
- */
-BUILD_ASSERT(CONFIG_BT_HCI_TX_PRIO < CONFIG_BT_RX_PRIO);
-
 /* The Bluetooth subsystem requires that higher priority events shall be given
  * in a priority higher than the Bluetooth Host's Tx and the Controller's
  * receive thread priority.

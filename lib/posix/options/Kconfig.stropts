@@ -1,9 +1,0 @@
-# copyright (c) 2024 Abhinav Srivastava
-#
-# SPDX-License-Identifier: Apache-2.0
-
-config POSIX_PUTMSG
-	bool "Support for putmsg function"
-	default y if POSIX_API
-	help
-	  This option provides support for the putmsg function used in message passing.

@@ -1,5 +1,6 @@
 board:
   name: 96b_avenger96
+  full_name: Avenger96
   vendor: 96boards
   socs:
     - name: stm32mp157cxx

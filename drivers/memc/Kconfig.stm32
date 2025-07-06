@@ -4,7 +4,8 @@
 config MEMC_STM32
 	bool "STM32 Flexible Memory Controller (FMC)"
 	default y
-	depends on DT_HAS_ST_STM32_FMC_ENABLED
+	depends on DT_HAS_ST_STM32_FMC_ENABLED || DT_HAS_ST_STM32H7_FMC_ENABLED
+	select PINCTRL
 	help
 	  Enable STM32 Flexible Memory Controller.
 
@@ -30,3 +31,12 @@ config MEMC_STM32_NOR_PSRAM
 	  Enable STM32 FMC NOR/PSRAM controller.
 
 endif
+
+config MEMC_STM32_XSPI_PSRAM
+	bool "STM32 XSPI PSRAM"
+	default y
+	depends on DT_HAS_ST_STM32_XSPI_PSRAM_ENABLED
+	select USE_STM32_HAL_XSPI
+	select PINCTRL
+	help
+	  Enable STM32 XSPI Memory Controller.

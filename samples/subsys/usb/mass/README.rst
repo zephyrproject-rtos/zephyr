@@ -1,6 +1,6 @@
 .. zephyr:code-sample:: usb-mass
    :name: USB Mass Storage
-   :relevant-api: usbd_api _usb_device_core_api file_system_api
+   :relevant-api: usbd_api usbd_msc_device _usb_device_core_api file_system_api
 
    Expose board's RAM or FLASH as a USB disk using USB Mass Storage driver.
 
@@ -61,7 +61,7 @@ to use the external 16 MiBi QSPI flash chip with a 2 MiBy FAT partition.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/usb/mass
-   :board: adafruit_feather/nrf52840
+   :board: adafruit_feather_nrf52840_sense
    :gen-args: -DCONFIG_APP_MSC_STORAGE_FLASH_FATFS=y
    :goals: build
    :compact:

@@ -11,3 +11,5 @@ Architecture-related Guides
    risc-v.rst
    semihost.rst
    x86.rst
+   xtensa.rst
+   arm-scmi.rst

@@ -7,8 +7,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/sys/util.h>
-#include <zephyr/bluetooth/addr.h>
+#ifndef TESTS_BLUETOOTH_TESTER_SRC_BTP_
+#define TESTS_BLUETOOTH_TESTER_SRC_BTP_
+
+#include <stdint.h>
 
 #include "bttester.h"
 #include "btp_core.h"
@@ -37,44 +39,50 @@
 #include "btp_cap.h"
 #include "btp_tbs.h"
 #include "btp_tmap.h"
+#include "btp_ots.h"
+#include "btp_pbp.h"
 
 #define BTP_MTU 1024
 #define BTP_DATA_MAX_SIZE (BTP_MTU - sizeof(struct btp_hdr))
 
+#define BTP_BR_ADDRESS_TYPE 0xe0
+
 #define BTP_INDEX_NONE		0xff
 #define BTP_INDEX		0x00
 
-#define BTP_SERVICE_ID_CORE	0
-#define BTP_SERVICE_ID_GAP	1
-#define BTP_SERVICE_ID_GATT	2
-#define BTP_SERVICE_ID_L2CAP	3
-#define BTP_SERVICE_ID_MESH	4
-#define BTP_SERVICE_ID_MESH_MDL	5
-#define BTP_SERVICE_GATT_CLIENT	6
-#define BTP_SERVICE_GATT_SERVER	7
-#define BTP_SERVICE_ID_VCS	8
-#define BTP_SERVICE_ID_IAS	9
-#define BTP_SERVICE_ID_AICS	10
-#define BTP_SERVICE_ID_VOCS	11
-#define BTP_SERVICE_ID_PACS	12
-#define BTP_SERVICE_ID_ASCS	13
-#define BTP_SERVICE_ID_BAP	14
-#define BTP_SERVICE_ID_HAS	15
-#define BTP_SERVICE_ID_MICP	16
-#define BTP_SERVICE_ID_CSIS	17
-#define BTP_SERVICE_ID_MICS	18
-#define BTP_SERVICE_ID_CCP	19
-#define BTP_SERVICE_ID_VCP	20
-#define BTP_SERVICE_ID_CAS	21
-#define BTP_SERVICE_ID_MCP	22
-#define BTP_SERVICE_ID_GMCS	23
-#define BTP_SERVICE_ID_HAP	24
-#define BTP_SERVICE_ID_CSIP	25
-#define BTP_SERVICE_ID_CAP	26
-#define BTP_SERVICE_ID_TBS	27
-#define BTP_SERVICE_ID_TMAP	28
+#define BTP_SERVICE_ID_CORE     0x00
+#define BTP_SERVICE_ID_GAP      0x01
+#define BTP_SERVICE_ID_GATT     0x02
+#define BTP_SERVICE_ID_L2CAP    0x03
+#define BTP_SERVICE_ID_MESH     0x04
+#define BTP_SERVICE_ID_MESH_MDL 0x05
+#define BTP_SERVICE_GATT_CLIENT 0x06
+#define BTP_SERVICE_GATT_SERVER 0x07
+#define BTP_SERVICE_ID_VCS      0x08
+#define BTP_SERVICE_ID_IAS      0x09
+#define BTP_SERVICE_ID_AICS     0x0a
+#define BTP_SERVICE_ID_VOCS     0x0b
+#define BTP_SERVICE_ID_PACS     0x0c
+#define BTP_SERVICE_ID_ASCS     0x0d
+#define BTP_SERVICE_ID_BAP      0x0e
+#define BTP_SERVICE_ID_HAS      0x0f
+#define BTP_SERVICE_ID_MICP     0x10
+#define BTP_SERVICE_ID_CSIS     0x11
+#define BTP_SERVICE_ID_MICS     0x12
+#define BTP_SERVICE_ID_CCP      0x13
+#define BTP_SERVICE_ID_VCP      0x14
+#define BTP_SERVICE_ID_CAS      0x15
+#define BTP_SERVICE_ID_MCP      0x16
+#define BTP_SERVICE_ID_GMCS     0x17
+#define BTP_SERVICE_ID_HAP      0x18
+#define BTP_SERVICE_ID_CSIP     0x19
+#define BTP_SERVICE_ID_CAP      0x1a
+#define BTP_SERVICE_ID_TBS      0x1b
+#define BTP_SERVICE_ID_TMAP     0x1c
+#define BTP_SERVICE_ID_OTS      0x1d
+#define BTP_SERVICE_ID_PBP      0x1e
 
-#define BTP_SERVICE_ID_MAX	BTP_SERVICE_ID_TMAP
+#define BTP_SERVICE_ID_MAX	BTP_SERVICE_ID_PBP
 
 #define BTP_STATUS_SUCCESS	0x00
 #define BTP_STATUS_FAILED	0x01
@@ -82,6 +90,8 @@
 #define BTP_STATUS_NOT_READY	0x03
 
 #define BTP_STATUS_VAL(err) (err) ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS
+
+#define BTP_EVENT_OPCODE 0x80
 
 /* TODO indicate delay response, should be removed when all commands are
  * converted to cmd+status+ev pattern
@@ -100,3 +110,5 @@ struct btp_hdr {
 struct btp_status {
 	uint8_t code;
 } __packed;
+
+#endif /* TESTS_BLUETOOTH_TESTER_SRC_BTP_ */

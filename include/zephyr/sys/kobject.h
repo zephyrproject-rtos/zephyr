@@ -36,7 +36,7 @@ enum k_objects {
 	 *  generated during build by gen_kobject_list.py.  It includes
 	 *  basic kernel objects (e.g.  pipes and mutexes) and driver types.
 	 */
-#include <kobj-types-enum.h>
+#include <zephyr/kobj-types-enum.h>
 	/** @endcond
 	 */
 
@@ -283,7 +283,7 @@ static inline void k_object_free(void *obj)
 
 /** @} */
 
-#include <syscalls/kobject.h>
+#include <zephyr/syscalls/kobject.h>
 #ifdef __cplusplus
 }
 #endif

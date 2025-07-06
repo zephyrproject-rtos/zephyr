@@ -1,0 +1,22 @@
+boards:
+- name: adafruit_feather_esp32s2
+  full_name: Adafruit Feather ESP32S2
+  vendor: adafruit
+  socs:
+  - name: esp32s2
+  revision:
+    format: "letter"
+    default: "C"
+    revisions:
+    - name: "B"
+    - name: "C"
+- name: adafruit_feather_esp32s2_tft
+  full_name: Adafruit Feather ESP32S2 TFT
+  vendor: adafruit
+  socs:
+  - name: esp32s2
+- name: adafruit_feather_esp32s2_tft_reverse
+  full_name: Adafruit Feather ESP32S2 TFT Reverse
+  vendor: adafruit
+  socs:
+  - name: esp32s2

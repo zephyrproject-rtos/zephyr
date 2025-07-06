@@ -304,7 +304,7 @@ static int ccs811_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api ccs811_driver_api = {
+static DEVICE_API(sensor, ccs811_driver_api) = {
 #ifdef CONFIG_CCS811_TRIGGER
 	.attr_set = ccs811_attr_set,
 	.trigger_set = ccs811_trigger_set,

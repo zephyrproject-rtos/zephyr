@@ -1,7 +1,4 @@
-.. _mpfs_icicle:
-
-Microchip mpfs_icicle
-#####################
+.. zephyr:board:: mpfs_icicle
 
 Overview
 ********
@@ -13,6 +10,8 @@ More information can be found on the `Microchip website <https://www.microchip.c
 Programming and debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Building
 ========
 
@@ -23,6 +22,11 @@ Applications for the ``mpfs_icicle`` board configuration can be built as usual
    :board: mpfs_icicle
    :goals: build
 
+To build the default SMP capable variant
+
+.. zephyr-app-commands::
+   :board: mpfs_icicle/polarfire/smp
+   :goals: build
 
 Flashing
 ========
@@ -40,7 +44,7 @@ To establish an OpenOCD connection run:
 .. code-block:: bash
 
    sudo LD_LIBRARY_PATH=<softconsole_path>/openocd/bin \
-   <softconsole_path>/openocd/bin/openocd  --file \
+   <softconsole_path>/openocd/bin/openocd --command "set DEVICE MPFS" --file \
    <softconsole_path>/openocd/share/openocd/scripts/board/microsemi-riscv.cfg
 
 

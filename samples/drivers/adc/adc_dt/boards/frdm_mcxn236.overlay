@@ -1,0 +1,50 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/mcux-lpadc.h>
+
+/ {
+	zephyr,user {
+		/* adjust channel number according to pinmux in board.dts */
+		io-channels = <&lpadc0 0>, <&lpadc0 1>;
+	};
+};
+
+&lpadc0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	/*
+	 * To use this sample:
+	 * LPADC0 CH1A and CH1B are set up in differential mode (B-A)
+	 * - Connect LPADC0 CH1A signal to voltage between 0~1.8V (J4 pin 4)
+	 * - Connect LPADC0 CH1B signal to voltage between 0~1.8V (J8 pin 11)
+	 * LPADC0 CH2A is set up in single ended mode
+	 * - Connect LPADC0 CH2A signal to voltage between 0~1.8V (J8 pin 12)
+	 */
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_EXTERNAL1";
+		zephyr,vref-mv = <1800>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <13>;
+		zephyr,input-positive = <MCUX_LPADC_CH1B>;
+		zephyr,input-negative = <MCUX_LPADC_CH1A>;
+	};
+
+	channel@1 {
+		reg = <1>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_EXTERNAL1";
+		zephyr,vref-mv = <1800>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <MCUX_LPADC_CH2A>;
+	};
+};

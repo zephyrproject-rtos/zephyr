@@ -26,12 +26,11 @@ void IRAM_ATTR esp_config_instruction_cache_mode(void)
 	rom_config_instruction_cache_mode(CONFIG_ESP32S3_INSTRUCTION_CACHE_SIZE,
 					  CONFIG_ESP32S3_ICACHE_ASSOCIATED_WAYS,
 					  CONFIG_ESP32S3_INSTRUCTION_CACHE_LINE_SIZE);
-
-	Cache_Suspend_DCache();
 }
 
 void IRAM_ATTR esp_config_data_cache_mode(void)
 {
+	Cache_Suspend_DCache();
 	rom_config_data_cache_mode(CONFIG_ESP32S3_DATA_CACHE_SIZE,
 				   CONFIG_ESP32S3_DCACHE_ASSOCIATED_WAYS,
 				   CONFIG_ESP32S3_DATA_CACHE_LINE_SIZE);

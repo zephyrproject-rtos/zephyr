@@ -1,0 +1,43 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Carl Zeiss Meditec AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Allegro A4979 microstepping stepper motor driver.
+  A4979 is a flexible microstepping motor driver with built-in translator for easy operation.
+  It is designed to operate bipolar stepper motors in full-, half-, quarter-, and sixteenth-step
+  modes.
+
+  Example:
+  a4979: a4979 {
+      status = "okay";
+      compatible = "allegro,a4979";
+      micro-step-res = <2>;
+      reset-gpios = <&gpiod 10 GPIO_ACTIVE_HIGH>;
+      dir-gpios = <&gpiod 14 GPIO_ACTIVE_HIGH>;
+      step-gpios = <&gpiod 15 GPIO_ACTIVE_HIGH>;
+      en-gpios = <&gpiod 11 GPIO_ACTIVE_HIGH>;
+      m0-gpios = <&gpiod 13 0>;
+      m1-gpios = <&gpiod 12 0>;
+      counter = <&counter5>;
+  };
+
+compatible: "allegro,a4979"
+
+include:
+  - name: stepper-controller.yaml
+
+properties:
+  m0-gpios:
+    required: true
+    type: phandle-array
+    description: Microstep configuration pin 0.
+
+  m1-gpios:
+    required: true
+    type: phandle-array
+    description: Microstep configuration pin 1.
+
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description: Reset pin

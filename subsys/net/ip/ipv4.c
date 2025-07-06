@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 #include <zephyr/net/net_stats.h>
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/virtual.h>
+#include <zephyr/net/ethernet.h>
 #include "net_private.h"
 #include "connection.h"
 #include "net_stats.h"
@@ -25,6 +26,7 @@ LOG_MODULE_REGISTER(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 #include "tcp_internal.h"
 #include "dhcpv4/dhcpv4_internal.h"
 #include "ipv4.h"
+#include "pmtu.h"
 
 BUILD_ASSERT(sizeof(struct in_addr) == NET_IPV4_ADDR_SIZE);
 
@@ -90,13 +92,18 @@ int net_ipv4_create(struct net_pkt *pkt,
 		    const struct in_addr *dst)
 {
 	uint8_t tos = 0;
+	uint8_t flags = 0U;
 
 	if (IS_ENABLED(CONFIG_NET_IP_DSCP_ECN)) {
 		net_ipv4_set_dscp(&tos, net_pkt_ip_dscp(pkt));
 		net_ipv4_set_ecn(&tos, net_pkt_ip_ecn(pkt));
 	}
 
-	return net_ipv4_create_full(pkt, src, dst, tos, 0U, 0U, 0U);
+	if (IS_ENABLED(CONFIG_NET_IPV4_PMTU) && net_pkt_ipv4_pmtu(pkt)) {
+		flags = NET_IPV4_DF;
+	}
+
+	return net_ipv4_create_full(pkt, src, dst, tos, 0U, flags, 0U);
 }
 
 int net_ipv4_finalize(struct net_pkt *pkt, uint8_t next_header_proto)
@@ -122,11 +129,12 @@ int net_ipv4_finalize(struct net_pkt *pkt, uint8_t next_header_proto)
 	ipv4_hdr->len   = htons(net_pkt_get_len(pkt));
 	ipv4_hdr->proto = next_header_proto;
 
-	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt))) {
+	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt), NET_IF_CHECKSUM_IPV4_HEADER)) {
 		ipv4_hdr->chksum = net_calc_chksum_ipv4(pkt);
 	}
 
 	net_pkt_set_data(pkt, &ipv4_access);
+	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_IP);
 
 	if (IS_ENABLED(CONFIG_NET_UDP) &&
 	    next_header_proto == IPPROTO_UDP) {
@@ -196,7 +204,7 @@ int net_ipv4_parse_hdr_options(struct net_pkt *pkt,
 			break;
 
 		case NET_IPV4_OPTS_EO:
-			/* Options length should be zero, when cursor reachs to
+			/* Options length should be zero, when cursor reaches to
 			 * End of options.
 			 */
 			if (total_opts_len) {
@@ -294,36 +302,36 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt, bool is_loopback)
 	}
 
 	if (!is_loopback) {
-		if (net_ipv4_is_addr_loopback((struct in_addr *)hdr->dst) ||
-		    net_ipv4_is_addr_loopback((struct in_addr *)hdr->src)) {
+		if (net_ipv4_is_addr_loopback_raw(hdr->dst) ||
+		    net_ipv4_is_addr_loopback_raw(hdr->src)) {
 			NET_DBG("DROP: localhost packet");
 			goto drop;
 		}
 
-		if (net_ipv4_is_my_addr((struct in_addr *)hdr->src)) {
+		if (net_ipv4_is_my_addr_raw(hdr->src)) {
 			NET_DBG("DROP: src addr is %s", "mine");
 			goto drop;
 		}
 	}
 
-	if (net_ipv4_is_addr_mcast((struct in_addr *)hdr->src)) {
+	if (net_ipv4_is_addr_mcast_raw(hdr->src)) {
 		NET_DBG("DROP: src addr is %s", "mcast");
 		goto drop;
 	}
 
-	if (net_ipv4_is_addr_bcast(net_pkt_iface(pkt), (struct in_addr *)hdr->src)) {
+	if (net_ipv4_is_addr_bcast_raw(net_pkt_iface(pkt), hdr->src)) {
 		NET_DBG("DROP: src addr is %s", "bcast");
 		goto drop;
 	}
 
-	if (net_ipv4_is_addr_unspecified((struct in_addr *)hdr->src) &&
-	    !net_ipv4_is_addr_bcast(net_pkt_iface(pkt), (struct in_addr *)hdr->dst) &&
+	if (net_ipv4_is_addr_unspecified_raw(hdr->src) &&
+	    !net_ipv4_is_addr_bcast_raw(net_pkt_iface(pkt), hdr->dst) &&
 	    (hdr->proto != IPPROTO_IGMP)) {
 		NET_DBG("DROP: src addr is %s", "unspecified");
 		goto drop;
 	}
 
-	if (net_if_need_calc_rx_checksum(net_pkt_iface(pkt)) &&
+	if (net_if_need_calc_rx_checksum(net_pkt_iface(pkt), NET_IF_CHECKSUM_IPV4_HEADER) &&
 	    net_calc_chksum_ipv4(pkt) != 0U) {
 		NET_DBG("DROP: invalid chksum");
 		goto drop;
@@ -335,20 +343,21 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt, bool is_loopback)
 
 	if (!net_pkt_filter_ip_recv_ok(pkt)) {
 		/* drop the packet */
+		net_stats_update_filter_rx_ipv4_drop(net_pkt_iface(pkt));
 		return NET_DROP;
 	}
 
-	if ((!net_ipv4_is_my_addr((struct in_addr *)hdr->dst) &&
-	     !net_ipv4_is_addr_mcast((struct in_addr *)hdr->dst) &&
+	if ((!net_ipv4_is_my_addr_raw(hdr->dst) &&
+	     !net_ipv4_is_addr_mcast_raw(hdr->dst) &&
 	     !(hdr->proto == IPPROTO_UDP &&
-	       (net_ipv4_addr_cmp((struct in_addr *)hdr->dst, net_ipv4_broadcast_address()) ||
+	       (net_ipv4_addr_cmp_raw(hdr->dst, net_ipv4_broadcast_address()->s4_addr) ||
 		/* RFC 1122 ch. 3.3.6 The 0.0.0.0 is non-standard bcast addr */
 		(IS_ENABLED(CONFIG_NET_IPV4_ACCEPT_ZERO_BROADCAST) &&
-		 net_ipv4_addr_cmp((struct in_addr *)hdr->dst,
-				   net_ipv4_unspecified_address())) ||
+		 net_ipv4_addr_cmp_raw(hdr->dst,
+				       net_ipv4_unspecified_address()->s4_addr)) ||
 		net_dhcpv4_accept_unicast(pkt)))) ||
 	    (hdr->proto == IPPROTO_TCP &&
-	     net_ipv4_is_addr_bcast(net_pkt_iface(pkt), (struct in_addr *)hdr->dst))) {
+	     net_ipv4_is_addr_bcast_raw(net_pkt_iface(pkt), hdr->dst))) {
 		NET_DBG("DROP: not for me");
 		goto drop;
 	}
@@ -374,6 +383,14 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt, bool is_loopback)
 	NET_DBG("IPv4 packet received from %s to %s",
 		net_sprint_ipv4_addr(&hdr->src),
 		net_sprint_ipv4_addr(&hdr->dst));
+
+	ip.ipv4 = hdr;
+
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_INET_RAW)) {
+		if (net_conn_raw_ip_input(pkt, &ip, hdr->proto) == NET_DROP) {
+			goto drop;
+		}
+	}
 
 	switch (hdr->proto) {
 	case IPPROTO_ICMP:
@@ -432,8 +449,6 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt, bool is_loopback)
 		goto drop;
 	}
 
-	ip.ipv4 = hdr;
-
 	verdict = net_conn_input(pkt, &ip, hdr->proto, &proto_hdr);
 	if (verdict != NET_DROP) {
 		return verdict;
@@ -444,9 +459,43 @@ drop:
 	return NET_DROP;
 }
 
+enum net_verdict net_ipv4_prepare_for_send(struct net_pkt *pkt)
+{
+	if (IS_ENABLED(CONFIG_NET_IPV4_PMTU)) {
+		struct net_pmtu_entry *entry;
+		struct sockaddr_in dst = {
+			.sin_family = AF_INET,
+		};
+		int ret;
+
+		net_ipv4_addr_copy_raw((uint8_t *)&dst.sin_addr,
+				       NET_IPV4_HDR(pkt)->dst);
+		entry = net_pmtu_get_entry((struct sockaddr *)&dst);
+		if (entry == NULL) {
+			ret = net_pmtu_update_mtu((struct sockaddr *)&dst,
+						  net_if_get_mtu(net_pkt_iface(pkt)));
+			if (ret < 0) {
+				NET_DBG("Cannot update PMTU for %s (%d)",
+					net_sprint_ipv4_addr(&dst.sin_addr),
+					ret);
+			}
+		}
+	}
+
+#if defined(CONFIG_NET_IPV4_FRAGMENT)
+	return net_ipv4_prepare_for_send_fragment(pkt);
+#else
+	return NET_OK;
+#endif
+}
+
 void net_ipv4_init(void)
 {
 	if (IS_ENABLED(CONFIG_NET_IPV4_FRAGMENT)) {
 		net_ipv4_setup_fragment_buffers();
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4_ACD)) {
+		net_ipv4_acd_init();
 	}
 }

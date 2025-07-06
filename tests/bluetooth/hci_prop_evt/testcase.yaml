@@ -1,10 +1,10 @@
 tests:
   bluetooth.hci_prop_evt:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="test.overlay"
     platform_allow:
       - qemu_x86
       - qemu_cortex_m3
-      - native_posix
-      - native_posix/native/64
       - native_sim
       - native_sim/native/64
     integration_platforms:

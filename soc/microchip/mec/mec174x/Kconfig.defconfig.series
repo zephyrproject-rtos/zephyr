@@ -1,0 +1,26 @@
+# Copyright (c) 2024 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# Microchip MEC174x MCU series configuration options
+
+if SOC_SERIES_MEC174X
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	# - include the UART interrupts
+	# All NVIC external sources.
+	default 194
+
+config CORTEX_M_SYSTICK
+	depends on !MCHP_MEC5_KTIMER
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
+	default $(dt_node_int_prop_int,/soc/timer@40007400,clock-frequency) if MCHP_MEC5_KTIMER
+
+if MCHP_MEC5_KTIMER
+config SYS_CLOCK_TICKS_PER_SEC
+	default $(dt_node_int_prop_int,/soc/timer@40007400,clock-frequency)
+endif # MCHP_MEC5_KTIMER
+
+endif # SOC_SERIES_MEC174X

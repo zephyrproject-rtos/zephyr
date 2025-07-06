@@ -24,10 +24,28 @@
 #include <zephyr/logging/log.h>
 
 /* Time to wait for NET_MGMT events to finish firing */
-#define EVENT_WAIT_TIME K_MSEC(1)
+#define EVENT_WAIT_TIME_SHORT  K_MSEC(10)
+#define EVENT_WAIT_TIME_MEDIUM K_MSEC(100)
+#define EVENT_WAIT_TIME        K_MSEC(200)
 
-/* Time to wait for IPv6 DAD to finish */
+
+/* Time to wait for IPv6 DAD-gated events to finish.
+ * Equivalent to EVENT_WAIT_TIME if DAD is dissabled.
+ */
+#if defined(CONFIG_NET_IPV6_DAD)
 #define DAD_WAIT_TIME K_MSEC(110)
+#else
+#define DAD_WAIT_TIME EVENT_WAIT_TIME
+#endif
+
+#define TEST_EXPECT_L4_CONNECTED         NET_EVENT_L4_CMD_CONNECTED
+#define TEST_EXPECT_L4_DISCONNECTED      NET_EVENT_L4_CMD_DISCONNECTED
+#define TEST_EXPECT_L4_IPV6_CONNECTED    NET_EVENT_L4_CMD_IPV6_CONNECTED
+#define TEST_EXPECT_L4_IPV6_DISCONNECTED NET_EVENT_L4_CMD_IPV6_DISCONNECTED
+#define TEST_EXPECT_L4_IPV4_CONNECTED    NET_EVENT_L4_CMD_IPV4_CONNECTED
+#define TEST_EXPECT_L4_IPV4_DISCONNECTED NET_EVENT_L4_CMD_IPV4_DISCONNECTED
+
+#define TEST_EXPECT_CLEAR(event) (global_stats.expected_events &= ~event)
 
 /* IP addresses -- Two of each are needed because address sharing will cause address removal to
  * fail silently (Address is only removed from one iface).
@@ -37,6 +55,10 @@ static struct in_addr test_ipv4_b = { { { 10, 0, 0, 2 } } };
 static struct in6_addr test_ipv6_a = { { {
 	0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x1
 } } };
+static struct in6_addr test_ipv6_b = { { {
+	0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x2
+} } };
+
 
 /* Helpers */
 static void reset_test_iface(struct net_if *iface)
@@ -50,6 +72,7 @@ static void reset_test_iface(struct net_if *iface)
 	net_if_ipv4_addr_rm(iface, &test_ipv4_a);
 	net_if_ipv4_addr_rm(iface, &test_ipv4_b);
 	net_if_ipv6_addr_rm(iface, &test_ipv6_a);
+	net_if_ipv6_addr_rm(iface, &test_ipv6_b);
 
 	/* DAD adds the link-local address automatically. Check for it, and remove it if present. */
 	ll_ipv6 = net_if_ipv6_get_ll(iface, NET_ADDR_ANY_STATE);
@@ -61,33 +84,61 @@ static void reset_test_iface(struct net_if *iface)
 }
 
 /* Thread-safe test statistics */
-K_MUTEX_DEFINE(stats_mutex);
+static K_MUTEX_DEFINE(stats_mutex);
+static K_SEM_DEFINE(event_sem, 0, 1);
+
 static struct test_stats {
-	/** The number of times conn_mgr_monitor has raised a connect event */
-	int conn_count;
+	/** IPv4 connectivity event counters */
+	int event_count_ipv4; /* any */
+	int conn_count_ipv4;  /* connect */
+	int dconn_count_ipv4; /* disconnect */
 
-	/** The number of times conn_mgr_monitor has raised a disconnect event */
-	int dconn_count;
+	/** IPv6 connectivity event counters */
+	int event_count_ipv6; /* any */
+	int conn_count_ipv6;  /* connect */
+	int dconn_count_ipv6; /* disconnect */
 
-	/** The total number of connectivity events fired by conn_mgr_monitor */
-	int event_count;
+	/** General connectivity event counters */
+	int event_count_gen; /* any */
+	int conn_count_gen;  /* connect */
+	int dconn_count_gen; /* disconnect */
 
 	/** The iface blamed for the last disconnect event */
-	struct net_if *dconn_iface;
+	struct net_if *dconn_iface_gen;
+	struct net_if *dconn_iface_ipv4;
+	struct net_if *dconn_iface_ipv6;
 
 	/** The iface blamed for the last connect event */
-	struct net_if *conn_iface;
+	struct net_if *conn_iface_gen;
+	struct net_if *conn_iface_ipv4;
+	struct net_if *conn_iface_ipv6;
+
+	uint32_t expected_events;
 } global_stats;
 
 static void reset_stats(void)
 {
 	k_mutex_lock(&stats_mutex, K_FOREVER);
 
-	global_stats.conn_count = 0;
-	global_stats.dconn_count = 0;
-	global_stats.event_count = 0;
-	global_stats.dconn_iface = NULL;
-	global_stats.conn_iface = NULL;
+	global_stats.conn_count_gen = 0;
+	global_stats.dconn_count_gen = 0;
+	global_stats.event_count_gen = 0;
+	global_stats.dconn_iface_gen = NULL;
+	global_stats.conn_iface_gen = NULL;
+
+	global_stats.conn_count_ipv4 = 0;
+	global_stats.dconn_count_ipv4 = 0;
+	global_stats.event_count_ipv4 = 0;
+	global_stats.dconn_iface_ipv4 = NULL;
+	global_stats.conn_iface_ipv4 = NULL;
+
+	global_stats.conn_count_ipv6 = 0;
+	global_stats.dconn_count_ipv6 = 0;
+	global_stats.event_count_ipv6 = 0;
+	global_stats.dconn_iface_ipv6 = NULL;
+	global_stats.conn_iface_ipv6 = NULL;
+
+	global_stats.expected_events = 0;
 
 	k_mutex_unlock(&stats_mutex);
 }
@@ -111,23 +162,80 @@ static struct test_stats get_reset_stats(void)
 /* Callback hooks */
 struct net_mgmt_event_callback l4_callback;
 
-void l4_handler(struct net_mgmt_event_callback *cb, uint32_t event, struct net_if *iface)
+void l4_handler(struct net_mgmt_event_callback *cb, uint64_t event, struct net_if *iface)
 {
 	if (event == NET_EVENT_L4_CONNECTED) {
 		k_mutex_lock(&stats_mutex, K_FOREVER);
-		global_stats.conn_count += 1;
-		global_stats.event_count += 1;
-		global_stats.conn_iface = iface;
+		global_stats.conn_count_gen += 1;
+		global_stats.event_count_gen += 1;
+		global_stats.conn_iface_gen = iface;
+		TEST_EXPECT_CLEAR(TEST_EXPECT_L4_CONNECTED);
 		k_mutex_unlock(&stats_mutex);
 	} else if (event == NET_EVENT_L4_DISCONNECTED) {
 		k_mutex_lock(&stats_mutex, K_FOREVER);
-		global_stats.dconn_count += 1;
-		global_stats.event_count += 1;
-		global_stats.dconn_iface = iface;
+		global_stats.dconn_count_gen += 1;
+		global_stats.event_count_gen += 1;
+		global_stats.dconn_iface_gen = iface;
+		TEST_EXPECT_CLEAR(TEST_EXPECT_L4_DISCONNECTED);
 		k_mutex_unlock(&stats_mutex);
+	}
+
+	if (global_stats.expected_events == 0) {
+		k_sem_give(&event_sem);
 	}
 }
 
+struct net_mgmt_event_callback conn_callback;
+
+void conn_handler(struct net_mgmt_event_callback *cb, uint64_t event, struct net_if *iface)
+{
+	if (event == NET_EVENT_L4_IPV6_CONNECTED) {
+		k_mutex_lock(&stats_mutex, K_FOREVER);
+		global_stats.conn_count_ipv6 += 1;
+		global_stats.event_count_ipv6 += 1;
+		global_stats.conn_iface_ipv6 = iface;
+		TEST_EXPECT_CLEAR(TEST_EXPECT_L4_IPV6_CONNECTED);
+		k_mutex_unlock(&stats_mutex);
+	} else if (event == NET_EVENT_L4_IPV6_DISCONNECTED) {
+		k_mutex_lock(&stats_mutex, K_FOREVER);
+		global_stats.dconn_count_ipv6 += 1;
+		global_stats.event_count_ipv6 += 1;
+		global_stats.dconn_iface_ipv6 = iface;
+		TEST_EXPECT_CLEAR(TEST_EXPECT_L4_IPV6_DISCONNECTED);
+		k_mutex_unlock(&stats_mutex);
+	} else if (event == NET_EVENT_L4_IPV4_CONNECTED) {
+		k_mutex_lock(&stats_mutex, K_FOREVER);
+		global_stats.conn_count_ipv4 += 1;
+		global_stats.event_count_ipv4 += 1;
+		global_stats.conn_iface_ipv4 = iface;
+		TEST_EXPECT_CLEAR(TEST_EXPECT_L4_IPV4_CONNECTED);
+		k_mutex_unlock(&stats_mutex);
+	} else if (event == NET_EVENT_L4_IPV4_DISCONNECTED) {
+		k_mutex_lock(&stats_mutex, K_FOREVER);
+		global_stats.dconn_count_ipv4 += 1;
+		global_stats.event_count_ipv4 += 1;
+		global_stats.dconn_iface_ipv4 = iface;
+		TEST_EXPECT_CLEAR(TEST_EXPECT_L4_IPV4_DISCONNECTED);
+		k_mutex_unlock(&stats_mutex);
+	}
+
+	if (global_stats.expected_events == 0) {
+		k_sem_give(&event_sem);
+	}
+}
+
+static void wait_for_events(uint64_t event_mask, k_timeout_t timeout)
+{
+	k_mutex_lock(&stats_mutex, K_FOREVER);
+	k_sem_reset(&event_sem);
+	global_stats.expected_events = event_mask;
+	k_mutex_unlock(&stats_mutex);
+
+	(void)k_sem_take(&event_sem, timeout);
+
+	/* Add small extra sleep to give any unexpected events to show up. */
+	k_sleep(EVENT_WAIT_TIME_SHORT);
+}
 
 /* Test suite shared functions & routines */
 
@@ -137,6 +245,13 @@ static void *conn_mgr_setup(void)
 		&l4_callback, l4_handler, NET_EVENT_L4_CONNECTED | NET_EVENT_L4_DISCONNECTED
 	);
 	net_mgmt_add_event_callback(&l4_callback);
+
+	net_mgmt_init_event_callback(
+		&conn_callback, conn_handler,
+		NET_EVENT_L4_IPV6_CONNECTED | NET_EVENT_L4_IPV6_DISCONNECTED |
+		NET_EVENT_L4_IPV4_CONNECTED | NET_EVENT_L4_IPV4_DISCONNECTED
+	);
+	net_mgmt_add_event_callback(&conn_callback);
 	return NULL;
 }
 
@@ -151,7 +266,7 @@ static void conn_mgr_before(void *data)
 	reset_test_iface(if_conn_b);
 
 	/* Allow any triggered events to shake out */
-	k_sleep(EVENT_WAIT_TIME);
+	k_sleep(K_MSEC(50));
 
 	reset_stats();
 }
@@ -176,52 +291,52 @@ static void cycle_ready_ifaces(struct net_if *ifa, struct net_if *ifb)
 	net_if_ipv4_addr_add(ifb, &test_ipv4_b, NET_ADDR_MANUAL, 0);
 
 	/* Expect no events */
-	k_sleep(EVENT_WAIT_TIME);
+	k_sleep(EVENT_WAIT_TIME_SHORT);
 	stats = get_reset_stats();
-	zassert_equal(stats.event_count, 0,
+	zassert_equal(stats.event_count_gen, 0,
 		"No events should be fired if connectivity availability did not change.");
 
 	/* Take A up */
 	zassert_equal(net_if_up(ifa), 0, "net_if_up should succeed for ifa.");
 
 	/* Expect connectivity gained */
-	k_sleep(EVENT_WAIT_TIME);
+	wait_for_events(TEST_EXPECT_L4_CONNECTED, EVENT_WAIT_TIME);
 	stats = get_reset_stats();
-	zassert_equal(stats.conn_count, 1,
+	zassert_equal(stats.conn_count_gen, 1,
 		"NET_EVENT_L4_CONNECTED should be fired when connectivity is gained.");
-	zassert_equal(stats.event_count, 1,
+	zassert_equal(stats.event_count_gen, 1,
 		"Only NET_EVENT_L4_CONNECTED should be fired when connectivity is gained.");
-	zassert_equal(stats.conn_iface, ifa, "ifa should be blamed.");
+	zassert_equal(stats.conn_iface_gen, ifa, "ifa should be blamed.");
 
 	/* Take B up */
 	zassert_equal(net_if_up(ifb), 0, "net_if_up should succeed for ifb.");
 
 	/* Expect no events */
-	k_sleep(EVENT_WAIT_TIME);
+	k_sleep(EVENT_WAIT_TIME_SHORT);
 	stats = get_reset_stats();
-	zassert_equal(stats.event_count, 0,
+	zassert_equal(stats.event_count_gen, 0,
 		"No events should be fired if connectivity availability did not change.");
 
 	/* Take A down */
 	zassert_equal(net_if_down(ifa), 0, "net_if_down should succeed for ifa.");
 
 	/* Expect no events */
-	k_sleep(EVENT_WAIT_TIME);
+	k_sleep(EVENT_WAIT_TIME_SHORT);
 	stats = get_reset_stats();
-	zassert_equal(stats.event_count, 0,
+	zassert_equal(stats.event_count_gen, 0,
 		"No events should be fired if connectivity availability did not change.");
 
 	/* Take B down */
 	zassert_equal(net_if_down(ifb), 0, "net_if_down should succeed for ifb.");
 
 	/* Expect connectivity loss */
-	k_sleep(EVENT_WAIT_TIME);
+	wait_for_events(TEST_EXPECT_L4_DISCONNECTED, EVENT_WAIT_TIME);
 	stats = get_reset_stats();
-	zassert_equal(stats.dconn_count, 1,
+	zassert_equal(stats.dconn_count_gen, 1,
 		"NET_EVENT_L4_DISCONNECTED should be fired when connectivity is lost.");
-	zassert_equal(stats.event_count, 1,
+	zassert_equal(stats.event_count_gen, 1,
 		"Only NET_EVENT_L4_DISCONNECTED should be fired when connectivity is lost.");
-	zassert_equal(stats.dconn_iface, ifb, "ifb should be blamed.");
+	zassert_equal(stats.dconn_iface_gen, ifb, "ifb should be blamed.");
 }
 
 /**
@@ -229,81 +344,132 @@ static void cycle_ready_ifaces(struct net_if *ifa, struct net_if *ifb)
  *
  * At several points, change the readiness state of ifa and ensure events are fired.
  *
+ * Steps which bring ifa or ifb online wait for the DAD delay to allow IPv6 events to finish.
+ * For test builds that have DAD disabled, this is equivalent to the usual event wait time.
+ *
  * @param ifa
  * @param ifb
  */
 static void cycle_ignored_iface(struct net_if *ifa, struct net_if *ifb)
 {
 	struct test_stats stats;
+	printk("cycle_ignored_iface\n");
 
 	/* Ignore B */
 	conn_mgr_ignore_iface(ifb);
 
-	/* Add IPv4 addresses */
+	/* Add IPv4 and IPv6 addresses so that all possible event types are fired. */
 	net_if_ipv4_addr_add(ifa, &test_ipv4_a, NET_ADDR_MANUAL, 0);
 	net_if_ipv4_addr_add(ifb, &test_ipv4_b, NET_ADDR_MANUAL, 0);
+	net_if_ipv6_addr_add(ifa, &test_ipv6_a, NET_ADDR_MANUAL, 0);
+	net_if_ipv6_addr_add(ifb, &test_ipv6_b, NET_ADDR_MANUAL, 0);
 
 	/* Set one: Change A state between B state toggles */
 
 	/* Take B up */
 	zassert_equal(net_if_up(ifb), 0, "net_if_up should succeed for ifb.");
 
-	/* Expect no events */
-	k_sleep(EVENT_WAIT_TIME);
+	/* Expect no events.
+	 * Wait for the DAD delay since IPv6 connected events might be delayed by this amount.
+	 */
+	printk("Expect no events.\n");
+	k_sleep(DAD_WAIT_TIME);
 	stats = get_reset_stats();
-	zassert_equal(stats.event_count, 0,
+	zassert_equal(stats.event_count_gen, 0,
+		"No events should be fired if connectivity availability did not change.");
+	zassert_equal(stats.event_count_ipv4, 0,
+		"No events should be fired if connectivity availability did not change.");
+	zassert_equal(stats.event_count_ipv6, 0,
 		"No events should be fired if connectivity availability did not change.");
 
 	/* Take B down */
 	zassert_equal(net_if_down(ifb), 0, "net_if_down should succeed for ifb.");
 
 	/* Expect no events */
-	k_sleep(EVENT_WAIT_TIME);
+	k_sleep(EVENT_WAIT_TIME_SHORT);
 	stats = get_reset_stats();
-	zassert_equal(stats.event_count, 0,
+	zassert_equal(stats.event_count_gen, 0,
+		"No events should be fired if connectivity availability did not change.");
+	zassert_equal(stats.event_count_ipv4, 0,
+		"No events should be fired if connectivity availability did not change.");
+	zassert_equal(stats.event_count_ipv6, 0,
 		"No events should be fired if connectivity availability did not change.");
 
 	/* Take A up */
 	zassert_equal(net_if_up(ifa), 0, "net_if_up should succeed for ifa.");
 
 	/* Expect connectivity gained */
-	k_sleep(EVENT_WAIT_TIME);
+	wait_for_events(TEST_EXPECT_L4_CONNECTED |
+			TEST_EXPECT_L4_IPV4_CONNECTED |
+			TEST_EXPECT_L4_IPV6_CONNECTED,
+			EVENT_WAIT_TIME);
 	stats = get_reset_stats();
-	zassert_equal(stats.conn_count, 1,
+	zassert_equal(stats.conn_count_gen, 1,
 		"NET_EVENT_L4_CONNECTED should be fired when connectivity is gained.");
-	zassert_equal(stats.event_count, 1,
+	zassert_equal(stats.event_count_gen, 1,
 		"Only NET_EVENT_L4_CONNECTED should be fired when connectivity is gained.");
-	zassert_equal(stats.conn_iface, ifa, "ifa should be blamed.");
+	zassert_equal(stats.conn_count_ipv6, 1,
+		"NET_EVENT_L4_IPV6_CONNECTED should be fired when connectivity is gained.");
+	zassert_equal(stats.event_count_ipv6, 1,
+		"Only NET_EVENT_L4_IPV6_CONNECTED should be fired when connectivity is gained.");
+	zassert_equal(stats.conn_count_ipv4, 1,
+		"NET_EVENT_L4_IPV4_CONNECTED should be fired when connectivity is gained.");
+	zassert_equal(stats.event_count_ipv4, 1,
+		"Only NET_EVENT_L4_IPV4_CONNECTED should be fired when connectivity is gained.");
+	zassert_equal(stats.conn_iface_gen, ifa, "ifa should be blamed.");
+	zassert_equal(stats.conn_iface_ipv4, ifa, "ifa should be blamed.");
+	zassert_equal(stats.conn_iface_ipv6, ifa, "ifa should be blamed.");
 
 	/* Take B up */
 	zassert_equal(net_if_up(ifb), 0, "net_if_up should succeed for ifb.");
 
 	/* Expect no events */
-	k_sleep(EVENT_WAIT_TIME);
+	k_sleep(DAD_WAIT_TIME);
 	stats = get_reset_stats();
-	zassert_equal(stats.event_count, 0,
+	zassert_equal(stats.event_count_gen, 0,
+		"No events should be fired if connectivity availability did not change.");
+	zassert_equal(stats.event_count_ipv4, 0,
+		"No events should be fired if connectivity availability did not change.");
+	zassert_equal(stats.event_count_ipv6, 0,
 		"No events should be fired if connectivity availability did not change.");
 
 	/* Take B down */
 	zassert_equal(net_if_down(ifb), 0, "net_if_down should succeed for ifb.");
 
 	/* Expect no events */
-	k_sleep(EVENT_WAIT_TIME);
+	k_sleep(EVENT_WAIT_TIME_SHORT);
 	stats = get_reset_stats();
-	zassert_equal(stats.event_count, 0,
+	zassert_equal(stats.event_count_gen, 0,
+		"No events should be fired if connectivity availability did not change.");
+	zassert_equal(stats.event_count_ipv4, 0,
+		"No events should be fired if connectivity availability did not change.");
+	zassert_equal(stats.event_count_ipv6, 0,
 		"No events should be fired if connectivity availability did not change.");
 
 	/* Take A down */
 	zassert_equal(net_if_down(ifa), 0, "net_if_down should succeed for ifa.");
 
 	/* Expect connectivity lost */
-	k_sleep(EVENT_WAIT_TIME);
+	wait_for_events(TEST_EXPECT_L4_DISCONNECTED |
+			TEST_EXPECT_L4_IPV4_DISCONNECTED |
+			TEST_EXPECT_L4_IPV6_DISCONNECTED,
+			EVENT_WAIT_TIME);
 	stats = get_reset_stats();
-	zassert_equal(stats.dconn_count, 1,
+	zassert_equal(stats.dconn_count_gen, 1,
 		"NET_EVENT_L4_DISCONNECTED should be fired when connectivity is lost.");
-	zassert_equal(stats.event_count, 1,
+	zassert_equal(stats.event_count_gen, 1,
 		"Only NET_EVENT_L4_DISCONNECTED should be fired when connectivity is lost.");
-	zassert_equal(stats.dconn_iface, ifa, "ifa should be blamed.");
+	zassert_equal(stats.dconn_count_ipv6, 1,
+		"NET_EVENT_L4_IPV6_DISCONNECTED should be fired when connectivity is lost.");
+	zassert_equal(stats.event_count_ipv6, 1,
+		"Only NET_EVENT_L4_IPV6_DISCONNECTED should be fired when connectivity is lost.");
+	zassert_equal(stats.dconn_count_ipv4, 1,
+		"NET_EVENT_L4_IPV4_DISCONNECTED should be fired when connectivity is lost.");
+	zassert_equal(stats.event_count_ipv4, 1,
+		"Only NET_EVENT_L4_IPV4_DISCONNECTED should be fired when connectivity is lost.");
+	zassert_equal(stats.dconn_iface_gen, ifa, "ifa should be blamed.");
+	zassert_equal(stats.dconn_iface_ipv4, ifa, "ifa should be blamed.");
+	zassert_equal(stats.dconn_iface_ipv6, ifa, "ifa should be blamed.");
 
 
 	/* Set two: Change A state during B state toggles */
@@ -312,30 +478,51 @@ static void cycle_ignored_iface(struct net_if *ifa, struct net_if *ifb)
 	zassert_equal(net_if_up(ifb), 0, "net_if_up should succeed for ifb.");
 
 	/* Expect no events */
-	k_sleep(EVENT_WAIT_TIME);
+	k_sleep(DAD_WAIT_TIME);
 	stats = get_reset_stats();
-	zassert_equal(stats.event_count, 0,
+	zassert_equal(stats.event_count_gen, 0,
+		"No events should be fired if connectivity availability did not change.");
+	zassert_equal(stats.event_count_ipv4, 0,
+		"No events should be fired if connectivity availability did not change.");
+	zassert_equal(stats.event_count_ipv6, 0,
 		"No events should be fired if connectivity availability did not change.");
 
 	/* Take A up */
 	zassert_equal(net_if_up(ifa), 0, "net_if_up should succeed for ifa.");
 
 	/* Expect connectivity gained */
-	k_sleep(EVENT_WAIT_TIME);
+	wait_for_events(TEST_EXPECT_L4_CONNECTED |
+			TEST_EXPECT_L4_IPV4_CONNECTED |
+			TEST_EXPECT_L4_IPV6_CONNECTED,
+			EVENT_WAIT_TIME);
 	stats = get_reset_stats();
-	zassert_equal(stats.conn_count, 1,
+	zassert_equal(stats.conn_count_gen, 1,
 		"NET_EVENT_L4_CONNECTED should be fired when connectivity is gained.");
-	zassert_equal(stats.event_count, 1,
+	zassert_equal(stats.event_count_gen, 1,
 		"Only NET_EVENT_L4_CONNECTED should be fired when connectivity is gained.");
-	zassert_equal(stats.conn_iface, ifa, "ifa should be blamed.");
+	zassert_equal(stats.conn_count_ipv6, 1,
+		"NET_EVENT_L4_IPV6_CONNECTED should be fired when connectivity is gained.");
+	zassert_equal(stats.event_count_ipv6, 1,
+		"Only NET_EVENT_L4_IPV6_CONNECTED should be fired when connectivity is gained.");
+	zassert_equal(stats.conn_count_ipv4, 1,
+		"NET_EVENT_L4_IPV4_CONNECTED should be fired when connectivity is gained.");
+	zassert_equal(stats.event_count_ipv4, 1,
+		"Only NET_EVENT_L4_IPV4_CONNECTED should be fired when connectivity is gained.");
+	zassert_equal(stats.conn_iface_gen, ifa, "ifa should be blamed.");
+	zassert_equal(stats.conn_iface_ipv4, ifa, "ifa should be blamed.");
+	zassert_equal(stats.conn_iface_ipv6, ifa, "ifa should be blamed.");
 
 	/* Take B down */
 	zassert_equal(net_if_down(ifb), 0, "net_if_down should succeed for ifb.");
 
 	/* Expect no events */
-	k_sleep(EVENT_WAIT_TIME);
+	k_sleep(EVENT_WAIT_TIME_SHORT);
 	stats = get_reset_stats();
-	zassert_equal(stats.event_count, 0,
+	zassert_equal(stats.event_count_gen, 0,
+		"No events should be fired if connectivity availability did not change.");
+	zassert_equal(stats.event_count_ipv4, 0,
+		"No events should be fired if connectivity availability did not change.");
+	zassert_equal(stats.event_count_ipv6, 0,
 		"No events should be fired if connectivity availability did not change.");
 
 
@@ -343,30 +530,51 @@ static void cycle_ignored_iface(struct net_if *ifa, struct net_if *ifb)
 	zassert_equal(net_if_up(ifb), 0, "net_if_up should succeed for ifb.");
 
 	/* Expect no events */
-	k_sleep(EVENT_WAIT_TIME);
+	k_sleep(DAD_WAIT_TIME);
 	stats = get_reset_stats();
-	zassert_equal(stats.event_count, 0,
+	zassert_equal(stats.event_count_gen, 0,
+		"No events should be fired if connectivity availability did not change.");
+	zassert_equal(stats.event_count_ipv4, 0,
+		"No events should be fired if connectivity availability did not change.");
+	zassert_equal(stats.event_count_ipv6, 0,
 		"No events should be fired if connectivity availability did not change.");
 
 	/* Take A down */
 	zassert_equal(net_if_down(ifa), 0, "net_if_down should succeed for ifa.");
 
 	/* Expect connectivity lost */
-	k_sleep(EVENT_WAIT_TIME);
+	wait_for_events(TEST_EXPECT_L4_DISCONNECTED |
+			TEST_EXPECT_L4_IPV4_DISCONNECTED |
+			TEST_EXPECT_L4_IPV6_DISCONNECTED,
+			EVENT_WAIT_TIME);
 	stats = get_reset_stats();
-	zassert_equal(stats.dconn_count, 1,
+	zassert_equal(stats.dconn_count_gen, 1,
 		"NET_EVENT_L4_DISCONNECTED should be fired when connectivity is lost.");
-	zassert_equal(stats.event_count, 1,
+	zassert_equal(stats.event_count_gen, 1,
 		"Only NET_EVENT_L4_DISCONNECTED should be fired when connectivity is lost.");
-	zassert_equal(stats.dconn_iface, ifa, "ifa should be blamed.");
+	zassert_equal(stats.dconn_count_ipv6, 1,
+		"NET_EVENT_L4_IPV6_DISCONNECTED should be fired when connectivity is lost.");
+	zassert_equal(stats.event_count_ipv6, 1,
+		"Only NET_EVENT_L4_IPV6_DISCONNECTED should be fired when connectivity is lost.");
+	zassert_equal(stats.dconn_count_ipv4, 1,
+		"NET_EVENT_L4_IPV4_DISCONNECTED should be fired when connectivity is lost.");
+	zassert_equal(stats.event_count_ipv4, 1,
+		"Only NET_EVENT_L4_IPV4_DISCONNECTED should be fired when connectivity is lost.");
+	zassert_equal(stats.dconn_iface_gen, ifa, "ifa should be blamed.");
+	zassert_equal(stats.dconn_iface_ipv4, ifa, "ifa should be blamed.");
+	zassert_equal(stats.dconn_iface_ipv6, ifa, "ifa should be blamed.");
 
 	/* Take B down */
 	zassert_equal(net_if_down(ifb), 0, "net_if_down should succeed for ifb.");
 
 	/* Expect no events */
-	k_sleep(EVENT_WAIT_TIME);
+	k_sleep(EVENT_WAIT_TIME_SHORT);
 	stats = get_reset_stats();
-	zassert_equal(stats.event_count, 0,
+	zassert_equal(stats.event_count_gen, 0,
+		"No events should be fired if connectivity availability did not change.");
+	zassert_equal(stats.event_count_ipv4, 0,
+		"No events should be fired if connectivity availability did not change.");
+	zassert_equal(stats.event_count_ipv6, 0,
 		"No events should be fired if connectivity availability did not change.");
 }
 
@@ -415,9 +623,9 @@ static void cycle_iface_states(struct net_if *iface, enum ip_order ifa_ipm)
 	zassert_equal(net_if_up(iface), 0, "net_if_up should succeed.");
 
 	/* Verify that no events have been fired yet */
-	k_sleep(EVENT_WAIT_TIME);
+	k_sleep(EVENT_WAIT_TIME_MEDIUM);
 	stats = get_reset_stats();
-	zassert_equal(stats.event_count, 0,
+	zassert_equal(stats.event_count_gen, 0,
 		"No events should be fired if connectivity availability did not change.");
 
 	/* (10 -> 11): Gain IP from semi-ready state */
@@ -427,48 +635,85 @@ static void cycle_iface_states(struct net_if *iface, enum ip_order ifa_ipm)
 		net_if_ipv4_addr_add(iface, &test_ipv4_a, NET_ADDR_MANUAL, 0);
 
 		/* Verify correct events */
-		k_sleep(EVENT_WAIT_TIME);
+		wait_for_events(TEST_EXPECT_L4_CONNECTED |
+				TEST_EXPECT_L4_IPV4_CONNECTED,
+				EVENT_WAIT_TIME);
 		stats = get_reset_stats();
-		zassert_equal(stats.conn_count, 1,
+		zassert_equal(stats.conn_count_gen, 1,
 			"NET_EVENT_L4_CONNECTED should be fired when connectivity is gained.");
-		zassert_equal(stats.event_count, 1,
+		zassert_equal(stats.event_count_gen, 1,
 			"Only NET_EVENT_L4_CONNECTED should be fired when connectivity is gained.");
-		zassert_equal(stats.conn_iface, iface, "The test iface should be blamed.");
-
+		zassert_equal(stats.conn_count_ipv4, 1,
+			"NET_EVENT_L4_IPV4_CONNECTED should be fired when IPv4 "
+			"connectivity is gained.");
+		zassert_equal(stats.event_count_ipv4, 1,
+			"Only NET_EVENT_L4_IPV4_CONNECTED should be fired when IPv4 "
+			"connectivity is gained.");
+		zassert_equal(stats.event_count_ipv6, 0,
+			"No IPv6 events should be fired when IPv4 connectivity is gained.");
+		zassert_equal(stats.conn_iface_gen, iface, "The test iface should be blamed.");
+		zassert_equal(stats.conn_iface_ipv4, iface, "The test iface should be blamed.");
 
 		/* Add IPv6 */
 		net_if_ipv6_addr_add(iface, &test_ipv6_a, NET_ADDR_MANUAL, 0);
-		k_sleep(DAD_WAIT_TIME);
 
-		/* Verify no events */
-		k_sleep(EVENT_WAIT_TIME);
+		/* Verify only IPv6 events */
+		wait_for_events(TEST_EXPECT_L4_IPV6_CONNECTED, EVENT_WAIT_TIME);
 		stats = get_reset_stats();
-		zassert_equal(stats.event_count, 0,
+		zassert_equal(stats.event_count_gen, 0,
 			"No events should be fired if connectivity availability did not change.");
+		zassert_equal(stats.conn_count_ipv6, 1,
+			"NET_EVENT_L4_IPV6_CONNECTED should be fired when IPv6 "
+			"connectivity is gained.");
+		zassert_equal(stats.event_count_ipv6, 1,
+			"Only NET_EVENT_L4_IPV6_CONNECTED should be fired when IPv6 "
+			"connectivity is gained.");
+		zassert_equal(stats.event_count_ipv4, 0,
+			"No IPv4 events should be fired when IPv6 connectivity is gained.");
+		zassert_equal(stats.conn_iface_ipv6, iface, "The test iface should be blamed.");
 
 		break;
 	case IPV6_FIRST:
 		/* Add IPv6 */
 		net_if_ipv6_addr_add(iface, &test_ipv6_a, NET_ADDR_MANUAL, 0);
-		k_sleep(DAD_WAIT_TIME);
 
 		/* Verify correct events */
-		k_sleep(EVENT_WAIT_TIME);
+		wait_for_events(TEST_EXPECT_L4_CONNECTED |
+				TEST_EXPECT_L4_IPV6_CONNECTED,
+				EVENT_WAIT_TIME);
 		stats = get_reset_stats();
-		zassert_equal(stats.conn_count, 1,
+		zassert_equal(stats.conn_count_gen, 1,
 			"NET_EVENT_L4_CONNECTED should be fired when connectivity is gained.");
-		zassert_equal(stats.event_count, 1,
+		zassert_equal(stats.event_count_gen, 1,
 			"Only NET_EVENT_L4_CONNECTED should be fired when connectivity is gained.");
-		zassert_equal(stats.conn_iface, iface, "The test iface should be blamed.");
+		zassert_equal(stats.conn_count_ipv6, 1,
+			"NET_EVENT_L4_IPV6_CONNECTED should be fired when IPv6 "
+			"connectivity is gained.");
+		zassert_equal(stats.event_count_ipv6, 1,
+			"Only NET_EVENT_L4_IPV6_CONNECTED should be fired when IPv6 "
+			"connectivity is gained.");
+		zassert_equal(stats.event_count_ipv4, 0,
+			"No IPv4 events should be fired when IPv6 connectivity is gained.");
+		zassert_equal(stats.conn_iface_gen, iface, "The test iface should be blamed.");
+		zassert_equal(stats.conn_iface_ipv6, iface, "The test iface should be blamed.");
 
 		/* Add IPv4 */
 		net_if_ipv4_addr_add(iface, &test_ipv4_a, NET_ADDR_MANUAL, 0);
 
-		/* Verify no events */
-		k_sleep(EVENT_WAIT_TIME);
+		/* Verify only IPv4 events */
+		wait_for_events(TEST_EXPECT_L4_IPV4_CONNECTED, EVENT_WAIT_TIME);
 		stats = get_reset_stats();
-		zassert_equal(stats.event_count, 0,
+		zassert_equal(stats.event_count_gen, 0,
 			"No events should be fired if connectivity availability did not change.");
+		zassert_equal(stats.conn_count_ipv4, 1,
+			"NET_EVENT_L4_IPV4_CONNECTED should be fired when IPv4 "
+			"connectivity is gained.");
+		zassert_equal(stats.event_count_ipv4, 1,
+			"Only NET_EVENT_L4_IPV4_CONNECTED should be fired when IPv4 "
+			"connectivity is gained.");
+		zassert_equal(stats.event_count_ipv6, 0,
+			"No IPv6 events should be fired when IPv4 connectivity is gained.");
+		zassert_equal(stats.conn_iface_ipv4, iface, "The test iface should be blamed.");
 		break;
 	}
 
@@ -479,25 +724,46 @@ static void cycle_iface_states(struct net_if *iface, enum ip_order ifa_ipm)
 		zassert_true(net_if_ipv4_addr_rm(iface, &test_ipv4_a),
 							"IPv4 removal should succeed.");
 
-		/* Verify no events (because IPv6 addr is still active) */
-		k_sleep(EVENT_WAIT_TIME);
+		/* Verify only IPv4 events */
+		wait_for_events(TEST_EXPECT_L4_IPV4_DISCONNECTED, EVENT_WAIT_TIME);
 		stats = get_reset_stats();
-		zassert_equal(stats.event_count, 0,
+		zassert_equal(stats.event_count_gen, 0,
 			"No events should be fired if connectivity availability did not change.");
+		zassert_equal(stats.dconn_count_ipv4, 1,
+			"NET_EVENT_L4_IPV4_DISCONNECTED should be fired when IPv4 "
+			"connectivity is lost.");
+		zassert_equal(stats.event_count_ipv4, 1,
+			"Only NET_EVENT_L4_IPV4_DISCONNECTED should be fired when IPv4 "
+			"connectivity is lost.");
+		zassert_equal(stats.event_count_ipv6, 0,
+			"No IPv6 events should be fired when IPv4 connectivity is gained.");
+		zassert_equal(stats.dconn_iface_ipv4, iface, "The test iface should be blamed.");
 
 		/* Remove IPv6 */
 		zassert_true(net_if_ipv6_addr_rm(iface, &test_ipv6_a),
 							"IPv6 removal should succeed.");
 
 		/* Verify correct events */
-		k_sleep(EVENT_WAIT_TIME);
+		wait_for_events(TEST_EXPECT_L4_DISCONNECTED |
+				TEST_EXPECT_L4_IPV6_DISCONNECTED,
+				EVENT_WAIT_TIME);
 		stats = get_reset_stats();
-		zassert_equal(stats.dconn_count, 1,
+		zassert_equal(stats.dconn_count_gen, 1,
 			"NET_EVENT_L4_DISCONNECTED should be fired when connectivity is lost.");
-		zassert_equal(stats.event_count, 1,
+		zassert_equal(stats.event_count_gen, 1,
 			"Only NET_EVENT_L4_DISCONNECTED should be fired when connectivity "
 			"is lost.");
-		zassert_equal(stats.dconn_iface, iface, "The test iface should be blamed.");
+		zassert_equal(stats.dconn_count_ipv6, 1,
+			"NET_EVENT_L4_IPV6_DISCONNECTED should be fired when IPv6 "
+			"connectivity is lost.");
+		zassert_equal(stats.event_count_ipv6, 1,
+			"Only NET_EVENT_L4_IPV6_DISCONNECTED should be fired when IPv6 "
+			"connectivity is lost.");
+		zassert_equal(stats.event_count_ipv4, 0,
+			"No IPv4 events should be fired when IPv6 connectivity is gained.");
+
+		zassert_equal(stats.dconn_iface_gen, iface, "The test iface should be blamed.");
+		zassert_equal(stats.dconn_iface_ipv6, iface, "The test iface should be blamed.");
 
 		break;
 	case IPV6_FIRST:
@@ -505,25 +771,45 @@ static void cycle_iface_states(struct net_if *iface, enum ip_order ifa_ipm)
 		zassert_true(net_if_ipv6_addr_rm(iface, &test_ipv6_a),
 							"IPv6 removal should succeed.");
 
-		/* Verify no events (because IPv4 addr is still active) */
-		k_sleep(EVENT_WAIT_TIME);
+		/* Verify only IPv6 events */
+		wait_for_events(TEST_EXPECT_L4_IPV6_DISCONNECTED, EVENT_WAIT_TIME);
 		stats = get_reset_stats();
-		zassert_equal(stats.event_count, 0,
+		zassert_equal(stats.event_count_gen, 0,
 			"No events should be fired if connectivity availability did not change.");
+		zassert_equal(stats.dconn_count_ipv6, 1,
+			"NET_EVENT_L4_IPV6_DISCONNECTED should be fired when IPv6 "
+			"connectivity is lost.");
+		zassert_equal(stats.event_count_ipv6, 1,
+			"Only NET_EVENT_L4_IPV6_DISCONNECTED should be fired when IPv6 "
+			"connectivity is lost.");
+		zassert_equal(stats.event_count_ipv4, 0,
+			"No IPv4 events should be fired when IPv6 connectivity is gained.");
+		zassert_equal(stats.dconn_iface_ipv6, iface, "The test iface should be blamed.");
 
 		/* Remove IPv4 */
 		zassert_true(net_if_ipv4_addr_rm(iface, &test_ipv4_a),
 							"IPv4 removal should succeed.");
 
 		/* Verify correct events */
-		k_sleep(EVENT_WAIT_TIME);
+		wait_for_events(TEST_EXPECT_L4_DISCONNECTED |
+				TEST_EXPECT_L4_IPV4_DISCONNECTED,
+				EVENT_WAIT_TIME);
 		stats = get_reset_stats();
-		zassert_equal(stats.dconn_count, 1,
+		zassert_equal(stats.dconn_count_gen, 1,
 			"NET_EVENT_L4_DISCONNECTED should be fired when connectivity is lost.");
-		zassert_equal(stats.event_count, 1,
+		zassert_equal(stats.event_count_gen, 1,
 			"Only NET_EVENT_L4_DISCONNECTED should be fired when connectivity "
 			"is lost.");
-		zassert_equal(stats.dconn_iface, iface, "The test iface should be blamed.");
+		zassert_equal(stats.dconn_count_ipv4, 1,
+			"NET_EVENT_L4_IPV4_DISCONNECTED should be fired when IPv4 "
+			"connectivity is lost.");
+		zassert_equal(stats.event_count_ipv4, 1,
+			"Only NET_EVENT_L4_IPV4_DISCONNECTED should be fired when IPv4 "
+			"connectivity is lost.");
+		zassert_equal(stats.event_count_ipv6, 0,
+			"No IPv6 events should be fired when IPv4 connectivity is gained.");
+		zassert_equal(stats.dconn_iface_gen, iface, "The test iface should be blamed.");
+		zassert_equal(stats.dconn_iface_ipv4, iface, "The test iface should be blamed.");
 
 		break;
 	}
@@ -534,9 +820,13 @@ static void cycle_iface_states(struct net_if *iface, enum ip_order ifa_ipm)
 	zassert_equal(net_if_down(iface), 0, "net_if_down should succeed.");
 
 	/* Verify there are no events fired */
-	k_sleep(EVENT_WAIT_TIME);
+	k_sleep(EVENT_WAIT_TIME_SHORT);
 	stats = get_reset_stats();
-	zassert_equal(stats.event_count, 0,
+	zassert_equal(stats.event_count_gen, 0,
+		"No events should be fired if connectivity availability did not change.");
+	zassert_equal(stats.event_count_ipv4, 0,
+		"No events should be fired if connectivity availability did not change.");
+	zassert_equal(stats.event_count_ipv6, 0,
 		"No events should be fired if connectivity availability did not change.");
 
 	/* (00 -> 01): Gain IP from unready state */
@@ -558,9 +848,13 @@ static void cycle_iface_states(struct net_if *iface, enum ip_order ifa_ipm)
 	}
 
 	/* Verify that no events are fired */
-	k_sleep(EVENT_WAIT_TIME);
+	k_sleep(EVENT_WAIT_TIME_SHORT);
 	stats = get_reset_stats();
-	zassert_equal(stats.event_count, 0,
+	zassert_equal(stats.event_count_gen, 0,
+		"No events should be fired if connectivity availability did not change.");
+	zassert_equal(stats.event_count_ipv4, 0,
+		"No events should be fired if connectivity availability did not change.");
+	zassert_equal(stats.event_count_ipv6, 0,
 		"No events should be fired if connectivity availability did not change.");
 
 	/* (01 -> 11): Gain Oper-up from semi-ready state */
@@ -569,13 +863,30 @@ static void cycle_iface_states(struct net_if *iface, enum ip_order ifa_ipm)
 	zassert_equal(net_if_up(iface), 0, "net_if_up should succeed.");
 
 	/* Verify events are fired */
-	k_sleep(EVENT_WAIT_TIME);
+	wait_for_events(TEST_EXPECT_L4_CONNECTED |
+			TEST_EXPECT_L4_IPV4_CONNECTED |
+			TEST_EXPECT_L4_IPV6_CONNECTED,
+			EVENT_WAIT_TIME);
 	stats = get_reset_stats();
-	zassert_equal(stats.conn_count, 1,
+	zassert_equal(stats.conn_count_gen, 1,
 		"NET_EVENT_L4_CONNECTED should be fired when connectivity is gained.");
-	zassert_equal(stats.event_count, 1,
+	zassert_equal(stats.event_count_gen, 1,
 		"Only NET_EVENT_L4_CONNECTED should be fired when connectivity is gained.");
-	zassert_equal(stats.conn_iface, iface, "The test iface should be blamed.");
+	zassert_equal(stats.conn_count_ipv4, 1,
+		"NET_EVENT_L4_IPV4_CONNECTED should be fired when IPv4 "
+		"connectivity is gained.");
+	zassert_equal(stats.event_count_ipv4, 1,
+		"Only NET_EVENT_L4_IPV4_CONNECTED should be fired when IPv4 "
+		"connectivity is gained.");
+	zassert_equal(stats.conn_count_ipv6, 1,
+		"NET_EVENT_L4_IPV6_CONNECTED should be fired when IPv6 "
+		"connectivity is gained.");
+	zassert_equal(stats.event_count_ipv6, 1,
+		"Only NET_EVENT_L4_IPV6_CONNECTED should be fired when IPv6 "
+		"connectivity is gained.");
+	zassert_equal(stats.conn_iface_gen, iface, "The test iface should be blamed.");
+	zassert_equal(stats.conn_iface_ipv4, iface, "The test iface should be blamed.");
+	zassert_equal(stats.conn_iface_ipv6, iface, "The test iface should be blamed.");
 
 	/* (11 -> 01): Lose oper-up from ready state */
 
@@ -583,13 +894,30 @@ static void cycle_iface_states(struct net_if *iface, enum ip_order ifa_ipm)
 	zassert_equal(net_if_down(iface), 0, "net_if_down should succeed.");
 
 	/* Verify events are fired */
-	k_sleep(EVENT_WAIT_TIME);
+	wait_for_events(TEST_EXPECT_L4_DISCONNECTED |
+			TEST_EXPECT_L4_IPV4_DISCONNECTED |
+			TEST_EXPECT_L4_IPV6_DISCONNECTED,
+			EVENT_WAIT_TIME);
 	stats = get_reset_stats();
-	zassert_equal(stats.dconn_count, 1,
+	zassert_equal(stats.dconn_count_gen, 1,
 		"NET_EVENT_L4_DISCONNECTED should be fired when connectivity is lost.");
-	zassert_equal(stats.event_count, 1,
+	zassert_equal(stats.event_count_gen, 1,
 		"Only NET_EVENT_L4_DISCONNECTED should be fired when connectivity is lost.");
-	zassert_equal(stats.dconn_iface, iface, "The test iface should be blamed.");
+	zassert_equal(stats.dconn_count_ipv4, 1,
+		"NET_EVENT_L4_IPV4_DISCONNECTED should be fired when IPv4 "
+		"connectivity is lost.");
+	zassert_equal(stats.event_count_ipv4, 1,
+		"Only NET_EVENT_L4_IPV4_DISCONNECTED should be fired when IPv4 "
+		"connectivity is lost.");
+	zassert_equal(stats.dconn_count_ipv6, 1,
+		"NET_EVENT_L4_IPV6_DISCONNECTED should be fired when IPv6 "
+		"connectivity is lost.");
+	zassert_equal(stats.event_count_ipv6, 1,
+		"Only NET_EVENT_L4_IPV6_DISCONNECTED should be fired when IPv6 "
+		"connectivity is lost.");
+	zassert_equal(stats.dconn_iface_gen, iface, "The test iface should be blamed.");
+	zassert_equal(stats.dconn_iface_ipv4, iface, "The test iface should be blamed.");
+	zassert_equal(stats.dconn_iface_ipv6, iface, "The test iface should be blamed.");
 
 	/* (01 -> 00): Lose IP from semi-ready state */
 
@@ -612,9 +940,13 @@ static void cycle_iface_states(struct net_if *iface, enum ip_order ifa_ipm)
 	}
 
 	/* Verify no events fired */
-	k_sleep(EVENT_WAIT_TIME);
+	k_sleep(EVENT_WAIT_TIME_SHORT);
 	stats = get_reset_stats();
-	zassert_equal(stats.event_count, 0,
+	zassert_equal(stats.event_count_gen, 0,
+		"No events should be fired if connectivity availability did not change.");
+	zassert_equal(stats.event_count_ipv4, 0,
+		"No events should be fired if connectivity availability did not change.");
+	zassert_equal(stats.event_count_ipv6, 0,
 		"No events should be fired if connectivity availability did not change.");
 }
 
@@ -698,15 +1030,15 @@ ZTEST(conn_mgr_monitor, test_DAD)
 	net_if_ipv6_addr_add(if_simp_a, &test_ipv6_a, NET_ADDR_MANUAL, 0);
 
 	/* After a delay too short for DAD, ensure no events */
-	k_sleep(EVENT_WAIT_TIME);
+	k_sleep(EVENT_WAIT_TIME_SHORT);
 	stats = get_reset_stats();
-	zassert_equal(stats.event_count, 0,
+	zassert_equal(stats.event_count_gen, 0,
 		"No events should be fired before DAD success.");
 
 	/* After a delay long enough for DAD, ensure connectivity acquired */
-	k_sleep(DAD_WAIT_TIME);
+	wait_for_events(TEST_EXPECT_L4_CONNECTED, EVENT_WAIT_TIME);
 	stats = get_reset_stats();
-	zassert_equal(stats.conn_count, 1,
+	zassert_equal(stats.conn_count_gen, 1,
 			"NET_EVENT_L4_CONNECTED should be fired after DAD success.");
 }
 
@@ -720,45 +1052,81 @@ ZTEST(conn_mgr_monitor, test_ignore_while_ready)
 
 	/* Add IP and take iface up */
 	net_if_ipv4_addr_add(if_simp_a, &test_ipv4_a, NET_ADDR_MANUAL, 0);
+	net_if_ipv6_addr_add(if_simp_a, &test_ipv6_a, NET_ADDR_MANUAL, 0);
 	zassert_equal(net_if_up(if_simp_a), 0, "net_if_up should succeed for if_simp_a.");
 
 	/* Ensure no events */
-	k_sleep(EVENT_WAIT_TIME);
+	k_sleep(DAD_WAIT_TIME);
 	stats = get_reset_stats();
-	zassert_equal(stats.event_count, 0,
+	zassert_equal(stats.event_count_gen, 0,
+		"No events should be fired if connecting iface is ignored.");
+	zassert_equal(stats.event_count_ipv4, 0,
+		"No events should be fired if connecting iface is ignored.");
+	zassert_equal(stats.event_count_ipv6, 0,
 		"No events should be fired if connecting iface is ignored.");
 
 	/* Watch iface */
 	conn_mgr_watch_iface(if_simp_a);
 
 	/* Ensure connectivity gained */
-	k_sleep(EVENT_WAIT_TIME);
+	wait_for_events(TEST_EXPECT_L4_CONNECTED |
+			TEST_EXPECT_L4_IPV4_CONNECTED |
+			TEST_EXPECT_L4_IPV6_CONNECTED,
+			EVENT_WAIT_TIME);
 	stats = get_reset_stats();
-	zassert_equal(stats.conn_count, 1,
+	zassert_equal(stats.conn_count_gen, 1,
 		"NET_EVENT_L4_CONNECTED should be fired when online iface is watched.");
-	zassert_equal(stats.event_count, 1,
+	zassert_equal(stats.event_count_gen, 1,
 		"Only NET_EVENT_L4_CONNECTED should be fired.");
-	zassert_equal(stats.conn_iface, if_simp_a, "if_simp_a should be blamed.");
+	zassert_equal(stats.conn_count_ipv4, 1,
+		"NET_EVENT_L4_IPV4_CONNECTED should be fired when online iface is watched.");
+	zassert_equal(stats.event_count_ipv4, 1,
+		"Only NET_EVENT_L4_IPV4_CONNECTED should be fired.");
+	zassert_equal(stats.conn_count_ipv6, 1,
+		"NET_EVENT_L4_IPV6_CONNECTED should be fired when online iface is watched.");
+	zassert_equal(stats.event_count_ipv6, 1,
+		"Only NET_EVENT_L4_IPV6_CONNECTED should be fired.");
+	zassert_equal(stats.conn_iface_gen, if_simp_a, "if_simp_a should be blamed");
+	zassert_equal(stats.conn_iface_ipv4, if_simp_a, "if_simp_a should be blamed");
+	zassert_equal(stats.conn_iface_ipv6, if_simp_a, "if_simp_a should be blamed");
+
 
 	/* Ignore iface */
 	conn_mgr_ignore_iface(if_simp_a);
 
 	/* Ensure connectivity lost */
-	k_sleep(EVENT_WAIT_TIME);
+	wait_for_events(TEST_EXPECT_L4_DISCONNECTED |
+			TEST_EXPECT_L4_IPV4_DISCONNECTED |
+			TEST_EXPECT_L4_IPV6_DISCONNECTED,
+			EVENT_WAIT_TIME);
 	stats = get_reset_stats();
-	zassert_equal(stats.dconn_count, 1,
+	zassert_equal(stats.dconn_count_gen, 1,
 		"NET_EVENT_L4_DISCONNECTED should be fired when online iface is ignored.");
-	zassert_equal(stats.event_count, 1,
+	zassert_equal(stats.event_count_gen, 1,
 		"Only NET_EVENT_L4_DISCONNECTED should be fired.");
-	zassert_equal(stats.dconn_iface, if_simp_a, "if_simp_a should be blamed");
+	zassert_equal(stats.dconn_count_ipv4, 1,
+		"NET_EVENT_L4_IPV4_DISCONNECTED should be fired when online iface is ignored.");
+	zassert_equal(stats.event_count_ipv4, 1,
+		"Only NET_EVENT_L4_IPV4_DISCONNECTED should be fired.");
+	zassert_equal(stats.dconn_count_ipv6, 1,
+		"NET_EVENT_L4_IPV6_DISCONNECTED should be fired when online iface is ignored.");
+	zassert_equal(stats.event_count_ipv6, 1,
+		"Only NET_EVENT_L4_IPV6_DISCONNECTED should be fired.");
+	zassert_equal(stats.dconn_iface_gen, if_simp_a, "if_simp_a should be blamed");
+	zassert_equal(stats.dconn_iface_ipv4, if_simp_a, "if_simp_a should be blamed");
+	zassert_equal(stats.dconn_iface_ipv6, if_simp_a, "if_simp_a should be blamed");
 
 	/* Take iface down*/
 	zassert_equal(net_if_down(if_simp_a), 0, "net_if_down should succeed for if_simp_a.");
 
 	/* Ensure no events */
-	k_sleep(EVENT_WAIT_TIME);
+	k_sleep(EVENT_WAIT_TIME_SHORT);
 	stats = get_reset_stats();
-	zassert_equal(stats.event_count, 0,
+	zassert_equal(stats.event_count_gen, 0,
+		"No events should be fired if disconnecting iface is ignored.");
+	zassert_equal(stats.event_count_ipv4, 0,
+		"No events should be fired if disconnecting iface is ignored.");
+	zassert_equal(stats.event_count_ipv6, 0,
 		"No events should be fired if disconnecting iface is ignored.");
 }
 

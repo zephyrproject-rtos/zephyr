@@ -4,17 +4,17 @@ type: mcu
 arch: arm
 ram: 4096
 flash: 4096
-simulation: qemu
+simulation:
+  - name: qemu
+  - name: armfvp
 toolchain:
   - gnuarmemb
   - zephyr
-  - xtools
 supported:
   - gpio
 testing:
   default: true
   ignore_tags:
-    - drivers
     - bluetooth
     - net
     - timer

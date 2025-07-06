@@ -3,9 +3,6 @@
 
 if BOARD_SPARKFUN_RED_V_THINGS_PLUS
 
-config SYS_CLOCK_TICKS_PER_SEC
-	default 128
-
 config HAS_FLASH_LOAD_OFFSET
 	default y
 

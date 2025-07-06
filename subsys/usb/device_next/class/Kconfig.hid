@@ -1,0 +1,37 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig USBD_HID_SUPPORT
+	bool "USB Human Interface Device support"
+	default y
+	depends on DT_HAS_ZEPHYR_HID_DEVICE_ENABLED
+	help
+	  Enables USB Human Interface Device support.
+
+if USBD_HID_SUPPORT
+
+config USBD_HID_IN_BUF_COUNT
+	int "Number of buffers in the IN pool"
+	range 1 256
+	default 2
+	help
+	  Number of buffers in the IN pool per HID instance.
+
+config USBD_HID_OUT_BUF_COUNT
+	int "Number of buffers in the OUT pool"
+	range 1 256
+	default 2
+	help
+	  Number of buffers in the OUT pool per HID instance.
+
+config USBD_HID_INIT_PRIORITY
+	int "HID device init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  HID device initialization priority
+
+module = USBD_HID
+module-str = usbd hid
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # USBD_HID_SUPPORT

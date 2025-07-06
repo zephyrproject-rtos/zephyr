@@ -83,7 +83,7 @@ static int sbs_gauge_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		break;
 	case FUEL_GAUGE_CURRENT:
 		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_CURRENT, &tmp_val);
-		val->current = tmp_val * 1000;
+		val->current = (int16_t)tmp_val * 1000;
 		break;
 	case FUEL_GAUGE_FULL_CHARGE_CAPACITY:
 		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_FULL_CAPACITY, &tmp_val);
@@ -290,7 +290,7 @@ static int sbs_gauge_init(const struct device *dev)
 	return 0;
 }
 
-static const struct fuel_gauge_driver_api sbs_gauge_driver_api = {
+static DEVICE_API(fuel_gauge, sbs_gauge_driver_api) = {
 	.get_property = &sbs_gauge_get_prop,
 	.set_property = &sbs_gauge_set_prop,
 	.get_buffer_property = &sbs_gauge_get_buffer_prop,

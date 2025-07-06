@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  STM32 Flexible Memory Controller (FMC).
+  STM32H7 Flexible Memory Controller (FMC).
 
   The FMC allows to interface with static-memory mapped external devices such as
   SRAM, NOR Flash, NAND Flash, SDRAM...

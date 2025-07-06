@@ -1,5 +1,10 @@
+/**
+ * @file
+ * @brief Bluetooth Common Audio Profile (CAP) APIs.
+ */
+
 /*
- * Copyright (c) 2022-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,19 +17,31 @@
  *
  * @defgroup bt_cap Common Audio Profile (CAP)
  *
+ * @since 3.2
+ * @version 0.8.0
+ *
  * @ingroup bluetooth
  * @{
  *
- * [Experimental] Users should note that the APIs can change
- * as a part of ongoing development.
+ * Common Audio Profile (CAP) provides procedures to start, update, and stop unicast and broadcast
+ * Audio Streams on individual or groups of devices using procedures in the Basic Audio Profile
+ * (BAP). This profile also provides procedures to control volume and device input on groups of
+ * devices using procedures in the Volume Control Profile (VCP) and the Microphone Control Profile
+ * (MICP). This profile specification also refers to the Common Audio Service (CAS).
  */
 
+#include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
-#include <zephyr/bluetooth/audio/csip.h>
-#include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/audio/csip.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/net_buf.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,6 +49,9 @@ extern "C" {
 
 /** @brief Abstract Audio Broadcast Source structure. */
 struct bt_cap_broadcast_source;
+
+/** @brief Abstract CAP Unicast Group structure. */
+struct bt_cap_unicast_group;
 
 /**
  * @brief Register the Common Audio Service.
@@ -56,21 +76,23 @@ int bt_cap_acceptor_register(const struct bt_csip_set_member_register_param *par
 
 /** Callback structure for CAP procedures */
 struct bt_cap_initiator_cb {
-#if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT) || defined(__DOXYGEN__)
 	/**
 	 * @brief Callback for bt_cap_initiator_unicast_discover().
 	 *
 	 * @param conn      The connection pointer supplied to
 	 *                  bt_cap_initiator_unicast_discover().
 	 * @param err       0 if Common Audio Service was found else -ENODATA.
+	 * @param member    Pointer to the set member. NULL if err != 0.
 	 * @param csis_inst The Coordinated Set Identification Service if
 	 *                  Common Audio Service was found and includes a
 	 *                  Coordinated Set Identification Service.
 	 *                  NULL on error or if remote device does not include
-	 *                  Coordinated Set Identification Service.
+	 *                  Coordinated Set Identification Service. NULL if err != 0.
 	 */
 	void (*unicast_discovery_complete)(
 		struct bt_conn *conn, int err,
+		const struct bt_csip_set_coordinator_set_member *member,
 		const struct bt_csip_set_coordinator_csis_inst *csis_inst);
 
 	/**
@@ -109,6 +131,22 @@ struct bt_cap_initiator_cb {
 	 */
 	void (*unicast_stop_complete)(int err, struct bt_conn *conn);
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
+	/**
+	 * @brief The Broadcast Source has started and all of the streams are ready for audio data
+	 *
+	 * @param source The started Broadcast Source
+	 */
+	void (*broadcast_started)(struct bt_cap_broadcast_source *source);
+
+	/**
+	 * @brief The Broadcast Source has stopped and none of the streams are ready for audio data
+	 *
+	 * @param source The stopped Broadcast Source
+	 * @param reason The reason why the Broadcast Source stopped (see the BT_HCI_ERR_* values)
+	 */
+	void (*broadcast_stopped)(struct bt_cap_broadcast_source *source, uint8_t reason);
+#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 };
 
 /**
@@ -143,17 +181,27 @@ union bt_cap_set_member {
 	struct bt_csip_set_coordinator_csis_inst *csip;
 };
 
+/**
+ * @brief Common Audio Profile stream structure.
+ *
+ * Streams represents a Basic Audio Profile (BAP) stream and operation callbacks.
+ * See @ref bt_bap_stream for additional information.
+ */
 struct bt_cap_stream {
+	/** The underlying BAP audio stream */
 	struct bt_bap_stream bap_stream;
+
+	/** Audio stream operations */
 	struct bt_bap_stream_ops *ops;
 };
 
-/** @brief Register Audio operations for a Common Audio Profile stream.
+/**
+ * @brief Register Audio operations for a Common Audio Profile stream.
  *
- *  Register Audio operations for a stream.
+ * Register Audio operations for a stream.
  *
- *  @param stream Stream object.
- *  @param ops    Stream operations structure.
+ * @param stream Stream object.
+ * @param ops    Stream operations structure.
  */
 void bt_cap_stream_ops_register(struct bt_cap_stream *stream, struct bt_bap_stream_ops *ops);
 
@@ -209,6 +257,173 @@ int bt_cap_stream_send_ts(struct bt_cap_stream *stream, struct net_buf *buf, uin
  */
 int bt_cap_stream_get_tx_sync(struct bt_cap_stream *stream, struct bt_iso_tx_info *info);
 
+/** Parameter struct for each stream in the unicast group */
+struct bt_cap_unicast_group_stream_param {
+	/** Pointer to a stream object. */
+	struct bt_cap_stream *stream;
+
+	/** The QoS settings for the stream object. */
+	struct bt_bap_qos_cfg *qos_cfg;
+};
+
+/**
+ * @brief Parameter struct for the unicast group functions
+ *
+ * Parameter struct for the bt_cap_unicast_group_create() and
+ * bt_cap_unicast_group_add_streams() functions.
+ */
+struct bt_cap_unicast_group_stream_pair_param {
+	/** Pointer to a receiving stream parameters. */
+	struct bt_cap_unicast_group_stream_param *rx_param;
+
+	/** Pointer to a transmitting stream parameters. */
+	struct bt_cap_unicast_group_stream_param *tx_param;
+};
+
+/** Parameters for the creating unicast groups with bt_cap_unicast_group_create() */
+struct bt_cap_unicast_group_param {
+	/** The number of parameters in @p params */
+	size_t params_count;
+
+	/** Array of stream parameters */
+	struct bt_cap_unicast_group_stream_pair_param *params;
+
+	/**
+	 * @brief Unicast Group packing mode.
+	 *
+	 * @ref BT_ISO_PACKING_SEQUENTIAL or @ref BT_ISO_PACKING_INTERLEAVED.
+	 *
+	 * @note This is a recommendation to the controller, which the controller may ignore.
+	 */
+	uint8_t packing;
+
+#if defined(CONFIG_BT_ISO_TEST_PARAMS) || defined(__DOXYGEN__)
+	/**
+	 * @brief Central to Peripheral flush timeout
+	 *
+	 * The flush timeout in multiples of ISO_Interval for each payload sent
+	 * from the Central to Peripheral.
+	 *
+	 * Value range from @ref BT_ISO_FT_MIN to @ref BT_ISO_FT_MAX
+	 */
+	uint8_t c_to_p_ft;
+
+	/**
+	 * @brief Peripheral to Central flush timeout
+	 *
+	 * The flush timeout in multiples of ISO_Interval for each payload sent
+	 * from the Peripheral to Central.
+	 *
+	 * Value range from @ref BT_ISO_FT_MIN to @ref BT_ISO_FT_MAX.
+	 */
+	uint8_t p_to_c_ft;
+
+	/**
+	 * @brief ISO interval
+	 *
+	 * Time between consecutive CIS anchor points.
+	 *
+	 * Value range from @ref BT_ISO_ISO_INTERVAL_MIN to @ref BT_ISO_ISO_INTERVAL_MAX.
+	 */
+	uint16_t iso_interval;
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
+};
+
+/**
+ * @brief Create unicast group.
+ *
+ * Create a new audio unicast group with one or more audio streams as a unicast client.
+ * All streams shall share the same framing.
+ * All streams in the same direction shall share the same interval and latency (see
+ * @ref bt_bap_qos_cfg).
+ *
+ * @param[in]  param          The unicast group create parameters.
+ * @param[out] unicast_group  Pointer to the unicast group created.
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_cap_unicast_group_create(const struct bt_cap_unicast_group_param *param,
+				struct bt_cap_unicast_group **unicast_group);
+
+/**
+ * @brief Reconfigure unicast group.
+ *
+ * Reconfigure a unicast group with one or more audio streams as a unicast client.
+ * All streams shall share the same framing.
+ * All streams in the same direction shall share the same interval and latency (see
+ * @ref bt_bap_qos_cfg).
+ * All streams in @p param shall already belong to @p unicast_group.
+ * Use bt_cap_unicast_group_add_streams() to add additional streams.
+ *
+ * @param unicast_group  Pointer to the unicast group created.
+ * @param param          The unicast group reconfigure parameters.
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_cap_unicast_group_reconfig(struct bt_cap_unicast_group *unicast_group,
+				  const struct bt_cap_unicast_group_param *param);
+
+/**
+ * @brief Add streams to a unicast group as a unicast client
+ *
+ * This function can be used to add additional streams to a  bt_cap_unicast_group.
+ *
+ * This can be called at any time before any of the streams in the group has been started
+ * (see bt_bap_stream_ops.started()).
+ * This can also be called after the streams have been stopped (see bt_bap_stream_ops.stopped()).
+ *
+ * Once a stream has been added to a unicast group, it cannot be removed. To remove a stream from a
+ * group, the group must be deleted with bt_cap_unicast_group_delete(), but this will require all
+ * streams in the group to be released first.
+ *
+ * @param unicast_group  Pointer to the unicast group
+ * @param params         Array of stream parameters with streams being added to the group.
+ * @param num_param      Number of parameters in @p params.
+ *
+ * @return 0 in case of success or negative value in case of error.
+ */
+int bt_cap_unicast_group_add_streams(struct bt_cap_unicast_group *unicast_group,
+				     const struct bt_cap_unicast_group_stream_pair_param params[],
+				     size_t num_param);
+
+/**
+ * @brief Delete audio unicast group.
+ *
+ * Delete a audio unicast group as a client. All streams in the group shall
+ * be in the idle or configured state.
+ *
+ * @param unicast_group  Pointer to the unicast group to delete
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_cap_unicast_group_delete(struct bt_cap_unicast_group *unicast_group);
+
+/** Callback function for bt_bap_unicast_group_foreach_stream()
+ *
+ * @param stream     The audio stream
+ * @param user_data  User data
+ *
+ * @retval true Stop iterating.
+ * @retval false Continue iterating.
+ */
+typedef bool (*bt_cap_unicast_group_foreach_stream_func_t)(struct bt_cap_stream *stream,
+							   void *user_data);
+
+/**
+ * @brief Iterate through all streams in a unicast group
+ *
+ * @param unicast_group  The unicast group
+ * @param func           The callback function
+ * @param user_data      User specified data that sent to the callback function
+ *
+ * @retval 0 Success (even if no streams exists in the group).
+ * @retval -ECANCELED Iteration was stopped by the callback function before complete.
+ * @retval -EINVAL @p unicast_group or @p func were NULL.
+ */
+int bt_cap_unicast_group_foreach_stream(struct bt_cap_unicast_group *unicast_group,
+					bt_cap_unicast_group_foreach_stream_func_t func,
+					void *user_data);
+
 /** Stream specific parameters for the bt_cap_initiator_unicast_audio_start() function */
 struct bt_cap_unicast_audio_start_stream_param {
 	/** Coordinated or ad-hoc set member. */
@@ -253,10 +468,10 @@ struct bt_cap_unicast_audio_update_stream_param {
 	/** The length of @p meta. */
 	size_t meta_len;
 
-	/** @brief The new metadata.
+	/**
+	 * @brief The new metadata.
 	 *
-	 * The metadata shall a list of CCIDs as
-	 * well as a non-0 context bitfield.
+	 * The metadata shall contain a list of CCIDs as well as a non-0 context bitfield.
 	 */
 	uint8_t *meta;
 };
@@ -283,6 +498,9 @@ struct bt_cap_unicast_audio_stop_param {
 
 	/** Array of streams to stop */
 	struct bt_cap_stream **streams;
+
+	/** Whether to release the streams after they have stopped */
+	bool release;
 };
 
 /**
@@ -293,6 +511,16 @@ struct bt_cap_unicast_audio_stop_param {
  * @return 0 on success or negative error value on failure.
  */
 int bt_cap_initiator_register_cb(const struct bt_cap_initiator_cb *cb);
+
+/**
+ * @brief Unregister Common Audio Profile Initiator callbacks
+ *
+ * @param cb   The callback structure that was previously registered.
+ *
+ * @retval 0 Success
+ * @retval -EINVAL @p cb is NULL or @p cb was not registered
+ */
+int bt_cap_initiator_unregister_cb(const struct bt_cap_initiator_cb *cb);
 
 /**
  * @brief Setup and start unicast audio streams for a set of devices.
@@ -307,7 +535,10 @@ int bt_cap_initiator_register_cb(const struct bt_cap_initiator_cb *cb);
  *
  * @param param Parameters to start the audio streams.
  *
- * @return 0 on success or negative error value on failure.
+ * @retval 0 on success
+ * @retval -EBUSY if a CAP procedure is already in progress
+ * @retval -EINVAL if any parameter is invalid
+ * @retval -EALREADY All streams are already in the streaming state
  */
 int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start_param *param);
 
@@ -337,11 +568,15 @@ int bt_cap_initiator_unicast_audio_update(const struct bt_cap_unicast_audio_upda
  *
  * @param param Stop parameters.
  *
- * @return 0 on success or negative error value on failure.
+ * @return 0 on success
+ * @retval -EBUSY if a CAP procedure is already in progress
+ * @retval -EINVAL if any parameter is invalid
+ * @retval -EALREADY if no state changes will occur
  */
 int bt_cap_initiator_unicast_audio_stop(const struct bt_cap_unicast_audio_stop_param *param);
 
-/** @brief Cancel any current Common Audio Profile procedure
+/**
+ * @brief Cancel any current Common Audio Profile procedure
  *
  * This will stop the current procedure from continuing and making it possible to run a new
  * Common Audio Profile procedure.
@@ -365,6 +600,10 @@ int bt_cap_initiator_unicast_audio_stop(const struct bt_cap_unicast_audio_stop_p
  */
 int bt_cap_initiator_unicast_audio_cancel(void);
 
+/**
+ * Parameters part of @p bt_cap_initiator_broadcast_subgroup_param for
+ * bt_cap_initiator_broadcast_audio_create()
+ */
 struct bt_cap_initiator_broadcast_stream_param {
 	/** Audio stream */
 	struct bt_cap_stream *stream;
@@ -379,6 +618,10 @@ struct bt_cap_initiator_broadcast_stream_param {
 	uint8_t *data;
 };
 
+/**
+ * Parameters part of @p bt_cap_initiator_broadcast_create_param for
+ * bt_cap_initiator_broadcast_audio_create()
+ */
 struct bt_cap_initiator_broadcast_subgroup_param {
 	/** The number of parameters in @p stream_params */
 	size_t stream_count;
@@ -390,6 +633,7 @@ struct bt_cap_initiator_broadcast_subgroup_param {
 	struct bt_audio_codec_cfg *codec_cfg;
 };
 
+/** Parameters for * bt_cap_initiator_broadcast_audio_create() */
 struct bt_cap_initiator_broadcast_create_param {
 	/** The number of parameters in @p subgroup_params */
 	size_t subgroup_count;
@@ -398,14 +642,14 @@ struct bt_cap_initiator_broadcast_create_param {
 	struct bt_cap_initiator_broadcast_subgroup_param *subgroup_params;
 
 	/** Quality of Service configuration. */
-	struct bt_audio_codec_qos *qos;
+	struct bt_bap_qos_cfg *qos;
 
-	/** @brief Broadcast Source packing mode.
+	/**
+	 * @brief Broadcast Source packing mode.
 	 *
-	 *  @ref BT_ISO_PACKING_SEQUENTIAL or @ref BT_ISO_PACKING_INTERLEAVED.
+	 * @ref BT_ISO_PACKING_SEQUENTIAL or @ref BT_ISO_PACKING_INTERLEAVED.
 	 *
-	 *  @note This is a recommendation to the controller, which the
-	 *  controller may ignore.
+	 * @note This is a recommendation to the controller, which the controller may ignore.
 	 */
 	uint8_t packing;
 
@@ -424,32 +668,33 @@ struct bt_cap_initiator_broadcast_create_param {
 	 *   The string "Broadcast Code" shall be
 	 *   [42 72 6F 61 64 63 61 73 74 20 43 6F 64 65 00 00]
 	 */
-	uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE];
+	uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
 
-#if defined(CONFIG_BT_ISO_TEST_PARAMS)
-	/** @brief Immediate Repetition Count
+#if defined(CONFIG_BT_ISO_TEST_PARAMS) || defined(__DOXYGEN__)
+	/**
+	 * @brief Immediate Repetition Count
 	 *
-	 *  The number of times the scheduled payloads are transmitted in a
-	 *  given event.
+	 * The number of times the scheduled payloads are transmitted in a given event.
 	 *
-	 *  Value range from @ref BT_ISO_MIN_IRC to @ref BT_ISO_MAX_IRC.
+	 * Value range from @ref BT_ISO_IRC_MIN to @ref BT_ISO_IRC_MAX.
 	 */
 	uint8_t irc;
 
-	/** @brief Pre-transmission offset
+	/**
+	 * @brief Pre-transmission offset
 	 *
-	 *  Offset used for pre-transmissions.
+	 * Offset used for pre-transmissions.
 	 *
-	 *  Value range from @ref BT_ISO_MIN_PTO to @ref BT_ISO_MAX_PTO.
+	 * Value range from @ref BT_ISO_PTO_MIN to @ref BT_ISO_PTO_MAX.
 	 */
 	uint8_t pto;
 
-	/** @brief ISO interval
+	/**
+	 * @brief ISO interval
 	 *
-	 *  Time between consecutive BIS anchor points.
+	 * Time between consecutive BIS anchor points.
 	 *
-	 *  Value range from @ref BT_ISO_ISO_INTERVAL_MIN to
-	 *  @ref BT_ISO_ISO_INTERVAL_MAX.
+	 * Value range from @ref BT_ISO_ISO_INTERVAL_MIN to  @ref BT_ISO_ISO_INTERVAL_MAX.
 	 */
 	uint16_t iso_interval;
 #endif /* CONFIG_BT_ISO_TEST_PARAMS */
@@ -467,7 +712,12 @@ struct bt_cap_initiator_broadcast_create_param {
  * @param[in]  param             Parameters to start the audio streams.
  * @param[out] broadcast_source  Pointer to the broadcast source created.
  *
- * @return 0 on success or negative error value on failure.
+ * @retval 0 Success
+ * @retval -EINVAL @p param is invalid or @p broadcast_source is NULL
+ * @retval -ENOMEM Could not allocate more broadcast sources, subgroups or ISO streams, or the
+ *         provided codec configuration data is too large when merging the BIS and subgroup
+ *         configuration data.
+ * @retval -ENOEXEC The broadcast source failed to be created for other reasons
  */
 int bt_cap_initiator_broadcast_audio_create(
 	const struct bt_cap_initiator_broadcast_create_param *param,
@@ -545,23 +795,6 @@ int bt_cap_initiator_broadcast_audio_stop(struct bt_cap_broadcast_source *broadc
 int bt_cap_initiator_broadcast_audio_delete(struct bt_cap_broadcast_source *broadcast_source);
 
 /**
- * @brief Get the broadcast ID of a Common Audio Profile broadcast source
- *
- * This will return the 3-octet broadcast ID that should be advertised in the
- * extended advertising data with @ref BT_UUID_BROADCAST_AUDIO_VAL as
- * @ref BT_DATA_SVC_DATA16.
- *
- * See table 3.14 in the Basic Audio Profile v1.0.1 for the structure.
- *
- * @param[in]  broadcast_source  Pointer to the broadcast source.
- * @param[out] broadcast_id      Pointer to the 3-octet broadcast ID.
- *
- * @return int		0 if on success, errno on error.
- */
-int bt_cap_initiator_broadcast_get_id(const struct bt_cap_broadcast_source *broadcast_source,
-				      uint32_t *const broadcast_id);
-
-/**
  * @brief Get the Broadcast Audio Stream Endpoint of a Common Audio Profile broadcast source
  *
  * This will encode the BASE of a broadcast source into a buffer, that can be
@@ -579,6 +812,7 @@ int bt_cap_initiator_broadcast_get_id(const struct bt_cap_broadcast_source *broa
 int bt_cap_initiator_broadcast_get_base(struct bt_cap_broadcast_source *broadcast_source,
 					struct net_buf_simple *base_buf);
 
+/** Parameters for  bt_cap_initiator_unicast_to_broadcast() */
 struct bt_cap_unicast_to_broadcast_param {
 	/** The source unicast group with the streams. */
 	struct bt_bap_unicast_group *unicast_group;
@@ -625,6 +859,7 @@ struct bt_cap_unicast_to_broadcast_param {
 int bt_cap_initiator_unicast_to_broadcast(const struct bt_cap_unicast_to_broadcast_param *param,
 					  struct bt_cap_broadcast_source **source);
 
+/** Parameters for  bt_cap_initiator_broadcast_to_unicast() */
 struct bt_cap_broadcast_to_unicast_param {
 	/**
 	 * @brief The source broadcast source with the streams.
@@ -676,16 +911,18 @@ struct bt_cap_commander_cb {
 	 * @param conn      The connection pointer supplied to
 	 *                  bt_cap_initiator_unicast_discover().
 	 * @param err       0 if Common Audio Service was found else -ENODATA.
+	 * @param member    Pointer to the set member. NULL if err != 0.
 	 * @param csis_inst The Coordinated Set Identification Service if
 	 *                  Common Audio Service was found and includes a
 	 *                  Coordinated Set Identification Service.
 	 *                  NULL on error or if remote device does not include
-	 *                  Coordinated Set Identification Service.
+	 *                  Coordinated Set Identification Service. NULL if err != 0.
 	 */
 	void (*discovery_complete)(struct bt_conn *conn, int err,
+				   const struct bt_csip_set_coordinator_set_member *member,
 				   const struct bt_csip_set_coordinator_csis_inst *csis_inst);
 
-#if defined(CONFIG_BT_VCP_VOL_CTLR)
+#if defined(CONFIG_BT_VCP_VOL_CTLR) || defined(__DOXYGEN__)
 	/**
 	 * @brief Callback for bt_cap_commander_change_volume().
 	 *
@@ -710,7 +947,7 @@ struct bt_cap_commander_cb {
 	 */
 	void (*volume_mute_changed)(struct bt_conn *conn, int err);
 
-#if defined(CONFIG_BT_VCP_VOL_CTLR_VOCS)
+#if defined(CONFIG_BT_VCP_VOL_CTLR_VOCS) || defined(__DOXYGEN__)
 	/**
 	 * @brief Callback for bt_cap_commander_change_volume_offset().
 	 *
@@ -724,7 +961,7 @@ struct bt_cap_commander_cb {
 	void (*volume_offset_changed)(struct bt_conn *conn, int err);
 #endif /* CONFIG_BT_VCP_VOL_CTLR_VOCS */
 #endif /* CONFIG_BT_VCP_VOL_CTLR */
-#if defined(CONFIG_BT_MICP_MIC_CTLR)
+#if defined(CONFIG_BT_MICP_MIC_CTLR) || defined(__DOXYGEN__)
 	/**
 	 * @brief Callback for bt_cap_commander_change_microphone_mute_state().
 	 *
@@ -736,7 +973,7 @@ struct bt_cap_commander_cb {
 	 *                       by bt_cap_commander_cancel().
 	 */
 	void (*microphone_mute_changed)(struct bt_conn *conn, int err);
-#if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)
+#if defined(CONFIG_BT_MICP_MIC_CTLR_AICS) || defined(__DOXYGEN__)
 	/**
 	 * @brief Callback for bt_cap_commander_change_microphone_gain_setting().
 	 *
@@ -750,6 +987,42 @@ struct bt_cap_commander_cb {
 	void (*microphone_gain_changed)(struct bt_conn *conn, int err);
 #endif /* CONFIG_BT_MICP_MIC_CTLR_AICS */
 #endif /* CONFIG_BT_MICP_MIC_CTLR */
+
+#if defined(CONFIG_BT_BAP_BROADCAST_ASSISTANT) || defined(__DOXYGEN__)
+	/**
+	 * @brief Callback for bt_cap_commander_broadcast_reception_start().
+	 *
+	 * @param conn		Pointer to the connection where the error
+	 *			occurred. NULL if @p err is 0 or if cancelled by
+	 *			bt_cap_commander_cancel()
+	 * @param err		0 on success, BT_GATT_ERR() with a
+	 *			specific ATT (BT_ATT_ERR_*) error code or -ECANCELED if cancelled
+	 *			by bt_cap_commander_cancel().
+	 */
+	void (*broadcast_reception_start)(struct bt_conn *conn, int err);
+	/**
+	 * @brief Callback for bt_cap_commander_broadcast_reception_stop().
+	 *
+	 * @param conn		Pointer to the connection where the error
+	 *			occurred. NULL if @p err is 0 or if cancelled by
+	 *			bt_cap_commander_cancel()
+	 * @param err		0 on success, BT_GATT_ERR() with a
+	 *			specific ATT (BT_ATT_ERR_*) error code or -ECANCELED if cancelled
+	 *			by bt_cap_commander_cancel().
+	 */
+	void (*broadcast_reception_stop)(struct bt_conn *conn, int err);
+	/**
+	 * @brief Callback for bt_cap_commander_distribute_broadcast_code().
+	 *
+	 * @param conn		Pointer to the connection where the error
+	 *			occurred. NULL if @p err is 0 or if cancelled by
+	 *			bt_cap_commander_cancel()
+	 * @param err		0 on success, BT_GATT_ERR() with a
+	 *			specific ATT (BT_ATT_ERR_*) error code or -ECANCELED if cancelled
+	 *			by bt_cap_commander_cancel().
+	 */
+	void (*distribute_broadcast_code)(struct bt_conn *conn, int err);
+#endif /* CONFIG_BT_BAP_BROADCAST_ASSISTANT */
 };
 
 /**
@@ -793,7 +1066,8 @@ int bt_cap_commander_unregister_cb(const struct bt_cap_commander_cb *cb);
  */
 int bt_cap_commander_discover(struct bt_conn *conn);
 
-/** @brief Cancel any current Common Audio Profile commander procedure
+/**
+ * @brief Cancel any current Common Audio Profile commander procedure
  *
  * This will stop the current procedure from continuing and making it possible to run a new
  * Common Audio Profile procedure.
@@ -817,6 +1091,10 @@ int bt_cap_commander_discover(struct bt_conn *conn);
  */
 int bt_cap_commander_cancel(void);
 
+/**
+ * Parameters part of @ref bt_cap_commander_broadcast_reception_start_param for
+ * bt_cap_commander_broadcast_reception_start()
+ */
 struct bt_cap_commander_broadcast_reception_start_member_param {
 	/** Coordinated or ad-hoc set member. */
 	union bt_cap_set_member member;
@@ -842,7 +1120,7 @@ struct bt_cap_commander_broadcast_reception_start_member_param {
 	 *
 	 * At least one bit in one of the subgroups bis_sync parameters shall be set.
 	 */
-	struct bt_bap_bass_subgroup *subgroups;
+	struct bt_bap_bass_subgroup subgroups[BT_BAP_BASS_MAX_SUBGROUPS];
 
 	/** Number of subgroups */
 	size_t num_subgroups;
@@ -871,15 +1149,27 @@ struct bt_cap_commander_broadcast_reception_start_param {
 int bt_cap_commander_broadcast_reception_start(
 	const struct bt_cap_commander_broadcast_reception_start_param *param);
 
-/** Parameters for stopping broadcast reception  */
+/** Member parameters for stopping broadcast reception  */
+struct bt_cap_commander_broadcast_reception_stop_member_param {
+	/** Coordinated or ad-hoc set member. */
+	union bt_cap_set_member member;
+
+	/** Source ID of the receive state. */
+	uint8_t src_id;
+
+	/** Number of subgroups */
+	size_t num_subgroups;
+};
+
+/** Parameters for stopping broadcast reception */
 struct bt_cap_commander_broadcast_reception_stop_param {
 	/** The type of the set. */
 	enum bt_cap_set_type type;
 
-	/** Coordinated or ad-hoc set member. */
-	union bt_cap_set_member *members;
+	/** The set of devices for this procedure */
+	struct bt_cap_commander_broadcast_reception_stop_member_param *param;
 
-	/** The number of members in @p members */
+	/** The number of parameters in @p param */
 	size_t count;
 };
 
@@ -893,6 +1183,50 @@ struct bt_cap_commander_broadcast_reception_stop_param {
  */
 int bt_cap_commander_broadcast_reception_stop(
 	const struct bt_cap_commander_broadcast_reception_stop_param *param);
+
+/** Member parameters for distributing broadcast code */
+struct bt_cap_commander_distribute_broadcast_code_member_param {
+	/** Coordinated or ad-hoc set member. */
+	union bt_cap_set_member member;
+
+	/** Source ID of the receive state. */
+	uint8_t src_id;
+};
+
+/** Parameters for distributing broadcast code */
+struct bt_cap_commander_distribute_broadcast_code_param {
+	/** The type of the set. */
+	enum bt_cap_set_type type;
+
+	/** The set of devices for this procedure */
+	struct bt_cap_commander_distribute_broadcast_code_member_param *param;
+
+	/** The number of parameters in @p param */
+	size_t count;
+
+	/**
+	 * @brief 16-octet broadcast code.
+	 *
+	 * If the value is a string or a the value is less than 16 octets,
+	 * the remaining octets shall be 0.
+	 *
+	 * Example:
+	 *   The string "Broadcast Code" shall be
+	 *   [42 72 6F 61 64 63 61 73 74 20 43 6F 64 65 00 00]
+	 */
+	uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
+};
+
+/**
+ * @brief Distributes the broadcast code on one or more remote Common Audio Profile
+ * Acceptors
+ *
+ * @param param The parameters for distributing the broadcast code
+ *
+ * @return 0 on success or negative error value on failure.
+ */
+int bt_cap_commander_distribute_broadcast_code(
+	const struct bt_cap_commander_distribute_broadcast_code_param *param);
 
 /** Parameters for changing absolute volume  */
 struct bt_cap_commander_change_volume_param {
@@ -918,6 +1252,10 @@ struct bt_cap_commander_change_volume_param {
  */
 int bt_cap_commander_change_volume(const struct bt_cap_commander_change_volume_param *param);
 
+/**
+ * Parameters part of @ref bt_cap_commander_change_volume_offset_param for
+ * bt_cap_commander_change_volume_offset()
+ */
 struct bt_cap_commander_change_volume_offset_member_param {
 	/** Coordinated or ad-hoc set member. */
 	union bt_cap_set_member member;
@@ -1010,6 +1348,10 @@ struct bt_cap_commander_change_microphone_mute_state_param {
 int bt_cap_commander_change_microphone_mute_state(
 	const struct bt_cap_commander_change_microphone_mute_state_param *param);
 
+/**
+ * Parameters part of @ref bt_cap_commander_change_microphone_gain_setting_param for
+ * bt_cap_commander_change_microphone_gain_setting()
+ */
 struct bt_cap_commander_change_microphone_gain_setting_member_param {
 	/** Coordinated or ad-hoc set member. */
 	union bt_cap_set_member member;

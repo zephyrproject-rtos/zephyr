@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Silicon Labs
+ * Copyright (c) 2024 Capgemini
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,8 +15,10 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 	uint8_t loc;
 #ifdef CONFIG_SOC_FAMILY_SILABS_S1
 	LEUART_TypeDef *lebase = (LEUART_TypeDef *)reg;
-#else
-	int usart_num = USART_NUM(base);
+#endif
+
+#ifdef CONFIG_I2C_GECKO
+	I2C_TypeDef *i2c_base = (I2C_TypeDef *)reg;
 #endif
 
 #ifdef CONFIG_UART_GECKO
@@ -111,15 +114,6 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 #elif defined(USART_ROUTE_RXPEN) && defined(USART_ROUTE_TXPEN)
 			/* For olders SOCs with only one pin location */
 			base->ROUTE = USART_ROUTE_RXPEN | USART_ROUTE_TXPEN | (loc << 8);
-#elif defined(GPIO_USART_ROUTEEN_RXPEN) && defined(GPIO_USART_ROUTEEN_TXPEN)
-			GPIO->USARTROUTE[usart_num].ROUTEEN =
-				GPIO_USART_ROUTEEN_TXPEN | GPIO_USART_ROUTEEN_RXPEN;
-			GPIO->USARTROUTE[usart_num].TXROUTE =
-				(txpin.pin << _GPIO_USART_TXROUTE_PIN_SHIFT) |
-				(txpin.port << _GPIO_USART_TXROUTE_PORT_SHIFT);
-			GPIO->USARTROUTE[usart_num].RXROUTE =
-				(rxpin.pin << _GPIO_USART_RXROUTE_PIN_SHIFT) |
-				(rxpin.port << _GPIO_USART_RXROUTE_PORT_SHIFT);
 #endif /* CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION */
 
 #ifdef UART_GECKO_HW_FLOW_CONTROL
@@ -141,17 +135,6 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 				config->base->ROUTELOC1 =
 					(config->loc_rts << _USART_ROUTELOC1_RTSLOC_SHIFT) |
 					(config->loc_cts << _USART_ROUTELOC1_CTSLOC_SHIFT);
-#elif defined(GPIO_USART_ROUTEEN_RTSPEN) && defined(GPIO_USART_ROUTEEN_CTSPEN)
-				GPIO->USARTROUTE[usart_num].ROUTEEN =
-					GPIO_USART_ROUTEEN_TXPEN | GPIO_USART_ROUTEEN_RXPEN |
-					GPIO_USART_ROUTEPEN_RTSPEN | GPIO_USART_ROUTEPEN_CTSPEN;
-
-				GPIO->USARTROUTE[usart_num].RTSROUTE =
-					(config->pin_rts.pin << _GPIO_USART_RTSROUTE_PIN_SHIFT) |
-					(config->pin_rts.port << _GPIO_USART_RTSROUTE_PORT_SHIFT);
-				GPIO->USARTROUTE[usart_num].CTSROUTE =
-					(config->pin_cts.pin << _GPIO_USART_CTSROUTE_PIN_SHIFT) |
-					(config->pin_cts.port << _GPIO_USART_CTSROUTE_PORT_SHIFT);
 #endif /* CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION */
 			}
 #endif /* UART_GECKO_HW_FLOW_CONTROL */
@@ -159,7 +142,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 #endif /* CONFIG_SOC_FAMILY_SILABS_S1 */
 #endif /* CONFIG_UART_GECKO */
 
-#ifdef CONFIG_SPI_GECKO
+#ifdef CONFIG_SPI_SILABS_USART
 #ifdef CONFIG_SOC_FAMILY_SILABS_S1
 		case GECKO_FUN_SPIM_SCK:
 			pin_config.mode = gpioModePushPull;
@@ -240,42 +223,45 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			base->ROUTELOC0 &= ~_USART_ROUTELOC0_CSLOC_MASK;
 			base->ROUTELOC0 |= (loc << _USART_ROUTELOC0_CSLOC_SHIFT);
 			break;
-
-#else /* CONFIG_SOC_FAMILY_SILABS_S1 */
-		case GECKO_FUN_SPI_SCK:
-			pin_config.mode = gpioModePushPull;
-			pin_config.out = 1;
-			GPIO->USARTROUTE[usart_num].ROUTEEN |= GPIO_USART_ROUTEEN_CLKPEN;
-			GPIO->USARTROUTE[usart_num].CLKROUTE =
-				(pin_config.pin << _GPIO_USART_CLKROUTE_PIN_SHIFT) |
-				(pin_config.port << _GPIO_USART_CLKROUTE_PORT_SHIFT);
-			GPIO_PinModeSet(pin_config.port, pin_config.pin, pin_config.mode,
-					pin_config.out);
-			break;
-
-		case GECKO_FUN_SPI_MOSI:
-			pin_config.mode = gpioModePushPull;
-			pin_config.out = 1;
-			GPIO->USARTROUTE[usart_num].ROUTEEN |= GPIO_USART_ROUTEEN_TXPEN;
-			GPIO->USARTROUTE[usart_num].TXROUTE =
-				(pin_config.pin << _GPIO_USART_TXROUTE_PIN_SHIFT) |
-				(pin_config.port << _GPIO_USART_TXROUTE_PORT_SHIFT);
-			GPIO_PinModeSet(pin_config.port, pin_config.pin, pin_config.mode,
-					pin_config.out);
-			break;
-
-		case GECKO_FUN_SPI_MISO:
-			pin_config.mode = gpioModeInput;
-			pin_config.out = 1;
-			GPIO->USARTROUTE[usart_num].ROUTEEN |= GPIO_USART_ROUTEEN_RXPEN;
-			GPIO->USARTROUTE[usart_num].RXROUTE =
-				(pin_config.pin << _GPIO_USART_RXROUTE_PIN_SHIFT) |
-				(pin_config.port << _GPIO_USART_RXROUTE_PORT_SHIFT);
-			GPIO_PinModeSet(pin_config.port, pin_config.pin, pin_config.mode,
-					pin_config.out);
-			break;
 #endif /* CONFIG_SOC_FAMILY_SILABS_S1 */
-#endif /* CONFIG_SPI_GECKO */
+#endif /* CONFIG_SPI_SILABS_USART */
+
+#ifdef CONFIG_I2C_GECKO
+		case GECKO_FUN_I2C_SDA:
+			pin_config.mode = gpioModeWiredAnd;
+			pin_config.out = 1;
+			GPIO_PinModeSet(pin_config.port, pin_config.pin, pin_config.mode,
+				pin_config.out);
+			break;
+
+		case GECKO_FUN_I2C_SCL:
+			pin_config.mode = gpioModeWiredAnd;
+			pin_config.out = 1;
+			GPIO_PinModeSet(pin_config.port, pin_config.pin, pin_config.mode,
+				pin_config.out);
+			break;
+
+		case GECKO_FUN_I2C_SDA_LOC:
+#ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
+			i2c_base->ROUTEPEN |= I2C_ROUTEPEN_SDAPEN;
+			i2c_base->ROUTELOC0 &= ~_I2C_ROUTELOC0_SDALOC_MASK;
+			i2c_base->ROUTELOC0 |= (loc << _I2C_ROUTELOC0_SDALOC_SHIFT);
+#elif defined(I2C_ROUTE_SDAPEN)
+			i2c_base->ROUTE = I2C_ROUTE_SDAPEN | I2C_ROUTE_SCLPEN | (loc << 8);
+#endif
+			break;
+
+		case GECKO_FUN_I2C_SCL_LOC:
+#ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
+			i2c_base->ROUTEPEN |= I2C_ROUTEPEN_SCLPEN;
+			i2c_base->ROUTELOC0 &= ~_I2C_ROUTELOC0_SCLLOC_MASK;
+			i2c_base->ROUTELOC0 |= (loc << _I2C_ROUTELOC0_SCLLOC_SHIFT);
+#elif defined(I2C_ROUTE_SCLPEN)
+			i2c_base->ROUTE = I2C_ROUTE_SDAPEN | I2C_ROUTE_SCLPEN | (loc << 8);
+#endif
+			break;
+
+#endif /* CONFIG_I2C_GECKO */
 
 		default:
 			return -ENOTSUP;

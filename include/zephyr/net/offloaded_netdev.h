@@ -25,6 +25,8 @@ extern "C" {
 /**
  * @brief Offloaded Net Devices
  * @defgroup offloaded_netdev Offloaded Net Devices
+ * @since 3.4
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */
@@ -58,7 +60,7 @@ struct offloaded_if_api {
 	/** Enable or disable the device (in response to admin state change) */
 	int (*enable)(const struct net_if *iface, bool state);
 
-	/* Types of offloaded net device */
+	/** Types of offloaded net device */
 	enum offloaded_net_if_types (*get_type)(void);
 };
 

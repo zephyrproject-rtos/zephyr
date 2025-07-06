@@ -52,6 +52,8 @@ struct gpio_cmsdk_ahb {
 	volatile uint32_t ub_masked[256];
 };
 
+int cmsdk_ahb_gpio_config(const struct device *dev, uint32_t mask, gpio_flags_t flags);
+
 #ifdef __cplusplus
 }
 #endif

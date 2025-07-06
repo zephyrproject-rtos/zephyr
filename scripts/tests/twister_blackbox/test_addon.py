@@ -106,7 +106,7 @@ class TestAddon:
     def test_enable_asan(self, capfd, out_path, asan_flags, expected_exit_value, expect_asan):
         test_platforms = ['native_sim']
         test_path = os.path.join(TEST_DATA, 'tests', 'san', 'asan')
-        args = ['-i', '--outdir', out_path, '-T', test_path] + \
+        args = ['-i', '-W', '--outdir', out_path, '-T', test_path] + \
                asan_flags + \
                [] + \
                [val for pair in zip(
@@ -159,7 +159,7 @@ class TestAddon:
 
     @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
     def test_extra_args(self, caplog, out_path):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic', 'group2')
         args = ['--outdir', out_path, '-T', path] + \
                ['--extra-args', 'USE_CCACHE=0', '--extra-args', 'DUMMY=1'] + \

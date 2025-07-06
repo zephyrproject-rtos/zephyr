@@ -1,0 +1,27 @@
+# Copyright (c) 2024 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+# This file extends Kconfig.psa (which is automatically generated) by adding
+# some logic between PSA_WANT symbols.
+
+config PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_BASIC
+	bool
+	default y
+	depends on PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT || \
+		   PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT || \
+		   PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE || \
+		   PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_DERIVE
+
+config PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_BASIC
+	bool
+	default y
+	depends on PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_IMPORT || \
+		   PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_EXPORT || \
+		   PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_GENERATE
+
+config PSA_WANT_KEY_TYPE_DH_KEY_PAIR_BASIC
+	bool
+	default y
+	depends on PSA_WANT_KEY_TYPE_DH_KEY_PAIR_IMPORT || \
+		   PSA_WANT_KEY_TYPE_DH_KEY_PAIR_EXPORT || \
+		   PSA_WANT_KEY_TYPE_DH_KEY_PAIR_GENERATE

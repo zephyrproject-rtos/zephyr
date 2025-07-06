@@ -448,7 +448,7 @@ static int counter_gd32_timer_init(const struct device *dev)
 	return 0;
 }
 
-static const struct counter_driver_api counter_api = {
+static DEVICE_API(counter, counter_api) = {
 	.start = counter_gd32_timer_start,
 	.stop = counter_gd32_timer_stop,
 	.get_value = counter_gd32_timer_get_value,

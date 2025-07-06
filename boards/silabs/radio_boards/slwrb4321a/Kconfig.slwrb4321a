@@ -1,0 +1,7 @@
+# Copyright (c) 2019 Interay Solutions B.V.
+# Copyright (c) 2019 Oane Kingma
+# Copyright (c) 2020 Thorvald Natvig
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_SLWRB4321A
+	select SOC_PART_NUMBER_EFM32GG11B820F2048GM64

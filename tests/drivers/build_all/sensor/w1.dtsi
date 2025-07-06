@@ -12,3 +12,9 @@ test_w1_ds18b20: ds18b20 {
 	resolution = <12>;
 	status = "okay";
 };
+
+test_w1_ds18s20: ds18s20 {
+	compatible = "maxim,ds18s20";
+	family-code = <0x10>;
+	status = "okay";
+};

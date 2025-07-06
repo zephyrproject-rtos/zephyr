@@ -60,6 +60,7 @@ config POWER_DOMAIN_GPIO_MONITOR
 	default y
 	depends on DT_HAS_POWER_DOMAIN_GPIO_MONITOR_ENABLED
 	depends on GPIO
+	depends on PM_DEVICE
 	select DEVICE_DEPS
 
 if POWER_DOMAIN_GPIO_MONITOR
@@ -71,5 +72,55 @@ config POWER_DOMAIN_GPIO_MONITOR_INIT_PRIORITY
 	  GPIO monitor power domain initialization priority.
 
 endif #POWER_DOMAIN_GPIO_MONITOR
+
+config POWER_DOMAIN_NXP_SCU
+	bool "NXP SCU-managed PD driver"
+	default y
+	depends on DT_HAS_NXP_SCU_PD_ENABLED
+	help
+	  Enable support for NXPs SCU-managed power domain driver.
+
+if POWER_DOMAIN_NXP_SCU
+
+config POWER_DOMAIN_NXP_SCU_INIT_PRIORITY
+	int "NXP SCU-managed PD driver init priority"
+	default 10
+	help
+	  NXP SCU-managed PD driver initialization priority.
+
+endif #POWER_DOMAIN_NXP_SCU
+
+config POWER_DOMAIN_SOC_PM_STATE
+	bool "SoC PM state power domain"
+	default y
+	depends on DT_HAS_POWER_DOMAIN_SOC_STATE_CHANGE_ENABLED
+	select DEVICE_DEPS
+	help
+	  Generic power domain control to turn on/off devices when the
+	  PM subsystem transitions in and out of certain power states.
+
+config POWER_DOMAIN_TISCI
+	bool "TISCI managed power domain"
+	default y
+	depends on DT_HAS_TI_SCI_PM_DOMAIN_ENABLED
+	help
+	  TISCI managed power domain control to turn on/off devices when the
+	  PM subsystem transitions in and out of certain power states.
+
+if POWER_DOMAIN_TISCI
+
+config POWER_DOMAIN_TISCI_INIT_PRIORITY
+	int "TISCI managed power domain init priority"
+	default 10
+	help
+	  TISCI managed power domain initialization priority.
+
+config SOC_POWER_DOMAIN_INIT
+	bool "Power domain initialization"
+	default y
+	help
+	  Power domain initialization for the SoC.
+
+endif #POWER_DOMAIN_TISCI
 
 endif

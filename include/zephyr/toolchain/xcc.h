@@ -11,6 +11,22 @@
 #error Please do not include toolchain-specific headers directly, use <zephyr/toolchain.h> instead
 #endif
 
+/*
+ * XCC does not support using deprecated attribute in enum,
+ * so just nullify it here to avoid compilation errors.
+ */
+#ifndef __deprecated
+#define __deprecated
+#endif
+
+#define __in_section_unique(seg) \
+	__attribute__((section("." STRINGIFY(seg) "." STRINGIFY(__COUNTER__))))
+
+#define __in_section_unique_named(seg, name) \
+	__attribute__((section("." STRINGIFY(seg) \
+			       "." STRINGIFY(__COUNTER__) \
+			       "." STRINGIFY(name))))
+
 /* toolchain/gcc.h errors out if __BYTE_ORDER__ cannot be determined
  * there. However, __BYTE_ORDER__ is actually being defined later in
  * this file. So define __BYTE_ORDER__ to skip the check in gcc.h
@@ -26,6 +42,19 @@
 #include <zephyr/toolchain/llvm.h>
 #else
 #include <zephyr/toolchain/gcc.h>
+#endif
+
+#ifdef __clang__
+/* For some reasons, xt-clang does not like "%hhd" or "%hd" (for example)
+ * being fed int data (same goes for unsigned ones) and will always complain
+ * about mismatched types. GCC and newer LLVM/Clang do not complain.
+ * This could be due to xt-clang being based on older LLVM/Clang.
+ * So skip the check.
+ */
+#ifdef __printf_like
+#undef __printf_like
+#define __printf_like(f, a)
+#endif
 #endif
 
 #ifndef __clang__
@@ -121,16 +150,6 @@
 #define __COUNTER__ __LINE__
 #endif
 
-#undef __in_section_unique
-#define __in_section_unique(seg) \
-	__attribute__((section("." STRINGIFY(seg) "." STRINGIFY(__COUNTER__))))
-
-#undef __in_section_unique_named
-#define __in_section_unique_named(seg, name) \
-	__attribute__((section("." STRINGIFY(seg) \
-			       "." STRINGIFY(__COUNTER__) \
-			       "." STRINGIFY(name))))
-
 #ifndef __GCC_LINKER_CMD__
 #include <xtensa/config/core.h>
 
@@ -154,14 +173,5 @@
 /* Not a full barrier, just a SW barrier */
 #define __sync_synchronize() do { __asm__ __volatile__ ("" ::: "memory"); } \
 	while (false)
-
-#ifdef __deprecated
-/*
- * XCC does not support using deprecated attribute in enum,
- * so just nullify it here to avoid compilation errors.
- */
-#undef __deprecated
-#define __deprecated
-#endif
 
 #endif

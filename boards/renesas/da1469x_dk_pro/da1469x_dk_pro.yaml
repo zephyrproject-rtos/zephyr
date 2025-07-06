@@ -6,7 +6,6 @@ ram: 512
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - arduino_gpio
   - counter
@@ -21,4 +20,6 @@ supported:
   - dma
   - mipi_dbi
   - display
+  - memc
+  - usbd
 vendor: renesas

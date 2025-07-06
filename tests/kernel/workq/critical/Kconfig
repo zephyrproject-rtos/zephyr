@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+source "Kconfig.zephyr"
+
+if WDT_SAM
+config WDT_DISABLE_AT_BOOT
+	bool "Disable at boot"
+	default y
+endif

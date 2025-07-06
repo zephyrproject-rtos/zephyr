@@ -92,6 +92,10 @@ SECTIONS
 
 #include <zephyr/linker/rel-sections.ld>
 
+#ifdef CONFIG_LLEXT
+#include <zephyr/linker/llext-sections.ld>
+#endif
+
     /*
      * The .plt and .iplt are here according to
      * 'riscv32-zephyr-elf-ld --verbose', before text section.
@@ -112,7 +116,7 @@ SECTIONS
     {
 		. = ALIGN(16);
 		MPU_ALIGN(__rom_region_size);
-		__rom_region_start = .;
+		__rom_region_start = ABSOLUTE(.);
 /* Located in generated directory. This file is populated by calling
  * zephyr_linker_sources(ROM_START ...).
  */
@@ -152,6 +156,10 @@ SECTIONS
 
 	__rodata_region_start = .;
 #include <zephyr/linker/common-rom.ld>
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(ROM_SECTIONS ...). Useful for grouping iterable RO structs.
+ */
+#include <snippets-rom-sections.ld>
 #include <zephyr/linker/thread-local-storage.ld>
 
     SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
@@ -397,6 +405,15 @@ GROUP_END(DTCM)
 	KEEP(*(.gnu.attributes))
 	}
 
+/* Output section descriptions are needed for these sections to suppress
+ * warnings when "--orphan-handling=warn" is set for lld.
+ */
+#if defined(CONFIG_LLVM_USE_LLD)
+    SECTION_PROLOGUE(.symtab, 0,) { *(.symtab) }
+    SECTION_PROLOGUE(.strtab, 0,) { *(.strtab) }
+    SECTION_PROLOGUE(.shstrtab, 0,) { *(.shstrtab) }
+#endif
+
     /* Sections generated from 'zephyr,memory-region' nodes */
     LINKER_DT_SECTIONS()
 
@@ -404,11 +421,9 @@ GROUP_END(DTCM)
 /* Must be last in romable region */
 SECTION_PROLOGUE(.last_section,,)
 {
-#ifdef CONFIG_LINKER_LAST_SECTION_ID
-  /* Fill last section with a word to ensure location counter and actual rom
-   * region data usage match. */
-  LONG(CONFIG_LINKER_LAST_SECTION_ID_PATTERN)
-#endif
+  /* .last_section contains a fixed word to ensure location counter and actual
+   * rom region data usage match when CONFIG_LINKER_LAST_SECTION_ID=y. */
+  KEEP(*(.last_section))
 } GROUP_LINK_IN(ROMABLE_REGION)
 
 /* Because ROMABLE_REGION != RAMABLE_REGION in XIP-system, it is valid

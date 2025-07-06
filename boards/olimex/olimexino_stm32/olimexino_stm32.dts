@@ -136,6 +136,7 @@ uext_serial: &usart1 {};
 		spi-max-frequency = <24000000>;
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
+			disk-name = "SD";
 			status = "okay";
 		};
 	};
@@ -166,7 +167,6 @@ zephyr_udc0: &usb {
 &can1 {
 	pinctrl-0 = <&can_rx_remap1_pb8 &can_tx_remap1_pb9>;
 	pinctrl-names = "default";
-	bus-speed = <125000>;
 	phys = <&transceiver0>;
 	status = "okay";
 };

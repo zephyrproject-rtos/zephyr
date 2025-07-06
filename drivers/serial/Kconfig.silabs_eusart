@@ -1,0 +1,30 @@
+# Copyright (c) 2024, Yishai Jaffe
+# Copyright (c) 2025, Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_SILABS_EUSART
+	bool "Silabs EUSART UART driver"
+	default y
+	depends on DT_HAS_SILABS_EUSART_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select SOC_GECKO_EUSART
+	select SERIAL_SUPPORT_ASYNC \
+		if DT_HAS_SILABS_LDMA_ENABLED
+	select DMA if UART_ASYNC_API
+	select PINCTRL
+	select CLOCK_CONTROL
+	help
+	  Enable the eusart uart driver.
+
+if UART_SILABS_EUSART
+
+config UART_SILABS_EUSART_ASYNC
+	bool
+	depends on DMA_SILABS_LDMA
+	depends on UART_ASYNC_API
+	default y
+	help
+	  If 'y', Silabs eusart driver will compile with support for UART async API.
+
+endif

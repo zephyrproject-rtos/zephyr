@@ -1,6 +1,14 @@
 # Copyright (c) 2019 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+config BUILD_ONLY_NO_BLOBS
+	bool "Build only mode (do not link firmware blob)"
+	help
+	  Exclude firmware blobs from the build. This will produce a
+	  non-functional application, but allows drivers requiring
+	  blobs to be built for testing purposes. Primarily intended
+	  for CI validation of such drivers.
+
 config TAINT_BLOBS
 	bool
 	select TAINT
@@ -12,23 +20,21 @@ comment "Available modules."
 
 osource "$(KCONFIG_BINARY_DIR)/Kconfig.modules"
 
-source "modules/Kconfig.altera"
 source "modules/Kconfig.atmel"
 source "modules/Kconfig.chre"
 source "modules/Kconfig.cypress"
 source "modules/Kconfig.eos_s3"
 source "modules/Kconfig.esp32"
-source "modules/Kconfig.imx"
 source "modules/Kconfig.infineon"
 source "modules/Kconfig.libmetal"
 source "modules/lvgl/Kconfig"
-source "modules/Kconfig.mcux"
 source "modules/Kconfig.microchip"
+source "modules/Kconfig.mspm0"
 source "modules/Kconfig.nuvoton"
 source "modules/Kconfig.open-amp"
 source "modules/Kconfig.picolibc"
-source "modules/Kconfig.nxp_s32"
-source "modules/Kconfig.silabs"
+source "modules/Kconfig.renesas"
+source "modules/Kconfig.rust"
 source "modules/Kconfig.simplelink"
 source "modules/Kconfig.sof"
 source "modules/Kconfig.stm32"
@@ -57,11 +63,17 @@ comment "Unavailable modules, please install those via the project manifest."
 # config ZEPHYR_<MODULE_NAME_UPPER>_MODULE
 # 	bool
 
+comment "hal_bouffalolab module not available."
+	depends on !ZEPHYR_HAL_BOUFFALOLAB_MODULE
+
 comment "hal_gigadevice module not available."
 	depends on !ZEPHYR_HAL_GIGADEVICE_MODULE
 
 comment "hal_nordic module not available."
 	depends on !ZEPHYR_HAL_NORDIC_MODULE
+
+comment "hal_nxp module not available."
+	depends on !ZEPHYR_HAL_NXP_MODULE
 
 comment "liblc3 module not available."
 	depends on !ZEPHYR_LIBLC3_MODULE

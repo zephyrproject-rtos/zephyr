@@ -1,22 +1,23 @@
 /*
  * Copyright (c) 2021 Golioth, Inc.
+ * Copyright (c) 2025 Tenstorrent AI ULC
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
 #include <time.h>
 
-/* clock_gettime() prototype */
-#include <zephyr/posix/time.h>
+#include <zephyr/sys/clock.h>
 
 time_t time(time_t *tloc)
 {
 	struct timespec ts;
 	int ret;
 
-	ret = clock_gettime(CLOCK_REALTIME, &ts);
+	ret = sys_clock_gettime(SYS_CLOCK_REALTIME, &ts);
 	if (ret < 0) {
-		/* errno is already set by clock_gettime */
+		errno = -ret;
 		return (time_t) -1;
 	}
 

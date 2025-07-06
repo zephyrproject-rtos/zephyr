@@ -7,9 +7,12 @@
 #define DT_DRV_COMPAT silabs_gecko_iadc
 
 #include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/clock_control_silabs.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/pm/device.h>
 
 #include <em_iadc.h>
-#include <em_cmu.h>
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
@@ -43,6 +46,9 @@ struct adc_gecko_data {
 struct adc_gecko_config {
 	IADC_Config_t config;
 	IADC_TypeDef *base;
+	const struct pinctrl_dev_config *pcfg;
+	const struct device *clock_dev;
+	const struct silabs_clock_control_cmu_config clock_cfg;
 	void (*irq_cfg_func)(void);
 };
 
@@ -277,80 +283,6 @@ static int adc_gecko_read_async(const struct device *dev,
 }
 #endif
 
-static void adc_gecko_gpio_busalloc_pos(IADC_PosInput_t input)
-{
-	uint32_t port = ((input << _IADC_SCAN_PINPOS_SHIFT) &
-			_IADC_SCAN_PORTPOS_MASK) >> _IADC_SCAN_PORTPOS_SHIFT;
-	uint32_t pin = ((input << _IADC_SCAN_PINPOS_SHIFT) &
-			_IADC_SCAN_PINPOS_MASK) >> _IADC_SCAN_PINPOS_SHIFT;
-
-	switch (port) {
-	case _IADC_SCAN_PORTPOS_PORTA:
-		if (pin & 1) {
-			GPIO->ABUSALLOC |= GPIO_ABUSALLOC_AODD0_ADC0;
-		} else {
-			GPIO->ABUSALLOC |= GPIO_ABUSALLOC_AEVEN0_ADC0;
-		}
-		break;
-
-	case _IADC_SCAN_PORTPOS_PORTB:
-		if (pin & 1) {
-			GPIO->BBUSALLOC |= GPIO_BBUSALLOC_BODD0_ADC0;
-		} else {
-			GPIO->BBUSALLOC |= GPIO_BBUSALLOC_BEVEN0_ADC0;
-		}
-		break;
-
-	case _IADC_SCAN_PORTPOS_PORTC:
-	case _IADC_SCAN_PORTPOS_PORTD:
-		if (pin & 1) {
-			GPIO->CDBUSALLOC |= GPIO_CDBUSALLOC_CDODD0_ADC0;
-		} else {
-			GPIO->CDBUSALLOC |= GPIO_CDBUSALLOC_CDEVEN0_ADC0;
-		}
-		break;
-
-	default:
-	}
-}
-
-static void adc_gecko_gpio_busalloc_neg(IADC_NegInput_t input)
-{
-	uint32_t port = ((input << _IADC_SCAN_PINNEG_SHIFT) &
-			_IADC_SCAN_PORTNEG_MASK) >> _IADC_SCAN_PORTNEG_SHIFT;
-	uint32_t pin = ((input << _IADC_SCAN_PINNEG_SHIFT) &
-			_IADC_SCAN_PINNEG_MASK) >> _IADC_SCAN_PINNEG_SHIFT;
-
-	switch (port) {
-	case _IADC_SCAN_PORTNEG_PORTA:
-		if (pin & 1) {
-			GPIO->ABUSALLOC |= GPIO_ABUSALLOC_AODD0_ADC0;
-		} else {
-			GPIO->ABUSALLOC |= GPIO_ABUSALLOC_AEVEN0_ADC0;
-		}
-		break;
-
-	case _IADC_SCAN_PORTNEG_PORTB:
-		if (pin & 1) {
-			GPIO->BBUSALLOC |= GPIO_BBUSALLOC_BODD0_ADC0;
-		} else {
-			GPIO->BBUSALLOC |= GPIO_BBUSALLOC_BEVEN0_ADC0;
-		}
-		break;
-
-	case _IADC_SCAN_PORTNEG_PORTC:
-	case _IADC_SCAN_PORTNEG_PORTD:
-		if (pin & 1) {
-			GPIO->CDBUSALLOC |= GPIO_CDBUSALLOC_CDODD0_ADC0;
-		} else {
-			GPIO->CDBUSALLOC |= GPIO_CDBUSALLOC_CDEVEN0_ADC0;
-		}
-		break;
-
-	default:
-	}
-}
-
 static int adc_gecko_channel_setup(const struct device *dev,
 				const struct adc_channel_cfg *channel_cfg)
 {
@@ -424,12 +356,42 @@ static int adc_gecko_channel_setup(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	/* Setup GPIO xBUSALLOC registers if channel uses GPIO pin */
-	adc_gecko_gpio_busalloc_pos(channel_config->input_positive);
-	adc_gecko_gpio_busalloc_neg(channel_config->input_negative);
-
 	channel_config->initialized = true;
 	LOG_DBG("Channel setup succeeded!");
+
+	return 0;
+}
+
+static int adc_gecko_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	int err;
+	const struct adc_gecko_config *config = dev->config;
+
+	if (action == PM_DEVICE_ACTION_RESUME) {
+		err = clock_control_on(config->clock_dev,
+				       (clock_control_subsys_t)&config->clock_cfg);
+		if (err < 0 && err != -EALREADY) {
+			return err;
+		}
+
+		err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+		if (err < 0 && err != -ENOENT) {
+			return err;
+		}
+	} else if (IS_ENABLED(CONFIG_PM_DEVICE) && (action == PM_DEVICE_ACTION_SUSPEND)) {
+		err = clock_control_off(config->clock_dev,
+					(clock_control_subsys_t)&config->clock_cfg);
+		if (err < 0) {
+			return err;
+		}
+
+		err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
+		if (err < 0 && err != -ENOENT) {
+			return err;
+		}
+	} else {
+		return -ENOTSUP;
+	}
 
 	return 0;
 }
@@ -439,21 +401,16 @@ static int adc_gecko_init(const struct device *dev)
 	const struct adc_gecko_config *config = dev->config;
 	struct adc_gecko_data *data = dev->data;
 
-	CMU_ClockEnable(cmuClock_IADC0, true);
-
-	/* Select clock for IADC */
-	CMU_ClockSelectSet(cmuClock_IADCCLK, cmuSelect_FSRCO);  /* FSRCO - 20MHz */
-
 	data->dev = dev;
 
 	config->irq_cfg_func();
 
 	adc_context_unlock_unconditionally(&data->ctx);
 
-	return 0;
+	return pm_device_driver_init(dev, adc_gecko_pm_action);
 }
 
-static const struct adc_driver_api api_gecko_adc_driver_api = {
+static DEVICE_API(adc, api_gecko_adc_driver_api) = {
 	.channel_setup = adc_gecko_channel_setup,
 	.read = adc_gecko_read,
 #ifdef CONFIG_ADC_ASYNC
@@ -463,11 +420,16 @@ static const struct adc_driver_api api_gecko_adc_driver_api = {
 };
 
 #define GECKO_IADC_INIT(n)						\
+	PINCTRL_DT_INST_DEFINE(n);					\
+	PM_DEVICE_DT_INST_DEFINE(n, adc_gecko_pm_action);		\
 									\
 	static void adc_gecko_config_func_##n(void);			\
 									\
 	const static struct adc_gecko_config adc_gecko_config_##n = {	\
 		.base = (IADC_TypeDef *)DT_INST_REG_ADDR(n),\
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
+		.clock_cfg = SILABS_DT_INST_CLOCK_CFG(n),		\
 		.irq_cfg_func = adc_gecko_config_func_##n,		\
 	};								\
 	static struct adc_gecko_data adc_gecko_data_##n = {		\
@@ -483,7 +445,7 @@ static const struct adc_driver_api api_gecko_adc_driver_api = {
 		irq_enable(DT_INST_IRQN(n));	\
 	}; \
 	DEVICE_DT_INST_DEFINE(n,					 \
-			      &adc_gecko_init, NULL,			 \
+			      &adc_gecko_init, PM_DEVICE_DT_INST_GET(n), \
 			      &adc_gecko_data_##n, &adc_gecko_config_##n,\
 			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,	 \
 			      &api_gecko_adc_driver_api);

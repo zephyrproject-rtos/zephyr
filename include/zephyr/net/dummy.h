@@ -4,6 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/** @file
+ * @brief Dummy layer 2
+ *
+ * This is not to be included by the application.
+ */
 
 #ifndef ZEPHYR_INCLUDE_NET_DUMMY_H_
 #define ZEPHYR_INCLUDE_NET_DUMMY_H_
@@ -18,10 +23,13 @@ extern "C" {
 /**
  * @brief Dummy L2/driver support functions
  * @defgroup dummy Dummy L2/driver Support Functions
+ * @since 1.14
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */
 
+/** Dummy L2 API operations. */
 struct dummy_api {
 	/**
 	 * The net_if_api must be placed in first position in this

@@ -3,7 +3,10 @@
 
 # Find out if we are optimizing for size
 get_target_property(zephyr_COMPILE_OPTIONS zephyr_interface INTERFACE_COMPILE_OPTIONS)
-if ("-Os" IN_LIST zephyr_COMPILE_OPTIONS)
+#Any -Os is (or may be) wraped in $<COMPILE_LANGUAGE> guards
+list(FILTER zephyr_COMPILE_OPTIONS INCLUDE REGEX "-Os")
+list(LENGTH zephyr_COMPILE_OPTIONS have_os)
+if (${have_os} GREATER 0)
   zephyr_cc_option(-mpreferred-stack-boundary=2)
 else()
   zephyr_compile_definitions(PERF_OPT)
@@ -126,7 +129,7 @@ add_bin_file_to_the_next_link(gen_idt_output irq_int_vector_map)
 add_bin_file_to_the_next_link(gen_idt_output irq_vectors_alloc)
 
 if(CONFIG_GDT_DYNAMIC)
-  # Use gen_gdt.py and objcopy to generate gdt.o from from the elf
+  # Use gen_gdt.py and objcopy to generate gdt.o from the elf
   # file ${ZEPHYR_PREBUILT_EXECUTABLE}, creating the temp file gdt.bin along the
   # way.
   #

@@ -45,7 +45,7 @@ firmware image metadata. The Firmware Update Server performs the transfer check 
 :c:member:`check <bt_mesh_dfu_srv_cb.check>` callback.
 
 The result of the transfer check is a pass/fail status return and the expected
-:c:type:`bt_mesh_dfu_effect`. The DFU effect return parameter will be communicated back to the
+:c:enum:`bt_mesh_dfu_effect`. The DFU effect return parameter will be communicated back to the
 Distributor, and should indicate what effect the firmware update will have on the mesh state of the
 device.
 
@@ -128,5 +128,3 @@ API reference
 *************
 
 .. doxygengroup:: bt_mesh_dfu_srv
-   :project: Zephyr
-   :members:

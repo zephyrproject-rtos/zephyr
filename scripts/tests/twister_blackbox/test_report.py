@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2023 Intel Corporation
+# Copyright (c) 2023-2024 Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
 """
@@ -13,10 +13,13 @@ import os
 import pytest
 import shutil
 import sys
+import re
 
 from lxml import etree
 
-from conftest import TEST_DATA, ZEPHYR_BASE, testsuite_filename_mock
+# pylint: disable=no-name-in-module
+from conftest import TEST_DATA, ZEPHYR_BASE, testsuite_filename_mock, clear_log_in_test
+from twisterlib.statuses import TwisterStatus
 from twisterlib.testplan import TestPlan
 
 
@@ -25,9 +28,9 @@ class TestReport:
     TESTDATA_1 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86', 'mps2/an385'],
+            ['qemu_x86/atom', 'mps2/an385'],
             [
-                'qemu_x86.xml', 'mps2_an385.xml',
+                'qemu_x86_atom.xml', 'mps2_an385.xml',
                 'testplan.json', 'twister.json',
                 'twister.log', 'twister_report.xml',
                 'twister_suite_report.xml', 'twister.xml'
@@ -37,9 +40,9 @@ class TestReport:
     TESTDATA_2 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86', 'mps2/an385'],
+            ['qemu_x86/atom', 'mps2/an385'],
             [
-                'mps2_an385_TEST.xml', 'qemu_x86_TEST.xml',
+                'mps2_an385_TEST.xml', 'qemu_x86_atom_TEST.xml',
                 'twister_TEST.json', 'twister_TEST_report.xml',
                 'twister_TEST_suite_report.xml', 'twister_TEST.xml'
             ]
@@ -48,7 +51,7 @@ class TestReport:
     TESTDATA_3 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86', 'mps2/an385'],
+            ['qemu_x86/atom', 'mps2/an385'],
             ['--report-name', 'abcd'],
             [
                 'abcd.json', 'abcd_report.xml',
@@ -57,20 +60,20 @@ class TestReport:
         ),
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86', 'mps2/an385'],
+            ['qemu_x86/atom', 'mps2/an385'],
             ['--report-name', '1234', '--platform-reports'],
             [
-                'mps2_an385.xml', 'qemu_x86.xml',
+                'mps2_an385.xml', 'qemu_x86_atom.xml',
                 '1234.json', '1234_report.xml',
                 '1234_suite_report.xml', '1234.xml'
             ]
         ),
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86', 'mps2/an385'],
+            ['qemu_x86/atom', 'mps2/an385'],
             ['--report-name', 'Final', '--platform-reports', '--report-suffix=Test'],
             [
-                'mps2_an385_Test.xml', 'qemu_x86_Test.xml',
+                'mps2_an385_Test.xml', 'qemu_x86_atom_Test.xml',
                 'Final_Test.json', 'Final_Test_report.xml',
                 'Final_Test_suite_report.xml', 'Final_Test.xml'
             ]
@@ -79,7 +82,7 @@ class TestReport:
     TESTDATA_4 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86'],
+            ['qemu_x86/atom'],
             [
                 'twister.json', 'twister_report.xml',
                 'twister_suite_report.xml', 'twister.xml'
@@ -90,7 +93,7 @@ class TestReport:
     TESTDATA_5 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86'],
+            ['qemu_x86/atom'],
             [
                 'testplan.json', 'twister.log',
                 'twister.json', 'twister_report.xml',
@@ -102,9 +105,18 @@ class TestReport:
     TESTDATA_6 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86'],
+            ['qemu_x86/atom'],
             "TEST_LOG_FILE.log"
         ),
+    ]
+    TESTDATA_7 = [
+        (
+            os.path.join(TEST_DATA, 'tests', 'one_fail_two_error_one_pass'),
+            ['qemu_x86/atom'],
+            [r'one_fail_two_error_one_pass.agnostic.group1.subgroup2 on qemu_x86/atom FAILED \(.*\)',
+            r'one_fail_two_error_one_pass.agnostic.group1.subgroup3 on qemu_x86/atom ERROR \(Build failure.*\)',
+            r'one_fail_two_error_one_pass.agnostic.group1.subgroup4 on qemu_x86/atom ERROR \(Build failure.*\)'],
+        )
     ]
 
     @classmethod
@@ -162,7 +174,7 @@ class TestReport:
                 pytest.fail(f"Unsupported file type: '{path}'")
 
         for f_platform in test_platforms:
-            platform_path = os.path.join(out_path, f_platform.replace("/", "_"))
+            platform_path = os.path.join(out_path, f_platform.replace("/", "_") + ".json", )
             assert os.path.exists(platform_path), f'file not found {f_platform}'
 
         assert str(sys_exit.value) == '0'
@@ -294,7 +306,7 @@ class TestReport:
                 assert os.path.exists(path), 'file not found {f_name}'
 
             for f_platform in test_platforms:
-                platform_path = os.path.join(twister_path, f_platform)
+                platform_path = os.path.join(twister_path, f_platform.replace("/", "_"))
                 assert os.path.exists(platform_path), f'file not found {f_platform}'
 
             assert str(sys_exit.value) == '0'
@@ -333,14 +345,25 @@ class TestReport:
         assert str(sys_exit.value) == '0'
 
     @pytest.mark.parametrize(
-        'test_path, expected_testcase_count',
-        [(os.path.join(TEST_DATA, 'tests', 'dummy'), 6),],
-        ids=['dummy tests']
+        'test_path, flags, expected_testcase_counts',
+        [
+            (
+                os.path.join(TEST_DATA, 'tests', 'dummy'),
+                ['--detailed-skipped-report'],
+                {'qemu_x86/atom': 6, 'intel_adl_crb/alder_lake': 1}
+            ),
+            (
+                os.path.join(TEST_DATA, 'tests', 'dummy'),
+                ['--detailed-skipped-report', '--report-filtered'],
+                {'qemu_x86/atom': 13, 'intel_adl_crb/alder_lake': 13}
+            ),
+        ],
+        ids=['dummy tests', 'dummy tests with filtered']
     )
-    def test_detailed_skipped_report(self, out_path, test_path, expected_testcase_count):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+    def test_detailed_skipped_report(self, out_path, test_path, flags, expected_testcase_counts):
+        test_platforms = ['qemu_x86/atom', 'intel_adl_crb/alder_lake']
         args = ['-i', '--outdir', out_path, '-T', test_path] + \
-               ['--detailed-skipped-report'] + \
+               flags + \
                [val for pair in zip(
                    ['-p'] * len(test_platforms), test_platforms
                ) for val in pair]
@@ -356,14 +379,49 @@ class TestReport:
         for ts in xml_data.iter('testsuite'):
             testsuite_counter += 1
             # Without the tested flag, filtered testcases would be missing from the report
-            assert len(list(ts.iter('testcase'))) == expected_testcase_count, \
-                   'Not all expected testcases appear in the report.'
+            testcase_count = len(list(ts.iter('testcase')))
+            expected_tc_count = expected_testcase_counts[ts.get('name')]
+            assert testcase_count == expected_tc_count, \
+                   f'Not all expected testcases appear in the report.' \
+                   f' (In {ts.get("name")}, expected {expected_tc_count}, got {testcase_count}.)'
 
         assert testsuite_counter == len(test_platforms), \
                'Some platforms are missing from the XML report.'
 
+    @pytest.mark.parametrize(
+        'test_path, report_filtered, expected_filtered_count',
+        [
+            (os.path.join(TEST_DATA, 'tests', 'dummy'), False, 0),
+            (os.path.join(TEST_DATA, 'tests', 'dummy'), True, 10),
+        ],
+        ids=['no filtered', 'with filtered']
+    )
+    def test_report_filtered(self, out_path, test_path, report_filtered, expected_filtered_count):
+        test_platforms = ['qemu_x86', 'intel_adl_crb']
+        args = ['-i', '--outdir', out_path, '-T', test_path] + \
+               (['--report-filtered'] if report_filtered else []) + \
+               [val for pair in zip(
+                   ['-p'] * len(test_platforms), test_platforms
+               ) for val in pair]
+
+        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
+                pytest.raises(SystemExit) as sys_exit:
+            self.loader.exec_module(self.twister_module)
+
+        assert str(sys_exit.value) == '0'
+
+        with open(os.path.join(out_path, 'twister.json')) as f:
+            j = json.load(f)
+
+        testsuites = j.get('testsuites')
+        assert testsuites, 'No testsuites found.'
+        statuses = [TwisterStatus(testsuite.get('status')) for testsuite in testsuites]
+        filtered_status_count = statuses.count("filtered")
+        assert filtered_status_count == expected_filtered_count, \
+            f'Expected {expected_filtered_count} filtered statuses, got {filtered_status_count}.'
+
     def test_enable_size_report(self, out_path):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy', 'device', 'group')
         args = ['-i', '--outdir', out_path, '-T', path] + \
                ['--enable-size-report'] + \
@@ -397,3 +455,65 @@ class TestReport:
                 if ts['name'] == expected_rel_path and not 'reason' in ts
             ]
         )
+
+    @pytest.mark.parametrize(
+        'test_path, test_platforms, expected_content',
+        TESTDATA_7,
+        ids=[
+            'Report summary test'
+        ]
+    )
+
+    def test_report_summary(self, out_path, capfd, test_path, test_platforms, expected_content):
+        args = ['-i', '--outdir', out_path, '-T', test_path] + \
+               [val for pair in zip(
+                   ['-p'] * len(test_platforms), test_platforms
+               ) for val in pair]
+
+        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
+                pytest.raises(SystemExit) as sys_exit:
+            self.loader.exec_module(self.twister_module)
+
+        assert str(sys_exit.value) == '1'
+
+        capfd.readouterr()
+
+        clear_log_in_test()
+
+        args += ['--report-summary']
+
+        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
+                pytest.raises(SystemExit) as sys_exit:
+            self.loader.exec_module(self.twister_module)
+
+        out, err = capfd.readouterr()
+        sys.stdout.write(out)
+        sys.stderr.write(err)
+
+        for line in expected_content:
+            result = re.search(line, err)
+            assert result, f'missing information in log: {line}'
+
+        capfd.readouterr()
+
+        clear_log_in_test()
+
+        args = ['-i', '--outdir', out_path, '-T', test_path] + \
+               ['--report-summary', '2'] + \
+               [val for pair in zip(
+                   ['-p'] * len(test_platforms), test_platforms
+               ) for val in pair]
+
+        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
+                pytest.raises(SystemExit) as sys_exit:
+            self.loader.exec_module(self.twister_module)
+
+        out, err = capfd.readouterr()
+        sys.stdout.write(out)
+        sys.stderr.write(err)
+
+        lines=0
+        for line in expected_content:
+            result = re.search(line, err)
+            if result: lines += 1
+        assert lines == 2, f'too many or too few lines'

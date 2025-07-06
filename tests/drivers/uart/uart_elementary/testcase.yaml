@@ -1,5 +1,7 @@
 common:
-  tags: drivers uart
+  tags:
+    - drivers
+    - uart
   depends_on: gpio
   harness: ztest
   harness_config:
@@ -9,8 +11,25 @@ tests:
     filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp
-      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54l09pdk/nrf54l09/cpuapp
+      - nrf54l09pdk/nrf54l09/cpuflpr
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l15dk/nrf54l15/cpuflpr
+      - nrf54l20pdk/nrf54l20/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf54l20pdk/nrf54l20/cpuflpr
+      - nrf54lm20dk/nrf54lm20a/cpuflpr
       - nrf5340dk/nrf5340/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
+      - ophelia4ev/nrf54l15/cpuflpr
+      - esp32_devkitc/esp32/procpu
+      - esp8684_devkitm
+      - esp32c3_devkitm
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32s2_saola
+      - esp32s3_devkitm/esp32s3/procpu
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuapp
   drivers.uart.uart_elementary_dual_nrf54h:
     filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
     platform_allow:
@@ -18,6 +37,15 @@ tests:
     extra_args: DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_dual_uart.overlay"
     extra_configs:
       - CONFIG_DUAL_UART_TEST=y
+  drivers.uart.uart_elementary_dual_nrf54h.pm:
+    filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    extra_args: DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_dual_uart.overlay"
+    extra_configs:
+      - CONFIG_DUAL_UART_TEST=y
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_PM_DEVICE_RUNTIME=y
   drivers.uart.uart_elementary_dual_setup_mismatch_nrf54h:
     filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
     platform_allow:
@@ -29,7 +57,59 @@ tests:
   drivers.uart.uart_elementary_dual_nrf54l:
     filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
     platform_allow:
-      - nrf54l15pdk/nrf54l15/cpuapp
-    extra_args: DTC_OVERLAY_FILE="boards/nrf54l15pdk_nrf54l15_cpuapp_dual_uart.overlay"
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l20pdk/nrf54l20/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
+    extra_args: DTC_OVERLAY_FILE="boards/nrf54l15dk_nrf54l15_cpuapp_dual_uart.overlay"
     extra_configs:
       - CONFIG_DUAL_UART_TEST=y
+  drivers.uart.uart_elementary_dual_setup_mismatch_nrf54l:
+    filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l20pdk/nrf54l20/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
+    extra_args: DTC_OVERLAY_FILE="boards/nrf54l15dk_nrf54l15_cpuapp_dual_uart.overlay"
+    extra_configs:
+      - CONFIG_DUAL_UART_TEST=y
+      - CONFIG_SETUP_MISMATCH_TEST=y
+  drivers.uart.uart_elementary_dual_nrf54l_cpuflpr:
+    filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuflpr
+      - nrf54l20pdk/nrf54l20/cpuflpr
+      - nrf54lm20dk/nrf54lm20a/cpuflpr
+      - ophelia4ev/nrf54l15/cpuflpr
+    extra_args: DTC_OVERLAY_FILE="boards/nrf54l15dk_nrf54l15_cpuflpr_dual_uart.overlay"
+    extra_configs:
+      - CONFIG_DUAL_UART_TEST=y
+  drivers.uart.uart_elementary_dual_setup_mismatch_nrf54l_cpuflpr:
+    filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuflpr
+      - nrf54l20pdk/nrf54l20/cpuflpr
+      - nrf54lm20dk/nrf54lm20a/cpuflpr
+      - ophelia4ev/nrf54l15/cpuflpr
+    extra_args: DTC_OVERLAY_FILE="boards/nrf54l15dk_nrf54l15_cpuflpr_dual_uart.overlay"
+    extra_configs:
+      - CONFIG_DUAL_UART_TEST=y
+      - CONFIG_SETUP_MISMATCH_TEST=y
+  drivers.uart.uart_elementary_dual_nrf54l09:
+    filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
+    platform_allow:
+      - nrf54l09pdk/nrf54l09/cpuapp
+      - nrf54l09pdk/nrf54l09/cpuflpr
+    extra_args: DTC_OVERLAY_FILE="boards/nrf54l09pdk_nrf54l09_dual_uart.overlay"
+    extra_configs:
+      - CONFIG_DUAL_UART_TEST=y
+  drivers.uart.uart_elementary_dual_setup_mismatch_nrf54l09:
+    filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
+    platform_allow:
+      - nrf54l09pdk/nrf54l09/cpuapp
+      - nrf54l09pdk/nrf54l09/cpuflpr
+    extra_args: DTC_OVERLAY_FILE="boards/nrf54l09pdk_nrf54l09_dual_uart.overlay"
+    extra_configs:
+      - CONFIG_DUAL_UART_TEST=y
+      - CONFIG_SETUP_MISMATCH_TEST=y

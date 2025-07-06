@@ -42,6 +42,22 @@ enum lorawan_act_type {
 };
 
 /**
+ * @brief LoRaWAN channels mask sizes.
+ */
+enum lorawan_channels_mask_size {
+	LORAWAN_CHANNELS_MASK_SIZE_AS923 = 1, /**< Region AS923 mask size */
+	LORAWAN_CHANNELS_MASK_SIZE_AU915 = 6, /**< Region AU915 mask size */
+	LORAWAN_CHANNELS_MASK_SIZE_CN470 = 6, /**< Region CN470 mask size */
+	LORAWAN_CHANNELS_MASK_SIZE_CN779 = 1, /**< Region CN779 mask size */
+	LORAWAN_CHANNELS_MASK_SIZE_EU433 = 1, /**< Region EU433 mask size */
+	LORAWAN_CHANNELS_MASK_SIZE_EU868 = 1, /**< Region EU868 mask size */
+	LORAWAN_CHANNELS_MASK_SIZE_KR920 = 1, /**< Region KR920 mask size */
+	LORAWAN_CHANNELS_MASK_SIZE_IN865 = 1, /**< Region IN865 mask size */
+	LORAWAN_CHANNELS_MASK_SIZE_US915 = 6, /**< Region US915 mask size */
+	LORAWAN_CHANNELS_MASK_SIZE_RU864 = 1, /**< Region RU864 mask size */
+};
+
+/**
  * @brief LoRaWAN datarate types.
  */
 enum lorawan_datarate {
@@ -85,6 +101,14 @@ enum lorawan_region {
 enum lorawan_message_type {
 	LORAWAN_MSG_UNCONFIRMED = 0,  /**< Unconfirmed message */
 	LORAWAN_MSG_CONFIRMED,        /**< Confirmed message */
+};
+
+/**
+ * @brief  LoRaWAN downlink flags.
+ */
+enum lorawan_dl_flags {
+	LORAWAN_DATA_PENDING = BIT(0),
+	LORAWAN_TIME_UPDATED = BIT(1),
 };
 
 /**
@@ -165,15 +189,14 @@ struct lorawan_downlink_cb {
 	 *       and should therefore be as short as possible.
 	 *
 	 * @param port Port message was sent on
-	 * @param data_pending Network server has more downlink packets pending
+	 * @param flags Downlink data flags (see @ref lorawan_dl_flags)
 	 * @param rssi Received signal strength in dBm
 	 * @param snr Signal to Noise ratio in dBm
 	 * @param len Length of data received, will be 0 for ACKs
 	 * @param data Data received, will be NULL for ACKs
 	 */
-	void (*cb)(uint8_t port, bool data_pending,
-		   int16_t rssi, int8_t snr,
-		   uint8_t len, const uint8_t *data);
+	void (*cb)(uint8_t port, uint8_t flags, int16_t rssi, int8_t snr, uint8_t len,
+		   const uint8_t *data);
 	/** Node for callback list */
 	sys_snode_t node;
 };
@@ -193,6 +216,35 @@ typedef uint8_t (*lorawan_battery_level_cb_t)(void);
  * @param dr Updated datarate.
  */
 typedef void (*lorawan_dr_changed_cb_t)(enum lorawan_datarate dr);
+
+/**
+ * @brief Defines the link check answer handler function signature.
+ *
+ * @param demod_margin The demodulation margin in db.
+ * @param nb_gateways The number of gateways the device is connected to.
+ */
+typedef void (*lorawan_link_check_ans_cb_t)(uint8_t demod_margin, uint8_t nb_gateways);
+
+/**
+ * @brief Defines the user's descriptor callback handler function signature.
+ *
+ * The use of this callback is optional. When Fragmented Data Block Transport
+ * is enabled, the application will be notified with the descriptor field present on
+ * the FragSessionSetupReq command.
+ *
+ * @param descriptor Descriptor value given on the FragSessionSetupReq command.
+ *
+ * The meaning of Descriptor is application dependent. When doing a FUOTA
+ * with a binary image, it may represent the version of the firmware
+ * transported.
+ *
+ * @return 0 if successful. This represents, in the case that the descriptor is the firmware
+ * version, that the end-device is able to receive binary firmware. Otherwise, a negative error code
+ * (errno.h) indicating the reason for failure. Any negative error code will result in setting
+ * the Wrong Descriptor status bit mask when sending FragSessionSetupAns to the Network Server.
+ *
+ */
+typedef int (*transport_descriptor_cb)(uint32_t descriptor);
 
 /**
  * @brief Register a battery level callback function.
@@ -222,6 +274,14 @@ void lorawan_register_downlink_callback(struct lorawan_downlink_cb *cb);
  * @param cb Pointer to datarate update callback
  */
 void lorawan_register_dr_changed_callback(lorawan_dr_changed_cb_t cb);
+
+/**
+ * @brief Register a callback to be called when getting answer
+ * a to check link request.
+ *
+ * @param cb Pointer to link check ans callback
+ */
+void lorawan_register_link_check_ans_callback(lorawan_link_check_ans_cb_t cb);
 
 /**
  * @brief Join the LoRaWAN network
@@ -296,6 +356,21 @@ int lorawan_set_conf_msg_tries(uint8_t tries);
 void lorawan_enable_adr(bool enable);
 
 /**
+ * @brief Set the channels mask.
+ *
+ * Change the default channels mask. When mask is not changed, all the channels
+ * can be used for data transmission. Some Network Servers don't use all the channels,
+ * in this case, the channels mask must be provided.
+ *
+ * @param channels_mask Buffer with channels mask to be used.
+ * @param channels_mask_size Size of channels mask buffer.
+ *
+ * @retval 0 successful
+ * @retval -EINVAL channels mask or channels mask size is wrong
+ */
+int lorawan_set_channels_mask(uint16_t *channels_mask, size_t channels_mask_size);
+
+/**
  * @brief Set the default data rate
  *
  * Change the default data rate.
@@ -341,6 +416,44 @@ void lorawan_get_payload_sizes(uint8_t *max_next_payload_size,
  */
 int lorawan_set_region(enum lorawan_region region);
 
+/**
+ * @brief Request for time according to DeviceTimeReq MAC cmd
+ *
+ * Append MAC DevTimeReq command. It will be processed on next send
+ * message or force sending empty message to request time immediately.
+ *
+ * @param force_request Immediately send an empty message to execute the request
+ * @return 0 if successful, negative errno otherwise
+ */
+int lorawan_request_device_time(bool force_request);
+
+/**
+ * @brief Retrieve the current time from LoRaWAN stack updated by
+ * DeviceTimeAns on MAC layer.
+ *
+ * This function uses the GPS epoch format, as used in all LoRaWAN services.
+ *
+ * The GPS epoch started on 1980-01-06T00:00:00Z, but has since diverged
+ * from UTC, as it does not consider corrections like leap seconds.
+ *
+ * @param gps_time Synchronized time in GPS epoch format truncated to 32-bit.
+ *
+ * @return 0 if successful, -EAGAIN if the clock is not yet synchronized.
+ */
+int lorawan_device_time_get(uint32_t *gps_time);
+
+/**
+ * @brief Request for link check according to LinkCheckReq MAC cmd
+ *
+ * Append MAC LinkCheckReq command. It will be processed on next send
+ * message or force sending empty message to request time immediately.
+ *
+ * @param force_request Immediately send an empty message to execute the request
+ *
+ * @return 0 if successful, negative errno otherwise
+ */
+int lorawan_request_link_check(bool force_request);
+
 #ifdef CONFIG_LORAWAN_APP_CLOCK_SYNC
 
 /**
@@ -372,6 +485,35 @@ int lorawan_clock_sync_run(void);
 int lorawan_clock_sync_get(uint32_t *gps_time);
 
 #endif /* CONFIG_LORAWAN_APP_CLOCK_SYNC */
+
+#ifdef CONFIG_LORAWAN_FRAG_TRANSPORT
+
+/**
+ * @brief Register a handle descriptor callback function.
+ *
+ * Provide to the fragmentation transport service a function to be called
+ * whenever a FragSessionSetupReq is received and Descriptor field should be
+ * handled.
+ *
+ * @param transport_descriptor_cb Callback for notification.
+ */
+void lorawan_frag_transport_register_descriptor_callback(transport_descriptor_cb cb);
+
+/**
+ * @brief Run Fragmented Data Block Transport service
+ *
+ * This service receives fragmented data (usually firmware images) and
+ * stores them in the image-1 flash partition.
+ *
+ * After all fragments have been received, the provided callback is invoked.
+ *
+ * @param transport_finished_cb Callback for notification of finished data transfer.
+ *
+ * @return 0 if successful, negative errno otherwise.
+ */
+int lorawan_frag_transport_run(void (*transport_finished_cb)(void));
+
+#endif /* CONFIG_LORAWAN_FRAG_TRANSPORT */
 
 #ifdef __cplusplus
 }

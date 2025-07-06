@@ -1,0 +1,6 @@
+# Copyright 2025 tinyVision.ai Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Emulated Video test pattern generator
+
+compatible: "zephyr,video-sw-generator"

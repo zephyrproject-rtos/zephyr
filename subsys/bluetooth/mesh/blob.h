@@ -27,6 +27,20 @@
 #define BLOB_CHUNK_SIZE_MAX(sdu_max) ((sdu_max) - BLOB_CHUNK_SDU_OVERHEAD)
 #define BLOB_CHUNK_SDU_LEN(chunk_size) (BLOB_CHUNK_SDU_OVERHEAD + (chunk_size))
 
+#if CONFIG_BT_MESH_ALIGN_CHUNK_SIZE_TO_MAX_SEGMENT ||                                              \
+	CONFIG_BT_MESH_RX_BLOB_CHUNK_SIZE > BLOB_CHUNK_SIZE_MAX(BT_MESH_RX_SDU_MAX)
+#define BLOB_RX_CHUNK_SIZE BLOB_CHUNK_SIZE_MAX(BT_MESH_RX_SDU_MAX)
+#else
+#define BLOB_RX_CHUNK_SIZE CONFIG_BT_MESH_RX_BLOB_CHUNK_SIZE
+#endif
+
+#if CONFIG_BT_MESH_ALIGN_CHUNK_SIZE_TO_MAX_SEGMENT ||                                              \
+	CONFIG_BT_MESH_TX_BLOB_CHUNK_SIZE > BLOB_CHUNK_SIZE_MAX(BT_MESH_TX_SDU_MAX)
+#define BLOB_TX_CHUNK_SIZE BLOB_CHUNK_SIZE_MAX(BT_MESH_TX_SDU_MAX)
+#else
+#define BLOB_TX_CHUNK_SIZE CONFIG_BT_MESH_TX_BLOB_CHUNK_SIZE
+#endif
+
 /* Utility macros for calculating log2 of a number at compile time.
  * Used to determine the log2 representation of the block size, which
  * is configured as a raw number, but encoded as log2.

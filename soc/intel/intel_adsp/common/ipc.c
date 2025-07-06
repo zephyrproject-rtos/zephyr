@@ -35,7 +35,7 @@ void intel_adsp_ipc_set_done_handler(const struct device *dev,
 	k_spin_unlock(&devdata->lock, key);
 }
 
-void z_intel_adsp_ipc_isr(const void *devarg)
+static void intel_adsp_ipc_isr(const void *devarg)
 {
 	const struct device *dev = devarg;
 	const struct intel_adsp_ipc_config *config = dev->config;
@@ -100,6 +100,8 @@ int intel_adsp_ipc_init(const struct device *dev)
 
 	memset(devdata, 0, sizeof(*devdata));
 
+	k_sem_init(&devdata->sem, 0, 1);
+
 	/* ACK any latched interrupts (including TDA to clear IDA on
 	 * the other side!), then enable.
 	 */
@@ -158,7 +160,7 @@ int intel_adsp_ipc_send_message(const struct device *dev,
 		return -EBUSY;
 	}
 
-	k_sem_init(&devdata->sem, 0, 1);
+	k_sem_reset(&devdata->sem);
 	/* Prevent entering runtime idle state until IPC acknowledgment is received. */
 	pm_policy_state_lock_get(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
 	devdata->tx_ack_pending = true;
@@ -222,7 +224,7 @@ static inline void ace_ipc_intc_unmask(void) {}
 
 static int dt_init(const struct device *dev)
 {
-	IRQ_CONNECT(DT_IRQN(INTEL_ADSP_IPC_HOST_DTNODE), 0, z_intel_adsp_ipc_isr,
+	IRQ_CONNECT(DT_IRQN(INTEL_ADSP_IPC_HOST_DTNODE), 0, intel_adsp_ipc_isr,
 		INTEL_ADSP_IPC_HOST_DEV, 0);
 	irq_enable(DT_IRQN(INTEL_ADSP_IPC_HOST_DTNODE));
 

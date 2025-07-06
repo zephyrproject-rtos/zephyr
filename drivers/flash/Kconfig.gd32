@@ -7,6 +7,7 @@ config SOC_FLASH_GD32
 	depends on (GD32_NV_FLASH_V1 || GD32_NV_FLASH_V2 || GD32_NV_FLASH_V3)
 	select FLASH_HAS_DRIVER_ENABLED
 	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EXPLICIT_ERASE
 	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
 	help
 	  Enable the GigaDevice GD32 flash driver.

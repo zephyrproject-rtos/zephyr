@@ -1,47 +1,48 @@
-.. _dining-philosophers-sample:
+.. zephyr:code-sample:: dining-philosophers
+  :name: Dining Philosophers
+  :relevant-api: semaphore_apis mutex_apis stack_apis thread_apis fifo_apis lifo_apis
 
-Dining Philosophers
-###################
+  Implement a solution to the Dining Philosophers problem using Zephyr kernel services.
 
 Overview
 ********
 
-An implementation of a solution to the Dining Philosophers problem (a classic
-multi-thread synchronization problem).  This particular implementation
-demonstrates the usage of multiple preemptible and cooperative threads of
-differing priorities, as well as dynamic mutexes and thread sleeping.
+An implementation of a solution to the Dining Philosophers problem (a classic multi-thread
+synchronization problem).  This particular implementation demonstrates the usage of multiple
+preemptible and cooperative threads of differing priorities, as well as dynamic mutexes and thread
+sleeping.
 
-The philosopher always tries to get the lowest fork first (f1 then f2).  When
-done, he will give back the forks in the reverse order (f2 then f1).  If he
-gets two forks, he is EATING.  Otherwise, he is THINKING. Transitional states
-are shown as well, such as STARVING when the philosopher is hungry but the
-forks are not available, and HOLDING ONE FORK when a philosopher is waiting
-for the second fork to be available.
+The philosopher always tries to get the lowest fork first (f1 then f2).  When done, he will give
+back the forks in the reverse order (f2 then f1).  If he gets two forks, he is ``EATING``.
+Otherwise, he is ``THINKING``. Transitional states are shown as well, such as ``STARVING`` when the
+philosopher is hungry but the forks are not available, and ``HOLDING ONE FORK`` when a philosopher
+is waiting for the second fork to be available.
 
-Each Philosopher will randomly alternate between the EATING and THINKING state.
+Each Philosopher will randomly alternate between the ``EATING`` and ``THINKING`` states.
 
-It is possible to run the demo in coop-only or preempt-only mode. To achieve
-this, set these values for CONFIG_NUM_COOP_PRIORITIES and
-CONFIG_NUM_PREEMPT_PRIORITIES in prj.conf:
+It is possible to run the demo in ``coop-only`` or ``preempt-only`` mode. To achieve this, set these
+values for ``CONFIG_NUM_COOP_PRIORITIES`` and ``CONFIG_NUM_PREEMPT_PRIORITIES`` in :file:`prj.conf`:
 
-preempt-only:
+preempt-only
+  .. code-block:: cfg
 
-  CONFIG_NUM_PREEMPT_PRIORITIES 6
-  CONFIG_NUM_COOP_PRIORITIES 0
+     CONFIG_NUM_PREEMPT_PRIORITIES=6
+     CONFIG_NUM_COOP_PRIORITIES=0
 
-coop-only:
 
-  CONFIG_NUM_PREEMPT_PRIORITIES 0
-  CONFIG_NUM_COOP_PRIORITIES 6
+coop-only
+  .. code-block:: cfg
 
-In these cases, the philosopher threads will run with priorities 0 to 5
-(preempt-only) and -7 to -2 (coop-only).
+     CONFIG_NUM_PREEMPT_PRIORITIES=0
+     CONFIG_NUM_COOP_PRIORITIES=6
+
+In these cases, the philosopher threads will run with priorities 0 to 5 (preempt-only) and -7 to -2
+(coop-only).
 
 Building and Running
 ********************
 
-This project outputs to the console.  It can be built and executed
-on QEMU as follows:
+This project outputs to the console.  It can be built and executed on QEMU as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/philosophers
@@ -53,7 +54,7 @@ on QEMU as follows:
 Sample Output
 =============
 
-.. code-block:: console
+.. code-block::
 
    Philosopher 0 [P: 3]  HOLDING ONE FORK
    Philosopher 1 [P: 2]  HOLDING ONE FORK
@@ -67,9 +68,8 @@ Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.
 Debug Threads
 *************
 
-The philosophers sample by default enables :kconfig:option:`CONFIG_DEBUG_THREAD_INFO`.
-This allows tools like OpenOCD and J-link to inspect thread data using
-``info threads``.
+The philosophers sample by default enables :kconfig:option:`CONFIG_DEBUG_THREAD_INFO`. This allows
+tools like OpenOCD and J-link to inspect thread data using ``info threads``.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/philosophers
@@ -82,7 +82,7 @@ This allows tools like OpenOCD and J-link to inspect thread data using
 OpenOCD Sample Output
 =====================
 
-.. code-block:: console
+.. code-block::
 
    Thread 1 received signal SIGINT, Interrupt.
    [Switching to Thread 537003160]
@@ -104,7 +104,7 @@ OpenOCD Sample Output
    Info : Getting thread 537002104 reg list
      7    Thread 537002104 (Name: Philosopher 0, prio:3,useropts:4)  0x08001404 in arch_irq_unlock (key=0) at zephyr/mainline/zephyr/include/arch/arm/asm_inline_gcc.h:95
 
-.. code-block:: console
+.. code-block::
 
    Philosopher 0 [P: 3]        STARVING
    Philosopher 1 [P: 2]    HOLDING ONE FORK
@@ -117,7 +117,7 @@ OpenOCD Sample Output
 J-Link Sample Output
 ====================
 
-.. code-block:: console
+.. code-block::
 
    Thread 2 received signal SIGTRAP, Trace/breakpoint trap.
    [Switching to Thread 537920592]
@@ -133,7 +133,7 @@ J-Link Sample Output
      7    Thread 537920240 (Philosopher 4 PENDING PRIO 255)   arch_swap (key=0) at zephyr/mainline/zephyr/arch/arm/core/swap.c:53
      8    Thread 537920416 (Philosopher 5 SUSPENDED PRIO 254) arch_swap (key=key@entry=0) at zephyr/mainline/zephyr/arch/arm/core/swap.c:53
 
-.. code-block:: console
+.. code-block::
 
    Philosopher 0 [P: 3]        STARVING
    Philosopher 1 [P: 2]   EATING  [  475 ms ]

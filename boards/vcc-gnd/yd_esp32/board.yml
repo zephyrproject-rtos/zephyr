@@ -1,5 +1,6 @@
 board:
   name: yd_esp32
+  full_name: YD-ESP32
   vendor: vcc-gnd
   socs:
   - name: esp32

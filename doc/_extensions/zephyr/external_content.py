@@ -32,14 +32,13 @@ Configuration options
 
 import filecmp
 import os
-from pathlib import Path
 import re
 import shutil
 import tempfile
-from typing import Dict, Any, List, Optional
+from pathlib import Path
+from typing import Any
 
 from sphinx.application import Sphinx
-
 
 __version__ = "0.1.0"
 
@@ -51,9 +50,9 @@ DEFAULT_DIRECTIVES = ("figure", "image", "include", "literalinclude")
 def adjust_includes(
     fname: Path,
     basepath: Path,
-    directives: List[str],
+    directives: list[str],
     encoding: str,
-    dstpath: Optional[Path] = None,
+    dstpath: Path | None = None,
 ) -> None:
     """Adjust included content paths.
 
@@ -162,7 +161,7 @@ def sync_contents(app: Sphinx) -> None:
         file.unlink()
 
 
-def setup(app: Sphinx) -> Dict[str, Any]:
+def setup(app: Sphinx) -> dict[str, Any]:
     app.add_config_value("external_content_contents", [], "env")
     app.add_config_value("external_content_directives", DEFAULT_DIRECTIVES, "env")
     app.add_config_value("external_content_keep", [], "")

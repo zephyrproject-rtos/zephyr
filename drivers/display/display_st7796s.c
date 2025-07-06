@@ -7,8 +7,6 @@
 #define DT_DRV_COMPAT sitronix_st7796s
 
 #include <zephyr/device.h>
-#include <zephyr/drivers/spi.h>
-#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/display.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/mipi_dbi.h>
@@ -30,8 +28,6 @@ LOG_MODULE_REGISTER(display_st7796s, CONFIG_DISPLAY_LOG_LEVEL);
 struct st7796s_config {
 	const struct device *mipi_dbi;
 	const struct mipi_dbi_config dbi_config;
-	const struct gpio_dt_spec cmd_data_gpio;
-	const struct gpio_dt_spec reset_gpio;
 	uint16_t width;
 	uint16_t height;
 	bool inverted; /* Display color inversion */
@@ -50,6 +46,9 @@ struct st7796s_config {
 	uint8_t pgc[14]; /* Positive gamma control */
 	uint8_t ngc[14]; /* Negative gamma control */
 	uint8_t madctl; /* Memory data access control */
+	uint8_t te_mode; /* Tearing enable mode */
+	uint32_t te_delay; /* Tearing enable delay */
+	bool rgb_is_inverted;
 };
 
 static int st7796s_send_cmd(const struct device *dev,
@@ -96,6 +95,59 @@ static int st7796s_blanking_off(const struct device *dev)
 	return st7796s_send_cmd(dev, ST7796S_CMD_DISPON, NULL, 0);
 }
 
+static int st7796s_get_pixelfmt(const struct device *dev)
+{
+	const struct st7796s_config *config = dev->config;
+
+	/*
+	 * Invert the pixel format for 8-bit 8080 Parallel Interface.
+	 *
+	 * Zephyr uses big endian byte order when the pixel format has
+	 * multiple bytes.
+	 *
+	 * For RGB565, Red is placed in byte 1 and Blue in byte 0.
+	 * For BGR565, Red is placed in byte 0 and Blue in byte 1.
+	 *
+	 * This is not an issue when using a 16-bit interface.
+	 * For RGB565, this would map to Red being in D[11:15] and
+	 * Blue in D[0:4] and vice versa for BGR565.
+	 *
+	 * However this is an issue when using a 8-bit interface.
+	 * For RGB565, Blue is placed in byte 0 as mentioned earlier.
+	 * However the controller expects Red to be in D[3:7] of byte 0.
+	 *
+	 * Hence we report pixel format as RGB when MADCTL setting is BGR
+	 * and vice versa.
+	 */
+	if (config->dbi_config.mode == MIPI_DBI_MODE_8080_BUS_8_BIT) {
+		/*
+		 * Similar to the handling for other interface modes,
+		 * invert the reported pixel format if "rgb_is_inverted"
+		 * is enabled
+		 */
+		if (((bool)(config->madctl & ST7796S_MADCTL_BGR)) !=
+		    config->rgb_is_inverted) {
+			return PIXEL_FORMAT_RGB_565;
+		} else {
+			return PIXEL_FORMAT_BGR_565;
+		}
+	}
+
+	/*
+	 * Invert the pixel format if rgb_is_inverted is enabled.
+	 * Report pixel format as the same format set in the MADCTL
+	 * if rgb_is_inverted is disabled.
+	 * Report pixel format as RGB if MADCTL setting is BGR and vice versa
+	 * if rgb_is_inverted is enabled.
+	 * It is a workaround for supporting buggy modules that display RGB as BGR.
+	 */
+	if (((bool)(config->madctl & ST7796S_MADCTL_BGR)) !=
+	    config->rgb_is_inverted) {
+		return PIXEL_FORMAT_BGR_565;
+	} else {
+		return PIXEL_FORMAT_RGB_565;
+	}
+}
 
 static int st7796s_write(const struct device *dev,
 			 const uint16_t x,
@@ -105,7 +157,7 @@ static int st7796s_write(const struct device *dev,
 {
 	const struct st7796s_config *config = dev->config;
 	int ret;
-	struct display_buffer_descriptor mipi_desc;
+	struct display_buffer_descriptor mipi_desc = {0};
 	enum display_pixel_format pixfmt;
 
 	ret = st7796s_set_cursor(dev, x, y, desc->width, desc->height);
@@ -114,6 +166,7 @@ static int st7796s_write(const struct device *dev,
 	}
 
 	mipi_desc.buf_size = desc->width * desc->height * ST7796S_PIXEL_SIZE;
+	mipi_desc.frame_incomplete = desc->frame_incomplete;
 
 	ret =  mipi_dbi_command_write(config->mipi_dbi,
 				      &config->dbi_config, ST7796S_CMD_RAMWR,
@@ -122,12 +175,7 @@ static int st7796s_write(const struct device *dev,
 		return ret;
 	}
 
-	if (config->madctl & ST7796S_MADCTL_BGR) {
-		/* Zephyr treats RGB565 as BGR565 */
-		pixfmt = PIXEL_FORMAT_RGB_565;
-	} else {
-		pixfmt = PIXEL_FORMAT_BGR_565;
-	}
+	pixfmt = st7796s_get_pixelfmt(dev);
 
 	return mipi_dbi_write_display(config->mipi_dbi,
 				      &config->dbi_config, buf,
@@ -141,12 +189,8 @@ static void st7796s_get_capabilities(const struct device *dev,
 
 	memset(capabilities, 0, sizeof(struct display_capabilities));
 
-	if (config->madctl & ST7796S_MADCTL_BGR) {
-		/* Zephyr treats RGB565 as BGR565 */
-		capabilities->current_pixel_format = PIXEL_FORMAT_RGB_565;
-	} else {
-		capabilities->current_pixel_format = PIXEL_FORMAT_BGR_565;
-	}
+	capabilities->current_pixel_format = st7796s_get_pixelfmt(dev);
+
 	capabilities->x_resolution = config->width;
 	capabilities->y_resolution = config->height;
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
@@ -241,6 +285,18 @@ static int st7796s_lcd_config(const struct device *dev)
 		return ret;
 	}
 
+	/* Attempt to enable TE signal */
+	ret = mipi_dbi_configure_te(config->mipi_dbi, config->te_mode,
+				    config->te_delay);
+	if (ret == 0) {
+		/* TE was enabled- send TEON, and enable vblank only */
+		param = 0x0; /* Set TMEM bit to 0 */
+		ret = st7796s_send_cmd(dev, ST7796S_CMD_TEON, &param, sizeof(param));
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
 	/* Lock display configuration */
 	param = ST7796S_LOCK_1;
 	ret = st7796s_send_cmd(dev, ST7796S_CMD_CSCON, &param, sizeof(param));
@@ -306,7 +362,7 @@ static int st7796s_init(const struct device *dev)
 	return 0;
 }
 
-static const struct display_driver_api st7796s_api = {
+static DEVICE_API(display, st7796s_api) = {
 	.blanking_on = st7796s_blanking_on,
 	.blanking_off = st7796s_blanking_off,
 	.write = st7796s_write,
@@ -323,7 +379,8 @@ static const struct display_driver_api st7796s_api = {
 						SPI_OP_MODE_MASTER |		\
 						SPI_WORD_SET(8),		\
 						0),				\
-			.mode = MIPI_DBI_MODE_SPI_4WIRE,			\
+			.mode = DT_INST_STRING_UPPER_TOKEN_OR(n, mipi_mode,     \
+						MIPI_DBI_MODE_SPI_4WIRE),	\
 		},								\
 		.width = DT_INST_PROP(n, width),				\
 		.height = DT_INST_PROP(n, height),				\
@@ -342,6 +399,9 @@ static const struct display_driver_api st7796s_api = {
 		.pgc = DT_INST_PROP(n, pgc),					\
 		.ngc = DT_INST_PROP(n, ngc),					\
 		.madctl = DT_INST_PROP(n, madctl),				\
+		.rgb_is_inverted = DT_INST_PROP(n, rgb_is_inverted),		\
+		.te_mode = MIPI_DBI_TE_MODE_DT_INST(n, te_mode),                \
+		.te_delay = DT_INST_PROP(n, te_delay),                          \
 	};									\
 										\
 	DEVICE_DT_INST_DEFINE(n, st7796s_init,					\

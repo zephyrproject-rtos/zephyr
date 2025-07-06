@@ -12,8 +12,22 @@ config FLASH_INFINEON_CAT1
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
 	select USE_INFINEON_FLASH
+	select FLASH_HAS_EXPLICIT_ERASE
 	help
 	  Enable the Flash driver for Infineon CAT1 family.
+
+config INFINEON_CAT1_QSPI_FLASH
+	bool "Infineon CAT1 QSPI FLASH driver"
+	default y
+	depends on DT_HAS_INFINEON_CAT1_QSPI_FLASH_ENABLED && DT_HAS_FIXED_PARTITIONS_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	select USE_INFINEON_FLASH
+	select USE_INFINEON_SMIF
+	select PINCTRL
+	select FLASH_HAS_EXPLICIT_ERASE
+	help
+	  Enable the QSPI Flash driver for Infineon CAT1 family.
 
 
 config MPU_ALLOW_FLASH_WRITE

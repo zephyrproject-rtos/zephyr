@@ -11,7 +11,7 @@
 #define PR(fmt, ...)                                                            \
 	do {                                                                    \
 		if (sh) {                                                       \
-			shell_fprintf(sh, SHELL_NORMAL, fmt, ##__VA_ARGS__);    \
+			shell_fprintf_normal(sh, fmt, ##__VA_ARGS__);           \
 		} else {                                                        \
 			printk(fmt, ##__VA_ARGS__);                             \
 		}                                                               \
@@ -20,7 +20,7 @@
 #define PR_SHELL(sh, fmt, ...)                                                  \
 	do {                                                                    \
 		if (sh) {                                                       \
-			shell_fprintf(sh, SHELL_NORMAL, fmt, ##__VA_ARGS__);    \
+			shell_fprintf_normal(sh, fmt, ##__VA_ARGS__);           \
 		} else {                                                        \
 			printk(fmt, ##__VA_ARGS__);                             \
 		}                                                               \
@@ -29,7 +29,7 @@
 #define PR_ERROR(fmt, ...)                                                      \
 	do {                                                                    \
 		if (sh) {                                                       \
-			shell_fprintf(sh, SHELL_ERROR, fmt, ##__VA_ARGS__);     \
+			shell_fprintf_error(sh, fmt, ##__VA_ARGS__);            \
 		} else {                                                        \
 			printk(fmt, ##__VA_ARGS__);                             \
 		}                                                               \
@@ -38,7 +38,7 @@
 #define PR_INFO(fmt, ...)                                                       \
 	do {                                                                    \
 		if (sh) {                                                       \
-			shell_fprintf(sh, SHELL_INFO, fmt, ##__VA_ARGS__);      \
+			shell_fprintf_info(sh, fmt, ##__VA_ARGS__);             \
 		} else {                                                        \
 			printk(fmt, ##__VA_ARGS__);                             \
 		}                                                               \
@@ -47,7 +47,7 @@
 #define PR_WARNING(fmt, ...)                                                    \
 	do {                                                                    \
 		if (sh) {                                                       \
-			shell_fprintf(sh, SHELL_WARNING, fmt, ##__VA_ARGS__);   \
+			shell_fprintf_warn(sh, fmt, ##__VA_ARGS__);             \
 		} else {                                                        \
 			printk(fmt, ##__VA_ARGS__);                             \
 		}                                                               \
@@ -64,8 +64,12 @@ struct net_shell_user_data {
 #if !defined(NET_VLAN_MAX_COUNT)
 #define MAX_IFACE_COUNT NET_IF_MAX_CONFIGS
 #else
+#if NET_VLAN_MAX_COUNT > 0
 #define MAX_IFACE_COUNT NET_VLAN_MAX_COUNT
-#endif
+#else
+#define MAX_IFACE_COUNT NET_IF_MAX_CONFIGS
+#endif /* NET_VLAN_MAX_COUNT > 0 */
+#endif /* !NET_VLAN_MAX_COUNT */
 
 #if defined(CONFIG_NET_IPV6) && !defined(CONFIG_NET_IPV4)
 #define ADDR_LEN NET_IPV6_ADDR_LEN

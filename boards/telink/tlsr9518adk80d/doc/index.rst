@@ -1,7 +1,4 @@
-.. _tlsr9518adk80d:
-
-Telink TLSR9518ADK80D
-#####################
+.. zephyr:board:: tlsr9518adk80d
 
 Overview
 ********
@@ -11,10 +8,6 @@ can be used to verify the `Telink TLSR951x series chipset`_ and develop applicat
 for several 2.4 GHz air interface standards including Bluetooth 5.2 (Basic data
 rate, Enhanced data rate, LE, Indoor positioning and BLE Mesh),
 Zigbee 3.0, Homekit, 6LoWPAN, Thread and 2.4 Ghz proprietary.
-
-.. figure:: img/tlsr9518adk80d.jpg
-     :align: center
-     :alt: TLSR9518ADK80D
 
 More information about the board can be found at the `Telink B91 Generic Starter Kit Hardware Guide`_ website.
 
@@ -45,44 +38,12 @@ The TLSR9518ADK80D default board configuration provides the following hardware c
 Supported Features
 ==================
 
-The Zephyr TLSR9518ADK80D board configuration supports the following hardware features:
-
-+----------------+------------+------------------------------+
-| Interface      | Controller | Driver/Component             |
-+================+============+==============================+
-| PLIC           | on-chip    | interrupt_controller         |
-+----------------+------------+------------------------------+
-| RISC-V Machine | on-chip    | timer                        |
-| Timer (32 KHz) |            |                              |
-+----------------+------------+------------------------------+
-| PINCTRL        | on-chip    | pinctrl                      |
-+----------------+------------+------------------------------+
-| GPIO           | on-chip    | gpio                         |
-+----------------+------------+------------------------------+
-| UART           | on-chip    | serial                       |
-+----------------+------------+------------------------------+
-| PWM            | on-chip    | pwm                          |
-+----------------+------------+------------------------------+
-| TRNG           | on-chip    | entropy                      |
-+----------------+------------+------------------------------+
-| FLASH (MSPI)   | on-chip    | flash                        |
-+----------------+------------+------------------------------+
-| RADIO          | on-chip    | Bluetooth,                   |
-|                |            | ieee802154, OpenThread       |
-+----------------+------------+------------------------------+
-| SPI (Master)   | on-chip    | spi                          |
-+----------------+------------+------------------------------+
-| I2C (Master)   | on-chip    | i2c                          |
-+----------------+------------+------------------------------+
-| ADC            | on-chip    | adc                          |
-+----------------+------------+------------------------------+
+.. zephyr:board-supported-hw::
 
 .. note::
    To support "button" example project PC3-KEY3 (J20-19, J20-20) jumper needs to be removed and KEY3 (J20-19) should be connected to VDD3_DCDC (J51-13) externally.
 
    For the rest example projects use the default jumpers configuration.
-
-Other hardware features and example projects are not supported yet.
 
 Limitations
 -----------
@@ -144,6 +105,8 @@ The default settings are 115200 8N1.
 
 Programming and debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Building
 ========
@@ -235,7 +198,7 @@ It is also possible to use the west flash command, but additional steps are requ
 Debugging
 =========
 
-This port supports UART debug and OpenOCD+GDB. The `west debug` command also supported. You may run
+This port supports UART debug and OpenOCD+GDB. The ``west debug`` command also supported. You may run
 it in a simple way, like:
 
 .. code-block:: console

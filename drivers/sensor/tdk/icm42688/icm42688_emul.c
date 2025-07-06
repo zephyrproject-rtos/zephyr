@@ -48,13 +48,13 @@ static void icm42688_emul_handle_write(const struct emul *target, uint8_t regn, 
 
 	switch (regn) {
 	case REG_DEVICE_CONFIG:
-		if (FIELD_GET(BIT_SOFT_RESET, value) == 1) {
+		if (FIELD_GET(BIT_SOFT_RESET_CONFIG, value) == 1) {
 			/* Perform a soft reset */
 			memset(data->reg, 0, NUM_REGS);
 			/* Initialized the who-am-i register */
 			data->reg[REG_WHO_AM_I] = WHO_AM_I_ICM42688;
 			/* Set the bit for the reset being done */
-			data->reg[REG_INT_STATUS] |= BIT_INT_STATUS_RESET_DONE;
+			data->reg[REG_INT_STATUS] |= BIT_RESET_DONE_INT;
 		}
 		break;
 	}
@@ -295,15 +295,15 @@ static void icm42688_emul_get_gyro_ranges(const struct emul *target, q31_t *lowe
 	*lower = -*upper;
 }
 
-static int icm42688_emul_backend_get_sample_range(const struct emul *target, enum sensor_channel ch,
-						  q31_t *lower, q31_t *upper, q31_t *epsilon,
-						  int8_t *shift)
+static int icm42688_emul_backend_get_sample_range(const struct emul *target,
+						  struct sensor_chan_spec ch, q31_t *lower,
+						  q31_t *upper, q31_t *epsilon, int8_t *shift)
 {
 	if (!lower || !upper || !epsilon || !shift) {
 		return -EINVAL;
 	}
 
-	switch (ch) {
+	switch (ch.chan_type) {
 	case SENSOR_CHAN_DIE_TEMP:
 		/* degrees C = ([16-bit signed temp_data register] / 132.48) + 25 */
 		*shift = 9;
@@ -328,7 +328,7 @@ static int icm42688_emul_backend_get_sample_range(const struct emul *target, enu
 	return 0;
 }
 
-static int icm42688_emul_backend_set_channel(const struct emul *target, enum sensor_channel ch,
+static int icm42688_emul_backend_set_channel(const struct emul *target, struct sensor_chan_spec ch,
 					     const q31_t *value, int8_t shift)
 {
 	if (!target || !target->data) {
@@ -343,7 +343,7 @@ static int icm42688_emul_backend_set_channel(const struct emul *target, enum sen
 	int64_t value_unshifted =
 		shift < 0 ? ((int64_t)*value >> -shift) : ((int64_t)*value << shift);
 
-	switch (ch) {
+	switch (ch.chan_type) {
 	case SENSOR_CHAN_DIE_TEMP:
 		reg_addr = REG_TEMP_DATA1;
 		reg_val = ((value_unshifted - (25 * Q31_SCALE)) * 13248) / (100 * Q31_SCALE);
@@ -351,7 +351,7 @@ static int icm42688_emul_backend_set_channel(const struct emul *target, enum sen
 	case SENSOR_CHAN_ACCEL_X:
 	case SENSOR_CHAN_ACCEL_Y:
 	case SENSOR_CHAN_ACCEL_Z:
-		switch (ch) {
+		switch (ch.chan_type) {
 		case SENSOR_CHAN_ACCEL_X:
 			reg_addr = REG_ACCEL_DATA_X1;
 			break;
@@ -370,7 +370,7 @@ static int icm42688_emul_backend_set_channel(const struct emul *target, enum sen
 	case SENSOR_CHAN_GYRO_X:
 	case SENSOR_CHAN_GYRO_Y:
 	case SENSOR_CHAN_GYRO_Z:
-		switch (ch) {
+		switch (ch.chan_type) {
 		case SENSOR_CHAN_GYRO_X:
 			reg_addr = REG_GYRO_DATA_X1;
 			break;
@@ -397,19 +397,19 @@ static int icm42688_emul_backend_set_channel(const struct emul *target, enum sen
 	data->reg[reg_addr + 1] = reg_val & 0xFF;
 
 	/* Set data ready flag */
-	data->reg[REG_INT_STATUS] |= BIT_INT_STATUS_DATA_RDY;
+	data->reg[REG_INT_STATUS] |= BIT_DATA_RDY_INT;
 
 	return 0;
 }
 
-static const struct emul_sensor_backend_api icm42688_emul_sensor_backend_api = {
+static const struct emul_sensor_driver_api icm42688_emul_sensor_driver_api = {
 	.set_channel = icm42688_emul_backend_set_channel,
 	.get_sample_range = icm42688_emul_backend_get_sample_range,
 };
 
 #define ICM42688_EMUL_DEFINE(n, api)                                                               \
 	EMUL_DT_INST_DEFINE(n, icm42688_emul_init, &icm42688_emul_data_##n,                        \
-			    &icm42688_emul_cfg_##n, &api, &icm42688_emul_sensor_backend_api)
+			    &icm42688_emul_cfg_##n, &api, &icm42688_emul_sensor_driver_api)
 
 #define ICM42688_EMUL_SPI(n)                                                                       \
 	static struct icm42688_emul_data icm42688_emul_data_##n;                                   \

@@ -69,9 +69,6 @@
 /* 10 == {esc, [, 2, 5, 0, ;, 2, 5, 0, '\0'} */
 #define SHELL_CURSOR_POSITION_BUFFER	(10u)
 
-#define SHELL_DEFAULT_TERMINAL_WIDTH 80
-#define SHELL_DEFAULT_TERMINAL_HEIGHT 24
-
 /* Function reads cursor position from terminal. */
 static int cursor_position_get(const struct shell *sh, uint16_t *x, uint16_t *y)
 {
@@ -408,8 +405,8 @@ static int cmd_resize_default(const struct shell *sh,
 	ARG_UNUSED(argv);
 
 	Z_SHELL_VT100_CMD(sh, SHELL_VT100_SETCOL_80);
-	sh->ctx->vt100_ctx.cons.terminal_wid = SHELL_DEFAULT_TERMINAL_WIDTH;
-	sh->ctx->vt100_ctx.cons.terminal_hei = SHELL_DEFAULT_TERMINAL_HEIGHT;
+	sh->ctx->vt100_ctx.cons.terminal_wid = CONFIG_SHELL_DEFAULT_TERMINAL_WIDTH;
+	sh->ctx->vt100_ctx.cons.terminal_hei = CONFIG_SHELL_DEFAULT_TERMINAL_HEIGHT;
 
 	return 0;
 }

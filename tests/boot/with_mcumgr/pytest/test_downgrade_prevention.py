@@ -4,18 +4,12 @@
 from __future__ import annotations
 
 import logging
-
 from pathlib import Path
-from twister_harness import DeviceAdapter, Shell, MCUmgr
-from utils import (
-    find_in_config,
-    match_lines,
-    match_no_lines,
-    check_with_shell_command,
-    check_with_mcumgr_command,
-)
-from test_upgrade import create_signed_image, PROJECT_NAME
 
+from test_upgrade import WELCOME_STRING, create_signed_image
+from twister_harness import DeviceAdapter, MCUmgr, Shell
+from twister_harness.helpers.utils import find_in_config, match_lines, match_no_lines
+from utils import check_with_mcumgr_command, check_with_shell_command
 
 logger = logging.getLogger(__name__)
 
@@ -34,14 +28,15 @@ def test_downgrade_prevention(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr):
     6) Verify that the original application is booted (version 1.1.1)
     """
     origin_version = find_in_config(
-        Path(dut.device_config.build_dir) / PROJECT_NAME / 'zephyr' / '.config',
+        Path(dut.device_config.app_build_dir) / 'zephyr' / '.config',
         'CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION'
     )
     check_with_shell_command(shell, origin_version)
     assert origin_version != '0.0.0+0'
 
     logger.info('Prepare upgrade image with lower version')
-    image_to_test = create_signed_image(dut.device_config.build_dir, '0.0.0+0')
+    image_to_test = create_signed_image(dut.device_config.build_dir,
+                                        dut.device_config.app_build_dir, '0.0.0+0')
 
     logger.info('Upload image with mcumgr')
     dut.disconnect()
@@ -53,7 +48,7 @@ def test_downgrade_prevention(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr):
     mcumgr.reset_device()
 
     dut.connect()
-    output = dut.readlines_until('Launching primary slot application')
+    output = dut.readlines_until(WELCOME_STRING)
     match_no_lines(output, ['Starting swap using move algorithm'])
     match_lines(output, ['erased due to downgrade prevention'])
     logger.info('Verify that the original APP is booted')

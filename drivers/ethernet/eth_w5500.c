@@ -35,12 +35,10 @@ LOG_MODULE_REGISTER(eth_w5500, CONFIG_ETHERNET_LOG_LEVEL);
 	((W5500_SPI_BLOCK_SELECT(addr) << 3) | BIT(2))
 
 static int w5500_spi_read(const struct device *dev, uint32_t addr,
-			  uint8_t *data, uint32_t len)
+			  uint8_t *data, size_t len)
 {
 	const struct w5500_config *cfg = dev->config;
 	int ret;
-	/* 3 bytes as 0x010203 during command phase */
-	uint8_t tmp[len + 3];
 
 	uint8_t cmd[3] = {
 		addr >> 8,
@@ -55,27 +53,29 @@ static int w5500_spi_read(const struct device *dev, uint32_t addr,
 		.buffers = &tx_buf,
 		.count = 1,
 	};
-	const struct spi_buf rx_buf = {
-		.buf = tmp,
-		.len = ARRAY_SIZE(tmp),
+	/* skip the default dummy 0x010203 */
+	const struct spi_buf rx_buf[2] = {
+		{
+			.buf = NULL,
+			.len = 3
+		},
+		{
+			.buf = data,
+			.len = len
+		},
 	};
 	const struct spi_buf_set rx = {
-		.buffers = &rx_buf,
-		.count = 1,
+		.buffers = rx_buf,
+		.count = ARRAY_SIZE(rx_buf),
 	};
 
 	ret = spi_transceive_dt(&cfg->spi, &tx, &rx);
-
-	if (!ret) {
-		/* skip the default dummy 0x010203 */
-		memcpy(data, &tmp[3], len);
-	}
 
 	return ret;
 }
 
 static int w5500_spi_write(const struct device *dev, uint32_t addr,
-			   uint8_t *data, uint32_t len)
+			   uint8_t *data, size_t len)
 {
 	const struct w5500_config *cfg = dev->config;
 	int ret;
@@ -105,13 +105,13 @@ static int w5500_spi_write(const struct device *dev, uint32_t addr,
 }
 
 static int w5500_readbuf(const struct device *dev, uint16_t offset, uint8_t *buf,
-			 int len)
+			 size_t len)
 {
 	uint32_t addr;
-	int remain = 0;
+	size_t remain = 0;
 	int ret;
 	const uint32_t mem_start = W5500_Sn_RX_MEM_START;
-	const uint16_t mem_size = W5500_RX_MEM_SIZE;
+	const uint32_t mem_size = W5500_RX_MEM_SIZE;
 
 	offset %= mem_size;
 	addr = mem_start + offset;
@@ -130,11 +130,11 @@ static int w5500_readbuf(const struct device *dev, uint16_t offset, uint8_t *buf
 }
 
 static int w5500_writebuf(const struct device *dev, uint16_t offset, uint8_t *buf,
-			  int len)
+			  size_t len)
 {
 	uint32_t addr;
-	int ret = 0;
-	int remain = 0;
+	size_t remain = 0;
+	int ret;
 	const uint32_t mem_start = W5500_Sn_TX_MEM_START;
 	const uint32_t mem_size = W5500_TX_MEM_SIZE;
 
@@ -160,7 +160,7 @@ static int w5500_command(const struct device *dev, uint8_t cmd)
 	k_timepoint_t end = sys_timepoint_calc(K_MSEC(100));
 
 	w5500_spi_write(dev, W5500_S0_CR, &cmd, 1);
-	while (1) {
+	while (true) {
 		w5500_spi_read(dev, W5500_S0_CR, &reg, 1);
 		if (!reg) {
 			break;
@@ -176,7 +176,7 @@ static int w5500_command(const struct device *dev, uint8_t cmd)
 static int w5500_tx(const struct device *dev, struct net_pkt *pkt)
 {
 	struct w5500_runtime *ctx = dev->data;
-	uint16_t len = net_pkt_get_len(pkt);
+	uint16_t len = (uint16_t)net_pkt_get_len(pkt);
 	uint16_t offset;
 	uint8_t off[2];
 	int ret;
@@ -260,9 +260,9 @@ static void w5500_rx(const struct device *dev)
 
 		w5500_readbuf(dev, reader, data_ptr, frame_len);
 		net_buf_add(pkt_buf, frame_len);
-		reader += frame_len;
+		reader += (uint16_t)frame_len;
 
-		read_len -= frame_len;
+		read_len -= (uint16_t)frame_len;
 		pkt_buf = pkt_buf->frags;
 	} while (read_len > 0);
 
@@ -370,7 +370,7 @@ static enum ethernet_hw_caps w5500_get_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T
+	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 		| ETHERNET_PROMISC_MODE
 #endif
@@ -459,7 +459,7 @@ static int w5500_hw_stop(const struct device *dev)
 	return 0;
 }
 
-static struct ethernet_api w5500_api_funcs = {
+static const struct ethernet_api w5500_api_funcs = {
 	.iface_api.init = w5500_iface_init,
 	.get_capabilities = w5500_get_capabilities,
 	.set_config = w5500_set_config,
@@ -468,7 +468,7 @@ static struct ethernet_api w5500_api_funcs = {
 	.send = w5500_tx,
 };
 
-static int w5500_hw_reset(const struct device *dev)
+static int w5500_soft_reset(const struct device *dev)
 {
 	int ret;
 	uint8_t mask = 0;
@@ -502,14 +502,7 @@ static void w5500_set_macaddr(const struct device *dev)
 	struct w5500_runtime *ctx = dev->data;
 
 #if DT_INST_PROP(0, zephyr_random_mac_address)
-	/* override vendor bytes */
-	memset(ctx->mac_addr, '\0', sizeof(ctx->mac_addr));
-	ctx->mac_addr[0] = WIZNET_OUI_B0;
-	ctx->mac_addr[1] = WIZNET_OUI_B1;
-	ctx->mac_addr[2] = WIZNET_OUI_B2;
-	if (ctx->generate_mac) {
-		ctx->generate_mac(ctx->mac_addr);
-	}
+	gen_random_mac(ctx->mac_addr, WIZNET_OUI_B0, WIZNET_OUI_B1, WIZNET_OUI_B2);
 #endif
 
 	w5500_spi_write(dev, W5500_SHAR, ctx->mac_addr, sizeof(ctx->mac_addr));
@@ -529,11 +522,6 @@ static void w5500_memory_configure(const struct device *dev)
 		w5500_spi_write(dev, W5500_Sn_RXMEM_SIZE(i), &mem, 1);
 		w5500_spi_write(dev, W5500_Sn_TXMEM_SIZE(i), &mem, 1);
 	}
-}
-
-static void w5500_random_mac(uint8_t *mac_addr)
-{
-	gen_random_mac(mac_addr, WIZNET_OUI_B0, WIZNET_OUI_B1, WIZNET_OUI_B2);
 }
 
 static int w5500_init(const struct device *dev)
@@ -583,7 +571,7 @@ static int w5500_init(const struct device *dev)
 		k_usleep(500);
 	}
 
-	err = w5500_hw_reset(dev);
+	err = w5500_soft_reset(dev);
 	if (err) {
 		LOG_ERR("Reset failed");
 		return err;
@@ -605,6 +593,7 @@ static int w5500_init(const struct device *dev)
 			(void *)dev, NULL, NULL,
 			K_PRIO_COOP(CONFIG_ETH_W5500_RX_THREAD_PRIO),
 			0, K_NO_WAIT);
+	k_thread_name_set(&ctx->thread, "eth_w5500");
 
 	LOG_INF("W5500 Initialized");
 
@@ -615,7 +604,6 @@ static struct w5500_runtime w5500_0_runtime = {
 #if NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(0))
 	.mac_addr = DT_INST_PROP(0, local_mac_address),
 #endif
-	.generate_mac = w5500_random_mac,
 	.tx_sem = Z_SEM_INITIALIZER(w5500_0_runtime.tx_sem,
 					1,  UINT_MAX),
 	.int_sem  = Z_SEM_INITIALIZER(w5500_0_runtime.int_sem,

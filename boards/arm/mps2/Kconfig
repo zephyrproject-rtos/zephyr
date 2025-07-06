@@ -1,6 +1,7 @@
 # Copyright (c) 2017 Linaro Limited
+# Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_MPS2
-	select QEMU_TARGET
 	select HAS_COVERAGE_SUPPORT
+	select QEMU_TARGET if BOARD_MPS2_AN385 || BOARD_MPS2_AN521_CPU0 || BOARD_MPS2_AN521_CPU0_NS || BOARD_MPS2_AN521_CPU1

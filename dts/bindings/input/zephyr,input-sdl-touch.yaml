@@ -4,3 +4,8 @@
 description: SDL based emulated touch panel
 
 compatible: "zephyr,input-sdl-touch"
+
+properties:
+  display:
+    type: phandle
+    description: Handle to the display that the input events are raised for

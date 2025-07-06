@@ -8,9 +8,6 @@ if LVGL
 config INPUT
 	default y
 
-config INPUT_FT5336_INTERRUPT
-	default y
-
 if MIPI_DSI_MCUX_2L
 # Enable color swap in driver
 
@@ -20,7 +17,7 @@ config MIPI_DSI_MCUX_2L_SWAP16
 endif # MIPI_DSI_MCUX_2L
 
 # Swap 16 bit color setting for LVGL, to send high byte first
-config LV_COLOR_16_SWAP
+configdefault LV_COLOR_16_SWAP
 	default y if !MIPI_DSI_MCUX_2L_SWAP16
 
 config LV_Z_VDB_SIZE

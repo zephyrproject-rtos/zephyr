@@ -1,0 +1,18 @@
+identifier: slstk3402a/efm32jg12b500f1024gl125
+name: EFM32JG12 Pearl Gecko Starter Kit (SLSTK3402A, BRD2501B)
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - i2c
+  - gpio
+  - nvs
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: silabs

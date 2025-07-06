@@ -1,0 +1,18 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: rsk_rx130@512kb
+name: Renesas Starter Kit+ RX130-512KB
+type: mcu
+arch: rx
+toolchain:
+  - cross-compile
+  - zephyr
+supported:
+  - gpio
+  - serial
+  - timer
+  - spi
+  - i2c
+ram: 48
+flash: 512

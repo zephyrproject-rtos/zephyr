@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: nrf54l09pdk/nrf54l09/cpuflpr
+name: nRF54L09-PDK-nRF54L09-Fast-Lightweight-Peripheral-Processor
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+sysbuild: true
+ram: 48
+flash: 48
+supported:
+  - counter
+  - gpio

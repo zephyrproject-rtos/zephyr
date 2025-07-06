@@ -10,6 +10,15 @@ config FDTABLE
 	  for any I/O object implementing POSIX I/O semantics (i.e. read/write +
 	  aux operations).
 
+config ZVFS_OPEN_MAX
+	int "Maximum number of open file descriptors"
+	default 16 if WIFI_NM_WPA_SUPPLICANT
+	default 16 if POSIX_API
+	default 4
+	help
+	  Maximum number of open file descriptors, this includes
+	  files, sockets, special devices, etc.
+
 config PRINTK_SYNC
 	bool "Serialize printk() calls"
 	default y if SMP && MP_MAX_NUM_CPUS > 1 && !(EFI_CONSOLE && LOG)
@@ -51,7 +60,9 @@ config SPSC_PBUF_CACHE_ALWAYS
 	bool "Always handle cache"
 	help
 	  Handle cache writeback and invalidation for all instances. Option used
-	  to avoid runtime check and thus reduce memory footprint.
+	  to avoid runtime check and thus reduce memory footprint. Beware! It shall
+	  be used only if all packet buffer instances are used for data sharing
+	  between cores.
 
 config SPSC_PBUF_CACHE_NEVER
 	bool "Never handle cache"
@@ -95,6 +106,16 @@ config MPSC_CLEAR_ALLOCATED
 	  When enabled packet space is zeroed before returning from allocation.
 endif
 
+if SCHED_DEADLINE
+
+config P4WQ_INIT_STAGE_EARLY
+	bool "Early initialization of P4WQ threads"
+	help
+	  Initialize P4WQ threads early so that the P4WQ can be used on devices
+	  initialization sequence.
+
+endif
+
 config REBOOT
 	bool "Reboot functionality"
 	help
@@ -114,5 +135,6 @@ config POWEROFF
 	  Enable support for system power off.
 
 rsource "Kconfig.cbprintf"
+rsource "zvfs/Kconfig"
 
 endmenu

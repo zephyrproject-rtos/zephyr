@@ -98,6 +98,10 @@ static int wdt_gecko_setup(const struct device *dev, uint8_t options)
 		return -EINVAL;
 	}
 
+#if defined(_WDOG_CFG_EM1RUN_MASK)
+	data->wdog_config.em1Run =
+		(options & WDT_OPT_PAUSE_IN_SLEEP) == 0U;
+#endif
 	data->wdog_config.em2Run =
 		(options & WDT_OPT_PAUSE_IN_SLEEP) == 0U;
 	data->wdog_config.em3Run =
@@ -271,7 +275,7 @@ static int wdt_gecko_init(const struct device *dev)
 	return 0;
 }
 
-static const struct wdt_driver_api wdt_gecko_driver_api = {
+static DEVICE_API(wdt, wdt_gecko_driver_api) = {
 	.setup = wdt_gecko_setup,
 	.disable = wdt_gecko_disable,
 	.install_timeout = wdt_gecko_install_timeout,

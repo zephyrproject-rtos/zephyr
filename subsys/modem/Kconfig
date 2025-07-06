@@ -29,10 +29,35 @@ config MODEM_CMUX
 
 if MODEM_CMUX
 
+config MODEM_CMUX_DEFAULT_MTU_127
+	bool
+	default y if (DT_HAS_QUECTEL_BG95_ENABLED || DT_HAS_QUECTEL_EG25_G_ENABLED || \
+		      DT_HAS_SIMCOM_SIM7080_ENABLED || DT_HAS_U_BLOX_SARA_R4_ENABLED || \
+		      DT_HAS_U_BLOX_SARA_R5_ENABLED || DT_HAS_SWIR_HL7800_ENABLED || \
+		      DT_HAS_TELIT_ME910G1_ENABLED || DT_HAS_TELIT_ME310G1_ENABLED || \
+		      DT_HAS_SQN_GM02S_ENABLED || DT_HAS_QUECTEL_EG800Q_ENABLED || \
+		      DT_HAS_SIMCOM_A76XX_ENABLED)
+	help
+	  Use the default MTU size of 127 bytes for the CMUX module on certain modems.
+	  This must match the AT+CMUX commands in the modem_cellular driver.
+
+config MODEM_CMUX_MTU
+	int "CMUX MTU size in bytes"
+	range 16 1500
+	default 127 if MODEM_CMUX_DEFAULT_MTU_127
+	default 31
+	help
+	  Maximum Transmission Unit (MTU) size for the CMUX module.
+	  Linux ldattach defaults to 127 bytes, 3GPP TS 27.010 to 31.
+
 config MODEM_CMUX_WORK_BUFFER_SIZE
 	int "CMUX module work buffer size in bytes"
-	range 16 1500
-	default 64
+	range 23 1507
+	default 134 if MODEM_CMUX_DEFAULT_MTU_127
+	default 38
+	help
+	  Size of the work buffer used by the CMUX module.
+	  Recommended size is MODEM_CMUX_MTU + 7 (CMUX header size).
 
 module = MODEM_CMUX
 module-str = modem_cmux
@@ -42,6 +67,11 @@ endif
 
 config MODEM_PIPE
 	bool "Modem pipe module"
+	select EVENTS
+
+config MODEM_PIPELINK
+	bool "Modem pipelink module"
+	depends on MODEM_PIPE
 
 config MODEM_PPP
 	bool "Modem PPP module"
@@ -58,6 +88,19 @@ config MODEM_PPP_NET_BUF_FRAG_SIZE
 	default 128
 
 endif
+
+config MODEM_STATS
+	bool "Modem statistics"
+	depends on SHELL
+	help
+	  Enables modem statistics shell commands which track the usage of
+	  buffers across the modem modules. The statistics are useful for
+	  scaling buffer sizes, as these are application specific.
+
+config MODEM_STATS_BUFFER_NAME_SIZE
+	int "Maximum string size of modem stats buffer name"
+	default 32
+	range 8 64
 
 config MODEM_UBX
 	bool "Modem U-BLOX module"

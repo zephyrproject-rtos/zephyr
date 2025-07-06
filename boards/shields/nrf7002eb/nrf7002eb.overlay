@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+
+/ {
+	chosen {
+		zephyr,wifi = &wlan0;
+	};
+};
+
+&edge_connector_spi {
+	status = "okay";
+
+	nrf70: nrf7002@0 {
+		compatible = "nordic,nrf7002-spi";
+		status = "okay";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(8)>;
+
+		bucken-gpios = <&edge_connector 9 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		iovdd-ctrl-gpios = <&edge_connector 9 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		host-irq-gpios = <&edge_connector 19 GPIO_ACTIVE_HIGH>;
+		srrf-switch-gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
+
+		wlan0: wlan0 {
+			compatible = "nordic,wlan";
+		};
+
+		wifi-max-tx-pwr-2g-dsss = <21>;
+		wifi-max-tx-pwr-2g-mcs0 = <16>;
+		wifi-max-tx-pwr-2g-mcs7 = <16>;
+		wifi-max-tx-pwr-5g-low-mcs0 = <13>;
+		wifi-max-tx-pwr-5g-low-mcs7 = <13>;
+		wifi-max-tx-pwr-5g-mid-mcs0 = <13>;
+		wifi-max-tx-pwr-5g-mid-mcs7 = <13>;
+		wifi-max-tx-pwr-5g-high-mcs0 = <12>;
+		wifi-max-tx-pwr-5g-high-mcs7 = <12>;
+	};
+};

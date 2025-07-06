@@ -1,5 +1,5 @@
 # Copyright (c) 2023 Google, LLC
-# SPDX -License-Identifier: Apache-2.0
+# SPDX-License-Identifier: Apache-2.0
 
 config MFD_NCT38XX
 	bool "Nuvton NCT38xx multi-function device driver"

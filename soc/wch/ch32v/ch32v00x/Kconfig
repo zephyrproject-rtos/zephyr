@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Michael Hope <michaelh@juju.nz>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_CH32V00X
+	select RISCV_ISA_RV32E
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_ZMMUL

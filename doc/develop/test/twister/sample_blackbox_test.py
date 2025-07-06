@@ -4,13 +4,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import importlib
-import mock
-import os
-import pytest
-import sys
 import json
+import os
+import sys
+from unittest import mock
 
-from conftest import ZEPHYR_BASE, TEST_DATA, testsuite_filename_mock
+import pytest
+from conftest import TEST_DATA, ZEPHYR_BASE, testsuite_filename_mock
 from twisterlib.testplan import TestPlan
 
 
@@ -57,7 +57,7 @@ class TestDummy:
             # Flags related to platform selection
             + [
                 val
-                for pair in zip(["-p"] * len(test_platforms), test_platforms)
+                for pair in zip(["-p"] * len(test_platforms), test_platforms, strict=False)
                 for val in pair
             ]
         )

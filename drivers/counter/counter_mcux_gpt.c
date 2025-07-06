@@ -28,6 +28,7 @@ struct mcux_gpt_config {
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	clock_name_t clock_source;
+	void (*irq_config_func)(void);
 };
 
 struct mcux_gpt_data {
@@ -210,10 +211,12 @@ static int mcux_gpt_init(const struct device *dev)
 	base = get_base(dev);
 	GPT_Init(base, &gptConfig);
 
+	config->irq_config_func();
+
 	return 0;
 }
 
-static const struct counter_driver_api mcux_gpt_driver_api = {
+static DEVICE_API(counter, mcux_gpt_driver_api) = {
 	.start = mcux_gpt_start,
 	.stop = mcux_gpt_stop,
 	.get_value = mcux_gpt_get_value,
@@ -226,6 +229,7 @@ static const struct counter_driver_api mcux_gpt_driver_api = {
 
 #define GPT_DEVICE_INIT_MCUX(n)						\
 	static struct mcux_gpt_data mcux_gpt_data_ ## n;		\
+	static void mcux_gpt_irq_config_ ## n(void);			\
 									\
 	static const struct mcux_gpt_config mcux_gpt_config_ ## n = {	\
 		DEVICE_MMIO_NAMED_ROM_INIT(gpt_mmio, DT_DRV_INST(n)),	\
@@ -238,11 +242,11 @@ static const struct counter_driver_api mcux_gpt_driver_api = {
 			.channels = 1,					\
 			.flags = COUNTER_CONFIG_INFO_COUNT_UP,		\
 		},							\
+		.irq_config_func = mcux_gpt_irq_config_ ## n,		\
 	};								\
 									\
-	static int mcux_gpt_## n ##_init(const struct device *dev);	\
 	DEVICE_DT_INST_DEFINE(n,					\
-			    mcux_gpt_## n ##_init,			\
+			    mcux_gpt_init,				\
 			    NULL,					\
 			    &mcux_gpt_data_ ## n,			\
 			    &mcux_gpt_config_ ## n,			\
@@ -250,13 +254,12 @@ static const struct counter_driver_api mcux_gpt_driver_api = {
 			    CONFIG_COUNTER_INIT_PRIORITY,		\
 			    &mcux_gpt_driver_api);			\
 									\
-	static int mcux_gpt_## n ##_init(const struct device *dev)	\
+	static void mcux_gpt_irq_config_ ## n(void)			\
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n),				\
 			    DT_INST_IRQ(n, priority),			\
 			    mcux_gpt_isr, DEVICE_DT_INST_GET(n), 0);	\
 		irq_enable(DT_INST_IRQN(n));				\
-		return mcux_gpt_init(dev);				\
 	}								\
 
 DT_INST_FOREACH_STATUS_OKAY(GPT_DEVICE_INIT_MCUX)

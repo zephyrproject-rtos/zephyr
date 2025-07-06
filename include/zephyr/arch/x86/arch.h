@@ -3,6 +3,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief X86 specific kernel interface header
+ *
+ * This header contains the X86 specific kernel interfaces for both
+ * IA-32 and Intel-64.  It is included by the kernel interface
+ * architecture-abstraction header (include/zephyr/arch/cpu.h).
+ */
+
 #ifndef ZEPHYR_INCLUDE_ARCH_X86_ARCH_H_
 #define ZEPHYR_INCLUDE_ARCH_X86_ARCH_H_
 
@@ -216,10 +225,10 @@ static ALWAYS_INLINE int sys_test_and_clear_bit(mem_addr_t addr,
  * at build time and defined via the linker script. On Intel64, it's an array.
  */
 
-extern unsigned char _irq_to_interrupt_vector[];
+extern unsigned char _irq_to_interrupt_vector[CONFIG_MAX_IRQ_LINES];
 
 #define Z_IRQ_TO_INTERRUPT_VECTOR(irq) \
-	((unsigned int) _irq_to_interrupt_vector[irq])
+	((unsigned int) _irq_to_interrupt_vector[(irq)])
 
 
 #endif /* _ASMLANGUAGE */
@@ -244,10 +253,10 @@ extern "C" {
 
 #ifndef _ASMLANGUAGE
 
-extern void arch_irq_enable(unsigned int irq);
-extern void arch_irq_disable(unsigned int irq);
+void arch_irq_enable(unsigned int irq);
+void arch_irq_disable(unsigned int irq);
 
-extern uint32_t sys_clock_cycle_get_32(void);
+uint32_t sys_clock_cycle_get_32(void);
 
 __pinned_func
 static inline uint32_t arch_k_cycle_get_32(void)
@@ -255,7 +264,7 @@ static inline uint32_t arch_k_cycle_get_32(void)
 	return sys_clock_cycle_get_32();
 }
 
-extern uint64_t sys_clock_cycle_get_64(void);
+uint64_t sys_clock_cycle_get_64(void);
 
 __pinned_func
 static inline uint64_t arch_k_cycle_get_64(void)

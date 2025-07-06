@@ -22,3 +22,32 @@ tests:
         - "E: #CD:4([dD])([0-9a-fA-F]+)"
         - "E: #CD:END#"
         - "k_sys_fatal_error_handler"
+  debug.coredump.logging_backend.userspace:
+    tags: coredump
+    ignore_faults: true
+    ignore_qemu_crash: true
+    filter: CONFIG_ARCH_SUPPORTS_COREDUMP and CONFIG_ARCH_HAS_USERSPACE
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=y
+    integration_platforms:
+      - qemu_x86
+    platform_allow:
+      - qemu_riscv32
+      - qemu_riscv64
+      - qemu_x86
+      - qemu_x86_64
+      - qemu_xtensa/dc233c/mmu
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "Coredump: (.*)"
+        - ">>> ZEPHYR FATAL ERROR "
+        - "E: #CD:BEGIN#"
+        - "E: #CD:5([aA])45([0-9a-fA-F]+)"
+        - "E: #CD:41([0-9a-fA-F]+)"
+        - "E: #CD:4([dD])([0-9a-fA-F]+)"
+        - "E: #CD:4([dD])([0-9a-fA-F]+)"
+        - "E: #CD:4([dD])([0-9a-fA-F]+)"
+        - "E: #CD:END#"
+        - "k_sys_fatal_error_handler"

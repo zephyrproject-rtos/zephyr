@@ -105,7 +105,9 @@ struct _thread_base {
 	int prio_deadline;
 #endif /* CONFIG_SCHED_DEADLINE */
 
+#if defined(CONFIG_SCHED_SCALABLE) || defined(CONFIG_WAITQ_SCALABLE)
 	uint32_t order_key;
+#endif
 
 #ifdef CONFIG_SMP
 	/* True for the per-CPU idle threads */
@@ -194,6 +196,7 @@ struct _mem_domain_info {
 	struct k_mem_domain *mem_domain;
 };
 
+typedef struct _mem_domain_info _mem_domain_info_t;
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
@@ -206,13 +209,12 @@ struct _thread_userspace_local_data {
 
 typedef struct k_thread_runtime_stats {
 #ifdef CONFIG_SCHED_THREAD_USAGE
-	uint64_t execution_cycles;
-	uint64_t total_cycles;        /* total # of non-idle cycles */
 	/*
-	 * In the context of thread statistics, [execution_cycles] is the same
-	 * as the total # of non-idle cycles. In the context of CPU statistics,
-	 * it refers to the sum of non-idle + idle cycles.
+	 * For CPU stats, execution_cycles is the sum of non-idle + idle cycles.
+	 * For thread stats, execution_cycles = total_cycles.
 	 */
+	uint64_t execution_cycles;    /* total # of cycles (cpu: non-idle + idle) */
+	uint64_t total_cycles;        /* total # of non-idle cycles */
 #endif /* CONFIG_SCHED_THREAD_USAGE */
 
 #ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS

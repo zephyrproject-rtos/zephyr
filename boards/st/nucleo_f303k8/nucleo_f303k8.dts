@@ -22,6 +22,7 @@
 
 	leds: leds {
 		compatible = "gpio-leds";
+
 		green_led_3: green_led_3 {
 			gpios = <&gpiob 3 GPIO_ACTIVE_HIGH>;
 			label = "LD3";
@@ -29,6 +30,7 @@
 	};
 	pwmleds {
 		compatible = "pwm-leds";
+
 		green_pwm_led: green_pwm_led {
 			pwms = <&pwm2 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
@@ -63,6 +65,7 @@
 	ahb-prescaler = <1>;
 	apb1-prescaler = <2>;
 	apb2-prescaler = <1>;
+	adc12-prescaler = <0>;
 };
 
 &timers2 {
@@ -99,7 +102,7 @@
 &adc1 {
 	pinctrl-0 = <&adc1_in1_pa0>;
 	pinctrl-names = "default";
-	st,adc-clock-source = <SYNC>;
+	st,adc-clock-source = "SYNC";
 	st,adc-prescaler = <2>;
 	status = "okay";
 };

@@ -22,6 +22,11 @@
 #include <zephyr/dt-bindings/pinctrl/stm32-pinctrl.h>
 #endif
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_pinctrl)
+/* Required for GPIO LL definitions we use */
+#include <stm32_ll_gpio.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -32,7 +37,7 @@ extern "C" {
 typedef struct pinctrl_soc_pin {
 	/** Pinmux settings (port, pin and function). */
 	uint32_t pinmux;
-	/** Pin configuration (bias, drive and slew rate). */
+	/** Pin configuration (bias, drive, slew rate, I/O retime) */
 	uint32_t pincfg;
 } pinctrl_soc_pin_t;
 
@@ -55,6 +60,23 @@ typedef struct pinctrl_soc_pin {
 #define STM32_OUTPUT_HIGH 0x1
 #define STM32_GPIO_OUTPUT 0x1
 
+/**
+ * @brief Definitions for the various fields related to I/O synchronization
+ *
+ * NOTES:
+ *  (1) Series-specific CMSIS and GPIO LL definitions are used here.
+ *      This is OK as long as the macros are never used on series where
+ *      the underlying definitions do not exist.
+ *  (2) I/O delay values definitions from GPIO LL definitions are used
+ *      directly to ensure greater portability to other platforms.
+ */
+#define STM32_IOSYNC_DELAY_DIRECTION_OUTPUT	0x0
+#define STM32_IOSYNC_DELAY_DIRECTION_INPUT	GPIO_ADVCFGRL_DLYPATH0
+#define STM32_IOSYNC_RETIME_EDGE_RISING		0x0
+#define STM32_IOSYNC_RETIME_EDGE_FALLING	GPIO_ADVCFGRL_INVCLK0
+#define STM32_IOSYNC_RETIME_EDGE_BOTH		GPIO_ADVCFGRL_DE0
+#define STM32_IOSYNC_RETIME_ENABLE		GPIO_ADVCFGRL_RET0
+
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 /**
  * @brief Utility macro to initialize pincfg field in #pinctrl_pin_t (F1).
@@ -71,6 +93,36 @@ typedef struct pinctrl_soc_pin {
 	 ((STM32_OUTPUT_HIGH * DT_PROP(node_id, output_high)) << STM32_ODR_SHIFT) | \
 	 (DT_ENUM_IDX(node_id, slew_rate) << STM32_MODE_OSPEED_SHIFT))
 #else
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_pinctrl)
+/* Inner helper macro for Z_PINCTRL_STM32_IOSYNC_INIT */
+#define Z_PINCTRL_STM32_IOSYNC_INIT_INNER(delay_path, retime_edge, retime_enable, delay_ps)	\
+	((CONCAT(STM32_IOSYNC_DELAY_DIRECTION_, delay_path) << STM32_IODELAY_DIRECTION_SHIFT) | \
+	 ((retime_enable) << STM32_IORETIME_ENABLE_SHIFT) |					\
+	 (CONCAT(STM32_IOSYNC_RETIME_EDGE_, retime_edge) << STM32_IORETIME_EDGE_SHIFT) |	\
+	 (CONCAT(LL_GPIO_DELAY_, delay_ps) << STM32_IODELAY_LENGTH_SHIFT))
+
+/**
+ * @brief Utility macro to initialize fields of @ref{pinctrl_pin_t}.pincfg
+ *        related to the I/O synchronization feature
+ *
+ * @param node_id Pinctrl node identifier
+ *
+ * NOTE: a default value for st,retime-edge is specified to ensure the macro expands properly.
+ * However, this default value is never used, as I/O retiming is not enabled unless the property
+ * was explicitly specified in Device Tree.
+ */
+#define Z_PINCTRL_STM32_IOSYNC_INIT(node_id)							\
+	Z_PINCTRL_STM32_IOSYNC_INIT_INNER(							\
+		DT_STRING_UPPER_TOKEN(node_id, st_io_delay_path),				\
+		DT_STRING_UPPER_TOKEN_OR(node_id, st_retime_edge, RISING),			\
+		STM32_IOSYNC_RETIME_ENABLE * DT_NODE_HAS_PROP(node_id, st_retime_edge),		\
+		DT_PROP(node_id, st_io_delay_ps))
+#else /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_pinctrl) */
+/** Dummy value for series without I/O synchronization feature */
+#define Z_PINCTRL_STM32_IOSYNC_INIT(node_id)	0
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_pinctrl) */
+
 /**
  * @brief Utility macro to initialize pincfg field in #pinctrl_pin_t (non-F1).
  *
@@ -86,7 +138,8 @@ typedef struct pinctrl_soc_pin {
 	 ((STM32_OUTPUT_HIGH * DT_PROP(node_id, output_high)) << STM32_ODR_SHIFT) | \
 	 ((STM32_GPIO_OUTPUT * DT_PROP(node_id, output_low)) << STM32_MODER_SHIFT) | \
 	 ((STM32_GPIO_OUTPUT * DT_PROP(node_id, output_high)) << STM32_MODER_SHIFT) | \
-	 (DT_ENUM_IDX(node_id, slew_rate) << STM32_OSPEEDR_SHIFT))
+	 (DT_ENUM_IDX(node_id, slew_rate) << STM32_OSPEEDR_SHIFT) | \
+	 (Z_PINCTRL_STM32_IOSYNC_INIT(node_id)))
 #endif /* CONFIG_SOC_SERIES_STM32F1X */
 
 /**

@@ -16,6 +16,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/hash_map_api.h>

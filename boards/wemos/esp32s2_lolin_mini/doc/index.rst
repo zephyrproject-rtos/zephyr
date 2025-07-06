@@ -1,7 +1,4 @@
-.. _esp32s2_lolin_mini:
-
-ESP32-S2 Lolin Mini
-###################
+.. zephyr:board:: esp32s2_lolin_mini
 
 Overview
 ********
@@ -30,15 +27,19 @@ The features include the following:
   - DAC
   - LED PWM with up to 8 channels
 
-.. figure:: img/esp32_s2_lolin_mini.jpg
-        :align: center
-        :alt: ESP32-S2 LOLIN MINI
+Hardware
+********
+
+Supported Features
+==================
+
+.. zephyr:board-supported-hw::
 
 System requirements
 *******************
 
 Prerequisites
--------------
+=============
 
 Espressif HAL requires WiFi and Bluetooth binary blobs in order work. Run the command
 below to retrieve those files.
@@ -52,7 +53,9 @@ below to retrieve those files.
    It is recommended running the command above after :file:`west update`.
 
 Building & Flashing
--------------------
+===================
+
+.. zephyr:board-supported-runners::
 
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -66,7 +69,7 @@ The usual ``flash`` target will work with the ``esp32s2_lolin_mini`` board
 configuration after putting the board into bootloader mode by holding the '0'
 button then pressing 'RST' and releasing the 'RST' button.
 
-Here is an example for the :ref:`hello_world`
+Here is an example for the :zephyr:code-sample:`hello_world`
 application.
 
 .. zephyr-app-commands::
@@ -90,6 +93,8 @@ message in the monitor:
 
 References
 **********
+
+.. target-notes::
 
 .. [1] https://www.espressif.com/en/products/socs/esp32-s2
 .. _`ESP32S2 Technical Reference Manual`: https://espressif.com/sites/default/files/documentation/esp32-s2_technical_reference_manual_en.pdf

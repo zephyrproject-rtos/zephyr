@@ -64,27 +64,26 @@ static inline void z_vrfy_k_object_access_grant(const void *object,
 				    object));
 	k_thread_perms_set(ko, thread);
 }
-#include <syscalls/k_object_access_grant_mrsh.c>
+#include <zephyr/syscalls/k_object_access_grant_mrsh.c>
 
 static inline void z_vrfy_k_object_release(const void *object)
 {
 	struct k_object *ko;
 
-	ko = validate_any_object((void *)object);
-	K_OOPS(K_SYSCALL_VERIFY_MSG(ko != NULL, "object %p access denied",
-				    (void *)object));
+	ko = validate_any_object(object);
+	K_OOPS(K_SYSCALL_VERIFY_MSG(ko != NULL, "object %p access denied", object));
 	k_thread_perms_clear(ko, _current);
 }
-#include <syscalls/k_object_release_mrsh.c>
+#include <zephyr/syscalls/k_object_release_mrsh.c>
 
 static inline void *z_vrfy_k_object_alloc(enum k_objects otype)
 {
 	return z_impl_k_object_alloc(otype);
 }
-#include <syscalls/k_object_alloc_mrsh.c>
+#include <zephyr/syscalls/k_object_alloc_mrsh.c>
 
 static inline void *z_vrfy_k_object_alloc_size(enum k_objects otype, size_t size)
 {
 	return z_impl_k_object_alloc_size(otype, size);
 }
-#include <syscalls/k_object_alloc_size_mrsh.c>
+#include <zephyr/syscalls/k_object_alloc_size_mrsh.c>

@@ -1,0 +1,18 @@
+identifier: mps2/an383
+name: ARM V2M MPS2-an383
+type: mcu
+arch: arm
+simulation:
+  - name: armfvp
+    exec: FVP_MPS2_Cortex-M0plus
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - counter
+  - netif:serial-net
+  - gpio
+  - watchdog
+testing:
+  default: true
+vendor: arm

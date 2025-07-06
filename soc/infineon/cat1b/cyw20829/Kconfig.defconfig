@@ -1,0 +1,33 @@
+# Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+# Infineon CYW20829 based MCU default configuration
+
+if SOC_DIE_CYW20829
+
+config INFINEON_CAT1_LP_TIMER
+	bool
+
+config CORTEX_M_SYSTICK
+	default n if INFINEON_CAT1_LP_TIMER
+
+config NUM_IRQS
+	default 70
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 96000000
+
+config BUILD_OUTPUT_ADJUST_LMA
+	depends on XIP
+	default "0x60000000 - $(dt_node_reg_addr_hex,$(dt_nodelabel_path,flash0))"
+
+config MAIN_STACK_SIZE
+	default 2048
+
+config IDLE_STACK_SIZE
+	default 1024 if PM
+
+# add additional die specific params
+
+endif # SOC_DIE_CYW20829

@@ -4,12 +4,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 '''Common fixtures for use in testing the twister tool.'''
-
+import logging
 import os
 import sys
 import pytest
 
 pytest_plugins = ["pytester"]
+logging.getLogger("twister").setLevel(logging.DEBUG)  # requires for testing twister
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
@@ -90,7 +91,7 @@ def instances_fixture(class_testplan, platforms_list, all_testsuites_dict, tmpdi
     platform = class_testplan.get_platform("demo_board_2")
     instance_list = []
     for _, testcase in all_testsuites_dict.items():
-        instance = TestInstance(testcase, platform, class_testplan.outdir)
+        instance = TestInstance(testcase, platform, 'zephyr', class_testplan.outdir)
         instance_list.append(instance)
     class_testplan.add_instances(instance_list)
     return class_testplan.instances

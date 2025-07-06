@@ -220,3 +220,5 @@ Specifications of management groups supported by Zephyr
     smp_groups/smp_group_3.rst
     smp_groups/smp_group_8.rst
     smp_groups/smp_group_9.rst
+    smp_groups/smp_group_10.rst
+    smp_groups/smp_group_63.rst

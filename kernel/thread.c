@@ -90,7 +90,7 @@ static inline void z_vrfy_k_thread_custom_data_set(void *data)
 {
 	z_impl_k_thread_custom_data_set(data);
 }
-#include <syscalls/k_thread_custom_data_set_mrsh.c>
+#include <zephyr/syscalls/k_thread_custom_data_set_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 void *z_impl_k_thread_custom_data_get(void)
@@ -103,7 +103,7 @@ static inline void *z_vrfy_k_thread_custom_data_get(void)
 {
 	return z_impl_k_thread_custom_data_get();
 }
-#include <syscalls/k_thread_custom_data_get_mrsh.c>
+#include <zephyr/syscalls/k_thread_custom_data_get_mrsh.c>
 
 #endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_THREAD_CUSTOM_DATA */
@@ -118,7 +118,7 @@ static inline int z_vrfy_k_is_preempt_thread(void)
 {
 	return z_impl_k_is_preempt_thread();
 }
-#include <syscalls/k_is_preempt_thread_mrsh.c>
+#include <zephyr/syscalls/k_is_preempt_thread_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 int z_impl_k_thread_priority_get(k_tid_t thread)
@@ -132,25 +132,29 @@ static inline int z_vrfy_k_thread_priority_get(k_tid_t thread)
 	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
 	return z_impl_k_thread_priority_get(thread);
 }
-#include <syscalls/k_thread_priority_get_mrsh.c>
+#include <zephyr/syscalls/k_thread_priority_get_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-int z_impl_k_thread_name_set(struct k_thread *thread, const char *value)
+int z_impl_k_thread_name_set(k_tid_t thread, const char *str)
 {
 #ifdef CONFIG_THREAD_NAME
 	if (thread == NULL) {
 		thread = _current;
 	}
 
-	strncpy(thread->name, value, CONFIG_THREAD_MAX_NAME_LEN - 1);
+	strncpy(thread->name, str, CONFIG_THREAD_MAX_NAME_LEN - 1);
 	thread->name[CONFIG_THREAD_MAX_NAME_LEN - 1] = '\0';
+
+#ifdef CONFIG_ARCH_HAS_THREAD_NAME_HOOK
+	arch_thread_name_set(thread, str);
+#endif /* CONFIG_ARCH_HAS_THREAD_NAME_HOOK */
 
 	SYS_PORT_TRACING_OBJ_FUNC(k_thread, name_set, thread, 0);
 
 	return 0;
 #else
 	ARG_UNUSED(thread);
-	ARG_UNUSED(value);
+	ARG_UNUSED(str);
 
 	SYS_PORT_TRACING_OBJ_FUNC(k_thread, name_set, thread, -ENOSYS);
 
@@ -159,7 +163,7 @@ int z_impl_k_thread_name_set(struct k_thread *thread, const char *value)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_k_thread_name_set(struct k_thread *thread, const char *str)
+static inline int z_vrfy_k_thread_name_set(k_tid_t thread, const char *str)
 {
 #ifdef CONFIG_THREAD_NAME
 	char name[CONFIG_THREAD_MAX_NAME_LEN];
@@ -174,7 +178,7 @@ static inline int z_vrfy_k_thread_name_set(struct k_thread *thread, const char *
 	 * the current z_vrfy / z_impl split does not provide a
 	 * means of doing so.
 	 */
-	if (k_usermode_string_copy(name, (char *)str, sizeof(name)) != 0) {
+	if (k_usermode_string_copy(name, str, sizeof(name)) != 0) {
 		return -EFAULT;
 	}
 
@@ -183,7 +187,7 @@ static inline int z_vrfy_k_thread_name_set(struct k_thread *thread, const char *
 	return -ENOSYS;
 #endif /* CONFIG_THREAD_NAME */
 }
-#include <syscalls/k_thread_name_set_mrsh.c>
+#include <zephyr/syscalls/k_thread_name_set_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 const char *k_thread_name_get(k_tid_t thread)
@@ -224,19 +228,22 @@ const char *k_thread_state_str(k_tid_t thread_id, char *buf, size_t buf_size)
 	size_t      off = 0;
 	uint8_t     bit;
 	uint8_t     thread_state = thread_id->base.thread_state;
+#define SS_ENT(s) { Z_STATE_STR_##s, _THREAD_##s, sizeof(Z_STATE_STR_##s) - 1 }
 	static const struct {
 		const char *str;
-		size_t      len;
+		uint16_t    bit;
+		uint16_t    len;
 	} state_string[] = {
-		{ Z_STATE_STR_DUMMY, sizeof(Z_STATE_STR_DUMMY) - 1},
-		{ Z_STATE_STR_PENDING, sizeof(Z_STATE_STR_PENDING) - 1},
-		{ Z_STATE_STR_PRESTART, sizeof(Z_STATE_STR_PRESTART) - 1},
-		{ Z_STATE_STR_DEAD, sizeof(Z_STATE_STR_DEAD) - 1},
-		{ Z_STATE_STR_SUSPENDED, sizeof(Z_STATE_STR_SUSPENDED) - 1},
-		{ Z_STATE_STR_ABORTING, sizeof(Z_STATE_STR_ABORTING) - 1},
-		{ Z_STATE_STR_SUSPENDING, sizeof(Z_STATE_STR_SUSPENDING) - 1},
-		{ Z_STATE_STR_QUEUED, sizeof(Z_STATE_STR_QUEUED) - 1},
+		SS_ENT(DUMMY),
+		SS_ENT(PENDING),
+		SS_ENT(SLEEPING),
+		SS_ENT(DEAD),
+		SS_ENT(SUSPENDED),
+		SS_ENT(ABORTING),
+		SS_ENT(SUSPENDING),
+		SS_ENT(QUEUED),
 	};
+#undef SS_ENT
 
 	if ((buf == NULL) || (buf_size == 0)) {
 		return "";
@@ -252,7 +259,7 @@ const char *k_thread_state_str(k_tid_t thread_id, char *buf, size_t buf_size)
 
 
 	for (unsigned int index = 0; thread_state != 0; index++) {
-		bit = BIT(index);
+		bit = state_string[index].bit;
 		if ((thread_state & bit) == 0) {
 			continue;
 		}
@@ -284,15 +291,15 @@ static inline int z_vrfy_k_thread_name_copy(k_tid_t thread,
 	/* Special case: we allow reading the names of initialized threads
 	 * even if we don't have permission on them
 	 */
-	if (thread == NULL || ko->type != K_OBJ_THREAD ||
-	    (ko->flags & K_OBJ_FLAG_INITIALIZED) == 0) {
+	if ((thread == NULL) || (ko->type != K_OBJ_THREAD) ||
+		((ko->flags & K_OBJ_FLAG_INITIALIZED) == 0)) {
 		return -EINVAL;
 	}
 	if (K_SYSCALL_MEMORY_WRITE(buf, size) != 0) {
 		return -EFAULT;
 	}
 	len = strlen(thread->name);
-	if (len + 1 > size) {
+	if ((len + 1) > size) {
 		return -ENOSPC;
 	}
 
@@ -304,7 +311,7 @@ static inline int z_vrfy_k_thread_name_copy(k_tid_t thread,
 	return -ENOSYS;
 #endif /* CONFIG_THREAD_NAME */
 }
-#include <syscalls/k_thread_name_copy_mrsh.c>
+#include <zephyr/syscalls/k_thread_name_copy_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_STACK_SENTINEL
@@ -340,23 +347,7 @@ void z_check_stack_sentinel(void)
 }
 #endif /* CONFIG_STACK_SENTINEL */
 
-void z_impl_k_thread_start(struct k_thread *thread)
-{
-	SYS_PORT_TRACING_OBJ_FUNC(k_thread, start, thread);
-
-	z_sched_start(thread);
-}
-
-#ifdef CONFIG_USERSPACE
-static inline void z_vrfy_k_thread_start(struct k_thread *thread)
-{
-	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
-	return z_impl_k_thread_start(thread);
-}
-#include <syscalls/k_thread_start_mrsh.c>
-#endif /* CONFIG_USERSPACE */
-
-#if CONFIG_STACK_POINTER_RANDOM
+#if defined(CONFIG_STACK_POINTER_RANDOM) && (CONFIG_STACK_POINTER_RANDOM != 0)
 int z_stack_adjust_initialized;
 
 static size_t random_offset(size_t stack_size)
@@ -409,6 +400,7 @@ static char *setup_thread_stack(struct k_thread *new_thread,
 		stack_buf_start = K_KERNEL_STACK_BUFFER(stack);
 		stack_buf_size = stack_obj_size - K_KERNEL_STACK_RESERVED;
 
+#if defined(ARCH_KERNEL_STACK_RESERVED)
 		/* Zephyr treats stack overflow as an app bug.  But
 		 * this particular overflow can be seen by static
 		 * analysis so needs to be handled somehow.
@@ -416,7 +408,7 @@ static char *setup_thread_stack(struct k_thread *new_thread,
 		if (K_KERNEL_STACK_RESERVED > stack_obj_size) {
 			k_panic();
 		}
-
+#endif
 	}
 
 #ifdef CONFIG_THREAD_STACK_MEM_MAPPED
@@ -429,8 +421,9 @@ static char *setup_thread_stack(struct k_thread *new_thread,
 	 * stack. If CONFIG_INIT_STACKS is enabled, the stack will be
 	 * cleared below.
 	 */
-	void *stack_mapped = k_mem_phys_map((uintptr_t)stack, stack_obj_size,
-					    K_MEM_PERM_RW | K_MEM_CACHE_WB | K_MEM_MAP_UNINIT);
+	void *stack_mapped = k_mem_map_phys_guard((uintptr_t)stack, stack_obj_size,
+				K_MEM_PERM_RW | K_MEM_CACHE_WB | K_MEM_MAP_UNINIT,
+				false);
 
 	__ASSERT_NO_MSG((uintptr_t)stack_mapped != 0);
 
@@ -487,7 +480,7 @@ static char *setup_thread_stack(struct k_thread *new_thread,
 	new_thread->userspace_local_data =
 		(struct _thread_userspace_local_data *)(stack_ptr - delta);
 #endif /* CONFIG_THREAD_USERSPACE_LOCAL_DATA */
-#if CONFIG_STACK_POINTER_RANDOM
+#if defined(CONFIG_STACK_POINTER_RANDOM) && (CONFIG_STACK_POINTER_RANDOM != 0)
 	delta += random_offset(stack_buf_size);
 #endif /* CONFIG_STACK_POINTER_RANDOM */
 	delta = ROUND_UP(delta, ARCH_STACK_PTR_ALIGN);
@@ -551,7 +544,7 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	z_waitq_init(&new_thread->join_queue);
 
 	/* Initialize various struct k_thread members */
-	z_init_thread_base(&new_thread->base, prio, _THREAD_PRESTART, options);
+	z_init_thread_base(&new_thread->base, prio, _THREAD_SLEEPING, options);
 	stack_ptr = setup_thread_stack(new_thread, stack, stack_size);
 
 #ifdef CONFIG_KERNEL_COHERENCE
@@ -607,6 +600,9 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 			CONFIG_THREAD_MAX_NAME_LEN - 1);
 		/* Ensure NULL termination, truncate if longer */
 		new_thread->name[CONFIG_THREAD_MAX_NAME_LEN - 1] = '\0';
+#ifdef CONFIG_ARCH_HAS_THREAD_NAME_HOOK
+		arch_thread_name_set(new_thread, name);
+#endif /* CONFIG_ARCH_HAS_THREAD_NAME_HOOK */
 	} else {
 		new_thread->name[0] = '\0';
 	}
@@ -741,7 +737,7 @@ k_tid_t z_vrfy_k_thread_create(struct k_thread *new_thread,
 
 	return new_thread;
 }
-#include <syscalls/k_thread_create_mrsh.c>
+#include <zephyr/syscalls/k_thread_create_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 void z_init_thread_base(struct _thread_base *thread_base, int priority,
@@ -895,7 +891,7 @@ int z_vrfy_k_thread_stack_space_get(const struct k_thread *thread,
 
 	return 0;
 }
-#include <syscalls/k_thread_stack_space_get_mrsh.c>
+#include <zephyr/syscalls/k_thread_stack_space_get_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_INIT_STACKS && CONFIG_THREAD_STACK_INFO */
 
@@ -906,7 +902,7 @@ static inline k_ticks_t z_vrfy_k_thread_timeout_remaining_ticks(
 	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
 	return z_impl_k_thread_timeout_remaining_ticks(thread);
 }
-#include <syscalls/k_thread_timeout_remaining_ticks_mrsh.c>
+#include <zephyr/syscalls/k_thread_timeout_remaining_ticks_mrsh.c>
 
 static inline k_ticks_t z_vrfy_k_thread_timeout_expires_ticks(
 						  const struct k_thread *thread)
@@ -914,7 +910,7 @@ static inline k_ticks_t z_vrfy_k_thread_timeout_expires_ticks(
 	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
 	return z_impl_k_thread_timeout_expires_ticks(thread);
 }
-#include <syscalls/k_thread_timeout_expires_ticks_mrsh.c>
+#include <zephyr/syscalls/k_thread_timeout_expires_ticks_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
@@ -938,9 +934,10 @@ void z_thread_mark_switched_out(void)
 #ifdef CONFIG_TRACING
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
 	/* Dummy thread won't have TLS set up to run arbitrary code */
-	if (!_current_cpu->current ||
-	    (_current_cpu->current->base.thread_state & _THREAD_DUMMY) != 0)
+	if (!_current ||
+	    (_current->base.thread_state & _THREAD_DUMMY) != 0) {
 		return;
+	}
 #endif /* CONFIG_THREAD_LOCAL_STORAGE */
 	SYS_PORT_TRACING_FUNC(k_thread, switched_out);
 #endif /* CONFIG_TRACING */
@@ -993,6 +990,27 @@ int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t *stats)
 		stats->idle_cycles      += tmp_stats.idle_cycles;
 	}
 #endif /* CONFIG_SCHED_THREAD_USAGE_ALL */
+
+	return 0;
+}
+
+int k_thread_runtime_stats_cpu_get(int cpu, k_thread_runtime_stats_t *stats)
+{
+	if (stats == NULL) {
+		return -EINVAL;
+	}
+
+	*stats = (k_thread_runtime_stats_t) {};
+
+#ifdef CONFIG_SCHED_THREAD_USAGE_ALL
+#ifdef CONFIG_SMP
+	z_sched_cpu_usage(cpu, stats);
+#else
+	__ASSERT(cpu == 0, "cpu filter out of bounds");
+	ARG_UNUSED(cpu);
+	z_sched_cpu_usage(0, stats);
+#endif
+#endif
 
 	return 0;
 }
@@ -1051,8 +1069,8 @@ void do_thread_cleanup(struct k_thread *thread)
 
 #ifdef CONFIG_THREAD_STACK_MEM_MAPPED
 	if (thread_cleanup_stack_addr != NULL) {
-		k_mem_phys_unmap(thread_cleanup_stack_addr,
-				 thread_cleanup_stack_sz);
+		k_mem_unmap_phys_guard(thread_cleanup_stack_addr,
+				       thread_cleanup_stack_sz, false);
 
 		thread_cleanup_stack_addr = NULL;
 	}
@@ -1106,3 +1124,30 @@ void k_thread_abort_cleanup_check_reuse(struct k_thread *thread)
 }
 
 #endif /* CONFIG_THREAD_ABORT_NEED_CLEANUP */
+
+void z_dummy_thread_init(struct k_thread *dummy_thread)
+{
+	dummy_thread->base.thread_state = _THREAD_DUMMY;
+#ifdef CONFIG_SCHED_CPU_MASK
+	dummy_thread->base.cpu_mask = -1;
+#endif /* CONFIG_SCHED_CPU_MASK */
+	dummy_thread->base.user_options = K_ESSENTIAL;
+#ifdef CONFIG_THREAD_STACK_INFO
+	dummy_thread->stack_info.start = 0U;
+	dummy_thread->stack_info.size = 0U;
+#endif /* CONFIG_THREAD_STACK_INFO */
+#ifdef CONFIG_USERSPACE
+	dummy_thread->mem_domain_info.mem_domain = &k_mem_domain_default;
+#endif /* CONFIG_USERSPACE */
+#if (K_HEAP_MEM_POOL_SIZE > 0)
+	k_thread_system_pool_assign(dummy_thread);
+#else
+	dummy_thread->resource_pool = NULL;
+#endif /* K_HEAP_MEM_POOL_SIZE */
+
+#ifdef CONFIG_TIMESLICE_PER_THREAD
+	dummy_thread->base.slice_ticks = 0;
+#endif /* CONFIG_TIMESLICE_PER_THREAD */
+
+	z_current_thread_set(dummy_thread);
+}

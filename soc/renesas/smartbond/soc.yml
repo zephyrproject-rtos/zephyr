@@ -4,4 +4,5 @@ family:
       - name: da1469x
         socs:
           - name: da14695
+          - name: da14697
           - name: da14699

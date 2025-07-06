@@ -3,9 +3,6 @@
 
 if SOC_SERIES_GD32A50X
 
-config SOC_SERIES
-	default "gd32a50x"
-
 rsource "Kconfig.defconfig.gd32*"
 
 endif # SOC_SERIES_GD32A50X

@@ -10,18 +10,18 @@
 #include <zephyr/usb/usbd.h>
 
 /**
- * @brief Get common USB descriptor
+ * @brief Get USB descriptor node
  *
- * Get descriptor from internal descriptor list.
+ * Get descriptor node from internal descriptor list.
  *
  * @param[in] ctx    Pointer to USB device support context
  * @param[in] type   Descriptor type (bDescriptorType)
  * @param[in] idx    Descriptor index
  *
- * @return pointer to descriptor or NULL if not found.
+ * @return pointer to descriptor node or NULL if not found.
  */
-void *usbd_get_descriptor(struct usbd_contex *uds_ctx,
-			  const uint8_t type, const uint8_t idx);
+struct usbd_desc_node *usbd_get_descriptor(struct usbd_context *const uds_ctx,
+					   const uint8_t type, const uint8_t idx);
 
 /**
  * @brief Remove all descriptors from an USB device context
@@ -34,6 +34,6 @@ void *usbd_get_descriptor(struct usbd_contex *uds_ctx,
  *
  * @return 0 on success, other values on fail.
  */
-int usbd_desc_remove_all(struct usbd_contex *const uds_ctx);
+int usbd_desc_remove_all(struct usbd_context *const uds_ctx);
 
 #endif /* ZEPHYR_INCLUDE_USBD_DESC_H */

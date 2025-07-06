@@ -126,6 +126,9 @@ def process_line(line, fp):
     # and just turn them into pointers
     line = re.sub(r'["].*["]', reformat_str, line)
 
+    # Use a bigger data type for the asso_values table to provide some margin
+    line = re.sub(r'char asso_values', r'short asso_values', line)
+
     fp.write(line)
 
 

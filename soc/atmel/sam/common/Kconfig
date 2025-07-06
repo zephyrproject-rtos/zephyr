@@ -32,13 +32,25 @@ config SOC_ATMEL_SAM_EXT_MAINCK
 
 	  Says n here will use the internal fast RC oscillator running at 12 MHz.
 
+config SOC_ATMEL_SAM_EXT_MAINCK_BYPASS
+	bool "Use bypass mode for external crystal oscillator"
+	depends on SOC_ATMEL_SAM_EXT_MAINCK
+	help
+	  When bypass mode is enabled, the external crystal oscillator is bypassed,
+	  and the main clock is directly driven by an external clock signal.
+
+	  Says y here if you want to use an external clock signal directly instead
+	  of the crystal oscillator.
+
+	  Says n here to use the external crystal oscillator normally.
+
 menu "PLL A"
 
 config SOC_ATMEL_SAM_PLLA_MULA
 	int "PLL MULA"
 	default  6 if SOC_SERIES_SAM3X
 	default  9 if SOC_SERIES_SAM4S  || SOC_SERIES_SAM4E
-	default 24 if SOC_SERIES_SAME70 || SOC_SERIES_SAMV71
+	default 24 if SOC_SERIES_SAMX7X
 	range 1 62
 	help
 	  This is the multiplier (MULA) used by the PLL.
@@ -52,7 +64,7 @@ config SOC_ATMEL_SAM_PLLA_MULA
 config SOC_ATMEL_SAM_PLLA_DIVA
 	int "PLL DIVA"
 	default 1
-	range 1 255
+	range 1 $(UINT8_MAX)
 	help
 	  This is the divider (DIVA) used by the PLL.
 	  The processor clock is (MAINCK * (MULA + 1) / DIVA).
@@ -65,7 +77,7 @@ config SOC_ATMEL_SAM_PLLA_DIVA
 
 config SOC_ATMEL_SAM_MDIV
 	int "MDIV"
-	depends on SOC_SERIES_SAME70 || SOC_SERIES_SAMV71
+	depends on SOC_SERIES_SAMX7X
 	default 2
 	range 1 4
 	help

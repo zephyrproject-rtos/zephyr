@@ -52,12 +52,6 @@ static struct nvs_fs fs;
 #define NVS_PARTITION_DEVICE	FIXED_PARTITION_DEVICE(NVS_PARTITION)
 #define NVS_PARTITION_OFFSET	FIXED_PARTITION_OFFSET(NVS_PARTITION)
 
-/* 1000 msec = 1 sec */
-#define SLEEP_TIME      100
-/* maximum reboot counts, make high enough to trigger sector change (buffer */
-/* rotation). */
-#define MAX_REBOOT 400
-
 #define ADDRESS_ID 1
 #define KEY_ID 2
 #define RBT_CNT_ID 3
@@ -86,7 +80,7 @@ int main(void)
 	fs.offset = NVS_PARTITION_OFFSET;
 	rc = flash_get_page_info_by_offs(fs.flash_device, fs.offset, &info);
 	if (rc) {
-		printk("Unable to get page info\n");
+		printk("Unable to get page info, rc=%d\n", rc);
 		return 0;
 	}
 	fs.sector_size = info.size;
@@ -94,7 +88,7 @@ int main(void)
 
 	rc = nvs_mount(&fs);
 	if (rc) {
-		printk("Flash Init failed\n");
+		printk("Flash Init failed, rc=%d\n", rc);
 		return 0;
 	}
 
@@ -192,11 +186,11 @@ int main(void)
 		}
 	}
 
-	cnt = 5;
+	cnt = CONFIG_NVS_SAMPLE_REBOOT_COUNTDOWN;
 	while (1) {
-		k_msleep(SLEEP_TIME);
-		if (reboot_counter < MAX_REBOOT) {
-			if (cnt == 5) {
+		k_msleep(CONFIG_NVS_SAMPLE_SLEEP_TIME);
+		if (reboot_counter < CONFIG_NVS_SAMPLE_MAX_REBOOT) {
+			if (cnt == CONFIG_NVS_SAMPLE_REBOOT_COUNTDOWN) {
 				/* print some history information about
 				 * the reboot counter
 				 * Check the counter history in flash
@@ -230,7 +224,7 @@ int main(void)
 				(void)nvs_write(
 					&fs, RBT_CNT_ID, &reboot_counter,
 					sizeof(reboot_counter));
-				if (reboot_counter == MAX_REBOOT) {
+				if (reboot_counter == CONFIG_NVS_SAMPLE_MAX_REBOOT) {
 					printk("Doing last reboot...\n");
 				}
 				sys_reboot(0);

@@ -9,6 +9,7 @@ set(OPENOCD_NRF5_SUBFAMILY "nrf51")
 set(OPENOCD_NRF5_INTERFACE "cmsis-dap")
 
 include(${ZEPHYR_BASE}/boards/common/pyocd.board.cmake)
+include(${ZEPHYR_BASE}/boards/common/nrfutil.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/nrfjprog.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/openocd-nrf5.board.cmake)

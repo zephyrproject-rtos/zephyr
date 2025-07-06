@@ -3,9 +3,6 @@
 
 if BOARD_RPI_PICO
 
-config RP2_FLASH_W25Q080
-	default y
-
 if I2C_DW
 
 config I2C_DW_CLOCK_SPEED
@@ -15,5 +12,16 @@ endif # I2C_DW
 
 config USB_SELF_POWERED
 	default n
+
+if BOARD_RPI_PICO_RP2040_W && WIFI_AIROC
+
+config MAIN_STACK_SIZE
+	default 4096
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 16384
+
+endif # BOARD_RPI_PICO_RP2040_W && WIFI_AIROC
 
 endif # BOARD_RPI_PICO

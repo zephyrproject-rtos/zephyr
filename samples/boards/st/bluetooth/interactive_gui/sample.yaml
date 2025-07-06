@@ -1,0 +1,12 @@
+sample:
+  name: Bluetooth ST Interactive GUI
+  description: Allows BlueNRG-based boards to connect to BlueNRG GUI application via UART
+tests:
+  sample.boards.stm32.bluetooth.interactive_gui:
+    harness: bluetooth
+    platform_allow:
+      - sensortile_box_pro
+      - disco_l475_iot1
+    tags:
+      - uart
+      - bluetooth

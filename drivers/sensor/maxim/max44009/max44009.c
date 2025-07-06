@@ -165,7 +165,7 @@ static int max44009_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api max44009_driver_api = {
+static DEVICE_API(sensor, max44009_driver_api) = {
 	.attr_set = max44009_attr_set,
 	.sample_fetch = max44009_sample_fetch,
 	.channel_get = max44009_channel_get,

@@ -16,3 +16,5 @@ API reference
 *************
 
 .. doxygengroup:: udc_api
+
+.. doxygengroup:: udc_buf

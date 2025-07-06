@@ -15,14 +15,48 @@ module = I3C
 module-str = i3c
 source "subsys/logging/Kconfig.template.log_config"
 
-config I3C_USE_GROUP_ADDR
-	bool "Use Group Addresses"
-	default y
+choice I3C_MODE
+	prompt "I3C Mode Selection"
+	default I3C_DUAL_ROLE
 	help
-	  Enable this to use group addresses if supported
-	  by the controllers and target devices.
+	  Select the role in which I3C is enabled.
+	  At least one of Controller or Target must be enabled.
 
-	  Says Y if unsure.
+	  Selecting only one can reduce the code footprint size.
+
+config I3C_CONTROLLER_ROLE_ONLY
+	bool "I3C Controller only"
+
+config I3C_TARGET_ROLE_ONLY
+	bool "I3C Target only"
+
+config I3C_DUAL_ROLE
+	bool "Both I3C Controller and Target"
+
+endchoice
+
+config I3C_CONTROLLER
+	bool
+	default y if I3C_DUAL_ROLE || I3C_CONTROLLER_ROLE_ONLY
+
+config I3C_TARGET
+	bool
+	default y if I3C_DUAL_ROLE || I3C_TARGET_ROLE_ONLY
+
+config I3C_SHELL
+	bool "I3C Shell"
+	depends on SHELL
+	help
+	  Enable I3C Shell.
+
+	  The I3C shell supports info, bus recovery, CCC, I3C read and
+	  write operations.
+
+config I3C_TARGET_BUFFER_MODE
+	bool "I3C target driver for buffer mode"
+	depends on I3C_TARGET
+	help
+	  This is an option to enable buffer mode.
 
 menuconfig I3C_USE_IBI
 	bool "Use In-Band Interrupt (IBI)"
@@ -38,7 +72,7 @@ config I3C_IBI_MAX_PAYLOAD_SIZE
 	int "Maximum IBI Payload Size"
 	default 16
 	help
-	  Maxmium IBI payload size.
+	  Maximum IBI payload size.
 
 menuconfig I3C_IBI_WORKQUEUE
 	bool "Use IBI Workqueue"
@@ -96,10 +130,90 @@ config I3C_CONTROLLER_INIT_PRIORITY
 	  may not be addressable until addresses are assigned by
 	  the controller.
 
+config I3C_INIT_RSTACT
+	bool "Perform Reset Action During Bus Initialization"
+	default y
+	help
+	  This determines whether the bus initialization routine
+	  sends a reset action command to I3C targets.
+
+if I3C_CONTROLLER && I3C_TARGET
+
+config I3C_NUM_OF_DESC_MEM_SLABS
+	int "Number of I3C Device Descriptors Mem Slabs"
+	default 3
+	help
+	  This is the number of memory slabs allocated from when
+	  there is a device encountered through ENTDAA or DEFTGTS that
+	  is not within known I3C devices.
+
+config I3C_I2C_NUM_OF_DESC_MEM_SLABS
+	int "Number of I2C Device Descriptors Mem Slabs"
+	default 3
+	help
+	  This is the number of memory slabs allocated from when
+	  there is a device encountered through DEFTGTS that is not
+	  within known I2C devices.
+
+endif # I3C_CONTROLLER && I3C_TARGET
+
+if I3C_CONTROLLER
+
+config I3C_RTIO
+	bool "I3C RTIO API"
+	select EXPERIMENTAL
+	select RTIO
+	select RTIO_WORKQ
+	help
+	  API and implementations of I3C for RTIO
+
+if I3C_RTIO
+config I3C_RTIO_SQ_SIZE
+	int "Submission queue size for blocking calls"
+	default 4
+	help
+	  Blocking i3c calls when I3C_RTIO is enabled are copied into a per driver
+	  submission queue. The queue depth determines the number of possible i3c_msg
+	  structs that may be in the array given to i3c_transfer. A sensible default
+	  is going to be 4 given the device address, register address, and a value
+	  to be read or written.
+
+config I3C_RTIO_CQ_SIZE
+	int "Completion queue size for blocking calls"
+	default 4
+	help
+	  Blocking i3c calls when I3C_RTIO is enabled are copied into a per driver
+	  submission queue. The queue depth determines the number of possible i3c_msg
+	  structs that may be in the array given to i3c_transfer. A sensible default
+	  is going to be 4 given the device address, register address, and a value
+	  to be read or written.
+
+config I3C_RTIO_FALLBACK_MSGS
+	int "Number of available i3c_msg structs for the default handler to use"
+	default 4
+	help
+		When RTIO is used with a driver that does not yet implement the submit API
+		natively the submissions are converted back to struct i3c_msg values that
+		are given to i3c_transfer. This requires some number of msgs be available to convert
+		the submissions into on the stack. MISRA rules dictate we must know this in
+		advance.
+
+		In all likelihood 4 is going to work for everyone, but in case you do end up with
+		an issue where you are using RTIO, your driver does not implement submit natively,
+
+endif # I3C_RTIO
+
+endif # I3C_CONTROLLER
+
 comment "Device Drivers"
 
 rsource "Kconfig.nxp"
 rsource "Kconfig.cdns"
+rsource "Kconfig.npcx"
+rsource "Kconfig.dw"
 rsource "Kconfig.test"
+rsource "Kconfig.stm32"
+rsource "Kconfig.it51xxx"
+rsource "Kconfig.renesas"
 
 endif # I3C

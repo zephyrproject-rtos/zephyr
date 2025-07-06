@@ -4,23 +4,29 @@
 
 if BOARD_APOLLO4P_BLUE_KXR_EVB
 
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 32768 if AMBIQ_STIMER_TIMER
+
+config LOG_BACKEND_SWO_FREQ_HZ
+	default 1000000
+	depends on LOG_BACKEND_SWO
+
 if BT
 
 config MAIN_STACK_SIZE
 	default 2048
 
-choice BT_HCI_BUS_TYPE
-	default BT_AMBIQ_HCI
-endchoice
-
 config BT_BUF_ACL_TX_COUNT
 	default 14
 
+config BT_BUF_EVT_RX_COUNT
+	default 15
+
 config BT_BUF_CMD_TX_SIZE
-	default 255
+	default $(UINT8_MAX)
 
 config BT_BUF_EVT_RX_SIZE
-	default 255
+	default $(UINT8_MAX)
 
 config BT_BUF_ACL_TX_SIZE
 	default 251

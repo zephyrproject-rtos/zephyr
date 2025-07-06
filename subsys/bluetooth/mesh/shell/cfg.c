@@ -1150,7 +1150,7 @@ static int cmd_mod_sub_del(const struct shell *sh, size_t argc, char *argv[])
 	if (status) {
 		shell_print(sh, "Model Subscription Delete failed with status 0x%02x", status);
 	} else {
-		shell_print(sh, "Model subscription deltion was successful");
+		shell_print(sh, "Model subscription deletion was successful");
 	}
 
 	return 0;
@@ -1387,7 +1387,7 @@ static int cmd_mod_sub_del_all(const struct shell *sh, size_t argc, char *argv[]
 	if (status) {
 		shell_print(sh, "Model Subscription Delete All failed with status 0x%02x", status);
 	} else {
-		shell_print(sh, "Model subscription deltion all was successful");
+		shell_print(sh, "Model subscription deletion all was successful");
 	}
 
 	return 0;
@@ -1561,7 +1561,7 @@ static int mod_pub_set(const struct shell *sh, uint16_t addr, bool is_va, uint16
 		return -EINVAL;
 	}
 
-	pub.period = (steps << 2) + res_step;
+	pub.period = steps + (res_step << 6);
 	count = shell_strtoul(argv[6], 0, &err);
 	if (count > 7) {
 		shell_print(sh, "Invalid retransmit count");

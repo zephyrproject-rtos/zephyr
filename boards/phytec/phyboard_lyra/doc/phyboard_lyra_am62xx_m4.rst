@@ -56,6 +56,8 @@ The phyboard_lyra/am6234/m4 configuration supports the following hardware featur
 +-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial                              |
 +-----------+------------+-------------------------------------+
+| Mailbox   | on-chip    | IPC Mailbox                         |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by the port.
 
@@ -96,16 +98,18 @@ The Linux running on the A53 uses the remoteproc framework to manage the M4F co-
 Therefore, the testing requires the binary to be copied to the SD card to allow the A53 cores to
 load it while booting using remoteproc.
 
-To test the M4F core, we build the `hello_world` sample with the following command.
+To test the M4F core, we build the :zephyr:code-sample:`hello_world` sample with the following command.
 
 .. code-block:: console
 
    # From the root of the Zephyr repository
    west build -p -b phyboard_lyra/am6234/m4 samples/hello_world
 
-This builds the program and the binary is present in the `build/zephyr` directory as `zephyr.elf`.
+This builds the program and the binary is present in the :file:`build/zephyr` directory as
+:file:`zephyr.elf`.
 
-We now copy this binary onto the SD card in the `/lib/firmware` directory and name it as `am62-mcu-m4f0_0-fw`.
+We now copy this binary onto the SD card in the :file:`/lib/firmware` directory and name it as
+:file:`am62-mcu-m4f0_0-fw`.
 
 .. code-block:: console
 
@@ -131,6 +135,22 @@ The board should boot into Linux and the binary will run and print Hello world t
 port.
 
 
+Debugging
+*********
+
+The board is equipped with an XDS110 JTAG debugger. To debug a binary, utilize the ``debug`` build
+target:
+
+.. zephyr-app-commands::
+   :app: <my_app>
+   :board: phyboard_lyra/am6234/m4
+   :maybe-skip-config:
+   :goals: debug
+
+.. hint::
+   To utilize this feature, you'll need OpenOCD version 0.12 or higher. Due to the possibility of
+   older versions being available in package feeds, it's advisable to `build OpenOCD from source`_.
+
 
 .. _PHYTEC AM62x Product Page:
    https://www.phytec.com/product/phycore-am62x/
@@ -143,3 +163,6 @@ port.
 
 .. _phyBOARD SD Card Booting Essentials:
    https://docs.phytec.com/projects/yocto-phycore-am62x/en/bsp-yocto-ampliphy-am62x-pd23.2.1/bootingessentials/sdcard.html
+
+.. _build OpenOCD from source:
+   https://docs.u-boot.org/en/latest/board/ti/k3.html#building-openocd-from-source

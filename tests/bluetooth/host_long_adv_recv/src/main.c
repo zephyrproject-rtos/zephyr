@@ -1,11 +1,14 @@
 /* main.c - Host long advertising receive */
 
 /*
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stddef.h>
+
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/fff.h>
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
@@ -16,8 +19,15 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/drivers/bluetooth/hci_driver.h>
+#include <zephyr/drivers/bluetooth.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/ztest_assert.h>
+
+#define DT_DRV_COMPAT zephyr_bt_hci_test
+
+struct driver_data {
+	bt_hci_recv_t recv;
+};
 
 #define LOG_LEVEL CONFIG_BT_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -111,8 +121,10 @@ static int cmd_handle_helper(uint16_t opcode, struct net_buf *cmd, struct net_bu
 }
 
 /* Lookup the command opcode and invoke handler. */
-static int cmd_handle(struct net_buf *cmd, const struct cmd_handler *handlers, size_t num_handlers)
+static int cmd_handle(const struct device *dev, struct net_buf *cmd,
+		      const struct cmd_handler *handlers, size_t num_handlers)
 {
+	struct driver_data *drv = dev->data;
 	struct net_buf *evt = NULL;
 	struct bt_hci_evt_cc_status *ccst;
 	struct bt_hci_cmd_hdr *chdr;
@@ -130,7 +142,7 @@ static int cmd_handle(struct net_buf *cmd, const struct cmd_handler *handlers, s
 	}
 
 	if (evt) {
-		bt_recv(evt);
+		drv->recv(dev, evt);
 	}
 
 	return err;
@@ -193,6 +205,7 @@ static void le_read_supp_states(struct net_buf *buf, struct net_buf **evt, uint8
 	(void)memset(&rp->le_states, 0xFF, sizeof(rp->le_states));
 }
 
+
 /* Setup handlers needed for bt_enable to function. */
 static const struct cmd_handler cmds[] = {
 	{ BT_HCI_OP_READ_LOCAL_VERSION_INFO, sizeof(struct bt_hci_rp_read_local_version_info),
@@ -211,33 +224,48 @@ static const struct cmd_handler cmds[] = {
 	{ BT_HCI_OP_LE_RAND, sizeof(struct bt_hci_rp_le_rand), generic_success },
 	{ BT_HCI_OP_LE_SET_RANDOM_ADDRESS, sizeof(struct bt_hci_cp_le_set_random_address),
 	  generic_success },
+	{ BT_HCI_OP_LE_SET_EXT_SCAN_PARAM, 0, generic_success },
+	{ BT_HCI_OP_LE_SET_EXT_SCAN_ENABLE, 0, generic_success },
 	{ BT_HCI_OP_RESET, 0, generic_success },
 };
 
 /* HCI driver open. */
-static int driver_open(void)
+static int driver_open(const struct device *dev, bt_hci_recv_t recv)
 {
+	struct driver_data *drv = dev->data;
+
+	drv->recv = recv;
+
 	return 0;
 }
 
 /*  HCI driver send.  */
-static int driver_send(struct net_buf *buf)
+static int driver_send(const struct device *dev, struct net_buf *buf)
 {
-	zassert_true(cmd_handle(buf, cmds, ARRAY_SIZE(cmds)) == 0, "Unknown HCI command");
+	uint8_t type = net_buf_pull_u8(buf);
+
+	zassert_true(type == BT_HCI_H4_CMD, "Unexpected command buffer, got %u", type);
+
+	zassert_true(cmd_handle(dev, buf, cmds, ARRAY_SIZE(cmds)) == 0, "Unknown HCI command");
 
 	net_buf_unref(buf);
 
 	return 0;
 }
 
-/* HCI driver structure. */
-static const struct bt_hci_driver drv = {
-	.name = "test",
-	.bus = BT_HCI_DRIVER_BUS_VIRTUAL,
+static DEVICE_API(bt_hci, driver_api) = {
 	.open = driver_open,
 	.send = driver_send,
-	.quirks = 0,
 };
+
+#define TEST_DEVICE_INIT(inst) \
+	static struct driver_data driver_data_##inst = { \
+	}; \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &driver_data_##inst, NULL, \
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &driver_api)
+
+DT_INST_FOREACH_STATUS_OKAY(TEST_DEVICE_INIT)
+
 
 struct bt_recv_job_data {
 	struct k_work work; /* Work item */
@@ -250,10 +278,12 @@ struct bt_recv_job_data {
 /* Work item handler for bt_recv() jobs. */
 static void bt_recv_job_cb(struct k_work *item)
 {
+	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
+	struct driver_data *drv = dev->data;
 	struct bt_recv_job_data *data = CONTAINER_OF(item, struct bt_recv_job_data, work);
 
 	/* Send net buffer to host */
-	bt_recv(data->buf);
+	drv->recv(dev, data->buf);
 
 	/* Wake up bt_recv_job_submit */
 	k_sem_give(job(data->buf)->sync);
@@ -357,15 +387,14 @@ ZTEST(long_adv_rx_tests, test_host_long_adv_recv)
 {
 	struct test_adv_report expected_reports[2];
 
-	/* Register the test HCI driver */
-	bt_hci_driver_register(&drv);
-
 	/* Go! Wait until Bluetooth initialization is done  */
 	zassert_true((bt_enable(NULL) == 0), "bt_enable failed");
 
 	static struct bt_le_scan_cb scan_callbacks = { .recv = scan_recv_cb,
 						       .timeout = scan_timeout_cb };
 	bt_le_scan_cb_register(&scan_callbacks);
+	zassert_true((bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL) == 0), "bt_le_scan_start failed");
+
 	bt_addr_le_t addr_a;
 	bt_addr_le_t addr_b;
 	bt_addr_le_t addr_c;

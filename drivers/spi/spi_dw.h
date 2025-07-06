@@ -48,6 +48,7 @@ struct spi_dw_config {
 struct spi_dw_data {
 	DEVICE_MMIO_RAM;
 	struct spi_context ctx;
+	uint32_t version;	/* ssi comp version */
 	uint8_t dfs;	/* dfs in bytes: 1,2 or 4 */
 	uint8_t fifo_diff;	/* cannot be bigger than FIFO depth */
 };
@@ -179,18 +180,30 @@ static int reg_test_bit(uint8_t bit, mm_reg_t addr, uint32_t off)
 /* Common registers settings, bits etc... */
 
 /* CTRLR0 settings */
+#if !defined(CONFIG_SPI_DW_HSSI)
 #define DW_SPI_CTRLR0_SCPH_BIT		(6)
 #define DW_SPI_CTRLR0_SCPOL_BIT		(7)
+#define DW_SPI_CTRLR0_TMOD_SHIFT	(8)
+#define DW_SPI_CTRLR0_SLV_OE_BIT	(10)
 #define DW_SPI_CTRLR0_SRL_BIT		(11)
+#else
+/* The register layout is different in the HSSI variant */
+#define DW_SPI_CTRLR0_SCPH_BIT		(8)
+#define DW_SPI_CTRLR0_SCPOL_BIT		(9)
+#define DW_SPI_CTRLR0_TMOD_SHIFT	(10)
+#define DW_SPI_CTRLR0_SLV_OE_BIT	(12)
+#define DW_SPI_CTRLR0_SRL_BIT		(13)
+#endif
+
+#if defined(CONFIG_SPI_DW_HSSI) && defined(CONFIG_SPI_EXTENDED_MODES)
+/* TXFTLR setting. Only valid for Controller operation mode. */
+#define DW_SPI_TXFTLR_TXFTLR_SHIFT	(16)
+#endif
 
 #define DW_SPI_CTRLR0_SCPH		BIT(DW_SPI_CTRLR0_SCPH_BIT)
 #define DW_SPI_CTRLR0_SCPOL		BIT(DW_SPI_CTRLR0_SCPOL_BIT)
 #define DW_SPI_CTRLR0_SRL		BIT(DW_SPI_CTRLR0_SRL_BIT)
-
-#define DW_SPI_CTRLR0_SLV_OE_BIT	(10)
 #define DW_SPI_CTRLR0_SLV_OE		BIT(DW_SPI_CTRLR0_SLV_OE_BIT)
-
-#define DW_SPI_CTRLR0_TMOD_SHIFT	(8)
 
 #define DW_SPI_CTRLR0_TMOD_TX_RX	(0)
 #define DW_SPI_CTRLR0_TMOD_TX		(1 << DW_SPI_CTRLR0_TMOD_SHIFT)

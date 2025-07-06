@@ -26,11 +26,13 @@ config FDC2X1X_TRIGGER_NONE
 config FDC2X1X_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_TI_FDC2X1X),intb-gpios)
 	select FDC2X1X_TRIGGER
 
 config FDC2X1X_TRIGGER_OWN_THREAD
 	bool "Use own thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_TI_FDC2X1X),intb-gpios)
 	select FDC2X1X_TRIGGER
 
 endchoice

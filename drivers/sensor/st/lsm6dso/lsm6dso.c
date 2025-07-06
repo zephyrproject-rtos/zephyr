@@ -8,14 +8,11 @@
  * https://www.st.com/resource/en/datasheet/lsm6dso.pdf
  */
 
-#define DT_DRV_COMPAT st_lsm6dso
-
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <string.h>
-#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/logging/log.h>
 
@@ -87,21 +84,6 @@ static int lsm6dso_gyro_range_to_fs_val(int32_t range)
 	}
 
 	return -EINVAL;
-}
-
-static inline int lsm6dso_reboot(const struct device *dev)
-{
-	const struct lsm6dso_config *cfg = dev->config;
-	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
-
-	if (lsm6dso_boot_set(ctx, 1) < 0) {
-		return -EIO;
-	}
-
-	/* Wait sensor turn-on time as per datasheet */
-	k_busy_wait(35 * USEC_PER_MSEC);
-
-	return 0;
 }
 
 static int lsm6dso_accel_set_fs_raw(const struct device *dev, uint8_t fs)
@@ -525,12 +507,12 @@ static inline int lsm6dso_magn_get_channel(enum sensor_channel chan,
 	}
 
 
-	sample[0] = sys_le16_to_cpu((int16_t)(data->ext_data[idx][0] |
-				    (data->ext_data[idx][1] << 8)));
-	sample[1] = sys_le16_to_cpu((int16_t)(data->ext_data[idx][2] |
-				    (data->ext_data[idx][3] << 8)));
-	sample[2] = sys_le16_to_cpu((int16_t)(data->ext_data[idx][4] |
-				    (data->ext_data[idx][5] << 8)));
+	sample[0] = (int16_t)(data->ext_data[idx][0] |
+			     (data->ext_data[idx][1] << 8));
+	sample[1] = (int16_t)(data->ext_data[idx][2] |
+			     (data->ext_data[idx][3] << 8));
+	sample[2] = (int16_t)(data->ext_data[idx][4] |
+			     (data->ext_data[idx][5] << 8));
 
 	switch (chan) {
 	case SENSOR_CHAN_MAGN_X:
@@ -568,8 +550,8 @@ static inline void lsm6dso_hum_convert(struct sensor_value *val,
 		return;
 	}
 
-	raw_val = sys_le16_to_cpu((int16_t)(data->ext_data[idx][0] |
-					  (data->ext_data[idx][1] << 8)));
+	raw_val = (int16_t)(data->ext_data[idx][0] |
+			   (data->ext_data[idx][1] << 8));
 
 	/* find relative humidty by linear interpolation */
 	rh = (ht->y1 - ht->y0) * raw_val + ht->x1 * ht->y0 - ht->x0 * ht->y1;
@@ -592,9 +574,9 @@ static inline void lsm6dso_press_convert(struct sensor_value *val,
 		return;
 	}
 
-	raw_val = sys_le32_to_cpu((int32_t)(data->ext_data[idx][0] |
-					  (data->ext_data[idx][1] << 8) |
-					  (data->ext_data[idx][2] << 16)));
+	raw_val = (int32_t)(data->ext_data[idx][0] |
+			   (data->ext_data[idx][1] << 8) |
+			   (data->ext_data[idx][2] << 16));
 
 	/* Pressure sensitivity is 4096 LSB/hPa */
 	/* Convert raw_val to val in kPa */
@@ -615,8 +597,8 @@ static inline void lsm6dso_temp_convert(struct sensor_value *val,
 		return;
 	}
 
-	raw_val = sys_le16_to_cpu((int16_t)(data->ext_data[idx][3] |
-					  (data->ext_data[idx][4] << 8)));
+	raw_val = (int16_t)(data->ext_data[idx][3] |
+			   (data->ext_data[idx][4] << 8));
 
 	/* Temperature sensitivity is 100 LSB/deg C */
 	val->val1 = raw_val / 100;
@@ -695,7 +677,7 @@ static int lsm6dso_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api lsm6dso_driver_api = {
+static DEVICE_API(sensor, lsm6dso_driver_api) = {
 	.attr_set = lsm6dso_attr_set,
 #if CONFIG_LSM6DSO_TRIGGER
 	.trigger_set = lsm6dso_trigger_set,
@@ -868,21 +850,17 @@ static int lsm6dso_init(const struct device *dev)
 	return 0;
 }
 
-#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
-#warning "LSM6DSO driver enabled without any devices"
-#endif
-
 /*
  * Device creation macro, shared by LSM6DSO_DEFINE_SPI() and
  * LSM6DSO_DEFINE_I2C().
  */
 
-#define LSM6DSO_DEVICE_INIT(inst)					\
+#define LSM6DSO_DEVICE_INIT(inst, model)				\
 	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
 			    lsm6dso_init,				\
 			    NULL,					\
-			    &lsm6dso_data_##inst,			\
-			    &lsm6dso_config_##inst,			\
+			    &model##_data_##inst,			\
+			    &model##_config_##inst,			\
 			    POST_KERNEL,				\
 			    CONFIG_SENSOR_INIT_PRIORITY,		\
 			    &lsm6dso_driver_api);
@@ -890,6 +868,17 @@ static int lsm6dso_init(const struct device *dev)
 /*
  * Instantiation macros used when a device is on a SPI bus.
  */
+
+#ifdef CONFIG_LSM6DSO_TAP
+#define LSM6DSO_CONFIG_TAP(inst)					\
+	.tap_mode = DT_INST_PROP(inst, tap_mode),			\
+	.tap_threshold = DT_INST_PROP(inst, tap_threshold),		\
+	.tap_shock = DT_INST_PROP(inst, tap_shock),			\
+	.tap_latency = DT_INST_PROP(inst, tap_latency),			\
+	.tap_quiet = DT_INST_PROP(inst, tap_quiet),
+#else
+#define LSM6DSO_CONFIG_TAP(inst)
+#endif /* CONFIG_LSM6DSO_TAP */
 
 #ifdef CONFIG_LSM6DSO_TRIGGER
 #define LSM6DSO_CFG_IRQ(inst)						\
@@ -909,18 +898,19 @@ static int lsm6dso_init(const struct device *dev)
 	.accel_pm = DT_INST_PROP(inst, accel_pm),			\
 	.accel_odr = DT_INST_PROP(inst, accel_odr),			\
 	.accel_range = DT_INST_PROP(inst, accel_range) |		\
-		(DT_NODE_HAS_COMPAT(DT_DRV_INST(inst), st_lsm6dso32) ?	\
+		(DT_INST_NODE_HAS_COMPAT(inst, st_lsm6dso32) ?	        \
 			ACCEL_RANGE_DOUBLE : 0),			\
 	.gyro_pm = DT_INST_PROP(inst, gyro_pm),				\
 	.gyro_odr = DT_INST_PROP(inst, gyro_odr),			\
 	.gyro_range = DT_INST_PROP(inst, gyro_range),			\
-	.drdy_pulsed = DT_INST_PROP(inst, drdy_pulsed),                 \
+	.drdy_pulsed = DT_INST_PROP(inst, drdy_pulsed),			\
+	LSM6DSO_CONFIG_TAP(inst)					\
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),		\
 		(LSM6DSO_CFG_IRQ(inst)), ())
 
-#define LSM6DSO_CONFIG_SPI(inst)					\
+#define LSM6DSO_CONFIG_SPI(inst, model)					\
 	{								\
-		STMEMSC_CTX_SPI(&lsm6dso_config_##inst.stmemsc_cfg),	\
+		STMEMSC_CTX_SPI(&model##_config_##inst.stmemsc_cfg),	\
 		.stmemsc_cfg = {					\
 			.spi = SPI_DT_SPEC_INST_GET(inst,		\
 					   LSM6DSO_SPI_OP,		\
@@ -933,9 +923,9 @@ static int lsm6dso_init(const struct device *dev)
  * Instantiation macros used when a device is on an I2C bus.
  */
 
-#define LSM6DSO_CONFIG_I2C(inst)					\
+#define LSM6DSO_CONFIG_I2C(inst, model)					\
 	{								\
-		STMEMSC_CTX_I2C(&lsm6dso_config_##inst.stmemsc_cfg),	\
+		STMEMSC_CTX_I2C(&model##_config_##inst.stmemsc_cfg),	\
 		.stmemsc_cfg = {					\
 			.i2c = I2C_DT_SPEC_INST_GET(inst),		\
 		},							\
@@ -947,12 +937,18 @@ static int lsm6dso_init(const struct device *dev)
  * bus-specific macro at preprocessor time.
  */
 
-#define LSM6DSO_DEFINE(inst)						\
-	static struct lsm6dso_data lsm6dso_data_##inst;			\
-	static const struct lsm6dso_config lsm6dso_config_##inst =	\
+#define LSM6DSO_DEFINE(inst, model)					\
+	static struct lsm6dso_data model##_data_##inst;			\
+	static const struct lsm6dso_config model##_config_##inst =	\
 		COND_CODE_1(DT_INST_ON_BUS(inst, spi),			\
-			(LSM6DSO_CONFIG_SPI(inst)),			\
-			(LSM6DSO_CONFIG_I2C(inst)));			\
-	LSM6DSO_DEVICE_INIT(inst)
+			(LSM6DSO_CONFIG_SPI(inst, model)),		\
+			(LSM6DSO_CONFIG_I2C(inst, model)));		\
+	LSM6DSO_DEVICE_INIT(inst, model)
 
-DT_INST_FOREACH_STATUS_OKAY(LSM6DSO_DEFINE)
+#define DT_DRV_COMPAT st_lsm6dso
+DT_INST_FOREACH_STATUS_OKAY_VARGS(LSM6DSO_DEFINE, lsm6dso)
+#undef DT_DRV_COMPAT
+
+#define DT_DRV_COMPAT st_lsm6dso32
+DT_INST_FOREACH_STATUS_OKAY_VARGS(LSM6DSO_DEFINE, lsm6dso32)
+#undef DT_DRV_COMPAT

@@ -1,0 +1,11 @@
+# Copyright(c) 2017 Intel Corporation
+# Copyright(c) 2018 Phytec Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config APDS9253
+	bool "APDS9253 Sensor"
+	default y
+	depends on DT_HAS_AVAGO_APDS9253_ENABLED
+	select I2C
+	help
+	  Enable driver for APDS9253 sensors.

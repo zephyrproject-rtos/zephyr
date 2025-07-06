@@ -1,11 +1,4 @@
-.. _longan_nano:
-
-Sipeed Longan Nano
-##################
-
-.. image:: img/longan_nano.jpg
-     :align: center
-     :alt: longan_nano
+.. zephyr:board:: longan_nano
 
 Overview
 ********
@@ -42,38 +35,9 @@ Hardware
 Supported Features
 ==================
 
-The board configuration supports the following hardware features:
+.. zephyr:board-supported-hw::
 
-.. list-table::
-   :header-rows: 1
-
-   * - Peripheral
-     - Kconfig option
-     - Devicetree compatible
-   * - GPIO
-     - :kconfig:option:`CONFIG_GPIO`
-     - :dtcompatible:`gd,gd32-gpio`
-   * - Machine timer
-     - :kconfig:option:`CONFIG_RISCV_MACHINE_TIMER`
-     - :dtcompatible:`riscv,machine-timer`
-   * - Nuclei ECLIC Interrupt Controller
-     - :kconfig:option:`CONFIG_NUCLEI_ECLIC`
-     - :dtcompatible:`nuclei,eclic`
-   * - PWM
-     - :kconfig:option:`CONFIG_PWM`
-     - :dtcompatible:`gd,gd32-pwm`
-   * - USART
-     - :kconfig:option:`CONFIG_SERIAL`
-     - :dtcompatible:`gd,gd32-usart`
-   * - I2C
-     - :kconfig:option:`CONFIG_I2C`
-     - :dtcompatible:`gd,gd32-i2c`
-   * - DAC
-     - :kconfig:option:`CONFIG_DAC`
-     - :dtcompatible:`gd,gd32-dac`
-   * - ADC
-     - :kconfig:option:`CONFIG_ADC`
-     - :dtcompatible:`gd,gd32-adc`
+The microSD card reader in Longan Nano board is connected to SPI1.
 
 Serial Port
 ===========
@@ -83,6 +47,8 @@ Connect to TX0 (PA9) and RX0 (PA10).
 
 Programming and debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Building & Flashing
 ===================

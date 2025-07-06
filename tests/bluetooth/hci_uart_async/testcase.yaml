@@ -1,11 +1,12 @@
 tests:
   bluetooth.hci_uart_async:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="test.overlay"
     tags:
       - bluetooth
       - uart
     harness: ztest
     platform_allow:
-      - native_posix
       - native_sim
     integration_platforms:
       - native_sim

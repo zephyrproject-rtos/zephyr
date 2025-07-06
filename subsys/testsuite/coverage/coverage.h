@@ -30,7 +30,9 @@
 #ifndef _COVERAGE_H_
 #define _COVERAGE_H_
 
-#if (__GNUC__ >= 10)
+#if (__GNUC__ >= 14)
+#define GCOV_COUNTERS 9U
+#elif (__GNUC__ >= 10)
 #define GCOV_COUNTERS 8U
 #elif (__GNUC__ >= 8)
 #define GCOV_COUNTERS 9U
@@ -124,5 +126,6 @@ struct gcov_info {
 struct gcov_info *gcov_get_list_head(void);
 size_t gcov_populate_buffer(uint8_t *buffer, struct gcov_info *info);
 size_t gcov_calculate_buff_size(struct gcov_info *info);
+void gcov_reset_all_counts(void);
 
 #endif /* _COVERAGE_H_ */

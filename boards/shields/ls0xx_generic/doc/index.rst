@@ -63,10 +63,8 @@ for LS013B7DH03. Other shields can be added by using the LS013B7DH03 as
 a reference and changing the width, height, etc configurations.
 
 LS012B7DD01
-LS012B7DD06
 LS013B7DH03
 LS013B7DH05
-LS013B7DH06
 LS027B7DH01A
 LS032B7DD02
 LS044Q7DH01
@@ -88,7 +86,7 @@ for Arduino connectors and defines node aliases for SPI and GPIO interfaces
 Programming
 ***********
 
-Set ``-DSHIELD=ls013b7dh03`` when you invoke ``west build``. For example:
+Set ``--shield ls013b7dh03`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/display/lvgl

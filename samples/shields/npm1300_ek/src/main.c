@@ -9,10 +9,10 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/regulator.h>
 #include <zephyr/drivers/sensor.h>
-#include <zephyr/drivers/sensor/npm1300_charger.h>
+#include <zephyr/drivers/sensor/npm13xx_charger.h>
 #include <zephyr/drivers/led.h>
-#include <zephyr/dt-bindings/regulator/npm1300.h>
-#include <zephyr/drivers/mfd/npm1300.h>
+#include <zephyr/dt-bindings/regulator/npm13xx.h>
+#include <zephyr/drivers/mfd/npm13xx.h>
 #include <zephyr/sys/printk.h>
 #include <getopt.h>
 
@@ -68,9 +68,9 @@ void configure_events(void)
 	/* Setup callback for shiphold button press */
 	static struct gpio_callback event_cb;
 
-	gpio_init_callback(&event_cb, event_callback, BIT(NPM1300_EVENT_SHIPHOLD_PRESS));
+	gpio_init_callback(&event_cb, event_callback, BIT(NPM13XX_EVENT_SHIPHOLD_PRESS));
 
-	mfd_npm1300_add_callback(pmic, &event_cb);
+	mfd_npm13xx_add_callback(pmic, &event_cb);
 }
 
 void read_sensors(void)
@@ -80,13 +80,18 @@ void read_sensors(void)
 	struct sensor_value temp;
 	struct sensor_value error;
 	struct sensor_value status;
+	struct sensor_value vbus_present;
 
 	sensor_sample_fetch(charger);
 	sensor_channel_get(charger, SENSOR_CHAN_GAUGE_VOLTAGE, &volt);
 	sensor_channel_get(charger, SENSOR_CHAN_GAUGE_AVG_CURRENT, &current);
 	sensor_channel_get(charger, SENSOR_CHAN_GAUGE_TEMP, &temp);
-	sensor_channel_get(charger, SENSOR_CHAN_NPM1300_CHARGER_STATUS, &status);
-	sensor_channel_get(charger, SENSOR_CHAN_NPM1300_CHARGER_ERROR, &error);
+	sensor_channel_get(charger, (enum sensor_channel)SENSOR_CHAN_NPM13XX_CHARGER_STATUS,
+			   &status);
+	sensor_channel_get(charger, (enum sensor_channel)SENSOR_CHAN_NPM13XX_CHARGER_ERROR, &error);
+	sensor_attr_get(charger, (enum sensor_channel)SENSOR_CHAN_NPM13XX_CHARGER_VBUS_STATUS,
+			(enum sensor_attribute)SENSOR_ATTR_NPM13XX_CHARGER_VBUS_PRESENT,
+			&vbus_present);
 
 	printk("V: %d.%03d ", volt.val1, volt.val2 / 1000);
 
@@ -96,7 +101,8 @@ void read_sensors(void)
 	printk("T: %s%d.%02d\n", ((temp.val1 < 0) || (temp.val2 < 0)) ? "-" : "", abs(temp.val1),
 	       abs(temp.val2) / 10000);
 
-	printk("Charger Status: %d, Error: %d\n", status.val1, error.val1);
+	printk("Charger Status: %d, Error: %d, VBUS: %s\n", status.val1, error.val1,
+	       vbus_present.val1 ? "connected" : "disconnected");
 }
 
 int main(void)

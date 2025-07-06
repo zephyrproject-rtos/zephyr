@@ -23,10 +23,11 @@ application and open the :file:`zephyr.dts` file in the build directory.
 
 .. tip::
 
-   You can build :ref:`hello_world` to see the "base" devicetree for your board
+   You can build :zephyr:code-sample:`hello_world` to see the "base" devicetree for your board
    without any additional changes from :ref:`overlay files <dt-input-files>`.
 
-For example, using the :ref:`qemu_cortex_m3` board to build :ref:`hello_world`:
+For example, using the :zephyr:board:`qemu_cortex_m3` board to build
+:zephyr:code-sample:`hello_world`:
 
 .. code-block:: sh
 
@@ -42,7 +43,7 @@ CMake prints the input and output file locations like this:
 
    -- Found BOARD.dts: .../zephyr/boards/arm/qemu_cortex_m3/qemu_cortex_m3.dts
    -- Generated zephyr.dts: .../zephyr/build/zephyr/zephyr.dts
-   -- Generated devicetree_generated.h: .../zephyr/build/zephyr/include/generated/devicetree_generated.h
+   -- Generated devicetree_generated.h: .../zephyr/build/zephyr/include/generated/zephyr/devicetree_generated.h
 
 The :file:`zephyr.dts` file is the final devicetree in DTS format.
 
@@ -100,7 +101,7 @@ works best for your requirements. Here are some examples:
    #define MY_SERIAL DT_PATH(soc, serial_40002000)
 
 Once you have a node identifier there are two ways to proceed. One way to get a
-device is to use :c:func:`DEVICE_DT_GET`:
+device is to use :c:macro:`DEVICE_DT_GET`:
 
 .. code-block:: c
 
@@ -111,9 +112,9 @@ device is to use :c:func:`DEVICE_DT_GET`:
            return -ENODEV;
    }
 
-There are variants of :c:func:`DEVICE_DT_GET` such as
-:c:func:`DEVICE_DT_GET_OR_NULL`, :c:func:`DEVICE_DT_GET_ONE` or
-:c:func:`DEVICE_DT_GET_ANY`. This idiom fetches the device pointer at
+There are variants of :c:macro:`DEVICE_DT_GET` such as
+:c:macro:`DEVICE_DT_GET_OR_NULL`, :c:macro:`DEVICE_DT_GET_ONE` or
+:c:macro:`DEVICE_DT_GET_ANY`. This idiom fetches the device pointer at
 build-time, which means there is no runtime penalty. This method is useful if
 you want to store the device pointer as configuration data. But because the
 device may not be initialized, or may have failed to initialize, you must verify
@@ -237,11 +238,10 @@ If you don't set :makevar:`DTC_OVERLAY_FILE`, the build system will follow
 these steps, looking for files in your application configuration directory to
 use as devicetree overlays:
 
-#. If the file :file:`boards/<BOARD>.overlay` exists, it will be used.
+#. If the file :file:`socs/<SOC>_<BOARD_QUALIFIERS>.overlay` exists, it will be used.
+#. If the file :file:`boards/<BOARD>.overlay` exists, it will be used in addition to the above.
 #. If the current board has :ref:`multiple revisions <porting_board_revisions>`
-   and :file:`boards/<BOARD>_<revision>.overlay` exists, it will be used.
-   This file will be used in addition to :file:`boards/<BOARD>.overlay`
-   if both exist.
+   and :file:`boards/<BOARD>_<revision>.overlay` exists, it will be used in addition to the above.
 #. If one or more files have been found in the previous steps, the build system
    stops looking and just uses those files.
 #. Otherwise, if :file:`<BOARD>.overlay` exists, it will be used, and the build
@@ -510,12 +510,12 @@ using instance numbers. Do this after defining ``my_api_funcs``.
    			      MY_DEV_INIT_LEVEL, MY_DEV_INIT_PRIORITY,	\
    			      &my_api_funcs);
 
-Notice the use of APIs like :c:func:`DT_INST_PROP` and
-:c:func:`DEVICE_DT_INST_DEFINE` to access devicetree node data. These
+Notice the use of APIs like :c:macro:`DT_INST_PROP` and
+:c:macro:`DEVICE_DT_INST_DEFINE` to access devicetree node data. These
 APIs retrieve data from the devicetree for instance number ``inst`` of
 the node with compatible determined by ``DT_DRV_COMPAT``.
 
-Finally, pass the instantiation macro to :c:func:`DT_INST_FOREACH_STATUS_OKAY`:
+Finally, pass the instantiation macro to :c:macro:`DT_INST_FOREACH_STATUS_OKAY`:
 
 .. code-block:: c
 
@@ -534,7 +534,7 @@ Option 2: create devices using node labels
 Some device drivers cannot use instance numbers. One example is an SoC
 peripheral driver which relies on vendor HAL APIs specialized for individual IP
 blocks to implement Zephyr driver callbacks. Cases like this should use
-:c:func:`DT_NODELABEL` to refer to individual nodes in the devicetree
+:c:macro:`DT_NODELABEL` to refer to individual nodes in the devicetree
 representing the supported peripherals on the SoC. The devicetree.h
 :ref:`devicetree-generic-apis` can then be used to access node data.
 
@@ -587,8 +587,8 @@ devicetree to operate on specific device nodes:
 			MY_DEV_INIT_LEVEL, MY_DEV_INIT_PRIORITY,	\
 			&my_api_funcs)
 
-Notice the use of APIs like :c:func:`DT_PROP` and
-:c:func:`DEVICE_DT_DEFINE` to access devicetree node data.
+Notice the use of APIs like :c:macro:`DT_PROP` and
+:c:macro:`DEVICE_DT_DEFINE` to access devicetree node data.
 
 Finally, manually detect each enabled devicetree node and use
 ``CREATE_MY_DEVICE`` to instantiate each ``struct device``:
@@ -621,7 +621,7 @@ its SPI bus controller device. Some advice:
 - In particular, for bus devices, your driver's binding should include a
   file like :zephyr_file:`dts/bindings/spi/spi-device.yaml` which provides
   common definitions for devices addressable via a specific bus. This enables
-  use of APIs like :c:func:`DT_BUS` to obtain a node identifier for the bus
+  use of APIs like :c:macro:`DT_BUS` to obtain a node identifier for the bus
   node. You can then :ref:`dt-get-device` for the bus in the usual way.
 
 Search existing bindings and device drivers for examples.

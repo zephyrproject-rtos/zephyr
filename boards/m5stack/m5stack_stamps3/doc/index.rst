@@ -1,7 +1,4 @@
-.. _m5stack_stamps3:
-
-M5Stack StampS3
-###############
+.. zephyr:board:: m5stack_stamps3
 
 Overview
 ********
@@ -16,13 +13,6 @@ It features the following integrated components:
 - Wi-Fi
 - Bluetooth
 - User-Button
-
-.. figure:: img/m5stack_stamps3.webp
-        :align: center
-        :alt: M5Stack StampS3
-        :width: 400 px
-
-        M5Stack StampS3 module
 
 Functional Description
 **********************
@@ -144,6 +134,8 @@ below to retrieve those files.
 Building & Flashing
 -------------------
 
+.. zephyr:board-supported-runners::
+
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -153,7 +145,7 @@ Build and flash applications as usual (see :ref:`build_an_application` and
    :goals: build
 
 The usual ``flash`` target will work with the ``m5stack_stamps3`` board
-configuration. Here is an example for the :ref:`hello_world`
+configuration. Here is an example for the :zephyr:code-sample:`hello_world`
 application.
 
 .. zephyr-app-commands::

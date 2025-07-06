@@ -1,21 +1,10 @@
-.. _beagleconnect_freedom:
-
-BeagleConnect Freedom
-#####################
+.. zephyr:board:: beagleconnect_freedom
 
 Overview
 ********
 
 BeagleBoard.org BeagleConnect Freedom is a wireless
 Internet of Things board based on the SimpleLink multi-Standard CC1352P7 wireless MCU.
-
-
-.. figure:: img/beagleconnect_freedom.webp
-   :align: center
-   :width: 500px
-   :alt: BeagleBoard.org BeagleConnect Freedom
-
-   BeagleBoard.org BeagleConnect Freedom
 
 Hardware
 ********
@@ -35,33 +24,7 @@ GPIO expander.
 Supported Features
 ==================
 
-The board configuration supports the following hardware features:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| PINMUX    | on-chip    | pinmux               |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| I2C       | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| SPI       | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| HWINFO    | on-chip    | hwinfo               |
-+-----------+------------+----------------------+
-| I2C       | off-chip   | OPT3001              |
-+-----------+------------+----------------------+
-| I2C       | off-chip   | HDC2010              |
-+-----------+------------+----------------------+
-| I2C       | off-chip   | BCF_BRIDGE_MCU       |
-+-----------+------------+----------------------+
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================

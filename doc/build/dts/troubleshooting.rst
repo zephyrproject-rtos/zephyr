@@ -66,7 +66,7 @@ Below, ``<build>`` means your build directory.
 
 To find the devicetree node you need to check, use the number ``<N>`` from the
 linker error. Look for this number in the list of nodes at the top of
-:file:`<build>/zephyr/include/generated/devicetree_generated.h`. For example, if
+:file:`<build>/zephyr/include/generated/zephyr/devicetree_generated.h`. For example, if
 ``<N>`` is 15, and your :file:`devicetree_generated.h` file looks like this,
 the node you are interested in is ``/soc/i2c@deadbeef``:
 
@@ -261,7 +261,7 @@ Look at the preprocessor output
 
 To save preprocessor output files, enable the
 :kconfig:option:`CONFIG_COMPILER_SAVE_TEMPS` option. For example, to build
-:ref:`hello_world` with west with this option set, use:
+:zephyr:code-sample:`hello_world` with west with this option set, use:
 
 .. code-block:: sh
 
@@ -300,7 +300,7 @@ To prevent the compiler from doing this, you can disable the
 :kconfig:option:`CONFIG_COMPILER_TRACK_MACRO_EXPANSION` option. This typically
 reduces the output to one message per error.
 
-For example, to build :ref:`hello_world` with west and this option disabled,
+For example, to build :zephyr:code-sample:`hello_world` with west and this option disabled,
 use:
 
 .. code-block:: sh

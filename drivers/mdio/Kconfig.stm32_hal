@@ -1,0 +1,12 @@
+# Copyright (c) 2024 BayLibre, SAS
+# Copyright (c) 2024 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config MDIO_ST_STM32_HAL
+	bool "STM32 MDIO controller driver"
+	default y
+	depends on DT_HAS_ST_STM32_MDIO_ENABLED
+	depends on ETH_STM32_HAL
+	select PINCTRL
+	help
+	  Enable STM32 MDIO support.

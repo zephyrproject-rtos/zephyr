@@ -162,6 +162,8 @@ The IRQ must be subsequently **enabled** to permit the ISR to execute.
     Disabling an IRQ prevents *all* threads in the system from being preempted
     by the associated ISR, not just the thread that disabled the IRQ.
 
+.. _zlis:
+
 Zero Latency Interrupts
 -----------------------
 
@@ -173,10 +175,14 @@ The kernel addresses such use-cases by allowing interrupts with critical
 latency constraints to execute at a priority level that cannot be blocked
 by interrupt locking. These interrupts are defined as
 *zero-latency interrupts*. The support for zero-latency interrupts requires
-:kconfig:option:`CONFIG_ZERO_LATENCY_IRQS` to be enabled. In addition to that, the
-flag :c:macro:`IRQ_ZERO_LATENCY` must be passed to :c:macro:`IRQ_CONNECT` or
-:c:macro:`IRQ_DIRECT_CONNECT` macros to configure the particular interrupt
-with zero latency.
+:kconfig:option:`CONFIG_ZERO_LATENCY_IRQS` to be enabled. Any interrupts
+configured as zero-latency must also be declared as :ref:`direct ISRs
+<direct_isrs>` (and must not use the :c:macro:`ISR_DIRECT_PM` in them), since
+regular ISRs interact with the kernel. In addition to that, the flag
+:c:macro:`IRQ_ZERO_LATENCY` must be passed to the :c:macro:`IRQ_DIRECT_CONNECT`
+macro to configure the particular interrupt with
+zero latency. Declaring a zero-latency interrupt ISR to be both direct and
+dynamic is possible on some architectures, see :ref:`direct_isrs`.
 
 Zero-latency interrupts are expected to be used to manage hardware events
 directly, and not to interoperate with the kernel code at all. They should
@@ -306,6 +312,8 @@ Dynamic interrupts require the :kconfig:option:`CONFIG_DYNAMIC_INTERRUPTS` optio
 be enabled. Removing or re-configuring a dynamic interrupt is currently
 unsupported.
 
+.. _direct_isrs:
+
 Defining a 'direct' ISR
 =======================
 
@@ -322,12 +330,16 @@ for some low-latency use-cases. Specifically:
   need to switch to the interrupt stack in code
 
 * After the interrupt is serviced, the OS then performs some logic to
-  potentially make a scheduling decision.
+  potentially make a scheduling decision
+
+* :ref:`zlis` must always be declared as direct ISRs, since regular
+  ISRs interact with the kernel
 
 Zephyr supports so-called 'direct' interrupts, which are installed via
-:c:macro:`IRQ_DIRECT_CONNECT`. These direct interrupts have some special
-implementation requirements and a reduced feature set; see the definition
-of :c:macro:`IRQ_DIRECT_CONNECT` for details.
+:c:macro:`IRQ_DIRECT_CONNECT` and whose handlers are declared using
+:c:macro:`ISR_DIRECT_DECLARE`. These direct interrupts have some special
+implementation requirements and a reduced feature set; see the definitions
+of :c:macro:`IRQ_DIRECT_CONNECT` and :c:macro:`ISR_DIRECT_DECLARE` for details.
 
 The following code demonstrates a direct ISR:
 
@@ -335,14 +347,17 @@ The following code demonstrates a direct ISR:
 
     #define MY_DEV_IRQ  24       /* device uses IRQ 24 */
     #define MY_DEV_PRIO  2       /* device uses interrupt priority 2 */
-    /* argument passed to my_isr(), in this case a pointer to the device */
     #define MY_IRQ_FLAGS 0       /* IRQ flags */
 
     ISR_DIRECT_DECLARE(my_isr)
     {
        do_stuff();
-       ISR_DIRECT_PM(); /* PM done after servicing interrupt for best latency */
-       return 1; /* We should check if scheduling decision should be made */
+       /* PM done after servicing interrupt for best latency. This cannot be
+       used for zero-latency IRQs because it accesses kernel data. */
+       ISR_DIRECT_PM();
+       /* Ask the kernel to check if scheduling decision should be made. If the
+       ISR is for a zero-latency IRQ then the return value must always be 0. */
+       return 1;
     }
 
     void my_isr_installer(void)
@@ -354,9 +369,10 @@ The following code demonstrates a direct ISR:
     }
 
 Installation of dynamic direct interrupts is supported on an
-architecture-specific basis. (The feature is currently implemented in
-ARM Cortex-M architecture variant. Dynamic direct interrupts feature is
-exposed to the user via an ARM-only API.)
+architecture-specific basis. The feature is currently implemented in the Arm
+Cortex-M architecture variant via the macro
+:c:macro:`ARM_IRQ_DIRECT_DYNAMIC_CONNECT`, which can be used to declare a direct
+and dynamic interrupt.
 
 Sharing an interrupt line
 =========================
@@ -458,7 +474,7 @@ details laid out here apply to all architectures except x86, which are
 covered in the `x86 Details`_ section below.
 
 The invocation of :c:macro:`IRQ_CONNECT` will declare an instance of
-struct _isr_list wich is placed in a special .intList section.
+struct _isr_list which is placed in a special .intList section.
 This section is placed in compiled code on precompilation stages only.
 It is meant to be used by Zephyr script to generate interrupt tables
 and is removed from the final build.
@@ -467,7 +483,7 @@ and produce the required output.
 
 The default parser generates C arrays filled with arguments and interrupt
 handlers in a form of addresses directly taken from .intList section entries.
-It works with all the architectures and compillers (with the exception mentioned above).
+It works with all the architectures and compilers (with the exception mentioned above).
 The limitation of this parser is the fact that after the arrays are generated
 it is expected for the code not to relocate.
 Any relocation on this stage may lead to the situation where the entry in the interrupt array
@@ -478,7 +494,7 @@ The local isr declaration parser uses different approach to construct
 the same arrays at binnary level.
 All the entries to the arrays are declared and defined locally,
 directly in the file where :c:macro:`IRQ_CONNECT` is used.
-They are placed in a section with the unique, synthetized name.
+They are placed in a section with the unique, synthesized name.
 The name of the section is then placed in .intList section and it is used to create linker script
 to properly place the created entry in the right place in the memory.
 This parser is now limited to the supported architectures and toolchains but in reward it keeps
@@ -548,10 +564,9 @@ for IRQ line n, and the function pointers are:
    spurious IRQ handler will be placed here. The spurious IRQ handler
    causes a system fatal error if encountered.
 
-Some architectures (such as the Nios II internal interrupt controller) have a
-common entry point for all interrupts and do not support a vector table, in
-which case the :kconfig:option:`CONFIG_GEN_IRQ_VECTOR_TABLE` option should be
-disabled.
+Some architectures have a common entry point for all interrupts and do not
+support a vector table, in which case the
+:kconfig:option:`CONFIG_GEN_IRQ_VECTOR_TABLE` option should be disabled.
 
 Some architectures may reserve some initial vectors for system exceptions
 and declare this in a table elsewhere, in which case
@@ -599,13 +614,13 @@ The name comes from the fact that all the entries to the arrays that would creat
 interrupt vectors are created locally in place of invocation of :c:macro:`IRQ_CONNECT` macro.
 Then automatically generated linker scripts are used to place it in the right place in the memory.
 
-This option requires enabling by the choose of :kconfig:option:`ISR_TABLES_LOCAL_DECLARATION`.
+This option requires enabling by the choose of :kconfig:option:`CONFIG_ISR_TABLES_LOCAL_DECLARATION`.
 If this configuration is supported by the used architecture and toolchaing the
-:kconfig:option:`ISR_TABLES_LOCAL_DECLARATION_SUPPORTED` is set.
-See defails of this option for the information about currently supported configurations.
+:kconfig:option:`CONFIG_ISR_TABLES_LOCAL_DECLARATION_SUPPORTED` is set.
+See details of this option for the information about currently supported configurations.
 
-Any invocation of :c:macro:`IRQ_CONNECT` or `IRQ_DIRECT_CONNECT` will declare an instance of struct
-_isr_list_sname which is placde in a special .intList section:
+Any invocation of :c:macro:`IRQ_CONNECT` or :c:macro:`IRQ_DIRECT_CONNECT` will declare an instance
+of ``struct _isr_list_sname`` which is placed in a special .intList section:
 
 .. code-block:: c
 
@@ -619,7 +634,7 @@ _isr_list_sname which is placde in a special .intList section:
     };
 
 Note that the section name is placed in flexible array member.
-It means that the size of the initialized structure will warry depending on the
+It means that the size of the initialized structure will vary depending on the
 structure name length.
 The whole entry is used by the script during the build of the application
 and has all the information needed for proper interrupt placement.
@@ -643,7 +658,7 @@ It can be changed to variable that points to a interrupt handler:
 
     static uintptr_t <unique name> = ((uintptr_t)func);
 
-Or to actuall naked function that implements a jump to the interrupt handler:
+Or to actually naked function that implements a jump to the interrupt handler:
 
 .. code-block:: c
 
@@ -652,7 +667,7 @@ Or to actuall naked function that implements a jump to the interrupt handler:
         __asm(ARCH_IRQ_VECTOR_JUMP_CODE(func));
     }
 
-Simillar like for :c:macro:`IRQ_CONNECT`, the created variable or function is placed
+Similar like for :c:macro:`IRQ_CONNECT`, the created variable or function is placed
 in a section, saved in _isr_list_sname section.
 
 Files generated by the script
@@ -720,7 +735,7 @@ aggregator. In this case it may be desirable to override these defaults and use 
 number of bits per level. Regardless of how many bits used for each level, the sum of
 the total bits used between all levels must sum to be less than or equal to 32-bits,
 fitting into a single 32-bit integer. To modify the bit total per level, override the
-default 8 in `Kconfig.multilevel` by setting :kconfig:option:`CONFIG_1ST_LEVEL_INTERRUPT_BITS`
+default 8 in :file:`Kconfig.multilevel` by setting :kconfig:option:`CONFIG_1ST_LEVEL_INTERRUPT_BITS`
 for the  first level, :kconfig:option:`CONFIG_2ND_LEVEL_INTERRUPT_BITS` for the second level and
 :kconfig:option:`CONFIG_3RD_LEVEL_INTERRUPT_BITS` for the third level. These masks control the
 length of the bit masks and shift to apply when generating interrupt values, when checking the

@@ -58,7 +58,7 @@ which can be overwritten to use the other EEPROM devices instead.
 Programming
 ***********
 
-Set ``-DSHIELD=x_nucleo_eeprma2`` when you invoke ``west build``. For example:
+Set ``--shield x_nucleo_eeprma2`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/eeprom/

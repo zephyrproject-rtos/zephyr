@@ -37,6 +37,7 @@ config USB_DC_RPI_PICO
 	bool "USB device controller driver for Raspberry Pi Pico devices"
 	default y
 	depends on DT_HAS_RASPBERRYPI_PICO_USBD_ENABLED
+	select PINCTRL
 	help
 	  Enable USB support on the RP2 family of processors.
 
@@ -53,6 +54,7 @@ config USB_DC_STM32
 	select USE_STM32_HAL_PCD
 	select USE_STM32_HAL_PCD_EX
 	select USB_DC_HAS_HS_SUPPORT if "$(DT_STM32_USBHS_SPEED)"
+	select PINCTRL
 	imply USB_DEVICE_REMOTE_WAKEUP
 	help
 	  Enable STM32 family USB device controller shim driver.
@@ -60,7 +62,7 @@ config USB_DC_STM32
 config USB_DC_STM32_CLOCK_CHECK
 	bool "Runtime USB 48MHz clock check"
 	depends on USB_DC_STM32
-	default y if !(SOC_SERIES_STM32F1X || SOC_SERIES_STM32F3X)
+	default y if !(SOC_SERIES_STM32F1X || SOC_SERIES_STM32F3X || SOC_SERIES_STM32U5X)
 	help
 	  Enable USB clock 48MHz configuration runtime check.
 	  In specific cases, this check might provide wrong verdict and should
@@ -70,6 +72,7 @@ config USB_DC_SAM0
 	bool "SAM0 series USB Device Controller driver"
 	default y
 	depends on DT_HAS_ATMEL_SAM0_USB_ENABLED
+	select PINCTRL
 	help
 	  SAM0 family USB device controller Driver.
 
@@ -78,6 +81,7 @@ config USB_DC_SMARTBOND
 	default y
 	select CLOCK_CONTROL_SMARTBOND
 	select CLOCK_CONTROL
+	select DMA
 	depends on DT_HAS_RENESAS_SMARTBOND_USBD_ENABLED
 	help
 	  SmartBond family USB device controller Driver.
@@ -86,6 +90,7 @@ config USB_DC_SAM_USBC
 	bool "SAM4L USBC Device Controller driver"
 	default y
 	depends on DT_HAS_ATMEL_SAM_USBC_ENABLED
+	select PINCTRL
 	help
 	  SAM4L family USBC device controller Driver.
 
@@ -148,18 +153,17 @@ config USB_MCUX
 	bool "NXP MCUX USB Device Controller Driver"
 	default y
 	depends on DT_HAS_NXP_EHCI_ENABLED || DT_HAS_NXP_LPCIP3511_ENABLED
+	select PINCTRL
+	imply USB_DEVICE_REMOTE_WAKEUP
 	help
 	  NXP MCUX USB Device Controller Driver for MXRT and LPC SoC's.
 
 if USB_MCUX
 
-choice USB_MCUX_CONTROLLER_TYPE
-	prompt "USB Controller type"
-	help
-	  Select the type of controller available in the SoC.
-
 config USB_DC_NXP_EHCI
 	bool "MXRT EHCI USB Device Controller"
+	default y
+	depends on DT_HAS_NXP_EHCI_ENABLED
 	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	select USB_DC_HAS_HS_SUPPORT
 	help
@@ -167,12 +171,12 @@ config USB_DC_NXP_EHCI
 
 config USB_DC_NXP_LPCIP3511
 	bool "LPC USB Device Controller"
+	default y
+	depends on DT_HAS_NXP_LPCIP3511_ENABLED
 	select USB_DC_HAS_HS_SUPPORT if "$(dt_nodelabel_enabled,usbhs)"
 	select PINCTRL
 	help
 	  LPC USB Device Controller Driver.
-
-endchoice
 
 config USB_DC_MSG_QUEUE_LEN
 	int
@@ -194,6 +198,7 @@ config USB_DC_IT82XX2
 	bool "ITE IT82XX2 USB Device Controller Driver"
 	default y
 	depends on DT_HAS_ITE_IT82XX2_USB_ENABLED
+	select PINCTRL
 	help
 	  ITE IT82XX2 USB Device Controller Driver
 
@@ -201,6 +206,7 @@ config USB_DC_NUMAKER
 	bool "Nuvoton NuMaker USB 1.1 device controller"
 	default y
 	depends on DT_HAS_NUVOTON_NUMAKER_USBD_ENABLED
+	select PINCTRL
 	help
 	  Enable Nuvoton NuMaker USB 1.1 device controller driver
 
@@ -225,8 +231,20 @@ endif # USB_DC_NUMAKER
 config USB_NATIVE_POSIX
 	bool "Native Posix USB Device Controller Driver"
 	depends on ARCH_POSIX && EXTERNAL_LIBC
+	default y if BOARD_NATIVE_SIM || BOARD_NATIVE_POSIX
 	help
 	  Native Posix USB Device Controller Driver.
+
+DT_ZEPHYR_UDC0 := $(dt_nodelabel_path,zephyr_udc0)
+DT_ZEPHYR_UDC0_HS_SPEED := $(dt_node_str_prop_equals,$(DT_ZEPHYR_UDC0),maximum-speed,high-speed)
+
+config USB_NATIVE_POSIX_HS
+	bool "High speed support"
+	select USB_DC_HAS_HS_SUPPORT
+	depends on USB_NATIVE_POSIX
+	default y if "$(DT_ZEPHYR_UDC0_HS_SPEED)"
+	help
+	  Enable high speed support in the Native Posix USB device controller driver.
 
 module = USB_DRIVER
 module-str = usb driver

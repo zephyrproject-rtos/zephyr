@@ -35,6 +35,7 @@
 		sw1 = &user_button_2;
 		magn0 = &fxos8700;
 		accel0 = &fxos8700;
+		mcuboot-button0 = &user_button_3;
 	};
 
 	chosen {
@@ -47,6 +48,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &lpuart0;
 		zephyr,console = &lpuart0;
 		zephyr,shell-uart = &lpuart0;
 		zephyr,uart-pipe = &lpuart0;
@@ -222,18 +224,20 @@
 
 &ftm0 {
 	status = "okay";
-	compatible = "nxp,kinetis-ftm-pwm";
+	compatible = "nxp,ftm-pwm";
 	#pwm-cells = <3>;
 	pinctrl-0 = <&ftm0_default>;
 	pinctrl-names = "default";
+	clock-source = "fixed";
 };
 
 &ftm3 {
 	status = "okay";
-	compatible = "nxp,kinetis-ftm-pwm";
+	compatible = "nxp,ftm-pwm";
 	#pwm-cells = <3>;
 	pinctrl-0 = <&ftm3_default>;
 	pinctrl-names = "default";
+	clock-source = "fixed";
 };
 
 &lpi2c0 {
@@ -281,6 +285,7 @@
 &adc0 {
 	status = "okay";
 	sample-time = <12>;
+	vref-mv = <3300>;
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
 };
@@ -291,7 +296,6 @@
 
 &flexcan0 {
 	status = "okay";
-	bus-speed = <125000>;
 	pinctrl-0 = <&flexcan0_default>;
 	pinctrl-names = "default";
 
@@ -335,25 +339,26 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		/*
+		 * Partition sizes must be aligned
+		 * to the flash memory sector size of 4KB.
+		 */
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x00000000 0xc000>;
+			reg = <0x00000000 DT_SIZE_K(64)>;
+			read-only;
 		};
-		slot0_partition: partition@c000 {
+		slot0_partition: partition@10000 {
 			label = "image-0";
-			reg = <0x0000c000 0x32000>;
+			reg = <0x00010000 DT_SIZE_K(204)>;
 		};
-		slot1_partition: partition@3e000 {
+		slot1_partition: partition@43000 {
 			label = "image-1";
-			reg = <0x0003e000 0x32000>;
+			reg = <0x00043000 DT_SIZE_K(204)>;
 		};
-		scratch_partition: partition@70000 {
-			label = "image-scratch";
-			reg = <0x00070000 0xa000>;
-		};
-		storage_partition: partition@7a000 {
+		storage_partition: partition@76000 {
 			label = "storage";
-			reg = <0x0007a000 0x00006000>;
+			reg = <0x00076000 DT_SIZE_K(40)>;
 		};
 	};
 };

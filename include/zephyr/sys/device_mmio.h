@@ -101,8 +101,8 @@ static inline void device_map(mm_reg_t *virt_addr, uintptr_t phys_addr,
 	/* Pass along flags and add that we want supervisor mode
 	 * read-write access.
 	 */
-	z_phys_map((uint8_t **)virt_addr, phys_addr, size,
-		   flags | K_MEM_PERM_RW);
+	k_mem_map_phys_bare((uint8_t **)virt_addr, phys_addr, size,
+			    flags | K_MEM_PERM_RW);
 #else
 	ARG_UNUSED(size);
 	ARG_UNUSED(flags);
@@ -715,7 +715,7 @@ struct z_device_mmio_rom {
 #define DEVICE_MMIO_TOPLEVEL_MAP(name, flags) \
 	device_map(&Z_TOPLEVEL_RAM_NAME(name), \
 		   Z_TOPLEVEL_ROM_NAME(name).phys_addr, \
-		   Z_TOPLEVEL_ROM_NAME(name).size, flags)
+		   Z_TOPLEVEL_ROM_NAME(name).size, (flags))
 #else
 #define DEVICE_MMIO_TOPLEVEL_MAP(name, flags) do { } while (false)
 #endif

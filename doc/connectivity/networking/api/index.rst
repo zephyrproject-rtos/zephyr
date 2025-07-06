@@ -23,5 +23,4 @@ libraries for the application to use. See the list below for details.
    protocols.rst
    system_mgmt.rst
    tsn.rst
-   gsm_modem.rst
    zperf.rst

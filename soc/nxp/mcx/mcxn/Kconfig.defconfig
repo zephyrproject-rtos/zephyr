@@ -1,0 +1,40 @@
+# Copyright 2024-2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_MCXN
+
+config CORTEX_M_SYSTICK
+	default n if MCUX_LPTMR_TIMER
+
+config MFD
+	default y if DT_HAS_NXP_LP_FLEXCOMM_ENABLED
+
+config NUM_IRQS
+	default 155
+
+config ROM_START_OFFSET
+	default 0x400 if BOOTLOADER_MCUBOOT
+	default 0x1000 if !BOOTLOADER_MCUBOOT && FLASH_MCUX_FLEXSPI_XIP
+
+config MCUX_LPTMR_TIMER
+	default n if (DT_HAS_NXP_OS_TIMER_ENABLED || DT_HAS_ARM_ARMV8M_SYSTICK_ENABLED)
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 1000000 if MCUX_OS_TIMER
+	default 16000 if MCUX_LPTMR_TIMER
+	default 150000000 if CORTEX_M_SYSTICK
+
+config MCUX_FLASH_K4_API
+	default y if (SOC_MCXN947 || SOC_MCXN547) # Initially, only Nx4x uses the k4 driver
+
+# Set to the minimal size of data which can be written.
+config FLASH_FILL_BUFFER_SIZE
+	default 16 if (SOC_MCXN947 || SOC_MCXN547) # Initially, only Nx4x uses the k4 driver
+	default 128
+
+# The existing SAI diver cannot initialize the PLL on the board,
+# so the PLL settings will not be performed in the driver.
+config I2S_HAS_PLL_SETTING
+	default n
+
+endif # SOC_SERIES_MCXN

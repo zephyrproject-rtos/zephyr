@@ -9,22 +9,19 @@
 #include <zephyr/bluetooth/mesh.h>
 #include <zephyr/bluetooth/mesh/shell.h>
 
+#include "common/bt_shell_private.h"
 #include "utils.h"
-
-extern const struct shell *bt_mesh_shell_ctx_shell;
 
 static void status_print(int err, char *msg, uint16_t addr, struct bt_mesh_large_comp_data_rsp *rsp)
 {
 	if (err) {
-		shell_error(bt_mesh_shell_ctx_shell,
-			    "Failed to send %s Get message (err %d)", msg, err);
+		bt_shell_error("Failed to send %s Get message (err %d)", msg, err);
 		return;
 	}
 
-	shell_print(bt_mesh_shell_ctx_shell,
-		    "%s [0x%04x]: page: %u offset: %u total size: %u", msg, addr, rsp->page,
-		    rsp->offset, rsp->total_size);
-	shell_hexdump(bt_mesh_shell_ctx_shell, rsp->data->data, rsp->data->len);
+	bt_shell_print("%s [0x%04x]: page: %u offset: %u total size: %u", msg, addr, rsp->page,
+		       rsp->offset, rsp->total_size);
+	bt_shell_hexdump(rsp->data->data, rsp->data->len);
 }
 
 static int cmd_large_comp_data_get(const struct shell *sh, size_t argc, char *argv[])

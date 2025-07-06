@@ -8,6 +8,7 @@ supported:
   - adc
   - gpio
   - i2c
+  - i2s
   - watchdog
   - uart
   - dma
@@ -15,8 +16,4 @@ supported:
   - spi
   - counter
   - entropy
-testing:
-  ignore_tags:
-    - net
-    - bluetooth
 vendor: espressif

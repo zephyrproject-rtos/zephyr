@@ -1,8 +1,0 @@
-board:
-  name: bl5340_dvk
-  vendor: lairdconnect
-  socs:
-  - name: 'nrf5340'
-    variants:
-    - name: 'ns'
-      cpucluster: 'cpuapp'

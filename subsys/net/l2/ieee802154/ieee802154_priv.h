@@ -17,7 +17,7 @@
 #ifndef __IEEE802154_PRIV_H__
 #define __IEEE802154_PRIV_H__
 
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
 
@@ -63,7 +63,7 @@ int ieee802154_wait_for_clear_channel(struct net_if *iface);
  *        This function has side effects and must be called before each individual transmission
  *        attempt.
  *
- *        This function checks for and supports both, software and hardware acknowlegement,
+ *        This function checks for and supports both, software and hardware acknowledgement,
  *        depending on driver capabilities.
  *
  *        See sections 6.7.4.1 through 6.7.4.3.
@@ -72,7 +72,7 @@ int ieee802154_wait_for_clear_channel(struct net_if *iface);
  * @param pkt A valid pointer on a packet to send
  * @param frag The fragment that needs to be acknowledged
  *
- * @return true if the given packet requires acknowlegement, false otherwise.
+ * @return true if the given packet requires acknowledgement, false otherwise.
  */
 bool ieee802154_prepare_for_ack(struct net_if *iface, struct net_pkt *pkt, struct net_buf *frag);
 
@@ -84,14 +84,14 @@ bool ieee802154_prepare_for_ack(struct net_if *iface, struct net_pkt *pkt, struc
  * This function has side effects and must be called after each transmission attempt if (and only
  * if) @ref ieee802154_prepare_for_ack() had been called before.
  *
- * This function checks for and supports both, software and hardware acknowlegement, depending on
+ * This function checks for and supports both, software and hardware acknowledgement, depending on
  * driver capabilities.
  *
  * @param iface A valid pointer on the network the packet was transmitted to
  * @param ack_required The return value from the corresponding call to
  *        @ref ieee802154_prepare_for_ack()
  *
- * @return 0 if no ACK was required or the exected ACK was received in time, -EIO if the expected
+ * @return 0 if no ACK was required or the expected ACK was received in time, -EIO if the expected
  *         ACK was not received within the standard compliant timeout.
  */
 int ieee802154_wait_for_ack(struct net_if *iface, bool ack_required);

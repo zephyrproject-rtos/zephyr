@@ -15,7 +15,7 @@
 #include <zephyr/sys/linear_range.h>
 
 #include "zephyr/logging/log.h"
-LOG_MODULE_REGISTER(max20335_charger);
+LOG_MODULE_REGISTER(max20335_charger, CONFIG_CHARGER_LOG_LEVEL);
 
 #define MAX20335_REG_STATUSA 0x02
 #define MAX20335_REG_STATUSB 0x03
@@ -646,7 +646,7 @@ static int max20335_init(const struct device *dev)
 	return 0;
 }
 
-static const struct charger_driver_api max20335_driver_api = {
+static DEVICE_API(charger, max20335_driver_api) = {
 	.get_property = max20335_get_prop,
 	.set_property = max20335_set_prop,
 	.charge_enable = max20335_set_enabled,

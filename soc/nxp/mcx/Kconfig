@@ -1,42 +1,15 @@
 # Copyright 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_FAMILY_NXP_MCX
-	select HAS_SEGGER_RTT
-	select CLOCK_CONTROL
-	select ARM
+# Do NOT select anything from the MCX family kconfig,
+# and do not make it a dependency of anything else.
+# If there is some similarity between series,
+# use if SERIES_A || SERIES_B or something of that
+# effect rather than the family config.
+# This is because MCX series is expected to be very diverse.
 
 if SOC_FAMILY_NXP_MCX
 
 rsource "*/Kconfig"
-
-if FLASH_MCUX_FLEXSPI_XIP
-
-# Avoid RWW hazards by defaulting logging to disabled
-choice FLASH_LOG_LEVEL_CHOICE
-	default FLASH_LOG_LEVEL_OFF
-endchoice
-
-choice MEMC_LOG_LEVEL_CHOICE
-	default MEMC_LOG_LEVEL_OFF
-endchoice
-
-endif
-
-if FLASH_MCUX_FLEXSPI_XIP
-
-# Code relocation is needed when FLASH_MCUX_FLEXSPI_XIP is enabled
-config CODE_DATA_RELOCATION_SRAM
-	default y
-
-config FLASH_MCUX_FLEXSPI_XIP_MEM
-	string
-	default "RAM"
-
-endif # FLASH_MCUX_FLEXSPI_XIP
-
-config MFD
-	default y
-	depends on DT_HAS_NXP_LP_FLEXCOMM_ENABLED
 
 endif # SOC_FAMILY_NXP_MCX

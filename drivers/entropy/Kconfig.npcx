@@ -54,6 +54,6 @@ config ENTROPY_NPCX_DRBG_RESEED_INTERVAL
 	int "DRBG Reseed Interval"
 	default 100
 	help
-	   Number of gererations allowed until next reseeding.
+	   Number of generations allowed until next reseeding.
 
 endif

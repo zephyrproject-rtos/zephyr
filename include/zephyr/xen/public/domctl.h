@@ -38,7 +38,7 @@ struct xen_domctl_createdomain {
 /* Use hardware-assisted paging if available? */
 #define _XEN_DOMCTL_CDF_hap		1
 #define XEN_DOMCTL_CDF_hap		(1U << _XEN_DOMCTL_CDF_hap)
-/* Should domain memory integrity be verifed by tboot during Sx? */
+/* Should domain memory integrity be verified by tboot during Sx? */
 #define _XEN_DOMCTL_CDF_s3_integrity	2
 #define XEN_DOMCTL_CDF_s3_integrity	(1U << _XEN_DOMCTL_CDF_s3_integrity)
 /* Disable out-of-sync shadow page tables? */

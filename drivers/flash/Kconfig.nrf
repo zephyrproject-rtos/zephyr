@@ -7,6 +7,13 @@ config FLASH_NRF_FORCE_ALT
 	  This option can be enabled to force an alternative implementation
 	  of the flash driver.
 
+config SOC_FLASH_NRF_CUSTOM_CONTEXT
+	bool "Nordic nRFx flash driver operation custom context"
+	depends on SOC_COMPATIBLE_NRF
+	help
+	  Enable pointer to custom context, for drivers that need to store additional data,
+	  not covered by the structure.
+
 menuconfig SOC_FLASH_NRF
 	bool "Nordic Semiconductor nRF flash driver"
 	default y
@@ -17,6 +24,7 @@ menuconfig SOC_FLASH_NRF
 	depends on !FLASH_NRF_FORCE_ALT
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_EXPLICIT_ERASE
 	select NRFX_NVMC
 	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
 	help
@@ -36,7 +44,7 @@ config SOC_FLASH_NRF_RADIO_SYNC_TICKER
 	depends on BT_LL_SW_SPLIT
 	help
 	  Enable synchronization between flash memory driver and radio using
-	  BLE LL controller ticker API.
+	  Bluetooth LE LL controller ticker API.
 
 config SOC_FLASH_NRF_RADIO_SYNC_NONE
 	bool "none"

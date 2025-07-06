@@ -1,0 +1,11 @@
+/*
+ * Copyright 2025 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * To test this sample
+ * mimxrt685_evk/mimxrt685s/cm33 Short J27-1 to J27-2
+ */
+
+dut: &flexcomm4 { };

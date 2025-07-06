@@ -13,7 +13,9 @@
 
 #include <zephyr/types.h>
 #include <stddef.h>
+#include <string.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
 
 #define BSWAP_16(x) ((uint16_t) ((((x) >> 8) & 0xff) | (((x) & 0xff) << 8)))
@@ -716,6 +718,134 @@ static inline void sys_mem_swap(void *buf, size_t length)
 
 		((uint8_t *)buf)[i] = ((uint8_t *)buf)[length - 1 - i];
 		((uint8_t *)buf)[length - 1 - i] = tmp;
+	}
+}
+
+/**
+ *  @brief Convert buffer from little-endian to host endianness.
+ *
+ * @param buf A valid pointer on a memory area to convert from little-endian to host endianness.
+ * @param length Size of buf memory area
+ */
+static inline void sys_le_to_cpu(void *buf, size_t length)
+{
+	if (IS_ENABLED(CONFIG_BIG_ENDIAN)) {
+		sys_mem_swap(buf, length);
+	}
+}
+
+/**
+ *  @brief Convert buffer from host endianness to little-endian.
+ *
+ * @param buf A valid pointer on a memory area to convert from host endianness to little-endian.
+ * @param length Size of buf memory area
+ */
+static inline void sys_cpu_to_le(void *buf, size_t length)
+{
+	if (IS_ENABLED(CONFIG_BIG_ENDIAN)) {
+		sys_mem_swap(buf, length);
+	}
+}
+
+/**
+ *  @brief Convert buffer from big-endian to host endianness.
+ *
+ * @param buf A valid pointer on a memory area to convert from big-endian to host endianness.
+ * @param length Size of buf memory area
+ */
+static inline void sys_be_to_cpu(void *buf, size_t length)
+{
+	if (IS_ENABLED(CONFIG_LITTLE_ENDIAN)) {
+		sys_mem_swap(buf, length);
+	}
+}
+
+/**
+ *  @brief Convert buffer from host endianness to big-endian.
+ *
+ * @param buf A valid pointer on a memory area to convert from host endianness to big-endian.
+ * @param length Size of buf memory area
+ */
+static inline void sys_cpu_to_be(void *buf, size_t length)
+{
+	if (IS_ENABLED(CONFIG_LITTLE_ENDIAN)) {
+		sys_mem_swap(buf, length);
+	}
+}
+
+/**
+ *  @brief Put a buffer as little-endian to arbitrary location.
+ *
+ *  Put a buffer originally in host endianness, to a
+ *  potentially unaligned memory location in little-endian format.
+ *
+ * @param dst A valid pointer on a memory area where to copy the data in
+ * @param src A valid pointer on a memory area where to copy the data from
+ * @param length Size of both dst and src memory areas
+ */
+static inline void sys_put_le(void *dst, const void *src, size_t length)
+{
+	if (IS_ENABLED(CONFIG_LITTLE_ENDIAN)) {
+		(void)memcpy(dst, src, length);
+	} else {
+		sys_memcpy_swap(dst, src, length);
+	}
+}
+
+/**
+ *  @brief Put a buffer as big-endian to arbitrary location.
+ *
+ *  Put a buffer originally in host endianness, to a
+ *  potentially unaligned memory location in big-endian format.
+ *
+ * @param dst A valid pointer on a memory area where to copy the data in
+ * @param src A valid pointer on a memory area where to copy the data from
+ * @param length Size of both dst and src memory areas
+ */
+static inline void sys_put_be(void *dst, const void *src, size_t length)
+{
+	if (IS_ENABLED(CONFIG_LITTLE_ENDIAN)) {
+		sys_memcpy_swap(dst, src, length);
+	} else {
+		(void)memcpy(dst, src, length);
+	}
+}
+
+/**
+ *  @brief Get a buffer stored in little-endian format.
+ *
+ *  Get a buffer, stored in little-endian format in a potentially
+ *  unaligned memory location, and convert it to the host endianness.
+ *
+ * @param dst A valid pointer on a memory area where to copy the data in
+ * @param src A valid pointer on a memory area where to copy the data from
+ * @param length Size of both dst and src memory areas
+ */
+static inline void sys_get_le(void *dst, const void *src, size_t length)
+{
+	if (IS_ENABLED(CONFIG_LITTLE_ENDIAN)) {
+		(void)memcpy(dst, src, length);
+	} else {
+		sys_memcpy_swap(dst, src, length);
+	}
+}
+
+/**
+ *  @brief Get a buffer stored in big-endian format.
+ *
+ *  Get a buffer, stored in big-endian format in a potentially
+ *  unaligned memory location, and convert it to the host endianness.
+ *
+ * @param dst A valid pointer on a memory area where to copy the data in
+ * @param src A valid pointer on a memory area where to copy the data from
+ * @param length Size of both dst and src memory areas
+ */
+static inline void sys_get_be(void *dst, const void *src, size_t length)
+{
+	if (IS_ENABLED(CONFIG_LITTLE_ENDIAN)) {
+		sys_memcpy_swap(dst, src, length);
+	} else {
+		(void)memcpy(dst, src, length);
 	}
 }
 

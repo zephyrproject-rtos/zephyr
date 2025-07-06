@@ -19,22 +19,22 @@
  */
 ZTEST(posix_headers, test_dirent_h)
 {
+#ifdef CONFIG_POSIX_API
 	zassert_not_equal((DIR *)-1, (DIR *)NULL);
 
 	zassert_not_equal(-1, offsetof(struct dirent, d_ino));
 	zassert_not_equal(-1, offsetof(struct dirent, d_name));
 
-	if (IS_ENABLED(CONFIG_POSIX_API)) {
-		/* zassert_not_null(alphasort); */ /* not implemented */
-		zassert_not_null(closedir);
-		/* zassert_not_null(dirfd); */ /* not implemented */
-		/* zassert_not_null(fdopendir); */ /* not implemented */
-		zassert_not_null(opendir);
-		zassert_not_null(readdir);
-		/* zassert_not_null(readdir_r); */ /* not implemented */
-		/* zassert_not_null(rewinddir); */ /* not implemented */
-		/* zassert_not_null(scandir); */ /* not implemented */
-		/* zassert_not_null(seekdir); */ /* not implemented */
-		/* zassert_not_null(telldir); */ /* not implemented */
-	}
+	/* zassert_not_null(alphasort); */ /* not implemented */
+	zassert_not_null(closedir);
+	/* zassert_not_null(dirfd); */     /* not implemented */
+	/* zassert_not_null(fdopendir); */ /* not implemented */
+	zassert_not_null(opendir);
+	zassert_not_null(readdir);
+	zassert_not_null(readdir_r);
+	/* zassert_not_null(rewinddir); */ /* not implemented */
+	/* zassert_not_null(scandir); */   /* not implemented */
+	/* zassert_not_null(seekdir); */   /* not implemented */
+	/* zassert_not_null(telldir); */   /* not implemented */
+#endif
 }

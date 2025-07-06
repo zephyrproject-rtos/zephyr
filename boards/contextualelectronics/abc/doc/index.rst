@@ -1,7 +1,4 @@
-.. _contextualelectronics_abc:
-
-Contextual Electronics Advanced BLE Cell
-########################################
+.. zephyr:board:: contextualelectronics_abc
 
 Overview
 ********
@@ -21,12 +18,6 @@ Nordic Semiconductor nRF52840 ARM Cortex-M4F CPU and the following devices:
 * :abbr:`UART (Universal asynchronous receiver-transmitter)`
 * Quectel BG95 Modem
 
-.. figure:: img/contextualelectronics_abc.jpg
-     :align: center
-     :alt: Contextual Electronics Advanced BLE Cell
-
-     Contextual Electronics Advanced BLE Cell (Credit: Chris Gamell)
-
 More information about the board can be found at the `ABC Board website`_.
 The `Nordic Semiconductor Infocenter`_ contains the processor's information
 and the datasheet.
@@ -44,44 +35,16 @@ is 32.768 kHz. The frequency of the main clock is 32 MHz.
 Supported Features
 ==================
 
-The contextualelectronics_abc board configuration supports the following
-hardware features:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C(M)    | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| RTT       | Segger     | console              |
-+-----------+------------+----------------------+
-| SPI(M)    | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| Modem     | on-board   | quectel_bg9x         |
-+-----------+------------+----------------------+
-
-Other hardware features have not been enabled yet for this board.
 See `ABC Board website`_ for more details on this board, and
 `Nordic Semiconductor Infocenter`_ for a complete list of SoC
 features.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``contextualelectronics_abc`` board configuration can be
 built and flashed in the usual way (see :ref:`build_an_application`
@@ -93,7 +56,7 @@ Flashing
 Flashing Zephyr onto the ``contextualelectronics_abc`` board requires
 an external programmer. The programmer is attached to the SWD header.
 
-Build the Zephyr kernel and the :ref:`hello_world` sample application.
+Build the Zephyr kernel and the :zephyr:code-sample:`hello_world` sample application.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world

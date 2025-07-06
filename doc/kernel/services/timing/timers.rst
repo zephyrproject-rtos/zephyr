@@ -22,11 +22,11 @@ is referenced by its memory address.
 A timer has the following key properties:
 
 * A **duration** specifying the time interval before the timer
-  expires for the first time.  This is a ``k_timeout_t`` value that
+  expires for the first time.  This is a :c:type:`k_timeout_t` value that
   may be initialized via different units.
 
 * A **period** specifying the time interval between all timer
-  expirations after the first one, also a ``k_timeout_t``. It must be
+  expirations after the first one, also a :c:type:`k_timeout_t`. It must be
   non-negative.  A period of ``K_NO_WAIT`` (i.e. zero) or
   ``K_FOREVER`` means that the timer is a one-shot timer that stops
   after a single expiration. (For example then, if a timer is started

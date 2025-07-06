@@ -5,10 +5,13 @@ description: Zephyr CAN driver using Linux SocketCAN
 
 compatible: "zephyr,native-linux-can"
 
-include: can-controller.yaml
+include: can-fd-controller.yaml
 
 properties:
   host-interface:
     type: string
     required: true
-    description: Linux host interface name (e.g. zcan0, vcan0, can0, ...)
+    description: |
+      Linux host interface name (e.g. zcan0, vcan0, can0, ...).
+      This property can be overridden using the --can-if command-line
+      option. Note that it applies for every instance of this driver.

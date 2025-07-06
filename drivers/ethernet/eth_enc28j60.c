@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <ethernet/eth_stats.h>
 
 #include "eth_enc28j60_priv.h"
+#include "eth.h"
 
 #define D10D24S 11
 
@@ -70,7 +71,7 @@ static void eth_enc28j60_set_bank(const struct device *dev, uint16_t reg_addr)
 
 	if (!spi_transceive_dt(&config->spi, &tx, &rx)) {
 		buf[0] = ENC28J60_SPI_WCR | ENC28J60_REG_ECON1;
-		buf[1] = (buf[1] & 0xFC) | ((reg_addr >> 8) & 0x0F);
+		buf[1] = (buf[1] & 0xFC) | ((reg_addr >> 8) & 0x03);
 
 		spi_write_dt(&config->spi, &tx);
 	} else {
@@ -527,6 +528,18 @@ static int eth_enc28j60_tx(const struct device *dev, struct net_pkt *pkt)
 
 	if (tx_end & ENC28J60_BIT_ESTAT_TXABRT) {
 		LOG_ERR("%s: TX failed!", dev->name);
+
+		/* 12.1.3 "TRANSMIT ERROR INTERRUPT FLAG (TXERIF)" states:
+		 *
+		 * "After determining the problem and solution, the
+		 * host controller should clear the LATECOL (if set) and
+		 * TXABRT bits so that future aborts can be detected
+		 * accurately."
+		 */
+		eth_enc28j60_clear_eth_reg(dev, ENC28J60_REG_ESTAT,
+					   ENC28J60_BIT_ESTAT_TXABRT
+					   | ENC28J60_BIT_ESTAT_LATECOL);
+
 		return -EIO;
 	}
 
@@ -670,6 +683,13 @@ static int eth_enc28j60_rx(const struct device *dev)
 
 	k_sem_give(&context->tx_rx_sem);
 
+	/* Clear a potential Receive Error Interrupt Flag bit (RX buffer full).
+	 * PKTIF was automatically cleared in eth_enc28j60_rx() when EPKTCNT
+	 * reached zero, so no need to clear it.
+	 */
+	eth_enc28j60_clear_eth_reg(dev, ENC28J60_REG_EIR,
+				   ENC28J60_BIT_EIR_RXERIF);
+
 	return 0;
 }
 
@@ -685,14 +705,13 @@ static void eth_enc28j60_rx_thread(void *p1, void *p2, void *p3)
 	while (true) {
 		k_sem_take(&context->int_sem, K_FOREVER);
 
+		/* Disable interrupts during processing, otherwise there's a small race
+		 * window where we can miss one!
+		 */
+		eth_enc28j60_clear_eth_reg(dev, ENC28J60_REG_EIE, ENC28J60_BIT_EIE_INTIE);
+
 		eth_enc28j60_read_reg(dev, ENC28J60_REG_EIR, &int_stat);
-		if (int_stat & ENC28J60_BIT_EIR_PKTIF) {
-			eth_enc28j60_rx(dev);
-			/* Clear rx interruption flag */
-			eth_enc28j60_clear_eth_reg(dev, ENC28J60_REG_EIR,
-						   ENC28J60_BIT_EIR_PKTIF
-						   | ENC28J60_BIT_EIR_RXERIF);
-		} else if (int_stat & ENC28J60_BIT_EIR_LINKIF) {
+		if (int_stat & ENC28J60_BIT_EIR_LINKIF) {
 			uint16_t phir;
 			uint16_t phstat2;
 			/* Clear link change interrupt flag by PHIR reg read */
@@ -700,7 +719,14 @@ static void eth_enc28j60_rx_thread(void *p1, void *p2, void *p3)
 			eth_enc28j60_read_phy(dev, ENC28J60_PHY_PHSTAT2, &phstat2);
 			if (phstat2 & ENC28J60_BIT_PHSTAT2_LSTAT) {
 				LOG_INF("%s: Link up", dev->name);
-				net_eth_carrier_on(context->iface);
+				/* We may have been interrupted before L2 init complete
+				 * If so flag that the carrier should be set on in init
+				 */
+				if (context->iface_initialized) {
+					net_eth_carrier_on(context->iface);
+				} else {
+					context->iface_carrier_on_init = true;
+				}
 			} else {
 				LOG_INF("%s: Link down", dev->name);
 
@@ -709,6 +735,14 @@ static void eth_enc28j60_rx_thread(void *p1, void *p2, void *p3)
 				}
 			}
 		}
+
+		/* We cannot rely on the PKTIF flag because of errata 6. Call
+		 * eth_enc28j60_rx() unconditionally. It will check EPKTCNT instead.
+		 */
+		eth_enc28j60_rx(dev);
+
+		/* Now that the IRQ line was released, enable interrupts back */
+		eth_enc28j60_set_eth_reg(dev, ENC28J60_REG_EIE, ENC28J60_BIT_EIE_INTIE);
 	}
 }
 
@@ -716,11 +750,44 @@ static enum ethernet_hw_caps eth_enc28j60_get_capabilities(const struct device *
 {
 	ARG_UNUSED(dev);
 
-	return ETHERNET_LINK_10BASE_T
+	return ETHERNET_LINK_10BASE
 #if defined(CONFIG_NET_VLAN)
 		| ETHERNET_HW_VLAN
 #endif
 		;
+}
+
+static int eth_enc28j60_set_config(const struct device *dev,
+				   enum ethernet_config_type type,
+				   const struct ethernet_config *config)
+{
+	struct eth_enc28j60_runtime *context = dev->data;
+
+	/* Compile time check that the memcpy below won't overflow */
+	BUILD_ASSERT(sizeof(context->mac_address) <= sizeof(config->mac_address.addr),
+		     "ENC28j60 Runtime MAC address buffer too small");
+
+	if (type == ETHERNET_CONFIG_TYPE_MAC_ADDRESS) {
+		memcpy(context->mac_address, config->mac_address.addr,
+		       sizeof(config->mac_address.addr));
+		eth_enc28j60_init_mac(dev);
+
+		if (context->iface != NULL) {
+			net_if_set_link_addr(context->iface, context->mac_address,
+					     sizeof(context->mac_address),
+					     NET_LINK_ETHERNET);
+		}
+
+		LOG_INF("Set cfg - MAC %02x:%02x:%02x:%02x:%02x:%02x",
+			context->mac_address[0], context->mac_address[1],
+			context->mac_address[2], context->mac_address[3],
+			context->mac_address[4], context->mac_address[5]);
+
+		return 0;
+	}
+
+	/* Only mac address config supported */
+	return -ENOTSUP;
 }
 
 static void eth_enc28j60_iface_init(struct net_if *iface)
@@ -738,13 +805,18 @@ static void eth_enc28j60_iface_init(struct net_if *iface)
 
 	ethernet_init(iface);
 
-	net_if_carrier_off(iface);
+	/* The device may have already interrupted us to flag link UP */
+	if (context->iface_carrier_on_init) {
+		net_if_carrier_on(iface);
+	} else {
+		net_if_carrier_off(iface);
+	}
 	context->iface_initialized = true;
 }
 
 static const struct ethernet_api api_funcs = {
 	.iface_api.init		= eth_enc28j60_iface_init,
-
+	.set_config		= eth_enc28j60_set_config,
 	.get_capabilities	= eth_enc28j60_get_capabilities,
 	.send			= eth_enc28j60_tx,
 };
@@ -789,10 +861,19 @@ static int eth_enc28j60_init(const struct device *dev)
 	/* Errata B7/1 */
 	k_busy_wait(D10D24S);
 
-	/* Assign octets not previously taken from devicetree */
-	context->mac_address[0] = MICROCHIP_OUI_B0;
-	context->mac_address[1] = MICROCHIP_OUI_B1;
-	context->mac_address[2] = MICROCHIP_OUI_B2;
+	/* Apply a random MAC address if requested in DT */
+	if (config->random_mac) {
+		gen_random_mac(context->mac_address, MICROCHIP_OUI_B0, MICROCHIP_OUI_B1,
+			       MICROCHIP_OUI_B2);
+		LOG_INF("Random MAC Addr %02x:%02x:%02x:%02x:%02x:%02x", context->mac_address[0],
+			context->mac_address[1], context->mac_address[2], context->mac_address[3],
+			context->mac_address[4], context->mac_address[5]);
+	} else {
+		/* Assign octets not previously taken from devicetree */
+		context->mac_address[0] = MICROCHIP_OUI_B0;
+		context->mac_address[1] = MICROCHIP_OUI_B1;
+		context->mac_address[2] = MICROCHIP_OUI_B2;
+	}
 
 	if (eth_enc28j60_init_buffers(dev)) {
 		return -ETIMEDOUT;
@@ -838,6 +919,7 @@ static int eth_enc28j60_init(const struct device *dev)
 		.full_duplex = DT_INST_PROP(0, full_duplex),                                       \
 		.timeout = CONFIG_ETH_ENC28J60_TIMEOUT,                                            \
 		.hw_rx_filter = DT_INST_PROP_OR(inst, hw_rx_filter, ENC28J60_RECEIVE_FILTERS),     \
+		.random_mac = DT_INST_PROP(inst, zephyr_random_mac_address),                    \
 	};                                                                                         \
                                                                                                    \
 	ETH_NET_DEVICE_DT_INST_DEFINE(inst, eth_enc28j60_init, NULL, &eth_enc28j60_runtime_##inst, \

@@ -9,6 +9,7 @@ config SOC_SERIES_IMX6SX
 	select CPU_HAS_FPU
 	select CPU_HAS_ARM_MPU
 	select CLOCK_CONTROL
+	select SOC_EARLY_INIT_HOOK
 
 config SOC_MCIMX6X_M4
 	select HAS_IMX_HAL

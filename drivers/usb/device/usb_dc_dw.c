@@ -128,12 +128,12 @@ static int usb_dw_init_pinctrl(const struct usb_dw_config *const config)
 #define USB_DW_GET_COMPAT_QUIRK_NONE(n)	NULL
 
 #define USB_DW_GET_COMPAT_CLK_QUIRK_0(n)					\
-	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_DRV_INST(n), st_stm32f4_fsotg),	\
+	COND_CODE_1(DT_INST_NODE_HAS_COMPAT(n, st_stm32f4_fsotg),		\
 		    (clk_enable_st_stm32f4_fsotg_##n),				\
 		    USB_DW_GET_COMPAT_QUIRK_NONE(n))
 
 #define USB_DW_GET_COMPAT_PWR_QUIRK_0(n)					\
-	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_DRV_INST(n), st_stm32f4_fsotg),	\
+	COND_CODE_1(DT_INST_NODE_HAS_COMPAT(n, st_stm32f4_fsotg),		\
 		    (pwr_on_st_stm32f4_fsotg),					\
 		    USB_DW_GET_COMPAT_QUIRK_NONE(n))
 

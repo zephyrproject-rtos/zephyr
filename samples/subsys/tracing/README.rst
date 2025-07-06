@@ -33,7 +33,9 @@ or:
 	:goals: build
 	:compact:
 
-.. note:: You may need to set "zephyr,tracing-uart" property under the chosen node in your devicetree. See :zephyr_file:`boards/mps2_an521.overlay` for an example.
+.. note::
+   You may need to set "zephyr,tracing-uart" property under the chosen node in your devicetree.
+   See :zephyr_file:`samples/subsys/tracing/boards/mps2_an521_cpu0.overlay` for an example.
 
 After the application has run for a while, check the trace output file.
 
@@ -44,16 +46,7 @@ Build a USB-tracing image with:
 
 .. zephyr-app-commands::
 	:zephyr-app: samples/subsys/tracing
-	:board: sam_e70_xplained/same70q21
-	:conf: "prj_usb.conf"
-	:goals: build
-	:compact:
-
-or:
-
-.. zephyr-app-commands::
-	:zephyr-app: samples/subsys/tracing
-	:board: sam_e70_xplained/same70q21
+	:board: reel_board
 	:conf: "prj_usb_ctf.conf"
 	:goals: build
 	:compact:
@@ -72,7 +65,7 @@ run the :zephyr_file:`scripts/tracing/trace_capture_usb.py` script on the host:
 
 .. code-block:: console
 
-	sudo python3 trace_capture_usb.py -v 0x2FE9 -p 0x100 -o channel0_0
+	sudo python3 trace_capture_usb.py -v 0x2FE3 -p 0x0001 -o channel0_0
 
 The VID and PID of USB device can be configured, just adjusting it accordingly.
 
@@ -107,6 +100,34 @@ Build a USER-tracing image with:
 	:zephyr-app: samples/subsys/tracing
 	:board: qemu_x86
 	:conf: "prj_user.conf"
+	:goals: build
+	:compact:
+
+After the application has run for a while, check the trace output file.
+
+Usage for SEGGER SystemView RTT
+*******************************
+
+Build a SystemView-tracing image with the :ref:`snippet-rtt-tracing`:
+
+.. zephyr-app-commands::
+	:zephyr-app: samples/subsys/tracing
+	:board: frdm_k64f
+	:snippets: rtt-tracing
+	:goals: build
+	:compact:
+
+After the application has run for a while, check the trace output file.
+
+Usage for GPIO Tracing Backend
+*******************************
+
+Build a GPIO-tracing image with:
+
+.. zephyr-app-commands::
+	:zephyr-app: samples/subsys/tracing
+	:board: native_sim
+	:conf: "prj_gpio.conf"
 	:goals: build
 	:compact:
 

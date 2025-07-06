@@ -1,0 +1,29 @@
+#
+# Copyright (c) 2019-2021 Linaro Limited
+# Copyright 2024-2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: mps3/corstone300/an547
+name: Arm MPS3-Corstone300-AN547
+type: mcu
+arch: arm
+ram: 512
+flash: 512
+simulation:
+  - name: qemu
+  - name: armfvp
+toolchain:
+  - gnuarmemb
+  - zephyr
+supported:
+  - gpio
+testing:
+  default: true
+  ignore_tags:
+    - drivers
+    - bluetooth
+    - net
+    - timer
+vendor: arm

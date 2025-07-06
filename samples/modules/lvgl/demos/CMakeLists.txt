@@ -66,16 +66,17 @@ target_sources_ifdef(CONFIG_LV_USE_DEMO_MUSIC app PRIVATE
 )
 
 target_sources_ifdef(CONFIG_LV_USE_DEMO_BENCHMARK app PRIVATE
+    ${LVGL_DIR}/demos/benchmark/assets/img_benchmark_avatar.c
+    ${LVGL_DIR}/demos/benchmark/assets/img_benchmark_lvgl_logo_argb.c
+    ${LVGL_DIR}/demos/benchmark/assets/img_benchmark_lvgl_logo_rgb.c
+    ${LVGL_DIR}/demos/benchmark/assets/lv_font_benchmark_montserrat_12_aligned.c
+    ${LVGL_DIR}/demos/benchmark/assets/lv_font_benchmark_montserrat_14_aligned.c
+    ${LVGL_DIR}/demos/benchmark/assets/lv_font_benchmark_montserrat_16_aligned.c
+    ${LVGL_DIR}/demos/benchmark/assets/lv_font_benchmark_montserrat_18_aligned.c
+    ${LVGL_DIR}/demos/benchmark/assets/lv_font_benchmark_montserrat_20_aligned.c
+    ${LVGL_DIR}/demos/benchmark/assets/lv_font_benchmark_montserrat_24_aligned.c
+    ${LVGL_DIR}/demos/benchmark/assets/lv_font_benchmark_montserrat_26_aligned.c
     ${LVGL_DIR}/demos/benchmark/lv_demo_benchmark.c
-    ${LVGL_DIR}/demos/benchmark/assets/img_benchmark_cogwheel_indexed16.c
-    ${LVGL_DIR}/demos/benchmark/assets/lv_font_bechmark_montserrat_28_compr_az.c.c
-    ${LVGL_DIR}/demos/benchmark/assets/lv_font_bechmark_montserrat_16_compr_az.c.c
-    ${LVGL_DIR}/demos/benchmark/assets/img_benchmark_cogwheel_argb.c
-    ${LVGL_DIR}/demos/benchmark/assets/img_benchmark_cogwheel_alpha16.c
-    ${LVGL_DIR}/demos/benchmark/assets/img_benchmark_cogwheel_rgb.c
-    ${LVGL_DIR}/demos/benchmark/assets/lv_font_bechmark_montserrat_12_compr_az.c.c
-    ${LVGL_DIR}/demos/benchmark/assets/img_benchmark_cogwheel_chroma_keyed.c
-    ${LVGL_DIR}/demos/benchmark/assets/img_benchmark_cogwheel_rgb565a8.c
 )
 
 target_sources_ifdef(CONFIG_LV_USE_DEMO_STRESS app PRIVATE
@@ -85,6 +86,25 @@ target_sources_ifdef(CONFIG_LV_USE_DEMO_STRESS app PRIVATE
 target_sources_ifdef(CONFIG_LV_USE_DEMO_WIDGETS app PRIVATE
     ${LVGL_DIR}/demos/widgets/assets/img_clothes.c
     ${LVGL_DIR}/demos/widgets/assets/img_demo_widgets_avatar.c
+    ${LVGL_DIR}/demos/widgets/assets/img_demo_widgets_needle.c
     ${LVGL_DIR}/demos/widgets/assets/img_lvgl_logo.c
     ${LVGL_DIR}/demos/widgets/lv_demo_widgets.c
+)
+
+target_sources_ifdef(CONFIG_LV_USE_DEMO_KEYPAD_AND_ENCODER app PRIVATE
+    ${LVGL_DIR}/demos/keypad_encoder/lv_demo_keypad_encoder.c
+)
+
+target_sources_ifdef(CONFIG_LV_USE_DEMO_RENDER app PRIVATE
+    ${LVGL_DIR}/demos/render/assets/img_render_arc_bg.c
+    ${LVGL_DIR}/demos/render/assets/img_render_lvgl_logo_argb8888.c
+    ${LVGL_DIR}/demos/render/assets/img_render_lvgl_logo_argb8888_premultiplied.c
+    ${LVGL_DIR}/demos/render/assets/img_render_lvgl_logo_i1.c
+    ${LVGL_DIR}/demos/render/assets/img_render_lvgl_logo_l8.c
+    ${LVGL_DIR}/demos/render/assets/img_render_lvgl_logo_rgb565a8.c
+    ${LVGL_DIR}/demos/render/assets/img_render_lvgl_logo_rgb565.c
+    ${LVGL_DIR}/demos/render/assets/img_render_lvgl_logo_rgb565_swapped.c
+    ${LVGL_DIR}/demos/render/assets/img_render_lvgl_logo_rgb888.c
+    ${LVGL_DIR}/demos/render/assets/img_render_lvgl_logo_xrgb8888.c
+    ${LVGL_DIR}/demos/render/lv_demo_render.c
 )

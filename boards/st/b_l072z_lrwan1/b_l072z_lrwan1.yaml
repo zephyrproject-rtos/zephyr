@@ -5,7 +5,6 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 ram: 20
 flash: 192
 testing:
@@ -20,4 +19,5 @@ supported:
   - eeprom
   - nvs
   - lora
+  - usbd
 vendor: st

@@ -5,3 +5,11 @@ description: Zephyr I2C target EEPROM
 compatible: "zephyr,i2c-target-eeprom"
 
 include: ["eeprom-base.yaml", i2c-device.yaml]
+
+properties:
+  address-width:
+    type: int
+    enum: [8, 16]
+    description: |
+      Number of address bits used to address the EEPROM. If not specified
+      the EEPROM is assumed to have a 8-bit address.

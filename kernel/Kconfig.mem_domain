@@ -1,0 +1,79 @@
+# Kernel configuration options
+
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Memory Domains"
+
+config MAX_DOMAIN_PARTITIONS
+	int "Maximum number of partitions per memory domain"
+	default 16
+	range 0 $(UINT8_MAX)
+	depends on USERSPACE
+	help
+	  Configure the maximum number of partitions per memory domain.
+
+config ARCH_MEM_DOMAIN_DATA
+	bool
+	depends on USERSPACE
+	help
+	  This hidden option is selected by the target architecture if
+	  architecture-specific data is needed on a per memory domain basis.
+	  If so, the architecture defines a 'struct arch_mem_domain' which is
+	  embedded within every struct k_mem_domain. The architecture
+	  must also define the arch_mem_domain_init() function to set this up
+	  when a memory domain is created.
+
+	  Typical uses might be a set of page tables for that memory domain.
+
+config ARCH_MEM_DOMAIN_SYNCHRONOUS_API
+	bool
+	depends on USERSPACE
+	help
+	  This hidden option is selected by the target architecture if
+	  modifying a memory domain's partitions at runtime, or changing
+	  a memory domain's thread membership requires synchronous calls
+	  into the architecture layer.
+
+	  If enabled, the architecture layer must implement the following
+	  APIs:
+
+	  arch_mem_domain_thread_add
+	  arch_mem_domain_thread_remove
+	  arch_mem_domain_partition_remove
+	  arch_mem_domain_partition_add
+
+	  It's important to note that although supervisor threads can be
+	  members of memory domains, they have no implications on supervisor
+	  thread access to memory. Memory domain APIs may only be invoked from
+	  supervisor mode.
+
+	  For these reasons, on uniprocessor systems unless memory access
+	  policy is managed in separate software constructions like page
+	  tables, these APIs don't need to be implemented as the underlying
+	  memory management hardware will be reprogrammed on context switch
+	  anyway.
+
+config ARCH_MEM_DOMAIN_SUPPORTS_ISOLATED_STACKS
+	bool
+	help
+	  This hidden option is selected by the target architecture if
+	  the architecture supports isolating thread stacks for threads
+	  within the same memory domain.
+
+config MEM_DOMAIN_ISOLATED_STACKS
+	bool
+	default y
+	depends on (MMU || MPU) && ARCH_MEM_DOMAIN_SUPPORTS_ISOLATED_STACKS
+	help
+	  If enabled, thread stacks within the same memory domains are
+	  isolated which means threads within the same memory domains
+	  have no access to others threads' stacks.
+
+	  If disabled, threads within the same memory domains can access
+	  other threads' stacks.
+
+	  Regardless of this settings, threads cannot access the stacks of
+	  threads outside of their domains.
+
+endmenu

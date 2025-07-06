@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,9 +37,10 @@
 		led2 = &user_led1_blue;
 		sw0 = &user_button_1;
 		sw1 = &user_button_2;
-		watchdog0 = &fs26_wdt;
+		watchdog0 = &swt0;
 		/* For pwm test suites */
 		pwm-0 = &emios0_pwm;
+		pwm-1 = &flexio0_pwm;
 		red-pwm-led = &user_led1_red_pwm;
 		green-pwm-led = &user_led1_green_pwm;
 		blue-pwm-led = &user_led1_blue_pwm;
@@ -200,6 +201,10 @@
 	};
 };
 
+&pmc {
+	lm-reg;
+};
+
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";
@@ -339,6 +344,8 @@
 		readoc = "1-4-4";
 		writeoc = "1-4-4";
 		has-32k-erase;
+		max-program-buffer-size = <256>;
+		write-block-size = <1>;
 		status = "okay";
 
 		partitions {
@@ -358,8 +365,6 @@
 	pinctrl-0 = <&flexcan0_default>;
 	pinctrl-names = "default";
 	phys = <&can_phy0>;
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 	status = "okay";
 };
 
@@ -367,40 +372,30 @@
 	pinctrl-0 = <&flexcan1_default>;
 	pinctrl-names = "default";
 	phys = <&can_phy1>;
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 };
 
 &flexcan2 {
 	pinctrl-0 = <&flexcan2_default>;
 	pinctrl-names = "default";
 	phys = <&can_phy2>;
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 };
 
 &flexcan3 {
 	pinctrl-0 = <&flexcan3_default>;
 	pinctrl-names = "default";
 	phys = <&can_phy3>;
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 };
 
 &flexcan4 {
 	pinctrl-0 = <&flexcan4_default>;
 	pinctrl-names = "default";
 	phys = <&can_phy4>;
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 };
 
 &flexcan5 {
 	pinctrl-0 = <&flexcan5_default>;
 	pinctrl-names = "default";
 	phys = <&can_phy5>;
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 };
 
 &lpi2c0 {
@@ -506,7 +501,6 @@
 		emios0_bus_a {
 			mode = "MCB_UP_COUNTER";
 			prescaler = <16>;
-			period = <1000>;
 			status = "okay";
 		};
 	};
@@ -520,63 +514,43 @@
 		pwm_0 {
 			channel = <0>;
 			pwm-mode = "OPWFMB";
-			period = <65535>;
-			duty-cycle = <0>;
 			prescaler = <8>;
-			polarity = "ACTIVE_HIGH";
 		};
 
 		pwm_1 {
 			channel = <1>;
 			pwm-mode = "OPWFMB";
-			period = <65535>;
-			duty-cycle = <0>;
 			prescaler = <8>;
-			polarity = "ACTIVE_HIGH";
 		};
 
 		pwm_2 {
 			channel = <2>;
 			pwm-mode = "OPWFMB";
-			period = <65535>;
-			duty-cycle = <0>;
 			prescaler = <8>;
-			polarity = "ACTIVE_HIGH";
 		};
 
 		pwm_3 {
 			channel = <3>;
 			pwm-mode = "OPWFMB";
-			period = <65535>;
-			duty-cycle = <0>;
 			prescaler = <8>;
-			polarity = "ACTIVE_HIGH";
 		};
 
 		pwm_4 {
 			channel = <4>;
 			pwm-mode = "OPWFMB";
-			period = <65535>;
-			duty-cycle = <0>;
 			prescaler = <8>;
-			polarity = "ACTIVE_HIGH";
 		};
 
 		pwm_5 {
 			channel = <5>;
 			pwm-mode = "OPWFMB";
-			period = <65535>;
-			duty-cycle = <0>;
 			prescaler = <8>;
-			polarity = "ACTIVE_HIGH";
 		};
 
 		rgb_red {
 			channel = <19>;
 			master-bus = <&emios0_bus_a>;
-			duty-cycle = <0>;
 			pwm-mode = "OPWMB";
-			polarity = "ACTIVE_LOW";
 		};
 	};
 };
@@ -593,14 +567,12 @@
 		emios1_bus_a {
 			prescaler = <16>;
 			mode = "MCB_UP_COUNTER";
-			period = <1000>;
 			status = "okay";
 		};
 
 		emios1_bus_f {
 			prescaler = <16>;
 			mode = "MCB_UP_COUNTER";
-			period = <1000>;
 			status = "okay";
 		};
 	};
@@ -613,19 +585,36 @@
 		rgb_green {
 			channel = <10>;
 			master-bus = <&emios1_bus_a>;
-			duty-cycle = <0>;
 			pwm-mode = "OPWMB";
-			polarity = "ACTIVE_LOW";
 		};
 
 		rgb_blue {
 			channel = <5>;
 			master-bus = <&emios1_bus_f>;
-			duty-cycle = <0>;
 			pwm-mode = "OPWMB";
-			polarity = "ACTIVE_LOW";
 		};
 	};
+};
+
+&flexio0 {
+	status = "okay";
+
+	flexio0_pwm: flexio0_pwm {
+		pinctrl-0 = <&flexio0_pwm_default>;
+		pinctrl-names = "default";
+		status = "okay";
+
+		pwm_0 {
+			pin-id = <19>;
+			prescaler = <1>;
+		};
+
+		pwm_1 {
+			pin-id = <11>;
+			prescaler = <1>;
+		};
+	};
+
 };
 
 &lcu1 {

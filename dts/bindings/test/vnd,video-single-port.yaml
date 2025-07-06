@@ -1,0 +1,13 @@
+# Copyright (c) 2024 tinyVision.ai Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test Video device
+
+compatible: "vnd,video-single-port"
+
+child-binding:
+  child-binding:
+    include: video-interfaces.yaml
+    properties:
+      reg:
+        type: array

@@ -22,10 +22,18 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_br);
 
-static bt_br_discovery_cb_t *discovery_cb;
+#define RSSI_INVALID 127
+
+enum __packed resolve_name_state {
+	RESOLVE_REMOTE_NAME_PENDING,
+	RESOLVE_REMOTE_NAME_RESOLVING,
+	RESOLVE_REMOTE_NAME_RESOLVED,
+};
+
 struct bt_br_discovery_result *discovery_results;
 static size_t discovery_results_size;
 static size_t discovery_results_count;
+static sys_slist_t discovery_cbs = SYS_SLIST_STATIC_INIT(&discovery_cbs);
 
 static int reject_conn(const bt_addr_t *bdaddr, uint8_t reason)
 {
@@ -33,7 +41,7 @@ static int reject_conn(const bt_addr_t *bdaddr, uint8_t reason)
 	struct net_buf *buf;
 	int err;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_REJECT_CONN_REQ, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -56,7 +64,7 @@ static int accept_conn(const bt_addr_t *bdaddr)
 	struct net_buf *buf;
 	int err;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_ACCEPT_CONN_REQ, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -98,7 +106,7 @@ void bt_hci_conn_req(struct net_buf *buf)
 
 	accept_conn(&evt->bdaddr);
 	conn->role = BT_HCI_ROLE_PERIPHERAL;
-	bt_conn_set_state(conn, BT_CONN_CONNECTING);
+	bt_conn_set_state(conn, BT_CONN_INITIATING);
 	bt_conn_unref(conn);
 }
 
@@ -110,7 +118,7 @@ static bool br_sufficient_key_size(struct bt_conn *conn)
 	uint8_t key_size;
 	int err;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_READ_ENCRYPTION_KEY_SIZE, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		LOG_ERR("Failed to allocate command buffer");
 		return false;
@@ -141,7 +149,7 @@ static bool br_sufficient_key_size(struct bt_conn *conn)
 		return key_size == BT_HCI_ENCRYPTION_KEY_SIZE_MAX;
 	}
 
-	return key_size >= BT_HCI_ENCRYPTION_KEY_SIZE_MIN;
+	return key_size >= CONFIG_BT_BR_MIN_ENC_KEY_SIZE;
 }
 
 bool bt_br_update_sec_level(struct bt_conn *conn)
@@ -153,7 +161,7 @@ bool bt_br_update_sec_level(struct bt_conn *conn)
 
 	if (conn->br.link_key) {
 		if (conn->br.link_key->flags & BT_LINK_KEY_AUTHENTICATED) {
-			if (conn->encrypt == 0x02) {
+			if (conn->encrypt == BT_HCI_ENCRYPTION_ON_BR_AES_CCM) {
 				conn->sec_level = BT_SECURITY_L4;
 			} else {
 				conn->sec_level = BT_SECURITY_L3;
@@ -240,11 +248,13 @@ void bt_hci_conn_complete(struct net_buf *buf)
 
 	bt_conn_set_state(conn, BT_CONN_CONNECTED);
 
+	atomic_set_bit_to(conn->flags, BT_CONN_BR_BONDABLE, bt_get_bondable());
+
 	bt_conn_connected(conn);
 
 	bt_conn_unref(conn);
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_READ_REMOTE_FEATURES, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return;
 	}
@@ -255,18 +265,12 @@ void bt_hci_conn_complete(struct net_buf *buf)
 	bt_hci_cmd_send_sync(BT_HCI_OP_READ_REMOTE_FEATURES, buf, NULL);
 }
 
-struct discovery_priv {
-	uint16_t clock_offset;
-	uint8_t pscan_rep_mode;
-	uint8_t resolving;
-} __packed;
-
 static int request_name(const bt_addr_t *addr, uint8_t pscan, uint16_t offset)
 {
 	struct bt_hci_cp_remote_name_request *cp;
 	struct net_buf *buf;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_REMOTE_NAME_REQUEST, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -324,44 +328,67 @@ static bool eir_has_name(const uint8_t *eir)
 
 void bt_br_discovery_reset(void)
 {
-	discovery_cb = NULL;
 	discovery_results = NULL;
 	discovery_results_size = 0;
 	discovery_results_count = 0;
 }
 
-static void report_discovery_results(void)
+static bool check_request_name(void)
 {
-	bool resolving_names = false;
 	int i;
+	bool resolving_names = false;
 
 	for (i = 0; i < discovery_results_count; i++) {
-		struct discovery_priv *priv;
+		struct bt_br_discovery_priv *priv;
 
-		priv = (struct discovery_priv *)&discovery_results[i]._priv;
+		priv = &discovery_results[i]._priv;
 
 		if (eir_has_name(discovery_results[i].eir)) {
 			continue;
 		}
 
-		if (request_name(&discovery_results[i].addr, priv->pscan_rep_mode,
-				 priv->clock_offset)) {
+		if (priv->resolve_state != RESOLVE_REMOTE_NAME_PENDING) {
 			continue;
 		}
 
-		priv->resolving = 1U;
+		if (request_name(&discovery_results[i].addr, priv->pscan_rep_mode,
+				 priv->clock_offset)) {
+			priv->resolve_state = RESOLVE_REMOTE_NAME_RESOLVED;
+			continue;
+		}
+
+		priv->resolve_state = RESOLVE_REMOTE_NAME_RESOLVING;
 		resolving_names = true;
+		break;
 	}
 
-	if (resolving_names) {
+	return resolving_names;
+}
+
+static void report_discovery_results(void)
+{
+	int i;
+	struct bt_br_discovery_cb *listener, *next;
+
+	for (i = 0; i < discovery_results_count; i++) {
+		struct bt_br_discovery_priv *priv;
+
+		priv = &discovery_results[i]._priv;
+		priv->resolve_state = RESOLVE_REMOTE_NAME_PENDING;
+	}
+
+	if (check_request_name()) {
 		return;
 	}
 
 	atomic_clear_bit(bt_dev.flags, BT_DEV_INQUIRY);
 
-	if (discovery_cb) {
-		discovery_cb(discovery_results, discovery_results_count);
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&discovery_cbs, listener, next, node) {
+		if (listener->timeout) {
+			listener->timeout(discovery_results, discovery_results_count);
+		}
 	}
+
 	bt_br_discovery_reset();
 }
 
@@ -395,7 +422,7 @@ static struct bt_br_discovery_result *get_result_slot(const bt_addr_t *addr, int
 	}
 
 	/* ignore if invalid RSSI */
-	if (rssi == 0xff) {
+	if (rssi == RSSI_INVALID) {
 		return NULL;
 	}
 
@@ -436,7 +463,8 @@ void bt_hci_inquiry_result_with_rssi(struct net_buf *buf)
 	while (num_reports--) {
 		struct bt_hci_evt_inquiry_result_with_rssi *evt;
 		struct bt_br_discovery_result *result;
-		struct discovery_priv *priv;
+		struct bt_br_discovery_priv *priv;
+		struct bt_br_discovery_cb *listener, *next;
 
 		if (buf->len < sizeof(*evt)) {
 			LOG_ERR("Unexpected end to buffer");
@@ -451,7 +479,7 @@ void bt_hci_inquiry_result_with_rssi(struct net_buf *buf)
 			return;
 		}
 
-		priv = (struct discovery_priv *)&result->_priv;
+		priv = &result->_priv;
 		priv->pscan_rep_mode = evt->pscan_rep_mode;
 		priv->clock_offset = evt->clock_offset;
 
@@ -460,6 +488,12 @@ void bt_hci_inquiry_result_with_rssi(struct net_buf *buf)
 
 		/* we could reuse slot so make sure EIR is cleared */
 		(void)memset(result->eir, 0, sizeof(result->eir));
+
+		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&discovery_cbs, listener, next, node) {
+			if (listener->recv) {
+				listener->recv(result);
+			}
+		}
 	}
 }
 
@@ -467,7 +501,8 @@ void bt_hci_extended_inquiry_result(struct net_buf *buf)
 {
 	struct bt_hci_evt_extended_inquiry_result *evt = (void *)buf->data;
 	struct bt_br_discovery_result *result;
-	struct discovery_priv *priv;
+	struct bt_br_discovery_priv *priv;
+	struct bt_br_discovery_cb *listener, *next;
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_INQUIRY)) {
 		return;
@@ -480,31 +515,37 @@ void bt_hci_extended_inquiry_result(struct net_buf *buf)
 		return;
 	}
 
-	priv = (struct discovery_priv *)&result->_priv;
+	priv = &result->_priv;
 	priv->pscan_rep_mode = evt->pscan_rep_mode;
 	priv->clock_offset = evt->clock_offset;
 
 	result->rssi = evt->rssi;
 	memcpy(result->cod, evt->cod, 3);
 	memcpy(result->eir, evt->eir, sizeof(result->eir));
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&discovery_cbs, listener, next, node) {
+		if (listener->recv) {
+			listener->recv(result);
+		}
+	}
 }
 
 void bt_hci_remote_name_request_complete(struct net_buf *buf)
 {
 	struct bt_hci_evt_remote_name_req_complete *evt = (void *)buf->data;
 	struct bt_br_discovery_result *result;
-	struct discovery_priv *priv;
+	struct bt_br_discovery_priv *priv;
 	int eir_len = 240;
 	uint8_t *eir;
-	int i;
+	struct bt_br_discovery_cb *listener, *next;
 
-	result = get_result_slot(&evt->bdaddr, 0xff);
+	result = get_result_slot(&evt->bdaddr, RSSI_INVALID);
 	if (!result) {
 		return;
 	}
 
-	priv = (struct discovery_priv *)&result->_priv;
-	priv->resolving = 0U;
+	priv = &result->_priv;
+	priv->resolve_state = RESOLVE_REMOTE_NAME_RESOLVED;
 
 	if (evt->status) {
 		goto check_names;
@@ -549,23 +590,25 @@ void bt_hci_remote_name_request_complete(struct net_buf *buf)
 		eir += eir[0] + 1;
 	}
 
-check_names:
-	/* if still waiting for names */
-	for (i = 0; i < discovery_results_count; i++) {
-		struct discovery_priv *dpriv;
-
-		dpriv = (struct discovery_priv *)&discovery_results[i]._priv;
-
-		if (dpriv->resolving) {
-			return;
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&discovery_cbs, listener, next, node) {
+		if (listener->recv) {
+			listener->recv(result);
 		}
+	}
+
+check_names:
+	/* if still need to request name */
+	if (check_request_name()) {
+		return;
 	}
 
 	/* all names resolved, report discovery results */
 	atomic_clear_bit(bt_dev.flags, BT_DEV_INQUIRY);
 
-	if (discovery_cb) {
-		discovery_cb(discovery_results, discovery_results_count);
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&discovery_cbs, listener, next, node) {
+		if (listener->timeout) {
+			listener->timeout(discovery_results, discovery_results_count);
+		}
 	}
 }
 
@@ -594,7 +637,7 @@ void bt_hci_read_remote_features_complete(struct net_buf *buf)
 		goto done;
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_READ_REMOTE_EXT_FEATURES, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		goto done;
 	}
@@ -668,7 +711,7 @@ static int read_ext_features(void)
 		struct net_buf *buf, *rsp;
 		int err;
 
-		buf = bt_hci_cmd_create(BT_HCI_OP_READ_LOCAL_EXT_FEATURES, sizeof(*cp));
+		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (!buf) {
 			return -ENOBUFS;
 		}
@@ -757,7 +800,6 @@ int bt_br_init(void)
 	struct bt_hci_cp_write_ssp_mode *ssp_cp;
 	struct bt_hci_cp_write_inquiry_mode *inq_cp;
 	struct bt_hci_write_local_name *name_cp;
-	struct bt_hci_cp_write_class_of_device *cod;
 	int err;
 
 	/* Read extended local features */
@@ -781,7 +823,7 @@ int bt_br_init(void)
 	net_buf_unref(buf);
 
 	/* Set SSP mode */
-	buf = bt_hci_cmd_create(BT_HCI_OP_WRITE_SSP_MODE, sizeof(*ssp_cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -794,7 +836,7 @@ int bt_br_init(void)
 	}
 
 	/* Enable Inquiry results with RSSI or extended Inquiry */
-	buf = bt_hci_cmd_create(BT_HCI_OP_WRITE_INQUIRY_MODE, sizeof(*inq_cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -807,7 +849,7 @@ int bt_br_init(void)
 	}
 
 	/* Set local name */
-	buf = bt_hci_cmd_create(BT_HCI_OP_WRITE_LOCAL_NAME, sizeof(*name_cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -821,7 +863,7 @@ int bt_br_init(void)
 	}
 
 	/* Set Class of device */
-	buf = bt_hci_cmd_create(BT_HCI_OP_WRITE_CLASS_OF_DEVICE, sizeof(*cod));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -834,7 +876,7 @@ int bt_br_init(void)
 	}
 
 	/* Set page timeout*/
-	buf = bt_hci_cmd_create(BT_HCI_OP_WRITE_PAGE_TIMEOUT, sizeof(uint16_t));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -850,7 +892,7 @@ int bt_br_init(void)
 	if (BT_FEAT_SC(bt_dev.features)) {
 		struct bt_hci_cp_write_sc_host_supp *sc_cp;
 
-		buf = bt_hci_cmd_create(BT_HCI_OP_WRITE_SC_HOST_SUPP, sizeof(*sc_cp));
+		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (!buf) {
 			return -ENOBUFS;
 		}
@@ -873,7 +915,7 @@ static int br_start_inquiry(const struct bt_br_discovery_param *param)
 	struct bt_hci_op_inquiry *cp;
 	struct net_buf *buf;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_INQUIRY, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -905,8 +947,7 @@ static bool valid_br_discov_param(const struct bt_br_discovery_param *param, siz
 }
 
 int bt_br_discovery_start(const struct bt_br_discovery_param *param,
-			  struct bt_br_discovery_result *results, size_t cnt,
-			  bt_br_discovery_cb_t cb)
+			  struct bt_br_discovery_result *results, size_t cnt)
 {
 	int err;
 
@@ -929,7 +970,6 @@ int bt_br_discovery_start(const struct bt_br_discovery_param *param,
 
 	(void)memset(results, 0, sizeof(*results) * cnt);
 
-	discovery_cb = cb;
 	discovery_results = results;
 	discovery_results_size = cnt;
 	discovery_results_count = 0;
@@ -954,17 +994,17 @@ int bt_br_discovery_stop(void)
 	}
 
 	for (i = 0; i < discovery_results_count; i++) {
-		struct discovery_priv *priv;
+		struct bt_br_discovery_priv *priv;
 		struct bt_hci_cp_remote_name_cancel *cp;
 		struct net_buf *buf;
 
-		priv = (struct discovery_priv *)&discovery_results[i]._priv;
+		priv = &discovery_results[i]._priv;
 
-		if (!priv->resolving) {
+		if (priv->resolve_state != RESOLVE_REMOTE_NAME_RESOLVING) {
 			continue;
 		}
 
-		buf = bt_hci_cmd_create(BT_HCI_OP_REMOTE_NAME_CANCEL, sizeof(*cp));
+		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (!buf) {
 			continue;
 		}
@@ -977,12 +1017,21 @@ int bt_br_discovery_stop(void)
 
 	atomic_clear_bit(bt_dev.flags, BT_DEV_INQUIRY);
 
-	discovery_cb = NULL;
 	discovery_results = NULL;
 	discovery_results_size = 0;
 	discovery_results_count = 0;
 
 	return 0;
+}
+
+void bt_br_discovery_cb_register(struct bt_br_discovery_cb *cb)
+{
+	sys_slist_append(&discovery_cbs, &cb->node);
+}
+
+void bt_br_discovery_cb_unregister(struct bt_br_discovery_cb *cb)
+{
+	sys_slist_find_and_remove(&discovery_cbs, &cb->node);
 }
 
 static int write_scan_enable(uint8_t scan)
@@ -992,7 +1041,7 @@ static int write_scan_enable(uint8_t scan)
 
 	LOG_DBG("type %u", scan);
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_WRITE_SCAN_ENABLE, 1);
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -1026,8 +1075,127 @@ int bt_br_set_connectable(bool enable)
 	}
 }
 
-int bt_br_set_discoverable(bool enable)
+#define BT_LIAC 0x9e8b00
+#define BT_GIAC 0x9e8b33
+
+static int bt_br_write_current_iac_lap(bool limited)
 {
+	struct bt_hci_cp_write_current_iac_lap *iac_lap;
+	struct net_buf *buf;
+	uint8_t param_len;
+	uint8_t num_current_iac = limited ? 2 : 1;
+
+	LOG_DBG("limited discoverable mode? %s", limited ? "Yes" : "No");
+
+	param_len = sizeof(*iac_lap) + (num_current_iac * sizeof(struct bt_hci_iac_lap));
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	iac_lap = net_buf_add(buf, param_len);
+	iac_lap->num_current_iac = num_current_iac;
+	sys_put_le24(BT_GIAC, iac_lap->lap[0].iac);
+	if (num_current_iac > 1) {
+		sys_put_le24(BT_LIAC, iac_lap->lap[1].iac);
+	}
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_CURRENT_IAC_LAP, buf, NULL);
+}
+
+#define BT_COD_MAJOR_SVC_CLASS_LIMITED_DISCOVER BIT(13)
+
+static int bt_br_read_cod(uint32_t *cod)
+{
+	struct net_buf *rsp;
+	struct bt_hci_rp_read_class_of_device *rp;
+	int err;
+
+	LOG_DBG("Read COD");
+
+	/* Read Class of device */
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_CLASS_OF_DEVICE, NULL, &rsp);
+	if (err) {
+		LOG_WRN("Fail to read COD");
+		return err;
+	}
+
+	if (!rsp || (rsp->len < sizeof(*rp))) {
+		LOG_WRN("Invalid response");
+		return -EIO;
+	}
+
+	rp = (void *)rsp->data;
+	*cod = sys_get_le24(rp->class_of_device);
+
+	LOG_DBG("Current COD %06x", *cod);
+
+	net_buf_unref(rsp);
+
+	return 0;
+}
+
+static int bt_br_write_cod(uint32_t cod)
+{
+	struct net_buf *buf;
+
+	/* Set Class of device */
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	net_buf_add_le24(buf, cod);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_CLASS_OF_DEVICE, buf, NULL);
+}
+
+static int bt_br_update_cod(bool limited)
+{
+	int err;
+	uint32_t cod;
+
+	LOG_DBG("Update COD");
+
+	err = bt_br_read_cod(&cod);
+	if (err) {
+		return err;
+	}
+
+	if (limited) {
+		cod |= BT_COD_MAJOR_SVC_CLASS_LIMITED_DISCOVER;
+	} else {
+		cod &= ~BT_COD_MAJOR_SVC_CLASS_LIMITED_DISCOVER;
+	}
+
+	err = bt_br_write_cod(cod);
+	return err;
+}
+
+static void bt_br_limited_discoverable_timeout_handler(struct k_work *work)
+{
+	int err;
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_LIMITED_DISCOVERABLE_MODE)) {
+		LOG_INF("Limited discoverable mode has been disabled");
+		return;
+	}
+
+	err = bt_br_set_discoverable(false, false);
+	if (err) {
+		LOG_WRN("Disable discoverable failure (err %d)", err);
+	}
+}
+
+/* Work used for limited discoverable mode time span */
+static K_WORK_DELAYABLE_DEFINE(bt_br_limited_discoverable_timeout,
+			       bt_br_limited_discoverable_timeout_handler);
+
+int bt_br_set_discoverable(bool enable, bool limited)
+{
+	int err;
+
 	if (enable) {
 		if (atomic_test_bit(bt_dev.flags, BT_DEV_ISCAN)) {
 			return -EALREADY;
@@ -1037,12 +1205,94 @@ int bt_br_set_discoverable(bool enable)
 			return -EPERM;
 		}
 
-		return write_scan_enable(BT_BREDR_SCAN_INQUIRY | BT_BREDR_SCAN_PAGE);
-	} else {
-		if (!atomic_test_bit(bt_dev.flags, BT_DEV_ISCAN)) {
-			return -EALREADY;
+		err = bt_br_write_current_iac_lap(limited);
+		if (err) {
+			return err;
 		}
 
-		return write_scan_enable(BT_BREDR_SCAN_PAGE);
+		err = bt_br_update_cod(limited);
+		if (err) {
+			return err;
+		}
+
+		err = write_scan_enable(BT_BREDR_SCAN_INQUIRY | BT_BREDR_SCAN_PAGE);
+		if (!err && (limited == true)) {
+			atomic_set_bit(bt_dev.flags, BT_DEV_LIMITED_DISCOVERABLE_MODE);
+			k_work_reschedule(&bt_br_limited_discoverable_timeout,
+					  K_SECONDS(CONFIG_BT_LIMITED_DISCOVERABLE_DURATION));
+		}
+		return err;
 	}
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_ISCAN)) {
+		return -EALREADY;
+	}
+
+	err = write_scan_enable(BT_BREDR_SCAN_PAGE);
+	if (err) {
+		return err;
+	}
+
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_LIMITED_DISCOVERABLE_MODE)) {
+		err = bt_br_write_current_iac_lap(false);
+		if (err) {
+			return err;
+		}
+
+		err = bt_br_update_cod(false);
+		if (err) {
+			return err;
+		}
+
+		atomic_clear_bit(bt_dev.flags, BT_DEV_LIMITED_DISCOVERABLE_MODE);
+		k_work_cancel_delayable(&bt_br_limited_discoverable_timeout);
+	}
+
+	return 0;
+}
+
+bool bt_br_bond_exists(const bt_addr_t *addr)
+{
+	struct bt_keys_link_key *key = bt_keys_find_link_key(addr);
+
+	/* if there are any keys stored then device is bonded */
+	return key != NULL;
+}
+
+static void unpair(const bt_addr_t *addr)
+{
+	struct bt_conn *conn = bt_conn_lookup_addr_br(addr);
+	struct bt_conn_auth_info_cb *listener, *next;
+
+	if (conn) {
+		bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+		bt_conn_unref(conn);
+	}
+
+	bt_keys_link_key_clear_addr(addr);
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&bt_auth_info_cbs, listener,
+					  next, node) {
+		if (listener->br_bond_deleted) {
+			listener->br_bond_deleted(addr);
+		}
+	}
+}
+
+static void bt_br_unpair_remote(const struct bt_br_bond_info *info, void *data)
+{
+	ARG_UNUSED(data);
+
+	unpair(&info->addr);
+}
+
+int bt_br_unpair(const bt_addr_t *addr)
+{
+	if (!addr || bt_addr_eq(addr, BT_ADDR_ANY)) {
+		bt_br_foreach_bond(bt_br_unpair_remote, NULL);
+	} else {
+		unpair(addr);
+	}
+
+	return 0;
 }

@@ -1,5 +1,5 @@
 # Copyright (c) 2023 Grinn
-# SPDX -License-Identifier: Apache-2.0
+# SPDX-License-Identifier: Apache-2.0
 
 config DAC_AD559X
 	bool "AD559x DAC driver"

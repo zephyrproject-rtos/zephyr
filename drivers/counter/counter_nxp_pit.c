@@ -187,7 +187,9 @@ static void nxp_pit_isr(const struct device *dev)
 	flags = PIT_GetStatusFlags(config->base, channel);
 	if (flags) {
 		PIT_ClearStatusFlags(config->base, channel, flags);
-		data->top_callback(dev, data->top_user_data);
+		if (data->top_callback) {
+			data->top_callback(dev, data->top_user_data);
+		}
 	}
 }
 #endif /* DT_NODE_HAS_PROP(DT_COMPAT_GET_ANY_STATUS_OKAY(nxp_pit), interrupts) */
@@ -232,7 +234,7 @@ static int nxp_pit_init(const struct device *dev)
 	return 0;
 }
 
-static const struct counter_driver_api nxp_pit_driver_api = {
+static DEVICE_API(counter, nxp_pit_driver_api) = {
 	.start = nxp_pit_start,
 	.stop = nxp_pit_stop,
 	.get_value = nxp_pit_get_value,

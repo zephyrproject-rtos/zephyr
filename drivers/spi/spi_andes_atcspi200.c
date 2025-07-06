@@ -639,14 +639,16 @@ static int transceive(const struct device *dev,
 		if ((data->dma_tx.dma_dev != NULL) && (data->dma_rx.dma_dev != NULL)) {
 			error = spi_transfer_dma(dev);
 			if (error != 0) {
-				return error;
+				spi_context_cs_control(ctx, false);
+				goto out;
 			}
 		} else {
 #endif /* CONFIG_ANDES_SPI_DMA_MODE */
 
 			error = spi_transfer(dev);
 			if (error != 0) {
-				return error;
+				spi_context_cs_control(ctx, false);
+				goto out;
 			}
 
 #ifdef CONFIG_ANDES_SPI_DMA_MODE
@@ -655,7 +657,7 @@ static int transceive(const struct device *dev,
 		error = spi_context_wait_for_completion(ctx);
 		spi_context_cs_control(ctx, false);
 	}
-
+out:
 	spi_context_release(ctx, error);
 
 	return error;
@@ -737,10 +739,13 @@ int spi_atcspi200_init(const struct device *dev)
 	return 0;
 }
 
-static const struct spi_driver_api spi_atcspi200_api = {
+static DEVICE_API(spi, spi_atcspi200_api) = {
 	.transceive = spi_atcspi200_transceive,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_atcspi200_transceive_async,
+#endif
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
 #endif
 	.release = spi_atcspi200_release
 };
@@ -952,7 +957,7 @@ static void spi_atcspi200_irq_handler(void *arg)
 		.xip = SPI_ROM_CFG_XIP(DT_DRV_INST(n)),			\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(n,					\
+	SPI_DEVICE_DT_INST_DEFINE(n,					\
 		spi_atcspi200_init,					\
 		NULL,							\
 		&spi_atcspi200_dev_data_##n,				\

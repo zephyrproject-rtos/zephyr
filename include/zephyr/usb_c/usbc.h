@@ -91,7 +91,7 @@ enum usbc_policy_notify_t {
 	MSG_ACCEPT_RECEIVED,
 	/** Power Delivery Reject message was received */
 	MSG_REJECTED_RECEIVED,
-	/** Power Delivery discarded the message being transmited */
+	/** Power Delivery discarded the message being transmitted */
 	MSG_DISCARDED,
 	/** Power Delivery Not Supported message was received */
 	MSG_NOT_SUPPORTED_RECEIVED,
@@ -291,7 +291,7 @@ typedef bool (*policy_cb_present_contract_is_valid_t)(const struct device *dev,
  *	  be sent to the Sink
  *
  * @param dev USB-C Connector Instance
- * @return true if a different set of Cource Caps is available
+ * @return true if a different set of Source Caps is available
  */
 typedef bool (*policy_cb_change_src_caps_t)(const struct device *dev);
 

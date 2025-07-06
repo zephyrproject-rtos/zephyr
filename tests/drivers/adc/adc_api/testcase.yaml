@@ -7,14 +7,30 @@ tests:
   drivers.adc:
     depends_on: adc
     min_flash: 40
+    platform_exclude:
+      - nucleo_u031r8
+      - panb511evb/nrf54l15/cpuapp
+      - panb511evb/nrf54l15/cpuapp/ns
+      - nrf54l15dk/nrf54l15/cpuapp/ns
+      - nrf54l15dk/nrf54l10/cpuapp/ns
+      - bl54l15_dvk/nrf54l10/cpuapp/ns
+      - bl54l15_dvk/nrf54l15/cpuapp/ns
+      - bl54l15u_dvk/nrf54l15/cpuapp/ns
+      - raytac_an54l15q_db/nrf54l15/cpuapp/ns
   drivers.adc.b_u585i_iot02a_adc4:
     extra_args:
       - DTC_OVERLAY_FILE="boards/b_u585i_iot02a_adc4.overlay"
     platform_allow:
       - b_u585i_iot02a
+  drivers.adc.nucleo_f103rb_dma:
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/nucleo_f103rb_dma.overlay"
+      - EXTRA_CONF_FILE="overlay-dma-stm32.conf"
+    platform_allow:
+      - nucleo_f103rb
   drivers.adc.dma_st_stm32:
     extra_args:
-      - OVERLAY_CONFIG="overlay-dma-stm32.conf"
+      - EXTRA_CONF_FILE="overlay-dma-stm32.conf"
     depends_on:
       - adc
       - dma
@@ -26,6 +42,7 @@ tests:
       - nucleo_f207zg
       - nucleo_f401re
       - nucleo_f429zi
+      - nucleo_f439zi
       - nucleo_f746zg
       - nucleo_g071rb
       - nucleo_g474re
@@ -33,15 +50,22 @@ tests:
       - nucleo_l073rz
       - nucleo_l152re
       - nucleo_l476rg
+      - nucleo_u083rc
+      - nucleo_u385rg_q
       - nucleo_u575zi_q
       - nucleo_wb55rg
-      - nucleo_wba52cg
+      - nucleo_wba55cg
+      - nucleo_wba65ri
       - nucleo_wl55jc
       - stm32f3_disco
       - stm32h573i_dk
+      - stm32u083c_dk
+    integration_platforms:
+      - disco_l475_iot1
+      - nucleo_l476rg
   drivers.adc.dma_nxp_kinetis:
     extra_args:
-      - OVERLAY_CONFIG="overlay-dma-kinetis.conf"
+      - EXTRA_CONF_FILE="overlay-dma-kinetis.conf"
     depends_on:
       - adc
       - dma
@@ -51,3 +75,12 @@ tests:
       - frdm_k82f
     integration_platforms:
       - frdm_k82f
+  drivers.adc.dma_espressif:
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/esp32s3_devkitc_procpu.overlay"
+      - EXTRA_CONF_FILE="overlay-dma-esp32.conf"
+    depends_on:
+      - adc
+      - dma
+    platform_allow:
+      - esp32s3_devkitc/esp32s3/procpu

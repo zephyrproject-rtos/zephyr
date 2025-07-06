@@ -1,0 +1,9 @@
+description: A group of GPIOs that share an interrupt.
+
+compatible: "nxp,gpio-cluster"
+
+include: [base.yaml]
+
+properties:
+  interrupts:
+    required: true

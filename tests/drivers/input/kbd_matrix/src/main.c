@@ -103,7 +103,7 @@ static int last_checked_event_count;
 	zassert_equal(_val, test_event_data.val); \
 }
 
-static void test_cb(struct input_event *evt)
+static void test_cb(struct input_event *evt, void *user_data)
 {
 	static int row, col, val;
 
@@ -128,7 +128,7 @@ static void test_cb(struct input_event *evt)
 			 test_event_data.event_count, row, col, val);
 	}
 }
-INPUT_CALLBACK_DEFINE(test_dev, test_cb);
+INPUT_CALLBACK_DEFINE(test_dev, test_cb, NULL);
 
 #define WAIT_FOR_IDLE_TIMEOUT_US (5 * USEC_PER_SEC)
 

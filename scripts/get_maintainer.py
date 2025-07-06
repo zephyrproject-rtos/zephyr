@@ -30,6 +30,7 @@ import re
 import shlex
 import subprocess
 import sys
+from tabulate import tabulate
 
 from yaml import load, YAMLError
 try:
@@ -107,6 +108,16 @@ def _parse_args():
         metavar="MAINTAINER",
         nargs="?",
         help="List all areas maintained by maintainer.")
+
+    # New arguments for filtering
+    areas_parser.add_argument(
+        "--without-maintainers",
+        action="store_true",
+        help="Exclude areas that have maintainers")
+    areas_parser.add_argument(
+        "--without-collaborators",
+        action="store_true",
+        help="Exclude areas that have collaborators")
 
     areas_parser.set_defaults(cmd_fn=Maintainers._areas_cmd)
 
@@ -281,12 +292,42 @@ class Maintainers:
 
     def _areas_cmd(self, args):
         # 'areas' subcommand implementation
+        def multiline(items):
+            # Each item on its own line, empty string if none
+            return "\n".join(items) if items else ""
+
+        table = []
         for area in self.areas.values():
+            maintainers = multiline(area.maintainers)
+            collaborators = multiline(area.collaborators)
+
+            # Filter based on new arguments
+            if getattr(args, "without_maintainers", False) and area.maintainers:
+                continue
+            if getattr(args, "without_collaborators", False) and area.collaborators:
+                continue
+
             if args.maintainer:
                 if args.maintainer in area.maintainers:
-                    print("{:25}\t{}".format(area.name, ",".join(area.maintainers)))
+                    table.append([
+                        area.name,
+                        maintainers,
+                        collaborators
+                    ])
             else:
-                print("{:25}\t{}".format(area.name, ",".join(area.maintainers)))
+                table.append([
+                    area.name,
+                    maintainers,
+                    collaborators
+                ])
+        if table:
+            print(tabulate(
+                table,
+                headers=["Area", "Maintainers", "Collaborators"],
+                tablefmt="grid",
+                stralign="left",
+                disable_numparse=True
+            ))
 
     def _count_cmd(self, args):
         # 'count' subcommand implementation
@@ -508,6 +549,9 @@ def _check_maintainers(maints_path, yaml):
         if not area_dict.keys() & {"files", "files-regex"}:
             ferr("either 'files' or 'files-regex' (or both) must be specified "
                  "for area '{}'".format(area_name))
+
+        if not area_dict.get("maintainers") and area_dict.get("status") == "maintained":
+            ferr("maintained area '{}' with no maintainers".format(area_name))
 
         for list_name in "maintainers", "collaborators", "inform", "files", \
                          "files-regex", "labels", "tags", "tests":

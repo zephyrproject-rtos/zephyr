@@ -1,5 +1,6 @@
 board:
   name: kv260_r5
+  full_name: KV260 Development Board RPU Cortex-R5
   vendor: amd
   socs:
   - name: zynqmp_rpu

@@ -30,7 +30,7 @@
  *   privileged portion of the user stack without touching SP_EL0. This portion
  *   is marked as not user accessible in the MMU/MPU.
  *
- * - a stack guard region will be added bellow the kernel stack when
+ * - a stack guard region will be added below the kernel stack when
  *   ARM64_STACK_PROTECTION is enabled. In this case, SP_EL0 will always point
  *   to the safe exception stack in the kernel space. For the kernel thread,
  *   SP_EL0 will not change always pointing to safe exception stack. For the
@@ -87,7 +87,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		     void *p1, void *p2, void *p3)
 {
 	extern void z_arm64_exit_exc(void);
-	z_arch_esf_t *pInitCtx;
+	struct arch_esf *pInitCtx;
 
 	/*
 	 * Clean the thread->arch to avoid unexpected behavior because the
@@ -102,7 +102,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 * dropping into EL0.
 	 */
 
-	pInitCtx = Z_STACK_PTR_TO_FRAME(struct __esf, stack_ptr);
+	pInitCtx = Z_STACK_PTR_TO_FRAME(struct arch_esf, stack_ptr);
 
 	pInitCtx->x0 = (uint64_t)entry;
 	pInitCtx->x1 = (uint64_t)p1;

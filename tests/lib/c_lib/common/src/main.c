@@ -15,14 +15,14 @@
  * it guarantee that ALL functionality provided is working correctly.
  */
 
-#if defined(CONFIG_NATIVE_LIBC)
 #undef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 200809L
-#endif
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
+#include <zephyr/test_toolchain.h>
 
 #include <limits.h>
 #include <sys/types.h>
@@ -52,9 +52,7 @@
  * destination array).  That's exactly the case we're testing, so turn
  * it off.
  */
-#if defined(__GNUC__) && __GNUC__ >= 8
-#pragma GCC diagnostic ignored "-Wstringop-truncation"
-#endif
+TOOLCHAIN_DISABLE_GCC_WARNING(TOOLCHAIN_WARNING_STRINGOP_TRUNCATION)
 
 ZTEST_SUITE(libc_common, NULL, NULL, NULL, NULL, NULL);
 
@@ -67,17 +65,17 @@ volatile long long_max = LONG_MAX;
 volatile long long_one = 1L;
 
 /**
- *
  * @brief Test implementation-defined constants library
- * @defgroup libc_api
+ * @defgroup libc_api C Library APIs
  * @ingroup all_tests
  * @{
  *
  */
-
+/**
+ * @brief Test c library limits
+ */
 ZTEST(libc_common, test_limits)
 {
-
 	zassert_true((long_max + long_one == LONG_MIN));
 }
 
@@ -86,13 +84,15 @@ static ssize_t foobar(void)
 	return -1;
 }
 
+/**
+ * @brief Test C library ssize_t
+ */
 ZTEST(libc_common, test_ssize_t)
 {
 	zassert_true(foobar() < 0);
 }
 
 /**
- *
  * @brief Test boolean types and values library
  *
  */
@@ -112,7 +112,6 @@ volatile long long_variable;
 volatile size_t size_of_long_variable = sizeof(long_variable);
 
 /**
- *
  * @brief Test standard type definitions library
  *
  */
@@ -134,7 +133,6 @@ volatile uint8_t unsigned_byte = 0xff;
 volatile uint32_t unsigned_int = 0xffffff00;
 
 /**
- *
  * @brief Test integer types library
  *
  */
@@ -159,7 +157,6 @@ ZTEST(libc_common, test_stdint)
 }
 
 /**
- *
  * @brief Test time_t to make sure it is at least 64 bits
  *
  */
@@ -181,7 +178,6 @@ ZTEST(libc_common, test_time_t)
 char buffer[BUFSIZE];
 
 /**
- *
  * @brief Test string memset
  *
  */
@@ -201,7 +197,6 @@ ZTEST(libc_common, test_memset)
 }
 
 /**
- *
  * @brief Test string length function
  *
  * @see strlen(), strnlen().
@@ -218,7 +213,6 @@ ZTEST(libc_common, test_strlen)
 }
 
 /**
- *
  * @brief Test string compare function
  *
  * @see strcmp(), strncasecmp().
@@ -230,7 +224,7 @@ ZTEST(libc_common, test_strcmp)
 	char test = 0;
 
 	zassert_true((strcmp(buffer, "fffff") < 0), "strcmp less ...");
-	zassert_true((strcmp(buffer, "eeeee") == 0), "strcmp equal ...");
+	zassert_str_equal(buffer, "eeeee", "strcmp equal ...");
 	zassert_true((strcmp(buffer, "ddddd") > 0), "strcmp greater ...");
 
 	zassert_true((strncasecmp(buffer, "FFFFF", 3) < 0), "strncasecmp less ...");
@@ -262,7 +256,7 @@ ZTEST(libc_common, test_strncmp)
 	/* test compare the same strings */
 	buffer[BUFSIZE - 1] = '\0';
 	zassert_true((strncmp(buffer, buffer, BUFSIZE) == 0),
-				 "strncmp 10 with \0");
+				 "strncmp 10 with \\0");
 }
 
 
@@ -277,7 +271,7 @@ ZTEST(libc_common, test_strcpy)
 	(void)memset(buffer, '\0', BUFSIZE);
 	strcpy(buffer, "10 chars!\0");
 
-	zassert_true((strcmp(buffer, "10 chars!\0") == 0), "strcpy");
+	zassert_str_equal(buffer, "10 chars!\0", "strcpy");
 }
 
 /**
@@ -467,7 +461,7 @@ ZTEST(libc_common, test_checktype)
 		}
 	}
 	*ptr = '\0';
-	zassert_equal(strcmp(buf, exp_alnum), 0, "isalnum error");
+	zassert_str_equal(buf, exp_alnum, "isalnum error");
 
 	ptr = buf;
 	for (int i = 0; i < 128; i++) {
@@ -476,7 +470,7 @@ ZTEST(libc_common, test_checktype)
 		}
 	}
 	*ptr = '\0';
-	zassert_equal(strcmp(buf, exp_alpha), 0, "isalpha error");
+	zassert_str_equal(buf, exp_alpha, "isalpha error");
 
 	ptr = buf;
 	for (int i = 0; i < 128; i++) {
@@ -485,7 +479,7 @@ ZTEST(libc_common, test_checktype)
 		}
 	}
 	*ptr = '\0';
-	zassert_equal(strcmp(buf, exp_digit), 0, "isdigit error");
+	zassert_str_equal(buf, exp_digit, "isdigit error");
 
 	ptr = buf;
 	for (int i = 0; i < 128; i++) {
@@ -494,7 +488,7 @@ ZTEST(libc_common, test_checktype)
 		}
 	}
 	*ptr = '\0';
-	zassert_equal(strcmp(buf, exp_graph), 0, "isgraph error");
+	zassert_str_equal(buf, exp_graph, "isgraph error");
 
 	ptr = buf;
 	for (int i = 0; i < 128; i++) {
@@ -503,7 +497,7 @@ ZTEST(libc_common, test_checktype)
 		}
 	}
 	*ptr = '\0';
-	zassert_equal(strcmp(buf, exp_print), 0, "isprint error");
+	zassert_str_equal(buf, exp_print, "isprint error");
 
 	ptr = buf;
 	for (int i = 0; i < 128; i++) {
@@ -512,7 +506,7 @@ ZTEST(libc_common, test_checktype)
 		}
 	}
 	*ptr = '\0';
-	zassert_equal(strcmp(buf, exp_upper), 0, "isupper error");
+	zassert_str_equal(buf, exp_upper, "isupper error");
 
 	ptr = buf;
 	for (int i = 0; i < 128; i++) {
@@ -521,7 +515,7 @@ ZTEST(libc_common, test_checktype)
 		}
 	}
 	*ptr = '\0';
-	zassert_equal(strcmp(buf, exp_space), 0, "isspace error");
+	zassert_str_equal(buf, exp_space, "isspace error");
 
 	ptr = buf;
 	for (int i = 0; i < 128; i++) {
@@ -530,7 +524,7 @@ ZTEST(libc_common, test_checktype)
 		}
 	}
 	*ptr = '\0';
-	zassert_equal(strcmp(buf, exp_xdigit), 0, "isxdigit error");
+	zassert_str_equal(buf, exp_xdigit, "isxdigit error");
 }
 
 /**
@@ -544,7 +538,7 @@ ZTEST(libc_common, test_memchr)
 
 	/* verify the character inside the count scope */
 	zassert_not_null(memchr(str, 'e', strlen(str)), "memchr serach e");
-	zassert_not_null(memchr(str, '\0', strlen(str)+1), "memchr serach \0");
+	zassert_not_null(memchr(str, '\0', strlen(str)+1), "memchr serach \\0");
 
 	/* verify when the count parm is zero */
 	zassert_is_null(memchr(str, 't', 0), "memchr count 0 error");
@@ -642,7 +636,7 @@ ZTEST(libc_common, test_str_operate)
 	char *ptr;
 
 	zassert_not_null(strcat(str1, str3), "strcat false");
-	zassert_equal(strcmp(str1, "aabbccd"), 0, "test strcat failed");
+	zassert_str_equal(str1, "aabbccd", "test strcat failed");
 
 	ret = strcspn(str1, str2);
 	zassert_equal(ret, 2, "strcspn failed");
@@ -651,32 +645,27 @@ ZTEST(libc_common, test_str_operate)
 
 	zassert_true(strncat(ncat, str1, 2), "strncat failed");
 	zassert_not_null(strncat(str1, str3, 2), "strncat failed");
-#if defined(__GNUC__) && __GNUC__ >= 7
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wstringop-overflow"
-#endif
+	TOOLCHAIN_DISABLE_GCC_WARNING(TOOLCHAIN_WARNING_STRINGOP_OVERFLOW);
 	zassert_not_null(strncat(str1, str3, 1), "strncat failed");
-#if defined(__GNUC__) && __GNUC__ >= 7
-#pragma GCC diagnostic pop
-#endif
-	zassert_equal(strcmp(ncat, "ddeeaa"), 0, "strncat failed");
+	TOOLCHAIN_ENABLE_GCC_WARNING(TOOLCHAIN_WARNING_STRINGOP_OVERFLOW);
+	zassert_str_equal(ncat, "ddeeaa", "strncat failed");
 
 	zassert_is_null(strrchr(ncat, 'z'),
 		       "strrchr not found this word. failed");
 	ptr = strrchr(ncat, 'e');
-	zassert_equal(strcmp(ptr, "eaa"), 0, "strrchr failed");
+	zassert_str_equal(ptr, "eaa", "strrchr failed");
 
 	zassert_is_null(strstr(str1, "ayz"), "strstr aabbccd with ayz failed");
 	zassert_not_null(strstr(str1, str2), "strstr aabbccd with b succeed");
 	zassert_not_null(strstr(str1, "bb"), "strstr aabbccd with bb succeed");
-	zassert_not_null(strstr(str1, ""), "strstr aabbccd with \0 failed");
+	zassert_not_null(strstr(str1, ""), "strstr aabbccd with \\0 failed");
 }
 
 /**
  *
  * @brief test strtol function
  *
- * @detail   in 32bit system:
+ * @details   in 32bit system:
  *	when base is 10, [-2147483648..2147483647]
  *		   in 64bit system:
  *	when base is 10,
@@ -728,13 +717,11 @@ ZTEST(libc_common, test_strtol)
 
 	ret = strtol(str_normal, &stop, 10);
 	zassert_equal(ret, -1011, "strtol base = 10 failed");
-	zassert_true((strcmp(stop, " This stopped it") == 0),
-		"strtol get stop failed");
+	zassert_str_equal(stop, " This stopped it", "strtol get stop failed");
 
 	ret = strtol(str_abnormal, &stop, 0);
 	zassert_equal(ret, 0, "strtol base = 0 failed");
-	zassert_true((strcmp(stop, "ABCDEFGH") == 0),
-		"strtol get stop failed");
+	zassert_str_equal(stop, "ABCDEFGH", "strtol get stop failed");
 
 #if LONG_MAX > 2147483647
 	char border1[] = "-9223372036854775809";
@@ -817,13 +804,11 @@ ZTEST(libc_common, test_strtoul)
 
 	ret = strtoul(str_normal, &stop, 10);
 	zassert_equal(ret, -1011, "strtol base = 10 failed");
-	zassert_true((strcmp(stop, " This stopped it") == 0),
-		"strtol get stop failed");
+	zassert_str_equal(stop, " This stopped it", "strtol get stop failed");
 
 	ret = strtoul(str_abnormal, &stop, 0);
 	zassert_equal(ret, 0, "strtol base = 0 failed");
-	zassert_true((strcmp(stop, "ABCDEFGH") == 0),
-		"strtol get stop failed");
+	zassert_str_equal(stop, "ABCDEFGH", "strtol get stop failed");
 
 #if LONG_MAX > 2147483647
 	char border1[] = "18446744073709551615";
@@ -901,11 +886,11 @@ void test_strtoll(void)
 
 	ret = strtoll(str_normal, &stop, 10);
 	zassert_equal(ret, -1011, "strtoll base = 10 failed");
-	zassert_true((strcmp(stop, " This stopped it") == 0), "strtoll get stop failed");
+	zassert_str_equal(stop, " This stopped it", "strtoll get stop failed");
 
 	ret = strtoll(str_abnormal, &stop, 0);
 	zassert_equal(ret, 0, "strtoll base = 0 failed");
-	zassert_true((strcmp(stop, "ABCDEFGH") == 0), "strtoll get stop failed");
+	zassert_str_equal(stop, "ABCDEFGH", "strtoll get stop failed");
 
 	char border1[] = "-9223372036854775808";
 	char border2[] = "+9223372036854775807";
@@ -924,7 +909,7 @@ void test_strtoll(void)
 	ret = strtoll(border4, NULL, 10);
 	zassert_equal(ret, LLONG_MAX, "strtoll base = 10 failed");
 	ret = strtoull(border5, NULL, 16);
-	zassert_equal(ret, 1, "strtoull base = 16 failed, %s != 0x%x", border5, ret);
+	zassert_equal(ret, 1, "strtoull base = 16 failed, %s != 0x%llx", border5, ret);
 	ret = strtoull(border6, NULL, 10);
 	zassert_equal(errno, ERANGE, "strtoull base = 10 failed, %s != %lld", border6, ret);
 	ret = strtoull(border7, NULL, 10);
@@ -981,11 +966,12 @@ void test_strtoull(void)
 
 	ret = strtoull(str_normal, &stop, 10);
 	zassert_equal(ret, -1011, "strtoull base = 10 failed");
-	zassert_true((strcmp(stop, " This stopped it") == 0), "strtoull get stop failed");
+	zassert_str_equal(stop, " This stopped it",
+			  "strtoull get stop failed");
 
 	ret = strtoull(str_abnormal, &stop, 0);
 	zassert_equal(ret, 0, "strtoull base = 0 failed");
-	zassert_true((strcmp(stop, "ABCDEFGH") == 0), "strtoull get stop failed");
+	zassert_str_equal(stop, "ABCDEFGH", "strtoull get stop failed");
 
 	char border1[] = "+18446744073709551615";
 	char border2[] = "-18446744073709551615000";
@@ -1001,7 +987,7 @@ void test_strtoull(void)
 	ret = strtoull(border3, NULL, 10);
 	zassert_equal(ret, ULLONG_MAX, "strtoull base = 10 failed");
 	ret = strtoull(border4, NULL, 16);
-	zassert_equal(ret, 1, "strtoull base = 16 failed, %s != 0x%x", border4, ret);
+	zassert_equal(ret, 1, "strtoull base = 16 failed, %s != 0x%llx", border4, ret);
 	ret = strtoull(border5, NULL, 10);
 	zassert_equal(errno, ERANGE, "strtoull base = 10 failed, %s != %lld", border5, ret);
 	ret = strtoull(border6, NULL, 10);
@@ -1028,8 +1014,8 @@ ZTEST(libc_common, test_tolower_toupper)
 	}
 	lw[i] = up[i] = '\0';
 
-	zassert_equal(strcmp(up, toup), 0, "toupper error");
-	zassert_equal(strcmp(lw, tolw), 0, "tolower error");
+	zassert_str_equal(up, toup, "toupper error");
+	zassert_str_equal(lw, tolw, "tolower error");
 }
 
 void test_strtok_r_do(char *str, char *sep, int tlen,
@@ -1078,7 +1064,7 @@ ZTEST(libc_common, test_strtok_r)
  *
  * @see gmtime(),gmtime_r().
  */
-ZTEST(libc_common, test_time)
+ZTEST(libc_common, test_time_gmtime)
 {
 	time_t tests1 = 0;
 	time_t tests2 = -5;
@@ -1093,6 +1079,84 @@ ZTEST(libc_common, test_time)
 	tp.tm_wday = -5;
 	zassert_not_null(gmtime_r(&tests3, &tp), "gmtime_r failed");
 	zassert_not_null(gmtime_r(&tests4, &tp), "gmtime_r failed");
+}
+
+/**
+ * @brief Test time function
+ *
+ * @see asctime(), asctime_r().
+ */
+ZTEST(libc_common, test_time_asctime)
+{
+	char buf[26] = {0};
+	struct tm tp = {
+		.tm_sec = 10,   /* Seconds */
+		.tm_min = 30,   /* Minutes */
+		.tm_hour = 14,  /* Hour (24-hour format) */
+		.tm_wday = 5,   /* Day of the week (0-6, 0 = Sun) */
+		.tm_mday = 1,   /* Day of the month */
+		.tm_mon = 5,    /* Month (0-11, January = 0) */
+		.tm_year = 124, /* Year (current year - 1900) */
+	};
+
+	zassert_not_null(asctime_r(&tp, buf));
+	zassert_equal(strncmp("Fri Jun  1 14:30:10 2024\n", buf, sizeof(buf)), 0);
+
+	zassert_not_null(asctime(&tp));
+	zassert_equal(strncmp("Fri Jun  1 14:30:10 2024\n", asctime(&tp), sizeof(buf)), 0);
+
+	if (IS_ENABLED(CONFIG_COMMON_LIBC_ASCTIME_R)) {
+		tp.tm_wday = 8;
+		zassert_is_null(asctime_r(&tp, buf));
+		zassert_is_null(asctime(&tp));
+
+		tp.tm_wday = 5;
+		tp.tm_mon = 12;
+		zassert_is_null(asctime_r(&tp, buf));
+		zassert_is_null(asctime(&tp));
+	}
+}
+
+/**
+ * @brief Test time function
+ *
+ * @see localtime(), localtime_r().
+ */
+ZTEST(libc_common, test_time_localtime)
+{
+	time_t tests1 = 0;
+	time_t tests2 = -5;
+	time_t tests3 = (time_t) -214748364800;
+	time_t tests4 = 951868800;
+
+	struct tm tp;
+
+	zassert_not_null(localtime(&tests1), "localtime failed");
+	zassert_not_null(localtime(&tests2), "localtime failed");
+
+	tp.tm_wday = -5;
+	zassert_not_null(localtime_r(&tests3, &tp), "localtime_r failed");
+	zassert_not_null(localtime_r(&tests4, &tp), "localtime_r failed");
+}
+
+/**
+ * @brief Test time function
+ *
+ * @see ctime(), ctime_r().
+ */
+ZTEST(libc_common, test_time_ctime)
+{
+	char buf[26] = {0};
+	time_t test1 = 1718260000;
+
+#ifdef CONFIG_NATIVE_LIBC
+	setenv("TZ", "UTC", 1);
+#endif
+	zassert_not_null(ctime_r(&test1, buf));
+	zassert_equal(strncmp("Thu Jun 13 06:26:40 2024\n", buf, sizeof(buf)), 0);
+
+	zassert_not_null(ctime(&test1));
+	zassert_equal(strncmp("Thu Jun 13 06:26:40 2024\n", ctime(&test1), sizeof(buf)), 0);
 }
 
 /**
@@ -1262,3 +1326,6 @@ ZTEST(libc_common, test_exit)
 	zassert_equal(a, 0, "exit failed");
 #endif
 }
+/**
+ * @}
+ */

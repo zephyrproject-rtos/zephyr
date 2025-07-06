@@ -1,0 +1,17 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_RENESAS_RZ
+	bool "Renesas RZ series gpio driver"
+	default y
+	depends on DT_HAS_RENESAS_RZ_GPIO_ENABLED
+	select USE_RZ_FSP_IOPORT
+	help
+	  Enable Renesas RZ series gpio driver.
+
+config GPIO_RENESAS_RZ_HAS_GPIO_INTERRUPT
+	bool
+	default y
+	depends on DT_HAS_RENESAS_RZ_GPIO_INT_ENABLED
+	help
+	  GPIO pins can generate interrupts at port mode.

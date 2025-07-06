@@ -1,0 +1,244 @@
+/*
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/clock/ra_clock.h>
+#include <arm/renesas/ra/ra4/ra4-cm4-common.dtsi>
+#include <zephyr/dt-bindings/pwm/ra_pwm.h>
+#include <zephyr/dt-bindings/misc/renesas/ra-elc/ra4w1-elc.h>
+
+/ {
+	soc {
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 DT_SIZE_K(96)>;
+		};
+
+		flash-controller@407e0000 {
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				reg = <0x0 DT_SIZE_K(512)>;
+			};
+		};
+
+		sci4: sci4@40070080  {
+			compatible = "renesas,ra-sci";
+			interrupts = <16 1>, <17 1>, <18 1>, <19 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
+			reg = <0x40070080 0x20>;
+			clocks = <&pclka MSTPB 26>;
+			status = "disabled";
+			uart {
+				compatible = "renesas,ra-sci-uart";
+				channel = <4>;
+				status = "disabled";
+			};
+		};
+
+		trng: trng {
+			compatible = "renesas,ra-sce5-rng";
+			status = "disabled";
+		};
+
+		adc@4005c000 {
+			interrupts = <20 1>;
+			channel-available-mask = <0x1a0670>;
+		};
+
+		pwm8: pwm8@40078800 {
+			compatible = "renesas,ra-pwm";
+			divider = <RA_PWM_SOURCE_DIV_1>;
+			channel = <RA_PWM_CHANNEL_8>;
+			clocks = <&pclkd MSTPD 6>;
+			reg = <0x40078800 0x100>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+	};
+
+	clocks: clocks {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		xtal: clock-main-osc {
+			compatible = "renesas,ra-cgc-external-clock";
+			clock-frequency = <DT_FREQ_M(8)>;
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+
+		hoco: clock-hoco {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(48)>;
+			#clock-cells = <0>;
+		};
+
+		moco: clock-moco {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(8)>;
+			#clock-cells = <0>;
+		};
+
+		loco: clock-loco {
+			compatible = "fixed-clock";
+			clock-frequency = <32768>;
+			#clock-cells = <0>;
+		};
+
+		subclk: clock-subclk {
+			compatible = "renesas,ra-cgc-subclk";
+			clock-frequency = <32768>;
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+
+		pll: pll {
+			compatible = "renesas,ra-cgc-pll";
+			#clock-cells = <0>;
+
+			/* PLL */
+			clocks = <&xtal>;
+			div = <2>;
+			mul = <12 0>;
+			status = "disabled";
+		};
+
+		pclkblock: pclkblock@4001e01c {
+			compatible = "renesas,ra-cgc-pclk-block";
+			reg = <0x4001e01c 4>, <0x40047000 4>, <0x40047004 4>,
+			      <0x40047008 4>;
+			reg-names = "MSTPA", "MSTPB","MSTPC",
+				    "MSTPD";
+			#clock-cells = <0>;
+			clocks = <&hoco>;
+			status = "okay";
+
+			iclk: iclk {
+				compatible = "renesas,ra-cgc-pclk";
+				clock-frequency = <48000000>;
+				div = <1>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			pclka: pclka {
+				compatible = "renesas,ra-cgc-pclk";
+				div = <1>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			pclkb: pclkb {
+				compatible = "renesas,ra-cgc-pclk";
+				div = <2>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			pclkc: pclkc {
+				compatible = "renesas,ra-cgc-pclk";
+				div = <1>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			pclkd: pclkd {
+				compatible = "renesas,ra-cgc-pclk";
+				div = <1>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			fclk: fclk {
+				compatible = "renesas,ra-cgc-pclk";
+				div = <2>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			clkout: clkout {
+				compatible = "renesas,ra-cgc-pclk";
+				#clock-cells = <2>;
+				status = "disabled";
+			};
+
+			uclk: uclk {
+				compatible = "renesas,ra-cgc-pclk";
+				div = <1>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+		};
+	};
+};
+
+&ioport0 {
+	port-irqs = <&port_irq3 &port_irq7 &port_irq14
+	&port_irq15>;
+	port-irq-names = "port-irq3",
+			 "port-irq7",
+			 "port-irq14",
+			 "port-irq15";
+	port-irq3-pins = <4>;
+	port-irq7-pins = <15>;
+	port-irq14-pins = <10>;
+	port-irq15-pins = <11>;
+};
+
+&ioport1 {
+	port-irqs = <&port_irq0 &port_irq1 &port_irq2
+	&port_irq3 &port_irq4>;
+	port-irq-names = "port-irq0",
+			 "port-irq1",
+			 "port-irq2",
+			 "port-irq3",
+			 "port-irq4";
+	port-irq0-pins = <5>;
+	port-irq1-pins = <1 4>;
+	port-irq2-pins = <0>;
+	port-irq3-pins = <10>;
+	port-irq4-pins = <11>;
+};
+
+&ioport2 {
+	port-irqs = <&port_irq0 &port_irq1 &port_irq2
+	&port_irq3>;
+	port-irq-names = "port-irq0",
+			 "port-irq1",
+			 "port-irq2",
+			 "port-irq3";
+	port-irq0-pins = <6>;
+	port-irq1-pins = <5>;
+	port-irq2-pins = <13>;
+	port-irq3-pins = <12>;
+};
+
+&ioport4 {
+	port-irqs = <&port_irq4 &port_irq6 &port_irq9>;
+	port-irq-names = "port-irq4",
+			 "port-irq6",
+			 "port-irq9";
+	port-irq4-pins = <2>;
+	port-irq6-pins = <9>;
+	port-irq9-pins = <14>;
+};
+
+&ioport5 {
+	port-irqs = <&port_irq11>;
+	port-irq-names = "port-irq11";
+	port-irq11-pins = <1>;
+};
+
+&pwm2 {
+	clocks = <&pclkd MSTPD 5>;
+};
+
+&pwm3 {
+	clocks = <&pclkd MSTPD 5>;
+};
+
+&dac_global {
+	has-davrefcr;
+};

@@ -14,7 +14,8 @@
 #include <kernel_internal.h>
 #include <string.h>
 #include <zephyr/cache.h>
-#include <zsr.h>
+#include <zephyr/platform/hooks.h>
+#include <zephyr/zsr.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,84 +26,132 @@ K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_MAX_NUM_CPUS,
 
 static ALWAYS_INLINE void arch_kernel_init(void)
 {
-	_cpu_t *cpu0 = &_kernel.cpus[0];
-
-#ifdef CONFIG_KERNEL_COHERENCE
-	/* Make sure we don't have live data for unexpected cached
-	 * regions due to boot firmware
-	 */
-	sys_cache_data_flush_and_invd_all();
-
-	/* Our cache top stash location might have junk in it from a
-	 * pre-boot environment.  Must be zero or valid!
-	 */
-	XTENSA_WSR(ZSR_FLUSH_STR, 0);
-#endif
-
-	cpu0->nested = 0;
-
-	/* The asm2 scheme keeps the kernel pointer in a scratch SR
-	 * (see zsr.h for generation specifics) for easy access.  That
-	 * saves 4 bytes of immediate value to store the address when
-	 * compared to the legacy scheme.  But in SMP this record is a
-	 * per-CPU thing and having it stored in a SR already is a big
-	 * win.
-	 */
-	XTENSA_WSR(ZSR_CPU_STR, cpu0);
-
-#ifdef CONFIG_INIT_STACKS
-	char *stack_start = K_KERNEL_STACK_BUFFER(z_interrupt_stacks[0]);
-	size_t stack_sz = K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[0]);
-	char *stack_end = stack_start + stack_sz;
-
-	uint32_t sp;
-
-	__asm__ volatile("mov %0, sp" : "=a"(sp));
-
-	/* Only clear the interrupt stack if the current stack pointer
-	 * is not within the interrupt stack. Or else we would be
-	 * wiping the in-use stack.
-	 */
-	if (((uintptr_t)sp < (uintptr_t)stack_start) ||
-	    ((uintptr_t)sp >= (uintptr_t)stack_end)) {
-		memset(stack_start, 0xAA, stack_sz);
-	}
-#endif
-
-#ifdef CONFIG_XTENSA_MMU
-	xtensa_mmu_init();
-#endif
-
-#ifdef CONFIG_XTENSA_MPU
-	xtensa_mpu_init();
-#endif
+#ifdef CONFIG_SOC_PER_CORE_INIT_HOOK
+	soc_per_core_init_hook();
+#endif /* CONFIG_SOC_PER_CORE_INIT_HOOK */
 }
 
 void xtensa_switch(void *switch_to, void **switched_from);
 
 static ALWAYS_INLINE void arch_switch(void *switch_to, void **switched_from)
 {
-	return xtensa_switch(switch_to, switched_from);
+	xtensa_switch(switch_to, switched_from);
 }
 
 #ifdef CONFIG_KERNEL_COHERENCE
+/**
+ * @brief Invalidate cache between two stack addresses.
+ *
+ * This invalidates the cache lines between two stack addresses,
+ * beginning with the cache line including the start address, up to
+ * but not including the cache line containing the end address.
+ * Not invalidating the last cache line is due to the usage in
+ * arch_cohere_stacks() where it invalidates the unused portion of
+ * stack. If the stack pointer happens to be in the middle of
+ * a cache line, the cache line containing the stack pointer
+ * address will be flushed, and then immediately invalidated.
+ * If we are swapping back into the same thread (e.g. after
+ * handling interrupt), that cache line, being invalidated, needs
+ * to be retrieved from main memory. This creates unnecessary
+ * data move between main memory and cache.
+ *
+ * @param s_addr Starting address of memory region to have cache invalidated.
+ * @param e_addr Ending address of memory region to have cache invalidated.
+ */
+static ALWAYS_INLINE void xtensa_cohere_stacks_cache_invd(size_t s_addr, size_t e_addr)
+{
+	const size_t first = ROUND_DOWN(s_addr, XCHAL_DCACHE_LINESIZE);
+	const size_t last = ROUND_DOWN(e_addr, XCHAL_DCACHE_LINESIZE);
+	size_t line;
+
+	for (line = first; line < last; line += XCHAL_DCACHE_LINESIZE) {
+		__asm__ volatile("dhi %0, 0" :: "r"(line));
+	}
+}
+
+/**
+ * @brief Flush cache between two stack addresses.
+ *
+ * This flushes the cache lines between two stack addresses,
+ * beginning with the cache line including the start address,
+ * and ending with the cache line including the end address.
+ * Note that, contrary to xtensa_cohere_stacks_cache_invd(),
+ * the last cache line will be flushed instead of being
+ * ignored.
+ *
+ * @param s_addr Starting address of memory region to have cache invalidated.
+ * @param e_addr Ending address of memory region to have cache invalidated.
+ */
+static ALWAYS_INLINE void xtensa_cohere_stacks_cache_flush(size_t s_addr, size_t e_addr)
+{
+	const size_t first = ROUND_DOWN(s_addr, XCHAL_DCACHE_LINESIZE);
+	const size_t last = ROUND_UP(e_addr, XCHAL_DCACHE_LINESIZE);
+	size_t line;
+
+	for (line = first; line < last; line += XCHAL_DCACHE_LINESIZE) {
+		__asm__ volatile("dhwb %0, 0" :: "r"(line));
+	}
+}
+
+/**
+ * @brief Flush and invalidate cache between two stack addresses.
+ *
+ * This flushes the cache lines between two stack addresses,
+ * beginning with the cache line including the start address,
+ * and ending with the cache line including the end address.
+ * Note that, contrary to xtensa_cohere_stacks_cache_invd(),
+ * the last cache line will be flushed and invalidated instead
+ * of being ignored.
+ *
+ * @param s_addr Starting address of memory region to have cache manipulated.
+ * @param e_addr Ending address of memory region to have cache manipulated.
+ */
+static ALWAYS_INLINE void xtensa_cohere_stacks_cache_flush_invd(size_t s_addr, size_t e_addr)
+{
+	const size_t first = ROUND_DOWN(s_addr, XCHAL_DCACHE_LINESIZE);
+	const size_t last = ROUND_UP(e_addr, XCHAL_DCACHE_LINESIZE);
+	size_t line;
+
+	for (line = first; line < last; line += XCHAL_DCACHE_LINESIZE) {
+		__asm__ volatile("dhwbi %0, 0" :: "r"(line));
+	}
+}
+
 static ALWAYS_INLINE void arch_cohere_stacks(struct k_thread *old_thread,
 					     void *old_switch_handle,
 					     struct k_thread *new_thread)
 {
+#ifdef CONFIG_SCHED_CPU_MASK_PIN_ONLY
+	ARG_UNUSED(old_thread);
+	ARG_UNUSED(old_switch_handle);
+	ARG_UNUSED(new_thread);
+
+	/* This kconfig option ensures that a living thread will never
+	 * be executed in a different CPU so we can safely return without
+	 * invalidate and/or flush threads cache.
+	 */
+	return;
+#endif /* CONFIG_SCHED_CPU_MASK_PIN_ONLY */
+
+#if !defined(CONFIG_SCHED_CPU_MASK_PIN_ONLY)
 	int32_t curr_cpu = _current_cpu->id;
 
 	size_t ostack = old_thread->stack_info.start;
-	size_t osz    = old_thread->stack_info.size;
+	size_t oend   = ostack + old_thread->stack_info.size;
 	size_t osp    = (size_t) old_switch_handle;
 
 	size_t nstack = new_thread->stack_info.start;
-	size_t nsz    = new_thread->stack_info.size;
+	size_t nend   = nstack + new_thread->stack_info.size;
 	size_t nsp    = (size_t) new_thread->switch_handle;
 
-	int zero = 0;
+	uint32_t flush_end = 0;
 
-	__asm__ volatile("wsr %0, " ZSR_FLUSH_STR :: "r"(zero));
+#ifdef CONFIG_USERSPACE
+	/* End of old_thread privileged stack. */
+	void *o_psp_end = old_thread->arch.psp;
+#endif
+
+	__asm__ volatile("wsr %0, " ZSR_FLUSH_STR :: "r"(flush_end));
 
 	if (old_switch_handle != NULL) {
 		int32_t a0save;
@@ -111,14 +160,6 @@ static ALWAYS_INLINE void arch_cohere_stacks(struct k_thread *old_thread,
 				 "call0 xtensa_spill_reg_windows;"
 				 "mov a0, %0"
 				 : "=r"(a0save));
-	}
-
-	/* The following option ensures that a living thread will never
-	 * be executed in a different CPU so we can safely return without
-	 * invalidate and/or flush threads cache.
-	 */
-	if (IS_ENABLED(CONFIG_SCHED_CPU_MASK_PIN_ONLY)) {
-		return;
 	}
 
 	/* The "live" area (the region between the switch handle,
@@ -135,7 +176,7 @@ static ALWAYS_INLINE void arch_cohere_stacks(struct k_thread *old_thread,
 	 * automatically overwritten as needed.
 	 */
 	if (curr_cpu != new_thread->arch.last_cpu) {
-		sys_cache_data_invd_range((void *)nsp, (nstack + nsz) - nsp);
+		xtensa_cohere_stacks_cache_invd(nsp, nend);
 	}
 	old_thread->arch.last_cpu = curr_cpu;
 
@@ -163,8 +204,13 @@ static ALWAYS_INLINE void arch_cohere_stacks(struct k_thread *old_thread,
 	 * to the stack top stashed in a special register.
 	 */
 	if (old_switch_handle != NULL) {
-		sys_cache_data_flush_range((void *)osp, (ostack + osz) - osp);
-		sys_cache_data_invd_range((void *)ostack, osp - ostack);
+#ifdef CONFIG_USERSPACE
+		if (o_psp_end == NULL)
+#endif
+		{
+			xtensa_cohere_stacks_cache_flush(osp, oend);
+			xtensa_cohere_stacks_cache_invd(ostack, osp);
+		}
 	} else {
 		/* When in a switch, our current stack is the outbound
 		 * stack.  Flush the single line containing the stack
@@ -175,13 +221,58 @@ static ALWAYS_INLINE void arch_cohere_stacks(struct k_thread *old_thread,
 		 */
 		__asm__ volatile("mov %0, a1" : "=r"(osp));
 		osp -= 16;
-		sys_cache_data_flush_range((void *)osp, 1);
-		sys_cache_data_invd_range((void *)ostack, osp - ostack);
+		xtensa_cohere_stacks_cache_flush(osp, osp + 16);
 
-		uint32_t end = ostack + osz;
+#ifdef CONFIG_USERSPACE
+		if (o_psp_end == NULL)
+#endif
+		{
+			xtensa_cohere_stacks_cache_invd(ostack, osp);
 
-		__asm__ volatile("wsr %0, " ZSR_FLUSH_STR :: "r"(end));
+			flush_end = oend;
+		}
 	}
+
+#ifdef CONFIG_USERSPACE
+	/* User threads need a bit more processing due to having
+	 * privileged stack for handling syscalls. The privileged
+	 * stack always immediately precedes the thread stack.
+	 *
+	 * Note that, with userspace enabled, we need to swap
+	 * page table during context switch via function calls.
+	 * This means that the stack is being actively used
+	 * unlike the non-userspace case mentioned above.
+	 * Therefore we need to set ZSR_FLUSH_STR to make sure
+	 * we flush the cached data in the stack.
+	 */
+	if (o_psp_end != NULL) {
+		/* Start of old_thread privileged stack.
+		 *
+		 * struct xtensa_thread_stack_header wholly contains
+		 * a array for the privileged stack, so we can use
+		 * its size to calculate where the start is.
+		 */
+		size_t o_psp_start = (size_t)o_psp_end - sizeof(struct xtensa_thread_stack_header);
+
+		if ((osp >= ostack) && (osp < oend)) {
+			/* osp in user stack. */
+			xtensa_cohere_stacks_cache_invd(o_psp_start, osp);
+
+			flush_end = oend;
+		} else if ((osp >= o_psp_start) && (osp < ostack)) {
+			/* osp in privileged stack. */
+			xtensa_cohere_stacks_cache_flush(ostack, oend);
+			xtensa_cohere_stacks_cache_invd(o_psp_start, osp);
+
+			flush_end = (size_t)old_thread->arch.psp;
+		}
+	}
+#endif /* CONFIG_USERSPACE */
+
+	flush_end = ROUND_DOWN(flush_end, XCHAL_DCACHE_LINESIZE);
+	__asm__ volatile("wsr %0, " ZSR_FLUSH_STR :: "r"(flush_end));
+
+#endif /* !CONFIG_SCHED_CPU_MASK_PIN_ONLY */
 }
 #endif
 

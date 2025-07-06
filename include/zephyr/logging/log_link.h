@@ -130,7 +130,7 @@ static inline int log_link_initiate(const struct log_link *link,
 
 /** @brief Activate log link.
  *
- * Function checks if link is initilized and completes initialization process.
+ * Function checks if link is initialized and completes initialization process.
  * When successfully returns, link is ready with domain and sources count fetched
  * and timestamp details updated.
  *

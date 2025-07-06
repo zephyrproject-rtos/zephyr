@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2022 NXP
+ * Copyright 2021-2022,2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,7 +16,8 @@
 	chosen {
 		zephyr,console = &uart4;
 		zephyr,shell-uart = &uart4;
-		zephyr,sram = &sram0;
+		/* sram node actually locates at DDR DRAM */
+		zephyr,sram = &dram;
 	};
 
 	cpus {
@@ -33,8 +34,32 @@
 		method = "smc";
 	};
 
-	sram0: memory@93c00000 {
+	dram: memory@93c00000 {
 		reg = <0x93c00000 DT_SIZE_M(1)>;
+	};
+};
+
+&enet {
+	status = "okay";
+};
+
+&enet_mac {
+	pinctrl-0 = <&pinmux_enet>;
+	pinctrl-names = "default";
+	phy-handle = <&phy>;
+	zephyr,random-mac-address;
+	phy-connection-type = "rgmii";
+	status = "okay";
+};
+
+&enet_mdio {
+	pinctrl-0 = <&pinmux_mdio>;
+	pinctrl-names = "default";
+	status = "okay";
+	phy: phy@0 {
+		compatible = "qca,ar8031";
+		reg = <0>;
+		status = "okay";
 	};
 };
 

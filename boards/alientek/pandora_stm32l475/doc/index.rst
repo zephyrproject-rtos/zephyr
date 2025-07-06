@@ -1,7 +1,4 @@
-.. _pandora_stm32l475_board:
-
-Alientek STM32L475 Pandora
-##########################
+.. zephyr:board:: pandora_stm32l475
 
 Overview
 ********
@@ -28,14 +25,11 @@ some highlights of the STM32L475 Pandora board:
 - MCU current ammeter with 4 ranges and auto-calibration
 - Connector for external board or RF-EEPROM
 - Four power supply options:
+
     - ST-LINK/V2-1
     - USB FS connector
     - External 5 V
     - CR2032 battery (not provided)
-
-.. image:: img/pandora_stm32l475.jpg
-     :align: center
-     :alt: STM32L475 Pandora
 
 More information about the board can be found at the `STM32L475 Pandora website`_.
 
@@ -91,44 +85,7 @@ The STM32L475VE SoC provides the following hardware features:
 Supported Features
 ==================
 
-The Zephyr stm32l475ve_pandora board configuration supports the following hardware features:
-
-+-----------+------------+----------------------------------------------+
-| Interface | Controller | Driver/Component                             |
-+===========+============+==============================================+
-| NVIC      | on-chip    | nested vector interrupt controller           |
-+-----------+------------+----------------------------------------------+
-| UART      | on-chip    | serial port-polling;                         |
-|           |            | serial port-interrupt                        |
-+-----------+------------+----------------------------------------------+
-| PINMUX    | on-chip    | pinmux                                       |
-+-----------+------------+----------------------------------------------+
-| GPIO      | on-chip    | gpio                                         |
-+-----------+------------+----------------------------------------------+
-| I2C       | on-chip    | I2C-AHT10(Temperature and humidity sensor)   |
-|           |            | I2C-ICM2068(light environment sensor)        |
-+-----------+------------+----------------------------------------------+
-| I2S       | on-chip    | I2S-ES8388(Audio Decoder)                    |
-+-----------+------------+----------------------------------------------+
-| USB       | on-chip    | I2S-OTG                                      |
-+-----------+------------+----------------------------------------------+
-| SDIO      | on-chip    | SDIO-AP6181(WIFI)                            |
-+-----------+------------+----------------------------------------------+
-| SPI       | on-chip    | LCD-TFT                                      |
-+-----------+------------+----------------------------------------------+
-| QSPI NOR  | on-chip    | flash                                        |
-+-----------+------------+----------------------------------------------+
-| IR-RX/TX  | on-board   | Infrared Receiver(38Khz)/Transmitter         |
-+-----------+------------+----------------------------------------------+
-| STLINK-V2 | on-board   | STLINK-V2 Debugger                           |
-+-----------+------------+----------------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-
-	:zephyr_file:`boards/alientek/pandora_stm32l475/pandora_stm32l475_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -164,6 +121,8 @@ Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 
@@ -182,7 +141,7 @@ board. For example:
    $ minicom -D /dev/ttyACM0
 
 Then, build and flash in the usual way. Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -199,7 +158,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

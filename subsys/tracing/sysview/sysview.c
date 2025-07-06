@@ -6,10 +6,12 @@
 #include <zephyr/kernel.h>
 #include <zephyr/kernel_structs.h>
 #include <zephyr/init.h>
+#include <zephyr/debug/cpu_load.h>
 #include <ksched.h>
 
 #include <SEGGER_SYSVIEW.h>
 
+#define NAMED_EVENT_MAXSTR 20 /* Maximum string length supported by named event */
 
 static uint32_t interrupt;
 
@@ -62,7 +64,34 @@ void sys_trace_isr_exit_to_scheduler(void)
 
 void sys_trace_idle(void)
 {
+#ifdef CONFIG_TRACING_IDLE
 	SEGGER_SYSVIEW_OnIdle();
+#endif
+
+	if (IS_ENABLED(CONFIG_CPU_LOAD)) {
+		cpu_load_on_enter_idle();
+	}
+}
+
+void sys_trace_idle_exit(void)
+{
+	if (IS_ENABLED(CONFIG_CPU_LOAD)) {
+		cpu_load_on_exit_idle();
+	}
+}
+
+void sys_trace_named_event(const char *name, uint32_t arg0, uint32_t arg1)
+{
+	/* Based on SEGGER provided code for user defined packets */
+	uint8_t a_packet[SEGGER_SYSVIEW_INFO_SIZE + 2 *
+		SEGGER_SYSVIEW_QUANTA_U32 + NAMED_EVENT_MAXSTR + 1];
+	uint8_t *payload;
+
+	payload = SEGGER_SYSVIEW_PREPARE_PACKET(a_packet);
+	payload = SEGGER_SYSVIEW_EncodeString(payload, name, NAMED_EVENT_MAXSTR);
+	payload = SEGGER_SYSVIEW_EncodeU32(payload, arg0);
+	payload = SEGGER_SYSVIEW_EncodeU32(payload, arg1);
+	SEGGER_SYSVIEW_SendPacket(a_packet, payload, TID_NAMED_EVENT);
 }
 
 static int sysview_init(void)

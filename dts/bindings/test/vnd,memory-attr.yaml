@@ -5,4 +5,4 @@ description: Test memory and memory attributes
 
 compatible: "vnd,memory-attr"
 
-include: [base.yaml, "zephyr,memory-attr.yaml"]
+include: [base.yaml, "zephyr,memory-common.yaml"]

@@ -245,7 +245,7 @@ static int tsl2561_channel_get(const struct device *dev, enum sensor_channel cha
 	return 0;
 }
 
-static const struct sensor_driver_api tsl2561_driver_api = {
+static DEVICE_API(sensor, tsl2561_driver_api) = {
 	.sample_fetch = tsl2561_sample_fetch,
 	.channel_get = tsl2561_channel_get
 };

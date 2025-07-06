@@ -13,6 +13,7 @@
 #define ZEPHYR_DRIVERS_MISC_FT8XX_FT8XX_COPRO_H_
 
 #include <stdint.h>
+#include <zephyr/device.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -65,19 +66,24 @@ extern "C" {
 /**
  * @brief Execute a display list command by co-processor engine
  *
+ * @param dev Device structure
  * @param cmd Display list command to execute
  */
-void ft8xx_copro_cmd(uint32_t cmd);
+void ft8xx_copro_cmd(const struct device *dev, uint32_t cmd);
 
 /**
  * @brief Start a new display list
+ *
+ * @param dev Device structure
  */
-void ft8xx_copro_cmd_dlstart(void);
+void ft8xx_copro_cmd_dlstart(const struct device *dev);
 
 /**
  * @brief Swap the current display list
+ *
+ * @param dev Device structure
  */
-void ft8xx_copro_cmd_swap(void);
+void ft8xx_copro_cmd_swap(const struct device *dev);
 
 /**
  * @brief Draw text
@@ -88,17 +94,19 @@ void ft8xx_copro_cmd_swap(void);
  * the text in both directions. @ref FT8XX_OPT_RIGHTX right-justifies the text,
  * so that the @p x is the rightmost pixel.
  *
+ * @param dev Device structure
  * @param x x-coordinate of text base, in pixels
  * @param y y-coordinate of text base, in pixels
  * @param font Font to use for text, 0-31. 16-31 are ROM fonts
  * @param options Options to apply
- * @param s Character string to display, terminated with a null character
+ * @param string Character string to display, terminated with a null character
  */
-void ft8xx_copro_cmd_text(int16_t x,
-			   int16_t y,
-			   int16_t font,
-			   uint16_t options,
-			   const char *s);
+void ft8xx_copro_cmd_text(const struct device *dev,
+			  int16_t x,
+			  int16_t y,
+			  int16_t font,
+			  uint16_t options,
+			  const char *string);
 
 /**
  * @brief Draw a decimal number
@@ -113,17 +121,19 @@ void ft8xx_copro_cmd_text(int16_t x,
  * If @ref FT8XX_OPT_SIGNED is given, the number is treated as signed, and
  * prefixed by a minus sign if negative.
  *
+ * @param dev Device structure
  * @param x x-coordinate of text base, in pixels
  * @param y y-coordinate of text base, in pixels
  * @param font Font to use for text, 0-31. 16-31 are ROM fonts
  * @param options Options to apply
- * @param n The number to display.
+ * @param number The number to display.
  */
-void ft8xx_copro_cmd_number(int16_t x,
-			     int16_t y,
-			     int16_t font,
-			     uint16_t options,
-			     int32_t n);
+void ft8xx_copro_cmd_number(const struct device *dev,
+			    int16_t x,
+			    int16_t y,
+			    int16_t font,
+			    uint16_t options,
+			    int32_t number);
 
 /**
  * @brief Execute the touch screen calibration routine
@@ -134,9 +144,10 @@ void ft8xx_copro_cmd_number(int16_t x,
  * engine overlays the touch targets on the current display list, gathers the
  * calibration input and updates REG_TOUCH_TRANSFORM_A-F.
  *
+ * @param dev Device structure
  * @param result Calibration result, written with 0 on failure of calibration
  */
-void ft8xx_copro_cmd_calibrate(uint32_t *result);
+void ft8xx_copro_cmd_calibrate(const struct device *dev, uint32_t *result);
 
 /**
  * @}

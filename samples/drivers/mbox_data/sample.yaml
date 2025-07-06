@@ -5,11 +5,7 @@ common:
   tags: mbox
 tests:
   sample.drivers.mbox_data.real_hw:
-    platform_allow:
-      - mimxrt1170_evk@B/mimxrt1176/cm7
-      - mimxrt1170_evk/mimxrt1176/cm7
-      - mimxrt1160_evk/mimxrt1166/cm7
-      - lpcxpresso55s69/lpc55s69/cpu0
+    filter: dt_compat_enabled("vnd,mbox-consumer")
     integration_platforms:
       - mimxrt1160_evk/mimxrt1166/cm7
       - lpcxpresso55s69/lpc55s69/cpu0
@@ -18,12 +14,12 @@ tests:
       type: multi_line
       ordered: false
       regex:
-        - "Client received \\(on channel 2\\) value: 1"
-        - "Client send \\(on channel 3\\) value: 2"
-        - "Client received \\(on channel 2\\) value: 3"
-        - "Client send \\(on channel 3\\) value: 4"
-        - "Client received \\(on channel 2\\) value: 41"
-        - "Client send \\(on channel 3\\) value: 42"
-        - "Client received \\(on channel 2\\) value: 97"
-        - "Client send \\(on channel 3\\) value: 98"
-        - "Client received \\(on channel 2\\) value: 99"
+        - "Client received .+ value: 1"
+        - "Client send .+ value: 2"
+        - "Client received .+ value: 3"
+        - "Client send .+ value: 4"
+        - "Client received .+ value: 41"
+        - "Client send .+ value: 42"
+        - "Client received .+ value: 97"
+        - "Client send .+ value: 98"
+        - "Client received .+ value: 99"

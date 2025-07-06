@@ -32,14 +32,14 @@
 
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/led.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
+#include <zephyr/pm/device.h>
 
 #define LOG_LEVEL CONFIG_LED_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(lp5562);
-
-#include "led_context.h"
 
 /* Registers */
 #define LP5562_ENABLE             0x00
@@ -77,17 +77,15 @@ LOG_MODULE_REGISTER(lp5562);
  */
 #define LP5562_MIN_BLINK_PERIOD 1
 
-/* Brightness limits in percent */
-#define LP5562_MIN_BRIGHTNESS 0
-#define LP5562_MAX_BRIGHTNESS 100
-
 /* Output current limits in 0.1 mA */
 #define LP5562_MIN_CURRENT_SETTING 0
 #define LP5562_MAX_CURRENT_SETTING 255
 
 /* Values for ENABLE register. */
-#define LP5562_ENABLE_CHIP_EN (1 << 6)
-#define LP5562_ENABLE_LOG_EN  (1 << 7)
+#define LP5562_ENABLE_CHIP_EN_MASK (1 << 6)
+#define LP5562_ENABLE_CHIP_EN_SET  (1 << 6)
+#define LP5562_ENABLE_CHIP_EN_CLR  (0 << 6)
+#define LP5562_ENABLE_LOG_EN       (1 << 7)
 
 /* Values for CONFIG register. */
 #define LP5562_CONFIG_EXTERNAL_CLOCK         0x00
@@ -167,10 +165,7 @@ struct lp5562_config {
 	uint8_t g_current;
 	uint8_t b_current;
 	uint8_t w_current;
-};
-
-struct lp5562_data {
-	struct led_data dev_data;
+	struct gpio_dt_spec enable_gpio;
 };
 
 /*
@@ -279,8 +274,8 @@ static int lp5562_get_engine_reg_shift(enum lp5562_led_sources engine,
  * @param prescale  Pointer to the prescale value.
  * @param step_time Pointer to the step_time value.
  */
-static void lp5562_ms_to_prescale_and_step(struct led_data *data, uint32_t ms,
-					   uint8_t *prescale, uint8_t *step_time)
+static void lp5562_ms_to_prescale_and_step(uint32_t ms, uint8_t *prescale,
+					   uint8_t *step_time)
 {
 	/*
 	 * One step with the prescaler set to 0 takes 0.49ms. The max value for
@@ -604,16 +599,9 @@ static int lp5562_program_set_brightness(const struct device *dev,
 					 uint8_t command_index,
 					 uint8_t brightness)
 {
-	struct lp5562_data *data = dev->data;
-	struct led_data *dev_data = &data->dev_data;
 	uint8_t val;
 
-	if ((brightness < dev_data->min_brightness) ||
-			(brightness > dev_data->max_brightness)) {
-		return -EINVAL;
-	}
-
-	val = (brightness * 0xFF) / dev_data->max_brightness;
+	val = (brightness * 0xFF) / LED_BRIGHTNESS_MAX;
 
 	return lp5562_program_command(dev, engine, command_index,
 			LP5562_PROG_COMMAND_SET_PWM, val);
@@ -643,17 +631,14 @@ static int lp5562_program_ramp(const struct device *dev,
 			       uint8_t step_count,
 			       enum lp5562_engine_fade_dirs fade_dir)
 {
-	struct lp5562_data *data = dev->data;
-	struct led_data *dev_data = &data->dev_data;
 	uint8_t prescale, step_time;
 
-	if ((time_per_step < dev_data->min_period) ||
-			(time_per_step > dev_data->max_period)) {
+	if (time_per_step < LP5562_MIN_BLINK_PERIOD ||
+	    time_per_step > LP5562_MAX_BLINK_PERIOD) {
 		return -EINVAL;
 	}
 
-	lp5562_ms_to_prescale_and_step(dev_data, time_per_step,
-			&prescale, &step_time);
+	lp5562_ms_to_prescale_and_step(time_per_step, &prescale, &step_time);
 
 	return lp5562_program_command(dev, engine, command_index,
 			LP5562_PROG_COMMAND_RAMP_TIME(prescale, step_time),
@@ -763,21 +748,31 @@ static int lp5562_update_blinking_brightness(const struct device *dev,
 static int lp5562_led_blink(const struct device *dev, uint32_t led,
 			    uint32_t delay_on, uint32_t delay_off)
 {
-	struct lp5562_data *data = dev->data;
-	struct led_data *dev_data = &data->dev_data;
 	int ret;
 	enum lp5562_led_sources engine;
 	uint8_t command_index = 0U;
 
-	ret = lp5562_get_available_engine(dev, &engine);
+	/*
+	 * Read current "led" source setting. This is to check
+	 * whether the "led" is in PWM mode or using an Engine.
+	 */
+	ret = lp5562_get_led_source(dev, led, &engine);
 	if (ret) {
 		return ret;
 	}
 
-	ret = lp5562_set_led_source(dev, led, engine);
-	if (ret) {
-		LOG_ERR("Failed to set LED source.");
-		return ret;
+	/* Find and assign new engine only if the "led" is not using any. */
+	if (engine == LP5562_SOURCE_PWM) {
+		ret = lp5562_get_available_engine(dev, &engine);
+		if (ret) {
+			return ret;
+		}
+
+		ret = lp5562_set_led_source(dev, led, engine);
+		if (ret) {
+			LOG_ERR("Failed to set LED source.");
+			return ret;
+		}
 	}
 
 	ret = lp5562_set_engine_op_mode(dev, engine, LP5562_OP_MODE_LOAD);
@@ -786,7 +781,7 @@ static int lp5562_led_blink(const struct device *dev, uint32_t led,
 	}
 
 	ret = lp5562_program_set_brightness(dev, engine, command_index,
-			dev_data->max_brightness);
+			LED_BRIGHTNESS_MAX);
 	if (ret) {
 		return ret;
 	}
@@ -797,7 +792,7 @@ static int lp5562_led_blink(const struct device *dev, uint32_t led,
 	}
 
 	ret = lp5562_program_set_brightness(dev, engine, ++command_index,
-			dev_data->min_brightness);
+			LED_BRIGHTNESS_MAX);
 	if (ret) {
 		return ret;
 	}
@@ -825,16 +820,9 @@ static int lp5562_led_set_brightness(const struct device *dev, uint32_t led,
 				     uint8_t value)
 {
 	const struct lp5562_config *config = dev->config;
-	struct lp5562_data *data = dev->data;
-	struct led_data *dev_data = &data->dev_data;
 	int ret;
 	uint8_t val, reg;
 	enum lp5562_led_sources current_source;
-
-	if ((value < dev_data->min_brightness) ||
-			(value > dev_data->max_brightness)) {
-		return -EINVAL;
-	}
 
 	ret = lp5562_get_led_source(dev, led, &current_source);
 	if (ret) {
@@ -857,7 +845,7 @@ static int lp5562_led_set_brightness(const struct device *dev, uint32_t led,
 		}
 	}
 
-	val = (value * 0xFF) / dev_data->max_brightness;
+	val = (value * 0xFF) / LED_BRIGHTNESS_MAX;
 
 	ret = lp5562_get_pwm_reg(led, &reg);
 	if (ret) {
@@ -874,17 +862,11 @@ static int lp5562_led_set_brightness(const struct device *dev, uint32_t led,
 
 static inline int lp5562_led_on(const struct device *dev, uint32_t led)
 {
-	struct lp5562_data *data = dev->data;
-	struct led_data *dev_data = &data->dev_data;
-
-	return lp5562_led_set_brightness(dev, led, dev_data->max_brightness);
+	return lp5562_led_set_brightness(dev, led, LED_BRIGHTNESS_MAX);
 }
 
 static inline int lp5562_led_off(const struct device *dev, uint32_t led)
 {
-	struct lp5562_data *data = dev->data;
-	struct led_data *dev_data = &data->dev_data;
-
 	int ret;
 	enum lp5562_led_sources current_source;
 
@@ -900,7 +882,7 @@ static inline int lp5562_led_off(const struct device *dev, uint32_t led)
 		}
 	}
 
-	return lp5562_led_set_brightness(dev, led, dev_data->min_brightness);
+	return lp5562_led_set_brightness(dev, led, LED_BRIGHTNESS_MAX);
 }
 
 static int lp5562_led_update_current(const struct device *dev)
@@ -921,34 +903,106 @@ static int lp5562_led_update_current(const struct device *dev)
 	return ret;
 }
 
+static int lp5562_enable(const struct device *dev, bool soft_reset)
+{
+	const struct lp5562_config *config = dev->config;
+	const struct gpio_dt_spec *enable_gpio = &config->enable_gpio;
+	int err = 0;
+
+	/* If ENABLE_GPIO control is enabled, we need to assert ENABLE_GPIO first. */
+	if (enable_gpio->port != NULL) {
+		err = gpio_pin_set_dt(enable_gpio, 1);
+		if (err) {
+			LOG_ERR("%s: failed to set enable GPIO 1", dev->name);
+			return err;
+		}
+		/*
+		 * The I2C host should allow at least 1ms before sending data to
+		 * the LP5562 after the rising edge of the enable line.
+		 * So let's wait for 1 ms.
+		 */
+		k_sleep(K_MSEC(1));
+	}
+
+	if (soft_reset) {
+		/* Reset all internal registers to have a deterministic state. */
+		err = i2c_reg_write_byte_dt(&config->bus, LP5562_RESET, 0xFF);
+		if (err) {
+			LOG_ERR("%s: failed to soft-reset device", dev->name);
+			return err;
+		}
+	}
+
+	/* Set en bit in LP5562_ENABLE register. */
+	err = i2c_reg_update_byte_dt(&config->bus, LP5562_ENABLE, LP5562_ENABLE_CHIP_EN_MASK,
+				     LP5562_ENABLE_CHIP_EN_SET);
+	if (err) {
+		LOG_ERR("%s: failed to set EN Bit in ENABLE register", dev->name);
+		return err;
+	}
+	/* Allow 500 µs delay after setting chip_en bit to '1'. */
+	k_sleep(K_USEC(500));
+	return 0;
+}
+
+#ifdef CONFIG_PM_DEVICE
+static int lp5562_disable(const struct device *dev)
+{
+	const struct lp5562_config *config = dev->config;
+	const struct gpio_dt_spec *enable_gpio = &config->enable_gpio;
+	int err = 0;
+
+	/* clear en bit in register configurations */
+	err = i2c_reg_update_byte_dt(&config->bus, LP5562_ENABLE, LP5562_ENABLE_CHIP_EN_MASK,
+				     LP5562_ENABLE_CHIP_EN_CLR);
+	if (err) {
+		LOG_ERR("%s: failed to clear EN Bit in ENABLE register", dev->name);
+		return err;
+	}
+
+	/* if gpio control is enabled, we can de-assert EN_GPIO now */
+	if (enable_gpio->port != NULL) {
+		err = gpio_pin_set_dt(enable_gpio, 0);
+		if (err) {
+			LOG_ERR("%s: failed to set enable GPIO to 0", dev->name);
+			return err;
+		}
+	}
+	return 0;
+}
+#endif
+
 static int lp5562_led_init(const struct device *dev)
 {
 	const struct lp5562_config *config = dev->config;
-	struct lp5562_data *data = dev->data;
-	struct led_data *dev_data = &data->dev_data;
+	const struct gpio_dt_spec *enable_gpio = &config->enable_gpio;
 	int ret;
+
+	if (enable_gpio->port != NULL) {
+		if (!gpio_is_ready_dt(enable_gpio)) {
+			return -ENODEV;
+		}
+		ret = gpio_pin_configure_dt(enable_gpio, GPIO_OUTPUT);
+		if (ret) {
+			LOG_ERR("LP5562 Enable GPIO Config failed");
+			return ret;
+		}
+	}
 
 	if (!device_is_ready(config->bus.bus)) {
 		LOG_ERR("I2C device not ready");
 		return -ENODEV;
 	}
 
-	/* Hardware specific limits */
-	dev_data->min_period = LP5562_MIN_BLINK_PERIOD;
-	dev_data->max_period = LP5562_MAX_BLINK_PERIOD;
-	dev_data->min_brightness = LP5562_MIN_BRIGHTNESS;
-	dev_data->max_brightness = LP5562_MAX_BRIGHTNESS;
+	ret = lp5562_enable(dev, true);
+	if (ret) {
+		return ret;
+	}
 
 	ret = lp5562_led_update_current(dev);
 	if (ret) {
 		LOG_ERR("Setting current setting LP5562 LED chip failed.");
 		return ret;
-	}
-
-	if (i2c_reg_write_byte_dt(&config->bus, LP5562_ENABLE,
-				  LP5562_ENABLE_CHIP_EN)) {
-		LOG_ERR("Enabling LP5562 LED chip failed.");
-		return -EIO;
 	}
 
 	if (i2c_reg_write_byte_dt(&config->bus, LP5562_CONFIG,
@@ -971,12 +1025,26 @@ static int lp5562_led_init(const struct device *dev)
 	return 0;
 }
 
-static const struct led_driver_api lp5562_led_api = {
+static DEVICE_API(led, lp5562_led_api) = {
 	.blink = lp5562_led_blink,
 	.set_brightness = lp5562_led_set_brightness,
 	.on = lp5562_led_on,
 	.off = lp5562_led_off,
 };
+
+#ifdef CONFIG_PM_DEVICE
+static int lp5562_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		return lp5562_disable(dev);
+	case PM_DEVICE_ACTION_RESUME:
+		return lp5562_enable(dev, false);
+	default:
+		return -ENOTSUP;
+	}
+}
+#endif /* CONFIG_PM_DEVICE */
 
 #define LP5562_DEFINE(id)						\
 	BUILD_ASSERT(DT_INST_PROP(id, red_output_current) <= LP5562_MAX_CURRENT_SETTING,\
@@ -993,11 +1061,13 @@ static const struct led_driver_api lp5562_led_api = {
 		.g_current = DT_INST_PROP(id, green_output_current),	\
 		.b_current = DT_INST_PROP(id, blue_output_current),	\
 		.w_current = DT_INST_PROP(id, white_output_current),	\
+		.enable_gpio = GPIO_DT_SPEC_INST_GET_OR(id, enable_gpios, {0}),	\
 	};								\
 									\
-	struct lp5562_data lp5562_data_##id;				\
-	DEVICE_DT_INST_DEFINE(id, &lp5562_led_init, NULL,		\
-			&lp5562_data_##id,				\
+	PM_DEVICE_DT_INST_DEFINE(id, lp5562_pm_action);			\
+									\
+	DEVICE_DT_INST_DEFINE(id, &lp5562_led_init, PM_DEVICE_DT_INST_GET(id),	\
+			NULL,						\
 			&lp5562_config_##id, POST_KERNEL,		\
 			CONFIG_LED_INIT_PRIORITY,			\
 			&lp5562_led_api);				\

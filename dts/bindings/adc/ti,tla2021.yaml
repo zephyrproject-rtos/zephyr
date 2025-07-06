@@ -5,11 +5,4 @@ description: Texas Instruments TLA2021 Low-Power ADC
 
 compatible: "ti,tla2021"
 
-include: [i2c-device.yaml, adc-controller.yaml]
-
-properties:
-  "#io-channel-cells":
-    const: 1
-
-io-channel-cells:
-  - input
+include: ti,tla202x-base.yaml

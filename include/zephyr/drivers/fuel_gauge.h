@@ -1,6 +1,7 @@
 /*
  * Copyright 2022 Google LLC
  * Copyright 2023 Microsoft Corporation
+ * Copyright (c) 2025 Philipp Steiner <philipp.steiner1987@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -100,6 +101,12 @@ enum fuel_gauge_prop_type {
 	FUEL_GAUGE_DEVICE_NAME,
 	/** Chemistry (1 byte length + 4 bytes data) */
 	FUEL_GAUGE_DEVICE_CHEMISTRY,
+	/** Battery current direction (flags)*/
+	FUEL_GAUGE_CURRENT_DIRECTION,
+	/** Remaining state of charge alarm (percent, 0-100) */
+	FUEL_GAUGE_STATE_OF_CHARGE_ALARM,
+	/** Low Cell Voltage Alarm (uV)*/
+	FUEL_GAUGE_LOW_VOLTAGE_ALARM,
 
 	/** Reserved to demark end of common fuel gauge properties */
 	FUEL_GAUGE_COMMON_COUNT,
@@ -130,10 +137,14 @@ union fuel_gauge_prop_val {
 	int current;
 	/** FUEL_GAUGE_CYCLE_COUNT */
 	uint32_t cycle_count;
+	/** FUEL_GAUGE_CONNECT_STATE */
+	uint32_t connect_state;
 	/** FUEL_GAUGE_FLAGS */
 	uint32_t flags;
 	/** FUEL_GAUGE_FULL_CHARGE_CAPACITY */
 	uint32_t full_charge_capacity;
+	/** FUEL_GAUGE_PRESENT_STATE */
+	bool present_state;
 	/** FUEL_GAUGE_REMAINING_CAPACITY */
 	uint32_t remaining_capacity;
 	/** FUEL_GAUGE_RUNTIME_TO_EMPTY */
@@ -174,6 +185,12 @@ union fuel_gauge_prop_val {
 	uint16_t sbs_remaining_capacity_alarm;
 	/** FUEL_GAUGE_SBS_REMAINING_TIME_ALARM */
 	uint16_t sbs_remaining_time_alarm;
+	/** FUEL_GAUGE_CURRENT_DIRECTION */
+	uint16_t current_direction;
+	/** FUEL_GAUGE_STATE_OF_CHARGE_ALARM */
+	uint8_t state_of_charge_alarm;
+	/** FUEL_GAUGE_LOW_VOLTAGE_ALARM */
+	uint32_t low_voltage_alarm;
 };
 
 /**
@@ -223,8 +240,8 @@ typedef int (*fuel_gauge_set_property_t)(const struct device *dev, fuel_gauge_pr
  * See fuel_gauge_get_buffer_property() for argument description
  */
 typedef int (*fuel_gauge_get_buffer_property_t)(const struct device *dev,
-					       fuel_gauge_prop_t prop_type,
-					       void *dst, size_t dst_len);
+						fuel_gauge_prop_t prop_type, void *dst,
+						size_t dst_len);
 
 /**
  * @typedef fuel_gauge_battery_cutoff_t
@@ -274,7 +291,7 @@ static inline int z_impl_fuel_gauge_get_prop(const struct device *dev, fuel_gaug
 }
 
 /**
- * @brief Fetch multiple battery fuel-gauge properies. The default implementation is the same as
+ * @brief Fetch multiple battery fuel-gauge properties. The default implementation is the same as
  * calling fuel_gauge_get_prop() multiple times. A driver may implement the `get_properties` field
  * of the fuel gauge driver APIs struct to override this implementation.
  *
@@ -288,15 +305,15 @@ static inline int z_impl_fuel_gauge_get_prop(const struct device *dev, fuel_gaug
  * @return 0 if successful, negative errno code of first failing property
  */
 
-__syscall int fuel_gauge_get_props(const struct device *dev, fuel_gauge_prop_t *props,
+__syscall int fuel_gauge_get_props(const struct device *dev, const fuel_gauge_prop_t *props,
 				   union fuel_gauge_prop_val *vals, size_t len);
 static inline int z_impl_fuel_gauge_get_props(const struct device *dev,
-					      fuel_gauge_prop_t *props,
+					      const fuel_gauge_prop_t *props,
 					      union fuel_gauge_prop_val *vals, size_t len)
 {
-	const struct fuel_gauge_driver_api *api = dev->api;
+	const struct fuel_gauge_driver_api *api = (const struct fuel_gauge_driver_api *)dev->api;
 
-	for (int i = 0; i < len; i++) {
+	for (size_t i = 0; i < len; i++) {
 		int ret = api->get_property(dev, props[i], vals + i);
 
 		if (ret) {
@@ -322,7 +339,7 @@ __syscall int fuel_gauge_set_prop(const struct device *dev, fuel_gauge_prop_t pr
 static inline int z_impl_fuel_gauge_set_prop(const struct device *dev, fuel_gauge_prop_t prop,
 					     union fuel_gauge_prop_val val)
 {
-	const struct fuel_gauge_driver_api *api = dev->api;
+	const struct fuel_gauge_driver_api *api = (const struct fuel_gauge_driver_api *)dev->api;
 
 	if (api->set_property == NULL) {
 		return -ENOSYS;
@@ -342,14 +359,14 @@ static inline int z_impl_fuel_gauge_set_prop(const struct device *dev, fuel_gaug
  *
  * @return return=0 if successful. Otherwise, return array index of failing property.
  */
-__syscall int fuel_gauge_set_props(const struct device *dev, fuel_gauge_prop_t *props,
-				   union fuel_gauge_prop_val *vals, size_t len);
+__syscall int fuel_gauge_set_props(const struct device *dev, const fuel_gauge_prop_t *props,
+				   const union fuel_gauge_prop_val *vals, size_t len);
 
 static inline int z_impl_fuel_gauge_set_props(const struct device *dev,
-					      fuel_gauge_prop_t *props,
-					      union fuel_gauge_prop_val *vals, size_t len)
+					      const fuel_gauge_prop_t *props,
+					      const union fuel_gauge_prop_val *vals, size_t len)
 {
-	for (int i = 0; i < len; i++) {
+	for (size_t i = 0; i < len; i++) {
 		int ret = fuel_gauge_set_prop(dev, props[i], vals[i]);
 
 		if (ret) {
@@ -375,8 +392,8 @@ __syscall int fuel_gauge_get_buffer_prop(const struct device *dev, fuel_gauge_pr
 					 void *dst, size_t dst_len);
 
 static inline int z_impl_fuel_gauge_get_buffer_prop(const struct device *dev,
-						   fuel_gauge_prop_t prop_type,
-						   void *dst, size_t dst_len)
+						    fuel_gauge_prop_t prop_type, void *dst,
+						    size_t dst_len)
 {
 	const struct fuel_gauge_driver_api *api = (const struct fuel_gauge_driver_api *)dev->api;
 
@@ -416,6 +433,6 @@ static inline int z_impl_fuel_gauge_battery_cutoff(const struct device *dev)
 }
 #endif /* __cplusplus */
 
-#include <syscalls/fuel_gauge.h>
+#include <zephyr/syscalls/fuel_gauge.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_BATTERY_H_ */

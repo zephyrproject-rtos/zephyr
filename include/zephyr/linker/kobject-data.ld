@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Please keep in sync with cmake/linker_script/common/kobject-data.cmake */
+
 #ifdef CONFIG_USERSPACE
 
-	z_kobject_data_begin = .;
+	PLACE_SYMBOL_HERE(z_kobject_data_begin);
 	SECTION_DATA_PROLOGUE(kobject_data,,)
 	{
 
@@ -30,7 +32,7 @@
 	 */
 
 #if defined(LINKER_ZEPHYR_PREBUILT)
-#include <linker-kobject-prebuilt-data.h>
+#include <zephyr/linker-kobject-prebuilt-data.h>
 
 #ifdef CONFIG_DYNAMIC_OBJECTS
 	/* This is produced by gperf. Put a place holder here
@@ -45,18 +47,18 @@
 #endif /* LINKER_ZEPHYR_PREBUILT */
 
 #if defined(LINKER_ZEPHYR_FINAL)
-#include <linker-kobject-prebuilt-data.h>
+#include <zephyr/linker-kobject-prebuilt-data.h>
 #ifdef KOBJECT_DATA_ALIGN
 	. = ALIGN(KOBJECT_DATA_ALIGN);
 
-	_kobject_data_area_start = .;
+	PLACE_SYMBOL_HERE(_kobject_data_area_start);
 #endif
 
 	*(".kobject_data.data*")
 	*(".kobject_data.sdata*")
 
 #ifdef KOBJECT_DATA_ALIGN
-	_kobject_data_area_end = .;
+	PLACE_SYMBOL_HERE(_kobject_data_area_end);
 	_kobject_data_area_used = _kobject_data_area_end - _kobject_data_area_start;
 
 	ASSERT(_kobject_data_area_used <= KOBJECT_DATA_SZ,

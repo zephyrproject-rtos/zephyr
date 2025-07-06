@@ -1,5 +1,9 @@
 board:
   name: imx93_evk
+  full_name: i.MX93 EVK
   vendor: nxp
   socs:
   - name: mimx9352
+    variants:
+    - name: ddr
+      cpucluster: m33

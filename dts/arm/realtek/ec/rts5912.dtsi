@@ -1,0 +1,741 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2024 Realtek Semiconductor Corporation, SIBG-SD7
+ *
+ */
+
+#include <arm/armv8-m.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/clock/rts5912_clock.h>
+#include <zephyr/dt-bindings/gpio/realtek-gpio.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <mem.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-m33f";
+			reg = <0>;
+			cpu-power-states = <&idle &suspend_to_ram>;
+		};
+
+		power-states {
+			idle: idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				min-residency-us = <100000000>;
+			};
+
+			suspend_to_ram: suspend_to_ram {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-ram";
+				min-residency-us = <250000000>;
+			};
+		};
+	};
+
+	flash0: flash@2000B400 {
+		reg = <0x2000B400 0x40000>;
+	};
+
+	sram0: memory@20050000 {
+		compatible = "mmio-sram";
+		reg = <0x20050000 0x10000>;
+	};
+
+	clocks {
+		rc25m: rc25m {
+			compatible = "fixed-clock";
+			clock-frequency = <25000000>;
+			#clock-cells = <0>;
+		};
+
+		pll: pll {
+			compatible = "fixed-clock";
+			clock-frequency = <100000000>;
+			#clock-cells = <0>;
+		};
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		interrupt-parent = <&nvic>;
+		ranges;
+
+		bbram: bb-ram@40005000 {
+			compatible = "realtek,rts5912-bbram";
+			reg = <0x40005000 0x100>;
+			status = "okay";
+		};
+
+		sccon: clock-controller@40020000 {
+			compatible = "realtek,rts5912-sccon";
+			reg = <0x40020000 0xf0>;
+			#clock-cells = <2>;
+			clocks = <&rc25m>, <&pll>;
+			clock-names = "rc25m", "pll";
+		};
+
+		rtc: rtc@4000c100 {
+			compatible = "realtek,rts5912-rtc";
+			reg = <0x4000c100 0x20>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP2 PERIPH_GRP2_RTC_CLKPWR>;
+			clock-names = "rtc";
+			status = "disabled";
+		};
+
+		timer0: timer@4000c300 {
+			compatible = "realtek,rts5912-timer";
+			reg = < 0x4000c300 0x14 >;
+			interrupt-parent = <&nvic>;
+			interrupts = <196 0>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_TMR0_CLKPWR>;
+			clock-names = "tmr32";
+			max-value = <0xFFFFFFFF>;
+			clock-frequency = <25000000>;
+			prescaler = <0>;
+			status = "disabled";
+		};
+
+		timer1: timer@4000c314 {
+			compatible = "realtek,rts5912-timer";
+			reg = < 0x4000c314 0x14 >;
+			interrupt-parent = <&nvic>;
+			interrupts = <197 0>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_TMR1_CLKPWR>;
+			clock-names = "tmr32";
+			max-value = <0xFFFFFFFF>;
+			clock-frequency = <25000000>;
+			prescaler = <0>;
+			status = "disabled";
+		};
+
+		timer2: timer@4000c328 {
+			compatible = "realtek,rts5912-timer";
+			reg = < 0x4000c328 0x14 >;
+			interrupt-parent = <&nvic>;
+			interrupts = <198 0>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_TMR2_CLKPWR>;
+			clock-names = "tmr32";
+			max-value = <0xFFFFFFFF>;
+			clock-frequency = <25000000>;
+			prescaler = <0>;
+			status = "disabled";
+		};
+
+		timer3: timer@4000c33c {
+			compatible = "realtek,rts5912-timer";
+			reg = < 0x4000c33c 0x14 >;
+			interrupt-parent = <&nvic>;
+			interrupts = <199 0>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_TMR3_CLKPWR>;
+			clock-names = "tmr32";
+			max-value = <0xFFFFFFFF>;
+			clock-frequency = <25000000>;
+			prescaler = <0>;
+			status = "disabled";
+		};
+
+		timer4: timer@4000c350 {
+			compatible = "realtek,rts5912-timer";
+			reg = < 0x4000c350 0x14 >;
+			interrupt-parent = <&nvic>;
+			interrupts = <200 0>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_TMR4_CLKPWR>;
+			clock-names = "tmr32";
+			max-value = <0xFFFFFFFF>;
+			clock-frequency = <25000000>;
+			prescaler = <0>;
+			status = "disabled";
+		};
+
+		timer5: timer@4000c364 {
+			compatible = "realtek,rts5912-timer";
+			reg = < 0x4000c364 0x14 >;
+			interrupt-parent = <&nvic>;
+			interrupts = <201 0>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_TMR5_CLKPWR>;
+			clock-names = "tmr32";
+			max-value = <0xFFFFFFFF>;
+			clock-frequency = <25000000>;
+			prescaler = <0>;
+			status = "disabled";
+		};
+
+		espi0: espi0@400b1000 {
+			compatible = "realtek,rts5912-espi";
+			status = "disabled";
+
+			reg = <0x400b1000 0x200		/* espi target */
+				0x400a0400 0x01c		/* port80 */
+				0x400a0200 0x1c			/* ACPI */
+				0x400A021C 0x1C			/* PROMT0 */
+				0x400A0238 0x1C			/* PROMT1 */
+				0x400A0254 0x1C			/* PROMT2 */
+				0x400A0270 0x1C			/* PROMT3 */
+				0x40082000 0x14			/* EMI0 */
+				0x40082020 0x14			/* EMI1 */
+				0x40082040 0x14			/* EMI2 */
+				0x40082060 0x14			/* EMI3 */
+				0x40082080 0x14			/* EMI4 */
+				0x400820A0 0x14			/* EMI5 */
+				0x400820C0 0x14			/* EMI6 */
+				0x400820E0 0x14			/* EMI7 */
+				0x400a0100 0x1c			/* KBC */
+				0x400B1600 0xd0>;		/* MBX */
+
+			reg-names = "espi_target", "port80", "acpi", "promt0", "promt1", "promt2",
+				"promt3", "emi0", "emi1", "emi2", "emi3", "emi4", "emi5",
+				"emi6", "emi7", "kbc", "mbx";
+
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_ESPI_CLKPWR>,
+				<&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_P80_CLKPWR>,
+				<&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_ACPI_CLKPWR>,
+				<&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PMPORT0_CLKPWR>,
+				<&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PMPORT1_CLKPWR>,
+				<&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PMPORT2_CLKPWR>,
+				<&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PMPORT3_CLKPWR>,
+				<&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_EMI0_CLKPWR>,
+				<&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_EMI1_CLKPWR>,
+				<&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_EMI2_CLKPWR>,
+				<&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_EMI3_CLKPWR>,
+				<&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_EMI4_CLKPWR>,
+				<&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_EMI5_CLKPWR>,
+				<&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_EMI6_CLKPWR>,
+				<&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_EMI7_CLKPWR>,
+				<&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_KBC_CLKPWR>;
+
+			clock-names = "espi-target", "port80", "acpi", "promt0", "promt1", "promt2",
+				"promt3", "emi0", "emi1", "emi2", "emi3", "emi4", "emi5",
+				"emi6", "emi7", "kbc";
+
+			interrupts = <133 0>, <134 0>, <146 0>,
+				<145 0>, <144 0>, <143 0>,
+				<142 0>, <141 0>, <140 0>,
+				<139 0>, <138 0>, <137 0>,
+				<136 0>, <135 0>, <154 0>,
+				<155 0>, <156 0>, <157 0>,
+				<158 0>, <159 0>, <160 0>,
+				<161 0>, <162 0>, <163 0>,
+				<164 0>, <165 0>, <212 0>,
+				<213 0>, <214 0>, <215 0>,
+				<216 0>, <217 0>, <218 0>,
+				<219 0>, <147 0>, <148 0>,
+				<149 0>, <152 0>, <153 0>,
+				<166 0>, <220 0>;
+
+			interrupt-names = "bus-rst", "periph-ch", "vw-ch",
+				"vw-idx2", "vw-idx3", "vw-idx7",
+				"vw-idx41", "vw-idx42", "vw-idx43",
+				"vw-idx44", "vw-idx47", "vw-idx4a",
+				"vw-idx51", "vw-idx61", "kbc_ibf",
+				"kbc_obe", "acpi_ibf", "acpi_obe",
+				"promt0_ibf", "promt0_obe", "promt1_ibf",
+				"promt1_obe", "promt2_ibf", "promt2_obe",
+				"promt3_ibf", "promt3_obe", "emi0",
+				"emi1", "emi2", "emi3",
+				"emi4", "emi5", "emi6",
+				"emi7", "oob_tx", "oob_rx",
+				"oob_chg", "maf_tr", "flash_chg",
+				"port80", "mbx";
+
+		};
+
+		slwtmr0: slwtmr0@4000c200 {
+			compatible = "realtek,rts5912-slwtimer";
+			reg = <0x4000c200 0x10>;
+			interrupts = <202 0>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_SLWTMR0_CLKPWR>;
+			clock-names = "slwtmr";
+			max-value = <0xFFFFFFFF>;
+			clock-frequency = <1000000>;
+			prescaler = <0>;
+			status = "disabled";
+		};
+
+		rtmr: rtmr@4000c500 {
+			compatible = "realtek,rts5912-rtmr";
+			reg = <0x4000c500 0x10>;
+			interrupts = <204 0>;
+			status = "okay";
+		};
+
+		adc0: adc@4000fe00 {
+			compatible = "realtek,rts5912-adc";
+			reg = <0x4000fe00 0x38>;
+			clocks = <&sccon RTS5912_SCCON_ADC ADC0_CLKPWR>;
+			interrupts = <221 0>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		uart0: uart@40010100 {
+			compatible = "ns16550";
+			reg = <0x40010100 0x100>;
+			reg-shift = <2>;
+			clock-frequency = <25000000>;
+			interrupts = <191 0>;
+			status = "disabled";
+		};
+
+		uart0_wrapper: uart_wrapper@40010200 {
+			compatible = "realtek,rts5912-uart";
+			reg = <0x40010200 0x0020>;
+			port = <0>;
+			clocks = <&sccon RTS5912_SCCON_UART UART0_CLKPWR>;
+			clock-names = "uart0";
+			status = "disabled";
+		};
+
+		pinctrl: pin-controller@40090000 {
+			compatible = "realtek,rts5912-pinctrl";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x40090000 0x300>;
+
+			/* GPIO0-GPIO15 */
+			gpioa: gpio@40090000 {
+				compatible = "realtek,rts5912-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40090000 0x40>;
+				ngpios = <16>;
+				interrupts = <0 0 1 0 2 0 3 0
+					      4 0 5 0 6 0 7 0
+					      8 0 9 0 10 0 11 0
+					      12 0 13 0 14 0 15 0>;
+			};
+
+			/* GPIO16-GPIO31 */
+			gpiob: gpio@40090040 {
+				compatible = "realtek,rts5912-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40090040 0x40>;
+				ngpios = <16>;
+				interrupts = <16 0 17 0 18 0 19 0
+					      20 0 21 0 22 0 23 0
+					      24 0 25 0 26 0 27 0
+					      28 0 29 0 30 0 31 0>;
+			};
+
+			/* GPIO32-GPIO47 */
+			gpioc: gpio@40090080 {
+				compatible = "realtek,rts5912-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40090080 0x40>;
+				ngpios = <16>;
+				interrupts = <32 0 33 0 34 0 35 0
+					      36 0 37 0 38 0 39 0
+					      40 0 41 0 42 0 43 0
+					      44 0 45 0 46 0 47 0>;
+			};
+
+			/* GPIO48-GPIO63 */
+			gpiod: gpio@400900c0 {
+				compatible = "realtek,rts5912-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x400900c0 0x40>;
+				ngpios = <16>;
+				interrupts = <48 0 49 0 50 0 51 0
+					      52 0 53 0 54 0 55 0
+					      56 0 57 0 58 0 59 0
+					      60 0 61 0 62 0 63 0>;
+			};
+
+			/* GPIO64-GPIO79 */
+			gpioe: gpio@40090100 {
+				compatible = "realtek,rts5912-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40090100 0x40>;
+				ngpios = <16>;
+				interrupts = <64 0 65 0 66 0 67 0
+					      68 0 69 0 70 0 71 0
+					      72 0 73 0 74 0 75 0
+					      76 0 77 0 78 0 79 0>;
+			};
+
+			/* GPIO80-GPIO95 */
+			gpiof: gpio@40090140 {
+				compatible = "realtek,rts5912-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40090140 0x40>;
+				ngpios = <16>;
+				interrupts = <80 0 81 0 82 0 83 0
+					      84 0 85 0 86 0 87 0
+					      88 0 89 0 90 0 91 0
+					      92 0 93 0 94 0 95 0>;
+			};
+
+			/* GPIO96-GPIO111 */
+			gpiog: gpio@40090180 {
+				compatible = "realtek,rts5912-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40090180 0x40>;
+				ngpios = <16>;
+				interrupts = <96 0 97 0 98 0 99 0
+					      100 0 101 0 102 0 103 0
+					      104 0 105 0 106 0 107 0
+					      108 0 109 0 110 0 111 0>;
+			};
+
+			/* GPIO112-GPIO127 */
+			gpioh: gpio@400901c0 {
+				compatible = "realtek,rts5912-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x400901c0 0x40>;
+				ngpios = <16>;
+				interrupts = <112 0 113 0 114 0 115 0
+					      116 0 117 0 118 0 119 0
+					      120 0 121 0 122 0 123 0
+					      124 0 125 0 126 0 127 0>;
+			};
+
+			/* GPIO128-GPIO131 */
+			gpioi: gpio@40090200 {
+				compatible = "realtek,rts5912-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40090200 0x10>;
+				ngpios = <4>;
+				interrupts = <128 0 129 0 130 0 131 0
+					      132 0 133 0 134 0 135 0
+					      136 0 137 0 138 0 139 0
+					      140 0 141 0 142 0 143 0>;
+			};
+		};
+
+		wdog: watchdog@4000c000 {
+			compatible = "realtek,rts5912-watchdog";
+			reg = <0x4000c000 0x14>;
+			interrupt-parent = <&nvic>;
+			interrupts = <209 0>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP2 PERIPH_GRP2_WDT_CLKPWR>;
+			clock-names = "watchdog";
+			clk-divider = <33>;
+			status = "disabled";
+		};
+
+		kbd: kbd@40010000 {
+			compatible = "realtek,rts5912-kbd";
+			reg = <0x40010000 0x10>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_KBM_CLKPWR>;
+			interrupts = <210 0>;
+			interrupt-parent = <&nvic>;
+			status = "disabled";
+		};
+
+		tach0: tach@4000fd00 {
+			compatible = "realtek,rts5912-tach";
+			reg = <0x4000fd00 0x40>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_TACH0_CLKPWR>;
+			clock-names = "tacho";
+			interrupts = <192 0>;
+			status = "disabled";
+		};
+
+		pwm0: pwm@4000f000 {
+			compatible = "realtek,rts5912-pwm";
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM0_CLKPWR>;
+			reg = <0x4000f000 0x0c>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+
+		pwm1: pwm@4000f00c {
+			compatible = "realtek,rts5912-pwm";
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM1_CLKPWR>;
+			reg = <0x4000f00c 0x0c>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+
+		pwm2: pwm@4000f018 {
+			compatible = "realtek,rts5912-pwm";
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM2_CLKPWR>;
+			reg = <0x4000f018 0x0c>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+
+		pwm3: pwm@4000f024 {
+			compatible = "realtek,rts5912-pwm";
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM3_CLKPWR>;
+			reg = <0x4000f024 0x0c>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+
+		pwm4: pwm@4000f030 {
+			compatible = "realtek,rts5912-pwm";
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM4_CLKPWR>;
+			reg = <0x4000f030 0x0c>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+
+		pwm5: pwm@4000f03c {
+			compatible = "realtek,rts5912-pwm";
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM5_CLKPWR>;
+			reg = <0x4000f03c 0x0c>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+
+		pwm6: pwm@4000f048 {
+			compatible = "realtek,rts5912-pwm";
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM6_CLKPWR>;
+			reg = <0x4000f048 0x0c>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+
+		pwm7: pwm@4000f054 {
+			compatible = "realtek,rts5912-pwm";
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM7_CLKPWR>;
+			reg = <0x4000f054 0x0c>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+
+		flash_controller: flash-controller@40010200 {
+			compatible = "realtek,rts5912-flash-controller";
+			reg = <0x40010200 0x200>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			eflash: eflash@60000000 {
+				compatible = "soc-nv-flash";
+				reg = <0x60000000 DT_SIZE_K(1024)>;
+				erase-block-size = <DT_SIZE_K(4)>;
+				write-block-size = <4>;
+			};
+		};
+
+		i2c_0: i2c@4000d000 {
+			compatible = "snps,designware-i2c";
+			reg = <0x4000d000 0x154>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupt-parent = <&nvic>;
+			interrupts = <182 1>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		i2c_1: i2c@4000d200 {
+			compatible = "snps,designware-i2c";
+			reg = <0x4000d200 0x154>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupt-parent = <&nvic>;
+			interrupts = <183 1>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		i2c_2: i2c@4000d400 {
+			compatible = "snps,designware-i2c";
+			reg = <0x4000d400 0x154>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupt-parent = <&nvic>;
+			interrupts = <184 1>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		i2c_3: i2c@4000d600 {
+			compatible = "snps,designware-i2c";
+			reg = <0x4000d600 0x154>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupt-parent = <&nvic>;
+			interrupts = <185 1>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		i2c_4: i2c@4000d800 {
+			compatible = "snps,designware-i2c";
+			reg = <0x4000d800 0x154>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupt-parent = <&nvic>;
+			interrupts = <186 1>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		i2c_5: i2c@4000da00 {
+			compatible = "snps,designware-i2c";
+			reg = <0x4000da00 0x154>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupt-parent = <&nvic>;
+			interrupts = <187 1>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		i2c_6: i2c@4000dc00 {
+			compatible = "snps,designware-i2c";
+			reg = <0x4000dc00 0x154>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupt-parent = <&nvic>;
+			interrupts = <188 1>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		i2c_7: i2c@4000de00 {
+			compatible = "snps,designware-i2c";
+			reg = <0x4000de00 0x154>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupt-parent = <&nvic>;
+			interrupts = <189 1>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		sha0: crypto@40000000 {
+			compatible = "realtek,rts5912-sha";
+			reg = <0x40000000 0x40 0x40001000 932>;
+			reg-names = "sha2", "sha2dma";
+			status = "disabled";
+		};
+	};
+
+	i2c_0_wrapper: i2c_0_wrapper {
+		compatible = "realtek,rts5912-i2c";
+		dw-i2c-dev = <&i2c_0>;
+		clocks = <&sccon RTS5912_SCCON_I2C I2C0_CLKPWR>;
+		clock-names = "i2c";
+		status = "disabled";
+	};
+
+	i2c_1_wrapper: i2c_1_wrapper {
+		compatible = "realtek,rts5912-i2c";
+		dw-i2c-dev = <&i2c_1>;
+		clocks = <&sccon RTS5912_SCCON_I2C I2C1_CLKPWR>;
+		clock-names = "i2c";
+		status = "disabled";
+	};
+
+	i2c_2_wrapper: i2c_2_wrapper {
+		compatible = "realtek,rts5912-i2c";
+		dw-i2c-dev = <&i2c_2>;
+		clocks = <&sccon RTS5912_SCCON_I2C I2C2_CLKPWR>;
+		clock-names = "i2c";
+		status = "disabled";
+	};
+
+	i2c_3_wrapper: i2c_3_wrapper {
+		compatible = "realtek,rts5912-i2c";
+		dw-i2c-dev = <&i2c_3>;
+		clocks = <&sccon RTS5912_SCCON_I2C I2C3_CLKPWR>;
+		clock-names = "i2c";
+		status = "disabled";
+	};
+
+	i2c_4_wrapper: i2c_4_wrapper {
+		compatible = "realtek,rts5912-i2c";
+		dw-i2c-dev = <&i2c_4>;
+		clocks = <&sccon RTS5912_SCCON_I2C I2C4_CLKPWR>;
+		clock-names = "i2c";
+		status = "disabled";
+	};
+
+	i2c_5_wrapper: i2c_5_wrapper {
+		compatible = "realtek,rts5912-i2c";
+		dw-i2c-dev = <&i2c_5>;
+		clocks = <&sccon RTS5912_SCCON_I2C I2C5_CLKPWR>;
+		clock-names = "i2c";
+		status = "disabled";
+	};
+
+	i2c_6_wrapper: i2c_6_wrapper {
+		compatible = "realtek,rts5912-i2c";
+		dw-i2c-dev = <&i2c_6>;
+		clocks = <&sccon RTS5912_SCCON_I2C I2C6_CLKPWR>;
+		clock-names = "i2c";
+		status = "disabled";
+	};
+
+	i2c_7_wrapper: i2c_7_wrapper {
+		compatible = "realtek,rts5912-i2c";
+		dw-i2c-dev = <&i2c_7>;
+		clocks = <&sccon RTS5912_SCCON_I2C I2C7_CLKPWR>;
+		clock-names = "i2c";
+		status = "disabled";
+	};
+
+	swj_port: swj-port {
+		compatible = "swj-connector";
+		pinctrl-0 = <&jtag_tdi_gpio87 &jtag_tdo_gpio88 &jtag_rst_gpio89
+			     &jtag_clk_gpio90 &jtag_tms_gpio91>;
+		pinctrl-names = "default";
+	};
+
+	ulpm: ulpm {
+		compatible = "realtek,rts5912-ulpm";
+		wkup-pins-max = <6>; /* 6 system wake-up pins */
+		status = "disabled";
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		wkup-pin@0 {
+			reg = <0x0>;
+			wkup-pin-mode = "gpio";
+		};
+
+		wkup-pin@1 {
+			reg = <0x1>;
+			wkup-pin-mode = "gpio";
+		};
+
+		wkup-pin@2 {
+			reg = <0x2>;
+			wkup-pin-mode = "gpio";
+		};
+
+		wkup-pin@3 {
+			reg = <0x3>;
+			wkup-pin-mode = "gpio";
+		};
+
+		wkup-pin@4 {
+			reg = <0x4>;
+			wkup-pin-mode = "gpio";
+		};
+
+		wkup-pin@5 {
+			reg = <0x5>;
+			wkup-pin-mode = "gpio";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};
+
+&systick {
+	status = "disabled";
+};

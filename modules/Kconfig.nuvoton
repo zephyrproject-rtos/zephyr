@@ -75,4 +75,12 @@ menu "Nuvoton NuMaker drivers"
 		bool "NuMaker RMC"
 		help
 		  Enable Nuvoton RMC HAL module driver
+	config HAS_NUMAKER_RTC
+		bool "NuMaker RTC"
+		help
+		  Enable Nuvoton RTC HAL module driver
+	config HAS_NUMAKER_TMR
+		bool "NuMaker Timer"
+		help
+		  Enable Nuvoton Timer HAL module driver
 endmenu

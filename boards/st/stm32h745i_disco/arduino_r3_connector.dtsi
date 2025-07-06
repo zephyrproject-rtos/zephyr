@@ -1,0 +1,42 @@
+/*
+ * Copyright (c) 2020 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
+ * Copyright (c) 2024 Tomas Jurena <jurena@utb.cz>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	arduino_header: connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpioc 0 0>,	/* A0 */
+			   <1 0 &gpiof 8 0>,	/* A1 */
+			   <2 0 &gpioa 0 0>,	/* A2 */
+			   <3 0 &gpioa 1 0>,	/* A3 */
+			   <4 0 &gpioc 2 0>,	/* A4 */
+			   <5 0 &gpioc 3 0>,	/* A5 */
+			   <6 0 &gpiob 7 0>,	/* D0 */
+			   <7 0 &gpiob 6 0>,	/* D1 */
+			   <8 0 &gpiog 3 0>,	/* D2 */
+			   <9 0 &gpioa 6 0>,	/* D3 */
+			   <10 0 &gpiok 1 0>,	/* D4 */
+			   <11 0 &gpioa 8 0>,	/* D5 */
+			   <12 0 &gpioe 6 0>,	/* D6 */
+			   <13 0 &gpioi 6 0>,	/* D7 */
+			   <14 0 &gpioe 3 0>,	/* D8 */
+			   <15 0 &gpioh 15 0>,	/* D9 */
+			   <16 0 &gpiob 4 0>,	/* D10 */
+			   <17 0 &gpiob 15 0>,	/* D11 */
+			   <18 0 &gpioi 2 0>,	/* D12 */
+			   <19 0 &gpiod 3 0>,	/* D13 */
+			   <20 0 &gpiod 13 0>,	/* D14 */
+			   <21 0 &gpiod 12 0>;	/* D15 */
+	};
+};
+
+
+arduino_i2c: &i2c4 {};
+arduino_spi: &spi2 {};
+arduino_serial: &usart1 {};

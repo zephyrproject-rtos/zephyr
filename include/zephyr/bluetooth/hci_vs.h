@@ -11,7 +11,10 @@
 
 #include <stdint.h>
 
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/net_buf.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -451,7 +454,7 @@ struct bt_hci_evt_mesh_scanning_report {
 	struct bt_hci_evt_mesh_scan_report reports[0];
 } __packed;
 
-struct net_buf *hci_vs_err_stack_frame(unsigned int reason, const z_arch_esf_t *esf);
+struct net_buf *hci_vs_err_stack_frame(unsigned int reason, const struct arch_esf *esf);
 struct net_buf *hci_vs_err_trace(const char *file, uint32_t line, uint64_t pc);
 struct net_buf *hci_vs_err_assert(const char *file, uint32_t line);
 

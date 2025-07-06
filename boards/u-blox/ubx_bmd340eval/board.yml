@@ -1,5 +1,6 @@
 board:
   name: ubx_bmd340eval
+  full_name: "EVK-BMD-34/38: BMD-340-EVAL and BMD-341-EVAL"
   vendor: u-blox
   socs:
   - name: nrf52840

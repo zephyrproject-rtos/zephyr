@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -292,9 +292,5 @@
 #define NXP_S32_SPI9_CLK                           284U
 #define NXP_S32_SRX0_CLK                           285U
 #define NXP_S32_SRX1_CLK                           286U
-#define NXP_S32_CORE_PLL_REFCLKOUT                 287U
-#define NXP_S32_CORE_PLL_FBCLKOUT                  288U
-#define NXP_S32_PERIPH_PLL_REFCLKOUT               289U
-#define NXP_S32_PERIPH_PLL_FBCLKOUT                290U
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_NXP_S32Z2_CLOCK_H_ */

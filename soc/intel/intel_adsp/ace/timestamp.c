@@ -5,6 +5,7 @@
  */
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/devicetree.h>
 #include <adsp_shim.h>
@@ -68,7 +69,7 @@ int intel_adsp_get_timestamp(uint32_t tsctrl, struct intel_adsp_timestamp *times
 	sys_write32(tsctrl_temp, TSCTRL_ADDR);
 
 	/* Wait for timestamp capture to complete */
-	while (1) {
+	while (true) {
 		tsctrl_temp = sys_read32(TSCTRL_ADDR);
 		if (tsctrl_temp & ADSP_SHIM_TSCTRL_NTK) {
 			break;

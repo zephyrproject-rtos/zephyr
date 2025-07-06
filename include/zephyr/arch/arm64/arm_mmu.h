@@ -45,6 +45,7 @@
  * attrs[7] : Mirror RO/RW permissions to EL0
  * attrs[8] : Overwrite existing mapping if any
  * attrs[9] : non-Global mapping (nG)
+ * attrs[10]: Paged-out mapping
  *
  */
 #define MT_PERM_SHIFT		3U
@@ -54,6 +55,7 @@
 #define MT_RW_AP_SHIFT		7U
 #define MT_NO_OVERWRITE_SHIFT	8U
 #define MT_NON_GLOBAL_SHIFT	9U
+#define MT_PAGED_OUT_SHIFT	10U
 
 #define MT_RO			(0U << MT_PERM_SHIFT)
 #define MT_RW			(1U << MT_PERM_SHIFT)
@@ -75,6 +77,8 @@
 #define MT_G			(0U << MT_NON_GLOBAL_SHIFT)
 #define MT_NG			(1U << MT_NON_GLOBAL_SHIFT)
 
+#define MT_PAGED_OUT		(1U << MT_PAGED_OUT_SHIFT)
+
 #define MT_P_RW_U_RW		(MT_RW | MT_RW_AP_ELx | MT_P_EXECUTE_NEVER | MT_U_EXECUTE_NEVER)
 #define MT_P_RW_U_NA		(MT_RW | MT_RW_AP_EL_HIGHER  | MT_P_EXECUTE_NEVER | MT_U_EXECUTE_NEVER)
 #define MT_P_RO_U_RO		(MT_RO | MT_RW_AP_ELx | MT_P_EXECUTE_NEVER | MT_U_EXECUTE_NEVER)
@@ -89,77 +93,18 @@
 #define MT_DEFAULT_SECURE_STATE	MT_SECURE
 #endif
 
-/*
- * ARM guarantees at least 8 ASID bits.
- * We may have more available, but do not make use of them for the time being.
- */
-#define VM_ASID_BITS 8
-#define TTBR_ASID_SHIFT 48
+/* Definitions used by arch_page_info_get() */
+#define ARCH_DATA_PAGE_LOADED		BIT(0)
+#define ARCH_DATA_PAGE_ACCESSED		BIT(1)
+#define ARCH_DATA_PAGE_DIRTY		BIT(2)
+#define ARCH_DATA_PAGE_NOT_MAPPED	BIT(3)
 
 /*
- * PTE descriptor can be Block descriptor or Table descriptor
- * or Page descriptor.
+ * Special unpaged "location" tags (highest possible descriptor physical
+ * address values unlikely to conflict with backing store locations)
  */
-#define PTE_DESC_TYPE_MASK	3U
-#define PTE_BLOCK_DESC		1U
-#define PTE_TABLE_DESC		3U
-#define PTE_PAGE_DESC		3U
-#define PTE_INVALID_DESC	0U
-
-/*
- * Block and Page descriptor attributes fields
- */
-#define PTE_BLOCK_DESC_MEMTYPE(x)	(x << 2)
-#define PTE_BLOCK_DESC_NS		(1ULL << 5)
-#define PTE_BLOCK_DESC_AP_ELx		(1ULL << 6)
-#define PTE_BLOCK_DESC_AP_EL_HIGHER	(0ULL << 6)
-#define PTE_BLOCK_DESC_AP_RO		(1ULL << 7)
-#define PTE_BLOCK_DESC_AP_RW		(0ULL << 7)
-#define PTE_BLOCK_DESC_NON_SHARE	(0ULL << 8)
-#define PTE_BLOCK_DESC_OUTER_SHARE	(2ULL << 8)
-#define PTE_BLOCK_DESC_INNER_SHARE	(3ULL << 8)
-#define PTE_BLOCK_DESC_AF		(1ULL << 10)
-#define PTE_BLOCK_DESC_NG		(1ULL << 11)
-#define PTE_BLOCK_DESC_PXN		(1ULL << 53)
-#define PTE_BLOCK_DESC_UXN		(1ULL << 54)
-
-/*
- * TCR definitions.
- */
-#define TCR_EL1_IPS_SHIFT	32U
-#define TCR_EL2_PS_SHIFT	16U
-#define TCR_EL3_PS_SHIFT	16U
-
-#define TCR_T0SZ_SHIFT		0U
-#define TCR_T0SZ(x)		((64 - (x)) << TCR_T0SZ_SHIFT)
-
-#define TCR_IRGN_NC		(0ULL << 8)
-#define TCR_IRGN_WBWA		(1ULL << 8)
-#define TCR_IRGN_WT		(2ULL << 8)
-#define TCR_IRGN_WBNWA		(3ULL << 8)
-#define TCR_IRGN_MASK		(3ULL << 8)
-#define TCR_ORGN_NC		(0ULL << 10)
-#define TCR_ORGN_WBWA		(1ULL << 10)
-#define TCR_ORGN_WT		(2ULL << 10)
-#define TCR_ORGN_WBNWA		(3ULL << 10)
-#define TCR_ORGN_MASK		(3ULL << 10)
-#define TCR_SHARED_NON		(0ULL << 12)
-#define TCR_SHARED_OUTER	(2ULL << 12)
-#define TCR_SHARED_INNER	(3ULL << 12)
-#define TCR_TG0_4K		(0ULL << 14)
-#define TCR_TG0_64K		(1ULL << 14)
-#define TCR_TG0_16K		(2ULL << 14)
-#define TCR_EPD1_DISABLE	(1ULL << 23)
-#define TCR_TG1_16K		(1ULL << 30)
-#define TCR_TG1_4K		(2ULL << 30)
-#define TCR_TG1_64K		(3ULL << 30)
-
-#define TCR_PS_BITS_4GB		0x0ULL
-#define TCR_PS_BITS_64GB	0x1ULL
-#define TCR_PS_BITS_1TB		0x2ULL
-#define TCR_PS_BITS_4TB		0x3ULL
-#define TCR_PS_BITS_16TB	0x4ULL
-#define TCR_PS_BITS_256TB	0x5ULL
+#define ARCH_UNPAGED_ANON_ZERO		0x0000fffffffff000
+#define ARCH_UNPAGED_ANON_UNINIT	0x0000ffffffffe000
 
 #ifndef _ASMLANGUAGE
 

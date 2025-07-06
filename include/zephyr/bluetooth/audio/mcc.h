@@ -1,19 +1,10 @@
 /**
- * @brief Bluetooth Media Control Client (MCC) interface
- *
- * Updated to the Media Control Profile specification revision 1.0
- *
- * @defgroup bt_gatt_mcc Media Control Client (MCC)
- *
- * @ingroup bluetooth
- * @{
- *
- * [Experimental] Users should note that the APIs can change
- * as a part of ongoing development.
+ * @file
+ * @brief Bluetooth Media Control Client (MCC) APIs.
  */
 
 /*
- * Copyright (c) 2019 - 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2019 - 2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,10 +12,25 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MCC_
 #define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MCC_
 
+/**
+ * @brief Bluetooth Media Control Client (MCC) interface
+ *
+ * Updated to the Media Control Profile specification revision 1.0
+ *
+ * @defgroup bt_mcc Media Control Client (MCC)
+ *
+ * @since 3.0
+ * @version 0.8.0
+ *
+ * @ingroup bluetooth
+ * @{
+ */
+
 #include <stdint.h>
+#include <stdbool.h>
 
 #include <zephyr/bluetooth/conn.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/audio/media_proxy.h>
 
 #ifdef __cplusplus
@@ -407,7 +413,7 @@ typedef void (*bt_mcc_read_content_control_id_cb)(struct bt_conn *conn,
 typedef void (*bt_mcc_otc_obj_selected_cb)(struct bt_conn *conn, int err);
 
 /**
- * @brief Callback function for bt_mcc_otc_read_object_meatadata()
+ * @brief Callback function for bt_mcc_otc_read_object_metadata()
  *
  * Called when object metadata is read
  *
@@ -505,81 +511,120 @@ typedef void (*bt_mcc_otc_read_current_group_object_cb)(struct bt_conn *conn, in
  * @brief Media control client callbacks
  */
 struct bt_mcc_cb {
+	/** Callback when discovery has finished */
 	bt_mcc_discover_mcs_cb                   discover_mcs;
+	/** Callback when reading the player name */
 	bt_mcc_read_player_name_cb               read_player_name;
-#ifdef CONFIG_BT_OTS_CLIENT
+#if defined(CONFIG_BT_OTS_CLIENT) || defined(__DOXYGEN__)
+	/** Callback when reading the icon object ID */
 	bt_mcc_read_icon_obj_id_cb               read_icon_obj_id;
 #endif /* CONFIG_BT_OTS_CLIENT */
-#if defined(CONFIG_BT_MCC_READ_MEDIA_PLAYER_ICON_URL)
+#if defined(CONFIG_BT_MCC_READ_MEDIA_PLAYER_ICON_URL) || defined(__DOXYGEN__)
+	/** Callback when reading the icon URL */
 	bt_mcc_read_icon_url_cb                  read_icon_url;
 #endif /* defined(CONFIG_BT_MCC_READ_MEDIA_PLAYER_ICON_URL) */
+	/** Callback when getting a track changed notification */
 	bt_mcc_track_changed_ntf_cb              track_changed_ntf;
-#if defined(CONFIG_BT_MCC_READ_TRACK_TITLE)
+#if defined(CONFIG_BT_MCC_READ_TRACK_TITLE) || defined(__DOXYGEN__)
+	/** Callback when reading the track title */
 	bt_mcc_read_track_title_cb               read_track_title;
 #endif /* defined(CONFIG_BT_MCC_READ_TRACK_TITLE) */
-#if defined(CONFIG_BT_MCC_READ_TRACK_DURATION)
+#if defined(CONFIG_BT_MCC_READ_TRACK_DURATION) || defined(__DOXYGEN__)
+	/** Callback when reading the track duration */
 	bt_mcc_read_track_duration_cb            read_track_duration;
 #endif /* defined(CONFIG_BT_MCC_READ_TRACK_DURATION) */
-#if defined(CONFIG_BT_MCC_READ_TRACK_POSITION)
+#if defined(CONFIG_BT_MCC_READ_TRACK_POSITION) || defined(__DOXYGEN__)
+	/** Callback when reading the track position */
 	bt_mcc_read_track_position_cb            read_track_position;
 #endif /* defined(CONFIG_BT_MCC_READ_TRACK_POSITION) */
-#if defined(CONFIG_BT_MCC_SET_TRACK_POSITION)
+#if defined(CONFIG_BT_MCC_SET_TRACK_POSITION) || defined(__DOXYGEN__)
+	/** Callback when setting the track position */
 	bt_mcc_set_track_position_cb             set_track_position;
 #endif /* defined(CONFIG_BT_MCC_SET_TRACK_POSITION) */
-#if defined(CONFIG_BT_MCC_READ_PLAYBACK_SPEED)
+#if defined(CONFIG_BT_MCC_READ_PLAYBACK_SPEED) || defined(__DOXYGEN__)
+	/** Callback when reading the playback speed */
 	bt_mcc_read_playback_speed_cb            read_playback_speed;
 #endif /* defined (CONFIG_BT_MCC_READ_PLAYBACK_SPEED) */
-#if defined(CONFIG_BT_MCC_SET_PLAYBACK_SPEED)
+#if defined(CONFIG_BT_MCC_SET_PLAYBACK_SPEED) || defined(__DOXYGEN__)
+	/** Callback when setting the playback speed */
 	bt_mcc_set_playback_speed_cb             set_playback_speed;
 #endif /* defined (CONFIG_BT_MCC_SET_PLAYBACK_SPEED) */
-#if defined(CONFIG_BT_MCC_READ_SEEKING_SPEED)
+#if defined(CONFIG_BT_MCC_READ_SEEKING_SPEED) || defined(__DOXYGEN__)
+	/** Callback when reading the seeking speed */
 	bt_mcc_read_seeking_speed_cb             read_seeking_speed;
 #endif /* defined (CONFIG_BT_MCC_READ_SEEKING_SPEED) */
-#ifdef CONFIG_BT_OTS_CLIENT
+#if defined(CONFIG_BT_OTS_CLIENT) || defined(__DOXYGEN__)
+	/** Callback when reading the segments object ID */
 	bt_mcc_read_segments_obj_id_cb           read_segments_obj_id;
+	/** Callback when reading the current track object ID */
 	bt_mcc_read_current_track_obj_id_cb      read_current_track_obj_id;
+	/** Callback when setting the current track object ID */
 	bt_mcc_set_current_track_obj_id_cb       set_current_track_obj_id;
+	/** Callback when reading the next track object ID */
 	bt_mcc_read_next_track_obj_id_cb         read_next_track_obj_id;
+	/** Callback when setting the next track object ID */
 	bt_mcc_set_next_track_obj_id_cb          set_next_track_obj_id;
+	/** Callback when reading the current group object ID */
 	bt_mcc_read_current_group_obj_id_cb      read_current_group_obj_id;
+	/** Callback when setting the current group object ID */
 	bt_mcc_set_current_group_obj_id_cb       set_current_group_obj_id;
+	/** Callback when reading the parent group object ID */
 	bt_mcc_read_parent_group_obj_id_cb       read_parent_group_obj_id;
 #endif /* CONFIG_BT_OTS_CLIENT */
-#if defined(CONFIG_BT_MCC_READ_PLAYING_ORDER)
+#if defined(CONFIG_BT_MCC_READ_PLAYING_ORDER) || defined(__DOXYGEN__)
+	/** Callback when reading the playing order */
 	bt_mcc_read_playing_order_cb	         read_playing_order;
 #endif /* defined(CONFIG_BT_MCC_READ_PLAYING_ORDER) */
-#if defined(CONFIG_BT_MCC_SET_PLAYING_ORDER)
+#if defined(CONFIG_BT_MCC_SET_PLAYING_ORDER) || defined(__DOXYGEN__)
+	/** Callback when setting the playing order */
 	bt_mcc_set_playing_order_cb              set_playing_order;
 #endif /* defined(CONFIG_BT_MCC_SET_PLAYING_ORDER) */
-#if defined(CONFIG_BT_MCC_READ_PLAYING_ORDER_SUPPORTED)
+#if defined(CONFIG_BT_MCC_READ_PLAYING_ORDER_SUPPORTED) || defined(__DOXYGEN__)
+	/** Callback when reading the supported playing orders */
 	bt_mcc_read_playing_orders_supported_cb  read_playing_orders_supported;
 #endif /* defined(CONFIG_BT_MCC_READ_PLAYING_ORDER_SUPPORTED) */
-#if defined(CONFIG_BT_MCC_READ_MEDIA_STATE)
+#if defined(CONFIG_BT_MCC_READ_MEDIA_STATE) || defined(__DOXYGEN__)
+	/** Callback when reading the media state */
 	bt_mcc_read_media_state_cb               read_media_state;
 #endif /* defined(CONFIG_BT_MCC_READ_MEDIA_STATE) */
-#if defined(CONFIG_BT_MCC_SET_MEDIA_CONTROL_POINT)
+#if defined(CONFIG_BT_MCC_SET_MEDIA_CONTROL_POINT) || defined(__DOXYGEN__)
+	/** Callback when sending a command */
 	bt_mcc_send_cmd_cb                       send_cmd;
 #endif /* defined(CONFIG_BT_MCC_SET_MEDIA_CONTROL_POINT) */
+	/** Callback command notifications */
 	bt_mcc_cmd_ntf_cb                        cmd_ntf;
-#if defined(CONFIG_BT_MCC_READ_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED)
+#if defined(CONFIG_BT_MCC_READ_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED) || defined(__DOXYGEN__)
+	/** Callback when reading the supported opcodes */
 	bt_mcc_read_opcodes_supported_cb         read_opcodes_supported;
 #endif /* defined(CONFIG_BT_MCC_READ_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED) */
-#ifdef CONFIG_BT_OTS_CLIENT
+#if defined(CONFIG_BT_OTS_CLIENT) || defined(__DOXYGEN__)
+	/** Callback when sending the a search query */
 	bt_mcc_send_search_cb                    send_search;
+	/** Callback when receiving a search notification */
 	bt_mcc_search_ntf_cb                     search_ntf;
+	/** Callback when reading the search results object ID */
 	bt_mcc_read_search_results_obj_id_cb     read_search_results_obj_id;
 #endif /* CONFIG_BT_OTS_CLIENT */
-#if defined(CONFIG_BT_MCC_READ_CONTENT_CONTROL_ID)
+#if defined(CONFIG_BT_MCC_READ_CONTENT_CONTROL_ID) || defined(__DOXYGEN__)
+	/** Callback when reading the content control ID */
 	bt_mcc_read_content_control_id_cb        read_content_control_id;
 #endif /* defined(CONFIG_BT_MCC_READ_CONTENT_CONTROL_ID) */
-#ifdef CONFIG_BT_OTS_CLIENT
+#if defined(CONFIG_BT_OTS_CLIENT) || defined(__DOXYGEN__)
+	/** Callback when selecting an object */
 	bt_mcc_otc_obj_selected_cb               otc_obj_selected;
+	/** Callback when receiving the current object metadata */
 	bt_mcc_otc_obj_metadata_cb               otc_obj_metadata;
+	/** Callback when reading the current icon object */
 	bt_mcc_otc_read_icon_object_cb           otc_icon_object;
+	/** Callback when reading the track segments object */
 	bt_mcc_otc_read_track_segments_object_cb otc_track_segments_object;
+	/** Callback when reading the current track object */
 	bt_mcc_otc_read_current_track_object_cb  otc_current_track_object;
+	/** Callback when reading the next track object */
 	bt_mcc_otc_read_next_track_object_cb     otc_next_track_object;
+	/** Callback when reading the current group object */
 	bt_mcc_otc_read_current_group_object_cb  otc_current_group_object;
+	/** Callback when reading the parent group object */
 	bt_mcc_otc_read_parent_group_object_cb   otc_parent_group_object;
 #endif /* CONFIG_BT_OTS_CLIENT */
 };
@@ -725,7 +770,7 @@ int bt_mcc_read_current_track_obj_id(struct bt_conn *conn);
 /**
  * @brief Set Current Track Object ID
  *
- * Set the Current Track to the the track given by the @p id parameter
+ * Set the Current Track to the track given by the @p id parameter
  *
  * @param conn  Connection to the peer device
  * @param id    Object Transfer Service ID (UINT48) of the track to set as the current track
@@ -746,7 +791,7 @@ int bt_mcc_read_next_track_obj_id(struct bt_conn *conn);
 /**
  * @brief Set Next Track Object ID
  *
- * Set the Next Track to the the track given by the @p id parameter
+ * Set the Next Track to the track given by the @p id parameter
  *
  * @param conn  Connection to the peer device
  * @param id   Object Transfer Service ID (UINT48) of the track to set as the next track
@@ -767,7 +812,7 @@ int bt_mcc_read_current_group_obj_id(struct bt_conn *conn);
 /**
  * @brief Set Current Group Object ID
  *
- * Set the Current Group to the the group given by the @p id parameter
+ * Set the Current Group to the group given by the @p id parameter
  *
  * @param conn  Connection to the peer device
  * @param id   Object Transfer Service ID (UINT48) of the group to set as the current group

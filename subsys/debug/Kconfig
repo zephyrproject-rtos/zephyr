@@ -6,89 +6,7 @@
 
 menu "System Monitoring Options"
 
-menuconfig THREAD_ANALYZER
-	bool "Thread analyzer"
-	depends on !ARCH_POSIX
-	select INIT_STACKS
-	select THREAD_MONITOR
-	select THREAD_STACK_INFO
-	select THREAD_RUNTIME_STATS
-	help
-	  Enable thread analyzer functionality and all the required modules.
-	  This module may be used to debug thread configuration issues, e.g.
-	  stack size configuration to find stack overflow or to find stacks
-	  which may be optimized.
-
-if THREAD_ANALYZER
-module = THREAD_ANALYZER
-module-str = thread analyzer
-source "subsys/logging/Kconfig.template.log_config"
-
-choice
-	prompt "Thread analysis print mode"
-	default THREAD_ANALYZER_USE_PRINTK
-
-config THREAD_ANALYZER_USE_LOG
-	bool "Use logger output"
-	select LOG
-	help
-	  Use logger output to print thread information.
-
-config THREAD_ANALYZER_USE_PRINTK
-	bool "Use printk function"
-	help
-	  Use kernel printk function to print thread information.
-
-endchoice
-
-config THREAD_ANALYZER_ISR_STACK_USAGE
-	bool "Analyze interrupt stacks usage"
-	default y
-
-config THREAD_ANALYZER_RUN_UNLOCKED
-	bool "Run analysis with interrupts unlocked"
-	default y
-	help
-	  The thread analysis takes quite a long time.
-	  Every thread it finds is analyzed word by word to find any that
-	  does not match the magic number.
-	  Normally while thread are analyzed the k_thread_foreach function
-	  is used.
-	  While this is a safe run from the thread list perspective it may lock
-	  the interrupts for a long time - long enough to disconnect when
-	  Bluetooth communication is used.
-	  Setting this flag will force thread analyzer to use
-	  the k_thread_foreach_unlocked function.
-	  This will allow the interrupts to be processed while the thread is
-	  analyzed.
-	  For the limitation of such configuration see the k_thread_foreach
-	  documentation.
-
-config THREAD_ANALYZER_AUTO
-	bool "Run periodic thread analysis in a thread"
-	help
-	  Run the thread analyzer automatically, without the need to add
-	  any code to the application.
-	  Thread analysis would be called periodically.
-
-if THREAD_ANALYZER_AUTO
-
-config THREAD_ANALYZER_AUTO_INTERVAL
-	int "Thread analysis interval"
-	default 60
-	range 5 3600
-	help
-	  The time in seconds to call thread analyzer periodic printing function.
-
-config THREAD_ANALYZER_AUTO_STACK_SIZE
-	int "Stack size for the periodic thread analysis thread"
-	default 2048 if THREAD_ANALYZER_USE_LOG && LOG_MODE_IMMEDIATE && NO_OPTIMIZATIONS
-	default 1024
-
-endif # THREAD_ANALYZER_AUTO
-
-endif # THREAD_ANALYZER
-
+source "subsys/debug/thread_analyzer/Kconfig"
 
 endmenu
 
@@ -149,12 +67,35 @@ config ASAN_NOP_DLCLOSE
 
 config UBSAN
 	bool "Build with undefined behavior sanitizer"
-	depends on ARCH_POSIX
 	help
-	  Builds Zephyr with Undefined Behavior Sanitizer enabled.
-	  This is currently only supported by boards based on the posix
-	  architecture, and requires a recent-ish compiler with the
-	  ``-fsanitize=undefined`` command line option.
+	  Builds Zephyr with Undefined Behavior Sanitizer enabled.  This
+	  requires a recent-ish compiler with the ``-fsanitize=undefined``
+	  command line option.
+
+choice UBSAN_MODE
+	prompt "Undefined behavior sanitizer mode"
+	depends on UBSAN
+	default UBSAN_LIBRARY
+
+config UBSAN_LIBRARY
+	bool "Call ubsan routines"
+	depends on ARCH_POSIX || PICOLIBC
+	help
+	  Call ubsan library routines when undefined behavior is detected
+	  at runtime. This provides information about the faulting
+	  condition along with the source filename, line number, types and
+	  values involved.  This is currently only supported by boards
+	  based on the posix architecture or when building with picolibc.
+
+config UBSAN_TRAP
+	bool "Call __builtin_trap"
+	help
+	  When undefined behavior is detected, invoke __builtin_trap to
+	  cause an exception to be raised. This can be used on any target,
+	  but the lack of information makes figuring out the triggering
+	  code difficult.
+
+endchoice
 
 config MSAN
 	bool "Build with memory sanitizer"
@@ -287,6 +228,7 @@ config FORCE_NO_ASSERT
 config ASSERT_VERBOSE
 	bool "Verbose assertions"
 	default y
+	depends on PRINTK
 	help
 	  This option enables printing an assert message with information about
 	  the assertion that occurred. This includes printing the location,
@@ -345,6 +287,7 @@ config OVERRIDE_FRAME_POINTER_DEFAULT
 
 config OMIT_FRAME_POINTER
 	bool "Omit frame pointer"
+	depends on !FRAME_POINTER
 	depends on OVERRIDE_FRAME_POINTER_DEFAULT
 	help
 	  Choose Y for best performance. On some architectures (including x86)
@@ -361,19 +304,10 @@ config OMIT_FRAME_POINTER
 #
 # Generic Debugging Options
 #
-config DEBUG_INFO
-	bool "System debugging information"
-	help
-	  This option enables the addition of various information that can be
-	  used by debuggers in debugging the system, or enable additional
-	  debugging information to be reported at runtime.
-
 config EXCEPTION_STACK_TRACE
 	bool "Attempt to print stack traces upon exceptions"
 	default y
-	depends on PRINTK
-	depends on DEBUG_INFO
-	depends on !OMIT_FRAME_POINTER
+	depends on ARCH_STACKWALK
 	help
 	  If the architecture fatal handling code supports it, attempt to
 	  print a stack trace of function memory addresses when an
@@ -392,50 +326,10 @@ config DEBUG_THREAD_INFO
 	  for debugger RTOS plugins to determine the state of running threads.
 
 rsource "coredump/Kconfig"
+rsource "symtab/Kconfig"
 endmenu
 
-config GDBSTUB
-	bool "GDB remote serial protocol support [EXPERIMENTAL]"
-	depends on ARCH_HAS_GDBSTUB
-	select UART_USE_RUNTIME_CONFIGURE
-	select EXPERIMENTAL
-	help
-	  This option enable support the target using GDB, or any other
-	  application that supports GDB protocol.
-
-if GDBSTUB
-
-choice
-	prompt "GDB backend"
-
-config GDBSTUB_SERIAL_BACKEND
-	bool "Use serial backend"
-	depends on SERIAL
-	help
-	  Use serial as backend for GDB
-
-config GDBSTUB_CUSTOM_BACKEND
-	bool "Use a custom backend"
-	help
-	  Use a custom backend for GDB
-
-endchoice
-
-config GDBSTUB_BUF_SZ
-	int "GDB backend send/receive buffer size (in bytes)"
-	default 256
-	help
-	  This specifies the size (in bytes) of the send/receive buffer
-	  for GDB backend. This needs to be big enough to hold one
-	  full GDB packet at a time.
-
-config GDBSTUB_TRACE
-	bool "GDB backend extra logging"
-	help
-	  Enable extra debug logging for the GDB backend, including
-	  breakpoint interrupts and remote commands it receives.
-
-endif
+rsource "gdbstub/Kconfig"
 
 config SEGGER_DEBUGMON
 	bool "Use Segger's J-Link debug monitor implementation"
@@ -444,3 +338,43 @@ config SEGGER_DEBUGMON
 	  This option will enable Segger's implementation of
 	  the debug monitor interrupt, overriding the
 	  default z_arm_debug_monitor symbol.
+
+config MIPI_STP_DECODER
+	bool "MIPI STPv2 decoder"
+	depends on !BIG_ENDIAN
+	help
+	  Module decodes a stream of STPv2 data.
+
+config CS_TRACE_DEFMT
+	bool "Coresight Trace Deformatter"
+	help
+	  Module is decoding data which is formatted using Coresight
+	  Trace Formatter, e.g. when data is put into ETR (Embedded Trace Router).
+
+config CPU_LOAD
+	select TRACING
+	depends on CPU_CORTEX_M || RISCV
+	depends on !SMP
+	bool "CPU load measurement"
+
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_CPU_LOAD_COUNTER := zephyr,cpu-load-counter
+
+config CPU_LOAD_USE_COUNTER
+	bool "Use counter"
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_Z_CPU_LOAD_COUNTER))
+	default y
+	select COUNTER
+	help
+	  Use counter for tracking CPU idle time.
+
+config CPU_LOAD_LOG_PERIODICALLY
+	int "Report period (in milliseconds)"
+	depends on LOG
+	default 0
+	help
+	  Specifies how often CPU load shall be logged. 0 means that there is no logging.
+
+module = CPU_LOAD
+module-str = cpu_load
+source "subsys/logging/Kconfig.template.log_config"

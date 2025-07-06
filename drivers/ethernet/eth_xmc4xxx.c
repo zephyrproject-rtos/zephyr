@@ -635,6 +635,13 @@ static void phy_link_state_changed(const struct device *phy_dev, struct phy_link
 	}
 }
 
+static const struct device *eth_xmc4xxx_get_phy(const struct device *dev)
+{
+	const struct eth_xmc4xxx_config *dev_cfg = dev->config;
+
+	return dev_cfg->phy_dev;
+}
+
 static void eth_xmc4xxx_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
@@ -859,7 +866,7 @@ static int eth_xmc4xxx_init(const struct device *dev)
 
 	eth_xmc4xxx_mask_unused_interrupts(dev_cfg->regs);
 
-#if !DT_INST_NODE_HAS_PROP(0, local_mac_address)
+#if DT_INST_PROP(0, zephyr_random_mac_address)
 	gen_random_mac(dev_data->mac_addr, INFINEON_OUI_B0, INFINEON_OUI_B1, INFINEON_OUI_B2);
 #endif
 	eth_xmc4xxx_set_mac_address(dev_cfg->regs, dev_data->mac_addr);
@@ -877,7 +884,7 @@ static int eth_xmc4xxx_init(const struct device *dev)
 static enum ethernet_hw_caps eth_xmc4xxx_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
-	enum ethernet_hw_caps caps =  ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T |
+	enum ethernet_hw_caps caps =  ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE |
 	       ETHERNET_HW_TX_CHKSUM_OFFLOAD | ETHERNET_HW_RX_CHKSUM_OFFLOAD;
 
 #if defined(CONFIG_PTP_CLOCK_XMC4XXX)
@@ -959,6 +966,7 @@ static const struct ethernet_api eth_xmc4xxx_api = {
 	.iface_api.init = eth_xmc4xxx_iface_init,
 	.send = eth_xmc4xxx_send,
 	.set_config = eth_xmc4xxx_set_config,
+	.get_phy = eth_xmc4xxx_get_phy,
 	.get_capabilities = eth_xmc4xxx_capabilities,
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	.get_stats = eth_xmc4xxx_stats,
@@ -1105,7 +1113,7 @@ static int eth_xmc4xxx_ptp_clock_rate_adjust(const struct device *dev, double ra
 	return 0;
 }
 
-static const struct ptp_clock_driver_api ptp_api_xmc4xxx = {
+static DEVICE_API(ptp_clock, ptp_api_xmc4xxx) = {
 	.set = eth_xmc4xxx_ptp_clock_set,
 	.get = eth_xmc4xxx_ptp_clock_get,
 	.adjust = eth_xmc4xxx_ptp_clock_adjust,

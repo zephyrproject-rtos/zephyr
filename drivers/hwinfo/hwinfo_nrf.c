@@ -8,8 +8,13 @@
 #include <zephyr/drivers/hwinfo.h>
 #include <string.h>
 #include <zephyr/sys/byteorder.h>
-#ifndef CONFIG_BOARD_QEMU_CORTEX_M0
+#if defined(CONFIG_BOARD_QEMU_CORTEX_M0) || \
+	(defined(CONFIG_NRF_PLATFORM_HALTIUM) && \
+	 defined(CONFIG_RISCV_CORE_NORDIC_VPR))
+#define RESET_CAUSE_AVAILABLE 0
+#else
 #include <helpers/nrfx_reset_reason.h>
+#define RESET_CAUSE_AVAILABLE 1
 #endif
 
 #if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) && defined(NRF_FICR_S)
@@ -25,17 +30,34 @@ struct nrf_uid {
 ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
 	struct nrf_uid dev_id;
-	uint32_t deviceid[2];
+	uint32_t buf[2];
 
+#if NRF_FICR_HAS_DEVICE_ID || NRF_FICR_HAS_INFO_DEVICE_ID
+	/* DEVICEID is accessible, use this */
 #if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) && defined(NRF_FICR_S)
-	soc_secure_read_deviceid(deviceid);
+	soc_secure_read_deviceid(buf);
 #else
-	deviceid[0] = nrf_ficr_deviceid_get(NRF_FICR, 0);
-	deviceid[1] = nrf_ficr_deviceid_get(NRF_FICR, 1);
+	buf[0] = nrf_ficr_deviceid_get(NRF_FICR, 0);
+	buf[1] = nrf_ficr_deviceid_get(NRF_FICR, 1);
+#endif
+#elif NRF_FICR_HAS_DEVICE_ADDR || NRF_FICR_HAS_BLE_ADDR
+	/* DEVICEID is not accessible, use device/Bluetooth LE address instead.
+	 * Assume that it is always accessible from the non-secure image.
+	 */
+	buf[0] = nrf_ficr_deviceaddr_get(NRF_FICR, 0);
+	buf[1] = nrf_ficr_deviceaddr_get(NRF_FICR, 1);
+
+	/* Assume that ER and IR are available whenever deviceaddr is.
+	 * Use the LSBytes from ER and IR to complete the device id.
+	 */
+	buf[1] |= (nrf_ficr_er_get(NRF_FICR, 0) & 0xFF) << 16;
+	buf[1] |= (nrf_ficr_ir_get(NRF_FICR, 0) & 0xFF) << 24;
+#else
+#error "No suitable source for hwinfo device_id generation"
 #endif
 
-	dev_id.id[0] = sys_cpu_to_be32(deviceid[1]);
-	dev_id.id[1] = sys_cpu_to_be32(deviceid[0]);
+	dev_id.id[0] = sys_cpu_to_be32(buf[1]);
+	dev_id.id[1] = sys_cpu_to_be32(buf[0]);
 
 	if (length > sizeof(dev_id.id)) {
 		length = sizeof(dev_id.id);
@@ -46,7 +68,30 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 	return length;
 }
 
-#ifndef CONFIG_BOARD_QEMU_CORTEX_M0
+#if RESET_CAUSE_AVAILABLE
+
+#if defined(NRF_RESETINFO)
+
+#define REASON_LOCKUP (NRFX_RESET_REASON_LOCKUP_MASK | NRFX_RESET_REASON_LOCAL_LOCKUP_MASK)
+#define REASON_SOFTWARE (NRFX_RESET_REASON_SREQ_MASK | NRFX_RESET_REASON_LOCAL_SREQ_MASK)
+#define REASON_WATCHDOG	\
+	(NRFX_RESET_REASON_DOG_MASK | \
+	 NRFX_RESET_REASON_LOCAL_DOG1_MASK | \
+	 NRFX_RESET_REASON_LOCAL_DOG0_MASK)
+
+#else /* NRF_RESETINFO */
+
+#define REASON_LOCKUP NRFX_RESET_REASON_LOCKUP_MASK
+#define REASON_SOFTWARE NRFX_RESET_REASON_SREQ_MASK
+
+#if NRF_POWER_HAS_RESETREAS
+#define REASON_WATCHDOG NRFX_RESET_REASON_DOG_MASK
+#else
+#define REASON_WATCHDOG	(NRFX_RESET_REASON_DOG0_MASK | NRFX_RESET_REASON_DOG1_MASK)
+#endif /* NRF_POWER_HAS_RESETREAS */
+
+#endif /* NRF_RESETINFO */
+
 int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 {
 	uint32_t flags = 0;
@@ -56,19 +101,21 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 	if (reason & NRFX_RESET_REASON_RESETPIN_MASK) {
 		flags |= RESET_PIN;
 	}
-	if (reason & NRFX_RESET_REASON_DOG_MASK) {
+	if (reason & REASON_WATCHDOG) {
 		flags |= RESET_WATCHDOG;
 	}
-	if (reason & NRFX_RESET_REASON_LOCKUP_MASK) {
+
+	if (reason & REASON_LOCKUP) {
 		flags |= RESET_CPU_LOCKUP;
 	}
+
 	if (reason & NRFX_RESET_REASON_OFF_MASK) {
 		flags |= RESET_LOW_POWER_WAKE;
 	}
 	if (reason & NRFX_RESET_REASON_DIF_MASK) {
 		flags |= RESET_DEBUG;
 	}
-	if (reason & NRFX_RESET_REASON_SREQ_MASK) {
+	if (reason & REASON_SOFTWARE) {
 		flags |= RESET_SOFTWARE;
 	}
 
@@ -107,11 +154,7 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 		flags |= RESET_DEBUG;
 	}
 #endif
-#if !NRF_POWER_HAS_RESETREAS
-	if (reason & NRFX_RESET_REASON_DOG1_MASK) {
-		flags |= RESET_WATCHDOG;
-	}
-#endif
+
 #if NRFX_RESET_REASON_HAS_GRTC
 	if (reason & NRFX_RESET_REASON_GRTC_MASK) {
 		flags |= RESET_CLOCK;
@@ -130,6 +173,7 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 	if (reason & NRFX_RESET_REASON_LCTRLAP_MASK) {
 		flags |= RESET_DEBUG;
 	}
+
 #endif
 #if defined(NRFX_RESET_REASON_TAMPC_MASK)
 	if (reason & NRFX_RESET_REASON_TAMPC_MASK) {
@@ -167,4 +211,4 @@ int z_impl_hwinfo_get_supported_reset_cause(uint32_t *supported)
 
 	return 0;
 }
-#endif
+#endif /* RESET_CAUSE_AVAILABLE */

@@ -89,6 +89,12 @@ static ALWAYS_INLINE bool soc_cpu_is_powered(int cpu_num)
 }
 
 /**
+ * @brief Restore timer after leaving soft-off.
+ *
+ */
+void intel_adsp_clock_soft_off_exit(void);
+
+/**
  * @brief Retrieve node identifier for Intel ADSP HOST power domain.
  */
 #define INTEL_ADSP_HST_DOMAIN_DTNODE DT_NODELABEL(hst_domain)

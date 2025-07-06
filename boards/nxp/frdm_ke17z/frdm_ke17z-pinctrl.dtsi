@@ -1,0 +1,68 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+
+#include <nxp/kinetis/MKE17Z256VLL7-pinctrl.h>
+
+&pinctrl {
+	adc0_default: adc0_default {
+		group0 {
+			pinmux = <ADC0_SE0_PTE9>;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
+
+	lpuart0_default: lpuart0_default {
+		group0 {
+			pinmux = <LPUART0_TX_PTB1>,
+				<LPUART0_RX_PTB0>;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
+
+	ftm2_default: ftm2_default {
+		group0 {
+			pinmux = <FTM2_CH0_PTD10>,
+				<FTM2_CH1_PTD11>,
+				<FTM2_CH2_PTD12>;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
+
+	lpi2c0_default: lpi2c0_default {
+		group0 {
+			pinmux = <LPI2C0_SDA_PTA16>,
+				<LPI2C0_SCL_PTB8>;
+			bias-pull-up;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
+
+	flexio_pwm_default: flexio_pwm_default {
+		group0 {
+			pinmux = <FXIO_D3_PTD5>,
+				<FXIO_D5_PTD3>;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
+
+	lpspi0_default: lpspi0_default {
+		group0 {
+			pinmux = <LPSPI0_SCK_PTB2>,
+				<LPSPI0_SIN_PTB3>,
+				<LPSPI0_SOUT_PTB4>,
+				<LPSPI0_PCS1_PTB5>;
+			bias-pull-up;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
+};

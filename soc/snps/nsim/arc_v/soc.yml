@@ -1,0 +1,6 @@
+family:
+  - name: nsim_arc_v
+    series:
+      - name: rmx
+        socs:
+          - name: rmx100

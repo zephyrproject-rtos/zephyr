@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2025 Jilay Sandeep Pandya
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "native_sim.overlay"
+
+/ {
+	aliases {
+		stepper =  &allegro_a4979;
+	};
+};
+
+/ {
+	allegro_a4979: allegro_a4979 {
+		status = "okay";
+		compatible = "allegro,a4979";
+		micro-step-res = <1>;
+		reset-gpios = <&gpio4 0 0>;
+		dir-gpios = <&gpio1 0 0>;
+		step-gpios = <&gpio1 1 0>;
+		en-gpios = <&gpio2 1 0>;
+		m0-gpios = <&gpio3 0 0>;
+		m1-gpios = <&gpio3 1 0>;
+		counter = <&counter0>;
+	};
+};

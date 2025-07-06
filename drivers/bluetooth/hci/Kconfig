@@ -10,13 +10,11 @@ config BT_UART
 	select SERIAL
 	select UART_INTERRUPT_DRIVEN
 
-
-choice BT_HCI_BUS_TYPE
-	prompt "Bluetooth HCI driver"
-
 config BT_H4
 	bool "H:4 UART"
 	select BT_UART
+	default y
+	depends on DT_HAS_ZEPHYR_BT_HCI_UART_ENABLED
 	help
 	  Bluetooth H:4 UART driver. Requires hardware flow control
 	  lines to be available.
@@ -25,19 +23,16 @@ config BT_H5
 	bool "H:5 UART [EXPERIMENTAL]"
 	select BT_UART
 	select EXPERIMENTAL
+	default y
+	depends on DT_HAS_ZEPHYR_BT_HCI_3WIRE_UART_ENABLED
 	help
 	  Bluetooth three-wire (H:5) UART driver. Implementation of HCI
 	  Three-Wire UART Transport Layer.
 
-# Removed: Here only to give the user a warning about its removal
-# Remove after 3.7.0 is released
-config BT_RPMSG
-	bool "[REMOVED] HCI using RPMsg"
-	help
-	  Use BT_HCI_IPC instead
-
 config BT_HCI_IPC
-	bool "HCI using the IPC subsystem"
+	bool
+	default y
+	depends on DT_HAS_ZEPHYR_BT_HCI_IPC_ENABLED
 	select BT_HAS_HCI_VS
 	select IPC_SERVICE
 	select MBOX
@@ -45,133 +40,271 @@ config BT_HCI_IPC
 	  Bluetooth HCI driver for communication with another CPU
 	  using the IPC subsystem.
 
+config BT_HCI_IPC_SEND_RETRY_COUNT
+	int "HCI IPC send retry count"
+	depends on BT_HCI_IPC
+	default 3
+	help
+	  Number of times to retry sending a message via IPC.
+	  The retries occur in case of a failure to send a message
+	  through IPC (-ENOMEM returned by ipc_service_send).
+
+config BT_HCI_IPC_SEND_RETRY_DELAY_US
+	int "HCI IPC send retry delay (us)"
+	depends on BT_HCI_IPC
+	default 75
+	help
+	  Delay in microseconds between retries when sending a message via IPC.
+	  When a single tick (CONFIG_SYS_CLOCK_TICKS_PER_SEC) is bigger then
+	  the retry delay the k_busy_wait function is used. Set with care.
+
+config BT_HCI_IPC_ENDPOINT_BOUND_TIMEOUT_MS
+	int "HCI IPC binding timeout value in milliseconds"
+	depends on BT_HCI_IPC
+	default 2000
+	help
+	  Timeout value that HCI will wait for an IPC endpoint to be bound,
+	  in milliseconds.
+
 config BT_SPI
-	bool "SPI HCI"
+	bool
 	select SPI
 	help
 	  Supports Bluetooth ICs using SPI as the communication protocol.
 	  HCI packets are sent and received as single Byte transfers,
-	  prepended after a known header.  Headers may vary per device, so
+	  prepended after a known header. Headers may vary per device, so
 	  additional platform specific knowledge may need to be added as
 	  devices are.
 
-config BT_STM32_IPM
-	bool "IPM HCI"
-	select USE_STM32_HAL_CORTEX
-	select HAS_STM32LIB
-	help
-	  TODO
-
-config BT_STM32WBA
-	bool "STM32WBA HCI driver"
-	select HAS_STM32LIB
-	help
-	  ST STM32WBA HCI Bluetooth interface
-
-config BT_SILABS_HCI
-	bool "Silicon Labs Bluetooth interface"
-	depends on SOC_SERIES_EFR32BG22 || SOC_SERIES_EFR32MG24 || SOC_SERIES_EFR32BG27
-	depends on !PM || SOC_GECKO_PM_BACKEND_PMGR
-	select SOC_GECKO_USE_RAIL
-	select ENTROPY_GENERATOR
-	select MBEDTLS
-	select MBEDTLS_PSA_CRYPTO_C
-	select MBEDTLS_ENTROPY_ENABLED
-	select MBEDTLS_ZEPHYR_ENTROPY
-	help
-	  Use Silicon Labs binary Bluetooth library to connect to the
-	  controller.
-
-config BT_USERCHAN
-	bool "HCI User Channel based driver"
-	depends on BOARD_NATIVE_POSIX
-	help
-	  This driver provides access to the local Linux host's Bluetooth
-	  adapter using a User Channel HCI socket to the Linux kernel. It
-	  is only intended to be used with the native POSIX build of Zephyr.
-	  The Bluetooth adapter must be powered off in order for Zephyr to
-	  be able to use it.
-
-config BT_ESP32
-	bool "ESP32 HCI driver"
-	help
-	  Espressif HCI bluetooth interface
-
-config BT_B91
-	bool "Telink B91 HCI driver"
-	help
-	  Telink B91 HCI bluetooth interface
-
-config BT_PSOC6_BLESS
-	bool "PSOC6 BLESS driver"
-	select BT_HCI_SETUP
-	help
-	  PSOC6 BLESS driver with BLE Controller which operates in
-	  Single CPU mode.
-
-config BT_NO_DRIVER
-	bool "No default HCI driver"
-	select BT_HAS_HCI_VS
-	help
-	  This is intended for unit tests where no internal driver
-	  should be selected.
-
-config BT_AMBIQ_HCI
-	bool "AMBIQ BT HCI driver"
-	select SPI
-	select GPIO
-	select CLOCK_CONTROL
-	select BT_HCI_SETUP
-	help
-	  Supports Ambiq Bluetooth SoC using SPI as the communication protocol.
-	  HCI packets are sent and received as single Byte transfers.
-
-endchoice
-
-if BT_SPI
-
 config BT_SPI_INIT_PRIORITY
 	int "BT SPI init priority"
+	depends on BT_SPI
 	default 75
 
+config BT_SPI_BOOT_TIMEOUT_SEC
+	int "Seconds to wait for SPI device to report ready"
+	depends on BT_SPI_ZEPHYR || BT_SPI_BLUENRG
+	default 30
+	help
+	  Maximum duration for a HCI SPI Controller to report ready through the
+	  Zephyr Project defined `EVT_BLUE_INITIALIZED` HCI vendor event.
+	  Default is 30 seconds to support a bootloader image swap on the
+	  Controller.
+
+config BT_SPI_ZEPHYR
+	bool
+	default y
+	depends on DT_HAS_ZEPHYR_BT_HCI_SPI_ENABLED
+	select BT_SPI
+	help
+	  Bluetooth HCI over SPI driver for communication with Bluetooth
+	  controllers running Zephyr.
+
+config BT_SPI_BLUENRG
+	bool
+	default y
+	depends on DT_HAS_ST_HCI_SPI_V1_ENABLED || DT_HAS_ST_HCI_SPI_V2_ENABLED
+	select BT_SPI
+	help
+	  Bluetooth HCI over SPI driver for communication with
+	  STMicroelectronics BlueNRG devices.
+
 config BT_BLUENRG_ACI
-	bool "ACI message with with BlueNRG-based devices"
+	bool "ACI message with BlueNRG-based devices"
+	depends on BT_SPI_BLUENRG
 	select BT_HCI_SET_PUBLIC_ADDR
 	help
 	  Enable support for devices compatible with the BlueNRG Bluetooth
 	  Stack. Current driver supports: ST BLUENRG-MS.
 
-endif # BT_SPI
+config BT_STM32_IPM
+	bool
+	default y
+	depends on DT_HAS_ST_STM32WB_RF_ENABLED
+	select USE_STM32_HAL_CORTEX
+	select HAS_STM32LIB
+	select BT_HCI_SETUP
+	help
+	  TODO
 
-if BT_AMBIQ_HCI
+config BT_STM32WBA
+	bool
+	default y
+	depends on DT_HAS_ST_HCI_STM32WBA_ENABLED
+	depends on ZEPHYR_HAL_STM32_MODULE_BLOBS
+	select HAS_STM32LIB
+	select BT_HCI_SET_PUBLIC_ADDR if !BT_HCI_RAW
+	help
+	  ST STM32WBA HCI Bluetooth interface
+
+config BT_STM32WB0
+	bool "STM32WB0 HCI driver"
+	default y
+	depends on DT_HAS_ST_HCI_STM32WB0_ENABLED
+	depends on ZEPHYR_HAL_STM32_MODULE_BLOBS
+	select HAS_STM32LIB
+	select USE_STM32_HAL_PKA
+	select USE_STM32_HAL_CORTEX
+	select USE_STM32_HAL_GPIO
+	select USE_STM32_HAL_RADIO
+	select USE_STM32_HAL_RADIO_TIMER
+	help
+	  ST STM32WB0 HCI Bluetooth interface
+
+config BT_SILABS_EFR32
+	bool "Silabs EFR32 HCI driver"
+	default y
+	depends on DT_HAS_SILABS_BT_HCI_EFR32_ENABLED
+	depends on ZEPHYR_HAL_SILABS_MODULE_BLOBS || BUILD_ONLY_NO_BLOBS
+	depends on !PM || SOC_GECKO_PM_BACKEND_PMGR
+	select SOC_GECKO_USE_RAIL
+	select MBEDTLS
+	select MBEDTLS_PSA_CRYPTO_C
+	select MBEDTLS_ENTROPY_C
+	select HAS_BT_CTLR
+	select BT_CTLR_PHY_UPDATE_SUPPORT
+	select BT_CTLR_PER_INIT_FEAT_XCHG_SUPPORT
+	select BT_CTLR_DATA_LEN_UPDATE_SUPPORT
+	select BT_CTLR_EXT_REJ_IND_SUPPORT
+	select BT_CTLR_CHAN_SEL_2_SUPPORT
+	select BT_CTLR_CONN_RSSI_SUPPORT
+	select BT_CTLR_ADV_EXT_SUPPORT
+	select BT_CTLR_PRIVACY_SUPPORT
+	help
+	  Use Silicon Labs binary Bluetooth library to connect to the
+	  controller.
+
+source "drivers/bluetooth/hci/Kconfig.silabs"
+
+config BT_SILABS_SIWX91X
+	bool "Silabs SiWx91x Bluetooth interface"
+	default y
+	depends on DT_HAS_SILABS_SIWX91X_BT_HCI_ENABLED
+	select WISECONNECT_NETWORK_STACK
+	select ENTROPY_GENERATOR
+	help
+	  Use Silicon Labs Wiseconnect 3.x Bluetooth library to connect to the controller.
+
+	# SiWx917 BLE controller currently does not support HCI Command: Host Number of Completed Packets
+	configdefault BT_HCI_ACL_FLOW_CONTROL
+		default n if BT_SILABS_SIWX91X
+
+config BT_USERCHAN
+	bool
+	depends on BOARD_NATIVE_SIM
+	default y
+	depends on DT_HAS_ZEPHYR_BT_HCI_USERCHAN_ENABLED
+	select NATIVE_USE_NSI_ERRNO
+	help
+	  This driver provides access to the local Linux host's Bluetooth
+	  adapter using a User Channel HCI socket to the Linux kernel. It
+	  is only intended to be used with the native_sim[//64] build of Zephyr.
+	  The Bluetooth adapter must be powered off in order for Zephyr to
+	  be able to use it.
+
+config BT_ESP32
+	bool
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_BT_HCI_ENABLED
+	depends on ZEPHYR_HAL_ESPRESSIF_MODULE_BLOBS || BUILD_ONLY_NO_BLOBS
+	select HAS_BT_CTLR
+	select BT_CTLR_PRIVACY_SUPPORT
+	select BT_CTLR_EXT_SCAN_FP_SUPPORT
+	select BT_CTLR_DATA_LEN_UPDATE_SUPPORT
+	select BT_CTLR_ADV_EXT_SUPPORT if SOC_SERIES_ESP32S3 || SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32C6
+	select BT_CTLR_PHY_UPDATE_SUPPORT if SOC_SERIES_ESP32S3 || SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32C6
+	select BT_CTLR_EXT_REJ_IND_SUPPORT if SOC_SERIES_ESP32S3 || SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32C6
+	select BT_CTLR_PHY_2M_SUPPORT if SOC_SERIES_ESP32S3 || SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32C6
+	select BT_CTLR_CHAN_SEL_2_SUPPORT if SOC_SERIES_ESP32S3 || SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32C6
+	help
+	  Espressif HCI bluetooth interface
+
+config BT_PSOC6_BLESS
+	bool
+	default y
+	depends on DT_HAS_INFINEON_CAT1_BLESS_HCI_ENABLED
+	depends on ZEPHYR_HAL_INFINEON_MODULE_BLOBS
+	select BT_HCI_SETUP
+	help
+	  PSOC 6 BLESS driver with BLE Controller which operates in
+	  Single CPU mode.
+
+config BT_DA1453X
+	bool "DA1453x HCI driver"
+	default y
+	depends on DT_HAS_RENESAS_BT_HCI_DA1453X_ENABLED
+	select GPIO
+	help
+	  Bluetooth HCI driver for communication with controller
+	  running on DA1453x MCU.
+
+config BT_DA1469X
+	bool
+	default y
+	depends on DT_HAS_RENESAS_BT_HCI_DA1469X_ENABLED
+	help
+	  Bluetooth HCI driver for communication with CMAC core
+	  on DA1469x MCU.
+
+config BT_NXP
+	bool
+	default y
+	depends on DT_HAS_NXP_HCI_BLE_ENABLED
+	select BT_HCI_SETUP
+	help
+	  NXP HCI bluetooth interface
+
+config BT_CYW208XX
+	bool
+	default y
+	depends on DT_HAS_INFINEON_CYW208XX_HCI_ENABLED
+	select BT_HCI_SET_PUBLIC_ADDR
+	help
+	  Infineon CYW208XX HCI bluetooth interface
+
+config BT_AMBIQ_HCI
+	bool
+	default y
+	depends on DT_HAS_AMBIQ_BT_HCI_SPI_ENABLED
+	select SPI
+	select GPIO if SOC_SERIES_APOLLO4X
+	select CLOCK_CONTROL if SOC_SERIES_APOLLO4X
+	select BT_HCI_SETUP
+	select AMBIQ_COMPONENT_USE_BT
+	help
+	  Supports Ambiq Bluetooth SoC using SPI as the communication protocol.
+	  HCI packets are sent and received as single Byte transfers.
 
 config BT_HCI_INIT_PRIORITY
 	int "BT HCI init priority"
-	default 75
+	default 75 if BT_AMBIQ_HCI
+	default KERNEL_INIT_PRIORITY_DEVICE
 	help
-	  The priority of BT HCI driver initialization needs to be lower than
-	  the SPI, GPIO, clock controller drivers initialization priorities.
-
-endif # BT_AMBIQ_HCI
+	  The priority of BT HCI driver initialization.
 
 config BT_STM32_IPM_RX_STACK_SIZE
 	int "STM32 IPM stack size for RX thread"
 	depends on BT_STM32_IPM
 	default 512
 
-menuconfig BT_AIROC
+config BT_AIROC
 	bool "AIROC BT connectivity"
 	default y
+	select GPIO                          if BT_H4
+	select UART                          if BT_H4
+	select UART_USE_RUNTIME_CONFIGURE    if BT_H4
 	select BT_HCI_SETUP
-	select UART_USE_RUNTIME_CONFIGURE
-	depends on GPIO
-	depends on DT_HAS_INFINEON_CYW43XXX_BT_HCI_ENABLED
-	depends on BT_H4
+	select USE_INFINEON_ABSTRACTION_RTOS if BT_CYW208XX
+	select EVENTS                        if BT_CYW208XX
+	depends on DT_HAS_INFINEON_CYW43XXX_BT_HCI_ENABLED || DT_HAS_INFINEON_CYW208XX_HCI_ENABLED
 	help
 	  Infineon's AIROC™ Wi-Fi & combos portfolio integrates
 	  IEEE 802.11a/b/g/n/ac/ax Wi-Fi and Bluetooth® 5.2 in a single-chip
 	  solution to enable small-form-factor IoT designs.
+source "drivers/bluetooth/hci/Kconfig.esp32"
 source "drivers/bluetooth/hci/Kconfig.infineon"
+source "drivers/bluetooth/hci/Kconfig.nxp"
+source "drivers/bluetooth/hci/Kconfig.stm32"
 
 config BT_DRIVER_QUIRK_NO_AUTO_DLE
 	bool "Host auto-initiated Data Length Update quirk"
@@ -223,14 +356,45 @@ config BT_DRV_RX_STACK_SIZE
 	default 640 if (BT_SPI || BT_AMBIQ_HCI)
 	default BT_RX_STACK_SIZE if (BT_H4 || BT_HCI_RAW_H4)
 	default BT_STM32_IPM_RX_STACK_SIZE if BT_STM32_IPM
-	default 256
+	default HCI_NXP_RX_STACK_SIZE if HCI_NXP_RX_THREAD
+	default 512
 	help
 	  Stack size for the HCI driver's RX thread.
 
-config BT_SILABS_HCI_BUFFER_MEMORY
-	int "Silicon Labs Bluetooth Library memory buffer size"
-	depends on BT_SILABS_HCI
-	default 6144
+config BT_H4_NXP_CTLR
+	bool "NXP Bluetooth Controller"
+	select GPIO
+	depends on BT_H4
+	select CRC
+	select BT_HCI_SETUP
+	default y
+	depends on DT_HAS_NXP_BT_HCI_UART_ENABLED
 	help
-	  Select the size of allocated memory buffer for the Silicon Labs
-	  Bluetooth Library.
+	  Enables support for NXP Bluetooth Controller.
+	  More information about NXP Bluetooth products could be found on
+	  https://www.nxp.com/products/wireless-connectivity/wi-fi-plus-bluetooth-plus-802-15-4:WIFI-BLUETOOTH
+
+if BT_H4_NXP_CTLR
+
+config BT_H4_NXP_CTLR_WAIT_HDR_SIG_TIMEOUT
+	int "Timeout for waiting HDR Signure"
+	range 1000 60000
+	default 2500
+	help
+	  Timeout for waiting HDR Signure. Unit is millisecond.
+
+config BT_H4_NXP_CTLR_WAIT_TIME_AFTER_UPLOAD
+	int "Waiting time after firmware is uploaded"
+	range 1000 5000
+	default 1000
+	help
+	  Waiting time after firmware is uploaded. Unit is millisecond.
+
+config BT_H4_NXP_CTLR_WAIT_TIME_AFTER_BAUDRATE_UPDATE
+	int "Waiting time after controller baudrate is updated"
+	range 500 5000
+	default 500
+	help
+	  Waiting time after controller baudrate is updated. Unit is millisecond.
+
+endif #BT_H4_NXP_CTLR

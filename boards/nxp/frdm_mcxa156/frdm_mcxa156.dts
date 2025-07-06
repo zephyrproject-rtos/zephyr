@@ -1,0 +1,253 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_mcxa156.dtsi>
+#include "frdm_mcxa156-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <freq.h>
+
+/ {
+	model = "NXP FRDM_MCXA156 board";
+	compatible = "nxp,mcxa156", "nxp,mcx";
+
+	aliases{
+		led0 = &red_led;
+		led1 = &green_led;
+		led2 = &red_led;
+		sw0 = &user_button_2;
+		sw1 = &user_button_3;
+		pwm-0 = &flexpwm0_pwm0;
+		mcuboot-button0 = &user_button_2;
+		watchdog0 = &wwdt0;
+		ambient-temp0 = &p3t1755;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash;
+		zephyr,flash-controller = &fmu;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,console = &lpuart0;
+		zephyr,shell-uart = &lpuart0;
+		zephyr,uart-mcumgr = &lpuart0;
+		zephyr,canbus = &flexcan0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led: led_0 {
+			gpios = <&gpio3 12 GPIO_ACTIVE_LOW>;
+			label = "Red LED";
+		};
+		green_led: led_1 {
+			gpios = <&gpio3 13 GPIO_ACTIVE_LOW>;
+			label = "Green LED";
+		};
+		blue_led: led_2 {
+			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
+			label = "Blue LED";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button_2: button_2 {
+			label = "User SW2";
+			gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		user_button_3: button_3 {
+			label = "User SW3";
+			gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	/*
+	 * This node describes the GPIO pins of the LCD-PAR-S035 panel 8080 interface.
+	 */
+	nxp_lcd_8080_connector: lcd-8080-connector {
+		compatible = "nxp,lcd-8080";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<9  0 &gpio2 15 0>,	/* Pin 9, LCD touch INT */
+				<10  0 &gpio3 22 0>,	/* Pin 10, LCD backlight control */
+				<11  0 &gpio3 0 0>;	/* Pin 11, LCD and touch reset */
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&gpio4 {
+	status = "okay";
+};
+
+&lpuart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart0>;
+	pinctrl-names = "default";
+};
+
+&lpuart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart1>;
+	pinctrl-names = "default";
+};
+
+&ctimer0 {
+	status = "okay";
+};
+
+&dac0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_dac0>;
+	pinctrl-names = "default";
+};
+
+&edma0 {
+	status = "okay";
+};
+
+&flexcan0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexcan0>;
+	pinctrl-names = "default";
+};
+
+&flexio0 {
+	status = "okay";
+};
+
+nxp_8080_touch_panel_i2c: &lpi2c2 {
+	pinctrl-0 = <&pinmux_lpi2c2>;
+	pinctrl-names = "default";
+};
+
+zephyr_mipi_dbi_parallel: &flexio0_lcd {
+	/* DMA channels 0, muxed to FlexIO TX */
+	dmas = <&edma0 0 71>;
+	dma-names = "tx";
+	shifters-count = <4>;
+	timers-count = <1>;
+	enwr-pin = <31>;
+	rd-pin = <28>;
+	data-pin-start = <0>;
+	reset-gpios = <&gpio3 0 GPIO_ACTIVE_HIGH>;
+	cs-gpios = <&gpio2 19 GPIO_ACTIVE_HIGH>;
+	rs-gpios = <&gpio2 17 GPIO_ACTIVE_HIGH>;
+	pinctrl-0 = <&pinmux_flexio_lcd>;
+	pinctrl-names = "default";
+};
+
+&flexpwm0_pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexpwm0_pwm0>;
+	pinctrl-names = "default";
+};
+
+&i3c0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_i3c0>;
+	pinctrl-names = "default";
+
+	i2c-scl-hz = <DT_FREQ_K(400)>;
+	i3c-scl-hz = <DT_FREQ_M(4)>;
+	i3c-od-scl-hz = <DT_FREQ_K(1500)>;
+
+	p3t1755: p3t1755@4800000236152a0090 {
+		compatible = "nxp,p3t1755";
+		reg = <0x48 0x0236 0x152a0090>;
+		status = "okay";
+	};
+};
+
+&lpadc0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpadc0>;
+	pinctrl-names = "default";
+};
+
+&lpcmp0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpcmp0>;
+	pinctrl-names = "default";
+};
+
+&lpi2c0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c0>;
+	pinctrl-names = "default";
+};
+
+&lpi2c3 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c3>;
+	pinctrl-names = "default";
+};
+
+&lpspi0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpspi0>;
+	pinctrl-names = "default";
+};
+
+&lptmr0 {
+	status = "okay";
+};
+
+zephyr_udc0: &usb {
+	status = "okay";
+	num-bidir-endpoints = <8>;
+};
+
+&wwdt0 {
+	status = "okay";
+};
+
+&flash {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(64)>;
+			read-only;
+		};
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x00010000 DT_SIZE_K(424)>;
+		};
+		slot1_partition: partition@7a000 {
+			label = "image-1";
+			reg = <0x0007a000 DT_SIZE_K(424)>;
+		};
+		storage_partition: partition@e4000 {
+			label = "storage";
+			reg = <0x000e4000 DT_SIZE_K(112)>;
+		};
+	};
+};

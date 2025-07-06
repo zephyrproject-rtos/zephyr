@@ -268,7 +268,7 @@ static int gpio_axp192_manage_callback(const struct device *dev, struct gpio_cal
 	return gpio_manage_callback(&data->cb_list_gpio, callback, set);
 }
 
-static const struct gpio_driver_api gpio_axp192_api = {
+static DEVICE_API(gpio, gpio_axp192_api) = {
 	.pin_configure = gpio_axp192_configure,
 	.port_get_raw = gpio_axp192_port_get_raw,
 	.port_set_masked_raw = gpio_axp192_port_set_masked_raw,
@@ -313,7 +313,7 @@ static int gpio_axp192_init(const struct device *dev)
                                                                                                    \
 	static struct gpio_axp192_data gpio_axp192_data##inst;                                     \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, &gpio_axp192_init, NULL, &gpio_axp192_data##inst,              \
+	DEVICE_DT_INST_DEFINE(inst, gpio_axp192_init, NULL, &gpio_axp192_data##inst,               \
 			      &gpio_axp192_config##inst, POST_KERNEL,                              \
 			      CONFIG_GPIO_AXP192_INIT_PRIORITY, &gpio_axp192_api);
 

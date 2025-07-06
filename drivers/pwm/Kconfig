@@ -48,7 +48,11 @@ source "drivers/pwm/Kconfig.mcux_ftm"
 
 source "drivers/pwm/Kconfig.imx"
 
+source "drivers/pwm/Kconfig.it51xxx"
+
 source "drivers/pwm/Kconfig.it8xxx2"
+
+source "drivers/pwm/Kconfig.it8801"
 
 source "drivers/pwm/Kconfig.esp32"
 
@@ -58,15 +62,21 @@ source "drivers/pwm/Kconfig.mcux"
 
 source "drivers/pwm/Kconfig.mcux_sctimer"
 
+source "drivers/pwm/Kconfig.mcux_qtmr"
+
 source "drivers/pwm/Kconfig.xec"
 
 source "drivers/pwm/Kconfig.litex"
 
 source "drivers/pwm/Kconfig.rv32m1_tpm"
 
+source "drivers/pwm/Kconfig.max32"
+
 source "drivers/pwm/Kconfig.mcux_tpm"
 
 source "drivers/pwm/Kconfig.sam0"
+
+source "drivers/pwm/Kconfig.sam0_tc"
 
 source "drivers/pwm/Kconfig.npcx"
 
@@ -75,6 +85,10 @@ source "drivers/pwm/Kconfig.xlnx"
 source "drivers/pwm/Kconfig.mcux_pwt"
 
 source "drivers/pwm/Kconfig.gecko"
+
+source "drivers/pwm/Kconfig.silabs"
+
+source "drivers/pwm/Kconfig.siwx91x"
 
 source "drivers/pwm/Kconfig.gd32"
 
@@ -96,10 +110,30 @@ source "drivers/pwm/Kconfig.xmc4xxx_ccu8"
 
 source "drivers/pwm/Kconfig.mcux_ctimer"
 
+source "drivers/pwm/Kconfig.mspm0"
+
 source "drivers/pwm/Kconfig.numaker"
 
 source "drivers/pwm/Kconfig.nxp_s32_emios"
 
+source "drivers/pwm/Kconfig.nxp_flexio"
+
 source "drivers/pwm/Kconfig.ene"
+
+source "drivers/pwm/Kconfig.renesas_ra"
+
+source "drivers/pwm/Kconfig.renesas_rx_mtu"
+
+source "drivers/pwm/Kconfig.ifx_cat1"
+
+source "drivers/pwm/Kconfig.fake"
+
+source "drivers/pwm/Kconfig.renesas_rz"
+
+source "drivers/pwm/Kconfig.rts5912"
+
+source "drivers/pwm/Kconfig.neorv32"
+
+source "drivers/pwm/Kconfig.wch"
 
 endif # PWM

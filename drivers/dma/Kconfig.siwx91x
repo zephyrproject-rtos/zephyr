@@ -1,0 +1,18 @@
+# Copyright (c) 2024 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_SILABS_SIWX91X
+	bool "Silabs SiWx91x DMA driver"
+	default y
+	select SYS_MEM_BLOCKS
+	depends on DT_HAS_SILABS_SIWX91X_DMA_ENABLED
+	help
+	  Enable the High Power(HP)/Ultra Low Power(ULP) DMA driver for the Silabs SiWx91x SoC series.
+
+if DMA_SILABS_SIWX91X
+
+config DMA_SILABS_SIWX91X_SG_BUFFER_COUNT
+	int "The maximum allowable number of buffers for scatter-gather transfers"
+	default 30
+
+endif

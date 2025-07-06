@@ -98,27 +98,8 @@ struct mcux_i3c_data {
 	/** Condvar for waiting for bus to be in IDLE state */
 	struct k_condvar condvar;
 
-	struct {
-		/**
-		 * Clock divider for use when generating clock for
-		 * I3C Push-pull mode.
-		 */
-		uint8_t clk_div_pp;
-
-		/**
-		 * Clock divider for use when generating clock for
-		 * I3C open drain mode.
-		 */
-		uint8_t clk_div_od;
-
-		/**
-		 * Clock divider for the slow time control clock.
-		 */
-		uint8_t clk_div_tc;
-
-		/** I3C open drain clock frequency in Hz. */
-		uint32_t i3c_od_scl_hz;
-	} clocks;
+	/** I3C open drain clock frequency in Hz. */
+	uint32_t i3c_od_scl_hz;
 
 #ifdef CONFIG_I3C_USE_IBI
 	struct {
@@ -148,38 +129,24 @@ struct mcux_i3c_data {
  * @param reg Pointer to 32-bit Register.
  * @param mask Mask to the register value.
  * @param match Value to match for masked register value.
- * @param init_delay_us Initial delay in microsecond before reading register
- *                      (can be 0).
- * @param step_delay_us Delay in microsecond between each read of register
- *                      (cannot be 0).
- * @param total_delay_us Total delay in microsecond before bailing out.
+ * @param timeout_us Timeout in microsecond before bailing out.
  *
  * @retval 0 If masked register value matches before time out.
- * @retval -ETIMEDOUT Exhausted all delays without matching.
+ * @retval -ETIMEDOUT Timedout without matching.
  */
 static int reg32_poll_timeout(volatile uint32_t *reg,
 			      uint32_t mask, uint32_t match,
-			      uint32_t init_delay_us, uint32_t step_delay_us,
-			      uint32_t total_delay_us)
+			      uint32_t timeout_us)
 {
-	uint32_t delayed = init_delay_us;
-	int ret = -ETIMEDOUT;
-
-	if (init_delay_us > 0U) {
-		k_busy_wait(init_delay_us);
+	/*
+	 * These polling checks are typically satisfied
+	 * quickly (some sub-microseconds) so no extra
+	 * delay between checks.
+	 */
+	if (!WAIT_FOR((sys_read32((mm_reg_t)reg) & mask) == match, timeout_us, /*nop*/)) {
+		return -ETIMEDOUT;
 	}
-
-	while (delayed <= total_delay_us) {
-		if ((sys_read32((mm_reg_t)reg) & mask) == match) {
-			ret = 0;
-			break;
-		}
-
-		k_busy_wait(step_delay_us);
-		delayed += step_delay_us;
-	}
-
-	return ret;
+	return 0;
 }
 
 /**
@@ -231,7 +198,7 @@ static inline bool reg32_test(volatile uint32_t *reg, uint32_t mask)
 }
 
 /**
- * @breif Disable all interrupts.
+ * @brief Disable all interrupts.
  *
  * @param base Pointer to controller registers.
  *
@@ -362,22 +329,15 @@ static inline void mcux_i3c_status_wait(I3C_Type *base, uint32_t mask)
  *
  * @param base Pointer to controller registers.
  * @param mask Bits to be tested.
- * @param init_delay_us Initial delay in microsecond before reading register
- *                      (can be 0).
- * @param step_delay_us Delay in microsecond between each read of register
- *                      (cannot be 0).
- * @param total_delay_us Total delay in microsecond before bailing out.
+ * @param timeout_us Timeout in microsecond before bailing out.
  *
  * @retval 0 If bits are set before time out.
- * @retval -ETIMEDOUT Exhausted all delays.
+ * @retval -ETIMEDOUT
  */
 static inline int mcux_i3c_status_wait_timeout(I3C_Type *base, uint32_t mask,
-					       uint32_t init_delay_us,
-					       uint32_t step_delay_us,
-					       uint32_t total_delay_us)
+					       uint32_t timeout_us)
 {
-	return reg32_poll_timeout(&base->MSTATUS, mask, mask,
-				  init_delay_us, step_delay_us, total_delay_us);
+	return reg32_poll_timeout(&base->MSTATUS, mask, mask, timeout_us);
 }
 
 /**
@@ -429,37 +389,27 @@ static inline void mcux_i3c_status_clear_all(I3C_Type *base)
  *
  * @param base Pointer to controller registers.
  * @param mask Bits to be cleared.
- * @param init_delay_us Initial delay in microsecond before reading register
- *                      (can be 0).
- * @param step_delay_us Delay in microsecond between each read of register
- *                      (cannot be 0).
- * @param total_delay_us Total delay in microsecond before bailing out.
+ * @param timeout_us Timeout in microsecond before bailing out.
  *
  * @retval 0 If bits are cleared before time out.
- * @retval -ETIMEDOUT Exhausted all delays.
+ * @retval -ETIMEDOUT
  */
 static inline int mcux_i3c_status_clear_timeout(I3C_Type *base, uint32_t mask,
-						uint32_t init_delay_us,
-						uint32_t step_delay_us,
-						uint32_t total_delay_us)
+						uint32_t timeout_us)
 {
-	uint32_t delayed = init_delay_us;
-	int ret = -ETIMEDOUT;
+	bool result;
 
-	/* Try to clear bit until it is cleared */
-	while (delayed <= total_delay_us) {
-		base->MSTATUS = mask;
-
-		if (!mcux_i3c_status_is_set(base, mask)) {
-			ret = 0;
-			break;
-		}
-
-		k_busy_wait(step_delay_us);
-		delayed += step_delay_us;
+	base->MSTATUS = mask;
+	/*
+	 * Status should clear quickly so no extra delays between
+	 * checks. Use the delay_stmt to retry clearing the
+	 * status by writing to the MSTATUS register.
+	 */
+	result = WAIT_FOR(!mcux_i3c_status_is_set(base, mask), timeout_us, base->MSTATUS = mask);
+	if (!result) {
+		return -ETIMEDOUT;
 	}
-
-	return ret;
+	return 0;
 }
 
 /**
@@ -488,30 +438,22 @@ static inline void mcux_i3c_status_wait_clear(I3C_Type *base, uint32_t mask)
  *
  * @param base Pointer to controller registers.
  * @param mask Bits to be set and to be cleared.
- * @param init_delay_us Initial delay in microsecond before reading register
- *                      (can be 0).
- * @param step_delay_us Delay in microsecond between each read of register
- *                      (cannot be 0).
- * @param total_delay_us Total delay in microsecond before bailing out.
+ * @param timeout_us Timeout in microsecond before bailing out.
  *
  * @retval 0 If masked register value matches before time out.
- * @retval -ETIMEDOUT Exhausted all delays without matching.
+ * @retval -ETIMEDOUT Timedout without matching.
  */
 static inline int mcux_i3c_status_wait_clear_timeout(I3C_Type *base, uint32_t mask,
-						     uint32_t init_delay_us,
-						     uint32_t step_delay_us,
-						     uint32_t total_delay_us)
+						     uint32_t timeout_us)
 {
 	int ret;
 
-	ret = mcux_i3c_status_wait_timeout(base, mask, init_delay_us,
-					   step_delay_us, total_delay_us);
+	ret = mcux_i3c_status_wait_timeout(base, mask, timeout_us);
 	if (ret != 0) {
 		goto out;
 	}
 
-	ret = mcux_i3c_status_clear_timeout(base, mask, init_delay_us,
-					    step_delay_us, total_delay_us);
+	ret = mcux_i3c_status_clear_timeout(base, mask, timeout_us);
 
 out:
 	return ret;
@@ -580,12 +522,10 @@ static inline uint32_t mcux_i3c_state_get(I3C_Type *base)
 }
 
 /**
- * @brief Wait for MSTATUS bit to be set, and clear it afterwards with time out.
+ * @brief Wait for MSTATUS state
  *
  * @param base Pointer to controller registers.
- * @param mask Bits to be set.
- * @param init_delay_us Initial delay in microsecond before reading register
- *                      (can be 0).
+ * @param state MSTATUS state to wait for.
  * @param step_delay_us Delay in microsecond between each read of register
  *                      (cannot be 0).
  * @param total_delay_us Total delay in microsecond before bailing out.
@@ -594,14 +534,12 @@ static inline uint32_t mcux_i3c_state_get(I3C_Type *base)
  * @retval -ETIMEDOUT Exhausted all delays without matching.
  */
 static inline int mcux_i3c_state_wait_timeout(I3C_Type *base, uint32_t state,
-					      uint32_t init_delay_us,
 					      uint32_t step_delay_us,
 					      uint32_t total_delay_us)
 {
-	uint32_t delayed = init_delay_us;
+	uint32_t delayed = 0;
 	int ret = -ETIMEDOUT;
 
-	/* Try to clear bit until it is cleared */
 	while (delayed <= total_delay_us) {
 		if (mcux_i3c_state_get(base) == state) {
 			ret = 0;
@@ -664,7 +602,7 @@ static int mcux_i3c_request_emit_start(I3C_Type *base, uint8_t addr, bool is_i2c
 
 	/* Wait for controller to say the operation is done */
 	ret = mcux_i3c_status_wait_clear_timeout(base, I3C_MSTATUS_MCTRLDONE_MASK,
-						 0, 10, 1000);
+						 1000);
 	if (ret == 0) {
 		/* Check for NACK */
 		if (mcux_i3c_error_is_nack(base)) {
@@ -918,7 +856,7 @@ static int mcux_i3c_recover_bus(const struct device *dev)
 		mcux_i3c_request_auto_ibi(base);
 
 		if (mcux_i3c_status_wait_clear_timeout(base, I3C_MSTATUS_COMPLETE_MASK,
-						       0, 10, 1000) == -ETIMEDOUT) {
+						       1000) == -ETIMEDOUT) {
 			break;
 		}
 
@@ -934,7 +872,7 @@ static int mcux_i3c_recover_bus(const struct device *dev)
 	}
 
 	if (reg32_poll_timeout(&base->MSTATUS, I3C_MSTATUS_STATE_MASK,
-			       I3C_MSTATUS_STATE_IDLE, 0, 10, 1000) == -ETIMEDOUT) {
+			       I3C_MSTATUS_STATE_IDLE, 1000) == -ETIMEDOUT) {
 		ret = -EBUSY;
 	}
 
@@ -1023,8 +961,7 @@ static int mcux_i3c_do_one_xfer_write(I3C_Type *base, uint8_t *buf, uint8_t buf_
 	int ret = 0;
 
 	while (remaining > 0) {
-		ret = reg32_poll_timeout(&base->MDATACTRL, I3C_MDATACTRL_TXFULL_MASK, 0,
-					 0, 10, 1000);
+		ret = reg32_poll_timeout(&base->MDATACTRL, I3C_MDATACTRL_TXFULL_MASK, 0, 1000);
 		if (ret == -ETIMEDOUT) {
 			goto one_xfer_write_out;
 		}
@@ -1097,9 +1034,11 @@ static int mcux_i3c_do_one_xfer(I3C_Type *base, struct mcux_i3c_data *data,
 	}
 
 	if (is_read || !no_ending) {
-		/* Wait for controller to say the operation is done */
-		ret = mcux_i3c_status_wait_clear_timeout(base, I3C_MSTATUS_COMPLETE_MASK,
-							 0, 10, 1000);
+		/*
+		 * Wait for controller to say the operation is done.
+		 * Save time by not clearing the bit.
+		 */
+		ret = mcux_i3c_status_wait_timeout(base, I3C_MSTATUS_COMPLETE_MASK, 1000);
 		if (ret != 0) {
 			LOG_DBG("%s: timed out addr 0x%02x, buf_sz %u",
 				__func__, addr, buf_sz);
@@ -1263,7 +1202,7 @@ static int mcux_i3c_do_daa(const struct device *dev)
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
-	ret = mcux_i3c_state_wait_timeout(base, I3C_MSTATUS_STATE_IDLE, 0, 100, 100000);
+	ret = mcux_i3c_state_wait_timeout(base, I3C_MSTATUS_STATE_IDLE, 100, 100000);
 	if (ret == -ETIMEDOUT) {
 		goto out_daa_unlock;
 	}
@@ -1459,7 +1398,7 @@ static int mcux_i3c_do_ccc(const struct device *dev,
 	}
 
 	/* Wait for controller to say the operation is done */
-	ret = mcux_i3c_status_wait_clear_timeout(base, I3C_MSTATUS_COMPLETE_MASK, 0, 10, 1000);
+	ret = mcux_i3c_status_wait_clear_timeout(base, I3C_MSTATUS_COMPLETE_MASK, 1000);
 	if (ret != 0) {
 		goto out_ccc_stop;
 	}
@@ -1520,7 +1459,6 @@ static void mcux_i3c_ibi_work(struct k_work *work)
 	const struct device *dev = i3c_ibi_work->controller;
 	const struct mcux_i3c_config *config = dev->config;
 	struct mcux_i3c_data *data = dev->data;
-	struct i3c_dev_attached_list *dev_list = &data->common.attached_dev;
 	I3C_Type *base = config->base;
 	struct i3c_device_desc *target = NULL;
 	uint32_t mstatus, ibitype, ibiaddr;
@@ -1563,7 +1501,7 @@ static void mcux_i3c_ibi_work(struct k_work *work)
 
 	case I3C_MSTATUS_IBITYPE_MR:
 		if (mcux_i3c_status_wait_timeout(base, I3C_MSTATUS_COMPLETE_MASK,
-						 0, 10, 1000) == -ETIMEDOUT) {
+						 1000) == -ETIMEDOUT) {
 			LOG_ERR("Timeout waiting for COMPLETE");
 
 			mcux_i3c_request_emit_stop(data, base, true);
@@ -1578,7 +1516,7 @@ static void mcux_i3c_ibi_work(struct k_work *work)
 
 	switch (ibitype) {
 	case I3C_MSTATUS_IBITYPE_IBI:
-		target = i3c_dev_list_i3c_addr_find(dev_list, (uint8_t)ibiaddr);
+		target = i3c_dev_list_i3c_addr_find(dev, (uint8_t)ibiaddr);
 		if (target != NULL) {
 			ret = mcux_i3c_do_one_xfer_read(base, &payload[0],
 							sizeof(payload), true);
@@ -1954,8 +1892,8 @@ static int mcux_i3c_configure(const struct device *dev,
 	master_config.baudRate_Hz.i3cPushPullBaud = ctrl_cfg->scl.i3c;
 	master_config.enableOpenDrainHigh = dev_cfg->disable_open_drain_high_pp ? false : true;
 
-	if (dev_data->clocks.i3c_od_scl_hz) {
-		master_config.baudRate_Hz.i3cOpenDrainBaud = dev_data->clocks.i3c_od_scl_hz;
+	if (dev_data->i3c_od_scl_hz) {
+		master_config.baudRate_Hz.i3cOpenDrainBaud = dev_data->i3c_od_scl_hz;
 	}
 
 	/* Initialize hardware */
@@ -2013,16 +1951,13 @@ static int mcux_i3c_init(const struct device *dev)
 	struct mcux_i3c_data *data = dev->data;
 	I3C_Type *base = config->base;
 	struct i3c_config_controller *ctrl_config = &data->common.ctrl_config;
+	i3c_master_config_t ctrl_config_hal;
 	int ret = 0;
 
 	ret = i3c_addr_slots_init(dev);
 	if (ret != 0) {
 		goto err_out;
 	}
-
-	CLOCK_SetClkDiv(kCLOCK_DivI3cClk, data->clocks.clk_div_pp);
-	CLOCK_SetClkDiv(kCLOCK_DivI3cSlowClk, data->clocks.clk_div_od);
-	CLOCK_SetClkDiv(kCLOCK_DivI3cTcClk, data->clocks.clk_div_tc);
 
 	ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (ret != 0) {
@@ -2031,6 +1966,17 @@ static int mcux_i3c_init(const struct device *dev)
 
 	k_mutex_init(&data->lock);
 	k_condvar_init(&data->condvar);
+
+	I3C_MasterGetDefaultConfig(&ctrl_config_hal);
+
+	/* Set default SCL clock rate (in Hz) */
+	if (ctrl_config->scl.i2c == 0U) {
+		ctrl_config->scl.i2c = ctrl_config_hal.baudRate_Hz.i2cBaud;
+	}
+
+	if (ctrl_config->scl.i3c == 0U) {
+		ctrl_config->scl.i3c = ctrl_config_hal.baudRate_Hz.i3cPushPullBaud;
+	}
 
 	/* Currently can only act as primary controller. */
 	ctrl_config->is_secondary = false;
@@ -2144,10 +2090,13 @@ out_xfer_i2c_stop_unlock:
 	return ret;
 }
 
-static const struct i3c_driver_api mcux_i3c_driver_api = {
+static DEVICE_API(i3c, mcux_i3c_driver_api) = {
 	.i2c_api.configure = mcux_i3c_i2c_api_configure,
 	.i2c_api.transfer = mcux_i3c_i2c_api_transfer,
 	.i2c_api.recover_bus = mcux_i3c_recover_bus,
+#ifdef CONFIG_I2C_RTIO
+	.i2c_api.iodev_submit = i2c_iodev_submit_fallback,
+#endif
 
 	.configure = mcux_i3c_configure,
 	.config_get = mcux_i3c_config_get,
@@ -2164,6 +2113,10 @@ static const struct i3c_driver_api mcux_i3c_driver_api = {
 #ifdef CONFIG_I3C_USE_IBI
 	.ibi_enable = mcux_i3c_ibi_enable,
 	.ibi_disable = mcux_i3c_ibi_disable,
+#endif
+
+#ifdef CONFIG_I3C_RTIO
+	.iodev_submit = i3c_iodev_submit_fallback,
 #endif
 };
 
@@ -2189,12 +2142,9 @@ static const struct i3c_driver_api mcux_i3c_driver_api = {
 			DT_INST_PROP(id, disable_open_drain_high_pp),		\
 	};									\
 	static struct mcux_i3c_data mcux_i3c_data_##id = {			\
-		.clocks.i3c_od_scl_hz = DT_INST_PROP_OR(id, i3c_od_scl_hz, 0),	\
+		.i3c_od_scl_hz = DT_INST_PROP_OR(id, i3c_od_scl_hz, 0),		\
 		.common.ctrl_config.scl.i3c = DT_INST_PROP_OR(id, i3c_scl_hz, 0),	\
 		.common.ctrl_config.scl.i2c = DT_INST_PROP_OR(id, i2c_scl_hz, 0),	\
-		.clocks.clk_div_pp = DT_INST_PROP(id, clk_divider),		\
-		.clocks.clk_div_od = DT_INST_PROP(id, clk_divider_slow),	\
-		.clocks.clk_div_tc = DT_INST_PROP(id, clk_divider_tc),		\
 	};									\
 	DEVICE_DT_INST_DEFINE(id,						\
 			      mcux_i3c_init,					\

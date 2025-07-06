@@ -36,22 +36,6 @@ static inline bool append_u8(struct coap_packet *cpkt, uint8_t data)
 	return true;
 }
 
-static inline bool append_be16(struct coap_packet *cpkt, uint16_t data)
-{
-	if (!cpkt) {
-		return false;
-	}
-
-	if (cpkt->max_len - cpkt->offset < 2) {
-		return false;
-	}
-
-	cpkt->data[cpkt->offset++] = data >> 8;
-	cpkt->data[cpkt->offset++] = (uint8_t) data;
-
-	return true;
-}
-
 static inline bool append(struct coap_packet *cpkt, const uint8_t *data, uint16_t len)
 {
 	if (!cpkt || !data) {
@@ -711,12 +695,14 @@ int coap_well_known_core_get(struct coap_resource *resource,
 			     struct coap_packet *response,
 			     uint8_t *data, uint16_t data_len)
 {
-	struct coap_resource *resources = resource + 1;
+	struct coap_resource *resources;
 	size_t resources_len = 0;
 
 	if (resource == NULL) {
 		return -EINVAL;
 	}
+
+	resources = resource + 1;
 
 	while (resources[resources_len].path) {
 		resources_len++;

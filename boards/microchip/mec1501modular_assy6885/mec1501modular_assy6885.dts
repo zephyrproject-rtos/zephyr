@@ -17,7 +17,6 @@
 		zephyr,sram = &sram0;
 		zephyr,console = &uart1;
 		zephyr,flash = &flash0;
-		zephyr,keyboard-scan = &kscan_input;
 	};
 
 	aliases {
@@ -26,7 +25,6 @@
 
 		i2c0 = &i2c_smb_0;
 		i2c1 = &i2c_smb_1;
-		kscan0 = &kscan_input;
 		watchdog0 = &wdog;
 	};
 };
@@ -52,7 +50,7 @@
 
 &i2c_smb_0 {
 	status = "okay";
-	port_sel = <0>;
+	port-sel = <0>;
 	sda-gpios = <MCHP_GPIO_DECODE_003 0>;
 	scl-gpios = <MCHP_GPIO_DECODE_004 0>;
 	pinctrl-0 = < &i2c00_scl_gpio004 &i2c00_sda_gpio003 >;
@@ -61,7 +59,7 @@
 
 &i2c_smb_1 {
 	status = "okay";
-	port_sel = <1>;
+	port-sel = <1>;
 	sda-gpios = <MCHP_GPIO_DECODE_130 0>;
 	scl-gpios = <MCHP_GPIO_DECODE_131 0>;
 	pinctrl-0 = < &i2c01_scl_gpio131 &i2c01_sda_gpio130 >;
@@ -70,9 +68,9 @@
 
 &espi0 {
 	status = "okay";
-	io_girq = <19>;
-	vw_girqs = <24 25>;
-	pc_girq = <15>;
+	io-girq = <19>;
+	vw-girqs = <24 25>;
+	pc-girq = <15>;
 	pinctrl-0 = < &espi_reset_n_gpio061 &espi_cs_n_gpio066
 		  &espi_alert_n_gpio063 &espi_clk_gpio065
 		  &espi_io0_gpio070 &espi_io1_gpio071
@@ -120,10 +118,6 @@
 	pinctrl-names = "default", "sleep";
 	row-size = <8>;
 	col-size = <16>;
-
-	kscan_input: kscan-input {
-		compatible = "zephyr,kscan-input";
-	};
 };
 
 &peci0 {

@@ -10,7 +10,7 @@
 /** Macro used to iterate over USB-C connector and call a function if the node has PPC property */
 #define CALL_IF_HAS_PPC(usb_node, func)                                                            \
 	COND_CODE_1(DT_NODE_HAS_PROP(usb_node, ppc),                                               \
-		    (ret |= func(DEVICE_DT_GET(DT_PHANDLE_BY_IDX(usb_node, ppc, 0)));), ())
+		    (ret |= func(DEVICE_DT_GET_BY_IDX(usb_node, ppc, 0));), ())
 
 /**
  * @brief Command that dumps registers of one or all of the PPCs
@@ -27,7 +27,7 @@ static int cmd_ppc_dump(const struct shell *sh, size_t argc, char **argv)
 	if (argc <= 1) {
 		DT_FOREACH_STATUS_OKAY_VARGS(usb_c_connector, CALL_IF_HAS_PPC, ppc_dump_regs);
 	} else {
-		const struct device *dev = device_get_binding(argv[1]);
+		const struct device *dev = shell_device_get_binding(argv[1]);
 
 		ret = ppc_dump_regs(dev);
 	}
@@ -66,7 +66,7 @@ static int cmd_ppc_status(const struct shell *sh, size_t argc, char **argv)
 	if (argc <= 1) {
 		DT_FOREACH_STATUS_OKAY_VARGS(usb_c_connector, CALL_IF_HAS_PPC, print_status);
 	} else {
-		const struct device *dev = device_get_binding(argv[1]);
+		const struct device *dev = shell_device_get_binding(argv[1]);
 
 		ret = print_status(dev);
 	}
@@ -90,7 +90,7 @@ static int cmd_ppc_exit_db(const struct shell *sh, size_t argc, char **argv)
 		DT_FOREACH_STATUS_OKAY_VARGS(usb_c_connector, CALL_IF_HAS_PPC,
 					     ppc_exit_dead_battery_mode);
 	} else {
-		const struct device *dev = device_get_binding(argv[1]);
+		const struct device *dev = shell_device_get_binding(argv[1]);
 
 		ret = ppc_exit_dead_battery_mode(dev);
 	}
@@ -123,7 +123,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_ppc_cmds,
 					     cmd_ppc_dump, 1, 1),
 			       SHELL_CMD_ARG(status, &list_device_names,
 					     "Write PPC power status\n"
-					     "Usage: ppc statuc [<ppc device>]",
+					     "Usage: ppc status [<ppc device>]",
 					     cmd_ppc_status, 1, 1),
 			       SHELL_CMD_ARG(exitdb, &list_device_names,
 					     "Exit from the dead battery mode\n"

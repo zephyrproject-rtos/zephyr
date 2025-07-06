@@ -95,4 +95,11 @@ config INPUT_KEYMAP
 	help
 	  Enable the input keymap driver.
 
+config INPUT_DOUBLE_TAP
+	bool "Input double tap"
+	default y
+	depends on DT_HAS_ZEPHYR_INPUT_DOUBLE_TAP_ENABLED
+	help
+	  Enable the input double tap driver.
+
 endif # INPUT

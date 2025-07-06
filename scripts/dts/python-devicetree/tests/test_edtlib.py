@@ -97,6 +97,34 @@ def test_interrupts():
         edtlib.ControllerAndData(node=node, controller=controller_2, data={'one': 0, 'two': 0, 'three': 5}, name=None, basename=None)
     ]
 
+    node = edt.get_node("/interrupt-map-test/node@2")
+    assert node.interrupts == [
+        edtlib.ControllerAndData(node=node, controller=controller_0, data={'one': 0}, name=None, basename=None),
+        edtlib.ControllerAndData(node=node, controller=controller_1, data={'one': 0, 'two': 1}, name=None, basename=None),
+        edtlib.ControllerAndData(node=node, controller=controller_2, data={'one': 0, 'two': 0, 'three': 2}, name=None, basename=None)
+    ]
+
+    node = edt.get_node("/interrupt-map-test/node@3")
+    assert node.interrupts == [
+        edtlib.ControllerAndData(node=node, controller=controller_0, data={'one': 0}, name=None, basename=None),
+        edtlib.ControllerAndData(node=node, controller=controller_1, data={'one': 0, 'two': 1}, name=None, basename=None),
+        edtlib.ControllerAndData(node=node, controller=controller_2, data={'one': 0, 'two': 0, 'three': 2}, name=None, basename=None)
+    ]
+
+    node = edt.get_node("/interrupt-map-test/node@4")
+    assert node.interrupts == [
+        edtlib.ControllerAndData(node=node, controller=controller_0, data={'one': 3}, name=None, basename=None),
+        edtlib.ControllerAndData(node=node, controller=controller_1, data={'one': 0, 'two': 4}, name=None, basename=None),
+        edtlib.ControllerAndData(node=node, controller=controller_2, data={'one': 0, 'two': 0, 'three': 5}, name=None, basename=None)
+    ]
+
+    node = edt.get_node("/interrupt-map-test/node@100000004")
+    assert node.interrupts == [
+        edtlib.ControllerAndData(node=node, controller=controller_0, data={'one': 3}, name=None, basename=None),
+        edtlib.ControllerAndData(node=node, controller=controller_1, data={'one': 0, 'two': 4}, name=None, basename=None),
+        edtlib.ControllerAndData(node=node, controller=controller_2, data={'one': 0, 'two': 0, 'three': 5}, name=None, basename=None)
+    ]
+
     node = edt.get_node("/interrupt-map-bitops-test/node@70000000E")
     assert node.interrupts == [
         edtlib.ControllerAndData(node=node, controller=edt.get_node('/interrupt-map-bitops-test/controller'), data={'one': 3, 'two': 2}, name=None, basename=None)
@@ -365,6 +393,118 @@ def test_include_filters():
         assert set(child.prop2specs.keys()) == {'child-prop-1', 'child-prop-2',
                                                 'x', 'z'}  # root level 'y' is blocked
 
+def test_include_filters_inherited_bindings() -> None:
+    '''Test the basics of filtering properties inherited via an intermediary binding file.
+
+    Use-case "B includes I includes X":
+    - X is a base binding file, specifying common properties
+    - I is an intermediary binding file, which includes X without modification
+      nor filter
+    - B includes I, filtering the properties it chooses to inherit
+      with an allowlist or a blocklist
+
+    Checks that the properties inherited from X via I are actually filtered
+    as B intends to.
+    '''
+    fname2path = {
+        # Base binding file, specifies a few properties up to the grandchild-binding level.
+        "simple.yaml": "test-bindings-include/simple.yaml",
+        # 'include:'s the base file above, without modification nor filter
+        "simple_inherit.yaml": "test-bindings-include/simple_inherit.yaml",
+    }
+    with from_here():
+        binding = edtlib.Binding(
+            # Filters inherited specifications with an allowlist.
+            "test-bindings-include/simple_filter_allowlist.yaml",
+            fname2path,
+            require_compatible=False,
+            require_description=False,
+        )
+    # Only property allowed.
+    assert {"prop-1"} == set(binding.prop2specs.keys())
+
+    with from_here():
+        binding = edtlib.Binding(
+            # Filters inherited specifications with a blocklist.
+            "test-bindings-include/simple_filter_blocklist.yaml",
+            fname2path,
+            require_compatible=False,
+            require_description=False,
+        )
+    # Only non blocked property.
+    assert {"prop-1"} == set(binding.prop2specs.keys())
+
+def test_include_filters_inherited_child_bindings() -> None:
+    '''Test the basics of filtering properties inherited via an intermediary binding file
+    (child-binding level).
+
+    See also: test_include_filters_inherited_bindings()
+    '''
+    fname2path = {
+        "simple.yaml": "test-bindings-include/simple.yaml",
+        "simple_inherit.yaml": "test-bindings-include/simple_inherit.yaml",
+    }
+    with from_here():
+        binding = edtlib.Binding(
+            "test-bindings-include/simple_filter_allowlist.yaml",
+            fname2path,
+            require_compatible=False,
+            require_description=False,
+        )
+    assert binding.child_binding
+    child_binding = binding.child_binding
+    # Only property allowed.
+    assert {"child-prop-1"} == set(child_binding.prop2specs.keys())
+
+    with from_here():
+        binding = edtlib.Binding(
+            "test-bindings-include/simple_filter_blocklist.yaml",
+            fname2path,
+            require_compatible=False,
+            require_description=False,
+        )
+    # Only non blocked property.
+    assert binding.child_binding
+    child_binding = binding.child_binding
+    assert {"child-prop-1"} == set(child_binding.prop2specs.keys())
+
+def test_include_filters_inherited_grandchild_bindings() -> None:
+    '''Test the basics of filtering properties inherited via an intermediary binding file
+    (grandchild-binding level).
+
+    See also: test_include_filters_inherited_bindings()
+    '''
+    fname2path = {
+        "simple.yaml": "test-bindings-include/simple.yaml",
+        "simple_inherit.yaml": "test-bindings-include/simple_inherit.yaml",
+    }
+    with from_here():
+        binding = edtlib.Binding(
+            "test-bindings-include/simple_filter_allowlist.yaml",
+            fname2path,
+            require_compatible=False,
+            require_description=False,
+        )
+    assert binding.child_binding
+    child_binding = binding.child_binding
+    assert child_binding.child_binding
+    grandchild_binding = child_binding.child_binding
+    # Only property allowed.
+    assert {"grandchild-prop-1"} == set(grandchild_binding.prop2specs.keys())
+
+    with from_here():
+        binding = edtlib.Binding(
+            "test-bindings-include/simple_filter_blocklist.yaml",
+            fname2path,
+            require_compatible=False,
+            require_description=False,
+        )
+    assert binding.child_binding
+    child_binding = binding.child_binding
+    assert child_binding.child_binding
+    grandchild_binding = child_binding.child_binding
+    # Only non blocked property.
+    assert {"grandchild-prop-1"} == set(grandchild_binding.prop2specs.keys())
 
 def test_bus():
     '''Test 'bus:' and 'on-bus:' in bindings'''
@@ -418,6 +558,20 @@ def test_bus():
     assert "foo" in edt.get_node("/buses/foo-bus/node1/nested").on_buses
     assert str(edt.get_node("/buses/foo-bus/node1/nested").binding_path) == \
         hpath("test-bindings/device-on-foo-bus.yaml")
+
+def test_binding_top_key():
+    fname2path = {'include.yaml': 'test-bindings-include/include.yaml',
+                  'include-2.yaml': 'test-bindings-include/include-2.yaml'}
+
+    with from_here():
+        binding = edtlib.Binding("test-bindings/defaults.yaml", fname2path)
+    title = binding.title
+    description = binding.description
+    compatible = binding.compatible
+
+    assert title == "Test binding"
+    assert description == "Property default value test"
+    assert compatible == "defaults"
 
 def test_child_binding():
     '''Test 'child-binding:' in bindings'''
@@ -543,31 +697,44 @@ def test_prop_enums():
     string_enum = props['string-enum']
     tokenizable_enum = props['tokenizable-enum']
     tokenizable_lower_enum = props['tokenizable-lower-enum']
+    array_enum = props['array-enum']
+    string_array_enum = props['string-array-enum']
     no_enum = props['no-enum']
 
     assert int_enum.val == 1
-    assert int_enum.enum_index == 0
+    assert int_enum.enum_indices[0] == 0
     assert not int_enum.spec.enum_tokenizable
     assert not int_enum.spec.enum_upper_tokenizable
 
     assert string_enum.val == 'foo_bar'
-    assert string_enum.enum_index == 1
+    assert string_enum.enum_indices[0] == 1
     assert not string_enum.spec.enum_tokenizable
     assert not string_enum.spec.enum_upper_tokenizable
 
     assert tokenizable_enum.val == '123 is ok'
-    assert tokenizable_enum.val_as_token == '123_is_ok'
-    assert tokenizable_enum.enum_index == 2
+    assert tokenizable_enum.val_as_tokens[0] == '123_is_ok'
+    assert tokenizable_enum.enum_indices[0] == 2
     assert tokenizable_enum.spec.enum_tokenizable
     assert tokenizable_enum.spec.enum_upper_tokenizable
 
     assert tokenizable_lower_enum.val == 'bar'
-    assert tokenizable_lower_enum.val_as_token == 'bar'
-    assert tokenizable_lower_enum.enum_index == 0
+    assert tokenizable_lower_enum.val_as_tokens[0] == 'bar'
+    assert tokenizable_lower_enum.enum_indices[0] == 0
     assert tokenizable_lower_enum.spec.enum_tokenizable
     assert not tokenizable_lower_enum.spec.enum_upper_tokenizable
 
-    assert no_enum.enum_index is None
+    assert array_enum.val == [0, 40, 40, 10]
+    assert array_enum.enum_indices == [0, 4, 4, 1]
+    assert not array_enum.spec.enum_tokenizable
+    assert not array_enum.spec.enum_upper_tokenizable
+
+    assert string_array_enum.val == ["foo", "bar"]
+    assert string_array_enum.val_as_tokens == ["foo", "bar"]
+    assert string_array_enum.enum_indices == [1, 0]
+    assert string_array_enum.spec.enum_tokenizable
+    assert string_array_enum.spec.enum_upper_tokenizable
+
+    assert no_enum.enum_indices is None
     assert not no_enum.spec.enum_tokenizable
     assert not no_enum.spec.enum_upper_tokenizable
 

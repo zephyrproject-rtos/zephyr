@@ -12,6 +12,27 @@ config CPP
 
 if CPP
 
+config STD_CPP_VERSION
+	int
+	default 199711 if STD_CPP98
+	default 201103 if STD_CPP11
+	default 201402 if STD_CPP14
+	default 201703 if STD_CPP17
+	default 202002 if STD_CPP20 || STD_CPP2A || STD_CPP2B
+	help
+	  The version number of C++ standard being used (NOTE: this uses the
+	  full year and month, and is the same as the __cplusplus macro defined
+	  by the compiler). This config can be used to check for a minimum
+	  supported version. Example:
+
+	    depends on STD_CPP_VERSION >= 201703
+
+	  Adding this to your library's enablement Kconfig will force a minimum
+	  c++17 standard.
+
+	  The full year is used so c++98 can be checked using > and < operators
+	  without conflicting with c++11 or higher.
+
 choice STD_CPP
 	prompt "C++ Standard"
 	default STD_CPP11
@@ -128,17 +149,6 @@ config EXTERNAL_MODULE_LIBCPP
 
 endchoice # LIBCPP_IMPLEMENTATION
 
-config CPP_MAIN
-	bool "[DEPRECATED] C++ main() function definition"
-	select DEPRECATED
-	help
-	  This option used to be necessary to instruct the Zephyr kernel to
-	  call 'int main(void)' instead of the old Zephyr default, 'void
-	  main(void)'.
-
-	  As the Zephyr type now matches the C++ required type, this option
-	  is no longer necessary.
-
 if !MINIMAL_LIBCPP
 
 config CPP_EXCEPTIONS
@@ -154,16 +164,6 @@ config CPP_RTTI
 
 endif # !MINIMAL_LIBCPP
 
-config CPP_STATIC_INIT_GNU
-	# As of today only ARC MWDT toolchain doesn't support GNU-compatible
-	# initialization of CPP static objects, new toolchains can be added
-	# here if required.
-	def_bool "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "arcmwdt"
-	help
-	  GNU-compatible initialization of CPP static objects
-
 endif # CPP
-
-rsource "Kconfig.deprecated"
 
 endmenu

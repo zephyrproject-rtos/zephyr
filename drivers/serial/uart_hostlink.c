@@ -6,6 +6,7 @@
 
 #include <zephyr/drivers/uart.h>
 #include <zephyr/kernel.h>
+#include <zephyr/toolchain.h>
 #include <string.h>
 
 #define DT_DRV_COMPAT snps_hostlink_uart
@@ -34,10 +35,6 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_ARC));
 #define HL_SYSCALL_GETPID	16
 #define HL_SYSCALL_GETCWD	17
 #define HL_SYSCALL_USER		18
-
-#ifndef __noinline
-#define __noinline __attribute__((noinline))
-#endif /* __noinline */
 
 #define HL_VERSION 1
 
@@ -394,7 +391,7 @@ static void uart_hostlink_poll_out(const struct device *dev, unsigned char c)
 	hl_write_char(1, c);
 }
 
-static const struct uart_driver_api uart_hostlink_driver_api = {
+static DEVICE_API(uart, uart_hostlink_driver_api) = {
 	.poll_in = uart_hostlink_poll_in,
 	.poll_out = uart_hostlink_poll_out,
 };

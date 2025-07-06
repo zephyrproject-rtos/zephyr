@@ -15,7 +15,7 @@
  *     1. 9 write clocks per byte, final bit is command/data selection bit
  *     2. Same as above, but 16 write clocks per byte
  *     3. 8 write clocks per byte. Command/data selected via GPIO pin
- * The current driver interface only supports type C modes 1 and 3
+ * The current driver interface does not support type C with 16 write clocks (option 2).
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_MIPI_DBI_H_
@@ -63,7 +63,7 @@ extern "C" {
 		.cs = {							\
 			.gpio = GPIO_DT_SPEC_GET_BY_IDX_OR(DT_PHANDLE(DT_PARENT(node_id), \
 							   spi_dev), cs_gpios, \
-							   DT_REG_ADDR(node_id), \
+							   DT_REG_ADDR_RAW(node_id), \
 							   {}),		\
 			.delay = (delay_),				\
 		},							\
@@ -96,7 +96,7 @@ extern "C" {
  */
 #define MIPI_DBI_CONFIG_DT(node_id, operation_, delay_)			\
 	{								\
-		.mode = DT_PROP(node_id, mipi_mode),			\
+		.mode = DT_STRING_UPPER_TOKEN(node_id, mipi_mode),	\
 		.config = MIPI_DBI_SPI_CONFIG_DT(node_id, operation_, delay_), \
 	}
 
@@ -113,12 +113,36 @@ extern "C" {
 	MIPI_DBI_CONFIG_DT(DT_DRV_INST(inst), operation_, delay_)
 
 /**
+ * @brief Get the MIPI DBI TE mode from devicetree
+ *
+ * Gets the MIPI DBI TE mode from a devicetree property.
+ * @param node_id Devicetree node identifier for the MIPI DBI device with the
+ *                TE mode property
+ * @param edge_prop Property name for the TE mode that should be read from
+ *                  devicetree
+ */
+#define MIPI_DBI_TE_MODE_DT(node_id, edge_prop)                           \
+	DT_STRING_UPPER_TOKEN(node_id, edge_prop)
+
+/**
+ * @brief Get the MIPI DBI TE mode for device instance
+ *
+ * Gets the MIPI DBI TE mode from a devicetree property. Equivalent to
+ * MIPI_DBI_TE_MODE_DT(DT_DRV_INST(inst), edge_mode).
+ * @param inst Instance of the device to get the TE mode for
+ * @param edge_prop Property name for the TE mode that should be read from
+ *                  devicetree
+ */
+#define MIPI_DBI_TE_MODE_DT_INST(inst, edge_prop)                         \
+	DT_STRING_UPPER_TOKEN(DT_DRV_INST(inst), edge_prop)
+
+/**
  * @brief MIPI DBI controller configuration
  *
  * Configuration for MIPI DBI controller write
  */
 struct mipi_dbi_config {
-	/** MIPI DBI mode (SPI 3 wire or 4 wire) */
+	/** MIPI DBI mode */
 	uint8_t mode;
 	/** SPI configuration */
 	struct spi_config config;
@@ -138,9 +162,12 @@ __subsystem struct mipi_dbi_driver_api {
 			     const uint8_t *framebuf,
 			     struct display_buffer_descriptor *desc,
 			     enum display_pixel_format pixfmt);
-	int (*reset)(const struct device *dev, uint32_t delay);
+	int (*reset)(const struct device *dev, k_timeout_t delay);
 	int (*release)(const struct device *dev,
 		       const struct mipi_dbi_config *config);
+	int (*configure_te)(const struct device *dev,
+			    uint8_t edge,
+			    k_timeout_t delay);
 };
 
 /**
@@ -247,13 +274,13 @@ static inline int mipi_dbi_write_display(const struct device *dev,
  *
  * Resets the attached display controller.
  * @param dev mipi dbi controller
- * @param delay duration to set reset signal for, in milliseconds
+ * @param delay_ms duration to set reset signal for, in milliseconds
  * @retval 0 reset succeeded
  * @retval -EIO I/O error
  * @retval -ENOSYS not implemented
  * @retval -ENOTSUP not supported
  */
-static inline int mipi_dbi_reset(const struct device *dev, uint32_t delay)
+static inline int mipi_dbi_reset(const struct device *dev, uint32_t delay_ms)
 {
 	const struct mipi_dbi_driver_api *api =
 		(const struct mipi_dbi_driver_api *)dev->api;
@@ -261,7 +288,7 @@ static inline int mipi_dbi_reset(const struct device *dev, uint32_t delay)
 	if (api->reset == NULL) {
 		return -ENOSYS;
 	}
-	return api->reset(dev, delay);
+	return api->reset(dev, K_MSEC(delay_ms));
 }
 
 /**
@@ -276,6 +303,10 @@ static inline int mipi_dbi_reset(const struct device *dev, uint32_t delay)
  * locked.
  * @param dev mipi dbi controller
  * @param config MIPI DBI configuration
+ * @retval 0 reset succeeded
+ * @retval -EIO I/O error
+ * @retval -ENOSYS not implemented
+ * @retval -ENOTSUP not supported
  */
 static inline int mipi_dbi_release(const struct device *dev,
 				   const struct mipi_dbi_config *config)
@@ -287,6 +318,45 @@ static inline int mipi_dbi_release(const struct device *dev,
 		return -ENOSYS;
 	}
 	return api->release(dev, config);
+}
+
+/**
+ * @brief Configures MIPI DBI tearing effect signal
+ *
+ * Many displays provide a tearing effect signal, which can be configured
+ * to pulse at each vsync interval or each hsync interval. This signal can be
+ * used by the MCU to determine when to transmit a new frame so that the
+ * read pointer of the display never overlaps with the write pointer from the
+ * MCU. This function configures the MIPI DBI controller to delay transmitting
+ * display frames until the selected tearing effect signal edge occurs.
+ *
+ * The delay will occur on the on each call to @ref mipi_dbi_write_display
+ * where the ``frame_incomplete`` flag was set within the buffer descriptor
+ * provided with the prior call, as this indicates the buffer being written
+ * in this call is the first buffer of a new frame.
+ *
+ * Note that most display controllers will need to enable the TE signal
+ * using vendor specific commands before the MIPI DBI controller can react
+ * to it.
+ *
+ * @param dev mipi dbi controller
+ * @param edge which edge of the TE signal to start transmitting on
+ * @param delay_us how many microseconds after TE edge to start transmission
+ * @retval -EIO I/O error
+ * @retval -ENOSYS not implemented
+ * @retval -ENOTSUP not supported
+ */
+static inline int mipi_dbi_configure_te(const struct device *dev,
+					uint8_t edge,
+					uint32_t delay_us)
+{
+	const struct mipi_dbi_driver_api *api =
+		(const struct mipi_dbi_driver_api *)dev->api;
+
+	if (api->configure_te == NULL) {
+		return -ENOSYS;
+	}
+	return api->configure_te(dev, edge, K_USEC(delay_us));
 }
 
 #ifdef __cplusplus

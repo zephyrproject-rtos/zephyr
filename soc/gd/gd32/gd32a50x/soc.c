@@ -8,7 +8,7 @@
 #include <soc.h>
 
 /* initial ecc memory */
-void z_arm_platform_init(void)
+void soc_reset_hook(void)
 {
 	register unsigned r0 __asm("r0") = DT_REG_ADDR(DT_CHOSEN(zephyr_sram));
 	register unsigned r1 __asm("r1") =
@@ -19,11 +19,7 @@ void z_arm_platform_init(void)
 	}
 }
 
-static int gd32a50x_soc_init(void)
+void soc_early_init_hook(void)
 {
 	SystemInit();
-
-	return 0;
 }
-
-SYS_INIT(gd32a50x_soc_init, PRE_KERNEL_1, 0);

@@ -86,7 +86,8 @@
 
 &spi6 {
 	cs-gpios = <&gpio_prt12 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>,
-		   <&gpio_prt13 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		<&gpio_prt13 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 
-	pinctrl-0 = <&p12_0_spi6_mosi &p12_1_spi6_miso &p12_2_spi6_clk>;
+	pinctrl-0 = <&p12_0_scb6_spi_m_mosi &p12_1_scb6_spi_m_miso &p12_2_scb6_spi_m_clk>;
+	pinctrl-names = "default";
 };

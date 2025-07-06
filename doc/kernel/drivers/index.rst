@@ -61,6 +61,8 @@ High-level calls accessed through device-specific APIs, such as
 :file:`i2c.h` or :file:`spi.h`, are usually intended as synchronous. Thus,
 these calls should be blocking.
 
+.. _device_driver_api:
+
 Driver APIs
 ***********
 
@@ -68,20 +70,23 @@ The following APIs for device drivers are provided by :file:`device.h`. The APIs
 are intended for use in device drivers only and should not be used in
 applications.
 
-:c:func:`DEVICE_DEFINE()`
+:c:macro:`DEVICE_DEFINE()`
    Create device object and related data structures including setting it
    up for boot-time initialization.
 
-:c:func:`DEVICE_NAME_GET()`
+:c:macro:`DEVICE_NAME_GET()`
    Converts a device identifier to the global identifier for a device
    object.
 
-:c:func:`DEVICE_GET()`
+:c:macro:`DEVICE_GET()`
    Obtain a pointer to a device object by name.
 
-:c:func:`DEVICE_DECLARE()`
+:c:macro:`DEVICE_DECLARE()`
    Declare a device object.  Use this when you need a forward reference
    to a device that has not yet been defined.
+
+:c:macro:`DEVICE_API()`
+   Wrap a driver API declaration to assign it to its respective linker section.
 
 .. _device_struct:
 
@@ -97,8 +102,8 @@ split into read-only and runtime-mutable parts. At a high level we have:
   struct device {
 	const char *name;
 	const void *config;
-        const void *api;
-        void * const data;
+	const void *api;
+	void * const data;
   };
 
 The ``config`` member is for read-only configuration data set at build time. For
@@ -122,6 +127,9 @@ Most drivers will be implementing a device-independent subsystem API.
 Applications can simply program to that generic API, and application
 code is not specific to any particular driver implementation.
 
+If all driver API instances are assigned to their respective API linker section
+use :c:macro:`DEVICE_API_IS()` to verify the API's type.
+
 A subsystem API definition typically looks like this:
 
 .. code-block:: C
@@ -129,29 +137,24 @@ A subsystem API definition typically looks like this:
   typedef int (*subsystem_do_this_t)(const struct device *dev, int foo, int bar);
   typedef void (*subsystem_do_that_t)(const struct device *dev, void *baz);
 
-  struct subsystem_api {
+  __subsystem struct subsystem_driver_api {
         subsystem_do_this_t do_this;
         subsystem_do_that_t do_that;
   };
 
   static inline int subsystem_do_this(const struct device *dev, int foo, int bar)
   {
-        struct subsystem_api *api;
-
-        api = (struct subsystem_api *)dev->api;
-        return api->do_this(dev, foo, bar);
+        return DEVICE_API_GET(subsystem, dev)->do_this(dev, foo, bar);
   }
 
   static inline void subsystem_do_that(const struct device *dev, void *baz)
   {
-        struct subsystem_api *api;
-
-        api = (struct subsystem_api *)dev->api;
-        api->do_that(dev, baz);
+        DEVICE_API_GET(subsystem, dev)->do_that(dev, baz);
   }
 
 A driver implementing a particular subsystem will define the real implementation
-of these APIs, and populate an instance of subsystem_api structure:
+of these APIs, and populate an instance of subsystem_driver_api structure using
+the :c:macro:`DEVICE_API()` wrapper:
 
 .. code-block:: C
 
@@ -165,9 +168,9 @@ of these APIs, and populate an instance of subsystem_api structure:
         ...
   }
 
-  static struct subsystem_api my_driver_api_funcs = {
+  static DEVICE_API(subsystem, my_driver_api_funcs) = {
         .do_this = my_driver_do_this,
-        .do_that = my_driver_do_that
+        .do_that = my_driver_do_that,
   };
 
 The driver would then pass ``my_driver_api_funcs`` as the ``api`` argument to
@@ -203,7 +206,7 @@ A device-specific API definition typically looks like this:
    __syscall int specific_from_user(const struct device *dev, int bar);
 
    /* Only needed when extensions include syscalls */
-   #include <syscalls/specific.h>
+   #include <zephyr/syscalls/specific.h>
 
 A driver implementing extensions to the subsystem will define the real
 implementation of both the subsystem API and the specific APIs:
@@ -243,7 +246,7 @@ implementation of both the subsystem API and the specific APIs:
        return z_impl_specific_do_that(dev, bar)
    }
 
-   #include <syscalls/specific_from_user_mrsh.c>
+   #include <zephyr/syscalls/specific_from_user_mrsh.c>
 
    #endif /* CONFIG_USERSPACE */
 
@@ -363,7 +366,7 @@ initialization levels:
 
 Within each initialization level you may specify a priority level, relative to
 other devices in the same initialization level. The priority level is specified
-as an integer value in the range 0 to 99; lower values indicate earlier
+as an integer value in the range 0 to 999; lower values indicate earlier
 initialization.  The priority level must be a decimal integer literal without
 leading zeroes or sign (e.g. 32), or an equivalent symbolic name (e.g.
 ``\#define MY_INIT_PRIO 32``); symbolic expressions are *not* permitted (e.g.
@@ -372,6 +375,24 @@ leading zeroes or sign (e.g. 32), or an equivalent symbolic name (e.g.
 Drivers and other system utilities can determine whether startup is
 still in pre-kernel states by using the :c:func:`k_is_pre_kernel`
 function.
+
+Deferred initialization
+***********************
+
+Initialization of devices can also be deferred to a later time. In this case,
+the device is not automatically initialized by Zephyr at boot time. Instead,
+the device is initialized when the application calls :c:func:`device_init`.
+To defer a device driver initialization, add the property ``zephyr,deferred-init``
+to the associated device node in the DTS file. For example:
+
+.. code-block:: devicetree
+
+   / {
+           a-driver@40000000 {
+                   reg = <0x40000000 0x1000>;
+                   zephyr,deferred-init;
+           };
+   };
 
 System Drivers
 **************
@@ -569,7 +590,7 @@ would be in the driver config struct:
 Drivers that do not use Zephyr Device Model
 ===========================================
 
-Some drivers or driver-like code may not user Zephyr's device model,
+Some drivers or driver-like code may not use Zephyr's device model,
 and alternative storage must be arranged for the MMIO data. An
 example of this are timer drivers, or interrupt controller code.
 

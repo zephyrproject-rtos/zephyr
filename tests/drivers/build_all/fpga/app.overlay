@@ -38,6 +38,18 @@
 			#include "spi.dtsi"
 		};
 	};
+
+	fpga0: bridges {
+		compatible = "altr,socfpga-agilex-bridge";
+		status = "okay";
+	};
+
+	sip_smc: smc {
+		compatible = "intel,socfpga-agilex-sip-smc";
+		method = "smc";
+		status = "okay";
+		zephyr,num-clients = <2>;
+	};
 };
 
 /* Put device specific modifications to properties or disabling of devices

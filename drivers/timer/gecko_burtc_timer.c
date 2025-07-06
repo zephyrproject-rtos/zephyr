@@ -20,7 +20,6 @@
 #include <soc.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/timer/system_timer.h>
-#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/irq.h>
 #include <zephyr/spinlock.h>
@@ -55,7 +54,7 @@ const int32_t z_sys_timer_irq_for_test = TIMER_IRQ;
 /* With CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME, that's where we
  * should write hw_cycles timer clock frequency upon init
  */
-extern int z_clock_hw_cycles_per_sec;
+extern unsigned int z_clock_hw_cycles_per_sec;
 
 /* Number of hw_cycles clocks per 1 kernel tick */
 static uint32_t g_cyc_per_tick;
@@ -188,17 +187,6 @@ static int burtc_init(void)
 
 	/* Enable clock for BURTC CSRs on APB */
 	CMU_ClockEnable(cmuClock_BURTC, true);
-
-	/* Configure BURTC LF clocksource according to Kconfig */
-#if defined(CONFIG_CMU_BURTCCLK_LFXO)
-	CMU_ClockSelectSet(cmuClock_BURTC, cmuSelect_LFXO);
-#elif defined(CONFIG_CMU_BURTCCLK_LFRCO)
-	CMU_ClockSelectSet(cmuClock_BURTC, cmuSelect_LFRCO);
-#elif defined(CONFIG_CMU_BURTCCLK_ULFRCO)
-	CMU_ClockSelectSet(cmuClock_BURTC, cmuSelect_ULFRCO);
-#else
-#error "Unsupported BURTC clock specified"
-#endif
 
 	/* Calculate timing constants and init BURTC */
 	hw_clock_freq = CMU_ClockFreqGet(cmuClock_BURTC);

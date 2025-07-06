@@ -8,7 +8,7 @@ target_sources(app PRIVATE
   src/main.c
   src/mcp_server.c
   src/vcp_vol_ctlr.c
-  src/ccp_server.c
+  src/ccp_call_control_server.c
   src/cap_initiator.c
 )
 

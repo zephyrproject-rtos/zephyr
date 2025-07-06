@@ -273,8 +273,8 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
 	}
 
 	/* Send data */
-	mctx.iface.write(&mctx.iface, buf, len);
-	mctx.iface.write(&mctx.iface, &ctrlz, 1);
+	modem_cmd_send_data_nolock(&mctx.iface, buf, len);
+	modem_cmd_send_data_nolock(&mctx.iface, &ctrlz, 1);
 
 	/* Wait for the OK */
 	k_sem_reset(&mdata.sem_response);
@@ -576,7 +576,7 @@ static int offload_poll(struct zsock_pollfd *fds, int nfds, int msecs)
 		}
 
 		/* If vtable matches, then it's modem socket. */
-		obj = z_get_fd_obj(fds[i].fd,
+		obj = zvfs_get_fd_obj(fds[i].fd,
 				   (const struct fd_op_vtable *)&offload_socket_fd_op_vtable,
 				   EINVAL);
 		if (obj == NULL) {

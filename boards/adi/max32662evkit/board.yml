@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: max32662evkit
+  full_name: MAX32662EVKIT
+  vendor: adi
+  socs:
+    - name: max32662

@@ -1,17 +1,10 @@
-.. _sam4e_xpro:
-
-SAM4E Xplained Pro
-###################
+.. zephyr:board:: sam4e_xpro
 
 Overview
 ********
 
 The SAM4E Xplained Pro evaluation kit is a development platform to evaluate the
 Atmel SAM4E series microcontrollers.
-
-.. image:: img/sam4e_xpro.jpg
-     :align: center
-     :alt: SAM4E Xplained Pro
 
 Hardware
 ********
@@ -34,45 +27,7 @@ Hardware
 Supported Features
 ==================
 
-The sam4e_xpro board configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| AFEC      | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| COUNTER   | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| ETHERNET  | on-chip    | ethernet                            |
-+-----------+------------+-------------------------------------+
-| HWINFO    | on-chip    | hwinfo                              |
-+-----------+------------+-------------------------------------+
-| HSMCI     | on-chip    | sdhc                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| USART     | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not currently supported by Zephyr.
-
-The default configuration can be found in the Kconfig
-:zephyr_file:`boards/atmel/sam/sam4e_xpro/sam4e_xpro_defconfig`.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -95,6 +50,8 @@ chip.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Flashing the Zephyr project onto SAM4E MCU requires the `OpenOCD tool`_.
 By default a factory new SAM4E chip will boot SAM-BA boot loader located in
@@ -122,7 +79,7 @@ Using OpenOCD
 -------------
 
 #. Connect the SAM4E Xplained Pro board to your host computer using the USB
-   debug port. Then build and flash the :ref:`hello_world` application.
+   debug port. Then build and flash the :zephyr:code-sample:`hello_world` application.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
@@ -138,7 +95,7 @@ Using SAM-BA bootloader
 #. Open the ``ERASE`` jumper.
 
 #. Connect the SAM4E Xplained Pro board to your host computer using the SoC
-   USB port. Then build and flash the :ref:`hello_world` application.
+   USB port. Then build and flash the :zephyr:code-sample:`hello_world` application.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
@@ -175,7 +132,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

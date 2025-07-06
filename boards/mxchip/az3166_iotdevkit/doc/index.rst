@@ -1,7 +1,4 @@
-.. _az3166_iotdevkit:
-
-AZ3166 MXChip IoT DevKit
-########################
+.. zephyr:board:: az3166_iotdevkit
 
 Overview
 ********
@@ -10,12 +7,6 @@ The AZ3166 IoT DevKit from MXChip is a development board designed for IoT (Inter
 projects. It's an all-in-one board powered by an Arm Cortex-M4 processor. On-board peripherals
 include an OLED screen, headphone output, stereo microphone and abundant sensors like humidity &
 temperature, pressure, motion (accelerometer & gyroscope) and magnetometer.
-
-.. figure:: img/az3166-iotdevkit.webp
-     :align: center
-     :alt: AZ3166 MXChip IoT DevKit
-
-     AZ3166 MXChip IoT DevKit (Credit: MXChip)
 
 More information about the board can be found at the `MXChip AZ3166 website`_.
 
@@ -43,25 +34,7 @@ The MXChip AZ3166 IoT DevKit has the following physical features:
 Supported Features
 ==================
 
-The az3166_iotdevkit board configuration supports the following
-hardware features:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| NVIC      | on-chip    | nested vector        |
-|           |            | interrupt controller |
-+-----------+------------+----------------------+
-| SYSTICK   | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial port          |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C       | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| SPI       | on-chip    | spi                  |
-+-----------+------------+----------------------+
+.. zephyr:board-supported-hw::
 
 .. note::
 
@@ -70,13 +43,15 @@ hardware features:
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 First, run your favorite terminal program to listen for output.
 

@@ -276,7 +276,7 @@ static int api_write(const struct device *dev,
 	return 0;
 }
 
-const struct display_driver_api driver_api = {
+DEVICE_API(display, driver_api) = {
 	.blanking_on = api_blanking_on,
 	.blanking_off = api_blanking_off,
 	.write = api_write,
@@ -339,7 +339,7 @@ static void timer_irq_handler(void *arg)
 	const struct display_drv_config *dev_config = dev->config;
 	uint8_t iteration = dev_data->iteration;
 	uint8_t pixel_idx;
-	uint8_t row_idx;
+	uint8_t row_idx = 0;
 
 	/* The timer is automagically stopped and cleared by shortcuts
 	 * on the same event (COMPARE0) that generates this interrupt.

@@ -11,12 +11,25 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+/*
+ * Define COREDUMP_*_STR as public to allow coredump_backend_other to re-use
+ * these strings if necessary
+ */
+#define COREDUMP_BEGIN_STR      "BEGIN#"
+#define COREDUMP_END_STR        "END#"
+#define COREDUMP_ERROR_STR      "ERROR CANNOT DUMP#"
+
+/*
+ * Need to prefix coredump strings to make it easier to parse
+ * as log module adds its own prefixes.
+ */
+#define COREDUMP_PREFIX_STR     "#CD:"
 
 /**
  * @file
  *
  * @defgroup coredump_apis Coredump APIs
- * @ingroup os_services
+ * @ingroup debug
  * @brief Coredump APIs
  * @{
  */
@@ -129,9 +142,12 @@ struct coredump_cmd_copy_arg {
 #include <zephyr/arch/cpu.h>
 #include <zephyr/sys/byteorder.h>
 
-#define COREDUMP_HDR_VER		1
+#define COREDUMP_HDR_VER		2
 
 #define	COREDUMP_ARCH_HDR_ID		'A'
+
+#define THREADS_META_HDR_ID		'T'
+#define THREADS_META_HDR_VER		1
 
 #define	COREDUMP_MEM_HDR_ID		'M'
 #define COREDUMP_MEM_HDR_VER		1
@@ -179,6 +195,18 @@ struct coredump_arch_hdr_t {
 	uint16_t	num_bytes;
 } __packed;
 
+/* Threads metadata header */
+struct coredump_threads_meta_hdr_t {
+	/* THREADS_META_HDR_ID */
+	char		id;
+
+	/* Header version */
+	uint16_t	hdr_version;
+
+	/* Number of bytes in this block (excluding header) */
+	uint16_t	num_bytes;
+} __packed;
+
 /* Memory block header */
 struct coredump_mem_hdr_t {
 	/* COREDUMP_MEM_HDR_ID */
@@ -207,7 +235,7 @@ struct coredump_backend_api {
 	coredump_backend_start_t		start;
 
 	/* Signal to backend of the end of coredump. */
-	coredump_backend_end_t		end;
+	coredump_backend_end_t			end;
 
 	/* Raw buffer output */
 	coredump_backend_buffer_output_t	buffer_output;
@@ -219,7 +247,7 @@ struct coredump_backend_api {
 	coredump_backend_cmd_t			cmd;
 };
 
-void coredump(unsigned int reason, const z_arch_esf_t *esf,
+void coredump(unsigned int reason, const struct arch_esf *esf,
 	      struct k_thread *thread);
 void coredump_memory_dump(uintptr_t start_addr, uintptr_t end_addr);
 void coredump_buffer_output(uint8_t *buf, size_t buflen);
@@ -229,34 +257,34 @@ int coredump_cmd(enum coredump_cmd_id cmd_id, void *arg);
 
 #else
 
-void coredump(unsigned int reason, const z_arch_esf_t *esf,
-	      struct k_thread *thread)
+static inline void coredump(unsigned int reason, const struct arch_esf *esf,
+			    struct k_thread *thread)
 {
 	ARG_UNUSED(reason);
 	ARG_UNUSED(esf);
 	ARG_UNUSED(thread);
 }
 
-void coredump_memory_dump(uintptr_t start_addr, uintptr_t end_addr)
+static inline void coredump_memory_dump(uintptr_t start_addr, uintptr_t end_addr)
 {
 	ARG_UNUSED(start_addr);
 	ARG_UNUSED(end_addr);
 }
 
-void coredump_buffer_output(uint8_t *buf, size_t buflen)
+static inline void coredump_buffer_output(uint8_t *buf, size_t buflen)
 {
 	ARG_UNUSED(buf);
 	ARG_UNUSED(buflen);
 }
 
-int coredump_query(enum coredump_query_id query_id, void *arg)
+static inline int coredump_query(enum coredump_query_id query_id, void *arg)
 {
 	ARG_UNUSED(query_id);
 	ARG_UNUSED(arg);
 	return -ENOTSUP;
 }
 
-int coredump_cmd(enum coredump_cmd_id query_id, void *arg)
+static inline int coredump_cmd(enum coredump_cmd_id query_id, void *arg)
 {
 	ARG_UNUSED(query_id);
 	ARG_UNUSED(arg);
@@ -266,7 +294,7 @@ int coredump_cmd(enum coredump_cmd_id query_id, void *arg)
 #endif /* CONFIG_DEBUG_COREDUMP */
 
 /**
- * @fn void coredump(unsigned int reason, const z_arch_esf_t *esf, struct k_thread *thread);
+ * @fn void coredump(unsigned int reason, const struct arch_esf *esf, struct k_thread *thread);
  * @brief Perform coredump.
  *
  * Normally, this is called inside z_fatal_error() to generate coredump

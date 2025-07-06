@@ -21,4 +21,5 @@ else()
 endif()
 
 target_sources(app PRIVATE "src/main.c" ${creds})
-target_sources_ifdef(CONFIG_NET_DHCPV4 app PRIVATE "src/dhcp.c")
+
+include(${ZEPHYR_BASE}/samples/net/common/common.cmake)

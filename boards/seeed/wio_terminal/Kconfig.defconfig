@@ -3,5 +3,7 @@
 
 # SPDX-License-Identifier: Apache-2.0
 
-config LV_COLOR_16_SWAP
+configdefault LV_COLOR_16_SWAP
 	default y if LVGL
+
+source "boards/common/usb/Kconfig.cdc_acm_serial.defconfig"

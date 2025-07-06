@@ -15,7 +15,11 @@ LOG_MODULE_REGISTER(net_lwm2m_link_format, CONFIG_LWM2M_LOG_LEVEL);
 
 #define CORELINK_BUF_SIZE 24
 
-#define ENABLER_VERSION "lwm2m=\"" LWM2M_PROTOCOL_VERSION_STRING "\""
+#if defined(CONFIG_LWM2M_VERSION_1_1)
+#define ENABLER_VERSION "</>;lwm2m=" LWM2M_PROTOCOL_VERSION_STRING
+#else
+#define ENABLER_VERSION "</>;lwm2m=\"" LWM2M_PROTOCOL_VERSION_STRING "\""
+#endif
 
 /*
  * TODO: to implement a way for clients to specify alternate path

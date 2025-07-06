@@ -7,6 +7,7 @@ zephyr_syscall_header(
 
 zephyr_include_directories(
   ${ZEPHYR_BASE}/subsys/testsuite/include
+  ${ZEPHYR_BASE}/subsys/testsuite/coverage
   ${ZEPHYR_BASE}/subsys/testsuite/ztest/include
   )
 
@@ -17,7 +18,7 @@ endif()
 zephyr_library()
 
 # For strtok_r() and strdup()
-zephyr_library_compile_options(-D_POSIX_C_SOURCE=200809L)
+zephyr_library_compile_options(-U_POSIX_C_SOURCE -D_POSIX_C_SOURCE=200809L)
 
 zephyr_library_sources(
   src/ztest.c

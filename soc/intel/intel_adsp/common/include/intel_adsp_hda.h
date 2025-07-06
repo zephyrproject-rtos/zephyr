@@ -8,6 +8,7 @@
 #include <zephyr/cache.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/sys/util.h>
 #include <adsp_shim.h>
 #include <adsp_memory.h>
 #include <adsp_shim.h>
@@ -88,6 +89,13 @@
 #define DGLPIBI(base, regblock_size, stream) \
 	((volatile uint32_t *)(HDA_ADDR(base, regblock_size, stream) + 0x28))
 
+/* Gateway Linear Link Position registers (ACE2 and onwards */
+#define DGLLLPL(base, regblock_size, stream) \
+	((volatile uint32_t *)(HDA_ADDR(base, regblock_size, stream) + 0x20))
+
+#define DGLLLPU(base, regblock_size, stream) \
+	((volatile uint32_t *)(HDA_ADDR(base, regblock_size, stream) + 0x24))
+
 /**
  * @brief Dump all the useful registers of an HDA stream to printk
  *
@@ -164,14 +172,22 @@ static inline int intel_adsp_hda_set_buffer(uint32_t base,
 	uint32_t aligned_size = buf_size & HDA_BUFFER_SIZE_MASK;
 
 	__ASSERT(aligned_addr == addr, "Buffer must be 128 byte aligned");
-	__ASSERT(aligned_addr >= L2_SRAM_BASE
-		 && aligned_addr < L2_SRAM_BASE + L2_SRAM_SIZE,
-		 "Buffer must be in L2 address space");
 	__ASSERT(aligned_size == buf_size,
 		 "Buffer must be 16 byte aligned in size");
 
-	__ASSERT(aligned_addr + aligned_size < L2_SRAM_BASE + L2_SRAM_SIZE,
-		 "Buffer must end in L2 address space");
+#if defined(CONFIG_KERNEL_VM_SUPPORT)
+#  define _INTEL_ADSP_BASE  CONFIG_KERNEL_VM_BASE
+#  define _INTEL_ADSP_SIZE  CONFIG_KERNEL_VM_SIZE
+#else
+#  define _INTEL_ADSP_BASE  CONFIG_SRAM_BASE_ADDRESS
+#  define _INTEL_ADSP_SIZE  KB(CONFIG_SRAM_SIZE)
+#endif
+
+	__ASSERT(aligned_addr >= _INTEL_ADSP_BASE
+		 && aligned_addr < _INTEL_ADSP_BASE + _INTEL_ADSP_SIZE,
+		 "Buffer must be in kernel address space");
+	__ASSERT(aligned_addr + aligned_size < _INTEL_ADSP_BASE + _INTEL_ADSP_SIZE,
+		 "Buffer must end in kernel address space");
 
 	if (*DGCS(base, regblock_size, sid) & DGCS_GEN) {
 		return -EBUSY;
@@ -257,24 +273,24 @@ static inline bool intel_adsp_hda_is_enabled(uint32_t base, uint32_t regblock_si
  */
 static inline uint32_t intel_adsp_hda_unused(uint32_t base, uint32_t regblock_size, uint32_t sid)
 {
-	uint32_t dgcs = *DGCS(base, regblock_size, sid);
 	uint32_t dgbs = *DGBS(base, regblock_size, sid);
-
-	/* Check if buffer is empty */
-	if ((dgcs & DGCS_BNE) == 0) {
-		return dgbs;
-	}
-
-	/* Check if the buffer is full */
-	if (dgcs & DGCS_BF) {
-		return 0;
-	}
-
 	int32_t rp = *DGBRP(base, regblock_size, sid);
 	int32_t wp = *DGBWP(base, regblock_size, sid);
 	int32_t size = rp - wp;
 
-	if (size <= 0) {
+	if (size == 0) {
+		uint32_t dgcs = *DGCS(base, regblock_size, sid);
+
+		/* Check if buffer is empty */
+		if ((dgcs & DGCS_BNE) == 0) {
+			return dgbs;
+		}
+
+		/*
+		 * Buffer is not empty and pointers equal, it can
+		 * only be full, no need to check the DGCS_BF flag
+		 */
+	} else if (size < 0) {
 		size += dgbs;
 	}
 

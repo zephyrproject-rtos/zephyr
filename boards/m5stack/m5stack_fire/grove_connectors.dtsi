@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2023 Joel Guittet
+ * Copyright (c) 2023 Martin Kiepfer
+ * Copyright (c) 2025 Jakub Novák
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	grove_header_a: grove_header_a {
+		compatible = "grove-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 22 0>,    /* D0/SCL/RX */
+				<1 0 &gpio1 21 0>;    /* D1/SDA/TX */
+	};
+
+	grove_header_b: grove_header_b {
+		compatible = "grove-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio1 5 0>,    /* D0/SCL/RX */
+				<1 0 &gpio0 26 0>;    /* D1/SDA/TX */
+	};
+
+	grove_header_c: grove_header_c {
+		compatible = "grove-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 17 0>,    /* D0/SCL/RX */
+				<1 0 &gpio0 16 0>;    /* D1/SDA/TX */
+	};
+};
+
+grove_uart: &uart1 {};

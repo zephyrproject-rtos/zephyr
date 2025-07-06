@@ -8,15 +8,19 @@
  *  User CPR Interval
  */
 #if !defined(CONFIG_BT_CTLR_USER_CPR_INTERVAL_MIN)
+#if defined(CONFIG_BT_CTLR_CONN_INTERVAL_LOW_LATENCY)
+#define CONN_INTERVAL_MIN(x) (0U)
+#else /* !CONFIG_BT_CTLR_CONN_INTERVAL_LOW_LATENCY */
 /* Bluetooth defined CPR Interval Minimum (7.5ms) */
-#define CONN_INTERVAL_MIN(x) (6)
+#define CONN_INTERVAL_MIN(x) (6U)
+#endif /* !CONFIG_BT_CTLR_CONN_INTERVAL_LOW_LATENCY */
 #else /* CONFIG_BT_CTLR_USER_CPR_INTERVAL_MIN */
 /* Proprietary user defined CPR Interval Minimum */
-#define CONN_INTERVAL_MIN(x) (MAX(ull_conn_interval_min_get(x), 1))
+#define CONN_INTERVAL_MIN(x) (MAX(ull_conn_interval_min_get(x), 1U))
 #endif /* CONFIG_BT_CTLR_USER_CPR_INTERVAL_MIN */
 
 /**
- *  User deferance of CPR Anchor Point Move
+ *  User deference of CPR Anchor Point Move
  */
 #if !defined(CONFIG_BT_CTLR_USER_CPR_ANCHOR_POINT_MOVE)
 #define DEFER_APM_CHECK(x, y, z) (false)
@@ -44,6 +48,9 @@ extern bool ull_handle_cpr_anchor_point_move(struct ll_conn *conn, uint16_t *off
 
 /* Macro to convert time in us to periodic advertising interval units */
 #define RADIO_SYNC_EVENTS(x, y) ((uint16_t)DIV_ROUND_UP(x, y))
+
+/* Macro to mark address type as identity address from RPA (0x02, 0x03) */
+#define MARK_AS_IDENTITY_ADDR(addr_type) ((addr_type) += 2U)
 
 static inline uint8_t ull_ref_get(struct ull_hdr *hdr)
 {
@@ -170,3 +177,4 @@ void ull_rxfifo_alloc(uint8_t s, uint8_t n, uint8_t f, uint8_t *l, uint8_t *m,
 		      void *mem_free, void *link_free, uint8_t max);
 void *ull_rxfifo_release(uint8_t s, uint8_t n, uint8_t f, uint8_t *l, uint8_t *m,
 			 memq_link_t *link, struct node_rx_hdr *rx);
+uint32_t ull_get_wrapped_time_us(uint32_t time_now_us, int32_t time_diff_us);

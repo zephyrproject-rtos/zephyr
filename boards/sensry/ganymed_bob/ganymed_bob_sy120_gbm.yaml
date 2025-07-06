@@ -1,0 +1,15 @@
+# Copyright (c) 2024 sensry.io
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: ganymed_bob/sy120_gbm
+vendor: sensry
+name: Ganymed family breakout board with SY120_GBM chip equipped
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - uart
+  - spi
+  - i2c

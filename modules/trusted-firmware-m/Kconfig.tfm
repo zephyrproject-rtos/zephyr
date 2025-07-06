@@ -2,6 +2,7 @@
 
 # Copyright (c) 2019, 2020 Linaro Limited
 # Copyright (c) 2020, 2021 Nordic Semiconductor ASA
+# Copyright 2024-2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 config ZEPHYR_TRUSTED_FIRMWARE_M_MODULE
@@ -11,15 +12,22 @@ config TFM_BOARD
 	string
 	default "nxp/lpcxpresso55s69" if BOARD_LPCXPRESSO55S69_LPC55S69_CPU0_NS
 	default "arm/mps2/an521" if BOARD_MPS2_AN521_CPU0_NS
-	default "arm/mps3/an547" if BOARD_MPS3_AN547
+	default "arm/mps3/corstone300/fvp"   if BOARD_MPS3_CORSTONE300_FVP_NS
+	default "arm/mps3/corstone300/an547" if BOARD_MPS3_CORSTONE300_AN547_NS
+	default "arm/mps3/corstone300/an552" if BOARD_MPS3_CORSTONE300_AN552_NS
+	default "arm/mps3/corstone310/an555" if BOARD_MPS3_CORSTONE310_AN555_NS
+	default "arm/mps3/corstone310/fvp"   if BOARD_MPS3_CORSTONE310_FVP_NS
 	default "stm/b_u585i_iot02a" if BOARD_B_U585I_IOT02A
 	default "stm/nucleo_l552ze_q" if BOARD_NUCLEO_L552ZE_Q
 	default "stm/stm32l562e_dk" if BOARD_STM32L562E_DK
 	default "arm/musca_b1" if BOARD_V2M_MUSCA_B1
 	default "arm/musca_s1" if BOARD_V2M_MUSCA_S1
+	default "adi/max32657" if BOARD_MAX32657EVKIT_MAX32657_NS
 	default "${ZEPHYR_BASE}/modules/trusted-firmware-m/nordic/nrf9160" if SOC_NRF9160
 	default "${ZEPHYR_BASE}/modules/trusted-firmware-m/nordic/nrf9120" if SOC_NRF9120
 	default "${ZEPHYR_BASE}/modules/trusted-firmware-m/nordic/nrf5340_cpuapp" if SOC_NRF5340_CPUAPP
+	default "${ZEPHYR_BASE}/modules/trusted-firmware-m/nordic/nrf54l15_cpuapp" if SOC_NRF54L15_CPUAPP
+	default "${ZEPHYR_BASE}/modules/trusted-firmware-m/nordic/nrf54l10_cpuapp" if SOC_NRF54L10_CPUAPP
 	help
 	  The board name used for building TFM. Building with TFM requires that
 	  TFM has been ported to the given board/SoC.
@@ -30,8 +38,10 @@ menuconfig BUILD_WITH_TFM
 	depends on TFM_BOARD != ""
 	depends on ARM_TRUSTZONE_M
 	select BUILD_OUTPUT_HEX
+	select PSA_CRYPTO_CLIENT
 	imply INIT_ARCH_HW_AT_BOOT
 	imply ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS
+	imply MBEDTLS
 	help
 	  When enabled, this option instructs the Zephyr build process to
 	  additionally generate a TF-M image for the Secure Execution
@@ -51,27 +61,8 @@ menuconfig BUILD_WITH_TFM
 
 if BUILD_WITH_TFM
 
-config TFM_KEY_FILE_S
-	string "Path to private key used to sign secure firmware images."
-	depends on BUILD_WITH_TFM
-	default "${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/bl2/ext/mcuboot/root-RSA-3072.pem"
-	help
-	  The path and filename for the .pem file containing the private key
-	  that should be used by the BL2 bootloader when signing secure
-	  firmware images.
-
-config TFM_KEY_FILE_NS
-	string "Path to private key used to sign non-secure firmware images."
-	depends on BUILD_WITH_TFM
-	default "${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/bl2/ext/mcuboot/root-RSA-3072_1.pem"
-	help
-	  The path and filename for the .pem file containing the private key
-	  that should be used by the BL2 bootloader when signing non-secure
-	  firmware images.
-
 config TFM_PROFILE
 	string
-	depends on BUILD_WITH_TFM
 	default "profile_small" if TFM_PROFILE_TYPE_SMALL
 	default "profile_medium" if TFM_PROFILE_TYPE_MEDIUM
 	default "profile_medium_arotless" if TFM_PROFILE_TYPE_AROTLESS
@@ -83,7 +74,6 @@ config TFM_PROFILE
 
 choice TFM_PROFILE_TYPE
 	prompt "TF-M build profile"
-	depends on BUILD_WITH_TFM
 	default TFM_PROFILE_TYPE_NOT_SET
 	help
 	  The TF-M build profile selection. Can be empty (not set),
@@ -111,7 +101,7 @@ endchoice
 choice TFM_CMAKE_BUILD_TYPE
 	prompt "The build type for TFM"
 	default TFM_CMAKE_BUILD_TYPE_RELEASE if SPEED_OPTIMIZATIONS && BUILD_OUTPUT_STRIPPED
-	default TFM_CMAKE_BUILD_TYPE_MINSIZEREL if SIZE_OPTIMIZATIONS
+	default TFM_CMAKE_BUILD_TYPE_MINSIZEREL if SIZE_OPTIMIZATIONS || SIZE_OPTIMIZATIONS_AGGRESSIVE
 	default TFM_CMAKE_BUILD_TYPE_DEBUG if DEBUG_OPTIMIZATIONS
 	default TFM_CMAKE_BUILD_TYPE_RELWITHDEBINFO
 
@@ -132,7 +122,6 @@ endchoice
 config TFM_ISOLATION_LEVEL
 	int "Isolation level setting." if (TFM_PROFILE_TYPE_NOT_SET && TFM_IPC)
 	range 1 3
-	depends on BUILD_WITH_TFM
 	default 1 if TFM_PROFILE_TYPE_SMALL || !TFM_IPC
 	default 2 if TFM_PROFILE_TYPE_MEDIUM
 	default 3 if TFM_PROFILE_TYPE_LARGE
@@ -207,19 +196,24 @@ config TFM_BL2_NOT_SUPPORTED
 
 config TFM_IMAGE_VERSION_S
 	string "Version of the Secure Image"
+	default "$(APP_VERSION_TWEAK_STRING)" if "$(VERSION_MAJOR)" != "" && TFM_MCUBOOT_IMAGE_NUMBER = 1
 	default "0.0.0+0"
 	help
-	  MCUBoot may be configured to prevent rollback prevention based on image
-	  versions of both the secure firmware and non-secure firmware. This sets
-	  the secure firmware's version for rollback prevention.
+	  Version of the secure image. This version is also used for merged
+	  secure + non-secure builds (TFM_MCUBOOT_IMAGE_NUMBER == 1).
 
 config TFM_IMAGE_VERSION_NS
 	string "Version of the Non-Secure Image"
+	default "$(APP_VERSION_TWEAK_STRING)" if "$(VERSION_MAJOR)" != "" && TFM_MCUBOOT_IMAGE_NUMBER = 2
 	default "0.0.0+0"
 	help
-	  MCUBoot may be configured to prevent rollback prevention based on image
-	  versions of both the secure firmware and non-secure firmware. This sets
-	  the non-secure firmware's version for rollback prevention.
+	  Version of the non-secure image.
+
+config TFM_BL1
+	bool "Add BL1 to TFM"
+	help
+	  TFM is designed to run with BL1 in a certain configuration.
+	  This config adds BL1 to the build - built via TFM's build system.
 
 config TFM_BL2
 	bool "Add MCUboot to TFM"
@@ -255,7 +249,52 @@ config TFM_CONNECTION_BASED_SERVICE_API
 	  system. When this option is not enabled in the TF-M build system this
 	  will result in compilation error.
 
+
+if TFM_BL1
+
+config TFM_BL2_SIGNING_KEY_PATH
+	string "Path to private key used to sign BL2 firmware images."
+	help
+	  Path to binary BL2 signing private key
+	  Default is ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/bl1/bl1_2/bl1_dummy_rotpk
+	  if it has not been changed on TF-M side for your board
+
+endif # TFM_BL1
+
 if TFM_BL2
+
+config TFM_IMAGE_SECURITY_COUNTER
+	int "Security counter value used for hardware rollback protection"
+	range 1 1024
+	default 1
+	help
+	  By default, TFM enables hardware rollback protection, which requires a security counter
+	  to be embedded in the image trailer. As per "Hardware-based downgrade prevention" in
+	  mcuboot/docs/design.md, this does not need to be incremented on every firmware update,
+	  but hardware rollback protection will only apply when this value is incremented.
+
+config TFM_MCUBOOT_SIGNATURE_TYPE
+	string "The signature type used to sign the secure and non-secure firmware images."
+	default "EC-P256"
+	help
+	  Available types: RSA-2048, RSA-3072, EC-P256, EC-P384.
+
+config TFM_KEY_FILE_S
+	string "Path to private key used to sign secure firmware images."
+	default "${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/bl2/ext/mcuboot/root-${CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE}.pem"
+	help
+	  The path and filename for the .pem file containing the private key
+	  that should be used by the BL2 bootloader when signing secure
+	  firmware images. This key file is also used for merged secure +
+	  non-secure builds (TFM_MCUBOOT_IMAGE_NUMBER == 1).
+
+config TFM_KEY_FILE_NS
+	string "Path to private key used to sign non-secure firmware images."
+	default "${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/bl2/ext/mcuboot/root-${CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE}_1.pem"
+	help
+	  The path and filename for the .pem file containing the private key
+	  that should be used by the BL2 bootloader when signing non-secure
+	  firmware images.
 
 config TFM_MCUBOOT_IMAGE_NUMBER
 	int "Granularity of FW updates of TFM and app"
@@ -291,6 +330,18 @@ config TFM_MCUBOOT_PATH_DOWNLOAD
 	  fetch and check-out the MCUboot version to use in the build.
 
 endchoice
+
+config TFM_ETHOS_DRIVER_PATH_LOCAL
+	string "Path to a locally available Ethos-U driver or an empty string"
+	depends on SOC_SERIES_MPS3 || SOC_SERIES_MPS4
+	default "${ZEPHYR_HAL_ETHOS_U_MODULE_DIR}"
+	help
+	  Path to a locally available Ethos-U driver to be used for TF-M builds or
+	  an empty string to allow TF-M to automatically fetch the Ethos-U
+	  driver from an external repository at build time.
+	  By default Zephyr's Ethos-U driver will be used. It is present in
+	  the hal_ethos_u module.
+	  Alternatively, applications can point to their own paths for Ethos-U driver.
 
 config TFM_QCBOR_PATH
 	string
@@ -391,6 +442,7 @@ config TFM_PSA_TEST_STORAGE
 config TFM_PSA_TEST_INITIAL_ATTESTATION
 	bool "Initial attestation tests"
 	depends on MAIN_STACK_SIZE >= 4096
+	select TFM_PARTITION_INITIAL_ATTESTATION
 	help
 	  Enable the PSA Initial Attestation test suite.
 

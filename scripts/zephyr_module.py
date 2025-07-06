@@ -25,8 +25,13 @@ import subprocess
 import sys
 import yaml
 import pykwalify.core
-from pathlib import Path, PurePath
+from pathlib import Path, PurePath, PurePosixPath
 from collections import namedtuple
+
+try:
+    from yaml import CSafeLoader as SafeLoader
+except ImportError:
+    from yaml import SafeLoader
 
 METADATA_SCHEMA = '''
 ## A pykwalify schema for basic validation of the structure of a
@@ -138,6 +143,10 @@ mapping:
           license-path:
             required: true
             type: str
+          click-through:
+            required: false
+            type: bool
+            default: false
           url:
             required: true
             type: str
@@ -146,6 +155,37 @@ mapping:
             type: str
           doc-url:
             required: false
+            type: str
+  security:
+     required: false
+     type: map
+     mapping:
+       external-references:
+         required: false
+         type: seq
+         sequence:
+            - type: str
+  package-managers:
+    required: false
+    type: map
+    mapping:
+      pip:
+        required: false
+        type: map
+        mapping:
+          requirement-files:
+            required: false
+            type: seq
+            sequence:
+              - type: str
+  runners:
+    required: false
+    type: seq
+    sequence:
+      - type: map
+        mapping:
+          file:
+            required: true
             type: str
 '''
 
@@ -156,7 +196,7 @@ BLOB_PRESENT = 'A'
 BLOB_NOT_PRESENT = 'D'
 BLOB_OUTDATED = 'M'
 
-schema = yaml.safe_load(METADATA_SCHEMA)
+schema = yaml.load(METADATA_SCHEMA, Loader=SafeLoader)
 
 
 def validate_setting(setting, module_path, filename=None):
@@ -179,8 +219,8 @@ def process_module(module):
     for module_yml in [module_path / MODULE_YML_PATH,
                        module_path / MODULE_YML_PATH.with_suffix('.yaml')]:
         if Path(module_yml).is_file():
-            with Path(module_yml).open('r') as f:
-                meta = yaml.safe_load(f.read())
+            with Path(module_yml).open('r', encoding='utf-8') as f:
+                meta = yaml.load(f.read(), Loader=SafeLoader)
 
             try:
                 pykwalify.core.Core(source_data=meta, schema_data=schema)\
@@ -305,39 +345,56 @@ def process_blobs(module, meta):
     for blob in mblobs:
         blob['module'] = meta.get('name', None)
         blob['abspath'] = blobs_path / Path(blob['path'])
+        blob['license-abspath'] = Path(module) / Path(blob['license-path'])
         blob['status'] = get_blob_status(blob['abspath'], blob['sha256'])
         blobs.append(blob)
 
     return blobs
 
 
-def kconfig_snippet(meta, path, kconfig_file=None, blobs=False, sysbuild=False):
+def kconfig_module_opts(name_sanitized, blobs, taint_blobs):
+    snippet = [f'config ZEPHYR_{name_sanitized.upper()}_MODULE',
+               '	bool',
+               '	default y']
+
+    if taint_blobs:
+        snippet += ['	select TAINT_BLOBS']
+
+    if blobs:
+        snippet += [f'\nconfig ZEPHYR_{name_sanitized.upper()}_MODULE_BLOBS',
+                    '	bool']
+        if taint_blobs:
+            snippet += ['	default y']
+
+    return snippet
+
+
+def kconfig_snippet(meta, path, kconfig_file=None, blobs=False, taint_blobs=False, sysbuild=False):
     name = meta['name']
     name_sanitized = meta['name-sanitized']
 
-    snippet = [f'menu "{name} ({path.as_posix()})"',
-               f'osource "{kconfig_file.resolve().as_posix()}"' if kconfig_file
-               else f'osource "$(SYSBUILD_{name_sanitized.upper()}_KCONFIG)"' if sysbuild is True
-	       else f'osource "$(ZEPHYR_{name_sanitized.upper()}_KCONFIG)"',
-               f'config ZEPHYR_{name_sanitized.upper()}_MODULE',
-               '	bool',
-               '	default y',
-               'endmenu\n']
+    snippet = [f'menu "{name} ({path.as_posix()})"']
 
-    if blobs:
-        snippet.insert(-1, '	select TAINT_BLOBS')
+    snippet += [f'osource "{kconfig_file.resolve().as_posix()}"' if kconfig_file
+                else f'osource "$(SYSBUILD_{name_sanitized.upper()}_KCONFIG)"' if sysbuild is True
+                else f'osource "$(ZEPHYR_{name_sanitized.upper()}_KCONFIG)"']
+
+    snippet += kconfig_module_opts(name_sanitized, blobs, taint_blobs)
+
+    snippet += ['endmenu\n']
+
     return '\n'.join(snippet)
 
 
 def process_kconfig(module, meta):
     blobs = process_blobs(module, meta)
-    taint_blobs = len(tuple(filter(lambda b: b['status'] != 'D', blobs))) != 0
+    taint_blobs = any(b['status'] != BLOB_NOT_PRESENT for b in blobs)
     section = meta.get('build', dict())
     module_path = PurePath(module)
     module_yml = module_path.joinpath('zephyr/module.yml')
     kconfig_extern = section.get('kconfig-ext', False)
     if kconfig_extern:
-        return kconfig_snippet(meta, module_path, blobs=taint_blobs)
+        return kconfig_snippet(meta, module_path, blobs=blobs, taint_blobs=taint_blobs)
 
     kconfig_setting = section.get('kconfig', None)
     if not validate_setting(kconfig_setting, module):
@@ -348,12 +405,11 @@ def process_kconfig(module, meta):
     kconfig_file = os.path.join(module, kconfig_setting or 'zephyr/Kconfig')
     if os.path.isfile(kconfig_file):
         return kconfig_snippet(meta, module_path, Path(kconfig_file),
-                               blobs=taint_blobs)
+                               blobs=blobs, taint_blobs=taint_blobs)
     else:
         name_sanitized = meta['name-sanitized']
-        return (f'config ZEPHYR_{name_sanitized.upper()}_MODULE\n'
-                f'   bool\n'
-                f'   default y\n')
+        snippet = kconfig_module_opts(name_sanitized, blobs, taint_blobs)
+        return '\n'.join(snippet) + '\n'
 
 
 def process_sysbuildkconfig(module, meta):
@@ -370,14 +426,15 @@ def process_sysbuildkconfig(module, meta):
                  'not point to a valid Kconfig file.'
                  .format(module_yml, kconfig_setting))
 
-    if kconfig_setting is None:
-        return ""
+    if kconfig_setting is not None:
+        kconfig_file = os.path.join(module, kconfig_setting)
+        if os.path.isfile(kconfig_file):
+            return kconfig_snippet(meta, module_path, Path(kconfig_file))
 
-    kconfig_file = os.path.join(module, kconfig_setting)
-    if os.path.isfile(kconfig_file):
-        return kconfig_snippet(meta, module_path, Path(kconfig_file))
-    else:
-        return ""
+    name_sanitized = meta['name-sanitized']
+    return (f'config ZEPHYR_{name_sanitized.upper()}_MODULE\n'
+            f'   bool\n'
+            f'   default y\n')
 
 
 def process_twister(module, meta):
@@ -401,25 +458,15 @@ def process_twister(module, meta):
 
     return out
 
+def is_valid_git_revision(revision):
+    """
+    Returns True if the given string is a valid git revision hash (40 hex digits).
+    """
+    if not isinstance(revision, str):
+        return False
+    return bool(re.fullmatch(r'[0-9a-fA-F]{40}', revision))
 
-def process_meta(zephyr_base, west_projs, modules, extra_modules=None,
-                 propagate_state=False):
-    # Process zephyr_base, projects, and modules and create a dictionary
-    # with meta information for each input.
-    #
-    # The dictionary will contain meta info in the following lists:
-    # - zephyr:        path and revision
-    # - modules:       name, path, and revision
-    # - west-projects: path and revision
-    #
-    # returns the dictionary with said lists
-
-    meta = {'zephyr': None, 'modules': None, 'workspace': None}
-
-    workspace_dirty = False
-    workspace_extra = extra_modules is not None
-    workspace_off = False
-
+def _create_meta_project(project_path):
     def git_revision(path):
         rc = subprocess.Popen(['git', 'rev-parse', '--is-inside-work-tree'],
                               stdout=subprocess.PIPE,
@@ -445,79 +492,218 @@ def process_meta(zephyr_base, west_projs, modules, extra_modules=None,
                 if rc:
                     return revision + '-dirty', True
                 return revision, False
-        return None, False
+        return "unknown", False
 
-    zephyr_revision, zephyr_dirty = git_revision(zephyr_base)
-    zephyr_project = {'path': zephyr_base,
-                      'revision': zephyr_revision}
+    def git_remote(path):
+        popen = subprocess.Popen(['git', 'remote'],
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE,
+                                 cwd=path)
+        stdout, stderr = popen.communicate()
+        stdout = stdout.decode('utf-8')
+
+        remotes_name = []
+        if not (popen.returncode or stderr):
+            remotes_name = stdout.rstrip().split('\n')
+
+        remote_url = None
+
+        # If more than one remote, do not return any remote
+        if len(remotes_name) == 1:
+            remote = remotes_name[0]
+            popen = subprocess.Popen(['git', 'remote', 'get-url', remote],
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.PIPE,
+                                     cwd=path)
+            stdout, stderr = popen.communicate()
+            stdout = stdout.decode('utf-8')
+
+            if not (popen.returncode or stderr):
+                remote_url = stdout.rstrip()
+
+        return remote_url
+
+    def git_tags(path, revision):
+        if not revision or len(revision) == 0:
+            return None
+
+        popen = subprocess.Popen(['git', '-P', 'tag', '--points-at', revision],
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE,
+                                 cwd=path)
+        stdout, stderr = popen.communicate()
+        stdout = stdout.decode('utf-8')
+
+        tags = None
+        if not (popen.returncode or stderr):
+            tags = stdout.rstrip().splitlines()
+
+        return tags
+
+    workspace_dirty = False
+    path = PurePath(project_path).as_posix()
+
+    revision, dirty = git_revision(path)
+    workspace_dirty |= dirty
+    remote = git_remote(path)
+    tags = git_tags(path, revision)
+
+    meta_project = {'path': path,
+                    'revision': revision}
+
+    if remote:
+        meta_project['remote'] = remote
+
+    if tags:
+        meta_project['tags'] = tags
+
+    return meta_project, workspace_dirty
+
+
+def _get_meta_project(meta_projects_list, project_path):
+    projects = [ prj for prj in meta_projects_list[1:] if prj["path"] == project_path ]
+
+    return projects[0] if len(projects) == 1 else None
+
+
+def process_meta(zephyr_base, west_projs, modules, extra_modules=None,
+                 propagate_state=False):
+    # Process zephyr_base, projects, and modules and create a dictionary
+    # with meta information for each input.
+    #
+    # The dictionary will contain meta info in the following lists:
+    # - zephyr:        path and revision
+    # - modules:       name, path, and revision
+    # - west-projects: path and revision
+    #
+    # returns the dictionary with said lists
+
+    meta = {'zephyr': None, 'modules': None, 'workspace': None}
+
+    zephyr_project, zephyr_dirty = _create_meta_project(zephyr_base)
+    zephyr_off = zephyr_project.get("remote") is None
+
+    workspace_dirty = zephyr_dirty
+    workspace_extra = extra_modules is not None
+    workspace_off = zephyr_off
+
+    if zephyr_off and is_valid_git_revision(zephyr_project['revision']):
+        zephyr_project['revision'] += '-off'
+
     meta['zephyr'] = zephyr_project
     meta['workspace'] = {}
-    workspace_dirty |= zephyr_dirty
 
     if west_projs is not None:
         from west.manifest import MANIFEST_REV_BRANCH
         projects = west_projs['projects']
         meta_projects = []
 
-        # Special treatment of manifest project.
-        manifest_proj_path = PurePath(projects[0].posixpath).as_posix()
-        manifest_revision, manifest_dirty = git_revision(manifest_proj_path)
-        workspace_dirty |= manifest_dirty
-        manifest_project = {'path': manifest_proj_path,
-                            'revision': manifest_revision}
-        meta_projects.append(manifest_project)
+        manifest_path = projects[0].posixpath
 
+        # Special treatment of manifest project
+        # Git information (remote/revision) are not provided by west for the Manifest (west.yml)
+        # To mitigate this, we check if we don't use the manifest from the zephyr repository or an other project.
+        # If it's from zephyr, reuse zephyr information
+        # If it's from an other project, ignore it, it will be added later
+        # If it's not found, we extract data manually (remote/revision) from the directory
+
+        manifest_project = None
+        manifest_dirty = False
+        manifest_off = False
+
+        if zephyr_base == manifest_path:
+            manifest_project = zephyr_project
+            manifest_dirty = zephyr_dirty
+            manifest_off = zephyr_off
+        elif not [ prj for prj in projects[1:] if prj.posixpath == manifest_path ]:
+            manifest_project, manifest_dirty = _create_meta_project(
+                projects[0].posixpath)
+            manifest_off = manifest_project.get("remote") is None
+            if manifest_off and is_valid_git_revision(manifest_project['revision']):
+                manifest_project["revision"] +=  "-off"
+
+        if manifest_project:
+            workspace_off |= manifest_off
+            workspace_dirty |= manifest_dirty
+            meta_projects.append(manifest_project)
+
+        # Iterates on all projects except the first one (manifest)
         for project in projects[1:]:
-            project_path = PurePath(project.posixpath).as_posix()
-            revision, dirty = git_revision(project_path)
+            meta_project, dirty = _create_meta_project(project.posixpath)
             workspace_dirty |= dirty
-            if project.sha(MANIFEST_REV_BRANCH) != revision:
-                revision += '-off'
-                workspace_off = True
-            meta_project = {'path': project_path,
-                            'revision': revision}
             meta_projects.append(meta_project)
+
+            off = False
+            if not meta_project.get("remote") or project.sha(MANIFEST_REV_BRANCH) != meta_project['revision'].removesuffix("-dirty"):
+                off = True
+            if not meta_project.get('remote') or project.url != meta_project['remote']:
+                # Force manifest URL and set commit as 'off'
+                meta_project['url'] = project.url
+                off = True
+
+            if off:
+                if is_valid_git_revision(meta_project['revision']):
+                    meta_project['revision'] += '-off'
+                workspace_off |= off
+
+            # If manifest is in project, updates related variables
+            if project.posixpath == manifest_path:
+                manifest_dirty |= dirty
+                manifest_off |= off
+                manifest_project = meta_project
 
         meta.update({'west': {'manifest': west_projs['manifest_path'],
                               'projects': meta_projects}})
         meta['workspace'].update({'off': workspace_off})
 
-    meta_projects = []
+    # Iterates on all modules
+    meta_modules = []
     for module in modules:
-        module_path = PurePath(module.project).as_posix()
-        revision, dirty = git_revision(module_path)
-        workspace_dirty |= dirty
-        meta_project = {'name': module.meta['name'],
-                        'path': module_path,
-                        'revision': revision}
-        meta_projects.append(meta_project)
-    meta['modules'] = meta_projects
+        # Check if modules is not in projects
+        # It allows to have the "-off" flag since `modules` variable` does not provide URL/remote
+        meta_module = _get_meta_project(meta_projects, module.project)
+
+        if not meta_module:
+            meta_module, dirty = _create_meta_project(module.project)
+            workspace_dirty |= dirty
+
+        meta_module['name'] = module.meta.get('name')
+
+        if module.meta.get('security'):
+            meta_module['security'] = module.meta.get('security')
+        meta_modules.append(meta_module)
+
+    meta['modules'] = meta_modules
 
     meta['workspace'].update({'dirty': workspace_dirty,
                               'extra': workspace_extra})
 
     if propagate_state:
-        if workspace_dirty and not zephyr_dirty:
-            zephyr_revision += '-dirty'
-        if workspace_extra:
-            zephyr_revision += '-extra'
-        if workspace_off:
-            zephyr_revision += '-off'
+        zephyr_revision = zephyr_project['revision']
+        if is_valid_git_revision(zephyr_revision):
+            if workspace_dirty and not zephyr_dirty:
+                zephyr_revision += '-dirty'
+            if workspace_extra:
+                zephyr_revision += '-extra'
+            if workspace_off and not zephyr_off:
+                zephyr_revision += '-off'
         zephyr_project.update({'revision': zephyr_revision})
 
         if west_projs is not None:
-            if workspace_dirty and not manifest_dirty:
-                manifest_revision += '-dirty'
-            if workspace_extra:
-                manifest_revision += '-extra'
-            if workspace_off:
-                manifest_revision += '-off'
+            manifest_revision = manifest_project['revision']
+            if is_valid_git_revision(manifest_revision):
+                if workspace_dirty and not manifest_dirty:
+                    manifest_revision += '-dirty'
+                if workspace_extra:
+                    manifest_revision += '-extra'
+                if workspace_off and not manifest_off:
+                    manifest_revision += '-off'
             manifest_project.update({'revision': manifest_revision})
 
     return meta
 
 
-def west_projects(manifest = None):
+def west_projects(manifest=None):
     manifest_path = None
     projects = []
     # West is imported here, as it is optional
@@ -572,6 +758,9 @@ def parse_modules(zephyr_base, manifest=None, west_projs=None, modules=None,
 
     if extra_modules is None:
         extra_modules = []
+        for var in ['EXTRA_ZEPHYR_MODULES', 'ZEPHYR_EXTRA_MODULES']:
+            if var in os.environ:
+                extra_modules.extend(PurePosixPath(p) for p in os.environ[var].split(';'))
 
     Module = namedtuple('Module', ['project', 'meta', 'depends'])
 
@@ -685,7 +874,8 @@ def main():
     for module in modules:
         kconfig += process_kconfig(module.project, module.meta)
         cmake += process_cmake(module.project, module.meta)
-        sysbuild_kconfig += process_sysbuildkconfig(module.project, module.meta)
+        sysbuild_kconfig += process_sysbuildkconfig(
+            module.project, module.meta)
         sysbuild_cmake += process_sysbuildcmake(module.project, module.meta)
         settings += process_settings(module.project, module.meta)
         twister += process_twister(module.project, module.meta)
@@ -729,6 +919,8 @@ def main():
                             args.extra_modules, args.meta_state_propagate)
 
         with open(args.meta_out, 'w', encoding="utf-8") as fp:
+            # Ignore references and insert data instead
+            yaml.Dumper.ignore_aliases = lambda self, data: True
             fp.write(yaml.dump(meta))
 
 

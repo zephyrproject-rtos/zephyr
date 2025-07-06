@@ -5,6 +5,7 @@ config PWM_MCUX_SCTIMER
 	bool "MCUX SCTimer PWM driver"
 	default y
 	depends on DT_HAS_NXP_SCTIMER_PWM_ENABLED
-	depends on CLOCK_CONTROL && PINCTRL
+	depends on CLOCK_CONTROL
+	select PINCTRL
 	help
 	  Enable sctimer based pwm driver.

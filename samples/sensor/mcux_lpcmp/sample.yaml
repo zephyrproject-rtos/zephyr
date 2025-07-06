@@ -1,0 +1,28 @@
+sample:
+  description: Demonstration of the NXP MCUX LPCMP driver
+  name: NXP MCUX LPCMP sample
+common:
+  platform_allow:
+    - frdm_mcxn947/mcxn947/cpu0
+    - mcx_n9xx_evk/mcxn947/cpu0
+    - frdm_mcxn236
+    - frdm_mcxa156
+    - frdm_mcxa153
+  integration_platforms:
+    - frdm_mcxn947/mcxn947/cpu0
+    - frdm_mcxn236
+  tags:
+    - drivers
+    - sensor
+tests:
+  sample.sensor.mcux_lpcmp:
+    harness: console
+    harness_config:
+      type: one_line
+      ordered: true
+      regex:
+        - "LPCMP input [a-z]* threshold"
+  sample.sensor.mcux_lpcmp.no_trigger:
+    build_only: true
+    extra_configs:
+      - CONFIG_MCUX_LPCMP_TRIGGER=n

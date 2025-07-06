@@ -91,8 +91,6 @@ static int eeprom_stm32_write(const struct device *dev, off_t offset,
 	ret = HAL_FLASHEx_DATAEEPROM_Lock();
 	if (ret) {
 		LOG_ERR("failed to lock EEPROM (err %d)", ret);
-		k_mutex_unlock(&lock);
-		return ret;
 	}
 
 	k_mutex_unlock(&lock);
@@ -107,7 +105,7 @@ static size_t eeprom_stm32_size(const struct device *dev)
 	return config->size;
 }
 
-static const struct eeprom_driver_api eeprom_stm32_api = {
+static DEVICE_API(eeprom, eeprom_stm32_api) = {
 	.read = eeprom_stm32_read,
 	.write = eeprom_stm32_write,
 	.size = eeprom_stm32_size,

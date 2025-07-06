@@ -41,7 +41,7 @@ config IEEE802154_NRF5_EXT_IRQ_MGMT
 config IEEE802154_NRF5_UICR_EUI64_ENABLE
 	bool "Support usage of EUI64 value stored in UICR registers"
 	depends on !IEEE802154_VENDOR_OUI_ENABLE
-	depends on SOC_SERIES_NRF52X || SOC_SERIES_NRF53X
+	depends on SOC_SERIES_NRF52X || SOC_SERIES_NRF53X || SOC_SERIES_NRF54LX
 	help
 	  This option enables setting custom vendor EUI64 value
 	  stored in User information configuration registers (UICR).
@@ -55,6 +55,7 @@ config IEEE802154_NRF5_UICR_EUI64_REG
 	int "UICR base register for the EUI64 value"
 	range 0 30 if SOC_SERIES_NRF52X
 	range 0 190 if SOC_SERIES_NRF53X
+	range 0 318 if SOC_SERIES_NRF54LX
 	default 0
 	help
 	  Base of the two consecutive registers from the UICR customer
@@ -62,18 +63,10 @@ config IEEE802154_NRF5_UICR_EUI64_REG
 
 endif # IEEE802154_NRF5_UICR_EUI64_ENABLE
 
-config IEEE802154_NRF5_FCS_IN_LENGTH
-	bool "Include FCS field in the overall packet length"
-	default y if IEEE802154_RAW_MODE || NET_L2_OPENTHREAD
-	help
-	  Some 802.15.4 L2 implementations expect that FCS length is included in
-	  the overall packet length while others not. Allow to configure this
-	  behavior, based on the selected upper layer.
-
 config IEEE802154_NRF5_DELAY_TRX_ACC
 	int "Clock accuracy for delayed operations"
-	default CLOCK_CONTROL_NRF_ACCURACY if CLOCK_CONTROL_NRF_ACCURACY < 255
-	default 255
+	default CLOCK_CONTROL_NRF_ACCURACY if (CLOCK_CONTROL_NRF && (CLOCK_CONTROL_NRF_ACCURACY < $(UINT8_MAX)))
+	default $(UINT8_MAX)
 	help
 	  Accuracy of the clock used for scheduling radio delayed operations (delayed transmission
 	  or delayed reception), in ppm.
@@ -93,5 +86,14 @@ config IEEE802154_NRF5_MULTIPLE_CCA
 	help
 	  When this option is enabled the OpenThread capability
 	  IEEE802154_OPENTHREAD_HW_MULTIPLE_CCA is supported by the ieee802154_nrf5.
+
+config IEEE802154_NRF5_CST_ENDPOINT
+	bool "Support for OpenThread CST Endpoint extension in the ieee802154_nrf5."
+	default y if OPENTHREAD_WAKEUP_COORDINATOR
+	help
+	  Enable support for OpenThread CST (Coordinated Sampled Transmitter) Endpoint
+	  with CST IE injection as an extension to ieee802154_nrf5 driver.
+	  When this option is enabled, the ieee802154_nrf5 driver supports the
+	  IEEE802154_OPENTHREAD_HW_CST capability.
 
 endif

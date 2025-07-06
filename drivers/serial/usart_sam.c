@@ -105,12 +105,26 @@ static int usart_sam_baudrate_set(const struct device *dev, uint32_t baudrate)
 
 	uint32_t divisor;
 
+#ifdef SOC_ATMEL_SAM_MCK_FREQ_HZ
+	uint32_t rate = SOC_ATMEL_SAM_MCK_FREQ_HZ;
+#else
+	uint32_t rate;
+	int ret;
+
+	ret = clock_control_get_rate(SAM_DT_PMC_CONTROLLER,
+				     (clock_control_subsys_t)&config->clock_cfg,
+				     &rate);
+	if (ret) {
+		return ret;
+	}
+#endif
+
 	__ASSERT(baudrate,
 		 "baud rate has to be bigger than 0");
-	__ASSERT(SOC_ATMEL_SAM_MCK_FREQ_HZ/16U >= baudrate,
+	__ASSERT(rate/16U >= baudrate,
 		 "MCK frequency is too small to set required baud rate");
 
-	divisor = SOC_ATMEL_SAM_MCK_FREQ_HZ / 16U / baudrate;
+	divisor = rate / 16U / baudrate;
 
 	if (divisor > 0xFFFF) {
 		return -EINVAL;
@@ -512,7 +526,7 @@ static int usart_sam_init(const struct device *dev)
 	return usart_sam_configure(dev, &uart_config);
 }
 
-static const struct uart_driver_api usart_sam_driver_api = {
+static DEVICE_API(uart, usart_sam_driver_api) = {
 	.poll_in = usart_sam_poll_in,
 	.poll_out = usart_sam_poll_out,
 	.err_check = usart_sam_err_check,
@@ -579,7 +593,7 @@ static const struct uart_driver_api usart_sam_driver_api = {
 	static const struct usart_sam_dev_cfg usart##n##_sam_config;	\
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
-			    &usart_sam_init, NULL,			\
+			    usart_sam_init, NULL,			\
 			    &usart##n##_sam_data,			\
 			    &usart##n##_sam_config, PRE_KERNEL_1,	\
 			    CONFIG_SERIAL_INIT_PRIORITY,		\

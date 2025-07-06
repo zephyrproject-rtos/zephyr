@@ -1,5 +1,6 @@
 board:
   name: adafruit_grand_central_m4_express
+  full_name: Grand Central M4 Express
   vendor: adafruit
   socs:
     - name: samd51p20a

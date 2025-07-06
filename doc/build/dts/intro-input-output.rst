@@ -112,6 +112,9 @@ this:
 
    list(APPEND EXTRA_DTC_FLAGS "-Wno-simple_bus_reg")
 
+Shield directories can contain a file named :file:`pre_dt_shield.cmake` which
+has the same functionality as the aforementioned :file:`pre_dt_board.cmake`.
+
 .. _dt-outputs:
 
 Output files
@@ -129,7 +132,7 @@ These are created in your application's build directory.
    input to :file:`gen_defines.py` and used to create :file:`zephyr.dts` and
    :file:`devicetree_generated.h`.
 
-:file:`<build>/zephyr/include/generated/devicetree_generated.h`
+:file:`<build>/zephyr/include/generated/zephyr/devicetree_generated.h`
    The generated macros and additional comments describing the devicetree.
    Included by ``devicetree.h``.
 

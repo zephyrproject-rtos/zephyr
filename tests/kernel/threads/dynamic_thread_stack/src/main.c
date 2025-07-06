@@ -9,7 +9,7 @@
 
 #define TIMEOUT_MS 500
 
-#define POOL_SIZE 20480
+#define POOL_SIZE 28672
 
 #ifdef CONFIG_USERSPACE
 #define STACK_OBJ_SIZE K_THREAD_STACK_LEN(CONFIG_DYNAMIC_THREAD_STACK_SIZE)
@@ -166,6 +166,103 @@ ZTEST(dynamic_thread_stack, test_dynamic_thread_stack_alloc)
 	for (size_t i = 0; i < N; ++i) {
 		zassert_ok(k_thread_stack_free(stack[i]));
 	}
+}
+
+K_SEM_DEFINE(perm_sem, 0, 1);
+ZTEST_BMEM static volatile bool expect_fault;
+ZTEST_BMEM static volatile unsigned int expected_reason;
+
+static void set_fault(unsigned int reason)
+{
+	expect_fault = true;
+	expected_reason = reason;
+	compiler_barrier();
+}
+
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
+{
+	if (expect_fault) {
+		if (expected_reason == reason) {
+			printk("System error was expected\n");
+			expect_fault = false;
+		} else {
+			printk("Wrong fault reason, expecting %d\n",
+			       expected_reason);
+			TC_END_REPORT(TC_FAIL);
+			k_fatal_halt(reason);
+		}
+	} else {
+		printk("Unexpected fault during test\n");
+		TC_END_REPORT(TC_FAIL);
+		k_fatal_halt(reason);
+	}
+}
+
+static void perm_func(void *arg1, void *arg2, void *arg3)
+{
+	k_sem_take((struct k_sem *)arg1, K_FOREVER);
+}
+
+static void perm_func_violator(void *arg1, void *arg2, void *arg3)
+{
+	(void)k_thread_stack_free((k_thread_stack_t *)arg2);
+
+	zassert_unreachable("should not reach here");
+}
+
+/** @brief Exercise stack permissions */
+ZTEST(dynamic_thread_stack, test_dynamic_thread_stack_permission)
+{
+	static k_tid_t tid[2];
+	static struct k_thread th[2];
+	static k_thread_stack_t *stack[2];
+
+	if (!IS_ENABLED(CONFIG_DYNAMIC_THREAD_PREFER_ALLOC)) {
+		ztest_test_skip();
+	}
+
+	if (!IS_ENABLED(CONFIG_DYNAMIC_THREAD_ALLOC)) {
+		ztest_test_skip();
+	}
+
+	if (!IS_ENABLED(CONFIG_USERSPACE)) {
+		ztest_test_skip();
+	}
+
+	stack[0] = k_thread_stack_alloc(CONFIG_DYNAMIC_THREAD_STACK_SIZE, K_USER);
+	zassert_not_null(stack[0]);
+
+	stack[1] = k_thread_stack_alloc(CONFIG_DYNAMIC_THREAD_STACK_SIZE, K_USER);
+	zassert_not_null(stack[1]);
+
+	k_thread_access_grant(k_current_get(), &perm_sem);
+
+	/* First thread inherit permissions */
+	tid[0] = k_thread_create(&th[0], stack[0], CONFIG_DYNAMIC_THREAD_STACK_SIZE, perm_func,
+				 &perm_sem, NULL, NULL, 0, K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+	zassert_not_null(tid[0]);
+
+	/* Second thread will have access to specific kobjects only */
+	tid[1] = k_thread_create(&th[1], stack[1], CONFIG_DYNAMIC_THREAD_STACK_SIZE,
+				 perm_func_violator, &perm_sem, stack[0], NULL, 0, K_USER,
+				 K_FOREVER);
+	zassert_not_null(tid[1]);
+	k_thread_access_grant(tid[1], &perm_sem);
+	k_thread_access_grant(tid[1], &stack[1]);
+
+	set_fault(K_ERR_KERNEL_OOPS);
+
+	k_thread_start(tid[1]);
+
+	/* join all threads and check that flags have been set */
+	zassert_ok(k_thread_join(tid[1], K_MSEC(TIMEOUT_MS)));
+
+	k_sem_give(&perm_sem);
+	zassert_ok(k_thread_join(tid[0], K_MSEC(TIMEOUT_MS)));
+
+	/* clean up stacks allocated from the heap */
+	zassert_ok(k_thread_stack_free(stack[0]));
+	zassert_ok(k_thread_stack_free(stack[1]));
 }
 
 static void *dynamic_thread_stack_setup(void)

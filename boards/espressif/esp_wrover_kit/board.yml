@@ -1,5 +1,6 @@
 board:
   name: esp_wrover_kit
+  full_name: ESP-WROVER-KIT
   vendor: espressif
   socs:
   - name: esp32

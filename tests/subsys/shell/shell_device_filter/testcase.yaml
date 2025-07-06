@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  shell.device_filter:
+    platform_allow:
+      - native_sim
+    tags:
+      - shell
+    integration_platforms:
+      - native_sim

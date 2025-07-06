@@ -340,8 +340,7 @@ static void drv_rx_done(struct ieee802154_cc13xx_cc26xx_subg_data *drv_data)
 			status = drv_data->rx_data[i][len--];
 			rssi = drv_data->rx_data[i][len--];
 
-			/* TODO: Configure firmware to include CRC in raw mode. */
-			if (IS_ENABLED(CONFIG_IEEE802154_RAW_MODE) && len > 0) {
+			if (IS_ENABLED(CONFIG_IEEE802154_L2_PKT_INCL_FCS) && len > 0) {
 				/* append CRC-16/CCITT */
 				uint16_t crc = 0;
 
@@ -403,7 +402,11 @@ static void cmd_prop_rx_adv_callback(RF_Handle h, RF_CmdHandle ch,
 	LOG_DBG("ch: %u cmd: %04x st: %04x e: 0x%" PRIx64, ch,
 		op->commandNo, op->status, e);
 
-	if (e & RF_EventRxEntryDone) {
+	/* If PROP_ERROR_RXBUF is returned, then RF_EventRxEntryDone is never
+	 * triggered. So finished buffers need to be cleaned up even on this
+	 * status.
+	 */
+	if (e & RF_EventRxEntryDone || op->status == PROP_ERROR_RXBUF) {
 		drv_rx_done(drv_data);
 	}
 

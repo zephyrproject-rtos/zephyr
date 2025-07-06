@@ -213,7 +213,7 @@ ZTEST(threads_lifecycle_1cpu, test_k_thread_foreach_unlocked_null_cb)
  * @brief Test k_thread_state_str API with null callback
  *
  * @details It's impossible to sched a thread step by step manually to
- * experience each state from _THREAD_PRESTART to _THREAD_DEAD. To cover each
+ * experience each state from initialization to _THREAD_DEAD. To cover each
  * line of function k_thread_state_str(), set thread_state of tdata1 and check
  * the string this function returns
  *
@@ -228,44 +228,44 @@ ZTEST(threads_lifecycle_1cpu, test_k_thread_state_str)
 
 	tid->base.thread_state = 0;
 	str = k_thread_state_str(tid, state_str, sizeof(state_str));
-	zassert_true(strcmp(str, "") == 0);
+	zassert_str_equal(str, "");
 
 	tid->base.thread_state = _THREAD_DUMMY;
 
 	str = k_thread_state_str(tid, NULL, sizeof(state_str));
-	zassert_true(strcmp(str, "") == 0);
+	zassert_str_equal(str, "");
 
 	str = k_thread_state_str(tid, state_str, 0);
-	zassert_true(strcmp(str, "") == 0);
+	zassert_str_equal(str, "");
 
 	str = k_thread_state_str(tid, state_str, sizeof(state_str));
-	zassert_true(strcmp(str, "dummy") == 0);
+	zassert_str_equal(str, "dummy");
 
 	tid->base.thread_state = _THREAD_PENDING;
 	str = k_thread_state_str(tid, state_str, sizeof(state_str));
-	zassert_true(strcmp(str, "pending") == 0);
-
-	tid->base.thread_state = _THREAD_PRESTART;
-	str = k_thread_state_str(tid, state_str, sizeof(state_str));
-	zassert_true(strcmp(str, "prestart") == 0);
+	zassert_str_equal(str, "pending");
 
 	tid->base.thread_state = _THREAD_DEAD;
 	str = k_thread_state_str(tid, state_str, sizeof(state_str));
-	zassert_true(strcmp(str, "dead") == 0);
+	zassert_str_equal(str, "dead");
+
+	tid->base.thread_state = _THREAD_SLEEPING;
+	str = k_thread_state_str(tid, state_str, sizeof(state_str));
+	zassert_str_equal(str, "sleeping");
 
 	tid->base.thread_state = _THREAD_SUSPENDED;
 	str = k_thread_state_str(tid, state_str, sizeof(state_str));
-	zassert_true(strcmp(str, "suspended") == 0);
+	zassert_str_equal(str, "suspended");
 
 	tid->base.thread_state = _THREAD_ABORTING;
 	str = k_thread_state_str(tid, state_str, sizeof(state_str));
-	zassert_true(strcmp(str, "aborting") == 0);
+	zassert_str_equal(str, "aborting");
 
 	tid->base.thread_state = _THREAD_QUEUED;
 	str = k_thread_state_str(tid, state_str, sizeof(state_str));
-	zassert_true(strcmp(str, "queued") == 0);
+	zassert_str_equal(str, "queued");
 
 	tid->base.thread_state = _THREAD_PENDING | _THREAD_SUSPENDED;
 	str = k_thread_state_str(tid, state_str, sizeof(state_str));
-	zassert_true(strcmp(str, "pending+suspended") == 0);
+	zassert_str_equal(str, "pending+suspended");
 }

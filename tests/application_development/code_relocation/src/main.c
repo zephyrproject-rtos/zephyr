@@ -16,7 +16,7 @@
  *  have to configure the region appropriately in arm_mpu_regions.c.
  */
 
-#if (defined(CONFIG_ARM_MPU) && !defined(CONFIG_CPU_HAS_NXP_MPU))
+#if (defined(CONFIG_ARM_MPU) && !defined(CONFIG_CPU_HAS_NXP_SYSMPU))
 #include <cmsis_core.h>
 void disable_mpu_rasr_xn(void)
 {
@@ -53,8 +53,6 @@ void  z_early_memcpy(void *dst, const void *src, size_t n)
 		*(d_byte++) = *(s_byte++);
 		n--;
 	}
-
-	return (void)dst;
 }
 
 __boot_func
@@ -69,12 +67,11 @@ void z_early_memset(void *dst, int c, size_t n)
 		*(d_byte++) = c_byte;
 		n--;
 	}
-	return (void)dst;
 }
 
 void *relocate_code_setup(void)
 {
-#if (defined(CONFIG_ARM_MPU) && !defined(CONFIG_CPU_HAS_NXP_MPU))
+#if (defined(CONFIG_ARM_MPU) && !defined(CONFIG_CPU_HAS_NXP_SYSMPU))
 	disable_mpu_rasr_xn();
 #endif	/* CONFIG_ARM_MPU */
 	return NULL;

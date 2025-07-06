@@ -1,8 +1,10 @@
 # Copyright (c) 2022, Andriy Gelman <andriy.gelman@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
+title: Infineon XMC4XXX Pin Controller
+
 description: |
-  The Infineon XMC4XXX pin controller is responsible for connecting peripheral outputs
+  Singleton node responsible for connecting peripheral outputs to specific port/pins
   to specific port/pins (also known as alternate functions) and configures pin properties.
 
   The pinctrl settings are referenced in a device tree peripheral node. For example in a UART

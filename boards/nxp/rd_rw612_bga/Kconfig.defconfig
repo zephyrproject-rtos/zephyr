@@ -1,6 +1,6 @@
 # RD_RW612_BGA board
 
-# Copyright 2022-2024 NXP
+# Copyright 2022-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_RD_RW612_BGA
@@ -29,5 +29,19 @@ config LV_Z_FLUSH_THREAD
 	default y
 
 endif # LVGL
+
+if DT_HAS_NXP_ENET_MAC_ENABLED && NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+
+endif # DT_HAS_NXP_ENET_MAC_ENABLED && NETWORKING
+
+if COUNTER_MCUX_LPC_RTC_1HZ
+
+config XTAL32K
+	default y
+
+endif # COUNTER_MCUX_LPC_RTC_1HZ
 
 endif # BOARD_RD_RW612_BGA

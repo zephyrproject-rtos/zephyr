@@ -17,7 +17,7 @@ struct sbs_charger_config {
 	struct i2c_dt_spec i2c;
 };
 
-LOG_MODULE_REGISTER(sbs_charger);
+LOG_MODULE_REGISTER(sbs_charger, CONFIG_CHARGER_LOG_LEVEL);
 
 static int sbs_cmd_reg_read(const struct device *dev, uint8_t reg_addr, uint16_t *val)
 {
@@ -157,7 +157,7 @@ static int sbs_charger_init(const struct device *dev)
 	return 0;
 }
 
-static const struct charger_driver_api sbs_charger_driver_api = {
+static DEVICE_API(charger, sbs_charger_driver_api) = {
 	.get_property = &sbs_charger_get_prop,
 	.set_property = &sbs_charger_set_prop,
 	.charge_enable = &sbs_charger_charge_enable,

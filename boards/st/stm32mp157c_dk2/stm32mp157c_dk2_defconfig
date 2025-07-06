@@ -11,9 +11,6 @@ CONFIG_HW_STACK_PROTECTION=y
 CONFIG_SERIAL=y
 CONFIG_UART_INTERRUPT_DRIVEN=y
 
-# clock configuration
-CONFIG_CLOCK_CONTROL=y
-
 # console (remote proc console by default)
 CONFIG_CONSOLE=y
 CONFIG_RAM_CONSOLE=y
@@ -21,6 +18,3 @@ CONFIG_RAM_CONSOLE_BUFFER_SIZE=1024
 
 # uart console (overrides remote proc console)
 CONFIG_UART_CONSOLE=n
-
-# enable pin controller
-CONFIG_PINCTRL=y

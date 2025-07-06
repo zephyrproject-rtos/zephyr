@@ -1,6 +1,7 @@
 # IPv6 Options
 
 # Copyright (c) 2016 Intel Corporation.
+# Copyright (c) 2025 Aerlync Labs Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig NET_IPV6
@@ -14,7 +15,7 @@ if NET_IPV6
 
 config NET_IF_MAX_IPV6_COUNT
 	int "Max number of IPv6 network interfaces in the system"
-	default NET_VLAN_COUNT if NET_VLAN
+	default NET_VLAN_COUNT if NET_VLAN && NET_VLAN_COUNT > 0
 	default 2 if NET_LOOPBACK
 	default 1
 	help
@@ -46,10 +47,22 @@ config NET_IPV6_MTU
 	  The value should normally be 1280 which is the minimum IPv6 packet
 	  size that implementations need to support without fragmentation.
 
+config NET_IPV6_PMTU
+	bool "IPv6 Path MTU Discovery"
+	help
+	  Enables IPv6 Path MTU Discovery (see RFC 8201)
+
+config NET_IPV6_PMTU_DESTINATION_CACHE_ENTRIES
+	int "Number of IPv6 PMTU destination cache entries"
+	default 3
+	depends on NET_IPV6_PMTU
+	help
+	  How many PMTU entries we can track for each destination address.
+
 config NET_INITIAL_HOP_LIMIT
 	int "Initial IPv6 hop limit value for unicast packets"
 	default 64
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  The value should normally be > 0. The device receiving the IPv6
 	  packet will decrement the value and will drop the packet if the hop
@@ -59,7 +72,7 @@ config NET_INITIAL_HOP_LIMIT
 config NET_INITIAL_MCAST_HOP_LIMIT
 	int "Initial IPv6 hop limit value for multicast packets"
 	default 1
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  The value should normally be > 0. The device receiving the IPv6
 	  packet will decrement the value and will drop the packet if the hop
@@ -68,6 +81,13 @@ config NET_INITIAL_MCAST_HOP_LIMIT
 	  The default is 1 (same as in IPv4) which means that multicast packets
 	  don't leave the local network unless the application explicitly
 	  requests it.
+
+config NET_INITIAL_IPV6_MCAST_LOOP
+	bool "Control whether the socket sees multicast packets sent by itself"
+	default y
+	help
+	  Assign initial value to IPV6_MULTICAST_LOOP in socket options,
+	  if not set by the user using setsockopt().
 
 config NET_IPV6_MAX_NEIGHBORS
 	int "How many IPv6 neighbors are supported"
@@ -156,14 +176,122 @@ config NET_IPV6_DAD
 	  The value depends on your network needs. DAD should normally
 	  be active.
 
+config NET_IPV6_RS_TIMEOUT
+	int "Timeout of Router Solicitation messaging"
+	depends on NET_IPV6_ND
+	range 1 30
+	default 1
+	help
+	  The timeout in seconds between attempts to send a Router
+	  Solicitation message at startup.
+
 config NET_IPV6_RA_RDNSS
 	bool "Support RA RDNSS option"
 	depends on NET_IPV6_ND
-	select DNS_RESOLVER
+	depends on DNS_RESOLVER
 	default y
 	help
 	  Support Router Advertisement Recursive DNS Server option.
 	  See RFC 6106 for details. The value depends on your network needs.
+
+choice NET_IPV6_IID_GENERATION
+	prompt "IPv6 Interface Identifier (IID) generation"
+	default NET_IPV6_IID_EUI_64
+	help
+	  Determines how the IPv6 Interface Identifier (IID) is generated.
+	  By default the legacy format using EUI-64 (MAC address) specified in
+	  RFC 4291 chapter 2.5.1 is used.
+	  User can also choose to use stable IID specified in RFC 7217 in which
+	  case a randomized IID is generated for each network interface.
+	  The stable IID enhances privacy by having a different IID for each
+	  network interface.
+
+config NET_IPV6_IID_EUI_64
+	bool "Generate IID using EUI-64"
+	help
+	  Generate IID from modified EUI-64 a.k.a MAC address. This is the
+	  legacy way described in RFC 4291 chapter 2.5.1
+
+config NET_IPV6_IID_STABLE
+	bool "Generate stable IID [EXPERIMENTAL]"
+	select MBEDTLS
+	select MBEDTLS_MD
+	select EXPERIMENTAL
+	depends on !NET_6LO
+	help
+	  Generate a stable IID described in RFC 7217. This option specifies a
+	  method for generating IPv6 Interface Identifiers to be used with
+	  IPv6 Stateless Address Autoconfiguration (SLAAC), such that an IPv6
+	  address configured using this method is stable within each subnet,
+	  but the corresponding Interface Identifier changes when the host
+	  moves from one network to another. This method is meant to be an
+	  alternative to generating Interface Identifiers based on hardware
+	  addresses (e.g., IEEE LAN Media Access Control (MAC) addresses),
+	  such that the benefits of stable addresses can be achieved without
+	  sacrificing the security and privacy of users.
+	  Currently the stable IID generation is disabled for 6lo networks
+	  because of header compression.
+
+endchoice
+
+config NET_IPV6_PE
+	bool "Privacy extension (RFC 8981) support [EXPERIMENTAL]"
+	select MBEDTLS
+	select MBEDTLS_MD
+	select EXPERIMENTAL
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	select NET_MGMT_EVENT_INFO
+	help
+	  This enables IPv6 privacy extension (RFC 8981) support.
+	  The interface identifier is randomized and SLAAC addresses
+	  generated from it will expire. This requires that applications are
+	  prepared to use new IPv6 addresses when old ones will expire.
+	  Note that you should make sure that the value of config option
+	  CONFIG_NET_IF_UNICAST_IPV6_ADDR_COUNT should be large enough so that
+	  two PE generated IPv6 addresses can be added to the network interface
+	  at the same time.
+
+if NET_IPV6_PE
+
+config NET_IPV6_PE_FILTER_PREFIX_COUNT
+	int "Size of the IPv6 prefix filter list"
+	default 0
+	help
+	  Size of the allow/deny filter list of IPv6 prefixes. User can
+	  set filters at runtime and it is possible to enable or disable
+	  privacy extension support according to this filter list.
+	  By default no filters are enabled.
+
+config NET_IPV6_PE_PREFER_PUBLIC_ADDRESSES
+	bool "Prefer public preferred address over temporary one"
+	help
+	  Prefer public addresses over temporary addresses.
+
+config NET_IPV6_PE_TEMP_VALID_LIFETIME
+	int "Max lifetime for temporary address (in minutes)"
+	default 1440
+	help
+	  No temporary address should ever remain valid for longer than this
+	  value. The value is in minutes. Default value is 1 day (24*60).
+
+config NET_IPV6_PE_TEMP_PREFERRED_LIFETIME
+	int "Max preferred lifetime for temporary address (in minutes)"
+	default 1380
+	help
+	  No temporary address should ever remain preferred for longer than this
+	  value. The value is in minutes. Default value is 23 hours (23*60).
+
+config NET_IPV6_PE_TEMP_IDGEN_RETRIES
+	int "Max amount of failed DAD attempts"
+	default 3
+	help
+	  The node MUST perform duplicate address detection (DAD) on the
+	  generated temporary address. If after TEMP_IDGEN_RETRIES consecutive
+	  attempts no non-unique address was generated then there will be no
+	  attempt to generate temporary addresses for that interface.
+
+endif
 
 config NET_6LO
 	bool "6lowpan IPv6 Compression library"
@@ -209,6 +337,12 @@ module = NET_IPV6_ND
 module-dep = NET_LOG
 module-str = Log level for IPv6 Neighbor Discovery
 module-help = Enables IPv6 Neighbor Discovery code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+module = NET_IPV6_PE
+module-dep = NET_LOG
+module-str = Log level for IPv6 Privacy Extension
+module-help = Enables IPv6 Privacy Extension code to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 
 module = NET_ICMPV6

@@ -1,0 +1,129 @@
+/*
+ * Copyright (c) 2020 Guillaume Paquet <guillaume.paquet@smile.fr>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf52840_qiaa.dtsi>
+#include <nordic/nrf52840_partition.dtsi>
+#include "rak5010_nrf52840-pinctrl.dtsi"
+
+/ {
+	model = "RAKWireless RAK5010 Wistrio Board with a Nordic NRF52840 SoC";
+	compatible = "nordic,rak5010_nrf52840";
+
+	chosen {
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,uart-mcumgr = &uart1;
+		zephyr,bt-mon-uart = &uart1;
+		zephyr,bt-c2h-uart = &uart1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+			label = "Green LED 0";
+		};
+	};
+
+	/* Declaration of aliases */
+	aliases {
+		led0 = &led0;
+		watchdog0 = &wdt0;
+		accel0 = &lis3dh;
+		modem-uart = &uart0;
+		modem = &modem;
+	};
+};
+
+&adc {
+	status = "okay";
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&uart0 {
+	compatible = "nordic,nrf-uarte";
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+	modem: modem {
+		compatible = "quectel,bg95";
+		mdm-power-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+};
+
+&uart1 {
+	current-speed = <115200>;
+	status = "okay";
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-1 = <&uart1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&i2c1 {
+	compatible = "nordic,nrf-twi";
+	status = "okay";
+
+	/* TI OPT3001 light sensor */
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-1 = <&i2c1_sleep>;
+	pinctrl-names = "default", "sleep";
+	opt3001@44 {
+		compatible = "ti,opt3001";
+		reg = <0x44>;
+	};
+
+	/* ST Microelectronics LIS3DH motion sensor */
+	lis3dh: lis3dh@19 {
+		compatible = "st,lis3dh", "st,lis2dh";
+		reg = <0x19>;
+		irq-gpios = <&gpio0 16 0>;
+	};
+
+	/* ST Microelectronics LPS22HB pressure sensor */
+	lps22hb-press@5c {
+		compatible = "st,lps22hb-press";
+		reg = <0x5c>;
+	};
+};
+
+&qspi {
+	status = "okay";
+	pinctrl-0 = <&qspi_default>;
+	pinctrl-1 = <&qspi_sleep>;
+	pinctrl-names = "default", "sleep";
+	is25wp064a: is25wp064a@0 {
+		compatible = "nordic,qspi-nor";
+		reg = <0>;
+		writeoc = "pp4o";
+		readoc = "read4io";
+		sck-frequency = <32000000>;
+		jedec-id = [9d 70 17];
+		size = <67108864>;
+		has-dpd;
+		t-enter-dpd = <3000>;
+		t-exit-dpd = <5000>;
+	};
+};
+
+zephyr_udc0: &usbd {
+	compatible = "nordic,nrf-usbd";
+	status = "okay";
+};

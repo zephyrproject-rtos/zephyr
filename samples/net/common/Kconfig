@@ -1,0 +1,52 @@
+#
+# Copyright (c) 2025 Ezurio
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config NET_SAMPLE_COMMON_WAIT_DNS_SERVER_ADDITION
+	bool "Wait DNS server addition before considering connection to be up"
+	depends on MODEM_HL7800 && !DNS_SERVER_IP_ADDRESSES
+	help
+	  Make sure we get DNS server addresses from the network
+	  before considering the connection to be up.
+
+config NET_SAMPLE_COMMON_VLAN_SETUP_1
+	string "VLAN setup for the 1st VLAN interface"
+	default ""
+	depends on NET_VLAN
+	help
+	  This can setup the first VLAN network interface.
+	  The format of the string looks like this:
+	    <VLAN-tag>;<ip-address/mask-len>,...
+	  Example:
+	    100;198.51.100.1/24,2001:db8:100::1/64
+	  The VLAN tag can have values between 0 and 4094.
+	  There can be multiple IP addresses specified, and the
+	  code tries to apply them all to this interface.
+
+config NET_SAMPLE_COMMON_VLAN_SETUP_2
+	string "VLAN setup for the 2nd VLAN interface"
+	default ""
+	depends on NET_VLAN
+	help
+	  This can setup the first VLAN network interface.
+	  The format of the string looks like this:
+	    <VLAN-tag>;<ip-address/mask-len>,...
+	  Example:
+	    200;203.0.113.1/24,2001:db8:200::1/64
+	  The VLAN tag can have values between 0 and 4094.
+	  There can be multiple IP addresses specified, and the
+	  code tries to apply them all to this interface.
+
+config NET_SAMPLE_COMMON_TUNNEL_PEER_ADDR
+	string "Remote IP address of the tunnel interface"
+	depends on NET_L2_IPIP
+	help
+	  Use overlay-tunnel.conf to setup the tunnel support.
+
+config NET_SAMPLE_COMMON_TUNNEL_MY_ADDR
+	string "My address for tunnel interface"
+	depends on NET_L2_IPIP
+	help
+	  The value depends on your network setup.

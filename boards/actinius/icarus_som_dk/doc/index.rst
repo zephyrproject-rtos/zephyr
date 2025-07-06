@@ -1,17 +1,7 @@
-.. _actinius_icarus_som_dk:
-
-Actinius Icarus SoM DK
-######################
+.. zephyr:board:: actinius_icarus_som_dk
 
 Overview
 ********
-
-.. figure:: img/icarus-som-dk.jpg
-     :width: 450px
-     :align: center
-     :alt: Icarus SoM DK
-
-     Icarus SoM Development Kit (nRF9160)
 
 The Icarus SoM DK is a single board development kit for
 evaluation and development on the Icarus SoM (`Icarus SoM Docs`_).
@@ -42,7 +32,7 @@ following devices (provided directly by Nordic):
 * :abbr:`WDT (Watchdog Timer)`
 * :abbr:`IDAU (Implementation Defined Attribution Unit)`
 
-.. figure:: img/icarus-som-dk-block-diagram.jpg
+.. figure:: img/icarus_som_dk_block_diagram.jpg
      :width: 450px
      :align: center
      :alt: Icarus SoM DK Block Diagram

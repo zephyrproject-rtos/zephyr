@@ -1,19 +1,10 @@
-.. _nrf51_vbluno51:
-
-nRF51-VBLUno51
-##############
+.. zephyr:board:: nrf51_vbluno51
 
 Overview
 ********
 
 Zephyr uses the nrf51_vbluno51 board configuration to run on the VBLUno51 board,
 a VNG Bluetooth Low Energy UNO using an nRF51822 ARM processor.
-
-.. figure:: img/nrf51_vbluno51.jpg
-     :align: center
-     :alt: nRF51_VBLUno51
-
-     nrf51_vbluno51 Top
 
 .. figure:: img/nrf51_vbluno51_bot.jpg
      :align: center
@@ -95,6 +86,8 @@ More details
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``nrf51_vbluno51`` board configuration can be
 built and flashed in the usual way (see :ref:`build_an_application`
 and :ref:`application_run` for more details).
@@ -135,11 +128,11 @@ Testing the VBLUno51 with Zephyr: buttons, LEDs, UART, BLE
  Here are some sample applications that you can use to test different
  components on the VBLUno51 board:
 
- * :ref:`hello_world`
+ * :zephyr:code-sample:`hello_world`
  * :zephyr:code-sample:`blinky`
  * :zephyr:code-sample:`button`
- * :ref:`bluetooth-beacon-sample`
- * :ref:`peripheral_hr`
+ * :zephyr:code-sample:`bluetooth_beacon`
+ * :zephyr:code-sample:`ble_peripheral_hr`
 
 References
 **********

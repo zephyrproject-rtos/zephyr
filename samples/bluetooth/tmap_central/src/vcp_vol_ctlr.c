@@ -1,12 +1,20 @@
 /*
  * Copyright 2023 NXP
+ * Copyright (c) 2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/bluetooth/bluetooth.h>
+#include <errno.h>
+#include <stddef.h>
+#include <stdint.h>
+
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/vcp.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/sys/printk.h>
 
 static struct bt_vcp_vol_ctlr *vcp_vol_ctlr;
 
@@ -78,7 +86,7 @@ static int process_profile_connection(struct bt_conn *conn)
 static void connected(struct bt_conn *conn, uint8_t err)
 {
 	if (err) {
-		printk("Connection failed (err %d)\n", err);
+		printk("Connection failed, err %d %s\n", err, bt_hci_err_to_str(err));
 		return;
 	}
 

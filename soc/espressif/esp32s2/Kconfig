@@ -7,17 +7,12 @@ config SOC_SERIES_ESP32S2
 	select DYNAMIC_INTERRUPTS
 	select CLOCK_CONTROL
 	select PINCTRL
-	select XIP if !MCUBOOT
 	select HAS_ESPRESSIF_HAL
 	select ARCH_SUPPORTS_COREDUMP
 	select HAS_PM
 	select HAS_POWEROFF
 
 if SOC_SERIES_ESP32S2
-
-config IDF_TARGET_ESP32S2
-	bool "ESP32S2 as target SOC"
-	default y
 
 menu "Cache config"
 
@@ -84,17 +79,5 @@ config ESP32S2_DATA_CACHE_SIZE
 	default 0x0000
 
 endmenu  # Cache config
-
-config ESP32_PHY_MAX_WIFI_TX_POWER
-	int "Max WiFi TX power (dBm)"
-	range 10 20
-	default 20
-	help
-	  Set maximum transmit power for WiFi radio. Actual transmit power for high
-	  data rates may be lower than this setting.
-
-config ESP32_PHY_MAX_TX_POWER
-	int
-	default ESP32_PHY_MAX_WIFI_TX_POWER
 
 endif # SOC_SERIES_ESP32S2

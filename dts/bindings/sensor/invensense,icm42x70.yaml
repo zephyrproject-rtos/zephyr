@@ -1,0 +1,114 @@
+# Copyright (c) 2024 TDK Invensense
+# Copyright (c) 2022 Esco Medical ApS
+# Copyright (c) 2020 TDK Invensense
+# SPDX-License-Identifier: Apache-2.0
+
+description: ICM-42670 motion tracking device
+
+include: sensor-device.yaml
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      The INT signal default configuration is active-high. The
+      property value should ensure the flags properly describe the
+      signal that is presented to the driver.
+
+  accel-hz:
+    type: int
+    required: true
+    description: |
+      Default frequency of accelerometer. (Unit - Hz)
+      Maps to ACCEL_ODR field in ACCEL_CONFIG0 setting
+      Power-on reset value is 800.
+    enum:
+      - 0
+      - 1600
+      - 800
+      - 400
+      - 200
+      - 100
+      - 50
+      - 25
+      - 12
+      - 6
+      - 3
+      - 1
+
+  power-mode:
+    type: string
+    default: "low-noise"
+    description: |
+      Power mode.
+      Low power mode is allowed for accelerometer sensor only from
+      1.5625Hz to 400Hz.
+      The default is chosen to support both accelerometer and
+      gyroscope sensors.
+    enum:
+      - "low-noise"
+      - "low-power"
+
+  accel-fs:
+    type: int
+    required: true
+    description: |
+      Default full scale of accelerometer. (Unit - g)
+      Maps to ACCEL_FS_SEL field in ACCEL_CONFIG0 setting
+      Power-on reset value is 16
+    enum:
+      - 16
+      - 8
+      - 4
+      - 2
+
+  accel-avg:
+    type: int
+    default: 32
+    description: |
+      Averaging filter setting to create accelerometer output
+      in accelerometer low power mode.
+      Maps to ACCEL_UI_AVG field in ACCEL_CONFIG1 setting.
+      The default corresponds to the reset value of the register field.
+    enum:
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+
+  accel-filt-bw-hz:
+    type: int
+    default: 180
+    description: |
+      Accelerometer low pass filter bandwidth frequency (Unit - Hz).
+      Maps to ACCEL_UI_FILT_BW field in ACCEL_CONFIG1 setting.
+      The default corresponds to the reset value of the register field.
+    enum:
+      - 0
+      - 180
+      - 121
+      - 73
+      - 53
+      - 34
+      - 25
+      - 16
+
+  apex:
+    type: string
+    default: "none"
+    description: |
+      APEX (Advanced Pedometer and Event Detection) features. It consists of:
+      * Pedometer: Tracks step count, and provide details such as the cadence and
+                   the estimated activity type (Walk, Run, Unknown).
+      * Tilt Detection: Detects the Tilt when tilting the board with an angle of
+                        30 degrees or more held for 4 seconds.
+      * Wake on Motion (WoM): Detects motion per axis exceeding 195 mg threshold.
+      * Significant Motion Detector (SMD): Detects when the user has moved significantly.
+    enum:
+      - "none"
+      - "pedometer"
+      - "tilt"
+      - "smd"
+      - "wom"

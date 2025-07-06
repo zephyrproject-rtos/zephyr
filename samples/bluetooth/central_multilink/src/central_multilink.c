@@ -20,8 +20,8 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/sys/byteorder.h>
 
-#define SCAN_INTERVAL 0x0640 /* 1000 ms */
-#define SCAN_WINDOW   0x0030 /* 30 ms */
+#define SCAN_INTERVAL 0x0010 /* 10 ms */
+#define SCAN_WINDOW   0x0010 /* 10 ms */
 #define INIT_INTERVAL 0x0010 /* 10 ms */
 #define INIT_WINDOW   0x0010 /* 10 ms */
 #define CONN_INTERVAL 0x0320 /* 1000 ms */
@@ -32,6 +32,7 @@
 static void start_scan(void);
 
 static struct bt_conn *conn_connecting;
+static uint8_t conn_count_max;
 static uint8_t volatile conn_count;
 static bool volatile is_disconnecting;
 
@@ -74,8 +75,9 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 		return;
 	}
 
-	if (bt_le_scan_stop()) {
-		printk("Scanning successfully stopped\n");
+	err = bt_le_scan_stop();
+	if (err != 0) {
+		printk("Failed to stop scanning (err %d)\n", err);
 		return;
 	}
 
@@ -90,7 +92,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 static void start_scan(void)
 {
 	struct bt_le_scan_param scan_param = {
-		.type       = BT_HCI_LE_SCAN_PASSIVE,
+		.type       = BT_LE_SCAN_TYPE_PASSIVE,
 		.options    = BT_LE_SCAN_OPT_NONE,
 		.interval   = SCAN_INTERVAL,
 		.window     = SCAN_WINDOW,
@@ -157,7 +159,7 @@ static void connected(struct bt_conn *conn, uint8_t reason)
 	conn_connecting = NULL;
 
 	conn_count++;
-	if (conn_count < CONFIG_BT_MAX_CONN) {
+	if (conn_count < conn_count_max) {
 		start_scan();
 	}
 
@@ -182,11 +184,11 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-	printk("Disconnected: %s (reason 0x%02x)\n", addr, reason);
+	printk("Disconnected: %s, reason 0x%02x %s\n", addr, reason, bt_hci_err_to_str(reason));
 
 	bt_conn_unref(conn);
 
-	if ((conn_count == 1U) && is_disconnecting) {
+	if ((conn_count == 1U) && (is_disconnecting || (reason == BT_HCI_ERR_CONN_FAIL_TO_ESTAB))) {
 		is_disconnecting = false;
 		start_scan();
 	}
@@ -228,8 +230,8 @@ static void security_changed(struct bt_conn *conn, bt_security_t level,
 	if (!err) {
 		printk("Security changed: %s level %u\n", addr, level);
 	} else {
-		printk("Security failed: %s level %u err %d\n", addr, level,
-		       err);
+		printk("Security failed: %s level %u err %d %s\n", addr, level,
+		       err, bt_security_err_to_str(err));
 	}
 }
 #endif
@@ -280,6 +282,27 @@ static struct bt_conn_cb conn_callbacks = {
 #endif /* CONFIG_BT_USER_DATA_LEN_UPDATE */
 };
 
+static void remote_info(struct bt_conn *conn, void *data)
+{
+	struct bt_conn_remote_info remote_info;
+	char addr[BT_ADDR_LE_STR_LEN];
+	int err;
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	printk("Get remote info %s...\n", addr);
+	err = bt_conn_get_remote_info(conn, &remote_info);
+	if (err) {
+		printk("Failed remote info %s.\n", addr);
+		return;
+	}
+	printk("success.\n");
+
+	uint8_t *actual_count = (void *)data;
+
+	(*actual_count)++;
+}
+
 static void disconnect(struct bt_conn *conn, void *data)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
@@ -291,13 +314,16 @@ static void disconnect(struct bt_conn *conn, void *data)
 	err = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	if (err) {
 		printk("Failed disconnection %s.\n", addr);
+		return;
 	}
 	printk("success.\n");
 }
 
-int init_central(uint8_t iterations)
+int init_central(uint8_t max_conn, uint8_t iterations)
 {
 	int err;
+
+	conn_count_max = max_conn;
 
 	err = bt_enable(NULL);
 	if (err) {
@@ -312,10 +338,27 @@ int init_central(uint8_t iterations)
 	start_scan();
 
 	while (true) {
-		while (conn_count < CONFIG_BT_MAX_CONN) {
+		while (conn_count < conn_count_max) {
 			k_sleep(K_MSEC(10));
 		}
 
+		is_disconnecting = true;
+
+		/* Let us perform version exchange on all connections to ensure
+		 * there is actual communication.
+		 */
+		uint8_t actual_count = 0U;
+
+		bt_conn_foreach(BT_CONN_TYPE_LE, remote_info, &actual_count);
+		if (actual_count < conn_count_max) {
+			k_sleep(K_MSEC(10));
+
+			continue;
+		}
+
+		/* Lets wait sufficiently to ensure a stable connection
+		 * before starting to disconnect for next iteration.
+		 */
 		k_sleep(K_SECONDS(60));
 
 		if (!iterations) {
@@ -324,9 +367,15 @@ int init_central(uint8_t iterations)
 		iterations--;
 		printk("Iterations remaining: %u\n", iterations);
 
-		printk("Disconnecting all...\n");
-		is_disconnecting = true;
-		bt_conn_foreach(BT_CONN_TYPE_LE, disconnect, NULL);
+		/* Device needing multiple connections is the one
+		 * initiating the disconnects.
+		 */
+		if (conn_count_max > 1U) {
+			printk("Disconnecting all...\n");
+			bt_conn_foreach(BT_CONN_TYPE_LE, disconnect, NULL);
+		} else {
+			printk("Wait for disconnections...\n");
+		}
 
 		while (is_disconnecting) {
 			k_sleep(K_MSEC(10));

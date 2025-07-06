@@ -1,0 +1,208 @@
+/*
+ * Copyright (c) 2022 Benjamin Björnsson <benjamin.bjornsson@gmail.com>.
+ * Copyright (c) 2024 DNDG srl
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/h7/stm32h747Xi_m7.dtsi>
+#include <st/h7/stm32h747xihx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "arduino_opta-common.dtsi"
+
+/ {
+	model = "Arduino OPTA M7 core Programmable Logic Controller";
+	compatible = "arduino,opta-m7";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &bt_hci_uart;
+	};
+};
+
+zephyr_udc0: &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+#include <../boards/common/usb/cdc_acm_serial.dtsi>
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(25)>;
+	hse-bypass;
+	status = "okay";
+};
+
+&clk_lse {
+	clock-frequency = <32768>;
+	lse-bypass;
+	status = "okay";
+};
+
+&clk_hsi {
+	hsi-div = <1>;
+	status = "okay";
+};
+
+&clk_hsi48 {
+	/* HSI48 required for USB */
+	status = "okay";
+};
+
+&pll {
+	div-m = <5>;
+	mul-n = <160>;
+	div-p = <2>;
+	div-r = <2>;
+	div-q = <10>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(400)>;
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcu-boot";
+			reg = <0x00000000 DT_SIZE_K(256)>;
+			read-only;
+		};
+
+		slot0_partition: partition@40000 {
+			label = "image-0";
+			reg = <0x00040000 DT_SIZE_K(768)>;
+		};
+	};
+};
+
+/* Assign USB to M7 by default */
+&usbotg_fs {
+	status = "okay";
+};
+
+&usbotg_hs {
+	status = "disabled";
+};
+
+/* Assign ethernet to M7 by default */
+&mac {
+	pinctrl-0 = <
+		&eth_ref_clk_pa1
+		&eth_crs_dv_pa7
+		&eth_rxd0_pc4
+		&eth_rxd1_pc5
+		&eth_tx_en_pg11
+		&eth_txd1_pg12
+		&eth_txd0_pg13
+	>;
+	pinctrl-names = "default";
+	phy-connection-type = "rmii";
+	phy-handle = <&eth_phy>;
+	status = "okay";
+};
+
+&mdio {
+	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	eth_phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0x00>;
+	};
+};
+
+/* Assign Bluetooth to M7 by default */
+&uart4 {
+	pinctrl-0 = <
+		&uart4_tx_pb9
+		&uart4_rx_ph14
+		&uart4_cts_pb15
+		&uart4_rts_pa15
+	>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	hw-flow-control;
+	status = "okay";
+
+	bt_hci_uart: bt_hci_uart {
+		compatible = "zephyr,bt-hci-uart";
+		status = "okay";
+
+		murata-1dx {
+			compatible = "infineon,cyw43xxx-bt-hci";
+			bt-reg-on-gpios = <&gpioj 12 GPIO_ACTIVE_HIGH>;
+			bt-host-wake-gpios = <&gpioj 13 GPIO_ACTIVE_HIGH>;
+			bt-dev-wake-gpios = <&gpioj 14 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+/* Assign external flash to M7 by default */
+&quadspi {
+	pinctrl-0 = <
+		&quadspi_bk1_io0_pd11
+		&quadspi_bk1_io1_pd12
+		&quadspi_bk1_io2_pe2
+		&quadspi_bk1_io3_pd13
+		&quadspi_bk1_ncs_pg6
+		&quadspi_clk_pb2
+	>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	qspi_flash: qspi-nor-flash@0 {
+		compatible = "st,stm32-qspi-nor";
+		reg = <0>;
+		size = <DT_SIZE_M(128)>; /* 128 MBits */
+		qspi-max-frequency = <80000000>;
+		jedec-id = [01 1f 89];
+		spi-bus-width = <4>;
+		quad-enable-requirements = "NONE";
+		status = "okay";
+
+		/* The following partitions are valid only if the Opta external flash
+		 * has never been reformatted or repartitioned. Note the offset of the
+		 * first partition, due to the presence of the MBR.
+		 */
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* WiFi firmware and TLS certificates: 1MB - 4K for MBR using LBA */
+			wlan_partition: partition@1000 {
+				label = "wlan";
+				reg=<0x001000 DT_SIZE_K(1020)>;
+			};
+
+			/* Arduino OTA partition: 13MB */
+			fs_partition: partition@100000 {
+				label = "fs";
+				reg=<0x100000 DT_SIZE_M(13)>;
+			};
+
+			/* The final 2MB is used to keep a memory-mapped copy of the WiFi
+			 * firmware. The address of the firmware blob is 0xF80000 and the
+			 * size of the partition in the MBR is 0 but, given that we can't
+			 * specify a zero size in `reg` we just give the "correct" one.
+			 */
+			wifi_partition: partition@e00000 {
+				label = "4343WA1";
+				reg=<0xE00000 DT_SIZE_M(2)>;
+			};
+		};
+	};
+};

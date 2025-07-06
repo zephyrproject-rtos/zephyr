@@ -12,6 +12,7 @@
  */
 
 #include <zephyr/drivers/uart.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/ztest.h>
 
 #if DT_NODE_EXISTS(DT_NODELABEL(dut))
@@ -29,6 +30,8 @@
 #define SLEEP_TIME_US 1000
 #define TEST_BUFFER_LEN 10
 
+#define UART_BAUDRATE DT_PROP_OR(UART_NODE, current_speed, 115200)
+
 static const struct device *const uart_dev = DEVICE_DT_GET(UART_NODE);
 
 const uint8_t test_pattern[TEST_BUFFER_LEN] = { 0x11, 0x12, 0x13, 0x14, 0x15,
@@ -40,6 +43,7 @@ static volatile uint8_t uart_error_counter;
 static const struct device *const uart_dev_aux = DEVICE_DT_GET(UART_NODE_AUX);
 static uint8_t test_buffer_aux[TEST_BUFFER_LEN];
 static volatile uint8_t aux_uart_error;
+static volatile uint8_t aux_uart_error_counter;
 #endif
 
 /*
@@ -66,14 +70,12 @@ static void uart_rx_interrupt_service(const struct device *dev, uint8_t *receive
 				      int *rx_byte_offset)
 {
 	int rx_data_length = 0;
-	int bytes_received = 0;
 
 	do {
 		rx_data_length = uart_fifo_read(dev, receive_buffer_pointer + *rx_byte_offset,
 						TEST_BUFFER_LEN);
-		bytes_received += rx_data_length;
+		*rx_byte_offset += rx_data_length;
 	} while (rx_data_length);
-	*rx_byte_offset += bytes_received;
 }
 
 /*
@@ -112,12 +114,9 @@ static void interrupt_driven_uart_callback_aux_uart(const struct device *dev, vo
 
 	uart_irq_update(dev);
 	err = uart_err_check(dev);
-#if !defined(CONFIG_COVERAGE)
-	/* This assetion will fail with coverge enabled
-	 * When in coverage mode it has no impact on test case execution
-	 */
-	zassert_equal(err, 0, "Unexpected UART device: %s error: %d", dev->name, err);
-#endif /* CONFIG_COVERAGE */
+	if (err != 0) {
+		aux_uart_error_counter++;
+	}
 	while (uart_irq_is_pending(dev)) {
 		if (uart_irq_rx_ready(dev)) {
 			uart_rx_interrupt_service(dev, (uint8_t *)user_data, &rx_byte_offset_aux);
@@ -138,7 +137,7 @@ ZTEST(uart_elementary, test_uart_proper_configuration)
 
 	int err;
 	struct uart_config test_expected_uart_config;
-	struct uart_config test_uart_config = { .baudrate = 115200,
+	struct uart_config test_uart_config = { .baudrate = UART_BAUDRATE,
 						.parity = UART_CFG_PARITY_NONE,
 						.stop_bits = UART_CFG_STOP_BITS_1,
 						.data_bits = UART_CFG_DATA_BITS_8,
@@ -179,7 +178,7 @@ ZTEST(uart_elementary, test_uart_improper_configuration)
 	Z_TEST_SKIP_IFDEF(CONFIG_DUAL_UART_TEST);
 
 	int err;
-	struct uart_config test_uart_config = { .baudrate = 115200,
+	struct uart_config test_uart_config = { .baudrate = UART_BAUDRATE,
 						.parity = 7,
 						.stop_bits = UART_CFG_STOP_BITS_1,
 						.data_bits = UART_CFG_DATA_BITS_8,
@@ -199,7 +198,7 @@ ZTEST(uart_elementary, test_uart_improper_configuration)
 ZTEST(uart_elementary, test_uart_basic_transmission)
 {
 	int err;
-	struct uart_config test_uart_config = { .baudrate = 115200,
+	struct uart_config test_uart_config = { .baudrate = UART_BAUDRATE,
 						.parity = UART_CFG_PARITY_ODD,
 						.stop_bits = UART_CFG_STOP_BITS_1,
 						.data_bits = UART_CFG_DATA_BITS_8,
@@ -225,7 +224,7 @@ ZTEST(uart_elementary, test_uart_basic_transmission)
 	uart_irq_err_disable(uart_dev);
 	for (int index = 0; index < TEST_BUFFER_LEN; index++) {
 		zassert_equal(test_buffer[index], test_pattern[index],
-			      "Recieived data byte %d does not match pattern 0x%x != 0x%x", index,
+			      "Received data byte %d does not match pattern 0x%x != 0x%x", index,
 			      test_buffer[index], test_pattern[index]);
 	}
 }
@@ -236,16 +235,16 @@ ZTEST(uart_elementary, test_uart_basic_transmission)
 ZTEST(uart_elementary, test_uart_dual_port_transmission)
 {
 	int err;
-	struct uart_config test_uart_config = { .baudrate = 115200,
-						.parity = UART_CFG_PARITY_NONE,
-						.stop_bits = UART_CFG_STOP_BITS_1,
+	struct uart_config test_uart_config = { .baudrate = UART_BAUDRATE,
+						.parity = UART_CFG_PARITY_EVEN,
+						.stop_bits = UART_CFG_STOP_BITS_2,
 						.data_bits = UART_CFG_DATA_BITS_8,
 						.flow_ctrl = UART_CFG_FLOW_CTRL_NONE };
 
 #if defined(CONFIG_SETUP_MISMATCH_TEST)
-	struct uart_config test_uart_config_aux = { .baudrate = 9600,
-						    .parity = UART_CFG_PARITY_NONE,
-						    .stop_bits = UART_CFG_STOP_BITS_1,
+	struct uart_config test_uart_config_aux = { .baudrate = CONFIG_UART_BAUDRATE_MISMATCH,
+						    .parity = UART_CFG_PARITY_EVEN,
+						    .stop_bits = UART_CFG_STOP_BITS_2,
 						    .data_bits = UART_CFG_DATA_BITS_8,
 						    .flow_ctrl = UART_CFG_FLOW_CTRL_NONE };
 #endif
@@ -272,14 +271,24 @@ ZTEST(uart_elementary, test_uart_dual_port_transmission)
 					      (void *)test_buffer_aux);
 	zassert_equal(err, 0, "Unexpected error when setting user data for UART1 callback %d", err);
 
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		int usage = pm_device_runtime_usage(uart_dev);
+		int usage_aux = pm_device_runtime_usage(uart_dev_aux);
+
+		zassert_equal(usage, 0);
+		zassert_equal(usage_aux, 0);
+		pm_device_runtime_get(uart_dev);
+		pm_device_runtime_get(uart_dev_aux);
+	}
+
 	uart_irq_err_enable(uart_dev);
 	uart_irq_err_enable(uart_dev_aux);
 
-	uart_irq_tx_enable(uart_dev);
-	uart_irq_tx_enable(uart_dev_aux);
-
 	uart_irq_rx_enable(uart_dev);
 	uart_irq_rx_enable(uart_dev_aux);
+
+	uart_irq_tx_enable(uart_dev);
+	uart_irq_tx_enable(uart_dev_aux);
 
 	/* wait for the tramission to finish (no polling is intentional) */
 	k_sleep(K_USEC(100 * SLEEP_TIME_US));
@@ -291,15 +300,29 @@ ZTEST(uart_elementary, test_uart_dual_port_transmission)
 	uart_irq_err_disable(uart_dev);
 	uart_irq_err_disable(uart_dev_aux);
 
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_put(uart_dev);
+		pm_device_runtime_put(uart_dev_aux);
+
+		int usage = pm_device_runtime_usage(uart_dev);
+		int usage_aux = pm_device_runtime_usage(uart_dev_aux);
+
+		zassert_equal(usage, 0);
+		zassert_equal(usage_aux, 0);
+	}
+
 #if defined(CONFIG_SETUP_MISMATCH_TEST)
-	zassert_not_equal(uart_error_counter, 0);
+	TC_PRINT("Mismatched configuration test\n");
+	zassert_not_equal(uart_error_counter + aux_uart_error_counter, 0,
+			  "UART configuration mismatch error not detected");
+
 #else
 	for (int index = 0; index < TEST_BUFFER_LEN; index++) {
 		zassert_equal(test_buffer[index], test_pattern[index],
-			      "UART0 recieived data byte %d does not match pattern 0x%x != 0x%x",
+			      "UART0 received data byte %d does not match pattern 0x%x != 0x%x",
 			      index, test_buffer[index], test_pattern[index]);
 		zassert_equal(test_buffer_aux[index], test_pattern[index],
-			      "UART1 recieived data byte %d does not match pattern 0x%x != 0x%x",
+			      "UART1 received data byte %d does not match pattern 0x%x != 0x%x",
 			      index, test_buffer_aux[index], test_pattern[index]);
 	}
 #endif /* CONFIG_SETUP_MISMATCH_TEST */

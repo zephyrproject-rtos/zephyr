@@ -19,6 +19,28 @@
 #include "npcx.dtsi"
 
 / {
+	cpus {
+		cpu0: cpu@0 {
+			cpu-power-states = <&suspend_to_idle0 &suspend_to_idle1>;
+		};
+
+		power-states {
+			suspend_to_idle0: suspend-to-idle0 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <0>;
+				min-residency-us = <1000>;
+			};
+
+			suspend_to_idle1: suspend-to-idle1 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <1>;
+				min-residency-us = <201000>;
+			};
+		};
+	};
+
 	def-io-conf-list {
 		pinmux = <&alt0_gpio_no_spip
 			   &alt0_gpio_no_fpip
@@ -60,6 +82,13 @@
 	soc {
 		compatible = "nuvoton,npcx9", "nuvoton,npcx", "simple-bus";
 
+		bbram: bb-ram@400af000 {
+			compatible = "nuvoton,npcx-bbram";
+			reg = <0x400af000 0x80
+			       0x400af100 0x1>;
+			reg-names = "memory", "status";
+		};
+
 		/* Specific soc devices in npcx9 series */
 		itims: timer@400b0000 {
 			compatible = "nuvoton,npcx-itim-timer";
@@ -69,40 +98,53 @@
 			clocks = <&pcc NPCX_CLOCK_BUS_LFCLK NPCX_PWDWN_CTL4 0
 				  &pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL7 5>;
 			interrupts = <28 1>; /* Event timer interrupt */
+			clock-frequency = <15000000>; /* Set for SYS_CLOCK_HW_CYCLES_PER_SEC */
 		};
 
 		uart1: serial@400e0000 {
 			compatible = "nuvoton,npcx-uart";
-			reg = <0x400E0000 0x2000>;
+			/* Index 0: UART1 register, Index 1: MDMA1 register */
+			reg = <0x400E0000 0x2000 0x40011100 0x100>;
 			interrupts = <33 3>;
-			clocks = <&pcc NPCX_CLOCK_BUS_APB4 NPCX_PWDWN_CTL1 4>;
+			/* Index 0: UART1 clock, Index 1: MDMA1 clock */
+			clocks = <&pcc NPCX_CLOCK_BUS_APB4 NPCX_PWDWN_CTL1 4
+				  &pcc NPCX_CLOCK_BUS_CORE NPCX_PWDWN_CTL9 0>;
 			uart-rx = <&wui_cr_sin1>;
 			status = "disabled";
 		};
 
 		uart2: serial@400e2000 {
 			compatible = "nuvoton,npcx-uart";
-			reg = <0x400E2000 0x2000>;
+			/* Index 0: UART2 register, Index 1: MDMA2 register */
+			reg = <0x400E2000 0x2000 0x40011200 0x100>;
 			interrupts = <32 3>;
-			clocks = <&pcc NPCX_CLOCK_BUS_APB4 NPCX_PWDWN_CTL7 6>;
+			/* Index 0: UART2 clock, Index 1: MDMA2 clock */
+			clocks = <&pcc NPCX_CLOCK_BUS_APB4 NPCX_PWDWN_CTL7 6
+				  &pcc NPCX_CLOCK_BUS_CORE NPCX_PWDWN_CTL9 1>;
 			uart-rx = <&wui_cr_sin2>;
 			status = "disabled";
 		};
 
 		uart3: serial@400e4000 {
 			compatible = "nuvoton,npcx-uart";
-			reg = <0x400E4000 0x2000>;
+			/* Index 0: UART3 register, Index 1: MDMA3 register */
+			reg = <0x400E4000 0x2000 0x40011300 0x100>;
 			interrupts = <38 3>;
-			clocks = <&pcc NPCX_CLOCK_BUS_APB4 NPCX_PWDWN_CTL7 4>;
+			/* Index 0: UART3 clock, Index 1: MDMA3 clock */
+			clocks = <&pcc NPCX_CLOCK_BUS_APB4 NPCX_PWDWN_CTL7 4
+				  &pcc NPCX_CLOCK_BUS_CORE NPCX_PWDWN_CTL9 2>;
 			uart-rx = <&wui_cr_sin3>;
 			status = "disabled";
 		};
 
 		uart4: serial@400e6000 {
 			compatible = "nuvoton,npcx-uart";
-			reg = <0x400E6000 0x2000>;
+			/* Index 0: UART4 register, Index 1: MDMA4 register */
+			reg = <0x400E6000 0x2000 0x40011400 0x100>;
 			interrupts = <39 3>;
-			clocks = <&pcc NPCX_CLOCK_BUS_APB4 NPCX_PWDWN_CTL7 3>;
+			/* Index 0: UART4 clock, Index 1: MDMA4 clock */
+			clocks = <&pcc NPCX_CLOCK_BUS_APB4 NPCX_PWDWN_CTL7 3
+				  &pcc NPCX_CLOCK_BUS_CORE NPCX_PWDWN_CTL9 3>;
 			uart-rx = <&wui_cr_sin4>;
 			status = "disabled";
 		};
@@ -255,6 +297,79 @@
 				     &lvol_iof4 &lvol_iof5 &lvol_none &lvol_none>;
 		};
 
+		/* I2c Controllers - Do not use them as i2c node directly */
+		i2c_ctrl0: i2c@40009000 {
+			compatible = "nuvoton,npcx-i2c-ctrl";
+			reg = <0x40009000 0x1000>;
+			interrupts = <13 3>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL3 0>;
+			smb-wui = <&wui_smb0_2>;
+			status = "disabled";
+		};
+
+		i2c_ctrl1: i2c@4000b000 {
+			compatible = "nuvoton,npcx-i2c-ctrl";
+			reg = <0x4000b000 0x1000>;
+			interrupts = <14 3>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL3 1>;
+			smb-wui = <&wui_smb1_3>;
+			status = "disabled";
+		};
+
+		i2c_ctrl2: i2c@400c0000 {
+			compatible = "nuvoton,npcx-i2c-ctrl";
+			reg = <0x400c0000 0x1000>;
+			interrupts = <36 3>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL3 2>;
+			smb-wui = <&wui_smb0_2>;
+			status = "disabled";
+		};
+
+		i2c_ctrl3: i2c@400c2000 {
+			compatible = "nuvoton,npcx-i2c-ctrl";
+			reg = <0x400c2000 0x1000>;
+			interrupts = <37 3>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL3 3>;
+			smb-wui = <&wui_smb1_3>;
+			status = "disabled";
+		};
+
+		i2c_ctrl4: i2c@40008000 {
+			compatible = "nuvoton,npcx-i2c-ctrl";
+			reg = <0x40008000 0x1000>;
+			interrupts = <19 3>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL3 4>;
+			smb-wui = <&wui_smb4>;
+			status = "disabled";
+		};
+
+		i2c_ctrl5: i2c@40017000 {
+			compatible = "nuvoton,npcx-i2c-ctrl";
+			reg = <0x40017000 0x1000>;
+			interrupts = <20 3>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL7 0>;
+			smb-wui = <&wui_smb5>;
+			status = "disabled";
+		};
+
+		i2c_ctrl6: i2c@40018000 {
+			compatible = "nuvoton,npcx-i2c-ctrl";
+			reg = <0x40018000 0x1000>;
+			interrupts = <16 3>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL7 1>;
+			smb-wui = <&wui_smb6>;
+			status = "disabled";
+		};
+
+		i2c_ctrl7: i2c@40019000 {
+			compatible = "nuvoton,npcx-i2c-ctrl";
+			reg = <0x40019000 0x1000>;
+			interrupts = <8 3>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL7 2>;
+			smb-wui = <&wui_smb7>;
+			status = "disabled";
+		};
+
 		/* ADC0 comparator configuration in npcx9 series */
 		adc0: adc@400d1000 {
 			channel-count = <12>;
@@ -293,6 +408,13 @@
 			compatible = "nuvoton,npcx-rst";
 			reg = <0x400c3100 0x14>;
 			#reset-cells = <1>;
+			status = "disabled";
+		};
+
+		ramlock0: ramlock@4000c02e {
+			compatible = "syscon";
+			reg = <0x4000c02e 0x52>;
+			reg-io-width = <1>;
 			status = "disabled";
 		};
 	};

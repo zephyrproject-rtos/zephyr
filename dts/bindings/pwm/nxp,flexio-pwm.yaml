@@ -1,0 +1,47 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP Flexio PWM controller.
+  Each flexio timer can be used for generating one pwm pulse.
+  The two PWM modes supported by flexio are chosen based on the selected polarity -
+  Dual 8-bit counters PWM mode and Dual 8-bit counters PWM Low mode.
+
+compatible: "nxp,flexio-pwm"
+
+include: [pwm-controller.yaml, pinctrl-device.yaml, base.yaml]
+
+properties:
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  "#pwm-cells":
+    const: 3
+
+pwm-cells:
+  - channel
+  - period
+  - flags
+
+child-binding:
+  description: |
+    Flexio PWM channel configuration.
+
+  properties:
+    pin-id:
+      type: int
+      required: true
+      description: |
+        pin-id should be populated with number 'n' specified in the
+        FXIO_D<n> data pin of your board's schematic.
+
+    prescaler:
+      type: int
+      description: |
+        The clock divider for internal counter prescaler.
+        - 1: Divide by 1
+        - 16: Divide by 16
+        - 256: Divide by 256
+      enum: [1, 16, 256]

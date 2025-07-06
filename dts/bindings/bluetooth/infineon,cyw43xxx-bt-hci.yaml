@@ -18,12 +18,20 @@ description: |
                      &p3_2_scb2_uart_rts &p3_3_scb2_uart_cts>;
         pinctrl-names = "default";
 
-        bt-hci {
-          status = "okay";
-          compatible = "infineon,cyw43xxx-bt-hci";
-          bt-reg-on-gpios = <&gpio_prt3 4 (GPIO_ACTIVE_HIGH)>;
+        /* HW Flow control must be enabled for HCI H4 */
+        hw-flow-control;
 
-          fw-download-speed = <3000000>;
+        bt_hci_uart: bt_hci_uart {
+          compatible = "zephyr,bt-hci-uart";
+          status = "okay";
+
+          bt-hci {
+            status = "okay";
+            compatible = "infineon,cyw43xxx-bt-hci";
+            bt-reg-on-gpios = <&gpio_prt3 4 (GPIO_ACTIVE_HIGH)>;
+
+            fw-download-speed = <3000000>;
+          };
         };
       };
 
@@ -65,11 +73,11 @@ properties:
   hci-operation-speed:
     type: int
     description: |
-      HCI UART boudrate for feature operation. If not defined
+      HCI UART baudrate for feature operation. If not defined
       bus/current-speed will be used as default.
 
   fw-download-speed:
     type: int
     description: |
-      HCI UART boudrate for FW download operation. If not defined
+      HCI UART baudrate for FW download operation. If not defined
       bus/current-speed will be used as default.

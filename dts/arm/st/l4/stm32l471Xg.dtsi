@@ -14,6 +14,7 @@
 	sram1: memory@10000000 {
 		reg = <0x10000000 DT_SIZE_K(32)>;
 	};
+
 	soc {
 		flash-controller@40022000 {
 			flash0: flash@8000000 {

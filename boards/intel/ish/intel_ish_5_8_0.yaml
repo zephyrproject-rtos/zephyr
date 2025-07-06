@@ -5,9 +5,13 @@ arch: x86
 toolchain:
   - zephyr
 ram: 640
+simulation:
+  - name: simics
+    exec: simics
 supported:
   - serial
 testing:
+  timeout_multiplier: 2
   ignore_tags:
     - net
     - bluetooth

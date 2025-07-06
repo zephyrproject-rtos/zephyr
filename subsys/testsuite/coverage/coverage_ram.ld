@@ -6,7 +6,7 @@
 
 /* Copied from linker.ld */
 
-#ifdef CONFIG_ARM
+#if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
 SECTION_DATA_PROLOGUE(_GCOV_BSS_SECTION_NAME,(NOLOAD),)
 {
 #ifdef CONFIG_USERSPACE

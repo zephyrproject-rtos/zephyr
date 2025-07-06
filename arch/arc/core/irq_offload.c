@@ -54,7 +54,7 @@ void arch_irq_offload(irq_offload_routine_t routine, const void *parameter)
 }
 
 /* need to be executed on every core in the system */
-int arc_irq_offload_init(void)
+void arch_irq_offload_init(void)
 {
 
 	IRQ_CONNECT(IRQ_OFFLOAD_LINE, IRQ_OFFLOAD_PRIO, arc_irq_offload_handler, NULL, 0);
@@ -64,8 +64,4 @@ int arc_irq_offload_init(void)
 	 * with generic irq_enable() but via z_arc_v2_irq_unit_int_enable().
 	 */
 	z_arc_v2_irq_unit_int_enable(IRQ_OFFLOAD_LINE);
-
-	return 0;
 }
-
-SYS_INIT(arc_irq_offload_init, POST_KERNEL, 0);

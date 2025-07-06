@@ -131,7 +131,7 @@ Zephyr repository application
 
 An application located within the ``zephyr`` source code repository in a Zephyr
 :ref:`west workspace <west-workspaces>` is referred to as a Zephyr repository
-application. In the following example, the :ref:`hello_world sample
+application. In the following example, the :zephyr:code-sample:`hello_world sample
 <hello_world>` is a Zephyr repository application:
 
 .. code-block:: none
@@ -303,7 +303,7 @@ Creating an Application by Hand
 
 You can follow these steps to create a basic application directory from
 scratch. However, using the `example-application`_ repository or one of
-Zephyr's :ref:`samples-and-demos` as a starting point is likely to be easier.
+Zephyr's :zephyr:code-sample-category:`samples` as a starting point is likely to be easier.
 
 #. Create an application directory.
 
@@ -494,13 +494,11 @@ Make sure to follow these steps in order.
      as described in this step, this value will be used.
 
 #. If your application uses a configuration file or files other than
-   the usual :file:`prj.conf` (or :file:`prj_YOUR_BOARD.conf`, where
-   ``YOUR_BOARD`` is a board name), add lines setting the
-   :makevar:`CONF_FILE` variable to these files appropriately.
-   If multiple filenames are given, separate them by a single space or
-   semicolon.  CMake lists can be used to build up configuration fragment
-   files in a modular way when you want to avoid setting :makevar:`CONF_FILE`
-   in a single place. For example:
+   the usual :file:`prj.conf`, add lines setting the :makevar:`CONF_FILE`
+   variable to these files appropriately. If multiple filenames are given,
+   separate them by a single space or semicolon.  CMake lists can be used to
+   build up configuration fragment files in a modular way when you want to
+   avoid setting :makevar:`CONF_FILE` in a single place. For example:
 
    .. code-block:: cmake
 
@@ -641,11 +639,11 @@ Application configuration options are usually set in :file:`prj.conf` in the
 application directory. For example, C++ support could be enabled with this
 assignment:
 
-.. code-block:: none
+.. code-block:: cfg
 
    CONFIG_CPP=y
 
-Looking at :ref:`existing samples <samples-and-demos>` is a good way to get
+Looking at :zephyr:code-sample-category:`existing samples <samples>` is a good way to get
 started.
 
 See :ref:`setting_configuration_values` for detailed documentation on setting
@@ -668,7 +666,7 @@ marked ``[EXPERIMENTAL]`` in their Kconfig title.
 The :kconfig:option:`CONFIG_WARN_EXPERIMENTAL` setting can be used to enable warnings
 at CMake configure time if any experimental feature is enabled.
 
-.. code-block:: none
+.. code-block:: cfg
 
    CONFIG_WARN_EXPERIMENTAL=y
 
@@ -723,12 +721,6 @@ Given the following example project layout:
 
 * If this is build with ``FILE_SUFFIX`` set to ``mouse`` for ``qemu_cortex_m3`` then
   ``prj_mouse.conf`` will be used and ``boards/qemu_cortex_m3_mouse.overlay`` will be used.
-
-.. note::
-
-   When ``CONF_FILE`` is set in the form of ``prj_X.conf`` then the ``X`` will be used as the
-   build type. If this is combined with ``FILE_SUFFIX`` then the file suffix option will take
-   priority over the build type.
 
 Application-Specific Code
 *************************
@@ -804,7 +796,7 @@ As an example, let's build the Hello World sample for the ``reel_board``:
 
 .. zephyr-app-commands::
    :tool: all
-   :app: samples/hello_world
+   :zephyr-app: samples/hello_world
    :board: reel_board
    :goals: build
 
@@ -822,7 +814,7 @@ Using CMake directly:
 
 .. zephyr-app-commands::
    :tool: cmake
-   :app: samples/hello_world
+   :zephyr-app: samples/hello_world
    :generator: make
    :host-os: unix
    :board: reel_board
@@ -1144,7 +1136,7 @@ where the ``boards`` directory hosts the board you are building for:
 
    .
    ├── boards
-   │   └── x86
+   │   └── vendor
    │       └── my_custom_board
    │           ├── doc
    │           │   └── img
@@ -1157,9 +1149,9 @@ supported by a SOC that is available in the Zephyr tree.
 Boards
 ======
 
-Use the proper architecture folder name (e.g., ``x86``, ``arm``, etc.)
-under ``boards`` for ``my_custom_board``.  (See  :ref:`boards` for a
-list of board architectures.)
+Use the vendor name as the folder name (which must match the vendor prefix in
+:zephyr_file:`dts/bindings/vendor-prefixes.txt` if submitting upstream to Zephyr, or be
+``others`` if it is not a vendor board) under ``boards`` for ``my_custom_board``.
 
 Documentation (under ``doc/``) and support files (under ``support/``) are optional, but
 will be needed when submitting to Zephyr.
@@ -1174,9 +1166,8 @@ Zephyr board, and provide the following files::
     board.h
     CMakeLists.txt
     doc/
-    Kconfig.board
+    Kconfig.my_custom_board
     Kconfig.defconfig
-    pinmux.c
     support/
 
 
@@ -1206,6 +1197,11 @@ boilerplate with ``find_package(Zephyr ...)``.
    When using ``-DBOARD_ROOT=<board-root>`` both absolute and relative paths can
    be used. Relative paths are treated relatively to the application directory.
 
+.. note::
+
+   When using sysbuild, then ``BOARD_ROOT`` must defined in a module or in the sysbuild
+   ``CMakeLists.txt`` file, see :ref:`sysbuild_var_override` for details.
+
 SOC Definitions
 ===============
 
@@ -1215,11 +1211,10 @@ the Zephyr tree, for example:
 .. code-block:: none
 
         soc
-        └── arm
-            └── st_stm32
-                    ├── common
-                    └── stm32l0
-
+        └── st
+            └── stm32
+                ├── common
+                └── stm32l0x
 
 
 The file :zephyr_file:`soc/Kconfig` will create the top-level
@@ -1235,8 +1230,9 @@ more SoCs into the menu.
 .. code-block:: none
 
         soc
-        └── arm
-            └── st_stm32
+        └── st
+            └── stm32
+                └── stm32l0x
                     ├── Kconfig
                     ├── Kconfig.soc
                     └── Kconfig.defconfig
@@ -1248,17 +1244,17 @@ An example of loading ``stm31l0`` specific Kconfig files in this structure:
 .. code-block:: none
 
         soc
-        └── arm
-            └── st_stm32
-                    ├── Kconfig.soc
-                    └── stm32l0
-                        └── Kconfig.series
+        └── st
+            └── stm32
+                ├── Kconfig.soc
+                └── stm32l0x
+                    └── Kconfig.soc
 
-can be done with the following content in ``st_stm32/Kconfig.soc``:
+can be done with the following content in ``st/stm32/Kconfig.soc``:
 
-.. code-block:: none
+.. code-block:: kconfig
 
-   rsource "*/Kconfig.series"
+   rsource "*/Kconfig.soc"
 
 Once the SOC structure is in place, you can build your application
 targeting this platform by specifying the location of your custom platform

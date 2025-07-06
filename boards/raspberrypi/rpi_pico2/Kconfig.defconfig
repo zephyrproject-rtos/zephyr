@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Andrew Featherstone
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_RPI_PICO2
+
+config USB_SELF_POWERED
+	default n
+
+endif # BOARD_RPI_PICO2

@@ -1,7 +1,4 @@
-.. _adi_sdp_k1:
-
-ADI SDP-K1
-##########
+.. zephyr:board:: adi_sdp_k1
 
 Overview
 ********
@@ -23,12 +20,6 @@ ADI components.
 - One push-buttons: RESET
 - 16MB SDRAM
 - Arduino UNO and 120-pin SDP connectors
-
-.. figure:: img/adi_sdp_k1.webp
-   :align: center
-   :alt: ADI SDP-K1
-
-   ADI SDP-K1 (Credit: Analog Devices, Inc.)
 
 More information about the board can be found on the `ADI SDP-K1 website`_.
 
@@ -74,23 +65,7 @@ More information about STM32F469NI can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32f469i_disco board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on Zephyr porting.
-
-The default configuration can be found in
-:zephyr_file:`boards/adi/sdp_k1/adi_sdp_k1_defconfig`
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========
@@ -128,6 +103,8 @@ Default Zephyr Peripheral Mapping:
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The ADI SDP-K1 be programmed over USB using the DAPLink firmware running on an
 embedded NXP Freescale microcontroller or a 10-pin ``DEBUG`` header connected
 to a STLINK debugger.
@@ -151,7 +128,7 @@ Run a serial host program to connect with your board:
 
    $ minicom -D /dev/serial/by-id/usb-ARM_DAPLink_CMSIS-DAP_<...>
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

@@ -16,6 +16,8 @@
 /**
  * @brief TLS credentials management
  * @defgroup tls_credentials TLS credentials management
+ * @since 1.13
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */
@@ -34,11 +36,15 @@ enum tls_credential_type {
 	 */
 	TLS_CREDENTIAL_CA_CERTIFICATE,
 
-	/** A public server certificate. Use this to register your own server
+	/** A public client or server certificate. Use this to register your own
 	 *  certificate. Should be registered together with a corresponding
 	 *  private key. Used with certificate-based ciphersuites.
 	 */
-	TLS_CREDENTIAL_SERVER_CERTIFICATE,
+	TLS_CREDENTIAL_PUBLIC_CERTIFICATE,
+
+	/** @deprecated Use TLS_CREDENTIAL_PUBLIC_CERTIFICATE instead.
+	 */
+	TLS_CREDENTIAL_SERVER_CERTIFICATE = TLS_CREDENTIAL_PUBLIC_CERTIFICATE,
 
 	/** Private key. Should be registered together with a corresponding
 	 *  public certificate. Used with certificate-based ciphersuites.
@@ -62,10 +68,12 @@ enum tls_credential_type {
  * in the system.
  *
  * @note Some TLS credentials come in pairs:
- *    - TLS_CREDENTIAL_SERVER_CERTIFICATE with TLS_CREDENTIAL_PRIVATE_KEY,
+ *    - TLS_CREDENTIAL_PUBLIC_CERTIFICATE with TLS_CREDENTIAL_PRIVATE_KEY,
  *    - TLS_CREDENTIAL_PSK with TLS_CREDENTIAL_PSK_ID.
- *    Such pairs of credentials must be assigned the same secure tag to be
- *    correctly handled in the system.
+ *    Such pairs of credentials should generally be assigned the same secure tag
+ *    when used with subsystems that support fetching multiple credentials per tag,
+ *    such as TLS sockets. However, note that certain subsystems or implementations
+ *    may expect only one credential per secure tag.
  *
  * @note Negative values are reserved for internal use.
  */
@@ -105,6 +113,7 @@ int tls_credential_add(sec_tag_t tag, enum tls_credential_type type,
  * @retval -EACCES Access to the TLS credential subsystem was denied.
  * @retval -ENOENT Requested TLS credential was not found.
  * @retval -EFBIG Requested TLS credential does not fit in the buffer provided.
+ *                Check *credlen for size required.
  */
 int tls_credential_get(sec_tag_t tag, enum tls_credential_type type,
 		       void *cred, size_t *credlen);

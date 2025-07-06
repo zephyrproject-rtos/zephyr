@@ -20,25 +20,25 @@ description: |
           reset-gpios = <&gpio5 3 GPIO_ACTIVE_LOW>;
 
           mux_i2c@0 {
-              compatible: "ti,tca9546a-channel"
+              compatible = "ti,tca9546a-channel";
               reg = <0>;
               #address-cells = <1>;
               #size-cells = <0>;
 
-              temp_sens_0: tmp116@49 {
-                  compatible = "ti,tmp116";
+              temp_sens_0: tmp11x@49 {
+                  compatible = "ti,tmp11x";
                   reg = <0x49>;
               };
           };
 
           mux_i2c@1 {
-            compatible: "ti,tca9546a-channel"
+              compatible = "ti,tca9546a-channel";
               reg = <1>;
               #address-cells = <1>;
               #size-cells = <0>;
 
-              temp_sens_1: tmp116@49 {
-                  compatible = "ti,tmp116";
+              temp_sens_1: tmp11x@49 {
+                  compatible = "ti,tmp11x";
                   reg = <0x49>;
               };
           };
@@ -51,6 +51,13 @@ properties:
     type: phandle-array
     description: |
       GPIO connected to the controller RESET pin. This pin is active-low.
+
+  i2c-mux-idle-disconnect:
+    type: boolean
+    description: |
+      Forces mux to disconnect all children in idle state. This is
+      necessary for example, if there are several multiplexers on the bus and
+      the devices behind them use same I2C addresses.
 
 child-binding:
   description: TCA954x I2C switch channel node

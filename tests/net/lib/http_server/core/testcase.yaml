@@ -1,0 +1,20 @@
+common:
+  depends_on: netif
+  min_ram: 80
+  min_flash: 200
+  tags:
+    - http
+    - net
+    - server
+    - socket
+  integration_platforms:
+    - native_sim
+    - qemu_x86
+tests:
+  net.http.server.core: {}
+  net.http.server.static.fs:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="ramdisk.overlay"
+    platform_allow:
+      - native_sim
+      - qemu_x86

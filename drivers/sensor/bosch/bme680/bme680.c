@@ -18,11 +18,19 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
 
 #include "bme680.h"
 
 LOG_MODULE_REGISTER(bme680, CONFIG_SENSOR_LOG_LEVEL);
 
+struct bme_data_regs {
+	uint8_t pressure[3];
+	uint8_t temperature[3];
+	uint8_t humidity[2];
+	uint8_t padding[3];
+	uint8_t gas[2];
+} __packed;
 
 #if BME680_BUS_SPI
 static inline bool bme680_is_on_spi(const struct device *dev)
@@ -41,7 +49,7 @@ static inline int bme680_bus_check(const struct device *dev)
 }
 
 static inline int bme680_reg_read(const struct device *dev,
-				  uint8_t start, uint8_t *buf, int size)
+				  uint8_t start, void *buf, int size)
 {
 	const struct bme680_config *config = dev->config;
 
@@ -199,7 +207,9 @@ static uint8_t bme680_calc_gas_wait(uint16_t dur)
 			dur = dur / 4;
 			factor += 1;
 		}
-		durval = dur + (factor * 64);
+		const uint16_t max_duration = dur + (factor * 64);
+
+		durval = CLAMP(max_duration, 0, 0xff);
 	}
 
 	return durval;
@@ -209,45 +219,54 @@ static int bme680_sample_fetch(const struct device *dev,
 			       enum sensor_channel chan)
 {
 	struct bme680_data *data = dev->data;
-	uint8_t buff[BME680_LEN_FIELD] = { 0 };
+	struct bme_data_regs data_regs;
 	uint8_t gas_range;
 	uint32_t adc_temp, adc_press;
 	uint16_t adc_hum, adc_gas_res;
-	int size = BME680_LEN_FIELD;
+	uint8_t status;
+	int cnt = 0;
 	int ret;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
-	ret = bme680_reg_read(dev, BME680_REG_FIELD0, buff, size);
+	/* Trigger the measurement */
+	ret = bme680_reg_write(dev, BME680_REG_CTRL_MEAS, BME680_CTRL_MEAS_VAL);
 	if (ret < 0) {
 		return ret;
 	}
 
-	data->new_data = buff[0] & BME680_MSK_NEW_DATA;
-	data->heatr_stab = buff[14] & BME680_MSK_HEATR_STAB;
+	do {
+		/* Wait for a maximum of 250ms for data.
+		 * Initial delay after boot has been measured at 170ms.
+		 * Subequent triggers are < 1ms.
+		 */
+		if (cnt++ > 250) {
+			return -EAGAIN;
+		}
+		k_sleep(K_MSEC(1));
+		ret = bme680_reg_read(dev, BME680_REG_MEAS_STATUS, &status, 1);
+		if (ret < 0) {
+			return ret;
+		}
+	} while (!(status & BME680_MSK_NEW_DATA));
+	LOG_DBG("New data after %d ms", cnt);
 
-	adc_press = (uint32_t)(((uint32_t)buff[2] << 12) | ((uint32_t)buff[3] << 4)
-			    | ((uint32_t)buff[4] >> 4));
-	adc_temp = (uint32_t)(((uint32_t)buff[5] << 12) | ((uint32_t)buff[6] << 4)
-			   | ((uint32_t)buff[7] >> 4));
-	adc_hum = (uint16_t)(((uint32_t)buff[8] << 8) | (uint32_t)buff[9]);
-	adc_gas_res = (uint16_t)((uint32_t)buff[13] << 2 | (((uint32_t)buff[14]) >> 6));
-	gas_range = buff[14] & BME680_MSK_GAS_RANGE;
-
-	if (data->new_data) {
-		bme680_calc_temp(data, adc_temp);
-		bme680_calc_press(data, adc_press);
-		bme680_calc_humidity(data, adc_hum);
-		bme680_calc_gas_resistance(data, gas_range, adc_gas_res);
-	}
-
-	/* Trigger the next measurement */
-	ret = bme680_reg_write(dev, BME680_REG_CTRL_MEAS,
-			       BME680_CTRL_MEAS_VAL);
+	ret = bme680_reg_read(dev, BME680_REG_FIELD0, &data_regs, sizeof(data_regs));
 	if (ret < 0) {
 		return ret;
 	}
 
+	adc_press = sys_get_be24(data_regs.pressure) >> 4;
+	adc_temp = sys_get_be24(data_regs.temperature) >> 4;
+	adc_hum = sys_get_be16(data_regs.humidity);
+	adc_gas_res = sys_get_be16(data_regs.gas) >> 6;
+	data->heatr_stab = data_regs.gas[1] & BME680_MSK_HEATR_STAB;
+	gas_range = data_regs.gas[1] & BME680_MSK_GAS_RANGE;
+
+	bme680_calc_temp(data, adc_temp);
+	bme680_calc_press(data, adc_press);
+	bme680_calc_humidity(data, adc_hum);
+	bme680_calc_gas_resistance(data, gas_range, adc_gas_res);
 	return 0;
 }
 
@@ -303,6 +322,10 @@ static int bme680_read_compensation(const struct device *dev)
 	uint8_t buff[BME680_LEN_COEFF_ALL];
 	int err = 0;
 
+	if (data->has_read_compensation) {
+		return 0;
+	}
+
 	err = bme680_reg_read(dev, BME680_REG_COEFF1, buff, BME680_LEN_COEFF1);
 	if (err < 0) {
 		return err;
@@ -356,19 +379,14 @@ static int bme680_read_compensation(const struct device *dev)
 	data->res_heat_range = ((buff[39] & BME680_MSK_RH_RANGE) >> 4);
 	data->range_sw_err = ((int8_t)(buff[41] & BME680_MSK_RANGE_SW_ERR)) / 16;
 
+	data->has_read_compensation = true;
 	return 0;
 }
 
-static int bme680_init(const struct device *dev)
+static int bme680_power_up(const struct device *dev)
 {
 	struct bme680_data *data = dev->data;
 	int err;
-
-	err = bme680_bus_check(dev);
-	if (err < 0) {
-		LOG_ERR("Bus not ready for '%s'", dev->name);
-		return err;
-	}
 
 #if BME680_BUS_SPI
 	if (bme680_is_on_spi(dev)) {
@@ -410,8 +428,7 @@ static int bme680_init(const struct device *dev)
 		return err;
 	}
 
-	err = bme680_reg_write(dev, BME680_REG_CTRL_GAS_1,
-			       BME680_CTRL_GAS_1_VAL);
+	err = bme680_reg_write(dev, BME680_REG_CTRL_GAS_1, BME680_CTRL_GAS_1_VAL);
 	if (err < 0) {
 		return err;
 	}
@@ -428,13 +445,42 @@ static int bme680_init(const struct device *dev)
 		return err;
 	}
 
-	err = bme680_reg_write(dev, BME680_REG_CTRL_MEAS,
-			       BME680_CTRL_MEAS_VAL);
-
-	return err;
+	return bme680_reg_write(dev, BME680_REG_CTRL_MEAS, BME680_CTRL_MEAS_VAL);
 }
 
-static const struct sensor_driver_api bme680_api_funcs = {
+static int bme680_pm_control(const struct device *dev, enum pm_device_action action)
+{
+	int rc = 0;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+	case PM_DEVICE_ACTION_RESUME:
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+	case PM_DEVICE_ACTION_TURN_ON:
+		rc = bme680_power_up(dev);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return rc;
+}
+
+static int bme680_init(const struct device *dev)
+{
+	int err;
+
+	err = bme680_bus_check(dev);
+	if (err < 0) {
+		LOG_ERR("Bus not ready for '%s'", dev->name);
+		return err;
+	}
+
+	return pm_device_driver_init(dev, bme680_pm_control);
+}
+
+static DEVICE_API(sensor, bme680_api_funcs) = {
 	.sample_fetch = bme680_sample_fetch,
 	.channel_get = bme680_channel_get,
 };
@@ -464,9 +510,10 @@ static const struct sensor_driver_api bme680_api_funcs = {
 		COND_CODE_1(DT_INST_ON_BUS(inst, spi),			\
 			    (BME680_CONFIG_SPI(inst)),			\
 			    (BME680_CONFIG_I2C(inst)));			\
+	PM_DEVICE_DT_INST_DEFINE(inst, bme680_pm_control);              \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
 			 bme680_init,					\
-			 NULL,						\
+			 PM_DEVICE_DT_INST_GET(inst),			\
 			 &bme680_data_##inst,				\
 			 &bme680_config_##inst,				\
 			 POST_KERNEL,					\

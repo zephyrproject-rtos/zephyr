@@ -1,0 +1,641 @@
+/*
+ * Copyright (c) 2025 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/max32-pinctrl.h>
+
+/ {
+	soc {
+		pinctrl: pin-controller@40008000 {
+			/omit-if-no-ref/ spixr_sdio0_p0_1: spixr_sdio0_p0_1 {
+				pinmux = <MAX32_PINMUX(0, 1, AF1)>;
+			};
+
+			/omit-if-no-ref/ spixr_sdio2_p0_2: spixr_sdio2_p0_2 {
+				pinmux = <MAX32_PINMUX(0, 2, AF1)>;
+			};
+
+			/omit-if-no-ref/ spixr_sck_p0_3: spixr_sck_p0_3 {
+				pinmux = <MAX32_PINMUX(0, 3, AF1)>;
+			};
+
+			/omit-if-no-ref/ spixr_sdio3_p0_4: spixr_sdio3_p0_4 {
+				pinmux = <MAX32_PINMUX(0, 4, AF1)>;
+			};
+
+			/omit-if-no-ref/ spixr_sdio1_p0_5: spixr_sdio1_p0_5 {
+				pinmux = <MAX32_PINMUX(0, 5, AF1)>;
+			};
+
+			/omit-if-no-ref/ spixr_ss0_p0_6: spixr_ss0_p0_6 {
+				pinmux = <MAX32_PINMUX(0, 6, AF1)>;
+			};
+
+			/omit-if-no-ref/ spixf_ss0_p0_7: spixf_ss0_p0_7 {
+				pinmux = <MAX32_PINMUX(0, 7, AF1)>;
+			};
+
+			/omit-if-no-ref/ spixf_sck_p0_8: spixf_sck_p0_8 {
+				pinmux = <MAX32_PINMUX(0, 8, AF1)>;
+			};
+
+			/omit-if-no-ref/ spixf_sdio1_p0_9: spixf_sdio1_p0_9 {
+				pinmux = <MAX32_PINMUX(0, 9, AF1)>;
+			};
+
+			/omit-if-no-ref/ spixf_sdio0_p0_10: spixf_sdio0_p0_10 {
+				pinmux = <MAX32_PINMUX(0, 10, AF1)>;
+			};
+
+			/omit-if-no-ref/ spixf_sdio2_p0_11: spixf_sdio2_p0_11 {
+				pinmux = <MAX32_PINMUX(0, 11, AF1)>;
+			};
+
+			/omit-if-no-ref/ spixf_sdio3_p0_12: spixf_sdio3_p0_12 {
+				pinmux = <MAX32_PINMUX(0, 12, AF1)>;
+			};
+
+			/omit-if-no-ref/ spi3_ss1_p0_13: spi3_ss1_p0_13 {
+				pinmux = <MAX32_PINMUX(0, 13, AF1)>;
+			};
+
+			/omit-if-no-ref/ clcd_g0_p0_13: clcd_g0_p0_13 {
+				pinmux = <MAX32_PINMUX(0, 13, AF2)>;
+			};
+
+			/omit-if-no-ref/ spi3_ss2_p0_14: spi3_ss2_p0_14 {
+				pinmux = <MAX32_PINMUX(0, 14, AF1)>;
+			};
+
+			/omit-if-no-ref/ clcd_g1_p0_14: clcd_g1_p0_14 {
+				pinmux = <MAX32_PINMUX(0, 14, AF2)>;
+			};
+
+			/omit-if-no-ref/ spi3_sdio3_p0_15: spi3_sdio3_p0_15 {
+				pinmux = <MAX32_PINMUX(0, 15, AF1)>;
+			};
+
+			/omit-if-no-ref/ clcd_g2_p0_15: clcd_g2_p0_15 {
+				pinmux = <MAX32_PINMUX(0, 15, AF2)>;
+			};
+
+			/omit-if-no-ref/ spi3_sck_p0_16: spi3_sck_p0_16 {
+				pinmux = <MAX32_PINMUX(0, 16, AF1)>;
+			};
+
+			/omit-if-no-ref/ clcd_g3_p0_16: clcd_g3_p0_16 {
+				pinmux = <MAX32_PINMUX(0, 16, AF2)>;
+			};
+
+			/omit-if-no-ref/ spi3_sdio2_p0_17: spi3_sdio2_p0_17 {
+				pinmux = <MAX32_PINMUX(0, 17, AF1)>;
+			};
+
+			/omit-if-no-ref/ clcd_g4_p0_17: clcd_g4_p0_17 {
+				pinmux = <MAX32_PINMUX(0, 17, AF2)>;
+			};
+
+			/omit-if-no-ref/ spi3_ss3_p0_18: spi3_ss3_p0_18 {
+				pinmux = <MAX32_PINMUX(0, 18, AF1)>;
+			};
+
+			/omit-if-no-ref/ clcd_g5_p0_18: clcd_g5_p0_18 {
+				pinmux = <MAX32_PINMUX(0, 18, AF2)>;
+			};
+
+			/omit-if-no-ref/ spi3_ss0_p0_19: spi3_ss0_p0_19 {
+				pinmux = <MAX32_PINMUX(0, 19, AF1)>;
+			};
+
+			/omit-if-no-ref/ clcd_g6_p0_19: clcd_g6_p0_19 {
+				pinmux = <MAX32_PINMUX(0, 19, AF2)>;
+			};
+
+			/omit-if-no-ref/ spi3_sdio1_p0_20: spi3_sdio1_p0_20 {
+				pinmux = <MAX32_PINMUX(0, 20, AF1)>;
+			};
+
+			/omit-if-no-ref/ clcd_g7_p0_20: clcd_g7_p0_20 {
+				pinmux = <MAX32_PINMUX(0, 20, AF2)>;
+			};
+
+			/omit-if-no-ref/ spi3_sdio0_p0_21: spi3_sdio0_p0_21 {
+				pinmux = <MAX32_PINMUX(0, 21, AF1)>;
+			};
+
+			/omit-if-no-ref/ spi0_ss0_p0_22: spi0_ss0_p0_22 {
+				pinmux = <MAX32_PINMUX(0, 22, AF1)>;
+			};
+
+			/omit-if-no-ref/ clcd_vden_p0_22: clcd_vden_p0_22 {
+				pinmux = <MAX32_PINMUX(0, 22, AF2)>;
+			};
+
+			/omit-if-no-ref/ pt15_p0_23: pt15_p0_23 {
+				pinmux = <MAX32_PINMUX(0, 23, AF1)>;
+			};
+
+			/omit-if-no-ref/ clcd_clk_p0_23: clcd_clk_p0_23 {
+				pinmux = <MAX32_PINMUX(0, 23, AF2)>;
+			};
+
+			/omit-if-no-ref/ rxev_p0_24: rxev_p0_24 {
+				pinmux = <MAX32_PINMUX(0, 24, AF1)>;
+			};
+
+			/omit-if-no-ref/ clcd_hsync_p0_24: clcd_hsync_p0_24 {
+				pinmux = <MAX32_PINMUX(0, 24, AF2)>;
+			};
+
+			/omit-if-no-ref/ txev_p0_25: txev_p0_25 {
+				pinmux = <MAX32_PINMUX(0, 25, AF1)>;
+			};
+
+			/omit-if-no-ref/ clcd_b0_p0_25: clcd_b0_p0_25 {
+				pinmux = <MAX32_PINMUX(0, 25, AF2)>;
+			};
+
+			/omit-if-no-ref/ tdi_p0_26: tdi_p0_26 {
+				pinmux = <MAX32_PINMUX(0, 26, AF1)>;
+			};
+
+			/omit-if-no-ref/ tdo_p0_27: tdo_p0_27 {
+				pinmux = <MAX32_PINMUX(0, 27, AF1)>;
+			};
+
+			/omit-if-no-ref/ tms_p0_28: tms_p0_28 {
+				pinmux = <MAX32_PINMUX(0, 28, AF1)>;
+			};
+
+			/omit-if-no-ref/ tck_p0_29: tck_p0_29 {
+				pinmux = <MAX32_PINMUX(0, 29, AF1)>;
+			};
+
+			/omit-if-no-ref/ clcd_b0_p0_30: clcd_b0_p0_30 {
+				pinmux = <MAX32_PINMUX(0, 30, AF2)>;
+			};
+
+			/omit-if-no-ref/ kcal32_p0_31: kcal32_p0_31 {
+				pinmux = <MAX32_PINMUX(0, 31, AF1)>;
+			};
+
+			/omit-if-no-ref/ sdhc_cdn_p0_31: sdhc_cdn_p0_31 {
+				pinmux = <MAX32_PINMUX(0, 31, AF2)>;
+			};
+
+			/omit-if-no-ref/ sdhc_cmd_p1_0: sdhc_cmd_p1_0 {
+				pinmux = <MAX32_PINMUX(1, 0, AF1)>;
+			};
+
+			/omit-if-no-ref/ spixf_sdio3_p1_0: spixf_sdio3_p1_0 {
+				pinmux = <MAX32_PINMUX(1, 0, AF2)>;
+			};
+
+			/omit-if-no-ref/ sdhc_dat2_p1_1: sdhc_dat2_p1_1 {
+				pinmux = <MAX32_PINMUX(1, 1, AF1)>;
+			};
+
+			/omit-if-no-ref/ spixf_sdio1_p1_1: spixf_sdio1_p1_1 {
+				pinmux = <MAX32_PINMUX(1, 1, AF2)>;
+			};
+
+			/omit-if-no-ref/ sdhc_wp_p1_2: sdhc_wp_p1_2 {
+				pinmux = <MAX32_PINMUX(1, 2, AF1)>;
+			};
+
+			/omit-if-no-ref/ spixf_ss0_p1_2: spixf_ss0_p1_2 {
+				pinmux = <MAX32_PINMUX(1, 2, AF2)>;
+			};
+
+			/omit-if-no-ref/ sdhc_dat3_p1_3: sdhc_dat3_p1_3 {
+				pinmux = <MAX32_PINMUX(1, 3, AF1)>;
+			};
+
+			/omit-if-no-ref/ clcd_clk_p1_3: clcd_clk_p1_3 {
+				pinmux = <MAX32_PINMUX(1, 3, AF2)>;
+			};
+
+			/omit-if-no-ref/ sdhc_dat0_p1_4: sdhc_dat0_p1_4 {
+				pinmux = <MAX32_PINMUX(1, 4, AF1)>;
+			};
+
+			/omit-if-no-ref/ spixf_sdio0_p1_4: spixf_sdio0_p1_4 {
+				pinmux = <MAX32_PINMUX(1, 4, AF2)>;
+			};
+
+			/omit-if-no-ref/ sdhc_clk_p1_5: sdhc_clk_p1_5 {
+				pinmux = <MAX32_PINMUX(1, 5, AF1)>;
+			};
+
+			/omit-if-no-ref/ spixf_sck_p1_5: spixf_sck_p1_5 {
+				pinmux = <MAX32_PINMUX(1, 5, AF2)>;
+			};
+
+			/omit-if-no-ref/ sdhc_dat1_p1_6: sdhc_dat1_p1_6 {
+				pinmux = <MAX32_PINMUX(1, 6, AF1)>;
+			};
+
+			/omit-if-no-ref/ pt0_p1_6: pt0_p1_6 {
+				pinmux = <MAX32_PINMUX(1, 6, AF2)>;
+			};
+
+			/omit-if-no-ref/ uart2_cts_p1_7: uart2_cts_p1_7 {
+				pinmux = <MAX32_PINMUX(1, 7, AF1)>;
+			};
+
+			/omit-if-no-ref/ pt1_p1_7: pt1_p1_7 {
+				pinmux = <MAX32_PINMUX(1, 7, AF2)>;
+			};
+
+			/omit-if-no-ref/ uart2_rts_p1_8: uart2_rts_p1_8 {
+				pinmux = <MAX32_PINMUX(1, 8, AF1)>;
+			};
+
+			/omit-if-no-ref/ pt2_p1_8: pt2_p1_8 {
+				pinmux = <MAX32_PINMUX(1, 8, AF2)>;
+			};
+
+			/omit-if-no-ref/ uart2_rx_p1_9: uart2_rx_p1_9 {
+				pinmux = <MAX32_PINMUX(1, 9, AF1)>;
+			};
+
+			/omit-if-no-ref/ pt3_p1_9: pt3_p1_9 {
+				pinmux = <MAX32_PINMUX(1, 9, AF2)>;
+			};
+
+			/omit-if-no-ref/ uart2_tx_p1_10: uart2_tx_p1_10 {
+				pinmux = <MAX32_PINMUX(1, 10, AF1)>;
+			};
+
+			/omit-if-no-ref/ pt4_p1_10: pt4_p1_10 {
+				pinmux = <MAX32_PINMUX(1, 10, AF2)>;
+			};
+
+			/omit-if-no-ref/ hyp_cs0_p1_11: hyp_cs0_p1_11 {
+				pinmux = <MAX32_PINMUX(1, 11, AF1)>;
+			};
+
+			/omit-if-no-ref/ spixr_sdio_p1_11: spixr_sdio_p1_11 {
+				pinmux = <MAX32_PINMUX(1, 11, AF2)>;
+			};
+
+			/omit-if-no-ref/ hyp_d0_p1_12: hyp_d0_p1_12 {
+				pinmux = <MAX32_PINMUX(1, 12, AF1)>;
+			};
+
+			/omit-if-no-ref/ spixr_sdio1_p1_12: spixr_sdio1_p1_12 {
+				pinmux = <MAX32_PINMUX(1, 12, AF2)>;
+			};
+
+			/omit-if-no-ref/ hyp_d4_p1_13: hyp_d4_p1_13 {
+				pinmux = <MAX32_PINMUX(1, 13, AF1)>;
+			};
+
+			/omit-if-no-ref/ spixr_ss0_p1_13: spixr_ss0_p1_13 {
+				pinmux = <MAX32_PINMUX(1, 13, AF2)>;
+			};
+
+			/omit-if-no-ref/ hyp_rwds_p1_14: hyp_rwds_p1_14 {
+				pinmux = <MAX32_PINMUX(1, 14, AF1)>;
+			};
+
+			/omit-if-no-ref/ pt5_p1_14: pt5_p1_14 {
+				pinmux = <MAX32_PINMUX(1, 14, AF2)>;
+			};
+
+			/omit-if-no-ref/ hyp_d1_p1_15: hyp_d1_p1_15 {
+				pinmux = <MAX32_PINMUX(1, 15, AF1)>;
+			};
+
+			/omit-if-no-ref/ spixr_sdio2_p1_15: spixr_sdio2_p1_15 {
+				pinmux = <MAX32_PINMUX(1, 15, AF2)>;
+			};
+
+			/omit-if-no-ref/ hyp_d5_p1_16: hyp_d5_p1_16 {
+				pinmux = <MAX32_PINMUX(1, 16, AF1)>;
+			};
+
+			/omit-if-no-ref/ spixr_sck_p1_16: spixr_sck_p1_16 {
+				pinmux = <MAX32_PINMUX(1, 16, AF2)>;
+			};
+
+			/omit-if-no-ref/ pt9_p1_17: pt9_p1_17 {
+				pinmux = <MAX32_PINMUX(1, 17, AF1)>;
+			};
+
+			/omit-if-no-ref/ hyp_d6_p1_18: hyp_d6_p1_18 {
+				pinmux = <MAX32_PINMUX(1, 18, AF1)>;
+			};
+
+			/omit-if-no-ref/ pt6_p1_18: pt6_p1_18 {
+				pinmux = <MAX32_PINMUX(1, 18, AF2)>;
+			};
+
+			/omit-if-no-ref/ hyp_d2_p1_19: hyp_d2_p1_19 {
+				pinmux = <MAX32_PINMUX(1, 19, AF1)>;
+			};
+
+			/omit-if-no-ref/ pt7_p1_19: pt7_p1_19 {
+				pinmux = <MAX32_PINMUX(1, 19, AF2)>;
+			};
+
+			/omit-if-no-ref/ hyp_d3_p1_20: hyp_d3_p1_20 {
+				pinmux = <MAX32_PINMUX(1, 20, AF1)>;
+			};
+
+			/omit-if-no-ref/ clcd_hsync_p1_20: clcd_hsync_p1_20 {
+				pinmux = <MAX32_PINMUX(1, 20, AF2)>;
+			};
+
+			/omit-if-no-ref/ hyp_d7_p1_21: hyp_d7_p1_21 {
+				pinmux = <MAX32_PINMUX(1, 21, AF1)>;
+			};
+
+			/omit-if-no-ref/ pt8_p1_21: pt8_p1_21 {
+				pinmux = <MAX32_PINMUX(1, 21, AF2)>;
+			};
+
+			/omit-if-no-ref/ spi1_ss0_p1_23: spi1_ss0_p1_23 {
+				pinmux = <MAX32_PINMUX(1, 23, AF1)>;
+			};
+
+			/omit-if-no-ref/ clcd_b1_p1_23: clcd_b1_p1_23 {
+				pinmux = <MAX32_PINMUX(1, 23, AF2)>;
+			};
+
+			/omit-if-no-ref/ spi1_ss2_p1_24: spi1_ss2_p1_24 {
+				pinmux = <MAX32_PINMUX(1, 24, AF1)>;
+			};
+
+			/omit-if-no-ref/ clcd_b2_p1_24: clcd_b2_p1_24 {
+				pinmux = <MAX32_PINMUX(1, 24, AF2)>;
+			};
+
+			/omit-if-no-ref/ spi1_ss1_p1_25: spi1_ss1_p1_25 {
+				pinmux = <MAX32_PINMUX(1, 25, AF1)>;
+			};
+
+			/omit-if-no-ref/ clcd_b3_p1_25: clcd_b3_p1_25 {
+				pinmux = <MAX32_PINMUX(1, 25, AF2)>;
+			};
+
+			/omit-if-no-ref/ spi1_sck_p1_26: spi1_sck_p1_26 {
+				pinmux = <MAX32_PINMUX(1, 26, AF1)>;
+			};
+
+			/omit-if-no-ref/ clcd_b4_p1_26: clcd_b4_p1_26 {
+				pinmux = <MAX32_PINMUX(1, 26, AF2)>;
+			};
+
+			/omit-if-no-ref/ spi1_ss3_p1_27: spi1_ss3_p1_27 {
+				pinmux = <MAX32_PINMUX(1, 27, AF1)>;
+			};
+
+			/omit-if-no-ref/ clcd_b5_p1_27: clcd_b5_p1_27 {
+				pinmux = <MAX32_PINMUX(1, 27, AF2)>;
+			};
+
+			/omit-if-no-ref/ spi1_miso_p1_28: spi1_miso_p1_28 {
+				pinmux = <MAX32_PINMUX(1, 28, AF1)>;
+			};
+
+			/omit-if-no-ref/ clcd_b6_p1_28: clcd_b6_p1_28 {
+				pinmux = <MAX32_PINMUX(1, 28, AF2)>;
+			};
+
+			/omit-if-no-ref/ spi1_mosi_p1_29: spi1_mosi_p1_29 {
+				pinmux = <MAX32_PINMUX(1, 29, AF1)>;
+			};
+
+			/omit-if-no-ref/ clcd_b7_p1_29: clcd_b7_p1_29 {
+				pinmux = <MAX32_PINMUX(1, 29, AF2)>;
+			};
+
+			/omit-if-no-ref/ owm_pupen_p1_30: owm_pupen_p1_30 {
+				pinmux = <MAX32_PINMUX(1, 30, AF1)>;
+			};
+
+			/omit-if-no-ref/ clcd_r0_p1_30: clcd_r0_p1_30 {
+				pinmux = <MAX32_PINMUX(1, 30, AF2)>;
+			};
+
+			/omit-if-no-ref/ owm_io_p1_31: owm_io_p1_31 {
+				pinmux = <MAX32_PINMUX(1, 31, AF1)>;
+			};
+
+			/omit-if-no-ref/ clcd_r1_p1_31: clcd_r1_p1_31 {
+				pinmux = <MAX32_PINMUX(1, 31, AF2)>;
+			};
+
+			/omit-if-no-ref/ spi2_ss2_p2_0: spi2_ss2_p2_0 {
+				pinmux = <MAX32_PINMUX(2, 0, AF1)>;
+			};
+
+			/omit-if-no-ref/ pt9_p2_0: pt9_p2_0 {
+				pinmux = <MAX32_PINMUX(2, 0, AF2)>;
+			};
+
+			/omit-if-no-ref/ spi2_ss1_p2_1: spi2_ss1_p2_1 {
+				pinmux = <MAX32_PINMUX(2, 1, AF1)>;
+			};
+
+			/omit-if-no-ref/ pt10_p2_1: pt10_p2_1 {
+				pinmux = <MAX32_PINMUX(2, 1, AF2)>;
+			};
+
+			/omit-if-no-ref/ spi2_sck_p2_2: spi2_sck_p2_2 {
+				pinmux = <MAX32_PINMUX(2, 2, AF1)>;
+			};
+
+			/omit-if-no-ref/ clcd_lend_p2_2: clcd_lend_p2_2 {
+				pinmux = <MAX32_PINMUX(2, 2, AF2)>;
+			};
+
+			/omit-if-no-ref/ spi2_miso_p2_3: spi2_miso_p2_3 {
+				pinmux = <MAX32_PINMUX(2, 3, AF1)>;
+			};
+
+			/omit-if-no-ref/ clcd_pwren_p2_3: clcd_pwren_p2_3 {
+				pinmux = <MAX32_PINMUX(2, 3, AF2)>;
+			};
+
+			/omit-if-no-ref/ spi2_mosi_p2_4: spi2_mosi_p2_4 {
+				pinmux = <MAX32_PINMUX(2, 4, AF1)>;
+			};
+
+			/omit-if-no-ref/ spi2_ss0_p2_5: spi2_ss0_p2_5 {
+				pinmux = <MAX32_PINMUX(2, 5, AF1)>;
+			};
+
+			/omit-if-no-ref/ pt11_p2_5: pt11_p2_5 {
+				pinmux = <MAX32_PINMUX(2, 5, AF2)>;
+			};
+
+			/omit-if-no-ref/ spi2_ss3_p2_6: spi2_ss3_p2_6 {
+				pinmux = <MAX32_PINMUX(2, 6, AF1)>;
+			};
+
+			/omit-if-no-ref/ clcd_vsync_p2_6: clcd_vsync_p2_6 {
+				pinmux = <MAX32_PINMUX(2, 6, AF2)>;
+			};
+
+			/omit-if-no-ref/ i2c0_sda_p2_7: i2c0_sda_p2_7 {
+				pinmux = <MAX32_PINMUX(2, 7, AF1)>;
+			};
+
+			/omit-if-no-ref/ i2c0_scl_p2_8: i2c0_scl_p2_8 {
+				pinmux = <MAX32_PINMUX(2, 8, AF1)>;
+			};
+
+			/omit-if-no-ref/ uart0_cts_p2_9: uart0_cts_p2_9 {
+				pinmux = <MAX32_PINMUX(2, 9, AF1)>;
+			};
+
+			/omit-if-no-ref/ pt12_p2_9: pt12_p2_9 {
+				pinmux = <MAX32_PINMUX(2, 9, AF2)>;
+			};
+
+			/omit-if-no-ref/ uart0_rts_p2_10: uart0_rts_p2_10 {
+				pinmux = <MAX32_PINMUX(2, 10, AF1)>;
+			};
+
+			/omit-if-no-ref/ pt14_p2_10: pt14_p2_10 {
+				pinmux = <MAX32_PINMUX(2, 10, AF2)>;
+			};
+
+			/omit-if-no-ref/ uart0_rx_p2_11: uart0_rx_p2_11 {
+				pinmux = <MAX32_PINMUX(2, 11, AF1)>;
+			};
+
+			/omit-if-no-ref/ pt13_p2_11: pt13_p2_11 {
+				pinmux = <MAX32_PINMUX(2, 11, AF2)>;
+			};
+
+			/omit-if-no-ref/ uart0_tx_p2_12: uart0_tx_p2_12 {
+				pinmux = <MAX32_PINMUX(2, 12, AF1)>;
+			};
+
+			/omit-if-no-ref/ pt15_p2_12: pt15_p2_12 {
+				pinmux = <MAX32_PINMUX(2, 12, AF2)>;
+			};
+
+			/omit-if-no-ref/ uart1_cts_p2_13: uart1_cts_p2_13 {
+				pinmux = <MAX32_PINMUX(2, 13, AF1)>;
+			};
+
+			/omit-if-no-ref/ clcd_r2_p2_13: clcd_r2_p2_13 {
+				pinmux = <MAX32_PINMUX(2, 13, AF2)>;
+			};
+
+			/omit-if-no-ref/ uart1_rx_p2_14: uart1_rx_p2_14 {
+				pinmux = <MAX32_PINMUX(2, 14, AF1)>;
+			};
+
+			/omit-if-no-ref/ clcd_r3_p2_14: clcd_r3_p2_14 {
+				pinmux = <MAX32_PINMUX(2, 14, AF2)>;
+			};
+
+			/omit-if-no-ref/ uart1_rts_p2_15: uart1_rts_p2_15 {
+				pinmux = <MAX32_PINMUX(2, 15, AF1)>;
+			};
+
+			/omit-if-no-ref/ clcd_r4_p2_15: clcd_r4_p2_15 {
+				pinmux = <MAX32_PINMUX(2, 15, AF2)>;
+			};
+
+			/omit-if-no-ref/ uart1_tx_p2_16: uart1_tx_p2_16 {
+				pinmux = <MAX32_PINMUX(2, 16, AF1)>;
+			};
+
+			/omit-if-no-ref/ clcd_r5_p2_16: clcd_r5_p2_16 {
+				pinmux = <MAX32_PINMUX(2, 16, AF2)>;
+			};
+
+			/omit-if-no-ref/ i2c1_sda_p2_17: i2c1_sda_p2_17 {
+				pinmux = <MAX32_PINMUX(2, 17, AF1)>;
+			};
+
+			/omit-if-no-ref/ clcd_r6_p2_17: clcd_r6_p2_17 {
+				pinmux = <MAX32_PINMUX(2, 17, AF2)>;
+			};
+
+			/omit-if-no-ref/ i2c1_scl_p2_18: i2c1_scl_p2_18 {
+				pinmux = <MAX32_PINMUX(2, 18, AF1)>;
+			};
+
+			/omit-if-no-ref/ clcd_r7_p2_18: clcd_r7_p2_18 {
+				pinmux = <MAX32_PINMUX(2, 18, AF2)>;
+			};
+
+			/omit-if-no-ref/ pt6_p2_23: pt6_p2_23 {
+				pinmux = <MAX32_PINMUX(2, 23, AF1)>;
+			};
+
+			/omit-if-no-ref/ spixr_sdio3_p2_23: spixr_sdio3_p2_23 {
+				pinmux = <MAX32_PINMUX(2, 23, AF2)>;
+			};
+
+			/omit-if-no-ref/ pt11_p2_25: pt11_p2_25 {
+				pinmux = <MAX32_PINMUX(2, 25, AF1)>;
+			};
+
+			/omit-if-no-ref/ pt12_p2_26: pt12_p2_26 {
+				pinmux = <MAX32_PINMUX(2, 26, AF1)>;
+			};
+
+			/omit-if-no-ref/ pt14_p2_28: pt14_p2_28 {
+				pinmux = <MAX32_PINMUX(2, 28, AF1)>;
+			};
+
+			/omit-if-no-ref/ pt1_p2_30: pt1_p2_30 {
+				pinmux = <MAX32_PINMUX(2, 30, AF1)>;
+			};
+
+			/omit-if-no-ref/ pdown_p3_0: pdown_p3_0 {
+				pinmux = <MAX32_PINMUX(3, 0, AF1)>;
+			};
+
+			/omit-if-no-ref/ hyp_cs1_p3_0: hyp_cs1_p3_0 {
+				pinmux = <MAX32_PINMUX(3, 0, AF2)>;
+			};
+
+			/omit-if-no-ref/ spi0_miso_p3_1: spi0_miso_p3_1 {
+				pinmux = <MAX32_PINMUX(3, 1, AF1)>;
+			};
+
+			/omit-if-no-ref/ spi0_mosi_p3_2: spi0_mosi_p3_2 {
+				pinmux = <MAX32_PINMUX(3, 2, AF1)>;
+			};
+
+			/omit-if-no-ref/ spi0_sck_p3_3: spi0_sck_p3_3 {
+				pinmux = <MAX32_PINMUX(3, 3, AF1)>;
+			};
+
+			/omit-if-no-ref/ tmr0_p3_4: tmr0_p3_4 {
+				pinmux = <MAX32_PINMUX(3, 4, AF1)>;
+			};
+
+			/omit-if-no-ref/ tmr2_p3_5: tmr2_p3_5 {
+				pinmux = <MAX32_PINMUX(3, 5, AF1)>;
+			};
+
+			/omit-if-no-ref/ tmr4_p3_6: tmr4_p3_6 {
+				pinmux = <MAX32_PINMUX(3, 6, AF1)>;
+			};
+
+			/omit-if-no-ref/ tmr1_p3_7: tmr1_p3_7 {
+				pinmux = <MAX32_PINMUX(3, 7, AF1)>;
+			};
+
+			/omit-if-no-ref/ tmr3_p3_8: tmr3_p3_8 {
+				pinmux = <MAX32_PINMUX(3, 8, AF1)>;
+			};
+
+			/omit-if-no-ref/ tmr5_p3_9: tmr5_p3_9 {
+				pinmux = <MAX32_PINMUX(3, 9, AF1)>;
+			};
+		};
+	};
+};

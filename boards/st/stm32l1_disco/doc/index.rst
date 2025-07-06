@@ -1,7 +1,4 @@
-.. _stm32l1_disco_board:
-
-ST STM32L1 Discovery
-####################
+.. zephyr:board:: stm32l1_disco
 
 Overview
 ********
@@ -16,16 +13,13 @@ packaged software examples.
 There
 are two variants of the board:
 
-- STM32LDISCOVERY targets STM32L152RBT6, with 128K flash, 16K RAM
-- 32L152CDISCOVERY targets STM32L152RCT6, with 256K flash, 32K RAM
+- STM32LDISCOVERY targets STM32L152RBT6, with 128K flash, 16K RAM, 4K EEPROM
+- STM32L152CDISCOVERY targets STM32L152RCT6, with 256K flash, 32K RAM, 8K EEPROM
 
-The STM32LDISCOVERY is no longer sold, but was widely available.  The current
-configuration assumes only 128K flash and 16K RAM, so it builds and runs
-on both variants out of the box.
+The STM32LDISCOVERY is no longer sold, but was widely available.
+stm32l1_disco configuration enables support for STM32LDISCOVERY board and
+stm32l152c_disco configuration enables support for STM32L152CDISCOVERY board.
 
-.. image:: img/stm32l1_disco.jpg
-     :align: center
-     :alt: STM32LDISCOVERY
 
 More information about the board can be found at the `STM32LDISCOVERY website`_.
 
@@ -53,50 +47,7 @@ More information about STM32L151x can be found in the `STM32L1x reference manual
 Supported Features
 ==================
 
-The Zephyr stm32l1_disco board configuration supports the following hardware features:
-
-.. list-table:: Supported hardware
-   :header-rows: 1
-
-   * - Interface
-     - Controller
-     - Driver/component
-   * - NVIC
-     - on-chip
-     - nested vector interrupt controller
-   * - UART
-     - on-chip
-     - serial port-polling
-       serial port-interrupt
-   * - PINMUX
-     - on-chip
-     - pinmux
-   * - GPIO
-     - on-chip
-     - gpio
-   * - CLOCK
-     - on-chip
-     - reset and clock control
-   * - FLASH
-     - on-chip
-     - flash memory
-   * - EEPROM
-     - on-chip
-     - eeprom
-   * - WATCHDOG
-     - on-chip
-     - window watchdog
-   * - I2C
-     - on-chip
-     - i2c
-   * - SPI
-     - on-chip
-     - spi
-
-Other hardware features are not yet supported in this Zephyr port.
-
-The default configuration can be found in
-:zephyr_file:`boards/st/stm32l1_disco/stm32l1_disco_defconfig`
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -133,6 +84,10 @@ For more details please refer to `STM32L1DISCOVERY board User Manual`_.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
+STM32L1DISCOVERY and STM32L152CDISCOVERY boards include an ST-LINK/V2 embedded debug tool interface.
+
 Applications for the ``stm32l1_disco`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -140,8 +95,16 @@ flashed in the usual way (see :ref:`build_an_application` and
 Flashing
 ========
 
-STM32L1DISCOVERY board includes an ST-LINK/V2 embedded debug tool interface.
-This interface is supported by the openocd version included in the Zephyr SDK.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, OpenOCD or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
 
 Flashing an application
 -----------------------
@@ -180,3 +143,9 @@ References
 
 .. _STM32L1DISCOVERY board User Manual:
    https://www.st.com/resource/en/user_manual/dm00027954.pdf
+
+.. _STM32L152CDISCOVERY board User Manual:
+   https://www.st.com/resource/en/user_manual/um1079-discovery-kit-with-stm32l152rc-mcu-stmicroelectronics.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

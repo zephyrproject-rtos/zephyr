@@ -25,6 +25,7 @@
 
 	leds: leds {
 		compatible = "gpio-leds";
+
 		green_led_1: led_4 {
 			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
 			label = "User LD4";
@@ -33,6 +34,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
@@ -101,6 +103,7 @@
 &timers3 {
 	st,prescaler = <10000>;
 	status = "okay";
+
 	pwm3: pwm {
 		status = "okay";
 		pinctrl-0 = <&tim3_ch1_pa6>;
@@ -139,7 +142,7 @@
 &adc1 {
 	pinctrl-0 = <&adc1_in0_pa0 &adc1_in1_pa1>;
 	pinctrl-names = "default";
-	st,adc-clock-source = <SYNC>;
+	st,adc-clock-source = "SYNC";
 	st,adc-prescaler = <4>;
 	status = "okay";
 	vref-mv = <3300>;
@@ -155,10 +158,10 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		/* Set 2KB of storage at the end of 128KB flash */
-		storage_partition: partition@1f800 {
+		/* Set 4KB of storage at the end of 128KB flash */
+		storage_partition: partition@1f000 {
 			label = "storage";
-			reg = <0x0001f800 DT_SIZE_K(2)>;
+			reg = <0x0001f000 DT_SIZE_K(4)>;
 		};
 	};
 };

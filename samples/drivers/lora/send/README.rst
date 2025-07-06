@@ -21,7 +21,7 @@ Build and flash the sample as follows, changing ``b_l072z_lrwan1`` for
 your board, where your board has a ``lora0`` alias in the devicetree.
 
 .. zephyr-app-commands::
-   :zephyr-app: zephyr/samples/drivers/lora/send
+   :zephyr-app: samples/drivers/lora/send
    :host-os: unix
    :board: b_l072z_lrwan1
    :goals: build flash
@@ -32,6 +32,6 @@ Sample Output
 
 .. code-block:: console
 
-    [00:00:00.531,000] <inf> lora_send: Data sent!
-    [00:00:01.828,000] <inf> lora_send: Data sent!
-    [00:00:03.125,000] <inf> lora_send: Data sent!
+    [00:00:00.531,000] <inf> lora_send: Data sent 0!
+    [00:00:01.828,000] <inf> lora_send: Data sent 1!
+    [00:00:03.125,000] <inf> lora_send: Data sent 2!

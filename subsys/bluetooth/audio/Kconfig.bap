@@ -7,33 +7,29 @@
 #
 
 config BT_BAP_UNICAST
-	bool
-	depends on BT_CONN
-	select BT_SMP
-	select BT_ISO_UNICAST
+	def_bool BT_BAP_UNICAST_SERVER || BT_BAP_UNICAST_CLIENT
 
 config BT_BAP_UNICAST_SERVER
-	bool "Bluetooth Unicast Audio Server Support [EXPERIMENTAL]"
-	select EXPERIMENTAL
-	select BT_PERIPHERAL
-	select BT_BAP_UNICAST
-	select BT_ISO_PERIPHERAL
-	select BT_GATT_DYNAMIC_DB
-	select BT_GATT_CACHING
-	select BT_ASCS
+	bool "Bluetooth Unicast Audio Server Support"
+	depends on BT_GATT_DYNAMIC_DB
+	depends on BT_PERIPHERAL
+	depends on BT_ISO_PERIPHERAL
+	depends on BT_ASCS
+	depends on BT_BONDABLE
+	select BT_PAC_SRC if BT_ASCS_ASE_SNK
+	select BT_PAC_SNK if BT_ASCS_ASE_SRC
 	help
 	  This option enables support for Bluetooth Unicast Audio Server
 	  using Isochronous channels.
 
 config BT_BAP_UNICAST_CLIENT
-	bool "Bluetooth Unicast Audio Client Support [EXPERIMENTAL]"
-	select EXPERIMENTAL
-	select BT_BAP_UNICAST
-	select BT_ISO_CENTRAL
-	select BT_CENTRAL
-	select BT_GATT_CLIENT
-	select BT_GATT_AUTO_DISCOVER_CCC
-	select BT_GATT_AUTO_UPDATE_MTU
+	bool "Bluetooth Unicast Audio Client Support"
+	depends on BT_GATT_CLIENT
+	depends on BT_GATT_AUTO_DISCOVER_CCC
+	depends on BT_GATT_AUTO_UPDATE_MTU
+	depends on BT_CENTRAL
+	depends on BT_ISO_CENTRAL
+	depends on BT_BONDABLE
 	help
 	  This option enables support for Bluetooth Unicast Audio Client
 	  using Isochronous channels.
@@ -41,7 +37,7 @@ config BT_BAP_UNICAST_CLIENT
 config BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE
 	int "Codec Specific Configuration Data Size"
 	default 19
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  Number of octets to support for Codec Specific Configuration data.
 	  The default value 19 matches the required fields for the LC3 codec.
@@ -49,7 +45,7 @@ config BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE
 config BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE
 	int "Codec Specific Configuration Metadata Size"
 	default 4
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  Number of octets to support for Codec Specific Configuration metadata.
 
@@ -66,7 +62,7 @@ config BT_BAP_BASS_MAX_SUBGROUPS
 config BT_AUDIO_CODEC_CAP_MAX_DATA_SIZE
 	int "Codec Capabilities Data Size"
 	default 19
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  Number of octets to support for Codec Specific Capabilities data.
 	  The default value 19 matches the required fields for the LC3 codec.
@@ -74,14 +70,13 @@ config BT_AUDIO_CODEC_CAP_MAX_DATA_SIZE
 config BT_AUDIO_CODEC_CAP_MAX_METADATA_SIZE
 	int "Codec Capabilities Metadata Size"
 	default 4
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  Number of octets to support for Codec Specific Capabilities metadata.
 
 if BT_BAP_UNICAST_CLIENT
 config BT_BAP_UNICAST_CLIENT_GROUP_COUNT
 	int "Basic Audio Unicast Group count"
-	depends on BT_BAP_UNICAST
 	default BT_ISO_MAX_CIG
 	range 1 BT_ISO_MAX_CIG
 	help
@@ -102,7 +97,7 @@ config BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT
 config BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT
 	int "Basic Audio Profile ASE Sink count"
 	default 2
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  This option enables caching a number of Audio Stream Endpoint Sink
 	  instances for Basic Audio Profile on a per connection basis.
@@ -110,26 +105,22 @@ config BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT
 config BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT
 	int "Basic Audio Profile ASE Source count"
 	default 2
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  This option enables caching a number of Audio Stream Endpoint Source
 	  instances for Basic Audio Profile on a per connection basis.
 
 config BT_BAP_UNICAST_CLIENT_ASE_SNK
 	def_bool BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
-	select BT_AUDIO_TX
 
 config BT_BAP_UNICAST_CLIENT_ASE_SRC
 	def_bool BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
-	select BT_AUDIO_RX
 
 endif # BT_BAP_UNICAST_CLIENT
 
 config BT_BAP_BROADCAST_SOURCE
-	bool "Bluetooth Broadcast Source Audio Support [EXPERIMENTAL]"
-	select EXPERIMENTAL
-	select BT_ISO_BROADCASTER
-	select BT_AUDIO_TX
+	bool "Bluetooth Broadcast Source Audio Support"
+	depends on BT_ISO_BROADCASTER
 	help
 	  This option enables support for Bluetooth Broadcast Source Audio using
 	  Isochronous channels.
@@ -166,11 +157,9 @@ config BT_BAP_BROADCAST_SRC_STREAM_COUNT
 endif # BT_BAP_BROADCAST_SOURCE
 
 config BT_BAP_BROADCAST_SINK
-	bool "Bluetooth Broadcast Sink Audio Support [EXPERIMENTAL]"
-	select EXPERIMENTAL
-	select BT_ISO_SYNC_RECEIVER
-	select BT_AUDIO_RX
-	select BT_PAC_SNK
+	bool "Bluetooth Broadcast Sink Audio Support"
+	depends on BT_ISO_SYNC_RECEIVER
+	depends on BT_PAC_SNK
 	depends on BT_PERIPHERAL
 	depends on BT_BAP_SCAN_DELEGATOR
 	help
@@ -181,9 +170,8 @@ if BT_BAP_BROADCAST_SINK
 
 config BT_BAP_BROADCAST_SNK_SUBGROUP_COUNT
 	int "Basic Audio Profile Broadcast Sink subgroup count"
-	default 1
-	range 1 BT_ISO_MAX_CHAN if BT_ISO_MAX_CHAN < 31
-	range 1 31
+	default BT_BAP_BASS_MAX_SUBGROUPS
+	range 1 BT_BAP_BASS_MAX_SUBGROUPS
 	help
 	  This option sets the maximum number of subgroups per broadcast sink
 	  to support.
@@ -210,12 +198,13 @@ config BT_BAP_BROADCAST_SNK_STREAM_COUNT
 endif # BT_BAP_BROADCAST_SINK
 
 config BT_BAP_SCAN_DELEGATOR
-	bool "Basic Audio Profile Scan Delegator role support [EXPERIMENTAL]"
-	select EXPERIMENTAL
-	select BT_OBSERVER
-	select BT_EXT_ADV
-	select BT_PER_ADV_SYNC
-	select BT_ISO_SYNC_RECEIVER
+	bool "Basic Audio Profile Scan Delegator role support"
+	depends on BT_EXT_ADV
+	depends on BT_PER_ADV_SYNC
+	depends on BT_ISO_SYNC_RECEIVER
+	depends on BT_OBSERVER
+	depends on BT_GATT_DYNAMIC_DB
+	depends on BT_BONDABLE
 	help
 	  This option enables support for the Scan Delegator role and the
 	  Broadcast Audio Scan Service (BASS).
@@ -243,15 +232,15 @@ config BT_BAP_SCAN_DELEGATOR_BUF_TIMEOUT
 endif # BT_BAP_SCAN_DELEGATOR
 
 config BT_BAP_BROADCAST_ASSISTANT
-	bool "Basic Audio Profile Broadcast Assistant role support [EXPERIMENTAL]"
-	select EXPERIMENTAL
-	select BT_OBSERVER
-	select BT_EXT_ADV
-	select BT_PER_ADV_SYNC
-	select BT_ISO_SYNC_RECEIVER
-	select BT_GATT_CLIENT
-	select BT_GATT_AUTO_DISCOVER_CCC
-	select BT_GATT_AUTO_UPDATE_MTU
+	bool "Basic Audio Profile Broadcast Assistant role support"
+	depends on BT_EXT_ADV
+	depends on BT_PER_ADV_SYNC
+	depends on BT_ISO_SYNC_RECEIVER
+	depends on BT_GATT_CLIENT
+	depends on BT_GATT_AUTO_DISCOVER_CCC
+	depends on BT_GATT_AUTO_UPDATE_MTU
+	depends on BT_OBSERVER
+	depends on BT_BONDABLE
 	help
 	  This option enables support for the Broadcast Assistant role.
 
@@ -260,7 +249,7 @@ if BT_BAP_BROADCAST_ASSISTANT
 config BT_BAP_BROADCAST_ASSISTANT_RECV_STATE_COUNT
 	int "Broadcast Assistant Max Receive State Count"
 	default 1
-	range 1 255
+	range 1 $(UINT8_MAX)
 	help
 	  Sets the number of maximum receive stat characteristics that will be
 	  discovered and ready to use. Each characteristic may hold information

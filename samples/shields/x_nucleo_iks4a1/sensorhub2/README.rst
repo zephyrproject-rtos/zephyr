@@ -23,13 +23,13 @@ Requirements
 
 This sample communicates over I2C with the X-NUCLEO-IKS4A1 shield
 stacked on a board with an Arduino connector, e.g. the
-:ref:`nucleo_f411re_board` board.
+:zephyr:board:`nucleo_f411re` board.
 
 Building and Running
 ********************
 
 This sample runs with X-NUCLEO-IKS4A1 stacked on any board with a matching
-Arduino connector. For this example, we use a :ref:`nucleo_f411re_board` board.
+Arduino connector. For this example, we use a :zephyr:board:`nucleo_f411re` board.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/shields/x_nucleo_iks4a1/sensorhub2/

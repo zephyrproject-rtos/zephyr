@@ -9,10 +9,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/types.h>
-#include <zephyr/bluetooth/conn.h>
+#include <stdbool.h>
+#include <stdint.h>
+
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/types.h>
 
 #define BT_BAP_BASS_SCAN_STATE_NOT_SCANNING   0x00
 #define BT_BAP_BASS_SCAN_STATE_SCANNING       0x01
@@ -72,7 +78,7 @@ struct bt_bap_bass_cp_mod_src {
 struct bt_bap_bass_cp_broadcase_code {
 	uint8_t opcode;
 	uint8_t src_id;
-	uint8_t broadcast_code[16];
+	uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
 } __packed;
 
 struct bt_bap_bass_cp_rem_src {
@@ -122,4 +128,17 @@ static inline const char *bt_bap_big_enc_state_str(uint8_t state)
 	default:
 		return "unknown state";
 	}
+}
+
+static inline bool valid_bis_syncs(uint32_t bis_sync)
+{
+	if (bis_sync == BT_BAP_BIS_SYNC_NO_PREF) {
+		return true;
+	}
+
+	if (bis_sync > BIT_MASK(BT_ISO_MAX_GROUP_ISO_COUNT)) {
+		return false;
+	}
+
+	return true;
 }

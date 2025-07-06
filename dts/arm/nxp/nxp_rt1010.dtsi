@@ -8,11 +8,6 @@
 
 &flexram {
 	flexram,num-ram-banks = <4>;
-	/* default fuse */
-	flexram,bank-spec = <FLEXRAM_OCRAM>,
-			     <FLEXRAM_OCRAM>,
-			     <FLEXRAM_DTCM>,
-			     <FLEXRAM_ITCM>;
 };
 
 &sysclk {
@@ -57,6 +52,8 @@
 };
 
 &edma0 {
+	/* Each channel has separate interrupt entry */
+	irq-shared-offset = <0>;
 	dma-channels = <16>;
 };
 
@@ -115,7 +112,7 @@
 			clocks = <&ccm IMX_CCM_FLEXSPI_CLK 0x0 0x0>;
 		};
 
-		/* Remove SEMC, it does'nt exist on RT1010 */
+		/* Remove SEMC, it doesn't exist on RT1010 */
 		/delete-node/ semc0@402f0000;
 
 		/* Fixup LPI2C1 and LPI2C2, they have different base addr on RT1010 */
@@ -123,7 +120,7 @@
 		/delete-node/ i2c@403f4000;
 
 		lpi2c1: i2c@401a4000 {
-			compatible = "nxp,imx-lpi2c";
+			compatible = "nxp,lpi2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -134,7 +131,7 @@
 		};
 
 		lpi2c2: i2c@401a8000 {
-			compatible = "nxp,imx-lpi2c";
+			compatible = "nxp,lpi2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -155,23 +152,27 @@
 		/delete-node/ spi@40394000;
 		/delete-node/ spi@40398000;
 		lpspi1: spi@40194000 {
-			compatible = "nxp,imx-lpspi";
+			compatible = "nxp,lpspi";
 			reg = <0x40194000 0x4000>;
 			interrupts = <32 3>;
 			status = "disabled";
 			clocks = <&ccm IMX_CCM_LPSPI_CLK 0x6c 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <16>;
+			rx-fifo-size = <16>;
 		};
 
 		lpspi2: spi@40198000 {
-			compatible = "nxp,imx-lpspi";
+			compatible = "nxp,lpspi";
 			reg = <0x40198000 0x4000>;
 			interrupts = <33 3>;
 			status = "disabled";
 			clocks = <&ccm IMX_CCM_LPSPI_CLK 0x6c 2>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <16>;
+			rx-fifo-size = <16>;
 		};
 
 		/* Remove LPUART5-8, they don't exist on RT1010 */
@@ -238,7 +239,7 @@
 		/delete-node/ flexpwm@403e4000;
 		/delete-node/ flexpwm@403e8000;
 
-		/* Remove Ethernet, it does'nt exist on RT1010 */
+		/* Remove Ethernet, it doesn't exist on RT1010 */
 		/delete-node/ enet@402d8000;
 
 		/* Fixup USB it has different base addr and interrupt numbers on RT1010 */
@@ -253,14 +254,14 @@
 			status = "disabled";
 		};
 
-		/* Remove USB2, it does'nt exist on RT1010 */
+		/* Remove USB2, it doesn't exist on RT1010 */
 		/delete-node/ usbd@402e0200;
 
 		/* Remove USDHC, they don't exist on RT1010 */
 		/delete-node/ usdhc@402c0000;
 		/delete-node/ usdhc@402c4000;
 
-		/* Remove CSI, it does'nt exist on RT1010 */
+		/* Remove CSI, it doesn't exist on RT1010 */
 		/delete-node/ csi@402bc000;
 
 		/* Remove FLEXCAN, they don't exist on RT1010 */
@@ -268,7 +269,7 @@
 		/delete-node/ can@401d4000;
 		/delete-node/ can@401d8000;
 
-		/* Remove WDOG2, it does'nt exist on RT1010 */
+		/* Remove WDOG2, it doesn't exist on RT1010 */
 		/delete-node/ wdog@400d0000;
 
 		/* Fix SAI1, 3, it has different base addr on RT1010 */
@@ -341,7 +342,7 @@
 			status = "disabled";
 		};
 
-		/* Remove SAI2, it does'nt exist on RT1010 */
+		/* Remove SAI2, it doesn't exist on RT1010 */
 		/delete-node/ sai@40388000;
 	};
 };

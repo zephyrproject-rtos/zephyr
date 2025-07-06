@@ -33,8 +33,8 @@ config ENTROPY_CC13XX_CC26XX_SAMPLES_PER_CYCLE
 
 config ENTROPY_CC13XX_CC26XX_ALARM_THRESHOLD
 	int "Threshold for detected repeated patterns"
-	range 0 255
-	default 255
+	range 0 $(UINT8_MAX)
+	default $(UINT8_MAX)
 	help
 	  The number of samples detected with repeating patterns before an alarm
 	  event is triggered. The associated FRO is automatically shut down.

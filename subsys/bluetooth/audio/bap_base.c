@@ -6,18 +6,30 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
-#include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/check.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 
 LOG_MODULE_REGISTER(bt_bap_base, CONFIG_BT_BAP_BASE_LOG_LEVEL);
 
 /* The BASE and the following defines are defined by BAP v1.0.1, section 3.7.2.2 Basic Audio
  * Announcements
  */
-#define BASE_MAX_SIZE            (UINT8_MAX - 1 /* type */ - BT_UUID_SIZE_16)
 #define BASE_CODEC_ID_SIZE       (1 /* id */ + 2 /* cid */ + 2 /* vid */)
 #define BASE_PD_SIZE             3
 #define BASE_SUBGROUP_COUNT_SIZE 1
@@ -26,14 +38,14 @@ LOG_MODULE_REGISTER(bt_bap_base, CONFIG_BT_BAP_BASE_LOG_LEVEL);
 #define BASE_META_LEN_SIZE       1
 #define BASE_BIS_INDEX_SIZE      1
 #define BASE_BIS_CC_LEN_SIZE     1
-#define BASE_SUBGROUP_MAX_SIZE   (BASE_MAX_SIZE - BASE_PD_SIZE - BASE_SUBGROUP_COUNT_SIZE)
+#define BASE_SUBGROUP_MAX_SIZE   (BT_BASE_MAX_SIZE - BASE_PD_SIZE - BASE_SUBGROUP_COUNT_SIZE)
 #define BASE_SUBGROUP_MIN_SIZE                                                                     \
 	(BASE_NUM_BIS_SIZE + BASE_CODEC_ID_SIZE + BASE_CC_LEN_SIZE + BASE_META_LEN_SIZE +          \
 	 BASE_BIS_INDEX_SIZE + BASE_BIS_CC_LEN_SIZE)
 #define BASE_MIN_SIZE                                                                              \
 	(BT_UUID_SIZE_16 + BASE_PD_SIZE + BASE_SUBGROUP_COUNT_SIZE + BASE_SUBGROUP_MIN_SIZE)
 #define BASE_SUBGROUP_MAX_COUNT                                                                    \
-	((BASE_MAX_SIZE - BASE_PD_SIZE - BASE_SUBGROUP_COUNT_SIZE) / BASE_SUBGROUP_MIN_SIZE)
+	((BT_BASE_MAX_SIZE - BASE_PD_SIZE - BASE_SUBGROUP_COUNT_SIZE) / BASE_SUBGROUP_MIN_SIZE)
 
 static uint32_t base_pull_pd(struct net_buf_simple *net_buf)
 {
@@ -136,7 +148,7 @@ const struct bt_bap_base *bt_bap_base_get_base_from_ad(const struct bt_data *ad)
 	/* Pull all data to verify that the result BASE is valid */
 	base_pull_pd(&net_buf);
 	subgroup_count = net_buf_simple_pull_u8(&net_buf);
-	if (subgroup_count == 0 || subgroup_count > BASE_SUBGROUP_MAX_COUNT) {
+	if (!IN_RANGE(subgroup_count, 1U, BASE_SUBGROUP_MAX_COUNT)) {
 		LOG_DBG("Invalid subgroup count: %u", subgroup_count);
 
 		return NULL;
@@ -152,7 +164,7 @@ const struct bt_bap_base *bt_bap_base_get_base_from_ad(const struct bt_data *ad)
 		}
 
 		bis_count = base_pull_bis_count(&net_buf);
-		if (bis_count == 0 || bis_count > BT_ISO_MAX_GROUP_ISO_COUNT) {
+		if (!IN_RANGE(bis_count, 1U, BT_ISO_MAX_GROUP_ISO_COUNT)) {
 			LOG_DBG("Subgroup[%u]: Invalid BIS count: %u", i, bis_count);
 
 			return NULL;
@@ -190,7 +202,7 @@ const struct bt_bap_base *bt_bap_base_get_base_from_ad(const struct bt_data *ad)
 			}
 
 			bis_index = net_buf_simple_pull_u8(&net_buf);
-			if (bis_index == 0 || bis_index > BT_ISO_BIS_INDEX_MAX) {
+			if (!IN_RANGE(bis_index, 1U, BT_ISO_BIS_INDEX_MAX)) {
 				LOG_DBG("Subgroup[%u]: Invalid BIS index: %u", i, bis_index);
 
 				return NULL;
@@ -206,6 +218,58 @@ const struct bt_bap_base *bt_bap_base_get_base_from_ad(const struct bt_data *ad)
 	}
 
 	return base;
+}
+
+int bt_bap_base_get_size(const struct bt_bap_base *base)
+{
+	struct net_buf_simple net_buf;
+	uint8_t subgroup_count;
+	size_t size = 0;
+
+	CHECKIF(base == NULL) {
+		LOG_DBG("base is NULL");
+
+		return -EINVAL;
+	}
+
+	net_buf_simple_init_with_data(&net_buf, (void *)base, BT_BASE_MAX_SIZE);
+	base_pull_pd(&net_buf);
+	size += BASE_PD_SIZE;
+	subgroup_count = net_buf_simple_pull_u8(&net_buf);
+	size += BASE_SUBGROUP_COUNT_SIZE;
+
+	/* Parse subgroup data */
+	for (uint8_t i = 0U; i < subgroup_count; i++) {
+		uint8_t bis_count;
+		uint8_t len;
+
+		bis_count = base_pull_bis_count(&net_buf);
+		size += BASE_NUM_BIS_SIZE;
+
+		base_pull_codec_id(&net_buf, NULL);
+		size += BASE_CODEC_ID_SIZE;
+
+		/* Codec config */
+		len = base_pull_ltv(&net_buf, NULL);
+		size += len + BASE_CC_LEN_SIZE;
+
+		/* meta */
+		len = base_pull_ltv(&net_buf, NULL);
+		size += len + BASE_META_LEN_SIZE;
+
+		/* Parse BIS data */
+		for (uint8_t j = 0U; j < bis_count; j++) {
+			/* BIS index */
+			net_buf_simple_pull_u8(&net_buf);
+			size += BASE_BIS_INDEX_SIZE;
+
+			/* Codec config */
+			len = base_pull_ltv(&net_buf, NULL);
+			size += len + BASE_BIS_CC_LEN_SIZE;
+		}
+	}
+
+	return (int)size;
 }
 
 int bt_bap_base_get_pres_delay(const struct bt_bap_base *base)
@@ -236,7 +300,7 @@ int bt_bap_base_get_subgroup_count(const struct bt_bap_base *base)
 		return -EINVAL;
 	}
 
-	net_buf_simple_init_with_data(&net_buf, (void *)base, BASE_MAX_SIZE);
+	net_buf_simple_init_with_data(&net_buf, (void *)base, BT_BASE_MAX_SIZE);
 	base_pull_pd(&net_buf);
 	subgroup_count = net_buf_simple_pull_u8(&net_buf);
 
@@ -264,7 +328,7 @@ int bt_bap_base_foreach_subgroup(const struct bt_bap_base *base,
 		return -EINVAL;
 	}
 
-	net_buf_simple_init_with_data(&net_buf, (void *)base, BASE_MAX_SIZE);
+	net_buf_simple_init_with_data(&net_buf, (void *)base, BT_BASE_MAX_SIZE);
 	base_pull_pd(&net_buf);
 	subgroup_count = net_buf_simple_pull_u8(&net_buf);
 
@@ -528,7 +592,7 @@ static bool base_subgroup_bis_cb(const struct bt_bap_base_subgroup_bis *bis, voi
 {
 	uint32_t *base_bis_index_bitfield = user_data;
 
-	*base_bis_index_bitfield |= BIT(bis->index);
+	*base_bis_index_bitfield |= BT_ISO_BIS_INDEX_BIT(bis->index);
 
 	return true;
 }

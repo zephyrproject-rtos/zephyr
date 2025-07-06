@@ -1,5 +1,6 @@
 board:
   name: olimexino_stm32
+  full_name: OLIMEXINO-STM32
   vendor: olimex
   socs:
     - name: stm32f103xb

@@ -41,10 +41,6 @@ _DEVICE_ORD_PREFIX = "__device_dts_ord_"
 _DEVICE_INIT_LEVELS = ["EARLY", "PRE_KERNEL_1", "PRE_KERNEL_2", "POST_KERNEL",
                       "APPLICATION", "SMP"]
 
-# List of compatibles for node where the initialization priority should be the
-# opposite of the device tree inferred dependency.
-_INVERTED_PRIORITY_COMPATIBLES = frozenset()
-
 # List of compatibles for nodes where we don't check the priority.
 _IGNORE_COMPATIBLES = frozenset([
         # There is no direct dependency between the CDC ACM UART and the USB
@@ -172,7 +168,7 @@ class ZephyrInitLevels:
         elif elfclass == 64:
             ptrsize = 8
         else:
-            ValueError(f"Unknown pointer size for ELF class f{elfclass}")
+            raise ValueError(f"Unknown pointer size for ELF class f{elfclass}")
 
         section = self._elf.get_section(shidx)
         start = section.header.sh_addr
@@ -206,15 +202,14 @@ class ZephyrInitLevels:
                     raise ValueError(f"no symbol at addr {addr:08x}")
                 obj, size, shidx = self._objects[addr]
 
-                arg0_name = self._object_name(self._initlevel_pointer(addr, 0, shidx))
-                arg1_name = self._object_name(self._initlevel_pointer(addr, 1, shidx))
+                arg_name = self._object_name(self._initlevel_pointer(addr, 0, shidx))
 
-                self.initlevels[level].append(f"{obj}: {arg0_name}({arg1_name})")
+                self.initlevels[level].append(f"{obj}: {arg_name}")
 
-                ordinal = self._device_ord_from_name(arg1_name)
+                ordinal = self._device_ord_from_name(arg_name)
                 if ordinal:
                     prio = Priority(level, priority)
-                    self.devices[ordinal] = (prio, arg0_name)
+                    self.devices[ordinal] = prio
 
                 addr += size
                 priority += 1
@@ -260,15 +255,8 @@ class Validator():
                 self.log.info(f"Ignoring priority: {dev_node._binding.compatible}")
                 return
 
-        if dev_node._binding and dep_node._binding:
-            dev_compat = dev_node._binding.compatible
-            dep_compat = dep_node._binding.compatible
-            if (dev_compat, dep_compat) in _INVERTED_PRIORITY_COMPATIBLES:
-                self.log.info(f"Swapped priority: {dev_compat}, {dep_compat}")
-                dev_ord, dep_ord = dep_ord, dev_ord
-
-        dev_prio, dev_init = self._obj.devices.get(dev_ord, (None, None))
-        dep_prio, dep_init = self._obj.devices.get(dep_ord, (None, None))
+        dev_prio = self._obj.devices.get(dev_ord, None)
+        dep_prio = self._obj.devices.get(dep_ord, None)
 
         if not dev_prio or not dep_prio:
             return
@@ -283,12 +271,12 @@ class Validator():
                                "the devicetree dependencies.")
             self.errors += 1
             self.log.error(
-                    f"{dev_node.path} <{dev_init}> is initialized before its dependency "
-                    f"{dep_node.path} <{dep_init}> ({dev_prio} < {dep_prio})")
+                    f"{dev_node.path} is initialized before its dependency "
+                    f"{dep_node.path} ({dev_prio} < {dep_prio})")
         else:
             self.log.info(
-                    f"{dev_node.path} <{dev_init}> {dev_prio} > "
-                    f"{dep_node.path} <{dep_init}> {dep_prio}")
+                    f"{dev_node.path} {dev_prio} > "
+                    f"{dep_node.path} {dep_prio}")
 
     def check_edt(self):
         """Scan through all known devices and validate the init priorities."""
@@ -322,7 +310,7 @@ def _parse_args(argv):
     parser.add_argument("-i", "--initlevels", action="store_true",
                         help="print the initlevel functions instead of checking the device dependencies")
     parser.add_argument("--edt-pickle", default=pathlib.Path("edt.pickle"),
-                        help="name of the the pickled edtlib.EDT file",
+                        help="name of the pickled edtlib.EDT file",
                         type=pathlib.Path)
 
     return parser.parse_args(argv)

@@ -17,6 +17,8 @@ LOG_MODULE_REGISTER(net_dns_resolve_client_sample, LOG_LEVEL_DBG);
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/dns_resolve.h>
 
+#include "net_sample_common.h"
+
 #if defined(CONFIG_MDNS_RESOLVER)
 #if defined(CONFIG_NET_IPV4)
 static struct k_work_delayable mdns_ipv4_timer;
@@ -196,7 +198,7 @@ static void print_dhcpv4_addr(struct net_if *iface, struct net_if_addr *if_addr,
 }
 
 static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
-				  uint32_t mgmt_event,
+				  uint64_t mgmt_event,
 				  struct net_if *iface)
 {
 
@@ -394,6 +396,8 @@ int main(void)
 	struct net_if *iface = net_if_get_default();
 
 	LOG_INF("Starting DNS resolve sample");
+
+	wait_for_network();
 
 	setup_ipv4(iface);
 

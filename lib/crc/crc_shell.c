@@ -24,12 +24,15 @@ static const char *const crc_types[] = {
 	[CRC7_BE] = "7_be",
 	[CRC8] = "8",
 	[CRC8_CCITT] = "8_ccitt",
+	[CRC8_ROHC] = "8_rohc",
 	[CRC16] = "16",
 	[CRC16_ANSI] = "16_ansi",
 	[CRC16_CCITT] = "16_ccitt",
 	[CRC16_ITU_T] = "16_itu_t",
+	[CRC24_PGP] = "24_pgp",
 	[CRC32_C] = "32_c",
 	[CRC32_IEEE] = "32_ieee",
+	[CRC32_K_4_2] = "32_k_4_2",
 };
 
 static int string_to_crc_type(const char *s)

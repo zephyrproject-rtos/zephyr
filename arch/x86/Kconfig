@@ -43,7 +43,16 @@ config CPU_APOLLO_LAKE
 	help
 	  This option signifies the use of a CPU from the Apollo Lake family.
 
-config CPU_LAKEMONT
+config CPU_LAKEMONT_VALUE
+	bool
+	select CPU_HAS_FPU
+	select ARCH_HAS_STACK_PROTECTION if X86_MMU
+	select ARCH_HAS_USERSPACE if X86_MMU
+	select CPU_HAS_DCACHE
+	help
+	  This option signifies the use of a CPU from the Lakemont Value family.
+
+config CPU_LAKEMONT_PERF
 	bool
 	select CPU_HAS_FPU
 	select ARCH_HAS_STACK_PROTECTION if X86_MMU
@@ -55,7 +64,7 @@ config CPU_LAKEMONT
 	select X86_CPU_HAS_SSSE3
 	select CPU_HAS_DCACHE
 	help
-	  This option signifies the use of a CPU from the Lakemont family.
+	  This option signifies the use of a CPU from the Lakemont Performance family.
 
 #
 # Configuration common to both IA32 and Intel64 sub-architectures.
@@ -74,6 +83,7 @@ config X86_64
 	select X86_MMX
 	select X86_SSE
 	select X86_SSE2
+	select ARCH_HAS_DIRECTED_IPIS if !X2APIC
 
 menu "x86 Features"
 
@@ -177,6 +187,13 @@ endif # FPU || X86_64
 
 endmenu
 
+config X86_DEBUG_INFO
+	bool "System debugging information"
+	help
+	  This option enables the addition of various information that can be
+	  used by debuggers in debugging the system, or enable additional
+	  debugging information to be reported at runtime.
+
 config SRAM_OFFSET
 	default 0x100000 if X86_PC_COMPATIBLE
 	help
@@ -205,7 +222,7 @@ config MAX_IRQ_LINES
 config IRQ_OFFLOAD_VECTOR
 	int "IDT vector to use for IRQ offload"
 	default 33
-	range 32 255
+	range 32 $(UINT8_MAX)
 	depends on IRQ_OFFLOAD
 
 config PIC_DISABLE
@@ -417,15 +434,6 @@ config X86_DISABLE_SSBD
 	  Even if enabled, will have no effect on CPUs that do not
 	  require this feature.
 
-config DISABLE_SSBD
-	bool "Disable Speculative Store Bypass [DEPRECATED]"
-	depends on USERSPACE
-	default y if !X86_NO_SPECTRE_V4
-	select X86_DISABLE_SSBD
-	select DEPRECATED
-	help
-	  Deprecated. Use CONFIG_X86_DISABLE_SSBD instead.
-
 config X86_ENABLE_EXTENDED_IBRS
 	bool "Extended IBRS"
 	depends on USERSPACE
@@ -434,15 +442,6 @@ config X86_ENABLE_EXTENDED_IBRS
 	  This option will enable the Extended Indirect Branch Restricted
 	  Speculation 'always on' feature. This mitigates Indirect Branch
 	  Control vulnerabilities (aka Spectre V2).
-
-config ENABLE_EXTENDED_IBRS
-	bool "Extended IBRS [DEPRECATED]"
-	depends on USERSPACE
-	default y if !X86_NO_SPECTRE_V2
-	select X86_ENABLE_EXTENDED_IBRS
-	select DEPRECATED
-	help
-	  Deprecated. Use CONFIG_X86_ENABLE_EXTENDED_IBRS instead.
 
 config X86_BOUNDS_CHECK_BYPASS_MITIGATION
 	bool

@@ -5,15 +5,15 @@
  */
 
 #include <zephyr/logging/log.h>
-
+#include <zephyr/drivers/sensor_clock.h>
 #include "icm42688.h"
 #include "icm42688_decoder.h"
 #include "icm42688_reg.h"
 #include "icm42688_rtio.h"
 
-LOG_MODULE_DECLARE(ICM42688_RTIO);
+LOG_MODULE_DECLARE(ICM42688_RTIO, CONFIG_SENSOR_LOG_LEVEL);
 
-int icm42688_submit_stream(const struct device *sensor, struct rtio_iodev_sqe *iodev_sqe)
+void icm42688_submit_stream(const struct device *sensor, struct rtio_iodev_sqe *iodev_sqe)
 {
 	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
 	struct icm42688_dev_data *data = sensor->data;
@@ -35,7 +35,8 @@ int icm42688_submit_stream(const struct device *sensor, struct rtio_iodev_sqe *i
 			break;
 		default:
 			LOG_DBG("Trigger (%d) not supported", cfg->triggers[i].trigger);
-			break;
+			rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
+			return;
 		}
 	}
 
@@ -46,12 +47,12 @@ int icm42688_submit_stream(const struct device *sensor, struct rtio_iodev_sqe *i
 
 		if (rc != 0) {
 			LOG_ERR("Failed to configure sensor");
-			return rc;
+			rtio_iodev_sqe_err(iodev_sqe, rc);
+			return;
 		}
 	}
 
 	data->streaming_sqe = iodev_sqe;
-	return 0;
 }
 
 static void icm42688_complete_cb(struct rtio *r, const struct rtio_sqe *sqe, void *arg)
@@ -113,10 +114,14 @@ static void icm42688_fifo_count_cb(struct rtio *r, const struct rtio_sqe *sqe, v
 			.gyro_fs = drv_data->cfg.gyro_fs,
 			.accel_fs = drv_data->cfg.accel_fs,
 			.timestamp = drv_data->timestamp,
+			.axis_align[0] = drv_data->cfg.axis_align[0],
+			.axis_align[1] = drv_data->cfg.axis_align[1],
+			.axis_align[2] = drv_data->cfg.axis_align[2]
 		},
 		.int_status = drv_data->int_status,
 		.gyro_odr = drv_data->cfg.gyro_odr,
 		.accel_odr = drv_data->cfg.accel_odr,
+		.rtc_freq = drv_data->cfg.rtc_freq,
 	};
 	uint32_t buf_avail = buf_len;
 
@@ -129,7 +134,7 @@ static void icm42688_fifo_count_cb(struct rtio *r, const struct rtio_sqe *sqe, v
 	read_len = pkts * packet_size;
 	((struct icm42688_fifo_data *)buf)->fifo_count = read_len;
 
-	__ASSERT_NO_MSG(read_len % pkt_size == 0);
+	__ASSERT_NO_MSG(read_len % packet_size == 0);
 
 	uint8_t *read_buf = buf + sizeof(hdr);
 
@@ -147,15 +152,18 @@ static void icm42688_fifo_count_cb(struct rtio *r, const struct rtio_sqe *sqe, v
 	 * result
 	 */
 	struct rtio_sqe *write_fifo_addr = rtio_sqe_acquire(r);
+	__ASSERT_NO_MSG(write_fifo_addr != NULL);
 	struct rtio_sqe *read_fifo_data = rtio_sqe_acquire(r);
+	__ASSERT_NO_MSG(read_fifo_data != NULL);
 	struct rtio_sqe *complete_op = rtio_sqe_acquire(r);
+	__ASSERT_NO_MSG(complete_op != NULL);
 	const uint8_t reg_addr = REG_SPI_READ_BIT | FIELD_GET(REG_ADDRESS_MASK, REG_FIFO_DATA);
 
 	rtio_sqe_prep_tiny_write(write_fifo_addr, spi_iodev, RTIO_PRIO_NORM, &reg_addr, 1, NULL);
 	write_fifo_addr->flags = RTIO_SQE_TRANSACTION;
 	rtio_sqe_prep_read(read_fifo_data, spi_iodev, RTIO_PRIO_NORM, read_buf, read_len,
 			   iodev_sqe);
-
+	read_fifo_data->flags = RTIO_SQE_CHAINED;
 	rtio_sqe_prep_callback(complete_op, icm42688_complete_cb, (void *)dev, iodev_sqe);
 
 	rtio_submit(r, 0);
@@ -198,14 +206,15 @@ static void icm42688_int_status_cb(struct rtio *r, const struct rtio_sqe *sqr, v
 	struct sensor_stream_trigger *fifo_ths_cfg =
 		icm42688_get_read_config_trigger(read_config, SENSOR_TRIG_FIFO_WATERMARK);
 	bool has_fifo_ths_trig = fifo_ths_cfg != NULL &&
-				 FIELD_GET(BIT_INT_STATUS_FIFO_THS, drv_data->int_status) != 0;
+				 FIELD_GET(BIT_FIFO_THS_INT, drv_data->int_status) != 0;
 
 	struct sensor_stream_trigger *fifo_full_cfg =
 		icm42688_get_read_config_trigger(read_config, SENSOR_TRIG_FIFO_FULL);
 	bool has_fifo_full_trig = fifo_full_cfg != NULL &&
-				  FIELD_GET(BIT_INT_STATUS_FIFO_FULL, drv_data->int_status) != 0;
+				  FIELD_GET(BIT_FIFO_FULL_INT, drv_data->int_status) != 0;
 
 	if (!has_fifo_ths_trig && !has_fifo_full_trig) {
+		LOG_DBG("No FIFO trigger is configured");
 		gpio_pin_interrupt_configure_dt(&drv_cfg->gpio_int1, GPIO_INT_EDGE_TO_ACTIVE);
 		return;
 	}
@@ -280,6 +289,7 @@ static void icm42688_int_status_cb(struct rtio *r, const struct rtio_sqe *sqr, v
 	rtio_sqe_prep_tiny_write(write_fifo_count_reg, spi_iodev, RTIO_PRIO_NORM, &reg, 1, NULL);
 	write_fifo_count_reg->flags = RTIO_SQE_TRANSACTION;
 	rtio_sqe_prep_read(read_fifo_count, spi_iodev, RTIO_PRIO_NORM, read_buf, 2, NULL);
+	read_fifo_count->flags = RTIO_SQE_CHAINED;
 	rtio_sqe_prep_callback(check_fifo_count, icm42688_fifo_count_cb, arg, NULL);
 
 	rtio_submit(r, 0);
@@ -290,12 +300,21 @@ void icm42688_fifo_event(const struct device *dev)
 	struct icm42688_dev_data *drv_data = dev->data;
 	struct rtio_iodev *spi_iodev = drv_data->spi_iodev;
 	struct rtio *r = drv_data->r;
+	uint64_t cycles;
+	int rc;
 
 	if (drv_data->streaming_sqe == NULL) {
 		return;
 	}
 
-	drv_data->timestamp = k_ticks_to_ns_floor64(k_uptime_ticks());
+	rc = sensor_clock_get_cycles(&cycles);
+	if (rc != 0) {
+		LOG_ERR("Failed to get sensor clock cycles");
+		rtio_iodev_sqe_err(drv_data->streaming_sqe, rc);
+		return;
+	}
+
+	drv_data->timestamp = sensor_clock_cycles_to_ns(cycles);
 
 	/*
 	 * Setup rtio chain of ops with inline calls to make decisions
@@ -314,6 +333,7 @@ void icm42688_fifo_event(const struct device *dev)
 	rtio_sqe_prep_tiny_write(write_int_reg, spi_iodev, RTIO_PRIO_NORM, &reg, 1, NULL);
 	write_int_reg->flags = RTIO_SQE_TRANSACTION;
 	rtio_sqe_prep_read(read_int_reg, spi_iodev, RTIO_PRIO_NORM, &drv_data->int_status, 1, NULL);
+	read_int_reg->flags = RTIO_SQE_CHAINED;
 	rtio_sqe_prep_callback(check_int_status, icm42688_int_status_cb, (void *)dev, NULL);
 	rtio_submit(r, 0);
 }

@@ -1,0 +1,34 @@
+# Copyright (c) 2024 Gergo Vari <work@gergovari.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+  Maxim DS3231 I2C MFD
+
+  The following example displays the node layout
+  with every possible partial driver included.
+
+  ds3231: ds3231@68 {
+          compatible = "maxim,ds3231-mfd";
+          reg = <0x68>;
+          status = "okay";
+
+          ds3231_sensor: ds3231_sensor {
+                  compatible = "maxim,ds3231-sensor";
+                  status = "okay";
+          };
+
+          ds3231_rtc: ds3231_rtc {
+                  compatible = "maxim,ds3231-rtc";
+                  status = "okay";
+
+                  isw-gpios = <&gpio0 25 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+                  freq-32khz-gpios = <&gpio0 33 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+          };
+  };
+
+compatible: "maxim,ds3231-mfd"
+
+include:
+  - name: i2c-device.yaml

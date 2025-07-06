@@ -24,10 +24,12 @@
 		zephyr,dtcm = &dtcm;
 		zephyr,flash-controller = &n25q128a1;
 		zephyr,display = &ltdc;
+		zephyr,touch = &ft5336;
 	};
 
 	leds {
 		compatible = "gpio-leds";
+
 		green_led_1: led_1 {
 			gpios = <&gpioi 1 GPIO_ACTIVE_HIGH>;
 			label = "User LD1";
@@ -36,6 +38,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User";
 			gpios = <&gpioi 11 GPIO_ACTIVE_HIGH>;
@@ -59,7 +62,6 @@
 	aliases {
 		led0 = &green_led_1;
 		sw0 = &user_button;
-		spi-flash0 = &n25q128a1;
 	};
 };
 
@@ -105,7 +107,7 @@
 	ft5336: ft5336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
-		int-gpios = <&gpioi 13 0>;
+		int-gpios = <&gpioi 13 GPIO_ACTIVE_LOW>;
 	};
 };
 
@@ -160,20 +162,32 @@ zephyr_udc0: &usbotg_fs {
 		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
 	pinctrl-names = "default";
 	cd-gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+	disk-name = "SD";
 };
 
 &mac {
 	status = "okay";
-	pinctrl-0 = <&eth_mdc_pc1
-		     &eth_rxd0_pc4
+	pinctrl-0 = <&eth_rxd0_pc4
 		     &eth_rxd1_pc5
 		     &eth_ref_clk_pa1
-		     &eth_mdio_pa2
 		     &eth_crs_dv_pa7
 		     &eth_tx_en_pg11
 		     &eth_txd0_pg13
 		     &eth_txd1_pg14>;
 	pinctrl-names = "default";
+	phy-connection-type = "rmii";
+	phy-handle = <&eth_phy>;
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
+	pinctrl-names = "default";
+
+	eth_phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0x00>;
+	};
 };
 
 &quadspi {
@@ -183,9 +197,10 @@ zephyr_udc0: &usbotg_fs {
 	pinctrl-names = "default";
 	status = "okay";
 
-	n25q128a1: qspi-nor-flash@90000000 {
+	n25q128a1: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
-		reg = <0x90000000 DT_SIZE_M(16)>; /* 128 Mbits */
+		reg = <0>;
+		size = <DT_SIZE_M(128)>; /* 128 Mbits */
 		qspi-max-frequency = <72000000>;
 		status = "okay";
 
@@ -197,7 +212,7 @@ zephyr_udc0: &usbotg_fs {
 			slot1_partition: partition@0 {
 				label = "image-1";
 				reg = <0x00000000 DT_SIZE_K(640)>;
-				};
+			};
 
 			storage_partition: partition@a0000 {
 				label = "storage";
@@ -233,6 +248,7 @@ zephyr_udc0: &usbotg_fs {
 		 * Note: SDRAM_CLK_MHZ = HCLK_MHZ / 2 (108 MHz)
 		 */
 		refresh-rate = <1667>;
+
 		bank@0 {
 			reg = <0>;
 			st,sdram-control = <STM32_FMC_SDRAM_NC_8
@@ -265,6 +281,7 @@ zephyr_udc0: &usbotg_fs {
 	width = <480>;
 	height = <272>;
 	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+
 	display-timings {
 		compatible = "zephyr,panel-timing";
 		de-active = <0>;
@@ -278,6 +295,7 @@ zephyr_udc0: &usbotg_fs {
 		hfront-porch = <8>;
 		vfront-porch = <4>;
 	};
+
 	def-back-color-red = <0xFF>;
 	def-back-color-green = <0xFF>;
 	def-back-color-blue = <0xFF>;

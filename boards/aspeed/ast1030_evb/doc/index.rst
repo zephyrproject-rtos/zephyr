@@ -1,7 +1,4 @@
-.. _ast1030_evb:
-
-AST1030_EVB
-###################
+.. zephyr:board:: ast1030_evb
 
 Overview
 ********
@@ -9,10 +6,6 @@ Overview
 The AST1030_EVB kit is a development platform to evaluate the
 Aspeed AST10x0 series SOCs. This board needs to be mated with
 part number AST1030.
-
-.. image:: ast1030_evb.jpg
-     :align: center
-     :alt: AST1030 Evaluation Board
 
 Hardware
 ********
@@ -33,22 +26,7 @@ Hardware
 Supported Features
 ==================
 
-The following features are supported:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not currently supported by Zephyr (at the moment)
-
-The default configuration can be found in
-:zephyr_file:`boards/aspeed/ast1030_evb/ast1030_evb_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -69,6 +47,8 @@ UART5 is configured for serial logs.  The default serial setup is 115200 8N1.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 This board comes with a JTAG port which facilitates debugging using a single physical connection.
 

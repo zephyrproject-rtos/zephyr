@@ -1,0 +1,10 @@
+# Analog Devices MAX32xxx MCU family
+
+# Copyright (c) 2023-2024 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_MAX32
+
+rsource "Kconfig.defconfig.max*"
+
+endif # SOC_FAMILY_MAX32

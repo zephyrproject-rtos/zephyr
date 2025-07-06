@@ -75,7 +75,7 @@ struct bt_mesh_dfu_metadata {
 int bt_mesh_dfu_metadata_decode(struct net_buf_simple *buf,
 				struct bt_mesh_dfu_metadata *metadata);
 
-/** @brief Encode a firmare metadata into a network buffer.
+/** @brief Encode a firmware metadata into a network buffer.
  *
  *  @param metadata Firmware metadata to be encoded.
  *  @param buf Buffer to store the encoded metadata.

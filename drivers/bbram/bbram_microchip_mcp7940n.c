@@ -212,7 +212,7 @@ finish:
 	return rc;
 }
 
-static const struct bbram_driver_api microchip_mcp7940n_bbram_api = {
+static DEVICE_API(bbram, microchip_mcp7940n_bbram_api) = {
 	.get_size = microchip_mcp7940n_bbram_size,
 	.check_invalid = microchip_mcp7940n_bbram_is_invalid,
 	.check_standby_power = microchip_mcp7940n_bbram_check_standby_power,

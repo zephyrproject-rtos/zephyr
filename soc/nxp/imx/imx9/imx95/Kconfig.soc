@@ -1,0 +1,27 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_MIMX9596
+	bool
+	select SOC_SERIES_IMX9
+
+config SOC_MIMX9596_M7
+	bool
+	select SOC_MIMX9596
+	help
+	  NXP i.MX95 M7
+
+config SOC_MIMX9596_A55
+	bool
+	select SOC_MIMX9596
+	help
+	  NXP i.MX95 A55
+
+config SOC
+	default "mimx9596" if SOC_MIMX9596
+
+config SOC_PART_NUMBER_MIMX9596AVZXN
+	bool
+
+config SOC_PART_NUMBER
+	default "MIMX9596AVZXN" if SOC_PART_NUMBER_MIMX9596AVZXN

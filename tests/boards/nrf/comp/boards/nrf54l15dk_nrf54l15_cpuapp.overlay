@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		test-comp = &comp;
+	};
+
+	zephyr,user {
+		first-gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
+		second-gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&led3 {
+	status = "disabled";
+};
+
+&button0 {
+	status = "disabled";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&comp {
+	status = "okay";
+	psel = "AIN4";
+	refsel = "AREF";
+	extrefsel= "AIN3";
+	sp-mode = "NORMAL";
+	th-up = <36>;
+	th-down = <30>;
+	isource = "DISABLED";
+	enable-hyst;
+};

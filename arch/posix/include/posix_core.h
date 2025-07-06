@@ -31,10 +31,9 @@ typedef struct {
 	 * Note: If more elements are added to this structure, remember to
 	 * update ARCH_POSIX_RECOMMENDED_STACK_SIZE in the configuration.
 	 *
-	 * Currently there are 4 pointers + 2 ints, on a 32-bit native posix
-	 * implementation this will result in 24 bytes ( 4*4 + 2*4).
-	 * For a 64-bit implementation the recommended stack size will be
-	 * 40 bytes ( 4*8 + 2*4 ).
+	 * Currently there are 4 pointers + 2 ints, on a 32-bit build this will result in 24 bytes
+	 * (4*4 + 2*4).
+	 * For a 64-bit build the recommended stack size will be 40 bytes ( 4*8 + 2*4 ).
 	 */
 } posix_thread_status_t;
 
@@ -47,6 +46,7 @@ void posix_main_thread_start(int next_allowed_thread_nbr);
 int posix_new_thread(void *payload);
 void posix_abort_thread(int thread_idx);
 int posix_arch_get_unique_thread_id(int thread_idx);
+int posix_arch_thread_name_set(int thread_idx, const char *str);
 
 #ifndef POSIX_ARCH_DEBUG_PRINTS
 #define POSIX_ARCH_DEBUG_PRINTS 0

@@ -1,0 +1,44 @@
+/*
+ * Copyright (c) 2024 Mario Paja
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/esp-pinctrl-common.h>
+#include <dt-bindings/pinctrl/esp32c6-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/esp32c6-gpio-sigmap.h>
+
+&pinctrl {
+
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0_TX_GPIO16>;
+			output-high;
+		};
+		group2 {
+			pinmux = <UART0_RX_GPIO17>;
+			bias-pull-up;
+		};
+	};
+
+	spim2_default: spim2_default {
+		group1 {
+			pinmux = <SPIM2_MISO_GPIO20>,
+				 <SPIM2_SCLK_GPIO19>;
+		};
+		group2 {
+			pinmux = <SPIM2_MOSI_GPIO18>;
+			output-low;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SDA_GPIO22>,
+				 <I2C0_SCL_GPIO23>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
+	};
+};

@@ -1,7 +1,4 @@
-.. _qemu_riscv64:
-
-RISCV64 Emulation (QEMU)
-########################
+.. zephyr:board:: qemu_riscv64
 
 Overview
 ********
@@ -19,6 +16,8 @@ for more details.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``qemu_riscv64`` board configuration can be built and run in
 the usual way for emulated boards (see :ref:`build_an_application` and

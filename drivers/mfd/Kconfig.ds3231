@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Gergo Vari <work@gergovari.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config MFD_DS3231
+	bool "DS3231 multi-function device driver"
+	default y
+	depends on DT_HAS_MAXIM_DS3231_MFD_ENABLED
+	select I2C
+	help
+	  Enable the Maxim DS3231 multi-function device driver

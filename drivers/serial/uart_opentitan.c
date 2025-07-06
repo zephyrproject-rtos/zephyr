@@ -93,7 +93,7 @@ static void uart_opentitan_poll_out(const struct device *dev, unsigned char c)
 	sys_write32(c, cfg->base + UART_WDATA_REG_OFFSET);
 }
 
-static const struct uart_driver_api uart_opentitan_driver_api = {
+static DEVICE_API(uart, uart_opentitan_driver_api) = {
 	.poll_in = uart_opentitan_poll_in,
 	.poll_out = uart_opentitan_poll_out,
 };

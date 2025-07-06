@@ -8,6 +8,14 @@ menuconfig IPM
 
 if IPM
 
+config IPM_MAX_DATA_SIZE
+	int "Max data size supported"
+	default 0 if IPM_STM32_IPCC || IPM_STM32_HSEM
+	default 1024
+	help
+	  Define the max size (in bytes) of data that can be transmitted or
+	  received by the IPM device.
+
 config IPM_MHU
 	bool "IPM MHU driver"
 	default y
@@ -54,6 +62,14 @@ config XLNX_IPI
 	help
 	  Inter Processor Interrupt driver for AMD-Xilinx
 	  platforms such as ZynqMP Ultrascale+.
+
+config IPM_MBOX
+	bool "IPM over MBOX driver"
+	default y
+	depends on DT_HAS_ZEPHYR_MBOX_IPM_ENABLED
+	select MBOX
+	help
+	  IPM driver using a MBOX driver as the backend mechanism.
 
 source "drivers/ipm/Kconfig.nrfx"
 source "drivers/ipm/Kconfig.imx"

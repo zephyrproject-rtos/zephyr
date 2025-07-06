@@ -21,12 +21,14 @@
 		magn0 = &fxos8700;
 		accel0 = &fxos8700;
 		sdhc0 = &usdhc1;
+		mcuboot-button0 = &user_button;
 	};
 
 	chosen {
 		zephyr,flash-controller = &w25q32jvwj0;
 		zephyr,flash = &w25q32jvwj0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &lpuart1;
 		zephyr,sram = &sdram0;
 		zephyr,itcm = &itcm;
 		zephyr,dtcm = &dtcm;
@@ -101,24 +103,25 @@ arduino_serial: &lpuart2 {
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		/*
+		 * Partition sizes must be aligned
+		 * to the flash memory sector size of 4KB.
+		 */
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x00000000 DT_SIZE_K(64)>;
+			reg = <0x00000000 DT_SIZE_K(128)>;
 		};
-		/* Note slot 0 has one additional sector,
-		 * this is intended for use with the swap move algorithm
-		 */
-		slot0_partition: partition@10000 {
+		slot0_partition: partition@20000 {
 			label = "image-0";
-			reg = <0x00010000 DT_SIZE_K(1924)>;
+			reg = <0x00020000 DT_SIZE_K(1924)>;
 		};
-		slot1_partition: partition@1f1000 {
+		slot1_partition: partition@201000 {
 			label = "image-1";
-			reg = <0x001F1000 DT_SIZE_K(1920)>;
+			reg = <0x00201000 DT_SIZE_K(1924)>;
 		};
-		storage_partition: partition@3d1000 {
+		storage_partition: partition@3E2000 {
 			label = "storage";
-			reg = <0x003D1000 DT_SIZE_K(188)>;
+			reg = <0x003E2000 DT_SIZE_K(120)>;
 		};
 	};
 };
@@ -140,9 +143,9 @@ arduino_serial: &lpuart2 {
 		compatible = "microchip,ksz8081";
 		reg = <0>;
 		status = "okay";
-		mc,reset-gpio = <&gpio1 4 GPIO_ACTIVE_HIGH>;
-		mc,interrupt-gpio = <&gpio1 22 GPIO_ACTIVE_HIGH>;
-		mc,interface-type = "rmii";
+		reset-gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
+		int-gpios = <&gpio1 22 GPIO_ACTIVE_HIGH>;
+		microchip,interface-type = "rmii";
 	};
 };
 
@@ -168,7 +171,6 @@ arduino_serial: &lpuart2 {
 
 &flexcan1 {
 	status = "okay";
-	bus-speed = <125000>;
 	pinctrl-0 = <&pinmux_flexcan1>;
 	pinctrl-names = "default";
 
@@ -241,6 +243,7 @@ zephyr_udc0: &usb1 {
 	no-1-8-v;
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
 		status = "okay";
 	};
 };

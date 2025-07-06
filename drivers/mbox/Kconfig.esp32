@@ -1,0 +1,9 @@
+# Copyright 2024 Felipe Neves
+# SPDX-License-Identifier: Apache-2.0
+
+config MBOX_ESP32
+	bool "ESP32 Soft mailbox driver"
+	default y
+	depends on DT_HAS_ESPRESSIF_MBOX_ESP32_ENABLED
+	help
+	  Driver for ESP32 mailbox based on its doorbell mechanism.

@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2025 Harris Tomy
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/u5/stm32u599.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32u5f9", "st,stm32u5", "simple-bus";
+	};
+};
+
+&sram0 {
+	/* SRAM1 + SRAM2 + SRAM3 + SRAM5 + SRAM6 */
+	/* 768K + 64K + 832K + 832K + 512K */
+	reg = <0x20000000 DT_SIZE_K(3008)>;
+};

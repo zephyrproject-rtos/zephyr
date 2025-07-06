@@ -8,6 +8,7 @@
 #include <arm64/armv8-a.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/dt-bindings/reset/intel_socfpga_reset.h>
+#include <zephyr/dt-bindings/clock/intel_socfpga_clock.h>
 #include <mem.h>
 
 / {
@@ -97,6 +98,10 @@
 		reg = <0x80100000 DT_SIZE_M(8)>;
 	};
 
+	fpga0: bridges {
+		compatible = "altr,socfpga-agilex-bridge";
+	};
+
 	uart0: uart@10c02000 {
 		compatible = "ns16550";
 		reg-shift = <2>;
@@ -104,7 +109,7 @@
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SPI 108 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "irq_0";
-		clock-frequency = <100000000>;
+		clocks = <&clock INTEL_SOCFPGA_CLOCK_UART>;
 		resets = <&reset RSTMGR_UART0_RSTLINE>;
 		status = "disabled";
 	};
@@ -123,7 +128,7 @@
 			<0x10B92000 0x1000>;
 		reg-names = "reg_base", "combo_phy";
 		clock-frequency = <200000000>;
-		power_delay_ms = <1000>;
+		power-delay-ms = <1000>;
 		resets = <&reset RSTMGR_SDMMC_RSTLINE>,
 			<&reset RSTMGR_SDMMCECC_RSTLINE>,
 			<&reset RSTMGR_SOFTPHY_RSTLINE>;
@@ -136,7 +141,7 @@
 		interrupts = <GIC_SPI 113 IRQ_TYPE_LEVEL
 				IRQ_DEFAULT_PRIORITY>;
 		reg = <0x10c03000 0x100>;
-		clock-frequency = <100000000>;
+		clocks = <&clock INTEL_SOCFPGA_CLOCK_TIMER>;
 		resets = <&reset RSTMGR_SPTIMER0_RSTLINE>;
 		status = "disabled";
 	};
@@ -147,7 +152,7 @@
 		interrupts = <GIC_SPI 114 IRQ_TYPE_LEVEL
 				IRQ_DEFAULT_PRIORITY>;
 		reg = <0x10c03100 0x100>;
-		clock-frequency = <100000000>;
+		clocks = <&clock INTEL_SOCFPGA_CLOCK_TIMER>;
 		resets = <&reset RSTMGR_SPTIMER1_RSTLINE>;
 		status = "disabled";
 	};
@@ -158,7 +163,7 @@
 		interrupts = <GIC_SPI 115 IRQ_TYPE_LEVEL
 				IRQ_DEFAULT_PRIORITY>;
 		reg = <0x10D00000 0x100>;
-		clock-frequency = <100000000>;
+		clocks = <&clock INTEL_SOCFPGA_CLOCK_TIMER>;
 		resets = <&reset RSTMGR_L4SYSTIMER0_RSTLINE>;
 		status = "disabled";
 	};
@@ -169,7 +174,7 @@
 		interrupts = <GIC_SPI 116 IRQ_TYPE_LEVEL
 				IRQ_DEFAULT_PRIORITY>;
 		reg = <0x10D00100 0x100>;
-		clock-frequency = <100000000>;
+		clocks = <&clock INTEL_SOCFPGA_CLOCK_TIMER>;
 		resets = <&reset RSTMGR_L4SYSTIMER1_RSTLINE>;
 	};
 
@@ -235,4 +240,110 @@
 		status = "disabled";
 	};
 
+	dma0: dma@10DB0000 {
+		compatible = "snps,designware-dma-axi";
+		#dma-cells = <1>;
+		reg = <0x10DB0000 0x1000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 81 IRQ_TYPE_LEVEL
+				 IRQ_DEFAULT_PRIORITY>,
+			     <GIC_SPI 82 IRQ_TYPE_LEVEL
+				 IRQ_DEFAULT_PRIORITY>,
+			     <GIC_SPI 83 IRQ_TYPE_LEVEL
+				 IRQ_DEFAULT_PRIORITY>,
+			     <GIC_SPI 84 IRQ_TYPE_LEVEL
+				 IRQ_DEFAULT_PRIORITY>;
+		dma-channels = <4>;
+		resets = <&reset RSTMGR_DMA_RSTLINE>;
+		status = "disabled";
+	};
+
+	dma1: dma@10DC0000 {
+		compatible = "snps,designware-dma-axi";
+		#dma-cells = <1>;
+		reg = <0x10DC0000 0x1000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 166 IRQ_TYPE_LEVEL
+				 IRQ_DEFAULT_PRIORITY>,
+			     <GIC_SPI 167 IRQ_TYPE_LEVEL
+				 IRQ_DEFAULT_PRIORITY>,
+			     <GIC_SPI 168 IRQ_TYPE_LEVEL
+				 IRQ_DEFAULT_PRIORITY>,
+			     <GIC_SPI 169 IRQ_TYPE_LEVEL
+				 IRQ_DEFAULT_PRIORITY>;
+		dma-channels = <4>;
+		resets = <&reset RSTMGR_DMA_RSTLINE>;
+	};
+
+	xgmac0: xgmac@10810000 {
+		compatible = "snps,dwcxgmac";
+		reg = <0x10810000 0x10000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 190 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>;
+		local-mac-address = [06 00 00 00 00 01];
+		max-frame-size = <1518>;
+		tx-fifo-size = <32768>;
+		rx-fifo-size = <16384>;
+		pblx8;
+		blen32;
+		status = "disabled";
+	};
+
+	mdio0: mdio@10810000 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x10810000 0x10000>;
+		resets = <&reset RSTMGR_TSN0_RSTLINE>;
+		compatible = "snps,dwcxgmac-mdio";
+		status = "disabled";
+	};
+
+	xgmac1: xgmac@10820000 {
+		compatible = "snps,dwcxgmac";
+		reg = <0x10820000 0x10000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 207 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>;
+		local-mac-address = [06 00 00 00 00 02];
+		max-frame-size = <1518>;
+		tx-fifo-size = <32768>;
+		rx-fifo-size = <16384>;
+		pblx8;
+		blen32;
+		status = "disabled";
+	};
+
+	mdio1: mdio@10820000 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x10820000 0x10000>;
+		resets = <&reset RSTMGR_TSN1_RSTLINE>;
+		compatible = "snps,dwcxgmac-mdio";
+		status = "disabled";
+	};
+
+	xgmac2: xgmac@10830000 {
+		compatible = "snps,dwcxgmac";
+		reg = <0x10830000 0x10000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 224 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>;
+		local-mac-address = [06 00 00 00 00 03];
+		max-frame-size = <1518>;
+		tx-fifo-size = <32768>;
+		rx-fifo-size = <16384>;
+		pblx8;
+		blen32;
+		status = "disabled";
+	};
+
+	mdio2: mdio@10830000 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x10830000 0x10000>;
+		resets = <&reset RSTMGR_TSN2_RSTLINE>;
+		compatible = "snps,dwcxgmac-mdio";
+		status = "disabled";
+	};
 };

@@ -60,6 +60,14 @@ config IEEE802154_VENDOR_OUI
 
 endif # IEEE802154_VENDOR_OUI_ENABLE
 
+config IEEE802154_L2_PKT_INCL_FCS
+	bool "Include FCS field in the L2 packet"
+	default y if IEEE802154_RAW_MODE || NET_L2_OPENTHREAD
+	help
+	  Some 802.15.4 L2 implementations expect FCS to be included in the
+	  packet, while others do not. Allow to configure this behavior based
+	  on the upper layer selected.
+
 source "drivers/ieee802154/Kconfig.b91"
 
 source "drivers/ieee802154/Kconfig.cc2520"
@@ -67,6 +75,8 @@ source "drivers/ieee802154/Kconfig.cc2520"
 source "drivers/ieee802154/Kconfig.kw41z"
 
 source "drivers/ieee802154/Kconfig.mcr20a"
+
+source "drivers/ieee802154/Kconfig.mcxw"
 
 source "drivers/ieee802154/Kconfig.nrf5"
 
@@ -78,13 +88,9 @@ source "drivers/ieee802154/Kconfig.rf2xx"
 
 source "drivers/ieee802154/Kconfig.dw1000"
 
-source "drivers/ieee802154/Kconfig.uart_pipe"
+source "drivers/ieee802154/Kconfig.esp32"
 
-config IEEE802154_2015
-	bool "Support for IEEE 802.15.4-2015 frames (DEPRECATED)"
-	select DEPRECATED
-	help
-	  Enable radio driver support for IEEE 802.15.4-2015 frames, including security handling of frames and ACKs.
+source "drivers/ieee802154/Kconfig.uart_pipe"
 
 config IEEE802154_CSL_ENDPOINT
 	bool "Support for CSL Endpoint"
@@ -97,6 +103,20 @@ config IEEE802154_CSL_DEBUG
 	depends on IEEE802154_CSL_ENDPOINT
 	help
 	  Enable support for CSL debugging by avoiding sleep state in favor of receive state.
+
+config IEEE802154_SELECTIVE_TXCHANNEL
+	bool "Support for selective TX channel setting"
+	help
+	  Enable support for selectively setting TX channel for every timed transmission request.
+	  The drivers MAY have the capability IEEE802154_HW_SELECTIVE_TXCHANNEL only if
+	  this Kconfig option is enabled. If the Kconfig option is disabled the drivers
+	  MUST NOT have the capability.
+
+config IEEE802154_CARRIER_FUNCTIONS
+	bool "Support for carrier functions"
+	default y if OPENTHREAD_DIAG
+	help
+	  Enable support for functions such as modulated carrier and continuous carrier.
 
 module = IEEE802154_DRIVER
 module-str = IEEE 802.15.4 driver

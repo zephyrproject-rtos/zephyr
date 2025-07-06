@@ -211,7 +211,7 @@ static int regulator_npm6001_ldo0_set_voltage(const struct device *dev, int32_t 
 					      int32_t max_uv)
 {
 	const struct regulator_npm6001_config *config = dev->config;
-	uint8_t val;
+	uint8_t val = 0U;
 	size_t i;
 
 	for (i = 0U; i < ARRAY_SIZE(ldo0_voltages); i++) {
@@ -569,7 +569,7 @@ static int regulator_npm6001_init(const struct device *dev)
 	return regulator_common_init(dev, is_enabled);
 }
 
-static const struct regulator_driver_api api = {
+static DEVICE_API(regulator, api) = {
 	.enable = regulator_npm6001_enable,
 	.disable = regulator_npm6001_disable,
 	.count_voltages = regulator_npm6001_count_voltages,

@@ -122,9 +122,27 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	}
 }
 
+static int start_advertising(void)
+{
+	int err;
+
+	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), NULL, 0);
+	if (err) {
+		printk("Advertising failed to start (err %d)\n", err);
+	}
+
+	return err;
+}
+
+static void recycled(void)
+{
+	start_advertising();
+}
+
 static struct bt_conn_cb conn_callbacks = {
 	.connected = connected,
 	.disconnected = disconnected,
+	.recycled = recycled,
 };
 
 static void bt_ready(void)
@@ -133,13 +151,17 @@ static void bt_ready(void)
 
 	printk("Peripheral Bluetooth initialized\n");
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
 		FAIL("Advertising failed to start (err %d)\n", err);
 		return;
 	}
 
-	printk("Advertising successfully started\n");
+	err = start_advertising();
+
+	if (!err) {
+		printk("Advertising successfully started\n");
+	}
 }
 
 static void bas_notify(void)
@@ -187,7 +209,12 @@ static void test_con2_main(void)
 	 * of starting delayed work so we do it here
 	 */
 	while (1) {
-		k_sleep(K_SECONDS(1));
+		if (IS_ENABLED(CONFIG_TEST_CONN_INTERVAL_1MS) ||
+		    IS_ENABLED(CONFIG_BT_CTLR_TX_DEFER)) {
+			k_sleep(K_MSEC(1));
+		} else {
+			k_sleep(K_SECONDS(1));
+		}
 
 		/* Heartrate measurements simulation */
 		hrs_notify();
@@ -227,7 +254,7 @@ static const struct bst_test_instance test_connect[] = {
 			      "central device can be found. The test will "
 			      "pass if notifications can be sent without "
 			      "crash.",
-		.test_post_init_f = test_con2_init,
+		.test_pre_init_f = test_con2_init,
 		.test_tick_f = test_con2_tick,
 		.test_main_f = test_con2_main
 	},
@@ -236,7 +263,7 @@ static const struct bst_test_instance test_connect[] = {
 		.test_descr = "Multiple connections test. It expects that a "
 			      "central device connects 20 times. The test will "
 			      "pass if 20 connections are succeed in less than 22 seconds",
-		.test_post_init_f = test_con2_repeat_init,
+		.test_pre_init_f = test_con2_repeat_init,
 		.test_tick_f = test_con2_repeat_tick,
 		.test_main_f = test_con2_repeat_main
 	},

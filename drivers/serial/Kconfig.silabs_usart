@@ -1,0 +1,29 @@
+# Copyright (c) 2025, Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_SILABS_USART
+	bool "Silabs USART UART driver"
+	default y
+	depends on DT_HAS_SILABS_USART_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select SOC_GECKO_USART
+	select SERIAL_SUPPORT_ASYNC \
+		if DT_HAS_SILABS_LDMA_ENABLED
+	select DMA if UART_ASYNC_API
+	select PINCTRL
+	select CLOCK_CONTROL
+	help
+	  Enable the Silicon Labs usart driver.
+
+if UART_SILABS_USART
+
+config UART_SILABS_USART_ASYNC
+	bool
+	default y
+	depends on DMA_SILABS_LDMA
+	depends on UART_ASYNC_API
+	help
+	  If 'y', Silabs usart driver will compile with support for UART async API.
+
+endif

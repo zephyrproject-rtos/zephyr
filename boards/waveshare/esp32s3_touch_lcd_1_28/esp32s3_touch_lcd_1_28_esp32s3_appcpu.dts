@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2024 Joel Guittet
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <espressif/esp32s3/esp32s3_r2.dtsi>
+#include <espressif/partitions_0x0_amp_16M.dtsi>
+
+/ {
+	model = "ESP32-S3-Touch-LCD-1.28 APPCPU";
+	compatible = "waveshare,esp32-s3-touch-lcd-1.28";
+
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,ipc_shm = &shm0;
+		zephyr,ipc = &ipm0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_appcpu_partition;
+	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(16)>;
+};
+
+&trng0 {
+	status = "okay";
+};

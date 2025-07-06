@@ -1,0 +1,31 @@
+# Copyright (c) 2023-2025 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+family:
+- name: max32
+  socs:
+  - name: max32650
+  - name: max32655
+    cpuclusters:
+    - name: m4
+  - name: max32657
+  - name: max32660
+  - name: max32662
+  - name: max32666
+    cpuclusters:
+    - name: cpu0
+  - name: max32670
+  - name: max32672
+  - name: max32675
+  - name: max32680
+    cpuclusters:
+    - name: m4
+  - name: max32690
+    cpuclusters:
+    - name: m4
+  - name: max78000
+    cpuclusters:
+    - name: m4
+  - name: max78002
+    cpuclusters:
+    - name: m4

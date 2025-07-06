@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <nuvoton/npcx4m8f.dtsi>
+#include <nuvoton/npcx/npcx-espi-vws-ex-map.dtsi>
 #include "npcx4m8f_evb-pinctrl.dtsi"
 
 / {
@@ -15,8 +16,8 @@
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
 		zephyr,flash = &flash0;
-		zephyr,keyboard-scan = &kscan_input;
 	};
 
 	aliases {
@@ -26,8 +27,6 @@
 		i2c-0 = &i2c0_0;
 		watchdog0 = &twd0;
 		peci-0 = &peci0;
-		spi-flash0 = &int_flash;
-		kscan0 = &kscan_input;
 	};
 
 	leds-pwm {
@@ -113,8 +112,19 @@
 	row-size = <8>;
 	col-size = <13>;
 	status = "okay";
+};
 
-	kscan_input: kscan-input {
-		compatible = "zephyr,kscan-input";
-	};
+&i3c0 {
+	pinctrl-0 = <&i3c1_sda_scl_gpe3_e4>;
+	pinctrl-names = "default";
+};
+
+&i3c1 {
+	pinctrl-0 = <&i3c2_sda_scl_gp50_56>;
+	pinctrl-names = "default";
+};
+
+&i3c2 {
+	pinctrl-0 = <&i3c3_sda_scl_gpf4_f5>;
+	pinctrl-names = "default";
 };

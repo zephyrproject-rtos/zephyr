@@ -1,7 +1,4 @@
-.. _raytac_mdbt50q_db_40_nrf52840:
-
-Raytac MDBT50Q-DB-40
-####################
+.. zephyr:board:: raytac_mdbt50q_db_40
 
 Overview
 ********
@@ -25,11 +22,6 @@ Nordic Semiconductor nRF52840 ARM Cortex-M4F CPU and the following devices:
 * :abbr:`USB (Universal Serial Bus)`
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/mdbt50q_db_40.jpg
-     :width: 442px
-     :align: center
-     :alt: MDBT50Q-DB-40
-
 More information about the board can be found at the `MDBT50Q-DB-40 website`_.
 The `MDBT50Q-DB-40 Specification`_ contains the demo board's datasheet.
 The `MDBT50Q-DB-40 Schematic`_ contains the demo board's schematic.
@@ -38,7 +30,7 @@ Hardware
 ********
 - Module Demo Board build by MDBT50Q-1MV2
 - Nordic nRF52840 SoC Solution Version: 2
-- A recommnded 3rd-party module by Nordic Semiconductor.
+- A recommended 3rd-party module by Nordic Semiconductor.
 - BT5.2&BT5.1&BT5 Bluetooth Specification Cerified
 - Supports BT5 Long Range Features
 - Cerifications: FCC, IC, CE, Telec(MIC), KC, SRRC, NCC, RCM, WPC
@@ -52,54 +44,15 @@ Hardware
 - 3 User LEDs
 - 4 User buttons
 - 1 Mini USB connector for power supply and USB communication
-- SWD connector for FW programing
-- J-Link interface for FW programing
+- SWD connector for FW programming
+- J-Link interface for FW programming
 - UART interface for UART communication
 
 Supported Features
 ==================
 
-The raytac_mdbt50q_db_40/nrf52840 board configuration supports the following
-hardware features:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C(M)    | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| RADIO     | on-chip    | Bluetooth,           |
-|           |            | ieee802154           |
-+-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| RTT       | Segger     | console              |
-+-----------+------------+----------------------+
-| SPI(M/S)  | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| QSPI(M)   | on-chip    | qspi                 |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| USB       | on-chip    | usb                  |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
-
-Other hardware features have not been enabled yet for this board.
 See `MDBT50Q-DB-40 website`_ and `MDBT50Q-DB-40 Specification`_
 for a complete list of Raytac MDBT50Q-DB-40 board hardware features.
 
@@ -131,6 +84,8 @@ UART
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``raytac_mdbt50q_db_40/nrf52840`` board configuration can be
 built, flashed, and debugged in the usual way. See :ref:`build_an_application` and
 :ref:`application_run` for more details on building and running.
@@ -149,7 +104,7 @@ found in :ref:`nordic_segger_flashing`. Then build and flash
 applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 Use a USB to TTL converter to connect the computer and raytac_mdbt50q_db_40/nrf52840
 J10 connector. Then run your favorite terminal program to listen for output.

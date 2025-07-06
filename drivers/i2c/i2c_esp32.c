@@ -90,8 +90,9 @@ struct i2c_esp32_config {
 	} mode;
 
 	int irq_source;
+	int irq_priority;
+	int irq_flags;
 
-	const uint32_t default_config;
 	const uint32_t bitrate;
 	const uint32_t scl_timeout;
 };
@@ -148,7 +149,6 @@ static i2c_clock_source_t i2c_get_clk_src(uint32_t clk_freq)
 static int i2c_esp32_config_pin(const struct device *dev)
 {
 	const struct i2c_esp32_config *config = dev->config;
-	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
 	int ret = 0;
 
 	if (config->index >= SOC_I2C_NUM) {
@@ -262,14 +262,17 @@ static int i2c_esp32_recover(const struct device *dev)
 	return 0;
 }
 
-static void IRAM_ATTR i2c_esp32_configure_timeout(const struct device *dev)
+static void IRAM_ATTR i2c_esp32_configure_bitrate(const struct device *dev, uint32_t bitrate)
 {
 	const struct i2c_esp32_config *config = dev->config;
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
 
+	i2c_clock_source_t sclk = i2c_get_clk_src(bitrate);
+	uint32_t clk_freq_mhz = i2c_get_src_clk_freq(sclk);
+
+	i2c_hal_set_bus_timing(&data->hal, bitrate, sclk, clk_freq_mhz);
+
 	if (config->scl_timeout > 0) {
-		i2c_clock_source_t sclk = i2c_get_clk_src(config->bitrate);
-		uint32_t clk_freq_mhz = i2c_get_src_clk_freq(sclk);
 		uint32_t timeout_cycles = MIN(I2C_LL_MAX_TIMEOUT,
 					      clk_freq_mhz / MHZ(1) * config->scl_timeout);
 		i2c_ll_set_tout(data->hal.dev, timeout_cycles);
@@ -281,19 +284,14 @@ static void IRAM_ATTR i2c_esp32_configure_timeout(const struct device *dev)
 		 */
 		i2c_ll_set_tout(data->hal.dev, I2C_LL_MAX_TIMEOUT);
 	}
+
+	i2c_ll_update(data->hal.dev);
 }
 
-static int i2c_esp32_configure(const struct device *dev, uint32_t dev_config)
+static void i2c_esp32_configure_data_mode(const struct device *dev)
 {
 	const struct i2c_esp32_config *config = dev->config;
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
-
-	if (!(dev_config & I2C_MODE_CONTROLLER)) {
-		LOG_ERR("Only I2C Master mode supported.");
-		return -ENOTSUP;
-	}
-
-	data->dev_config = dev_config;
 
 	i2c_trans_mode_t tx_mode = I2C_DATA_MODE_MSB_FIRST;
 	i2c_trans_mode_t rx_mode = I2C_DATA_MODE_MSB_FIRST;
@@ -306,21 +304,58 @@ static int i2c_esp32_configure(const struct device *dev, uint32_t dev_config)
 		rx_mode = I2C_DATA_MODE_LSB_FIRST;
 	}
 
-	i2c_hal_master_init(&data->hal);
 	i2c_ll_set_data_mode(data->hal.dev, tx_mode, rx_mode);
 	i2c_ll_set_filter(data->hal.dev, I2C_FILTER_CYC_NUM_DEF);
 	i2c_ll_update(data->hal.dev);
 
-	if (config->bitrate == 0) {
+}
+
+static int i2c_esp32_configure(const struct device *dev, uint32_t dev_config)
+{
+	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
+	uint32_t bitrate;
+
+	if (!(dev_config & I2C_MODE_CONTROLLER)) {
+		LOG_ERR("Only I2C Master mode supported.");
+		return -ENOTSUP;
+	}
+
+	switch (I2C_SPEED_GET(dev_config)) {
+	case I2C_SPEED_STANDARD:
+		bitrate = KHZ(100);
+		break;
+	case I2C_SPEED_FAST:
+		bitrate = KHZ(400);
+		break;
+	case I2C_SPEED_FAST_PLUS:
+		bitrate = MHZ(1);
+		break;
+	default:
 		LOG_ERR("Error configuring I2C speed.");
 		return -ENOTSUP;
 	}
 
-	i2c_clock_source_t sclk = i2c_get_clk_src(config->bitrate);
+	k_sem_take(&data->transfer_sem, K_FOREVER);
 
-	i2c_hal_set_bus_timing(&data->hal, config->bitrate, sclk, i2c_get_src_clk_freq(sclk));
-	i2c_esp32_configure_timeout(dev);
-	i2c_ll_update(data->hal.dev);
+	data->dev_config = dev_config;
+
+	i2c_esp32_configure_bitrate(dev, bitrate);
+
+	k_sem_give(&data->transfer_sem);
+
+	return 0;
+}
+
+static int i2c_esp32_get_config(const struct device *dev, uint32_t *config)
+{
+	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
+
+	if (data->dev_config == 0) {
+		LOG_ERR("I2C controller not configured");
+		return -EIO;
+	}
+
+	*config = data->dev_config;
 
 	return 0;
 }
@@ -471,7 +506,6 @@ static int IRAM_ATTR i2c_esp32_read_msg(const struct device *dev,
 					struct i2c_msg *msg, uint16_t addr)
 {
 	int ret = 0;
-	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
 
 	/* Set the R/W bit to R */
 	addr |= BIT(0);
@@ -480,14 +514,12 @@ static int IRAM_ATTR i2c_esp32_read_msg(const struct device *dev,
 		i2c_esp32_master_start(dev);
 		ret = i2c_esp32_write_addr(dev, addr);
 		if (ret < 0) {
-			LOG_ERR("I2C transfer error: %d", ret);
 			return ret;
 		}
 	}
 
 	ret = i2c_esp32_master_read(dev, msg);
 	if (ret < 0) {
-		LOG_ERR("I2C transfer error: %d", ret);
 		return ret;
 	}
 
@@ -495,7 +527,6 @@ static int IRAM_ATTR i2c_esp32_read_msg(const struct device *dev,
 		i2c_esp32_master_stop(dev);
 		ret = i2c_esp32_transmit(dev);
 		if (ret < 0) {
-			LOG_ERR("I2C transfer error: %d", ret);
 			return ret;
 		}
 	}
@@ -547,21 +578,18 @@ static int IRAM_ATTR i2c_esp32_master_write(const struct device *dev, struct i2c
 static int IRAM_ATTR i2c_esp32_write_msg(const struct device *dev,
 					 struct i2c_msg *msg, uint16_t addr)
 {
-	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
 	int ret = 0;
 
 	if (msg->flags & I2C_MSG_RESTART) {
 		i2c_esp32_master_start(dev);
 		ret = i2c_esp32_write_addr(dev, addr);
 		if (ret < 0) {
-			LOG_ERR("I2C transfer error: %d", ret);
 			return ret;
 		}
 	}
 
 	ret = i2c_esp32_master_write(dev, msg);
 	if (ret < 0) {
-		LOG_ERR("I2C transfer error: %d", ret);
 		return ret;
 	}
 
@@ -569,7 +597,6 @@ static int IRAM_ATTR i2c_esp32_write_msg(const struct device *dev,
 		i2c_esp32_master_stop(dev);
 		ret = i2c_esp32_transmit(dev);
 		if (ret < 0) {
-			LOG_ERR("I2C transfer error: %d", ret);
 			return ret;
 		}
 	}
@@ -619,9 +646,6 @@ static int IRAM_ATTR i2c_esp32_transfer(const struct device *dev, struct i2c_msg
 				ret = -EINVAL;
 				break;
 			}
-		} else {
-			/* make sure the last message contains stop event */
-			current->flags |= I2C_MSG_STOP;
 		}
 
 		current++;
@@ -692,18 +716,22 @@ static void IRAM_ATTR i2c_esp32_isr(void *arg)
 	k_sem_give(&data->cmd_sem);
 }
 
-static const struct i2c_driver_api i2c_esp32_driver_api = {
+static DEVICE_API(i2c, i2c_esp32_driver_api) = {
 	.configure = i2c_esp32_configure,
+	.get_config = i2c_esp32_get_config,
 	.transfer = i2c_esp32_transfer,
-	.recover_bus = i2c_esp32_recover
+	.recover_bus = i2c_esp32_recover,
+#ifdef CONFIG_I2C_RTIO
+	.iodev_submit = i2c_iodev_submit_fallback,
+#endif
 };
 
 static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 {
 	const struct i2c_esp32_config *config = dev->config;
-#ifndef SOC_I2C_SUPPORT_HW_CLR_BUS
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
 
+#ifndef SOC_I2C_SUPPORT_HW_CLR_BUS
 	if (!gpio_is_ready_dt(&config->scl.gpio)) {
 		LOG_ERR("SCL GPIO device is not ready");
 		return -EINVAL;
@@ -728,9 +756,23 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 
 	clock_control_on(config->clock_dev, config->clock_subsys);
 
-	esp_intr_alloc(config->irq_source, 0, i2c_esp32_isr, (void *)dev, NULL);
+	ret = esp_intr_alloc(config->irq_source,
+			ESP_PRIO_TO_FLAGS(config->irq_priority) |
+			ESP_INT_FLAGS_CHECK(config->irq_flags) | ESP_INTR_FLAG_IRAM,
+			i2c_esp32_isr,
+			(void *)dev,
+			NULL);
 
-	return i2c_esp32_configure(dev, config->default_config);
+	if (ret != 0) {
+		LOG_ERR("could not allocate interrupt (err %d)", ret);
+		return ret;
+	}
+
+	i2c_hal_master_init(&data->hal);
+
+	i2c_esp32_configure_data_mode(dev);
+
+	return i2c_esp32_configure(dev, I2C_MODE_CONTROLLER | i2c_map_dt_bitrate(config->bitrate));
 }
 
 #define I2C(idx) DT_NODELABEL(i2c##idx)
@@ -752,8 +794,8 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 #endif /* SOC_I2C_SUPPORT_HW_CLR_BUS */
 
 #define I2C_ESP32_TIMEOUT(inst)						\
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, scl_timeout_us),	\
-		    (DT_INST_PROP(inst, scl_timeout_us)), (0))
+	COND_CODE_1(DT_NODE_HAS_PROP(I2C(inst), scl_timeout_us),	\
+		    (DT_PROP(I2C(inst), scl_timeout_us)), (0))
 
 #define I2C_ESP32_FREQUENCY(bitrate)					\
 	 (bitrate == I2C_BITRATE_STANDARD ? KHZ(100)			\
@@ -785,16 +827,17 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 			.tx_lsb_first = DT_PROP(I2C(idx), tx_lsb),				   \
 			.rx_lsb_first = DT_PROP(I2C(idx), rx_lsb),				   \
 		},										   \
-		.irq_source = ETS_I2C_EXT##idx##_INTR_SOURCE,					   \
+		.irq_source = DT_IRQ_BY_IDX(I2C(idx), 0, irq),				   \
+		.irq_priority = DT_IRQ_BY_IDX(I2C(idx), 0, priority),		   \
+		.irq_flags = DT_IRQ_BY_IDX(I2C(idx), 0, flags),				   \
 		.bitrate = I2C_FREQUENCY(idx),							   \
 		.scl_timeout = I2C_ESP32_TIMEOUT(idx),						   \
-		.default_config = I2C_MODE_CONTROLLER,						   \
 	};											   \
 	I2C_DEVICE_DT_DEFINE(I2C(idx), i2c_esp32_init, NULL, &i2c_esp32_data_##idx,		   \
 			     &i2c_esp32_config_##idx, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,	   \
 			     &i2c_esp32_driver_api);
 
-#if DT_NODE_HAS_STATUS(I2C(0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(I2C(0))
 #ifndef SOC_I2C_SUPPORT_HW_CLR_BUS
 #if !DT_NODE_HAS_PROP(I2C(0), sda_gpios) || !DT_NODE_HAS_PROP(I2C(0), scl_gpios)
 #error "Missing <sda-gpios> and <scl-gpios> properties to build for this target."
@@ -805,9 +848,9 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 #endif
 #endif /* !SOC_I2C_SUPPORT_HW_CLR_BUS */
 ESP32_I2C_INIT(0);
-#endif /* DT_NODE_HAS_STATUS(I2C(0), okay) */
+#endif /* DT_NODE_HAS_STATUS_OKAY(I2C(0)) */
 
-#if DT_NODE_HAS_STATUS(I2C(1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(I2C(1))
 #ifndef SOC_I2C_SUPPORT_HW_CLR_BUS
 #if !DT_NODE_HAS_PROP(I2C(1), sda_gpios) || !DT_NODE_HAS_PROP(I2C(1), scl_gpios)
 #error "Missing <sda-gpios> and <scl-gpios> properties to build for this target."
@@ -818,4 +861,4 @@ ESP32_I2C_INIT(0);
 #endif
 #endif /* !SOC_I2C_SUPPORT_HW_CLR_BUS */
 ESP32_I2C_INIT(1);
-#endif /* DT_NODE_HAS_STATUS(I2C(1), okay) */
+#endif /* DT_NODE_HAS_STATUS_OKAY(I2C(1)) */

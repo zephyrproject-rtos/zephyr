@@ -257,7 +257,7 @@ static int notify_callback_set(const struct device *dev,
 	return 0;
 }
 
-static const struct edac_driver_api api = {
+static DEVICE_API(edac, api) = {
 #if defined(CONFIG_EDAC_ERROR_INJECT)
 	/* Error Injection functions */
 	.inject_set_param1 = inject_set_param1,
@@ -387,7 +387,7 @@ static bool handle_nmi(void)
 	return true;
 }
 
-bool z_x86_do_kernel_nmi(const z_arch_esf_t *esf)
+bool z_x86_do_kernel_nmi(const struct arch_esf *esf)
 {
 	const struct device *const dev = DEVICE_DT_GET(DEVICE_NODE);
 	struct ibecc_data *data = dev->data;

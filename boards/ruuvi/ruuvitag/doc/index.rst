@@ -1,7 +1,4 @@
-.. _ruuvi_ruuvitag:
-
-Ruuvi RuuviTag
-##############
+.. zephyr:board:: ruuvi_ruuvitag
 
 Overview
 ********
@@ -9,12 +6,6 @@ Overview
 RuuviTag is an advanced battery-operated open-source Bluetooth
 enabled sensor beacon platform capable of sending temperature, humidity,
 pressure, and motion information over Bluetooth Low Energy.
-
-.. figure:: img/ruuvitag.jpg
-     :align: center
-     :alt: RUUVI RuuviTag
-
-     RUUVI RuuviTag (Credit: https://ruuvi.com/)
 
 More information about the board can be found at the
 `ruuvitag website`_.
@@ -38,37 +29,7 @@ RuuviTag's have the following physical features:
 Supported Features
 ==================
 
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| RADIO     | on-chip    | Bluetooth            |
-+-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| SPI       | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
-| Humidity, | on-board   | bme280               |
-| Temp & Air|            |                      |
-| Pressure  |            |                      |
-+-----------+------------+----------------------+
-| Acc       | on-board   | lis2dh12             |
-+-----------+------------+----------------------+
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -137,6 +98,8 @@ P1 = TC2030 TagConnect (on RuuviTag Rev.B6)
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Flashing
 ========

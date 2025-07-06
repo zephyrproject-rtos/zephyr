@@ -39,10 +39,6 @@
 };
 
 / {
-	aliases {
-		spi-flash0 = &w25q64;
-	};
-
 	charger_enable: charger-enable {
 		compatible = "actinius-charger-enable";
 		gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;

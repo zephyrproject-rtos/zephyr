@@ -16,7 +16,15 @@
 #include "time_machine.h"
 #include "bstests.h"
 
-#define COUNT      5000   /* Arbitrary GATT Write Cmd iterations used */
+/* There are 13 iterations of PHY update every 3 seconds, and based on actual
+ * simulation 10000 iterations are sufficient to finish these iterations with
+ * a stable 2M throughput value to be verified. If Central and Peripheral take
+ * different duration to complete these iterations, the test will fail due to
+ * the throughput calculated over one second duration will be low due to the
+ * connection being disconnected before the other device could complete all the
+ * iterations.
+ */
+#define COUNT 10000
 
 /* Write Throughput calculation:
  *  Measure interval = 1 s
@@ -101,14 +109,14 @@ static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "central",
 		.test_descr = "Central GATT Write",
-		.test_post_init_f = test_gatt_write_init,
+		.test_pre_init_f = test_gatt_write_init,
 		.test_tick_f = test_gatt_write_tick,
 		.test_main_f = test_central_main
 	},
 	{
 		.test_id = "peripheral",
 		.test_descr = "Peripheral GATT Write",
-		.test_post_init_f = test_gatt_write_init,
+		.test_pre_init_f = test_gatt_write_init,
 		.test_tick_f = test_gatt_write_tick,
 		.test_main_f = test_peripheral_main
 	},

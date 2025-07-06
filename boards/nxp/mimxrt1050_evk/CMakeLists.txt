@@ -24,7 +24,7 @@ if(CONFIG_NXP_IMXRT_BOOT_HEADER)
     set(FLASH_CONF evkbimxrt1050_flexspi_nor_config.c)
   endif()
   set(RT1050_BOARD_DIR
-    "${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk/boards/evkbimxrt1050")
+    "${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/boards/evkbimxrt1050")
   if(CONFIG_BOOT_FLEXSPI_NOR)
     # Include flash configuration block for RT1050 EVK from NXP's HAL.
     # This configuration block may need modification if another flash chip is

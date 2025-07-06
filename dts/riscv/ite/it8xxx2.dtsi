@@ -153,6 +153,15 @@
 			interrupt-parent = <&intc>;
 		};
 
+		counter0: counter@f01f30 {
+			compatible = "ite,it8xxx2-counter";
+			reg = <0xf01f30 0x10>;
+			interrupts = <IT8XXX2_IRQ_TIMER7 IRQ_TYPE_EDGE_RISING   /* Alarm timer */
+				      IT8XXX2_IRQ_TIMER8 IRQ_TYPE_EDGE_RISING>; /* Top timer */
+			interrupt-parent = <&intc>;
+			status = "disabled";
+		};
+
 		gpioa: gpio@f01601 {
 			compatible = "ite,it8xxx2-gpio";
 			reg = <0x00f01601 1   /* GPDR (set) */
@@ -440,24 +449,6 @@
 			status = "disabled";
 		};
 
-		spi0: spi@f02600  {
-			#address-cells = <1>;
-			#size-cells = <0>;
-			compatible = "ite,it8xxx2-sspi";
-			reg = <0x00f02600 0x40>;
-			interrupt-parent = <&intc>;
-			interrupts = <37 IRQ_TYPE_EDGE_RISING>;
-			clock-frequency = <115200>;
-		};
-		spi1: spi@f02640  {
-			#address-cells = <1>;
-			#size-cells = <0>;
-			compatible = "ite,it8xxx2-sspi";
-			reg = <0x00f02640 0x40>;
-			interrupts = <37 IRQ_TYPE_EDGE_RISING>;
-			interrupt-parent = <&intc>;
-			status = "okay";
-		};
 		shi0: shi@f03a00 {
 			compatible = "ite,it8xxx2-shi";
 			reg = <0x00f03a00 0x30>;
@@ -707,12 +698,6 @@
 				   &wuc_wu37>; /* KSI[7] */
 			kso16-gpios = <&gpioc 3 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
 			kso17-gpios = <&gpioc 5 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
-		};
-
-		sha0: sha@f0202d {
-			compatible = "ite,it8xxx2-sha";
-			reg = <0x00f0202d 0x3>;
-			status = "disabled";
 		};
 
 		usbpd0: usbpd@f03700 {

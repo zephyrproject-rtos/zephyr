@@ -3,25 +3,22 @@
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
-import pytest
 import logging
-
 from pathlib import Path
-from twister_harness import DeviceAdapter, Shell, MCUmgr
+
+import pytest
+from twister_harness import DeviceAdapter, MCUmgr, Shell
+from twister_harness.helpers.utils import find_in_config, match_lines, match_no_lines
+from utils import check_with_mcumgr_command, check_with_shell_command
 from west_sign_wrapper import west_sign_with_imgtool
-from utils import (
-    find_in_config,
-    match_lines,
-    match_no_lines,
-    check_with_shell_command,
-    check_with_mcumgr_command,
-)
 
 logger = logging.getLogger(__name__)
-PROJECT_NAME = 'with_mcumgr'
+
+# This string is used to verify that the device is running the application
+WELCOME_STRING = "smp_sample: build time:"
 
 
-def create_signed_image(build_dir: Path, version: str) -> Path:
+def create_signed_image(build_dir: Path, app_build_dir: Path, version: str) -> Path:
     image_to_test = Path(build_dir) / 'test_{}.signed.bin'.format(
         version.replace('.', '_').replace('+', '_'))
     origin_key_file = find_in_config(
@@ -29,13 +26,20 @@ def create_signed_image(build_dir: Path, version: str) -> Path:
         'CONFIG_BOOT_SIGNATURE_KEY_FILE'
     )
     west_sign_with_imgtool(
-        build_dir=Path(build_dir) / PROJECT_NAME,
+        build_dir=Path(app_build_dir),
         output_bin=image_to_test,
         key_file=Path(origin_key_file),
         version=version
     )
     assert image_to_test.is_file()
     return image_to_test
+
+
+def get_upgrade_string_to_verify(build_dir: Path) -> str:
+    sysbuild_config = Path(build_dir) / 'zephyr' / '.config'
+    if find_in_config(sysbuild_config, 'SB_CONFIG_MCUBOOT_MODE_SWAP_USING_OFFSET'):
+        return 'Starting swap using offset algorithm'
+    return 'Starting swap using move algorithm'
 
 
 def clear_buffer(dut: DeviceAdapter) -> None:
@@ -48,7 +52,7 @@ def clear_buffer(dut: DeviceAdapter) -> None:
         dut.disconnect()
 
 
-def test_upgrade_with_confirm(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr):
+def run_upgrade_with_confirm(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr):
     """
     Verify that the application can be updated
     1) Device flashed with MCUboot and an application that contains SMP server
@@ -62,7 +66,8 @@ def test_upgrade_with_confirm(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr):
     """
     logger.info('Prepare upgrade image')
     new_version = '0.0.2+0'
-    image_to_test = create_signed_image(dut.device_config.build_dir, new_version)
+    image_to_test = create_signed_image(dut.device_config.build_dir,
+                                        dut.device_config.app_build_dir, new_version)
 
     logger.info('Upload image with mcumgr')
     dut.disconnect()
@@ -75,10 +80,11 @@ def test_upgrade_with_confirm(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr):
     mcumgr.reset_device()
 
     dut.connect()
-    output = dut.readlines_until('Launching primary slot application')
+    output = dut.readlines_until(WELCOME_STRING)
+    upgrade_string_to_verify = get_upgrade_string_to_verify(dut.device_config.build_dir)
     match_lines(output, [
         'Swap type: test',
-        'Starting swap using move algorithm'
+        upgrade_string_to_verify
     ])
     logger.info('Verify new APP is booted')
     check_with_shell_command(shell, new_version, swap_type='test')
@@ -90,12 +96,17 @@ def test_upgrade_with_confirm(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr):
     mcumgr.reset_device()
 
     dut.connect()
-    output = dut.readlines_until('Launching primary slot application')
+    output = dut.readlines_until(WELCOME_STRING)
     match_no_lines(output, [
-        'Starting swap using move algorithm'
+        upgrade_string_to_verify
     ])
     logger.info('Verify new APP is still booted')
     check_with_shell_command(shell, new_version)
+
+
+def test_upgrade_with_confirm(mcumgr: MCUmgr, dut: DeviceAdapter, shell: Shell):
+    """Verify that the application can be updated over serial"""
+    run_upgrade_with_confirm(dut, shell, mcumgr)
 
 
 def test_upgrade_with_revert(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr):
@@ -111,12 +122,13 @@ def test_upgrade_with_revert(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr):
     8) Verify that MCUboot reverts update
     """
     origin_version = find_in_config(
-        Path(dut.device_config.build_dir) / PROJECT_NAME / 'zephyr' / '.config',
+        Path(dut.device_config.app_build_dir) / 'zephyr' / '.config',
         'CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION'
     )
     logger.info('Prepare upgrade image')
     new_version = '0.0.3+0'
-    image_to_test = create_signed_image(dut.device_config.build_dir, new_version)
+    image_to_test = create_signed_image(dut.device_config.build_dir,
+                                        dut.device_config.app_build_dir, new_version)
 
     logger.info('Upload image with mcumgr')
     dut.disconnect()
@@ -129,10 +141,11 @@ def test_upgrade_with_revert(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr):
     mcumgr.reset_device()
 
     dut.connect()
-    output = dut.readlines_until('Launching primary slot application')
+    output = dut.readlines_until(WELCOME_STRING)
+    upgrade_string_to_verify = get_upgrade_string_to_verify(dut.device_config.build_dir)
     match_lines(output, [
         'Swap type: test',
-        'Starting swap using move algorithm'
+        upgrade_string_to_verify
     ])
     logger.info('Verify new APP is booted')
     check_with_shell_command(shell, new_version, swap_type='test')
@@ -143,10 +156,10 @@ def test_upgrade_with_revert(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr):
     mcumgr.reset_device()
 
     dut.connect()
-    output = dut.readlines_until('Launching primary slot application')
+    output = dut.readlines_until(WELCOME_STRING)
     match_lines(output, [
         'Swap type: revert',
-        'Starting swap using move algorithm'
+        upgrade_string_to_verify
     ])
     logger.info('Verify that MCUboot reverts update')
     check_with_shell_command(shell, origin_version)
@@ -154,10 +167,8 @@ def test_upgrade_with_revert(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr):
 
 @pytest.mark.parametrize(
     'key_file', [None, 'root-ec-p256.pem'],
-    ids=[
-        'no_key',
-        'invalid_key'
-    ])
+    ids=['no_key', 'invalid_key']
+)
 def test_upgrade_signature(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr, key_file):
     """
     Verify that the application is not updated when app is not signed or signed with invalid key
@@ -178,14 +189,14 @@ def test_upgrade_signature(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr, key
         key_file = Path(origin_key_file).parent / key_file
         assert key_file.is_file()
         assert not key_file.samefile(origin_key_file)
-        image_to_test = image_to_test = Path(dut.device_config.build_dir) / 'test_invalid_key.bin'
+        image_to_test = Path(dut.device_config.build_dir) / 'test_invalid_key.bin'
         logger.info('Sign second image with an invalid key')
     else:
-        image_to_test = image_to_test = Path(dut.device_config.build_dir) / 'test_no_key.bin'
+        image_to_test = Path(dut.device_config.build_dir) / 'test_no_key.bin'
         logger.info('Sign second imagewith no key')
 
     west_sign_with_imgtool(
-        build_dir=Path(dut.device_config.build_dir) / PROJECT_NAME,
+        build_dir=Path(dut.device_config.app_build_dir),
         output_bin=image_to_test,
         key_file=key_file,
         version='0.0.3+4'  # must differ from the origin version, if not then hash is not updated
@@ -205,6 +216,7 @@ def test_upgrade_signature(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr, key
     mcumgr.reset_device()
 
     dut.connect()
-    output = dut.readlines_until('Launching primary slot application')
-    match_no_lines(output, ['Starting swap using move algorithm'])
+    output = dut.readlines_until(WELCOME_STRING)
+    upgrade_string_to_verify = get_upgrade_string_to_verify(dut.device_config.build_dir)
+    match_no_lines(output, [upgrade_string_to_verify])
     match_lines(output, ['Image in the secondary slot is not valid'])

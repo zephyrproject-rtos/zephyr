@@ -1,0 +1,12 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# Copyright (c) 2024 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config LOG_INFO_COLOR_GREEN
+	default y if LOG_BACKEND_SHOW_COLOR
+
+config LOG_DBG_COLOR_BLUE
+	default y if LOG_BACKEND_SHOW_COLOR
+
+source "Kconfig.zephyr"

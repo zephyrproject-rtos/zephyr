@@ -50,7 +50,7 @@ enum usbc_ppc_event {
 typedef void (*usbc_ppc_event_cb_t)(const struct device *dev, void *data, enum usbc_ppc_event ev);
 
 /** Structure with pointers to the functions implemented by driver */
-__subsystem struct usbc_ppc_drv {
+__subsystem struct usbc_ppc_driver_api {
 	int (*is_dead_battery_mode)(const struct device *dev);
 	int (*exit_dead_battery_mode)(const struct device *dev);
 	int (*is_vbus_source)(const struct device *dev);
@@ -78,7 +78,7 @@ __subsystem struct usbc_ppc_drv {
  */
 static inline int ppc_is_dead_battery_mode(const struct device *dev)
 {
-	const struct usbc_ppc_drv *api = (const struct usbc_ppc_drv *)dev->api;
+	const struct usbc_ppc_driver_api *api = (const struct usbc_ppc_driver_api *)dev->api;
 
 	if (api->is_dead_battery_mode == NULL) {
 		return -ENOSYS;
@@ -101,7 +101,7 @@ static inline int ppc_is_dead_battery_mode(const struct device *dev)
  */
 static inline int ppc_exit_dead_battery_mode(const struct device *dev)
 {
-	const struct usbc_ppc_drv *api = (const struct usbc_ppc_drv *)dev->api;
+	const struct usbc_ppc_driver_api *api = (const struct usbc_ppc_driver_api *)dev->api;
 
 	if (api->exit_dead_battery_mode == NULL) {
 		return -ENOSYS;
@@ -121,7 +121,7 @@ static inline int ppc_exit_dead_battery_mode(const struct device *dev)
  */
 static inline int ppc_is_vbus_source(const struct device *dev)
 {
-	const struct usbc_ppc_drv *api = (const struct usbc_ppc_drv *)dev->api;
+	const struct usbc_ppc_driver_api *api = (const struct usbc_ppc_driver_api *)dev->api;
 
 	if (api->is_vbus_source == NULL) {
 		return -ENOSYS;
@@ -141,7 +141,7 @@ static inline int ppc_is_vbus_source(const struct device *dev)
  */
 static inline int ppc_is_vbus_sink(const struct device *dev)
 {
-	const struct usbc_ppc_drv *api = (const struct usbc_ppc_drv *)dev->api;
+	const struct usbc_ppc_driver_api *api = (const struct usbc_ppc_driver_api *)dev->api;
 
 	if (api->is_vbus_sink == NULL) {
 		return -ENOSYS;
@@ -161,7 +161,7 @@ static inline int ppc_is_vbus_sink(const struct device *dev)
  */
 static inline int ppc_set_snk_ctrl(const struct device *dev, bool enable)
 {
-	const struct usbc_ppc_drv *api = (const struct usbc_ppc_drv *)dev->api;
+	const struct usbc_ppc_driver_api *api = (const struct usbc_ppc_driver_api *)dev->api;
 
 	if (api->set_snk_ctrl == NULL) {
 		return -ENOSYS;
@@ -181,7 +181,7 @@ static inline int ppc_set_snk_ctrl(const struct device *dev, bool enable)
  */
 static inline int ppc_set_src_ctrl(const struct device *dev, bool enable)
 {
-	const struct usbc_ppc_drv *api = (const struct usbc_ppc_drv *)dev->api;
+	const struct usbc_ppc_driver_api *api = (const struct usbc_ppc_driver_api *)dev->api;
 
 	if (api->set_src_ctrl == NULL) {
 		return -ENOSYS;
@@ -201,7 +201,7 @@ static inline int ppc_set_src_ctrl(const struct device *dev, bool enable)
  */
 static inline int ppc_set_vbus_discharge(const struct device *dev, bool enable)
 {
-	const struct usbc_ppc_drv *api = (const struct usbc_ppc_drv *)dev->api;
+	const struct usbc_ppc_driver_api *api = (const struct usbc_ppc_driver_api *)dev->api;
 
 	if (api->set_vbus_discharge == NULL) {
 		return -ENOSYS;
@@ -221,7 +221,7 @@ static inline int ppc_set_vbus_discharge(const struct device *dev, bool enable)
  */
 static inline int ppc_is_vbus_present(const struct device *dev)
 {
-	const struct usbc_ppc_drv *api = (const struct usbc_ppc_drv *)dev->api;
+	const struct usbc_ppc_driver_api *api = (const struct usbc_ppc_driver_api *)dev->api;
 
 	if (api->is_vbus_present == NULL) {
 		return -ENOSYS;
@@ -242,7 +242,7 @@ static inline int ppc_is_vbus_present(const struct device *dev)
 static inline int ppc_set_event_handler(const struct device *dev,
 	usbc_ppc_event_cb_t handler, void *data)
 {
-	const struct usbc_ppc_drv *api = (const struct usbc_ppc_drv *)dev->api;
+	const struct usbc_ppc_driver_api *api = (const struct usbc_ppc_driver_api *)dev->api;
 
 	if (api->set_event_handler == NULL) {
 		return -ENOSYS;
@@ -261,7 +261,7 @@ static inline int ppc_set_event_handler(const struct device *dev,
  */
 static inline int ppc_dump_regs(const struct device *dev)
 {
-	const struct usbc_ppc_drv *api = (const struct usbc_ppc_drv *)dev->api;
+	const struct usbc_ppc_driver_api *api = (const struct usbc_ppc_driver_api *)dev->api;
 
 	if (api->dump_regs == NULL) {
 		return -ENOSYS;

@@ -34,7 +34,11 @@ ZTEST(rtc_api, test_update_callback)
 
 	ret = rtc_update_set_callback(rtc, NULL, NULL);
 
-	zassert_ok(ret, "Failed to clear and disable update callback");
+	if (ret == -ENOSYS) {
+		ztest_test_skip();
+	} else {
+		zassert_ok(ret, "Failed to clear and disable update callback");
+	}
 
 	key = k_spin_lock(&lock);
 
@@ -69,4 +73,6 @@ ZTEST(rtc_api, test_update_callback)
 	zassert_true(counter < 12 && counter > 8, "Invalid update callback called counter");
 
 	zassert_equal(address, ((void *)&test_user_data), "Incorrect user data");
+	zassert_ok(rtc_update_set_callback(rtc, NULL, NULL),
+	    "Failed to clear and disable update callback");
 }

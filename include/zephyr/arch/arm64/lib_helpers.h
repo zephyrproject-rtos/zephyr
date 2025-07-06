@@ -24,8 +24,9 @@
 
 #define write_sysreg(val, reg)						\
 ({									\
+	uint64_t reg_val = val;						\
 	__asm__ volatile ("msr " STRINGIFY(reg) ", %0"			\
-			  :: "r" (val) : "memory");			\
+			  :: "r" (reg_val) : "memory");			\
 })
 
 #define zero_sysreg(reg)						\
@@ -70,8 +71,10 @@ MAKE_REG_HELPER(hcr_el2);
 MAKE_REG_HELPER(id_aa64pfr0_el1);
 MAKE_REG_HELPER(id_aa64mmfr0_el1);
 MAKE_REG_HELPER(mpidr_el1);
-MAKE_REG_HELPER(par_el1)
+MAKE_REG_HELPER(par_el1);
+#if !defined(CONFIG_ARMV8_R)
 MAKE_REG_HELPER(scr_el3);
+#endif /* CONFIG_ARMV8_R */
 MAKE_REG_HELPER(tpidrro_el0);
 MAKE_REG_HELPER(vmpidr_el2);
 MAKE_REG_HELPER(sp_el0);
@@ -177,8 +180,9 @@ static inline bool is_el_highest_implemented(void)
 
 	curr_el = GET_EL(read_currentel());
 
-	if (curr_el < el_highest)
+	if (curr_el < el_highest) {
 		return false;
+	}
 
 	return true;
 }

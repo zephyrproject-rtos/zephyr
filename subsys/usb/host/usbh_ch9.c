@@ -10,7 +10,7 @@
 #include <zephyr/usb/usbh.h>
 #include <zephyr/usb/usb_ch9.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 
 #include "usbh_device.h"
 
@@ -25,13 +25,26 @@ LOG_MODULE_REGISTER(usbh_ch9, CONFIG_USBH_LOG_LEVEL);
 #define SETUP_REQ_TIMEOUT	5000U
 
 K_SEM_DEFINE(ch9_req_sync, 0, 1);
+static bool ctrl_req_no_status;
 
 static int ch9_req_cb(struct usb_device *const udev, struct uhc_transfer *const xfer)
 {
 	LOG_DBG("Request finished %p, err %d", xfer, xfer->err);
+	if (xfer->err == -ECONNRESET) {
+		LOG_INF("Transfer %p cancelled", (void *)xfer);
+		usbh_xfer_free(udev, xfer);
+
+		return 0;
+	}
+
 	k_sem_give(&ch9_req_sync);
 
 	return 0;
+}
+
+void usbh_req_omit_status(const bool omit)
+{
+	ctrl_req_no_status = omit;
 }
 
 int usbh_req_setup(struct usb_device *const udev,
@@ -53,14 +66,15 @@ int usbh_req_setup(struct usb_device *const udev,
 	uint8_t ep = usb_reqtype_is_to_device(&req) ? 0x00 : 0x80;
 	int ret;
 
-	xfer = usbh_xfer_alloc(udev, ep, 0, 64, SETUP_REQ_TIMEOUT, (void *)ch9_req_cb);
+	xfer = usbh_xfer_alloc(udev, ep, ch9_req_cb, NULL);
 	if (!xfer) {
 		return -ENOMEM;
 	}
 
 	memcpy(xfer->setup_pkt, &req, sizeof(req));
 
-	__ASSERT((buf != NULL && wLength) || (buf == NULL && !wLength),
+	__ASSERT(IS_ENABLED(CONFIG_ZTEST) ||
+		 (buf != NULL && wLength) || (buf == NULL && !wLength),
 		 "Unresolved conditions for data stage");
 	if (wLength) {
 		ret = usbh_xfer_buf_add(udev, xfer, buf);
@@ -69,12 +83,26 @@ int usbh_req_setup(struct usb_device *const udev,
 		}
 	}
 
+	if (IS_ENABLED(CONFIG_ZTEST) && ctrl_req_no_status) {
+		xfer->no_status = true;
+	}
+
 	ret = usbh_xfer_enqueue(udev, xfer);
 	if (ret) {
 		goto buf_alloc_err;
 	}
 
-	k_sem_take(&ch9_req_sync, K_MSEC(SETUP_REQ_TIMEOUT));
+	if (k_sem_take(&ch9_req_sync, K_MSEC(SETUP_REQ_TIMEOUT)) != 0) {
+		ret = usbh_xfer_dequeue(udev, xfer);
+		if (ret != 0) {
+			LOG_ERR("Failed to cancel transfer");
+			return ret;
+		}
+
+		LOG_ERR("Timeout");
+		return -ETIMEDOUT;
+	}
+
 	ret = xfer->err;
 
 buf_alloc_err:
@@ -99,10 +127,11 @@ int usbh_req_desc(struct usb_device *const udev,
 }
 
 int usbh_req_desc_dev(struct usb_device *const udev,
+		      const uint16_t len,
 		      struct usb_device_descriptor *const desc)
 {
 	const uint8_t type = USB_DESC_DEVICE;
-	const uint16_t wLength = sizeof(struct usb_device_descriptor);
+	const uint16_t wLength = MIN(len, sizeof(struct usb_device_descriptor));
 	struct net_buf *buf;
 	int ret;
 
@@ -156,21 +185,8 @@ int usbh_req_set_address(struct usb_device *const udev,
 {
 	const uint8_t bmRequestType = USB_REQTYPE_DIR_TO_DEVICE << 7;
 	const uint8_t bRequest = USB_SREQ_SET_ADDRESS;
-	int ret;
 
-	ret = usbh_req_setup(udev, bmRequestType, bRequest, addr, 0, 0, NULL);
-	if (ret == 0) {
-		udev->addr = addr;
-		if (addr == 0) {
-			udev->state = USB_STATE_DEFAULT;
-		}
-
-		if (addr != 0 && udev->state == USB_STATE_DEFAULT) {
-			udev->state = USB_STATE_ADDRESSED;
-		}
-	}
-
-	return ret;
+	return usbh_req_setup(udev, bmRequestType, bRequest, addr, 0, 0, NULL);
 }
 
 int usbh_req_set_cfg(struct usb_device *const udev,
@@ -178,22 +194,8 @@ int usbh_req_set_cfg(struct usb_device *const udev,
 {
 	const uint8_t bmRequestType = USB_REQTYPE_DIR_TO_DEVICE << 7;
 	const uint8_t bRequest = USB_SREQ_SET_CONFIGURATION;
-	int ret;
 
-	/* Ignore the required state change condition for now. */
-	ret = usbh_req_setup(udev, bmRequestType, bRequest, cfg, 0, 0, NULL);
-	if (ret == 0) {
-		udev->actual_cfg = cfg;
-		if (cfg == 0) {
-			udev->state = USB_STATE_ADDRESSED;
-		}
-
-		if (cfg != 0 && udev->state == USB_STATE_ADDRESSED) {
-			udev->state = USB_STATE_CONFIGURED;
-		}
-	}
-
-	return ret;
+	return usbh_req_setup(udev, bmRequestType, bRequest, cfg, 0, 0, NULL);
 }
 
 int usbh_req_get_cfg(struct usb_device *const udev,
@@ -253,6 +255,30 @@ int usbh_req_clear_sfs_rwup(struct usb_device *const udev)
 
 	return usbh_req_setup(udev,
 			      bmRequestType, bRequest, wValue, 0, 0,
+			      NULL);
+}
+
+int usbh_req_set_sfs_halt(struct usb_device *const udev, const uint8_t ep)
+{
+	const uint8_t bmRequestType = USB_REQTYPE_RECIPIENT_ENDPOINT;
+	const uint8_t bRequest = USB_SREQ_SET_FEATURE;
+	const uint16_t wValue = USB_SFS_ENDPOINT_HALT;
+	const uint16_t wIndex = ep;
+
+	return usbh_req_setup(udev,
+			      bmRequestType, bRequest, wValue, wIndex, 0,
+			      NULL);
+}
+
+int usbh_req_clear_sfs_halt(struct usb_device *const udev, const uint8_t ep)
+{
+	const uint8_t bmRequestType = USB_REQTYPE_RECIPIENT_ENDPOINT;
+	const uint8_t bRequest = USB_SREQ_CLEAR_FEATURE;
+	const uint16_t wValue = USB_SFS_ENDPOINT_HALT;
+	const uint16_t wIndex = ep;
+
+	return usbh_req_setup(udev,
+			      bmRequestType, bRequest, wValue, wIndex, 0,
 			      NULL);
 }
 

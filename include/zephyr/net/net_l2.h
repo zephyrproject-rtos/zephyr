@@ -13,7 +13,8 @@
 #define ZEPHYR_INCLUDE_NET_NET_L2_H_
 
 #include <zephyr/device.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/net/net_ip.h>
 #include <zephyr/net/capture.h>
 #include <zephyr/sys/iterable_sections.h>
 
@@ -24,6 +25,8 @@ extern "C" {
 /**
  * @brief Network Layer 2 abstraction layer
  * @defgroup net_l2 Network L2 Abstraction Layer
+ * @since 1.5
+ * @version 1.0.0
  * @ingroup networking
  * @{
  */
@@ -77,6 +80,13 @@ struct net_l2 {
 	 * Return L2 flags for the network interface.
 	 */
 	enum net_l2_flags (*get_flags)(struct net_if *iface);
+
+	/**
+	 * Optional function for reserving L2 header space for this technology.
+	 */
+	int (*alloc)(struct net_if *iface, struct net_pkt *pkt,
+		     size_t size, enum net_ip_protocol proto,
+		     k_timeout_t timeout);
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -85,47 +95,31 @@ struct net_l2 {
 	extern const struct net_l2 NET_L2_GET_NAME(_name)
 #define NET_L2_GET_CTX_TYPE(_name) _name##_CTX_TYPE
 
-#ifdef CONFIG_NET_L2_VIRTUAL
 #define VIRTUAL_L2		VIRTUAL
 NET_L2_DECLARE_PUBLIC(VIRTUAL_L2);
-#endif /* CONFIG_NET_L2_DUMMY */
 
-#ifdef CONFIG_NET_L2_DUMMY
 #define DUMMY_L2		DUMMY
 #define DUMMY_L2_CTX_TYPE	void*
 NET_L2_DECLARE_PUBLIC(DUMMY_L2);
-#endif /* CONFIG_NET_L2_DUMMY */
 
-#if defined(CONFIG_NET_OFFLOAD) || defined(CONFIG_NET_SOCKETS_OFFLOAD)
 #define OFFLOADED_NETDEV_L2 OFFLOADED_NETDEV
 NET_L2_DECLARE_PUBLIC(OFFLOADED_NETDEV_L2);
-#endif /* CONFIG_NET_OFFLOAD || CONFIG_NET_SOCKETS_OFFLOAD */
 
-#ifdef CONFIG_NET_L2_ETHERNET
 #define ETHERNET_L2		ETHERNET
 NET_L2_DECLARE_PUBLIC(ETHERNET_L2);
-#endif /* CONFIG_NET_L2_ETHERNET */
 
-#ifdef CONFIG_NET_L2_PPP
 #define PPP_L2			PPP
 NET_L2_DECLARE_PUBLIC(PPP_L2);
-#endif /* CONFIG_NET_L2_PPP */
 
-#ifdef CONFIG_NET_L2_IEEE802154
 #define IEEE802154_L2		IEEE802154
 NET_L2_DECLARE_PUBLIC(IEEE802154_L2);
-#endif /* CONFIG_NET_L2_IEEE802154 */
 
-#ifdef CONFIG_NET_L2_OPENTHREAD
 #define OPENTHREAD_L2		OPENTHREAD
 NET_L2_DECLARE_PUBLIC(OPENTHREAD_L2);
-#endif /* CONFIG_NET_L2_OPENTHREAD */
 
-#ifdef CONFIG_NET_L2_CANBUS_RAW
 #define CANBUS_RAW_L2		CANBUS_RAW
 #define CANBUS_RAW_L2_CTX_TYPE	void*
 NET_L2_DECLARE_PUBLIC(CANBUS_RAW_L2);
-#endif /* CONFIG_NET_L2_CANBUS_RAW */
 
 #ifdef CONFIG_NET_L2_CUSTOM_IEEE802154
 #ifndef CUSTOM_IEEE802154_L2
@@ -135,13 +129,16 @@ NET_L2_DECLARE_PUBLIC(CANBUS_RAW_L2);
 NET_L2_DECLARE_PUBLIC(CUSTOM_IEEE802154_L2);
 #endif /* CONFIG_NET_L2_CUSTOM_IEEE802154 */
 
-#define NET_L2_INIT(_name, _recv_fn, _send_fn, _enable_fn, _get_flags_fn) \
+#define NET_L2_INIT(_name, _recv_fn, _send_fn, _enable_fn, _get_flags_fn, ...) \
 	const STRUCT_SECTION_ITERABLE(net_l2,				\
 				      NET_L2_GET_NAME(_name)) = {	\
 		.recv = (_recv_fn),					\
 		.send = (_send_fn),					\
 		.enable = (_enable_fn),					\
 		.get_flags = (_get_flags_fn),				\
+		.alloc = COND_CODE_0(NUM_VA_ARGS_LESS_1(LIST_DROP_EMPTY(__VA_ARGS__, _)), \
+				     (NULL),				\
+				     (GET_ARG_N(1, __VA_ARGS__))),	\
 	}
 
 #define NET_L2_GET_DATA(name, sfx) _net_l2_data_##name##sfx

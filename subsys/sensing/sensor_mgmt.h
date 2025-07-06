@@ -26,7 +26,7 @@ extern "C" {
 	STRUCT_SECTION_END_EXTERN(sensing_sensor);				\
 	for (struct sensing_sensor *sensor = STRUCT_SECTION_END(sensing_sensor)	\
 		- 1;								\
-	     ({ __ASSERT(sensor >= STRUCT_SECTION_START(sensing_sensor) - 1,	\
+	     ({ __ASSERT(sensor >= STRUCT_SECTION_START(sensing_sensor),	\
 		"unexpected list start location");				\
 		sensor >= STRUCT_SECTION_START(sensing_sensor); });		\
 	     sensor--)
@@ -66,7 +66,7 @@ static inline struct sensing_sensor *get_sensor_by_dev(const struct device *dev)
 		}
 	}
 
-	__ASSERT(true, "device %s is not a sensing sensor", dev->name);
+	__ASSERT(false, "device %s is not a sensing sensor", dev->name);
 
 	return NULL;
 }

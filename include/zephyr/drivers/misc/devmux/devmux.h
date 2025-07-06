@@ -62,7 +62,7 @@ extern "C" {
  * @return The index (>= 0) of the currently active multiplexed device on success
  * @retval -EINVAL If @p dev is invalid
  */
-__syscall ssize_t devmux_select_get(const struct device *dev);
+__syscall int devmux_select_get(const struct device *dev);
 
 /**
  * @brief Set the selection of a devmux device.
@@ -85,6 +85,6 @@ __syscall int devmux_select_set(struct device *dev, size_t index);
 }
 #endif
 
-#include <syscalls/devmux.h>
+#include <zephyr/syscalls/devmux.h>
 
 #endif /* INCLUDE_ZEPHYR_DRIVERS_MISC_DEVMUX_H_ */

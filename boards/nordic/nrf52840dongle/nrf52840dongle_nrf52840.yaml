@@ -7,11 +7,9 @@ flash: 1024
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - adc
   - usb_device
-  - usb_cdc
   - ble
   - pwm
   - spi

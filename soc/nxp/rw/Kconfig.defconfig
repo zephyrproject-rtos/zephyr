@@ -9,68 +9,97 @@ config ROM_START_OFFSET
 
 config NUM_IRQS
 	default 129
-if CORTEX_M_SYSTICK
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 260000000
+	default 1000000 if MCUX_OS_TIMER
+	default 260000000 if CORTEX_M_SYSTICK
 
-endif # CORTEX_M_SYSTICK
+config NXP_MONOLITHIC_NBU
+	default y if (BT || IEEE802154)
 
-# The base address is determined from the zephyr,flash node with the following
-# precedence:
-# FlexSPI base address (if flash node is on a FlexSPI bus)
-# node reg property (used for memory regions such as SRAM)
+if BT
 
-# Workaround for not being able to have commas in macro arguments
+config HCI_NXP_ENABLE_AUTO_SLEEP
+	default y
 
-DT_CHOSEN_Z_FLASH := zephyr,flash
-DT_COMPAT_FLEXSPI := nxp,imx-flexspi
+config HCI_NXP_SET_CAL_DATA
+	default y
 
-# Macros to shorten Kconfig definitions
-DT_CHOSEN_FLASH_NODE := $(dt_chosen_path,$(DT_CHOSEN_Z_FLASH))
-DT_CHOSEN_FLASH_PARENT := $(dt_node_parent,$(DT_CHOSEN_FLASH_NODE))
+config MAIN_STACK_SIZE
+	default 2560
 
-config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,$(DT_CHOSEN_FLASH_PARENT),1) \
-		if $(dt_node_has_compat,$(DT_CHOSEN_FLASH_PARENT),$(DT_COMPAT_FLEXSPI))
-	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
+config BT_LONG_WQ_STACK_SIZE
+	default 5120 if (WIFI || IEEE802154)
+	default 2560
 
-# The RW6xx has no internal flash. If the flash node has a size property,
-# use that over the reg property. This is used for the external flash
-# present on the board. Otherwise, fallback to the reg property
-config FLASH_SIZE
-	default $(dt_node_int_prop_int,$(DT_CHOSEN_FLASH_NODE),size,Kb) \
-		if $(dt_node_has_prop,$(DT_CHOSEN_FLASH_NODE),size)
-	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K)
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	default 2048
 
-if NXP_RW_ROM_RAMLOADER
+config BT_BUF_EVT_RX_COUNT
+	default 12
 
-FLASH_BASE := $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
-FLEXSPI_BASE := $(dt_node_reg_addr_hex,/soc/spi@134000,1)
-config BUILD_OUTPUT_ADJUST_LMA
-	default "$(FLEXSPI_BASE) - $(FLASH_BASE)"
+config BT_BUF_ACL_TX_COUNT
+	default 8
 
-endif # NXP_RW_ROM_RAMLOADER
+if SHELL
 
-if FLASH_MCUX_FLEXSPI_XIP
+config SHELL_STACK_SIZE
+	default 4096
 
-# Avoid RWW hazards by defaulting logging to disabled
-choice FLASH_LOG_LEVEL_CHOICE
-	default FLASH_LOG_LEVEL_OFF
-endchoice
+endif # SHELL
 
-choice MEMC_LOG_LEVEL_CHOICE
-	default MEMC_LOG_LEVEL_OFF
-endchoice
+endif # BT
 
-# Code relocation is needed when MEMC driver is enabled
-config CODE_DATA_RELOCATION_SRAM
-	default y if MEMC
+config NXP_MONOLITHIC_WIFI
+	default y if WIFI
 
-endif # FLASH_MCUX_FLEXSPI_XIP
+config NXP_FW_LOADER
+	default y if (BT || WIFI || IEEE802154)
 
-choice USB_MCUX_CONTROLLER_TYPE
-	default USB_DC_NXP_EHCI
-endchoice
+config NXP_RF_IMU
+	default y if (BT || WIFI || IEEE802154)
+
+if WIFI
+orsource "Kconfig.defconfig.wifi"
+endif # WIFI
+
+if PM
+# For PM mode 3 we change this config to get better accuracy
+# when using the iKHz RTC clock as system clock.
+config SYS_CLOCK_TICKS_PER_SEC
+	default 1000 if "$(dt_nodelabel_enabled,standby)"
+
+# Enable PM_DEVICE by default if STANDBY mode is enabled
+# as we use the TURN_OFF and TURN_ON actions to recover
+# from Standby mode (PM Mode 3)
+config PM_DEVICE
+	default y if "$(dt_nodelabel_enabled,standby)" || "$(dt_nodelabel_enabled,suspend)"
+
+# Enable PM_POLICY_DEVICE_CONSTRAINTS by default when doing PM_DEVICE.
+# This will allow support of device power states.
+config PM_POLICY_DEVICE_CONSTRAINTS
+	default y if PM_DEVICE
+
+# Enable the counter if STANDBY mode is enabled
+# RTC counter is the wakeup source from STANDBY mode
+config COUNTER
+	default y if "$(dt_nodelabel_enabled,standby)"
+
+config MCUX_OS_TIMER_PM_POWERED_OFF
+	default y
+
+# PM code that runs from the idle loop has a large
+# footprint. Hence increase the size when PM is enabled.
+config IDLE_STACK_SIZE
+	default 640
+
+endif # PM
+
+if PM_DEVICE
+
+config POWER_DOMAIN
+	default y
+
+endif # PM_DEVICE
 
 endif # SOC_SERIES_RW6XX

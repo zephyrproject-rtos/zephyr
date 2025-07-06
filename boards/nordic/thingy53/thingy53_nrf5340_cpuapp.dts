@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <nordic/nrf5340_cpuapp_qkaa.dtsi>
 #include "thingy53_nrf5340_common.dtsi"
+#include <../boards/common/usb/cdc_acm_serial.dtsi>
 
 / {
 	model = "Nordic Thingy53 NRF5340 Application";
@@ -23,4 +24,21 @@
 	aliases {
 		watchdog0 = &wdt0;
 	};
+};
+
+&vregmain {
+	regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+};
+
+&vregradio {
+	regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+};
+
+&vregh {
+	status = "okay";
+};
+
+&lfxo {
+	load-capacitors = "internal";
+	load-capacitance-picofarad = <7>;
 };

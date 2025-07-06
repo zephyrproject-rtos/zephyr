@@ -37,7 +37,7 @@ static int usbd_event_carrier(const struct device *dev,
 	return k_msgq_put(&usbd_msgq, event, K_NO_WAIT);
 }
 
-static int event_handler_ep_request(struct usbd_contex *const uds_ctx,
+static int event_handler_ep_request(struct usbd_context *const uds_ctx,
 				    const struct udc_event *const event)
 {
 	struct udc_buf_info *bi;
@@ -59,7 +59,7 @@ static int event_handler_ep_request(struct usbd_contex *const uds_ctx,
 	return ret;
 }
 
-static void usbd_class_bcast_event(struct usbd_contex *const uds_ctx,
+static void usbd_class_bcast_event(struct usbd_context *const uds_ctx,
 				   struct udc_event *const event)
 {
 	struct usbd_config_node *cfg_nd;
@@ -78,13 +78,13 @@ static void usbd_class_bcast_event(struct usbd_contex *const uds_ctx,
 	SYS_SLIST_FOR_EACH_CONTAINER(&cfg_nd->class_list, c_nd, node) {
 		switch (event->type) {
 		case UDC_EVT_SUSPEND:
-			usbd_class_suspended(c_nd);
+			usbd_class_suspended(c_nd->c_data);
 			break;
 		case UDC_EVT_RESUME:
-			usbd_class_resumed(c_nd);
+			usbd_class_resumed(c_nd->c_data);
 			break;
 		case UDC_EVT_SOF:
-			usbd_class_sof(c_nd);
+			usbd_class_sof(c_nd->c_data);
 			break;
 		default:
 			break;
@@ -92,8 +92,9 @@ static void usbd_class_bcast_event(struct usbd_contex *const uds_ctx,
 	}
 }
 
-static int event_handler_bus_reset(struct usbd_contex *const uds_ctx)
+static int event_handler_bus_reset(struct usbd_context *const uds_ctx)
 {
+	enum udc_bus_speed udc_speed;
 	int ret;
 
 	usbd_status_suspended(uds_ctx, false);
@@ -114,14 +115,25 @@ static int event_handler_bus_reset(struct usbd_contex *const uds_ctx)
 		LOG_ERR("Failed to dequeue control IN");
 	}
 
-	LOG_INF("Actual device speed %d", udc_device_speed(uds_ctx->dev));
+	LOG_INF("Actual device speed %u", udc_device_speed(uds_ctx->dev));
+	udc_speed = udc_device_speed(uds_ctx->dev);
+	switch (udc_speed) {
+	case UDC_BUS_SPEED_HS:
+		uds_ctx->status.speed = USBD_SPEED_HS;
+		break;
+	default:
+		uds_ctx->status.speed = USBD_SPEED_FS;
+	}
+
 	uds_ctx->ch9_data.state = USBD_STATE_DEFAULT;
+
+	uds_ctx->status.rwup = false;
 
 	return 0;
 }
 
 
-static ALWAYS_INLINE void usbd_event_handler(struct usbd_contex *const uds_ctx,
+static ALWAYS_INLINE void usbd_event_handler(struct usbd_context *const uds_ctx,
 					     struct udc_event *const event)
 {
 	int err = 0;
@@ -177,25 +189,24 @@ static void usbd_thread(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
+	struct usbd_context *uds_ctx;
 	struct udc_event event;
 
 	while (true) {
 		k_msgq_get(&usbd_msgq, &event, K_FOREVER);
 
-		STRUCT_SECTION_FOREACH(usbd_contex, uds_ctx) {
-			if (uds_ctx->dev == event.dev &&
-			    usbd_is_initialized(uds_ctx)) {
-				usbd_event_handler(uds_ctx, &event);
-			}
-		}
+		uds_ctx = (void *)udc_get_event_ctx(event.dev);
+		__ASSERT(uds_ctx != NULL && usbd_is_initialized(uds_ctx),
+			 "USB device is not initialized");
+		usbd_event_handler(uds_ctx, &event);
 	}
 }
 
-int usbd_device_init_core(struct usbd_contex *const uds_ctx)
+int usbd_device_init_core(struct usbd_context *const uds_ctx)
 {
 	int ret;
 
-	ret = udc_init(uds_ctx->dev, usbd_event_carrier);
+	ret = udc_init(uds_ctx->dev, usbd_event_carrier, uds_ctx);
 	if (ret != 0) {
 		LOG_ERR("Failed to init device driver");
 		return ret;
@@ -212,15 +223,26 @@ int usbd_device_init_core(struct usbd_contex *const uds_ctx)
 	return ret;
 }
 
-int usbd_device_shutdown_core(struct usbd_contex *const uds_ctx)
+int usbd_device_shutdown_core(struct usbd_context *const uds_ctx)
 {
 	struct usbd_config_node *cfg_nd;
 	int ret;
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&uds_ctx->configs, cfg_nd, node) {
+	if (USBD_SUPPORTS_HIGH_SPEED) {
+		SYS_SLIST_FOR_EACH_CONTAINER(&uds_ctx->hs_configs, cfg_nd, node) {
+			uint8_t cfg_value = usbd_config_get_value(cfg_nd);
+
+			ret = usbd_class_remove_all(uds_ctx, USBD_SPEED_HS, cfg_value);
+			if (ret) {
+				LOG_ERR("Failed to cleanup registered classes, %d", ret);
+			}
+		}
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&uds_ctx->fs_configs, cfg_nd, node) {
 		uint8_t cfg_value = usbd_config_get_value(cfg_nd);
 
-		ret = usbd_class_remove_all(uds_ctx, cfg_value);
+		ret = usbd_class_remove_all(uds_ctx, USBD_SPEED_FS, cfg_value);
 		if (ret) {
 			LOG_ERR("Failed to cleanup registered classes, %d", ret);
 		}
@@ -230,6 +252,8 @@ int usbd_device_shutdown_core(struct usbd_contex *const uds_ctx)
 	if (ret) {
 		LOG_ERR("Failed to cleanup descriptors, %d", ret);
 	}
+
+	usbd_device_unregister_all_vreq(uds_ctx);
 
 	return udc_shutdown(uds_ctx->dev);
 }
@@ -244,10 +268,14 @@ static int usbd_pre_init(void)
 
 	k_thread_name_set(&usbd_thread_data, "usbd");
 
-	LOG_DBG("Available USB class nodes:");
-	STRUCT_SECTION_FOREACH(usbd_class_node, node) {
-		atomic_set(&node->data->state, 0);
-		LOG_DBG("\t%p, name %s", node, node->name);
+	LOG_DBG("Available USB class iterators:");
+	STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_fs, usbd_class_node, c_nd) {
+		atomic_set(&c_nd->state, 0);
+		LOG_DBG("\t%p->%p, name %s", c_nd, c_nd->c_data, c_nd->c_data->name);
+	}
+	STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_hs, usbd_class_node, c_nd) {
+		atomic_set(&c_nd->state, 0);
+		LOG_DBG("\t%p->%p, name %s", c_nd, c_nd->c_data, c_nd->c_data->name);
 	}
 
 	return 0;

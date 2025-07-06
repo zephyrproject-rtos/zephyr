@@ -5,18 +5,32 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
-
+#include <zephyr/drivers/flash.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/util.h>
 
-#include <stdlib.h>
-#include <string.h>
-#include <zephyr/drivers/flash.h>
-
 /* Buffer is only needed for bytes that follow command and offset */
 #define BUF_ARRAY_CNT (CONFIG_SHELL_ARGC_MAX - 2)
+
+#define FLASH_LOAD_BUF_MAX 256
+
+static const struct device *flash_load_dev;
+static uint32_t flash_load_buf_size;
+static uint32_t flash_load_addr;
+static uint32_t flash_load_total;
+static uint32_t flash_load_written;
+static uint32_t flash_load_chunk;
+
+static uint32_t flash_load_boff;
+static uint8_t flash_load_buf[FLASH_LOAD_BUF_MAX];
 
 /* This only issues compilation error when it would not be possible
  * to extract at least one byte from command line arguments, yet
@@ -40,7 +54,7 @@ static int parse_helper(const struct shell *sh, size_t *argc,
 
 	if (*endptr != '\0') {
 		/* flash controller from user input */
-		*flash_dev = device_get_binding((*argv)[1]);
+		*flash_dev = shell_device_get_binding((*argv)[1]);
 		if (!*flash_dev) {
 			shell_error(sh, "Given flash device was not found");
 			return -ENODEV;
@@ -73,9 +87,11 @@ static int parse_helper(const struct shell *sh, size_t *argc,
 
 static int cmd_erase(const struct shell *sh, size_t argc, char *argv[])
 {
+	int result = -ENOTSUP;
+
+#if defined(CONFIG_FLASH_HAS_EXPLICIT_ERASE)
 	const struct device *flash_dev;
 	uint32_t page_addr;
-	int result;
 	uint32_t size;
 
 	result = parse_helper(sh, &argc, &argv, &flash_dev, &page_addr);
@@ -106,6 +122,7 @@ static int cmd_erase(const struct shell *sh, size_t argc, char *argv[])
 	} else {
 		shell_print(sh, "Erase success.");
 	}
+#endif
 
 	return result;
 }
@@ -158,6 +175,40 @@ static int cmd_write(const struct shell *sh, size_t argc, char *argv[])
 		shell_error(sh, "Verification ERROR!");
 		return -EIO;
 	}
+
+	return 0;
+}
+
+static int cmd_copy(const struct shell *sh, size_t argc, char *argv[])
+{
+	int ret;
+	uint32_t size = 0;
+	uint32_t src_offset = 0;
+	uint32_t dst_offset = 0;
+	const struct device *src_dev = NULL;
+	const struct device *dst_dev = NULL;
+
+	if (argc < 5) {
+		shell_error(sh, "missing parameters");
+		return -EINVAL;
+	}
+
+	src_dev = shell_device_get_binding(argv[1]);
+	dst_dev = shell_device_get_binding(argv[2]);
+	src_offset = strtoul(argv[3], NULL, 0);
+	dst_offset = strtoul(argv[4], NULL, 0);
+	/* size will be padded to write_size bytes */
+	size = strtoul(argv[5], NULL, 0);
+
+	ret = flash_copy(src_dev, src_offset, dst_dev, dst_offset, size, flash_load_buf,
+			 sizeof(flash_load_buf));
+	if (ret < 0) {
+		shell_error(sh, "%s failed: %d", "flash_copy()", ret);
+		return -EIO;
+	}
+
+	shell_print(sh, "Copied %u bytes from %s:%x to %s:%x", size, argv[1], src_offset, argv[2],
+		    dst_offset);
 
 	return 0;
 }
@@ -541,18 +592,6 @@ static int set_bypass(const struct shell *sh, shell_bypass_cb_t bypass)
 	return 0;
 }
 
-#define FLASH_LOAD_BUF_MAX 256
-
-static const struct device *flash_load_dev;
-static uint32_t flash_load_buf_size;
-static uint32_t flash_load_addr;
-static uint32_t flash_load_total;
-static uint32_t flash_load_written;
-static uint32_t flash_load_chunk;
-
-static uint32_t flash_load_boff;
-static uint8_t flash_load_buf[FLASH_LOAD_BUF_MAX];
-
 static void bypass_cb(const struct shell *sh, uint8_t *recv, size_t len)
 {
 	uint32_t left_to_read = flash_load_total - flash_load_written - flash_load_boff;
@@ -697,9 +736,14 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry);
 
 SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
 
+static bool device_is_flash(const struct device *dev)
+{
+	return DEVICE_API_IS(flash, dev);
+}
+
 static void device_name_get(size_t idx, struct shell_static_entry *entry)
 {
-	const struct device *dev = shell_device_lookup(idx, NULL);
+	const struct device *dev = shell_device_filter(idx, device_is_flash);
 
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
 	entry->handler = NULL;
@@ -708,6 +752,9 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(flash_cmds,
+	SHELL_CMD_ARG(copy, &dsub_device_name,
+		"<src_device> <dst_device> <src_offset> <dst_offset> <size>",
+		cmd_copy, 5, 5),
 	SHELL_CMD_ARG(erase, &dsub_device_name,
 		"[<device>] <page address> [<size>]",
 		cmd_erase, 2, 2),

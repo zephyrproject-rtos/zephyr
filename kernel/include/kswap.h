@@ -78,7 +78,6 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 					  struct k_spinlock *lock,
 					  bool is_spinlock)
 {
-	ARG_UNUSED(lock);
 	struct k_thread *new_thread, *old_thread;
 
 #ifdef CONFIG_SPIN_VALIDATE
@@ -125,7 +124,6 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 		z_sched_usage_switch(new_thread);
 
 #ifdef CONFIG_SMP
-		_current_cpu->swap_ok = 0;
 		new_thread->base.cpu = arch_curr_cpu()->id;
 
 		if (!is_spinlock) {
@@ -134,7 +132,7 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 #endif /* CONFIG_SMP */
 		z_thread_mark_switched_out();
 		z_sched_switch_spin(new_thread);
-		_current_cpu->current = new_thread;
+		z_current_thread_set(new_thread);
 
 #ifdef CONFIG_TIMESLICING
 		z_reset_time_slice(new_thread);
@@ -195,7 +193,6 @@ static inline void z_swap_unlocked(void)
 
 #else /* !CONFIG_USE_SWITCH */
 
-extern int arch_swap(unsigned int key);
 
 static inline void z_sched_switch_spin(struct k_thread *thread)
 {
@@ -236,30 +233,6 @@ static inline void z_swap_unlocked(void)
  *
  * The memory of the dummy thread can be completely uninitialized.
  */
-static inline void z_dummy_thread_init(struct k_thread *dummy_thread)
-{
-	dummy_thread->base.thread_state = _THREAD_DUMMY;
-#ifdef CONFIG_SCHED_CPU_MASK
-	dummy_thread->base.cpu_mask = -1;
-#endif /* CONFIG_SCHED_CPU_MASK */
-	dummy_thread->base.user_options = K_ESSENTIAL;
-#ifdef CONFIG_THREAD_STACK_INFO
-	dummy_thread->stack_info.start = 0U;
-	dummy_thread->stack_info.size = 0U;
-#endif /* CONFIG_THREAD_STACK_INFO */
-#ifdef CONFIG_USERSPACE
-	dummy_thread->mem_domain_info.mem_domain = &k_mem_domain_default;
-#endif /* CONFIG_USERSPACE */
-#if (K_HEAP_MEM_POOL_SIZE > 0)
-	k_thread_system_pool_assign(dummy_thread);
-#else
-	dummy_thread->resource_pool = NULL;
-#endif /* K_HEAP_MEM_POOL_SIZE */
+void z_dummy_thread_init(struct k_thread *dummy_thread);
 
-#ifdef CONFIG_TIMESLICE_PER_THREAD
-	dummy_thread->base.slice_ticks = 0;
-#endif /* CONFIG_TIMESLICE_PER_THREAD */
-
-	_current_cpu->current = dummy_thread;
-}
 #endif /* ZEPHYR_KERNEL_INCLUDE_KSWAP_H_ */

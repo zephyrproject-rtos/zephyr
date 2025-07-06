@@ -16,7 +16,7 @@
 			block-cycles = <512>;
 			partition = <&lfs1_partition>;
 			mount-point = "/lfs1";
-    };
+		};
 	};
 };
 

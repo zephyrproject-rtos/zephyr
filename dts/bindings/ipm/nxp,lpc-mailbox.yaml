@@ -5,7 +5,7 @@ description: LPC MAILBOX
 
 compatible: "nxp,lpc-mailbox"
 
-include: base.yaml
+include: [base.yaml, reset-device.yaml]
 
 properties:
   reg:

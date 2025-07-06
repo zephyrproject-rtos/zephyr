@@ -1,12 +1,13 @@
-.. _bluetooth-periodic-advertising-conn-sample:
+.. zephyr:code-sample:: ble_periodic_adv_conn
+   :name: Periodic Advertising Connection Procedure (Initiator)
+   :relevant-api: bt_gap bluetooth
 
-Bluetooth: Periodic Advertising Connection Procedure - Initiator
-################################################################
+   Initiate a connection to a device using the Periodic Advertising Connection Procedure.
 
 Overview
 ********
 
-A simple application demonstrating the initiator side of the BLE
+A simple application demonstrating the initiator side of the Bluetooth LE
 Periodic Advertising Connection Procedure.
 
 How the initiator decides the address of the synced device to connect to
@@ -17,7 +18,7 @@ wait for disconnect before connecting to another synced device.
 Requirements
 ************
 
-* A board with BLE support
+* A board with Bluetooth LE support
 * A controller that supports the Periodic Advertising with Responses (PAwR) - Advertiser feature
 
 Building and Running
@@ -29,4 +30,4 @@ the Zephyr tree.
 Use the sample found under :zephyr_file:`samples/bluetooth/periodic_sync_conn` in the
 Zephyr tree that will synchronize and respond to this sample.
 
-See :ref:`bluetooth samples section <bluetooth-samples>` for details.
+See :zephyr:code-sample-category:`bluetooth` samples for details.

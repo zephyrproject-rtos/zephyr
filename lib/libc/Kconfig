@@ -27,6 +27,7 @@ config FULL_LIBC_SUPPORTED
 
 config MINIMAL_LIBC_SUPPORTED
 	bool
+	depends on !NATIVE_APPLICATION
 	default y
 	help
 	  Selected when the target has support for the minimal C library
@@ -35,6 +36,7 @@ config NEWLIB_LIBC_SUPPORTED
 	bool
 	default y
 	depends on "$(TOOLCHAIN_HAS_NEWLIB)" = "y"
+	depends on !NATIVE_APPLICATION
 	select FULL_LIBC_SUPPORTED
 	help
 	  Selected when the target has support for the newlib C library
@@ -43,37 +45,46 @@ config NEWLIB_LIBC_SUPPORTED
 config PICOLIBC_SUPPORTED
 	bool
 	depends on !NATIVE_APPLICATION
-	depends on ("$(TOOLCHAIN_HAS_PICOLIBC)" = "y") || (NATIVE_LIBRARY)
-	depends on !REQUIRES_FULL_LIBCPP || ("$(TOOLCHAIN_HAS_PICOLIBC)" = "y")
+	depends on ("$(TOOLCHAIN_HAS_PICOLIBC)" = "y") || (ZEPHYR_PICOLIBC_MODULE && !REQUIRES_FULL_LIBCPP)
 	default y
 	select FULL_LIBC_SUPPORTED
 	help
 	  Selected when the target has support for picolibc.
 
-config SUPPORT_MINIMAL_LIBC
+config IAR_LIBC_SUPPORTED
 	bool
-	select MINIMAL_LIBC_SUPPORTED
-	select DEPRECATED
+	default n
+	select FULL_LIBC_SUPPORTED
 	help
-	  Legacy symbol that selects MINIMAL_LIBC_SUPPORTED
+	  Selected if the target is an IAR Systems compiler
+
+config NATIVE_LIBC_INCOMPATIBLE
+	bool
+	help
+	  Other Kconfig options can select this, if they are not compatible with the
+	  native/host libC, and should only be compiled with an embedded libC
 
 menu "C Library"
 
 choice LIBC_IMPLEMENTATION
 	prompt "C Library Implementation"
-	default EXTERNAL_LIBC if NATIVE_BUILD && !(NATIVE_LIBRARY && POSIX_API)
+	default EXTERNAL_LIBC if NATIVE_BUILD && !(NATIVE_LIBRARY && NATIVE_LIBC_INCOMPATIBLE)
 	default PICOLIBC
 	default NEWLIB_LIBC if REQUIRES_FULL_LIBC
 	default MINIMAL_LIBC
+	default IAR_LIBC
 
 config MINIMAL_LIBC
 	bool "Minimal C library"
-	depends on !NATIVE_APPLICATION
 	depends on !REQUIRES_FULL_LIBC
 	depends on MINIMAL_LIBC_SUPPORTED
 	imply COMPILER_FREESTANDING
 	select COMMON_LIBC_ABORT
 	select COMMON_LIBC_STRNLEN
+	imply COMMON_LIBC_MALLOC
+	imply COMMON_LIBC_CALLOC
+	imply COMMON_LIBC_REALLOCARRAY
+	imply COMMON_LIBC_TIME
 	help
 	  Build with minimal C library.
 
@@ -83,8 +94,10 @@ config PICOLIBC
 	imply THREAD_LOCAL_STORAGE if ARCH_HAS_THREAD_LOCAL_STORAGE && TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
 	select LIBC_ERRNO if THREAD_LOCAL_STORAGE
 	select NEED_LIBC_MEM_PARTITION
+	select TC_PROVIDES_POSIX_C_LANG_SUPPORT_R
 	imply COMMON_LIBC_MALLOC
-	depends on !NATIVE_APPLICATION
+	imply COMMON_LIBC_ABORT
+	imply COMMON_LIBC_TIME
 	depends on PICOLIBC_SUPPORTED
 	help
 	  Build with picolibc library. The picolibc library is built as
@@ -94,9 +107,18 @@ config PICOLIBC
 config NEWLIB_LIBC
 	bool "Newlib C library"
 	select COMMON_LIBC_ABORT
-	depends on !NATIVE_APPLICATION
 	depends on NEWLIB_LIBC_SUPPORTED
 	select NEED_LIBC_MEM_PARTITION
+	select TC_PROVIDES_POSIX_C_LANG_SUPPORT_R
+	imply POSIX_DEVICE_IO_ALIAS_CLOSE
+	imply POSIX_DEVICE_IO_ALIAS_OPEN
+	imply POSIX_DEVICE_IO_ALIAS_READ
+	imply POSIX_DEVICE_IO_ALIAS_WRITE
+	imply POSIX_FD_MGMT_ALIAS_LSEEK
+	imply POSIX_FILE_SYSTEM_ALIAS_FSTAT
+	imply POSIX_MULTI_PROCESS_ALIAS_GETPID
+	imply POSIX_SIGNALS_ALIAS_KILL
+	imply COMMON_LIBC_TIME
 	help
 	  Build with newlib library. The newlib library is expected to be
 	  part of the SDK in this case.
@@ -112,6 +134,17 @@ config EXTERNAL_LIBC
 	bool "External C library"
 	help
 	  Build with external/user provided C library.
+
+config IAR_LIBC
+	bool "IAR C Runtime Library"
+	depends on IAR_LIBC_SUPPORTED
+	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "iar"
+	select COMMON_LIBC_STRNLEN
+	select COMMON_LIBC_TIME
+	help
+	  Use the full IAR Compiler runtime libraries.
+	  A reduced Zephyr minimal libc will be used for library functionality
+	  not provided by the IAR C Runtime Library.
 
 endchoice # LIBC_IMPLEMENTATION
 

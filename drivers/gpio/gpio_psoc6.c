@@ -229,7 +229,7 @@ static uint32_t gpio_psoc6_get_pending_int(const struct device *dev)
 	return GPIO_PRT_INTR_MASKED(port);
 }
 
-static const struct gpio_driver_api gpio_psoc6_api = {
+static DEVICE_API(gpio, gpio_psoc6_api) = {
 	.pin_configure = gpio_psoc6_config,
 	.port_get_raw = gpio_psoc6_port_get_raw,
 	.port_set_masked_raw = gpio_psoc6_port_set_masked_raw,

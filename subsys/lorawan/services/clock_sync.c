@@ -16,6 +16,7 @@
 #include <zephyr/lorawan/lorawan.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/random/random.h>
+#include <zephyr/sys/__assert.h>
 
 LOG_MODULE_REGISTER(lorawan_clock_sync, CONFIG_LORAWAN_SERVICES_LOG_LEVEL);
 
@@ -23,7 +24,7 @@ LOG_MODULE_REGISTER(lorawan_clock_sync, CONFIG_LORAWAN_SERVICES_LOG_LEVEL);
  * Version of LoRaWAN Application Layer Clock Synchronization Specification
  *
  * This implementation only supports TS003-2.0.0, as the previous revision TS003-1.0.0
- * requested to temporarily disable ADR and and set nb_trans to 1. This causes issues on the
+ * requested to temporarily disable ADR and set nb_trans to 1. This causes issues on the
  * server side and is not recommended anymore.
  */
 #define CLOCK_SYNC_PACKAGE_VERSION 2
@@ -69,13 +70,11 @@ static struct clock_sync_context ctx;
  *
  * @returns number of bytes written or -ENOSPC in case of error
  */
-static int clock_sync_serialize_device_time(uint8_t *buf, size_t size)
+static uint8_t clock_sync_serialize_device_time(uint8_t *buf, size_t size)
 {
-	uint32_t device_time = k_uptime_get() / MSEC_PER_SEC + ctx.time_offset;
+	uint32_t device_time = k_uptime_seconds() + ctx.time_offset;
 
-	if (size < sizeof(uint32_t)) {
-		return -ENOSPC;
-	}
+	__ASSERT_NO_MSG(size >= sizeof(uint32_t));
 
 	buf[0] = (device_time >> 0) & 0xFF;
 	buf[1] = (device_time >> 8) & 0xFF;
@@ -91,7 +90,7 @@ static inline k_timeout_t clock_sync_calc_periodicity(void)
 	return K_SECONDS(ctx.periodicity - 30 + sys_rand32_get() % 61);
 }
 
-static void clock_sync_package_callback(uint8_t port, bool data_pending, int16_t rssi, int8_t snr,
+static void clock_sync_package_callback(uint8_t port, uint8_t flags, int16_t rssi, int8_t snr,
 					uint8_t len, const uint8_t *rx_buf)
 {
 	uint8_t tx_buf[3 * MAX_CLOCK_SYNC_ANS_LEN];
@@ -221,7 +220,7 @@ int lorawan_clock_sync_get(uint32_t *gps_time)
 	__ASSERT(gps_time != NULL, "gps_time parameter is required");
 
 	if (ctx.synchronized) {
-		*gps_time = (uint32_t)(k_uptime_get() / MSEC_PER_SEC + ctx.time_offset);
+		*gps_time = k_uptime_seconds() + ctx.time_offset;
 		return 0;
 	} else {
 		return -EAGAIN;

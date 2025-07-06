@@ -8,6 +8,7 @@
 #include <zephyr/net/dummy.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_if.h>
+#include <zephyr/net/net_mgmt.h>
 
 #include "../../../subsys/net/lib/dhcpv6/dhcpv6.c"
 
@@ -18,6 +19,7 @@ static struct in6_addr test_prefix = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 static uint8_t test_prefix_len = 64;
 static uint8_t test_preference;
 static struct net_dhcpv6_duid_storage test_serverid;
+static struct net_mgmt_event_callback net_mgmt_cb;
 
 typedef void (*test_dhcpv6_pkt_fn_t)(struct net_if *iface,
 				     struct net_pkt *pkt);
@@ -107,8 +109,10 @@ static void generate_fake_server_duid(void)
 
 	memset(serverid, 0, sizeof(*serverid));
 
-	UNALIGNED_PUT(htons(DHCPV6_DUID_TYPE_LL), &serverid->duid.type);
-	UNALIGNED_PUT(htons(DHCPV6_HARDWARE_ETHERNET_TYPE), &duid_ll->hw_type);
+	UNALIGNED_PUT(htons(DHCPV6_DUID_TYPE_LL),
+		      UNALIGNED_MEMBER_ADDR(serverid, duid.type));
+	UNALIGNED_PUT(htons(DHCPV6_HARDWARE_ETHERNET_TYPE),
+		      UNALIGNED_MEMBER_ADDR(duid_ll, hw_type));
 	memcpy(duid_ll->ll_addr, fake_mac, sizeof(fake_mac));
 
 	serverid->length = DHCPV6_DUID_LL_HEADER_SIZE + sizeof(fake_mac);
@@ -176,6 +180,19 @@ fail:
 	return NULL;
 }
 
+static void evt_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
+			struct net_if *iface)
+{
+	ARG_UNUSED(cb);
+
+	if (mgmt_event == NET_EVENT_IF_UP) {
+		struct in6_addr lladdr;
+
+		net_ipv6_addr_create_iid(&lladdr, net_if_get_link_addr(test_ctx.iface));
+		(void)net_if_ipv6_addr_add(test_ctx.iface, &lladdr, NET_ADDR_AUTOCONF, 0);
+	}
+}
+
 static void *dhcpv6_tests_setup(void)
 {
 	struct in6_addr lladdr;
@@ -189,6 +206,9 @@ static void *dhcpv6_tests_setup(void)
 	k_sem_init(&test_ctx.exchange_complete_sem, 0, 1);
 
 	generate_fake_server_duid();
+
+	net_mgmt_init_event_callback(&net_mgmt_cb, evt_handler, NET_EVENT_IF_UP);
+	net_mgmt_add_event_callback(&net_mgmt_cb);
 
 	return NULL;
 }

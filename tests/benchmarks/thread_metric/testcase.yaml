@@ -1,0 +1,70 @@
+common:
+  platform_key:
+    - arch
+  tags:
+    - kernel
+    - benchmark
+  # Native platforms excluded as they are not relevant: These benchmarks run some kernel primitives
+  # in a loop during a predefined time counting how many times they execute. But in the POSIX arch,
+  # time does not pass while the CPU executes. So the benchmark just appears as if hung.
+  arch_exclude:
+    - posix
+  # some slow qemu_* excluded
+  platform_exclude:
+    - qemu_malta/qemu_malta
+    - qemu_malta/qemu_malta/be
+  integration_platforms:
+    - qemu_x86
+    - qemu_cortex_a53
+  timeout: 300
+  harness: console
+  harness_config:
+    type: multi_line
+    ordered: true
+    regex:
+      # Collect at least 3 measurements for each benchmark:
+      - "(.*) Thread-Metric(.+) Relative Time:[ ]*[0-9]+(.*)"
+      - "(.*)Time Period Total:[ ]*[0-9]+(.*)"
+      - "(.*) Thread-Metric(.+) Relative Time:[ ]*[0-9]+(.*)"
+      - "(.*)Time Period Total:[ ]*[0-9]+(.*)"
+      - "(.*) Thread-Metric(.+) Relative Time:[ ]*[0-9]+(.*)"
+      - "(.*)Time Period Total:[ ]*[0-9]+(.*)"
+    record:
+      regex:
+        - "Time Period Total:[ ]*(?P<total_time_period>[0-9]+)"
+        - "ERROR:[ ]*(?P<error_message>.*)"
+        - "[ ]+Average:(?P<error_details>.*)"
+      merge: true
+
+tests:
+  benchmark.thread_metric.basic:
+    extra_configs:
+      - CONFIG_TM_BASIC=y
+
+  benchmark.thread_metric.cooperative:
+    extra_configs:
+      - CONFIG_TM_COOPERATIVE=y
+
+  benchmark.thread_metric.interrupt:
+    extra_configs:
+      - CONFIG_TM_INTERRUPT=y
+
+  benchmark.thread_metric.interrupt_preemption:
+    extra_configs:
+      - CONFIG_TM_INTERRUPT_PREEMPTION=y
+
+  benchmark.thread_metric.memory_allocation:
+    extra_configs:
+      - CONFIG_TM_MEMORY_ALLOCATION=y
+
+  benchmark.thread_metric.message:
+    extra_configs:
+      - CONFIG_TM_MESSAGE=y
+
+  benchmark.thread_metric.preemptive:
+    extra_configs:
+      - CONFIG_TM_PREEMPTIVE=y
+
+  benchmark.thread_metric.synchronization:
+    extra_configs:
+      - CONFIG_TM_SYNCHRONIZATION=y

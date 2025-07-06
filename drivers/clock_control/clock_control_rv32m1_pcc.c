@@ -51,14 +51,14 @@ static int rv32m1_pcc_get_rate(const struct device *dev,
 	return 0;
 }
 
-static const struct clock_control_driver_api rv32m1_pcc_api = {
+static DEVICE_API(clock_control, rv32m1_pcc_api) = {
 	.on = rv32m1_pcc_on,
 	.off = rv32m1_pcc_off,
 	.get_rate = rv32m1_pcc_get_rate,
 };
 
 #define RV32M1_PCC_INIT(inst)						\
-	static struct rv32m1_pcc_config rv32m1_pcc##inst##_config = {	\
+	static const struct rv32m1_pcc_config rv32m1_pcc##inst##_config = {	\
 		.base_address = DT_INST_REG_ADDR(inst)			\
 	};								\
 									\

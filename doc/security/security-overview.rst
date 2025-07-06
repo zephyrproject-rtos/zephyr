@@ -122,14 +122,12 @@ Security Functionality
 The security functionality in Zephyr hinges mainly on the inclusion of
 cryptographic algorithms, and on its monolithic system design.
 
-The cryptographic features are provided through a set of cryptographic
-libraries. Applications can choose TinyCrypt2 or Mbed TLS based on their
-needs. TinyCrypt2 supports key cryptographic algorithms required by the
-connectivity stacks. TinyCrypt2, however, only provides a limited set of
-algorithms. Mbed TLS supports a wider range of algorithms, but at the
-cost of additional requirements such as malloc support. Applications can
-choose the solution that matches their individual requirements. Future
-work may include APIs to abstract the underlying crypto library choice.
+The cryptographic features are provided through PSA Crypto, with
+mbedTLS as the underlying implementation. Applications leverage PSA
+Crypto APIs, ensuring a standardized and secure approach to
+cryptographic operations. mbedTLS, as the implementation of PSA
+Crypto, supports a wide range of cryptographic algorithms, making it
+suitable for various application requirements.
 
 APIs for vendor specific cryptographic IPs in both hardware and software
 are planned, including secure key storage in the form of secure access

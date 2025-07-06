@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_cc_option(-m64)
+zephyr_cc_option(-mno-red-zone)
 
 set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_ARCH "i386:x86-64")
 set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT "elf64-x86-64")

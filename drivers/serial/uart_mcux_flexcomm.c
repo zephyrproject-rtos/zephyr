@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022-2023 NXP
+ * Copyright 2017, 2022-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +14,10 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/pm/policy.h>
+#include <zephyr/pm/pm.h>
 #include <zephyr/irq.h>
+#include <zephyr/pm/device.h>
 #include <fsl_usart.h>
 #include <soc.h>
 #include <fsl_device_registers.h>
@@ -23,6 +26,8 @@
 #include <zephyr/drivers/dma.h>
 #include <fsl_inputmux.h>
 #endif
+
+#define FC_UART_IS_WAKEUP (IS_ENABLED(CONFIG_PM) && DT_ANY_INST_HAS_BOOL_STATUS_OKAY(wakeup_source))
 
 #ifdef CONFIG_UART_ASYNC_API
 struct mcux_flexcomm_uart_dma_config {
@@ -48,6 +53,13 @@ struct mcux_flexcomm_config {
 	struct mcux_flexcomm_uart_dma_config rx_dma;
 	void (*rx_timeout_func)(struct k_work *work);
 	void (*tx_timeout_func)(struct k_work *work);
+#endif
+#ifdef CONFIG_PM_POLICY_DEVICE_CONSTRAINTS
+	void (*pm_unlock_work_fn)(struct k_work *);
+#endif
+#if FC_UART_IS_WAKEUP
+	void (*wakeup_cfg)(void);
+	clock_control_subsys_t lp_clock_subsys;
 #endif
 };
 
@@ -86,7 +98,52 @@ struct mcux_flexcomm_data {
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	struct uart_config uart_config;
 #endif
+#if FC_UART_IS_WAKEUP
+	struct pm_notifier pm_handles;
+	uint16_t old_brg;
+	uint8_t old_osr;
+#endif
+#ifdef CONFIG_PM_POLICY_DEVICE_CONSTRAINTS
+	bool pm_policy_state_lock;
+	struct k_work pm_lock_work;
+#endif
 };
+
+#ifdef CONFIG_PM_POLICY_DEVICE_CONSTRAINTS
+static void mcux_flexcomm_pm_policy_state_lock_get(const struct device *dev)
+{
+	struct mcux_flexcomm_data *data = dev->data;
+
+	if (!data->pm_policy_state_lock) {
+		data->pm_policy_state_lock = true;
+		pm_policy_device_power_lock_get(dev);
+	}
+}
+
+static void mcux_flexcomm_pm_unlock_if_idle(const struct device *dev)
+{
+	const struct mcux_flexcomm_config *config = dev->config;
+	struct mcux_flexcomm_data *data = dev->data;
+
+	if (config->base->STAT & USART_STAT_TXIDLE_MASK) {
+		data->pm_policy_state_lock = false;
+		pm_policy_device_power_lock_put(dev);
+	} else {
+		/* can't block systemn workqueue so keep re-submitting until it's done */
+		k_work_submit(&data->pm_lock_work);
+	}
+}
+
+static void mcux_flexcomm_pm_policy_state_lock_put(const struct device *dev)
+{
+	struct mcux_flexcomm_data *data = dev->data;
+
+	if (data->pm_policy_state_lock) {
+		/* we can't block on TXidle mask in IRQ context so offload */
+		k_work_submit(&data->pm_lock_work);
+	}
+}
+#endif /* CONFIG_PM_POLICY_DEVICE_CONSTRAINTS */
 
 static int mcux_flexcomm_poll_in(const struct device *dev, unsigned char *c)
 {
@@ -107,11 +164,22 @@ static void mcux_flexcomm_poll_out(const struct device *dev,
 {
 	const struct mcux_flexcomm_config *config = dev->config;
 
-	/* Wait until space is available in TX FIFO */
-	while (!(USART_GetStatusFlags(config->base) & kUSART_TxFifoEmptyFlag)) {
+	/* Wait until space is available in TX FIFO, as per API description:
+	 * This routine checks if the transmitter is full.
+	 * When the transmitter is not full, it writes a character to the data register.
+	 * It waits and blocks the calling thread otherwise.
+	 */
+	while (!(USART_GetStatusFlags(config->base) & kUSART_TxFifoNotFullFlag)) {
 	}
 
 	USART_WriteByte(config->base, c);
+
+	/* Wait for the transfer to complete, as per API description:
+	 * This function is a blocking call. It blocks the calling thread until the character
+	 * is sent.
+	 */
+	while (!(USART_GetStatusFlags(config->base) & kUSART_TxFifoEmptyFlag)) {
+	}
 }
 
 static int mcux_flexcomm_err_check(const struct device *dev)
@@ -146,7 +214,7 @@ static int mcux_flexcomm_fifo_fill(const struct device *dev,
 				   int len)
 {
 	const struct mcux_flexcomm_config *config = dev->config;
-	uint8_t num_tx = 0U;
+	int num_tx = 0U;
 
 	while ((len - num_tx > 0) &&
 	       (USART_GetStatusFlags(config->base)
@@ -162,7 +230,7 @@ static int mcux_flexcomm_fifo_read(const struct device *dev, uint8_t *rx_data,
 				   const int len)
 {
 	const struct mcux_flexcomm_config *config = dev->config;
-	uint8_t num_rx = 0U;
+	int num_rx = 0U;
 
 	while ((len - num_rx > 0) &&
 	       (USART_GetStatusFlags(config->base)
@@ -179,6 +247,14 @@ static void mcux_flexcomm_irq_tx_enable(const struct device *dev)
 	const struct mcux_flexcomm_config *config = dev->config;
 	uint32_t mask = kUSART_TxLevelInterruptEnable;
 
+	/* Indicates that this device started a transaction that should
+	 * not be interrupted by putting the SoC in states that would
+	 * interfere with this transfer.
+	 */
+#ifdef CONFIG_PM_POLICY_DEVICE_CONSTRAINTS
+	mcux_flexcomm_pm_policy_state_lock_get(dev);
+#endif
+
 	USART_EnableInterrupts(config->base, mask);
 }
 
@@ -186,6 +262,10 @@ static void mcux_flexcomm_irq_tx_disable(const struct device *dev)
 {
 	const struct mcux_flexcomm_config *config = dev->config;
 	uint32_t mask = kUSART_TxLevelInterruptEnable;
+
+#ifdef CONFIG_PM_POLICY_DEVICE_CONSTRAINTS
+	mcux_flexcomm_pm_policy_state_lock_put(dev);
+#endif
 
 	USART_DisableInterrupts(config->base, mask);
 }
@@ -467,11 +547,19 @@ static int mcux_flexcomm_uart_tx(const struct device *dev, const uint8_t *buf,
 	/* Enable TX DMA requests */
 	USART_EnableTxDMA(config->base, true);
 
+	/* Do not allow the system to suspend until the transmission has completed */
+#ifdef CONFIG_PM_POLICY_DEVICE_CONSTRAINTS
+	mcux_flexcomm_pm_policy_state_lock_get(dev);
+#endif
+
 	/* Trigger the DMA to start transfer */
 	ret = dma_start(config->tx_dma.dev, config->tx_dma.channel);
 	if (ret) {
 		irq_unlock(key);
-		return ret;
+#ifdef CONFIG_PM_POLICY_DEVICE_CONSTRAINTS
+		mcux_flexcomm_pm_policy_state_lock_put(dev);
+#endif
+	return ret;
 	}
 
 	/* Schedule a TX abort for @param timeout */
@@ -993,6 +1081,10 @@ static void mcux_flexcomm_isr(const struct device *dev)
 			data->tx_data.xfer_buf = NULL;
 
 			async_user_callback(dev, &tx_done_event);
+
+#ifdef CONFIG_PM_POLICY_DEVICE_CONSTRAINTS
+			mcux_flexcomm_pm_policy_state_lock_put(dev);
+#endif
 		}
 
 	}
@@ -1000,8 +1092,7 @@ static void mcux_flexcomm_isr(const struct device *dev)
 }
 #endif /* CONFIG_UART_MCUX_FLEXCOMM_ISR_SUPPORT */
 
-
-static int mcux_flexcomm_init(const struct device *dev)
+static int mcux_flexcomm_init_common(const struct device *dev)
 {
 	const struct mcux_flexcomm_config *config = dev->config;
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
@@ -1067,7 +1158,90 @@ static int mcux_flexcomm_init(const struct device *dev)
 	return 0;
 }
 
-static const struct uart_driver_api mcux_flexcomm_driver_api = {
+#if FC_UART_IS_WAKEUP
+static void mcux_flexcomm_pm_prepare_wake(const struct device *dev, enum pm_state state)
+{
+	const struct mcux_flexcomm_config *config = dev->config;
+	struct mcux_flexcomm_data *data = dev->data;
+	USART_Type *base = config->base;
+
+	/* Switch to the lowest possible baud rate, in order to
+	 * both minimize power consumption and also be able to
+	 * potentially wake up the chip from this mode.
+	 */
+	if (pm_policy_device_is_disabling_state(dev, state, 0)) {
+		clock_control_configure(config->clock_dev, config->lp_clock_subsys, NULL);
+		data->old_brg = base->BRG;
+		data->old_osr = base->OSR;
+		base->OSR = 8;
+		base->BRG = 0;
+	}
+}
+
+static void mcux_flexcomm_pm_restore_wake(const struct device *dev, enum pm_state state)
+{
+	const struct mcux_flexcomm_config *config = dev->config;
+	struct mcux_flexcomm_data *data = dev->data;
+	USART_Type *base = config->base;
+
+	if (pm_policy_device_is_disabling_state(dev, state, 0)) {
+		clock_control_configure(config->clock_dev, config->clock_subsys, NULL);
+		base->OSR = data->old_osr;
+		base->BRG = data->old_brg;
+	}
+}
+#endif /* FC_UART_IS_WAKEUP */
+
+static uint32_t usart_intenset;
+static int mcux_flexcomm_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct mcux_flexcomm_config *config = dev->config;
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+		usart_intenset = USART_GetEnabledInterrupts(config->base);
+		break;
+	case PM_DEVICE_ACTION_TURN_ON:
+		ret = mcux_flexcomm_init_common(dev);
+		if (ret) {
+			return ret;
+		}
+		USART_EnableInterrupts(config->base, usart_intenset);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+	return 0;
+}
+
+static int mcux_flexcomm_init(const struct device *dev)
+{
+#if FC_UART_IS_WAKEUP || defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+	const struct mcux_flexcomm_config *config = dev->config;
+	struct mcux_flexcomm_data *data = dev->data;
+#endif
+
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+	k_work_init(&data->pm_lock_work, config->pm_unlock_work_fn);
+#endif
+
+#if FC_UART_IS_WAKEUP
+	config->wakeup_cfg();
+	pm_notifier_register(&data->pm_handles);
+#endif
+
+	/* Rest of the init is done from the PM_DEVICE_TURN_ON action
+	 * which is invoked by pm_device_driver_init().
+	 */
+	return pm_device_driver_init(dev, mcux_flexcomm_pm_action);
+}
+
+static DEVICE_API(uart, mcux_flexcomm_driver_api) = {
 	.poll_in = mcux_flexcomm_poll_in,
 	.poll_out = mcux_flexcomm_poll_out,
 	.err_check = mcux_flexcomm_err_check,
@@ -1119,6 +1293,21 @@ static const struct uart_driver_api mcux_flexcomm_driver_api = {
 #define UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC_INIT(n)
 #endif /* CONFIG_UART_MCUX_FLEXCOMM_ISR_SUPPORT */
 
+#ifdef CONFIG_PM_POLICY_DEVICE_CONSTRAINTS
+#define UART_MCUX_FLEXCOMM_PM_UNLOCK_FUNC_DEFINE(n)				\
+static void mcux_flexcomm_##n##_pm_unlock(struct k_work *work)			\
+{										\
+	const struct device *dev = DEVICE_DT_INST_GET(n);			\
+										\
+	mcux_flexcomm_pm_unlock_if_idle(dev);					\
+}
+#define UART_MCUX_FLEXCOMM_PM_UNLOCK_FUNC_BIND(n)				\
+	.pm_unlock_work_fn = mcux_flexcomm_##n##_pm_unlock,
+#else
+#define UART_MCUX_FLEXCOMM_PM_UNLOCK_FUNC_DEFINE(n)
+#define UART_MCUX_FLEXCOMM_PM_UNLOCK_FUNC_BIND(n)
+#endif /* CONFIG_PM_POLICY_DEVICE_CONSTRAINTS */
+
 #ifdef CONFIG_UART_ASYNC_API
 #define UART_MCUX_FLEXCOMM_TX_TIMEOUT_FUNC(n)					\
 	static void mcux_flexcomm_uart_##n##_tx_timeout(struct k_work *work)	\
@@ -1149,7 +1338,6 @@ DT_INST_FOREACH_STATUS_OKAY(UART_MCUX_FLEXCOMM_RX_TIMEOUT_FUNC);
 			.head_block =						\
 				&mcux_flexcomm_##n##_data.tx_data.active_block,	\
 			.channel_direction = MEMORY_TO_PERIPHERAL,		\
-			.dma_slot = DT_INST_DMAS_CELL_BY_NAME(n, tx, channel),	\
 			.dma_callback = mcux_flexcomm_uart_dma_tx_callback,	\
 			.user_data = (void *)DEVICE_DT_INST_GET(n),		\
 		},								\
@@ -1170,7 +1358,6 @@ DT_INST_FOREACH_STATUS_OKAY(UART_MCUX_FLEXCOMM_RX_TIMEOUT_FUNC);
 			.head_block =						\
 				&mcux_flexcomm_##n##_data.rx_data.active_block,	\
 			.channel_direction = PERIPHERAL_TO_MEMORY,		\
-			.dma_slot = DT_INST_DMAS_CELL_BY_NAME(n, rx, channel),	\
 			.dma_callback = mcux_flexcomm_uart_dma_rx_callback,	\
 			.user_data = (void *)DEVICE_DT_INST_GET(n)		\
 		},								\
@@ -1183,6 +1370,47 @@ DT_INST_FOREACH_STATUS_OKAY(UART_MCUX_FLEXCOMM_RX_TIMEOUT_FUNC);
 #define UART_MCUX_FLEXCOMM_ASYNC_CFG(n)
 #endif /* CONFIG_UART_ASYNC_API */
 
+#if FC_UART_IS_WAKEUP
+#define UART_MCUX_FLEXCOMM_WAKEUP_CFG_DEFINE(n)					\
+static void serial_mcux_flexcomm_##n##_wakeup_cfg(void)				\
+{										\
+	IF_ENABLED(DT_INST_PROP(n, wakeup_source), (				\
+		POWER_EnableWakeup(DT_INST_IRQN(n));				\
+	))									\
+}
+#define UART_MCUX_FLEXCOMM_WAKEUP_CFG_BIND(n)					\
+		.wakeup_cfg = serial_mcux_flexcomm_##n##_wakeup_cfg,
+
+#define UART_MCUX_FLEXCOMM_PM_HANDLES_DEFINE(n)					\
+static void serial_mcux_flexcomm_##n##_pm_entry(enum pm_state state)		\
+{										\
+	IF_ENABLED(DT_INST_PROP(n, wakeup_source), (				\
+		mcux_flexcomm_pm_prepare_wake(DEVICE_DT_INST_GET(n), state);	\
+	))									\
+}										\
+										\
+static void serial_mcux_flexcomm_##n##_pm_exit(enum pm_state state)		\
+{										\
+	IF_ENABLED(DT_INST_PROP(n, wakeup_source), (				\
+		mcux_flexcomm_pm_restore_wake(DEVICE_DT_INST_GET(n), state);	\
+	))									\
+}
+#define UART_MCUX_FLEXCOMM_PM_HANDLES_BIND(n)					\
+	.pm_handles = {								\
+			.state_entry = serial_mcux_flexcomm_##n##_pm_entry,	\
+			.state_exit = serial_mcux_flexcomm_##n##_pm_exit,	\
+	},
+#define UART_MCUX_FLEXCOMM_LP_CLK_SUBSYS(n)					\
+	.lp_clock_subsys = (clock_control_subsys_t)				\
+				DT_INST_CLOCKS_CELL_BY_NAME(n, sleep, name),
+#else
+#define UART_MCUX_FLEXCOMM_WAKEUP_CFG_DEFINE(n)
+#define UART_MCUX_FLEXCOMM_WAKEUP_CFG_BIND(n)
+#define UART_MCUX_FLEXCOMM_PM_HANDLES_DEFINE(n)
+#define UART_MCUX_FLEXCOMM_PM_HANDLES_BIND(n)
+#define UART_MCUX_FLEXCOMM_LP_CLK_SUBSYS(n)
+#endif /* FC_UART_IS_WAKEUP */
+
 #define UART_MCUX_FLEXCOMM_INIT_CFG(n)						\
 static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config = {		\
 	.base = (USART_Type *)DT_INST_REG_ADDR(n),				\
@@ -1190,31 +1418,42 @@ static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config = {		\
 	.clock_subsys =								\
 	(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),			\
 	.baud_rate = DT_INST_PROP(n, current_speed),				\
-	.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),		\
+	.parity = DT_INST_ENUM_IDX(n, parity),					\
 	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				\
 	UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC_INIT(n)					\
 	UART_MCUX_FLEXCOMM_ASYNC_CFG(n)						\
+	UART_MCUX_FLEXCOMM_PM_UNLOCK_FUNC_BIND(n)				\
+	UART_MCUX_FLEXCOMM_WAKEUP_CFG_BIND(n)					\
+	UART_MCUX_FLEXCOMM_LP_CLK_SUBSYS(n)					\
+};
+
+#define UART_MCUX_FLEXCOMM_INIT_DATA(n)						\
+static struct mcux_flexcomm_data mcux_flexcomm_##n##_data = {			\
+	UART_MCUX_FLEXCOMM_PM_HANDLES_BIND(n)					\
 };
 
 #define UART_MCUX_FLEXCOMM_INIT(n)						\
 										\
 	PINCTRL_DT_INST_DEFINE(n);						\
 										\
-	static struct mcux_flexcomm_data mcux_flexcomm_##n##_data;		\
+	UART_MCUX_FLEXCOMM_PM_UNLOCK_FUNC_DEFINE(n)				\
+	UART_MCUX_FLEXCOMM_WAKEUP_CFG_DEFINE(n)					\
+	UART_MCUX_FLEXCOMM_PM_HANDLES_DEFINE(n)					\
+	PM_DEVICE_DT_INST_DEFINE(n, mcux_flexcomm_pm_action);			\
 										\
-	static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config;	\
+	UART_MCUX_FLEXCOMM_INIT_DATA(n)						\
+										\
+	UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC(n)					\
+										\
+	UART_MCUX_FLEXCOMM_INIT_CFG(n)						\
 										\
 	DEVICE_DT_INST_DEFINE(n,						\
 			    &mcux_flexcomm_init,				\
-			    NULL,						\
+			    PM_DEVICE_DT_INST_GET(n),				\
 			    &mcux_flexcomm_##n##_data,				\
 			    &mcux_flexcomm_##n##_config,			\
 			    PRE_KERNEL_1,					\
 			    CONFIG_SERIAL_INIT_PRIORITY,			\
-			    &mcux_flexcomm_driver_api);				\
-										\
-	UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC(n)					\
-										\
-	UART_MCUX_FLEXCOMM_INIT_CFG(n)
+			    &mcux_flexcomm_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(UART_MCUX_FLEXCOMM_INIT)

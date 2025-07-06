@@ -17,6 +17,8 @@ zephyr_library_sources(
 	usbd_msg.c
 )
 
+add_subdirectory(app)
+
 zephyr_library_sources_ifdef(
 	CONFIG_USBD_SHELL
 	usbd_shell.c
@@ -41,6 +43,15 @@ zephyr_library_sources_ifdef(
 	class/usbd_cdc_ecm.c
 )
 
+zephyr_include_directories_ifdef(
+	CONFIG_USBD_CDC_NCM_CLASS
+	${ZEPHYR_BASE}/drivers/ethernet
+)
+zephyr_library_sources_ifdef(
+	CONFIG_USBD_CDC_NCM_CLASS
+	class/usbd_cdc_ncm.c
+)
+
 zephyr_library_sources_ifdef(
 	CONFIG_USBD_BT_HCI
 	class/bt_hci.c
@@ -60,6 +71,37 @@ zephyr_linker_sources_ifdef(
 zephyr_library_sources_ifdef(
 	CONFIG_USBD_AUDIO2_CLASS
 	class/usbd_uac2.c
+)
+
+zephyr_library_sources_ifdef(
+  CONFIG_USBD_MIDI2_CLASS
+  class/usbd_midi2.c
+)
+
+zephyr_library_sources_ifdef(
+	CONFIG_USBD_VIDEO_CLASS
+	class/usbd_uvc.c
+)
+
+zephyr_library_sources_ifdef(
+	CONFIG_USBD_HID_SUPPORT
+	class/usbd_hid.c
+	class/usbd_hid_api.c
+)
+
+zephyr_library_sources_ifdef(
+  CONFIG_USBD_DFU
+  class/usbd_dfu.c
+)
+
+zephyr_library_sources_ifdef(
+  CONFIG_USBD_DFU_FLASH
+  class/usbd_dfu_flash.c
+)
+
+zephyr_linker_sources_ifdef(
+  CONFIG_USBD_DFU
+  SECTIONS class/usbd_dfu.ld
 )
 
 zephyr_linker_sources(DATA_SECTIONS usbd_data.ld)

@@ -1,0 +1,7 @@
+# Copyright (c) 2024 DPTechnics bv
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_WALTER
+	select SOC_ESP32S3_WROOM_N16R2
+	select SOC_ESP32S3_PROCPU if BOARD_WALTER_ESP32S3_PROCPU
+	select SOC_ESP32S3_APPCPU if BOARD_WALTER_ESP32S3_APPCPU

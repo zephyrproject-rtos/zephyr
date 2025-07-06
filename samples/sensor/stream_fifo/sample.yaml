@@ -1,0 +1,12 @@
+sample:
+  name: Stream FIFO sample
+tests:
+  sample.sensor.stream_fifo:
+    harness: console
+    tags: sensors
+    filter: dt_alias_exists("stream0")
+    harness_config:
+      type: one_line
+      regex:
+        - "^\\s*[0-9A-Za-z_,+-.]*@[0-9A-Fa-f]* \\[m\/s\\^2\\]:    \
+           \\(\\s*-?[0-9\\.]*,\\s*-?[0-9\\.]*,\\s*-?[0-9\\.]*\\)$"

@@ -334,7 +334,7 @@ static int entropy_cc13xx_cc26xx_init(const struct device *dev)
 	return 0;
 }
 
-static const struct entropy_driver_api entropy_cc13xx_cc26xx_driver_api = {
+static DEVICE_API(entropy, entropy_cc13xx_cc26xx_driver_api) = {
 	.get_entropy = entropy_cc13xx_cc26xx_get_entropy,
 	.get_entropy_isr = entropy_cc13xx_cc26xx_get_entropy_isr,
 };

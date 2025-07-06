@@ -1,7 +1,7 @@
 # Copyright (c) 2020 Nuvoton Technology Corporation.
 # SPDX-License-Identifier: Apache-2.0
 
-description: Nuvoton, NPCX-I2C controller node
+description: Nuvoton NPCX-I2C controller
 
 compatible: "nuvoton,npcx-i2c-ctrl"
 
@@ -12,3 +12,11 @@ properties:
     required: true
   clocks:
     required: true
+  smb-wui:
+    type: phandle
+    required: true
+    description: |
+        Mapping table between Wake-Up Input (WUI) and SMB module.
+
+        For example the WUI mapping on SMB 4 module would be
+           smb-wui = <&wui_smb4>;

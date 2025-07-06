@@ -11,7 +11,7 @@
 #include <fsl_power.h>
 #include <fsl_clock.h>
 
-int soc_init(void)
+void soc_early_init_hook(void)
 {
 	POWER_DisablePD(kPDRUNCFG_PD_FRO_EN);
 	CLOCK_SetupFROClocking(12000000U);
@@ -31,34 +31,22 @@ int soc_init(void)
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm4), nxp_lpc_i2c, okay)
 	/* attach 12 MHz clock for flexcomm4 */
 	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM4);
-
-	/* reset FLEXCOMM for I2C */
-	RESET_PeripheralReset(kFC4_RST_SHIFT_RSTn);
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm5), nxp_lpc_spi, okay)
 	/* attach 12MHz clock to flexcomm5 */
 	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM5);
-
-	/* reset FLEXCOMM for SPI */
-	RESET_PeripheralReset(kFC5_RST_SHIFT_RSTn);
 #endif
 
 	POWER_DisablePD(kPDRUNCFG_PD_ADC0);
 	POWER_DisablePD(kPDRUNCFG_PD_VD7_ENA);
 	POWER_DisablePD(kPDRUNCFG_PD_VREFP_SW);
 	POWER_DisablePD(kPDRUNCFG_PD_TEMPS);
-
-	return 0;
 }
 
-#ifdef CONFIG_PLATFORM_SPECIFIC_INIT
-
-void z_arm_platform_init(void)
+#ifdef CONFIG_SOC_RESET_HOOK
+void soc_reset_hook(void)
 {
 	SystemInit();
 }
-
-#endif /* CONFIG_PLATFORM_SPECIFIC_INIT */
-
-SYS_INIT(soc_init, PRE_KERNEL_1, 0);
+#endif /* CONFIG_SOC_RESET_HOOK */

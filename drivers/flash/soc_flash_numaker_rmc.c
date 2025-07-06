@@ -29,6 +29,9 @@ struct flash_numaker_data {
 static const struct flash_parameters flash_numaker_parameters = {
 	.write_block_size = SOC_NV_FLASH_WRITE_BLOCK_SIZE,
 	.erase_value = 0xff,
+	.caps = {
+		.no_explicit_erase = true,
+	},
 };
 
 /* Validate offset and length */
@@ -243,7 +246,7 @@ static const struct flash_parameters *flash_numaker_get_parameters(const struct 
 
 static struct flash_numaker_data flash_data;
 
-static const struct flash_driver_api flash_numaker_api = {
+static DEVICE_API(flash, flash_numaker_api) = {
 	.erase = flash_numaker_erase,
 	.write = flash_numaker_write,
 	.read = flash_numaker_read,

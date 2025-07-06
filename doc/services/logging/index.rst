@@ -53,7 +53,7 @@ For each level the following set of macros are available:
 - ``LOG_INST_X`` for standard printf-like message associated with the
   particular instance, e.g. :c:macro:`LOG_INST_INF`.
 - ``LOG_INST_HEXDUMP_X`` for dumping data associated with the particular
-  instance, e.g. :c:macro:`LOG_HEXDUMP_INST_DBG`
+  instance, e.g. :c:macro:`LOG_INST_HEXDUMP_DBG`
 
 The warning level also exposes the following additional macro:
 
@@ -487,6 +487,8 @@ particular source will be buffered.
 | INF  | ERR  | INF  | OFF  | ... | OFF  |
 +------+------+------+------+-----+------+
 
+.. _log_frontend:
+
 Custom Frontend
 ===============
 
@@ -498,7 +500,12 @@ backends.
 
 In some cases, logs need to be redirected at the macro level. For these cases,
 :kconfig:option:`CONFIG_LOG_CUSTOM_HEADER` can be used to inject an application provided
-header named `zephyr_custom_log.h` at the end of :zephyr_file:`include/zephyr/logging/log.h`.
+header named :file:`zephyr_custom_log.h` at the end of :zephyr_file:`include/zephyr/logging/log.h`.
+
+Frontend using ARM Coresight STM (System Trace Macrocell)
+---------------------------------------------------------
+
+For more details about logging using ARM Coresight STM see :ref:`logging_cs_stm`.
 
 .. _logging_strings:
 
@@ -668,6 +675,8 @@ specific.
 standard and hexdump messages because log message hold string with arguments
 and data. It is also common for deferred and immediate logging.
 
+.. _log_output:
+
 Message formatting
 ------------------
 
@@ -749,8 +758,8 @@ Please refer to the :zephyr:code-sample:`logging-dictionary` sample to learn mor
 the log parser.
 
 
-Recommendations
-***************
+Recommendations and limitations
+*******************************
 
 The are following recommendations:
 
@@ -762,13 +771,18 @@ The are following recommendations:
   format specifier and it points to a constant string.
 * It is recommended to cast pointer to ``char *`` when it is used with ``%s``
   format specifier and it points to a transient string.
-* It is recommended to cast character pointer to non character pointer
+* It is required to cast a character pointer to non character pointer
   (e.g., ``void *``) when it is used with ``%p`` format specifier.
 
 .. code-block:: c
 
    LOG_WRN("%s", str);
    LOG_WRN("%p", (void *)str);
+
+There are following limitations:
+
+* Logging does not support string format specifier with width (e.g., ``%.*s`` or ``%8s``). That
+  is because format string content is not used to build a log message, only argument types.
 
 Benchmark
 *********
@@ -827,9 +841,6 @@ When :kconfig:option:`CONFIG_LOG_MODE_IMMEDIATE` is used then log message is pro
 which includes string formatting. In case of that mode, stack usage will depend on which backends
 are used.
 
-:zephyr_file:`tests/subsys/logging/log_stack` test is used to characterize stack usage depending
-on mode, optimization and platform used. Test is using only the default backend.
-
 Some of the platforms characterization for log message with two ``integer`` arguments listed below:
 
 +---------------+----------+----------------------------+-----------+-----------------------------+
@@ -846,6 +857,10 @@ Some of the platforms characterization for log message with two ``integer`` argu
 | x86_64        | 32       | 528                        | 1088      | 1440                        |
 +---------------+----------+----------------------------+-----------+-----------------------------+
 
+Logging using ARM Coresight STM
+*******************************
+
+For logging on NRF54H20 using ARM Coresight STM see :ref:`logging_cs_stm`.
 
 API Reference
 *************
@@ -874,3 +889,8 @@ Logger output formatting
 ========================
 
 .. doxygengroup:: log_output
+
+.. toctree::
+   :maxdepth: 1
+
+   cs_stm.rst

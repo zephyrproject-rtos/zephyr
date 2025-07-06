@@ -1,7 +1,4 @@
-.. _icev_wireless:
-
-ICE-V Wireless
-##############
+.. zephyr:board:: icev_wireless
 
 Overview
 ********
@@ -9,12 +6,6 @@ Overview
 The ICE-V Wireless is a combined ESP32C3 and iCE40 FPGA board.
 
 See the `ICE-V Wireless Github Project`_ for details.
-
-.. figure:: img/icev_wireless.jpg
-   :align: center
-   :alt: ICE-V Wireless
-
-   ICE-V Wireless
 
 Hardware
 ********
@@ -37,32 +28,7 @@ For details on iCE40 hardware please refer to the following resources:
 Supported Features
 ==================
 
-The ICE-V Wireless board configuration supports the following hardware
-features:
-
-+-----------+------------+------------------+
-| Interface | Controller | Driver/Component |
-+===========+============+==================+
-| PMP       | on-chip    | arch/riscv       |
-+-----------+------------+------------------+
-| INTMTRX   | on-chip    | intc_esp32c3     |
-+-----------+------------+------------------+
-| PINMUX    | on-chip    | pinctrl_esp32    |
-+-----------+------------+------------------+
-| USB UART  | on-chip    | serial_esp32_usb |
-+-----------+------------+------------------+
-| GPIO      | on-chip    | gpio_esp32       |
-+-----------+------------+------------------+
-| UART      | on-chip    | uart_esp32       |
-+-----------+------------+------------------+
-| I2C       | on-chip    | i2c_esp32        |
-+-----------+------------+------------------+
-| SPI       | on-chip    | spi_esp32_spim   |
-+-----------+------------+------------------+
-| ADC       | on-chip    |                  |
-+-----------+------------+------------------+
-
-Other hardware features have not been enabled yet for this board.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -92,6 +58,8 @@ below.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Programming and debugging for the ICE-V Wireless ESP32-C3 target is
 incredibly easy 🎉 following the steps below.
 
@@ -112,7 +80,7 @@ MCUboot bootloader
 ==================
 
 User may choose to use MCUboot bootloader instead. In that case the bootloader
-must be build (and flash) at least once.
+must be built (and flashed) at least once.
 
 There are two options to be used when building an application:
 
@@ -123,9 +91,10 @@ There are two options to be used when building an application:
 
    User can select the MCUboot bootloader by adding the following line
    to the board default configuration file.
-   ```
-   CONFIG_BOOTLOADER_MCUBOOT=y
-   ```
+
+   .. code:: cfg
+
+      CONFIG_BOOTLOADER_MCUBOOT=y
 
 Sysbuild
 ========
@@ -137,7 +106,7 @@ To build the sample application using sysbuild use the command:
 
 .. zephyr-app-commands::
    :tool: west
-   :app: samples/hello_world
+   :zephyr-app: samples/hello_world
    :board: icev_wireless
    :goals: build
    :west-args: --sysbuild
@@ -173,7 +142,7 @@ Manual build
 ============
 
 During the development cycle, it is intended to build & flash as quickly possible.
-For that reason, images can be build one at a time using traditional build.
+For that reason, images can be built one at a time using traditional build.
 
 The instructions following are relevant for both manual build and sysbuild.
 The only difference is the structure of the build directory.
@@ -223,7 +192,7 @@ The Zephyr SDK uses a bundled version of OpenOCD by default. You can overwrite t
 ``-DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>``
 parameter when building.
 
-Here is an example for building the :ref:`hello_world` application.
+Here is an example for building the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -232,7 +201,7 @@ Here is an example for building the :ref:`hello_world` application.
    :gen-args: -DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>
 
 You can debug an application in the usual way. Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -242,6 +211,8 @@ You can debug an application in the usual way. Here is an example for the
 
 References
 **********
+
+.. target-notes::
 
 .. _ICE-V Wireless Github Project:
    https://github.com/ICE-V-Wireless/ICE-V-Wireless

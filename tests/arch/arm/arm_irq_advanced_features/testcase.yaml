@@ -7,5 +7,8 @@ common:
 tests:
   arch.arm.irq_advanced_features:
     filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
+    platform_exclude:
+      - kit_xmc72_evk/xmc7200d_e272k8384/m7_0
+      - kit_xmc72_evk/xmc7200d_e272k8384/m7_1
   arch.arm.irq_advanced_features.secure_fw:
     filter: CONFIG_TRUSTED_EXECUTION_SECURE

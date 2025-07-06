@@ -163,7 +163,7 @@ static void ipm_mhu_register_cb(const struct device *d,
 	driver_data->user_data = user_data;
 }
 
-static const struct ipm_driver_api ipm_mhu_driver_api = {
+static DEVICE_API(ipm, ipm_mhu_driver_api) = {
 	.send = ipm_mhu_send,
 	.register_callback = ipm_mhu_register_cb,
 	.max_data_size_get = ipm_mhu_max_data_size_get,

@@ -40,7 +40,7 @@ char *lwm2m_sprint_ip_addr(const struct sockaddr *addr);
  * @brief Converts the token to a printable format.
  *
  * @param[in] token Token to be printed
- * @param[in] tkl Lenghts of token
+ * @param[in] tkl Lengths of token
  * @return char buffer with the string representation of the token
  */
 char *sprint_token(const uint8_t *token, uint8_t tkl);

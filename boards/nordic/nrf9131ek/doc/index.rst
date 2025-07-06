@@ -1,7 +1,4 @@
-.. _nrf9131ek_nrf9131:
-
-nRF9131 EK
-##########
+.. zephyr:board:: nrf9131ek
 
 Overview
 ********
@@ -26,14 +23,8 @@ Cortex-M33F CPU with ARMv8-M Security Extension and the following devices:
 * :abbr:`WDT (Watchdog Timer)`
 * :abbr:`IDAU (Implementation Defined Attribution Unit)`
 
-.. figure:: img/nrf9131ek_nrf9131.webp
-     :align: center
-     :alt: nRF9131 EK
-
-     nRF9131 EK (Credit: Nordic Semiconductor)
-
-The `Nordic Semiconductor Infocenter`_
-contains the processor's information and the datasheet.
+The `Nordic Semiconductor TechDocs`_ will soon
+contain the processor's information and the datasheet.
 
 
 Hardware
@@ -46,40 +37,7 @@ is 32 MHz.
 Supported Features
 ==================
 
-The ``nrf9131ek/nrf9131`` board configuration supports the following
-hardware features:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C(M)    | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| RTT       | Segger     | console              |
-+-----------+------------+----------------------+
-| SPI(M/S)  | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| SPU       | on-chip    | system protection    |
-+-----------+------------+----------------------+
-| UARTE     | on-chip    | serial               |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -109,6 +67,8 @@ Security components
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 ``nrf9131ek/nrf9131`` supports the Armv8m Security Extension, and by default boots
 in the Secure state.
@@ -180,7 +140,7 @@ found in :ref:`nordic_segger_flashing`. Then build and flash
 applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 First, run your favorite terminal program to listen for output.
 
@@ -225,5 +185,5 @@ References
 
 .. _IDAU:
    https://developer.arm.com/docs/100690/latest/attribution-units-sau-and-idau
-.. _Nordic Semiconductor Infocenter: https://infocenter.nordicsemi.com
+.. _Nordic Semiconductor TechDocs: https://docs.nordicsemi.com/
 .. _Trusted Firmware M: https://www.trustedfirmware.org/projects/tf-m/

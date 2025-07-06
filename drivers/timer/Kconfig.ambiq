@@ -10,4 +10,4 @@ config AMBIQ_STIMER_TIMER
 	select TICKLESS_CAPABLE
 	select AMBIQ_HAL_USE_STIMER
 	help
-	  Ambiq Apollo4 stimer driver
+	  Ambiq Apollo stimer driver

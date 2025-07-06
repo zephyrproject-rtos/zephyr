@@ -1,0 +1,157 @@
+/*
+ * Copyright (c) 2024 Intel Corporation.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "skeleton.dtsi"
+#include <zephyr/dt-bindings/interrupt-controller/intel-ioapic.h>
+#include <zephyr/dt-bindings/acpi/acpi.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	acpi {
+		gpio_a: gpio_a {
+			compatible = "intel,gpio";
+			interrupt-parent = <&intc>;
+			interrupts = <ACPI_IRQ_DETECT ACPI_IRQ_FLAG_DETECT 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio_b: gpio_b {
+			compatible = "intel,gpio";
+			interrupt-parent = <&intc>;
+			interrupts = <ACPI_IRQ_DETECT ACPI_IRQ_FLAG_DETECT 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio_c: gpio_c {
+			compatible = "intel,gpio";
+			interrupt-parent = <&intc>;
+			interrupts = <ACPI_IRQ_DETECT ACPI_IRQ_FLAG_DETECT 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio_d: gpio_d {
+			compatible = "intel,gpio";
+			interrupt-parent = <&intc>;
+			interrupts = <ACPI_IRQ_DETECT ACPI_IRQ_FLAG_DETECT 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio_e: gpio_e {
+			compatible = "intel,gpio";
+			interrupt-parent = <&intc>;
+			interrupts = <ACPI_IRQ_DETECT ACPI_IRQ_FLAG_DETECT 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio_f: gpio_f {
+			compatible = "intel,gpio";
+			interrupt-parent = <&intc>;
+			interrupts = <ACPI_IRQ_DETECT ACPI_IRQ_FLAG_DETECT 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio_g: gpio_g {
+			compatible = "intel,gpio";
+			interrupt-parent = <&intc>;
+			interrupts = <ACPI_IRQ_DETECT ACPI_IRQ_FLAG_DETECT 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio_h: gpio_h {
+			compatible = "intel,gpio";
+			interrupt-parent = <&intc>;
+			interrupts = <ACPI_IRQ_DETECT ACPI_IRQ_FLAG_DETECT 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio_i: gpio_i {
+			compatible = "intel,gpio";
+			interrupt-parent = <&intc>;
+			interrupts = <ACPI_IRQ_DETECT ACPI_IRQ_FLAG_DETECT 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio_j: gpio_j {
+			compatible = "intel,gpio";
+			interrupt-parent = <&intc>;
+			interrupts = <ACPI_IRQ_DETECT ACPI_IRQ_FLAG_DETECT 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio_k: gpio_k {
+			compatible = "intel,gpio";
+			interrupt-parent = <&intc>;
+			interrupts = <ACPI_IRQ_DETECT ACPI_IRQ_FLAG_DETECT 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio_s: gpio_s {
+			compatible = "intel,gpio";
+			interrupt-parent = <&intc>;
+			interrupts = <ACPI_IRQ_DETECT ACPI_IRQ_FLAG_DETECT 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio_r: gpio_r {
+			compatible = "intel,gpio";
+			interrupt-parent = <&intc>;
+			interrupts = <ACPI_IRQ_DETECT ACPI_IRQ_FLAG_DETECT 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio_t: gpio_t {
+			compatible = "intel,gpio";
+			interrupt-parent = <&intc>;
+			interrupts = <ACPI_IRQ_DETECT ACPI_IRQ_FLAG_DETECT 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio_u: gpio_u {
+			compatible = "intel,gpio";
+			interrupt-parent = <&intc>;
+			interrupts = <ACPI_IRQ_DETECT ACPI_IRQ_FLAG_DETECT 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		vgpio: vgpio {
+			compatible = "intel,gpio";
+			interrupt-parent = <&intc>;
+			interrupts = <ACPI_IRQ_DETECT ACPI_IRQ_FLAG_DETECT 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+	};
+};

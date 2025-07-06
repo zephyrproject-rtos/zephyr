@@ -4,6 +4,7 @@ sample:
 common:
   filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
   harness: net
+  depends_on: netif
   min_ram: 32
   min_flash: 128
   tags:
@@ -14,4 +15,4 @@ tests:
     extra_configs:
       - CONFIG_POSIX_API=y
   sample.net.sockets.big_http_download.ci:
-    extra_args: OVERLAY_CONFIG=overlay-ci.conf
+    extra_args: EXTRA_CONF_FILE=overlay-ci.conf

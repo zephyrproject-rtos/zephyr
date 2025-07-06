@@ -5,7 +5,4 @@ if SOC_FAMILY_RENESAS_SMARTBOND
 
 rsource "*/Kconfig.defconfig"
 
-config PINCTRL
-	default y
-
 endif # SOC_FAMILY_RENESAS_SMARTBOND

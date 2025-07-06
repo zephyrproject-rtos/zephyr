@@ -44,11 +44,14 @@ kconfig_to_ot_option(CONFIG_OPENTHREAD_BACKBONE_ROUTER_DUA_NDPROXYING OT_BACKBON
 kconfig_to_ot_option(CONFIG_OPENTHREAD_BACKBONE_ROUTER_MULTICAST_ROUTING OT_BACKBONE_ROUTER_MULTICAST_ROUTING "Enable BBR MR support")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_BLE_TCAT OT_BLE_TCAT "Enable BLE TCAT support")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_BORDER_AGENT OT_BORDER_AGENT "Enable Border Agent")
+kconfig_to_ot_option(CONFIG_OPENTHREAD_BORDER_AGENT_EPHEMERAL_KEY_ENABLE OT_BORDER_AGENT_EPSKC "Border agent ephemeral PSKc")
+kconfig_to_ot_option(CONFIG_OPENTHREAD_BORDER_AGENT_ID OT_BORDER_AGENT_ID "Create and save border agent ID")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_BORDER_ROUTER OT_BORDER_ROUTER "Enable Border Router")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_BORDER_ROUTING OT_BORDER_ROUTING "Enable Border routing")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_BORDER_ROUTING_COUNTERS OT_BORDER_ROUTING_COUNTERS "Enable Border routing counters")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_BORDER_ROUTING_DHCP6_PD OT_BORDER_ROUTING_DHCP6_PD "DHCPv6-PD support in border routing")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_CHANNEL_MANAGER OT_CHANNEL_MANAGER "Enable channel manager support")
+kconfig_to_ot_option(CONFIG_OPENTHREAD_CHANNEL_MANAGER_CSL OT_CHANNEL_MANAGER_CSL "Channel manager for CSL channel")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_CHANNEL_MONITOR OT_CHANNEL_MONITOR "Enable channel monitor support")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_COAP OT_COAP "Enable CoAP API")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_COAP_BLOCK OT_COAP_BLOCK "Enable CoAP Block-wise option support")
@@ -68,8 +71,10 @@ kconfig_to_ot_option(CONFIG_OPENTHREAD_DNS_CLIENT OT_DNS_CLIENT "Enable DNS clie
 kconfig_to_ot_option(CONFIG_OPENTHREAD_DNS_CLIENT_OVER_TCP OT_DNS_CLIENT_OVER_TCP "Enable dns query over tcp")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_DNS_DSO OT_DNS_DSO "Enable DNS Stateful Operations (DSO) support")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_DNS_UPSTREAM_QUERY OT_DNS_UPSTREAM_QUERY "Enable forwarding DNS queries to upstream")
+kconfig_to_ot_option(CONFIG_OPENTHREAD_DNSSD_DISCOVERY_PROXY OT_DNSSD_DISCOVERY_PROXY "Enable DNS-SD discovery proxy support")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_DNSSD_SERVER OT_DNSSD_SERVER "Enable DNS-SD server support")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_DUA OT_DUA "Enable Domain Unicast Address feature for Thread 1.2")
+kconfig_to_ot_option(CONFIG_OPENTHREAD_DYNAMIC_STORE_FRAME_AHEAD_COUNTER OT_DYNAMIC_STORE_FRAME_AHEAD_COUNTER "Enable dynamic store frame ahead counter")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_ECDSA OT_ECDSA "Enable ECDSA support")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_ENABLE_SERVICE OT_SERVICE "Enable Service entries in Thread Network Data")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_EXTERNAL_HEAP OT_EXTERNAL_HEAP "Enable external heap support")
@@ -83,8 +88,10 @@ kconfig_to_ot_option(CONFIG_OPENTHREAD_LEGACY OT_LEGACY "Enable legacy network s
 kconfig_to_ot_option(CONFIG_OPENTHREAD_LINK_METRICS_INITIATOR OT_LINK_METRICS_INITIATOR "Enable Link Metrics initiator for Thread 1.2")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_LINK_METRICS_MANAGER OT_LINK_METRICS_MANAGER "Enable Link Metrics manager for Thread 1.2")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT OT_LINK_METRICS_SUBJECT "Enable Link Metrics subject for Thread 1.2")
+kconfig_to_ot_option(CONFIG_OPENTHREAD_PLATFORM_LOG_CRASH_DUMP OT_PLATFORM_LOG_CRASH_DUMP "Platform log crash dump")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_LOG_LEVEL_DYNAMIC OT_LOG_LEVEL_DYNAMIC "Enable dynamic log level control")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_MAC_FILTER OT_MAC_FILTER "Enable MAC filter support")
+kconfig_to_ot_option(CONFIG_OPENTHREAD_MULTICAST_DNS OT_MDNS "multicast DNS (mDNS)")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_MESH_DIAG OT_MESH_DIAG "Enable Mesh Diagnostics")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_MESSAGE_USE_HEAP OT_MESSAGE_USE_HEAP "Enable heap allocator for message buffers")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_MLE_LONG_ROUTES OT_MLE_LONG_ROUTES "Enable MLE long routes support (Experimental)")
@@ -95,6 +102,7 @@ kconfig_to_ot_option(CONFIG_OPENTHREAD_NAT64_BORDER_ROUTING OT_NAT64_BORDER_ROUT
 kconfig_to_ot_option(CONFIG_OPENTHREAD_NAT64_TRANSLATOR OT_NAT64_TRANSLATOR "Enable NAT64 translator")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_NEIGHBOR_DISCOVERY_AGENT OT_NEIGHBOR_DISCOVERY_AGENT "Enable neighbor discovery agent support")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_NETDIAG_CLIENT OT_NETDIAG_CLIENT "Enable TMF network diagnostics on clients")
+kconfig_to_ot_option(CONFIG_OPENTHREAD_NETDIAG_VENDOR_INFO OT_NETDIAG_VENDOR_INFO "Allow setting vendor info at runtime")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_NETDATA_PUBLISHER OT_NETDATA_PUBLISHER "Enable Thread Network Data publisher")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_OPERATIONAL_DATASET_AUTO_INIT OT_OPERATIONAL_DATASET_AUTO_INIT "Enable operational dataset auto init")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_OTNS OT_OTNS "Enable OTNS support")
@@ -119,6 +127,9 @@ kconfig_to_ot_option(CONFIG_OPENTHREAD_TX_BEACON_PAYLOAD OT_TX_BEACON_PAYLOAD "E
 kconfig_to_ot_option(CONFIG_OPENTHREAD_TX_QUEUE_STATISTICS OT_TX_QUEUE_STATS "Enable tx queue statistics")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_UDP_FORWARD OT_UDP_FORWARD "Enable UDP forward feature")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_UPTIME OT_UPTIME "Enable support for tracking OpenThread instance's uptime")
+kconfig_to_ot_option(CONFIG_OPENTHREAD_VERHOEFF_CHECKSUM OT_VERHOEFF_CHECKSUM "Verhoeff checksum")
+kconfig_to_ot_option(CONFIG_OPENTHREAD_WAKEUP_COORDINATOR OT_WAKEUP_COORDINATOR "Enable Wake-up Coordinator role")
+kconfig_to_ot_option(CONFIG_OPENTHREAD_WAKEUP_END_DEVICE OT_WAKEUP_END_DEVICE "Enable Wake-up End Device role")
 
 if(CONFIG_OPENTHREAD_COPROCESSOR_VENDOR_HOOK_SOURCE)
   set(OT_NCP_VENDOR_HOOK_SOURCE ${CONFIG_OPENTHREAD_COPROCESSOR_VENDOR_HOOK_SOURCE} CACHE STRING "NCP vendor hook source file name" FORCE)
@@ -126,6 +137,10 @@ endif()
 
 if(CONFIG_OPENTHREAD_POWER_SUPPLY)
   set(OT_POWER_SUPPLY ${CONFIG_OPENTHREAD_POWER_SUPPLY} CACHE STRING "Power supply configuration" FORCE)
+endif()
+
+if (CONFIG_OPENTHREAD_CLI_VENDOR_EXTENSION)
+  set(OT_CLI_VENDOR_EXTENSION ${CONFIG_OPENTHREAD_CLI_VENDOR_EXTENSION} CACHE STRING "Path to CMake file to define and link Openthread CLI vendor extension" FORCE)
 endif()
 
 set(BUILD_TESTING OFF CACHE BOOL "Disable openthread cmake testing targets" FORCE)
@@ -157,6 +172,11 @@ endforeach()
 
 string(REPLACE " " ";" OT_PARAM_LIST " ${CONFIG_OPENTHREAD_CUSTOM_PARAMETERS}")
 target_compile_definitions(ot-config INTERFACE ${OT_PARAM_LIST})
+
+# Since Mbed TLS 3.1.0 MBEDTLS_SSL_EXPORT_KEYS was removed as build symbol and
+# it's always assumed to be enabled. Corresponding kconfig was removed from
+# Zephyr as well, but OpenThread code still uses it, so we add it here.
+target_compile_definitions(ot-config INTERFACE -DMBEDTLS_SSL_EXPORT_KEYS)
 
 # Zephyr compiler options
 target_include_directories(ot-config INTERFACE
@@ -229,6 +249,17 @@ list(APPEND ot_libs openthread-mtd)
 endif()
 endif()
 
+if(CONFIG_HDLC_RCP_IF)
+list(APPEND ot_libs
+  ot-config
+  openthread-platform
+  openthread-radio-spinel
+  openthread-spinel-ncp
+  openthread-url
+  openthread-hdlc
+)
+endif()
+
 if(CONFIG_OPENTHREAD_SETTINGS_RAM)
   target_compile_options(openthread-platform-utils PRIVATE
     $<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_OPTIONS>
@@ -241,6 +272,15 @@ endif()
 zephyr_link_libraries(${ot_libs})
 
 endif()
+
+# Create a library for the OpenThread Zephyr utils
+zephyr_library_named(openthread_utils)
+zephyr_library_sources(
+  openthread.c
+  openthread_utils.c
+)
+zephyr_library_sources_ifdef(CONFIG_OPENTHREAD_SHELL shell.c)
+zephyr_include_directories(include)
 
 add_subdirectory(platform)
 

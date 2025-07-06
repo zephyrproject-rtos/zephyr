@@ -7,7 +7,7 @@
 #define H_SMP_STUB_
 
 #include <inttypes.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/mgmt/mcumgr/grp/img_mgmt/img_mgmt.h>
 
 

@@ -26,12 +26,12 @@ void arch_reserved_pages_update(void)
 	uintptr_t end = ROUND_UP(addr + len, CONFIG_MMU_PAGE_SIZE);
 
 	for (; pos < end; pos += CONFIG_MMU_PAGE_SIZE) {
-		if (!z_is_page_frame(pos)) {
+		if (!k_mem_is_page_frame(pos)) {
 			continue;
 		}
-		struct z_page_frame *pf = z_phys_to_page_frame(pos);
+		struct k_mem_page_frame *pf = k_mem_phys_to_page_frame(pos);
 
-		pf->flags |= Z_PAGE_FRAME_RESERVED;
+		k_mem_page_frame_set(pf, K_MEM_PAGE_FRAME_RESERVED);
 	}
 }
 
@@ -70,16 +70,12 @@ const struct arm_mmu_config mmu_config = {
  *
  * @return 0
  */
-static int soc_intel_cyclonev_init(void)
+void soc_early_init_hook(void)
 {
 	unsigned int sctlr = __get_SCTLR(); /* modifying some registers prior to initialization */
 
 	sctlr &= ~SCTLR_A_Msk;
 	__set_SCTLR(sctlr);
 	__set_VBAR(0);
-	return 0;
 }
-
-SYS_INIT(soc_intel_cyclonev_init, PRE_KERNEL_1,
-	CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 /* EOF */

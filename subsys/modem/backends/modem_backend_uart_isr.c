@@ -118,9 +118,51 @@ static int modem_backend_uart_isr_open(void *data)
 	return 0;
 }
 
+static uint32_t get_transmit_buf_length(struct modem_backend_uart *backend)
+{
+	return atomic_get(&backend->isr.transmit_buf_len);
+}
+
+#if CONFIG_MODEM_STATS
+static uint32_t get_receive_buf_length(struct modem_backend_uart *backend)
+{
+	return ring_buf_size_get(&backend->isr.receive_rdb[0]) +
+	       ring_buf_size_get(&backend->isr.receive_rdb[1]);
+}
+
+static uint32_t get_receive_buf_size(struct modem_backend_uart *backend)
+{
+	return ring_buf_capacity_get(&backend->isr.receive_rdb[0]) +
+	       ring_buf_capacity_get(&backend->isr.receive_rdb[1]);
+}
+
+static uint32_t get_transmit_buf_size(struct modem_backend_uart *backend)
+{
+	return ring_buf_capacity_get(&backend->isr.transmit_rb);
+}
+
+static void advertise_transmit_buf_stats(struct modem_backend_uart *backend)
+{
+	uint32_t length;
+
+	length = get_transmit_buf_length(backend);
+	modem_stats_buffer_advertise_length(&backend->transmit_buf_stats, length);
+}
+
+static void advertise_receive_buf_stats(struct modem_backend_uart *backend)
+{
+	uint32_t length;
+
+	uart_irq_rx_disable(backend->uart);
+	length = get_receive_buf_length(backend);
+	uart_irq_rx_enable(backend->uart);
+	modem_stats_buffer_advertise_length(&backend->receive_buf_stats, length);
+}
+#endif
+
 static bool modem_backend_uart_isr_transmit_buf_above_limit(struct modem_backend_uart *backend)
 {
-	return backend->isr.transmit_buf_put_limit < atomic_get(&backend->isr.transmit_buf_len);
+	return backend->isr.transmit_buf_put_limit < get_transmit_buf_length(backend);
 }
 
 static int modem_backend_uart_isr_transmit(void *data, const uint8_t *buf, size_t size)
@@ -138,6 +180,11 @@ static int modem_backend_uart_isr_transmit(void *data, const uint8_t *buf, size_
 
 	/* Update transmit buf capacity tracker */
 	atomic_add(&backend->isr.transmit_buf_len, written);
+
+#if CONFIG_MODEM_STATS
+	advertise_transmit_buf_stats(backend);
+#endif
+
 	return written;
 }
 
@@ -147,6 +194,10 @@ static int modem_backend_uart_isr_receive(void *data, uint8_t *buf, size_t size)
 
 	uint32_t read_bytes;
 	uint8_t receive_rdb_unused;
+
+#if CONFIG_MODEM_STATS
+	advertise_receive_buf_stats(backend);
+#endif
 
 	read_bytes = 0;
 	receive_rdb_unused = (backend->isr.receive_rdb_used == 1) ? 0 : 1;
@@ -182,12 +233,29 @@ static int modem_backend_uart_isr_close(void *data)
 	return 0;
 }
 
-struct modem_pipe_api modem_backend_uart_isr_api = {
+static const struct modem_pipe_api modem_backend_uart_isr_api = {
 	.open = modem_backend_uart_isr_open,
 	.transmit = modem_backend_uart_isr_transmit,
 	.receive = modem_backend_uart_isr_receive,
 	.close = modem_backend_uart_isr_close,
 };
+
+#if CONFIG_MODEM_STATS
+static void init_stats(struct modem_backend_uart *backend)
+{
+	char name[CONFIG_MODEM_STATS_BUFFER_NAME_SIZE];
+	uint32_t receive_buf_size;
+	uint32_t transmit_buf_size;
+
+	receive_buf_size = get_receive_buf_size(backend);
+	transmit_buf_size = get_transmit_buf_size(backend);
+
+	snprintk(name, sizeof(name), "%s_%s", backend->uart->name, "rx");
+	modem_stats_buffer_init(&backend->receive_buf_stats, name, receive_buf_size);
+	snprintk(name, sizeof(name), "%s_%s", backend->uart->name, "tx");
+	modem_stats_buffer_init(&backend->transmit_buf_stats, name, transmit_buf_size);
+}
+#endif
 
 void modem_backend_uart_isr_init(struct modem_backend_uart *backend,
 				 const struct modem_backend_uart_config *config)
@@ -215,4 +283,8 @@ void modem_backend_uart_isr_init(struct modem_backend_uart *backend,
 					backend);
 
 	modem_pipe_init(&backend->pipe, backend, &modem_backend_uart_isr_api);
+
+#if CONFIG_MODEM_STATS
+	init_stats(backend);
+#endif
 }

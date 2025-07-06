@@ -16,6 +16,6 @@ __syscall timing_t timing_timestamp_get(void);
 void     timestamp_overhead_init(uint32_t num_iterations);
 uint64_t timestamp_overhead_adjustment(uint32_t options1, uint32_t options2);
 
-#include <syscalls/timing_sc.h>
+#include <zephyr/syscalls/timing_sc.h>
 
 #endif

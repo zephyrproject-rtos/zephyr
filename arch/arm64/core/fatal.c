@@ -13,12 +13,17 @@
  * exceptions
  */
 
+#include <zephyr/debug/symtab.h>
 #include <zephyr/drivers/pm_cpu_ops.h>
 #include <zephyr/arch/common/exc_handle.h>
 #include <zephyr/kernel.h>
+#include <zephyr/linker/linker-defs.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/poweroff.h>
 #include <kernel_arch_func.h>
+#include <kernel_arch_interface.h>
+
+#include "paging.h"
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -180,7 +185,7 @@ static void dump_esr(uint64_t esr, bool *dump_far)
 	LOG_ERR("  ISS: 0x%llx", GET_ESR_ISS(esr));
 }
 
-static void esf_dump(const z_arch_esf_t *esf)
+static void esf_dump(const struct arch_esf *esf)
 {
 	LOG_ERR("x0:  0x%016llx  x1:  0x%016llx", esf->x0, esf->x1);
 	LOG_ERR("x2:  0x%016llx  x3:  0x%016llx", esf->x2, esf->x3);
@@ -193,9 +198,44 @@ static void esf_dump(const z_arch_esf_t *esf)
 	LOG_ERR("x16: 0x%016llx  x17: 0x%016llx", esf->x16, esf->x17);
 	LOG_ERR("x18: 0x%016llx  lr:  0x%016llx", esf->x18, esf->lr);
 }
+#endif /* CONFIG_EXCEPTION_DEBUG */
 
-#ifdef CONFIG_ARM64_ENABLE_FRAME_POINTER
-static void esf_unwind(const z_arch_esf_t *esf)
+#ifdef CONFIG_ARCH_STACKWALK
+typedef bool (*arm64_stacktrace_cb)(void *cookie, unsigned long addr, void *fp);
+
+static bool is_address_mapped(uint64_t *addr)
+{
+	uintptr_t *phys = NULL;
+
+	if (*addr == 0U) {
+		return false;
+	}
+
+	/* Check alignment. */
+	if ((*addr & (sizeof(uint32_t) - 1U)) != 0U) {
+		return false;
+	}
+
+	return !arch_page_phys_get((void *) addr, phys);
+}
+
+static bool is_valid_jump_address(uint64_t *addr)
+{
+	if (*addr == 0U) {
+		return false;
+	}
+
+	/* Check alignment. */
+	if ((*addr & (sizeof(uint32_t) - 1U)) != 0U) {
+		return false;
+	}
+
+	return ((*addr >= (uint64_t)__text_region_start) &&
+		(*addr <= (uint64_t)(__text_region_end)));
+}
+
+static void walk_stackframe(arm64_stacktrace_cb cb, void *cookie, const struct arch_esf *esf,
+			    int max_frames)
 {
 	/*
 	 * For GCC:
@@ -217,25 +257,69 @@ static void esf_unwind(const z_arch_esf_t *esf)
 	 *  +  +-----------------+
 	 */
 
-	uint64_t *fp = (uint64_t *) esf->fp;
-	unsigned int count = 0;
+	uint64_t *fp;
 	uint64_t lr;
 
-	LOG_ERR("");
-	while (fp != NULL) {
+	if (esf != NULL) {
+		fp = (uint64_t *) esf->fp;
+	} else {
+		return;
+	}
+
+	for (int i = 0; (fp != NULL) && (i < max_frames); i++) {
+		if (!is_address_mapped(fp))
+			break;
 		lr = fp[1];
-		LOG_ERR("backtrace %2d: fp: 0x%016llx lr: 0x%016llx",
-			 count++, (uint64_t) fp, lr);
+		if (!is_valid_jump_address(&lr)) {
+			break;
+		}
+		if (!cb(cookie, lr, fp)) {
+			break;
+		}
 		fp = (uint64_t *) fp[0];
 	}
+}
+
+void arch_stack_walk(stack_trace_callback_fn callback_fn, void *cookie,
+		     const struct k_thread *thread, const struct arch_esf *esf)
+{
+	ARG_UNUSED(thread);
+
+	walk_stackframe((arm64_stacktrace_cb)callback_fn, cookie, esf,
+			CONFIG_ARCH_STACKWALK_MAX_FRAMES);
+}
+#endif /* CONFIG_ARCH_STACKWALK */
+
+#ifdef CONFIG_EXCEPTION_STACK_TRACE
+static bool print_trace_address(void *arg, unsigned long lr, void *fp)
+{
+	int *i = arg;
+#ifdef CONFIG_SYMTAB
+	uint32_t offset = 0;
+	const char *name = symtab_find_symbol_name(lr, &offset);
+
+	LOG_ERR("     %d: fp: 0x%016llx lr: 0x%016lx [%s+0x%x]", (*i)++, (uint64_t)fp, lr, name,
+		offset);
+#else
+	LOG_ERR("     %d: fp: 0x%016llx lr: 0x%016lx", (*i)++, (uint64_t)fp, lr);
+#endif /* CONFIG_SYMTAB */
+
+	return true;
+}
+
+static void esf_unwind(const struct arch_esf *esf)
+{
+	int i = 0;
+
+	LOG_ERR("");
+	LOG_ERR("call trace:");
+	walk_stackframe(print_trace_address, &i, esf, CONFIG_ARCH_STACKWALK_MAX_FRAMES);
 	LOG_ERR("");
 }
-#endif
-
-#endif /* CONFIG_EXCEPTION_DEBUG */
+#endif /* CONFIG_EXCEPTION_STACK_TRACE */
 
 #ifdef CONFIG_ARM64_STACK_PROTECTION
-static bool z_arm64_stack_corruption_check(z_arch_esf_t *esf, uint64_t esr, uint64_t far)
+static bool z_arm64_stack_corruption_check(struct arch_esf *esf, uint64_t esr, uint64_t far)
 {
 	uint64_t sp, sp_limit, guard_start;
 	/* 0x25 means data abort from current EL */
@@ -275,11 +359,12 @@ static bool z_arm64_stack_corruption_check(z_arch_esf_t *esf, uint64_t esr, uint
 }
 #endif
 
-static bool is_recoverable(z_arch_esf_t *esf, uint64_t esr, uint64_t far,
+static bool is_recoverable(struct arch_esf *esf, uint64_t esr, uint64_t far,
 			   uint64_t elr)
 {
-	if (!esf)
+	if (!esf) {
 		return false;
+	}
 
 #ifdef CONFIG_USERSPACE
 	for (int i = 0; i < ARRAY_SIZE(exceptions); i++) {
@@ -297,7 +382,7 @@ static bool is_recoverable(z_arch_esf_t *esf, uint64_t esr, uint64_t far,
 	return false;
 }
 
-void z_arm64_fatal_error(unsigned int reason, z_arch_esf_t *esf)
+void z_arm64_fatal_error(unsigned int reason, struct arch_esf *esf)
 {
 	uint64_t esr = 0;
 	uint64_t elr = 0;
@@ -313,11 +398,13 @@ void z_arm64_fatal_error(unsigned int reason, z_arch_esf_t *esf)
 			far = read_far_el1();
 			elr = read_elr_el1();
 			break;
+#if !defined(CONFIG_ARMV8_R)
 		case MODE_EL3:
 			esr = read_esr_el3();
 			far = read_far_el3();
 			elr = read_elr_el3();
 			break;
+#endif /* CONFIG_ARMV8_R */
 		}
 
 #ifdef CONFIG_ARM64_STACK_PROTECTION
@@ -325,6 +412,12 @@ void z_arm64_fatal_error(unsigned int reason, z_arch_esf_t *esf)
 			reason = K_ERR_STACK_CHK_FAIL;
 		}
 #endif
+
+		if (IS_ENABLED(CONFIG_DEMAND_PAGING) &&
+		    reason != K_ERR_STACK_CHK_FAIL &&
+		    z_arm64_do_demand_paging(esf, esr, far)) {
+			return;
+		}
 
 		if (GET_EL(el) != MODE_EL0) {
 #ifdef CONFIG_EXCEPTION_DEBUG
@@ -334,8 +427,9 @@ void z_arm64_fatal_error(unsigned int reason, z_arch_esf_t *esf)
 
 			dump_esr(esr, &dump_far);
 
-			if (dump_far)
+			if (dump_far) {
 				LOG_ERR("FAR_ELn: 0x%016llx", far);
+			}
 
 			LOG_ERR("TPIDRRO: 0x%016llx", read_tpidrro_el0());
 #endif /* CONFIG_EXCEPTION_DEBUG */
@@ -352,14 +446,12 @@ void z_arm64_fatal_error(unsigned int reason, z_arch_esf_t *esf)
 		esf_dump(esf);
 	}
 
-#ifdef CONFIG_ARM64_ENABLE_FRAME_POINTER
+#ifdef CONFIG_EXCEPTION_STACK_TRACE
 	esf_unwind(esf);
-#endif /* CONFIG_ARM64_ENABLE_FRAME_POINTER */
+#endif /* CONFIG_EXCEPTION_STACK_TRACE */
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
 	z_fatal_error(reason, esf);
-
-	CODE_UNREACHABLE;
 }
 
 /**
@@ -368,7 +460,7 @@ void z_arm64_fatal_error(unsigned int reason, z_arch_esf_t *esf)
  *
  * @param esf exception frame
  */
-void z_arm64_do_kernel_oops(z_arch_esf_t *esf)
+void z_arm64_do_kernel_oops(struct arch_esf *esf)
 {
 	/* x8 holds the exception reason */
 	unsigned int reason = esf->x8;

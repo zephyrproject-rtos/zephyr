@@ -1,7 +1,4 @@
-.. _adafruit_qt_py_rp2040:
-
-Adafruit QT Py RP2040
-#####################
+.. zephyr:board:: adafruit_qt_py_rp2040
 
 Overview
 ********
@@ -27,61 +24,10 @@ Hardware
 - On-board RGB LED
 - 1 Watchdog timer peripheral
 
-
-.. figure:: img/qtpy_rp2040.jpg
-     :align: center
-     :alt: Adafruit QT Py RP2040
-
-     Adafruit QT Py RP2040 (Image courtesy of Adafruit)
-
 Supported Features
 ==================
 
-The adafruit_qt_py_rp2040 board configuration supports the following
-hardware features:
-
-.. list-table::
-   :header-rows: 1
-
-   * - Peripheral
-     - Kconfig option
-     - Devicetree compatible
-   * - NVIC
-     - N/A
-     - :dtcompatible:`arm,v6m-nvic`
-   * - UART
-     - :kconfig:option:`CONFIG_SERIAL`
-     - :dtcompatible:`raspberrypi,pico-uart`
-   * - GPIO
-     - :kconfig:option:`CONFIG_GPIO`
-     - :dtcompatible:`raspberrypi,pico-gpio`
-   * - ADC
-     - :kconfig:option:`CONFIG_ADC`
-     - :dtcompatible:`raspberrypi,pico-adc`
-   * - I2C
-     - :kconfig:option:`CONFIG_I2C`
-     - :dtcompatible:`snps,designware-i2c`
-   * - SPI
-     - :kconfig:option:`CONFIG_SPI`
-     - :dtcompatible:`raspberrypi,pico-spi`
-   * - USB Device
-     - :kconfig:option:`CONFIG_USB_DEVICE_STACK`
-     - :dtcompatible:`raspberrypi,pico-usbd`
-   * - HWINFO
-     - :kconfig:option:`CONFIG_HWINFO`
-     - N/A
-   * - Watchdog Timer (WDT)
-     - :kconfig:option:`CONFIG_WATCHDOG`
-     - :dtcompatible:`raspberrypi,pico-watchdog`
-   * - PWM
-     - :kconfig:option:`CONFIG_PWM`
-     - :dtcompatible:`raspberrypi,pico-pwm`
-   * - Flash
-     - :kconfig:option:`CONFIG_FLASH`
-     - :dtcompatible:`raspberrypi,pico-flash`
-   * - UART (PIO)
-     - :kconfig:option:`CONFIG_SERIAL`
-     - :dtcompatible:`raspberrypi,pico-uart-pio`
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========
@@ -108,6 +54,8 @@ Default Zephyr Peripheral Mapping:
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 
@@ -116,7 +64,7 @@ Using UF2
 
 Since it doesn't expose the SWD pins, you must flash the Adafruit QT Py RP2040 with
 a UF2 file. By default, building an app for this board will generate a
-`build/zephyr/zephyr.uf2` file. If the QT Py RP2040 is powered on with the `BOOTSEL`
+:file:`build/zephyr/zephyr.uf2` file. If the QT Py RP2040 is powered on with the ``BOOTSEL``
 button pressed, it will appear on the host as a mass storage device. The
 UF2 file should be drag-and-dropped to the device, which will flash the QT Py RP2040.
 

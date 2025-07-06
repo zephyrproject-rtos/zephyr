@@ -16,8 +16,14 @@
 #include <zephyr/ztest.h>
 #include <zephyr/net/offloaded_netdev.h>
 #include <zephyr/net/net_offload.h>
+#include <zephyr/net/socket_offload.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_l2.h>
+
+static struct in_addr test_addr_ipv4 = { { { 192, 0, 2, 1 } } };
+static struct in6_addr test_addr_ipv6 = { { {
+	0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x1
+} } };
 
 /* Dummy socket creator for socket-offloaded ifaces */
 int offload_socket(int family, int type, int proto)
@@ -36,6 +42,8 @@ static void sock_offload_l2_iface_init(struct net_if *iface)
 	 */
 	net_if_socket_offload_set(iface, offload_socket);
 	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
+	net_if_flag_set(iface, NET_IF_IPV4);
+	net_if_flag_set(iface, NET_IF_IPV6);
 }
 
 /* Dummy init function for net-offloaded ifaces */
@@ -46,6 +54,8 @@ static void net_offload_l2_iface_init(struct net_if *iface)
 	 */
 	iface->if_dev->offload = &net_offload_api;
 	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
+	net_if_flag_set(iface, NET_IF_IPV4);
+	net_if_flag_set(iface, NET_IF_IPV6);
 }
 
 /* Tracks the total number of ifaces that are up (theoretically). */
@@ -327,5 +337,134 @@ ZTEST(net_offloaded_netdev, test_up_down_sock_off_impl_fail_down)
 			"Iface under test should have failed to go up");
 }
 
+static void test_addr_add_common(struct net_if *test_iface, const char *off_type)
+{
+	struct net_if *lookup_iface;
+	struct net_if_addr *ipv4_addr;
+	struct net_if_addr *ipv6_addr;
+
+	/* Bring iface up before test */
+	(void)net_if_up(test_iface);
+
+	ipv4_addr = net_if_ipv4_addr_add(test_iface, &test_addr_ipv4,
+					 NET_ADDR_MANUAL, 0);
+	zassert_not_null(ipv4_addr,
+			"Failed to add IPv4 address to a %s offloaded interface",
+			off_type);
+	ipv6_addr = net_if_ipv6_addr_add(test_iface, &test_addr_ipv6,
+					 NET_ADDR_MANUAL, 0);
+	zassert_not_null(ipv6_addr,
+			 "Failed to add IPv6 address to a socket %s interface",
+			 off_type);
+
+	lookup_iface = NULL;
+	zassert_equal_ptr(net_if_ipv4_addr_lookup(&test_addr_ipv4, &lookup_iface),
+			  ipv4_addr,
+			  "Failed to find IPv4 address on a %s offloaded interface", off_type);
+	zassert_equal_ptr(lookup_iface, test_iface, "Wrong interface");
+
+	lookup_iface = NULL;
+	zassert_equal_ptr(net_if_ipv6_addr_lookup(&test_addr_ipv6, &lookup_iface),
+			  ipv6_addr,
+			  "Failed to find IPv6 address on a %s offloaded interface", off_type);
+	zassert_equal_ptr(lookup_iface, test_iface, "Wrong interface");
+
+	zassert_true(net_if_ipv4_addr_rm(test_iface, &test_addr_ipv4),
+		     "Failed to remove IPv4 address from a %s offloaded interface",
+		     off_type);
+	zassert_true(net_if_ipv6_addr_rm(test_iface, &test_addr_ipv6),
+		     "Failed to remove IPv4 address from a %s offloaded interface",
+		     off_type);
+}
+
+ZTEST(net_offloaded_netdev, test_addr_add_sock_off_impl)
+{
+	struct net_if *test_iface = NET_IF_GET(sock_offload_test_impl, 0);
+
+	test_addr_add_common(test_iface, "offloaded");
+}
+
+ZTEST(net_offloaded_netdev, test_addr_add_net_off_impl)
+{
+	struct net_if *test_iface = NET_IF_GET(net_offload_test_impl, 0);
+
+	test_addr_add_common(test_iface, "net");
+}
+
+static bool offload_getaddrinfo_called;
+
+static int test_offload_getaddrinfo(const char *node,
+				    const char *service,
+				    const struct zsock_addrinfo *hints,
+				    struct zsock_addrinfo **res)
+{
+	ARG_UNUSED(node);
+	ARG_UNUSED(service);
+	ARG_UNUSED(hints);
+	ARG_UNUSED(res);
+
+	offload_getaddrinfo_called = true;
+
+	return 0;
+}
+
+static void test_offload_freeaddrinfo(struct zsock_addrinfo *res)
+{
+	ARG_UNUSED(res);
+}
+
+static const struct socket_dns_offload test_dns_offload_ops = {
+	.getaddrinfo = test_offload_getaddrinfo,
+	.freeaddrinfo = test_offload_freeaddrinfo,
+};
+
+ZTEST(net_offloaded_netdev, test_dns_offload)
+{
+	struct zsock_addrinfo *ai;
+
+	/* Register offloaded DNS */
+	offload_getaddrinfo_called = false;
+	socket_offload_dns_register(&test_dns_offload_ops);
+	zassert_true(socket_offload_dns_is_enabled(),
+		     "DNS offloading should be enabled");
+	zassert_ok(zsock_getaddrinfo("127.0.0.1", NULL, NULL, &ai),
+		   "getaddrinfo() failed");
+	zassert_true(offload_getaddrinfo_called,
+		     "Offloaded implementation should be called");
+	zsock_freeaddrinfo(ai);
+
+	/* Disable offloaded DNS */
+	offload_getaddrinfo_called = false;
+	socket_offload_dns_enable(false);
+	zassert_false(socket_offload_dns_is_enabled(),
+		     "DNS offloading should be disabled");
+	zassert_ok(zsock_getaddrinfo("127.0.0.1", NULL, NULL, &ai),
+		   "getaddrinfo() failed");
+	zassert_false(offload_getaddrinfo_called,
+		     "Offloaded implementation shouldn't be called");
+	zsock_freeaddrinfo(ai);
+
+	/* Reenable offloaded DNS */
+	offload_getaddrinfo_called = false;
+	socket_offload_dns_enable(true);
+	zassert_true(socket_offload_dns_is_enabled(),
+		     "DNS offloading should be enabled");
+	zassert_ok(zsock_getaddrinfo("127.0.0.1", NULL, NULL, &ai),
+		   "getaddrinfo() failed");
+	zassert_true(offload_getaddrinfo_called,
+		     "Offloaded implementation should be called");
+	zsock_freeaddrinfo(ai);
+
+	/* Deregister offloaded DNS */
+	offload_getaddrinfo_called = false;
+	socket_offload_dns_deregister(&test_dns_offload_ops);
+	zassert_false(socket_offload_dns_is_enabled(),
+		      "DNS offloading should be disabled");
+	zassert_ok(zsock_getaddrinfo("127.0.0.1", NULL, NULL, &ai),
+		   "getaddrinfo() failed");
+	zassert_false(offload_getaddrinfo_called,
+		     "Offloaded implementation shouldn't be called");
+	zsock_freeaddrinfo(ai);
+}
 
 ZTEST_SUITE(net_offloaded_netdev, NULL, NULL, net_offloaded_netdev_before, NULL, NULL);

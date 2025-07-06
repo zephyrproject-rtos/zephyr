@@ -9,7 +9,7 @@ dut: &uart7 {
 	dmas = <&dmamux1 2 80 STM32_DMA_PERIPH_TX>,
 		<&dmamux1 3 79 STM32_DMA_PERIPH_RX>;
 	dma-names = "tx", "rx";
-    pinctrl-0 = <&uart7_tx_pf7 &uart7_rx_pf6>;
+	pinctrl-0 = <&uart7_tx_pf7 &uart7_rx_pf6>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";

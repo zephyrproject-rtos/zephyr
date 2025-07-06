@@ -12,6 +12,8 @@ import os
 import pytest
 import sys
 
+logging.getLogger("twister").setLevel("DEBUG")  # requires for testing twister
+
 ZEPHYR_BASE = os.getenv('ZEPHYR_BASE')
 TEST_DATA = os.path.join(ZEPHYR_BASE, 'scripts', 'tests',
                         'twister_blackbox', 'test_data')
@@ -84,4 +86,10 @@ def provide_out(tmp_path, request):
     # After
     # We're operating in temp, so it is not strictly necessary
     # but the files can get large quickly as we do not need them after the test.
+    loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
+    for logg in loggers:
+        handls = logg.handlers[:]
+        for handl in handls:
+            logg.removeHandler(handl)
+            handl.close()
     shutil.rmtree(out_container_path)

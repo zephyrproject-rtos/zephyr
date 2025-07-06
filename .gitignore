@@ -7,8 +7,10 @@
 *.swp
 *.swo
 *~
-.\#*
+
+# Emacs
 \#*\#
+
 build*/
 !doc/build/
 !scripts/build
@@ -27,6 +29,8 @@ outdir
 outdir-*
 scripts/basic/fixdep
 scripts/gen_idt/gen_idt
+coverage-report
+doc-coverage.info
 doc/_build
 doc/doxygen
 doc/xml
@@ -39,6 +43,7 @@ sanity-out*
 twister-out*
 bsim_out
 bsim_bt_out
+myresults.xml
 tests/RunResults.xml
 scripts/grub
 doc/reference/kconfig/*.rst
@@ -52,6 +57,18 @@ venv
 .venv
 .DS_Store
 .clangd
+new.info
+
+# Cargo drops lock files in projects to capture resolved dependencies.
+# We don't want to record these.
+Cargo.lock
+
+# Cargo encourages a .cargo/config.toml file to symlink to a generated file.  Don't save these.
+.cargo/
+
+# Normal west builds will place the Rust target directory under the build directory.  However,
+# sometimes IDEs and such will litter these target directories as well.
+target/
 
 # CI output
 compliance.xml
@@ -70,6 +87,7 @@ tags
 BinaryFiles.txt
 BoardYml.txt
 Checkpatch.txt
+ClangFormat.txt
 DevicetreeBindings.txt
 GitDiffCheck.txt
 Gitlint.txt
@@ -84,4 +102,11 @@ MaintainersFormat.txt
 ModulesMaintainers.txt
 Nits.txt
 Pylint.txt
+PythonCompat.txt
+Ruff.txt
+SphinxLint.txt
+SysbuildKconfig.txt
+SysbuildKconfigBasic.txt
+SysbuildKconfigBasicNoModules.txt
+TextEncoding.txt
 YAMLLint.txt

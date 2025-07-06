@@ -1,7 +1,4 @@
-.. _xiao_ble:
-
-XIAO BLE (Sense)
-################
+.. zephyr:board:: xiao_ble
 
 Overview
 ********
@@ -9,10 +6,6 @@ Overview
 The Seeed XIAO BLE (Sense) is a tiny (21 mm x 17.5 mm) Nordic Semiconductor
 nRF52840 ARM Cortex-M4F development board with onboard LEDs, USB port, QSPI
 flash, battery charger, and range of I/O broken out into 14 pins.
-
-.. figure:: img/xiao_ble.jpg
-     :align: center
-     :alt: XIAO BLE
 
 Hardware
 ********
@@ -30,42 +23,7 @@ Hardware
 Supported Features
 ==================
 
-The xiao_ble board configuration supports the following hardware features:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash, QSPI flash    |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C(M)    | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| RADIO     | on-chip    | Bluetooth,           |
-|           |            | ieee802154           |
-+-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| SPI(M/S)  | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| USB       | on-chip    | usb                  |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
-
-Other hardware features have not been enabled yet for this board.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -83,6 +41,8 @@ LED
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The XIAO BLE ships with the `Adafruit nRF52 Bootloader`_ which supports flashing
 using `UF2`_. Doing so allows easy flashing of new images, but does not support
 debugging the device. For debugging please use `External Debugger`_.
@@ -92,9 +52,9 @@ UF2 Flashing
 
 To enter the bootloader, connect the USB port of the XIAO BLE to your host, and
 double tap the reset botton to the left of the USB connector. A mass storage
-device named `XIAO BLE` should appear on the host. Using the command line, or
-your file manager copy the `zephyr/zephyr.uf2` file from your build to the base
-of the `XIAO BLE` mass storage device. The XIAO BLE will automatically reset
+device named ``XIAO BLE`` should appear on the host. Using the command line, or
+your file manager copy the :file:`zephyr/zephyr.uf2` file from your build to the base
+of the ``XIAO BLE`` mass storage device. The XIAO BLE will automatically reset
 and launch the newly flashed application.
 
 External Debugger
@@ -117,7 +77,7 @@ BlackMagic Probe). Then build and flash applications as
 usual (see :ref:`build_an_application` and :ref:`application_run` for more
 details).
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 First, run your favorite terminal program to listen for output.
 

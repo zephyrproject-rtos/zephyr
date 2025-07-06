@@ -377,7 +377,9 @@ void radio_df_cte_rx_4us_switching(bool cte_info_in_s1, uint8_t phy)
 
 void radio_df_ant_switch_pattern_clear(void)
 {
-	NRF_RADIO->CLEARPATTERN = RADIO_CLEARPATTERN_CLEARPATTERN_Clear;
+	NRF_RADIO->CLEARPATTERN = (HAL_RADIO_CLEARPATTERN_CLEARPATTERN_Clear <<
+				   RADIO_CLEARPATTERN_CLEARPATTERN_Pos) &
+				  RADIO_CLEARPATTERN_CLEARPATTERN_Msk;
 }
 
 void radio_df_reset(void)
@@ -397,10 +399,10 @@ void radio_switch_complete_and_phy_end_b2b_tx(uint8_t phy_curr, uint8_t flags_cu
 					      uint8_t phy_next, uint8_t flags_next)
 {
 #if defined(CONFIG_BT_CTLR_TIFS_HW)
-	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | RADIO_SHORTS_END_DISABLE_Msk |
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk |
 			    RADIO_SHORTS_DISABLED_TXEN_Msk;
 #else /* !CONFIG_BT_CTLR_TIFS_HW */
-	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_PDU_END_DISABLE;
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk;
 	sw_switch(SW_SWITCH_TX, SW_SWITCH_TX, phy_curr, flags_curr, phy_next, flags_next,
 		  END_EVT_DELAY_DISABLED);
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */

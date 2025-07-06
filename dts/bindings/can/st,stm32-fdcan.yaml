@@ -1,4 +1,4 @@
-description: ST STM32 FDCAN CAN FD controller
+description: STM32 FDCAN CAN FD controller
 
 compatible: "st,stm32-fdcan"
 

@@ -1,20 +1,38 @@
 /*
- * Copyright (c) 2022-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/sys/check.h>
-#include <zephyr/bluetooth/gatt.h>
-#include <zephyr/bluetooth/audio/audio.h>
-#include <zephyr/bluetooth/audio/cap.h>
-#include <zephyr/bluetooth/audio/tbs.h>
-#include "cap_internal.h"
-#include "ccid_internal.h"
-#include "csip_internal.h"
-#include "bap_endpoint.h"
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/audio/cap.h>
+#include <zephyr/bluetooth/audio/ccid.h>
+#include <zephyr/bluetooth/audio/csip.h>
+#include <zephyr/bluetooth/audio/tbs.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <sys/errno.h>
+
+#include "bap_endpoint.h"
+#include "cap_internal.h"
+#include "csip_internal.h"
 
 LOG_MODULE_REGISTER(bt_cap_initiator, CONFIG_BT_CAP_INITIATOR_LOG_LEVEL);
 
@@ -39,6 +57,23 @@ int bt_cap_initiator_register_cb(const struct bt_cap_initiator_cb *cb)
 	return 0;
 }
 
+int bt_cap_initiator_unregister_cb(const struct bt_cap_initiator_cb *cb)
+{
+	CHECKIF(cb == NULL) {
+		LOG_DBG("cb is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(cap_cb != cb) {
+		LOG_DBG("cb is not registered");
+		return -EINVAL;
+	}
+
+	cap_cb = NULL;
+
+	return 0;
+}
+
 struct valid_metadata_param {
 	bool stream_context_found;
 	bool valid;
@@ -57,15 +92,16 @@ static bool data_func_cb(struct bt_data *data, void *user_data)
 		}
 
 		metadata_param->stream_context_found = true;
-	} else if (IS_ENABLED(CONFIG_BT_CCID) && data->type == BT_AUDIO_METADATA_TYPE_CCID_LIST) {
+	} else if (IS_ENABLED(CONFIG_BT_CONN) && data->type == BT_AUDIO_METADATA_TYPE_CCID_LIST) {
 		/* If the application supplies a CCID list, we verify that the CCIDs exist on our
 		 * device
+		 * This is guarded by CONFIG_BT_CONN as without that we do not have a GATT DB to
+		 * check.
 		 */
 		for (uint8_t i = 0U; i < data->data_len; i++) {
 			const uint8_t ccid = data->data[i];
-
 			if (bt_ccid_find_attr(ccid) == NULL) {
-				LOG_DBG("Unknown characterstic for CCID 0x%02X", ccid);
+				LOG_DBG("Unknown characteristic for CCID 0x%02X", ccid);
 				metadata_param->valid = false;
 
 				return false;
@@ -84,7 +120,7 @@ static bool cap_initiator_valid_metadata(const uint8_t meta[], size_t meta_len)
 	};
 	int err;
 
-	LOG_DBG("meta %p len %zu", meta, meta_len);
+	LOG_DBG("meta %p len %zu", (void *)meta, meta_len);
 
 	err = bt_audio_data_parse(meta, meta_len, data_func_cb, &metadata_param);
 	if (err != 0 && err != -ECANCELED) {
@@ -151,10 +187,15 @@ static void cap_initiator_broadcast_to_bap_broadcast_param(
 	bap_param->encryption = cap_param->encryption;
 	if (bap_param->encryption) {
 		memcpy(bap_param->broadcast_code, cap_param->broadcast_code,
-		       BT_AUDIO_BROADCAST_CODE_SIZE);
+		       BT_ISO_BROADCAST_CODE_SIZE);
 	} else {
-		memset(bap_param->broadcast_code, 0, BT_AUDIO_BROADCAST_CODE_SIZE);
+		memset(bap_param->broadcast_code, 0, BT_ISO_BROADCAST_CODE_SIZE);
 	}
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+	bap_param->irc = cap_param->irc;
+	bap_param->pto = cap_param->pto;
+	bap_param->iso_interval = cap_param->iso_interval;
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 
 	for (size_t i = 0U; i < bap_param->params_count; i++) {
 		const struct bt_cap_initiator_broadcast_subgroup_param *cap_subgroup_param =
@@ -193,6 +234,7 @@ int bt_cap_initiator_broadcast_audio_create(
 	struct bt_bap_broadcast_source_stream_param
 		bap_stream_params[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
 	struct bt_bap_broadcast_source_param bap_create_param = {0};
+	int err;
 
 	CHECKIF(param == NULL) {
 		LOG_DBG("param is NULL");
@@ -208,6 +250,7 @@ int bt_cap_initiator_broadcast_audio_create(
 		return -EINVAL;
 	}
 
+	*broadcast_source = NULL;
 	for (size_t i = 0; i < ARRAY_SIZE(broadcast_sources); i++) {
 		if (broadcast_sources[i].bap_broadcast == NULL) {
 			*broadcast_source = &broadcast_sources[i];
@@ -215,16 +258,78 @@ int bt_cap_initiator_broadcast_audio_create(
 		}
 	}
 
+	if (*broadcast_source == NULL) {
+		LOG_DBG("Failed to allocate a new broadcast source");
+		return -ENOMEM;
+	}
+
 	cap_initiator_broadcast_to_bap_broadcast_param(param, &bap_create_param,
 						       bap_subgroup_params, bap_stream_params);
 
-	return bt_bap_broadcast_source_create(&bap_create_param,
-					      &(*broadcast_source)->bap_broadcast);
+	err = bt_bap_broadcast_source_create(&bap_create_param,
+					     &(*broadcast_source)->bap_broadcast);
+	if (err != 0) {
+		/* Return known errors */
+		if (err == -EINVAL || err == -ENOMEM) {
+			return err;
+		}
+
+		LOG_DBG("Unexpected error from bt_bap_broadcast_source_create: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
+static struct bt_cap_broadcast_source *get_cap_broadcast_source_by_bap_broadcast_source(
+	const struct bt_bap_broadcast_source *bap_broadcast_source)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_sources); i++) {
+		if (broadcast_sources[i].bap_broadcast == bap_broadcast_source) {
+			return &broadcast_sources[i];
+		}
+	}
+
+	return NULL;
+}
+
+static void broadcast_source_started_cb(struct bt_bap_broadcast_source *bap_broadcast_source)
+{
+	if (cap_cb && cap_cb->broadcast_started) {
+		struct bt_cap_broadcast_source *source =
+			get_cap_broadcast_source_by_bap_broadcast_source(bap_broadcast_source);
+
+		if (source == NULL) {
+			/* Not one of ours */
+			return;
+		}
+
+		cap_cb->broadcast_started(source);
+	}
+}
+
+static void broadcast_source_stopped_cb(struct bt_bap_broadcast_source *bap_broadcast_source,
+					uint8_t reason)
+{
+	if (cap_cb && cap_cb->broadcast_stopped) {
+		struct bt_cap_broadcast_source *source =
+			get_cap_broadcast_source_by_bap_broadcast_source(bap_broadcast_source);
+
+		if (source == NULL) {
+			/* Not one of ours */
+			return;
+		}
+
+		cap_cb->broadcast_stopped(source, reason);
+	}
 }
 
 int bt_cap_initiator_broadcast_audio_start(struct bt_cap_broadcast_source *broadcast_source,
 					   struct bt_le_ext_adv *adv)
 {
+	static bool broadcast_source_cbs_registered;
+
 	CHECKIF(adv == NULL) {
 		LOG_DBG("adv is NULL");
 		return -EINVAL;
@@ -233,6 +338,21 @@ int bt_cap_initiator_broadcast_audio_start(struct bt_cap_broadcast_source *broad
 	CHECKIF(broadcast_source == NULL) {
 		LOG_DBG("broadcast_source is NULL");
 		return -EINVAL;
+	}
+
+	if (!broadcast_source_cbs_registered) {
+		static struct bt_bap_broadcast_source_cb broadcast_source_cb = {
+			.started = broadcast_source_started_cb,
+			.stopped = broadcast_source_stopped_cb,
+		};
+		const int err = bt_bap_broadcast_source_register_cb(&broadcast_source_cb);
+
+		if (err != 0) {
+			__ASSERT(false, "Failed to register BAP broadcast source callbacks: %d",
+				 err);
+		}
+
+		broadcast_source_cbs_registered = true;
 	}
 
 	return bt_bap_broadcast_source_start(broadcast_source->bap_broadcast, adv);
@@ -287,17 +407,6 @@ int bt_cap_initiator_broadcast_audio_delete(struct bt_cap_broadcast_source *broa
 	return err;
 }
 
-int bt_cap_initiator_broadcast_get_id(const struct bt_cap_broadcast_source *broadcast_source,
-				      uint32_t *const broadcast_id)
-{
-	CHECKIF(broadcast_source == NULL) {
-		LOG_DBG("broadcast_source is NULL");
-		return -EINVAL;
-	}
-
-	return bt_bap_broadcast_source_get_id(broadcast_source->bap_broadcast, broadcast_id);
-}
-
 int bt_cap_initiator_broadcast_get_base(struct bt_cap_broadcast_source *broadcast_source,
 					struct net_buf_simple *base_buf)
 {
@@ -312,13 +421,353 @@ int bt_cap_initiator_broadcast_get_base(struct bt_cap_broadcast_source *broadcas
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
+static struct bt_cap_unicast_group {
+	struct bt_bap_unicast_group *bap_unicast_group;
+} unicast_groups[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_COUNT];
+
+static enum bt_bap_ep_state stream_get_state(const struct bt_bap_stream *bap_stream)
+{
+	struct bt_bap_ep_info ep_info;
+	int err;
+
+	if (bap_stream->ep == NULL) {
+		return BT_BAP_EP_STATE_IDLE;
+	}
+
+	err = bt_bap_ep_get_info(bap_stream->ep, &ep_info);
+	if (err != 0) {
+		LOG_DBG("Failed to get endpoint info %p: %d", bap_stream, err);
+
+		return BT_BAP_EP_STATE_IDLE;
+	}
+
+	return ep_info.state;
+}
+
+static bool stream_is_in_state(const struct bt_bap_stream *bap_stream, enum bt_bap_ep_state state)
+{
+	if (bap_stream->conn == NULL) {
+		return state == BT_BAP_EP_STATE_IDLE;
+	}
+
+	return stream_get_state(bap_stream) == state;
+}
+
+static bool stream_is_dir(const struct bt_bap_stream *bap_stream, enum bt_audio_dir dir)
+{
+	struct bt_bap_ep_info ep_info;
+	int err;
+
+	if (bap_stream->conn == NULL) {
+		return false;
+	}
+
+	err = bt_bap_ep_get_info(bap_stream->ep, &ep_info);
+	if (err != 0) {
+		LOG_DBG("Failed to get endpoint info %p: %d", bap_stream, err);
+
+		return false;
+	}
+
+	return ep_info.dir == dir;
+}
+
+static enum bt_iso_state bap_stream_get_iso_state(const struct bt_bap_stream *bap_stream)
+{
+	struct bt_bap_ep_info ep_info;
+	int err;
+
+	if (bap_stream->ep == NULL) {
+		return BT_ISO_STATE_DISCONNECTED;
+	}
+
+	err = bt_bap_ep_get_info(bap_stream->ep, &ep_info);
+	if (err != 0) {
+		LOG_DBG("Failed to get endpoint info %p: %d", bap_stream, err);
+
+		return BT_ISO_STATE_DISCONNECTED;
+	}
+
+	if (ep_info.iso_chan == NULL) {
+		return BT_ISO_STATE_DISCONNECTED;
+	}
+
+	return ep_info.iso_chan->state;
+}
+
+static bool iso_is_in_state(const struct bt_cap_stream *cap_stream, enum bt_iso_state state)
+{
+	const struct bt_bap_stream *bap_stream = &cap_stream->bap_stream;
+
+	return bap_stream_get_iso_state(bap_stream) == state;
+}
+
+static void set_cap_stream_in_progress(struct bt_cap_stream *cap_stream, bool value)
+{
+	struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
+
+	for (size_t i = 0U; i < active_proc->proc_cnt; i++) {
+		if (cap_stream == active_proc->proc_param.initiator[i].stream) {
+			active_proc->proc_param.initiator[i].in_progress = value;
+			return;
+		}
+	}
+
+	__ASSERT(false, "CAP stream %p not in active_proc", cap_stream);
+}
+
+/**
+ * @brief Gets the next stream for the active procedure.
+ *
+ * Returns NULL if all streams are in the right state for the current step
+ */
+static struct bt_cap_initiator_proc_param *
+get_proc_param_by_cap_stream(struct bt_cap_common_proc *active_proc,
+			     const struct bt_cap_stream *cap_stream)
+{
+	for (size_t i = 0U; i < active_proc->proc_cnt; i++) {
+		if (active_proc->proc_param.initiator[i].stream == cap_stream) {
+			return &active_proc->proc_param.initiator[i];
+		}
+	}
+
+	return NULL;
+}
+
+static void update_proc_done_cnt(struct bt_cap_common_proc *active_proc)
+{
+	const enum bt_cap_common_subproc_type subproc_type = active_proc->subproc_type;
+	const enum bt_cap_common_proc_type proc_type = active_proc->proc_type;
+	size_t proc_done_cnt = 0U;
+
+	if (proc_type == BT_CAP_COMMON_PROC_TYPE_START) {
+		/* To support state changes by the server, we cannot rely simply on the number of
+		 * BAP procedures we have initiated. For the start and stop CAP procedures we use
+		 * the states to determine how far we are.
+		 */
+		for (size_t i = 0U; i < active_proc->proc_cnt; i++) {
+			struct bt_cap_initiator_proc_param *proc_param;
+			struct bt_cap_stream *cap_stream;
+			struct bt_bap_stream *bap_stream;
+			enum bt_bap_ep_state state;
+
+			proc_param = &active_proc->proc_param.initiator[i];
+			cap_stream = proc_param->stream;
+			bap_stream = &cap_stream->bap_stream;
+
+			state = stream_get_state(bap_stream);
+
+			switch (subproc_type) {
+			case BT_CAP_COMMON_SUBPROC_TYPE_CODEC_CONFIG:
+				if (state > BT_BAP_EP_STATE_IDLE) {
+					proc_done_cnt++;
+				}
+				break;
+			case BT_CAP_COMMON_SUBPROC_TYPE_QOS_CONFIG:
+				if (state > BT_BAP_EP_STATE_CODEC_CONFIGURED) {
+					proc_done_cnt++;
+				} else if (state < BT_BAP_EP_STATE_CODEC_CONFIGURED) {
+					/* Unexpected state - Abort */
+					bt_cap_common_abort_proc(bap_stream->conn, -EBADMSG);
+				}
+				break;
+			case BT_CAP_COMMON_SUBPROC_TYPE_ENABLE:
+				if (state > BT_BAP_EP_STATE_QOS_CONFIGURED) {
+					proc_done_cnt++;
+				} else if (state < BT_BAP_EP_STATE_QOS_CONFIGURED) {
+					/* Unexpected state - Abort */
+					bt_cap_common_abort_proc(bap_stream->conn, -EBADMSG);
+				}
+				break;
+			case BT_CAP_COMMON_SUBPROC_TYPE_CONNECT:
+				if (state < BT_BAP_EP_STATE_ENABLING) {
+					/* Unexpected state - Abort */
+					bt_cap_common_abort_proc(bap_stream->conn, -EBADMSG);
+				} else if (proc_param->start.connected) {
+					proc_done_cnt++;
+				}
+				break;
+			case BT_CAP_COMMON_SUBPROC_TYPE_START:
+				if (state > BT_BAP_EP_STATE_ENABLING) {
+					proc_done_cnt++;
+				} else if (state < BT_BAP_EP_STATE_ENABLING ||
+					   !iso_is_in_state(cap_stream, BT_ISO_STATE_CONNECTED)) {
+					/* Unexpected state - Abort */
+					bt_cap_common_abort_proc(bap_stream->conn, -EBADMSG);
+				}
+				break;
+			default:
+				__ASSERT(false, "Invalid subproc %d for %d", subproc_type,
+					 proc_type);
+			}
+		}
+	} else if (proc_type == BT_CAP_COMMON_PROC_TYPE_STOP) {
+		/* To support state changes by the server, we cannot rely simply on the number of
+		 * BAP procedures we have initiated. For the start and stop CAP procedures we use
+		 * the states to determine how far we are.
+		 */
+		for (size_t i = 0U; i < active_proc->proc_cnt; i++) {
+			struct bt_cap_initiator_proc_param *proc_param;
+			struct bt_cap_stream *cap_stream;
+			struct bt_bap_stream *bap_stream;
+			enum bt_bap_ep_state state;
+
+			proc_param = &active_proc->proc_param.initiator[i];
+			cap_stream = proc_param->stream;
+			bap_stream = &cap_stream->bap_stream;
+
+			state = stream_get_state(bap_stream);
+
+			switch (subproc_type) {
+			case BT_CAP_COMMON_SUBPROC_TYPE_DISABLE:
+				if (state == BT_BAP_EP_STATE_QOS_CONFIGURED ||
+				    state == BT_BAP_EP_STATE_DISABLING) {
+					proc_done_cnt++;
+				}
+				break;
+			case BT_CAP_COMMON_SUBPROC_TYPE_STOP:
+				if (state == BT_BAP_EP_STATE_QOS_CONFIGURED) {
+					proc_done_cnt++;
+				}
+				break;
+			case BT_CAP_COMMON_SUBPROC_TYPE_RELEASE:
+				if (state == BT_BAP_EP_STATE_IDLE ||
+				    state == BT_BAP_EP_STATE_CODEC_CONFIGURED) {
+					proc_done_cnt++;
+				}
+				break;
+			default:
+				__ASSERT(false, "Invalid subproc %d for %d", subproc_type,
+					 proc_type);
+			}
+		}
+	} else if (proc_type == BT_CAP_COMMON_PROC_TYPE_UPDATE) {
+		/* For metadata we cannot check the states for all streams, as it does not trigger a
+		 * state change
+		 */
+		struct bt_cap_initiator_proc_param *proc_param;
+		struct bt_cap_stream *cap_stream;
+		struct bt_bap_stream *bap_stream;
+		enum bt_bap_ep_state state;
+
+		proc_param = &active_proc->proc_param.initiator[active_proc->proc_done_cnt];
+		cap_stream = proc_param->stream;
+		bap_stream = &cap_stream->bap_stream;
+
+		state = stream_get_state(bap_stream);
+
+		switch (subproc_type) {
+		case BT_CAP_COMMON_SUBPROC_TYPE_META_UPDATE:
+			if (state == BT_BAP_EP_STATE_ENABLING ||
+			    state == BT_BAP_EP_STATE_STREAMING) {
+				proc_done_cnt = active_proc->proc_done_cnt + 1U;
+			} else {
+				/* Unexpected state - Abort */
+				bt_cap_common_abort_proc(bap_stream->conn, -EBADMSG);
+			}
+			break;
+		default:
+			__ASSERT(false, "Invalid subproc %d for %d", subproc_type, proc_type);
+		}
+	}
+
+	active_proc->proc_done_cnt = proc_done_cnt;
+
+	LOG_DBG("proc %d subproc %d: %zu/%zu", proc_type, subproc_type, active_proc->proc_done_cnt,
+		active_proc->proc_cnt);
+}
+
+/**
+ * @brief Gets the next stream for the active procedure.
+ *
+ * Returns NULL if all streams are in the right state for the current step
+ */
+static struct bt_cap_initiator_proc_param *
+get_next_proc_param(struct bt_cap_common_proc *active_proc)
+{
+	const enum bt_cap_common_subproc_type subproc_type = active_proc->subproc_type;
+
+	for (size_t i = 0U; i < active_proc->proc_cnt; i++) {
+		struct bt_cap_initiator_proc_param *proc_param;
+		struct bt_cap_stream *cap_stream;
+		struct bt_bap_stream *bap_stream;
+		enum bt_bap_ep_state state;
+
+		proc_param = &active_proc->proc_param.initiator[i];
+
+		if (proc_param->in_progress) {
+			continue;
+		}
+
+		cap_stream = proc_param->stream;
+		bap_stream = &cap_stream->bap_stream;
+		state = stream_get_state(bap_stream);
+
+		switch (subproc_type) {
+		case BT_CAP_COMMON_SUBPROC_TYPE_CODEC_CONFIG:
+			if (state == BT_BAP_EP_STATE_IDLE) {
+				return proc_param;
+			}
+			break;
+		case BT_CAP_COMMON_SUBPROC_TYPE_QOS_CONFIG:
+			if (state == BT_BAP_EP_STATE_CODEC_CONFIGURED) {
+				return proc_param;
+			}
+			break;
+		case BT_CAP_COMMON_SUBPROC_TYPE_ENABLE:
+			if (state == BT_BAP_EP_STATE_QOS_CONFIGURED) {
+				return proc_param;
+			}
+			break;
+		case BT_CAP_COMMON_SUBPROC_TYPE_CONNECT:
+			if (state == BT_BAP_EP_STATE_ENABLING && !proc_param->start.connected) {
+				return proc_param;
+			}
+			break;
+		case BT_CAP_COMMON_SUBPROC_TYPE_START:
+			if (state == BT_BAP_EP_STATE_ENABLING) {
+				/* TODO: Add check for connected */
+				return proc_param;
+			}
+			break;
+		case BT_CAP_COMMON_SUBPROC_TYPE_META_UPDATE:
+			if (state == BT_BAP_EP_STATE_ENABLING ||
+			    state == BT_BAP_EP_STATE_STREAMING) {
+				return proc_param;
+			}
+			break;
+		case BT_CAP_COMMON_SUBPROC_TYPE_DISABLE:
+			if (state == BT_BAP_EP_STATE_ENABLING ||
+			    state == BT_BAP_EP_STATE_STREAMING) {
+				return proc_param;
+			}
+			break;
+		case BT_CAP_COMMON_SUBPROC_TYPE_STOP:
+			if (state == BT_BAP_EP_STATE_DISABLING) {
+				return proc_param;
+			}
+			break;
+		case BT_CAP_COMMON_SUBPROC_TYPE_RELEASE:
+			if (proc_param->stop.release && state != BT_BAP_EP_STATE_IDLE &&
+			    state != BT_BAP_EP_STATE_CODEC_CONFIGURED) {
+				return proc_param;
+			}
+			break;
+		default:
+			break;
+		}
+	}
+
+	return NULL;
+}
 
 static void
 bt_cap_initiator_discover_complete(struct bt_conn *conn, int err,
+				   const struct bt_csip_set_coordinator_set_member *member,
 				   const struct bt_csip_set_coordinator_csis_inst *csis_inst)
 {
 	if (cap_cb && cap_cb->unicast_discovery_complete) {
-		cap_cb->unicast_discovery_complete(conn, err, csis_inst);
+		cap_cb->unicast_discovery_complete(conn, err, member, csis_inst);
 	}
 }
 
@@ -330,6 +779,274 @@ int bt_cap_initiator_unicast_discover(struct bt_conn *conn)
 	}
 
 	return bt_cap_common_discover(conn, bt_cap_initiator_discover_complete);
+}
+
+/** Validates that the stream parameter does not contain invalid values  */
+static bool valid_unicast_group_stream_param(const struct bt_cap_unicast_group_stream_param *param)
+{
+	if (param->stream == NULL) {
+		LOG_DBG("param->stream is NULL");
+		return false;
+	}
+
+	/* Remaining values will be validated by BAP */
+
+	return true;
+}
+
+static bool
+valid_group_stream_pair_param(const struct bt_cap_unicast_group_stream_pair_param *pair_param)
+{
+	if (pair_param->rx_param != NULL &&
+	    !valid_unicast_group_stream_param(pair_param->rx_param)) {
+		return false;
+	}
+
+	if (pair_param->tx_param != NULL &&
+	    !valid_unicast_group_stream_param(pair_param->tx_param)) {
+		return false;
+	}
+
+	return true;
+}
+
+static bool valid_unicast_group_param(const struct bt_cap_unicast_group_param *param)
+{
+	if (param == NULL) {
+		LOG_DBG("param is NULL");
+		return false;
+	}
+
+	if (param->params_count > CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT) {
+		LOG_DBG("Too many streams provided: %u/%u", param->params_count,
+			UNICAST_GROUP_STREAM_CNT);
+		return false;
+	}
+
+	for (size_t i = 0U; i < param->params_count; i++) {
+		if (!valid_group_stream_pair_param(&param->params[i])) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+struct cap_to_bap_unicast_params {
+	struct bt_bap_unicast_group_stream_param
+		stream_params[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT +
+			      CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT];
+	struct bt_bap_unicast_group_stream_pair_param
+		pair_params[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT];
+	struct bt_bap_unicast_group_param group_param;
+};
+
+static void cap_to_bap_unicast_group_pair_param(
+	const struct bt_cap_unicast_group_stream_pair_param pair_params[],
+	struct cap_to_bap_unicast_params *bap_params)
+{
+	size_t stream_param_idx = 0U;
+
+	for (size_t i = 0U; i < bap_params->group_param.params_count; i++) {
+		const struct bt_cap_unicast_group_stream_pair_param *pair_param = &pair_params[i];
+		struct bt_bap_unicast_group_stream_pair_param *bap_pair_param =
+			&bap_params->pair_params[i];
+		struct bt_bap_unicast_group_stream_param *bap_stream_param;
+
+		if (pair_param->rx_param != NULL) {
+			bap_stream_param = &bap_params->stream_params[stream_param_idx++];
+
+			bap_stream_param->stream = &pair_param->rx_param->stream->bap_stream;
+			bap_stream_param->qos = pair_param->rx_param->qos_cfg;
+
+			bap_pair_param->rx_param = bap_stream_param;
+		} else {
+			bap_pair_param->rx_param = NULL;
+		}
+
+		if (pair_param->tx_param != NULL) {
+			bap_stream_param = &bap_params->stream_params[stream_param_idx++];
+
+			bap_stream_param->stream = &pair_param->tx_param->stream->bap_stream;
+			bap_stream_param->qos = pair_param->tx_param->qos_cfg;
+
+			bap_pair_param->tx_param = bap_stream_param;
+		} else {
+			bap_pair_param->tx_param = NULL;
+		}
+	}
+}
+
+static void cap_to_bap_unicast_group_param(const struct bt_cap_unicast_group_param *param,
+					   struct cap_to_bap_unicast_params *bap_params)
+{
+	bap_params->group_param.params_count = param->params_count;
+	bap_params->group_param.packing = param->packing;
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+	bap_params->group_param.c_to_p_ft = param->c_to_p_ft;
+	bap_params->group_param.p_to_c_ft = param->p_to_c_ft;
+	bap_params->group_param.iso_interval = param->iso_interval;
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
+	bap_params->group_param.params = bap_params->pair_params;
+
+	cap_to_bap_unicast_group_pair_param(param->params, bap_params);
+}
+
+int bt_cap_unicast_group_create(const struct bt_cap_unicast_group_param *param,
+				struct bt_cap_unicast_group **unicast_group)
+{
+	struct cap_to_bap_unicast_params bap_param = {0};
+	int err;
+
+	static K_MUTEX_DEFINE(list_mutex);
+
+	if (unicast_group == NULL) {
+		LOG_DBG("unicast_group is NULL");
+		return -EINVAL;
+	}
+
+	if (!valid_unicast_group_param(param)) {
+		return -EINVAL;
+	}
+
+	*unicast_group = NULL;
+
+	(void)k_mutex_lock(&list_mutex, K_FOREVER);
+	for (size_t i = 0; i < ARRAY_SIZE(unicast_groups); i++) {
+		if (unicast_groups[i].bap_unicast_group == NULL) {
+			*unicast_group = &unicast_groups[i];
+			break;
+		}
+	}
+
+	if (*unicast_group == NULL) {
+		LOG_DBG("Could not allocate more unicast groups");
+		(void)k_mutex_unlock(&list_mutex);
+		return -ENOMEM;
+	}
+
+	/* Populate the BAP group params based on the CAP params (mostly just a copy) */
+	cap_to_bap_unicast_group_param(param, &bap_param);
+
+	err = bt_bap_unicast_group_create(&bap_param.group_param,
+					  &(*unicast_group)->bap_unicast_group);
+	if (err != 0) {
+		LOG_DBG("Failed to create unicast group: %d", err);
+	}
+	(void)k_mutex_unlock(&list_mutex);
+
+	return err;
+}
+
+int bt_cap_unicast_group_reconfig(struct bt_cap_unicast_group *unicast_group,
+				  const struct bt_cap_unicast_group_param *param)
+{
+	struct cap_to_bap_unicast_params bap_param = {0};
+
+	if (unicast_group == NULL) {
+		LOG_DBG("unicast_group is NULL");
+		return -EINVAL;
+	}
+
+	if (!valid_unicast_group_param(param)) {
+		return -EINVAL;
+	}
+
+	/* Populate the BAP group params based on the CAP params (mostly just a copy) */
+	cap_to_bap_unicast_group_param(param, &bap_param);
+
+	return bt_bap_unicast_group_reconfig(unicast_group->bap_unicast_group,
+					     &bap_param.group_param);
+}
+
+int bt_cap_unicast_group_add_streams(struct bt_cap_unicast_group *unicast_group,
+				     const struct bt_cap_unicast_group_stream_pair_param params[],
+				     size_t num_param)
+{
+	struct cap_to_bap_unicast_params bap_param = {.group_param.params_count = num_param};
+
+	if (unicast_group == NULL) {
+		LOG_DBG("unicast_group is NULL");
+		return -EINVAL;
+	}
+
+	if (params == NULL) {
+		LOG_DBG("params is NULL");
+		return -EINVAL;
+	}
+
+	if (num_param == 0U) {
+		LOG_DBG("num_param is 0");
+		return -EINVAL;
+	}
+
+	for (size_t i = 0U; i < num_param; i++) {
+		if (!valid_group_stream_pair_param(&params[i])) {
+			return -EINVAL;
+		}
+	}
+
+	cap_to_bap_unicast_group_pair_param(params, &bap_param);
+
+	return bt_bap_unicast_group_add_streams(unicast_group->bap_unicast_group,
+						bap_param.pair_params, num_param);
+}
+
+int bt_cap_unicast_group_delete(struct bt_cap_unicast_group *unicast_group)
+{
+	int err;
+
+	if (unicast_group == NULL) {
+		LOG_DBG("unicast_group is NULL");
+		return -EINVAL;
+	}
+
+	err = bt_bap_unicast_group_delete(unicast_group->bap_unicast_group);
+	if (err == 0) {
+		unicast_group->bap_unicast_group = NULL;
+	}
+
+	return err;
+}
+
+struct cap_unicast_group_foreach_stream_data {
+	bt_cap_unicast_group_foreach_stream_func_t func;
+	void *user_data;
+};
+
+static bool bap_unicast_group_foreach_stream_cb(struct bt_bap_stream *bap_stream, void *user_data)
+{
+	struct cap_unicast_group_foreach_stream_data *data = user_data;
+
+	/* Since we are iterating on a CAP unicast group, we can assume that all streams are CAP
+	 * streams
+	 */
+	data->func(CONTAINER_OF(bap_stream, struct bt_cap_stream, bap_stream), data->user_data);
+
+	return false;
+}
+
+int bt_cap_unicast_group_foreach_stream(struct bt_cap_unicast_group *unicast_group,
+					bt_cap_unicast_group_foreach_stream_func_t func,
+					void *user_data)
+{
+	struct cap_unicast_group_foreach_stream_data data = {
+		.func = func,
+		.user_data = user_data,
+	};
+
+	if (unicast_group == NULL) {
+		LOG_DBG("unicast_group is NULL");
+		return -EINVAL;
+	}
+
+	if (func == NULL) {
+		LOG_DBG("func is NULL");
+		return -EINVAL;
+	}
+
+	return bt_bap_unicast_group_foreach_stream(unicast_group->bap_unicast_group,
+						   bap_unicast_group_foreach_stream_cb, &data);
 }
 
 static bool valid_unicast_audio_start_param(const struct bt_cap_unicast_audio_start_param *param)
@@ -366,10 +1083,15 @@ static bool valid_unicast_audio_start_param(const struct bt_cap_unicast_audio_st
 		const struct bt_cap_stream *cap_stream = stream_param->stream;
 		const struct bt_audio_codec_cfg *codec_cfg = stream_param->codec_cfg;
 		const struct bt_bap_stream *bap_stream;
-		const struct bt_cap_common_client *client =
-			bt_cap_common_get_client(param->type, member);
+		const struct bt_conn *member_conn =
+			bt_cap_common_get_member_conn(param->type, member);
 
-		if (client == NULL) {
+		if (member == NULL) {
+			LOG_DBG("param->members[%zu] is NULL", i);
+			return false;
+		}
+
+		if (member_conn == NULL) {
 			LOG_DBG("Invalid param->members[%zu]", i);
 			return false;
 		}
@@ -400,11 +1122,6 @@ static bool valid_unicast_audio_start_param(const struct bt_cap_unicast_audio_st
 		}
 
 		bap_stream = &cap_stream->bap_stream;
-
-		CHECKIF(bap_stream->ep != NULL) {
-			LOG_DBG("param->streams[%zu] is already started", i);
-			return false;
-		}
 
 		CHECKIF(bap_stream->group == NULL) {
 			LOG_DBG("param->streams[%zu] is not in a unicast group", i);
@@ -475,6 +1192,43 @@ static void cap_initiator_unicast_audio_proc_complete(void)
 	}
 }
 
+void bt_cap_initiator_cp_cb(struct bt_cap_stream *cap_stream, enum bt_bap_ascs_rsp_code rsp_code,
+			    enum bt_bap_ascs_reason reason)
+{
+	if (!bt_cap_common_stream_in_active_proc(cap_stream)) {
+		/* State change happened outside of a procedure; ignore */
+		return;
+	}
+
+	LOG_DBG("cap_stream %p", cap_stream);
+
+	set_cap_stream_in_progress(cap_stream, false);
+
+	if (rsp_code != BT_BAP_ASCS_RSP_CODE_SUCCESS) {
+		struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
+
+		/* In the case that the control point write is rejected, we will not get a ASE state
+		 * change notification. This is considered an error that shall abort the current
+		 * procedure.
+		 */
+		active_proc->proc_done_cnt++;
+
+		LOG_DBG("Control point operation on stream %p failed with %d and reason %d",
+			cap_stream, rsp_code, reason);
+
+		/* Unexpected callback - Abort */
+		bt_cap_common_abort_proc(cap_stream->bap_stream.conn, -EBADMSG);
+
+		if (bt_cap_common_proc_is_aborted()) {
+			if (bt_cap_common_proc_all_handled()) {
+				cap_initiator_unicast_audio_proc_complete();
+			}
+
+			return;
+		}
+	}
+}
+
 static int cap_initiator_unicast_audio_configure(
 	const struct bt_cap_unicast_audio_start_param *param)
 {
@@ -513,19 +1267,29 @@ static int cap_initiator_unicast_audio_configure(
 	/* Store the information about the active procedure so that we can
 	 * continue the procedure after each step
 	 */
-	bt_cap_common_start_proc(BT_CAP_COMMON_PROC_TYPE_START, param->count);
+	bt_cap_common_set_proc(BT_CAP_COMMON_PROC_TYPE_START, param->count);
 	bt_cap_common_set_subproc(BT_CAP_COMMON_SUBPROC_TYPE_CODEC_CONFIG);
 
-	proc_param = &active_proc->proc_param.initiator[0];
+	proc_param = get_next_proc_param(active_proc);
+	if (proc_param == NULL) {
+		/* If proc_param is NULL then this step is a no-op and we can skip to the next step
+		 */
+		bt_cap_initiator_codec_configured(active_proc->proc_param.initiator[0].stream);
+
+		return 0;
+	}
+
 	bap_stream = &proc_param->stream->bap_stream;
 	codec_cfg = proc_param->start.codec_cfg;
 	conn = proc_param->start.conn;
 	ep = proc_param->start.ep;
 	active_proc->proc_initiated_cnt++;
+	proc_param->in_progress = true;
 
 	/* Since BAP operations may require a write long or a read long on the notification,
 	 * we cannot assume that we can do multiple streams at once, thus do it one at a time.
 	 * TODO: We should always be able to do one per ACL, so there is room for optimization.
+	 * This applies to all BAP calls in this file.
 	 */
 	err = bt_bap_stream_config(conn, bap_stream, ep, codec_cfg);
 	if (err != 0) {
@@ -539,17 +1303,42 @@ static int cap_initiator_unicast_audio_configure(
 
 int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start_param *param)
 {
-	if (bt_cap_common_proc_is_active()) {
-		LOG_DBG("A CAP procedure is already in progress");
-
-		return -EBUSY;
-	}
+	bool all_streaming = true;
+	int err;
 
 	if (!valid_unicast_audio_start_param(param)) {
 		return -EINVAL;
 	}
 
-	return cap_initiator_unicast_audio_configure(param);
+	if (bt_cap_common_test_and_set_proc_active()) {
+		LOG_DBG("A CAP procedure is already in progress");
+
+		return -EBUSY;
+	}
+
+	for (size_t i = 0U; i < param->count; i++) {
+		const struct bt_bap_stream *bap_stream =
+			&param->stream_params[i].stream->bap_stream;
+
+		if (!stream_is_in_state(bap_stream, BT_BAP_EP_STATE_STREAMING)) {
+			all_streaming = false;
+		}
+	}
+
+	if (all_streaming) {
+		LOG_DBG("All streams are already in the streaming state");
+
+		bt_cap_common_clear_active_proc();
+
+		return -EALREADY;
+	}
+
+	err = cap_initiator_unicast_audio_configure(param);
+	if (err != 0) {
+		bt_cap_common_clear_active_proc();
+	}
+
+	return err;
 }
 
 void bt_cap_initiator_codec_configured(struct bt_cap_stream *cap_stream)
@@ -565,6 +1354,8 @@ void bt_cap_initiator_codec_configured(struct bt_cap_stream *cap_stream)
 		return;
 	}
 
+	LOG_DBG("cap_stream %p", cap_stream);
+
 	if (bt_cap_common_subproc_is_type(BT_CAP_COMMON_SUBPROC_TYPE_RELEASE)) {
 		/* When releasing a stream, it may go into the codec configured state if
 		 * the unicast server caches the configuration - We treat it as a release
@@ -575,7 +1366,7 @@ void bt_cap_initiator_codec_configured(struct bt_cap_stream *cap_stream)
 		/* Unexpected callback - Abort */
 		bt_cap_common_abort_proc(cap_stream->bap_stream.conn, -EBADMSG);
 	} else {
-		active_proc->proc_done_cnt++;
+		update_proc_done_cnt(active_proc);
 
 		LOG_DBG("Stream %p configured (%zu/%zu streams done)", cap_stream,
 			active_proc->proc_done_cnt, active_proc->proc_cnt);
@@ -590,29 +1381,24 @@ void bt_cap_initiator_codec_configured(struct bt_cap_stream *cap_stream)
 	}
 
 	if (!bt_cap_common_proc_is_done()) {
-		const size_t proc_done_cnt = active_proc->proc_done_cnt;
 		struct bt_cap_stream *next_cap_stream;
+		struct bt_bap_stream *next_bap_stream;
 		struct bt_audio_codec_cfg *codec_cfg;
-		struct bt_bap_stream *bap_stream;
 		struct bt_conn *conn;
 		struct bt_bap_ep *ep;
 		int err;
 
-		proc_param = &active_proc->proc_param.initiator[proc_done_cnt];
+		proc_param = get_next_proc_param(active_proc);
+		__ASSERT(proc_param != NULL, "proc is not done, but could not get next proc_param");
 		next_cap_stream = proc_param->stream;
 		conn = proc_param->start.conn;
 		ep = proc_param->start.ep;
 		codec_cfg = proc_param->start.codec_cfg;
-		bap_stream = &next_cap_stream->bap_stream;
+		next_bap_stream = &next_cap_stream->bap_stream;
 		active_proc->proc_initiated_cnt++;
+		proc_param->in_progress = true;
 
-		/* Since BAP operations may require a write long or a read long on the notification,
-		 * we cannot assume that we can do multiple streams at once, thus do it one at a
-		 * time.
-		 * TODO: We should always be able to do one per ACL, so there is room for
-		 * optimization.
-		 */
-		err = bt_bap_stream_config(conn, bap_stream, ep, codec_cfg);
+		err = bt_bap_stream_config(conn, next_bap_stream, ep, codec_cfg);
 		if (err != 0) {
 			LOG_DBG("Failed to config stream %p: %d", next_cap_stream, err);
 
@@ -650,16 +1436,25 @@ void bt_cap_initiator_codec_configured(struct bt_cap_stream *cap_stream)
 		if (free_conn != NULL) {
 			*free_conn = stream_conn;
 		} else {
-			__ASSERT_PRINT("No free conns");
+			__ASSERT(false, "[%zu]: No free conns", i);
+			return;
 		}
 	}
 
 	/* All streams in the procedure share the same unicast group, so we just
 	 * use the reference from the first stream
 	 */
-	proc_param = &active_proc->proc_param.initiator[0];
-	unicast_group = (struct bt_bap_unicast_group *)proc_param->stream->bap_stream.group;
 	bt_cap_common_set_subproc(BT_CAP_COMMON_SUBPROC_TYPE_QOS_CONFIG);
+	proc_param = get_next_proc_param(active_proc);
+	if (proc_param == NULL) {
+		/* If proc_param is NULL then this step is a no-op and we can skip to the next step
+		 */
+		bt_cap_initiator_qos_configured(active_proc->proc_param.initiator[0].stream);
+
+		return;
+	}
+
+	unicast_group = (struct bt_bap_unicast_group *)proc_param->stream->bap_stream.group;
 
 	for (size_t i = 0U; i < ARRAY_SIZE(conns); i++) {
 		int err;
@@ -669,7 +1464,16 @@ void bt_cap_initiator_codec_configured(struct bt_cap_stream *cap_stream)
 			break;
 		}
 
-		active_proc->proc_initiated_cnt++;
+		for (size_t j = 0U; j < active_proc->proc_cnt; j++) {
+			proc_param = &active_proc->proc_param.initiator[j];
+			if (proc_param->stream->bap_stream.conn == conns[i]) {
+				active_proc->proc_initiated_cnt++;
+				proc_param->in_progress = false;
+				break;
+			}
+		}
+
+		proc_param->in_progress = true;
 
 		err = bt_bap_stream_qos(conns[i], unicast_group);
 		if (err != 0) {
@@ -693,21 +1497,21 @@ void bt_cap_initiator_codec_configured(struct bt_cap_stream *cap_stream)
 void bt_cap_initiator_qos_configured(struct bt_cap_stream *cap_stream)
 {
 	struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
-	struct bt_cap_initiator_proc_param *proc_param;
-	struct bt_cap_stream *next_cap_stream;
-	struct bt_bap_stream *bap_stream;
-	int err;
 
 	if (!bt_cap_common_stream_in_active_proc(cap_stream)) {
 		/* State change happened outside of a procedure; ignore */
 		return;
 	}
 
-	if (!bt_cap_common_subproc_is_type(BT_CAP_COMMON_SUBPROC_TYPE_QOS_CONFIG)) {
+	LOG_DBG("cap_stream %p", cap_stream);
+
+	if (!(bt_cap_common_proc_is_type(BT_CAP_COMMON_PROC_TYPE_START) &&
+	      bt_cap_common_subproc_is_type(BT_CAP_COMMON_SUBPROC_TYPE_QOS_CONFIG)) &&
+	    !(bt_cap_common_proc_is_type(BT_CAP_COMMON_PROC_TYPE_STOP))) {
 		/* Unexpected callback - Abort */
 		bt_cap_common_abort_proc(cap_stream->bap_stream.conn, -EBADMSG);
 	} else {
-		active_proc->proc_done_cnt++;
+		update_proc_done_cnt(active_proc);
 
 		LOG_DBG("Stream %p QoS configured (%zu/%zu streams done)", cap_stream,
 			active_proc->proc_done_cnt, active_proc->proc_cnt);
@@ -721,28 +1525,62 @@ void bt_cap_initiator_qos_configured(struct bt_cap_stream *cap_stream)
 		return;
 	}
 
-	if (!bt_cap_common_proc_is_done()) {
-		/* Not yet finished, wait for all */
-		return;
-	}
+	if (bt_cap_common_proc_is_type(BT_CAP_COMMON_PROC_TYPE_START)) {
+		struct bt_cap_initiator_proc_param *proc_param;
+		struct bt_cap_stream *next_cap_stream;
+		struct bt_bap_stream *bap_stream;
+		int err;
 
-	bt_cap_common_set_subproc(BT_CAP_COMMON_SUBPROC_TYPE_ENABLE);
-	proc_param = &active_proc->proc_param.initiator[0];
-	next_cap_stream = proc_param->stream;
-	bap_stream = &next_cap_stream->bap_stream;
-	active_proc->proc_initiated_cnt++;
+		if (!bt_cap_common_proc_is_done()) {
+			/* Not yet finished, wait for all */
+			return;
+		}
 
-	/* Since BAP operations may require a write long or a read long on the notification, we
-	 * cannot assume that we can do multiple streams at once, thus do it one at a time.
-	 * TODO: We should always be able to do one per ACL, so there is room for optimization.
-	 */
-	err = bt_bap_stream_enable(bap_stream, bap_stream->codec_cfg->meta,
-				   bap_stream->codec_cfg->meta_len);
-	if (err != 0) {
-		LOG_DBG("Failed to enable stream %p: %d", next_cap_stream, err);
+		bt_cap_common_set_subproc(BT_CAP_COMMON_SUBPROC_TYPE_ENABLE);
+		proc_param = get_next_proc_param(active_proc);
+		if (proc_param == NULL) {
+			/* If proc_param is NULL then this step is a no-op and we can skip to the
+			 * next step
+			 */
+			bt_cap_initiator_enabled(active_proc->proc_param.initiator[0].stream);
 
-		bt_cap_common_abort_proc(bap_stream->conn, err);
-		cap_initiator_unicast_audio_proc_complete();
+			return;
+		}
+
+		next_cap_stream = proc_param->stream;
+		bap_stream = &next_cap_stream->bap_stream;
+		active_proc->proc_initiated_cnt++;
+		proc_param->in_progress = true;
+
+		err = bt_bap_stream_enable(bap_stream, bap_stream->codec_cfg->meta,
+					   bap_stream->codec_cfg->meta_len);
+		if (err != 0) {
+			LOG_DBG("Failed to enable stream %p: %d", next_cap_stream, err);
+
+			bt_cap_common_abort_proc(bap_stream->conn, err);
+			cap_initiator_unicast_audio_proc_complete();
+		}
+	} else if (bt_cap_common_subproc_is_type(BT_CAP_COMMON_SUBPROC_TYPE_RELEASE)) {
+		struct bt_cap_initiator_proc_param *proc_param;
+		struct bt_cap_stream *next_cap_stream;
+		struct bt_bap_stream *next_bap_stream;
+		int err;
+
+		proc_param = get_next_proc_param(active_proc);
+		__ASSERT(proc_param != NULL, "proc is not done, but could not get next proc_param");
+
+		next_cap_stream = proc_param->stream;
+		next_bap_stream = &next_cap_stream->bap_stream;
+		active_proc->proc_initiated_cnt++;
+		proc_param->in_progress = true;
+
+		err = bt_bap_stream_release(next_bap_stream);
+		if (err != 0) {
+			LOG_DBG("Failed to release stream %p: %d", next_cap_stream, err);
+
+			bt_cap_common_abort_proc(next_bap_stream->conn, err);
+			cap_initiator_unicast_audio_proc_complete();
+		}
 	}
 }
 
@@ -758,11 +1596,13 @@ void bt_cap_initiator_enabled(struct bt_cap_stream *cap_stream)
 		return;
 	}
 
+	LOG_DBG("cap_stream %p", cap_stream);
+
 	if (!bt_cap_common_subproc_is_type(BT_CAP_COMMON_SUBPROC_TYPE_ENABLE)) {
 		/* Unexpected callback - Abort */
 		bt_cap_common_abort_proc(cap_stream->bap_stream.conn, -EBADMSG);
 	} else {
-		active_proc->proc_done_cnt++;
+		update_proc_done_cnt(active_proc);
 
 		LOG_DBG("Stream %p enabled (%zu/%zu streams done)", cap_stream,
 			active_proc->proc_done_cnt, active_proc->proc_cnt);
@@ -777,18 +1617,17 @@ void bt_cap_initiator_enabled(struct bt_cap_stream *cap_stream)
 	}
 
 	if (!bt_cap_common_proc_is_done()) {
-		struct bt_cap_stream *next_cap_stream =
-			active_proc->proc_param.initiator[active_proc->proc_done_cnt].stream;
-		struct bt_bap_stream *next_bap_stream = &next_cap_stream->bap_stream;
+		struct bt_cap_stream *next_cap_stream;
+		struct bt_bap_stream *next_bap_stream;
+
+		proc_param = get_next_proc_param(active_proc);
+		__ASSERT(proc_param != NULL, "proc is not done, but could not get next proc_param");
+		next_cap_stream = proc_param->stream;
+		next_bap_stream = &next_cap_stream->bap_stream;
 
 		active_proc->proc_initiated_cnt++;
+		proc_param->in_progress = true;
 
-		/* Since BAP operations may require a write long or a read long on the notification,
-		 * we cannot assume that we can do multiple streams at once, thus do it one at a
-		 * time.
-		 * TODO: We should always be able to do one per ACL, so there is room for
-		 * optimization.
-		 */
 		err = bt_bap_stream_enable(next_bap_stream, next_bap_stream->codec_cfg->meta,
 					   next_bap_stream->codec_cfg->meta_len);
 		if (err != 0) {
@@ -801,17 +1640,29 @@ void bt_cap_initiator_enabled(struct bt_cap_stream *cap_stream)
 		return;
 	}
 
-	bt_cap_common_set_subproc(BT_CAP_COMMON_SUBPROC_TYPE_START);
-	proc_param = &active_proc->proc_param.initiator[0];
-	bap_stream = &proc_param->stream->bap_stream;
+	bt_cap_common_set_subproc(BT_CAP_COMMON_SUBPROC_TYPE_CONNECT);
+	proc_param = get_next_proc_param(active_proc);
+	if (proc_param == NULL) {
+		/* If proc_param is NULL then this step is a no-op and we can skip to the next step
+		 */
+		bt_cap_initiator_connected(active_proc->proc_param.initiator[0].stream);
 
-	/* Since BAP operations may require a write long or a read long on the notification, we
-	 * cannot assume that we can do multiple streams at once, thus do it one at a time.
-	 * TODO: We should always be able to do one per ACL, so there is room for optimization.
-	 */
-	err = bt_bap_stream_start(bap_stream);
-	if (err != 0) {
-		LOG_DBG("Failed to start stream %p: %d", proc_param->stream, err);
+		return;
+	}
+
+	bap_stream = &proc_param->stream->bap_stream;
+	proc_param->in_progress = true;
+
+	err = bt_bap_stream_connect(bap_stream);
+	if (err == -EALREADY) {
+		/* If the stream is already connected we can just call the callback directly
+		 * NOTE: It's important that we do not do any additional functionality after
+		 * calling this
+		 */
+		proc_param->in_progress = false;
+		bt_cap_initiator_connected(proc_param->stream);
+	} else if (err != 0) {
+		LOG_DBG("Failed to connect stream %p: %d", proc_param->stream, err);
 
 		/* End and mark procedure as aborted.
 		 * If we have sent any requests over air, we will abort
@@ -819,8 +1670,106 @@ void bt_cap_initiator_enabled(struct bt_cap_stream *cap_stream)
 		 */
 		bt_cap_common_abort_proc(bap_stream->conn, err);
 		cap_initiator_unicast_audio_proc_complete();
+	}
+}
+
+void bt_cap_initiator_connected(struct bt_cap_stream *cap_stream)
+{
+	struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
+	struct bt_cap_initiator_proc_param *proc_param;
+	struct bt_bap_stream *bap_stream;
+	int err;
+
+	if (!bt_cap_common_stream_in_active_proc(cap_stream)) {
+		/* State change happened outside of a procedure; ignore */
+		return;
+	}
+
+	LOG_DBG("cap_stream %p", cap_stream);
+
+	set_cap_stream_in_progress(cap_stream, false);
+
+	if (!bt_cap_common_subproc_is_type(BT_CAP_COMMON_SUBPROC_TYPE_CONNECT)) {
+		/* Unexpected callback - Abort */
+		bt_cap_common_abort_proc(cap_stream->bap_stream.conn, -EBADMSG);
+	} else {
+		proc_param = get_proc_param_by_cap_stream(active_proc, cap_stream);
+		__ASSERT_NO_MSG(proc_param != NULL);
+
+		/* Sets connected before update_proc_done_cnt as that is the only way to can track
+		 * the CIS state change
+		 */
+		proc_param->start.connected = true;
+		update_proc_done_cnt(active_proc);
+
+		LOG_DBG("Stream %p connected (%zu/%zu streams done)", cap_stream,
+			active_proc->proc_done_cnt, active_proc->proc_cnt);
+	}
+
+	if (bt_cap_common_proc_is_aborted()) {
+		if (bt_cap_common_proc_all_handled()) {
+			cap_initiator_unicast_audio_proc_complete();
+		}
 
 		return;
+	}
+
+	if (!bt_cap_common_proc_is_done()) {
+		struct bt_cap_stream *next_cap_stream;
+		struct bt_bap_stream *next_bap_stream;
+
+		proc_param = get_next_proc_param(active_proc);
+		if (proc_param != NULL) {
+			next_cap_stream = proc_param->stream;
+			next_bap_stream = &next_cap_stream->bap_stream;
+
+			active_proc->proc_initiated_cnt++;
+			proc_param->in_progress = true;
+
+			err = bt_bap_stream_connect(next_bap_stream);
+			if (err == 0 || err == -EALREADY) {
+				if (err == -EALREADY) {
+					proc_param->in_progress = false;
+				}
+				/* Pending connected - wait for connected callback */
+			} else if (err != 0) {
+				LOG_DBG("Failed to connect stream %p: %d", next_cap_stream, err);
+
+				bt_cap_common_abort_proc(next_bap_stream->conn, err);
+				cap_initiator_unicast_audio_proc_complete();
+			}
+		} /* else pending connection - wait for connected callback */
+
+		return;
+	}
+
+	/* All streams connected - Start sending the receiver start ready for all source
+	 * ASEs. For sink ASEs it is the responsibility of the unicast server to do the
+	 * receiver start ready operation. If there are no source ASEs then we just wait.
+	 */
+	bt_cap_common_set_subproc(BT_CAP_COMMON_SUBPROC_TYPE_START);
+	proc_param = get_next_proc_param(active_proc);
+	if (proc_param == NULL) {
+		/* If proc_param is NULL then this step is a no-op and we can skip to the next step
+		 */
+		bt_cap_initiator_started(active_proc->proc_param.initiator[0].stream);
+
+		return;
+	}
+
+	bap_stream = &proc_param->stream->bap_stream;
+	if (stream_is_dir(bap_stream, BT_AUDIO_DIR_SOURCE)) {
+		proc_param->in_progress = true;
+
+		err = bt_bap_stream_start(bap_stream);
+		if (err != 0) {
+			LOG_DBG("Failed to start stream %p: %d", proc_param->stream, err);
+
+			bt_cap_common_abort_proc(bap_stream->conn, err);
+			cap_initiator_unicast_audio_proc_complete();
+
+			return;
+		}
 	}
 }
 
@@ -828,66 +1777,72 @@ void bt_cap_initiator_started(struct bt_cap_stream *cap_stream)
 {
 	struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
 
+	LOG_DBG("cap_stream %p", cap_stream);
+
 	if (!bt_cap_common_stream_in_active_proc(cap_stream)) {
 		/* State change happened outside of a procedure; ignore */
 		return;
 	}
 
-	if (!bt_cap_common_subproc_is_type(BT_CAP_COMMON_SUBPROC_TYPE_START)) {
+	/* Streams may go into the streaming state while we are connecting or starting them */
+	if (bt_cap_common_subproc_is_type(BT_CAP_COMMON_SUBPROC_TYPE_CONNECT)) {
+		/* If we are still connecting the streams, we terminate early as to not perform any
+		 * start operations until all streams are connected
+		 */
+		return;
+	} else if (!bt_cap_common_subproc_is_type(BT_CAP_COMMON_SUBPROC_TYPE_START)) {
 		/* Unexpected callback - Abort */
 		bt_cap_common_abort_proc(cap_stream->bap_stream.conn, -EBADMSG);
 	} else {
-		active_proc->proc_done_cnt++;
+		update_proc_done_cnt(active_proc);
 
 		LOG_DBG("Stream %p started (%zu/%zu streams done)", cap_stream,
 			active_proc->proc_done_cnt, active_proc->proc_cnt);
 	}
 
-	/* Since bt_bap_stream_start connects the ISO, we can, at this point,
-	 * only do this one by one due to a restriction in the ISO layer
-	 * (maximum 1 outstanding ISO connection request at any one time).
-	 */
 	if (!bt_cap_common_proc_is_done()) {
-		struct bt_cap_stream *next_cap_stream =
-			active_proc->proc_param.initiator[active_proc->proc_done_cnt].stream;
-		struct bt_bap_stream *bap_stream = &next_cap_stream->bap_stream;
-		int err;
+		struct bt_cap_initiator_proc_param *proc_param;
+		struct bt_cap_stream *next_cap_stream;
+		struct bt_bap_stream *next_bap_stream;
 
-		/* Not yet finished, start next */
-		err = bt_bap_stream_start(bap_stream);
-		if (err != 0) {
-			LOG_DBG("Failed to start stream %p: %d", next_cap_stream, err);
+		proc_param = get_next_proc_param(active_proc);
+		if (proc_param != NULL) {
+			next_cap_stream = proc_param->stream;
+			next_bap_stream = &next_cap_stream->bap_stream;
 
-			/* End and mark procedure as aborted.
-			 * If we have sent any requests over air, we will abort
-			 * once all sent requests has completed
-			 */
-			bt_cap_common_abort_proc(bap_stream->conn, err);
-			cap_initiator_unicast_audio_proc_complete();
-		}
-	} else {
-		cap_initiator_unicast_audio_proc_complete();
+			if (stream_is_dir(next_bap_stream, BT_AUDIO_DIR_SOURCE)) {
+				int err;
+
+				proc_param->in_progress = true;
+
+				err = bt_bap_stream_start(next_bap_stream);
+				if (err != 0) {
+					LOG_DBG("Failed to start stream %p: %d", next_cap_stream,
+						err);
+
+					/* End and mark procedure as aborted.
+					 * If we have sent any requests over air, we will abort
+					 * once all sent requests has completed
+					 */
+					bt_cap_common_abort_proc(next_bap_stream->conn, err);
+					cap_initiator_unicast_audio_proc_complete();
+
+					return;
+				}
+			}
+		} /* else await notifications from server */
+
+		/* Return to await for response from server */
+		return;
 	}
+
+	cap_initiator_unicast_audio_proc_complete();
 }
 
 static bool can_update_metadata(const struct bt_bap_stream *bap_stream)
 {
-	struct bt_bap_ep_info ep_info;
-	int err;
-
-	if (bap_stream->conn == NULL) {
-		return false;
-	}
-
-	err = bt_bap_ep_get_info(bap_stream->ep, &ep_info);
-	if (err != 0) {
-		LOG_DBG("Failed to get endpoint info %p: %d", bap_stream, err);
-
-		return false;
-	}
-
-	return ep_info.state == BT_BAP_EP_STATE_ENABLING ||
-	       ep_info.state == BT_BAP_EP_STATE_STREAMING;
+	return stream_is_in_state(bap_stream, BT_BAP_EP_STATE_ENABLING) ||
+	       stream_is_in_state(bap_stream, BT_BAP_EP_STATE_STREAMING);
 }
 
 static bool valid_unicast_audio_update_param(const struct bt_cap_unicast_audio_update_param *param)
@@ -921,7 +1876,6 @@ static bool valid_unicast_audio_update_param(const struct bt_cap_unicast_audio_u
 			&param->stream_params[i];
 		const struct bt_cap_stream *cap_stream = stream_param->stream;
 		const struct bt_bap_stream *bap_stream;
-		struct bt_cap_common_client *client;
 		struct bt_conn *conn;
 
 		CHECKIF(cap_stream == NULL) {
@@ -935,12 +1889,6 @@ static bool valid_unicast_audio_update_param(const struct bt_cap_unicast_audio_u
 			LOG_DBG("param->stream_params[%zu].stream->bap_stream.conn is NULL", i);
 
 			return -EINVAL;
-		}
-
-		client = bt_cap_common_get_client_by_acl(conn);
-		if (!client->cas_found) {
-			LOG_DBG("CAS was not found for param->stream_params[%zu].stream", i);
-			return false;
 		}
 
 		CHECKIF(bap_stream->group == NULL) {
@@ -996,14 +1944,14 @@ int bt_cap_initiator_unicast_audio_update(const struct bt_cap_unicast_audio_upda
 	size_t meta_len;
 	int err;
 
-	if (bt_cap_common_proc_is_active()) {
+	if (!valid_unicast_audio_update_param(param)) {
+		return -EINVAL;
+	}
+
+	if (bt_cap_common_test_and_set_proc_active()) {
 		LOG_DBG("A CAP procedure is already in progress");
 
 		return -EBUSY;
-	}
-
-	if (!valid_unicast_audio_update_param(param)) {
-		return -EINVAL;
 	}
 
 	for (size_t i = 0U; i < param->count; i++) {
@@ -1011,20 +1959,26 @@ int bt_cap_initiator_unicast_audio_update(const struct bt_cap_unicast_audio_upda
 			&param->stream_params[i];
 		struct bt_cap_stream *cap_stream = stream_param->stream;
 
+		/* Ensure that ops are registered before any procedures are started */
+		bt_cap_stream_ops_register_bap(cap_stream);
+
 		active_proc->proc_param.initiator[i].stream = cap_stream;
 		active_proc->proc_param.initiator[i].meta_update.meta_len = stream_param->meta_len;
 		memcpy(&active_proc->proc_param.initiator[i].meta_update.meta, stream_param->meta,
 		       stream_param->meta_len);
 	}
 
-	bt_cap_common_start_proc(BT_CAP_COMMON_PROC_TYPE_UPDATE, param->count);
+	bt_cap_common_set_proc(BT_CAP_COMMON_PROC_TYPE_UPDATE, param->count);
 	bt_cap_common_set_subproc(BT_CAP_COMMON_SUBPROC_TYPE_META_UPDATE);
 
-	proc_param = &active_proc->proc_param.initiator[0];
+	proc_param = get_next_proc_param(active_proc);
+	__ASSERT(proc_param != NULL, "proc is not done, but could not get next proc_param");
+
 	bap_stream = &proc_param->stream->bap_stream;
 	meta_len = proc_param->meta_update.meta_len;
 	meta = proc_param->meta_update.meta;
 	active_proc->proc_initiated_cnt++;
+	proc_param->in_progress = true;
 
 	err = bt_bap_stream_metadata(bap_stream, meta, meta_len);
 	if (err != 0) {
@@ -1063,7 +2017,7 @@ void bt_cap_initiator_metadata_updated(struct bt_cap_stream *cap_stream)
 		/* Unexpected callback - Abort */
 		bt_cap_common_abort_proc(cap_stream->bap_stream.conn, -EBADMSG);
 	} else {
-		active_proc->proc_done_cnt++;
+		update_proc_done_cnt(active_proc);
 
 		LOG_DBG("Stream %p QoS metadata updated (%zu/%zu streams done)", cap_stream,
 			active_proc->proc_done_cnt, active_proc->proc_cnt);
@@ -1092,13 +2046,7 @@ void bt_cap_initiator_metadata_updated(struct bt_cap_stream *cap_stream)
 		next_cap_stream = proc_param->stream;
 		bap_stream = &next_cap_stream->bap_stream;
 		active_proc->proc_initiated_cnt++;
-
-		/* Since BAP operations may require a write long or a read long on the notification,
-		 * we cannot assume that we can do multiple streams at once, thus do it one at a
-		 * time.
-		 * TODO: We should always be able to do one per ACL, so there is room for
-		 * optimization.
-		 */
+		proc_param->in_progress = true;
 
 		err = bt_bap_stream_metadata(bap_stream, meta, meta_len);
 		if (err != 0) {
@@ -1115,23 +2063,54 @@ void bt_cap_initiator_metadata_updated(struct bt_cap_stream *cap_stream)
 	cap_initiator_unicast_audio_proc_complete();
 }
 
-static bool can_release(const struct bt_bap_stream *bap_stream)
+static bool can_release_stream(const struct bt_bap_stream *bap_stream)
 {
-	struct bt_bap_ep_info ep_info;
-	int err;
+	enum bt_bap_ep_state state;
 
 	if (bap_stream->conn == NULL) {
 		return false;
 	}
 
-	err = bt_bap_ep_get_info(bap_stream->ep, &ep_info);
-	if (err != 0) {
-		LOG_DBG("Failed to get endpoint info %p: %d", bap_stream, err);
+	state = stream_get_state(bap_stream);
 
+	/* We cannot release idle endpoints.
+	 * We do not know if we can release endpoints in the Codec Configured state as servers may
+	 * cache it, so treat it as idle
+	 */
+	return state != BT_BAP_EP_STATE_IDLE && state != BT_BAP_EP_STATE_CODEC_CONFIGURED;
+}
+
+static bool can_disable_stream(const struct bt_bap_stream *bap_stream)
+{
+	enum bt_bap_ep_state state;
+
+	if (bap_stream->conn == NULL) {
 		return false;
 	}
 
-	return ep_info.state != BT_BAP_EP_STATE_IDLE;
+	state = stream_get_state(bap_stream);
+
+	return state == BT_BAP_EP_STATE_STREAMING || state == BT_BAP_EP_STATE_ENABLING;
+}
+
+static bool can_stop_stream(const struct bt_bap_stream *bap_stream)
+{
+	enum bt_iso_state iso_state;
+
+	if (bap_stream->conn == NULL) {
+		return false;
+	}
+
+	if (stream_is_dir(bap_stream, BT_AUDIO_DIR_SINK)) {
+		return false;
+	}
+
+	iso_state = bap_stream_get_iso_state(bap_stream);
+	if (iso_state != BT_ISO_STATE_CONNECTED && iso_state != BT_ISO_STATE_CONNECTING) {
+		return false;
+	}
+
+	return stream_is_in_state(bap_stream, BT_BAP_EP_STATE_DISABLING);
 }
 
 static bool valid_unicast_audio_stop_param(const struct bt_cap_unicast_audio_stop_param *param)
@@ -1163,7 +2142,6 @@ static bool valid_unicast_audio_stop_param(const struct bt_cap_unicast_audio_sto
 	for (size_t i = 0U; i < param->count; i++) {
 		const struct bt_cap_stream *cap_stream = param->streams[i];
 		const struct bt_bap_stream *bap_stream;
-		struct bt_cap_common_client *client;
 		struct bt_conn *conn;
 
 		CHECKIF(cap_stream == NULL) {
@@ -1179,10 +2157,16 @@ static bool valid_unicast_audio_stop_param(const struct bt_cap_unicast_audio_sto
 			return -EINVAL;
 		}
 
-		client = bt_cap_common_get_client_by_acl(conn);
-		if (!client->cas_found) {
-			LOG_DBG("CAS was not found for param->streams[%zu]", i);
-			return false;
+		if (param->type == BT_CAP_SET_TYPE_CSIP) {
+			struct bt_cap_common_client *client = bt_cap_common_get_client_by_acl(conn);
+
+			if (client->csis_inst == NULL) {
+				LOG_DBG("param->streams[%zu]->bap_stream.conn not part of a "
+					"coordinated set",
+					i);
+
+				return false;
+			}
 		}
 
 		CHECKIF(bap_stream->group == NULL) {
@@ -1199,12 +2183,6 @@ static bool valid_unicast_audio_stop_param(const struct bt_cap_unicast_audio_sto
 					unicast_group);
 				return false;
 			}
-		}
-
-		if (!can_release(bap_stream)) {
-			LOG_DBG("Cannot stop param->streams[%zu]", i);
-
-			return false;
 		}
 
 		for (size_t j = 0U; j < i; j++) {
@@ -1224,46 +2202,288 @@ static bool valid_unicast_audio_stop_param(const struct bt_cap_unicast_audio_sto
 int bt_cap_initiator_unicast_audio_stop(const struct bt_cap_unicast_audio_stop_param *param)
 {
 	struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
-	struct bt_cap_initiator_proc_param *proc_param;
-	struct bt_bap_stream *bap_stream;
+	bool can_release = false;
+	bool can_disable = false;
+	bool can_stop = false;
 	int err;
-
-	if (bt_cap_common_proc_is_active()) {
-		LOG_DBG("A CAP procedure is already in progress");
-
-		return -EBUSY;
-	}
 
 	if (!valid_unicast_audio_stop_param(param)) {
 		return -EINVAL;
 	}
 
-	for (size_t i = 0U; i < param->count; i++) {
-		struct bt_cap_stream *cap_stream = param->streams[i];
+	if (bt_cap_common_test_and_set_proc_active()) {
+		LOG_DBG("A CAP procedure is already in progress");
 
-		active_proc->proc_param.initiator[i].stream = cap_stream;
+		return -EBUSY;
 	}
 
-	bt_cap_common_start_proc(BT_CAP_COMMON_PROC_TYPE_STOP, param->count);
+	for (size_t i = 0U; i < param->count; i++) {
+		struct bt_cap_stream *cap_stream = param->streams[i];
+		struct bt_bap_stream *bap_stream = &cap_stream->bap_stream;
 
-	bt_cap_common_set_subproc(BT_CAP_COMMON_SUBPROC_TYPE_RELEASE);
+		/* Ensure that ops are registered before any procedures are started */
+		bt_cap_stream_ops_register_bap(cap_stream);
 
+		active_proc->proc_param.initiator[i].stream = cap_stream;
+		active_proc->proc_param.initiator[i].stop.release = param->release;
+
+		if (!can_disable && can_disable_stream(bap_stream)) {
+			can_disable = true;
+		}
+
+		if (!can_stop && can_stop_stream(bap_stream)) {
+			can_stop = true;
+		}
+
+		if (!can_release && param->release && can_release_stream(bap_stream)) {
+			can_release = true;
+		}
+	}
+
+	if (!can_disable && !can_stop && !can_release) {
+		LOG_DBG("Cannot %s any streams", !can_disable ? "disable"
+						 : !can_stop  ? "stop"
+							      : "release");
+
+		bt_cap_common_clear_active_proc();
+
+		return -EALREADY;
+	}
+
+	bt_cap_common_set_proc(BT_CAP_COMMON_PROC_TYPE_STOP, param->count);
 	/** TODO: If this is a CSIP set, then the order of the procedures may
 	 * not match the order in the parameters, and the CSIP ordered access
 	 * procedure should be used.
 	 */
-	proc_param = &active_proc->proc_param.initiator[0];
-	bap_stream = &proc_param->stream->bap_stream;
-	active_proc->proc_initiated_cnt++;
 
-	err = bt_bap_stream_release(bap_stream);
-	if (err != 0) {
-		LOG_DBG("Failed to stop bap_stream %p: %d", proc_param->stream, err);
+	if (can_disable) {
+		struct bt_cap_initiator_proc_param *proc_param;
+		struct bt_bap_stream *bap_stream;
 
-		bt_cap_common_clear_active_proc();
+		bt_cap_common_set_subproc(BT_CAP_COMMON_SUBPROC_TYPE_DISABLE);
+
+		proc_param = get_next_proc_param(active_proc);
+		__ASSERT(proc_param != NULL,
+			 "proc is not started, but could not get next proc_param");
+		bap_stream = &proc_param->stream->bap_stream;
+		active_proc->proc_initiated_cnt++;
+		proc_param->in_progress = true;
+
+		err = bt_bap_stream_disable(bap_stream);
+		if (err != 0) {
+			LOG_DBG("Failed to disable bap_stream %p: %d", proc_param->stream, err);
+
+			bt_cap_common_clear_active_proc();
+		}
+	} else if (can_stop) {
+		struct bt_cap_initiator_proc_param *proc_param;
+		struct bt_bap_stream *bap_stream;
+
+		bt_cap_common_set_subproc(BT_CAP_COMMON_SUBPROC_TYPE_STOP);
+
+		proc_param = get_next_proc_param(active_proc);
+		__ASSERT(proc_param != NULL,
+			 "proc is not started, but could not get next proc_param");
+		bap_stream = &proc_param->stream->bap_stream;
+		active_proc->proc_initiated_cnt++;
+		proc_param->in_progress = true;
+
+		err = bt_bap_stream_stop(bap_stream);
+		if (err != 0) {
+			LOG_DBG("Failed to stop bap_stream %p: %d", proc_param->stream, err);
+
+			bt_cap_common_clear_active_proc();
+		}
+	} else {
+		struct bt_cap_initiator_proc_param *proc_param;
+		struct bt_bap_stream *bap_stream;
+
+		bt_cap_common_set_subproc(BT_CAP_COMMON_SUBPROC_TYPE_RELEASE);
+
+		proc_param = get_next_proc_param(active_proc);
+		__ASSERT(proc_param != NULL,
+			 "proc is not started, but could not get next proc_param");
+		bap_stream = &proc_param->stream->bap_stream;
+		active_proc->proc_initiated_cnt++;
+		proc_param->in_progress = true;
+
+		err = bt_bap_stream_release(bap_stream);
+		if (err != 0) {
+			LOG_DBG("Failed to release bap_stream %p: %d", proc_param->stream, err);
+
+			bt_cap_common_clear_active_proc();
+		}
 	}
 
 	return err;
+}
+
+void bt_cap_initiator_disabled(struct bt_cap_stream *cap_stream)
+{
+	struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
+
+	if (!bt_cap_common_stream_in_active_proc(cap_stream)) {
+		/* State change happened outside of a procedure; ignore */
+		return;
+	}
+
+	if (!bt_cap_common_subproc_is_type(BT_CAP_COMMON_SUBPROC_TYPE_DISABLE)) {
+		/* Unexpected callback - Abort */
+		bt_cap_common_abort_proc(cap_stream->bap_stream.conn, -EBADMSG);
+	} else {
+		update_proc_done_cnt(active_proc);
+
+		LOG_DBG("Stream %p disabled (%zu/%zu streams done)", cap_stream,
+			active_proc->proc_done_cnt, active_proc->proc_cnt);
+	}
+
+	if (bt_cap_common_proc_is_aborted()) {
+		if (bt_cap_common_proc_all_handled()) {
+			cap_initiator_unicast_audio_proc_complete();
+		}
+
+		return;
+	}
+
+	if (!bt_cap_common_proc_is_done()) {
+		struct bt_cap_initiator_proc_param *proc_param;
+		struct bt_cap_stream *next_cap_stream;
+		struct bt_bap_stream *next_bap_stream;
+		int err;
+
+		proc_param = get_next_proc_param(active_proc);
+		__ASSERT(proc_param != NULL, "proc is not done, but could not get next proc_param");
+		next_cap_stream = proc_param->stream;
+		next_bap_stream = &next_cap_stream->bap_stream;
+		active_proc->proc_initiated_cnt++;
+		proc_param->in_progress = true;
+
+		err = bt_bap_stream_disable(next_bap_stream);
+		if (err != 0) {
+			LOG_DBG("Failed to disable stream %p: %d", next_cap_stream, err);
+
+			bt_cap_common_abort_proc(next_bap_stream->conn, err);
+			cap_initiator_unicast_audio_proc_complete();
+		}
+	} else {
+		struct bt_cap_initiator_proc_param *proc_param;
+		struct bt_cap_stream *next_cap_stream;
+		struct bt_bap_stream *next_bap_stream;
+		int err;
+
+		bt_cap_common_set_subproc(BT_CAP_COMMON_SUBPROC_TYPE_STOP);
+
+		proc_param = get_next_proc_param(active_proc);
+		if (proc_param == NULL) {
+			/* If proc_param is NULL then this step is a no-op and we can skip to the
+			 * next step
+			 */
+			bt_cap_initiator_stopped(active_proc->proc_param.initiator[0].stream);
+
+			return;
+		}
+
+		next_cap_stream = proc_param->stream;
+		next_bap_stream = &next_cap_stream->bap_stream;
+		active_proc->proc_initiated_cnt++;
+		proc_param->in_progress = true;
+
+		err = bt_bap_stream_stop(next_bap_stream);
+		if (err != 0 && err != -EALREADY) {
+			LOG_DBG("Failed to stop stream %p: %d", next_cap_stream, err);
+
+			bt_cap_common_abort_proc(next_bap_stream->conn, err);
+			cap_initiator_unicast_audio_proc_complete();
+		} else if (err == -EALREADY) {
+			proc_param->in_progress = false;
+		} /* else wait for server notification*/
+	}
+}
+
+void bt_cap_initiator_stopped(struct bt_cap_stream *cap_stream)
+{
+	struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
+
+	if (!bt_cap_common_stream_in_active_proc(cap_stream)) {
+		/* State change happened outside of a procedure; ignore */
+		return;
+	}
+
+	if (!bt_cap_common_proc_is_type(BT_CAP_COMMON_PROC_TYPE_STOP)) {
+		/* Unexpected callback - Abort */
+		bt_cap_common_abort_proc(cap_stream->bap_stream.conn, -EBADMSG);
+	} else {
+		if (bt_cap_common_subproc_is_type(BT_CAP_COMMON_SUBPROC_TYPE_STOP)) {
+			update_proc_done_cnt(active_proc);
+
+			LOG_DBG("Stream %p stopped (%zu/%zu streams done)", cap_stream,
+				active_proc->proc_done_cnt, active_proc->proc_cnt);
+		} else {
+			/* We are still doing disable - Wait for those to be done, as stopped may
+			 * also be called when we are disabling sink ASEs
+			 */
+			return;
+		}
+	}
+
+	if (bt_cap_common_proc_is_aborted()) {
+		if (bt_cap_common_proc_all_handled()) {
+			cap_initiator_unicast_audio_proc_complete();
+		}
+
+		return;
+	}
+
+	if (!bt_cap_common_proc_is_done()) {
+		struct bt_cap_initiator_proc_param *proc_param;
+		struct bt_cap_stream *next_cap_stream;
+		struct bt_bap_stream *next_bap_stream;
+		int err;
+
+		proc_param = get_next_proc_param(active_proc);
+		if (proc_param != NULL) {
+			next_cap_stream = proc_param->stream;
+			next_bap_stream = &next_cap_stream->bap_stream;
+
+			active_proc->proc_initiated_cnt++;
+			proc_param->in_progress = true;
+
+			err = bt_bap_stream_stop(next_bap_stream);
+			if (err != 0 && err != -EALREADY) {
+				LOG_DBG("Failed to stop stream %p: %d", next_cap_stream, err);
+
+				bt_cap_common_abort_proc(next_bap_stream->conn, err);
+				cap_initiator_unicast_audio_proc_complete();
+			} else if (err == -EALREADY) {
+				proc_param->in_progress = false;
+			}
+		} /* else await notification from server */
+	} else {
+		/* We are done stopping streams now - We mark the next subproc. If
+		 * get_next_proc_param returns a NULL value it means that we are complete done. If
+		 * it returns a non-NULL value, it means that we need to start releasing streams.
+		 * However, since the QoS Configured state is better suited to trigger this, we
+		 * simply wait until bt_cap_initiator_qos_configured is called.
+		 */
+		struct bt_cap_initiator_proc_param *proc_param;
+
+		if (!bt_cap_common_proc_is_done()) {
+			/* We are still disabling or stopping some */
+			return;
+		}
+
+		bt_cap_common_set_subproc(BT_CAP_COMMON_SUBPROC_TYPE_RELEASE);
+
+		proc_param = get_next_proc_param(active_proc);
+		if (proc_param == NULL) {
+			/* If proc_param is NULL then this step is a no-op and we can finish the
+			 * procedure
+			 */
+			cap_initiator_unicast_audio_proc_complete();
+
+			return;
+		} /* wait for bt_cap_initiator_qos_configured */
+	}
 }
 
 void bt_cap_initiator_released(struct bt_cap_stream *cap_stream)
@@ -1279,7 +2499,7 @@ void bt_cap_initiator_released(struct bt_cap_stream *cap_stream)
 		/* Unexpected callback - Abort */
 		bt_cap_common_abort_proc(cap_stream->bap_stream.conn, -EBADMSG);
 	} else {
-		active_proc->proc_done_cnt++;
+		update_proc_done_cnt(active_proc);
 
 		LOG_DBG("Stream %p released (%zu/%zu streams done)", cap_stream,
 			active_proc->proc_done_cnt, active_proc->proc_cnt);
@@ -1294,23 +2514,23 @@ void bt_cap_initiator_released(struct bt_cap_stream *cap_stream)
 	}
 
 	if (!bt_cap_common_proc_is_done()) {
-		struct bt_cap_stream *next_cap_stream =
-			active_proc->proc_param.initiator[active_proc->proc_done_cnt].stream;
-		struct bt_bap_stream *bap_stream = &next_cap_stream->bap_stream;
+		struct bt_cap_initiator_proc_param *proc_param;
+		struct bt_cap_stream *next_cap_stream;
+		struct bt_bap_stream *next_bap_stream;
 		int err;
 
+		proc_param = get_next_proc_param(active_proc);
+		__ASSERT(proc_param != NULL, "proc is not done, but could not get next proc_param");
+		next_cap_stream = proc_param->stream;
+		next_bap_stream = &next_cap_stream->bap_stream;
 		active_proc->proc_initiated_cnt++;
-		/* Since BAP operations may require a write long or a read long on the notification,
-		 * we cannot assume that we can do multiple streams at once, thus do it one at a
-		 * time.
-		 * TODO: We should always be able to do one per ACL, so there is room for
-		 * optimization.
-		 */
-		err = bt_bap_stream_release(bap_stream);
+		proc_param->in_progress = true;
+
+		err = bt_bap_stream_release(next_bap_stream);
 		if (err != 0) {
 			LOG_DBG("Failed to release stream %p: %d", next_cap_stream, err);
 
-			bt_cap_common_abort_proc(bap_stream->conn, err);
+			bt_cap_common_abort_proc(next_bap_stream->conn, err);
 			cap_initiator_unicast_audio_proc_complete();
 		}
 	} else {

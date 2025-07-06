@@ -12,7 +12,7 @@
 / {
 	chosen {
 		zephyr,flash = &flash0;
-		zephyr,sram = &sram0_ns;
+		zephyr,sram = &sram0_ns_app;
 		zephyr,code-partition = &slot0_ns_partition;
 	};
 

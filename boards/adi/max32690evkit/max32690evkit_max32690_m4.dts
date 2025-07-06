@@ -1,0 +1,205 @@
+/*
+ * Copyright (c) 2023-2025 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <adi/max32/max32690.dtsi>
+#include <adi/max32/max32690-pinctrl.dtsi>
+#include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
+#include <zephyr/dt-bindings/memory-controller/adi-max32-hpb.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+
+/ {
+	model = "Analog Devices MAX32690EVKIT";
+	compatible = "adi,max32690evkit";
+
+	chosen {
+		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,display = &st7735;
+		zephyr,canbus = &can0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led: led_0 {
+			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+			label = "LED0";
+		};
+		green_led: led_1 {
+			gpios = <&gpio2 12 GPIO_ACTIVE_LOW>;
+			label = "LED1";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		pb0: pb0 {
+			gpios = <&gpio4 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW2";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &red_led;
+		led1 = &green_led;
+		sw0 = &pb0;
+		watchdog0 = &wdt0;
+	 };
+
+	mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		spi-dev = <&spibb0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		status = "okay";
+
+		st7735: st7735@0 {
+			compatible = "sitronix,st7735r";
+			mipi-max-frequency = <DT_FREQ_M(6)>;
+			mipi-mode = "MIPI_DBI_MODE_SPI_3WIRE";
+
+			reg = <0>;
+			width = <130>;
+			height = <132>;
+			x-offset = <0>;
+			y-offset = <0>;
+			madctl = <0xc0>;
+			colmod = <0x05>;
+			vmctr1 = <0x51>;
+			pwctr1 = [02 02];
+			pwctr2 = [c5];
+			pwctr3 = [0d 00];
+			pwctr4 = [8d 1a];
+			pwctr5 = [8d ee];
+			frmctr1 = [02 35 36];
+			frmctr2 = [02 35 36];
+			frmctr3 = [02 35 36 02 35 36];
+			gamctrp1 = [0a 1c 0c 14 33 2b 24 28 27 25 2c 39 00 05 03 0d];
+			gamctrn1 = [0a 1c 0c 14 33 2b 24 28 27 25 2d 3a 00 05 03 0d];
+		};
+	};
+
+	spibb0: spibb0 {
+		compatible = "zephyr,spi-bitbang";
+		status="okay";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		clk-gpios = <&gpio2 25 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
+		mosi-gpios = <&gpio2 24 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
+		cs-gpios = <&gpio2 11 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
+	};
+
+	sdram1: sdram1@60000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		status = "disabled";
+		device_type = "memory";
+		reg = <0x60000000 DT_SIZE_M(8)>;
+		zephyr,memory-region = "SDRAM1";
+	};
+};
+
+&hpb {
+	pinctrl-0 = <&hyp_cs0n_p1_11 &hyp_rwds_p1_14 &hyp_d0_p1_12 &hyp_d1_p1_15
+				 &hyp_d2_p1_19 &hyp_d3_p1_20 &hyp_d4_p1_13
+				 &hyp_d5_p1_16 &hyp_d6_p1_18 &hyp_d7_p1_21>;
+	pinctrl-names = "default";
+	enable-emcc;
+
+	mem@0 {
+		reg = <0>;
+		base-address = <0x60000000>;
+		device-type = <ADI_MAX32_HPB_DEV_TYPE_HYPER_RAM>;
+		config-regs =     <1>;
+		config-reg-vals = <2>;
+	};
+};
+
+&clk_ipo {
+	status = "okay";
+};
+
+&clk_ibro {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&gpio4 {
+	status = "okay";
+};
+
+&uart2 {
+	clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
+	pinctrl-0 = <&uart2a_tx_p1_10 &uart2a_rx_p1_9>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+	status = "okay";
+};
+
+&trng {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+	pinctrl-0 = <&i2c0a_scl_p2_8 &i2c0a_sda_p2_7>;
+	pinctrl-names = "default";
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+	pinctrl-0 = <&spi0b_mosi_p2_28 &spi0b_miso_p2_27 &spi0b_sck_p2_29 &spi0b_ss1_p2_26>;
+	pinctrl-names = "default";
+};
+
+&w1 {
+	pinctrl-0 = <&owm_io_p0_8 &owm_pe_p0_7>;
+	pinctrl-names = "default";
+};
+
+&rtc_counter {
+	status = "okay";
+};
+
+zephyr_udc0: &usbhs {
+	status = "okay";
+};
+
+&can0 {
+	status = "okay";
+	pinctrl-0 = <&can0b_tx_p2_23 &can0b_rx_p2_22>;
+	pinctrl-names = "default";
+};

@@ -8,3 +8,4 @@ config SOC_EOS_S3
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU
 	select EOS_S3_HAL
+	select SOC_EARLY_INIT_HOOK

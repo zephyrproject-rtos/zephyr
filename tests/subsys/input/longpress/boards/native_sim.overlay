@@ -18,7 +18,7 @@
 		short-codes = <INPUT_KEY_A>, <INPUT_KEY_B>;
 		long-codes = <INPUT_KEY_X>, <INPUT_KEY_Y>;
 		long-delay-ms = <100>;
-        };
+	};
 
 	longpress_no_short: longpress-no-short {
 		input = <&fake_input_device>;

@@ -1,0 +1,12 @@
+# TMP11X temperature sensor configuration options
+
+# Copyright (c) 2019 Centaur Analytics, Inc
+# SPDX-License-Identifier: Apache-2.0
+
+config TMP11X
+	bool "TMP116, TMP117 and TMP119 Temperature Sensors"
+	default y
+	depends on DT_HAS_TI_TMP11X_ENABLED
+	select I2C
+	help
+	  Enable driver for TMP116, TMP117 and TMP119 temperature sensors.

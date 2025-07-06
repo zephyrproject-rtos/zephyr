@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024, STRIM, ALC
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +9,7 @@
 
 #include <errno.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/drivers/clock_control.h>
 #include <fsl_flexio_spi.h>
 #include <zephyr/logging/log.h>
@@ -197,8 +199,26 @@ static void spi_flexio_master_init(FLEXIO_SPI_Type *base, flexio_spi_master_conf
 	timerConfig.timerEnable     = kFLEXIO_TimerEnableOnTriggerHigh;
 	timerConfig.timerStop       = kFLEXIO_TimerStopBitEnableOnTimerDisable;
 	timerConfig.timerStart      = kFLEXIO_TimerStartBitEnabled;
-	/* Low 8-bits are used to configure baudrate. */
+	/* Low 8-bits are used to configure baud rate. */
 	timerDiv = (uint16_t)(srcClock_Hz / masterConfig->baudRate_Bps);
+
+	/* Add protection if the required baud rate overflows.
+	 * FLEXIO input freq can't meet required baud rate. Max baud rate can
+	 * not exceed 1/4 of input freq. You can raise input freq or lower
+	 * baud rate required to remove this warning.
+	 */
+	if (timerDiv < 4) {
+		timerDiv = 4;
+	}
+	/* If timeDiv is odd, get it to even. */
+	timerDiv += timerDiv & 1UL;
+
+	if (masterConfig->baudRate_Bps != (srcClock_Hz / timerDiv)) {
+		LOG_WRN("baud rate req:%uKbps, got:%uKbps",
+			(uint32_t)(masterConfig->baudRate_Bps / 1000),
+			(uint32_t)(srcClock_Hz / (timerDiv*1000)));
+	}
+
 	timerDiv = timerDiv / 2U - 1U;
 	/* High 8-bits are used to configure shift clock edges(transfer width). */
 	timerCmp = ((uint16_t)masterConfig->dataMode * 2U - 1U) << 8U;
@@ -387,10 +407,13 @@ static int spi_mcux_init(const struct device *dev)
 	return 0;
 }
 
-static const struct spi_driver_api spi_mcux_driver_api = {
+static DEVICE_API(spi, spi_mcux_driver_api) = {
 	.transceive = spi_mcux_transceive,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_mcux_transceive_async,
+#endif
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
 #endif
 	.release = spi_mcux_release,
 };
@@ -429,7 +452,7 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)	\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(n, &spi_mcux_init, NULL,			\
+	SPI_DEVICE_DT_INST_DEFINE(n, spi_mcux_init, NULL,		\
 				&spi_mcux_flexio_data_##n,		\
 				&spi_mcux_flexio_config_##n, POST_KERNEL, \
 				CONFIG_SPI_INIT_PRIORITY,		\

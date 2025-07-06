@@ -1,0 +1,62 @@
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32N6 main PLL.
+
+  It can be used to describe 4 different PLLs: PLL1, PLL2, PLL3 and PLL4.
+
+  These PLLs can take one of clk_hse, clk_hsi or clk_msi as input clock, with
+  an input frequency from 5 to 50 MHz. PLLM factor is used to set the input
+  clock in this acceptable range.
+
+  Each PLL has one output clock whose frequency can be computed with the
+  following formula:
+
+    f(PLL_P) = f(VCO clock) / (PLLP1 × PLLP2)
+
+      with f(VCO clock) = f(PLL clock input) × (PLLN / PLLM)
+
+  Note: To reduce the power consumption, it is recommended to configure the VCOx
+        clock output to the lowest frequency.
+
+  The PLL output frequency must not exceed 3200 MHz.
+
+compatible: "st,stm32n6-pll-clock"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+
+  "#clock-cells":
+    const: 0
+
+  clocks:
+    required: true
+
+  div-m:
+    type: int
+    required: true
+    description: |
+        Prescaler for PLLx
+        input clock
+        Valid range: 1 - 63
+
+  mul-n:
+    type: int
+    required: true
+    description: |
+        PLLx multiplication factor for VCO
+        Valid range: 16 - 2500
+
+  div-p1:
+    type: int
+    description: |
+        PLLx DIVP1 division factor
+        Valid range: 1 - 7
+
+  div-p2:
+    type: int
+    description: |
+        PLLx DIVP2 division factor
+        Valid range: 1 - 7

@@ -11,7 +11,7 @@
 };
 
 &sysclk {
-	clock-frequency = <500000000>;
+	clock-frequency = <528000000>;
 };
 
 &ccm {
@@ -20,10 +20,13 @@
 	};
 
 	arm-podf {
-		clock-div = <2>;
+		clock-div = <1>;
 	};
 };
 
+&gpt2 {
+	gptfreq = <33000000>;
+};
 
 / {
 	soc {

@@ -1,0 +1,22 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config TEST_WDT_MAX_WINDOW_TIME
+	int "Watchdog Max Value"
+	default 1000
+	help
+	  Set the watchdog max window time to feed the watchdog.
+	  The units for this value will change based on the watchdog
+	  driver being tested. Most drivers represent this as milliseconds
+	  due to the max window reaching the millisecond feed window.
+
+config TEST_WDT_SLEEP_TIME
+	int "Watchdog Sleep Time"
+	default 500
+	help
+	  Set the test sleep time between watchdog feeds.
+	  The units for this value will change based on the watchdog
+	  driver being tested. Most drivers represent this as milliseconds
+	  due to the max window reaching the millisecond feed window.

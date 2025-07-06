@@ -47,7 +47,7 @@ config TASK_WDT_HW_FALLBACK_DELAY
 	int "Additional delay for hardware watchdog (ms)"
 	depends on TASK_WDT_HW_FALLBACK
 	default 20
-	range 1 1000
+	range 1 10000
 	help
 	  The timeout of the hardware watchdog fallback will be increased by
 	  this value to provide sufficient time for corrective actions in the
@@ -57,6 +57,16 @@ config TASK_WDT_HW_FALLBACK_DELAY
 	  between different clock sources for the hardware watchdog and the
 	  kernel timer. This is especially important if the hardware watchdog
 	  is clocked by an inaccurate low-speed RC oscillator.
+
+config TASK_WDT_HW_FALLBACK_PAUSE_IN_SLEEP
+	bool "Pause the hardware watchdog in system sleep"
+	depends on TASK_WDT_HW_FALLBACK
+	help
+	  Configure the hardware watchdog to automatically pause when the
+	  system reaches a sleep power state. When the system is resumed, the
+	  watchdog is also automatically resumed.
+	  Note that this feature is supported only by a subset of hardware
+	  watchdogs.
 
 config TASK_WDT_SHELL
 	bool "Task watchdog shell utilities"

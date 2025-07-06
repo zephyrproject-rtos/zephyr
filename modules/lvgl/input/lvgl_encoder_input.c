@@ -19,15 +19,19 @@ struct lvgl_encoder_input_config {
 	int button_input_code;
 };
 
-static void lvgl_encoder_process_event(const struct device *dev, struct input_event *evt)
+static void lvgl_encoder_process_event(struct input_event *evt, void *user_data)
 {
+	const struct device *dev = user_data;
 	struct lvgl_common_input_data *data = dev->data;
 	const struct lvgl_encoder_input_config *cfg = dev->config;
 
 	if (evt->code == cfg->rotation_input_code) {
 		data->pending_event.enc_diff = evt->value;
 	} else if (evt->code == cfg->button_input_code) {
-		data->pending_event.state = evt->value ? LV_INDEV_STATE_PR : LV_INDEV_STATE_REL;
+		data->pending_event.state =
+			evt->value ? LV_INDEV_STATE_PRESSED : LV_INDEV_STATE_RELEASED;
+		data->pending_event.enc_diff = 0;
+		data->pending_event.key = LV_KEY_ENTER;
 	} else {
 		LOG_DBG("Ignored input event: %u", evt->code);
 		return;
@@ -61,6 +65,8 @@ int lvgl_encoder_input_init(const struct device *dev)
 			  lvgl_encoder_process_event);                                             \
 	static const struct lvgl_encoder_input_config lvgl_encoder_input_config_##inst = {         \
 		.common_config.event_msgq = &LVGL_INPUT_EVENT_MSGQ(inst, encoder),                 \
+		.common_config.display_dev =                                                       \
+			DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(inst, display)),                     \
 		.rotation_input_code = ROTATION_CODE(inst),                                        \
 		.button_input_code = BUTTON_CODE(inst),                                            \
 	};                                                                                         \

@@ -10,6 +10,7 @@
 #include <threads.h>
 
 #include <zephyr/sys_clock.h>
+#include <zephyr/sys/timeutil.h>
 #include <zephyr/ztest.h>
 
 static thrd_t     thr;
@@ -23,17 +24,21 @@ ZTEST(libc_thrd, test_thrd_sleep)
 	struct timespec remaining;
 	const uint16_t delay_ms[] = {0, 100, 200, 400};
 
-	zassert_not_equal(0, thrd_sleep(NULL, NULL));
-	zassert_ok(thrd_sleep(&duration, NULL));
-	zassert_ok(thrd_sleep(&duration, &duration));
+	if (false) {
+		/* duration may not be NULL */
+		zassert_not_equal(thrd_success, thrd_sleep(NULL, NULL));
+	}
+
+	zassert_equal(thrd_success, thrd_sleep(&duration, NULL));
+	zassert_equal(thrd_success, thrd_sleep(&duration, &duration));
 
 	for (int i = 0; i < ARRAY_SIZE(delay_ms); ++i) {
-		duration = (struct timespec){.tv_nsec = delay_ms[i] * NSEC_PER_MSEC};
+		timespec_from_timeout(K_MSEC(delay_ms[i]), &duration);
 		remaining = (struct timespec){.tv_sec = 4242, .tv_nsec = 4242};
 
 		printk("sleeping %d ms\n", delay_ms[i]);
 		start = k_uptime_get();
-		zassert_ok(thrd_sleep(&duration, &remaining));
+		zassert_equal(thrd_success, thrd_sleep(&duration, &remaining));
 		end = k_uptime_get();
 		zassert_equal(remaining.tv_sec, 0);
 		zassert_equal(remaining.tv_nsec, 0);

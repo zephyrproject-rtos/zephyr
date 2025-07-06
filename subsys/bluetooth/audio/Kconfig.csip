@@ -9,9 +9,10 @@
 #################### Coordinated Set Identification Service ####################
 
 config BT_CSIP_SET_MEMBER
-	bool "Coordinated Set Identification Profile Set Member support [EXPERIMENTAL]"
+	bool "Coordinated Set Identification Profile Set Member support"
+	depends on BT_GATT_DYNAMIC_DB
+	depends on BT_SMP
 	imply BT_EXT_ADV if BT_PRIVACY
-	select EXPERIMENTAL
 	help
 	  This option enables support for Coordinated Set Identification
 	  Profile Set Member role and the Coordinated Set Identification
@@ -36,9 +37,9 @@ config BT_CSIP_SET_MEMBER_ENC_SIRK_SUPPORT
 	  Enables support encrypting the SIRK.
 
 config BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT
-	int "Coordinated Set Identification Profle max service instance count"
+	int "Coordinated Set Identification Profile max service instance count"
 	default 1
-	range 1 255
+	range 1 $(UINT8_MAX)
 	help
 	  This option sets the maximum number of instances of Coordinated Set
 	  Identification Services. If the service is declared as primary service
@@ -47,20 +48,25 @@ config BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT
 	  Enabling BT_CAP_ACCEPTOR_SET_MEMBER will take one of the allocated
 	  instances.
 
-config BT_CSIP_SET_MEMBER_NOTIFIABLE
+config BT_CSIP_SET_MEMBER_SIRK_NOTIFIABLE
 	bool "SIRK notifiable Support"
 	help
 	  This option enables support for clients to be notified on SIRK changes.
+
+config BT_CSIP_SET_MEMBER_SIZE_NOTIFIABLE
+	bool "Set Size notifiable support"
+	help
+	  This option enables support for clients to be notified on Set Size changes.
 
 endif # BT_CSIP_SET_MEMBER
 
 #################### Coordinated Set Identification Client ####################
 
 config BT_CSIP_SET_COORDINATOR
-	bool "Coordinated Set Identification Profile Set Coordinator Support [EXPERIMENTAL]"
-	select BT_GATT_CLIENT
-	select BT_GATT_AUTO_DISCOVER_CCC
-	select EXPERIMENTAL
+	bool "Coordinated Set Identification Profile Set Coordinator Support"
+	depends on BT_GATT_CLIENT
+	depends on BT_GATT_AUTO_DISCOVER_CCC
+	depends on BT_SMP
 	help
 	  This option enables support for Coordinated Set Identification
 	  Profile Set Coordinator.

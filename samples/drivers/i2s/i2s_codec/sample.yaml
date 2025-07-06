@@ -1,0 +1,14 @@
+sample:
+  name: codec sample
+tests:
+  sample.drivers.i2s.codec:
+    tags: i2s
+    platform_allow:
+      - mimxrt595_evk/mimxrt595s/cm33
+      - mimxrt1170_evk@B/mimxrt1176/cm7
+      - mimxrt700_evk/mimxrt798s/cm33_cpu0
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "start streams"

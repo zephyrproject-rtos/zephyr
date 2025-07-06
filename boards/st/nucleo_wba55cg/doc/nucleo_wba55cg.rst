@@ -1,7 +1,4 @@
-.. _nucleo_wba55cg_board:
-
-ST Nucleo WBA55CG
-#################
+.. zephyr:board:: nucleo_wba55cg
 
 Overview
 ********
@@ -36,10 +33,6 @@ platform with a wide choice of specialized shields.
 - Flexible power-supply options: ST-LINK USB VBUS or external sources
 - On-board STLINK-V3MODS debugger/programmer with USB re-enumeration capability:
   mass storage, Virtual COM port, and debug port
-
-.. image:: img/nucleowba55cg.jpg
-   :align: center
-   :alt: Nucleo WBA55CG
 
 Hardware
 ********
@@ -151,37 +144,7 @@ More information about STM32WBA series can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_wba55cg board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-| RNG       | on-chip    | True Random number generator        |
-+-----------+------------+-------------------------------------+
-| RADIO     | on-chip    | Bluetooth Low Energy                |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_wba55cg/nucleo_wba55cg_defconfig`
+.. zephyr:board-supported-hw::
 
 Bluetooh support
 ----------------
@@ -194,7 +157,7 @@ To fetch Binary Blobs:
 
 .. code-block:: console
 
-   west blobs fetch stm32
+   west blobs fetch hal_stm32
 
 Connections and IOs
 ===================
@@ -233,14 +196,23 @@ Default settings are 115500 8N1.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Nucleo WBA55CG board includes an ST-LINK/V3 embedded debug tool interface.
 It could be used for flash and debug using either OpenOCD or STM32Cube ecosystem tools.
 
 Flashing
 ========
 
-STM32CubeProgrammer is configured as flashing tool by default.
-If available, OpenOCD could be used. Same process applies with both tools.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, openocd can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
 
 Flashing an application to Nucleo WBA55CG
 -----------------------------------------
@@ -273,7 +245,9 @@ Debugging using STM32CubeIDE
 ----------------------------
 
 You can debug an application using a STM32WBA compatible version of STM32CubeIDE.
+
 For that:
+
 - Create an empty STM32WBA project by going to File > New > STM32 project
 - Select your MCU, click Next, and select an Empty project.
 - Right click on your project name, select Debug as > Debug configurations
@@ -287,3 +261,6 @@ For that:
 
 .. _OpenOCD official Github mirror:
    https://github.com/openocd-org/openocd/commit/870769b0ba9f4dae6ada9d8b1a40d75bd83aaa06
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

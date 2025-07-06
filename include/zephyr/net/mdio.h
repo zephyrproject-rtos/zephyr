@@ -15,6 +15,8 @@
 /**
  * @brief Definitions for IEEE 802.3 management interface
  * @defgroup ethernet_mdio IEEE 802.3 management interface
+ * @since 3.5
+ * @version 0.8.0
  * @ingroup ethernet
  * @{
  */
@@ -97,6 +99,10 @@ enum mdio_opcode {
 #define MDIO_PKGID1			0x000EU
 /** Package identifier (2) */
 #define MDIO_PKGID2			0x000FU
+/* PCS Register: EEE capability Register */
+#define MDIO_PCS_EEE_CAP		0x0014U
+/* Auto-negotiation Register: EEE advertisement Register */
+#define MDIO_AN_EEE_ADV			0x003CU
 
 
 /* BASE-T1 registers */
@@ -110,7 +116,7 @@ enum mdio_opcode {
 #define MDIO_AN_T1_ADV_M		0x0203U
 /** BASE-T1 Auto-negotiation advertisement register [47:32] */
 #define MDIO_AN_T1_ADV_H		0x0204U
-/* BASE-T1 PMA/PMD control register */
+/** BASE-T1 PMA/PMD control register */
 #define MDIO_PMA_PMD_BT1_CTRL		0x0834U
 
 /* BASE-T1 Auto-negotiation Control register */
@@ -152,9 +158,9 @@ enum mdio_opcode {
 #define MDIO_AN_T1_ADV_M_MST		BIT(4)
 
 /* BASE-T1 Auto-negotiation Advertisement register [47:32] */
-/* 10BASE-T1L High Level Transmit Operating Mode Request */
+/** 10BASE-T1L High Level Transmit Operating Mode Request */
 #define MDIO_AN_T1_ADV_H_10L_TX_HI_REQ	BIT(12)
-/* 10BASE-T1L High Level Transmit Operating Mode Ability */
+/** 10BASE-T1L High Level Transmit Operating Mode Ability */
 #define MDIO_AN_T1_ADV_H_10L_TX_HI	BIT(13)
 
 /* BASE-T1 PMA/PMD control register */
@@ -227,6 +233,12 @@ enum mdio_opcode {
 /* 10BASE-T1L PCS status */
 /** 10BASE-T1L PCS Descrambler Status */
 #define MDIO_PCS_B10L_STAT_DSCR_STAT_OK_LL		BIT(2)
+
+/* Auto-negotiation Register: EEE advertisement Register */
+/** Advertise 1000T capability */
+#define MDIO_AN_EEE_ADV_1000T				BIT(2)
+/** Advertise 100TX capability */
+#define MDIO_AN_EEE_ADV_100TX				BIT(1)
 
 #ifdef __cplusplus
 }

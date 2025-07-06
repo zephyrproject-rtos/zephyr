@@ -112,8 +112,6 @@ static int can_loopback_send(const struct device *dev,
 	uint8_t max_dlc = CAN_MAX_DLC;
 	int ret;
 
-	__ASSERT_NO_MSG(callback != NULL);
-
 	LOG_DBG("Sending %d bytes on %s. Id: 0x%x, ID type: %s %s",
 		frame->dlc, dev->name, frame->id,
 		(frame->flags & CAN_FRAME_IDE) != 0 ? "extended" : "standard",
@@ -354,7 +352,7 @@ static int can_loopback_get_core_clock(const struct device *dev, uint32_t *rate)
 {
 	ARG_UNUSED(dev);
 
-	/* Recommended CAN clock from from CiA 601-3 */
+	/* Recommended CAN clock from CiA 601-3 */
 	*rate = MHZ(80);
 
 	return 0;
@@ -367,7 +365,7 @@ static int can_loopback_get_max_filters(const struct device *dev, bool ide)
 	return CONFIG_CAN_MAX_FILTER;
 }
 
-static const struct can_driver_api can_loopback_driver_api = {
+static DEVICE_API(can, can_loopback_driver_api) = {
 	.get_capabilities = can_loopback_get_capabilities,
 	.start = can_loopback_start,
 	.stop = can_loopback_stop,
@@ -438,6 +436,8 @@ static int can_loopback_init(const struct device *dev)
 		LOG_ERR("ERROR spawning tx thread");
 		return -1;
 	}
+
+	k_thread_name_set(tx_tid, dev->name);
 
 	return 0;
 }

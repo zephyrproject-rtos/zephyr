@@ -5,6 +5,5 @@
 source "drivers/sensor/microchip/mchp_tach_xec/Kconfig"
 source "drivers/sensor/microchip/mcp9600/Kconfig"
 source "drivers/sensor/microchip/mcp970x/Kconfig"
-source "drivers/sensor/microchip/mcp9808/Kconfig"
 source "drivers/sensor/microchip/tcn75a/Kconfig"
 # zephyr-keep-sorted-stop

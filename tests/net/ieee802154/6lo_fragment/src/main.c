@@ -290,9 +290,9 @@ static struct net_pkt *create_pkt(struct net_fragment_data *data)
 	}
 
 	/* Setup link layer addresses. */
-	net_pkt_lladdr_dst(pkt)->addr = (uint8_t *)&dummy_short_addr;
-	net_pkt_lladdr_dst(pkt)->len = sizeof(dummy_short_addr);
-	net_pkt_lladdr_dst(pkt)->type = NET_LINK_IEEE802154;
+	(void)net_linkaddr_create(net_pkt_lladdr_dst(pkt),
+				  (const uint8_t *)&dummy_short_addr, sizeof(dummy_short_addr),
+				  NET_LINK_IEEE802154);
 
 	memcpy(net_pkt_lladdr_src(pkt),
 	       net_if_get_link_addr(

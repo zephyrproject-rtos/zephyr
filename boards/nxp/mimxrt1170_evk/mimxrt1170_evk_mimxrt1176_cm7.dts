@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_rt11xx_cm7.dtsi>
+#include <nxp/nxp_rt1170_cm7.dtsi>
 #include "mimxrt1170_evk.dtsi"
 
 / {
@@ -28,6 +28,7 @@
 		zephyr,flash-controller = &is25wp128;
 		zephyr,flash = &is25wp128;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &lpuart1;
 		zephyr,cpu1-region = &ocram;
 		zephyr,ipc = &mailbox_a;
 	};
@@ -59,6 +60,31 @@
 				<32 0 &gpio11 16 0>,	/* Pin 32, PWR_EN */
 				<34 0 &gpio9 29 0>;	/* Pin 34, BL_PWM */
 	};
+
+	/*
+	 * This node describes the GPIO pins mapping of the 44-pin camera
+	 * connector, J2 on the EVK. This camera interface is supported
+	 * on several NXP RT11xx EVKs, such as RT1170 and RT1160 EVK and
+	 * is used with an ov5640 camera module available as a Zephyr shield
+	 */
+	nxp_cam_connector: cam-connector {
+		compatible = "nxp,cam-44pins-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<9 0 &gpio11 15 0>,	/* Pin 9, RESETB */
+				<17 0 &gpio9 25  0>;	/* Pin 17, PWDN */
+	};
+
+	zephyr,user {
+		dac = <&dac>;
+		dac-channel-id = <0>;
+		dac-resolution = <12>;
+	};
+};
+
+&dac {
+	status = "okay";
 };
 
 zephyr_lcdif: &lcdif {};
@@ -74,8 +100,6 @@ zephyr_mipi_dsi: &mipi_dsi {
 
 &flexcan3 {
 	status = "okay";
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 	can-transceiver {
 		max-bitrate = <5000000>;
 	};
@@ -104,6 +128,7 @@ nxp_mipi_i2c: &lpi2c5 {
 	pwr-gpios = <&gpio10 2 GPIO_ACTIVE_LOW>;
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
 		status = "okay";
 	};
 };
@@ -135,6 +160,14 @@ nxp_mipi_i2c: &lpi2c5 {
 
 zephyr_udc0: &usb1 {
 	status = "okay";
+	phy-handle = <&usbphy1>;
+};
+
+&usbphy1 {
+	status = "okay";
+	tx-d-cal = <7>;
+	tx-cal-45-dp-ohms = <6>;
+	tx-cal-45-dm-ohms = <6>;
 };
 
 &mailbox_a {
@@ -148,3 +181,9 @@ zephyr_udc0: &usb1 {
 &pit2 {
 	status = "okay";
 };
+
+nxp_cam_i2c: &lpi2c6 {};
+
+nxp_mipi_csi: &mipi_csi2rx {};
+
+nxp_csi: &csi {};

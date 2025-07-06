@@ -924,9 +924,9 @@ static void test_cli_trans_complete(void)
 	blob_cli_inputs_prepare(BLOB_GROUP_ADDR);
 	blob_cli_xfer.xfer.mode =
 		is_pull_mode ? BT_MESH_BLOB_XFER_MODE_PULL : BT_MESH_BLOB_XFER_MODE_PUSH;
-	blob_cli_xfer.xfer.size = CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MAX * 2;
+	blob_cli_xfer.xfer.size = CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MIN * 4;
 	blob_cli_xfer.xfer.id = 1;
-	blob_cli_xfer.xfer.block_size_log = 12;
+	blob_cli_xfer.xfer.block_size_log = 9;
 	blob_cli_xfer.xfer.chunk_size = 377;
 	blob_cli_xfer.inputs.timeout_base = 10;
 
@@ -999,9 +999,9 @@ static void test_cli_trans_resume(void)
 	blob_cli_inputs_prepare(BLOB_GROUP_ADDR);
 	blob_cli_xfer.xfer.mode =
 		is_pull_mode ? BT_MESH_BLOB_XFER_MODE_PULL : BT_MESH_BLOB_XFER_MODE_PUSH;
-	blob_cli_xfer.xfer.size = CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MAX * 2;
+	blob_cli_xfer.xfer.size = CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MIN * 4;
 	blob_cli_xfer.xfer.id = 1;
-	blob_cli_xfer.xfer.block_size_log = 12;
+	blob_cli_xfer.xfer.block_size_log = 9;
 	blob_cli_xfer.xfer.chunk_size = 377;
 	blob_cli_xfer.inputs.timeout_base = 10;
 
@@ -1054,7 +1054,7 @@ static void test_srv_trans_resume(void)
 	bt_mesh_blob_srv_recv(&blob_srv, 1, &blob_io, 0, 10);
 
 	/* Let server receive a couple of chunks from second block before disruption */
-	for (int i = 0; i < 3; i++) {
+	for (int i = 0; i < 2; i++) {
 		if (k_sem_take(&first_block_wr_sem, K_SECONDS(180))) {
 			FAIL("Server did not receive the first BLOB block");
 		}
@@ -1220,9 +1220,9 @@ static void cli_common_fail_on_init(void)
 
 	blob_cli_inputs_prepare(BLOB_GROUP_ADDR);
 	blob_cli_xfer.xfer.mode = BT_MESH_BLOB_XFER_MODE_PUSH;
-	blob_cli_xfer.xfer.size = CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MAX * 1;
+	blob_cli_xfer.xfer.size = CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MIN * 2;
 	blob_cli_xfer.xfer.id = 1;
-	blob_cli_xfer.xfer.block_size_log = 12;
+	blob_cli_xfer.xfer.block_size_log = 9;
 	blob_cli_xfer.xfer.chunk_size = 377;
 	blob_cli_xfer.inputs.timeout_base = 10;
 }
@@ -1422,9 +1422,9 @@ static void cli_stop_setup(void)
 	blob_cli_inputs_prepare(BLOB_GROUP_ADDR);
 	blob_cli_xfer.xfer.mode =
 		is_pull_mode ? BT_MESH_BLOB_XFER_MODE_PULL : BT_MESH_BLOB_XFER_MODE_PUSH;
-	blob_cli_xfer.xfer.size = CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MAX * 2;
+	blob_cli_xfer.xfer.size = CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MIN * 4;
 	blob_cli_xfer.xfer.id = 1;
-	blob_cli_xfer.xfer.block_size_log = 12;
+	blob_cli_xfer.xfer.block_size_log = 9;
 	blob_cli_xfer.xfer.chunk_size = 377;
 	blob_cli_xfer.inputs.timeout_base = 10;
 }
@@ -1444,7 +1444,7 @@ static void test_cli_stop(void)
 {
 	int err;
 
-	bt_mesh_test_cfg_set(NULL, 1000);
+	bt_mesh_test_cfg_set(NULL, 500);
 	k_sem_init(&blob_caps_sem, 0, 1);
 	k_sem_init(&lost_target_sem, 0, 1);
 	k_sem_init(&blob_cli_end_sem, 0, 1);
@@ -1526,8 +1526,8 @@ static void srv_check_reboot_and_continue(void)
 	ASSERT_EQUAL(BLOB_CLI_ADDR, blob_srv.state.cli);
 	ASSERT_EQUAL(1, blob_srv.state.timeout_base);
 	ASSERT_EQUAL(BT_MESH_RX_SDU_MAX - BT_MESH_MIC_SHORT, blob_srv.state.mtu_size);
-	ASSERT_EQUAL(CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MAX * 2, blob_srv.state.xfer.size);
-	ASSERT_EQUAL(12, blob_srv.state.xfer.block_size_log);
+	ASSERT_EQUAL(CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MIN * 4, blob_srv.state.xfer.size);
+	ASSERT_EQUAL(9, blob_srv.state.xfer.block_size_log);
 	ASSERT_EQUAL(1, blob_srv.state.xfer.id);
 	ASSERT_TRUE(blob_srv.state.xfer.mode != BT_MESH_BLOB_XFER_MODE_NONE);
 	/* First block should be already received, second one pending */
@@ -1539,7 +1539,7 @@ static void srv_check_reboot_and_continue(void)
 
 static void test_srv_stop(void)
 {
-	bt_mesh_test_cfg_set(NULL, 1000);
+	bt_mesh_test_cfg_set(NULL, 500);
 	k_sem_init(&blob_srv_end_sem, 0, 1);
 	k_sem_init(&first_block_wr_sem, 0, 1);
 	k_sem_init(&blob_srv_suspend_sem, 0, 1);
@@ -1594,7 +1594,7 @@ static void test_cli_friend_pull(void)
 {
 	int err;
 
-	bt_mesh_test_cfg_set(NULL, 1000);
+	bt_mesh_test_cfg_set(NULL, 500);
 
 	bt_mesh_test_friendship_init(1);
 
@@ -1629,7 +1629,7 @@ static void test_cli_friend_pull(void)
 
 static void test_srv_lpn_pull(void)
 {
-	bt_mesh_test_cfg_set(NULL, 1000);
+	bt_mesh_test_cfg_set(NULL, 500);
 
 	bt_mesh_test_friendship_init(1);
 

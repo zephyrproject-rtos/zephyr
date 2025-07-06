@@ -4,11 +4,9 @@
 if SOC_BCM2711
 
 config NUM_IRQS
-	int
 	default 260
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	int
 	default 54000000
 
 endif

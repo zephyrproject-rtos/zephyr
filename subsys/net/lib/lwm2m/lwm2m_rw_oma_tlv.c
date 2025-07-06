@@ -745,14 +745,13 @@ static int get_opaque(struct lwm2m_input_context *in, uint8_t *value,
 	int size;
 
 	/* Get the TLV header only on first read. */
-	if (opaque->remaining == 0) {
+	if (opaque->offset == 0) {
 		size = oma_tlv_get(&tlv, in, false);
 		if (size < 0) {
 			return size;
 		}
 
 		opaque->len = tlv.length;
-		opaque->remaining = tlv.length;
 	}
 
 	return lwm2m_engine_get_opaque_more(in, value, buflen,
@@ -907,6 +906,27 @@ static int write_tlv_resource(struct lwm2m_message *msg, struct oma_tlv *tlv)
 	return 0;
 }
 
+#if defined(CONFIG_LWM2M_VERSION_1_1)
+static int write_tlv_resource_instance(struct lwm2m_message *msg, struct oma_tlv *tlv)
+{
+	int ret;
+
+	if (msg->in.block_ctx) {
+		msg->in.block_ctx->path.res_inst_id = tlv->id;
+	}
+
+	msg->path.res_inst_id = tlv->id;
+	msg->path.level = LWM2M_PATH_LEVEL_RESOURCE_INST;
+	ret = do_write_op_tlv_item(msg);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	return 0;
+}
+#endif
+
 static int lwm2m_multi_resource_tlv_parse(struct lwm2m_message *msg,
 					  struct oma_tlv *multi_resource_tlv)
 {
@@ -959,9 +979,11 @@ int do_write_op_tlv(struct lwm2m_message *msg)
 	struct oma_tlv tlv;
 	int ret;
 
-	/* In case of block transfer go directly to the
-	 * message processing - consecutive blocks will not carry the TLV
-	 * header.
+	/* In case of block transfer, check if there are any fragments
+	 * left from the previous resource (instance). If this is the
+	 * case, proceed directly to processing the message -
+	 * consecutive blocks from the same resource do not carry the
+	 * TLV header.
 	 */
 	if (msg->in.block_ctx != NULL && msg->in.block_ctx->ctx.current > 0) {
 		msg->path.res_id = msg->in.block_ctx->path.res_id;
@@ -971,7 +993,6 @@ int do_write_op_tlv(struct lwm2m_message *msg)
 			return ret;
 		}
 
-		return 0;
 	}
 
 	while (true) {
@@ -1043,6 +1064,16 @@ int do_write_op_tlv(struct lwm2m_message *msg)
 			if (ret) {
 				return ret;
 			}
+#if defined(CONFIG_LWM2M_VERSION_1_1)
+		} else if (tlv.type == OMA_TLV_TYPE_RESOURCE_INSTANCE) {
+			if (msg->path.level < LWM2M_PATH_LEVEL_OBJECT_INST) {
+				return -ENOTSUP;
+			}
+			ret = write_tlv_resource_instance(msg, &tlv);
+			if (ret) {
+				return ret;
+			}
+#endif
 		} else {
 			return -ENOTSUP;
 		}

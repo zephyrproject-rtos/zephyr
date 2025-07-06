@@ -70,7 +70,9 @@ int coap_well_known_core_get_len(struct coap_resource *resources,
  * to a valid coap_core_metadata structure.
  */
 struct coap_core_metadata {
+	/** List of attributes to add */
 	const char * const *attributes;
+	/** User specific data */
 	void *user_data;
 };
 

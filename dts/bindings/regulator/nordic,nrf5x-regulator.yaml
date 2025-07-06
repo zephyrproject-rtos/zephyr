@@ -1,0 +1,24 @@
+# Copyright (c), 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nordic nRF5X regulator (fixed stage of the core supply)
+
+compatible: "nordic,nrf5x-regulator"
+
+include:
+  - name: base.yaml
+  - name: regulator.yaml
+    property-allowlist:
+      - regulator-name
+      - regulator-initial-mode
+
+properties:
+  reg:
+    required: true
+
+  regulator-name:
+    required: true
+
+  regulator-initial-mode:
+    required: true

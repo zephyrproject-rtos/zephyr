@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT adi_adxl367
-
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/util.h>
@@ -16,6 +14,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(ADXL367, CONFIG_SENSOR_LOG_LEVEL);
 
+#if defined(CONFIG_ADXL367_TRIGGER_OWN_THREAD) || defined(CONFIG_ADXL367_TRIGGER_GLOBAL_THREAD)
 static void adxl367_thread_cb(const struct device *dev)
 {
 	const struct adxl367_dev_config *cfg = dev->config;
@@ -45,6 +44,7 @@ static void adxl367_thread_cb(const struct device *dev)
 					      GPIO_INT_EDGE_TO_ACTIVE);
 	__ASSERT(ret == 0, "Interrupt configuration failed");
 }
+#endif /* CONFIG_ADXL367_TRIGGER_OWN_THREAD || CONFIG_ADXL367_TRIGGER_GLOBAL_THREAD */
 
 static void adxl367_gpio_callback(const struct device *dev,
 				  struct gpio_callback *cb, uint32_t pins)
@@ -54,6 +54,10 @@ static void adxl367_gpio_callback(const struct device *dev,
 	const struct adxl367_dev_config *cfg = drv_data->dev->config;
 
 	gpio_pin_interrupt_configure_dt(&cfg->interrupt, GPIO_INT_DISABLE);
+
+	if (IS_ENABLED(CONFIG_ADXL367_STREAM)) {
+		adxl367_stream_irq_handler(drv_data->dev);
+	}
 
 #if defined(CONFIG_ADXL367_TRIGGER_OWN_THREAD)
 	k_sem_give(&drv_data->gpio_sem);
@@ -174,6 +178,8 @@ int adxl367_init_interrupt(const struct device *dev)
 			(k_thread_entry_t)adxl367_thread, drv_data,
 			NULL, NULL, K_PRIO_COOP(CONFIG_ADXL367_THREAD_PRIORITY),
 			0, K_NO_WAIT);
+
+	k_thread_name_set(&drv_data->thread, dev->name);
 #elif defined(CONFIG_ADXL367_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = adxl367_work_cb;
 #endif

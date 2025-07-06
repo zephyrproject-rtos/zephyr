@@ -12,8 +12,10 @@
 #include <zephyr/debug/gcov.h>
 #endif
 
+struct k_thread crash_thread;
+K_THREAD_STACK_DEFINE(crash_stack, CONFIG_MAIN_STACK_SIZE);
 
-void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
 {
 	ARG_UNUSED(pEsf);
 
@@ -30,14 +32,19 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
  */
 __no_optimization void func_3(uint32_t *addr)
 {
+	/* clang-format off */
 #if defined(CONFIG_BOARD_M2GL025_MIV) || \
 	defined(CONFIG_BOARD_HIFIVE1) || \
 	defined(CONFIG_BOARD_HIFIVE_UNLEASHED) || \
 	defined(CONFIG_BOARD_HIFIVE_UNMATCHED) || \
+	defined(CONFIG_BOARD_MPFS_ICICLE) || \
 	defined(CONFIG_BOARD_LONGAN_NANO) || \
 	defined(CONFIG_BOARD_QEMU_XTENSA) || \
 	defined(CONFIG_BOARD_RISCV32_VIRTUAL) || \
-	defined(CONFIG_SOC_FAMILY_INTEL_ADSP)
+	defined(CONFIG_SOC_FAMILY_INTEL_ISH) || \
+	defined(CONFIG_SOC_FAMILY_INTEL_ADSP) || \
+	defined(CONFIG_SOC_FAMILY_OPENHWGROUP_CVA6)
+	/* clang-format on */
 	ARG_UNUSED(addr);
 	/* Call k_panic() directly so Renode doesn't pause execution.
 	 * Needed on ADSP as well, since null pointer derefence doesn't
@@ -68,10 +75,16 @@ void func_1(uint32_t *addr)
 	func_2(addr);
 }
 
-int main(void)
+static void crash_entry(void *p1, void *p2, void *p3)
 {
 	printk("Coredump: %s\n", CONFIG_BOARD);
 
 	func_1(0);
+}
+
+int main(void)
+{
+	k_thread_create(&crash_thread, crash_stack, CONFIG_MAIN_STACK_SIZE, crash_entry, NULL, NULL,
+			NULL, -1, IS_ENABLED(CONFIG_USERSPACE) ? K_USER : 0, K_NO_WAIT);
 	return 0;
 }

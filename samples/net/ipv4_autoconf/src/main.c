@@ -20,10 +20,12 @@ LOG_MODULE_REGISTER(net_ipv4_autoconf_sample, LOG_LEVEL_DBG);
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/net_mgmt.h>
 
+#include "net_sample_common.h"
+
 static struct net_mgmt_event_callback mgmt_cb;
 
 static void handler(struct net_mgmt_event_callback *cb,
-		    uint32_t mgmt_event,
+		    uint64_t mgmt_event,
 		    struct net_if *iface)
 {
 	int i = 0;
@@ -59,6 +61,8 @@ static void handler(struct net_mgmt_event_callback *cb,
 int main(void)
 {
 	LOG_INF("Run ipv4 autoconf client");
+
+	wait_for_network();
 
 	net_mgmt_init_event_callback(&mgmt_cb, handler,
 				     NET_EVENT_IPV4_ADDR_ADD);

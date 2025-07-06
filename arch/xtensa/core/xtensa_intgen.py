@@ -105,13 +105,11 @@ for l in ints_by_lvl:
         cprint("#endif")
 cprint("")
 
-# Populate empty levels just for sanity.  The second-to-last interrupt
-# level (usually "debug") typically doesn't have any associated
-# vectors, but we don't have any way to know that a-prioi.
-max = 0
-for lvl in ints_by_lvl:
-    if lvl > max:
-        max = lvl
+# Populate all theoretical levels just in case.  Odd cores have been
+# seen in the wild with "empty" interrupt levels that exist in the
+# hardware but without any interrupts associated with them.  The
+# unused handlers will be ignored if uncalled.
+max = 15
 
 for lvl in range(0, max+1):
     if not lvl in ints_by_lvl:
@@ -119,7 +117,8 @@ for lvl in range(0, max+1):
 
 # Emit the handlers
 for lvl in ints_by_lvl:
-    cprint("static inline int _xtensa_handle_one_int" + str(lvl) + "(unsigned int mask)")
+    cprint("static inline int _xtensa_handle_one_int" +
+        str(lvl) + "(unsigned int set, unsigned int mask)")
     cprint("{")
 
     if not ints_by_lvl[lvl]:
@@ -130,11 +129,14 @@ for lvl in ints_by_lvl:
     cprint("int irq;")
     print("")
 
-    emit_int_handler(sorted(ints_by_lvl[lvl]))
+    if int(len(ints_by_lvl[lvl])) > 32:
+        emit_int_handler((sorted(ints_by_lvl[lvl]))[0:31])
+    else:
+        emit_int_handler(sorted(ints_by_lvl[lvl]))
 
     cprint("return 0;")
     cprint("handle_irq:")
-    cprint("_sw_isr_table[irq].isr(_sw_isr_table[irq].arg);")
+    cprint("_sw_isr_table[set * 32 + irq].isr(_sw_isr_table[set * 32 + irq].arg);")
     cprint("return mask;")
     cprint("}")
     cprint("")

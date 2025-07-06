@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 Linaro Limited
+ * Copyright (c) 2024 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,10 +13,12 @@
 / {
 	leds {
 		compatible = "gpio-leds";
+
 		green_led_1: led_1 {
 			gpios = <&gpioh 7 GPIO_ACTIVE_LOW>;
 			label = "User LD7";
 		};
+
 		red_led_1: led_3 {
 			gpios = <&gpioh 6 GPIO_ACTIVE_LOW>;
 			label = "User LD6";
@@ -24,6 +27,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User";
 			gpios = <&gpioc 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
@@ -34,7 +38,6 @@
 
 	aliases {
 		watchdog0 = &iwdg;
-		spi-flash0 = &mx25lm51245;
 		die-temp0 = &die_temp;
 		volt-sensor0 = &vref1;
 		volt-sensor1 = &vbat4;
@@ -104,6 +107,7 @@ stm32_lp_tick_source: &lptim1 {
 &timers4 {
 	status = "okay";
 	st,prescaler = <1>;
+
 	pwm4: pwm {
 		status = "okay";
 		pinctrl-0 = <&tim4_ch1_pb6>;
@@ -114,6 +118,7 @@ stm32_lp_tick_source: &lptim1 {
 &timers3 {
 	status = "okay";
 	st,prescaler = <255>;
+
 	pwm3: pwm {
 		status = "okay";
 		pinctrl-0 = <&tim3_ch2_pe4>;
@@ -132,9 +137,10 @@ stm32_lp_tick_source: &lptim1 {
 
 	status = "okay";
 
-	mx25lm51245: ospi-nor-flash@70000000 {
+	mx25lm51245: ospi-nor-flash@0 {
 		compatible = "st,stm32-ospi-nor";
-		reg = <0x70000000 DT_SIZE_M(64)>; /* 512 Mbits */
+		reg = <0>;
+		size = <DT_SIZE_M(512)>; /* 512 Megabits */
 		ospi-max-frequency = <DT_FREQ_M(50)>;
 		spi-bus-width = <OSPI_OPI_MODE>;
 		data-rate = <OSPI_DTR_TRANSFER>;
@@ -142,13 +148,13 @@ stm32_lp_tick_source: &lptim1 {
 		status = "okay";
 
 		partitions {
-			   compatible = "fixed-partitions";
-			   #address-cells = <1>;
-			   #size-cells = <1>;
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-			   partition@0 {
-			       reg = <0x00000000 DT_SIZE_M(64)>;
-			   };
+			partition@0 {
+				reg = <0x00000000 DT_SIZE_M(64)>;
+			};
 		};
 	};
 };
@@ -223,7 +229,7 @@ zephyr_udc0: &usbotg_fs {
 &adc1 {
 	pinctrl-0 = <&adc1_in15_pb0>;
 	pinctrl-names = "default";
-	st,adc-clock-source = <ASYNC>;
+	st,adc-clock-source = "ASYNC";
 	st,adc-prescaler = <4>;
 	status = "okay";
 };
@@ -231,7 +237,7 @@ zephyr_udc0: &usbotg_fs {
 &adc4 {
 	pinctrl-0 = <&adc4_in19_pb1>;
 	pinctrl-names = "default";
-	st,adc-clock-source = <ASYNC>;
+	st,adc-clock-source = "ASYNC";
 	st,adc-prescaler = <4>;
 	status = "okay";
 };
@@ -243,6 +249,12 @@ zephyr_udc0: &usbotg_fs {
 &dac1 {
 	pinctrl-0 = <&dac1_out1_pa4>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00200000>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	status = "okay";
 };
 

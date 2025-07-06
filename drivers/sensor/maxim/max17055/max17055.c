@@ -469,7 +469,7 @@ static int max17055_gauge_init(const struct device *dev)
 	return max17055_reg_write(dev, STATUS, tmp);
 }
 
-static const struct sensor_driver_api max17055_battery_driver_api = {
+static DEVICE_API(sensor, max17055_battery_driver_api) = {
 	.sample_fetch = max17055_sample_fetch,
 	.channel_get = max17055_channel_get,
 };

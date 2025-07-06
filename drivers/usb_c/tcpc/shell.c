@@ -54,7 +54,7 @@ static int cmd_tcpc_dump(const struct shell *sh, size_t argc, char **argv)
 	if (argc <= 1) {
 		DT_FOREACH_STATUS_OKAY(usb_c_connector, TCPC_DUMP_CONN_NODE);
 	} else {
-		const struct device *dev = device_get_binding(argv[1]);
+		const struct device *dev = shell_device_get_binding(argv[1]);
 
 		if (dev != NULL) {
 			TCPC_DUMP_DEV(dev);
@@ -81,7 +81,7 @@ static int cmd_tcpc_vbus(const struct shell *sh, size_t argc, char **argv)
 	if (argc <= 1) {
 		DT_FOREACH_STATUS_OKAY(usb_c_connector, TCPC_VBUS_CONN_NODE);
 	} else {
-		const struct device *dev = device_get_binding(argv[1]);
+		const struct device *dev = shell_device_get_binding(argv[1]);
 
 		if (dev != NULL) {
 			TCPC_VBUS_DEV(dev);
@@ -109,7 +109,7 @@ static int cmd_tcpc_chip_info(const struct shell *sh, size_t argc, char **argv)
 	if (argc <= 1) {
 		DT_FOREACH_STATUS_OKAY(usb_c_connector, TCPC_GET_CHIP_CONN_NODE);
 	} else {
-		const struct device *dev = device_get_binding(argv[1]);
+		const struct device *dev = shell_device_get_binding(argv[1]);
 
 		if (dev != NULL) {
 			TCPC_GET_CHIP_DEV(dev);

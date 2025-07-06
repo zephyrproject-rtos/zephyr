@@ -1,0 +1,23 @@
+identifier: max32672fthr
+name: max32672fthr
+vendor: adi
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - serial
+  - trng
+  - i2c
+  - dma
+  - watchdog
+  - spi
+  - adc
+  - counter
+  - rtc_counter
+  - pwm
+  - flash
+ram: 200
+flash: 1024

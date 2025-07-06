@@ -20,6 +20,11 @@ struct can_shell_tx_event {
 	int error;
 };
 
+struct can_shell_rx_event {
+	struct can_frame frame;
+	const struct device *dev;
+};
+
 struct can_shell_mode_mapping {
 	const char *name;
 	can_mode_t mode;
@@ -49,7 +54,8 @@ static struct k_poll_event can_shell_tx_msgq_events[] = {
 					&can_shell_tx_msgq, 0)
 };
 
-CAN_MSGQ_DEFINE(can_shell_rx_msgq, CONFIG_CAN_SHELL_RX_QUEUE_SIZE);
+K_MSGQ_DEFINE(can_shell_rx_msgq, sizeof(struct can_shell_rx_event),
+	      CONFIG_CAN_SHELL_RX_QUEUE_SIZE, 4);
 const struct shell *can_shell_rx_msgq_sh;
 static struct k_work_poll can_shell_rx_msgq_work;
 static struct k_poll_event can_shell_rx_msgq_events[] = {
@@ -62,46 +68,72 @@ static struct k_poll_event can_shell_rx_msgq_events[] = {
 static void can_shell_tx_msgq_triggered_work_handler(struct k_work *work);
 static void can_shell_rx_msgq_triggered_work_handler(struct k_work *work);
 
-static void can_shell_print_frame(const struct shell *sh, const struct can_frame *frame)
+static bool can_device_check(const struct device *dev)
+{
+	return DEVICE_API_IS(can, dev) && device_is_ready(dev);
+}
+
+#ifdef CONFIG_CAN_SHELL_SCRIPTING_FRIENDLY
+static void can_shell_dummy_bypass_cb(const struct shell *sh, uint8_t *data, size_t len)
+{
+	ARG_UNUSED(sh);
+	ARG_UNUSED(data);
+	ARG_UNUSED(len);
+}
+#endif /* CONFIG_CAN_SHELL_SCRIPTING_FRIENDLY */
+
+static void can_shell_print_frame(const struct shell *sh, const struct device *dev,
+				  const struct can_frame *frame)
 {
 	uint8_t nbytes = can_dlc_to_bytes(frame->dlc);
 	int i;
 
+#ifdef CONFIG_CAN_SHELL_SCRIPTING_FRIENDLY
+	/* Bypass the shell to avoid breaking up the line containing the frame */
+	shell_set_bypass(sh, can_shell_dummy_bypass_cb);
+#endif /* CONFIG_CAN_SHELL_SCRIPTING_FRIENDLY */
+
 #ifdef CONFIG_CAN_RX_TIMESTAMP
 	/* Timestamp */
-	shell_fprintf(sh, SHELL_NORMAL, "(%05d)  ", frame->timestamp);
+	shell_fprintf_normal(sh, "(%05d)  ", frame->timestamp);
 #endif /* CONFIG_CAN_RX_TIMESTAMP */
+
+	shell_fprintf_normal(sh, "%s  ", dev->name);
 
 #ifdef CONFIG_CAN_FD_MODE
 	/* Flags */
-	shell_fprintf(sh, SHELL_NORMAL, "%c%c  ",
-		      (frame->flags & CAN_FRAME_BRS) == 0 ? '-' : 'B',
-		      (frame->flags & CAN_FRAME_ESI) == 0 ? '-' : 'P');
+	shell_fprintf_normal(sh, "%c%c  ",
+			     (frame->flags & CAN_FRAME_BRS) == 0 ? '-' : 'B',
+			     (frame->flags & CAN_FRAME_ESI) == 0 ? '-' : 'P');
 #endif /* CONFIG_CAN_FD_MODE */
 
 	/* CAN ID */
-	shell_fprintf(sh, SHELL_NORMAL, "%*s%0*x  ",
-		(frame->flags & CAN_FRAME_IDE) != 0 ? 0 : 5, "",
-		(frame->flags & CAN_FRAME_IDE) != 0 ? 8 : 3,
-		(frame->flags & CAN_FRAME_IDE) != 0 ?
-		frame->id & CAN_EXT_ID_MASK : frame->id & CAN_STD_ID_MASK);
+	shell_fprintf_normal(sh, "%*s%0*x  ",
+			     (frame->flags & CAN_FRAME_IDE) != 0 ? 0 : 5, "",
+			     (frame->flags & CAN_FRAME_IDE) != 0 ? 8 : 3,
+			     (frame->flags & CAN_FRAME_IDE) != 0 ?
+			     frame->id & CAN_EXT_ID_MASK : frame->id & CAN_STD_ID_MASK);
 
 	/* DLC as number of bytes */
-	shell_fprintf(sh, SHELL_NORMAL, "%s[%0*d]  ",
-		(frame->flags & CAN_FRAME_FDF) != 0 ? "" : " ",
-		(frame->flags & CAN_FRAME_FDF) != 0 ? 2 : 1,
-		nbytes);
+	shell_fprintf_normal(sh, "%s[%0*d]  ",
+			     (frame->flags & CAN_FRAME_FDF) != 0 ? "" : " ",
+			     (frame->flags & CAN_FRAME_FDF) != 0 ? 2 : 1,
+			     nbytes);
 
 	/* Data payload */
 	if ((frame->flags & CAN_FRAME_RTR) != 0) {
-		shell_fprintf(sh, SHELL_NORMAL, "remote transmission request");
+		shell_fprintf_normal(sh, "remote transmission request");
 	} else {
 		for (i = 0; i < nbytes; i++) {
-			shell_fprintf(sh, SHELL_NORMAL, "%02x ", frame->data[i]);
+			shell_fprintf_normal(sh, "%02x ", frame->data[i]);
 		}
 	}
 
-	shell_fprintf(sh, SHELL_NORMAL, "\n");
+	shell_fprintf_normal(sh, "\n");
+
+#ifdef CONFIG_CAN_SHELL_SCRIPTING_FRIENDLY
+	shell_set_bypass(sh, NULL);
+#endif /* CONFIG_CAN_SHELL_SCRIPTING_FRIENDLY */
 }
 
 static int can_shell_tx_msgq_poll_submit(const struct shell *sh)
@@ -156,6 +188,23 @@ static void can_shell_tx_callback(const struct device *dev, int error, void *use
 	}
 }
 
+static void can_shell_rx_callback(const struct device *dev, struct can_frame *frame,
+				  void *user_data)
+{
+	struct can_shell_rx_event event;
+	int err;
+
+	ARG_UNUSED(user_data);
+
+	event.frame = *frame;
+	event.dev = dev;
+
+	err = k_msgq_put(&can_shell_rx_msgq, &event, K_NO_WAIT);
+	if (err != 0) {
+		LOG_ERR("CAN shell rx event queue full");
+	}
+}
+
 static int can_shell_rx_msgq_poll_submit(const struct shell *sh)
 {
 	int err;
@@ -177,10 +226,10 @@ static int can_shell_rx_msgq_poll_submit(const struct shell *sh)
 
 static void can_shell_rx_msgq_triggered_work_handler(struct k_work *work)
 {
-	struct can_frame frame;
+	struct can_shell_rx_event event;
 
-	while (k_msgq_get(&can_shell_rx_msgq, &frame, K_NO_WAIT) == 0) {
-		can_shell_print_frame(can_shell_rx_msgq_sh, &frame);
+	while (k_msgq_get(&can_shell_rx_msgq, &event, K_NO_WAIT) == 0) {
+		can_shell_print_frame(can_shell_rx_msgq_sh, event.dev, &event.frame);
 	}
 
 	(void)can_shell_rx_msgq_poll_submit(can_shell_rx_msgq_sh);
@@ -218,24 +267,24 @@ static void can_shell_print_extended_modes(const struct shell *sh, can_mode_t ca
 		/* Lookup symbolic mode name */
 		for (i = 0; i < ARRAY_SIZE(can_shell_mode_map); i++) {
 			if (BIT(bit) == can_shell_mode_map[i].mode) {
-				shell_fprintf(sh, SHELL_NORMAL, "%s ", can_shell_mode_map[i].name);
+				shell_fprintf_normal(sh, "%s ", can_shell_mode_map[i].name);
 				break;
 			}
 		}
 
 		if (i == ARRAY_SIZE(can_shell_mode_map)) {
 			/* Symbolic name not found, use raw mode */
-			shell_fprintf(sh, SHELL_NORMAL, "0x%08x ", (can_mode_t)BIT(bit));
+			shell_fprintf_normal(sh, "0x%08x ", (can_mode_t)BIT(bit));
 		}
 	}
 }
 
 static int cmd_can_start(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct device *dev = device_get_binding(argv[1]);
+	const struct device *dev = shell_device_get_binding(argv[1]);
 	int err;
 
-	if (!device_is_ready(dev)) {
+	if (!can_device_check(dev)) {
 		shell_error(sh, "device %s not ready", argv[1]);
 		return -ENODEV;
 	}
@@ -253,10 +302,10 @@ static int cmd_can_start(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_can_stop(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct device *dev = device_get_binding(argv[1]);
+	const struct device *dev = shell_device_get_binding(argv[1]);
 	int err;
 
-	if (!device_is_ready(dev)) {
+	if (!can_device_check(dev)) {
 		shell_error(sh, "device %s not ready", argv[1]);
 		return -ENODEV;
 	}
@@ -274,7 +323,7 @@ static int cmd_can_stop(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_can_show(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct device *dev = device_get_binding(argv[1]);
+	const struct device *dev = shell_device_get_binding(argv[1]);
 	const struct device *phy;
 	const struct can_timing *timing_min;
 	const struct can_timing *timing_max;
@@ -287,7 +336,7 @@ static int cmd_can_show(const struct shell *sh, size_t argc, char **argv)
 	can_mode_t cap;
 	int err;
 
-	if (!device_is_ready(dev)) {
+	if (!can_device_check(dev)) {
 		shell_error(sh, "device %s not ready", argv[1]);
 		return -ENODEV;
 	}
@@ -329,13 +378,13 @@ static int cmd_can_show(const struct shell *sh, size_t argc, char **argv)
 	shell_print(sh, "max std filters: %d", max_std_filters);
 	shell_print(sh, "max ext filters: %d", max_ext_filters);
 
-	shell_fprintf(sh, SHELL_NORMAL, "capabilities:    normal ");
+	shell_fprintf_normal(sh, "capabilities:    normal ");
 	can_shell_print_extended_modes(sh, cap);
-	shell_fprintf(sh, SHELL_NORMAL, "\n");
+	shell_fprintf_normal(sh, "\n");
 
-	shell_fprintf(sh, SHELL_NORMAL, "mode:            normal ");
+	shell_fprintf_normal(sh, "mode:            normal ");
 	can_shell_print_extended_modes(sh, can_get_mode(dev));
-	shell_fprintf(sh, SHELL_NORMAL, "\n");
+	shell_fprintf_normal(sh, "\n");
 
 	shell_print(sh, "state:           %s", can_shell_state_to_string(state));
 	shell_print(sh, "rx errors:       %d", err_cnt.rx_err_cnt);
@@ -385,14 +434,14 @@ static int cmd_can_show(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_can_bitrate_set(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct device *dev = device_get_binding(argv[1]);
+	const struct device *dev = shell_device_get_binding(argv[1]);
 	struct can_timing timing = { 0 };
 	uint16_t sample_pnt;
 	uint32_t bitrate;
 	char *endptr;
 	int err;
 
-	if (!device_is_ready(dev)) {
+	if (!can_device_check(dev)) {
 		shell_error(sh, "device %s not ready", argv[1]);
 		return -ENODEV;
 	}
@@ -456,14 +505,14 @@ static int cmd_can_bitrate_set(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_can_dbitrate_set(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct device *dev = device_get_binding(argv[1]);
+	const struct device *dev = shell_device_get_binding(argv[1]);
 	struct can_timing timing = { 0 };
 	uint16_t sample_pnt;
 	uint32_t bitrate;
 	char *endptr;
 	int err;
 
-	if (!device_is_ready(dev)) {
+	if (!can_device_check(dev)) {
 		shell_error(sh, "device %s not ready", argv[1]);
 		return -ENODEV;
 	}
@@ -565,11 +614,11 @@ static int can_shell_parse_timing(const struct shell *sh, size_t argc, char **ar
 
 static int cmd_can_timing_set(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct device *dev = device_get_binding(argv[1]);
+	const struct device *dev = shell_device_get_binding(argv[1]);
 	struct can_timing timing = { 0 };
 	int err;
 
-	if (!device_is_ready(dev)) {
+	if (!can_device_check(dev)) {
 		shell_error(sh, "device %s not ready", argv[1]);
 		return -ENODEV;
 	}
@@ -594,11 +643,11 @@ static int cmd_can_timing_set(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_can_dtiming_set(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct device *dev = device_get_binding(argv[1]);
+	const struct device *dev = shell_device_get_binding(argv[1]);
 	struct can_timing timing = { 0 };
 	int err;
 
-	if (!device_is_ready(dev)) {
+	if (!can_device_check(dev)) {
 		shell_error(sh, "device %s not ready", argv[1]);
 		return -ENODEV;
 	}
@@ -623,7 +672,7 @@ static int cmd_can_dtiming_set(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_can_mode_set(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct device *dev = device_get_binding(argv[1]);
+	const struct device *dev = shell_device_get_binding(argv[1]);
 	can_mode_t mode = CAN_MODE_NORMAL;
 	can_mode_t raw;
 	char *endptr;
@@ -631,7 +680,7 @@ static int cmd_can_mode_set(const struct shell *sh, size_t argc, char **argv)
 	int i;
 	int j;
 
-	if (!device_is_ready(dev)) {
+	if (!can_device_check(dev)) {
 		shell_error(sh, "device %s not ready", argv[1]);
 		return -ENODEV;
 	}
@@ -671,10 +720,10 @@ static int cmd_can_mode_set(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_can_send(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct device *dev = device_get_binding(argv[1]);
+	const struct device *dev = shell_device_get_binding(argv[1]);
 	static unsigned int frame_counter;
 	unsigned int frame_no;
-	struct can_frame frame;
+	struct can_frame frame = { 0 };
 	uint32_t id_mask;
 	int argidx = 2;
 	uint32_t val;
@@ -683,7 +732,7 @@ static int cmd_can_send(const struct shell *sh, size_t argc, char **argv)
 	int err;
 	int i;
 
-	if (!device_is_ready(dev)) {
+	if (!can_device_check(dev)) {
 		shell_error(sh, "device %s not ready", argv[1]);
 		return -ENODEV;
 	}
@@ -779,7 +828,7 @@ static int cmd_can_send(const struct shell *sh, size_t argc, char **argv)
 		    (frame.flags & CAN_FRAME_RTR) != 0 ? 1 : 0,
 		    (frame.flags & CAN_FRAME_FDF) != 0 ? 1 : 0,
 		    (frame.flags & CAN_FRAME_BRS) != 0 ? 1 : 0,
-		    can_dlc_to_bytes(frame.dlc));
+		    frame.dlc);
 
 	err = can_send(dev, &frame, K_NO_WAIT, can_shell_tx_callback, UINT_TO_POINTER(frame_no));
 	if (err != 0) {
@@ -792,7 +841,7 @@ static int cmd_can_send(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_can_filter_add(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct device *dev = device_get_binding(argv[1]);
+	const struct device *dev = shell_device_get_binding(argv[1]);
 	struct can_filter filter;
 	uint32_t id_mask;
 	int argidx = 2;
@@ -800,7 +849,7 @@ static int cmd_can_filter_add(const struct shell *sh, size_t argc, char **argv)
 	char *endptr;
 	int err;
 
-	if (!device_is_ready(dev)) {
+	if (!can_device_check(dev)) {
 		shell_error(sh, "device %s not ready", argv[1]);
 		return -ENODEV;
 	}
@@ -879,7 +928,7 @@ static int cmd_can_filter_add(const struct shell *sh, size_t argc, char **argv)
 		    (filter.flags & CAN_FILTER_IDE) != 0 ? 8 : 3, filter.id,
 		    (filter.flags & CAN_FILTER_IDE) != 0 ? 8 : 3, filter.mask);
 
-	err = can_add_rx_filter_msgq(dev, &can_shell_rx_msgq, &filter);
+	err = can_add_rx_filter(dev, can_shell_rx_callback, NULL, &filter);
 	if (err < 0) {
 		shell_error(sh, "failed to add filter (err %d)", err);
 		return err;
@@ -892,11 +941,11 @@ static int cmd_can_filter_add(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_can_filter_remove(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct device *dev = device_get_binding(argv[1]);
+	const struct device *dev = shell_device_get_binding(argv[1]);
 	int filter_id;
 	char *endptr;
 
-	if (!device_is_ready(dev)) {
+	if (!can_device_check(dev)) {
 		shell_error(sh, "device %s not ready", argv[1]);
 		return -ENODEV;
 	}
@@ -916,13 +965,13 @@ static int cmd_can_filter_remove(const struct shell *sh, size_t argc, char **arg
 
 static int cmd_can_recover(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct device *dev = device_get_binding(argv[1]);
+	const struct device *dev = shell_device_get_binding(argv[1]);
 	k_timeout_t timeout = K_FOREVER;
 	int millisec;
 	char *endptr;
 	int err;
 
-	if (!device_is_ready(dev)) {
+	if (!can_device_check(dev)) {
 		shell_error(sh, "device %s not ready", argv[1]);
 		return -ENODEV;
 	}
@@ -952,7 +1001,7 @@ static int cmd_can_recover(const struct shell *sh, size_t argc, char **argv)
 
 static void cmd_can_device_name(size_t idx, struct shell_static_entry *entry)
 {
-	const struct device *dev = shell_device_lookup(idx, NULL);
+	const struct device *dev = shell_device_filter(idx, can_device_check);
 
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
 	entry->handler = NULL;
@@ -982,7 +1031,7 @@ static void cmd_can_mode(size_t idx, struct shell_static_entry *entry)
 
 static void cmd_can_device_name_mode(size_t idx, struct shell_static_entry *entry)
 {
-	const struct device *dev = shell_device_lookup(idx, NULL);
+	const struct device *dev = shell_device_filter(idx, can_device_check);
 
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
 	entry->handler = NULL;

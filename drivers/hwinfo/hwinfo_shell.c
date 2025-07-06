@@ -18,9 +18,9 @@ static int cmd_get_device_id(const struct shell *sh, size_t argc, char **argv)
 
 	length = hwinfo_get_device_id(dev_id, sizeof(dev_id));
 
-	if (length == -ENOTSUP) {
+	if (length == -ENOSYS) {
 		shell_error(sh, "Not supported by hardware");
-		return -ENOTSUP;
+		return -ENOSYS;
 	} else if (length < 0) {
 		shell_error(sh, "Error: %zd", length);
 		return length;
@@ -31,6 +31,33 @@ static int cmd_get_device_id(const struct shell *sh, size_t argc, char **argv)
 
 	for (i = 0 ; i < length ; i++) {
 		shell_fprintf(sh, SHELL_NORMAL, "%02x", dev_id[i]);
+	}
+
+	shell_fprintf(sh, SHELL_NORMAL, "\n");
+
+	return 0;
+}
+
+static int cmd_get_device_eui64(const struct shell *sh, size_t argc, char **argv)
+{
+	uint8_t dev_eui64[8];
+	int ret;
+	int i;
+
+	ret = hwinfo_get_device_eui64(dev_eui64);
+
+	if (ret == -ENOSYS) {
+		shell_error(sh, "Not supported by hardware");
+		return -ENOSYS;
+	} else if (ret < 0) {
+		shell_error(sh, "Error: %d", ret);
+		return ret;
+	}
+
+	shell_fprintf(sh, SHELL_NORMAL, "EUI64: 0x");
+
+	for (i = 0 ; i < 8 ; i++) {
+		shell_fprintf(sh, SHELL_NORMAL, "%02x", dev_eui64[i]);
 	}
 
 	shell_fprintf(sh, SHELL_NORMAL, "\n");
@@ -111,7 +138,7 @@ static int cmd_show_reset_cause(const struct shell *sh, size_t argc,
 	ARG_UNUSED(argv);
 
 	res = hwinfo_get_reset_cause(&cause);
-	if (res == -ENOTSUP) {
+	if (res == -ENOSYS) {
 		shell_error(sh, "Not supported by hardware");
 		return res;
 	} else if (res != 0) {
@@ -138,7 +165,7 @@ static int cmd_clear_reset_cause(const struct shell *sh, size_t argc,
 	ARG_UNUSED(argv);
 
 	res = hwinfo_clear_reset_cause();
-	if (res == -ENOTSUP) {
+	if (res == -ENOSYS) {
 		shell_error(sh, "Not supported by hardware");
 	} else if (res != 0) {
 		shell_error(sh, "Error clearing the reset causes [%d]", res);
@@ -158,7 +185,7 @@ static int cmd_supported_reset_cause(const struct shell *sh, size_t argc,
 	ARG_UNUSED(argv);
 
 	res = hwinfo_get_supported_reset_cause(&cause);
-	if (res == -ENOTSUP) {
+	if (res == -ENOSYS) {
 		shell_error(sh, "Not supported by hardware");
 	} else if (res != 0) {
 		shell_error(sh, "Could not get the supported reset causes [%d]", res);
@@ -188,6 +215,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_reset_cause,
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_hwinfo,
 	SHELL_CMD_ARG(devid, NULL, "Show device id", cmd_get_device_id, 1, 0),
+	SHELL_CMD_ARG(deveui64, NULL, "Show device eui64", cmd_get_device_eui64, 1, 0),
 	SHELL_CMD_ARG(reset_cause, &sub_reset_cause, "Reset cause commands",
 		      cmd_show_reset_cause, 1, 0),
 	SHELL_SUBCMD_SET_END /* Array terminated. */

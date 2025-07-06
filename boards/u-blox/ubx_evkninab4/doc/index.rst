@@ -119,7 +119,7 @@ Flashing
 Build and flash applications as usual (see
 :ref:`build_an_application` and :ref:`application_run` for more details)
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 Open a terminal program to the USB Serial Port installed when connecting
 the board and listen for output.

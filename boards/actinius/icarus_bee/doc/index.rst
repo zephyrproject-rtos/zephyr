@@ -1,16 +1,7 @@
-.. _actinius_icarus_bee:
-
-Actinius Icarus Bee
-###################
+.. zephyr:board:: actinius_icarus_bee
 
 Overview
 ********
-
-.. figure:: img/icarus-bee.jpg
-     :align: center
-     :alt: Icarus Bee
-
-     Icarus Bee (nRF9160 Bee)
 
 The Icarus Bee is a cellular IoT board in Bee/xBee form factor.
 It is built around Nordic Semi's nRF9160 modem and combines

@@ -1,4 +1,4 @@
-description: STMicroelectronics STM32 family External Interrupt Controller
+description: STM32 External Interrupt Controller
 
 compatible: "st,stm32-exti"
 
@@ -23,7 +23,7 @@ properties:
     type: array
     required: true
     description: |
-      Description of the the input lines range for each interrupt line supported
+      Description of the input lines range for each interrupt line supported
       by the external interrupt controller. For each line a couple of integers is
       provided: the number of the first line of the range start and the length
       of the range.

@@ -1,5 +1,6 @@
 board:
   name: nrf9131ek
+  full_name: nRF9131 EK
   vendor: nordic
   socs:
   - name: nrf9131

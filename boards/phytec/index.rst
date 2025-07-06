@@ -1,7 +1,7 @@
 .. _boards-phytec:
 
-PHYTEC Messtechnik GmbH
-#######################
+PHYTEC
+######
 
 .. toctree::
    :maxdepth: 1

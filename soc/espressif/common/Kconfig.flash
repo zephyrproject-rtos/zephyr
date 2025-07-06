@@ -94,7 +94,7 @@ config BOOTLOADER_FLASH_XMC_SUPPORT
 choice BOOTLOADER_VDDSDIO_BOOST
 	bool "VDDSDIO LDO voltage"
 	default BOOTLOADER_VDDSDIO_BOOST_1_9V
-	depends on !SOC_SERIES_ESP32C3
+	depends on !SOC_SERIES_ESP32C2 && !SOC_SERIES_ESP32C3 && !SOC_SERIES_ESP32C6
 	help
 	  If this option is enabled, and VDDSDIO LDO is set to 1.8V (using eFuse
 	  or MTDI bootstrapping pin), bootloader will change LDO settings to
@@ -126,13 +126,5 @@ config SPI_FLASH_HPM_ENABLE
 	help
 	  This option is invisible, and will be selected automatically
 	  when ``ESPTOOLPY_FLASHFREQ_120M`` is selected.
-
-config ESP_SIMPLE_BOOT
-	bool "Simple Boot method"
-	default y if !BOOTLOADER_MCUBOOT
-	help
-	  The Simple Boot is a method of booting that doesn't depend on a
-	  2nd stage bootloader. Please note that some of the bootloader features
-	  are not available using simple boot, such secure boot and OTA.
 
 endif # SOC_FAMILY_ESPRESSIF_ESP32

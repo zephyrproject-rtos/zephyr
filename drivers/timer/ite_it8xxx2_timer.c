@@ -150,6 +150,8 @@ void timer_5ms_one_shot(void)
 #ifdef CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT
 void arch_busy_wait(uint32_t usec_to_wait)
 {
+	uint32_t start = IT8XXX2_EXT_CNTOX(BUSY_WAIT_H_TIMER);
+
 	if (!usec_to_wait) {
 		return;
 	}
@@ -157,16 +159,8 @@ void arch_busy_wait(uint32_t usec_to_wait)
 	/* Decrease 1us here to calibrate our access registers latency */
 	usec_to_wait--;
 
-	/*
-	 * We want to set the bit(1) re-start busy wait timer as soon
-	 * as possible, so we directly write 0xb instead of | bit(1).
-	 */
-	IT8XXX2_EXT_CTRLX(BUSY_WAIT_L_TIMER) = IT8XXX2_EXT_ETX_COMB_RST_EN;
-
 	for (;;) {
-		uint32_t curr = IT8XXX2_EXT_CNTOX(BUSY_WAIT_H_TIMER);
-
-		if (curr >= usec_to_wait) {
+		if ((IT8XXX2_EXT_CNTOX(BUSY_WAIT_H_TIMER) - start) >= usec_to_wait) {
 			break;
 		}
 	}
@@ -340,15 +334,15 @@ static int timer_init(enum ext_timer_idx ext_timer,
 	if (raw == EXT_RAW_CNT) {
 		hw_cnt = ms;
 	} else {
-		if (clock_source_sel == EXT_PSR_32P768K)
+		if (clock_source_sel == EXT_PSR_32P768K) {
 			hw_cnt = MS_TO_COUNT(32768, ms);
-		else if (clock_source_sel == EXT_PSR_1P024K)
+		} else if (clock_source_sel == EXT_PSR_1P024K) {
 			hw_cnt = MS_TO_COUNT(1024, ms);
-		else if (clock_source_sel == EXT_PSR_32)
+		} else if (clock_source_sel == EXT_PSR_32) {
 			hw_cnt = MS_TO_COUNT(32, ms);
-		else if (clock_source_sel == EXT_PSR_EC_CLK)
+		} else if (clock_source_sel == EXT_PSR_EC_CLK) {
 			hw_cnt = MS_TO_COUNT(EC_FREQ, ms);
-		else {
+		} else {
 			LOG_ERR("Timer %d clock source error !", ext_timer);
 			return -1;
 		}
@@ -381,10 +375,11 @@ static int timer_init(enum ext_timer_idx ext_timer,
 
 	/* Disable external timer x */
 	IT8XXX2_EXT_CTRLX(ext_timer) &= ~IT8XXX2_EXT_ETXEN;
-	if (start == EXT_START_TIMER)
+	if (start == EXT_START_TIMER) {
 		/* Enable and re-start external timer x */
 		IT8XXX2_EXT_CTRLX(ext_timer) |= (IT8XXX2_EXT_ETXEN |
 						 IT8XXX2_EXT_ETXRST);
+	}
 
 	if (with_int == EXT_WITH_TIMER_INT) {
 		irq_enable(irq_num);

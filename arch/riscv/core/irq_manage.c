@@ -9,6 +9,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/arch/riscv/csr.h>
 #include <zephyr/irq_multilevel.h>
+#include <zephyr/sw_isr_table.h>
 
 #ifdef CONFIG_RISCV_HAS_PLIC
 #include <zephyr/drivers/interrupt_controller/riscv_plic.h>
@@ -18,6 +19,12 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 FUNC_NORETURN void z_irq_spurious(const void *unused)
 {
+#ifdef CONFIG_EMPTY_IRQ_SPURIOUS
+	while (1) {
+	}
+
+	CODE_UNREACHABLE;
+#else
 	unsigned long mcause;
 
 	ARG_UNUSED(unused);
@@ -36,6 +43,7 @@ FUNC_NORETURN void z_irq_spurious(const void *unused)
 	}
 #endif
 	z_riscv_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
+#endif /* CONFIG_EMPTY_IRQ_SPURIOUS */
 }
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
@@ -43,7 +51,7 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 			     void (*routine)(const void *parameter),
 			     const void *parameter, uint32_t flags)
 {
-	z_isr_install(irq, routine, parameter);
+	z_isr_install(irq + CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET, routine, parameter);
 
 #if defined(CONFIG_RISCV_HAS_PLIC) || defined(CONFIG_RISCV_HAS_CLIC)
 	z_riscv_irq_priority_set(irq, priority, flags);
@@ -53,4 +61,17 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 #endif
 	return irq;
 }
+
+#ifdef CONFIG_SHARED_INTERRUPTS
+int arch_irq_disconnect_dynamic(unsigned int irq, unsigned int priority,
+				void (*routine)(const void *parameter), const void *parameter,
+				uint32_t flags)
+{
+	ARG_UNUSED(priority);
+	ARG_UNUSED(flags);
+
+	return z_isr_uninstall(irq + CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET, routine,
+			       parameter);
+}
+#endif /* CONFIG_SHARED_INTERRUPTS */
 #endif /* CONFIG_DYNAMIC_INTERRUPTS */

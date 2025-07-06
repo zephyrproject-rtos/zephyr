@@ -1,9 +1,9 @@
-# Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
+# Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
 
-  Espressif's LEDC controller Node
+  ESP32 LED Control (LEDC)
 
   The LEDC controller is primarily designed to control the intensity of LEDs, although it can be
   used to generate PWM signals for other purposes as well.
@@ -64,12 +64,16 @@ description: |
       channel9@9 {
         reg = <0x9>;
         timer = <0>;
+        inverted;
       };
       channel10@a {
         reg = <0xa>;
         timer = <1>;
       };
     };
+
+    For the channel to be initially inverted after the driver's init, the flag 'inverted' can
+    be declared, as shown above for channel 9.
 
     Note: The channel's 'reg' property defines the ID of the channel. It must match the channel used
       in the 'pinmux'.
@@ -129,6 +133,14 @@ child-binding:
         Timer selection.
         For maximum flexibility, the high-speed as well as the low-speed channels can be driven from
         one of four high-speed/low-speed timers.
+
+    inverted:
+      type: boolean
+      description: |
+        Initial channel output level.
+        This flag defines if the channel will remain initially inverted after driver init,
+        as any pwm_set() operation will re-evaluate if the output is inverted or not
+        according to the flag passed as parameter.
 
 pwm-cells:
 - channel

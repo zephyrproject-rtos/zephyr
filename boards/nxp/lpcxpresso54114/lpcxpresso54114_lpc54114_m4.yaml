@@ -13,10 +13,10 @@ flash: 256
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - arduino_i2c
   - arduino_spi
+  - flash
   - gpio
   - i2c
   - spi

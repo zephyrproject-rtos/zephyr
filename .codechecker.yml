@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2024, Basalte bv
+
+analyzer:
+  # Start by disabling all
+  - --disable-all
+
+  # Enable the sensitive profile
+  - --enable=sensitive
+
+  # Disable unused cases
+  - --disable=boost
+  - --disable=mpi
+
+  # Many identifiers in zephyr start with _
+  - --disable=clang-diagnostic-reserved-identifier
+  - --disable=clang-diagnostic-reserved-macro-identifier
+
+  # Cleanup
+  - --clean

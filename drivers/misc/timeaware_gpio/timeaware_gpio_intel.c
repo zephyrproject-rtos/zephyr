@@ -188,7 +188,7 @@ static int tgpio_intel_read_ts_ec(const struct device *dev,
 	return 0;
 }
 
-static const struct tgpio_driver_api api_funcs = {
+static DEVICE_API(tgpio, api_funcs) = {
 	.pin_disable = tgpio_intel_pin_disable,
 	.get_time = tgpio_intel_get_time,
 	.set_perout = tgpio_intel_periodic_output,

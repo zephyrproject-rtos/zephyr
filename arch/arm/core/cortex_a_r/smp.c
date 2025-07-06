@@ -1,16 +1,19 @@
 /*
- * Copyright (c) 2023 Arm Limited (or its affiliates). All rights reserved.
+ * Copyright (c) 2023, 2024 Arm Limited (or its affiliates).
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr/kernel/thread_stack.h>
 #include <zephyr/kernel.h>
+#include <ksched.h>
 #include <zephyr/arch/arm/cortex_a_r/lib_helpers.h>
 #include <zephyr/drivers/interrupt_controller/gic.h>
+#include <ipi.h>
 #include "boot.h"
 #include "zephyr/cache.h"
 #include "zephyr/kernel/thread_stack.h"
 #include "zephyr/toolchain/gcc.h"
+#include <zephyr/platform/hooks.h>
 
 #define INV_MPID	UINT32_MAX
 
@@ -50,6 +53,7 @@ struct boot_params {
 	char *udf_sp;
 	char *svc_sp;
 	char *sys_sp;
+	uint8_t voting[CONFIG_MP_MAX_NUM_CPUS];
 	arch_cpustart_t fn;
 	void *arg;
 	int cpu_num;
@@ -63,6 +67,7 @@ BUILD_ASSERT(offsetof(struct boot_params, abt_sp) == BOOT_PARAM_ABT_SP_OFFSET);
 BUILD_ASSERT(offsetof(struct boot_params, udf_sp) == BOOT_PARAM_UDF_SP_OFFSET);
 BUILD_ASSERT(offsetof(struct boot_params, svc_sp) == BOOT_PARAM_SVC_SP_OFFSET);
 BUILD_ASSERT(offsetof(struct boot_params, sys_sp) == BOOT_PARAM_SYS_SP_OFFSET);
+BUILD_ASSERT(offsetof(struct boot_params, voting) == BOOT_PARAM_VOTING_OFFSET);
 
 volatile struct boot_params arm_cpu_boot_params = {
 	.mpid = -1,
@@ -74,7 +79,7 @@ volatile struct boot_params arm_cpu_boot_params = {
 	.sys_sp = (char *)(z_arm_sys_stack + CONFIG_ARMV7_SYS_STACK_SIZE),
 };
 
-static const uint32_t cpu_node_list[] = {
+const uint32_t cpu_node_list[] = {
 	DT_FOREACH_CHILD_STATUS_OKAY_SEP(DT_PATH(cpus), DT_REG_ADDR, (,))};
 
 /* cpu_map saves the maping of core id and mpid */
@@ -136,10 +141,14 @@ void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz, arch_cpustart_
 	arm_cpu_boot_params.arg = arg;
 	arm_cpu_boot_params.cpu_num = cpu_num;
 
+	/* we need the barrier here to make sure the above changes to
+	 * arm_cpu_boot_params are completed before we set the mpid
+	 */
+	barrier_dsync_fence_full();
+
 	/* store mpid last as this is our synchronization point */
 	arm_cpu_boot_params.mpid = cpu_mpid;
 
-	barrier_dsync_fence_full();
 	sys_cache_data_invd_range(
 			(void *)&arm_cpu_boot_params,
 			sizeof(arm_cpu_boot_params));
@@ -191,6 +200,10 @@ void arch_secondary_cpu_init(void)
 	 */
 #endif
 
+#ifdef CONFIG_SOC_PER_CORE_INIT_HOOK
+	soc_per_core_init_hook();
+#endif /* CONFIG_SOC_PER_CORE_INIT_HOOK */
+
 	fn = arm_cpu_boot_params.fn;
 	arg = arm_cpu_boot_params.arg;
 	barrier_dsync_fence_full();
@@ -210,7 +223,7 @@ void arch_secondary_cpu_init(void)
 
 #ifdef CONFIG_SMP
 
-static void broadcast_ipi(unsigned int ipi)
+static void send_ipi(unsigned int ipi, uint32_t cpu_bitmap)
 {
 	uint32_t mpidr = MPIDR_TO_CORE(GET_MPIDR());
 
@@ -220,6 +233,10 @@ static void broadcast_ipi(unsigned int ipi)
 	unsigned int num_cpus = arch_num_cpus();
 
 	for (int i = 0; i < num_cpus; i++) {
+		if ((cpu_bitmap & BIT(i)) == 0) {
+			continue;
+		}
+
 		uint32_t target_mpidr = cpu_map[i];
 		uint8_t aff0;
 
@@ -239,10 +256,14 @@ void sched_ipi_handler(const void *unused)
 	z_sched_ipi();
 }
 
-/* arch implementation of sched_ipi */
-void arch_sched_ipi(void)
+void arch_sched_broadcast_ipi(void)
 {
-	broadcast_ipi(SGI_SCHED_IPI);
+	send_ipi(SGI_SCHED_IPI, IPI_ALL_CPUS_MASK);
+}
+
+void arch_sched_directed_ipi(uint32_t cpu_bitmap)
+{
+	send_ipi(SGI_SCHED_IPI, cpu_bitmap);
 }
 
 int arch_smp_init(void)
@@ -258,7 +279,5 @@ int arch_smp_init(void)
 
 	return 0;
 }
-
-SYS_INIT(arch_smp_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #endif

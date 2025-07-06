@@ -11,6 +11,9 @@
 
 #define DAI_INTEL_I2S_TDM_MAX_SLOT_MAP_COUNT 8
 
+#define I2SIPCMC 8
+#define I2SOPCMC 8
+
 /**< Type of the gateway. */
 enum dai_intel_ipc4_connector_node_id_type {
 	/**< HD/A host output (-> DSP). */
@@ -236,6 +239,21 @@ struct dai_intel_ipc4_ssp_config {
 	uint32_t ssioc;
 } __packed;
 
+struct dai_intel_ipc4_ssp_config_ver_3_0 {
+	uint32_t ssc0;
+	uint32_t ssc1;
+	uint32_t sscto;
+	uint32_t sspsp;
+	uint32_t ssc2;
+	uint32_t sspsp2;
+	uint32_t ssc3;
+	uint32_t ssioc;
+	/* Specifies which time slots the DMA FIFO will receive from the SSP Interface*/
+	uint64_t ssmidytsa[I2SIPCMC];
+	/* Specifies which time slots the DMA FIFO will transmit to the SSP Interface */
+	uint64_t ssmodytsa[I2SOPCMC];
+} __packed;
+
 struct dai_intel_ipc4_ssp_mclk_config {
 	/* master clock divider control register */
 	uint32_t mdivc;
@@ -251,7 +269,11 @@ struct dai_intel_ipc4_ssp_mclk_config_2 {
 } __packed;
 
 struct dai_intel_ipc4_ssp_driver_config {
+#ifdef CONFIG_SOC_INTEL_ACE30
+	struct dai_intel_ipc4_ssp_config_ver_3_0 i2s_config;
+#else
 	struct dai_intel_ipc4_ssp_config i2s_config;
+#endif
 	struct dai_intel_ipc4_ssp_mclk_config mclk_config;
 } __packed;
 
@@ -311,7 +333,7 @@ struct dai_intel_ipc4_ssp_configuration_blob {
 	struct dai_intel_ipc4_ssp_driver_config i2s_driver_config;
 
 	/* optional configuration parameters */
-	union dai_intel_ipc4_ssp_dma_control i2s_dma_control[0];
+	FLEXIBLE_ARRAY_DECLARE(union dai_intel_ipc4_ssp_dma_control, i2s_dma_control);
 } __packed;
 
 #define SSP_BLOB_VER_1_5 0xee000105
@@ -327,6 +349,23 @@ struct dai_intel_ipc4_ssp_configuration_blob_ver_1_5 {
 
 	/* i2s port configuration */
 	struct dai_intel_ipc4_ssp_config i2s_ssp_config;
+	/* clock configuration parameters */
+	struct dai_intel_ipc4_ssp_mclk_config_2 i2s_mclk_control;
+} __packed;
+
+#define SSP_BLOB_VER_3_0 0xee000300
+
+struct dai_intel_ipc4_ssp_configuration_blob_ver_3_0 {
+	union dai_intel_ipc4_gateway_attributes gw_attr;
+
+	uint32_t version;
+	uint32_t size;
+
+	/* TDM time slot mappings */
+	uint32_t tdm_ts_group[DAI_INTEL_I2S_TDM_MAX_SLOT_MAP_COUNT];
+
+	/* i2s port configuration */
+	struct dai_intel_ipc4_ssp_config_ver_3_0 i2s_ssp_config;
 	/* clock configuration parameters */
 	struct dai_intel_ipc4_ssp_mclk_config_2 i2s_mclk_control;
 } __packed;

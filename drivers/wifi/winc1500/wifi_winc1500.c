@@ -42,16 +42,16 @@ typedef void (*tpfAppSocketCb) (SOCKET sock, uint8 u8Msg, void *pvMsg);
 typedef void (*tpfAppResolveCb) (uint8 *pu8DomainName, uint32 u32ServerIP);
 NMI_API void registerSocketCallback(tpfAppSocketCb socket_cb,
 				    tpfAppResolveCb resolve_cb);
-NMI_API SOCKET socket(uint16 u16Domain, uint8 u8Type, uint8 u8Flags);
-NMI_API sint8 bind(SOCKET sock, struct sockaddr *pstrAddr, uint8 u8AddrLen);
-NMI_API sint8 listen(SOCKET sock, uint8 backlog);
-NMI_API sint8 accept(SOCKET sock, struct sockaddr *addr, uint8 *addrlen);
-NMI_API sint8 connect(SOCKET sock, struct sockaddr *pstrAddr, uint8 u8AddrLen);
-NMI_API sint16 recv(SOCKET sock, void *pvRecvBuf,
+NMI_API SOCKET winc1500_socket(uint16 u16Domain, uint8 u8Type, uint8 u8Flags);
+NMI_API sint8 winc1500_socket_bind(SOCKET sock, struct sockaddr *pstrAddr, uint8 u8AddrLen);
+NMI_API sint8 winc1500_socket_listen(SOCKET sock, uint8 backlog);
+NMI_API sint8 winc1500_socket_accept(SOCKET sock, struct sockaddr *addr, uint8 *addrlen);
+NMI_API sint8 winc1500_socket_connect(SOCKET sock, struct sockaddr *pstrAddr, uint8 u8AddrLen);
+NMI_API sint16 winc1500_socket_recv(SOCKET sock, void *pvRecvBuf,
 		    uint16 u16BufLen, uint32 u32Timeoutmsec);
-NMI_API sint16 send(SOCKET sock, void *pvSendBuffer,
+NMI_API sint16 winc1500_socket_send(SOCKET sock, void *pvSendBuffer,
 		    uint16 u16SendLength, uint16 u16Flags);
-NMI_API sint16 sendto(SOCKET sock, void *pvSendBuffer,
+NMI_API sint16 winc1500_socket_sendto(SOCKET sock, void *pvSendBuffer,
 		      uint16 u16SendLength, uint16 flags,
 		      struct sockaddr *pstrDestAddr, uint8 u8AddrLen);
 NMI_API sint8 winc1500_close(SOCKET sock);
@@ -306,7 +306,7 @@ static int winc1500_get(sa_family_t family,
 	 * we have checked if family is AF_INET so we can hardcode this
 	 * for now.
 	 */
-	sock = socket(2, type, 0);
+	sock = winc1500_socket(2, type, 0);
 	if (sock < 0) {
 		LOG_ERR("socket error!");
 		return -1;
@@ -329,7 +329,7 @@ static int winc1500_bind(struct net_context *context,
 			 const struct sockaddr *addr,
 			 socklen_t addrlen)
 {
-	SOCKET socket = (int)context->offload_context;
+	SOCKET socket = (intptr_t)context->offload_context;
 	int ret;
 
 	/* FIXME atmel winc1500 don't support bind on null port */
@@ -337,7 +337,7 @@ static int winc1500_bind(struct net_context *context,
 		return 0;
 	}
 
-	ret = bind((int)context->offload_context, (struct sockaddr *)addr,
+	ret = winc1500_socket_bind((intptr_t)context->offload_context, (struct sockaddr *)addr,
 		   addrlen);
 	if (ret) {
 		LOG_ERR("bind error %d %s!",
@@ -360,10 +360,10 @@ static int winc1500_bind(struct net_context *context,
  */
 static int winc1500_listen(struct net_context *context, int backlog)
 {
-	SOCKET socket = (int)context->offload_context;
+	SOCKET socket = (intptr_t)context->offload_context;
 	int ret;
 
-	ret = listen((int)context->offload_context, backlog);
+	ret = winc1500_socket_listen((intptr_t)context->offload_context, backlog);
 	if (ret) {
 		LOG_ERR("listen error %d %s!",
 			ret, socket_error_string(ret));
@@ -389,14 +389,14 @@ static int winc1500_connect(struct net_context *context,
 			    int32_t timeout,
 			    void *user_data)
 {
-	SOCKET socket = (int)context->offload_context;
+	SOCKET socket = (intptr_t)context->offload_context;
 	int ret;
 
 	w1500_data.socket_data[socket].connect_cb = cb;
 	w1500_data.socket_data[socket].connect_user_data = user_data;
 	w1500_data.socket_data[socket].ret_code = 0;
 
-	ret = connect(socket, (struct sockaddr *)addr, addrlen);
+	ret = winc1500_socket_connect(socket, (struct sockaddr *)addr, addrlen);
 	if (ret) {
 		LOG_ERR("connect error %d %s!",
 			ret, socket_error_string(ret));
@@ -420,13 +420,13 @@ static int winc1500_accept(struct net_context *context,
 			   int32_t timeout,
 			   void *user_data)
 {
-	SOCKET socket = (int)context->offload_context;
+	SOCKET socket = (intptr_t)context->offload_context;
 	int ret;
 
 	w1500_data.socket_data[socket].accept_cb = cb;
 	w1500_data.socket_data[socket].accept_user_data = user_data;
 
-	ret = accept(socket, NULL, 0);
+	ret = winc1500_socket_accept(socket, NULL, 0);
 	if (ret) {
 		LOG_ERR("accept error %d %s!",
 			ret, socket_error_string(ret));
@@ -452,7 +452,7 @@ static int winc1500_send(struct net_pkt *pkt,
 			 void *user_data)
 {
 	struct net_context *context = pkt->context;
-	SOCKET socket = (int)context->offload_context;
+	SOCKET socket = (intptr_t)context->offload_context;
 	int ret = 0;
 	struct net_buf *buf;
 
@@ -468,7 +468,7 @@ static int winc1500_send(struct net_pkt *pkt,
 
 	net_buf_add(buf, net_pkt_get_len(pkt));
 
-	ret = send(socket, buf->data, buf->len, 0);
+	ret = winc1500_socket_send(socket, buf->data, buf->len, 0);
 	if (ret) {
 		LOG_ERR("send error %d %s!", ret, socket_error_string(ret));
 		goto out;
@@ -492,7 +492,7 @@ static int winc1500_sendto(struct net_pkt *pkt,
 			   void *user_data)
 {
 	struct net_context *context = pkt->context;
-	SOCKET socket = (int)context->offload_context;
+	SOCKET socket = (intptr_t)context->offload_context;
 	int ret = 0;
 	struct net_buf *buf;
 
@@ -508,7 +508,7 @@ static int winc1500_sendto(struct net_pkt *pkt,
 
 	net_buf_add(buf, net_pkt_get_len(pkt));
 
-	ret = sendto(socket, buf->data, buf->len, 0,
+	ret = winc1500_socket_sendto(socket, buf->data, buf->len, 0,
 		     (struct sockaddr *)dst_addr, addrlen);
 	if (ret) {
 		LOG_ERR("sendto error %d %s!", ret, socket_error_string(ret));
@@ -556,7 +556,7 @@ static int winc1500_recv(struct net_context *context,
 			 int32_t timeout,
 			 void *user_data)
 {
-	SOCKET socket = (int) context->offload_context;
+	SOCKET socket = (intptr_t)context->offload_context;
 	int ret;
 
 	w1500_data.socket_data[socket].recv_cb = cb;
@@ -572,7 +572,7 @@ static int winc1500_recv(struct net_context *context,
 	}
 
 
-	ret = recv(socket, w1500_data.socket_data[socket].pkt_buf->data,
+	ret = winc1500_socket_recv(socket, w1500_data.socket_data[socket].pkt_buf->data,
 		   CONFIG_WIFI_WINC1500_MAX_PACKET_SIZE, timeout);
 	if (ret) {
 		LOG_ERR("recv error %d %s!",
@@ -588,7 +588,7 @@ static int winc1500_recv(struct net_context *context,
  */
 static int winc1500_put(struct net_context *context)
 {
-	SOCKET sock = (int) context->offload_context;
+	SOCKET sock = (intptr_t)context->offload_context;
 	struct socket_data *sd = &w1500_data.socket_data[sock];
 	int ret;
 
@@ -683,7 +683,7 @@ static void reset_scan_data(void)
 static void handle_scan_result(void *pvMsg)
 {
 	tstrM2mWifiscanResult *pstrScanResult = (tstrM2mWifiscanResult *)pvMsg;
-	struct wifi_scan_result result;
+	struct wifi_scan_result result = { 0 };
 
 	if (!w1500_data.scan_cb) {
 		return;
@@ -817,6 +817,8 @@ static bool handle_socket_msg_recv(SOCKET sock,
 			}
 	} else if (pstrRx->pu8Buffer == NULL) {
 		if (pstrRx->s16BufferSize == SOCK_ERR_CONN_ABORTED) {
+			winc1500_close(sock);
+
 			net_pkt_unref(sd->rx_pkt);
 			return false;
 		}
@@ -899,12 +901,13 @@ static void handle_socket_msg_accept(struct socket_data *sd, void *pvMsg)
 		 * context as well. The new context gives us another socket
 		 * so we have to close that one first.
 		 */
-		winc1500_close((int)a_sd->context->offload_context);
+		winc1500_close((intptr_t)a_sd->context->offload_context);
 
-		a_sd->context->offload_context =
-				(void *)((int)accept_msg->sock);
+		a_sd->context->offload_context = (void *)((intptr_t)accept_msg->sock);
 		/** The iface is reset when getting a new context. */
 		a_sd->context->iface = sd->context->iface;
+
+		net_context_set_state(a_sd->context, NET_CONTEXT_CONNECTED);
 
 		/** Setup remote */
 		a_sd->context->remote.sa_family = AF_INET;
@@ -1068,7 +1071,8 @@ static int winc1500_mgmt_ap_enable(const struct device *dev,
 	tstrM2MAPConfig strM2MAPConfig;
 
 	memset(&strM2MAPConfig, 0x00, sizeof(tstrM2MAPConfig));
-	strcpy((char *)&strM2MAPConfig.au8SSID, params->ssid);
+	strncpy((char *)&strM2MAPConfig.au8SSID, params->ssid,
+		params->ssid_length);
 	strM2MAPConfig.u8ListenChannel = params->channel;
 	/** security is hardcoded as open for now */
 	strM2MAPConfig.u8SecType = M2M_WIFI_SEC_OPEN;

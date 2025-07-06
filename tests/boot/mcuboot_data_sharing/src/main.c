@@ -11,12 +11,12 @@
 #include <zephyr/settings/settings.h>
 #include <bootutil/boot_status.h>
 #include <bootutil/image.h>
-#include <mcuboot_version.h>
+#include <zephyr/mcuboot_version.h>
 
 #define FLASH_SECTOR_SIZE 1024
 #define FLASH_SECTOR_SIZE_KB 4
 #define FLASH_MAX_APP_SECTORS 34
-#define FLASH_RESERVED_SECTORS 1
+#define FLASH_RESERVED_SECTORS 2
 #define FLASH_MAX_APP_SIZE ((FLASH_MAX_APP_SECTORS - FLASH_RESERVED_SECTORS) \
 			    * FLASH_SECTOR_SIZE_KB)
 #define RUNNING_SLOT 0

@@ -1,0 +1,53 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+
+#include <nxp/mcx/MCXC444VLH-pinctrl.h>
+
+&pinctrl {
+	pinmux_adc0: pinmux_adc0 {
+		group0 {
+			pinmux = <ADC0_SE0_PTE20>,
+				 <ADC0_SE3_PTE22>;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
+	pinmux_i2c0: pinmux_i2c0 {
+		group0 {
+			pinmux = <I2C0_SCL_PTE24>,
+				<I2C0_SDA_PTE25>;
+			drive-strength = "low";
+			drive-open-drain;
+			slew-rate = "fast";
+		};
+	};
+	pinmux_lpuart0: pinmux_lpuart0 {
+		group0 {
+			pinmux = <LPUART0_RX_PTA1>,
+				<LPUART0_TX_PTA2>;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
+	pinmux_uart2: pinmux_uart2 {
+		group0 {
+			pinmux = <UART2_RX_PTD2>,
+				<UART2_TX_PTD3>;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
+	pinmux_tpm0: pinmux_tpm0 {
+		group0 {
+			pinmux = <TPM0_CH2_PTE29>,
+				<TPM0_CH4_PTE31>,
+				<TPM0_CH5_PTD5>;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
+};

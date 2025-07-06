@@ -1,7 +1,4 @@
-﻿.. _mimxrt1170_evk:
-
-NXP MIMXRT1170-EVK/EVKB
-#######################
+﻿.. zephyr:board:: mimxrt1170_evk
 
 Overview
 ********
@@ -10,10 +7,6 @@ The dual core i.MX RT1170 runs on the Cortex-M7 core at 1 GHz and on the Cortex-
 at 400 MHz. The i.MX RT1170 MCU offers support over a wide temperature range
 and is qualified for consumer, industrial and automotive markets. Zephyr
 supports the initial revision of this EVK, as well as rev EVKB.
-
-.. image:: mimxrt1170_evk.jpg
-   :align: center
-   :alt: MIMXRT1170-EVK
 
 Hardware
 ********
@@ -69,6 +62,7 @@ Hardware
 - Expansion port
 
   - Arduino interface
+  - M.2 WIFI/BT interface
 
 - CAN bus connector
 
@@ -79,6 +73,7 @@ these references:
 - `i.MX RT1170 Datasheet`_
 - `i.MX RT1170 Reference Manual`_
 - `MIMXRT1170-EVK Website`_
+- `MIMXRT1170-EVKB Board Hardware User's Guide`_
 - `MIMXRT1170-EVK Board Hardware User's Guide`_
 
 External Memory
@@ -108,70 +103,9 @@ Supported Features
 
 NXP considers the MIMXRT1170-EVK as the superset board for the i.MX RT11xx
 family of MCUs.  This board is a focus for NXP's Full Platform Support for
-Zephyr, to better enable the entire RT11xx family.  NXP prioritizes enabling
-this board with new support for Zephyr features. Note that this table
-covers two boards: the RT1170 EVK (`mimxrt1170_evk//cm7/cm4`), and
-RT1170 EVKB (`mimxrt1170_evk@B//cm7/cm4`)
+Zephyr, to better enable the entire RT11xx family.
 
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| Interface | Controller | Driver/Component                    | RT1170 EVK      | RT1170 EVKB     |
-+===========+============+=====================================+=================+=================+
-| NVIC      | on-chip    | nested vector interrupt controller  | Supported       | Supported       |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| SYSTICK   | on-chip    | systick                             | Supported       | Supported       |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| GPIO      | on-chip    | gpio                                | Supported       | Supported       |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| COUNTER   | on-chip    | gpt                                 | Supported       | Supported       |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| TIMER     | on-chip    | gpt                                 | Supported       | Supported       |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| CAN       | on-chip    | flexcan                             | Supported (M7)  | Supported (M7)  |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| SPI       | on-chip    | spi                                 | Supported (M7)  | Supported       |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| I2C       | on-chip    | i2c                                 | Supported       | Supported       |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| PWM       | on-chip    | pwm                                 | Supported       | Supported       |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| ADC       | on-chip    | adc                                 | Supported (M7)  | Supported (M7)  |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| UART      | on-chip    | serial port-polling;                | Supported       | Supported       |
-|           |            | serial port-interrupt;              |                 |                 |
-|           |            | serial port-async                   |                 |                 |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| DMA       | on-chip    | dma                                 | Supported       | Supported       |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| WATCHDOG  | on-chip    | watchdog                            | Supported (M7)  | Supported (M7)  |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| ENET      | on-chip    | ethernet - 10/100M (ENET_QOS or     | Supported (M7)  | No support      |
-| ENET1G    |            | GigE not supported yet)             |                 |                 |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| SAI       | on-chip    | i2s                                 | Supported       | No support      |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| USB       | on-chip    | USB Device                          | Supported (M7)  | Supported (M7)  |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| HWINFO    | on-chip    | Unique device serial number         | Supported (M7)  | Supported (M7)  |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| DISPLAY   | on-chip    | eLCDIF; MIPI-DSI. Tested with       | Supported (M7)  | Supported (M7)  |
-|           |            | :ref:`rk055hdmipi4m`,               |                 |                 |
-|           |            | :ref:`rk055hdmipi4ma0`,             |                 |                 |
-|           |            | and :ref:`g1120b0mipi` shields      |                 |                 |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| ACMP      | on-chip    | analog comparator                   | Supported       | No support      |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| CAAM RNG  | on-chip    | entropy                             | Supported (M7)  | No support      |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| FLEXSPI   | on-chip    | flash programming                   | Supported (M7)  | No support      |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| SDHC      | on-chip    | SD host controller                  | Supported (M7)  | Supported (M7)  |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-| PIT       | on-chip    | pit                                 | Supported (M7)  | Supported (M7)  |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
-
-The default configuration can be found in the defconfig files:
-:zephyr_file:`boards/nxp/mimxrt1170_evk/mimxrt1170_evk_mimxrt1176_cm7_defconfig`
-:zephyr_file:`boards/nxp/mimxrt1170_evk/mimxrt1170_evk_mimxrt1176_cm4_defconfig`
+.. zephyr:board-supported-hw::
 
 Connections and I/Os
 ====================
@@ -243,6 +177,14 @@ The MIMXRT1170 SoC has six pairs of pinmux/gpio controllers.
 +---------------------------+----------------+------------------+
 | GPIO_AD_20_SAI1_RX_DATA00 | SAI1_RX_DATA00 | SAI              |
 +---------------------------+----------------+------------------+
+| GPIO_DISP_B2_10           | LPUART2_TX     | M.2 BT HCI       |
++---------------------------+----------------+------------------+
+| GPIO_DISP_B2_11           | LPUART2_RX     | M.2 BT HCI       |
++---------------------------+----------------+------------------+
+| GPIO_DISP_B2_12           | LPUART2_CTS_B  | M.2 BT HCI       |
++---------------------------+----------------+------------------+
+| GPIO_DISP_B2_13           | LPUART1_RTS_B  | M.2 BT HCI       |
++---------------------------+----------------+------------------+
 
 Dual Core samples
 *****************
@@ -287,11 +229,26 @@ cost of reduced resolution
 Serial Port
 ===========
 
-The MIMXRT1170 SoC has 12 UARTs. One is configured for the console and the
+The MIMXRT1170 SoC has 12 UARTs. ``LPUART1`` is configured for the console,
+``LPUART2`` for the Bluetooth Host Controller Interface (BT HCI), and the
 remaining are not used.
+
+Fetch Binary Blobs
+==================
+
+The board Bluetooth/WiFi module requires fetching some binary blob files, to do
+that run the command:
+
+.. code-block:: console
+
+   west blobs fetch hal_nxp
+
+.. note:: Only Bluetooth functionality is currently supported.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -310,46 +267,57 @@ The secondary core can be debugged normally in single core builds
 secondary core should be placed into a loop, then a debugger can be attached
 (see `AN13264`_, section 4.2.3 for more information)
 
+Launching Images Targeting M4 Core
+==================================
+If building targeting the M4 core, the M7 core must first run code to launch
+the M4 image, by copying it into the ``ocram`` region then kicking off the M4
+core. When building using sysbuild targeting the M4 core, a minimal "launcher"
+image will be built and flashed to the M7 core, which loads and kicks off
+the M4 core. Therefore when developing an application intended to run
+standalone on the M4 core, it is recommended to build with sysbuild, like
+so:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: mimxrt1170_evk/mimxrt1176/cm4
+   :west-args: --sysbuild
+   :goals: flash
+
+If desired, this behavior can be disabled by building with
+``-DSB_CONFIG_SECOND_CORE_MCUX_LAUNCHER=n``
+
 Configuring a Debug Probe
 =========================
 
 A debug probe is used for both flashing and debugging the board. The on-board
 debugger listed below works with the LinkServer runner by default, or can be
 reprogrammed with JLink firmware.
+
 - MIMXRT1170-EVKB: :ref:`mcu-link-cmsis-onboard-debug-probe`
 - MIMXRT1170-EVK:  :ref:`opensda-daplink-onboard-debug-probe`
+
+Using LinkServer
+----------------
+
+Install the :ref:`linkserver-debug-host-tools` and make sure they are in your
+search path.  LinkServer works with the default CMSIS-DAP firmware included in
+the on-board debugger.
 
 Using J-Link
 ------------
 
-JLink is the default runner for this board.  Install the
-:ref:`jlink-debug-host-tools` and make sure they are in your search path.
+Install the :ref:`jlink-debug-host-tools` and make sure they are in your search path.
 
 There are two options: the onboard debug circuit can be updated with Segger
 J-Link firmware, or :ref:`jlink-external-debug-probe` can be attached to the
 EVK. See `Using J-Link with MIMXRT1170-EVKB`_ or
 `Using J-Link with MIMXRT1160-EVK or MIMXRT1170-EVK`_ for more details.
 
-Using LinkServer
-----------------
-
-Known limitations with LinkServer and these boards include:
-- ``west debug`` does not yet work correctly, and the application image is not
-properly written to the memory.  `NXP MCUXpresso for Visual Studio Code`_
-can be used to debug Zephyr applications with LinkServer.
-- ``west flash`` will not write images to non-flash locations. The flash
-command only works when all data in the image is written to flash memory
-regions.
-
-Install the :ref:`linkserver-debug-host-tools` and make sure they are in your
-search path.  LinkServer works with the default CMSIS-DAP firmware included in
-the on-board debugger.
-
-Use the ``-r linkserver`` option with West to use the LinkServer runner.
+Use the ``-r jlink`` option with West to use the jlink runner.
 
 .. code-block:: console
 
-   west flash -r linkserver
+   west flash -r jlink
 
 Alternatively, pyOCD can be used to flash and debug the board by using the
 ``-r pyocd`` option with West. pyOCD is installed when you complete the
@@ -364,10 +332,12 @@ We will use the on-board debugger
 microcontroller as a usb-to-serial adapter for the serial console. The following
 jumper settings are default on these boards, and are required to connect the
 UART signals to the USB bridge circuit:
+
 - MIMXRT1170-EVKB: JP2 open (default)
 - MIMXRT1170-EVK:  J31 and J32 shorted (default)
 
 Connect a USB cable from your PC to the on-board debugger USB port:
+
 - MIMXRT1170-EVKB: J86
 - MIMXRT1170-EVK:  J11
 
@@ -382,7 +352,7 @@ etc.):
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 Before powering the board, make sure SW1 is set to 0001b
 
@@ -403,7 +373,7 @@ see the following message in the terminal:
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -418,11 +388,24 @@ should see the following message in the terminal:
    ***** Booting Zephyr OS v3.4.0-xxxx-xxxxxxxxxxxxx *****
    Hello World! mimxrt1170_evk
 
+ENET1G Driver
+=============
+
+Current default of ethernet driver is to use 100M Ethernet instance ENET.
+To use the 1G Ethernet instance ENET1G, include the overlay to west build with
+the option ``-DEXTRA_DTC_OVERLAY_FILE=nxp,enet1g.overlay`` instead.
+
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
+
 .. _MIMXRT1170-EVK Website:
    https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/i-mx-rt1170-evaluation-kit:MIMXRT1170-EVK
 
 .. _MIMXRT1170-EVK Board Hardware User's Guide:
    https://www.nxp.com/webapp/Download?colCode=MIMXRT1170EVKHUG
+
+.. _MIMXRT1170-EVKB Board Hardware User's Guide:
+   https://www.nxp.com/webapp/Download?colCode=MIMXRT1170EVKBHUG
 
 .. _i.MX RT1170 Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/i-mx-rt-crossover-mcus/i-mx-rt1170-crossover-mcu-family-first-ghz-mcu-with-arm-cortex-m7-and-cortex-m4-cores:i.MX-RT1170

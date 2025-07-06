@@ -5,7 +5,6 @@ config IPM_STM32_IPCC
 	bool "STM32 IPCC controller"
 	default y
 	depends on DT_HAS_ST_STM32_IPCC_MAILBOX_ENABLED
-	select USE_STM32_LL_IPCC
 	help
 	  Driver for stm32 IPCC mailboxes
 

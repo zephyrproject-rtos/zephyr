@@ -134,7 +134,7 @@ unlock:
 	return ret;
 }
 
-static const struct gpio_driver_api gpio_sn74hc595_drv_api_funcs = {
+static DEVICE_API(gpio, gpio_sn74hc595_drv_api_funcs) = {
 	.pin_configure = gpio_sn74hc595_config,
 	.port_get_raw = gpio_sn74hc595_port_get_raw,
 	.port_set_masked_raw = gpio_sn74hc595_port_set_masked_raw,

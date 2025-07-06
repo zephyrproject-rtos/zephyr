@@ -18,6 +18,8 @@ extern "C" {
 /**
  * @brief DHCPv6
  * @defgroup dhcpv6 DHCPv6
+ * @since 3.5
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */

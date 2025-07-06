@@ -8,7 +8,8 @@
 
 config SOC_FAMILY_NORDIC_NRF
 	select SOC_COMPATIBLE_NRF
-	select PLATFORM_SPECIFIC_INIT if ARM
+	select SOC_RESET_HOOK
+	select CMSIS_CORE_HAS_SYSTEM_CORE_CLOCK if ARM
 
 if SOC_FAMILY_NORDIC_NRF
 
@@ -18,8 +19,9 @@ rsource "*/Kconfig"
 config NRF_SOC_SECURE_SUPPORTED
 	def_bool !TRUSTED_EXECUTION_NONSECURE || (BUILD_WITH_TFM && TFM_PARTITION_PLATFORM)
 	depends on !SOC_SERIES_NRF54HX
+	depends on !SOC_SERIES_NRF92X
 	help
-	  Hidden function to indicate that that the soc_secure functions are
+	  Hidden function to indicate that the soc_secure functions are
 	  available.
 	  The functions are always available when not in non-secure.
 	  For non-secure the functions must redirect to secure services exposed
@@ -73,40 +75,26 @@ config NRF_ACL_FLASH_REGION_SIZE
 	help
 	  FLASH region size for the NRF_ACL peripheral.
 
-config NFCT_PINS_AS_GPIOS
-	bool "[DEPRECATED] NFCT pins as GPIOs"
-	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_NFCT))
-	select DEPRECATED
-	help
-	  Two pins are usually reserved for NFC in SoCs that implement the
-	  NFCT peripheral. This option switches them to normal GPIO mode.
-	  HW enabling happens once in the device lifetime, during the first
-	  system startup. Disabling this option will not switch back these
-	  pins to NFCT mode. Doing this requires UICR erase prior to
-	  flashing device using the image which has this option disabled.
-
-	  NFC pins in nRF52 series: P0.09 and P0.10
-	  NFC pins in nRF5340: P0.02 and P0.03
-
-	  This option is deprecated, please use devicetree to configure NFCT
-	  pins as GPIOS like this:
-
-	  &uicr {
-	      nfct-pins-as-gpios;
-	  };
-
 choice NRF_APPROTECT_HANDLING
 	bool "APPROTECT handling"
-	depends on SOC_SERIES_NRF52X || SOC_NRF5340_CPUNET || \
-		   (SOC_NRF5340_CPUAPP && !TRUSTED_EXECUTION_NONSECURE) || \
+	depends on SOC_SERIES_NRF52X || SOC_SERIES_NRF53X || SOC_NRF54L_CPUAPP_COMMON || \
 		   SOC_SERIES_NRF91X
+	default NRF_APPROTECT_DISABLE if SOC_NRF54L_CPUAPP_COMMON
 	default NRF_APPROTECT_USE_UICR
 	help
 	  Specifies how the SystemInit() function should handle the APPROTECT
 	  mechanism.
 
+config NRF_APPROTECT_DISABLE
+	bool "Disable"
+	depends on SOC_NRF54L_CPUAPP_COMMON
+	help
+	  When this option is selected, the SystemInit() disables
+	  the APPROTECT mechanism.
+
 config NRF_APPROTECT_USE_UICR
 	bool "Use UICR"
+	depends on SOC_SERIES_NRF52X || SOC_SERIES_NRF53X || SOC_SERIES_NRF91X
 	help
 	  When this option is selected, the SystemInit() function loads the
 	  firmware branch state of the APPROTECT mechanism from UICR, so if
@@ -131,14 +119,23 @@ endchoice
 
 choice NRF_SECURE_APPROTECT_HANDLING
 	bool "Secure APPROTECT handling"
-	depends on (SOC_NRF5340_CPUAPP && !TRUSTED_EXECUTION_NONSECURE)
+	depends on SOC_NRF5340_CPUAPP || SOC_NRF54L_CPUAPP_COMMON || SOC_SERIES_NRF91X
+	default NRF_SECURE_APPROTECT_DISABLE if SOC_NRF54L_CPUAPP_COMMON
 	default NRF_SECURE_APPROTECT_USE_UICR
 	help
 	  Specifies how the SystemInit() function should handle the secure
 	  APPROTECT mechanism.
 
+config NRF_SECURE_APPROTECT_DISABLE
+	bool "Disable"
+	depends on SOC_NRF54L_CPUAPP_COMMON
+	help
+	  When this option is selected, the SystemInit() disables
+	  the secure APPROTECT mechanism.
+
 config NRF_SECURE_APPROTECT_USE_UICR
 	bool "Use UICR"
+	depends on SOC_NRF5340_CPUAPP || SOC_SERIES_NRF91X
 	help
 	  When this option is selected, the SystemInit() function loads the
 	  firmware branch state of the secure APPROTECT mechanism from UICR,
@@ -170,5 +167,12 @@ config NRF_TRACE_PORT
 	  Enable this option to initialize the TPIU (Trace Port Interface
 	  Unit) for tracing using a hardware probe. If disabled, the trace
 	  pins will be used as GPIO.
+
+config NRF_PLATFORM_HALTIUM
+	bool
+	help
+	  SoC series based on the Nordic nRF Haltium platform need to select
+	  this option. This allows to easily enable common functionality on
+	  SoCs based on the Haltium platform.
 
 endif # SOC_FAMILY_NORDIC_NRF

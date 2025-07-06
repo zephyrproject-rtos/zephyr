@@ -8,5 +8,6 @@ config DAC_STM32
 	bool "STM32 DAC driver"
 	default y
 	depends on DT_HAS_ST_STM32_DAC_ENABLED
+	select PINCTRL
 	help
 	  Enable the driver implementation for the stm32xx DAC

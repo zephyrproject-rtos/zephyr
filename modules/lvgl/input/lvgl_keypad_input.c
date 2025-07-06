@@ -21,8 +21,9 @@ struct lvgl_keypad_input_config {
 	uint8_t num_codes;
 };
 
-static void lvgl_keypad_process_event(const struct device *dev, struct input_event *evt)
+static void lvgl_keypad_process_event(struct input_event *evt, void *user_data)
 {
+	const struct device *dev = user_data;
 	struct lvgl_common_input_data *data = dev->data;
 	const struct lvgl_keypad_input_config *cfg = dev->config;
 	uint8_t i;
@@ -39,9 +40,8 @@ static void lvgl_keypad_process_event(const struct device *dev, struct input_eve
 		return;
 	}
 
-	data->pending_event.state = evt->value ? LV_INDEV_STATE_PR : LV_INDEV_STATE_REL;
-	if (k_msgq_put(cfg->common_config.event_msgq, &data->pending_event,
-		       K_NO_WAIT) != 0) {
+	data->pending_event.state = evt->value ? LV_INDEV_STATE_PRESSED : LV_INDEV_STATE_RELEASED;
+	if (k_msgq_put(cfg->common_config.event_msgq, &data->pending_event, K_NO_WAIT) != 0) {
 		LOG_WRN("Could not put input data into keypad queue");
 	}
 }
@@ -63,6 +63,8 @@ int lvgl_keypad_input_init(const struct device *dev)
 	static const uint16_t lvgl_keypad_lvgl_codes_##inst[] = DT_INST_PROP(inst, lvgl_codes);    \
 	static const struct lvgl_keypad_input_config lvgl_keypad_input_config_##inst = {           \
 		.common_config.event_msgq = &LVGL_INPUT_EVENT_MSGQ(inst, keypad),                  \
+		.common_config.display_dev =                                                       \
+			DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(inst, display)),                     \
 		.input_codes = lvgl_keypad_input_codes_##inst,                                     \
 		.lvgl_codes = lvgl_keypad_lvgl_codes_##inst,                                       \
 		.num_codes = DT_INST_PROP_LEN(inst, input_codes),                                  \

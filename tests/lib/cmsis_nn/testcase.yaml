@@ -1,5 +1,7 @@
 tests:
   libraries.cmsis_nn:
+    arch_allow:
+      - arm
     filter: CONFIG_CPU_CORTEX_M and CONFIG_FULL_LIBC_SUPPORTED
     integration_platforms:
       - frdm_k64f

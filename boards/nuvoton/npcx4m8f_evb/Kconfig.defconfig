@@ -3,6 +3,3 @@
 
 config SYS_CLOCK_TICKS_PER_SEC
 	default 1000
-
-config INPUT
-	default y if KSCAN

@@ -21,7 +21,7 @@ static int z_vrfy_can_calc_timing(const struct device *dev, struct can_timing *r
 
 	return err;
 }
-#include <syscalls/can_calc_timing_mrsh.c>
+#include <zephyr/syscalls/can_calc_timing_mrsh.c>
 
 static inline int z_vrfy_can_set_timing(const struct device *dev,
 					const struct can_timing *timing)
@@ -33,7 +33,7 @@ static inline int z_vrfy_can_set_timing(const struct device *dev,
 
 	return z_impl_can_set_timing(dev, &timing_copy);
 }
-#include <syscalls/can_set_timing_mrsh.c>
+#include <zephyr/syscalls/can_set_timing_mrsh.c>
 
 static inline int z_vrfy_can_get_core_clock(const struct device *dev,
 					    uint32_t *rate)
@@ -43,7 +43,7 @@ static inline int z_vrfy_can_get_core_clock(const struct device *dev,
 
 	return z_impl_can_get_core_clock(dev, rate);
 }
-#include <syscalls/can_get_core_clock_mrsh.c>
+#include <zephyr/syscalls/can_get_core_clock_mrsh.c>
 
 static inline uint32_t z_vrfy_can_get_bitrate_min(const struct device *dev)
 {
@@ -51,7 +51,7 @@ static inline uint32_t z_vrfy_can_get_bitrate_min(const struct device *dev)
 
 	return z_impl_can_get_bitrate_min(dev);
 }
-#include <syscalls/can_get_bitrate_min_mrsh.c>
+#include <zephyr/syscalls/can_get_bitrate_min_mrsh.c>
 
 static inline uint32_t z_vrfy_can_get_bitrate_max(const struct device *dev)
 {
@@ -59,7 +59,7 @@ static inline uint32_t z_vrfy_can_get_bitrate_max(const struct device *dev)
 
 	return z_impl_can_get_bitrate_max(dev);
 }
-#include <syscalls/can_get_bitrate_max_mrsh.c>
+#include <zephyr/syscalls/can_get_bitrate_max_mrsh.c>
 
 static inline const struct can_timing *z_vrfy_can_get_timing_min(const struct device *dev)
 {
@@ -67,7 +67,7 @@ static inline const struct can_timing *z_vrfy_can_get_timing_min(const struct de
 
 	return z_impl_can_get_timing_min(dev);
 }
-#include <syscalls/can_get_timing_min_mrsh.c>
+#include <zephyr/syscalls/can_get_timing_min_mrsh.c>
 
 static inline const struct can_timing *z_vrfy_can_get_timing_max(const struct device *dev)
 {
@@ -75,7 +75,7 @@ static inline const struct can_timing *z_vrfy_can_get_timing_max(const struct de
 
 	return z_impl_can_get_timing_max(dev);
 }
-#include <syscalls/can_get_timing_max_mrsh.c>
+#include <zephyr/syscalls/can_get_timing_max_mrsh.c>
 
 #ifdef CONFIG_CAN_FD_MODE
 
@@ -93,7 +93,7 @@ static int z_vrfy_can_calc_timing_data(const struct device *dev, struct can_timi
 
 	return err;
 }
-#include <syscalls/can_calc_timing_data_mrsh.c>
+#include <zephyr/syscalls/can_calc_timing_data_mrsh.c>
 
 static inline const struct can_timing *z_vrfy_can_get_timing_data_min(const struct device *dev)
 {
@@ -101,7 +101,7 @@ static inline const struct can_timing *z_vrfy_can_get_timing_data_min(const stru
 
 	return z_impl_can_get_timing_data_min(dev);
 }
-#include <syscalls/can_get_timing_data_min_mrsh.c>
+#include <zephyr/syscalls/can_get_timing_data_min_mrsh.c>
 
 static inline const struct can_timing *z_vrfy_can_get_timing_data_max(const struct device *dev)
 {
@@ -109,7 +109,7 @@ static inline const struct can_timing *z_vrfy_can_get_timing_data_max(const stru
 
 	return z_impl_can_get_timing_data_max(dev);
 }
-#include <syscalls/can_get_timing_data_max_mrsh.c>
+#include <zephyr/syscalls/can_get_timing_data_max_mrsh.c>
 
 static inline int z_vrfy_can_set_timing_data(const struct device *dev,
 					     const struct can_timing *timing_data)
@@ -121,7 +121,7 @@ static inline int z_vrfy_can_set_timing_data(const struct device *dev,
 
 	return z_impl_can_set_timing_data(dev, &timing_data_copy);
 }
-#include <syscalls/can_set_timing_data_mrsh.c>
+#include <zephyr/syscalls/can_set_timing_data_mrsh.c>
 
 static inline int z_vrfy_can_set_bitrate_data(const struct device *dev,
 					      uint32_t bitrate_data)
@@ -130,7 +130,7 @@ static inline int z_vrfy_can_set_bitrate_data(const struct device *dev,
 
 	return z_impl_can_set_bitrate_data(dev, bitrate_data);
 }
-#include <syscalls/can_set_bitrate_data_mrsh.c>
+#include <zephyr/syscalls/can_set_bitrate_data_mrsh.c>
 
 #endif /* CONFIG_CAN_FD_MODE */
 
@@ -141,7 +141,7 @@ static inline int z_vrfy_can_get_max_filters(const struct device *dev, bool ide)
 
 	return z_impl_can_get_max_filters(dev, ide);
 }
-#include <syscalls/can_get_max_filters_mrsh.c>
+#include <zephyr/syscalls/can_get_max_filters_mrsh.c>
 
 static inline int z_vrfy_can_get_capabilities(const struct device *dev, can_mode_t *cap)
 {
@@ -150,7 +150,7 @@ static inline int z_vrfy_can_get_capabilities(const struct device *dev, can_mode
 
 	return z_impl_can_get_capabilities(dev, cap);
 }
-#include <syscalls/can_get_capabilities_mrsh.c>
+#include <zephyr/syscalls/can_get_capabilities_mrsh.c>
 
 static inline const struct device *z_vrfy_can_get_transceiver(const struct device *dev)
 {
@@ -158,7 +158,7 @@ static inline const struct device *z_vrfy_can_get_transceiver(const struct devic
 
 	return z_impl_can_get_transceiver(dev);
 }
-#include <syscalls/can_get_transceiver_mrsh.c>
+#include <zephyr/syscalls/can_get_transceiver_mrsh.c>
 
 static inline int z_vrfy_can_start(const struct device *dev)
 {
@@ -166,7 +166,7 @@ static inline int z_vrfy_can_start(const struct device *dev)
 
 	return z_impl_can_start(dev);
 }
-#include <syscalls/can_start_mrsh.c>
+#include <zephyr/syscalls/can_start_mrsh.c>
 
 static inline int z_vrfy_can_stop(const struct device *dev)
 {
@@ -174,7 +174,7 @@ static inline int z_vrfy_can_stop(const struct device *dev)
 
 	return z_impl_can_stop(dev);
 }
-#include <syscalls/can_stop_mrsh.c>
+#include <zephyr/syscalls/can_stop_mrsh.c>
 
 static inline int z_vrfy_can_set_mode(const struct device *dev, can_mode_t mode)
 {
@@ -182,7 +182,7 @@ static inline int z_vrfy_can_set_mode(const struct device *dev, can_mode_t mode)
 
 	return z_impl_can_set_mode(dev, mode);
 }
-#include <syscalls/can_set_mode_mrsh.c>
+#include <zephyr/syscalls/can_set_mode_mrsh.c>
 
 static inline can_mode_t z_vrfy_can_get_mode(const struct device *dev)
 {
@@ -190,7 +190,7 @@ static inline can_mode_t z_vrfy_can_get_mode(const struct device *dev)
 
 	return z_impl_can_get_mode(dev);
 }
-#include <syscalls/can_get_mode_mrsh.c>
+#include <zephyr/syscalls/can_get_mode_mrsh.c>
 
 static inline int z_vrfy_can_set_bitrate(const struct device *dev, uint32_t bitrate)
 {
@@ -198,7 +198,7 @@ static inline int z_vrfy_can_set_bitrate(const struct device *dev, uint32_t bitr
 
 	return z_impl_can_set_bitrate(dev, bitrate);
 }
-#include <syscalls/can_set_bitrate_mrsh.c>
+#include <zephyr/syscalls/can_set_bitrate_mrsh.c>
 
 static inline int z_vrfy_can_send(const struct device *dev,
 				  const struct can_frame *frame,
@@ -214,7 +214,7 @@ static inline int z_vrfy_can_send(const struct device *dev,
 
 	return z_impl_can_send(dev, &frame_copy, timeout, callback, user_data);
 }
-#include <syscalls/can_send_mrsh.c>
+#include <zephyr/syscalls/can_send_mrsh.c>
 
 static inline int z_vrfy_can_add_rx_filter_msgq(const struct device *dev,
 						struct k_msgq *msgq,
@@ -228,7 +228,7 @@ static inline int z_vrfy_can_add_rx_filter_msgq(const struct device *dev,
 
 	return z_impl_can_add_rx_filter_msgq(dev, msgq, &filter_copy);
 }
-#include <syscalls/can_add_rx_filter_msgq_mrsh.c>
+#include <zephyr/syscalls/can_add_rx_filter_msgq_mrsh.c>
 
 static inline void z_vrfy_can_remove_rx_filter(const struct device *dev, int filter_id)
 {
@@ -236,7 +236,7 @@ static inline void z_vrfy_can_remove_rx_filter(const struct device *dev, int fil
 
 	z_impl_can_remove_rx_filter(dev, filter_id);
 }
-#include <syscalls/can_remove_rx_filter_mrsh.c>
+#include <zephyr/syscalls/can_remove_rx_filter_mrsh.c>
 
 static inline int z_vrfy_can_get_state(const struct device *dev, enum can_state *state,
 				       struct can_bus_err_cnt *err_cnt)
@@ -253,7 +253,7 @@ static inline int z_vrfy_can_get_state(const struct device *dev, enum can_state 
 
 	return z_impl_can_get_state(dev, state, err_cnt);
 }
-#include <syscalls/can_get_state_mrsh.c>
+#include <zephyr/syscalls/can_get_state_mrsh.c>
 
 #ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
 static inline int z_vrfy_can_recover(const struct device *dev, k_timeout_t timeout)
@@ -263,7 +263,7 @@ static inline int z_vrfy_can_recover(const struct device *dev, k_timeout_t timeo
 
 	return z_impl_can_recover(dev, timeout);
 }
-#include <syscalls/can_recover_mrsh.c>
+#include <zephyr/syscalls/can_recover_mrsh.c>
 #endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
 
 #ifdef CONFIG_CAN_STATS
@@ -274,7 +274,7 @@ static inline uint32_t z_vrfy_can_stats_get_bit_errors(const struct device *dev)
 
 	return z_impl_can_stats_get_bit_errors(dev);
 }
-#include <syscalls/can_stats_get_bit_errors_mrsh.c>
+#include <zephyr/syscalls/can_stats_get_bit_errors_mrsh.c>
 
 static inline uint32_t z_vrfy_can_stats_get_bit0_errors(const struct device *dev)
 {
@@ -282,7 +282,7 @@ static inline uint32_t z_vrfy_can_stats_get_bit0_errors(const struct device *dev
 
 	return z_impl_can_stats_get_bit0_errors(dev);
 }
-#include <syscalls/can_stats_get_bit0_errors_mrsh.c>
+#include <zephyr/syscalls/can_stats_get_bit0_errors_mrsh.c>
 
 static inline uint32_t z_vrfy_can_stats_get_bit1_errors(const struct device *dev)
 {
@@ -290,7 +290,7 @@ static inline uint32_t z_vrfy_can_stats_get_bit1_errors(const struct device *dev
 
 	return z_impl_can_stats_get_bit1_errors(dev);
 }
-#include <syscalls/can_stats_get_bit1_errors_mrsh.c>
+#include <zephyr/syscalls/can_stats_get_bit1_errors_mrsh.c>
 
 static inline uint32_t z_vrfy_can_stats_get_stuff_errors(const struct device *dev)
 {
@@ -298,7 +298,7 @@ static inline uint32_t z_vrfy_can_stats_get_stuff_errors(const struct device *de
 
 	return z_impl_can_stats_get_stuff_errors(dev);
 }
-#include <syscalls/can_stats_get_stuff_errors_mrsh.c>
+#include <zephyr/syscalls/can_stats_get_stuff_errors_mrsh.c>
 
 static inline uint32_t z_vrfy_can_stats_get_crc_errors(const struct device *dev)
 {
@@ -306,7 +306,7 @@ static inline uint32_t z_vrfy_can_stats_get_crc_errors(const struct device *dev)
 
 	return z_impl_can_stats_get_crc_errors(dev);
 }
-#include <syscalls/can_stats_get_crc_errors_mrsh.c>
+#include <zephyr/syscalls/can_stats_get_crc_errors_mrsh.c>
 
 static inline uint32_t z_vrfy_can_stats_get_form_errors(const struct device *dev)
 {
@@ -314,7 +314,7 @@ static inline uint32_t z_vrfy_can_stats_get_form_errors(const struct device *dev
 
 	return z_impl_can_stats_get_form_errors(dev);
 }
-#include <syscalls/can_stats_get_form_errors_mrsh.c>
+#include <zephyr/syscalls/can_stats_get_form_errors_mrsh.c>
 
 static inline uint32_t z_vrfy_can_stats_get_ack_errors(const struct device *dev)
 {
@@ -322,7 +322,7 @@ static inline uint32_t z_vrfy_can_stats_get_ack_errors(const struct device *dev)
 
 	return z_impl_can_stats_get_ack_errors(dev);
 }
-#include <syscalls/can_stats_get_ack_errors_mrsh.c>
+#include <zephyr/syscalls/can_stats_get_ack_errors_mrsh.c>
 
 static inline uint32_t z_vrfy_can_stats_get_rx_overruns(const struct device *dev)
 {
@@ -330,6 +330,6 @@ static inline uint32_t z_vrfy_can_stats_get_rx_overruns(const struct device *dev
 
 	return z_impl_can_stats_get_rx_overruns(dev);
 }
-#include <syscalls/can_stats_get_rx_overruns_mrsh.c>
+#include <zephyr/syscalls/can_stats_get_rx_overruns_mrsh.c>
 
 #endif /* CONFIG_CAN_STATS */

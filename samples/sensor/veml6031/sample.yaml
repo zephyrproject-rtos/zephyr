@@ -1,0 +1,10 @@
+sample:
+  name: VEML6031 Sensor Sample
+tests:
+  sample.sensor.veml6031:
+    harness: sensor
+    platform_allow: olimex_stm32_e407
+    integration_platforms:
+      - olimex_stm32_e407
+    tags: sensors
+    filter: dt_compat_enabled("vishay,veml6031")

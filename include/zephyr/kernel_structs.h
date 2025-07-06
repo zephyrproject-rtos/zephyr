@@ -33,13 +33,7 @@
 #endif
 
 #define K_NUM_THREAD_PRIO (CONFIG_NUM_PREEMPT_PRIORITIES + CONFIG_NUM_COOP_PRIORITIES + 1)
-
-#if defined(CONFIG_64BIT)
-#define PRIQ_BITMAP_SIZE (DIV_ROUND_UP(K_NUM_THREAD_PRIO, 8 * sizeof(uint64_t)))
-#else
-#define PRIQ_BITMAP_SIZE (DIV_ROUND_UP(K_NUM_THREAD_PRIO, 8 * sizeof(uint32_t)))
-#endif
-
+#define PRIQ_BITMAP_SIZE  (DIV_ROUND_UP(K_NUM_THREAD_PRIO, BITS_PER_LONG))
 
 #ifdef __cplusplus
 extern "C" {
@@ -60,8 +54,8 @@ extern "C" {
 /* Thread is waiting on an object */
 #define _THREAD_PENDING (BIT(1))
 
-/* Thread has not yet started */
-#define _THREAD_PRESTART (BIT(2))
+/* Thread is sleeping */
+#define _THREAD_SLEEPING (BIT(2))
 
 /* Thread has terminated */
 #define _THREAD_DEAD (BIT(3))
@@ -127,10 +121,9 @@ struct _priq_rb {
  */
 struct _priq_mq {
 	sys_dlist_t queues[K_NUM_THREAD_PRIO];
-#ifdef CONFIG_64BIT
-	uint64_t bitmask[PRIQ_BITMAP_SIZE];
-#else
-	uint32_t bitmask[PRIQ_BITMAP_SIZE];
+	unsigned long bitmask[PRIQ_BITMAP_SIZE];
+#ifndef CONFIG_SMP
+	unsigned int cached_queue_index;
 #endif
 };
 
@@ -140,7 +133,7 @@ struct _ready_q {
 	struct k_thread *cache;
 #endif
 
-#if defined(CONFIG_SCHED_DUMB)
+#if defined(CONFIG_SCHED_SIMPLE)
 	sys_dlist_t runq;
 #elif defined(CONFIG_SCHED_SCALABLE)
 	struct _priq_rb runq;
@@ -224,20 +217,6 @@ struct z_kernel {
 	struct _ready_q ready_q;
 #endif
 
-#ifdef CONFIG_FPU_SHARING
-	/*
-	 * A 'current_sse' field does not exist in addition to the 'current_fp'
-	 * field since it's not possible to divide the IA-32 non-integer
-	 * registers into 2 distinct blocks owned by differing threads.  In
-	 * other words, given that the 'fxnsave/fxrstor' instructions
-	 * save/restore both the X87 FPU and XMM registers, it's not possible
-	 * for a thread to only "own" the XMM registers.
-	 */
-
-	/* thread that owns the FP regs */
-	struct k_thread *current_fp;
-#endif
-
 #if defined(CONFIG_THREAD_MONITOR)
 	struct k_thread *threads; /* singly linked list of ALL threads */
 #endif
@@ -250,8 +229,8 @@ struct z_kernel {
 #endif
 
 #if defined(CONFIG_SMP) && defined(CONFIG_SCHED_IPI_SUPPORTED)
-	/* Need to signal an IPI at the next scheduling point */
-	bool pending_ipi;
+	/* Identify CPUs to send IPIs to at the next scheduling point */
+	atomic_t pending_ipi;
 #endif
 };
 
@@ -267,14 +246,28 @@ extern atomic_t _cpus_active;
  * another SMP CPU.
  */
 bool z_smp_cpu_mobile(void);
-
 #define _current_cpu ({ __ASSERT_NO_MSG(!z_smp_cpu_mobile()); \
 			arch_curr_cpu(); })
-#define _current k_sched_current_thread_query()
+
+__attribute_const__ struct k_thread *z_smp_current_get(void);
+#define _current z_smp_current_get()
 
 #else
 #define _current_cpu (&_kernel.cpus[0])
 #define _current _kernel.cpus[0].current
+#endif
+
+#define CPU_ID ((CONFIG_MP_MAX_NUM_CPUS == 1) ? 0 : _current_cpu->id)
+
+/* This is always invoked from a context where preemption is disabled */
+#define z_current_thread_set(thread) ({ _current_cpu->current = (thread); })
+
+#ifdef CONFIG_ARCH_HAS_CUSTOM_CURRENT_IMPL
+#undef _current
+#define _current arch_current_thread()
+#undef z_current_thread_set
+#define z_current_thread_set(thread) \
+	arch_current_thread_set(({ _current_cpu->current = (thread); }))
 #endif
 
 /* kernel wait queue record */

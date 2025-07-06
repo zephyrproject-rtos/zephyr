@@ -5,7 +5,6 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 ram: 20
 flash: 192
 supported:
@@ -22,4 +21,5 @@ supported:
   - counter
   - rng
   - eeprom
+  - rtc
 vendor: st

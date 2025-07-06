@@ -9,20 +9,16 @@
 #include <zephyr/drivers/watchdog.h>
 
 #define WDT_SETUP_HELP                                                                             \
-	"Set up watchdog instance. Syntax:\n"                                                      \
-	"<device>"
+	SHELL_HELP("Set up watchdog instance", "<device>")
 
 #define WDT_DISABLE_HELP                                                                           \
-	"Disable watchdog instance. Syntax:\n"                                                     \
-	"<device>"
+	SHELL_HELP("Disable watchdog instance", "<device>")
 
 #define WDT_TIMEOUT_HELP                                                                           \
-	"Install a new timeout. Syntax:\n"                                                         \
-	"<device> <none|cpu|soc> <min_ms> <max_ms>"
+	SHELL_HELP("Install a new timeout", "<device> <none|cpu|soc> <min_ms> <max_ms>")
 
 #define WDT_FEED_HELP                                                                              \
-	"Feed specified watchdog timeout. Syntax:\n"                                               \
-	"<device> <channel_id>"
+	SHELL_HELP("Feed specified watchdog timeout", "<device> <channel_id>")
 
 static const char *const wdt_reset_name[] = {
 	[WDT_FLAG_RESET_NONE] = "none",
@@ -72,7 +68,7 @@ static int cmd_setup(const struct shell *sh, size_t argc, char *argv[])
 {
 	const struct device *dev;
 
-	dev = device_get_binding(argv[args_indx.device]);
+	dev = shell_device_get_binding(argv[args_indx.device]);
 	if (!dev) {
 		shell_error(sh, "WDT device not found");
 		return -ENODEV;
@@ -85,7 +81,7 @@ static int cmd_disable(const struct shell *sh, size_t argc, char *argv[])
 {
 	const struct device *dev;
 
-	dev = device_get_binding(argv[args_indx.device]);
+	dev = shell_device_get_binding(argv[args_indx.device]);
 	if (!dev) {
 		shell_error(sh, "WDT device not found");
 		return -ENODEV;
@@ -103,7 +99,7 @@ static int cmd_timeout(const struct shell *sh, size_t argc, char *argv[])
 	struct wdt_timeout_cfg cfg;
 	int rc;
 
-	dev = device_get_binding(argv[args_indx.device]);
+	dev = shell_device_get_binding(argv[args_indx.device]);
 	if (!dev) {
 		shell_error(sh, "WDT device not found");
 		return -ENODEV;
@@ -145,7 +141,7 @@ static int cmd_feed(const struct shell *sh, size_t argc, char *argv[])
 	const struct device *dev;
 	int channel_id;
 
-	dev = device_get_binding(argv[args_indx.device]);
+	dev = shell_device_get_binding(argv[args_indx.device]);
 	if (!dev) {
 		shell_error(sh, "WDT device not found");
 		return -ENODEV;
@@ -160,10 +156,15 @@ static int cmd_feed(const struct shell *sh, size_t argc, char *argv[])
 	return wdt_feed(dev, channel_id);
 }
 
+static bool device_is_wdt(const struct device *dev)
+{
+	return DEVICE_API_IS(wdt, dev);
+}
+
 /* Device name autocompletion support */
 static void device_name_get(size_t idx, struct shell_static_entry *entry)
 {
-	const struct device *dev = shell_device_lookup(idx, NULL);
+	const struct device *dev = shell_device_filter(idx, device_is_wdt);
 
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
 	entry->handler = NULL;

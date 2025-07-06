@@ -41,7 +41,7 @@ static inline int z_vrfy_i2s_configure(const struct device *dev,
 out:
 	return ret;
 }
-#include <syscalls/i2s_configure_mrsh.c>
+#include <zephyr/syscalls/i2s_configure_mrsh.c>
 
 static inline int z_vrfy_i2s_buf_read(const struct device *dev,
 				      void *buf, size_t *size)
@@ -74,7 +74,7 @@ static inline int z_vrfy_i2s_buf_read(const struct device *dev,
 
 	return ret;
 }
-#include <syscalls/i2s_buf_read_mrsh.c>
+#include <zephyr/syscalls/i2s_buf_read_mrsh.c>
 
 static inline int z_vrfy_i2s_buf_write(const struct device *dev,
 				       void *buf, size_t size)
@@ -111,7 +111,7 @@ static inline int z_vrfy_i2s_buf_write(const struct device *dev,
 
 	return ret;
 }
-#include <syscalls/i2s_buf_write_mrsh.c>
+#include <zephyr/syscalls/i2s_buf_write_mrsh.c>
 
 static inline int z_vrfy_i2s_trigger(const struct device *dev,
 				     enum i2s_dir dir,
@@ -121,4 +121,4 @@ static inline int z_vrfy_i2s_trigger(const struct device *dev,
 
 	return z_impl_i2s_trigger((const struct device *)dev, dir, cmd);
 }
-#include <syscalls/i2s_trigger_mrsh.c>
+#include <zephyr/syscalls/i2s_trigger_mrsh.c>

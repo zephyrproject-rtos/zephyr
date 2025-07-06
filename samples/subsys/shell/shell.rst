@@ -1,10 +1,5 @@
-.. _shell-samples:
+.. zephyr:code-sample-category:: shell
+   :name: Shell
+   :show-listing:
 
-Shell System Samples
-####################
-
-.. toctree::
-   :maxdepth: 1
-   :glob:
-
-   **/*
+   Samples that demonstrate the :ref:`shell_api` subsystem.

@@ -1,0 +1,415 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include <arm/armv7-m.dtsi>
+#include <mem.h>
+#include <freq.h>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	clocks {
+		uartclk: apb-pclk {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(24)>;
+			#clock-cells = <0>;
+		};
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-m4f";
+			reg = <0>;
+			cpu-power-states = <&idle &suspend_to_ram>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			itm: itm@e0000000 {
+				compatible = "arm,armv7m-itm";
+				reg = <0xe0000000 0x1000>;
+				swo-ref-frequency = <DT_FREQ_M(6)>;
+			};
+		};
+
+		power-states {
+			idle: idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				/* As Apollo3blue datasheet, run_to_sleep and sleep_to_run
+				 * transition time are both lower than 1us, but considering
+				 * the software overhead we set a bigger value.
+				 */
+				min-residency-us = <100>;
+				exit-latency-us = <5>;
+			};
+
+			suspend_to_ram: suspend_to_ram {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-ram";
+				/* As Apollo3blue datasheet, run_to_deepsleep transition time is
+				 * the software overhead 1us and deepsleep_to_run transition time
+				 * is about 25us,but considering the software overhead, we set
+				 * a bigger value.
+				 */
+				min-residency-us = <2000>;
+				exit-latency-us = <125>;
+			};
+		};
+	};
+
+	/* TCM */
+	tcm: tcm@10000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x10000000 0x10000>;
+		zephyr,memory-region = "ITCM";
+	};
+
+	/* SRAM */
+	sram0: memory@10010000 {
+		compatible = "mmio-sram";
+		reg = <0x10010000 0x50000>;
+	};
+
+	soc {
+		compatible = "ambiq,apollo3-blue", "ambiq,apollo3x", "simple-bus";
+
+		flash: flash-controller@0 {
+			compatible = "ambiq,flash-controller";
+			reg = <0x00000000 0x100000>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* Flash region */
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				reg = <0x00000000 0x100000>;
+			};
+		};
+
+		stimer0: stimer@40008140 {
+			compatible = "ambiq,stimer";
+			reg = <0x40008140 0x80>;
+			interrupts = <23 0>;
+			status = "okay";
+		};
+
+		counter0: counter@40008000 {
+			compatible = "ambiq,counter";
+			reg = <0x40008000 0x20>;
+			interrupts = <14 0>;
+			clock-frequency = <DT_FREQ_M(3)>;
+			clk-source = <2>;
+			status = "disabled";
+		};
+
+		counter1: counter@40008020 {
+			compatible = "ambiq,counter";
+			reg = <0x40008020 0x20>;
+			interrupts = <14 0>;
+			clock-frequency = <DT_FREQ_M(3)>;
+			clk-source = <2>;
+			status = "disabled";
+		};
+
+		counter2: counter@40008040 {
+			compatible = "ambiq,counter";
+			reg = <0x40008040 0x20>;
+			interrupts = <14 0>;
+			clock-frequency = <DT_FREQ_M(3)>;
+			clk-source = <2>;
+			status = "disabled";
+		};
+
+		counter4: counter@40008080 {
+			compatible = "ambiq,counter";
+			reg = <0x40008080 0x20>;
+			interrupts = <14 0>;
+			clock-frequency = <DT_FREQ_M(3)>;
+			clk-source = <2>;
+			status = "disabled";
+		};
+
+		counter5: counter@400080a0 {
+			compatible = "ambiq,counter";
+			reg = <0x400080A0 0x20>;
+			interrupts = <14 0>;
+			clock-frequency = <DT_FREQ_M(3)>;
+			clk-source = <2>;
+			status = "disabled";
+		};
+
+		counter6: counter@400080c0 {
+			compatible = "ambiq,counter";
+			reg = <0x400080C0 0x20>;
+			interrupts = <14 0>;
+			clock-frequency = <DT_FREQ_M(3)>;
+			clk-source = <2>;
+			status = "disabled";
+		};
+
+		counter7: counter@400080e0 {
+			compatible = "ambiq,counter";
+			reg = <0x400080E0 0x20>;
+			interrupts = <14 0>;
+			clock-frequency = <DT_FREQ_M(3)>;
+			clk-source = <2>;
+			status = "disabled";
+		};
+
+		uart0: uart@4001c000 {
+			compatible = "ambiq,pl011-uart", "arm,pl011";
+			reg = <0x4001c000 0x1000>;
+			interrupts = <15 0>;
+			interrupt-names = "UART0";
+			status = "disabled";
+			clocks = <&uartclk>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		uart1: uart@4001d000 {
+			compatible = "ambiq,pl011-uart", "arm,pl011";
+			reg = <0x4001d000 0x1000>;
+			interrupts = <16 0>;
+			interrupt-names = "UART1";
+			status = "disabled";
+			clocks = <&uartclk>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		spid0: spi@50000100 {
+			compatible = "ambiq,spid";
+			reg = <0x50000100 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <4 0>;
+			status = "disabled";
+			zephyr,pm-device-runtime-auto;
+		};
+
+		iom0: iom@50004000 {
+			compatible = "ambiq,iom";
+			reg = <0x50004000 0x1000>;
+			interrupts = <6 0>;
+
+			spi {
+				compatible = "ambiq,spi";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
+			i2c {
+				compatible = "ambiq,i2c";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
+		};
+
+		iom1: iom@50005000 {
+			compatible = "ambiq,iom";
+			reg = <0x50005000 0x1000>;
+			interrupts = <7 0>;
+
+			spi {
+				compatible = "ambiq,spi";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
+			i2c {
+				compatible = "ambiq,i2c";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
+		};
+
+		iom2: iom@50006000 {
+			compatible = "ambiq,iom";
+			reg = <0x50006000 0x1000>;
+			interrupts = <8 0>;
+
+			spi {
+				compatible = "ambiq,spi";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
+			i2c {
+				compatible = "ambiq,i2c";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
+		};
+
+		iom3: iom@50007000 {
+			compatible = "ambiq,iom";
+			reg = <0x50007000 0x1000>;
+			interrupts = <9 0>;
+
+			spi {
+				compatible = "ambiq,spi";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
+			i2c {
+				compatible = "ambiq,i2c";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
+		};
+
+		iom4: iom@50008000 {
+			compatible = "ambiq,iom";
+			reg = <0x50008000 0x1000>;
+			interrupts = <10 0>;
+
+			spi {
+				compatible = "ambiq,spi";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
+			i2c {
+				compatible = "ambiq,i2c";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
+		};
+
+		iom5: iom@50009000 {
+			compatible = "ambiq,iom";
+			reg = <0x50009000 0x1000>;
+			interrupts = <11 0>;
+
+			spi {
+				compatible = "ambiq,spi";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
+			i2c {
+				compatible = "ambiq,i2c";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
+		};
+
+		adc0: adc@50010000 {
+			compatible = "ambiq,adc";
+			reg = <0x50010000 0x400>;
+			interrupts = <18 0>;
+			interrupt-names = "ADC";
+			channel-count = <10>;
+			internal-vref-mv = <1500>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
+		mspi0: spi@40020000 {
+			compatible = "ambiq,mspi";
+			reg = <0x40020000 0x400>;
+			interrupts = <20 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		rtc0: rtc@40004240 {
+			compatible = "ambiq,rtc";
+			reg = <0x40004240 0xD0>;
+			interrupts = <2 0>;
+			alarms-count = <1>;
+			status = "disabled";
+		};
+
+		bleif: spi@5000c000 {
+			compatible = "ambiq,spi-bleif";
+			reg = <0x5000c000 0x414>;
+			interrupts = <12 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			bt_hci_apollo: bt-hci@0 {
+				compatible = "ambiq,bt-hci-spi";
+				spi-max-frequency = <DT_FREQ_M(6)>;
+				reg = <0>;
+			};
+		};
+
+		pinctrl: pin-controller@40010000 {
+			compatible = "ambiq,apollo3-pinctrl";
+			reg = <0x40010000 0x800>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			gpio: gpio@40010000 {
+				compatible = "ambiq,gpio";
+				gpio-map-mask = <0xffffffe0 0xffffffc0>;
+				gpio-map-pass-thru = <0x1f 0x3f>;
+				gpio-map = <
+					0x00 0x0 &gpio0_31 0x0 0x0
+					0x20 0x0 &gpio32_63 0x0 0x0
+				>;
+				reg = <0x40010000>;
+				#gpio-cells = <2>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				ranges;
+
+				gpio0_31: gpio0_31@0 {
+					compatible = "ambiq,gpio-bank";
+					gpio-controller;
+					#gpio-cells = <2>;
+					reg = <0>;
+					interrupts = <13 0>;
+					status = "disabled";
+				};
+
+				gpio32_63: gpio32_63@20 {
+					compatible = "ambiq,gpio-bank";
+					gpio-controller;
+					#gpio-cells = <2>;
+					reg = <0x20>;
+					interrupts = <13 0>;
+					status = "disabled";
+					ngpios = <18>;
+				};
+			};
+		};
+
+		wdt0: watchdog@40024000 {
+			compatible = "ambiq,watchdog";
+			reg = <0x40024000 0x400>;
+			interrupts = <1 0>;
+			clock-frequency = <16>;
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

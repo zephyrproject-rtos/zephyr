@@ -24,7 +24,7 @@ int usbd_ep_enable(const struct device *dev,
 	int ret;
 
 	ret = udc_ep_enable(dev, ed->bEndpointAddress, ed->bmAttributes,
-			    ed->wMaxPacketSize, ed->bInterval);
+			    sys_le16_to_cpu(ed->wMaxPacketSize), ed->bInterval);
 	if (ret == 0) {
 		usbd_ep_bm_set(ep_bm, ed->bEndpointAddress);
 	}
@@ -55,11 +55,24 @@ int usbd_ep_disable(const struct device *dev,
 	return ret;
 }
 
-static void usbd_ep_ctrl_set_zlp(struct usbd_contex *const uds_ctx,
+static void usbd_ep_ctrl_set_zlp(struct usbd_context *const uds_ctx,
 				 struct net_buf *const buf)
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
+	struct usb_device_descriptor *desc = uds_ctx->fs_desc;
 	size_t min_len = MIN(setup->wLength, buf->len);
+	uint8_t mps0 = 0;
+
+	switch (usbd_bus_speed(uds_ctx)) {
+	case USBD_SPEED_FS:
+		mps0 = desc->bMaxPacketSize0;
+		break;
+	case USBD_SPEED_HS:
+		mps0 = USB_CONTROL_EP_MPS;
+		break;
+	default:
+		__ASSERT(false, "Cannot determine bMaxPacketSize0 (unsupported speed)");
+	}
 
 	if (buf->len == 0) {
 		return;
@@ -70,7 +83,7 @@ static void usbd_ep_ctrl_set_zlp(struct usbd_contex *const uds_ctx,
 	 * last chunk is wMaxPacketSize long, to indicate the last
 	 * packet.
 	 */
-	if (setup->wLength > min_len && !(min_len % USB_CONTROL_EP_MPS)) {
+	if (setup->wLength > min_len && !(min_len % mps0)) {
 		/*
 		 * Transfer length is less as requested by wLength and
 		 * is multiple of wMaxPacketSize.
@@ -86,18 +99,7 @@ static void usbd_ep_ctrl_set_zlp(struct usbd_contex *const uds_ctx,
  * All the functions below are part of public USB device support API.
  */
 
-struct net_buf *usbd_ep_ctrl_buf_alloc(struct usbd_contex *const uds_ctx,
-				       const uint8_t ep, const size_t size)
-{
-	if (USB_EP_GET_IDX(ep)) {
-		/* Not a control endpoint */
-		return NULL;
-	}
-
-	return udc_ep_buf_alloc(uds_ctx->dev, ep, size);
-}
-
-int usbd_ep_ctrl_enqueue(struct usbd_contex *const uds_ctx,
+int usbd_ep_ctrl_enqueue(struct usbd_context *const uds_ctx,
 			 struct net_buf *const buf)
 {
 	struct udc_buf_info *bi;
@@ -120,18 +122,18 @@ int usbd_ep_ctrl_enqueue(struct usbd_contex *const uds_ctx,
 	return udc_ep_enqueue(uds_ctx->dev, buf);
 }
 
-struct net_buf *usbd_ep_buf_alloc(const struct usbd_class_node *const c_nd,
+struct net_buf *usbd_ep_buf_alloc(const struct usbd_class_data *const c_data,
 				  const uint8_t ep, const size_t size)
 {
-	struct usbd_contex *uds_ctx = c_nd->data->uds_ctx;
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 
 	return udc_ep_buf_alloc(uds_ctx->dev, ep, size);
 }
 
-int usbd_ep_enqueue(const struct usbd_class_node *const c_nd,
+int usbd_ep_enqueue(const struct usbd_class_data *const c_data,
 		    struct net_buf *const buf)
 {
-	struct usbd_contex *uds_ctx = c_nd->data->uds_ctx;
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 	struct udc_buf_info *bi = udc_get_buf_info(buf);
 
 	if (USB_EP_DIR_IS_IN(bi->ep)) {
@@ -140,22 +142,22 @@ int usbd_ep_enqueue(const struct usbd_class_node *const c_nd,
 		}
 	}
 
-	bi->owner = (void *)c_nd;
+	bi->owner = (void *)c_data;
 
 	return udc_ep_enqueue(uds_ctx->dev, buf);
 }
 
-int usbd_ep_buf_free(struct usbd_contex *const uds_ctx, struct net_buf *buf)
+int usbd_ep_buf_free(struct usbd_context *const uds_ctx, struct net_buf *buf)
 {
 	return udc_ep_buf_free(uds_ctx->dev, buf);
 }
 
-int usbd_ep_dequeue(struct usbd_contex *const uds_ctx, const uint8_t ep)
+int usbd_ep_dequeue(struct usbd_context *const uds_ctx, const uint8_t ep)
 {
 	return udc_ep_dequeue(uds_ctx->dev, ep);
 }
 
-int usbd_ep_set_halt(struct usbd_contex *const uds_ctx, const uint8_t ep)
+int usbd_ep_set_halt(struct usbd_context *const uds_ctx, const uint8_t ep)
 {
 	struct usbd_ch9_data *ch9_data = &uds_ctx->ch9_data;
 	int ret;
@@ -171,7 +173,7 @@ int usbd_ep_set_halt(struct usbd_contex *const uds_ctx, const uint8_t ep)
 	return ret;
 }
 
-int usbd_ep_clear_halt(struct usbd_contex *const uds_ctx, const uint8_t ep)
+int usbd_ep_clear_halt(struct usbd_context *const uds_ctx, const uint8_t ep)
 {
 	struct usbd_ch9_data *ch9_data = &uds_ctx->ch9_data;
 	int ret;
@@ -187,7 +189,7 @@ int usbd_ep_clear_halt(struct usbd_contex *const uds_ctx, const uint8_t ep)
 	return ret;
 }
 
-bool usbd_ep_is_halted(struct usbd_contex *const uds_ctx, const uint8_t ep)
+bool usbd_ep_is_halted(struct usbd_context *const uds_ctx, const uint8_t ep)
 {
 	struct usbd_ch9_data *ch9_data = &uds_ctx->ch9_data;
 

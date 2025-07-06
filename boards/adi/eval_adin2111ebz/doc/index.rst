@@ -1,7 +1,4 @@
-.. _adi_eval_adin2111ebz:
-
-ADI EVAL-ADIN2111EVB Evaluation board
-#####################################
+.. zephyr:board:: adi_eval_adin2111ebz
 
 Overview
 ********
@@ -38,12 +35,6 @@ the 2 PHYs configuration and data exchange between SPI host and ports.
    so the S1 DIP switches must be set as ``SPI_CFG0 OFF and SPI_CFG1 OFF``.
    An inconsistent S1 DIP switches configuration will halt the boot.
 
-.. figure:: img/adi_eval_adin2111ebz.webp
-   :align: center
-   :alt: ADI EVAL-ADIN2111EBZ
-
-   ADI EVAL-ADIN2111EBZ (Credit: Analog Devices, Inc.)
-
 Hardware
 ********
 
@@ -55,39 +46,7 @@ https://wiki.analog.com/resources/eval/user-guides/eval-adin2111ebz-user-guide
 Supported Features
 ==================
 
-The ADI adi_eval_adin2111ebz board configuration supports the
-following hardware features:
-
-+--------------+------------+-------------------------------------+
-| Interface    | Controller | Driver/Component                    |
-+==============+============+=====================================+
-| NVIC         | on-chip    | nested vector interrupt controller  |
-+--------------+------------+-------------------------------------+
-| UART         | on-chip    | serial port-polling;                |
-|              |            | serial port-interrupt               |
-+--------------+------------+-------------------------------------+
-| PINMUX       | on-chip    | pinmux                              |
-+--------------+------------+-------------------------------------+
-| GPIO         | on-chip    | gpio                                |
-+--------------+------------+-------------------------------------+
-| I2C          | on-chip    | i2c                                 |
-+--------------+------------+-------------------------------------+
-| SPI          | on-chip    | spi                                 |
-+--------------+------------+-------------------------------------+
-| PWM          | on-chip    | pwm                                 |
-+--------------+------------+-------------------------------------+
-| WATCHDOG     | on-chip    | independent watchdog                |
-+--------------+------------+-------------------------------------+
-| ADIN2111     | spi        | adin2111 10BASE-T1L mac/phy         |
-+--------------+------------+-------------------------------------+
-| FT232        | uart       | usb-uart                            |
-+--------------+------------+-------------------------------------+
-
-
-The default configuration can be found in the defconfig file:
-
-	:zephyr_file:`boards/adi/eval_adin2111ebz/adi_eval_adin2111ebz_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -129,6 +88,8 @@ Same UART1 TX and RX cmos signals are available before the FT232, at P9 connecto
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 
@@ -146,7 +107,7 @@ program to connect with your ADI board. For example:
    $ minicom -D /dev/serial/by-id/usb-ADI_EVAL-ADIN2111EBZ_XXXXXX-12-if00-port0
 
 where XXXXXX is the serial number of the connected device.
-Then, build and flash in the usual way. Here is an example for the :ref:`hello_world` application.
+Then, build and flash in the usual way. Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -162,7 +123,7 @@ You should see the following message on the console:
 Debugging
 =========
 
-You can debug an application in the usual way.  Here is an example for the :ref:`hello_world`
+You can debug an application in the usual way.  Here is an example for the :zephyr:code-sample:`hello_world`
 application.
 
 .. zephyr-app-commands::

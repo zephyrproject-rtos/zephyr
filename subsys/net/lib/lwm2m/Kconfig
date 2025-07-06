@@ -18,7 +18,7 @@ source "subsys/net/Kconfig.template.log_config.net"
 
 menu "Protocol versions"
 
-choice
+choice LWM2M_VERSION
 	prompt "LwM2M protocol version"
 	default LWM2M_VERSION_1_0
 	help
@@ -134,6 +134,14 @@ config LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP
 	help
 	  Enabling this setting allows the RD client to support bootstrap mode.
 
+config LWM2M_ENGINE_ALWAYS_REPORT_OBJ_VERSION
+	bool "LwM2M engine always report object version"
+	help
+	  According to LwM2M specification v1.0 and v1.1, non-core object versions other than 1.0
+	  'must' be provided, while all other versions 'may' be provided. With specification v1.2,
+	  a client 'can always attach Object Version Information'. Enable this configuration to
+	  always report all object versions.
+
 choice
 prompt "Socket handling at idle state"
 
@@ -153,12 +161,12 @@ endchoice
 
 choice
 	prompt "LwM2M Engine operation mode"
-	default LWM2M_TICKLESS if NET_SOCKETPAIR
-	default LWM2M_INTERVAL if !NET_SOCKETPAIR
+	default LWM2M_TICKLESS if ZVFS_EVENTFD_MAX > 1
+	default LWM2M_INTERVAL
 
 config LWM2M_TICKLESS
 	bool "Tickless operation mode"
-	depends on NET_SOCKETPAIR
+	depends on ZVFS_EVENTFD
 
 config LWM2M_INTERVAL
 	bool "Interval based polling mode"
@@ -219,7 +227,7 @@ config LWM2M_RD_CLIENT_MAX_RETRIES
 config LWM2M_RESOURCE_DATA_CACHE_SUPPORT
 	bool "Resource Time series data cache support"
 	depends on (LWM2M_RW_SENML_JSON_SUPPORT || LWM2M_RW_SENML_CBOR_SUPPORT)
-	depends on (POSIX_CLOCK && RING_BUFFER)
+	depends on RING_BUFFER
 	help
 	  Enable time series data storage.
 	  Requires time() to provide current Unix timestamp.
@@ -265,25 +273,25 @@ config LWM2M_ENGINE_MAX_MESSAGES
 
 config LWM2M_COAP_BLOCK_SIZE
 	int "LWM2M CoAP block-wise transfer size"
-	default 256
+	default 512
 	range 64 1024
 	help
 	  CoAP block size used by LwM2M when performing block-wise
 	  transfers. Possible values: 64, 128, 256, 512 and 1024.
-
-config LWM2M_ENGINE_MESSAGE_HEADER_SIZE
-	int "Room for CoAP header data"
-	default 48
-	range 24 128
-	help
-	  Extra room allocated to handle CoAP header data
+	  When adjusting the value, ensure that LWM2M_COAP_MAX_MSG_SIZE is large enough
+	  to fit all CoAP headers and full block size.
 
 config LWM2M_COAP_MAX_MSG_SIZE
 	int "LWM2M CoAP maximum message size"
-	default LWM2M_COAP_BLOCK_SIZE
+	default 1232 if !LWM2M_DTLS_SUPPORT
+	default 1195 if LWM2M_DTLS_SUPPORT && !LWM2M_DTLS_CID
+	default 1187 if LWM2M_DTLS_SUPPORT && LWM2M_DTLS_CID
 	help
-	  CoAP message size used by LWM2M. Minimum is the block size used
-	  in blockwise transfers.
+	  CoAP message size used by LWM2M. Default is the maximum
+	  packet size for IPv6 network (MTU(1280)-IPv6(40)-UDP(8)-DTLS(29..53)).
+	  If the network has a smaller MTU, this value should be adjusted accordingly.
+	  If CoAP block-wise transfer is enabled, this value should be larger than
+	  the block size and estimated CoAP header sizes.
 
 config LWM2M_ENGINE_VALIDATION_BUFFER_SIZE
 	int "Size of the validation buffer for the incoming data"
@@ -370,7 +378,7 @@ config LWM2M_NUM_OUTPUT_BLOCK_CONTEXT
 	default 3
 	help
 	  Maximum number of CoAP block contexts needed to split messages into blocks for
-	  sending. This limits the numer of messages that need block transfer that can be
+	  sending. This limits the number of messages that need block transfer that can be
 	  handled at the same time.
 
 config LWM2M_LOG_ENCODE_BUFFER_ALLOCATIONS
@@ -438,6 +446,14 @@ config LWM2M_NUM_ATTR
 	  This value sets up the maximum number of LwM2M attributes that
 	  we can handle at the same time.
 
+config LWM2M_MAX_NOTIFIED_NUMERICAL_RES_TRACKED
+	int "Maximum # of resources that can track last notified value for gt/lt/st"
+	default 4
+	help
+	  This value specifies the maximum number of numerical LwM2M resources
+	  that can track the last notified resource value for gt/lt/st attribute
+	  handling.
+
 endmenu # "Memory and buffer size configuration"
 
 menu "Content format supports"
@@ -486,7 +502,7 @@ endmenu # "Content format supports"
 config LWM2M_ENGINE_DEFAULT_LIFETIME
 	int "LWM2M engine default server connection lifetime"
 	default 30
-	range 15 4294967295
+	range 15 $(UINT32_MAX)
 	help
 	  Set the default lifetime (in seconds) for the LwM2M library engine.
 	  This is also a minimum lifetime that client accepts. If server sets lifetime
@@ -495,7 +511,7 @@ config LWM2M_ENGINE_DEFAULT_LIFETIME
 config LWM2M_UPDATE_PERIOD
 	int "LwM2M engine update period"
 	default 0
-	range 0 4294967295
+	range 0 $(UINT32_MAX)
 	help
 	  Time period after the previous update or registration when to send the next update message.
 	  This allows modifying lifetime without affecting the update period.
@@ -505,16 +521,23 @@ config LWM2M_UPDATE_PERIOD
 config LWM2M_SECONDS_TO_UPDATE_EARLY
 	int "LWM2M Registration Update transmission time before timeout"
 	default 10
-	range 1 4294967295
+	range 1 $(UINT32_MAX)
 	help
 	  Time in seconds before the registration timeout, when the LWM2M
 	  Registration Update is sent by the engine. In networks with large
 	  round trip times (like NB-IoT), it might be needed to set this value
 	  higher, in order to allow the response to arrive before timeout.
 
+config LWM2M_SERVER_BOOTSTRAP_ON_FAIL
+	bool "Bootstrap on Registration Failure"
+	default y
+	help
+	  If set to true, the LwM2M client will attempt to re-bootstrap if the registration fails.
+
 config LWM2M_SHELL
 	bool "LwM2M shell utilities"
 	select SHELL
+	select CRC
 	help
 	  Activate shell module that provides LwM2M commands like
 	  send to the console.
@@ -651,6 +674,24 @@ config LWM2M_BINARYAPPDATA_OBJ_SUPPORT
 	help
 	  Include support for LwM2M BinaryAppDataContainer Object
 
+if LWM2M_BINARYAPPDATA_OBJ_SUPPORT
+config LWM2M_BINARYAPPDATA_INSTANCE_COUNT
+	int "Maximum # of BinaryAppDataContainer object instances"
+	default 2
+	range 1 10
+	help
+	  This setting establishes the total count of BinaryAppDataContainer
+	  instances available to the client.
+
+config LWM2M_BINARYAPPDATA_DATA_INSTANCE_COUNT
+	int "Maximum # of BinaryAppDataContainer data resource instances"
+	default 2
+	range 1 10
+	help
+	  This setting establishes the total count of BinaryAppDataContainer
+	  data resource instances available to the client.
+endif # LWM2M_BINARYAPPDATA_OBJ_SUPPORT
+
 config LWM2M_EVENT_LOG_OBJ_SUPPORT
 	bool "LwM2M Event Log Object (ID 20)"
 	help
@@ -706,13 +747,5 @@ endif # LWM2M_GATEWAY_OBJ_SUPPORT
 source "subsys/net/lib/lwm2m/Kconfig.ipso"
 
 source "subsys/net/lib/lwm2m/Kconfig.ucifi"
-
-menu "Deprecated flags"
-config LWM2M_RD_CLIENT_SUPPORT
-	bool "DEPRECATED: client bootstrap/registration state machine"
-	select DEPRECATED
-	help
-	  Deprecated flag. RD state machine is always part of engine. It cannot be disabled.
-endmenu # "Deprecated flags"
 
 endif # LWM2M

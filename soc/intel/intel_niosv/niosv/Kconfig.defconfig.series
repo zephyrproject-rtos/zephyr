@@ -10,9 +10,6 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config NUM_IRQS # Platform interrupts IRQs index start from index 16
 	default 32
 
-config RISCV_GP
-	default y
-
 config RISCV_SOC_INTERRUPT_INIT
 	default y
 

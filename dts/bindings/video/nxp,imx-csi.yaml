@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2019, Linaro Limited
+# Copyright 2024 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -14,7 +15,6 @@ properties:
   interrupts:
     required: true
 
-  sensor:
-    required: true
-    type: phandle
-    description: phandle of connected sensor device
+child-binding:
+  child-binding:
+    include: video-interfaces.yaml

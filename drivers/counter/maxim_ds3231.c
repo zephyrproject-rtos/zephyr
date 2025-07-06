@@ -4,6 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifdef CONFIG_SOC_POSIX
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L /* Required for gmtime_r */
+#endif
+
 #define DT_DRV_COMPAT maxim_ds3231
 
 #include <zephyr/device.h>
@@ -234,7 +239,7 @@ int maxim_ds3231_stat_update(const struct device *dev,
 
 /*
  * Look for current users of the interrupt/square-wave signal and
- * enable monitoring iff at least one consumer is active.
+ * enable monitoring if and only if at least one consumer is active.
  */
 static void validate_isw_monitoring(const struct device *dev)
 {
@@ -1265,7 +1270,7 @@ static int ds3231_counter_set_top_value(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static const struct counter_driver_api ds3231_api = {
+static DEVICE_API(counter, ds3231_api) = {
 	.start = ds3231_counter_start,
 	.stop = ds3231_counter_stop,
 	.get_value = ds3231_counter_get_value,
@@ -1321,7 +1326,7 @@ int z_vrfy_maxim_ds3231_get_syncpoint(const struct device *dev,
 	return rv;
 }
 
-#include <syscalls/maxim_ds3231_get_syncpoint_mrsh.c>
+#include <zephyr/syscalls/maxim_ds3231_get_syncpoint_mrsh.c>
 
 int z_vrfy_maxim_ds3231_req_syncpoint(const struct device *dev,
 				      struct k_poll_signal *sig)
@@ -1334,6 +1339,6 @@ int z_vrfy_maxim_ds3231_req_syncpoint(const struct device *dev,
 	return z_impl_maxim_ds3231_req_syncpoint(dev, sig);
 }
 
-#include <syscalls/maxim_ds3231_req_syncpoint_mrsh.c>
+#include <zephyr/syscalls/maxim_ds3231_req_syncpoint_mrsh.c>
 
 #endif /* CONFIG_USERSPACE */

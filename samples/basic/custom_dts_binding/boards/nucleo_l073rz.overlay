@@ -7,7 +7,7 @@
 / {
 	load_switch: load_switch {
 		compatible = "power-switch";
-                /* using built-in LED pin for demonstration */
+		/* using built-in LED pin for demonstration */
 		gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
 	};
 };

@@ -8,9 +8,9 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 ram: 512
 flash: 1024
 supported:
   - gpio
+  - usbd
 vendor: nuvoton

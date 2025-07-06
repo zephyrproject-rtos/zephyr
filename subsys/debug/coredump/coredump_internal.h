@@ -16,16 +16,6 @@
  * public documentation.
  */
 
-#define COREDUMP_BEGIN_STR	"BEGIN#"
-#define COREDUMP_END_STR	"END#"
-#define COREDUMP_ERROR_STR	"ERROR CANNOT DUMP#"
-
-/*
- * Need to prefix coredump strings to make it easier to parse
- * as log module adds its own prefixes.
- */
-#define COREDUMP_PREFIX_STR	"#CD:"
-
 struct z_coredump_memory_region_t {
 	uintptr_t	start;
 	uintptr_t	end;

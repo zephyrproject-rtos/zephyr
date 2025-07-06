@@ -4,7 +4,7 @@
  */
 
 / {
-        /* NOTE: It is necessary to connect VREG_OUT to the ADC to perform the test.
+	/* NOTE: It is necessary to connect VREG_OUT to the ADC to perform the test.
 	 * But the rpi_pico board and most boards that use the rp2040, VREG_OUT and
 	 * DVDD are directly connected, and no available exposed trace on the board.
 	 *

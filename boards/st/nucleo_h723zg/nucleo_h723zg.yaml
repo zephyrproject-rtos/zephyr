@@ -5,7 +5,6 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 ram: 372
 flash: 1024
 supported:
@@ -21,4 +20,6 @@ supported:
   - netif:eth
   - backup_sram
   - usb_device
+  - rtc
+  - can
 vendor: st

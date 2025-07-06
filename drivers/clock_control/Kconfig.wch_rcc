@@ -1,0 +1,7 @@
+# Copyright (c) 2024 Michael Hope
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_WCH_RCC
+	bool "WCH CH32V00x Reset and Clock Control (RCC) driver"
+	default y
+	depends on DT_HAS_WCH_RCC_ENABLED

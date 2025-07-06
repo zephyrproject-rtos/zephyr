@@ -1,0 +1,24 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &storage_partition;
+
+&w25q512jvfiq {
+	partitions {
+		large_partition: partition@3C00000 {
+			label = "large";
+			reg = <0x03C00000 DT_SIZE_M(3)>;
+		};
+		medium_partition: partition@3F00000 {
+			label = "medium";
+			reg = <0x03F00000 DT_SIZE_K(960)>;
+		};
+		small_partition: partition@3FF0000 {
+			label = "small";
+			reg = <0x03FF0000 DT_SIZE_K(64)>;
+		};
+	};
+};

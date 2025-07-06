@@ -36,7 +36,7 @@ config STM32_ENABLE_DEBUG_SLEEP_STOP
 	  Some STM32 parts disable the DBGMCU in sleep/stop modes because
 	  of power consumption. As a side-effects this prevents
 	  debuggers from attaching w/o resetting the target. This
-	  effectivly destroys the use-case of `west attach`. Also
+	  effectively destroys the use-case of `west attach`. Also
 	  SEGGER RTT and similar technologies need this.
 
 config SWJ_ANALOG_PRIORITY
@@ -47,11 +47,20 @@ config SWJ_ANALOG_PRIORITY
 	  This priority must be greater than GPIO_INIT_PRIORITY and lower than
 	  UART_INIT_PRIORITY.
 
+config STM32_FLASH_PREFETCH
+	bool "Flash prefetch buffer"
+
+config STM32_WKUP_PINS
+	bool "STM32 PWR Wake-up Pins"
+	depends on DT_HAS_ST_STM32_PWR_ENABLED
+	help
+	  Enable support for STM32 PWR wake-up pins.
+
 choice POWER_SUPPLY_CHOICE
 	prompt "STM32 power supply configuration"
 	default POWER_SUPPLY_LDO
-	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32U5X || \
-		   SOC_STM32WBA55XX
+	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32H7RSX || \
+		SOC_SERIES_STM32U5X || SOC_STM32WBA55XX || SOC_STM32WBA65XX
 
 config POWER_SUPPLY_LDO
 	bool "LDO supply"
@@ -61,32 +70,38 @@ config POWER_SUPPLY_DIRECT_SMPS
 
 config POWER_SUPPLY_SMPS_1V8_SUPPLIES_LDO
 	bool "SMPS 1.8V supplies LDO (no external supply)"
-	depends on SOC_SERIES_STM32H7X
+	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32H7RSX
 
 config POWER_SUPPLY_SMPS_2V5_SUPPLIES_LDO
 	bool "SMPS 2.5V supplies LDO (no external supply)"
-	depends on SOC_SERIES_STM32H7X
+	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32H7RSX
 
 config POWER_SUPPLY_SMPS_1V8_SUPPLIES_EXT_AND_LDO
 	bool "External SMPS 1.8V supply, supplies LDO"
-	depends on SOC_SERIES_STM32H7X
+	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32H7RSX
 
 config POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT_AND_LDO
 	bool "External SMPS 2.5V supply, supplies LDO"
-	depends on SOC_SERIES_STM32H7X
+	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32H7RSX
 
 config POWER_SUPPLY_SMPS_1V8_SUPPLIES_EXT
 	bool "External SMPS 1.8V supply and bypass"
-	depends on SOC_SERIES_STM32H7X
+	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32H7RSX
 
 config POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT
 	bool "External SMPS 2.5V supply and bypass"
-	depends on SOC_SERIES_STM32H7X
+	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32H7RSX
 
 config POWER_SUPPLY_EXTERNAL_SOURCE
 	bool "Bypass"
-	depends on SOC_SERIES_STM32H7X
+	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32H7RSX
 
 endchoice
+
+config STM32_BACKUP_PROTECTION
+	bool "SoC has backup domain protection access"
+	help
+	  Enabled for SoCs for which access protection to backup domain
+	  resources needs to be explicitly handled.
 
 endif # SOC_FAMILY_STM32

@@ -5,6 +5,7 @@
  */
 
 #include <string.h>
+#include <zephyr/kernel.h>
 #include <zephyr/debug/coredump.h>
 
 #ifndef CONFIG_64BIT
@@ -67,7 +68,7 @@ struct riscv_arch_block {
  */
 static struct riscv_arch_block arch_blk;
 
-void arch_coredump_info_dump(const z_arch_esf_t *esf)
+void arch_coredump_info_dump(const struct arch_esf *esf)
 {
 	struct coredump_arch_hdr_t hdr = {
 		.id = COREDUMP_ARCH_HDR_ID,
@@ -116,3 +117,21 @@ uint16_t arch_coredump_tgt_code_get(void)
 {
 	return COREDUMP_TGT_RISC_V;
 }
+
+#if defined(CONFIG_DEBUG_COREDUMP_DUMP_THREAD_PRIV_STACK)
+void arch_coredump_priv_stack_dump(struct k_thread *thread)
+{
+	uintptr_t start_addr, end_addr;
+
+	/* See: zephyr/include/zephyr/arch/riscv/arch.h */
+	if (IS_ENABLED(CONFIG_PMP_POWER_OF_TWO_ALIGNMENT)) {
+		start_addr = thread->arch.priv_stack_start + Z_RISCV_STACK_GUARD_SIZE;
+	} else {
+		start_addr = thread->stack_info.start - CONFIG_PRIVILEGED_STACK_SIZE;
+	}
+	end_addr = Z_STACK_PTR_ALIGN(thread->arch.priv_stack_start + K_KERNEL_STACK_RESERVED +
+				     CONFIG_PRIVILEGED_STACK_SIZE);
+
+	coredump_memory_dump(start_addr, end_addr);
+}
+#endif /* CONFIG_DEBUG_COREDUMP_DUMP_THREAD_PRIV_STACK */

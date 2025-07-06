@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include <zephyr/ztest.h>
 
 #include <zephyr/net/dummy.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/virtual.h>
 #include <zephyr/net/virtual_mgmt.h>
@@ -116,7 +116,7 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 
 	zassert_equal_ptr(&eth_context, context,
 			  "Context pointers do not match (%p vs %p)",
-			  eth_context, context);
+			  &eth_context, context);
 
 	if (!pkt->buffer) {
 		DBG("No data to send!\n");
@@ -212,7 +212,7 @@ static uint8_t *net_iface_get_mac(const struct device *dev)
 		data->mac_addr[5] = sys_rand8_get();
 	}
 
-	data->ll_addr.addr = data->mac_addr;
+	memcpy(data->ll_addr.addr, data->mac_addr, sizeof(data->mac_addr));
 	data->ll_addr.len = 6U;
 
 	return data->mac_addr;
@@ -309,8 +309,9 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	if ((iface != net_if_lookup_by_dev(DEVICE_GET(eth_test_dummy1))) &&
 	    (iface != net_if_lookup_by_dev(DEVICE_GET(eth_test_dummy2))) &&
 	    (iface != net_if_lookup_by_dev(DEVICE_GET(eth_test))) &&
-	    (net_if_l2(iface) != &NET_L2_GET_NAME(VIRTUAL)))
+	    (net_if_l2(iface) != &NET_L2_GET_NAME(VIRTUAL))) {
 		return;
+	}
 
 	DBG("Interface %p (%s) [%d]\n", iface, iface2str(iface),
 	    net_if_get_by_iface(iface));
@@ -502,19 +503,17 @@ static void test_address_setup(void)
 
 static bool add_neighbor(struct net_if *iface, struct in6_addr *addr)
 {
-	struct net_linkaddr_storage llstorage;
 	struct net_linkaddr lladdr;
 	struct net_nbr *nbr;
 
-	llstorage.addr[0] = 0x01;
-	llstorage.addr[1] = 0x02;
-	llstorage.addr[2] = 0x33;
-	llstorage.addr[3] = 0x44;
-	llstorage.addr[4] = 0x05;
-	llstorage.addr[5] = 0x06;
+	lladdr.addr[0] = 0x01;
+	lladdr.addr[1] = 0x02;
+	lladdr.addr[2] = 0x33;
+	lladdr.addr[3] = 0x44;
+	lladdr.addr[4] = 0x05;
+	lladdr.addr[5] = 0x06;
 
 	lladdr.len = 6U;
-	lladdr.addr = llstorage.addr;
 	lladdr.type = NET_LINK_ETHERNET;
 
 	nbr = net_ipv6_nbr_add(iface, addr, &lladdr, false,
@@ -687,7 +686,7 @@ ZTEST(net_virtual, test_virtual_04_get_mtu)
 
 	ret = net_mgmt(NET_REQUEST_VIRTUAL_INTERFACE_GET_MTU,
 		       iface, &params, sizeof(params));
-	zassert_equal(ret, 0, "Cannot get interface %d MTU (%d)",
+	zassert_equal(ret, 0, "Cannot get interface %d MTU %d (%d)",
 		      net_if_get_by_iface(iface), params.mtu, ret);
 
 	zassert_equal(params.mtu, MTU,
@@ -979,7 +978,7 @@ static void test_virtual_recv_data_from_tunnel(int remote_ip,
 	if (peer_addr.sa_family == AF_INET) {
 		outer = create_outer(attached, AF_INET, IPPROTO_IP,
 				     sizeof(struct net_ipv4_hdr), 0);
-		zassert_not_null(outer, "Cannot allocate %s pkt", outer);
+		zassert_not_null(outer, "Cannot allocate pkt");
 
 		ret = net_ipv4_create(outer, &net_sin(&src_addr)->sin_addr,
 				      &net_sin(&dst_addr)->sin_addr);
@@ -988,7 +987,7 @@ static void test_virtual_recv_data_from_tunnel(int remote_ip,
 	} else {
 		outer = create_outer(attached, AF_INET6, IPPROTO_IPV6,
 				     sizeof(struct net_ipv6_hdr), 0);
-		zassert_not_null(outer, "Cannot allocate %s pkt", outer);
+		zassert_not_null(outer, "Cannot allocate %p pkt", outer);
 
 		ret = net_ipv6_create(outer, &net_sin6(&src_addr)->sin6_addr,
 				      &net_sin6(&dst_addr)->sin6_addr);
@@ -1001,7 +1000,7 @@ static void test_virtual_recv_data_from_tunnel(int remote_ip,
 				     sizeof(struct net_ipv4_hdr),
 				     sizeof(struct net_udp_hdr) +
 				     strlen(test_data));
-		zassert_not_null(inner, "Cannot allocate %s pkt", inner);
+		zassert_not_null(inner, "Cannot allocate pkt");
 
 		ret = net_ipv4_create(inner, &net_sin(&inner_src)->sin_addr,
 				      innerv4);
@@ -1014,7 +1013,7 @@ static void test_virtual_recv_data_from_tunnel(int remote_ip,
 				     sizeof(struct net_ipv6_hdr),
 				     sizeof(struct net_udp_hdr) +
 				     strlen(test_data));
-		zassert_not_null(inner, "Cannot allocate %s pkt", inner);
+		zassert_not_null(inner, "Cannot allocate pkt");
 
 		ret = net_ipv6_create(inner, &net_sin6(&inner_src)->sin6_addr,
 				      innerv6);

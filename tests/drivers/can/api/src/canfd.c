@@ -239,6 +239,43 @@ ZTEST(canfd, test_canfd_get_capabilities)
 }
 
 /**
+ * @brief Test sending CAN FD frame with too big payload.
+ */
+ZTEST(canfd, test_send_fd_dlc_out_of_range)
+{
+	struct can_frame frame = {
+		.flags = CAN_FRAME_FDF | CAN_FRAME_BRS,
+		.id = TEST_CAN_STD_ID_1,
+		.dlc = CANFD_MAX_DLC + 1U,
+	};
+	int err;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_RUNTIME_ERROR_CHECKS);
+
+	err = can_send(can_dev, &frame, TEST_SEND_TIMEOUT, NULL, NULL);
+	zassert_equal(err, -EINVAL, "wrong error on sending invalid frame (err %d)", err);
+}
+
+/**
+ * @brief Test error when CAN FD Error State Indicator (ESI) is set on transmit frame.
+ *
+ * CAN FD Error State Indicator (ESI) indicates that the transmitting node is in error-passive
+ * state, but should never be set explicitly. Setting it is handled in the CAN controller hardware.
+ */
+ZTEST(canfd, test_send_fd_incorrect_esi)
+{
+	struct can_frame frame = {
+		.flags = CAN_FRAME_FDF | CAN_FRAME_ESI,
+		.id = TEST_CAN_STD_ID_1,
+		.dlc = 0,
+	};
+	int err;
+
+	err = can_send(can_dev, &frame, TEST_SEND_TIMEOUT, NULL, NULL);
+	zassert_equal(err, -ENOTSUP, "wrong error on sending invalid frame (err %d)", err);
+}
+
+/**
  * @brief Test send/receive with standard (11-bit) CAN IDs and classic CAN frames.
  */
 ZTEST(canfd, test_send_receive_classic)
@@ -388,6 +425,34 @@ ZTEST_USER(canfd, test_set_timing_data_min)
 	err = can_set_timing_data(can_dev, can_get_timing_data_min(can_dev));
 	zassert_equal(err, 0, "failed to set minimum timing data parameters (err %d)", err);
 
+	err = can_set_bitrate_data(can_dev, CONFIG_CAN_DEFAULT_BITRATE_DATA);
+	zassert_equal(err, 0, "failed to restore default data bitrate");
+
+	err = can_start(can_dev);
+	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+}
+
+/**
+ * @brief Test setting a too low data phase bitrate.
+ */
+ZTEST_USER(canfd, test_set_bitrate_data_too_low)
+{
+	uint32_t min = can_get_bitrate_min(can_dev);
+	int err;
+
+	if (min == 0) {
+		ztest_test_skip();
+	}
+
+	err = can_stop(can_dev);
+	zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
+
+	err = can_set_bitrate_data(can_dev, min - 1);
+	zassert_equal(err, -ENOTSUP, "too low data phase bitrate accepted");
+
+	err = can_set_bitrate_data(can_dev, CONFIG_CAN_DEFAULT_BITRATE_DATA);
+	zassert_equal(err, 0, "failed to restore default data bitrate");
+
 	err = can_start(can_dev);
 	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
 }
@@ -419,7 +484,7 @@ ZTEST_USER(canfd, test_invalid_sample_point)
 	int err;
 
 	err = can_calc_timing_data(can_dev, &timing, TEST_BITRATE_3, 1000);
-	zassert_equal(err, -EINVAL, "invalid sample point of 100.0% accepted (err %d)", err);
+	zassert_equal(err, -EINVAL, "invalid sample point of 100.0%% accepted (err %d)", err);
 }
 
 /**
@@ -434,6 +499,9 @@ ZTEST_USER(canfd, test_set_timing_data_max)
 
 	err = can_set_timing_data(can_dev, can_get_timing_data_max(can_dev));
 	zassert_equal(err, 0, "failed to set maximum timing data parameters (err %d)", err);
+
+	err = can_set_bitrate_data(can_dev, CONFIG_CAN_DEFAULT_BITRATE_DATA);
+	zassert_equal(err, 0, "failed to restore default data bitrate");
 
 	err = can_start(can_dev);
 	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
@@ -491,19 +559,7 @@ static bool canfd_predicate(const void *state)
 
 void *canfd_setup(void)
 {
-	int err;
-
-	k_sem_init(&rx_callback_sem, 0, 2);
-	k_sem_init(&tx_callback_sem, 0, 2);
-
-	(void)can_stop(can_dev);
-
-	err = can_set_mode(can_dev, CAN_MODE_LOOPBACK | CAN_MODE_FD);
-	zassert_equal(err, 0, "failed to set CAN FD loopback mode (err %d)", err);
-	zassert_equal(CAN_MODE_LOOPBACK | CAN_MODE_FD, can_get_mode(can_dev));
-
-	err = can_start(can_dev);
-	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+	can_common_test_setup(CAN_MODE_LOOPBACK | CAN_MODE_FD);
 
 	return NULL;
 }

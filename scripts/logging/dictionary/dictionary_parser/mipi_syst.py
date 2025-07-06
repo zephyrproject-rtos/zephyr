@@ -10,7 +10,6 @@ Utilities for MIPI Sys-T Collateral XML data
 
 from xml.sax.saxutils import escape
 
-
 XML_HEADER = """
 <?xml version="1.0" encoding="utf-8"?>
 <syst:Collateral xmlns:syst="http://www.mipi.org/1.0/sys-t"

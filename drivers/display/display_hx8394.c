@@ -106,19 +106,19 @@ struct hx8394_config {
 #define HX8394_EXTC3_MAGIC 0x94
 
 
-const uint8_t enable_extension[] = {
+static const uint8_t enable_extension[] = {
 	HX8394_SETEXTC,
 	HX8394_EXTC1_MAGIC,
 	HX8394_EXTC2_MAGIC,
 	HX8394_EXTC3_MAGIC,
 };
 
-const uint8_t address_config[] = {
+static const uint8_t address_config[] = {
 	HX8394_SET_ADDRESS,
 	HX8394_FLIP_HORIZONTAL
 };
 
-const uint8_t power_config[] = {
+static const uint8_t power_config[] = {
 	HX8394_SETPOWER,
 	(HX8394_POWER_HX5186 | HX8394_POWER_AP_1_0UA),
 	HX8394_POWER_VRHP_4_8V,
@@ -134,7 +134,7 @@ const uint8_t power_config[] = {
 	HX8394_POWER_VGLS_12_4V
 };
 
-const uint8_t line_config[] = {
+static const uint8_t line_config[] = {
 	HX8394_SETDISP,
 	HX8394_DISP_COL_INV,
 	HX8394_DISP_MESSI_ENB,
@@ -144,7 +144,7 @@ const uint8_t line_config[] = {
 	HX8394_DISP_RTN_144
 };
 
-const uint8_t cycle_config[] = {
+static const uint8_t cycle_config[] = {
 	HX8394_SETCYC,
 	0x73, /* SPON delay */
 	0x74, /* SPOFF delay */
@@ -169,7 +169,7 @@ const uint8_t cycle_config[] = {
 	0x86 /* SOFF_MPU time */
 };
 
-const uint8_t gip0_config[] = {
+static const uint8_t gip0_config[] = {
 	HX8394_SETGIP0,
 	(HX8394_GIP0_EQ_OPT_BOTH | HX8394_GIP0_EQ_HSYNC_NORMAL),
 	HX8394_GIP0_EQ_VSEL_VSSA,
@@ -210,7 +210,7 @@ const uint8_t gip0_config[] = {
 	0x40
 };
 
-const uint8_t gip1_config[] = {
+static const uint8_t gip1_config[] = {
 	HX8394_SETGIP1,
 	/* Select output clock sources
 	 * See COSn_L/COSn_R values in datasheet
@@ -261,7 +261,7 @@ const uint8_t gip1_config[] = {
 	0x18 /* COS22_R */
 };
 
-const uint8_t gip2_config[] = {
+static const uint8_t gip2_config[] = {
 	HX8394_SETGIP2,
 	/* Select output clock sources for GS mode.
 	 * See COSn_L_GS/COSn_R_GS values in datasheet
@@ -312,13 +312,13 @@ const uint8_t gip2_config[] = {
 	0x18  /* COS22_R_GS */
 };
 
-const uint8_t vcom_config[] = {
+static const uint8_t vcom_config[] = {
 	HX8394_SETVCOM,
 	HX8394_VCMC_F_1_76V,
 	HX8394_VCMC_B_1_76V
 };
 
-const uint8_t gamma_config[] = {
+static const uint8_t gamma_config[] = {
 	HX8394_SETGAMMA,
 	0x00, /* VHP0 */
 	0x0A, /* VHP1 */
@@ -380,31 +380,62 @@ const uint8_t gamma_config[] = {
 	0x7F  /* VLN7 */
 };
 
-const uint8_t hx8394_cmd1[] = {0xC0U, 0x1FU, 0x31U};
+static const uint8_t hx8394_cmd1[] = {0xC0U, 0x1FU, 0x31U};
 
-const uint8_t panel_config[] = {
+static const uint8_t panel_config[] = {
 	HX8394_SETPANEL,
 	(HX8394_COLOR_BGR | HX8394_REV_PANEL)
 };
 
-const uint8_t hx8394_cmd2[] = {0xD4, 0x2};
+static const uint8_t hx8394_cmd2[] = {0xD4, 0x2};
 
-const uint8_t hx8394_bank2[] = {
+static const uint8_t hx8394_bank2[] = {
 	0xD8U, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU,
 	0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU,
 	0xFFU
 };
 
-const uint8_t hx8394_bank1[] = {0xB1U, 0x00U};
+static const uint8_t hx8394_bank1[] = {0xB1U, 0x00U};
 
-const uint8_t hx8394_bank0[] = {
+static const uint8_t hx8394_bank0[] = {
 	0xBFU, 0x40U, 0x81U, 0x50U,
 	0x00U, 0x1AU, 0xFCU, 0x01
 };
 
-const uint8_t hx8394_cmd3[] = {0xC6U, 0xEDU};
+static const uint8_t hx8394_cmd3[] = {0xC6U, 0xEDU};
 
-const uint8_t tear_config[] = {HX8394_SET_TEAR, HX8394_TEAR_VBLANK};
+static const uint8_t tear_config[] = {HX8394_SET_TEAR, HX8394_TEAR_VBLANK};
+
+static ssize_t hx8394_mipi_tx(const struct device *mipi_dev, uint8_t channel,
+			      const void *buf, size_t len)
+{
+	/* Send MIPI transfers using low power mode */
+	struct mipi_dsi_msg msg = {
+		.tx_buf = buf,
+		.tx_len = len,
+		.flags = MIPI_DSI_MSG_USE_LPM,
+	};
+
+	switch (len) {
+	case 0U:
+		msg.type = MIPI_DSI_GENERIC_SHORT_WRITE_0_PARAM;
+		break;
+
+	case 1U:
+		msg.type = MIPI_DSI_GENERIC_SHORT_WRITE_1_PARAM;
+		break;
+
+	case 2U:
+		msg.type = MIPI_DSI_GENERIC_SHORT_WRITE_2_PARAM;
+		break;
+
+	default:
+		msg.type = MIPI_DSI_GENERIC_LONG_WRITE;
+		break;
+	}
+
+	return mipi_dsi_transfer(mipi_dev, channel, &msg);
+}
 
 static int hx8394_write(const struct device *dev, const uint16_t x,
 			 const uint16_t y,
@@ -477,7 +508,7 @@ static int hx8394_set_orientation(const struct device *dev,
 	default:
 		return -ENOTSUP;
 	}
-	return mipi_dsi_generic_write(config->mipi_dsi, config->channel, param, 2);
+	return hx8394_mipi_tx(config->mipi_dsi, config->channel, param, 2);
 }
 
 static void hx8394_get_capabilities(const struct device *dev,
@@ -493,7 +524,7 @@ static void hx8394_get_capabilities(const struct device *dev,
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 }
 
-static const struct display_driver_api hx8394_api = {
+static DEVICE_API(display, hx8394_api) = {
 	.blanking_on = hx8394_blanking_on,
 	.blanking_off = hx8394_blanking_off,
 	.write = hx8394_write,
@@ -557,66 +588,66 @@ static int hx8394_init(const struct device *dev)
 		k_sleep(K_MSEC(50));
 	}
 	/* Enable extended commands */
-	ret = mipi_dsi_generic_write(config->mipi_dsi, config->channel,
-			enable_extension, sizeof(enable_extension));
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
+			     enable_extension, sizeof(enable_extension));
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* Set the number of lanes to DSISETUP0 parameter */
 	setmipi[1] |= (config->num_of_lanes - 1);
-	ret = mipi_dsi_generic_write(config->mipi_dsi, config->channel,
-				setmipi, sizeof(setmipi));
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
+			     setmipi, sizeof(setmipi));
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* Set scan direction */
-	ret = mipi_dsi_generic_write(config->mipi_dsi, config->channel,
-			address_config, sizeof(address_config));
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
+			     address_config, sizeof(address_config));
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* Set voltage and current targets */
-	ret = mipi_dsi_generic_write(config->mipi_dsi, config->channel,
-			power_config, sizeof(power_config));
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
+			     power_config, sizeof(power_config));
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* Setup display line count and front/back porch size */
-	ret = mipi_dsi_generic_write(config->mipi_dsi, config->channel,
-			line_config, sizeof(line_config));
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
+			     line_config, sizeof(line_config));
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* Setup display cycle counts (in counts of TCON CLK) */
-	ret = mipi_dsi_generic_write(config->mipi_dsi, config->channel,
-			cycle_config, sizeof(cycle_config));
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
+			     cycle_config, sizeof(cycle_config));
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* Set group delay values */
-	ret = mipi_dsi_generic_write(config->mipi_dsi, config->channel,
-			gip0_config, sizeof(gip0_config));
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
+			     gip0_config, sizeof(gip0_config));
 	if (ret < 0) {
 		return ret;
 	}
 
 
 	/* Set group clock selections */
-	ret = mipi_dsi_generic_write(config->mipi_dsi, config->channel,
-			gip1_config, sizeof(gip1_config));
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
+			     gip1_config, sizeof(gip1_config));
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* Set group clock selections for GS mode */
-	ret = mipi_dsi_generic_write(config->mipi_dsi, config->channel,
-			gip2_config, sizeof(gip2_config));
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
+			     gip2_config, sizeof(gip2_config));
 	if (ret < 0) {
 		return ret;
 	}
@@ -627,15 +658,15 @@ static int hx8394_init(const struct device *dev)
 	 */
 	k_msleep(1);
 	/* Set VCOM voltage config */
-	ret = mipi_dsi_generic_write(config->mipi_dsi, config->channel,
-			vcom_config, sizeof(vcom_config));
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
+			     vcom_config, sizeof(vcom_config));
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* Set manufacturer supplied gamma values */
-	ret = mipi_dsi_generic_write(config->mipi_dsi, config->channel,
-			gamma_config, sizeof(gamma_config));
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
+			     gamma_config, sizeof(gamma_config));
 	if (ret < 0) {
 		return ret;
 	}
@@ -643,15 +674,15 @@ static int hx8394_init(const struct device *dev)
 	/* This command is not documented in datasheet, but is included
 	 * in the display initialization done by MCUXpresso SDK
 	 */
-	ret = mipi_dsi_generic_write(config->mipi_dsi, config->channel,
-			hx8394_cmd1, sizeof(hx8394_cmd1));
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
+			     hx8394_cmd1, sizeof(hx8394_cmd1));
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* Set panel to BGR mode, and reverse colors */
-	ret = mipi_dsi_generic_write(config->mipi_dsi, config->channel,
-			panel_config, sizeof(panel_config));
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
+			     panel_config, sizeof(panel_config));
 	if (ret < 0) {
 		return ret;
 	}
@@ -659,8 +690,8 @@ static int hx8394_init(const struct device *dev)
 	/* This command is not documented in datasheet, but is included
 	 * in the display initialization done by MCUXpresso SDK
 	 */
-	ret = mipi_dsi_generic_write(config->mipi_dsi, config->channel,
-			hx8394_cmd2, sizeof(hx8394_cmd2));
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
+			     hx8394_cmd2, sizeof(hx8394_cmd2));
 	if (ret < 0) {
 		return ret;
 	}
@@ -668,43 +699,43 @@ static int hx8394_init(const struct device *dev)
 	/* Write values to manufacturer register banks */
 	param[0] = HX8394_SETBANK;
 	param[1] = 0x2;
-	ret = mipi_dsi_generic_write(config->mipi_dsi, config->channel,
-			param, 2);
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
+			     param, 2);
 	if (ret < 0) {
 		return ret;
 	}
-	ret = mipi_dsi_generic_write(config->mipi_dsi, config->channel,
-			hx8394_bank2, sizeof(hx8394_bank2));
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
+			     hx8394_bank2, sizeof(hx8394_bank2));
 	if (ret < 0) {
 		return ret;
 	}
 	param[1] = 0x0;
-	ret = mipi_dsi_generic_write(config->mipi_dsi, config->channel,
-			param, 2);
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
+			     param, 2);
 	if (ret < 0) {
 		return ret;
 	}
 	/* Select bank 1 */
 	param[1] = 0x1;
-	ret = mipi_dsi_generic_write(config->mipi_dsi, config->channel,
-			param, 2);
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
+			     param, 2);
 	if (ret < 0) {
 		return ret;
 	}
-	ret = mipi_dsi_generic_write(config->mipi_dsi, config->channel,
-			hx8394_bank1, sizeof(hx8394_bank1));
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
+			     hx8394_bank1, sizeof(hx8394_bank1));
 	if (ret < 0) {
 		return ret;
 	}
 	/* Select bank 0 */
 	param[1] = 0x0;
-	ret = mipi_dsi_generic_write(config->mipi_dsi, config->channel,
-			param, 2);
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
+			     param, 2);
 	if (ret < 0) {
 		return ret;
 	}
-	ret = mipi_dsi_generic_write(config->mipi_dsi, config->channel,
-			hx8394_bank0, sizeof(hx8394_bank0));
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
+			     hx8394_bank0, sizeof(hx8394_bank0));
 	if (ret < 0) {
 		return ret;
 	}
@@ -712,27 +743,31 @@ static int hx8394_init(const struct device *dev)
 	/* This command is not documented in datasheet, but is included
 	 * in the display initialization done by MCUXpresso SDK
 	 */
-	ret = mipi_dsi_generic_write(config->mipi_dsi, config->channel,
-			hx8394_cmd3, sizeof(hx8394_cmd3));
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
+			     hx8394_cmd3, sizeof(hx8394_cmd3));
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = mipi_dsi_generic_write(config->mipi_dsi, config->channel,
-			tear_config, sizeof(tear_config));
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
+			     tear_config, sizeof(tear_config));
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = mipi_dsi_dcs_write(config->mipi_dsi, config->channel,
-				MIPI_DCS_EXIT_SLEEP_MODE, NULL, 0);
+	param[0] = MIPI_DCS_EXIT_SLEEP_MODE;
+
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
+			     param, 1);
 	if (ret < 0) {
 		return ret;
 	}
 	/* We must delay 120ms after exiting sleep mode per datasheet */
 	k_sleep(K_MSEC(120));
-	ret = mipi_dsi_dcs_write(config->mipi_dsi, config->channel,
-				MIPI_DCS_SET_DISPLAY_ON, NULL, 0);
+
+	param[0] = MIPI_DCS_SET_DISPLAY_ON;
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
+			     param, 1);
 
 	if (config->bl_gpio.port != NULL) {
 		ret = gpio_pin_configure_dt(&config->bl_gpio, GPIO_OUTPUT_ACTIVE);

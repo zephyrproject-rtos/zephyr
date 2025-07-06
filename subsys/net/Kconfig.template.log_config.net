@@ -4,7 +4,7 @@
 # Copyright (c) 2018 Intel Corporation.
 # SPDX-License-Identifier: Apache-2.0
 
-choice
+choice "$(module)_LOG_LEVEL_CHOICE"
 	prompt "$(module-str)"
 	default $(module)_LOG_LEVEL_DEFAULT
 	depends on $(module-dep)

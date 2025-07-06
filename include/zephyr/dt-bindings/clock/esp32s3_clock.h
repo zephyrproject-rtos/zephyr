@@ -7,30 +7,35 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_ESP32S3_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_ESP32S3_H_
 
-/* System Clock Source */
-#define ESP32_CLK_SRC_XTAL             0U
-#define ESP32_CLK_SRC_PLL              1U
-#define ESP32_CLK_SRC_RTC8M            2U
-#define ESP32_CLK_SRC_APLL             3U
+/* Supported CPU clock Sources */
+#define ESP32_CPU_CLK_SRC_XTAL 0U
+#define ESP32_CPU_CLK_SRC_PLL  1U
+#define ESP32_CLK_SRC_RC_FAST  2U
 
-/* Supported CPU Frequencies */
-#define ESP32_CLK_CPU_26M              26000000
-#define ESP32_CLK_CPU_40M              40000000
-#define ESP32_CLK_CPU_80M              80000000
-#define ESP32_CLK_CPU_160M             160000000
-#define ESP32_CLK_CPU_240M             240000000
+/* Supported PLL CPU frequencies */
+#define ESP32_CLK_CPU_PLL_80M     80000000
+#define ESP32_CLK_CPU_PLL_160M    160000000
+#define ESP32_CLK_CPU_PLL_240M    240000000
+#define ESP32_CLK_CPU_RC_FAST_FREQ 17500000
 
-/* Supported XTAL Frequencies */
-#define ESP32_CLK_XTAL_32M             32
-#define ESP32_CLK_XTAL_40M             40
+/* Supported XTAL frequencies */
+#define ESP32_CLK_XTAL_32M 32000000
+#define ESP32_CLK_XTAL_40M 40000000
 
-/* Supported RTC fast clock frequencies */
-#define ESP32_RTC_FAST_CLK_FREQ_8M     8500000U
+/* Supported RTC fast clock sources */
+#define ESP32_RTC_FAST_CLK_SRC_XTAL_D2 0
+#define ESP32_RTC_FAST_CLK_SRC_RC_FAST 1
 
-/* Supported RTC slow clock frequencies */
-#define ESP32_RTC_SLOW_CLK_FREQ_150K   150000U
-#define ESP32_RTC_SLOW_CLK_FREQ_32K    32000U
-#define ESP32_RTC_SLOW_CLK_FREQ_8MD256 (ESP32_RTC_FAST_CLK_FREQ_8M / 256)
+/* Supported RTC slow clock sources */
+#define ESP32_RTC_SLOW_CLK_SRC_RC_SLOW      0
+#define ESP32_RTC_SLOW_CLK_SRC_XTAL32K      1
+#define ESP32_RTC_SLOW_CLK_SRC_RC_FAST_D256 2
+#define ESP32_RTC_SLOW_CLK_32K_EXT_OSC      9
+
+/* RTC slow clock frequencies */
+#define ESP32_RTC_SLOW_CLK_SRC_RC_SLOW_FREQ      136000
+#define ESP32_RTC_SLOW_CLK_SRC_XTAL32K_FREQ      32768
+#define ESP32_RTC_SLOW_CLK_SRC_RC_FAST_D256_FREQ 68359
 
 /* Modules IDs
  * These IDs are actually offsets in CLK and RST Control registers.

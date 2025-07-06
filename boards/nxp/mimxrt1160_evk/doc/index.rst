@@ -1,7 +1,4 @@
-.. _mimxrt1160_evk:
-
-NXP MIMXRT1160-EVK
-##################
+.. zephyr:board:: mimxrt1160_evk
 
 Overview
 ********
@@ -10,10 +7,6 @@ The dual core i.MX RT1160 runs on the Cortex-M7 core at 600 MHz and on the
 Cortex-M4 at 240 MHz. The i.MX RT1160 MCU offers support over a wide
 temperature range and is qualified for consumer, industrial and automotive
 markets.
-
-.. image:: mimxrt1160_evk.jpg
-   :align: center
-   :alt: MIMXRT1160-EVK
 
 Hardware
 ********
@@ -90,7 +83,7 @@ This platform has the following external memories:
 |                    |            | data block, which sets up SEMC at   |
 |                    |            | boot time                           |
 +--------------------+------------+-------------------------------------+
-| IS25WP128          | FLEXSPI    | Enabled via flash configurationn    |
+| IS25WP128          | FLEXSPI    | Enabled via flash configuration     |
 |                    |            | block, which sets up FLEXSPI at     |
 |                    |            | boot time.                          |
 +--------------------+------------+-------------------------------------+
@@ -98,59 +91,15 @@ This platform has the following external memories:
 Supported Features
 ==================
 
-The mimxrt1160_evk board configuration supports the hardware features listed
-below.  For additional features not yet supported, please also refer to the
-:ref:`mimxrt1170_evk` , which is the superset board in NXP's i.MX RT11xx family.
-NXP prioritizes enabling the superset board with NXP's Full Platform Support for
-Zephyr.  Therefore, the mimxrt1170_evk board may have additional features
-already supported, which can also be re-used on this mimxrt1160_evk board:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| COUNTER   | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| CAN       | on-chip    | flexcan                             |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| DMA       | on-chip    | dma                                 |
-+-----------+------------+-------------------------------------+
-| GPT       | on-chip    | gpt                                 |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | USB Device                          |
-+-----------+------------+-------------------------------------+
-| HWINFO    | on-chip    | Unique device serial number         |
-+-----------+------------+-------------------------------------+
-| CAAM RNG  | on-chip    | entropy                             |
-+-----------+------------+-------------------------------------+
-| FLEXSPI   | on-chip    | flash programming                   |
-+-----------+------------+-------------------------------------+
-| PIT       | on-chip    | pit                                 |
-+-----------+------------+-------------------------------------+
+.. note::
 
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/nxp/mimxrt1160_evk/mimxrt1160_evk_mimxrt1166_cm7_defconfig`
-
-Other hardware features are not currently supported by the port.
-
+   For additional features not yet supported, please also refer to the
+   :zephyr:board:`mimxrt1170_evk` , which is the superset board in NXP's i.MX RT11xx family.
+   NXP prioritizes enabling the superset board with NXP's Full Platform Support for
+   Zephyr.  Therefore, the mimxrt1170_evk board may have additional features
+   already supported, which can also be re-used on this mimxrt1160_evk board:
 
 Connections and I/Os
 ====================
@@ -241,6 +190,8 @@ remaining are not used.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -258,26 +209,53 @@ The secondary core can be debugged normally in single core builds
 secondary core should be placed into a loop, then a debugger can be attached
 (see `AN13264`_, section 4.2.3 for more information)
 
+Launching Images Targeting M4 Core
+==================================
+If building targeting the M4 core, the M7 core must first run code to launch
+the M4 image, by copying it into the ``ocram`` region then kicking off the M4
+core. When building using sysbuild targeting the M4 core, a minimal "launcher"
+image will be built and flashed to the M7 core, which loads and kicks off
+the M4 core. Therefore when developing an application intended to run
+standalone on the M4 core, it is recommended to build with sysbuild, like
+so:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: mimxrt1160_evk/mimxrt1166/cm4
+   :west-args: --sysbuild
+   :goals: flash
+
+If desired, this behavior can be disabled by building with
+``-DSB_CONFIG_SECOND_CORE_MCUX_LAUNCHER=n``
+
 Configuring a Debug Probe
 =========================
 
-A debug probe is used for both flashing and debugging the board. This board is
-configured by default to use the :ref:`opensda-daplink-onboard-debug-probe`,
-however the :ref:`pyocd-debug-host-tools` do not yet support programming the
-external flashes on this board so you must reconfigure the board for one of the
-following debug probes instead.
+A debug probe is used for both flashing and debugging the board. The on-board
+debugger :ref:`opensda-daplink-onboard-debug-probe`
+works with the LinkServer runner, or can be reprogrammed with JLink firmware.
 
-.. _Using J-Link RT1160:
+Using LinkServer
+----------------
+
+Install the :ref:`linkserver-debug-host-tools` and make sure they are in your
+search path. LinkServer works with the default CMSIS-DAP firmware included in
+the on-board debugger.
 
 Using J-Link
----------------------------------
+------------
 
-Install the :ref:`jlink-debug-host-tools` and make sure they are in your search
-path.
+Install the :ref:`jlink-debug-host-tools` and make sure they are in your search path.
 
-There are two options: the onboard debug circuit can be updated with Segger
-J-Link firmware, or :ref:`jlink-external-debug-probe` can be attached to the
+The on-board debug circuit can be updated with Segger J-Link firmware,
+or :ref:`jlink-external-debug-probe` can be attached to the
 EVK. See `Using J-Link with MIMXRT1160-EVK or MIMXRT1170-EVK`_ for more details.
+
+Use the ``-r jlink`` option with West to use the jlink runner.
+
+.. code-block:: console
+
+   west flash -r jlink
 
 Configuring a Console
 =====================
@@ -300,7 +278,7 @@ etc.):
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 Before power on the board, make sure SW1 is set to 0001b
 
@@ -321,7 +299,7 @@ see the following message in the terminal:
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -335,6 +313,9 @@ should see the following message in the terminal:
 
    ***** Booting Zephyr OS v2.4.0-xxxx-xxxxxxxxxxxxx *****
    Hello World! mimxrt1160_evk
+
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
 
 .. _MIMXRT1160-EVK Website:
    https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/i-mx-rt1160-evaluation-kit:MIMXRT1160-EVK

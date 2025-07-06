@@ -1,0 +1,27 @@
+identifier: max32690evkit/max32690/m4
+name: max32690evkit m4
+vendor: adi
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - serial
+  - spi
+  - i2c
+  - trng
+  - dma
+  - watchdog
+  - adc
+  - counter
+  - rtc_counter
+  - pwm
+  - w1
+  - flash
+  - usbd
+  - memc
+  - can
+ram: 1024
+flash: 3072

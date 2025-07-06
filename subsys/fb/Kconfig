@@ -23,14 +23,6 @@ config CHARACTER_FRAMEBUFFER_SHELL
 	  Activate shell module that provides Framebuffer commands to the
 	  console.
 
-config CHARACTER_FRAMEBUFFER_SHELL_DRIVER_NAME
-	string
-	default "SSD16XX" if SSD16XX
-	default "SSD1306" if SSD1306
-	depends on CHARACTER_FRAMEBUFFER_SHELL
-	help
-	  Character Framebuffer Display Driver Name
-
 module = CFB
 module-str = cfb
 source "subsys/logging/Kconfig.template.log_config"

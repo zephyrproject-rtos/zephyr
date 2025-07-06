@@ -10,7 +10,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
@@ -56,6 +56,24 @@ static struct bt_mesh_proxy_role roles[CONFIG_BT_MAX_CONN];
 
 static int conn_count;
 
+static void proxy_queue_put(struct bt_mesh_proxy_role *role, struct bt_mesh_adv *adv)
+{
+	k_fifo_put(&role->pending, &(adv->gatt_bearer[bt_conn_index(role->conn)]));
+}
+
+static struct bt_mesh_adv *proxy_queue_get(struct bt_mesh_proxy_role *role)
+{
+	void *gatt_bearer;
+
+	gatt_bearer = k_fifo_get(&role->pending, K_NO_WAIT);
+	if (!gatt_bearer) {
+		return NULL;
+	}
+
+	return CONTAINER_OF(gatt_bearer, struct bt_mesh_adv,
+			    gatt_bearer[bt_conn_index(role->conn)]);
+}
+
 static void proxy_sar_timeout(struct k_work *work)
 {
 	struct bt_mesh_proxy_role *role;
@@ -64,6 +82,15 @@ static void proxy_sar_timeout(struct k_work *work)
 	LOG_WRN("Proxy SAR timeout");
 
 	role = CONTAINER_OF(dwork, struct bt_mesh_proxy_role, sar_timer);
+
+	while (!k_fifo_is_empty(&role->pending)) {
+		struct bt_mesh_adv *adv = proxy_queue_get(role);
+
+		__ASSERT_NO_MSG(adv);
+
+		bt_mesh_adv_unref(adv);
+	}
+
 	if (role->conn) {
 		bt_conn_disconnect(role->conn,
 				   BT_HCI_ERR_REMOTE_USER_TERM_CONN);
@@ -149,6 +176,7 @@ int bt_mesh_proxy_msg_send(struct bt_conn *conn, uint8_t type,
 			   bt_gatt_complete_func_t end, void *user_data)
 {
 	int err;
+	uint16_t att_mtu = bt_gatt_get_mtu(conn);
 	uint16_t mtu;
 	struct bt_mesh_proxy_role *role = &roles[bt_conn_index(conn)];
 
@@ -156,7 +184,12 @@ int bt_mesh_proxy_msg_send(struct bt_conn *conn, uint8_t type,
 		bt_hex(msg->data, msg->len));
 
 	/* ATT_MTU - OpCode (1 byte) - Handle (2 bytes) */
-	mtu = bt_gatt_get_mtu(conn) - 3;
+	if (att_mtu < 3) {
+		LOG_WRN("Invalid ATT MTU: %d", att_mtu);
+		return -EINVAL;
+	}
+
+	mtu = att_mtu - 3;
 	if (mtu > msg->len) {
 		net_buf_simple_push_u8(msg, PDU_HDR(SAR_COMPLETE, type));
 		return role->cb.send(conn, msg->data, msg->len, end, user_data);
@@ -200,7 +233,7 @@ static void buf_send_end(struct bt_conn *conn, void *user_data)
 	bt_mesh_adv_unref(adv);
 }
 
-int bt_mesh_proxy_relay_send(struct bt_conn *conn, struct bt_mesh_adv *adv)
+static int proxy_relay_send(struct bt_conn *conn, struct bt_mesh_adv *adv)
 {
 	int err;
 
@@ -230,6 +263,39 @@ int bt_mesh_proxy_relay_send(struct bt_conn *conn, struct bt_mesh_adv *adv)
 	return err;
 }
 
+int bt_mesh_proxy_relay_send(struct bt_conn *conn, struct bt_mesh_adv *adv)
+{
+	struct bt_mesh_proxy_role *role = &roles[bt_conn_index(conn)];
+
+	proxy_queue_put(role, bt_mesh_adv_ref(adv));
+
+	bt_mesh_wq_submit(&role->work);
+
+	return 0;
+}
+
+static void proxy_msg_send_pending(struct k_work *work)
+{
+	struct bt_mesh_proxy_role *role = CONTAINER_OF(work, struct bt_mesh_proxy_role, work);
+	struct bt_mesh_adv *adv;
+
+	if (!role->conn) {
+		return;
+	}
+
+	adv = proxy_queue_get(role);
+	if (!adv) {
+		return;
+	}
+
+	(void)proxy_relay_send(role->conn, adv);
+	bt_mesh_adv_unref(adv);
+
+	if (!k_fifo_is_empty(&role->pending)) {
+		bt_mesh_wq_submit(&role->work);
+	}
+}
+
 static void proxy_msg_init(struct bt_mesh_proxy_role *role)
 {
 	/* Check if buf has been allocated, in this way, we no longer need
@@ -246,6 +312,9 @@ static void proxy_msg_init(struct bt_mesh_proxy_role *role)
 				      CONFIG_BT_MESH_PROXY_MSG_LEN);
 
 	net_buf_simple_reset(&role->buf);
+
+	k_fifo_init(&role->pending);
+	k_work_init(&role->work, proxy_msg_send_pending);
 
 	k_work_init_delayable(&role->sar_timer, proxy_sar_timeout);
 }

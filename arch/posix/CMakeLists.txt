@@ -75,6 +75,10 @@ if (CONFIG_NATIVE_APPLICATION)
   zephyr_compile_options(
     -include ${ZEPHYR_BASE}/arch/posix/include/posix_cheats.h
   )
+  # About this -include directive: The reason to do it this way, is because in this
+  # manner it is transparent to the application. Otherwise posix_cheats.h needs to
+  # be included in all the applications' files which define main( ), and in any
+  # app file which uses any of the APIs renamed in that header.
 elseif (CONFIG_NATIVE_LIBRARY)
   zephyr_compile_options(
     -fvisibility=hidden
@@ -99,11 +103,13 @@ elseif (CONFIG_NATIVE_LIBRARY)
     get_filename_component(COMPILER_OWN_INCLUDE_PATH "${_OUTPUT}" DIRECTORY)
 
     # Do not use the C library from this compiler/host,
-    # but still use the basic compiler headers
+    # but still use the basic compiler headers,
+    # remove all operating system specific predefined macros,
     # no_builtin to avoid the compiler using builtin replacements for std library functions
     zephyr_compile_options(
       -nostdinc
       -isystem ${COMPILER_OWN_INCLUDE_PATH}
+      "SHELL:-include ${ZEPHYR_BASE}/arch/posix/include/undef_system_defines.h"
       $<TARGET_PROPERTY:compiler,freestanding>
       $<TARGET_PROPERTY:compiler,no_builtin>
     )
@@ -144,14 +150,6 @@ if (CONFIG_NATIVE_APPLICATION)
   )
 endif()
 
-# About the -include directive: The reason to do it this way, is because in this
-# manner it is transparent to the application. Otherwise posix_cheats.h needs to
-# be included in all the applications' files which define main( ), and in any
-# app file which uses the pthreads like API provided by Zephyr
-# ( include/posix/pthread.h / kernel/pthread.c ) [And any future API added to
-# Zephyr which will clash with the native POSIX API] . It would also need to
-# be included in a few zephyr kernel files.
-
 #
 # Support for the LLVM Sanitizer toolchain instrumentation frameworks
 # (supported by current gcc's as well)
@@ -176,6 +174,7 @@ endif()
 
 if(CONFIG_ARCH_POSIX_LIBFUZZER)
   list(APPEND LLVM_SANITIZERS "fuzzer")
+  target_compile_options(native_simulator INTERFACE "-DNSI_NO_MAIN=1")
   if(NOT CONFIG_64BIT)
     # On i386, libfuzzer seems to dynamically relocate the binary, so
     # we need to emit PIC code.  This limitation is undocumented and
@@ -196,11 +195,5 @@ if(NOT ${LLVM_SANITIZERS_ARG} STREQUAL "")
   target_compile_options(native_simulator INTERFACE ${LLVM_SANITIZERS_ARG})
 endif()
 
-# Override the C standard used for compilation to C 2011
-# This is due to some tests using _Static_assert which is a 2011 feature, but
-# otherwise relying on compilers supporting it also when set to C99.
-# This was in general ok, but with some host compilers and C library versions
-# it led to problems. So we override it to 2011 for the native targets.
-set_property(GLOBAL PROPERTY CSTD c11)
-
+include(natsim_optional.cmake)
 add_subdirectory(core)

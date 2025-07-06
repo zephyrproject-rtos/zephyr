@@ -1,0 +1,51 @@
+# Copyright (c) 2024 Jan Kubiznak <jan.kubiznak@deveritec.com>
+# SPDX-License-Identifier: Apache-2.0
+
+include: [dac-controller.yaml]
+
+properties:
+  "#io-channel-cells":
+    const: 1
+
+  voltage-reference:
+    type: string
+    default: "internal"
+    enum:
+      - "internal"
+      - "external"
+    description: |
+      DAC voltage reference select.
+      - Internal voltage reference - 2.5V (reg: 0).
+      - External voltage reference (reg: 1).
+      The default corresponds to the reset value of the register field.
+
+  gain:
+    type: string
+    default: "gain-1"
+    enum:
+      - "gain-1"
+      - "gain-2"
+    description: |
+      Gain selection bit.
+      - Gain of 1 (reg: 0).
+      - Gain of 2 (reg: 1).
+      The default corresponds to the reset value of the register field.
+
+  power-down-mode:
+    type: string
+    default: "normal"
+    enum:
+      - "normal"
+      - "power-down-1k"
+      - "power-down-100k"
+      - "power-down-3-state"
+    description: |
+      Power-down mode select.
+      - Normal mode (reg: 0).
+      - 1 kOhm output impedance (reg: 1).
+      - 100 kOhm output impedance (reg: 2).
+      - Three-state output impedance (reg: 3).
+      The default corresponds to the reset value of the register field.
+
+io-channel-cells:
+  - output

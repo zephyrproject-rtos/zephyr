@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 NXP
+ * Copyright 2022,2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/sys/crc.h>
+#include <zephyr/pm/device_runtime.h>
 
 LOG_MODULE_REGISTER(sdhc_spi, CONFIG_SDHC_LOG_LEVEL);
 
@@ -21,11 +22,19 @@ LOG_MODULE_REGISTER(sdhc_spi, CONFIG_SDHC_LOG_LEVEL);
 #define SPI_R1B_TIMEOUT_MS 3000
 #define SD_SPI_SKIP_RETRIES 1000000
 
-/* The SD protocol requires sending ones while reading but Zephyr
- * defaults to writing zeros. This block of 512 bytes is used for writing
- * 0xff while we read data blocks. Should remain const so this buffer is
- * stored in flash.
+#define _INST_REQUIRES_EXPLICIT_FF(inst) (SPI_MOSI_OVERRUN_DT(DT_INST_BUS(inst)) != 0xFF) ||
+
+/* The SD protocol requires sending ones while reading but the Zephyr
+ * SPI API defers the choice of default values to the drivers.
+ *
+ * For drivers that we know will send ones we can avoid allocating a
+ * 512 byte array of ones and remove the limit on the number of bytes
+ * that can be read in a single transaction.
  */
+#define ANY_INST_REQUIRES_EXPLICIT_FF DT_INST_FOREACH_STATUS_OKAY(_INST_REQUIRES_EXPLICIT_FF) 0
+
+#if ANY_INST_REQUIRES_EXPLICIT_FF
+
 static const uint8_t sdhc_ones[] = {
 	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -78,6 +87,8 @@ static const uint8_t sdhc_ones[] = {
 
 BUILD_ASSERT(sizeof(sdhc_ones) == 512, "0xFF array for SDHC must be 512 bytes");
 
+#endif /* ANY_INST_REQUIRES_EXPLICIT_FF */
+
 struct sdhc_spi_config {
 	const struct device *spi_dev;
 	const struct gpio_dt_spec pwr_gpio;
@@ -97,6 +108,7 @@ struct sdhc_spi_data {
 static int sdhc_spi_rx(const struct device *spi_dev, struct spi_config *spi_cfg,
 	uint8_t *buf, int len)
 {
+#if ANY_INST_REQUIRES_EXPLICIT_FF
 	struct spi_buf tx_bufs[] = {
 		{
 			.buf = (uint8_t *)sdhc_ones,
@@ -108,6 +120,10 @@ static int sdhc_spi_rx(const struct device *spi_dev, struct spi_config *spi_cfg,
 		.buffers = tx_bufs,
 		.count = 1,
 	};
+	const struct spi_buf_set *tx_ptr = &tx;
+#else
+	const struct spi_buf_set *tx_ptr = NULL;
+#endif /* ANY_INST_REQUIRES_EXPLICIT_FF */
 
 	struct spi_buf rx_bufs[] = {
 		{
@@ -121,7 +137,7 @@ static int sdhc_spi_rx(const struct device *spi_dev, struct spi_config *spi_cfg,
 		.count = 1,
 	};
 
-	return spi_transceive(spi_dev, spi_cfg, &tx, &rx);
+	return spi_transceive(spi_dev, spi_cfg, tx_ptr, &rx);
 }
 
 static int sdhc_spi_init_card(const struct device *dev)
@@ -133,23 +149,30 @@ static int sdhc_spi_init_card(const struct device *dev)
 	const struct sdhc_spi_config *config = dev->config;
 	struct sdhc_spi_data *data = dev->data;
 	struct spi_config *spi_cfg = data->spi_cfg;
-	int ret;
+	int ret, ret2;
 
 	if (spi_cfg->frequency == 0) {
 		/* Use default 400KHZ frequency */
 		spi_cfg->frequency = SDMMC_CLOCK_400KHZ;
 	}
+
+	/* Request SPI bus to be active */
+	if (pm_device_runtime_get(config->spi_dev) < 0) {
+		return -EIO;
+	}
+
 	/* the initial 74 clocks must be sent while CS is high */
 	spi_cfg->operation |= SPI_CS_ACTIVE_HIGH;
 	ret = sdhc_spi_rx(config->spi_dev, spi_cfg, data->scratch, 10);
-	if (ret != 0) {
-		spi_cfg->operation &= ~SPI_CS_ACTIVE_HIGH;
-		return ret;
-	}
+
 	/* Release lock on SPI bus */
-	ret = spi_release(config->spi_dev, spi_cfg);
+	ret2 = spi_release(config->spi_dev, spi_cfg);
 	spi_cfg->operation &= ~SPI_CS_ACTIVE_HIGH;
-	return ret;
+
+	/* Release request for SPI bus to be active */
+	(void)pm_device_runtime_put(config->spi_dev);
+
+	return ret ? ret : ret2;
 }
 
 /* Checks if SPI SD card is sending busy signal */
@@ -160,17 +183,22 @@ static int sdhc_spi_card_busy(const struct device *dev)
 	int ret;
 	uint8_t response;
 
+	/* Request SPI bus to be active */
+	if (pm_device_runtime_get(config->spi_dev) < 0) {
+		return -EIO;
+	}
 
 	ret = sdhc_spi_rx(config->spi_dev, data->spi_cfg, &response, 1);
+	(void)pm_device_runtime_put(config->spi_dev);
 	if (ret) {
 		return -EIO;
 	}
 
 	if (response == 0xFF) {
 		return 0;
-	} else
+	} else {
 		return 1;
-
+	}
 }
 
 /* Waits for SPI SD card to stop sending busy signal */
@@ -431,10 +459,14 @@ static int sdhc_spi_read_data(const struct device *dev, struct sdhc_data *data)
 	int ret;
 	uint8_t crc[SD_SPI_CRC16_SIZE + 1];
 
-	/* The SPI API defaults to sending 0x00 when no TX buffer is
-	 * provided, so we are limited to 512 byte reads
-	 * (unless we increase the size of SDHC buffer)
+#if ANY_INST_REQUIRES_EXPLICIT_FF
+	/* If the driver requires explicit 0xFF bytes on receive, we
+	 * are limited to receiving the size of the sdhc_ones buffer
 	 */
+	if (data->block_size > sizeof(sdhc_ones)) {
+		return -ENOTSUP;
+	}
+
 	const struct spi_buf tx_bufs[] = {
 		{
 			.buf = (uint8_t *)sdhc_ones,
@@ -446,6 +478,10 @@ static int sdhc_spi_read_data(const struct device *dev, struct sdhc_data *data)
 		.buffers = tx_bufs,
 		.count = 1,
 	};
+	const struct spi_buf_set *tx_ptr = &tx;
+#else
+	const struct spi_buf_set *tx_ptr = NULL;
+#endif /* ANY_INST_REQUIRES_EXPLICIT_FF */
 
 	struct spi_buf rx_bufs[] = {
 		{
@@ -459,10 +495,6 @@ static int sdhc_spi_read_data(const struct device *dev, struct sdhc_data *data)
 		.count = 1,
 	};
 
-	if (data->block_size > 512) {
-		/* SPI max BLKLEN is 512 */
-		return -ENOTSUP;
-	}
 
 	/* Read bytes until data stream starts. SD will send 0xff until
 	 * data is available
@@ -479,7 +511,7 @@ static int sdhc_spi_read_data(const struct device *dev, struct sdhc_data *data)
 	/* Read blocks until we are out of data */
 	while (remaining--) {
 		ret = spi_transceive(config->spi_dev,
-			dev_data->spi_cfg, &tx, &rx);
+			dev_data->spi_cfg, tx_ptr, &rx);
 		if (ret) {
 			LOG_ERR("Data write failed");
 			return ret;
@@ -603,7 +635,7 @@ static int sdhc_spi_request(const struct device *dev,
 {
 	const struct sdhc_spi_config *config = dev->config;
 	struct sdhc_spi_data *dev_data = dev->data;
-	int ret, retries = cmd->retries;
+	int ret, ret2, stop_ret, retries = cmd->retries;
 	const struct sdhc_command stop_cmd = {
 		.opcode = SD_STOP_TRANSMISSION,
 		.arg = 0,
@@ -611,12 +643,19 @@ static int sdhc_spi_request(const struct device *dev,
 		.timeout_ms = 1000,
 		.retries = 1,
 	};
+
+	/* Request SPI bus to be active */
+	if (pm_device_runtime_get(config->spi_dev) < 0) {
+		return -EIO;
+	}
+
 	if (data == NULL) {
 		do {
 			ret = sdhc_spi_send_cmd(dev, cmd, false);
 		} while ((ret != 0) && (retries-- > 0));
 	} else {
 		do {
+			retries--;
 			ret = sdhc_spi_send_cmd(dev, cmd, true);
 			if (ret) {
 				continue;
@@ -628,20 +667,32 @@ static int sdhc_spi_request(const struct device *dev,
 				ret = sdhc_spi_read_data(dev, data);
 			}
 			if (ret || (cmd->opcode == SD_READ_MULTIPLE_BLOCK)) {
+				int stop_retries = cmd->retries;
+
 				/* CMD12 is required after multiple read, or
 				 * to retry failed transfer
 				 */
-				sdhc_spi_send_cmd(dev,
+				stop_ret = sdhc_spi_send_cmd(dev,
 					(struct sdhc_command *)&stop_cmd,
 					false);
+				while ((stop_ret != 0) && (stop_retries > 0)) {
+					/* Retry stop command */
+					ret = stop_ret = sdhc_spi_send_cmd(dev,
+						(struct sdhc_command *)&stop_cmd,
+						false);
+					stop_retries--;
+				}
 			}
-		} while ((ret != 0) && (retries-- > 0));
+		} while ((ret != 0) && (retries > 0));
 	}
-	if (ret) {
-		return ret;
-	}
+
 	/* Release SPI bus */
-	return spi_release(config->spi_dev, dev_data->spi_cfg);
+	ret2 = spi_release(config->spi_dev, dev_data->spi_cfg);
+
+	/* Release request for SPI bus to be active */
+	(void)pm_device_runtime_put(config->spi_dev);
+
+	return ret ? ret : ret2;
 }
 
 static int sdhc_spi_set_io(const struct device *dev, struct sdhc_io *ios)
@@ -676,22 +727,31 @@ static int sdhc_spi_set_io(const struct device *dev, struct sdhc_io *ios)
 	}
 	if (data->power_mode != ios->power_mode) {
 		if (ios->power_mode == SDHC_POWER_ON) {
+			if (cfg->pwr_gpio.port) {
+				if (gpio_pin_set_dt(&cfg->pwr_gpio, 1)) {
+					return -EIO;
+				}
+
+				/* Wait until VDD is stable. Per the spec:
+				 *   Maximum VDD rise time of 35ms.
+				 *   Minimum 1ms VDD stable time.
+				 */
+				k_sleep(K_MSEC(36));
+
+				LOG_INF("Powered up");
+			}
+
 			/* Send 74 clock cycles to start card */
 			if (sdhc_spi_init_card(dev) != 0) {
 				LOG_ERR("Card SCLK init sequence failed");
 				return -EIO;
 			}
-		}
-		if (cfg->pwr_gpio.port) {
-			/* If power control GPIO is defined, toggle SD power */
-			if (ios->power_mode == SDHC_POWER_ON) {
-				if (gpio_pin_set_dt(&cfg->pwr_gpio, 1)) {
-					return -EIO;
-				}
-			} else {
+		} else {
+			if (cfg->pwr_gpio.port) {
 				if (gpio_pin_set_dt(&cfg->pwr_gpio, 0)) {
 					return -EIO;
 				}
+				LOG_INF("Powered down");
 			}
 		}
 		data->power_mode = ios->power_mode;
@@ -762,7 +822,7 @@ static int sdhc_spi_init(const struct device *dev)
 	return ret;
 }
 
-static const struct sdhc_driver_api sdhc_spi_api = {
+static DEVICE_API(sdhc, sdhc_spi_api) = {
 	.request = sdhc_spi_request,
 	.set_io = sdhc_spi_set_io,
 	.get_host_props = sdhc_spi_get_host_props,

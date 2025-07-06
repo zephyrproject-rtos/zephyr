@@ -1,0 +1,47 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_RK043FN66HS_CTG
+
+if LVGL
+
+config INPUT
+	default y
+
+config INPUT_GT911_INTERRUPT
+	default y
+
+# LVGL should allocate buffers equal to size of display
+config LV_Z_VDB_SIZE
+	default 100
+
+# Enable double buffering
+config LV_Z_DOUBLE_VDB
+	default y
+
+# Force full refresh. This prevents memory copy associated with partial
+# display refreshes, which is not necessary for the eLCDIF driver
+config LV_Z_FULL_REFRESH
+	default y
+
+config LV_Z_BITS_PER_PIXEL
+	default 16
+
+config LV_DPI_DEF
+	default 128
+
+# Use offloaded render thread
+config LV_Z_FLUSH_THREAD
+	default y
+
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_16
+endchoice
+
+# Force display buffers to be aligned to cache line size (32 bytes)
+config LV_Z_VDB_ALIGN
+	default 32
+
+endif # LVGL
+
+endif # SHIELD_RK043FN66HS_CTG

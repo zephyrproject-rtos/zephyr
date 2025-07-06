@@ -23,17 +23,30 @@
 #include <zephyr/toolchain/common.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/sys/util.h>
-#include <offsets.h>
+#include <zephyr/offsets.h>
 
 /* We need to dummy out DT_NODE_HAS_STATUS when building the unittests.
  * Including devicetree.h would require generating dummy header files
  * to match what gen_defines creates, so it's easier to just dummy out
- * DT_NODE_HAS_STATUS.
+ * DT_NODE_HAS_STATUS. These are undefined at the end of the file.
  */
 #ifdef ZTEST_UNITTEST
 #define DT_NODE_HAS_STATUS(node, status) 0
+#define DT_NODE_HAS_STATUS_OKAY(node) 0
 #else
 #include <zephyr/devicetree.h>
+#endif
+
+/* The GCC for Renesas RX processors adds leading underscores to C-symbols
+ * by default. As a workaroud for symbols defined in linker scripts to be
+ * available in C code, an alias with a leading underscore has to be provided.
+ */
+#if defined(CONFIG_RX)
+#define PLACE_SYMBOL_HERE(symbol)                                                                  \
+	symbol = .;                                                                                \
+	PROVIDE(_CONCAT(_, symbol) = symbol)
+#else
+#define PLACE_SYMBOL_HERE(symbol) symbol = .
 #endif
 
 #ifdef _LINKER
@@ -43,10 +56,14 @@
  * (sorted by priority). Ensure the objects aren't discarded if there is
  * no direct reference to them
  */
+
+/* clang-format off */
 #define CREATE_OBJ_LEVEL(object, level)				\
-		__##object##_##level##_start = .;		\
-		KEEP(*(SORT(.z_##object##_##level?_*)));	\
-		KEEP(*(SORT(.z_##object##_##level??_*)));
+		PLACE_SYMBOL_HERE(__##object##_##level##_start);\
+		KEEP(*(SORT(.z_##object##_##level##_P_?_*)));	\
+		KEEP(*(SORT(.z_##object##_##level##_P_??_*)));	\
+		KEEP(*(SORT(.z_##object##_##level##_P_???_*)));
+/* clang-format on */
 
 /*
  * link in shell initialization objects for all modules that use shell and
@@ -150,6 +167,12 @@ extern char _vector_end[];
 extern char __vector_relay_table[];
 #endif
 
+#ifdef CONFIG_SRAM_VECTOR_TABLE
+extern char _sram_vector_start[];
+extern char _sram_vector_end[];
+extern char _sram_vector_size[];
+#endif
+
 #ifdef CONFIG_COVERAGE_GCOV
 extern char __gcov_bss_start[];
 extern char __gcov_bss_end[];
@@ -159,8 +182,8 @@ extern char __gcov_bss_size[];
 /* end address of image, used by newlib for the heap */
 extern char _end[];
 
-#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ccm), okay)
-extern char __ccm_data_rom_start[];
+#if (DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_ccm)))
+extern char __ccm_data_load_start[];
 extern char __ccm_start[];
 extern char __ccm_data_start[];
 extern char __ccm_data_end[];
@@ -171,14 +194,14 @@ extern char __ccm_noinit_end[];
 extern char __ccm_end[];
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_itcm), okay)
+#if (DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_itcm)))
 extern char __itcm_start[];
 extern char __itcm_end[];
 extern char __itcm_size[];
 extern char __itcm_load_start[];
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
+#if (DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm)))
 extern char __dtcm_data_start[];
 extern char __dtcm_data_end[];
 extern char __dtcm_bss_start[];
@@ -190,7 +213,7 @@ extern char __dtcm_start[];
 extern char __dtcm_end[];
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ocm), okay)
+#if (DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_ocm)))
 extern char __ocm_data_start[];
 extern char __ocm_data_end[];
 extern char __ocm_bss_start[];
@@ -221,6 +244,7 @@ extern char __sg_size[];
 extern char _nocache_ram_start[];
 extern char _nocache_ram_end[];
 extern char _nocache_ram_size[];
+extern char _nocache_load_start[];
 #endif /* CONFIG_NOCACHE_MEMORY */
 
 /* Memory owned by the kernel. Start and end will be aligned for memory
@@ -230,6 +254,7 @@ extern char _nocache_ram_size[];
  * section, stored in RAM instead of FLASH.
  */
 #ifdef CONFIG_ARCH_HAS_RAMFUNC_SUPPORT
+extern char __ramfunc_region_start[];
 extern char __ramfunc_start[];
 extern char __ramfunc_end[];
 extern char __ramfunc_size[];
@@ -292,7 +317,7 @@ extern char lnkr_boot_noinit_size[];
 /* lnkr_pinned_start[] and lnkr_pinned_end[] must encapsulate
  * all the pinned sections as these are used by
  * the MMU code to mark the physical page frames with
- * Z_PAGE_FRAME_PINNED.
+ * K_MEM_PAGE_FRAME_PINNED.
  */
 extern char lnkr_pinned_start[];
 extern char lnkr_pinned_end[];
@@ -337,6 +362,29 @@ static inline bool lnkr_is_region_pinned(uint8_t *addr, size_t sz)
 
 #endif /* CONFIG_LINKER_USE_PINNED_SECTION */
 
+#ifdef CONFIG_LINKER_USE_ONDEMAND_SECTION
+/* lnkr_ondemand_start[] and lnkr_ondemand_end[] must encapsulate
+ * all the on-demand sections as these are used by
+ * the MMU code to mark the virtual pages with the appropriate backing store
+ * location token to have them be paged in on demand.
+ */
+extern char lnkr_ondemand_start[];
+extern char lnkr_ondemand_end[];
+extern char lnkr_ondemand_load_start[];
+
+extern char lnkr_ondemand_text_start[];
+extern char lnkr_ondemand_text_end[];
+extern char lnkr_ondemand_text_size[];
+extern char lnkr_ondemand_rodata_start[];
+extern char lnkr_ondemand_rodata_end[];
+extern char lnkr_ondemand_rodata_size[];
+
+#endif /* CONFIG_LINKER_USE_ONDEMAND_SECTION */
 #endif /* ! _ASMLANGUAGE */
+
+#ifdef ZTEST_UNITTEST
+#undef DT_NODE_HAS_STATUS
+#undef DT_NODE_HAS_STATUS_OKAY
+#endif
 
 #endif /* ZEPHYR_INCLUDE_LINKER_LINKER_DEFS_H_ */

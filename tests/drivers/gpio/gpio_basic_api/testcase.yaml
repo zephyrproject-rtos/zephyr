@@ -10,13 +10,104 @@ common:
 tests:
   drivers.gpio.2pin:
     min_flash: 34
-    filter: dt_compat_enabled("test-gpio-basic-api")
+    filter: dt_compat_enabled("test-gpio-basic-api") and not dt_compat_enabled("arduino-header-r3")
 
   drivers.gpio.nrf_sense_edge:
-    platform_allow: nrf52840dk/nrf52840 nrf52_bsim
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52_bsim
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf5340bsim/nrf5340/cpunet
+      - nrf54l15bsim/nrf54l15/cpuapp
+    integration_platforms:
+      - nrf52840dk/nrf52840
     extra_args: "DTC_OVERLAY_FILE=boards/nrf52840dk_nrf52840.overlay;\
                  boards/nrf52840dk_nrf52840_sense_edge.overlay"
 
   drivers.gpio.mr_canhubk3_wkpu:
     platform_allow: mr_canhubk3
     extra_args: "DTC_OVERLAY_FILE=boards/mr_canhubk3_wkpu.overlay"
+
+  drivers.gpio.2pin_ke17z_fgpio:
+    min_flash: 34
+    filter: dt_compat_enabled("test-gpio-basic-api")
+    platform_allow:
+      - frdm_ke17z
+      - frdm_ke17z512
+    extra_args: "DTC_OVERLAY_FILE=boards/frdm_ke17z_fgpio.overlay"
+    harness_config:
+      fixture: fgpio_loopback
+
+  drivers.gpio.2pin_arduino:
+    min_flash: 34
+    depends_on:
+      - gpio
+      - arduino_gpio
+    filter: >
+      dt_compat_enabled("test-gpio-basic-api") and dt_compat_enabled("arduino-header-r3")
+      and not CONFIG_SOC_FAMILY_STM32
+    extra_args: "DTC_OVERLAY_FILE=arduino_D2D3.overlay"
+    extra_configs:
+      - CONFIG_SKIP_PULL_TEST=y
+    integration_platforms:
+      - frdm_k64f
+    platform_exclude:
+      # below boards are customized
+      - mimxrt595_evk/mimxrt595s/cm33
+      - mimxrt1020_evk
+      - mimxrt1040_evk
+      - mimxrt1060_evk@A/mimxrt1062/qspi
+      - mimxrt1060_evk@B/mimxrt1062/qspi
+      - mimxrt1060_evk@C/mimxrt1062/qspi
+      - lpcxpresso55s69/lpc55s69/cpu0
+      - lpcxpresso55s36
+  drivers.gpio.2pin_arduino_customized:
+    min_flash: 34
+    depends_on:
+      - gpio
+      - arduino_gpio
+    filter: dt_compat_enabled("test-gpio-basic-api") and dt_compat_enabled("arduino-header-r3")
+    platform_allow:
+      - mimxrt595_evk/mimxrt595s/cm33
+      - mimxrt1020_evk
+      - mimxrt1040_evk
+      - mimxrt1060_evk/mimxrt1062/qspi
+      - lpcxpresso55s69/lpc55s69/cpu0
+      - lpcxpresso55s36
+      - nucleo_wb09ke
+      - nucleo_wb05kz
+      - nucleo_wba55cg
+    integration_platforms:
+      - mimxrt595_evk/mimxrt595s/cm33
+  drivers.gpio.st_2pin_arduino:
+    min_flash: 34
+    depends_on:
+      - gpio
+      - arduino_gpio
+    filter: >
+      dt_compat_enabled("test-gpio-basic-api") and dt_compat_enabled("arduino-header-r3")
+      and CONFIG_SOC_FAMILY_STM32
+    extra_args: "DTC_OVERLAY_FILE=arduino_D9D10.overlay"
+    integration_platforms:
+      - disco_l475_iot1
+    platform_exclude:
+      # below boards need customized
+      - nucleo_wb05kz
+      - nucleo_wb09ke
+      - nucleo_wba55cg
+  drivers.gpio.2pin_aw9523b:
+    depends_on:
+      - gpio
+      - arduino_gpio
+      - i2c
+      - arduino_i2c
+    harness_config:
+      fixture: aw9523b_on_arduino_header
+    filter: dt_compat_enabled("test-gpio-basic-api") and dt_compat_enabled("arduino-header-r3") and
+            dt_nodelabel_enabled("arduino_i2c")
+    extra_dtc_overlay_files:
+      - boards/aw9523b_on_arduino_header.overlay
+  drivers.gpio.2pin_siwx91x_uulp:
+    platform_allow:
+      - siwx917_rb4338a
+    extra_args: "DTC_OVERLAY_FILE=boards/siwx917_rb4338a-uulp.overlay"

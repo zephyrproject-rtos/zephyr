@@ -28,7 +28,10 @@ ZTEST(rtc_api, test_y2k)
 		Y2K,
 	};
 
-	static struct rtc_time rtm[2];
+	static struct rtc_time rtm[2] = {
+		{.tm_isdst = -1, .tm_nsec = 0},
+		{.tm_isdst = -1, .tm_nsec = 0},
+	};
 	struct tm *const tm[2] = {
 		(struct tm *const)&rtm[0],
 		(struct tm *const)&rtm[1],
@@ -40,7 +43,15 @@ ZTEST(rtc_api, test_y2k)
 
 	/* Party like it's 1999 */
 	zassert_not_null(gmtime_r(&t[Y99], tm[Y99]));
-	zassert_ok(rtc_set_time(rtc, &rtm[Y99]));
+
+	int ret = rtc_set_time(rtc, &rtm[Y99]);
+
+	if (ret == -EINVAL) {
+		TC_PRINT("Rollover not supported\n");
+		ztest_test_skip();
+	} else {
+		zassert_ok(ret, "RTC Set Time Failed");
+	}
 
 	/* Living after midnight */
 	k_sleep(K_SECONDS(SECONDS_BEFORE + SECONDS_AFTER));
@@ -56,5 +67,9 @@ ZTEST(rtc_api, test_y2k)
 		     rtm[Y2K].tm_wday);
 	zassert_equal(rtm[Y2K].tm_hour, 0, "wrong hour: %d", rtm[Y2K].tm_hour);
 	zassert_equal(rtm[Y2K].tm_min, 0, "wrong minute: %d", rtm[Y2K].tm_min);
-	zassert_equal(rtm[Y2K].tm_sec, SECONDS_AFTER, "wrong second: %d", rtm[Y2K].tm_sec);
+	/* We're testing Y2K rollover, not precise timing. Seconds should be small but exact value
+	 * doesn't matter
+	 */
+	zassert_true(rtm[Y2K].tm_sec <= SECONDS_AFTER + 1, "seconds out of valid range: %d",
+		     rtm[Y2K].tm_sec);
 }

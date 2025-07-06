@@ -1,7 +1,4 @@
-.. _lpcxpresso55s36:
-
-NXP LPCXpresso55S36
-###################
+.. zephyr:board:: lpcxpresso55s36
 
 Overview
 ********
@@ -13,15 +10,11 @@ with additional expansion ports around the Arduino footprint, along
 with a PMod/host interface port and MikroElektronika Click module
 site.
 
-.. image:: lpcxpresso55S36.jpg
-   :align: center
-   :alt: LPCXpresso55S36
-
 Hardware
 ********
 
 - LPC55S36 Arm® Cortex®-M33 microcontroller running at up to 150 MHz
-- 256 KB flash and 96 KB SRAM on-chip
+- 256 KB flash and 112 KB SRAM on-chip
 - LPC-Link2 debug high speed USB probe with VCOM port
 - I2C and SPI USB bridging to the LPC device via LPC-Link2 probe
 - MikroElektronika Click expansion option
@@ -50,43 +43,11 @@ Supported Features
 NXP considers the LPCXpresso55S36 as a superset board for the LPC55(S)3x
 family of MCUs.  This board is a focus for NXP's Full Platform Support for
 Zephyr, to better enable the entire LPC55(S)3x family.  NXP prioritizes enabling
-this board with new support for Zephyr features.  The lpcxpresso55s36 board
-configuration supports the hardware features below.  Another similar superset
-board is the :ref:`lpcxpresso55s69`, and that board may have additional features
-already supported, which can also be re-used on this lpcxpresso55s36 board:
+this board with new support for Zephyr features.  Another similar superset
+board is the :zephyr:board:`lpcxpresso55s69`, and that board may have additional features
+already supported, which can also be re-used on this lpcxpresso55s36 board.
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| IOCON     | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| USART     | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock_control                       |
-+-----------+------------+-------------------------------------+
-| CAN       | on-chip    | canbus                              |
-+-----------+------------+-------------------------------------+
-| IAP       | on-chip    | flash                               |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| USB FS    | on-chip    | USB Full Speed device               |
-+-----------+------------+-------------------------------------+
-| DAC       | on-chip    | dac                                 |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not currently enabled.
-
-Currently available targets for this board are:
-
-- *lpcxpresso55s36*
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -160,25 +121,25 @@ remaining are not used.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Build and flash applications as usual (see :ref:`build_an_application`
 and :ref:`application_run` for more details).
 
 Configuring a Debug Probe
 =========================
 
-A debug probe is used for both flashing and debugging the board. This
-board is configured by default to use the LPC-Link2 CMSIS-DAP Onboard
-Debug Probe, however the :ref:`pyocd-debug-host-tools` does not yet
-support the LPC55S36 so you must reconfigure the board for one of the
-J-Link debug probe instead.
+LinkServer is the default runner for this board.
+A debug probe is used for both flashing and debugging the board. This board is
+configured by default to use the integrated :ref:`mcu-link-onboard-debug-probe`
+in the CMSIS-DAP mode. To use this probe with Zephyr, you need to install the
+:ref:`linkserver-debug-host-tools` and make sure they are in your search path.
+Refer to the detailed overview about :ref:`application_debugging` for additional
+information.
 
-First install the :ref:`jlink-debug-host-tools` and make sure they are
-in your search path.
-
-Then follow the instructions in
-:ref:`lpclink2-jlink-onboard-debug-probe` to program the J-Link
-firmware. Please make sure you have the latest firmware for this
-board.
+The integrated MCU-Link hardware can also be used as a J-Link probe with a
+firmware update, as described in :ref:`mcu-link-jlink-onboard-debug-probe`.
+The :ref:`jlink-debug-host-tools` should be available in this case.
 
 Configuring a Console
 =====================
@@ -195,7 +156,7 @@ settings:
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -213,7 +174,7 @@ see the following message in the terminal:
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -227,6 +188,9 @@ should see the following message in the terminal:
 
    ***** Booting Zephyr OS zephyr-v2.2.0 *****
    Hello World! lpcxpresso55s36
+
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
 
 .. _LPC55S36 SoC Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/general-purpose-mcus/lpc5500-cortex-m33/lpc553x-s3x-advanced-analog-armcortex-m33-based-mcu-family:LPC553x

@@ -254,7 +254,7 @@ static int r8a779f0_cpg_mssr_init(const struct device *dev)
 	return 0;
 }
 
-static const struct clock_control_driver_api r8a779f0_cpg_mssr_api = {
+static DEVICE_API(clock_control, r8a779f0_cpg_mssr_api) = {
 	.on = r8a779f0_cpg_mssr_start,
 	.off = r8a779f0_cpg_mssr_stop,
 	.get_rate = rcar_cpg_get_rate,

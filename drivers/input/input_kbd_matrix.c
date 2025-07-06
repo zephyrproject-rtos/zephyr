@@ -12,6 +12,9 @@
 #include <zephyr/kernel.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/util.h>
 
 LOG_MODULE_REGISTER(input_kbd_matrix, CONFIG_INPUT_LOG_LEVEL);
@@ -80,6 +83,17 @@ static void input_kbd_matrix_drive_column(const struct device *dev, int col)
 #endif
 }
 
+static bool input_kbd_matrix_is_suspended(const struct device *dev)
+{
+#ifdef CONFIG_PM_DEVICE
+	struct input_kbd_matrix_common_data *data = dev->data;
+
+	return atomic_get(&data->suspended) == 1;
+#else
+	return false;
+#endif
+}
+
 static bool input_kbd_matrix_scan(const struct device *dev)
 {
 	const struct input_kbd_matrix_common_config *cfg = dev->config;
@@ -92,6 +106,11 @@ static bool input_kbd_matrix_scan(const struct device *dev)
 		    cfg->actual_key_mask[col] == 0) {
 			continue;
 		}
+
+		if (input_kbd_matrix_is_suspended(dev)) {
+			cfg->matrix_new_state[col] = 0;
+			continue;
+		};
 
 		input_kbd_matrix_drive_column(dev, col);
 
@@ -245,6 +264,19 @@ static k_timepoint_t input_kbd_matrix_poll_timeout(const struct device *dev)
 	return sys_timepoint_calc(K_MSEC(cfg->poll_timeout_ms));
 }
 
+static bool input_kbd_matrix_is_unstable(const struct device *dev)
+{
+	const struct input_kbd_matrix_common_config *cfg = dev->config;
+
+	for (uint8_t c = 0; c < cfg->col_size; c++) {
+		if (cfg->matrix_unstable_state[c] != 0) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static void input_kbd_matrix_poll(const struct device *dev)
 {
 	const struct input_kbd_matrix_common_config *cfg = dev->config;
@@ -252,6 +284,7 @@ static void input_kbd_matrix_poll(const struct device *dev)
 	uint32_t current_cycles;
 	uint32_t cycles_diff;
 	uint32_t wait_period_us;
+	uint32_t poll_period_us;
 
 	poll_time_end = input_kbd_matrix_poll_timeout(dev);
 
@@ -270,10 +303,14 @@ static void input_kbd_matrix_poll(const struct device *dev)
 		 */
 		current_cycles = k_cycle_get_32();
 		cycles_diff = current_cycles - start_period_cycles;
-		wait_period_us = cfg->poll_period_us - k_cyc_to_us_floor32(cycles_diff);
 
-		wait_period_us = CLAMP(wait_period_us,
-				       USEC_PER_MSEC, cfg->poll_period_us);
+		if (input_kbd_matrix_is_unstable(dev)) {
+			poll_period_us = cfg->poll_period_us;
+		} else {
+			poll_period_us = cfg->stable_poll_period_us;
+		}
+		wait_period_us = CLAMP(poll_period_us - k_cyc_to_us_floor32(cycles_diff),
+				       USEC_PER_MSEC, poll_period_us);
 
 		LOG_DBG("wait_period_us: %d", wait_period_us);
 
@@ -293,14 +330,16 @@ static void input_kbd_matrix_polling_thread(void *arg1, void *unused2, void *unu
 	ARG_UNUSED(unused3);
 
 	while (true) {
-		input_kbd_matrix_drive_column(dev, INPUT_KBD_MATRIX_COLUMN_DRIVE_ALL);
-		api->set_detect_mode(dev, true);
+		if (!input_kbd_matrix_is_suspended(dev)) {
+			input_kbd_matrix_drive_column(dev, INPUT_KBD_MATRIX_COLUMN_DRIVE_ALL);
+			api->set_detect_mode(dev, true);
 
-		/* Check the rows again after enabling the interrupt to catch
-		 * any potential press since the last read.
-		 */
-		if (api->read_row(dev) != 0) {
-			input_kbd_matrix_poll_start(dev);
+			/* Check the rows again after enabling the interrupt to catch
+			 * any potential press since the last read.
+			 */
+			if (api->read_row(dev) != 0) {
+				input_kbd_matrix_poll_start(dev);
+			}
 		}
 
 		k_sem_take(&data->poll_lock, K_FOREVER);
@@ -313,9 +352,33 @@ static void input_kbd_matrix_polling_thread(void *arg1, void *unused2, void *unu
 	}
 }
 
+#ifdef CONFIG_PM_DEVICE
+int input_kbd_matrix_pm_action(const struct device *dev,
+			       enum pm_device_action action)
+{
+	struct input_kbd_matrix_common_data *data = dev->data;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		atomic_set(&data->suspended, 1);
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		atomic_set(&data->suspended, 0);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	input_kbd_matrix_poll_start(dev);
+
+	return 0;
+}
+#endif
+
 int input_kbd_matrix_common_init(const struct device *dev)
 {
 	struct input_kbd_matrix_common_data *data = dev->data;
+	int ret;
 
 	k_sem_init(&data->poll_lock, 0, 1);
 
@@ -325,6 +388,12 @@ int input_kbd_matrix_common_init(const struct device *dev)
 			CONFIG_INPUT_KBD_MATRIX_THREAD_PRIORITY, 0, K_NO_WAIT);
 
 	k_thread_name_set(&data->thread, dev->name);
+
+	ret = pm_device_runtime_enable(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to enable runtime power management");
+		return ret;
+	}
 
 	return 0;
 }

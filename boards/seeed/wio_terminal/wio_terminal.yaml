@@ -7,7 +7,6 @@ flash: 512
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - adc
   - counter
@@ -16,7 +15,6 @@ supported:
   - i2c
   - pwm
   - spi
-  - usb_cdc
   - usb_device
   - watchdog
 vendor: seeed

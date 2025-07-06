@@ -10,12 +10,8 @@
 
 #include "memory.h"
 
-#ifdef CONFIG_XIP
-#error "ESP32C3 bootloader cannot use XIP"
-#endif /* CONFIG_XIP */
-
 /* Disable all romable LMA */
-#udef GROUP_DATA_LINK_IN
+#undef GROUP_DATA_LINK_IN
 #define GROUP_DATA_LINK_IN(vregion, lregion) > vregion
 
 #define RAMABLE_REGION dram_seg
@@ -48,26 +44,14 @@ SECTIONS
     _loader_text_start = ABSOLUTE(.);
     *(.stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
 
-    /* TODO: cross-segments calls in the libzephyr.a:device.* */
-
     *libapp.a:flash_map_extended.*(.literal .text .literal.* .text.*)
     *libzephyr.a:cbprintf_nano.*(.literal .text .literal.* .text.*)
     *libzephyr.a:cpu.*(.literal .text .literal.* .text.*)
     *libzephyr.a:mmu_hal.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:cache_hal.*(.literal .text .literal.* .text.*)
     *libzephyr.a:flash_map.*(.literal .text .literal.* .text.*)
     *libzephyr.a:esp_rom_spiflash.*(.literal .text .literal.* .text.*)
-
-    *libzephyr.a:heap.*(.literal .text .literal.* .text.*)
-
-    *libkernel.a:kheap.*(.literal .text .literal.* .text.*)
-    *libkernel.a:mempool.*(.literal .text .literal.* .text.*)
-
-    *(.literal.bootloader_mmap .text.bootloader_mmap)
-    *(.literal.bootloader_munmap .text.bootloader_munmap)
-
+    *libkernel.a:device.*(.literal .text .literal.* .text.*)
     *libzephyr.a:esp_loader.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:mmu_hal.*(.literal .text .literal.* .text.*)
 
     *(.literal.esp_intr_disable .literal.esp_intr_disable.* .text.esp_intr_disable .text.esp_intr_disable.*)
     *(.literal.default_intr_handler .text.default_intr_handler .iram1.*.default_intr_handler)
@@ -87,6 +71,7 @@ SECTIONS
     /* Vectors go to IRAM */
     _iram_start = ABSOLUTE(.);
     _init_start = ABSOLUTE(.);
+    __text_region_start = ABSOLUTE(.);
 
     KEEP(*(.exception_vectors.text));
     . = ALIGN(256);
@@ -133,6 +118,7 @@ SECTIONS
     . += 16;
 
     _text_end = ABSOLUTE(.);
+    __text_region_end = ABSOLUTE(.);
     _etext = .;
 
     /* Similar to _iram_start, this symbol goes here so it is
@@ -223,7 +209,7 @@ SECTIONS
     . = ALIGN(4);
   } > dram_seg
 
-  #include <zephyr/linker/common-rom/common-rom-cpp.ld>
+  #include <zephyr/linker/common-rom/common-rom-init.ld>
   #include <zephyr/linker/common-rom/common-rom-kernel-devices.ld>
   #include <zephyr/linker/common-rom/common-rom-debug.ld>
   #include <zephyr/linker/common-rom/common-rom-misc.ld>

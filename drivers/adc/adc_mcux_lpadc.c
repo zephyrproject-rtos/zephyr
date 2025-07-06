@@ -44,9 +44,10 @@ struct mcux_lpadc_config {
 	uint32_t offset_b;
 	void (*irq_config_func)(const struct device *dev);
 	const struct pinctrl_dev_config *pincfg;
-	const struct device **ref_supplies;
+	const struct device *ref_supplies;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
+	int32_t ref_supply_val;
 };
 
 struct mcux_lpadc_data {
@@ -122,10 +123,14 @@ static int mcux_lpadc_acquisition_time_setup(const struct device *dev, uint16_t 
 static int mcux_lpadc_channel_setup(const struct device *dev,
 				const struct adc_channel_cfg *channel_cfg)
 {
+	const struct mcux_lpadc_config *config = dev->config;
+	const struct device *regulator = config->ref_supplies;
+	int32_t vref_uv = config->ref_supply_val * 1000;
 	struct mcux_lpadc_data *data = dev->data;
 	lpadc_conv_command_config_t *cmd;
 	uint8_t channel_side;
 	uint8_t channel_num;
+	int err;
 
 	/* User may configure maximum number of active channels */
 	if (channel_cfg->channel_id >= CONFIG_LPADC_CHANNEL_COUNT) {
@@ -152,6 +157,8 @@ static int mcux_lpadc_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
+#if !(defined(FSL_FEATURE_LPADC_HAS_B_SIDE_CHANNELS) && \
+	(FSL_FEATURE_LPADC_HAS_B_SIDE_CHANNELS == 0U))
 	if (channel_cfg->differential) {
 		/* Channel pairs must match in differential mode */
 		if ((ADC_CMDL_ADCH(channel_cfg->input_positive)) !=
@@ -178,6 +185,7 @@ static int mcux_lpadc_channel_setup(const struct device *dev,
 	} else {
 		/* Default value for sampleChannelMode is SideA */
 	}
+#endif
 #if defined(FSL_FEATURE_LPADC_HAS_CMDL_CSCALE) && FSL_FEATURE_LPADC_HAS_CMDL_CSCALE
 	/*
 	 * The true scaling factor used by the LPADC is 30/64, instead of
@@ -200,8 +208,25 @@ static int mcux_lpadc_channel_setup(const struct device *dev,
 	}
 #endif
 
-	if (channel_cfg->reference != ADC_REF_EXTERNAL0) {
-		LOG_ERR("Invalid channel reference");
+	/*
+	 * ADC_REF_EXTERNAL1: Use SoC internal regulator as LPADC reference voltage.
+	 * ADC_REF_EXTERNAL0: Use other voltage source (maybe also within the SoCs)
+	 * as LPADC reference voltage, like VREFH, VDDA, etc.
+	 */
+	if (channel_cfg->reference == ADC_REF_EXTERNAL1) {
+		LOG_DBG("ref external1");
+		if (regulator != NULL) {
+			err = regulator_set_voltage(regulator, vref_uv, vref_uv);
+			if (err < 0) {
+				return err;
+			}
+		} else {
+			return -EINVAL;
+		}
+	} else if (channel_cfg->reference == ADC_REF_EXTERNAL0) {
+		LOG_DBG("ref external0");
+	} else {
+		LOG_DBG("ref not support");
 		return -EINVAL;
 	}
 
@@ -402,7 +427,7 @@ static void mcux_lpadc_isr(const struct device *dev)
 	LOG_DBG("Finished channel %d. Raw result is 0x%04x",
 		channel, conv_result.convValue);
 	/*
-	 * For 12 or 13 bit resolution the the LSBs will be 0, so a bit shift
+	 * For 12 or 13 bit resolution the LSBs will be 0, so a bit shift
 	 * is needed. For differential modes, the ADC conversion to
 	 * millivolts expects to use a shift one less than the resolution.
 	 *
@@ -413,6 +438,8 @@ static void mcux_lpadc_isr(const struct device *dev)
 	conv_mode = data->cmd_config[channel].sampleChannelMode;
 	if (data->ctx.sequence.resolution < 15) {
 		result = ((conv_result.convValue >> 3) & 0xFFF);
+#if !(defined(FSL_FEATURE_LPADC_HAS_B_SIDE_CHANNELS) && \
+	(FSL_FEATURE_LPADC_HAS_B_SIDE_CHANNELS == 0U))
 #if defined(FSL_FEATURE_LPADC_HAS_CMDL_DIFF) && FSL_FEATURE_LPADC_HAS_CMDL_DIFF
 		if (conv_mode == kLPADC_SampleChannelDiffBothSideAB ||
 		    conv_mode == kLPADC_SampleChannelDiffBothSideBA) {
@@ -425,6 +452,7 @@ static void mcux_lpadc_isr(const struct device *dev)
 			}
 		}
 		*data->buffer++ = result;
+#endif
 	} else {
 		*data->buffer++ = conv_result.convValue;
 	}
@@ -455,10 +483,10 @@ static int mcux_lpadc_init(const struct device *dev)
 	}
 
 	/* Enable necessary regulators */
-	const struct device **regulator = config->ref_supplies;
+	const struct device *regulator = config->ref_supplies;
 
-	while (*regulator != NULL) {
-		err = regulator_enable(*(regulator++));
+	if (regulator != NULL) {
+		err = regulator_enable(regulator);
 		if (err) {
 			return err;
 		}
@@ -474,7 +502,9 @@ static int mcux_lpadc_init(const struct device *dev)
 	adc_config.conversionAverageMode = config->calibration_average;
 #endif /* FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS */
 
-	adc_config.powerLevelMode = config->power_level;
+#if !(DT_ANY_INST_HAS_PROP_STATUS_OKAY(no_power_level))
+		adc_config.powerLevelMode = config->power_level;
+#endif
 
 	LPADC_Init(base, &adc_config);
 
@@ -519,7 +549,7 @@ static int mcux_lpadc_init(const struct device *dev)
 	return 0;
 }
 
-static const struct adc_driver_api mcux_lpadc_driver_api = {
+static DEVICE_API(adc, mcux_lpadc_driver_api) = {
 	.channel_setup = mcux_lpadc_channel_setup,
 	.read = mcux_lpadc_read,
 #ifdef CONFIG_ADC_ASYNC
@@ -527,17 +557,7 @@ static const struct adc_driver_api mcux_lpadc_driver_api = {
 #endif
 };
 
-#define LPADC_REGULATOR_DEPENDENCY(node_id, prop, idx) \
-	DEVICE_DT_GET(DT_PHANDLE_BY_IDX(node_id, prop, idx)),
-
-#define LPADC_REGULATORS_DEFINE(inst)				\
-	static const struct device *mcux_lpadc_ref_supplies_##inst[] = {	\
-		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, nxp_reference_supply),	\
-			(DT_INST_FOREACH_PROP_ELEM(inst, nxp_reference_supply,	\
-				LPADC_REGULATOR_DEPENDENCY)), ()) NULL};
-
 #define LPADC_MCUX_INIT(n)						\
-	LPADC_REGULATORS_DEFINE(n)						\
 									\
 	static void mcux_lpadc_config_func_##n(const struct device *dev);	\
 									\
@@ -546,14 +566,20 @@ static const struct adc_driver_api mcux_lpadc_driver_api = {
 		.base = (ADC_Type *)DT_INST_REG_ADDR(n),	\
 		.voltage_ref =	DT_INST_PROP(n, voltage_ref),	\
 		.calibration_average = DT_INST_ENUM_IDX_OR(n, calibration_average, 0),	\
-		.power_level = DT_INST_PROP(n, power_level),	\
+		.power_level = DT_INST_PROP_OR(n, power_level, 0),	\
 		.offset_a = DT_INST_PROP(n, offset_value_a),	\
 		.offset_b = DT_INST_PROP(n, offset_value_b),	\
 		.irq_config_func = mcux_lpadc_config_func_##n,				\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
-		.ref_supplies = mcux_lpadc_ref_supplies_##n, \
+		.ref_supplies = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, nxp_references),\
+						(DEVICE_DT_GET(DT_PHANDLE(DT_DRV_INST(n),\
+						nxp_references))), (NULL)),\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
+		.ref_supply_val = COND_CODE_1(\
+						DT_INST_NODE_HAS_PROP(n, nxp_references),\
+						(DT_PHA(DT_DRV_INST(n), nxp_references, vref_mv)), \
+						(0)),\
 	};									\
 	static struct mcux_lpadc_data mcux_lpadc_data_##n = {	\
 		ADC_CONTEXT_INIT_TIMER(mcux_lpadc_data_##n, ctx),	\
@@ -574,6 +600,9 @@ static const struct adc_driver_api mcux_lpadc_driver_api = {
 			DEVICE_DT_INST_GET(n), 0);				\
 										\
 		irq_enable(DT_INST_IRQN(n));					\
-	}
+	}	\
+										\
+	BUILD_ASSERT((DT_INST_PROP_OR(n, power_level, 0) >= 0) && \
+		(DT_INST_PROP_OR(n, power_level, 0) <= 3), "power_level: wrong value");
 
 DT_INST_FOREACH_STATUS_OKAY(LPADC_MCUX_INIT)

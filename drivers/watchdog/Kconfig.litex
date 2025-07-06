@@ -1,0 +1,12 @@
+# LiteX WDT configuration
+
+# Copyright (C) 2024 Vogl Electronic GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_LITEX
+	bool "LiteX Watchdog (WDT) Driver"
+	default y
+	depends on DT_HAS_LITEX_WATCHDOG_ENABLED
+	select HAS_WDT_DISABLE_AT_BOOT
+	help
+	  Enable WDT driver for LiteX.

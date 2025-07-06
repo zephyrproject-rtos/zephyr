@@ -20,6 +20,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,bt-c2h-uart = &usart1;
+		zephyr,display = &st7789v;
 	};
 
 	aliases {
@@ -50,7 +51,7 @@
 
 		/* 2KB at the end of 512KB flash is set for storage */
 		storage_partition: partition@7f800 {
-			   reg = <0x0007f800 DT_SIZE_K(2)>;
-		   };
+			reg = <0x0007f800 DT_SIZE_K(2)>;
+		};
 	};
 };

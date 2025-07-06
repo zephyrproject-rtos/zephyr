@@ -100,6 +100,59 @@ static uint32_t dump_fault(uint32_t status, uint32_t addr)
 		reason = K_ERR_ARM_UNSUPPORTED_EXCLUSIVE_ACCESS_FAULT;
 		LOG_ERR("Unsupported Exclusive Access Fault @ 0x%08x", addr);
 		break;
+#elif defined(CONFIG_ARMV7_A)
+	case FSR_FS_PERMISSION_FAULT_2ND_LEVEL:
+		reason = K_ERR_ARM_PERMISSION_FAULT_2ND_LEVEL;
+		LOG_ERR("2nd Level Permission Fault @ 0x%08x", addr);
+		break;
+	case FSR_FS_ACCESS_FLAG_FAULT_1ST_LEVEL:
+		reason = K_ERR_ARM_ACCESS_FLAG_FAULT_1ST_LEVEL;
+		LOG_ERR("1st Level Access Flag Fault @ 0x%08x", addr);
+		break;
+	case FSR_FS_ACCESS_FLAG_FAULT_2ND_LEVEL:
+		reason = K_ERR_ARM_ACCESS_FLAG_FAULT_2ND_LEVEL;
+		LOG_ERR("2nd Level Access Flag Fault @ 0x%08x", addr);
+		break;
+	case FSR_FS_CACHE_MAINTENANCE_INSTRUCTION_FAULT:
+		reason = K_ERR_ARM_CACHE_MAINTENANCE_INSTRUCTION_FAULT;
+		LOG_ERR("Cache Maintenance Instruction Fault @ 0x%08x", addr);
+		break;
+	case FSR_FS_TRANSLATION_FAULT:
+		reason = K_ERR_ARM_TRANSLATION_FAULT;
+		LOG_ERR("1st Level Translation Fault @ 0x%08x", addr);
+		break;
+	case FSR_FS_TRANSLATION_FAULT_2ND_LEVEL:
+		reason = K_ERR_ARM_TRANSLATION_FAULT_2ND_LEVEL;
+		LOG_ERR("2nd Level Translation Fault @ 0x%08x", addr);
+		break;
+	case FSR_FS_DOMAIN_FAULT_1ST_LEVEL:
+		reason = K_ERR_ARM_DOMAIN_FAULT_1ST_LEVEL;
+		LOG_ERR("1st Level Domain Fault @ 0x%08x", addr);
+		break;
+	case FSR_FS_DOMAIN_FAULT_2ND_LEVEL:
+		reason = K_ERR_ARM_DOMAIN_FAULT_2ND_LEVEL;
+		LOG_ERR("2nd Level Domain Fault @ 0x%08x", addr);
+		break;
+	case FSR_FS_SYNC_EXTERNAL_ABORT_TRANSLATION_TABLE_1ST_LEVEL:
+		reason = K_ERR_ARM_SYNC_EXTERNAL_ABORT_TRANSLATION_TABLE_1ST_LEVEL;
+		LOG_ERR("1st Level Synchronous External Abort Translation Table @ 0x%08x", addr);
+		break;
+	case FSR_FS_SYNC_EXTERNAL_ABORT_TRANSLATION_TABLE_2ND_LEVEL:
+		reason = K_ERR_ARM_SYNC_EXTERNAL_ABORT_TRANSLATION_TABLE_2ND_LEVEL;
+		LOG_ERR("2nd Level Synchronous External Abort Translation Table @ 0x%08x", addr);
+		break;
+	case FSR_FS_TLB_CONFLICT_ABORT:
+		reason = K_ERR_ARM_TLB_CONFLICT_ABORT;
+		LOG_ERR("TLB Conflict Abort @ 0x%08x", addr);
+		break;
+	case FSR_FS_SYNC_PARITY_ERROR_TRANSLATION_TABLE_1ST_LEVEL:
+		reason = K_ERR_ARM_SYNC_PARITY_ERROR_TRANSLATION_TABLE_1ST_LEVEL;
+		LOG_ERR("1st Level Synchronous Parity Error Translation Table @ 0x%08x", addr);
+		break;
+	case FSR_FS_SYNC_PARITY_ERROR_TRANSLATION_TABLE_2ND_LEVEL:
+		reason = K_ERR_ARM_SYNC_PARITY_ERROR_TRANSLATION_TABLE_2ND_LEVEL;
+		LOG_ERR("2nd Level Synchronous Parity Error Translation Table @ 0x%08x", addr);
+		break;
 #else
 	case FSR_FS_BACKGROUND_FAULT:
 		reason = K_ERR_ARM_BACKGROUND_FAULT;
@@ -147,8 +200,9 @@ bool z_arm_fault_undef_instruction_fp(void)
 	 * the FP was already enabled then this was an actual undefined
 	 * instruction.
 	 */
-	if (__get_FPEXC() & FPEXC_EN)
+	if (__get_FPEXC() & FPEXC_EN) {
 		return true;
+	}
 
 	__set_FPEXC(FPEXC_EN);
 
@@ -162,8 +216,9 @@ bool z_arm_fault_undef_instruction_fp(void)
 		struct __fpu_sf *spill_esf =
 			(struct __fpu_sf *)_current_cpu->fp_ctx;
 
-		if (spill_esf == NULL)
+		if (spill_esf == NULL) {
 			return false;
+		}
 
 		_current_cpu->fp_ctx = NULL;
 
@@ -206,7 +261,7 @@ bool z_arm_fault_undef_instruction_fp(void)
  *
  * @return Returns true if the fault is fatal
  */
-bool z_arm_fault_undef_instruction(z_arch_esf_t *esf)
+bool z_arm_fault_undef_instruction(struct arch_esf *esf)
 {
 #if defined(CONFIG_FPU_SHARING)
 	/*
@@ -243,7 +298,7 @@ bool z_arm_fault_undef_instruction(z_arch_esf_t *esf)
  *
  * @return Returns true if the fault is fatal
  */
-bool z_arm_fault_prefetch(z_arch_esf_t *esf)
+bool z_arm_fault_prefetch(struct arch_esf *esf)
 {
 	uint32_t reason = K_ERR_CPU_EXCEPTION;
 
@@ -299,7 +354,7 @@ static const struct z_exc_handle exceptions[] = {
  *
  * @return true if error is recoverable, otherwise return false.
  */
-static bool memory_fault_recoverable(z_arch_esf_t *esf)
+static bool memory_fault_recoverable(struct arch_esf *esf)
 {
 	for (int i = 0; i < ARRAY_SIZE(exceptions); i++) {
 		/* Mask out instruction mode */
@@ -321,7 +376,7 @@ static bool memory_fault_recoverable(z_arch_esf_t *esf)
  *
  * @return Returns true if the fault is fatal
  */
-bool z_arm_fault_data(z_arch_esf_t *esf)
+bool z_arm_fault_data(struct arch_esf *esf)
 {
 	uint32_t reason = K_ERR_CPU_EXCEPTION;
 

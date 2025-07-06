@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf5340_cpuapp_qkaa.dtsi>
+#include "nrf5340_cpuapp_common.dtsi"
+#include "nrf7002dk_nrf5340_cpuapp_pinctrl.dtsi"
+
+/ {
+	model = "Nordic NRF7002 DK NRF5340 Application";
+	compatible = "nordic,nrf7002-dk-nrf5340-cpuapp";
+
+	chosen {
+		zephyr,sram = &sram0_image;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,sram-secure-partition = &sram0_s;
+		zephyr,sram-non-secure-partition = &sram0_ns;
+		zephyr,wifi = &wlan0;
+	};
+};
+
+&qspi {
+	nrf70: nrf7001@1 {
+		compatible = "nordic,nrf7001-qspi";
+		status = "okay";
+		reg = <1>;
+		qspi-frequency = <24000000>;
+		qspi-quad-mode;
+
+		#include "nrf70_common.dtsi"
+	};
+};

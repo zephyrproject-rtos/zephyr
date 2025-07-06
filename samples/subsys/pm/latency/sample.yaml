@@ -3,7 +3,6 @@ sample:
 tests:
   sample.pm.latency:
     platform_allow:
-      - native_posix
       - native_sim
     integration_platforms:
       - native_sim

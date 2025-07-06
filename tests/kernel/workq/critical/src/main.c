@@ -15,7 +15,7 @@
  * This test has two threads that increment a counter.  The routine that
  * increments the counter is invoked from workqueue due to the two threads
  * calling using it.  The final result of the counter is expected
- * to be the the number of times work item was called to increment
+ * to be the number of times work item was called to increment
  * the counter.
  *
  * This is done with time slicing both disabled and enabled to ensure that the

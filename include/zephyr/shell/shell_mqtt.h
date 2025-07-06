@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef SHELL_MQTT_H__
-#define SHELL_MQTT_H__
+#ifndef ZEPHYR_INCLUDE_SHELL_MQTT_H_
+#define ZEPHYR_INCLUDE_SHELL_MQTT_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
@@ -120,7 +120,7 @@ struct shell_mqtt {
 const struct shell *shell_backend_mqtt_get_ptr(void);
 
 /**
- * @brief Function to define the device ID （devid) for which the shell mqtt backend uses as a
+ * @brief Function to define the device ID (devid) for which the shell mqtt backend uses as a
  * client ID when it connects to the broker. It will publish its output to devid_tx and subscribe
  * to devid_rx for input .
  *
@@ -137,4 +137,4 @@ bool shell_mqtt_get_devid(char *id, int id_max_len);
 }
 #endif
 
-#endif /* SHELL_MQTT_H__ */
+#endif /* ZEPHYR_INCLUDE_SHELL_MQTT_H_ */

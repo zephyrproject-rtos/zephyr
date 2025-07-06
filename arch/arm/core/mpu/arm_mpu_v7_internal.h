@@ -145,7 +145,7 @@ static inline int get_dyn_region_min_index(void)
 /* Only a single bit is set for all user accessible permissions.
  * In ARMv7-M MPU this is bit AP[1].
  */
-#define MPU_USER_READ_ACCESSIBLE_Msk (P_RW_U_RO & P_RW_U_RW & P_RO_U_RO & RO)
+#define MPU_USER_READ_ACCESSIBLE_Msk (P_RW_U_RO & P_RW_U_RW & P_RO_U_RO)
 
 /**
  * This internal function checks if the region is user accessible or not.
@@ -169,7 +169,7 @@ static inline int is_user_accessible_region(uint32_t r_index, int write)
  * This internal function validates whether a given memory buffer
  * is user accessible or not.
  */
-static inline int mpu_buffer_validate(void *addr, size_t size, int write)
+static inline int mpu_buffer_validate(const void *addr, size_t size, int write)
 {
 	int32_t r_index;
 	int rc = -EPERM;

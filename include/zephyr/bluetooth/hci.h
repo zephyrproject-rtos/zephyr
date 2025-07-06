@@ -9,15 +9,44 @@
 #define ZEPHYR_INCLUDE_BLUETOOTH_HCI_H_
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
-#include <zephyr/net/buf.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/hci_types.h>
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+/** Converts a HCI error to string.
+ *
+ * The error codes are described in the Bluetooth Core specification,
+ * Vol 1, Part F, Section 2.
+ *
+ * The HCI documentation found in Vol 4, Part E,
+ * describes when the different error codes are used.
+ *
+ * See also the defined BT_HCI_ERR_* macros.
+ *
+ * @return The string representation of the HCI error code.
+ *         If @kconfig{CONFIG_BT_HCI_ERR_TO_STR} is not enabled,
+ *         this just returns the empty string
+ */
+#if defined(CONFIG_BT_HCI_ERR_TO_STR)
+const char *bt_hci_err_to_str(uint8_t hci_err);
+#else
+#include <zephyr/toolchain.h>
+
+static inline const char *bt_hci_err_to_str(uint8_t hci_err)
+{
+	ARG_UNUSED(hci_err);
+
+	return "";
+}
 #endif
 
 /** Allocate a HCI command buffer.
@@ -27,17 +56,33 @@ extern "C" {
   * of the parameters. Upon successful return the buffer is ready to have
   * the parameters encoded into it.
   *
+  * @deprecated Use bt_hci_cmd_alloc() instead.
+  *
   * @param opcode     Command OpCode.
   * @param param_len  Length of command parameters.
   *
   * @return Newly allocated buffer.
   */
-struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len);
+__deprecated struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len);
+
+/** Allocate an HCI command buffer.
+ *
+ * This function allocates a new buffer for an HCI command. Upon successful
+ * return the buffer is ready to have the command parameters encoded into it.
+ * Sufficient headroom gets automatically reserved in the buffer, allowing
+ * the actual command and H:4 headers to be encoded later, as part of
+ * calling bt_hci_cmd_send() or bt_hci_cmd_send_sync().
+ *
+ * @param timeout Timeout for the allocation.
+ *
+ * @return Newly allocated buffer or NULL if allocation failed.
+ */
+struct net_buf *bt_hci_cmd_alloc(k_timeout_t timeout);
 
 /** Send a HCI command asynchronously.
   *
   * This function is used for sending a HCI command asynchronously. It can
-  * either be called for a buffer created using bt_hci_cmd_create(), or
+  * either be called for a buffer created using bt_hci_cmd_alloc(), or
   * if the command has no parameters a NULL can be passed instead. The
   * sending of the command will happen asynchronously, i.e. upon successful
   * return from this function the caller only knows that it was queued
@@ -56,7 +101,7 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf);
 /** Send a HCI command synchronously.
   *
   * This function is used for sending a HCI command synchronously. It can
-  * either be called for a buffer created using bt_hci_cmd_create(), or
+  * either be called for a buffer created using bt_hci_cmd_alloc(), or
   * if the command has no parameters a NULL can be passed instead.
   *
   * The function will block until a Command Status or a Command Complete
@@ -88,6 +133,18 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
  */
 int bt_hci_get_conn_handle(const struct bt_conn *conn, uint16_t *conn_handle);
 
+/** @brief Get connection given a connection handle.
+ *
+ * The caller gets a new reference to the connection object which must be
+ * released with bt_conn_unref() once done using the object.
+ *
+ * @param handle The connection handle
+ *
+ * @returns The corresponding connection object on success.
+ *          NULL if it does not exist.
+ */
+struct bt_conn *bt_hci_conn_lookup_handle(uint16_t handle);
+
 /** @brief Get advertising handle for an advertising set.
  *
  * @param adv Advertising set.
@@ -96,6 +153,33 @@ int bt_hci_get_conn_handle(const struct bt_conn *conn, uint16_t *conn_handle);
  * @return 0 on success or negative error value on failure.
  */
 int bt_hci_get_adv_handle(const struct bt_le_ext_adv *adv, uint8_t *adv_handle);
+
+/** @brief Get advertising set given an advertising handle
+ *
+ * @param handle The advertising handle
+ *
+ * @returns The corresponding advertising set on success,
+ *          NULL if it does not exist.
+ */
+struct bt_le_ext_adv *bt_hci_adv_lookup_handle(uint8_t handle);
+
+/** @brief Get periodic advertising sync handle.
+ *
+ * @param sync Periodic advertising sync set.
+ * @param sync_handle Place to store the periodic advertising sync handle.
+ *
+ * @return 0 on success or negative error value on failure.
+ */
+int bt_hci_get_adv_sync_handle(const struct bt_le_per_adv_sync *sync, uint16_t *sync_handle);
+
+/** @brief Get periodic advertising sync given an periodic advertising sync handle.
+ *
+ * @param handle The periodic sync set handle
+ *
+ * @retval The corresponding periodic advertising sync set object on success,
+ *         NULL if it does not exist.
+ */
+struct bt_le_per_adv_sync *bt_hci_per_adv_sync_lookup_handle(uint16_t handle);
 
 /** @brief Obtain the version string given a core version number.
  *

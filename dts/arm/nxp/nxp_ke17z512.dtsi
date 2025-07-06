@@ -1,0 +1,65 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/nxp_ke1xz.dtsi>
+
+/delete-node/ &sram_l;
+/delete-node/ &sram_u;
+
+/ {
+	/* Fix sram_l and sram_u, they have different addr and size on KE17Z512 */
+	sram_l: memory@1fff8000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x1fff8000 DT_SIZE_K(32)>;
+		zephyr,memory-region = "SRAML";
+	};
+
+	sram_u: memory@20000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x20000000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "SRAMU";
+	};
+
+	soc {
+		/* Fix flash, it has different size on KE17Z512 */
+		/delete-node/ ftfe;
+
+		ftfe: flash-controller@40020000 {
+			compatible = "nxp,kinetis-ftfe";
+			reg = <0x40020000 0x1000>;
+			interrupts = <5 0>;
+			interrupt-names = "command-complete";
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				reg = <0 DT_SIZE_K(512)>;
+				erase-block-size = <DT_SIZE_K(2)>;
+				write-block-size = <8>;
+			};
+		};
+
+		uart0: uart@4006d000 {
+			compatible = "nxp,kinetis-uart";
+			reg = <0x4006d000 0x1000>;
+			interrupts = <21 0>;
+			interrupt-names = "status";
+			clocks = <&scg KINETIS_SCG_BUS_CLK>;
+			status = "disabled";
+		};
+
+		uart1: uart@4006e000 {
+			compatible = "nxp,kinetis-uart";
+			reg = <0x4006e000 0x1000>;
+			interrupts = <30 0>;
+			interrupt-names = "status";
+			clocks = <&scg KINETIS_SCG_BUS_CLK>;
+			status = "disabled";
+		};
+	};
+};

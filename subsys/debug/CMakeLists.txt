@@ -10,9 +10,9 @@ zephyr_sources_ifdef(
   asan_hacks.c
   )
 
-zephyr_sources_ifdef(
+add_subdirectory_ifdef(
   CONFIG_THREAD_ANALYZER
-  thread_analyzer.c
+  thread_analyzer
   )
 
 add_subdirectory_ifdef(
@@ -20,12 +20,27 @@ add_subdirectory_ifdef(
   coredump
   )
 
-zephyr_sources_ifdef(
+add_subdirectory_ifdef(
   CONFIG_GDBSTUB
-  gdbstub.c
+  gdbstub
   )
 
 zephyr_sources_ifdef(
-  CONFIG_GDBSTUB_SERIAL_BACKEND
-  gdbstub/gdbstub_backend_serial.c
+  CONFIG_MIPI_STP_DECODER
+  mipi_stp_decoder.c
+  )
+
+add_subdirectory_ifdef(
+  CONFIG_SYMTAB
+  symtab
+  )
+
+zephyr_sources_ifdef(
+  CONFIG_CS_TRACE_DEFMT
+  coresight/cs_trace_defmt.c
+)
+
+zephyr_sources_ifdef(
+  CONFIG_CPU_LOAD
+  cpu_load.c
   )

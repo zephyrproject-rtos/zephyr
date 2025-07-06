@@ -39,7 +39,7 @@ ZTEST(pot, test_constexpr_NHPOT)
 	zassert_equal(0, NHPOT(UINT64_MAX));
 
 	zassert_equal(64, val);
-	zassert_equal(64, nhpot(42));
+	zassert_equal(64ULL, nhpot(42ULL));
 	zassert_equal(BIT64(33), val64);
 	zassert_equal(BIT64(33), nhpot(42 + BIT64(32)));
 }

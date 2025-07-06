@@ -14,6 +14,7 @@
 #include <zephyr/arch/cpu.h>
 #include <stm32_ll_system.h>
 #include <stm32_ll_bus.h>
+#include <stm32_ll_pwr.h>
 
 /**
  * @brief Perform SoC configuration at boot.
@@ -27,10 +28,12 @@ static int st_stm32_common_config(void)
 {
 #ifdef CONFIG_LOG_BACKEND_SWO
 	/* Enable SWO trace asynchronous mode */
-#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_SOC_SERIES_STM32H5X)
+#if defined(CONFIG_SOC_SERIES_STM32H5X) || defined(CONFIG_SOC_SERIES_STM32H7RSX) ||                \
+	defined(CONFIG_SOC_SERIES_STM32L5X) || defined(CONFIG_SOC_SERIES_STM32U5X) ||              \
+	defined(CONFIG_SOC_SERIES_STM32WBX)
 	LL_DBGMCU_EnableTraceClock();
 #endif
-#if !defined(CONFIG_SOC_SERIES_STM32WBX)
+#if !defined(CONFIG_SOC_SERIES_STM32WBX) && defined(DBGMCU_CR_TRACE_IOEN)
 	LL_DBGMCU_SetTracePinAssignment(LL_DBGMCU_TRACE_ASYNCH);
 #endif
 #endif /* CONFIG_LOG_BACKEND_SWO */
@@ -47,11 +50,15 @@ static int st_stm32_common_config(void)
 	__HAL_RCC_GPDMA1_CLK_ENABLE();
 #endif /* __HAL_RCC_DMA1_CLK_ENABLE */
 
+#endif /* CONFIG_USE_SEGGER_RTT */
+
 	/* On some STM32 boards, for unclear reason,
 	 * RTT feature is working with realtime update only when
 	 *   - one of the DBGMCU bit STOP/STANDBY/SLEEP is set
 	 * See https://github.com/zephyrproject-rtos/zephyr/issues/34324
 	 */
+
+	/* Enable DBGMCU clock if it exists */
 #if defined(LL_APB1_GRP1_PERIPH_DBGMCU)
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_DBGMCU);
 #elif defined(LL_APB1_GRP2_PERIPH_DBGMCU)
@@ -60,55 +67,55 @@ static int st_stm32_common_config(void)
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_DBGMCU);
 #endif /* LL_APB1_GRP1_PERIPH_DBGMCU */
 
-#endif /* CONFIG_USE_SEGGER_RTT */
-
-
 #if defined(CONFIG_STM32_ENABLE_DEBUG_SLEEP_STOP)
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32MP1X)
-	HAL_EnableDBGStopMode();
-#else /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32MP1X */
-#if defined(SOC_SERIES_STM32G0X) || defined(SOC_SERIES_STM32C0X)
-	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_DBGMCU);
+#if defined(CONFIG_SOC_SERIES_STM32F1X)
+	LL_DBGMCU_EnableDBGSleepMode();
 	LL_DBGMCU_EnableDBGStopMode();
-	LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_DBGMCU);
-#elif defined(SOC_SERIES_STM32F0X)
-	LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_DBGMCU);
-	LL_DBGMCU_EnableDBGStopMode();
-	LL_APB1_GRP2_DisableClock(LL_APB1_GRP2_PERIPH_DBGMCU);
-#elif defined(SOC_SERIES_STM32L0X)
-	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_DBGMCU);
-	LL_DBGMCU_EnableDBGStopMode();
-	LL_APB2_GRP1_DisableClock(LL_APB2_GRP1_PERIPH_DBGMCU);
+	LL_DBGMCU_EnableDBGStandbyMode();
+#elif defined(CONFIG_SOC_SERIES_STM32H7X)
+	LL_DBGMCU_EnableD1DebugInStopMode();
+	LL_DBGMCU_EnableD1DebugInSleepMode();
+#elif defined(CONFIG_SOC_SERIES_STM32MP1X)
+	LL_DBGMCU_EnableDebugInStopMode();
+#elif defined(CONFIG_SOC_SERIES_STM32WB0X)
+	LL_PWR_EnableDEEPSTOP2();
+#elif defined(CONFIG_SOC_SERIES_STM32MP13X)
+	LL_DBGMCU_EnableDebugInLowPowerMode();
 #else /* all other parts */
 	LL_DBGMCU_EnableDBGStopMode();
 #endif
-#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32MP1X */
 
 #else
 
 /* keeping in mind that debugging draws a lot of power we explcitly disable when not needed */
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32MP1X)
-	HAL_DisableDBGStopMode();
-#else /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32MP1X */
-#if defined(SOC_SERIES_STM32G0X) || defined(SOC_SERIES_STM32C0X)
-	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_DBGMCU);
+#if defined(CONFIG_SOC_SERIES_STM32F1X)
+	LL_DBGMCU_DisableDBGSleepMode();
 	LL_DBGMCU_DisableDBGStopMode();
-	LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_DBGMCU);
-#elif defined(SOC_SERIES_STM32F0X)
-	LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_DBGMCU);
-	LL_DBGMCU_DisableDBGStopMode();
-	LL_APB1_GRP2_DisableClock(LL_APB1_GRP2_PERIPH_DBGMCU);
-#elif defined(SOC_SERIES_STM32L0X)
-	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_DBGMCU);
-	LL_DBGMCU_DisableDBGStopMode();
-	LL_APB2_GRP1_DisableClock(LL_APB2_GRP1_PERIPH_DBGMCU);
+	LL_DBGMCU_DisableDBGStandbyMode();
+#elif defined(CONFIG_SOC_SERIES_STM32H7X)
+	LL_DBGMCU_DisableD1DebugInStopMode();
+	LL_DBGMCU_DisableD1DebugInSleepMode();
+#elif defined(CONFIG_SOC_SERIES_STM32MP1X)
+	LL_DBGMCU_DisableDebugInStopMode();
+#elif defined(CONFIG_SOC_SERIES_STM32WB0X)
+	LL_PWR_DisableDEEPSTOP2();
+#elif defined(CONFIG_SOC_SERIES_STM32MP13X)
+	LL_DBGMCU_DisableDebugInLowPowerMode();
 #else /* all other parts */
 	LL_DBGMCU_DisableDBGStopMode();
 #endif
-#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32MP1X */
 
 #endif /* CONFIG_STM32_ENABLE_DEBUG_SLEEP_STOP */
+
+	/* Disable DBGMCU clock if it exists */
+#if defined(LL_APB1_GRP1_PERIPH_DBGMCU)
+	LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_DBGMCU);
+#elif defined(LL_APB1_GRP2_PERIPH_DBGMCU)
+	LL_APB1_GRP2_DisableClock(LL_APB1_GRP2_PERIPH_DBGMCU);
+#elif defined(LL_APB2_GRP1_PERIPH_DBGMCU)
+	LL_APB2_GRP1_DisableClock(LL_APB2_GRP1_PERIPH_DBGMCU);
+#endif /* LL_APB1_GRP1_PERIPH_DBGMCU */
 
 	return 0;
 }

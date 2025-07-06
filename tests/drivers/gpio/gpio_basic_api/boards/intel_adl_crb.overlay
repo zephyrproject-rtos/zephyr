@@ -16,7 +16,7 @@
 	resources {
 		compatible = "test-gpio-basic-api";
 
-		out-gpios = <&gpio_0_b 14 0>;
-		in-gpios  = <&gpio_0_b 15 0>;
+		out-gpios = <&gpio_b 14 0>;
+		in-gpios  = <&gpio_b 15 0>;
 	};
 };

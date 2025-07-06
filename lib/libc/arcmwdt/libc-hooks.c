@@ -59,15 +59,22 @@ static inline int z_vrfy_zephyr_write_stdout(const void *buf, int nbytes)
 	K_OOPS(K_SYSCALL_MEMORY_READ(buf, nbytes));
 	return z_impl_zephyr_write_stdout(buf, nbytes);
 }
-#include <syscalls/zephyr_write_stdout_mrsh.c>
+#include <zephyr/syscalls/zephyr_write_stdout_mrsh.c>
 #endif
 
-#ifndef CONFIG_POSIX_API
+#ifndef CONFIG_POSIX_DEVICE_IO_ALIAS_WRITE
 int _write(int fd, const char *buf, unsigned int nbytes)
 {
 	ARG_UNUSED(fd);
 
 	return zephyr_write_stdout(buf, nbytes);
+}
+#endif
+
+#ifndef CONFIG_POSIX_DEVICE_IO
+__weak int fileno(FILE *file)
+{
+	return _fileno(file);
 }
 #endif
 

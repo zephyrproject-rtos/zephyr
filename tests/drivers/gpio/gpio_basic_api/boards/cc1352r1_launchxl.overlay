@@ -7,9 +7,9 @@
 /* Connect DIO21 to DIO22 to run this test */
 
 / {
-        resources {
-                compatible = "test-gpio-basic-api";
-                out-gpios = <&gpio0 22 0>;
-                in-gpios = <&gpio0 21 0>;
-        };
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&gpio0 22 0>;
+		in-gpios = <&gpio0 21 0>;
+	};
 };

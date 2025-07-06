@@ -43,17 +43,17 @@
 #define _EXCEPTION_RESERVED_PRIO 0
 #endif
 
-#define _EXC_FAULT_PRIO 0
+#define _EXC_FAULT_PRIO             0
 #define _EXC_ZERO_LATENCY_IRQS_PRIO 0
-#define _EXC_SVC_PRIO COND_CODE_1(CONFIG_ZERO_LATENCY_IRQS,		\
+#define _EXC_SVC_PRIO               COND_CODE_1(CONFIG_ZERO_LATENCY_IRQS,		\
 				  (CONFIG_ZERO_LATENCY_LEVELS), (0))
-#define _IRQ_PRIO_OFFSET (_EXCEPTION_RESERVED_PRIO + _EXC_SVC_PRIO)
-#define IRQ_PRIO_LOWEST (BIT(NUM_IRQ_PRIO_BITS) - (_IRQ_PRIO_OFFSET) - 1)
+#define _IRQ_PRIO_OFFSET            (_EXCEPTION_RESERVED_PRIO + _EXC_SVC_PRIO)
+#define IRQ_PRIO_LOWEST             (BIT(NUM_IRQ_PRIO_BITS) - (_IRQ_PRIO_OFFSET) - 1)
 
 #define _EXC_IRQ_DEFAULT_PRIO Z_EXC_PRIO(_IRQ_PRIO_OFFSET)
 
 /* Use lowest possible priority level for PendSV */
-#define _EXC_PENDSV_PRIO 0xff
+#define _EXC_PENDSV_PRIO      0xff
 #define _EXC_PENDSV_PRIO_MASK Z_EXC_PRIO(_EXC_PENDSV_PRIO)
 
 #ifdef _ASMLANGUAGE
@@ -98,7 +98,13 @@ struct __extra_esf_info {
 };
 #endif /* CONFIG_EXTRA_EXCEPTION_INFO */
 
-struct __esf {
+/* ARM GPRs are often designated by two different names */
+#define sys_define_gpr_with_alias(name1, name2)                                                    \
+	union {                                                                                    \
+		uint32_t name1, name2;                                                             \
+	}
+
+struct arch_esf {
 	struct __basic_sf {
 		sys_define_gpr_with_alias(a1, r0);
 		sys_define_gpr_with_alias(a2, r1);
@@ -118,8 +124,6 @@ struct __esf {
 };
 
 extern uint32_t z_arm_coredump_fault_sp;
-
-typedef struct __esf z_arch_esf_t;
 
 extern void z_arm_exc_exit(void);
 

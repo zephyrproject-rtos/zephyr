@@ -156,7 +156,7 @@ _vfp_not_enabled:
 	 * idle, this ensures that the calculation and programming of the
 	 * device for the next timer deadline is not interrupted.  For
 	 * non-tickless idle, this ensures that the clearing of the kernel idle
-	 * state is not interrupted.  In each case, z_pm_save_idle_exit
+	 * state is not interrupted.  In each case, pm_system_resume
 	 * is called with interrupts disabled.
 	 */
 
@@ -170,7 +170,7 @@ _vfp_not_enabled:
 	movs r1, #0
 	/* clear kernel idle state */
 	str r1, [r2, #_kernel_offset_to_idle]
-	bl z_pm_save_idle_exit
+	bl pm_system_resume
 _idle_state_cleared:
 
 #endif /* CONFIG_PM */
@@ -189,7 +189,7 @@ _idle_state_cleared:
 	 *
 	 * Note that interrupts are disabled up to this point on the ARM
 	 * architecture variants other than the Cortex-M. It is also important
-	 * to note that that most interrupt controllers require that the nested
+	 * to note that most interrupt controllers require that the nested
 	 * interrupts are handled after the active interrupt is acknowledged;
 	 * this is be done through the `get_active` interrupt controller
 	 * interface function.
@@ -269,7 +269,7 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	 * idle, this ensures that the calculation and programming of the
 	 * device for the next timer deadline is not interrupted.  For
 	 * non-tickless idle, this ensures that the clearing of the kernel idle
-	 * state is not interrupted.  In each case, z_pm_save_idle_exit
+	 * state is not interrupted.  In each case, pm_system_resume
 	 * is called with interrupts disabled.
 	 */
 
@@ -283,7 +283,7 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	movs r1, #0
 	/* clear kernel idle state */
 	str r1, [r2, #_kernel_offset_to_idle]
-	bl z_pm_save_idle_exit
+	bl pm_system_resume
 _idle_state_cleared:
 #endif /* CONFIG_PM */
 
@@ -339,6 +339,15 @@ z_arm_cortex_ar_irq_done:
 	str r0, [r2, #___cpu_t_nested_OFFSET]
 	/* Do not context switch if exiting a nested interrupt */
 	cmp r0, #0
+	/* Note that this function is only called from `z_arm_svc`,
+	 *	while handling irq_offload, with below modes set:
+	 *	```
+	 *		if (cpu interrupts are nested)
+	 *			mode=MODE_SYS
+	 *		else
+	 *			mode=MODE_IRQ
+	 *	```
+	 */
 	bhi __EXIT_INT
 
 	/* retrieve pointer to the current thread */

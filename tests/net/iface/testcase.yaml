@@ -1,9 +1,14 @@
 common:
   min_ram: 16
   depends_on: netif
+  tags:
+    - net
+    - iface
+    - userspace
 tests:
-  net.iface:
-    tags:
-      - net
-      - iface
-      - userspace
+  net.iface.iid.eui64:
+    extra_configs:
+      - CONFIG_NET_IPV6_IID_EUI_64=y
+  net.iface.iid.stable:
+    extra_configs:
+      - CONFIG_NET_IPV6_IID_STABLE=y

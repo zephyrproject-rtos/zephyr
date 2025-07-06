@@ -2,6 +2,7 @@
  * Copyright (c) 2018 Marvell
  * Copyright (c) 2018 Lexmark International, Inc.
  * Copyright (c) 2019 Stephanos Ioannidis <root@stephanos.io>
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -79,6 +80,16 @@ bool arm_gic_irq_is_pending(unsigned int irq)
 	return (enabler & (1 << int_off)) != 0;
 }
 
+void arm_gic_irq_set_pending(unsigned int irq)
+{
+	int int_grp, int_off;
+
+	int_grp = irq / 32;
+	int_off = irq % 32;
+
+	sys_write32((1 << int_off), (GICD_ISPENDRn + int_grp * 4));
+}
+
 void arm_gic_irq_clear_pending(unsigned int irq)
 {
 	int int_grp, int_off;
@@ -102,20 +113,34 @@ void arm_gic_irq_set_priority(
 	int_grp = (irq / 16) * 4;
 	int_off = (irq % 16) * 2;
 
-	val = sys_read32(GICD_ICFGRn + int_grp);
-	val &= ~(GICD_ICFGR_MASK << int_off);
-	if (flags & IRQ_TYPE_EDGE) {
-		val |= (GICD_ICFGR_TYPE << int_off);
-	}
+	/* GICD_ICFGR0 is read-only; SGIs are always edge-triggered */
+	if (int_grp != 0) {
+		val = sys_read32(GICD_ICFGRn + int_grp);
+		val &= ~(GICD_ICFGR_MASK << int_off);
+		if (flags & IRQ_TYPE_EDGE) {
+			val |= (GICD_ICFGR_TYPE << int_off);
+		}
 
-	sys_write32(val, GICD_ICFGRn + int_grp);
+		sys_write32(val, GICD_ICFGRn + int_grp);
+	}
 }
 
 unsigned int arm_gic_get_active(void)
 {
-	int irq;
+	unsigned int irq;
 
-	irq = sys_read32(GICC_IAR) & 0x3ff;
+	/*
+	 * "ARM Generic Interrupt Controller Architecture version 2.0" states that
+	 * [4.4.5 End of Interrupt Register, GICC_EOIR)]:
+	 * """
+	 * For compatibility with possible extensions to the GIC architecture
+	 * specification, ARM recommends that software preserves the entire register
+	 * value read from the GICC_IAR when it acknowledges the interrupt, and uses
+	 * that entire value for its corresponding write to the GICC_EOIR.
+	 * """
+	 * Because of that, we read the entire value here, to be later written back to GICC_EOIR
+	 */
+	irq = sys_read32(GICC_IAR);
 	return irq;
 }
 

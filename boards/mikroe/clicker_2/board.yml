@@ -1,5 +1,6 @@
 board:
   name: mikroe_clicker_2
+  full_name: Clicker 2 for STM32
   vendor: mikroe
   socs:
     - name: stm32f407xx

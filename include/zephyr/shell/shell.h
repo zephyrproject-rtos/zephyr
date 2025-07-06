@@ -17,6 +17,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 
 #if defined CONFIG_SHELL_GETOPT
 #include <getopt.h>
@@ -132,6 +133,56 @@ const struct device *shell_device_lookup(size_t idx,
 				   const char *prefix);
 
 /**
+ * @brief Filter callback type, for use with shell_device_lookup_filter
+ *
+ * This is used as an argument of shell_device_lookup_filter to only return
+ * devices that match a specific condition, implemented by the filter.
+ *
+ * @param dev pointer to a struct device.
+ *
+ * @return bool, true if the filter matches the device type.
+ */
+typedef bool (*shell_device_filter_t)(const struct device *dev);
+
+/**
+ * @brief Get a device by index and filter.
+ *
+ * This can be used to return devices matching a specific type.
+ *
+ * Devices that the filter returns false for, failed to initialize or do not
+ * have a non-empty name are excluded from the candidates for a match.
+ *
+ * @param idx the device number starting from zero.
+ *
+ * @param filter a pointer to a shell_device_filter_t function that returns
+ * true if the device matches the filter.
+ */
+const struct device *shell_device_filter(size_t idx,
+					 shell_device_filter_t filter);
+
+/**
+ * @brief Get a @ref device reference from its @ref device.name field or label.
+ *
+ * This function iterates through the devices on the system. If a device with
+ * the given @p name field is found, and that device initialized successfully at
+ * boot time, this function returns a pointer to the device.
+ *
+ * If no device has the given @p name, this function returns `NULL`.
+ *
+ * This function also returns NULL when a device is found, but it failed to
+ * initialize successfully at boot time. (To troubleshoot this case, set a
+ * breakpoint on your device driver's initialization function.)
+ *
+ * @param name device name to search for. A null pointer, or a pointer to an
+ * empty string, will cause NULL to be returned.
+ *
+ * @return pointer to device structure with the given name; `NULL` if the device
+ * is not found or if the device with that name's initialization function
+ * failed.
+ */
+const struct device *shell_device_get_binding(const char *name);
+
+/**
  * @brief Shell command handler prototype.
  *
  * @param sh Shell instance.
@@ -163,7 +214,7 @@ typedef int (*shell_dict_cmd_handler)(const struct shell *sh, size_t argc,
 				      char **argv, void *data);
 
 /* When entries are added to the memory section a padding is applied for
- * native_posix_64 and x86_64 targets. Adding padding to allow handle data
+ * the posix architecture with 64bits builds and x86_64 targets. Adding padding to allow handle data
  * in the memory section as array.
  */
 #if (defined(CONFIG_ARCH_POSIX) && defined(CONFIG_64BIT)) || defined(CONFIG_X86_64)
@@ -185,6 +236,83 @@ struct shell_static_entry {
 };
 
 /**
+ * @brief Shell structured help descriptor.
+ *
+ * @details This structure provides an organized way to specify command help
+ * as opposed to a free-form string. This helps make help messages more
+ * consistent and easier to read.
+ */
+struct shell_cmd_help {
+	/* @cond INTERNAL_HIDDEN */
+	uint32_t magic;
+	/* @endcond */
+	const char *description; /*!< Command description */
+	const char *usage;       /*!< Command usage string */
+};
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+
+/**
+ * @brief Magic number used to identify the beginning of a structured help
+ * message when cast to a char pointer.
+ */
+#define SHELL_STRUCTURED_HELP_MAGIC 0x86D20BC4
+
+/**
+ * @endcond
+ */
+
+/**
+ * @brief Check if help string is structured help.
+ *
+ * @param help Pointer to help string or structured help.
+ * @return true if help is structured, false otherwise.
+ */
+static inline bool shell_help_is_structured(const char *help)
+{
+	const struct shell_cmd_help *structured = (const struct shell_cmd_help *)help;
+
+	return structured != NULL && IS_PTR_ALIGNED(structured, struct shell_cmd_help) &&
+	       structured->magic == SHELL_STRUCTURED_HELP_MAGIC;
+}
+
+#if defined(CONFIG_SHELL_HELP) || defined(__DOXYGEN__)
+/**
+ * @brief Helper macro to create structured help inline.
+ *
+ * This macro allows you to pass structured help directly to existing shell macros.
+ *
+ * Example:
+ *
+ * @code{.c}
+ * #define MY_CMD_HELP SHELL_HELP("Do stuff", "<device> <arg1> [<arg2>]")
+ * SHELL_CMD_REGISTER(my_cmd, NULL, MY_CMD_HELP, &my_cmd_handler, 1, 1);
+ * @endcode
+ *
+ * @param[in] _description	Command description.
+ *				This can be a multi-line string. First line should be one sentence
+ *				describing the command. Additional lines might be used to provide
+ *				additional details.
+ *
+ * @param[in] _usage		Command usage string.
+ *				This can be a multi-line string. First line should always be
+ *				indicating the command syntax (_without_ the command name).
+ *				Additional lines may be used to provide additional details, e.g.
+ *				explain the meaning of each argument, allowed values, etc.
+ */
+#define SHELL_HELP(_description, _usage)                                                           \
+	((const char *)&(const struct shell_cmd_help){                                             \
+		.magic = SHELL_STRUCTURED_HELP_MAGIC,                                              \
+		.description = (_description),                                                     \
+		.usage = (_usage),                                                                 \
+	})
+#else
+#define SHELL_HELP(_description, _usage) NULL
+#endif /* CONFIG_SHELL_HELP */
+
+/**
  * @brief Macro for defining and adding a root command (level 0) with required
  * number of arguments.
  *
@@ -194,7 +322,7 @@ struct shell_static_entry {
  *
  * @param[in] syntax	Command syntax (for example: history).
  * @param[in] subcmd	Pointer to a subcommands array.
- * @param[in] help	Pointer to a command help string.
+ * @param[in] help	Pointer to a command help string (use @ref SHELL_HELP for structured help)
  * @param[in] handler	Pointer to a function handler.
  * @param[in] mandatory	Number of mandatory arguments including command name.
  * @param[in] optional	Number of optional arguments.
@@ -225,7 +353,7 @@ struct shell_static_entry {
  *			exists and equals 1.
  * @param[in] syntax	Command syntax (for example: history).
  * @param[in] subcmd	Pointer to a subcommands array.
- * @param[in] help	Pointer to a command help string.
+ * @param[in] help	Pointer to a command help string (use @ref SHELL_HELP for structured help).
  * @param[in] handler	Pointer to a function handler.
  * @param[in] mandatory	Number of mandatory arguments including command name.
  * @param[in] optional	Number of optional arguments.
@@ -253,7 +381,7 @@ struct shell_static_entry {
  *
  * @param[in] syntax	Command syntax (for example: history).
  * @param[in] subcmd	Pointer to a subcommands array.
- * @param[in] help	Pointer to a command help string.
+ * @param[in] help	Pointer to a command help string. Use @ref SHELL_HELP for structured help.
  * @param[in] handler	Pointer to a function handler.
  */
 #define SHELL_CMD_REGISTER(syntax, subcmd, help, handler) \
@@ -269,7 +397,7 @@ struct shell_static_entry {
  *			exists and equals 1.
  * @param[in] syntax	Command syntax (for example: history).
  * @param[in] subcmd	Pointer to a subcommands array.
- * @param[in] help	Pointer to a command help string.
+ * @param[in] help	Pointer to a command help string. Use @ref SHELL_HELP for structured help.
  * @param[in] handler	Pointer to a function handler.
  */
 #define SHELL_COND_CMD_REGISTER(flag, syntax, subcmd, help, handler) \
@@ -382,7 +510,7 @@ struct shell_static_entry {
  * @brief Define ending subcommands set.
  *
  */
-#define SHELL_SUBCMD_SET_END {NULL}
+#define SHELL_SUBCMD_SET_END {0}
 
 /**
  * @brief Macro for creating a dynamic entry.
@@ -405,7 +533,7 @@ struct shell_static_entry {
  *
  * @param[in] syntax	 Command syntax (for example: history).
  * @param[in] subcmd	 Pointer to a subcommands array.
- * @param[in] help	 Pointer to a command help string.
+ * @param[in] help	 Pointer to a command help string. Use @ref SHELL_HELP for structured help.
  * @param[in] handler	 Pointer to a function handler.
  * @param[in] mand	 Number of mandatory arguments including command name.
  * @param[in] opt	 Number of optional arguments.
@@ -427,7 +555,7 @@ struct shell_static_entry {
  *			 exists and equals 1.
  * @param[in] syntax	 Command syntax (for example: history).
  * @param[in] subcmd	 Pointer to a subcommands array.
- * @param[in] help	 Pointer to a command help string.
+ * @param[in] help	 Pointer to a command help string. Use @ref SHELL_HELP for structured help.
  * @param[in] handler	 Pointer to a function handler.
  * @param[in] mand	 Number of mandatory arguments including command name.
  * @param[in] opt	 Number of optional arguments.
@@ -884,6 +1012,41 @@ struct shell {
 
 extern void z_shell_print_stream(const void *user_ctx, const char *data,
 				 size_t data_len);
+
+/** @brief Internal macro for defining a shell instance.
+ *
+ * As it does not create the default shell logging backend it allows to use
+ * custom approach for integrating logging with shell.
+ *
+ * @param[in] _name		Instance name.
+ * @param[in] _prompt		Shell default prompt string.
+ * @param[in] _transport_iface	Pointer to the transport interface.
+ * @param[in] _out_buf		Output buffer.
+ * @param[in] _log_backend	Pointer to the log backend instance.
+ * @param[in] _shell_flag	Shell output newline sequence.
+ */
+#define Z_SHELL_DEFINE(_name, _prompt, _transport_iface, _out_buf, _log_backend, _shell_flag)      \
+	static const struct shell _name;                                                           \
+	static struct shell_ctx UTIL_CAT(_name, _ctx);                                             \
+	Z_SHELL_HISTORY_DEFINE(_name##_history, CONFIG_SHELL_HISTORY_BUFFER);                      \
+	Z_SHELL_FPRINTF_DEFINE(_name##_fprintf, &_name, _out_buf, CONFIG_SHELL_PRINTF_BUFF_SIZE,   \
+			       IS_ENABLED(CONFIG_SHELL_PRINTF_AUTOFLUSH), z_shell_print_stream);   \
+	LOG_INSTANCE_REGISTER(shell, _name, CONFIG_SHELL_LOG_LEVEL);                               \
+	Z_SHELL_STATS_DEFINE(_name);                                                               \
+	static K_KERNEL_STACK_DEFINE(_name##_stack, CONFIG_SHELL_STACK_SIZE);                      \
+	static struct k_thread _name##_thread;                                                     \
+	static const STRUCT_SECTION_ITERABLE(shell, _name) = {                                     \
+		.default_prompt = _prompt,                                                         \
+		.iface = _transport_iface,                                                         \
+		.ctx = &UTIL_CAT(_name, _ctx),                                                     \
+		.history = IS_ENABLED(CONFIG_SHELL_HISTORY) ? &_name##_history : NULL,             \
+		.shell_flag = _shell_flag,                                                         \
+		.fprintf_ctx = &_name##_fprintf,                                                   \
+		.stats = Z_SHELL_STATS_PTR(_name),                                                 \
+		.log_backend = _log_backend,                                                       \
+		LOG_INSTANCE_PTR_INIT(log, shell, _name).name =                                    \
+			STRINGIFY(_name), .thread = &_name##_thread, .stack = _name##_stack}
+
 /**
  * @brief Macro for defining a shell instance.
  *
@@ -897,37 +1060,12 @@ extern void z_shell_print_stream(const void *user_ctx, const char *data,
  *				message is dropped.
  * @param[in] _shell_flag	Shell output newline sequence.
  */
-#define SHELL_DEFINE(_name, _prompt, _transport_iface,			      \
-		     _log_queue_size, _log_timeout, _shell_flag)	      \
-	static const struct shell _name;				      \
-	static struct shell_ctx UTIL_CAT(_name, _ctx);			      \
-	static uint8_t _name##_out_buffer[CONFIG_SHELL_PRINTF_BUFF_SIZE];     \
-	Z_SHELL_LOG_BACKEND_DEFINE(_name, _name##_out_buffer,		      \
-				 CONFIG_SHELL_PRINTF_BUFF_SIZE,		      \
-				 _log_queue_size, _log_timeout);	      \
-	Z_SHELL_HISTORY_DEFINE(_name##_history, CONFIG_SHELL_HISTORY_BUFFER); \
-	Z_SHELL_FPRINTF_DEFINE(_name##_fprintf, &_name, _name##_out_buffer,   \
-			     CONFIG_SHELL_PRINTF_BUFF_SIZE,		      \
-			     true, z_shell_print_stream);		      \
-	LOG_INSTANCE_REGISTER(shell, _name, CONFIG_SHELL_LOG_LEVEL);	      \
-	Z_SHELL_STATS_DEFINE(_name);					      \
-	static K_KERNEL_STACK_DEFINE(_name##_stack, CONFIG_SHELL_STACK_SIZE); \
-	static struct k_thread _name##_thread;				      \
-	static const STRUCT_SECTION_ITERABLE(shell, _name) = {		      \
-		.default_prompt = _prompt,				      \
-		.iface = _transport_iface,				      \
-		.ctx = &UTIL_CAT(_name, _ctx),				      \
-		.history = IS_ENABLED(CONFIG_SHELL_HISTORY) ?		      \
-				&_name##_history : NULL,		      \
-		.shell_flag = _shell_flag,				      \
-		.fprintf_ctx = &_name##_fprintf,			      \
-		.stats = Z_SHELL_STATS_PTR(_name),			      \
-		.log_backend = Z_SHELL_LOG_BACKEND_PTR(_name),		      \
-		LOG_INSTANCE_PTR_INIT(log, shell, _name)		      \
-		.name = STRINGIFY(_name),				      \
-		.thread = &_name##_thread,				      \
-		.stack = _name##_stack					      \
-	}
+#define SHELL_DEFINE(_name, _prompt, _transport_iface, _log_queue_size, _log_timeout, _shell_flag) \
+	static uint8_t _name##_out_buffer[CONFIG_SHELL_PRINTF_BUFF_SIZE];                          \
+	Z_SHELL_LOG_BACKEND_DEFINE(_name, _name##_out_buffer, CONFIG_SHELL_PRINTF_BUFF_SIZE,       \
+				   _log_queue_size, _log_timeout);                                 \
+	Z_SHELL_DEFINE(_name, _prompt, _transport_iface, _name##_out_buffer,                       \
+		       Z_SHELL_LOG_BACKEND_PTR(_name), _shell_flag)
 
 /**
  * @brief Function for initializing a transport layer and internal shell state.
@@ -1008,9 +1146,10 @@ int shell_stop(const struct shell *sh);
  * @param[in] fmt	Format string.
  * @param[in] ...	List of parameters to print.
  */
-void __printf_like(3, 4) shell_fprintf(const struct shell *sh,
-				       enum shell_vt100_color color,
-				       const char *fmt, ...);
+void __printf_like(3, 4) shell_fprintf_impl(const struct shell *sh, enum shell_vt100_color color,
+					    const char *fmt, ...);
+
+#define shell_fprintf(sh, color, fmt, ...) shell_fprintf_impl(sh, color, fmt, ##__VA_ARGS__)
 
 /**
  * @brief vprintf-like function which sends formatted data stream to the shell.
@@ -1064,7 +1203,8 @@ void shell_hexdump(const struct shell *sh, const uint8_t *data, size_t len);
  * @param[in] ... List of parameters to print.
  */
 #define shell_info(_sh, _ft, ...) \
-	shell_fprintf(_sh, SHELL_INFO, _ft "\n", ##__VA_ARGS__)
+	shell_fprintf_info(_sh, _ft "\n", ##__VA_ARGS__)
+void __printf_like(2, 3) shell_fprintf_info(const struct shell *sh, const char *fmt, ...);
 
 /**
  * @brief Print normal message to the shell.
@@ -1076,7 +1216,8 @@ void shell_hexdump(const struct shell *sh, const uint8_t *data, size_t len);
  * @param[in] ... List of parameters to print.
  */
 #define shell_print(_sh, _ft, ...) \
-	shell_fprintf(_sh, SHELL_NORMAL, _ft "\n", ##__VA_ARGS__)
+	shell_fprintf_normal(_sh, _ft "\n", ##__VA_ARGS__)
+void __printf_like(2, 3) shell_fprintf_normal(const struct shell *sh, const char *fmt, ...);
 
 /**
  * @brief Print warning message to the shell.
@@ -1088,7 +1229,8 @@ void shell_hexdump(const struct shell *sh, const uint8_t *data, size_t len);
  * @param[in] ... List of parameters to print.
  */
 #define shell_warn(_sh, _ft, ...) \
-	shell_fprintf(_sh, SHELL_WARNING, _ft "\n", ##__VA_ARGS__)
+	shell_fprintf_warn(_sh, _ft "\n", ##__VA_ARGS__)
+void __printf_like(2, 3) shell_fprintf_warn(const struct shell *sh, const char *fmt, ...);
 
 /**
  * @brief Print error message to the shell.
@@ -1100,7 +1242,8 @@ void shell_hexdump(const struct shell *sh, const uint8_t *data, size_t len);
  * @param[in] ... List of parameters to print.
  */
 #define shell_error(_sh, _ft, ...) \
-	shell_fprintf(_sh, SHELL_ERROR, _ft "\n", ##__VA_ARGS__)
+	shell_fprintf_error(_sh, _ft "\n", ##__VA_ARGS__)
+void __printf_like(2, 3) shell_fprintf_error(const struct shell *sh, const char *fmt, ...);
 
 /**
  * @brief Process function, which should be executed when data is ready in the
@@ -1275,6 +1418,11 @@ int shell_get_return_value(const struct shell *sh);
 
 #ifdef __cplusplus
 }
+#endif
+
+#ifdef CONFIG_SHELL_CUSTOM_HEADER
+/* This include must always be at the end of shell.h */
+#include <zephyr_custom_shell.h>
 #endif
 
 #endif /* SHELL_H__ */

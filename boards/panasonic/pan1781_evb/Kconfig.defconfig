@@ -5,7 +5,4 @@
 
 if BOARD_PAN1781_EVB
 
-config BT_CTLR
-	default BT
-
 endif # BOARD_PAN1781_EVB

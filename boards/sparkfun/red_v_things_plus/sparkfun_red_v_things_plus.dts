@@ -63,7 +63,7 @@
 	pinctrl-names = "default";
 };
 
-&i2c0 {
+zephyr_i2c: &i2c0 {
 	status = "okay";
 	clock-frequency = <100000>;
 	pinctrl-0 = <&i2c0_0_default &i2c0_1_default>;

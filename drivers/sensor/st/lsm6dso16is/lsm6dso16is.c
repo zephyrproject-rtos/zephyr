@@ -15,7 +15,6 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <string.h>
-#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/logging/log.h>
 
@@ -79,21 +78,6 @@ static int lsm6dso16is_gyro_range_to_fs_val(int32_t range)
 	}
 
 	return -EINVAL;
-}
-
-static inline int lsm6dso16is_reboot(const struct device *dev)
-{
-	const struct lsm6dso16is_config *cfg = dev->config;
-	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
-
-	if (lsm6dso16is_boot_set(ctx, 1) < 0) {
-		return -EIO;
-	}
-
-	/* Wait sensor turn-on time as per datasheet */
-	k_sleep(K_MSEC(35)); /* turn-on time in ms */
-
-	return 0;
 }
 
 static int lsm6dso16is_accel_set_fs_raw(const struct device *dev, uint8_t fs)
@@ -556,12 +540,12 @@ static inline int lsm6dso16is_magn_get_channel(enum sensor_channel chan,
 	}
 
 
-	sample[0] = sys_le16_to_cpu((int16_t)(data->ext_data[idx][0] |
-				    (data->ext_data[idx][1] << 8)));
-	sample[1] = sys_le16_to_cpu((int16_t)(data->ext_data[idx][2] |
-				    (data->ext_data[idx][3] << 8)));
-	sample[2] = sys_le16_to_cpu((int16_t)(data->ext_data[idx][4] |
-				    (data->ext_data[idx][5] << 8)));
+	sample[0] = (int16_t)(data->ext_data[idx][0] |
+			     (data->ext_data[idx][1] << 8));
+	sample[1] = (int16_t)(data->ext_data[idx][2] |
+			     (data->ext_data[idx][3] << 8));
+	sample[2] = (int16_t)(data->ext_data[idx][4] |
+			     (data->ext_data[idx][5] << 8));
 
 	switch (chan) {
 	case SENSOR_CHAN_MAGN_X:
@@ -599,8 +583,8 @@ static inline void lsm6dso16is_hum_convert(struct sensor_value *val,
 		return;
 	}
 
-	raw_val = sys_le16_to_cpu((int16_t)(data->ext_data[idx][0] |
-					  (data->ext_data[idx][1] << 8)));
+	raw_val = (int16_t)(data->ext_data[idx][0] |
+			   (data->ext_data[idx][1] << 8));
 
 	/* find relative humidty by linear interpolation */
 	rh = (ht->y1 - ht->y0) * raw_val + ht->x1 * ht->y0 - ht->x0 * ht->y1;
@@ -623,9 +607,9 @@ static inline void lsm6dso16is_press_convert(struct sensor_value *val,
 		return;
 	}
 
-	raw_val = sys_le32_to_cpu((int32_t)(data->ext_data[idx][0] |
-					  (data->ext_data[idx][1] << 8) |
-					  (data->ext_data[idx][2] << 16)));
+	raw_val = (int32_t)(data->ext_data[idx][0] |
+			   (data->ext_data[idx][1] << 8) |
+			   (data->ext_data[idx][2] << 16));
 
 	/* Pressure sensitivity is 4096 LSB/hPa */
 	/* Convert raw_val to val in kPa */
@@ -646,8 +630,8 @@ static inline void lsm6dso16is_temp_convert(struct sensor_value *val,
 		return;
 	}
 
-	raw_val = sys_le16_to_cpu((int16_t)(data->ext_data[idx][3] |
-					  (data->ext_data[idx][4] << 8)));
+	raw_val = (int16_t)(data->ext_data[idx][3] |
+			   (data->ext_data[idx][4] << 8));
 
 	/* Temperature sensitivity is 100 LSB/deg C */
 	val->val1 = raw_val / 100;
@@ -726,7 +710,7 @@ static int lsm6dso16is_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api lsm6dso16is_driver_api = {
+static DEVICE_API(sensor, lsm6dso16is_driver_api) = {
 	.attr_set = lsm6dso16is_attr_set,
 #if CONFIG_LSM6DSO16IS_TRIGGER
 	.trigger_set = lsm6dso16is_trigger_set,

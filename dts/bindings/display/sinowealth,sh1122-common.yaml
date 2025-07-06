@@ -1,0 +1,65 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+include: display-controller.yaml
+
+properties:
+  oscillator-freq:
+    type: int
+    required: true
+    description: Front clock divider (3:0) / oscillator frequency (7:4). It can be set to 0x0.
+      If you get weird scanlines, increase oscillator frequency and play with phase length values,
+      for example set this to 0x90. Note this increases power consumption.
+
+  display-offset:
+    type: int
+    required: true
+    description: Vertical offset by com from 0 ~ 63. Typically 64 - height.
+
+  start-line:
+    type: int
+    required: true
+    description: Start line of display RAM to be displayed by selecting a value from 0 to 63.
+      Typically 0.
+
+  multiplex-ratio:
+    type: int
+    required: true
+    description: Multiplex ratio from 0MUX to 63MUX. Typically same value as height - 1.
+
+  phase-length:
+    type: int
+    required: true
+    description: Phase Length for segment charging (7:4) and discharging (3:0).
+
+  vcomh-voltage:
+    type: int
+    required: true
+    description: Set COM deselect voltage
+
+  precharge-voltage:
+    type: int
+    required: true
+    description: Set precharge voltage VSEGM. refer to datasheet for formula
+
+  dc-dc:
+    type: int
+    required: true
+    description: Internal DC-DC enable and set frequency.
+
+  low-voltage:
+    type: int
+    default: 0x0
+    description: set discharge VSL level. 0x0 (0V) is the reset value
+
+  inversion-on:
+    type: boolean
+    description: Turn on display color inverting
+
+  inv-seg:
+    type: boolean
+    description: Invert segment order
+
+  inv-com:
+    type: boolean
+    description: Invert COM order

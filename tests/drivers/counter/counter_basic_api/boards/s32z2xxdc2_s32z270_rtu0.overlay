@@ -15,12 +15,12 @@
 };
 
 &stm2 {
-	prescaler = <16>;
+	prescaler = <32>;
 	status = "okay";
 };
 
 &stm3 {
-	prescaler = <32>;
+	prescaler = <64>;
 	status = "okay";
 };
 
@@ -29,5 +29,25 @@
 };
 
 &pit0_channel0 {
+	status = "okay";
+};
+
+&pit0_channel1 {
+	status = "okay";
+};
+
+&pit0_channel2 {
+	status = "okay";
+};
+
+&pit0_channel3 {
+	status = "okay";
+};
+
+&pit0_channel4 {
+	status = "okay";
+};
+
+&pit0_channel5 {
 	status = "okay";
 };

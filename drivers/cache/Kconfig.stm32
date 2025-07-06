@@ -1,0 +1,24 @@
+# Copyright (c) 2025 Henrik Lindblom <henrik.lindblom@vaisala.com>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig CACHE_STM32
+	bool "STM32 cache driver"
+	select CACHE_HAS_DRIVER
+	depends on CACHE_MANAGEMENT
+	help
+	  Enable support for the STM32 ICACHE / DCACHE peripheral present in some STM32 chips.
+
+if CACHE_STM32
+
+# "default n" for L5 is legacy - could be removed?
+config CACHE_STM32_ICACHE_DIRECT_MAPPING
+	bool "Use 1-way associative mapping for ICACHE"
+	default n if SOC_SERIES_STM32L5X
+	default y
+	help
+	  Use ICACHE in direct mapping (1-way associative) mode instead of the default n-way
+	  associative cache mode.
+
+	  This option reduces power consumption but slightly reduces cache's performance.
+
+endif # CACHE_STM32

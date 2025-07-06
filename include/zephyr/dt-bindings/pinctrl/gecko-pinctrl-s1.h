@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_GECKO_PINCTRL_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_GECKO_PINCTRL_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_GECKO_PINCTRL_S1_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_GECKO_PINCTRL_S1_H_
 
 /*
  * The whole GECKO_pin configuration information is encoded in a 32-bit bitfield
@@ -26,7 +26,7 @@
 /** Position of the function field. */
 #define GECKO_FUN_POS 24U
 /** Mask for the function field. */
-#define GECKO_FUN_MSK 0xFFFU
+#define GECKO_FUN_MSK 0xFFU
 
 /** Position of the pin field. */
 #define GECKO_PIN_POS 0U
@@ -85,6 +85,11 @@
 #define GECKO_FUN_SPI_CS_LOC  20U
 #define GECKO_FUN_SPI_SCK_LOC  21U
 
+#define GECKO_FUN_I2C_SDA 22U
+#define GECKO_FUN_I2C_SCL 23U
+#define GECKO_FUN_I2C_SDA_LOC 24U
+#define GECKO_FUN_I2C_SCL_LOC 25U
+
 
 /** @} */
 
@@ -110,4 +115,4 @@
 	(((GECKO_LOCATION(##loc##) & GECKO_LOC_MSK) << GECKO_LOC_POS) |                            \
 	 ((GECKO_FUN_##fun##_LOC & GECKO_FUN_MSK) << GECKO_FUN_POS))
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_GECKO_PINCTRL_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_GECKO_PINCTRL_S1_H_ */

@@ -34,6 +34,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_PWM_LOG_LEVEL);
 #define PWM_INITIAL_DUTY   0U /* initially off */
 
 struct pwm_cc13xx_cc26xx_data {
+	bool standby_disabled;
 };
 
 struct pwm_cc13xx_cc26xx_config {
@@ -56,14 +57,17 @@ static void write_value(const struct pwm_cc13xx_cc26xx_config *config, uint32_t 
 }
 
 static int set_period_and_pulse(const struct pwm_cc13xx_cc26xx_config *config, uint32_t period,
-				uint32_t pulse)
+				uint32_t pulse, struct pwm_cc13xx_cc26xx_data *data)
 {
 	uint32_t match_value = pulse;
 
 	if (pulse == 0U) {
 		TimerDisable(config->gpt_base, TIMER_B);
 #ifdef CONFIG_PM
-		Power_releaseConstraint(PowerCC26XX_DISALLOW_STANDBY);
+		if (data->standby_disabled) {
+			Power_releaseConstraint(PowerCC26XX_DISALLOW_STANDBY);
+			data->standby_disabled = false;
+		}
 #endif
 		match_value = period + 1;
 	}
@@ -86,7 +90,10 @@ static int set_period_and_pulse(const struct pwm_cc13xx_cc26xx_config *config, u
 
 	if (pulse > 0U) {
 #ifdef CONFIG_PM
-		Power_setConstraint(PowerCC26XX_DISALLOW_STANDBY);
+		if (!data->standby_disabled) {
+			Power_setConstraint(PowerCC26XX_DISALLOW_STANDBY);
+			data->standby_disabled = true;
+		}
 #endif
 		TimerEnable(config->gpt_base, TIMER_B);
 	}
@@ -104,7 +111,13 @@ static int set_cycles(const struct device *dev, uint32_t channel, uint32_t perio
 		return -EIO;
 	}
 
-	set_period_and_pulse(config, period, pulse);
+	if (flags & PWM_POLARITY_INVERTED) {
+		HWREG(config->gpt_base + GPT_O_CTL) |= GPT_CTL_TBPWML_INVERTED;
+	} else {
+		HWREG(config->gpt_base + GPT_O_CTL) |= GPT_CTL_TBPWML_NORMAL;
+	}
+
+	set_period_and_pulse(config, period, pulse, dev->data);
 
 	return 0;
 }
@@ -122,7 +135,7 @@ static int get_cycles_per_sec(const struct device *dev, uint32_t channel, uint64
 	return 0;
 }
 
-static const struct pwm_driver_api pwm_driver_api = {
+static DEVICE_API(pwm, pwm_driver_api) = {
 	.set_cycles = set_cycles,
 	.get_cycles_per_sec = get_cycles_per_sec,
 };
@@ -140,7 +153,7 @@ static int get_timer_inst_number(const struct pwm_cc13xx_cc26xx_config *config)
 	case GPT3_BASE:
 		return 3;
 	default:
-		__ASSERT_UNREACHABLE;
+		CODE_UNREACHABLE;
 	}
 }
 #else
@@ -156,7 +169,7 @@ static int get_timer_peripheral(const struct pwm_cc13xx_cc26xx_config *config)
 	case GPT3_BASE:
 		return PRCM_PERIPH_TIMER3;
 	default:
-		__ASSERT_UNREACHABLE;
+		CODE_UNREACHABLE;
 	}
 }
 #endif /* CONFIG_PM */
@@ -176,6 +189,8 @@ static int init_pwm(const struct device *dev)
 
 	/* Enable GPIO peripheral. */
 	PRCMPeripheralRunEnable(get_timer_peripheral(config));
+	PRCMPeripheralSleepEnable(get_timer_peripheral(config));
+	PRCMPeripheralDeepSleepEnable(get_timer_peripheral(config));
 
 	/* Load PRCM settings. */
 	PRCMLoadSet();
@@ -212,11 +227,10 @@ static int init_pwm(const struct device *dev)
 	 */
 	HWREG(config->gpt_base + GPT_O_CTL) |= GPT_CTL_TBSTALL;
 
-	/* TODO: Make PWM polarity configurable via DT PWM flag. */
 	HWREG(config->gpt_base + GPT_O_TBMR) = GPT_TBMR_TBAMS_PWM | GPT_TBMR_TBMRSU_TOUPDATE |
 					       GPT_TBMR_TBPWMIE_EN | GPT_TBMR_TBMR_PERIODIC;
 
-	set_period_and_pulse(config, PWM_INITIAL_PERIOD, PWM_INITIAL_DUTY);
+	set_period_and_pulse(config, PWM_INITIAL_PERIOD, PWM_INITIAL_DUTY, dev->data);
 
 	return 0;
 }

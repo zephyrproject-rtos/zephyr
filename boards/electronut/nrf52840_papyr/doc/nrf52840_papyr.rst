@@ -1,7 +1,4 @@
-.. _nrf52840_papyr:
-
-Electronut Labs Papyr
-#####################
+.. zephyr:board:: nrf52840_papyr
 
 Overview
 ********
@@ -27,12 +24,6 @@ the following devices:
 * :abbr:`WDT (Watchdog Timer)`
 * COUNTER
 
-.. figure:: img/nrf52840_papyr.jpg
-     :align: center
-     :alt: Electronut Labs Papyr
-
-     Electronut Labs Papyr (Credit: Electronut Labs)
-
 More information about the board is available at https://gitlab.com/electronutlabs-public/papyr.
 
 Hardware
@@ -45,41 +36,7 @@ is 32 MHz.
 Supported Features
 ==================
 
-The nrf52840_papyr board configuration supports the following
-hardware features currently:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C(M)    | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| RADIO     | on-chip    | Bluetooth,           |
-|           |            | ieee802154           |
-+-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| SPI(M/S)  | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| USB       | on-chip    | usb                  |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -132,6 +89,8 @@ Other pins used by the e-paper display are:
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``nrf52840_papyr`` board configuration can be
 built and flashed in the usual way (see :ref:`build_an_application`
 and :ref:`application_run` for more details); Black Magic
@@ -151,7 +110,7 @@ debugger (see _Bumpy).
 Applications are flashed and run as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 First, run your favorite terminal program to listen for output.
 

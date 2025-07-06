@@ -1,11 +1,14 @@
 # Copyright (c) 2018 Diego Sueiro <diego.sueiro@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
-description: Silabs Gecko I2C node
+title: Silicon Labs Series 0-2 I2C (Inter-Integrated Circuit)
+
+description: |
+  I2C peripheral on Silicon Labs EFM32 and EFR32 Series 0, 1 and 2.
 
 compatible: "silabs,gecko-i2c"
 
-include: i2c-controller.yaml
+include: [i2c-controller.yaml, pinctrl-device.yaml]
 
 properties:
   reg:
@@ -14,15 +17,8 @@ properties:
   interrupts:
     required: true
 
-  # Note: Not all SoC series support setting individual pin location. If this
-  # is a case all location-* properties need to have identical value.
-
-  location-sda:
-    type: array
+  pinctrl-0:
     required: true
-    description: SDA pin configuration defined as <location port pin>
 
-  location-scl:
-    type: array
+  pinctrl-names:
     required: true
-    description: SCL pin configuration defined as <location port pin>

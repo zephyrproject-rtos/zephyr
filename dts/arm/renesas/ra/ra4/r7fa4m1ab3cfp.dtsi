@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
+ * Copyright (c) 2025 TOKITA Hiroshi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/clock/ra_clock.h>
+#include <arm/renesas/ra/ra4/r7fa4m1ax.dtsi>
+
+/ {
+	soc {
+		 flash-controller@407e0000 {
+			  flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				reg = <0x0 DT_SIZE_K(256)>;
+			  };
+		 };
+	};
+};

@@ -2,22 +2,25 @@ name: Scancode
 
 on: [pull_request]
 
+permissions:
+  contents: read
+
 jobs:
   scancode_job:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     name: Scan code for licenses
     steps:
     - name: Checkout the code
-      uses: actions/checkout@v4
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         fetch-depth: 0
     - name: Scan the code
       id: scancode
-      uses: zephyrproject-rtos/action_scancode@v4
+      uses: zephyrproject-rtos/action_scancode@23ef91ce31cd4b954366a7b71eea47520da9b380 # v4
       with:
         directory-to-scan: 'scan/'
     - name: Artifact Upload
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
         name: scancode
         path: ./artifacts

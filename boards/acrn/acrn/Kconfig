@@ -1,17 +1,9 @@
-# Copyright (c) 2019-2024 Intel Corporation
+# Copyright (c) 2019-2025 Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD_ACRN
+config ACRN_COMMON
 	bool
+	default y if BOARD_ACRN || BOARD_ACRN_EHL_CRB || BOARD_ACRN_ADL_CRB
 	select CPU_HAS_FPU
 	select X86_64
-	help
-	  "ACRN User OS"
-
-config BOARD_ACRN_EHL_CRB
-	bool
-	select CPU_HAS_FPU
-	select X86_64
-	help
-	  "ACRN User OS on ElkhartLake CRB"

@@ -1,0 +1,56 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* The SRAM is defined for nrf52840 in DTS to take entire 256KiB
+ * of RAM there is. We need some for the Disk, so we need to
+ * remove the original definition and replace it with smaller one.
+ */
+/delete-node/ &sram0;
+
+/ {
+
+	soc {
+		/* This is defined based on dts and dtsi files for
+		 * nrf52840 SoC; because we are not able to just
+		 * change the size, what we have to do is to remove
+		 * the sram0 definition, which is a combined result
+		 * of all the sram0 referencing entries in included
+		 * dts files, and replace it with our own.
+		 * The first one is reduced in size original sram0:
+		 */
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 DT_SIZE_K(192)>;
+		};
+		/* The second one is 64kiB region taken out of SRAM,
+		 * labeled here ram_disk, label can be anything,
+		 * used later in disk definition.
+		 */
+		ram_disk: memory@20030000 {
+			compatible = "mmio-sram";
+			reg = <0x20030000 DT_SIZE_K(64)>;
+		};
+	};
+
+	msc_disk0 {
+		status="okay";
+		compatible = "zephyr,ram-disk";
+		/* Sample, to make things easier, mounts all FAT
+		 * systems at "SD".
+		 */
+		disk-name = "SD";
+		/* Disk size is 64kB, 128 sectors of 512B, the minimal
+		 * required by FAT FS.
+		 */
+		sector-size = <512>;
+		sector-count = <128>;
+		/* Here is the reference to the memory reserved for our
+		 * disk using a phandle; note that we reference the
+		 * region by label we have defined it above.
+		 */
+		ram-region = <&ram_disk>;
+	};
+};

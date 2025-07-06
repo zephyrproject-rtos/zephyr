@@ -18,6 +18,7 @@
 	aliases {
 		led0 = &green_led;
 		sw0 = &user_button;
+		mcuboot-button0 = &user_button;
 	};
 
 	chosen {
@@ -29,6 +30,7 @@
 		zephyr,flash = &at25sf128a;
 		zephyr,flash-controller = &at25sf128a;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &lpuart1;
 	};
 
 	leds {
@@ -68,7 +70,7 @@
 			   <12 0 &gpio1 15 0>,	/* D6 (shared with A4) */
 			   <13 0 &gpio1 16 0>,	/* D7 (shared with A5) */
 			   <14 0 &gpio2 2 0>,	/* D8 */
-			   /* R795 not populated,  D9 */
+			   <15 0 &gpio2 3 0>,	/* D9 R795 not populated */
 			   <16 0 &gpio1 19 0>,	/* D10 (shared with D2) */
 			   <17 0 &gpio1 18 0>,	/* D11 */
 			   <18 0 &gpio1 17 0>,	/* D12 */
@@ -103,21 +105,26 @@ arduino_serial: &lpuart1 {};
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
+
+			/*
+			 * Partition sizes must be aligned
+			 * to the flash memory sector size of 4KB.
+			 */
 			boot_partition: partition@0 {
 				label = "mcuboot";
-				reg = <0x00000000 DT_SIZE_K(64)>;
+				reg = <0x00000000 DT_SIZE_K(128)>;
 			};
-			slot0_partition: partition@10000 {
+			slot0_partition: partition@20000 {
 				label = "image-0";
-				reg = <0x00010000 DT_SIZE_M(7)>;
+				reg = <0x00020000 DT_SIZE_M(7)>;
 			};
-			slot1_partition: partition@710000 {
+			slot1_partition: partition@720000 {
 				label = "image-1";
-				reg = <0x00710000 DT_SIZE_M(7)>;
+				reg = <0x00720000 DT_SIZE_M(7)>;
 			};
-			storage_partition: partition@E10000 {
+			storage_partition: partition@E20000 {
 				label = "storage";
-				reg = <0x00E10000 DT_SIZE_K(1984)>;
+				reg = <0x00E20000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
 			};
 		};
 	};

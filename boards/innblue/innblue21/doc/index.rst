@@ -1,19 +1,10 @@
-.. _nrf9160_innblue21:
-
-nRF9160 INNBLUE21
-#################
+.. zephyr:board:: innblue21
 
 Overview
 ********
 
 The nRF9160 innblue21 is a cellular IoT sensor development board, which
 is based on the nRF9160 SiP, and features NB-IoT and LTE-M connectivity.
-
-.. figure:: img/nrf9160_innblue21.jpg
-	 :align: center
-	 :alt: nRF9160 innblue21
-
-	 nRF9160 innblue21 (Credit: innblue)
 
 Hardware
 ********
@@ -29,34 +20,7 @@ The following parts are built into the board:
 Supported Features
 ==================
 
-The innblue21 board configuration supports the following
-hardware (as of nRF9160) features:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+-----------+------------+----------------------+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C(M)    | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| RTT       | Segger     | console              |
-+-----------+------------+----------------------+
-| SPU       | on-chip    | system protection    |
-+-----------+------------+----------------------+
-| UARTE     | on-chip    | serial               |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -85,6 +49,8 @@ Security components
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 innblue21 supports the Armv8m Security Extension, and by default boots
 in the Secure state.
@@ -119,7 +85,7 @@ found in :ref:`nordic_segger_flashing`. Then build and flash
 applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 First, run your favorite terminal program to listen for output.
 

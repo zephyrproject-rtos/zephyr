@@ -18,10 +18,11 @@ State Creation
 
 A state is represented by three functions, where one function implements the
 Entry actions, another function implements the Run actions, and the last
-function implements the Exit actions. The prototype for these functions is as
-follows: ``void funct(void *obj)``, where the ``obj`` parameter is a user
-defined structure that has the state machine context, :c:struct:`smf_ctx`, as
-its first member. For example::
+function implements the Exit actions. The prototype for the entry and exit
+functions are as follows: ``void funct(void *obj)``, and the prototype for the
+run action is ``enum smf_state_result funct(void *obj)`` where the ``obj``
+parameter is a user defined structure that has the state machine context,
+:c:struct:`smf_ctx`, as its first member. For example::
 
    struct user_object {
       struct smf_ctx ctx;
@@ -39,19 +40,23 @@ By default, a state can have no ancestor states, resulting in a flat state
 machine. But to enable the creation of a hierarchical state machine, the
 :kconfig:option:`CONFIG_SMF_ANCESTOR_SUPPORT` option must be enabled.
 
-By default, the hierarchical state machine does not support initial transitions
+The return value of the run action, :c:enum:`smf_state_result` determines if the
+state machine propagates the event to parent run actions
+(:c:enum:`SMF_EVENT_PROPAGATE`) or if the event was handled by the run action
+(:c:enum:`SMF_EVENT_HANDLED`). Flat state machines do not have parent actions,
+so the return code is ignored; returning :c:enum:`SMF_EVENT_HANDLED` is
+recommended.
+
+Calling :c:func:`smf_set_state` prevents calling parent run
+actions, even if :c:enum:`SMF_EVENT_PROPAGATE` is returned.
+
+By default, the hierarchical state machines do not support initial transitions
 to child states on entering a superstate. To enable them the
 :kconfig:option:`CONFIG_SMF_INITIAL_TRANSITION` option must be enabled.
 
 The following macro can be used for easy state creation:
 
 * :c:macro:`SMF_CREATE_STATE` Create a state
-
-.. note:: The :c:macro:`SMF_CREATE_STATE` macro takes an additional parameter
-   for the parent state when :kconfig:option:`CONFIG_SMF_ANCESTOR_SUPPORT` is
-   enabled . The :c:macro:`SMF_CREATE_STATE` macro takes two additional
-   parameters for the parent state and initial transition when the
-   :kconfig:option:`CONFIG_SMF_INITIAL_TRANSITION` option is enabled.
 
 State Machine Creation
 ======================
@@ -62,9 +67,9 @@ enum. For example, the following creates three flat states::
    enum demo_state { S0, S1, S2 };
 
    const struct smf_state demo_states[] = {
-      [S0] = SMF_CREATE_STATE(s0_entry, s0_run, s0_exit),
-      [S1] = SMF_CREATE_STATE(s1_entry, s1_run, s1_exit),
-      [S2] = SMF_CREATE_STATE(s2_entry, s2_run, s2_exit)
+      [S0] = SMF_CREATE_STATE(s0_entry, s0_run, s0_exit, NULL, NULL),
+      [S1] = SMF_CREATE_STATE(s1_entry, s1_run, s1_exit, NULL, NULL),
+      [S2] = SMF_CREATE_STATE(s2_entry, s2_run, s2_exit, NULL, NULL)
    };
 
 And this example creates three hierarchical states::
@@ -72,9 +77,9 @@ And this example creates three hierarchical states::
    enum demo_state { S0, S1, S2 };
 
    const struct smf_state demo_states[] = {
-      [S0] = SMF_CREATE_STATE(s0_entry, s0_run, s0_exit, parent_s0),
-      [S1] = SMF_CREATE_STATE(s1_entry, s1_run, s1_exit, parent_s12),
-      [S2] = SMF_CREATE_STATE(s2_entry, s2_run, s2_exit, parent_s12)
+      [S0] = SMF_CREATE_STATE(s0_entry, s0_run, s0_exit, parent_s0, NULL),
+      [S1] = SMF_CREATE_STATE(s1_entry, s1_run, s1_exit, parent_s12, NULL),
+      [S2] = SMF_CREATE_STATE(s2_entry, s2_run, s2_exit, parent_s12, NULL)
    };
 
 
@@ -93,50 +98,66 @@ from parent state S0 to child state S2::
    };
 
 To set the initial state, the :c:func:`smf_set_initial` function should be
-called. It has the following prototype:
-``void smf_set_initial(smf_ctx *ctx, smf_state *state)``
+called.
 
 To transition from one state to another, the :c:func:`smf_set_state`
-function is used and it has the following prototype:
-``void smf_set_state(smf_ctx *ctx, smf_state *state)``
+function is used.
 
 .. note:: If :kconfig:option:`CONFIG_SMF_INITIAL_TRANSITION` is not set,
    :c:func:`smf_set_initial` and :c:func:`smf_set_state` function should
    not be passed a parent state as the parent state does not know which
    child state to transition to. Transitioning to a parent state is OK
    if an initial transition to a child state is defined. A well-formed
-   HSM will have initial transitions defined for all parent states.
+   HSM should have initial transitions defined for all parent states.
 
-.. note:: While the state machine is running, smf_set_state should only be
-   called from the Entry and Run functions. Calling smf_set_state from the
-   Exit functions doesn't make sense and will generate a warning.
+.. note:: While the state machine is running, :c:func:`smf_set_state` should
+   only be called from the Entry or Run function. Calling
+   :c:func:`smf_set_state` from Exit functions will generate a warning in the
+   log and no transition will occur.
 
 State Machine Execution
 =======================
 
 To run the state machine, the :c:func:`smf_run_state` function should be
 called in some application dependent way. An application should cease calling
-smf_run_state if it returns a non-zero value. The function has the following
-prototype: ``int32_t smf_run_state(smf_ctx *ctx)``
-
-Preventing Parent Run Actions
-=============================
-
-Calling :c:func:`smf_set_handled` prevents calling the run action of parent
-states. It is not required to call :c:func:`smf_set_handled` if the state
-calls :c:func:`smf_set_state`.
+smf_run_state if it returns a non-zero value.
 
 State Machine Termination
 =========================
 
 To terminate the state machine, the :c:func:`smf_set_terminate` function
-should be called. It can be called from the entry, run, or exit action. The
-function takes a non-zero user defined value that's returned by the
-:c:func:`smf_run_state` function. The function has the following prototype:
-``void smf_set_terminate(smf_ctx *ctx, int32_t val)``
+should be called. It can be called from the entry, run, or exit actions. The
+function takes a non-zero user defined value that will be returned by the
+:c:func:`smf_run_state` function.
+
+UML State Machines
+==================
+
+SMF follows UML hierarchical state machine rules for transitions i.e., the
+entry and exit actions of the least common ancestor are not executed on
+transition, unless said transition is a transition to self.
+
+The UML Specification for StateMachines may be found in chapter 14 of the UML
+specification available here: https://www.omg.org/spec/UML/
+
+SMF breaks from UML rules in:
+
+1. Executing the actions associated with the transition within the context
+   of the source state, rather than after the exit actions are performed.
+2. Only allowing external transitions to self, not to sub-states. A transition
+   from a superstate to a child state is treated as a local transition.
+3. Prohibiting transitions using :c:func:`smf_set_state` in exit actions.
+
+SMF also does not provide any pseudostates except the Initial Pseudostate.
+Terminate pseudostates can be modelled by calling  :c:func:`smf_set_terminate`
+from the entry action of a 'terminate' state. Orthogonal regions are modelled
+by calling :c:func:`smf_run_state` for each region.
+
+State Machine Examples
+======================
 
 Flat State Machine Example
-==========================
+**************************
 
 This example turns the following state diagram into code using the SMF, where
 the initial state is S0.
@@ -180,9 +201,10 @@ Code::
 	{
 		/* Do something */
 	}
-	static void s0_run(void *o)
+	static enum smf_state_result s0_run(void *o)
 	{
 		smf_set_state(SMF_CTX(&s_obj), &demo_states[S1]);
+		return SMF_EVENT_HANDLED;
 	}
 	static void s0_exit(void *o)
 	{
@@ -190,9 +212,10 @@ Code::
 	}
 
 	/* State S1 */
-	static void s1_run(void *o)
+	static enum smf_state_result s1_run(void *o)
 	{
 		smf_set_state(SMF_CTX(&s_obj), &demo_states[S2]);
+		return SMF_EVENT_HANDLED;
 	}
 	static void s1_exit(void *o)
 	{
@@ -204,18 +227,19 @@ Code::
 	{
 		/* Do something */
 	}
-	static void s2_run(void *o)
+	static enum smf_state_result s2_run(void *o)
 	{
 		smf_set_state(SMF_CTX(&s_obj), &demo_states[S0]);
+		return SMF_EVENT_HANDLED;
 	}
 
 	/* Populate state table */
 	static const struct smf_state demo_states[] = {
-		[S0] = SMF_CREATE_STATE(s0_entry, s0_run, s0_exit),
+		[S0] = SMF_CREATE_STATE(s0_entry, s0_run, s0_exit, NULL, NULL),
 		/* State S1 does not have an entry action */
-		[S1] = SMF_CREATE_STATE(NULL, s1_run, s1_exit),
+		[S1] = SMF_CREATE_STATE(NULL, s1_run, s1_exit, NULL, NULL),
 		/* State S2 does not have an exit action */
-		[S2] = SMF_CREATE_STATE(s2_entry, s2_run, NULL),
+		[S2] = SMF_CREATE_STATE(s2_entry, s2_run, NULL, NULL, NULL),
 	};
 
 	int main(void)
@@ -238,7 +262,7 @@ Code::
 	}
 
 Hierarchical State Machine Example
-==================================
+**********************************
 
 This example turns the following state diagram into code using the SMF, where
 S0 and S1 share a parent state and S0 is the initial state.
@@ -294,32 +318,35 @@ Code::
 	}
 
 	/* State S0 */
-	static void s0_run(void *o)
+	static enum smf_state_result s0_run(void *o)
 	{
 		smf_set_state(SMF_CTX(&s_obj), &demo_states[S1]);
+		return SMF_EVENT_HANDLED;
 	}
 
 	/* State S1 */
-	static void s1_run(void *o)
+	static enum smf_state_result s1_run(void *o)
 	{
 		smf_set_state(SMF_CTX(&s_obj), &demo_states[S2]);
+		return SMF_EVENT_HANDLED;
 	}
 
 	/* State S2 */
-	static void s2_run(void *o)
+	static enum smf_state_result s2_run(void *o)
 	{
 		smf_set_state(SMF_CTX(&s_obj), &demo_states[S0]);
+		return SMF_EVENT_HANDLED;
 	}
 
 	/* Populate state table */
 	static const struct smf_state demo_states[] = {
 		/* Parent state does not have a run action */
-		[PARENT] = SMF_CREATE_STATE(parent_entry, NULL, parent_exit, NULL),
+		[PARENT] = SMF_CREATE_STATE(parent_entry, NULL, parent_exit, NULL, NULL),
 		/* Child states do not have entry or exit actions */
-		[S0] = SMF_CREATE_STATE(NULL, s0_run, NULL, &demo_states[PARENT]),
-		[S1] = SMF_CREATE_STATE(NULL, s1_run, NULL, &demo_states[PARENT]),
-		/* State S2 do ot have entry or exit actions and no parent */
-		[S2] = SMF_CREATE_STATE(NULL, s2_run, NULL, NULL),
+		[S0] = SMF_CREATE_STATE(NULL, s0_run, NULL, &demo_states[PARENT], NULL),
+		[S1] = SMF_CREATE_STATE(NULL, s1_run, NULL, &demo_states[PARENT], NULL),
+		/* State S2 do not have entry or exit actions and no parent */
+		[S2] = SMF_CREATE_STATE(NULL, s2_run, NULL, NULL, NULL),
 	};
 
 	int main(void)
@@ -348,17 +375,14 @@ When designing hierarchical state machines, the following should be considered:
    re-execute the ancestor\'s entry action or execute the exit action.
    For example, the parent_entry function is not called when transitioning
    from S0 to S1, nor is the parent_exit function called.
- - Ancestor exit actions are executed after the sibling exit actions. For
-   example, the s1_exit function is called before the parent_exit function
-   is called.
+ - Ancestor exit actions are executed after the exit action of the current
+   state. For example, the s1_exit function is called before the parent_exit
+   function is called.
  - The parent_run function only executes if the child_run function does not
-   call either :c:func:`smf_set_state` or :c:func:`smf_set_handled`.
- - Transitions to self in super-states containing sub-states are not supported.
-   Transitions to self from the most-nested child state are supported and will
-   call the exit and entry function of the child state correctly.
+   call either :c:func:`smf_set_state` or return :c:enum:`SMF_EVENT_HANDLED`.
 
 Event Driven State Machine Example
-==================================
+**********************************
 
 Events are not explicitly part of the State Machine Framework but an event driven
 state machine can be implemented using Zephyr :ref:`events`.
@@ -425,6 +449,7 @@ Code::
 		if (s->events & EVENT_BTN_PRESS) {
 			smf_set_state(SMF_CTX(&s_obj), &demo_states[S1]);
 		}
+		return SMF_EVENT_HANDLED;
 	}
 
 	/* State S1 */
@@ -441,12 +466,13 @@ Code::
 		if (s->events & EVENT_BTN_PRESS) {
 			smf_set_state(SMF_CTX(&s_obj), &demo_states[S0]);
 		}
+		return SMF_EVENT_HANDLED;
 	}
 
 	/* Populate state table */
 	static const struct smf_state demo_states[] = {
-		[S0] = SMF_CREATE_STATE(s0_entry, s0_run, NULL),
-		[S1] = SMF_CREATE_STATE(s1_entry, s1_run, NULL),
+		[S0] = SMF_CREATE_STATE(s0_entry, s0_run, NULL, NULL, NULL),
+		[S1] = SMF_CREATE_STATE(s1_entry, s1_run, NULL, NULL, NULL),
 	};
 
 	void button_pressed(const struct device *dev,
@@ -505,47 +531,55 @@ Code::
 		}
 	}
 
-Hierarchical State Machine Example With Initial Transitions
-===========================================================
+State Machine Example With Initial Transitions And Transition To Self
+*********************************************************************
 
-:zephyr_file:`tests/lib/smf/src/test_lib_initial_transitions_smf.c` defines
-a state machine for testing initial transitions and :c:func:`smf_set_handled`.
-The statechart for this test is below.
+:zephyr_file:`tests/lib/smf/src/test_lib_self_transition_smf.c` defines a state
+machine for testing the initial transitions and transitions to self in a parent
+state. The statechart for this test is below.
+
 
 .. graphviz::
-   :caption: Test state machine for initial transitions and ``smf_set_handled``
+   :caption: Test state machine for UML State Transitions
 
    digraph smf_hierarchical_initial {
       compound=true;
       node [style = rounded];
-      smf_set_initial [shape=plaintext];
+      "smf_set_initial()" [shape=plaintext fontname=Courier];
       ab_init_state [shape = point];
       STATE_A [shape = box];
       STATE_B [shape = box];
       STATE_C [shape = box];
       STATE_D [shape = box];
+      DC[shape=point height=0 width=0 label=<>]
 
-      subgraph cluster_ab {
-         label = "PARENT_AB";
+      subgraph cluster_root {
+         label = "ROOT";
          style = rounded;
-         ab_init_state -> STATE_A;
-         STATE_A -> STATE_B;
+
+         subgraph cluster_ab {
+            label = "PARENT_AB";
+            style = rounded;
+            ab_init_state -> STATE_A;
+            STATE_A -> STATE_B;
+         }
+
+         subgraph cluster_c {
+            label = "PARENT_C";
+            style = rounded;
+            STATE_B -> STATE_C [ltail=cluster_ab]
+         }
+
+         STATE_C -> DC [ltail=cluster_c, dir=none];
+         DC -> STATE_C [lhead=cluster_c];
+         STATE_C -> STATE_D
       }
 
-      subgraph cluster_c {
-         label = "PARENT_C";
-         style = rounded;
-	 STATE_C -> STATE_C
-      }
-
-      smf_set_initial -> STATE_A [lhead=cluster_ab]
-      STATE_B -> STATE_C
-      STATE_C -> STATE_D
+      "smf_set_initial()" -> STATE_A [lhead=cluster_ab]
    }
 
 
-
 API Reference
-*************
+=============
 
 .. doxygengroup:: smf

@@ -5,9 +5,9 @@
  */
 
 dut: &uart0 {
-        status = "okay";
+	status = "okay";
 };
 
 &uart0_dma {
-        status = "okay";
+	status = "okay";
 };

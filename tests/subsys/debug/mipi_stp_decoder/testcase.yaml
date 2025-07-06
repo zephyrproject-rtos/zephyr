@@ -1,0 +1,6 @@
+tests:
+  debug.mipi_stp_decoder:
+    filter: not CONFIG_BIG_ENDIAN
+    tags: stp_decoder
+    integration_platforms:
+      - native_sim

@@ -24,18 +24,22 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		orange_led_3: led_3 {
 			gpios = <&gpiod 13 GPIO_ACTIVE_HIGH>;
 			label = "User LD3";
 		};
+
 		green_led_4: led_4 {
 			gpios = <&gpiod 12 GPIO_ACTIVE_HIGH>;
 			label = "User LD4";
 		};
+
 		red_led_5: led_5 {
 			gpios = <&gpiod 14 GPIO_ACTIVE_HIGH>;
 			label = "User LD5";
 		};
+
 		blue_led_6: led_6 {
 			gpios = <&gpiod 15 GPIO_ACTIVE_HIGH>;
 			label = "User LD6";
@@ -44,10 +48,31 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "Key";
 			gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
 			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	pwmleds: pwmleds {
+		compatible = "pwm-leds";
+
+		orange_pwm_led: orange_pwm_led {
+			pwms = <&pwm4 2 PWM_USEC(100) PWM_POLARITY_NORMAL>;
+		};
+
+		green_pwm_led: green_pwm_led {
+			pwms = <&pwm4 1 PWM_USEC(100) PWM_POLARITY_NORMAL>;
+		};
+
+		red_pwm_led: red_pwm_led {
+			pwms = <&pwm4 3 PWM_USEC(100) PWM_POLARITY_NORMAL>;
+		};
+
+		blue_pwm_led: blue_pwm_led {
+			pwms = <&pwm4 4 PWM_USEC(100) PWM_POLARITY_NORMAL>;
 		};
 	};
 
@@ -57,14 +82,10 @@
 		led2 = &red_led_5;
 		led3 = &blue_led_6;
 		sw0 = &user_button;
+		die-temp0 = &die_temp;
+		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
 	};
-};
-
-&usart1 {
-	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
-	pinctrl-names = "default";
-	current-speed = <115200>;
-	status = "okay";
 };
 
 &clk_lsi {
@@ -110,6 +131,16 @@
 	};
 };
 
+&timers4 {
+	status = "okay";
+
+	pwm4: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim4_ch1_pd12 &tim4_ch2_pd13 &tim4_ch3_pd14 &tim4_ch4_pd15>;
+		pinctrl-names = "default";
+	};
+};
+
 &rtc {
 	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
@@ -126,16 +157,66 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 };
 
-&can1 {
-	pinctrl-0 = <&can1_rx_pb8 &can1_tx_pb9>;
-	pinctrl-names = "default";
-	bus-speed = <125000>;
-	status = "disabled";
-};
-
 &can2 {
 	pinctrl-0 = <&can2_rx_pb5 &can2_tx_pb13>;
 	pinctrl-names = "default";
-	bus-speed = <125000>;
 	status = "okay";
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_in1_pa1 &adc1_in6_pa6>;
+	pinctrl-names = "default";
+	st,adc-prescaler = <2>;
+	status = "okay";
+};
+
+&die_temp {
+	status = "okay";
+};
+
+&vref {
+	status = "okay";
+};
+
+&vbat {
+	status = "okay";
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&plli2s {
+	/* Minimize audio clock error (with i2s mck-enabled) for all of:
+	 * - 22.05kHz / 16b, 24b or 32b
+	 * - 44.1kHz  / 16b, 24b or 32b
+	 * - 88.2kHz  / 16b or 24b
+	 * Note: because the PLLI2S is dependent on the main PLL, the latter
+	 *       should not be changed without checking impact on PLLI2S
+	 */
+	mul-n = <271>;
+	div-r = <2>;
+	status = "okay";
+};
+
+&i2s3 {
+	mck-enabled;
+	pinctrl-0 = <&i2s3_ws_pa4 &i2s3_ck_pc10 &i2s3_sd_pc12 &i2s3_mck_pc7>;
+	pinctrl-names = "default";
+	clocks = <&rcc STM32_CLOCK(APB1, 15U)>,
+		 <&rcc STM32_SRC_PLLI2S_R I2S_SEL(0)>;
+	status = "okay";
+};
+
+&i2c1 {
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb9>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	audio_codec: cs43l22@4a {
+		compatible = "cirrus,cs43l22";
+		reg = <0x4a>;
+		reset-gpios = <&gpiod 4 0>;
+	};
 };

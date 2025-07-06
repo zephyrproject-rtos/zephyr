@@ -65,10 +65,6 @@
 	#define MPU_ALIGN(region_size) . = ALIGN(4)
 #endif
 
-#ifdef CONFIG_SOC_IT8XXX2_SHA256_HW_ACCELERATE
-#define SHA256_BLOCK_SIZE 0x200
-#endif
-
 #include <zephyr/linker/linker-devnull.h>
 
 MEMORY
@@ -94,6 +90,10 @@ SECTIONS
     {
 
 #include <zephyr/linker/rel-sections.ld>
+
+#ifdef CONFIG_LLEXT
+#include <zephyr/linker/llext-sections.ld>
+#endif
 
     /*
      * The .plt and .iplt are here according to
@@ -130,6 +130,26 @@ SECTIONS
 		KEEP(*(.reset.*))
     } GROUP_LINK_IN(ROMABLE_REGION)
 
+#ifdef CONFIG_SOC_IT8XXX2_JTAG_DEBUG_INTERFACE
+#define JTAG_DEBUG_RESERVED_ADDR_START (ROM_BASE + 0x800)
+#define JTAG_DEBUG_RESERVED_ADDR_END (ROM_BASE + 0x8FF)
+	/* The flash range at offset 0x800 to 0x8FF is reserved for JTAG
+	 * debug usage. */
+	SECTION_PROLOGUE(jtag_dbg,,)
+	{
+		__jtag_dbg_pad_start = ABSOLUTE(.);
+		ASSERT((__jtag_dbg_pad_start < JTAG_DEBUG_RESERVED_ADDR_START),
+			"The start address of jtag debug section is incorrect.");
+
+		__jtag_dbg_pad_size = JTAG_DEBUG_RESERVED_ADDR_END - __jtag_dbg_pad_start;
+		. = . + __jtag_dbg_pad_size;
+
+		__jtag_dbg_pad_end = ABSOLUTE(.);
+		ASSERT((__jtag_dbg_pad_end == JTAG_DEBUG_RESERVED_ADDR_END),
+			"The end address of jtag debug section is incorrect.");
+	} GROUP_LINK_IN(ROMABLE_REGION)
+#endif
+
 #ifndef CONFIG_SOC_IT8XXX2_EXCEPTIONS_IN_RAM
     SECTION_PROLOGUE(_EXCEPTION_SECTION_NAME,,)
 	{
@@ -145,9 +165,46 @@ SECTIONS
 		KEEP(*(".openocd_debug.*"))
 
 		__text_region_start = .;
-
+#ifndef CONFIG_SOC_IT8XXX2_LIBRARY_TO_RAM
 		*(.text)
 		*(".text.*")
+#endif
+
+#ifdef CONFIG_SOC_IT8XXX2_LIBRARY_TO_RAM
+		*(EXCLUDE_FILE (
+#endif
+#ifdef CONFIG_SOC_IT8XXX2_SERIAL_IN_RAM
+			*libdrivers__serial.a:*
+#endif
+#ifdef CONFIG_SOC_IT8XXX2_KERNEL_IN_RAM
+			*libkernel.a:*
+#endif
+#ifdef CONFIG_SOC_IT8XXX2_ZEPHYR_IN_RAM
+			*libzephyr.a:*
+#endif
+#ifdef CONFIG_SOC_IT8XXX2_LIBRARY_TO_RAM
+		)
+			.text
+		)
+#endif
+
+#ifdef CONFIG_SOC_IT8XXX2_LIBRARY_TO_RAM
+		*(EXCLUDE_FILE (
+#endif
+#ifdef CONFIG_SOC_IT8XXX2_SERIAL_IN_RAM
+			*libdrivers__serial.a:*
+#endif
+#ifdef CONFIG_SOC_IT8XXX2_KERNEL_IN_RAM
+			*libkernel.a:*
+#endif
+#ifdef CONFIG_SOC_IT8XXX2_ZEPHYR_IN_RAM
+			*libzephyr.a:*
+#endif
+#ifdef CONFIG_SOC_IT8XXX2_LIBRARY_TO_RAM
+		)
+			.text.*
+		)
+#endif
 		*(.gnu.linkonce.t.*)
 #include <zephyr/linker/kobject-text.ld>
 
@@ -161,7 +218,7 @@ SECTIONS
 		/* Pad to match allocation of block in RAM,
 		 * maintaining code alignment against ILM */
 		__sha256_pad_block_start = .;
-		. = . + SHA256_BLOCK_SIZE;
+		. = . + CONFIG_SOC_IT8XXX2_SHA256_BLOCK_SIZE;
 #endif
 		/* Specially-tagged functions in SoC sources */
 		KEEP(*(.__ram_code))
@@ -169,6 +226,21 @@ SECTIONS
 #ifdef CONFIG_SOC_IT8XXX2_EXCEPTIONS_IN_RAM
 		KEEP(*(".exception.entry.*"))
 		*(".exception.other.*")
+#endif
+#ifdef CONFIG_SOC_IT8XXX2_SERIAL_IN_RAM
+		*libdrivers__serial.a:*(.text .text.*)
+		*libdrivers__serial.a:*(.rodata .rodata.*)
+		*libdrivers__serial.a:*(.srodata .srodata.*)
+#endif
+#ifdef CONFIG_SOC_IT8XXX2_KERNEL_IN_RAM
+		*libkernel.a:*(.text .text.*)
+		*libkernel.a:*(.rodata .rodata.*)
+		*libkernel.a:*(.srodata .srodata.*)
+#endif
+#ifdef CONFIG_SOC_IT8XXX2_ZEPHYR_IN_RAM
+		*libzephyr.a:*(.text .text.*)
+		*libzephyr.a:*(.rodata .rodata.*)
+		*libzephyr.a:*(.srodata .srodata.*)
 #endif
 		__ilm_flash_end = .;
 		/* ILM mapping is always a multiple of 4k size; ensure following
@@ -181,6 +253,10 @@ SECTIONS
 
 	__rodata_region_start = .;
 #include <zephyr/linker/common-rom.ld>
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(ROM_SECTIONS ...). Useful for grouping iterable RO structs.
+ */
+#include <snippets-rom-sections.ld>
 #include <zephyr/linker/thread-local-storage.ld>
 
     SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
@@ -249,15 +325,18 @@ SECTIONS
 		__sha256_ram_block_size = \
 			ABSOLUTE(. - __sha256_ram_block_start);
 		__sha256_ram_block_end = .;
-		ASSERT((__sha256_ram_block_size == SHA256_BLOCK_SIZE), \
-			"We need 512bytes for HW sha256 module");
+
+		ASSERT((__sha256_ram_block_size == CONFIG_SOC_IT8XXX2_SHA256_BLOCK_SIZE), \
+			"Not compatible ram size for HW sha256 module");
 		ASSERT((__sha256_ram_block_end < (RAM_BASE + 0x1000)), \
-			"512bytes must in SRAM first 4kbytes");
+			"sha256 ram block must in SRAM first 4kbytes");
 		ASSERT(((ABSOLUTE(__sha256_ram_block_start) & 0xfff) == \
 			(ABSOLUTE(__sha256_pad_block_start) & 0xfff)), \
 			"sha256 ram block needs the same offset with sha256 rom block");
+#else
+		__sha256_ram_block_size = 0;
 #endif
-		. += __ilm_flash_end - __ilm_flash_start;
+		. += __ilm_flash_end - __ilm_flash_start - __sha256_ram_block_size;
 		__ilm_ram_end = .;
 	} GROUP_LINK_IN(RAMABLE_REGION)
 

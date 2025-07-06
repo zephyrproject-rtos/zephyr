@@ -1,0 +1,16 @@
+# Copyright (c) 2024 Yishai Jaffe
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_EFR32ZG23
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 75
+
+config PM
+	select UART_INTERRUPT_DRIVEN
+
+config GPIO_GECKO
+	default y
+
+endif

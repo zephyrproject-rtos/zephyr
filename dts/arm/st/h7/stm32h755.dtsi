@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2024 S&C Electric Company <Michael.Banducci@sandc.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/h7/stm32h7_dualcore.dtsi>
+#include <st/h7/stm32h745.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32h755", "st,stm32h7", "simple-bus";
+
+		cryp: cryp@48021000 {
+			compatible = "st,stm32-cryp";
+			reg = <0x48021000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 4U)>;
+			interrupts = <79 0>;
+			status = "disabled";
+		};
+
+		hash: cryp@48021400 {
+			compatible = "st,stm32-cryp";
+			reg = <0x48021400 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 5U)>;
+			interrupts = <80 0>;
+			status = "disabled";
+		};
+	};
+};

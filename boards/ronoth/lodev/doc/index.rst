@@ -1,7 +1,4 @@
-.. _ronoth_lodev:
-
-Ronoth LoDev
-############
+.. zephyr:board:: ronoth_lodev
 
 ========
 Overview
@@ -15,12 +12,6 @@ The S76S contains an STMicro STM32L073RZ MCU, a `Semtech SX1276`_ LoRaWAN transc
 and a +20 dBm power amplifier.  Refer to `AcSIP S76S Product Information Brief`_ for details.
 
 Zephyr applications may use the **ronoth_lodev** configuration to run on this board.
-
-.. figure:: img/lodev.jpg
-     :align: center
-     :alt: Image of Ronoth LoDev open source development board containing S76S system on a chip
-
-     Ronoth LoDev
 
 `Board design files`_ are available on GitHub.
 

@@ -9,3 +9,4 @@ tests:
     tags:
       - agnostic
       - subgrouped
+      - odd

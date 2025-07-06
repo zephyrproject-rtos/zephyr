@@ -22,10 +22,8 @@ extern "C" {
 #endif
 
 enum sensor_attribute_tsl2540 {
-	/* Sensor Gain */
-	SENSOR_ATTR_GAIN = SENSOR_ATTR_PRIV_START + 1,
 	/* Sensor Integration Time (in ms) */
-	SENSOR_ATTR_INTEGRATION_TIME,
+	SENSOR_ATTR_INTEGRATION_TIME = SENSOR_ATTR_PRIV_START + 1,
 	/* Sensor ALS interrupt persistence filters */
 	SENSOR_ATTR_INT_APERS,
 	/* Shutdown the sensor */

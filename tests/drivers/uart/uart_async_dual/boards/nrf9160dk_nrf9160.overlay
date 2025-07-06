@@ -1,0 +1,70 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+&pinctrl {
+	uart1_default: uart1_default {
+		group1 {
+			psels = <NRF_PSEL(UART_RX, 0, 10)>;
+				bias-pull-up;
+		};
+		group2 {
+			psels = <NRF_PSEL(UART_RTS, 0, 12)>;
+		};
+	};
+
+	uart1_sleep: uart1_sleep {
+		group1 {
+			psels = <NRF_PSEL(UART_RX, 0, 10)>,
+				<NRF_PSEL(UART_RTS, 0, 12)>;
+			low-power-enable;
+		};
+	};
+
+	uart2_default: uart2_default {
+		group1 {
+			psels = <NRF_PSEL(UART_TX, 0, 11)>;
+		};
+		group2 {
+			psels = <NRF_PSEL(UART_CTS, 0, 13)>;
+				bias-pull-up;
+		};
+	};
+
+	uart2_sleep: uart2_sleep {
+		group1 {
+			psels = <NRF_PSEL(UART_TX, 0, 11)>,
+				<NRF_PSEL(UART_CTS, 0, 13)>;
+			low-power-enable;
+		};
+	};
+};
+
+dut: &uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-1 = <&uart1_sleep>;
+	pinctrl-names = "default", "sleep";
+	hw-flow-control;
+};
+
+dut_aux: &uart2 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart2_default>;
+	pinctrl-1 = <&uart2_sleep>;
+	pinctrl-names = "default", "sleep";
+	hw-flow-control;
+};
+
+&timer2 {
+	status = "okay";
+	interrupts = <17 0>;
+};
+
+/ {
+	busy-sim {
+		compatible = "vnd,busy-sim";
+		status = "okay";
+		counter = <&timer2>;
+	};
+};

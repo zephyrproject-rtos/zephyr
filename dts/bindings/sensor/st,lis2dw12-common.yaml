@@ -247,3 +247,21 @@ properties:
       - 3 # LIS2DW12_DT_WAKEUP_4_ODR
 
     enum: [0, 1, 2, 3]
+
+  sleep-duration:
+    type: int
+    default: 0
+    description: |
+      The sleep duration. Default value is the register reset value (0000 -> 16*1/ODR).
+      If the accelerometer readings of the all axes are lower
+      than the wakeup threshold value for the sleep duration long,
+      then a sleep trigger occurs or the device goes in sleep mode. This value is 4 bits long in the
+      register and 1 LSB = 512 * 1/ODR.
+
+      Value goes from 0 to 15
+
+      - 0 # LIS2DW12_DT_SLEEP_0_ODR
+      ...
+      - 15 # LIS2DW12_DT_SLEEP_15_ODR
+
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]

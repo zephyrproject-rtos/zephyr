@@ -8,3 +8,4 @@ config RPMSG_REMOTE_BOARD
 	string
 	default "mps2/an521/cpu1" if $(BOARD) = "mps2"
 	default "v2m_musca_b1/musca_b1/ns" if $(BOARD) = "v2m_musca_b1"
+	default "stm32h747i_disco/stm32h747xx/m4" if $(BOARD) = "stm32h747i_disco"

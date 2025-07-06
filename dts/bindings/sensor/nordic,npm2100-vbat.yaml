@@ -1,0 +1,25 @@
+#
+# Copyright (c) 2024 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: NPM2100 PMIC Battery Voltage
+
+compatible: "nordic,npm2100-vbat"
+
+include: [sensor-device.yaml]
+
+properties:
+  vout-min-microvolt:
+    type: int
+    description: |
+      Minimum Vout level.
+      When Vout falls to this level, the PMIC will allow more current to flow
+      from the battery by dropping to the vbatminl battery threshold.
+
+  vbat-min-microvolt:
+    type: int
+    description: |
+      Initial value for vbatminl and vbatminh.
+      The boost converter will not allow the battery to drop below this level.

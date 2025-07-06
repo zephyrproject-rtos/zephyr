@@ -21,12 +21,13 @@ enum sd_status {
 
 struct sdmmc_config {
 	const struct device *host_controller;
+	const char *name;
 };
 
 struct sdmmc_data {
 	struct sd_card card;
 	enum sd_status status;
-	char *name;
+	struct disk_info disk_info;
 };
 
 
@@ -36,11 +37,6 @@ static int disk_sdmmc_access_init(struct disk_info *disk)
 	const struct sdmmc_config *cfg = dev->config;
 	struct sdmmc_data *data = dev->data;
 	int ret;
-
-	if (data->status == SD_OK) {
-		/* Called twice, don't reinit */
-		return 0;
-	}
 
 	if (!sd_is_card_present(cfg->host_controller)) {
 		return DISK_STATUS_NOMEDIA;
@@ -94,7 +90,18 @@ static int disk_sdmmc_access_ioctl(struct disk_info *disk, uint8_t cmd, void *bu
 	const struct device *dev = disk->dev;
 	struct sdmmc_data *data = dev->data;
 
-	return sdmmc_ioctl(&data->card, cmd, buf);
+	switch (cmd) {
+	case DISK_IOCTL_CTRL_INIT:
+		return disk_sdmmc_access_init(disk);
+	case DISK_IOCTL_CTRL_DEINIT:
+		/* Card will be uninitialized after DEINIT */
+		data->status = SD_UNINIT;
+		return sdmmc_ioctl(&data->card, DISK_IOCTL_CTRL_DEINIT, NULL);
+	default:
+		return sdmmc_ioctl(&data->card, cmd, buf);
+	}
+
+	return 0;
 }
 
 static const struct disk_operations sdmmc_disk_ops = {
@@ -105,29 +112,26 @@ static const struct disk_operations sdmmc_disk_ops = {
 	.ioctl = disk_sdmmc_access_ioctl,
 };
 
-static struct disk_info sdmmc_disk = {
-	.ops = &sdmmc_disk_ops,
-};
-
 static int disk_sdmmc_init(const struct device *dev)
 {
+	const struct sdmmc_config *config = dev->config;
 	struct sdmmc_data *data = dev->data;
 
 	data->status = SD_UNINIT;
-	sdmmc_disk.dev = dev;
-	sdmmc_disk.name = data->name;
+	data->disk_info.name = config->name;
+	data->disk_info.ops = &sdmmc_disk_ops;
+	data->disk_info.dev = dev;
 
-	return disk_access_register(&sdmmc_disk);
+	return disk_access_register(&data->disk_info);
 }
 
 #define DISK_ACCESS_SDMMC_INIT(n)						\
 	static const struct sdmmc_config sdmmc_config_##n = {			\
 		.host_controller = DEVICE_DT_GET(DT_INST_PARENT(n)),		\
+		.name = DT_INST_PROP(n, disk_name),                             \
 	};									\
 										\
-	static struct sdmmc_data sdmmc_data_##n = {				\
-		.name = CONFIG_SDMMC_VOLUME_NAME,				\
-	};									\
+	static struct sdmmc_data sdmmc_data_##n;                                \
 										\
 	DEVICE_DT_INST_DEFINE(n,						\
 			&disk_sdmmc_init,					\

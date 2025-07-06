@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2024 TOKITA Hiroshi
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/****************************************
+ * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
+ ***************************************/
+
+mcp7940n@0 {
+	compatible = "microchip,mcp7940n";
+	reg = <0x0>;
+	status = "okay";
+};

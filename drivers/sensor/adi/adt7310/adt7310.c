@@ -276,7 +276,7 @@ static int adt7310_init(const struct device *dev)
 	return ret;
 }
 
-static const struct sensor_driver_api adt7310_driver_api = {
+static DEVICE_API(sensor, adt7310_driver_api) = {
 	.attr_set = adt7310_attr_set,
 	.sample_fetch = adt7310_sample_fetch,
 	.channel_get  = adt7310_channel_get,

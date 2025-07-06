@@ -92,7 +92,7 @@ int mfd_axp192_gpio_func_get(const struct device *dev, uint8_t gpio, enum axp192
 
 /**
  * @brief Enable pull-down on specified GPIO pin. AXP192 only supports
- * pull-down on GPIO3..5. Pull-ups are not supprted.
+ * pull-down on GPIO3..5. Pull-ups are not supported.
  *
  * @param dev axp192 mfd device
  * @param gpio GPIO to control pull-downs

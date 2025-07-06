@@ -1,9 +1,13 @@
-.. _bluetooth-hci-uart-async-sample:
+.. zephyr:code-sample:: bluetooth_hci_uart_async
+   :name: HCI UART async
+   :relevant-api: hci_raw bluetooth uart_interface
 
-Bluetooth: HCI UART based on ASYNC UART
-#######################################
+   Expose a Bluetooth controller to another device or CPU over asynchronous UART.
 
-Expose a Zephyr Bluetooth Controller over a standard Bluetooth HCI UART interface.
+Overview
+*********
+
+Expose Bluetooth Controller support over a standard Bluetooth HCI UART interface.
 
 This sample performs the same basic function as the HCI UART sample, but it uses the UART_ASYNC_API
 instead of UART_INTERRUPT_DRIVEN API. Not all boards implement both UART APIs, so the board support
@@ -12,7 +16,7 @@ of the HCI UART sample may be different.
 Requirements
 ************
 
-* A board with BLE support
+* A board with Bluetooth LE support
 
 Default UART settings
 *********************
@@ -32,7 +36,7 @@ in the Zephyr tree and is built as a standard Zephyr application.
 Using the controller with emulators and BlueZ
 *********************************************
 
-The instructions below show how to use a Nordic nRF5x device as a Zephyr BLE
+The instructions below show how to use a Nordic nRF5x device as a Zephyr Bluetooth
 controller and expose it to Linux's BlueZ.
 
 First, make sure you have a recent BlueZ version installed by following the
@@ -121,7 +125,7 @@ Using the controller with the Zephyr host
 This describes how to hook up a board running this sample to a board running
 an application that uses the Zephyr host.
 
-On the controller side, the `zephyr,bt-c2h-uart` DTS property (in the `chosen`
+On the controller side, the ``zephyr,bt-c2h-uart`` DTS property (in the ``chosen``
 block) is used to select which uart device to use. For example if we want to
 keep the console logs, we can keep console on uart0 and the HCI on uart1 like
 so:
@@ -139,13 +143,13 @@ so:
 On the host application, some config options need to be used to select the H4
 driver instead of the built-in controller:
 
-.. code-block:: kconfig
+.. code-block:: cfg
 
    CONFIG_BT_HCI=y
-   CONFIG_BT_CTLR=n
-   CONFIG_BT_H4=y
+   CONFIG_BT_LL_SW_SPLIT=n
 
-Similarly, the `zephyr,bt-uart` DTS property selects which uart to use:
+Similarly, the ``zephyr,bt-hci`` DTS property selects which HCI instance to use.
+The UART needs to have as its child node a HCI UART node:
 
 .. code-block:: dts
 
@@ -153,6 +157,14 @@ Similarly, the `zephyr,bt-uart` DTS property selects which uart to use:
       chosen {
          zephyr,console = &uart0;
          zephyr,shell-uart = &uart0;
-         zephyr,bt-uart = &uart1;
+         zephyr,bt-hci = &bt_hci_uart;
+      };
+   };
+
+   &uart1 {
+      status = "okay";
+      bt_hci_uart: bt_hci_uart {
+         compatible = "zephyr,bt-hci-uart";
+         status = "okay";
       };
    };

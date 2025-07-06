@@ -57,6 +57,7 @@
       .getElementById("search-se-settings-icon")
       .setAttribute("aria-expanded", visible ? "true" : "false");
   };
+  setSearchEngineSettingsMenuVisibility(false);
 
   window.toggleSearchEngineSettingsMenu = function () {
     isVisible = searchMenu.style.display === "block";

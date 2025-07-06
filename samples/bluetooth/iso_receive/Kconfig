@@ -18,3 +18,9 @@ config ISO_ALIGN_PRINT_INTERVALS
 	  Align interval-counter with packet number from incoming ISO packets.
 	  This may be needed if report printouts are to be synchronized between
 	  the iso_broadcast sample and the iso_receive sample.
+
+config ISO_BLINK_LED0
+	bool "Blink led0"
+	depends on $(dt_alias_enabled,led0)
+	select GPIO
+	default y

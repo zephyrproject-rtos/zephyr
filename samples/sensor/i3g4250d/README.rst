@@ -1,7 +1,8 @@
-.. _i3g4250d:
+.. zephyr:code-sample:: i3g4250d
+   :name: I3G4250D 3-axis gyroscope sensor
+   :relevant-api: sensor_interface
 
-I3G4250D: 3-axis digital output gyroscope
-#########################################
+   Get gyroscope data from an I3G4250D sensor.
 
 Description
 ***********

@@ -6,8 +6,16 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/crypto/crypto.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 
+#ifdef CONFIG_CRYPTO_MBEDTLS_SHIM
 #define CRYPTO_DRV_NAME CONFIG_CRYPTO_MBEDTLS_SHIM_DRV_NAME
+#elif DT_HAS_COMPAT_STATUS_OKAY(renesas_smartbond_crypto)
+#define CRYPTO_DEV_COMPAT renesas_smartbond_crypto
+#else
+#error "You need to enable one crypto device"
+#endif
 
 /* Following test are part of mbedTLS */
 
@@ -128,7 +136,20 @@ ZTEST_USER(crypto_hash, test_hash)
 {
 	int ret;
 	struct hash_ctx ctx;
+
+#ifdef CRYPTO_DRV_NAME
 	const struct device *dev = device_get_binding(CRYPTO_DRV_NAME);
+
+	if (!dev) {
+		zassert(0, "Crypto device is not ready");
+	}
+#else
+	const struct device *dev = DEVICE_DT_GET_ONE(CRYPTO_DEV_COMPAT);
+
+	if (!device_is_ready(dev)) {
+		zassert(0, "Crypto device is not ready");
+	}
+#endif
 
 	ctx.flags = CAP_SYNC_OPS | CAP_SEPARATE_IO_BUFS;
 

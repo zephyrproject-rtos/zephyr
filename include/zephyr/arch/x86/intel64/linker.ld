@@ -105,6 +105,10 @@ SECTIONS
 	__rodata_region_start = .;
 
 	#include <zephyr/linker/common-rom.ld>
+	/* Located in generated directory. This file is populated by calling
+	 * zephyr_linker_sources(ROM_SECTIONS ...). Useful for grouping iterable RO structs.
+	 */
+	#include <snippets-rom-sections.ld>
 	#include <zephyr/linker/thread-local-storage.ld>
 
 	SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
@@ -219,12 +223,6 @@ SECTIONS
 	*(.rel.*)
 	*(.rela.*)
 	}
-/*
- * eh_frame section won't be removed even with "--gc-sections" by LLVM lld.
- */
-#if !defined(CONFIG_CPP_EXCEPTIONS)
-	/DISCARD/ : { *(.eh_frame) }
-#endif
 
 /*
  * The sections below are still treated as warnings
@@ -236,4 +234,7 @@ SECTIONS
 	.shstrtab 0 : { *(.shstrtab) }
 #endif
 
+#ifdef CONFIG_LLEXT
+	#include <zephyr/linker/llext-sections.ld>
+#endif
 }

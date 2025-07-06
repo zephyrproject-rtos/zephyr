@@ -542,5 +542,5 @@ There is a settings access MCUmgr callback available (see :ref:`mcumgr_callbacks
 callbacks) which allows for applications/modules to know when settings management commands are
 used and, optionally, block access (for example through the use of a security mechanism). This
 callback can be enabled with :kconfig:option:`CONFIG_MCUMGR_GRP_SETTINGS_ACCESS_HOOK`, registered
-with the event :c:enum:`MGMT_EVT_OP_SETTINGS_MGMT_ACCESS`, whereby the supplied callback data is
-:c:struct:`settings_mgmt_access`.
+with the event :c:enumerator:`MGMT_EVT_OP_SETTINGS_MGMT_ACCESS`, whereby the supplied callback data
+is :c:struct:`settings_mgmt_access`.

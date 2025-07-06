@@ -1,7 +1,8 @@
-.. _ms5837-sample:
+.. zephyr:code-sample:: ms5837
+   :name: MS5837 Digital Pressure Sensor
+   :relevant-api: sensor_interface
 
-MS5837 Sensor Sample
-####################
+   Get pressure and temperature data from an MS5837 sensor (polling mode).
 
 Overview
 ********
@@ -12,13 +13,13 @@ sensor every 10 seconds, and prints this information to the UART console.
 Requirements
 ************
 
-- `nRF52840 Preview development kit`_
+- `nRF52840 Development kit`_
 - MS5837 sensor
 
 Wiring
 ******
 
-The nrf52840 Preview development kit should be connected as follows to the
+The nrf52840 Development kit should be connected as follows to the
 MS5837 sensor.
 
 +-------------+----------+
@@ -41,7 +42,7 @@ Build this sample using the following commands:
    :goals: build
    :compact:
 
-See :ref:`nrf52840dk_nrf52840` on how to flash the build.
+See :zephyr:board:`nrf52840dk` on how to flash the build.
 
 References
 **********
@@ -49,4 +50,4 @@ References
 .. target-notes::
 
 .. _MS5837 Sensor: http://www.te.com/usa-en/product-CAT-BLPS0017.html?q=&type=products&samples=N&q2=ms5837
-.. _nRF52840 Preview development kit: http://www.nordicsemi.com/eng/Products/nRF52840-Preview-DK
+.. _nRF52840 Development kit: https://www.nordicsemi.com/Products/Development-hardware/nRF52840-DK

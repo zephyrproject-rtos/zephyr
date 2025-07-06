@@ -10,12 +10,14 @@
 #include <zephyr/drivers/flash/stm32_flash_api_extensions.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/storage/flash_map.h>
+#include <zephyr/sys/barrier.h>
 
 #define TEST_AREA	 storage_partition
 #define TEST_AREA_OFFSET FIXED_PARTITION_OFFSET(TEST_AREA)
 #define TEST_AREA_SIZE	 FIXED_PARTITION_SIZE(TEST_AREA)
 #define TEST_AREA_MAX	 (TEST_AREA_OFFSET + TEST_AREA_SIZE)
 #define TEST_AREA_DEVICE FIXED_PARTITION_DEVICE(TEST_AREA)
+#define TEST_AREA_DEVICE_REG DT_REG_ADDR(DT_MTD_FROM_FIXED_PARTITION(DT_NODELABEL(TEST_AREA)))
 
 #define EXPECTED_SIZE 512
 
@@ -23,11 +25,11 @@ static const struct device *const flash_dev = TEST_AREA_DEVICE;
 
 #if defined(CONFIG_FLASH_STM32_WRITE_PROTECT)
 static const struct flash_parameters *flash_params;
-static uint32_t sector_mask;
+static uint64_t sector_mask;
 static uint8_t __aligned(4) expected[EXPECTED_SIZE];
 
 static int sector_mask_from_offset(const struct device *dev, off_t offset,
-				   size_t size, uint32_t *mask)
+				   size_t size, uint64_t *mask)
 {
 	struct flash_pages_info start_page, end_page;
 
@@ -66,7 +68,7 @@ static void *flash_stm32_setup(void)
 				     &sector_mask);
 	zassert_equal(rc, 0, "Cannot get sector mask");
 
-	TC_PRINT("Sector mask for offset 0x%x size 0x%x is 0x%x\n",
+	TC_PRINT("Sector mask for offset 0x%x size 0x%x is 0x%llx\n",
 	       TEST_AREA_OFFSET, EXPECTED_SIZE, sector_mask);
 
 	/* Check if region is not write protected. */
@@ -74,12 +76,13 @@ static void *flash_stm32_setup(void)
 			 (uintptr_t)NULL, &wp_status);
 	zassert_equal(rc, 0, "Cannot get write protect status");
 
-	TC_PRINT("Protected sectors: 0x%x\n", wp_status.protected_mask);
+	TC_PRINT("Protected sectors: 0x%llx\n", wp_status.protected_mask);
 
 	/* Remove protection if needed. */
 	if (wp_status.protected_mask & sector_mask) {
 		TC_PRINT("Removing write protection\n");
 		wp_request.disable_mask = sector_mask;
+		wp_request.enable_mask = 0;
 
 		rc = flash_ex_op(flash_dev, FLASH_STM32_EX_OP_SECTOR_WP,
 				 (uintptr_t)&wp_request, NULL);
@@ -176,6 +179,107 @@ ZTEST(flash_stm32, test_stm32_readout_protection_disabled)
 	zassert_false(rdp_status.permanent, "RDP is enabled permanently");
 
 	TC_PRINT("RDP is disabled\n");
+}
+#endif
+
+#ifdef CONFIG_FLASH_STM32_BLOCK_REGISTERS
+
+#if defined(CONFIG_FLASH_STM32_WRITE_PROTECT) || defined(CONFIG_FLASH_STM32_READOUT_PROTECTION)
+#error Block Register tests unable to run other tests, because of locked registers.
+#endif
+
+int flash_stm32_option_bytes_lock(const struct device *dev, bool enable);
+
+static bool flash_opt_locked(void)
+{
+	FLASH_TypeDef *regs = (FLASH_TypeDef *)TEST_AREA_DEVICE_REG;
+
+	return regs->OPTCR & FLASH_OPTCR_OPTLOCK;
+}
+
+static void flash_cr_unlock(void)
+{
+	FLASH_TypeDef *regs = (FLASH_TypeDef *)TEST_AREA_DEVICE_REG;
+
+#ifdef CONFIG_SOC_SERIES_STM32H7X
+	regs->KEYR1 = FLASH_KEY1;
+	regs->KEYR1 = FLASH_KEY2;
+#ifdef DUAL_BANK
+	regs->KEYR2 = FLASH_KEY1;
+	regs->KEYR2 = FLASH_KEY2;
+#endif /* DUAL_BANK */
+#else /* CONFIG_SOC_SERIES_STM32H7X */
+	regs->KEYR = FLASH_KEY1;
+	regs->KEYR = FLASH_KEY2;
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
+	barrier_dsync_fence_full();
+}
+
+static bool flash_cr_is_locked(void)
+{
+	FLASH_TypeDef *regs = (FLASH_TypeDef *)TEST_AREA_DEVICE_REG;
+
+#ifdef CONFIG_SOC_SERIES_STM32H7X
+	return regs->CR1 & FLASH_CR_LOCK;
+#ifdef DUAL_BANK
+	return (regs->CR1 & FLASH_CR_LOCK) && (regs->CR2 & FLASH_CR_LOCK);
+#endif /* DUAL_BANK */
+#else /* CONFIG_SOC_SERIES_STM32H7X */
+	return regs->CR & FLASH_CR_LOCK;
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
+}
+
+static bool flash_cr_is_unlocked(void)
+{
+	FLASH_TypeDef *regs = (FLASH_TypeDef *)TEST_AREA_DEVICE_REG;
+
+#ifdef CONFIG_SOC_SERIES_STM32H7X
+	return !(regs->CR1 & FLASH_CR_LOCK);
+#ifdef DUAL_BANK
+	return !((regs->CR1 & FLASH_CR_LOCK) || (regs->CR2 & FLASH_CR_LOCK));
+#endif /* DUAL_BANK */
+#else /* CONFIG_SOC_SERIES_STM32H7X */
+	return !(regs->CR & FLASH_CR_LOCK);
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
+}
+
+ZTEST(flash_stm32, test_stm32_block_registers)
+{
+	/* Test OPT lock. */
+	TC_PRINT("Unlocking OPT\n");
+	flash_stm32_option_bytes_lock(flash_dev, false);
+	zassert_false(flash_opt_locked(), "Unable to unlock OPT");
+
+	TC_PRINT("Blocking OPT\n");
+	flash_ex_op(flash_dev, FLASH_STM32_EX_OP_BLOCK_OPTION_REG, (uintptr_t)NULL, NULL);
+
+	zassert_true(flash_opt_locked(), "Blocking OPT didn't lock OPT");
+	TC_PRINT("Try to unlock blocked OPT\n");
+	__set_FAULTMASK(1);
+	flash_stm32_option_bytes_lock(flash_dev, false);
+	/* Clear Bus Fault pending bit */
+	SCB->SHCSR &= ~SCB_SHCSR_BUSFAULTPENDED_Msk;
+	barrier_dsync_fence_full();
+	__set_FAULTMASK(0);
+	zassert_true(flash_opt_locked(), "OPT unlocked after being blocked");
+
+	/* Test CR lock. */
+	zassert_true(flash_cr_is_locked(), "CR should be locked by default");
+	TC_PRINT("Unlocking CR\n");
+	flash_cr_unlock();
+	zassert_true(flash_cr_is_unlocked(), "Unable to unlock CR");
+	TC_PRINT("Blocking CR\n");
+	flash_ex_op(flash_dev, FLASH_STM32_EX_OP_BLOCK_CONTROL_REG, (uintptr_t)NULL, NULL);
+	zassert_true(flash_cr_is_locked(), "Blocking CR didn't lock CR");
+	__set_FAULTMASK(1);
+	TC_PRINT("Try to unlock blocked CR\n");
+	flash_cr_unlock();
+	/* Clear Bus Fault pending bit */
+	SCB->SHCSR &= ~SCB_SHCSR_BUSFAULTPENDED_Msk;
+	barrier_dsync_fence_full();
+	__set_FAULTMASK(0);
+	/* Make sure previous write is completed. */
+	zassert_true(flash_cr_is_locked(), "CR unlocked after being blocked");
 }
 #endif
 

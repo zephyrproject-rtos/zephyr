@@ -1,11 +1,13 @@
-Fuzzing Example
-###############
+.. zephyr:code-sample:: fuzzing
+   :name: Fuzzing
+
+   Integrate fuzz testing with Zephyr apps.
 
 Overview
 ********
 
 This is a simple example of fuzz test integration with Zephyr apps
-that displays LLVM libfuzzer's most important feature: it's ability to
+that displays LLVM libfuzzer's most important feature: its ability to
 detect and explore deep and complicated call trees by exploiting
 coverage information gleaned from instrumented binaries.
 
@@ -24,7 +26,7 @@ toolchain is installed in your host environment, and build with:
    Thread model: posix
    InstalledDir: /usr/bin
    $ export ZEPHYR_TOOLCHAIN_VARIANT=llvm
-   $ west build -t run -b native_posix/native/64 samples/subsys/debug/fuzz
+   $ west build -t run -b native_sim/native/64 samples/subsys/debug/fuzz
 
 Over 10-20 seconds or so (runtimes can be quite variable) you will see
 it discover and recurse deeper into the test's deliberately
@@ -43,7 +45,7 @@ Example output:
    INFO: Loaded 1 PC tables (2112 PCs): 2112 [0x55cbe336f498,0x55cbe3377898),
    INFO: -max_len is not provided; libFuzzer will not generate inputs larger than 4096 bytes
    *** Booting Zephyr OS build zephyr-v3.1.0-3976-g806034e02865  ***
-   Hello World! native_posix/native/64
+   Hello World! native_sim/native/64
    INFO: A corpus is not provided, starting from an empty corpus
    #2	INITED cov: 101 ft: 102 corp: 1/1b exec/s: 0 rss: 30Mb
    #

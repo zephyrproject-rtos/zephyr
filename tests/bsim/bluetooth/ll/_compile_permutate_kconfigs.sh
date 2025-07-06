@@ -10,19 +10,14 @@
 # set DEBUG_PERMUTATE to 'true' for extra debug output
 DEBUG_PERMUTATE=false
 
-: "${BSIM_OUT_PATH:?BSIM_OUT_PATH must be defined}"
-: "${BSIM_COMPONENTS_PATH:?BSIM_COMPONENTS_PATH must be defined}"
 : "${ZEPHYR_BASE:?ZEPHYR_BASE must be set to point to the zephyr root\
  directory}"
 
-WORK_DIR="${WORK_DIR:-${ZEPHYR_BASE}/bsim_out}"
-BOARD="${BOARD:-nrf52_bsim}"
+source ${ZEPHYR_BASE}/tests/bsim/compile.source
 BOARD_ROOT="${BOARD_ROOT:-${ZEPHYR_BASE}}"
+BOARD_TS="${BOARD//\//_}"
 
 mkdir -p ${WORK_DIR}
-
-source ${ZEPHYR_BASE}/tests/bsim/compile.source
-
 
 declare -a list=(
 "CONFIG_BT_CENTRAL="
@@ -42,7 +37,7 @@ perm_compile() {
     # created by the compile scripts since that may mess up other tests
     # We also delete the executable to avoid having artifacts from
     # a previous run
-    local exe_name="bs_nrf52_bsim_tests_kconfig_perm"
+    local exe_name="bs_${BOARD_TS}_tests_kconfig_perm"
     local executable_name=${exe_name}
     local executable_name=${BSIM_OUT_PATH}/bin/$executable_name
 

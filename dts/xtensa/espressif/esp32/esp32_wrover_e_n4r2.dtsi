@@ -13,7 +13,7 @@
 };
 
 &gpio1 {
-	gpio-reserved-ranges = <6 1>, <7 1>; // GPIO37-38 NC
+	gpio-reserved-ranges = <5 2>; // GPIO37-38 NC
 };
 
 /* 4MB flash */
@@ -23,6 +23,5 @@
 
 /* 2MB psram */
 &psram0 {
-	reg = <0x3f800000 DT_SIZE_M(2)>;
-	status = "okay";
+	size = <DT_SIZE_M(2)>;
 };

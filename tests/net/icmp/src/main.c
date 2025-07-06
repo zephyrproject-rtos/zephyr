@@ -30,7 +30,7 @@ LOG_MODULE_REGISTER(net_test, ICMP_LOG_LEVEL);
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <string.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/ztest.h>
 #include <zephyr/net/dummy.h>
 #include <zephyr/net/ethernet.h>
@@ -188,7 +188,7 @@ static int get_ipv4_reply(struct net_if *iface,
 
 	/* The code below should not be used in real life scenarios
 	 * as it is missing filling the ICMP params etc. We just create
-	 * a basic IPv4 header here in order to pass sanity checks
+	 * a basic IPv4 header here in order to pass coherence checks
 	 * in IP packet parsing.
 	 */
 	reply = net_pkt_alloc_with_buffer(iface, sizeof(struct net_ipv4_hdr) +

@@ -1,0 +1,8 @@
+# Copyright (c) 2025, Ivan Wagner <ivan.wagner@tecinvent.ch>
+# SPDX-License-Identifier: Apache-2.0
+
+description: TE Connectivity MS5837-02BA digital pressure sensor
+
+compatible: "meas,ms5837-02ba"
+
+include: [sensor-device.yaml, i2c-device.yaml]

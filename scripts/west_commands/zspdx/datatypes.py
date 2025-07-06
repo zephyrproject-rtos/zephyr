@@ -4,11 +4,12 @@
 
 from enum import Enum
 
+
 # DocumentConfig contains settings used to configure how the SPDX Document
 # should be built.
 class DocumentConfig:
     def __init__(self):
-        super(DocumentConfig, self).__init__()
+        super().__init__()
 
         # name of document
         self.name = ""
@@ -20,12 +21,13 @@ class DocumentConfig:
         # docs will use to refer to this one
         self.docRefID = ""
 
+
 # Document contains the data assembled by the SBOM builder, to be used to
 # create the actual SPDX Document.
 class Document:
     # initialize with a DocumentConfig
     def __init__(self, cfg):
-        super(Document, self).__init__()
+        super().__init__()
 
         # configuration - DocumentConfig
         self.cfg = cfg
@@ -56,11 +58,12 @@ class Document:
         # written to disk, so that others can refer to it
         self.myDocSHA1 = ""
 
+
 # PackageConfig contains settings used to configure how an SPDX Package should
 # be built.
 class PackageConfig:
     def __init__(self):
-        super(PackageConfig, self).__init__()
+        super().__init__()
 
         # package name
         self.name = ""
@@ -70,6 +73,18 @@ class PackageConfig:
 
         # primary package purpose (ex. "LIBRARY", "APPLICATION", etc.)
         self.primaryPurpose = ""
+
+        # package URL
+        self.url = ""
+
+        # package version
+        self.version = ""
+
+        # package revision
+        self.revision = ""
+
+        # package external references
+        self.externalReferences = []
 
         # the Package's declared license
         self.declaredLicense = "NOASSERTION"
@@ -83,6 +98,7 @@ class PackageConfig:
         # may want to note this in a Package comment field
         self.relativeBaseDir = ""
 
+
 # Package contains the data assembled by the SBOM builder, to be used to
 # create the actual SPDX Package.
 class Package:
@@ -90,7 +106,7 @@ class Package:
     # 1) PackageConfig
     # 2) the Document that owns this Package
     def __init__(self, cfg, doc):
-        super(Package, self).__init__()
+        super().__init__()
 
         # configuration - PackageConfig
         self.cfg = cfg
@@ -119,6 +135,7 @@ class Package:
         # If this Package was a target, which File was its main build product?
         self.targetBuildFile = None
 
+
 # RelationshipDataElementType defines whether a RelationshipData element
 # (e.g., the "owner" or the "other" element) is a File, a target Package,
 # a Package's ID (as other only, and only where owner type is DOCUMENT),
@@ -130,12 +147,13 @@ class RelationshipDataElementType(Enum):
     PACKAGEID = 3
     DOCUMENT = 4
 
+
 # RelationshipData contains the pre-analysis data about a relationship between
 # Files and/or Packages/targets. It is eventually parsed into a corresponding
 # Relationship after we have organized the SPDX Package and File data.
 class RelationshipData:
     def __init__(self):
-        super(RelationshipData, self).__init__()
+        super().__init__()
 
         # for the "owner" element (e.g., the left side of the Relationship),
         # is it a filename or a target name (e.g., a Package in the build doc)
@@ -167,12 +185,13 @@ class RelationshipData:
         # from table 68 in section 11.1 of SPDX spec v2.3
         self.rlnType = ""
 
+
 # Relationship contains the post-analysis, processed data about a relationship
 # in a form suitable for creating the actual SPDX Relationship in a particular
 # Document's context.
 class Relationship:
     def __init__(self):
-        super(Relationship, self).__init__()
+        super().__init__()
 
         # SPDX ID for left side of relationship
         # including "SPDXRef-" as well as "DocumentRef-" if needed
@@ -186,6 +205,7 @@ class Relationship:
         # from table 68 in section 11.1 of SPDX spec v2.3
         self.rlnType = ""
 
+
 # File contains the data needed to create a File element in the context of a
 # particular SPDX Document and Package.
 class File:
@@ -193,7 +213,7 @@ class File:
     # 1) Document containing this File
     # 2) Package containing this File
     def __init__(self, doc, pkg):
-        super(File, self).__init__()
+        super().__init__()
 
         # absolute path to this file on disk
         self.abspath = ""

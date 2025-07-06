@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  STM32 lptim : low power timer
+  STM32 low-power timer (LPTIM).
+
   The lptim node to be used for counting ticks during lowpower modes
   must be named stm32_lp_tick_source in the DTS, as follows:
   stm32_lp_tick_source: &lptim1 {
@@ -45,3 +46,10 @@ properties:
       - 32
       - 64
       - 128
+
+  st,timeout:
+    type: int
+    description: |
+        Gives the LPTIM an exact counting value (s) for timeout expiration.
+        Valid range is [1, 256] and should be consistent with st,prescaler
+        pre-defined setting. If not, an error is raised.

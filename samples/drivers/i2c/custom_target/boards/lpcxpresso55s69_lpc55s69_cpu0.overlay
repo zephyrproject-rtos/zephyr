@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2024 Open Pixel Systems
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&flexcomm4 {
+	status = "okay";
+};

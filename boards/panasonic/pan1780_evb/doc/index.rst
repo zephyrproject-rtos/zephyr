@@ -1,7 +1,4 @@
-.. _pan1780_evb:
-
-PAN1780 Evaluation Board
-########################
+.. zephyr:board:: pan1780_evb
 
 Overview
 ********
@@ -10,12 +7,8 @@ The PAN1780 Evaluation Board is a development tool for the PAN1780 module which
 is based on the nRF52840 chipset from Nordic Semiconductor.
 
 It is basically a clone of the official nRF52840 development kit (PCA10056)
-from Nordic Semiconductor. Please refer to :ref:`nrf52840dk_nrf52840` for
+from Nordic Semiconductor. Please refer to :zephyr:board:`nrf52840dk` for
 further information.
-
-.. figure:: pan1780_evaluation_board.jpg
-     :align: center
-     :alt: PAN1780 Evaluation Board
 
 You can find more information about the PAN1780 module and the PAN1780
 evaluation board on the `product website`_.
@@ -23,8 +16,8 @@ evaluation board on the `product website`_.
 The PAN1780 evaluation board is closely linked to these other evaluation
 boards:
 
-* :ref:`pan1781_evb`
-* :ref:`pan1782_evb`
+* :zephyr:board:`pan1781_evb`
+* :zephyr:board:`pan1782_evb`
 
 Usage
 *****
@@ -47,6 +40,8 @@ The schematics for the PAN1780 Evaluation Board are available in the
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Please use the ``pan1780_evb`` board configuration when
 :ref:`build_an_application` and :ref:`application_run`.

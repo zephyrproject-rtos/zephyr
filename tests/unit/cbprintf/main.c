@@ -358,9 +358,7 @@ static inline bool prf_check(const char *expected,
 	return true;
 }
 
-#define PRF_CHECK(expected, rv)	\
-	zassert_true(prf_check(expected, rv, __FILE__, __LINE__), \
-		     NULL)
+#define PRF_CHECK(expected, rv)	zassert_true(prf_check(expected, rv, __FILE__, __LINE__))
 
 ZTEST(prf, test_pct)
 {
@@ -574,8 +572,7 @@ ZTEST(prf, test_d_flags)
 	reset_out();
 	rc = rawprf("/%#d/% +d/%-04d/%06.4d/", sv, sv, sv, sv);
 	zassert_equal(rc, 22, "rc %d", rc);
-	zassert_equal(strncmp("/123/+123/123 /  0123/",
-			      buf, rc), 0, NULL);
+	zassert_equal(strncmp("/123/+123/123 /  0123/", buf, rc), 0);
 }
 
 ZTEST(prf, test_x_length)
@@ -1306,14 +1303,14 @@ ZTEST(prf, test_cbprintf_fsc_package)
 	cbpprintf(fsc_package_cb, &pout, package);
 	*pout = '\0';
 
-	zassert_equal(strcmp(out_str, exp_str1), 0);
+	zassert_str_equal(out_str, exp_str1);
 	zassert_true(strcmp(exp_str0, exp_str1) != 0);
 
 	/* FSC package contains original content. */
 	pout = out_str;
 	cbpprintf(fsc_package_cb, &pout, fsc_package);
 	*pout = '\0';
-	zassert_equal(strcmp(out_str, exp_str0), 0);
+	zassert_str_equal(out_str, exp_str0);
 }
 
 ZTEST(prf, test_cbpprintf)
@@ -1365,8 +1362,7 @@ ZTEST(prf, test_is_none_char_ptr)
 	float f = 0.1;
 	double d = 0.1;
 
-	_Pragma("GCC diagnostic push")
-	_Pragma("GCC diagnostic ignored \"-Wpointer-arith\"")
+	TOOLCHAIN_DISABLE_GCC_WARNING(TOOLCHAIN_WARNING_POINTER_ARITH);
 	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR(c), 0);
 	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR(cc), 0);
 	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR(vc), 0);
@@ -1414,7 +1410,7 @@ ZTEST(prf, test_is_none_char_ptr)
 
 	zassert_equal(Z_CBPRINTF_IS_NONE_CHAR_PTR((void *)&c), 1);
 
-	_Pragma("GCC diagnostic pop")
+	TOOLCHAIN_ENABLE_GCC_WARNING(TOOLCHAIN_WARNING_POINTER_ARITH);
 }
 
 ZTEST(prf, test_p_count)
@@ -1428,13 +1424,12 @@ ZTEST(prf, test_p_count)
 
 ZTEST(prf, test_pointers_validate)
 {
-	_Pragma("GCC diagnostic push")
-	_Pragma("GCC diagnostic ignored \"-Wpointer-arith\"")
+	TOOLCHAIN_DISABLE_GCC_WARNING(TOOLCHAIN_WARNING_POINTER_ARITH);
 	zassert_equal(Z_CBPRINTF_POINTERS_VALIDATE("no arguments"), true);
 	/* const char fails validation */
 	zassert_equal(Z_CBPRINTF_POINTERS_VALIDATE("%p", "string"), false);
 	zassert_equal(Z_CBPRINTF_POINTERS_VALIDATE("%p", (void *)"string"), true);
-	_Pragma("GCC diagnostic pop")
+	TOOLCHAIN_ENABLE_GCC_WARNING(TOOLCHAIN_WARNING_POINTER_ARITH);
 }
 
 static void *cbprintf_setup(void)

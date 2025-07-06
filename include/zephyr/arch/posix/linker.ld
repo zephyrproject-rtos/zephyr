@@ -19,7 +19,11 @@
 
 
 SECTIONS
- {
+{
+
+#ifdef CONFIG_LLEXT
+#include <zephyr/linker/llext-sections.ld>
+#endif
 
 SECTION_PROLOGUE(rom_start,,)
 {
@@ -30,6 +34,10 @@ SECTION_PROLOGUE(rom_start,,)
 } GROUP_LINK_IN(ROMABLE_REGION)
 
 #include <zephyr/linker/common-rom.ld>
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(ROM_SECTIONS ...). Useful for grouping iterable RO structs.
+ */
+#include <snippets-rom-sections.ld>
 
 SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
 {
@@ -55,7 +63,6 @@ SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
 #include <snippets-ram-sections.ld>
 
 #include <zephyr/arch/posix/native_tasks.ld>
-#include <zephyr/arch/posix/native_sim_interface.ld>
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
@@ -77,7 +84,9 @@ SECTION_DATA_PROLOGUE(_NOINIT_SECTION_NAME,,)
  */
 #include <snippets-sections.ld>
 
- } INSERT AFTER .data;
+} INSERT AFTER .data;
+
+#include <zephyr/arch/posix/native_sim_interface.ld>
 
 /*
  * Note that the INSERT command actually changes the meaning of the -T command

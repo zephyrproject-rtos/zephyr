@@ -33,5 +33,3 @@ API reference
 *************
 
 .. doxygengroup:: bt_mesh_od_priv_proxy_cli
-   :project: Zephyr
-   :members:

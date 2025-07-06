@@ -38,7 +38,8 @@ static inline int lsm9ds0_mfd_reboot_memory(const struct device *dev)
 	return 0;
 }
 
-#if !defined(LSM9DS0_MFD_ACCEL_DISABLED)
+#if !defined(LSM9DS0_MFD_ACCEL_DISABLED) && defined(CONFIG_LSM9DS0_MFD_ACCEL_SAMPLING_RATE_RUNTIME)
+
 static inline int lsm9ds0_mfd_accel_set_odr_raw(const struct device *dev,
 						uint8_t odr)
 {
@@ -49,7 +50,6 @@ static inline int lsm9ds0_mfd_accel_set_odr_raw(const struct device *dev,
 				      odr << LSM9DS0_MFD_SHIFT_CTRL_REG1_XM_AODR);
 }
 
-#if defined(CONFIG_LSM9DS0_MFD_ACCEL_SAMPLING_RATE_RUNTIME)
 static const struct {
 	int freq_int;
 	int freq_micro;
@@ -121,7 +121,6 @@ static int lsm9ds0_mfd_accel_set_fs(const struct device *dev, int val)
 
 	return -ENOTSUP;
 }
-#endif
 #endif
 
 #if !defined(LSM9DS0_MFD_MAGN_DISABLED)
@@ -634,7 +633,7 @@ static int lsm9ds0_mfd_attr_set(const struct device *dev,
 }
 #endif
 
-static const struct sensor_driver_api lsm9ds0_mfd_api_funcs = {
+static DEVICE_API(sensor, lsm9ds0_mfd_api_funcs) = {
 	.sample_fetch = lsm9ds0_mfd_sample_fetch,
 	.channel_get = lsm9ds0_mfd_channel_get,
 #if defined(LSM9DS0_MFD_ATTR_SET)

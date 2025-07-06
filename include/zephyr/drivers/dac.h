@@ -28,6 +28,12 @@ extern "C" {
  */
 
 /**
+ * @brief Broadcast channel identifier for DACs that support it.
+ * @note Only for use in dac_write_value().
+ */
+#define DAC_CHANNEL_BROADCAST	0xFF
+
+/**
  * @brief Structure for specifying the configuration of a DAC channel.
  */
 struct dac_channel_cfg {
@@ -39,7 +45,12 @@ struct dac_channel_cfg {
 	 * This is relevant for instance if the output is directly connected to the load,
 	 * without an amplifierin between. The actual details on this are hardware dependent.
 	 */
-	bool buffered;
+	bool buffered: 1;
+	/** Enable internal output path for this channel. This is relevant for channels that
+	 * support directly connecting to on-chip peripherals via internal paths. The actual
+	 * details on this are hardware dependent.
+	 */
+	bool internal: 1;
 };
 
 /**
@@ -131,6 +142,6 @@ static inline int z_impl_dac_write_value(const struct device *dev,
 }
 #endif
 
-#include <syscalls/dac.h>
+#include <zephyr/syscalls/dac.h>
 
 #endif  /* ZEPHYR_INCLUDE_DRIVERS_DAC_H_ */

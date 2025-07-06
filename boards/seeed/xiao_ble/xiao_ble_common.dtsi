@@ -6,19 +6,12 @@
  */
 
 #include <nordic/nrf52840_qiaa.dtsi>
+#include <nordic/nrf52840_partition_uf2_sdv7.dtsi>
 #include "xiao_ble-pinctrl.dtsi"
 #include "seeed_xiao_connector.dtsi"
 
 / {
 	chosen {
-		zephyr,console = &usb_cdc_acm_uart;
-		zephyr,shell-uart = &usb_cdc_acm_uart;
-		zephyr,uart-mcumgr = &usb_cdc_acm_uart;
-		zephyr,bt-mon-uart = &usb_cdc_acm_uart;
-		zephyr,bt-c2h-uart = &usb_cdc_acm_uart;
-		zephyr,sram = &sram0;
-		zephyr,flash = &flash0;
-		zephyr,code-partition = &code_partition;
 		zephyr,ieee802154 = &ieee802154;
 	};
 
@@ -54,8 +47,15 @@
 		bootloader-led0 = &led0;
 		mcuboot-led0 = &led0;
 		watchdog0 = &wdt0;
-		spi-flash0 = &p25q16h;
 	};
+};
+
+&reg0 {
+	status = "okay";
+};
+
+&reg1 {
+	regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
 };
 
 &adc {
@@ -138,46 +138,9 @@
 	status = "okay";
 };
 
-&flash0 {
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		sd_partition: partition@0 {
-			label = "softdevice";
-			reg = <0x00000000 0x00027000>;
-		};
-
-		code_partition: partition@27000 {
-			label = "code_partition";
-			reg = <0x00027000 0x000c5000>;
-		};
-
-		/*
-		 * The flash starting at 0x000ec000 and ending at
-		 * 0x000f3fff is reserved for use by the application.
-		 *
-		 * Storage partition will be used by FCB/LittleFS/NVS
-		 * if enabled.
-		 */
-		storage_partition: partition@ec000 {
-			label = "storage";
-			reg = <0x000ec000 0x00008000>;
-		};
-
-		boot_partition: partition@f4000 {
-			label = "adafruit_boot";
-			reg = <0x000f4000 0x0000c000>;
-		};
-	};
-};
-
 zephyr_udc0: &usbd {
 	compatible = "nordic,nrf-usbd";
 	status = "okay";
-
-	usb_cdc_acm_uart: cdc-acm-uart {
-		compatible = "zephyr,cdc-acm-uart";
-	};
 };
+
+#include <../boards/common/usb/cdc_acm_serial.dtsi>

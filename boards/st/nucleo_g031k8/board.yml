@@ -1,5 +1,6 @@
 board:
   name: nucleo_g031k8
+  full_name: Nucleo G031K8
   vendor: st
   socs:
     - name: stm32g031xx

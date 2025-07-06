@@ -33,6 +33,9 @@ extern char _heap_start[];
 /** MPU foreground map for kernel mode. */
 static struct xtensa_mpu_map xtensa_mpu_map_fg_kernel;
 
+/** Make sure write to the MPU region is atomic. */
+static struct k_spinlock xtensa_mpu_lock;
+
 /*
  * Additional information about the MPU maps: foreground and background
  * maps.
@@ -443,6 +446,8 @@ static int mpu_map_region_add(struct xtensa_mpu_map *map,
 
 				xtensa_mpu_entry_set(entry_slot_s, start_addr, true,
 						     access_rights, memory_type);
+				first_enabled_idx = XTENSA_MPU_NUM_ENTRIES - 1;
+				goto end;
 			} else {
 				/*
 				 * Populate the last two entries to indicate
@@ -459,6 +464,8 @@ static int mpu_map_region_add(struct xtensa_mpu_map *map,
 				xtensa_mpu_entry_set(entry_slot_e, end_addr, false,
 						     XTENSA_MPU_ACCESS_P_NA_U_NA,
 						     CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE);
+				first_enabled_idx = XTENSA_MPU_NUM_ENTRIES - 2;
+				goto end;
 			}
 
 			ret = 0;
@@ -595,6 +602,7 @@ static int mpu_map_region_add(struct xtensa_mpu_map *map,
 		xtensa_mpu_entry_attributes_set(&entries[idx], access_rights, memory_type);
 	}
 
+end:
 	if (first_idx != NULL) {
 		*first_idx = first_enabled_idx;
 	}
@@ -624,6 +632,9 @@ void xtensa_mpu_map_write(struct xtensa_mpu_map *map)
 #endif
 {
 	int entry;
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&xtensa_mpu_lock);
 
 #ifdef CONFIG_USERSPACE
 	struct xtensa_mpu_map *map = thread->arch.mpu_map;
@@ -647,6 +658,8 @@ void xtensa_mpu_map_write(struct xtensa_mpu_map *map)
 		__asm__ volatile("wptlb %0, %1\n\t"
 				 : : "a"(map->entries[entry].at), "a"(map->entries[entry].as));
 	}
+
+	k_spin_unlock(&xtensa_mpu_lock, key);
 }
 
 /**
@@ -760,6 +773,7 @@ int arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 {
 	int ret;
 	uint32_t perm;
+	struct k_thread *cur_thread;
 	struct xtensa_mpu_map *map = &domain->arch.mpu_map;
 	struct k_mem_partition *partition = &domain->partitions[partition_id];
 	uintptr_t end_addr = partition->start + partition->size;
@@ -828,6 +842,15 @@ int arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 				 CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
 				 NULL);
 
+	/*
+	 * Need to update hardware MPU regions if we are removing
+	 * partition from the domain of the current running thread.
+	 */
+	cur_thread = _current_cpu->current;
+	if (cur_thread->mem_domain_info.mem_domain == domain) {
+		xtensa_mpu_map_write(cur_thread);
+	}
+
 out:
 	return ret;
 }
@@ -836,6 +859,7 @@ int arch_mem_domain_partition_add(struct k_mem_domain *domain,
 				  uint32_t partition_id)
 {
 	int ret;
+	struct k_thread *cur_thread;
 	struct xtensa_mpu_map *map = &domain->arch.mpu_map;
 	struct k_mem_partition *partition = &domain->partitions[partition_id];
 	uintptr_t end_addr = partition->start + partition->size;
@@ -849,6 +873,20 @@ int arch_mem_domain_partition_add(struct k_mem_domain *domain,
 				 (uint8_t)partition->attr,
 				 CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
 				 NULL);
+
+	/*
+	 * Need to update hardware MPU regions if we are removing
+	 * partition from the domain of the current running thread.
+	 *
+	 * Note that this function can be called with dummy thread
+	 * at boot so we need to avoid writing MPU regions to
+	 * hardware.
+	 */
+	cur_thread = _current_cpu->current;
+	if (((cur_thread->base.thread_state & _THREAD_DUMMY) != _THREAD_DUMMY) &&
+	    (cur_thread->mem_domain_info.mem_domain == domain)) {
+		xtensa_mpu_map_write(cur_thread);
+	}
 
 out:
 	return ret;
@@ -969,7 +1007,7 @@ out:
 	return ret;
 }
 
-int arch_buffer_validate(void *addr, size_t size, int write)
+int arch_buffer_validate(const void *addr, size_t size, int write)
 {
 	uintptr_t aligned_addr;
 	size_t aligned_size, addr_offset;
@@ -983,6 +1021,14 @@ int arch_buffer_validate(void *addr, size_t size, int write)
 	for (size_t offset = 0; offset < aligned_size;
 	     offset += XCHAL_MPU_ALIGN) {
 		uint32_t probed = xtensa_pptlb_probe(aligned_addr + offset);
+
+		if ((probed & XTENSA_MPU_PROBE_VALID_ENTRY_MASK) == 0U) {
+			/* There is no foreground or background entry associated
+			 * with the region.
+			 */
+			ret = -EPERM;
+			goto out;
+		}
 
 		uint8_t access_rights = (probed & XTENSA_MPU_PPTLB_ACCESS_RIGHTS_MASK)
 					>> XTENSA_MPU_PPTLB_ACCESS_RIGHTS_SHIFT;
@@ -1031,6 +1077,95 @@ int arch_buffer_validate(void *addr, size_t size, int write)
 out:
 	return ret;
 }
+
+bool xtensa_mem_kernel_has_access(const void *addr, size_t size, int write)
+{
+	uintptr_t aligned_addr;
+	size_t aligned_size, addr_offset;
+	bool ret = true;
+
+	/* addr/size arbitrary, fix this up into an aligned region */
+	aligned_addr = ROUND_DOWN((uintptr_t)addr, XCHAL_MPU_ALIGN);
+	addr_offset = (uintptr_t)addr - aligned_addr;
+	aligned_size = ROUND_UP(size + addr_offset, XCHAL_MPU_ALIGN);
+
+	for (size_t offset = 0; offset < aligned_size;
+	     offset += XCHAL_MPU_ALIGN) {
+		uint32_t probed = xtensa_pptlb_probe(aligned_addr + offset);
+
+		if ((probed & XTENSA_MPU_PROBE_VALID_ENTRY_MASK) == 0U) {
+			/* There is no foreground or background entry associated
+			 * with the region.
+			 */
+			ret = false;
+			goto out;
+		}
+
+		uint8_t access_rights = (probed & XTENSA_MPU_PPTLB_ACCESS_RIGHTS_MASK)
+					>> XTENSA_MPU_PPTLB_ACCESS_RIGHTS_SHIFT;
+
+
+		if (write != 0) {
+			/* Need to check write permission. */
+			switch (access_rights) {
+			case XTENSA_MPU_ACCESS_P_RW_U_NA:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RWX_U_NA:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_WO_U_WO:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RW_U_RWX:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RW_U_RO:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RWX_U_RX:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RW_U_RW:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RWX_U_RWX:
+				/* These permissions are okay. */
+				break;
+			default:
+				ret = false;
+				goto out;
+			}
+		} else {
+			/* Only check read permission. */
+			switch (access_rights) {
+			case XTENSA_MPU_ACCESS_P_RO_U_NA:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RX_U_NA:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RW_U_NA:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RWX_U_NA:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RW_U_RWX:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RW_U_RO:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RWX_U_RX:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RO_U_RO:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RX_U_RX:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RW_U_RW:
+				__fallthrough;
+			case XTENSA_MPU_ACCESS_P_RWX_U_RWX:
+				/* These permissions are okay. */
+				break;
+			default:
+				ret = false;
+				goto out;
+			}
+		}
+	}
+
+out:
+	return ret;
+}
+
 
 void xtensa_user_stack_perms(struct k_thread *thread)
 {

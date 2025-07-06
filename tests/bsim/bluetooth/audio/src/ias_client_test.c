@@ -4,11 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdint.h>
-#ifdef CONFIG_BT_IAS_CLIENT
+#include <stddef.h>
 
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/services/ias.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/printk.h>
+
+#include "bstests.h"
 #include "common.h"
+
+#ifdef CONFIG_BT_IAS_CLIENT
 
 extern enum bst_result_t bst_result;
 
@@ -129,7 +136,7 @@ static void test_main(void)
 static const struct bst_test_instance test_ias[] = {
 	{
 		.test_id = "ias_client",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main,
 	},

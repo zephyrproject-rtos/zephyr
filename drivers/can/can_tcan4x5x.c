@@ -508,8 +508,10 @@ static int tcan4x5x_wake(const struct device *dev)
 
 static int tcan4x5x_reset(const struct device *dev)
 {
+#if TCAN4X5X_RST_GPIO_SUPPORT
 	const struct can_mcan_config *mcan_config = dev->config;
 	const struct tcan4x5x_config *tcan_config = mcan_config->custom;
+#endif /* TCAN4X5X_RST_GPIO_SUPPORT */
 	int err;
 
 	err = tcan4x5x_wake(dev);
@@ -713,7 +715,7 @@ static int tcan4x5x_init(const struct device *dev)
 	return 0;
 }
 
-static const struct can_driver_api tcan4x5x_driver_api = {
+static DEVICE_API(can, tcan4x5x_driver_api) = {
 	.get_capabilities = can_mcan_get_capabilities,
 	.start = can_mcan_start,
 	.stop = can_mcan_stop,

@@ -14,7 +14,7 @@
 #include <mips/regdef.h>
 #include <mips/mipsregs.h>
 
-#define ESF_O(FIELD)	__z_arch_esf_t_##FIELD##_OFFSET
+#define ESF_O(FIELD)	__struct_arch_esf_##FIELD##_OFFSET
 #define THREAD_O(FIELD)	_thread_offset_to_##FIELD
 
 /* Convenience macros for loading/storing register states. */
@@ -58,18 +58,19 @@
 	op v1, ESF_O(v1)(sp)		;
 
 #define STORE_CALLER_SAVED() \
-	addi sp, sp, -__z_arch_esf_t_SIZEOF	;\
+	addi sp, sp, -__struct_arch_esf_SIZEOF	;\
 	DO_CALLER_SAVED(OP_STOREREG)		;
 
 #define LOAD_CALLER_SAVED() \
 	DO_CALLER_SAVED(OP_LOADREG)		;\
-	addi sp, sp, __z_arch_esf_t_SIZEOF	;
+	addi sp, sp, __struct_arch_esf_SIZEOF	;
 
 /* imports */
-GTEXT(_Fault)
+GTEXT(z_mips_fault)
 
 GTEXT(_k_neg_eagain)
 GTEXT(z_thread_mark_switched_in)
+GTEXT(z_thread_mark_switched_out)
 
 /* exports */
 GTEXT(__isr_vec)
@@ -124,7 +125,7 @@ SECTION_FUNC(exception.other, _mips_interrupt)
 
 unhandled:
 	move a0, sp
-	jal _Fault
+	jal z_mips_fault
 	eret
 
 is_kernel_syscall:
@@ -209,6 +210,9 @@ on_thread_stack:
 #endif /* CONFIG_PREEMPT_ENABLED */
 
 reschedule:
+#ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
+	jal z_thread_mark_switched_out
+#endif
 	/*
 	 * Check if the current thread is the same as the thread on the ready Q. If
 	 * so, do not reschedule.

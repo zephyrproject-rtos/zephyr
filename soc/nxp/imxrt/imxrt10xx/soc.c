@@ -1,5 +1,5 @@
 /*
- * Copyright  2017-2023 NXP
+ * Copyright  2017-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,7 +22,7 @@
 #include "usb.h"
 #endif
 
-#include "memc_nxp_flexram.h"
+#include <zephyr/drivers/misc/flexram/nxp_flexram.h>
 
 #include <cmsis_core.h>
 
@@ -33,64 +33,18 @@
 		     DT_PROP(DT_CHILD(CCM_NODE, podf), clock_div) <= (b), \
 		     #podf " is out of supported range (" #a ", " #b ")")
 
-#ifdef CONFIG_INIT_ARM_PLL
-/* ARM PLL configuration for RUN mode */
-const clock_arm_pll_config_t armPllConfig = {
-	.loopDivider = 100U
-};
-#endif
-
 #if CONFIG_USB_DC_NXP_EHCI
-/* USB PHY condfiguration */
+/* USB PHY configuration */
 #define BOARD_USB_PHY_D_CAL (0x0CU)
 #define BOARD_USB_PHY_TXCAL45DP (0x06U)
 #define BOARD_USB_PHY_TXCAL45DM (0x06U)
 #endif
 
-#ifdef CONFIG_INIT_ENET_PLL
-/* ENET PLL configuration for RUN mode */
-const clock_enet_pll_config_t ethPllConfig = {
-#if defined(CONFIG_SOC_MIMXRT1011) || \
-	defined(CONFIG_SOC_MIMXRT1015) || \
-	defined(CONFIG_SOC_MIMXRT1021) || \
-	defined(CONFIG_SOC_MIMXRT1024)
-	.enableClkOutput500M = true,
-#endif
-#if defined(CONFIG_ETH_NXP_ENET) || defined(CONFIG_ETH_MCUX)
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay)
-	.enableClkOutput = true,
-#endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet2), okay)
-	.enableClkOutput1 = true,
-#endif
-#endif
-#if defined(CONFIG_PTP_CLOCK_MCUX) || defined(CONFIG_PTP_CLOCK_NXP_ENET)
-	.enableClkOutput25M = true,
-#else
-	.enableClkOutput25M = false,
-#endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay)
-	.loopDivider = 1,
-#endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet2), okay)
-	.loopDivider1 = 1,
-#endif
-};
-#endif
 
 #if CONFIG_USB_DC_NXP_EHCI
 	usb_phy_config_struct_t usbPhyConfig = {
 		BOARD_USB_PHY_D_CAL, BOARD_USB_PHY_TXCAL45DP, BOARD_USB_PHY_TXCAL45DM,
 	};
-#endif
-
-#ifdef CONFIG_INIT_VIDEO_PLL
-const clock_video_pll_config_t videoPllConfig = {
-	.loopDivider = 31,
-	.postDivider = 8,
-	.numerator = 0,
-	.denominator = 0,
-};
 #endif
 
 #ifdef CONFIG_NXP_IMXRT_BOOT_HEADER
@@ -125,7 +79,7 @@ const __imx_boot_ivt_section ivt image_vector_table = {
 /**
  * @brief Initialize the system clock
  */
-static ALWAYS_INLINE void clock_init(void)
+__weak void clock_init(void)
 {
 	/* Boot ROM did initialize the XTAL, here we only sets external XTAL
 	 * OSC freq
@@ -141,24 +95,63 @@ static ALWAYS_INLINE void clock_init(void)
 	/* Set PERIPH_CLK MUX to PERIPH_CLK2 */
 	CLOCK_SetMux(kCLOCK_PeriphMux, 0x1);
 
-	/* Setting the VDD_SOC value.
-	 */
-	DCDC->REG3 = (DCDC->REG3 & (~DCDC_REG3_TRG_MASK)) | DCDC_REG3_TRG(CONFIG_DCDC_VALUE);
-	/* Waiting for DCDC_STS_DC_OK bit is asserted */
-	while (DCDC_REG0_STS_DC_OK_MASK !=
-			(DCDC_REG0_STS_DC_OK_MASK & DCDC->REG0)) {
-		;
+	if (IS_ENABLED(CONFIG_ADJUST_DCDC)) {
+		/* Setting the VDD_SOC value */
+		DCDC->REG3 = (DCDC->REG3 & (~DCDC_REG3_TRG_MASK)) |
+				DCDC_REG3_TRG(CONFIG_DCDC_VALUE);
+		/* Waiting for DCDC_STS_DC_OK bit is asserted */
+		while (DCDC_REG0_STS_DC_OK_MASK != (DCDC_REG0_STS_DC_OK_MASK & DCDC->REG0)) {
+			;
+		}
 	}
 
 #ifdef CONFIG_INIT_ARM_PLL
+	/* ARM PLL configuration for RUN mode */
+	static const clock_arm_pll_config_t armPllConfig = {
+		.loopDivider = 100U
+	};
 	CLOCK_InitArmPll(&armPllConfig); /* Configure ARM PLL to 1200M */
 #endif
-#ifdef CONFIG_INIT_ENET_PLL
-	CLOCK_InitEnetPll(&ethPllConfig);
+
+	static const clock_enet_pll_config_t ethPllConfig = {
+		.enableClkOutput25M = IS_ENABLED(CONFIG_PTP_CLOCK_NXP_ENET),
+		.enableClkOutput = DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet)),
+		.loopDivider = DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet)),
+#if DT_NODE_EXISTS(DT_NODELABEL(enet2))
+		/* some platform don't have enet 2 and sdk doesn't have these fields for it */
+		.enableClkOutput1 = DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet2)),
+		.loopDivider1 = DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet2)),
 #endif
+#if IS_ENABLED(CONFIG_INIT_PLL6_500M)
+		/* this field only exists on some platforms, so ifdef is needed */
+		.enableClkOutput500M = true,
+#endif
+	};
+
+	if (IS_ENABLED(CONFIG_INIT_ENET_PLL)) {
+		CLOCK_InitEnetPll(&ethPllConfig);
+	}
+
 #ifdef CONFIG_INIT_VIDEO_PLL
+	static const clock_video_pll_config_t videoPllConfig = {
+		.loopDivider = 31,
+		.postDivider = 8,
+		.numerator = 0,
+		.denominator = 0,
+	};
 	CLOCK_InitVideoPll(&videoPllConfig);
 #endif
+
+	const clock_sys_pll_config_t sysPllConfig = {
+		.loopDivider = (DT_PROP(DT_CHILD(CCM_NODE, sys_pll), loop_div) - 20) / 2,
+		.numerator = DT_PROP(DT_CHILD(CCM_NODE, sys_pll), numerator),
+		.denominator = DT_PROP(DT_CHILD(CCM_NODE, sys_pll), denominator),
+		.src = DT_PROP(DT_CHILD(CCM_NODE, sys_pll), src),
+	};
+
+	if (IS_ENABLED(CONFIG_INIT_SYS_PLL)) {
+		CLOCK_InitSysPll(&sysPllConfig);
+	}
 
 #if DT_NODE_EXISTS(DT_CHILD(CCM_NODE, arm_podf))
 	/* Set ARM PODF */
@@ -172,8 +165,13 @@ static ALWAYS_INLINE void clock_init(void)
 	BUILD_ASSERT_PODF_IN_RANGE(ipg_podf, 1, 4);
 	CLOCK_SetDiv(kCLOCK_IpgDiv, DT_PROP(DT_CHILD(CCM_NODE, ipg_podf), clock_div) - 1);
 
+#ifdef CONFIG_SOC_MIMXRT1042
+	/* Set PRE_PERIPH_CLK to SYS_PLL */
+	CLOCK_SetMux(kCLOCK_PrePeriphMux, 0x0);
+#else
 	/* Set PRE_PERIPH_CLK to PLL1, 1200M */
 	CLOCK_SetMux(kCLOCK_PrePeriphMux, 0x3);
+#endif
 
 	/* Set PERIPH_CLK MUX to PRE_PERIPH_CLK */
 	CLOCK_SetMux(kCLOCK_PeriphMux, 0x0);
@@ -189,9 +187,22 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetDiv(kCLOCK_Lpi2cDiv, 5); /* Set I2C divider to 6 */
 #endif
 
-#ifdef CONFIG_SPI_MCUX_LPSPI
-	CLOCK_SetMux(kCLOCK_LpspiMux, 1); /* Set SPI source to USB1 PFD0 720M */
-	CLOCK_SetDiv(kCLOCK_LpspiDiv, 7); /* Set SPI divider to 8 */
+#ifdef CONFIG_SPI_NXP_LPSPI
+	/* Configure input clock to be able to reach the datasheet specified band rate. */
+	CLOCK_SetMux(kCLOCK_LpspiMux, 1); /* Set SPI source to USB1 PFD0 */
+	CLOCK_SetDiv(kCLOCK_LpspiDiv, 0); /* Set SPI divider to 1 */
+#endif
+
+#ifdef CONFIG_MCUX_FLEXIO
+	/* Configure input clock to be able to reach the datasheet specified baud rate.
+	 * FLEXIO can reach to 120MHz. Select USB pll(480M) as source and divide by 2.
+	 * pre divider by default is 1 which means divide by 2.
+	 */
+	CLOCK_SetMux(kCLOCK_Flexio1Mux, 3);
+	CLOCK_SetDiv(kCLOCK_Flexio1Div, 1);
+
+	CLOCK_SetMux(kCLOCK_Flexio2Mux, 3);
+	CLOCK_SetDiv(kCLOCK_Flexio2Div, 1);
 #endif
 
 #ifdef CONFIG_DISPLAY_MCUX_ELCDIF
@@ -207,8 +218,8 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay) && CONFIG_NET_L2_ETHERNET
-#if CONFIG_ETH_MCUX_RMII_EXT_CLK
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet)) && CONFIG_NET_L2_ETHERNET
+#if CONFIG_ETH_NXP_ENET_RMII_EXT_CLK
 	/* Enable clock input for ENET1 */
 	IOMUXC_EnableMode(IOMUXC_GPR, kIOMUXC_GPR_ENET1TxClkOutputDir, false);
 #else
@@ -217,37 +228,45 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet2), okay) && CONFIG_NET_L2_ETHERNET
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet2)) && CONFIG_NET_L2_ETHERNET
 	/* Set ENET2 ref clock to be generated by External OSC,*/
 	/* direction as output and frequency to 50MHz */
 	IOMUXC_EnableMode(IOMUXC_GPR, kIOMUXC_GPR_ENET2TxClkOutputDir |
 				kIOMUXC_GPR_ENET2RefClkMode, true);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usb1), okay) && CONFIG_USB_DC_NXP_EHCI
+#if ((DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb1)) && \
+	(CONFIG_USB_DC_NXP_EHCI || CONFIG_UDC_NXP_EHCI)) ||\
+	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usbh1)) && (CONFIG_UHC_NXP_EHCI)))
 	CLOCK_EnableUsbhs0PhyPllClock(kCLOCK_Usb480M,
 		DT_PROP_BY_PHANDLE(DT_NODELABEL(usb1), clocks, clock_frequency));
 	CLOCK_EnableUsbhs0Clock(kCLOCK_Usb480M,
 		DT_PROP_BY_PHANDLE(DT_NODELABEL(usb1), clocks, clock_frequency));
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb1)) && CONFIG_USB_DC_NXP_EHCI
 	USB_EhciPhyInit(kUSB_ControllerEhci0, CPU_XTAL_CLK_HZ, &usbPhyConfig);
 #endif
+#endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usb2), okay) && CONFIG_USB_DC_NXP_EHCI
+#if ((DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb2)) && \
+	(CONFIG_USB_DC_NXP_EHCI || CONFIG_UDC_NXP_EHCI)) ||\
+	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usbh2)) && (CONFIG_UHC_NXP_EHCI)))
 	CLOCK_EnableUsbhs1PhyPllClock(kCLOCK_Usb480M,
 		DT_PROP_BY_PHANDLE(DT_NODELABEL(usb2), clocks, clock_frequency));
 	CLOCK_EnableUsbhs1Clock(kCLOCK_Usb480M,
 		DT_PROP_BY_PHANDLE(DT_NODELABEL(usb2), clocks, clock_frequency));
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb1)) && CONFIG_USB_DC_NXP_EHCI
 	USB_EhciPhyInit(kUSB_ControllerEhci1, CPU_XTAL_CLK_HZ, &usbPhyConfig);
 #endif
+#endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_IMX_USDHC
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc1)) && CONFIG_IMX_USDHC
 	/* Configure USDHC clock source and divider */
 	CLOCK_InitSysPfd(kCLOCK_Pfd0, 24U);
 	CLOCK_SetDiv(kCLOCK_Usdhc1Div, 1U);
 	CLOCK_SetMux(kCLOCK_Usdhc1Mux, 1U);
 	CLOCK_EnableClock(kCLOCK_Usdhc1);
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc2), okay) && CONFIG_IMX_USDHC
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc2)) && CONFIG_IMX_USDHC
 	/* Configure USDHC clock source and divider */
 	CLOCK_InitSysPfd(kCLOCK_Pfd0, 24U);
 	CLOCK_SetDiv(kCLOCK_Usdhc2Div, 1U);
@@ -286,26 +305,35 @@ void imxrt_audio_codec_pll_init(uint32_t clock_name, uint32_t clk_src,
 					uint32_t clk_pre_div, uint32_t clk_src_div)
 {
 	switch (clock_name) {
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai1))
 	case IMX_CCM_SAI1_CLK:
 		CLOCK_SetMux(kCLOCK_Sai1Mux, clk_src);
 		CLOCK_SetDiv(kCLOCK_Sai1PreDiv, clk_pre_div);
 		CLOCK_SetDiv(kCLOCK_Sai1Div, clk_src_div);
 		break;
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai2))
 	case IMX_CCM_SAI2_CLK:
 		CLOCK_SetMux(kCLOCK_Sai2Mux, clk_src);
 		CLOCK_SetDiv(kCLOCK_Sai2PreDiv, clk_pre_div);
 		CLOCK_SetDiv(kCLOCK_Sai2Div, clk_src_div);
 		break;
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai3))
 	case IMX_CCM_SAI3_CLK:
-		CLOCK_SetMux(kCLOCK_Sai2Mux, clk_src);
-		CLOCK_SetDiv(kCLOCK_Sai2PreDiv, clk_pre_div);
-		CLOCK_SetDiv(kCLOCK_Sai2Div, clk_src_div);
+		CLOCK_SetMux(kCLOCK_Sai3Mux, clk_src);
+		CLOCK_SetDiv(kCLOCK_Sai3PreDiv, clk_pre_div);
+		CLOCK_SetDiv(kCLOCK_Sai3Div, clk_src_div);
 		break;
+#endif
 	default:
 		return;
 	}
 }
 #endif
+
+extern void rt10xx_power_init(void);
+extern void imxrt_lpm_init(void);
 
 /**
  *
@@ -313,32 +341,31 @@ void imxrt_audio_codec_pll_init(uint32_t clock_name, uint32_t clk_src,
  *
  * Initialize the interrupt controller device drivers.
  * Also initialize the timer device driver, if required.
- *
- * @return 0
  */
-
-static int imxrt_init(void)
+void soc_early_init_hook(void)
 {
 	sys_cache_instr_enable();
 	sys_cache_data_enable();
 
 	/* Initialize system clock */
 	clock_init();
-
-	return 0;
+#ifdef CONFIG_PM
+#ifdef CONFIG_SOC_MIMXRT1064
+	imxrt_lpm_init();
+#endif
+	rt10xx_power_init();
+#endif
 }
 
-#ifdef CONFIG_PLATFORM_SPECIFIC_INIT
-void z_arm_platform_init(void)
+#ifdef CONFIG_SOC_RESET_HOOK
+void soc_reset_hook(void)
 {
 	/* Call CMSIS SystemInit */
 	SystemInit();
 
 #if defined(FLEXRAM_RUNTIME_BANKS_USED)
 	/* Configure flexram if not running from RAM */
-	memc_flexram_dt_partition();
+	flexram_dt_partition();
 #endif
 }
 #endif
-
-SYS_INIT(imxrt_init, PRE_KERNEL_1, 0);

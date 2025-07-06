@@ -1,5 +1,6 @@
 board:
   name: stm32wb5mm_dk
+  full_name: STM32WB5MM-DK
   vendor: st
   socs:
     - name: stm32wb55xx

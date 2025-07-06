@@ -98,7 +98,7 @@ flash_gd32_get_parameters(const struct device *dev)
 	return &flash_gd32_parameters;
 }
 
-static const struct flash_driver_api flash_gd32_driver_api = {
+static DEVICE_API(flash, flash_gd32_driver_api) = {
 	.read = flash_gd32_read,
 	.write = flash_gd32_write,
 	.erase = flash_gd32_erase,

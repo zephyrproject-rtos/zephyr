@@ -4,7 +4,6 @@ common:
     - input
   build_only: true
   platform_allow:
-    - native_posix
     - native_sim
 tests:
   drivers.input.default: {}

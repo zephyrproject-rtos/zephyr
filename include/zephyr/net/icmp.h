@@ -6,10 +6,13 @@
 
 /** @file icmp.h
  *
+ * @brief ICMP sending and receiving.
+ *
  * @defgroup icmp Send and receive IPv4 or IPv6 ICMP Echo Request messages.
+ * @since 3.5
+ * @version 0.8.0
  * @ingroup networking
  * @{
- * @brief ICMP sending and receiving.
  */
 
 #ifndef ZEPHYR_INCLUDE_NET_ICMP_H_
@@ -27,10 +30,10 @@
 extern "C" {
 #endif
 
-#define NET_ICMPV4_ECHO_REQUEST 8
-#define NET_ICMPV4_ECHO_REPLY   0
-#define NET_ICMPV6_ECHO_REQUEST 128
-#define NET_ICMPV6_ECHO_REPLY   129
+#define NET_ICMPV4_ECHO_REQUEST 8    /**< ICMPv4 Echo-Request */
+#define NET_ICMPV4_ECHO_REPLY   0    /**< ICMPv4 Echo-Reply */
+#define NET_ICMPV6_ECHO_REQUEST 128  /**< ICMPv6 Echo-Request */
+#define NET_ICMPV6_ECHO_REPLY   129  /**< ICMPv6 Echo-Reply */
 
 struct net_icmp_ctx;
 struct net_icmp_ip_hdr;
@@ -136,7 +139,7 @@ struct net_icmp_ping_params {
 	/** Network packet priority. */
 	int priority;
 
-	/* Arbitrary payload data that will be included in the Echo Reply
+	/** Arbitrary payload data that will be included in the Echo Reply
 	 * verbatim. May be NULL.
 	 */
 	const void *data;
@@ -187,6 +190,30 @@ int net_icmp_send_echo_request(struct net_icmp_ctx *ctx,
 			       struct sockaddr *dst,
 			       struct net_icmp_ping_params *params,
 			       void *user_data);
+
+/**
+ * @brief Send ICMP echo request message without waiting during send.
+ *
+ * @details This function can be used to send ICMP Echo-Request from a system
+ *          workqueue handler which should not have any sleeps or waits.
+ *          This variant will do the net_buf allocations with K_NO_WAIT.
+ *          This will avoid a warning message in the log about the timeout.
+ *
+ * @param ctx ICMP context used in this request.
+ * @param iface Network interface, can be set to NULL in which case the
+ *        interface is selected according to destination address.
+ * @param dst IP address of the target host.
+ * @param params Echo-Request specific parameters. May be NULL in which case
+ *        suitable default parameters are used.
+ * @param user_data User supplied opaque data passed to the handler. May be NULL.
+ *
+ * @return Return 0 if the sending succeed, <0 otherwise.
+ */
+int net_icmp_send_echo_request_no_wait(struct net_icmp_ctx *ctx,
+				       struct net_if *iface,
+				       struct sockaddr *dst,
+				       struct net_icmp_ping_params *params,
+				       void *user_data);
 
 /**
  * @brief ICMP offload context structure.

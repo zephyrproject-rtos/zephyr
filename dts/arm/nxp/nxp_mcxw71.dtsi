@@ -1,0 +1,66 @@
+/*
+ * Copyright 2023-2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "nxp_mcxw7x_common.dtsi"
+
+&fmu {
+	ranges = <0x0 0x10000000 DT_SIZE_M(1)>;
+};
+
+&flash {
+	reg = <0x0 DT_SIZE_M(1)>;
+};
+
+&ctcm {
+	ranges = <0x0 0x14000000 DT_SIZE_K(16)>;
+};
+
+&ctcm0 {
+	reg = <0x0 DT_SIZE_K(16)>;
+};
+
+&stcm {
+	ranges = <0x0 0x30000000 DT_SIZE_K(112)>;
+
+	stcm1: system_memory@1a000 {
+		compatible = "zephyr,memory-region","mmio-sram";
+		reg = <0x1a000 DT_SIZE_K(8)>;
+		zephyr,memory-region = "RetainedMem";
+	};
+};
+
+&stcm0 {
+	/* With only the first 64KB having ECC */
+	reg = <0x0 DT_SIZE_K(104)>;
+};
+
+&pbridge2 {
+	reg = <0x0 0x4b000>;
+};
+
+&porta {
+	reg = <0x42000 0xdc>;
+};
+
+&portb {
+	reg = <0x43000 0xdc>;
+};
+
+&portc {
+	reg = <0x44000 0xdc>;
+};
+
+&portd {
+	reg = <0x45000 0xdc>;
+};
+
+&smu2 {
+	ranges = <0x0 0x1c0000 DT_SIZE_K(40)>;
+};
+
+&rtc {
+	reg = <0x4002c000 0x50>;
+};

@@ -8,7 +8,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/iterable_sections.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
@@ -28,6 +28,7 @@
 #include "foundation.h"
 #include "access.h"
 #include "proxy.h"
+#include "gatt.h"
 #include "proxy_msg.h"
 #include "crypto.h"
 
@@ -35,27 +36,17 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_mesh_gatt);
 
-#define PROXY_SVC_INIT_TIMEOUT K_MSEC(10)
-#define PROXY_SVC_REG_ATTEMPTS 5
-
 /* Interval to update random value in (10 minutes).
  *
  * Defined in the Bluetooth Mesh Specification v1.1, Section 7.2.2.2.4.
  */
 #define PROXY_RANDOM_UPDATE_INTERVAL (10 * 60 * MSEC_PER_SEC)
 
-#if defined(CONFIG_BT_MESH_PROXY_USE_DEVICE_NAME)
-#define ADV_OPT_USE_NAME BT_LE_ADV_OPT_USE_NAME
-#else
-#define ADV_OPT_USE_NAME 0
-#endif
-
 #define ADV_OPT_ADDR(private) (IS_ENABLED(CONFIG_BT_MESH_DEBUG_USE_ID_ADDR) ?                      \
 			       BT_LE_ADV_OPT_USE_IDENTITY : (private) ? BT_LE_ADV_OPT_USE_NRPA : 0)
 
 #define ADV_OPT_PROXY(private)                                                                     \
-	(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_SCANNABLE | ADV_OPT_ADDR(private) |             \
-	 BT_LE_ADV_OPT_ONE_TIME | ADV_OPT_USE_NAME)
+	(BT_LE_ADV_OPT_CONN | BT_LE_ADV_OPT_SCANNABLE | ADV_OPT_ADDR(private))
 
 static void proxy_send_beacons(struct k_work *work);
 static int proxy_send(struct bt_conn *conn,
@@ -283,7 +274,7 @@ static void proxy_cfg(struct bt_mesh_proxy_role *role)
 
 	rx.local_match = 1U;
 
-	if (bt_mesh_rpl_check(&rx, NULL)) {
+	if (bt_mesh_rpl_check(&rx, NULL, false)) {
 		LOG_WRN("Replay: src 0x%04x dst 0x%04x seq 0x%06x", rx.ctx.addr, rx.ctx.recv_dst,
 			rx.seq);
 		return;
@@ -510,6 +501,7 @@ static int enc_id_adv(struct bt_mesh_subnet *sub, uint8_t type,
 					 type == BT_MESH_ID_TYPE_PRIV_NODE),
 		ADV_FAST_INT,
 	};
+	struct bt_data sd[1];
 	int err;
 
 	err = bt_mesh_encrypt(&sub->keys[SUBNET_KEY_TX_IDX(sub)].identity, hash, hash);
@@ -529,9 +521,17 @@ static int enc_id_adv(struct bt_mesh_subnet *sub, uint8_t type,
 	proxy_svc_data[2] = type;
 	memcpy(&proxy_svc_data[3], &hash[8], 8);
 
+	if (IS_ENABLED(CONFIG_BT_MESH_PROXY_USE_DEVICE_NAME)) {
+		sd[0].type = BT_DATA_NAME_COMPLETE;
+		sd[0].data_len = BT_DEVICE_NAME_LEN;
+		sd[0].data = BT_DEVICE_NAME;
+	}
+
 	err = bt_mesh_adv_gatt_start(
 		type == BT_MESH_ID_TYPE_PRIV_NET ? &slow_adv_param : &fast_adv_param,
-		duration, enc_id_ad, ARRAY_SIZE(enc_id_ad), NULL, 0);
+		duration, enc_id_ad, ARRAY_SIZE(enc_id_ad),
+		IS_ENABLED(CONFIG_BT_MESH_PROXY_USE_DEVICE_NAME) ? sd : NULL,
+		IS_ENABLED(CONFIG_BT_MESH_PROXY_USE_DEVICE_NAME) ? ARRAY_SIZE(sd) : 0);
 	if (err) {
 		LOG_WRN("Failed to advertise using type 0x%02x (err %d)", type, err);
 		return err;
@@ -607,6 +607,7 @@ static int net_id_adv(struct bt_mesh_subnet *sub, int32_t duration)
 		.options = ADV_OPT_PROXY(false),
 		ADV_SLOW_INT,
 	};
+	struct bt_data sd[1];
 	int err;
 
 	proxy_svc_data[2] = BT_MESH_ID_TYPE_NET;
@@ -615,8 +616,17 @@ static int net_id_adv(struct bt_mesh_subnet *sub, int32_t duration)
 
 	memcpy(proxy_svc_data + 3, sub->keys[SUBNET_KEY_TX_IDX(sub)].net_id, 8);
 
+	if (IS_ENABLED(CONFIG_BT_MESH_PROXY_USE_DEVICE_NAME)) {
+		sd[0].type = BT_DATA_NAME_COMPLETE;
+		sd[0].data_len = BT_DEVICE_NAME_LEN;
+		sd[0].data = BT_DEVICE_NAME;
+	}
+
 	err = bt_mesh_adv_gatt_start(&slow_adv_param, duration, net_id_ad,
-				     ARRAY_SIZE(net_id_ad), NULL, 0);
+				     ARRAY_SIZE(net_id_ad),
+				     IS_ENABLED(CONFIG_BT_MESH_PROXY_USE_DEVICE_NAME) ? sd : NULL,
+				     IS_ENABLED(CONFIG_BT_MESH_PROXY_USE_DEVICE_NAME) ?
+					ARRAY_SIZE(sd) : 0);
 	if (err) {
 		LOG_WRN("Failed to advertise using Network ID (err %d)", err);
 		return err;
@@ -783,7 +793,7 @@ static int gatt_proxy_advertise(void)
 {
 	int err;
 
-	int32_t max_adv_duration;
+	int32_t max_adv_duration = 0;
 	int cnt;
 	struct bt_mesh_subnet *sub;
 	struct proxy_adv_request request;
@@ -887,10 +897,13 @@ static void subnet_evt(struct bt_mesh_subnet *sub, enum bt_mesh_key_evt evt)
 		if (sub == beacon_sub) {
 			beacon_sub = NULL;
 		}
+
+		bt_mesh_proxy_identity_stop(sub);
 	} else {
 		bt_mesh_proxy_beacon_send(sub);
-		bt_mesh_adv_gatt_update();
 	}
+
+	bt_mesh_adv_gatt_update();
 }
 
 BT_MESH_SUBNET_CB_DEFINE(gatt_services) = {
@@ -917,15 +930,15 @@ static ssize_t proxy_ccc_write(struct bt_conn *conn,
 	client = find_client(conn);
 	if (client->filter_type == NONE) {
 		client->filter_type = ACCEPT;
-		k_work_submit(&client->send_beacons);
+		bt_mesh_wq_submit(&client->send_beacons);
 	}
 
 	return sizeof(value);
 }
 
 /* Mesh Proxy Service Declaration */
-static struct _bt_gatt_ccc proxy_ccc =
-	BT_GATT_CCC_INITIALIZER(proxy_ccc_changed, proxy_ccc_write, NULL);
+static struct bt_gatt_ccc_managed_user_data proxy_ccc =
+	BT_GATT_CCC_MANAGED_USER_DATA_INIT(proxy_ccc_changed, proxy_ccc_write, NULL);
 
 static struct bt_gatt_attr proxy_attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_MESH_PROXY),
@@ -944,34 +957,6 @@ static struct bt_gatt_attr proxy_attrs[] = {
 };
 
 static struct bt_gatt_service proxy_svc = BT_GATT_SERVICE(proxy_attrs);
-static void svc_reg_work_handler(struct k_work *work);
-static struct k_work_delayable svc_reg_work = Z_WORK_DELAYABLE_INITIALIZER(svc_reg_work_handler);
-static uint32_t svc_reg_attempts;
-
-static void svc_reg_work_handler(struct k_work *work)
-{
-	int err;
-
-	err = bt_gatt_service_register(&proxy_svc);
-	if ((err == -EINVAL) && ((--svc_reg_attempts) > 0)) {
-		/* settings_load() didn't finish yet. Try again. */
-		(void)k_work_schedule(&svc_reg_work, PROXY_SVC_INIT_TIMEOUT);
-		return;
-	} else if (err) {
-		LOG_ERR("Unable to register Mesh Proxy Service (err %d)", err);
-		return;
-	}
-
-	service_registered = true;
-
-	for (int i = 0; i < ARRAY_SIZE(clients); i++) {
-		if (clients[i].cli) {
-			clients[i].filter_type = ACCEPT;
-		}
-	}
-
-	bt_mesh_adv_gatt_update();
-}
 
 int bt_mesh_proxy_gatt_enable(void)
 {
@@ -987,12 +972,21 @@ int bt_mesh_proxy_gatt_enable(void)
 		return -EBUSY;
 	}
 
-	svc_reg_attempts = PROXY_SVC_REG_ATTEMPTS;
-	err = k_work_schedule(&svc_reg_work, PROXY_SVC_INIT_TIMEOUT);
-	if (err < 0) {
-		LOG_ERR("Enabling GATT proxy failed (err %d)", err);
+	err = bt_gatt_service_register(&proxy_svc);
+	if (err) {
+		LOG_ERR("Unable to register Mesh Proxy Service (err %d)", err);
 		return err;
 	}
+
+	service_registered = true;
+
+	for (int i = 0; i < ARRAY_SIZE(clients); i++) {
+		if (clients[i].cli) {
+			clients[i].filter_type = ACCEPT;
+		}
+	}
+
+	bt_mesh_adv_gatt_update();
 
 	return 0;
 }

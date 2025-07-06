@@ -1,6 +1,9 @@
 # Copyright (c) 2023 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
 # SPDX-License-Identifier: Apache-2.0
 
+config SOC_FAMILY_RENESAS_RA
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
+
 if SOC_FAMILY_RENESAS_RA
 
 config SERIES_SPECIFIC_SOC_INIT

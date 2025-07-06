@@ -7,14 +7,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT adi_adxl367
-
 #include <string.h>
 #include <zephyr/logging/log.h>
 
 #include "adxl367.h"
 
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+#ifdef ADXL367_BUS_I2C
 
 LOG_MODULE_DECLARE(ADXL367, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -28,8 +26,9 @@ static int adxl367_bus_access(const struct device *dev, uint8_t reg,
 					 ADXL367_TO_REG(reg),
 					 (uint8_t *) data, length);
 	} else {
-		if (length != 1)
+		if (length != 1) {
 			return -EINVAL;
+		}
 
 		return i2c_reg_write_byte_dt(&config->i2c,
 					     ADXL367_TO_REG(reg),
@@ -100,4 +99,4 @@ int adxl367_i2c_init(const struct device *dev)
 
 	return 0;
 }
-#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */
+#endif /* ADXL367_BUS_I2C */

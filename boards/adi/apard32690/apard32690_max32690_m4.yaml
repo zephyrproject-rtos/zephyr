@@ -1,0 +1,23 @@
+identifier: apard32690/max32690/m4
+name: apard32690 m4
+vendor: adi
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - arduino_gpio
+  - arduino_serial
+  - arduino_spi
+  - pmod_spi
+  - pmod_gpio
+  - gpio
+  - serial
+  - spi
+  - trng
+  - counter
+  - w1
+  - memc
+ram: 1024
+flash: 3072

@@ -5,7 +5,7 @@
  */
 
 /**
- * @brief Common functions for Maxim DS2477,DS2485 1-Wire Masters
+ * @brief Common functions for Analog Devices DS2477,DS2485 1-Wire Masters
  */
 
 #include "w1_ds2477_85_common.h"

@@ -1,0 +1,31 @@
+# Copyright (c) 2024, TDK Invensense
+# SPDX-License-Identifier: Apache-2.0
+
+config LOG
+	default y
+
+config LOG_PRINTK
+	default y
+
+config SENSOR_LOG_LEVEL
+	default 4
+
+config PRESSURE_DRDY
+	bool "Enable pressure data ready interrupt"
+	default y
+
+config PRESSURE_THRESHOLD
+	bool "Enable pressure threshold interrupt"
+	default y
+
+config PRESSURE_DELTA
+	bool "Enable pressure delta interrupt"
+	default y
+
+choice ICP201XX_TRIGGER_MODE
+	default ICP201XX_TRIGGER_GLOBAL_THREAD
+	depends on ICP201XX
+
+endchoice
+
+source "Kconfig.zephyr"

@@ -63,31 +63,30 @@ this purpose, the :c:func:`input_to_hid_code` and
 :c:func:`input_to_hid_modifier` functions can be used to map input codes to HID
 codes and modifiers.
 
-Kscan Compatibility
-*******************
+General Purpose Drivers
+***********************
 
-Input devices generating X/Y/Touch events can be used in existing applications
-based on the :ref:`kscan_api` API by enabling both
-:kconfig:option:`CONFIG_INPUT` and :kconfig:option:`CONFIG_KSCAN`, defining a
-:dtcompatible:`zephyr,kscan-input` node as a child node of the corresponding
-input device and pointing the ``zephyr,keyboard-scan`` chosen node to the
-compatibility device node, for example:
+- :dtcompatible:`adc-keys`: for buttons connected to a resistor ladder.
+- :dtcompatible:`analog-axis`: for absolute position devices connected to an
+  ADC input (thumbsticks, sliders...).
+- :dtcompatible:`gpio-kbd-matrix`: for GPIO-connected keyboard matrices.
+- :dtcompatible:`gpio-keys`: for switches directly connected to a GPIO,
+  implements button debouncing.
+- :dtcompatible:`gpio-qdec`: for GPIO-connected quadrature encoders.
+- :dtcompatible:`input-keymap`: maps row/col/touch events from a keyboard
+  matrix to key events.
+- :dtcompatible:`zephyr,input-longpress`: listens for key events, emits events
+  for short and long press.
+- :dtcompatible:`zephyr,input-double-tap`: listens for key events, emits events
+  for input double taps
+- :dtcompatible:`zephyr,lvgl-button-input`
+  :dtcompatible:`zephyr,lvgl-encoder-input`
+  :dtcompatible:`zephyr,lvgl-keypad-input`
+  :dtcompatible:`zephyr,lvgl-pointer-input`: listens for input events and
+  translates those to various types of LVGL input devices.
 
-.. code-block:: devicetree
-
-    chosen {
-        zephyr,keyboard-scan = &kscan_input;
-    };
-
-    ft5336@38 {
-        ...
-        kscan_input: kscan-input {
-            compatible = "zephyr,kscan-input";
-        };
-    };
-
-Driver Documentation
-********************
+Detailed Driver Documentation
+*****************************
 
 .. toctree::
    :maxdepth: 1
@@ -109,3 +108,8 @@ Analog Axis API Reference
 *************************
 
 .. doxygengroup:: input_analog_axis
+
+Touchscreen API Reference
+*************************
+
+.. doxygengroup:: touch_events

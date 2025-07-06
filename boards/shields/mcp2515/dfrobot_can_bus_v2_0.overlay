@@ -15,7 +15,6 @@
 		status = "okay";
 		reg = <0x0>;
 		osc-freq = <16000000>;
-		bus-speed = <125000>;
 
 		can-transceiver {
 			min-bitrate = <60000>;

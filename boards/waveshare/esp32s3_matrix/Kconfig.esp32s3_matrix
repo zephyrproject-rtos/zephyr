@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Joel Guittet
+# Copyright (c) 2025 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ESP32S3_MATRIX
+	select SOC_ESP32S3_R2
+	select SOC_ESP32S3_PROCPU if BOARD_ESP32S3_MATRIX_ESP32S3_PROCPU
+	select SOC_ESP32S3_APPCPU if BOARD_ESP32S3_MATRIX_ESP32S3_APPCPU

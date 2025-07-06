@@ -1,0 +1,11 @@
+#Copyright (c) 2025 Måns Ansgariusson <mansgariusson@gmail.com>
+#
+#SPDX-License-Identifier: Apache-2.0
+
+config RTC_RX8130CE
+	bool "EPSON rx8130ce rtc driver"
+	default y
+	depends on DT_HAS_EPSON_RX8130CE_RTC_ENABLED
+	select I2C
+	help
+	  Enable RTC driver for the Epson rx8130ce rtc

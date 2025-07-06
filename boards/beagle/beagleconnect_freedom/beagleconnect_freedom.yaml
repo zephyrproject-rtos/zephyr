@@ -7,11 +7,12 @@ flash: 704
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - gpio
   - i2c
   - spi
   - uart
   - hwinfo
+  - adc
+  - pwm
 vendor: beagle

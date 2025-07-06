@@ -18,6 +18,7 @@
 #include "util/mem.h"
 #include "util/memq.h"
 #include "util/dbuf.h"
+#include "util/mayfly.h"
 
 #include "pdu_df.h"
 #include "lll/pdu_vendor.h"
@@ -31,12 +32,22 @@
 #include "lll/lll_df_types.h"
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
+#include "lll_sync.h"
+#include "lll_sync_iso.h"
+#include "lll_scan.h"
+#include "lll/lll_adv_types.h"
+#include "lll_adv.h"
+#include "lll/lll_adv_pdu.h"
 
 #include "ull_tx_queue.h"
 
 #include "isoal.h"
 #include "ull_iso_types.h"
 #include "ull_conn_iso_types.h"
+#include "ull_sync_types.h"
+#include "ull_scan_types.h"
+#include "ull_adv_types.h"
+#include "ull_adv_internal.h"
 #include "ull_iso_internal.h"
 #include "ull_conn_iso_internal.h"
 #include "ull_peripheral_iso_internal.h"
@@ -46,6 +57,7 @@
 #include "ull_llcp.h"
 #include "ull_conn_internal.h"
 #include "ull_internal.h"
+#include "ull_sync_internal.h"
 #include "ull_llcp_features.h"
 #include "ull_llcp_internal.h"
 
@@ -54,7 +66,7 @@
 
 /* LLCP Local Procedure FSM states */
 enum {
-	LP_COMMON_STATE_IDLE,
+	LP_COMMON_STATE_IDLE = LLCP_STATE_IDLE,
 	LP_COMMON_STATE_WAIT_TX,
 	LP_COMMON_STATE_WAIT_TX_ACK,
 	LP_COMMON_STATE_WAIT_RX,
@@ -84,7 +96,7 @@ enum {
 
 /* LLCP Remote Procedure Common FSM states */
 enum {
-	RP_COMMON_STATE_IDLE,
+	RP_COMMON_STATE_IDLE = LLCP_STATE_IDLE,
 	RP_COMMON_STATE_WAIT_RX,
 	RP_COMMON_STATE_POSTPONE_TERMINATE,
 	RP_COMMON_STATE_WAIT_TX,
@@ -417,7 +429,7 @@ static void lp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	}
 
 	if (!piggy_back) {
-		/* Enqueue notification towards LL, unless we re-use RX node,
+		/* Enqueue notification towards LL, unless we reuse RX node,
 		 * in which case it is handled on the ull_cp_rx return path
 		 */
 		ll_rx_put_sched(ntf->hdr.link, ntf);
@@ -921,11 +933,6 @@ void llcp_lp_comm_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_
 	lp_comm_execute_fsm(conn, ctx, LP_COMMON_EVT_RESPONSE, rx->pdu);
 }
 
-void llcp_lp_comm_init_proc(struct proc_ctx *ctx)
-{
-	ctx->state = LP_COMMON_STATE_IDLE;
-}
-
 void llcp_lp_comm_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 {
 	lp_comm_execute_fsm(conn, ctx, LP_COMMON_EVT_RUN, param);
@@ -1139,6 +1146,7 @@ static void rp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t gene
 
 	/* Allocate ntf node */
 	ntf = ctx->node_ref.rx;
+	ctx->node_ref.rx = NULL;
 	LL_ASSERT(ntf);
 
 	/* This should be an 'old' RX node, so put/sched when done */
@@ -1419,11 +1427,6 @@ void llcp_rp_comm_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_
 void llcp_rp_comm_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx)
 {
 	rp_comm_execute_fsm(conn, ctx, RP_COMMON_EVT_ACK, tx->pdu);
-}
-
-void llcp_rp_comm_init_proc(struct proc_ctx *ctx)
-{
-	ctx->state = RP_COMMON_STATE_IDLE;
 }
 
 void llcp_rp_comm_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)

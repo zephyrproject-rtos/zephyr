@@ -1,0 +1,18 @@
+arch: xtensa
+type: mcu
+toolchain:
+  - xt-clang
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+    - mcumgr
+variants:
+  mt8195/mt8195/adsp:
+    name: MediaTek MT8195 Audio DSP
+  mt8188/mt8188/adsp:
+    name: MediaTek MT8188 Audio DSP
+  mt8186/mt8186/adsp:
+    name: MediaTek MT8186 Audio DSP
+  mt8196/mt8196/adsp:
+    name: MediaTek MT8196 Audio DSP

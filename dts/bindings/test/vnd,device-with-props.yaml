@@ -14,3 +14,12 @@ properties:
 
   baz:
     type: int
+
+  bool-foo:
+    type: boolean
+
+  bool-bar:
+    type: boolean
+
+  bool-baz:
+    type: boolean

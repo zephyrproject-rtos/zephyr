@@ -73,6 +73,17 @@ Afterwards, ifaces can become ready or unready without firing additional events,
 
 When there are no longer any ready ifaces left, the :c:macro:`NET_EVENT_L4_DISCONNECTED` :ref:`network management <net_mgmt_interface>` event is triggered, and IP connectivity is said to be unready.
 
+.. note::
+
+   Connection Manager also fires the following more specific ``CONNECTED`` / ``DISCONNECTED`` events:
+
+   - :c:macro:`NET_EVENT_L4_IPV4_CONNECTED`
+   - :c:macro:`NET_EVENT_L4_IPV4_DISCONNECTED`
+   - :c:macro:`NET_EVENT_L4_IPV6_CONNECTED`
+   - :c:macro:`NET_EVENT_L4_IPV6_DISCONNECTED`
+
+   These are similar to :c:macro:`NET_EVENT_L4_CONNECTED` and :c:macro:`NET_EVENT_L4_DISCONNECTED`, but specifically track whether IPv4- and IPv6-capable ifaces are ready.
+
 .. _conn_mgr_monitoring_usage:
 
 Usage
@@ -300,7 +311,7 @@ If this happens, the :ref:`timeout event<conn_mgr_control_events_timeout>` is ra
 Connection Persistence
 ----------------------
 
-Each iface also has a connection persistence setting that you can enable or disable by setting the :c:enumerator:`~conn_mgr_if_flag.CONN_MGR_IF_PERSISTENT` flag with :c:func:`conn_mgr_binding_set_flag`.
+Each iface also has a connection persistence setting that you can enable or disable by setting the :c:enumerator:`CONN_MGR_IF_PERSISTENT` flag with :c:func:`conn_mgr_binding_set_flag`.
 
 This setting specifies how the iface should handle unintentional connection loss.
 
@@ -405,7 +416,7 @@ There are a few actions related to connectivity that are (by default at least) p
 
    In Zephyr, ifaces are automatically taken admin-up (see :ref:`net_if_interface_state_management` for details on iface states) during initialization.
 
-   Applications can disable this behavior by setting the :c:enumerator:`~net_if_flag.NET_IF_NO_AUTO_START` interface flag with :c:func:`net_if_flag_set`.
+   Applications can disable this behavior by setting the :c:enumerator:`NET_IF_NO_AUTO_START` interface flag with :c:func:`net_if_flag_set`.
 
 .. _conn_mgr_control_automations_auto_connect:
 
@@ -413,7 +424,7 @@ There are a few actions related to connectivity that are (by default at least) p
 
    By default, Connection Manager will automatically connect any :ref:`bound <conn_mgr_impl_binding>` iface that becomes admin-up.
 
-   Applications can disable this by setting the :c:enumerator:`~conn_mgr_if_flag.CONN_MGR_IF_NO_AUTO_CONNECT` connectivity flag with :c:func:`conn_mgr_if_set_flag`.
+   Applications can disable this by setting the :c:enumerator:`CONN_MGR_IF_NO_AUTO_CONNECT` connectivity flag with :c:func:`conn_mgr_if_set_flag`.
 
 .. _conn_mgr_control_automations_auto_down:
 
@@ -421,7 +432,7 @@ There are a few actions related to connectivity that are (by default at least) p
 
    By default, Connection Manager will automatically take any bound iface admin-down if it has given up on associating.
 
-   Applications can disable this for all ifaces by disabling the :kconfig:option:`CONFIG_NET_CONNECTION_MANAGER_AUTO_IF_DOWN` Kconfig option, or for individual ifaces by setting the :c:enumerator:`~conn_mgr_if_flag.CONN_MGR_IF_NO_AUTO_DOWN` connectivity flag with :c:func:`conn_mgr_if_set_flag`.
+   Applications can disable this for all ifaces by disabling the :kconfig:option:`CONFIG_NET_CONNECTION_MANAGER_AUTO_IF_DOWN` Kconfig option, or for individual ifaces by setting the :c:enumerator:`CONN_MGR_IF_NO_AUTO_DOWN` connectivity flag with :c:func:`conn_mgr_if_set_flag`.
 
 .. _conn_mgr_control_api:
 

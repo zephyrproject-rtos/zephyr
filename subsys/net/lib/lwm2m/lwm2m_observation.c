@@ -83,16 +83,164 @@ struct notification_attrs {
 };
 
 /* write-attribute related definitions */
-static const char *const LWM2M_ATTR_STR[] = {"pmin", "pmax", "gt", "lt", "st"};
 static const uint8_t LWM2M_ATTR_LEN[] = {4, 4, 2, 2, 2};
 
 static struct lwm2m_attr write_attr_pool[CONFIG_LWM2M_NUM_ATTR];
+
+/* Notification value register is used to store the resource values sent in
+ * the last notification, for resources that carry one of the numerical
+ * gt/lt/st attributes. This value is needed to determine whether notification
+ * send conditions are satisfied for given attributes.
+ */
+static struct lwm2m_notify_value_register {
+	/* A pointer to the corresponding resource instance. */
+	const struct lwm2m_engine_res_inst *ref;
+
+	/* Last notified resource value. */
+	double value;
+
+	/* Whether resource was notified already or not. */
+	bool notified : 1;
+} notify_value_pool[CONFIG_LWM2M_MAX_NOTIFIED_NUMERICAL_RES_TRACKED];
 
 /* Forward declarations */
 
 void lwm2m_engine_free_list(sys_slist_t *path_list, sys_slist_t *free_list);
 
 struct lwm2m_obj_path_list *lwm2m_engine_get_from_list(sys_slist_t *path_list);
+
+static struct lwm2m_notify_value_register *notify_value_reg_alloc(
+	const struct lwm2m_engine_res_inst *ref)
+{
+	for (int i = 0; i < ARRAY_SIZE(notify_value_pool); i++) {
+		if (notify_value_pool[i].ref == NULL) {
+			notify_value_pool[i].ref = ref;
+			notify_value_pool[i].notified = false;
+
+			return &notify_value_pool[i];
+		}
+	}
+
+	return NULL;
+}
+
+static void notify_value_reg_free(const struct lwm2m_engine_res_inst *ref)
+{
+	for (int i = 0; i < ARRAY_SIZE(notify_value_pool); i++) {
+		if (ref == notify_value_pool[i].ref) {
+			(void)memset(&notify_value_pool[i], 0,
+				     sizeof(notify_value_pool[i]));
+			break;
+		}
+	}
+}
+
+static struct lwm2m_notify_value_register *notify_value_reg_get(
+	const struct lwm2m_engine_res_inst *ref)
+{
+	for (int i = 0; i < ARRAY_SIZE(notify_value_pool); i++) {
+		if (ref == notify_value_pool[i].ref) {
+			return &notify_value_pool[i];
+		}
+	}
+
+	return NULL;
+}
+
+static int notify_value_reg_inst_update(const struct lwm2m_engine_res_inst *ref,
+					bool enable)
+{
+	struct lwm2m_notify_value_register *notify_reg;
+
+	if (ref->res_inst_id == RES_INSTANCE_NOT_CREATED) {
+		return 0;
+	}
+
+	if (!enable) {
+		notify_value_reg_free(ref);
+		return 0;
+	}
+
+	notify_reg = notify_value_reg_get(ref);
+	if (notify_reg == NULL) {
+		notify_reg = notify_value_reg_alloc(ref);
+	}
+
+	if (notify_reg == NULL) {
+		LOG_ERR("Failed to allocate entry in notify registry");
+		return -ENOMEM;
+	}
+
+	return 0;
+}
+
+static int notify_value_reg_update(uint8_t level, void *ref, bool enable)
+{
+	struct lwm2m_engine_res *res;
+	int ret;
+
+	if (level < LWM2M_PATH_LEVEL_RESOURCE) {
+		return -EINVAL;
+	}
+
+	if (level == LWM2M_PATH_LEVEL_RESOURCE_INST) {
+		return notify_value_reg_inst_update(ref, enable);
+	}
+
+	/* Resource level - need to allocate value registers for all instances */
+	res = ref;
+	for (int i = 0; i < res->res_inst_count; i++) {
+		ret = notify_value_reg_inst_update(&res->res_instances[i],
+						   enable);
+		if (ret < 0) {
+			goto cleanup;
+		}
+	}
+
+	return 0;
+
+cleanup:
+	for (int i = 0; i < res->res_inst_count; i++) {
+		bool skip = false;
+
+		for (int j = 0; j < ARRAY_SIZE(write_attr_pool); j++) {
+			struct lwm2m_attr *attr = &write_attr_pool[j];
+
+			/* If register was allocated individually for the resource
+			 * instance earlier - skip.
+			 */
+			if (attr->ref == &res->res_instances[i] &&
+			    (attr->type == LWM2M_ATTR_LT ||
+			     attr->type == LWM2M_ATTR_GT ||
+			     attr->type == LWM2M_ATTR_STEP)) {
+				skip = true;
+				break;
+			}
+		}
+
+		(void)notify_value_reg_inst_update(&res->res_instances[i], false);
+	}
+
+	return -ENOMEM;
+}
+
+const char *const lwm2m_attr_to_str(uint8_t type)
+{
+	switch (type) {
+	case LWM2M_ATTR_PMIN:
+		return "pmin";
+	case LWM2M_ATTR_PMAX:
+		return "pmax";
+	case LWM2M_ATTR_GT:
+		return "gt";
+	case LWM2M_ATTR_LT:
+		return "lt";
+	case LWM2M_ATTR_STEP:
+		return "st";
+	default:
+		return "unknown";
+	}
+}
 
 static int update_attrs(void *ref, struct notification_attrs *out)
 {
@@ -131,7 +279,7 @@ static int update_attrs(void *ref, struct notification_attrs *out)
 	return 0;
 }
 
-void clear_attrs(void *ref)
+void clear_attrs(uint8_t level, void *ref)
 {
 	int i;
 
@@ -140,6 +288,8 @@ void clear_attrs(void *ref)
 			(void)memset(&write_attr_pool[i], 0, sizeof(write_attr_pool[i]));
 		}
 	}
+
+	(void)notify_value_reg_update(level, ref, false);
 }
 
 static bool lwm2m_observer_path_compare(const struct lwm2m_obj_path *o_p,
@@ -334,6 +484,151 @@ int engine_observe_attribute_list_get(sys_slist_t *path_list, struct notificatio
 	return 0;
 }
 
+static int resource_value_as_double(const struct lwm2m_obj_path *path,
+				    double *value)
+{
+	struct lwm2m_engine_obj_field *obj_field;
+	union {
+		int64_t s64;
+		int32_t s32;
+		int16_t s16;
+		int8_t s8;
+		uint32_t u32;
+		uint16_t u16;
+		uint8_t u8;
+	} temp_buf = { 0 };
+	int ret;
+
+	lwm2m_registry_lock();
+
+	ret = path_to_objs(path, NULL, &obj_field, NULL, NULL);
+	if (ret < 0 || obj_field == NULL) {
+		lwm2m_registry_unlock();
+		return -ENOENT;
+	}
+
+	switch (obj_field->data_type) {
+	case LWM2M_RES_TYPE_U32:
+		ret = lwm2m_get_u32(path, &temp_buf.u32);
+		*value = (double)temp_buf.u32;
+		break;
+	case LWM2M_RES_TYPE_U16:
+		ret = lwm2m_get_u16(path, &temp_buf.u16);
+		*value = (double)temp_buf.u16;
+		break;
+	case LWM2M_RES_TYPE_U8:
+		ret = lwm2m_get_u8(path, &temp_buf.u8);
+		*value = (double)temp_buf.u8;
+		break;
+	case LWM2M_RES_TYPE_S64:
+		ret = lwm2m_get_s64(path, &temp_buf.s64);
+		*value = (double)temp_buf.s64;
+		break;
+	case LWM2M_RES_TYPE_S32:
+		ret = lwm2m_get_s32(path, &temp_buf.s32);
+		*value = (double)temp_buf.s32;
+		break;
+	case LWM2M_RES_TYPE_S16:
+		ret = lwm2m_get_s16(path, &temp_buf.s16);
+		*value = (double)temp_buf.s16;
+		break;
+	case LWM2M_RES_TYPE_S8:
+		ret = lwm2m_get_s8(path, &temp_buf.s8);
+		*value = (double)temp_buf.s8;
+		break;
+	case LWM2M_RES_TYPE_FLOAT:
+		ret = lwm2m_get_f64(path, value);
+		break;
+	default:
+		ret = -ENOTSUP;
+		break;
+	}
+
+	lwm2m_registry_unlock();
+
+	return ret;
+}
+
+static bool value_conditions_satisfied(const struct lwm2m_obj_path *path,
+				       uint16_t srv_obj_inst)
+{
+	struct lwm2m_notify_value_register *last_notified;
+	struct notification_attrs attrs = { 0 };
+	double res_value, old_value;
+	void *ref;
+	int ret;
+
+	/* Value check only applies to resource or resource instance levels. */
+	if (path->level < LWM2M_PATH_LEVEL_RESOURCE) {
+		return true;
+	}
+
+	ret = engine_observe_get_attributes(path, &attrs, srv_obj_inst);
+	if (ret < 0) {
+		return true;
+	}
+
+	/* Check if any of the value attributes is actually set. */
+	if ((attrs.flags & (BIT(LWM2M_ATTR_GT) |
+			    BIT(LWM2M_ATTR_LT) |
+			    BIT(LWM2M_ATTR_STEP))) == 0) {
+		return true;
+	}
+
+	ret = lwm2m_get_path_reference_ptr(NULL, path, &ref);
+	if (ret < 0 || ref == NULL) {
+		return true;
+	}
+
+	/* Notification value register uses resource instance pointer as ref */
+	if (path->level == LWM2M_PATH_LEVEL_RESOURCE) {
+		struct lwm2m_engine_res *res = ref;
+
+		ref = res->res_instances;
+		if (ref == NULL) {
+			return true;
+		}
+	}
+
+	last_notified = notify_value_reg_get(ref);
+	if (last_notified == NULL || !last_notified->notified) {
+		return true;
+	}
+
+	old_value = last_notified->value;
+
+	/* Value check only applies to numerical resources. */
+	ret = resource_value_as_double(path, &res_value);
+	if (ret < 0) {
+		return true;
+	}
+
+	if ((attrs.flags & BIT(LWM2M_ATTR_STEP)) != 0) {
+		double res_diff = old_value > res_value ?
+				  old_value - res_value : res_value - old_value;
+
+		if (res_diff >= attrs.st) {
+			return true;
+		}
+	}
+
+	if ((attrs.flags & BIT(LWM2M_ATTR_GT)) != 0) {
+		if ((old_value <= attrs.gt && res_value > attrs.gt) ||
+		    (old_value >= attrs.gt && res_value < attrs.gt)) {
+			return true;
+		}
+	}
+
+	if ((attrs.flags & BIT(LWM2M_ATTR_LT)) != 0) {
+		if ((old_value <= attrs.lt && res_value > attrs.lt) ||
+		    (old_value >= attrs.lt && res_value < attrs.lt)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 int lwm2m_notify_observer_path(const struct lwm2m_obj_path *path)
 {
 	struct observe_node *obs;
@@ -356,6 +651,10 @@ int lwm2m_notify_observer_path(const struct lwm2m_obj_path *path)
 									sock_ctx[i]->srv_obj_inst);
 				if (ret < 0) {
 					return ret;
+				}
+
+				if (!value_conditions_satisfied(path, sock_ctx[i]->srv_obj_inst)) {
+					continue;
 				}
 
 				if (nattrs.pmin) {
@@ -607,6 +906,8 @@ static int engine_add_observer(struct lwm2m_message *msg, const uint8_t *token, 
 			msg->path.obj_inst_id, msg->path.res_id, msg->path.level,
 			lwm2m_sprint_ip_addr(&msg->ctx->remote_addr));
 
+		lwm2m_engine_observer_refresh_notified_values(obs);
+
 		return 0;
 	}
 
@@ -622,6 +923,8 @@ static int engine_add_observer(struct lwm2m_message *msg, const uint8_t *token, 
 	}
 
 	engine_observe_node_init(obs, token, msg->ctx, tkl, format, attrs.pmax);
+	lwm2m_engine_observer_refresh_notified_values(obs);
+
 	return 0;
 }
 
@@ -695,6 +998,8 @@ static int engine_add_composite_observer(struct lwm2m_message *msg, const uint8_
 		LOG_DBG("OBSERVER Composite DUPLICATE [%s]",
 			lwm2m_sprint_ip_addr(&msg->ctx->remote_addr));
 
+		lwm2m_engine_observer_refresh_notified_values(obs);
+
 		return do_composite_read_op_for_parsed_list(msg, format, &lwm2m_path_list);
 	}
 
@@ -708,6 +1013,8 @@ static int engine_add_composite_observer(struct lwm2m_message *msg, const uint8_
 		return -ENOMEM;
 	}
 	engine_observe_node_init(obs, token, msg->ctx, tkl, format, attrs.pmax);
+	lwm2m_engine_observer_refresh_notified_values(obs);
+
 	return do_composite_read_op_for_parsed_list(msg, format, &lwm2m_path_list);
 }
 
@@ -873,10 +1180,10 @@ static int lwm2m_update_or_allocate_attribute(void *ref, uint8_t type, void *dat
 
 		if (type <= LWM2M_ATTR_PMAX) {
 			attr->int_val = *(int32_t *)data;
-			LOG_DBG("Update %s to %d", LWM2M_ATTR_STR[type], attr->int_val);
+			LOG_DBG("Update %s to %d", lwm2m_attr_to_str(type), attr->int_val);
 		} else {
 			attr->float_val = *(double *)data;
-			LOG_DBG("Update %s to %f", LWM2M_ATTR_STR[type], attr->float_val);
+			LOG_DBG("Update %s to %f", lwm2m_attr_to_str(type), attr->float_val);
 		}
 		return 0;
 	}
@@ -899,10 +1206,10 @@ static int lwm2m_update_or_allocate_attribute(void *ref, uint8_t type, void *dat
 
 	if (type <= LWM2M_ATTR_PMAX) {
 		attr->int_val = *(int32_t *)data;
-		LOG_DBG("Add %s to %d", LWM2M_ATTR_STR[type], attr->int_val);
+		LOG_DBG("Add %s to %d", lwm2m_attr_to_str(type), attr->int_val);
 	} else {
 		attr->float_val = *(double *)data;
-		LOG_DBG("Add %s to %f", LWM2M_ATTR_STR[type], attr->float_val);
+		LOG_DBG("Add %s to %f", lwm2m_attr_to_str(type), attr->float_val);
 	}
 	return 0;
 }
@@ -913,7 +1220,7 @@ const char *lwm2m_engine_get_attr_name(const struct lwm2m_attr *attr)
 		return NULL;
 	}
 
-	return LWM2M_ATTR_STR[attr->type];
+	return lwm2m_attr_to_str(attr->type);
 }
 
 static int lwm2m_engine_observer_timestamp_update(sys_slist_t *observer,
@@ -1047,20 +1354,6 @@ int lwm2m_update_observer_min_period(struct lwm2m_ctx *client_ctx,
 	return lwm2m_update_or_allocate_attribute(ref, LWM2M_ATTR_PMIN, &period_s);
 }
 
-int lwm2m_engine_update_observer_min_period(struct lwm2m_ctx *client_ctx, const char *pathstr,
-					    uint32_t period_s)
-{
-	int ret;
-	struct lwm2m_obj_path path;
-
-	ret = lwm2m_string_to_path(pathstr, &path, '/');
-	if (ret < 0) {
-		return ret;
-	}
-
-	return lwm2m_update_observer_min_period(client_ctx, &path, period_s);
-}
-
 int lwm2m_update_observer_max_period(struct lwm2m_ctx *client_ctx,
 				     const struct lwm2m_obj_path *path, uint32_t period_s)
 {
@@ -1107,20 +1400,6 @@ int lwm2m_update_observer_max_period(struct lwm2m_ctx *client_ctx,
 						      client_ctx->srv_obj_inst);
 }
 
-int lwm2m_engine_update_observer_max_period(struct lwm2m_ctx *client_ctx, const char *pathstr,
-					    uint32_t period_s)
-{
-	int ret;
-	struct lwm2m_obj_path path;
-
-	ret = lwm2m_string_to_path(pathstr, &path, '/');
-	if (ret < 0) {
-		return ret;
-	}
-
-	return lwm2m_update_observer_max_period(client_ctx, &path, period_s);
-}
-
 struct lwm2m_attr *lwm2m_engine_get_next_attr(const void *ref, struct lwm2m_attr *prev)
 {
 	struct lwm2m_attr *iter = (prev == NULL) ? write_attr_pool : prev + 1;
@@ -1140,6 +1419,33 @@ struct lwm2m_attr *lwm2m_engine_get_next_attr(const void *ref, struct lwm2m_attr
 	}
 
 	return result;
+}
+
+static bool is_resource_numerical(const struct lwm2m_obj_path *path)
+{
+	struct lwm2m_engine_obj_field *obj_field;
+	int ret;
+
+	ret = path_to_objs(path, NULL, &obj_field, NULL, NULL);
+	if (ret < 0 || obj_field == NULL) {
+		return false;
+	}
+
+	switch (obj_field->data_type) {
+	case LWM2M_RES_TYPE_U32:
+	case LWM2M_RES_TYPE_U16:
+	case LWM2M_RES_TYPE_U8:
+	case LWM2M_RES_TYPE_S64:
+	case LWM2M_RES_TYPE_S32:
+	case LWM2M_RES_TYPE_S16:
+	case LWM2M_RES_TYPE_S8:
+	case LWM2M_RES_TYPE_FLOAT:
+		return true;
+	default:
+		break;
+	}
+
+	return false;
 }
 
 int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj, struct lwm2m_message *msg)
@@ -1203,7 +1509,8 @@ int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj, struct lwm2m_message 
 		/* matching attribute name */
 		for (type = 0U; type < NR_LWM2M_ATTR; type++) {
 			if (LWM2M_ATTR_LEN[type] == plen &&
-			    !memcmp(options[i].value, LWM2M_ATTR_STR[type], LWM2M_ATTR_LEN[type])) {
+			    !memcmp(options[i].value, lwm2m_attr_to_str(type),
+				    LWM2M_ATTR_LEN[type])) {
 				break;
 			}
 		}
@@ -1222,8 +1529,12 @@ int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj, struct lwm2m_message 
 			continue;
 		}
 
-		/* gt/lt/st cannot be assigned to obj/obj_inst unless unset */
-		if (plen == 2 && msg->path.level <= 2U) {
+		/* gt/lt/st cannot be assigned to obj/obj_inst unless unset.
+		 * They also can only be applied to numerical resources.
+		 */
+		if (plen == 2 &&
+		    (msg->path.level <= LWM2M_PATH_LEVEL_OBJECT_INST ||
+		     !is_resource_numerical(&msg->path))) {
 			return -EEXIST;
 		}
 
@@ -1252,7 +1563,7 @@ int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj, struct lwm2m_message 
 		}
 
 		if (ret < 0) {
-			LOG_ERR("invalid attr[%s] value", LWM2M_ATTR_STR[type]);
+			LOG_ERR("invalid attr[%s] value", lwm2m_attr_to_str(type));
 			/* bad request */
 			return -EEXIST;
 		}
@@ -1288,6 +1599,21 @@ int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj, struct lwm2m_message 
 		}
 	}
 
+	if (msg->path.level >= LWM2M_PATH_LEVEL_RESOURCE) {
+		bool enable = false;
+
+		if ((nattrs.flags & (BIT(LWM2M_ATTR_LT) |
+				     BIT(LWM2M_ATTR_GT) |
+				     BIT(LWM2M_ATTR_STEP))) != 0) {
+			enable = true;
+		}
+
+		ret = notify_value_reg_update(msg->path.level, ref, enable);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
 	/* find matching attributes */
 	for (i = 0; i < CONFIG_LWM2M_NUM_ATTR; i++) {
 		if (ref != write_attr_pool[i].ref) {
@@ -1298,7 +1624,7 @@ int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj, struct lwm2m_message 
 		type = attr->type;
 
 		if (!(BIT(type) & nattrs.flags)) {
-			LOG_DBG("Unset attr %s", LWM2M_ATTR_STR[type]);
+			LOG_DBG("Unset attr %s", lwm2m_attr_to_str(type));
 			(void)memset(attr, 0, sizeof(*attr));
 
 			if (type <= LWM2M_ATTR_PMAX) {
@@ -1318,7 +1644,7 @@ int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj, struct lwm2m_message 
 			attr->int_val = *(int32_t *)nattr_ptrs[type];
 			update_observe_node = true;
 
-			LOG_DBG("Update %s to %d", LWM2M_ATTR_STR[type], attr->int_val);
+			LOG_DBG("Update %s to %d", lwm2m_attr_to_str(type), attr->int_val);
 		} else {
 			if (attr->float_val == *(double *)nattr_ptrs[type]) {
 				continue;
@@ -1326,7 +1652,7 @@ int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj, struct lwm2m_message 
 
 			attr->float_val = *(double *)nattr_ptrs[type];
 
-			LOG_DBG("Update %s to %f", LWM2M_ATTR_STR[type], attr->float_val);
+			LOG_DBG("Update %s to %f", lwm2m_attr_to_str(type), attr->float_val);
 		}
 	}
 
@@ -1355,11 +1681,11 @@ int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj, struct lwm2m_message 
 			attr->int_val = *(int32_t *)nattr_ptrs[type];
 			update_observe_node = true;
 
-			LOG_DBG("Add %s to %d", LWM2M_ATTR_STR[type], attr->int_val);
+			LOG_DBG("Add %s to %d", lwm2m_attr_to_str(type), attr->int_val);
 		} else {
 			attr->float_val = *(double *)nattr_ptrs[type];
 
-			LOG_DBG("Add %s to %f", LWM2M_ATTR_STR[type], attr->float_val);
+			LOG_DBG("Add %s to %f", lwm2m_attr_to_str(type), attr->float_val);
 		}
 
 		nattrs.flags &= ~BIT(type);
@@ -1391,19 +1717,6 @@ bool lwm2m_path_is_observed(const struct lwm2m_obj_path *path)
 		}
 	}
 	return false;
-}
-
-bool lwm2m_engine_path_is_observed(const char *pathstr)
-{
-	int ret;
-	struct lwm2m_obj_path path;
-
-	ret = lwm2m_string_to_path(pathstr, &path, '/');
-	if (ret < 0) {
-		return false;
-	}
-
-	return lwm2m_path_is_observed(&path);
 }
 
 int lwm2m_engine_observation_handler(struct lwm2m_message *msg, int observe, uint16_t accept,
@@ -1665,4 +1978,135 @@ void lwm2m_engine_clear_duplicate_path(sys_slist_t *lwm2m_path_list, sys_slist_t
 			prev = entry;
 		}
 	}
+}
+
+static void update_resource_instance_notified_value(
+		const struct lwm2m_obj_path *path,
+		const struct lwm2m_engine_res_inst *ref)
+{
+	struct lwm2m_notify_value_register *last_notified;
+	double new_value;
+	int ret;
+
+	last_notified = notify_value_reg_get(ref);
+	if (last_notified == NULL) {
+		return;
+	}
+
+	ret = resource_value_as_double(path, &new_value);
+	if (ret < 0) {
+		return;
+	}
+
+	last_notified->value = new_value;
+	last_notified->notified = true;
+}
+
+static void update_resource_notified_value(const struct lwm2m_obj_path *path,
+					   const struct lwm2m_engine_res *res)
+{
+	struct lwm2m_obj_path res_inst_path = {
+		.level = LWM2M_PATH_LEVEL_RESOURCE_INST,
+		.obj_id = path->obj_id,
+		.obj_inst_id = path->obj_inst_id,
+		.res_id = path->res_id,
+	};
+	struct lwm2m_engine_res_inst *res_inst;
+
+	if (!is_resource_numerical(path)) {
+		return;
+	}
+
+	for (int i = 0; i < res->res_inst_count; i++) {
+		res_inst = &res->res_instances[i];
+		res_inst_path.res_inst_id = res_inst->res_inst_id;
+
+		if (res_inst->res_inst_id == RES_INSTANCE_NOT_CREATED) {
+			continue;
+		}
+
+		update_resource_instance_notified_value(&res_inst_path, res_inst);
+	}
+}
+
+static void update_object_instance_notified_values(
+		const struct lwm2m_obj_path *path,
+		const struct lwm2m_engine_obj_inst *obj_inst)
+{
+	struct lwm2m_obj_path res_path = {
+		.level = LWM2M_PATH_LEVEL_RESOURCE,
+		.obj_id = path->obj_id,
+		.obj_inst_id = path->obj_inst_id,
+	};
+	struct lwm2m_engine_res *res;
+
+	for (int i = 0; i < obj_inst->resource_count; i++) {
+		res = &obj_inst->resources[i];
+		res_path.res_id = res->res_id;
+
+		update_resource_notified_value(&res_path, res);
+	}
+}
+
+static void update_object_notified_values(const struct lwm2m_obj_path *path,
+					  const struct lwm2m_engine_obj *obj)
+{
+	struct lwm2m_engine_obj_inst *obj_inst = next_engine_obj_inst(obj->obj_id, -1);
+	struct lwm2m_obj_path obj_inst_path = {
+		.level = LWM2M_PATH_LEVEL_OBJECT_INST,
+		.obj_id = path->obj_id,
+	};
+
+	if (obj_inst == NULL) {
+		return;
+	}
+
+	for (int i = 0; i < obj->instance_count; i++) {
+		obj_inst_path.obj_inst_id = obj_inst->obj_inst_id;
+
+		update_object_instance_notified_values(&obj_inst_path, obj_inst);
+
+		obj_inst = next_engine_obj_inst(obj->obj_id, obj_inst->obj_inst_id);
+		if (obj_inst == NULL) {
+			break;
+		}
+	}
+}
+
+void lwm2m_engine_observer_refresh_notified_values(struct observe_node *obs)
+{
+	struct lwm2m_obj_path_list *tmp;
+	struct lwm2m_obj_path *obs_path;
+	void *ref;
+	int ret;
+
+	lwm2m_registry_lock();
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&obs->path_list, tmp, node) {
+		obs_path =  &tmp->path;
+
+		ret = lwm2m_get_path_reference_ptr(NULL, &tmp->path, &ref);
+		if (ret < 0) {
+			continue;
+		}
+
+		switch (obs_path->level) {
+		case LWM2M_PATH_LEVEL_RESOURCE_INST:
+			update_resource_instance_notified_value(obs_path, ref);
+			break;
+		case LWM2M_PATH_LEVEL_RESOURCE:
+			update_resource_notified_value(obs_path, ref);
+			break;
+		case LWM2M_PATH_LEVEL_OBJECT_INST:
+			update_object_instance_notified_values(obs_path, ref);
+			break;
+		case LWM2M_PATH_LEVEL_OBJECT:
+			update_object_notified_values(obs_path, ref);
+			break;
+		default:
+			break;
+		}
+	}
+
+	lwm2m_registry_unlock();
 }

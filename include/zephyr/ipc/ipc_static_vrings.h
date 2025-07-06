@@ -9,7 +9,6 @@
 
 #include <zephyr/ipc/ipc_service.h>
 #include <openamp/open_amp.h>
-#include <metal/device.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -55,9 +54,6 @@ struct ipc_static_vrings {
 	/** SHM physmap. */
 	metal_phys_addr_t shm_physmap[1];
 
-	/** SHM device. */
-	struct metal_device shm_device;
-
 	/** SHM and addresses. */
 	uintptr_t status_reg_addr;
 
@@ -77,7 +73,7 @@ struct ipc_static_vrings {
 	size_t shm_size;
 
 	/** SHM IO region. */
-	struct metal_io_region *shm_io;
+	struct metal_io_region shm_io;
 
 	/** VRINGs */
 	struct virtio_vring_info rvrings[VRING_COUNT];

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Vitrolife A/S
+ * Copyright (c) 2025 Prevas A/S
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -11,6 +11,8 @@
 #include <zephyr/sys/util_macro.h>
 
 #include "mfd_ad559x.h"
+
+#define AD559X_REG_RD_POINTER 0x70
 
 static int mfd_ad559x_i2c_read_raw(const struct device *dev, uint8_t *val, size_t len)
 {
@@ -35,7 +37,9 @@ static int mfd_ad559x_i2c_read_reg(const struct device *dev, uint8_t reg, uint8_
 
 	ARG_UNUSED(reg_data);
 
-	__ASSERT((reg & 0xf0) == 0, "reg bits [7:4] should be 0: 0x%x", reg);
+	if (reg >= AD559X_REG_SEQ_ADC || reg <= AD559X_REG_IO_TS_CONFIG) {
+		reg |= AD559X_REG_RD_POINTER;
+	}
 
 	ret = i2c_write_read_dt(&config->i2c, &reg, sizeof(reg), buf, sizeof(buf));
 	if (ret < 0) {

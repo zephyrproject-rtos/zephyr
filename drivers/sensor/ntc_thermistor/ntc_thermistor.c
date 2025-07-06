@@ -15,8 +15,9 @@ LOG_MODULE_REGISTER(NTC_THERMISTOR, CONFIG_SENSOR_LOG_LEVEL);
 
 struct ntc_thermistor_data {
 	struct k_mutex mutex;
-	int16_t raw;
-	int16_t sample_val;
+	int32_t raw;
+	int32_t sample_val;
+	int32_t sample_val_max;
 };
 
 struct ntc_thermistor_config {
@@ -28,8 +29,6 @@ static int ntc_thermistor_sample_fetch(const struct device *dev, enum sensor_cha
 {
 	struct ntc_thermistor_data *data = dev->data;
 	const struct ntc_thermistor_config *cfg = dev->config;
-	enum pm_device_state pm_state;
-	int32_t val_mv;
 	int res;
 	struct adc_sequence sequence = {
 		.options = NULL,
@@ -38,19 +37,21 @@ static int ntc_thermistor_sample_fetch(const struct device *dev, enum sensor_cha
 		.calibrate = false,
 	};
 
-	(void)pm_device_state_get(dev, &pm_state);
-	if (pm_state != PM_DEVICE_STATE_ACTIVE) {
-		return -EIO;
-	}
-
 	k_mutex_lock(&data->mutex, K_FOREVER);
 
 	adc_sequence_init_dt(&cfg->adc_channel, &sequence);
 	res = adc_read(cfg->adc_channel.dev, &sequence);
 	if (!res) {
-		val_mv = data->raw;
-		res = adc_raw_to_millivolts_dt(&cfg->adc_channel, &val_mv);
-		data->sample_val = val_mv;
+		if (cfg->ntc_cfg.pullup_mv) {
+			int32_t val_mv = data->raw;
+
+			res = adc_raw_to_millivolts_dt(&cfg->adc_channel, &val_mv);
+			data->sample_val = val_mv;
+			data->sample_val_max = cfg->ntc_cfg.pullup_mv;
+		} else {
+			data->sample_val = data->raw;
+			data->sample_val_max = BIT(cfg->adc_channel.resolution) - 1;
+		}
 	}
 
 	k_mutex_unlock(&data->mutex);
@@ -68,7 +69,10 @@ static int ntc_thermistor_channel_get(const struct device *dev, enum sensor_chan
 
 	switch (chan) {
 	case SENSOR_CHAN_AMBIENT_TEMP:
-		ohm = ntc_get_ohm_of_thermistor(&cfg->ntc_cfg, data->sample_val);
+		k_mutex_lock(&data->mutex, K_FOREVER);
+		ohm = ntc_get_ohm_of_thermistor(&cfg->ntc_cfg, data->sample_val,
+						data->sample_val_max);
+		k_mutex_unlock(&data->mutex);
 		temp = ntc_get_temp_mc(&cfg->ntc_cfg.type, ohm);
 		val->val1 = temp / 1000;
 		val->val2 = (temp % 1000) * 1000;
@@ -79,7 +83,7 @@ static int ntc_thermistor_channel_get(const struct device *dev, enum sensor_chan
 	return 0;
 }
 
-static const struct sensor_driver_api ntc_thermistor_driver_api = {
+static DEVICE_API(sensor, ntc_thermistor_driver_api) = {
 	.sample_fetch = ntc_thermistor_sample_fetch,
 	.channel_get = ntc_thermistor_channel_get,
 };
@@ -135,7 +139,7 @@ static int ntc_thermistor_pm_action(const struct device *dev, enum pm_device_act
 		.adc_channel = ADC_DT_SPEC_INST_GET(inst),                                         \
 		.ntc_cfg =                                                                         \
 			{                                                                          \
-				.pullup_uv = DT_INST_PROP(inst, pullup_uv),                        \
+				.pullup_mv = DT_INST_PROP_OR(inst, pullup_uv, 0) / 1000,           \
 				.pullup_ohm = DT_INST_PROP(inst, pullup_ohm),                      \
 				.pulldown_ohm = DT_INST_PROP(inst, pulldown_ohm),                  \
 				.connected_positive = DT_INST_PROP(inst, connected_positive),      \
@@ -243,3 +247,29 @@ static __unused const struct ntc_compensation comp_tdk_ntcg163jf103ft1[] = {
 
 DT_INST_FOREACH_STATUS_OKAY_VARGS(NTC_THERMISTOR_DEFINE, DT_DRV_COMPAT,
 				  comp_tdk_ntcg163jf103ft1)
+
+/* murata,ncp15xh103 */
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT murata_ncp15xh103
+
+static __unused const struct ntc_compensation comp_murata_ncp15xh103[] = {
+	{ -25, 87558 },
+	{ -15, 53649 },
+	{  -5, 33892 },
+	{   5, 22021 },
+	{  15, 14673 },
+	{  25, 10000 },
+	{  35,  6947 },
+	{  45,  4916 },
+	{  55,  3535 },
+	{  64,  2586 },
+	{  75,  1924 },
+	{  85,  1452 },
+	{  95,  1109 },
+	{ 105,   858 },
+	{ 115,   671 },
+	{ 125,   531 },
+};
+
+DT_INST_FOREACH_STATUS_OKAY_VARGS(NTC_THERMISTOR_DEFINE, DT_DRV_COMPAT,
+				  comp_murata_ncp15xh103)

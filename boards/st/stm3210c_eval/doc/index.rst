@@ -1,7 +1,4 @@
-.. _stm3210c_eval_board:
-
-ST STM3210C Evaluation
-######################
+.. zephyr:board:: stm3210c_eval
 
 Overview
 ********
@@ -14,10 +11,6 @@ audio DAC, MEMS, EEPROM and more) and develop your own applications.
 
 Extension headers make it easy to connect a daughterboard or wrapping board for your specific
 application.
-
-.. image:: img/stm3210c_eval.jpg
-     :align: center
-     :alt: STM3210C-EVAL
 
 More information about the board can be found at the `STM3210C-EVAL website`_.
 
@@ -57,31 +50,7 @@ More information about STM32F107VCT can be found here:
 Supported Features
 ==================
 
-The Zephyr stm3210c_eval board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported in this Zephyr port.
-
-The default configuration can be found in
-:zephyr_file:`boards/st/stm3210c_eval/stm3210c_eval_defconfig`.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -106,6 +75,8 @@ Default Zephyr Peripheral Mapping:
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Flashing
 ========
@@ -145,7 +116,7 @@ example, on Linux:
    $ minicom -D /dev/ttyACM0
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

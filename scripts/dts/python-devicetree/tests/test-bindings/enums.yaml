@@ -32,5 +32,20 @@ properties:
       - whitespace is ok
       - 123 is ok
 
+  array-enum:
+    type: array
+    enum:
+      - 0
+      - 10
+      - 20
+      - 30
+      - 40
+
+  string-array-enum:            # tokenizable string-array
+    type: string-array
+    enum:
+      - bar
+      - foo
+
   no-enum:
     type: string

@@ -1,7 +1,4 @@
-.. _mm_swiftio:
-
-MadMachine SwiftIO
-##################
+.. zephyr:board:: mm_swiftio
 
 Overview
 ********
@@ -16,12 +13,6 @@ at:
 - `MadMachine Homepage`_
 - `SwiftIO API Reference`_
 
-
-
-.. image:: mm_swiftio.jpg
-   :align: center
-   :alt: SwiftIO Board
-
 Hardware
 ********
 
@@ -35,31 +26,7 @@ Hardware
 Supported Features
 ==================
 
-The mm_swiftio board configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| DISPLAY   | on-chip    | display                             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | USB device                          |
-+-----------+------------+-------------------------------------+
-
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -175,10 +142,12 @@ The Swift ID is not the same as the Zephyr driver ID.
 +-----------+---------------+----------+---------------+----------+---------------+
 
 
-Programming and Flash
-*************************
+Programming and Flashing
+************************
 
-Build  applications as usual (see :ref:`build_an_application` for more details).
+.. zephyr:board-supported-runners::
+
+Build applications as usual (see :ref:`build_an_application` for more details).
 
 Configuring a Debug Probe
 =========================
@@ -206,7 +175,7 @@ etc.):
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 Connect a USB cable from your PC to "Serial" port of SwiftIO.
 On Ubuntu, DAPLink debug probes appear on the host

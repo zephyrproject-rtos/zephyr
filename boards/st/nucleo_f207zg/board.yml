@@ -1,5 +1,6 @@
 board:
   name: nucleo_f207zg
+  full_name: Nucleo F207ZG
   vendor: st
   socs:
     - name: stm32f207xx

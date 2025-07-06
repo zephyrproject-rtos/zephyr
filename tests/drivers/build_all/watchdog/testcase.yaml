@@ -8,3 +8,17 @@ tests:
     # will cover drivers without in-tree boards
     platform_allow: qemu_cortex_m3
     extra_args: "CONFIG_WATCHDOG=y"
+  drivers.watchdog.build.i2c:
+    extra_args: DTC_OVERLAY_FILE="i2c_devices.overlay"
+    extra_configs:
+      - CONFIG_I2C=y
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+  drivers.watchdog.build.spi:
+    extra_args: DTC_OVERLAY_FILE="spi_devices.overlay"
+    extra_configs:
+      - CONFIG_SPI=y
+    platform_allow:
+      - native_sim
+      - native_sim/native/64

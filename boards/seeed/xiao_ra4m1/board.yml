@@ -1,0 +1,6 @@
+board:
+  name: xiao_ra4m1
+  full_name: XIAO RA4M1
+  vendor: seeed
+  socs:
+  - name: r7fa4m1ab3cne

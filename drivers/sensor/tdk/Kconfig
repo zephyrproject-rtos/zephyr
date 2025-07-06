@@ -1,0 +1,14 @@
+# Copyright (c) 2024 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# zephyr-keep-sorted-start
+source "drivers/sensor/tdk/icm40627/Kconfig"
+source "drivers/sensor/tdk/icm42605/Kconfig"
+source "drivers/sensor/tdk/icm42688/Kconfig"
+source "drivers/sensor/tdk/icm42x70/Kconfig"
+source "drivers/sensor/tdk/icm45686/Kconfig"
+source "drivers/sensor/tdk/icp101xx/Kconfig"
+source "drivers/sensor/tdk/icp201xx/Kconfig"
+source "drivers/sensor/tdk/mpu6050/Kconfig"
+source "drivers/sensor/tdk/mpu9250/Kconfig"
+# zephyr-keep-sorted-stop

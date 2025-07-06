@@ -1,0 +1,33 @@
+# Copyright (c) 2024 EXALT Technologies.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32H5 I3C controller
+
+compatible: "st,stm32-i3c"
+
+include: [i3c-controller.yaml, pinctrl-device.yaml, reset-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  resets:
+    required: true
+
+  dmas:
+    description: |
+      Optional DMA channel specifier, required for DMA transactions.
+
+  dma-names:
+    description: |
+      DMA channel name. If DMA should be used, expected value is "rx" "tx" "tc" "rs".
+
+      For example
+         dma-names = "rx", "tx", "tc", "rs";

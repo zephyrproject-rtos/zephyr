@@ -101,6 +101,8 @@ and 2. Exploitability of the issue.  Issues that the subcommittee
 decides do not need an embargo will be reproduced in the regular
 Zephyr project bug tracking system.
 
+.. _vulnerability_timeline:
+
 Security sensitive vulnerabilities shall be made public after an
 embargo period of at most 90 days.  The intent is to allow 30 days
 within the Zephyr project to fix the issues, and 60 days for external

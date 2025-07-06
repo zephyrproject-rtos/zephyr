@@ -52,7 +52,7 @@ ground and the white wire to the SCL pin, i.e. pin P19 on the edge connector.
 Building and Running
 ********************
 
-The sample has a devicetree overlay for the :ref:`bbc_microbit`.
+The sample has a devicetree overlay for the :zephyr:board:`bbc_microbit`.
 
 This sample can be built for multiple boards, in this example we will build it
 for the bbc_microbit board:

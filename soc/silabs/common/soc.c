@@ -19,20 +19,6 @@
 #include <soc.h>
 #include <cmsis_core.h>
 
-#ifdef CONFIG_SOC_GECKO_DEV_INIT
-#include <sl_device_init_dcdc.h>
-#include <sl_device_init_dpll.h>
-#include <sl_device_init_emu.h>
-#include <sl_device_init_hfxo.h>
-#include <sl_device_init_nvic.h>
-
-#ifdef CONFIG_PM
-#include <sl_hfxo_manager.h>
-#include <sl_power_manager.h>
-#endif
-
-#endif
-
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
 #ifdef CONFIG_CMU_HFCLK_HFXO
@@ -206,7 +192,7 @@ static void swo_init(void)
  *
  * @return 0
  */
-static int silabs_init(void)
+void soc_early_init_hook(void)
 {
 	/* handle chip errata */
 	CHIP_Init();
@@ -214,19 +200,6 @@ static int silabs_init(void)
 #ifdef CONFIG_CMU_NEED_LFXO
 	init_lfxo();
 #endif
-
-#ifdef CONFIG_SOC_GECKO_DEV_INIT
-	sl_device_init_dcdc();
-	sl_device_init_hfxo();
-	sl_device_init_dpll();
-	sl_device_init_emu();
-
-#ifdef CONFIG_PM
-	sl_power_manager_init();
-	sl_hfxo_manager_init();
-#endif
-
-#else /* !CONFIG_SOC_GECKO_DEV_INIT */
 
 #ifdef CONFIG_SOC_GECKO_EMU_DCDC
 	dcdc_init();
@@ -239,9 +212,4 @@ static int silabs_init(void)
 	/* Configure SWO debug output */
 	swo_init();
 #endif
-#endif /* !CONFIG_SOC_GECKO_DEV_INIT */
-
-	return 0;
 }
-
-SYS_INIT(silabs_init, PRE_KERNEL_1, 0);

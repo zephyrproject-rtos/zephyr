@@ -1,7 +1,4 @@
-.. _it82xx2_evb:
-
-ITE IT82XX2 series
-######################
+.. zephyr:board:: it82xx2_evb
 
 Overview
 ********
@@ -40,63 +37,8 @@ Listing the IT82202 hardware features as following:
 
 Supported Features
 ==================
-currently supports the following hardware features:
 
-.. list-table:: Supported Features
-   :header-rows: 1
-   :widths: auto
-
-   * - Interface
-     - Controller
-     - Driver/Component
-   * - NVIC
-     - on-chip
-     - interrupt controller
-   * - FLASH
-     - on-chip
-     - flash controller
-   * - PINCTRL
-     - on-chip
-     - pin controller
-   * - ESPI
-     - on-chip
-     - espi
-   * - PECI
-     - on-chip
-     - peci
-   * - UART
-     - on-chip
-     - serial
-   * - GPIO
-     - on-chip
-     - gpio
-   * - PWM
-     - on-chip
-     - pwm
-   * - ADC
-     - on-chip
-     - adc
-   * - TIMER
-     - on-chip
-     - timer
-   * - WATCHDOG
-     - on-chip
-     - watchdog
-   * - KSCAN
-     - on-chip
-     - kscan
-   * - SENSOR
-     - on-chip
-     - voltage comparator
-   * - I2C
-     - on-chip
-     - i2c
-
-
-Other hardware features are not currently supported by Zephyr.
-
-The default configuration can be found in the
-:zephyr_file:`boards/ite/it82xx2_evb/it82xx2_evb_defconfig` Kconfig file.
+.. zephyr:board-supported-hw::
 
 Programming and debugging on it82202
 ************************************
@@ -151,7 +93,7 @@ Wiring
 Building
 ========
 
-#. Build :ref:`hello_world` application as you would normally do
+#. Build :zephyr:code-sample:`hello_world` application as you would normally do
    (see :`Zephyr Getting Started Guide`_):.
 
    .. zephyr-app-commands::
@@ -220,7 +162,7 @@ Ubuntu
       $ sudo ~/itetool/ite -f build/zephyr/zephyr.bin
 
    .. note:: The source code of ITE tool can be downloaded here:
-    https://www.ite.com.tw/uploads/product_download/itedlb4-linux-v106.tar.bz2
+    https://www.ite.com.tw/upload/2024_01_23/6_20240123162336wu55j1Rjm4.bz2
 
 #. Split first and second terminal windows to view both of them.
    You should see ``"Hello World! it82xx2_evb"`` in the first terminal window.

@@ -23,9 +23,10 @@ tests:
     filter: CONFIG_ARCH_HAS_USERSPACE and CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS
     arch_allow: arm
     platform_allow:
-      - efr32_radio/efr32mg21a020f1024im32
-      - mps3/an547
+      - slwrb4180a
+      - mps3/corstone300/an547
       - nrf9160dk/nrf9160
+      - xg29_rb4412a
     integration_platforms:
-      - mps3/an547
+      - mps3/corstone300/an547
     extra_args: CONFIG_MPU_GAP_FILLING=y

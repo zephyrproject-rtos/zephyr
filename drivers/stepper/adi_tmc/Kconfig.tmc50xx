@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Fabian Blatz <fabianblatz@gmail.com>
+# SPDX-FileCopyrightText: Copyright (c) 2025 Jilay Sandeep Pandya
+# SPDX-License-Identifier: Apache-2.0
+
+config STEPPER_ADI_TMC50XX
+	bool "Activate trinamic tmc50xx stepper driver"
+	depends on DT_HAS_ADI_TMC50XX_ENABLED && STEPPER_ADI_TMC
+	select STEPPER_ADI_TMC_SPI
+	default y
+
+module = TMC50XX
+module-str = tmc50xx
+rsource "Kconfig.tmc_rampgen_template"

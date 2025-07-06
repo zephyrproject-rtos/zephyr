@@ -22,6 +22,16 @@ tests:
       - s32z2xxdc2/s32z270/rtu1
       - s32z2xxdc2@D/s32z270/rtu0
       - s32z2xxdc2@D/s32z270/rtu1
+      - panb511evb/nrf54l15/cpuapp
+      - panb511evb/nrf54l15/cpuapp/ns
+      - panb511evb/nrf54l15/cpuflpr
+      - panb511evb/nrf54l15/cpuflpr/xip
+      - nrf54l15dk/nrf54l15/cpuapp/ns
+      - nrf54l15dk/nrf54l10/cpuapp/ns
+      - bl54l15_dvk/nrf54l10/cpuapp/ns
+      - bl54l15_dvk/nrf54l15/cpuapp/ns
+      - bl54l15u_dvk/nrf54l15/cpuapp/ns
+      - raytac_an54l15q_db/nrf54l15/cpuapp/ns
   sample.drivers.watchdog.stm32_wwdg:
     extra_args: DTC_OVERLAY_FILE=boards/stm32_wwdg.overlay
     filter: dt_compat_enabled("st,stm32-window-watchdog")
@@ -37,6 +47,7 @@ tests:
       - nucleo_g474re
       - nucleo_l073rz
       - nucleo_l152re
+      - nucleo_u385rg_q
       - nucleo_wb55rg
       - nucleo_wl55jc
       - stm32f3_disco
@@ -48,7 +59,21 @@ tests:
   sample.drivers.watchdog.stm32h7_wwdg:
     extra_args: DTC_OVERLAY_FILE=boards/stm32h7_wwdg.overlay
     filter: dt_compat_enabled("st,stm32-window-watchdog")
-    platform_allow: nucleo_h743zi
+    # filter CONFIG_SOC_SERIES_STM32H7X and dt_compat_enabled
+    # seems to ignore extra_args
+    platform_allow:
+      - nucleo_h723zg
+      - nucleo_h745zi_q/stm32h745xx/m4
+      - nucleo_h743zi
+      - stm32h735g_disco
+      - nucleo_h753zi
+      - stm32h750b_dk
+      - stm32h7b3i_dk
+      - stm32h745i_disco/stm32h745xx/m4
+      - nucleo_h755zi_q/stm32h755xx/m4
+      - stm32h747i_disco/stm32h747xx/m4
+    integration_platforms:
+      - nucleo_h743zi
   sample.drivers.watchdog.stm32_iwdg:
     extra_args: DTC_OVERLAY_FILE=boards/stm32_iwdg.overlay
     filter: dt_compat_enabled("st,stm32-watchdog")
@@ -65,6 +90,7 @@ tests:
       - nucleo_h743zi
       - nucleo_l073rz
       - nucleo_l152re
+      - nucleo_u385rg_q
       - nucleo_wb55rg
       - nucleo_wl55jc
       - stm32f3_disco
@@ -112,3 +138,5 @@ tests:
       - s32z2xxdc2/s32z270/rtu1
       - s32z2xxdc2@D/s32z270/rtu0
       - s32z2xxdc2@D/s32z270/rtu1
+    integration_platforms:
+      - s32z2xxdc2/s32z270/rtu0

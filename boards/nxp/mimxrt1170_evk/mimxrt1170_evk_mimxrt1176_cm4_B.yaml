@@ -11,13 +11,14 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 ram: 128
 flash: 128
 supported:
+  - dac
   - dma
+  - flash
   - gpio
   - i2c
-  - spi
   - pwm
+  - spi
 vendor: nxp

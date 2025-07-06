@@ -120,10 +120,10 @@ most Zephyr samples and tests.
 When you want to run a simulation with radio activity you need to run also the
 BableSim 2G4 (2.4GHz) physical layer simulation (phy).
 
-For example, if you would like to run a simple case with 1 BLE ``central_hr``
-sample application connecting to a BLE ``peripheral`` sample application:
-Build the ``central_hr`` application targeting this board and copy the resulting
-executable to the simulator bin folder with a sensible name:
+For example, if you would like to run a simple case with a BLE :zephyr:code-sample:`ble_central_hr`
+sample application connecting to a BLE :zephyr:code-sample:`ble_peripheral_hr` sample application:
+Build the :zephyr:code-sample:`ble_central_hr` application targeting this board and copy the
+resulting executable to the simulator bin folder with a sensible name:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/bluetooth/central_hr
@@ -137,10 +137,10 @@ executable to the simulator bin folder with a sensible name:
    $ cp build/zephyr/zephyr.exe \
      ${BSIM_OUT_PATH}/bin/bs_nrf52_bsim_samples_bluetooth_central_hr
 
-Do the same for the ``peripheral`` sample app:
+Do the same for the :zephyr:code-sample:`ble_peripheral_hr` sample app:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/bluetooth/peripheral
+   :zephyr-app: samples/bluetooth/peripheral_hr
    :host-os: unix
    :board: nrf52_bsim
    :goals: build
@@ -149,7 +149,7 @@ Do the same for the ``peripheral`` sample app:
 .. code-block:: console
 
    $ cp build/zephyr/zephyr.exe \
-     ${BSIM_OUT_PATH}/bin/bs_nrf52_bsim_samples_bluetooth_peripheral
+     ${BSIM_OUT_PATH}/bin/bs_nrf52_bsim_samples_bluetooth_peripheral_hr
 
 And then run them together with BabbleSim's 2G4 physical layer simulation:
 
@@ -171,6 +171,33 @@ Run them with ``-help`` for more information.
 You can find more information about how to run BabbleSim simulations in
 `this BabbleSim example <https://babblesim.github.io/example_2g4.html>`_.
 
+Running an application using the console
+========================================
+
+Some applications require the use of a console to interact with the user.
+These applications typically enable :kconfig:option:`CONFIG_CONSOLE_SUBSYS` and :kconfig:option:`CONFIG_CONSOLE_GETCHAR`.
+The UART console is disabled by default for BabbleSim boards, to enable it simply add the snippet :ref:`snippet-uart-console`.
+
+.. code-block:: console
+
+   west build -S serial-console [...]
+
+To view the output and interact with the application the user needs to connect a terminal to this pseudoterminal.
+
+.. code-block:: console
+
+   # Automatically attach to the terminal
+   ./build/zephyr/zephyr.exe --uart<uart_id>_pty_attach
+   # Use a custom command to attach to the terminal, for example 'xterm -e screen %s &'
+   ./build/zephyr/zephyr.exe --uart<uart_id>_attach_cmd=<cmd>
+   # Use a custom way to connect to the pseudoterminal
+   ./build/zephyr/zephyr.exe --uart<uart_id>_pty --uart_pty_wait
+   minicom -D /dev/pts/<pts_id>
+
+The command line option ``--uart_list`` prints out the mapping between ``uart_id`` and the UART peripherals.
+The overlay files describes which UART peripheral is being used as the console output.
+
+For more details about attaching to the UART output, refer to the output of the ``-help`` option of the executable.
 
 C library choice
 ****************

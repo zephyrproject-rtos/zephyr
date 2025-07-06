@@ -1,5 +1,6 @@
 board:
   name: lora_e5_mini
+  full_name: LoRa-E5 mini
   vendor: seeed
   socs:
     - name: stm32wle5xx

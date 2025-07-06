@@ -1,24 +1,42 @@
 /*
- * Copyright (c) 2023 Nordic Semiconductor
+ * Copyright (c) 2023-2025 Nordic Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "common.h"
+#include <errno.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
 
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
+
+#include <testlib/conn.h>
+
+#include "babblekit/testcase.h"
+#include "babblekit/flags.h"
+#include "bstests.h"
+#include "common.h"
 
 extern enum bst_result_t bst_result;
 
-CREATE_FLAG(flag_iso_connected);
-CREATE_FLAG(flag_data_received);
+DEFINE_FLAG_STATIC(flag_data_received);
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 };
 static struct bt_iso_chan iso_chan;
+
+static size_t disconnect_after_recv_cnt;
+static size_t iso_recv_cnt;
 
 /** Print data as d_0 d_1 d_2 ... d_(n-2) d_(n-1) d_(n) to show the 3 first and 3 last octets
  *
@@ -57,28 +75,45 @@ static void iso_print_data(uint8_t *data, size_t data_len)
 	printk("\t %s\n", data_str);
 }
 
+static void disconnect_device(struct bt_conn *conn, void *data)
+{
+	int err = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+
+	TEST_ASSERT(!err, "Failed to initate disconnect (err %d)", err);
+}
+
 static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *info,
 		     struct net_buf *buf)
 {
+	iso_recv_cnt++;
 	if (info->flags & BT_ISO_FLAGS_VALID) {
 		printk("Incoming data channel %p len %u\n", chan, buf->len);
 		iso_print_data(buf->data, buf->len);
 		SET_FLAG(flag_data_received);
 	}
+	if (disconnect_after_recv_cnt && (iso_recv_cnt >= disconnect_after_recv_cnt)) {
+		printk("Disconnecting\n");
+		bt_conn_foreach(BT_CONN_TYPE_LE, disconnect_device, NULL);
+	}
 }
 
 static void iso_connected(struct bt_iso_chan *chan)
 {
+	const struct bt_iso_chan_path hci_path = {
+		.pid = BT_ISO_DATA_PATH_HCI,
+		.format = BT_HCI_CODING_FORMAT_TRANSPARENT,
+	};
+	int err;
+
 	printk("ISO Channel %p connected\n", chan);
 
-	SET_FLAG(flag_iso_connected);
+	err = bt_iso_setup_data_path(chan, BT_HCI_DATAPATH_DIR_CTLR_TO_HOST, &hci_path);
+	TEST_ASSERT(err == 0, "Failed to set ISO data path: %d", err);
 }
 
 static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 {
 	printk("ISO Channel %p disconnected (reason 0x%02x)\n", chan, reason);
-
-	UNSET_FLAG(flag_iso_connected);
 }
 
 static int iso_accept(const struct bt_iso_accept_info *info, struct bt_iso_chan **chan)
@@ -86,7 +121,7 @@ static int iso_accept(const struct bt_iso_accept_info *info, struct bt_iso_chan 
 	printk("Incoming request from %p\n", (void *)info->acl);
 
 	if (iso_chan.iso) {
-		FAIL("No channels available\n");
+		TEST_FAIL("No channels available");
 
 		return -ENOMEM;
 	}
@@ -100,7 +135,6 @@ static void init(void)
 {
 	static struct bt_iso_chan_io_qos iso_rx = {
 		.sdu = CONFIG_BT_ISO_TX_MTU,
-		.path = NULL,
 	};
 	static struct bt_iso_server iso_server = {
 #if defined(CONFIG_BT_SMP)
@@ -121,7 +155,7 @@ static void init(void)
 
 	err = bt_enable(NULL);
 	if (err) {
-		FAIL("Bluetooth enable failed (err %d)\n", err);
+		TEST_FAIL("Bluetooth enable failed (err %d)", err);
 
 		return;
 	}
@@ -134,7 +168,7 @@ static void init(void)
 
 	err = bt_iso_server_register(&iso_server);
 	if (err) {
-		FAIL("Unable to register ISO server (err %d)\n", err);
+		TEST_FAIL("Unable to register ISO server (err %d)", err);
 
 		return;
 	}
@@ -144,37 +178,58 @@ static void adv_connect(void)
 {
 	int err;
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
-		FAIL("Advertising failed to start (err %d)\n", err);
+		TEST_FAIL("Advertising failed to start (err %d)", err);
 
 		return;
 	}
 
 	printk("Advertising successfully started\n");
 
-	WAIT_FOR_FLAG_SET(flag_connected);
+	WAIT_FOR_FLAG(flag_connected);
 }
 
 static void test_main(void)
 {
 	init();
-	adv_connect();
-	WAIT_FOR_FLAG_SET(flag_iso_connected);
-	WAIT_FOR_FLAG_SET(flag_data_received);
-	WAIT_FOR_FLAG_UNSET(flag_iso_connected);
-	WAIT_FOR_FLAG_UNSET(flag_connected);
 
-	PASS("Test passed\n");
+	while (true) {
+		adv_connect();
+		bt_testlib_conn_wait_free();
+
+		if (IS_FLAG_SET(flag_data_received)) {
+			TEST_PASS("Test passed");
+		}
+	}
+}
+
+static void test_main_early_disconnect(void)
+{
+	init();
+
+	disconnect_after_recv_cnt = 10;
+
+	while (true) {
+		adv_connect();
+		bt_testlib_conn_wait_free();
+
+		if (IS_FLAG_SET(flag_data_received)) {
+			TEST_PASS("Test passed");
+		}
+	}
 }
 
 static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "peripheral",
 		.test_descr = "Peripheral",
-		.test_post_init_f = test_init,
-		.test_tick_f = test_tick,
 		.test_main_f = test_main,
+	},
+	{
+		.test_id = "peripheral_early_disconnect",
+		.test_descr = "Peripheral that tests early disconnect",
+		.test_main_f = test_main_early_disconnect,
 	},
 	BSTEST_END_MARKER,
 };

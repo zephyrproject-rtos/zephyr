@@ -5,10 +5,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stddef.h>
-#include <zephyr/types.h>
+#include <stdint.h>
 
 #include <zephyr/bluetooth/audio/csip.h>
+#include <zephyr/types.h>
 
 #define BT_CSIP_CRYPTO_KEY_SIZE   16
 #define BT_CSIP_CRYPTO_SALT_SIZE  16
@@ -22,13 +22,13 @@
  * used in RSIs - Used by the Coordinated Set Identification service and
  * profile.
  *
- * @param sirk  16 byte LS byte first SIRK
- * @param r     3 byte LS byte first random value
- * @param out   3 byte LS byte first output buffer
+ * @param sirk  16-byte SIRK in little-endian byte order.
+ * @param r     3-byte random value in little-endian byte order.
+ * @param out   3-byte output buffer in little-endian byte order.
+ *
  * @return int 0 on success, any other value indicates a failure.
  */
-int bt_csip_sih(const uint8_t sirk[BT_CSIP_SET_SIRK_SIZE],
-		uint8_t r[BT_CSIP_CRYPTO_PRAND_SIZE],
+int bt_csip_sih(const uint8_t sirk[BT_CSIP_SIRK_SIZE], uint8_t r[BT_CSIP_CRYPTO_PRAND_SIZE],
 		uint8_t out[BT_CSIP_CRYPTO_HASH_SIZE]);
 
 /**
@@ -38,25 +38,22 @@ int bt_csip_sih(const uint8_t sirk[BT_CSIP_SET_SIRK_SIZE],
  * with a key K. The value of K depends on the transport on which the pairing
  * between the client and the server was performed.
  *
- * If the pairing was performed on BR/EDR, K is equal to the Link Key shared by
- * the server and the client.
+ * If the pairing was performed on Basic Rate/Enhanced Data Rate (BR/EDR), K is equal to the
+ * Link Key shared by the server and the client.
  *    K = Link Key.
  *
- * If the pairing was performed on LE, the 64 LSBs of K correspond to the 64
- * LSBs of the IRK that the server sent to the client during the Phase 3
- * (Transport Specific Key Distribution) of the pairing procedure (see Volume 3,
- * Part H, Section 2.1 in [2]), and the 64 MSBs of K correspond to the 64 MSBs
- * of the LTK shared by the server and client. That is,
- *    K = LTK_64-127 || IRK_0-63
+ * If the pairing was performed on Bluetooth Low Energy (LE), K is equal to the LTK shared by the
+ * server and client. That is,
+ *    K = LTK
  *
- * @param k         16-byte key.
- * @param sirk      The unencrypted SIRK.
- * @param out_sirk  The encrypted SIRK.
+ * @param k         16-byte key in little-endian byte order.
+ * @param sirk      16-byte unencrypted SIRK key in little-endian byte order.
+ * @param out_sirk  16-byte encrypted SIRK key in little-endian byte order.
+ *
  * @return int 0 on success, any other value indicates a failure.
  */
-int bt_csip_sef(const uint8_t k[BT_CSIP_CRYPTO_KEY_SIZE],
-		const uint8_t sirk[BT_CSIP_SET_SIRK_SIZE],
-		uint8_t out_sirk[BT_CSIP_SET_SIRK_SIZE]);
+int bt_csip_sef(const uint8_t k[BT_CSIP_CRYPTO_KEY_SIZE], const uint8_t sirk[BT_CSIP_SIRK_SIZE],
+		uint8_t out_sirk[BT_CSIP_SIRK_SIZE]);
 
 /**
  * @brief SIRK decryption function sdf
@@ -65,22 +62,19 @@ int bt_csip_sef(const uint8_t k[BT_CSIP_CRYPTO_KEY_SIZE],
  * with a key K. The value of K depends on the transport on which the pairing
  * between the client and the server was performed.
  *
- * If the pairing was performed on BR/EDR, K is equal to the Link Key shared by
- * the server and the client.
+ * If the pairing was performed on Basic Rate/Enhanced Data Rate (BR/EDR), K is equal to the
+ * Link Key shared by the server and the client.
  *    K = Link Key.
  *
- * If the pairing was performed on LE, the 64 LSBs of K correspond to the 64
- * LSBs of the IRK that the server sent to the client during the Phase 3
- * (Transport Specific Key Distribution) of the pairing procedure (see Volume 3,
- * Part H, Section 2.1 in [2]), and the 64 MSBs of K correspond to the 64 MSBs
- * of the LTK shared by the server and client. That is,
- *    K = LTK_64-127 || IRK_0-63
+ * If the pairing was performed on Bluetooth Low Energy (LE), K is equal to the LTK shared by the
+ * server and client. That is,
+ *    K = LTK
  *
- * @param k         16-byte key.
- * @param sirk      The encrypted SIRK.
- * @param out_sirk  The decrypted SIRK.
+ * @param k         16-byte key in little-endian byte order.
+ * @param sirk      16-byte encrypted SIRK in little-endian byte order.
+ * @param out_sirk  16-byte decrypted SIRK in little-endian byte order.
+ *
  * @return int 0 on success, any other value indicates a failure.
  */
-int bt_csip_sdf(const uint8_t k[BT_CSIP_CRYPTO_KEY_SIZE],
-		const uint8_t enc_sirk[BT_CSIP_SET_SIRK_SIZE],
-		uint8_t out_sirk[BT_CSIP_SET_SIRK_SIZE]);
+int bt_csip_sdf(const uint8_t k[BT_CSIP_CRYPTO_KEY_SIZE], const uint8_t enc_sirk[BT_CSIP_SIRK_SIZE],
+		uint8_t out_sirk[BT_CSIP_SIRK_SIZE]);

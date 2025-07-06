@@ -17,6 +17,7 @@
 		led0 = &green_led;
 		sw0 = &sw0_user_button;
 		watchdog0 = &wdt;
+		sdhc0 = &hsmci;
 	};
 
 	chosen {
@@ -206,10 +207,49 @@ zephyr_udc0: &usbhs {
 	pinctrl-0 = <&can0_default>;
 	pinctrl-names = "default";
 
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
-
 	can-transceiver {
 		max-bitrate = <5000000>;
+	};
+};
+
+&tc0 {
+	qdec0: qdec {
+		pinctrl-0 = <&qdec0_default>;
+		pinctrl-names = "default";
+	};
+};
+
+&tc1 {
+	qdec1: qdec {
+		pinctrl-0 = <&qdec1_default>;
+		pinctrl-names = "default";
+	};
+};
+
+&tc2 {
+	qdec2: qdec {
+		pinctrl-0 = <&qdec2_default>;
+		pinctrl-names = "default";
+	};
+};
+
+&tc3 {
+	qdec3: qdec {
+		pinctrl-0 = <&qdec3_default>;
+		pinctrl-names = "default";
+	};
+};
+
+&hsmci {
+	status = "okay";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&hsmci_default>;
+	cd-gpios = <&pioc 16 GPIO_ACTIVE_LOW>;
+
+	mmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "okay";
 	};
 };

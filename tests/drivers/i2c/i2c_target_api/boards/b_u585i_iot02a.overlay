@@ -10,11 +10,13 @@
  * Short Pin PB9 to PH5, and PB8 to PH4, for the test to pass.
  */
 
+/delete-node/ &eeprom0;
+
 &i2c1 {
 	eeprom0: eeprom@54 {
 		compatible = "zephyr,i2c-target-eeprom";
 		reg = <0x54>;
-		size = <1024>;
+		size = <256>;
 	};
 };
 
@@ -22,6 +24,6 @@
 	eeprom1: eeprom@56 {
 		compatible = "zephyr,i2c-target-eeprom";
 		reg = <0x56>;
-		size = <1024>;
+		size = <256>;
 	};
 };

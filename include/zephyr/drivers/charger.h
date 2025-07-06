@@ -405,6 +405,6 @@ static inline int z_impl_charger_charge_enable(const struct device *dev, const b
 }
 #endif /* __cplusplus */
 
-#include <syscalls/charger.h>
+#include <zephyr/syscalls/charger.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_CHARGER_H_ */

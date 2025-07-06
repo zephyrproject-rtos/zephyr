@@ -33,18 +33,30 @@
 #include <esp_app_format.h>
 #include <zephyr/sys/printk.h>
 
-extern void z_cstart(void);
+#define HDR_ATTR __attribute__((section(".entry_addr"))) __attribute__((used))
+
+void __appcpu_start(void);
+static HDR_ATTR void (*_entry_point)(void) = &__appcpu_start;
+
+extern void z_prep_c(void);
+
+static void core_intr_matrix_clear(void)
+{
+	uint32_t core_id = esp_cpu_get_core_id();
+
+	for (int i = 0; i < ETS_MAX_INTR_SOURCE; i++) {
+		intr_matrix_set(core_id, i, ETS_INVALID_INUM);
+	}
+}
 
 /*
  * This is written in C rather than assembly since, during the port bring up,
  * Zephyr is being booted by the Espressif bootloader.  With it, the C stack
  * is already set up.
  */
-void __app_cpu_start(void)
+void IRAM_ATTR __appcpu_start(void)
 {
 	extern uint32_t _init_start;
-	extern uint32_t _bss_start;
-	extern uint32_t _bss_end;
 
 	/* Move the exception vector table to IRAM. */
 	__asm__ __volatile__ (
@@ -69,13 +81,14 @@ void __app_cpu_start(void)
 
 	/* Initialize the architecture CPU pointer.  Some of the
 	 * initialization code wants a valid _current before
-	 * arch_kernel_init() is invoked.
+	 * z_prep_c() is invoked.
 	 */
-	__asm__ __volatile__("wsr.MISC0 %0; rsync" : : "r"(&_kernel.cpus[0]));
+	__asm__ __volatile__("wsr.MISC0 %0; rsync" : : "r"(&_kernel.cpus[1]));
 
-	esp_intr_initialize();
+	core_intr_matrix_clear();
+
 	/* Start Zephyr */
-	z_cstart();
+	z_prep_c();
 
 	CODE_UNREACHABLE;
 }
@@ -89,5 +102,5 @@ int IRAM_ATTR arch_printk_char_out(int c)
 
 void sys_arch_reboot(int type)
 {
-	esp_restart_noos();
+	esp_restart();
 }

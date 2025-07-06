@@ -15,7 +15,7 @@
 
 #include <zephyr/drivers/cellular.h>
 
-#define SAMPLE_TEST_ENDPOINT_HOSTNAME		("test-endpoint.com")
+#define SAMPLE_TEST_ENDPOINT_HOSTNAME		CONFIG_SAMPLE_CELLULAR_MODEM_ENDPOINT_HOSTNAME
 #define SAMPLE_TEST_ENDPOINT_UDP_ECHO_PORT	(7780)
 #define SAMPLE_TEST_ENDPOINT_UDP_RECEIVE_PORT	(7781)
 #define SAMPLE_TEST_PACKET_SIZE			(1024)
@@ -197,8 +197,10 @@ int sample_echo_packet(struct sockaddr *ai_addr, socklen_t ai_addrlen, uint16_t 
 	printk("Successfully sent and received %u of %u packets\n", packets_sent,
 	       SAMPLE_TEST_ECHO_PACKETS);
 
-	printk("Average time per successful echo: %u ms\n",
-	       accumulated_ms / packets_sent);
+	if (packets_sent > 0) {
+		printk("Average time per successful echo: %u ms\n",
+		accumulated_ms / packets_sent);
+	}
 
 	printk("Close UDP socket\n");
 

@@ -27,10 +27,10 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 unsigned int z_x86_exception_vector;
 #endif
 
-__weak void z_debug_fatal_hook(const z_arch_esf_t *esf) { ARG_UNUSED(esf); }
+__weak void z_debug_fatal_hook(const struct arch_esf *esf) { ARG_UNUSED(esf); }
 
 __pinned_func
-void z_x86_spurious_irq(const z_arch_esf_t *esf)
+void z_x86_spurious_irq(const struct arch_esf *esf)
 {
 	int vector = z_irq_controller_isr_vector_get();
 
@@ -46,7 +46,7 @@ void arch_syscall_oops(void *ssf)
 {
 	struct _x86_syscall_stack_frame *ssf_ptr =
 		(struct _x86_syscall_stack_frame *)ssf;
-	z_arch_esf_t oops = {
+	struct arch_esf oops = {
 		.eip = ssf_ptr->eip,
 		.cs = ssf_ptr->cs,
 		.eflags = ssf_ptr->eflags
@@ -66,7 +66,7 @@ NANO_CPU_INT_REGISTER(_kernel_oops_handler, NANO_SOFT_IRQ,
 #if CONFIG_EXCEPTION_DEBUG
 __pinned_func
 FUNC_NORETURN static void generic_exc_handle(unsigned int vector,
-					     const z_arch_esf_t *pEsf)
+					     const struct arch_esf *pEsf)
 {
 #ifdef CONFIG_DEBUG_COREDUMP
 	z_x86_exception_vector = vector;
@@ -77,7 +77,7 @@ FUNC_NORETURN static void generic_exc_handle(unsigned int vector,
 
 #define _EXC_FUNC(vector) \
 __pinned_func \
-FUNC_NORETURN __used static void handle_exc_##vector(const z_arch_esf_t *pEsf) \
+FUNC_NORETURN __used static void handle_exc_##vector(const struct arch_esf *pEsf) \
 { \
 	generic_exc_handle(vector, pEsf); \
 }
@@ -120,7 +120,7 @@ EXC_FUNC_NOCODE(IV_MACHINE_CHECK, 0);
 _EXCEPTION_CONNECT_CODE(z_x86_page_fault_handler, IV_PAGE_FAULT, 0);
 
 #ifdef CONFIG_X86_ENABLE_TSS
-static __pinned_noinit volatile z_arch_esf_t _df_esf;
+static __pinned_noinit volatile struct arch_esf _df_esf;
 
 /* Very tiny stack; just enough for the bogus error code pushed by the CPU
  * and a frame pointer push by the compiler. All df_handler_top does is
@@ -156,7 +156,7 @@ struct task_state_segment _df_tss = {
 	.ss = DATA_SEG,
 	.eip = (uint32_t)df_handler_top,
 	.cr3 = (uint32_t)
-		Z_MEM_PHYS_ADDR(POINTER_TO_UINT(&z_x86_kernel_ptables[0]))
+		K_MEM_PHYS_ADDR(POINTER_TO_UINT(&z_x86_kernel_ptables[0]))
 };
 
 __pinned_func
@@ -182,14 +182,14 @@ static __used void df_handler_bottom(void)
 		reason = K_ERR_STACK_CHK_FAIL;
 	}
 #endif
-	z_x86_fatal_error(reason, (z_arch_esf_t *)&_df_esf);
+	z_x86_fatal_error(reason, (struct arch_esf *)&_df_esf);
 }
 
 __pinned_func
 static FUNC_NORETURN __used void df_handler_top(void)
 {
 	/* State of the system when the double-fault forced a task switch
-	 * will be in _main_tss. Set up a z_arch_esf_t and copy system state into
+	 * will be in _main_tss. Set up a struct arch_esf and copy system state into
 	 * it
 	 */
 	_df_esf.esp = _main_tss.esp;
@@ -213,7 +213,7 @@ static FUNC_NORETURN __used void df_handler_top(void)
 	_main_tss.es = DATA_SEG;
 	_main_tss.ss = DATA_SEG;
 	_main_tss.eip = (uint32_t)df_handler_bottom;
-	_main_tss.cr3 = z_mem_phys_addr(z_x86_kernel_ptables);
+	_main_tss.cr3 = k_mem_phys_addr(z_x86_kernel_ptables);
 	_main_tss.eflags = 0U;
 
 	/* NT bit is set in EFLAGS so we will task switch back to _main_tss

@@ -31,6 +31,8 @@ typedef uint16_t adc_emul_res_t;
 enum adc_emul_input_source {
 	ADC_EMUL_CONST_VALUE,
 	ADC_EMUL_CUSTOM_FUNC,
+	ADC_EMUL_CONST_RAW_VALUE,
+	ADC_EMUL_CUSTOM_FUNC_RAW_VALUE,
 };
 
 /**
@@ -39,11 +41,11 @@ enum adc_emul_input_source {
  * This structure contains configuration of one channel of emulated ADC.
  */
 struct adc_emul_chan_cfg {
-	/** Pointer to function used to obtain input mV */
+	/** Pointer to function used to obtain input mV or raw input value */
 	adc_emul_value_func func;
 	/** Pointer to data that are passed to @a func on call */
 	void *func_data;
-	/** Constant mV input value */
+	/** Constant mV input value or raw input value */
 	uint32_t const_value;
 	/** Gain used on output value */
 	enum adc_gain gain;
@@ -127,8 +129,31 @@ int adc_emul_const_value_set(const struct device *dev, unsigned int chan,
 	return 0;
 }
 
-int adc_emul_value_func_set(const struct device *dev, unsigned int chan,
-			    adc_emul_value_func func, void *func_data)
+int adc_emul_const_raw_value_set(const struct device *dev, unsigned int chan, uint32_t raw_value)
+{
+	const struct adc_emul_config *config = dev->config;
+	struct adc_emul_data *data = dev->data;
+	struct adc_emul_chan_cfg *chan_cfg;
+
+	if (chan >= config->num_channels) {
+		LOG_ERR("unsupported channel %d", chan);
+		return -EINVAL;
+	}
+
+	chan_cfg = &data->chan_cfg[chan];
+
+	k_mutex_lock(&data->cfg_mtx, K_FOREVER);
+
+	chan_cfg->input = ADC_EMUL_CONST_RAW_VALUE;
+	chan_cfg->const_value = raw_value;
+
+	k_mutex_unlock(&data->cfg_mtx);
+
+	return 0;
+}
+
+int adc_emul_value_func_set(const struct device *dev, unsigned int chan, adc_emul_value_func func,
+			    void *func_data)
 {
 	const struct adc_emul_config *config = dev->config;
 	struct adc_emul_data *data = dev->data;
@@ -152,10 +177,34 @@ int adc_emul_value_func_set(const struct device *dev, unsigned int chan,
 	return 0;
 }
 
+int adc_emul_raw_value_func_set(const struct device *dev, unsigned int chan,
+				adc_emul_value_func func, void *func_data)
+{
+	const struct adc_emul_config *config = dev->config;
+	struct adc_emul_data *data = dev->data;
+	struct adc_emul_chan_cfg *chan_cfg;
+
+	if (chan >= config->num_channels) {
+		LOG_ERR("unsupported channel %d", chan);
+		return -EINVAL;
+	}
+
+	chan_cfg = &data->chan_cfg[chan];
+
+	k_mutex_lock(&data->cfg_mtx, K_FOREVER);
+
+	chan_cfg->func = func;
+	chan_cfg->func_data = func_data;
+	chan_cfg->input = ADC_EMUL_CUSTOM_FUNC_RAW_VALUE;
+
+	k_mutex_unlock(&data->cfg_mtx);
+
+	return 0;
+}
+
 int adc_emul_ref_voltage_set(const struct device *dev, enum adc_reference ref,
 			     uint16_t value)
 {
-	struct adc_driver_api *api = (struct adc_driver_api *)dev->api;
 	struct adc_emul_data *data = dev->data;
 	int err = 0;
 
@@ -167,7 +216,6 @@ int adc_emul_ref_voltage_set(const struct device *dev, enum adc_reference ref,
 		break;
 	case ADC_REF_INTERNAL:
 		data->ref_int = value;
-		api->ref_internal = value;
 		break;
 	case ADC_REF_EXTERNAL0:
 		data->ref_ext0 = value;
@@ -346,24 +394,34 @@ static int adc_emul_start_read(const struct device *dev,
 	return adc_context_wait_for_completion(&data->ctx);
 }
 
-static int adc_emul_read_async(const struct device *dev,
+static int adc_emul_read_common(const struct device *dev,
 			       const struct adc_sequence *sequence,
+			       bool is_async,
 			       struct k_poll_signal *async)
 {
 	struct adc_emul_data *data = dev->data;
 	int err;
 
-	adc_context_lock(&data->ctx, async ? true : false, async);
+	adc_context_lock(&data->ctx, is_async, async);
 	err = adc_emul_start_read(dev, sequence);
 	adc_context_release(&data->ctx, err);
 
 	return err;
 }
 
+#ifdef CONFIG_ADC_ASYNC
+static int adc_emul_read_async(const struct device *dev,
+			       const struct adc_sequence *sequence,
+			       struct k_poll_signal *async)
+{
+	return adc_emul_read_common(dev, sequence, true, async);
+}
+#endif
+
 static int adc_emul_read(const struct device *dev,
 			 const struct adc_sequence *sequence)
 {
-	return adc_emul_read_async(dev, sequence, NULL);
+	return adc_emul_read_common(dev, sequence, false, NULL);
 }
 
 static void adc_context_start_sampling(struct adc_context *ctx)
@@ -428,6 +486,19 @@ static int adc_emul_get_chan_value(struct adc_emul_data *data,
 		}
 		break;
 
+	case ADC_EMUL_CONST_RAW_VALUE:
+		temp = chan_cfg->const_value;
+		goto check_bound_and_out;
+
+	case ADC_EMUL_CUSTOM_FUNC_RAW_VALUE:
+		err = chan_cfg->func(data->dev, chan, chan_cfg->func_data, &input_mV);
+		if (err) {
+			LOG_ERR("failed to read channel %d (err %d)", chan, err);
+			goto out;
+		}
+		temp = input_mV;
+		goto check_bound_and_out;
+
 	default:
 		LOG_ERR("unknown input source %d", chan_cfg->input);
 		err = -EINVAL;
@@ -446,6 +517,7 @@ static int adc_emul_get_chan_value(struct adc_emul_data *data,
 	/* Calculate output value */
 	temp = (uint64_t)input_mV * data->res_mask / ref_v;
 
+check_bound_and_out:
 	/* If output value is greater than resolution, it has to be trimmed */
 	if (temp > data->res_mask) {
 		temp = data->res_mask;
@@ -548,7 +620,7 @@ static int adc_emul_init(const struct device *dev)
 }
 
 #define ADC_EMUL_INIT(_num)						\
-	static struct adc_driver_api adc_emul_api_##_num = {		\
+	static DEVICE_API(adc, adc_emul_api_##_num) = {			\
 		.channel_setup = adc_emul_channel_setup,		\
 		.read = adc_emul_read,					\
 		.ref_internal = DT_INST_PROP(_num, ref_internal_mv),	\

@@ -1,0 +1,8 @@
+# Copyright (c) 2025 sensry.io
+# SPDX-License-Identifier: Apache-2.0
+
+config ENTROPY_SY1XX_TRNG
+	bool "Sensry sy1xx soc family true random number generator (TRNG) driver"
+	default y
+	depends on DT_HAS_SENSRY_SY1XX_TRNG_ENABLED
+	select ENTROPY_HAS_DRIVER

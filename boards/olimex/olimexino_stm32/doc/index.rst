@@ -1,19 +1,10 @@
-.. _olimexino_stm32:
-
-OLIMEXINO-STM32
-###############
+.. zephyr:board:: olimexino_stm32
 
 Overview
 ********
 
 The OLIMEXINO-STM32 board is based on the STMicroelectronics STM32F103RB ARM
 Cortex-M3 CPU.
-
-.. figure:: img/olimexino_stm32.jpg
-     :align: center
-     :alt: OLIMEXINO-STM32
-
-     OLIMEXINO-STM32
 
 More information about the board can be found at the
 `OLIMEXINO-STM32 website`_ and `OLIMEXINO-STM32 user manual`_.
@@ -23,33 +14,7 @@ information and the datasheet.
 Supported Features
 ==================
 
-The olimexino_stm32 board configuration supports the following
-hardware features:
-
-+-----------+------------+-------------------------+
-| Interface | Controller | Driver/Component        |
-+===========+============+=========================+
-| NVIC      | on-chip    | nested vectored         |
-|           |            | interrupt controller    |
-+-----------+------------+-------------------------+
-| SYSTICK   | on-chip    | system clock            |
-+-----------+------------+-------------------------+
-| UART      | on-chip    | serial port             |
-+-----------+------------+-------------------------+
-| GPIO      | on-chip    | gpio                    |
-+-----------+------------+-------------------------+
-| I2C       | on-chip    | i2c                     |
-+-----------+------------+-------------------------+
-| SPI       | on-chip    | spi                     |
-+-----------+------------+-------------------------+
-| USB       | on-chip    | USB device              |
-+-----------+------------+-------------------------+
-| WATCHDOG  | on-chip    | independent watchdog    |
-+-----------+------------+-------------------------+
-| CAN       | on-chip    | Controller Area Network |
-+-----------+------------+-------------------------+
-
-Other hardware features have not been enabled yet for this board.
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========
@@ -385,6 +350,8 @@ The default jumper settings for the OLIMEXIMO-STM32E are:
 
 Flashing Zephyr onto OLIMEXINO-STM32
 ************************************
+
+.. zephyr:board-supported-runners::
 
 Flashing the Zephyr kernel onto OLIMEXINO-STM32 requires the
 `stm32flash tool`_.

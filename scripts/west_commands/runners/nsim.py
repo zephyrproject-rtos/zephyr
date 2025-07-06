@@ -7,7 +7,7 @@
 
 from os import path
 
-from runners.core import ZephyrBinaryRunner
+from runners.core import RunnerCaps, ZephyrBinaryRunner
 
 DEFAULT_ARC_GDB_PORT = 3333
 DEFAULT_PROPS_FILE = 'nsim_em.props'
@@ -39,6 +39,10 @@ class NsimBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def name(cls):
         return 'arc-nsim'
+
+    @classmethod
+    def capabilities(cls):
+        return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach'})
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -79,10 +83,10 @@ class NsimBinaryRunner(ZephyrBinaryRunner):
         config = kwargs['nsim-cfg']
 
         server_cmd = (self.nsim_cmd + ['-gdb',
-                                       '-port={}'.format(self.gdb_port),
+                                       f'-port={self.gdb_port}',
                                        '-propsfile', config])
         gdb_cmd = (self.gdb_cmd +
-                   ['-ex', 'target remote :{}'.format(self.gdb_port),
+                   ['-ex', f'target remote :{self.gdb_port}',
                     '-ex', 'load', self.cfg.elf_file])
         self.require(gdb_cmd[0])
 
@@ -92,7 +96,7 @@ class NsimBinaryRunner(ZephyrBinaryRunner):
         config = kwargs['nsim-cfg']
 
         cmd = (self.nsim_cmd +
-               ['-gdb', '-port={}'.format(self.gdb_port),
+               ['-gdb', f'-port={self.gdb_port}',
                 '-propsfile', config])
 
         self.check_call(cmd)

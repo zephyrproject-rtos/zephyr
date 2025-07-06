@@ -57,3 +57,8 @@ int posix_arch_get_unique_thread_id(int thread_idx)
 {
 	return nct_get_unique_thread_id(te_state, thread_idx);
 }
+
+int posix_arch_thread_name_set(int thread_idx, const char *str)
+{
+	return nct_thread_name_set(te_state, thread_idx, str);
+}

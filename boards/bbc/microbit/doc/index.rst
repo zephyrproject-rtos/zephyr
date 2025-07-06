@@ -1,7 +1,4 @@
-.. _bbc_microbit:
-
-BBC MicroBit
-##############
+.. zephyr:board:: bbc_microbit
 
 Overview
 ********
@@ -15,19 +12,6 @@ magnetometer sensors, Bluetooth and USB connectivity, a display consisting of
 25 LEDs, two programmable buttons, and can be powered by either USB or an
 external battery pack. The device inputs and outputs are through five ring
 connectors that are part of the 23-pin edge connector.
-
-* :abbr:`NVIC (Nested Vectored Interrupt Controller)`
-* :abbr:`RTC (nRF RTC System Clock)`
-* UART
-* GPIO
-* FLASH
-* RADIO (Bluetooth Low Energy)
-
-.. figure:: img/bbc_microbit.jpg
-     :align: center
-     :alt: BBC Micro Bit
-
-     BBC Micro Bit (Credit: http://microbit.org/)
 
 More information about the board can be found at the `microbit website`_.
 
@@ -48,28 +32,12 @@ The micro:bit has the following physical features:
 Supported Features
 ==================
 
-The bbc_microbit board configuration supports the following nRF51
-hardware features:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| NVIC      | on-chip    | nested vectored      |
-|           |            | interrupt controller |
-+-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial port          |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| RADIO     | on-chip    | Bluetooth            |
-+-----------+------------+----------------------+
+.. zephyr:board-supported-hw::
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Flashing
 ========
@@ -77,7 +45,7 @@ Flashing
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 First, run your favorite terminal program to listen for output.
 

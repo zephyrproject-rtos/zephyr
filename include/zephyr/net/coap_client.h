@@ -15,6 +15,8 @@
 /**
  * @brief CoAP client API
  * @defgroup coap_client CoAP client API
+ * @since 3.4
+ * @version 0.1.0
  * @ingroup networking
  * @{
  */
@@ -22,7 +24,11 @@
 #include <zephyr/net/coap.h>
 #include <zephyr/kernel.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
+/** Maximum size of a CoAP message */
 #define MAX_COAP_MSG_LEN (CONFIG_COAP_CLIENT_MESSAGE_HEADER_SIZE + \
 			  CONFIG_COAP_CLIENT_MESSAGE_SIZE)
 
@@ -51,28 +57,33 @@ typedef void (*coap_client_response_cb_t)(int16_t result_code,
  * @brief Representation of a CoAP client request.
  */
 struct coap_client_request {
-	enum coap_method method;            /**< Method of the request */
-	bool confirmable;	            /**< CoAP Confirmable/Non-confirmable message */
-	const char *path;	            /**< Path of the requested resource */
-	enum coap_content_format fmt;       /**< Content format to be used */
-	uint8_t *payload;	            /**< User allocated buffer for send request */
-	size_t len;		            /**< Length of the payload */
-	coap_client_response_cb_t cb;       /**< Callback when response received */
-	struct coap_client_option *options; /**< Extra options to be added to request */
-	uint8_t num_options;                /**< Number of extra options */
-	void *user_data;	            /**< User provided context */
+	enum coap_method method;                  /**< Method of the request */
+	bool confirmable;                         /**< CoAP Confirmable/Non-confirmable message */
+	const char *path;                         /**< Path of the requested resource */
+	enum coap_content_format fmt;             /**< Content format to be used */
+	const uint8_t *payload;                   /**< User allocated buffer for send request */
+	size_t len;                               /**< Length of the payload */
+	coap_client_response_cb_t cb;             /**< Callback when response received */
+	const struct coap_client_option *options; /**< Extra options to be added to request */
+	uint8_t num_options;                      /**< Number of extra options */
+	void *user_data;                          /**< User provided context */
 };
 
 /**
  * @brief Representation of extra options for the CoAP client request
  */
 struct coap_client_option {
+	/** Option code */
 	uint16_t code;
 #if defined(CONFIG_COAP_EXTENDED_OPTIONS_LEN)
+	/** Option len */
 	uint16_t len;
+	/** Buffer for the length */
 	uint8_t value[CONFIG_COAP_EXTENDED_OPTIONS_LEN_VALUE];
 #else
+	/** Option len */
 	uint8_t len;
+	/** Buffer for the length */
 	uint8_t value[12];
 #endif
 };
@@ -81,23 +92,27 @@ struct coap_client_option {
 struct coap_client_internal_request {
 	uint8_t request_token[COAP_TOKEN_MAX_LEN];
 	uint32_t offset;
-	uint32_t last_id;
+	uint16_t last_id;
 	uint8_t request_tkl;
 	bool request_ongoing;
+	atomic_t in_callback;
 	struct coap_block_context recv_blk_ctx;
 	struct coap_block_context send_blk_ctx;
 	struct coap_pending pending;
 	struct coap_client_request coap_request;
 	struct coap_packet request;
 	uint8_t request_tag[COAP_TOKEN_MAX_LEN];
+
+	/* For GETs with observe option set */
+	bool is_observe;
+	int last_response_id;
 };
 
 struct coap_client {
 	int fd;
 	struct sockaddr address;
 	socklen_t socklen;
-	bool response_ready;
-	struct k_mutex send_mutex;
+	struct k_mutex lock;
 	uint8_t send_buf[MAX_COAP_MSG_LEN];
 	uint8_t recv_buf[MAX_COAP_MSG_LEN];
 	struct coap_client_internal_request requests[CONFIG_COAP_CLIENT_MAX_REQUESTS];
@@ -136,6 +151,67 @@ int coap_client_init(struct coap_client *client, const char *info);
 
 int coap_client_req(struct coap_client *client, int sock, const struct sockaddr *addr,
 		    struct coap_client_request *req, struct coap_transmission_parameters *params);
+
+/**
+ * @brief Cancel all current requests.
+ *
+ * This is intended for canceling long-running requests (e.g. GETs with the OBSERVE option set)
+ * which has gone stale for some reason.
+ * The function should also be called before the corresponding client socket is closed,
+ * to prevent the socket from being monitored by the internal polling thread.
+ *
+ * @param client Client instance.
+ */
+void coap_client_cancel_requests(struct coap_client *client);
+
+/**
+ * @brief Cancel matching requests.
+ *
+ * This function cancels all CoAP client request that matches the given request.
+ * The request is matched based on the method, path, callback and user_data, if provided.
+ * Any field set to NULL is considered a wildcard.
+ *
+ * (struct coap_client_request){0} cancels all requests.
+ * (struct coap_client_request){.method = COAP_METHOD_GET} cancels all GET requests.
+ *
+ * @param client Pointer to the CoAP client instance.
+ * @param req Pointer to the CoAP client request to be canceled.
+ */
+void coap_client_cancel_request(struct coap_client *client, struct coap_client_request *req);
+
+/**
+ * @brief Initialise a Block2 option to be added to a request
+ *
+ * If the application expects a request to require a blockwise transfer, it may pre-emptively
+ * suggest a maximum block size to the server - see RFC7959 Figure 3: Block-Wise GET with Early
+ * Negotiation.
+ *
+ * This helper function returns a Block2 option to send with the initial request.
+ *
+ * @return CoAP client initial Block2 option structure
+ */
+struct coap_client_option coap_client_option_initial_block2(void);
+
+/**
+ * @brief Check if client has ongoing exchange.
+ *
+ * @note Function not only considers ongoing requests, but also lifetime of completed requests
+ * (which provides graceful duplicates handling).
+ *
+ * @note For socket handling.
+ * Function does no consider a socket POLL that has started before this call,
+ * therefore it is recommended to wait out POLL timeout before closing socket
+ * (e.g. call coap_client_cancel_requests() which applies delay for timeout).
+ *
+ * @param client Pointer to the CoAP client instance.
+ *
+ * @return true if there is an ongoing exchange, false otherwise.
+ */
+bool coap_client_has_ongoing_exchange(struct coap_client *client);
+
+#ifdef __cplusplus
+}
+#endif
 
 /**
  * @}

@@ -1,0 +1,6 @@
+board:
+  name: ch32v003f4p6_dev_board
+  full_name: WCH CH32V003F4P6 Development Board
+  vendor: wch
+  socs:
+    - name: ch32v003

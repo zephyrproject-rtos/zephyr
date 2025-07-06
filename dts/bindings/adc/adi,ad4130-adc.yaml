@@ -1,0 +1,100 @@
+# Copyright (c) 2025 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Bindings for the ADI AD4130 Analog-to-Digital Converter.
+
+  This device is controlled over SPI and exposes one or more ADC input channels.
+  Each child node corresponds to a channel and supports standard ADC properties
+  such as gain, reference, resolution, and input configuration.
+
+  Sample binding
+
+  &spi0 {
+      status = "okay";
+
+      spi_ad4130: ad4130@0 {
+          compatible = "adi,ad4130-adc";
+          reg = <0x0>;
+          spi-max-frequency = <2700000>;
+          status = "okay";
+
+          #address-cells = <1>;
+          #size-cells = <0>;
+          #io-channel-cells = <1>;
+
+          channel@1 {
+              reg = <1>;
+              zephyr,gain = "ADC_GAIN_1";
+              zephyr,reference = "ADC_REF_INTERNAL";
+              zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+              zephyr,resolution = <24>;
+              zephyr,input-positive = <AD4130_ADC_AIN8>;
+              zephyr,input-negative = <AD4130_ADC_AIN9>;
+          };
+
+          channel@2 {
+              reg = <2>;
+              zephyr,gain = "ADC_GAIN_1";
+              zephyr,reference = "ADC_REF_INTERNAL";
+              zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+              zephyr,resolution = <24>;
+              zephyr,input-positive = <AD4130_ADC_AIN10>;
+              zephyr,input-negative = <AD4130_ADC_AIN11>;
+          };
+      };
+  };
+
+  For input constants such as `AD4130_ADC_AIN8`, refer to the binding header:
+  `include/zephyr/dt-bindings/adc/ad4130-adc.h`
+
+compatible: adi,ad4130-adc
+
+include: [adc-controller.yaml, spi-device.yaml]
+
+properties:
+  bipolar:
+    type: boolean
+    description: |
+      Bipolar configuration for AD4130
+  internal-reference-value:
+    type: int
+    enum: [0, 1]
+    default: 0
+    description: |
+      Internal reference value selection:
+      - AD4130_INTREF_2_5V
+      - AD4130_INTREF_1_25V
+      The default value is set to 0 to provide a higher full-scale range
+      for ADC measurements, which is suitable for a wider variety of
+      general-purpose applications.
+  adc-mode:
+    type: int
+    enum: [0, 1, 2, 3, 4]
+    default: 0
+    description: |
+      ADC operating mode for AD4130
+      - 0 AD4130_CONTINUOUS
+      - 1 AD4130_SINGLE
+      - 2 AD4130_STANDBY
+      - 3 AD4130_POWER_DOWN
+      - 4 AD4130_IDLE
+      The default is set to 0 because the continuous conversion mode
+      is enabled for control setup upon power-up or after reset.
+  clock-type:
+    type: int
+    enum: [0, 1, 2, 3]
+    default: 0
+    description: |
+      Clock selection:
+      - AD4130_INT_76_8_KHZ_OUT_OFF
+      - AD4130_INT_76_8_KHZ_OUT_ON
+      - AD4130_EXT_76_8KHZ
+      - AD4130_EXT_153_6_KHZ_DIV_2
+      The default value is 0, which selects the internal clock without
+      enabling the clock output.
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input

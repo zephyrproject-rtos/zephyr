@@ -243,7 +243,7 @@ static int adc_cmp_npcx_channel_get(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static const struct sensor_driver_api adc_cmp_npcx_api = {
+static DEVICE_API(sensor, adc_cmp_npcx_api) = {
 	.attr_set = adc_cmp_npcx_attr_set,
 	.attr_get = adc_cmp_npcx_attr_get,
 	.trigger_set = adc_cmp_npcx_trigger_set,

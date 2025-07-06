@@ -145,7 +145,7 @@ static int wdt_xmc4xxx_feed(const struct device *dev, int channel_id)
 	return 0;
 }
 
-static const struct wdt_driver_api wdt_xmc4xxx_api = {
+static DEVICE_API(wdt, wdt_xmc4xxx_api) = {
 	.setup = wdt_xmc4xxx_setup,
 	.disable = wdt_xmc4xxx_disable,
 	.install_timeout = wdt_xmc4xxx_install_timeout,

@@ -1,5 +1,6 @@
 board:
   name: dragino_nbsn95
+  full_name: NBSN95 NB-IoT Sensor Node
   vendor: dragino
   socs:
     - name: stm32l072xx

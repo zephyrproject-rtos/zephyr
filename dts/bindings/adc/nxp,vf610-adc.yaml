@@ -5,7 +5,7 @@ description: Vf610 Adc
 
 compatible: "nxp,vf610-adc"
 
-include: adc-controller.yaml
+include: [adc-controller.yaml, "nxp,rdc-policy.yaml"]
 
 properties:
   reg:
@@ -29,22 +29,6 @@ properties:
 
   "#io-channel-cells":
     const: 1
-
-  rdc:
-    type: int
-    required: true
-    description: |
-      Set the RDC permission for this peripheral: the RDC controls which
-      processor can access to this peripheral. User can select to assign this
-      peripheral to the M4 processor, A9 processor or both with R/W or RW
-      permissions. To set wanted permission a user should use the helper
-      macro RDC_DOMAIN_PERM(domain,permission) where domain must be one of
-      M4_DOMAIN_ID or A9_DOMAIN_ID and permission one among
-      RDC_DOMAIN_PERM_NONE, RDC_DOMAIN_PERM_W, RDC_DOMAIN_PERM_R,
-      RDC_DOMAIN_PERM_RW. Example to allow both processor to read/write to
-      this peripheral a user should put:
-      rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID, RDC_DOMAIN_PERM_RW) |
-              RDC_DOMAIN_PERM(M4_DOMAIN_ID, RDC_DOMAIN_PERM_RW))>;
 
 io-channel-cells:
   - input

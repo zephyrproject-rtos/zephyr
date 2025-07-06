@@ -7,6 +7,8 @@
 #   elfconvert_flag_final         : empty
 #   elfconvert_flag_strip_all     : -S
 #   elfconvert_flag_strip_debug   : -g
+#   elfconvert_flag_strip_unneeded: --strip-unneeded
+#   elfconvert_flag_compress_debug_sections: --compress-debug-sections
 #   elfconvert_flag_intarget      : --input-target=
 #   elfconvert_flag_outtarget     : --output-target=
 #   elfconvert_flag_section_remove: --remove-section=
@@ -25,14 +27,17 @@
 set_property(TARGET bintools PROPERTY elfconvert_command ${CMAKE_OBJCOPY})
 
 # List of format the tool supports for converting, for example,
-# GNU tools uses objectcopy, which supports the following: ihex, srec, binary
-set_property(TARGET bintools PROPERTY elfconvert_formats ihex srec binary)
+# GNU tools uses objectcopy, which supports the following: ihex, srec, binary, mot
+set_property(TARGET bintools PROPERTY elfconvert_formats ihex srec binary mot)
 
 set_property(TARGET bintools PROPERTY elfconvert_flag "")
 set_property(TARGET bintools PROPERTY elfconvert_flag_final "")
 
 set_property(TARGET bintools PROPERTY elfconvert_flag_strip_all "-S")
 set_property(TARGET bintools PROPERTY elfconvert_flag_strip_debug "-g")
+set_property(TARGET bintools PROPERTY elfconvert_flag_strip_unneeded "--strip-unneeded")
+
+set_property(TARGET bintools PROPERTY elfconvert_flag_compress_debug_sections "--compress-debug-sections")
 
 set_property(TARGET bintools PROPERTY elfconvert_flag_intarget "--input-target=")
 set_property(TARGET bintools PROPERTY elfconvert_flag_outtarget "--output-target=")
@@ -41,7 +46,7 @@ set_property(TARGET bintools PROPERTY elfconvert_flag_section_remove "--remove-s
 set_property(TARGET bintools PROPERTY elfconvert_flag_section_only "--only-section=")
 set_property(TARGET bintools PROPERTY elfconvert_flag_section_rename "--rename-section;")
 
-set_property(TARGET bintools PROPERTY elfconvert_flag_lma_adjust "--change-section-lma;*+")
+set_property(TARGET bintools PROPERTY elfconvert_flag_lma_adjust "--change-section-lma;")
 
 # Note, placing a ';' at the end results in the following param  to be a list,
 # and hence space separated.
@@ -59,6 +64,7 @@ set_property(TARGET bintools PROPERTY elfconvert_flag_outfile "")
 #   disassembly_flag               : -d
 #   disassembly_flag_final         : empty
 #   disassembly_flag_inline_source : -S
+#   disassembly_flag_no_aliases    : -M no-aliases
 #   disassembly_flag_all           : -SDz
 #   disassembly_flag_infile        : empty, objdump doesn't take arguments for filenames
 #   disassembly_flag_outfile       : '>', objdump doesn't take arguments for output file, but result is printed to standard out, and is redirected.
@@ -67,6 +73,7 @@ set_property(TARGET bintools PROPERTY disassembly_command ${CMAKE_OBJDUMP})
 set_property(TARGET bintools PROPERTY disassembly_flag -d)
 set_property(TARGET bintools PROPERTY disassembly_flag_final "")
 set_property(TARGET bintools PROPERTY disassembly_flag_inline_source -S)
+set_property(TARGET bintools PROPERTY disassembly_flag_no_aliases -M no-aliases)
 set_property(TARGET bintools PROPERTY disassembly_flag_all -SDz)
 
 set_property(TARGET bintools PROPERTY disassembly_flag_infile "")

@@ -8,8 +8,8 @@
  * @brief Public APIs for Digital Signal Processing (DSP) math.
  */
 
-#ifndef INCLUDE_ZEPHYR_DSP_DSP_H_
-#define INCLUDE_ZEPHYR_DSP_DSP_H_
+#ifndef ZEPHYR_INCLUDE_DSP_DSP_H_
+#define ZEPHYR_INCLUDE_DSP_DSP_H_
 
 #ifdef CONFIG_DSP_BACKEND_HAS_STATIC
 #define DSP_FUNC_SCOPE static
@@ -44,4 +44,4 @@
 
 #include "zdsp_backend.h"
 
-#endif /* INCLUDE_ZEPHYR_DSP_DSP_H_ */
+#endif /* ZEPHYR_INCLUDE_DSP_DSP_H_ */

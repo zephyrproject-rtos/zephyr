@@ -1,5 +1,6 @@
 board:
   name: stm32f723e_disco
+  full_name: STM32F723E Discovery
   vendor: st
   socs:
     - name: stm32f723xx

@@ -30,13 +30,7 @@ static int sb_tsi_sample_fetch(const struct device *dev,
 {
 	struct sb_tsi_data *data = dev->data;
 	const struct sb_tsi_config *config = dev->config;
-	enum pm_device_state pm_state;
 	int res;
-
-	(void)pm_device_state_get(dev, &pm_state);
-	if (pm_state != PM_DEVICE_STATE_ACTIVE) {
-		return -EIO;
-	}
 
 	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_AMBIENT_TEMP) {
 		return -ENOTSUP;
@@ -76,7 +70,7 @@ static int sb_tsi_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api sb_tsi_driver_api = {
+static DEVICE_API(sensor, sb_tsi_driver_api) = {
 	.sample_fetch = sb_tsi_sample_fetch,
 	.channel_get = sb_tsi_channel_get,
 };

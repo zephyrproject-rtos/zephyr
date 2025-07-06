@@ -63,23 +63,39 @@
  */
 #if defined(CONFIG_BT_TICKER_EXT)
 #if defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
+#if defined(CONFIG_BT_TICKER_REMAINDER_SUPPORT)
 #define TICKER_USER_OP_T_SIZE   44
+#else /* !CONFIG_BT_TICKER_REMAINDER_SUPPORT */
+#define TICKER_USER_OP_T_SIZE   40
+#endif /* !CONFIG_BT_TICKER_REMAINDER_SUPPORT */
 #else /* !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
-#if defined(CONFIG_BT_TICKER_REMAINDER)
+#if defined(CONFIG_BT_TICKER_REMAINDER_SUPPORT)
+#if defined(CONFIG_BT_TICKER_START_REMAINDER)
 #define TICKER_USER_OP_T_SIZE   52
-#else /* !CONFIG_BT_TICKER_REMAINDER */
+#else /* !CONFIG_BT_TICKER_START_REMAINDER */
 #define TICKER_USER_OP_T_SIZE   48
-#endif /* !CONFIG_BT_TICKER_REMAINDER */
+#endif /* !CONFIG_BT_TICKER_START_REMAINDER */
+#else /* !CONFIG_BT_TICKER_REMAINDER_SUPPORT */
+#define TICKER_USER_OP_T_SIZE   44
+#endif /* !CONFIG_BT_TICKER_REMAINDER_SUPPORT */
 #endif /* !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
 #else /* !CONFIG_BT_TICKER_EXT */
 #if defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
+#if defined(CONFIG_BT_TICKER_REMAINDER_SUPPORT)
 #define TICKER_USER_OP_T_SIZE   40
+#else /* !CONFIG_BT_TICKER_REMAINDER_SUPPORT */
+#define TICKER_USER_OP_T_SIZE   36
+#endif /* !CONFIG_BT_TICKER_REMAINDER_SUPPORT */
 #else /* !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
-#if defined(CONFIG_BT_TICKER_REMAINDER)
+#if defined(CONFIG_BT_TICKER_REMAINDER_SUPPORT)
+#if defined(CONFIG_BT_TICKER_START_REMAINDER)
 #define TICKER_USER_OP_T_SIZE   48
-#else /* !CONFIG_BT_TICKER_REMAINDER */
+#else /* !CONFIG_BT_TICKER_START_REMAINDER */
 #define TICKER_USER_OP_T_SIZE   44
-#endif /* !CONFIG_BT_TICKER_REMAINDER */
+#endif /* !CONFIG_BT_TICKER_START_REMAINDER */
+#else /* !CONFIG_BT_TICKER_REMAINDER_SUPPORT */
+#define TICKER_USER_OP_T_SIZE   40
+#endif /* !CONFIG_BT_TICKER_REMAINDER_SUPPORT */
 #endif /* !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
 #endif /* !CONFIG_BT_TICKER_EXT */
 
@@ -120,7 +136,9 @@ typedef void (*ticker_timeout_func) (uint32_t ticks_at_expire,
 
 struct ticker_expire_info {
 	uint32_t ticks_to_expire;
+#if defined(CONFIG_BT_TICKER_REMAINDER_SUPPORT)
 	uint32_t remainder;
+#endif /* CONFIG_BT_TICKER_REMAINDER_SUPPORT */
 	uint16_t lazy;
 };
 
@@ -155,6 +173,7 @@ uint8_t ticker_init(uint8_t instance_index, uint8_t count_node, void *node,
 		     void *user_op, ticker_caller_id_get_cb_t caller_id_get_cb,
 		     ticker_sched_cb_t sched_cb,
 		     ticker_trigger_set_cb_t trigger_set_cb);
+int ticker_deinit(uint8_t instance_index);
 bool ticker_is_initialized(uint8_t instance_index);
 void ticker_trigger(uint8_t instance_index);
 void ticker_worker(void *param);
@@ -213,15 +232,24 @@ uint8_t ticker_priority_set(uint8_t instance_index, uint8_t user_id,
 #if defined(CONFIG_BT_TICKER_EXT)
 struct ticker_ext {
 #if !defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
-	uint32_t ticks_slot_window;/* Window in which the slot
-				    * reservation may be re-scheduled
-				    * to avoid collision
-				    */
-	uint32_t ticks_drift;      /* Actual drift since last expiry */
-	uint8_t reschedule_state;  /* State of re-scheduling of the
-				    * node. See defines
-				    * TICKER_RESCHEDULE_STATE_XXX
-				    */
+	uint32_t ticks_slot_window;    /* Window in which the slot
+					* reservation may be re-scheduled
+					* to avoid collision
+					*/
+	uint32_t ticks_drift;          /* Actual drift since last expiry,
+					* includes any ticker update interface
+					* made changes plus drift due to
+					* reschedule when not
+					* is_jitter_in_window, otherwise is only
+					* the value of drift due to reschedule
+					*/
+	uint8_t reschedule_state:3;    /* State of re-scheduling of the
+					* node. See defines
+					* TICKER_RESCHEDULE_STATE_XXX
+					*/
+	uint8_t is_drift_in_window:1;  /* Drift in slot window, to be placed
+					* after an overlapping ticker
+					*/
 #endif /* CONFIG_BT_TICKER_SLOT_AGNOSTIC */
 
 #if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)

@@ -4,6 +4,8 @@
 config DNS_RESOLVER
 	bool "DNS resolver"
 	depends on NET_NATIVE
+	select NET_SOCKETS
+	select NET_SOCKETS_SERVICE
 	select CRC
 	help
 	  This option enables the DNS client side support for Zephyr
@@ -32,16 +34,6 @@ config LLMNR_RESOLVER
 	  to LLMNR well known multicast address 224.0.0.252:5355 or
 	  [ff02::1:3]:5355 and other DNS server addresses are ignored.
 
-
-config DNS_RESOLVER_ADDITIONAL_BUF_CTR
-	int "Additional DNS buffers"
-	default 0
-	help
-	  Number of additional buffers available for the DNS resolver.
-	  The DNS resolver requires at least one buffer. This option
-	  enables additional buffers required for multiple concurrent
-	  DNS connections.
-
 config DNS_RESOLVER_ADDITIONAL_QUERIES
 	int "Additional DNS queries"
 	range 0 2
@@ -69,13 +61,31 @@ config DNS_RESOLVER_MAX_SERVERS
 	  DNS server is enough. Each connection to DNS server will use one
 	  network context.
 
+config DNS_RESOLVER_MAX_ANSWER_SIZE
+	int "Max length of a DNS answer"
+	range 1 $(UINT16_MAX)
+	default 512
+	help
+	  Max length of the returned DNS answer we can process.
+	  Recommended value by RFC 1035 is 512 bytes.
+
 config DNS_RESOLVER_MAX_QUERY_LEN
 	int "Max length of a DNS query"
-	range 1 255
-	default 255
+	range 1 $(UINT8_MAX)
+	default $(UINT8_MAX)
 	help
 	  Max length of a DNS query that should be looked up including the
 	  trailing 0. So e.g. "example.com" would have a query len of 12.
+
+config DNS_RESOLVER_MAX_NAME_LEN
+	int "Max length of the resolved DNS name"
+	range 1 $(UINT8_MAX)
+	default 128 if DNS_SD
+	default 20
+	help
+	  Max length of a buffer that is used to store information returned from
+	  DNS server. For example if we query a DNS-SD service, then this value should
+	  be long enough to store the returned string.
 
 menuconfig DNS_SERVER_IP_ADDRESSES
 	bool "Set DNS server IP addresses"
@@ -95,6 +105,12 @@ config DNS_SERVER1
 	  192.0.2.1:5353
 	  2001:db8::1
 	  [2001:db8::1]:5353
+	  It is possible to bind the DNS connection via a certain network
+	  interface by appending "%" and network interface name to the server
+	  address. For example: 192.0.2.1%eth1 would bind the connection socket
+	  to the network interface eth1. This is optional and by default the
+	  resolver connects to server by selecting the output network interface
+	  using normal IP routing.
 	  It is not mandatory to use this Kconfig option at all.
 	  The one calling dns_resolve_init() can use this option or not
 	  to populate the server list. If the DNS server addresses are
@@ -122,6 +138,19 @@ config DNS_SERVER5
 	  See help in "DNS server 1" option.
 
 endif # DNS_SERVER_IP_ADDRESSES
+
+config DNS_RECONFIGURE_CLEANUP
+	bool "Cleanup old DNS server entries when reconfiguring"
+	help
+	  If calling dns_resolve_reconfigure() when new DNS servers
+	  are being set, for example if receiving new ones from DHCP server,
+	  remove the old entries before setting up the new ones.
+	  If you have only one network interface, then this can be enabled.
+	  If you have multiple network interfaces, then this should be disabled
+	  because the later configuration update would remove the entries
+	  set by the other network interface configuration.
+	  The previous default in Zephyr 4.1 or earlier was to have this enabled.
+	  The current default in Zephyr 4.2 is to disable this option.
 
 config DNS_NUM_CONCUR_QUERIES
 	int "Number of simultaneous DNS queries per one DNS context"
@@ -164,6 +193,8 @@ config MDNS_RESPONDER
 	select NET_IPV6_MLD if NET_IPV6
 	select NET_MGMT
 	select NET_MGMT_EVENT
+	select NET_SOCKETS
+	select NET_SOCKETS_SERVICE
 	depends on NET_HOSTNAME_ENABLE
 	help
 	  This option enables the mDNS responder support for Zephyr.
@@ -174,6 +205,12 @@ config MDNS_RESPONDER
 	  See RFC 6762 for more details about mDNS.
 
 if MDNS_RESPONDER
+
+config MDNS_RESOLVER_BUF_SIZE
+	int "Size of the net_buf pool buffers"
+	default 512
+	help
+	  For larger DNS SD TXT records and long service instance names, bigger buffers are necessary
 
 config MDNS_RESPONDER_TTL
 	int "Time-to-Live of returned DNS name"
@@ -187,6 +224,36 @@ config MDNS_RESPONDER_INIT_PRIO
 	help
 	  Note that if NET_CONFIG_AUTO_INIT is enabled, then this value
 	  should be bigger than its value.
+
+config MDNS_RESPONDER_PROBE
+	bool "mDNS probing support [EXPERIMENTAL]"
+	select NET_CONNECTION_MANAGER
+	select MDNS_RESOLVER
+	select DNS_RESOLVER
+	select EXPERIMENTAL
+	help
+	  Note that for probing to work, the mDNS and DNS resolver need to
+	  be enabled. The probing is made optional to allow smaller memory
+	  usage.
+
+config MDNS_WORKQ_STACK_SIZE
+	int "mDNS work queue thread stack size"
+	default 1200 if X86
+	default 1024
+	depends on MDNS_RESPONDER_PROBE
+	help
+	  Set the mDNS work queue thread stack size in bytes.
+
+config MDNS_WORKER_PRIO
+	int "Priority of the mDNS work queue"
+	default 2
+	depends on MDNS_RESPONDER_PROBE
+	help
+	  Set the priority of the mDNS worker queue, that handles all
+	  mDNS probing. Value 0 = highest priortity.
+	  When CONFIG_NET_TC_THREAD_COOPERATIVE = y, lowest priority is
+	  CONFIG_NUM_COOP_PRIORITIES-1 else lowest priority is
+	  CONFIG_NUM_PREEMPT_PRIORITIES-1.
 
 config MDNS_RESPONDER_DNS_SD
 	bool "DNS Service Discovery via mDNS"
@@ -229,6 +296,8 @@ config LLMNR_RESPONDER
 	select NET_IPV6_MLD if NET_IPV6
 	select NET_MGMT
 	select NET_MGMT_EVENT
+	select NET_SOCKETS
+	select NET_SOCKETS_SERVICE
 	depends on NET_HOSTNAME_ENABLE
 	help
 	  This option enables the LLMNR responder support for Zephyr.
@@ -288,3 +357,35 @@ module-help = Enables DNS Service Discovery code to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 
 endif # DNS_SD
+
+# Note that we enable the DNS socket dispatcher always if either responder or
+# resolver support is enabled to simplify things. Strictly speaking the
+# dispatcher is really needed for supporting resolver and responder at the same
+# time.
+config DNS_SOCKET_DISPATCHER
+	bool
+	depends on (DNS_RESOLVER || MDNS_RESPONDER)
+	select NET_SOCKETS_SERVICE
+	default y
+	help
+	  A DNS socket dispatcher that allows both the DNS resolver and
+	  mDNS responder to be used at the same time.
+
+if DNS_SOCKET_DISPATCHER
+
+config DNS_RESOLVER_ADDITIONAL_BUF_CTR
+	int "Additional DNS buffers"
+	default 1
+	help
+	  Number of additional buffers available for the DNS resolver.
+	  The DNS resolver requires at least one buffer. This option
+	  enables additional buffers required for multiple concurrent
+	  DNS connections.
+
+module = DNS_SOCKET_DISPATCHER
+module-dep = NET_LOG
+module-str = Log level for DNS socket dispatcher
+module-help = Enables DNS socket dispatcher code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+endif # DNS_SOCKET_DISPATCHER

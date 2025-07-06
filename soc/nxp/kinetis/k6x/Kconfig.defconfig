@@ -19,4 +19,10 @@ config GPIO
 config SPI
 	default n if SOC_MK64F12
 
+# The flash option register (FOPT) boot options
+# 1111 1001 - Set NMI pin/interrupts and EzPort reset default to disabled
+config KINETIS_FLASH_CONFIG_FOPT
+	default 0xF9
+	depends on KINETIS_FLASH_CONFIG
+
 endif # SOC_SERIES_KINETIS_K6X

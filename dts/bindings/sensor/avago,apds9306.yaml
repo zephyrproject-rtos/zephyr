@@ -1,0 +1,54 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2024 Daniel Kampert
+# Author: Daniel Kampert <DanielKampert@Kampis-Elektroecke.de>
+
+description: APDS9306 miniature Surface-Mount Digital Ambient Light Sensor.
+
+compatible: "avago,apds9306"
+
+include:
+  - sensor-device.yaml
+  - i2c-device.yaml
+
+properties:
+  gain:
+    type: int
+    default: 1
+    enum:
+      - 18
+      - 9
+      - 6
+      - 3
+      - 1
+    description:
+      ALS Gain range.
+      The default corresponds to the reset value of the register field.
+
+  resolution:
+    type: int
+    default: 18
+    enum:
+      - 13
+      - 16
+      - 17
+      - 18
+      - 19
+      - 20
+    description:
+      ALS Resolution / Bit width.
+      The default corresponds to the reset value of the register field.
+
+  frequency:
+    type: int
+    default: 100
+    enum:
+      - 2000
+      - 1000
+      - 500
+      - 200
+      - 100
+      - 50
+      - 25
+    description:
+      ALS Measurement Rate in milliseconds.
+      The default corresponds to the reset value of the register field.

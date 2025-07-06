@@ -5,6 +5,7 @@
 
 #include <zephyr/init.h>
 #include <zephyr/rtio/rtio.h>
+#include <zephyr/sys/mpsc_lockfree.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/app_memory/app_memdomain.h>
 #include <zephyr/sys/iterable_sections.h>
@@ -17,13 +18,13 @@ int rtio_init(void)
 {
 	STRUCT_SECTION_FOREACH(rtio_sqe_pool, sqe_pool) {
 		for (int i = 0; i < sqe_pool->pool_size; i++) {
-			rtio_mpsc_push(&sqe_pool->free_q, &sqe_pool->pool[i].q);
+			mpsc_push(&sqe_pool->free_q, &sqe_pool->pool[i].q);
 		}
 	}
 
 	STRUCT_SECTION_FOREACH(rtio_cqe_pool, cqe_pool) {
 		for (int i = 0; i < cqe_pool->pool_size; i++) {
-			rtio_mpsc_push(&cqe_pool->free_q, &cqe_pool->pool[i].q);
+			mpsc_push(&cqe_pool->free_q, &cqe_pool->pool[i].q);
 		}
 	}
 

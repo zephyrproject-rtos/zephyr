@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2017, NXP
+ * Copyright 2017, 2024 NXP
  * Copyright (c) 2020-2021 Vestas Wind Systems A/S
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nxp_kinetis_ftm_pwm
+#define DT_DRV_COMPAT nxp_ftm_pwm
 
 #include <zephyr/drivers/clock_control.h>
 #include <errno.h>
@@ -492,7 +492,7 @@ static int mcux_ftm_init(const struct device *dev)
 	return 0;
 }
 
-static const struct pwm_driver_api mcux_ftm_driver_api = {
+static DEVICE_API(pwm, mcux_ftm_driver_api) = {
 	.set_cycles = mcux_ftm_set_cycles,
 	.get_cycles_per_sec = mcux_ftm_get_cycles_per_sec,
 #ifdef CONFIG_PWM_CAPTURE
@@ -578,7 +578,7 @@ static const struct mcux_ftm_config mcux_ftm_config_##n = { \
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)), \
 	.clock_subsys = (clock_control_subsys_t) \
 		DT_INST_CLOCKS_CELL(n, name), \
-	.ftm_clock_source = kFTM_FixedClock, \
+	.ftm_clock_source = (ftm_clock_source_t)(DT_INST_ENUM_IDX(n, clock_source) + 1U), \
 	.prescale = TO_FTM_PRESCALE_DIVIDE(DT_INST_PROP(n, prescaler)),\
 	.channel_count = FSL_FEATURE_FTM_CHANNEL_COUNTn((FTM_Type *) \
 		DT_INST_REG_ADDR(n)), \

@@ -100,7 +100,7 @@ endif()
 # Add a BT serial device when building for bluetooth, unless the
 # application explicitly opts out with NO_QEMU_SERIAL_BT_SERVER.
 if(CONFIG_BT)
-  if(CONFIG_BT_NO_DRIVER)
+  if(NOT CONFIG_BT_UART)
       set(NO_QEMU_SERIAL_BT_SERVER 1)
   endif()
   if(NOT NO_QEMU_SERIAL_BT_SERVER)
@@ -254,26 +254,35 @@ elseif(QEMU_NET_STACK)
     # NET_TOOLS has been set to the net-tools repo path
     # net-tools/monitor_15_4 has been built beforehand
 
-    set_ifndef(NET_TOOLS ${ZEPHYR_BASE}/../net-tools) # Default if not set
+    set_ifndef(NET_TOOLS ${ZEPHYR_BASE}/../tools/net-tools) # Default if not set
 
     list(APPEND PRE_QEMU_COMMANDS_FOR_server
-      COMMAND
+      #Disable Ctrl-C to ensure that users won't accidentally exit
+      #w/o killing the monitor.
+      COMMAND stty intr ^d
+
       #This command is run in the background using '&'. This prevents
       #chaining other commands with '&&'. The command is enclosed in '{}'
       #to fix this.
-      {
-      ${NET_TOOLS}/monitor_15_4
-      ${PCAP}
-      /tmp/ip-stack-server
-      /tmp/ip-stack-client
-      > /dev/null &
+      COMMAND {
+        ${NET_TOOLS}/monitor_15_4
+        ${PCAP}
+        /tmp/ip-stack-server
+        /tmp/ip-stack-client
+        > /dev/null &
       }
-      # TODO: Support cleanup of the monitor_15_4 process
+      )
+    set(POST_QEMU_COMMANDS_FOR_server
+      # Re-enable Ctrl-C.
+      COMMAND stty intr ^c
+
+      # Kill the monitor_15_4 sub-process
+      COMMAND pkill -P $$$$
       )
   endif()
 endif(QEMU_PIPE_STACK)
 
-if(CONFIG_CAN AND NOT (CONFIG_NIOS2 OR CONFIG_SOC_LEON3))
+if(CONFIG_CAN AND NOT (CONFIG_SOC_LEON3))
   # Add CAN bus 0
   list(APPEND QEMU_FLAGS -object can-bus,id=canbus0)
 
@@ -440,6 +449,7 @@ foreach(target ${qemu_targets})
     ${MORE_FLAGS_FOR_${target}}
     ${QEMU_SMP_FLAGS}
     ${QEMU_KERNEL_OPTION}
+    ${POST_QEMU_COMMANDS_FOR_${target}}
     DEPENDS ${logical_target_for_zephyr_elf}
     WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
     COMMENT "${QEMU_PIPE_COMMENT}[QEMU] CPU: ${QEMU_CPU_TYPE_${ARCH}}"

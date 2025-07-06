@@ -27,9 +27,3 @@
 		mxicy,mx25r-power-mode = "high-performance";
 	};
 };
-
-/ {
-	aliases {
-		spi-flash0 = &mx25r64;
-	};
-};

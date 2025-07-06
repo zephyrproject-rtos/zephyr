@@ -1,0 +1,59 @@
+/*
+ * Copyright 2024-2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "nxp_mcxw7x_common.dtsi"
+
+&fmu {
+	ranges = <0x0 0x10000000 DT_SIZE_M(2)>;
+};
+
+&flash {
+	reg = <0x0 DT_SIZE_M(2)>;
+};
+
+&ctcm {
+	ranges = <0x0 0x14000000 DT_SIZE_K(32)>;
+};
+
+&ctcm0 {
+	reg = <0x0 DT_SIZE_K(32)>;
+};
+
+&stcm {
+	ranges = <0x0 0x30000000 DT_SIZE_K(232)>;
+};
+
+&stcm0 {
+	reg = <0x0 DT_SIZE_K(232)>;
+};
+
+&pbridge2 {
+	reg = <0x0 0x54000>;
+};
+
+&porta {
+	reg = <0x42000 0xF0>;
+};
+
+&portb {
+	reg = <0x43000 0xF0>;
+};
+
+&portc {
+	reg = <0x44000 0xF0>;
+};
+
+&portd {
+	reg = <0x45000 0xF0>;
+};
+
+&smu2 {
+	ranges = <0x0 0x1c0000 DT_SIZE_K(80)>;
+};
+
+&rtc {
+	reg = <0x4002c000 0x60>;
+};

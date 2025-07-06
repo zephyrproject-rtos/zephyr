@@ -1,0 +1,8 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP NETC ethernet switch
+
+compatible: "nxp,netc-switch"
+
+include: [dsa.yaml]

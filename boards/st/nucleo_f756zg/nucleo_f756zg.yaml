@@ -5,7 +5,6 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 ram: 256
 flash: 1024
 supported:
@@ -19,4 +18,5 @@ supported:
   - i2c
   - pwm
   - spi
+  - usbd
 vendor: st

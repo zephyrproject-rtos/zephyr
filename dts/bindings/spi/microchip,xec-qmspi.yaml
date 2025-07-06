@@ -11,7 +11,7 @@ properties:
   reg:
     required: true
 
-  port_sel:
+  port-sel:
     type: int
     required: true
     description: SPI Port 0 or 1.
@@ -37,7 +37,7 @@ properties:
     required: true
     description: QMSPI lines 1, 2, or 4
 
-  chip_select:
+  chip-select:
     type: int
     required: true
     description: Use QMSPI CS0# or CS1#

@@ -8,12 +8,21 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 
 LOG_MODULE_REGISTER(mss_qspi, CONFIG_SPI_LOG_LEVEL);
+
+/* Is MSS QSPI module 'resets' line property defined */
+#define MSS_QSPI_RESET_ENABLED DT_ANY_INST_HAS_PROP_STATUS_OKAY(resets)
+
+#if MSS_QSPI_RESET_ENABLED
+#include <zephyr/drivers/reset.h>
+#endif
+
 #include "spi_context.h"
 
 /*MSS QSPI Register offsets */
@@ -100,6 +109,9 @@ struct mss_qspi_config {
 	void (*irq_config_func)(const struct device *dev);
 	int irq;
 	uint32_t clock_freq;
+#if MSS_QSPI_RESET_ENABLED
+	struct reset_dt_spec reset_spec;
+#endif
 };
 
 /* Device run time data */
@@ -554,6 +566,12 @@ static int mss_qspi_init(const struct device *dev)
 	unsigned int ret = 0;
 	uint32_t control = 0;
 
+#if MSS_QSPI_RESET_ENABLED
+	if (cfg->reset_spec.dev != NULL) {
+		(void)reset_line_deassert_dt(&cfg->reset_spec);
+	}
+#endif
+
 	cfg->irq_config_func(dev);
 
 	control &= ~(MSS_QSPI_CONTROL_SAMPLE_MSK);
@@ -568,41 +586,42 @@ static int mss_qspi_init(const struct device *dev)
 	return ret;
 }
 
-static const struct spi_driver_api mss_qspi_driver_api = {
+static DEVICE_API(spi, mss_qspi_driver_api) = {
 	.transceive = mss_qspi_transceive_blocking,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = mss_qspi_transceive_async,
 #endif /* CONFIG_SPI_ASYNC */
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
+#endif
 	.release = mss_qspi_release,
 };
 
-#define MSS_QSPI_INIT(n)						\
-	static void mss_qspi_config_func_##n(const struct device *dev);	\
-									\
-	static const struct mss_qspi_config mss_qspi_config_##n = { \
-		.base = DT_INST_REG_ADDR(n),				\
-		.irq_config_func = mss_qspi_config_func_##n,	\
-		.clock_freq = DT_INST_PROP(n, clock_frequency),	\
-	};								\
-									\
-	static struct mss_qspi_data mss_qspi_data_##n = {	\
-		SPI_CONTEXT_INIT_LOCK(mss_qspi_data_##n, ctx),	\
-		SPI_CONTEXT_INIT_SYNC(mss_qspi_data_##n, ctx),	\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(n, &mss_qspi_init,			\
-			    NULL,					\
-			    &mss_qspi_data_##n,			\
-			    &mss_qspi_config_##n, POST_KERNEL,	\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
-			    &mss_qspi_driver_api);			\
-									\
-	static void mss_qspi_config_func_##n(const struct device *dev)	\
-	{								\
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	\
-			    mss_qspi_interrupt,				\
-			    DEVICE_DT_INST_GET(n), 0);			\
-		irq_enable(DT_INST_IRQN(n));				\
+#define MSS_QSPI_INIT(n)                                                                           \
+	static void mss_qspi_config_func_##n(const struct device *dev);                            \
+                                                                                                   \
+	static const struct mss_qspi_config mss_qspi_config_##n = {                                \
+		.base = DT_INST_REG_ADDR(n),                                                       \
+		.irq_config_func = mss_qspi_config_func_##n,                                       \
+		.clock_freq = DT_INST_PROP(n, clock_frequency),                                    \
+		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, resets),                                       \
+			(.reset_spec = RESET_DT_SPEC_INST_GET(n),))                                \
+	};                                                                                         \
+                                                                                                   \
+	static struct mss_qspi_data mss_qspi_data_##n = {                                          \
+		SPI_CONTEXT_INIT_LOCK(mss_qspi_data_##n, ctx),                                     \
+		SPI_CONTEXT_INIT_SYNC(mss_qspi_data_##n, ctx),                                     \
+	};                                                                                         \
+                                                                                                   \
+	SPI_DEVICE_DT_INST_DEFINE(n, mss_qspi_init, NULL, &mss_qspi_data_##n,                      \
+				  &mss_qspi_config_##n, POST_KERNEL,                               \
+				  CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &mss_qspi_driver_api);       \
+                                                                                                   \
+	static void mss_qspi_config_func_##n(const struct device *dev)                             \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mss_qspi_interrupt,         \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+		irq_enable(DT_INST_IRQN(n));                                                       \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(MSS_QSPI_INIT)

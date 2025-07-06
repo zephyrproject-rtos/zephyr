@@ -31,9 +31,13 @@ static int stm32h7_m4_wakeup(void)
 	LL_APB4_GRP1_EnableClock(LL_APB4_GRP1_PERIPH_SYSCFG);
 
 	if (READ_BIT(SYSCFG->UR1, SYSCFG_UR1_BCM4)) {
-		/* Cortex-M4 is waiting for end of system initialization made by
-		 * Cortex-M7. This initialization is now finished,
-		 * then Cortex-M7 takes HSEM so that CM4 can continue running.
+		/**
+		 * Cortex-M4 has been started by hardware.
+		 * Its `soc_early_init_hook()` will stall boot until
+		 * a specific HSEM becomes locked, which indicates
+		 * that Cortex-M7 has finished initializing the system.
+		 * As system initialization is now complete, lock the
+		 * HSEM to release CM4 and allow it to continue booting.
 		 */
 		LL_HSEM_1StepLock(HSEM, CFG_HW_ENTRY_STOP_MODE_SEMID);
 	} else if (IS_ENABLED(CONFIG_STM32H7_BOOT_M4_AT_INIT)) {
@@ -49,11 +53,8 @@ static int stm32h7_m4_wakeup(void)
  * @brief Perform basic hardware initialization at boot.
  *
  * This needs to be run from the very beginning.
- * So the init priority has to be 0 (zero).
- *
- * @return 0
  */
-static int stm32h7_init(void)
+void soc_early_init_hook(void)
 {
 	sys_cache_instr_enable();
 	sys_cache_data_enable();
@@ -92,9 +93,6 @@ static int stm32h7_init(void)
 #else
 	LL_PWR_ConfigSupply(LL_PWR_LDO_SUPPLY);
 #endif
-	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
-	while (LL_PWR_IsActiveFlag_VOS() == 0) {
-	}
 
 	/* Errata ES0392 Rev 8:
 	 * 2.2.9: Reading from AXI SRAM may lead to data read corruption
@@ -105,12 +103,7 @@ static int stm32h7_init(void)
 	if (LL_DBGMCU_GetRevisionID() == 0x1003) {
 		MODIFY_REG(GPV->AXI_TARG7_FN_MOD, 0x1, 0x1);
 	}
-
-	return 0;
 }
-
-SYS_INIT(stm32h7_init, PRE_KERNEL_1, 0);
-
 
 #if defined(CONFIG_STM32H7_DUAL_CORE)
 /* Unlock M4 once system configuration has been done */

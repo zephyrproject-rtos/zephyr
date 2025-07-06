@@ -1,7 +1,7 @@
-.. psa_protected_storage:
+.. zephyr:code-sample:: psa_protected_storage
+   :name: TF-M PSA Protected Storage
 
-PSA Protected Storage
-#####################
+   Use the Protected Storage (PS) API to store encrypted data.
 
 Overview
 ********
@@ -41,7 +41,7 @@ run as the overwrite protection will not be removed with a power reset.
 On QEMU
 ========
 
-Refer to :ref:`tfm_ipc` for detailed instructions.
+Refer to :zephyr:code-sample:`tfm_ipc` for detailed instructions.
 Following is an example based on ``west build``
 
    .. code-block:: bash

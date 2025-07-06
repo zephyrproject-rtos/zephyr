@@ -6,6 +6,8 @@
 
 #include "frdm_mcxn947-pinctrl.dtsi"
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/gpio/dvp-20pin-connector.h>
 
 / {
 	aliases{
@@ -14,6 +16,8 @@
 		led2 = &blue_led;
 		sw0 = &user_button_2;
 		sw1 = &user_button_3;
+		sdhc0 = &usdhc0;
+		mcuboot-button0 = &user_button_2;
 	};
 
 	leds {
@@ -40,13 +44,28 @@
 		user_button_2: button_0 {
 			label = "User SW2";
 			gpios = <&gpio0 23 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_0>;
 			status = "disabled";
 		};
 		user_button_3: button_1 {
 			label = "User SW3";
 			gpios = <&gpio0 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_1>;
 			status = "disabled";
 		};
+	};
+
+	/*
+	 * This node describes the GPIO pins of the LCD-PAR-S035 panel 8080 interface.
+	 */
+	nxp_lcd_8080_connector: lcd-8080-connector {
+		compatible = "nxp,lcd-8080";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<9  0 &gpio4 6 0>,	/* Pin 9, LCD touch INT */
+				<10  0 &gpio4 5 0>,	/* Pin 10, LCD backlight control */
+				<11  0 &gpio4 7 0>;	/* Pin 11, LCD and touch reset */
 	};
 };
 
@@ -55,7 +74,7 @@
 	pinctrl-names = "default";
 };
 
-&flexcomm2_lpi2c2 {
+nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 	pinctrl-0 = <&pinmux_flexcomm2_lpi2c>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
@@ -73,13 +92,51 @@
 	pinctrl-names = "default";
 };
 
+&flexcomm7_lpi2c7 {
+	pinctrl-0 = <&pinmux_flexcomm7_lpi2c>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+/* SmartDMA is used for video driver on this board */
+&smartdma {
+	/* Shields do not enable video-sdma parent node so enable it by default */
+	status = "okay";
+	program-mem = <0x4000000>;
+
+	video_sdma: video-sdma {
+		status = "disabled";
+		compatible = "nxp,video-smartdma";
+		pinctrl-0 = <&pinmux_smartdma_camera>;
+		pinctrl-names = "default";
+		vsync-pin = <4>;
+		hsync-pin = <11>;
+		pclk-pin = <5>;
+	};
+};
+
 /*
  * MCXN947 board uses OS timer as the kernel timer
  * In case we need to switch to SYSTICK timer, then
  * replace &os_timer with &systick
  */
 &os_timer {
+	status = "disabled";
+};
+
+&systick {
 	status = "okay";
+};
+
+&sram {
+	sramg: memory@20050000 {
+		compatible = "mmio-sram";
+		reg = <0x20050000 DT_SIZE_K(64)>;
+	};
+	sramh: memory@20060000 {
+		compatible = "mmio-sram";
+		reg = <0x20060000 DT_SIZE_K(32)>;
+	};
 };
 
 &flash {
@@ -88,22 +145,23 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		/*
+		 * Partition sizes must be aligned
+		 * to the flash memory sector size of 8KB.
+		 */
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x00000000 DT_SIZE_K(64)>;
+			reg = <0x00000000 DT_SIZE_K(80)>;
 		};
-		slot0_partition: partition@10000 {
+		slot0_partition: partition@14000 {
 			label = "image-0";
-			reg = <0x00010000 DT_SIZE_K(960)>;
+			reg = <0x00014000 DT_SIZE_K(984)>;
 		};
-		slot1_partition: partition@100000 {
+		slot1_partition: partition@10A000 {
 			label = "image-1";
-			reg = <0x00100000 DT_SIZE_K(960)>;
+			reg = <0x0010A000 DT_SIZE_K(984)>;
 		};
-		scratch_partition: partition@1f0000 {
-			label = "image-scratch";
-			reg = <0x001f0000 DT_SIZE_K(64)>;
-		};
+		/* storage_partition is placed in WINBOND flash memory*/
 	};
 };
 
@@ -133,20 +191,21 @@
 		cs-setup-time = <3>;
 		data-valid-time = <2>;
 		column-space = <0>;
-		partitions {
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
-			storage_partition: partition@0 {
-				label = "storage";
-				reg = <0x0 DT_SIZE_M(8)>;
-			};
-		};
 	};
 };
 
 &dac0 {
 	pinctrl-0 = <&pinmux_dac0>;
+	pinctrl-names = "default";
+};
+
+&sai1 {
+	pinctrl-0 = <&pinmux_sai1>;
+	pinctrl-names = "default";
+};
+
+&sai0 {
+	pinctrl-0 = <&pinmux_sai0>;
 	pinctrl-names = "default";
 };
 
@@ -173,3 +232,72 @@
 	pinctrl-0 = <&pinmux_flexpwm1_pwm0>;
 	pinctrl-names = "default";
 };
+
+&usdhc0 {
+	pinctrl-0 = <&pinmux_usdhc0>;
+	pinctrl-1 = <&pinmux_usdhc0>;
+	pinctrl-2 = <&pinmux_usdhc0>;
+	cd-gpios = <&gpio2 1 GPIO_ACTIVE_LOW>;
+	pinctrl-names = "default", "slow", "med";
+	no-1-8-v;
+};
+
+&lpadc0 {
+	pinctrl-0 = <&pinmux_lpadc0>;
+	pinctrl-names = "default";
+};
+
+zephyr_mipi_dbi_parallel: &flexio0_lcd {
+	/* DMA channels 0, muxed to FlexIO TX */
+	dmas = <&edma0 0 61>;
+	dma-names = "tx";
+	shifters-count = <8>;
+	timers-count = <1>;
+	enwr-pin = <1>;
+	rd-pin = <0>;
+	data-pin-start = <16>;
+	reset-gpios = <&gpio4 7 GPIO_ACTIVE_HIGH>;
+	cs-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+	rs-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+	pinctrl-0 = <&pinmux_flexio_lcd>;
+	pinctrl-names = "default";
+};
+
+&lpcmp0 {
+	pinctrl-0 = <&pinmux_lpcmp0>;
+	pinctrl-names = "default";
+};
+
+&i3c1 {
+	pinctrl-0 = <&pinmux_i3c1>;
+	pinctrl-names = "default";
+};
+
+&flexcan0 {
+	pinctrl-0 = <&pinmux_flexcan0>;
+	pinctrl-names = "default";
+};
+
+&sc_timer {
+	pinctrl-0 = <&pinmux_sctimer>;
+	pinctrl-names = "default";
+};
+
+/*
+ * Connection with camera modules such as the dvp_20pin_ov7670 shield
+ */
+
+/ {
+	dvp_20pin_connector: dvp-20pin-connector {
+		compatible = "arducam,dvp-20pin-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
+		gpio-map =	<DVP_20PIN_PEN 0 &gpio1 19 0>,
+				<DVP_20PIN_PDN 0 &gpio1 18 0>;
+	};
+};
+
+dvp_20pin_i2c: &flexcomm7_lpi2c7 {};
+
+dvp_20pin_interface: &video_sdma {};

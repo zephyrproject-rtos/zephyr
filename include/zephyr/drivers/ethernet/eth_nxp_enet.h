@@ -40,6 +40,12 @@ enum nxp_enet_driver {
 	NXP_ENET_PTP_CLOCK,
 };
 
+struct nxp_enet_ptp_data {
+	struct k_sem ptp_ts_sem;
+	struct k_mutex *ptp_mutex; /* created in PTP driver */
+	void *enet; /* enet_handle poiniter used by PTP driver */
+};
+
 extern void nxp_enet_mdio_callback(const struct device *mdio_dev,
 		enum nxp_enet_callback_reason event,
 		void *data);

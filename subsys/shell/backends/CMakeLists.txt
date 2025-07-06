@@ -26,6 +26,16 @@ zephyr_sources_ifdef(
 )
 
 zephyr_sources_ifdef(
+  CONFIG_SHELL_BACKEND_WEBSOCKET
+  shell_websocket.c
+)
+
+zephyr_sources_ifdef(
   CONFIG_SHELL_BACKEND_RPMSG
   shell_rpmsg.c
+)
+
+zephyr_sources_ifdef(
+  CONFIG_SHELL_BACKEND_ADSP_MEMORY_WINDOW
+  shell_adsp_memory_window.c
 )

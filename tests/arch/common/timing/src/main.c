@@ -112,8 +112,9 @@ ZTEST(arch_timing, test_arch_timing_smp)
 		k_thread_start(&threads[i]);
 	}
 
-	for (i = 0; i < num_threads; i++)
+	for (i = 0; i < num_threads; i++) {
 		k_thread_join(&threads[i], K_FOREVER);
+	}
 }
 #else
 ZTEST(arch_timing, test_arch_timing_smp)

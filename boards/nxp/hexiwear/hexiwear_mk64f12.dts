@@ -26,9 +26,10 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &uart0;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
-		zephyr,bt-uart = &uart4;
+		zephyr,bt-hci = &bt_hci_uart;
 	};
 
 	leds {
@@ -102,10 +103,11 @@
 
 &ftm3 {
 	status = "okay";
-	compatible = "nxp,kinetis-ftm-pwm";
+	compatible = "nxp,ftm-pwm";
 	#pwm-cells = <3>;
 	pinctrl-0 = <&ftm3_default>;
 	pinctrl-names = "default";
+	clock-source = "fixed";
 };
 
 &i2c0 {
@@ -152,6 +154,11 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&uart4_default>;
 	pinctrl-names = "default";
+
+	bt_hci_uart: bt_hci_uart {
+		compatible = "zephyr,bt-hci-uart";
+		status = "okay";
+	};
 };
 
 &gpioa {
@@ -181,29 +188,26 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		/*
+		 * Partition sizes must be aligned
+		 * to the flash memory sector size of 4KB.
+		 */
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x00000000 0x00010000>;
+			reg = <0x00000000 DT_SIZE_K(64)>;
 			read-only;
 		};
-
-		/*
-		 * The flash starting at 0x00010000 and ending at
-		 * 0x0001ffff (sectors 16-31) is reserved for use
-		 * by the application.
-		 */
-
-		slot0_partition: partition@20000 {
+		slot0_partition: partition@10000 {
 			label = "image-0";
-			reg = <0x00020000 0x00060000>;
+			reg = <0x00010000 DT_SIZE_K(420)>;
 		};
-		slot1_partition: partition@80000 {
+		slot1_partition: partition@79000 {
 			label = "image-1";
-			reg = <0x00080000 0x00060000>;
+			reg = <0x00079000 DT_SIZE_K(420)>;
 		};
-		scratch_partition: partition@e0000 {
-			label = "image-scratch";
-			reg = <0x000e0000 0x00020000>;
+		storage_partition: partition@e2000 {
+			label = "storage";
+			reg = <0x000e2000 DT_SIZE_K(120)>;
 		};
 	};
 };

@@ -21,8 +21,11 @@ LOG_MODULE_REGISTER(nxp_mbox_mailbox);
 #define MAILBOX_MAX_CHANNELS 4
 #define MAILBOX_MBOX_SIZE    3
 
-#if (defined(LPC55S69_cm33_core0_SERIES) || defined(LPC55S69_cm33_core1_SERIES))
-#ifdef LPC55S69_cm33_core0_SERIES
+#if (defined(LPC55S69_cm33_core0_SERIES) || defined(LPC55S69_cm33_core1_SERIES) ||                 \
+defined(CONFIG_SOC_SERIES_MCXN))
+#if (defined(LPC55S69_cm33_core0_SERIES) || defined(MCXN947_cm33_core0_SERIES) ||                  \
+defined(MCXN946_cm33_core0_SERIES) || defined(MCXN547_cm33_core0_SERIES) ||                   \
+defined(MCXN546_cm33_core0_SERIES))
 #define MAILBOX_ID_THIS_CPU  kMAILBOX_CM33_Core0
 #define MAILBOX_ID_OTHER_CPU kMAILBOX_CM33_Core1
 #else
@@ -180,7 +183,7 @@ static int nxp_mailbox_set_enabled(const struct device *dev, uint32_t channel, b
 	return 0;
 }
 
-static const struct mbox_driver_api nxp_mailbox_driver_api = {
+static DEVICE_API(mbox, nxp_mailbox_driver_api) = {
 	.send = nxp_mailbox_send,
 	.register_callback = nxp_mailbox_register_callback,
 	.mtu_get = nxp_mailbox_mtu_get,

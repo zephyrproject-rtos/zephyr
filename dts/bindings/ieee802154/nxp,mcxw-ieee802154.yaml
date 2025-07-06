@@ -1,0 +1,8 @@
+# Copyright (c) 2025, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP MCXW71 IEEE 802.15.4 node
+
+compatible: "nxp,mcxw-ieee802154"
+
+include: base.yaml

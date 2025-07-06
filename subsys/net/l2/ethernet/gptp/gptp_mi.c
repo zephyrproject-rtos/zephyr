@@ -786,14 +786,12 @@ static void gptp_update_local_port_clock(void)
 		nanosecond_diff = -(int64_t)NSEC_PER_SEC + nanosecond_diff;
 	}
 
-	ptp_clock_rate_adjust(clk, port_ds->neighbor_rate_ratio);
-
 	/* If time difference is too high, set the clock value.
 	 * Otherwise, adjust it.
 	 */
 	if (second_diff || (second_diff == 0 &&
-			    (nanosecond_diff < -5000 ||
-			     nanosecond_diff > 5000))) {
+			    (nanosecond_diff < -50000000 ||
+			     nanosecond_diff > 50000000))) {
 		bool underflow = false;
 
 		key = irq_lock();
@@ -822,28 +820,22 @@ static void gptp_update_local_port_clock(void)
 			tm.second++;
 			tm.nanosecond -= NSEC_PER_SEC;
 		}
-
-		/* This prints too much data normally but can be enabled to see
-		 * what time we are setting to the local clock.
-		 */
-		if (0) {
-			NET_INFO("Set local clock %lu.%lu",
-				 (unsigned long int)tm.second,
-				 (unsigned long int)tm.nanosecond);
+		if (IS_ENABLED(CONFIG_NET_GPTP_MONITOR_SYNC_STATUS)) {
+			NET_INFO("Set local clock %"PRIu64".%09u", tm.second, tm.nanosecond);
 		}
-
 		ptp_clock_set(clk, &tm);
 
 	skip_clock_set:
 		irq_unlock(key);
 	} else {
-		if (nanosecond_diff < -200) {
-			nanosecond_diff = -200;
-		} else if (nanosecond_diff > 200) {
-			nanosecond_diff = 200;
-		}
+		double ppb = gptp_servo_pi(nanosecond_diff);
 
-		ptp_clock_adjust(clk, nanosecond_diff);
+		ptp_clock_rate_adjust(clk, 1.0 + (ppb / 1000000000.0));
+
+		if (IS_ENABLED(CONFIG_NET_GPTP_MONITOR_SYNC_STATUS)) {
+			NET_INFO("sync offset %9"PRId64" ns, freq offset %f ppb",
+				 nanosecond_diff, ppb);
+		}
 	}
 }
 #endif /* CONFIG_NET_GPTP_USE_DEFAULT_CLOCK_UPDATE */
@@ -960,12 +952,17 @@ static void gptp_mi_set_ps_sync_cmss(void)
 	sync_info->precise_orig_ts.second = current_time / NSEC_PER_SEC;
 	sync_info->precise_orig_ts.nanosecond = current_time % NSEC_PER_SEC;
 
-	/* TODO calculate correction field properly, rate_ratio is also set to
-	 * zero instead of being copied from global_ds as it affects the final
-	 * value of FUP correction field.
+	/* TODO calculate rate ratio and correction field properly.
+	 * Whenever time aware system is the grand master clock, we currently
+	 * make the following shortcuts:
+	 * - assuming that clock source is the local clock,
+	 *   rate_ratio is set to 1.0 instead of being copied from global_ds.
+	 * - considering that precise origin timestamp is directly inherited
+	 *   from sync egress timestamp in gptp_md_follow_up_prepare(),
+	 *   follow_up_correction_field is set to 0.
 	 */
 	sync_info->follow_up_correction_field = 0;
-	sync_info->rate_ratio = 0;
+	sync_info->rate_ratio = 1.0;
 
 	memcpy(&sync_info->src_port_id.clk_id,
 	       GPTP_DEFAULT_DS()->clk_id,
@@ -2014,7 +2011,22 @@ void gptp_mi_state_machines(void)
 	gptp_mi_port_role_selection_state_machine();
 	gptp_mi_clk_master_sync_offset_state_machine();
 #if defined(CONFIG_NET_GPTP_GM_CAPABLE)
-	gptp_mi_clk_master_sync_snd_state_machine();
+	/*
+	 * Only call ClockMasterSyncSend state machine in case a Grand Master clock
+	 * is present and is this time aware system.
+	 * This check is not described by IEEE802.1AS. Instead, according to
+	 * 10.2.9.3, the SiteSyncSync state machine shall not take into account
+	 * information from ClockMasterSyncSend in case this time aware system is
+	 * not grand-master capable. Current implementation of ClockMasterSyncSend
+	 * state machine send sync indication to the PortSync entities, instead of
+	 * sending it to the SiteSyncSync entity. And the SiteSyncSync state machine
+	 * does not make sanity check.
+	 */
+	if (memcmp(GPTP_GLOBAL_DS()->gm_priority.root_system_id.grand_master_id,
+			   GPTP_DEFAULT_DS()->clk_id, GPTP_CLOCK_ID_LEN) == 0 &&
+			   GPTP_GLOBAL_DS()->gm_present) {
+		gptp_mi_clk_master_sync_snd_state_machine();
+	}
 #endif
 	gptp_mi_clk_master_sync_rcv_state_machine();
 }

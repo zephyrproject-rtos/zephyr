@@ -35,20 +35,23 @@ GTEXT(z_soc_irq_eoi)
 #else
 
 #if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
+extern void arm_irq_enable(unsigned int irq);
+extern void arm_irq_disable(unsigned int irq);
+extern int arm_irq_is_enabled(unsigned int irq);
+extern void arm_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags);
+#if !defined(CONFIG_MULTI_LEVEL_INTERRUPTS)
+#define arch_irq_enable(irq)                     arm_irq_enable(irq)
+#define arch_irq_disable(irq)                    arm_irq_disable(irq)
+#define arch_irq_is_enabled(irq)                 arm_irq_is_enabled(irq)
+#define z_arm_irq_priority_set(irq, prio, flags) arm_irq_priority_set(irq, prio, flags)
+#endif
+#endif
 
-extern void arch_irq_enable(unsigned int irq);
-extern void arch_irq_disable(unsigned int irq);
-extern int arch_irq_is_enabled(unsigned int irq);
-
-/* internal routine documented in C file, needed by IRQ_CONNECT() macro */
-extern void z_arm_irq_priority_set(unsigned int irq, unsigned int prio,
-				   uint32_t flags);
-
-#else
-
+#if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER) || defined(CONFIG_MULTI_LEVEL_INTERRUPTS)
 /*
- * When a custom interrupt controller is specified, map the architecture
- * interrupt control functions to the SoC layer interrupt control functions.
+ * When a custom interrupt controller or multi-level interrupts is specified,
+ * map the architecture interrupt control functions to the SoC layer interrupt
+ * control functions.
  */
 
 void z_soc_irq_init(void);
@@ -69,7 +72,7 @@ void z_soc_irq_eoi(unsigned int irq);
 #define z_arm_irq_priority_set(irq, prio, flags)	\
 	z_soc_irq_priority_set(irq, prio, flags)
 
-#endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
+#endif
 
 extern void z_arm_int_exit(void);
 
@@ -81,7 +84,7 @@ extern void z_arm_interrupt_init(void);
  * is 1 it has a fixed hardware priority level (discarding what was supplied
  * in the interrupt's priority argument). If CONFIG_ZERO_LATENCY_LEVELS is
  * greater 1 it has the priority level assigned by the argument.
- * The interrupt wil run even if irq_lock() is active. Be careful!
+ * The interrupt will run even if irq_lock() is active. Be careful!
  */
 #define IRQ_ZERO_LATENCY	BIT(0)
 
@@ -166,10 +169,18 @@ static inline void arch_isr_direct_footer(int maybe_swap)
 	}
 }
 
+#define ARCH_ISR_DIAG_OFF \
+	TOOLCHAIN_DISABLE_CLANG_WARNING(TOOLCHAIN_WARNING_EXTRA) \
+	TOOLCHAIN_DISABLE_GCC_WARNING(TOOLCHAIN_WARNING_ATTRIBUTES) \
+	TOOLCHAIN_DISABLE_IAR_WARNING(TOOLCHAIN_WARNING_ATTRIBUTES)
+#define ARCH_ISR_DIAG_ON \
+	TOOLCHAIN_ENABLE_CLANG_WARNING(TOOLCHAIN_WARNING_EXTRA) \
+	TOOLCHAIN_ENABLE_GCC_WARNING(TOOLCHAIN_WARNING_ATTRIBUTES) \
+	TOOLCHAIN_ENABLE_IAR_WARNING(TOOLCHAIN_WARNING_ATTRIBUTES)
+
 #define ARCH_ISR_DIRECT_DECLARE(name) \
 	static inline int name##_body(void); \
-	_Pragma("GCC diagnostic push") \
-	_Pragma("GCC diagnostic ignored \"-Wattributes\"") \
+	ARCH_ISR_DIAG_OFF \
 	__attribute__ ((interrupt ("IRQ"))) void name(void) \
 	{ \
 		int check_reschedule; \
@@ -177,7 +188,7 @@ static inline void arch_isr_direct_footer(int maybe_swap)
 		check_reschedule = name##_body(); \
 		ISR_DIRECT_FOOTER(check_reschedule); \
 	} \
-	_Pragma("GCC diagnostic pop") \
+	ARCH_ISR_DIAG_ON \
 	static inline int name##_body(void)
 
 #if defined(CONFIG_DYNAMIC_DIRECT_INTERRUPTS)
@@ -220,12 +231,18 @@ extern void z_arm_irq_direct_dynamic_dispatch_no_reschedule(void);
  *   direct interrupts, the decisions must be made at build time.
  *   They are controlled by @param resch to this macro.
  *
+ * @warning
+ * Just like with regular direct ISRs, any ISRs that serve IRQs configured with
+ * the IRQ_ZERO_LATENCY flag must not use the ISR_DIRECT_PM() macro and must
+ * return 0 (i.e. resch must be no_reschedule).
+ *
  * @param irq_p IRQ line number.
  * @param priority_p Interrupt priority.
  * @param flags_p Architecture-specific IRQ configuration flags.
  * @param resch Set flag to 'reschedule' to request thread
  *              re-scheduling upon ISR function. Set flag
  *              'no_reschedule' to skip thread re-scheduling
+ *              Must be 'no_reschedule' for zero-latency interrupts
  *
  * Note: the function is an ARM Cortex-M only API.
  *

@@ -170,7 +170,7 @@ bool lll_scan_adva_check(const struct lll_scan *lll, uint8_t addr_type,
 	}
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
-	/* NOTE: This function to be used only to check AdvA when intiating,
+	/* NOTE: This function to be used only to check AdvA when initiating,
 	 *       hence, otherwise we should not use the return value.
 	 *       This function is referenced in lll_scan_ext_tgta_check, but
 	 *       is not used when not being an initiator, hence return false
@@ -287,7 +287,7 @@ void lll_scan_prepare_connect_req(struct lll_scan *lll, struct pdu_adv *pdu_tx,
 		*conn_space_us = conn_offset_us;
 		pdu_tx->connect_ind.win_offset = sys_cpu_to_le16(0);
 	} else {
-		uint32_t win_offset_us =
+		uint32_t win_offset_us = radio_tmr_start_latency_get() +
 			lll->conn_win_offset_us +
 			radio_rx_ready_delay_get(phy, PHY_FLAGS_S8);
 
@@ -939,7 +939,9 @@ static void isr_window(void *param)
 	uint32_t ticks_at_start;
 
 	ticks_at_start = ticker_ticks_now_get() +
-			 HAL_TICKER_CNTR_CMP_OFFSET_MIN;
+			 HAL_TICKER_US_TO_TICKS(HAL_RADIO_ISR_LATENCY_MAX_US) +
+			 HAL_TICKER_CNTR_CMP_OFFSET_MIN +
+			 HAL_TICKER_CNTR_SET_LATENCY;
 	remainder_us = radio_tmr_start_tick(0, ticks_at_start);
 #else /* !CONFIG_BT_CENTRAL && !CONFIG_BT_CTLR_ADV_EXT */
 
@@ -1087,6 +1089,9 @@ static void isr_done_cleanup(void *param)
 		lll->is_stop = 1U;
 	}
 
+	/* LLL scheduled auxiliary PDU reception is_abort on duration expire or
+	 * aborted in the unreserved time space.
+	 */
 	if (lll->is_aux_sched) {
 		struct node_rx_pdu *node_rx2;
 
@@ -1098,6 +1103,7 @@ static void isr_done_cleanup(void *param)
 		node_rx2->hdr.type = NODE_RX_TYPE_EXT_AUX_RELEASE;
 
 		node_rx2->rx_ftr.param = lll;
+		node_rx2->rx_ftr.lll_aux = lll->lll_aux;
 
 		ull_rx_put_sched(node_rx2->hdr.link, node_rx2);
 	}
@@ -1375,9 +1381,10 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 					rl_idx, &dir_report))) ||
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 		  ((pdu_adv_rx->type == PDU_ADV_TYPE_EXT_IND) &&
-		   lll->phy && lll_scan_ext_tgta_check(lll, true, false,
-						       pdu_adv_rx, rl_idx,
-						       &dir_report)) ||
+		   lll->phy &&
+		   !lll->state &&
+		   lll_scan_ext_tgta_check(lll, true, false, pdu_adv_rx, rl_idx,
+					   &dir_report)) ||
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 		  ((pdu_adv_rx->type == PDU_ADV_TYPE_SCAN_RSP) &&
 		   (pdu_adv_rx->len >= offsetof(struct pdu_adv_scan_rsp, data)) &&
@@ -1546,6 +1553,11 @@ static int isr_rx_scan_report(struct lll_scan *lll, uint8_t devmatch_ok,
 		case PDU_ADV_TYPE_EXT_IND:
 			{
 				struct node_rx_ftr *ftr;
+
+				/* Reset Scan context association with any Aux context as a new
+				 * extended advertising chain is being setup for reception here.
+				 */
+				lll->lll_aux = NULL;
 
 				ftr = &(node_rx->rx_ftr);
 				ftr->param = lll;

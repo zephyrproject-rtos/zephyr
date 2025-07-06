@@ -1,19 +1,26 @@
 /*
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <ctype.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/kernel.h>
 #include <string.h>
+#include <stdint.h>
 #include <stdlib.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys_clock.h>
 #include <zephyr/types.h>
 
 
 #include <zephyr/console/console.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/iso.h>
+#include <zephyr/bluetooth/hci.h>
 #include <zephyr/sys/byteorder.h>
 
 #include <zephyr/logging/log.h>
@@ -137,6 +144,10 @@ static struct bt_iso_cig_param cig_create_param = {
 #endif /* CONFIG_BT_ISO_TEST_PARAMS */
 };
 
+static const struct bt_data sd[] = {
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+};
+
 static enum benchmark_role device_role_select(void)
 {
 	char role_char;
@@ -197,7 +208,7 @@ static void iso_send(struct bt_iso_chan *chan)
 	interval = (role == ROLE_CENTRAL) ?
 		   cig_create_param.c_to_p_interval : cig_create_param.p_to_c_interval;
 
-	buf = net_buf_alloc(&tx_pool, K_FOREVER);
+	buf = net_buf_alloc(&tx_pool, K_NO_WAIT);
 	if (buf == NULL) {
 		LOG_ERR("Could not allocate buffer");
 		k_work_reschedule(&chan_work->send_work, K_USEC(interval));
@@ -296,7 +307,12 @@ static void iso_recv(struct bt_iso_chan *chan,
 
 static void iso_connected(struct bt_iso_chan *chan)
 {
+	const struct bt_iso_chan_path hci_path = {
+		.pid = BT_ISO_DATA_PATH_HCI,
+		.format = BT_HCI_CODING_FORMAT_TRANSPARENT,
+	};
 	struct iso_chan_work *chan_work;
+	struct bt_iso_info iso_info;
 	int err;
 
 	LOG_INF("ISO Channel %p connected", chan);
@@ -315,6 +331,20 @@ static void iso_connected(struct bt_iso_chan *chan)
 	chan_work = CONTAINER_OF(chan, struct iso_chan_work, chan);
 	chan_work->seq_num = 0U;
 
+	if (iso_info.can_recv) {
+		err = bt_iso_setup_data_path(chan, BT_HCI_DATAPATH_DIR_CTLR_TO_HOST, &hci_path);
+		if (err != 0) {
+			LOG_ERR("Failed to setup ISO RX data path: %d", err);
+		}
+	}
+
+	if (iso_info.can_send) {
+		err = bt_iso_setup_data_path(chan, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR, &hci_path);
+		if (err != 0) {
+			LOG_ERR("Failed to setup ISO TX data path: %d", err);
+		}
+	}
+
 	k_sem_give(&sem_iso_connected);
 }
 
@@ -327,8 +357,10 @@ static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 	 * of the last created CIS.
 	 */
 	static int64_t average_duration;
+	struct bt_iso_info iso_info;
 	uint64_t iso_conn_duration;
 	uint64_t total_duration;
+	int err;
 
 	if (iso_conn_start_time > 0) {
 		iso_conn_duration = k_uptime_get() - iso_conn_start_time;
@@ -344,6 +376,25 @@ static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 		chan, reason, iso_conn_duration, average_duration);
 
 	k_sem_give(&sem_iso_disconnected);
+
+	err = bt_iso_chan_get_info(chan, &iso_info);
+	if (err != 0) {
+		LOG_ERR("Failed to get ISO info: %d\n", err);
+	} else if (iso_info.type == BT_ISO_CHAN_TYPE_CENTRAL) {
+		if (iso_info.can_recv) {
+			err = bt_iso_remove_data_path(chan, BT_HCI_DATAPATH_DIR_CTLR_TO_HOST);
+			if (err != 0) {
+				LOG_ERR("Failed to remove ISO RX data path: %d\n", err);
+			}
+		}
+
+		if (iso_info.can_send) {
+			err = bt_iso_remove_data_path(chan, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR);
+			if (err != 0) {
+				LOG_ERR("Failed to remove ISO TX data path: %d\n", err);
+			}
+		}
+	}
 }
 
 static struct bt_iso_chan_ops iso_ops = {
@@ -471,7 +522,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (err != 0 && role == ROLE_CENTRAL) {
-		LOG_INF("Failed to connect to %s: %u", addr, err);
+		LOG_INF("Failed to connect to %s: %u %s", addr, err, bt_hci_err_to_str(err));
 
 		bt_conn_unref(default_conn);
 		default_conn = NULL;
@@ -491,7 +542,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-	LOG_INF("Disconnected: %s (reason 0x%02x)", addr, reason);
+	LOG_INF("Disconnected: %s, reason 0x%02x %s", addr, reason, bt_hci_err_to_str(reason));
 
 	bt_conn_unref(default_conn);
 	default_conn = NULL;
@@ -1041,6 +1092,12 @@ static int change_central_settings(void)
 
 static int central_create_connection(void)
 {
+	/* Give the controller a large range of intervals to pick from. In this benchmark sample we
+	 * want to prioritize ISO over ACL, but will leave the actual choice up to the controller.
+	 */
+	const struct bt_le_conn_param *conn_param =
+		BT_LE_CONN_PARAM(BT_GAP_INIT_CONN_INT_MIN, BT_GAP_MS_TO_CONN_INTERVAL(500U), 0,
+				 BT_GAP_MS_TO_CONN_TIMEOUT(4000));
 	int err;
 
 	advertiser_found = false;
@@ -1066,8 +1123,7 @@ static int central_create_connection(void)
 	}
 
 	LOG_INF("Connecting");
-	err = bt_conn_le_create(&adv_addr, BT_CONN_LE_CREATE_CONN,
-				BT_LE_CONN_PARAM_DEFAULT, &default_conn);
+	err = bt_conn_le_create(&adv_addr, BT_CONN_LE_CREATE_CONN, conn_param, &default_conn);
 	if (err != 0) {
 		LOG_ERR("Create connection failed: %d", err);
 		return err;
@@ -1084,7 +1140,6 @@ static int central_create_connection(void)
 
 static int central_create_cig(void)
 {
-	struct bt_iso_connect_param connect_param[CONFIG_BT_ISO_MAX_CHAN];
 	int err;
 
 	iso_conn_start_time = 0;
@@ -1096,6 +1151,16 @@ static int central_create_cig(void)
 		LOG_ERR("Failed to create CIG: %d", err);
 		return err;
 	}
+
+	return 0;
+}
+
+static int central_connect_cis(void)
+{
+	struct bt_iso_connect_param connect_param[CONFIG_BT_ISO_MAX_CHAN];
+	int err;
+
+	iso_conn_start_time = 0;
 
 	LOG_INF("Connecting ISO channels");
 
@@ -1200,15 +1265,26 @@ static int run_central(void)
 		}
 	}
 
+	/* Creating the CIG before connecting verified that it's possible before establishing a
+	 * connection, while also providing the controller information about our use case before
+	 * creating the connection, which should provide additional information to the controller
+	 * about which connection interval to use
+	 */
+	err = central_create_cig();
+	if (err != 0) {
+		LOG_ERR("Failed to create CIG: %d", err);
+		return err;
+	}
+
 	err = central_create_connection();
 	if (err != 0) {
 		LOG_ERR("Failed to create connection: %d", err);
 		return err;
 	}
 
-	err = central_create_cig();
+	err = central_connect_cis();
 	if (err != 0) {
-		LOG_ERR("Failed to create CIG or connect CISes: %d", err);
+		LOG_ERR("Failed to connect CISes: %d", err);
 		return err;
 	}
 
@@ -1274,12 +1350,7 @@ static int run_peripheral(void)
 	}
 
 	LOG_INF("Starting advertising");
-	err = bt_le_adv_start(
-		BT_LE_ADV_PARAM(BT_LE_ADV_OPT_ONE_TIME | BT_LE_ADV_OPT_CONNECTABLE |
-					BT_LE_ADV_OPT_USE_NAME |
-					BT_LE_ADV_OPT_FORCE_NAME_IN_AD,
-				BT_GAP_ADV_FAST_INT_MIN_2, BT_GAP_ADV_FAST_INT_MAX_2, NULL),
-		NULL, 0, NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, NULL, 0, sd, ARRAY_SIZE(sd));
 	if (err != 0) {
 		LOG_ERR("Advertising failed to start: %d", err);
 		return err;

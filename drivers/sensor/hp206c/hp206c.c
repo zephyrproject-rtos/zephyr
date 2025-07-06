@@ -91,7 +91,7 @@ static int hp206c_cmd_send(const struct device *dev, uint8_t cmd)
  * conversion wait time which looks like a good compromise provided the highest
  * precision computation takes 131.1ms.
  */
-static uint8_t hp206c_adc_time_ms[] = {
+static const uint8_t hp206c_adc_time_ms[] = {
 /*	conversion time(ms),   OSR  */
 	132,		    /* 4096 */
 	66,		    /* 2048 */
@@ -275,7 +275,7 @@ static int hp206c_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api hp206c_api = {
+static DEVICE_API(sensor, hp206c_api) = {
 	.attr_set = hp206c_attr_set,
 	.sample_fetch = hp206c_adc_acquire,
 	.channel_get = hp206c_channel_get,

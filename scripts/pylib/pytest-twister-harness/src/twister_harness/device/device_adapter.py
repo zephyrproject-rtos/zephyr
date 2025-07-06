@@ -14,6 +14,7 @@ import threading
 import time
 from datetime import datetime
 from pathlib import Path
+from serial import SerialException
 
 from twister_harness.exceptions import (
     TwisterHarnessException,
@@ -66,17 +67,28 @@ class DeviceAdapter(abc.ABC):
 
         if not self.command:
             self.generate_command()
+            if self.device_config.extra_test_args:
+                self.command.extend(self.device_config.extra_test_args.split())
 
         if self.device_config.type != 'hardware':
             self._flash_and_run()
+            self._device_run.set()
+            self._start_reader_thread()
+            self.connect()
+            return
 
         self._device_run.set()
         self._start_reader_thread()
-        self.connect()
 
-        if self.device_config.type == 'hardware':
+        if self.device_config.flash_before:
+            # For hardware devices with shared USB or software USB, connect after flashing.
+            # Retry for up to 10 seconds for USB-CDC based devices to enumerate.
+            self._flash_and_run()
+            self.connect(retry_s = 10)
+        else:
             # On hardware, flash after connecting to COM port, otherwise some messages
             # from target can be lost.
+            self.connect()
             self._flash_and_run()
 
     def close(self) -> None:
@@ -89,7 +101,7 @@ class DeviceAdapter(abc.ABC):
         self._device_run.clear()
         self._join_reader_thread()
 
-    def connect(self) -> None:
+    def connect(self, retry_s: int = 0) -> None:
         """Connect to device - allow for output gathering."""
         if self.is_device_connected():
             logger.debug('Device already connected')
@@ -98,7 +110,20 @@ class DeviceAdapter(abc.ABC):
             msg = 'Cannot connect to not working device'
             logger.error(msg)
             raise TwisterHarnessException(msg)
-        self._connect_device()
+
+        if retry_s > 0:
+            retry_cycles = retry_s * 10
+            for i in range(retry_cycles):
+                try:
+                    self._connect_device()
+                    break
+                except SerialException:
+                    if i == retry_cycles - 1:
+                        raise
+                    time.sleep(0.1)
+        else:
+            self._connect_device()
+
         self._device_connected.set()
 
     def disconnect(self) -> None:
@@ -215,7 +240,7 @@ class DeviceAdapter(abc.ABC):
         with open(self.handler_log_path, 'a+') as log_file:
             while self.is_device_running():
                 if self.is_device_connected():
-                    output = self._read_device_output().decode(errors='replace').strip()
+                    output = self._read_device_output().decode(errors='replace').rstrip("\r\n")
                     if output:
                         self._device_read_queue.put(output)
                         log_file.write(f'{output}\n')

@@ -1,0 +1,9 @@
+# Copyright (c) 2024 sensry.io
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_SY1XX
+	bool "SY1XX GPIO driver"
+	default y
+	depends on DT_HAS_SENSRY_SY1XX_GPIO_ENABLED
+	help
+	  Enable the SY1XX GPIO driver.

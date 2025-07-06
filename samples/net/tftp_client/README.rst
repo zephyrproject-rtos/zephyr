@@ -56,13 +56,17 @@ Build the tftp-client sample application for :ref:`native_sim <native_sim>` like
 Download and run a TFTP server (like TFTPd), then create file1.bin (with data) and newfile.bin.
 
 Please note that default IP server address is 192.0.2.2 and default port is 69.
-To specify an IP server address and/or port, change configurations in ``prj.conf``::
+To specify an IP server address and/or port, change these configurations in ``prj.conf``:
+
+.. code-block:: cfg
 
     CONFIG_TFTP_APP_SERVER="10.0.0.10"
     CONFIG_TFTP_APP_PORT="70"
 
 To connect to server using hostname, enable DNS resolver by changing these two
-configurations in ``prj.conf``::
+configurations in ``prj.conf``:
+
+.. code-block:: cfg
 
     CONFIG_DNS_RESOLVER=y
     CONFIG_TFTP_APP_SERVER="my-tftp-server.org"
@@ -70,13 +74,16 @@ configurations in ``prj.conf``::
 Sample output
 ==================================
 
-Sample run on native_sim platform with TFTP server on host machine
-Launch net-setup.sh in net-tools
-.. code-block:: console
+This sample can be run on :ref:`native_sim<native_sim>` while running a TFTP server on the host
+machine.
+
+Launch :command:`net-setup.sh` in net-tools:
+
+.. code-block:: bash
 
    net-setup.sh
 
-.. code-block:: console
+.. code-block:: bash
 
     <inf> net_config: Initializing network
     <inf> net_config: IPv4 address: 192.0.2.1

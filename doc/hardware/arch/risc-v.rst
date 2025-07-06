@@ -23,7 +23,7 @@ ISA extensions
 **************
 
 It's possible to set in Zephyr which ISA extensions (RV32/64I(E)MAFD(G)QC)
-are available on a given platform, by setting the appropriate `RISCV_ISA_*`
+are available on a given platform, by setting the appropriate ``CONFIG_RISCV_ISA_*``
 kconfig. Look at :file:`arch/riscv/Kconfig.isa` for more information.
 
 Note that Zephyr SDK toolchain support may not be defined for all
@@ -32,6 +32,8 @@ combinations.
 SMP support
 ***********
 
-SMP is supported on RISC-V, but currently only on Qemu platforms. In
-order to test the SMP support, one can use `qemu_riscv32_smp` or
-`qemu_riscv64_smp` boards.
+SMP is supported on RISC-V for both QEMU-virtualized and hardware-based
+platforms. In order to test the SMP support, one can use
+:zephyr:board:`qemu_riscv32` or :zephyr:board:`qemu_riscv64` for QEMU-based
+platforms, or :zephyr:board:`beaglev_fire` or :zephyr:board:`mpfs_icicle` for
+hardware-based platforms.

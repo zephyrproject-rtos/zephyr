@@ -5,6 +5,7 @@
 
 #include <zephyr/init.h>
 #include "fsl_power.h"
+#include "fsl_inputmux.h"
 #include <zephyr/pm/policy.h>
 #include "board.h"
 
@@ -262,7 +263,7 @@ __ramfunc int32_t power_manager_set_profile(uint32_t power_profile)
 
 #endif /* CONFIG_REGULATOR */
 
-static int mimxrt595_evk_init(void)
+void board_early_init_hook(void)
 {
 	/* Set the correct voltage range according to the board. */
 	power_pad_vrange_t vrange = {
@@ -279,35 +280,78 @@ static int mimxrt595_evk_init(void)
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 
 #ifdef CONFIG_I2S
-
+#ifdef CONFIG_I2S_TEST_SEPARATE_DEVICES
 	/* Set shared signal set 0 SCK, WS from Transmit I2S - Flexcomm3 */
 	SYSCTL1->SHAREDCTRLSET[0] = SYSCTL1_SHAREDCTRLSET_SHAREDSCKSEL(3) |
 				SYSCTL1_SHAREDCTRLSET_SHAREDWSSEL(3);
-
-#ifdef CONFIG_I2S_TEST_SEPARATE_DEVICES
 	/* Select Data in from Transmit I2S - Flexcomm 3 */
 	SYSCTL1->SHAREDCTRLSET[0] |= SYSCTL1_SHAREDCTRLSET_SHAREDDATASEL(3);
 	/* Enable Transmit I2S - Flexcomm 3 for Shared Data Out */
 	SYSCTL1->SHAREDCTRLSET[0] |= SYSCTL1_SHAREDCTRLSET_FC3DATAOUTEN(1);
+#else
+	/* Set shared signal set 0: SCK, WS from Flexcomm1 */
+	SYSCTL1->SHAREDCTRLSET[0] = SYSCTL1_SHAREDCTRLSET_SHAREDSCKSEL(1) |
+				SYSCTL1_SHAREDCTRLSET_SHAREDWSSEL(1);
 #endif
-
 	/* Set Receive I2S - Flexcomm 1 SCK, WS from shared signal set 0 */
 	SYSCTL1->FCCTRLSEL[1] = SYSCTL1_FCCTRLSEL_SCKINSEL(1) |
 				SYSCTL1_FCCTRLSEL_WSINSEL(1);
-
 	/* Set Transmit I2S - Flexcomm 3 SCK, WS from shared signal set 0 */
 	SYSCTL1->FCCTRLSEL[3] = SYSCTL1_FCCTRLSEL_SCKINSEL(1) |
 				SYSCTL1_FCCTRLSEL_WSINSEL(1);
-
 #ifdef CONFIG_I2S_TEST_SEPARATE_DEVICES
 	/* Select Receive I2S - Flexcomm 1 Data in from shared signal set 0 */
 	SYSCTL1->FCCTRLSEL[1] |= SYSCTL1_FCCTRLSEL_DATAINSEL(1);
 	/* Select Transmit I2S - Flexcomm 3 Data out to shared signal set 0 */
 	SYSCTL1->FCCTRLSEL[3] |= SYSCTL1_FCCTRLSEL_DATAOUTSEL(1);
-#endif
+#endif /* CONFIG_I2S_TEST_SEPARATE_DEVICES */
+#endif /* CONFIG_I2S */
 
-#endif
+	/* Configure the DMA requests in the INPUTMUX */
+	INPUTMUX_Init(INPUTMUX);
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dma0))
+	/* Enable the DMA requests with only 1 mux option.  The other request
+	 * choices should be configured for the application
+	 */
+	INPUTMUX_EnableSignal(INPUTMUX,
+			kINPUTMUX_Flexcomm11RxToDmac0Ch32RequestEna, true);
+	INPUTMUX_EnableSignal(INPUTMUX,
+			kINPUTMUX_Flexcomm11TxToDmac0Ch33RequestEna, true);
+	INPUTMUX_EnableSignal(INPUTMUX,
+			kINPUTMUX_Flexcomm12RxToDmac0Ch34RequestEna, true);
+	INPUTMUX_EnableSignal(INPUTMUX,
+			kINPUTMUX_Flexcomm12TxToDmac0Ch35RequestEna, true);
+	INPUTMUX_EnableSignal(INPUTMUX,
+			kINPUTMUX_Flexcomm16RxToDmac0Ch28RequestEna, true);
+	INPUTMUX_EnableSignal(INPUTMUX,
+			kINPUTMUX_Flexcomm16TxToDmac0Ch29RequestEna, true);
+	INPUTMUX_EnableSignal(INPUTMUX,
+			kINPUTMUX_I3c1RxToDmac0Ch30RequestEna, true);
+	INPUTMUX_EnableSignal(INPUTMUX,
+			kINPUTMUX_I3c1TxToDmac0Ch31RequestEna, true);
+#endif /* dma0 */
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dma1))
+	/* Enable the DMA requests with only 1 mux option.  The other request
+	 * choices should be configured for the application
+	 */
+	INPUTMUX_EnableSignal(INPUTMUX,
+			kINPUTMUX_Flexcomm11RxToDmac1Ch32RequestEna, true);
+	INPUTMUX_EnableSignal(INPUTMUX,
+			kINPUTMUX_Flexcomm11TxToDmac1Ch33RequestEna, true);
+	INPUTMUX_EnableSignal(INPUTMUX,
+			kINPUTMUX_Flexcomm12RxToDmac1Ch34RequestEna, true);
+	INPUTMUX_EnableSignal(INPUTMUX,
+			kINPUTMUX_Flexcomm12TxToDmac1Ch35RequestEna, true);
+	INPUTMUX_EnableSignal(INPUTMUX,
+			kINPUTMUX_Flexcomm16RxToDmac1Ch28RequestEna, true);
+	INPUTMUX_EnableSignal(INPUTMUX,
+			kINPUTMUX_Flexcomm16TxToDmac1Ch29RequestEna, true);
+	INPUTMUX_EnableSignal(INPUTMUX,
+			kINPUTMUX_I3c1RxToDmac1Ch30RequestEna, true);
+	INPUTMUX_EnableSignal(INPUTMUX,
+			kINPUTMUX_I3c1TxToDmac1Ch31RequestEna, true);
+#endif /* dma1 */
 
 #ifdef CONFIG_REBOOT
 	/*
@@ -341,12 +385,10 @@ static int mimxrt595_evk_init(void)
 		rd_trim_96 = CLKCTL0->FRO_RDTRIM;
 		sc_trim_96 = sc_trim_192;
 	}
-
-	return 0;
 }
 
 
-#ifdef CONFIG_LV_Z_VBD_CUSTOM_SECTION
+#ifdef CONFIG_LV_Z_VDB_CUSTOM_SECTION
 extern char __flexspi2_start[];
 extern char __flexspi2_end[];
 
@@ -360,18 +402,16 @@ static int init_psram_framebufs(void)
 	return 0;
 }
 
-#endif /* CONFIG_LV_Z_VBD_CUSTOM_SECTION */
+#endif /* CONFIG_LV_Z_VDB_CUSTOM_SECTION */
 
 #if CONFIG_REGULATOR
 /* PMIC setup is dependent on the regulator API */
 SYS_INIT(board_config_pmic, POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY);
 #endif
 
-#ifdef CONFIG_LV_Z_VBD_CUSTOM_SECTION
+#ifdef CONFIG_LV_Z_VDB_CUSTOM_SECTION
 /* Framebuffers should be setup after PSRAM is initialized but before
  * Graphics framework init
  */
 SYS_INIT(init_psram_framebufs, POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY);
 #endif
-
-SYS_INIT(mimxrt595_evk_init, PRE_KERNEL_1, CONFIG_BOARD_INIT_PRIORITY);

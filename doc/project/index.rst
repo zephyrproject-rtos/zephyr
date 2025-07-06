@@ -7,11 +7,12 @@ Project and Governance
 .. toctree::
    :maxdepth: 1
 
+   tsc
    project_roles.rst
+   working_groups
    release_process
    proposals
    code_flow
-   modifying_contributions.rst
    dev_env_and_tools
    issues
    communication

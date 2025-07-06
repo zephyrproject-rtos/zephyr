@@ -12,6 +12,7 @@
 # - SOC_ROOT:        CMake list of SoC roots containing SoC implementations
 # - BOARD_ROOT:      CMake list of board roots containing board and shield implementations
 # - MODULE_EXT_ROOT: CMake list of module external roots containing module glue code
+# - SCA_ROOT:        CMake list of SCA roots containing static code analysis integration code
 #
 # If a root is defined it will check the list of paths in the root and convert
 # any relative path to absolute path and update the root list.
@@ -27,6 +28,7 @@ zephyr_get(BOARD_ROOT MERGE SYSBUILD GLOBAL)
 zephyr_get(SOC_ROOT MERGE SYSBUILD GLOBAL)
 zephyr_get(ARCH_ROOT MERGE SYSBUILD GLOBAL)
 zephyr_get(SCA_ROOT MERGE SYSBUILD GLOBAL)
+zephyr_get(SNIPPET_ROOT MERGE SYSBUILD GLOBAL)
 
 # Convert paths to absolute, relative from APPLICATION_SOURCE_DIR
 zephyr_file(APPLICATION_ROOT MODULE_EXT_ROOT)
@@ -34,6 +36,7 @@ zephyr_file(APPLICATION_ROOT BOARD_ROOT)
 zephyr_file(APPLICATION_ROOT SOC_ROOT)
 zephyr_file(APPLICATION_ROOT ARCH_ROOT)
 zephyr_file(APPLICATION_ROOT SCA_ROOT)
+zephyr_file(APPLICATION_ROOT SNIPPET_ROOT)
 
 if(unittest IN_LIST Zephyr_FIND_COMPONENTS)
   # Zephyr used in unittest mode, use dedicated unittest root.

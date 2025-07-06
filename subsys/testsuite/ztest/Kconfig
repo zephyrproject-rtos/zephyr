@@ -101,6 +101,7 @@ config ZTEST_ASSERT_HOOK
 
 config ZTEST_NO_YIELD
 	bool "Do not yield to the idle thread after tests complete"
+	default y if PM
 	help
 	  When the tests complete, do not yield to the idle thread and instead
 	  spin in a loop. This is useful for low power mode tests, where
@@ -132,6 +133,16 @@ config ZTEST_VERIFY_RUN_ALL
 	help
 	  This rule will fail the project if not all tests have been run.
 
+
+config ZTEST_COVERAGE_RESET_BEFORE_TESTS
+	bool "Performs coverage counters reset"
+	depends on COVERAGE_GCOV
+	help
+	  This rule will reset gcov counters before running tests. This ensures
+	  that only code lines triggered by test itself are counted in the coverage report
+	  and all the board initialization code and pre-test bootstrap is not counted.
+	  This is useful when, for example, you are testing code that is also executed during bootup.
+
 config ZTEST_SHUFFLE
 	bool "Shuffle the order of tests and suites"
 	select TEST_RANDOM_GENERATOR if !ENTROPY_HAS_DRIVER
@@ -140,21 +151,40 @@ config ZTEST_SHUFFLE
 
 if ZTEST_SHUFFLE
 config ZTEST_SHUFFLE_SUITE_REPEAT_COUNT
+	int "[DEPRECATED] Number of iterations the test suite will run"
+	default 3
+	help
+	  This is used to execute a test suite N number of times.
+	  [DEPRECATED] use ZTEST_SUITE_REPEAT_COUNT instead.
+
+config ZTEST_SHUFFLE_TEST_REPEAT_COUNT
+	int "[DEPRECATED] Number of iterations the test will run"
+	default 3
+	help
+	  This is used to execute a test case N number of times.
+	  [DEPRECATED] use ZTEST_TEST_REPEAT_COUNT instead.
+
+endif #ZTEST_SHUFFLE
+
+config ZTEST_REPEAT
+	bool "Repeat the tests and suites"
+	help
+	  This rule will repeat the tests and the test suites.
+
+if ZTEST_REPEAT
+config ZTEST_SUITE_REPEAT_COUNT
 	int "Number of iterations the test suite will run"
 	default 3
 	help
-	  This rule will execute a test suite N number of times. The tests
-	  per suite will be shuffled on each iteration.  The test order will likely
-	  be different per iteration.
+	  This rule will execute a test suite N number of times.
 
-config ZTEST_SHUFFLE_TEST_REPEAT_COUNT
+config ZTEST_TEST_REPEAT_COUNT
 	int "Number of iterations the test will run"
 	default 3
 	help
-	  This rule will execute a test N number of times.  The test order will
-	  likely be different per iteration.
+	  This rule will execute a test N number of times.
 
-endif #ZTEST_SHUFFLE
+endif #ZTEST_REPEAT
 
 config ZTEST_SUMMARY
 	bool "Display test summary"
@@ -178,7 +208,6 @@ config ZTEST_VERBOSE_SUMMARY
 
 config ZTEST_FAIL_ON_ASSUME
 	bool "Fail the test run when an assumption fails"
-	default y
 	help
 	  When enabled, the test binary will fail at the end if an assumption failed. This means
 	  that while tests will still be marked as skipped on failed zassume calls, the final test

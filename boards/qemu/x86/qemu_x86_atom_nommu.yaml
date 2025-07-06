@@ -2,10 +2,10 @@ identifier: qemu_x86/atom/nommu
 name: QEMU Emulation for X86 (MMU disabled)
 type: qemu
 arch: x86
-simulation: qemu
+simulation:
+  - name: qemu
 toolchain:
   - zephyr
-  - xtools
 testing:
   default: true
   only_tags:

@@ -1,0 +1,310 @@
+/*
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <adi/max32/max32690.dtsi>
+#include <adi/max32/max32690-pinctrl.dtsi>
+#include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
+#include <zephyr/dt-bindings/memory-controller/adi-max32-hpb.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Analog Devices AD-APARD32690-SL";
+	compatible = "adi,apard32690";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		blue_led: blue_led {
+			gpios = <&gpio2 1 GPIO_ACTIVE_HIGH>;
+			label = "LED1";
+		};
+		red_led: red_led {
+			gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+			label = "LED2";
+		};
+		green_led: green_led {
+			gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+			label = "LED3";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		usr_btn: usr_btn {
+			gpios = <&gpio1 27 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+			label = "S2";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &blue_led;
+		led1 = &red_led;
+		led2 = &green_led;
+		sw0 = &usr_btn;
+	};
+
+	arduino_header: connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio3 0 0>,	/* A0 */
+			   <1 0 &gpio3 1 0>,	/* A1 */
+			   <2 0 &gpio3 2 0>,	/* A2 */
+			   <3 0 &gpio3 3 0>,	/* A3 */
+			   <4 0 &gpio3 4 0>,	/* A4 */
+			   <5 0 &gpio3 5 0>,	/* A5 */
+			   <6 0 &gpio2 14 0>,	/* D0 */
+			   <7 0 &gpio2 16 0>,	/* D1 */
+			   <8 0 &gpio2 13 0>,	/* D2 */
+			   <9 0 &gpio2 15 0>,	/* D3 */
+			   <10 0 &gpio0 8 0>,	/* D4 */
+			   <11 0 &gpio0 7 0>,	/* D5 */
+			   <12 0 &gpio1 24 0>,	/* D6 */
+			   <13 0 &gpio1 25 0>,	/* D7 */
+			   <14 0 &gpio1 31 0>,	/* D8 */
+			   <15 0 &gpio1 30 0>,	/* D9 */
+			   <16 0 &gpio1 23 0>,	/* D10 */
+			   <17 0 &gpio1 29 0>,	/* D11 */
+			   <18 0 &gpio1 28 0>,	/* D12 */
+			   <19 0 &gpio1 26 0>,	/* D13 */
+			   <20 0 &gpio2 17 0>,	/* D14 */
+			   <21 0 &gpio2 18 0>;	/* D15 */
+	};
+
+	pmod_header: pmod-header {
+		compatible = "digilent,pmod";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio1 0 0>,	/* IO1/CS */
+			   <1 0 &gpio1 1 0>,	/* IO2/MOSI */
+			   <2 0 &gpio1 2 0>,	/* IO3/MISO */
+			   <3 0 &gpio1 3 0>,	/* IO4/SCK */
+			   <4 0 &gpio2 21 0>,	/* IO5/INT */
+			   <5 0 &gpio1 6 0>,	/* IO6/RESET */
+			   <6 0 &gpio1 4 0>,	/* IO7/CS2 */
+			   <7 0 &gpio1 5 0>;	/* IO8/CS3 */
+	};
+
+	sdram1: sdram1@60000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		status = "disabled";
+		device_type = "memory";
+		reg = <0x60000000 DT_SIZE_M(64)>;
+		zephyr,memory-region = "SDRAM1";
+	};
+
+	sdram2: sdram2@70000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		status = "disabled";
+		device_type = "memory";
+		reg = <0x70000000 DT_SIZE_M(64)>;
+		zephyr,memory-region = "SDRAM2";
+	};
+};
+
+&clk_ipo {
+	status = "okay";
+};
+
+&clk_ibro {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&gpio4 {
+	status = "okay";
+};
+
+&uart0 {
+	clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
+	pinctrl-0 = <&uart0a_tx_p2_12 &uart0a_rx_p2_11>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+	status = "okay";
+};
+
+&trng {
+	status = "okay";
+};
+
+arduino_serial: &uart1 {
+	clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
+	pinctrl-0 = <&uart1a_tx_p2_16 &uart1a_rx_p2_14>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+&spi1a_miso_p1_28 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi1a_mosi_p1_29 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi1a_sck_p1_26 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi1a_ss0_p1_23 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+arduino_spi: &spi1 {
+	pinctrl-0 = <&spi1a_miso_p1_28 &spi1a_mosi_p1_29 &spi1a_sck_p1_26
+		     &spi1a_ss0_p1_23>;
+	pinctrl-names = "default";
+};
+
+&spi4a_miso_p1_2 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi4a_mosi_p1_1 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi4a_sck_p1_3 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi4a_ss0_p1_0 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+pmod_spi: &spi4 {
+	pinctrl-0 = <&spi4a_miso_p1_2 &spi4a_mosi_p1_1 &spi4a_sck_p1_3
+		     &spi4a_ss0_p1_0>;
+	pinctrl-names = "default";
+};
+
+&spi3a_miso_p0_20 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi3a_mosi_p0_21 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi3a_sck_p0_16 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi3a_ss0_p0_19 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi3 {
+	pinctrl-0 = <&spi3a_miso_p0_20 &spi3a_mosi_p0_21 &spi3a_sck_p0_16
+		     &spi3a_ss0_p0_19>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	adin1110: adin1110@0 {
+		compatible = "adi,adin1110";
+		reg = <0x0>;
+		spi-max-frequency = <DT_FREQ_M(25)>;
+		int-gpios = <&gpio0 17 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
+		reset-gpios = <&gpio0 15 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
+		status = "okay";
+
+		port1 {
+			local-mac-address = [ 00 E0 22 FE DA C9 ];
+		};
+		mdio {
+			compatible = "adi,adin2111-mdio";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			ethernet-phy@1 {
+				reg = <0x1>;
+				compatible = "adi,adin2111-phy";
+			};
+		};
+	};
+};
+
+&w1 {
+	pinctrl-0 = <&owm_io_p0_8 &owm_pe_p0_7>;
+	pinctrl-names = "default";
+};
+
+&hpb {
+	pinctrl-0 = <&hyp_cs0n_p1_11 &hyp_cs1n_p1_17 &hyp_rwds_p1_14
+				 &hyp_d0_p1_12 &hyp_d1_p1_15
+				 &hyp_d2_p1_19 &hyp_d3_p1_20 &hyp_d4_p1_13
+				 &hyp_d5_p1_16 &hyp_d6_p1_18 &hyp_d7_p1_21>;
+	pinctrl-names = "default";
+	enable-emcc;
+
+	mem@0 {
+		reg = <0>;
+		base-address = <0x60000000>;
+		device-type = <ADI_MAX32_HPB_DEV_TYPE_HYPER_RAM>;
+
+		latency-cycles = <ADI_MAX32_HPB_LAT_6>;
+		read-cs-high = <ADI_MAX32_HPB_CS_HIGH_10_5>;
+		write-cs-high = <ADI_MAX32_HPB_CS_HIGH_10_5>;
+		read-cs-setup = <ADI_MAX32_HPB_CS_SETUP_HOLD_16>;
+		write-cs-setup = <ADI_MAX32_HPB_CS_SETUP_HOLD_14>;
+		read-cs-hold = <ADI_MAX32_HPB_CS_SETUP_HOLD_5>;
+		write-cs-hold = <ADI_MAX32_HPB_CS_SETUP_HOLD_12>;
+
+		/* CR0 settings. Key setting is enabling 6-clock latency, since
+		 * HPB doesn't support 7-clock latency which is default
+		 */
+		config-regs =     <0x1000>;
+		config-reg-vals = <0x801F>;
+	};
+
+	mem@1 {
+		reg = <1>;
+		base-address = <0x70000000>;
+		device-type = <ADI_MAX32_HPB_DEV_TYPE_HYPER_RAM>;
+
+		latency-cycles = <ADI_MAX32_HPB_LAT_6>;
+		read-cs-high = <ADI_MAX32_HPB_CS_HIGH_10_5>;
+		write-cs-high = <ADI_MAX32_HPB_CS_HIGH_10_5>;
+		read-cs-setup = <ADI_MAX32_HPB_CS_SETUP_HOLD_16>;
+		write-cs-setup = <ADI_MAX32_HPB_CS_SETUP_HOLD_14>;
+		read-cs-hold = <ADI_MAX32_HPB_CS_SETUP_HOLD_5>;
+		write-cs-hold = <ADI_MAX32_HPB_CS_SETUP_HOLD_12>;
+
+		/* CR0 settings. Key setting is enabling 6-clock latency, since
+		 * HPB doesn't support 7-clock latency which is default
+		 */
+		config-regs =     <0x1000>;
+		config-reg-vals = <0x801F>;
+	};
+};

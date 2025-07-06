@@ -4,12 +4,24 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
 
-#ifdef CONFIG_BT_VCP_VOL_REND
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/aics.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/vcp.h>
+#include <zephyr/bluetooth/audio/vocs.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
+
+#include "bstests.h"
 #include "common.h"
 
+#ifdef CONFIG_BT_VCP_VOL_REND
 extern enum bst_result_t bst_result;
 
 #if defined(CONFIG_BT_VOCS)
@@ -43,7 +55,7 @@ static volatile bool g_aics_active = 1;
 static char g_aics_desc[AICS_DESC_SIZE];
 static volatile bool g_cb;
 
-static void vcs_state_cb(int err, uint8_t volume, uint8_t mute)
+static void vcs_state_cb(struct bt_conn *conn, int err, uint8_t volume, uint8_t mute)
 {
 	if (err != 0) {
 		FAIL("VCP state cb err (%d)", err);
@@ -55,7 +67,7 @@ static void vcs_state_cb(int err, uint8_t volume, uint8_t mute)
 	g_cb = true;
 }
 
-static void vcs_flags_cb(int err, uint8_t flags)
+static void vcs_flags_cb(struct bt_conn *conn, int err, uint8_t flags)
 {
 	if (err != 0) {
 		FAIL("VCP flags cb err (%d)", err);
@@ -1017,6 +1029,7 @@ static void test_standalone(void)
 
 static void test_main(void)
 {
+	struct bt_le_ext_adv *ext_adv;
 	int err;
 
 	err = bt_enable(NULL);
@@ -1032,13 +1045,7 @@ static void test_main(void)
 
 	printk("VCP initialized\n");
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, AD_SIZE, NULL, 0);
-	if (err != 0) {
-		FAIL("Advertising failed to start (err %d)\n", err);
-		return;
-	}
-
-	printk("Advertising successfully started\n");
+	setup_connectable_adv(&ext_adv);
 
 	WAIT_FOR_FLAG(flag_connected);
 
@@ -1048,13 +1055,13 @@ static void test_main(void)
 static const struct bst_test_instance test_vcs[] = {
 	{
 		.test_id = "vcp_vol_rend_standalone",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_standalone
 	},
 	{
 		.test_id = "vcp_vol_rend",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main
 	},

@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
-CONFIG_PINCTRL=y
 CONFIG_GPIO=y
 
 # Enable system clock controller driver

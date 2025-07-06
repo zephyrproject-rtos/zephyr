@@ -14,6 +14,8 @@
 
 /* Zephyr macros */
 
+#define ZTEST(suite, fn) static void _##suite##_##fn##_wrapper(void)
+
 /* Attributes */
 
 /* Confirmed problematic */

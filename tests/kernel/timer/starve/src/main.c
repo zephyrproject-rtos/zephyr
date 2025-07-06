@@ -84,7 +84,7 @@ ZTEST(starve_fn, test_starve)
 
 		zassert_equal(na_capture, 0,
 			      "%sTimer alarm fired: %u\n",
-			      na_capture);
+			      tag(), na_capture);
 
 		k_timer_start(&tmr, K_MSEC(TIMER_DELAY_ms), K_NO_WAIT);
 

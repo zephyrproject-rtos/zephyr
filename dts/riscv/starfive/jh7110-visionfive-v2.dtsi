@@ -145,14 +145,25 @@
 		compatible = "starfive,jh7110", "simple-bus";
 		ranges;
 
-		clint: timer@2000000 {
-			compatible = "starfive,jh7110-clint", "sifive,clint0";
+		clint: clint@2000000 {
+			compatible = "sifive,clint0";
 			interrupts-extended = <&cpu0_intc 3 &cpu0_intc 7
 						&cpu1_intc 3 &cpu1_intc 7
 						&cpu2_intc 3 &cpu2_intc 7
 						&cpu3_intc 3 &cpu3_intc 7
 						&cpu4_intc 3 &cpu4_intc 7>;
 			reg = <0x0 0x2000000 0x0 0x10000>;
+		};
+
+		mtimer: timer@200bff8 {
+			compatible = "riscv,machine-timer";
+			interrupts-extended = <&cpu0_intc 7
+						&cpu1_intc 7
+						&cpu2_intc 7
+						&cpu3_intc 7
+						&cpu4_intc 7>;
+			reg = <0x0 0x200bff8 0x0 0x8 0x0 0x2004000 0x0 0x8>;
+			reg-names = "mtime", "mtimecmp";
 		};
 
 		ccache: cache-controller@2010000 {

@@ -15,7 +15,7 @@
 #include "usbc_prl.h"
 
 #define PRIV_PORT_REQUEST_SUSPEND -1
-#define PRIV_PORT_REQUEST_START	  -2
+#define PRIV_PORT_REQUEST_START   -2
 
 /**
  * @brief Each layer of the stack is composed of state machines that can be
@@ -157,13 +157,12 @@ struct usbc_port_data {
 	 * is at default level
 	 */
 	bool (*policy_cb_is_snk_at_default)(const struct device *dev);
-#else /* CONFIG_USBC_CSM_SOURCE_ONLY */
+#else  /* CONFIG_USBC_CSM_SOURCE_ONLY */
 	/**
 	 * Callback used by the Policy Engine get the Rp pull-up that should
 	 * be placed on the CC lines
 	 */
-	int (*policy_cb_get_src_rp)(const struct device *dev,
-				    enum tc_rp_value *rp);
+	int (*policy_cb_get_src_rp)(const struct device *dev, enum tc_rp_value *rp);
 
 	/**
 	 * Callback used by the Policy Engine to enable and disable the
@@ -175,23 +174,22 @@ struct usbc_port_data {
 	 * Callback used by the Policy Engine to get the Source Caps that
 	 * will be sent to the Sink
 	 */
-	int (*policy_cb_get_src_caps)(const struct device *dev,
-				     const uint32_t **pdos,
-				     uint32_t *num_pdos);
+	int (*policy_cb_get_src_caps)(const struct device *dev, const uint32_t **pdos,
+				      uint32_t *num_pdos);
 
 	/**
 	 * Callback used by the Policy Engine to check if the Sink's request
 	 * is valid
 	 */
 	enum usbc_snk_req_reply_t (*policy_cb_check_sink_request)(const struct device *dev,
-					     const uint32_t request_msg);
+								  const uint32_t request_msg);
 
 	/**
 	 * Callback used by the Policy Engine to check if the Present Contract
 	 * is still valid
 	 */
 	bool (*policy_present_contract_is_valid)(const struct device *dev,
-						const uint32_t present_contract);
+						 const uint32_t present_contract);
 
 	/**
 	 * Callback used by the Policy Engine to check if the Source Power Supply
@@ -208,12 +206,44 @@ struct usbc_port_data {
 	/**
 	 * Callback used by the Policy Engine to store the Sink's Capabilities
 	 */
-	void (*policy_cb_set_port_partner_snk_cap)(const struct device *dev,
-					const uint32_t *pdos,
-					const int num_pdos);
+	void (*policy_cb_set_port_partner_snk_cap)(const struct device *dev, const uint32_t *pdos,
+						   const int num_pdos);
 #endif /* CONFIG_USBC_CSM_SINK_ONLY */
 	/** Device Policy Manager data */
 	void *dpm_data;
 };
+
+#ifdef CONFIG_USBC_CSM_SOURCE_ONLY
+/**
+ * @brief Function that enables the source path either using callback or by the TCPC.
+ * If source and sink paths are controlled by the TCPC, this callback doesn't have to be set.
+ *
+ * @param dev USB-C connector device
+ * @param tcpc Type-C Port Controller device
+ * @param en True to enable the sourcing, false to disable
+ * @return int 0 if success, -ENOSYS if both callback and TCPC function are not implemented.
+ *             In case of error, value from any of the functions is returned
+ */
+static inline int usbc_policy_src_en(const struct device *dev, const struct device *tcpc, bool en)
+{
+	struct usbc_port_data *data = dev->data;
+	int ret_cb = -ENOSYS;
+	int ret_tcpc;
+
+	if (data->policy_cb_src_en != NULL) {
+		ret_cb = data->policy_cb_src_en(dev, en);
+		if (ret_cb != 0 && ret_cb != -ENOSYS) {
+			return ret_cb;
+		}
+	}
+
+	ret_tcpc = tcpc_set_src_ctrl(tcpc, en);
+	if (ret_tcpc == -ENOSYS) {
+		return ret_cb;
+	}
+
+	return ret_tcpc;
+}
+#endif
 
 #endif /* ZEPHYR_SUBSYS_USBC_STACK_PRIV_H_ */

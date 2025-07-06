@@ -12,6 +12,7 @@ source "subsys/logging/Kconfig.template.log_config"
 config MULTITHREADING
 	bool "Multi-threading" if ARCH_HAS_SINGLE_THREAD_SUPPORT
 	default y
+	select RING_BUFFER
 	help
 	  If disabled, only the main thread is available, so a main() function
 	  must be provided. Interrupts are available. Kernel objects will most
@@ -52,7 +53,7 @@ config NUM_PREEMPT_PRIORITIES
 	int "Number of preemptible priorities" if MULTITHREADING
 	default 0 if !MULTITHREADING
 	default 15
-	range 0 128
+	range 0 127
 	help
 	  Number of preemptible priorities available in the system. Gives access
 	  to priorities 0 to CONFIG_NUM_PREEMPT_PRIORITIES - 1.
@@ -120,14 +121,14 @@ config SCHED_DEADLINE
 
 config SCHED_CPU_MASK
 	bool "CPU mask affinity/pinning API"
-	depends on SCHED_DUMB
+	depends on SCHED_SIMPLE
 	help
 	  When true, the application will have access to the
 	  k_thread_cpu_mask_*() APIs which control per-CPU affinity masks in
 	  SMP mode, allowing applications to pin threads to specific CPUs or
 	  disallow threads from running on given CPUs.  Note that as currently
 	  implemented, this involves an inherent O(N) scaling in the number of
-	  idle-but-runnable threads, and thus works only with the DUMB
+	  idle-but-runnable threads, and thus works only with the simple
 	  scheduler (as SCALABLE and MULTIQ would see no benefit).
 
 	  Note that this setting does not technically depend on SMP and is
@@ -156,7 +157,7 @@ config SCHED_CPU_MASK_PIN_ONLY
 config MAIN_STACK_SIZE
 	int "Size of stack for initialization and main thread"
 	default 2048 if COVERAGE_GCOV
-	default 512 if ZTEST && !(RISCV || X86 || ARM)
+	default 512 if ZTEST && !(RISCV || X86 || ARM || ARC)
 	default 1024
 	help
 	  When the initialization is complete, the thread executing it then
@@ -245,8 +246,9 @@ if DYNAMIC_THREAD
 
 config DYNAMIC_THREAD_STACK_SIZE
 	int "Size of each pre-allocated thread stack"
-	default 1024 if !64BIT
-	default 2048 if 64BIT
+	default 4096 if X86
+	default 1024 if !X86 && !64BIT
+	default 2048 if !X86 && 64BIT
 	help
 	  Default stack size (in bytes) for dynamic threads.
 
@@ -276,7 +278,7 @@ choice DYNAMIC_THREAD_PREFER
 	help
 	  If both CONFIG_DYNAMIC_THREAD_ALLOC=y and
 	  CONFIG_DYNAMIC_THREAD_POOL_SIZE > 0, then the user may
-	  specify the order in which allocation is attmpted.
+	  specify the order in which allocation is attempted.
 
 config DYNAMIC_THREAD_PREFER_ALLOC
 	bool "Prefer heap-based allocation"
@@ -295,16 +297,23 @@ endchoice # DYNAMIC_THREAD_PREFER
 
 endif # DYNAMIC_THREADS
 
+config SCHED_DUMB
+	bool "Simple linked-list ready queue"
+	select DEPRECATED
+	help
+	  Deprecated in favour of SCHED_SIMPLE.
+
 choice SCHED_ALGORITHM
 	prompt "Scheduler priority queue algorithm"
-	default SCHED_DUMB
+	default SCHED_SIMPLE if SCHED_DUMB
+	default SCHED_SIMPLE
 	help
-	  The kernel can be built with with several choices for the
+	  The kernel can be built with several choices for the
 	  ready queue implementation, offering different choices between
 	  code size, constant factor runtime overhead and performance
 	  scaling when many threads are added.
 
-config SCHED_DUMB
+config SCHED_SIMPLE
 	bool "Simple linked-list ready queue"
 	help
 	  When selected, the scheduler ready queue will be implemented
@@ -337,20 +346,27 @@ config SCHED_MULTIQ
 	  as the classic/textbook array of lists, one per priority.
 	  This corresponds to the scheduler algorithm used in Zephyr
 	  versions prior to 1.12.  It incurs only a tiny code size
-	  overhead vs. the "dumb" scheduler and runs in O(1) time
+	  overhead vs. the "simple" scheduler and runs in O(1) time
 	  in almost all circumstances with very low constant factor.
 	  But it requires a fairly large RAM budget to store those list
 	  heads, and the limited features make it incompatible with
 	  features like deadline scheduling that need to sort threads
 	  more finely, and SMP affinity which need to traverse the list
 	  of threads.  Typical applications with small numbers of runnable
-	  threads probably want the DUMB scheduler.
+	  threads probably want the simple scheduler.
 
 endchoice # SCHED_ALGORITHM
 
+config WAITQ_DUMB
+	bool "Simple linked-list wait_q"
+	select DEPRECATED
+	help
+	  Deprecated in favour of WAITQ_SIMPLE.
+
 choice WAITQ_ALGORITHM
 	prompt "Wait queue priority algorithm"
-	default WAITQ_DUMB
+	default WAITQ_SIMPLE if WAITQ_DUMB
+	default WAITQ_SIMPLE
 	help
 	  The wait_q abstraction used in IPC primitives to pend
 	  threads for later wakeup shares the same backend data
@@ -363,13 +379,13 @@ config WAITQ_SCALABLE
 	  When selected, the wait_q will be implemented with a
 	  balanced tree.  Choose this if you expect to have many
 	  threads waiting on individual primitives.  There is a ~2kb
-	  code size increase over WAITQ_DUMB (which may be shared with
+	  code size increase over WAITQ_SIMPLE (which may be shared with
 	  SCHED_SCALABLE) if the rbtree is not used elsewhere in the
 	  application, and pend/unpend operations on "small" queues
 	  will be somewhat slower (though this is not generally a
 	  performance path).
 
-config WAITQ_DUMB
+config WAITQ_SIMPLE
 	bool "Simple linked-list wait_q"
 	help
 	  When selected, the wait_q will be implemented with a
@@ -467,6 +483,12 @@ config BOOT_DELAY
 	  achieved by waiting for DCD on the serial port--however, not
 	  all serial ports have DCD.
 
+config BOOT_CLEAR_SCREEN
+	bool "Clear screen"
+	help
+	  Use this option to clear the screen before printing anything else.
+	  Using a VT100 enabled terminal on the client side is required for this to work.
+
 config THREAD_MONITOR
 	bool "Thread monitoring"
 	help
@@ -552,10 +574,18 @@ endmenu
 
 rsource "Kconfig.obj_core"
 
+config WORKQUEUE_WORK_TIMEOUT
+	bool "Support workqueue work timeout monitoring"
+	help
+	  If enabled, the workqueue will monitor the duration of each work item.
+	  If the work item handler takes longer than the specified time to
+	  execute, the work queue thread will be aborted, and an error will be
+	  logged.
+
 menu "System Work Queue Options"
 config SYSTEM_WORKQUEUE_STACK_SIZE
 	int "System workqueue stack size"
-	default 4096 if COVERAGE_GCOV
+	default 4096 if COVERAGE_GCOV || WIFI_NRF70
 	default 2560 if WIFI_NM_WPA_SUPPLICANT
 	default 1024
 
@@ -577,6 +607,14 @@ config SYSTEM_WORKQUEUE_NO_YIELD
 	  this yield, which may be useful if the work queue thread is
 	  cooperative and a sequence of work items is expected to complete
 	  without yielding.
+
+config SYSTEM_WORKQUEUE_WORK_TIMEOUT_MS
+	int "Select system work queue work timeout in milliseconds"
+	default 5000 if ASSERT
+	default 0
+	help
+	  Set to 0 to disable work timeout for system workqueue. Option
+	  has no effect if WORKQUEUE_WORK_TIMEOUT is not enabled.
 
 endmenu
 
@@ -631,8 +669,8 @@ config TIMESLICING
 
 config TIMESLICE_SIZE
 	int "Time slice size (in ms)"
-	default 0
-	range 0 2147483647
+	default 20
+	range 0 $(INT32_MAX)
 	depends on TIMESLICING
 	help
 	  This option specifies the maximum amount of time a thread can execute
@@ -670,6 +708,13 @@ config POLL
 	  concurrently, which can be either directly triggered or triggered by
 	  the availability of some kernel objects (semaphores and FIFOs).
 
+config MEM_SLAB_POINTER_VALIDATE
+	bool "Validate the memory slab pointer when allocating or freeing"
+	default ASSERT
+	help
+	  This enables additional runtime checks to validate the memory slab
+	  pointer during when allocating or freeing a memory slab.
+
 config MEM_SLAB_TRACE_MAX_UTILIZATION
 	bool "Getting maximum slab utilization"
 	help
@@ -699,10 +744,17 @@ config EVENTS
 
 config PIPES
 	bool "Pipe objects"
+	select DEPRECATED
 	help
 	  This option enables kernel pipes. A pipe is a kernel object that
 	  allows a thread to send a byte stream to another thread. Pipes can
 	  be used to synchronously transfer chunks of data in whole or in part.
+
+	  Note that setting this option slightly increases the size of the
+	  thread structure.
+	  This Kconfig is deprecated and will be removed, by disabling this
+	  kconfig another implementation of k_pipe will be available when
+	  CONFIG_MULTITHREADING is enabled.
 
 config KERNEL_MEM_POOL
 	bool "Use Kernel Memory Pool"
@@ -743,31 +795,23 @@ endif # KERNEL_MEM_POOL
 
 endmenu
 
-config ARCH_HAS_CUSTOM_SWAP_TO_MAIN
-	bool
-	help
-	  It's possible that an architecture port cannot use _Swap() to swap to
-	  the _main() thread, but instead must do something custom. It must
-	  enable this option in that case.
-
 config SWAP_NONATOMIC
 	bool
 	help
-	  On some architectures, the _Swap() primitive cannot be made
+	  On some architectures, the z_swap() primitive cannot be made
 	  atomic with respect to the irq_lock being released.  That
-	  is, interrupts may be received between the entry to _Swap
+	  is, interrupts may be received between the entry to z_swap
 	  and the completion of the context switch.  There are a
 	  handful of workaround cases in the kernel that need to be
 	  enabled when this is true.  Currently, this only happens on
 	  ARM when the PendSV exception priority sits below that of
 	  Zephyr-handled interrupts.
 
-config ARCH_HAS_CUSTOM_BUSY_WAIT
+config ARCH_HAS_THREAD_NAME_HOOK
 	bool
 	help
-	  It's possible that an architecture port cannot or does not want to use
-	  the provided k_busy_wait(), but instead must do something custom. It must
-	  enable this option in that case.
+	  The architecture provides a hook to handle thread name changes beyond
+	  just storing it in the kernel structure.
 
 config SYS_CLOCK_TICKS_PER_SEC
 	int "System tick frequency (in ticks/second)"
@@ -799,6 +843,8 @@ config SYS_CLOCK_TICKS_PER_SEC
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int "System clock's h/w timer frequency"
+	default 0 if TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
+	depends on SYS_CLOCK_EXISTS
 	help
 	  This option specifies the frequency of the hardware timer used for the
 	  system clock (in Hz). This option is set by the SOC's or board's Kconfig file
@@ -860,25 +906,67 @@ config XIP
 
 menu "Security Options"
 
-config STACK_CANARIES
-	bool "Compiler stack canaries"
-	depends on ENTROPY_GENERATOR || TEST_RANDOM_GENERATOR
-	select NEED_LIBC_MEM_PARTITION if !STACK_CANARIES_TLS
+config REQUIRES_STACK_CANARIES
+	bool
 	help
-	  This option enables compiler stack canaries.
+	  Hidden option to signal that software stack protection is required.
 
+choice
+	prompt "Stack canaries protection options"
+	optional
+	help
 	  If stack canaries are supported by the compiler, it will emit
 	  extra code that inserts a canary value into the stack frame when
 	  a function is entered and validates this value upon exit.
 	  Stack corruption (such as that caused by buffer overflow) results
 	  in a fatal error condition for the running entity.
-	  Enabling this option can result in a significant increase
-	  in footprint and an associated decrease in performance.
+	  Enabling this option, depending on the level chosen, can result in a
+	  significant increase in footprint and a corresponding decrease in performance.
 
 	  If stack canaries are not supported by the compiler an error
 	  will occur at build time.
 
-if STACK_CANARIES
+config STACK_CANARIES
+	bool "Default protection"
+	depends on ENTROPY_GENERATOR || TEST_RANDOM_GENERATOR
+	select NEED_LIBC_MEM_PARTITION if !STACK_CANARIES_TLS
+	select REQUIRES_STACK_CANARIES
+	help
+	  This option enables compiler stack canaries in functions that have
+	  vulnerable objects. Generally this means function that call alloca or
+	  have buffers larger than 8 bytes.
+
+config STACK_CANARIES_STRONG
+	bool "Strong protection"
+	depends on ENTROPY_GENERATOR || TEST_RANDOM_GENERATOR
+	select NEED_LIBC_MEM_PARTITION if !STACK_CANARIES_TLS
+	select REQUIRES_STACK_CANARIES
+	help
+	  This option enables compiler stack canaries in functions that call alloca,
+	  functions that have local array definition or have references to local
+	  frame addresses.
+
+config STACK_CANARIES_ALL
+	bool "Maximum protection available"
+	depends on ENTROPY_GENERATOR || TEST_RANDOM_GENERATOR
+	select NEED_LIBC_MEM_PARTITION if !STACK_CANARIES_TLS
+	select REQUIRES_STACK_CANARIES
+	help
+	  This option enables compiler stack canaries for all functions.
+
+config STACK_CANARIES_EXPLICIT
+	bool "Explicit protection"
+	depends on ENTROPY_GENERATOR || TEST_RANDOM_GENERATOR
+	depends on "${ZEPHYR_TOOLCHAIN_VARIANT}" = "zephyr"
+	select NEED_LIBC_MEM_PARTITION if !STACK_CANARIES_TLS
+	select REQUIRES_STACK_CANARIES
+	help
+	  This option enables compiler stack canaries only in functions which have the
+	  stack_protect attribute.
+
+endchoice
+
+if REQUIRES_STACK_CANARIES
 
 config STACK_CANARIES_TLS
 	bool "Stack canaries using thread local storage"
@@ -943,59 +1031,7 @@ config BOUNDS_CHECK_BYPASS_MITIGATION
 	  macros do nothing.
 endmenu
 
-
-menu "Memory Domains"
-
-config MAX_DOMAIN_PARTITIONS
-	int "Maximum number of partitions per memory domain"
-	default 16
-	range 0 255
-	depends on USERSPACE
-	help
-	  Configure the maximum number of partitions per memory domain.
-
-config ARCH_MEM_DOMAIN_DATA
-	bool
-	depends on USERSPACE
-	help
-	  This hidden option is selected by the target architecture if
-	  architecture-specific data is needed on a per memory domain basis.
-	  If so, the architecture defines a 'struct arch_mem_domain' which is
-	  embedded within every struct k_mem_domain. The architecture
-	  must also define the arch_mem_domain_init() function to set this up
-	  when a memory domain is created.
-
-	  Typical uses might be a set of page tables for that memory domain.
-
-config ARCH_MEM_DOMAIN_SYNCHRONOUS_API
-	bool
-	depends on USERSPACE
-	help
-	  This hidden option is selected by the target architecture if
-	  modifying a memory domain's partitions at runtime, or changing
-	  a memory domain's thread membership requires synchronous calls
-	  into the architecture layer.
-
-	  If enabled, the architecture layer must implement the following
-	  APIs:
-
-	  arch_mem_domain_thread_add
-	  arch_mem_domain_thread_remove
-	  arch_mem_domain_partition_remove
-	  arch_mem_domain_partition_add
-
-	  It's important to note that although supervisor threads can be
-	  members of memory domains, they have no implications on supervisor
-	  thread access to memory. Memory domain APIs may only be invoked from
-	  supervisor mode.
-
-	  For these reasons, on uniprocessor systems unless memory access
-	  policy is managed in separate software constructions like page
-	  tables, these APIs don't need to be implemented as the underlying
-	  memory management hardware will be reprogrammed on context switch
-	  anyway.
-endmenu
-
+rsource "Kconfig.mem_domain"
 rsource "Kconfig.smp"
 
 config TICKLESS_KERNEL
@@ -1020,7 +1056,59 @@ config THREAD_LOCAL_STORAGE
 	help
 	  This option enables thread local storage (TLS) support in kernel.
 
+config KERNEL_WHOLE_ARCHIVE
+	bool
+	help
+	  This option forces every object file in the libkernel.a archive
+	  to be included, rather than searching the archive for required object files.
+
+config TOOLCHAIN_SUPPORTS_STATIC_INIT_GNU
+	# As of today, we don't know of any toolchains that don't create
+	# either .ctors or .init_array sections containing initializer
+	# addresses in a fashion compatible with how Zephyr uses them.
+	def_bool y
+
+config STATIC_INIT_GNU
+	bool "Support GNU-compatible initializers and constructors"
+	default y if CPP || NATIVE_LIBRARY || COVERAGE
+	depends on TOOLCHAIN_SUPPORTS_STATIC_INIT_GNU
+	depends on !CMAKE_LINKER_GENERATOR
+	help
+	  GNU-compatible initialization of static objects. This is required for
+	  C++ constructor support as well as for initializer functions as
+	  defined by GNU-compatible toolchains. This increases the size of
+	  Zephyr binaries by around 24 bytes. If you know your application
+	  doesn't need any initializers, you can disable this option. The linker
+	  will emit an error if constructors are needed and this option has been
+	  disabled.
+
+config BOOTARGS
+	bool "Support bootargs"
+	help
+	  Enables bootargs support and passing them to main().
+
+config DYNAMIC_BOOTARGS
+	bool "Support dynamic bootargs"
+	depends on BOOTARGS
+	help
+	  Enables dynamic bootargs support.
+
+config BOOTARGS_STRING
+	string "static bootargs string"
+	depends on BOOTARGS && !DYNAMIC_BOOTARGS
+	help
+	  Static bootargs string. It includes argv[0], so if its expected that it
+	  contains executable name it should be put at the beginning of this string.
+
+config BOOTARGS_ARGS_BUFFER_SIZE
+	int "Size of buffer containing main arguments in bytes"
+	default 1024
+	depends on BOOTARGS
+	help
+	  Configures size of buffer containing all arguments passed to main.
+
 endmenu
 
 rsource "Kconfig.device"
 rsource "Kconfig.vm"
+rsource "Kconfig.init"

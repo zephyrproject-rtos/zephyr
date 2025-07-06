@@ -11,13 +11,13 @@
 	 */
 	dfe-antenna-num = <10>;
 	/* This is an example switch pattern that will be used to set an
-	 * antenna for Tx PDU (period before start of Tx CTE).
+	 * antenna for Rx PDU (period before start of Rx CTE).
 	 */
 	dfe-pdu-antenna = <0x1>;
 
 	/* These are example GPIO pin numbers that are provided to
 	 * Radio peripheral. The pins will be acquired by Radio to
-	 * drive antenna switching when AoD is enabled.
+	 * drive antenna switching when AoA is enabled.
 	 */
 	dfegpio0-gpios = <&gpio0 3 0>;
 	dfegpio1-gpios = <&gpio0 4 0>;

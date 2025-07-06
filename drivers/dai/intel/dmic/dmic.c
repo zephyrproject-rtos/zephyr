@@ -76,11 +76,13 @@ static int32_t exp_fixed(int32_t x)
 	int i;
 	int n = 0;
 
-	if (x < Q_CONVERT_FLOAT(-11.5, 27))
+	if (x < Q_CONVERT_FLOAT(-11.5, 27)) {
 		return 0;
+	}
 
-	if (x > Q_CONVERT_FLOAT(7.6245, 27))
+	if (x > Q_CONVERT_FLOAT(7.6245, 27)) {
 		return INT32_MAX;
+	}
 
 	/* x is Q5.27 */
 	xs = x;
@@ -94,8 +96,9 @@ static int32_t exp_fixed(int32_t x)
 	 */
 	z = Q_SHIFT_RND(exp_small_fixed(Q_SHIFT_LEFT(xs, 27, 29)), 23, 20);
 	y = ONE_Q20;
-	for (i = 0; i < (1 << n); i++)
+	for (i = 0; i < (1 << n); i++) {
 		y = (int32_t)Q_MULTSR_32X32((int64_t)y, z, 20, 20, 20);
+	}
 
 	return y;
 }
@@ -104,8 +107,9 @@ static int32_t db2lin_fixed(int32_t db)
 {
 	int32_t arg;
 
-	if (db < Q_CONVERT_FLOAT(-100.0, 24))
+	if (db < Q_CONVERT_FLOAT(-100.0, 24)) {
 		return 0;
+	}
 
 	/* Q8.24 x Q5.27, result needs to be Q5.27 */
 	arg = (int32_t)Q_MULTSR_32X32((int64_t)db, LOG10_DIV20_Q27, 24, 27, 27);
@@ -116,9 +120,6 @@ static void dai_dmic_update_bits(const struct dai_intel_dmic *dmic,
 				 uint32_t reg, uint32_t mask, uint32_t val)
 {
 	uint32_t dest = dmic->reg_base + reg;
-
-	LOG_INF("%s base %x, reg %x, mask %x, value %x", __func__,
-			dmic->reg_base, reg, mask, val);
 
 	sys_write32((sys_read32(dest) & (~mask)) | (val & mask), dest);
 }
@@ -159,7 +160,7 @@ static inline void dai_dmic_release_ownership(const struct dai_intel_dmic *dmic)
 
 static inline uint32_t dai_dmic_base(const struct dai_intel_dmic *dmic)
 {
-#ifdef CONFIG_SOC_INTEL_ACE20_LNL
+#if defined(CONFIG_SOC_INTEL_ACE20_LNL) || defined(CONFIG_SOC_INTEL_ACE30)
 	return dmic->hdamldmic_base;
 #else
 	return dmic->shim_base;
@@ -172,7 +173,7 @@ static inline void dai_dmic_set_sync_period(uint32_t period, const struct dai_in
 	uint32_t val = CONFIG_DAI_DMIC_HW_IOCLK / period - 1;
 	uint32_t base = dai_dmic_base(dmic);
 	/* DMIC Change sync period */
-#ifdef CONFIG_SOC_INTEL_ACE20_LNL
+#if defined(CONFIG_SOC_INTEL_ACE20_LNL) || defined(CONFIG_SOC_INTEL_ACE30)
 	sys_write32(sys_read32(base + DMICSYNC_OFFSET) | FIELD_PREP(DMICSYNC_SYNCPRD, val),
 		    base + DMICSYNC_OFFSET);
 	sys_write32(sys_read32(base + DMICSYNC_OFFSET) | DMICSYNC_SYNCPU,
@@ -256,37 +257,10 @@ static void dai_dmic_stop_fifo_packers(struct dai_intel_dmic *dmic,
 			     OUTCONTROL_FINIT);
 }
 
-/* On DMIC IRQ event trace the status register that contains the status and
- * error bit fields.
- */
-static void dai_dmic_irq_handler(const void *data)
-{
-	struct dai_intel_dmic *dmic = ((struct device *)data)->data;
-	uint32_t val0;
-	uint32_t val1;
-
-	/* Trace OUTSTAT0 register */
-	val0 = dai_dmic_read(dmic, OUTSTAT);
-	val1 = dai_dmic_read(dmic, OUTSTAT + PDM_CHANNEL_REGS_SIZE);
-	LOG_DBG("dmic_irq_handler(), OUTSTAT0 = 0x%x, OUTSTAT1 = 0x%x", val0, val1);
-
-	if (val0 & OUTSTAT_ROR) {
-		LOG_ERR("dmic_irq_handler(): full fifo A or PDM overrun");
-		dai_dmic_write(dmic, OUTSTAT, val0);
-		dai_dmic_stop_fifo_packers(dmic, 0);
-	}
-
-	if (val1 & OUTSTAT_ROR) {
-		LOG_ERR("dmic_irq_handler(): full fifo B or PDM overrun");
-		dai_dmic_write(dmic, OUTSTAT + PDM_CHANNEL_REGS_SIZE, val1);
-		dai_dmic_stop_fifo_packers(dmic, 1);
-	}
-}
-
 static inline void dai_dmic_dis_clk_gating(const struct dai_intel_dmic *dmic)
 {
 	/* Disable DMIC clock gating */
-#ifdef CONFIG_SOC_INTEL_ACE20_LNL /* Ace 2.0 */
+#if (CONFIG_SOC_INTEL_ACE20_LNL || CONFIG_SOC_INTEL_ACE30)
 	sys_write32((sys_read32(dmic->vshim_base + DMICLVSCTL_OFFSET) | DMICLVSCTL_DCGD),
 		    dmic->vshim_base + DMICLVSCTL_OFFSET);
 #else
@@ -298,10 +272,10 @@ static inline void dai_dmic_dis_clk_gating(const struct dai_intel_dmic *dmic)
 static inline void dai_dmic_en_clk_gating(const struct dai_intel_dmic *dmic)
 {
 	/* Enable DMIC clock gating */
-#ifdef CONFIG_SOC_INTEL_ACE20_LNL /* Ace 2.0 */
+#if (CONFIG_SOC_INTEL_ACE20_LNL || CONFIG_SOC_INTEL_ACE30)
 	sys_write32((sys_read32(dmic->vshim_base + DMICLVSCTL_OFFSET) & ~DMICLVSCTL_DCGD),
 		    dmic->vshim_base + DMICLVSCTL_OFFSET);
-#else
+#else /* All other CAVS and ACE platforms */
 	sys_write32((sys_read32(dmic->shim_base + DMICLCTL_OFFSET) & ~DMICLCTL_DCGD),
 		    dmic->shim_base + DMICLCTL_OFFSET);
 #endif
@@ -312,7 +286,7 @@ static inline void dai_dmic_program_channel_map(const struct dai_intel_dmic *dmi
 						const struct dai_config *cfg,
 						uint32_t index)
 {
-#ifdef CONFIG_SOC_INTEL_ACE20_LNL
+#if defined(CONFIG_SOC_INTEL_ACE20_LNL) || defined(CONFIG_SOC_INTEL_ACE30)
 	uint16_t pcmsycm = cfg->link_config;
 	uint32_t reg_add = dmic->shim_base + DMICXPCMSyCM_OFFSET + 0x0004*index;
 
@@ -321,7 +295,7 @@ static inline void dai_dmic_program_channel_map(const struct dai_intel_dmic *dmi
 	ARG_UNUSED(dmic);
 	ARG_UNUSED(cfg);
 	ARG_UNUSED(index);
-#endif /* defined(CONFIG_SOC_INTEL_ACE20_LNL) */
+#endif /* defined(CONFIG_SOC_INTEL_ACE20_LNL) || defined(CONFIG_SOC_INTEL_ACE30) */
 }
 
 static inline void dai_dmic_en_power(const struct dai_intel_dmic *dmic)
@@ -331,7 +305,7 @@ static inline void dai_dmic_en_power(const struct dai_intel_dmic *dmic)
 	sys_write32((sys_read32(base + DMICLCTL_OFFSET) | DMICLCTL_SPA),
 			base + DMICLCTL_OFFSET);
 
-#ifdef CONFIG_SOC_INTEL_ACE20_LNL /* Ace 2.0 */
+#if defined(CONFIG_SOC_INTEL_ACE20_LNL) || defined(CONFIG_SOC_INTEL_ACE30)
 	while (!(sys_read32(base + DMICLCTL_OFFSET) & DMICLCTL_CPA)) {
 		k_sleep(K_USEC(100));
 	}
@@ -365,8 +339,6 @@ static int dai_dmic_probe(struct dai_intel_dmic *dmic)
 	/* DMIC Owner Select to DSP */
 	dai_dmic_claim_ownership(dmic);
 
-	irq_enable(dmic->irq);
-
 	return 0;
 }
 
@@ -375,10 +347,6 @@ static int dai_dmic_remove(struct dai_intel_dmic *dmic)
 	uint32_t active_fifos_mask = dai_dmic_global.active_fifos_mask;
 	uint32_t pause_mask = dai_dmic_global.pause_mask;
 
-	LOG_INF("dmic_remove()");
-
-	irq_disable(dmic->irq);
-
 	LOG_INF("dmic_remove(), dmic_active_fifos_mask = 0x%x, dmic_pause_mask = 0x%x",
 		active_fifos_mask, pause_mask);
 
@@ -386,8 +354,9 @@ static int dai_dmic_remove(struct dai_intel_dmic *dmic)
 	 * Note: dai_put() function that calls remove() applies the spinlock
 	 * so it is not needed here to protect access to mask bits.
 	 */
-	if (active_fifos_mask || pause_mask)
+	if (active_fifos_mask || pause_mask) {
 		return 0;
+	}
 
 	/* Disable DMIC clock and power */
 	dai_dmic_en_clk_gating(dmic);
@@ -445,8 +414,9 @@ static int dai_timestamp_dmic_get(const struct device *dev, struct dai_ts_cfg *c
 
 	/* Read SSP timestamp registers */
 	ntk = sys_read32(tsctrl) & TS_LOCAL_TSCTRL_NTK;
-	if (!ntk)
+	if (!ntk) {
 		goto out;
+	}
 
 	/* NTK was set, get wall clock */
 	tsd->walclk = sys_read64(TS_DMIC_LOCAL_WALCLK);
@@ -459,8 +429,9 @@ static int dai_timestamp_dmic_get(const struct device *dev, struct dai_ts_cfg *c
 
 out:
 	tsd->walclk_rate = cfg->walclk_rate;
-	if (!ntk)
+	if (!ntk) {
 		return -ENODATA;
+	}
 
 	return 0;
 }
@@ -487,8 +458,9 @@ static void dai_dmic_gain_ramp(struct dai_intel_dmic *dmic)
 	 * task associated with each DAI, so we don't need to hold the lock to
 	 * read the value here.
 	 */
-	if (dmic->gain == DMIC_HW_FIR_GAIN_MAX << 11)
+	if (dmic->gain == DMIC_HW_FIR_GAIN_MAX << 11) {
 		return;
+	}
 
 	key = k_spin_lock(&dmic->lock);
 
@@ -514,12 +486,14 @@ static void dai_dmic_gain_ramp(struct dai_intel_dmic *dmic)
 
 	/* Write gain to registers */
 	for (i = 0; i < CONFIG_DAI_DMIC_HW_CONTROLLERS; i++) {
-		if (!dmic->enable[i])
+		if (!dmic->enable[i]) {
 			continue;
+		}
 
-		if (dmic->startcount == DMIC_UNMUTE_CIC)
+		if (dmic->startcount == DMIC_UNMUTE_CIC) {
 			dai_dmic_update_bits(dmic, dmic_base[i] + CIC_CONTROL,
 					     CIC_CONTROL_MIC_MUTE, 0);
+		}
 
 		if (dmic->startcount == DMIC_UNMUTE_FIR) {
 			dai_dmic_update_bits(dmic, dmic_base[i] + FIR_CHANNEL_REGS_SIZE *
@@ -556,7 +530,13 @@ static void dai_dmic_start(struct dai_intel_dmic *dmic)
 
 	/* enable port */
 	key = k_spin_lock(&dmic->lock);
-	LOG_DBG("dmic_start(), dai_index = %d", dmic->dai_config_params.dai_index);
+
+#ifdef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
+	for (i = 0; i < CONFIG_DAI_DMIC_HW_CONTROLLERS; i++) {
+		dai_dmic_update_bits(dmic, dmic_base[i] + CIC_CONTROL, CIC_CONTROL_SOFT_RESET, 0);
+	}
+#endif
+
 	dmic->startcount = 0;
 
 	/* Compute unmute ramp gain update coefficient. */
@@ -570,18 +550,8 @@ static void dai_dmic_start(struct dai_intel_dmic *dmic)
 	dai_dmic_start_fifo_packers(dmic, dmic->dai_config_params.dai_index);
 
 	for (i = 0; i < CONFIG_DAI_DMIC_HW_CONTROLLERS; i++) {
-#ifdef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
-		dai_dmic_update_bits(dmic, dmic_base[i] + CIC_CONTROL,
-				     CIC_CONTROL_SOFT_RESET, 0);
-
-		LOG_INF("dmic_start(), cic 0x%08x",
-			dai_dmic_read(dmic, dmic_base[i] + CIC_CONTROL));
-#endif
-
 		mic_a = dmic->enable[i] & 1;
 		mic_b = (dmic->enable[i] & 2) >> 1;
-		start_fir = dmic->enable[i] > 0;
-		LOG_INF("dmic_start(), pdm%d mic_a = %u, mic_b = %u", i, mic_a, mic_b);
 
 		/* If both microphones are needed start them simultaneously
 		 * to start them in sync. The reset may be cleared for another
@@ -614,7 +584,10 @@ static void dai_dmic_start(struct dai_intel_dmic *dmic)
 					     MIC_CONTROL_PDM_EN_B,
 					     FIELD_PREP(MIC_CONTROL_PDM_EN_B, 1));
 		}
+	}
 
+	for (i = 0; i < CONFIG_DAI_DMIC_HW_CONTROLLERS; i++) {
+		start_fir = dmic->enable[i] > 0;
 		dai_dmic_update_bits(dmic, dmic_base[i] + FIR_CHANNEL_REGS_SIZE *
 				     dmic->dai_config_params.dai_index + FIR_CONTROL,
 				     FIR_CONTROL_START,
@@ -666,10 +639,11 @@ static void dai_dmic_stop(struct dai_intel_dmic *dmic, bool stop_is_pause)
 	 * If stop is not for pausing, it is safe to clear the pause bit.
 	 */
 	dai_dmic_global.active_fifos_mask &= ~BIT(dmic->dai_config_params.dai_index);
-	if (stop_is_pause)
+	if (stop_is_pause) {
 		dai_dmic_global.pause_mask |= BIT(dmic->dai_config_params.dai_index);
-	else
+	} else {
 		dai_dmic_global.pause_mask &= ~BIT(dmic->dai_config_params.dai_index);
+	}
 
 	for (i = 0; i < CONFIG_DAI_DMIC_HW_CONTROLLERS; i++) {
 		/* Don't stop CIC yet if one FIFO remains active */
@@ -869,7 +843,7 @@ static int dmic_pm_action(const struct device *dev, enum pm_device_action action
 	return 0;
 }
 
-const struct dai_driver_api dai_dmic_ops = {
+DEVICE_API(dai, dai_dmic_ops) = {
 	.probe			= pm_device_runtime_get,
 	.remove			= pm_device_runtime_put,
 	.config_set		= dai_dmic_set_config,
@@ -884,19 +858,7 @@ const struct dai_driver_api dai_dmic_ops = {
 
 static int dai_dmic_initialize_device(const struct device *dev)
 {
-	IRQ_CONNECT(
-		DT_INST_IRQN(0),
-		IRQ_DEFAULT_PRIORITY,
-		dai_dmic_irq_handler,
-		DEVICE_DT_INST_GET(0),
-		0);
-	if (pm_device_on_power_domain(dev)) {
-		pm_device_init_off(dev);
-	} else {
-		pm_device_init_suspended(dev);
-	}
-
-	return pm_device_runtime_enable(dev);
+	return pm_device_driver_init(dev, dmic_pm_action);
 };
 
 

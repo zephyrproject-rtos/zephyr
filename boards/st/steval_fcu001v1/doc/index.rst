@@ -1,16 +1,9 @@
-.. _steval_fcu001v1:
-
-ST STM32 Flight Controller Unit
-###############################
+.. zephyr:board:: steval_fcu001v1
 
 Overview
 ********
 
 The STEVAL-FCU001V1 is a Cortex M4 MCU-based flight controller unit for toy quad-copter drones.
-
-.. figure:: img/steval_fcu001v1.jpg
-     :align: center
-     :alt: STM32 Flight Controller Unit
 
 Hardware
 ********
@@ -46,28 +39,7 @@ can be found in these documents:
 Supported Features
 ==================
 
-The Zephyr steval_fcu001v1 board configuration supports the following hardware features:
-
-+-----------+------------+------------------------------------+
-| Interface | Controller | Driver/Component                   |
-+===========+============+====================================+
-| NVIC      | on-chip    | nested vector interrupt controller |
-+-----------+------------+------------------------------------+
-| UART      | on-chip    | serial port-polling;               |
-|           |            | serial port-interrupt              |
-+-----------+------------+------------------------------------+
-| PINMUX    | on-chip    | pinmux                             |
-+-----------+------------+------------------------------------+
-| GPIO      | on-chip    | gpio                               |
-+-----------+------------+------------------------------------+
-| PWM       | on-chip    | pwm                                |
-+-----------+------------+------------------------------------+
-| I2C       | on-chip    | i2c                                |
-+-----------+------------+------------------------------------+
-
-
-The default configuration can be found in
-:zephyr_file:`boards/st/steval_fcu001v1/steval_fcu001v1_defconfig`
+.. zephyr:board-supported-hw::
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------
@@ -102,6 +74,8 @@ The steval_fcu001v1 board has one I2C. The default I2C mapping for Zephyr is:
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``steval_fcu001v1`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -123,7 +97,7 @@ program to connect with your steval_fcu001v1 via the FT232 board:
 
    $ minicom -D /dev/ttyUSB0
 
-Now build and flash an application. Here is an example for :ref:`hello_world`
+Now build and flash an application. Here is an example for :zephyr:code-sample:`hello_world`
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -140,7 +114,7 @@ Debugging
 =========
 
 You can debug an application in the usual way. Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

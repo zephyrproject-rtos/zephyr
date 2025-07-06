@@ -16,7 +16,7 @@
 /* OOB operations will be attempted regardless of channel enabled or not */
 #include "espi_oob_handler.h"
 
-#ifdef CONFIG_ESPI_SAF
+#ifdef CONFIG_ESPI_TAF
 #include <zephyr/drivers/espi_saf.h>
 #endif
 
@@ -45,7 +45,7 @@ LOG_MODULE_DECLARE(espi, CONFIG_ESPI_LOG_LEVEL);
 /* The devicetree node identifier for the board power rails pins. */
 #define BRD_PWR_NODE DT_NODELABEL(board_power)
 
-#if DT_NODE_HAS_STATUS(BRD_PWR_NODE, okay)
+#ifdef CONFIG_ESPI_USE_BOARD_POWER
 static const struct gpio_dt_spec pwrgd_gpio = GPIO_DT_SPEC_GET(BRD_PWR_NODE, pwrg_gpios);
 static const struct gpio_dt_spec rsm_gpio = GPIO_DT_SPEC_GET(BRD_PWR_NODE, rsm_gpios);
 #endif
@@ -65,7 +65,7 @@ static uint8_t flash_write_buf[MAX_TEST_BUF_SIZE];
 static uint8_t flash_read_buf[MAX_TEST_BUF_SIZE];
 #endif
 
-#ifdef CONFIG_ESPI_SAF
+#ifdef CONFIG_ESPI_TAF
 #define SAF_BASE_ADDR DT_REG_ADDR(DT_NODELABEL(espi_saf0))
 
 #define SAF_TEST_FREQ_HZ  24000000U
@@ -128,7 +128,7 @@ static const struct espi_saf_flash_cfg flash_w25q128 = {
  * by QMSPI driver.
  * Use SAF hardware default TAG map.
  */
-#ifdef CONFIG_ESPI_SAF_XEC_V2
+#ifdef CONFIG_ESPI_TAF_XEC_V2
 static const struct espi_saf_cfg saf_cfg1 = {
 	.nflash_devices = 1U,
 	.hwcfg = {.version = 2U,               /* TODO */
@@ -757,7 +757,7 @@ int espi_saf_test1(uint32_t spi_addr)
 
 	return rc;
 }
-#endif /* CONFIG_ESPI_SAF */
+#endif /* CONFIG_ESPI_TAF */
 
 static void host_warn_handler(uint32_t signal, uint32_t status)
 {
@@ -881,11 +881,11 @@ int espi_init(void)
 
 	ret = espi_config(espi_dev, &cfg);
 	if (ret) {
-		LOG_ERR("Failed to configure eSPI slave channels:%x err: %d", cfg.channel_caps,
+		LOG_ERR("Failed to configure eSPI target channels:%x err: %d", cfg.channel_caps,
 			ret);
 		return ret;
 	} else {
-		LOG_INF("eSPI slave configured successfully!");
+		LOG_INF("eSPI target configured successfully!");
 	}
 
 	LOG_INF("eSPI test - callbacks initialization... ");
@@ -911,7 +911,7 @@ int espi_init(void)
 	return ret;
 }
 
-#if DT_NODE_HAS_STATUS(BRD_PWR_NODE, okay)
+#ifdef CONFIG_ESPI_USE_BOARD_POWER
 static int wait_for_pin(const struct gpio_dt_spec *gpio, uint16_t timeout, int exp_level)
 {
 	uint16_t loop_cnt = timeout;
@@ -1145,20 +1145,20 @@ static int espi_flash_test(uint32_t start_flash_addr, uint8_t blocks)
 }
 #endif /* CONFIG_ESPI_FLASH_CHANNEL */
 
-#ifndef CONFIG_ESPI_AUTOMATIC_BOOT_DONE_ACKNOWLEDGE
-static void send_slave_bootdone(void)
+#ifndef CONFIG_ESPI_AUTOMATIC_WARNING_ACKNOWLEDGE
+static void send_target_bootdone(void)
 {
 	int ret;
 	uint8_t boot_done;
 
-	ret = espi_receive_vwire(espi_dev, ESPI_VWIRE_SIGNAL_SLV_BOOT_DONE, &boot_done);
+	ret = espi_receive_vwire(espi_dev, ESPI_VWIRE_SIGNAL_TARGET_BOOT_DONE, &boot_done);
 	LOG_INF("%s boot_done: %d", __func__, boot_done);
 	if (ret) {
-		LOG_WRN("Fail to retrieve slave boot done");
+		LOG_WRN("Fail to retrieve target boot done");
 	} else if (!boot_done) {
-		/* SLAVE_BOOT_DONE & SLAVE_LOAD_STS have to be sent together */
-		espi_send_vwire(espi_dev, ESPI_VWIRE_SIGNAL_SLV_BOOT_STS, 1);
-		espi_send_vwire(espi_dev, ESPI_VWIRE_SIGNAL_SLV_BOOT_DONE, 1);
+		/* TARGET_BOOT_DONE & TARGET_LOAD_STS have to be sent together */
+		espi_send_vwire(espi_dev, ESPI_VWIRE_SIGNAL_TARGET_BOOT_STS, 1);
+		espi_send_vwire(espi_dev, ESPI_VWIRE_SIGNAL_TARGET_BOOT_DONE, 1);
 	}
 }
 #endif
@@ -1172,7 +1172,7 @@ int espi_test(void)
 	 */
 	k_sleep(K_SECONDS(1));
 
-#if DT_NODE_HAS_STATUS(BRD_PWR_NODE, okay)
+#ifdef CONFIG_ESPI_USE_BOARD_POWER
 	if (!gpio_is_ready_dt(&pwrgd_gpio)) {
 		LOG_ERR("%s: device not ready.", pwrgd_gpio.port->name);
 		return -ENODEV;
@@ -1187,7 +1187,7 @@ int espi_test(void)
 		return -ENODEV;
 	}
 
-#ifdef CONFIG_ESPI_SAF
+#ifdef CONFIG_ESPI_TAF
 	if (!device_is_ready(qspi_dev)) {
 		LOG_ERR("%s: device not ready.", qspi_dev->name);
 		return -ENODEV;
@@ -1201,7 +1201,7 @@ int espi_test(void)
 
 	LOG_INF("Hello eSPI test %s", CONFIG_BOARD);
 
-#if DT_NODE_HAS_STATUS(BRD_PWR_NODE, okay)
+#ifdef CONFIG_ESPI_USE_BOARD_POWER
 	ret = gpio_pin_configure_dt(&pwrgd_gpio, GPIO_INPUT);
 	if (ret) {
 		LOG_ERR("Unable to configure %d:%d", pwrgd_gpio.pin, ret);
@@ -1223,7 +1223,7 @@ int espi_test(void)
 
 	espi_init();
 
-#ifdef CONFIG_ESPI_SAF
+#ifdef CONFIG_ESPI_TAF
 	/*
 	 * eSPI SAF configuration must be after eSPI configuration.
 	 * eSPI SAF EC portal flash tests before EC releases RSMRST# and
@@ -1252,7 +1252,7 @@ int espi_test(void)
 	}
 #endif
 
-#if DT_NODE_HAS_STATUS(BRD_PWR_NODE, okay)
+#ifdef CONFIG_ESPI_USE_BOARD_POWER
 	ret = wait_for_pin(&pwrgd_gpio, PWR_SEQ_TIMEOUT, 1);
 	if (ret) {
 		LOG_ERR("RSMRST_PWRGD timeout");
@@ -1271,9 +1271,9 @@ int espi_test(void)
 		return ret;
 	}
 
-#ifndef CONFIG_ESPI_AUTOMATIC_BOOT_DONE_ACKNOWLEDGE
+#ifndef CONFIG_ESPI_AUTOMATIC_WARNING_ACKNOWLEDGE
 	/* When automatic acknowledge is disabled to perform lengthy operations
-	 * in the eSPI slave, need to explicitly send slave boot
+	 * in the eSPI target, need to explicitly send target boot virtual wires
 	 */
 	bool vw_ch_sts;
 
@@ -1285,7 +1285,7 @@ int espi_test(void)
 		k_busy_wait(100);
 	} while (!vw_ch_sts);
 
-	send_slave_bootdone();
+	send_target_bootdone();
 #endif
 
 #ifdef CONFIG_ESPI_FLASH_CHANNEL

@@ -23,6 +23,8 @@ extern "C" {
 /**
  * @brief Network packet capture support functions
  * @defgroup net_capture Network packet capture
+ * @since 2.6
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */
@@ -271,7 +273,7 @@ struct net_capture_cooked {
 /**
  * @brief Initialize cooked mode capture context.
  *
- * @param cooked Cooked context struct allocated by user.
+ * @param ctx Cooked context struct allocated by user.
  * @param hatype Link-layer address type
  * @param halen Link-layer address length (maximum is 8 bytes)
  * @param addr Link-layer address
@@ -307,7 +309,7 @@ static inline int net_capture_cooked_setup(struct net_capture_cooked *ctx,
  *        layer packets so that packet boundary is not lost.
  *
  * @param ctx Cooked mode capture context.
- * @param buf Data to capture.
+ * @param data Data to capture.
  * @param len Length of the data.
  * @param type The direction and type of the packet (did we sent it etc).
  * @param ptype Protocol type id. These are the ETH_P_* types set in ethernet.h

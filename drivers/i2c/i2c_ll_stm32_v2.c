@@ -19,15 +19,138 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
-#include "i2c_ll_stm32.h"
+
+#include <zephyr/cache.h>
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/mem_mgmt/mem_attr.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_ll_stm32_v2);
 
+#include "i2c_ll_stm32.h"
 #include "i2c-priv.h"
 
-#define STM32_I2C_TRANSFER_TIMEOUT_MSEC  500
+#define I2C_STM32_TRANSFER_TIMEOUT_MSEC  500
+
+#ifdef CONFIG_I2C_STM32_V2_TIMING
+/* Use the algorithm to calcuate the I2C timing */
+#ifndef I2C_STM32_VALID_TIMING_NBR
+#define I2C_STM32_VALID_TIMING_NBR                 128U
+#endif
+#define I2C_STM32_SPEED_FREQ_STANDARD                0U    /* 100 kHz */
+#define I2C_STM32_SPEED_FREQ_FAST                    1U    /* 400 kHz */
+#define I2C_STM32_SPEED_FREQ_FAST_PLUS               2U    /* 1 MHz */
+#define I2C_STM32_ANALOG_FILTER_DELAY_MIN            50U   /* ns */
+#define I2C_STM32_ANALOG_FILTER_DELAY_MAX            260U  /* ns */
+#define I2C_STM32_USE_ANALOG_FILTER                  1U
+#define I2C_STM32_DIGITAL_FILTER_COEF                0U
+#define I2C_STM32_PRESC_MAX                          16U
+#define I2C_STM32_SCLDEL_MAX                         16U
+#define I2C_STM32_SDADEL_MAX                         16U
+#define I2C_STM32_SCLH_MAX                           256U
+#define I2C_STM32_SCLL_MAX                           256U
+
+/* I2C_DEVICE_Private_Types */
+struct i2c_stm32_charac_t {
+	uint32_t freq;       /* Frequency in Hz */
+	uint32_t freq_min;   /* Minimum frequency in Hz */
+	uint32_t freq_max;   /* Maximum frequency in Hz */
+	uint32_t hddat_min;  /* Minimum data hold time in ns */
+	uint32_t vddat_max;  /* Maximum data valid time in ns */
+	uint32_t sudat_min;  /* Minimum data setup time in ns */
+	uint32_t lscl_min;   /* Minimum low period of the SCL clock in ns */
+	uint32_t hscl_min;   /* Minimum high period of SCL clock in ns */
+	uint32_t trise;      /* Rise time in ns */
+	uint32_t tfall;      /* Fall time in ns */
+	uint32_t dnf;        /* Digital noise filter coefficient */
+};
+
+struct i2c_stm32_timings_t {
+	uint32_t presc;      /* Timing prescaler */
+	uint32_t tscldel;    /* SCL delay */
+	uint32_t tsdadel;    /* SDA delay */
+	uint32_t sclh;       /* SCL high period */
+	uint32_t scll;       /* SCL low period */
+};
+
+/* I2C_DEVICE Private Constants */
+static const struct i2c_stm32_charac_t i2c_stm32_charac[] = {
+	[I2C_STM32_SPEED_FREQ_STANDARD] = {
+		.freq = 100000,
+		.freq_min = 80000,
+		.freq_max = 120000,
+		.hddat_min = 0,
+		.vddat_max = 3450,
+		.sudat_min = 250,
+		.lscl_min = 4700,
+		.hscl_min = 4000,
+		.trise = 640,
+		.tfall = 20,
+		.dnf = I2C_STM32_DIGITAL_FILTER_COEF,
+	},
+	[I2C_STM32_SPEED_FREQ_FAST] = {
+		.freq = 400000,
+		.freq_min = 320000,
+		.freq_max = 480000,
+		.hddat_min = 0,
+		.vddat_max = 900,
+		.sudat_min = 100,
+		.lscl_min = 1300,
+		.hscl_min = 600,
+		.trise = 250,
+		.tfall = 100,
+		.dnf = I2C_STM32_DIGITAL_FILTER_COEF,
+	},
+	[I2C_STM32_SPEED_FREQ_FAST_PLUS] = {
+		.freq = 1000000,
+		.freq_min = 800000,
+		.freq_max = 1200000,
+		.hddat_min = 0,
+		.vddat_max = 450,
+		.sudat_min = 50,
+		.lscl_min = 500,
+		.hscl_min = 260,
+		.trise = 60,
+		.tfall = 100,
+		.dnf = I2C_STM32_DIGITAL_FILTER_COEF,
+	},
+};
+
+static struct i2c_stm32_timings_t i2c_valid_timing[I2C_STM32_VALID_TIMING_NBR];
+static uint32_t i2c_valid_timing_nbr;
+#endif /* CONFIG_I2C_STM32_V2_TIMING */
+
+#ifdef CONFIG_I2C_STM32_V2_DMA
+static int configure_dma(struct stream const *dma, struct dma_config *dma_cfg,
+			 struct dma_block_config *blk_cfg)
+{
+	if (!device_is_ready(dma->dev_dma)) {
+		LOG_ERR("DMA device not ready");
+		return -ENODEV;
+	}
+
+	dma_cfg->head_block = blk_cfg;
+	dma_cfg->block_count = 1;
+
+	int ret = dma_config(dma->dev_dma, dma->dma_channel, dma_cfg);
+
+	if (ret != 0) {
+		LOG_ERR("Problem setting up DMA: %d", ret);
+		return ret;
+	}
+
+	ret = dma_start(dma->dev_dma, dma->dma_channel);
+
+	if (ret != 0) {
+		LOG_ERR("Problem starting DMA: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_I2C_STM32_V2_DMA */
 
 static inline void msg_init(const struct device *dev, struct i2c_msg *msg,
 			    uint8_t *next_msg_flags, uint16_t slave,
@@ -63,6 +186,50 @@ static inline void msg_init(const struct device *dev, struct i2c_msg *msg,
 #if defined(CONFIG_I2C_TARGET)
 		data->master_active = true;
 #endif
+
+#ifdef CONFIG_I2C_STM32_V2_DMA
+		if (msg->len) {
+			if (msg->flags & I2C_MSG_READ) {
+				/* Configure RX DMA */
+				data->dma_blk_cfg.source_address = LL_I2C_DMA_GetRegAddr(
+					cfg->i2c, LL_I2C_DMA_REG_DATA_RECEIVE);
+				data->dma_blk_cfg.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+				data->dma_blk_cfg.dest_address = (uint32_t)msg->buf;
+				data->dma_blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+				data->dma_blk_cfg.block_size = msg->len;
+
+				if (configure_dma(&cfg->rx_dma, &data->dma_rx_cfg,
+						  &data->dma_blk_cfg) != 0) {
+					LOG_ERR("Problem setting up RX DMA");
+					return;
+				}
+				data->current.buf += msg->len;
+				data->current.len -= msg->len;
+				LL_I2C_EnableDMAReq_RX(i2c);
+			} else {
+				if (data->current.len) {
+					/* Configure TX DMA */
+					data->dma_blk_cfg.source_address =
+						(uint32_t)data->current.buf;
+					data->dma_blk_cfg.source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+					data->dma_blk_cfg.dest_address = LL_I2C_DMA_GetRegAddr(
+						cfg->i2c, LL_I2C_DMA_REG_DATA_TRANSMIT);
+					data->dma_blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+					data->dma_blk_cfg.block_size = msg->len;
+
+					if (configure_dma(&cfg->tx_dma, &data->dma_tx_cfg,
+							  &data->dma_blk_cfg) != 0) {
+						LOG_ERR("Problem setting up TX DMA");
+						return;
+					}
+					data->current.buf += data->current.len;
+					data->current.len -= data->current.len;
+					LL_I2C_EnableDMAReq_TX(i2c);
+				}
+			}
+		}
+#endif /* CONFIG_I2C_STM32_V2_DMA */
+
 		LL_I2C_Enable(i2c);
 
 		LL_I2C_GenerateStartCondition(i2c);
@@ -71,7 +238,7 @@ static inline void msg_init(const struct device *dev, struct i2c_msg *msg,
 
 #ifdef CONFIG_I2C_STM32_INTERRUPT
 
-static void stm32_i2c_disable_transfer_interrupts(const struct device *dev)
+static void i2c_stm32_disable_transfer_interrupts(const struct device *dev)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
@@ -88,7 +255,7 @@ static void stm32_i2c_disable_transfer_interrupts(const struct device *dev)
 	}
 }
 
-static void stm32_i2c_enable_transfer_interrupts(const struct device *dev)
+static void i2c_stm32_enable_transfer_interrupts(const struct device *dev)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	I2C_TypeDef *i2c = cfg->i2c;
@@ -99,13 +266,13 @@ static void stm32_i2c_enable_transfer_interrupts(const struct device *dev)
 	LL_I2C_EnableIT_ERR(i2c);
 }
 
-static void stm32_i2c_master_mode_end(const struct device *dev)
+static void i2c_stm32_master_mode_end(const struct device *dev)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
 
-	stm32_i2c_disable_transfer_interrupts(dev);
+	i2c_stm32_disable_transfer_interrupts(dev);
 
 	if (LL_I2C_IsEnabledReloadMode(i2c)) {
 		LL_I2C_DisableReloadMode(i2c);
@@ -121,11 +288,22 @@ static void stm32_i2c_master_mode_end(const struct device *dev)
 		LL_I2C_Disable(i2c);
 	}
 #endif
+
+#ifdef CONFIG_I2C_STM32_V2_DMA
+	if (data->current.msg->flags & I2C_MSG_READ) {
+		dma_stop(cfg->rx_dma.dev_dma, cfg->rx_dma.dma_channel);
+		LL_I2C_DisableDMAReq_RX(i2c);
+	} else {
+		dma_stop(cfg->tx_dma.dev_dma, cfg->tx_dma.dma_channel);
+		LL_I2C_DisableDMAReq_TX(i2c);
+	}
+#endif /* CONFIG_I2C_STM32_V2_DMA */
+
 	k_sem_give(&data->device_sync_sem);
 }
 
 #if defined(CONFIG_I2C_TARGET)
-static void stm32_i2c_slave_event(const struct device *dev)
+static void i2c_stm32_slave_event(const struct device *dev)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
@@ -166,8 +344,11 @@ static void stm32_i2c_slave_event(const struct device *dev)
 	if (LL_I2C_IsActiveFlag_TXIS(i2c)) {
 		uint8_t val;
 
-		slave_cb->read_processed(slave_cfg, &val);
-		LL_I2C_TransmitData8(i2c, val);
+		if (slave_cb->read_processed(slave_cfg, &val) < 0) {
+			LOG_ERR("Error continuing reading");
+		} else {
+			LL_I2C_TransmitData8(i2c, val);
+		}
 		return;
 	}
 
@@ -185,7 +366,7 @@ static void stm32_i2c_slave_event(const struct device *dev)
 	}
 
 	if (LL_I2C_IsActiveFlag_STOP(i2c)) {
-		stm32_i2c_disable_transfer_interrupts(dev);
+		i2c_stm32_disable_transfer_interrupts(dev);
 
 		/* Flush remaining TX byte before clearing Stop Flag */
 		LL_I2C_ClearFlag_TXE(i2c);
@@ -205,23 +386,29 @@ static void stm32_i2c_slave_event(const struct device *dev)
 
 		dir = LL_I2C_GetTransferDirection(i2c);
 		if (dir == LL_I2C_DIRECTION_WRITE) {
-			slave_cb->write_requested(slave_cfg);
-			LL_I2C_EnableIT_RX(i2c);
+			if (slave_cb->write_requested(slave_cfg) < 0) {
+				LOG_ERR("Error initiating writing");
+			} else {
+				LL_I2C_EnableIT_RX(i2c);
+			}
 		} else {
 			uint8_t val;
 
-			slave_cb->read_requested(slave_cfg, &val);
-			LL_I2C_TransmitData8(i2c, val);
-			LL_I2C_EnableIT_TX(i2c);
+			if (slave_cb->read_requested(slave_cfg, &val) < 0) {
+				LOG_ERR("Error initiating reading");
+			} else {
+				LL_I2C_TransmitData8(i2c, val);
+				LL_I2C_EnableIT_TX(i2c);
+			}
 		}
 
-		stm32_i2c_enable_transfer_interrupts(dev);
+		i2c_stm32_enable_transfer_interrupts(dev);
 	}
 }
 
 /* Attach and start I2C as target */
 int i2c_stm32_target_register(const struct device *dev,
-			     struct i2c_target_config *config)
+			      struct i2c_target_config *config)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
@@ -249,15 +436,14 @@ int i2c_stm32_target_register(const struct device *dev,
 		return ret;
 	}
 
-#if defined(CONFIG_PM_DEVICE_RUNTIME)
+	/* Mark device as active */
+	(void)pm_device_runtime_get(dev);
+
 	if (pm_device_wakeup_is_capable(dev)) {
-		/* Mark device as active */
-		(void)pm_device_runtime_get(dev);
 		/* Enable wake-up from stop */
 		LOG_DBG("i2c: enabling wakeup from stop");
 		LL_I2C_EnableWakeUpFromStop(cfg->i2c);
 	}
-#endif /* defined(CONFIG_PM_DEVICE_RUNTIME) */
 
 	LL_I2C_Enable(i2c);
 
@@ -294,7 +480,7 @@ int i2c_stm32_target_register(const struct device *dev,
 }
 
 int i2c_stm32_target_unregister(const struct device *dev,
-			       struct i2c_target_config *config)
+				struct i2c_target_config *config)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
@@ -330,7 +516,7 @@ int i2c_stm32_target_unregister(const struct device *dev,
 
 	/* Otherwise disable I2C */
 	LL_I2C_DisableIT_ADDR(i2c);
-	stm32_i2c_disable_transfer_interrupts(dev);
+	i2c_stm32_disable_transfer_interrupts(dev);
 
 	LL_I2C_ClearFlag_NACK(i2c);
 	LL_I2C_ClearFlag_STOP(i2c);
@@ -340,15 +526,14 @@ int i2c_stm32_target_unregister(const struct device *dev,
 		LL_I2C_Disable(i2c);
 	}
 
-#if defined(CONFIG_PM_DEVICE_RUNTIME)
 	if (pm_device_wakeup_is_capable(dev)) {
 		/* Disable wake-up from STOP */
 		LOG_DBG("i2c: disabling wakeup from stop");
 		LL_I2C_DisableWakeUpFromStop(i2c);
-		/* Release the device */
-		(void)pm_device_runtime_put(dev);
 	}
-#endif /* defined(CONFIG_PM_DEVICE_RUNTIME) */
+
+	/* Release the device */
+	(void)pm_device_runtime_put(dev);
 
 	data->slave_attached = false;
 
@@ -357,7 +542,7 @@ int i2c_stm32_target_unregister(const struct device *dev,
 
 #endif /* defined(CONFIG_I2C_TARGET) */
 
-static void stm32_i2c_event(const struct device *dev)
+void i2c_stm32_event(const struct device *dev)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
@@ -365,7 +550,7 @@ static void stm32_i2c_event(const struct device *dev)
 
 #if defined(CONFIG_I2C_TARGET)
 	if (data->slave_attached && !data->master_active) {
-		stm32_i2c_slave_event(dev);
+		i2c_stm32_slave_event(dev);
 		return;
 	}
 #endif
@@ -410,17 +595,28 @@ static void stm32_i2c_event(const struct device *dev)
 		if (data->current.msg->flags & I2C_MSG_STOP) {
 			LL_I2C_GenerateStopCondition(i2c);
 		} else {
-			stm32_i2c_disable_transfer_interrupts(dev);
+			i2c_stm32_disable_transfer_interrupts(dev);
+
+#ifdef CONFIG_I2C_STM32_V2_DMA
+			if (data->current.msg->flags & I2C_MSG_READ) {
+				dma_stop(cfg->rx_dma.dev_dma, cfg->rx_dma.dma_channel);
+				LL_I2C_DisableDMAReq_RX(i2c);
+			} else {
+				dma_stop(cfg->tx_dma.dev_dma, cfg->tx_dma.dma_channel);
+				LL_I2C_DisableDMAReq_TX(i2c);
+			}
+#endif /* CONFIG_I2C_STM32_V2_DMA */
+
 			k_sem_give(&data->device_sync_sem);
 		}
 	}
 
 	return;
 end:
-	stm32_i2c_master_mode_end(dev);
+	i2c_stm32_master_mode_end(dev);
 }
 
-static int stm32_i2c_error(const struct device *dev)
+int i2c_stm32_error(const struct device *dev)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
@@ -457,39 +653,12 @@ static int stm32_i2c_error(const struct device *dev)
 
 	return 0;
 end:
-	stm32_i2c_master_mode_end(dev);
+	i2c_stm32_master_mode_end(dev);
 	return -EIO;
 }
 
-#ifdef CONFIG_I2C_STM32_COMBINED_INTERRUPT
-void stm32_i2c_combined_isr(void *arg)
-{
-	const struct device *dev = (const struct device *) arg;
-
-	if (stm32_i2c_error(dev)) {
-		return;
-	}
-	stm32_i2c_event(dev);
-}
-#else
-
-void stm32_i2c_event_isr(void *arg)
-{
-	const struct device *dev = (const struct device *) arg;
-
-	stm32_i2c_event(dev);
-}
-
-void stm32_i2c_error_isr(void *arg)
-{
-	const struct device *dev = (const struct device *) arg;
-
-	stm32_i2c_error(dev);
-}
-#endif
-
-static int stm32_i2c_msg_write(const struct device *dev, struct i2c_msg *msg,
-			uint8_t *next_msg_flags, uint16_t slave)
+static int i2c_stm32_msg_write(const struct device *dev, struct i2c_msg *msg,
+			       uint8_t *next_msg_flags, uint16_t slave)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
@@ -503,14 +672,22 @@ static int stm32_i2c_msg_write(const struct device *dev, struct i2c_msg *msg,
 	data->current.is_err = 0U;
 	data->current.msg = msg;
 
+#if defined(CONFIG_I2C_STM32_V2_DMA)
+	if (!stm32_buf_in_nocache((uintptr_t)msg->buf, msg->len)) {
+		LOG_DBG("Tx buffer at %p (len %zu) is in cached memory; cleaning cache", msg->buf,
+			msg->len);
+		sys_cache_data_flush_range((void *)msg->buf, msg->len);
+	}
+#endif /* CONFIG_I2C_STM32_V2_DMA */
+
 	msg_init(dev, msg, next_msg_flags, slave, LL_I2C_REQUEST_WRITE);
 
-	stm32_i2c_enable_transfer_interrupts(dev);
+	i2c_stm32_enable_transfer_interrupts(dev);
 	LL_I2C_EnableIT_TX(i2c);
 
 	if (k_sem_take(&data->device_sync_sem,
-		       K_MSEC(STM32_I2C_TRANSFER_TIMEOUT_MSEC)) != 0) {
-		stm32_i2c_master_mode_end(dev);
+		       K_MSEC(I2C_STM32_TRANSFER_TIMEOUT_MSEC)) != 0) {
+		i2c_stm32_master_mode_end(dev);
 		k_sem_take(&data->device_sync_sem, K_FOREVER);
 		is_timeout = true;
 	}
@@ -546,8 +723,8 @@ error:
 	return -EIO;
 }
 
-static int stm32_i2c_msg_read(const struct device *dev, struct i2c_msg *msg,
-		       uint8_t *next_msg_flags, uint16_t slave)
+static int i2c_stm32_msg_read(const struct device *dev, struct i2c_msg *msg,
+			      uint8_t *next_msg_flags, uint16_t slave)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
@@ -564,15 +741,22 @@ static int stm32_i2c_msg_read(const struct device *dev, struct i2c_msg *msg,
 
 	msg_init(dev, msg, next_msg_flags, slave, LL_I2C_REQUEST_READ);
 
-	stm32_i2c_enable_transfer_interrupts(dev);
+	i2c_stm32_enable_transfer_interrupts(dev);
 	LL_I2C_EnableIT_RX(i2c);
 
 	if (k_sem_take(&data->device_sync_sem,
-		       K_MSEC(STM32_I2C_TRANSFER_TIMEOUT_MSEC)) != 0) {
-		stm32_i2c_master_mode_end(dev);
+		       K_MSEC(I2C_STM32_TRANSFER_TIMEOUT_MSEC)) != 0) {
+		i2c_stm32_master_mode_end(dev);
 		k_sem_take(&data->device_sync_sem, K_FOREVER);
 		is_timeout = true;
 	}
+#if defined(CONFIG_I2C_STM32_V2_DMA)
+	if (!stm32_buf_in_nocache((uintptr_t)msg->buf, msg->len)) {
+		LOG_DBG("Rx buffer at %p (len %zu) is in cached memory; invalidating cache",
+			msg->buf, msg->len);
+		sys_cache_data_invd_range((void *)msg->buf, msg->len);
+	}
+#endif /* CONFIG_I2C_STM32_V2_DMA */
 
 	if (data->current.is_nack || data->current.is_err ||
 	    data->current.is_arlo || is_timeout) {
@@ -648,17 +832,26 @@ static inline int msg_done(const struct device *dev,
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	I2C_TypeDef *i2c = cfg->i2c;
+	int64_t start_time = k_uptime_get();
 
 	/* Wait for transfer to complete */
 	while (!LL_I2C_IsActiveFlag_TC(i2c) && !LL_I2C_IsActiveFlag_TCR(i2c)) {
 		if (check_errors(dev, __func__)) {
 			return -EIO;
 		}
+		if ((k_uptime_get() - start_time) >
+		    I2C_STM32_TRANSFER_TIMEOUT_MSEC) {
+			return -ETIMEDOUT;
+		}
 	}
 	/* Issue stop condition if necessary */
 	if (current_msg_flags & I2C_MSG_STOP) {
 		LL_I2C_GenerateStopCondition(i2c);
 		while (!LL_I2C_IsActiveFlag_STOP(i2c)) {
+			if ((k_uptime_get() - start_time) >
+			    I2C_STM32_TRANSFER_TIMEOUT_MSEC) {
+				return -ETIMEDOUT;
+			}
 		}
 
 		LL_I2C_ClearFlag_STOP(i2c);
@@ -668,13 +861,14 @@ static inline int msg_done(const struct device *dev,
 	return 0;
 }
 
-static int stm32_i2c_msg_write(const struct device *dev, struct i2c_msg *msg,
-			uint8_t *next_msg_flags, uint16_t slave)
+static int i2c_stm32_msg_write(const struct device *dev, struct i2c_msg *msg,
+			       uint8_t *next_msg_flags, uint16_t slave)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	I2C_TypeDef *i2c = cfg->i2c;
 	unsigned int len = 0U;
 	uint8_t *buf = msg->buf;
+	int64_t start_time = k_uptime_get();
 
 	msg_init(dev, msg, next_msg_flags, slave, LL_I2C_REQUEST_WRITE);
 
@@ -688,6 +882,11 @@ static int stm32_i2c_msg_write(const struct device *dev, struct i2c_msg *msg,
 			if (check_errors(dev, __func__)) {
 				return -EIO;
 			}
+
+			if ((k_uptime_get() - start_time) >
+			    I2C_STM32_TRANSFER_TIMEOUT_MSEC) {
+				return -ETIMEDOUT;
+			}
 		}
 
 		LL_I2C_TransmitData8(i2c, *buf);
@@ -698,13 +897,14 @@ static int stm32_i2c_msg_write(const struct device *dev, struct i2c_msg *msg,
 	return msg_done(dev, msg->flags);
 }
 
-static int stm32_i2c_msg_read(const struct device *dev, struct i2c_msg *msg,
-		       uint8_t *next_msg_flags, uint16_t slave)
+static int i2c_stm32_msg_read(const struct device *dev, struct i2c_msg *msg,
+			      uint8_t *next_msg_flags, uint16_t slave)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	I2C_TypeDef *i2c = cfg->i2c;
 	unsigned int len = 0U;
 	uint8_t *buf = msg->buf;
+	int64_t start_time = k_uptime_get();
 
 	msg_init(dev, msg, next_msg_flags, slave, LL_I2C_REQUEST_READ);
 
@@ -713,6 +913,10 @@ static int stm32_i2c_msg_read(const struct device *dev, struct i2c_msg *msg,
 		while (!LL_I2C_IsActiveFlag_RXNE(i2c)) {
 			if (check_errors(dev, __func__)) {
 				return -EIO;
+			}
+			if ((k_uptime_get() - start_time) >
+			    I2C_STM32_TRANSFER_TIMEOUT_MSEC) {
+				return -ETIMEDOUT;
 			}
 		}
 
@@ -725,7 +929,241 @@ static int stm32_i2c_msg_read(const struct device *dev, struct i2c_msg *msg,
 }
 #endif
 
-int stm32_i2c_configure_timing(const struct device *dev, uint32_t clock)
+#ifdef CONFIG_I2C_STM32_V2_TIMING
+/*
+ * Macro used to fix the compliance check warning :
+ * "DEEP_INDENTATION: Too many leading tabs - consider code refactoring
+ * in the i2c_compute_scll_sclh() function below
+ */
+#define I2C_LOOP_SCLH();						\
+	if ((tscl >= clk_min) &&					\
+		(tscl <= clk_max) &&					\
+		(tscl_h >= i2c_stm32_charac[i2c_speed].hscl_min) &&	\
+		(ti2cclk < tscl_h)) {					\
+									\
+		int32_t error = (int32_t)tscl - (int32_t)ti2cspeed;	\
+									\
+		if (error < 0) {					\
+			error = -error;					\
+		}							\
+									\
+		if ((uint32_t)error < prev_error) {			\
+			prev_error = (uint32_t)error;			\
+			i2c_valid_timing[count].scll = scll;		\
+			i2c_valid_timing[count].sclh = sclh;		\
+			ret = count;					\
+		}							\
+	}
+
+/*
+ * @brief  Calculate SCLL and SCLH and find best configuration.
+ * @param  clock_src_freq I2C source clock in Hz.
+ * @param  i2c_speed I2C frequency (index).
+ * @retval config index (0 to I2C_VALID_TIMING_NBR], 0xFFFFFFFF for no valid config.
+ */
+uint32_t i2c_compute_scll_sclh(uint32_t clock_src_freq, uint32_t i2c_speed)
+{
+	uint32_t ret = 0xFFFFFFFFU;
+	uint32_t ti2cclk;
+	uint32_t ti2cspeed;
+	uint32_t prev_error;
+	uint32_t dnf_delay;
+	uint32_t clk_min, clk_max;
+	uint32_t scll, sclh;
+	uint32_t tafdel_min;
+
+	ti2cclk = (NSEC_PER_SEC + (clock_src_freq / 2U)) / clock_src_freq;
+	ti2cspeed = (NSEC_PER_SEC + (i2c_stm32_charac[i2c_speed].freq / 2U)) /
+		i2c_stm32_charac[i2c_speed].freq;
+
+	tafdel_min = (I2C_STM32_USE_ANALOG_FILTER == 1U) ?
+		I2C_STM32_ANALOG_FILTER_DELAY_MIN :
+		0U;
+
+	/* tDNF = DNF x tI2CCLK */
+	dnf_delay = i2c_stm32_charac[i2c_speed].dnf * ti2cclk;
+
+	clk_max = NSEC_PER_SEC / i2c_stm32_charac[i2c_speed].freq_min;
+	clk_min = NSEC_PER_SEC / i2c_stm32_charac[i2c_speed].freq_max;
+
+	prev_error = ti2cspeed;
+
+	for (uint32_t count = 0; count < I2C_STM32_VALID_TIMING_NBR; count++) {
+		/* tPRESC = (PRESC+1) x tI2CCLK*/
+		uint32_t tpresc = (i2c_valid_timing[count].presc + 1U) * ti2cclk;
+
+		for (scll = 0; scll < I2C_STM32_SCLL_MAX; scll++) {
+			/* tLOW(min) <= tAF(min) + tDNF + 2 x tI2CCLK + [(SCLL+1) x tPRESC ] */
+			uint32_t tscl_l = tafdel_min + dnf_delay +
+				(2U * ti2cclk) + ((scll + 1U) * tpresc);
+
+			/*
+			 * The I2CCLK period tI2CCLK must respect the following conditions:
+			 * tI2CCLK < (tLOW - tfilters) / 4 and tI2CCLK < tHIGH
+			 */
+			if ((tscl_l > i2c_stm32_charac[i2c_speed].lscl_min) &&
+				(ti2cclk < ((tscl_l - tafdel_min - dnf_delay) / 4U))) {
+				for (sclh = 0; sclh < I2C_STM32_SCLH_MAX; sclh++) {
+					/*
+					 * tHIGH(min) <= tAF(min) + tDNF +
+					 * 2 x tI2CCLK + [(SCLH+1) x tPRESC]
+					 */
+					uint32_t tscl_h = tafdel_min + dnf_delay +
+						(2U * ti2cclk) + ((sclh + 1U) * tpresc);
+
+					/* tSCL = tf + tLOW + tr + tHIGH */
+					uint32_t tscl = tscl_l +
+						tscl_h + i2c_stm32_charac[i2c_speed].trise +
+					i2c_stm32_charac[i2c_speed].tfall;
+
+					/* get timings with the lowest clock error */
+					I2C_LOOP_SCLH();
+				}
+			}
+		}
+	}
+
+	return ret;
+}
+
+/*
+ * Macro used to fix the compliance check warning :
+ * "DEEP_INDENTATION: Too many leading tabs - consider code refactoring
+ * in the i2c_compute_presc_scldel_sdadel() function below
+ */
+#define I2C_LOOP_SDADEL();								\
+											\
+	if ((tsdadel >= (uint32_t)tsdadel_min) &&					\
+		(tsdadel <= (uint32_t)tsdadel_max)) {					\
+		if (presc != prev_presc) {						\
+			i2c_valid_timing[i2c_valid_timing_nbr].presc = presc;		\
+			i2c_valid_timing[i2c_valid_timing_nbr].tscldel = scldel;	\
+			i2c_valid_timing[i2c_valid_timing_nbr].tsdadel = sdadel;	\
+			prev_presc = presc;						\
+			i2c_valid_timing_nbr++;						\
+											\
+			if (i2c_valid_timing_nbr >= I2C_STM32_VALID_TIMING_NBR) {	\
+				break;							\
+			}								\
+		}									\
+	}
+
+/*
+ * @brief  Compute PRESC, SCLDEL and SDADEL.
+ * @param  clock_src_freq I2C source clock in Hz.
+ * @param  i2c_speed I2C frequency (index).
+ * @retval None.
+ */
+void i2c_compute_presc_scldel_sdadel(uint32_t clock_src_freq, uint32_t i2c_speed)
+{
+	uint32_t prev_presc = I2C_STM32_PRESC_MAX;
+	uint32_t ti2cclk;
+	int32_t  tsdadel_min, tsdadel_max;
+	int32_t  tscldel_min;
+	uint32_t presc, scldel, sdadel;
+	uint32_t tafdel_min, tafdel_max;
+
+	ti2cclk   = (NSEC_PER_SEC + (clock_src_freq / 2U)) / clock_src_freq;
+
+	tafdel_min = (I2C_STM32_USE_ANALOG_FILTER == 1U) ?
+		I2C_STM32_ANALOG_FILTER_DELAY_MIN : 0U;
+	tafdel_max = (I2C_STM32_USE_ANALOG_FILTER == 1U) ?
+		I2C_STM32_ANALOG_FILTER_DELAY_MAX : 0U;
+	/*
+	 * tDNF = DNF x tI2CCLK
+	 * tPRESC = (PRESC+1) x tI2CCLK
+	 * SDADEL >= {tf +tHD;DAT(min) - tAF(min) - tDNF - [3 x tI2CCLK]} / {tPRESC}
+	 * SDADEL <= {tVD;DAT(max) - tr - tAF(max) - tDNF- [4 x tI2CCLK]} / {tPRESC}
+	 */
+	tsdadel_min = (int32_t)i2c_stm32_charac[i2c_speed].tfall +
+		(int32_t)i2c_stm32_charac[i2c_speed].hddat_min -
+		(int32_t)tafdel_min -
+		(int32_t)(((int32_t)i2c_stm32_charac[i2c_speed].dnf + 3) *
+		(int32_t)ti2cclk);
+
+	tsdadel_max = (int32_t)i2c_stm32_charac[i2c_speed].vddat_max -
+		(int32_t)i2c_stm32_charac[i2c_speed].trise -
+		(int32_t)tafdel_max -
+		(int32_t)(((int32_t)i2c_stm32_charac[i2c_speed].dnf + 4) *
+		(int32_t)ti2cclk);
+
+	/* {[tr+ tSU;DAT(min)] / [tPRESC]} - 1 <= SCLDEL */
+	tscldel_min = (int32_t)i2c_stm32_charac[i2c_speed].trise +
+		(int32_t)i2c_stm32_charac[i2c_speed].sudat_min;
+
+	if (tsdadel_min <= 0) {
+		tsdadel_min = 0;
+	}
+
+	if (tsdadel_max <= 0) {
+		tsdadel_max = 0;
+	}
+
+	for (presc = 0; presc < I2C_STM32_PRESC_MAX; presc++) {
+		for (scldel = 0; scldel < I2C_STM32_SCLDEL_MAX; scldel++) {
+			/* TSCLDEL = (SCLDEL+1) * (PRESC+1) * TI2CCLK */
+			uint32_t tscldel = (scldel + 1U) * (presc + 1U) * ti2cclk;
+
+			if (tscldel >= (uint32_t)tscldel_min) {
+				for (sdadel = 0; sdadel < I2C_STM32_SDADEL_MAX; sdadel++) {
+					/* TSDADEL = SDADEL * (PRESC+1) * TI2CCLK */
+					uint32_t tsdadel = (sdadel * (presc + 1U)) * ti2cclk;
+
+					I2C_LOOP_SDADEL();
+				}
+
+				if (i2c_valid_timing_nbr >= I2C_STM32_VALID_TIMING_NBR) {
+					return;
+				}
+			}
+		}
+	}
+}
+
+int i2c_stm32_configure_timing(const struct device *dev, uint32_t clock)
+{
+	const struct i2c_stm32_config *cfg = dev->config;
+	struct i2c_stm32_data *data = dev->data;
+	I2C_TypeDef *i2c = cfg->i2c;
+	uint32_t timing = 0U;
+	uint32_t idx;
+	uint32_t speed = 0U;
+	uint32_t i2c_freq = cfg->bitrate;
+
+	/* Reset valid timing count at the beginning of each new computation */
+	i2c_valid_timing_nbr = 0;
+
+	if ((clock != 0U) && (i2c_freq != 0U)) {
+		for (speed = 0 ; speed <= (uint32_t)I2C_STM32_SPEED_FREQ_FAST_PLUS ; speed++) {
+			if ((i2c_freq >= i2c_stm32_charac[speed].freq_min) &&
+				(i2c_freq <= i2c_stm32_charac[speed].freq_max)) {
+				i2c_compute_presc_scldel_sdadel(clock, speed);
+				idx = i2c_compute_scll_sclh(clock, speed);
+				if (idx < I2C_STM32_VALID_TIMING_NBR) {
+					timing = ((i2c_valid_timing[idx].presc  &
+						0x0FU) << 28) |
+					((i2c_valid_timing[idx].tscldel & 0x0FU) << 20) |
+					((i2c_valid_timing[idx].tsdadel & 0x0FU) << 16) |
+					((i2c_valid_timing[idx].sclh & 0xFFU) << 8) |
+					((i2c_valid_timing[idx].scll & 0xFFU) << 0);
+				}
+				break;
+			}
+		}
+	}
+
+	/* Fill the current timing value in data structure at runtime */
+	data->current_timing.periph_clock = clock;
+	data->current_timing.i2c_speed = i2c_freq;
+	data->current_timing.timing_setting = timing;
+
+	LL_I2C_SetTiming(i2c, timing);
+
+	return 0;
+}
+#else/* CONFIG_I2C_STM32_V2_TIMING */
+
+int i2c_stm32_configure_timing(const struct device *dev, uint32_t clock)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
@@ -764,7 +1202,7 @@ int stm32_i2c_configure_timing(const struct device *dev, uint32_t clock)
 		break;
 	default:
 		LOG_ERR("i2c: speed above \"fast\" requires manual timing configuration, "
-				"see \"timings\" property of st,stm32-i2c-v2 devicetree binding");
+			"see \"timings\" property of st,stm32-i2c-v2 devicetree binding");
 		return -EINVAL;
 	}
 
@@ -793,18 +1231,20 @@ int stm32_i2c_configure_timing(const struct device *dev, uint32_t clock)
 	} while (presc < 16);
 
 	if (presc >= 16U) {
-		LOG_DBG("I2C:failed to find prescaler value");
+		LOG_ERR("I2C:failed to find prescaler value");
 		return -EINVAL;
 	}
 
+	LOG_DBG("I2C TIMING = 0x%x", timing);
 	LL_I2C_SetTiming(i2c, timing);
 
 	return 0;
 }
+#endif /* CONFIG_I2C_STM32_V2_TIMING */
 
-int stm32_i2c_transaction(const struct device *dev,
-						  struct i2c_msg msg, uint8_t *next_msg_flags,
-						  uint16_t periph)
+int i2c_stm32_transaction(const struct device *dev,
+			  struct i2c_msg msg, uint8_t *next_msg_flags,
+			  uint16_t periph)
 {
 	/*
 	 * Perform a I2C transaction, while taking into account the STM32 I2C V2
@@ -836,9 +1276,9 @@ int stm32_i2c_transaction(const struct device *dev,
 			flagsp = next_msg_flags;
 		}
 		if ((msg.flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
-			ret = stm32_i2c_msg_write(dev, &msg, flagsp, periph);
+			ret = i2c_stm32_msg_write(dev, &msg, flagsp, periph);
 		} else {
-			ret = stm32_i2c_msg_read(dev, &msg, flagsp, periph);
+			ret = i2c_stm32_msg_read(dev, &msg, flagsp, periph);
 		}
 		if (ret < 0) {
 			break;
@@ -847,6 +1287,29 @@ int stm32_i2c_transaction(const struct device *dev,
 		msg.buf += msg.len;
 		msg.len = rest;
 	} while (rest > 0U);
+
+#ifndef CONFIG_I2C_STM32_INTERRUPT
+	struct i2c_stm32_data *data = dev->data;
+	const struct i2c_stm32_config *cfg = dev->config;
+	I2C_TypeDef *i2c = cfg->i2c;
+
+	if (ret == -ETIMEDOUT) {
+		if (LL_I2C_IsEnabledReloadMode(i2c)) {
+			LL_I2C_DisableReloadMode(i2c);
+		}
+#if defined(CONFIG_I2C_TARGET)
+		data->master_active = false;
+		if (!data->slave_attached && !data->smbalert_active) {
+			LL_I2C_Disable(i2c);
+		}
+#else
+		if (!data->smbalert_active) {
+			LL_I2C_Disable(i2c);
+		}
+#endif
+		return -EIO;
+	}
+#endif /* !CONFIG_I2C_STM32_INTERRUPT */
 
 	return ret;
 }

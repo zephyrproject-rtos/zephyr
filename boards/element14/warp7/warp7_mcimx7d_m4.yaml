@@ -13,7 +13,6 @@ flash: 32
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 testing:
   ignore_tags:
     - net
@@ -21,4 +20,3 @@ testing:
 supported:
   - gpio
   - i2c
-vendor: nxp

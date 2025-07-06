@@ -6,6 +6,7 @@ config GNSS_NMEA_GENERIC
 	default y
 	depends on GNSS
 	depends on DT_HAS_GNSS_NMEA_GENERIC_ENABLED
+	depends on GNSS_REFERENCE_FRAME_WGS84
 	select MODEM_MODULES
 	select MODEM_BACKEND_UART
 	select MODEM_CHAT
@@ -14,6 +15,8 @@ config GNSS_NMEA_GENERIC
 	select GNSS_NMEA0183_MATCH
 	help
 	  Generic NMEA based GNSS device.
+
+if GNSS_NMEA_GENERIC
 
 config GNSS_NMEA_GENERIC_SATELLITES_COUNT
 	int "Maximum satellite count"
@@ -24,3 +27,5 @@ config GNSS_NMEA_GENERIC_SATELLITES_COUNT
 	  the GNSS device. This does not affect the number of devices that the
 	  device is actually tracking, just how many of those can be reported
 	  in the satellites callback.
+
+endif

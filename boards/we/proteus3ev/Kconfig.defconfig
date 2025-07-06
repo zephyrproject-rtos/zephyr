@@ -3,7 +3,4 @@
 
 if BOARD_WE_PROTEUS3EV
 
-config BT_CTLR
-	default BT
-
 endif # BOARD_WE_PROTEUS3EV

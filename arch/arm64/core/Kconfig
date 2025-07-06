@@ -126,6 +126,7 @@ config PRIVILEGED_STACK_SIZE
 	default 4096
 
 config KOBJECT_TEXT_AREA
+	default 1024 if UBSAN
 	default 512 if TEST
 
 config WAIT_AT_RESET_VECTOR
@@ -143,14 +144,20 @@ config ARM64_SAFE_EXCEPTION_STACK
 	  used for user stack overflow checking, because kernel stack support
 	  the checking work.
 
-config ARM64_ENABLE_FRAME_POINTER
+config ARM64_EXCEPTION_STACK_TRACE
 	bool
 	default y
-	depends on OVERRIDE_FRAME_POINTER_DEFAULT && !OMIT_FRAME_POINTER
+	depends on FRAME_POINTER
 	help
-	  Hidden option to simplify access to OVERRIDE_FRAME_POINTER_DEFAULT
-	  and OMIT_FRAME_POINTER. It is automatically enabled when the frame
-	  pointer unwinding is enabled.
+	  Internal config to enable runtime stack traces on fatal exceptions.
+
+config ARCH_HAS_STACKWALK
+	bool
+	default y
+	depends on FRAME_POINTER
+	help
+	  Internal config to indicate that the arch_stack_walk() API is implemented
+	  and it can be enabled.
 
 config ARM64_SAFE_EXCEPTION_STACK_SIZE
 	int "The stack size of the safe exception stack"
@@ -349,5 +356,21 @@ config MAX_XLAT_TABLES
 	  attributes to these memory regions.
 
 endif # ARM_MMU
+
+config ARM64_DCACHE_ALL_OPS
+	bool "Provide data cache APIs to operate all data caches"
+	depends on CACHE_MANAGEMENT && DCACHE
+	help
+	  Enable this option to provide the data cache APIs to flush or
+	  invalidate all data caches.
+
+config ARM64_BOOT_DISABLE_DCACHE
+	bool "Disable data cache before enable MMU when booting from EL2"
+	depends on ARM64_DCACHE_ALL_OPS
+	help
+	  To make it safe, if data cache is enabled in case of Zephyr is booting
+	  from EL2, enable this option, it will clean and invalidate all data
+	  cache and then disable data cache, it will will be re-enabled after
+	  MMU is configured and enabled.
 
 endif # CPU_CORTEX_A || CPU_AARCH64_CORTEX_R

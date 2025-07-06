@@ -66,8 +66,8 @@ struct rbnode {
  * packed binary tree, plus root...  Works out to 59 entries for 32
  * bit pointers and 121 at 64 bits.
  */
-#define Z_TBITS(t) ((sizeof(t)) < 8 ? 2 : 3)
-#define Z_PBITS(t) (8 * sizeof(t))
+#define Z_TBITS(t)         ((sizeof(t)) < sizeof(uint64_t) ? 2 : 3)
+#define Z_PBITS(t)         (BITS_PER_BYTE * sizeof(t))
 #define Z_MAX_RBTREE_DEPTH (2 * (Z_PBITS(int *) - Z_TBITS(int *) - 1) + 1)
 
 /**
@@ -215,7 +215,7 @@ struct rbnode *z_rb_foreach_next(struct rbtree *tree, struct _rb_foreach *f);
  */
 #define RB_FOR_EACH(tree, node) \
 	for (struct _rb_foreach __f = _RB_FOREACH_INIT(tree, node);	\
-	     (node = z_rb_foreach_next(tree, &__f));			\
+	     ((node) = z_rb_foreach_next((tree), &__f));		\
 	     /**/)
 
 /**
@@ -231,8 +231,8 @@ struct rbnode *z_rb_foreach_next(struct rbtree *tree, struct _rb_foreach *f);
 #define RB_FOR_EACH_CONTAINER(tree, node, field)		           \
 	for (struct _rb_foreach __f = _RB_FOREACH_INIT(tree, node);	   \
 			({struct rbnode *n = z_rb_foreach_next(tree, &__f); \
-			 node = n ? CONTAINER_OF(n, __typeof__(*(node)),   \
-					 field) : NULL; }) != NULL;        \
+			 (node) = n ? CONTAINER_OF(n, __typeof__(*(node)),   \
+					 field) : NULL; (node); }) != NULL;        \
 			 /**/)
 
 /** @} */

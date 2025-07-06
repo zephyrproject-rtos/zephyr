@@ -21,16 +21,22 @@ Configuration
 Basic configuration of the driver, including default settings for clock outputs, is held in Device Tree clock control nodes.
 
 .. literalinclude:: ../../../dts/riscv/riscv32-litex-vexriscv.dtsi
+   :language: dts
    :start-at: clk0: clock-controller@0 {
    :end-at: };
+   :dedent:
 
 .. literalinclude:: ../../../dts/riscv/riscv32-litex-vexriscv.dtsi
+   :language: dts
    :start-at: clk1: clock-controller@1 {
    :end-at: };
+   :dedent:
 
 .. literalinclude:: ../../../dts/riscv/riscv32-litex-vexriscv.dtsi
+   :language: dts
    :start-at: clock0: clock@e0004800 {
    :end-at: };
+   :dedent:
 
 This configuration defines 2 clock outputs: ``clk0`` and ``clk1`` with default frequency set to 100MHz, 0 degrees phase offset and 50% duty cycle. Special care should be taken when defining values for FPGA-specific configuration (parameters from ``litex,divclk-divide-min`` to ``litex,vco-margin``).
 
@@ -39,12 +45,9 @@ This configuration defines 2 clock outputs: ``clk0`` and ``clk1`` with default f
 Driver Usage
 ************
 
-The driver is interfaced with the :ref:`Clock Control API <clock_control_api>` function ``clock_control_on()`` and a LiteX driver specific structure:
+The driver is interfaced with the :ref:`Clock Control API <clock_control_api>` function ``clock_control_on()`` and a LiteX driver specific structure (:c:struct:`litex_clk_setup`).
 
-.. doxygenstruct:: litex_clk_setup
-   :project: Zephyr
-
-| To change clock parameter it is needed to cast a pointer to structure ``litex_clk_setup`` onto ``clock_control_subsys_t`` and use it with ``clock_control_on()``.
+| To change clock parameter it is needed to cast a pointer to structure :c:struct:`litex_clk_setup` onto :c:type:`clock_control_subsys_t` and use it with :c:func:`clock_control_on()`.
 | This code will try to set on ``clk0`` frequency 50MHz, 90 degrees of phase offset and 75% duty cycle.
 
 .. code-block:: c
@@ -129,4 +132,5 @@ Sample output
 
 References
 **********
-- :ref:`litex-vexriscv`
+
+- :zephyr:board:`litex_vexriscv`

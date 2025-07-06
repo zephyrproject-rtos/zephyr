@@ -14,34 +14,36 @@ tests:
   drivers.spi.loopback.internal:
     filter: CONFIG_SPI_LOOPBACK_MODE_LOOP
   drivers.spi.loopback.lpspi.dma:
-    filter: CONFIG_HAS_MCUX_LPSPI and CONFIG_HAS_MCUX_EDMA
+    filter: DT_HAS_NXP_LPSPI_ENABLED and DT_HAS_NXP_MCUX_EDMA_ENABLED
     extra_configs:
-      - CONFIG_SPI_MCUX_LPSPI_DMA=y
+      - CONFIG_SPI_NXP_LPSPI_DMA=y
   drivers.spi.loopback.lpspi.async.unset:
-    filter: CONFIG_HAS_MCUX_LPSPI and CONFIG_HAS_MCUX_EDMA
+    filter: DT_HAS_NXP_LPSPI_ENABLED and DT_HAS_NXP_MCUX_EDMA_ENABLED
     extra_configs:
-      - CONFIG_SPI_MCUX_LPSPI_DMA=n
+      - CONFIG_SPI_NXP_LPSPI_DMA=n
       - CONFIG_SPI_ASYNC=n
   drivers.spi.loopback.lpspi.dma.async.unset:
-    filter: CONFIG_HAS_MCUX_LPSPI and CONFIG_HAS_MCUX_EDMA
+    filter: DT_HAS_NXP_LPSPI_ENABLED and DT_HAS_NXP_MCUX_EDMA_ENABLED
     extra_configs:
-      - CONFIG_SPI_MCUX_LPSPI_DMA=y
+      - CONFIG_SPI_NXP_LPSPI_DMA=y
       - CONFIG_SPI_ASYNC=n
   drivers.spi.loopback.rtio:
     extra_configs:
       - CONFIG_SPI_RTIO=y
+      - CONFIG_SPI_RTIO_FALLBACK_MSGS=5
     platform_allow:
       - robokit1
       - mimxrt1170_evk/mimxrt1176/cm7
-      - vmu_rt1170/mimxrt1176/cm7
+    integration_platforms:
+      - robokit1
   drivers.spi.mcux_dspi_dma.loopback:
     extra_args:
-      - OVERLAY_CONFIG="overlay-mcux-dspi-dma.conf"
+      - EXTRA_CONF_FILE="overlay-mcux-dspi-dma.conf"
       - DTC_OVERLAY_FILE="overlay-mcux-dspi-dma.overlay"
     platform_allow: frdm_k64f
   drivers.spi.sam_spi_dma.loopback:
     extra_args:
-      - OVERLAY_CONFIG="overlay-sam-spi-dma.conf"
+      - EXTRA_CONF_FILE="overlay-sam-spi-dma.conf"
       - DTC_OVERLAY_FILE="overlay-sam-spi-dma.overlay"
     platform_allow:
       - sam_e70_xplained/same70q21
@@ -49,60 +51,70 @@ tests:
       - robokit1
     integration_platforms:
       - sam_e70_xplained/same70q21
-  drivers.spi.stm32_spi_16bits_frames.loopback:
-    extra_args:
-      - OVERLAY_CONFIG="overlay-stm32-spi-16bits.conf"
-      - DTC_OVERLAY_FILE="overlay-stm32-spi-16bits.overlay"
-    platform_allow:
-      - nucleo_h743zi
-      - nucleo_h753zi
   drivers.spi.stm32_spi_dma.loopback:
-    extra_args: OVERLAY_CONFIG="overlay-stm32-spi-dma.conf"
-    filter: CONFIG_SOC_FAMILY_STM32
+    extra_args: EXTRA_CONF_FILE="overlay-stm32-spi-dma.conf"
     platform_allow:
+      - b_u585i_iot02a
+      - nucleo_c071rb
       - nucleo_g474re
       - nucleo_f207zg
       - nucleo_f429zi
       - nucleo_f746zg
+      - nucleo_f767zi
+      - nucleo_wba55cg
       - nucleo_wb55rg
       - nucleo_l152re
       - nucleo_wl55jc
       - nucleo_h743zi
       - nucleo_h753zi
+      - nucleo_h745zi_q/stm32h745xx/m4
+      - nucleo_h745zi_q/stm32h745xx/m7
+      - nucleo_u385rg_q
       - stm32h573i_dk
+      - stm32n6570_dk/stm32n657xx/sb
+      - stm32u083c_dk
     integration_platforms:
       - nucleo_g474re
-  drivers.spi.stm32_spi_dma_no_nocache.loopback:
+  drivers.spi.stm32_spi_dma_dt_nocache_mem.loopback:
+    # this test case is for when nocache memory region is defined in DT
+    # using `zephyr,memory-attr = < DT_MEM_ARM_MPU_RAM_NOCACHE)>`
     extra_args:
-      - OVERLAY_CONFIG="overlay-stm32-spi-dma-no-nocache.conf"
-    filter: CONFIG_SOC_FAMILY_STM32
+      - EXTRA_CONF_FILE="overlay-stm32-spi-dma-dt-nocache-mem.conf"
+    filter: CONFIG_CPU_HAS_DCACHE
     platform_allow:
       - nucleo_h743zi
       - nucleo_h753zi
-  drivers.spi.stm32_spi_16bits_frames_dma.loopback:
-    extra_args:
-      - OVERLAY_CONFIG="overlay-stm32-spi-16bits-dma.conf"
-      - DTC_OVERLAY_FILE="overlay-stm32-spi-16bits.overlay"
-    filter: CONFIG_SOC_FAMILY_STM32
-    platform_allow:
+      - nucleo_h745zi_q/stm32h745xx/m4
+      - nucleo_h745zi_q/stm32h745xx/m7
+    integration_platforms:
       - nucleo_h743zi
-      - nucleo_h753zi
-  drivers.spi.stm32_spi_16bits_frames_dma_no_nocache.loopback:
-    extra_args:
-      - OVERLAY_CONFIG="overlay-stm32-spi-16bits-dma-no-nocache.conf"
-      - DTC_OVERLAY_FILE="overlay-stm32-spi-16bits.overlay"
-    filter: CONFIG_SOC_FAMILY_STM32
-    platform_allow:
-      - nucleo_h743zi
-      - nucleo_h753zi
   drivers.spi.stm32_spi_interrupt.loopback:
-    extra_args: OVERLAY_CONFIG="overlay-stm32-spi-interrupt.conf"
-    filter: CONFIG_SOC_FAMILY_STM32
+    extra_args: EXTRA_CONF_FILE="overlay-stm32-spi-interrupt.conf"
     platform_allow:
+      - b_u585i_iot02a
+      - nucleo_c071rb
+      - nucleo_f207zg
+      - nucleo_f429zi
+      - nucleo_f746zg
+      - nucleo_f767zi
+      - nucleo_g474re
       - nucleo_h743zi
       - nucleo_h753zi
+      - nucleo_h745zi_q/stm32h745xx/m4
+      - nucleo_h745zi_q/stm32h745xx/m7
+      - nucleo_l152re
+      - nucleo_u385rg_q
+      - nucleo_wba55cg
+      - nucleo_wb55rg
+      - nucleo_wl55jc
+      - stm32f3_disco
+      - stm32h573i_dk
+      - stm32n6570_dk/stm32n657xx/sb
+      - stm32u083c_dk
+    integration_platforms:
+      - stm32h573i_dk
   drivers.spi.gd32_spi_interrupt.loopback:
-    extra_args: OVERLAY_CONFIG="overlay-gd32-spi-interrupt.conf"
+    extra_args: EXTRA_CONF_FILE="overlay-gd32-spi-interrupt.conf"
     platform_allow:
       - gd32f403z_eval
       - gd32f407v_start
@@ -114,8 +126,10 @@ tests:
       - gd32vf103v_eval
       - longan_nano
       - longan_nano/gd32vf103/lite
+    integration_platforms:
+      - gd32f403z_eval
   drivers.spi.gd32_spi_dma.loopback:
-    extra_args: OVERLAY_CONFIG="overlay-gd32-spi-dma.conf"
+    extra_args: EXTRA_CONF_FILE="overlay-gd32-spi-dma.conf"
     platform_allow:
       - gd32f403z_eval
       - gd32f407v_start
@@ -127,39 +141,194 @@ tests:
       - gd32vf103v_eval
       - longan_nano
       - longan_nano/gd32vf103/lite
+    integration_platforms:
+      - gd32f403z_eval
   drivers.spi.pl022_spi_interrupt.loopback:
+    extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_pl022.overlay"
     extra_configs:
       - CONFIG_SPI_PL022_INTERRUPT=y
       - CONFIG_SPI_PL022_DMA=n
-    platform_allow: rpi_pico
+    platform_allow:
+      - rpi_pico
+      - pico_plus2/rp2350b/m33
   drivers.spi.pl022_spi_dma.loopback:
+    extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_pl022_dma.overlay"
     extra_configs:
       - CONFIG_SPI_PL022_INTERRUPT=n
       - CONFIG_SPI_PL022_DMA=y
       - CONFIG_DMA=y
-    platform_allow: rpi_pico
+    platform_allow:
+      - rpi_pico
+      - pico_plus2/rp2350b/m33
   drivers.spi.pl022_spi_dma_and_interrupt.loopback:
+    extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_pl022_dma.overlay"
     extra_configs:
       - CONFIG_SPI_PL022_INTERRUPT=y
       - CONFIG_SPI_PL022_DMA=y
       - CONFIG_DMA=y
-    platform_allow: rpi_pico
+    platform_allow:
+      - rpi_pico
+      - pico_plus2/rp2350b/m33
   drivers.spi.pl022_spi_dma_no_dma_props.loopback:
-    extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_delete_dma_props.overlay"
+    extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_pl022.overlay"
     extra_configs:
       - CONFIG_SPI_PL022_INTERRUPT=n
       - CONFIG_SPI_PL022_DMA=y
       - CONFIG_DMA=y
-    platform_allow: rpi_pico
+    platform_allow:
+      - rpi_pico
+      - pico_plus2/rp2350b/m33
   drivers.spi.pl022_spi_dma_and_interrupt_no_dma_props.loopback:
-    extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_delete_dma_props.overlay"
+    extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_pl022.overlay"
     extra_configs:
       - CONFIG_SPI_PL022_INTERRUPT=y
       - CONFIG_SPI_PL022_DMA=y
       - CONFIG_DMA=y
+    platform_allow:
+      - rpi_pico
+      - pico_plus2/rp2350b/m33
+  drivers.spi.pio_spi.loopback:
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/rpi_pico_pio.overlay"
+      - EXTRA_CONF_FILE="overlay-rpi-pico-pio.conf"
     platform_allow: rpi_pico
   drivers.spi.mcux_flexio_spi.loopback:
     extra_args: DTC_OVERLAY_FILE="overlay-mcux-flexio-spi.overlay"
     filter: CONFIG_DT_HAS_NXP_FLEXIO_ENABLED and
             CONFIG_DT_HAS_NXP_FLEXIO_SPI_ENABLED
-    platform_allow: mimxrt1064_evk
+    platform_allow:
+      - mimxrt1064_evk
+      - mimxrt1060_evk/mimxrt1062/qspi
+  drivers.spi.mimxrt1170_evk_mimxrt1176_cm7_flexio_spi.loopback:
+    extra_args: DTC_OVERLAY_FILE="boards/mimxrt1170_evk_mimxrt1176_cm7_flexio_spi.overlay"
+    filter: CONFIG_DT_HAS_NXP_FLEXIO_ENABLED and
+            CONFIG_DT_HAS_NXP_FLEXIO_SPI_ENABLED
+    platform_allow:
+      - mimxrt1170_evk/mimxrt1176/cm7
+  drivers.spi.mimxrt1040evk_flexio_spi.loopback:
+    extra_args: DTC_OVERLAY_FILE="boards/mimxrt1040_evk_flexio_spi.overlay"
+    filter: CONFIG_DT_HAS_NXP_FLEXIO_ENABLED and
+            CONFIG_DT_HAS_NXP_FLEXIO_SPI_ENABLED
+    platform_allow:
+      - mimxrt1040_evk
+  drivers.spi.nrf54h_fast_2mhz:
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_fast.overlay"
+      - EXTRA_DTC_OVERLAY_FILE="boards/nrf_at_2mhz.overlay"
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    harness: console
+    harness_config:
+      fixture: spi_loopback
+      type: one_line
+      regex:
+        - "Failed to initialize nrfx driver"
+  drivers.spi.nrf54h_fast_8mhz:
+    extra_args: DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_fast.overlay"
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+  drivers.spi.nrf54h_fast_16mhz:
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_fast.overlay"
+      - EXTRA_DTC_OVERLAY_FILE="boards/nrf_at_16mhz.overlay"
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+  drivers.spi.nrf54h_fast_32mhz:
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_fast.overlay"
+      - EXTRA_DTC_OVERLAY_FILE="boards/nrf_at_32mhz.overlay"
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+  drivers.spi.nrf54h_fast_8mhz_port2:
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_fast_p2.overlay"
+      - CONFIG_NRF_REGTOOL_VERBOSITY=2
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+  drivers.spi.nrf54l_1mhz:
+    extra_args: EXTRA_DTC_OVERLAY_FILE="boards/nrf_at_1mhz.overlay"
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l20pdk/nrf54l20/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuapp
+    harness: console
+    harness_config:
+      fixture: spi_loopback
+      type: one_line
+      regex:
+        - "Failed to initialize nrfx driver"
+  drivers.spi.nrf54l_8mhz:
+    extra_args: EXTRA_DTC_OVERLAY_FILE="boards/nrf_at_8mhz.overlay"
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l20pdk/nrf54l20/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
+  drivers.spi.nrf54l_16mhz:
+    extra_args: EXTRA_DTC_OVERLAY_FILE="boards/nrf_at_16mhz.overlay"
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l20pdk/nrf54l20/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
+  drivers.spi.nrf54l_32mhz:
+    extra_args: EXTRA_DTC_OVERLAY_FILE="boards/nrf_at_32mhz.overlay"
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l20pdk/nrf54l20/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
+  drivers.spi.ke1xz_flexio_spi.loopback:
+    extra_args: DTC_OVERLAY_FILE="boards/frdm_ke1xz_flexio_spi.overlay"
+    filter: CONFIG_DT_HAS_NXP_FLEXIO_ENABLED and
+            CONFIG_DT_HAS_NXP_FLEXIO_SPI_ENABLED
+    platform_allow:
+      - frdm_ke17z
+      - frdm_ke17z512
+  drivers.spi.max32_dma.loopback:
+    extra_args: EXTRA_CONF_FILE="overlay-max32-spi-dma.conf"
+    filter: CONFIG_SOC_FAMILY_MAX32
+  drivers.spi.s32z_dspi.loopback:
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/s32z2xxdc2_s32z270_dspi.overlay
+    platform_allow:
+      - s32z2xxdc2/s32z270/rtu0
+      - s32z2xxdc2/s32z270/rtu1
+  drivers.spi.max32_spi_rtio.loopback:
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-max32-spi-rtio.conf"
+    filter: CONFIG_SOC_FAMILY_MAX32
+    platform_allow:
+      - apard32690/max32690/m4
+  drivers.spi.nrf_pm_runtime:
+    extra_configs:
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_PM_DEVICE_RUNTIME=y
+    filter: CONFIG_SOC_FAMILY_NORDIC_NRF
+  drivers.spi.silabs_s2.loopback.no_async:
+    filter: CONFIG_SOC_FAMILY_SILABS_S2
+    platform_allow:
+      - xg24_rb4187c
+      - xg29_rb4412a
+    extra_configs:
+      - CONFIG_SPI_SILABS_EUSART_DMA=n
+      - CONFIG_SPI_ASYNC=n
+  drivers.spi.silabs_s2.loopback.dma.no_async:
+    filter: CONFIG_SOC_FAMILY_SILABS_S2
+    platform_allow:
+      - xg24_rb4187c
+      - xg29_rb4412a
+    extra_configs:
+      - CONFIG_SPI_SILABS_EUSART_DMA=y
+      - CONFIG_SPI_ASYNC=n
+  drivers.spi.silabs_siwx91x.loopback:
+    filter: CONFIG_SOC_FAMILY_SILABS_SIWX91X
+    platform_allow:
+      - siwx917_rb4338a
+  drivers.spi.cc23x0.loopback.dma.no_async:
+    filter: CONFIG_SOC_FAMILY_TI_SIMPLELINK
+    platform_allow:
+      - lp_em_cc2340r5
+    extra_configs:
+      - CONFIG_SPI_CC23X0_DMA_DRIVEN=y
+      - CONFIG_SPI_ASYNC=n

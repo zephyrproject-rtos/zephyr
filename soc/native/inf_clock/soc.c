@@ -123,7 +123,7 @@ void posix_boot_cpu(void)
 {
 	nce_st = nce_init();
 	posix_arch_init();
-	nce_boot_cpu(nce_st, z_cstart);
+	nce_boot_cpu(nce_st, &z_cstart);
 }
 
 /**

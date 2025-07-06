@@ -68,7 +68,9 @@ static uint32_t counter_rpi_pico_timer_get_top_value(const struct device *dev)
 
 static int counter_rpi_pico_timer_get_value(const struct device *dev, uint32_t *ticks)
 {
-	*ticks = time_us_32();
+	const struct counter_rpi_pico_timer_config *config = dev->config;
+
+	*ticks = timer_time_us_32(config->timer);
 	return 0;
 }
 
@@ -95,11 +97,11 @@ static int counter_rpi_pico_timer_set_alarm(const struct device *dev, uint8_t id
 	chdata->callback = alarm_cfg->callback;
 	chdata->user_data = alarm_cfg->user_data;
 
-	missed = hardware_alarm_set_target(id, alarm_at);
+	missed = timer_hardware_alarm_set_target(config->timer, id, alarm_at);
 
 	if (missed) {
 		if (alarm_cfg->flags & COUNTER_ALARM_CFG_EXPIRE_WHEN_LATE) {
-			hardware_alarm_force_irq(id);
+			timer_hardware_alarm_force_irq(config->timer, id);
 		}
 		chdata->callback = NULL;
 		chdata->user_data = NULL;
@@ -113,10 +115,11 @@ static int counter_rpi_pico_timer_cancel_alarm(const struct device *dev, uint8_t
 {
 	struct counter_rpi_pico_timer_data *data = dev->data;
 	struct counter_rpi_pico_timer_ch_data *chdata = &data->ch_data[id];
+	const struct counter_rpi_pico_timer_config *config = dev->config;
 
 	chdata->callback = NULL;
 	chdata->user_data = NULL;
-	hardware_alarm_cancel(id);
+	timer_hardware_alarm_cancel(config->timer, id);
 
 	return 0;
 }
@@ -157,6 +160,7 @@ static int counter_rpi_pico_timer_set_guard_period(const struct device *dev, uin
 static void counter_rpi_pico_irq_handle(uint32_t ch, void *arg)
 {
 	struct device *dev = arg;
+	const struct counter_rpi_pico_timer_config *config = dev->config;
 	struct counter_rpi_pico_timer_data *data = dev->data;
 	counter_alarm_callback_t cb = data->ch_data[ch].callback;
 	void *user_data = data->ch_data[ch].user_data;
@@ -164,7 +168,7 @@ static void counter_rpi_pico_irq_handle(uint32_t ch, void *arg)
 	if (cb) {
 		data->ch_data[ch].callback = NULL;
 		data->ch_data[ch].user_data = NULL;
-		cb(dev, ch, time_us_32(), user_data);
+		cb(dev, ch, timer_time_us_32(config->timer), user_data);
 	}
 }
 
@@ -188,7 +192,7 @@ static int counter_rpi_pico_timer_init(const struct device *dev)
 	return 0;
 }
 
-static const struct counter_driver_api counter_rpi_pico_driver_api = {
+static DEVICE_API(counter, counter_rpi_pico_driver_api) = {
 	.start = counter_rpi_pico_timer_start,
 	.stop = counter_rpi_pico_timer_stop,
 	.get_value = counter_rpi_pico_timer_get_value,
@@ -203,7 +207,8 @@ static const struct counter_driver_api counter_rpi_pico_driver_api = {
 
 #define RPI_PICO_TIMER_IRQ_ENABLE(node_id, name, idx)                                              \
 	do {                                                                                       \
-		hardware_alarm_set_callback(idx, counter_rpi_pico_irq_handle);                     \
+		timer_hardware_alarm_set_callback((timer_hw_t *)DT_REG_ADDR(node_id), idx,         \
+						  counter_rpi_pico_irq_handle);                    \
 		IRQ_CONNECT((DT_IRQ_BY_IDX(node_id, idx, irq)),                                    \
 			    (DT_IRQ_BY_IDX(node_id, idx, priority)), hardware_alarm_irq_handler,   \
 			    (DEVICE_DT_GET(node_id)), 0);                                          \

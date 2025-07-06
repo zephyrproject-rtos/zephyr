@@ -12,6 +12,7 @@ LOG_MODULE_REGISTER(spi_bitbang);
 
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include "spi_context.h"
 
 struct spi_bitbang_data {
@@ -36,21 +37,26 @@ static int spi_bitbang_configure(const struct spi_bitbang_config *info,
 		return -ENOTSUP;
 	}
 
-	if (config->operation & (SPI_TRANSFER_LSB | SPI_LINES_DUAL
-			| SPI_LINES_QUAD)) {
+	if (config->operation & (SPI_LINES_DUAL | SPI_LINES_QUAD | SPI_LINES_OCTAL)) {
 		LOG_ERR("Unsupported configuration");
 		return -ENOTSUP;
 	}
 
 	const int bits = SPI_WORD_SIZE_GET(config->operation);
 
-	if (bits > 16) {
-		LOG_ERR("Word sizes > 16 bits not supported");
+	if (bits > 32) {
+		LOG_ERR("Word sizes > 32 bits not supported");
 		return -ENOTSUP;
 	}
 
 	data->bits = bits;
 	data->dfs = ((data->bits - 1) / 8) + 1;
+
+	/* As there is no uint24_t, it is assumed uint32_t will be used as the buffer base type. */
+	if (data->dfs == 3) {
+		data->dfs = 4;
+	}
+
 	if (config->frequency > 0) {
 		/* convert freq to period, the extra /2 is due to waiting
 		 * twice in each clock cycle. The '2000' is an upscale factor.
@@ -124,6 +130,7 @@ static int spi_bitbang_transceive(const struct device *dev,
 	int clock_state = 0;
 	int cpha = 0;
 	bool loop = false;
+	bool lsb = false;
 
 	if (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL) {
 		clock_state = 1;
@@ -134,6 +141,9 @@ static int spi_bitbang_transceive(const struct device *dev,
 	if (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_LOOP) {
 		loop = true;
 	}
+	if (spi_cfg->operation & SPI_TRANSFER_LSB) {
+		lsb = true;
+	}
 
 	/* set the initial clock state before CS */
 	gpio_pin_set_dt(&info->clk_gpio, clock_state);
@@ -143,10 +153,14 @@ static int spi_bitbang_transceive(const struct device *dev,
 	const uint32_t wait_us = data->wait_us;
 
 	while (spi_context_tx_buf_on(ctx) || spi_context_rx_buf_on(ctx)) {
-		uint16_t w = 0;
+		uint32_t w = 0;
 
 		if (ctx->tx_len) {
 			switch (data->dfs) {
+			case 4:
+			case 3:
+				w = *(uint32_t *)(ctx->tx_buf);
+				break;
 			case 2:
 				w = *(uint16_t *)(ctx->tx_buf);
 				break;
@@ -156,8 +170,8 @@ static int spi_bitbang_transceive(const struct device *dev,
 			}
 		}
 
-		int shift = data->bits - 1;
-		uint16_t r = 0;
+		uint32_t r = 0;
+		uint8_t i = 0;
 		int b = 0;
 		bool do_read = false;
 
@@ -165,7 +179,8 @@ static int spi_bitbang_transceive(const struct device *dev,
 			do_read = true;
 		}
 
-		while (shift >= 0) {
+		while (i < data->bits) {
+			const int shift = lsb ? i : (data->bits - 1 - i);
 			const int d = (w >> shift) & 0x1;
 
 			b = 0;
@@ -177,33 +192,37 @@ static int spi_bitbang_transceive(const struct device *dev,
 
 			k_busy_wait(wait_us);
 
-			/* first clock edge */
-			gpio_pin_set_dt(&info->clk_gpio, !clock_state);
-
 			if (!loop && do_read && !cpha) {
 				b = gpio_pin_get_dt(miso);
 			}
 
-			k_busy_wait(wait_us);
+			/* first (leading) clock edge */
+			gpio_pin_set_dt(&info->clk_gpio, !clock_state);
 
-			/* second clock edge */
-			gpio_pin_set_dt(&info->clk_gpio, clock_state);
+			k_busy_wait(wait_us);
 
 			if (!loop && do_read && cpha) {
 				b = gpio_pin_get_dt(miso);
 			}
 
+			/* second (trailing) clock edge */
+			gpio_pin_set_dt(&info->clk_gpio, clock_state);
+
 			if (loop) {
 				b = d;
 			}
 
-			r = (r << 1) | (b ? 0x1 : 0x0);
+			r |= (b ? 0x1 : 0x0) << shift;
 
-			--shift;
+			++i;
 		}
 
 		if (spi_context_rx_buf_on(ctx)) {
 			switch (data->dfs) {
+			case 4:
+			case 3:
+				*(uint32_t *)(ctx->rx_buf) = r;
+				break;
 			case 2:
 				*(uint16_t *)(ctx->rx_buf) = r;
 				break;
@@ -231,7 +250,8 @@ static int spi_bitbang_transceive_async(const struct device *dev,
 				    const struct spi_config *spi_cfg,
 				    const struct spi_buf_set *tx_bufs,
 				    const struct spi_buf_set *rx_bufs,
-				    struct k_poll_signal *async)
+				    spi_callback_t cb,
+				    void *userdata)
 {
 	return -ENOTSUP;
 }
@@ -247,12 +267,15 @@ int spi_bitbang_release(const struct device *dev,
 	return 0;
 }
 
-static const struct spi_driver_api spi_bitbang_api = {
+static DEVICE_API(spi, spi_bitbang_api) = {
 	.transceive = spi_bitbang_transceive,
 	.release = spi_bitbang_release,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_bitbang_transceive_async,
 #endif /* CONFIG_SPI_ASYNC */
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
+#endif
 };
 
 int spi_bitbang_init(const struct device *dev)
@@ -320,7 +343,7 @@ int spi_bitbang_init(const struct device *dev)
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), ctx)	\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(inst,					\
+	SPI_DEVICE_DT_INST_DEFINE(inst,					\
 			    spi_bitbang_init,				\
 			    NULL,					\
 			    &spi_bitbang_data_##inst,			\

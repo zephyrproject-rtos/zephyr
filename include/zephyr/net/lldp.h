@@ -16,6 +16,8 @@
 /**
  * @brief LLDP definitions and helpers
  * @defgroup lldp Link Layer Discovery Protocol definitions and helpers
+ * @since 1.13
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */
@@ -222,16 +224,6 @@ typedef enum net_verdict (*net_lldp_recv_cb_t)(struct net_if *iface,
  * @return 0 if ok, < 0 if error
  */
 int net_lldp_register_callback(struct net_if *iface, net_lldp_recv_cb_t cb);
-
-/**
- * @brief Parse LLDP packet
- *
- * @param iface Network interface
- * @param pkt Network packet
- *
- * @return Return the policy for network buffer
- */
-enum net_verdict net_lldp_recv(struct net_if *iface, struct net_pkt *pkt);
 
 /**
  * @brief Set LLDP protocol data unit (LLDPDU) for the network interface.

@@ -352,7 +352,7 @@ static int vcmp_it8xxx2_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api vcmp_ite_it8xxx2_api = {
+static DEVICE_API(sensor, vcmp_ite_it8xxx2_api) = {
 	.attr_set = vcmp_ite_it8xxx2_attr_set,
 	.trigger_set = vcmp_ite_it8xxx2_trigger_set,
 	.channel_get = vcmp_it8xxx2_channel_get,

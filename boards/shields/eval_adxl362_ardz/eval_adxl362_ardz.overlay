@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/sensor/adxl362.h>
+
+&arduino_spi {
+	status = "okay";
+
+	adxl362_eval_adxl362_ardz: adxl362@0 {
+		compatible = "adi,adxl362";
+		reg = <0x0>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
+		int1-gpios = <&arduino_header 8 GPIO_ACTIVE_HIGH>;
+		fifo-mode = <ADXL362_FIFO_MODE_STREAM>;
+		fifo-watermark = <0x80>;
+		status = "okay";
+	};
+};

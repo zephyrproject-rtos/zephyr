@@ -10,7 +10,6 @@
 #include <sample_usbd.h>
 #include "feedback.h"
 
-#include <zephyr/cache.h>
 #include <zephyr/device.h>
 #include <zephyr/usb/usbd.h>
 #include <zephyr/usb/class/usbd_uac2.h>
@@ -36,7 +35,8 @@ LOG_MODULE_REGISTER(uac2_sample, LOG_LEVEL_INF);
  * when USB host decides to perform rapid terminal enable/disable cycles.
  */
 #define I2S_BUFFERS_COUNT   7
-K_MEM_SLAB_DEFINE_STATIC(i2s_tx_slab, MAX_BLOCK_SIZE, I2S_BUFFERS_COUNT, 4);
+K_MEM_SLAB_DEFINE_STATIC(i2s_tx_slab, ROUND_UP(MAX_BLOCK_SIZE, UDC_BUF_GRANULARITY),
+			 I2S_BUFFERS_COUNT, UDC_BUF_ALIGN);
 
 struct usb_i2s_ctx {
 	const struct device *i2s_dev;
@@ -116,7 +116,6 @@ static void uac2_data_recv_cb(const struct device *dev, uint8_t terminal,
 		 */
 		size = BLOCK_SIZE;
 		memset(buf, 0, size);
-		sys_cache_data_flush_range(buf, size);
 	}
 
 	LOG_DBG("Received %d data to input terminal %d", size, terminal);
@@ -255,7 +254,7 @@ static struct usb_i2s_ctx main_ctx;
 int main(void)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(uac2_headphones));
-	struct usbd_contex *sample_usbd;
+	struct usbd_context *sample_usbd;
 	struct i2s_config config;
 	int ret;
 

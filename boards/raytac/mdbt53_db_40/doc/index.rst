@@ -1,7 +1,4 @@
-.. _raytac_mdbt53_db_40_nrf5340:
-
-Raytac MDBT53-DB-40
-###################
+.. zephyr:board:: raytac_mdbt53_db_40
 
 Overview
 ********
@@ -43,13 +40,6 @@ nRF5340 SoC provides support for the following devices:
 * :abbr:`UARTE (Universal asynchronous receiver-transmitter)`
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/MDBT53-DB-40.jpg
-     :width: 442px
-     :align: center
-     :alt: MDBT53-DB-40
-
-     MDBT53-DB-40 (Credit: Raytac Corporation)
-
 More information about the board can be found at the `MDBT53-DB-40 website`_.
 The `MDBT53-DB-40 Specification`_ contains the demo board's datasheet.
 The `MDBT53-DB-40 Schematic`_ contains the demo board's schematic.
@@ -58,7 +48,7 @@ Hardware
 ********
 - Module Demo Board build by MDBT53-1M
 - Nordic nRF5340 SoC Solution
-- A recommnded 3rd-party module by Nordic Semiconductor.
+- A recommended 3rd-party module by Nordic Semiconductor.
 - Dual-core Arm® Cortex® M33
 - 1MB/256KB Flash Memory; 512kB/ 64kB RAM
 - Supports BT5 Long Range Features
@@ -74,79 +64,15 @@ Hardware
 - 4 User LEDs
 - 4 User buttons
 - 1 Mini USB connector for power supply
-- SWD connector for FW programing
-- J-Link interface for FW programing
+- SWD connector for FW programming
+- J-Link interface for FW programming
 - UART interface for UART communication
 
 Supported Features
 ==================
 
-The ``raytac_mdbt53_db_40_nrf5340/cpuapp`` board configuration supports the following
-hardware features:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C(M)    | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| QSPI(M)   | on-chip    | nor                  |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| SPI(M/S)  | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| SPU       | on-chip    | system protection    |
-+-----------+------------+----------------------+
-| UARTE     | on-chip    | serial               |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
-
-The ``raytac_mdbt53_db_40_nrf5340/cpunet`` board configuration supports the following
-hardware features:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C(M)    | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| RADIO     | on-chip    | Bluetooth,           |
-|           |            | ieee802154           |
-+-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| SPI(M/S)  | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| UARTE     | on-chip    | serial               |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
-
-Other hardware features have not been enabled yet for this board.
 See `MDBT53-DB-40 website`_ and `MDBT53-DB-40 Specification`_
 for a complete list of Raytac MDBT53-DB-40 board hardware features.
 
@@ -190,6 +116,8 @@ Security components
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 nRF5340 application core supports the Armv8-M Security Extension.
 Applications built for the ``raytac_mdbt53_db_40/nrf5340/cpuapp`` board by
 default boot in the Secure state.
@@ -225,7 +153,7 @@ applications as usual (see :ref:`build_an_application` and
    If you are flashing with :ref:`west <west-build-flash-debug>`, run
    this command for more details on the related ``--recover`` option:
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 Use a USB to TTL converter to connect the computer and raytac_mdbt53_db_40_nrf5340
 J10 connector. Then run your favorite terminal program to listen for output.
@@ -258,6 +186,8 @@ boards with a Segger IC.
 
 References
 **********
+
+.. target-notes::
 
 .. _IDAU:
    https://developer.arm.com/docs/100690/latest/attribution-units-sau-and-idau

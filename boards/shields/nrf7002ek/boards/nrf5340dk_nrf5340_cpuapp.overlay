@@ -1,0 +1,36 @@
+/* Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* This node by default forwards the UART1 pins to CPUNET, but as UART1 uses
+ * same pins as bucken and iovdd-ctrl, we need these pins to be controlled by
+ * the CPUAPP. Since a child node of gpio_fwd cannot be disabled, hence
+ * the entire node is disabled. If the application needs to forward other pins
+ * to the CPUNET, it should create a separate instance of nrf-gpio-forwarder
+ * and use it instead.
+ */
+&gpio_fwd {
+	status = "disabled";
+};
+
+/*
+ * Override the default pinctrl settings for SPI4 when used with the nRF7002 EK
+ * to pull down the SPIM lines. This is needed to avoid floating inputs when
+ * the SPI4 is not used. The default pinctrl settings are defined in the
+ * nrf5340_cpuapp_common_pinctrl.dtsi file.
+ */
+&pinctrl {
+	spi4_default: spi4_default {
+		group1 {
+			bias-pull-down;
+		};
+	};
+
+	spi4_sleep: spi4_sleep {
+		group1 {
+			bias-pull-down;
+			low-power-enable;
+		};
+	};
+};

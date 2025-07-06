@@ -52,7 +52,7 @@ In summary:
 
 Modules are repositories that contain a :file:`zephyr/module.yml` file, so that
 the Zephyr build system can pull in the source code from the repository.
-:ref:`West projects <west-manifests-projects>` are entries in the `projects:`
+:ref:`West projects <west-manifests-projects>` are entries in the ``projects:``
 section in the :file:`west.yml` manifest file.
 West projects are often also modules, but not always. There are west projects
 that are not included in the final firmware image (eg. tools) and thus do not
@@ -545,7 +545,7 @@ The ``sysbuild-cmake: <cmake-directory>`` part specifies that
 use.
 
 Here is an example :file:`module.yml` file referring to
-:file:`CMakeLists.txt` and :file:`Kconfig` files in the `sysbuild` directory of
+:file:`CMakeLists.txt` and :file:`Kconfig` files in the ``sysbuild`` directory of
 the module:
 
 .. code-block:: yaml
@@ -569,6 +569,45 @@ Build files located in a ``MODULE_EXT_ROOT`` can be described as:
 This allows control of the build inclusion to be described externally to the
 Zephyr module.
 
+.. _modules-vulnerability-monitoring:
+
+Vulnerability monitoring
+========================
+
+The module description file :file:`zephyr/module.yml` can be used to improve vulnerability monitoring.
+
+If your module needs to track vulnerabilities using an external reference
+(e.g your module is forked from another repository), you can use the ``security`` section.
+It contains the field ``external-references`` that contains a list of references that needs to
+be monitored for your module. The supported formats are:
+
+- CPE (Common Platform Enumeration)
+- PURL (Package URL)
+
+.. code-block:: yaml
+
+   security:
+     external-references:
+       - <module-related-cpe>
+       - <an-other-module-related-cpe>
+       - <module-related-purl>
+
+A real life example for ``mbedTLS`` module could look like this:
+
+.. code-block:: yaml
+
+   security:
+     external-references:
+       - cpe:2.3:a:arm:mbed_tls:3.5.2:*:*:*:*:*:*:*
+       - pkg:github/Mbed-TLS/mbedtls@V3.5.2
+
+.. note::
+   CPE field must follow the CPE 2.3 schema provided by `NVD
+   <https://csrc.nist.gov/projects/security-content-automation-protocol/specifications/cpe>`_.
+   PURL field must follow the PURL specification provided by `Github
+   <https://github.com/package-url/purl-spec/blob/master/PURL-SPECIFICATION.rst>`_.
+
+
 Build system integration
 ========================
 
@@ -581,6 +620,14 @@ Zephyr modules
 
 In both Kconfig and CMake, the variable ``ZEPHYR_<MODULE_NAME>_MODULE_DIR``
 contains the absolute path to the module.
+
+Additionally, ``ZEPHYR_<MODULE_NAME>_MODULE`` and ``ZEPHYR_<MODULE_NAME>_MODULE_BLOBS``
+(in case the module declares blobs) symbols are automatically generated for available
+modules. These can be used e.g. to declare dependencies from other Kconfig symbols
+which depend on the module or blobs from the module. To satisfy compliance checking
+when building Zephyr without the module present, it's recommended for the module to
+have default definitions for these symbols in its respective Kconfig file under
+``modules/`` in the Zephyr main tree.
 
 In CMake, ``ZEPHYR_<MODULE_NAME>_CMAKE_DIR`` contains the
 absolute path to the directory containing the :file:`CMakeLists.txt` file that
@@ -746,7 +793,7 @@ module ``bar`` to be present in the build system:
    name: foo
    build:
      depends:
-     - bar
+       - bar
 
 This example will ensure that ``bar`` is present when ``foo`` is included into
 the build system, and it will also ensure that ``bar`` is processed before
@@ -974,6 +1021,54 @@ maps, each of which has the following entries:
 - ``doc-url``: A URL pointing to the location of the official documentation for
   this blob
 
+Package manager dependencies
+============================
+
+Zephyr modules can describe dependencies available from package managers,
+currently only ``pip`` is supported.
+
+A west extension command ``west packages <manager>`` is available to list
+dependencies for Zephyr and present modules that leverage this feature in their
+``module.yml`` file.
+Run ``west help packages`` for more details.
+
+Python pip
+----------
+
+Calling ``west packages pip`` lists `requirement files`_ for Zephyr and modules.
+Passing ``--install`` installs these if there's an active virtual environment.
+
+The following example demonstrates a ``zephyr/module.yml`` file with some
+requirement files in the ``scripts`` directory of the module.
+
+
+.. code-block:: yaml
+
+    package-managers:
+      pip:
+        requirement-files:
+          - scripts/requirements-build.txt
+          - scripts/requirements-doc.txt
+
+
+.. _modules-runners:
+
+External Runners
+================
+
+If a module has out of tree boards that require custom :ref:`runners <west-runner>`,
+then it can add a list to its ``zephyr/module.yml`` file, for example:
+
+
+.. code-block:: yaml
+
+    runners:
+      - file: scripts/my-runner.py
+
+
+Each file entry is imported when executing ``west flash`` or ``west debug`` and
+subclasses of the ``ZephyrBinaryRunner`` are registered for use.
+
 Module Inclusion
 ================
 
@@ -1153,3 +1248,4 @@ revision needs to be changed to the commit hash from the module repository.
 .. _CMake list: https://cmake.org/cmake/help/latest/manual/cmake-language.7.html#lists
 .. _add_subdirectory(): https://cmake.org/cmake/help/latest/command/add_subdirectory.html
 .. _GitHub issues: https://github.com/zephyrproject-rtos/zephyr/issues
+.. _requirement files: https://pip.pypa.io/en/stable/reference/requirements-file-format/

@@ -14,7 +14,7 @@ config WDT_MCUX_WDOG
 config WDT_MCUX_WDOG32
 	bool "MCUX WDOG32 driver"
 	default y
-	depends on DT_HAS_NXP_KINETIS_WDOG32_ENABLED
+	depends on DT_HAS_NXP_WDOG32_ENABLED
 	depends on CLOCK_CONTROL
 	help
 	  Enable the mcux wdog32 driver.
@@ -37,3 +37,10 @@ config WDT_MCUX_WWDT_WARNING_INTERRUPT_CFG
 	  the number of watchdog counter ticks before timeout.
 
 endif # WDT_MCUX_WWDT
+
+config WDT_MCUX_RTWDOG
+	bool "MCUX RTWDOG driver"
+	default y
+	depends on DT_HAS_NXP_RTWDOG_ENABLED
+	help
+	  Enable the mcux rtwdog driver.

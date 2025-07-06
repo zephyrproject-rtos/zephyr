@@ -21,6 +21,9 @@
 
 LOG_MODULE_REGISTER(flash_andes, CONFIG_FLASH_LOG_LEVEL);
 
+/* ATCSPI200 transfer count is limited to 512 bytes. */
+#define MAX_TRANSFER_CNT (512)
+
 /* Indicates that an access command includes bytes for the address.
  * If not provided the opcode is not followed by address bytes.
  */
@@ -50,7 +53,7 @@ struct flash_andes_qspi_config {
 	uint32_t base;
 	uint32_t irq_num;
 	struct flash_parameters parameters;
-	bool xip;
+	bool qspi_cfg_rom;
 #if defined(CONFIG_FLASH_ANDES_QSPI_SFDP_DEVICETREE)
 	uint8_t jedec_id[SPI_NOR_MAX_ID_LEN];
 	uint32_t flash_size;
@@ -304,6 +307,8 @@ static int flash_andes_qspi_read(const struct device *dev,
 				 off_t addr, void *dest, size_t size)
 {
 	const size_t flash_size = dev_flash_size(dev);
+	size_t to_read = size;
+
 	int ret;
 
 	/* should be between 0 and flash size */
@@ -317,8 +322,23 @@ static int flash_andes_qspi_read(const struct device *dev,
 
 	acquire_device(dev);
 
-	ret = flash_andes_qspi_cmd_addr_read(dev,
-		FLASH_ANDES_CMD_4READ, addr, dest, size);
+	do {
+		/* Get the adequate size to receive */
+		to_read = MIN(MAX_TRANSFER_CNT, size);
+
+		ret = flash_andes_qspi_cmd_addr_read(dev,
+			FLASH_ANDES_CMD_4READ, addr, dest, to_read);
+
+		if (ret != 0) {
+			break;
+		}
+
+		size -= to_read;
+		dest = (uint8_t *)dest + to_read;
+		addr += to_read;
+
+		flash_andes_qspi_wait_until_ready(dev);
+	} while (size > 0);
 
 	release_device(dev);
 	return ret;
@@ -352,6 +372,8 @@ static int flash_andes_qspi_write(const struct device *dev, off_t addr,
 	do {
 		/* Get the adequate size to send*/
 		to_write = MIN(page_size - (addr % page_size), size);
+
+		flash_andes_qspi_cmd_write(dev, FLASH_ANDES_CMD_WREN);
 
 		ret = flash_andes_qspi_cmd_addr_write(dev,
 			FLASH_ANDES_CMD_4PP, addr, src, to_write);
@@ -548,10 +570,10 @@ static int spi_nor_process_sfdp(const struct device *dev)
 		/* We only process BFP so use one parameter block */
 		uint8_t raw[JESD216_SFDP_SIZE(decl_nph)];
 		struct jesd216_sfdp_header sfdp;
-	} u;
-	const struct jesd216_sfdp_header *hp = &u.sfdp;
+	} u_header;
+	const struct jesd216_sfdp_header *hp = &u_header.sfdp;
 
-	ret = read_sfdp(dev, 0, u.raw, sizeof(u.raw));
+	ret = read_sfdp(dev, 0, u_header.raw, sizeof(u_header.raw));
 	if (ret != 0) {
 		LOG_ERR("SFDP read failed: %d", ret);
 		return ret;
@@ -582,11 +604,11 @@ static int spi_nor_process_sfdp(const struct device *dev)
 			union {
 				uint32_t dw[MIN(php->len_dw, 20)];
 				struct jesd216_bfp bfp;
-			} u;
-			const struct jesd216_bfp *bfp = &u.bfp;
+			} u_param;
+			const struct jesd216_bfp *bfp = &u_param.bfp;
 
 			ret = read_sfdp(dev,
-				jesd216_param_addr(php), u.dw, sizeof(u.dw));
+				jesd216_param_addr(php), u_param.dw, sizeof(u_param.dw));
 
 			if (ret != 0) {
 				break;
@@ -609,7 +631,7 @@ static int spi_nor_process_sfdp(const struct device *dev)
 		.len_dw = config->bfp_len,
 	};
 
-	ret = spi_nor_process_bfp(dev, &bfp_hdr, cfg->bfp);
+	ret = spi_nor_process_bfp(dev, &bfp_hdr, config->bfp);
 #else
 #error Unhandled SFDP choice
 #endif
@@ -801,7 +823,7 @@ static int flash_andes_qspi_init(const struct device *dev)
 	uint8_t jedec_id[SPI_NOR_MAX_ID_LEN];
 
 	/* we should not configure the device we are running on */
-	if (config->xip) {
+	if (config->qspi_cfg_rom) {
 		return -EINVAL;
 	}
 
@@ -825,10 +847,10 @@ static int flash_andes_qspi_init(const struct device *dev)
 
 #ifndef CONFIG_FLASH_ANDES_QSPI_SFDP_RUNTIME
 
-	if (memcmp(jedec_id, cfg->jedec_id, sizeof(jedec_id)) != 0) {
+	if (memcmp(jedec_id, config->jedec_id, sizeof(jedec_id)) != 0) {
 		LOG_ERR("Device id %02x %02x %02x does not match config"
 			"%02x %02x %02x", jedec_id[0], jedec_id[1], jedec_id[2],
-			cfg->jedec_id[0], cfg->jedec_id[1], cfg->jedec_id[2]);
+			config->jedec_id[0], config->jedec_id[1], config->jedec_id[2]);
 		return -EINVAL;
 	}
 #endif
@@ -880,7 +902,7 @@ flash_andes_qspi_get_parameters(const struct device *dev)
 	return &config->parameters;
 }
 
-static const struct flash_driver_api flash_andes_qspi_api = {
+static DEVICE_API(flash, flash_andes_qspi_api) = {
 	.read = flash_andes_qspi_read,
 	.write = flash_andes_qspi_write,
 	.erase = flash_andes_qspi_erase,
@@ -895,10 +917,20 @@ static const struct flash_driver_api flash_andes_qspi_api = {
 };
 
 #if (CONFIG_XIP)
-#define QSPI_ROM_CFG_XIP(node_id) DT_SAME_NODE(node_id, DT_CHOSEN(zephyr_flash))
+#define QSPI_FLASH_BASE DT_REG_ADDR_BY_IDX(DT_PARENT(DT_CHOSEN(zephyr_flash)), 1)
+#define QSPI_FLASH_SIZE DT_REG_SIZE_BY_IDX(DT_PARENT(DT_CHOSEN(zephyr_flash)), 1)
+#define QSPI_FLASH_END (QSPI_FLASH_BASE + QSPI_FLASH_SIZE)
+
+#if ((QSPI_FLASH_BASE <= CONFIG_FLASH_BASE_ADDRESS) && \
+	(CONFIG_FLASH_BASE_ADDRESS <= QSPI_FLASH_END))
+#define QSPI_CFG_ROM(node_id) DT_SAME_NODE(node_id, DT_CHOSEN(zephyr_flash))
 #else
-#define QSPI_ROM_CFG_XIP(node_id) false
+#define QSPI_CFG_ROM(node_id) false
 #endif
+
+#else /* CONFIG_XIP */
+#define QSPI_CFG_ROM(node_id) false
+#endif /* CONFIG_XIP */
 
 #define LAYOUT_PAGES_PROP(n)						\
 	IF_ENABLED(CONFIG_FLASH_PAGE_LAYOUT,				\
@@ -940,7 +972,7 @@ static const struct flash_driver_api flash_andes_qspi_api = {
 				.write_block_size = 1,			\
 				.erase_value = 0xff			\
 			},						\
-			.xip = QSPI_ROM_CFG_XIP(DT_DRV_INST(n)),	\
+			.qspi_cfg_rom = QSPI_CFG_ROM(DT_DRV_INST(n)), \
 			ANDES_QSPI_SFDP_DEVICETREE_PROP(n)		\
 		};							\
 									\

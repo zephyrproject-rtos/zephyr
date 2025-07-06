@@ -4,6 +4,7 @@
 
 import pytest
 
+
 # add option "--cmdopt" to pytest, or it will report "unknown option"
 # this option is passed from twister.
 def pytest_addoption(parser):

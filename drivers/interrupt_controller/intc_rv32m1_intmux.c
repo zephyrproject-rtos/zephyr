@@ -23,6 +23,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/devicetree/interrupt_controller.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/init.h>
 #include <zephyr/irq.h>
@@ -42,7 +43,7 @@ struct rv32m1_intmux_config {
 	INTMUX_Type *regs;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
-	struct _isr_table_entry *isr_base;
+	const struct _isr_table_entry *isr_base;
 };
 
 #define DEV_REGS(dev) (((const struct rv32m1_intmux_config *)(dev->config))->regs)
@@ -111,8 +112,8 @@ static void rv32m1_intmux_isr(const void *arg)
 	INTMUX_Type *regs = DEV_REGS(dev);
 	uint32_t channel = POINTER_TO_UINT(arg);
 	uint32_t line = (regs->CHANNEL[channel].CHn_VEC >> 2);
-	struct _isr_table_entry *isr_base = config->isr_base;
-	struct _isr_table_entry *entry;
+	const struct _isr_table_entry *isr_base = config->isr_base;
+	const struct _isr_table_entry *entry;
 
 	/*
 	 * Make sure the vector is valid, there is a note of page 1243~1244
@@ -218,3 +219,10 @@ static int rv32m1_intmux_init(const struct device *dev)
 DEVICE_DT_INST_DEFINE(0, &rv32m1_intmux_init, NULL, NULL,
 		    &rv32m1_intmux_cfg, PRE_KERNEL_1,
 		    CONFIG_RV32M1_INTMUX_INIT_PRIORITY, &rv32m1_intmux_apis);
+
+#define INTC_CHILD_IRQ_ENTRY_DEF(node_id)                                                          \
+	IRQ_PARENT_ENTRY_DEFINE(CONCAT(DT_DRV_COMPAT, _child_, DT_NODE_CHILD_IDX(node_id)), NULL,  \
+				DT_IRQN(node_id), INTC_CHILD_ISR_TBL_OFFSET(node_id),              \
+				DT_INTC_GET_AGGREGATOR_LEVEL(node_id));
+
+DT_INST_FOREACH_CHILD_STATUS_OKAY(0, INTC_CHILD_IRQ_ENTRY_DEF);

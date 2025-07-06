@@ -260,7 +260,7 @@ static void i2s_copy_to_fifo(uint8_t *src, size_t size, int sample_width,
 /*
  * Get data from the queue
  */
-static int queue_get(struct ring_buf *rb, void **mem_block, size_t *size)
+static int queue_get(struct ring_buffer *rb, void **mem_block, size_t *size)
 {
 	unsigned int key;
 
@@ -282,7 +282,7 @@ static int queue_get(struct ring_buf *rb, void **mem_block, size_t *size)
 /*
  * Put data in the queue
  */
-static int queue_put(struct ring_buf *rb, void *mem_block, size_t size)
+static int queue_put(struct ring_buffer *rb, void *mem_block, size_t size)
 {
 	uint16_t head_next;
 	unsigned int key;
@@ -591,7 +591,7 @@ static void i2s_litex_isr_tx(void *arg)
 	k_mem_slab_free(stream->cfg.mem_slab, stream->mem_block);
 }
 
-static const struct i2s_driver_api i2s_litex_driver_api = {
+static DEVICE_API(i2s, i2s_litex_driver_api) = {
 	.configure = i2s_litex_configure,
 	.read = i2s_litex_read,
 	.write = i2s_litex_write,
@@ -634,9 +634,9 @@ static const struct i2s_driver_api i2s_litex_driver_api = {
 		irq_enable(DT_IRQN(DT_NODELABEL(i2s_##dir)));                  \
 	}
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2s_rx), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i2s_rx))
 I2S_INIT(rx);
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2s_tx), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i2s_tx))
 I2S_INIT(tx);
 #endif

@@ -5,13 +5,11 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 ram: 192
 flash: 1024
 supported:
   - can
   - pwm
   - counter
-  - usb
   - spi
   - gpio

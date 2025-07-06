@@ -16,7 +16,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_mesh_blob_srv);
 
-#define CHUNK_SIZE_MAX BLOB_CHUNK_SIZE_MAX(BT_MESH_RX_SDU_MAX)
 #define MTU_SIZE_MAX (BT_MESH_RX_SDU_MAX - BT_MESH_MIC_SHORT)
 
 /* The Receive BLOB Timeout Timer */
@@ -53,9 +52,8 @@ static inline uint32_t block_count_get(const struct bt_mesh_blob_srv *srv)
 
 static inline uint32_t max_chunk_size(const struct bt_mesh_blob_srv *srv)
 {
-	return MIN((srv->state.mtu_size - 2 -
-		    BT_MESH_MODEL_OP_LEN(BT_MESH_BLOB_OP_CHUNK)),
-		   CHUNK_SIZE_MAX);
+	return MIN((srv->state.mtu_size - 2 - BT_MESH_MODEL_OP_LEN(BT_MESH_BLOB_OP_CHUNK)),
+		   BLOB_RX_CHUNK_SIZE);
 }
 
 static inline uint32_t max_chunk_count(const struct bt_mesh_blob_srv *srv)
@@ -221,6 +219,7 @@ static void cancel(struct bt_mesh_blob_srv *srv)
 	srv->state.xfer.mode = BT_MESH_BLOB_XFER_MODE_NONE;
 	srv->state.ttl = BT_MESH_TTL_DEFAULT;
 	srv->block.number = 0xffff;
+	memset(srv->block.missing, 0, sizeof(srv->block.missing));
 	srv->state.xfer.chunk_size = 0xffff;
 	k_work_cancel_delayable(&srv->rx_timeout);
 	k_work_cancel_delayable(&srv->pull.report);
@@ -822,7 +821,7 @@ static int handle_info_get(const struct bt_mesh_model *mod, struct bt_mesh_msg_c
 	net_buf_simple_add_u8(&rsp, BLOB_BLOCK_SIZE_LOG_MIN);
 	net_buf_simple_add_u8(&rsp, BLOB_BLOCK_SIZE_LOG_MAX);
 	net_buf_simple_add_le16(&rsp, CONFIG_BT_MESH_BLOB_CHUNK_COUNT_MAX);
-	net_buf_simple_add_le16(&rsp, CHUNK_SIZE_MAX);
+	net_buf_simple_add_le16(&rsp, BLOB_RX_CHUNK_SIZE);
 	net_buf_simple_add_le32(&rsp, CONFIG_BT_MESH_BLOB_SIZE_MAX);
 	net_buf_simple_add_le16(&rsp, MTU_SIZE_MAX);
 	net_buf_simple_add_u8(&rsp, BT_MESH_BLOB_XFER_MODE_ALL);

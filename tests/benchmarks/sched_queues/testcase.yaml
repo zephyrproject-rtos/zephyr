@@ -1,0 +1,34 @@
+common:
+  platform_key:
+    - arch
+  min_ram: 32
+  timeout: 120
+  tags:
+    - kernel
+    - benchmark
+  integration_platforms:
+    - qemu_x86
+    - qemu_cortex_a53
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "PROJECT EXECUTION SUCCESSFUL"
+    record:
+      regex:
+        - "REC: (?P<metric>.*) - (?P<description>.*):(?P<cycles>.*) cycles ,(?P<nanoseconds>.*) ns"
+  extra_configs:
+    - CONFIG_BENCHMARK_RECORDING=y
+
+tests:
+  benchmark.sched_queues.simple:
+    extra_configs:
+      - CONFIG_SCHED_SIMPLE=y
+
+  benchmark.sched_queues.scalable:
+    extra_configs:
+      - CONFIG_SCHED_SCALABLE=y
+
+  benchmark.sched_queues.multiq:
+    extra_configs:
+      - CONFIG_SCHED_MULTIQ=y

@@ -43,8 +43,8 @@ Pin Assignment of the FRDM-STBC-AGM01 Shield
 For more information about the FXOS8700, FXAS21002, and FRDM-STBC-AGM01
 board:
 
-- :ref:`fxos8700`
-- :ref:`fxas21002`
+- :zephyr:code-sample:`fxas21002`
+- `FXOS8700 Website`_
 - `FRDM-STBC-AGM01 Website`_
 - `FRDM-STBC-AGM01 Quick Reference Card`_
 - `FRDM-STBC-AGM01 Schematics`_
@@ -52,13 +52,16 @@ board:
 Programming
 ***********
 
-Set ``-DSHIELD=frdm_stbc_agm01`` when you invoke ``west build``. For example:
+Set ``--shield frdm_stbc_agm01`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/fxas21002
    :board: frdm_k22f
    :shield: frdm_stbc_agm01
    :goals: build
+
+.. include:: ../../../nxp/common/board-footer.rst
+   :start-after: nxp-board-footer
 
 .. _FRDM-STBC-AGM01 Website:
    https://www.nxp.com/design/development-boards/freedom-development-boards/sensors/sensor-toolbox-development-boards-for-a-9-axis-solution-using-fxas21002c-and-fxos8700cq:FRDM-STBC-AGM01
@@ -68,3 +71,6 @@ Set ``-DSHIELD=frdm_stbc_agm01`` when you invoke ``west build``. For example:
 
 .. _FRDM-STBC-AGM01 Schematics:
    https://www.nxp.com/downloads/en/schematics/FRDM-STBC-AGM01-SCH.pdf
+
+.. _FXOS8700 Website:
+   https://www.nxp.com/products/sensors/accelerometers/digital-motion-sensor-3d-accelerometer-2g-4g-8g-plus-3d-magnetometer:FXOS8700CQ

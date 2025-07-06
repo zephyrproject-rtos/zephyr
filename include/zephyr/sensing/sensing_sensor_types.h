@@ -27,8 +27,11 @@
 /**
  * sensor category motion
  */
+/* Sensor type for 3D accelerometers. */
 #define SENSING_SENSOR_TYPE_MOTION_ACCELEROMETER_3D		0x73
+/* Sensor type for 3D gyrometers. */
 #define SENSING_SENSOR_TYPE_MOTION_GYROMETER_3D			0x76
+/* Sensor type for motion detectors. */
 #define SENSING_SENSOR_TYPE_MOTION_MOTION_DETECTOR		0x77
 
 
@@ -37,10 +40,16 @@
  */
 #define SENSING_SENSOR_TYPE_OTHER_CUSTOM			0xE1
 
+/* Sensor type for uncalibrated 3D accelerometers. */
 #define SENSING_SENSOR_TYPE_MOTION_UNCALIB_ACCELEROMETER_3D	0x240
-
+/* Sensor type for hinge angle sensors. */
 #define SENSING_SENSOR_TYPE_MOTION_HINGE_ANGLE			0x20B
 
+/**
+ * @brief Sensor type for all sensors.
+ *
+ * This macro defines the sensor type for all sensors.
+ */
 #define SENSING_SENSOR_TYPE_ALL					0xFFFF
 
 /**

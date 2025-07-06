@@ -1,0 +1,72 @@
+/*
+ * Copyright (c) 2021 Katsuhiro Suzuki
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <sifive/riscv64-fu540.dtsi>
+
+/ {
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &l2lim;
+	};
+
+	ram0: ram0@80000000 {
+		compatible = "memory";
+		reg = <0x80000000 0xf0000000>;
+		reg-names = "mem";
+	};
+
+	lscon_96b: connector {
+		compatible = "linaro,96b-lscon-1v8";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <22 0 &gpio0 0 0>,	/* GPIO-A */
+			   <23 0 &gpio0 1 0>,	/* GPIO-B */
+			   <24 0 &gpio0 2 0>,	/* GPIO-C */
+			   <25 0 &gpio0 3 0>,	/* GPIO-D */
+			   <26 0 &gpio0 4 0>,	/* GPIO-E */
+			   <27 0 &gpio0 5 0>,	/* GPIO-F */
+			   <38 0 &gpio0 6 0>,	/* GPIO-G */
+			   <39 0 &gpio0 7 0>,	/* GPIO-H */
+			   <30 0 &gpio0 8 0>,	/* GPIO-I */
+			   <31 0 &gpio0 9 0>,	/* GPIO-J */
+			   <32 0 &gpio0 15 0>;	/* GPIO-K */
+			   /* GPIO-L not connected */
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+/* disabled (used by Flash ROM by default) */
+&spi0 {
+	reg = <0x10040000 0x1000 0x20000000 0x2000000>;
+	flash0: flash@0 {
+		compatible = "issi,is25wp256d", "jedec,spi-nor";
+		status = "disabled";
+		size = <33554432>;
+		jedec-id = [96 60 18];
+		reg = <0>;
+		spi-max-frequency = <133000000>;
+	};
+};
+
+&spi1 {
+	status = "okay";
+};
+
+&spi2 {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};

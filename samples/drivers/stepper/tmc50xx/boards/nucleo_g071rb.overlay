@@ -1,0 +1,52 @@
+/ {
+	aliases {
+		stepper = &tmc_stepper;
+	};
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
+	status = "okay";
+	tmc50xx: tmc50xx@0 {
+		compatible = "adi,tmc50xx";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(1)>; /* Maximum SPI bus frequency */
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		clock-frequency = <DT_FREQ_M(10)>; /* Internal/External Clock frequency */
+
+		tmc_stepper: tmc_stepper@0 {
+			status = "okay";
+			reg = <0>;
+
+			/* common stepper controller settings */
+			micro-step-res = <256>;
+
+			/* ADI TMC stallguard settings specific to TMC50XX */
+			activate-stallguard2;
+			stallguard-velocity-check-interval-ms=<1000>;
+			stallguard2-threshold=<30>;
+			stallguard-threshold-velocity=<200000>;
+
+			/* ADI TMC ramp generator as well as current settings */
+			vstart = <1000>;
+			vstop = <10>;
+			a1 = <10000>;
+			v1 = <50000>;
+			d1 = <14000>;
+			vmax = <900000>;
+			amax = <50000>;
+			dmax = <7000>;
+			tzerowait = <100>;
+			vhigh = <900000>;
+			vcoolthrs = <900000>;
+			ihold = <1>;
+			irun = <10>;
+			iholddelay = <1>;
+		};
+	};
+};

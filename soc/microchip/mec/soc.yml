@@ -8,3 +8,15 @@ family:
     socs:
     - name: mec172x_nsz
     - name: mec172x_nlj
+  - name: mec174x
+    socs:
+    - name: mec1743_qlj
+    - name: mec1743_qsz
+  - name: mec175x
+    socs:
+    - name: mec1753_qlj
+    - name: mec1753_qsz
+  - name: mech172x
+    socs:
+    - name: mech1723_nlj
+    - name: mech1723_nsz

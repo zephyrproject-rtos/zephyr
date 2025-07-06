@@ -1,7 +1,4 @@
-.. _visionfive2:
-
-Starfive VisionFive 2 JH7110
-############################
+.. zephyr:board:: visionfive2
 
 Overview
 ********
@@ -9,12 +6,10 @@ Overview
 The StarFive VisionFive 2 is a development board with a StarFive JH7110
 multi-core 64bit RISC-V SoC.
 
-.. image:: img/visionfive2.webp
-   :align: center
-   :alt: StarFive VisionFive 2 Board
-
 Programming and debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Building
 ========

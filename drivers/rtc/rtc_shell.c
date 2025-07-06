@@ -148,7 +148,7 @@ static char *strptime(const char *s, const char *format, struct tm *tm_time)
 
 static int cmd_set(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct device *dev = device_get_binding(argv[1]);
+	const struct device *dev = shell_device_get_binding(argv[1]);
 
 	if (!device_is_ready(dev)) {
 		shell_error(sh, "device %s not ready", argv[1]);
@@ -191,7 +191,7 @@ static int cmd_set(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_get(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct device *dev = device_get_binding(argv[1]);
+	const struct device *dev = shell_device_get_binding(argv[1]);
 
 	if (!device_is_ready(dev)) {
 		shell_error(sh, "device %s not ready", argv[1]);
@@ -210,25 +210,42 @@ static int cmd_get(const struct shell *sh, size_t argc, char **argv)
 		return res;
 	}
 
-	shell_print(sh, "%04d-%02d-%02dT%02d:%02d:%02d:%06d", rtctime.tm_year + 1900,
+	shell_print(sh, "%04d-%02d-%02dT%02d:%02d:%02d.%03d", rtctime.tm_year + 1900,
 		    rtctime.tm_mon + 1, rtctime.tm_mday, rtctime.tm_hour, rtctime.tm_min,
 		    rtctime.tm_sec, rtctime.tm_nsec / 1000000);
 
 	return 0;
 }
 
+static bool device_is_rtc(const struct device *dev)
+{
+	return DEVICE_API_IS(rtc, dev);
+}
+
+static void device_name_get(size_t idx, struct shell_static_entry *entry)
+{
+	const struct device *dev = shell_device_filter(idx, device_is_rtc);
+
+	entry->syntax = (dev != NULL) ? dev->name : NULL;
+	entry->handler = NULL;
+	entry->help = NULL;
+	entry->subcmd = NULL;
+}
+
 #define RTC_GET_HELP                                                                               \
-	("Get current time (UTC)\n"                                                                \
-	 "Usage: rtc get <device>")
+	SHELL_HELP("Get current time (UTC)",                                                       \
+		   "<device>")
 
 #define RTC_SET_HELP                                                                               \
-	("Set UTC time\n"                                                                          \
-	 "Usage: rtc set <device> <YYYY-MM-DDThh:mm:ss> | <YYYY-MM-DD> | <hh:mm:ss>")
+	SHELL_HELP("Set UTC time",                                                                 \
+		   "<device> <YYYY-MM-DDThh:mm:ss> | <YYYY-MM-DD> | <hh:mm:ss>")
+
+SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_rtc,
 			       /* Alphabetically sorted */
-			       SHELL_CMD_ARG(set, NULL, RTC_SET_HELP, cmd_set, 3, 0),
-			       SHELL_CMD_ARG(get, NULL, RTC_GET_HELP, cmd_get, 2, 0),
+			       SHELL_CMD_ARG(set, &dsub_device_name, RTC_SET_HELP, cmd_set, 3, 0),
+			       SHELL_CMD_ARG(get, &dsub_device_name, RTC_GET_HELP, cmd_get, 2, 0),
 			       SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(rtc, &sub_rtc, "RTC commands", NULL);

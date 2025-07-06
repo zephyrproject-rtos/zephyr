@@ -12,7 +12,7 @@ description: |
     https://download.mikroe.com/documents/standards/mikrobus/mikrobus-standard-specification-v200.pdf
 
     This binding provides a nexus mapping for 10 pins, left side pins are
-    numbered 0 - 5 (AN - MOSI), the right side pins are numbered 6 - 10
+    numbered 0 - 5 (AN - MOSI), the right side pins are numbered 6 - 11
     (PWM - SDA). The bottom 2 pins on each side are used for input voltage
     and ground, they are not mapped in the nexus.
 

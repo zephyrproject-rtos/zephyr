@@ -5,7 +5,14 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 ram: 256
 flash: 1024
 vendor: google
+supported:
+  - counter
+  - dma
+  - gpio
+  - i2c
+  - spi
+  - pwm
+  - rtc

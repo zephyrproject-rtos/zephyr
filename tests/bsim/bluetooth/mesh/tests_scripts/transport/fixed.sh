@@ -14,6 +14,3 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 # - unsubscribes the model from the all-relayes address and doesn't deliver the third message to the
 #   model;
 RunTest mesh_transport_fixed transport_tx_fixed transport_rx_fixed
-
-overlay=overlay_psa_conf
-RunTest mesh_transport_fixed_1d1 transport_tx_fixed transport_rx_fixed

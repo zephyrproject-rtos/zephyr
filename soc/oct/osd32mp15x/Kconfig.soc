@@ -1,0 +1,19 @@
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+# The OSD32MP15X is technically a SiP (System-in-Package) that consists of
+# the STM32MP15 MCU and additional components like EEPROM. So for
+# OSD32MP1-BRK platform the STM32MP15_M4 SoC is to be indicated as
+# the build target, but since the OSD32MP15x SiP is what a user can actually
+# see on a board, using only STM32MP15_M4 in the Zephyr build
+# infrastructure might be confusing. That's why in the top level of SoC
+# definitions (for user-configurable options in Kconfig, for example)
+# the OSD32MP15X term is used and STM32MP15_M4 underneath.
+
+config SOC_OSD32MP15X
+	bool
+	help
+	  Octavo Systems OSD32MP15X SiP
+
+config SOC
+	default "osd32mp15x" if SOC_OSD32MP15X

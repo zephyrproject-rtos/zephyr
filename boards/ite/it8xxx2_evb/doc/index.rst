@@ -1,7 +1,4 @@
-.. _it8xxx2_evb:
-
-ITE IT8XXX2 series
-######################
+.. zephyr:board:: it8xxx2_evb
 
 Overview
 ********
@@ -37,49 +34,15 @@ Listing the IT81302 hardware features as following:
 
 Supported Features
 ==================
-currently supports the following hardware features:
 
-.. list-table:: Supported Features
-   :header-rows: 1
-   :widths: auto
-
-   * - Interface
-     - Controller
-     - Driver/Component
-   * - NVIC
-     - on-chip
-     - interrupt controller
-   * - TIMER
-     - on-chip
-     - timer
-   * - UART
-     - on-chip
-     - serial
-   * - GPIO
-     - on-chip
-     - gpio
-   * - ADC
-     - on-chip
-     - adc
-   * - I2C
-     - on-chip
-     - i2c
-   * - KSCAN
-     - on-chip
-     - kscan
-
-
-Other hardware features are not currently supported by Zephyr.
-
-The default configuration can be found in the
-:zephyr_file:`boards/ite/it8xxx2_evb/it8xxx2_evb_defconfig` Kconfig file.
+.. zephyr:board-supported-hw::
 
 Hardware reworks
 ****************
 
 Before using the it8xxx2_evb, some hardware rework is needed. The HW rework
 guide can be found in ITE's website.
-https://www.ite.com.tw/uploads/product_download/IT81302_MECC_Rework_Guide_0927.pdf
+https://www.ite.com.tw/upload/2024_01_15/6_20240115100309cgdjgcLzX3.pdf
 
 Programming and debugging on it83202
 ************************************
@@ -133,7 +96,7 @@ Wiring
 Building
 ========
 
-#. Build :ref:`hello_world` application as you would normally do
+#. Build :zephyr:code-sample:`hello_world` application as you would normally do
    (see :`Zephyr Getting Started Guide`_):.
 
    .. zephyr-app-commands::
@@ -202,7 +165,7 @@ Ubuntu
       $ sudo ~/itetool/ite -f build/zephyr/zephyr.bin
 
    .. note:: The source code of ITE tool can be downloaded here:
-    https://www.ite.com.tw/uploads/product_download/itedlb4-linux-v106.tar.bz2
+    https://www.ite.com.tw/upload/2024_01_23/6_20240123162336wu55j1Rjm4.bz2
 
 #. Split first and second terminal windows to view both of them.
    You should see ``"Hello World! it8xxx2_evb"`` in the first terminal window.
@@ -224,5 +187,5 @@ References
 
 .. target-notes::
 
-.. _ITE's website: http://www.ite.com.tw/en/product/view?mid=149
+.. _ITE's website: https://www.ite.com.tw/en/product/cate2/IT81202
 .. _Zephyr Getting Started Guide: https://docs.zephyrproject.org/latest/getting_started/index.html

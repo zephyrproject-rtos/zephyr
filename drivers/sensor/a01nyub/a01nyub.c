@@ -114,7 +114,7 @@ static int a01nyub_sample_fetch(const struct device *dev, enum sensor_channel ch
 	return -ENOTSUP;
 }
 
-static const struct sensor_driver_api a01nyub_api_funcs = {
+static DEVICE_API(sensor, a01nyub_api_funcs) = {
 	.sample_fetch = a01nyub_sample_fetch,
 	.channel_get = a01nyub_channel_get,
 };

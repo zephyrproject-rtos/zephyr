@@ -399,7 +399,7 @@ static int sam_xdmac_get_status(const struct device *dev, uint32_t channel,
 	return 0;
 }
 
-static const struct dma_driver_api sam_xdmac_driver_api = {
+static DEVICE_API(dma, sam_xdmac_driver_api) = {
 	.config = sam_xdmac_config,
 	.reload = sam_xdmac_transfer_reload,
 	.start = sam_xdmac_transfer_start,
@@ -424,6 +424,6 @@ static const struct sam_xdmac_dev_cfg dma0_sam_config = {
 
 static struct sam_xdmac_dev_data dma0_sam_data;
 
-DEVICE_DT_INST_DEFINE(0, &sam_xdmac_initialize, NULL,
+DEVICE_DT_INST_DEFINE(0, sam_xdmac_initialize, NULL,
 		    &dma0_sam_data, &dma0_sam_config, POST_KERNEL,
 		    CONFIG_DMA_INIT_PRIORITY, &sam_xdmac_driver_api);

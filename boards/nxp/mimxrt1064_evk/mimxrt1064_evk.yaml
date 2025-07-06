@@ -11,15 +11,17 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 ram: 32768
 flash: 4096
 supported:
+  - adc
   - arduino_gpio
   - arduino_serial
+  - can
   - counter
   - display
   - dma
+  - flash
   - gpio
   - hwinfo
   - i2c
@@ -29,7 +31,5 @@ supported:
   - spi
   - usb_device
   - video
-  - can
   - watchdog
-  - adc
 vendor: nxp

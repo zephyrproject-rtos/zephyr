@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 NXP
+ * Copyright 2022-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,13 @@
 	pinmux_flexcomm3_usart: pinmux_flexcomm3_usart {
 		group0 {
 			pinmux = <IO_MUX_FC3_USART_DATA>;
+			slew-rate = "normal";
+		};
+	};
+
+	pinmux_flexcomm0_usart: pinmux_flexcomm0_usart {
+		group0 {
+			pinmux = <IO_MUX_FC0_USART_DATA>;
 			slew-rate = "normal";
 		};
 	};
@@ -69,6 +76,54 @@
 			pinmux = <IO_MUX_QUAD_SPI_FLASH_IO29>;
 			slew-rate = "ultra";
 			bias-pull-down;
+		};
+
+		group2 {
+			pinmux = <IO_MUX_QUAD_SPI_PSRAM_IO35
+				IO_MUX_QUAD_SPI_PSRAM_IO36
+				IO_MUX_QUAD_SPI_PSRAM_IO38
+				IO_MUX_QUAD_SPI_PSRAM_IO39
+				IO_MUX_QUAD_SPI_PSRAM_IO40
+				IO_MUX_QUAD_SPI_PSRAM_IO41>;
+			slew-rate = "normal";
+		};
+
+		group3 {
+			pinmux = <IO_MUX_QUAD_SPI_PSRAM_IO37>;
+			slew-rate = "normal";
+			bias-pull-down;
+		};
+	};
+
+	pinmux_enet: pinmux_enet {
+		group0 {
+			pinmux = <IO_MUX_ENET_CLK
+				IO_MUX_ENET_RX
+				IO_MUX_ENET_TX
+				IO_MUX_GPIO21
+				IO_MUX_GPIO55>;
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_mdio: pinmux_mdio {
+		group0 {
+			pinmux = <IO_MUX_ENET_MDIO>;
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_pwm0: pinmux_pwm0 {
+		group0 {
+			pinmux = <IO_MUX_SCT_OUT_0>;
+			slew-rate = "normal";
+		};
+	};
+
+	pinmux_flexcomm1_i2s: pinmux_flexcomm1_i2s {
+		group0 {
+			pinmux = <IO_MUX_FC1_I2S>;
+			slew-rate = "normal";
 		};
 	};
 };

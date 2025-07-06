@@ -12,9 +12,7 @@
 / {
 	model = "GR716-MINI Development Board";
 	compatible = "gaisler,gr716a-mini";
-	aliases {
-		spi-flash0 = &flash0;
-	};
+
 	chosen {
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
@@ -36,4 +34,12 @@
 		size = <DT_SIZE_M(256)>;
 		jedec-id = [c2 20 19];
 	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
 };

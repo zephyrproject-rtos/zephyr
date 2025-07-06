@@ -1,0 +1,5 @@
+# Copyright (c) 2025 KWS Computersysteme Gmbh
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_PICO2_SPE
+	select SOC_RP2350A_M33 if BOARD_PICO2_SPE_RP2350A_M33

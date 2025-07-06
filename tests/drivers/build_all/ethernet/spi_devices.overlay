@@ -36,6 +36,8 @@
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>;
 
 			test_spi_enc28j60: enc28j60@0 {
@@ -119,6 +121,40 @@
 						status = "okay";
 					};
 				};
+			};
+
+			test_spi_lan865x: lan865x@5 {
+				compatible = "microchip,lan865x";
+				reg = <0x5>;
+				spi-max-frequency = <0>;
+				int-gpios = <&test_gpio 0 0>;
+				rst-gpios = <&test_gpio 0 0>;
+				local-mac-address = [00 00 00 01 02 03];
+				lan865x_mdio: lan865x_mdio {
+					compatible = "microchip,lan865x-mdio";
+					status = "okay";
+					#address-cells = <1>;
+					#size-cells = <0>;
+					ethernet-phy@0 {
+						compatible = "microchip,t1s-phy";
+						reg = <0x0>;
+						plca-enable;
+						plca-node-id = <0>;
+						plca-node-count = <8>;
+						plca-burst-count = <0>;
+						plca-burst-timer = <0x80>;
+						plca-to-timer = <0x20>;
+						status = "okay";
+					};
+				};
+			};
+
+			test_spi_lan9250: lan9250@6 {
+				compatible = "microchip,lan9250";
+				reg = <0x6>;
+				spi-max-frequency = <0>;
+				int-gpios = <&test_gpio 0 0>;
+				local-mac-address = [00 00 00 00 00 00];
 			};
 		};
 	};

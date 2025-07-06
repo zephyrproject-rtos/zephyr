@@ -1,5 +1,6 @@
 board:
   name: nucleo_f091rc
+  full_name: Nucleo F091RC
   vendor: st
   socs:
     - name: stm32f091xc

@@ -4,13 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT intel_ace_intc
+
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/devicetree/interrupt_controller.h>
 #include <zephyr/irq_nextlevel.h>
 #include <zephyr/arch/xtensa/irq.h>
-#ifdef CONFIG_DYNAMIC_INTERRUPTS
 #include <zephyr/sw_isr_table.h>
-#endif
 #include <zephyr/drivers/interrupt_controller/dw_ace.h>
 #include <soc.h>
 #include <adsp_interrupt.h>
@@ -68,7 +69,7 @@
  *     ACE_INTC[core_id].irq_inten_l |= interrupt_bit;
  */
 
-#define ACE_INTC ((volatile struct dw_ictl_registers *)DT_REG_ADDR(DT_NODELABEL(ace_intc)))
+#define ACE_INTC ((volatile struct dw_ictl_registers *)DT_INST_REG_ADDR(0))
 
 static inline bool is_dw_irq(uint32_t irq)
 {
@@ -149,7 +150,7 @@ static void dwint_isr(const void *arg)
 	while (fs) {
 		uint32_t bit = find_lsb_set(fs) - 1;
 		uint32_t offset = CONFIG_2ND_LVL_ISR_TBL_OFFSET + bit;
-		struct _isr_table_entry *ent = &_sw_isr_table[offset];
+		const struct _isr_table_entry *ent = &_sw_isr_table[offset];
 
 		fs &= ~BIT(bit);
 		ent->isr(ent->arg);
@@ -175,6 +176,10 @@ static const struct dw_ace_v1_ictl_driver_api dw_ictl_ace_v1x_apis = {
 #endif
 };
 
-DEVICE_DT_DEFINE(DT_NODELABEL(ace_intc), dw_ace_init, NULL, NULL, NULL,
+DEVICE_DT_INST_DEFINE(0, dw_ace_init, NULL, NULL, NULL,
 		 PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
 		 &dw_ictl_ace_v1x_apis);
+
+IRQ_PARENT_ENTRY_DEFINE(ace_intc, DEVICE_DT_INST_GET(0), DT_INST_IRQN(0),
+			INTC_BASE_ISR_TBL_OFFSET(DT_DRV_INST(0)),
+			DT_INST_INTC_GET_AGGREGATOR_LEVEL(0));

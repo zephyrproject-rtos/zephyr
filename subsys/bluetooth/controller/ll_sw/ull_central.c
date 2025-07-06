@@ -215,11 +215,12 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	/* Use the default 1M PHY, extended connection initiation in LLL will
-	 * update this with the correct PHY.
+	 * update this with the correct PHY and defaults using the coding on
+	 * which the connection is established.
 	 */
 	conn_lll->phy_tx = PHY_1M;
-	conn_lll->phy_flags = 0;
 	conn_lll->phy_tx_time = PHY_1M;
+	conn_lll->phy_flags = PHY_FLAGS_S8;
 	conn_lll->phy_rx = PHY_1M;
 #endif /* CONFIG_BT_CTLR_PHY */
 
@@ -252,6 +253,7 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	conn_lll->role = 0;
 	conn_lll->central.initiated = 0;
 	conn_lll->central.cancelled = 0;
+	conn_lll->central.forced = 0;
 	/* FIXME: END: Move to ULL? */
 #if defined(CONFIG_BT_CTLR_CONN_META)
 	memset(&conn_lll->conn_meta, 0, sizeof(conn_lll->conn_meta));
@@ -309,12 +311,10 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	/* Re-initialize the Tx Q */
 	ull_tx_q_init(&conn->tx_q);
 
-	/* TODO: active_to_start feature port */
-	conn->ull.ticks_active_to_start = 0U;
-	conn->ull.ticks_prepare_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
-	conn->ull.ticks_preempt_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
+	conn_lll->tifs_tx_us = EVENT_IFS_DEFAULT_US;
+	conn_lll->tifs_rx_us = EVENT_IFS_DEFAULT_US;
+	conn_lll->tifs_hcto_us = EVENT_IFS_DEFAULT_US;
+	conn_lll->tifs_cis_us = EVENT_IFS_DEFAULT_US;
 
 #if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN)
 	/* Remember peer and own identity address */
@@ -361,7 +361,7 @@ conn_is_valid:
 
 	/* Calculate event time reservation */
 	slot_us = max_tx_time + max_rx_time;
-	slot_us += EVENT_IFS_US + (EVENT_CLOCK_JITTER_US << 1);
+	slot_us += conn_lll->tifs_rx_us + (EVENT_CLOCK_JITTER_US << 1);
 	slot_us += ready_delay_us;
 	slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 
@@ -378,8 +378,8 @@ conn_is_valid:
 						 NULL);
 	}
 
-	if (own_addr_type == BT_ADDR_LE_PUBLIC_ID ||
-	    own_addr_type == BT_ADDR_LE_RANDOM_ID) {
+	if (own_addr_type == BT_HCI_OWN_ADDR_RPA_OR_PUBLIC ||
+	    own_addr_type == BT_HCI_OWN_ADDR_RPA_OR_RANDOM) {
 
 		/* Generate RPAs if required */
 		ull_filter_rpa_update(false);
@@ -720,7 +720,7 @@ void ull_central_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 		ll_rl_id_addr_get(rl_idx, &cc->peer_addr_type,
 				  &cc->peer_addr[0]);
 		/* Mark it as identity address from RPA (0x02, 0x03) */
-		cc->peer_addr_type += 2;
+		MARK_AS_IDENTITY_ADDR(cc->peer_addr_type);
 
 		/* Store peer RPA */
 		memcpy(&cc->peer_rpa[0], &peer_addr[0], BDADDR_SIZE);
@@ -746,6 +746,11 @@ void ull_central_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 
 	/* Set LLCP as connection-wise connected */
 	ull_cp_state_set(conn, ULL_CP_CONNECTED);
+
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
+	/* Set default PAST parameters */
+	conn->past = ull_conn_default_past_param_get();
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
 
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
 	lll->tx_pwr_lvl = RADIO_TXP_DEFAULT;
@@ -790,8 +795,7 @@ void ull_central_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 
 	ll_rx_put_sched(link, rx);
 
-	ticks_slot_offset = MAX(conn->ull.ticks_active_to_start,
-				conn->ull.ticks_prepare_to_start);
+	ticks_slot_offset = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 		ticks_slot_overhead = ticks_slot_offset;
 	} else {

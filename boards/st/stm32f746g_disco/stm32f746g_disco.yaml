@@ -5,7 +5,6 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 ram: 256
 flash: 1024
 supported:
@@ -16,8 +15,8 @@ supported:
   - gpio
   - pwm
   - counter
-  - sdhc
   - usb_device
   - display
   - memc
+  - dma
 vendor: st

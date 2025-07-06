@@ -19,7 +19,7 @@ LOG_MODULE_DECLARE(lis2dh, CONFIG_SENSOR_LOG_LEVEL);
 #include "lis2dh.h"
 
 static const gpio_flags_t gpio_int_cfg[5] = {
-			GPIO_INT_EDGE,
+			GPIO_INT_EDGE_BOTH,
 			GPIO_INT_EDGE_RISING,
 			GPIO_INT_EDGE_FALLING,
 			GPIO_INT_LEVEL_HIGH,
@@ -361,22 +361,6 @@ int lis2dh_acc_slope_config(const struct device *dev,
 	return status;
 }
 
-#ifdef CONFIG_LIS2DH_ACCEL_HP_FILTERS
-int lis2dh_acc_hp_filter_set(const struct device *dev, int32_t val)
-{
-	struct lis2dh_data *lis2dh = dev->data;
-	int status;
-
-	status = lis2dh->hw_tf->update_reg(dev, LIS2DH_REG_CTRL2,
-					   LIS2DH_HPIS_EN_MASK, val);
-	if (status < 0) {
-		LOG_ERR("Failed to set high pass filters");
-	}
-
-	return status;
-}
-#endif
-
 static void lis2dh_gpio_int1_callback(const struct device *dev,
 				      struct gpio_callback *cb, uint32_t pins)
 {
@@ -467,17 +451,15 @@ static void lis2dh_thread_cb(const struct device *dev)
 			TRIGGED_INT2)) {
 		uint8_t reg_val = 0;
 
-		if (cfg->hw.anym_latch) {
-			/* clear interrupt to de-assert int line */
-			status = lis2dh->hw_tf->read_reg(dev,
-							 cfg->hw.anym_on_int1 ?
-								LIS2DH_REG_INT1_SRC :
-								LIS2DH_REG_INT2_SRC,
-							 &reg_val);
-			if (status < 0) {
-				LOG_ERR("clearing interrupt 2 failed: %d", status);
-				return;
-			}
+		/* if necessary also clears an interrupt to de-assert int line */
+		status = lis2dh->hw_tf->read_reg(dev,
+						 cfg->hw.anym_on_int1 ?
+							LIS2DH_REG_INT1_SRC :
+							LIS2DH_REG_INT2_SRC,
+						 &reg_val);
+		if (status < 0) {
+			LOG_ERR("clearing interrupt 2 failed: %d", status);
+			return;
 		}
 
 		if (likely(lis2dh->handler_anymotion != NULL) &&

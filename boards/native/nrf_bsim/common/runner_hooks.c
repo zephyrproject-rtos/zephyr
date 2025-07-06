@@ -16,6 +16,20 @@
 #include "NRF_HWLowL.h"
 #include "bsim_args_runner.h"
 
+static bool bsim_disconnect_on_exit;
+
+/*
+ * Control what will happen to the overall simulation when this executable exists.
+ * If <terminate> is true (default behavior) the Phy will be told to end the simulation
+ * when this executable exits.
+ * If <terminate> is false, this device will just disconnect, but let the simulation continue
+ * otherwise.
+ */
+void bsim_set_terminate_on_exit(bool terminate)
+{
+	bsim_disconnect_on_exit = !terminate;
+}
+
 static uint8_t main_clean_up_trace_wrap(void)
 {
 	return nsi_exit_inner(0);
@@ -40,9 +54,33 @@ NSI_TASK(open_dumps, PRE_BOOT_2, 500);
 
 static void exit_hooks(void)
 {
-	hwll_terminate_simulation();
+	if (bsim_disconnect_on_exit) {
+		hwll_disconnect_phy();
+	} else {
+		hwll_terminate_simulation();
+	}
 	bs_dump_files_close_all();
 	bs_clean_back_channels();
 }
 
 NSI_TASK(exit_hooks, ON_EXIT_PRE, 500);
+
+static void exit_control_args(void)
+{
+	static bs_args_struct_t args_struct_toadd[] = {
+		{
+		.option = "disconnect_on_exit",
+		.type = 'b',
+		.name = "term",
+		.dest = (void *)&bsim_disconnect_on_exit,
+		.descript = "If set to 1, on exit only disconnect this device from the Phy and let "
+			    "the simulation continue. Otherwise (default) on exit terminate the "
+			    "whole simulation."
+		},
+		ARG_TABLE_ENDMARKER
+	};
+
+	bs_add_extra_dynargs(args_struct_toadd);
+}
+
+NSI_TASK(exit_control_args, PRE_BOOT_1, 10);

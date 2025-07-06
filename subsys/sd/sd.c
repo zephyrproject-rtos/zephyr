@@ -32,13 +32,26 @@ static inline int sd_idle(struct sd_card *card)
 	return sdhc_request(card->sdhc, &cmd, NULL);
 }
 
-/* Sends CMD8 during SD initialization */
+/*
+ * Perform init required for both SD and SDIO cards.
+ * This function performs the following portions of SD initialization
+ * - CMD0 (SD reset)
+ * - CMD8 (SD voltage check)
+ */
 static int sd_send_interface_condition(struct sd_card *card)
 {
 	struct sdhc_command cmd;
 	int ret;
 	uint32_t resp;
 
+	/* Reset card with CMD0 */
+	ret = sd_idle(card);
+	if (ret) {
+		LOG_ERR("Card error on CMD0");
+		return ret;
+	}
+
+	/* Query voltage with CMD 8 */
 	cmd.opcode = SD_SEND_IF_COND;
 	cmd.arg = SD_IF_COND_VHS_3V3 | SD_IF_COND_CHECK;
 	cmd.response_type = (SD_RSP_TYPE_R7 | SD_SPI_RSP_TYPE_R7);
@@ -56,7 +69,7 @@ static int sd_send_interface_condition(struct sd_card *card)
 		resp = cmd.response[0];
 	}
 	if ((resp & 0xFF) != SD_IF_COND_CHECK) {
-		LOG_INF("Legacy card detected, no CMD8 support");
+		LOG_DBG("Legacy card detected, no CMD8 support");
 		/* Retry probe */
 		return SD_RETRY;
 	}
@@ -84,29 +97,18 @@ static int sd_enable_crc(struct sd_card *card)
 	return sdhc_request(card->sdhc, &cmd, NULL);
 }
 
-/*
- * Perform init required for both SD and SDIO cards.
- * This function performs the following portions of SD initialization
- * - CMD0 (SD reset)
- * - CMD8 (SD voltage check)
- */
+/* Retries SD and SDIO initialisation until card has valid response to SD CMD8 */
 static int sd_common_init(struct sd_card *card)
 {
 	int ret;
 
-	/* Reset card with CMD0 */
-	ret = sd_idle(card);
-	if (ret) {
-		LOG_ERR("Card error on CMD0");
-		return ret;
-	}
 	/* Perform voltage check using SD CMD8 */
 	ret = sd_retry(sd_send_interface_condition, card, CONFIG_SD_RETRY_COUNT);
 	if (ret == -ETIMEDOUT) {
 		LOG_INF("Card does not support CMD8, assuming legacy card");
 		return sd_idle(card);
 	} else if (ret) {
-		LOG_ERR("Card error on CMD 8");
+		LOG_ERR("Card error on CMD8");
 		return ret;
 	}
 	if (card->host_props.is_spi &&
@@ -133,13 +135,13 @@ static int sd_init_io(struct sd_card *card)
 	bus_io->timing = SDHC_TIMING_LEGACY;
 
 	if (host_props->host_caps.vol_330_support) {
-		LOG_DBG("Host controller support 3.3V max");
+		LOG_DBG("Host controller support %sV max", "3.3");
 		voltage = SD_VOL_3_3_V;
 	} else if (host_props->host_caps.vol_300_support) {
-		LOG_DBG("Host controller support 3.0V max");
+		LOG_DBG("Host controller support %sV max", "3.0");
 		voltage = SD_VOL_3_0_V;
 	} else {
-		LOG_DBG("Host controller support 1.8V max");
+		LOG_DBG("Host controller support %sV max", "1.8");
 		voltage = SD_VOL_1_8_V;
 	}
 
@@ -151,14 +153,14 @@ static int sd_init_io(struct sd_card *card)
 	bus_io->power_mode = SDHC_POWER_OFF;
 	ret = sdhc_set_io(card->sdhc, bus_io);
 	if (ret) {
-		LOG_ERR("Could not disable card power via SDHC");
+		LOG_ERR("Could not %s card power via SDHC", "disable");
 		return ret;
 	}
 	sd_delay(card->host_props.power_delay);
 	bus_io->power_mode = SDHC_POWER_ON;
 	ret = sdhc_set_io(card->sdhc, bus_io);
 	if (ret) {
-		LOG_ERR("Could not disable card power via SDHC");
+		LOG_ERR("Could not %s card power via SDHC", "enable");
 		return ret;
 	}
 	/* After reset or init, card voltage should be max HC support */
@@ -213,7 +215,7 @@ static int sd_command_init(struct sd_card *card)
 	if (!sdmmc_card_init(card)) {
 		return 0;
 	}
-#endif /* CONFIG_SDIO_STACK */
+#endif /* CONFIG_SDMMC_STACK */
 #ifdef CONFIG_MMC_STACK
 	ret = sd_idle(card);
 	if (ret) {

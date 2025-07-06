@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Diego Sueiro
+ * Copyright (c) 2024 Capgemini
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +9,7 @@
 
 #include <errno.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 #include <em_cmu.h>
@@ -24,17 +26,10 @@ LOG_MODULE_REGISTER(i2c_gecko);
 #define DEV_BASE(dev) ((I2C_TypeDef *)((const struct i2c_gecko_config *const)(dev)->config)->base)
 
 struct i2c_gecko_config {
+	const struct pinctrl_dev_config *pcfg;
 	I2C_TypeDef *base;
 	CMU_Clock_TypeDef clock;
 	uint32_t bitrate;
-	struct soc_gpio_pin pin_sda;
-	struct soc_gpio_pin pin_scl;
-#ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
-	uint8_t loc_sda;
-	uint8_t loc_scl;
-#else
-	uint8_t loc;
-#endif
 #if defined(CONFIG_I2C_TARGET)
 	void (*irq_config_func)(const struct device *dev);
 #endif
@@ -42,37 +37,12 @@ struct i2c_gecko_config {
 
 struct i2c_gecko_data {
 	struct k_sem device_sync_sem;
+	struct k_sem bus_lock;
 	uint32_t dev_config;
 #if defined(CONFIG_I2C_TARGET)
 	struct i2c_target_config *target_cfg;
 #endif
 };
-
-void i2c_gecko_config_pins(const struct device *dev, const struct soc_gpio_pin *pin_sda,
-			   const struct soc_gpio_pin *pin_scl)
-{
-	I2C_TypeDef *base = DEV_BASE(dev);
-	const struct i2c_gecko_config *config = dev->config;
-
-	GPIO_PinModeSet(pin_scl->port, pin_scl->pin, pin_scl->mode, pin_scl->out);
-	GPIO_PinModeSet(pin_sda->port, pin_sda->pin, pin_sda->mode, pin_sda->out);
-
-#ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
-	base->ROUTEPEN = I2C_ROUTEPEN_SDAPEN | I2C_ROUTEPEN_SCLPEN;
-	base->ROUTELOC0 = (config->loc_sda << _I2C_ROUTELOC0_SDALOC_SHIFT) |
-			  (config->loc_scl << _I2C_ROUTELOC0_SCLLOC_SHIFT);
-#elif defined(GPIO_I2C_ROUTEEN_SCLPEN) && defined(GPIO_I2C_ROUTEEN_SDAPEN)
-	GPIO->I2CROUTE[I2C_NUM(base)].ROUTEEN = GPIO_I2C_ROUTEEN_SCLPEN | GPIO_I2C_ROUTEEN_SDAPEN;
-	GPIO->I2CROUTE[I2C_NUM(base)].SCLROUTE =
-		(config->pin_scl.pin << _GPIO_I2C_SCLROUTE_PIN_SHIFT) |
-		(config->pin_scl.port << _GPIO_I2C_SCLROUTE_PORT_SHIFT);
-	GPIO->I2CROUTE[I2C_NUM(base)].SDAROUTE =
-		(config->pin_sda.pin << _GPIO_I2C_SDAROUTE_PIN_SHIFT) |
-		(config->pin_sda.port << _GPIO_I2C_SDAROUTE_PORT_SHIFT);
-#else
-	base->ROUTE = I2C_ROUTE_SDAPEN | I2C_ROUTE_SCLPEN | (config->loc << 8);
-#endif
-}
 
 static int i2c_gecko_configure(const struct device *dev, uint32_t dev_config_raw)
 {
@@ -99,6 +69,8 @@ static int i2c_gecko_configure(const struct device *dev, uint32_t dev_config_raw
 		return -EINVAL;
 	}
 
+	k_sem_take(&data->bus_lock, K_FOREVER);
+
 	data->dev_config = dev_config_raw;
 	i2cInit.freq = baudrate;
 
@@ -107,6 +79,8 @@ static int i2c_gecko_configure(const struct device *dev, uint32_t dev_config_raw
 #endif
 
 	I2C_Init(base, &i2cInit);
+
+	k_sem_give(&data->bus_lock);
 
 	return 0;
 }
@@ -123,6 +97,8 @@ static int i2c_gecko_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 	if (!num_msgs) {
 		return 0;
 	}
+
+	k_sem_take(&data->bus_lock, K_FOREVER);
 
 	seq.addr = addr << 1;
 
@@ -168,6 +144,8 @@ static int i2c_gecko_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 	} while (num_msgs);
 
 finish:
+	k_sem_give(&data->bus_lock);
+
 	if (ret != i2cTransferDone) {
 		ret = -EIO;
 	}
@@ -176,13 +154,23 @@ finish:
 
 static int i2c_gecko_init(const struct device *dev)
 {
+	struct i2c_gecko_data *data = dev->data;
 	const struct i2c_gecko_config *config = dev->config;
 	uint32_t bitrate_cfg;
 	int error;
 
+	/* Initialize mutex to guarantee that each transaction
+	 * is atomic and has exclusive access to the I2C bus
+	 */
+	k_sem_init(&data->bus_lock, 1, 1);
+
 	CMU_ClockEnable(config->clock, true);
 
-	i2c_gecko_config_pins(dev, &config->pin_sda, &config->pin_scl);
+	error = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (error < 0) {
+		LOG_ERR("Failed to configure I2C pins err[%d]", error);
+		return error;
+	}
 
 	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
 
@@ -204,7 +192,7 @@ static int i2c_gecko_target_register(const struct device *dev, struct i2c_target
 
 	I2C_SlaveAddressSet(config->base, cfg->address << _I2C_SADDR_ADDR_SHIFT);
 	/* Match with specified address, no wildcards in address */
-	I2C_SlaveAddressMaskSet(config->base, _I2C_SADDRMASK_SADDRMASK_MASK);
+	I2C_SlaveAddressMaskSet(config->base, _I2C_SADDRMASK_MASK);
 
 	I2C_IntDisable(config->base, _I2C_IEN_MASK);
 	I2C_IntEnable(config->base, I2C_IEN_ADDR | I2C_IEN_RXDATAV | I2C_IEN_ACK | I2C_IEN_SSTOP |
@@ -228,12 +216,15 @@ static int i2c_gecko_target_unregister(const struct device *dev, struct i2c_targ
 }
 #endif
 
-static const struct i2c_driver_api i2c_gecko_driver_api = {
+static DEVICE_API(i2c, i2c_gecko_driver_api) = {
 	.configure = i2c_gecko_configure,
 	.transfer = i2c_gecko_transfer,
 #if defined(CONFIG_I2C_TARGET)
 	.target_register = i2c_gecko_target_register,
 	.target_unregister = i2c_gecko_target_unregister,
+#endif
+#ifdef CONFIG_I2C_RTIO
+	.iodev_submit = i2c_iodev_submit_fallback,
 #endif
 };
 
@@ -246,6 +237,7 @@ void i2c_gecko_isr(const struct device *dev)
 	uint32_t pending;
 	uint32_t rx_byte;
 	uint8_t tx_byte;
+	int ret;
 
 	pending = config->base->IF;
 
@@ -258,31 +250,52 @@ void i2c_gecko_isr(const struct device *dev)
 		if (pending & I2C_IF_ADDR) {
 			/* Address Match, indicating that reception is started */
 			rx_byte = config->base->RXDATA;
-			config->base->CMD = I2C_CMD_ACK;
 
 			/* Check if read bit set */
 			if (rx_byte & 0x1) {
-				data->target_cfg->callbacks->read_requested(data->target_cfg,
-									    &tx_byte);
-				config->base->TXDATA = tx_byte;
+				ret = data->target_cfg->callbacks->read_requested(data->target_cfg,
+										  &tx_byte);
+				if (ret == 0) {
+					config->base->CMD = I2C_CMD_ACK;
+					config->base->TXDATA = tx_byte;
+				} else {
+					config->base->CMD = I2C_CMD_NACK;
+					config->base->TXDATA = 0xFF;
+				}
 			} else {
-				data->target_cfg->callbacks->write_requested(data->target_cfg);
+				ret = data->target_cfg->callbacks->write_requested(
+					data->target_cfg);
+				if (ret == 0) {
+					config->base->CMD = I2C_CMD_ACK;
+				} else {
+					config->base->CMD = I2C_CMD_NACK;
+				}
 			}
 
 			I2C_IntClear(config->base, I2C_IF_ADDR | I2C_IF_RXDATAV);
 		} else if (pending & I2C_IF_RXDATAV) {
 			rx_byte = config->base->RXDATA;
 			/* Read new data and write to target address */
-			data->target_cfg->callbacks->write_received(data->target_cfg, rx_byte);
-			config->base->CMD = I2C_CMD_ACK;
+			ret = data->target_cfg->callbacks->write_received(data->target_cfg,
+									  rx_byte);
+			if (ret == 0) {
+				config->base->CMD = I2C_CMD_ACK;
+			} else {
+				config->base->CMD = I2C_CMD_NACK;
+			}
 
 			I2C_IntClear(config->base, I2C_IF_RXDATAV);
 		}
 
 		if (pending & I2C_IF_ACK) {
 			/* Leader ACK'ed, so requesting more data */
-			data->target_cfg->callbacks->read_processed(data->target_cfg, &tx_byte);
-			config->base->TXDATA = tx_byte;
+			ret = data->target_cfg->callbacks->read_processed(data->target_cfg,
+									  &tx_byte);
+			if (ret == 0) {
+				config->base->TXDATA = tx_byte;
+			} else {
+				config->base->TXDATA = 0xFF;
+			}
 
 			I2C_IntClear(config->base, I2C_IF_ACK);
 		}
@@ -294,19 +307,6 @@ void i2c_gecko_isr(const struct device *dev)
 		}
 	}
 }
-#endif
-
-#ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
-#define I2C_LOC_DATA(idx)                                                                          \
-	.loc_sda = DT_INST_PROP_BY_IDX(idx, location_sda, 0),                                      \
-	.loc_scl = DT_INST_PROP_BY_IDX(idx, location_scl, 0)
-#define I2C_VALIDATE_LOC(idx) BUILD_ASSERT(true, "")
-#else
-#define I2C_VALIDATE_LOC(idx)                                                                      \
-	BUILD_ASSERT(DT_INST_PROP_BY_IDX(idx, location_sda, 0) ==                                  \
-			     DT_INST_PROP_BY_IDX(idx, location_scl, 0),                            \
-		     "DTS location-* properties must be equal")
-#define I2C_LOC_DATA(idx) .loc = DT_INST_PROP_BY_IDX(idx, location_scl, 0)
 #endif
 
 #if defined(CONFIG_I2C_TARGET)
@@ -326,22 +326,22 @@ void i2c_gecko_isr(const struct device *dev)
 #endif
 
 #define I2C_INIT(idx)                                                                              \
-	I2C_VALIDATE_LOC(idx);                                                                     \
-	GECKO_I2C_IRQ_DEF(idx)                                                                     \
+	PINCTRL_DT_INST_DEFINE(idx);                                                               \
+	GECKO_I2C_IRQ_DEF(idx);                                                                    \
+                                                                                                   \
 	static const struct i2c_gecko_config i2c_gecko_config_##idx = {                            \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                       \
 		.base = (I2C_TypeDef *)DT_INST_REG_ADDR(idx),                                      \
 		.clock = cmuClock_I2C##idx,                                                        \
-		.pin_sda = {DT_INST_PROP_BY_IDX(idx, location_sda, 1),                             \
-			    DT_INST_PROP_BY_IDX(idx, location_sda, 2), gpioModeWiredAnd, 1},       \
-		.pin_scl = {DT_INST_PROP_BY_IDX(idx, location_scl, 1),                             \
-			    DT_INST_PROP_BY_IDX(idx, location_scl, 2), gpioModeWiredAnd, 1},       \
-		I2C_LOC_DATA(idx),                                                                 \
 		.bitrate = DT_INST_PROP(idx, clock_frequency),                                     \
 		GECKO_I2C_IRQ_DATA(idx)};                                                          \
+                                                                                                   \
 	static struct i2c_gecko_data i2c_gecko_data_##idx;                                         \
+                                                                                                   \
 	I2C_DEVICE_DT_INST_DEFINE(idx, i2c_gecko_init, NULL, &i2c_gecko_data_##idx,                \
 				  &i2c_gecko_config_##idx, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,  \
 				  &i2c_gecko_driver_api);                                          \
+                                                                                                   \
 	GECKO_I2C_IRQ_HANDLER(idx)
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_INIT)

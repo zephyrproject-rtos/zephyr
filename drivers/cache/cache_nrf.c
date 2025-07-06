@@ -5,6 +5,7 @@
  */
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/cache.h>
+#include <zephyr/sys/barrier.h>
 #include <hal/nrf_cache.h>
 #include <zephyr/logging/log.h>
 
@@ -14,10 +15,8 @@ LOG_MODULE_REGISTER(cache_nrfx, CONFIG_CACHE_LOG_LEVEL);
 #define NRF_ICACHE NRF_CACHE
 #endif
 
-#define CACHE_LINE_SIZE		     32
 #define CACHE_BUSY_RETRY_INTERVAL_US 10
 
-static struct k_spinlock lock;
 
 enum k_nrf_cache_op {
 	/*
@@ -55,7 +54,6 @@ static inline bool is_cache_busy(NRF_CACHE_Type *cache)
 static inline void wait_for_cache(NRF_CACHE_Type *cache)
 {
 	while (is_cache_busy(cache)) {
-		k_busy_wait(CACHE_BUSY_RETRY_INTERVAL_US);
 	}
 }
 
@@ -68,15 +66,9 @@ static inline int _cache_all(NRF_CACHE_Type *cache, enum k_nrf_cache_op op)
 		return -ENOTSUP;
 	}
 
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
-	/*
-	 * Invalidating the whole cache is dangerous. For good measure
-	 * disable the cache.
-	 */
-	nrf_cache_disable(cache);
-
 	wait_for_cache(cache);
+
+	barrier_dsync_fence_full();
 
 	switch (op) {
 
@@ -102,65 +94,70 @@ static inline int _cache_all(NRF_CACHE_Type *cache, enum k_nrf_cache_op op)
 
 	wait_for_cache(cache);
 
-	nrf_cache_enable(cache);
-
-	k_spin_unlock(&lock, key);
-
 	return 0;
 }
 
+#if NRF_CACHE_HAS_LINEADDR
 static inline void _cache_line(NRF_CACHE_Type *cache, enum k_nrf_cache_op op, uintptr_t line_addr)
 {
-	wait_for_cache(cache);
+	do {
+		wait_for_cache(cache);
 
-	nrf_cache_lineaddr_set(cache, line_addr);
+		nrf_cache_lineaddr_set(cache, line_addr);
 
-	switch (op) {
+		barrier_dsync_fence_full();
+
+		switch (op) {
 
 #if NRF_CACHE_HAS_TASK_CLEAN
-	case K_NRF_CACHE_CLEAN:
-		nrf_cache_task_trigger(cache, NRF_CACHE_TASK_CLEANLINE);
-		break;
+		case K_NRF_CACHE_CLEAN:
+			nrf_cache_task_trigger(cache, NRF_CACHE_TASK_CLEANLINE);
+			break;
 #endif
 
-	case K_NRF_CACHE_INVD:
-		nrf_cache_task_trigger(cache, NRF_CACHE_TASK_INVALIDATELINE);
-		break;
+		case K_NRF_CACHE_INVD:
+			nrf_cache_task_trigger(cache, NRF_CACHE_TASK_INVALIDATELINE);
+			break;
 
 #if NRF_CACHE_HAS_TASK_FLUSH
-	case K_NRF_CACHE_FLUSH:
-		nrf_cache_task_trigger(cache, NRF_CACHE_TASK_FLUSHLINE);
-		break;
+		case K_NRF_CACHE_FLUSH:
+			nrf_cache_task_trigger(cache, NRF_CACHE_TASK_FLUSHLINE);
+			break;
 #endif
 
-	default:
-		break;
-	}
-
-	wait_for_cache(cache);
+		default:
+			break;
+		}
+	} while (nrf_cache_lineaddr_get(cache) != line_addr);
 }
 
 static inline int _cache_range(NRF_CACHE_Type *cache, enum k_nrf_cache_op op, void *addr,
 			       size_t size)
 {
 	uintptr_t line_addr = (uintptr_t)addr;
-	uintptr_t end_addr = line_addr + size;
+	uintptr_t end_addr;
+
+	/* Some SOCs has a bug that requires to set 28th bit in the address on
+	 * Trustzone secure builds.
+	 */
+	if (IS_ENABLED(CONFIG_CACHE_NRF_PATCH_LINEADDR) &&
+	    !IS_ENABLED(CONFIG_TRUSTED_EXECUTION_NONSECURE)) {
+		line_addr |= BIT(28);
+	}
+
+	end_addr = line_addr + size;
 
 	/*
 	 * Align address to line size
 	 */
-	line_addr &= ~(CACHE_LINE_SIZE - 1);
+	line_addr &= ~(CONFIG_DCACHE_LINE_SIZE - 1);
 
 	do {
-		k_spinlock_key_t key = k_spin_lock(&lock);
-
 		_cache_line(cache, op, line_addr);
-
-		k_spin_unlock(&lock, key);
-
-		line_addr += CACHE_LINE_SIZE;
-
+		line_addr += CONFIG_DCACHE_LINE_SIZE;
 	} while (line_addr < end_addr);
+
+	wait_for_cache(cache);
 
 	return 0;
 }
@@ -169,7 +166,7 @@ static inline int _cache_checks(NRF_CACHE_Type *cache, enum k_nrf_cache_op op, v
 				size_t size, bool is_range)
 {
 	/* Check if the cache is enabled */
-	if (!(cache->ENABLE & CACHE_ENABLE_ENABLE_Enabled)) {
+	if (!nrf_cache_enable_check(cache)) {
 		return -EAGAIN;
 	}
 
@@ -184,17 +181,22 @@ static inline int _cache_checks(NRF_CACHE_Type *cache, enum k_nrf_cache_op op, v
 
 	return _cache_range(cache, op, addr, size);
 }
+#else
+static inline int _cache_all_checks(NRF_CACHE_Type *cache, enum k_nrf_cache_op op)
+{
+	/* Check if the cache is enabled */
+	if (!nrf_cache_enable_check(cache)) {
+		return -EAGAIN;
+	}
+	return _cache_all(cache, op);
+}
+#endif /* NRF_CACHE_HAS_LINEADDR */
 
 #if defined(NRF_DCACHE) && NRF_CACHE_HAS_TASKS
 
 void cache_data_enable(void)
 {
 	nrf_cache_enable(NRF_DCACHE);
-}
-
-void cache_data_disable(void)
-{
-	nrf_cache_disable(NRF_DCACHE);
 }
 
 int cache_data_flush_all(void)
@@ -204,6 +206,14 @@ int cache_data_flush_all(void)
 #else
 	return -ENOTSUP;
 #endif
+}
+
+void cache_data_disable(void)
+{
+	if (nrf_cache_enable_check(NRF_DCACHE)) {
+		(void)cache_data_flush_all();
+	}
+	nrf_cache_disable(NRF_DCACHE);
 }
 
 int cache_data_invd_all(void)
@@ -302,7 +312,11 @@ void cache_instr_disable(void)
 int cache_instr_flush_all(void)
 {
 #if NRF_CACHE_HAS_TASK_CLEAN
+#if NRF_CACHE_HAS_LINEADDR
 	return _cache_checks(NRF_ICACHE, K_NRF_CACHE_CLEAN, NULL, 0, false);
+#else
+	return _cache_all_checks(NRF_ICACHE, K_NRF_CACHE_CLEAN);
+#endif
 #else
 	return -ENOTSUP;
 #endif
@@ -310,13 +324,21 @@ int cache_instr_flush_all(void)
 
 int cache_instr_invd_all(void)
 {
+#if NRF_CACHE_HAS_LINEADDR
 	return _cache_checks(NRF_ICACHE, K_NRF_CACHE_INVD, NULL, 0, false);
+#else
+	return _cache_all_checks(NRF_ICACHE, K_NRF_CACHE_INVD);
+#endif
 }
 
 int cache_instr_flush_and_invd_all(void)
 {
 #if NRF_CACHE_HAS_TASK_FLUSH
+#if NRF_CACHE_HAS_LINEADDR
 	return _cache_checks(NRF_ICACHE, K_NRF_CACHE_FLUSH, NULL, 0, false);
+#else
+	return _cache_all_checks(NRF_ICACHE, K_NRF_CACHE_FLUSH);
+#endif
 #else
 	return -ENOTSUP;
 #endif
@@ -324,7 +346,7 @@ int cache_instr_flush_and_invd_all(void)
 
 int cache_instr_flush_range(void *addr, size_t size)
 {
-#if NRF_CACHE_HAS_TASK_CLEAN
+#if NRF_CACHE_HAS_TASK_CLEAN && NRF_CACHE_HAS_LINEADDR
 	return _cache_checks(NRF_ICACHE, K_NRF_CACHE_CLEAN, addr, size, true);
 #else
 	return -ENOTSUP;
@@ -333,12 +355,16 @@ int cache_instr_flush_range(void *addr, size_t size)
 
 int cache_instr_invd_range(void *addr, size_t size)
 {
+#if NRF_CACHE_HAS_LINEADDR
 	return _cache_checks(NRF_ICACHE, K_NRF_CACHE_INVD, addr, size, true);
+#else
+	return -ENOTSUP;
+#endif
 }
 
 int cache_instr_flush_and_invd_range(void *addr, size_t size)
 {
-#if NRF_CACHE_HAS_TASK_FLUSH
+#if NRF_CACHE_HAS_TASK_FLUSH && NRF_CACHE_HAS_LINEADDR
 	return _cache_checks(NRF_ICACHE, K_NRF_CACHE_FLUSH, addr, size, true);
 #else
 	return -ENOTSUP;

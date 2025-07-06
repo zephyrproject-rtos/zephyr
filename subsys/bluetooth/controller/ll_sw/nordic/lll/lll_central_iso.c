@@ -92,22 +92,11 @@ int lll_central_iso_reset(void)
 
 void lll_central_iso_prepare(void *param)
 {
-	struct lll_conn_iso_group *cig_lll;
-	struct lll_prepare_param *p;
-	uint16_t elapsed;
 	int err;
 
 	/* Initiate HF clock start up */
 	err = lll_hfclock_on();
 	LL_ASSERT(err >= 0);
-
-	/* Instants elapsed */
-	p = param;
-	elapsed = p->lazy + 1U;
-
-	/* Save the (latency + 1) for use in event and/or supervision timeout */
-	cig_lll = p->param;
-	cig_lll->latency_prepare += elapsed;
 
 	/* Invoke common pipeline handling of prepare */
 	err = lll_prepare(lll_is_abort_cb, abort_cb, prepare_cb, 0U, param);
@@ -135,7 +124,6 @@ static int prepare_cb(struct lll_prepare_param *p)
 	struct ull_hdr *ull;
 	uint32_t remainder;
 	uint32_t start_us;
-	uint16_t lazy;
 	uint32_t ret;
 	uint8_t phy;
 	int err = 0;
@@ -156,11 +144,21 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	LL_ASSERT(cis_lll);
 
+	/* Unconditionally set the prepared flag.
+	 * This flag ensures current CIG event does not pick up a new CIS becoming active when the
+	 * ACL overlaps at the instant with this already started CIG events.
+	 */
+	cis_lll->prepared = 1U;
+
 	/* Save first active CIS offset */
 	cis_offset_first = cis_lll->offset;
 
 	/* Get reference to ACL context */
 	conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
+	LL_ASSERT(conn_lll != NULL);
+
+	/* Pick the event_count calculated in the ULL prepare */
+	cis_lll->event_count = cis_lll->event_count_prepare;
 
 	/* Event counter value,  0-15 bit of cisEventCounter */
 	event_counter = cis_lll->event_count;
@@ -173,9 +171,9 @@ static int prepare_cb(struct lll_prepare_param *p)
 					   &data_chan_prn_s,
 					   &data_chan_remap_idx);
 
-	/* Store the current event latency */
-	cig_lll->latency_event = cig_lll->latency_prepare;
-	lazy = cig_lll->latency_prepare - 1U;
+	/* Calculate the current event latency */
+	cig_lll->lazy_prepare = p->lazy;
+	cig_lll->latency_event = cig_lll->latency_prepare + cig_lll->lazy_prepare;
 
 	/* Reset accumulated latencies */
 	cig_lll->latency_prepare = 0U;
@@ -183,7 +181,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	se_curr = 1U;
 
 	/* Adjust the SN and NESN for skipped CIG events */
-	payload_count_lazy_update(cis_lll, lazy);
+	payload_count_lazy_update(cis_lll, cig_lll->latency_event);
 
 	/* Start setting up of Radio h/w */
 	radio_reset();
@@ -306,7 +304,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	radio_isr_set(isr_tx, cis_lll);
 
-	radio_tmr_tifs_set(EVENT_IFS_US);
+	radio_tmr_tifs_set(cis_lll->tifs_us);
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	radio_switch_complete_and_rx(cis_lll->rx.phy);
@@ -369,8 +367,18 @@ static int prepare_cb(struct lll_prepare_param *p)
 	do {
 		cis_lll = ull_conn_iso_lll_stream_get_by_group(cig_lll, &cis_handle);
 		if (cis_lll && cis_lll->active) {
+			/* Unconditionally set the prepared flag.
+			 * This flag ensures current CIG event does not pick up a new CIS becoming
+			 * active when the ACL overlaps at the instant with this already started
+			 * CIG events.
+			 */
+			cis_lll->prepared = 1U;
+
+			/* Pick the event_count calculated in the ULL prepare */
+			cis_lll->event_count = cis_lll->event_count_prepare;
+
 			/* Adjust sn and nesn for skipped CIG events */
-			payload_count_lazy_update(cis_lll, lazy);
+			payload_count_lazy_update(cis_lll, cig_lll->latency_event);
 
 			/* Adjust sn and nesn for canceled events */
 			if (err) {
@@ -395,13 +403,13 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 {
+	struct lll_conn_iso_group *cig_lll;
 	int err;
 
 	/* NOTE: This is not a prepare being cancelled */
 	if (!prepare_param) {
 		struct lll_conn_iso_stream *next_cis_lll;
 		struct lll_conn_iso_stream *cis_lll;
-		struct lll_conn_iso_group *cig_lll;
 
 		cis_lll = ull_conn_iso_lll_stream_get(cis_handle_curr);
 		cig_lll = param;
@@ -410,7 +418,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 		do {
 			next_cis_lll = ull_conn_iso_lll_stream_get_by_group(cig_lll,
 									    &cis_handle_curr);
-			if (next_cis_lll && next_cis_lll->active) {
+			if (next_cis_lll && next_cis_lll->prepared) {
 				payload_count_flush_or_inc_on_close(next_cis_lll);
 			}
 		} while (next_cis_lll);
@@ -422,6 +430,17 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 		radio_isr_set(isr_done, cis_lll);
 		radio_disable();
 
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+		/* Get reference to ACL context */
+		const struct lll_conn *conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
+
+		LL_ASSERT(conn_lll != NULL);
+
+		if (conn_lll->enc_rx) {
+			radio_ccm_disable();
+		}
+#endif /* CONFIG_BT_CTLR_LE_ENC */
+
 		return;
 	}
 
@@ -430,6 +449,13 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	 */
 	err = lll_hfclock_off();
 	LL_ASSERT(err >= 0);
+
+	/* Get reference to CIG LLL context */
+	cig_lll = prepare_param->param;
+
+	/* Accumulate the latency as event is aborted while being in pipeline */
+	cig_lll->lazy_prepare = prepare_param->lazy;
+	cig_lll->latency_prepare += (cig_lll->lazy_prepare + 1U);
 
 	lll_done(param);
 }
@@ -456,6 +482,8 @@ static void isr_tx(void *param)
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	/* Get reference to ACL context */
 	const struct lll_conn *conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
+
+	LL_ASSERT(conn_lll != NULL);
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 	/* PHY */
@@ -501,7 +529,7 @@ static void isr_tx(void *param)
 	LL_ASSERT(!radio_is_ready());
 
 	/* +/- 2us active clock jitter, +1 us PPI to timer start compensation */
-	hcto = radio_tmr_tifs_base_get() + EVENT_IFS_US +
+	hcto = radio_tmr_tifs_base_get() + cis_lll->tifs_us +
 	       (EVENT_CLOCK_JITTER_US << 1) + RANGE_DELAY_US +
 	       HAL_RADIO_TMR_START_DELAY_US;
 
@@ -527,13 +555,13 @@ static void isr_tx(void *param)
 	radio_gpio_lna_setup();
 
 #if defined(CONFIG_BT_CTLR_PHY)
-	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + EVENT_IFS_US -
+	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + cis_lll->tifs_us -
 				 (EVENT_CLOCK_JITTER_US << 1) -
 				 radio_tx_chain_delay_get(cis_lll->tx.phy,
 							  cis_lll->tx.phy_flags) -
 				 HAL_RADIO_GPIO_LNA_OFFSET);
 #else /* !CONFIG_BT_CTLR_PHY */
-	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + EVENT_IFS_US -
+	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + cis_lll->tifs_us -
 				 (EVENT_CLOCK_JITTER_US << 1) -
 				 radio_tx_chain_delay_get(0U, 0U) -
 				 HAL_RADIO_GPIO_LNA_OFFSET);
@@ -546,6 +574,8 @@ static void isr_tx(void *param)
 	if (se_curr < cis_lll->nse) {
 		const struct lll_conn *evt_conn_lll;
 		uint16_t data_chan_id;
+
+#if !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 		uint32_t subevent_us;
 		uint32_t start_us;
 
@@ -555,9 +585,11 @@ static void isr_tx(void *param)
 
 		start_us = radio_tmr_start_us(1U, subevent_us);
 		LL_ASSERT(start_us == (subevent_us + 1U));
+#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 		/* Get reference to ACL context */
 		evt_conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
+		LL_ASSERT(evt_conn_lll != NULL);
 
 		/* Calculate the radio channel to use for next subevent */
 		data_chan_id = lll_chan_id(cis_lll->access_addr);
@@ -574,9 +606,7 @@ static void isr_tx(void *param)
 		uint64_t payload_count;
 		uint16_t event_counter;
 		uint16_t data_chan_id;
-		uint32_t subevent_us;
 		uint16_t cis_handle;
-		uint32_t start_us;
 		memq_link_t *link;
 
 		/* Calculate channel for next CIS */
@@ -584,17 +614,29 @@ static void isr_tx(void *param)
 		cis_handle = cis_handle_curr;
 		do {
 			next_cis_lll = ull_conn_iso_lll_stream_get_by_group(cig_lll, &cis_handle);
-		} while (next_cis_lll && !next_cis_lll->active);
+		} while (next_cis_lll && !next_cis_lll->prepared);
 
 		if (!next_cis_lll) {
 			return;
 		}
 
-		/* Get reference to ACL context */
-		next_conn_lll = ull_conn_lll_get(next_cis_lll->acl_handle);
+#if !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+		uint32_t subevent_us;
+		uint32_t start_us;
+
+		subevent_us = radio_tmr_ready_restore();
+		subevent_us += next_cis_lll->offset - cis_offset_first;
+
+		start_us = radio_tmr_start_us(1U, subevent_us);
+		LL_ASSERT(start_us == (subevent_us + 1U));
+#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 		/* Event counter value,  0-15 bit of cisEventCounter */
 		event_counter = next_cis_lll->event_count;
+
+		/* Get reference to ACL context */
+		next_conn_lll = ull_conn_lll_get(next_cis_lll->acl_handle);
+		LL_ASSERT(next_conn_lll != NULL);
 
 		/* Calculate the radio channel to use for ISO event */
 		data_chan_id = lll_chan_id(next_cis_lll->access_addr);
@@ -603,12 +645,6 @@ static void isr_tx(void *param)
 						   next_conn_lll->data_chan_count,
 						   &next_cis_chan_prn_s,
 						   &next_cis_chan_remap_idx);
-
-		subevent_us = radio_tmr_ready_restore();
-		subevent_us += next_cis_lll->offset - cis_offset_first;
-
-		start_us = radio_tmr_start_us(1U, subevent_us);
-		LL_ASSERT(start_us == (subevent_us + 1U));
 
 		cis_lll = next_cis_lll;
 
@@ -741,6 +777,8 @@ static void isr_rx(void *param)
 			/* Get reference to ACL context */
 			const struct lll_conn *conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
 
+			LL_ASSERT(conn_lll != NULL);
+
 			/* If required, wait for CCM to finish
 			 */
 			if (pdu_rx->len && conn_lll->enc_rx) {
@@ -775,15 +813,12 @@ static void isr_rx(void *param)
 						(cis_lll->rx.payload_count / cis_lll->rx.bn)) *
 					       cig_lll->iso_interval_us;
 			iso_meta->timestamp %=
-				HAL_TICKER_TICKS_TO_US(BIT(HAL_TICKER_CNTR_MSBIT + 1U));
+				HAL_TICKER_TICKS_TO_US_64BIT(BIT64(HAL_TICKER_CNTR_MSBIT + 1U));
 			iso_meta->status = 0U;
 
 			ull_iso_pdu_rx_alloc();
 			iso_rx_put(node_rx->hdr.link, node_rx);
-
-#if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
 			iso_rx_sched();
-#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 
 			cis_lll->rx.bn_curr++;
 			if ((cis_lll->rx.bn_curr > cis_lll->rx.bn) &&
@@ -823,7 +858,7 @@ isr_rx_next_subevent:
 		do {
 			next_cis_lll = ull_conn_iso_lll_stream_get_by_group(cig_lll,
 									    &cis_handle_curr);
-		} while (next_cis_lll && !next_cis_lll->active);
+		} while (next_cis_lll && !next_cis_lll->prepared);
 
 		if (!next_cis_lll) {
 			goto isr_rx_done;
@@ -831,6 +866,7 @@ isr_rx_next_subevent:
 
 		/* Get reference to ACL context */
 		next_conn_lll = ull_conn_lll_get(next_cis_lll->acl_handle);
+		LL_ASSERT(next_conn_lll != NULL);
 
 		/* Calculate CIS channel if not already calculated */
 		if (se_curr < cis_lll->nse) {
@@ -838,9 +874,18 @@ isr_rx_next_subevent:
 			uint64_t payload_count;
 			uint16_t event_counter;
 			uint16_t data_chan_id;
+			memq_link_t *link;
+
+#if !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 			uint32_t subevent_us;
 			uint32_t start_us;
-			memq_link_t *link;
+
+			subevent_us = radio_tmr_ready_restore();
+			subevent_us += next_cis_lll->offset - cis_offset_first;
+
+			start_us = radio_tmr_start_us(1U, subevent_us);
+			LL_ASSERT(start_us == (subevent_us + 1U));
+#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 			/* Event counter value,  0-15 bit of cisEventCounter */
 			event_counter = next_cis_lll->event_count;
@@ -852,12 +897,6 @@ isr_rx_next_subevent:
 							   next_conn_lll->data_chan_count,
 							   &next_cis_chan_prn_s,
 							   &next_cis_chan_remap_idx);
-
-			subevent_us = radio_tmr_ready_restore();
-			subevent_us += next_cis_lll->offset - cis_offset_first;
-
-			start_us = radio_tmr_start_us(1U, subevent_us);
-			LL_ASSERT(start_us == (subevent_us + 1U));
 
 			old_cis_lll = cis_lll;
 			cis_lll = next_cis_lll;
@@ -935,7 +974,6 @@ static void isr_prepare_subevent(void *param)
 	struct pdu_cis *pdu_tx;
 	uint64_t payload_count;
 	uint8_t payload_index;
-	uint32_t subevent_us;
 	uint32_t start_us;
 
 	/* Get reference to CIS LLL context */
@@ -1004,6 +1042,8 @@ static void isr_prepare_subevent(void *param)
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	/* Get reference to ACL context */
 	const struct lll_conn *conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
+
+	LL_ASSERT(conn_lll != NULL);
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 	/* PHY */
@@ -1044,7 +1084,7 @@ static void isr_prepare_subevent(void *param)
 	radio_tmr_rx_disable();
 	radio_tmr_tx_enable();
 
-	radio_tmr_tifs_set(EVENT_IFS_US);
+	radio_tmr_tifs_set(cis_lll->tifs_us);
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	radio_switch_complete_and_rx(cis_lll->rx.phy);
@@ -1052,12 +1092,26 @@ static void isr_prepare_subevent(void *param)
 	radio_switch_complete_and_rx(0U);
 #endif /* !CONFIG_BT_CTLR_PHY */
 
+#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN) || \
+	defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	uint32_t subevent_us;
+
 	subevent_us = radio_tmr_ready_restore();
 	subevent_us += cis_lll->offset - cis_offset_first +
 		       (cis_lll->sub_interval * se_curr);
 
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	start_us = radio_tmr_start_us(1U, subevent_us);
+	LL_ASSERT(start_us == (subevent_us + 1U));
+
+#else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 	/* Compensate for the 1 us added by radio_tmr_start_us() */
 	start_us = subevent_us + 1U;
+#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+
+#endif /* HAL_RADIO_GPIO_HAVE_PA_PIN ||
+	* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER
+	*/
 
 	/* capture end of Tx-ed PDU, used to calculate HCTO. */
 	radio_tmr_end_capture();
@@ -1253,8 +1307,10 @@ static void payload_count_lazy_update(struct lll_conn_iso_stream *cis_lll, uint1
 			u = cis_lll->nse - ((cis_lll->nse / cis_lll->tx.bn) *
 					    (cis_lll->tx.bn - 1U -
 					     (payload_count % cis_lll->tx.bn)));
-			while (((cis_lll->tx.payload_count / cis_lll->tx.bn) + cis_lll->tx.ft) <
-			       (cis_lll->event_count + 1U)) {
+			while ((((cis_lll->tx.payload_count / cis_lll->tx.bn) + cis_lll->tx.ft) <
+				cis_lll->event_count) ||
+			       ((((cis_lll->tx.payload_count / cis_lll->tx.bn) + cis_lll->tx.ft) ==
+				 cis_lll->event_count) && (u <= cis_lll->nse))) {
 				/* sn and nesn are 1-bit, only Least Significant bit is needed */
 				cis_lll->sn++;
 				cis_lll->tx.bn_curr++;
@@ -1281,8 +1337,10 @@ static void payload_count_lazy_update(struct lll_conn_iso_stream *cis_lll, uint1
 			u = cis_lll->nse - ((cis_lll->nse / cis_lll->rx.bn) *
 					    (cis_lll->rx.bn - 1U -
 					     (payload_count % cis_lll->rx.bn)));
-			while (((cis_lll->rx.payload_count / cis_lll->rx.bn) + cis_lll->rx.ft) <
-			       (cis_lll->event_count + 1U)) {
+			while ((((cis_lll->rx.payload_count / cis_lll->rx.bn) + cis_lll->rx.ft) <
+				cis_lll->event_count) ||
+			       ((((cis_lll->rx.payload_count / cis_lll->rx.bn) + cis_lll->rx.ft) ==
+				 cis_lll->event_count) && (u <= cis_lll->nse))) {
 				/* sn and nesn are 1-bit, only Least Significant bit is needed */
 				cis_lll->nesn++;
 				cis_lll->rx.bn_curr++;

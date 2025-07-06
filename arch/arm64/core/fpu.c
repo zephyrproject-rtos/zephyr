@@ -159,7 +159,7 @@ void z_arm64_fpu_enter_exc(void)
  * simulate them and leave the FPU access disabled. This also avoids the
  * need for disabling interrupts in syscalls and IRQ handlers as well.
  */
-static bool simulate_str_q_insn(z_arch_esf_t *esf)
+static bool simulate_str_q_insn(struct arch_esf *esf)
 {
 	/*
 	 * Support only the "FP in exception" cases for now.
@@ -221,7 +221,7 @@ static bool simulate_str_q_insn(z_arch_esf_t *esf)
  * don't get interrupted that is. To ensure that we mask interrupts to
  * the triggering exception context.
  */
-void z_arm64_fpu_trap(z_arch_esf_t *esf)
+void z_arm64_fpu_trap(struct arch_esf *esf)
 {
 	__ASSERT(read_daif() & DAIF_IRQ_BIT, "must be called with IRQs disabled");
 

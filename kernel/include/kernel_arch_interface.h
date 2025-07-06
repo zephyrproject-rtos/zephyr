@@ -129,7 +129,10 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
  *        location, which must be updated.
  */
 static inline void arch_switch(void *switch_to, void **switched_from);
-#else
+#endif /* CONFIG_USE_SWITCH */
+
+#if !defined(CONFIG_USE_SWITCH) || defined(__DOXYGEN__)
+#if defined(__DOXYGEN__)
 /**
  * Cooperatively context switch
  *
@@ -143,6 +146,7 @@ static inline void arch_switch(void *switch_to, void **switched_from);
  *         blocking operation.
  */
 int arch_swap(unsigned int key);
+#endif /* __DOXYGEN__ */
 
 /**
  * Set the return value for the specified thread.
@@ -154,7 +158,7 @@ int arch_swap(unsigned int key);
  */
 static ALWAYS_INLINE void
 arch_thread_return_value_set(struct k_thread *thread, unsigned int value);
-#endif /* CONFIG_USE_SWITCH */
+#endif /* !CONFIG_USE_SWITCH || __DOXYGEN__ */
 
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 /**
@@ -207,6 +211,34 @@ int arch_float_disable(struct k_thread *thread);
  */
 int arch_float_enable(struct k_thread *thread, unsigned int options);
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
+
+#if defined(CONFIG_USERSPACE) && defined(CONFIG_ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET)
+/**
+ * @brief Obtain privileged stack usage information for the specified thread
+ *
+ * Must be called under supervisor mode.
+ *
+ * Some hardware may prevent inspection of a stack buffer currently in use.
+ * If this API is called from supervisor mode, on the currently running thread,
+ * on a platform which selects @kconfig{CONFIG_NO_UNUSED_STACK_INSPECTION}, an
+ * error will be generated.
+ *
+ * @param[in]  thread     Thread to inspect stack information
+ * @param[out] stack_size Filled in with the size of the stack space of
+ *                        the target thread in bytes.
+ * @param[out] unused_ptr Filled in with the unused stack space of
+ *                        the target thread in bytes.
+ *
+ * @return 0 on success
+ * @return -EBADF Bad thread object
+ * @return -EPERM No permissions on thread object
+ * #return -ENOTSUP Forbidden by hardware policy
+ * @return -EINVAL Thread is uninitialized or exited or not a user thread
+ * @return -EFAULT Bad memory address for unused_ptr
+ */
+int arch_thread_priv_stack_space_get(const struct k_thread *thread, size_t *stack_size,
+				     size_t *unused_ptr);
+#endif /* CONFIG_USERSPACE && CONFIG_ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET */
 
 /** @} */
 
@@ -341,7 +373,7 @@ int arch_page_phys_get(void *virt, uintptr_t *phys);
  * example of this is reserved regions in the first megabyte on PC-like systems.
  *
  * Implementations of this function should mark all relevant entries in
- * z_page_frames with K_PAGE_FRAME_RESERVED. This function is called at
+ * k_mem_page_frames with K_PAGE_FRAME_RESERVED. This function is called at
  * early system initialization with mm_lock held.
  */
 void arch_reserved_pages_update(void);
@@ -390,9 +422,9 @@ void arch_mem_page_in(void *addr, uintptr_t phys);
  * Update current page tables for a temporary mapping
  *
  * Map a physical page frame address to a special virtual address
- * Z_SCRATCH_PAGE, with read/write access to supervisor mode, such that
+ * K_MEM_SCRATCH_PAGE, with read/write access to supervisor mode, such that
  * when this function returns, the calling context can read/write the page
- * frame's contents from the Z_SCRATCH_PAGE address.
+ * frame's contents from the K_MEM_SCRATCH_PAGE address.
  *
  * This mapping only needs to be done on the current set of page tables,
  * as it is only used for a short period of time exclusively by the caller.
@@ -435,12 +467,12 @@ enum arch_page_location {
  * in that.
  *
  * @param addr Virtual data page address that took the page fault
- * @param [out] location In the case of ARCH_PAGE_FAULT_PAGED_OUT, the backing
+ * @param [out] location In the case of ARCH_PAGE_LOCATION_PAGED_OUT, the backing
  *        store location value used to retrieve the data page. In the case of
- *        ARCH_PAGE_FAULT_PAGED_IN, the physical address the page is mapped to.
- * @retval ARCH_PAGE_FAULT_PAGED_OUT The page was evicted to the backing store.
- * @retval ARCH_PAGE_FAULT_PAGED_IN The data page is resident in memory.
- * @retval ARCH_PAGE_FAULT_BAD The page is un-mapped or otherwise has had
+ *        ARCH_PAGE_LOCATION_PAGED_IN, the physical address the page is mapped to.
+ * @retval ARCH_PAGE_LOCATION_PAGED_OUT The page was evicted to the backing store.
+ * @retval ARCH_PAGE_LOCATION_PAGED_IN The data page is resident in memory.
+ * @retval ARCH_PAGE_LOCATION_BAD The page is un-mapped or otherwise has had
  *         invalid access
  */
 enum arch_page_location arch_page_location_get(void *addr, uintptr_t *location);
@@ -557,6 +589,22 @@ uintptr_t arch_page_info_get(void *addr, uintptr_t *location,
  */
 int arch_printk_char_out(int c);
 
+#ifdef CONFIG_ARCH_HAS_THREAD_NAME_HOOK
+/**
+ * Set thread name hook
+ *
+ * If implemented, any invocation of a function setting a thread name
+ * will invoke this function.
+ *
+ * @param thread    Pointer to thread object
+ * @param str       The thread name
+ *
+ * @retval 0        On success.
+ * @retval -EAGAIN  If the operation could not be performed.
+ */
+int arch_thread_name_set(struct k_thread *thread, const char *str);
+#endif /* CONFIG_ARCH_HAS_THREAD_NAME_HOOK */
+
 /**
  * Architecture-specific kernel initialization hook
  *
@@ -583,12 +631,30 @@ static inline void arch_nop(void);
  *
  * @param esf Exception Stack Frame (arch-specific)
  */
-void arch_coredump_info_dump(const z_arch_esf_t *esf);
+void arch_coredump_info_dump(const struct arch_esf *esf);
 
 /**
  * @brief Get the target code specified by the architecture.
  */
 uint16_t arch_coredump_tgt_code_get(void);
+
+/**
+ * @brief Get the stack pointer of the thread.
+ */
+uintptr_t arch_coredump_stack_ptr_get(const struct k_thread *thread);
+
+#if defined(CONFIG_USERSPACE) || defined(__DOXYGEN__)
+
+/**
+ * @brief Architecture-specific handling of dumping privileged stack
+ *
+ * This dumps the architecture-specific privileged stack during coredump.
+ *
+ * @param thread Pointer to thread object
+ */
+void arch_coredump_priv_stack_dump(struct k_thread *thread);
+
+#endif /* CONFIG_USERSPACE || __DOXYGEN__ */
 
 /** @} */
 

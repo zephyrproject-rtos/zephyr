@@ -15,9 +15,9 @@
 		};
 	};
 
-    aliases {
-        pwm-led0 = &green_pwm_led;
-    };
+	aliases {
+		pwm-led0 = &green_pwm_led;
+	};
 
 };
 

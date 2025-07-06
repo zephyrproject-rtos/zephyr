@@ -6,10 +6,6 @@ common:
     - socket
     - userspace
   filter: CONFIG_FULL_LIBC_SUPPORTED
-  # FIXME: This test fails very frequently on mps2/an385 due to the system
-  #        timer stability issues, so keep it disabled until the root cause
-  #        is fixed (GitHub issue zephyrproject-rtos/zephyr#48608).
-  platform_exclude: mps2/an385
 tests:
   net.socket.select:
     extra_configs:

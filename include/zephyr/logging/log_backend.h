@@ -83,6 +83,7 @@ struct log_backend_control_block {
 	void *ctx;
 	uint8_t id;
 	bool active;
+	bool initialized;
 
 	/* Initialization level. */
 	uint8_t level;
@@ -128,7 +129,7 @@ struct log_backend {
  * @brief Initialize or initiate the logging backend.
  *
  * If backend initialization takes longer time it could block logging thread
- * if backend is autostarted. That is because all backends are initilized in
+ * if backend is autostarted. That is because all backends are initialized in
  * the context of the logging thread. In that case, backend shall provide
  * function for polling for readiness (@ref log_backend_is_ready).
  *
@@ -140,6 +141,7 @@ static inline void log_backend_init(const struct log_backend *const backend)
 	if (backend->api->init) {
 		backend->api->init(backend);
 	}
+	backend->cb->initialized = true;
 }
 
 /**

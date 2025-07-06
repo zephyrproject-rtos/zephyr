@@ -8,7 +8,7 @@ Overview
 
 In order to test the actual framework's failure cases, this test suite has to do something unique.
 There's a subdirectory to this test called 'core'. This project builds a sample as a
-:ref:`native_sim <native_sim>` or `:ref:unit_testing <ztest_unit_testing>`
+:ref:`native_sim <native_sim>` or :ref:`unit_testing <ztest_unit_testing>`
 binary which is expected to fail by calling one of the following:
 - ``ztest_test_fail()`` during either the ``after`` or ``teardown`` phase of the test suite
 - ``ztest_test_skip()`` during either the ``after`` or ``teardown`` phase of the test suite

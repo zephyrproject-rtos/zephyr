@@ -31,11 +31,11 @@ see the following documentation:
 Programming
 ***********
 
-Set ``-DSHIELD=mikro_adc_click`` when you invoke ``west build``. For
+Set ``--shield mikro_adc_click`` when you invoke ``west build``. For
 example:
 
 .. zephyr-app-commands::
-   :zephyr-app: <my_app>
+   :app: <my_app>
    :board: lpcxpresso55s16
    :shield: mikroe_adc_click
    :goals: build

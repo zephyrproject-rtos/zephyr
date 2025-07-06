@@ -41,6 +41,12 @@ In particular, this rule applies if:
 General rules
 *************
 
+Wherever possible, when writing Devicetree bindings for Zephyr, try to follow
+the same `design guidelines laid out by Linux`_.
+
+.. _design guidelines laid out by Linux:
+   https://docs.kernel.org/devicetree/bindings/writing-bindings.html
+
 File names
 ==========
 
@@ -76,6 +82,8 @@ If your description is long or spans multiple lines, you must use this
 style:
 
 .. code-block:: yaml
+
+   title: I'm sure you need a short title.
 
    description: |
      My very long string

@@ -1,0 +1,109 @@
+# Copyright Nordic Semiconductor ASA 2024. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# The Kconfig file is dedicated to enumeration management group of
+# of MCUmgr subsystem and provides Kconfig options to configure
+# group commands behaviour and other aspects.
+#
+# Options defined in this file should be prefixed:
+#  MCUMGR_GRP_ENUM_ -- general group options;
+#
+# When adding Kconfig options, that control the same feature,
+# try to group them together by the same stem after prefix.
+
+menuconfig MCUMGR_GRP_ENUM
+	bool "MCUmgr handlers for enumeration management"
+	select MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_2
+	select MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_3 if ZCBOR_CANONICAL
+	help
+	  Enables MCUmgr handlers for enumeration management. This allows
+	  for listing supported command groups.
+
+if MCUMGR_GRP_ENUM
+
+menuconfig MCUMGR_GRP_ENUM_DETAILS
+	bool "Group details command"
+	select MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_3
+	select MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_4 if ZCBOR_CANONICAL
+	help
+	  Implements functionality for listing details about groups.
+
+	  Note: responses to this command can be very large
+
+if MCUMGR_GRP_ENUM_DETAILS
+
+config MCUMGR_GRP_ENUM_DETAILS_NAME
+	bool "Include group names in detail response"
+	default y
+	help
+	  Will include the name of groups in the detail command response.
+
+config MCUMGR_GRP_ENUM_DETAILS_HANDLERS
+	bool "Include group names in detail response"
+	default y
+	help
+	  Will include the number of handlers of groups in the detail command response.
+
+choice MCUMGR_GRP_ENUM_DETAILS_BUFFER_TYPE
+	prompt "Buffer type"
+	default MCUMGR_GRP_ENUM_DETAILS_BUFFER_TYPE_STACK
+	help
+	  Selects if the stack or heap will be used for variables that are needed when processing
+	  requests.
+
+menuconfig MCUMGR_GRP_ENUM_DETAILS_BUFFER_TYPE_STACK
+	bool "Stack (fixed size)"
+	help
+	  Use a fixed size stack buffer, any user-supplied values longer than this will be
+	  rejected.
+
+	  Note that stack usage for parameter storage alone will be
+	  MCUMGR_GRP_ENUM_DETAILS_BUFFER_TYPE_STACK * 2, therefore the MCUmgr stack should
+	  be appropriately sized.
+
+if MCUMGR_GRP_ENUM_DETAILS_BUFFER_TYPE_STACK
+
+config MCUMGR_GRP_ENUM_DETAILS_BUFFER_TYPE_STACK_ENTRIES
+	int "Maximum list item entries"
+	range 1 65535
+	default 16
+	help
+	  The number of maximum values in the list for the details command to support, each value
+	  occupies 2 bytes on the stack.
+
+endif # MCUMGR_GRP_ENUM_DETAILS_BUFFER_TYPE_STACK
+
+config MCUMGR_GRP_ENUM_DETAILS_BUFFER_TYPE_HEAP
+	bool "Heap (dynamic size)"
+	depends on COMMON_LIBC_MALLOC_ARENA_SIZE > 0
+	help
+	  Use dynamic heap memory allocation through malloc, if there is insufficient heap memory
+	  for the allocation then the request will be rejected.
+
+endchoice
+
+config MCUMGR_GRP_ENUM_DETAILS_HOOK
+	bool "Callback hook"
+	depends on MCUMGR_MGMT_NOTIFICATION_HOOKS
+	help
+	  Allows applications to add additional fields to responses for the details of supported
+	  command groups.
+
+config MCUMGR_GRP_ENUM_DETAILS_STATES
+	int
+	prompt "Predicted maximum number of entries per group" if MCUMGR_GRP_ENUM_DETAILS_HOOK
+	range 3 32
+	default 3
+	help
+	  This is used for defining CBOR map holding group data. The value does not affect memory
+	  allocation, it is used by zcbor to figure out how to encode map depending on its
+	  predicted size. This value should be increased from the default value by the number of
+	  additional fields that are returned by hooks.
+
+endif # MCUMGR_GRP_ENUM_DETAILS
+
+module = MCUMGR_GRP_ENUM
+module-str = mcumgr_grp_enum
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # MCUMGR_GRP_ENUM

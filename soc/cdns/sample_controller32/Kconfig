@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_XTENSA_SAMPLE_CONTROLLER32
+	select XTENSA
+	select XTENSA_HAL
+	select ATOMIC_OPERATIONS_C
+	select CPU_HAS_MPU
+	select ARCH_HAS_USERSPACE if XTENSA_MPU

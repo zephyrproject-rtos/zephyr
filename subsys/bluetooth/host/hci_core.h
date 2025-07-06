@@ -1,11 +1,25 @@
 /* hci_core.h - Bluetooth HCI core access */
 
 /*
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2025 Nordic Semiconductor ASA
  * Copyright (c) 2015-2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdbool.h>
+#include <stdint.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util_macro.h>
 
 /* LL connection parameters */
 #define LE_CONN_LATENCY		0x0000
@@ -24,6 +38,7 @@
 enum {
 	BT_EVENT_CMD_TX,
 	BT_EVENT_CONN_TX_QUEUE,
+	BT_EVENT_CONN_FREE_TX,
 };
 
 /* bt_dev flags: the flags defined here represent BT controller state */
@@ -33,14 +48,32 @@ enum {
 	BT_DEV_READY,
 	BT_DEV_PRESET_ID,
 	BT_DEV_HAS_PUB_KEY,
-	BT_DEV_PUB_KEY_BUSY,
 
+	/** The application either explicitly or implicitly instructed the stack to scan
+	 * for advertisers.
+	 *
+	 * Examples of such cases
+	 *  - Explicit scanning, @ref BT_LE_SCAN_USER_EXPLICIT_SCAN.
+	 *  - The application instructed the stack to automatically connect if a given device
+	 *    is detected.
+	 *  - The application wants to connect to a peer device using private addresses, but
+	 *    the controller resolving list is too small. The host will fallback to using
+	 *    host-based privacy and first scan for the device before it initiates a connection.
+	 *  - The application wants to synchronize to a periodic advertiser.
+	 *    The host will implicitly start scanning if it is not already doing so.
+	 *
+	 * The host needs to keep track of this state to ensure it can restart scanning
+	 * when a connection is established/lost, explicit scanning is started or stopped etc.
+	 * Also, when the scanner and advertiser share the same identity, the scanner may need
+	 * to be restarted upon RPA refresh.
+	 */
 	BT_DEV_SCANNING,
-	BT_DEV_EXPLICIT_SCAN,
-	BT_DEV_ACTIVE_SCAN,
-	BT_DEV_SCAN_FILTER_DUP,
-	BT_DEV_SCAN_FILTERED,
+
+	/**
+	 * Scanner is configured with a timeout.
+	 */
 	BT_DEV_SCAN_LIMITED,
+
 	BT_DEV_INITIATING,
 
 	BT_DEV_RPA_VALID,
@@ -53,6 +86,7 @@ enum {
 	BT_DEV_ISCAN,
 	BT_DEV_PSCAN,
 	BT_DEV_INQUIRY,
+	BT_DEV_LIMITED_DISCOVERABLE_MODE,
 #endif /* CONFIG_BT_CLASSIC */
 
 	/* Total number of flags - must be at the end of the enum */
@@ -61,7 +95,8 @@ enum {
 
 /* Flags which should not be cleared upon HCI_Reset */
 #define BT_DEV_PERSISTENT_FLAGS (BIT(BT_DEV_ENABLE) | \
-				 BIT(BT_DEV_PRESET_ID))
+				 BIT(BT_DEV_PRESET_ID) | \
+				 BIT(BT_DEV_DISABLE))
 
 #if defined(CONFIG_BT_EXT_ADV_LEGACY_SUPPORT)
 /* Check the feature bit for extended or legacy advertising commands */
@@ -250,7 +285,7 @@ struct bt_le_per_adv_sync {
 
 struct bt_dev_le {
 	/* LE features */
-	uint8_t			features[8];
+	uint8_t features[BT_LE_LOCAL_SUPPORTED_FEATURES_SIZE];
 	/* LE states */
 	uint64_t			states;
 
@@ -266,15 +301,24 @@ struct bt_dev_le {
 	uint8_t			iso_limit;
 	struct k_sem		iso_pkts;
 #endif /* CONFIG_BT_ISO */
+#if defined(CONFIG_BT_BROADCASTER)
+	uint16_t max_adv_data_len;
+#endif /* CONFIG_BT_BROADCASTER */
 
 #if defined(CONFIG_BT_SMP)
-	/* Size of the the controller resolving list */
+	/* Size of the controller resolving list */
 	uint8_t                    rl_size;
 	/* Number of entries in the resolving list. rl_entries > rl_size
 	 * means that host-side resolving is used.
 	 */
 	uint8_t                    rl_entries;
 #endif /* CONFIG_BT_SMP */
+	/* List of `struct bt_conn` that have either pending data to send, or
+	 * something to process (e.g. a disconnection event).
+	 *
+	 * Each element in this list contains a reference to its `conn` object.
+	 */
+	sys_slist_t		conn_ready;
 };
 
 #if defined(CONFIG_BT_CLASSIC)
@@ -342,7 +386,7 @@ struct bt_dev {
 	/* Supported commands */
 	uint8_t			supported_commands[64];
 
-#if defined(CONFIG_BT_HCI_VS_EXT)
+#if defined(CONFIG_BT_HCI_VS)
 	/* Vendor HCI support */
 	uint8_t                    vs_features[BT_DEV_VS_FEAT_MAX];
 	uint8_t                    vs_commands[BT_DEV_VS_CMDS_MAX];
@@ -372,8 +416,7 @@ struct bt_dev {
 	/* Queue for outgoing HCI commands */
 	struct k_fifo		cmd_tx_queue;
 
-	/* Registered HCI driver */
-	const struct bt_hci_driver *drv;
+	const struct device *hci;
 
 #if defined(CONFIG_BT_PRIVACY)
 	/* Local Identity Resolving Key */
@@ -408,6 +451,8 @@ extern sys_slist_t bt_auth_info_cbs;
 enum bt_security_err bt_security_err_get(uint8_t hci_err);
 #endif /* CONFIG_BT_SMP || CONFIG_BT_CLASSIC */
 
+int bt_hci_recv(const struct device *dev, struct net_buf *buf);
+
 /* Data type to store state related with command to be updated
  * when command completes successfully.
  */
@@ -440,14 +485,12 @@ uint8_t bt_get_phy(uint8_t hci_phy);
  * @return CTE type (@ref bt_df_cte_type).
  */
 int bt_get_df_cte_type(uint8_t hci_cte_type);
-int bt_le_scan_update(bool fast_scan);
 
 int bt_le_create_conn(const struct bt_conn *conn);
 int bt_le_create_conn_cancel(void);
 int bt_le_create_conn_synced(const struct bt_conn *conn, const struct bt_le_ext_adv *adv,
 			     uint8_t subevent);
 
-bool bt_addr_le_is_bonded(uint8_t id, const bt_addr_le_t *addr);
 const bt_addr_le_t *bt_lookup_id_addr(uint8_t id, const bt_addr_le_t *addr);
 
 int bt_send(struct net_buf *buf);
@@ -478,10 +521,6 @@ void bt_hci_user_passkey_notify(struct net_buf *buf);
 void bt_hci_user_passkey_req(struct net_buf *buf);
 void bt_hci_auth_complete(struct net_buf *buf);
 
-/* ECC HCI event handlers */
-void bt_hci_evt_le_pkey_complete(struct net_buf *buf);
-void bt_hci_evt_le_dhkey_complete(struct net_buf *buf);
-
 /* Common HCI event handlers */
 void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt);
 
@@ -499,6 +538,16 @@ void bt_hci_le_df_connectionless_iq_report(struct net_buf *buf);
 void bt_hci_le_vs_df_connectionless_iq_report(struct net_buf *buf);
 void bt_hci_le_past_received(struct net_buf *buf);
 void bt_hci_le_past_received_v2(struct net_buf *buf);
+
+/* CS HCI event handlers */
+void bt_hci_le_cs_read_remote_supported_capabilities_complete(struct net_buf *buf);
+void bt_hci_le_cs_read_remote_fae_table_complete(struct net_buf *buf);
+void bt_hci_le_cs_config_complete_event(struct net_buf *buf);
+void bt_hci_le_cs_security_enable_complete(struct net_buf *buf);
+void bt_hci_le_cs_procedure_enable_complete(struct net_buf *buf);
+void bt_hci_le_cs_subevent_result(struct net_buf *buf);
+void bt_hci_le_cs_subevent_result_continue(struct net_buf *buf);
+void bt_hci_le_cs_test_end_complete(struct net_buf *buf);
 
 /* Adv HCI event handlers */
 void bt_hci_le_adv_set_terminated(struct net_buf *buf);
@@ -525,3 +574,11 @@ void bt_hci_le_df_cte_req_failed(struct net_buf *buf);
 
 void bt_hci_le_per_adv_subevent_data_request(struct net_buf *buf);
 void bt_hci_le_per_adv_response_report(struct net_buf *buf);
+
+int bt_hci_read_remote_version(struct bt_conn *conn);
+int bt_hci_le_read_remote_features(struct bt_conn *conn);
+int bt_hci_le_read_max_data_len(uint16_t *tx_octets, uint16_t *tx_time);
+
+bool bt_drv_quirk_no_auto_dle(void);
+
+void bt_tx_irq_raise(void);

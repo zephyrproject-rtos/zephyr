@@ -5,6 +5,8 @@
 # Copyright (c) 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+source "Kconfig.constants"
+
 osource "${APPLICATION_SOURCE_DIR}/VERSION"
 
 # Include Kconfig.defconfig files first so that they can override defaults and
@@ -15,13 +17,13 @@ osource "${APPLICATION_SOURCE_DIR}/VERSION"
 # Shield defaults should have precedence over board defaults, which should have
 # precedence over SoC defaults, so include them in that order.
 #
-# $ARCH and $BOARD_DIR will be glob patterns when building documentation.
+# $ARCH and $KCONFIG_BOARD_DIR will be glob patterns when building documentation.
 # This loads custom shields defconfigs (from BOARD_ROOT)
 osource "$(KCONFIG_BINARY_DIR)/Kconfig.shield.defconfig"
 # This loads Zephyr base shield defconfigs
 source "boards/shields/*/Kconfig.defconfig"
 
-osource "$(BOARD_DIR)/Kconfig.defconfig"
+osource "$(KCONFIG_BOARD_DIR)/Kconfig.defconfig"
 
 # This loads Zephyr specific SoC root defconfigs
 source "$(KCONFIG_BINARY_DIR)/soc/Kconfig.defconfig"
@@ -213,12 +215,6 @@ config LINKER_SORT_BY_ALIGNMENT
 	  in decreasing size of symbols. This helps to minimize
 	  padding between symbols.
 
-config SRAM_VECTOR_TABLE
-	bool "Place the vector table in SRAM instead of flash"
-	help
-	  The option specifies that the vector table should be placed at the
-	  start of SRAM instead of the start of flash.
-
 config HAS_SRAM_OFFSET
 	bool
 	help
@@ -258,6 +254,20 @@ config LINKER_USE_PINNED_SECTION
 	  Requires that pinned sections exist in the architecture, SoC,
 	  board or custom linker script.
 
+config LINKER_USE_ONDEMAND_SECTION
+	bool "Use Evictable Linker Section"
+	depends on DEMAND_MAPPING
+	depends on !LINKER_USE_PINNED_SECTION
+	depends on !ARCH_MAPS_ALL_RAM
+	help
+	  If enabled, the symbols which may be evicted from memory
+	  will be put into a linker section reserved for on-demand symbols.
+	  During boot, the corresponding memory will be mapped as paged out.
+	  This is conceptually the opposite of CONFIG_LINKER_USE_PINNED_SECTION.
+
+	  Requires that on-demand sections exist in the architecture, SoC,
+	  board or custom linker script.
+
 config LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT
 	bool "Generic sections are present at boot" if DEMAND_PAGING && LINKER_USE_PINNED_SECTION
 	default y
@@ -273,7 +283,7 @@ config LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT
 
 config LINKER_LAST_SECTION_ID
 	bool "Last section identifier"
-	default y
+	default y if !ARM64
 	depends on ARM || ARM64 || RISCV
 	help
 	  If enabled, the last section will contain an identifier.
@@ -316,6 +326,13 @@ config LINKER_USE_RELAX
 
 endmenu # "Linker Sections"
 
+config LINKER_ITERABLE_SUBALIGN
+	int
+	default 8 if 64BIT
+	default 4
+	help
+	  Hidden option for the default subalignment of iterable sections.
+
 config LINKER_DEVNULL_SUPPORT
 	bool
 	default y if CPU_CORTEX_M || (RISCV && !64BIT)
@@ -338,6 +355,84 @@ endmenu
 
 menu "Compiler Options"
 
+config REQUIRES_STD_C99
+	bool
+	help
+	  Hidden option to select compiler support C99 standard or higher.
+
+config REQUIRES_STD_C11
+	bool
+	select REQUIRES_STD_C99
+	help
+	  Hidden option to select compiler support C11 standard or higher.
+
+config REQUIRES_STD_C17
+	bool
+	select REQUIRES_STD_C11
+	help
+	  Hidden option to select compiler support C17 standard or higher.
+
+config REQUIRES_STD_C23
+	bool
+	select REQUIRES_STD_C17
+	help
+	  Hidden option to select compiler support C23 standard or higher.
+
+choice STD_C
+	prompt "C Standard"
+	default STD_C23 if REQUIRES_STD_C23
+	default STD_C17 if REQUIRES_STD_C17
+	default STD_C11 if REQUIRES_STD_C11
+	default STD_C99
+	help
+	  C Standards.
+
+config STD_C90
+	bool "C90"
+	depends on !REQUIRES_STD_C99
+	help
+	  1989 C standard as completed in 1989 and ratified by ISO/IEC
+	  as ISO/IEC 9899:1990. This version is known as "ANSI C".
+
+config STD_C99
+	bool "C99"
+	depends on !REQUIRES_STD_C11
+	help
+	  1999 C standard.
+
+config STD_C11
+	bool "C11"
+	depends on !REQUIRES_STD_C17
+	help
+	  2011 C standard.
+
+config STD_C17
+	bool "C17"
+	depends on !REQUIRES_STD_C23
+	help
+	  2017 C standard, addresses defects in C11 without introducing
+	  new language features.
+
+config STD_C23
+	bool "C23"
+	help
+	  2023 C standard.
+
+endchoice
+
+config TOOLCHAIN_SUPPORTS_GNU_EXTENSIONS
+	bool
+	default y if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr"
+	help
+	  Hidden option to signal that toolchain supports GNU Extensions.
+
+config GNU_C_EXTENSIONS
+	bool "GNU C Extensions"
+	depends on TOOLCHAIN_SUPPORTS_GNU_EXTENSIONS
+	help
+	  Enable GNU C Extensions. GNU C provides several language features
+	  not found in ISO standard C.
+
 config CODING_GUIDELINE_CHECK
 	bool "Enforce coding guideline rules"
 	help
@@ -347,6 +442,7 @@ config CODING_GUIDELINE_CHECK
 config NATIVE_LIBC
 	bool
 	select FULL_LIBC_SUPPORTED
+	select TC_PROVIDES_POSIX_C_LANG_SUPPORT_R
 	help
 	  Zephyr will use the host system C library.
 
@@ -369,9 +465,11 @@ config NATIVE_APPLICATION
 	default y if ARCH_POSIX
 	depends on !NATIVE_LIBRARY
 	select NATIVE_BUILD
+	select DEPRECATED
 	help
 	  Build as a native application that can run on the host and using
-	  resources and libraries provided by the host.
+	  resources and libraries provided by the host. This option is deprecated
+	  and will be removed in Zephyr v4.3
 
 config NATIVE_LIBRARY
 	bool
@@ -393,6 +491,7 @@ choice COMPILER_OPTIMIZATIONS
 	prompt "Optimization level"
 	default NO_OPTIMIZATIONS    if COVERAGE
 	default DEBUG_OPTIMIZATIONS if DEBUG
+	default SIZE_OPTIMIZATIONS_AGGRESSIVE if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "llvm"
 	default SIZE_OPTIMIZATIONS
 	help
 	  Note that these flags shall only control the compiler
@@ -403,6 +502,12 @@ config SIZE_OPTIMIZATIONS
 	bool "Optimize for size"
 	help
 	  Compiler optimizations will be set to -Os independently of other
+	  options.
+
+config SIZE_OPTIMIZATIONS_AGGRESSIVE
+	bool "Aggressively optimize for size"
+	help
+	  Compiler optimizations will be set to -Oz independently of other
 	  options.
 
 config SPEED_OPTIMIZATIONS
@@ -428,11 +533,10 @@ config NO_OPTIMIZATIONS
 endchoice
 
 config LTO
-	bool "Link Time Optimization [EXPERIMENTAL]"
+	bool "Link Time Optimization"
 	depends on !(GEN_ISR_TABLES || GEN_IRQ_VECTOR_TABLE) || ISR_TABLES_LOCAL_DECLARATION
 	depends on !NATIVE_LIBRARY
 	depends on !CODE_DATA_RELOCATION
-	select EXPERIMENTAL
 	help
 	  This option enables Link Time Optimization.
 
@@ -440,6 +544,14 @@ config COMPILER_WARNINGS_AS_ERRORS
 	bool "Treat warnings as errors"
 	help
 	  Turn on "warning as error" toolchain flags
+
+config DEPRECATION_TEST
+	bool "Indicate test for deprecated feature"
+	help
+	  This option is selected by tests which check functionality of
+	  deprecated features. It ensures that COMPILER_WARNINGS_AS_ERRORS
+	  is not selected as that would generate errors when the deprecated
+	  features are used.
 
 config COMPILER_SAVE_TEMPS
 	bool "Save temporary object files"
@@ -511,6 +623,13 @@ config MISRA_SANE
 	  standard for safety reasons.  Specifically variable length
 	  arrays are not permitted (and gcc will enforce this).
 
+config TOOLCHAIN_SUPPORTS_VLA_IN_STATEMENTS
+	bool
+	default y
+	help
+	  Hidden symbol to state if the toolchain can handle vla in
+	  statements.
+
 endmenu
 
 choice
@@ -567,6 +686,24 @@ config OUTPUT_DISASSEMBLE_ALL
 	  The .lst file will contain complete disassembly of the firmware
 	  not just those expected to contain instructions including zeros
 
+config OUTPUT_DISASSEMBLY_WITH_SOURCE
+	bool "Include source code in output disassembly file"
+	default y
+	depends on OUTPUT_DISASSEMBLY && !OUTPUT_DISASSEMBLE_ALL
+	help
+	  The .lst file will also contain the source code. Having
+	  control over this can be useful for reproducible builds
+	  since it can be used to remove one of the elements of
+	  the .lst file that can vary across platforms because
+	  of reasons such as having ".." include paths.
+
+config OUTPUT_DISASSEMBLY_NO_ALIASES
+	bool "Disassemble with raw instruction mnemonics"
+	depends on OUTPUT_DISASSEMBLY
+	help
+	  The .lst file will contain raw instruction mnemonic instead of
+	  pseudo instructions.
+
 config OUTPUT_PRINT_MEMORY_USAGE
 	bool "Print memory usage to stdout"
 	default y
@@ -588,14 +725,33 @@ config CLEANUP_INTERMEDIATE_FILES
 	  from the build process. Note this breaks incremental builds, west spdx
 	  (Software Bill of Material generation), and maybe others.
 
+config BUILD_GAP_FILL_PATTERN
+	hex "Gap fill pattern"
+	default 0xFF
+	help
+	  Pattern used for gap filling of output files.
+	  This value should be set to the value of a clean flash as this can
+	  significantly reduce flash write times.
+	  This setting only defines the gap fill pattern and doesn't enable gap
+	  filling.
+	  Note: binary files are always gap filled as they contain no address
+	  information.
+
 config BUILD_NO_GAP_FILL
-	bool "Don't fill gaps in generated hex/bin/s19 files."
+	bool "Don't fill gaps in generated hex/s19 files [DEPRECATED]."
+	select DEPRECATED
 
 config BUILD_OUTPUT_HEX
 	bool "Build a binary in HEX format"
 	help
 	  Build an Intel HEX binary zephyr/zephyr.hex in the build directory.
 	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
+
+config BUILD_OUTPUT_HEX_GAP_FILL
+	bool "Fill gaps in hex files"
+	depends on !BUILD_NO_GAP_FILL
+	help
+	  Fill gaps in hex based files.
 
 config BUILD_OUTPUT_BIN
 	bool "Build a binary in BIN format"
@@ -631,11 +787,23 @@ config BUILD_OUTPUT_S19
 	  Build an S19 binary zephyr/zephyr.s19 in the build directory.
 	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
 
+config BUILD_OUTPUT_S19_GAP_FILL
+	bool "Fill gaps in s19 files"
+	depends on !BUILD_NO_GAP_FILL
+	help
+	  Fill gaps in s19 based files.
+
 config BUILD_OUTPUT_UF2
 	bool "Build a binary in UF2 format"
 	depends on BUILD_OUTPUT_BIN
 	help
 	  Build a UF2 binary zephyr/zephyr.uf2 in the build directory.
+	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
+
+config BUILD_OUTPUT_MOT
+	bool "Build a binary in MOT format"
+	help
+	  Build a MOT binary zephyr/zephyr.mot in the build directory.
 	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
 
 if BUILD_OUTPUT_UF2
@@ -647,7 +815,8 @@ config BUILD_OUTPUT_UF2_FAMILY_ID
 	default "0xada52840" if SOC_NRF52840_QIAA
 	default "0x4fb2d5bd" if SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX
 	default "0x2abc77ec" if SOC_SERIES_LPC55XXX
-	default "0xe48bff56" if SOC_SERIES_RP2XXX
+	default "0xe48bff56" if SOC_SERIES_RP2040
+	default "0xe48bff57" if SOC_SERIES_RP2350
 	default "0x68ed2b88" if SOC_SERIES_SAMD21
 	default "0x55114460" if SOC_SERIES_SAMD51
 	default "0x647824b6" if SOC_SERIES_STM32F0X
@@ -688,6 +857,11 @@ config BUILD_OUTPUT_STRIPPED
 	  Build a stripped binary zephyr/zephyr.strip in the build directory.
 	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
 
+config BUILD_OUTPUT_COMPRESS_DEBUG_SECTIONS
+	bool "Compress debug sections in the ELF file"
+	help
+	  Compress debug sections in the ELF file to reduce the file size.
+
 config BUILD_OUTPUT_ADJUST_LMA
 	string
 	help
@@ -711,6 +885,23 @@ config BUILD_OUTPUT_ADJUST_LMA
 	  config BUILD_OUTPUT_ADJUST_LMA
 	    default "$(dt_chosen_reg_addr_hex,$(DT_CHOSEN_IMAGE_M4))-\
 	             $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))"
+
+config BUILD_OUTPUT_ADJUST_LMA_SECTIONS
+	def_string "*"
+	depends on BUILD_OUTPUT_ADJUST_LMA!=""
+	help
+	  This determines the output sections to which the above LMA adjustment
+	  will be applied.
+	  The value can be the name of a section in the final ELF, like "text".
+	  It can also be a pattern with wildcards, such as "*bss", which could
+	  match more than one section name. Multiple such patterns can be given
+	  as a ";"-separated list. It's possible to supply a 'negative' pattern
+	  starting with "!", to exclude sections matched by a preceding pattern.
+
+	  By default, all sections will have their LMA adjusted. The following
+	  example excludes one section produced by the code relocation feature:
+	  config BUILD_OUTPUT_ADJUST_LMA_SECTIONS
+	    default "*;!.extflash_text_reloc"
 
 config BUILD_OUTPUT_INFO_HEADER
 	bool "Create a image information header"
@@ -822,6 +1013,8 @@ config DEPRECATED
 	help
 	  Symbol that must be selected by a feature or module if it is
 	  considered to be deprecated.
+	  When adding this to an option, remember to follow the instructions in
+	  https://docs.zephyrproject.org/latest/develop/api/api_lifecycle.html#deprecated
 
 config WARN_DEPRECATED
 	bool
@@ -879,32 +1072,6 @@ config IS_BOOTLOADER
 	  This option indicates that Zephyr will act as a bootloader to execute
 	  a separate Zephyr image payload.
 
-config BOOTLOADER_SRAM_SIZE
-	int "SRAM reserved for bootloader [DEPRECATED]"
-	default 0
-	depends on !XIP || IS_BOOTLOADER
-	depends on ARM || XTENSA
-	help
-	  This option specifies the amount of SRAM (measure in kB) reserved for
-	  a bootloader image, when either:
-	  - the Zephyr image itself is to act as the bootloader, or
-	  - Zephyr is a !XIP image, which implicitly assumes existence of a
-	  bootloader that loads the Zephyr !XIP image onto SRAM.
-
-	  This option is deprecated, users should transition to using DTS to set this, if needed.
-	  To be removed after Zephyr 3.7 release.
-
-config BOOTLOADER_SRAM_SIZE_DEPRECATED
-	bool
-	default y
-	select DEPRECATED
-	depends on BOOTLOADER_SRAM_SIZE != 0
-	depends on !XIP || IS_BOOTLOADER
-	depends on ARM || XTENSA
-	help
-	  Non-prompt symbol to indicate that the deprecated BOOTLOADER_SRAM_SIZE Kconfig has a
-	  non-0 value. Please transition to using devicetree.
-
 config BOOTLOADER_BOSSA
 	bool "BOSSA bootloader support"
 	select USE_DT_CODE_PARTITION
@@ -945,5 +1112,22 @@ config BOOTLOADER_BOSSA_ADAFRUIT_UF2
 	  0xf01669ef as the magic value to enter the bootloader.
 
 endchoice
+
+endmenu
+
+menu "Compatibility"
+
+config LEGACY_GENERATED_INCLUDE_PATH
+	bool "Legacy include path for generated headers"
+	default y
+	help
+	  Allow applications and libraries to use the Zephyr legacy include
+	  path for the generated headers which does not use the `zephyr/` prefix.
+
+	  From now on, i.e., the preferred way to include the `version.h` header is to
+	  use <zephyr/version.h>, this Kconfig is currently enabled by default so that
+	  user applications won't immediately fail to compile.
+
+	  This Kconfig will be deprecated and eventually removed in the future releases.
 
 endmenu

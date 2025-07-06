@@ -7,7 +7,7 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/i2c/rtio.h>
 #include <zephyr/rtio/rtio.h>
-#include <zephyr/rtio/rtio_mpsc.h>
+#include <zephyr/sys/mpsc_lockfree.h>
 #include <zephyr/sys/__assert.h>
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
@@ -52,17 +52,56 @@ struct rtio_sqe *i2c_rtio_copy(struct rtio *r, struct rtio_iodev *iodev, const s
 	return sqe;
 }
 
+struct rtio_sqe *i2c_rtio_copy_reg_write_byte(struct rtio *r, struct rtio_iodev *iodev,
+					      uint8_t reg_addr, uint8_t data)
+{
+	uint8_t msg[2];
+
+	struct rtio_sqe *sqe = rtio_sqe_acquire(r);
+
+	if (sqe == NULL) {
+		rtio_sqe_drop_all(r);
+		return NULL;
+	}
+	msg[0] = reg_addr;
+	msg[1] = data;
+	rtio_sqe_prep_tiny_write(sqe, iodev, RTIO_PRIO_NORM, msg, sizeof(msg), NULL);
+	sqe->iodev_flags = RTIO_IODEV_I2C_STOP;
+	return sqe;
+}
+
+struct rtio_sqe *i2c_rtio_copy_reg_burst_read(struct rtio *r, struct rtio_iodev *iodev,
+					      uint8_t start_addr, void *buf, size_t num_bytes)
+{
+	struct rtio_sqe *sqe = rtio_sqe_acquire(r);
+
+	if (sqe == NULL) {
+		rtio_sqe_drop_all(r);
+		return NULL;
+	}
+	rtio_sqe_prep_tiny_write(sqe, iodev, RTIO_PRIO_NORM, &start_addr, 1, NULL);
+	sqe->flags |= RTIO_SQE_TRANSACTION;
+
+	sqe = rtio_sqe_acquire(r);
+	if (sqe == NULL) {
+		rtio_sqe_drop_all(r);
+		return NULL;
+	}
+	rtio_sqe_prep_read(sqe, iodev, RTIO_PRIO_NORM, buf, num_bytes, NULL);
+	sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+
+	return sqe;
+}
+
 void i2c_rtio_init(struct i2c_rtio *ctx, const struct device *dev)
 {
 	k_sem_init(&ctx->lock, 1, 1);
-	rtio_mpsc_init(&ctx->io_q);
+	mpsc_init(&ctx->io_q);
 	ctx->txn_curr = NULL;
 	ctx->txn_head = NULL;
 	ctx->dt_spec.bus = dev;
 	ctx->iodev.data = &ctx->dt_spec;
 	ctx->iodev.api = &i2c_iodev_api;
-	/* TODO drop the builtin submission queue? */
-	rtio_mpsc_init(&ctx->iodev.iodev_sq);
 }
 
 /**
@@ -82,7 +121,7 @@ static bool i2c_rtio_next(struct i2c_rtio *ctx, bool completion)
 		return false;
 	}
 
-	struct rtio_mpsc_node *next = rtio_mpsc_pop(&ctx->io_q);
+	struct mpsc_node *next = mpsc_pop(&ctx->io_q);
 
 	/* Nothing left to do */
 	if (next == NULL) {
@@ -119,7 +158,7 @@ bool i2c_rtio_complete(struct i2c_rtio *ctx, int status)
 }
 bool i2c_rtio_submit(struct i2c_rtio *ctx, struct rtio_iodev_sqe *iodev_sqe)
 {
-	rtio_mpsc_push(&ctx->io_q, &iodev_sqe->q);
+	mpsc_push(&ctx->io_q, &iodev_sqe->q);
 	return i2c_rtio_next(ctx, false);
 }
 
@@ -141,8 +180,6 @@ int i2c_rtio_transfer(struct i2c_rtio *ctx, struct i2c_msg *msgs, uint8_t num_ms
 		res = -ENOMEM;
 		goto out;
 	}
-
-	sqe->flags &= ~RTIO_SQE_TRANSACTION;
 
 	rtio_submit(r, 1);
 

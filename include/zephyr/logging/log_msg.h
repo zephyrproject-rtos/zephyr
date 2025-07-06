@@ -72,7 +72,7 @@ struct log_msg_hdr {
 /* Attempting to keep best alignment. When address is 64 bit and timestamp 32
  * swap the order to have 16 byte header instead of 24 byte.
  */
-#if (INTPTR_MAX > INT32_MAX) && !CONFIG_LOG_TIMESTAMP_64BIT
+#if (INTPTR_MAX > INT32_MAX) && !defined(CONFIG_LOG_TIMESTAMP_64BIT)
 	log_timestamp_t timestamp;
 	const void *source;
 #else
@@ -150,10 +150,10 @@ enum z_log_msg_mode {
 	.valid = 0, \
 	.busy = 0, \
 	.type = Z_LOG_MSG_LOG, \
-	.domain = _domain_id, \
-	.level = _level, \
-	.package_len = _plen, \
-	.data_len = _dlen, \
+	.domain = (_domain_id), \
+	.level = (_level), \
+	.package_len = (_plen), \
+	.data_len = (_dlen), \
 }
 
 #define Z_LOG_MSG_CBPRINTF_FLAGS(_cstr_cnt) \
@@ -165,11 +165,11 @@ enum z_log_msg_mode {
 #define Z_LOG_MSG_ON_STACK_ALLOC(ptr, len) \
 	long long _ll_buf[DIV_ROUND_UP(len, sizeof(long long))]; \
 	long double _ld_buf[DIV_ROUND_UP(len, sizeof(long double))]; \
-	ptr = (sizeof(long double) == Z_LOG_MSG_ALIGNMENT) ? \
+	(ptr) = (sizeof(long double) == Z_LOG_MSG_ALIGNMENT) ? \
 			(struct log_msg *)_ld_buf : (struct log_msg *)_ll_buf; \
 	if (IS_ENABLED(CONFIG_LOG_TEST_CLEAR_MESSAGE_SPACE)) { \
 		/* During test fill with 0's to simplify message comparison */ \
-		memset(ptr, 0, len); \
+		memset((ptr), 0, (len)); \
 	}
 #else /* Z_LOG_MSG_USE_VLA */
 /* When VLA cannot be used we need to trick compiler a bit and create multiple
@@ -203,7 +203,7 @@ enum z_log_msg_mode {
 	} \
 	if (IS_ENABLED(CONFIG_LOG_TEST_CLEAR_MESSAGE_SPACE)) { \
 		/* During test fill with 0's to simplify message comparison */ \
-		memset(ptr, 0, len); \
+		memset((ptr), 0, (len)); \
 	}
 #endif /* Z_LOG_MSG_USE_VLA */
 
@@ -211,7 +211,7 @@ enum z_log_msg_mode {
 	offsetof(struct log_msg, data)
 
 #define Z_LOG_MSG_LEN(pkg_len, data_len) \
-	(offsetof(struct log_msg, data) + pkg_len + (data_len))
+	(offsetof(struct log_msg, data) + (pkg_len) + (data_len))
 
 #define Z_LOG_MSG_ALIGNED_WLEN(pkg_len, data_len) \
 	DIV_ROUND_UP(ROUND_UP(Z_LOG_MSG_LEN(pkg_len, data_len), \
@@ -336,9 +336,9 @@ do { \
 		CBPRINTF_STATIC_PACKAGE(NULL, 0, _plen, Z_LOG_MSG_ALIGN_OFFSET, _options, \
 					__VA_ARGS__); \
 	} \
-	TOOLCHAIN_IGNORE_WSHADOW_BEGIN \
+	TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_SHADOW) \
 	struct log_msg *_msg; \
-	TOOLCHAIN_IGNORE_WSHADOW_END \
+	TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_SHADOW) \
 	Z_LOG_MSG_ON_STACK_ALLOC(_msg, Z_LOG_MSG_LEN(_plen, 0)); \
 	Z_LOG_ARM64_VLA_PROTECT(); \
 	if (_plen != 0) { \
@@ -351,7 +351,7 @@ do { \
 					   (uint32_t)_plen, _dlen); \
 	LOG_MSG_DBG("creating message on stack: package len: %d, data len: %d\n", \
 			_plen, (int)(_dlen)); \
-	z_log_msg_static_create((void *)_source, _desc, _msg->data, _data); \
+	z_log_msg_static_create((void *)(_source), _desc, _msg->data, (_data)); \
 } while (false)
 
 #ifdef CONFIG_LOG_SPEED
@@ -499,22 +499,20 @@ do { \
  *
  * @param ...  Optional string with arguments (fmt, ...). It may be empty.
  */
-#if defined(CONFIG_LOG_ALWAYS_RUNTIME) || \
-	(!defined(CONFIG_LOG) && \
-		(!TOOLCHAIN_HAS_PRAGMA_DIAG || !TOOLCHAIN_HAS_C_AUTO_TYPE))
+#if defined(CONFIG_LOG_ALWAYS_RUNTIME) || !defined(CONFIG_LOG)
 #define Z_LOG_MSG_CREATE2(_try_0cpy, _mode,  _cstr_cnt, _domain_id, _source,\
 			  _level, _data, _dlen, ...) \
 do {\
 	Z_LOG_MSG_STR_VAR(_fmt, ##__VA_ARGS__) \
-	z_log_msg_runtime_create(_domain_id, (void *)_source, \
-				  _level, (uint8_t *)_data, _dlen,\
+	z_log_msg_runtime_create((_domain_id), (void *)(_source), \
+				  (_level), (uint8_t *)(_data), (_dlen),\
 				  Z_LOG_MSG_CBPRINTF_FLAGS(_cstr_cnt) | \
 				  (IS_ENABLED(CONFIG_LOG_USE_TAGGED_ARGUMENTS) ? \
 				   CBPRINTF_PACKAGE_ARGS_ARE_TAGGED : 0), \
 				  Z_LOG_FMT_RUNTIME_ARGS(_fmt, ##__VA_ARGS__));\
-	_mode = Z_LOG_MSG_MODE_RUNTIME; \
+	(_mode) = Z_LOG_MSG_MODE_RUNTIME; \
 } while (false)
-#else /* CONFIG_LOG_ALWAYS_RUNTIME */
+#else /* CONFIG_LOG_ALWAYS_RUNTIME || !CONFIG_LOG */
 #define Z_LOG_MSG_CREATE3(_try_0cpy, _mode,  _cstr_cnt, _domain_id, _source,\
 			  _level, _data, _dlen, ...) \
 do { \
@@ -522,11 +520,11 @@ do { \
 	bool has_rw_str = CBPRINTF_MUST_RUNTIME_PACKAGE( \
 					Z_LOG_MSG_CBPRINTF_FLAGS(_cstr_cnt), \
 					__VA_ARGS__); \
-	if (IS_ENABLED(CONFIG_LOG_SPEED) && _try_0cpy && ((_dlen) == 0) && !has_rw_str) {\
+	if (IS_ENABLED(CONFIG_LOG_SPEED) && (_try_0cpy) && ((_dlen) == 0) && !has_rw_str) {\
 		LOG_MSG_DBG("create zero-copy message\n");\
 		Z_LOG_MSG_SIMPLE_CREATE(_cstr_cnt, _domain_id, _source, \
 					_level, Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__)); \
-		_mode = Z_LOG_MSG_MODE_ZERO_COPY; \
+		(_mode) = Z_LOG_MSG_MODE_ZERO_COPY; \
 	} else { \
 		IF_ENABLED(UTIL_AND(IS_ENABLED(CONFIG_LOG_SIMPLE_MSG_OPTIMIZE), \
 				    UTIL_AND(UTIL_NOT(_domain_id), UTIL_NOT(_cstr_cnt))), \
@@ -544,9 +542,9 @@ do { \
 		LOG_MSG_DBG("create on stack message\n");\
 		Z_LOG_MSG_STACK_CREATE(_cstr_cnt, _domain_id, _source, _level, _data, \
 					_dlen, Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__)); \
-		_mode = Z_LOG_MSG_MODE_FROM_STACK; \
+		(_mode) = Z_LOG_MSG_MODE_FROM_STACK; \
 	} \
-	(void)_mode; \
+	(void)(_mode); \
 } while (false)
 
 #if defined(__cplusplus)
@@ -562,7 +560,7 @@ do { \
 
 /* Create local variable from input variable (expect for the first (fmt) argument). */
 #define Z_LOG_LOCAL_ARG_CREATE(idx, arg) \
-	COND_CODE_0(idx, (), (Z_AUTO_TYPE Z_LOG_LOCAL_ARG_NAME(idx, arg) = (arg) + 0))
+	COND_CODE_0(idx, (), (Z_AUTO_TYPE Z_LOG_LOCAL_ARG_NAME(idx, arg) = Z_ARGIFY(arg)))
 
 /* First level of processing creates stack variables to be passed for further processing.
  * This is done to prevent multiple evaluations of input arguments (in case argument
@@ -571,17 +569,12 @@ do { \
 #define Z_LOG_MSG_CREATE2(_try_0cpy, _mode, _cstr_cnt,  _domain_id, _source, \
 			   _level, _data, _dlen, ...) \
 do { \
-	_Pragma("GCC diagnostic push") \
-	_Pragma("GCC diagnostic ignored \"-Wpointer-arith\"") \
 	FOR_EACH_IDX(Z_LOG_LOCAL_ARG_CREATE, (;), __VA_ARGS__); \
-	_Pragma("GCC diagnostic pop") \
 	Z_LOG_MSG_CREATE3(_try_0cpy, _mode,  _cstr_cnt, _domain_id, _source,\
 			   _level, _data, _dlen, \
 			   FOR_EACH_IDX(Z_LOG_LOCAL_ARG_NAME, (,), __VA_ARGS__)); \
 } while (false)
-#endif /* CONFIG_LOG_ALWAYS_RUNTIME ||
-	* (!LOG && (!TOOLCHAIN_HAS_PRAGMA_DIAG || !TOOLCHAIN_HAS_C_AUTO_TYPE))
-	*/
+#endif /* CONFIG_LOG_ALWAYS_RUNTIME || !CONFIG_LOG */
 
 
 #define Z_LOG_MSG_CREATE(_try_0cpy, _mode,  _domain_id, _source,\
@@ -652,7 +645,7 @@ __syscall void z_log_msg_simple_create_2(const void *source, uint32_t level,
  *
  * @param package Package.
  *
- * @oaram data Data.
+ * @param data Data.
  */
 __syscall void z_log_msg_static_create(const void *source,
 					const struct log_msg_desc desc,
@@ -857,7 +850,7 @@ static inline uint8_t *log_msg_get_package(struct log_msg *msg, size_t *len)
  * @}
  */
 
-#include <syscalls/log_msg.h>
+#include <zephyr/syscalls/log_msg.h>
 
 #ifdef __cplusplus
 }

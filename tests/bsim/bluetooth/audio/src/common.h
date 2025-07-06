@@ -10,25 +10,30 @@
 #ifndef ZEPHYR_TEST_BSIM_BT_AUDIO_TEST_
 #define ZEPHYR_TEST_BSIM_BT_AUDIO_TEST_
 
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/audio/cap.h>
+#include <zephyr/bluetooth/audio/csip.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/gatt.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/atomic_types.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/types.h>
 
 #include "bstests.h"
 #include "bs_types.h"
 #include "bs_tracing.h"
-#include "time_machine.h"
-
-#include <zephyr/types.h>
-#include <stddef.h>
-#include <errno.h>
-#include <zephyr/sys_clock.h>
-
-#include <zephyr/bluetooth/audio/bap.h>
-#include <zephyr/bluetooth/audio/cap.h>
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/hci.h>
-#include <zephyr/bluetooth/conn.h>
-#include <zephyr/bluetooth/uuid.h>
-#include <zephyr/bluetooth/gatt.h>
 
 static const uint8_t mock_iso_data[] = {
 	0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
@@ -67,6 +72,13 @@ static const uint8_t mock_iso_data[] = {
 	0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7, 0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xfe, 0xff,
 };
 
+/* The sample SIRK as defined by the CSIS spec Appendix A.1.
+ * Sample data is Big Endian, so we reverse it for little-endian
+ */
+#define TEST_SAMPLE_SIRK                                                                           \
+	{REVERSE_ARGS(0x45, 0x7d, 0x7d, 0x09, 0x21, 0xa1, 0xfd, 0x22, 0xce, 0xcd, 0x8c, 0x86,      \
+		      0xdd, 0x72, 0xcc, 0xcd)}
+
 #define MIN_SEND_COUNT 100
 #define WAIT_SECONDS   100                           /* seconds */
 #define WAIT_TIME (WAIT_SECONDS * USEC_PER_SEC) /* microseconds*/
@@ -77,16 +89,20 @@ static const uint8_t mock_iso_data[] = {
 #define SET_FLAG(flag) (void)atomic_set(&flag, (atomic_t)true)
 #define UNSET_FLAG(flag) (void)atomic_clear(&flag)
 #define TEST_FLAG(flag) (atomic_get(&flag) == (atomic_t)true)
-#define WAIT_FOR_FLAG(flag) \
-	while (!(bool)atomic_get(&flag)) { \
-		(void)k_sleep(K_MSEC(1)); \
+#define WAIT_FOR_FLAG(flag)                                                                        \
+	while (!(bool)atomic_get(&flag)) {                                                         \
+		(void)k_sleep(K_MSEC(1));                                                          \
+	}
+#define WAIT_FOR_AND_CLEAR_FLAG(flag)                                                              \
+	while (!(bool)atomic_clear(&flag)) {                                                       \
+		(void)k_sleep(K_MSEC(1));                                                          \
 	}
 #define WAIT_FOR_UNSET_FLAG(flag) \
 	while (atomic_get(&flag) != (atomic_t)false) { \
 		(void)k_sleep(K_MSEC(1)); \
 	}
 
-
+extern enum bst_result_t bst_result;
 #define FAIL(...) \
 	do { \
 		bst_result = Failed; \
@@ -99,26 +115,43 @@ static const uint8_t mock_iso_data[] = {
 		bs_trace_info_time(1, "PASSED: " __VA_ARGS__); \
 	} while (0)
 
-#define AD_SIZE 1
-
-#define INVALID_BROADCAST_ID (BT_AUDIO_BROADCAST_ID_MAX + 1)
 #define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20 /* Set the timeout relative to interval */
 #define PA_SYNC_SKIP         5
 
-#define PBP_STREAMS_TO_SEND  2
+#define PBP_STREAMS_TO_SEND 2
+
+#define SINK_CONTEXT                                                                               \
+	(BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | BT_AUDIO_CONTEXT_TYPE_MEDIA |                         \
+	 BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL)
+#define SOURCE_CONTEXT                                                                             \
+	(BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL |                \
+	 BT_AUDIO_CONTEXT_TYPE_NOTIFICATIONS)
+
+#define TMAP_ROLE_SUPPORTED                                                                        \
+	((IS_ENABLED(CONFIG_BT_TMAP_CG_SUPPORTED) ? BT_TMAP_ROLE_CG : 0U) |                        \
+	 (IS_ENABLED(CONFIG_BT_TMAP_CT_SUPPORTED) ? BT_TMAP_ROLE_CT : 0U) |                        \
+	 (IS_ENABLED(CONFIG_BT_TMAP_UMS_SUPPORTED) ? BT_TMAP_ROLE_UMS : 0U) |                      \
+	 (IS_ENABLED(CONFIG_BT_TMAP_UMR_SUPPORTED) ? BT_TMAP_ROLE_UMR : 0U) |                      \
+	 (IS_ENABLED(CONFIG_BT_TMAP_BMS_SUPPORTED) ? BT_TMAP_ROLE_BMS : 0U) |                      \
+	 (IS_ENABLED(CONFIG_BT_TMAP_BMR_SUPPORTED) ? BT_TMAP_ROLE_BMR : 0U))
 
 extern struct bt_le_scan_cb common_scan_cb;
-extern const struct bt_data ad[AD_SIZE];
 extern struct bt_conn *default_conn;
 extern atomic_t flag_connected;
 extern atomic_t flag_disconnected;
 extern atomic_t flag_conn_updated;
+extern atomic_t flag_audio_received;
 extern volatile bt_security_t security_level;
+extern uint8_t csip_rsi[BT_CSIP_RSI_SIZE];
 
 void disconnected(struct bt_conn *conn, uint8_t reason);
+void setup_connectable_adv(struct bt_le_ext_adv **ext_adv);
+void setup_broadcast_adv(struct bt_le_ext_adv **adv);
+void start_broadcast_adv(struct bt_le_ext_adv *adv);
 void test_tick(bs_time_t HW_device_time);
 void test_init(void);
 uint16_t get_dev_cnt(void);
+uint16_t interval_to_sync_timeout(uint16_t pa_interval);
 void backchannel_sync_send(uint dev);
 void backchannel_sync_send_all(void);
 void backchannel_sync_wait(uint dev);
@@ -131,12 +164,12 @@ struct audio_test_stream {
 	struct bt_cap_stream stream;
 
 	uint16_t seq_num;
-	bool tx_active;
 	size_t tx_cnt;
 	uint16_t tx_sdu_size;
 
 	struct bt_iso_recv_info last_info;
 	size_t rx_cnt;
+	size_t valid_rx_cnt;
 };
 
 static inline struct bt_cap_stream *cap_stream_from_bap_stream(struct bt_bap_stream *bap_stream)

@@ -18,14 +18,18 @@ from twisterlib.platform import Platform
 def testinstance() -> TestInstance:
     testsuite = TestSuite('.', 'samples/hello', 'unit.test')
     testsuite.harness_config = {}
+    testsuite.harness = 'pytest'
     testsuite.ignore_faults = False
+    testsuite.sysbuild = False
     platform = Platform()
 
-    testinstance = TestInstance(testsuite, platform, 'outdir')
+    testinstance = TestInstance(testsuite, platform, 'zephyr', 'outdir')
     testinstance.handler = mock.Mock()
     testinstance.handler.options = mock.Mock()
     testinstance.handler.options.verbose = 1
+    testinstance.handler.options.fixture = ['fixture1:option1', 'fixture2']
     testinstance.handler.options.pytest_args = None
+    testinstance.handler.options.extra_test_args = []
     testinstance.handler.type_str = 'native'
     return testinstance
 
@@ -41,7 +45,9 @@ def test_pytest_command(testinstance: TestInstance, device_type):
         'samples/hello/pytest',
         f'--build-dir={testinstance.build_dir}',
         f'--junit-xml={testinstance.build_dir}/report.xml',
-        f'--device-type={device_type}'
+        f'--device-type={device_type}',
+        '--twister-fixture=fixture1:option1',
+        '--twister-fixture=fixture2'
     ]
 
     command = pytest_harness.generate_command()
@@ -68,9 +74,18 @@ def test_pytest_command_extra_args(testinstance: TestInstance):
         assert c in command
 
 
+def test_pytest_command_extra_test_args(testinstance: TestInstance):
+    pytest_harness = Pytest()
+    extra_test_args = ['-stop_at=3', '-no-rt']
+    testinstance.handler.options.extra_test_args = extra_test_args
+    pytest_harness.configure(testinstance)
+    command = pytest_harness.generate_command()
+    assert f'--extra-test-args={extra_test_args[0]} {extra_test_args[1]}' in command
+
+
 def test_pytest_command_extra_args_in_options(testinstance: TestInstance):
     pytest_harness = Pytest()
-    pytest_args_from_yaml = '-k test_from_yaml'
+    pytest_args_from_yaml = '--extra-option'
     pytest_args_from_cmd = ['-k', 'test_from_cmd']
     testinstance.testsuite.harness_config['pytest_args'] = [pytest_args_from_yaml]
     testinstance.handler.options.pytest_args = pytest_args_from_cmd
@@ -78,7 +93,8 @@ def test_pytest_command_extra_args_in_options(testinstance: TestInstance):
     command = pytest_harness.generate_command()
     assert pytest_args_from_cmd[0] in command
     assert pytest_args_from_cmd[1] in command
-    assert pytest_args_from_yaml not in command
+    assert pytest_args_from_yaml in command
+    assert command.index(pytest_args_from_yaml) < command.index(pytest_args_from_cmd[1])
 
 
 @pytest.mark.parametrize(
@@ -165,7 +181,7 @@ def test_if_report_is_parsed(pytester, testinstance: TestInstance):
 
     pytest_harness._update_test_status()
 
-    assert pytest_harness.state == "passed"
+    assert pytest_harness.status == "passed"
     assert testinstance.status == "passed"
     assert len(testinstance.testcases) == 2
     for tc in testinstance.testcases:
@@ -195,7 +211,7 @@ def test_if_report_with_error(pytester, testinstance: TestInstance):
 
     pytest_harness._update_test_status()
 
-    assert pytest_harness.state == "failed"
+    assert pytest_harness.status == "failed"
     assert testinstance.status == "failed"
     assert len(testinstance.testcases) == 2
     for tc in testinstance.testcases:
@@ -231,7 +247,7 @@ def test_if_report_with_skip(pytester, testinstance: TestInstance):
 
     pytest_harness._update_test_status()
 
-    assert pytest_harness.state == "skipped"
+    assert pytest_harness.status == "skipped"
     assert testinstance.status == "skipped"
     assert len(testinstance.testcases) == 2
     for tc in testinstance.testcases:
@@ -261,7 +277,7 @@ def test_if_report_with_filter(pytester, testinstance: TestInstance):
     pytest_harness.configure(testinstance)
     pytest_harness.report_file = report_file
     pytest_harness._update_test_status()
-    assert pytest_harness.state == "passed"
+    assert pytest_harness.status == "passed"
     assert testinstance.status == "passed"
     assert len(testinstance.testcases) == 1
 
@@ -287,5 +303,5 @@ def test_if_report_with_no_collected(pytester, testinstance: TestInstance):
     pytest_harness.configure(testinstance)
     pytest_harness.report_file = report_file
     pytest_harness._update_test_status()
-    assert pytest_harness.state == "skipped"
+    assert pytest_harness.status == "skipped"
     assert testinstance.status == "skipped"

@@ -41,7 +41,7 @@ for Mikro-BUS connectors and defines node aliases for SPI and GPIO interfaces
 Programming
 ***********
 
-Set ``-DSHIELD=mikroe_eth_click`` when you invoke ``west build``. For example:
+Set ``--shield mikroe_eth_click`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/dhcpv4_client

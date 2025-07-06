@@ -4,10 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/ {
+	 chosen {
+		 zephyr,bt-hci = &hci_spi;
+	 };
+ };
+
 &arduino_spi {
 	cs-gpios = <&arduino_header 1 GPIO_ACTIVE_LOW>;	/* A1 */
 
-	bluenrg-2@0 {
+	hci_spi: bluenrg-2@0 {
 		compatible = "st,hci-spi-v2";
 		reg = <0>;
 		reset-gpios = <&arduino_header 13 GPIO_ACTIVE_LOW>;  /* D7 */

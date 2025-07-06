@@ -23,6 +23,7 @@ LOG_MODULE_DECLARE(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 #include "ipv4.h"
 #include "route.h"
 #include "net_stats.h"
+#include "pmtu.h"
 
 /* Timeout for various buffer allocations in this file. */
 #define NET_BUF_TIMEOUT K_MSEC(100)
@@ -31,16 +32,16 @@ static void reassembly_timeout(struct k_work *work);
 
 static struct net_ipv4_reassembly reassembly[CONFIG_NET_IPV4_FRAGMENT_MAX_COUNT];
 
-static struct net_ipv4_reassembly *reassembly_get(uint16_t id, struct in_addr *src,
-						  struct in_addr *dst, uint8_t protocol)
+static struct net_ipv4_reassembly *reassembly_get(uint16_t id, const uint8_t *src,
+						  const uint8_t *dst, uint8_t protocol)
 {
 	int i, avail = -1;
 
 	for (i = 0; i < CONFIG_NET_IPV4_FRAGMENT_MAX_COUNT; i++) {
 		if (k_work_delayable_remaining_get(&reassembly[i].timer) &&
 		    reassembly[i].id == id &&
-		    net_ipv4_addr_cmp(src, &reassembly[i].src) &&
-		    net_ipv4_addr_cmp(dst, &reassembly[i].dst) &&
+		    net_ipv4_addr_cmp_raw(src, reassembly[i].src.s4_addr) &&
+		    net_ipv4_addr_cmp_raw(dst, reassembly[i].dst.s4_addr) &&
 		    reassembly[i].protocol == protocol) {
 			return &reassembly[i];
 		}
@@ -60,8 +61,8 @@ static struct net_ipv4_reassembly *reassembly_get(uint16_t id, struct in_addr *s
 
 	k_work_reschedule(&reassembly[avail].timer, K_SECONDS(CONFIG_NET_IPV4_FRAGMENT_TIMEOUT));
 
-	net_ipaddr_copy(&reassembly[avail].src, src);
-	net_ipaddr_copy(&reassembly[avail].dst, dst);
+	net_ipv4_addr_copy_raw(reassembly[avail].src.s4_addr, src);
+	net_ipv4_addr_copy_raw(reassembly[avail].dst.s4_addr, dst);
 
 	reassembly[avail].protocol = protocol;
 	reassembly[avail].id = id;
@@ -205,7 +206,7 @@ static void reassemble_packet(struct net_ipv4_reassembly *reass)
 	net_pkt_set_data(pkt, &ipv4_access);
 	net_pkt_set_ip_reassembled(pkt, true);
 
-	LOG_DBG("New pkt %p IPv4 len is %d bytes", pkt, net_pkt_get_len(pkt));
+	LOG_DBG("New pkt %p IPv4 len is %zd bytes", pkt, net_pkt_get_len(pkt));
 
 	/* We need to use the queue when feeding the packet back into the
 	 * IP stack as we might run out of stack if we call processing_data()
@@ -330,8 +331,7 @@ enum net_verdict net_ipv4_handle_fragment_hdr(struct net_pkt *pkt, struct net_ip
 	flag = ntohs(*((uint16_t *)&hdr->offset));
 	id = ntohs(*((uint16_t *)&hdr->id));
 
-	reass = reassembly_get(id, (struct in_addr *)hdr->src,
-			       (struct in_addr *)hdr->dst, hdr->proto);
+	reass = reassembly_get(id, hdr->src, hdr->dst, hdr->proto);
 	if (!reass) {
 		LOG_ERR("Cannot get reassembly slot, dropping pkt %p", pkt);
 		goto drop;
@@ -440,6 +440,8 @@ static int send_ipv4_fragment(struct net_pkt *pkt, uint16_t rand_id, uint16_t fi
 	net_pkt_cursor_backup(pkt, &cur_pkt);
 	net_pkt_cursor_backup(frag_pkt, &cur);
 
+	net_pkt_set_ll_proto_type(frag_pkt, net_pkt_ll_proto_type(pkt));
+
 	/* Copy the original IPv4 headers back to the fragment packet */
 	if (net_pkt_copy(frag_pkt, pkt, net_pkt_ip_hdr_len(pkt))) {
 		goto fail;
@@ -467,7 +469,7 @@ static int send_ipv4_fragment(struct net_pkt *pkt, uint16_t rand_id, uint16_t fi
 
 	ipv4_hdr = (struct net_ipv4_hdr *)net_pkt_get_data(frag_pkt, &ipv4_access);
 	if (!ipv4_hdr) {
-		return -ENOBUFS;
+		goto fail;
 	}
 
 	memcpy(ipv4_hdr->id, &rand_id, sizeof(rand_id));
@@ -607,7 +609,7 @@ int net_ipv4_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 	return 0;
 }
 
-enum net_verdict net_ipv4_prepare_for_send(struct net_pkt *pkt)
+enum net_verdict net_ipv4_prepare_for_send_fragment(struct net_pkt *pkt)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv4_access, struct net_ipv4_hdr);
 	struct net_ipv4_hdr *ip_hdr;
@@ -624,10 +626,26 @@ enum net_verdict net_ipv4_prepare_for_send(struct net_pkt *pkt)
 	 * and we can skip other checks.
 	 */
 	if (ip_hdr->id[0] == 0 && ip_hdr->id[1] == 0) {
-		uint16_t mtu = net_if_get_mtu(net_pkt_iface(pkt));
 		size_t pkt_len = net_pkt_get_len(pkt);
+		uint16_t mtu;
 
-		mtu = MAX(NET_IPV4_MTU, mtu);
+		if (IS_ENABLED(CONFIG_NET_IPV4_PMTU)) {
+			struct sockaddr_in dst = {
+				.sin_family = AF_INET,
+				.sin_addr = *((struct in_addr *)ip_hdr->dst),
+			};
+
+			ret = net_pmtu_get_mtu((struct sockaddr *)&dst);
+			if (ret <= 0) {
+				goto use_interface_mtu;
+			}
+
+			mtu = ret;
+		} else {
+use_interface_mtu:
+			mtu = net_if_get_mtu(net_pkt_iface(pkt));
+			mtu = MAX(NET_IPV4_MTU, mtu);
+		}
 
 		if (pkt_len > mtu) {
 			ret = net_ipv4_send_fragmented_pkt(net_pkt_iface(pkt), pkt, pkt_len, mtu);
@@ -635,16 +653,15 @@ enum net_verdict net_ipv4_prepare_for_send(struct net_pkt *pkt)
 			if (ret < 0) {
 				LOG_DBG("Cannot fragment IPv4 pkt (%d)", ret);
 
-				if (ret == -ENOMEM || ret == -ENOBUFS || ret == -EPERM) {
-					/* Try to send the packet if we could not allocate enough
-					 * network packets or if the don't fragment flag is set
+				if (ret == -EPERM) {
+					/* Try to send the packet if the don't fragment flag is set
 					 * and hope the original large packet can be sent OK.
 					 */
 					goto ignore_frag_error;
-				} else {
-					/* Other error, drop the packet */
-					return NET_DROP;
 				}
+
+				/* Other error, drop the packet */
+				return NET_DROP;
 			}
 
 			/* We need to unref here because we simulate the packet being sent. */

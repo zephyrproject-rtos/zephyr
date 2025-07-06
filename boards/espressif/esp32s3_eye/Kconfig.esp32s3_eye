@@ -1,0 +1,7 @@
+# Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ESP32S3_EYE
+	select SOC_ESP32S3_WROOM_N8R8
+	select SOC_ESP32S3_PROCPU if BOARD_ESP32S3_EYE_ESP32S3_PROCPU
+	select SOC_ESP32S3_APPCPU if BOARD_ESP32S3_EYE_ESP32S3_APPCPU

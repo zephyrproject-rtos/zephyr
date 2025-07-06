@@ -1,0 +1,31 @@
+/*
+ * Copyright 2024 PHYTEC Messtechnik GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_imx93_m33.dtsi>
+#include "phyboard_nash-pinctrl.dtsi"
+
+/ {
+	model = "PHYTEC phyBOARD-Nash i.MX93";
+	compatible = "phytec,phyboard_nash";
+
+	chosen {
+		/* TCM */
+		zephyr,flash = &itcm;
+		zephyr,sram = &dtcm;
+
+		zephyr,console = &lpuart2;
+		zephyr,shell-uart = &lpuart2;
+	};
+};
+
+&lpuart2 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart2_default>;
+	pinctrl-names = "default";
+};

@@ -73,9 +73,6 @@ extern "C" {
 #define USBD_DEFINE_CFG_DATA(name) \
 	static STRUCT_SECTION_ITERABLE(usb_cfg_data, name)
 
-#define USBD_CFG_DATA_DEFINE(p, name) __DEPRECATED_MACRO \
-	static __in_section(_usb_cfg_data, static, p##_name) __used __aligned(4)
-
 /*************************************************************************
  *  USB configuration
  **************************************************************************/
@@ -92,6 +89,8 @@ extern "C" {
 /**
  * @brief USB Device Core Layer API
  * @defgroup _usb_device_core_api USB Device Core API
+ * @since 1.5
+ * @version 1.0.0
  * @{
  */
 
@@ -445,6 +444,23 @@ int usb_wakeup_request(void);
  * @return true if remote wakeup has been enabled by the host, false otherwise.
  */
 bool usb_get_remote_wakeup_status(void);
+
+/**
+ * @brief Helper macro to place the BOS compatibility descriptor
+ *        in the right memory section.
+ */
+#define USB_DEVICE_BOS_DESC_DEFINE_CAP \
+	static __in_section(usb, bos_desc_area, 1) __aligned(1) __used
+
+/**
+ * @brief Register BOS capability descriptor
+ *
+ * This function should be used by the application to register BOS capability
+ * descriptors before the USB device stack is enabled.
+ *
+ * @param[in] hdr Pointer to BOS capability descriptor
+ */
+void usb_bos_register_cap(void *hdr);
 
 /**
  * @}

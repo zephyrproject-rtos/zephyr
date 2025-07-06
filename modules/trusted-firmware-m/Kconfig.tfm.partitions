@@ -7,7 +7,7 @@ if BUILD_WITH_TFM
 
 config TFM_PARTITION_PROTECTED_STORAGE
 	bool "Secure partition 'Protected Storage'"
-	depends on TFM_PARTITION_PLATFORM # Specfically TFM_SP_PLATFORM_NV_COUNTER service
+	depends on TFM_PARTITION_PLATFORM # Specifically TFM_SP_PLATFORM_NV_COUNTER service
 	depends on TFM_PARTITION_INTERNAL_TRUSTED_STORAGE
 	depends on TFM_PARTITION_CRYPTO
 	default y
@@ -45,7 +45,6 @@ config TFM_PARTITION_INITIAL_ATTESTATION
 	bool "Secure partition 'Initial Attestation'"
 	depends on TFM_PARTITION_CRYPTO
 	depends on TFM_INITIAL_ATTESTATION_KEY
-	default n
 	help
 	  Setting this option will cause '-DTFM_PARTITION_INITIAL_ATTESTATION'
 	  to be passed to the TF-M build system. Look at 'config_default.cmake'
@@ -66,7 +65,7 @@ config TFM_PARTITION_PLATFORM
 	  repository.
 
 config TFM_PARTITION_FIRMWARE_UPDATE
-	bool "Include the secure parition 'Firmware Update'"
+	bool "Include the secure partition 'Firmware Update'"
 	select TFM_MCUBOOT_DATA_SHARING
 	default n
 	help

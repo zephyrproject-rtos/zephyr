@@ -21,15 +21,18 @@
 #endif
 
 #if defined(CONFIG_DISK_DRIVER_SDMMC)
-#define DISK_NAME_PHYS CONFIG_SDMMC_VOLUME_NAME
-#elif IS_ENABLED(CONFIG_DISK_DRIVER_MMC)
-#define DISK_NAME_PHYS CONFIG_MMC_VOLUME_NAME
-#elif IS_ENABLED(CONFIG_DISK_DRIVER_RAM)
-#define DISK_NAME_PHYS "RAM"
-#elif IS_ENABLED(CONFIG_DISK_DRIVER_FLASH)
+#define DISK_NAME_PHYS "SD"
+#elif defined(CONFIG_DISK_DRIVER_MMC)
+#define DISK_NAME_PHYS "SD2"
+#elif defined(CONFIG_DISK_DRIVER_FLASH)
 #define DISK_NAME_PHYS "NAND"
-#elif IS_ENABLED(CONFIG_NVME)
+#elif defined(CONFIG_NVME)
 #define DISK_NAME_PHYS "nvme0n0"
+#elif defined(CONFIG_DISK_DRIVER_RAM)
+/* Since ramdisk is enabled by default on e.g. qemu boards, it needs to be checked last to not
+ * override other backends.
+ */
+#define DISK_NAME_PHYS "RAM"
 #else
 #error "No disk device defined, is your board supported?"
 #endif
@@ -282,4 +285,11 @@ static void *disk_driver_setup(void)
 	return NULL;
 }
 
-ZTEST_SUITE(disk_driver, NULL, disk_driver_setup, NULL, NULL, NULL);
+static void disk_driver_teardown(void *fixture)
+{
+#ifdef CONFIG_DISK_DRIVER_LOOPBACK
+	(void)loopback_disk_access_unregister(&lo_access);
+#endif
+}
+
+ZTEST_SUITE(disk_driver, NULL, disk_driver_setup, NULL, NULL, disk_driver_teardown);

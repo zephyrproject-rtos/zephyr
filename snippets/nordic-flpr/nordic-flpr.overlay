@@ -6,7 +6,3 @@
 &cpuflpr_vpr {
 	status = "okay";
 };
-
-&cpuflpr_vevif_remote {
-	status = "okay";
-};

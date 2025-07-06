@@ -22,18 +22,15 @@ LOG_MODULE_DECLARE(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 #include "connection.h"
 #include "ipv4.h"
 #include "net_stats.h"
+#include "igmp.h"
 
 /* Timeout for various buffer allocations in this file. */
 #define PKT_WAIT_TIME K_MSEC(50)
 
 #define IPV4_OPT_HDR_ROUTER_ALERT_LEN 4
 
-#define IGMPV3_MODE_IS_INCLUDE        0x01
-#define IGMPV3_MODE_IS_EXCLUDE        0x02
-#define IGMPV3_CHANGE_TO_INCLUDE_MODE 0x03
-#define IGMPV3_CHANGE_TO_EXCLUDE_MODE 0x04
-#define IGMPV3_ALLOW_NEW_SOURCES      0x05
-#define IGMPV3_BLOCK_OLD_SOURCES      0x06
+#define IGMPV2_PAYLOAD_MIN_LEN 8
+#define IGMPV3_PAYLOAD_MIN_LEN 12
 
 static const struct in_addr all_systems = { { { 224, 0, 0, 1 } } };
 #if defined(CONFIG_NET_IPV4_IGMPV3)
@@ -71,7 +68,7 @@ static int igmp_v2_create(struct net_pkt *pkt, const struct in_addr *addr,
 
 	igmp->type = type;
 	igmp->max_rsp = 0U;
-	net_ipaddr_copy(&igmp->address, addr);
+	net_ipaddr_copy(UNALIGNED_MEMBER_ADDR(igmp, address), addr);
 	igmp->chksum = 0;
 
 	if (net_pkt_set_data(pkt, &igmp_access)) {
@@ -416,28 +413,29 @@ drop:
 
 enum net_verdict net_ipv4_igmp_input(struct net_pkt *pkt, struct net_ipv4_hdr *ip_hdr)
 {
-#if defined(CONFIG_NET_IPV4_IGMPV3)
-	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(igmpv3_access, struct net_ipv4_igmp_v3_query);
-	struct net_ipv4_igmp_v3_query *igmpv3_hdr;
-#endif
-	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(igmpv2_access, struct net_ipv4_igmp_v2_query);
-	struct net_ipv4_igmp_v2_query *igmpv2_hdr;
-	enum igmp_version version;
 	int ret;
-	int igmp_buf_len = pkt->buffer->len - net_pkt_ip_hdr_len(pkt);
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(igmpv2_access, struct net_ipv4_igmp_v2_query);
+
+	struct net_ipv4_igmp_v2_query *igmpv2_hdr;
+	int igmp_buf_len =
+		pkt->buffer->len - (net_pkt_ip_hdr_len(pkt) + net_pkt_ipv4_opts_len(pkt));
+#if defined(CONFIG_NET_IPV4_IGMPV3)
+	struct net_ipv4_igmp_v3_query *igmpv3_hdr;
+	enum igmp_version version;
+
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(igmpv3_access, struct net_ipv4_igmp_v3_query);
 
 	/* Detect IGMP type (RFC 3376 ch 7.1) */
-	if (igmp_buf_len == 8) {
+	if (igmp_buf_len == IGMPV2_PAYLOAD_MIN_LEN) {
 		/* IGMPv1/2 detected */
 		version = IGMPV2;
-	} else if (igmp_buf_len >= 12) {
+	} else if (igmp_buf_len >= IGMPV3_PAYLOAD_MIN_LEN) {
 		/* IGMPv3 detected */
 		version = IGMPV3;
-#if !defined(CONFIG_NET_IPV4_IGMPV3)
-		NET_DBG("DROP: %sv3 msg received but %s support is disabled", "IGMP", "IGMP");
-		return NET_DROP;
-#endif
 	} else {
+#else
+	if (igmp_buf_len < IGMPV2_PAYLOAD_MIN_LEN) {
+#endif
 		NET_DBG("DROP: unsupported payload length");
 		return NET_DROP;
 	}
@@ -586,7 +584,7 @@ int net_ipv4_igmp_join(struct net_if *iface, const struct in_addr *addr,
 		       const struct igmp_param *param)
 {
 	struct net_if_mcast_addr *maddr;
-	int ret;
+	int ret = 0;
 
 #if defined(CONFIG_NET_IPV4_IGMPV3)
 	if (param != NULL) {
@@ -624,6 +622,10 @@ int net_ipv4_igmp_join(struct net_if *iface, const struct in_addr *addr,
 
 	net_if_ipv4_maddr_join(iface, maddr);
 
+	if (net_if_is_offloaded(iface)) {
+		goto out;
+	}
+
 #if defined(CONFIG_NET_IPV4_IGMPV3)
 	ret = igmpv3_send_generic(iface, maddr);
 #else
@@ -642,6 +644,7 @@ int net_ipv4_igmp_join(struct net_if *iface, const struct in_addr *addr,
 	}
 #endif
 
+out:
 	net_if_mcast_monitor(iface, &maddr->address, true);
 
 	net_mgmt_event_notify_with_info(NET_EVENT_IPV4_MCAST_JOIN, iface, &maddr->address.in_addr,
@@ -653,11 +656,15 @@ int net_ipv4_igmp_join(struct net_if *iface, const struct in_addr *addr,
 int net_ipv4_igmp_leave(struct net_if *iface, const struct in_addr *addr)
 {
 	struct net_if_mcast_addr *maddr;
-	int ret;
+	int ret = 0;
 
 	maddr = net_if_ipv4_maddr_lookup(addr, &iface);
 	if (!maddr) {
 		return -ENOENT;
+	}
+
+	if (net_if_is_offloaded(iface)) {
+		goto out;
 	}
 
 #if defined(CONFIG_NET_IPV4_IGMPV3)
@@ -672,6 +679,7 @@ int net_ipv4_igmp_leave(struct net_if *iface, const struct in_addr *addr)
 		return ret;
 	}
 
+out:
 	if (!net_if_ipv4_maddr_rm(iface, addr)) {
 		return -EINVAL;
 	}

@@ -54,9 +54,25 @@ config I2C_CALLBACK
 	help
 	  API and implementations of i2c_transfer_cb.
 
+config I2C_ALLOW_NO_STOP_TRANSACTIONS
+	bool "Allows I2C transfers with no STOP on the last transaction [DEPRECATED]"
+	depends on !I2C_NRFX_TWI
+	depends on !I2C_NRFX_TWIM
+	depends on !I2C_STM32
+	depends on !I2C_GD32
+	depends on !I2C_ESP32
+	depends on (!I2C_DW || I2C_RTS5912)
+	select DEPRECATED
+	help
+	  Allow I2C transactions with no STOP on the last message. This is
+	  unsupported and can leave the bus in an unexpected state. The option
+	  will be removed in Zephyr 4.1.
+
 config I2C_RTIO
 	bool "I2C RTIO API"
+	select EXPERIMENTAL
 	select RTIO
+	select RTIO_WORKQ
 	help
 	  API and implementations of I2C for RTIO
 
@@ -81,45 +97,72 @@ config I2C_RTIO_CQ_SIZE
 	  is going to be 4 given the device address, register address, and a value
 	  to be read or written.
 
+config I2C_RTIO_FALLBACK_MSGS
+	int "Number of available i2c_msg structs for the default handler to use"
+	default 4
+	help
+		When RTIO is used with a driver that does not yet implement the submit API
+		natively the submissions are converted back to struct i2c_msg values that
+		are given to i2c_transfer. This requires some number of msgs be available to convert
+		the submissions into on the stack. MISRA rules dictate we must know this in
+		advance.
+
+		In all likelihood 4 is going to work for everyone, but in case you do end up with
+		an issue where you are using RTIO, your driver does not implement submit natively,
+		and get an error relating to not enough i2c msgs this is the Kconfig to manipulate.
+
 endif # I2C_RTIO
 
 
 # Include these first so that any properties (e.g. defaults) below can be
 # overridden (by defining symbols in multiple locations)
-source "drivers/i2c/Kconfig.b91"
-source "drivers/i2c/Kconfig.cc13xx_cc26xx"
-source "drivers/i2c/Kconfig.dw"
-source "drivers/i2c/Kconfig.esp32"
 source "drivers/i2c/target/Kconfig"
-source "drivers/i2c/Kconfig.gpio"
-source "drivers/i2c/Kconfig.xec"
-source "drivers/i2c/Kconfig.nrfx"
-source "drivers/i2c/Kconfig.i2c_emul"
-source "drivers/i2c/Kconfig.it8xxx2"
-source "drivers/i2c/Kconfig.sbcon"
-source "drivers/i2c/Kconfig.sifive"
-source "drivers/i2c/Kconfig.stm32"
-source "drivers/i2c/Kconfig.sam0"
-source "drivers/i2c/Kconfig.sam_twihs"
-source "drivers/i2c/Kconfig.litex"
-source "drivers/i2c/Kconfig.lpc11u6x"
-source "drivers/i2c/Kconfig.npcx"
-source "drivers/i2c/Kconfig.test"
-source "drivers/i2c/Kconfig.rcar"
-source "drivers/i2c/Kconfig.tca954x"
+# zephyr-keep-sorted-start
+source "drivers/i2c/Kconfig.ambiq"
+source "drivers/i2c/Kconfig.andes_atciic100"
+source "drivers/i2c/Kconfig.b91"
+source "drivers/i2c/Kconfig.bcm_iproc"
+source "drivers/i2c/Kconfig.cc13xx_cc26xx"
+source "drivers/i2c/Kconfig.cdns"
+source "drivers/i2c/Kconfig.dw"
+source "drivers/i2c/Kconfig.ene"
+source "drivers/i2c/Kconfig.esp32"
 source "drivers/i2c/Kconfig.gd32"
+source "drivers/i2c/Kconfig.gpio"
+source "drivers/i2c/Kconfig.i2c_emul"
 source "drivers/i2c/Kconfig.ifx_cat1"
 source "drivers/i2c/Kconfig.ifx_xmc4"
-source "drivers/i2c/Kconfig.andes_atciic100"
-source "drivers/i2c/Kconfig.sc18im704"
-source "drivers/i2c/Kconfig.smartbond"
-source "drivers/i2c/Kconfig.xilinx_axi"
+source "drivers/i2c/Kconfig.it51xxx"
+source "drivers/i2c/Kconfig.it8xxx2"
+source "drivers/i2c/Kconfig.litex"
+source "drivers/i2c/Kconfig.lpc11u6x"
+source "drivers/i2c/Kconfig.max32"
 source "drivers/i2c/Kconfig.mchp_mss"
-source "drivers/i2c/Kconfig.sedi"
-source "drivers/i2c/Kconfig.ambiq"
-source "drivers/i2c/Kconfig.numaker"
 source "drivers/i2c/Kconfig.mcux"
-source "drivers/i2c/Kconfig.ene"
+source "drivers/i2c/Kconfig.npcx"
+source "drivers/i2c/Kconfig.nrfx"
+source "drivers/i2c/Kconfig.numaker"
+source "drivers/i2c/Kconfig.omap"
+source "drivers/i2c/Kconfig.rcar"
+source "drivers/i2c/Kconfig.renesas_ra"
+source "drivers/i2c/Kconfig.renesas_rx"
+source "drivers/i2c/Kconfig.renesas_rz"
+source "drivers/i2c/Kconfig.rts5912"
+source "drivers/i2c/Kconfig.sam0"
+source "drivers/i2c/Kconfig.sam_twihs"
+source "drivers/i2c/Kconfig.sbcon"
+source "drivers/i2c/Kconfig.sc18im704"
+source "drivers/i2c/Kconfig.sedi"
+source "drivers/i2c/Kconfig.sifive"
+source "drivers/i2c/Kconfig.smartbond"
+source "drivers/i2c/Kconfig.stm32"
+source "drivers/i2c/Kconfig.sy1xx"
+source "drivers/i2c/Kconfig.tca954x"
+source "drivers/i2c/Kconfig.test"
+source "drivers/i2c/Kconfig.wch"
+source "drivers/i2c/Kconfig.xec"
+source "drivers/i2c/Kconfig.xilinx_axi"
+# zephyr-keep-sorted-stop
 
 config I2C_INIT_PRIORITY
 	int "Init priority"
@@ -137,6 +180,7 @@ config I2C_GECKO
 	default y
 	depends on DT_HAS_SILABS_GECKO_I2C_ENABLED
 	select SOC_GECKO_I2C
+	select PINCTRL if SOC_FAMILY_SILABS_S2
 	help
 	  Enable the SiLabs Gecko I2C bus driver.
 
@@ -144,6 +188,7 @@ config I2C_SAM_TWIM
 	bool "Atmel SAM (TWIM) I2C driver"
 	default y
 	depends on DT_HAS_ATMEL_SAM_I2C_TWIM_ENABLED
+	select PINCTRL
 	help
 	  Enable Atmel SAM MCU Family (TWIM) I2C bus driver.
 
@@ -151,6 +196,7 @@ config I2C_SAM_TWI
 	bool "Atmel SAM (TWI) I2C driver"
 	default y
 	depends on DT_HAS_ATMEL_SAM_I2C_TWI_ENABLED
+	select PINCTRL
 	help
 	  Enable Atmel SAM MCU Family (TWI) I2C bus driver.
 
@@ -162,18 +208,10 @@ config I2C_MCUX
 	help
 	  Enable the mcux I2C driver.
 
-config I2C_MCUX_FLEXCOMM
-	bool "MCUX FLEXCOMM I2C driver"
-	default y
-	depends on DT_HAS_NXP_LPC_I2C_ENABLED
-	select PINCTRL
-	help
-	  Enable the mcux flexcomm i2c driver.
-
 config I2C_MCUX_LPI2C
 	bool "MCUX LPI2C driver"
 	default y
-	depends on DT_HAS_NXP_IMX_LPI2C_ENABLED
+	depends on DT_HAS_NXP_LPI2C_ENABLED
 	depends on CLOCK_CONTROL
 	select PINCTRL
 	help
@@ -190,6 +228,7 @@ config I2C_IMX
 	bool "i.MX I2C driver"
 	default y
 	depends on DT_HAS_FSL_IMX21_I2C_ENABLED
+	select PINCTRL
 	help
 	  Enable the i.MX I2C driver.
 
@@ -228,5 +267,12 @@ config GPIO_I2C_SWITCH
 	depends on DT_HAS_GPIO_I2C_SWITCH_ENABLED
 	help
 	  Enable GPIO controlled I2C bus switch driver.
+
+config I2C_NXP_II2C
+	bool "NXP i.MX8M serial I2C driver"
+	default y
+	depends on DT_HAS_NXP_II2C_ENABLED
+	help
+	  Enable the NXP II2C driver.
 
 endif # I2C

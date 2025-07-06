@@ -82,8 +82,8 @@ static enum ethernet_hw_caps e1000_caps(const struct device *dev)
 #if defined(CONFIG_ETH_E1000_PTP_CLOCK)
 		ETHERNET_PTP |
 #endif
-		ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T |
-		ETHERNET_LINK_1000BASE_T |
+		ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE |
+		ETHERNET_LINK_1000BASE |
 		/* The driver does not really support TXTIME atm but mark
 		 * it to support it so that we can test the txtime sample.
 		 */
@@ -270,10 +270,22 @@ static void e1000_iface_init(struct net_if *iface)
 	LOG_DBG("done");
 }
 
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+static struct net_stats_eth *get_stats(const struct device *dev)
+{
+	struct e1000_dev *ctx = dev->data;
+
+	return &ctx->stats;
+}
+#endif
+
 static const struct ethernet_api e1000_api = {
 	.iface_api.init		= e1000_iface_init,
 #if defined(CONFIG_ETH_E1000_PTP_CLOCK)
 	.get_ptp_clock		= e1000_get_ptp_clock,
+#endif
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+	.get_stats = get_stats,
 #endif
 	.get_capabilities	= e1000_caps,
 	.send			= e1000_send,
@@ -371,27 +383,27 @@ static int ptp_clock_e1000_rate_adjust(const struct device *dev, double ratio)
 	float val;
 
 	/* No change needed. */
-	if (ratio == 1.0f) {
+	if (ratio == 1.0) {
 		return 0;
 	}
 
 	ratio *= context->clk_ratio;
 
 	/* Limit possible ratio. */
-	if ((ratio > 1.0f + 1.0f/(2 * hw_inc)) ||
-			(ratio < 1.0f - 1.0f/(2 * hw_inc))) {
+	if ((ratio > 1.0 + 1.0/(2.0 * hw_inc)) ||
+			(ratio < 1.0 - 1.0/(2.0 * hw_inc))) {
 		return -EINVAL;
 	}
 
 	/* Save new ratio. */
 	context->clk_ratio = ratio;
 
-	if (ratio < 1.0f) {
+	if (ratio < 1.0) {
 		corr = hw_inc - 1;
-		val = 1.0f / (hw_inc * (1.0f - ratio));
-	} else if (ratio > 1.0f) {
+		val = 1.0 / (hw_inc * (1.0 - ratio));
+	} else if (ratio > 1.0) {
 		corr = hw_inc + 1;
-		val = 1.0f / (hw_inc * (ratio - 1.0f));
+		val = 1.0 / (hw_inc * (ratio - 1.0));
 	} else {
 		val = 0;
 		corr = hw_inc;
@@ -411,7 +423,7 @@ static int ptp_clock_e1000_rate_adjust(const struct device *dev, double ratio)
 	return 0;
 }
 
-static const struct ptp_clock_driver_api api = {
+static DEVICE_API(ptp_clock, api) = {
 	.set = ptp_clock_e1000_set,
 	.get = ptp_clock_e1000_get,
 	.adjust = ptp_clock_e1000_adjust,

@@ -66,6 +66,8 @@
 #   elfconvert_flag_final         : Flags that must always be applied last at the elfconvert command
 #   elfconvert_flag_strip_all     : Flag that is used for stripping all symbols when converting
 #   elfconvert_flag_strip_debug   : Flag that is used to strip debug symbols when converting
+#   elfconvert_flag_strip_unneeded: Flag that is used to strip all unreferenced symbols when converting
+#   elfconvert_flag_compress_debug_sections: Flag that is used to compress debug sections when converting
 #   elfconvert_flag_intarget      : Flag for specifying target used for infile
 #   elfconvert_flag_outtarget     : Flag for specifying target to use for converted file.
 #                                   Target value must be one of those listed described by: elfconvert_formats
@@ -84,6 +86,7 @@
 #   disassembly_flag               : Flags that must always be applied when calling disassembly command
 #   disassembly_flag_final         : Flags that must always be applied last at the disassembly command
 #   disassembly_flag_inline_source : Flag to use to display source code mixed with disassembly
+#   disassembly_flag_no_aliases    : Flag to use to disassemble with raw instruction mnemonics
 #   disassembly_flag_all           : Flag to use for disassemble everything, including zeroes
 #   disassembly_flag_infile        : Flag for specifying the input file
 #   disassembly_flag_outfile       : Flag for specifying the output file
@@ -133,6 +136,7 @@ set_property(TARGET bintools PROPERTY disassembly_command ${CMAKE_COMMAND} -E ec
 set_property(TARGET bintools PROPERTY disassembly_flag "")
 set_property(TARGET bintools PROPERTY disassembly_flag_final "")
 set_property(TARGET bintools PROPERTY disassembly_flag_inline_source "")
+set_property(TARGET bintools PROPERTY disassembly_flag_no_aliases "")
 set_property(TARGET bintools PROPERTY disassembly_flag_infile "")
 set_property(TARGET bintools PROPERTY disassembly_flag_outfile "")
 
@@ -141,6 +145,9 @@ set_property(TARGET bintools PROPERTY elfconvert_command ${CMAKE_COMMAND} -E ech
 set_property(TARGET bintools PROPERTY elfconvert_formats "")
 set_property(TARGET bintools PROPERTY elfconvert_flag "")
 set_property(TARGET bintools PROPERTY elfconvert_flag_final "")
+set_property(TARGET bintools PROPERTY elfconvert_flag_strip_debug "")
+set_property(TARGET bintools PROPERTY elfconvert_flag_strip_unneeded "")
+set_property(TARGET bintools PROPERTY elfconvert_flag_compress_debug_sections "")
 set_property(TARGET bintools PROPERTY elfconvert_flag_outtarget "")
 set_property(TARGET bintools PROPERTY elfconvert_flag_section_remove "")
 set_property(TARGET bintools PROPERTY elfconvert_flag_gapfill "")

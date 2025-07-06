@@ -1,0 +1,34 @@
+# Common fields for Bluetooth HCI devices
+
+include: base.yaml
+
+properties:
+  bt-hci-name:
+    type: string
+    description: Name of the HCI transport
+  bt-hci-bus:
+    type: string
+    description: Bus of the transport
+    enum:
+      - "virtual"
+      - "usb"
+      - "pccard"
+      - "uart"
+      - "rs232"
+      - "pci"
+      - "sdio"
+      - "spi"
+      - "i2c"
+      - "smd"
+      - "virtio"
+      - "ipm"    # Deprecated. "ipc" should be used instead.
+      - "ipc"
+  bt-hci-quirks:
+    type: string-array
+    description: HCI device quirks
+    enum:
+      - "no-reset"
+      - "no-auto-dle"
+  bt-hci-vs-ext:
+    type: boolean
+    description: Zephyr HCI vendor extensions are supported

@@ -17,13 +17,13 @@
 
 static volatile int int_handler_executed;
 
-extern uint8_t z_x86_nmi_stack[];
+extern uint8_t z_x86_nmi_stack0[];
 extern uint8_t z_x86_nmi_stack1[];
 extern uint8_t z_x86_nmi_stack2[];
 extern uint8_t z_x86_nmi_stack3[];
 
 uint8_t *nmi_stacks[] = {
-	z_x86_nmi_stack,
+	z_x86_nmi_stack0,
 #if CONFIG_MP_MAX_NUM_CPUS > 1
 	z_x86_nmi_stack1,
 #if CONFIG_MP_MAX_NUM_CPUS > 2
@@ -35,7 +35,7 @@ uint8_t *nmi_stacks[] = {
 #endif
 };
 
-bool z_x86_do_kernel_nmi(const z_arch_esf_t *esf)
+bool z_x86_do_kernel_nmi(const struct arch_esf *esf)
 {
 	uint64_t stack;
 

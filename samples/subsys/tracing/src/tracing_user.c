@@ -5,6 +5,8 @@
  */
 
 #include <tracing_user.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 
 static int nested_interrupts[CONFIG_MP_MAX_NUM_CPUS];
 
@@ -55,4 +57,47 @@ void sys_trace_isr_exit_user(void)
 void sys_trace_idle_user(void)
 {
 	printk("%s\n", __func__);
+}
+
+void sys_trace_gpio_pin_configure_enter_user(const struct device *port, gpio_pin_t pin,
+					     gpio_flags_t flags)
+{
+	printk("port: %s, pin: %d flags: %d\n", port->name, pin, flags);
+}
+
+void sys_trace_gpio_pin_configure_exit_user(const struct device *port, gpio_pin_t pin, int ret)
+{
+	printk("port: %s, pin: %d ret: %d\n", port->name, pin, ret);
+}
+
+void sys_trace_gpio_port_set_bits_raw_enter_user(const struct device *port, gpio_port_pins_t pins)
+{
+	printk("port: %s, pins: %d\n", port->name, pins);
+}
+
+void sys_trace_gpio_port_set_bits_raw_exit_user(const struct device *port, int ret)
+{
+	printk("port: %s, ret: %d\n", port->name, ret);
+}
+
+void sys_trace_gpio_port_clear_bits_raw_enter_user(const struct device *port, gpio_port_pins_t pins)
+{
+	printk("port: %s, pins: %d\n", port->name, pins);
+}
+
+void sys_trace_gpio_port_clear_bits_raw_exit_user(const struct device *port, int ret)
+{
+	printk("port: %s, pins: %d\n", port->name, ret);
+}
+
+void sys_trace_gpio_pin_interrupt_configure_enter_user(const struct device *port, gpio_pin_t pin,
+						       gpio_flags_t flags)
+{
+	printk("port: %s, pin: %d flags: %d\n", port->name, pin, flags);
+}
+
+void sys_trace_gpio_pin_interrupt_configure_exit_user(const struct device *port, gpio_pin_t pin,
+						      int ret)
+{
+	printk("port: %s, pin: %d ret: %d\n", port->name, pin, ret);
 }

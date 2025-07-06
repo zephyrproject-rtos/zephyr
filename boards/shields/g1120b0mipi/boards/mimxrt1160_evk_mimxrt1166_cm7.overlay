@@ -1,0 +1,12 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&rm67162_g1120b0mipi {
+	/* R414 is not populated on this board, so LPTE signal is not
+	 * connected. remove the property from the display.
+	 */
+	/delete-property/ te-gpios;
+};

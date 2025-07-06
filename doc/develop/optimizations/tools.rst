@@ -4,7 +4,7 @@ Optimization Tools
 ##################
 
 The available optimization tools let you analyse :ref:`footprint_tools`
-and :ref:`data_structures` using different build system targets.
+and :ref:`data_structure_tools` using different build system targets.
 
 .. _footprint_tools:
 
@@ -50,10 +50,11 @@ per symbol and the percentage it uses. The data is grouped based on the file
 system location of the object in the tree and the file containing the symbol.
 
 Use the ``ram_report`` target with your board, as in the following example.
+If you are using :ref:`sysbuild`, see :ref:`sysbuild_dedicated_image_build_targets` instead.
 
 .. zephyr-app-commands::
     :tool: all
-    :app: samples/hello_world
+    :zephyr-app: samples/hello_world
     :board: reel_board
     :goals: ram_report
 
@@ -111,10 +112,11 @@ per symbol and the percentage it uses. The data is grouped based on the file
 system location of the object in the tree and the file containing the symbol.
 
 Use the ``rom_report`` target with your board, as in the following example.
+If you are using :ref:`sysbuild`, see :ref:`sysbuild_dedicated_image_build_targets` instead.
 
 .. zephyr-app-commands::
     :tool: all
-    :app: samples/hello_world
+    :zephyr-app: samples/hello_world
     :board: reel_board
     :goals: rom_report
 
@@ -166,7 +168,7 @@ the files and view their ROM, RAM, and stack usage.
 Before you can use this
 target, install the puncover Python module::
 
-    pip3 install git+https://github.com/HBehrens/puncover --user
+    pip3 install --user puncover
 
 .. warning::
 
@@ -176,26 +178,30 @@ target, install the puncover Python module::
 
 After you installed the Python module, use ``puncover`` target with your board,
 as in the following example.
+If you are using :ref:`sysbuild`, see :ref:`sysbuild_dedicated_image_build_targets` instead.
 
 .. zephyr-app-commands::
     :tool: all
-    :app: samples/hello_world
+    :zephyr-app: samples/hello_world
     :board: reel_board
     :goals: puncover
 
+The ``puncover`` target will start a local web server on ``localhost:5000`` by default.
+The host IP and port the HTTP server runs on can be changed by setting the environment
+variables ``PUNCOVER_HOST`` and ``PUNCOVER_PORT``.
 
 To view worst-case stack usage analysis, build this with the
 :kconfig:option:`CONFIG_STACK_USAGE` enabled.
 
 .. zephyr-app-commands::
     :tool: all
-    :app: samples/hello_world
+    :zephyr-app: samples/hello_world
     :board: reel_board
     :goals: puncover
     :gen-args: -DCONFIG_STACK_USAGE=y
 
 
-.. _data_structures:
+.. _data_structure_tools:
 
 Data Structures
 ****************
@@ -220,41 +226,42 @@ Alternatively, you can get it from fedora::
 
 After you installed the package, use ``pahole`` target with your board,
 as in the following example.
+If you are using :ref:`sysbuild`, see :ref:`sysbuild_dedicated_image_build_targets` instead.
 
 .. zephyr-app-commands::
     :tool: all
-    :app: samples/hello_world
+    :zephyr-app: samples/hello_world
     :board: reel_board
     :goals: pahole
 
 Pahole will generate something similar to the output below in the console::
 
-    /* Used at: zephyr/isr_tables.c */
-    /* <80> ../include/sw_isr_table.h:30 */
-    struct _isr_table_entry {
-            void *                     arg;                  /*     0     4 */
-            void                       (*isr)(void *);       /*     4     4 */
+    /* Used at: [...]/build/zephyr/kobject_hash.c */
+    /* <375> [...]/zephyr/include/zephyr/sys/dlist.h:37 */
+    union {
+            struct _dnode *            head;               /*     0     4 */
+            struct _dnode *            next;               /*     0     4 */
+    };
+    /* Used at: [...]/build/zephyr/kobject_hash.c */
+    /* <397> [...]/zephyr/include/zephyr/sys/dlist.h:36 */
+    struct _dnode {
+            union {
+                    struct _dnode *    head;                 /*     0     4 */
+                    struct _dnode *    next;                 /*     0     4 */
+            };                                               /*     0     4 */
+            union {
+                    struct _dnode *    tail;                 /*     4     4 */
+                    struct _dnode *    prev;                 /*     4     4 */
+            };                                               /*     4     4 */
 
             /* size: 8, cachelines: 1, members: 2 */
             /* last cacheline: 8 bytes */
     };
-    /* Used at: zephyr/isr_tables.c */
-    /* <eb> ../include/arch/arm/aarch32/cortex_m/mpu/arm_mpu_v7m.h:134 */
-    struct arm_mpu_region_attr {
-            uint32_t                   rasr;                 /*     0     4 */
-
-            /* size: 4, cachelines: 1, members: 1 */
-            /* last cacheline: 4 bytes */
-    };
-    /* Used at: zephyr/isr_tables.c */
-    /* <112> ../include/arch/arm/aarch32/cortex_m/mpu/arm_mpu.h:24 */
-    struct arm_mpu_region {
-            uint32_t                   base;                 /*     0     4 */
-            const char  *              name;                 /*     4     4 */
-            arm_mpu_region_attr_t      attr;                 /*     8     4 */
-
-            /* size: 12, cachelines: 1, members: 3 */
-            /* last cacheline: 12 bytes */
+    /* Used at: [...]/build/zephyr/kobject_hash.c */
+    /* <3b7> [...]/zephyr/include/zephyr/sys/dlist.h:41 */
+    union {
+            struct _dnode *            tail;               /*     0     4 */
+            struct _dnode *            prev;               /*     0     4 */
     };
     ...
     ...

@@ -1,0 +1,165 @@
+/*
+ * Copyright (c) 2023-2025 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+ #include <adi/max32/max32655.dtsi>
+ #include <adi/max32/max32655-pinctrl.dtsi>
+ #include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	 model = "Analog Devices MAX32655EVKIT";
+	 compatible = "adi,max32655evkit";
+
+	 chosen {
+		 zephyr,console = &uart0;
+		 zephyr,shell-uart = &uart0;
+		 zephyr,sram = &sram2;
+		 zephyr,flash = &flash0;
+	 };
+
+	 leds {
+		 compatible = "gpio-leds";
+		 led1: led_1 {
+			 gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
+			 label = "Red LED";
+		 };
+		 led2: led_2 {
+			 gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+			 label = "Blue LED";
+		 };
+	 };
+
+	 buttons {
+		 compatible = "gpio-keys";
+		 pb1: pb1 {
+			 gpios = <&gpio0 18 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			 label = "SW2";
+			 zephyr,code = <INPUT_KEY_0>;
+		 };
+		 pb2: pb2 {
+			 gpios = <&gpio0 19 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			 label = "SW3";
+			 zephyr,code = <INPUT_KEY_1>;
+		 };
+		 pb_wakeup: pb_wakeup {
+			gpios = <&gpio3 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW
+								| MAX32_GPIO_VSEL_VDDIOH)>;
+			label = "Wakeup";
+			zephyr,code = <INPUT_KEY_WAKEUP>;
+		};
+	 };
+
+	 /* These aliases are provided for compatibility with samples */
+	 aliases {
+		led0 = &led1;
+		led1 = &led2;
+		sw0 = &pb1;
+		sw1 = &pb2;
+		watchdog0 = &wdt0;
+	 };
+};
+
+&uart0 {
+	pinctrl-0 = <&uart0a_tx_p0_1 &uart0a_rx_p0_0>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+	status = "okay";
+};
+
+&clk_ipo {
+	status = "okay";
+};
+
+/*
+ * ERTCO is required for counter RTC
+ */
+&clk_ertco {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&trng {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+	pinctrl-0 = <&i2c0_scl_p0_10 &i2c0_sda_p0_11>;
+	pinctrl-names = "default";
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+	pinctrl-0 = <&spi0_mosi_p0_5 &spi0_miso_p0_6 &spi0_sck_p0_7 &spi0_ss0_p0_4>;
+	pinctrl-names = "default";
+};
+
+&w1 {
+	pinctrl-0 = <&owm_io_p0_6 &owm_pe_p0_7>;
+	pinctrl-names = "default";
+};
+
+&rtc_counter {
+	status = "okay";
+};
+
+&spi0_mosi_p0_5 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi0_miso_p0_6 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi0_sck_p0_7 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi0 {
+	status = "okay";
+	pinctrl-0 = <&spi0_mosi_p0_5 &spi0_miso_p0_6 &spi0_sck_p0_7>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio0 4 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
+
+	spi0_cs0_flash: w25q128@0 {
+		compatible = "jedec,spi-nor";
+		/* 134217728 bits = 16 Mbytes */
+		size = <0x8000000>;
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+		jedec-id = [ef 40 18];
+		hold-gpios = <&gpio0 9 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
+		wp-gpios = <&gpio0 8 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
+		status = "okay";
+	};
+};

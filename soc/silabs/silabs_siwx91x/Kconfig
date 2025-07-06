@@ -1,0 +1,65 @@
+# Copyright (c) 2023 Antmicro
+# Copyright (c) 2024 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_SILABS_SIWX91X
+	select ARM
+	select CPU_CORTEX_M4
+	select CPU_HAS_FPU
+	select CPU_HAS_ARM_MPU
+	select HAS_SILABS_WISECONNECT
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
+	select HAS_PM
+
+if SOC_FAMILY_SILABS_SIWX91X
+
+rsource "*/Kconfig"
+
+config SOC_SILABS_SLEEPTIMER
+	bool
+	help
+	  The Sleeptimer HAL module is used for SIWX91X.
+
+config SOC_SIWX91X_PM_BACKEND_PMGR
+	bool
+	select WISECONNECT_NETWORK_STACK
+	select SILABS_SLEEPTIMER_TIMER
+	select SRAM_VECTOR_TABLE
+	select CODE_DATA_RELOCATION_SRAM
+	default y if PM
+	help
+	  Implement PM using sl_power_manager service from Gecko SDK
+
+config SIWX91X_NWP_INIT_PRIORITY
+	int "SiWx91x Network Processor init priority"
+	default 39
+	help
+	  Initialization priority of the SiWx91x Network Processor. NWP init must
+	  have a higher priority than services that depend on it, such as Bluetooth,
+	  Wi-Fi and crypto.
+
+config SIWX91X_SIGN_KEY
+	string "Signing key"
+	help
+	  Sign the firmware using this private key. This value is passed as-is
+	  to the command "commander rps convert". The value is usually a path to
+	  PEM formatted file.
+
+config SIWX91X_MIC_KEY
+	string "Integrity Code (MIC) key"
+	help
+	  Check integrity of the firmware using MIC (AES CBC-MAC) based
+	  integrity check instead of CRC based check.
+	  This value is passed as-is to the command "commander rps convert". The
+	  value is usually a string of 32 hexadecimal number representing the
+	  AES-256 key.
+
+config SIWX91X_ENCRYPT
+	bool "Also encrypt the firmware"
+	depends on SIWX91X_MIC_KEY != ""
+	help
+	  Encrypt the application image using AES ECB encryption.
+	  The key used is the value of CONFIG_SIWX91X_MIC_KEY. This value is
+	  passed as-is to the command "commander rps convert".
+
+endif # SOC_FAMILY_SILABS_SIWX91X

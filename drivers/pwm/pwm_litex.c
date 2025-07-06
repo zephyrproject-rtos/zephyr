@@ -61,7 +61,7 @@ int pwm_litex_get_cycles_per_sec(const struct device *dev, uint32_t channel,
 	return 0;
 }
 
-static const struct pwm_driver_api pwm_litex_driver_api = {
+static DEVICE_API(pwm, pwm_litex_driver_api) = {
 	.set_cycles = pwm_litex_set_cycles,
 	.get_cycles_per_sec = pwm_litex_get_cycles_per_sec,
 };

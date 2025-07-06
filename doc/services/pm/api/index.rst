@@ -1,7 +1,7 @@
 .. _pm_api:
 
-Power Management
-################
+Power Management APIs
+#####################
 
 System PM APIs
 **************

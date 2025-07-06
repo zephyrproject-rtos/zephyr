@@ -10,37 +10,150 @@
 #include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 #include <kswap.h>
-#include <_soc_inthandlers.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/logging/log.h>
-#include <offsets.h>
-#include <zsr.h>
+#include <zephyr/offsets.h>
+#include <zephyr/zsr.h>
 #include <zephyr/arch/common/exc_handle.h>
 
+#ifdef CONFIG_XTENSA_GEN_HANDLERS
+#include <xtensa_handlers.h>
+#else
+#include <_soc_inthandlers.h>
+#endif
+
+#include <kernel_internal.h>
 #include <xtensa_internal.h>
+#include <xtensa_stack.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 extern char xtensa_arch_except_epc[];
 extern char xtensa_arch_kernel_oops_epc[];
 
+bool xtensa_is_outside_stack_bounds(uintptr_t addr, size_t sz, uint32_t ps)
+{
+	uintptr_t start, end;
+	struct k_thread *thread = _current;
+	bool was_in_isr, invalid;
+
+	/* Without userspace, there is no privileged stack so the thread stack
+	 * is the whole stack (minus reserved area). So there is no need to
+	 * check for PS == UINT32_MAX for special treatment.
+	 */
+	ARG_UNUSED(ps);
+
+	/* Since both level 1 interrupts and exceptions go through
+	 * the same interrupt vector, both of them increase the nested
+	 * counter in the CPU struct. The architecture vector handler
+	 * moves execution to the interrupt stack when nested goes from
+	 * zero to one. Afterwards, any nested interrupts/exceptions will
+	 * continue running in interrupt stack. Therefore, only when
+	 * nested > 1, then it was running in the interrupt stack, and
+	 * we should check bounds against the interrupt stack.
+	 */
+	was_in_isr = arch_curr_cpu()->nested > 1;
+
+	if ((thread == NULL) || was_in_isr) {
+		/* We were servicing an interrupt or in early boot environment
+		 * and are supposed to be on the interrupt stack.
+		 */
+		int cpu_id;
+
+#ifdef CONFIG_SMP
+		cpu_id = arch_curr_cpu()->id;
+#else
+		cpu_id = 0;
+#endif
+
+		start = (uintptr_t)K_KERNEL_STACK_BUFFER(z_interrupt_stacks[cpu_id]);
+		end = start + CONFIG_ISR_STACK_SIZE;
 #ifdef CONFIG_USERSPACE
-Z_EXC_DECLARE(xtensa_user_string_nlen);
+	} else if (ps == UINT32_MAX) {
+		/* Since the stashed PS is inside struct pointed by frame->ptr_to_bsa,
+		 * we need to verify that both frame and frame->ptr_to_bsa are valid
+		 * pointer within the thread stack. Also without PS, we have no idea
+		 * whether we were in kernel mode (using privileged stack) or user
+		 * mode (normal thread stack). So we need to check the whole stack
+		 * area.
+		 *
+		 * And... we cannot account for reserved area since we have no idea
+		 * which to use: ARCH_KERNEL_STACK_RESERVED or ARCH_THREAD_STACK_RESERVED
+		 * as we don't know whether we were in kernel or user mode.
+		 */
+		start = (uintptr_t)thread->stack_obj;
+		end = Z_STACK_PTR_ALIGN(thread->stack_info.start + thread->stack_info.size);
+	} else if (((ps & PS_RING_MASK) == 0U) &&
+		   ((thread->base.user_options & K_USER) == K_USER)) {
+		/* Check if this is a user thread, and that it was running in
+		 * kernel mode. If so, we must have been doing a syscall, so
+		 * check with privileged stack bounds.
+		 */
+		start = thread->stack_info.start - CONFIG_PRIVILEGED_STACK_SIZE;
+		end = thread->stack_info.start;
+#endif
+	} else {
+		start = thread->stack_info.start;
+		end = Z_STACK_PTR_ALIGN(thread->stack_info.start + thread->stack_info.size);
+	}
 
-static const struct z_exc_handle exceptions[] = {
-	Z_EXC_HANDLE(xtensa_user_string_nlen)
-};
-#endif /* CONFIG_USERSPACE */
+	invalid = (addr <= start) || ((addr + sz) >= end);
 
-void xtensa_dump_stack(const z_arch_esf_t *stack)
+	return invalid;
+}
+
+bool xtensa_is_frame_pointer_valid(_xtensa_irq_stack_frame_raw_t *frame)
+{
+	_xtensa_irq_bsa_t *bsa;
+
+	/* Check if the pointer to the frame is within stack bounds. If not, there is no
+	 * need to test if the BSA (base save area) pointer is also valid as it is
+	 * possibly invalid.
+	 */
+	if (xtensa_is_outside_stack_bounds((uintptr_t)frame, sizeof(*frame), UINT32_MAX)) {
+		return false;
+	}
+
+	/* Need to test if the BSA area is also within stack bounds. The information
+	 * contained within the BSA is only valid if within stack bounds.
+	 */
+	bsa = frame->ptr_to_bsa;
+	if (xtensa_is_outside_stack_bounds((uintptr_t)bsa, sizeof(*bsa), UINT32_MAX)) {
+		return false;
+	}
+
+#ifdef CONFIG_USERSPACE
+	/* With usespace, we have privileged stack and normal thread stack within
+	 * one stack object. So we need to further test whether the frame pointer
+	 * resides in the correct stack based on kernel/user mode.
+	 */
+	if (xtensa_is_outside_stack_bounds((uintptr_t)frame, sizeof(*frame), bsa->ps)) {
+		return false;
+	}
+#endif
+
+	return true;
+}
+
+void xtensa_dump_stack(const void *stack)
 {
 	_xtensa_irq_stack_frame_raw_t *frame = (void *)stack;
-	_xtensa_irq_bsa_t *bsa = frame->ptr_to_bsa;
+	_xtensa_irq_bsa_t *bsa;
 	uintptr_t num_high_regs;
 	int reg_blks_remaining;
 
+	/* Don't dump stack if the stack pointer is invalid as any frame elements
+	 * obtained via de-referencing the frame pointer are probably also invalid.
+	 * Or worse, cause another access violation.
+	 */
+	if (!xtensa_is_frame_pointer_valid(frame)) {
+		return;
+	}
+
+	bsa = frame->ptr_to_bsa;
+
 	/* Calculate number of high registers. */
-	num_high_regs = (uint8_t *)bsa - (uint8_t *)frame + sizeof(void *);
+	num_high_regs = (uint8_t *)bsa - ((uint8_t *)frame + sizeof(void *));
 	num_high_regs /= sizeof(uintptr_t);
 
 	/* And high registers are always comes in 4 in a block. */
@@ -111,15 +224,30 @@ static void print_fatal_exception(void *print_stack, int cause,
 	uint32_t ps, vaddr;
 	_xtensa_irq_bsa_t *bsa = (void *)*(int **)print_stack;
 
-	ps = bsa->ps;
-	pc = (void *)bsa->pc;
-
 	__asm__ volatile("rsr.excvaddr %0" : "=r"(vaddr));
 
-	LOG_ERR(" ** FATAL EXCEPTION%s", (is_dblexc ? " (DOUBLE)" : ""));
+	if (is_dblexc) {
+		LOG_ERR(" ** FATAL EXCEPTION (DOUBLE)");
+	} else {
+		LOG_ERR(" ** FATAL EXCEPTION");
+	}
+
 	LOG_ERR(" ** CPU %d EXCCAUSE %d (%s)",
 		arch_curr_cpu()->id, cause,
 		xtensa_exccause(cause));
+
+	/* Don't print information if the BSA area is invalid as any elements
+	 * obtained via de-referencing the pointer are probably also invalid.
+	 * Or worse, cause another access violation.
+	 */
+	if (xtensa_is_outside_stack_bounds((uintptr_t)bsa, sizeof(*bsa), UINT32_MAX)) {
+		LOG_ERR(" ** VADDR %p Invalid SP %p", (void *)vaddr, print_stack);
+		return;
+	}
+
+	ps = bsa->ps;
+	pc = (void *)bsa->pc;
+
 	LOG_ERR(" **  PC %p VADDR %p", pc, (void *)vaddr);
 
 	if (is_dblexc) {
@@ -158,20 +286,116 @@ static inline void *return_to(void *interrupted)
  * This may be unused depending on number of interrupt levels
  * supported by the SoC.
  */
-#define DEF_INT_C_HANDLER(l)				\
-__unused void *xtensa_int##l##_c(void *interrupted_stack)	\
-{							   \
-	uint32_t irqs, intenable, m;			   \
-	usage_stop();					   \
-	__asm__ volatile("rsr.interrupt %0" : "=r"(irqs)); \
+
+#if XCHAL_NUM_INTERRUPTS <= 32
+#define DEF_INT_C_HANDLER(l)                                    \
+__unused void *xtensa_int##l##_c(void *interrupted_stack)       \
+{                                                               \
+	uint32_t irqs, intenable, m;                            \
+	usage_stop();                                           \
+	__asm__ volatile("rsr.interrupt %0" : "=r"(irqs));      \
 	__asm__ volatile("rsr.intenable %0" : "=r"(intenable)); \
-	irqs &= intenable;					\
-	while ((m = _xtensa_handle_one_int##l(irqs))) {		\
-		irqs ^= m;					\
+	irqs &= intenable;                                      \
+	while ((m = _xtensa_handle_one_int##l(0, irqs))) {      \
+		irqs ^= m;                                      \
 		__asm__ volatile("wsr.intclear %0" : : "r"(m)); \
-	}							\
-	return return_to(interrupted_stack);		\
+	}                                                       \
+	return return_to(interrupted_stack);                    \
 }
+#endif /* XCHAL_NUM_INTERRUPTS <= 32 */
+
+#if XCHAL_NUM_INTERRUPTS > 32 && XCHAL_NUM_INTERRUPTS <= 64
+#define DEF_INT_C_HANDLER(l)                                     \
+__unused void *xtensa_int##l##_c(void *interrupted_stack)        \
+{                                                                \
+	uint32_t irqs, intenable, m;                             \
+	usage_stop();                                            \
+	__asm__ volatile("rsr.interrupt %0" : "=r"(irqs));       \
+	__asm__ volatile("rsr.intenable %0" : "=r"(intenable));  \
+	irqs &= intenable;                                       \
+	while ((m = _xtensa_handle_one_int##l(0, irqs))) {       \
+		irqs ^= m;                                       \
+		__asm__ volatile("wsr.intclear %0" : : "r"(m));  \
+	}                                                        \
+	__asm__ volatile("rsr.interrupt1 %0" : "=r"(irqs));      \
+	__asm__ volatile("rsr.intenable1 %0" : "=r"(intenable)); \
+	irqs &= intenable;                                       \
+	while ((m = _xtensa_handle_one_int##l(1, irqs))) {       \
+		irqs ^= m;                                       \
+		__asm__ volatile("wsr.intclear1 %0" : : "r"(m)); \
+	}                                                        \
+	return return_to(interrupted_stack);                     \
+}
+#endif /* XCHAL_NUM_INTERRUPTS > 32 && XCHAL_NUM_INTERRUPTS <= 64 */
+
+#if XCHAL_NUM_INTERRUPTS > 64 && XCHAL_NUM_INTERRUPTS <= 96
+#define DEF_INT_C_HANDLER(l)                                     \
+__unused void *xtensa_int##l##_c(void *interrupted_stack)        \
+{                                                                \
+	uint32_t irqs, intenable, m;                             \
+	usage_stop();                                            \
+	__asm__ volatile("rsr.interrupt %0" : "=r"(irqs));       \
+	__asm__ volatile("rsr.intenable %0" : "=r"(intenable));  \
+	irqs &= intenable;                                       \
+	while ((m = _xtensa_handle_one_int##l(0, irqs))) {       \
+		irqs ^= m;                                       \
+		__asm__ volatile("wsr.intclear %0" : : "r"(m));  \
+	}                                                        \
+	__asm__ volatile("rsr.interrupt1 %0" : "=r"(irqs));      \
+	__asm__ volatile("rsr.intenable1 %0" : "=r"(intenable)); \
+	irqs &= intenable;                                       \
+	while ((m = _xtensa_handle_one_int##l(1, irqs))) {       \
+		irqs ^= m;                                       \
+		__asm__ volatile("wsr.intclear1 %0" : : "r"(m)); \
+	}                                                        \
+	__asm__ volatile("rsr.interrupt2 %0" : "=r"(irqs));      \
+	__asm__ volatile("rsr.intenable2 %0" : "=r"(intenable)); \
+	irqs &= intenable;                                       \
+	while ((m = _xtensa_handle_one_int##l(2, irqs))) {       \
+		irqs ^= m;                                       \
+		__asm__ volatile("wsr.intclear2 %0" : : "r"(m)); \
+	}                                                        \
+	return return_to(interrupted_stack);                     \
+}
+#endif /* XCHAL_NUM_INTERRUPTS > 64 && XCHAL_NUM_INTERRUPTS <= 96 */
+
+#if XCHAL_NUM_INTERRUPTS > 96
+#define DEF_INT_C_HANDLER(l)                                     \
+__unused void *xtensa_int##l##_c(void *interrupted_stack)        \
+{                                                                \
+	uint32_t irqs, intenable, m;                             \
+	usage_stop();                                            \
+	__asm__ volatile("rsr.interrupt %0" : "=r"(irqs));       \
+	__asm__ volatile("rsr.intenable %0" : "=r"(intenable));  \
+	irqs &= intenable;                                       \
+	while ((m = _xtensa_handle_one_int##l(0, irqs))) {       \
+		irqs ^= m;                                       \
+		__asm__ volatile("wsr.intclear %0" : : "r"(m));  \
+	}                                                        \
+	__asm__ volatile("rsr.interrupt1 %0" : "=r"(irqs));      \
+	__asm__ volatile("rsr.intenable1 %0" : "=r"(intenable)); \
+	irqs &= intenable;                                       \
+	while ((m = _xtensa_handle_one_int##l(1, irqs))) {       \
+		irqs ^= m;                                       \
+		__asm__ volatile("wsr.intclear1 %0" : : "r"(m)); \
+	}                                                        \
+	__asm__ volatile("rsr.interrupt2 %0" : "=r"(irqs));      \
+	__asm__ volatile("rsr.intenable2 %0" : "=r"(intenable)); \
+	irqs &= intenable;                                       \
+	while ((m = _xtensa_handle_one_int##l(2, irqs))) {       \
+		irqs ^= m;                                       \
+		__asm__ volatile("wsr.intclear2 %0" : : "r"(m)); \
+	}                                                        \
+	__asm__ volatile("rsr.interrupt3 %0" : "=r"(irqs));      \
+	__asm__ volatile("rsr.intenable3 %0" : "=r"(intenable)); \
+	irqs &= intenable;                                       \
+	while ((m = _xtensa_handle_one_int##l(3, irqs))) {       \
+		irqs ^= m;                                       \
+		__asm__ volatile("wsr.intclear3 %0" : : "r"(m)); \
+	}                                                        \
+	return return_to(interrupted_stack);                     \
+}
+#endif /* XCHAL_NUM_INTERRUPTS > 96 */
 
 #if XCHAL_HAVE_NMI
 #define MAX_INTR_LEVEL XCHAL_NMILEVEL
@@ -213,9 +437,10 @@ static inline DEF_INT_C_HANDLER(1)
  * different because exceptions and interrupts land at the same
  * vector; other interrupt levels have their own vectors.
  */
-void *xtensa_excint1_c(int *interrupted_stack)
+void *xtensa_excint1_c(void *esf)
 {
-	int cause;
+	int cause, reason;
+	int *interrupted_stack = &((struct arch_esf *)esf)->dummy;
 	_xtensa_irq_bsa_t *bsa = (void *)*(int **)interrupted_stack;
 	bool is_fatal_error = false;
 	bool is_dblexc = false;
@@ -223,19 +448,24 @@ void *xtensa_excint1_c(int *interrupted_stack)
 	void *pc, *print_stack = (void *)interrupted_stack;
 	uint32_t depc = 0;
 
-	__asm__ volatile("rsr.exccause %0" : "=r"(cause));
-
 #ifdef CONFIG_XTENSA_MMU
-	__asm__ volatile("rsr.depc %0" : "=r"(depc));
+	depc = XTENSA_RSR(ZSR_DEPC_SAVE_STR);
+	cause = XTENSA_RSR(ZSR_EXCCAUSE_SAVE_STR);
 
 	is_dblexc = (depc != 0U);
+#else /* CONFIG_XTENSA_MMU */
+	__asm__ volatile("rsr.exccause %0" : "=r"(cause));
 #endif /* CONFIG_XTENSA_MMU */
 
 	switch (cause) {
 	case EXCCAUSE_LEVEL1_INTERRUPT:
+#ifdef CONFIG_XTENSA_MMU
 		if (!is_dblexc) {
 			return xtensa_int1_c(interrupted_stack);
 		}
+#else
+		return xtensa_int1_c(interrupted_stack);
+#endif /* CONFIG_XTENSA_MMU */
 		break;
 #ifndef CONFIG_USERSPACE
 	/* Syscalls are handled earlier in assembly if MMU is enabled.
@@ -255,26 +485,17 @@ void *xtensa_excint1_c(int *interrupted_stack)
 		break;
 #endif /* !CONFIG_USERSPACE */
 	default:
+		reason = K_ERR_CPU_EXCEPTION;
+
+		/* If the BSA area is invalid, we cannot trust anything coming out of it. */
+		if (xtensa_is_outside_stack_bounds((uintptr_t)bsa, sizeof(*bsa), UINT32_MAX)) {
+			goto skip_checks;
+		}
+
 		ps = bsa->ps;
 		pc = (void *)bsa->pc;
 
-#ifdef CONFIG_USERSPACE
-		/* If the faulting address is from one of the known
-		 * exceptions that should not be fatal, return to
-		 * the fixup address.
-		 */
-		for (int i = 0; i < ARRAY_SIZE(exceptions); i++) {
-			if ((pc >= exceptions[i].start) &&
-			    (pc < exceptions[i].end)) {
-				bsa->pc = (uintptr_t)exceptions[i].fixup;
-
-				goto fixup_out;
-			}
-		}
-#endif /* CONFIG_USERSPACE */
-
 		/* Default for exception */
-		int reason = K_ERR_CPU_EXCEPTION;
 		is_fatal_error = true;
 
 		/* We need to distinguish between an ill in xtensa_arch_except,
@@ -308,6 +529,7 @@ void *xtensa_excint1_c(int *interrupted_stack)
 			}
 		}
 
+skip_checks:
 		if (reason != K_ERR_KERNEL_OOPS) {
 			print_fatal_exception(print_stack, cause, is_dblexc, depc);
 		}
@@ -359,20 +581,16 @@ void *xtensa_excint1_c(int *interrupted_stack)
 		 *    thread.
 		 */
 		__asm__ volatile("rsil %0, %1"
-				: "=r" (ignore) : "i"(XCHAL_NMILEVEL));
+				: "=r" (ignore) : "i"(XCHAL_EXCM_LEVEL));
 
 		_current_cpu->nested = 1;
 	}
 
-#if defined(CONFIG_XTENSA_MMU) || defined(CONFIG_XTENSA_MPU)
-#ifdef CONFIG_USERSPACE
-fixup_out:
-#endif
+#if defined(CONFIG_XTENSA_MMU)
 	if (is_dblexc) {
-		__asm__ volatile("wsr.depc %0" : : "r"(0));
+		XTENSA_WSR(ZSR_DEPC_SAVE_STR, 0);
 	}
-#endif /* CONFIG_XTENSA_MMU || CONFIG_XTENSA_MPU */
-
+#endif /* CONFIG_XTENSA_MMU */
 
 	return return_to(interrupted_stack);
 }
@@ -380,7 +598,7 @@ fixup_out:
 #if defined(CONFIG_GDBSTUB)
 void *xtensa_debugint_c(int *interrupted_stack)
 {
-	extern void z_gdb_isr(z_arch_esf_t *esf);
+	extern void z_gdb_isr(struct arch_esf *esf);
 
 	z_gdb_isr((void *)interrupted_stack);
 

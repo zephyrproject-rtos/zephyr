@@ -15,12 +15,23 @@ grey changes from black through to white. If the grey looks too green or red
 at any point or the order of the corners is not as described above then the LCD
 may be endian swapped.
 
+On displays with the :c:enumerator:`SCREEN_INFO_X_ALIGNMENT_WIDTH` capability,
+such as those using the :dtcompatible:`sharp,ls0xx` driver, it is only possible
+to draw full lines at a time. On these displays, the rectangles described above
+will be replaced with bars that take up the entire width of the display. Only
+the green and grey bar will be visible.
+
+On monochrome displays, the rectangles (or bars) will all be some shade of grey.
+
+On displays with 1 bit per pixel, the greyscale animation of the bottom
+rectangle (or bar) will appear as flickering between black and white.
+
 Building and Running
 ********************
 
 As this is a generic sample it should work with any display supported by Zephyr.
 
-Below is an example on how to build for a :ref:`nrf52840dk_nrf52840` board with a
+Below is an example on how to build for a :zephyr:board:`nrf52840dk` board with a
 :ref:`adafruit_2_8_tft_touch_v2`.
 
 .. zephyr-app-commands::
@@ -45,4 +56,4 @@ List of Arduino-based display shields
 - :ref:`adafruit_2_8_tft_touch_v2`
 - :ref:`ssd1306_128_shield`
 - :ref:`st7789v_generic`
-- :ref:`waveshare_e_paper_raw_panel_shield`
+- :ref:`waveshare_epaper`

@@ -1,0 +1,19 @@
+common:
+  tags: uuid
+  integration_platforms:
+    - native_sim
+
+tests:
+  libraries.uuid.base:
+    extra_configs:
+      - CONFIG_UUID_V5=y
+      - CONFIG_MBEDTLS=y
+      - CONFIG_MBEDTLS_MD=y
+      - CONFIG_MBEDTLS_SHA1=y
+      - CONFIG_UUID_BASE64=y
+      - CONFIG_BASE64=y
+  libraries.uuid.v4:
+    extra_configs:
+      - CONFIG_UUID_V4=y
+      - CONFIG_ENTROPY_GENERATOR=y
+    filter: CONFIG_ENTROPY_HAS_DRIVER

@@ -10,7 +10,6 @@ flash: 512
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - adc
   - ble
@@ -21,7 +20,6 @@ supported:
   - ieee802154
   - pwm
   - spi
-  - usb_cdc
   - usb_device
   - watchdog
   - netif:openthread

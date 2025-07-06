@@ -1,4 +1,4 @@
-description: EOS S3 GPIO node
+description: EOS S3 GPIO
 
 compatible: "quicklogic,eos-s3-gpio"
 

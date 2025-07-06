@@ -13,14 +13,14 @@ if NET_L2_PPP
 config NET_L2_PPP_TIMEOUT
 	int "Maximum timeout in ms for Configure-Req"
 	default 3000
-	range 1 4294967295
+	range 1 $(UINT32_MAX)
 	help
 	  How long to wait Configure-Req.
 
 config NET_L2_PPP_MAX_CONFIGURE_REQ_RETRANSMITS
 	int "Maximum number of Configure-Req retransmits"
 	default 10
-	range 0 4294967295
+	range 0 $(UINT32_MAX)
 	help
 	  How many times to resend Configure-Req messages before deciding the
 	  link is not working properly.
@@ -28,7 +28,7 @@ config NET_L2_PPP_MAX_CONFIGURE_REQ_RETRANSMITS
 config NET_L2_PPP_MAX_TERMINATE_REQ_RETRANSMITS
 	int "Maximum number of Terminate-Req retransmits"
 	default 2
-	range 0 4294967295
+	range 0 $(UINT32_MAX)
 	help
 	  How many times to resend Terminate-Req messages before terminating
 	  the link.
@@ -36,7 +36,7 @@ config NET_L2_PPP_MAX_TERMINATE_REQ_RETRANSMITS
 config NET_L2_PPP_MAX_NACK_LOOPS
 	int "Maximum number of NACK loops accepted"
 	default 5
-	range 0 4294967295
+	range 0 $(UINT32_MAX)
 	help
 	  How many times to accept NACK loops.
 
@@ -95,7 +95,7 @@ config NET_L2_PPP_THREAD_PRIO
 	int "Priority of the PPP TX thread"
 	default 1
 	help
-	  Set the priority of the the PPP TX thread, that handles all
+	  Set the priority of the PPP TX thread, that handles all
 	  transmission of PPP packets.
 	  Value 0 = highest priortity.
 	  When CONFIG_NET_TC_THREAD_COOPERATIVE = y, lowest priority is

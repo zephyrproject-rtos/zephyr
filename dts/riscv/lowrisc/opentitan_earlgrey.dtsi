@@ -44,12 +44,11 @@
 			reg = <0x10000000 0x10000>;
 		};
 
-		mtimer: timer@40100000 {
-			compatible = "lowrisc,machine-timer";
-			reg = <0x40100000 0x200>;
-			interrupts = <7 0>;
-			interrupt-parent = <&hlic>;
-			status = "disabled";
+		mtimer: timer@40100110 {
+			compatible = "riscv,machine-timer";
+			reg = <0x40100110 0x8 0x40100118 0x8>;
+			reg-names = "mtime", "mtimecmp";
+			interrupts-extended = <&hlic 7>;
 		};
 
 		aontimer: aontimer@40470000 {

@@ -56,8 +56,13 @@ static void isr_tx_normal(void *param);
 static void isr_tx_common(void *param,
 			  radio_isr_cb_t isr_tx,
 			  radio_isr_cb_t isr_done);
-static void next_chan_calc(struct lll_adv_iso *lll, uint16_t event_counter,
-			   uint16_t data_chan_id);
+#if defined(CONFIG_BT_CTLR_ADV_ISO_SEQUENTIAL)
+static void next_chan_calc_seq(struct lll_adv_iso *lll, uint16_t event_counter,
+			       uint16_t data_chan_id);
+#endif /* CONFIG_BT_CTLR_ADV_ISO_SEQUENTIAL */
+#if defined(CONFIG_BT_CTLR_ADV_ISO_INTERLEAVED)
+static void next_chan_calc_int(struct lll_adv_iso *lll, uint16_t event_counter);
+#endif /* CONFIG_BT_CTLR_ADV_ISO_INTERLEAVED */
 static void isr_done_create(void *param);
 static void isr_done_term(void *param);
 
@@ -232,8 +237,8 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	data_chan_use = lll_chan_iso_event(event_counter, data_chan_id,
 					   lll->data_chan_map,
 					   lll->data_chan_count,
-					   &lll->data_chan_prn_s,
-					   &lll->data_chan_remap_idx);
+					   &lll->data_chan.prn_s,
+					   &lll->data_chan.remap_idx);
 
 	/* Start setting up of Radio h/w */
 	radio_reset();
@@ -294,7 +299,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 
 	if (!link) {
 		pdu = radio_pkt_empty_get();
-		pdu->ll_id = PDU_BIS_LLID_START_CONTINUE;
+		pdu->ll_id = lll->framing ? PDU_BIS_LLID_FRAMED : PDU_BIS_LLID_START_CONTINUE;
 		pdu->len = 0U;
 	} else {
 		pdu = (void *)tx->pdu;
@@ -351,7 +356,8 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	/* Radio packet configuration */
 	pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_BIS, phy,
 					 RADIO_PKT_CONF_CTE_DISABLED);
-	if (pdu->len && lll->enc) {
+	if (IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC) &&
+	    pdu->len && lll->enc) {
 		/* Encryption */
 		lll->ccm_tx.counter = payload_count;
 
@@ -377,6 +383,8 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 		radio_pkt_tx_set(pdu);
 	}
 
+	const bool is_sequential_packing = (lll->bis_spacing >= (lll->sub_interval * lll->nse));
+
 	/* Setup radio IFS switching */
 	if ((lll->bn_curr == lll->bn) &&
 	    (lll->irc_curr == lll->irc) &&
@@ -388,9 +396,9 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 		uint16_t iss_us;
 
 		/* Calculate next subevent start based on previous PDU length */
-		iss_us = lll->sub_interval -
-			 PDU_BIS_US(pdu->len, ((pdu->len) ? lll->enc : 0U),
-				    lll->phy, lll->phy_flags);
+		iss_us = is_sequential_packing ? lll->sub_interval : lll->bis_spacing;
+		iss_us -= PDU_BIS_US(pdu->len, ((pdu->len) ? lll->enc : 0U),
+				     lll->phy, lll->phy_flags);
 
 		radio_tmr_tifs_set(iss_us);
 		radio_switch_complete_and_b2b_tx(lll->phy, lll->phy_flags,
@@ -407,7 +415,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	remainder = p->remainder;
 	start_us = radio_tmr_start(1U, ticks_at_start, remainder);
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR) || IS_ENABLED(HAL_RADIO_GPIO_HAVE_PA_PIN)) {
 		/* setup capture of PDU end timestamp */
 		radio_tmr_end_capture();
 	}
@@ -416,7 +424,8 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	radio_gpio_pa_setup();
 
 	radio_gpio_pa_lna_enable(start_us +
-				 radio_tx_ready_delay_get(phy, PHY_FLAGS_S8) -
+				 radio_tx_ready_delay_get(lll->phy,
+							  lll->phy_flags) -
 				 HAL_RADIO_GPIO_PA_OFFSET);
 #else /* !HAL_RADIO_GPIO_HAVE_PA_PIN */
 	ARG_UNUSED(start_us);
@@ -442,7 +451,27 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	LL_ASSERT(!ret);
 
 	/* Calculate ahead the next subevent channel index */
-	next_chan_calc(lll, event_counter, data_chan_id);
+	if (false) {
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO_SEQUENTIAL)
+	} else if (is_sequential_packing) {
+		next_chan_calc_seq(lll, event_counter, data_chan_id);
+#endif /* CONFIG_BT_CTLR_ADV_ISO_SEQUENTIAL */
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO_INTERLEAVED)
+	} else if (!is_sequential_packing) {
+		struct lll_adv_iso_data_chan_interleaved *interleaved_data_chan;
+
+		interleaved_data_chan =
+			&lll->interleaved_data_chan[lll->bis_curr - 1U];
+		interleaved_data_chan->id = data_chan_id;
+
+		next_chan_calc_int(lll, event_counter);
+#endif /* CONFIG_BT_CTLR_ADV_ISO_INTERLEAVED */
+
+	} else {
+		LL_ASSERT(false);
+	}
 
 	return 0;
 }
@@ -468,42 +497,96 @@ static void isr_tx_common(void *param,
 	uint64_t payload_count;
 	uint16_t data_chan_id;
 	uint8_t crc_init[3];
+	uint8_t is_ctrl;
 	uint8_t bis;
+
+#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
+	uint16_t pa_iss_us = 0U;
+#endif /* HAL_RADIO_GPIO_HAVE_PA_PIN */
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_latency_capture();
 	}
 
 	lll = param;
-	/* FIXME: Sequential or Interleaved BIS subevents decision */
-	/* Sequential Tx complete flow pseudo code */
-	if (lll->bn_curr < lll->bn) {
-		/* transmit the (bn_curr)th Tx PDU of bis_curr */
-		lll->bn_curr++; /* post increment */
 
-		bis = lll->bis_curr;
+	/* Sequential or Interleaved BIS subevents decision */
+	const bool is_sequential_packing = (lll->bis_spacing >= (lll->sub_interval * lll->nse));
 
-	} else if (lll->irc_curr < lll->irc) {
-		/* transmit the (bn_curr)th Tx PDU of bis_curr */
-		lll->bn_curr = 1U;
-		lll->irc_curr++; /* post increment */
+	is_ctrl = 0U;
+	if (false) {
 
-		bis = lll->bis_curr;
+#if defined(CONFIG_BT_CTLR_ADV_ISO_SEQUENTIAL)
+	} else if (is_sequential_packing) {
+		/* Sequential Tx complete flow */
+		if (lll->bn_curr < lll->bn) {
+			/* transmit the (bn_curr)th Tx PDU of bis_curr */
+			lll->bn_curr++; /* post increment */
 
-	} else if (lll->ptc_curr < lll->ptc) {
-		lll->ptc_curr++; /* pre increment */
-		/* transmit the (ptc_curr * bn)th Tx PDU */
+			bis = lll->bis_curr;
 
-		bis = lll->bis_curr;
+		} else if (lll->irc_curr < lll->irc) {
+			/* transmit the (bn_curr)th Tx PDU of bis_curr */
+			lll->bn_curr = 1U;
+			lll->irc_curr++; /* post increment */
 
-	} else if (lll->bis_curr < lll->num_bis) {
-		lll->bis_curr++;
-		lll->ptc_curr = 0U;
-		lll->irc_curr = 1U;
-		/* transmit the (bn_curr)th PDU of bis_curr */
-		lll->bn_curr = 1U;
+			bis = lll->bis_curr;
 
-		bis = lll->bis_curr;
+		} else if (lll->ptc_curr < lll->ptc) {
+			lll->ptc_curr++; /* pre increment */
+			/* transmit the (ptc_curr * bn)th Tx PDU */
+
+			bis = lll->bis_curr;
+
+		} else if (lll->bis_curr < lll->num_bis) {
+			lll->bis_curr++;
+			lll->ptc_curr = 0U;
+			lll->irc_curr = 1U;
+			/* transmit the (bn_curr)th PDU of bis_curr */
+			lll->bn_curr = 1U;
+
+			bis = lll->bis_curr;
+		} else {
+			is_ctrl = 1U;
+		}
+#endif /* CONFIG_BT_CTLR_ADV_ISO_SEQUENTIAL */
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO_INTERLEAVED)
+	} else if (!is_sequential_packing) {
+		/* Interleaved Tx complete flow */
+		if (lll->bis_curr < lll->num_bis) {
+			lll->bis_curr++;
+
+			bis = lll->bis_curr;
+		} else if (lll->bn_curr < lll->bn) {
+			lll->bn_curr++;
+			lll->bis_curr = 1U;
+
+			bis = lll->bis_curr;
+		} else if (lll->irc_curr < lll->irc) {
+			lll->irc_curr++;
+			lll->bn_curr = 1U;
+			lll->bis_curr = 1U;
+
+			bis = lll->bis_curr;
+		} else if (lll->ptc_curr < lll->ptc) {
+			lll->ptc_curr++;
+			lll->bis_curr = 1U;
+
+			bis = lll->bis_curr;
+		} else {
+			is_ctrl = 1U;
+		}
+#endif /* CONFIG_BT_CTLR_ADV_ISO_INTERLEAVED */
+
+	} else {
+		bis = 0U;
+
+		LL_ASSERT(false);
+	}
+
+	if (!is_ctrl) {
+		/* ISO data subevent, nothing to do here */
 
 	} else if (lll->term_ack) {
 		/* Transmit the control PDU and close the BIG event
@@ -552,6 +635,7 @@ static void isr_tx_common(void *param,
 		payload_count = lll->payload_count - lll->bn;
 
 	} else {
+		/* All subevents in the ISO interval is done. */
 		struct lll_adv_iso_stream *stream;
 		uint16_t stream_handle;
 		memq_link_t *link;
@@ -619,10 +703,35 @@ static void isr_tx_common(void *param,
 
 	/* Get ISO data PDU, not control subevent */
 	if (!pdu) {
-		uint8_t payload_index;
+		uint16_t payload_index;
 
-		payload_index = (lll->bn_curr - 1U) +
-				(lll->ptc_curr * lll->pto);
+		if (lll->ptc_curr) {
+			/* FIXME: Do not remember why ptc is 4 bits, it should be 5 bits as ptc is a
+			 *        running buffer offset related to nse.
+			 *        Fix ptc and ptc_curr definitions, until then there is an assertion
+			 *        check when ptc is calculated in ptc_calc function.
+			 */
+			uint8_t ptx_idx = lll->ptc_curr - 1U; /* max. nse 5 bits */
+			uint8_t ptx_payload_idx;
+			uint16_t ptx_group_mult;
+			uint8_t ptx_group_idx;
+
+			/* Calculate group index and multiplier for deriving
+			 * pre-transmission payload index.
+			 */
+			ptx_group_idx = ptx_idx / lll->bn; /* 5 bits */
+			ptx_payload_idx = ptx_idx - ptx_group_idx * lll->bn; /* 8 bits */
+			ptx_group_mult = (ptx_group_idx + 1U) * lll->pto; /* 9 bits */
+			payload_index = ptx_payload_idx + ptx_group_mult * lll->bn; /* 13 bits */
+
+			/* FIXME: memq_peek_n function does not support indices > UINT8_MAX,
+			 *        add assertion check to honor this limitation.
+			 */
+			LL_ASSERT(payload_index <= UINT8_MAX);
+		} else {
+			payload_index  = lll->bn_curr - 1U; /* 3 bits */
+		}
+
 		payload_count = lll->payload_count + payload_index - lll->bn;
 
 #if !TEST_WITH_DUMMY_PDU
@@ -648,8 +757,13 @@ static void isr_tx_common(void *param,
 				 (tx->payload_count < payload_count));
 		}
 		if (!link || (tx->payload_count != payload_count)) {
+			/* FIXME: Do not transmit on air an empty PDU if this is a Pre-Transmission
+			 *        subevent, instead use radio_tmr_start_us() to schedule next valid
+			 *        subevent.
+			 */
 			pdu = radio_pkt_empty_get();
-			pdu->ll_id = PDU_BIS_LLID_START_CONTINUE;
+			pdu->ll_id = lll->framing ? PDU_BIS_LLID_FRAMED :
+						    PDU_BIS_LLID_START_CONTINUE;
 			pdu->len = 0U;
 		} else {
 			pdu = (void *)tx->pdu;
@@ -691,14 +805,15 @@ static void isr_tx_common(void *param,
 		data_chan_use = lll_chan_iso_event(event_counter, data_chan_id,
 						   lll->data_chan_map,
 						   lll->data_chan_count,
-						   &lll->data_chan_prn_s,
-						   &lll->data_chan_remap_idx);
+						   &lll->data_chan.prn_s,
+						   &lll->data_chan.remap_idx);
 	}
 
 	lll_chan_set(data_chan_use);
 
 	/* Encryption */
-	if (pdu->len && lll->enc) {
+	if (IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC) &&
+	    pdu->len && lll->enc) {
 		lll->ccm_tx.counter = payload_count;
 
 		(void)memcpy(lll->ccm_tx.iv, lll->giv, 4U);
@@ -735,52 +850,96 @@ static void isr_tx_common(void *param,
 		uint16_t iss_us;
 
 		/* Calculate next subevent start based on previous PDU length */
-		iss_us = lll->sub_interval -
-			 PDU_BIS_US(pdu->len, ((pdu->len) ? lll->enc : 0U),
-				    lll->phy, lll->phy_flags);
+		iss_us = is_sequential_packing ? lll->sub_interval : lll->bis_spacing;
+		iss_us -= PDU_BIS_US(pdu->len, ((pdu->len) ? lll->enc : 0U),
+				     lll->phy, lll->phy_flags);
 
 		radio_tmr_tifs_set(iss_us);
 		radio_switch_complete_and_b2b_tx(lll->phy, lll->phy_flags,
 						 lll->phy, lll->phy_flags);
 
 		radio_isr_set(isr_tx, lll);
+
+#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
+		/* local variable used later to store iss_us next subevent PA
+		 * setup.
+		 */
+		pa_iss_us = iss_us;
+#endif /* HAL_RADIO_GPIO_HAVE_PA_PIN */
 	}
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
-		/* setup capture of PDU end timestamp */
-		radio_tmr_end_capture();
-	}
-
-	/* assert if radio packet ptr is not set and radio started rx */
+	/* assert if radio packet ptr is not set and radio started tx */
 	LL_ASSERT(!radio_is_ready());
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_cputime_capture();
 	}
 
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR) || IS_ENABLED(HAL_RADIO_GPIO_HAVE_PA_PIN)) {
+		/* setup capture of PDU end timestamp */
+		radio_tmr_end_capture();
+	}
+
+#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		/* PA/LNA enable is overwriting packet end used in ISR
+		 * profiling, hence back it up for later use.
+		 */
+		lll_prof_radio_end_backup();
+	}
+
+	radio_gpio_pa_setup();
+	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() +
+				 lll->pa_iss_us -
+				 (EVENT_CLOCK_JITTER_US << 1U) -
+				 radio_tx_chain_delay_get(lll->phy,
+							  lll->phy_flags) -
+				 HAL_RADIO_GPIO_PA_OFFSET);
+
+	/* Remember to use it for the next subevent PA setup */
+	lll->pa_iss_us = pa_iss_us;
+
+#endif /* HAL_RADIO_GPIO_HAVE_PA_PIN */
+
 	/* Calculate ahead the next subevent channel index */
 	const uint16_t event_counter = (lll->payload_count / lll->bn) - 1U;
 
-	next_chan_calc(lll, event_counter, data_chan_id);
+	if (false) {
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO_SEQUENTIAL)
+	} else if (is_sequential_packing) {
+		next_chan_calc_seq(lll, event_counter, data_chan_id);
+#endif /* CONFIG_BT_CTLR_ADV_ISO_SEQUENTIAL */
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO_INTERLEAVED)
+	} else if (!is_sequential_packing) {
+		next_chan_calc_int(lll, event_counter);
+#endif /* CONFIG_BT_CTLR_ADV_ISO_INTERLEAVED */
+
+	} else {
+		LL_ASSERT(false);
+	}
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_send();
 	}
 }
 
-static void next_chan_calc(struct lll_adv_iso *lll, uint16_t event_counter,
-			   uint16_t data_chan_id)
+#if defined(CONFIG_BT_CTLR_ADV_ISO_SEQUENTIAL)
+static void next_chan_calc_seq(struct lll_adv_iso *lll, uint16_t event_counter,
+			       uint16_t data_chan_id)
 {
 	/* Calculate ahead the next subevent channel index */
 	if ((lll->bn_curr < lll->bn) ||
 	    (lll->irc_curr < lll->irc) ||
 	    (lll->ptc_curr < lll->ptc)) {
 		/* Calculate the radio channel to use for next subevent */
-		lll->next_chan_use = lll_chan_iso_subevent(data_chan_id,
-						lll->data_chan_map,
-						lll->data_chan_count,
-						&lll->data_chan_prn_s,
-						&lll->data_chan_remap_idx);
+		lll->next_chan_use =
+			lll_chan_iso_subevent(data_chan_id,
+					      lll->data_chan_map,
+					      lll->data_chan_count,
+					      &lll->data_chan.prn_s,
+					      &lll->data_chan.remap_idx);
 	} else if (lll->bis_curr < lll->num_bis) {
 		uint8_t access_addr[4];
 
@@ -790,14 +949,72 @@ static void next_chan_calc(struct lll_adv_iso *lll, uint16_t event_counter,
 		data_chan_id = lll_chan_id(access_addr);
 
 		/* Calculate the radio channel to use for next BIS */
-		lll->next_chan_use = lll_chan_iso_event(event_counter,
-						data_chan_id,
-						lll->data_chan_map,
-						lll->data_chan_count,
-						&lll->data_chan_prn_s,
-						&lll->data_chan_remap_idx);
+		lll->next_chan_use =
+			lll_chan_iso_event(event_counter,
+					   data_chan_id,
+					   lll->data_chan_map,
+					   lll->data_chan_count,
+					   &lll->data_chan.prn_s,
+					   &lll->data_chan.remap_idx);
 	}
 }
+#endif /* CONFIG_BT_CTLR_ADV_ISO_SEQUENTIAL */
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO_INTERLEAVED)
+static void next_chan_calc_int(struct lll_adv_iso *lll, uint16_t event_counter)
+{
+	struct lll_adv_iso_data_chan_interleaved *interleaved_data_chan;
+
+	if ((lll->bis_curr >= lll->num_bis) &&
+	    (lll->bn_curr >= lll->bn) &&
+	    (lll->irc_curr >= lll->irc) &&
+	    (lll->ptc_curr >= lll->ptc)) {
+		return;
+	}
+
+	if ((lll->bis_curr < lll->num_bis) &&
+	    (lll->bn_curr == 1U) &&
+	    (lll->irc_curr == 1U) &&
+	    (lll->ptc_curr == 0U)) {
+		uint8_t access_addr[4];
+
+		/* Calculate the Access Address for the next BIS subevent */
+		util_bis_aa_le32((lll->bis_curr + 1U), lll->seed_access_addr,
+				 access_addr);
+
+		interleaved_data_chan =
+			&lll->interleaved_data_chan[lll->bis_curr];
+		interleaved_data_chan->id = lll_chan_id(access_addr);
+
+		/* Calculate the radio channel to use for next BIS */
+		lll->next_chan_use =
+			lll_chan_iso_event(event_counter,
+					   interleaved_data_chan->id,
+					   lll->data_chan_map,
+					   lll->data_chan_count,
+					   &interleaved_data_chan->prn_s,
+					   &interleaved_data_chan->remap_idx);
+	} else {
+		uint8_t bis_idx;
+
+		if (lll->bis_curr >= lll->num_bis) {
+			bis_idx = 0U;
+		} else {
+			bis_idx = lll->bis_curr;
+		}
+
+		interleaved_data_chan = &lll->interleaved_data_chan[bis_idx];
+
+		/* Calculate the radio channel to use for next subevent */
+		lll->next_chan_use =
+			lll_chan_iso_subevent(interleaved_data_chan->id,
+					      lll->data_chan_map,
+					      lll->data_chan_count,
+					      &interleaved_data_chan->prn_s,
+					      &interleaved_data_chan->remap_idx);
+	}
+}
+#endif  /* CONFIG_BT_CTLR_ADV_ISO_INTERLEAVED */
 
 static void isr_done_create(void *param)
 {

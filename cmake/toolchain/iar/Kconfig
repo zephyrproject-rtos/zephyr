@@ -1,0 +1,63 @@
+# Copyright (c) 2025 IAR Systems AB
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config LD_LINKER_SCRIPT_SUPPORTED
+	default n
+
+choice LINKER_SCRIPT
+	default CMAKE_LINKER_GENERATOR
+endchoice
+
+menu "IAR options"
+
+choice IAR_INIT
+	bool "Static initialization method"
+	depends on XIP
+	default IAR_ZEPHYR_INIT
+
+config IAR_DATA_INIT
+	bool "IAR"
+	select SKIP_BSS_CLEAR # IAR handles zeroing.
+	help
+	  IAR handles initialization of static variables.
+	  Instead of `z_prep_c` calling Zephyrs `z_data_copy`
+	  we call IARs own proprietary initialization method
+	  which can save time and space.
+
+config IAR_ZEPHYR_INIT
+	bool "Zephyr"
+	help
+	  Zephyr handles initialization of static variables.
+	  This is the regular `z_data_copy`.
+
+endchoice
+
+
+config IAR_SEMIHOSTING
+	bool "Use the IAR semihosting implementation."
+	depends on IAR_LIBC
+	help
+	  Use the semihosting implementation in the IAR library
+	  instead of the Zephyr implementation.
+
+config IAR_BUFFERED_WRITE
+	bool "Use buffered write"
+	depends on IAR_SEMIHOSTING
+	help
+	  Instead of printing one character at a time
+	  this option uses a buffer to print a line
+	  at a time instead, increasing speed of printout.
+
+endmenu
+
+config TOOLCHAIN_IAR_SUPPORTS_THREAD_LOCAL_STORAGE
+	def_bool y
+	select TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
+
+# Should we set this? It doesn't seem to be used
+# We support most but don't set __GNUC__
+#
+config TOOLCHAIN_IAR_SUPPORTS_GNU_EXTENSIONS
+	def_bool y
+	select TOOLCHAIN_SUPPORTS_GNU_EXTENSIONS

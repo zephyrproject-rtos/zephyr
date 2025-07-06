@@ -12,8 +12,6 @@
 #include <zephyr/posix/sys/socket.h>
 #endif
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-value"
 /**
  * @brief existence test for `<sys/socket.h>`
  *
@@ -51,9 +49,9 @@ ZTEST(posix_headers, test_sys_socket_h)
 	zassert_not_equal(-1, offsetof(struct cmsghdr, cmsg_level));
 	zassert_not_equal(-1, offsetof(struct cmsghdr, cmsg_type));
 
-	CMSG_DATA(&cmsg);
-	CMSG_NXTHDR(&mhdr, &cmsg);
-	CMSG_FIRSTHDR(&mhdr);
+	ARG_UNUSED(CMSG_DATA(&cmsg));
+	__unused struct cmsghdr *next = CMSG_NXTHDR(&mhdr, &cmsg);
+	__unused struct cmsghdr *first = CMSG_FIRSTHDR(&mhdr);
 
 	zassert_not_equal(-1, offsetof(struct linger, l_onoff));
 	zassert_not_equal(-1, offsetof(struct linger, l_linger));
@@ -100,7 +98,7 @@ ZTEST(posix_headers, test_sys_socket_h)
 	zassert_not_equal(-1, SHUT_RDWR);
 	zassert_not_equal(-1, SHUT_WR);
 
-	if (IS_ENABLED(CONFIG_POSIX_API)) {
+	if (IS_ENABLED(CONFIG_POSIX_NETWORKING)) {
 		zassert_not_null(accept);
 		zassert_not_null(bind);
 		zassert_not_null(connect);
@@ -120,4 +118,3 @@ ZTEST(posix_headers, test_sys_socket_h)
 		zassert_not_null(socketpair);
 	}
 }
-#pragma GCC diagnostic pop

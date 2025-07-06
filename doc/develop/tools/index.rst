@@ -8,3 +8,5 @@ Tools and IDEs
 
    clion.rst
    coccinelle.rst
+   stm32cubeide.rst
+   vscode.rst

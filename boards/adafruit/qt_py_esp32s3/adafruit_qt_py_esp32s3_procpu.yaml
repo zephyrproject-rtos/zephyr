@@ -1,0 +1,19 @@
+identifier: adafruit_qt_py_esp32s3/esp32s3/procpu
+name: Adafruit QT Py ESP32S3 PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - uart
+  - i2c
+  - i2s
+  - spi
+  - can
+  - counter
+  - watchdog
+  - entropy
+  - pwm
+  - dma
+vendor: adafruit

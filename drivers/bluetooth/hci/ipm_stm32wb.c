@@ -11,7 +11,7 @@
 #include <zephyr/init.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/bluetooth/hci.h>
-#include <zephyr/drivers/bluetooth/hci_driver.h>
+#include <zephyr/drivers/bluetooth.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/irq.h>
@@ -21,7 +21,11 @@
 #include "shci.h"
 #include "shci_tl.h"
 
-static const struct stm32_pclken clk_cfg[] = STM32_DT_CLOCKS(DT_NODELABEL(ble_rf));
+struct hci_data {
+	bt_hci_recv_t recv;
+};
+
+static const struct stm32_pclken clk_cfg[] = STM32_DT_CLOCKS(DT_DRV_INST(0));
 
 #define POOL_SIZE (CFG_TLBLE_EVT_QUEUE_LENGTH * 4 * \
 		DIVC((sizeof(TL_PacketHeader_t) + TL_BLE_EVENT_FRAME_SIZE), 4))
@@ -45,11 +49,6 @@ static void sysevt_received(void *pdata);
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(hci_ipm);
-
-#define HCI_CMD                 0x01
-#define HCI_ACL                 0x02
-#define HCI_SCO                 0x03
-#define HCI_EVT                 0x04
 
 #define STM32WB_C2_LOCK_TIMEOUT K_MSEC(500)
 
@@ -161,7 +160,9 @@ void TM_EvtReceivedCb(TL_EvtPacket_t *hcievt)
 
 static void bt_ipm_rx_thread(void *p1, void *p2, void *p3)
 {
-	ARG_UNUSED(p1);
+	const struct device *dev = p1;
+	struct hci_data *hci = dev->data;
+
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
@@ -181,7 +182,7 @@ static void bt_ipm_rx_thread(void *p1, void *p2, void *p3)
 		k_sem_take(&ipm_busy, K_FOREVER);
 
 		switch (hcievt->evtserial.type) {
-		case HCI_EVT:
+		case BT_HCI_H4_EVT:
 			LOG_DBG("EVT: hcievt->evtserial.evt.evtcode: 0x%02x",
 				hcievt->evtserial.evt.evtcode);
 			switch (hcievt->evtserial.evt.evtcode) {
@@ -222,7 +223,7 @@ static void bt_ipm_rx_thread(void *p1, void *p2, void *p3)
 			net_buf_add_mem(buf, &hcievt->evtserial.evt,
 					buf_add_len);
 			break;
-		case HCI_ACL:
+		case BT_HCI_H4_ACL:
 			acl = &(((TL_AclDataPacket_t *)hcievt)->AclDataSerial);
 			buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
 			acl_hdr.handle = acl->handle;
@@ -250,7 +251,7 @@ static void bt_ipm_rx_thread(void *p1, void *p2, void *p3)
 
 		TL_MM_EvtDone(hcievt);
 
-		bt_recv(buf);
+		hci->recv(dev, buf);
 end_loop:
 		k_sem_give(&ipm_busy);
 	}
@@ -352,28 +353,27 @@ void transport_init(void)
 	TL_Enable();
 }
 
-static int bt_ipm_send(struct net_buf *buf)
+static int bt_ipm_send(const struct device *dev, struct net_buf *buf)
 {
 	TL_CmdPacket_t *ble_cmd_buff = &BleCmdBuffer;
 
+	ARG_UNUSED(dev);
+
 	k_sem_take(&ipm_busy, K_FOREVER);
 
-	switch (bt_buf_get_type(buf)) {
-	case BT_BUF_ACL_OUT:
-		LOG_DBG("ACL: buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
+	switch (buf->data[0]) {
+	case BT_HCI_H4_ACL:
+		LOG_DBG("ACL: buf %p type %u len %u", buf, buf->data[0], buf->len);
 		k_sem_take(&acl_data_ack, K_FOREVER);
-		net_buf_push_u8(buf, HCI_ACL);
-		memcpy((void *)
-		       &((TL_AclDataPacket_t *)HciAclDataBuffer)->AclDataSerial,
+		memcpy((void *)&((TL_AclDataPacket_t *)HciAclDataBuffer)->AclDataSerial,
 		       buf->data, buf->len);
 		TL_BLE_SendAclData(NULL, 0);
 		break;
-	case BT_BUF_CMD:
-		LOG_DBG("CMD: buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
-		ble_cmd_buff->cmdserial.type = HCI_CMD;
+	case BT_HCI_H4_CMD:
+		LOG_DBG("CMD: buf %p type %u len %u", buf, buf->data[0], buf->len);
+		ble_cmd_buff->cmdserial.type = net_buf_pull_u8(buf);
 		ble_cmd_buff->cmdserial.cmd.plen = buf->len;
-		memcpy((void *)&ble_cmd_buff->cmdserial.cmd, buf->data,
-		       buf->len);
+		memcpy((void *)&ble_cmd_buff->cmdserial.cmd, buf->data, buf->len);
 		TL_BLE_SendCmd(NULL, 0);
 		break;
 	default:
@@ -425,7 +425,7 @@ static int bt_ipm_set_addr(void)
 {
 	bt_addr_t *uid_addr;
 	struct aci_set_ble_addr *param;
-	struct net_buf *buf, *rsp;
+	struct net_buf *buf;
 	int err;
 
 	uid_addr = bt_get_ble_addr();
@@ -433,8 +433,7 @@ static int bt_ipm_set_addr(void)
 		return -ENOMSG;
 	}
 
-	buf = bt_hci_cmd_create(ACI_HAL_WRITE_CONFIG_DATA, sizeof(*param));
-
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -449,18 +448,18 @@ static int bt_ipm_set_addr(void)
 	param->value[4] = uid_addr->val[4];
 	param->value[5] = uid_addr->val[5];
 
-	err = bt_hci_cmd_send_sync(ACI_HAL_WRITE_CONFIG_DATA, buf, &rsp);
+	err = bt_hci_cmd_send_sync(ACI_HAL_WRITE_CONFIG_DATA, buf, NULL);
 	if (err) {
 		return err;
 	}
-	net_buf_unref(rsp);
+
 	return 0;
 }
 
 static int bt_ipm_ble_init(void)
 {
 	struct aci_set_tx_power *param;
-	struct net_buf *buf, *rsp;
+	struct net_buf *buf;
 	int err;
 
 	err = bt_ipm_set_addr();
@@ -468,7 +467,7 @@ static int bt_ipm_ble_init(void)
 		LOG_ERR("Can't set BLE UID addr");
 	}
 	/* Send ACI_WRITE_SET_TX_POWER_LEVEL */
-	buf = bt_hci_cmd_create(ACI_WRITE_SET_TX_POWER_LEVEL, 3);
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -477,11 +476,10 @@ static int bt_ipm_ble_init(void)
 	param->value[0] = 0x18;
 	param->value[1] = 0x01;
 
-	err = bt_hci_cmd_send_sync(ACI_WRITE_SET_TX_POWER_LEVEL, buf, &rsp);
+	err = bt_hci_cmd_send_sync(ACI_WRITE_SET_TX_POWER_LEVEL, buf, NULL);
 	if (err) {
 		return err;
 	}
-	net_buf_unref(rsp);
 
 	return 0;
 }
@@ -539,8 +537,9 @@ static int c2_reset(void)
 	return 0;
 }
 
-static int bt_ipm_open(void)
+static int bt_ipm_open(const struct device *dev, bt_hci_recv_t recv)
 {
+	struct hci_data *hci = dev->data;
 	int err;
 
 	if (!c2_started_flag) {
@@ -558,9 +557,22 @@ static int bt_ipm_open(void)
 	/* Start RX thread */
 	k_thread_create(&ipm_rx_thread_data, ipm_rx_stack,
 			K_KERNEL_STACK_SIZEOF(ipm_rx_stack),
-			bt_ipm_rx_thread, NULL, NULL, NULL,
+			bt_ipm_rx_thread, (void *)dev, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO),
 			0, K_NO_WAIT);
+
+	hci->recv = recv;
+
+	LOG_DBG("IPM Channel Open Completed");
+
+	return 0;
+}
+
+static int bt_ipm_setup(const struct device *dev, const struct bt_hci_setup_params *params)
+{
+	ARG_UNUSED(params);
+	ARG_UNUSED(dev);
+	int err;
 
 #ifdef CONFIG_BT_HCI_HOST
 	err = bt_ipm_ble_init();
@@ -569,23 +581,22 @@ static int bt_ipm_open(void)
 	}
 #endif /* CONFIG_BT_HCI_HOST */
 
-	LOG_DBG("IPM Channel Open Completed");
+	LOG_DBG("IPM Channel Setup Completed");
 
 	return 0;
 }
 
 #ifdef CONFIG_BT_HCI_HOST
-static int bt_ipm_close(void)
+static int bt_ipm_close(const struct device *dev)
 {
+	struct hci_data *hci = dev->data;
 	int err;
-	struct net_buf *rsp;
 
-	err = bt_hci_cmd_send_sync(ACI_HAL_STACK_RESET, NULL, &rsp);
+	err = bt_hci_cmd_send_sync(ACI_HAL_STACK_RESET, NULL, NULL);
 	if (err) {
 		LOG_ERR("IPM Channel Close Issue");
 		return err;
 	}
-	net_buf_unref(rsp);
 
 	/* Wait till C2DS set */
 	while (LL_PWR_IsActiveFlag_C2DS() == 0) {
@@ -595,28 +606,28 @@ static int bt_ipm_close(void)
 
 	k_thread_abort(&ipm_rx_thread_data);
 
+	hci->recv = NULL;
+
 	LOG_DBG("IPM Channel Close Completed");
 
 	return err;
 }
 #endif /* CONFIG_BT_HCI_HOST */
 
-static const struct bt_hci_driver drv = {
-	.name           = "BT IPM",
-	.bus            = BT_HCI_DRIVER_BUS_IPM,
+static DEVICE_API(bt_hci, drv) = {
 	.open           = bt_ipm_open,
 #ifdef CONFIG_BT_HCI_HOST
 	.close          = bt_ipm_close,
 #endif
 	.send           = bt_ipm_send,
+	.setup          = bt_ipm_setup,
 };
 
-static int _bt_ipm_init(void)
+static int _bt_ipm_init(const struct device *dev)
 {
 	int err;
 
-
-	bt_hci_driver_register(&drv);
+	ARG_UNUSED(dev);
 
 	err = c2_reset();
 	if (err) {
@@ -626,4 +637,11 @@ static int _bt_ipm_init(void)
 	return 0;
 }
 
-SYS_INIT(_bt_ipm_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+#define HCI_DEVICE_INIT(inst) \
+	static struct hci_data hci_data_##inst = { \
+	}; \
+	DEVICE_DT_INST_DEFINE(inst, _bt_ipm_init, NULL, &hci_data_##inst, NULL, \
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
+
+/* Only one instance supported right now */
+HCI_DEVICE_INIT(0)

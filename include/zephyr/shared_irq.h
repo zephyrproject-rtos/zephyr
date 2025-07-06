@@ -9,6 +9,7 @@
 #ifndef ZEPHYR_INCLUDE_SHARED_IRQ_H_
 #define ZEPHYR_INCLUDE_SHARED_IRQ_H_
 
+#include <zephyr/device.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,7 +26,7 @@ typedef int (*shared_irq_enable_t)(const struct device *dev,
 typedef int (*shared_irq_disable_t)(const struct device *dev,
 				    const struct device *isr_dev);
 
-struct shared_irq_driver_api {
+__subsystem struct shared_irq_driver_api {
 	shared_irq_register_t isr_register;
 	shared_irq_enable_t enable;
 	shared_irq_disable_t disable;

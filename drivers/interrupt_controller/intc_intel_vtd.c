@@ -523,7 +523,7 @@ out:
 	return ret;
 }
 
-static const struct vtd_driver_api vtd_api = {
+static DEVICE_API(vtd, vtd_api) = {
 	.allocate_entries = vtd_ictl_allocate_entries,
 	.remap_msi = vtd_ictl_remap_msi,
 	.remap = vtd_ictl_remap,

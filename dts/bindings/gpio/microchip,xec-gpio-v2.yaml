@@ -1,7 +1,7 @@
 # Copyright (c) 2019, Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-description: Microchip CEC/MEC GPIO V2 node
+description: Microchip CEC/MEC GPIO V2
 
 compatible: "microchip,xec-gpio-v2"
 

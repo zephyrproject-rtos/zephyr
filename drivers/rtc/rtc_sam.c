@@ -14,6 +14,7 @@
 
 #include <string.h>
 #include <soc.h>
+#include "rtc_utils.h"
 
 #define RTC_SAM_REG_GET_FIELD(value, field) \
 	((RTC_##field##_Msk & value) >> RTC_##field##_Pos)
@@ -55,12 +56,16 @@ struct rtc_sam_data {
 
 static void rtc_sam_disable_wp(void)
 {
+#ifdef REG_RTC_WPMR
 	REG_RTC_WPMR = RTC_SAM_WPMR_DISABLE;
+#endif
 }
 
 static void rtc_sam_enable_wp(void)
 {
+#ifdef REG_RTC_WPMR
 	REG_RTC_WPMR = RTC_SAM_WPMR_ENABLE;
+#endif
 }
 
 static uint32_t rtc_sam_timr_from_tm(const struct rtc_time *timeptr)
@@ -358,7 +363,7 @@ static int rtc_sam_alarm_set_time(const struct device *dev, uint16_t id, uint16_
 		return -EINVAL;
 	}
 
-	if (rtc_sam_validate_tm(timeptr, mask) == false) {
+	if (rtc_utils_validate_rtc_time(timeptr, mask) == false) {
 		return -EINVAL;
 	}
 
@@ -615,7 +620,7 @@ static int rtc_sam_get_calibration(const struct device *dev, int32_t *calibratio
 }
 #endif /* CONFIG_RTC_CALIBRATION */
 
-static const struct rtc_driver_api rtc_sam_driver_api = {
+static DEVICE_API(rtc, rtc_sam_driver_api) = {
 	.set_time = rtc_sam_set_time,
 	.get_time = rtc_sam_get_time,
 #ifdef CONFIG_RTC_ALARM
@@ -641,7 +646,11 @@ static int rtc_sam_init(const struct device *dev)
 	Rtc *regs = config->regs;
 
 	rtc_sam_disable_wp();
+#ifdef RTC_MR_PERSIAN
 	regs->RTC_MR &= ~(RTC_MR_HRMOD | RTC_MR_PERSIAN);
+#else
+	regs->RTC_MR &= ~RTC_MR_HRMOD;
+#endif
 	regs->RTC_CR = 0;
 	rtc_sam_enable_wp();
 	regs->RTC_IDR = (RTC_IDR_ACKDIS

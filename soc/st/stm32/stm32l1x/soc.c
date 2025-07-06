@@ -15,6 +15,7 @@
 #include <string.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_pwr.h>
+#include <stm32_ll_system.h>
 
 #include <cmsis_core.h>
 
@@ -22,12 +23,12 @@
  * @brief Perform basic hardware initialization at boot.
  *
  * This needs to be run from the very beginning.
- * So the init priority has to be 0 (zero).
- *
- * @return 0
  */
-static int stm32l1_init(void)
+void soc_early_init_hook(void)
 {
+	/* Enable ART accelerator prefetch */
+	LL_FLASH_EnablePrefetch();
+
 	/* Update CMSIS SystemCoreClock variable (HCLK) */
 	/* At reset, system core clock is set to 2.1 MHz from MSI */
 	SystemCoreClock = 2097000;
@@ -38,8 +39,4 @@ static int stm32l1_init(void)
 	 */
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
 	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
-
-	return 0;
 }
-
-SYS_INIT(stm32l1_init, PRE_KERNEL_1, 0);

@@ -27,7 +27,7 @@ const int _k_neg_eagain = -EAGAIN;
 #if defined(CONFIG_LIBC_ERRNO)
 /* nothing needed here */
 #elif defined(CONFIG_ERRNO_IN_TLS)
-__thread int z_errno_var;
+Z_THREAD_LOCAL int z_errno_var;
 #else
 
 #ifdef CONFIG_USERSPACE
@@ -43,7 +43,7 @@ static inline int *z_vrfy_z_errno(void)
 {
 	return z_impl_z_errno();
 }
-#include <syscalls/z_errno_mrsh.c>
+#include <zephyr/syscalls/z_errno_mrsh.c>
 
 #else
 int *z_impl_z_errno(void)

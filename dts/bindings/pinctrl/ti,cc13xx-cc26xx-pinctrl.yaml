@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    TI SimpleLink CC13xx / CC26xx pinctrl node.
+    TI SimpleLink CC13xx / CC26xx Pin Controller
 
     Device pin configuration should be placed in the child nodes of this node.
     Populate the 'pinmux' field with a pair consisting of a pin number and its IO
@@ -123,7 +123,7 @@ child-binding:
         configured as an output.
           2: min 2 mA (SoC default)
           4: min 4 mA
-          8: min 8 mA for for double drive strength IOs, min 4 mA for normal IOs
+          8: min 8 mA for double drive strength IOs, min 4 mA for normal IOs
 
     ti,input-edge-detect:
       type: int

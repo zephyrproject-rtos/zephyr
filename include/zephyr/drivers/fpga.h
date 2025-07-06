@@ -101,6 +101,13 @@ static inline enum FPGA_status fpga_get_status(const struct device *dev)
 	const struct fpga_driver_api *api =
 		(const struct fpga_driver_api *)dev->api;
 
+	if (api->get_status == NULL) {
+		/* assume it can never be reprogrammed if it
+		 * doesn't support the get_status callback
+		 */
+		return FPGA_STATUS_INACTIVE;
+	}
+
 	return api->get_status(dev);
 }
 
@@ -116,6 +123,10 @@ static inline int fpga_reset(const struct device *dev)
 {
 	const struct fpga_driver_api *api =
 		(const struct fpga_driver_api *)dev->api;
+
+	if (api->reset == NULL) {
+		return -ENOTSUP;
+	}
 
 	return api->reset(dev);
 }
@@ -135,6 +146,10 @@ static inline int fpga_load(const struct device *dev, uint32_t *image_ptr,
 {
 	const struct fpga_driver_api *api =
 		(const struct fpga_driver_api *)dev->api;
+
+	if (api->load == NULL) {
+		return -ENOTSUP;
+	}
 
 	return api->load(dev, image_ptr, img_size);
 }
@@ -159,6 +174,8 @@ static inline int fpga_on(const struct device *dev)
 	return api->on(dev);
 }
 
+#define FPGA_GET_INFO_DEFAULT "n/a"
+
 /**
  * @brief Returns information about the FPGA.
  *
@@ -170,6 +187,10 @@ static inline const char *fpga_get_info(const struct device *dev)
 {
 	const struct fpga_driver_api *api =
 		(const struct fpga_driver_api *)dev->api;
+
+	if (api->get_info == NULL) {
+		return FPGA_GET_INFO_DEFAULT;
+	}
 
 	return api->get_info(dev);
 }

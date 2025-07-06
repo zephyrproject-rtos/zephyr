@@ -5,14 +5,14 @@
  */
 
 &pinctrl {
-    uart2_esp8266: uart2_esp8266 {
-	group0 {
-		pinmux = <PC1MFP_UART2_TXD>,
-			 <PC0MFP_UART2_RXD>,
-			 <PC3MFP_UART2_nRTS>,
-			 <PC2MFP_UART2_nCTS>;
+	uart2_esp8266: uart2_esp8266 {
+		group0 {
+			pinmux = <PC1MFP_UART2_TXD>,
+				 <PC0MFP_UART2_RXD>,
+				 <PC3MFP_UART2_nRTS>,
+				 <PC2MFP_UART2_nCTS>;
+		};
 	};
-    };
 };
 
 &uart2 {
@@ -27,7 +27,7 @@
 		compatible = "espressif,esp-at";
 		reset-gpios = <&gpioc 4 GPIO_ACTIVE_LOW>;
 		status = "okay";
-    };
+	};
 };
 
 &gpioc {

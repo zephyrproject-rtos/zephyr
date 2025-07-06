@@ -1,0 +1,19 @@
+identifier: frdm_mcxw72/mcxw727c/cpu0
+name: NXP FRDM_MCXW72
+type: mcu
+arch: arm
+ram: 264
+flash: 2048
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - can
+  - counter
+  - gpio
+  - i2c
+  - pinctrl
+  - pwm
+  - spi
+  - uart

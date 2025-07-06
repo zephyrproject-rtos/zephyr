@@ -1,5 +1,6 @@
 board:
   name: stm32h735g_disco
+  full_name: STM32H735G Discovery
   vendor: st
   socs:
     - name: stm32h735xx

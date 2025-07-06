@@ -1,0 +1,16 @@
+# EFR32XG24 EK2703A board
+
+# Copyright (c) 2022, Silicon Labs
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_XG24_EK2703A
+
+config BOARD_XG24_EK2703A
+	select GPIO
+	select BOARD_LATE_INIT_HOOK
+
+module = BOARD_EFR32MG24
+module-str = Board Control
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # BOARD_XG24_EK2703A

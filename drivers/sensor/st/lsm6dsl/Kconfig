@@ -27,11 +27,13 @@ config LSM6DSL_TRIGGER_NONE
 config LSM6DSL_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSL),irq-gpios)
 	select LSM6DSL_TRIGGER
 
 config LSM6DSL_TRIGGER_OWN_THREAD
 	bool "Use own thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSL),irq-gpios)
 	select LSM6DSL_TRIGGER
 
 endchoice

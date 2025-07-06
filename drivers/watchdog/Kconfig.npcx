@@ -7,17 +7,17 @@ config WDT_NPCX
 	bool "Nuvoton NPCX embedded controller (EC) Watchdog Timer driver"
 	default y
 	depends on DT_HAS_NUVOTON_NPCX_WATCHDOG_ENABLED
+	select HAS_WDT_DISABLE_AT_BOOT
 	help
 	  This option enables the Watchdog Timer driver for NPCX family of
 	  processors.
 	  Say y if you wish to use watchdog on NPCX MCU.
 
-config WDT_NPCX_DELAY_CYCLES
-	int "Number of delay cycles before generating watchdog event/signal"
+config WDT_NPCX_WARNING_LEADING_TIME_MS
+	int "Milliseconds before generating watchdog event/signal"
 	depends on WDT_NPCX
-	range 1 255
-	default 10
+	default 500
 	help
 	  This option defines the window in which a watchdog event must be
-	  handled, in units of 31ms. After this time window, the watchdog reset
-	  triggers immediately.
+	  handled. After this time window, the watchdog reset triggers
+	  immediately.

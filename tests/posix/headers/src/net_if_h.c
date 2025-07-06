@@ -24,7 +24,7 @@ ZTEST(posix_headers, test_net_if_h)
 
 	zassert_not_equal(-1, IF_NAMESIZE);
 
-	if (IS_ENABLED(CONFIG_POSIX_API)) {
+	if (IS_ENABLED(CONFIG_POSIX_NETWORKING)) {
 		zassert_not_null(if_freenameindex);
 		zassert_not_null(if_indextoname);
 		zassert_not_null(if_nameindex);

@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
+# As minimal libc will be built as a zephyr_library, clear c_library to
+# prevent accidentally requiring or linking against another libc implementation.
+set_property(TARGET linker PROPERTY c_library "")
+
 zephyr_system_include_directories(include)
 
 zephyr_library()
@@ -8,6 +12,7 @@ set(GEN_DIR ${ZEPHYR_BINARY_DIR}/include/generated)
 set(STRERROR_TABLE_H ${GEN_DIR}/libc/minimal/strerror_table.h)
 
 zephyr_library_compile_options($<TARGET_PROPERTY:compiler,no_builtin>)
+zephyr_library_compile_options($<TARGET_PROPERTY:compiler,prohibit_lto>)
 
 zephyr_library_sources(
   source/stdlib/atoi.c

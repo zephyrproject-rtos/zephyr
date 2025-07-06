@@ -19,11 +19,12 @@
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_ite_enhance, CONFIG_I2C_LOG_LEVEL);
-
+#include "i2c_bitbang.h"
 #include "i2c-priv.h"
 
 /* Start smbus session from idle state */
-#define I2C_MSG_START BIT(5)
+#define I2C_MSG_START    BIT(5)
+#define I2C_MSG_W2R_MASK (I2C_MSG_RESTART | I2C_MSG_READ | I2C_MSG_STOP)
 
 #define I2C_LINE_SCL_HIGH BIT(0)
 #define I2C_LINE_SDA_HIGH BIT(1)
@@ -53,7 +54,7 @@ struct i2c_cq_packet {
 	uint8_t id;
 	uint8_t cmd_l;
 	uint8_t cmd_h;
-	uint8_t wdata[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, wdata);
 };
 #endif /* CONFIG_I2C_IT8XXX2_CQ_MODE */
 
@@ -73,6 +74,7 @@ struct i2c_enhance_config {
 	uint8_t prescale_scl_low;
 	uint8_t data_hold_time;
 	uint32_t clock_gate_offset;
+	int transfer_timeout_ms;
 	bool target_enable;
 	bool target_pio_mode;
 	bool push_pull_recovery;
@@ -120,6 +122,7 @@ struct i2c_enhance_data {
 	struct i2c_msg *active_msg;
 	struct k_mutex mutex;
 	struct k_sem device_sync_sem;
+	struct i2c_bitbang bitbang;
 	/* Index into output data */
 	size_t widx;
 	/* Index into input data */
@@ -134,6 +137,8 @@ struct i2c_enhance_data {
 	uint8_t stop;
 	/* Number of messages. */
 	uint8_t num_msgs;
+	/* NACK */
+	bool nack;
 #ifdef CONFIG_I2C_IT8XXX2_CQ_MODE
 	/* Store command queue mode messages. */
 	struct i2c_msg *cq_msgs;
@@ -406,6 +411,7 @@ static int enhanced_i2c_error(const struct device *dev)
 	} else if ((i2c_str & E_HOSTA_BDS_AND_ACK) == E_HOSTA_BDS) {
 		if (IT8XXX2_I2C_CTR(base) & E_ACK) {
 			data->err = E_HOSTA_ACK;
+			data->nack = true;
 			/* STOP */
 			IT8XXX2_I2C_CTR(base) = E_FINISH;
 		}
@@ -518,6 +524,12 @@ static int enhanced_i2c_tran_read(const struct device *dev)
 				}
 				/* read next byte */
 				i2c_pio_trans_data(dev, RX_DIRECT, in_data, 0);
+			} else if (data->active_msg->len == 0) {
+				/* Handle data length of 0 */
+				data->i2ccs = I2C_CH_NORMAL;
+				IT8XXX2_I2C_CTR(base) = E_FINISH;
+				/* wait for stop bit interrupt */
+				data->stop = 1;
 			}
 		}
 	}
@@ -587,6 +599,19 @@ static int i2c_transaction(const struct device *dev)
 			}
 		}
 	}
+
+	/*
+	 * When a transaction results in NACK, ensure that the IT8XXX2_I2C_CTR
+	 * register has been updated E_FINISH before proceeding with the
+	 * following i2c_reset.
+	 */
+	if (data->nack) {
+		data->nack = false;
+		data->stop = 1;
+
+		return 1;
+	}
+
 	/* reset i2c port */
 	i2c_reset(dev);
 	IT8XXX2_I2C_CTR1(base) = 0;
@@ -626,8 +651,7 @@ static int i2c_enhance_pio_transfer(const struct device *dev,
 			irq_enable(config->i2c_irq_base);
 		}
 		/* Wait for the transfer to complete */
-		/* TODO: the timeout should be adjustable */
-		res = k_sem_take(&data->device_sync_sem, K_MSEC(100));
+		res = k_sem_take(&data->device_sync_sem, K_MSEC(config->transfer_timeout_ms));
 		/*
 		 * The irq will be enabled at the condition of start or
 		 * repeat start of I2C. If timeout occurs without being
@@ -658,6 +682,8 @@ static int i2c_enhance_pio_transfer(const struct device *dev,
 	if (data->err || (data->active_msg->flags & I2C_MSG_STOP)) {
 		data->i2ccs = I2C_CH_NORMAL;
 	}
+	/* Clear the flag */
+	data->nack = false;
 
 	return data->err;
 }
@@ -838,7 +864,7 @@ static int i2c_enhance_cq_transfer(const struct device *dev,
 		irq_enable(config->i2c_irq_base);
 	}
 	/* Wait for the transfer to complete */
-	res = k_sem_take(&data->device_sync_sem, K_MSEC(100));
+	res = k_sem_take(&data->device_sync_sem, K_MSEC(config->transfer_timeout_ms));
 
 	irq_disable(config->i2c_irq_base);
 
@@ -885,11 +911,10 @@ static bool cq_mode_allowed(const struct device *dev, struct i2c_msg *msgs)
 			return false;
 		}
 		/*
-		 * Write of I2C target address without writing data, used by
-		 * cmd_i2c_scan. Use PIO mode.
+		 * Use PIO mode when no data is written and read, such as in the
+		 * case of cmd_i2c_scan.
 		 */
-		if (((msgs[0].flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) &&
-		    (msgs[0].len == 0)) {
+		if (msgs[0].len == 0) {
 			return false;
 		}
 		return true;
@@ -914,10 +939,9 @@ static bool cq_mode_allowed(const struct device *dev, struct i2c_msg *msgs)
 			 *      msg[1].flags = I2C_MSG_RESTART | I2C_MSG_READ |
 			 *                     I2C_MSG_STOP;
 			 */
-			if ((msgs[1].flags & I2C_MSG_RESTART) &&
-			    ((msgs[1].flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) &&
-			    (msgs[1].flags & I2C_MSG_STOP) &&
-			    (msgs[1].len <= CONFIG_I2C_CQ_MODE_MAX_PAYLOAD_SIZE)) {
+			if (((msgs[1].flags & I2C_MSG_W2R_MASK) == I2C_MSG_W2R_MASK) &&
+			    (msgs[1].len <= CONFIG_I2C_CQ_MODE_MAX_PAYLOAD_SIZE) &&
+			    (msgs[1].len != 0)) {
 				return true;
 			}
 		}
@@ -1263,10 +1287,40 @@ static int i2c_enhance_init(const struct device *dev)
 	return 0;
 }
 
+static void i2c_enhance_set_scl(void *io_context, int state)
+{
+	const struct i2c_enhance_config *config = io_context;
+
+	gpio_pin_set_dt(&config->scl_gpios, state);
+}
+
+static void i2c_enhance_set_sda(void *io_context, int state)
+{
+	const struct i2c_enhance_config *config = io_context;
+
+	gpio_pin_set_dt(&config->sda_gpios, state);
+}
+
+static int i2c_enhance_get_sda(void *io_context)
+{
+	const struct i2c_enhance_config *config = io_context;
+	int ret = gpio_pin_get_dt(&config->sda_gpios);
+
+	/* Default high as that would be a NACK */
+	return ret != 0;
+}
+
+static const struct i2c_bitbang_io i2c_enhance_bitbang_io = {
+	.set_scl = i2c_enhance_set_scl,
+	.set_sda = i2c_enhance_set_sda,
+	.get_sda = i2c_enhance_get_sda,
+};
+
 static int i2c_enhance_recover_bus(const struct device *dev)
 {
 	const struct i2c_enhance_config *config = dev->config;
-	int i, status;
+	struct i2c_enhance_data *data = dev->data;
+	int status, ret;
 
 	/* Output type selection */
 	gpio_flags_t flags = GPIO_OUTPUT | (config->push_pull_recovery ? 0 : GPIO_OPEN_DRAIN);
@@ -1275,42 +1329,12 @@ static int i2c_enhance_recover_bus(const struct device *dev)
 	/* Set SDA of I2C as GPIO pin */
 	gpio_pin_configure_dt(&config->sda_gpios, flags);
 
-	/*
-	 * In I2C recovery bus, 1ms sleep interval for bitbanging i2c
-	 * is mainly to ensure that gpio has enough time to go from
-	 * low to high or high to low.
-	 */
-	/* Pull SCL and SDA pin to high */
-	gpio_pin_set_dt(&config->scl_gpios, 1);
-	gpio_pin_set_dt(&config->sda_gpios, 1);
-	k_msleep(1);
+	i2c_bitbang_init(&data->bitbang, &i2c_enhance_bitbang_io, (void *)config);
 
-	/* Start condition */
-	gpio_pin_set_dt(&config->sda_gpios, 0);
-	k_msleep(1);
-	gpio_pin_set_dt(&config->scl_gpios, 0);
-	k_msleep(1);
-
-	/* 9 cycles of SCL with SDA held high */
-	for (i = 0; i < 9; i++) {
-		/* SDA */
-		gpio_pin_set_dt(&config->sda_gpios, 1);
-		/* SCL */
-		gpio_pin_set_dt(&config->scl_gpios, 1);
-		k_msleep(1);
-		/* SCL */
-		gpio_pin_set_dt(&config->scl_gpios, 0);
-		k_msleep(1);
+	ret = i2c_bitbang_recover_bus(&data->bitbang);
+	if (ret != 0) {
+		LOG_ERR("%s: Failed to recover bus (err %d)", dev->name, ret);
 	}
-	/* SDA */
-	gpio_pin_set_dt(&config->sda_gpios, 0);
-	k_msleep(1);
-
-	/* Stop condition */
-	gpio_pin_set_dt(&config->scl_gpios, 1);
-	k_msleep(1);
-	gpio_pin_set_dt(&config->sda_gpios, 1);
-	k_msleep(1);
 
 	/* Set GPIO back to I2C alternate function */
 	status = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
@@ -1452,7 +1476,7 @@ static int i2c_enhance_target_unregister(const struct device *dev,
 }
 #endif
 
-static const struct i2c_driver_api i2c_enhance_driver_api = {
+static DEVICE_API(i2c, i2c_enhance_driver_api) = {
 	.configure = i2c_enhance_configure,
 	.get_config = i2c_enhance_get_config,
 	.transfer = i2c_enhance_transfer,
@@ -1460,6 +1484,9 @@ static const struct i2c_driver_api i2c_enhance_driver_api = {
 #ifdef CONFIG_I2C_TARGET
 	.target_register = i2c_enhance_target_register,
 	.target_unregister = i2c_enhance_target_unregister,
+#endif
+#ifdef CONFIG_I2C_RTIO
+	.iodev_submit = i2c_iodev_submit_fallback,
 #endif
 };
 
@@ -1492,6 +1519,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_I2C_TARGET_BUFFER_MODE),
 		.prescale_scl_low = DT_INST_PROP_OR(inst, prescale_scl_low, 0), \
 		.data_hold_time = DT_INST_PROP_OR(inst, data_hold_time, 0),     \
 		.clock_gate_offset = DT_INST_PROP(inst, clock_gate_offset),     \
+		.transfer_timeout_ms = DT_INST_PROP(inst, transfer_timeout_ms), \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                   \
 		.target_enable = DT_INST_PROP(inst, target_enable),             \
 		.target_pio_mode = DT_INST_PROP(inst, target_pio_mode),         \

@@ -74,11 +74,11 @@ Programming
 
 You can use the X-NUCLEO-IDB05A1 as a Bluetooth Low-Energy controller
 shield with an SPI host controller interface (HCI-SPI).  Activate the presence
-of the shield for the project build by adding the ``-DSHIELD`` arg to the
+of the shield for the project build by adding the ``--shield`` arg to the
 build command:
 
  .. zephyr-app-commands::
-    :zephyr-app: your_app
+    :app: your_app
     :board: your_board_name
     :shield: x_nucleo_idb05a1
     :goals: build

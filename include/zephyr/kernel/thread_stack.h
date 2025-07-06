@@ -293,7 +293,6 @@ static inline char *K_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
 #define K_THREAD_STACK_LEN		K_KERNEL_STACK_LEN
 #define K_THREAD_STACK_DEFINE		K_KERNEL_STACK_DEFINE
 #define K_THREAD_STACK_ARRAY_DEFINE	K_KERNEL_STACK_ARRAY_DEFINE
-#define K_THREAD_STACK_MEMBER		K_KERNEL_STACK_MEMBER
 #define K_THREAD_STACK_BUFFER		K_KERNEL_STACK_BUFFER
 #define K_THREAD_STACK_DECLARE		K_KERNEL_STACK_DECLARE
 #define K_THREAD_STACK_ARRAY_DECLARE	K_KERNEL_STACK_ARRAY_DECLARE
@@ -612,27 +611,6 @@ static inline char *K_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
 #define K_THREAD_PINNED_STACK_ARRAY_DEFINE(sym, nmemb, size) \
 	K_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size)
 #endif /* CONFIG_LINKER_USE_PINNED_SECTION */
-
-/**
- * @brief Define an embedded stack memory region
- *
- * Used for stacks embedded within other data structures. Use is highly
- * discouraged but in some cases necessary. For memory protection scenarios,
- * it is very important that any RAM preceding this member not be writable
- * by threads else a stack overflow will lead to silent corruption. In other
- * words, the containing data structure should live in RAM owned by the kernel.
- *
- * A user thread can only be started with a stack defined in this way if
- * the thread starting it is in supervisor mode.
- *
- * @deprecated This is now deprecated, as stacks defined in this way are not
- *             usable from user mode. Use K_KERNEL_STACK_MEMBER.
- *
- * @param sym Thread stack symbol name
- * @param size Size of the stack memory region
- */
-#define K_THREAD_STACK_MEMBER(sym, size) __DEPRECATED_MACRO \
-	Z_THREAD_STACK_DEFINE_IN(sym, size,)
 
 /** @} */
 

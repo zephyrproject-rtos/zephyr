@@ -47,6 +47,10 @@ DEFINE_FFF_GLOBALS;
 #include "helper_pdu.h"
 #include "helper_util.h"
 
+#include <zephyr/bluetooth/iso.h>
+
+#define SUB_INTERVAL_MIN 400
+
 static struct ll_conn conn;
 
 static struct ll_conn_iso_group cig_mock = { 0 };
@@ -84,11 +88,11 @@ static struct pdu_data_llctrl_cis_req remote_cis_req = {
 	.p_ft             =   1,
 	.iso_interval     =   6,
 	.conn_event_count =   12,
-	.c_sdu_interval   =   { 0, 0, 0},
-	.p_sdu_interval   =   { 0, 0, 0},
-	.sub_interval     =   { 0, 0, 0},
-	.cis_offset_min   =   { 0, 0, 0},
-	.cis_offset_max   =   { 0, 0, 0}
+	.c_sdu_interval   =   { 0, 0x02, 0}, /* 512 us */
+	.p_sdu_interval   =   { 0, 0x02, 0}, /* 512 us */
+	.sub_interval     =   { 0x90, 0x01, 0x00}, /* 400 us */
+	.cis_offset_min   =   { 0, 0x02, 0}, /* 512 us */
+	.cis_offset_max   =   { 0, 0x02, 0}  /* 512 us */
 };
 
 static struct pdu_data_llctrl_cis_ind remote_cis_ind = {
@@ -127,7 +131,7 @@ static struct pdu_data_llctrl_cis_ind local_cis_ind = {
 	.cig_sync_delay = { 0, 0, 0},
 	.cis_offset = { 0, 0, 0},
 	.cis_sync_delay = { 0, 0, 0},
-	.conn_event_count = 13
+	.conn_event_count = 0
 };
 
 #define ERROR_CODE 0x17
@@ -169,8 +173,8 @@ ZTEST(cis_create, test_cc_create_periph_rem_host_accept)
 		.cis_id = 0x02
 	};
 	struct pdu_data_llctrl_cis_rsp local_cis_rsp = {
-		.cis_offset_max = { 0, 0, 0},
-		.cis_offset_min = { 0, 0, 0},
+		.cis_offset_max = { 0, 0x02, 0},
+		.cis_offset_min = { 0, 0x02, 0},
 		.conn_event_count = 12
 	};
 	struct node_rx_conn_iso_estab cis_estab = {
@@ -196,7 +200,7 @@ ZTEST(cis_create, test_cc_create_periph_rem_host_accept)
 	/* Done */
 	event_done(&conn);
 
-	/* There should be excactly one host notification */
+	/* There should be exactly one host notification */
 	ut_rx_node(NODE_CIS_REQUEST, &ntf, &cis_req);
 	ut_rx_q_is_empty();
 
@@ -264,7 +268,7 @@ ZTEST(cis_create, test_cc_create_periph_rem_host_accept)
 	/* Prepare */
 	event_prepare(&conn);
 
-	/* There should be excactly one host notification */
+	/* There should be exactly one host notification */
 	ut_rx_node(NODE_CIS_ESTABLISHED, &ntf, &cis_estab);
 	ut_rx_q_is_empty();
 
@@ -328,7 +332,7 @@ ZTEST(cis_create, test_cc_create_periph_rem_host_reject)
 	/* Done */
 	event_done(&conn);
 
-	/* There should be excactly one host notification */
+	/* There should be exactly one host notification */
 	ut_rx_node(NODE_CIS_REQUEST, &ntf, &cis_req);
 	ut_rx_q_is_empty();
 
@@ -409,7 +413,7 @@ ZTEST(cis_create, test_cc_create_periph_rem_host_accept_to)
 	/* Done */
 	event_done(&conn);
 
-	/* There should be excactly one host notification */
+	/* There should be exactly one host notification */
 	ut_rx_node(NODE_CIS_REQUEST, &ntf, &cis_req);
 	ut_rx_q_is_empty();
 
@@ -435,7 +439,7 @@ ZTEST(cis_create, test_cc_create_periph_rem_host_accept_to)
 	/* Done */
 	event_done(&conn);
 
-	/* There should be excactly one host notification */
+	/* There should be exactly one host notification */
 	ut_rx_node(NODE_CIS_ESTABLISHED, &ntf, &cis_estab);
 	ut_rx_q_is_empty();
 
@@ -525,6 +529,196 @@ ZTEST(cis_create, test_cc_create_periph_rem_invalid_phy)
 		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
+static void rx_remote_cis_req_invalid_param(struct pdu_data_llctrl_cis_req *req)
+{
+	struct node_tx *tx;
+	struct pdu_data_llctrl_reject_ext_ind local_reject = {
+		.error_code = BT_HCI_ERR_INVALID_LL_PARAM,
+		.reject_opcode = PDU_DATA_LLCTRL_TYPE_CIS_REQ
+	};
+
+	test_setup(&conn);
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Rx */
+	lt_tx(LL_CIS_REQ, &conn, req);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_REJECT_EXT_IND, &conn, &tx, &local_reject);
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
+}
+
+/*
+ * Central-initiated CIS Create procedure.
+ * Central requests CIS w. invalid param, peripheral Host rejects.
+ *
+ * +-----+          +-------+                       +-----+
+ * | UT  |          | LL_S  |                       | LT  |
+ * +-----+          +-------+                       +-----+
+ *    |                 |                               |
+ *    |                 |   LL_CIS_REQ  (invalid param) |
+ *    |                 |<------------------------------|
+ *    |                 |                               |
+ *    |                 |                               |
+ *    |                 |                               |
+ *    |                 |                               |
+ *    |                 |                               |
+ *    |                 |                               |
+ *    |                 | LL_REJECT_EXT_IND             |
+ *    |                 |------------------------------>|
+ *    |                 |                               |
+ */
+ZTEST(cis_create, test_cc_create_periph_rem_invalid_param)
+{
+	struct pdu_data_llctrl_cis_req remote_cis_req_invalid_param = remote_cis_req;
+
+	/* Rx with c_sdu_interval < 255 */
+	sys_put_le24(BT_HCI_ISO_SDU_INTERVAL_MIN-1, remote_cis_req_invalid_param.c_sdu_interval);
+	rx_remote_cis_req_invalid_param(&remote_cis_req_invalid_param);
+
+	/* Restore to valid params */
+	remote_cis_req_invalid_param = remote_cis_req;
+
+	/* Rx with p_sdu_interval < 255 */
+	sys_put_le24(BT_HCI_ISO_SDU_INTERVAL_MIN-1, remote_cis_req_invalid_param.p_sdu_interval);
+	rx_remote_cis_req_invalid_param(&remote_cis_req_invalid_param);
+
+	/* Restore to valid params */
+	remote_cis_req_invalid_param = remote_cis_req;
+
+	/* Rx with c_max_pdu > 251 */
+	remote_cis_req_invalid_param.c_max_pdu = sys_cpu_to_le16(BT_ISO_PDU_MAX + 1);
+	rx_remote_cis_req_invalid_param(&remote_cis_req_invalid_param);
+
+	/* Restore to valid params */
+	remote_cis_req_invalid_param = remote_cis_req;
+
+	/* Rx with p_max_pdu > 251 */
+	remote_cis_req_invalid_param.p_max_pdu = sys_cpu_to_le16(BT_ISO_PDU_MAX + 1);
+	rx_remote_cis_req_invalid_param(&remote_cis_req_invalid_param);
+
+	/* Restore to valid params */
+	remote_cis_req_invalid_param = remote_cis_req;
+
+	/* Rx with nse == 0 */
+	remote_cis_req_invalid_param.nse = 0;
+	rx_remote_cis_req_invalid_param(&remote_cis_req_invalid_param);
+
+	/* Restore to valid params */
+	remote_cis_req_invalid_param = remote_cis_req;
+
+	/* Rx with nse > 31 */
+	remote_cis_req_invalid_param.nse = BT_ISO_NSE_MAX + 1;
+	rx_remote_cis_req_invalid_param(&remote_cis_req_invalid_param);
+
+	/* Restore to valid params */
+	remote_cis_req_invalid_param = remote_cis_req;
+
+	/* Rx with sub_interval > 0 && nse == 1 */
+	remote_cis_req_invalid_param.nse = 1;
+	rx_remote_cis_req_invalid_param(&remote_cis_req_invalid_param);
+
+	/* Restore to valid params */
+	remote_cis_req_invalid_param = remote_cis_req;
+
+	/* Rx with sub_interval < 400 && nse > 1 */
+	sys_put_le24(SUB_INTERVAL_MIN - 1, remote_cis_req_invalid_param.sub_interval);
+	rx_remote_cis_req_invalid_param(&remote_cis_req_invalid_param);
+
+	/* Restore to valid params */
+	remote_cis_req_invalid_param = remote_cis_req;
+
+	/* Rx with sub_interval >= iso_interval */
+	sys_put_le24(sys_le16_to_cpu(remote_cis_req_invalid_param.iso_interval) * CONN_INT_UNIT_US,
+				     remote_cis_req_invalid_param.sub_interval);
+	rx_remote_cis_req_invalid_param(&remote_cis_req_invalid_param);
+
+	/* Restore to valid params */
+	remote_cis_req_invalid_param = remote_cis_req;
+
+
+	/* Rx with c_bn == 0 && c_max_pdu > 0 */
+	remote_cis_req_invalid_param.c_bn = 0;
+	rx_remote_cis_req_invalid_param(&remote_cis_req_invalid_param);
+
+	/* Restore to valid params */
+	remote_cis_req_invalid_param = remote_cis_req;
+
+	/* Rx with p_bn == 0 && p_max_pdu > 0 */
+	remote_cis_req_invalid_param.p_bn = 0;
+	rx_remote_cis_req_invalid_param(&remote_cis_req_invalid_param);
+
+	/* Restore to valid params */
+	remote_cis_req_invalid_param = remote_cis_req;
+
+	/* Rx with c_ft == 0 */
+	remote_cis_req_invalid_param.c_ft = 0;
+	rx_remote_cis_req_invalid_param(&remote_cis_req_invalid_param);
+
+	/* Restore to valid params */
+	remote_cis_req_invalid_param = remote_cis_req;
+
+	/* Rx with p_ft == 0 */
+	remote_cis_req_invalid_param.p_ft = 0;
+	rx_remote_cis_req_invalid_param(&remote_cis_req_invalid_param);
+
+	/* Restore to valid params */
+	remote_cis_req_invalid_param = remote_cis_req;
+
+	/* Rx with iso_interval < 4 */
+	remote_cis_req_invalid_param.iso_interval = sys_cpu_to_le16(BT_HCI_ISO_INTERVAL_MIN - 1);
+	rx_remote_cis_req_invalid_param(&remote_cis_req_invalid_param);
+
+	/* Restore to valid params */
+	remote_cis_req_invalid_param = remote_cis_req;
+
+	/* Rx with iso_interval > 3200 */
+	remote_cis_req_invalid_param.iso_interval = sys_cpu_to_le16(BT_HCI_ISO_INTERVAL_MAX + 1);
+	rx_remote_cis_req_invalid_param(&remote_cis_req_invalid_param);
+
+	/* Restore to valid params */
+	remote_cis_req_invalid_param = remote_cis_req;
+
+	/* Rx with cis_offset_min < 500 */
+	sys_put_le24(PDU_CIS_OFFSET_MIN_US - 1, remote_cis_req_invalid_param.cis_offset_min);
+	rx_remote_cis_req_invalid_param(&remote_cis_req_invalid_param);
+
+	/* Restore to valid params */
+	remote_cis_req_invalid_param = remote_cis_req;
+
+	/* Rx with cis_offset_max < cis_offset_min */
+	sys_put_le24(0x01FF, remote_cis_req_invalid_param.cis_offset_max);
+	rx_remote_cis_req_invalid_param(&remote_cis_req_invalid_param);
+
+	/* Restore to valid params */
+	remote_cis_req_invalid_param = remote_cis_req;
+
+	/* Rx with cis_offset_max >= conn_interval */
+	sys_put_le24(conn.lll.interval * CONN_INT_UNIT_US,
+		     remote_cis_req_invalid_param.cis_offset_max);
+	rx_remote_cis_req_invalid_param(&remote_cis_req_invalid_param);
+}
+
 /*
  * Central-initiated CIS Create procedure.
  * Host requests CIS, LL replies with 'remote feature unsupported'
@@ -579,7 +773,7 @@ ZTEST(cis_create, test_cc_create_central_rem_unsupported)
 	/* Prepare */
 	event_prepare(&conn);
 
-	/* There should be excactly one host notification
+	/* There should be exactly one host notification
 	 * with status BT_HCI_ERR_UNSUPP_REMOTE_FEATURE
 	 */
 	ut_rx_node(NODE_CIS_ESTABLISHED, &ntf, &cis_estab);
@@ -737,7 +931,7 @@ ZTEST(cis_create, test_cc_create_central_rem_accept)
 	/* Prepare */
 	event_prepare(&conn);
 
-	/* There should be excactly one host notification */
+	/* There should be exactly one host notification */
 	ut_rx_node(NODE_CIS_ESTABLISHED, &ntf, &cis_estab);
 	ut_rx_q_is_empty();
 
@@ -846,7 +1040,7 @@ ZTEST(cis_create, test_cc_create_central_rem_reject)
 	/* Prepare */
 	event_prepare(&conn);
 
-	/* There should be excactly one host notification */
+	/* There should be exactly one host notification */
 	ut_rx_node(NODE_CIS_ESTABLISHED, &ntf, &cis_estab);
 	ut_rx_q_is_empty();
 

@@ -26,6 +26,15 @@ static struct k_thread tdata;
 static struct k_thread tdata2;
 static struct k_thread tdata3;
 
+
+
+/**
+ * @defgroup kernel_mutex_tests Mutexes
+ * @ingroup all_tests
+ * @{
+ * @}
+ */
+
 static void tThread_entry_lock_forever(void *p1, void *p2, void *p3)
 {
 	zassert_false(k_mutex_lock((struct k_mutex *)p1, K_FOREVER) == 0,

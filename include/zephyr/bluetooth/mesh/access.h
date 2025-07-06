@@ -187,6 +187,10 @@ struct bt_mesh_elem {
 #define BT_MESH_MODEL_ID_REMOTE_PROV_SRV           0x0004
 /** Remote Provisioning Client */
 #define BT_MESH_MODEL_ID_REMOTE_PROV_CLI           0x0005
+/** Bridge Configuration Sever */
+#define BT_MESH_MODEL_ID_BRG_CFG_SRV               0x0008
+/** Bridge Configuration Client */
+#define BT_MESH_MODEL_ID_BRG_CFG_CLI               0x0009
 /** Private Beacon Server */
 #define BT_MESH_MODEL_ID_PRIV_BEACON_SRV           0x000a
 /** Private Beacon Client */
@@ -506,7 +510,8 @@ struct bt_mesh_model_op {
  *  @param _pub       Model publish parameters.
  *  @param _user_data User data for the model.
  *  @param _cb        Callback structure, or NULL to keep no callbacks.
- *  @param _metadata  Metadata structure.
+ *  @param _metadata  Metadata structure. Used if @kconfig{CONFIG_BT_MESH_LARGE_COMP_DATA_SRV}
+ *		      is enabled.
  */
 #if defined(CONFIG_BT_MESH_LARGE_COMP_DATA_SRV)
 #define BT_MESH_MODEL_METADATA_CB(_id, _op, _pub, _user_data, _cb, _metadata)                    \
@@ -560,8 +565,10 @@ struct bt_mesh_model_op {
  *  @param _pub       Model publish parameters.
  *  @param _user_data User data for the model.
  *  @param _cb        Callback structure, or NULL to keep no callbacks.
- *  @param _metadata  Metadata structure.
+ *  @param _metadata  Metadata structure. Used if @kconfig{CONFIG_BT_MESH_LARGE_COMP_DATA_SRV}
+ *		      is enabled.
  */
+#if defined(CONFIG_BT_MESH_LARGE_COMP_DATA_SRV)
 #define BT_MESH_MODEL_VND_METADATA_CB(_company, _id, _op, _pub, _user_data, _cb, _metadata)      \
 {                                                                            \
 	.vnd.company = (_company),                                           \
@@ -577,7 +584,10 @@ struct bt_mesh_model_op {
 	.cb = _cb,                                                           \
 	.metadata = _metadata,                                               \
 }
-
+#else
+#define BT_MESH_MODEL_VND_METADATA_CB(_company, _id, _op, _pub, _user_data, _cb, _metadata)      \
+	BT_MESH_MODEL_VND_CB(_company, _id, _op, _pub, _user_data, _cb)
+#endif
 /**
  *  @brief Composition data SIG model entry.
  *
@@ -618,7 +628,7 @@ struct bt_mesh_model_op {
  *  @return Mesh transmit value that can be used e.g. for the default
  *          values of the configuration model data.
  */
-#define BT_MESH_TRANSMIT(count, int_ms) ((count) | (((int_ms / 10) - 1) << 3))
+#define BT_MESH_TRANSMIT(count, int_ms) ((uint8_t)((count) | (((int_ms / 10) - 1) << 3)))
 
 /**
  *  @brief Decode transmit count from a transmit value.
@@ -924,7 +934,7 @@ struct bt_mesh_model {
 
 #if defined(CONFIG_BT_MESH_LARGE_COMP_DATA_SRV) || defined(__DOXYGEN__)
 	/* Pointer to the array of model metadata entries. */
-	const struct bt_mesh_models_metadata_entry * const * const metadata;
+	const struct bt_mesh_models_metadata_entry * const metadata;
 #endif
 };
 

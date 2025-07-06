@@ -8,8 +8,8 @@
  * @brief Public APIs for DSP basicmath for 16 bit floating point
  */
 
-#ifndef INCLUDE_ZEPHYR_DSP_BASICMATH_F16_H_
-#define INCLUDE_ZEPHYR_DSP_BASICMATH_F16_H_
+#ifndef ZEPHYR_INCLUDE_DSP_BASICMATH_F16_H_
+#define ZEPHYR_INCLUDE_DSP_BASICMATH_F16_H_
 
 #ifndef CONFIG_FP16
 #error "Cannot use float16 DSP functionality without CONFIG_FP16 enabled"
@@ -121,4 +121,4 @@ DSP_FUNC_SCOPE void zdsp_clip_f16(const float16_t *src, float16_t *dst, float16_
 }
 #endif
 
-#endif /* INCLUDE_ZEPHYR_DSP_BASICMATH_F16_H_ */
+#endif /* ZEPHYR_INCLUDE_DSP_BASICMATH_F16_H_ */

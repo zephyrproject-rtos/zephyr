@@ -6,6 +6,7 @@ include(${ZEPHYR_BASE}/cmake/compiler/gcc/compiler_flags.cmake)
 # No property flag, clang doesn't understand fortify at all
 set_compiler_property(PROPERTY security_fortify_compile_time)
 set_compiler_property(PROPERTY security_fortify_run_time)
+set_compiler_property(PROPERTY optimization_fast -O3 -ffast-math)
 
 # No printf-return-value optimizations in clang
 set_compiler_property(PROPERTY no_printf_return_value)
@@ -101,20 +102,10 @@ check_set_compiler_property(APPEND PROPERTY warning_dw_3
 
 check_set_compiler_property(PROPERTY warning_extended
                             #FIXME: need to fix all of those
-                            -Wno-sometimes-uninitialized
-                            -Wno-shift-overflow
-                            -Wno-missing-braces
                             -Wno-self-assign
-                            -Wno-address-of-packed-member
-                            -Wno-unused-function
                             -Wno-initializer-overrides
                             -Wno-section
-                            -Wno-unknown-warning-option
-                            -Wno-unused-variable
-                            -Wno-format-invalid-specifier
                             -Wno-gnu
-                            # comparison of unsigned expression < 0 is always false
-                            -Wno-tautological-compare
 )
 
 set_compiler_property(PROPERTY warning_error_coding_guideline
@@ -125,3 +116,5 @@ set_compiler_property(PROPERTY warning_error_coding_guideline
 )
 
 set_compiler_property(PROPERTY no_global_merge "-mno-global-merge")
+
+set_compiler_property(PROPERTY specs)

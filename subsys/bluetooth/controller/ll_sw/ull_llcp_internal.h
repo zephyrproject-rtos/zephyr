@@ -29,9 +29,18 @@ enum llcp_proc {
 	PROC_CIS_CREATE,
 	PROC_CIS_TERMINATE,
 	PROC_SCA_UPDATE,
+	PROC_PERIODIC_SYNC,
 	/* A helper enum entry, to use in pause procedure context */
 	PROC_NONE = 0x0,
 };
+
+/* Generic IDLE state to be used across all procedures
+ * This allows a cheap procedure alloc/init handling
+ */
+enum llcp_proc_state_idle {
+	LLCP_STATE_IDLE
+};
+
 
 enum llcp_tx_q_pause_data_mask {
 	LLCP_TX_QUEUE_PAUSE_DATA_ENCRYPTION = 0x01,
@@ -128,6 +137,11 @@ struct proc_ctx {
 	/* llcp_mem_pool owner of this context */
 	struct llcp_mem_pool *owner;
 
+#if defined(LLCP_TX_CTRL_BUF_QUEUE_ENABLE)
+	/* Wait list next pointer */
+	sys_snode_t wait_node;
+#endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
+
 	/* PROC_ */
 	enum llcp_proc proc;
 
@@ -145,13 +159,13 @@ struct proc_ctx {
 	/* Last transmitted opcode used for unknown/reject */
 	enum pdu_data_llctrl_type tx_opcode;
 
-	/* Instant collision */
-	int collision;
+	/*
+	 * This flag is set to 1 when we are finished with the control
+	 * procedure and it is safe to release the context ctx
+	 */
+	uint8_t done;
 
 #if defined(LLCP_TX_CTRL_BUF_QUEUE_ENABLE)
-	/* Wait list next pointer */
-	sys_snode_t wait_node;
-
 	/* Procedure wait reason */
 	enum llcp_wait_reason wait_reason;
 #endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
@@ -166,11 +180,6 @@ struct proc_ctx {
 		/* pre-allocated TX node */
 		struct node_tx *tx;
 	} node_ref;
-	/*
-	 * This flag is set to 1 when we are finished with the control
-	 * procedure and it is safe to release the context ctx
-	 */
-	int done;
 
 	/* Procedure data */
 	union {
@@ -309,6 +318,31 @@ struct proc_ctx {
 			uint8_t error_code;
 		} sca_update;
 #endif /* CONFIG_BT_CTLR_SCA_UPDATE */
+
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER) || defined(CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER)
+		struct {
+			struct pdu_adv_sync_info sync_info;
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER) && defined(CONFIG_BT_PERIPHERAL)
+			uint32_t conn_start_to_actual_us;
+			uint32_t offset_us;
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER && CONFIG_BT_PERIPHERAL */
+			uint16_t id;
+			uint16_t sync_conn_event_count;
+			uint16_t sync_handle;
+			uint16_t conn_event_count;
+			uint16_t last_pa_event_counter;
+			uint8_t  adv_handle;
+			uint8_t  adv_addr[6];
+			uint8_t  sid;
+			uint8_t  addr_type:1;
+			uint8_t  addr_resolved:1;
+			uint8_t  sca;
+			uint8_t  phy;
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER)
+			uint8_t  conn_evt_trx;
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER */
+		} periodic_sync;
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER || CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER */
 	} data;
 
 	struct {
@@ -413,6 +447,7 @@ void llcp_ntf_set_pending(struct ll_conn *conn);
 void llcp_ntf_clear_pending(struct ll_conn *conn);
 bool llcp_ntf_pending(struct ll_conn *conn);
 void llcp_rx_node_retain(struct proc_ctx *ctx);
+void llcp_rx_node_release(struct proc_ctx *ctx);
 
 /*
  * ULL -> LLL Interface
@@ -758,6 +793,24 @@ void llcp_pdu_decode_cis_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pd
 void llcp_pdu_encode_cis_req(struct proc_ctx *ctx, struct pdu_data *pdu);
 void llcp_pdu_encode_cis_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
 void llcp_pdu_decode_cis_rsp(struct proc_ctx *ctx, struct pdu_data *pdu);
+
+
+/*
+ * Periodic Advertising Sync Transfers Procedure Helper
+ */
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER)
+void llcp_pdu_fill_sync_info_offset(struct pdu_adv_sync_info *si, uint32_t offset_us);
+void llcp_pdu_encode_periodic_sync_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
+void llcp_lp_past_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
+void llcp_lp_past_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx);
+void llcp_lp_past_conn_evt_done(struct ll_conn *conn, struct proc_ctx *ctx);
+void llcp_lp_past_offset_calc_reply(struct ll_conn *conn, struct proc_ctx *ctx);
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER */
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
+void llcp_pdu_decode_periodic_sync_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
+void llcp_rp_past_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
+void llcp_rp_past_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
 
 #ifdef ZTEST_UNITTEST
 bool llcp_lr_is_disconnected(struct ll_conn *conn);

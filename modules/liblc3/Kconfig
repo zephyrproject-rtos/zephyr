@@ -1,4 +1,5 @@
 # Copyright (c) 2022 Bose Corporation
+# Copyright (c) 2024 Codecoup
 # SPDX-License-Identifier: Apache-2.0
 
 config ZEPHYR_LIBLC3_MODULE
@@ -9,4 +10,20 @@ config LIBLC3
 	depends on FPU
 	select REQUIRES_FULL_LIBC
 	help
-	  This option enables the Android liblc3 library for Bluetooth LE Audio
+	  Enable the Low Complexity Communication Codec (LC3)
+
+if LIBLC3
+
+config LIBLC3_PLUS
+	bool "LC3plus Support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Enable support of 2.5ms and 5ms frame durations.
+
+config LIBLC3_PLUS_HR
+	bool "LC3plus High Resolution Support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Enable support of the High-Resolution mode.
+
+endif

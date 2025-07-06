@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Carl Zeiss Meditec AG
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig STEPPER_ALLEGRO
+	bool "Allegro Stepper Controller"
+	depends on STEPPER
+	default y
+	help
+	  Enable allegro stepper controller
+
+if STEPPER_ALLEGRO
+
+comment "Allegro Stepper Drivers"
+
+# zephyr-keep-sorted-start
+rsource "Kconfig.a4979"
+# zephyr-keep-sorted-stop
+
+endif # STEPPER_ALLEGRO

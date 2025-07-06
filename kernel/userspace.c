@@ -20,6 +20,7 @@
 #include <zephyr/app_memory/app_memdomain.h>
 #include <zephyr/sys/libc-hooks.h>
 #include <zephyr/sys/mutex.h>
+#include <zephyr/sys/util.h>
 #include <inttypes.h>
 #include <zephyr/linker/linker-defs.h>
 
@@ -51,19 +52,19 @@ static struct k_spinlock lists_lock;       /* kobj dlist */
 static struct k_spinlock objfree_lock;     /* k_object_free */
 
 #ifdef CONFIG_GEN_PRIV_STACKS
-/* On ARM & ARC MPU we may have two different alignment requirement
+/* On ARM & ARC MPU & RISC-V PMP we may have two different alignment requirement
  * when dynamically allocating thread stacks, one for the privileged
  * stack and other for the user stack, so we need to account the
  * worst alignment scenario and reserve space for that.
  */
-#if defined(CONFIG_ARM_MPU) || defined(CONFIG_ARC_MPU)
+#if defined(CONFIG_ARM_MPU) || defined(CONFIG_ARC_MPU) || defined(CONFIG_RISCV_PMP)
 #define STACK_ELEMENT_DATA_SIZE(size) \
 	(sizeof(struct z_stack_data) + CONFIG_PRIVILEGED_STACK_SIZE + \
 	Z_THREAD_STACK_OBJ_ALIGN(size) + K_THREAD_STACK_LEN(size))
 #else
 #define STACK_ELEMENT_DATA_SIZE(size) (sizeof(struct z_stack_data) + \
 	K_THREAD_STACK_LEN(size))
-#endif /* CONFIG_ARM_MPU || CONFIG_ARC_MPU */
+#endif /* CONFIG_ARM_MPU || CONFIG_ARC_MPU || CONFIG_RISCV_PMP */
 #else
 #define STACK_ELEMENT_DATA_SIZE(size) K_THREAD_STACK_LEN(size)
 #endif /* CONFIG_GEN_PRIV_STACKS */
@@ -71,7 +72,7 @@ static struct k_spinlock objfree_lock;     /* k_object_free */
 #endif /* CONFIG_DYNAMIC_OBJECTS */
 static struct k_spinlock obj_lock;         /* kobj struct data */
 
-#define MAX_THREAD_BITS		(CONFIG_MAX_THREAD_BYTES * 8)
+#define MAX_THREAD_BITS (CONFIG_MAX_THREAD_BYTES * BITS_PER_BYTE)
 
 #ifdef CONFIG_DYNAMIC_OBJECTS
 extern uint8_t _thread_idx_map[CONFIG_MAX_THREAD_BYTES];
@@ -82,7 +83,7 @@ static void clear_perms_cb(struct k_object *ko, void *ctx_ptr);
 const char *otype_to_str(enum k_objects otype)
 {
 	const char *ret;
-	/* -fdata-sections doesn't work right except in very very recent
+	/* -fdata-sections doesn't work right except in very recent
 	 * GCC and these literal strings would appear in the binary even if
 	 * otype_to_str was omitted by the linker
 	 */
@@ -94,7 +95,7 @@ const char *otype_to_str(enum k_objects otype)
 	case K_OBJ_ANY:
 		ret = "generic";
 		break;
-#include <otype-to-str.h>
+#include <zephyr/otype-to-str.h>
 	default:
 		ret = "?";
 		break;
@@ -134,7 +135,7 @@ uint8_t *z_priv_stack_find(k_thread_stack_t *stack)
 /*
  * Note that dyn_obj->data is where the kernel object resides
  * so it is the one that actually needs to be aligned.
- * Due to the need to get the the fields inside struct dyn_obj
+ * Due to the need to get the fields inside struct dyn_obj
  * from kernel object pointers (i.e. from data[]), the offset
  * from data[] needs to be fixed at build time. Therefore,
  * data[] is declared with __aligned(), such that when dyn_obj
@@ -150,13 +151,13 @@ uint8_t *z_priv_stack_find(k_thread_stack_t *stack)
 #endif /* ARCH_DYNAMIC_OBJ_K_THREAD_ALIGNMENT */
 
 #ifdef CONFIG_DYNAMIC_THREAD_STACK_SIZE
-#ifndef CONFIG_MPU_STACK_GUARD
-#define DYN_OBJ_DATA_ALIGN_K_THREAD_STACK \
-	Z_THREAD_STACK_OBJ_ALIGN(CONFIG_PRIVILEGED_STACK_SIZE)
-#else
+#if defined(CONFIG_MPU_STACK_GUARD) || defined(CONFIG_PMP_STACK_GUARD)
 #define DYN_OBJ_DATA_ALIGN_K_THREAD_STACK \
 	Z_THREAD_STACK_OBJ_ALIGN(CONFIG_DYNAMIC_THREAD_STACK_SIZE)
-#endif /* !CONFIG_MPU_STACK_GUARD */
+#else
+#define DYN_OBJ_DATA_ALIGN_K_THREAD_STACK \
+	Z_THREAD_STACK_OBJ_ALIGN(CONFIG_PRIVILEGED_STACK_SIZE)
+#endif /* CONFIG_MPU_STACK_GUARD || CONFIG_PMP_STACK_GUARD */
 #else
 #define DYN_OBJ_DATA_ALIGN_K_THREAD_STACK \
 	Z_THREAD_STACK_OBJ_ALIGN(ARCH_STACK_PTR_ALIGN)
@@ -192,7 +193,7 @@ static size_t obj_size_get(enum k_objects otype)
 	size_t ret;
 
 	switch (otype) {
-#include <otype-to-size.h>
+#include <zephyr/otype-to-size.h>
 	default:
 		ret = sizeof(const struct device);
 		break;
@@ -221,7 +222,7 @@ static size_t obj_align_get(enum k_objects otype)
 	return ret;
 }
 
-static struct dyn_obj *dyn_object_find(void *obj)
+static struct dyn_obj *dyn_object_find(const void *obj)
 {
 	struct dyn_obj *node;
 	k_spinlock_key_t key;
@@ -277,8 +278,10 @@ static bool thread_idx_alloc(uintptr_t *tidx)
 		if (idx != 0) {
 			*tidx = base + (idx - 1);
 
-			sys_bitfield_clear_bit((mem_addr_t)_thread_idx_map,
-					       *tidx);
+			/* Clear the bit. We already know the array index,
+			 * and the bit to be cleared.
+			 */
+			_thread_idx_map[i] &= ~(BIT(idx - 1));
 
 			/* Clear permission from all objects */
 			k_object_wordlist_foreach(clear_perms_cb,
@@ -308,7 +311,11 @@ static void thread_idx_free(uintptr_t tidx)
 	/* To prevent leaked permission when index is recycled */
 	k_object_wordlist_foreach(clear_perms_cb, (void *)tidx);
 
-	sys_bitfield_set_bit((mem_addr_t)_thread_idx_map, tidx);
+	/* Figure out which bits to set in _thread_idx_map[] and set it. */
+	int base = tidx / NUM_BITS(_thread_idx_map[0]);
+	int offset = tidx % NUM_BITS(_thread_idx_map[0]);
+
+	_thread_idx_map[base] |= BIT(offset);
 }
 
 static struct k_object *dynamic_object_create(enum k_objects otype, size_t align,
@@ -343,13 +350,13 @@ static struct k_object *dynamic_object_create(enum k_objects otype, size_t align
 		stack_data->priv = (uint8_t *)dyn->data;
 		stack_data->size = adjusted_size;
 		dyn->kobj.data.stack_data = stack_data;
-#if defined(CONFIG_ARM_MPU) || defined(CONFIG_ARC_MPU)
+#if defined(CONFIG_ARM_MPU) || defined(CONFIG_ARC_MPU) || defined(CONFIG_RISCV_PMP)
 		dyn->kobj.name = (void *)ROUND_UP(
 			  ((uint8_t *)dyn->data + CONFIG_PRIVILEGED_STACK_SIZE),
 			  Z_THREAD_STACK_OBJ_ALIGN(size));
 #else
 		dyn->kobj.name = dyn->data;
-#endif /* CONFIG_ARM_MPU || CONFIG_ARC_MPU */
+#endif /* CONFIG_ARM_MPU || CONFIG_ARC_MPU || CONFIG_RISCV_PMP */
 #else
 		dyn->kobj.name = dyn->data;
 		dyn->kobj.data.stack_size = adjusted_size;
@@ -357,7 +364,7 @@ static struct k_object *dynamic_object_create(enum k_objects otype, size_t align
 	} else {
 		dyn->data = z_thread_aligned_alloc(align, obj_size_get(otype) + size);
 		if (dyn->data == NULL) {
-			k_free(dyn->data);
+			k_free(dyn);
 			return NULL;
 		}
 		dyn->kobj.name = dyn->data;
@@ -391,7 +398,7 @@ static void *z_object_alloc(enum k_objects otype, size_t size)
 	struct k_object *zo;
 	uintptr_t tidx = 0;
 
-	if (otype <= K_OBJ_ANY || otype >= K_OBJ_LAST) {
+	if ((otype <= K_OBJ_ANY) || (otype >= K_OBJ_LAST)) {
 		LOG_ERR("bad object type %d requested", otype);
 		return NULL;
 	}
@@ -490,7 +497,7 @@ struct k_object *k_object_find(const void *obj)
 		 * 11.8 but is justified since we know dynamic objects
 		 * were not declared with a const qualifier.
 		 */
-		dyn = dyn_object_find((void *)obj);
+		dyn = dyn_object_find(obj);
 		if (dyn != NULL) {
 			ret = &dyn->kobj;
 		}
@@ -513,6 +520,33 @@ void k_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 	k_spin_unlock(&lists_lock, key);
 }
 #endif /* CONFIG_DYNAMIC_OBJECTS */
+
+/* In the earlier linker-passes before we have the real generated
+ * implementation of the lookup functions, we need some weak dummies.
+ * Being __weak, they will be replaced by the generated implementations in
+ * the later linker passes.
+ */
+#ifdef CONFIG_DYNAMIC_OBJECTS
+Z_GENERIC_SECTION(.kobject_data.text.dummies)
+__weak struct k_object *z_object_gperf_find(const void *obj)
+{
+	return NULL;
+}
+Z_GENERIC_SECTION(.kobject_data.text.dummies)
+__weak void z_object_gperf_wordlist_foreach(_wordlist_cb_func_t func, void *context)
+{
+}
+#else
+Z_GENERIC_SECTION(.kobject_data.text.dummies)
+__weak struct k_object *k_object_find(const void *obj)
+{
+	return NULL;
+}
+Z_GENERIC_SECTION(.kobject_data.text.dummies)
+__weak void k_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
+{
+}
+#endif
 
 static unsigned int thread_index_get(struct k_thread *thread)
 {
@@ -586,7 +620,7 @@ static void wordlist_cb(struct k_object *ko, void *ctx_ptr)
 	struct perm_ctx *ctx = (struct perm_ctx *)ctx_ptr;
 
 	if (sys_bitfield_test_bit((mem_addr_t)&ko->perms, ctx->parent_id) &&
-				  (struct k_thread *)ko->name != ctx->parent) {
+				  ((struct k_thread *)ko->name != ctx->parent)) {
 		sys_bitfield_set_bit((mem_addr_t)&ko->perms, ctx->child_id);
 	}
 }
@@ -727,7 +761,7 @@ int k_object_validate(struct k_object *ko, enum k_objects otype,
 		       enum _obj_init_check init)
 {
 	if (unlikely((ko == NULL) ||
-		(otype != K_OBJ_ANY && ko->type != otype))) {
+		((otype != K_OBJ_ANY) && (ko->type != otype)))) {
 		return -EBADF;
 	}
 
@@ -929,8 +963,8 @@ static int app_shmem_bss_zero(void)
 	struct z_app_region *region, *end;
 
 
-	end = (struct z_app_region *)&__app_shmem_regions_end;
-	region = (struct z_app_region *)&__app_shmem_regions_start;
+	end = (struct z_app_region *)&__app_shmem_regions_end[0];
+	region = (struct z_app_region *)&__app_shmem_regions_start[0];
 
 	for ( ; region < end; region++) {
 #if defined(CONFIG_DEMAND_PAGING) && !defined(CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
@@ -981,6 +1015,12 @@ static uintptr_t handler_bad_syscall(uintptr_t bad_id, uintptr_t arg2,
 				     uintptr_t arg5, uintptr_t arg6,
 				     void *ssf)
 {
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
+	ARG_UNUSED(arg4);
+	ARG_UNUSED(arg5);
+	ARG_UNUSED(arg6);
+
 	LOG_ERR("Bad system call id %" PRIuPTR " invoked", bad_id);
 	arch_syscall_oops(ssf);
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
@@ -990,9 +1030,16 @@ static uintptr_t handler_no_syscall(uintptr_t arg1, uintptr_t arg2,
 				    uintptr_t arg3, uintptr_t arg4,
 				    uintptr_t arg5, uintptr_t arg6, void *ssf)
 {
+	ARG_UNUSED(arg1);
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
+	ARG_UNUSED(arg4);
+	ARG_UNUSED(arg5);
+	ARG_UNUSED(arg6);
+
 	LOG_ERR("Unimplemented system call");
 	arch_syscall_oops(ssf);
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }
 
-#include <syscall_dispatch.c>
+#include <zephyr/syscall_dispatch.c>

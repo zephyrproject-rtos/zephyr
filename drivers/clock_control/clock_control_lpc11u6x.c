@@ -338,7 +338,7 @@ static int lpc11u6x_syscon_init(const struct device *dev)
 	return 0;
 }
 
-static const struct clock_control_driver_api lpc11u6x_clock_control_api = {
+static DEVICE_API(clock_control, lpc11u6x_clock_control_api) = {
 	.on = lpc11u6x_clock_control_on,
 	.off = lpc11u6x_clock_control_off,
 	.get_rate = lpc11u6x_clock_control_get_rate,
@@ -355,7 +355,7 @@ static const struct lpc11u6x_syscon_config syscon_config = {
 static struct lpc11u6x_syscon_data syscon_data;
 
 DEVICE_DT_INST_DEFINE(0,
-		    &lpc11u6x_syscon_init,
+		    lpc11u6x_syscon_init,
 		    NULL,
 		    &syscon_data, &syscon_config,
 		    PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,

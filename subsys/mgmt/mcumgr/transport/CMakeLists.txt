@@ -7,7 +7,7 @@
 
 # mgmt_mcumgr_transport covers interface API, allowing to implement transports.
 # It is exposed with mgmt_mcumgr interface.
-zephyr_library(mgmt_mcumgr_transport)
+zephyr_library()
 zephyr_library_sources(src/smp.c)
 
 zephyr_library_sources_ifdef(CONFIG_MCUMGR_TRANSPORT_REASSEMBLY
@@ -24,6 +24,9 @@ zephyr_library_sources_ifdef(CONFIG_MCUMGR_TRANSPORT_UART
 )
 zephyr_library_sources_ifdef(CONFIG_MCUMGR_TRANSPORT_UDP
   src/smp_udp.c
+)
+zephyr_library_sources_ifdef(CONFIG_MCUMGR_TRANSPORT_LORAWAN
+  src/smp_lorawan.c
 )
 zephyr_library_sources_ifdef(CONFIG_MCUMGR_TRANSPORT_DUMMY
   src/smp_dummy.c

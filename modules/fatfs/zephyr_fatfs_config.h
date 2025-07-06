@@ -4,9 +4,11 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#if FFCONF_DEF != 80286
+#if FFCONF_DEF != 5380
 #error "Configuration version mismatch"
 #endif
+
+#include <zephyr/devicetree.h>
 
 /*
  * Overrides of FF_ options from ffconf.h
@@ -71,6 +73,16 @@
 #define FF_FS_TIMEOUT		K_FOREVER
 #endif /* defined(CONFIG_FS_FATFS_REENTRANT) */
 
+#if defined(CONFIG_FS_FATFS_LBA64)
+#undef FF_LBA64
+#define FF_LBA64		CONFIG_FS_FATFS_LBA64
+#endif /* defined(CONFIG_FS_FATFS_LBA64) */
+
+#if defined(CONFIG_FS_FATFS_MULTI_PARTITION)
+#undef FF_MULTI_PARTITION
+#define FF_MULTI_PARTITION	CONFIG_FS_FATFS_MULTI_PARTITION
+#endif /* defined(CONFIG_FS_FATFS_MULTI_PARTITION) */
+
 /*
  * These options are override from default values, but have no Kconfig
  * options.
@@ -79,20 +91,57 @@
 #define FF_FS_TINY 1
 
 #undef FF_FS_NORTC
+#if defined(CONFIG_FS_FATFS_HAS_RTC)
+#define FF_FS_NORTC 0
+#else
 #define FF_FS_NORTC 1
+#endif /* defined(CONFIG_FS_FATFS_HAS_RTC) */
 
 /* Zephyr uses FF_VOLUME_STRS */
 #undef FF_STR_VOLUME_ID
 #define FF_STR_VOLUME_ID 1
 
 /* By default FF_STR_VOLUME_ID in ffconf.h is 0, which means that
- * FF_VOLUME_STRS is not used. Zephyr uses FF_VOLUME_STRS, which
- * by default holds 8 possible strings representing mount points,
- * and FF_VOLUMES needs to reflect that, which means that dolt
- * value of 1 is overridden here with 8.
+ * FF_VOLUME_STRS is not used. Zephyr uses FF_VOLUME_STRS.
+ * The array of volume strings is automatically generated from devicetree.
  */
+
+#define _FF_DISK_NAME(node) DT_PROP(node, disk_name),
+
+#undef FF_VOLUME_STRS
+#define FF_VOLUME_STRS \
+	DT_FOREACH_STATUS_OKAY(zephyr_flash_disk, _FF_DISK_NAME) \
+	DT_FOREACH_STATUS_OKAY(zephyr_ram_disk, _FF_DISK_NAME) \
+	DT_FOREACH_STATUS_OKAY(zephyr_sdmmc_disk, _FF_DISK_NAME) \
+	DT_FOREACH_STATUS_OKAY(zephyr_mmc_disk, _FF_DISK_NAME) \
+	DT_FOREACH_STATUS_OKAY(st_stm32_sdmmc, _FF_DISK_NAME)
+
 #undef FF_VOLUMES
-#define FF_VOLUMES 8
+#define FF_VOLUMES NUM_VA_ARGS_LESS_1(FF_VOLUME_STRS _)
+
+#if defined(CONFIG_FS_FATFS_EXTRA_NATIVE_API)
+#undef FF_USE_LABEL
+#undef FF_USE_EXPAND
+#undef FF_USE_FIND
+#define FF_USE_LABEL 1
+#define FF_USE_EXPAND 1
+#define FF_USE_FIND 1
+#endif /* defined(CONFIG_FS_FATFS_EXTRA_NATIVE_API) */
+
+/*
+ * When custom mount points are activated FF_VOLUME_STRS needs
+ * to be undefined in order to be able to provide a custom
+ * VolumeStr array containing the contents of
+ * CONFIG_FS_FATFS_CUSTOM_MOUNT_POINTS. Additionally the
+ * FF_VOLUMES define needs to be set to the correct mount
+ * point count contained in
+ * CONFIG_FS_FATFS_CUSTOM_MOUNT_POINT_COUNT.
+ */
+#if CONFIG_FS_FATFS_CUSTOM_MOUNT_POINT_COUNT
+#undef FF_VOLUMES
+#define FF_VOLUMES CONFIG_FS_FATFS_CUSTOM_MOUNT_POINT_COUNT
+#undef FF_VOLUME_STRS
+#endif /* CONFIG_FS_FATFS_CUSTOM_MOUNT_POINT_COUNT */
 
 /*
  * Options provided below have been added to ELM FAT source code to

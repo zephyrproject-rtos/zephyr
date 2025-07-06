@@ -12,6 +12,6 @@ cpu PerformanceInMips 4
 
 macro reset
 """
-    sysbus LoadELF $bin
+    sysbus LoadELF $elf
 """
 runMacro $reset

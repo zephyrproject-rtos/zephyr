@@ -79,8 +79,9 @@ static ssize_t read_value_v11__128_bit_uuid(struct bt_conn *conn,
 {
 	const uint8_t *value = attr->user_data;
 
-	if (!bAuthorized)
+	if (!bAuthorized) {
 		return BT_GATT_ERR(BT_ATT_ERR_AUTHORIZATION);
+	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
 				 sizeof(value_v11__128_bit_uuid_value));

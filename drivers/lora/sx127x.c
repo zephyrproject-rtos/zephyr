@@ -625,7 +625,7 @@ static int sx127x_lora_init(const struct device *dev)
 	return 0;
 }
 
-static const struct lora_driver_api sx127x_lora_api = {
+static DEVICE_API(lora, sx127x_lora_api) = {
 	.config = sx12xx_lora_config,
 	.send = sx12xx_lora_send,
 	.send_async = sx12xx_lora_send_async,

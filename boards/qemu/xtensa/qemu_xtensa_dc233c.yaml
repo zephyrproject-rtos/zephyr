@@ -1,0 +1,16 @@
+identifier: qemu_xtensa/dc233c
+name: QEMU Emulation for Xtensa
+type: qemu
+simulation:
+  - name: qemu
+arch: xtensa
+toolchain:
+  - zephyr
+testing:
+  default: true
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: cdns
+ram: 16384
+flash: 32768

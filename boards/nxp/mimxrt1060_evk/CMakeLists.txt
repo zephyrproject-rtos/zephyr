@@ -1,5 +1,5 @@
 #
-# Copyright 2018-2022 NXP
+# Copyright 2018-2022, 2025 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -12,7 +12,7 @@ endif()
 
 if(CONFIG_NXP_IMXRT_BOOT_HEADER)
   zephyr_library()
-  if(CONFIG_BOARD_MIMXRT1060_EVKB)
+  if((${BOARD_REVISION} STREQUAL "B") OR (${BOARD_REVISION} STREQUAL "C"))
     set(FLASH_CONF evkbmimxrt1060_flexspi_nor_config.c)
     set(BOARD_NAME evkbmimxrt1060)
   elseif(CONFIG_DT_HAS_NXP_IMX_FLEXSPI_NOR_ENABLED)
@@ -33,7 +33,7 @@ if(CONFIG_NXP_IMXRT_BOOT_HEADER)
     set(BOARD_NAME evkbmimxrt1060)
   endif()
   set(RT1060_BOARD_DIR
-    "${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk/boards/${BOARD_NAME}")
+    "${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/boards/${BOARD_NAME}")
   if(CONFIG_BOOT_FLEXSPI_NOR)
     # Include flash configuration block for RT1060 EVK from NXP's HAL.
     # This configuration block may need modification if another flash chip is

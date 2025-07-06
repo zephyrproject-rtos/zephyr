@@ -7,7 +7,6 @@ flash: 1024
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - adc
   - ble
@@ -17,8 +16,12 @@ supported:
   - i2s
   - pwm
   - spi
-  - usb_cdc
   - usb_device
   - watchdog
   - netif:openthread
+  - xiao_adc
+  - xiao_gpio
+  - xiao_i2c
+  - xiao_serial
+  - xiao_spi
 vendor: seeed

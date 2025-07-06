@@ -7,25 +7,35 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
-#include <zephyr/types.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
-#include <zephyr/sys/check.h>
-
-#include <zephyr/device.h>
-#include <zephyr/init.h>
-
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/audio/aics.h>
+#include <zephyr/bluetooth/audio/micp.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
-#include <zephyr/bluetooth/audio/micp.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/types.h>
 
+#include "common/bt_str.h"
 #include "micp_internal.h"
 
 LOG_MODULE_REGISTER(bt_micp_mic_ctlr, CONFIG_BT_MICP_MIC_CTLR_LOG_LEVEL);
-
-#include "common/bt_str.h"
 
 /* Callback functions */
 static sys_slist_t micp_mic_ctlr_cbs = SYS_SLIST_STATIC_INIT(&micp_mic_ctlr_cbs);
@@ -69,6 +79,8 @@ static void micp_mic_ctlr_mute_written(struct bt_micp_mic_ctlr *mic_ctlr, int er
 static void micp_mic_ctlr_discover_complete(struct bt_micp_mic_ctlr *mic_ctlr, int err)
 {
 	struct bt_micp_mic_ctlr_cb *listener, *next;
+
+	atomic_clear_bit(mic_ctlr->flags, BT_MICP_MIC_CTLR_FLAG_BUSY);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&micp_mic_ctlr_cbs, listener, next, _node) {
 		if (listener->discover) {
@@ -118,7 +130,7 @@ static uint8_t micp_mic_ctlr_read_mute_cb(struct bt_conn *conn, uint8_t err,
 	uint8_t cb_err = err;
 	uint8_t mute_val = 0;
 
-	mic_ctlr->busy = false;
+	atomic_clear_bit(mic_ctlr->flags, BT_MICP_MIC_CTLR_FLAG_BUSY);
 
 	if (err > 0) {
 		LOG_DBG("err: 0x%02X", err);
@@ -145,7 +157,7 @@ static void micp_mic_ctlr_write_mics_mute_cb(struct bt_conn *conn, uint8_t err,
 
 	LOG_DBG("Write %s (0x%02X)", err ? "failed" : "successful", err);
 
-	mic_ctlr->busy = false;
+	atomic_clear_bit(mic_ctlr->flags, BT_MICP_MIC_CTLR_FLAG_BUSY);
 
 	micp_mic_ctlr_mute_written(mic_ctlr, err, mute_val);
 }
@@ -411,8 +423,7 @@ static uint8_t micp_discover_func(struct bt_conn *conn,
 		if (sub_params != NULL) {
 			int err;
 
-			/* With ccc_handle == 0 it will use auto discovery */
-			sub_params->ccc_handle = 0;
+			sub_params->ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE;
 			sub_params->end_handle = mic_ctlr->end_handle;
 			sub_params->value = BT_GATT_CCC_NOTIFY;
 			sub_params->value_handle = chrc->value_handle;
@@ -530,6 +541,11 @@ int bt_micp_mic_ctlr_discover(struct bt_conn *conn, struct bt_micp_mic_ctlr **mi
 	}
 
 	mic_ctlr = mic_ctlr_get_by_conn(conn);
+	if (atomic_test_and_set_bit(mic_ctlr->flags, BT_MICP_MIC_CTLR_FLAG_BUSY)) {
+		LOG_DBG("Instance is busy");
+
+		return -EBUSY;
+	}
 
 	(void)memset(&mic_ctlr->discover_params, 0,
 		     sizeof(mic_ctlr->discover_params));
@@ -579,6 +595,8 @@ int bt_micp_mic_ctlr_discover(struct bt_conn *conn, struct bt_micp_mic_ctlr **mi
 	err = bt_gatt_discover(conn, &mic_ctlr->discover_params);
 	if (err == 0) {
 		*mic_ctlr_out = mic_ctlr;
+	} else {
+		atomic_clear_bit(mic_ctlr->flags, BT_MICP_MIC_CTLR_FLAG_BUSY);
 	}
 
 	return err;
@@ -672,7 +690,9 @@ int bt_micp_mic_ctlr_mute_get(struct bt_micp_mic_ctlr *mic_ctlr)
 	if (mic_ctlr->mute_handle == 0) {
 		LOG_DBG("Handle not set");
 		return -EINVAL;
-	} else if (mic_ctlr->busy) {
+	} else if (atomic_test_and_set_bit(mic_ctlr->flags, BT_MICP_MIC_CTLR_FLAG_BUSY)) {
+		LOG_DBG("Instance is busy");
+
 		return -EBUSY;
 	}
 
@@ -682,14 +702,14 @@ int bt_micp_mic_ctlr_mute_get(struct bt_micp_mic_ctlr *mic_ctlr)
 	mic_ctlr->read_params.single.offset = 0U;
 
 	err = bt_gatt_read(mic_ctlr->conn, &mic_ctlr->read_params);
-	if (err == 0) {
-		mic_ctlr->busy = true;
+	if (err != 0) {
+		atomic_clear_bit(mic_ctlr->flags, BT_MICP_MIC_CTLR_FLAG_BUSY);
 	}
 
 	return err;
 }
 
-int bt_micp_mic_ctlr_write_mute(struct bt_micp_mic_ctlr *mic_ctlr, bool mute)
+static int bt_micp_mic_ctlr_write_mute(struct bt_micp_mic_ctlr *mic_ctlr, bool mute)
 {
 	int err;
 
@@ -701,7 +721,9 @@ int bt_micp_mic_ctlr_write_mute(struct bt_micp_mic_ctlr *mic_ctlr, bool mute)
 	if (mic_ctlr->mute_handle == 0) {
 		LOG_DBG("Handle not set");
 		return -EINVAL;
-	} else if (mic_ctlr->busy) {
+	} else if (atomic_test_and_set_bit(mic_ctlr->flags, BT_MICP_MIC_CTLR_FLAG_BUSY)) {
+		LOG_DBG("Instance is busy");
+
 		return -EBUSY;
 	}
 
@@ -713,8 +735,8 @@ int bt_micp_mic_ctlr_write_mute(struct bt_micp_mic_ctlr *mic_ctlr, bool mute)
 	mic_ctlr->write_params.func = micp_mic_ctlr_write_mics_mute_cb;
 
 	err = bt_gatt_write(mic_ctlr->conn, &mic_ctlr->write_params);
-	if (err == 0) {
-		mic_ctlr->busy = true;
+	if (err != 0) {
+		atomic_clear_bit(mic_ctlr->flags, BT_MICP_MIC_CTLR_FLAG_BUSY);
 	}
 
 	return err;

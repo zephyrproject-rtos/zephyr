@@ -19,3 +19,14 @@ properties:
     type: int
     const: 1
     description: Number of block counts supported
+
+  "#dma-cells":
+    const: 2
+
+# - #dma-cells : Must be <2>.
+# channel: dma channel to be reserved
+# config: peripheral's dma request line. Valid values are defined in dt-bindings/dma/dma_smartbond.h
+
+dma-cells:
+  - channel
+  - config

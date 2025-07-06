@@ -5,15 +5,15 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/portability/cmsis_types.h>
 #include <string.h>
-#include "wrapper.h"
 
-#define ACTIVE 1
+#define ACTIVE     1
 #define NOT_ACTIVE 0
 
 static void zephyr_timer_wrapper(struct k_timer *timer);
 
-K_MEM_SLAB_DEFINE(cv2_timer_slab, sizeof(struct cv2_timer),
+K_MEM_SLAB_DEFINE(cmsis_rtos_timer_cb_slab, sizeof(struct cmsis_rtos_timer_cb),
 		  CONFIG_CMSIS_V2_TIMER_MAX_COUNT, 4);
 
 static const osTimerAttr_t init_timer_attrs = {
@@ -25,19 +25,19 @@ static const osTimerAttr_t init_timer_attrs = {
 
 static void zephyr_timer_wrapper(struct k_timer *timer)
 {
-	struct cv2_timer *cm_timer;
+	struct cmsis_rtos_timer_cb *cm_timer;
 
-	cm_timer = CONTAINER_OF(timer, struct cv2_timer, z_timer);
+	cm_timer = CONTAINER_OF(timer, struct cmsis_rtos_timer_cb, z_timer);
 	(cm_timer->callback_function)(cm_timer->arg);
 }
 
 /**
  * @brief Create a Timer
  */
-osTimerId_t osTimerNew(osTimerFunc_t func, osTimerType_t type,
-		       void *argument, const osTimerAttr_t *attr)
+osTimerId_t osTimerNew(osTimerFunc_t func, osTimerType_t type, void *argument,
+		       const osTimerAttr_t *attr)
 {
-	struct cv2_timer *timer;
+	struct cmsis_rtos_timer_cb *timer;
 
 	if (type != osTimerOnce && type != osTimerPeriodic) {
 		return NULL;
@@ -51,11 +51,14 @@ osTimerId_t osTimerNew(osTimerFunc_t func, osTimerType_t type,
 		attr = &init_timer_attrs;
 	}
 
-	if (k_mem_slab_alloc(&cv2_timer_slab, (void **)&timer, K_MSEC(100)) == 0) {
-		(void)memset(timer, 0, sizeof(struct cv2_timer));
-	} else {
+	if (attr->cb_mem != NULL) {
+		__ASSERT(attr->cb_size == sizeof(struct cmsis_rtos_timer_cb), "Invalid cb_size\n");
+		timer = (struct cmsis_rtos_timer_cb *)attr->cb_mem;
+	} else if (k_mem_slab_alloc(&cmsis_rtos_timer_cb_slab, (void **)&timer, K_MSEC(100)) != 0) {
 		return NULL;
 	}
+	(void)memset(timer, 0, sizeof(struct cmsis_rtos_timer_cb));
+	timer->is_cb_dynamic_allocation = attr->cb_mem == NULL;
 
 	timer->callback_function = func;
 	timer->arg = argument;
@@ -64,12 +67,7 @@ osTimerId_t osTimerNew(osTimerFunc_t func, osTimerType_t type,
 
 	k_timer_init(&timer->z_timer, zephyr_timer_wrapper, NULL);
 
-	if (attr->name == NULL) {
-		strncpy(timer->name, init_timer_attrs.name,
-			sizeof(timer->name) - 1);
-	} else {
-		strncpy(timer->name, attr->name, sizeof(timer->name) - 1);
-	}
+	timer->name = (attr->name == NULL) ? init_timer_attrs.name : attr->name;
 
 	return (osTimerId_t)timer;
 }
@@ -79,7 +77,7 @@ osTimerId_t osTimerNew(osTimerFunc_t func, osTimerType_t type,
  */
 osStatus_t osTimerStart(osTimerId_t timer_id, uint32_t ticks)
 {
-	struct cv2_timer *timer = (struct cv2_timer *)timer_id;
+	struct cmsis_rtos_timer_cb *timer = (struct cmsis_rtos_timer_cb *)timer_id;
 
 	if (timer == NULL) {
 		return osErrorParameter;
@@ -92,8 +90,7 @@ osStatus_t osTimerStart(osTimerId_t timer_id, uint32_t ticks)
 	if (timer->type == osTimerOnce) {
 		k_timer_start(&timer->z_timer, K_TICKS(ticks), K_NO_WAIT);
 	} else if (timer->type == osTimerPeriodic) {
-		k_timer_start(&timer->z_timer,
-			      K_TICKS(ticks), K_TICKS(ticks));
+		k_timer_start(&timer->z_timer, K_TICKS(ticks), K_TICKS(ticks));
 	}
 
 	timer->status = ACTIVE;
@@ -105,7 +102,7 @@ osStatus_t osTimerStart(osTimerId_t timer_id, uint32_t ticks)
  */
 osStatus_t osTimerStop(osTimerId_t timer_id)
 {
-	struct cv2_timer *timer = (struct cv2_timer *)timer_id;
+	struct cmsis_rtos_timer_cb *timer = (struct cmsis_rtos_timer_cb *)timer_id;
 
 	if (timer == NULL) {
 		return osErrorParameter;
@@ -129,7 +126,7 @@ osStatus_t osTimerStop(osTimerId_t timer_id)
  */
 osStatus_t osTimerDelete(osTimerId_t timer_id)
 {
-	struct cv2_timer *timer = (struct cv2_timer *) timer_id;
+	struct cmsis_rtos_timer_cb *timer = (struct cmsis_rtos_timer_cb *)timer_id;
 
 	if (timer == NULL) {
 		return osErrorParameter;
@@ -144,21 +141,23 @@ osStatus_t osTimerDelete(osTimerId_t timer_id)
 		timer->status = NOT_ACTIVE;
 	}
 
-	k_mem_slab_free(&cv2_timer_slab, (void *)timer);
+	if (timer->is_cb_dynamic_allocation) {
+		k_mem_slab_free(&cmsis_rtos_timer_cb_slab, (void *)timer);
+	}
 	return osOK;
 }
 
 /**
  * @brief Get name of a timer.
+ * This function may be called from Interrupt Service Routines.
  */
 const char *osTimerGetName(osTimerId_t timer_id)
 {
-	struct cv2_timer *timer = (struct cv2_timer *)timer_id;
+	struct cmsis_rtos_timer_cb *timer = (struct cmsis_rtos_timer_cb *)timer_id;
 
-	if (k_is_in_isr() || (timer == NULL)) {
+	if (timer == NULL) {
 		return NULL;
 	}
-
 	return timer->name;
 }
 
@@ -167,7 +166,7 @@ const char *osTimerGetName(osTimerId_t timer_id)
  */
 uint32_t osTimerIsRunning(osTimerId_t timer_id)
 {
-	struct cv2_timer *timer = (struct cv2_timer *)timer_id;
+	struct cmsis_rtos_timer_cb *timer = (struct cmsis_rtos_timer_cb *)timer_id;
 
 	if (k_is_in_isr() || (timer == NULL)) {
 		return 0;

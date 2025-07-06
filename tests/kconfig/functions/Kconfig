@@ -1,0 +1,134 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2022 CSIRO
+
+config KCONFIG_ARITHMETIC_ADD_10
+	int
+	default $(add, 10)
+
+config KCONFIG_ARITHMETIC_ADD_10_3
+	hex
+	default $(add_hex, 10, 3)
+
+config KCONFIG_ARITHMETIC_ADD_10_3_2
+	int
+	default $(add, 0xa, 3, 0b10)
+
+config KCONFIG_ARITHMETIC_SUB_10
+	int
+	default $(sub, 10)
+
+config KCONFIG_ARITHMETIC_SUB_10_3
+	hex
+	default $(sub_hex, 10, 3)
+
+config KCONFIG_ARITHMETIC_SUB_10_3_2
+	int
+	default $(sub, 0xa, 3, 0b10)
+
+config KCONFIG_ARITHMETIC_MUL_10
+	int
+	default $(mul, 10)
+
+config KCONFIG_ARITHMETIC_MUL_10_3
+	hex
+	default $(mul_hex, 10, 3)
+
+config KCONFIG_ARITHMETIC_MUL_10_3_2
+	int
+	default $(mul, 0xa, 3, 0b10)
+
+config KCONFIG_ARITHMETIC_DIV_10
+	int
+	default $(div, 10)
+
+config KCONFIG_ARITHMETIC_DIV_10_3
+	hex
+	default $(div_hex, 10, 3)
+
+config KCONFIG_ARITHMETIC_DIV_10_3_2
+	int
+	default $(div, 0xa, 3, 0b10)
+
+config KCONFIG_ARITHMETIC_MOD_10
+	int
+	default $(mod, 10)
+
+config KCONFIG_ARITHMETIC_MOD_10_3
+	hex
+	default $(mod_hex, 10, 3)
+
+config KCONFIG_ARITHMETIC_MOD_10_3_2
+	int
+	default $(mod, 0xa, 3, 0b10)
+
+config KCONFIG_ARITHMETIC_INC_1
+	int
+	default $(inc, 1)
+
+config KCONFIG_ARITHMETIC_INC_1_1
+	string
+	default "$(inc_hex, 1, 1)"
+
+config KCONFIG_ARITHMETIC_INC_INC_1_1
+	string
+	default "$(inc, $(inc_hex, 0x1, 0b1))"
+
+config KCONFIG_ARITHMETIC_DEC_1
+	int
+	default $(dec, 1)
+
+config KCONFIG_ARITHMETIC_DEC_1_1
+	string
+	default "$(dec_hex, 1, 1)"
+
+config KCONFIG_ARITHMETIC_DEC_DEC_1_1
+	string
+	default "$(dec, $(dec_hex, 0x1, 0b1))"
+
+config KCONFIG_ARITHMETIC_ADD_INC_1_1
+	int
+	default $(add, $(inc_hex, 1, 1))
+
+config KCONFIG_MIN_10
+	int
+	default $(min, 10)
+
+config KCONFIG_MIN_10_3
+	hex
+	default $(min_hex, 10, 3)
+
+config KCONFIG_MIN_10_3_2
+	int
+	default $(min, 0xa, 3, 0b10)
+
+config KCONFIG_MAX_10
+	int
+	default $(max, 10)
+
+config KCONFIG_MAX_10_3
+	hex
+	default $(max_hex, 10, 3)
+
+config KCONFIG_MAX_10_3_2
+	int
+	default $(max, 0xa, 3, 0b10)
+
+DT_COMPAT_VND_GPIO := vnd,gpio
+
+config KCONFIG_VND_GPIO_ENABLED_NUM_4
+	int
+	default $(dt_compat_enabled_num,$(DT_COMPAT_VND_GPIO))
+
+DT_COMPAT_VND_CAN_CONTROLLER := vnd,can-controller
+
+config KCONFIG_VND_CAN_CONTROLLER_ENABLED_NUM_2
+	int
+	default $(dt_compat_enabled_num,$(DT_COMPAT_VND_CAN_CONTROLLER))
+
+DT_COMPAT_VND_PWM := vnd,pwm
+
+config KCONFIG_VND_PWM_ENABLED_NUM_0
+	int
+	default $(dt_compat_enabled_num,$(DT_COMPAT_VND_PWM))
+
+source "Kconfig.zephyr"

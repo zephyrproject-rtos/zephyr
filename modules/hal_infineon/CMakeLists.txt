@@ -2,9 +2,9 @@
 # Copyright (c) 2022 Cypress Semiconductor Corporation.
 # SPDX-License-Identifier: Apache-2.0
 
-if(CONFIG_HAS_XMCLIB OR CONFIG_SOC_FAMILY_PSOC6 OR CONFIG_SOC_FAMILY_INFINEON_CAT1)
+if(CONFIG_HAS_XMCLIB OR CONFIG_SOC_FAMILY_PSOC6_LEGACY OR CONFIG_SOC_FAMILY_INFINEON_CAT1)
   zephyr_library_named(modules_hal_infineon)
-  zephyr_library_compile_options(-Wno-array-bounds)
+  zephyr_library_compile_options($<TARGET_PROPERTY:compiler,warning_no_array_bounds>)
 endif()
 
 ## Add PDL sources for XMC devices
@@ -12,7 +12,7 @@ if (CONFIG_HAS_XMCLIB)
   add_subdirectory(${ZEPHYR_HAL_INFINEON_MODULE_DIR}/XMCLib XMCLib)
 endif()
 
-if (CONFIG_SOC_FAMILY_INFINEON_CAT1A OR CONFIG_SOC_FAMILY_PSOC6)
+if (CONFIG_SOC_FAMILY_INFINEON_CAT1 OR CONFIG_SOC_FAMILY_PSOC6_LEGACY)
   ## Add core-lib sources for CAT1 devices
   add_subdirectory(core-lib)
 
@@ -23,7 +23,7 @@ if (CONFIG_SOC_FAMILY_INFINEON_CAT1A OR CONFIG_SOC_FAMILY_PSOC6)
   add_subdirectory(mtb-template-cat1)
 endif()
 
-if (CONFIG_SOC_FAMILY_INFINEON_CAT1A)
+if (CONFIG_SOC_FAMILY_INFINEON_CAT1 AND NOT CONFIG_SOC_FAMILY_PSOC6_LEGACY)
   ## Add mtb-hal-cat1 sources for CAT1 devices
   add_subdirectory(mtb-hal-cat1)
 
@@ -34,6 +34,9 @@ if (CONFIG_SOC_FAMILY_INFINEON_CAT1A)
 
   ## Add abstraction-rtos sources
   add_subdirectory(abstraction-rtos)
+
+  add_subdirectory(serial-flash)
+
 endif()
 
 ## Add Wi-Fi assets for AIROC devices

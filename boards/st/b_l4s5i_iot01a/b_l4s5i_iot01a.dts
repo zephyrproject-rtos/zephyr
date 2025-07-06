@@ -22,14 +22,17 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,flash-controller = &mx25r6435f;
 		zephyr,bt-c2h-uart = &usart1;
+		zephyr,bt-hci = &hci_spi;
 	};
 
 	leds {
 		compatible = "gpio-leds";
+
 		green_led_1: led_1 {
 			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
 			label = "User LD1";
 		};
+
 		green_led_2: led_2 {
 			gpios = <&gpiob 14 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
@@ -38,6 +41,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
@@ -50,7 +54,6 @@
 		sw0 = &user_button;
 		watchdog0 = &iwdg;
 		accel0 = &lsm6dsl;
-		spi-flash0 = &mx25r6435f;
 	};
 };
 
@@ -152,7 +155,7 @@
 	cs-gpios = <&gpiod 13 GPIO_ACTIVE_LOW>,
 		   <&gpioe 0 GPIO_ACTIVE_LOW>;
 
-	spbtle-rf@0 {
+	hci_spi: spbtle-rf@0 {
 		compatible = "st,hci-spi-v1";
 		reg = <0>;
 		reset-gpios = <&gpioa 8 GPIO_ACTIVE_LOW>;
@@ -173,7 +176,6 @@
 };
 
 &flash0 {
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -181,31 +183,23 @@
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x00000000 DT_SIZE_K(64)>;
+			reg = <0x0 DT_SIZE_K(64)>;
 			read-only;
 		};
 
-		/*
-		 * The flash starting at offset 0x10000 and ending at
-		 * offset 0x1ffff is reserved for use by the application.
-		 */
-
-		slot0_partition: partition@20000 {
+		slot0_partition: partition@10000 {
 			label = "image-0";
-			reg = <0x00020000 DT_SIZE_K(432)>;
-		};
-		slot1_partition: partition@8c000 {
-			label = "image-1";
-			reg = <0x0008C000 DT_SIZE_K(432)>;
-		};
-		scratch_partition: partition@f8000 {
-			label = "image-scratch";
-			reg = <0x000F8000 DT_SIZE_K(16)>;
+			reg = <0x10000 DT_SIZE_K(976)>;
 		};
 
-		storage_partition: partition@fc000 {
+		slot1_partition: partition@104000 {
+			label = "image-1";
+			reg = <0x104000 DT_SIZE_K(976)>;
+		};
+
+		storage_partition: partition@1f8000 {
 			label = "storage";
-			reg = <0x000fc000 DT_SIZE_K(16)>;
+			reg = <0x1f8000 DT_SIZE_K(32)>;
 		};
 	};
 };
@@ -247,14 +241,15 @@ zephyr_udc0: &usbotg_fs {
 		     &octospim_p1_io2_pe14 &octospim_p1_io3_pe15>;
 	pinctrl-names = "default";
 
-	dmas = <&dma1 0 40 0x480>; /* request 40 for OCTOSPI1 */
+	dmas = <&dma1 0 40 STM32_DMA_PERIPH_RX>; /* request 40 for OCTOSPI1 */
 	dma-names = "tx_rx";
 
 	status = "okay";
 
-	mx25r6435f: ospi-nor-flash@90000000 {
+	mx25r6435f: ospi-nor-flash@0 {
 		compatible = "st,stm32-ospi-nor";
-		reg = <0x90000000 DT_SIZE_M(8)>; /* 64 Megabits */
+		reg = <0>;
+		size = <DT_SIZE_M(64)>; /* 64 Megabits */
 		ospi-max-frequency = <DT_FREQ_M(26)>; /* for Voltage Range 2 */
 		spi-bus-width = <OSPI_QUAD_MODE>;
 		data-rate = <OSPI_STR_TRANSFER>;

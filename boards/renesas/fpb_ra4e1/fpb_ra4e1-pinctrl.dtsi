@@ -1,0 +1,57 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	sci0_default: sci0_default {
+		group1 {
+			/* tx rx */
+			psels = <RA_PSEL(RA_PSEL_SCI_0, 1, 1)>,
+			<RA_PSEL(RA_PSEL_SCI_0, 1, 0)>;
+		};
+	};
+
+	iic0_default: iic0_default {
+		group1 {
+			/* SCL0 SDA0 */
+			psels = <RA_PSEL(RA_PSEL_I2C, 4, 0)>,
+			<RA_PSEL(RA_PSEL_I2C, 4, 1)>;
+			drive-strength = "medium";
+		};
+	};
+
+	spi0_default: spi0_default {
+		group1 {
+			/* MISO MOSI RSPCK SSL */
+			psels = <RA_PSEL(RA_PSEL_SPI, 1, 10)>,
+			<RA_PSEL(RA_PSEL_SPI, 1, 9)>,
+			<RA_PSEL(RA_PSEL_SPI, 1, 11)>,
+			<RA_PSEL(RA_PSEL_SPI, 3, 1)>;
+		};
+	};
+
+	adc0_default: adc0_default {
+		group1 {
+			/* input */
+			psels = <RA_PSEL(RA_PSEL_ADC, 0, 0)>;
+			renesas,analog-enable;
+		};
+	};
+
+	dac0_default: dac0_default {
+		group1 {
+			/* output */
+			psels = <RA_PSEL(RA_PSEL_DAC, 0, 14)>;
+			renesas,analog-enable;
+		};
+	};
+
+	pwm1_default: pwm1_default {
+		group1 {
+			/* GTIOC1A GTIOC1B */
+			psels = <RA_PSEL(RA_PSEL_GPT1, 1, 5)>,
+				<RA_PSEL(RA_PSEL_GPT1, 1, 4)>;
+		};
+	};
+};

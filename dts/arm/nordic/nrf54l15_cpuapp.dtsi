@@ -5,36 +5,4 @@
  */
 
 #include <nordic/nrf54l15.dtsi>
-
-cpu: &cpuapp {};
-systick: &cpuapp_systick {};
-nvic: &cpuapp_nvic {};
-cpuflpr_vevif: &cpuflpr_vevif_remote {};
-
-/delete-node/ &cpuflpr;
-/delete-node/ &cpuflpr_rram;
-/delete-node/ &cpuflpr_sram;
-/delete-node/ &cpuflpr_clic;
-
-/ {
-	soc {
-		compatible = "simple-bus";
-		interrupt-parent = <&cpuapp_nvic>;
-		ranges;
-	};
-
-	psa_rng: psa-rng {
-		compatible = "zephyr,psa-crypto-rng";
-		status = "disabled";
-	};
-};
-
-&cpuapp_ppb {
-	compatible = "simple-bus";
-	ranges;
-};
-
-&grtc {
-	interrupts = <228 NRF_DEFAULT_IRQ_PRIORITY>,
-			<229 NRF_DEFAULT_IRQ_PRIORITY>; /* reserved for Zero Latency IRQs */
-};
+#include "nrf54l_05_10_15_cpuapp.dtsi"

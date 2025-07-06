@@ -1,5 +1,6 @@
 board:
   name: verdin_imx8mp
+  full_name: Verdin iMX8M Plus SoM
   vendor: toradex
   socs:
   - name: mimx8ml8

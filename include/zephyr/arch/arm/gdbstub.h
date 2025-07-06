@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_GDBSTUB_H_
 #define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_GDBSTUB_H_
 
-#include <zephyr/arch/arm/exc.h>
+#include <zephyr/arch/arm/exception.h>
 
 #ifndef _ASMLANGUAGE
 
@@ -64,7 +64,7 @@ struct gdb_ctx {
 	unsigned int registers[GDB_NUM_REGS];
 };
 
-void z_gdb_entry(z_arch_esf_t *esf, unsigned int exc_cause);
+void z_gdb_entry(struct arch_esf *esf, unsigned int exc_cause);
 
 #endif
 

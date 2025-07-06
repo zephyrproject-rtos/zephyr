@@ -11,6 +11,10 @@
 #include <zephyr/logging/log_core.h>
 #include <zephyr/sys/iterable_sections.h>
 
+#if CONFIG_USERSPACE && CONFIG_LOG_ALWAYS_RUNTIME
+#include <zephyr/app_memory/app_memdomain.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -185,7 +189,7 @@ extern "C" {
  * @param _str    Persistent, raw string.
  */
 #define LOG_HEXDUMP_ERR(_data, _length, _str) \
-	Z_LOG_HEXDUMP(LOG_LEVEL_ERR, _data, _length, _str)
+	Z_LOG_HEXDUMP(LOG_LEVEL_ERR, _data, _length, (_str))
 
 /**
  * @brief Writes a WARNING level message to the log.
@@ -198,7 +202,7 @@ extern "C" {
  * @param _str    Persistent, raw string.
  */
 #define LOG_HEXDUMP_WRN(_data, _length, _str) \
-	Z_LOG_HEXDUMP(LOG_LEVEL_WRN, _data, _length, _str)
+	Z_LOG_HEXDUMP(LOG_LEVEL_WRN, _data, _length, (_str))
 
 /**
  * @brief Writes an INFO level message to the log.
@@ -210,7 +214,7 @@ extern "C" {
  * @param _str    Persistent, raw string.
  */
 #define LOG_HEXDUMP_INF(_data, _length, _str) \
-	Z_LOG_HEXDUMP(LOG_LEVEL_INF, _data, _length, _str)
+	Z_LOG_HEXDUMP(LOG_LEVEL_INF, _data, _length, (_str))
 
 /**
  * @brief Writes a DEBUG level message to the log.
@@ -222,7 +226,7 @@ extern "C" {
  * @param _str    Persistent, raw string.
  */
 #define LOG_HEXDUMP_DBG(_data, _length, _str) \
-	Z_LOG_HEXDUMP(LOG_LEVEL_DBG, _data, _length, _str)
+	Z_LOG_HEXDUMP(LOG_LEVEL_DBG, _data, _length, (_str))
 
 /**
  * @brief Writes an ERROR hexdump message associated with the instance to the
@@ -330,7 +334,7 @@ void z_log_vprintk(const char *fmt, va_list ap);
 	{											\
 		.name = COND_CODE_1(CONFIG_LOG_FMT_SECTION,					\
 				(UTIL_CAT(_name, _str)), (STRINGIFY(_name))),			\
-		.level = _level									\
+		.level = (_level)								\
 	}
 
 #define _LOG_MODULE_DYNAMIC_DATA_CREATE(_name)					\
@@ -354,6 +358,16 @@ void z_log_vprintk(const char *fmt, va_list ap);
 		   (1), \
 		   (Z_LOG_EVAL(_LOG_LEVEL_RESOLVE(__VA_ARGS__), (1), (0))) \
 		  )), (0))
+
+/* Determine if the data of the log module shall be in the partition
+ * 'k_log_partition' to allow a user mode thread access to this data.
+ */
+#if CONFIG_USERSPACE && CONFIG_LOG_ALWAYS_RUNTIME
+extern struct k_mem_partition k_log_partition;
+#define Z_LOG_MODULE_PARTITION(_k_app_mem) _k_app_mem(k_log_partition)
+#else
+#define Z_LOG_MODULE_PARTITION(_k_app_mem)
+#endif
 
 /**
  * @brief Create module-specific state and register the module with Logger.
@@ -427,12 +441,14 @@ void z_log_vprintk(const char *fmt, va_list ap);
 	extern struct log_source_dynamic_data				      \
 			LOG_ITEM_DYNAMIC_DATA(GET_ARG_N(1, __VA_ARGS__));     \
 									      \
+	Z_LOG_MODULE_PARTITION(K_APP_DMEM)				      \
 	static const struct log_source_const_data *			      \
 		__log_current_const_data __unused =			      \
 			Z_DO_LOG_MODULE_REGISTER(__VA_ARGS__) ?		      \
 			&Z_LOG_ITEM_CONST_DATA(GET_ARG_N(1, __VA_ARGS__)) :   \
 			NULL;						      \
 									      \
+	Z_LOG_MODULE_PARTITION(K_APP_DMEM)				      \
 	static struct log_source_dynamic_data *				      \
 		__log_current_dynamic_data __unused =			      \
 			(Z_DO_LOG_MODULE_REGISTER(__VA_ARGS__) &&	      \
@@ -440,6 +456,7 @@ void z_log_vprintk(const char *fmt, va_list ap);
 			&LOG_ITEM_DYNAMIC_DATA(GET_ARG_N(1, __VA_ARGS__)) :   \
 			NULL;						      \
 									      \
+	Z_LOG_MODULE_PARTITION(K_APP_BMEM)				      \
 	static const uint32_t __log_level __unused =			      \
 					_LOG_LEVEL_RESOLVE(__VA_ARGS__)
 

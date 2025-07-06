@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2019, Linaro Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	mcp9808@18 {
+		compatible = "microchip,mcp9808", "jedec,jc-42.4-temp";
+		reg = <0x18>;
+		int-gpios = <&gpioc 16 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+	};
+};

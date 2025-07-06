@@ -12,6 +12,9 @@ LOG_MODULE_REGISTER(log_backend_net, CONFIG_LOG_DEFAULT_LEVEL);
 #include <zephyr/logging/log_core.h>
 #include <zephyr/logging/log_output.h>
 #include <zephyr/logging/log_backend_net.h>
+#include <zephyr/net/hostname.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/socket.h>
 
 /* Set this to 1 if you want to see what is being sent to server */
@@ -97,12 +100,14 @@ static int do_net_init(struct log_backend_net_ctx *ctx)
 	if (IS_ENABLED(CONFIG_NET_IPV4) && server_addr.sa_family == AF_INET) {
 		local_addr = (struct sockaddr *)&local_addr4;
 		server_addr_len = sizeof(struct sockaddr_in);
+		local_addr4.sin_family = AF_INET;
 		local_addr4.sin_port = 0U;
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && server_addr.sa_family == AF_INET6) {
 		local_addr = (struct sockaddr *)&local_addr6;
 		server_addr_len = sizeof(struct sockaddr_in6);
+		local_addr6.sin6_family = AF_INET6;
 		local_addr6.sin6_port = 0U;
 	}
 
@@ -110,8 +115,6 @@ static int do_net_init(struct log_backend_net_ctx *ctx)
 		DBG("Server address unknown\n");
 		return -EINVAL;
 	}
-
-	local_addr->sa_family = server_addr.sa_family;
 
 	if (ctx->is_tcp) {
 		proto = IPPROTO_TCP;
@@ -312,7 +315,8 @@ static void init_net(struct log_backend const *const backend)
 {
 	ARG_UNUSED(backend);
 
-	if (strlen(CONFIG_LOG_BACKEND_NET_SERVER) != 0) {
+	if (sizeof(CONFIG_LOG_BACKEND_NET_SERVER) != 1) {
+		/* Non empty address, set server via Kconfig defaults */
 		const char *server = CONFIG_LOG_BACKEND_NET_SERVER;
 		bool ret;
 
@@ -335,9 +339,18 @@ static void panic(struct log_backend const *const backend)
 	panic_mode = true;
 }
 
+/* After initialization of the logger, this function avoids
+ * the logger subsys to enable it.
+ */
+static int backend_ready(const struct log_backend *const backend)
+{
+	return log_backend_is_active(backend) ? 0 : -EAGAIN;
+}
+
 const struct log_backend_api log_backend_net_api = {
 	.panic = panic,
 	.init = init_net,
+	.is_ready = backend_ready,
 	.process = process,
 	.format_set = format_set,
 };
@@ -352,3 +365,24 @@ const struct log_backend *log_backend_net_get(void)
 {
 	return &log_backend_net;
 }
+
+#if defined(CONFIG_LOG_BACKEND_NET_USE_CONNECTION_MANAGER)
+static void l4_event_handler(uint64_t mgmt_event, struct net_if *iface, void *info,
+			     size_t info_length, void *user_data)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(info);
+	ARG_UNUSED(info_length);
+	ARG_UNUSED(user_data);
+
+	if (mgmt_event == NET_EVENT_L4_CONNECTED) {
+		log_backend_net_start();
+	} else if (mgmt_event == NET_EVENT_L4_DISCONNECTED) {
+		log_backend_deactivate(log_backend_net_get());
+	}
+}
+
+NET_MGMT_REGISTER_EVENT_HANDLER(log_backend_net_event_handler,
+				NET_EVENT_L4_CONNECTED | NET_EVENT_L4_DISCONNECTED,
+				&l4_event_handler, NULL);
+#endif /* CONFIG_LOG_BACKEND_NET_USE_CONNECTION_MANAGER */

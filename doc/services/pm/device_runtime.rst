@@ -26,13 +26,13 @@ asynchronously, it will be put into the
 :c:enumerator:`PM_DEVICE_STATE_SUSPENDING` state first and then into the
 :c:enumerator:`PM_DEVICE_STATE_SUSPENDED` state when the action is run.
 
-For devices on a power domain (via the devicetree 'power-domain' property), device runtime
+For devices on a power domain (via the devicetree 'power-domains' property), device runtime
 power management automatically attempts to request and release the dependent domain
 in response to :c:func:`pm_device_runtime_get` and :c:func:`pm_device_runtime_put`
 calls on the child device.
 
 For the previous to automatically control the power domain state, device runtime PM must be enabled
-on the power domain device (either through the `zephyr,pm-device-runtime-auto` devicetree property
+on the power domain device (either through the ``zephyr,pm-device-runtime-auto`` devicetree property
 or :c:func:`pm_device_runtime_enable`).
 
 .. graphviz::
@@ -107,9 +107,26 @@ be a problem if the operation is fast, e.g. a register toggle. However, the
 situation will not be the same if suspension involves sending packets through a
 slow bus. For this reason the device drivers can also make use of the
 :c:func:`pm_device_runtime_put_async` function. This function will schedule
-the suspend operation, again, if device is no longer used. The suspension will
-then be carried out when the system work queue gets the chance to run. The
-sequence diagram shown below illustrates this scenario.
+the suspend operation, again, if device is no longer used.
+
+
+By default, runtime PM operations are offloaded to the system work queue.
+However, device drivers must not perform any blocking operations during suspend, as
+this can stall the system work queue and negatively impact system responsiveness.
+
+To address this, applications can configure runtime PM to use a dedicated work queue
+by enabling :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_USE_DEDICATED_WQ`.
+
+If blocking behavior is required—for example, when accessing a slow peripheral
+or waiting for a bus transaction—the PM subsystem work queue must be used instead.
+Drivers that require this behavior can explicitly request it by enabling
+:kconfig:option:`CONFIG_PM_DEVICE_DRIVER_NEEDS_DEDICATED_WQ`.
+
+For targets with constrained resources that do not need asynchronous
+operations, this functionality can be disabled altogether by
+de-selecting :kconfig:option:`CONFIOG_PM_DEVICE_RUNTIME_ASYNC`, reducing
+memory usage and system complexity.
+
 
 .. figure:: images/devr-async-ops.svg
 
@@ -124,7 +141,7 @@ by the PM subsystem to suspend or resume devices.
 .. code-block:: c
 
     static int mydev_pm_action(const struct device *dev,
-                               enum pm_device_action *action)
+                               enum pm_device_action action)
     {
         switch (action) {
         case PM_DEVICE_ACTION_SUSPEND:
@@ -226,3 +243,12 @@ asynchronous API:
         /* "put" device (decreases usage count, schedule suspend if no more users) */
         return pm_device_runtime_put_async(dev, K_NO_WAIT);
     }
+
+Examples
+********
+
+Some helpful examples showing device runtime power management features:
+
+* :zephyr_file:`tests/subsys/pm/device_runtime_api/`
+* :zephyr_file:`tests/subsys/pm/device_power_domains/`
+* :zephyr_file:`tests/subsys/pm/power_domain/`

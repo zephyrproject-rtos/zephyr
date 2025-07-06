@@ -63,13 +63,23 @@
 					#address-cells = <1>;
 					#size-cells = <1>;
 
-					test_p0: partition@0 {
-						label = "partition-0";
-						reg = <0x00000000 0x0000C000>;
-					};
-					test_p1: partition@c000 {
-						label = "partition-1";
-						reg = <0x0000C000 0x00067000>;
+					test_p0_p1: partition@0 {
+						compatible = "fixed-subpartitions";
+						label = "partition-0-1-outer";
+						reg = <0x00000000 0x73000>;
+						ranges = <0x0 0x0 0x73000>;
+						#address-cells = <1>;
+						#size-cells = <1>;
+
+						test_p0: partition@0 {
+							label = "partition-0";
+							reg = <0x00000000 0x0000C000>;
+						};
+
+						test_p1: partition@c000 {
+							label = "partition-1";
+							reg = <0x0000C000 0x00067000>;
+						};
 					};
 				};
 			};

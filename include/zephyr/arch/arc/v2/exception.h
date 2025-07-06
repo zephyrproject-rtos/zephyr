@@ -18,11 +18,6 @@
 extern "C" {
 #endif
 
-#ifdef _ASMLANGUAGE
-#else
-typedef struct  _irq_stack_frame z_arch_esf_t;
-#endif
-
 #ifdef __cplusplus
 }
 #endif

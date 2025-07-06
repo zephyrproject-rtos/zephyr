@@ -1,7 +1,4 @@
-.. _swan_r5_board:
-
-Blues Wireless Swan
-###################
+.. zephyr:board:: swan_r5
 
 Overview
 ********
@@ -20,8 +17,8 @@ Due to its novel design, for high-volume deployment the low-cost Swan
 can also be soldered directly to a parent PCB integrating those sensors,
 utilizing the full range of Swan's I/O capabilities.
 
-The board has three independent power options-USB, Battery, or Line power-
-and provides a software-switchable 2 Amp regulator for powering external
+The board has three independent power options---USB, Battery, or Line
+power---and provides a software-switchable 2 Amp regulator for powering external
 sensors. When operating in its low-power operating mode, the entire Swan
 board commonly draws only about 8uA while retaining all of its memory,
 making it quite suitable for battery-powered devices.
@@ -52,10 +49,6 @@ some highlights of the board:
   - tRNG
   - 12-bit ADC, 2 x 12-bit DAC
   - low-power RTC, and CRC calculation peripherals
-
-.. image:: img/swan.jpg
-     :align: center
-     :alt: Blues Wireless Swan
 
 More information about the board can be found at the `Swan Product Page`_.
 
@@ -92,37 +85,7 @@ More information about Swan can be found here:
 Supported Features
 ==================
 
-The Zephyr Swan board configuration supports the following
-hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | usb                                 |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/blues/swan_r5/swan_r5_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -196,9 +159,11 @@ assigned to LPUART.  Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Connect Swan to your host computer using the USB port.
 Then build and flash an application. Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 Run a serial host program to connect with your Swan:
 
@@ -221,6 +186,8 @@ You should see the following message on the console:
 
 References
 **********
+
+.. target-notes::
 
 .. _Swan Product Page:
    https://blues.io/products/swan

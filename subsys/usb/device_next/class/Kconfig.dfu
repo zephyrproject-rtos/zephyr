@@ -1,0 +1,76 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig USBD_DFU
+	bool "USB DFU Class support"
+	help
+	  USB DFU Class support
+
+if USBD_DFU
+
+config USBD_DFU_NUMOF_IMAGES
+	int "Number of possible DFU images"
+	range 1 256
+	default 4
+	help
+	  Number of possible DFU images.
+
+config USBD_DFU_ENABLE_UPLOAD
+	bool "Allow images to be uploaded to the host"
+	default y
+	help
+	  This option sets the bitCanUpload flag in the DFU attributes and
+	  allows images to be uploaded to the host.
+
+config USBD_DFU_MANIFESTATION_TOLERANT
+	bool "Device is manifestation tolerant"
+	default y
+	help
+	  This option sets the bitManifestationTolerant flag in the DFU
+	  attributes and means that the device can communicate over USB after the
+	  manifestation phase.
+
+config USBD_DFU_TRANSFER_SIZE
+	int "Maximum number of bytes the device can accept per transfer"
+	default 512
+	range 64 1024
+	help
+	  This option sets the wTransferSize in the DFU functional descriptor.
+
+config USBD_DFU_POLLTIMEOUT
+	int "bwPollTimeout value (in ms)"
+	default 10
+	range 0 1000
+	help
+	  This option sets the bwPollTimeout field in DFU_GETSTATUS response.
+
+module = USBD_DFU
+module-str = usbd dfu
+source "subsys/logging/Kconfig.template.log_config"
+
+config USBD_DFU_FLASH
+	depends on FLASH && FLASH_MAP && STREAM_FLASH
+	depends on IMG_MANAGER && IMG_ERASE_PROGRESSIVELY
+	bool "Built-in flash backend"
+	help
+	  Enable the built-in flash backend, which can serve up to two image
+	  slots, which is the common configuration of in-tree boards.
+
+if USBD_DFU_FLASH
+
+config USBD_DFU_FLASH_SLOT0
+	bool "Flash backend for the slot-0 partition"
+	default y
+	help
+	  This option enables download or upload for the slot-0 partition, if
+	  one is defined.
+
+config USBD_DFU_FLASH_SLOT1
+	bool "Flash backend for the slot-1 partition"
+	help
+	  This option enables download or upload for the slot-1 partition, if
+	  one is defined.
+
+endif # USBD_DFU_FLASH
+
+endif

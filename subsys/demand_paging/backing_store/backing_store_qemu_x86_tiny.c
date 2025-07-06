@@ -40,12 +40,12 @@ void *location_to_flash(uintptr_t location)
 	return UINT_TO_POINTER(ptr);
 }
 
-int k_mem_paging_backing_store_location_get(struct z_page_frame *pf,
+int k_mem_paging_backing_store_location_get(struct k_mem_page_frame *pf,
 					    uintptr_t *location,
 					    bool page_fault)
 {
 	/* Simply returns the virtual address */
-	*location = POINTER_TO_UINT(pf->addr);
+	*location = POINTER_TO_UINT(k_mem_page_frame_to_virt(pf));
 
 	return 0;
 }
@@ -57,17 +57,17 @@ void k_mem_paging_backing_store_location_free(uintptr_t location)
 
 void k_mem_paging_backing_store_page_out(uintptr_t location)
 {
-	(void)memcpy(location_to_flash(location), Z_SCRATCH_PAGE,
+	(void)memcpy(location_to_flash(location), K_MEM_SCRATCH_PAGE,
 		     CONFIG_MMU_PAGE_SIZE);
 }
 
 void k_mem_paging_backing_store_page_in(uintptr_t location)
 {
-	(void)memcpy(Z_SCRATCH_PAGE, location_to_flash(location),
+	(void)memcpy(K_MEM_SCRATCH_PAGE, location_to_flash(location),
 		     CONFIG_MMU_PAGE_SIZE);
 }
 
-void k_mem_paging_backing_store_page_finalize(struct z_page_frame *pf,
+void k_mem_paging_backing_store_page_finalize(struct k_mem_page_frame *pf,
 					      uintptr_t location)
 {
 	/* Nothing to do */

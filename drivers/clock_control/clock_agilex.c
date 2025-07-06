@@ -35,7 +35,7 @@ static int clk_get_rate(const struct device *dev,
 	return 0;
 }
 
-static const struct clock_control_driver_api clk_api = {
+static DEVICE_API(clock_control, clk_api) = {
 	.get_rate = clk_get_rate
 };
 

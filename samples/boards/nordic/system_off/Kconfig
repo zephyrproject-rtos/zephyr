@@ -1,0 +1,26 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Nordic SYSTEM_OFF demo"
+
+config APP_USE_RETAINED_MEM
+	bool "Use state retention in system off using retained_mem driver"
+	select RETAINED_MEM
+
+config GPIO_WAKEUP_ENABLE
+	bool "Use button to wake up device from system off"
+	default y
+	help
+	  Enable system off wakeup from pressing sw0 button.
+
+config GRTC_WAKEUP_ENABLE
+	bool "Use GRTC to wake up device from system off"
+	help
+	  Enable system off wakeup from GRTC.
+
+config LPCOMP_WAKEUP_ENABLE
+	bool "Use COMP to wake up device from system off"
+	help
+	  Enable system off wakeup from analog comparator.
+
+source "Kconfig.zephyr"

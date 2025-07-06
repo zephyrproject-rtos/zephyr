@@ -18,7 +18,7 @@ Zephyr tree.
 The sample can be built and run as follows for the ``qemu_x86_64`` board:
 
 .. zephyr-app-commands::
-   :zephyr-app: zephyr/samples/drivers/smbus
+   :zephyr-app: samples/drivers/smbus
    :host-os: unix
    :board: qemu_x86_64
    :goals: run

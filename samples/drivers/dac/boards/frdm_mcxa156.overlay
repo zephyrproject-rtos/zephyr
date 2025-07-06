@@ -1,0 +1,17 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+
+	/*
+	 * Please note on the FRDM-MCXA156 board, DAC0 output signal port is J2-9.
+	 */
+	zephyr,user {
+		dac = <&dac0>;
+		dac-channel-id = <0>;
+		dac-resolution = <12>;
+	};
+};

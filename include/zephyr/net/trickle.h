@@ -26,6 +26,8 @@ extern "C" {
 /**
  * @brief Trickle algorithm library
  * @defgroup trickle Trickle Algorithm Library
+ * @since 1.7
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */
@@ -60,11 +62,11 @@ struct net_trickle {
 	uint8_t k;		/**< Redundancy constant */
 	uint8_t c;		/**< Consistency counter */
 
-	bool double_to;
+	bool double_to;         /**< Flag telling if the internval is doubled */
 
-	struct k_work_delayable timer;
+	struct k_work_delayable timer; /**< Internal timer struct */
 	net_trickle_cb_t cb;	/**< Callback to be called when timer expires */
-	void *user_data;
+	void *user_data;        /**< User specific opaque data */
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -134,7 +136,9 @@ void net_trickle_inconsistency(struct net_trickle *trickle);
  */
 static inline bool net_trickle_is_running(struct net_trickle *trickle)
 {
-	NET_ASSERT(trickle);
+	if (trickle == NULL) {
+		return false;
+	}
 
 	return trickle->I != 0U;
 }

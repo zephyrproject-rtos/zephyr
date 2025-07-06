@@ -33,7 +33,7 @@ Transfer context
 ================
 
 Both the transfer capabilities retrieval procedure and the BLOB transfer uses an instance of a
-:c:type:`bt_mesh_blob_cli_inputs` to determine how to perform the transfer. The BLOB Transfer Client
+:c:struct:`bt_mesh_blob_cli_inputs` to determine how to perform the transfer. The BLOB Transfer Client
 Inputs structure must at least be initialized with a list of targets, an application key and a time
 to live (TTL) value before it is used in a procedure:
 
@@ -126,5 +126,3 @@ API reference
 *************
 
 .. doxygengroup:: bt_mesh_blob_cli
-   :project: Zephyr
-   :members:

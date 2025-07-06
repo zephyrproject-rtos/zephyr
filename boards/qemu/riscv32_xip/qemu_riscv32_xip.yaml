@@ -1,12 +1,12 @@
 identifier: qemu_riscv32_xip
 name: QEMU Emulation for RISC-V 32-bit in XIP mode
 type: qemu
-simulation: qemu
+simulation:
+  - name: qemu
 arch: riscv
 ram: 16
 toolchain:
   - zephyr
-  - xtools
 testing:
   default: true
   only_tags:

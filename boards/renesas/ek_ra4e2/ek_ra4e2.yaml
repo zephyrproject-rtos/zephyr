@@ -1,0 +1,16 @@
+identifier: ek_ra4e2
+name: Renesas EK-RA4E2
+type: mcu
+arch: arm
+ram: 40
+flash: 128
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - uart
+  - watchdog
+  - counter
+  - i3c
+vendor: renesas

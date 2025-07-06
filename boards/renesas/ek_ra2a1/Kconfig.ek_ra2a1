@@ -1,0 +1,5 @@
+# Copyright (c) 2024 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_EK_RA2A1
+	select SOC_R7FA2A1AB3CFM

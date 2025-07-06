@@ -1,0 +1,7 @@
+# Copyright (c) 2024 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  rtio.i2c:
+    platform_allow: native_sim
+    tags: rtio

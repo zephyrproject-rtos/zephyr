@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Google LLC.
+ * Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,10 +10,13 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_sam0);
 
+/* clang-format off */
+
 #include "spi_context.h"
 #include <errno.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
@@ -26,14 +30,12 @@ struct spi_sam0_config {
 	SercomSpi *regs;
 	uint32_t pads;
 	const struct pinctrl_dev_config *pcfg;
-#ifdef MCLK
+
 	volatile uint32_t *mclk;
 	uint32_t mclk_mask;
-	uint16_t gclk_core_id;
-#else
-	uint32_t pm_apbcmask;
-	uint16_t gclk_clkctrl_id;
-#endif
+	uint32_t gclk_gen;
+	uint16_t gclk_id;
+
 #ifdef CONFIG_SPI_ASYNC
 	const struct device *dma_dev;
 	uint8_t tx_dma_request;
@@ -75,6 +77,10 @@ static int spi_sam0_configure(const struct device *dev,
 	SercomSpi *regs = cfg->regs;
 	SERCOM_SPI_CTRLA_Type ctrla = {.reg = 0};
 	SERCOM_SPI_CTRLB_Type ctrlb = {.reg = 0};
+#ifdef SERCOM_SPI_CTRLC_MASK
+	SERCOM_SPI_CTRLC_Type ctrlc = {.reg = 0};
+	SERCOM_SPI_LENGTH_Type length = {.reg = 0};
+#endif
 	int div;
 
 	if (spi_context_configured(&data->ctx, config)) {
@@ -127,18 +133,36 @@ static int spi_sam0_configure(const struct device *dev,
 	div = (SOC_ATMEL_SAM0_GCLK0_FREQ_HZ / config->frequency) / 2U - 1;
 	div = CLAMP(div, 0, UINT8_MAX);
 
+#ifdef SERCOM_SPI_CTRLC_MASK
+	/* LENGTH.LEN must only be enabled when CTRLC.bit.DATA32B is enabled.
+	 * Since we are about to explicitly disable it, we need to clear the LENGTH register.
+	 */
+	length.reg = SERCOM_SPI_LENGTH_RESETVALUE;
+
+	/* Disable inter-character spacing and the 32-bit read/write extension */
+	ctrlc.reg = SERCOM_SPI_CTRLC_RESETVALUE;
+#endif
+
 	/* Update the configuration only if it has changed */
-	if (regs->CTRLA.reg != ctrla.reg || regs->CTRLB.reg != ctrlb.reg ||
-	    regs->BAUD.reg != div) {
+	if (regs->CTRLA.reg != ctrla.reg || regs->CTRLB.reg != ctrlb.reg || regs->BAUD.reg != div
+#ifdef SERCOM_SPI_CTRLC_MASK
+		|| regs->LENGTH.reg != length.reg || regs->CTRLC.reg != ctrlc.reg
+#endif
+	) {
 		regs->CTRLA.bit.ENABLE = 0;
 		wait_synchronization(regs);
-
 		regs->CTRLB = ctrlb;
 		wait_synchronization(regs);
 		regs->BAUD.reg = div;
 		wait_synchronization(regs);
 		regs->CTRLA = ctrla;
 		wait_synchronization(regs);
+#ifdef SERCOM_SPI_CTRLC_MASK
+		regs->LENGTH = length;
+		wait_synchronization(regs);
+		/* Although CTRLC is not write-synchronized, it is enabled-protected */
+		regs->CTRLC = ctrlc;
+#endif
 	}
 
 	data->ctx.config = config;
@@ -644,21 +668,20 @@ static int spi_sam0_init(const struct device *dev)
 	struct spi_sam0_data *data = dev->data;
 	SercomSpi *regs = cfg->regs;
 
-#ifdef MCLK
-	/* Enable the GCLK */
-	GCLK->PCHCTRL[cfg->gclk_core_id].reg = GCLK_PCHCTRL_GEN_GCLK0 |
-					       GCLK_PCHCTRL_CHEN;
-
-	/* Enable the MCLK */
 	*cfg->mclk |= cfg->mclk_mask;
-#else
-	/* Enable the GCLK */
-	GCLK->CLKCTRL.reg = cfg->gclk_clkctrl_id | GCLK_CLKCTRL_GEN_GCLK0 |
-			    GCLK_CLKCTRL_CLKEN;
 
-	/* Enable SERCOM clock in PM */
-	PM->APBCMASK.reg |= cfg->pm_apbcmask;
+#ifdef MCLK
+	GCLK->PCHCTRL[cfg->gclk_id].reg = GCLK_PCHCTRL_CHEN
+					| GCLK_PCHCTRL_GEN(cfg->gclk_gen);
+#else
+	GCLK->CLKCTRL.reg = GCLK_CLKCTRL_CLKEN
+			  | GCLK_CLKCTRL_GEN(cfg->gclk_gen)
+			  | GCLK_CLKCTRL_ID(cfg->gclk_id);
 #endif
+
+	/* Ensure all registers are at their default values */
+	regs->CTRLA.bit.SWRST = 1;
+	wait_synchronization(regs);
 
 	/* Disable all SPI interrupts */
 	regs->INTENCLR.reg = SERCOM_SPI_INTENCLR_MASK;
@@ -690,10 +713,13 @@ static int spi_sam0_init(const struct device *dev)
 	return 0;
 }
 
-static const struct spi_driver_api spi_sam0_driver_api = {
+static DEVICE_API(spi, spi_sam0_driver_api) = {
 	.transceive = spi_sam0_transceive_sync,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_sam0_transceive_async,
+#endif
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
 #endif
 	.release = spi_sam0_release,
 };
@@ -713,13 +739,17 @@ static const struct spi_driver_api spi_sam0_driver_api = {
 	SERCOM_SPI_CTRLA_DIPO(DT_INST_PROP(n, dipo)) | \
 	SERCOM_SPI_CTRLA_DOPO(DT_INST_PROP(n, dopo))
 
+#define ASSIGNED_CLOCKS_CELL_BY_NAME					\
+	ATMEL_SAM0_DT_INST_ASSIGNED_CLOCKS_CELL_BY_NAME
+
 #ifdef MCLK
 #define SPI_SAM0_DEFINE_CONFIG(n)					\
 static const struct spi_sam0_config spi_sam0_config_##n = {		\
 	.regs = (SercomSpi *)DT_INST_REG_ADDR(n),			\
-	.mclk = (volatile uint32_t *)MCLK_MASK_DT_INT_REG_ADDR(n),	\
-	.mclk_mask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, bit)),	\
-	.gclk_core_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, periph_ch),\
+	.gclk_gen = ASSIGNED_CLOCKS_CELL_BY_NAME(n, gclk, gen),		\
+	.gclk_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, id),		\
+	.mclk = ATMEL_SAM0_DT_INST_MCLK_PM_REG_ADDR_OFFSET(n),		\
+	.mclk_mask = ATMEL_SAM0_DT_INST_MCLK_PM_PERIPH_MASK(n, bit),	\
 	.pads = SPI_SAM0_SERCOM_PADS(n),				\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 	SPI_SAM0_DMA_CHANNELS(n)					\
@@ -728,8 +758,10 @@ static const struct spi_sam0_config spi_sam0_config_##n = {		\
 #define SPI_SAM0_DEFINE_CONFIG(n)					\
 static const struct spi_sam0_config spi_sam0_config_##n = {		\
 	.regs = (SercomSpi *)DT_INST_REG_ADDR(n),			\
-	.pm_apbcmask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, pm, bit)),	\
-	.gclk_clkctrl_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, clkctrl_id),\
+	.gclk_gen = ASSIGNED_CLOCKS_CELL_BY_NAME(n, gclk, gen),		\
+	.gclk_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, id),		\
+	.mclk = ATMEL_SAM0_DT_INST_MCLK_PM_REG_ADDR_OFFSET(n),		\
+	.mclk_mask = ATMEL_SAM0_DT_INST_MCLK_PM_PERIPH_MASK(n, bit),	\
 	.pads = SPI_SAM0_SERCOM_PADS(n),				\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 	SPI_SAM0_DMA_CHANNELS(n)					\
@@ -744,10 +776,12 @@ static const struct spi_sam0_config spi_sam0_config_##n = {		\
 		SPI_CONTEXT_INIT_SYNC(spi_sam0_dev_data_##n, ctx),	\
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)	\
 	};								\
-	DEVICE_DT_INST_DEFINE(n, &spi_sam0_init, NULL,			\
+	SPI_DEVICE_DT_INST_DEFINE(n, spi_sam0_init, NULL,		\
 			    &spi_sam0_dev_data_##n,			\
 			    &spi_sam0_config_##n, POST_KERNEL,		\
 			    CONFIG_SPI_INIT_PRIORITY,			\
 			    &spi_sam0_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_SAM0_DEVICE_INIT)
+
+/* clang-format on */

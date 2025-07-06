@@ -1,7 +1,8 @@
-.. _fxas21002:
+.. zephyr:code-sample:: fxas21002
+   :name: FXAS21002 Gyroscope Sensor
+   :relevant-api: sensor_interface
 
-FXAS21002 Gyroscope Sensor
-##########################
+   Get gyroscope data synchronously from an FXAS21002 sensor.
 
 Overview
 ********

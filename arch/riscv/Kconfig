@@ -1,4 +1,5 @@
 # Copyright (c) 2016 Jean-Paul Etienne <fractalclone@gmail.com>
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
 # SPDX-License-Identifier: Apache-2.0
 
 menu "RISCV Options"
@@ -15,9 +16,13 @@ config FLOAT_HARD
 	help
 	  This option enables the hard-float calling convention.
 
+choice RISCV_GP_PURPOSE
+	prompt "Purpose of the global pointer (GP) register"
+	default RISCV_GP if RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
+
 config RISCV_GP
 	bool "RISC-V global pointer relative addressing"
-	default n
+	depends on RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
 	help
 	  Use global pointer relative addressing for small globals declared
 	  anywhere in the executable. It can benefit performance and reduce
@@ -27,10 +32,20 @@ config RISCV_GP
 	  global pointer at program start or earlier than any instruction
 	  using GP relative addressing.
 
+config RISCV_CURRENT_VIA_GP
+	bool "Store current thread into the global pointer (GP) register"
+	depends on MP_MAX_NUM_CPUS > 1
+	select ARCH_HAS_CUSTOM_CURRENT_IMPL
+	help
+	  Store the current thread's pointer into the global pointer (GP) register.
+	  When is enabled, calls to `_current` & `k_sched_current_thread_query()` will
+	  be reduced to a single register read.
+
+endchoice # RISCV_GP_PURPOSE
+
 config RISCV_ALWAYS_SWITCH_THROUGH_ECALL
 	bool "Do not use mret outside a trap handler context"
 	depends on MULTITHREADING
-	depends on !RISCV_PMP
 	help
 	  Use mret instruction only when in a trap handler.
 	  This is for RISC-V implementations that require every mret to be
@@ -38,13 +53,39 @@ config RISCV_ALWAYS_SWITCH_THROUGH_ECALL
 	  and most people should say n here to minimize context switching
 	  overhead.
 
+choice RISCV_SMP_IPI_IMPL
+	prompt "RISC-V SMP IPI implementation"
+	depends on SMP
+	default RISCV_SMP_IPI_CLINT if DT_HAS_SIFIVE_CLINT0_ENABLED
+	default RISCV_SMP_IPI_CUSTOM
+
+config RISCV_SMP_IPI_CLINT
+	bool "CLINT-based IPI"
+	depends on DT_HAS_SIFIVE_CLINT0_ENABLED
+	help
+	  Use CLINT-based IPI implementation.
+
+config RISCV_SMP_IPI_CUSTOM
+	bool "Custom IPI implementation"
+	help
+	  Allow custom IPI implementation.
+
+	  When this is selected, the following functions must be provided:
+	   - arch_sched_directed_ipi()
+	   - arch_flush_fpu_ipi() if CONFIG_FPU_SHARING
+	   - arch_spin_relax() if CONFIG_FPU_SHARING
+	   - arch_smp_init()
+
+endchoice # RISCV_SMP_IPI_IMPL
+
 menu "RISCV Processor Options"
 
 config INCLUDE_RESET_VECTOR
-	bool "Include Reset vector"
+	bool "Jumps to __initialize directly"
 	help
-	  Include the reset vector stub, which initializes the stack and
-	  prepares for running C code.
+	  Select 'y' here to use the Zephyr provided default implementation that
+	  jumps to `__initialize` directly. Otherwise a SOC needs to provide its
+	  custom `__reset` routine.
 
 config RISCV_PRIVILEGED
 	bool
@@ -81,7 +122,12 @@ config RISCV_SOC_HAS_ISR_STACKING
 	    guarded by !_ASMLANGUAGE. The ESF should be defined to account for
 	    the hardware stacked registers in the proper order as they are
 	    saved on the stack by the hardware, and the registers saved by the
-	    software macros. The structure must be called '__esf'.
+	    software macros. The structure must be called 'struct arch_esf'.
+
+	  - SOC_ISR_STACKING_ESR_INIT: macro guarded by !_ASMLANGUAGE.
+	    Some hardware stacked registers should be initialized on init
+	    stack with proper values. This prevents from incorrect behavior
+	    on entry context switch when initial stack is restored.
 
 config RISCV_SOC_HAS_CUSTOM_IRQ_HANDLING
 	bool
@@ -111,6 +157,12 @@ config RISCV_SOC_HAS_CUSTOM_SYS_IO
 	  Enable this hidden option and specialize the z_soc_* functions when
 	  the RISC-V SoC needs to do something different and more than reading and
 	  writing the registers.
+
+config RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
+	bool
+	help
+	  Selected when SoC has implemented the initialization of global pointer (GP)
+	  at program start, or earlier than any instruction using GP relative addressing.
 
 config RISCV_SOC_CONTEXT_SAVE
 	bool "SOC-based context saving in IRQ handlers"
@@ -168,8 +220,19 @@ config RISCV_HAS_PLIC
 config RISCV_HAS_CLIC
 	bool
 	depends on RISCV_PRIVILEGED
+	select RISCV_ALWAYS_SWITCH_THROUGH_ECALL if MULTITHREADING
+	select CLIC_SUPPORT_INTERRUPT_LEVEL if !NRFX_CLIC
 	help
 	  Does the SOC provide support for a Core-Local Interrupt Controller (CLIC).
+
+config CLIC_SUPPORT_INTERRUPT_LEVEL
+	bool
+	depends on RISCV_HAS_CLIC
+	help
+	  For CLIC implementations with extended interrupt level, where
+	  higher-numbered interrupt levels can preempt lower-numbered interrupt
+	  levels. This option handles interrupt level in ISR to ensure proper
+	  nested ISR exits.
 
 config RISCV_SOC_EXCEPTION_FROM_IRQ
 	bool
@@ -210,7 +273,7 @@ config RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET
 	default 0
 	depends on GEN_ISR_TABLES
 	help
-	  On some RISCV platform the first interrupt vectors are primarly
+	  On some RISCV platform the first interrupt vectors are primarily
 	  intended for inter-hart interrupt signaling and so retained for that
 	  purpose and not available. When this option is set, all the IRQ
 	  vectors are shifted by this offset value when installed into the
@@ -238,6 +301,14 @@ config RISCV_HART_MASK
 	  i.e. 128, 129, ..(0x80, 8x81, ..), this can be configured to 63 (0x7f)
 	  such that we can extract the bits that start from 0.
 
+config EXTRA_EXCEPTION_INFO
+	bool "Collect extra exception info"
+	depends on EXCEPTION_DEBUG
+	help
+	  This option enables the collection of extra information, such as
+	  register state, when a fault occurs. This information can be useful
+	  to collect for post-mortem analysis and debug of issues.
+
 config RISCV_PMP
 	bool "RISC-V PMP Support"
 	select THREAD_STACK_INFO
@@ -249,6 +320,8 @@ config RISCV_PMP
 	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE
 	select ARCH_MEM_DOMAIN_DATA if USERSPACE
 	select THREAD_LOCAL_STORAGE if USERSPACE
+	select ARCH_MEM_DOMAIN_SUPPORTS_ISOLATED_STACKS
+	select MEM_DOMAIN_ISOLATED_STACKS
 	help
 	  MCU implements Physical Memory Protection.
 
@@ -301,7 +374,6 @@ endif #RISCV_PMP
 
 config PMP_STACK_GUARD
 	def_bool y
-	depends on MULTITHREADING
 	depends on HW_STACK_PROTECTION
 
 config PMP_STACK_GUARD_MIN_SIZE
@@ -340,6 +412,15 @@ config NULL_POINTER_EXCEPTION_REGION_SIZE
 
 endif # NULL_POINTER_EXCEPTION_DETECTION_PMP
 
+config RISCV_IMPRECISE_FPU_STATE_TRACKING
+	bool "Imprecise implementation of FPU state tracking"
+	depends on FPU
+	help
+	  According to the RISC-V Instruction Set Manual: Volume II, Version 20240411
+	  (Section 3.1.6.6), some implementations may choose to track the dirtiness of
+	  the floating-point register state imprecisely by reporting the state to be
+	  dirty even when it has not been modified. This option reflects that.
+
 endmenu
 
 config MAIN_STACK_SIZE
@@ -347,6 +428,7 @@ config MAIN_STACK_SIZE
 	default 2048 if PMP_STACK_GUARD
 
 config TEST_EXTRA_STACK_SIZE
+	default 4096 if CPP_EXCEPTIONS
 	default 1536
 
 config CMSIS_THREAD_MAX_STACK_SIZE
@@ -360,6 +442,7 @@ config ARCH_IRQ_VECTOR_TABLE_ALIGN
 
 config RISCV_TRAP_HANDLER_ALIGNMENT
 	int "Alignment of RISC-V trap handler in bytes"
+	default 64 if RISCV_HAS_CLIC
 	default 4
 	help
 	  This value configures the alignment of RISC-V trap handling
@@ -372,6 +455,14 @@ config GEN_IRQ_VECTOR_TABLE
 
 config ARCH_HAS_SINGLE_THREAD_SUPPORT
 	default y if !SMP
+
+config ARCH_HAS_STACKWALK
+	bool
+	default y
+	imply THREAD_STACK_INFO
+	help
+	  Internal config to indicate that the arch_stack_walk() API is implemented
+	  and it can be enabled.
 
 rsource "Kconfig.isa"
 

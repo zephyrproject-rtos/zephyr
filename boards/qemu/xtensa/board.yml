@@ -1,7 +1,11 @@
 board:
   name: qemu_xtensa
+  full_name: QEMU Emulation for Xtensa
   vendor: cdns
   socs:
   - name: dc233c
     variants:
     - name: mmu
+  - name: sample_controller32
+    variants:
+    - name: mpu

@@ -4,24 +4,41 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+#include <sys/types.h>
 
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/pacs.h>
 #include <zephyr/bluetooth/audio/has.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/settings/settings.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/slist.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/toolchain.h>
 
-#include "../bluetooth/host/hci_core.h"
 #include "../bluetooth/host/settings.h"
+
 #include "audio_internal.h"
-#include "has_internal.h"
-
 #include "common/bt_str.h"
-
-#include <zephyr/logging/log.h>
+#include "has_internal.h"
 
 LOG_MODULE_REGISTER(bt_has, CONFIG_BT_HAS_LOG_LEVEL);
 
@@ -184,7 +201,7 @@ static struct client_context {
 	uint8_t last_preset_index_known;
 } contexts[CONFIG_BT_MAX_PAIRED];
 
-/* Connected client clientance */
+/* Connected client instance */
 static struct has_client {
 	struct bt_conn *conn;
 #if defined(CONFIG_BT_HAS_PRESET_SUPPORT)
@@ -252,7 +269,7 @@ static void client_free(struct has_client *client)
 	err = bt_conn_get_info(client->conn, &info);
 	__ASSERT_NO_MSG(err == 0);
 
-	if (client->context != NULL && !bt_addr_le_is_bonded(info.id, info.le.dst)) {
+	if (client->context != NULL && !bt_le_bond_exists(info.id, info.le.dst)) {
 		/* Free stored context of non-bonded client */
 		context_free(client->context);
 		client->context = NULL;
@@ -365,7 +382,7 @@ static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_
 		return;
 	}
 
-	if (!bt_addr_le_is_bonded(info.id, info.le.dst)) {
+	if (!bt_le_bond_exists(info.id, info.le.dst)) {
 		return;
 	}
 
@@ -732,13 +749,11 @@ static void control_point_ind_complete(struct bt_conn *conn,
 
 static int control_point_send(struct has_client *client, struct net_buf_simple *buf)
 {
-	const uint16_t mtu_size = bt_gatt_get_mtu(client->conn);
-	/* PDU structure is [Opcode (1)] [Handle (2)] [...] */
-	const uint16_t pdu_size = 3 + buf->len;
+	const uint16_t max_ntf_size = bt_audio_get_max_ntf_size(client->conn);
 
-	if (mtu_size < pdu_size) {
-		LOG_WRN("Sending truncated control point PDU %d < %d", mtu_size, pdu_size);
-		buf->len -= (pdu_size - mtu_size);
+	if (max_ntf_size < buf->len) {
+		LOG_WRN("Sending truncated control point PDU %u < %u", max_ntf_size, buf->len);
+		buf->len = max_ntf_size;
 	}
 
 #if defined(CONFIG_BT_HAS_PRESET_CONTROL_POINT_NOTIFIABLE)
@@ -760,6 +775,7 @@ static int control_point_send(struct has_client *client, struct net_buf_simple *
 		client->params.ind.func = control_point_ind_complete;
 		client->params.ind.destroy = NULL;
 		client->params.ind.data = buf->data;
+		/* indications have same size as notifications */
 		client->params.ind.len = buf->len;
 
 		return bt_gatt_indicate(client->conn, &client->params.ind);
@@ -919,7 +935,7 @@ static int settings_set_cb(const char *name, size_t len_rd, settings_read_cb rea
 	return 0;
 }
 
-BT_SETTINGS_DEFINE(has, "has", settings_set_cb, NULL);
+static BT_SETTINGS_DEFINE(has, "has", settings_set_cb, NULL);
 
 static void store_client_context(struct client_context *context)
 {

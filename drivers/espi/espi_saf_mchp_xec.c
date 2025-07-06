@@ -818,7 +818,7 @@ static int espi_saf_xec_activate(const struct device *dev)
 
 static int espi_saf_xec_init(const struct device *dev);
 
-static const struct espi_saf_driver_api espi_saf_xec_driver_api = {
+static DEVICE_API(espi_saf, espi_saf_xec_driver_api) = {
 	.config = espi_saf_xec_configuration,
 	.set_protection_regions = espi_saf_xec_set_pr,
 	.activate = espi_saf_xec_activate,
@@ -849,7 +849,7 @@ static const struct espi_saf_xec_config espi_saf_xec_config = {
 
 DEVICE_DT_INST_DEFINE(0, &espi_saf_xec_init, NULL,
 		      &espi_saf_xec_data, &espi_saf_xec_config, POST_KERNEL,
-		      CONFIG_ESPI_SAF_INIT_PRIORITY, &espi_saf_xec_driver_api);
+		      CONFIG_ESPI_TAF_INIT_PRIORITY, &espi_saf_xec_driver_api);
 
 static int espi_saf_xec_init(const struct device *dev)
 {

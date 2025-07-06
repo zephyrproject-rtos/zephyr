@@ -39,7 +39,7 @@ have not been approved by the `Open Source Initiative (OSI)`_. See the
    https://www.zephyrproject.org/governance/
 
 .. _Zephyr project charter:
-   https://www.zephyrproject.org/wp-content/uploads/sites/38/2020/09/CLEAN-LF-Zephyr-Charter-20200624-effective-20200901.pdf
+   https://www.zephyrproject.org/wp-content/uploads/2023/08/LF-Zephyr-Charter-2023.08.21.pdf
 
 .. _Open Source Initiative (OSI):
    https://opensource.org/licenses/alphabetical
@@ -173,7 +173,7 @@ Follow the steps below to begin the submission process:
    detail, so that you are informed of the criteria used by the TSC and board in
    order to approve or reject a request
 #. Use the :github:`New External Source Code Issue
-   <new?assignees=&labels=RFC&template=007_ext-source.md&title=>` to open an issue
+   <new?assignees=&labels=RFC&template=007_ext-source.yml>` to open an issue
 #. Fill out all required sections, making sure you provide enough detail for the
    TSC to assess the merit of the request. Optionally you can also create a Pull
    Request that demonstrates the integration of the external source code and

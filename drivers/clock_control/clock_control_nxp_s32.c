@@ -67,14 +67,14 @@ static int nxp_s32_clock_init(const struct device *dev)
 	return (status == CLOCK_IP_SUCCESS ? 0 : -EIO);
 }
 
-static const struct clock_control_driver_api nxp_s32_clock_driver_api = {
+static DEVICE_API(clock_control, nxp_s32_clock_driver_api) = {
 	.on = nxp_s32_clock_on,
 	.off = nxp_s32_clock_off,
 	.get_rate = nxp_s32_clock_get_rate,
 };
 
 DEVICE_DT_INST_DEFINE(0,
-		      &nxp_s32_clock_init,
+		      nxp_s32_clock_init,
 		      NULL, NULL, NULL,
 		      PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		      &nxp_s32_clock_driver_api);

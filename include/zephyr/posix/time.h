@@ -58,33 +58,33 @@ struct itimerspec {
 
 #include <zephyr/kernel.h>
 #include <errno.h>
-#include "posix_types.h"
+#include <zephyr/posix/posix_types.h>
 #include <zephyr/posix/signal.h>
+#include <zephyr/sys/clock.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #ifndef CLOCK_REALTIME
-#define CLOCK_REALTIME 1
+#define CLOCK_REALTIME SYS_CLOCK_REALTIME
 #endif
 
 #ifndef CLOCK_PROCESS_CPUTIME_ID
 #define CLOCK_PROCESS_CPUTIME_ID 2
 #endif
 
+#ifndef CLOCK_THREAD_CPUTIME_ID
+#define CLOCK_THREAD_CPUTIME_ID 3
+#endif
+
 #ifndef CLOCK_MONOTONIC
-#define CLOCK_MONOTONIC 4
+#define CLOCK_MONOTONIC SYS_CLOCK_MONOTONIC
 #endif
 
 #ifndef TIMER_ABSTIME
-#define TIMER_ABSTIME 4
+#define TIMER_ABSTIME SYS_TIMER_ABSTIME
 #endif
-
-static inline int32_t _ts_to_ms(const struct timespec *to)
-{
-	return (to->tv_sec * MSEC_PER_SEC) + (to->tv_nsec / NSEC_PER_MSEC);
-}
 
 int clock_gettime(clockid_t clock_id, struct timespec *ts);
 int clock_getres(clockid_t clock_id, struct timespec *ts);
@@ -93,6 +93,7 @@ int clock_getcpuclockid(pid_t pid, clockid_t *clock_id);
 /* Timer APIs */
 int timer_create(clockid_t clockId, struct sigevent *evp, timer_t *timerid);
 int timer_delete(timer_t timerid);
+struct itimerspec;
 int timer_gettime(timer_t timerid, struct itimerspec *its);
 int timer_settime(timer_t timerid, int flags, const struct itimerspec *value,
 		  struct itimerspec *ovalue);

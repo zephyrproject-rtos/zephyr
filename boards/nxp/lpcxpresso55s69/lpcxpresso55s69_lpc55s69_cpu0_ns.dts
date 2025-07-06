@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, NXP
+ * Copyright 2019,2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,6 +30,7 @@
 		zephyr,sram = &non_secure_ram;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_ns_partition;
+		zephyr,uart-mcumgr = &flexcomm0;
 		zephyr,console = &flexcomm0;
 		zephyr,shell-uart = &flexcomm0;
 		zephyr,entropy = &rng;
@@ -85,8 +86,6 @@
 
 &hs_lspi {
 	status = "okay";
-	dmas = <&dma0 2>, <&dma0 3>;
-	dma-names = "rx", "tx";
 };
 
 &wwdt0 {

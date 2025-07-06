@@ -9,6 +9,7 @@ menuconfig I2C_INFINEON_XMC4
 	bool "Infineon XMC4 I2C driver"
 	default y
 	depends on DT_HAS_INFINEON_XMC4XXX_I2C_ENABLED
+	select PINCTRL
 	help
 	  This option enables the I2C driver for Infineon XMC4 family.
 

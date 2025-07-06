@@ -45,7 +45,7 @@ is downloaded and installed. MCUboot can be used to verify the signature before
 upgrading the firmware.
 
 There is a :zephyr:code-sample:`hawkbit-api` sample included in the
-Zephyr :ref:`mgmt-samples` section.
+Zephyr :zephyr:code-sample-category:`mgmt` section.
 
 UpdateHub
 =========
@@ -56,18 +56,18 @@ the binary is downloaded and installed. MCUboot can be used to verify the
 signature before upgrading the firmware.
 
 There is an :zephyr:code-sample:`updatehub-fota` sample included in the Zephyr
-:ref:`mgmt-samples` section.
+:zephyr:code-sample-category:`mgmt` section.
 
 SMP Server
 ==========
 
 A Simple Management Protocol (SMP) server can be used to update firmware via
-Bluetooth Low Energy (BLE) or UDP. :ref:`mcu_mgr` is used to send a signed
+Bluetooth Low Energy (LE) or UDP. :ref:`mcu_mgr` is used to send a signed
 firmware binary to the remote device where it is verified by MCUboot before the
 upgrade occurs.
 
-There is an :zephyr:code-sample:`smp-svr` sample included in the Zephyr :ref:`mgmt-samples`
-section.
+There is an :zephyr:code-sample:`smp-svr` sample included in the Zephyr
+:zephyr:code-sample-category:`mgmt` section.
 
 Lightweight M2M (LWM2M)
 =======================

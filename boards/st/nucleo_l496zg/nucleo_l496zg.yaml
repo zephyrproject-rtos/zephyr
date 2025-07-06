@@ -5,7 +5,7 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-ram: 320
+ram: 256
 flash: 1024
 supported:
   - arduino_i2c
@@ -16,6 +16,8 @@ supported:
   - spi
   - pwm
   - counter
+  - usb_device
+  - usbd
   - watchdog
 testing:
   ignore_tags:

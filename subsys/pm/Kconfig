@@ -19,6 +19,8 @@ config PM
 	  power management subsystem of the number of ticks until the next kernel
 	  timer is due to expire.
 
+rsource "policy/Kconfig"
+
 if PM
 
 module = PM
@@ -37,6 +39,13 @@ config PM_S2RAM
 	help
 	  This option enables suspend-to-RAM (S2RAM).
 
+config PM_S2RAM_CUSTOM_MARKING
+	bool "Use custom marking functions"
+	depends on PM_S2RAM
+	help
+	  By default a magic word in RAM is used to mark entering suspend-to-RAM. Enabling
+	  this option allows custom implementation of functions which handle the marking.
+
 config PM_NEED_ALL_DEVICES_IDLE
 	bool "System Low Power Mode Needs All Devices Idle"
 	depends on PM_DEVICE && !SMP
@@ -44,24 +53,23 @@ config PM_NEED_ALL_DEVICES_IDLE
 	  When this option is enabled, check that no devices are busy before
 	  entering into system low power mode.
 
-choice PM_POLICY
-	prompt "Idle State Power Management Policy"
-	default PM_POLICY_DEFAULT
+choice PM_PREWAKEUP_CONV_MODE
+	prompt "Pre-wakeup microseconds to ticks conversion method"
+	default PM_PREWAKEUP_CONV_MODE_NEAR
 	help
-	  Select the idle state power management policy.
+	  Exit latency for each power state is given in microseconds. It is converted
+	  to ticks and system clock is set to wake up the core earlier before scheduled
+	  wake up. This option specifies rounding that is used when converting exit
+	  latency from microseconds to system ticks.
 
-config PM_POLICY_DEFAULT
-	bool "Default PM policy"
-	help
-	  This option selects the default PM policy. Default policy is based
-	  on CPU residency times and other constraints imposed by the drivers or
-	  application.
+config PM_PREWAKEUP_CONV_MODE_NEAR
+	bool "Nearest"
 
-config PM_POLICY_CUSTOM
-	bool "Custom PM Policy"
-	help
-	  This options allows applications to override the default policy with
-	  a custom implementation.
+config PM_PREWAKEUP_CONV_MODE_CEIL
+	bool "Round up"
+
+config PM_PREWAKEUP_CONV_MODE_FLOOR
+	bool "Round down"
 
 endchoice
 
@@ -71,12 +79,11 @@ config PM_DEVICE
 	bool "Device Power Management"
 	help
 	  This option enables the device power management interface.  The
-	  interface consists of hook functions implemented by device drivers
-	  that get called by the power manager application when the system
-	  is going to suspend state or resuming from suspend state. This allows
-	  device drivers to do any necessary power management operations
-	  like turning off device clocks and peripherals. The device drivers
-	  may also save and restore states in these hook functions.
+	  interface implemented by device drivers are called by the power
+	  management subsystem. This allows device drivers to do any
+	  necessary power management operations like turning off
+	  device clocks and peripherals. Device drivers may also save
+	  and restore states in these hook functions.
 
 if PM_DEVICE
 
@@ -94,7 +101,7 @@ config PM_DEVICE_POWER_DOMAIN
 	  domain is suspended or resumed.
 
 config PM_DEVICE_POWER_DOMAIN_DYNAMIC
-	bool "Dynamically bind devices to a Power Pomain"
+	bool "Dynamically bind devices to a Power Domain"
 	depends on PM_DEVICE_POWER_DOMAIN && DEVICE_DEPS_DYNAMIC
 	help
 	  Enable support for dynamically bind devices to a Power Domain.
@@ -114,13 +121,78 @@ config PM_DEVICE_RUNTIME
 	  enabled, devices can be suspended or resumed based on the device
 	  usage even while the CPU or system is running.
 
-config PM_DEVICE_RUNTIME_EXCLUSIVE
-	depends on PM_DEVICE_RUNTIME
-	bool "Use only on Runtime Power Management on system suspend / resume"
+if PM_DEVICE_RUNTIME
+
+config PM_DEVICE_DRIVER_NEEDS_DEDICATED_WQ
+	bool
+
+config PM_DEVICE_RUNTIME_ASYNC
+	bool "Asynchronous device runtime power management"
 	default y
 	help
-	  On system suspend / resume do not trigger the Device PM hooks but
-	  only rely on Runtime PM to manage the devices power states.
+	  Use this option to enable support for asynchronous operation
+	  in the power management device runtime.
+
+if PM_DEVICE_RUNTIME_ASYNC
+
+choice PM_DEVICE_RUNTIME_WQ
+	prompt "Work queue to be used by pm device runtime async"
+	default PM_DEVICE_RUNTIME_USE_DEDICATED_WQ if PM_DEVICE_DRIVER_NEEDS_DEDICATED_WQ
+	default PM_DEVICE_RUNTIME_USE_SYSTEM_WQ
+
+config PM_DEVICE_RUNTIME_USE_SYSTEM_WQ
+	bool "Use the system workqueue"
+	help
+	  When this option is enabled the power management subsystem will
+	  use the system workqueue instead of defining its own queue.
+
+config PM_DEVICE_RUNTIME_USE_DEDICATED_WQ
+	bool "Use a dedicated workqueue"
+	help
+	  When this option is enabled the power management subsystem will
+	  use a dedicated workqueue instead of the system work queue.
+
+if PM_DEVICE_RUNTIME_USE_DEDICATED_WQ
+config PM_DEVICE_RUNTIME_DEDICATED_WQ_STACK_SIZE
+	int "Stack size for pm runtime async workqueue"
+	default 1024
+	help
+	  Defines the size of the stack on the workqueue used for
+	  async operations.
+
+config PM_DEVICE_RUNTIME_DEDICATED_WQ_PRIO
+	int "PM device runtime workqueue priority. Should be pre-emptible."
+	default SYSTEM_WORKQUEUE_PRIORITY if PM_DEVICE_RUNTIME_USE_SYSTEM_WQ
+	default 0
+
+config PM_DEVICE_RUNTIME_DEDICATED_WQ_INIT_PRIO
+	int "PM device runtime workqueue init priority"
+	default 50
+	help
+	  Init priority level to setup the device runtime workqueue.
+endif #PM_DEVICE_RUNTIME_USE_DEDICATED_WQ
+endchoice
+
+endif # PM_DEVICE_RUNTIME_ASYNC
+endif # PM_DEVICE_RUNTIME
+
+config PM_DEVICE_SHELL
+	bool "Device Power Management shell"
+	depends on SHELL
+	help
+	  Enable the device power management shell, for triggering device power
+	  management events through the shell interface.
+
+config PM_DEVICE_SYSTEM_MANAGED
+	bool "System-Managed Device Power Management"
+	default y if !PM_DEVICE_RUNTIME
+	help
+	  This option enables the system-managed device power
+	  management.  The power management subsystem will suspend
+	  devices before entering a low power state. Conversely, after
+	  the core wakes up from low power mode all suspended devices
+	  are resumed.
+
 
 endif # PM_DEVICE
 

@@ -8,23 +8,39 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <sys/types.h>
 
-#include <zephyr/device.h>
-#include <zephyr/init.h>
-
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/audio/aics.h>
+#include <zephyr/bluetooth/audio/vcp.h>
+#include <zephyr/bluetooth/audio/vocs.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
-#include <zephyr/bluetooth/audio/vcp.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/sys/time_units.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/sys_clock.h>
 
 #include "audio_internal.h"
 #include "vcp_internal.h"
 
 #define LOG_LEVEL CONFIG_BT_VCP_VOL_REND_LOG_LEVEL
-#include <zephyr/logging/log.h>
+
 LOG_MODULE_REGISTER(bt_vcp_vol_rend);
 
 #define VOLUME_DOWN(current_vol) \
@@ -253,8 +269,7 @@ static ssize_t write_vcs_control(struct bt_conn *conn,
 		value_changed(&vol_rend, NOTIFY_STATE);
 
 		if (vol_rend.cb && vol_rend.cb->state) {
-			vol_rend.cb->state(0, vol_rend.state.volume,
-					       vol_rend.state.mute);
+			vol_rend.cb->state(conn, 0, vol_rend.state.volume, vol_rend.state.mute);
 		}
 	}
 
@@ -266,7 +281,7 @@ static ssize_t write_vcs_control(struct bt_conn *conn,
 		}
 
 		if (vol_rend.cb && vol_rend.cb->flags) {
-			vol_rend.cb->flags(0, vol_rend.flags);
+			vol_rend.cb->flags(conn, 0, vol_rend.flags);
 		}
 	}
 	return len;
@@ -508,8 +523,7 @@ int bt_vcp_vol_rend_set_step(uint8_t volume_step)
 int bt_vcp_vol_rend_get_state(void)
 {
 	if (vol_rend.cb && vol_rend.cb->state) {
-		vol_rend.cb->state(0, vol_rend.state.volume,
-				   vol_rend.state.mute);
+		vol_rend.cb->state(NULL, 0, vol_rend.state.volume, vol_rend.state.mute);
 	}
 
 	return 0;
@@ -518,7 +532,7 @@ int bt_vcp_vol_rend_get_state(void)
 int bt_vcp_vol_rend_get_flags(void)
 {
 	if (vol_rend.cb && vol_rend.cb->flags) {
-		vol_rend.cb->flags(0, vol_rend.flags);
+		vol_rend.cb->flags(NULL, 0, vol_rend.flags);
 	}
 
 	return 0;

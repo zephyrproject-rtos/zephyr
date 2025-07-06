@@ -12,12 +12,18 @@
 
 #ifdef CONFIG_ASSERT
 #ifndef __ASSERT_ON
+#ifdef CONFIG_ASSERT_LEVEL
 #define __ASSERT_ON CONFIG_ASSERT_LEVEL
+#endif
 #endif
 #endif
 
 #ifdef CONFIG_FORCE_NO_ASSERT
 #undef __ASSERT_ON
+#define __ASSERT_ON 0
+#endif
+
+#ifndef __ASSERT_ON
 #define __ASSERT_ON 0
 #endif
 

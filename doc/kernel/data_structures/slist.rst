@@ -3,7 +3,7 @@
 Single-linked List
 ==================
 
-Zephyr provides a :c:struct:`sys_slist_t` type for storing simple
+Zephyr provides a :c:type:`sys_slist_t` type for storing simple
 singly-linked list data (i.e. data where each list element stores a
 pointer to the next element, but not the previous one).  This supports
 constant-time access to the first (head) and last (tail) elements of
@@ -12,7 +12,7 @@ constant time removal of the head.  Removal of subsequent nodes
 requires access to the "previous" pointer and thus can only be
 performed in linear time by searching the list.
 
-The :c:struct:`sys_slist_t` struct may be instantiated by the user in any
+The :c:type:`sys_slist_t` struct may be instantiated by the user in any
 accessible memory.  It should be initialized with either
 :c:func:`sys_slist_init` or by static assignment from SYS_SLIST_STATIC_INIT
 before use.  Its interior fields are opaque and should not be accessed
@@ -21,15 +21,15 @@ by user code.
 The end nodes of a list may be retrieved with
 :c:func:`sys_slist_peek_head` and :c:func:`sys_slist_peek_tail`, which will
 return NULL if the list is empty, otherwise a pointer to a
-:c:struct:`sys_snode_t` struct.
+:c:type:`sys_snode_t` struct.
 
-The :c:struct:`sys_snode_t` struct represents the data to be inserted.  In
+The :c:type:`sys_snode_t` struct represents the data to be inserted.  In
 general, it is expected to be allocated/controlled by the user,
 usually embedded within a struct which is to be added to the list.
 The container struct pointer may be retrieved from a list node using
 :c:macro:`SYS_SLIST_CONTAINER`, passing it the struct name of the
 containing struct and the field name of the node.  Internally, the
-:c:struct:`sys_snode_t` struct contains only a next pointer, which may be
+:c:type:`sys_snode_t` struct contains only a next pointer, which may be
 accessed with :c:func:`sys_slist_peek_next`.
 
 Lists may be modified by adding a single node at the head or tail with
@@ -66,8 +66,8 @@ Single-linked List Internals
 ----------------------------
 
 The slist code is designed to be minimal and conventional.
-Internally, a :c:struct:`sys_slist_t` struct is nothing more than a pair of
-"head" and "tail" pointer fields.  And a :c:struct:`sys_snode_t` stores only a
+Internally, a :c:type:`sys_slist_t` struct is nothing more than a pair of
+"head" and "tail" pointer fields.  And a :c:type:`sys_snode_t` stores only a
 single "next" pointer.
 
 .. figure:: slist.png
@@ -101,7 +101,7 @@ Only one such variant, sflist, exists in Zephyr at the moment.
 Flagged List
 ------------
 
-The :c:struct:`sys_sflist_t` is implemented using the described genlist
+The :c:type:`sys_sflist_t` is implemented using the described genlist
 template API.  With the exception of symbol naming ("sflist" instead
 of "slist") and the additional API described next, it operates in all
 ways identically to the slist API.

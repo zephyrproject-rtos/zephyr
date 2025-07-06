@@ -253,6 +253,6 @@ static inline int z_impl_wdt_feed(const struct device *dev, int channel_id)
 
 /** @} */
 
-#include <syscalls/watchdog.h>
+#include <zephyr/syscalls/watchdog.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_WATCHDOG_H_ */

@@ -5,16 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <soc.h>
-#include <hal/nrf_vreqctrl.h>
-
-/* NRF Radio HW timing constants
- * - provided in US and NS (for higher granularity)
- * - based on the timings configured in the HW models, which are based
- *   on the product specification
- * - Note that this timings are approx. the same as in the real HW,
- *   but tend to be rounded to the nearest microsecond
- */
+/* Use the NRF_RTC instance for coarse radio event scheduling */
+#define NRF_RTC NRF_RTC0
 
 /* Override EVENT_TIMER_ID from 4 to 0, as nRF5340 does not have 4 timer
  * instances.
@@ -29,6 +21,17 @@
 #undef SW_SWITCH_TIMER
 #define SW_SWITCH_TIMER EVENT_TIMER
 #endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+
+/* HAL abstraction of event timer prescaler value */
+#define HAL_EVENT_TIMER_PRESCALER_VALUE 4U
+
+/* NRF Radio HW timing constants
+ * - provided in US and NS (for higher granularity)
+ * - based on the timings configured in the HW models, which are based
+ *   on the product specification
+ * - Note that this timings are approx. the same as in the real HW,
+ *   but tend to be rounded to the nearest microsecond
+ */
 
 /* TXEN->TXIDLE + TXIDLE->TX (with fast Radio ramp-up mode)
  * in microseconds for LE 1M PHY.
@@ -358,6 +361,21 @@
 #ifndef RADIO_TXPOWER_TXPOWER_Pos3dBm
 #define RADIO_TXPOWER_TXPOWER_Pos3dBm (0x03UL)
 #endif
+
+/* HAL abstraction of Radio bitfields */
+#define HAL_NRF_RADIO_EVENT_END                   NRF_RADIO_EVENT_END
+#define HAL_RADIO_EVENTS_END                      EVENTS_END
+#define HAL_RADIO_PUBLISH_END                     PUBLISH_END
+#define HAL_NRF_RADIO_EVENT_PHYEND                NRF_RADIO_EVENT_PHYEND
+#define HAL_RADIO_EVENTS_PHYEND                   EVENTS_PHYEND
+#define HAL_RADIO_PUBLISH_PHYEND                  PUBLISH_PHYEND
+#define HAL_RADIO_INTENSET_DISABLED_Msk           RADIO_INTENSET_DISABLED_Msk
+#define HAL_RADIO_SHORTS_TRX_END_DISABLE_Msk      RADIO_SHORTS_END_DISABLE_Msk
+#define HAL_RADIO_SHORTS_TRX_PHYEND_DISABLE_Msk   RADIO_SHORTS_PHYEND_DISABLE_Msk
+#define HAL_RADIO_CLEARPATTERN_CLEARPATTERN_Clear RADIO_CLEARPATTERN_CLEARPATTERN_Clear
+
+/* HAL abstraction of Radio IRQ number */
+#define HAL_RADIO_IRQn                          RADIO_IRQn
 
 /* SoC specific NRF_RADIO power-on reset value. Refer to Product Specification,
  * RADIO Registers section for the documented reset values.

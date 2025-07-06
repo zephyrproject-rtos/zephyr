@@ -16,10 +16,8 @@
 #include <zephyr/fs/fs_sys.h>
 #include <zephyr/sys/check.h>
 
-
-#define LOG_LEVEL CONFIG_FS_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(fs);
+LOG_MODULE_REGISTER(fs, CONFIG_FS_LOG_LEVEL);
 
 /* list of mounted file systems */
 static sys_dlist_t fs_mnt_list = SYS_DLIST_STATIC_INIT(&fs_mnt_list);
@@ -134,6 +132,7 @@ int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags)
 {
 	struct fs_mount_t *mp;
 	int rc = -EINVAL;
+	bool truncate_file = false;
 
 	if ((file_name == NULL) ||
 			(strlen(file_name) <= 1) || (file_name[0] != '/')) {
@@ -160,6 +159,19 @@ int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags)
 		return -ENOTSUP;
 	}
 
+	if ((flags & FS_O_TRUNC) != 0) {
+		if ((flags & FS_O_WRITE) == 0) {
+			/** Truncate not allowed when file is not opened for write */
+			LOG_ERR("file should be opened for write to truncate!!");
+			return -EACCES;
+		}
+		CHECKIF(mp->fs->truncate == NULL) {
+			LOG_ERR("file truncation not supported!!");
+			return -ENOTSUP;
+		}
+		truncate_file = true;
+	}
+
 	zfp->mp = mp;
 	rc = mp->fs->open(zfp, file_name, flags);
 	if (rc < 0) {
@@ -170,6 +182,16 @@ int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags)
 
 	/* Copy flags to zfp for use with other fs_ API calls */
 	zfp->flags = flags;
+
+	if (truncate_file) {
+		/* Truncate the opened file to 0 length */
+		rc = mp->fs->truncate(zfp, 0);
+		if (rc < 0) {
+			LOG_ERR("file truncation failed (%d)", rc);
+			zfp->mp = NULL;
+			return rc;
+		}
+	}
 
 	return rc;
 }
@@ -662,7 +684,7 @@ int fs_mount(struct fs_mount_t *mp)
 
 	len = strlen(mp->mnt_point);
 
-	if ((len <= 1) || (mp->mnt_point[0] != '/')) {
+	if ((len == 0) || (mp->mnt_point[0] != '/')) {
 		LOG_ERR("invalid mount point!!");
 		return -EINVAL;
 	}
@@ -790,9 +812,6 @@ int fs_unmount(struct fs_mount_t *mp)
 		LOG_ERR("fs unmount error (%d)", rc);
 		goto unmount_err;
 	}
-
-	/* clear file system interface */
-	mp->fs = NULL;
 
 	/* remove mount node from the list */
 	sys_dlist_remove(&mp->node);

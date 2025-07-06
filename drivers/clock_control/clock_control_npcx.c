@@ -11,7 +11,13 @@
 #include <zephyr/dt-bindings/clock/npcx_clock.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(clock_control_npcx, LOG_LEVEL_ERR);
+LOG_MODULE_REGISTER(clock_control_npcx, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
+
+#if defined(CONFIG_NPCX_SOC_VARIANT_NPCXN)
+#define NPCX_PWDWN_CTL_START_OFFSET NPCX_PWDWN_CTL1
+#elif defined(CONFIG_NPCX_SOC_VARIANT_NPCKN)
+#define NPCX_PWDWN_CTL_START_OFFSET NPCX_PWDWN_CTL0
+#endif
 
 /* Driver config */
 struct npcx_pcc_config {
@@ -105,6 +111,9 @@ static int npcx_clock_control_get_subsys_rate(const struct device *dev,
 	case NPCX_CLOCK_BUS_FMCLK:
 		*rate = FMCLK;
 		break;
+	case NPCX_CLOCK_BUS_MCLKD:
+		*rate = OFMCLK/(MCLKD_SL + 1);
+		break;
 	default:
 		*rate = 0U;
 		/* Invalid parameters */
@@ -127,8 +136,9 @@ void npcx_clock_control_turn_on_system_sleep(bool is_deep, bool is_instant)
 	if (is_deep) {
 		pm_flags |= BIT(NPCX_PMCSR_DHF);
 		/* Add 'Instant Wake-up' flag if sleep time is within 200 ms */
-		if (is_instant)
+		if (is_instant) {
 			pm_flags |= BIT(NPCX_PMCSR_DI_INSTW);
+		}
 	}
 
 	inst_pmc->PMCSR = pm_flags;
@@ -144,13 +154,15 @@ void npcx_clock_control_turn_off_system_sleep(void)
 #endif /* CONFIG_PM */
 
 /* Clock controller driver registration */
-static struct clock_control_driver_api npcx_clock_control_api = {
+static DEVICE_API(clock_control, npcx_clock_control_api) = {
 	.on = npcx_clock_control_on,
 	.off = npcx_clock_control_off,
 	.get_rate = npcx_clock_control_get_subsys_rate,
 };
 
 /* valid clock frequency check */
+BUILD_ASSERT(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == OFMCLK / (APB2DIV_VAL + 1),
+	     "SYS_CLOCK_HW_CYCLES_PER_SEC must equal to OFMCLK/APB2DIV_VAL");
 BUILD_ASSERT(OFMCLK <= MAX_OFMCLK, "Exceed maximum OFMCLK setting");
 BUILD_ASSERT(CORE_CLK <= MAX_OFMCLK && CORE_CLK >= MHZ(4) &&
 	     OFMCLK % CORE_CLK == 0 &&
@@ -185,15 +197,24 @@ BUILD_ASSERT(APBSRC_CLK / (APB4DIV_VAL + 1) <= MAX_OFMCLK &&
 	     (APB4DIV_VAL + 1) % (FPRED_VAL + 1) == 0,
 	     "Invalid APB4_CLK setting");
 #endif
+#if defined(CONFIG_I3C_NPCX)
+BUILD_ASSERT(OFMCLK / (MCLKD_SL + 1) <= MHZ(50) &&
+	     OFMCLK / (MCLKD_SL + 1) >= MHZ(40),
+	     "Invalid MCLKD_SL setting");
+BUILD_ASSERT(APBSRC_CLK / (APB4DIV_VAL + 1) >= MHZ(20),
+	     "Invalid PDMA CLK setting");
+#endif
 
 static int npcx_clock_control_init(const struct device *dev)
 {
 	struct cdcg_reg *const inst_cdcg = HAL_CDCG_INST(dev);
 	const uint32_t pmc_base = ((const struct npcx_pcc_config *)dev->config)->base_pmc;
 
+#if defined(CONFIG_NPCX_SOC_VARIANT_NPCXN)
 	if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NPCX_EXTERNAL_SRC)) {
 		inst_cdcg->LFCGCTL2 |= BIT(NPCX_LFCGCTL2_XT_OSC_SL_EN);
 	}
+#endif
 
 	/*
 	 * Resetting the OFMCLK (even to the same value) will make the clock
@@ -213,8 +234,9 @@ static int npcx_clock_control_init(const struct device *dev)
 		/* Load M and N values into the frequency multiplier */
 		inst_cdcg->HFCGCTRL |= BIT(NPCX_HFCGCTRL_LOAD);
 		/* Wait for stable */
-		while (IS_BIT_SET(inst_cdcg->HFCGCTRL, NPCX_HFCGCTRL_CLK_CHNG))
+		while (IS_BIT_SET(inst_cdcg->HFCGCTRL, NPCX_HFCGCTRL_CLK_CHNG)) {
 			;
+		}
 	}
 
 	/* Set all clock prescalers of core and peripherals. */
@@ -222,13 +244,16 @@ static int npcx_clock_control_init(const struct device *dev)
 	inst_cdcg->HFCBCD  = VAL_HFCBCD;
 	inst_cdcg->HFCBCD1 = VAL_HFCBCD1;
 	inst_cdcg->HFCBCD2 = VAL_HFCBCD2;
+#if defined(CONFIG_SOC_SERIES_NPCX4)
+	inst_cdcg->HFCBCD3 = VAL_HFCBCD3;
+#endif
 
 	/*
 	 * Power-down (turn off clock) the modules initially for better
 	 * power consumption.
 	 */
 	for (int i = 0; i < ARRAY_SIZE(pddwn_ctl_val); i++) {
-		NPCX_PWDWN_CTL(pmc_base, i) = pddwn_ctl_val[i];
+		NPCX_PWDWN_CTL(pmc_base, i + NPCX_PWDWN_CTL_START_OFFSET) = pddwn_ctl_val[i];
 	}
 
 	/* Turn off the clock of the eSPI module only if eSPI isn't required */
@@ -245,7 +270,7 @@ const struct npcx_pcc_config pcc_config = {
 };
 
 DEVICE_DT_INST_DEFINE(0,
-		    &npcx_clock_control_init,
+		    npcx_clock_control_init,
 		    NULL,
 		    NULL, &pcc_config,
 		    PRE_KERNEL_1,

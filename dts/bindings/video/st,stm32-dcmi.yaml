@@ -1,0 +1,51 @@
+#
+# Copyright (c) 2024 Charles Dias <charlesdias.cd@outlook.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+    STM32 Digital Camera Memory Interface (DCMI).
+
+    Example of node configuration at board level:
+
+    &dcmi {
+      status = "okay";
+      pinctrl-0 = <&dcmi_hsync_pa4 &dcmi_pixclk_pa6 &dcmi_vsync_pb7
+                  &dcmi_d0_pc6 &dcmi_d1_pc7 &dcmi_d2_pe0 &dcmi_d3_pe1
+                  &dcmi_d4_pe4 &dcmi_d5_pd3 &dcmi_d6_pe5 &dcmi_d7_pe6>;
+      pinctrl-names = "default";
+
+      port {
+        dcmi_ep_in: endpoint {
+          remote-endpoint-label = "ov2640_ep_out";
+          bus-width = <8>;
+          hsync-active = <0>;
+          vsync-active = <0>;
+          pclk-sample = <1>;
+        };
+      };
+    };
+
+compatible: "st,stm32-dcmi"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  interrupts:
+    required: true
+
+  dmas:
+    required: true
+    description: |
+      phandle of DMA controller. The DMA controller should be compatible with
+      DMA channel specifier. Specifies a phandle reference to the dma controller,
+      the channel number, the slot number, channel configuration and finally features.
+
+      dmas = <&dma1 0 75 (STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_PERIPH_NO_INC |
+              STM32_DMA_MEM_INC | STM32_DMA_PERIPH_8BITS | STM32_DMA_MEM_32BITS |
+              STM32_DMA_PRIORITY_HIGH) STM32_DMA_FIFO_1_4>;
+
+child-binding:
+  child-binding:
+    include: video-interfaces.yaml

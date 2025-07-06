@@ -79,10 +79,12 @@ configuration by altering device tree and Kconfig options. This will be covered
 in detail in next section.
 
 Most of Xen-specific features are not supported at the moment. This includes:
+
 * XenBus (under development)
 * Xen PV drivers
 
 Now only following features are supported:
+
 * Xen Enlighten memory page
 * Xen event channels
 * Xen PV console (2 versions: regular ring buffer based for DomU and consoleio for Dom0)

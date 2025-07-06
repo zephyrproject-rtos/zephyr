@@ -7,7 +7,6 @@
 if SOC_LS1046A
 
 config NUM_IRQS
-	int
 	default 240
 
 config FLASH_SIZE

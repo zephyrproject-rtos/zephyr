@@ -9,11 +9,20 @@
 #include <zephyr/device.h>
 #include <zephyr/logging/log.h>
 
+#if defined(CONFIG_SOC_NRF5340_CPUAPP)
+#include <nrf53_cpunet_mgmt.h>
+#include <hal/nrf_spu.h>
+#endif
+
 #include "nrf_802154.h"
 #include "nrf_802154_spinel_backend_callouts.h"
 #include "nrf_802154_serialization_error.h"
 #include "../../spinel_base/spinel.h"
 #include "../../src/include/nrf_802154_spinel.h"
+
+#if defined(CONFIG_SOC_NRF5340_CPUAPP)
+#include <nrf53_cpunet_mgmt.h>
+#endif
 
 #define LOG_LEVEL LOG_LEVEL_INFO
 #define LOG_MODULE_NAME spinel_ipc_backend
@@ -49,6 +58,18 @@ nrf_802154_ser_err_t nrf_802154_backend_init(void)
 	const struct device *const ipc_instance =
 		DEVICE_DT_GET(DT_CHOSEN(nordic_802154_spinel_ipc));
 	int err;
+
+#if defined(CONFIG_SOC_NRF5340_CPUAPP)
+
+#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+	/* Retain nRF5340 Network MCU in Secure domain (bus
+	 * accesses by Network MCU will have Secure attribute set).
+	 */
+	nrf_spu_extdomain_set((NRF_SPU_Type *)DT_REG_ADDR(DT_NODELABEL(spu)), 0, true, false);
+#endif /* !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) */
+
+	nrf53_cpunet_enable(true);
+#endif
 
 	err = ipc_service_open_instance(ipc_instance);
 	if (err < 0 && err != -EALREADY) {

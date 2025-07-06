@@ -53,7 +53,7 @@ static int w1_vnd_configure(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static const struct w1_driver_api w1_vnd_api = {
+static DEVICE_API(w1, w1_vnd_api) = {
 	.reset_bus = w1_vnd_reset_bus,
 	.read_bit = w1_vnd_read_bit,
 	.write_bit = w1_vnd_write_bit,

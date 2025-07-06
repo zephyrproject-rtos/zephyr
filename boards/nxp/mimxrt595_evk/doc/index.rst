@@ -1,7 +1,4 @@
-.. _mimxrt595_evk:
-
-NXP MIMXRT595-EVK
-##################
+.. zephyr:board:: mimxrt595_evk
 
 Overview
 ********
@@ -16,9 +13,6 @@ i.MX RT500 MCUs provides up to 5MB of on-chip SRAM and several high-bandwidth in
 to access off-chip flash, including an Octal/Quad SPI interface with an on-the-fly
 decryption engine.
 
-.. image:: mimxrt595_evk.jpg
-   :align: center
-   :alt: MIMXRT595-EVK
 
 Hardware
 ********
@@ -60,67 +54,11 @@ Supported Features
 NXP considers the MIMXRT595-EVK as a superset board for the i.MX RT5xx
 family of MCUs.  This board is a focus for NXP's Full Platform Support for
 Zephyr, to better enable the entire RT5xx family.  NXP prioritizes enabling
-this board with new support for Zephyr features.  The mimxrt595_evk board
-configuration supports the hardware features below.  Another very similar
-board is the :ref:`mimxrt685_evk`, and that board may have additional features
-already supported, which can also be re-used on this mimxrt595_evk board:
+this board with new support for Zephyr features.  Another very similar
+board is the :zephyr:board:`mimxrt685_evk`, and that board may have additional features
+already supported, which can also be re-used on this mimxrt595_evk board.
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| OS_TIMER  | on-chip    | os timer                            |
-+-----------+------------+-------------------------------------+
-| IOCON     | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| USART     | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock_control                       |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| CTIMER    | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| WDT       | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | OctalSPI Flash                      |
-+-----------+------------+-------------------------------------+
-| TRNG      | on-chip    | entropy                             |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | USB device                          |
-+-----------+------------+-------------------------------------+
-| FLEXSPI   | on-chip    | flash programming                   |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| PM        | on-chip    | power management; uses SoC sleep,   |
-|           |            | deep sleep and deep-powerdown modes |
-+-----------+------------+-------------------------------------+
-| SDHC      | on-chip    | disk access (works with eMMC & SD)  |
-+-----------+------------+-------------------------------------+
-| I2S       | on-chip    | i2s                                 |
-+-----------+------------+-------------------------------------+
-| DISPLAY   | on-chip    | LCDIF; MIPI-DSI. Tested with        |
-|           |            | :ref:`rk055hdmipi4m`,               |
-|           |            | :ref:`rk055hdmipi4ma0`, and         |
-|           |            | :ref:`g1120b0mipi` display shields  |
-+-----------+------------+-------------------------------------+
-| DMIC      | on-chip    | dmic                                |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in the defconfig file:
-
-   :zephyr_file:`boards/nxp/mimxrt595_evk/mimxrt595_evk_mimxrt595s_cm33_defconfig`
-
-Other hardware features are not currently supported by the port.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -193,6 +131,8 @@ this document: `Getting Started with Xplorer for EVK-MIMXRT595`_
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -244,7 +184,7 @@ Connect a USB cable from your PC to J40, and use the serial terminal of your cho
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application. This example uses the
+Here is an example for the :zephyr:code-sample:`hello_world` application. This example uses the
 :ref:`jlink-debug-host-tools` as default.
 
 .. zephyr-app-commands::
@@ -263,7 +203,7 @@ see the following message in the terminal:
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application. This example uses the
+Here is an example for the :zephyr:code-sample:`hello_world` application. This example uses the
 :ref:`jlink-debug-host-tools` as default.
 
 .. zephyr-app-commands::
@@ -308,6 +248,9 @@ steps:
 #. Set the SW5 DIP switches to OFF-OFF-ON to boot from flash.
 
 #. Reset by pressing SW3
+
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
 
 .. _MIMXRT595-EVK Website:
    https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/i-mx-rt595-evaluation-kit:MIMXRT595-EVK

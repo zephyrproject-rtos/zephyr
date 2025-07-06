@@ -197,16 +197,16 @@ static void rv32m1_switch_to_sirc(void)
  */
 static void rv32m1_setup_peripheral_clocks(void)
 {
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(tpm0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(tpm0))
 	CLOCK_SetIpSrc(kCLOCK_Tpm0, kCLOCK_IpSrcFircAsync);
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(tpm1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(tpm1))
 	CLOCK_SetIpSrc(kCLOCK_Tpm1, kCLOCK_IpSrcFircAsync);
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(tpm2), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(tpm2))
 	CLOCK_SetIpSrc(kCLOCK_Tpm2, kCLOCK_IpSrcFircAsync);
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(tpm3), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(tpm3))
 	CLOCK_SetIpSrc(kCLOCK_Tpm3, kCLOCK_IpSrcFircAsync);
 #endif
 }
@@ -218,7 +218,7 @@ static void rv32m1_setup_peripheral_clocks(void)
  *
  * @return 0
  */
-static int soc_rv32m1_init(void)
+void soc_early_init_hook(void)
 {
 	unsigned int key;
 
@@ -239,8 +239,4 @@ static int soc_rv32m1_init(void)
 	rv32m1_setup_peripheral_clocks();
 
 	irq_unlock(key);
-
-	return 0;
 }
-
-SYS_INIT(soc_rv32m1_init, PRE_KERNEL_1, 0);

@@ -1,0 +1,31 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: "Renesas RZ ADC"
+
+compatible: "renesas,rz-adc"
+
+include: [adc-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  vref-mv:
+    type: int
+    required: true
+    description: Indicates the reference voltage of the ADC in mV.
+
+  channel-available-mask:
+    type: int
+    required: true
+    description: Mask for ADC channels existed in each board
+
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input

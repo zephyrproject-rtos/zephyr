@@ -225,8 +225,8 @@ int k_mem_domain_remove_partition(struct k_mem_domain *domain,
 
 	/* find a partition that matches the given start and size */
 	for (p_idx = 0; p_idx < max_partitions; p_idx++) {
-		if (domain->partitions[p_idx].start == part->start &&
-		    domain->partitions[p_idx].size == part->size) {
+		if ((domain->partitions[p_idx].start == part->start) &&
+		    (domain->partitions[p_idx].size == part->size)) {
 			break;
 		}
 	}

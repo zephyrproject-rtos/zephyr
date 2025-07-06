@@ -13,15 +13,13 @@
 
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/input/input.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/led.h>
-#include <zephyr/drivers/led/ht16k33.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(ht16k33, CONFIG_LED_LOG_LEVEL);
-
-#include "led_context.h"
 
 /* HT16K33 commands and options */
 #define HT16K33_CMD_DISP_DATA_ADDR 0x00
@@ -61,6 +59,8 @@ LOG_MODULE_REGISTER(ht16k33, CONFIG_LED_LOG_LEVEL);
 #define HT16K33_KEYSCAN_COLS       13
 #define HT16K33_KEYSCAN_DATA_SIZE  6
 
+#define HT16K33_MAX_PERIOD 2000U
+
 struct ht16k33_cfg {
 	struct i2c_dt_spec i2c;
 	bool irq_enabled;
@@ -71,13 +71,11 @@ struct ht16k33_cfg {
 
 struct ht16k33_data {
 	const struct device *dev;
-	struct led_data dev_data;
 	 /* Shadow buffer for the display data RAM */
 	uint8_t buffer[HT16K33_DISP_DATA_SIZE];
 #ifdef CONFIG_HT16K33_KEYSCAN
 	struct k_mutex lock;
 	const struct device *child;
-	kscan_callback_t kscan_cb;
 	struct gpio_callback irq_cb;
 	struct k_thread irq_thread;
 	struct k_sem irq_sem;
@@ -96,13 +94,11 @@ static int ht16k33_led_blink(const struct device *dev, uint32_t led,
 	ARG_UNUSED(led);
 
 	const struct ht16k33_cfg *config = dev->config;
-	struct ht16k33_data *data = dev->data;
-	struct led_data *dev_data = &data->dev_data;
 	uint32_t period;
 	uint8_t cmd;
 
 	period = delay_on + delay_off;
-	if (period < dev_data->min_period || period > dev_data->max_period) {
+	if (period > HT16K33_MAX_PERIOD) {
 		return -EINVAL;
 	}
 
@@ -131,17 +127,10 @@ static int ht16k33_led_set_brightness(const struct device *dev, uint32_t led,
 	ARG_UNUSED(led);
 
 	const struct ht16k33_cfg *config = dev->config;
-	struct ht16k33_data *data = dev->data;
-	struct led_data *dev_data = &data->dev_data;
 	uint8_t dim;
 	uint8_t cmd;
 
-	if (value < dev_data->min_brightness ||
-	    value > dev_data->max_brightness) {
-		return -EINVAL;
-	}
-
-	dim = (value * (HT16K33_DIMMING_LEVELS - 1)) / dev_data->max_brightness;
+	dim = (value * (HT16K33_DIMMING_LEVELS - 1)) / LED_BRIGHTNESS_MAX;
 	cmd = HT16K33_CMD_DIMMING_SET | dim;
 
 	if (i2c_write_dt(&config->i2c, &cmd, sizeof(cmd))) {
@@ -214,7 +203,7 @@ static bool ht16k33_process_keyscan_data(const struct device *dev)
 
 	err = i2c_burst_read_dt(&config->i2c, HT16K33_CMD_KEY_DATA_ADDR, keys, sizeof(keys));
 	if (err) {
-		LOG_WRN("Failed to to read HT16K33 key data (err %d)", err);
+		LOG_WRN("Failed to read HT16K33 key data (err %d)", err);
 		/* Reprocess */
 		return true;
 	}
@@ -230,15 +219,13 @@ static bool ht16k33_process_keyscan_data(const struct device *dev)
 			pressed = true;
 		}
 
-		if (data->kscan_cb == NULL) {
-			continue;
-		}
-
 		for (col = 0; col < HT16K33_KEYSCAN_COLS; col++) {
-			if (changed & BIT(col)) {
-				data->kscan_cb(data->child, row, col,
-					state & BIT(col));
+			if ((changed & BIT(col)) == 0) {
+				continue;
 			}
+			input_report_abs(dev, INPUT_ABS_X, col, false, K_FOREVER);
+			input_report_abs(dev, INPUT_ABS_Y, row, false, K_FOREVER);
+			input_report_key(dev, INPUT_BTN_TOUCH, state & BIT(col), true, K_FOREVER);
 		}
 	}
 
@@ -285,27 +272,12 @@ static void ht16k33_timer_callback(struct k_timer *timer)
 	data = CONTAINER_OF(timer, struct ht16k33_data, timer);
 	k_sem_give(&data->irq_sem);
 }
-
-int ht16k33_register_keyscan_callback(const struct device *parent,
-				      const struct device *child,
-				      kscan_callback_t callback)
-{
-	struct ht16k33_data *data = parent->data;
-
-	k_mutex_lock(&data->lock, K_FOREVER);
-	data->child = child;
-	data->kscan_cb = callback;
-	k_mutex_unlock(&data->lock);
-
-	return 0;
-}
 #endif /* CONFIG_HT16K33_KEYSCAN */
 
 static int ht16k33_init(const struct device *dev)
 {
 	const struct ht16k33_cfg *config = dev->config;
 	struct ht16k33_data *data = dev->data;
-	struct led_data *dev_data = &data->dev_data;
 	uint8_t cmd[1 + HT16K33_DISP_DATA_SIZE]; /* 1 byte command + data */
 	int err;
 
@@ -317,12 +289,6 @@ static int ht16k33_init(const struct device *dev)
 	}
 
 	memset(&data->buffer, 0, sizeof(data->buffer));
-
-	/* Hardware specific limits */
-	dev_data->min_period = 0U;
-	dev_data->max_period = 2000U;
-	dev_data->min_brightness = 0U;
-	dev_data->max_brightness = 100U;
 
 	/* System oscillator on */
 	cmd[0] = HT16K33_CMD_SYSTEM_SETUP | HT16K33_OPT_S;
@@ -397,7 +363,7 @@ static int ht16k33_init(const struct device *dev)
 		err = i2c_burst_read_dt(&config->i2c, HT16K33_CMD_KEY_DATA_ADDR, keys,
 					sizeof(keys));
 		if (err) {
-			LOG_ERR("Failed to to read HT16K33 key data");
+			LOG_ERR("Failed to read HT16K33 key data");
 			return -EIO;
 		}
 
@@ -432,7 +398,7 @@ static int ht16k33_init(const struct device *dev)
 	return 0;
 }
 
-static const struct led_driver_api ht16k33_leds_api = {
+static DEVICE_API(led, ht16k33_leds_api) = {
 	.blink = ht16k33_led_blink,
 	.set_brightness = ht16k33_led_set_brightness,
 	.on = ht16k33_led_on,

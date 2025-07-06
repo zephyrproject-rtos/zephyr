@@ -1,5 +1,6 @@
 board:
   name: nucleo_l496zg
+  full_name: Nucleo L496ZG
   vendor: st
   socs:
     - name: stm32l496xx

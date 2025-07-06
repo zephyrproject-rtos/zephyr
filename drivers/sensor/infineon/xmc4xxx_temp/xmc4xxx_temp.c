@@ -57,7 +57,7 @@ static int xmc4xxx_temp_channel_get(const struct device *dev, enum sensor_channe
 	return sensor_value_from_double(val, data->temp_out);
 }
 
-static const struct sensor_driver_api xmc4xxx_temp_driver_api = {
+static DEVICE_API(sensor, xmc4xxx_temp_driver_api) = {
 	.sample_fetch = xmc4xxx_temp_sample_fetch,
 	.channel_get = xmc4xxx_temp_channel_get,
 };
@@ -71,7 +71,7 @@ static int xmc4xxx_temp_init(const struct device *dev)
 		     CONFIG_XMC4XXX_TEMP_CALIBRATE_OFFSET <= 63);
 
 	BUILD_ASSERT(CONFIG_XMC4XXX_TEMP_CALIBRATE_GAIN >= 0 &&
-		     CONFIG_XMC4XXX_TEMP_CALIBRATE_OFFSET <= 63);
+		     CONFIG_XMC4XXX_TEMP_CALIBRATE_GAIN <= 63);
 
 	XMC_SCU_CalibrateTemperatureSensor(CONFIG_XMC4XXX_TEMP_CALIBRATE_OFFSET & 0x7f,
 					   CONFIG_XMC4XXX_TEMP_CALIBRATE_GAIN);

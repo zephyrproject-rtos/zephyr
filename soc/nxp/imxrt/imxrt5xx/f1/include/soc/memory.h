@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <autoconf.h>
+#include <zephyr/autoconf.h>
 
 #define IRAM_BASE (CONFIG_RT595_ADSP_TEXT_MEM_ADDR)
 #define IRAM_SIZE (CONFIG_RT595_ADSP_TEXT_MEM_SIZE)

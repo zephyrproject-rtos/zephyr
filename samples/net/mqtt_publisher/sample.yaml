@@ -28,3 +28,9 @@ tests:
       - net
       - mqtt
       - bluetooth
+  sample.net.mqtt_publisher.wifi.nrf70dk:
+    extra_args:
+      - SNIPPET=wifi-ipv4
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+    platform_allow:
+      - nrf7002dk/nrf5340/cpuapp

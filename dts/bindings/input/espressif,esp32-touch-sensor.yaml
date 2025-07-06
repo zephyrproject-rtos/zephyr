@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  Zephyr input touch sensor parent node
+  ESP32 touch sensor input
 
   This defines a group of touch sensors that can generate input events. Each touch
   sensor is defined in a child node of the touch-sensor node and defines a specific key

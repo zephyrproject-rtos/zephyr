@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2025 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include "npck/npck3.dtsi"
+
+/ {
+	flash0: flash@10058000 {
+		reg = <0x10058000 DT_SIZE_K(416)>;
+	};
+
+	flash1: flash@60000000 {
+		reg = <0x60000000 DT_SIZE_K(512)>;
+	};
+
+	sram0: memory@200c0000 {
+		compatible = "mmio-sram";
+		reg = <0x200C0000 DT_SIZE_K(62)>;
+	};
+
+	/* RAM space used by Booter */
+	bootloader_ram: memory@200c7800 {
+		compatible = "mmio-sram";
+		reg = <0x200C7800 DT_SIZE_K(2)>;
+	};
+
+	soc-id {
+		device-id = <0x22>;
+	};
+};

@@ -23,20 +23,24 @@ struct counter_alarm_cfg alarm_cfg;
 #define TIMER DT_NODELABEL(extrtc0)
 #elif defined(CONFIG_COUNTER_NRF_RTC)
 #define TIMER DT_NODELABEL(rtc0)
+#elif defined(CONFIG_COUNTER_NRF_TIMER)
+#define TIMER DT_CHOSEN(counter)
 #elif defined(CONFIG_COUNTER_TIMER_STM32)
 #define TIMER DT_INST(0, st_stm32_counter)
 #elif defined(CONFIG_COUNTER_RTC_STM32)
 #define TIMER DT_INST(0, st_stm32_rtc)
 #elif defined(CONFIG_COUNTER_SMARTBOND_TIMER)
 #define TIMER DT_NODELABEL(timer3)
-#elif defined(CONFIG_COUNTER_NATIVE_POSIX)
+#elif defined(CONFIG_COUNTER_NATIVE_SIM)
 #define TIMER DT_NODELABEL(counter0)
 #elif defined(CONFIG_COUNTER_XLNX_AXI_TIMER)
 #define TIMER DT_INST(0, xlnx_xps_timer_1_00_a)
 #elif defined(CONFIG_COUNTER_TMR_ESP32)
-#define TIMER DT_NODELABEL(timer0)
+#define TIMER DT_INST(0, espressif_esp32_counter)
 #elif defined(CONFIG_COUNTER_MCUX_CTIMER)
 #define TIMER DT_NODELABEL(ctimer0)
+#elif defined(CONFIG_COUNTER_MSPM0_TIMER)
+#define TIMER DT_ALIAS(counter)
 #elif defined(CONFIG_COUNTER_NXP_S32_SYS_TIMER)
 #define TIMER DT_NODELABEL(stm0)
 #elif defined(CONFIG_COUNTER_TIMER_GD32)
@@ -48,11 +52,28 @@ struct counter_alarm_cfg alarm_cfg;
 #elif defined(CONFIG_COUNTER_INFINEON_CAT1)
 #define TIMER DT_NODELABEL(counter0_0)
 #elif defined(CONFIG_COUNTER_AMBIQ)
+#ifdef TIMER
+#undef TIMER
+#endif
 #define TIMER DT_NODELABEL(counter0)
 #elif defined(CONFIG_COUNTER_SNPS_DW)
 #define TIMER DT_NODELABEL(timer0)
 #elif defined(CONFIG_COUNTER_TIMER_RPI_PICO)
+#ifdef CONFIG_SOC_SERIES_RP2040
 #define TIMER DT_NODELABEL(timer)
+#elif CONFIG_SOC_SERIES_RP2350
+#define TIMER DT_NODELABEL(timer0)
+#endif
+#elif defined(CONFIG_COUNTER_TIMER_MAX32)
+#define TIMER DT_NODELABEL(counter0)
+#elif defined(CONFIG_COUNTER_RA_AGT)
+#define TIMER DT_NODELABEL(counter0)
+#elif defined(CONFIG_COUNTER_RENESAS_RZ_GTM)
+#define TIMER DT_INST(0, renesas_rz_gtm_counter)
+#elif defined(CONFIG_COUNTER_CC23X0_RTC)
+#define TIMER DT_NODELABEL(rtc0)
+#else
+#error Unable to find a counter device node in devicetree
 #endif
 
 static void test_counter_interrupt_fn(const struct device *counter_dev,
@@ -66,6 +87,10 @@ static void test_counter_interrupt_fn(const struct device *counter_dev,
 	int err;
 
 	err = counter_get_value(counter_dev, &now_ticks);
+	if (!counter_is_counting_up(counter_dev)) {
+		now_ticks = counter_get_top_value(counter_dev) - now_ticks;
+	}
+
 	if (err) {
 		printk("Failed to read counter value (err %d)", err);
 		return;

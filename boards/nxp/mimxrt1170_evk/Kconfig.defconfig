@@ -5,8 +5,8 @@
 
 if BOARD_MIMXRT1170_EVK
 
-# Only use DCD when booting primary core (M7)
-config DEVICE_CONFIGURATION_DATA
+# Use External Memory Configuration Data (XMCD) by default when booting primary core (M7)
+config EXTERNAL_MEM_CONFIG_DATA
 	default y if CPU_CORTEX_M7
 
 config NXP_IMX_EXTERNAL_SDRAM
@@ -34,22 +34,10 @@ config IMX_USDHC_DAT3_PWR_TOGGLE
 
 endif # DISK_DRIVERS
 
-if FLASH_MCUX_FLEXSPI_XIP && MEMC_MCUX_FLEXSPI
-
-choice FLASH_MCUX_FLEXSPI_XIP_MEM_TARGET
-	default FLASH_MCUX_FLEXSPI_XIP_MEM_ITCM if CPU_CORTEX_M7
-	default FLASH_MCUX_FLEXSPI_XIP_MEM_SRAM if CPU_CORTEX_M4
-endchoice
-
-endif # FLASH_MCUX_FLEXSPI_XIP && MEMC_MCUX_FLEXSPI
-
 if NETWORKING
 
 config NET_L2_ETHERNET
 	default y if CPU_CORTEX_M7 # No cache memory support is required for driver
-
-config ETH_MCUX_PHY_RESET
-	default y
 
 endif # NETWORKING
 

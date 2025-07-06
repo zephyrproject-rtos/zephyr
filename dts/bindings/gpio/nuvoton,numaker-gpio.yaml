@@ -1,7 +1,7 @@
 # Copyright (c) 2023 Nuvoton Technology Corporation.
 # SPDX-License-Identifier: Apache-2.0
 
-description: Nuvoton, Numaker-GPIO node
+description: Nuvoton Numaker GPIO
 
 compatible: "nuvoton,numaker-gpio"
 

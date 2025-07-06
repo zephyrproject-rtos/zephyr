@@ -3,7 +3,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import functools
 import inspect
+import operator
 import os
 import pickle
 import re
@@ -29,6 +31,7 @@ if not doc_mode:
             edtlib = inspect.getmodule(edt)
     else:
         edt = None
+        edtlib = None
 
 
 def _warn(kconf, msg):
@@ -144,6 +147,18 @@ def dt_node_enabled(kconf, name, node):
         return "n"
 
     return "y" if node and node.status == "okay" else "n"
+
+
+def dt_nodelabel_exists(kconf, _, label):
+    """
+    This function returns "y" if a nodelabel exists and "n" otherwise.
+    """
+    if doc_mode or edt is None:
+        return "n"
+
+    node = edt.label2node.get(label)
+
+    return "y" if node else "n"
 
 
 def dt_nodelabel_enabled(kconf, _, label):
@@ -517,6 +532,29 @@ def dt_nodelabel_bool_prop(kconf, _, label, prop):
 
     return _dt_node_bool_prop_generic(edt.label2node.get, label, prop)
 
+def dt_nodelabel_int_prop(kconf, _, label, prop):
+    """
+    This function takes a 'label' and looks for an EDT node with that label.
+    If it finds an EDT node, it will look to see if that node has a int
+    property by the name of 'prop'.  If the 'prop' exists it will return the
+    value of the property, otherwise it returns "0".
+    """
+    if doc_mode or edt is None:
+        return "0"
+
+    try:
+        node = edt.label2node.get(label)
+    except edtlib.EDTError:
+        return "0"
+
+    if not node or node.props[prop].type != "int":
+        return "0"
+
+    if not node.props[prop].val:
+        return "0"
+
+    return str(node.props[prop].val)
+
 def dt_chosen_bool_prop(kconf, _, chosen, prop):
     """
     This function takes a /chosen node property named 'chosen', and
@@ -657,6 +695,32 @@ def dt_node_ph_array_prop(kconf, name, path, prop, index, cell, unit=None):
     if name == "dt_node_ph_array_prop_hex":
         return hex(_node_ph_array_prop(node, prop, index, cell, unit))
 
+def dt_node_ph_prop_path(kconf, name, path, prop):
+    """
+    This function takes a 'path' and a property name ('prop') and
+    looks for an EDT node at that path. If it finds an EDT node,
+    it will look to see if that node has a property called 'prop'
+    and if that 'prop' is an phandle type. Then it will return the
+    path to the pointed-to node, or an empty string if there is
+    no such node.
+    """
+    if doc_mode or edt is None:
+        return ""
+
+    try:
+        node = edt.get_node(path)
+    except edtlib.EDTError:
+        return ""
+
+    if prop not in node.props:
+        return ""
+    if node.props[prop].type != "phandle":
+        return ""
+
+    phandle = node.props[prop].val
+
+    return phandle.path if phandle else ""
+
 def dt_node_str_prop_equals(kconf, _, path, prop, val):
     """
     This function takes a 'path' and property name ('prop') looks for an EDT
@@ -707,9 +771,20 @@ def dt_compat_enabled(kconf, _, compat):
     return "y" if compat in edt.compat2okay else "n"
 
 
+def dt_compat_enabled_num(kconf, _, compat):
+    """
+    This function takes a 'compat' and the returns number of status "okay"
+    compatible nodes in the EDT.
+    """
+    if doc_mode or edt is None:
+        return "0"
+
+    return str(len(edt.compat2okay[compat]))
+
+
 def dt_compat_on_bus(kconf, _, compat, bus):
     """
-    This function takes a 'compat' and returns "y" if we find an "enabled"
+    This function takes a 'compat' and returns "y" if we find an enabled
     compatible node in the EDT which is on bus 'bus'. It returns "n" otherwise.
     """
     if doc_mode or edt is None:
@@ -722,6 +797,43 @@ def dt_compat_on_bus(kconf, _, compat, bus):
 
     return "n"
 
+def dt_compat_any_has_prop(kconf, _, compat, prop, value=None):
+    """
+    This function takes a 'compat', a 'prop', and a 'value'.
+    If value=None, the function returns "y" if any
+    enabled node with compatible 'compat' also has a valid property 'prop'.
+    If value is given, the function returns "y" if any enabled node with compatible 'compat'
+    also has a valid property 'prop' with value 'value'.
+    It returns "n" otherwise.
+    """
+    if doc_mode or edt is None:
+        return "n"
+
+    if compat in edt.compat2okay:
+        for node in edt.compat2okay[compat]:
+            if prop in node.props:
+                if value is None:
+                    return "y"
+                elif str(node.props[prop].val) == value:
+                    return "y"
+    return "n"
+
+def dt_compat_any_not_has_prop(kconf, _, compat, prop):
+    """
+    This function takes a 'compat', and a 'prop'.
+    The function returns "y" if any enabled node with compatible 'compat'
+    does NOT contain the property 'prop'.
+    It returns "n" otherwise.
+    """
+    if doc_mode or edt is None:
+        return "n"
+
+    if compat in edt.compat2okay:
+        for node in edt.compat2okay[compat]:
+            if prop not in node.props:
+                return "y"
+
+    return "n"
 
 def dt_nodelabel_has_compat(kconf, _, label, compat):
     """
@@ -761,7 +873,7 @@ def dt_node_has_compat(kconf, _, path, compat):
 
 def dt_nodelabel_enabled_with_compat(kconf, _, label, compat):
     """
-    This function takes a 'label' and returns "y" if an "enabled" node with
+    This function takes a 'label' and returns "y" if an enabled node with
     such label can be found in the EDT and that node is compatible with the
     provided 'compat', otherwise it returns "n".
     """
@@ -875,6 +987,91 @@ def substring(kconf, _, string, start, stop=None):
     else:
         return string[int(start):]
 
+def arith(kconf, name, *args):
+    """
+    The arithmetic operations on integers.
+    If three or more arguments are given, it returns the result of performing
+    the operation on the first two arguments and operates the same operation as
+    the result and the following argument.
+    For interoperability with inc and dec,
+    each argument can be a single number or a comma-separated list of numbers,
+    but all numbers are processed as if they were individual arguments.
+
+    Examples in Kconfig:
+
+    $(add, 10, 3)          # -> 13
+    $(add, 10, 3, 2)       # -> 15
+    $(sub, 10, 3)          # -> 7
+    $(sub, 10, 3, 2)       # -> 5
+    $(mul, 10, 3)          # -> 30
+    $(mul, 10, 3, 2)       # -> 60
+    $(div, 10, 3)          # -> 3
+    $(div, 10, 3, 2)       # -> 1
+    $(mod, 10, 3)          # -> 1
+    $(mod, 10, 3, 2)       # -> 1
+    $(inc, 1)              # -> 2
+    $(inc, 1, 1)           # -> "2,2"
+    $(inc, $(inc, 1, 1))   # -> "3,3"
+    $(dec, 1)              # -> 0
+    $(dec, 1, 1)           # -> "0,0"
+    $(dec, $(dec, 1, 1))   # -> "-1,-1"
+    $(add, $(inc, 1, 1))   # -> 4
+    $(div, $(dec, 1, 1))   # Error (0 div 0)
+    """
+
+    intarray = (int(val, base=0) for arg in args for val in arg.split(","))
+
+    if name == "add":
+        return str(int(functools.reduce(operator.add, intarray)))
+    elif name == "add_hex":
+        return hex(int(functools.reduce(operator.add, intarray)))
+    elif name == "sub":
+        return str(int(functools.reduce(operator.sub, intarray)))
+    elif name == "sub_hex":
+        return hex(int(functools.reduce(operator.sub, intarray)))
+    elif name == "mul":
+        return str(int(functools.reduce(operator.mul, intarray)))
+    elif name == "mul_hex":
+        return hex(int(functools.reduce(operator.mul, intarray)))
+    elif name == "div":
+        return str(int(functools.reduce(operator.truediv, intarray)))
+    elif name == "div_hex":
+        return hex(int(functools.reduce(operator.truediv, intarray)))
+    elif name == "mod":
+        return str(int(functools.reduce(operator.mod, intarray)))
+    elif name == "mod_hex":
+        return hex(int(functools.reduce(operator.mod, intarray)))
+    elif name == "max":
+        return str(int(functools.reduce(max, intarray)))
+    elif name == "max_hex":
+        return hex(int(functools.reduce(max, intarray)))
+    elif name == "min":
+        return str(int(functools.reduce(min, intarray)))
+    elif name == "min_hex":
+        return hex(int(functools.reduce(min, intarray)))
+    else:
+        assert False
+
+
+def inc_dec(kconf, name, *args):
+    """
+    Calculate the increment and the decrement of integer sequence.
+    Returns a string that concatenates numbers with a comma as a separator.
+    """
+
+    intarray = (int(val, base=0) for arg in args for val in arg.split(","))
+
+    if name == "inc":
+        return ",".join(map(lambda a: str(a + 1), intarray))
+    if name == "inc_hex":
+        return ",".join(map(lambda a: hex(a + 1), intarray))
+    elif name == "dec":
+        return ",".join(map(lambda a: str(a - 1), intarray))
+    elif name == "dec_hex":
+        return ",".join(map(lambda a: hex(a - 1), intarray))
+    else:
+        assert False
+
 
 # Keys in this dict are the function names as they appear
 # in Kconfig files. The values are tuples in this form:
@@ -888,13 +1085,17 @@ def substring(kconf, _, string, start, stop=None):
 functions = {
         "dt_has_compat": (dt_has_compat, 1, 1),
         "dt_compat_enabled": (dt_compat_enabled, 1, 1),
+        "dt_compat_enabled_num": (dt_compat_enabled_num, 1, 1),
         "dt_compat_on_bus": (dt_compat_on_bus, 2, 2),
+        "dt_compat_any_has_prop": (dt_compat_any_has_prop, 2, 3),
+        "dt_compat_any_not_has_prop": (dt_compat_any_not_has_prop, 2, 2),
         "dt_chosen_label": (dt_chosen_label, 1, 1),
         "dt_chosen_enabled": (dt_chosen_enabled, 1, 1),
         "dt_chosen_path": (dt_chosen_path, 1, 1),
         "dt_chosen_has_compat": (dt_chosen_has_compat, 2, 2),
         "dt_path_enabled": (dt_node_enabled, 1, 1),
         "dt_alias_enabled": (dt_node_enabled, 1, 1),
+        "dt_nodelabel_exists": (dt_nodelabel_exists, 1, 1),
         "dt_nodelabel_enabled": (dt_nodelabel_enabled, 1, 1),
         "dt_nodelabel_enabled_with_compat": (dt_nodelabel_enabled_with_compat, 2, 2),
         "dt_chosen_reg_addr_int": (dt_chosen_reg, 1, 3),
@@ -911,6 +1112,7 @@ functions = {
         "dt_nodelabel_reg_size_hex": (dt_nodelabel_reg, 1, 3),
         "dt_node_bool_prop": (dt_node_bool_prop, 2, 2),
         "dt_nodelabel_bool_prop": (dt_nodelabel_bool_prop, 2, 2),
+        "dt_nodelabel_int_prop": (dt_nodelabel_int_prop, 2, 2),
         "dt_chosen_bool_prop": (dt_chosen_bool_prop, 2, 2),
         "dt_node_has_prop": (dt_node_has_prop, 2, 2),
         "dt_nodelabel_has_prop": (dt_nodelabel_has_prop, 2, 2),
@@ -920,6 +1122,7 @@ functions = {
         "dt_node_array_prop_hex": (dt_node_array_prop, 3, 4),
         "dt_node_ph_array_prop_int": (dt_node_ph_array_prop, 4, 5),
         "dt_node_ph_array_prop_hex": (dt_node_ph_array_prop, 4, 5),
+        "dt_node_ph_prop_path": (dt_node_ph_prop_path, 2, 2),
         "dt_node_str_prop_equals": (dt_node_str_prop_equals, 3, 3),
         "dt_nodelabel_has_compat": (dt_nodelabel_has_compat, 2, 2),
         "dt_node_has_compat": (dt_node_has_compat, 2, 2),
@@ -932,4 +1135,22 @@ functions = {
         "normalize_upper": (normalize_upper, 1, 1),
         "shields_list_contains": (shields_list_contains, 1, 1),
         "substring": (substring, 2, 3),
+        "add": (arith, 1, 255),
+        "add_hex": (arith, 1, 255),
+        "sub": (arith, 1, 255),
+        "sub_hex": (arith, 1, 255),
+        "mul": (arith, 1, 255),
+        "mul_hex": (arith, 1, 255),
+        "div": (arith, 1, 255),
+        "div_hex": (arith, 1, 255),
+        "mod": (arith, 1, 255),
+        "mod_hex": (arith, 1, 255),
+        "max": (arith, 1, 255),
+        "max_hex": (arith, 1, 255),
+        "min": (arith, 1, 255),
+        "min_hex": (arith, 1, 255),
+        "inc": (inc_dec, 1, 255),
+        "inc_hex": (inc_dec, 1, 255),
+        "dec": (inc_dec, 1, 255),
+        "dec_hex": (inc_dec, 1, 255),
 }

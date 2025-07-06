@@ -1,5 +1,5 @@
 identifier: legend@25ssd
-name: Legend
+name: Legend (25sdd)
 type: mcu
 arch: arm
 ram: 16
@@ -7,7 +7,6 @@ flash: 128
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - gpio
   - i2c

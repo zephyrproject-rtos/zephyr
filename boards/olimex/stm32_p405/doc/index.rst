@@ -1,19 +1,10 @@
-.. _olimex_stm32_p405:
-
-OLIMEX-STM32-P405
-#################
+.. zephyr:board:: olimex_stm32_p405
 
 Overview
 ********
 
 The OLIMEX-STM32-P405 board is based on the STMicroelectronics STM32F405RG ARM
 Cortex-M4 CPU.
-
-.. figure:: img/olimex_stm32_p405.jpg
-     :align: center
-     :alt: OLIMEX-STM32-P405
-
-     OLIMEX-STM32-P405
 
 Hardware
 ********
@@ -26,23 +17,7 @@ information and the datasheet.
 Supported Features
 ==================
 
-The olimex_stm32_p405 board configuration supports the following
-hardware features:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| NVIC      | on-chip    | nested vectored      |
-|           |            | interrupt controller |
-+-----------+------------+----------------------+
-| SYSTICK   | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial port          |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-
-Other hardware features have not been enabled yet for this board.
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========
@@ -209,6 +184,9 @@ which can be set as high as 168 MHz.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
+
 The OLIMEX-STM32-P405 board does not include an embedded debug tool
 interface. You will need to use ST tools or an external JTAG probe.
 In the following examples a ST-Link V2 USB dongle is used.
@@ -216,7 +194,7 @@ In the following examples a ST-Link V2 USB dongle is used.
 Flashing an application to the Olimex-STM32-P405
 ================================================
 
-The sample application :ref:`hello_world` is being used in this tutorial.
+The sample application :zephyr:code-sample:`hello_world` is being used in this tutorial.
 
 Connect the ST-Link USB dongle to your host computer and to the JTAG port of
 the OLIMEX-STM32-P405 board.
@@ -245,7 +223,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

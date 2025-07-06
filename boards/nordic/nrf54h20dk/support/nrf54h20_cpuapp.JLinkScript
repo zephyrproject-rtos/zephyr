@@ -1,0 +1,12 @@
+__constant U32 _CPUCONF_ADDR = 0x52011000;
+__constant U32 _CPUCONF_CPUWAIT_OFFSET = 0x50C;
+
+int SetupTarget(void)
+{
+	JLINK_TARGET_Halt();
+
+	// Disable CPU wait
+	JLINK_MEM_WriteU32(_CPUCONF_ADDR + _CPUCONF_CPUWAIT_OFFSET, 0);
+
+	return 0;
+}

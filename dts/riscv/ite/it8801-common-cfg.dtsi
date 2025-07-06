@@ -1,0 +1,150 @@
+/*
+ * Copyright (c) 2024 ITE Corporation. All Rights Reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <ite/it8801-mfd-map.dtsi>
+
+&it8801_mfd {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	/* GPIO */
+	ioex_it8801_port0: it8801_port@0 {
+		compatible = "ite,it8801-gpio";
+		reg = <0x00 1   /* GPIPSR */
+		       0x05 1   /* GPSOVR */
+		       0x0a 8   /* GPCR */
+		       0x32 1   /* GPISR */
+		       0x37 1>; /* GPIER */
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <8>;
+		pin-mask = <0xdb>;
+	};
+
+	ioex_it8801_port1: it8801_port@1 {
+		compatible = "ite,it8801-gpio";
+		reg = <0x01 1   /* GPIPSR */
+		       0x06 1   /* GPSOVR */
+		       0x12 6   /* GPCR */
+		       0x33 1   /* GPISR */
+		       0x38 1>; /* GPIER */
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <6>;
+		pin-mask = <0x3f>;
+	};
+
+	ioex_it8801_port2: it8801_port@2 {
+		compatible = "ite,it8801-gpio";
+		reg = <0x02 1   /* GPIPSR */
+		       0x07 1   /* GPSOVR */
+		       0x1a 4   /* GPCR */
+		       0x34 1   /* GPISR */
+		       0x39 1>; /* GPIER */
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <4>;
+		pin-mask = <0x0f>;
+	};
+
+	/* KBD */
+	ioex_it8801_kbd: it8801_kbd@40 {
+		compatible = "ite,it8801-kbd";
+		status = "disabled";
+		reg = <0x40 1
+		       0x41 1
+		       0x42 1
+		       0x43 1>;
+		row-size = <8>;
+		col-size = <13>;
+	};
+
+	/* PWM */
+	ioex_it8801_pwm1: it8801_pwm@60 {
+		compatible = "ite,it8801-pwm";
+		status = "disabled";
+		reg = <0x60 1   /* PWMMCR */
+		       0x64 1   /* PWMDCR */
+		       0x66 1   /* PWMPRSL */
+		       0x67 1>; /* PWMPRSM */
+		mfdctrl = <&pwm1_gp12_default>;
+		channel = <1>;
+		#pwm-cells = <3>;
+	};
+
+	ioex_it8801_pwm2: it8801_pwm@68 {
+		compatible = "ite,it8801-pwm";
+		status = "disabled";
+		reg = <0x68 1   /* PWMMCR */
+		       0x6c 1   /* PWMDCR */
+		       0x6e 1   /* PWMPRSL */
+		       0x6f 1>; /* PWMPRSM */
+		mfdctrl = <&pwm2_gp13_default>;
+		channel = <2>;
+		#pwm-cells = <3>;
+	};
+
+	ioex_it8801_pwm3: it8801_pwm@70 {
+		compatible = "ite,it8801-pwm";
+		status = "disabled";
+		reg = <0x70 1   /* PWMMCR */
+		       0x74 1   /* PWMDCR */
+		       0x76 1   /* PWMPRSL */
+		       0x77 1>; /* PWMPRSM */
+		mfdctrl = <&pwm3_gp14_default>;
+		channel = <3>;
+		#pwm-cells = <3>;
+	};
+
+	ioex_it8801_pwm4: it8801_pwm@78 {
+		compatible = "ite,it8801-pwm";
+		status = "disabled";
+		reg = <0x78 1   /* PWMMCR */
+		       0x7c 1   /* PWMDCR */
+		       0x7e 1   /* PWMPRSL */
+		       0x7f 1>; /* PWMPRSM */
+		mfdctrl = <&pwm4_gp15_default>;
+		channel = <4>;
+		#pwm-cells = <3>;
+	};
+
+	ioex_it8801_pwm7: it8801_pwm@90 {
+		compatible = "ite,it8801-pwm";
+		status = "disabled";
+		reg = <0x90 1   /* PWMMCR */
+		       0x94 1   /* PWMDCR */
+		       0x96 1   /* PWMPRSL */
+		       0x97 1>; /* PWMPRSM */
+		mfdctrl = <&pwm7_gp20_default>;
+		channel = <7>;
+		#pwm-cells = <3>;
+
+	};
+
+	ioex_it8801_pwm8: it8801_pwm@98 {
+		compatible = "ite,it8801-pwm";
+		status = "disabled";
+		reg = <0x98 1   /* PWMMCR */
+		       0x9c 1   /* PWMDCR */
+		       0x9e 1   /* PWMPRSL */
+		       0x9f 1>; /* PWMPRSM */
+		mfdctrl = <&pwm8_gp23_default>;
+		channel = <8>;
+		#pwm-cells = <3>;
+	};
+
+	ioex_it8801_pwm9: it8801_pwm@a0 {
+		compatible = "ite,it8801-pwm";
+		status = "disabled";
+		reg = <0xa0 1   /* PWMMCR */
+		       0xa4 1   /* PWMDCR */
+		       0xa6 1   /* PWMPRSL */
+		       0xa7 1>; /* PWMPRSM */
+		mfdctrl = <&pwm9_gp22_default>;
+		channel = <9>;
+		#pwm-cells = <3>;
+	};
+};

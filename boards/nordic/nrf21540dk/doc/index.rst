@@ -1,7 +1,4 @@
-.. _nrf21540dk_nrf52840:
-
-nRF21540 DK
-###########
+.. zephyr:board:: nrf21540dk
 
 Overview
 ********
@@ -25,14 +22,8 @@ The CPU provides support for the following devices:
 * :abbr:`USB (Universal Serial Bus)`
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/nrf21540dk_nrf52840.jpg
-     :align: center
-     :alt: nRF21540 DK
-
-     nRF21540 DK (Credit: Nordic Semiconductor)
-
 More information about the board can be found at the `nRF21540 website`_.
-The `Nordic Semiconductor Infocenter`_ contains the processor's and front end
+`nRF21540 Product Specification`_ contains the processor's and front end
 module's information and the datasheet.
 
 Hardware
@@ -44,46 +35,9 @@ of the slow clock is 32.768 kHz. The frequency of the main clock is 32 MHz.
 Supported Features
 ==================
 
-The nrf21540dk/nrf52840 board configuration supports the following
-hardware features:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C(M)    | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| RADIO     | on-chip    | Bluetooth,           |
-|           |            | ieee802154           |
-+-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| RTT       | Segger     | console              |
-+-----------+------------+----------------------+
-| SPI(M/S)  | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| USB       | on-chip    | usb                  |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
-
-Other hardware features have not been enabled yet for this board.
-See `nRF52840 Product Specification`_ and `Nordic Semiconductor Infocenter`_
+See `nRF52840 Product Specification`_ and `nRF21540 DK Hardware guide`_
 for a complete list of nRF21540 Development Kit board hardware features.
 
 Connections and IOs
@@ -122,6 +76,8 @@ Front End Module
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``nrf21540dk/nrf52840`` board configuration can be built,
 flashed, and debugged in the usual way. See :ref:`build_an_application` and
 :ref:`application_run` for more details on building and running.
@@ -135,7 +91,7 @@ found in :ref:`nordic_segger_flashing`. Then build and flash
 applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 First, run your favorite terminal program to listen for output.
 
@@ -229,8 +185,8 @@ References
 
 .. target-notes::
 
-.. _Nordic Semiconductor Infocenter: https://infocenter.nordicsemi.com
+.. _nRF21540 DK Hardware guide: https://docs.nordicsemi.com/bundle/ug_nrf21540_dk/page/UG/nrf21540_DK/intro.html
 .. _J-Link Software and documentation pack: https://www.segger.com/jlink-software.html
 .. _nRF21540 website: https://www.nordicsemi.com/Products/Low-power-short-range-wireless/nRF21540
-.. _nRF52840 Product Specification: http://infocenter.nordicsemi.com/pdf/nRF52840_PS_v1.0.pdf
-.. _nRF21540 Product Specification: http://infocenter.nordicsemi.com/pdf/nRF21540_PS_v1.0.pdf
+.. _nRF52840 Product Specification: https://docs.nordicsemi.com/bundle/ps_nrf52840/page/keyfeatures_html5.html
+.. _nRF21540 Product Specification: https://docs.nordicsemi.com/bundle/ps_nrf21540/page/keyfeatures_html5.html

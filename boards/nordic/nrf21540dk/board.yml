@@ -1,5 +1,6 @@
 board:
   name: nrf21540dk
+  full_name: nRF21540 DK
   vendor: nordic
   socs:
   - name: nrf52840

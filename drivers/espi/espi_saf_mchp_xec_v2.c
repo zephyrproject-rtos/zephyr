@@ -1027,7 +1027,7 @@ static void espi_saf_done_isr(const struct device *dev)
 	struct mchp_espi_saf * const regs = xcfg->saf_base;
 	const struct espi_xec_irq_info *safirq = &xcfg->irq_info_list[0];
 	uint32_t ecp_status = regs->SAF_ECP_STATUS;
-	struct espi_event evt = { .evt_type = ESPI_BUS_SAF_NOTIFICATION,
+	struct espi_event evt = { .evt_type = ESPI_BUS_TAF_NOTIFICATION,
 				  .evt_details = BIT(0),
 				  .evt_data = ecp_status };
 
@@ -1062,7 +1062,7 @@ static void espi_saf_err_isr(const struct device *dev)
 	espi_send_callbacks(&data->callbacks, dev, evt);
 }
 
-static const struct espi_saf_driver_api espi_saf_xec_driver_api = {
+static DEVICE_API(espi_saf, espi_saf_xec_driver_api) = {
 	.config = espi_saf_xec_configuration,
 	.set_protection_regions = espi_saf_xec_set_pr,
 	.activate = espi_saf_xec_activate,
@@ -1142,7 +1142,7 @@ static int espi_saf_xec_init(const struct device *dev)
 	DEVICE_DT_INST_DEFINE(0, &espi_saf_xec_init, NULL,				\
 				  &espisaf_xec_data_##n,				\
 				  &espisaf_xec_config_##n, POST_KERNEL,			\
-				  CONFIG_ESPI_SAF_INIT_PRIORITY,			\
+				  CONFIG_ESPI_TAF_INIT_PRIORITY,			\
 				  &espi_saf_xec_driver_api);				\
 											\
 	static void espi_saf_xec_connect_irqs_##n(void)					\

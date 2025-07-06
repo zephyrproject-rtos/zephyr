@@ -8,8 +8,13 @@
 #define ZEPHYR_INCLUDE_NET_LWM2M_PATH_H_
 
 /**
+ * @file lwm2m.h
+ *
  * @brief LwM2M path helper macros
+ *
  * @defgroup lwm2m_path_helpers LwM2M path helper macros
+ * @since 2.5
+ * @version 0.8.0
  * @ingroup lwm2m_api
  * @{
  */

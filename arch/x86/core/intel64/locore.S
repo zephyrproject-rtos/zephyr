@@ -44,7 +44,7 @@
 	/* Page tables created at build time by gen_mmu.py
 	 * NOTE: Presumes phys=virt
 	 */
-	movl $Z_MEM_PHYS_ADDR(z_x86_kernel_ptables), %eax
+	movl $K_MEM_PHYS_ADDR(z_x86_kernel_ptables), %eax
 	movl %eax, %cr3
 
 	set_efer
@@ -66,7 +66,7 @@
 	clts
 
 	/* NOTE: Presumes phys=virt */
-	movq $Z_MEM_PHYS_ADDR(z_x86_kernel_ptables), %rax
+	movq $K_MEM_PHYS_ADDR(z_x86_kernel_ptables), %rax
 	movq %rax, %cr3
 
 	set_efer
@@ -78,6 +78,15 @@
 	 */
 	orl $CR0_BITS, %eax
 	movq %rax, %cr0
+.endm
+
+.macro DEFINE_TSS_STACK_ARRAY
+	.irp idx, DEFINE_STACK_ARRAY_IDX
+		.word __X86_TSS64_SIZEOF-1
+		.word tss\idx
+		.word 0x8900
+		.word 0, 0, 0, 0, 0
+	.endr
 .endm
 
 /* The .locore section begins the page-aligned initialization region
@@ -113,17 +122,13 @@ __start:
 	nop
 	nop
 
-#if CONFIG_MP_MAX_NUM_CPUS > 1
-
 .code16
 .global x86_ap_start
 x86_ap_start:
-
 	/*
 	 * First, we move to 32-bit protected mode, and set up the
 	 * same flat environment that the BSP gets from the loader.
 	 */
-
 	lgdt gdt48
 	lidt idt48
 	movl %cr0, %eax
@@ -145,7 +150,7 @@ x86_ap_start:
 
 	movl LOAPIC_BASE_ADDRESS+LOAPIC_ID, %eax
 	shrl $24, %eax
-	andl $0x0F, %eax		/* local APIC ID -> EAX */
+	andl $0xFF, %eax		/* local APIC ID -> EAX */
 
 	movl $x86_cpuboot, %ebp
 	xorl %ebx, %ebx
@@ -159,8 +164,6 @@ x86_ap_start:
 
 unknown_loapic_id:
 	jmp unknown_loapic_id
-
-#endif /* CONFIG_MP_MAX_NUM_CPUS > 1 */
 
 .code32
 .globl __start32
@@ -1094,31 +1097,7 @@ gdt:
 
 	/* Remaining entries are TSS for each enabled CPU */
 
-	.word __X86_TSS64_SIZEOF-1	/* 0x40: 64-bit TSS (16-byte entry) */
-	.word tss0
-	.word 0x8900
-	.word 0, 0, 0, 0, 0
-
-#if CONFIG_MP_MAX_NUM_CPUS > 1
-	.word __X86_TSS64_SIZEOF-1	/* 0x50: 64-bit TSS (16-byte entry) */
-	.word tss1
-	.word 0x8900
-	.word 0, 0, 0, 0, 0
-#endif
-
-#if CONFIG_MP_MAX_NUM_CPUS > 2
-	.word __X86_TSS64_SIZEOF-1	/* 0x60: 64-bit TSS (16-byte entry) */
-	.word tss2
-	.word 0x8900
-	.word 0, 0, 0, 0, 0
-#endif
-
-#if CONFIG_MP_MAX_NUM_CPUS > 3
-	.word __X86_TSS64_SIZEOF-1	/* 0x70: 64-bit TSS (16-byte entry) */
-	.word tss3
-	.word 0x8900
-	.word 0, 0, 0, 0, 0
-#endif
+	DEFINE_TSS_STACK_ARRAY
 
 gdt_end:
 
@@ -1129,80 +1108,3 @@ gdt48:  /* LGDT descriptor for 32 bit mode */
 gdt80:  /* LGDT descriptor for long mode */
 	.word (gdt_end - gdt - 1)
 	.quad gdt
-.section .lodata,"ad"
-
-/*
- * Known-good stack for handling CPU exceptions.
- */
-
-.global z_x86_exception_stack
-.align 16
-z_x86_exception_stack:
-	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
-.global z_x86_nmi_stack
-.align 16
-z_x86_nmi_stack:
-	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
-
-#if CONFIG_MP_MAX_NUM_CPUS > 1
-.global z_x86_exception_stack1
-.align 16
-z_x86_exception_stack1:
-	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
-.global z_x86_nmi_stack1
-.align 16
-z_x86_nmi_stack1:
-	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
-#endif
-
-#if CONFIG_MP_MAX_NUM_CPUS > 2
-.global z_x86_exception_stack2
-.align 16
-z_x86_exception_stack2:
-	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
-.global z_x86_nmi_stack2
-.align 16
-z_x86_nmi_stack2:
-	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
-#endif
-
-#if CONFIG_MP_MAX_NUM_CPUS > 3
-.global z_x86_exception_stack3
-.align 16
-z_x86_exception_stack3:
-	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
-.global z_x86_nmi_stack3
-.align 16
-z_x86_nmi_stack3:
-	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
-#endif
-
-#ifdef CONFIG_X86_KPTI
-.section .trampolines,"ad"
-
-.global z_x86_trampoline_stack
-.align 16
-z_x86_trampoline_stack:
-	.fill Z_X86_TRAMPOLINE_STACK_SIZE, 1, 0xAA
-
-#if CONFIG_MP_MAX_NUM_CPUS > 1
-.global z_x86_trampoline_stack1
-.align 16
-z_x86_trampoline_stack1:
-	.fill Z_X86_TRAMPOLINE_STACK_SIZE, 1, 0xAA
-#endif
-
-#if CONFIG_MP_MAX_NUM_CPUS > 2
-.global z_x86_trampoline_stack2
-.align 16
-z_x86_trampoline_stack2:
-	.fill Z_X86_TRAMPOLINE_STACK_SIZE, 1, 0xAA
-#endif
-
-#if CONFIG_MP_MAX_NUM_CPUS > 3
-.global z_x86_trampoline_stack3
-.align 16
-z_x86_trampoline_stack3:
-	.fill Z_X86_TRAMPOLINE_STACK_SIZE, 1, 0xAA
-#endif
-#endif /* CONFIG_X86_KPTI */

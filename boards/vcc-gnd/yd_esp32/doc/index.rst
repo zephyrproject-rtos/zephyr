@@ -1,19 +1,10 @@
-.. _yd_esp32:
-
-YD-ESP32
-########
+.. zephyr:board:: yd_esp32
 
 Overview
 ********
 
-The YD-ESP32 development board is one of VCC-GND® Studio’s official boards.
+The YD-ESP32 development board is one of VCC-GND® Studio's official boards.
 This board is based on the ESP32-WROOM-32E module, with the ESP32 as the core.
-
-.. figure:: img/yd_esp32.png
-   :align: center
-   :alt: YD-ESP32
-
-   YD-ESP32 DevKit with ESP32-WROOM-32E Module
 
 ESP32
 =====
@@ -23,7 +14,7 @@ with integrated Wi-Fi & dual-mode Bluetooth.  The ESP32 series employs a
 Tensilica Xtensa LX6 microprocessor in both dual-core and single-core
 variations.  ESP32 is created and developed by Espressif Systems, a
 Shanghai-based Chinese company, and is manufactured by TSMC using their 40nm
-process. [1]_
+process.
 
 The features include the following:
 
@@ -53,49 +44,13 @@ The features include the following:
 - Cryptographic hardware acceleration (RNG, ECC, RSA, SHA-2, AES)
 - 5uA deep sleep current
 
+For more information, check the datasheet at `ESP32 Datasheet`_ or the technical reference
+manual at `ESP32 Technical Reference Manual`_.
+
 Supported Features
 ==================
 
-Current Zephyr's YD-ESP32 board supports the following features:
-
-+------------+------------+-------------------------------------+
-| Interface  | Controller | Driver/Component                    |
-+============+============+=====================================+
-+------------+------------+-------------------------------------+
-| UART       | on-chip    | serial port                         |
-+------------+------------+-------------------------------------+
-| GPIO       | on-chip    | gpio                                |
-+------------+------------+-------------------------------------+
-| PINMUX     | on-chip    | pinmux                              |
-+------------+------------+-------------------------------------+
-| USB-JTAG   | on-chip    | hardware interface                  |
-+------------+------------+-------------------------------------+
-| SPI Master | on-chip    | spi                                 |
-+------------+------------+-------------------------------------+
-| Timers     | on-chip    | counter                             |
-+------------+------------+-------------------------------------+
-| Watchdog   | on-chip    | watchdog                            |
-+------------+------------+-------------------------------------+
-| TRNG       | on-chip    | entropy                             |
-+------------+------------+-------------------------------------+
-| LEDC       | on-chip    | pwm                                 |
-+------------+------------+-------------------------------------+
-| MCPWM      | on-chip    | pwm                                 |
-+------------+------------+-------------------------------------+
-| PCNT       | on-chip    | qdec                                |
-+------------+------------+-------------------------------------+
-| SPI DMA    | on-chip    | spi                                 |
-+------------+------------+-------------------------------------+
-| TWAI       | on-chip    | can                                 |
-+------------+------------+-------------------------------------+
-| ADC        | on-chip    | adc                                 |
-+------------+------------+-------------------------------------+
-| DAC        | on-chip    | dac                                 |
-+------------+------------+-------------------------------------+
-| Wi-Fi      | on-chip    |                                     |
-+------------+------------+-------------------------------------+
-| Bluetooth  | on-chip    |                                     |
-+------------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 System requirements
 ===================
@@ -117,6 +72,8 @@ below to retrieve those files.
 Building & Flashing
 *******************
 
+.. zephyr:board-supported-runners::
+
 Simple boot
 ===========
 
@@ -131,7 +88,7 @@ MCUboot bootloader
 ==================
 
 User may choose to use MCUboot bootloader instead. In that case the bootloader
-must be build (and flash) at least once.
+must be built (and flashed) at least once.
 
 There are two options to be used when building an application:
 
@@ -142,9 +99,10 @@ There are two options to be used when building an application:
 
    User can select the MCUboot bootloader by adding the following line
    to the board default configuration file.
-   ```
-   CONFIG_BOOTLOADER_MCUBOOT=y
-   ```
+
+   .. code:: cfg
+
+      CONFIG_BOOTLOADER_MCUBOOT=y
 
 Sysbuild
 ========
@@ -156,7 +114,7 @@ To build the sample application using sysbuild use the command:
 
 .. zephyr-app-commands::
    :tool: west
-   :app: samples/hello_world
+   :zephyr-app: samples/hello_world
    :board: yd_esp32
    :goals: build
    :west-args: --sysbuild
@@ -192,7 +150,7 @@ Manual build
 ============
 
 During the development cycle, it is intended to build & flash as quickly possible.
-For that reason, images can be build one at a time using traditional build.
+For that reason, images can be built one at a time using traditional build.
 
 The instructions following are relevant for both manual build and sysbuild.
 The only difference is the structure of the build directory.
@@ -210,7 +168,7 @@ Build and flash applications as usual (see :ref:`build_an_application` and
    :goals: build
 
 The usual ``flash`` target will work with the ``yd_esp32`` board
-configuration. Here is an example for the :ref:`hello_world`
+configuration. Here is an example for the :zephyr:code-sample:`hello_world`
 application.
 
 .. zephyr-app-commands::
@@ -239,7 +197,7 @@ The board contains an addressable RGB LED (`XL-5050RGBC-WS2812B`_), driven by GP
 Here is an example of how to test it using the :zephyr:code-sample:`led-strip` application.
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/led_strip
+   :zephyr-app: samples/drivers/led/led_strip
    :board: yd_esp32/esp32/procpu
    :goals: flash
 
@@ -249,8 +207,7 @@ Here is an example of how to test it using the :zephyr:code-sample:`led-strip` a
 Debugging
 *********
 
-ESP32 support on OpenOCD is available upstream as of version 0.12.0.
-Download and install OpenOCD from `OpenOCD`_.
+ESP32 support on OpenOCD is available at `OpenOCD ESP32`_.
 
 On the YD-ESP32 board, the JTAG pins are not run to a
 standard connector (e.g. ARM 20-pin) and need to be manually connected
@@ -274,17 +231,16 @@ to the external programmer (e.g. a Flyswatter2):
 | IO15       | TDO       |
 +------------+-----------+
 
-Further documentation can be obtained from the SoC vendor in `JTAG debugging
-for ESP32`_.
+Further documentation can be obtained from the SoC vendor in `JTAG debugging for ESP32`_.
 
-Here is an example for building the :ref:`hello_world` application.
+Here is an example for building the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: yd_esp32/esp32/procpu
    :goals: build flash
 
-You can debug an application in the usual way. Here is an example for the :ref:`hello_world` application.
+You can debug an application in the usual way. Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -302,12 +258,13 @@ GDB stub is enabled on ESP32.
   This does not work as the code is on flash which cannot be randomly
   accessed for modification.
 
-.. _`JTAG debugging for ESP32`: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/jtag-debugging/index.html
-.. _`OpenOCD`: https://github.com/openocd-org/openocd
-
 References
 **********
 
-.. [1] https://en.wikipedia.org/wiki/ESP32
-.. _ESP32 Technical Reference Manual: https://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf
-.. _Hardware Reference: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/index.html
+.. target-notes::
+
+.. _`ESP32-DevKitC-WROVER`: https://docs.espressif.com/projects/esp-idf/en/stable/esp32/hw-reference/esp32/get-started-devkitc.html#
+.. _`ESP32 Datasheet`: https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf
+.. _`ESP32 Technical Reference Manual`: https://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf
+.. _`JTAG debugging for ESP32`: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/jtag-debugging/index.html
+.. _`OpenOCD ESP32`: https://github.com/espressif/openocd-esp32/releases

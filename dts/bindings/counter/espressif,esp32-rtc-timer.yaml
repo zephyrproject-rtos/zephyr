@@ -3,7 +3,7 @@
 
 description: |
 
-        Espressif's Counter Driver based on RTC Main Timer.
+        ESP32 Counter Driver based on RTC Main Timer.
 
         Any reset/sleep mode, except for the power-up reset, will not
         stop or reset the RTC Timer. This behavior may be handy when
@@ -14,12 +14,5 @@ description: |
         running from power-up.
 
 include: base.yaml
-
-properties:
-  slow-clk-freq:
-    description: |
-      The slow clock input frequency for the RTC Timer.
-    type: int
-    required: true
 
 compatible: "espressif,esp32-rtc-timer"

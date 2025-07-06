@@ -1,0 +1,38 @@
+# Copyright (c) 2024 Marcin Niestroj
+# Copyright (c) 2024 Meta
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STM32U5 OTG HS PHY.
+
+    This binding is to be used by the STM32U5xx transceivers which are built-in
+    with USB HS PHY IP and a configurable HSE clock source.
+
+compatible: "st,stm32u5-otghs-phy"
+
+include: phy-controller.yaml
+
+properties:
+  "#phy-cells":
+    const: 0
+
+  clocks:
+    required: true
+    description: |
+      Supported configurations:
+
+        /* HSE */
+        clocks = <&rcc STM32_CLOCK(AHB2, 15U)>,
+                 <&rcc STM32_SRC_HSE OTGHS_SEL(0)>;
+
+        /* HSE/2 */
+        clocks = <&rcc STM32_CLOCK(AHB2, 15U)>,
+                 <&rcc (STM32_SRC_HSE | STM32_CLOCK_DIV(2)) OTGHS_SEL(2)>;
+
+        /* PLL1_P_CK */
+        clocks = <&rcc STM32_CLOCK(AHB2, 15U)>,
+                 <&rcc STM32_SRC_PLL1_P OTGHS_SEL(1)>;
+
+        /* PLL1_P_CK/2 */
+        clocks = <&rcc STM32_CLOCK(AHB2, 15U)>,
+                 <&rcc (STM32_SRC_PLL1_P | STM32_CLOCK_DIV(2)) OTGHS_SEL(3)>;

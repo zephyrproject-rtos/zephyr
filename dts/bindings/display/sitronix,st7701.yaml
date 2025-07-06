@@ -1,0 +1,88 @@
+# Copyright (c) 2025 Arduino SA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Sitronix ST7701 Panel
+
+compatible: "sitronix,st7701"
+
+include: [mipi-dsi-device.yaml, display-controller.yaml]
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      The RESETn pin is asserted to disable the sensor causing a hard
+      reset.  The sensor receives this as an active-low signal.
+
+  bl-gpios:
+    type: phandle-array
+    description: |
+      The BLn pin is asserted to control the backlight of the panel.
+      The sensor receives this as an active-high signal.
+
+  rotation:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 90
+      - 180
+      - 270
+    description: |
+      Display rotation (CW) in degrees. Defaults to 0, display default.
+
+  gip-e0:
+    type: uint8-array
+    description: GIP setting at address 0xE0.
+
+  gip-e1:
+    type: uint8-array
+    description: GIP setting at address 0xE1.
+
+  gip-e2:
+    type: uint8-array
+    description: GIP setting at address 0xE2.
+
+  gip-e3:
+    type: uint8-array
+    description: GIP setting at address 0xE3.
+
+  gip-e4:
+    type: uint8-array
+    description: GIP setting at address 0xE4.
+
+  gip-e5:
+    type: uint8-array
+    description: GIP setting at address 0xE5.
+
+  gip-e6:
+    type: uint8-array
+    description: GIP setting at address 0xE6.
+
+  gip-e7:
+    type: uint8-array
+    description: GIP setting at address 0xE7.
+
+  gip-e8:
+    type: uint8-array
+    description: GIP setting at address 0xE8.
+
+  gip-eb:
+    type: uint8-array
+    description: GIP setting at address 0xEB.
+
+  gip-ec:
+    type: uint8-array
+    description: GIP setting at address 0xEC.
+
+  gip-ed:
+    type: uint8-array
+    description: GIP setting at address 0xED.
+
+  pvgamctrl:
+    type: uint8-array
+    description: Positive voltage gamma control.
+
+  nvgamctrl:
+    type: uint8-array
+    description: Negative voltage gamma control.

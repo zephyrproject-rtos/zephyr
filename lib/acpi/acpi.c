@@ -408,7 +408,7 @@ int acpi_legacy_irq_init(const char *hid, const char *uid)
 		 * If Name path exist then PCI interrupts are configurable and are not hardwired to
 		 * any specific interrupt inputs on the interrupt controller. OSPM can uses
 		 * _PRS/_CRS/_SRS to configure interrupts. But currently leave existing PCI bus
-		 * driver with arch_irq_allocate() menthod for allocate and configure interrupts
+		 * driver with arch_irq_allocate() method for allocate and configure interrupts
 		 * without conflicting.
 		 */
 		return -ENOENT;

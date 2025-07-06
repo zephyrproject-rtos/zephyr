@@ -288,7 +288,7 @@ static int gpio_litex_port_get_direction(const struct device *dev, gpio_port_pin
 }
 #endif /* CONFIG_GPIO_GET_DIRECTION */
 
-static const struct gpio_driver_api gpio_litex_driver_api = {
+static DEVICE_API(gpio, gpio_litex_driver_api) = {
 	.pin_configure = gpio_litex_configure,
 	.port_get_raw = gpio_litex_port_get_raw,
 	.port_set_masked_raw = gpio_litex_port_set_masked_raw,

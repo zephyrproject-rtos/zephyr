@@ -52,6 +52,15 @@ __no_optimization static void trigger_fault_illegal_instruction(void)
 
 	/* execute an illegal instruction */
 	((void(*)(void))&a)();
+#ifdef CONFIG_RX
+	/*
+	 * Intentionally execute an illegal instruction by calling a NULL pointer.
+	 * Optimization is disabled to avoid GCC internal error during DWARF frame generation.
+	 * __builtin_unreachable() hints to the compiler that control flow never returns here,
+	 * which prevents faulty CFA emission on RX targets.
+	 */
+	__builtin_unreachable();
+#endif
 }
 
 /*
@@ -60,7 +69,8 @@ __no_optimization static void trigger_fault_illegal_instruction(void)
  */
 __no_optimization static void trigger_fault_access(void)
 {
-#if defined(CONFIG_SOC_ARC_IOT) || defined(CONFIG_SOC_NSIM) || defined(CONFIG_SOC_EMSK)
+#if defined(CONFIG_SOC_ARC_IOT) || defined(CONFIG_SOC_FAMILY_NSIM_ARC_CLASSIC) || \
+	defined(CONFIG_SOC_FAMILY_NSIM_ARC_V) || defined(CONFIG_SOC_EMSK)
 	/* For iotdk, em_starterkit and ARC/nSIM, nSIM simulates full address space of
 	 * memory, iotdk has eflash at 0x0 address, em_starterkit has ICCM at 0x0 address,
 	 * access to 0x0 address doesn't generate any exception. So we access to 0XFFFFFFFF
@@ -120,6 +130,7 @@ __no_optimization static void trigger_fault_divide_zero(void)
 #if (defined(CONFIG_SOC_SERIES_MPS2) && defined(CONFIG_QEMU_TARGET)) || \
 	(defined(CONFIG_SOC_SERIES_MPS3) && defined(CONFIG_QEMU_TARGET)) || \
 	defined(CONFIG_BOARD_QEMU_CORTEX_A53) || defined(CONFIG_SOC_QEMU_ARC) || \
+	defined(CONFIG_SOC_CORTEX_R8_VIRTUAL) || \
 	defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) || \
 	defined(CONFIG_BOARD_QEMU_CORTEX_R5) || \
 	defined(CONFIG_ARMV8_R) || defined(CONFIG_AARCH32_ARMV8_R) || \
@@ -153,7 +164,7 @@ static void release_offload_sem(void)
  * default one.
  */
 void ztest_post_fatal_error_hook(unsigned int reason,
-		const z_arch_esf_t *pEsf)
+		const struct arch_esf *pEsf)
 {
 	switch (case_type) {
 	case ZTEST_CATCH_FATAL_ACCESS:

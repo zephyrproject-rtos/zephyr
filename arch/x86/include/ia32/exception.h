@@ -62,7 +62,7 @@
  * Assign an exception handler to a particular vector in the IDT.
  *
  * @param handler A handler function of the prototype
- *                void handler(const z_arch_esf_t *esf)
+ *                void handler(const struct arch_esf *esf)
  * @param vector Vector index in the IDT
  */
 #define _EXCEPTION_CONNECT_NOCODE(handler, vector, dpl) \
@@ -75,7 +75,7 @@
  * The error code will be accessible in esf->errorCode
  *
  * @param handler A handler function of the prototype
- *                void handler(const z_arch_esf_t *esf)
+ *                void handler(const struct arch_esf *esf)
  * @param vector Vector index in the IDT
  */
 #define _EXCEPTION_CONNECT_CODE(handler, vector, dpl) \

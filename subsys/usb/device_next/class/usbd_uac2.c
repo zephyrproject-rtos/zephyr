@@ -4,7 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include <zephyr/kernel.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
 
@@ -20,14 +24,15 @@ LOG_MODULE_REGISTER(usbd_uac2, CONFIG_USBD_UAC2_LOG_LEVEL);
 
 #define DT_DRV_COMPAT zephyr_uac2
 
-#define COUNT_UAC2_AS_ENDPOINTS(node)						\
+#define COUNT_UAC2_AS_ENDPOINT_BUFFERS(node)					\
 	IF_ENABLED(DT_NODE_HAS_COMPAT(node, zephyr_uac2_audio_streaming), (	\
 		+ AS_HAS_ISOCHRONOUS_DATA_ENDPOINT(node) +			\
+		+ AS_IS_USB_ISO_IN(node) /* ISO IN double buffering */ +	\
 		AS_HAS_EXPLICIT_FEEDBACK_ENDPOINT(node)))
-#define COUNT_UAC2_ENDPOINTS(i)							\
+#define COUNT_UAC2_EP_BUFFERS(i)						\
 	+ DT_PROP(DT_DRV_INST(i), interrupt_endpoint)				\
-	DT_INST_FOREACH_CHILD(i, COUNT_UAC2_AS_ENDPOINTS)
-#define UAC2_NUM_ENDPOINTS DT_INST_FOREACH_STATUS_OKAY(COUNT_UAC2_ENDPOINTS)
+	DT_INST_FOREACH_CHILD(i, COUNT_UAC2_AS_ENDPOINT_BUFFERS)
+#define UAC2_NUM_EP_BUFFERS DT_INST_FOREACH_STATUS_OKAY(COUNT_UAC2_EP_BUFFERS)
 
 /* Net buf is used mostly with external data. The main reason behind external
  * data is avoiding unnecessary isochronous data copy operations.
@@ -40,7 +45,7 @@ LOG_MODULE_REGISTER(usbd_uac2, CONFIG_USBD_UAC2_LOG_LEVEL);
  * "wasted memory" here is likely to be smaller than the memory overhead for
  * more complex "only as much as needed" schemes (e.g. heap).
  */
-NET_BUF_POOL_DEFINE(uac2_pool, UAC2_NUM_ENDPOINTS, 6,
+UDC_BUF_POOL_DEFINE(uac2_pool, UAC2_NUM_EP_BUFFERS, 6,
 		    sizeof(struct udc_buf_info), NULL);
 
 /* 5.2.2 Control Request Layout */
@@ -68,7 +73,7 @@ typedef enum {
 	ENTITY_TYPE_OUTPUT_TERMINAL,
 } entity_type_t;
 
-static size_t clock_frequencies(struct usbd_class_node *const node,
+static size_t clock_frequencies(struct usbd_class_data *const c_data,
 				const uint8_t id, const uint32_t **frequencies);
 
 /* UAC2 device runtime data */
@@ -80,32 +85,35 @@ struct uac2_ctx {
 	 */
 	atomic_t as_active;
 	atomic_t as_queued;
+	atomic_t as_double;
 	uint32_t fb_queued;
 };
 
 /* UAC2 device constant data */
 struct uac2_cfg {
-	struct usbd_class_node *const node;
+	struct usbd_class_data *const c_data;
+	const struct usb_desc_header **fs_descriptors;
+	const struct usb_desc_header **hs_descriptors;
 	/* Entity 1 type is at entity_types[0] */
 	const entity_type_t *entity_types;
-	/* Array of offsets to data endpoint bEndpointAddress in descriptors.
-	 * First AudioStreaming interface is at ep_offsets[0]. Offset is 0 if
+	/* Array of indexes to data endpoint descriptor in descriptors set.
+	 * First AudioStreaming interface is at ep_indexes[0]. Index is 0 if
 	 * the interface is external interface (Type IV), i.e. no endpoint.
 	 */
-	const uint16_t *ep_offsets;
-	/* Same as ep_offsets, but for explicit feedback endpoints. */
-	const uint16_t *fb_offsets;
+	const uint16_t *ep_indexes;
+	/* Same as ep_indexes, but for explicit feedback endpoints. */
+	const uint16_t *fb_indexes;
 	/* First AudioStreaming interface Terminal ID is at as_terminals[0]. */
 	const uint8_t *as_terminals;
-	/* Number of interfaces (ep_offsets, fb_offset and as_terminals size) */
+	/* Number of interfaces (ep_indexes, fb_indexes and as_terminals size) */
 	uint8_t num_ifaces;
 	/* Number of entities (entity_type array size) */
 	uint8_t num_entities;
 };
 
-static entity_type_t id_type(struct usbd_class_node *const node, uint8_t id)
+static entity_type_t id_type(struct usbd_class_data *const c_data, uint8_t id)
 {
-	const struct device *dev = node->data->priv;
+	const struct device *dev = usbd_class_get_private(c_data);
 	const struct uac2_cfg *cfg = dev->config;
 
 	if ((id - 1) < cfg->num_entities) {
@@ -116,56 +124,70 @@ static entity_type_t id_type(struct usbd_class_node *const node, uint8_t id)
 }
 
 static const struct usb_ep_descriptor *
-get_as_data_ep(struct usbd_class_node *const node, int as_idx)
+get_as_data_ep(struct usbd_class_data *const c_data, int as_idx)
 {
-	const struct device *dev = node->data->priv;
+	const struct device *dev = usbd_class_get_private(c_data);
 	const struct uac2_cfg *cfg = dev->config;
-	const uint8_t *desc = node->data->desc;
+	const struct usb_desc_header *desc = NULL;
+	const struct usb_desc_header **descriptors;
 
-	if ((as_idx < cfg->num_ifaces) && cfg->ep_offsets[as_idx]) {
-		return CONTAINER_OF(&desc[cfg->ep_offsets[as_idx]],
-				    const struct usb_ep_descriptor,
-				    bEndpointAddress);
+	if (usbd_bus_speed(c_data->uds_ctx) == USBD_SPEED_FS) {
+		descriptors = cfg->fs_descriptors;
+	} else {
+		descriptors = cfg->hs_descriptors;
 	}
 
-	return NULL;
+	if ((as_idx >= 0) && (as_idx < cfg->num_ifaces) &&
+	    cfg->ep_indexes[as_idx] && descriptors) {
+		desc = descriptors[cfg->ep_indexes[as_idx]];
+	}
+
+	return (const struct usb_ep_descriptor *)desc;
 }
 
 static const struct usb_ep_descriptor *
-get_as_feedback_ep(struct usbd_class_node *const node, int as_idx)
+get_as_feedback_ep(struct usbd_class_data *const c_data, int as_idx)
 {
-	const struct device *dev = node->data->priv;
+	const struct device *dev = usbd_class_get_private(c_data);
 	const struct uac2_cfg *cfg = dev->config;
-	const uint8_t *desc = node->data->desc;
+	const struct usb_desc_header *desc = NULL;
+	const struct usb_desc_header **descriptors;
 
-	if ((as_idx < cfg->num_ifaces) && cfg->fb_offsets[as_idx]) {
-		return CONTAINER_OF(&desc[cfg->fb_offsets[as_idx]],
-				    const struct usb_ep_descriptor,
-				    bEndpointAddress);
+	if (usbd_bus_speed(c_data->uds_ctx) == USBD_SPEED_FS) {
+		descriptors = cfg->fs_descriptors;
+	} else {
+		descriptors = cfg->hs_descriptors;
 	}
 
-	return NULL;
+	if ((as_idx < cfg->num_ifaces) && cfg->fb_indexes[as_idx] &&
+	    descriptors) {
+		desc = descriptors[cfg->fb_indexes[as_idx]];
+	}
+
+	return (const struct usb_ep_descriptor *)desc;
 }
 
 static int ep_to_as_interface(const struct device *dev, uint8_t ep, bool *fb)
 {
 	const struct uac2_cfg *cfg = dev->config;
-	const uint8_t *desc = cfg->node->data->desc;
+	const struct usb_ep_descriptor *desc;
 
 	for (int i = 0; i < cfg->num_ifaces; i++) {
-		if (!cfg->ep_offsets[i]) {
+		if (!cfg->ep_indexes[i]) {
 			/* If there is no data endpoint there cannot be feedback
 			 * endpoint. Simply skip external interfaces.
 			 */
 			continue;
 		}
 
-		if (ep == desc[cfg->ep_offsets[i]]) {
+		desc = get_as_data_ep(cfg->c_data, i);
+		if (desc && (ep == desc->bEndpointAddress)) {
 			*fb = false;
 			return i;
 		}
 
-		if (cfg->fb_offsets[i] && (ep == desc[cfg->fb_offsets[i]])) {
+		desc = get_as_feedback_ep(cfg->c_data, i);
+		if (desc && (ep == desc->bEndpointAddress)) {
 			*fb = true;
 			return i;
 		}
@@ -191,9 +213,49 @@ static int terminal_to_as_interface(const struct device *dev, uint8_t terminal)
 void usbd_uac2_set_ops(const struct device *dev,
 		       const struct uac2_ops *ops, void *user_data)
 {
+	const struct uac2_cfg *cfg = dev->config;
 	struct uac2_ctx *ctx = dev->data;
 
 	__ASSERT(ops->sof_cb, "SOF callback is mandatory");
+	__ASSERT(ops->terminal_update_cb, "terminal_update_cb is mandatory");
+
+	for (uint8_t i = 0U; i < cfg->num_ifaces; i++) {
+		const uint16_t ep_idx = cfg->ep_indexes[i];
+
+		if (cfg->fb_indexes[i] != 0U) {
+			__ASSERT(ops->feedback_cb, "feedback_cb is mandatory");
+		}
+
+		if (ep_idx) {
+			const struct usb_ep_descriptor *desc = NULL;
+
+			if (cfg->fs_descriptors != NULL) {
+				/* If fs_descriptors is non-NULL and ep_idx is non-zero then
+				 * cfg->fs_descriptors[ep_idx] is non-NULL
+				 */
+				desc = (const struct usb_ep_descriptor *)
+					       cfg->fs_descriptors[ep_idx];
+			} else if (cfg->hs_descriptors != NULL) {
+				/* If hs_descriptors is non-NULL and ep_idx is non-zero then
+				 * cfg->hs_descriptors[ep_idx] is non-NULL
+				 */
+				desc = (const struct usb_ep_descriptor *)
+					       cfg->hs_descriptors[ep_idx];
+			}
+
+			if (desc != NULL) {
+				if (USB_EP_DIR_IS_OUT(desc->bEndpointAddress)) {
+					__ASSERT(ops->get_recv_buf, "get_recv_buf is mandatory");
+					__ASSERT(ops->data_recv_cb, "data_recv_cb is mandatory");
+				}
+
+				if (USB_EP_DIR_IS_IN(desc->bEndpointAddress)) {
+					__ASSERT(ops->buf_release_cb,
+						 "buf_release_cb is mandatory");
+				}
+			}
+		}
+	}
 
 	ctx->ops = ops;
 	ctx->user_data = user_data;
@@ -205,13 +267,14 @@ uac2_buf_alloc(const uint8_t ep, void *data, uint16_t size)
 	struct net_buf *buf = NULL;
 	struct udc_buf_info *bi;
 
+	__ASSERT(IS_UDC_ALIGNED(data), "Application provided unaligned buffer");
+
 	buf = net_buf_alloc_with_data(&uac2_pool, data, size, K_NO_WAIT);
 	if (!buf) {
 		return NULL;
 	}
 
 	bi = udc_get_buf_info(buf);
-	memset(bi, 0, sizeof(struct udc_buf_info));
 	bi->ep = ep;
 
 	if (USB_EP_DIR_IS_OUT(ep)) {
@@ -226,15 +289,17 @@ int usbd_uac2_send(const struct device *dev, uint8_t terminal,
 		   void *data, uint16_t size)
 {
 	const struct uac2_cfg *cfg = dev->config;
-	const uint8_t *desc = cfg->node->data->desc;
 	struct uac2_ctx *ctx = dev->data;
 	struct net_buf *buf;
+	const struct usb_ep_descriptor *desc;
+	atomic_t *queued_bits = &ctx->as_queued;
 	uint8_t ep = 0;
 	int as_idx = terminal_to_as_interface(dev, terminal);
 	int ret;
 
-	if ((as_idx >= 0) && cfg->ep_offsets[as_idx]) {
-		ep = desc[cfg->ep_offsets[as_idx]];
+	desc = get_as_data_ep(cfg->c_data, as_idx);
+	if (desc) {
+		ep = desc->bEndpointAddress;
 	}
 
 	if (!ep) {
@@ -248,9 +313,12 @@ int usbd_uac2_send(const struct device *dev, uint8_t terminal,
 		return 0;
 	}
 
-	if (atomic_test_and_set_bit(&ctx->as_queued, as_idx)) {
-		LOG_ERR("Previous send not finished yet on 0x%02x", ep);
-		return -EAGAIN;
+	if (atomic_test_and_set_bit(queued_bits, as_idx)) {
+		queued_bits = &ctx->as_double;
+		if (atomic_test_and_set_bit(queued_bits, as_idx)) {
+			LOG_DBG("Already double queued on 0x%02x", ep);
+			return -EAGAIN;
+		}
 	}
 
 	buf = uac2_buf_alloc(ep, data, size);
@@ -259,26 +327,24 @@ int usbd_uac2_send(const struct device *dev, uint8_t terminal,
 		 * enough, but if it does all we loose is just single packet.
 		 */
 		LOG_ERR("No netbuf for send");
-		atomic_clear_bit(&ctx->as_queued, as_idx);
-		ctx->ops->buf_release_cb(dev, terminal, data, ctx->user_data);
+		atomic_clear_bit(queued_bits, as_idx);
 		return -ENOMEM;
 	}
 
-	ret = usbd_ep_enqueue(cfg->node, buf);
+	ret = usbd_ep_enqueue(cfg->c_data, buf);
 	if (ret) {
 		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
 		net_buf_unref(buf);
-		atomic_clear_bit(&ctx->as_queued, as_idx);
-		ctx->ops->buf_release_cb(dev, terminal, data, ctx->user_data);
+		atomic_clear_bit(queued_bits, as_idx);
 	}
 
 	return ret;
 }
 
-static void schedule_iso_out_read(struct usbd_class_node *const node,
+static void schedule_iso_out_read(struct usbd_class_data *const c_data,
 				  uint8_t ep, uint16_t mps, uint8_t terminal)
 {
-	struct device *dev = node->data->priv;
+	const struct device *dev = usbd_class_get_private(c_data);
 	const struct uac2_cfg *cfg = dev->config;
 	struct uac2_ctx *ctx = dev->data;
 	struct net_buf *buf;
@@ -324,7 +390,7 @@ static void schedule_iso_out_read(struct usbd_class_node *const node,
 		return;
 	}
 
-	ret = usbd_ep_enqueue(node, buf);
+	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
 		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
 		net_buf_unref(buf);
@@ -332,16 +398,19 @@ static void schedule_iso_out_read(struct usbd_class_node *const node,
 	}
 }
 
-static void write_explicit_feedback(struct usbd_class_node *const node,
+static void write_explicit_feedback(struct usbd_class_data *const c_data,
 				    uint8_t ep, uint8_t terminal)
 {
-	struct device *dev = node->data->priv;
+	const struct device *dev = usbd_class_get_private(c_data);
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 	struct uac2_ctx *ctx = dev->data;
 	struct net_buf *buf;
 	struct udc_buf_info *bi;
 	uint32_t fb_value;
 	int as_idx = terminal_to_as_interface(dev, terminal);
 	int ret;
+
+	__ASSERT_NO_MSG(as_idx >= 0);
 
 	buf = net_buf_alloc(&uac2_pool, K_NO_WAIT);
 	if (!buf) {
@@ -350,22 +419,17 @@ static void write_explicit_feedback(struct usbd_class_node *const node,
 	}
 
 	bi = udc_get_buf_info(buf);
-	memset(bi, 0, sizeof(struct udc_buf_info));
 	bi->ep = ep;
 
 	fb_value = ctx->ops->feedback_cb(dev, terminal, ctx->user_data);
 
-	/* REVISE: How to determine operating speed? Should we have separate
-	 * class instances for high-speed and full-speed (because high-speed
-	 * allows more sampling rates and/or bit depths)?
-	 */
-	if (udc_device_speed(node->data->uds_ctx->dev) == UDC_BUS_SPEED_FS) {
+	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_FS) {
 		net_buf_add_le24(buf, fb_value);
 	} else {
 		net_buf_add_le32(buf, fb_value);
 	}
 
-	ret = usbd_ep_enqueue(node, buf);
+	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
 		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
 		net_buf_unref(buf);
@@ -374,12 +438,14 @@ static void write_explicit_feedback(struct usbd_class_node *const node,
 	}
 }
 
-void uac2_update(struct usbd_class_node *const node,
+void uac2_update(struct usbd_class_data *const c_data,
 		 uint8_t iface, uint8_t alternate)
 {
-	struct device *dev = node->data->priv;
+	const struct device *dev = usbd_class_get_private(c_data);
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 	const struct uac2_cfg *cfg = dev->config;
 	struct uac2_ctx *ctx = dev->data;
+	const struct usb_desc_header **descriptors;
 	const struct usb_association_descriptor *iad;
 	const struct usb_ep_descriptor *data_ep, *fb_ep;
 	uint8_t as_idx;
@@ -387,7 +453,22 @@ void uac2_update(struct usbd_class_node *const node,
 
 	LOG_DBG("iface %d alt %d", iface, alternate);
 
-	iad = (const struct usb_association_descriptor *)node->data->desc;
+	/* Audio class is forbidden on Low-Speed, therefore the only possibility
+	 * for not using microframes is when device operates at Full-Speed.
+	 */
+	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_FS) {
+		microframes = false;
+		descriptors = cfg->fs_descriptors;
+	} else {
+		microframes = true;
+		descriptors = cfg->hs_descriptors;
+	}
+
+	if (!descriptors) {
+		return;
+	}
+
+	iad = (const struct usb_association_descriptor *)descriptors[0];
 
 	/* AudioControl interface (bFirstInterface) doesn't have alternate
 	 * configurations, therefore the iface must be AudioStreaming.
@@ -395,15 +476,6 @@ void uac2_update(struct usbd_class_node *const node,
 	__ASSERT_NO_MSG((iface > iad->bFirstInterface) &&
 			(iface < iad->bFirstInterface + iad->bInterfaceCount));
 	as_idx = iface - iad->bFirstInterface - 1;
-
-	/* Audio class is forbidden on Low-Speed, therefore the only possibility
-	 * for not using microframes is when device operates at Full-Speed.
-	 */
-	if (udc_device_speed(node->data->uds_ctx->dev) == UDC_BUS_SPEED_FS) {
-		microframes = false;
-	} else {
-		microframes = true;
-	}
 
 	/* Notify application about terminal state change */
 	ctx->ops->terminal_update_cb(dev, cfg->as_terminals[as_idx], alternate,
@@ -419,22 +491,65 @@ void uac2_update(struct usbd_class_node *const node,
 
 	atomic_set_bit(&ctx->as_active, as_idx);
 
-	data_ep = get_as_data_ep(node, as_idx);
+	data_ep = get_as_data_ep(c_data, as_idx);
 	/* External interfaces (i.e. NULL data_ep) do not have alternate
 	 * configuration and therefore data_ep must be valid here.
 	 */
 	__ASSERT_NO_MSG(data_ep);
 
 	if (USB_EP_DIR_IS_OUT(data_ep->bEndpointAddress)) {
-		schedule_iso_out_read(node, data_ep->bEndpointAddress,
+		schedule_iso_out_read(c_data, data_ep->bEndpointAddress,
 				      sys_le16_to_cpu(data_ep->wMaxPacketSize),
 				      cfg->as_terminals[as_idx]);
 
-		fb_ep = get_as_feedback_ep(node, as_idx);
+		fb_ep = get_as_feedback_ep(c_data, as_idx);
 		if (fb_ep) {
-			write_explicit_feedback(node, fb_ep->bEndpointAddress,
+			write_explicit_feedback(c_data, fb_ep->bEndpointAddress,
 						cfg->as_terminals[as_idx]);
 		}
+	}
+}
+
+/* 5.2.2 Control Request Layout: "As a general rule, when an attribute value
+ * is set, a Control will automatically adjust the passed value to the closest
+ * available valid value."
+ *
+ * The values array must be sorted ascending with at least 1 element.
+ */
+static uint32_t find_closest(const uint32_t input, const uint32_t *values,
+			     const size_t values_count)
+{
+	size_t i;
+
+	__ASSERT_NO_MSG(values_count);
+
+	for (i = 0; i < values_count; i++) {
+		if (input == values[i]) {
+			/* Exact match */
+			return input;
+		} else if (input < values[i]) {
+			break;
+		}
+	}
+
+	if (i == values_count) {
+		/* All values are smaller than input, return largest value */
+		return values[i - 1];
+	}
+
+	if (i == 0) {
+		/* All values are larger than input, return smallest value */
+		return values[i];
+	}
+
+	/* At this point values[i] is larger than input and values[i - 1] is
+	 * smaller than input, find and return the one that is closer, favoring
+	 * bigger value if input is exactly in the middle between the two.
+	 */
+	if ((values[i] - input) > (input - values[i - 1])) {
+		return values[i - 1];
+	} else {
+		return values[i];
 	}
 }
 
@@ -447,6 +562,19 @@ static void layout3_cur_response(struct net_buf *const buf, uint16_t length,
 	/* dCUR */
 	sys_put_le32(value, tmp);
 	net_buf_add_mem(buf, tmp, MIN(length, 4));
+}
+
+static int layout3_cur_request(const struct net_buf *const buf, uint32_t *out)
+{
+	uint8_t tmp[4];
+
+	if (buf->len != 4) {
+		return -EINVAL;
+	}
+
+	memcpy(tmp, buf->data, sizeof(tmp));
+	*out = sys_get_le32(tmp);
+	return 0;
 }
 
 /* Table 5-7: 4-byte Control RANGE Parameter Block */
@@ -492,11 +620,14 @@ static void layout3_range_response(struct net_buf *const buf, uint16_t length,
 	}
 }
 
-static int get_clock_source_request(struct usbd_class_node *const node,
+static int get_clock_source_request(struct usbd_class_data *const c_data,
 				    const struct usb_setup_packet *const setup,
 				    struct net_buf *const buf)
 {
+	const struct device *dev = usbd_class_get_private(c_data);
+	struct uac2_ctx *ctx = dev->data;
 	const uint32_t *frequencies;
+	const uint32_t clock_id = CONTROL_ENTITY_ID(setup);
 	size_t count;
 
 	/* Channel Number must be zero */
@@ -507,7 +638,7 @@ static int get_clock_source_request(struct usbd_class_node *const node,
 		return 0;
 	}
 
-	count = clock_frequencies(node, CONTROL_ENTITY_ID(setup), &frequencies);
+	count = clock_frequencies(c_data, clock_id, &frequencies);
 
 	if (CONTROL_SELECTOR(setup) == CS_SAM_FREQ_CONTROL) {
 		if (CONTROL_ATTRIBUTE(setup) == CUR) {
@@ -516,10 +647,15 @@ static int get_clock_source_request(struct usbd_class_node *const node,
 						     frequencies[0]);
 				return 0;
 			}
-			/* TODO: If there is more than one frequency supported,
-			 * call registered application API to determine active
-			 * sample rate.
-			 */
+
+			if (ctx->ops->get_sample_rate) {
+				uint32_t hz;
+
+				hz = ctx->ops->get_sample_rate(dev, clock_id,
+							       ctx->user_data);
+				layout3_cur_response(buf, setup->wLength, hz);
+				return 0;
+			}
 		} else if (CONTROL_ATTRIBUTE(setup) == RANGE) {
 			layout3_range_response(buf, setup->wLength, frequencies,
 					       frequencies, NULL, count);
@@ -534,7 +670,89 @@ static int get_clock_source_request(struct usbd_class_node *const node,
 	return 0;
 }
 
-static int uac2_control_to_host(struct usbd_class_node *const node,
+static int set_clock_source_request(struct usbd_class_data *const c_data,
+				    const struct usb_setup_packet *const setup,
+				    const struct net_buf *const buf)
+{
+	const struct device *dev = usbd_class_get_private(c_data);
+	struct uac2_ctx *ctx = dev->data;
+	const uint32_t *frequencies;
+	const uint32_t clock_id = CONTROL_ENTITY_ID(setup);
+	size_t count;
+
+	/* Channel Number must be zero */
+	if (CONTROL_CHANNEL_NUMBER(setup) != 0) {
+		LOG_DBG("Clock source control with channel %d",
+			CONTROL_CHANNEL_NUMBER(setup));
+		errno = -EINVAL;
+		return 0;
+	}
+
+	count = clock_frequencies(c_data, clock_id, &frequencies);
+
+	if (CONTROL_SELECTOR(setup) == CS_SAM_FREQ_CONTROL) {
+		if (CONTROL_ATTRIBUTE(setup) == CUR) {
+			uint32_t requested, hz;
+			int err;
+
+			err = layout3_cur_request(buf, &requested);
+			if (err) {
+				errno = err;
+				return 0;
+			}
+
+			hz = find_closest(requested, frequencies, count);
+
+			if (ctx->ops->set_sample_rate == NULL) {
+				/* The set_sample_rate() callback is optional
+				 * if there is only one supported sample rate.
+				 */
+				if (count > 1) {
+					errno = -ENOTSUP;
+				}
+				return 0;
+			}
+
+			err = ctx->ops->set_sample_rate(dev, clock_id, hz,
+							ctx->user_data);
+			if (err) {
+				errno = err;
+			}
+
+			return 0;
+		}
+	} else {
+		LOG_DBG("Unhandled clock control selector 0x%02x",
+			CONTROL_SELECTOR(setup));
+	}
+
+	errno = -ENOTSUP;
+	return 0;
+}
+
+static int uac2_control_to_dev(struct usbd_class_data *const c_data,
+			       const struct usb_setup_packet *const setup,
+			       const struct net_buf *const buf)
+{
+	entity_type_t entity_type;
+
+	if (CONTROL_ATTRIBUTE(setup) != CUR) {
+		errno = -ENOTSUP;
+		return 0;
+	}
+
+	if (setup->bmRequestType == SET_CLASS_REQUEST_TYPE) {
+		entity_type = id_type(c_data, CONTROL_ENTITY_ID(setup));
+		if (entity_type == ENTITY_TYPE_CLOCK_SOURCE) {
+			return set_clock_source_request(c_data, setup, buf);
+		}
+	}
+
+	errno = -ENOTSUP;
+	return 0;
+}
+
+static int uac2_control_to_host(struct usbd_class_data *const c_data,
 				const struct usb_setup_packet *const setup,
 				struct net_buf *const buf)
 {
@@ -547,9 +765,9 @@ static int uac2_control_to_host(struct usbd_class_node *const node,
 	}
 
 	if (setup->bmRequestType == GET_CLASS_REQUEST_TYPE) {
-		entity_type = id_type(node, CONTROL_ENTITY_ID(setup));
+		entity_type = id_type(c_data, CONTROL_ENTITY_ID(setup));
 		if (entity_type == ENTITY_TYPE_CLOCK_SOURCE) {
-			return get_clock_source_request(node, setup, buf);
+			return get_clock_source_request(c_data, setup, buf);
 		}
 	}
 
@@ -557,13 +775,13 @@ static int uac2_control_to_host(struct usbd_class_node *const node,
 	return 0;
 }
 
-static int uac2_request(struct usbd_class_node *const node, struct net_buf *buf,
+static int uac2_request(struct usbd_class_data *const c_data, struct net_buf *buf,
 			int err)
 {
-	struct device *dev = node->data->priv;
+	const struct device *dev = usbd_class_get_private(c_data);
 	const struct uac2_cfg *cfg = dev->config;
 	struct uac2_ctx *ctx = dev->data;
-	struct usbd_contex *uds_ctx = node->data->uds_ctx;
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 	struct udc_buf_info *bi;
 	uint8_t ep, terminal;
 	uint16_t mps;
@@ -589,8 +807,8 @@ static int uac2_request(struct usbd_class_node *const node, struct net_buf *buf,
 
 	if (is_feedback) {
 		ctx->fb_queued &= ~BIT(as_idx);
-	} else {
-		atomic_clear_bit(&ctx->as_queued, as_idx);
+	} else if (!atomic_test_and_clear_bit(&ctx->as_queued, as_idx) || buf->frags) {
+		atomic_clear_bit(&ctx->as_double, as_idx);
 	}
 
 	if (USB_EP_DIR_IS_OUT(ep)) {
@@ -598,6 +816,9 @@ static int uac2_request(struct usbd_class_node *const node, struct net_buf *buf,
 				       ctx->user_data);
 	} else if (!is_feedback) {
 		ctx->ops->buf_release_cb(dev, terminal, buf->__buf, ctx->user_data);
+		if (buf->frags) {
+			ctx->ops->buf_release_cb(dev, terminal, buf->frags->__buf, ctx->user_data);
+		}
 	}
 
 	usbd_ep_buf_free(uds_ctx, buf);
@@ -607,18 +828,20 @@ static int uac2_request(struct usbd_class_node *const node, struct net_buf *buf,
 
 	/* Reschedule the read or explicit feedback write */
 	if (USB_EP_DIR_IS_OUT(ep)) {
-		schedule_iso_out_read(node, ep, mps, terminal);
+		schedule_iso_out_read(c_data, ep, mps, terminal);
+	} else if (is_feedback) {
+		write_explicit_feedback(c_data, ep, cfg->as_terminals[as_idx]);
 	}
 
 	return 0;
 }
 
-static void uac2_sof(struct usbd_class_node *const node)
+static void uac2_sof(struct usbd_class_data *const c_data)
 {
-	struct device *dev = node->data->priv;
+	const struct device *dev = usbd_class_get_private(c_data);
 	const struct usb_ep_descriptor *data_ep;
+	const struct usb_ep_descriptor *feedback_ep;
 	const struct uac2_cfg *cfg = dev->config;
-	const uint8_t *desc = node->data->desc;
 	struct uac2_ctx *ctx = dev->data;
 	int as_idx;
 
@@ -629,15 +852,16 @@ static void uac2_sof(struct usbd_class_node *const node)
 		 * won't be pending only if there was buffer underrun, i.e. the
 		 * application failed to supply receive buffer.
 		 */
-		data_ep = get_as_data_ep(node, as_idx);
+		data_ep = get_as_data_ep(c_data, as_idx);
 		if (data_ep && USB_EP_DIR_IS_OUT(data_ep->bEndpointAddress)) {
-			schedule_iso_out_read(node, data_ep->bEndpointAddress,
+			schedule_iso_out_read(c_data, data_ep->bEndpointAddress,
 				sys_le16_to_cpu(data_ep->wMaxPacketSize),
 				cfg->as_terminals[as_idx]);
 		}
 
 		/* Skip interfaces without explicit feedback endpoint */
-		if (cfg->fb_offsets[as_idx] == 0) {
+		feedback_ep = get_as_feedback_ep(c_data, as_idx);
+		if (feedback_ep == NULL) {
 			continue;
 		}
 
@@ -658,14 +882,27 @@ static void uac2_sof(struct usbd_class_node *const node)
 		 * previous SOF is "gone" even if USB host did not attempt to
 		 * read it).
 		 */
-		write_explicit_feedback(node, desc[cfg->fb_offsets[as_idx]],
+		write_explicit_feedback(c_data, feedback_ep->bEndpointAddress,
 					cfg->as_terminals[as_idx]);
 	}
 }
 
-static int uac2_init(struct usbd_class_node *const node)
+static void *uac2_get_desc(struct usbd_class_data *const c_data,
+			   const enum usbd_speed speed)
 {
-	struct device *dev = node->data->priv;
+	struct device *dev = usbd_class_get_private(c_data);
+	const struct uac2_cfg *cfg = dev->config;
+
+	if (USBD_SUPPORTS_HIGH_SPEED && speed == USBD_SPEED_HS) {
+		return cfg->hs_descriptors;
+	}
+
+	return cfg->fs_descriptors;
+}
+
+static int uac2_init(struct usbd_class_data *const c_data)
+{
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct uac2_ctx *ctx = dev->data;
 
 	if (ctx->ops == NULL) {
@@ -678,9 +915,11 @@ static int uac2_init(struct usbd_class_node *const node)
 
 struct usbd_class_api uac2_api = {
 	.update = uac2_update,
+	.control_to_dev = uac2_control_to_dev,
 	.control_to_host = uac2_control_to_host,
 	.request = uac2_request,
 	.sof = uac2_sof,
+	.get_desc = uac2_get_desc,
 	.init = uac2_init,
 };
 
@@ -698,15 +937,15 @@ struct usbd_class_api uac2_api = {
 		ENTITY_TYPE_INVALID						\
 	))									\
 	, /* Comma here causes unknown types to fail at compile time */
-#define DEFINE_AS_EP_OFFSETS(node)						\
+#define DEFINE_AS_EP_INDEXES(node)						\
 	IF_ENABLED(DT_NODE_HAS_COMPAT(node, zephyr_uac2_audio_streaming), (	\
 		COND_CODE_1(AS_HAS_ISOCHRONOUS_DATA_ENDPOINT(node),		\
-			(UAC2_DESCRIPTOR_AS_DATA_EP_OFFSET(node),), (0,))	\
+			(UAC2_DESCRIPTOR_AS_DATA_EP_INDEX(node),), (0,))	\
 	))
-#define DEFINE_AS_FB_OFFSETS(node)						\
+#define DEFINE_AS_FB_INDEXES(node)						\
 	IF_ENABLED(DT_NODE_HAS_COMPAT(node, zephyr_uac2_audio_streaming), (	\
 		COND_CODE_1(AS_HAS_EXPLICIT_FEEDBACK_ENDPOINT(node),		\
-			(UAC2_DESCRIPTOR_AS_FEEDBACK_EP_OFFSET(node),), (0,))	\
+			(UAC2_DESCRIPTOR_AS_FEEDBACK_EP_INDEX(node),), (0,))	\
 	))
 #define DEFINE_AS_TERMINALS(node)						\
 	IF_ENABLED(DT_NODE_HAS_COMPAT(node, zephyr_uac2_audio_streaming), (	\
@@ -725,11 +964,11 @@ struct usbd_class_api uac2_api = {
 	static const entity_type_t entity_types_##i[] = {			\
 		DT_INST_FOREACH_CHILD_STATUS_OKAY(i, DEFINE_ENTITY_TYPES)	\
 	};									\
-	static const uint16_t ep_offsets_##i[] = {				\
-		DT_INST_FOREACH_CHILD_STATUS_OKAY(i, DEFINE_AS_EP_OFFSETS)	\
+	static const uint16_t ep_indexes_##i[] = {				\
+		DT_INST_FOREACH_CHILD_STATUS_OKAY(i, DEFINE_AS_EP_INDEXES)	\
 	};									\
-	static const uint16_t fb_offsets_##i[] = {				\
-		DT_INST_FOREACH_CHILD_STATUS_OKAY(i, DEFINE_AS_FB_OFFSETS)	\
+	static const uint16_t fb_indexes_##i[] = {				\
+		DT_INST_FOREACH_CHILD_STATUS_OKAY(i, DEFINE_AS_FB_INDEXES)	\
 	};									\
 	static const uint8_t as_terminals_##i[] = {				\
 		DT_INST_FOREACH_CHILD_STATUS_OKAY(i, DEFINE_AS_TERMINALS)	\
@@ -737,28 +976,38 @@ struct usbd_class_api uac2_api = {
 	DT_INST_FOREACH_CHILD_STATUS_OKAY_VARGS(i, DEFINE_CLOCK_SOURCES, i)
 
 #define DEFINE_UAC2_CLASS_DATA(inst)						\
-	DT_INST_FOREACH_CHILD(inst, VALIDATE_NODE)				\
+	VALIDATE_INSTANCE(DT_DRV_INST(inst))					\
 	static struct uac2_ctx uac2_ctx_##inst;					\
-	static uint8_t uac2_descriptor_##inst[] = {				\
-		UAC2_DESCRIPTORS(DT_DRV_INST(inst))				\
-		0x00, 0x00 /* terminator required by USBD stack */		\
-	};									\
-	static struct usbd_class_data uac2_class_##inst = {			\
-		.desc = (struct usb_desc_header *)uac2_descriptor_##inst,	\
-		.priv = (void *)DEVICE_DT_GET(DT_DRV_INST(inst)),		\
-	};									\
-	USBD_DEFINE_CLASS(uac2_##inst, &uac2_api, &uac2_class_##inst);		\
+	UAC2_DESCRIPTOR_ARRAYS(DT_DRV_INST(inst))				\
+	IF_ENABLED(UAC2_ALLOWED_AT_FULL_SPEED(DT_DRV_INST(inst)), (		\
+		static const struct usb_desc_header *uac2_fs_desc_##inst[] =	\
+			UAC2_FS_DESCRIPTOR_PTRS_ARRAY(DT_DRV_INST(inst));	\
+	))									\
+	IF_ENABLED(UAC2_ALLOWED_AT_HIGH_SPEED(DT_DRV_INST(inst)), (		\
+		static const struct usb_desc_header *uac2_hs_desc_##inst[] =	\
+			UAC2_HS_DESCRIPTOR_PTRS_ARRAY(DT_DRV_INST(inst));	\
+	))									\
+	USBD_DEFINE_CLASS(uac2_##inst, &uac2_api,				\
+			  (void *)DEVICE_DT_GET(DT_DRV_INST(inst)), NULL);	\
 	DEFINE_LOOKUP_TABLES(inst)						\
 	static const struct uac2_cfg uac2_cfg_##inst = {			\
-		.node = &uac2_##inst,						\
+		.c_data = &uac2_##inst,						\
+		COND_CODE_1(UAC2_ALLOWED_AT_FULL_SPEED(DT_DRV_INST(inst)),	\
+			(.fs_descriptors = uac2_fs_desc_##inst,),		\
+			(.fs_descriptors = NULL,)				\
+		)								\
+		COND_CODE_1(UAC2_ALLOWED_AT_HIGH_SPEED(DT_DRV_INST(inst)),	\
+			(.hs_descriptors = uac2_hs_desc_##inst,),		\
+			(.hs_descriptors = NULL,)				\
+		)								\
 		.entity_types = entity_types_##inst,				\
-		.ep_offsets = ep_offsets_##inst,				\
-		.fb_offsets = fb_offsets_##inst,				\
+		.ep_indexes = ep_indexes_##inst,				\
+		.fb_indexes = fb_indexes_##inst,				\
 		.as_terminals = as_terminals_##inst,				\
-		.num_ifaces = ARRAY_SIZE(ep_offsets_##inst),			\
+		.num_ifaces = ARRAY_SIZE(ep_indexes_##inst),			\
 		.num_entities = ARRAY_SIZE(entity_types_##inst),		\
 	};									\
-	BUILD_ASSERT(ARRAY_SIZE(ep_offsets_##inst) <= 32,			\
+	BUILD_ASSERT(ARRAY_SIZE(ep_indexes_##inst) <= 32,			\
 		"UAC2 implementation supports up to 32 AS interfaces");		\
 	BUILD_ASSERT(ARRAY_SIZE(entity_types_##inst) <= 255,			\
 		"UAC2 supports up to 255 entities");				\
@@ -768,10 +1017,10 @@ struct usbd_class_api uac2_api = {
 		NULL);
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_UAC2_CLASS_DATA)
 
-static size_t clock_frequencies(struct usbd_class_node *const node,
+static size_t clock_frequencies(struct usbd_class_data *const c_data,
 				const uint8_t id, const uint32_t **frequencies)
 {
-	const struct device *dev = node->data->priv;
+	const struct device *dev = usbd_class_get_private(c_data);
 	size_t count;
 
 #define GET_FREQUENCY_TABLE(node, i)						\

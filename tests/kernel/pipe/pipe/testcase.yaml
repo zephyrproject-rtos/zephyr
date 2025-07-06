@@ -1,6 +1,0 @@
-tests:
-  kernel.pipe:
-    tags:
-      - kernel
-      - userspace
-    ignore_faults: true

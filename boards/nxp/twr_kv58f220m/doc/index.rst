@@ -1,7 +1,4 @@
-.. _twr_kv58f220m:
-
-NXP TWR-KV58F220M
-#################
+.. zephyr:board:: twr_kv58f220m
 
 Overview
 ********
@@ -10,12 +7,6 @@ The TWR-KV58F220M is a development board for NXP Kinetis KV5x 32-bit
 MCU-based platforms. The onboard OpenSDAv2 serial and debug adapter,
 running an open source bootloader, offers options for serial
 communication, flash programming, and run-control debugging.
-
-.. figure:: twr_kv58f220m.jpg
-   :align: center
-   :alt: TWR-KV58F220M
-
-   TWR-KV58F220M (Credit: NXP)
 
 Hardware
 ********
@@ -43,39 +34,7 @@ these NXP reference documents:
 Supported Features
 ==================
 
-The twr_kv58f220m board configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | soc flash                           |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SENSOR    | off-chip   | fxos8700 polling;                   |
-|           |            | fxos8700 trigger                    |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/nxp/twr_kv58f220m/twr_kv58f220m_defconfig`.
-
-Other hardware features are not currently supported by the port.
+.. zephyr:board-supported-hw::
 
 System Clock
 ============
@@ -103,6 +62,8 @@ the jumpers ``J2`` and ``J9``. A trigger option also must be enabled in Kconfig
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -148,7 +109,7 @@ etc.):
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -166,7 +127,7 @@ see the following message in the terminal:
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -180,6 +141,9 @@ should see the following message in the terminal:
 
    ***** Booting Zephyr OS v1.14.0-xxx-gxxxxxxxxxxxx *****
    Hello World! twr_kv58f220m
+
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
 
 .. _TWR-KV58F220M Website:
    https://www.nxp.com/TWR-KV58F220M

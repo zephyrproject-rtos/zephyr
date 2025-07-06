@@ -8,6 +8,7 @@ Network System Management
 
    net_config.rst
    dhcpv4.rst
+   dhcpv6.rst
    net_hostname.rst
    net_core.rst
    net_if.rst

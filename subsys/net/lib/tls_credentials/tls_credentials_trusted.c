@@ -228,7 +228,7 @@ struct tls_credential *credential_get(sec_tag_t tag,
 }
 
 
-/* Get the following credential filtered by a TAG valud */
+/* Get the following credential filtered by a TAG value */
 struct tls_credential *credential_next_get(sec_tag_t tag,
 					   struct tls_credential *iter)
 {
@@ -401,6 +401,7 @@ int tls_credential_get(sec_tag_t tag, enum tls_credential_type type,
 
 	if (info.size > *credlen) {
 		ret = -EFBIG;
+		*credlen = info.size;
 		goto cleanup;
 	}
 

@@ -6,7 +6,11 @@
  */
 
 #include <zephyr/logging/log.h>
+#include <zephyr/random/random.h>
+#include <strings.h>
 LOG_MODULE_DECLARE(net_shell);
+
+#include <zephyr/sys/base64.h>
 
 #if defined(CONFIG_NET_L2_ETHERNET)
 #include <zephyr/net/ethernet.h>
@@ -16,9 +20,16 @@ LOG_MODULE_DECLARE(net_shell);
 #endif
 #if defined(CONFIG_NET_L2_VIRTUAL)
 #include <zephyr/net/virtual.h>
+#include <zephyr/net/virtual_mgmt.h>
+#endif
+#if defined(CONFIG_ETH_PHY_DRIVER)
+#include <zephyr/net/phy.h>
 #endif
 
 #include "net_shell_private.h"
+
+#define UNICAST_MASK GENMASK(7, 1)
+#define LOCAL_BIT BIT(1)
 
 #if defined(CONFIG_NET_L2_ETHERNET) && defined(CONFIG_NET_NATIVE)
 struct ethernet_capabilities {
@@ -33,11 +44,11 @@ static struct ethernet_capabilities eth_hw_caps[] = {
 	EC(ETHERNET_HW_RX_CHKSUM_OFFLOAD, "RX checksum offload"),
 	EC(ETHERNET_HW_VLAN,              "Virtual LAN"),
 	EC(ETHERNET_HW_VLAN_TAG_STRIP,    "VLAN Tag stripping"),
-	EC(ETHERNET_AUTO_NEGOTIATION_SET, "Auto negotiation"),
-	EC(ETHERNET_LINK_10BASE_T,        "10 Mbits"),
-	EC(ETHERNET_LINK_100BASE_T,       "100 Mbits"),
-	EC(ETHERNET_LINK_1000BASE_T,      "1 Gbits"),
-	EC(ETHERNET_DUPLEX_SET,           "Half/full duplex"),
+	EC(ETHERNET_LINK_10BASE,          "10 Mbits"),
+	EC(ETHERNET_LINK_100BASE,         "100 Mbits"),
+	EC(ETHERNET_LINK_1000BASE,        "1 Gbits"),
+	EC(ETHERNET_LINK_2500BASE,        "2.5 Gbits"),
+	EC(ETHERNET_LINK_5000BASE,        "5 Gbits"),
 	EC(ETHERNET_PTP,                  "IEEE 802.1AS gPTP clock"),
 	EC(ETHERNET_QAV,                  "IEEE 802.1Qav (credit shaping)"),
 	EC(ETHERNET_QBV,                  "IEEE 802.1Qbv (scheduled traffic)"),
@@ -46,8 +57,10 @@ static struct ethernet_capabilities eth_hw_caps[] = {
 	EC(ETHERNET_PROMISC_MODE,         "Promiscuous mode"),
 	EC(ETHERNET_PRIORITY_QUEUES,      "Priority queues"),
 	EC(ETHERNET_HW_FILTERING,         "MAC address filtering"),
-	EC(ETHERNET_DSA_SLAVE_PORT,       "DSA slave port"),
-	EC(ETHERNET_DSA_MASTER_PORT,      "DSA master port"),
+	EC(ETHERNET_DSA_USER_PORT,        "DSA user port"),
+	EC(ETHERNET_DSA_CONDUIT_PORT,     "DSA conduit port"),
+	EC(ETHERNET_TXTIME,               "TXTIME supported"),
+	EC(ETHERNET_TXINJECTION_MODE,     "TX-Injection supported"),
 };
 
 static void print_supported_ethernet_capabilities(
@@ -63,7 +76,26 @@ static void print_supported_ethernet_capabilities(
 }
 #endif /* CONFIG_NET_L2_ETHERNET */
 
-#if defined(CONFIG_NET_NATIVE)
+#ifdef CONFIG_ETH_PHY_DRIVER
+static void print_phy_link_state(const struct shell *sh, const struct device *phy_dev)
+{
+	struct phy_link_state link;
+	int ret;
+
+	ret = phy_get_link_state(phy_dev, &link);
+	if (ret < 0) {
+		PR_ERROR("Failed to get link state (%d)\n", ret);
+		return;
+	}
+
+	PR("Ethernet link speed: %s ", PHY_LINK_IS_SPEED_1000M(link.speed)  ? "1 Gbits"
+				       : PHY_LINK_IS_SPEED_100M(link.speed) ? "100 Mbits"
+									    : "10 Mbits");
+
+	PR("%s-duplex\n", PHY_LINK_IS_FULL_DUPLEX(link.speed) ? "full" : "half");
+}
+#endif
+
 static const char *iface_flags2str(struct net_if *iface)
 {
 	static char str[sizeof("POINTOPOINT") + sizeof("PROMISC") +
@@ -120,17 +152,20 @@ static const char *iface_flags2str(struct net_if *iface)
 
 	return str;
 }
-#endif
 
 static void iface_cb(struct net_if *iface, void *user_data)
 {
-#if defined(CONFIG_NET_NATIVE)
 	struct net_shell_user_data *data = user_data;
 	const struct shell *sh = data->sh;
+	int ret;
 
-#if defined(CONFIG_NET_IPV6)
+	ARG_UNUSED(ret); /* could be unused depending on config */
+
+#if defined(CONFIG_NET_NATIVE_IPV6)
 	struct net_if_ipv6_prefix *prefix;
 	struct net_if_router *router;
+#endif
+#if defined(CONFIG_NET_IPV6)
 	struct net_if_ipv6 *ipv6;
 #endif
 #if defined(CONFIG_NET_IPV4)
@@ -142,7 +177,6 @@ static void iface_cb(struct net_if *iface, void *user_data)
 #endif
 #if defined(CONFIG_NET_L2_ETHERNET_MGMT)
 	struct ethernet_req_params params;
-	int ret;
 #endif
 	const char *extra;
 #if defined(CONFIG_NET_IP) || defined(CONFIG_NET_L2_ETHERNET_MGMT)
@@ -226,11 +260,42 @@ static void iface_cb(struct net_if *iface, void *user_data)
 			   orig_iface);
 		}
 	}
+
+	if (IS_ENABLED(CONFIG_NET_VPN) &&
+	    net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL)) {
+		if (net_virtual_get_iface_capabilities(iface) & VIRTUAL_INTERFACE_VPN) {
+			struct virtual_interface_req_params vparams = { 0 };
+			char public_key[NET_VIRTUAL_MAX_PUBLIC_KEY_LEN * 2];
+			size_t olen;
+
+			ret = net_mgmt(NET_REQUEST_VIRTUAL_INTERFACE_GET_PUBLIC_KEY,
+				       iface, &vparams, sizeof(vparams));
+			if (ret < 0) {
+				PR_WARNING("Cannot get VPN public key (%d)\n", ret);
+			} else {
+				bool all_zeros = true;
+
+				for (int i = 0;
+				     all_zeros && i < NET_VIRTUAL_MAX_PUBLIC_KEY_LEN; i++) {
+					all_zeros = (vparams.public_key.data[i] == 0);
+				}
+
+				if (all_zeros) {
+					PR("Public key: <not set>\n");
+				} else {
+					(void)base64_encode(public_key, sizeof(public_key),
+							    &olen, vparams.public_key.data,
+							    vparams.public_key.len);
+
+					PR("Public key: %s\n", public_key);
+				}
+			}
+		}
+	}
 #endif /* CONFIG_NET_L2_VIRTUAL */
 
 	net_if_lock(iface);
-	if (net_if_get_link_addr(iface) &&
-	    net_if_get_link_addr(iface)->addr) {
+	if (net_if_get_link_addr(iface)->len > 0) {
 		PR("Link addr : %s\n",
 		   net_sprint_ll_addr(net_if_get_link_addr(iface)->addr,
 				      net_if_get_link_addr(iface)->len));
@@ -242,6 +307,25 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	PR("Device    : %s (%p)\n",
 	   net_if_get_device(iface) ? net_if_get_device(iface)->name : "<?>",
 	   net_if_get_device(iface));
+
+	PR("Status    : oper=%s, admin=%s, carrier=%s\n",
+	   net_if_oper_state2str(net_if_oper_state(iface)),
+	   net_if_is_admin_up(iface) ? "UP" : "DOWN",
+	   net_if_is_carrier_ok(iface) ? "ON" : "OFF");
+
+#if defined(CONFIG_NET_IF_LOG_LEVEL_DBG)
+	/* Print low level details only if debug is enabled */
+	if (IS_ENABLED(CONFIG_NET_IPV4) && net_if_flag_is_set(iface, NET_IF_IPV4)) {
+		PR("IPv4 TTL             : %d\n", net_if_ipv4_get_ttl(iface));
+		PR("IPv4 mcast TTL       : %d\n", net_if_ipv4_get_mcast_ttl(iface));
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && net_if_flag_is_set(iface, NET_IF_IPV6)) {
+		PR("IPv6 hop limit       : %d\n", net_if_ipv6_get_hop_limit(iface));
+		PR("IPv6 mcast hop limit : %d\n",
+		   net_if_ipv6_get_mcast_hop_limit(iface));
+	}
+#endif /* CONFIG_NET_IF_LOG_LEVEL_DBG */
 
 #if defined(CONFIG_NET_L2_ETHERNET_MGMT)
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
@@ -300,6 +384,16 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
 		PR("Ethernet capabilities supported:\n");
 		print_supported_ethernet_capabilities(sh, iface);
+
+#ifdef CONFIG_ETH_PHY_DRIVER
+		const struct device *phy_dev = net_eth_get_phy(iface);
+
+		PR("Ethernet PHY device: %s (%p)\n", (phy_dev != NULL) ? phy_dev->name : "<none>",
+		   phy_dev);
+		if (phy_dev != NULL) {
+			print_phy_link_state(sh, phy_dev);
+		}
+#endif /* CONFIG_ETH_PHY_DRIVER */
 	}
 #endif /* CONFIG_NET_L2_ETHERNET */
 
@@ -321,12 +415,13 @@ static void iface_cb(struct net_if *iface, void *user_data)
 			continue;
 		}
 
-		PR("\t%s %s %s%s%s\n",
+		PR("\t%s %s %s%s%s%s\n",
 		   net_sprint_ipv6_addr(&unicast->address.in6_addr),
 		   addrtype2str(unicast->addr_type),
 		   addrstate2str(unicast->addr_state),
 		   unicast->is_infinite ? " infinite" : "",
-		   unicast->is_mesh_local ? " meshlocal" : "");
+		   unicast->is_mesh_local ? " meshlocal" : "",
+		   unicast->is_temporary ? " temporary" : "");
 		count++;
 	}
 
@@ -354,6 +449,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		PR("\t<none>\n");
 	}
 
+#if defined(CONFIG_NET_NATIVE_IPV6)
 	count = 0;
 
 	PR("IPv6 prefixes (max %d):\n", NET_IF_MAX_IPV6_PREFIX);
@@ -382,8 +478,15 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		   net_sprint_ipv6_addr(&router->address.in6_addr),
 		   router->is_infinite ? " infinite" : "");
 	}
+#endif /* CONFIG_NET_NATIVE_IPV6 */
 
 skip_ipv6:
+
+#if defined(CONFIG_NET_IPV6_PE)
+	PR("IPv6 privacy extension   : %s (preferring %s addresses)\n",
+	   iface->pe_enabled ? "enabled" : "disabled",
+	   iface->pe_prefer_public ? "public" : "temporary");
+#endif
 
 	if (ipv6) {
 		PR("IPv6 hop limit           : %d\n",
@@ -395,6 +498,31 @@ skip_ipv6:
 		PR("IPv6 retransmit timer    : %d\n",
 		   ipv6->retrans_timer);
 	}
+
+#if defined(CONFIG_NET_DHCPV6)
+	if (net_if_flag_is_set(iface, NET_IF_IPV6)) {
+		if (iface->config.dhcpv6.state != NET_DHCPV6_DISABLED) {
+			PR("DHCPv6 renewal time (T1) : %llu ms\n",
+			   iface->config.dhcpv6.t1);
+			PR("DHCPv6 rebind time (T2)  : %llu ms\n",
+			   iface->config.dhcpv6.t2);
+			PR("DHCPv6 expire time       : %llu ms\n",
+			   iface->config.dhcpv6.expire);
+			if (iface->config.dhcpv6.params.request_addr) {
+				PR("DHCPv6 address           : %s\n",
+				   net_sprint_ipv6_addr(&iface->config.dhcpv6.addr));
+			}
+
+			if (iface->config.dhcpv6.params.request_prefix) {
+				PR("DHCPv6 prefix            : %s\n",
+				   net_sprint_ipv6_addr(&iface->config.dhcpv6.prefix));
+			}
+		}
+
+		PR("DHCPv6 state             : %s\n",
+		   net_dhcpv6_state_name(iface->config.dhcpv6.state));
+	}
+#endif /* CONFIG_NET_DHCPV6 */
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
@@ -473,26 +601,25 @@ skip_ipv4:
 
 #if defined(CONFIG_NET_DHCPV4)
 	if (net_if_flag_is_set(iface, NET_IF_IPV4)) {
-		PR("DHCPv4 lease time : %u\n",
-		   iface->config.dhcpv4.lease_time);
-		PR("DHCPv4 renew time : %u\n",
-		   iface->config.dhcpv4.renewal_time);
-		PR("DHCPv4 server     : %s\n",
-		   net_sprint_ipv4_addr(&iface->config.dhcpv4.server_id));
-		PR("DHCPv4 requested  : %s\n",
-		   net_sprint_ipv4_addr(&iface->config.dhcpv4.requested_ip));
+		if (iface->config.dhcpv4.state != NET_DHCPV4_DISABLED) {
+			PR("DHCPv4 lease time : %u\n",
+			   iface->config.dhcpv4.lease_time);
+			PR("DHCPv4 renew time : %u\n",
+			   iface->config.dhcpv4.renewal_time);
+			PR("DHCPv4 server     : %s\n",
+			   net_sprint_ipv4_addr(&iface->config.dhcpv4.server_id));
+			PR("DHCPv4 requested  : %s\n",
+			   net_sprint_ipv4_addr(&iface->config.dhcpv4.requested_ip));
+			PR("DHCPv4 state      : %s\n",
+			   net_dhcpv4_state_name(iface->config.dhcpv4.state));
+			PR("DHCPv4 attempts   : %d\n",
+			   iface->config.dhcpv4.attempts);
+		}
+
 		PR("DHCPv4 state      : %s\n",
 		   net_dhcpv4_state_name(iface->config.dhcpv4.state));
-		PR("DHCPv4 attempts   : %d\n",
-		   iface->config.dhcpv4.attempts);
 	}
 #endif /* CONFIG_NET_DHCPV4 */
-
-#else
-	ARG_UNUSED(iface);
-	ARG_UNUSED(user_data);
-
-#endif /* CONFIG_NET_NATIVE */
 }
 
 static int cmd_net_set_mac(const struct shell *sh, size_t argc, char *argv[])
@@ -529,10 +656,15 @@ static int cmd_net_set_mac(const struct shell *sh, size_t argc, char *argv[])
 		goto err;
 	}
 
-	if ((net_bytes_from_str(mac_addr, sizeof(params.mac_address), argv[2]) < 0) ||
-	    !net_eth_is_addr_valid(&params.mac_address)) {
-		PR_WARNING("Invalid MAC address: %s\n", argv[2]);
-		goto err;
+	if (!strncasecmp(argv[2], "random", 6)) {
+		sys_rand_get(mac_addr, NET_ETH_ADDR_LEN);
+		mac_addr[0] = (mac_addr[0] & UNICAST_MASK) | LOCAL_BIT;
+	} else {
+		if ((net_bytes_from_str(mac_addr, sizeof(params.mac_address), argv[2]) < 0) ||
+		    !net_eth_is_addr_valid(&params.mac_address)) {
+			PR_WARNING("Invalid MAC address: %s\n", argv[2]);
+			goto err;
+		}
 	}
 
 	ret = net_mgmt(NET_REQUEST_ETHERNET_SET_MAC_ADDRESS, iface, &params, sizeof(params));
@@ -634,8 +766,10 @@ static int cmd_net_iface(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 #if defined(CONFIG_NET_HOSTNAME_ENABLE)
-	PR("Hostname: %s\n\n", net_hostname_get());
+	PR("Hostname: %s\n", net_hostname_get());
 #endif
+	PR("Default interface: %d\n\n",
+	   net_if_get_by_iface(net_if_get_default()));
 
 	user_data.sh = sh;
 	user_data.user_data = iface;
@@ -644,6 +778,124 @@ static int cmd_net_iface(const struct shell *sh, size_t argc, char *argv[])
 
 	return 0;
 }
+
+static int cmd_net_default_iface(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = NULL;
+	int idx;
+
+	if (argc < 2) {
+		iface = net_if_get_default();
+		if (!iface) {
+			PR_WARNING("No default interface\n");
+			return -ENOEXEC;
+		}
+
+		idx = net_if_get_by_iface(iface);
+		PR("Default interface: %d\n", idx);
+	} else {
+		int new_idx;
+
+		idx = get_iface_idx(sh, argv[1]);
+		if (idx < 0) {
+			return -ENOEXEC;
+		}
+
+		net_if_set_default(net_if_get_by_index(idx));
+
+		new_idx = net_if_get_by_iface(net_if_get_default());
+		if (new_idx != idx) {
+			PR_WARNING("Failed to set default interface to %d\n", idx);
+			return -ENOEXEC;
+		}
+
+		PR("Default interface: %d\n", new_idx);
+	}
+
+	return 0;
+}
+
+#if defined(CONFIG_ETH_PHY_DRIVER)
+static int cmd_net_link_speed(const struct shell *sh, size_t argc, char *argv[])
+{
+	int idx = get_iface_idx(sh, argv[1]);
+	const struct device *phy_dev;
+	bool half_duplex = false;
+	uint16_t user_input_spd;
+	struct net_if *iface;
+	uint16_t speed = 0U;
+	uint16_t flags = 0U;
+	int ret;
+
+	if (argc < 3) {
+		PR_WARNING("Usage: net iface set_link <index> "
+			   "<Speed:10/100/1000/2500/5000> [Duplex]:h/f>\n");
+		return -ENOEXEC;
+	}
+
+	iface = net_if_get_by_index(idx);
+	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
+		PR_WARNING("Interface %d is not Ethernet type\n", idx);
+		return -EINVAL;
+	}
+
+	phy_dev = net_eth_get_phy(iface);
+	if (!phy_dev) {
+		PR_WARNING("No PHY device found for interface %d\n", idx);
+		return -ENOEXEC;
+	}
+
+	for (int k = 2; k < argc; k++) {
+		if ((k + 1 < argc) && (argv[k+1][0] == 'h')) {
+			half_duplex = true;
+		} else {
+			half_duplex = false;
+		}
+
+		user_input_spd = shell_strtoul(argv[k], 10, &ret);
+		switch (user_input_spd) {
+		case 0:
+			if (strcmp(argv[k], "no-autoneg") == 0) {
+				flags |= PHY_FLAG_AUTO_NEGOTIATION_DISABLED;
+				continue;
+			}
+			break;
+		case 10:
+			speed |= half_duplex ? LINK_HALF_10BASE : LINK_FULL_10BASE;
+			break;
+		case 100:
+			speed |= half_duplex ? LINK_HALF_100BASE : LINK_FULL_100BASE;
+			break;
+		case 1000:
+			speed |= half_duplex ? LINK_HALF_1000BASE :  LINK_FULL_1000BASE;
+			break;
+		case 2500:
+			if (half_duplex) {
+				PR_WARNING("2500BASE half-duplex not supported\n");
+				return -ENOTSUP;
+			}
+			speed |= LINK_FULL_2500BASE;
+			break;
+		case 5000:
+			if (half_duplex) {
+				PR_WARNING("5000BASE half-duplex not supported\n");
+				return -ENOTSUP;
+			}
+			speed |= LINK_FULL_5000BASE;
+			break;
+		default:
+			PR_WARNING("Unsupported speed %d\n", user_input_spd);
+			return -ENOTSUP;
+		}
+	}
+
+	if (speed != 0U) {
+		return phy_configure_link(phy_dev, speed, flags);
+	}
+	PR_WARNING("No speed specified\n");
+	return -ENOEXEC;
+}
+#endif /* CONFIG_ETH_PHY_DRIVER */
 
 #if defined(CONFIG_NET_SHELL_DYN_CMD_COMPLETION)
 
@@ -666,6 +918,16 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_iface,
 	SHELL_CMD(set_mac, IFACE_DYN_CMD,
 		  "'net iface set_mac <index> <MAC>' sets MAC address for the network interface.",
 		  cmd_net_set_mac),
+	SHELL_CMD(default, IFACE_DYN_CMD,
+		  "'net iface default [<index>]' displays or sets the default network interface.",
+		  cmd_net_default_iface),
+#if defined(CONFIG_ETH_PHY_DRIVER)
+	SHELL_CMD(set_link, IFACE_DYN_CMD,
+		  "'net iface set_link <index> <Speed 10/100/1000/2500/5000> "
+		  "<Duplex[optional]:h/f>'"
+		  " sets link speed for the network interface.",
+		  cmd_net_link_speed),
+#endif /* CONFIG_ETH_PHY_DRIVER */
 	SHELL_SUBCMD_SET_END
 );
 

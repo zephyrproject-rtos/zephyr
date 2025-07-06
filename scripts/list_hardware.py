@@ -4,21 +4,31 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
+import re
+import sys
 from dataclasses import dataclass
 from pathlib import Path, PurePath
+
 import pykwalify.core
-import sys
-from typing import List
 import yaml
+
+try:
+    from yaml import CSafeLoader as SafeLoader
+except ImportError:
+    from yaml import SafeLoader
 
 
 SOC_SCHEMA_PATH = str(Path(__file__).parent / 'schemas' / 'soc-schema.yml')
-with open(SOC_SCHEMA_PATH, 'r') as f:
-    soc_schema = yaml.safe_load(f.read())
+with open(SOC_SCHEMA_PATH) as f:
+    soc_schema = yaml.load(f.read(), Loader=SafeLoader)
+
+SOC_VALIDATOR = pykwalify.core.Core(schema_data=soc_schema, source_data={})
 
 ARCH_SCHEMA_PATH = str(Path(__file__).parent / 'schemas' / 'arch-schema.yml')
-with open(ARCH_SCHEMA_PATH, 'r') as f:
-    arch_schema = yaml.safe_load(f.read())
+with open(ARCH_SCHEMA_PATH) as f:
+    arch_schema = yaml.load(f.read(), Loader=SafeLoader)
+
+ARCH_VALIDATOR = pykwalify.core.Core(schema_data=arch_schema, source_data={})
 
 SOC_YML = 'soc.yml'
 ARCHS_YML_PATH = PurePath('arch/archs.yml')
@@ -29,24 +39,25 @@ class Systems:
         self._socs = []
         self._series = []
         self._families = []
+        self._extended_socs = []
 
         if soc_yaml is None:
             return
 
         try:
-            data = yaml.safe_load(soc_yaml)
-            pykwalify.core.Core(source_data=data,
-                                schema_data=soc_schema).validate()
+            data = yaml.load(soc_yaml, Loader=SafeLoader)
+            SOC_VALIDATOR.source = data
+            SOC_VALIDATOR.validate()
         except (yaml.YAMLError, pykwalify.errors.SchemaError) as e:
             sys.exit(f'ERROR: Malformed yaml {soc_yaml.as_posix()}', e)
 
         for f in data.get('family', []):
-            family = Family(f['name'], folder, [], [])
+            family = Family(f['name'], [folder], [], [])
             for s in f.get('series', []):
-                series = Series(s['name'], folder, f['name'], [])
+                series = Series(s['name'], [folder], f['name'], [])
                 socs = [(Soc(soc['name'],
                              [c['name'] for c in soc.get('cpuclusters', [])],
-                             folder, s['name'], f['name']))
+                             [folder], s['name'], f['name']))
                         for soc in s.get('socs', [])]
                 series.socs.extend(socs)
                 self._series.append(series)
@@ -55,33 +66,61 @@ class Systems:
                 family.socs.extend(socs)
             socs = [(Soc(soc['name'],
                          [c['name'] for c in soc.get('cpuclusters', [])],
-                         folder, None, f['name']))
+                         [folder], None, f['name']))
                     for soc in f.get('socs', [])]
             self._socs.extend(socs)
             self._families.append(family)
 
         for s in data.get('series', []):
-            series = Series(s['name'], folder, '', [])
+            series = Series(s['name'], [folder], '', [])
             socs = [(Soc(soc['name'],
                          [c['name'] for c in soc.get('cpuclusters', [])],
-                         folder, s['name'], ''))
+                         [folder], s['name'], ''))
                     for soc in s.get('socs', [])]
             series.socs.extend(socs)
             self._series.append(series)
             self._socs.extend(socs)
 
-        socs = [(Soc(soc['name'],
-                     [c['name'] for c in soc.get('cpuclusters', [])],
-                     folder, '', ''))
-                for soc in data.get('socs', [])]
-        self._socs.extend(socs)
+        for soc in data.get('socs', []):
+            mutual_exclusive = {'name', 'extend'}
+            if len(mutual_exclusive - soc.keys()) < 1:
+                sys.exit(f'ERROR: Malformed content in SoC file: {soc_yaml}\n'
+                         f'{mutual_exclusive} are mutual exclusive at this level.')
+            if soc.get('name') is not None:
+                self._socs.append(Soc(soc['name'], [c['name'] for c in soc.get('cpuclusters', [])],
+                                  [folder], '', ''))
+            elif soc.get('extend') is not None:
+                self._extended_socs.append(Soc(soc['extend'],
+                                           [c['name'] for c in soc.get('cpuclusters', [])],
+                                           [folder], '', ''))
+            else:
+                sys.exit(f'ERROR: Malformed "socs" section in SoC file: {soc_yaml}\n'
+                         f'Cannot find one of required keys {mutual_exclusive}.')
+
+        # Ensure that any runner configuration matches socs and cpuclusters declared in the same
+        # soc.yml file
+        if 'runners' in data and 'run_once' in data['runners']:
+            for grp in data['runners']['run_once']:
+                for item_data in data['runners']['run_once'][grp]:
+                    for group in item_data['groups']:
+                        for qualifiers in group['qualifiers']:
+                            soc_name = qualifiers.split('/')[0]
+                            found_match = False
+
+                            for soc in self._socs + self._extended_socs:
+                                if re.match(fr'^{soc_name}$', soc.name) is not None:
+                                    found_match = True
+                                    break
+
+                            if found_match is False:
+                                sys.exit(f'ERROR: SoC qualifier match unresolved: {qualifiers}')
 
     @staticmethod
     def from_file(socs_file):
         '''Load SoCs from a soc.yml file.
         '''
         try:
-            with open(socs_file, 'r') as f:
+            with open(socs_file) as f:
                 socs_yaml = f.read()
         except FileNotFoundError as e:
             sys.exit(f'ERROR: socs.yml file not found: {socs_file.as_posix()}', e)
@@ -97,7 +136,22 @@ class Systems:
     def extend(self, systems):
         self._families.extend(systems.get_families())
         self._series.extend(systems.get_series())
+
+        for es in self._extended_socs[:]:
+            for s in systems.get_socs():
+                if s.name == es.name:
+                    s.extend(es)
+                    self._extended_socs.remove(es)
+                    break
         self._socs.extend(systems.get_socs())
+
+        for es in systems.get_extended_socs():
+            for s in self._socs:
+                if s.name == es.name:
+                    s.extend(es)
+                    break
+            else:
+                self._extended_socs.append(es)
 
     def get_families(self):
         return self._families
@@ -107,6 +161,9 @@ class Systems:
 
     def get_socs(self):
         return self._socs
+
+    def get_extended_socs(self):
+        return self._extended_socs
 
     def get_soc(self, name):
         try:
@@ -119,26 +176,31 @@ class Systems:
 @dataclass
 class Soc:
     name: str
-    cpuclusters: List[str]
-    folder: str
+    cpuclusters: list[str]
+    folder: list[str]
     series: str = ''
     family: str = ''
+
+    def extend(self, soc):
+        if self.name == soc.name:
+            self.cpuclusters.extend(soc.cpuclusters)
+            self.folder.extend(soc.folder)
 
 
 @dataclass
 class Series:
     name: str
-    folder: str
+    folder: list[str]
     family: str
-    socs: List[Soc]
+    socs: list[Soc]
 
 
 @dataclass
 class Family:
     name: str
-    folder: str
-    series: List[Series]
-    socs: List[Soc]
+    folder: list[str]
+    series: list[Series]
+    socs: list[Soc]
 
 
 def unique_paths(paths):
@@ -152,14 +214,14 @@ def find_v2_archs(args):
         archs_yml = root / ARCHS_YML_PATH
 
         if Path(archs_yml).is_file():
-            with Path(archs_yml).open('r') as f:
-                archs = yaml.safe_load(f.read())
+            with Path(archs_yml).open('r', encoding='utf-8') as f:
+                archs = yaml.load(f.read(), Loader=SafeLoader)
 
             try:
-                pykwalify.core.Core(source_data=archs, schema_data=arch_schema).validate()
+                ARCH_VALIDATOR.source = archs
+                ARCH_VALIDATOR.validate()
             except pykwalify.errors.SchemaError as e:
-                sys.exit('ERROR: Malformed "build" section in file: {}\n{}'
-                         .format(archs_yml.as_posix(), e))
+                sys.exit(f'ERROR: Malformed "build" section in file: {archs_yml.as_posix()}\n{e}')
 
             if args.arch is not None:
                 archs = {'archs': list(filter(
@@ -253,7 +315,7 @@ def dump_v2_system(args, type, system):
         info = args.cmakeformat.format(
            TYPE='TYPE;' + type,
            NAME='NAME;' + system.name,
-           DIR='DIR;' + Path(system.folder).as_posix(),
+           DIR='DIR;' + ';'.join([Path(x).as_posix() for x in system.folder]),
            HWM='HWM;' + 'v2'
         )
     else:

@@ -57,8 +57,10 @@ static bool frontend_runtime_filtering(const void *source, uint32_t level)
 		return true;
 	}
 
-	/* If only frontend is used and log got here it means that it was accepted. */
-	if (IS_ENABLED(CONFIG_LOG_FRONTEND_ONLY)) {
+	/* If only frontend is used and log got here it means that it was accepted
+	 * unless userspace is enabled then runtime filtering is done here.
+	 */
+	if (!IS_ENABLED(CONFIG_USERSPACE) && IS_ENABLED(CONFIG_LOG_FRONTEND_ONLY)) {
 		return true;
 	}
 
@@ -335,9 +337,9 @@ static inline void z_vrfy_z_log_msg_static_create(const void *source,
 			      const struct log_msg_desc desc,
 			      uint8_t *package, const void *data)
 {
-	return z_impl_z_log_msg_static_create(source, desc, package, data);
+	z_impl_z_log_msg_static_create(source, desc, package, data);
 }
-#include <syscalls/z_log_msg_static_create_mrsh.c>
+#include <zephyr/syscalls/z_log_msg_static_create_mrsh.c>
 #endif
 
 void z_log_msg_runtime_vcreate(uint8_t domain_id, const void *source,
@@ -358,13 +360,22 @@ void z_log_msg_runtime_vcreate(uint8_t domain_id, const void *source,
 		plen = 0;
 	}
 
+	if (plen > Z_LOG_MSG_MAX_PACKAGE) {
+		LOG_WRN("Message dropped because it exceeds size limitation (%u)",
+			(uint32_t)Z_LOG_MSG_MAX_PACKAGE);
+		return;
+	}
+
 	size_t msg_wlen = Z_LOG_MSG_ALIGNED_WLEN(plen, dlen);
 	struct log_msg *msg;
 	uint8_t *pkg;
 	struct log_msg_desc desc =
 		Z_LOG_MSG_DESC_INITIALIZER(domain_id, level, plen, dlen);
 
-	if (IS_ENABLED(CONFIG_LOG_MODE_DEFERRED) && BACKENDS_IN_USE()) {
+	if (IS_ENABLED(CONFIG_USERSPACE) && k_is_user_context()) {
+		pkg = alloca(plen);
+		msg = NULL;
+	} else if (IS_ENABLED(CONFIG_LOG_MODE_DEFERRED) && BACKENDS_IN_USE()) {
 		msg = z_log_msg_alloc(msg_wlen);
 		if (IS_ENABLED(CONFIG_LOG_FRONTEND) && msg == NULL) {
 			pkg = alloca(plen);
@@ -381,14 +392,20 @@ void z_log_msg_runtime_vcreate(uint8_t domain_id, const void *source,
 		__ASSERT_NO_MSG(plen >= 0);
 	}
 
-	if (IS_ENABLED(CONFIG_LOG_FRONTEND) && frontend_runtime_filtering(source, desc.level)) {
-		log_frontend_msg(source, desc, pkg, data);
-	}
+	if (IS_ENABLED(CONFIG_USERSPACE) && k_is_user_context()) {
+		z_log_msg_static_create(source, desc, pkg, data);
+	} else {
+		if (IS_ENABLED(CONFIG_LOG_FRONTEND) &&
+		    frontend_runtime_filtering(source, desc.level)) {
+			log_frontend_msg(source, desc, pkg, data);
+		}
 
-	if (BACKENDS_IN_USE()) {
-		z_log_msg_finalize(msg, source, desc, data);
+		if (BACKENDS_IN_USE()) {
+			z_log_msg_finalize(msg, source, desc, data);
+		}
 	}
 }
+EXPORT_SYMBOL(z_log_msg_runtime_vcreate);
 
 int16_t log_msg_get_source_id(struct log_msg *msg)
 {
@@ -400,9 +417,7 @@ int16_t log_msg_get_source_id(struct log_msg *msg)
 	void *source = (void *)log_msg_get_source(msg);
 
 	if (source != NULL) {
-		return IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)
-					? log_dynamic_source_id(source)
-					: log_const_source_id(source);
+		return log_source_id(source);
 	}
 
 	return -1;

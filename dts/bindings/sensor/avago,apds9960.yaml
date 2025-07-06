@@ -10,7 +10,6 @@ include: [sensor-device.yaml, i2c-device.yaml]
 properties:
   int-gpios:
     type: phandle-array
-    required: true
     description: Interrupt pin.
 
       The interrupt pin of APDS9960 is open-drain, active low.

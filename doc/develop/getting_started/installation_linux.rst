@@ -219,7 +219,6 @@ The Zephyr SDK supports the following target architectures:
 * ARC (32-bit and 64-bit; ARCv1, ARCv2, ARCv3)
 * ARM (32-bit and 64-bit; ARMv6, ARMv7, ARMv8; A/R/M Profiles)
 * MIPS (32-bit and 64-bit)
-* Nios II
 * RISC-V (32-bit and 64-bit; RV32I, RV32E, RV64I)
 * x86 (32-bit and 64-bit)
 * Xtensa

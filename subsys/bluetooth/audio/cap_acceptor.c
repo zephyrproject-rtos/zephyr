@@ -4,13 +4,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/sys/check.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/audio/csip.h>
-#include "cap_internal.h"
-
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/uuid.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/sys/util_macro.h>
+
+#include "cap_internal.h"
 
 LOG_MODULE_REGISTER(bt_cap_acceptor, CONFIG_BT_CAP_ACCEPTOR_LOG_LEVEL);
 
@@ -84,4 +93,30 @@ bool bt_cap_acceptor_ccid_exist(const struct bt_conn *conn, uint8_t ccid)
 	/* TODO: check mcs */
 
 	return false;
+}
+
+bool bt_cap_acceptor_ccids_exist(const struct bt_conn *conn, const uint8_t ccids[],
+				 uint8_t ccid_cnt)
+{
+	for (uint8_t i = 0; i < ccid_cnt; i++) {
+		const uint8_t ccid = ccids[i];
+
+		if (!bt_cap_acceptor_ccid_exist(conn, ccid)) {
+			LOG_DBG("CCID %u is unknown", ccid);
+
+			/* TBD:
+			 * Should we reject the Metadata?
+			 *
+			 * Should unknown CCIDs trigger a
+			 * discovery procedure for TBS or MCS?
+			 *
+			 * Or should we just accept as is, and
+			 * then let the application decide?
+			 */
+			return false;
+		}
+	}
+
+	/* This will also return true if the ccid_cnt is 0 which is intended */
+	return true;
 }

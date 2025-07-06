@@ -5,7 +5,7 @@ Device Firmware Update (DFU)
 
 Bluetooth Mesh supports the distribution of firmware images across a mesh network. The Bluetooth
 mesh DFU subsystem implements the Bluetooth Mesh Device Firmware Update Model specification version
-1.0. The implementation is in experimental state.
+1.0.
 
 Bluetooth Mesh DFU implements a distribution mechanism for firmware images, and does not put any
 restrictions on the size, format or usage of the images. The primary design goal of the subsystem is
@@ -201,25 +201,26 @@ DFU. Depending on the availability of the Remote Provisioning Server model on th
 the device may either boot up unprovisioned after applying the new firmware or require to be
 re-provisioned. The complete list of available options is defined in :c:enum:`bt_mesh_dfu_effect`:
 
-:c:enum:`BT_MESH_DFU_EFFECT_NONE`
+:c:enumerator:`BT_MESH_DFU_EFFECT_NONE`
    The device stays provisioned after the new firmware is programmed. This effect is chosen if the
    composition data of the new firmware doesn't change.
-:c:enum:`BT_MESH_DFU_EFFECT_COMP_CHANGE_NO_RPR`
+:c:enumerator:`BT_MESH_DFU_EFFECT_COMP_CHANGE_NO_RPR`
    This effect is chosen when the composition data changes and the device doesn't support the remote
    provisioning. The new composition data takes place only after re-provisioning.
-:c:enum:`BT_MESH_DFU_EFFECT_COMP_CHANGE`
+:c:enumerator:`BT_MESH_DFU_EFFECT_COMP_CHANGE`
    This effect is chosen when the composition data changes and the device supports the remote
    provisioning. In this case, the device stays provisioned and the new composition data takes place
    after re-provisioning using the Remote Provisioning models.
-:c:enum:`BT_MESH_DFU_EFFECT_UNPROV`
-  This effect is chosen if the composition data in the new firmware changes, the device doesn't
+:c:enumerator:`BT_MESH_DFU_EFFECT_UNPROV`
+  This effect is chosen if the composition data in the new firmware changes, the device does not
   support the remote provisioning, and the new composition data takes effect after applying the
-  firmware.
+  firmware. The effect can also be chosen, if it is necessary to unprovision the device for
+  application-specific reasons.
 
 When the Target node receives the Firmware Update Firmware Metadata Check message, the Firmware
 Update Server model calls the :c:member:`bt_mesh_dfu_srv_cb.check` callback, the application can
 then process the metadata and provide the effect value. If the effect is
-:c:enum:`BT_MESH_DFU_EFFECT_COMP_CHANGE`, the application must call functions
+:c:enumerator:`BT_MESH_DFU_EFFECT_COMP_CHANGE`, the application must call functions
 :c:func:`bt_mesh_comp_change_prepare` and :c:func:`bt_mesh_models_metadata_change_prepare` to
 prepare the Composition Data Page and Models Metadata Page contents before applying the new
 firmware image. See :ref:`bluetooth_mesh_dfu_srv_comp_data_and_models_metadata` for more
@@ -371,13 +372,7 @@ API reference
 This section lists the types common to the Device Firmware Update mesh models.
 
 .. doxygengroup:: bt_mesh_dfd
-   :project: Zephyr
-   :members:
 
 .. doxygengroup:: bt_mesh_dfu
-   :project: Zephyr
-   :members:
 
 .. doxygengroup:: bt_mesh_dfu_metadata
-   :project: Zephyr
-   :members:

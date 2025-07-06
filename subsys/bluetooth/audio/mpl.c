@@ -6,24 +6,35 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdlib.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+#include <sys/types.h>
 
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/ccid.h>
+#include <zephyr/bluetooth/audio/mcs.h>
+#include <zephyr/bluetooth/audio/media_proxy.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/services/ots.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/time_units.h>
-
-#include <zephyr/bluetooth/services/ots.h>
-#include <zephyr/bluetooth/audio/media_proxy.h>
+#include <zephyr/sys/util_macro.h>
 
 #include "media_proxy_internal.h"
+#include "mcs_internal.h"
 #include "mpl_internal.h"
 
-#include <zephyr/logging/log.h>
-
 LOG_MODULE_REGISTER(bt_mpl, CONFIG_BT_MPL_LOG_LEVEL);
-
-#include "ccid_internal.h"
-#include "mcs_internal.h"
 
 #define TRACK_STATUS_INVALID 0x00
 #define TRACK_STATUS_VALID 0x01
@@ -269,6 +280,12 @@ enum mpl_objects {
 	MPL_OBJ_SEARCH_RESULTS,
 };
 
+enum mpl_obj_flag {
+	MPL_OBJ_FLAG_BUSY,
+
+	MPL_OBJ_FLAG_NUM_FLAGS, /* keep as last */
+};
+
 /* The active object */
 /* Only a single object is selected or being added (active) at a time. */
 /* And, except for the icon object, all objects can be created dynamically. */
@@ -276,8 +293,6 @@ enum mpl_objects {
 struct obj_t {
 	/* ID of the currently selected object*/
 	uint64_t selected_id;
-
-	bool busy;
 
 	/* Type of object being added, e.g. MPL_OBJ_ICON */
 	uint8_t add_type;
@@ -292,15 +307,16 @@ struct obj_t {
 		struct mpl_group *add_group;
 	};
 	struct net_buf_simple *content;
+
+	ATOMIC_DEFINE(flags, MPL_OBJ_FLAG_NUM_FLAGS);
 };
 
 static struct obj_t obj = {
 	.selected_id = 0,
 	.add_type = MPL_OBJ_NONE,
-	.busy = false,
 	.add_track = NULL,
 	.add_group = NULL,
-	.content = NET_BUF_SIMPLE(CONFIG_BT_MPL_MAX_OBJ_SIZE)
+	.content = NET_BUF_SIMPLE(CONFIG_BT_MPL_MAX_OBJ_SIZE),
 };
 
 /* Set up content buffer for the icon object */
@@ -395,7 +411,7 @@ static uint32_t setup_parent_group_object(struct mpl_group *group)
 	/* The implementation has a fixed structure, with one parent group, */
 	/* and one level of groups containing tracks only. */
 	/* The track groups have a pointer to the parent, but there is no */
-	/* poinbter in the other direction, so it is not possible to go from */
+	/* pointer in the other direction, so it is not possible to go from */
 	/* the parent group to a group of tracks. */
 
 	uint8_t type = MEDIA_PROXY_GROUP_OBJECT_GROUP_TYPE;
@@ -465,13 +481,6 @@ static int add_icon_object(struct mpl_mediaplayer *pl)
 	const struct bt_uuid *icon_type = BT_UUID_OTS_TYPE_MPL_ICON;
 	static char *icon_name = "Icon";
 
-	if (obj.busy) {
-		/* TODO: Can there be a collision between select and internal */
-		/* activities, like adding new objects? */
-		LOG_ERR("Object busy");
-		return 0;
-	}
-	obj.busy = true;
 	obj.add_type = MPL_OBJ_ICON;
 	obj.desc = &created_desc;
 
@@ -486,7 +495,6 @@ static int add_icon_object(struct mpl_mediaplayer *pl)
 	ret = bt_ots_obj_add(bt_mcs_get_ots(), &add_param);
 	if (ret < 0) {
 		LOG_WRN("Unable to add icon object, error %d", ret);
-		obj.busy = false;
 
 		return ret;
 	}
@@ -502,11 +510,6 @@ static int add_current_track_segments_object(struct mpl_mediaplayer *pl)
 	struct bt_ots_obj_created_desc created_desc = {};
 	const struct bt_uuid *segs_type = BT_UUID_OTS_TYPE_TRACK_SEGMENT;
 
-	if (obj.busy) {
-		LOG_ERR("Object busy");
-		return 0;
-	}
-	obj.busy = true;
 	obj.add_type = MPL_OBJ_TRACK_SEGMENTS;
 	obj.desc = &created_desc;
 
@@ -521,7 +524,6 @@ static int add_current_track_segments_object(struct mpl_mediaplayer *pl)
 	ret = bt_ots_obj_add(bt_mcs_get_ots(), &add_param);
 	if (ret < 0) {
 		LOG_WRN("Unable to add track segments object: %d", ret);
-		obj.busy = false;
 
 		return ret;
 	}
@@ -537,16 +539,10 @@ static int add_track_object(struct mpl_track *track)
 	const struct bt_uuid *track_type = BT_UUID_OTS_TYPE_TRACK;
 	int ret;
 
-	if (obj.busy) {
-		LOG_ERR("Object busy");
-		return 0;
-	}
 	if (!track) {
 		LOG_ERR("No track");
 		return -EINVAL;
 	}
-
-	obj.busy = true;
 
 	obj.add_type = MPL_OBJ_TRACK;
 	obj.add_track = track;
@@ -563,7 +559,6 @@ static int add_track_object(struct mpl_track *track)
 	ret = bt_ots_obj_add(bt_mcs_get_ots(), &add_param);
 	if (ret < 0) {
 		LOG_WRN("Unable to add track object: %d", ret);
-		obj.busy = false;
 
 		return ret;
 	}
@@ -579,11 +574,6 @@ static int add_parent_group_object(struct mpl_mediaplayer *pl)
 	struct bt_ots_obj_created_desc created_desc = {};
 	const struct bt_uuid *group_type = BT_UUID_OTS_TYPE_GROUP;
 
-	if (obj.busy) {
-		LOG_ERR("Object busy");
-		return 0;
-	}
-	obj.busy = true;
 	obj.add_type = MPL_OBJ_PARENT_GROUP;
 	obj.desc = &created_desc;
 
@@ -598,7 +588,6 @@ static int add_parent_group_object(struct mpl_mediaplayer *pl)
 	ret = bt_ots_obj_add(bt_mcs_get_ots(), &add_param);
 	if (ret < 0) {
 		LOG_WRN("Unable to add parent group object");
-		obj.busy = false;
 
 		return ret;
 	}
@@ -614,17 +603,10 @@ static int add_group_object(struct mpl_group *group)
 	const struct bt_uuid *group_type = BT_UUID_OTS_TYPE_GROUP;
 	int ret;
 
-	if (obj.busy) {
-		LOG_ERR("Object busy");
-		return 0;
-	}
-
 	if (!group) {
 		LOG_ERR("No group");
 		return -EINVAL;
 	}
-
-	obj.busy = true;
 
 	obj.add_type = MPL_OBJ_GROUP;
 	obj.add_group = group;
@@ -641,7 +623,6 @@ static int add_group_object(struct mpl_group *group)
 	ret = bt_ots_obj_add(bt_mcs_get_ots(), &add_param);
 	if (ret < 0) {
 		LOG_WRN("Unable to add group object: %d", ret);
-		obj.busy = false;
 
 		return ret;
 	}
@@ -719,13 +700,12 @@ static int on_obj_deleted(struct bt_ots *ots, struct bt_conn *conn,
 static void on_obj_selected(struct bt_ots *ots, struct bt_conn *conn,
 			    uint64_t id)
 {
-	if (obj.busy) {
+	if (atomic_test_and_set_bit(obj.flags, MPL_OBJ_FLAG_BUSY)) {
 		/* TODO: Can there be a collision between select and internal */
 		/* activities, like adding new objects? */
 		LOG_ERR("Object busy - select not performed");
 		return;
 	}
-	obj.busy = true;
 
 	LOG_DBG_OBJ_ID("Object Id selected: ", id);
 
@@ -754,18 +734,20 @@ static void on_obj_selected(struct bt_ots *ots, struct bt_conn *conn,
 		(void)setup_group_object(media_player.group);
 	} else {
 		LOG_ERR("Unknown Object ID");
-		obj.busy = false;
+		atomic_clear_bit(obj.flags, MPL_OBJ_FLAG_BUSY);
 		return;
 	}
 
 	obj.selected_id = id;
-	obj.busy = false;
+	atomic_clear_bit(obj.flags, MPL_OBJ_FLAG_BUSY);
 }
 
 static int on_obj_created(struct bt_ots *ots, struct bt_conn *conn, uint64_t id,
 			  const struct bt_ots_obj_add_param *add_param,
 			  struct bt_ots_obj_created_desc *created_desc)
 {
+	/* Objects are always created locally so we do not need to check for MPL_OBJ_FLAG_BUSY */
+
 	LOG_DBG_OBJ_ID("Object Id created: ", id);
 
 	*created_desc = *obj.desc;
@@ -820,24 +802,19 @@ static int on_obj_created(struct bt_ots *ots, struct bt_conn *conn, uint64_t id,
 		LOG_DBG("Unknown Object ID");
 	}
 
-	if (obj.add_type == MPL_OBJ_NONE) {
-		obj.busy = false;
-	}
 	return 0;
 }
-
 
 static ssize_t on_object_send(struct bt_ots *ots, struct bt_conn *conn,
 			      uint64_t id, void **data, size_t len,
 			      off_t offset)
 {
-	if (obj.busy) {
+	if (atomic_test_and_set_bit(obj.flags, MPL_OBJ_FLAG_BUSY)) {
 		/* TODO: Can there be a collision between select and internal */
 		/* activities, like adding new objects? */
 		LOG_ERR("Object busy");
-		return 0;
+		return -EBUSY;
 	}
-	obj.busy = true;
 
 	if (IS_ENABLED(CONFIG_BT_MPL_LOG_LEVEL_DBG)) {
 		char t[BT_OTS_OBJ_ID_STR_LEN];
@@ -847,20 +824,20 @@ static ssize_t on_object_send(struct bt_ots *ots, struct bt_conn *conn,
 
 	if (id != obj.selected_id) {
 		LOG_ERR("Read from unselected object");
-		obj.busy = false;
-		return 0;
+		atomic_clear_bit(obj.flags, MPL_OBJ_FLAG_BUSY);
+		return -EINVAL;
 	}
 
 	if (!data) {
 		LOG_DBG("Read complete");
-		obj.busy = false;
+		atomic_clear_bit(obj.flags, MPL_OBJ_FLAG_BUSY);
 		return 0;
 	}
 
 	if (offset >= obj.content->len) {
 		LOG_DBG("Offset too large");
-		obj.busy = false;
-		return 0;
+		atomic_clear_bit(obj.flags, MPL_OBJ_FLAG_BUSY);
+		return -EINVAL;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MPL_LOG_LEVEL_DBG)) {
@@ -870,7 +847,8 @@ static ssize_t on_object_send(struct bt_ots *ots, struct bt_conn *conn,
 	}
 
 	*data = &obj.content->data[offset];
-	obj.busy = false;
+	atomic_clear_bit(obj.flags, MPL_OBJ_FLAG_BUSY);
+
 	return MIN(len, obj.content->len - offset);
 }
 
@@ -2340,6 +2318,14 @@ int media_proxy_pl_init(void)
 		return -EALREADY;
 	}
 
+	/* Get a Content Control ID */
+	ret = bt_ccid_alloc_value();
+	if (ret < 0) {
+		LOG_DBG("Could not allocate CCID: %d", ret);
+		return ret;
+	}
+	media_player.content_ctrl_id = (uint8_t)ret;
+
 	/* Set up the media control service */
 	/* TODO: Fix initialization - who initializes what
 	 * https://github.com/zephyrproject-rtos/zephyr/issues/42965
@@ -2347,20 +2333,32 @@ int media_proxy_pl_init(void)
 	 */
 #ifdef CONFIG_BT_MCS
 #ifdef CONFIG_BT_MPL_OBJECTS
+	/* The test here is arguably needed as the objects cannot be accessed before bt_mcs_init is
+	 * called, but the set is to avoid the objects being accessed before properly initialized
+	 */
+	if (atomic_test_and_set_bit(obj.flags, MPL_OBJ_FLAG_BUSY)) {
+		LOG_ERR("Object busy");
+		return -EBUSY;
+	}
+
 	ret = bt_mcs_init(&ots_cbs);
+	if (ret < 0) {
+		LOG_ERR("Could not init MCS: %d", ret);
+		atomic_clear_bit(obj.flags, MPL_OBJ_FLAG_BUSY);
+
+		return ret;
+	}
 #else
 	ret = bt_mcs_init(NULL);
-#endif /* CONFIG_BT_MPL_OBJECTS */
 	if (ret < 0) {
 		LOG_ERR("Could not init MCS: %d", ret);
 		return ret;
 	}
+#endif  /* CONFIG_BT_MPL_OBJECTS */
+	/* TODO: If anything below fails we should unregister MCS */
 #else
 	LOG_WRN("MCS not configured");
 #endif /* CONFIG_BT_MCS */
-
-	/* Get a Content Control ID */
-	media_player.content_ctrl_id = bt_ccid_get_value();
 
 #ifdef CONFIG_BT_MPL_OBJECTS
 	/* Initialize the object content buffer */
@@ -2370,6 +2368,7 @@ int media_proxy_pl_init(void)
 	ret = add_icon_object(&media_player);
 	if (ret < 0) {
 		LOG_ERR("Unable to add icon object, error %d", ret);
+		atomic_clear_bit(obj.flags, MPL_OBJ_FLAG_BUSY);
 		return ret;
 	}
 
@@ -2377,6 +2376,7 @@ int media_proxy_pl_init(void)
 	ret = add_group_and_track_objects(&media_player);
 	if (ret < 0) {
 		LOG_ERR("Error adding tracks and groups to OTS, error %d", ret);
+		atomic_clear_bit(obj.flags, MPL_OBJ_FLAG_BUSY);
 		return ret;
 	}
 
@@ -2386,8 +2386,11 @@ int media_proxy_pl_init(void)
 	ret = add_current_track_segments_object(&media_player);
 	if (ret < 0) {
 		LOG_ERR("Error adding Track Segments Object to OTS, error %d", ret);
+		atomic_clear_bit(obj.flags, MPL_OBJ_FLAG_BUSY);
 		return ret;
 	}
+
+	atomic_clear_bit(obj.flags, MPL_OBJ_FLAG_BUSY);
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
 	/* Set up the calls structure */
@@ -2523,8 +2526,7 @@ void mpl_debug_dump_state(void)
 }
 #endif /* CONFIG_BT_MPL_LOG_LEVEL_DBG */
 
-#if defined(CONFIG_BT_MPL_LOG_LEVEL_DBG) &&                                                        \
-	defined(CONFIG_BT_TESTING) /* Special commands for testing */
+#if defined(CONFIG_BT_TESTING) /* Special commands for testing */
 
 #if CONFIG_BT_MPL_OBJECTS
 void mpl_test_unset_parent_group(void)
@@ -2623,4 +2625,4 @@ void mpl_test_search_results_changed_cb(void)
 }
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
-#endif /* CONFIG_BT_MPL_LOG_LEVEL_DBG && CONFIG_BT_TESTING */
+#endif /* CONFIG_BT_TESTING */

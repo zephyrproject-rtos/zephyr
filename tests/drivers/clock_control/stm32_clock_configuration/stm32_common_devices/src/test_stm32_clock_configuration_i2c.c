@@ -11,7 +11,7 @@
 #include <zephyr/logging/log.h>
 
 #if !defined(CONFIG_SOC_SERIES_STM32F4X)
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i2c1))
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v1)
 #define DT_DRV_COMPAT st_stm32_i2c_v1
@@ -42,12 +42,12 @@ static void i2c_set_clock(const struct stm32_pclken *clk)
 
 	if (clk->bus == STM32_SRC_HSI) {
 		zassert_equal(dev_actual_clk_src, RCC_I2C1CLKSOURCE_HSI,
-				"Expected I2C src: HSI (0x%lx). Actual I2C src: 0x%x",
-				RCC_I2C1CLKSOURCE_HSI, dev_actual_clk_src);
+				"Expected I2C src: HSI (0x%x). Actual I2C src: 0x%x",
+				(uint32_t)RCC_I2C1CLKSOURCE_HSI, dev_actual_clk_src);
 	} else if (clk->bus == STM32_SRC_SYSCLK) {
 		zassert_equal(dev_actual_clk_src, RCC_I2C1CLKSOURCE_SYSCLK,
-				"Expected I2C src: SYSCLK (0x%lx). Actual I2C src: 0x%x",
-				RCC_I2C1CLKSOURCE_SYSCLK, dev_actual_clk_src);
+				"Expected I2C src: SYSCLK (0x%x). Actual I2C src: 0x%x",
+				(uint32_t)RCC_I2C1CLKSOURCE_SYSCLK, dev_actual_clk_src);
 	} else {
 		zassert_true(0, "Unexpected domain clk (0x%x)", dev_actual_clk_src);
 	}

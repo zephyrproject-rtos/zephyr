@@ -8,25 +8,37 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/types.h>
-#include <zephyr/bluetooth/conn.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
 
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/csip.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/shell/shell_string_conv.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/types.h>
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
 #include <zephyr/shell/shell.h>
-#include <stdlib.h>
-#include <zephyr/bluetooth/gatt.h>
-#include <zephyr/bluetooth/bluetooth.h>
 
-#include "shell/bt.h"
-
-#include <zephyr/bluetooth/audio/csip.h>
+#include "host/shell/bt.h"
+#include "common/bt_shell_private.h"
 
 static uint8_t members_found;
 static struct k_work_delayable discover_members_timer;
 static struct bt_conn *conns[CONFIG_BT_MAX_CONN];
 static const struct bt_csip_set_coordinator_set_member *set_members[CONFIG_BT_MAX_CONN];
-struct bt_csip_set_coordinator_csis_inst *cur_inst;
+static struct bt_csip_set_coordinator_csis_inst *cur_inst;
 static bt_addr_le_t addr_found[CONFIG_BT_MAX_CONN];
 static const struct bt_csip_set_coordinator_set_member *locked_members[CONFIG_BT_MAX_CONN];
 
@@ -48,19 +60,18 @@ static void connected_cb(struct bt_conn *conn, uint8_t err)
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (err != 0) {
-		shell_error(ctx_shell, "Failed to connect to %s (%u)",
-			    addr, err);
+		bt_shell_error("Failed to connect to %s (%u)", addr, err);
 		return;
 	}
 
 	conn_index = bt_conn_index(conn);
 
-	shell_print(ctx_shell, "[%u]: Connected to %s", conn_index, addr);
+	bt_shell_print("[%u]: Connected to %s", conn_index, addr);
 
 	/* TODO: Handle RPAs */
 
 	conns[conn_index] = bt_conn_ref(conn);
-	shell_print(ctx_shell, "Member[%u] connected", conn_index);
+	bt_shell_print("Member[%u] connected", conn_index);
 }
 
 static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
@@ -83,25 +94,24 @@ static void csip_discover_cb(struct bt_conn *conn,
 	uint8_t conn_index;
 
 	if (err != 0) {
-		shell_error(ctx_shell, "discover failed (%d)", err);
+		bt_shell_error("discover failed (%d)", err);
 		return;
 	}
 
 	if (set_count == 0) {
-		shell_warn(ctx_shell, "Device has no sets");
+		bt_shell_warn("Device has no sets");
 		return;
 	}
 
 	conn_index = bt_conn_index(conn);
 
-	shell_print(ctx_shell, "Found %zu sets on member[%u]",
-		    set_count, conn_index);
+	bt_shell_print("Found %zu sets on member[%u]", set_count, conn_index);
 
 	for (size_t i = 0U; i < set_count; i++) {
-		shell_print(ctx_shell, "CSIS[%zu]: %p", i, &member->insts[i]);
-		shell_print(ctx_shell, "\tRank: %u", member->insts[i].info.rank);
-		shell_print(ctx_shell, "\tSet Size: %u", member->insts[i].info.set_size);
-		shell_print(ctx_shell, "\tLockable: %u", member->insts[i].info.lockable);
+		bt_shell_print("CSIS[%zu]: %p", i, &member->insts[i]);
+		bt_shell_print("\tRank: %u", member->insts[i].info.rank);
+		bt_shell_print("\tSet Size: %u", member->insts[i].info.set_size);
+		bt_shell_print("\tLockable: %u", member->insts[i].info.lockable);
 	}
 
 	set_members[conn_index] = member;
@@ -110,21 +120,21 @@ static void csip_discover_cb(struct bt_conn *conn,
 static void csip_set_coordinator_lock_set_cb(int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "Lock sets failed (%d)", err);
+		bt_shell_error("Lock sets failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Set locked");
+	bt_shell_print("Set locked");
 }
 
 static void csip_set_coordinator_release_set_cb(int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "Lock sets failed (%d)", err);
+		bt_shell_error("Lock sets failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Set released");
+	bt_shell_print("Set released");
 }
 
 static void csip_set_coordinator_ordered_access_cb(
@@ -141,11 +151,33 @@ static void csip_set_coordinator_ordered_access_cb(
 	}
 }
 
+static void csip_set_coordinator_lock_changed_cb(struct bt_csip_set_coordinator_csis_inst *inst,
+						 bool locked)
+{
+	bt_shell_print("Inst %p %s\n", inst, locked ? "locked" : "released");
+}
+
+static void csip_set_coordinator_sirk_changed_cb(struct bt_csip_set_coordinator_csis_inst *inst)
+{
+	bt_shell_print("Inst %p SIRK changed\n", inst);
+	bt_shell_hexdump(inst->info.sirk, BT_CSIP_SIRK_SIZE);
+}
+
+static void
+csip_set_coordinator_size_changed_cb(struct bt_conn *conn,
+				     const struct bt_csip_set_coordinator_csis_inst *inst)
+{
+	bt_shell_print("Inst %p size changed: %u\n", inst, inst->info.set_size);
+}
+
 static struct bt_csip_set_coordinator_cb cbs = {
 	.lock_set = csip_set_coordinator_lock_set_cb,
 	.release_set = csip_set_coordinator_release_set_cb,
 	.discover = csip_discover_cb,
-	.ordered_access = csip_set_coordinator_ordered_access_cb
+	.ordered_access = csip_set_coordinator_ordered_access_cb,
+	.lock_changed = csip_set_coordinator_lock_changed_cb,
+	.sirk_changed = csip_set_coordinator_sirk_changed_cb,
+	.size_changed = csip_set_coordinator_size_changed_cb,
 };
 
 static bool csip_set_coordinator_oap_cb(const struct bt_csip_set_coordinator_set_info *set_info,
@@ -181,24 +213,23 @@ static struct bt_le_scan_cb csip_set_coordinator_scan_callbacks = {
 
 static bool csip_found(struct bt_data *data, void *user_data)
 {
-	if (bt_csip_set_coordinator_is_set_member(cur_inst->info.set_sirk, data)) {
+	if (bt_csip_set_coordinator_is_set_member(cur_inst->info.sirk, data)) {
 		bt_addr_le_t *addr = user_data;
 		char addr_str[BT_ADDR_LE_STR_LEN];
 
 		bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-		shell_print(ctx_shell, "Found CSIP advertiser with address %s",
-			    addr_str);
+		bt_shell_print("Found CSIP advertiser with address %s", addr_str);
 
 		if (is_discovered(addr)) {
-			shell_print(ctx_shell, "Set member already found");
+			bt_shell_print("Set member already found");
 			/* Stop parsing */
 			return false;
 		}
 
 		bt_addr_le_copy(&addr_found[members_found++], addr);
 
-		shell_print(ctx_shell, "Found member (%u / %u)",
-			    members_found, cur_inst->info.set_size);
+		bt_shell_print("Found member (%u / %u)",
+			       members_found, cur_inst->info.set_size);
 
 		if (members_found == cur_inst->info.set_size) {
 			int err;
@@ -209,9 +240,7 @@ static bool csip_found(struct bt_data *data, void *user_data)
 
 			err = bt_le_scan_stop();
 			if (err != 0) {
-				shell_error(ctx_shell,
-					    "Failed to stop scan: %d",
-					    err);
+				bt_shell_error("Failed to stop scan: %d", err);
 			}
 		}
 
@@ -226,14 +255,14 @@ static void discover_members_timer_handler(struct k_work *work)
 {
 	int err;
 
-	shell_error(ctx_shell, "Could not find all members (%u / %u)",
-		    members_found, cur_inst->info.set_size);
+	bt_shell_error("Could not find all members (%u / %u)",
+		       members_found, cur_inst->info.set_size);
 
 	bt_le_scan_cb_unregister(&csip_set_coordinator_scan_callbacks);
 
 	err = bt_le_scan_stop();
 	if (err != 0) {
-		shell_error(ctx_shell, "Failed to stop scan: %d", err);
+		bt_shell_error("Failed to stop scan: %d", err);
 	}
 }
 
@@ -268,10 +297,6 @@ static int cmd_csip_set_coordinator_discover(const struct shell *sh,
 
 			return -ENOEXEC;
 		}
-	}
-
-	if (ctx_shell == NULL) {
-		ctx_shell = sh;
 	}
 
 	conn = conns[member_index];
@@ -325,8 +350,7 @@ static int cmd_csip_set_coordinator_discover_members(const struct shell *sh,
 			const struct bt_csip_set_coordinator_csis_inst *inst =
 				&set_members[i]->insts[j];
 
-			if (memcmp(inst->info.set_sirk, cur_inst->info.set_sirk,
-				   BT_CSIP_SET_SIRK_SIZE) == 0) {
+			if (memcmp(inst->info.sirk, cur_inst->info.sirk, BT_CSIP_SIRK_SIZE) == 0) {
 				bt_addr_le_copy(&addr_found[members_found++],
 						bt_conn_get_dst(conns[i]));
 				break;
@@ -369,6 +393,7 @@ static int cmd_csip_set_coordinator_discover_members(const struct shell *sh,
 	return err;
 }
 
+#if defined(CONFIG_BT_BONDABLE)
 static int cmd_csip_set_coordinator_lock_set(const struct shell *sh,
 					     size_t argc, char *argv[])
 {
@@ -414,45 +439,6 @@ static int cmd_csip_set_coordinator_release_set(const struct shell *sh,
 
 	err = bt_csip_set_coordinator_release(locked_members, conn_count,
 					      &cur_inst->info);
-	if (err != 0) {
-		shell_error(sh, "Fail: %d", err);
-	}
-
-	return err;
-}
-
-static int cmd_csip_set_coordinator_ordered_access(const struct shell *sh,
-						   size_t argc, char *argv[])
-{
-	int err;
-	unsigned long member_count = (unsigned long)ARRAY_SIZE(set_members);
-	const struct bt_csip_set_coordinator_set_member *members[ARRAY_SIZE(set_members)];
-
-	if (argc > 1) {
-		member_count = shell_strtoul(argv[1], 0, &err);
-		if (err != 0) {
-			shell_error(sh, "Could not parse member_count: %d",
-				    err);
-
-			return -ENOEXEC;
-		}
-
-		if (member_count > ARRAY_SIZE(members)) {
-			shell_error(sh, "Invalid member_count: %lu",
-				    member_count);
-
-			return -ENOEXEC;
-		}
-	}
-
-	for (size_t i = 0; i < (size_t)member_count; i++) {
-		members[i] = set_members[i];
-	}
-
-	err = bt_csip_set_coordinator_ordered_access(members,
-						     ARRAY_SIZE(members),
-						     &cur_inst->info,
-						     csip_set_coordinator_oap_cb);
 	if (err != 0) {
 		shell_error(sh, "Fail: %d", err);
 	}
@@ -537,6 +523,46 @@ static int cmd_csip_set_coordinator_release(const struct shell *sh, size_t argc,
 
 	return err;
 }
+#endif /* CONFIG_BT_BONDABLE */
+
+static int cmd_csip_set_coordinator_ordered_access(const struct shell *sh,
+						   size_t argc, char *argv[])
+{
+	int err;
+	unsigned long member_count = (unsigned long)ARRAY_SIZE(set_members);
+	const struct bt_csip_set_coordinator_set_member *members[ARRAY_SIZE(set_members)];
+
+	if (argc > 1) {
+		member_count = shell_strtoul(argv[1], 0, &err);
+		if (err != 0) {
+			shell_error(sh, "Could not parse member_count: %d",
+				    err);
+
+			return -ENOEXEC;
+		}
+
+		if (member_count > ARRAY_SIZE(members)) {
+			shell_error(sh, "Invalid member_count: %lu",
+				    member_count);
+
+			return -ENOEXEC;
+		}
+	}
+
+	for (size_t i = 0; i < (size_t)member_count; i++) {
+		members[i] = set_members[i];
+	}
+
+	err = bt_csip_set_coordinator_ordered_access(members,
+						     ARRAY_SIZE(members),
+						     &cur_inst->info,
+						     csip_set_coordinator_oap_cb);
+	if (err != 0) {
+		shell_error(sh, "Fail: %d", err);
+	}
+
+	return err;
+}
 
 static int cmd_csip_set_coordinator(const struct shell *sh, size_t argc,
 				    char **argv)
@@ -558,6 +584,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(csip_set_coordinator_cmds,
 	SHELL_CMD_ARG(discover_members, NULL,
 		      "Scan for set members <set_pointer>",
 		      cmd_csip_set_coordinator_discover_members, 2, 0),
+#if defined(CONFIG_BT_BONDABLE)
 	SHELL_CMD_ARG(lock_set, NULL,
 		      "Lock set",
 		      cmd_csip_set_coordinator_lock_set, 1, 0),
@@ -570,6 +597,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(csip_set_coordinator_cmds,
 	SHELL_CMD_ARG(release, NULL,
 		      "Release specific member [member_index]",
 		      cmd_csip_set_coordinator_release, 1, 1),
+#endif /* CONFIG_BT_BONDABLE */
 	SHELL_CMD_ARG(ordered_access, NULL,
 		      "Perform dummy ordered access procedure [member_count]",
 		      cmd_csip_set_coordinator_ordered_access, 1, 1),

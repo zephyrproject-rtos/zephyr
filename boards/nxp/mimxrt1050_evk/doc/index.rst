@@ -1,7 +1,4 @@
-.. _mimxrt1050_evk:
-
-NXP MIMXRT1050-EVK
-##################
+.. zephyr:board:: mimxrt1050_evk
 
 Overview
 ********
@@ -16,13 +13,6 @@ interfaces for connecting peripherals, such as WLAN, Bluetooth™, GPS, displays
 and camera sensors. As with other i.MX processors, i.MX RT1050 also has rich
 audio and video features, including LCD display, basic 2D graphics, camera
 interface, SPDIF, and I2S audio interface.
-
-The following document refers to the discontinued MIMXRT1050-EVK board. For the
-MIMXRT1050-EVKB board, refer to `Board Revisions`_ section.
-
-.. image:: mimxrt1050_evk.jpg
-   :align: center
-   :alt: MIMXRT1050-EVK
 
 Hardware
 ********
@@ -97,7 +87,7 @@ This platform has the following external memories:
 |                    |            | data block, which sets up SEMC at   |
 |                    |            | boot time                           |
 +--------------------+------------+-------------------------------------+
-| S26KS512SDPBHI020  | FLEXSPI    | Enabled via flash configurationn    |
+| S26KS512SDPBHI020  | FLEXSPI    | Enabled via flash configuration     |
 |                    |            | block, which sets up FLEXSPI at     |
 |                    |            | boot time.                          |
 +--------------------+------------+-------------------------------------+
@@ -105,50 +95,15 @@ This platform has the following external memories:
 Supported Features
 ==================
 
-The mimxrt1050_evk board configuration supports the hardware features listed
-below.  For additional features not yet supported, please also refer to the
-:ref:`mimxrt1064_evk` , which is the superset board in NXP's i.MX RT10xx family.
-NXP prioritizes enabling the superset board with NXP's Full Platform Support for
-Zephyr.  Therefore, the mimxrt1064_evk board may have additional features
-already supported, which can also be re-used on this mimxrt1050_evk board:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| DISPLAY   | on-chip    | display                             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SDHC      | on-chip    | disk access                         |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| ENET      | on-chip    | ethernet                            |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | USB device                          |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| GPT       | on-chip    | gpt                                 |
-+-----------+------------+-------------------------------------+
-| TRNG      | on-chip    | entropy                             |
-+-----------+------------+-------------------------------------+
-| FLEXSPI   | on-chip    | flash programming                   |
-+-----------+------------+-------------------------------------+
+.. note::
 
-The default configuration can be found in
-:zephyr_file:`boards/nxp/mimxrt1050_evk/mimxrt1050_evk_defconfig`
-
-Other hardware features are not currently supported by the port.
+   For additional features not yet supported, please also refer to the
+   :zephyr:board:`mimxrt1064_evk` , which is the superset board in NXP's i.MX RT10xx family.
+   NXP prioritizes enabling the superset board with NXP's Full Platform Support for
+   Zephyr.  Therefore, the mimxrt1064_evk board may have additional features
+   already supported, which can also be re-used on this mimxrt1050_evk board.
 
 Connections and IOs
 ===================
@@ -306,60 +261,59 @@ The RT1050 SoC has two USB OTG (USBOTG) controllers that supports both
 device and host functions through its micro USB connectors.
 Only USB device function is supported in Zephyr at the moment.
 
+Board Targets
+*************
+
+This board has two variants that can be targeted,
+depending on which flash to set as ``zephyr,flash``:
+
+* ``mimxrt1050_evk/mimxrt1052/hyperflash`` is the default variant for the out of box
+  setup of the board using hyperflash.
+* ``mimxrt1050_evk/mimxrt1052/qspi`` is for a board that has been reworked to use the
+  qspi flash instead of hyperflash.
+
 Programming and Debugging
 *************************
 
-Build and flash applications as usual (see :ref:`build_an_application` and
-:ref:`application_run` for more details).
+.. zephyr:board-supported-runners::
 
-Configuring a Debug Probe
-=========================
+.. note::
+   Newer revisions of this board use :ref:`lpc-link2-onboard-debug-probe`,
+   while older revisions use the :ref:`opensda-onboard-debug-probe`.
+   Schematic revisions A/A1 use the K20 OpenSDA probe, and B/B1 use the
+   LPC-Link2 LPC4322 probe.
 
-A debug probe is used for both flashing and debugging the board. This board is
-configured by default to use the :ref:`opensda-daplink-onboard-debug-probe`,
-however the :ref:`pyocd-debug-host-tools` do not yet support programming the
-external flashes on this board so you must reconfigure the board for one of the
-following debug probes instead.
+This board supports 3 debug host tools. Please install your preferred host
+tool, then follow the instructions in `Configuring a Debug Probe
+(Schematic A/A1)`_ or `Configuring a Debug Probe (Schematic B/B1)`_,
+depending on board schematic revision to configure the board appropriately.
 
-Using LinkServer
-----------------
+* :ref:`linkserver-debug-host-tools` (Default, NXP Supported)
+* :ref:`jlink-debug-host-tools` (NXP Supported)
+* :ref:`pyocd-debug-host-tools` (Not supported by NXP)
 
-Install the :ref:`linkserver-debug-host-tools` and make sure they are in your
-search path.  LinkServer works with the default CMSIS-DAP firmware included in
-the on-board debugger.
+Once the host tool and board are configured, build and flash applications
+as usual (see :ref:`build_an_application` and :ref:`application_run` for more
+details).
 
-Linkserver is the default runner. You may also se the ``-r linkserver`` option
-with West to use the LinkServer runner.
+Configuring a Debug Probe (Schematic A/A1)
+==========================================
 
-.. code-block:: console
+For the RT1050 Schematic Rev A, J32/J33 are the SWD isolation jumpers, SW4 is
+the reset button, and J21 is the 20 pin JTAG/SWD header.
 
-   west flash
-   west debug
+.. include:: ../../common/opensda-debug.rst
+   :start-after: nxp-opensda-probes
 
-JLink (on-board): :ref:`opensda-jlink-onboard-debug-probe`
-----------------------------------------------------------
 
-Install the :ref:`jlink-debug-host-tools` and make sure they are in your search
-path.
+Configuring a Debug Probe (Schematic B/B1)
+==========================================
 
-Follow the instructions in :ref:`opensda-jlink-onboard-debug-probe` to program
-the `OpenSDA J-Link MIMXRT1050-EVK-Hyperflash Firmware`_. Check that jumpers
-J32 and J33 are **on** (they are on by default when boards ship from the
-factory) to ensure SWD signals are connected to the OpenSDA microcontroller.
+For the RT1050 Schematic Rev B, J47/J48 are the SWD isolation jumpers, J42 is
+the DFU mode jumper, and J21 is the 20 pin JTAG/SWD header.
 
-Follow the instructions in `Enable QSPI flash support in SEGGER JLink`_
-in order to support your EVK if you have modified it to boot from QSPI NOR
-flash as specified by NXP AN12108.
-
-External JLink :ref:`jlink-external-debug-probe`
-------------------------------------------------
-
-Install the :ref:`jlink-debug-host-tools` and make sure they are in your search
-path.
-
-Attach a J-Link 20-pin connector to J21. Check that jumpers J32 and J33 are
-**off** (they are on by default when boards ship from the factory) to ensure
-SWD signals are disconnected from the OpenSDA microcontroller.
+.. include:: ../../common/rt1xxx-lpclink2-debug.rst
+   :start-after: rt1xxx-lpclink2-probes
 
 Configuring a Console
 =====================
@@ -382,11 +336,11 @@ etc.):
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: mimxrt1050_evk
+   :board: mimxrt1050_evk//hyperflash
    :goals: flash
 
 Open a serial terminal, reset the board (press the SW4 button), and you should
@@ -395,16 +349,16 @@ see the following message in the terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS v1.14.0-rc1 *****
-   Hello World! mimxrt1050_evk
+   Hello World! mimxrt1050_evk//hyperflash
 
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: mimxrt1050_evk
+   :board: mimxrt1050_evk//hyperflash
    :goals: debug
 
 Open a serial terminal, step through the application in your debugger, and you
@@ -413,7 +367,7 @@ should see the following message in the terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS v1.14.0-rc1 *****
-   Hello World! mimxrt1050_evk
+   Hello World! mimxrt1050_evk//hyperflash
 
 Troubleshooting
 ===============
@@ -459,6 +413,9 @@ MIMXRT1050-EVKB (rev A1) board, with these major hardware differences:
 For more details, please see the following `NXP i.MXRT1050 A0 to A1 Migration Guide`_.
 
 Current Zephyr build supports the new MIMXRT1050-EVKB
+
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
 
 .. _MIMXRT1050-EVK Website:
    https://www.nxp.com/products/microcontrollers-and-processors/arm-based-processors-and-mcus/i.mx-applications-processors/i.mx-rt-series/i.mx-rt1050-evaluation-kit:MIMXRT1050-EVK

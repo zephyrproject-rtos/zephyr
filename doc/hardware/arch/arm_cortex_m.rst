@@ -17,75 +17,81 @@ The table below summarizes the status of key OS features in the different
 Arm Cortex-M implementation variants.
 
 
-+---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+
-|                                 |                                   | **Processor families**                                                                      |
-+---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+
-| Architecture variant            |                                   | Arm v6-M                  | Arm v7-M                    | Arm v8-M             | Arm v8.1-M |
-+---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+
-|                                 |                                   | **M0/M1**       | **M0+** | **M3** |   **M4**  | **M7** | **M23** |   **M33**  |  **M55**   |
-+---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+
-| **OS Features**                 |                                   |                                                                                             |
-+---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+
-| Programmable fault              |                                   |                 |         |        |           |        |         |            |            |
-| IRQ priorities                  |                                   |        Y        |   N     |   Y    |    Y      |    Y   |    N    |     Y      |   Y        |
-+---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+
-| Single-thread kernel support    |                                   |        Y        |   Y     |   Y    |    Y      |    Y   |    Y    |     Y      |   Y        |
-+---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+
-| Thread local storage support    |                                   |        Y        |   Y     |   Y    |    Y      |    Y   |    Y    |     Y      |   Y        |
-+---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+
-| Interrupt handling              |                                   |                                                                                             |
-+---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+
-|                                 |   Regular interrupts              |        Y        |   Y     |   Y    |    Y      |    Y   |    Y    |     Y      |   Y        |
-+---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+
-|                                 |   Dynamic interrupts              |        Y        |   Y     |   Y    |    Y      |    Y   |    Y    |     Y      |   Y        |
-+---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+
-|                                 |   Direct  interrupts              |        Y        |   Y     |   Y    |    Y      |    Y   |    Y    |     Y      |   Y        |
-+---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+
-|                                 |   Zero Latency interrupts         |        N        |   N     |   Y    |    Y      |    Y   |    Y    |     Y      |   Y        |
-+---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+
-| CPU idling                      |                                   |        Y        |   Y     |   Y    |    Y      |    Y   |    Y    |     Y      |   Y        |
-+---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+
-| Native system timer (SysTick)   |                                   |        N [#f1]_ |   Y     |   Y    |    Y      |    Y   |    Y    |     Y      |   Y        |
-+---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+
-| Memory protection               |                                   |                                                                                             |
-+---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+
-|                                 |   User mode                       |        N        |   Y     |   Y    |    Y      |    Y   |    Y    |     Y      |   Y        |
-+---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+
-|                                 |   HW stack protection (MPU)       |        N        |   N     |   Y    |    Y      |    Y   |    Y    |     Y      |   Y        |
-+---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+
-|                                 | HW-assisted stack limit checking  |        N        |   N     |   N    |    N      |    N   |Y [#f2]_ |     Y      |   Y        |
-+---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+
-| HW-assisted null-pointer        |                                   |                 |         |        |           |        |         |            |            |
-| dereference detection           |                                   |        N        |   N     |   Y    |    Y      |    Y   |    Y    |     Y      |   Y        |
-+---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+
-| HW-assisted atomic operations   |                                   |        N        |   N     |   Y    |    Y      |    Y   |    N    |     Y      |   Y        |
-+---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+
-|Support for non-cacheable regions|                                   |        N        |   N     |   Y    |    Y      |    Y   |    N    |     Y      |   Y        |
-+---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+
-| Execute SRAM functions          |                                   |        N        |   N     |   Y    |    Y      |    Y   |    N    |     Y      |   Y        |
-+---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+
-| Floating Point Services         |                                   |        N        |   N     |   N    |    Y      |    Y   |    N    |     Y      |   Y        |
-+---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+
-| DSP ISA                         |                                   |        N        |   N     |   N    |    Y      |    Y   |    N    |     Y      |   Y        |
-+---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+
-| Trusted-Execution               |                                                                                                                                 |
-+---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+
-|                                 | Native TrustZone-M support        |        N        |   N     |   N    |    N      |    N   |    Y    |     Y      |   Y        |
-+---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+
-|                                 | TF-M integration                  |        N        |   N     |   N    |    N      |    N   |    N    |     Y      |   N        |
-+---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+
-| Code relocation                 |                                   |        Y        |   Y     |   Y    |    Y      |    Y   |    Y    |     Y      |   Y        |
-+---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+
-| SW-based vector table relaying  |                                   |        Y        |   Y     |   Y    |    Y      |    Y   |    Y    |     Y      |   Y        |
-+---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+
-| HW-assisted timing functions    |                                   |        N        |   N     |   Y    |    Y      |    Y   |    N    |     Y      |   Y        |
-+---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+
++---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+------------+
+|                                 |                                   | **Processor families**                                                                      |            |
++---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+------------+
+| Architecture variant            |                                   | Arm v6-M                  | Arm v7-M                    | Arm v8-M             | Arm v8.1-M              |
++---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+------------+
+|                                 |                                   | **M0/M1**       | **M0+** | **M3** |   **M4**  | **M7** | **M23** |   **M33**  |  **M55**   |  **M85**   |
++---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+------------+
+| **OS Features**                 |                                   |                                                                                             |            |
++---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+------------+
+| Programmable fault              |                                   |                 |         |        |           |        |         |            |            |            |
+| IRQ priorities                  |                                   |        Y        |   N     |   Y    |    Y      |    Y   |    N    |     Y      |   Y        |   Y        |
++---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+------------+
+| Single-thread kernel support    |                                   |        Y        |   Y     |   Y    |    Y      |    Y   |    Y    |     Y      |   Y        |   Y        |
++---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+------------+
+| Thread local storage support    |                                   |        Y        |   Y     |   Y    |    Y      |    Y   |    Y    |     Y      |   Y        |   Y        |
++---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+------------+
+| **Interrupt handling**          |                                   |                                                                                             |            |
++---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+------------+
+|                                 |   Regular interrupts              |        Y        |   Y     |   Y    |    Y      |    Y   |    Y    |     Y      |   Y        |   Y        |
++---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+------------+
+|                                 |   Dynamic interrupts              |        Y        |   Y     |   Y    |    Y      |    Y   |    Y    |     Y      |   Y        |   Y        |
++---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+------------+
+|                                 |   Direct  interrupts              |        Y        |   Y     |   Y    |    Y      |    Y   |    Y    |     Y      |   Y        |   Y        |
++---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+------------+
+|                                 |   Zero Latency interrupts         |        N        |   N     |   Y    |    Y      |    Y   |    Y    |     Y      |   Y        |   Y        |
++---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+------------+
+| CPU idling                      |                                   |        Y        |   Y     |   Y    |    Y      |    Y   |    Y    |     Y      |   Y        |   Y        |
++---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+------------+
+| Native system timer (SysTick)   |                                   |        N [#f1]_ |   Y     |   Y    |    Y      |    Y   |    Y    |     Y      |   Y        |   Y        |
++---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+------------+
+| **Memory protection**           |                                   |                                                                                             |            |
++---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+------------+
+|                                 |   User mode                       |        N        |   Y     |   Y    |    Y      |    Y   |    Y    |     Y      |   Y        |   Y        |
++---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+------------+
+|                                 |   HW stack protection (MPU)       |        N        |   N     |   Y    |    Y      |    Y   |    Y    |     Y      |   Y        |   Y        |
++---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+------------+
+|                                 | HW-assisted stack limit checking  |        N        |   N     |   N    |    N      |    N   |Y [#f2]_ |     Y      |   Y        |   Y        |
++---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+------------+
+|                                 |   Privileged Execute Never [#f3]_ |        N        |   N     |   N    |    N      |    N   |    N    |     N      |   Y        |   Y        |
++---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+------------+
+| HW-assisted Control             |                                   |                 |         |        |           |        |         |            |            |            |
+| Flow integrity                  |   PACBTI                          |        N        |   N     |   N    |    N      |    N   |    N    |     N      |   N        |   Y        |
++---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+------------+
+| HW-assisted null-pointer        |                                   |                 |         |        |           |        |         |            |            |            |
+| dereference detection           |                                   |        N        |   N     |   Y    |    Y      |    Y   |    Y    |     Y      |   Y        |   Y        |
++---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+------------+
+| HW-assisted atomic operations   |                                   |        N        |   N     |   Y    |    Y      |    Y   |    N    |     Y      |   Y        |   Y        |
++---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+------------+
+|Support for non-cacheable regions|                                   |        N        |   N     |   Y    |    Y      |    Y   |    N    |     Y      |   Y        |   Y        |
++---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+------------+
+| Execute SRAM functions          |                                   |        N        |   N     |   Y    |    Y      |    Y   |    N    |     Y      |   Y        |   Y        |
++---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+------------+
+| Floating Point Services         |                                   |        N        |   N     |   N    |    Y      |    Y   |    N    |     Y      |   Y        |   Y        |
++---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+------------+
+| DSP ISA                         |                                   |        N        |   N     |   N    |    Y      |    Y   |    N    |     Y      |   Y        |   Y        |
++---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+------------+
+| **Trusted-Execution**           |                                                                                                                                 |            |
++---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+------------+
+|                                 | Native TrustZone-M support        |        N        |   N     |   N    |    N      |    N   |    Y    |     Y      |   Y        |   Y        |
++---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+------------+
+|                                 | TF-M integration                  |        N        |   N     |   N    |    N      |    N   |    N    |     Y      |   N        |   N        |
++---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+------------+
+| Code relocation                 |                                   |        Y        |   Y     |   Y    |    Y      |    Y   |    Y    |     Y      |   Y        |   Y        |
++---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+------------+
+| SW-based vector table relaying  |                                   |        Y        |   Y     |   Y    |    Y      |    Y   |    Y    |     Y      |   Y        |   Y        |
++---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+------------+
+| HW-assisted timing functions    |                                   |        N        |   N     |   Y    |    Y      |    Y   |    N    |     Y      |   Y        |   Y        |
++---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+------------+
 
 Notes
 =====
 
 .. [#f1] SysTick is optional in Cortex-M1
 .. [#f2] Stack limit checking only in Secure builds in Cortex-M23
+.. [#f3] https://developer.arm.com/documentation/107655/100/RTOS-and-Secure-software-design-considerations/Secure-software-development-design-considerations/Security-and-privilege-combination/Using-PXN-bit?lang=en
 
 OS features
 ***********
@@ -169,7 +175,7 @@ PendSV exception return sequence restores the new thread's caller-saved register
 return address, as part of unstacking the exception stack frame.
 
 The implementation of the context-switch mechanism is present in
-:file:`arch/arm/core/swap_helper.S`.
+:file:`arch/arm/core/cortex_m/swap_helper.S`.
 
 Stack limit checking (Arm v8-M)
 -------------------------------
@@ -262,7 +268,7 @@ interrupt. If the ZLI feature is enabled in Mainline Cortex-M builds (see
 * Regular HW interrupts are assigned priority levels lower than SVC.
 
 The priority level configuration in Cortex-M is implemented in
-:file:`include/arch/arm/exception.h`.
+:file:`include/zephyr/arch/arm/cortex_m/exception.h`.
 
 Locking and unlocking IRQs
 --------------------------
@@ -337,7 +343,7 @@ CPU Idling
 
 The Cortex-M architecture port implements both k_cpu_idle()
 and k_cpu_atomic_idle(). The implementation is present in
-:file:`arch/arm/core/cpu_idle.S`.
+:file:`arch/arm/core/cortex_m/cpu_idle.c`.
 
 In both implementations, the processor
 will attempt to put the core to low power mode.
@@ -422,6 +428,44 @@ MPU stack guards
   detection mechanism; users may override this setting by manually enabling :kconfig:option:`CONFIG_MPU_STACK_GUARD`
   in these scenarios.
 
+Pointer Authentication and Branch Target Identification (PACBTI)
+================================================================
+
+The Armv8.1-M Pointer Authentication and Branch Target Identification (PACBTI) extension is an
+optional extension for the Armv8.1-M architecture profile and consists of the implementation of the
+following control-flow integrity approaches:
+* Return address signing and authentication (PAC-RET) as a mitigation for Return Oriented Programming (ROP) style attack.
+* BTI instruction placement (BTI) as a mitigation for Jump Oriented Programming (JOP) style attacks.
+
+When hardware support is present (e.g., Cortex-M85) and compiler support is available, PACBTI can be
+enabled at build time in Zephyr by selecting one of the below configs:
+
+- :kconfig:option:`CONFIG_ARMV8_1_M_PACBTI_STANDARD`
+- :kconfig:option:`CONFIG_ARMV8_1_M_PACBTI_PACRET`
+- :kconfig:option:`CONFIG_ARMV8_1_M_PACBTI_PACRET_LEAF`
+- :kconfig:option:`CONFIG_ARMV8_1_M_PACBTI_BTI`
+- :kconfig:option:`CONFIG_ARMV8_1_M_PACBTI_PACRET_BTI`
+- :kconfig:option:`CONFIG_ARMV8_1_M_PACBTI_PACRET_LEAF_BTI`
+- :kconfig:option:`CONFIG_ARMV8_1_M_PACBTI_NONE`
+
+The config options ensures that compiler flags enabling PACBTI instructions are added to the build,
+specifically:
+
+- ``-mbranch-protection=`` for GCC toolchains.
+
+**Limitations:**
+
+- Only builds targeting Armv8.1-M Mainline processors with PACBTI hardware support (e.g.,
+  Cortex-M85) are able to fully use this feature.
+- Zephyr’s integrated SDK currently includes GCC 12.2 which does not support PACBTI so external GCC
+  toolchains (14.2 or later) must be used for PACBTI support.
+  Refer [this](https://docs.zephyrproject.org/latest/develop/toolchains/index.html) on how to set up
+  toolchains.
+
+For more information about PACBTI, refer to the official [Arm documentation](https://developer.arm.com/documentation/109576/latest/).
+
+.. _arm_cortex_m_mpu_considerations:
+
 Memory map and MPU considerations
 =================================
 
@@ -444,7 +488,7 @@ are programmed during system boot.
   ``zephyr,memory-attr`` defining the MPU permissions for the memory region.
   See the next section for more details.
 
-The above MPU regions are defined in :file:`soc/arm/common/cortex_m/arm_mpu_regions.c`.
+The above MPU regions are defined in :file:`arch/arm/core/mpu/arm_mpu_regions.c`.
 Alternative MPU configurations are allowed by enabling :kconfig:option:`CONFIG_CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS`.
 When enabled, this option signifies that the Cortex-M SoC will define and
 configure its own fixed MPU regions in the SoC definition.
@@ -469,18 +513,19 @@ For example, to define a new non-cacheable memory region in devicetree:
    };
 
 This will automatically create a new MPU entry in with the correct name, base,
-size and attributes gathered directly from the devicetree.
+size and attributes gathered directly from the devicetree. See :ref:`cache_guide`
+and :ref:`mem_mgmt_api` for more details.
 
 Static MPU regions
 ------------------
 
 Additional *static* MPU regions may be programmed once during system boot. These regions
-are required to enable certain features
+are required to enable certain features. See :ref:`cache_guide` for more details.
 
 * a RX region to allow execution from SRAM, when :kconfig:option:`CONFIG_ARCH_HAS_RAMFUNC_SUPPORT` is
   enabled and users have defined functions to execute from SRAM.
 * a RX region for relocating text sections to SRAM, when :kconfig:option:`CONFIG_CODE_DATA_RELOCATION_SRAM` is enabled
-* a no-cache region to allow for a none-cacheable SRAM area, when :kconfig:option:`CONFIG_NOCACHE_MEMORY` is enabled
+* a ``nocache`` region to allow for a non-cacheable SRAM area, when :kconfig:option:`CONFIG_NOCACHE_MEMORY` is enabled
 * a possibly unprivileged RW region for GCOV code coverage accounting area, when :kconfig:option:`CONFIG_COVERAGE_GCOV` is enabled
 * a no-access region to implement null pointer dereference detection, when :kconfig:option:`CONFIG_NULL_POINTER_EXCEPTION_DETECTION_MPU` is enabled
 
@@ -618,7 +663,7 @@ Linking Cortex-M applications
 *****************************
 
 Most Cortex-M platforms make use of the default Cortex-M
-GCC linker script in :file:`include/arch/arm/cortex-m/scripts/linked.ld`,
+GCC linker script in :file:`include/zephyr/arch/arm/cortex_m/scripts/linker.ld`,
 although it is possible for platforms to use a custom linker
 script as well.
 
@@ -626,8 +671,16 @@ script as well.
 CMSIS
 *****
 
-Cortex-M CMSIS headers are hosted in a standalone module repository:
-`zephyrproject-rtos/cmsis <https://github.com/zephyrproject-rtos/cmsis>`_.
+Cortex-M CMSIS headers are provided through standalone module repositories:
+
+- **CMSIS 5**: `zephyrproject-rtos/cmsis <https://github.com/zephyrproject-rtos/cmsis>`_
+- **CMSIS 6**: `zephyrproject-rtos/CMSIS_6 <https://github.com/zephyrproject-rtos/CMSIS_6>`_
+
+Zephyr has begun transitioning to **CMSIS 6** as the default source for Cortex-M core headers.
+However, at present, Zephyr includes headers from **both** the CMSIS 6 and legacy CMSIS 5 modules.
+
+The legacy CMSIS 5 headers remain available primarily for compatibility with vendor HALs, while all
+new architecture-level development should use **CMSIS 6** headers whenever possible.
 
 :kconfig:option:`CONFIG_CPU_CORTEX_M` selects :kconfig:option:`CONFIG_HAS_CMSIS_CORE` to signify that
 CMSIS headers are available for all supported Cortex-M variants.
@@ -651,29 +704,29 @@ The table below lists the QEMU platform targets defined in Zephyr
 along with the corresponding Cortex-M implementation variant and the peripherals
 these targets emulate.
 
-+---------------------------------+--------------------+--------------------+----------------+-----------------+----------------+
-|                                 | **QEMU target**                                                                             |
-+---------------------------------+--------------------+--------------------+----------------+-----------------+----------------+
-| Architecture variant            | Arm v6-M           | Arm v7-M                            | Arm v8-M        | Arm v8.1-M     |
-+---------------------------------+--------------------+--------------------+----------------+-----------------+----------------+
-|                                 | **qemu_cortex_m0** | **qemu_cortex_m3** | **mps2_an385** | **mps2_an521**  | **mps3_an547** |
-+---------------------------------+--------------------+--------------------+----------------+-----------------+----------------+
-| **Emulated features**           |                                                                                             |
-+---------------------------------+--------------------+--------------------+----------------+-----------------+----------------+
-| NVIC                            | Y                  | Y                  | Y              | Y               | Y              |
-+---------------------------------+--------------------+--------------------+----------------+-----------------+----------------+
-| BASEPRI                         | N                  | Y                  | Y              | Y               | Y              |
-+---------------------------------+--------------------+--------------------+----------------+-----------------+----------------+
-| SysTick                         | N                  | Y                  | Y              | Y               | Y              |
-+---------------------------------+--------------------+--------------------+----------------+-----------------+----------------+
-| MPU                             | N                  | N                  | Y              | Y               | Y              |
-+---------------------------------+--------------------+--------------------+----------------+-----------------+----------------+
-| FPU                             | N                  | N                  | N              | Y               | N              |
-+---------------------------------+--------------------+--------------------+----------------+-----------------+----------------+
-| SPLIM                           | N                  | N                  | N              | Y               | Y              |
-+---------------------------------+--------------------+--------------------+----------------+-----------------+----------------+
-| TrustZone-M                     | N                  | N                  | N              | Y               | N              |
-+---------------------------------+--------------------+--------------------+----------------+-----------------+----------------+
++---------------------------------+--------------------+--------------------+----------------+----------------------+----------------------------+
+|                                 | **QEMU target**                                                                                              |
++---------------------------------+--------------------+--------------------+----------------+----------------------+----------------------------+
+| Architecture variant            | Arm v6-M           | Arm v7-M                            | Arm v8-M             | Arm v8.1-M                 |
++---------------------------------+--------------------+--------------------+----------------+----------------------+----------------------------+
+|                                 | **qemu_cortex_m0** | **qemu_cortex_m3** | **mps2/an385** | **mps2/an521/cpu0**  | **mps3/corstone300/an547** |
++---------------------------------+--------------------+--------------------+----------------+----------------------+----------------------------+
+| **Emulated features**           |                                                                                                              |
++---------------------------------+--------------------+--------------------+----------------+----------------------+----------------------------+
+| NVIC                            | Y                  | Y                  | Y              | Y                    | Y                          |
++---------------------------------+--------------------+--------------------+----------------+----------------------+----------------------------+
+| BASEPRI                         | N                  | Y                  | Y              | Y                    | Y                          |
++---------------------------------+--------------------+--------------------+----------------+----------------------+----------------------------+
+| SysTick                         | N                  | Y                  | Y              | Y                    | Y                          |
++---------------------------------+--------------------+--------------------+----------------+----------------------+----------------------------+
+| MPU                             | N                  | N                  | Y              | Y                    | Y                          |
++---------------------------------+--------------------+--------------------+----------------+----------------------+----------------------------+
+| FPU                             | N                  | N                  | N              | Y                    | N                          |
++---------------------------------+--------------------+--------------------+----------------+----------------------+----------------------------+
+| SPLIM                           | N                  | N                  | N              | Y                    | Y                          |
++---------------------------------+--------------------+--------------------+----------------+----------------------+----------------------------+
+| TrustZone-M                     | N                  | N                  | N              | Y                    | N                          |
++---------------------------------+--------------------+--------------------+----------------+----------------------+----------------------------+
 
 Maintainers & Collaborators
 ***************************

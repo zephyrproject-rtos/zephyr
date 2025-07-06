@@ -1,0 +1,25 @@
+identifier: adafruit_macropad_rp2040
+name: Adafruit MacroPad RP2040
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 264
+flash: 8192
+supported:
+  - uart
+  - gpio
+  - i2c
+  - spi
+  - hwinfo
+  - watchdog
+  - pwm
+  - flash
+  - dma
+  - counter
+  - clock
+  - usbd
+  - display
+  - qdec
+  - led_strip

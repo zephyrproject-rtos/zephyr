@@ -20,7 +20,7 @@
  * Scenario #2
  * Test thread enters an item into stack2, starts a Child thread and
  * extract an item from stack1 once the item is there. The child thread
- * will extract an item from stack2 once the item is there and and enter
+ * will extract an item from stack2 once the item is there and enter
  * an item to stack1. The flow of control goes from Test thread to Child
  * thread and so forth.
  *

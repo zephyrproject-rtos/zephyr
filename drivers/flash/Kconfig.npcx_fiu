@@ -7,6 +7,7 @@ config FLASH_NPCX_FIU_QSPI
 	bool "Nuvoton NPCX QSPI Bus Flash driver"
 	default y
 	depends on DT_HAS_NUVOTON_NPCX_FIU_QSPI_ENABLED
+	select PINCTRL
 	help
 	  This option enables the QSPI Bus Flash driver for NPCX family of
 	  processors.
@@ -18,6 +19,7 @@ config FLASH_NPCX_FIU_NOR
 	depends on FLASH_NPCX_FIU_QSPI
 	select FLASH_HAS_DRIVER_ENABLED
 	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EXPLICIT_ERASE
 	select FLASH_JESD216
 	select FLASH_HAS_EX_OP
 	help
@@ -62,5 +64,13 @@ config FLASH_NPCX_FIU_SUPP_DRA_2_DEV
 	help
 	  Selected if NPCX series supports two external SPI devices in Direct
 	  Read Access (DRA) on QSPI bus.
+
+DT_NPCX_FIU_LOW_DEV_SWAP := $(dt_nodelabel_bool_prop,qspi_fiu1,flash-dev-inv)
+config FLASH_NPCX_FIU_SUPP_LOW_DEV_SWAP
+	bool "Inverse the access of the two external flashes"
+	default y if SOC_SERIES_NPCX4 && FLASH_NPCX_FIU_SUPP_DRA_2_DEV && \
+		     "$(DT_NPCX_FIU_LOW_DEV_SWAP)"
+	help
+	  Select if it needs to swap the access of the two external flashes.
 
 endif #FLASH_NPCX_FIU_QSPI

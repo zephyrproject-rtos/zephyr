@@ -1,0 +1,13 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Comparator sample additional options"
+
+source "Kconfig.zephyr"
+
+ZEPHYR_USER := zephyr,user
+
+config DAC_REFERENCE_SOURCE
+	bool
+	select DAC
+	default y if $(dt_node_has_prop,/$(ZEPHYR_USER),vref-dac)

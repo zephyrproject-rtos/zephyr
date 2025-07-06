@@ -127,7 +127,11 @@ static void fill_device(struct devlist_device *dev, const uint8_t *desc)
 
 	dev->busnum = htonl(1);
 	dev->devnum = htonl(2);
-	dev->speed = htonl(2);
+	if (IS_ENABLED(CONFIG_USB_NATIVE_POSIX_HS)) {
+		dev->speed = htonl(3);
+	} else {
+		dev->speed = htonl(2);
+	}
 
 	dev->idVendor = htons(dev_dsc->idVendor);
 	dev->idProduct = htons(dev_dsc->idProduct);

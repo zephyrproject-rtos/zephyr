@@ -1,5 +1,6 @@
 board:
   name: sam4e_xpro
+  full_name: SAM4E Xplained Pro
   vendor: atmel
   socs:
     - name: sam4e16e

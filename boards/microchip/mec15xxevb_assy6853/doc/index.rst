@@ -1,7 +1,4 @@
-.. _mec15xxevb_assy6853:
-
-Microchip MEC15xxEVB ASSY6853
-#############################
+.. zephyr:board:: mec15xxevb_assy6853
 
 Overview
 ********
@@ -14,10 +11,6 @@ MEC150x except for an enhanced Boot-ROM SPI loader. The SPI image format has
 been updated requiring a new SPI image tool. MEC1501 and MEC152x SPI image
 formats are not compatible with each other. Evaluation and cpu boards are
 compatible.
-
-.. image:: mec15xxevb_assy6853.jpg
-     :align: center
-     :alt: MEC15XX EVB ASSY 6853
 
 Hardware
 ********
@@ -49,38 +42,7 @@ For more information about the SOC's please see `MEC152x Reference Manual`_
 Supported Features
 ==================
 
-The mec15xxevb_assy6853 board configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| PS/2      | on-chip    | ps2                                 |
-+-----------+------------+-------------------------------------+
-| KSCAN     | on-chip    | kscan                               |
-+-----------+------------+-------------------------------------+
-| TACH      | on-chip    | tachometer                          |
-+-----------+------------+-------------------------------------+
-
-
-
-
-Other hardware features are not currently supported by Zephyr (at the moment)
-
-The default configuration can be found in the
-:zephyr_file:`boards/microchip/mec15xxevb_assy6853/mec15xxevb_assy6853_defconfig` Kconfig file.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -240,6 +202,8 @@ in reference section below.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Setup
 =====
 #. If you use Dediprog SF100 programmer, then setup it.
@@ -352,7 +316,7 @@ Wiring
 
 Building
 ========
-#. Build :ref:`hello_world` application as you would normally do.
+#. Build :zephyr:code-sample:`hello_world` application as you would normally do.
 
 #. The file :file:`spi_image.bin` will be created if the build system
    can find the image generation tool. This binary image can be used

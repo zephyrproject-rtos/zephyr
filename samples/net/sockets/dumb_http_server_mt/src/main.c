@@ -98,7 +98,7 @@ K_THREAD_DEFINE(tcp6_thread_id, STACK_SIZE,
 		    NET_EVENT_L4_DISCONNECTED)
 
 static void event_handler(struct net_mgmt_event_callback *cb,
-			  uint32_t mgmt_event, struct net_if *iface)
+			  uint64_t mgmt_event, struct net_if *iface)
 {
 	if ((mgmt_event & EVENT_MASK) != mgmt_event) {
 		return;
@@ -413,7 +413,7 @@ int main(void)
 {
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 	int err = tls_credential_add(SERVER_CERTIFICATE_TAG,
-				     TLS_CREDENTIAL_SERVER_CERTIFICATE,
+				     TLS_CREDENTIAL_PUBLIC_CERTIFICATE,
 				     server_certificate,
 				     sizeof(server_certificate));
 	if (err < 0) {

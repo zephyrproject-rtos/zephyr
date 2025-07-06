@@ -327,7 +327,7 @@ static void uart_msp432p4xx_isr(const struct device *dev)
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static const struct uart_driver_api uart_msp432p4xx_driver_api = {
+static DEVICE_API(uart, uart_msp432p4xx_driver_api) = {
 	.poll_in = uart_msp432p4xx_poll_in,
 	.poll_out = uart_msp432p4xx_poll_out,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN

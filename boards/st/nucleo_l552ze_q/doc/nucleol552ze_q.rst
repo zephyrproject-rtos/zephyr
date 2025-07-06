@@ -1,7 +1,4 @@
-.. _nucleo_l552ze_q_board:
-
-ST Nucleo L552ZE Q
-##################
+.. zephyr:board:: nucleo_l552ze_q
 
 Overview
 ********
@@ -29,10 +26,6 @@ board:
 - Two push-buttons: USER and RESET
 - External or internal SMPS to generate Vcore logic supply
 - USB OTG full speed or device only
-
-.. image:: img/nucleo_l552ze_q.jpg
-   :align: center
-   :alt: Nucleo L552ZE Q
 
 More information about the board can be found at the `Nucleo L552ZE Q website`_.
 
@@ -130,55 +123,7 @@ More information about STM32L552ZE can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_l552ze_q board configuration supports the following
-hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| ADC       | on-chip    | ADC Controller                      |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| DAC       | on-chip    | DAC Controller                      |
-+-----------+------------+-------------------------------------+
-| DMA       | on-chip    | Direct Memory Access                |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| RNG       | on-chip    | entropy                             |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| TrustZone | on-chip    | Trusted Firmware-M                  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| die-temp  | on-chip    | die temperature sensor              |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in the defconfig and dts files:
-
-- Common:
-
-  - :zephyr_file:`boards/st/nucleo_l552ze_q/nucleo_l552ze_q-common.dtsi`
-
-- Secure target:
-
-  - :zephyr_file:`boards/st/nucleo_l552ze_q/nucleo_l552ze_q_defconfig`
-  - :zephyr_file:`boards/st/nucleo_l552ze_q/nucleo_l552ze_q.dts`
-
-- Non-Secure target:
-
-  - :zephyr_file:`boards/st/nucleo_l552ze_q/nucleo_l552ze_q_stm32l552xx_ns_defconfig`
-  - :zephyr_file:`boards/st/nucleo_l552ze_q/nucleo_l552ze_q_stm32l552xx_ns.dts`
+.. zephyr:board-supported-hw::
 
 Zephyr board options
 ====================
@@ -197,9 +142,9 @@ The BOARD options are summarized below:
 +--------------------------------+-------------------------------------------+
 
 Here are the instructions to build Zephyr with a non-secure configuration,
-using `tfm_ipc_` sample:
+using :zephyr:code-sample:`tfm_ipc` sample:
 
-   .. code-block:: bash
+   .. code-block:: console
 
       $ west build -b nucleo_l552ze_q/stm32l552xx/ns samples/tfm_integration/tfm_ipc/
 
@@ -213,7 +158,7 @@ option bit TZEN will be set).
       $ west flash
 
 Please note that, after having run a TFM sample on the board, you will need to
-run `./build/tfm/api_ns/regression.sh` once more to clean up the board from secure
+run ``./build/tfm/api_ns/regression.sh`` once more to clean up the board from secure
 options and get back the platform back to a "normal" state and be able to run
 usual, non-TFM, binaries.
 Also note that, even then, TZEN will remain set, and you will need to use
@@ -282,6 +227,10 @@ UART2. Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
+Nucleo L552ZE Q board includes an ST-LINK/V2-1 embedded debug tool interface.
+
 Applications for the ``nucleo_l552ze_q`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -289,24 +238,31 @@ flashed in the usual way (see :ref:`build_an_application` and
 Flashing
 ========
 
-Nucleo L552ZE Q board includes an ST-LINK/V2-1 embedded debug tool
-interface. Support can be enabled on pyocd by adding "pack" support with the
-following pyocd command:
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, OpenOCD or pyOCD can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner pyocd
+
+Support can be enabled for pyOCD by adding "pack" support with the
+following pyOCD commands:
 
 .. code-block:: console
 
    $ pyocd pack --update
    $ pyocd pack --install stm32l552ze
 
-Alternatively, this interface is supported by the openocd version
-included in the Zephyr SDK since v0.13.1.
-
 Flashing an application to Nucleo L552ZE Q
 ------------------------------------------
 
 Connect the Nucleo L552ZE Q to your host computer using the USB port.
 Then build and flash an application. Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 Run a serial host program to connect with your Nucleo board:
 
@@ -331,7 +287,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

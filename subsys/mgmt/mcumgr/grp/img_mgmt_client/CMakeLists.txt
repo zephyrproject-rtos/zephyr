@@ -7,7 +7,7 @@
 # Image management client group public API is exported by MCUmgr interface API,
 # when Image Management client is enabled.
 
-zephyr_library(mcumgr_grp_img_client)
+zephyr_library()
 zephyr_library_sources(
   src/img_mgmt_client.c
 )

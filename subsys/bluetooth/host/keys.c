@@ -5,33 +5,38 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#include <zephyr/kernel.h>
-#include <string.h>
+#include <errno.h>
+#include <stdbool.h>
 #include <stdlib.h>
-#include <zephyr/sys/atomic.h>
-#include <zephyr/sys/util.h>
-#include <zephyr/sys/byteorder.h>
+#include <stdint.h>
+#include <string.h>
 
-#include <zephyr/settings/settings.h>
-
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/settings/settings.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util_macro.h>
 
 #include "common/bt_str.h"
-
 #include "common/rpa.h"
 #include "conn_internal.h"
 #include "gatt_internal.h"
 #include "hci_core.h"
-#include "smp.h"
-#include "settings.h"
+#include "id.h"
 #include "keys.h"
+#include "settings.h"
+#include "smp.h"
+#include "sys/types.h"
 
 #define LOG_LEVEL CONFIG_BT_KEYS_LOG_LEVEL
-#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_keys);
 
 static struct bt_keys key_pool[CONFIG_BT_MAX_PAIRED];
@@ -74,11 +79,16 @@ static bool key_is_in_use(uint8_t id)
 {
 	struct key_data kdata = { false, id };
 
-	bt_conn_foreach(BT_CONN_TYPE_ALL, find_key_in_use, &kdata);
+	bt_conn_foreach(BT_CONN_TYPE_LE, find_key_in_use, &kdata);
 
 	return kdata.in_use;
 }
 #endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
+
+void bt_keys_reset(void)
+{
+	memset(key_pool, 0, sizeof(key_pool));
+}
 
 struct bt_keys *bt_keys_get_addr(uint8_t id, const bt_addr_le_t *addr)
 {
@@ -426,11 +436,19 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	return 0;
 }
 
+static void add_id_cb(struct k_work *work)
+{
+	bt_id_pending_keys_update();
+}
+
+static K_WORK_DEFINE(add_id_work, add_id_cb);
+
 static void id_add(struct bt_keys *keys, void *user_data)
 {
 	__ASSERT_NO_MSG(keys != NULL);
 
-	bt_id_add(keys);
+	bt_id_pending_keys_update_set(keys, BT_KEYS_ID_PENDING_ADD);
+	k_work_submit(&add_id_work);
 }
 
 static int keys_commit(void)

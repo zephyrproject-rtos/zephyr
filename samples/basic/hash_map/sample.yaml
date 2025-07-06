@@ -20,34 +20,34 @@ common:
 
 tests:
   # Minimal Libc
-  libraries.hash_map.minimal.separate_chaining.djb2:
+  sample.libraries.hash_map.minimal.separate_chaining.djb2:
     extra_configs:
       - CONFIG_MINIMAL_LIBC=y
       - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=8192
       - CONFIG_SYS_HASH_MAP_CHOICE_SC=y
       - CONFIG_SYS_HASH_FUNC32_CHOICE_DJB2=y
-  libraries.hash_map.minimal.open_addressing.djb2:
+  sample.libraries.hash_map.minimal.open_addressing.djb2:
     extra_configs:
       - CONFIG_MINIMAL_LIBC=y
       - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=8192
       - CONFIG_SYS_HASH_MAP_CHOICE_OA_LP=y
       - CONFIG_SYS_HASH_FUNC32_CHOICE_DJB2=y
   # Newlib
-  libraries.hash_map.newlib.separate_chaining.djb2:
+  sample.libraries.hash_map.newlib.separate_chaining.djb2:
     filter: TOOLCHAIN_HAS_NEWLIB == 1
     extra_configs:
       - CONFIG_NEWLIB_LIBC=y
       - CONFIG_NEWLIB_LIBC_MIN_REQUIRED_HEAP_SIZE=8192
       - CONFIG_SYS_HASH_MAP_CHOICE_SC=y
       - CONFIG_SYS_HASH_FUNC32_CHOICE_DJB2=y
-  libraries.hash_map.newlib.open_addressing.djb2:
+  sample.libraries.hash_map.newlib.open_addressing.djb2:
     filter: TOOLCHAIN_HAS_NEWLIB == 1
     extra_configs:
       - CONFIG_NEWLIB_LIBC=y
       - CONFIG_NEWLIB_LIBC_MIN_REQUIRED_HEAP_SIZE=8192
       - CONFIG_SYS_HASH_MAP_CHOICE_OA_LP=y
       - CONFIG_SYS_HASH_FUNC32_CHOICE_DJB2=y
-  libraries.hash_map.newlib.cxx_unordered_map.djb2:
+  sample.libraries.hash_map.newlib.cxx_unordered_map.djb2:
     filter: TOOLCHAIN_HAS_NEWLIB == 1
     extra_configs:
       - CONFIG_NEWLIB_LIBC=y
@@ -56,13 +56,13 @@ tests:
       - CONFIG_SYS_HASH_FUNC32_CHOICE_DJB2=y
       - CONFIG_MAIN_STACK_SIZE=2048
   # PicoLibc
-  libraries.hash_map.picolibc.separate_chaining.djb2:
+  sample.libraries.hash_map.picolibc.separate_chaining.djb2:
     extra_configs:
       - CONFIG_PICOLIBC=y
       - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=8192
       - CONFIG_SYS_HASH_MAP_CHOICE_SC=y
       - CONFIG_SYS_HASH_FUNC32_CHOICE_DJB2=y
-  libraries.hash_map.picolibc.open_addressing.djb2:
+  sample.libraries.hash_map.picolibc.open_addressing.djb2:
     extra_configs:
       - CONFIG_PICOLIBC=y
       - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=8192

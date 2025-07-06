@@ -9,9 +9,3 @@ compatible: "vnd,i3c-i2c-device"
 
 include:
   - name: i2c-device.yaml
-    property-blocklist:
-      - label
-
-properties:
-  label:
-    type: string

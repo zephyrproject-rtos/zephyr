@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2022 Linaro Limited
+ * Copyright (c) 2022 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&cpu0{
+	/* USART Wakeup requires automatic HSI16 switch on in deepsleep mode
+	 * which isn't possible in Stop Mode 2.
+	 * Remove Stop Mode 2 from supported modes
+	 */
+	cpu-power-states = <&stop0 &stop1>;
+};
+
+&usart1 {
+	/* Set domain clock to HSI to allow wakeup from Stop mode */
+	clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00004000>,
+		 <&rcc STM32_SRC_HSI USART1_SEL(2)>;
+
+	/* Configure device as wakeup source */
+	wakeup-source;
+
+	/* Enable FIFO to avoid losing chars on device wakeup */
+	fifo-enable;
+
+	/* Configure sleep pinctrl configuration which will be used when
+	 * device is not configured as wakeup source by the application.
+	 * This use case is only applicable in PM_DEVICE mode.
+	 */
+	pinctrl-1 = <&analog_pb6 &analog_pb7>;
+	pinctrl-names = "default", "sleep";
+};
+
+&clk_hsi {
+	/* Make sure HSI is enabled */
+	status = "okay";
+};

@@ -91,8 +91,8 @@ this:
 
       # CONFIG_SOME_OTHER_BOOL is not set
 
-   This is the format you will see in the merged configuration in
-   :file:`zephyr/.config`.
+   This is the format you will see in the merged configuration
+   saved to :file:`zephyr/.config` in the build directory.
 
    This style is accepted for historical reasons: Kconfig configuration files
    can be parsed as makefiles (though Zephyr doesn't use this). Having
@@ -128,7 +128,7 @@ The initial configuration for an application comes from merging configuration
 settings from three sources:
 
 1. A ``BOARD``-specific configuration file stored in
-   :file:`boards/<architecture>/<BOARD>/<BOARD>_defconfig`
+   :file:`boards/<VENDOR>/<BOARD>/<BOARD>_defconfig`
 
 2. Any CMake cache entries prefix with ``CONFIG_``
 
@@ -149,15 +149,6 @@ used.
 
    3. From the CMake variable cache
 
-   Furthermore if ``CONF_FILE`` is set as single configuration file of the
-   form :file:`prj_<build>.conf` and if file
-   :file:`boards/<BOARD>_<build>.conf` exists in same folder as file
-   :file:`prj_<build>.conf`, the result of merging :file:`prj_<build>.conf` and
-   :file:`boards/<BOARD>_<build>.conf` is used.
-
-#. Otherwise, :file:`prj_<BOARD>.conf` is used if it exists in the application
-   configuration directory.
-
 #. Otherwise, if :file:`boards/<BOARD>.conf` exists in the application
    configuration directory, the result of merging it with :file:`prj.conf` is
    used.
@@ -169,6 +160,11 @@ used.
 
 #. Otherwise, :file:`prj.conf` is used from the application configuration
    directory. If it does not exist then a fatal error will be emitted.
+
+Furthermore, applications can have SoC overlay configuration that is applied to
+it, the file :file:`socs/<SOC>_<BOARD_QUALIFIERS>.conf` will be applied if it exists,
+after the main project configuration has been applied and before any board overlay
+configuration files have been applied.
 
 All configuration files will be taken from the application's configuration
 directory except for files with an absolute path that are given with the
@@ -195,12 +191,61 @@ configuration that gets modified when making changes in the :ref:`interactive
 configuration interfaces <menuconfig>`.
 
 
+Tracking Kconfig symbols
+************************
+
+It is possible to create Kconfig symbols which takes the default value of
+another Kconfig symbol.
+
+This is valuable when you want a symbol specific to an application or subsystem
+but do not want to rely directly on the common symbol. For example, you might
+want to decouple the settings so they can be independently configured, or to
+ensure you always have a locally named setting, even if the external setting name changes.
+is later changed.
+
+For example, consider the common ``FOO_STRING`` setting where a subsystem wants
+to have a ``SUB_FOO_STRING`` but still allow for customization.
+
+This can be done like this:
+
+.. code-block:: kconfig
+
+    config FOO_STRING
+            string "Foo"
+            default "foo"
+
+    config SUB_FOO_STRING
+            string "Sub-foo"
+            default FOO_STRING
+
+This ensures that the default value of ``SUB_FOO_STRING`` is identical to
+``FOO_STRING`` while still allows users to configure both settings
+independently.
+
+It is also possible to make ``SUB_FOO_STRING`` invisible and thereby keep the
+two symbols in sync, unless the value of the tracking symbol is changed in a
+:file:`defconfig` file.
+
+.. code-block:: kconfig
+
+    config FOO_STRING
+            string "Foo"
+            default "foo"
+
+    config SUB_FOO_STRING
+            string
+            default FOO_STRING
+            help
+              Hidden symbol which follows FOO_STRING
+              Can be changed through *.defconfig files.
+
+
 Configuring invisible Kconfig symbols
 *************************************
 
 When making changes to the default configuration for a board, you might have to
 configure invisible symbols. This is done in
-:file:`boards/<architecture>/<BOARD>/Kconfig.defconfig`, which is a regular
+:file:`boards/<VENDOR>/<BOARD>/Kconfig.defconfig`, which is a regular
 :file:`Kconfig` file.
 
 .. note::

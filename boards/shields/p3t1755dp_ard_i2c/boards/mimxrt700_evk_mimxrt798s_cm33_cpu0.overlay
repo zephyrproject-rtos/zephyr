@@ -1,0 +1,10 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&flexcomm8_lpi2c8 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};

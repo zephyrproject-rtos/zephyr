@@ -24,10 +24,10 @@ static int cavs_clock_ctrl_init(const struct device *dev)
 	return 0;
 }
 
-static const struct clock_control_driver_api cavs_clock_api = {
+static DEVICE_API(clock_control, cavs_clock_api) = {
 	.set_rate = cavs_clock_ctrl_set_rate
 };
 
-DEVICE_DT_DEFINE(DT_NODELABEL(clkctl), &cavs_clock_ctrl_init, NULL,
+DEVICE_DT_DEFINE(DT_NODELABEL(clkctl), cavs_clock_ctrl_init, NULL,
 		 NULL, NULL, POST_KERNEL,
 		 CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &cavs_clock_api);

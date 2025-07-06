@@ -4,8 +4,8 @@ type: qemu
 arch: x86
 toolchain:
   - zephyr
-  - xtools
-simulation: qemu
+simulation:
+  - name: qemu
 supported:
   - acpi
   - can
@@ -17,4 +17,5 @@ testing:
   ignore_tags:
     - net
     - bluetooth
+ram: 3000
 vendor: qemu

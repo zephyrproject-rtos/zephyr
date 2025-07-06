@@ -31,6 +31,11 @@ extern "C" {
 #endif
 
 /**
+ * @brief Maximum brightness level, range is 0 to 100.
+ */
+#define LED_BRIGHTNESS_MAX 100u
+
+/**
  * @brief LED information structure
  *
  * This structure gathers useful information about LED controller.
@@ -112,13 +117,13 @@ typedef int (*led_api_write_channels)(const struct device *dev,
  * @brief LED driver API
  */
 __subsystem struct led_driver_api {
-	/* Mandatory callbacks. */
+	/* Mandatory callbacks, either on/off or set_brightness. */
 	led_api_on on;
 	led_api_off off;
+	led_api_set_brightness set_brightness;
 	/* Optional callbacks. */
 	led_api_blink blink;
 	led_api_get_info get_info;
-	led_api_set_brightness set_brightness;
 	led_api_set_color set_color;
 	led_api_write_channels write_channels;
 };
@@ -182,9 +187,10 @@ static inline int z_impl_led_get_info(const struct device *dev, uint32_t led,
  * This optional routine sets the brightness of a LED to the given value.
  * Calling this function after led_blink() won't affect blinking.
  *
- * LEDs which can only be turned on or off may provide this function.
+ * LEDs which can only be turned on or off do not need to provide this
+ * function.
  * These should simply turn the LED on if @p value is nonzero, and off
- * if @p value is zero.
+ * if @p value is zero using the on/off APIs automatically.
  *
  * @param dev LED device
  * @param led LED number
@@ -202,8 +208,23 @@ static inline int z_impl_led_set_brightness(const struct device *dev,
 		(const struct led_driver_api *)dev->api;
 
 	if (api->set_brightness == NULL) {
-		return -ENOSYS;
+		if (api->on == NULL || api->off == NULL) {
+			return -ENOSYS;
+		}
 	}
+
+	if (value > LED_BRIGHTNESS_MAX) {
+		return -EINVAL;
+	}
+
+	if (api->set_brightness == NULL) {
+		if (value) {
+			return api->on(dev, led);
+		} else {
+			return api->off(dev, led);
+		}
+	}
+
 	return api->set_brightness(dev, led, value);
 }
 
@@ -273,7 +294,7 @@ static inline int z_impl_led_set_channel(const struct device *dev,
  * @param led LED number
  * @param num_colors Number of colors in the array.
  * @param color Array of colors. It must be ordered following the color
- *        mapping of the LED controller. See the the color_mapping member
+ *        mapping of the LED controller. See the color_mapping member
  *        in struct led_info.
  * @return 0 on success, negative on error
  */
@@ -297,6 +318,9 @@ static inline int z_impl_led_set_color(const struct device *dev, uint32_t led,
  *
  * This routine turns on an LED
  *
+ * LEDs which implements brightness control do not need to implement this, the
+ * set_brightness API is used automatically.
+ *
  * @param dev LED device
  * @param led LED number
  * @return 0 on success, negative on error
@@ -308,6 +332,14 @@ static inline int z_impl_led_on(const struct device *dev, uint32_t led)
 	const struct led_driver_api *api =
 		(const struct led_driver_api *)dev->api;
 
+	if (api->set_brightness == NULL && api->on == NULL) {
+		return -ENOSYS;
+	}
+
+	if (api->on == NULL) {
+		return api->set_brightness(dev, led, LED_BRIGHTNESS_MAX);
+	}
+
 	return api->on(dev, led);
 }
 
@@ -315,6 +347,9 @@ static inline int z_impl_led_on(const struct device *dev, uint32_t led)
  * @brief Turn off an LED
  *
  * This routine turns off an LED
+ *
+ * LEDs which implements brightness control do not need to implement this, the
+ * set_brightness API is used automatically.
  *
  * @param dev LED device
  * @param led LED number
@@ -327,8 +362,145 @@ static inline int z_impl_led_off(const struct device *dev, uint32_t led)
 	const struct led_driver_api *api =
 		(const struct led_driver_api *)dev->api;
 
+	if (api->set_brightness == NULL && api->off == NULL) {
+		return -ENOSYS;
+	}
+
+	if (api->off == NULL) {
+		return api->set_brightness(dev, led, 0);
+	}
+
 	return api->off(dev, led);
 }
+
+/*
+ * LED DT helpers.
+ */
+
+/**
+ * @brief Container for an LED information specified in devicetree.
+ *
+ * This type contains a pointer to and LED device and an LED index.
+ *
+ * @see LED_DT_SPEC_GET
+ * @see LED_DT_SPEC_GET_OR
+ */
+struct led_dt_spec {
+	/** LED device instance. */
+	const struct device *dev;
+	/** Index of the LED on the controller. */
+	uint32_t index;
+};
+
+/**
+ * @brief Set LED brightness from a led_dt_spec.
+ *
+ * @param spec LED device specification from devicetree.
+ * @param value Brightness value to set in percent.
+ * @return 0 on success, negative on error.
+ *
+ * @see led_set_brightness()
+ */
+static inline int led_set_brightness_dt(const struct led_dt_spec *spec,
+					uint8_t value)
+{
+	return led_set_brightness(spec->dev, spec->index, value);
+}
+
+/**
+ * @brief Turn on an LED from a struct led_dt_spec.
+ *
+ * @param spec LED device specification from devicetree.
+ * @return 0 on success, negative on error.
+ *
+ * @see led_on()
+ */
+static inline int led_on_dt(const struct led_dt_spec *spec)
+{
+	return led_on(spec->dev, spec->index);
+}
+
+/**
+ * @brief Turn off an LED from a struct led_dt_spec.
+ *
+ * @param spec LED device specification from devicetree.
+ * @return 0 on success, negative on error.
+ *
+ * @see led_off()
+ */
+static inline int led_off_dt(const struct led_dt_spec *spec)
+{
+	return led_off(spec->dev, spec->index);
+}
+
+/**
+ * @brief Validate that the LED device is ready.
+ *
+ * @param spec LED specification from devicetree.
+ *
+ * @retval true If the LED device is ready for use.
+ * @retval false If the LED device is not ready for use.
+ */
+static inline bool led_is_ready_dt(const struct led_dt_spec *spec)
+{
+	return device_is_ready(spec->dev);
+}
+
+/**
+ * @brief Static initializer for a struct led_dt_spec
+ *
+ * This returns a static initializer for a struct led_dt_spec given a devicetree
+ * node identifier.
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *    leds {
+ *        compatible = "gpio-leds";
+ *        led0: led_0 {
+ *            ...
+ *        };
+ *    };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *    const struct led_dt_spec spec = LED_DT_SPEC_GET(DT_NODELABEL(led0));
+ *
+ *    // Initializes 'spec' to:
+ *    // {
+ *    //         .dev = DEVICE_DT_GET(DT_PARENT(led0)),
+ *    //         .index = 0,
+ *    // }
+ * @endcode
+ *
+ * The device (dev) must still be checked for readiness, e.g. using
+ * device_is_ready().
+ *
+ * @param node_id Devicetree node identifier.
+ *
+ * @return Static initializer for a struct led_dt_spec for the property.
+ */
+#define LED_DT_SPEC_GET(node_id)                                               \
+	{                                                                      \
+		.dev = DEVICE_DT_GET(DT_PARENT(node_id)),                      \
+		.index = DT_NODE_CHILD_IDX(node_id),                           \
+	}
+
+/**
+ * @brief Like LED_DT_SPEC_GET(), with a fallback value if the node does not exist.
+ *
+ * @param node_id Devicetree node identifier.
+ *
+ * @return Static initializer for a struct led_dt_spec for the property.
+ *
+ * @see LED_DT_SPEC_GET
+ */
+#define LED_DT_SPEC_GET_OR(node_id, default_value)                             \
+	COND_CODE_1(DT_NODE_EXISTS(node_id),                                   \
+		    (LED_DT_SPEC_GET(node_id)),                                \
+		    (default_value))
 
 /**
  * @}
@@ -338,6 +510,6 @@ static inline int z_impl_led_off(const struct device *dev, uint32_t led)
 }
 #endif
 
-#include <syscalls/led.h>
+#include <zephyr/syscalls/led.h>
 
 #endif	/* ZEPHYR_INCLUDE_DRIVERS_LED_H_ */

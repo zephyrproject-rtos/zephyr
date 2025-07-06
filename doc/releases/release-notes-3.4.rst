@@ -150,12 +150,12 @@ Changes in this release
   * ``gpio_keys``: moved out of ``gpio``, replaced the custom API to use input
     events instead, the :dtcompatible:`zephyr,gpio-keys` binding is unchanged
     but now requires ``zephyr,code`` to be set.
-  * ``ft5336``: moved from :ref:`kscan_api` to :ref:`input`, renamed the Kconfig
+  * ``ft5336``: moved from ``kscan_api`` to :ref:`input`, renamed the Kconfig
     options from ``CONFIG_KSCAN_FT5336``, ``CONFIG_KSCAN_FT5336_PERIOD`` and
     ``KSCAN_FT5336_INTERRUPT`` to :kconfig:option:`CONFIG_INPUT_FT5336`,
     :kconfig:option:`CONFIG_INPUT_FT5336_PERIOD` and
     :kconfig:option:`CONFIG_INPUT_FT5336_INTERRUPT`.
-  * ``kscan_sdl``: moved from :ref:`kscan_api` to :ref:`input`, renamed the Kconfig
+  * ``kscan_sdl``: moved from ``kscan_api`` to :ref:`input`, renamed the Kconfig
     option from ``KSCAN_SDL`` to :kconfig:option:`CONFIG_INPUT_SDL_TOUCH` and the
     compatible from ``zephyr,sdl-kscan`` to
     :dtcompatible:`zephyr,input-sdl-touch`.
@@ -253,7 +253,7 @@ Deprecated in this release
 Stable API changes in this release
 ==================================
 
-* Removed `bt_set_oob_data_flag` and replaced it with two new API calls:
+* Removed ``bt_set_oob_data_flag`` and replaced it with two new API calls:
   * :c:func:`bt_le_oob_set_sc_flag` for setting/clearing OOB flag in SC pairing
   * :c:func:`bt_le_oob_set_legacy_flag` for setting/clearing OOB flag in legacy paring
 
@@ -723,7 +723,7 @@ Build system and infrastructure
 * Babblesim is now included in the west manifest. Users can fetch it by enabling
   the ``babblesim`` group with west config.
 
-* `west sign` now uses DT labels, of "fixed-partition" compatible nodes, to identify
+* ``west sign`` now uses DT labels, of "fixed-partition" compatible nodes, to identify
   application image slots, instead of previously used DT node label properties.
   If you have been using custom partition layout for MCUboot, you will have to label
   your MCUboot slot partitions with proper DT node labels; for example partition
@@ -1406,7 +1406,7 @@ MCUboot
   interactive Kconfig interfaces, the MCUboot options will now be located under
   ``Modules`` instead of under ``Boot Options``.
 
-* Added :kconfig:option:`CONFIG_MCUBOOT_CMAKE_WEST_SIGN_PARAMS` that allows to pass arguments to
+* Added ``CONFIG_MCUBOOT_CMAKE_WEST_SIGN_PARAMS`` that allows to pass arguments to
   west sign when invoked from cmake.
 
 Storage

@@ -22,15 +22,6 @@ properties:
     description: |
         GPIO connected to the controller RESET pin. This pin is active-low.
 
-  ngpios:
-    type: int
-    enum:
-      - 8
-      - 16
-    required: true
-    description: |
-      Number of gpios supported by the chip.
-
 gpio-cells:
   - pin
   - flags

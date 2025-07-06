@@ -4,6 +4,7 @@
 config SPI_PL022
 	default y
 	depends on DT_HAS_ARM_PL022_ENABLED
+	select PINCTRL if $(dt_compat_any_has_prop,$(DT_COMPAT_ARM_PL022),pinctrl-0)
 	bool "ARM PL022 SPI driver"
 
 if SPI_PL022

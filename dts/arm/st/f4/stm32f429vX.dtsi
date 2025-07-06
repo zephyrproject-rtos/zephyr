@@ -2,7 +2,7 @@
  * Copyright (c) 2018 Daniel Wagenknecht
  *
  * Document the usage of /delete-node/ for device tree nodes
- * that are missing on on only a small subset of SoCs of a given group
+ * that are missing on only a small subset of SoCs of a given group
  * of SoCs.
  * Don't remove this file even if none of the SoCs currently
  * implemented in zephyr use it.

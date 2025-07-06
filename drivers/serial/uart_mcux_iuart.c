@@ -86,7 +86,7 @@ static int mcux_iuart_fifo_fill(const struct device *dev,
 				int len)
 {
 	const struct mcux_iuart_config *config = dev->config;
-	uint8_t num_tx = 0U;
+	int num_tx = 0U;
 
 	while ((len - num_tx > 0) &&
 	       (UART_GetStatusFlag(config->base, kUART_TxEmptyFlag))) {
@@ -101,7 +101,7 @@ static int mcux_iuart_fifo_read(const struct device *dev, uint8_t *rx_data,
 				const int len)
 {
 	const struct mcux_iuart_config *config = dev->config;
-	uint8_t num_rx = 0U;
+	int num_rx = 0U;
 
 	while ((len - num_rx > 0) &&
 	       (UART_GetStatusFlag(config->base, kUART_RxDataReadyFlag))) {
@@ -273,7 +273,7 @@ static int mcux_iuart_init(const struct device *dev)
 	return 0;
 }
 
-static const struct uart_driver_api mcux_iuart_driver_api = {
+static DEVICE_API(uart, mcux_iuart_driver_api) = {
 	.poll_in = mcux_iuart_poll_in,
 	.poll_out = mcux_iuart_poll_out,
 	.err_check = mcux_iuart_err_check,
@@ -329,7 +329,7 @@ static const struct mcux_iuart_config mcux_iuart_##n##_config = {	\
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
 	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
 	.baud_rate = DT_INST_PROP(n, current_speed),			\
-	.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),	\
+	.parity = DT_INST_ENUM_IDX(n, parity),				\
 	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 	IRQ_FUNC_INIT							\
 }
@@ -341,7 +341,7 @@ static const struct mcux_iuart_config mcux_iuart_##n##_config = {	\
 	static const struct mcux_iuart_config mcux_iuart_##n##_config;\
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
-			    &mcux_iuart_init,				\
+			    mcux_iuart_init,				\
 			    NULL,					\
 			    &mcux_iuart_##n##_data,			\
 			    &mcux_iuart_##n##_config,			\

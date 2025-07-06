@@ -1,0 +1,26 @@
+# Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: mps4/corstone315/fvp
+name: Arm MPS4-Corstone315-FVP
+type: mcu
+arch: arm
+ram: 2048
+flash: 4096
+simulation:
+  - name: armfvp
+    exec: FVP_Corstone_SSE-315
+toolchain:
+  - gnuarmemb
+  - zephyr
+supported:
+  - gpio
+testing:
+  default: true
+  timeout_multiplier: 4
+  ignore_tags:
+    - drivers
+    - bluetooth
+    - net
+    - timer
+vendor: arm

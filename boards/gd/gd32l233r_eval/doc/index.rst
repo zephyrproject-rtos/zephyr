@@ -1,7 +1,4 @@
-.. _gd32l233r_eval:
-
-GigaDevice GD32L233R-EVA
-#########################
+.. zephyr:board:: gd32l233r_eval
 
 Overview
 ********
@@ -12,10 +9,6 @@ of the GigaDevice GD32L233 Cortex-M23 Low Power MCU.
 The GD32RCT6 features a single-core ARM Cortex-M4F MCU which can run up
 to 64-MHz with flash accesses zero wait states, 256kB of Flash, 32kB of
 SRAM and 59 GPIOs.
-
-.. image:: img/gd32l233r_eval.jpg
-     :align: center
-     :alt: gd32l233r_eval
 
 Hardware
 ********
@@ -41,35 +34,7 @@ For more information about the GD32L233 SoC and GD32L233R-EVAL board:
 Supported Features
 ==================
 
-The board configuration supports the following hardware features:
-
-.. list-table::
-   :header-rows: 1
-
-   * - Peripheral
-     - Kconfig option
-     - Devicetree compatible
-   * - EXTI
-     - :kconfig:option:`CONFIG_GD32_EXTI`
-     - :dtcompatible:`gd,gd32-exti`
-   * - GPIO
-     - :kconfig:option:`CONFIG_GPIO`
-     - :dtcompatible:`gd,gd32-gpio`
-   * - NVIC
-     - N/A
-     - :dtcompatible:`arm,v8m-nvic`
-   * - SYSTICK
-     - N/A
-     - N/A
-   * - USART
-     - :kconfig:option:`CONFIG_SERIAL`
-     - :dtcompatible:`gd,gd32-usart`
-   * - PINMUX
-     - :kconfig:option:`CONFIG_PINCTRL`
-     - :dtcompatible:`gd,gd32-pinctrl-af`
-   * - ADC
-     - :kconfig:option:`CONFIG_ADC`
-     - :dtcompatible:`gd,gd32-adc`
+.. zephyr:board-supported-hw::
 
 Serial Port
 ===========
@@ -81,6 +46,8 @@ CH04E serial connector with Mini-USB.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Using J-Link
 =============
 
@@ -88,7 +55,7 @@ The GD32L233R-EVAL includes an onboard programmer/debugger (GD-Link) which
 allows flash programming and debugging over USB. There is also a SWD header
 which can be used with tools like Segger J-Link(latest version required).
 
-#. Build the Zephyr kernel and the :ref:`hello_world` sample application:
+#. Build the Zephyr kernel and the :zephyr:code-sample:`hello_world` sample application:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world

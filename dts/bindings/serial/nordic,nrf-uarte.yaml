@@ -3,3 +3,14 @@ description: Nordic nRF family UARTE (UART with EasyDMA)
 compatible: "nordic,nrf-uarte"
 
 include: ["nordic,nrf-uart-common.yaml", "memory-region.yaml"]
+
+properties:
+  endtx-stoptx-supported:
+    type: boolean
+    description: |
+      UARTE has ENDTX_STOPTX HW short.
+
+  frame-timeout-supported:
+    type: boolean
+    description: |
+      UARTE has RX frame timeout HW feature.

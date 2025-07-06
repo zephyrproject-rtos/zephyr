@@ -1,0 +1,11 @@
+# ST STM32H7R7X MCU configuration options
+
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32H7R7XX
+
+config NUM_IRQS
+	default 156
+
+endif # SOC_STM32H7R7XX

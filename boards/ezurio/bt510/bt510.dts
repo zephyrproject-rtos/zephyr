@@ -1,0 +1,172 @@
+/*
+ * Copyright (c) 2020 Laird Connectivity
+ * Copyright (c) 2024 Ezurio
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf52840_qiaa.dtsi>
+#include "bt510-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Ezurio Sentrius BT510 Sensor";
+	compatible = "ezurio,bt510";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,bt-c2h-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,ieee802154 = &ieee802154;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led1a: led_1a {
+			gpios = <&gpio0 22 GPIO_ACTIVE_HIGH>;
+			label = "Green LED 1A";
+		};
+		led1b: led_1b {
+			gpios = <&gpio0 20 GPIO_ACTIVE_HIGH>;
+			label = "Red LED 1B";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			gpios = <&gpio1 10 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 1 (SW1)";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		tm0: tm_0 {
+			gpios = <&gpio0 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Test mode (TM)";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led1a;
+		led1 = &led1b;
+		sw0 = &button0;
+		mcuboot-button0 = &button0;
+		mcuboot-led0 = &led1a;
+		watchdog0 = &wdt0;
+		accel0 = &lis2dh12;
+	};
+
+	mag0: mag_0 {
+		compatible = "honeywell,sm351lt";
+		gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&reg1 {
+	regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+};
+
+&adc {
+	status = "okay";
+};
+
+&uicr {
+	gpio-as-nreset;
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&uart0 {
+	compatible = "nordic,nrf-uarte";
+	current-speed = <115200>;
+	status = "okay";
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&i2c0 {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
+	lis2dh12: lis2dh12@18 {
+		compatible = "st,lis2dh12", "st,lis2dh";
+		reg = <0x18>;
+		irq-gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>,
+				<&gpio1 12 GPIO_ACTIVE_HIGH>;
+		disconnect-sdo-sa0-pull-up;
+	};
+
+	si7055@40 {
+		compatible = "silabs,si7055";
+		reg = <0x40>;
+	};
+};
+
+&ieee802154 {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* 96K */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x00018000>;
+		};
+		/* 396K */
+		slot0_partition: partition@18000 {
+			label = "image-0";
+			reg = <0x00018000 0x00063000>;
+		};
+		/* 396K */
+		slot1_partition: partition@7b000 {
+			label = "image-1";
+			reg = <0x0007b000 0x00063000>;
+		};
+		/* 8K */
+		scratch_partition: partition@de000 {
+			label = "image-scratch";
+			reg = <0x000de000 0x00002000>;
+		};
+
+		/*
+		 * The flash starting at 0x000e0000 and ending at
+		 * 0x000fffff is reserved for use by the application.
+		 */
+
+		/*
+		 * Storage partition will be used by FCB/LittleFS/NVS
+		 * if enabled.
+		 */
+		/* 128K */
+		storage_partition: partition@e0000 {
+			label = "storage";
+			reg = <0x000e0000 0x00020000>;
+		};
+	};
+};

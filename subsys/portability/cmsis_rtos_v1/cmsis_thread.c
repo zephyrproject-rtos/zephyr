@@ -14,7 +14,7 @@ static inline int _is_thread_cmsis_inactive(struct k_thread *thread)
 {
 	uint8_t state = thread->base.thread_state;
 
-	return state & (_THREAD_PRESTART | _THREAD_DEAD);
+	return state & _THREAD_DEAD;
 }
 
 static inline int32_t zephyr_to_cmsis_priority(uint32_t z_prio)

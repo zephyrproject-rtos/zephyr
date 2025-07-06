@@ -1,7 +1,4 @@
-.. _blackpill_f401ce:
-
-WeAct Studio Black Pill V3.0
-############################
+.. zephyr:board:: blackpill_f401ce
 
 Overview
 ********
@@ -11,10 +8,6 @@ development board featuring the STM32F401CE, see `STM32F401CE website`_.
 This is the 48-pin variant of the STM32F401x series,
 see `STM32F401x reference manual`_. More info about the board available
 `here <stm32-base-board-page_>`_ and on `WeAct Github`_.
-
-.. image:: img/blackpill-v3.jpg
-      :align: center
-      :alt: Black Pill V3.0+
 
 Hardware
 ********
@@ -44,35 +37,7 @@ hardware components:
 Supported Features
 ==================
 
-The Zephyr blackpill_f401ce board configuration supports the following
-hardware features:
-
-+------------+------------+-------------------------------------+
-| Interface  | Controller | Driver/Component                    |
-+============+============+=====================================+
-| NVIC       | on-chip    | nested vector interrupt controller  |
-+------------+------------+-------------------------------------+
-| SYSTICK    | on-chip    | system clock                        |
-+------------+------------+-------------------------------------+
-| UART       | on-chip    | serial port                         |
-+------------+------------+-------------------------------------+
-| GPIO       | on-chip    | gpio                                |
-+------------+------------+-------------------------------------+
-| PINMUX     | on-chip    | pinmux                              |
-+------------+------------+-------------------------------------+
-| FLASH      | on-chip    | flash                               |
-+------------+------------+-------------------------------------+
-| SPI        | on-chip    | spi                                 |
-+------------+------------+-------------------------------------+
-| I2C        | on-chip    | i2c                                 |
-+------------+------------+-------------------------------------+
-| ADC        | on-chip    | ADC Controller                      |
-+------------+------------+-------------------------------------+
-| USB OTG FS | on-chip    | USB device                          |
-+------------+------------+-------------------------------------+
-
-The default configuration can be found in
-:zephyr_file:`boards/weact/blackpill_f401ce/blackpill_f401ce_defconfig`
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========
@@ -112,6 +77,8 @@ to achieve a stable USB clock (42MHz).
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 There are 2 main entry points for flashing STM32F4X SoCs, one using the ROM
 bootloader, and another by using the SWD debug port (which requires additional

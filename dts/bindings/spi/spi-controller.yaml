@@ -57,3 +57,8 @@ properties:
       If this property is not defined, no chip select GPIOs are set.
       SPI controllers with dedicated CS pins do not need to define
       the cs-gpios property.
+  overrun-character:
+    type: int
+    description: |
+      The overrun character (ORC) is used when all bytes from the TX buffer
+      are sent, but the transfer continues due to RX.

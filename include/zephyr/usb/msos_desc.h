@@ -99,4 +99,33 @@ struct msosv2_guids_property {
 	'a', 0x00, 'c', 0x00, 'e', 0x00, 'G', 0x00, 'U', 0x00, 'I', 0x00, \
 	'D', 0x00, 's', 0x00, 0x00, 0x00
 
+/* Microsoft OS 2.0 minimum USB resume time descriptor */
+struct msosv2_resume_time {
+	uint16_t wLength;
+	uint16_t wDescriptorType;
+	uint8_t bResumeRecoveryTime;
+	uint8_t bResumeSignalingTime;
+} __packed;
+
+/* Microsoft OS 2.0 model ID descriptor */
+struct msosv2_model_id {
+	uint16_t wLength;
+	uint16_t wDescriptorType;
+	uint8_t ModelID[16];
+} __packed;
+
+/* Microsoft OS 2.0 CCGP device descriptor */
+struct msosv2_ccgp_device {
+	uint16_t wLength;
+	uint16_t wDescriptorType;
+} __packed;
+
+/* Microsoft OS 2.0 vendor revision descriptor */
+struct msosv2_vendor_revision {
+	uint16_t wLength;
+	uint16_t wDescriptorType;
+	uint16_t VendorRevision;
+} __packed;
+
+
 #endif /* ZEPHYR_INCLUDE_USB_MSOS_DESC_H */

@@ -24,9 +24,10 @@ static inline int z_vrfy_fuel_gauge_get_prop(const struct device *dev, fuel_gaug
 	return ret;
 }
 
-#include <syscalls/fuel_gauge_get_prop_mrsh.c>
+#include <zephyr/syscalls/fuel_gauge_get_prop_mrsh.c>
 
-static inline int z_vrfy_fuel_gauge_get_props(const struct device *dev, fuel_gauge_prop_t *props,
+static inline int z_vrfy_fuel_gauge_get_props(const struct device *dev,
+					      const fuel_gauge_prop_t *props,
 					      union fuel_gauge_prop_val *vals, size_t len)
 {
 	union fuel_gauge_prop_val k_vals[len];
@@ -44,7 +45,7 @@ static inline int z_vrfy_fuel_gauge_get_props(const struct device *dev, fuel_gau
 	return ret;
 }
 
-#include <syscalls/fuel_gauge_get_props_mrsh.c>
+#include <zephyr/syscalls/fuel_gauge_get_props_mrsh.c>
 
 static inline int z_vrfy_fuel_gauge_set_prop(const struct device *dev, fuel_gauge_prop_t prop,
 					     union fuel_gauge_prop_val val)
@@ -56,10 +57,11 @@ static inline int z_vrfy_fuel_gauge_set_prop(const struct device *dev, fuel_gaug
 	return ret;
 }
 
-#include <syscalls/fuel_gauge_set_prop_mrsh.c>
+#include <zephyr/syscalls/fuel_gauge_set_prop_mrsh.c>
 
-static inline int z_vrfy_fuel_gauge_set_props(const struct device *dev, fuel_gauge_prop_t *props,
-					      union fuel_gauge_prop_val *vals, size_t len)
+static inline int z_vrfy_fuel_gauge_set_props(const struct device *dev,
+					      const fuel_gauge_prop_t *props,
+					      const union fuel_gauge_prop_val *vals, size_t len)
 {
 	union fuel_gauge_prop_val k_vals[len];
 	fuel_gauge_prop_t k_props[len];
@@ -71,13 +73,10 @@ static inline int z_vrfy_fuel_gauge_set_props(const struct device *dev, fuel_gau
 
 	int ret = z_impl_fuel_gauge_set_props(dev, k_props, k_vals, len);
 
-	/* We only copy back vals because props will never be modified */
-	K_OOPS(k_usermode_to_copy(vals, k_vals, len * sizeof(union fuel_gauge_prop_val)));
-
 	return ret;
 }
 
-#include <syscalls/fuel_gauge_set_props_mrsh.c>
+#include <zephyr/syscalls/fuel_gauge_set_props_mrsh.c>
 
 static inline int z_vrfy_fuel_gauge_get_buffer_prop(const struct device *dev,
 						    fuel_gauge_prop_t prop, void *dst,
@@ -92,7 +91,7 @@ static inline int z_vrfy_fuel_gauge_get_buffer_prop(const struct device *dev,
 	return ret;
 }
 
-#include <syscalls/fuel_gauge_get_buffer_prop_mrsh.c>
+#include <zephyr/syscalls/fuel_gauge_get_buffer_prop_mrsh.c>
 
 static inline int z_vrfy_fuel_gauge_battery_cutoff(const struct device *dev)
 {
@@ -101,4 +100,4 @@ static inline int z_vrfy_fuel_gauge_battery_cutoff(const struct device *dev)
 	return z_impl_fuel_gauge_battery_cutoff(dev);
 }
 
-#include <syscalls/fuel_gauge_battery_cutoff_mrsh.c>
+#include <zephyr/syscalls/fuel_gauge_battery_cutoff_mrsh.c>

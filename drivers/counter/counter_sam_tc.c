@@ -74,14 +74,14 @@ struct counter_sam_dev_data {
 };
 
 static const uint32_t sam_tc_input_freq_table[] = {
-#if defined(CONFIG_SOC_SERIES_SAME70) || defined(CONFIG_SOC_SERIES_SAMV71)
+#if defined(CONFIG_SOC_SERIES_SAMX7X)
 	USEC_PER_SEC,
 	SOC_ATMEL_SAM_MCK_FREQ_HZ / 8,
 	SOC_ATMEL_SAM_MCK_FREQ_HZ / 32,
 	SOC_ATMEL_SAM_MCK_FREQ_HZ / 128,
 	32768,
 #elif defined(CONFIG_SOC_SERIES_SAM4L)
-	USEC_PER_SEC,
+	1024,
 	SOC_ATMEL_SAM_MCK_FREQ_HZ / 2,
 	SOC_ATMEL_SAM_MCK_FREQ_HZ / 8,
 	SOC_ATMEL_SAM_MCK_FREQ_HZ / 32,
@@ -319,7 +319,7 @@ static int counter_sam_initialize(const struct device *dev)
 
 	/* Connect pins to the peripheral */
 	retval = pinctrl_apply_state(dev_cfg->pcfg, PINCTRL_STATE_DEFAULT);
-	if (retval < 0) {
+	if (retval < 0 && retval != -ENOENT) {
 		return retval;
 	}
 
@@ -343,7 +343,7 @@ static int counter_sam_initialize(const struct device *dev)
 	return 0;
 }
 
-static const struct counter_driver_api counter_sam_driver_api = {
+static DEVICE_API(counter, counter_sam_driver_api) = {
 	.start = counter_sam_tc_start,
 	.stop = counter_sam_tc_stop,
 	.get_value = counter_sam_tc_get_value,

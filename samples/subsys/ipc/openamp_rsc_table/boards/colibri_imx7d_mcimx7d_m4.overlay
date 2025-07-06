@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2024 MAKEEN Energy A/S
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Follow the board's documentation to modify the Linux DT accordingly */
+
+/ {
+
+	chosen {
+		/* Use OCRAM 128kB because TCM 32kB is too small for the sample */
+		zephyr,flash = &ocram_code;
+		zephyr,ipc_shm = &ddr_shm;
+		zephyr,ipc = &mub;
+	};
+
+	ddr_shm: memory1@90000000 {
+		compatible = "mmio-sram";
+		/* use DDR_SYS area as mmio, 0x90000000 0x10000 */
+		reg = <0x90000000 0x10000>;
+		status = "okay";
+	};
+};
+
+&mub {
+	status = "okay";
+};

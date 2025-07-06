@@ -30,10 +30,7 @@
 
 #include "mm_drv_common.h"
 
-DEVICE_MMIO_TOPLEVEL_STATIC(tlb_regs, DT_DRV_INST(0));
-
-#define TLB_BASE \
-	((mm_reg_t)DEVICE_MMIO_TOPLEVEL_GET(tlb_regs))
+#define TLB_BASE (mm_reg_t)DT_REG_ADDR(DT_NODELABEL(tlb))
 
 /*
  * Number of significant bits in the page index (defines the size of
@@ -58,7 +55,6 @@ DEVICE_MMIO_TOPLEVEL_STATIC(tlb_regs, DT_DRV_INST(0));
 #define MAX_EBB_BANKS_IN_SEGMENT	32
 #define SRAM_BANK_SIZE				(128 * 1024)
 #define L2_SRAM_BANK_NUM			(L2_SRAM_SIZE / SRAM_BANK_SIZE)
-#define IS_BIT_SET(value, idx)		((value) & (1 << (idx)))
 
 /**
  * Calculate TLB entry based on physical address.

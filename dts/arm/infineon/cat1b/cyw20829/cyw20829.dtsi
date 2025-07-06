@@ -1,0 +1,375 @@
+/*
+ * Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
+ * an affiliate of Cypress Semiconductor Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+
+#define BOOTSTRAP_SIZE    DT_SIZE_K(12)
+#define SRAM0_SIZE       (DT_SIZE_K(256) - BOOTSTRAP_SIZE)
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m33";
+			reg = <0>;
+			cpu-power-states = <&idle &suspend_to_ram>;
+		};
+
+		power-states {
+			idle: idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				min-residency-us = <1000000>;
+			};
+
+			suspend_to_ram: suspend_to_ram {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-ram";
+				min-residency-us = <2000000>;
+			};
+		};
+	};
+
+	sram0: memory@20000000 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		compatible = "mmio-sram";
+		reg = <0x20000000 SRAM0_SIZE>;
+
+		/* SRAM aliased address path */
+		sram_sahb: sram_bus_alias@20000000 {
+			reg = <0x20000000 SRAM0_SIZE>;  /* SAHB address */
+		};
+
+		sram_cbus: sram_bus_alias@4000000 {
+			reg = <0x04000000 SRAM0_SIZE>;  /* CBUS address */
+		};
+	};
+
+	/* sram_bootstrap address calculation:
+	 * sram_sahb + sram_size (256k) - bootstrap size
+	 * (e.g. 0x20000000 + 0x40000 - 12K (0x3000) = 0x2003D000)
+	 */
+	sram_bootstrap: memory@2003D000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "BOOTSTRAP_RAM";
+		reg = <0x2003D000 BOOTSTRAP_SIZE>;
+	};
+
+	qspi_flash: qspi_flash@40890000 {
+		compatible = "infineon,cat1-qspi-flash";
+		reg = <0x40890000 0x30000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+	};
+
+	/* Flash aliased address path */
+	flash_sahb: flash_bus_alias@60000000 {
+		reg = <0x60000000 0x80000>;  /* SAHB address */
+	};
+
+	flash_cbus: flash_bus_alias@8000000 {
+		reg = <0x08000000 0x80000>;  /* CBUS address */
+	};
+
+	soc {
+		pinctrl: pinctrl@40400000 {
+			compatible = "infineon,cat1-pinctrl";
+			reg = <0x40400000 0x20000>;
+		};
+
+		hsiom: hsiom@40400000 {
+			compatible = "infineon,cat1-hsiom";
+			reg = <0x40400000 0x4000>;
+			interrupts = <7 4>, <6 4>;
+			status = "disabled";
+		};
+
+		gpio_prt0: gpio@40410000 {
+			compatible = "infineon,cat1-gpio";
+			reg = <0x40410000 0x80>;
+			interrupts = <0 4>;
+			gpio-controller;
+			ngpios = <6>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+		gpio_prt1: gpio@40410080 {
+			compatible = "infineon,cat1-gpio";
+			reg = <0x40410080 0x80>;
+			interrupts = <1 4>;
+			gpio-controller;
+			ngpios = <7>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+		gpio_prt2: gpio@40410100 {
+			compatible = "infineon,cat1-gpio";
+			reg = <0x40410100 0x80>;
+			interrupts = <2 4>;
+			gpio-controller;
+			ngpios = <6>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+		gpio_prt3: gpio@40410180 {
+			compatible = "infineon,cat1-gpio";
+			reg = <0x40410180 0x80>;
+			interrupts = <3 4>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+		gpio_prt4: gpio@40410200 {
+			compatible = "infineon,cat1-gpio";
+			reg = <0x40410200 0x80>;
+			interrupts = <4 4>;
+			gpio-controller;
+			ngpios = <2>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+		gpio_prt5: gpio@40410280 {
+			compatible = "infineon,cat1-gpio";
+			reg = <0x40410280 0x80>;
+			interrupts = <5 4>;
+			gpio-controller;
+			ngpios = <3>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		adc0: adc@40520000 {
+			compatible = "infineon,cat1-adc";
+			reg = <0x40520000 0x10000>;
+			interrupts = <67 6>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
+		ipc0: ipc@401d0000 {
+			compatible = "infineon,cat1-ipc";
+			reg = <0x401d0000 0x10000>;
+			status = "disabled";
+			#ipc-config-cells = <3>;
+		};
+
+		scb0: scb@40590000 {
+			compatible = "infineon,cat1-scb";
+			reg = <0x40590000 0xfd0>;
+			interrupts = <8 4>;
+			status = "disabled";
+		};
+		scb1: scb@405a0000 {
+			compatible = "infineon,cat1-scb";
+			reg = <0x405a0000 0xfd0>;
+			interrupts = <17 4>;
+			status = "disabled";
+		};
+		scb2: scb@405b0000 {
+			compatible = "infineon,cat1-scb";
+			reg = <0x405b0000 0xfd0>;
+			interrupts = <18 4>;
+			status = "disabled";
+		};
+
+		watchdog0: watchdog@4020c000 {
+			compatible = "infineon,cat1-watchdog";
+			reg = <0x4020c000 0x10>;
+			interrupts = <15 4>;
+			status = "disabled";
+		};
+
+		mcwdt0: mcwdt@4020d000 {
+			compatible = "infineon,cat1-lp-timer";
+			reg = <0x4020d000 0x40>;
+			interrupts = <9 4>;
+			status = "disabled";
+		};
+
+		rtc0: rtc@40220000 {
+			compatible = "infineon,cat1-rtc";
+			reg = <0x40220000 0x10000>;
+			interrupts = <10 6>;
+			alarms-count = <2>;
+			status = "disabled";
+		};
+
+		counter0_0: counter@404a0000 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x404a0000 0x80>;
+			interrupts = <42 4>;
+			resolution = <32>;
+			status = "disabled";
+		};
+		counter0_1: counter@404a0080 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x404a0080 0x80>;
+			interrupts = <43 4>;
+			resolution = <32>;
+			status = "disabled";
+		};
+		counter1_0: counter@404a8000 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x404a8000 0x80>;
+			interrupts = <44 4>;
+			resolution = <16>;
+			status = "disabled";
+		};
+		counter1_1: counter@404a8080 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x404a8080 0x80>;
+			interrupts = <45 4>;
+			resolution = <16>;
+			status = "disabled";
+		};
+		counter1_2: counter@404a8100 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x404a8100 0x80>;
+			interrupts = <46 4>;
+			resolution = <16>;
+			status = "disabled";
+		};
+		counter1_3: counter@404a8180 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x404a8180 0x80>;
+			interrupts = <47 4>;
+			resolution = <16>;
+			status = "disabled";
+		};
+		counter1_4: counter@404a8200 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x404a8200 0x80>;
+			interrupts = <48 4>;
+			resolution = <16>;
+			status = "disabled";
+		};
+		counter1_5: counter@404a8280 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x404a8280 0x80>;
+			interrupts = <49 4>;
+			resolution = <16>;
+			status = "disabled";
+		};
+		counter1_6: counter@404a8300 {
+			compatible = "infineon,cat1-counter";
+			reg = <0x404a8300 0x80>;
+			interrupts = <50 4>;
+			resolution = <16>;
+			status = "disabled";
+		};
+
+		pwm0_0: pwm@404a0000 {
+			compatible = "infineon,cat1-pwm";
+			reg = <0x404a0000 0x80>;
+			interrupts = <42 4>;
+			resolution = <32>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+		pwm0_1: pwm@404a0080 {
+			compatible = "infineon,cat1-pwm";
+			reg = <0x404a0080 0x80>;
+			interrupts = <43 4>;
+			resolution = <32>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+		pwm1_0: pwm@404a8000 {
+			compatible = "infineon,cat1-pwm";
+			reg = <0x404a8000 0x80>;
+			interrupts = <44 4>;
+			resolution = <16>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+		pwm1_1: pwm@404a8080 {
+			compatible = "infineon,cat1-pwm";
+			reg = <0x404a8080 0x80>;
+			interrupts = <45 4>;
+			resolution = <16>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+		pwm1_2: pwm@404a8100 {
+			compatible = "infineon,cat1-pwm";
+			reg = <0x404a8100 0x80>;
+			interrupts = <46 4>;
+			resolution = <16>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+		pwm1_3: pwm@404a8180 {
+			compatible = "infineon,cat1-pwm";
+			reg = <0x404a8180 0x80>;
+			interrupts = <47 4>;
+			resolution = <16>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+		pwm1_4: pwm@404a8200 {
+			compatible = "infineon,cat1-pwm";
+			reg = <0x404a8200 0x80>;
+			interrupts = <48 4>;
+			resolution = <16>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+		pwm1_5: pwm@404a8280 {
+			compatible = "infineon,cat1-pwm";
+			reg = <0x404a8280 0x80>;
+			interrupts = <49 4>;
+			resolution = <16>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+		pwm1_6: pwm@404a8300 {
+			compatible = "infineon,cat1-pwm";
+			reg = <0x404a8300 0x80>;
+			interrupts = <50 4>;
+			resolution = <16>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+
+		dma0: dw@40180000 {
+			#dma-cells = <1>;
+			compatible = "infineon,cat1-dma";
+			reg = <0x40180000 0x10000>;
+			dma-channels = <16>;
+			interrupts = <19 4>, /* CH0 */
+					     <20 4>, /* CH1 */
+					     <21 4>, /* CH2 */
+					     <22 4>, /* CH3 */
+					     <23 4>, /* CH4 */
+					     <24 4>, /* CH5 */
+					     <25 4>, /* CH6 */
+					     <26 4>, /* CH7 */
+					     <27 4>, /* CH8 */
+					     <28 4>, /* CH9 */
+					     <29 4>, /* CH10 */
+					     <30 4>, /* CH11 */
+					     <31 4>, /* CH12 */
+					     <32 4>, /* CH13 */
+					     <33 4>, /* CH14 */
+					     <34 4>; /* CH15 */
+			status = "disabled";
+		};
+		bluetooth: btss@42000000 {
+			compatible = "infineon,cyw208xx-hci";
+			reg = <0x42000000 0x6186A0>;
+			interrupts = <16 4>;
+			status = "disabled";
+		};
+
+	};
+};

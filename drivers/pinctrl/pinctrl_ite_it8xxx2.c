@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT ite_it8xxx2_pinctrl_func
 
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
 
@@ -13,13 +14,13 @@
 
 LOG_MODULE_REGISTER(pinctrl_ite_it8xxx2, LOG_LEVEL_ERR);
 
-#define GPIO_IT8XXX2_REG_BASE \
-	((struct gpio_it8xxx2_regs *)DT_REG_ADDR(DT_NODELABEL(gpiogcr)))
 #define GPIO_GROUP_MEMBERS  8
 
 struct pinctrl_it8xxx2_gpio {
 	/* gpio port control register (byte mapping to pin) */
 	uint8_t *reg_gpcr;
+	/* port driving select control */
+	uint8_t *reg_pdsc;
 	/* function 3 general control register */
 	uintptr_t func3_gcr[GPIO_GROUP_MEMBERS];
 	/* function 3 enable mask */
@@ -74,6 +75,7 @@ static int pinctrl_it8xxx2_set(const pinctrl_soc_pin_t *pins)
 	uint8_t pin = pins->pin;
 	volatile uint8_t *reg_gpcr = (uint8_t *)gpio->reg_gpcr + pin;
 	volatile uint8_t *reg_volt_sel = (uint8_t *)(gpio->volt_sel[pin]);
+	volatile uint8_t *reg_pdsc = (uint8_t *)gpio->reg_pdsc;
 
 	/* Setting pull-up or pull-down. */
 	switch (IT8XXX2_DT_PINCFG_PUPDR(pincfg)) {
@@ -125,6 +127,18 @@ static int pinctrl_it8xxx2_set(const pinctrl_soc_pin_t *pins)
 			      GPCR_PORT_PIN_MODE_PULLDOWN);
 	}
 
+	/* Driving current selection. */
+	if (reg_pdsc != NULL &&
+		IT8XXX2_DT_PINCFG_DRIVE_CURRENT(pincfg) != IT8XXX2_DRIVE_DEFAULT) {
+		if (IT8XXX2_DT_PINCFG_DRIVE_CURRENT(pincfg) & IT8XXX2_PDSCX_MASK) {
+			/* Driving current selects low. */
+			*reg_pdsc |= BIT(pin);
+		} else {
+			/* Driving current selects high. */
+			*reg_pdsc &= ~BIT(pin);
+		}
+	}
+
 	return 0;
 }
 
@@ -162,12 +176,14 @@ static int pinctrl_gpio_it8xxx2_configure_pins(const pinctrl_soc_pin_t *pins)
 	/*
 	 * Handle alternate function.
 	 */
-	if (reg_func3_gcr != NULL) {
-		*reg_func3_gcr &= ~gpio->func3_en_mask[pin];
-	}
-	/* Ensure that func3-ext setting is in default state. */
-	if (reg_func3_ext != NULL) {
-		*reg_func3_ext &= ~gpio->func3_ext_mask[pin];
+	if (pins->alt_func == IT8XXX2_ALT_FUNC_3) {
+		if (reg_func3_gcr != NULL) {
+			*reg_func3_gcr &= ~gpio->func3_en_mask[pin];
+		}
+		/* Ensure that func3-ext setting is in default state. */
+		if (reg_func3_ext != NULL) {
+			*reg_func3_ext &= ~gpio->func3_ext_mask[pin];
+		}
 	}
 
 	switch (pins->alt_func) {
@@ -275,7 +291,7 @@ static int pinctrl_kscan_it8xxx2_configure_pins(const pinctrl_soc_pin_t *pins)
 		return -EINVAL;
 	}
 
-#ifdef CONFIG_SOC_IT8XXX2_REG_SET_V1
+#if defined(CONFIG_SOC_IT8XXX2_REG_SET_V1) || defined(CONFIG_SOC_SERIES_IT51XXX)
 	uint8_t pin_mask = BIT(pins->pin);
 	volatile uint8_t *reg_gctrl = ksi_kso->reg_gctrl;
 
@@ -340,16 +356,30 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 
 static int pinctrl_it8xxx2_init(const struct device *dev)
 {
-	struct gpio_it8xxx2_regs *const gpio_base = GPIO_IT8XXX2_REG_BASE;
+	struct gpio_ite_ec_regs *const gpio_base = GPIO_ITE_EC_REGS_BASE;
 
 	/*
 	 * The default value of LPCRSTEN is bit2:1 = 10b(GPD2) in GCR.
 	 * If LPC reset is enabled on GPB7, we have to clear bit2:1
 	 * to 00b.
 	 */
-	gpio_base->GPIO_GCR &= ~IT8XXX2_GPIO_LPCRSTEN;
+	gpio_base->GPIO_GCR &= ~ITE_EC_GPIO_LPCRSTEN;
 
 #ifdef CONFIG_SOC_IT8XXX2_REG_SET_V2
+#if defined(CONFIG_I2C_ITE_ENHANCE) && DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i2c5))
+	const struct gpio_dt_spec scl_gpios = GPIO_DT_SPEC_GET(DT_NODELABEL(i2c5), scl_gpios);
+	const struct gpio_dt_spec sda_gpios = GPIO_DT_SPEC_GET(DT_NODELABEL(i2c5), sda_gpios);
+
+	/*
+	 * When setting these pins as I2C alternate mode and then setting
+	 * GCR7 or func3-ext of GPIO extended, it will cause leakage.
+	 * In order to prevent leakage, it must be set to GPIO INPUT mode.
+	 */
+	/* Set I2C5 SCL as GPIO input to prevent leakage */
+	gpio_pin_configure_dt(&scl_gpios, GPIO_INPUT);
+	/* Set I2C5 SDA as GPIO input to prevent leakage */
+	gpio_pin_configure_dt(&sda_gpios, GPIO_INPUT);
+#endif
 	/*
 	 * Swap the default I2C2 SMCLK2/SMDAT2 pins from GPC7/GPD0 to GPF6/GPF7,
 	 * and I2C3 SMCLK3/SMDAT3 pins from GPB2/GPB5 to GPH1/GPH2,
@@ -366,6 +396,7 @@ static int pinctrl_it8xxx2_init(const struct device *dev)
 	COND_CODE_1(DT_INST_PROP(inst, gpio_group),                                    \
 		(.gpio = {                                                             \
 			 .reg_gpcr = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 0),      \
+			 .reg_pdsc = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 1),      \
 			 .func3_gcr = DT_INST_PROP(inst, func3_gcr),                   \
 			 .func3_en_mask = DT_INST_PROP(inst, func3_en_mask),           \
 			 .func3_ext = DT_INST_PROP_OR(inst, func3_ext, {0}),           \

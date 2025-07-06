@@ -1,0 +1,7 @@
+# AD-SWIOT1L-SL board configuration
+
+# Copyright (c) 2025 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_AD_SWIOT1L_SL
+	select SOC_MAX32650

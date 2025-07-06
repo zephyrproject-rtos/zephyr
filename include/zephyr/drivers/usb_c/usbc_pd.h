@@ -134,7 +134,7 @@ extern "C" {
 #define PD_T_TYPEC_SEND_SOURCE_CAP_MIN_MS 100
 
 /**
- * @brief Maxmimum time a source shall wait before sending a
+ * @brief Maximum time a source shall wait before sending a
  *	  Source_Capabilities message while the following is true:
  *	  1) The Port is Attached.
  *	  2) The Source is not in an active connection with a PD Sink Port.
@@ -224,37 +224,37 @@ extern "C" {
 #define PD_T_SENDER_RESPONSE_MAX_MS 30
 
 /**
- * @brief Minimum SPR Mode time for a power suppply to transition to a new level
+ * @brief Minimum SPR Mode time for a power supply to transition to a new level
  *        See Table 6-68 Time Values
  */
 #define PD_T_SPR_PS_TRANSITION_MIN_MS 450
 
 /**
- * @brief Nominal SPR Mode time for a power suppply to transition to a new level
+ * @brief Nominal SPR Mode time for a power supply to transition to a new level
  *        See Table 6-68 Time Values
  */
 #define PD_T_SPR_PS_TRANSITION_NOM_MS 500
 
 /**
- * @brief Maximum SPR Mode time for a power suppply to transition to a new level
+ * @brief Maximum SPR Mode time for a power supply to transition to a new level
  *        See Table 6-68 Time Values
  */
 #define PD_T_SPR_PS_TRANSITION_MAX_MS 550
 
 /**
- * @brief Minimum EPR Mode time for a power suppply to transition to a new level
+ * @brief Minimum EPR Mode time for a power supply to transition to a new level
  *        See Table 6-68 Time Values
  */
 #define PD_T_EPR_PS_TRANSITION_MIN_MS 830
 
 /**
- * @brief Nominal EPR Mode time for a power suppply to transition to a new level
+ * @brief Nominal EPR Mode time for a power supply to transition to a new level
  *        See Table 6-68 Time Values
  */
 #define PD_T_EPR_PS_TRANSITION_NOM_MS 925
 
 /**
- * @brief Maximum EPR Mode time for a power suppply to transition to a new level
+ * @brief Maximum EPR Mode time for a power supply to transition to a new level
  *        See Table 6-68 Time Values
  */
 #define PD_T_EPR_PS_TRANSITION_MAX_MS 1020

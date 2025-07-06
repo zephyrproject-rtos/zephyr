@@ -104,7 +104,7 @@ _ResetHandler:
 	/* Read PWRSTAT */
 	movi	a2, XDM_MISC_PWRSTAT
 	/* Save area address - retained for later */
-	movi	a3, _xtos_pso_savearea
+	movi	a3, xthal_pso_savearea
 	/* Signature for compare - retained for later */
 	movi	a5, CORE_STATE_SIGNATURE
 	 /* PWRSTAT value - retained for later */
@@ -150,7 +150,16 @@ _ResetHandler:
 	/* make sure that interrupts are shut off (*before* we lower
 	 * PS.INTLEVEL and PS.EXCM!)
 	 */
-	wsr	a0, INTENABLE
+	wsr.intenable	a0
+#if (XCHAL_NUM_INTERRUPTS > 32)
+	wsr.intenable1	a0
+#endif
+#if (XCHAL_NUM_INTERRUPTS > 64)
+	wsr.intenable2	a0
+#endif
+#if (XCHAL_NUM_INTERRUPTS > 96)
+	wsr.intenable3	a0
+#endif
 #endif
 
 #if !XCHAL_HAVE_FULL_RESET
@@ -229,7 +238,7 @@ _ResetHandler:
 	 * MEMCTL register was already restored earlier, and as a side
 	 * effect, registers a3, a5, a7 are now preloaded with values
 	 * that we will use here.
-	 * a3 - pointer to save area base address (_xtos_pso_savearea)
+	 * a3 - pointer to save area base address (xthal_pso_savearea)
 	 * a5 - saved state signature (CORE_STATE_SIGNATURE)
 	 * a7 - contents of PWRSTAT register
 	 */
@@ -343,11 +352,11 @@ _ResetHandler:
 
 	/* make shutoff routine return zero */
 	movi	a2, 0
-	movi	a3, _xtos_pso_savearea
+	movi	a3, xthal_pso_savearea
 	/* Here, as below for _start, call0 is used as an unlimited-range
 	 * jump.
 	 */
-	call0	_xtos_core_restore_nw
+	call0	xthal_core_restore_nw
 	/*  (does not return) */
 .Lcoldstart:
 #endif

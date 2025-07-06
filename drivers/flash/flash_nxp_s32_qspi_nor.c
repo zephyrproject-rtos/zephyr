@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(nxp_s32_qspi_nor, CONFIG_FLASH_LOG_LEVEL);
 #include "jesd216.h"
 
 #include "memc_nxp_s32_qspi.h"
+#include "flash_nxp_s32_qspi.h"
 
 #define QSPI_INST_NODE_HAS_PROP_EQ_AND_OR(n, prop, val)				\
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, prop),				\
@@ -55,51 +56,8 @@ LOG_MODULE_REGISTER(nxp_s32_qspi_nor, CONFIG_FLASH_LOG_LEVEL);
 		(_CONCAT(QSPI_SEQ_READ_, DT_INST_STRING_UPPER_TOKEN(n, readoc))),\
 		(QSPI_SEQ_READ_1_1_1))
 
-#define QSPI_ERASE_VALUE 0xff
-#define QSPI_WRITE_BLOCK_SIZE 1U
-
-#define QSPI_IS_ALIGNED(addr, bits) (((addr) & BIT_MASK(bits)) == 0)
-
 #define QSPI_LUT_ENTRY_SIZE (FEATURE_QSPI_LUT_SEQUENCE_SIZE * 2)
 #define QSPI_LUT_IDX(n)	(n * QSPI_LUT_ENTRY_SIZE)
-
-#if defined(CONFIG_FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME)
-/* Size of LUT */
-#define QSPI_SFDP_LUT_SIZE 130U
-/* Size of init operations */
-#define QSPI_SFDP_INIT_OP_SIZE 8U
-#if defined(CONFIG_FLASH_JESD216_API)
-/* Size of all LUT sequences for JESD216 operations */
-#define QSPI_JESD216_SEQ_SIZE 8U
-#endif /* CONFIG_FLASH_JESD216_API */
-#endif /* CONFIG_FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME */
-
-struct nxp_s32_qspi_config {
-	const struct device *controller;
-	struct flash_parameters flash_parameters;
-#if defined(CONFIG_FLASH_PAGE_LAYOUT)
-	struct flash_pages_layout layout;
-#endif
-#if !defined(CONFIG_FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME)
-	const Qspi_Ip_MemoryConfigType memory_cfg;
-	enum jesd216_dw15_qer_type qer_type;
-	bool quad_mode;
-#endif
-};
-
-struct nxp_s32_qspi_data {
-	uint8_t instance;
-	Qspi_Ip_MemoryConnectionType memory_conn_cfg;
-	uint8_t read_sfdp_lut_idx;
-#if defined(CONFIG_FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME)
-	Qspi_Ip_MemoryConfigType memory_cfg;
-	Qspi_Ip_InstrOpType lut_ops[QSPI_SFDP_LUT_SIZE];
-	Qspi_Ip_InitOperationType init_ops[QSPI_SFDP_INIT_OP_SIZE];
-#endif
-#if defined(CONFIG_MULTITHREADING)
-	struct k_sem sem;
-#endif
-};
 
 enum {
 	QSPI_SEQ_RDSR,
@@ -145,7 +103,7 @@ enum {
 #endif
 };
 
-#if !defined(CONFIG_FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME)
+#if !defined(CONFIG_FLASH_NXP_S32_QSPI_SFDP_RUNTIME)
 static const Qspi_Ip_InstrOpType nxp_s32_qspi_lut[][QSPI_LUT_ENTRY_SIZE] = {
 	[QSPI_SEQ_RDSR] = {
 		QSPI_LUT_OP(QSPI_IP_LUT_INSTR_CMD, QSPI_IP_LUT_PADS_1, SPI_NOR_CMD_RDSR),
@@ -309,73 +267,9 @@ static const Qspi_Ip_InstrOpType nxp_s32_qspi_lut[][QSPI_LUT_ENTRY_SIZE] = {
 	},
 #endif
 };
-#endif /* !defined(CONFIG_FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME) */
+#endif /* !defined(CONFIG_FLASH_NXP_S32_QSPI_SFDP_RUNTIME) */
 
-static ALWAYS_INLINE Qspi_Ip_MemoryConfigType *get_memory_config(const struct device *dev)
-{
-#if defined(CONFIG_FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME)
-	return &((struct nxp_s32_qspi_data *)dev->data)->memory_cfg;
-#else
-	return ((Qspi_Ip_MemoryConfigType *)
-		&((const struct nxp_s32_qspi_config *)dev->config)->memory_cfg);
-#endif
-}
-
-static ALWAYS_INLINE bool area_is_subregion(const struct device *dev, off_t offset, size_t size)
-{
-	Qspi_Ip_MemoryConfigType *memory_cfg = get_memory_config(dev);
-
-	return ((offset >= 0) && (offset < memory_cfg->memSize)
-		&& ((size + offset) <= memory_cfg->memSize));
-}
-
-static inline void nxp_s32_qspi_lock(const struct device *dev)
-{
-#ifdef CONFIG_MULTITHREADING
-	struct nxp_s32_qspi_data *data = dev->data;
-
-	k_sem_take(&data->sem, K_FOREVER);
-#else
-	ARG_UNUSED(dev);
-#endif
-}
-
-static inline void nxp_s32_qspi_unlock(const struct device *dev)
-{
-#ifdef CONFIG_MULTITHREADING
-	struct nxp_s32_qspi_data *data = dev->data;
-
-	k_sem_give(&data->sem);
-#else
-	ARG_UNUSED(dev);
-#endif
-}
-
-/* Must be called with lock */
-static int nxp_s32_qspi_wait_until_ready(const struct device *dev)
-{
-	struct nxp_s32_qspi_data *data = dev->data;
-	Qspi_Ip_StatusType status;
-	uint32_t timeout = 0xFFFFFF;
-	int ret = 0;
-
-	do {
-		status = Qspi_Ip_GetMemoryStatus(data->instance);
-		timeout--;
-	} while ((status == STATUS_QSPI_IP_BUSY) && (timeout > 0));
-
-	if (status != STATUS_QSPI_IP_SUCCESS) {
-		LOG_ERR("Failed to read memory status (%d)", status);
-		ret = -EIO;
-	} else if (timeout <= 0) {
-		LOG_ERR("Timeout, memory is busy");
-		ret = -ETIMEDOUT;
-	}
-
-	return ret;
-}
-
-#if !defined(CONFIG_FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME)
+#if !defined(CONFIG_FLASH_NXP_S32_QSPI_SFDP_RUNTIME)
 static int nxp_s32_qspi_read_status_register(const struct device *dev,
 					     uint8_t reg_num,
 					     uint8_t *val)
@@ -565,210 +459,7 @@ static int nxp_s32_qspi_set_quad_mode(const struct device *dev, bool enabled)
 
 	return ret;
 }
-#endif /* !defined(CONFIG_FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME) */
-
-static int nxp_s32_qspi_read(const struct device *dev, off_t offset, void *dest, size_t size)
-{
-	struct nxp_s32_qspi_data *data = dev->data;
-	Qspi_Ip_StatusType status;
-	int ret = 0;
-
-	if (!dest) {
-		return -EINVAL;
-	}
-
-	if (!area_is_subregion(dev, offset, size)) {
-		return -ENODEV;
-	}
-
-	if (size) {
-		nxp_s32_qspi_lock(dev);
-
-		status = Qspi_Ip_Read(data->instance, (uint32_t)offset, (uint8_t *)dest,
-				      (uint32_t)size);
-		if (status != STATUS_QSPI_IP_SUCCESS) {
-			LOG_ERR("Failed to read %zu bytes at 0x%lx (%d)",
-				size, offset, status);
-			ret = -EIO;
-		}
-
-		nxp_s32_qspi_unlock(dev);
-	}
-
-	return ret;
-}
-
-static int nxp_s32_qspi_write(const struct device *dev, off_t offset, const void *src, size_t size)
-{
-	struct nxp_s32_qspi_data *data = dev->data;
-	Qspi_Ip_MemoryConfigType *memory_cfg = get_memory_config(dev);
-	Qspi_Ip_StatusType status;
-	size_t max_write = (size_t)MIN(QSPI_IP_MAX_WRITE_SIZE, memory_cfg->pageSize);
-	size_t len;
-	int ret = 0;
-
-	if (!src) {
-		return -EINVAL;
-	}
-
-	if (!area_is_subregion(dev, offset, size)) {
-		return -ENODEV;
-	}
-
-	nxp_s32_qspi_lock(dev);
-
-	while (size) {
-		len = MIN(max_write - (offset % max_write), size);
-		status = Qspi_Ip_Program(data->instance, (uint32_t)offset,
-					(const uint8_t *)src, (uint32_t)len);
-		if (status != STATUS_QSPI_IP_SUCCESS) {
-			LOG_ERR("Failed to write %zu bytes at 0x%lx (%d)",
-				len, offset, status);
-			ret = -EIO;
-			break;
-		}
-
-		ret = nxp_s32_qspi_wait_until_ready(dev);
-		if (ret != 0) {
-			break;
-		}
-
-		if (IS_ENABLED(CONFIG_FLASH_NXP_S32_QSPI_VERIFY_WRITE)) {
-			status = Qspi_Ip_ProgramVerify(data->instance, (uint32_t)offset,
-						       (const uint8_t *)src, (uint32_t)len);
-			if (status != STATUS_QSPI_IP_SUCCESS) {
-				LOG_ERR("Write verification failed at 0x%lx (%d)",
-					offset, status);
-				ret = -EIO;
-				break;
-			}
-		}
-
-		size -= len;
-		src = (const uint8_t *)src + len;
-		offset += len;
-	}
-
-	nxp_s32_qspi_unlock(dev);
-
-	return ret;
-}
-
-static int nxp_s32_qspi_erase_block(const struct device *dev, off_t offset,
-				    size_t size, size_t *erase_size)
-{
-	struct nxp_s32_qspi_data *data = dev->data;
-	Qspi_Ip_MemoryConfigType *memory_cfg = get_memory_config(dev);
-	Qspi_Ip_EraseVarConfigType *etp = NULL;
-	Qspi_Ip_EraseVarConfigType *etp_tmp;
-	Qspi_Ip_StatusType status;
-	int ret = 0;
-
-	/*
-	 * Find the erase type with bigger size that can erase all or part of the
-	 * requested memory size
-	 */
-	for (uint8_t i = 0; i < QSPI_IP_ERASE_TYPES; i++) {
-		etp_tmp = (Qspi_Ip_EraseVarConfigType *)&(memory_cfg->eraseSettings.eraseTypes[i]);
-		if ((etp_tmp->eraseLut != QSPI_IP_LUT_INVALID)
-			&& QSPI_IS_ALIGNED(offset, etp_tmp->size)
-			&& (BIT(etp_tmp->size) <= size)
-			&& ((etp == NULL) || (etp_tmp->size > etp->size))) {
-
-			etp = etp_tmp;
-		}
-	}
-	if (etp != NULL) {
-		*erase_size = BIT(etp->size);
-		status = Qspi_Ip_EraseBlock(data->instance, (uint32_t)offset, *erase_size);
-		if (status != STATUS_QSPI_IP_SUCCESS) {
-			LOG_ERR("Failed to erase %zu bytes at 0x%lx (%d)",
-				*erase_size, (long)offset, status);
-			ret = -EIO;
-		}
-	} else {
-		LOG_ERR("Can't find erase size to erase %zu bytes", size);
-		ret = -EINVAL;
-	}
-
-	return ret;
-}
-
-static int nxp_s32_qspi_erase(const struct device *dev, off_t offset, size_t size)
-{
-	struct nxp_s32_qspi_data *data = dev->data;
-	Qspi_Ip_MemoryConfigType *memory_cfg = get_memory_config(dev);
-	Qspi_Ip_StatusType status;
-	size_t erase_size;
-	int ret = 0;
-
-	if (!area_is_subregion(dev, offset, size)) {
-		return -ENODEV;
-	}
-
-	nxp_s32_qspi_lock(dev);
-
-	if (size == memory_cfg->memSize) {
-		status = Qspi_Ip_EraseChip(data->instance);
-		if (status != STATUS_QSPI_IP_SUCCESS) {
-			LOG_ERR("Failed to erase chip (%d)", status);
-			ret = -EIO;
-		}
-	} else {
-		while (size > 0) {
-			erase_size = 0;
-
-			ret = nxp_s32_qspi_erase_block(dev, offset, size, &erase_size);
-			if (ret != 0) {
-				break;
-			}
-
-			ret = nxp_s32_qspi_wait_until_ready(dev);
-			if (ret != 0) {
-				break;
-			}
-
-			if (IS_ENABLED(CONFIG_FLASH_NXP_S32_QSPI_VERIFY_ERASE)) {
-				status = Qspi_Ip_EraseVerify(data->instance, (uint32_t)offset,
-							erase_size);
-				if (status != STATUS_QSPI_IP_SUCCESS) {
-					LOG_ERR("Erase verification failed at 0x%lx (%d)",
-						offset, status);
-					ret = -EIO;
-					break;
-				}
-			}
-
-			offset += erase_size;
-			size -= erase_size;
-		}
-	}
-
-	nxp_s32_qspi_unlock(dev);
-
-	return ret;
-}
-
-#if defined(CONFIG_FLASH_JESD216_API) || !defined(CONFIG_FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME)
-static int nxp_s32_qspi_read_id(const struct device *dev, uint8_t *id)
-{
-	struct nxp_s32_qspi_data *data = dev->data;
-	Qspi_Ip_StatusType status;
-	int ret = 0;
-
-	nxp_s32_qspi_lock(dev);
-
-	status = Qspi_Ip_ReadId(data->instance, id);
-	if (status != STATUS_QSPI_IP_SUCCESS) {
-		LOG_ERR("Failed to read device ID (%d)", status);
-		ret = -EIO;
-	}
-
-	nxp_s32_qspi_unlock(dev);
-
-	return ret;
-}
-#endif /* CONFIG_FLASH_JESD216_API || !CONFIG_FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME */
+#endif /* !defined(CONFIG_FLASH_NXP_S32_QSPI_SFDP_RUNTIME) */
 
 #if defined(CONFIG_FLASH_JESD216_API)
 static int nxp_s32_qspi_sfdp_read(const struct device *dev, off_t offset, void *buf, size_t len)
@@ -792,7 +483,7 @@ static int nxp_s32_qspi_sfdp_read(const struct device *dev, off_t offset, void *
 }
 #endif /* CONFIG_FLASH_JESD216_API */
 
-#if defined(CONFIG_FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME)
+#if defined(CONFIG_FLASH_NXP_S32_QSPI_SFDP_RUNTIME)
 static int nxp_s32_qspi_sfdp_config(const struct device *dev)
 {
 	struct nxp_s32_qspi_data *data = dev->data;
@@ -852,36 +543,16 @@ static int nxp_s32_qspi_sfdp_config(const struct device *dev)
 }
 #endif
 
-static const struct flash_parameters *nxp_s32_qspi_get_parameters(const struct device *dev)
-{
-	const struct nxp_s32_qspi_config *config = dev->config;
-
-	return &config->flash_parameters;
-}
-
-#if defined(CONFIG_FLASH_PAGE_LAYOUT)
-static void nxp_s32_qspi_pages_layout(const struct device *dev,
-				const struct flash_pages_layout **layout,
-				size_t *layout_size)
-{
-	const struct nxp_s32_qspi_config *config = dev->config;
-
-	*layout = &config->layout;
-	*layout_size = 1;
-}
-#endif /* CONFIG_FLASH_PAGE_LAYOUT */
-
 static int nxp_s32_qspi_init(const struct device *dev)
 {
 	struct nxp_s32_qspi_data *data = dev->data;
 	const struct nxp_s32_qspi_config *config = dev->config;
 	Qspi_Ip_MemoryConfigType *memory_cfg = get_memory_config(dev);
 	Qspi_Ip_StatusType status;
-	static uint8_t instance_cnt;
 	int ret = 0;
 
 	/* Used by the HAL to retrieve the internal driver state */
-	data->instance = instance_cnt++;
+	data->instance = nxp_s32_qspi_register_device();
 	__ASSERT_NO_MSG(data->instance < QSPI_IP_MEM_INSTANCE_COUNT);
 	data->memory_conn_cfg.qspiInstance = memc_nxp_s32_qspi_get_instance(config->controller);
 
@@ -889,7 +560,7 @@ static int nxp_s32_qspi_init(const struct device *dev)
 	k_sem_init(&data->sem, 1, 1);
 #endif
 
-#if defined(CONFIG_FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME)
+#if defined(CONFIG_FLASH_NXP_S32_QSPI_SFDP_RUNTIME)
 	nxp_s32_qspi_sfdp_config(dev);
 #endif
 
@@ -903,7 +574,7 @@ static int nxp_s32_qspi_init(const struct device *dev)
 	}
 
 
-#if !defined(CONFIG_FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME)
+#if !defined(CONFIG_FLASH_NXP_S32_QSPI_SFDP_RUNTIME)
 	uint8_t jedec_id[JESD216_READ_ID_LEN];
 
 	/* Verify connectivity by reading the device ID */
@@ -930,12 +601,12 @@ static int nxp_s32_qspi_init(const struct device *dev)
 	if (ret < 0) {
 		return ret;
 	}
-#endif /* !CONFIG_FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME */
+#endif /* !CONFIG_FLASH_NXP_S32_QSPI_SFDP_RUNTIME */
 
 	return ret;
 }
 
-static const struct flash_driver_api nxp_s32_qspi_api = {
+static DEVICE_API(flash, nxp_s32_qspi_api) = {
 	.erase = nxp_s32_qspi_erase,
 	.write = nxp_s32_qspi_write,
 	.read = nxp_s32_qspi_read,
@@ -966,7 +637,7 @@ static const struct flash_driver_api nxp_s32_qspi_api = {
 #define QSPI_MEMORY_CONN_CFG(n)							\
 	{									\
 		.connectionType = (Qspi_Ip_ConnectionType)DT_INST_REG_ADDR(n),	\
-		.memAlignment = DT_INST_PROP_OR(n, memory_alignment, 1)		\
+		.memAlignment = DT_INST_PROP(n, write_block_size)		\
 	}
 
 #define QSPI_ERASE_CFG(n)							\
@@ -1037,7 +708,7 @@ static const struct flash_driver_api nxp_s32_qspi_api = {
 		.memType = QSPI_IP_SERIAL_FLASH,				\
 		.hfConfig = NULL,						\
 		.memSize = DT_INST_PROP(n, size) / 8,				\
-		.pageSize = CONFIG_FLASH_NXP_S32_QSPI_LAYOUT_PAGE_SIZE,		\
+		.pageSize = DT_INST_PROP(n, max_program_buffer_size),		\
 		.writeLut = QSPI_LUT_IDX(QSPI_WRITE_SEQ(n)),			\
 		.readLut = QSPI_LUT_IDX(QSPI_READ_SEQ(n)),			\
 		.read0xxLut = QSPI_IP_LUT_INVALID,				\
@@ -1048,7 +719,7 @@ static const struct flash_driver_api nxp_s32_qspi_api = {
 		.initResetSettings = QSPI_RESET_CFG(n),				\
 		.initConfiguration = QSPI_INIT_CFG(n),				\
 		.lutSequences = QSPI_LUT_CFG(n),				\
-		COND_CODE_1(CONFIG_FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME, (), (	\
+		COND_CODE_1(CONFIG_FLASH_NXP_S32_QSPI_SFDP_RUNTIME, (), (	\
 			.readIdSettings = QSPI_READ_ID_CFG(n),)			\
 		)								\
 		.suspendSettings = {						\
@@ -1065,7 +736,7 @@ static const struct flash_driver_api nxp_s32_qspi_api = {
 	}
 
 #define FLASH_NXP_S32_QSPI_INIT_DEVICE(n)					\
-	COND_CODE_1(CONFIG_FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME, (), (		\
+	COND_CODE_1(CONFIG_FLASH_NXP_S32_QSPI_SFDP_RUNTIME, (), (		\
 		BUILD_ASSERT(DT_INST_NODE_HAS_PROP(n, jedec_id),		\
 			"jedec-id is required for non-runtime SFDP");		\
 		BUILD_ASSERT(DT_INST_PROP_LEN(n, jedec_id) == JESD216_READ_ID_LEN,\
@@ -1075,12 +746,12 @@ static const struct flash_driver_api nxp_s32_qspi_api = {
 	static const struct nxp_s32_qspi_config nxp_s32_qspi_config_##n = {	\
 		.controller = DEVICE_DT_GET(DT_INST_BUS(n)),			\
 		.flash_parameters = {						\
-			.write_block_size = QSPI_WRITE_BLOCK_SIZE,		\
+			.write_block_size = DT_INST_PROP(n, write_block_size),	\
 			.erase_value = QSPI_ERASE_VALUE,			\
 		},								\
 		IF_ENABLED(CONFIG_FLASH_PAGE_LAYOUT,				\
 			(QSPI_PAGE_LAYOUT(n),))					\
-		COND_CODE_1(CONFIG_FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME, (), (	\
+		COND_CODE_1(CONFIG_FLASH_NXP_S32_QSPI_SFDP_RUNTIME, (), (	\
 			.memory_cfg = QSPI_MEMORY_CFG(n),			\
 			.qer_type = QSPI_QER_TYPE(n),				\
 			.quad_mode = QSPI_HAS_QUAD_MODE(n)			\
@@ -1089,7 +760,7 @@ static const struct flash_driver_api nxp_s32_qspi_api = {
 										\
 	static struct nxp_s32_qspi_data nxp_s32_qspi_data_##n = {		\
 		.memory_conn_cfg = QSPI_MEMORY_CONN_CFG(n),			\
-		COND_CODE_1(CONFIG_FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME, (), (	\
+		COND_CODE_1(CONFIG_FLASH_NXP_S32_QSPI_SFDP_RUNTIME, (), (	\
 			.read_sfdp_lut_idx = QSPI_LUT_IDX(QSPI_SEQ_READ_SFDP),	\
 		))								\
 	};									\

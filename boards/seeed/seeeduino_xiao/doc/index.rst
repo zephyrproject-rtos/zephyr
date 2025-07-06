@@ -1,7 +1,4 @@
-.. _seeeduino_xiao:
-
-Seeeduino XIAO
-##############
+.. zephyr:board:: seeeduino_xiao
 
 Overview
 ********
@@ -9,10 +6,6 @@ Overview
 The Seeeduino XIAO is a tiny (20 mm x 17.5 mm) ARM development
 board with onboard LEDs, USB port, and range of I/O broken out
 onto 14 pins.
-
-.. image:: img/seeeduino_xiao.jpg
-     :align: center
-     :alt: Seeeduino XIAO
 
 Hardware
 ********
@@ -25,41 +18,7 @@ Hardware
 Supported Features
 ==================
 
-The seeeduino_xiao board configuration supports the following hardware
-features:
-
-+-----------+------------+------------------------------------------+
-| Interface | Controller | Driver/Component                         |
-+===========+============+==========================================+
-| DMA       | on-chip    | Direct memory access                     |
-+-----------+------------+------------------------------------------+
-| DAC       | on-chip    | Digital to analogue converter            |
-+-----------+------------+------------------------------------------+
-| Flash     | on-chip    | Can be used with LittleFS to store files |
-+-----------+------------+------------------------------------------+
-| GPIO      | on-chip    | I/O ports                                |
-+-----------+------------+------------------------------------------+
-| HWINFO    | on-chip    | Hardware info                            |
-+-----------+------------+------------------------------------------+
-| I2C       | on-chip    | Inter-Integrated Circuit                 |
-+-----------+------------+------------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller       |
-+-----------+------------+------------------------------------------+
-| SPI       | on-chip    | Serial Peripheral Interface ports        |
-+-----------+------------+------------------------------------------+
-| SYSTICK   | on-chip    | systick                                  |
-+-----------+------------+------------------------------------------+
-| USART     | on-chip    | Serial ports                             |
-+-----------+------------+------------------------------------------+
-| USB       | on-chip    | USB device                               |
-+-----------+------------+------------------------------------------+
-| WDT       | on-chip    | Watchdog                                 |
-+-----------+------------+------------------------------------------+
-
-Other hardware features are not currently supported by Zephyr.
-
-The default configuration can be found in the Kconfig file
-:zephyr_file:`boards/seeed/seeeduino_xiao/seeeduino_xiao_defconfig`.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -98,7 +57,7 @@ USB Device Port
 ===============
 
 The SAMD21 MCU has a USB device port that can be used to communicate
-with a host PC.  See the :ref:`usb-samples` sample applications for
+with a host PC.  See the :zephyr:code-sample-category:`usb` sample applications for
 more, such as the :zephyr:code-sample:`usb-cdc-acm` sample which sets up a virtual
 serial port that echos characters back to the host PC.
 
@@ -111,6 +70,8 @@ the XIAO, the DAC is available on pin 0.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The XIAO ships the BOSSA compatible UF2 bootloader.  The bootloader can be
 entered by shorting the RST and GND pads twice.
 
@@ -120,7 +81,7 @@ will be entered automatically when you run :code:`west flash`.
 Flashing
 ========
 
-#. Build the Zephyr kernel and the :ref:`hello_world` sample application:
+#. Build the Zephyr kernel and the :zephyr:code-sample:`hello_world` sample application:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world

@@ -8,5 +8,9 @@ config NUM_IRQS
 
 config SYS_CLOCK_TICKS_PER_SEC
 	default 1000
+#
+# As PPR has limited memory most of tests does not fit with asserts enabled.
+config ASSERT
+	default n
 
 endif # SOC_NRF54H20_CPUPPR

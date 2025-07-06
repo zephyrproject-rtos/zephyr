@@ -1,0 +1,18 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2024 Ayush Singh <ayush@beagleboard.org>
+ */
+
+/ {
+	zephyr,user {
+		/* Reading mulitple pins not possible */
+		io-channels = <&adc0 0x09>;
+		io-channel-names = "MB1_AN";
+
+		/*
+		 * io-channels = <&adc0 0x0a>;
+		 * io-channel-names = "MB2_AN";
+		 */
+	};
+};

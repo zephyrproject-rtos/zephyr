@@ -135,7 +135,7 @@ Programming and Debugging
 Building
 ========
 
-Here is an example for building the :ref:`hello_world` application.
+Here is an example for building the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -215,6 +215,8 @@ GDB instance. To reattach, just follow the same steps above, till
 
 References
 **********
+
+.. target-notes::
 
 .. _96Boards website:
    https://www.96boards.org/product/neonkey/

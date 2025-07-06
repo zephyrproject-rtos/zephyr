@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2024 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/silabs/xg24-pinctrl.h>
+
+&pinctrl {
+	itm_default: itm_default {
+		group0 {
+			pins = <GPIO_SWV_PA3>;
+			drive-push-pull;
+			output-high;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group0 {
+			pins = <I2C0_SCL_PC4>, <I2C0_SDA_PC5>;
+			bias-pull-up;
+			drive-open-drain;
+		};
+	};
+
+	pti_default: pti_default {
+		group0 {
+			pins = <PTI_DOUT_PC6>, <PTI_DFRAME_PC7>;
+			drive-push-pull;
+			output-high;
+		};
+	};
+
+	usart0_default: usart0_default {
+		group0 {
+			pins = <USART0_TX_PA5>;
+			drive-push-pull;
+			output-high;
+		};
+
+		group1 {
+			pins = <USART0_RX_PA6>;
+			input-enable;
+			silabs,input-filter;
+		};
+	};
+};

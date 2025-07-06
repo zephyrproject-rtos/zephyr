@@ -18,6 +18,7 @@ Requirements
 
 * A board with settings support, for instance: nrf52840dk/nrf52840
 * Or qemu_x86 target
+* A nvs_sector_size <= 0xFFFF
 
 Building and Running
 ********************
@@ -25,7 +26,7 @@ Building and Running
 This sample can be found under :zephyr_file:`samples/subsys/settings` in
 the Zephyr tree.
 
-The sample can be build for several platforms, the following commands build the
+The sample can be built for several platforms, the following commands build the
 application for the qemu_x86.
 
 .. zephyr-app-commands::

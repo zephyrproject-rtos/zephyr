@@ -36,15 +36,17 @@ Requirements
 ************
 
 Display shield and a board which provides a configuration
-for Arduino connectors, for example:
+for corresponding connectors, for example:
 
-- :ref:`adafruit_2_8_tft_touch_v2` and :ref:`nrf52840dk_nrf52840`
-- :ref:`buydisplay_2_8_tft_touch_arduino` and :ref:`nrf52840dk_nrf52840`
-- :ref:`ssd1306_128_shield` and :ref:`frdm_k64f`
+- :ref:`adafruit_2_8_tft_touch_v2` and :zephyr:board:`nrf52840dk`
+- :ref:`buydisplay_2_8_tft_touch_arduino` and :zephyr:board:`nrf52840dk`
+- :ref:`ssd1306_128_shield` and :zephyr:board:`frdm_k64f`
+- :ref:`seeed_xiao_round_display` and :zephyr:board:`xiao_ble`
 
 or a board with an integrated display:
 
-- :ref:`esp_wrover_kit`
+- :zephyr:board:`esp_wrover_kit`
+- :zephyr:board:`adafruit_feather_esp32s3_tft`
 
 or a simulated display environment in a :ref:`native_sim <native_sim>` application:
 
@@ -53,18 +55,18 @@ or a simulated display environment in a :ref:`native_sim <native_sim>` applicati
 
 or
 
-- :ref:`mimxrt1050_evk`
+- :zephyr:board:`mimxrt1050_evk`
 - `RK043FN02H-CT`_
 
 or
 
-- :ref:`mimxrt1060_evk`
+- :zephyr:board:`mimxrt1060_evk`
 - `RK043FN02H-CT`_
 
 Building and Running
 ********************
 
-Example building for :ref:`nrf52840dk_nrf52840`:
+Example building for :zephyr:board:`nrf52840dk`:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/display/lvgl

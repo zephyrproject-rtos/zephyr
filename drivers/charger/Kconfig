@@ -1,4 +1,5 @@
 # Copyright 2023 Cirrus Logic, Inc.
+# Copyright 2025 Palta Tech, S.A
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -50,9 +51,12 @@ config CHARGER_SYSTEM_VOLTAGE_NOTIFICATIONS
 	  Enables support for system voltage notifications
 endmenu
 
+source "drivers/charger/Kconfig.axp2101"
 source "drivers/charger/Kconfig.sbs_charger"
 source "drivers/charger/Kconfig.bq24190"
 source "drivers/charger/Kconfig.bq25180"
+source "drivers/charger/Kconfig.bq25713"
 source "drivers/charger/Kconfig.max20335"
+source "drivers/charger/Kconfig.pf1550"
 
 endif # CHARGER

@@ -1,7 +1,4 @@
-.. _b_l4s5i_iot01a_board:
-
-ST B_L4S5I_IOT01A Discovery kit
-###############################
+.. zephyr:board:: b_l4s5i_iot01a
 
 Overview
 ********
@@ -39,10 +36,6 @@ some highlights of the B_L4S5I_IOT01A Discovery kit:
     - USB FS connector
     - External 5 V
 
-
-.. image:: img/b-l4s5i_iot01a.jpg
-     :align: center
-     :alt: B_L4S5I_IOT01A Discovery kit
 
 More information about the board can be found at the `B L4S5I IOT01A Discovery kit website`_.
 
@@ -106,37 +99,7 @@ More information about STM32L4S5VI can be found here:
 Supported Features
 ==================
 
-The Zephyr b_l4s5i_iot01a board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-| BLE       | module     | bluetooth                           |
-+-----------+------------+-------------------------------------+
-| WIFI      | module     | es-wifi                             |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in the defconfig file:
-
-	:zephyr_file:`boards/st/b_l4s5i_iot01a/b_l4s5i_iot01a_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -177,11 +140,23 @@ Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
+B_L4S5I_IOT01A Discovery kit includes an ST-LINK/V2-1 embedded debug tool interface.
+
 Flashing
 ========
 
-B_L4S5I_IOT01A Discovery kit includes an ST-LINK/V2-1 embedded debug tool interface.
-This interface is supported by the openocd version included in Zephyr SDK.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, OpenOCD or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
 
 Flashing an application to B_L4S5I_IOT01A Discovery kit
 -------------------------------------------------------
@@ -195,7 +170,7 @@ board. For example:
    $ minicom -D /dev/ttyACM0
 
 Then, build and flash in the usual way. Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -212,7 +187,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -231,3 +206,6 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32L4S5 reference manual:
    https://www.st.com/resource/en/reference_manual/dm00310109.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

@@ -1,5 +1,5 @@
 #
-# Copyright 2022-2024 NXP
+# Copyright 2022-2025 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -11,17 +11,21 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 ram: 960
 flash: 65536
 supported:
+  - adc
+  - counter
+  - dac
   - dma
   - dmic
-  - gpio
-  - spi
-  - i2c
   - entropy
+  - flash
+  - gpio
+  - hwinfo
+  - i2c
+  - i2s
+  - pwm
+  - spi
   - usb_device
   - watchdog
-  - counter
-  - hwinfo

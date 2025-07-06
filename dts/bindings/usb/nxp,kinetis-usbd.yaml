@@ -14,3 +14,7 @@ properties:
 
   interrupts:
     required: true
+
+  no-voltage-regulator:
+    type: boolean
+    description: Indicates that USB voltage regulator is not present.

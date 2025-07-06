@@ -53,7 +53,7 @@ static void feature_update(const struct device *dev,
 	case USB_AUDIO_FU_MUTE_CONTROL:
 		break;
 	case USB_AUDIO_FU_VOLUME_CONTROL:
-		volume = *((int16_t *)(evt->val));
+		volume = UNALIGNED_GET((int16_t *)evt->val);
 		LOG_INF("set volume: %d", volume);
 		break;
 	default:

@@ -8,12 +8,20 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 
 LOG_MODULE_REGISTER(mss_spi, CONFIG_SPI_LOG_LEVEL);
+
+/* Is MSS SPI module 'resets' line property defined */
+#define MSS_SPI_RESET_ENABLED DT_ANY_INST_HAS_PROP_STATUS_OKAY(resets)
+
+#if MSS_SPI_RESET_ENABLED
+#include <zephyr/drivers/reset.h>
+#endif
 
 #include "spi_context.h"
 
@@ -101,6 +109,9 @@ struct mss_spi_config {
 	mm_reg_t base;
 	uint8_t clk_gen;
 	int clock_freq;
+#if MSS_SPI_RESET_ENABLED
+	struct reset_dt_spec reset_spec;
+#endif
 };
 
 struct mss_spi_transfer {
@@ -425,6 +436,12 @@ static int mss_spi_init(const struct device *dev)
 	int ret = 0;
 	uint32_t control = 0;
 
+#if MSS_SPI_RESET_ENABLED
+	if (cfg->reset_spec.dev != NULL) {
+		(void)reset_line_deassert_dt(&cfg->reset_spec);
+	}
+#endif
+
 	/* Remove SPI from Reset  */
 	control = mss_spi_read(cfg, MSS_SPI_REG_CONTROL);
 	control &= ~MSS_SPI_CONTROL_RESET;
@@ -442,11 +459,14 @@ static int mss_spi_init(const struct device *dev)
 
 #define MICROCHIP_SPI_PM_OPS (NULL)
 
-static const struct spi_driver_api mss_spi_driver_api = {
+static DEVICE_API(spi, mss_spi_driver_api) = {
 	.transceive = mss_spi_transceive_blocking,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = mss_spi_transceive_async,
 #endif /* CONFIG_SPI_ASYNC */
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
+#endif
 	.release = mss_spi_release,
 };
 
@@ -466,6 +486,8 @@ static const struct spi_driver_api mss_spi_driver_api = {
 	static const struct mss_spi_config mss_spi_config_##n = {                                  \
 		.base = DT_INST_REG_ADDR(n),                                                       \
 		.clock_freq = DT_INST_PROP(n, clock_frequency),                                    \
+		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, resets),                                       \
+			(.reset_spec = RESET_DT_SPEC_INST_GET(n),))                                \
 	};                                                                                         \
                                                                                                    \
 	static struct mss_spi_data mss_spi_data_##n = {                                            \
@@ -473,8 +495,8 @@ static const struct spi_driver_api mss_spi_driver_api = {
 		SPI_CONTEXT_INIT_SYNC(mss_spi_data_##n, ctx),                                      \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, mss_spi_init_##n, NULL, &mss_spi_data_##n, &mss_spi_config_##n,   \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,                     \
-			      &mss_spi_driver_api);
+	SPI_DEVICE_DT_INST_DEFINE(n, mss_spi_init_##n, NULL, &mss_spi_data_##n,                    \
+				  &mss_spi_config_##n, POST_KERNEL,                                \
+				  CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &mss_spi_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MSS_SPI_INIT)

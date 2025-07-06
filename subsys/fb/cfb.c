@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <string.h>
 #include <zephyr/display/cfb.h>
+#include <zephyr/sys/byteorder.h>
 
 #define LOG_LEVEL CONFIG_CFB_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -14,6 +15,9 @@ LOG_MODULE_REGISTER(cfb);
 
 STRUCT_SECTION_START_EXTERN(cfb_font);
 STRUCT_SECTION_END_EXTERN(cfb_font);
+
+#define LSB_BIT_MASK(x) BIT_MASK(x)
+#define MSB_BIT_MASK(x) (BIT_MASK(x) << (8 - x))
 
 static inline uint8_t byte_reverse(uint8_t b)
 {
@@ -63,7 +67,7 @@ struct char_framebuffer {
 
 static struct char_framebuffer char_fb;
 
-static inline uint8_t *get_glyph_ptr(const struct cfb_font *fptr, char c)
+static inline uint8_t *get_glyph_ptr(const struct cfb_font *fptr, uint8_t c)
 {
 	return (uint8_t *)fptr->data +
 	       (c - fptr->first_char) *
@@ -71,10 +75,14 @@ static inline uint8_t *get_glyph_ptr(const struct cfb_font *fptr, char c)
 }
 
 static inline uint8_t get_glyph_byte(uint8_t *glyph_ptr, const struct cfb_font *fptr,
-				     uint8_t x, uint8_t y)
+				     uint8_t x, uint8_t y, bool vtiled)
 {
 	if (fptr->caps & CFB_FONT_MONO_VPACKED) {
-		return glyph_ptr[x * (fptr->height / 8U) + y];
+		if (vtiled) {
+			return glyph_ptr[x * (fptr->height / 8U) + y];
+		} else {
+			return glyph_ptr[(x * fptr->height + y) / 8];
+		}
 	} else if (fptr->caps & CFB_FONT_MONO_HPACKED) {
 		return glyph_ptr[y * (fptr->width) + x];
 	}
@@ -88,12 +96,13 @@ static inline uint8_t get_glyph_byte(uint8_t *glyph_ptr, const struct cfb_font *
  * a byte is interpreted as 8 pixels ordered vertically among each other.
  */
 static uint8_t draw_char_vtmono(const struct char_framebuffer *fb,
-				char c, uint16_t x, uint16_t y,
+				uint8_t c, uint16_t x, uint16_t y,
 				bool draw_bg)
 {
 	const struct cfb_font *fptr = &(fb->fonts[fb->font_idx]);
-	const bool need_reverse = (((fb->screen_info & SCREEN_INFO_MONO_MSB_FIRST) != 0)
-			     != ((fptr->caps & CFB_FONT_MSB_FIRST) != 0));
+	const bool font_is_msbfirst = ((fptr->caps & CFB_FONT_MSB_FIRST) != 0);
+	const bool need_reverse =
+		(((fb->screen_info & SCREEN_INFO_MONO_MSB_FIRST) != 0) != font_is_msbfirst);
 	uint8_t *glyph_ptr;
 
 	if (c < fptr->first_char || c > fptr->last_char) {
@@ -108,7 +117,7 @@ static uint8_t draw_char_vtmono(const struct char_framebuffer *fb,
 	for (size_t g_x = 0; g_x < fptr->width; g_x++) {
 		const int16_t fb_x = x + g_x;
 
-		for (size_t g_y = 0; g_y < fptr->height; g_y++) {
+		for (size_t g_y = 0; g_y < fptr->height;) {
 			/*
 			 * Process glyph rendering in the y direction
 			 * by separating per 8-line boundaries.
@@ -117,66 +126,144 @@ static uint8_t draw_char_vtmono(const struct char_framebuffer *fb,
 			const int16_t fb_y = y + g_y;
 			const size_t fb_index = (fb_y / 8U) * fb->x_res + fb_x;
 			const size_t offset = y % 8;
+			const uint8_t bottom_lines = ((offset + fptr->height) % 8);
 			uint8_t bg_mask;
 			uint8_t byte;
+			uint8_t next_byte;
 
 			if (fb_x < 0 || fb->x_res <= fb_x || fb_y < 0 || fb->y_res <= fb_y) {
+				g_y++;
 				continue;
 			}
 
-			byte = get_glyph_byte(glyph_ptr, fptr, g_x, g_y / 8);
-
-			if (offset == 0) {
+			if (offset == 0 || g_y == 0) {
 				/*
-				 * The start row is on an 8-line boundary.
-				 * Therefore, it can set the value directly.
+				 * The case of drawing the first line of the glyphs or
+				 * starting to draw with a tile-aligned position case.
+				 * In this case, no character is above it.
+				 * So, we process assume that nothing is drawn above.
 				 */
-				bg_mask = 0;
-				g_y += 7;
-			} else if (g_y == 0) {
-				/*
-				 * If the starting row is not on the 8-line boundary,
-				 * shift the glyph to the starting line, and create a mask
-				 * from the 8-line boundary to the starting line.
-				 */
-				byte = byte << offset;
-				bg_mask = BIT_MASK(offset);
-				g_y += (7 - offset);
+				byte = 0;
+				next_byte = get_glyph_byte(glyph_ptr, fptr, g_x, g_y / 8, true);
 			} else {
+				byte = get_glyph_byte(glyph_ptr, fptr, g_x, g_y / 8, true);
+				next_byte =
+					get_glyph_byte(glyph_ptr, fptr, g_x, (g_y + 8) / 8, true);
+			}
+
+			if (font_is_msbfirst) {
 				/*
-				 * After the starting row, read and concatenate the next 8-rows
-				 * glyph and clip to the 8-line boundary and write 8-lines
-				 * at the time.
-				 * Create a mask to prevent overwriting the drawing contents
-				 * after the end row.
+				 * Extract the necessary 8 bits from the combined 2 tiles of glyphs.
 				 */
-				const size_t lines = ((fptr->height - g_y) < 8) ? offset : 8;
+				byte = ((byte << 8) | next_byte) >> (offset);
 
-				if (lines == 8) {
-					uint16_t byte2 = byte;
-
-					byte2 |= (get_glyph_byte(glyph_ptr, fptr, g_x,
-								 (g_y + 8) / 8))
-						  << 8;
-					byte = (byte2 >> (8 - offset)) & BIT_MASK(lines);
+				if (g_y == 0) {
+					/*
+					 * Create a mask that does not draw offset white space.
+					 */
+					bg_mask = BIT_MASK(8 - offset);
 				} else {
-					byte = (byte >> (8 - offset)) & BIT_MASK(lines);
+					/*
+					 * The drawing of the second line onwards
+					 * is aligned with the tile, so it draws all the bits.
+					 */
+					bg_mask = 0xFF;
 				}
+			} else {
+				byte = ((next_byte << 8) | byte) >> (8 - offset);
+				if (g_y == 0) {
+					bg_mask = BIT_MASK(8 - offset) << offset;
+				} else {
+					bg_mask = 0xFF;
+				}
+			}
 
-				bg_mask = (BIT_MASK(8 - lines) << (lines)) & 0xFF;
-				g_y += (lines - 1);
+			/*
+			 * Clip the bottom margin to protect existing draw contents.
+			 */
+			if (((fptr->height - g_y) < 8) && (bottom_lines != 0)) {
+				const uint8_t clip = font_is_msbfirst ? MSB_BIT_MASK(bottom_lines)
+								      : LSB_BIT_MASK(bottom_lines);
+
+				bg_mask &= clip;
+				byte &= clip;
+			}
+
+			if (draw_bg) {
+				if (need_reverse) {
+					bg_mask = byte_reverse(bg_mask);
+				}
+				fb->buf[fb_index] &= ~bg_mask;
 			}
 
 			if (need_reverse) {
 				byte = byte_reverse(byte);
-				bg_mask = byte_reverse(bg_mask);
 			}
-
-			if (draw_bg) {
-				fb->buf[fb_index] &= bg_mask;
-			}
-
 			fb->buf[fb_index] |= byte;
+
+			if (g_y == 0) {
+				g_y += (8 - offset);
+			} else if ((fptr->height - g_y) >= 8) {
+				g_y += 8;
+			} else {
+				g_y += bottom_lines;
+			}
+		}
+	}
+
+	return fptr->width;
+}
+
+/*
+ * Draw the monochrome character in the monochrome tiled framebuffer,
+ * a byte is interpreted as 8 pixels ordered horizontally among each other.
+ */
+static uint8_t draw_char_htmono(const struct char_framebuffer *fb,
+				uint8_t c, uint16_t x, uint16_t y,
+				bool draw_bg)
+{
+	const struct cfb_font *fptr = &(fb->fonts[fb->font_idx]);
+	const bool font_is_msbfirst = (fptr->caps & CFB_FONT_MSB_FIRST) != 0;
+	const bool display_is_msbfirst = (fb->screen_info & SCREEN_INFO_MONO_MSB_FIRST) != 0;
+	uint8_t *glyph_ptr;
+
+	if (c < fptr->first_char || c > fptr->last_char) {
+		c = ' ';
+	}
+
+	glyph_ptr = get_glyph_ptr(fptr, c);
+	if (!glyph_ptr) {
+		return 0;
+	}
+
+	for (size_t g_y = 0; g_y < fptr->height; g_y++) {
+		const int16_t fb_y = y + g_y;
+
+		for (size_t g_x = 0; g_x < fptr->width; g_x++) {
+			const int16_t fb_x = x + g_x;
+			const size_t fb_pixel_index = fb_y * fb->x_res + fb_x;
+			const size_t fb_byte_index = fb_pixel_index / 8;
+			uint8_t byte;
+			uint8_t pixel_value;
+
+			if (fb_x < 0 || fb->x_res <= fb_x || fb_y < 0 || fb->y_res <= fb_y) {
+				g_y++;
+				continue;
+			}
+
+			byte = get_glyph_byte(glyph_ptr, fptr, g_x, g_y, false);
+			if (font_is_msbfirst) {
+				byte = byte_reverse(byte);
+			}
+			pixel_value = byte & BIT(g_y % 8);
+
+			if (pixel_value) {
+				if (display_is_msbfirst) {
+					fb->buf[fb_byte_index] |= BIT(7 - (fb_x % 8));
+				} else {
+					fb->buf[fb_byte_index] |= BIT(fb_x % 8);
+				}
+			}
 		}
 	}
 
@@ -186,8 +273,16 @@ static uint8_t draw_char_vtmono(const struct char_framebuffer *fb,
 static inline void draw_point(struct char_framebuffer *fb, int16_t x, int16_t y)
 {
 	const bool need_reverse = ((fb->screen_info & SCREEN_INFO_MONO_MSB_FIRST) != 0);
-	const size_t index = ((y / 8) * fb->x_res);
-	uint8_t m = BIT(y % 8);
+	size_t index;
+	uint8_t m;
+
+	if ((fb->screen_info & SCREEN_INFO_MONO_VTILED) != 0) {
+		index = (x + (y / 8) * fb->x_res);
+		m = BIT(y % 8);
+	} else {
+		index = ((x / 8) + y * (fb->x_res / 8));
+		m = BIT(x % 8);
+	}
 
 	if (x < 0 || x >= fb->x_res) {
 		return;
@@ -201,7 +296,7 @@ static inline void draw_point(struct char_framebuffer *fb, int16_t x, int16_t y)
 		m = byte_reverse(m);
 	}
 
-	fb->buf[index + x] |= m;
+	fb->buf[index] |= m;
 }
 
 static void draw_line(struct char_framebuffer *fb, int16_t x0, int16_t y0, int16_t x1, int16_t y1)
@@ -251,19 +346,20 @@ static int draw_text(const struct device *dev, const char *const str, int16_t x,
 		return -EINVAL;
 	}
 
-	if ((fb->screen_info & SCREEN_INFO_MONO_VTILED)) {
-		for (size_t i = 0; i < strlen(str); i++) {
-			if ((x + fptr->width > fb->x_res) && wrap) {
-				x = 0U;
-				y += fptr->height;
-			}
-			x += fb->kerning + draw_char_vtmono(fb, str[i], x, y, wrap);
-		}
-		return 0;
-	}
+	const size_t len = strlen(str);
 
-	LOG_ERR("Unsupported framebuffer configuration");
-	return -EINVAL;
+	for (size_t i = 0; i < len; i++) {
+		if ((x + fptr->width > fb->x_res) && wrap) {
+			x = 0U;
+			y += fptr->height;
+		}
+		if (fb->screen_info & SCREEN_INFO_MONO_VTILED) {
+			x += fb->kerning + draw_char_vtmono(fb, str[i], x, y, wrap);
+		} else {
+			x += fb->kerning + draw_char_htmono(fb, str[i], x, y, wrap);
+		}
+	}
+	return 0;
 }
 
 int cfb_draw_point(const struct device *dev, const struct cfb_position *pos)
@@ -294,6 +390,36 @@ int cfb_draw_rect(const struct device *dev, const struct cfb_position *start,
 	draw_line(fb, end->x, start->y, end->x, end->y);
 	draw_line(fb, end->x, end->y, start->x, end->y);
 	draw_line(fb, start->x, end->y, start->x, start->y);
+
+	return 0;
+}
+
+int cfb_draw_circle(const struct device *dev, const struct cfb_position *center, uint16_t radius)
+{
+	struct char_framebuffer *fb = &char_fb;
+	uint16_t x = 0;
+	int16_t y = -radius;
+	int16_t p = -radius;
+
+	/* Using the Midpoint Circle Algorithm */
+	while (x < -y) {
+		if (p > 0) {
+			p += 2 * (x + ++y) + 1;
+		} else {
+			p += 2 * x + 1;
+		}
+
+		draw_point(fb, center->x + x, center->y + y);
+		draw_point(fb, center->x - x, center->y + y);
+		draw_point(fb, center->x + x, center->y - y);
+		draw_point(fb, center->x - x, center->y - y);
+		draw_point(fb, center->x + y, center->y + x);
+		draw_point(fb, center->x + y, center->y - x);
+		draw_point(fb, center->x - y, center->y + x);
+		draw_point(fb, center->x - y, center->y - x);
+
+		x++;
+	}
 
 	return 0;
 }
@@ -408,7 +534,7 @@ int cfb_framebuffer_clear(const struct device *dev, bool clear_display)
 {
 	const struct char_framebuffer *fb = &char_fb;
 
-	if (!fb || !fb->buf) {
+	if (!fb->buf) {
 		return -ENODEV;
 	}
 
@@ -425,10 +551,6 @@ int cfb_framebuffer_invert(const struct device *dev)
 {
 	struct char_framebuffer *fb = &char_fb;
 
-	if (!fb) {
-		return -ENODEV;
-	}
-
 	fb->inverted = !fb->inverted;
 
 	return 0;
@@ -438,19 +560,22 @@ int cfb_framebuffer_finalize(const struct device *dev)
 {
 	const struct display_driver_api *api = dev->api;
 	const struct char_framebuffer *fb = &char_fb;
-	struct display_buffer_descriptor desc;
 	int err;
 
-	if (!fb || !fb->buf) {
+	__ASSERT_NO_MSG(DEVICE_API_IS(display, dev));
+
+	if (!fb->buf) {
 		return -ENODEV;
 	}
 
-	desc.buf_size = fb->size;
-	desc.width = fb->x_res;
-	desc.height = fb->y_res;
-	desc.pitch = fb->x_res;
+	struct display_buffer_descriptor desc = {
+		.buf_size = fb->size,
+		.width = fb->x_res,
+		.height = fb->y_res,
+		.pitch = fb->x_res,
+	};
 
-	if (!(fb->pixel_format & PIXEL_FORMAT_MONO10) != !(fb->inverted)) {
+	if ((fb->pixel_format == PIXEL_FORMAT_MONO10) == fb->inverted) {
 		cfb_invert(fb);
 		err = api->write(dev, 0, 0, &desc, fb->buf);
 		cfb_invert(fb);
@@ -466,7 +591,7 @@ int cfb_get_display_parameter(const struct device *dev,
 	const struct char_framebuffer *fb = &char_fb;
 
 	switch (param) {
-	case CFB_DISPLAY_HEIGH:
+	case CFB_DISPLAY_HEIGHT:
 		return fb->y_res;
 	case CFB_DISPLAY_WIDTH:
 		return fb->x_res;
@@ -539,6 +664,8 @@ int cfb_framebuffer_init(const struct device *dev)
 	struct char_framebuffer *fb = &char_fb;
 	struct display_capabilities cfg;
 
+	__ASSERT_NO_MSG(DEVICE_API_IS(display, dev));
+
 	api->get_capabilities(dev, &cfg);
 
 	STRUCT_SECTION_COUNT(cfb_font, &fb->numof_fonts);
@@ -550,7 +677,6 @@ int cfb_framebuffer_init(const struct device *dev)
 	fb->ppt = 8U;
 	fb->pixel_format = cfg.current_pixel_format;
 	fb->screen_info = cfg.screen_info;
-	fb->buf = NULL;
 	fb->kerning = 0;
 	fb->inverted = false;
 
@@ -566,4 +692,15 @@ int cfb_framebuffer_init(const struct device *dev)
 	memset(fb->buf, 0, fb->size);
 
 	return 0;
+}
+
+void cfb_framebuffer_deinit(const struct device *dev)
+{
+	struct char_framebuffer *fb = &char_fb;
+
+	if (fb->buf) {
+		k_free(fb->buf);
+		fb->buf = NULL;
+	}
+
 }

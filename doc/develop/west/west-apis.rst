@@ -148,7 +148,7 @@ WestCommand
    .. method:: check_call(args, **kwargs)
 
       Runs ``subprocess.check_call(args, **kwargs)`` after
-      logging the call at Verbosity.DBG_MORE`` level.
+      logging the call at ``Verbosity.DBG_MORE`` level.
 
    .. versionchanged:: 1.2.0
       The *cwd* keyword argument was replaced with a catch-all ``**kwargs``.
@@ -409,11 +409,19 @@ Manifest and sub-objects
    Additional methods:
 
    .. automethod:: as_dict
+   .. versionadded:: 1.4.0
+      The *active_only* argument.
    .. versionadded:: 0.7.0
    .. automethod:: as_frozen_dict
+   .. versionadded:: 1.4.0
+      The *active_only* argument.
    .. automethod:: as_yaml
+   .. versionadded:: 1.4.0
+      The *active_only* argument.
    .. versionadded:: 0.7.0
    .. automethod:: as_frozen_yaml
+   .. versionadded:: 1.4.0
+      The *active_only* argument.
    .. versionadded:: 0.7.0
    .. automethod:: is_active
    .. versionadded:: 0.9.0

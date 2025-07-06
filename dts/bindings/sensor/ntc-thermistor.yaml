@@ -15,6 +15,9 @@ properties:
     type: int
     description: |
       The pullup voltage microvoltage in the circuit.
+      If not specified, it is assumed that the pullup voltage is VDD. Therefore,
+      the specified ADC IO channel must be configured so that VDD is used as the
+      reference voltage.
 
   pullup-ohm:
     type: int

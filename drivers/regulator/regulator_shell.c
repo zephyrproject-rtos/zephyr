@@ -74,8 +74,7 @@ static int strtomicro(char *inp, char units, int32_t *val)
 static void microtoshell(const struct shell *sh, char unit, int32_t val)
 {
 	if (val > 100000) {
-		shell_print(sh, "%d.%03d %c", val / 1000000,
-			    (val % 1000000) / 1000, unit);
+		shell_print(sh, "%d.%06d %c", val / 1000000, val % 1000000, unit);
 	} else if (val > 1000) {
 		shell_print(sh, "%d.%03d m%c", val / 1000, val % 1000, unit);
 	} else {
@@ -90,7 +89,7 @@ static int cmd_enable(const struct shell *sh, size_t argc, char **argv)
 
 	ARG_UNUSED(argc);
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(sh, "Regulator device %s not available", argv[1]);
 		return -ENODEV;
@@ -112,7 +111,7 @@ static int cmd_disable(const struct shell *sh, size_t argc, char **argv)
 
 	ARG_UNUSED(argc);
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(sh, "Regulator device %s not available", argv[1]);
 		return -ENODEV;
@@ -127,6 +126,27 @@ static int cmd_disable(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_is_enabled(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+
+	ARG_UNUSED(argc);
+
+	dev = shell_device_get_binding(argv[1]);
+	if (dev == NULL) {
+		shell_error(sh, "Regulator device %s not available", argv[1]);
+		return -ENODEV;
+	}
+
+	if (regulator_is_enabled(dev)) {
+		shell_print(sh, "Regulator is enabled");
+	} else {
+		shell_print(sh, "Regulator is disabled");
+	}
+
+	return 0;
+}
+
 static int cmd_vlist(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
@@ -135,7 +155,7 @@ static int cmd_vlist(const struct shell *sh, size_t argc, char **argv)
 
 	ARG_UNUSED(argc);
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(sh, "Regulator device %s not available", argv[1]);
 		return -ENODEV;
@@ -165,7 +185,7 @@ static int cmd_vset(const struct shell *sh, size_t argc, char **argv)
 	int32_t min_uv, max_uv;
 	int ret;
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(sh, "Regulator device %s not available", argv[1]);
 		return -ENODEV;
@@ -204,7 +224,7 @@ static int cmd_vget(const struct shell *sh, size_t argc, char **argv)
 
 	ARG_UNUSED(argc);
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(sh, "Regulator device %s not available", argv[1]);
 		return -ENODEV;
@@ -229,7 +249,7 @@ static int cmd_clist(const struct shell *sh, size_t argc, char **argv)
 
 	ARG_UNUSED(argc);
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(sh, "Regulator device %s not available", argv[1]);
 		return -ENODEV;
@@ -259,7 +279,7 @@ static int cmd_iset(const struct shell *sh, size_t argc, char **argv)
 	int32_t min_ua, max_ua;
 	int ret;
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(sh, "Regulator device %s not available", argv[1]);
 		return -ENODEV;
@@ -297,7 +317,7 @@ static int cmd_iget(const struct shell *sh, size_t argc, char **argv)
 
 	ARG_UNUSED(argc);
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(sh, "Regulator device %s not available", argv[1]);
 		return -ENODEV;
@@ -322,7 +342,7 @@ static int cmd_modeset(const struct shell *sh, size_t argc, char **argv)
 
 	ARG_UNUSED(argc);
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(sh, "Regulator device %s not available", argv[1]);
 		return -ENODEV;
@@ -347,7 +367,7 @@ static int cmd_modeget(const struct shell *sh, size_t argc, char **argv)
 
 	ARG_UNUSED(argc);
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(sh, "Regulator device %s not available", argv[1]);
 		return -ENODEV;
@@ -372,15 +392,15 @@ static int cmd_adset(const struct shell *sh, size_t argc, char **argv)
 
 	ARG_UNUSED(argc);
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(sh, "Regulator device %s not available", argv[1]);
 		return -ENODEV;
 	}
 
-	if (strcmp(argv[2], "enable")) {
+	if (strcmp(argv[2], "enable") == 0) {
 		ad = true;
-	} else if (strcmp(argv[2], "disable")) {
+	} else if (strcmp(argv[2], "disable") == 0) {
 		ad = false;
 	} else {
 		shell_error(sh, "Invalid parameter");
@@ -404,7 +424,7 @@ static int cmd_adget(const struct shell *sh, size_t argc, char **argv)
 
 	ARG_UNUSED(argc);
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(sh, "Regulator device %s not available", argv[1]);
 		return -ENODEV;
@@ -429,7 +449,7 @@ static int cmd_errors(const struct shell *sh, size_t argc, char **argv)
 
 	ARG_UNUSED(argc);
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(sh, "Regulator device %s not available", argv[1]);
 		return -ENODEV;
@@ -459,7 +479,7 @@ static int cmd_dvsset(const struct shell *sh, size_t argc, char **argv)
 	int ret = 0;
 	regulator_dvs_state_t state;
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(sh, "Regulator device %s not available", argv[1]);
 		return -ENODEV;
@@ -487,7 +507,7 @@ static int cmd_shipmode(const struct shell *sh, size_t argc, char **argv)
 
 	ARG_UNUSED(argc);
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(sh, "Regulator device %s not available", argv[1]);
 		return -ENODEV;
@@ -502,9 +522,14 @@ static int cmd_shipmode(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static bool device_is_regulator(const struct device *dev)
+{
+	return DEVICE_API_IS(regulator, dev);
+}
+
 static void device_name_get(size_t idx, struct shell_static_entry *entry)
 {
-	const struct device *dev = shell_device_lookup(idx, NULL);
+	const struct device *dev = shell_device_filter(idx, device_is_regulator);
 
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
 	entry->handler = NULL;
@@ -516,69 +541,49 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_regulator_cmds,
-	SHELL_CMD_ARG(enable, &dsub_device_name,
-		      "Enable regulator\n"
-		      "Usage: enable <device>",
+	SHELL_CMD_ARG(enable, &dsub_device_name, SHELL_HELP("Enable the regulator", "<device>"),
 		      cmd_enable, 2, 0),
-	SHELL_CMD_ARG(disable, &dsub_device_name,
-		      "Disable regulator\n"
-		      "Usage: disable <device>",
+	SHELL_CMD_ARG(disable, &dsub_device_name, SHELL_HELP("Disable the regulator", "<device>"),
 		      cmd_disable, 2, 0),
-	SHELL_CMD_ARG(vlist, &dsub_device_name,
-		      "List all supported voltages\n"
-		      "Usage: vlist <device>",
+	SHELL_CMD_ARG(is_enabled, &dsub_device_name, SHELL_HELP("Get regulator status", "<device>"),
+		      cmd_is_enabled, 2, 0),
+	SHELL_CMD_ARG(vlist, &dsub_device_name, SHELL_HELP("List supported voltages", "<device>"),
 		      cmd_vlist, 2, 0),
 	SHELL_CMD_ARG(vset, &dsub_device_name,
-		      "Set voltage\n"
-		      "Input requires units, e.g. 200mv, 20.5mv, 10uv, 1v...\n"
-		      "Usage: vset <device> <minimum> [<maximum>]\n"
-		      "If maximum is not set, exact voltage will be requested",
+		      SHELL_HELP("Set voltage\n"
+				 "The input requires units, e.g. 200mv, 20.5mv, 10uv, 1v...",
+				 "<device> <minimum> [<maximum>]\n"
+				 "If maximum is not set, exact voltage will be requested"),
 		      cmd_vset, 3, 1),
-	SHELL_CMD_ARG(vget, &dsub_device_name,
-		      "Get voltage\n"
-		      "Usage: vget <device>",
-		      cmd_vget, 2, 0),
+	SHELL_CMD_ARG(vget, &dsub_device_name, SHELL_HELP("Get voltage", "<device>"), cmd_vget, 2,
+		      0),
 	SHELL_CMD_ARG(clist, &dsub_device_name,
-		      "List all supported current limits\n"
-		      "Usage: clist <device>",
-		      cmd_clist, 2, 0),
+		      SHELL_HELP("List supported current limits", "<device>"), cmd_clist, 2, 0),
 	SHELL_CMD_ARG(iset, &dsub_device_name,
-		      "Set current limit\n"
-		      "Input requires units, e.g. 200ma, 20.5ma, 10ua, 1a...\n"
-		      "Usage: iset <device> <minimum> [<maximum>]"
-		      "If maximum is not set, exact current will be requested",
+		      SHELL_HELP("Set current limit\n"
+				 "The input requires units, e.g. 200ma, 20.5ma, 10ua, 1a...",
+				 "<device> <minimum> [<maximum>]\n"
+				 "If maximum is not set, exact current will be requested"),
 		      cmd_iset, 3, 1),
-	SHELL_CMD_ARG(iget, &dsub_device_name,
-		      "Get current limit\n"
-		      "Usage: iget <device>",
+	SHELL_CMD_ARG(iget, &dsub_device_name, SHELL_HELP("Get current limit", "<device>"),
 		      cmd_iget, 2, 0),
 	SHELL_CMD_ARG(modeset, &dsub_device_name,
-		      "Set regulator mode\n"
-		      "Usage: modeset <device> <mode identifier>",
+		      SHELL_HELP("Set the mode of the regulator", "<device> <mode identifier>"),
 		      cmd_modeset, 3, 0),
 	SHELL_CMD_ARG(modeget, &dsub_device_name,
-		      "Get regulator mode\n"
-		      "Usage: modeget <device>",
-		      cmd_modeget, 2, 0),
+		      SHELL_HELP("Get the mode of the regulator", "<device>"), cmd_modeget, 2, 0),
 	SHELL_CMD_ARG(adset, NULL,
-		      "Set active discharge\n"
-		      "Usage: adset <device> <enable/disable>",
+		      SHELL_HELP("Set active discharge status", "<device> <enable|disable>"),
 		      cmd_adset, 3, 0),
-	SHELL_CMD_ARG(adget, NULL,
-		      "Get active discharge\n"
-		      "Usage: adget <device>",
-		      cmd_adget, 2, 0),
-	SHELL_CMD_ARG(errors, &dsub_device_name,
-		      "Get errors\n"
-		      "Usage: errors <device>",
+	SHELL_CMD_ARG(adget, NULL, SHELL_HELP("Get active discharge status", "<device>"), cmd_adget,
+		      2, 0),
+	SHELL_CMD_ARG(errors, &dsub_device_name, SHELL_HELP("Get active errors", "<device>"),
 		      cmd_errors, 2, 0),
 	SHELL_CMD_ARG(dvsset, &dsub_device_name,
-		      "Set regulator dynamic voltage scaling state\n"
-		      "Usage: dvsset <device> <state identifier>",
+		      SHELL_HELP("Set dynamic voltage scaling state",
+				 "<device> <state identifier>"),
 		      cmd_dvsset, 3, 0),
-	SHELL_CMD_ARG(shipmode, &dsub_device_name,
-		      "Enable regulator ship mode\n"
-		      "Usage: shipmode <device>",
+	SHELL_CMD_ARG(shipmode, &dsub_device_name, SHELL_HELP("Enable ship mode", "<device>"),
 		      cmd_shipmode, 2, 0),
 	SHELL_SUBCMD_SET_END);
 

@@ -9,8 +9,8 @@
  * @brief Open Supervised Device Protocol (OSDP) public API header file.
  */
 
-#ifndef _OSDP_H_
-#define _OSDP_H_
+#ifndef ZEPHYR_INCLUDE_MGMT_OSDP_H_
+#define ZEPHYR_INCLUDE_MGMT_OSDP_H_
 
 #include <zephyr/kernel.h>
 #include <stdint.h>
@@ -480,4 +480,4 @@ uint32_t osdp_get_sc_status_mask(void);
 }
 #endif
 
-#endif	/* _OSDP_H_ */
+#endif	/* ZEPHYR_INCLUDE_MGMT_OSDP_H_ */

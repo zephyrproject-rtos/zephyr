@@ -36,6 +36,7 @@ struct ll_adv_set {
 #if defined(CONFIG_BT_CTLR_HCI_ADV_HANDLE_MAPPING)
 	uint8_t  hci_handle;
 #endif
+	uint8_t  max_skip;
 	uint16_t event_counter;
 	uint16_t max_events;
 	uint32_t remain_duration_us;
@@ -58,11 +59,23 @@ struct ll_adv_set {
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 	struct lll_df_adv_cfg *df_cfg;
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+
+
+#if defined(CONFIG_BT_CTLR_JIT_SCHEDULING) || \
+	(defined(CONFIG_BT_CTLR_ADV_EXT) && \
+	 (CONFIG_BT_CTLR_ADV_AUX_SET > 0) && \
+	 !defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO))
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 	uint32_t delay;
 	uint32_t delay_at_expire;
-	uint32_t ticks_at_expire;
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
+
+	uint32_t ticks_at_expire;
+#endif /* CONFIG_BT_CTLR_JIT_SCHEDULING ||
+	* (CONFIG_BT_CTLR_ADV_EXT &&
+	*  (CONFIG_BT_CTLR_ADV_AUX_SET > 0) &&
+	*  !CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+	*/
 };
 
 struct ll_adv_aux_set {

@@ -332,8 +332,25 @@ static int sdmmc_read_switch(struct sd_card *card)
 	 * Bit n being set in support bit field indicates support for function
 	 * number n on the card. (So 0x3 indicates support for functions 0 and 1)
 	 */
+	/* Determine HS speed support, if any */
 	if (status[13] & HIGH_SPEED_BUS_SPEED) {
 		card->switch_caps.hs_max_dtr = HS_MAX_DTR;
+	} else {
+		card->switch_caps.hs_max_dtr = HS_UNSUPPORTED;
+	}
+	/* Determine UHS speed support, if any */
+	if (status[13] & UHS_SDR104_BUS_SPEED) {
+		card->switch_caps.uhs_max_dtr = UHS_SDR104_MAX_DTR;
+	} else if (status[13] & UHS_DDR50_BUS_SPEED) {
+		card->switch_caps.uhs_max_dtr = UHS_DDR50_MAX_DTR;
+	} else if (status[13] & UHS_SDR50_BUS_SPEED) {
+		card->switch_caps.uhs_max_dtr = UHS_SDR50_MAX_DTR;
+	} else if (status[13] & UHS_SDR25_BUS_SPEED) {
+		card->switch_caps.uhs_max_dtr = UHS_SDR25_MAX_DTR;
+	} else if (status[13] & UHS_SDR12_BUS_SPEED) {
+		card->switch_caps.uhs_max_dtr = UHS_SDR12_MAX_DTR;
+	} else {
+		card->switch_caps.uhs_max_dtr = UHS_UNSUPPORTED;
 	}
 	if (card->sd_version >= SD_SPEC_VER3_0) {
 		card->switch_caps.bus_speed = status[13];
@@ -349,22 +366,31 @@ static inline void sdmmc_select_bus_speed(struct sd_card *card)
 	 * Note that function support is defined using bitfields, but function
 	 * selection is defined using values 0x0-0xF.
 	 */
-	if (card->host_props.host_caps.sdr104_support &&
-	    (card->switch_caps.bus_speed & UHS_SDR104_BUS_SPEED) &&
-	    (card->host_props.f_max >= SD_CLOCK_208MHZ)) {
-		card->card_speed = SD_TIMING_SDR104;
-	} else if (card->host_props.host_caps.ddr50_support &&
-		   (card->switch_caps.bus_speed & UHS_DDR50_BUS_SPEED) &&
-		   (card->host_props.f_max >= SD_CLOCK_50MHZ)) {
-		card->card_speed = SD_TIMING_DDR50;
-	} else if (card->host_props.host_caps.sdr50_support &&
-		   (card->switch_caps.bus_speed & UHS_SDR50_BUS_SPEED) &&
-		   (card->host_props.f_max >= SD_CLOCK_100MHZ)) {
-		card->card_speed = SD_TIMING_SDR50;
-	} else if (card->host_props.host_caps.high_spd_support &&
-		   (card->switch_caps.bus_speed & UHS_SDR12_BUS_SPEED) &&
-		   (card->host_props.f_max >= SD_CLOCK_25MHZ)) {
-		card->card_speed = SD_TIMING_SDR12;
+	if ((card->flags & SD_1800MV_FLAG) && sdmmc_host_uhs(&card->host_props) &&
+	    !(card->host_props.is_spi) && IS_ENABLED(CONFIG_SD_UHS_PROTOCOL)) {
+		/* Select UHS mode timing */
+		if (card->host_props.host_caps.sdr104_support &&
+		    (card->switch_caps.bus_speed & UHS_SDR104_BUS_SPEED)) {
+			card->card_speed = SD_TIMING_SDR104;
+		} else if (card->host_props.host_caps.ddr50_support &&
+			   (card->switch_caps.bus_speed & UHS_DDR50_BUS_SPEED)) {
+			card->card_speed = SD_TIMING_DDR50;
+		} else if (card->host_props.host_caps.sdr50_support &&
+			   (card->switch_caps.bus_speed & UHS_SDR50_BUS_SPEED)) {
+			card->card_speed = SD_TIMING_SDR50;
+		} else if (card->switch_caps.bus_speed & UHS_SDR12_BUS_SPEED) {
+			card->card_speed = SD_TIMING_SDR25;
+		} else {
+			card->card_speed = SD_TIMING_SDR12;
+		}
+	} else {
+		/* Select HS mode timing */
+		if (card->host_props.host_caps.high_spd_support &&
+		    (card->switch_caps.bus_speed & HIGH_SPEED_BUS_SPEED)) {
+			card->card_speed = SD_TIMING_HIGH_SPEED;
+		} else {
+			card->card_speed = SD_TIMING_DEFAULT;
+		}
 	}
 }
 
@@ -432,34 +458,52 @@ static int sdmmc_set_current_limit(struct sd_card *card)
 static int sdmmc_set_bus_speed(struct sd_card *card)
 {
 	int ret;
-	int timing = 0;
 	uint8_t *status = card->card_buffer;
+	enum sdhc_timing_mode timing;
+	uint32_t card_clock;
 
-	switch (card->card_speed) {
-	/* Set bus clock speed */
-	case SD_TIMING_SDR104:
-		card->switch_caps.uhs_max_dtr = SD_CLOCK_208MHZ;
-		timing = SDHC_TIMING_SDR104;
-		break;
-	case SD_TIMING_DDR50:
-		card->switch_caps.uhs_max_dtr = SD_CLOCK_50MHZ;
-		timing = SDHC_TIMING_DDR50;
-		break;
-	case SD_TIMING_SDR50:
-		card->switch_caps.uhs_max_dtr = SD_CLOCK_100MHZ;
-		timing = SDHC_TIMING_SDR50;
-		break;
-	case SD_TIMING_SDR25:
-		card->switch_caps.uhs_max_dtr = SD_CLOCK_50MHZ;
-		timing = SDHC_TIMING_SDR25;
-		break;
-	case SD_TIMING_SDR12:
-		card->switch_caps.uhs_max_dtr = SD_CLOCK_25MHZ;
-		timing = SDHC_TIMING_SDR12;
-		break;
-	default:
-		/* No need to change bus speed */
-		return 0;
+	/* Set card clock and host timing. Since the card's maximum clock
+	 * was calculated within sdmmc_read_switch(), we can safely use the
+	 * minimum between that clock and the host's highest clock supported.
+	 */
+	if ((card->flags & SD_1800MV_FLAG) && sdmmc_host_uhs(&card->host_props) &&
+	    !(card->host_props.is_spi) && IS_ENABLED(CONFIG_SD_UHS_PROTOCOL)) {
+		/* UHS mode */
+		card_clock = MIN(card->host_props.f_max, card->switch_caps.uhs_max_dtr);
+		switch (card->card_speed) {
+		case SD_TIMING_SDR104:
+			timing = SDHC_TIMING_SDR104;
+			break;
+		case SD_TIMING_DDR50:
+			timing = SDHC_TIMING_DDR50;
+			break;
+		case SD_TIMING_SDR50:
+			timing = SDHC_TIMING_SDR50;
+			break;
+		case SD_TIMING_SDR25:
+			timing = SDHC_TIMING_SDR25;
+			break;
+		case SD_TIMING_SDR12:
+			timing = SDHC_TIMING_SDR12;
+			break;
+		default:
+			/* No need to change bus speed */
+			return 0;
+		}
+	} else {
+		/* High speed/default mode */
+		card_clock = MIN(card->host_props.f_max, card->switch_caps.hs_max_dtr);
+		switch (card->card_speed) {
+		case SD_TIMING_HIGH_SPEED:
+			timing = SDHC_TIMING_HS;
+			break;
+		case SD_TIMING_DEFAULT:
+			timing = SDHC_TIMING_LEGACY;
+			break;
+		default:
+			/* No need to change bus speed */
+			return 0;
+		}
 	}
 
 	/* Switch bus speed */
@@ -473,7 +517,7 @@ static int sdmmc_set_bus_speed(struct sd_card *card)
 	} else {
 		/* Change host bus speed */
 		card->bus_io.timing = timing;
-		card->bus_io.clock = card->switch_caps.uhs_max_dtr;
+		card->bus_io.clock = card_clock;
 		LOG_DBG("Setting bus clock to: %d", card->bus_io.clock);
 		ret = sdhc_set_io(card->sdhc, &card->bus_io);
 		if (ret) {
@@ -533,12 +577,15 @@ static int sdmmc_init_hs(struct sd_card *card)
 {
 	int ret;
 
-	if ((!card->host_props.host_caps.high_spd_support) || (card->sd_version < SD_SPEC_VER1_1) ||
-	    (card->switch_caps.hs_max_dtr == 0)) {
+	if ((!card->host_props.host_caps.high_spd_support) ||
+	    (card->sd_version < SD_SPEC_VER1_1) ||
+	    (card->switch_caps.hs_max_dtr == HS_UNSUPPORTED)) {
 		/* No high speed support. Leave card untouched */
 		return 0;
 	}
-	card->card_speed = SD_TIMING_SDR25;
+	/* Select bus speed for card depending on host and card capability*/
+	sdmmc_select_bus_speed(card);
+	/* Apply selected bus speed */
 	ret = sdmmc_set_bus_speed(card);
 	if (ret) {
 		LOG_ERR("Failed to switch card to HS mode");

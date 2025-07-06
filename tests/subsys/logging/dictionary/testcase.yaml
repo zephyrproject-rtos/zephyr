@@ -1,0 +1,32 @@
+common:
+  # For twister runs, only logging backends with in hexidecimal format
+  # are supported. Currently, only UART logging backend does that.
+  # So platform_allow list needs to limit to those platforms.
+  platform_allow:
+    - mps2/an385
+    - qemu_cortex_a53
+    - qemu_riscv32
+    - qemu_riscv64
+    - qemu_x86
+    - qemu_x86_64
+  integration_platforms:
+    - qemu_x86
+    - qemu_x86_64
+tests:
+  logging.dictionary:
+    tags: logging
+    harness: pytest
+    harness_config:
+      pytest_root:
+        - "pytest/test_logging_dictionary.py"
+  logging.dictionary.fpu:
+    tags: logging
+    filter: CONFIG_CPU_HAS_FPU
+    extra_configs:
+      - CONFIG_FPU=y
+    harness: pytest
+    harness_config:
+      pytest_root:
+        - "pytest/test_logging_dictionary.py"
+      pytest_args:
+        - "--fpu"

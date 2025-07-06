@@ -1,0 +1,39 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/s32/S32Z27-BGA594-pinctrl.h>
+
+/ {
+	aliases {
+		pwm-0 = &emios0_pwm;
+	};
+};
+
+&pinctrl {
+	emios0_default: emios0_default {
+		group0 {
+			pinmux = <PK0_EMIOS_0_CH24_O>;
+			output-enable;
+		};
+	};
+};
+
+&emios0 {
+	clock-divider = <133>;
+	status = "okay";
+
+	emios0_pwm: pwm {
+		pinctrl-0 = <&emios0_default>;
+		pinctrl-names = "default";
+		status = "okay";
+
+		pwm_24 {
+			channel = <24>;
+			prescaler = <16>;
+			pwm-mode = "OPWFMB";
+		};
+	};
+};

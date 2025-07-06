@@ -1,5 +1,7 @@
 tests:
   benchmark.data_structure_perf.rbtree:
+    platform_key:
+      - arch
     tags:
       - benchmark
       - rbtree

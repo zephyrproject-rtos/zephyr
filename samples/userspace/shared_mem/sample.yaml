@@ -21,5 +21,7 @@ tests:
       - cy8cproto_062_4343w
       - cy8cproto_063_ble
       - ucans32k1sic
+      - mimxrt700_evk/mimxrt798s/cm33_cpu0
+      - mimxrt700_evk/mimxrt798s/cm33_cpu1
     extra_configs:
       - CONFIG_TEST_HW_STACK_PROTECTION=n

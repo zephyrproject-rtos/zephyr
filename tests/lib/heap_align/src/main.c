@@ -7,12 +7,37 @@
 #include <zephyr/ztest.h>
 #include <zephyr/sys/sys_heap.h>
 
+/* need to peek into some heap internals */
+#include "../../../../lib/heap/heap.h"
+
 #define HEAP_SZ 0x1000
 
-uint8_t __aligned(8) heapmem[HEAP_SZ];
+uint8_t __aligned(CHUNK_UNIT) heapmem[HEAP_SZ];
 
 /* Heap metadata sizes */
 uint8_t *heap_start, *heap_end;
+size_t heap_chunk_header_size;
+
+/*
+ * The align argument may contain a "rewind" bit.
+ * See comment in sys_heap_aligned_alloc().
+ */
+static bool alignment_ok(void *ptr, size_t align)
+{
+	uintptr_t addr = (uintptr_t)ptr;
+	size_t rew;
+
+	/* split rewind bit from alignment */
+	rew = LSB_GET(align);
+	rew = (rew == align) ? 0 : rew;
+	align -= rew;
+
+	/* undo the pointer rewind */
+	addr += rew;
+
+	/* validate pointer alignment */
+	return (addr & (align - 1)) == 0;
+}
 
 /* Note that this test is making whitebox assumptions about the
  * behavior of the heap in order to exercise coverage of the
@@ -24,24 +49,28 @@ static void check_heap_align(struct sys_heap *h,
 			     size_t prefix, size_t align, size_t size)
 {
 	void *p, *q, *r, *s;
+	size_t suffix;
 
 	p = sys_heap_alloc(h, prefix);
 	zassert_true(prefix == 0 || p != NULL, "prefix allocation failed");
 
 	q = sys_heap_aligned_alloc(h, align, size);
 	zassert_true(q != NULL, "first aligned allocation failed");
-	zassert_true((((uintptr_t)q) & (align - 1)) == 0, "block not aligned");
+	zassert_true(alignment_ok(q, align), "block not aligned");
 
 	r = sys_heap_aligned_alloc(h, align, size);
 	zassert_true(r != NULL, "second aligned allocation failed");
-	zassert_true((((uintptr_t)r) & (align - 1)) == 0, "block not aligned");
+	zassert_true(alignment_ok(r, align), "block not aligned");
 
 	/* Make sure ALL the split memory goes back into the heap and
 	 * we can allocate the full remaining suffix
 	 */
-	s = sys_heap_alloc(h, (heap_end - (uint8_t *)r) - size - 8);
+	suffix = (heap_end - (uint8_t *)ROUND_UP((uintptr_t)r + size, CHUNK_UNIT))
+		- heap_chunk_header_size;
+	s = sys_heap_alloc(h, suffix);
 	zassert_true(s != NULL, "suffix allocation failed (%zd/%zd/%zd)",
 				prefix, align, size);
+	zassert_true(sys_heap_validate(h), "heap invalid");
 
 	sys_heap_free(h, p);
 	sys_heap_free(h, q);
@@ -72,12 +101,17 @@ ZTEST(lib_heap_align, test_aligned_alloc)
 	 * chunk header before the end of its memory
 	 */
 	heap_start = p;
-	heap_end = heapmem + HEAP_SZ - 8;
+	heap_end = heapmem + heap.heap->end_chunk * CHUNK_UNIT;
+	heap_chunk_header_size = chunk_header_bytes(heap.heap);
 
 	for (size_t align = 8; align < HEAP_SZ / 4; align *= 2) {
 		for (size_t prefix = 0; prefix <= align; prefix += 8) {
-			for (size_t size = 8; size <= align; size += 8) {
+			for (size_t size = 4; size <= align; size += 12) {
 				check_heap_align(&heap, prefix, align, size);
+				for (size_t rew = 4; rew < MIN(align, 32); rew *= 2) {
+					check_heap_align(&heap, prefix,
+							 align | rew, size);
+				}
 			}
 		}
 	}

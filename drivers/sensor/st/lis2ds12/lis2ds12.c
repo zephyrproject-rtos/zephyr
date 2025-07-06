@@ -15,7 +15,6 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <string.h>
-#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/dt-bindings/sensor/lis2ds12.h>
@@ -175,9 +174,9 @@ static int lis2ds12_sample_fetch_accel(const struct device *dev)
 		return -EIO;
 	}
 
-	data->sample_x = sys_le16_to_cpu(buf[0]);
-	data->sample_y = sys_le16_to_cpu(buf[1]);
-	data->sample_z = sys_le16_to_cpu(buf[2]);
+	data->sample_x = buf[0];
+	data->sample_y = buf[1];
+	data->sample_z = buf[2];
 
 	return 0;
 }
@@ -259,7 +258,7 @@ static int lis2ds12_channel_get(const struct device *dev,
 	return lis2ds12_get_channel(chan, val, data, data->gain);
 }
 
-static const struct sensor_driver_api lis2ds12_driver_api = {
+static DEVICE_API(sensor, lis2ds12_driver_api) = {
 	.attr_set = lis2ds12_attr_set,
 #if defined(CONFIG_LIS2DS12_TRIGGER)
 	.trigger_set = lis2ds12_trigger_set,

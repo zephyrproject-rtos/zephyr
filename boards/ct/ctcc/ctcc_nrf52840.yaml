@@ -1,0 +1,14 @@
+identifier: ctcc/nrf52840
+name: CTHINGS.CO Connectivity Card nRF52840
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - ble
+  - gpio
+  - usb_device
+  - watchdog
+  - counter
+vendor: ct

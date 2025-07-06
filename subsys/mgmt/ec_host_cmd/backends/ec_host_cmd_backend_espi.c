@@ -131,8 +131,9 @@ static int ec_host_cmd_espi_send(const struct ec_host_cmd_backend *backend)
 	int ret;
 
 	/* Ignore in-progress on eSPI since interface is synchronous anyway */
-	if (result == EC_HOST_CMD_IN_PROGRESS)
+	if (result == EC_HOST_CMD_IN_PROGRESS) {
 		return 0;
+	}
 
 	hc_espi->state = ESPI_STATE_SENDING;
 

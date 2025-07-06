@@ -16,4 +16,5 @@ target_include_directories(babblekit PUBLIC
 
 target_sources(babblekit PRIVATE
   src/sync.c
+  src/device.c
 )

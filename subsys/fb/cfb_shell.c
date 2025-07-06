@@ -18,9 +18,10 @@
 #define HELP_NONE "[none]"
 #define HELP_INIT "call \"cfb init\" first"
 #define HELP_PRINT "<col: pos> <row: pos> \"<text>\""
-#define HELP_DRAW_POINT "<x> <y0>"
+#define HELP_DRAW_POINT "<x> <y>"
 #define HELP_DRAW_LINE "<x0> <y0> <x1> <y1>"
 #define HELP_DRAW_RECT "<x0> <y0> <x1> <y1>"
+#define HELP_DRAW_CIRCLE "<x> <y> <radius>"
 #define HELP_INVERT "[<x> <y> <width> <height>]"
 
 static const struct device *const dev =
@@ -34,11 +35,6 @@ static int cmd_clear(const struct shell *sh, size_t argc, char *argv[])
 
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
-
-	if (!dev) {
-		shell_error(sh, HELP_INIT);
-		return -ENODEV;
-	}
 
 	err = cfb_framebuffer_clear(dev, true);
 	if (err) {
@@ -61,11 +57,6 @@ static int cmd_cfb_print(const struct shell *sh, int col, int row, char *str)
 {
 	int err;
 	uint8_t ppt;
-
-	if (!dev) {
-		shell_error(sh, HELP_INIT);
-		return -ENODEV;
-	}
 
 	ppt = cfb_get_display_parameter(dev, CFB_DISPLAY_PPT);
 
@@ -97,11 +88,6 @@ static int cmd_print(const struct shell *sh, size_t argc, char *argv[])
 	int err;
 	int col, row;
 
-	if (!dev) {
-		shell_error(sh, HELP_INIT);
-		return -ENODEV;
-	}
-
 	col = strtol(argv[1], NULL, 10);
 	if (col > cfb_get_display_parameter(dev, CFB_DISPLAY_COLS)) {
 		shell_error(sh, "Invalid col=%d position", col);
@@ -128,11 +114,6 @@ static int cmd_draw_text(const struct shell *sh, size_t argc, char *argv[])
 	int err;
 	int x, y;
 
-	if (!dev) {
-		shell_error(sh, HELP_INIT);
-		return -ENODEV;
-	}
-
 	x = strtol(argv[1], NULL, 10);
 	y = strtol(argv[2], NULL, 10);
 	err = cfb_draw_text(dev, argv[3], x, y);
@@ -150,11 +131,6 @@ static int cmd_draw_point(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 	struct cfb_position pos;
-
-	if (!dev) {
-		shell_error(sh, HELP_INIT);
-		return -ENODEV;
-	}
 
 	pos.x = strtol(argv[1], NULL, 10);
 	pos.y = strtol(argv[2], NULL, 10);
@@ -174,11 +150,6 @@ static int cmd_draw_line(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 	struct cfb_position start, end;
-
-	if (!dev) {
-		shell_error(sh, HELP_INIT);
-		return -ENODEV;
-	}
 
 	start.x = strtol(argv[1], NULL, 10);
 	start.y = strtol(argv[2], NULL, 10);
@@ -201,11 +172,6 @@ static int cmd_draw_rect(const struct shell *sh, size_t argc, char *argv[])
 	int err;
 	struct cfb_position start, end;
 
-	if (!dev) {
-		shell_error(sh, HELP_INIT);
-		return -ENODEV;
-	}
-
 	start.x = strtol(argv[1], NULL, 10);
 	start.y = strtol(argv[2], NULL, 10);
 	end.x = strtol(argv[3], NULL, 10);
@@ -222,16 +188,32 @@ static int cmd_draw_rect(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 }
 
+static int cmd_draw_circle(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+	struct cfb_position center;
+	uint16_t radius;
+
+	center.x = strtol(argv[1], NULL, 10);
+	center.y = strtol(argv[2], NULL, 10);
+	radius = strtol(argv[3], NULL, 10);
+
+	err = cfb_draw_circle(dev, &center, radius);
+	if (err) {
+		shell_error(sh, "Failed circle drawing to Framebuffer error=%d", err);
+		return err;
+	}
+
+	err = cfb_framebuffer_finalize(dev);
+
+	return err;
+}
+
 static int cmd_scroll_vert(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err = 0;
 	int col, row;
 	int boundary;
-
-	if (!dev) {
-		shell_error(sh, HELP_INIT);
-		return -ENODEV;
-	}
 
 	col = strtol(argv[1], NULL, 10);
 	if (col > cfb_get_display_parameter(dev, CFB_DISPLAY_COLS)) {
@@ -268,11 +250,6 @@ static int cmd_scroll_horz(const struct shell *sh, size_t argc, char *argv[])
 	int err = 0;
 	int col, row;
 	int boundary;
-
-	if (!dev) {
-		shell_error(sh, HELP_INIT);
-		return -ENODEV;
-	}
 
 	col = strtol(argv[1], NULL, 10);
 	if (col > cfb_get_display_parameter(dev, CFB_DISPLAY_COLS)) {
@@ -312,11 +289,6 @@ static int cmd_set_font(const struct shell *sh, size_t argc, char *argv[])
 	uint8_t height;
 	uint8_t width;
 
-	if (!dev) {
-		shell_error(sh, HELP_INIT);
-		return -ENODEV;
-	}
-
 	idx = strtol(argv[1], NULL, 10);
 
 	err = cfb_get_font_size(dev, idx, &width, &height);
@@ -332,7 +304,7 @@ static int cmd_set_font(const struct shell *sh, size_t argc, char *argv[])
 		return err;
 	}
 
-	shell_print(sh, "Font idx=%d height=%d widht=%d set", idx, height,
+	shell_print(sh, "Font idx=%d height=%d width=%d set", idx, height,
 		    width);
 
 	return err;
@@ -340,18 +312,11 @@ static int cmd_set_font(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_set_kerning(const struct shell *sh, size_t argc, char *argv[])
 {
-	int err;
-	char *ep = NULL;
+	int err = 0;
 	long kerning;
 
-	if (!dev) {
-		shell_error(sh, HELP_INIT);
-		return -ENODEV;
-	}
-
-	errno = 0;
-	kerning = strtol(argv[1], &ep, 10);
-	if (errno || ep == argv[1]) {
+	kerning = shell_strtol(argv[1], 10, &err);
+	if (err) {
 		shell_error(sh, HELP_INIT);
 		return -EINVAL;
 	}
@@ -368,11 +333,6 @@ static int cmd_set_kerning(const struct shell *sh, size_t argc, char *argv[])
 static int cmd_invert(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
-
-	if (!dev) {
-		shell_error(sh, HELP_INIT);
-		return -ENODEV;
-	}
 
 	if (argc == 1) {
 		err = cfb_framebuffer_invert(dev);
@@ -414,11 +374,6 @@ static int cmd_get_fonts(const struct shell *sh, size_t argc, char *argv[])
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	if (!dev) {
-		shell_error(sh, HELP_INIT);
-		return -ENODEV;
-	}
-
 	for (int idx = 0; idx < cfb_get_numof_fonts(dev); idx++) {
 		if (cfb_get_font_size(dev, idx, &font_width, &font_height)) {
 			break;
@@ -437,11 +392,6 @@ static int cmd_get_device(const struct shell *sh, size_t argc, char *argv[])
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	if (!dev) {
-		shell_error(sh, HELP_INIT);
-		return -ENODEV;
-	}
-
 	shell_print(sh, "Framebuffer Device: %s", dev->name);
 
 	return err;
@@ -452,11 +402,6 @@ static int cmd_get_param_all(const struct shell *sh, size_t argc,
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
-
-	if (!dev) {
-		shell_error(sh, HELP_INIT);
-		return -ENODEV;
-	}
 
 	for (unsigned int i = 0; i <= CFB_DISPLAY_COLS; i++) {
 		shell_print(sh, "param: %s=%d", param_name[i],
@@ -473,13 +418,8 @@ static int cmd_get_param_height(const struct shell *sh, size_t argc,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	if (!dev) {
-		shell_error(sh, HELP_INIT);
-		return -ENODEV;
-	}
-
-	shell_print(sh, "param: %s=%d", param_name[CFB_DISPLAY_HEIGH],
-		    cfb_get_display_parameter(dev, CFB_DISPLAY_HEIGH));
+	shell_print(sh, "param: %s=%d", param_name[CFB_DISPLAY_HEIGHT],
+		    cfb_get_display_parameter(dev, CFB_DISPLAY_HEIGHT));
 
 	return 0;
 }
@@ -489,11 +429,6 @@ static int cmd_get_param_width(const struct shell *sh, size_t argc,
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
-
-	if (!dev) {
-		shell_error(sh, HELP_INIT);
-		return -ENODEV;
-	}
 
 	shell_print(sh, "param: %s=%d", param_name[CFB_DISPLAY_WIDTH],
 		    cfb_get_display_parameter(dev, CFB_DISPLAY_WIDTH));
@@ -507,11 +442,6 @@ static int cmd_get_param_ppt(const struct shell *sh, size_t argc,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	if (!dev) {
-		shell_error(sh, HELP_INIT);
-		return -ENODEV;
-	}
-
 	shell_print(sh, "param: %s=%d", param_name[CFB_DISPLAY_PPT],
 		    cfb_get_display_parameter(dev, CFB_DISPLAY_PPT));
 
@@ -524,11 +454,6 @@ static int cmd_get_param_rows(const struct shell *sh, size_t argc,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	if (!dev) {
-		shell_error(sh, HELP_INIT);
-		return -ENODEV;
-	}
-
 	shell_print(sh, "param: %s=%d", param_name[CFB_DISPLAY_ROWS],
 		    cfb_get_display_parameter(dev, CFB_DISPLAY_ROWS));
 
@@ -540,11 +465,6 @@ static int cmd_get_param_cols(const struct shell *sh, size_t argc,
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
-
-	if (!dev) {
-		shell_error(sh, HELP_INIT);
-		return -ENODEV;
-	}
 
 	shell_print(sh, "param: %s=%d", param_name[CFB_DISPLAY_COLS],
 		    cfb_get_display_parameter(dev, CFB_DISPLAY_COLS));
@@ -611,6 +531,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_cmd_draw,
 	SHELL_CMD_ARG(point, NULL, HELP_DRAW_POINT, cmd_draw_point, 3, 0),
 	SHELL_CMD_ARG(line, NULL, HELP_DRAW_LINE, cmd_draw_line, 5, 0),
 	SHELL_CMD_ARG(rect, NULL, HELP_DRAW_RECT, cmd_draw_rect, 5, 0),
+	SHELL_CMD_ARG(circle, NULL, HELP_DRAW_RECT, cmd_draw_circle, 4, 0),
 	SHELL_SUBCMD_SET_END
 );
 

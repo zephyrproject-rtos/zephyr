@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Kamil Serwus
+ * Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +9,8 @@
 
 / {
 	aliases {
+		adc-1 = &adc1;
+
 		sercom-4 = &sercom4;
 		sercom-5 = &sercom5;
 	};
@@ -15,15 +18,18 @@
 	soc {
 		adc1: adc@42004800 {
 			compatible = "atmel,sam0-adc";
-			status = "disabled";
 			reg = <0x42004800 0x30>;
 			interrupts = <26 0>;
 			interrupt-names = "resrdy";
 			clocks = <&gclk 34>, <&mclk 0x1c 18>;
 			clock-names = "GCLK", "MCLK";
-			gclk = <0>;
-			prescaler = <4>;
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
+			status = "disabled";
+
 			#io-channel-cells = <1>;
+
+			prescaler = <4>;
 		};
 
 		sercom4: sercom@42001400 {
@@ -32,6 +38,8 @@
 			interrupts = <13 0>;
 			clocks = <&gclk 23>, <&mclk 0x1c 5>;
 			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 		};
 
@@ -41,6 +49,8 @@
 			interrupts = <14 0>;
 			clocks = <&gclk 25>, <&mclk 0x1c 6>;
 			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 		};
 
@@ -51,9 +61,12 @@
 			interrupt-names = "int0";
 			clocks = <&gclk 26>, <&mclk 0x10 8>;
 			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
+			status = "disabled";
+
 			bosch,mram-cfg = <0x0 28 8 3 3 0 1 1>;
 			divider = <12>;
-			status = "disabled";
 		};
 
 		can1: can@42002000 {
@@ -63,9 +76,12 @@
 			interrupt-names = "int0";
 			clocks = <&gclk 27>, <&mclk 0x10 9>;
 			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
+			status = "disabled";
+
 			bosch,mram-cfg = <0x0 28 8 3 3 0 1 1>;
 			divider = <12>;
-			status = "disabled";
 		};
 	};
 };

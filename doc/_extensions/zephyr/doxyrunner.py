@@ -28,33 +28,34 @@ Configuration options
 =====================
 
 - ``doxyrunner_doxygen``: Path to the Doxygen binary.
-- ``doxyrunner_doxyfile``: Path to Doxyfile.
-- ``doxyrunner_outdir``: Doxygen build output directory (inserted to
-  ``OUTPUT_DIRECTORY``)
-- ``doxyrunner_outdir_var``: Variable representing the Doxygen build output
-  directory, as used by ``OUTPUT_DIRECTORY``. This can be useful if other
-  Doxygen variables reference to the output directory.
-- ``doxyrunner_fmt``: Flag to indicate if Doxyfile should be formatted.
-- ``doxyrunner_fmt_vars``: Format variables dictionary (name: value).
-- ``doxyrunner_fmt_pattern``: Format pattern.
 - ``doxyrunner_silent``: If Doxygen output should be logged or not. Note that
   this option may not have any effect if ``QUIET`` is set to ``YES``.
+- ``doxyrunner_projects``: Dictionary specifying projects, keys being project
+  name and values a dictionary with the following keys:
+
+  - ``doxyfile``: Path to Doxyfile.
+  - ``outdir``: Doxygen build output directory (inserted to ``OUTPUT_DIRECTORY``)
+  - ``outdir_var``: Variable representing the Doxygen build output directory,
+    as used by ``OUTPUT_DIRECTORY``. This can be useful if other Doxygen
+    variables reference to the output directory.
+  - ``fmt``: Flag to indicate if Doxyfile should be formatted.
+  - ``fmt_vars``: Format variables dictionary (name: value).
+  - ``fmt_pattern``: Format pattern.
 """
 
 import filecmp
 import hashlib
-from pathlib import Path
 import re
 import shlex
 import shutil
-from subprocess import Popen, PIPE, STDOUT
 import tempfile
-from typing import List, Dict, Optional, Any
+from pathlib import Path
+from subprocess import PIPE, STDOUT, Popen
+from typing import Any
 
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 from sphinx.util import logging
-
 
 __version__ = "0.1.0"
 
@@ -77,7 +78,7 @@ def hash_file(file: Path) -> str:
 
     return sha256.hexdigest()
 
-def get_doxygen_option(doxyfile: str, option: str) -> List[str]:
+def get_doxygen_option(doxyfile: str, option: str) -> list[str]:
     """Obtain the value of a Doxygen option.
 
     Args:
@@ -133,9 +134,9 @@ def process_doxyfile(
     outdir: Path,
     silent: bool,
     fmt: bool = False,
-    fmt_pattern: Optional[str] = None,
-    fmt_vars: Optional[Dict[str, str]] = None,
-    outdir_var: Optional[str] = None,
+    fmt_pattern: str | None = None,
+    fmt_vars: dict[str, str] | None = None,
+    outdir_var: str | None = None,
 ) -> str:
     """Process Doxyfile.
 
@@ -194,7 +195,7 @@ def process_doxyfile(
     return content
 
 
-def doxygen_input_has_changed(env: BuildEnvironment, doxyfile: str) -> bool:
+def doxygen_input_has_changed(env: BuildEnvironment, name, doxyfile: str) -> bool:
     """Check if Doxygen input files have changed.
 
     Args:
@@ -225,12 +226,15 @@ def doxygen_input_has_changed(env: BuildEnvironment, doxyfile: str) -> bool:
                 for p_file in path.glob("**/" + pattern):
                     cache.add(hash_file(p_file))
 
+    if not hasattr(env, "doxyrunner_cache"):
+        env.doxyrunner_cache = dict()
+
     # check if any file has changed
-    if hasattr(env, "doxyrunner_cache") and env.doxyrunner_cache == cache:
+    if env.doxyrunner_cache.get(name) == cache:
         return False
 
     # store current state
-    env.doxyrunner_cache = cache
+    env.doxyrunner_cache[name] = cache
 
     return True
 
@@ -270,11 +274,11 @@ def run_doxygen(doxygen: str, doxyfile: str, silent: bool = False) -> None:
         silent: If Doxygen output should be logged or not.
     """
 
-    f_doxyfile = tempfile.NamedTemporaryFile("w", delete=False)
-    f_doxyfile.write(doxyfile)
-    f_doxyfile.close()
+    with tempfile.NamedTemporaryFile("w", delete=False) as f_doxyfile:
+        f_doxyfile.write(doxyfile)
+        f_doxyfile_name = f_doxyfile.name
 
-    p = Popen([doxygen, f_doxyfile.name], stdout=PIPE, stderr=STDOUT, encoding="utf-8")
+    p = Popen([doxygen, f_doxyfile_name], stdout=PIPE, stderr=STDOUT, encoding="utf-8")
     while True:
         line = p.stdout.readline()  # type: ignore
         if line:
@@ -282,10 +286,10 @@ def run_doxygen(doxygen: str, doxyfile: str, silent: bool = False) -> None:
         if p.poll() is not None:
             break
 
-    Path(f_doxyfile.name).unlink()
+    Path(f_doxyfile_name).unlink()
 
     if p.returncode:
-        raise IOError(f"Doxygen process returned non-zero ({p.returncode})")
+        raise OSError(f"Doxygen process returned non-zero ({p.returncode})")
 
 
 def sync_doxygen(doxyfile: str, new: Path, prev: Path) -> None:
@@ -342,53 +346,52 @@ def doxygen_build(app: Sphinx) -> None:
         app: Sphinx application instance.
     """
 
-    if app.config.doxyrunner_outdir:
-        outdir = Path(app.config.doxyrunner_outdir)
-    else:
-        outdir = Path(app.outdir) / "_doxygen"
+    for name, config in app.config.doxyrunner_projects.items():
+        if config.get("outdir"):
+            outdir = Path(config["outdir"])
+        else:
+            outdir = Path(app.outdir) / "_doxygen" / name
 
-    outdir.mkdir(exist_ok=True)
-    tmp_outdir = outdir / "tmp"
+        outdir.mkdir(exist_ok=True)
+        tmp_outdir = outdir / "tmp"
 
-    logger.info("Preparing Doxyfile...")
-    doxyfile = process_doxyfile(
-        app.config.doxyrunner_doxyfile,
-        tmp_outdir,
-        app.config.doxyrunner_silent,
-        app.config.doxyrunner_fmt,
-        app.config.doxyrunner_fmt_pattern,
-        app.config.doxyrunner_fmt_vars,
-        app.config.doxyrunner_outdir_var,
-    )
+        logger.info("Preparing Doxyfile...")
+        doxyfile = process_doxyfile(
+            config["doxyfile"],
+            tmp_outdir,
+            app.config.doxyrunner_silent,
+            config.get("fmt", False),
+            config.get("fmt_pattern", "@{}@"),
+            config.get("fmt_vars", {}),
+            config.get("outdir_var"),
+        )
 
-    logger.info("Checking if Doxygen needs to be run...")
-    changed = doxygen_input_has_changed(app.env, doxyfile)
-    if not changed:
-        logger.info("Doxygen build will be skipped (no changes)!")
-        return
+        logger.info(f"Checking if Doxygen needs to be run for {name}...")
+        if not hasattr(app.env, "doxygen_input_changed"):
+            app.env.doxygen_input_changed = dict()
 
-    logger.info("Running Doxygen...")
-    run_doxygen(
-        app.config.doxyrunner_doxygen,
-        doxyfile,
-        app.config.doxyrunner_silent,
-    )
+        app.env.doxygen_input_changed[name] = doxygen_input_has_changed(app.env, name, doxyfile)
+        if not app.env.doxygen_input_changed[name]:
+            logger.info(f"Doxygen build for {name} will be skipped (no changes)!")
+            return
 
-    logger.info("Syncing Doxygen output...")
-    sync_doxygen(doxyfile, tmp_outdir, outdir)
+        logger.info(f"Running Doxygen for {name}...")
+        run_doxygen(
+            app.config.doxyrunner_doxygen,
+            doxyfile,
+            app.config.doxyrunner_silent,
+        )
 
-    shutil.rmtree(tmp_outdir)
+        logger.info(f"Syncing Doxygen output for {name}...")
+        sync_doxygen(doxyfile, tmp_outdir, outdir)
+
+        shutil.rmtree(tmp_outdir)
 
 
-def setup(app: Sphinx) -> Dict[str, Any]:
+def setup(app: Sphinx) -> dict[str, Any]:
     app.add_config_value("doxyrunner_doxygen", "doxygen", "env")
-    app.add_config_value("doxyrunner_doxyfile", None, "env")
-    app.add_config_value("doxyrunner_outdir", None, "env")
-    app.add_config_value("doxyrunner_outdir_var", None, "env")
-    app.add_config_value("doxyrunner_fmt", False, "env")
-    app.add_config_value("doxyrunner_fmt_vars", {}, "env")
-    app.add_config_value("doxyrunner_fmt_pattern", "@{}@", "env")
     app.add_config_value("doxyrunner_silent", True, "")
+    app.add_config_value("doxyrunner_projects", {}, "")
 
     app.connect("builder-inited", doxygen_build)
 

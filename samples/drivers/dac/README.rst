@@ -21,7 +21,7 @@ overlays in :zephyr_file:`samples/drivers/dac/boards` for examples.
 Building and Running for ST Nucleo L073RZ
 =========================================
 The sample can be built and executed for the
-:ref:`nucleo_l073rz_board` as follows:
+:zephyr:board:`nucleo_l073rz` as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
@@ -32,7 +32,7 @@ The sample can be built and executed for the
 Building and Running for ST Nucleo L152RE
 =========================================
 The sample can be built and executed for the
-:ref:`nucleo_l152re_board` as follows:
+:zephyr:board:`nucleo_l152re` as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
@@ -43,7 +43,7 @@ The sample can be built and executed for the
 Building and Running for ST Nucleo F767ZI
 =========================================
 The sample can be built and executed for the
-:ref:`nucleo_f767zi_board` as follows:
+:zephyr:board:`nucleo_f767zi` as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
@@ -54,7 +54,7 @@ The sample can be built and executed for the
 Building and Running for ST Disco F3
 =========================================
 The sample can be built and executed for the
-:ref:`stm32f3_disco_board` as follows:
+:zephyr:board:`stm32f3_disco` as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
@@ -65,7 +65,7 @@ The sample can be built and executed for the
 Building and Running for ST Nucleo F429ZI
 =========================================
 The sample can be built and executed for the
-:ref:`nucleo_f429zi_board` as follows:
+:zephyr:board:`nucleo_f429zi` as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
@@ -76,7 +76,7 @@ The sample can be built and executed for the
 Building and Running for STM32L562E DK
 ======================================
 The sample can be built and executed for the
-:ref:`stm32l562e_dk_board` as follows:
+:zephyr:board:`stm32l562e_dk` as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
@@ -87,7 +87,7 @@ The sample can be built and executed for the
 Building and Running for ST Nucleo L552ZE Q
 ===========================================
 The sample can be built and executed for the
-:ref:`nucleo_l552ze_q_board` as follows:
+:zephyr:board:`nucleo_l552ze_q` as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
@@ -97,7 +97,7 @@ The sample can be built and executed for the
 
 Building and Running for NXP TWR-KE18F
 ======================================
-The sample can be built and executed for the :ref:`twr_ke18f` as
+The sample can be built and executed for the :zephyr:board:`twr_ke18f` as
 follows:
 
 .. zephyr-app-commands::
@@ -111,7 +111,7 @@ connector.
 
 Building and Running for NXP FRDM-K64F
 ======================================
-The sample can be built and executed for the :ref:`frdm_k64f` as
+The sample can be built and executed for the :zephyr:board:`frdm_k64f` as
 follows:
 
 .. zephyr-app-commands::
@@ -126,7 +126,7 @@ Building and Running for BL652
 ==============================
 The BL652 DVK PCB contains a footprint for a MCP4725 to use as an external
 DAC. Note this is not populated by default. The sample can be built and
-executed for the :ref:`bl652_dvk` as follows:
+executed for the :zephyr:board:`bl652_dvk` as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
@@ -140,7 +140,7 @@ Building and Running for BL653
 ==============================
 The BL653 DVK PCB contains a footprint for a MCP4725 to use as an external
 DAC. Note this is not populated by default. The sample can be built and
-executed for the :ref:`bl653_dvk` as follows:
+executed for the :zephyr:board:`bl653_dvk` as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
@@ -154,7 +154,7 @@ Building and Running for BL654
 ==============================
 The BL654 DVK PCB contains a footprint for a MCP4725 to use as an external
 DAC. Note this is not populated by default. The sample can be built and
-executed for the :ref:`bl654_dvk` as follows:
+executed for the :zephyr:board:`bl654_dvk` as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
@@ -167,7 +167,7 @@ DAC output is available on pin 1 of the MCP4725.
 Building and Running for BL5340
 ===============================
 The BL5340 DVK PCB contains a MCP4725 to use as a DAC. The sample can be
-built and executed for the :ref:`bl5340_dvk` as follows:
+built and executed for the :zephyr:board:`bl5340_dvk` as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
@@ -180,7 +180,7 @@ DAC output is available on pin 1 of the MCP4725.
 Building and Running for GD32450I-EVAL
 ======================================
 The sample can be built and executed for the
-:ref:`gd32f450i_eval` as follows:
+:zephyr:board:`gd32f450i_eval` as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
@@ -193,7 +193,7 @@ Bridge the JP23 to DAC with the jumper cap, then DAC output will available on JP
 Building and Running for Longan Nano and Longan Nano Lite
 =========================================================
 The sample can be built and executed for the
-:ref:`longan_nano` as follows:
+:zephyr:board:`longan_nano` as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
@@ -201,8 +201,7 @@ The sample can be built and executed for the
    :goals: build flash
    :compact:
 
-also can run for the
-:ref: `longan_nano_lite` as follows:
+also can run for the Longan Nano Lite as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
@@ -212,7 +211,7 @@ also can run for the
 
 Building and Running for NXP LPCXpresso55S36
 ============================================
-The sample can be built and executed for the :ref:`lpcxpresso55s36` as
+The sample can be built and executed for the :zephyr:board:`lpcxpresso55s36` as
 follows:
 
 .. zephyr-app-commands::

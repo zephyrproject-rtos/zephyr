@@ -1,0 +1,16 @@
+common:
+  depends_on: netif
+  min_ram: 192
+  tags:
+    - http
+    - net
+    - server
+    - socket
+  integration_platforms:
+    - native_sim
+    - qemu_x86
+  platform_allow:
+    - native_sim
+    - qemu_x86
+tests:
+  net.http.server.tls: {}

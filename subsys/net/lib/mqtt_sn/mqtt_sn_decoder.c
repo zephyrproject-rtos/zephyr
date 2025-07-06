@@ -111,6 +111,17 @@ static int decode_msg_advertise(struct net_buf_simple *buf, struct mqtt_sn_param
 	return 0;
 }
 
+static int decode_msg_searchgw(struct net_buf_simple *buf, struct mqtt_sn_param_searchgw *params)
+{
+	if (buf->len != 1) {
+		return -EPROTO;
+	}
+
+	params->radius = net_buf_simple_pull_u8(buf);
+
+	return 0;
+}
+
 static int decode_msg_gwinfo(struct net_buf_simple *buf, struct mqtt_sn_param_gwinfo *params)
 {
 	if (buf->len < 1) {
@@ -121,6 +132,8 @@ static int decode_msg_gwinfo(struct net_buf_simple *buf, struct mqtt_sn_param_gw
 
 	if (buf->len) {
 		decode_data(buf, &params->gw_add);
+	} else {
+		params->gw_add.size = 0;
 	}
 
 	return 0;
@@ -332,6 +345,8 @@ int mqtt_sn_decode_msg(struct net_buf_simple *buf, struct mqtt_sn_param *params)
 	switch (params->type) {
 	case MQTT_SN_MSG_TYPE_ADVERTISE:
 		return decode_msg_advertise(buf, &params->params.advertise);
+	case MQTT_SN_MSG_TYPE_SEARCHGW:
+		return decode_msg_searchgw(buf, &params->params.searchgw);
 	case MQTT_SN_MSG_TYPE_GWINFO:
 		return decode_msg_gwinfo(buf, &params->params.gwinfo);
 	case MQTT_SN_MSG_TYPE_CONNACK:

@@ -7,10 +7,39 @@
 
 #include <zephyr/llext/elf.h>
 #include <zephyr/llext/llext.h>
+#include <zephyr/llext/llext_internal.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 
 LOG_MODULE_REGISTER(elf, CONFIG_LLEXT_LOG_LEVEL);
+
+#define R_ARM_NONE         0
+#define R_ARM_PC24         1
+#define R_ARM_ABS32        2
+#define R_ARM_REL32        3
+#define R_ARM_COPY         20
+#define R_ARM_GLOB_DAT     21
+#define R_ARM_JUMP_SLOT    22
+#define R_ARM_RELATIVE     23
+#define R_ARM_CALL         28
+#define R_ARM_JUMP24       29
+#define R_ARM_TARGET1      38
+#define R_ARM_V4BX         40
+#define R_ARM_PREL31       42
+#define R_ARM_MOVW_ABS_NC  43
+#define R_ARM_MOVT_ABS     44
+#define R_ARM_MOVW_PREL_NC 45
+#define R_ARM_MOVT_PREL    46
+#define R_ARM_ALU_PC_G0_NC 57
+#define R_ARM_ALU_PC_G1_NC 59
+#define R_ARM_LDR_PC_G2    63
+
+#define R_ARM_THM_CALL         10
+#define R_ARM_THM_JUMP24       30
+#define R_ARM_THM_MOVW_ABS_NC  47
+#define R_ARM_THM_MOVT_ABS     48
+#define R_ARM_THM_MOVW_PREL_NC 49
+#define R_ARM_THM_MOVT_PREL    50
 
 #define OPCODE2ARMMEM(x) ((uint32_t)(x))
 #define OPCODE2THM16MEM(x) ((uint16_t)(x))
@@ -288,11 +317,32 @@ static void thm_movs_handler(elf_word reloc_type, uint32_t loc,
  * Do NOT mix them with not 'Thumb instructions' in the below switch/case: they are not
  * intended to work together.
  */
-int arch_elf_relocate(elf_rela_t *rel, uintptr_t loc, uintptr_t sym_base_addr,
-			const char *sym_name, uintptr_t load_bias)
+int arch_elf_relocate(struct llext_loader *ldr, struct llext *ext, elf_rela_t *rel,
+		      const elf_shdr_t *shdr)
 {
 	int ret = 0;
 	elf_word reloc_type = ELF32_R_TYPE(rel->r_info);
+	const uintptr_t load_bias = (uintptr_t)ext->mem[LLEXT_MEM_TEXT];
+	const uintptr_t loc = llext_get_reloc_instruction_location(ldr, ext, shdr->sh_info, rel);
+	elf_sym_t sym;
+	uintptr_t sym_base_addr;
+	const char *sym_name;
+
+	ret = llext_read_symbol(ldr, ext, rel, &sym);
+
+	if (ret != 0) {
+		LOG_ERR("Could not read symbol from binary!");
+		return ret;
+	}
+
+	sym_name = llext_symbol_name(ldr, ext, &sym);
+
+	ret = llext_lookup_symbol(ldr, ext, &sym_base_addr, rel, &sym, sym_name, shdr);
+
+	if (ret != 0) {
+		LOG_ERR("Could not find symbol %s!", sym_name);
+		return ret;
+	}
 
 	LOG_DBG("%d %lx %lx %s", reloc_type, loc, sym_base_addr, sym_name);
 

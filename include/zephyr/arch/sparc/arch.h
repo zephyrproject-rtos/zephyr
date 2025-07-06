@@ -7,13 +7,16 @@
 /**
  * @file
  * @brief SPARC specific kernel interface header
+ *
  * This header contains the SPARC specific kernel interface.  It is
- * included by the generic kernel interface header (arch/cpu.h)
+ * included by the kernel interface architecture-abstraction header
+ * (include/zephyr/arch/cpu.h).
  */
 
 #ifndef ZEPHYR_INCLUDE_ARCH_SPARC_ARCH_H_
 #define ZEPHYR_INCLUDE_ARCH_SPARC_ARCH_H_
 
+#include <zephyr/arch/sparc/exception.h>
 #include <zephyr/arch/sparc/thread.h>
 #include <zephyr/arch/sparc/sparc.h>
 #include <zephyr/arch/common/sys_bitops.h>
@@ -106,19 +109,6 @@ static inline uint64_t arch_k_cycle_get_64(void)
 {
 	return sys_clock_cycle_get_64();
 }
-
-struct __esf {
-	uint32_t out[8];
-	uint32_t global[8];
-	uint32_t psr;
-	uint32_t pc;
-	uint32_t npc;
-	uint32_t wim;
-	uint32_t tbr;
-	uint32_t y;
-};
-
-typedef struct __esf z_arch_esf_t;
 
 #define ARCH_EXCEPT(reason_p)						\
 do {									\

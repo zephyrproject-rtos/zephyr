@@ -5,8 +5,8 @@
 # rsyslog message to be malformed.
 config LOG_BACKEND_NET
 	bool "Networking backend"
-	depends on NETWORKING && (NET_UDP || NET_TCP) && !LOG_MODE_IMMEDIATE
-	select LOG_OUTPUT
+	depends on NETWORKING && (NET_UDP || NET_TCP) && NET_SOCKETS && !LOG_MODE_IMMEDIATE
+	depends on POSIX_C_LANG_SUPPORT_R
 	help
 	  Send syslog messages to network server.
 	  See RFC 5424 (syslog protocol) and RFC 5426 (syslog over UDP) and
@@ -118,6 +118,17 @@ config LOG_BACKEND_NET_AUTOSTART
 	  on application startup, this must be set to n and the backend must be
 	  started by the application later on. Otherwise the logging
 	  thread might block.
+
+config LOG_BACKEND_NET_USE_CONNECTION_MANAGER
+	bool "Use connection manager for start and stop networking backend"
+	depends on NET_CONNECTION_MANAGER
+	depends on LOG_BACKEND_NET_AUTOSTART
+	default y
+	help
+	  When enabled the connection manager will be used to start and stop
+	  the networking backend. This is useful when the application
+	  needs to wait for the network connection to be established before
+	  starting the logging backend.
 
 config LOG_BACKEND_NET_USE_DHCPV4_OPTION
 	bool "Use DHCPv4 Log Server Option to configure syslog server"

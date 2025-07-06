@@ -16,7 +16,7 @@
 
 #include <zephyr/ipc/ipc_service.h>
 
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/bluetooth/hci.h>
@@ -28,6 +28,9 @@
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(hci_ipc, CONFIG_BT_LOG_LEVEL);
+
+BUILD_ASSERT(!IS_ENABLED(CONFIG_BT_CONN) || IS_ENABLED(CONFIG_BT_HCI_ACL_FLOW_CONTROL),
+	     "HCI IPC driver can drop ACL data without Controller-to-Host ACL flow control");
 
 static struct ipc_ept hci_ept;
 
@@ -192,7 +195,7 @@ static void hci_ipc_rx(uint8_t *data, size_t len)
 	}
 
 	if (buf) {
-		net_buf_put(&tx_queue, buf);
+		k_fifo_put(&tx_queue, buf);
 
 		LOG_HEXDUMP_DBG(buf->data, buf->len, "Final net buffer:");
 	}
@@ -205,7 +208,7 @@ static void tx_thread(void *p1, void *p2, void *p3)
 		int err;
 
 		/* Wait until a buffer is available */
-		buf = net_buf_get(&tx_queue, K_FOREVER);
+		buf = k_fifo_get(&tx_queue, K_FOREVER);
 		/* Pass buffer to the stack */
 		err = bt_send(buf);
 		if (err) {
@@ -222,30 +225,10 @@ static void tx_thread(void *p1, void *p2, void *p3)
 
 static void hci_ipc_send(struct net_buf *buf, bool is_fatal_err)
 {
-	uint8_t pkt_indicator;
 	uint8_t retries = 0;
 	int ret;
 
-	LOG_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
-
-	LOG_HEXDUMP_DBG(buf->data, buf->len, "Controller buffer:");
-
-	switch (bt_buf_get_type(buf)) {
-	case BT_BUF_ACL_IN:
-		pkt_indicator = HCI_IPC_ACL;
-		break;
-	case BT_BUF_EVT:
-		pkt_indicator = HCI_IPC_EVT;
-		break;
-	case BT_BUF_ISO_IN:
-		pkt_indicator = HCI_IPC_ISO;
-		break;
-	default:
-		LOG_ERR("Unknown type %u", bt_buf_get_type(buf));
-		net_buf_unref(buf);
-		return;
-	}
-	net_buf_push_u8(buf, pkt_indicator);
+	LOG_DBG("buf %p type %u len %u", buf, buf->data[0], buf->len);
 
 	LOG_HEXDUMP_DBG(buf->data, buf->len, "Final HCI buffer:");
 
@@ -269,14 +252,23 @@ static void hci_ipc_send(struct net_buf *buf, bool is_fatal_err)
 			 * call to k_yield is against it.
 			 */
 			if (is_fatal_err) {
-				LOG_ERR("IPC service send error: %d", ret);
+				LOG_ERR("ipc_service_send error: %d", ret);
 			} else {
+				/* In the POSIX ARCH, code takes zero simulated time to execute,
+				 * so busy wait loops become infinite loops, unless we
+				 * force the loop to take a bit of time.
+				 *
+				 * This delay allows the IPC consumer to execute, thus making
+				 * it possible to send more data over IPC afterwards.
+				 */
+				Z_SPIN_DELAY(500);
 				k_yield();
 			}
 		}
 	} while (ret < 0);
 
-	LOG_INF("Sent message of %d bytes.", ret);
+	LOG_INF("ipc_service_send sent %d/%u bytes", ret, buf->len);
+	__ASSERT_NO_MSG(ret == buf->len);
 
 	net_buf_unref(buf);
 }
@@ -294,7 +286,7 @@ void bt_ctlr_assert_handle(char *file, uint32_t line)
 		struct net_buf *buf;
 
 		buf = hci_vs_err_assert(file, line);
-		if (buf == NULL) {
+		if (buf != NULL) {
 			/* Send the event over ipc */
 			hci_ipc_send(buf, HCI_FATAL_ERR_MSG);
 		} else {
@@ -320,7 +312,7 @@ void bt_ctlr_assert_handle(char *file, uint32_t line)
 #endif /* CONFIG_BT_CTLR_ASSERT_HANDLER */
 
 #if defined(CONFIG_BT_HCI_VS_FATAL_ERROR)
-void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *esf)
 {
 	/* Disable interrupts, this is unrecoverable */
 	(void)irq_lock();
@@ -412,7 +404,7 @@ int main(void)
 	while (1) {
 		struct net_buf *buf;
 
-		buf = net_buf_get(&rx_queue, K_FOREVER);
+		buf = k_fifo_get(&rx_queue, K_FOREVER);
 		hci_ipc_send(buf, HCI_REGULAR_MSG);
 	}
 	return 0;

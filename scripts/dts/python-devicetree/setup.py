@@ -18,7 +18,6 @@ setuptools.setup(
     # TBD, just use these for now.
     author='Zephyr Project',
     author_email='devel@lists.zephyrproject.org',
-
     name='devicetree',
     version=version,
     description='Python libraries for devicetree',

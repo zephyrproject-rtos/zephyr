@@ -18,34 +18,38 @@
 
 #include "sensor_shell.h"
 
-LOG_MODULE_REGISTER(sensor_shell);
+LOG_MODULE_REGISTER(sensor_shell, CONFIG_SENSOR_LOG_LEVEL);
 
 #define SENSOR_GET_HELP                                                                            \
-	"Get sensor data. Channel names are optional. All channels are read "                      \
-	"when no channels are provided. Syntax:\n"                                                 \
-	"<device_name> <channel name 0> .. <channel name N>"
+	SHELL_HELP("Get sensor data.\n"                                                            \
+		   "Channel names are optional. All channels are read when no channels are "       \
+		   "provided.",                                                                    \
+		   "<device_name> [<channel name 0> .. <channel name N>]")
 
 #define SENSOR_STREAM_HELP                                                                         \
-	"Start/stop streaming sensor data. Data ready trigger will be used if no triggers "        \
-	"are provided. Syntax:\n"                                                                  \
-	"<device_name> on|off <trigger name> incl|drop|nop"
+	SHELL_HELP("Start/stop streaming sensor data.\n"                                           \
+		   "Data ready trigger will be used if no triggers are provided.",                 \
+		   "<device_name> on|off <trigger name> incl|drop|nop")
 
 #define SENSOR_ATTR_GET_HELP                                                                       \
-	"Get the sensor's channel attribute. Syntax:\n"                                            \
-	"<device_name> [<channel_name 0> <attribute_name 0> .. "                                   \
-	"<channel_name N> <attribute_name N>]"
+	SHELL_HELP("Get the sensor's channel attribute.",                                          \
+		   "<device_name> [<channel_name 0> <attribute_name 0> .. "                        \
+		   "<channel_name N> <attribute_name N>]")
 
 #define SENSOR_ATTR_SET_HELP                                                                       \
-	"Set the sensor's channel attribute.\n"                                                    \
-	"<device_name> <channel_name> <attribute_name> <value>"
+	SHELL_HELP("Set the sensor's channel attribute.",                                          \
+		   "<device_name> <channel_name> <attribute_name> <value>")
 
-#define SENSOR_INFO_HELP "Get sensor info, such as vendor and model name, for all sensors."
+#define SENSOR_INFO_HELP                                                                           \
+	SHELL_HELP("Get sensor info, such as vendor and model name, for all sensors.",             \
+		   "<device_name>")
 
 #define SENSOR_TRIG_HELP                                                                           \
-	"Get or set the trigger type on a sensor. Currently only supports `data_ready`.\n"         \
-	"<device_name> <on/off> <trigger_name>"
+	SHELL_HELP("Get or set the trigger type on a sensor.\n"                                    \
+		   "Currently only supports `data_ready`.",                                        \
+		   "<device_name> <on/off> <trigger_name>")
 
-static const char *sensor_channel_name[SENSOR_CHAN_COMMON_COUNT] = {
+static const char *const sensor_channel_name[SENSOR_CHAN_COMMON_COUNT] = {
 	[SENSOR_CHAN_ACCEL_X] = "accel_x",
 	[SENSOR_CHAN_ACCEL_Y] = "accel_y",
 	[SENSOR_CHAN_ACCEL_Z] = "accel_z",
@@ -78,6 +82,7 @@ static const char *sensor_channel_name[SENSOR_CHAN_COMMON_COUNT] = {
 	[SENSOR_CHAN_VOC] = "voc",
 	[SENSOR_CHAN_GAS_RES] = "gas_resistance",
 	[SENSOR_CHAN_VOLTAGE] = "voltage",
+	[SENSOR_CHAN_VSHUNT] = "vshunt",
 	[SENSOR_CHAN_CURRENT] = "current",
 	[SENSOR_CHAN_POWER] = "power",
 	[SENSOR_CHAN_RESISTANCE] = "resistance",
@@ -85,7 +90,9 @@ static const char *sensor_channel_name[SENSOR_CHAN_COMMON_COUNT] = {
 	[SENSOR_CHAN_POS_DX] = "pos_dx",
 	[SENSOR_CHAN_POS_DY] = "pos_dy",
 	[SENSOR_CHAN_POS_DZ] = "pos_dz",
+	[SENSOR_CHAN_POS_DXYZ] = "pos_dxyz",
 	[SENSOR_CHAN_RPM] = "rpm",
+	[SENSOR_CHAN_FREQUENCY] = "frequency",
 	[SENSOR_CHAN_GAUGE_VOLTAGE] = "gauge_voltage",
 	[SENSOR_CHAN_GAUGE_AVG_CURRENT] = "gauge_avg_current",
 	[SENSOR_CHAN_GAUGE_STDBY_CURRENT] = "gauge_stdby_current",
@@ -104,10 +111,13 @@ static const char *sensor_channel_name[SENSOR_CHAN_COMMON_COUNT] = {
 	[SENSOR_CHAN_GAUGE_DESIGN_VOLTAGE] = "gauge_design_voltage",
 	[SENSOR_CHAN_GAUGE_DESIRED_VOLTAGE] = "gauge_desired_voltage",
 	[SENSOR_CHAN_GAUGE_DESIRED_CHARGING_CURRENT] = "gauge_desired_charging_current",
+	[SENSOR_CHAN_GAME_ROTATION_VECTOR] = "game_rotation_vector",
+	[SENSOR_CHAN_GRAVITY_VECTOR] = "gravity_vector",
+	[SENSOR_CHAN_GBIAS_XYZ] = "gbias_xyz",
 	[SENSOR_CHAN_ALL] = "all",
 };
 
-static const char *sensor_attribute_name[SENSOR_ATTR_COMMON_COUNT] = {
+static const char *const sensor_attribute_name[SENSOR_ATTR_COMMON_COUNT] = {
 	[SENSOR_ATTR_SAMPLING_FREQUENCY] = "sampling_frequency",
 	[SENSOR_ATTR_LOWER_THRESH] = "lower_thresh",
 	[SENSOR_ATTR_UPPER_THRESH] = "upper_thresh",
@@ -124,6 +134,8 @@ static const char *sensor_attribute_name[SENSOR_ATTR_COMMON_COUNT] = {
 	[SENSOR_ATTR_ALERT] = "alert",
 	[SENSOR_ATTR_FF_DUR] = "ff_dur",
 	[SENSOR_ATTR_BATCH_DURATION] = "batch_dur",
+	[SENSOR_ATTR_GAIN] = "gain",
+	[SENSOR_ATTR_RESOLUTION] = "resolution",
 };
 
 enum sample_stats_state {
@@ -143,6 +155,20 @@ static struct sample_stats sensor_stats[CONFIG_SENSOR_SHELL_MAX_TRIGGER_DEVICES]
 
 static const struct device *sensor_trigger_devices[CONFIG_SENSOR_SHELL_MAX_TRIGGER_DEVICES];
 
+static bool device_is_sensor(const struct device *dev)
+{
+#ifdef CONFIG_SENSOR_INFO
+	STRUCT_SECTION_FOREACH(sensor_info, sensor) {
+		if (sensor->dev == dev) {
+			return true;
+		}
+	}
+	return false;
+#else
+	return true;
+#endif /* CONFIG_SENSOR_INFO */
+}
+
 static int find_sensor_trigger_device(const struct device *sensor)
 {
 	for (int i = 0; i < CONFIG_SENSOR_SHELL_MAX_TRIGGER_DEVICES; i++) {
@@ -151,6 +177,11 @@ static int find_sensor_trigger_device(const struct device *sensor)
 		}
 	}
 	return -1;
+}
+
+static bool sensor_device_check(const struct device *dev)
+{
+	return DEVICE_API_IS(sensor, dev);
 }
 
 /* Forward declaration */
@@ -216,8 +247,8 @@ static enum dynamic_command_context current_cmd_ctx = NONE;
 /* Mutex for accessing shared RTIO/IODEV data structures */
 K_MUTEX_DEFINE(cmd_get_mutex);
 
-/* Crate a single common config for one-shot reading */
-static enum sensor_channel iodev_sensor_shell_channels[SENSOR_CHAN_ALL];
+/* Create a single common config for one-shot reading */
+static struct sensor_chan_spec iodev_sensor_shell_channels[SENSOR_CHAN_ALL];
 static struct sensor_read_config iodev_sensor_shell_read_config = {
 	.sensor = NULL,
 	.is_streaming = false,
@@ -230,7 +261,7 @@ RTIO_IODEV_DEFINE(iodev_sensor_shell_read, &__sensor_iodev_api, &iodev_sensor_sh
 /* Create the RTIO context to service the reading */
 RTIO_DEFINE_WITH_MEMPOOL(sensor_read_rtio, 8, 8, 32, 64, 4);
 
-static int parse_named_int(const char *name, const char *heystack[], size_t count)
+static int parse_named_int(const char *name, const char *const heystack[], size_t count)
 {
 	char *endptr;
 	int i;
@@ -256,7 +287,7 @@ static int parse_sensor_value(const char *val_str, struct sensor_value *out)
 {
 	const bool is_negative = val_str[0] == '-';
 	const char *decimal_pos = strchr(val_str, '.');
-	long value;
+	int64_t value;
 	char *endptr;
 
 	/* Parse int portion */
@@ -330,47 +361,42 @@ void sensor_shell_processing_callback(int result, uint8_t *buf, uint32_t buf_len
 				    : sensor_trigger_table[trigger].name));
 	}
 
-	for (int channel = 0; channel < SENSOR_CHAN_ALL; ++channel) {
+
+
+	for (struct sensor_chan_spec ch = {0, 0}; ch.chan_type < SENSOR_CHAN_ALL; ch.chan_type++) {
 		uint32_t fit = 0;
 		size_t base_size;
 		size_t frame_size;
-		size_t channel_idx = 0;
 		uint16_t frame_count;
 
-		if (channel == SENSOR_CHAN_ACCEL_X || channel == SENSOR_CHAN_ACCEL_Y ||
-		    channel == SENSOR_CHAN_ACCEL_Z || channel == SENSOR_CHAN_GYRO_X ||
-		    channel == SENSOR_CHAN_GYRO_Y || channel == SENSOR_CHAN_GYRO_Z ||
-		    channel == SENSOR_CHAN_MAGN_X || channel == SENSOR_CHAN_MAGN_Y ||
-		    channel == SENSOR_CHAN_MAGN_Z || channel == SENSOR_CHAN_POS_DY ||
-		    channel == SENSOR_CHAN_POS_DZ) {
-			continue;
-		}
-
-		rc = decoder->get_size_info(channel, &base_size, &frame_size);
+		rc = decoder->get_size_info(ch, &base_size, &frame_size);
 		if (rc != 0) {
+			LOG_DBG("skipping unsupported channel %s:%d",
+				 sensor_channel_name[ch.chan_type], ch.chan_idx);
 			/* Channel not supported, skipping */
 			continue;
 		}
 
 		if (base_size > ARRAY_SIZE(decoded_buffer)) {
 			shell_error(ctx->sh,
-				    "Channel (%d) requires %zu bytes to decode, but only %zu are "
-				    "available",
-				    channel, base_size, ARRAY_SIZE(decoded_buffer));
+				    "Channel (type %d, idx %d) requires %zu bytes to decode, but "
+				    "only %zu are available",
+				    ch.chan_type, ch.chan_idx, base_size,
+				    ARRAY_SIZE(decoded_buffer));
 			continue;
 		}
 
-		while (decoder->get_frame_count(buf, channel, channel_idx, &frame_count) == 0) {
+		while (decoder->get_frame_count(buf, ch, &frame_count) == 0) {
+			LOG_DBG("decoding %d frames from channel %s:%d",
+				frame_count, sensor_channel_name[ch.chan_type], ch.chan_idx);
 			fit = 0;
 			memset(&accumulator_buffer, 0, sizeof(accumulator_buffer));
-			while (decoder->decode(buf, channel, channel_idx, &fit, 1, decoded_buffer) >
-			       0) {
-
-				switch (channel) {
+			while (decoder->decode(buf, ch, &fit, 1, decoded_buffer) > 0) {
+				switch (ch.chan_type) {
 				case SENSOR_CHAN_ACCEL_XYZ:
 				case SENSOR_CHAN_GYRO_XYZ:
 				case SENSOR_CHAN_MAGN_XYZ:
-				case SENSOR_CHAN_POS_DX: {
+				case SENSOR_CHAN_POS_DXYZ: {
 					struct sensor_three_axis_data *data =
 						(struct sensor_three_axis_data *)decoded_buffer;
 
@@ -420,11 +446,11 @@ void sensor_shell_processing_callback(int result, uint8_t *buf, uint32_t buf_len
 			}
 
 			/* Print the accumulated value average */
-			switch (channel) {
+			switch (ch.chan_type) {
 			case SENSOR_CHAN_ACCEL_XYZ:
 			case SENSOR_CHAN_GYRO_XYZ:
 			case SENSOR_CHAN_MAGN_XYZ:
-			case SENSOR_CHAN_POS_DX: {
+			case SENSOR_CHAN_POS_DXYZ: {
 				struct sensor_three_axis_data *data =
 					(struct sensor_three_axis_data *)decoded_buffer;
 
@@ -442,10 +468,10 @@ void sensor_shell_processing_callback(int result, uint8_t *buf, uint32_t buf_len
 				data->readings[0].values[2] = (q31_t)(accumulator_buffer.values[2] /
 								      accumulator_buffer.count);
 				shell_info(ctx->sh,
-					   "channel idx=%d %s shift=%d num_samples=%d "
+					   "channel type=%d(%s) index=%d shift=%d num_samples=%d "
 					   "value=%" PRIsensor_three_axis_data,
-					   channel, sensor_channel_name[channel],
-					   data->shift, accumulator_buffer.count,
+					   ch.chan_type, sensor_channel_name[ch.chan_type],
+					   ch.chan_idx, data->shift, accumulator_buffer.count,
 					   PRIsensor_three_axis_data_arg(*data, 0));
 				break;
 			}
@@ -463,10 +489,10 @@ void sensor_shell_processing_callback(int result, uint8_t *buf, uint32_t buf_len
 					accumulator_buffer.values[0] / accumulator_buffer.count;
 
 				shell_info(ctx->sh,
-					   "channel idx=%d %s num_samples=%d "
+					   "channel type=%d(%s) index=%d num_samples=%d "
 					   "value=%" PRIsensor_byte_data(is_near),
-					   channel, sensor_channel_name[channel],
-					   accumulator_buffer.count,
+					   ch.chan_type, sensor_channel_name[ch.chan_type],
+					   ch.chan_idx, accumulator_buffer.count,
 					   PRIsensor_byte_data_arg(*data, 0, is_near));
 				break;
 			}
@@ -485,18 +511,20 @@ void sensor_shell_processing_callback(int result, uint8_t *buf, uint32_t buf_len
 								  accumulator_buffer.count);
 
 				shell_info(ctx->sh,
-					   "channel idx=%d %s shift=%d num_samples=%d "
+					   "channel type=%d(%s) index=%d shift=%d num_samples=%d "
 					   "value=%" PRIsensor_q31_data,
-					   channel,
-					   (channel >= ARRAY_SIZE(sensor_channel_name))
+					   ch.chan_type,
+					   (ch.chan_type >= ARRAY_SIZE(sensor_channel_name))
 						   ? ""
-						   : sensor_channel_name[channel],
+						   : sensor_channel_name[ch.chan_type],
+					   ch.chan_idx,
 					   data->shift, accumulator_buffer.count,
 					   PRIsensor_q31_data_arg(*data, 0));
+				}
 			}
-			}
-			++channel_idx;
+			++ch.chan_idx;
 		}
+		ch.chan_idx = 0;
 	}
 }
 
@@ -513,20 +541,26 @@ static int cmd_get_sensor(const struct shell *sh, size_t argc, char *argv[])
 		return err;
 	}
 
-	dev = device_get_binding(argv[1]);
-	if (dev == NULL) {
-		shell_error(sh, "Device unknown (%s)", argv[1]);
+	dev = shell_device_get_binding(argv[1]);
+	if (dev == NULL || !sensor_device_check(dev)) {
+		shell_error(sh, "Sensor device unknown (%s)", argv[1]);
+		k_mutex_unlock(&cmd_get_mutex);
+		return -ENODEV;
+	}
+
+	if (!device_is_sensor(dev)) {
+		shell_error(sh, "Device is not a sensor (%s)", argv[1]);
 		k_mutex_unlock(&cmd_get_mutex);
 		return -ENODEV;
 	}
 
 	if (argc == 2) {
-		/* read all channels */
+		/* read all channel types */
 		for (int i = 0; i < ARRAY_SIZE(iodev_sensor_shell_channels); ++i) {
 			if (SENSOR_CHANNEL_3_AXIS(i)) {
 				continue;
 			}
-			iodev_sensor_shell_channels[count++] = i;
+			iodev_sensor_shell_channels[count++] = (struct sensor_chan_spec){i, 0};
 		}
 	} else {
 		/* read specific channels */
@@ -538,7 +572,8 @@ static int cmd_get_sensor(const struct shell *sh, size_t argc, char *argv[])
 				shell_error(sh, "Failed to read channel (%s)", argv[i]);
 				continue;
 			}
-			iodev_sensor_shell_channels[count++] = chan;
+			iodev_sensor_shell_channels[count++] =
+				(struct sensor_chan_spec){chan, 0};
 		}
 	}
 
@@ -552,7 +587,7 @@ static int cmd_get_sensor(const struct shell *sh, size_t argc, char *argv[])
 
 	ctx.dev = dev;
 	ctx.sh = sh;
-	err = sensor_read(&iodev_sensor_shell_read, &sensor_read_rtio, &ctx);
+	err = sensor_read_async_mempool(&iodev_sensor_shell_read, &sensor_read_rtio, &ctx);
 	if (err < 0) {
 		shell_error(sh, "Failed to read sensor: %d", err);
 	}
@@ -570,15 +605,20 @@ static int cmd_get_sensor(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
-
-static int cmd_sensor_attr_set(const struct shell *shell_ptr, size_t argc, char *argv[])
+static int cmd_sensor_attr_set(const struct shell *sh, size_t argc, char *argv[])
 {
 	const struct device *dev;
 	int rc;
 
-	dev = device_get_binding(argv[1]);
-	if (dev == NULL) {
-		shell_error(shell_ptr, "Device unknown (%s)", argv[1]);
+	dev = shell_device_get_binding(argv[1]);
+	if (dev == NULL || !sensor_device_check(dev)) {
+		shell_error(sh, "Sensor device unknown (%s)", argv[1]);
+		return -ENODEV;
+	}
+
+	if (!device_is_sensor(dev)) {
+		shell_error(sh, "Device is not a sensor (%s)", argv[1]);
+		k_mutex_unlock(&cmd_get_mutex);
 		return -ENODEV;
 	}
 
@@ -590,31 +630,31 @@ static int cmd_sensor_attr_set(const struct shell *shell_ptr, size_t argc, char 
 		struct sensor_value value = {0};
 
 		if (channel < 0) {
-			shell_error(shell_ptr, "Channel '%s' unknown", argv[i]);
+			shell_error(sh, "Channel '%s' unknown", argv[i]);
 			return -EINVAL;
 		}
 		if (attr < 0) {
-			shell_error(shell_ptr, "Attribute '%s' unknown", argv[i + 1]);
+			shell_error(sh, "Attribute '%s' unknown", argv[i + 1]);
 			return -EINVAL;
 		}
 		if (parse_sensor_value(argv[i + 2], &value)) {
-			shell_error(shell_ptr, "Sensor value '%s' invalid", argv[i + 2]);
+			shell_error(sh, "Sensor value '%s' invalid", argv[i + 2]);
 			return -EINVAL;
 		}
 
 		rc = sensor_attr_set(dev, channel, attr, &value);
 		if (rc) {
-			shell_error(shell_ptr, "Failed to set channel(%s) attribute(%s): %d",
+			shell_error(sh, "Failed to set channel(%s) attribute(%s): %d",
 				    sensor_channel_name[channel], sensor_attribute_name[attr], rc);
 			continue;
 		}
-		shell_info(shell_ptr, "%s channel=%s, attr=%s set to value=%s", dev->name,
+		shell_info(sh, "%s channel=%s, attr=%s set to value=%s", dev->name,
 			   sensor_channel_name[channel], sensor_attribute_name[attr], argv[i + 2]);
 	}
 	return 0;
 }
 
-static void cmd_sensor_attr_get_handler(const struct shell *shell_ptr, const struct device *dev,
+static void cmd_sensor_attr_get_handler(const struct shell *sh, const struct device *dev,
 					const char *channel_name, const char *attr_name,
 					bool print_missing_attribute)
 {
@@ -626,11 +666,11 @@ static void cmd_sensor_attr_get_handler(const struct shell *shell_ptr, const str
 	int rc;
 
 	if (channel < 0) {
-		shell_error(shell_ptr, "Channel '%s' unknown", channel_name);
+		shell_error(sh, "Channel '%s' unknown", channel_name);
 		return;
 	}
 	if (attr < 0) {
-		shell_error(shell_ptr, "Attribute '%s' unknown", attr_name);
+		shell_error(sh, "Attribute '%s' unknown", attr_name);
 		return;
 	}
 
@@ -640,29 +680,35 @@ static void cmd_sensor_attr_get_handler(const struct shell *shell_ptr, const str
 		if (rc == -EINVAL && !print_missing_attribute) {
 			return;
 		}
-		shell_error(shell_ptr, "Failed to get channel(%s) attribute(%s): %d",
+		shell_error(sh, "Failed to get channel(%s) attribute(%s): %d",
 			    sensor_channel_name[channel], sensor_attribute_name[attr], rc);
 		return;
 	}
 
-	shell_info(shell_ptr, "%s(channel=%s, attr=%s) value=%.6f", dev->name,
+	shell_info(sh, "%s(channel=%s, attr=%s) value=%.6f", dev->name,
 		   sensor_channel_name[channel], sensor_attribute_name[attr],
 		   sensor_value_to_double(&value));
 }
 
-static int cmd_sensor_attr_get(const struct shell *shell_ptr, size_t argc, char *argv[])
+static int cmd_sensor_attr_get(const struct shell *sh, size_t argc, char *argv[])
 {
 	const struct device *dev;
 
-	dev = device_get_binding(argv[1]);
-	if (dev == NULL) {
-		shell_error(shell_ptr, "Device unknown (%s)", argv[1]);
+	dev = shell_device_get_binding(argv[1]);
+	if (dev == NULL || !sensor_device_check(dev)) {
+		shell_error(sh, "Sensor device unknown (%s)", argv[1]);
+		return -ENODEV;
+	}
+
+	if (!device_is_sensor(dev)) {
+		shell_error(sh, "Device is not a sensor (%s)", argv[1]);
+		k_mutex_unlock(&cmd_get_mutex);
 		return -ENODEV;
 	}
 
 	if (argc > 2) {
 		for (size_t i = 2; i < argc; i += 2) {
-			cmd_sensor_attr_get_handler(shell_ptr, dev, argv[i], argv[i + 1],
+			cmd_sensor_attr_get_handler(sh, dev, argv[i], argv[i + 1],
 						    /*print_missing_attribute=*/true);
 		}
 	} else {
@@ -670,7 +716,7 @@ static int cmd_sensor_attr_get(const struct shell *shell_ptr, size_t argc, char 
 		     ++channel_idx) {
 			for (size_t attr_idx = 0; attr_idx < ARRAY_SIZE(sensor_attribute_name);
 			     ++attr_idx) {
-				cmd_sensor_attr_get_handler(shell_ptr, dev,
+				cmd_sensor_attr_get_handler(sh, dev,
 							    sensor_channel_name[channel_idx],
 							    sensor_attribute_name[attr_idx],
 							    /*print_missing_attribute=*/false);
@@ -800,7 +846,7 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
 
 static void device_name_get(size_t idx, struct shell_static_entry *entry)
 {
-	const struct device *dev = shell_device_lookup(idx, NULL);
+	const struct device *dev = shell_device_filter(idx, sensor_device_check);
 
 	current_cmd_ctx = CTX_GET;
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
@@ -811,7 +857,7 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 
 static void device_name_get_for_attr(size_t idx, struct shell_static_entry *entry)
 {
-	const struct device *dev = shell_device_lookup(idx, NULL);
+	const struct device *dev = shell_device_filter(idx, sensor_device_check);
 
 	current_cmd_ctx = CTX_ATTR_GET_SET;
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
@@ -866,7 +912,7 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_trigger_onoff, trigger_on_off_get);
 
 static void device_name_get_for_trigger(size_t idx, struct shell_static_entry *entry)
 {
-	const struct device *dev = shell_device_lookup(idx, NULL);
+	const struct device *dev = shell_device_filter(idx, sensor_device_check);
 
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
 	entry->handler = NULL;
@@ -878,7 +924,7 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_trigger, device_name_get_for_trigger);
 
 static void device_name_get_for_stream(size_t idx, struct shell_static_entry *entry)
 {
-	const struct device *dev = shell_device_lookup(idx, NULL);
+	const struct device *dev = shell_device_filter(idx, sensor_device_check);
 
 	current_cmd_ctx = CTX_STREAM_ON_OFF;
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
@@ -943,8 +989,7 @@ static void data_ready_trigger_handler(const struct device *sensor,
 			continue;
 		}
 		/* Skip 3 axis channels */
-		if (i == SENSOR_CHAN_ACCEL_XYZ || i == SENSOR_CHAN_GYRO_XYZ ||
-		    i == SENSOR_CHAN_MAGN_XYZ) {
+		if (SENSOR_CHANNEL_3_AXIS(i)) {
 			continue;
 		}
 
@@ -990,6 +1035,7 @@ static int cmd_trig_sensor(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	int trigger;
+	bool trigger_enabled = false;
 	int err;
 
 	if (argc < 4) {
@@ -998,9 +1044,9 @@ static int cmd_trig_sensor(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	/* Parse device name */
-	dev = device_get_binding(argv[1]);
-	if (dev == NULL) {
-		shell_error(sh, "Device unknown (%s)", argv[1]);
+	dev = shell_device_get_binding(argv[1]);
+	if (dev == NULL || !sensor_device_check(dev)) {
+		shell_error(sh, "Sensor device unknown (%s)", argv[1]);
 		return -ENODEV;
 	}
 
@@ -1030,6 +1076,7 @@ static int cmd_trig_sensor(const struct shell *sh, size_t argc, char **argv)
 			}
 			err = sensor_trigger_set(dev, &sensor_trigger_table[trigger].trigger,
 						 sensor_trigger_table[trigger].handler);
+			trigger_enabled = true;
 		}
 	} else if (strcmp(argv[2], "off") == 0) {
 		/* Clear the handler for the given trigger on this device */
@@ -1052,6 +1099,10 @@ static int cmd_trig_sensor(const struct shell *sh, size_t argc, char **argv)
 	if (err) {
 		shell_error(sh, "Error while setting trigger %d on device %s (%d)", trigger,
 			    argv[1], err);
+	} else {
+		shell_info(sh, "%s trigger idx=%d %s on device %s",
+			   trigger_enabled ? "Enabled" : "Disabled", trigger,
+			   sensor_trigger_table[trigger].name, argv[1]);
 	}
 
 	return err;

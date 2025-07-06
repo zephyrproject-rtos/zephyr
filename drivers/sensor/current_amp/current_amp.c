@@ -6,11 +6,14 @@
 
 #define DT_DRV_COMPAT current_sense_amplifier
 
+#include <stdlib.h>
+
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/adc/current_sense_amplifier.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/sys/__assert.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(current_amp, CONFIG_SENSOR_LOG_LEVEL);
@@ -52,6 +55,10 @@ static int get(const struct device *dev, enum sensor_channel chan, struct sensor
 		return -ENOTSUP;
 	}
 
+	if (abs(raw_val) < config->noise_threshold) {
+		return sensor_value_from_micro(val, 0);
+	}
+
 	ret = adc_raw_to_millivolts_dt(&config->port, &raw_val);
 	if (ret != 0) {
 		LOG_ERR("raw_to_mv: %d", ret);
@@ -61,16 +68,16 @@ static int get(const struct device *dev, enum sensor_channel chan, struct sensor
 	i_ma = raw_val;
 	current_sense_amplifier_scale_dt(config, &i_ma);
 
-	LOG_DBG("%d/%d, %dmV, current:%duA", data->raw,
+	LOG_DBG("%d/%d, %dmV, current:%dmA", data->raw,
 		(1 << data->sequence.resolution) - 1, raw_val, i_ma);
 
 	val->val1 = i_ma / 1000;
-	val->val2 = i_ma % 1000;
+	val->val2 = (i_ma % 1000) * 1000;
 
 	return 0;
 }
 
-static const struct sensor_driver_api current_api = {
+static DEVICE_API(sensor, current_api) = {
 	.sample_fetch = fetch,
 	.channel_get = get,
 };
@@ -115,6 +122,8 @@ static int current_init(const struct device *dev)
 	struct current_sense_amplifier_data *data = dev->data;
 	int ret;
 
+	__ASSERT(config->sense_milli_ohms != 0, "Milli-ohms must not be 0");
+
 	if (!adc_is_ready_dt(&config->port)) {
 		LOG_ERR("ADC is not ready");
 		return -ENODEV;
@@ -149,6 +158,7 @@ static int current_init(const struct device *dev)
 
 	data->sequence.buffer = &data->raw;
 	data->sequence.buffer_size = sizeof(data->raw);
+	data->sequence.calibrate = config->enable_calibration;
 
 	return 0;
 }
@@ -163,6 +173,10 @@ static int current_init(const struct device *dev)
                                                                                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, &current_init, PM_DEVICE_DT_INST_GET(inst),             \
 				     &current_amp_##inst##_data, &current_amp_##inst##_config,     \
-				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &current_api);
+				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &current_api);      \
+                                                                                                   \
+	BUILD_ASSERT((DT_INST_PROP(inst, zero_current_voltage_mv) == 0) ||                         \
+			     (DT_INST_PROP(inst, sense_resistor_milli_ohms) == 1),                 \
+		     "zero_current_voltage_mv requires sense_resistor_milli_ohms == 1");
 
 DT_INST_FOREACH_STATUS_OKAY(CURRENT_SENSE_AMPLIFIER_INIT)

@@ -1,0 +1,36 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2025 STMicroelectronics
+ */
+
+&usart2 {
+	status = "okay";
+	pinctrl-0 = <&usart2_tx_pa12>;
+	current-speed = <115200>;
+	single-wire;
+};
+
+&lpuart1 {
+	status = "okay";
+	pinctrl-0 = <&lpuart1_tx_pa2>;
+	current-speed = <115200>;
+	single-wire;
+};
+
+&usart2_tx_pa12 {
+	bias-pull-up;
+	drive-open-drain;
+};
+
+&lpuart1_tx_pa2 {
+	bias-pull-up;
+	drive-open-drain;
+};
+
+/ {
+	aliases {
+	single-line-uart1 = &usart2;
+	single-line-uart2 = &lpuart1;
+	};
+};

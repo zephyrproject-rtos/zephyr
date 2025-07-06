@@ -34,3 +34,8 @@ tests:
   drivers.clock.stm32_clock_configuration.common_device.f3.i2c1_hsi:
     extra_args: DTC_OVERLAY_FILE="boards/f3_i2c1_hsi.overlay"
     platform_allow: stm32f3_disco
+  drivers.clock.stm32_clock_configuration.common_device.f4.sdmmc_48:
+    extra_args: DTC_OVERLAY_FILE="boards/f4_sdmmc48_pll.overlay"
+    platform_allow:
+      - stm32f412g_disco
+      - nucleo_f412zg

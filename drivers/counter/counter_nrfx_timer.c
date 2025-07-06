@@ -3,7 +3,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <soc.h>
 #include <zephyr/drivers/counter.h>
+#include <zephyr/drivers/clock_control/nrf_clock_control.h>
+#include <zephyr/devicetree.h>
 #include <hal/nrf_timer.h>
 #include <zephyr/sys/atomic.h>
 
@@ -14,8 +17,6 @@
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 
 #define DT_DRV_COMPAT nordic_nrf_timer
-
-#define TIMER_CLOCK(timer_instance) NRF_TIMER_BASE_FREQUENCY_GET(timer_instance)
 
 #define CC_TO_ID(cc_num) (cc_num - 2)
 
@@ -34,11 +35,32 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 #define MAYBE_CONST_CONFIG const
 #endif
 
+#ifdef CONFIG_SOC_NRF54H20_GPD
+#include <nrf/gpd.h>
+
+#define NRF_CLOCKS_INSTANCE_IS_FAST(node)						\
+	COND_CODE_1(DT_NODE_HAS_PROP(node, power_domains),				\
+		    (IS_EQ(DT_PHA(node, power_domains, id), NRF_GPD_FAST_ACTIVE1)),	\
+		    (0))
+
+/* Macro must resolve to literal 0 or 1 */
+#define INSTANCE_IS_FAST(idx) NRF_CLOCKS_INSTANCE_IS_FAST(DT_DRV_INST(idx))
+
+#define INSTANCE_IS_FAST_OR(idx) INSTANCE_IS_FAST(idx) ||
+
+#if (DT_INST_FOREACH_STATUS_OKAY(INSTANCE_IS_FAST_OR) 0)
+#define COUNTER_ANY_FAST 1
+#endif
+#endif
+
 struct counter_nrfx_data {
 	counter_top_callback_t top_cb;
 	void *top_user_data;
 	uint32_t guard_period;
 	atomic_t cc_int_pending;
+#ifdef COUNTER_ANY_FAST
+	atomic_t active;
+#endif
 };
 
 struct counter_nrfx_ch_data {
@@ -50,6 +72,10 @@ struct counter_nrfx_config {
 	struct counter_config_info info;
 	struct counter_nrfx_ch_data *ch_data;
 	NRF_TIMER_Type *timer;
+#ifdef COUNTER_ANY_FAST
+	const struct device *clk_dev;
+	struct nrf_clock_spec clk_spec;
+#endif
 	LOG_INSTANCE_PTR_DECLARE(log);
 };
 
@@ -63,6 +89,18 @@ static int start(const struct device *dev)
 {
 	const struct counter_nrfx_config *config = dev->config;
 
+#ifdef COUNTER_ANY_FAST
+	struct counter_nrfx_data *data = dev->data;
+
+	if (config->clk_dev && atomic_cas(&data->active, 0, 1)) {
+		int err;
+
+		err = nrf_clock_control_request_sync(config->clk_dev, &config->clk_spec, K_FOREVER);
+		if (err < 0) {
+			return err;
+		}
+	}
+#endif
 	nrf_timer_task_trigger(config->timer, NRF_TIMER_TASK_START);
 
 	return 0;
@@ -72,7 +110,25 @@ static int stop(const struct device *dev)
 {
 	const struct counter_nrfx_config *config = dev->config;
 
+#if NRF_TIMER_HAS_SHUTDOWN
 	nrf_timer_task_trigger(config->timer, NRF_TIMER_TASK_SHUTDOWN);
+#else
+	nrf_timer_task_trigger(config->timer, NRF_TIMER_TASK_STOP);
+	nrf_timer_task_trigger(config->timer, NRF_TIMER_TASK_CLEAR);
+#endif
+
+#ifdef COUNTER_ANY_FAST
+	struct counter_nrfx_data *data = dev->data;
+
+	if (config->clk_dev && atomic_cas(&data->active, 1, 0)) {
+		int err;
+
+		err = nrf_clock_control_release(config->clk_dev, &config->clk_spec);
+		if (err < 0) {
+			return err;
+		}
+	}
+#endif
 
 	return 0;
 }
@@ -91,6 +147,7 @@ static uint32_t read(const struct device *dev)
 
 	nrf_timer_task_trigger(timer,
 			       nrf_timer_capture_task_get(COUNTER_READ_CC));
+	nrf_barrier_w();
 
 	return nrf_timer_cc_get(timer, COUNTER_READ_CC);
 }
@@ -98,6 +155,14 @@ static uint32_t read(const struct device *dev)
 static int get_value(const struct device *dev, uint32_t *ticks)
 {
 	*ticks = read(dev);
+	return 0;
+}
+
+static int reset(const struct device *dev)
+{
+	const struct counter_nrfx_config *config = dev->config;
+
+	nrf_timer_task_trigger(config->timer, NRF_TIMER_TASK_CLEAR);
 	return 0;
 }
 
@@ -162,6 +227,7 @@ static int set_cc(const struct device *dev, uint8_t id, uint32_t val,
 	 */
 	now = read(dev);
 	prev_val = nrf_timer_cc_get(reg, chan);
+	nrf_barrier_r();
 	nrf_timer_cc_set(reg, chan, now);
 	nrf_timer_event_clear(reg, evt);
 
@@ -390,10 +456,11 @@ static void irq_handler(const void *arg)
 	}
 }
 
-static const struct counter_driver_api counter_nrfx_driver_api = {
+static DEVICE_API(counter, counter_nrfx_driver_api) = {
 	.start = start,
 	.stop = stop,
 	.get_value = get_value,
+	.reset = reset,
 	.set_alarm = set_alarm,
 	.cancel_alarm = cancel_alarm,
 	.set_top_value = set_top_value,
@@ -402,6 +469,20 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 	.get_guard_period = get_guard_period,
 	.set_guard_period = set_guard_period,
 };
+
+/* Get initialization level of an instance. Instances that requires clock control
+ * which is using nrfs (IPC) are initialized later.
+ */
+#define TIMER_INIT_LEVEL(idx) \
+	COND_CODE_1(INSTANCE_IS_FAST(idx), (POST_KERNEL), (PRE_KERNEL_1))
+
+/* Get initialization priority of an instance. Instances that requires clock control
+ * which is using nrfs (IPC) are initialized later.
+ */
+#define TIMER_INIT_PRIO(idx)								\
+	COND_CODE_1(INSTANCE_IS_FAST(idx),						\
+		    (UTIL_INC(CONFIG_CLOCK_CONTROL_NRF_HSFLL_GLOBAL_INIT_PRIORITY)),	\
+		    (CONFIG_COUNTER_INIT_PRIORITY))
 
 /*
  * Device instantiation is done with node labels due to HAL API
@@ -448,13 +529,21 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 	static MAYBE_CONST_CONFIG struct counter_nrfx_config nrfx_counter_##idx##_config = {	\
 		.info = {									\
 			.max_top_value = (uint32_t)BIT64_MASK(DT_INST_PROP(idx, max_bit_width)),\
-			.freq = TIMER_CLOCK((NRF_TIMER_Type *)DT_INST_REG_ADDR(idx)) /		\
+			.freq = NRF_PERIPH_GET_FREQUENCY(DT_DRV_INST(idx)) /			\
 				BIT(DT_INST_PROP(idx, prescaler)),				\
 			.flags = COUNTER_CONFIG_INFO_COUNT_UP,					\
 			.channels = CC_TO_ID(DT_INST_PROP(idx, cc_num)),			\
 		},										\
 		.ch_data = counter##idx##_ch_data,						\
 		.timer = (NRF_TIMER_Type *)DT_INST_REG_ADDR(idx),				\
+		IF_ENABLED(INSTANCE_IS_FAST(idx),						\
+			(.clk_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_DRV_INST(idx))),		\
+			 .clk_spec = {								\
+				.frequency = NRF_PERIPH_GET_FREQUENCY(DT_DRV_INST(idx)),	\
+				.accuracy = 0,							\
+				.precision = NRF_CLOCK_CONTROL_PRECISION_DEFAULT,		\
+				},								\
+			 ))									\
 		LOG_INSTANCE_PTR_INIT(log, LOG_MODULE_NAME, idx)				\
 	};											\
 	DEVICE_DT_INST_DEFINE(idx,								\
@@ -462,7 +551,7 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 			    NULL,								\
 			    &counter_##idx##_data,						\
 			    &nrfx_counter_##idx##_config.info,					\
-			    PRE_KERNEL_1, CONFIG_COUNTER_INIT_PRIORITY,				\
+			    TIMER_INIT_LEVEL(idx), TIMER_INIT_PRIO(idx),			\
 			    &counter_nrfx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_NRFX_TIMER_DEVICE)

@@ -1,5 +1,6 @@
 board:
   name: nucleo_u5a5zj_q
+  full_name: Nucleo U5A5ZJ Q
   vendor: st
   socs:
     - name: stm32u5a5xx

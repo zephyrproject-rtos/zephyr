@@ -8,7 +8,9 @@
 #include <zephyr/device.h>
 
 #include <zephyr/ipc/ipc_service.h>
+#if defined(CONFIG_SOC_NRF5340_CPUAPP)
 #include <nrf53_cpunet_mgmt.h>
+#endif
 #include <string.h>
 
 #include "common.h"
@@ -16,26 +18,49 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(host, LOG_LEVEL_INF);
 
-
+#if defined(CONFIG_MULTITHREADING)
 K_SEM_DEFINE(bound_sem, 0, 1);
+#else
+volatile uint32_t bound_sem = 1;
+volatile uint32_t recv_sem = 1;
+#endif
+
 static unsigned char expected_message = 'A';
 static size_t expected_len = PACKET_SIZE_START;
+static size_t received;
 
 static void ep_bound(void *priv)
 {
+	received = 0;
+#if defined(CONFIG_MULTITHREADING)
 	k_sem_give(&bound_sem);
+#else
+	bound_sem = 0;
+#endif
 	LOG_INF("Ep bounded");
+}
+
+static void ep_unbound(void *priv)
+{
+	LOG_INF("Ep unbounded");
 }
 
 static void ep_recv(const void *data, size_t len, void *priv)
 {
+#if defined(CONFIG_ASSERT)
 	struct data_packet *packet = (struct data_packet *)data;
 
 	__ASSERT(packet->data[0] == expected_message, "Unexpected message. Expected %c, got %c",
 		expected_message, packet->data[0]);
 	__ASSERT(len == expected_len, "Unexpected length. Expected %zu, got %zu",
 		expected_len, len);
+#endif
 
+#ifndef CONFIG_MULTITHREADING
+	recv_sem = 0;
+#endif
+
+	received += len;
 	expected_message++;
 	expected_len++;
 
@@ -46,6 +71,11 @@ static void ep_recv(const void *data, size_t len, void *priv)
 	if (expected_len > sizeof(struct data_packet)) {
 		expected_len = PACKET_SIZE_START;
 	}
+}
+
+static void ep_error(const char *message, void *priv)
+{
+	LOG_ERR("ICMsg error: %s", message);
 }
 
 static int send_for_time(struct ipc_ept *ep, const int64_t sending_time_ms)
@@ -63,11 +93,17 @@ static int send_for_time(struct ipc_ept *ep, const int64_t sending_time_ms)
 		ret = ipc_service_send(ep, &msg, mlen);
 		if (ret == -ENOMEM) {
 			/* No space in the buffer. Retry. */
+			ret = 0;
 			continue;
 		} else if (ret < 0) {
 			LOG_ERR("Failed to send (%c) failed with ret %d", msg.data[0], ret);
 			break;
 		}
+#if !defined(CONFIG_MULTITHREADING)
+		else {
+			recv_sem = 1;
+		}
+#endif
 
 		msg.data[0]++;
 		if (msg.data[0] > 'z') {
@@ -81,7 +117,12 @@ static int send_for_time(struct ipc_ept *ep, const int64_t sending_time_ms)
 			mlen = PACKET_SIZE_START;
 		}
 
+#if defined(CONFIG_MULTITHREADING)
 		k_usleep(1);
+#else
+		while ((recv_sem != 0) && ((k_uptime_get() - start) < sending_time_ms)) {
+		};
+#endif
 	}
 
 	LOG_INF("Sent %zu [Bytes] over %lld [ms]", bytes_sent, sending_time_ms);
@@ -92,7 +133,9 @@ static int send_for_time(struct ipc_ept *ep, const int64_t sending_time_ms)
 static struct ipc_ept_cfg ep_cfg = {
 	.cb = {
 		.bound    = ep_bound,
+		.unbound  = ep_unbound,
 		.received = ep_recv,
+		.error    = ep_error,
 	},
 };
 
@@ -103,6 +146,11 @@ int main(void)
 	int ret;
 
 	LOG_INF("IPC-service HOST demo started");
+
+#if defined(CONFIG_SOC_NRF5340_CPUAPP)
+	LOG_INF("Run network core");
+	nrf53_cpunet_enable(true);
+#endif
 
 	ipc0_instance = DEVICE_DT_GET(DT_NODELABEL(ipc0));
 
@@ -118,7 +166,12 @@ int main(void)
 		return ret;
 	}
 
+#if defined(CONFIG_MULTITHREADING)
 	k_sem_take(&bound_sem, K_FOREVER);
+#else
+	while (bound_sem != 0) {
+	};
+#endif
 
 	ret = send_for_time(&ep, SENDING_TIME_MS);
 	if (ret < 0) {
@@ -126,9 +179,16 @@ int main(void)
 		return ret;
 	}
 
-	LOG_INF("Wait 500ms. Let net core finish its sends");
+	LOG_INF("Wait 500ms. Let remote core finish its sends");
+#if defined(CONFIG_MULTITHREADING)
 	k_msleep(500);
+#else
+	k_busy_wait(500000);
+#endif
 
+	LOG_INF("Received %zu [Bytes] in total", received);
+
+#if defined(CONFIG_SOC_NRF5340_CPUAPP)
 	LOG_INF("Stop network core");
 	nrf53_cpunet_enable(false);
 
@@ -167,6 +227,7 @@ int main(void)
 		LOG_ERR("send_for_time() failure");
 		return ret;
 	}
+#endif /* CONFIG_SOC_NRF5340_CPUAPP */
 
 	LOG_INF("IPC-service HOST demo ended");
 

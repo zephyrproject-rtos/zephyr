@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* The Aux Offset shall be at least the length of the packet plus T_MAFS */
+#define PDU_ADV_AUX_OFFSET_MIN_US 300
+
 #if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)
 #define PDU_ADV_MEM_SIZE       MROUND(PDU_AC_LL_HEADER_SIZE + \
 				      PDU_AC_PAYLOAD_SIZE_MAX + \
@@ -192,6 +195,11 @@ lll_adv_sync_data_latest_peek(const struct lll_adv_sync *const lll)
 	return lll_adv_pdu_latest_peek(&lll->data);
 }
 
+static inline struct pdu_adv *lll_adv_sync_data_curr_get(struct lll_adv_sync *lll)
+{
+	return (void *)lll->data.pdu[lll->data.first];
+}
+
 #if defined(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
 static inline void *lll_adv_sync_extra_data_peek(struct lll_adv_sync *lll)
 {
@@ -210,7 +218,7 @@ static inline void *lll_adv_sync_extra_data_curr_get(struct lll_adv_sync *lll)
 /* Release PDU and all linked PDUs, shall only be called from ULL */
 void lll_adv_pdu_linked_release_all(struct pdu_adv *pdu_first);
 
-static inline struct pdu_adv *lll_adv_pdu_linked_next_get(struct pdu_adv *pdu)
+static inline struct pdu_adv *lll_adv_pdu_linked_next_get(const struct pdu_adv *pdu)
 {
 	return PDU_ADV_NEXT_PTR(pdu);
 }

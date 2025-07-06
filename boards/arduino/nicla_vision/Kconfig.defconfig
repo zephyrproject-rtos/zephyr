@@ -1,0 +1,18 @@
+# Copyright 2024 Felipe Neves
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ARDUINO_NICLA_VISION
+
+if BT
+
+choice AIROC_PART
+	default CYW4343W
+endchoice
+
+choice CYW4343W_MODULE
+	default CYW4343W_MURATA_1DX
+endchoice
+
+endif # BT
+
+endif # BOARD_ARDUINO_NICLA_VISION

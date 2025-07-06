@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_STM32_DMA_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_STM32_DMA_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_DMA_STM32_DMA_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_DMA_STM32_DMA_H_
 
 /**
  * @name custom DMA flags for channel configuration
@@ -46,6 +46,8 @@
 
 /** DMA  Peripheral increment offset config on bit 15 */
 #define STM32_DMA_CH_CFG_PERIPH_INC_FIXED(val)	((val & 0x1) << 15)
+#define STM32_DMA_OFFSET_LINKED_BUS		STM32_DMA_CH_CFG_PERIPH_INC_FIXED(0)
+#define STM32_DMA_OFFSET_FIXED_4		STM32_DMA_CH_CFG_PERIPH_INC_FIXED(1)
 
 /** DMA  Priority config  on bits 16, 17*/
 #define STM32_DMA_CH_CFG_PRIORITY(val)		((val & 0x3) << 16)
@@ -64,6 +66,8 @@
 #define STM32_DMA_PERIPH_TX	(STM32_DMA_MEMORY_TO_PERIPH | STM32_DMA_MEM_INC)
 #define STM32_DMA_PERIPH_RX	(STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_MEM_INC)
 
+#define STM32_DMA_16BITS	(STM32_DMA_PERIPH_16BITS | STM32_DMA_MEM_16BITS)
+
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_STM32_DMA_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_DMA_STM32_DMA_H_ */

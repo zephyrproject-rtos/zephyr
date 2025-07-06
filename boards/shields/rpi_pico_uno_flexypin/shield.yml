@@ -1,0 +1,6 @@
+shield:
+  name: rpi_pico_uno_flexypin
+  full_name: Raspberry Pi Pico to UNO FlexyPin Adapter
+  vendor: others
+  supported_features:
+    - gpio

@@ -12,7 +12,7 @@ Active Projects/Modules
 +++++++++++++++++++++++
 
 The projects below are enabled by default and will be downloaded when you
-call `west update`. Many of the projects or modules listed below are
+call :command:`west update`. Many of the projects or modules listed below are
 essential for building generic Zephyr application and include among others
 hardware support for many of the platforms available in Zephyr.
 
@@ -30,7 +30,7 @@ Inactive and Optional Projects/Modules
 
 
 The projects below are optional and will not be downloaded when you
-call `west update`. You can add any of the projects or modules listed below
+call :command:`west update`. You can add any of the projects or modules listed below
 and use them to write application code and extend your workspace with the added
 functionality.
 

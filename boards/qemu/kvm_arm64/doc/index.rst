@@ -1,7 +1,4 @@
-.. _qemu_kvm_arm64:
-
-ARM AArch64 Virt KVM Emulation (QEMU)
-#####################################
+.. zephyr:board:: qemu_kvm_arm64
 
 Overview
 ********
@@ -50,6 +47,8 @@ CPU's UART0.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Refer to the qemu_cortex_a53 board instructions for this part.
 

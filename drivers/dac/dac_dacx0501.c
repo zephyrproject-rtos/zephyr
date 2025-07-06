@@ -106,6 +106,11 @@ static int dacx0501_channel_setup(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+	if (channel_cfg->internal) {
+		LOG_ERR("Internal channels not supported");
+		return -ENOTSUP;
+	}
+
 	return 0;
 }
 
@@ -169,7 +174,7 @@ static int dacx0501_init(const struct device *dev)
 	return 0;
 }
 
-static const struct dac_driver_api dacx0501_driver_api = {
+static DEVICE_API(dac, dacx0501_driver_api) = {
 	.channel_setup = dacx0501_channel_setup,
 	.write_value = dacx0501_write_value,
 };

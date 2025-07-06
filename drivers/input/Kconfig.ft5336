@@ -7,6 +7,7 @@ menuconfig INPUT_FT5336
 	default y
 	depends on DT_HAS_FOCALTECH_FT5336_ENABLED
 	select I2C
+	select INPUT_TOUCH
 	help
 	  Enable driver for multiple Focaltech capacitive touch panel
 	  controllers. This driver should support FT5x06, FT5606, FT5x16,
@@ -24,6 +25,7 @@ config INPUT_FT5336_PERIOD
 
 config INPUT_FT5336_INTERRUPT
 	bool "Interrupt"
+	default y if $(dt_compat_any_has_prop,$(DT_COMPAT_FOCALTECH_FT5336),int-gpios)
 	help
 	  Enable interrupt support (requires GPIO).
 

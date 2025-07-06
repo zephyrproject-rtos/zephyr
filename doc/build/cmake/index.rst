@@ -43,6 +43,9 @@ source file :file:`src/main.c`, behavior that we surely do not want. The
 ``PUBLIC`` keyword could however be useful when modifying the include
 paths of a target library.
 
+When introducing build system code using CMake or adding new CMake files,
+please follow the style guidelines outlined :ref:`here <cmake-style>`.
+
 
 Build and Configuration Phases
 ==============================
@@ -88,7 +91,7 @@ Devicetree
 
    The preprocessed devicetree sources are parsed by
    :zephyr_file:`gen_defines.py <scripts/dts/gen_defines.py>` to generate a
-   :file:`build/zephyr/include/generated/devicetree_generated.h` header with
+   :file:`build/zephyr/include/generated/zephyr/devicetree_generated.h` header with
    preprocessor macros.
 
    Source code should access preprocessor macros generated from devicetree by

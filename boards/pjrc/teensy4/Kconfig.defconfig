@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if BOARD_TEENSY40 || BOARD_TEENSY41
+if BOARD_TEENSY40 || BOARD_TEENSY41 || BOARD_TEENSYMM
 
 config BUILD_OUTPUT_HEX
 	bool
@@ -12,5 +12,13 @@ config BUILD_OUTPUT_HEX
 
 config DISK_DRIVER_SDMMC
 	default y if DISK_DRIVERS
+
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default n if BOARD_TEENSY40
+	default y if BOARD_TEENSY41
+
+endif # NETWORKING
 
 endif # BOARD_TEENSY40 || BOARD_TEENSY41

@@ -1,20 +1,10 @@
-.. _quickfeather:
-
-QuickFeather
-############
+.. zephyr:board:: quick_feather
 
 Overview
 ********
 
 The QuickFeather development board is a platform with an on-board QuickLogic
 EOS S3 Sensor Processing Platform.
-
-
-.. figure:: img/feather-board.jpg
-   :align: center
-   :alt: QuickFeather
-
-   QuickFeather (Credit: QuickLogic)
 
 Hardware
 ********
@@ -33,19 +23,7 @@ Detailed information about the board can be found in a `QuickFeather repository`
 Supported Features
 ==================
 
-The QuickFeather configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in
-:zephyr_file:`boards/quicklogic/quick_feather/quick_feather_defconfig`.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -54,6 +32,8 @@ Detailed information about pinouts is available in the `schematics document`_.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Flashing
 ========

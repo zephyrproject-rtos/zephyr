@@ -5,6 +5,7 @@
  * Copyright (c) 2015 Runtime Inc
  * Copyright (c) 2018 Google LLC.
  * Copyright (c) 2022 Meta
+ * Copyright (c) 2024 Intercreate, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,6 +30,15 @@ extern "C" {
  * computation.
  */
 #define CRC8_CCITT_INITIAL_VALUE 0xFF
+#define CRC8_ROHC_INITIAL_VALUE  0xFF
+
+/* Initial value expected to be used at the beginning of the OpenPGP CRC-24 computation. */
+#define CRC24_PGP_INITIAL_VALUE 0x00B704CEU
+/*
+ * The CRC-24 value is stored on a 32-bit value, only the 3 least significant bytes
+ * are meaningful. Use the following mask to only keep the CRC-24 value.
+ */
+#define CRC24_FINAL_VALUE_MASK 0x00FFFFFFU
 
 /**
  * @defgroup checksum Checksum
@@ -50,14 +60,17 @@ enum crc_type {
 	CRC4,        /**< Use @ref crc4 */
 	CRC4_TI,     /**< Use @ref crc4_ti */
 	CRC7_BE,     /**< Use @ref crc7_be */
-	CRC8,	     /**< Use @ref crc8 */
+	CRC8,        /**< Use @ref crc8 */
 	CRC8_CCITT,  /**< Use @ref crc8_ccitt */
-	CRC16,	     /**< Use @ref crc16 */
+	CRC8_ROHC,   /**< Use @ref crc8_rohc */
+	CRC16,       /**< Use @ref crc16 */
 	CRC16_ANSI,  /**< Use @ref crc16_ansi */
 	CRC16_CCITT, /**< Use @ref crc16_ccitt */
 	CRC16_ITU_T, /**< Use @ref crc16_itu_t */
+	CRC24_PGP,   /**< Use @ref crc24_pgp */
 	CRC32_C,     /**< Use @ref crc32_c */
 	CRC32_IEEE,  /**< Use @ref crc32_ieee */
+	CRC32_K_4_2, /**< Use @ref crc32_k_4_2_update */
 };
 
 /**
@@ -126,7 +139,7 @@ uint16_t crc16_reflect(uint16_t poly, uint16_t seed, const uint8_t *src, size_t 
  * @return The computed CRC8 value
  */
 uint8_t crc8(const uint8_t *src, size_t len, uint8_t polynomial, uint8_t initial_value,
-	  bool reversed);
+	     bool reversed);
 
 /**
  * @brief Compute the checksum of a buffer with polynomial 0x1021, reflecting
@@ -253,6 +266,32 @@ uint32_t crc32_c(uint32_t crc, const uint8_t *data,
 		 size_t len, bool first_pkt, bool last_pkt);
 
 /**
+ * @brief Update a CRC-32K/4.2 (*op) (Koopman) checksum. This is a good HD=4
+ * checksum up to 2,147,483,615 bits and HD=5/6 up to 6,167 bits.
+ *
+ * Hamming Distance and properties:
+ *
+ * - Polynomial: 0x93a409eb
+ * - reflect-in: false
+ * - initial value (xor-in): provided by caller as crc argument (0xFFFFFFFF is OK)
+ * - reflect-out: false
+ * - xor-out: 0
+ * - HD=4 @ 2,147,483,615 bits
+ * - HD=5 @ 6,167 bits
+ * - HD=6 @ 6,167 bits
+ * - HD=7 @ 148 bits
+ *
+ * Reference: https://users.ece.cmu.edu/~koopman/crc/crc32.html
+ *
+ * @param crc       CRC32 checksum that needs to be updated.
+ * @param data      Pointer to data on which the CRC should be calculated.
+ * @param len       Data length.
+ *
+ * @return CRC32 value.
+ */
+uint32_t crc32_k_4_2_update(uint32_t crc, const uint8_t *data, size_t len);
+
+/**
  * @brief Compute CCITT variant of CRC 8
  *
  * Normal CCITT variant of CRC 8 is using 0x07.
@@ -264,6 +303,20 @@ uint32_t crc32_c(uint32_t crc, const uint8_t *data,
  * @return The computed CRC8 value
  */
 uint8_t crc8_ccitt(uint8_t initial_value, const void *buf, size_t len);
+
+/**
+ * @brief Compute ROHC variant of CRC 8
+ *
+ * ROHC (Robust Header Compression) variant of CRC 8.
+ * Uses 0x07 as the polynomial with reflection.
+ *
+ * @param initial_value Initial value for the CRC computation
+ * @param buf Input bytes for the computation
+ * @param len Length of the input in bytes
+ *
+ * @return The computed CRC8 value
+ */
+uint8_t crc8_rohc(uint8_t initial_value, const void *buf, size_t len);
 
 /**
  * @brief Compute the CRC-7 checksum of a buffer.
@@ -313,7 +366,30 @@ uint8_t crc4_ti(uint8_t seed, const uint8_t *src, size_t len);
  * @return The computed CRC4 value
  */
 uint8_t crc4(const uint8_t *src, size_t len, uint8_t polynomial, uint8_t initial_value,
-	  bool reversed);
+	     bool reversed);
+
+/**
+ * @brief Generate an OpenPGP CRC-24 checksum as defined in RFC 4880 section 6.1.
+ *
+ * @param data A pointer to the data on which the CRC will be calculated.
+ * @param len Data length in bytes.
+ *
+ * @return The CRC-24 value.
+ */
+uint32_t crc24_pgp(const uint8_t *data, size_t len);
+
+/**
+ * @brief Update an OpenPGP CRC-24 checksum.
+ *
+ * @param crc The CRC-24 checksum that needs to be updated. The full 32-bit value of the CRC needs
+ *            to be used between calls, do not mask the value to keep only the last 24 bits.
+ * @param data A pointer to the data on which the CRC will be calculated.
+ * @param len  Data length in bytes.
+ *
+ * @return The CRC-24 value. When the last buffer of data has been processed, mask the value
+ *         with CRC24_FINAL_VALUE_MASK to keep only the meaningful 24 bits of the CRC result.
+ */
+uint32_t crc24_pgp_update(uint32_t crc, const uint8_t *data, size_t len);
 
 /**
  * @brief Compute a CRC checksum, in a generic way.
@@ -321,16 +397,16 @@ uint8_t crc4(const uint8_t *src, size_t len, uint8_t polynomial, uint8_t initial
  * This is a dispatch function that calls the individual CRC routine
  * determined by @p type.
  *
- * For 7, 8, and 16-bit CRCs, the relevant @p seed and @p poly values should
+ * For 7, 8, 16 and 24-bit CRCs, the relevant @p seed and @p poly values should
  * be passed in via the least-significant byte(s).
  *
- * Similarly, for 7, 8, and 16-bit CRCs, the relevant result is stored in the
+ * Similarly, for 7, 8, 16 and 24-bit CRCs, the relevant result is stored in the
  * least-significant byte(s) of the returned value.
  *
  * @param type CRC algorithm to use.
  * @param src Input bytes for the computation
  * @param len Length of the input in bytes
- * @param seed Value to seed the CRC with
+ * @param seed Seed or existing CRC value to update
  * @param poly The polynomial to use omitting the leading coefficient
  * @param reflect Should we use reflected/reversed values or not
  * @param first Whether this is the first packet in the stream.
@@ -352,6 +428,8 @@ static inline uint32_t crc_by_type(enum crc_type type, const uint8_t *src, size_
 		return crc8(src, len, poly, seed, reflect);
 	case CRC8_CCITT:
 		return crc8_ccitt(seed, src, len);
+	case CRC8_ROHC:
+		return crc8_rohc(seed, src, len);
 	case CRC16:
 		if (reflect) {
 			return crc16_reflect(poly, seed, src, len);
@@ -364,10 +442,20 @@ static inline uint32_t crc_by_type(enum crc_type type, const uint8_t *src, size_
 		return crc16_ccitt(seed, src, len);
 	case CRC16_ITU_T:
 		return crc16_itu_t(seed, src, len);
+	case CRC24_PGP: {
+		uint32_t crc = crc24_pgp_update(seed, src, len);
+
+		if (last) {
+			crc &= CRC24_FINAL_VALUE_MASK;
+		}
+		return crc;
+	}
 	case CRC32_C:
 		return crc32_c(seed, src, len, first, last);
 	case CRC32_IEEE:
 		return crc32_ieee_update(seed, src, len);
+	case CRC32_K_4_2:
+		return crc32_k_4_2_update(seed, src, len);
 	default:
 		break;
 	}

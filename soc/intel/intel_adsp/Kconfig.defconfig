@@ -18,7 +18,7 @@ config XTENSA_RPO_CACHE
 	def_bool y
 
 # console can't handle the amount of data coming from many tests, so introduce
-# a delay beween testcases.
+# a delay between testcases.
 if ZTEST
 config ZTEST_TEST_DELAY_MS
 	default 100
@@ -47,5 +47,8 @@ config CACHE_MANAGEMENT
 choice CACHE_TYPE
 	default ARCH_CACHE
 endchoice
+
+config DCACHE_LINE_SIZE
+	default 64
 
 endif # SOC_FAMILY_INTEL_ADSP

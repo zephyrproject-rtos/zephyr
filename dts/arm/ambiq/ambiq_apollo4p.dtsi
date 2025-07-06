@@ -3,6 +3,7 @@
 #include <arm/armv7-m.dtsi>
 #include <mem.h>
 #include <freq.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
@@ -22,13 +23,43 @@
 		cpu0: cpu@0 {
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
-		};
-	};
+			cpu-power-states = <&idle &suspend_to_ram>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-	/* MRAM region */
-	flash0: flash@18000 {
-		compatible = "soc-nv-flash";
-		reg = <0x00018000 0x1e8000>;
+			itm: itm@e0000000 {
+				compatible = "arm,armv7m-itm";
+				reg = <0xe0000000 0x1000>;
+				swo-ref-frequency = <DT_FREQ_M(48)>;
+			};
+		};
+		power-states {
+			idle: idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				/*
+				 * As Apollo4 datasheet, run_to_sleep and sleep_to_run
+				 * transition time are both lower than 1us, but
+				 * considering the software overhead we set a
+				 * bigger value.
+				 */
+				min-residency-us = <100>;
+				exit-latency-us = <5>;
+			};
+
+			suspend_to_ram: suspend_to_ram {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-ram";
+				/*
+				 * As Apollo4 datasheet, run_to_deepsleep transition
+				 * time is lower than 1us and deepsleep_to_run
+				 * transition time is about 25us, but considering
+				 * the software overhead, we set a bigger value.
+				 */
+				min-residency-us = <2000>;
+				exit-latency-us = <125>;
+			};
+		};
 	};
 
 	/* TCM */
@@ -47,10 +78,18 @@
 	soc {
 		compatible = "ambiq,apollo4p", "ambiq,apollo4x", "simple-bus";
 
-		pwrcfg: pwrcfg@40021000 {
-			compatible = "ambiq,pwrctrl";
-			reg = <0x40021000 0x400>;
-			#pwrcfg-cells = <2>;
+		flash: flash-controller@18000 {
+			compatible = "ambiq,flash-controller";
+			reg = <0x00018000 0x1e8000>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* Flash region */
+			flash0: flash@18000 {
+				compatible = "soc-nv-flash";
+				reg = <0x00018000 0x1e8000>;
+			};
 		};
 
 		stimer0: stimer@40008800 {
@@ -60,194 +99,228 @@
 			status = "okay";
 		};
 
-		counter0: counter@40008000 {
+		counter0: counter@40008200 {
 			compatible = "ambiq,counter";
-			reg = <0x40008000 0x80>;
+			reg = <0x40008200 0x20>;
 			interrupts = <67 0>;
+			clock-frequency = <DT_FREQ_M(6)>;
+			clk-source = <1>;
 			status = "disabled";
 		};
 
 		uart0: uart@4001c000 {
-			compatible = "ambiq,uart", "arm,pl011";
+			compatible = "ambiq,pl011-uart", "arm,pl011";
 			reg = <0x4001c000 0x1000>;
 			interrupts = <15 0>;
 			interrupt-names = "UART0";
 			status = "disabled";
 			clocks = <&uartclk>;
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x200>;
 		};
+
 		uart1: uart@4001d000 {
-			compatible = "ambiq,uart", "arm,pl011";
+			compatible = "ambiq,pl011-uart", "arm,pl011";
 			reg = <0x4001d000 0x1000>;
 			interrupts = <16 0>;
 			interrupt-names = "UART1";
 			status = "disabled";
 			clocks = <&uartclk>;
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x400>;
 		};
 
 		uart2: uart@4001e000 {
-			compatible = "ambiq,uart", "arm,pl011";
+			compatible = "ambiq,pl011-uart", "arm,pl011";
 			reg = <0x4001e000 0x1000>;
 			interrupts = <17 0>;
 			interrupt-names = "UART2";
 			status = "disabled";
 			clocks = <&uartclk>;
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x800>;
 		};
 
 		uart3: uart@4001f000 {
-			compatible = "ambiq,uart", "arm,pl011";
+			compatible = "ambiq,pl011-uart", "arm,pl011";
 			reg = <0x4001f000 0x1000>;
 			interrupts = <18 0>;
 			interrupt-names = "UART3";
 			status = "disabled";
 			clocks = <&uartclk>;
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x1000>;
 		};
 
-		iom0_spi: spi@40050000 {
+		iom0: iom@40050000 {
+			compatible = "ambiq,iom";
 			reg = <0x40050000 0x1000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
 			interrupts = <6 0>;
-			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x2>;
+
+			spi {
+				compatible = "ambiq,spi";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
+			i2c {
+				compatible = "ambiq,i2c";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
 		};
 
-		iom0_i2c: i2c@40050000 {
-			reg = <0x40050000 0x1000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupts = <6 0>;
-			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x2>;
-		};
-
-		iom1_spi: spi@40051000 {
+		iom1: iom@40051000 {
+			compatible = "ambiq,iom";
 			reg = <0x40051000 0x1000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
 			interrupts = <7 0>;
-			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x4>;
+
+			spi {
+				compatible = "ambiq,spi";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
+			i2c {
+				compatible = "ambiq,i2c";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
 		};
 
-		iom1_i2c: i2c@40051000 {
-			reg = <0x40051000 0x1000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupts = <7 0>;
-			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x4>;
-		};
-
-		iom2_spi: spi@40052000 {
+		iom2: iom@40052000 {
+			compatible = "ambiq,iom";
 			reg = <0x40052000 0x1000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
 			interrupts = <8 0>;
-			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x8>;
+
+			spi {
+				compatible = "ambiq,spi";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
+			i2c {
+				compatible = "ambiq,i2c";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
 		};
 
-		iom2_i2c: i2c@40052000 {
-			reg = <0x40052000 0x1000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupts = <8 0>;
-			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x8>;
-		};
-
-		iom3_spi: spi@40053000 {
+		iom3: iom@40053000 {
+			compatible = "ambiq,iom";
 			reg = <0x40053000 0x1000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
 			interrupts = <9 0>;
-			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x10>;
+
+			spi {
+				compatible = "ambiq,spi";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
+			i2c {
+				compatible = "ambiq,i2c";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
 		};
 
-		iom3_i2c: i2c@40053000 {
-			reg = <0x40053000 0x1000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupts = <9 0>;
-			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x10>;
-		};
-
-		iom4_spi: spi@40054000 {
+		iom4: iom@40054000 {
+			compatible = "ambiq,iom";
 			reg = <0x40054000 0x1000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
 			interrupts = <10 0>;
-			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x20>;
+
+			spi {
+				compatible = "ambiq,spi";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
+			i2c {
+				compatible = "ambiq,i2c";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
 		};
 
-		iom4_i2c: i2c@40054000 {
-			reg = <0x40054000 0x1000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupts = <10 0>;
-			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x20>;
-		};
-
-		iom5_spi: spi@40055000 {
+		iom5: iom@40055000 {
+			compatible = "ambiq,iom";
 			reg = <0x40055000 0x1000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
 			interrupts = <11 0>;
-			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x40>;
+
+			spi {
+				compatible = "ambiq,spi";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
+			i2c {
+				compatible = "ambiq,i2c";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
 		};
 
-		iom5_i2c: i2c@40055000 {
-			reg = <0x40055000 0x1000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupts = <11 0>;
-			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x40>;
-		};
-
-		iom6_spi: spi@40056000 {
+		iom6: iom@40056000 {
+			compatible = "ambiq,iom";
 			reg = <0x40056000 0x1000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
 			interrupts = <12 0>;
-			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x80>;
+
+			spi {
+				compatible = "ambiq,spi";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
+			i2c {
+				compatible = "ambiq,i2c";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
 		};
 
-		iom6_i2c: i2c@40056000 {
-			reg = <0x40056000 0x1000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupts = <12 0>;
-			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x80>;
-		};
-
-		iom7_spi: spi@40057000 {
+		iom7: iom@40057000 {
+			compatible = "ambiq,iom";
 			reg = <0x40057000 0x1000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
 			interrupts = <13 0>;
-			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x100>;
+
+			spi {
+				compatible = "ambiq,spi";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
+			i2c {
+				compatible = "ambiq,i2c";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
 		};
 
-		iom7_i2c: i2c@40057000 {
-			reg = <0x40057000 0x1000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupts = <13 0>;
+		adc0: adc@40038000 {
+			compatible = "ambiq,adc";
+			reg = <0x40038000 0x400>;
+			interrupts = <19 0>;
+			interrupt-names = "ADC";
+			channel-count = <10>;
+			internal-vref-mv = <1190>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x100>;
+			#io-channel-cells = <1>;
 		};
 
 		mspi0: spi@40060000 {
@@ -257,7 +330,6 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x4000>;
 		};
 
 		mspi1: spi@40061000 {
@@ -267,7 +339,6 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x8000>;
 		};
 
 		mspi2: spi@40062000 {
@@ -277,7 +348,34 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
-			ambiq,pwrcfg = <&pwrcfg 0x4 0x10000>;
+		};
+
+		rtc0: rtc@40004800 {
+			compatible = "ambiq,rtc";
+			reg = <0x40004800 0x210>;
+			interrupts = <2 0>;
+			alarms-count = <1>;
+			status = "disabled";
+		};
+
+		sdio0: sdio@40070000 {
+			compatible = "ambiq,sdio";
+			reg = <0x40070000 0x100>;
+			interrupts = <26 0>;
+			max-bus-freq = <96000000>;
+			min-bus-freq = <375000>;
+			power-delay-ms = <50>;
+			status = "disabled";
+			zephyr,pm-device-runtime-auto;
+		};
+
+		usb: usb@400b0000 {
+			compatible = "ambiq,usb";
+			reg = <0x400B0000 0x4100>;
+			interrupts = <27 0>;
+			num-bidir-endpoints = <6>;
+			maximum-speed = "full-speed";
+			status = "disabled";
 		};
 
 		pinctrl: pin-controller@40010000 {

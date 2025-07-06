@@ -1,7 +1,4 @@
-.. _stm32wb5mmg_bluetooth_module:
-
-ST STM32WB5MMG
-################
+.. zephyr:board:: stm32wb5mmg
 
 Overview
 ********
@@ -32,10 +29,6 @@ STM32WB5MMG supports the following features:
 - Ultra-low-power modes for battery longevity
 - 68 GPIOs
 - SWD, JTAG
-
-.. image:: img/STM32WB5MMG.jpg
-   :align: center
-   :alt: STM32WB5MMG
 
 More information about the board can be found at the `` `STM32WB5MMG on www.st.com`_.
 
@@ -156,7 +149,7 @@ cut 2.2.
    and Bluetooth|reg| Low Energy
  - 48-bit EUI
 
-More information about STM32WB55RG can be found here:
+More information about STM32WB5MMG can be found here:
 
 - `STM32WB5MMG on www.st.com`_
 - `STM32WB5MMG datasheet`_
@@ -164,22 +157,7 @@ More information about STM32WB55RG can be found here:
 Supported Features
 ==================
 
-The Zephyr STM32WB5MMG board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| RADIO     | on-chip    | Bluetooth Low Energy                |
-+-----------+------------+-------------------------------------+
-
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/stm32wb5mmg/stm32wb5mmg_defconfig`
+.. zephyr:board-supported-hw::
 
 Bluetooth and compatibility with STM32WB Copro Wireless Binaries
 ================================================================
@@ -187,10 +165,11 @@ Bluetooth and compatibility with STM32WB Copro Wireless Binaries
 To operate bluetooth on STM32WB5MMG, Cortex-M0 core should be flashed with
 a valid STM32WB Coprocessor binaries (either 'Full stack' or 'HCI Layer').
 These binaries are delivered in STM32WB Cube packages, under
-Projects/STM32WB_Copro_Wireless_Binaries/STM32WB5x/
+``Projects/STM32WB_Copro_Wireless_Binaries/STM32WB5x/``
+
 For compatibility information with the various versions of these binaries,
-please check `modules/hal/stm32/lib/stm32wb/hci/README`_
-in the hal_stm32 repo.
+please check :module_file:`hal_stm32:lib/stm32wb/README.rst`.
+
 Note that since STM32WB Cube package V1.13.2, "full stack" binaries are not compatible
 anymore for a use in Zephyr and only "HCI Only" versions should be used on the M0
 side.
@@ -228,6 +207,8 @@ Rather, users can use the available USB port (CN12) to run virtual com port
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``stm32wb5mmg`` board configuration can be built the
 usual way (see :ref:`build_an_application`).
 
@@ -238,14 +219,23 @@ The onboard ST-Link on the ``b_u585i_iot02a`` board can be used to flash the
 STM32WB5MMG module. To do this you should put SW4 on OFF and SW5 on ON mode.
 In this case the firmware will be uploaded on the STM32WB5MMG module.
 
+The module is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
 
-Flashing `hci_uart` application to STM32WB5MMG
-----------------------------------------------
+Alternatively, openocd can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+
+Flashing ``hci_uart`` application to STM32WB5MMG
+------------------------------------------------
 
 Connect the B-U585I-IOT02A to your host computer using the USB port. Put
 the SW4 (MCU SWD) in OFF mode and SW5 (SWD BLE) in ON mode. Then build
 and flash an application. Here is an example for the
-:ref:`hci_uart <bluetooth-hci-uart-sample>` application.
+:zephyr:code-sample:`bluetooth_hci_uart` application.
 
 Run a serial host program to connect with your B-U585I-IOT02A board:
 
@@ -287,7 +277,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hci_uart <bluetooth-hci-uart-sample>` application.
+:zephyr:code-sample:`bluetooth_hci_uart` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/bluetooth/observer
@@ -300,5 +290,6 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32WB5MMG datasheet:
    https://www.st.com/resource/en/datasheet/stm32wb5mmg.pdf
-.. _modules/hal/stm32/lib/stm32wb/hci/README:
-  https://github.com/zephyrproject-rtos/hal_stm32/blob/main/lib/stm32wb/hci/README
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

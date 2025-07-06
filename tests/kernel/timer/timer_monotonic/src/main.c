@@ -58,7 +58,7 @@ ZTEST(timer_fn, test_timer)
 
 	TC_PRINT("k_ticks_to_cyc_floor32(1) = %d\n",
 		 k_ticks_to_cyc_floor32(1));
-	TC_PRINT("sys_clock_hw_cycles_per_sec() = %d\n",
+	TC_PRINT("sys_clock_hw_cycles_per_sec() = %u\n",
 		 sys_clock_hw_cycles_per_sec());
 
 	t_last = k_cycle_get_32();

@@ -33,6 +33,7 @@
 #include "lll_iso_tx.h"
 #include "isoal.h"
 #include "ull_iso_types.h"
+#include "ull_internal.h"
 
 #include <zephyr/logging/log.h>
 
@@ -71,7 +72,7 @@ LOG_MODULE_REGISTER(bt_ctlr_isoal, CONFIG_BT_CTLR_ISOAL_LOG_LEVEL);
 /* Defined the wrapping point and mid point in the range of time input values,
  * which depend on range of the controller's clock in microseconds.
  */
-#define ISOAL_TIME_WRAPPING_POINT_US      (HAL_TICKER_TICKS_TO_US(HAL_TICKER_CNTR_MASK))
+#define ISOAL_TIME_WRAPPING_POINT_US      (HAL_TICKER_TICKS_TO_US_64BIT(HAL_TICKER_CNTR_MASK))
 #define ISOAL_TIME_MID_POINT_US           (ISOAL_TIME_WRAPPING_POINT_US / 2)
 #define ISOAL_TIME_SPAN_FULL_US           (ISOAL_TIME_WRAPPING_POINT_US + 1)
 #define ISOAL_TIME_SPAN_HALF_US           (ISOAL_TIME_SPAN_FULL_US / 2)
@@ -134,12 +135,7 @@ isoal_status_t isoal_reset(void)
  */
 uint32_t isoal_get_wrapped_time_us(uint32_t time_now_us, int32_t time_diff_us)
 {
-	LL_ASSERT(time_now_us <= ISOAL_TIME_WRAPPING_POINT_US);
-
-	uint32_t result = ((uint64_t)time_now_us + ISOAL_TIME_SPAN_FULL_US + time_diff_us) %
-				((uint64_t)ISOAL_TIME_SPAN_FULL_US);
-
-	return result;
+	return ull_get_wrapped_time_us(time_now_us, time_diff_us);
 }
 
 /**
@@ -694,6 +690,7 @@ static isoal_status_t isoal_rx_append_to_sdu(struct isoal_sink *sink,
 			const struct isoal_sink_session *session = &sink->session;
 
 			err |= session->sdu_write(sdu->contents.dbuf,
+						  sp->sdu_written,
 						  pdu_payload,
 						  consume_len);
 			pdu_payload += consume_len;
@@ -922,7 +919,7 @@ static isoal_status_t isoal_rx_unframed_consume(struct isoal_sink *sink,
 	 *     Request for Clarification - Recombination actions when only
 	 *     padding unframed PDUs are received:
 	 *     The clarification was to be rejected, but the discussion in the
-	 *     comments from March 3rd 2023 were interpretted as "We are
+	 *     comments from March 3rd 2023 were interpreted as "We are
 	 *     expecting a PDU which ISOAL should convert into an SDU;
 	 *     instead we receive a padding PDU, which we cannot turn into a
 	 *     SDU, so the SDU wasn't received at all, and should be reported
@@ -1158,7 +1155,7 @@ static isoal_status_t isoal_rx_framed_consume(struct isoal_sink *sink,
 
 	if (pdu_padding && !pdu_err && !seq_err) {
 		/* Check and release missed SDUs on receiving padding PDUs */
-		ISOAL_LOG_DBGV("[%p] Recevied padding", sink);
+		ISOAL_LOG_DBGV("[%p] Received padding", sink);
 		err |= isoal_rx_framed_release_lost_sdus(sink, pdu_meta, false, timestamp);
 	}
 
@@ -1522,7 +1519,7 @@ static isoal_status_t isoal_check_source_hdl_valid(isoal_source_handle_t hdl)
  * @param pdu_release[in]       Callback of PDU deallocator
  * @param hdl[out]              Handle to new source
  *
- * @return ISOAL_STATUS_OK if we could create a new sink; otherwise ISOAL_STATUS_ERR_SOURCE_ALLOC
+ * @return ISOAL_STATUS_OK if we could create a new source; otherwise ISOAL_STATUS_ERR_SOURCE_ALLOC
  */
 isoal_status_t isoal_source_create(
 	uint16_t                    handle,
@@ -1553,6 +1550,7 @@ isoal_status_t isoal_source_create(
 
 	session->handle = handle;
 	session->framed = framed;
+	session->bis = role == ISOAL_ROLE_BROADCAST_SOURCE;
 	session->burst_number = burst_number;
 	session->iso_interval = iso_interval;
 	session->sdu_interval = sdu_interval;
@@ -1669,12 +1667,12 @@ static bool isoal_is_time_stamp_valid(const struct isoal_source *source_ctx,
 
 /**
  * Queue the PDU in production in the relevant LL transmit queue. If the
- * attmept to release the PDU fails, the buffer linked to the PDU will be released
+ * attempt to release the PDU fails, the buffer linked to the PDU will be released
  * and it will not be possible to retry the emit operation on the same PDU.
  * @param[in]  source_ctx        ISO-AL source reference for this CIS / BIS
  * @param[in]  produced_pdu      PDU in production
  * @param[in]  pdu_ll_id         LLID to be set indicating the type of fragment
- * @param[in]  sdu_fragments     Nummber of SDU HCI fragments consumed
+ * @param[in]  sdu_fragments     Number of SDU HCI fragments consumed
  * @param[in]  payload_number    CIS / BIS payload number
  * @param[in]  payload_size      Length of the data written to the PDU
  * @return     Error status of the operation
@@ -2031,7 +2029,7 @@ static isoal_status_t isoal_tx_unframed_produce(isoal_source_handle_t source_hdl
 
 		/* Get group reference point for this PDU based on the actual
 		 * event being set. This might introduce some errors as the
-		 * group refernce point for future events could drift. However
+		 * group reference point for future events could drift. However
 		 * as the time offset calculation requires an absolute value,
 		 * this seems to be the best candidate.
 		 */
@@ -2244,7 +2242,7 @@ static isoal_status_t isoal_insert_seg_header_timeoffset(struct isoal_source *so
 }
 
 /**
- * @breif  Updates the cmplt flag and length in the last segmentation header written
+ * @brief  Updates the cmplt flag and length in the last segmentation header written
  * @param  source     source handle
  * @param  cmplt      ew value for complete flag
  * param   add_length length to add
@@ -2324,7 +2322,7 @@ static uint16_t isoal_tx_framed_find_correct_tx_event(const struct isoal_source 
 
 	/* Get the drift updated group reference point for this event based on
 	 * the actual event being set. This might introduce some errors as the
-	 * group refernce point for future events could drift. However as the
+	 * group reference point for future events could drift. However as the
 	 * time offset calculation requires an absolute value, this seems to be
 	 * the best candidate.
 	 */
@@ -2346,6 +2344,9 @@ static uint16_t isoal_tx_framed_find_correct_tx_event(const struct isoal_source 
 		const bool time_stamp_is_valid = isoal_is_time_stamp_valid(source_ctx,
 									   tx_sdu->cntr_time_stamp,
 									   tx_sdu->time_stamp);
+		const uint16_t offset_margin = session->bis ?
+						    CONFIG_BT_CTLR_ISOAL_FRAMED_BIS_OFFSET_MARGIN :
+						    CONFIG_BT_CTLR_ISOAL_FRAMED_CIS_OFFSET_MARGIN;
 
 		/* Adjust payload number */
 		if (pp->initialized) {
@@ -2375,7 +2376,7 @@ static uint16_t isoal_tx_framed_find_correct_tx_event(const struct isoal_source 
 
 			if (time_stamp_is_valid) {
 				/* Use provided time stamp for time offset
-				 * calcutation
+				 * calculation
 				 */
 				time_stamp_selected = tx_sdu->time_stamp;
 				ISOAL_LOG_DBGV("[%p] Selecting Time Stamp (%lu) from SDU",
@@ -2440,7 +2441,7 @@ static uint16_t isoal_tx_framed_find_correct_tx_event(const struct isoal_source 
 		 * The Time_Offset shall be a positive value.
 		 */
 		while (!isoal_get_time_diff(time_stamp_selected, actual_grp_ref_point, &time_diff)
-			|| time_diff == 0) {
+			|| time_diff <= offset_margin) {
 			/* Advance target to next event */
 			actual_event++;
 			actual_grp_ref_point = isoal_get_wrapped_time_us(actual_grp_ref_point,
@@ -2452,7 +2453,7 @@ static uint16_t isoal_tx_framed_find_correct_tx_event(const struct isoal_source 
 			       actual_grp_ref_point);
 
 		/* If the event selected is the last event segmented for, then
-		 * it is possible that that some payloads have already been
+		 * it is possible that some payloads have already been
 		 * released for this event. Segmentation should continue from
 		 * that payload.
 		 */
@@ -2528,7 +2529,7 @@ static isoal_status_t isoal_tx_framed_produce(isoal_source_handle_t source_hdl,
 		uint64_t next_payload_number;
 		uint16_t sdus_skipped;
 		bool time_diff_valid;
-		uint32_t time_diff;
+		uint32_t time_diff = 0U;
 
 		/* Start of a new SDU */
 		time_diff_valid = isoal_get_time_diff(session->last_input_time_stamp,
@@ -2805,7 +2806,7 @@ static isoal_status_t isoal_tx_framed_event_prepare_handle(isoal_source_handle_t
  * @details Fragmentation will occur individually for every enabled source
  *
  * @param source_hdl[in] Handle of destination source
- * @param tx_sdu[in]     SDU along with packet boudary state
+ * @param tx_sdu[in]     SDU along with packet boundary state
  * @return Status
  */
 isoal_status_t isoal_tx_sdu_fragment(isoal_source_handle_t source_hdl,

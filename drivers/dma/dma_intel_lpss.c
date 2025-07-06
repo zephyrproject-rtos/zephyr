@@ -129,7 +129,7 @@ void dma_intel_lpss_isr(const struct device *dev)
 	dw_dma_isr(dev);
 }
 
-static const struct dma_driver_api dma_intel_lpss_driver_api = {
+static DEVICE_API(dma, dma_intel_lpss_driver_api) = {
 	.config = dw_dma_config,
 	.start = dw_dma_start,
 	.reload = dma_intel_lpss_reload,

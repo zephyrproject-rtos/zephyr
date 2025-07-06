@@ -33,9 +33,6 @@ endif ()
 
 target_compile_definitions(zephyr-802154-interface
   INTERFACE
-    # Radio driver shim layer uses raw api
-    NRF_802154_USE_RAW_API=1
-
     # Number of slots containing short addresses of nodes for which
     # pending data is stored.
     NRF_802154_PENDING_SHORT_ADDRESSES=${CONFIG_NRF_802154_PENDING_SHORT_ADDRESSES}
@@ -55,7 +52,7 @@ target_compile_definitions(zephyr-802154-interface
     # CCA mode options
     NRF_802154_CCA_CORR_LIMIT_DEFAULT=${CONFIG_NRF_802154_CCA_CORR_LIMIT}
     NRF_802154_CCA_CORR_THRESHOLD_DEFAULT=${CONFIG_NRF_802154_CCA_CORR_THRESHOLD}
-    NRF_802154_CCA_ED_THRESHOLD_DEFAULT=${CONFIG_NRF_802154_CCA_ED_THRESHOLD}
+    NRF_802154_CCA_ED_THRESHOLD_DBM_DEFAULT=${CONFIG_NRF_802154_CCA_ED_THRESHOLD_DBM}
 
     # Key storage size
     NRF_802154_SECURITY_KEY_STORAGE_SIZE=${CONFIG_NRF_802154_SECURITY_KEY_STORAGE_SIZE}

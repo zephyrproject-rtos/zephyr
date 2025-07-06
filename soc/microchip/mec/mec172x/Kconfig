@@ -11,11 +11,9 @@ config SOC_SERIES_MEC172X
 	select CPU_HAS_ARM_MPU
 	select HAS_SWO
 	select HAS_PM
+	select SOC_EARLY_INIT_HOOK
 
 if SOC_SERIES_MEC172X
-
-config RTOS_TIMER
-	bool "MEC172x RTOS Timer(32KHz) as kernel timer"
 
 choice
 	prompt "MEC172x debug interface general configuration"

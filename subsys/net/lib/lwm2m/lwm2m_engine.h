@@ -97,7 +97,7 @@ struct lwm2m_init_func {
  *
  * @param[in] msg lwm2m message to signal for which resource the write access should checked
  * @param[in] obj_inst Engine object instance to signal which object the resource belongs to
- * @param[out] obj_field Engine obejct field buffer pointer to store the field being checked
+ * @param[out] obj_field Engine object field buffer pointer to store the field being checked
  * @return 0 for successful validation and negative in all other cases
  */
 int lwm2m_engine_validate_write_access(struct lwm2m_message *msg,
@@ -374,5 +374,29 @@ int lwm2m_sock_nfds(void);
  * It should be called when new transmissions are scheduled or service schedules are modified.
  */
 void lwm2m_engine_wake_up(void);
+
+/**
+ * @brief Locks the access to shared LwM2M engine variables.
+ */
+void lwm2m_engine_lock(void);
+
+/**
+ * @brief Unlocks the access to shared LwM2M engine variables.
+ */
+void lwm2m_engine_unlock(void);
+
+/**
+ * @brief Locks the client.
+ *
+ * @param[in] client_ctx LwM2M context
+ */
+void lwm2m_client_lock(struct lwm2m_ctx *ctx);
+
+/**
+ * @brief Unlocks the client previously locked by lwm2m_client_lock().
+ *
+ * @param[in] client_ctx LwM2M context
+ */
+void lwm2m_client_unlock(struct lwm2m_ctx *ctx);
 
 #endif /* LWM2M_ENGINE_H */

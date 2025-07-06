@@ -70,17 +70,36 @@ void platformUartPanic(void);
  */
 uint16_t platformRadioChannelGet(otInstance *aInstance);
 
+#if defined(CONFIG_OPENTHREAD_DIAG)
+/**
+ * Set channel on radio driver.
+ *
+ * @param[in]  aChannel  The channel that the radio driver should use for operation.
+ *
+ */
+void platformRadioChannelSet(uint8_t aChannel);
+#endif /* CONFIG_OPENTHREAD_DIAG */
+
+#if defined(CONFIG_OPENTHREAD_PLATFORM_CARRIER_FUNCTIONS)
 /**
  * Start/stop continuous carrier wave transmission.
  */
 otError platformRadioTransmitCarrier(otInstance *aInstance, bool aEnable);
+#endif /* CONFIG_OPENTHREAD_PLATFORM_CARRIER_FUNCTIONS */
+
+#if defined(CONFIG_OPENTHREAD_PLATFORM_CARRIER_FUNCTIONS)
+/**
+ * Start/stop modulated carrier wave transmission.
+ */
+otError platformRadioTransmitModulatedCarrier(otInstance *aInstance, bool aEnable,
+					      const uint8_t *aData);
+#endif /* CONFIG_OPENTHREAD_PLATFORM_CARRIER_FUNCTIONS */
 
 /**
  * This function initializes the random number service used by OpenThread.
  *
  */
 void platformRandomInit(void);
-
 
 /**
  *  Initialize platform Shell driver.
@@ -98,4 +117,4 @@ int notify_new_rx_frame(struct net_pkt *pkt);
  */
 int notify_new_tx_frame(struct net_pkt *pkt);
 
-#endif  /* PLATFORM_POSIX_H_ */
+#endif /* PLATFORM_ZEPHYR_H_ */

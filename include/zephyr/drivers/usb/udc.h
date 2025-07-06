@@ -14,7 +14,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/drivers/usb/udc_buf.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/usb/usb_ch9.h>
 
@@ -42,6 +42,8 @@ struct udc_device_caps {
 	uint32_t out_ack : 1;
 	/** Controller expects device address to be set before status stage */
 	uint32_t addr_before_status : 1;
+	/** Controller can detect the state change of USB supply VBUS.*/
+	uint32_t can_detect_vbus : 1;
 	/** Maximum packet size for control endpoint */
 	enum udc_mps0 mps0 : 2;
 };
@@ -74,6 +76,8 @@ struct udc_ep_caps {
 	uint32_t bulk : 1;
 	/** ISO transfer capable endpoint */
 	uint32_t iso : 1;
+	/** High-Bandwidth (interrupt or iso) capable endpoint */
+	uint32_t high_bandwidth : 1;
 	/** IN transfer capable endpoint */
 	uint32_t in : 1;
 	/** OUT transfer capable endpoint */
@@ -245,8 +249,8 @@ struct udc_api {
 	int (*disable)(const struct device *dev);
 	int (*init)(const struct device *dev);
 	int (*shutdown)(const struct device *dev);
-	int (*lock)(const struct device *dev);
-	int (*unlock)(const struct device *dev);
+	void (*lock)(const struct device *dev);
+	void (*unlock)(const struct device *dev);
 };
 
 /**
@@ -275,8 +279,10 @@ struct udc_data {
 	struct udc_device_caps caps;
 	/** Driver access mutex */
 	struct k_mutex mutex;
-	/** Callback to submit an UDC event to upper layer */
+	/** Callback to submit an UDC event to higher layer */
 	udc_event_cb_t event_cb;
+	/** Opaque pointer to store higher layer context */
+	const void *event_ctx;
 	/** USB device controller status */
 	atomic_t status;
 	/** Internal used Control Sequence Stage */
@@ -291,6 +297,8 @@ struct udc_data {
  * @brief New USB device controller (UDC) driver API
  * @defgroup udc_api USB device controller driver API
  * @ingroup io_interfaces
+ * @since 3.3
+ * @version 0.1.0
  * @{
  */
 
@@ -303,7 +311,7 @@ struct udc_data {
  */
 static inline bool udc_is_initialized(const struct device *dev)
 {
-	struct udc_data *data = dev->data;
+	struct udc_data *data = (struct udc_data *)dev->data;
 
 	return atomic_test_bit(&data->status, UDC_STATUS_INITIALIZED);
 }
@@ -317,7 +325,7 @@ static inline bool udc_is_initialized(const struct device *dev)
  */
 static inline bool udc_is_enabled(const struct device *dev)
 {
-	struct udc_data *data = dev->data;
+	struct udc_data *data = (struct udc_data *)dev->data;
 
 	return atomic_test_bit(&data->status, UDC_STATUS_ENABLED);
 }
@@ -331,7 +339,7 @@ static inline bool udc_is_enabled(const struct device *dev)
  */
 static inline bool udc_is_suspended(const struct device *dev)
 {
-	struct udc_data *data = dev->data;
+	struct udc_data *data = (struct udc_data *)dev->data;
 
 	return atomic_test_bit(&data->status, UDC_STATUS_SUSPENDED);
 }
@@ -343,14 +351,16 @@ static inline bool udc_is_suspended(const struct device *dev)
  * After initialization controller driver should be able to detect
  * power state of the bus and signal power state changes.
  *
- * @param[in] dev      Pointer to device struct of the driver instance
- * @param[in] event_cb Event callback from the higher layer (USB device stack)
+ * @param[in] dev       Pointer to device struct of the driver instance
+ * @param[in] event_cb  Event callback from the higher layer (USB device stack)
+ * @param[in] event_ctx Opaque pointer to higher layer context
  *
  * @return 0 on success, all other values should be treated as error.
  * @retval -EINVAL on parameter error (no callback is passed)
  * @retval -EALREADY already initialized
  */
-int udc_init(const struct device *dev, udc_event_cb_t event_cb);
+int udc_init(const struct device *dev,
+	     udc_event_cb_t event_cb, const void *const event_ctx);
 
 /**
  * @brief Enable USB device controller
@@ -363,6 +373,7 @@ int udc_init(const struct device *dev, udc_event_cb_t event_cb);
  * @return 0 on success, all other values should be treated as error.
  * @retval -EPERM controller is not initialized
  * @retval -EALREADY already enabled
+ * @retval -ETIMEDOUT enable operation timed out
  */
 int udc_enable(const struct device *dev);
 
@@ -404,7 +415,7 @@ int udc_shutdown(const struct device *dev);
  */
 static inline struct udc_device_caps udc_caps(const struct device *dev)
 {
-	struct udc_data *data = dev->data;
+	struct udc_data *data = (struct udc_data *)dev->data;
 
 	return data->caps;
 }
@@ -434,7 +445,7 @@ enum udc_bus_speed udc_device_speed(const struct device *dev);
  */
 static inline int udc_set_address(const struct device *dev, const uint8_t addr)
 {
-	const struct udc_api *api = dev->api;
+	const struct udc_api *api = (const struct udc_api *)dev->api;
 	int ret;
 
 	if (!udc_is_enabled(dev)) {
@@ -466,7 +477,7 @@ static inline int udc_set_address(const struct device *dev, const uint8_t addr)
 static inline int udc_test_mode(const struct device *dev,
 				const uint8_t mode, const bool dryrun)
 {
-	const struct udc_api *api = dev->api;
+	const struct udc_api *api = (const struct udc_api *)dev->api;
 	int ret;
 
 	if (!udc_is_enabled(dev)) {
@@ -496,7 +507,7 @@ static inline int udc_test_mode(const struct device *dev,
  */
 static inline int udc_host_wakeup(const struct device *dev)
 {
-	const struct udc_api *api = dev->api;
+	const struct udc_api *api = (const struct udc_api *)dev->api;
 	int ret;
 
 	if (!udc_is_enabled(dev)) {
@@ -698,6 +709,36 @@ static inline struct udc_buf_info *udc_get_buf_info(const struct net_buf *const 
 {
 	__ASSERT_NO_MSG(buf);
 	return (struct udc_buf_info *)net_buf_user_data(buf);
+}
+
+
+/**
+ * @brief Get pointer to higher layer context
+ *
+ * The address of the context is passed as an argument to the udc_init()
+ * function and is stored in the UDC data.
+ *
+ * @param[in] dev Pointer to device struct of the driver instance
+ *
+ * @return Opaque pointer to higher layer context
+ */
+static inline const void *udc_get_event_ctx(const struct device *dev)
+{
+	struct udc_data *data = (struct udc_data *)dev->data;
+
+	return data->event_ctx;
+}
+
+/**
+ * @brief Get endpoint size from UDC endpoint configuration
+ *
+ * @param[in] cfg Pointer to UDC endpoint configuration
+ *
+ * @return Endpoint size
+ */
+static inline uint16_t udc_mps_ep_size(const struct udc_ep_config *const cfg)
+{
+	return USB_MPS_EP_SIZE(cfg->mps);
 }
 
 /**

@@ -1,0 +1,25 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  The i.MX 93 EVK boards has a series of MUXes that selects between 2 pin
+  functions. They are controlled by EXP_SEL signal from gpio_exp0, an
+  ADP5585 GPIO expander.
+
+compatible: "imx93evk-exp-sel"
+
+include: base.yaml
+
+properties:
+  mux-gpios:
+    type: phandle-array
+    required: true
+    description: Pin used to select the MUX
+
+  mux:
+    type: string
+    required: true
+    enum:
+      - "A"
+      - "B"
+    description: MUX choice

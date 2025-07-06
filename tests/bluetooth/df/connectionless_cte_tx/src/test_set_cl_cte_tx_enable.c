@@ -35,7 +35,7 @@ int send_set_cl_cte_tx_enable(uint8_t adv_handle, atomic_t *adv_flags,
 	struct bt_hci_cmd_state_set state;
 	struct net_buf *buf;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_CL_CTE_TX_ENABLE, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -71,7 +71,7 @@ ZTEST(test_set_cl_cte_tx_enable, test_set_cl_cte_tx_enable_cte_params_not_set)
 
 	/* test logic */
 	err = send_set_cl_cte_tx_enable(g_adv->handle, g_adv->flags, true);
-	zassert_equal(err, -EIO, "Unexpected error value for enable CTE before "
+	zassert_equal(err, -EACCES, "Unexpected error value for enable CTE before "
 		      "CTE params set");
 
 	/* clean up */
@@ -90,7 +90,7 @@ ZTEST(test_set_cl_cte_tx_enable, test_set_cl_cte_tx_enable_per_adv_coded_phy)
 
 	/* test logic */
 	err = send_set_cl_cte_tx_enable(g_adv->handle, g_adv->flags, true);
-	zassert_equal(err, -EIO, "Unexpected error value for enable CTE for "
+	zassert_equal(err, -EACCES, "Unexpected error value for enable CTE for "
 		      "coded PHY");
 
 	/* clean up */
@@ -151,7 +151,7 @@ ZTEST(test_set_cl_cte_tx_enable, test_set_cl_cte_tx_disable_when_no_CTE_enabled)
 
 	/* test logic */
 	err = send_set_cl_cte_tx_enable(g_adv->handle, g_adv->flags, false);
-	zassert_equal(err,  -EIO, "Unexpected error value for disable CTE "
+	zassert_equal(err,  -EACCES, "Unexpected error value for disable CTE "
 		      "before CTE enable");
 
 	/* clean up */

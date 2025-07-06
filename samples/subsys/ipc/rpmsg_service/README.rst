@@ -128,3 +128,26 @@ remote) will appear on the corresponding serial ports:
    ...
    Remote core received a message: 98
    RPMsg Service demo ended.
+
+Building the application for stm32h747i_disco/stm32h7xx
+*******************************************************
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/ipc/rpmsg_service
+   :board: stm32h747i_disco/stm32h7xx/m7
+   :goals: debug
+
+The serial output should now look like this:
+
+.. code-block:: console
+
+    *** Booting Zephyr OS build 15736b7415be ***
+    Starting application thread!
+
+    RPMsg Service [master] demo started
+    Master core received a message: 1
+    Master core received a message: 3
+    Master core received a message: 5
+    ...
+    Master core received a message: 99
+    RPMsg Service demo ended.

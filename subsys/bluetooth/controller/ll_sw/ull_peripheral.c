@@ -109,7 +109,7 @@ void ull_periph_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 		/* Get identity address */
 		ll_rl_id_addr_get(rl_idx, &peer_addr_type, peer_id_addr);
 		/* Mark it as identity address from RPA (0x02, 0x03) */
-		peer_addr_type += 2;
+		MARK_AS_IDENTITY_ADDR(peer_addr_type);
 	} else {
 #else /* CONFIG_BT_CTLR_PRIVACY */
 	if (1) {
@@ -144,6 +144,11 @@ void ull_periph_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 		     sizeof(conn->own_id_addr));
 #endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN */
 
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
+	/* Set default PAST parameters */
+	conn->past = ull_conn_default_past_param_get();
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
+
 	memcpy(&lll->crc_init[0], &pdu_adv->connect_ind.crc_init[0], 3);
 	memcpy(&lll->access_addr[0], &pdu_adv->connect_ind.access_addr[0], 4);
 	memcpy(&lll->data_chan_map[0], &pdu_adv->connect_ind.chan_map[0],
@@ -155,7 +160,7 @@ void ull_periph_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 	if ((lll->data_chan_count < CHM_USED_COUNT_MIN) ||
 	    (lll->data_chan_hop < CHM_HOP_COUNT_MIN) ||
 	    (lll->data_chan_hop > CHM_HOP_COUNT_MAX) ||
-	    !lll->interval) {
+	    !IN_RANGE(lll->interval, BT_HCI_LE_INTERVAL_MIN, BT_HCI_LE_INTERVAL_MAX)) {
 		invalid_release(&adv->ull, lll, link, rx);
 
 		return;
@@ -341,24 +346,39 @@ void ull_periph_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 
 	ll_rx_put_sched(link, rx);
 
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_RESERVE_MAX)
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 #if defined(CONFIG_BT_CTLR_PHY)
 	max_tx_time = lll->dle.eff.max_tx_time;
 	max_rx_time = lll->dle.eff.max_rx_time;
+
 #else /* !CONFIG_BT_CTLR_PHY */
 	max_tx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
 	max_rx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
 #endif /* !CONFIG_BT_CTLR_PHY */
+
 #else /* !CONFIG_BT_CTLR_DATA_LENGTH */
 	max_tx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
 	max_rx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
+
 #if defined(CONFIG_BT_CTLR_PHY)
 	max_tx_time = MAX(max_tx_time,
 			  PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, lll->phy_tx));
 	max_rx_time = MAX(max_rx_time,
 			  PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, lll->phy_rx));
-#endif /* !CONFIG_BT_CTLR_PHY */
+#endif /* CONFIG_BT_CTLR_PHY */
 #endif /* !CONFIG_BT_CTLR_DATA_LENGTH */
+
+#else /* !CONFIG_BT_CTLR_PERIPHERAL_RESERVE_MAX */
+#if defined(CONFIG_BT_CTLR_PHY)
+	max_tx_time = PDU_MAX_US(0U, 0U, lll->phy_tx);
+	max_rx_time = PDU_MAX_US(0U, 0U, lll->phy_rx);
+
+#else /* !CONFIG_BT_CTLR_PHY */
+	max_tx_time = PDU_MAX_US(0U, 0U, PHY_1M);
+	max_rx_time = PDU_MAX_US(0U, 0U, PHY_1M);
+#endif /* !CONFIG_BT_CTLR_PHY */
+#endif /* !CONFIG_BT_CTLR_PERIPHERAL_RESERVE_MAX */
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	ready_delay_us = lll_radio_rx_ready_delay_get(lll->phy_rx, PHY_FLAGS_S8);
@@ -366,25 +386,23 @@ void ull_periph_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 	ready_delay_us = lll_radio_rx_ready_delay_get(0U, 0U);
 #endif /* CONFIG_BT_CTLR_PHY */
 
+	lll->tifs_tx_us = EVENT_IFS_DEFAULT_US;
+	lll->tifs_rx_us = EVENT_IFS_DEFAULT_US;
+	lll->tifs_hcto_us = EVENT_IFS_DEFAULT_US;
+	lll->tifs_cis_us = EVENT_IFS_DEFAULT_US;
+
 	/* Calculate event time reservation */
 	slot_us = max_rx_time + max_tx_time;
-	slot_us += EVENT_IFS_US + (EVENT_CLOCK_JITTER_US << 1);
+	slot_us += lll->tifs_rx_us + (EVENT_CLOCK_JITTER_US << 1);
 	slot_us += ready_delay_us;
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX)) {
 		slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 	}
 
-	/* TODO: active_to_start feature port */
-	conn->ull.ticks_active_to_start = 0U;
-	conn->ull.ticks_prepare_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
-	conn->ull.ticks_preempt_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
 	conn->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(slot_us);
 
-	ticks_slot_offset = MAX(conn->ull.ticks_active_to_start,
-				conn->ull.ticks_prepare_to_start);
+	ticks_slot_offset = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 		ticks_slot_overhead = ticks_slot_offset;
 	} else {
@@ -400,6 +418,19 @@ void ull_periph_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 	conn_offset_us -= EVENT_TICKER_RES_MARGIN_US;
 	conn_offset_us -= EVENT_JITTER_US;
 	conn_offset_us -= ready_delay_us;
+	/*
+	 * NOTE: Correct window widening for the first connection will be:
+	 *
+	 * conn_offset_us -=
+	 *         DIV_ROUND_UP(((lll_clock_ppm_local_get() +
+	 *                        lll_clock_ppm_get(conn->periph.sca)) *
+	 *                       (win_offset * CONN_INT_UNIT_US + win_delay_us)), USEC_PER_SEC);
+	 *
+	 * But, as currently in the implementation the drift compensation uses the
+	 * `lll->periph.window_widening_periodic_us` value, we may as well use that value here
+	 * as well. Adding another value for LLL to use seems overkill for this one case.
+	 */
+	conn_offset_us -= lll->periph.window_widening_periodic_us;
 
 #if (CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
 	/* disable ticker job, in order to chain stop and start to avoid RTC

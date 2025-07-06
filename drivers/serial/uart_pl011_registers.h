@@ -37,9 +37,9 @@ struct pl011_regs {
 };
 
 static inline
-volatile struct pl011_regs *const get_uart(const struct device *dev)
+volatile struct pl011_regs *get_uart(const struct device *dev)
 {
-	return (volatile struct pl011_regs *const)DEVICE_MMIO_GET(dev);
+	return (volatile struct pl011_regs *)DEVICE_MMIO_GET(dev);
 }
 
 #define PL011_BIT_MASK(x, y) (((2 << x) - 1) << y)
@@ -114,6 +114,7 @@ volatile struct pl011_regs *const get_uart(const struct device *dev)
 #define PL011_CR_AMBIQ_CLKSEL_6MHZ	3
 #define PL011_CR_AMBIQ_CLKSEL_3MHZ	4
 #define PL011_CR_AMBIQ_CLKSEL_48MHZ	5
+#define PL011_CR_AMBIQ_CLKSEL_PLL	6
 
 /* PL011 Interrupt Fifo Level Select Register */
 #define PL011_IFLS_RXIFLSEL_M	GENMASK(5, 3)

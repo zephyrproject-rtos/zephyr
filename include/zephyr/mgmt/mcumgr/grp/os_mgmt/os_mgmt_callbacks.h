@@ -26,6 +26,35 @@ extern "C" {
 struct os_mgmt_reset_data {
 	/** Contains the value of the force parameter. */
 	bool force;
+
+#if defined(CONFIG_MCUMGR_GRP_OS_RESET_BOOT_MODE) || defined(__DOXYGEN__)
+	/** Contains the value of the boot_mode parameter. */
+	uint8_t boot_mode;
+#endif
+};
+
+/**
+ * Structure provided in the #MGMT_EVT_OP_OS_MGMT_BOOTLOADER_INFO notification callback: This
+ * callback function is used to add new fields to the bootloader info response.
+ */
+struct os_mgmt_bootloader_info_data {
+	/**
+	 * The zcbor encoder which is currently being used to output group information, additional
+	 * fields to the group can be added using this.
+	 */
+	zcbor_state_t *zse;
+
+	/** Contains the number of decoded parameters. */
+	const size_t *decoded;
+
+	/** Contains the value of the query parameter. */
+	struct zcbor_string *query;
+
+	/**
+	 * Must be set to true to indicate a response has been added, otherwise will return the
+	 * #OS_MGMT_ERR_QUERY_YIELDS_NO_ANSWER error.
+	 */
+	bool *has_output;
 };
 
 /**

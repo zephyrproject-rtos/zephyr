@@ -10,10 +10,13 @@ on:
     types:
     - completed
 
+permissions:
+  contents: read
+
 jobs:
   doc-publish:
     name: Publish Documentation
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     if: |
       github.event.workflow_run.event == 'pull_request' &&
       github.event.workflow_run.conclusion == 'success' &&
@@ -21,29 +24,40 @@ jobs:
 
     steps:
     - name: Download artifacts
-      uses: dawidd6/action-download-artifact@v2
+      id: download-artifacts
+      uses: dawidd6/action-download-artifact@ac66b43f0e6a346234dd65d4d0c8fbb31cb316e5 # v11
       with:
         workflow: doc-build.yml
         run_id: ${{ github.event.workflow_run.id }}
+        if_no_artifact_found: ignore
 
     - name: Load PR number
-      run: |
-        echo "PR_NUM=$(<pr_num/pr_num)" >> $GITHUB_ENV
+      if: steps.download-artifacts.outputs.found_artifact == 'true'
+      uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+      with:
+        script: |
+          let fs = require("fs");
+          let pr_number = Number(fs.readFileSync("./pr_num/pr_num"));
+          core.exportVariable("PR_NUM", pr_number);
 
     - name: Check PR number
+      if: steps.download-artifacts.outputs.found_artifact == 'true'
       id: check-pr
-      uses: carpentries/actions/check-valid-pr@v0.14.0
+      uses: carpentries/actions/check-valid-pr@2e20fd5ee53b691e27455ce7ca3b16ea885140e8 # v0.15.0
       with:
         pr: ${{ env.PR_NUM }}
         sha: ${{ github.event.workflow_run.head_sha }}
 
     - name: Validate PR number
-      if: steps.check-pr.outputs.VALID != 'true'
+      if: |
+        steps.download-artifacts.outputs.found_artifact == 'true' &&
+        steps.check-pr.outputs.VALID != 'true'
       run: |
         echo "ABORT: PR number validation failed!"
         exit 1
 
     - name: Uncompress HTML docs
+      if: steps.download-artifacts.outputs.found_artifact == 'true'
       run: |
         tar xf html-output/html-output.tar.xz -C html-output
         if [ -f api-coverage/api-coverage.tar.xz ]; then
@@ -51,13 +65,15 @@ jobs:
         fi
 
     - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v2
+      if: steps.download-artifacts.outputs.found_artifact == 'true'
+      uses: aws-actions/configure-aws-credentials@b47578312673ae6fa5b5096b330d9fbac3d116df # v4.2.1
       with:
         aws-access-key-id: ${{ vars.AWS_BUILDS_ZEPHYR_PR_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_BUILDS_ZEPHYR_PR_SECRET_ACCESS_KEY }}
         aws-region: us-east-1
 
     - name: Upload to AWS S3
+      if: steps.download-artifacts.outputs.found_artifact == 'true'
       env:
         HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
       run: |

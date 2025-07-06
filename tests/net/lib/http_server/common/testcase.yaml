@@ -1,11 +1,11 @@
 common:
-  min_ram: 16
+  depends_on: netif
+  min_ram: 40
   tags:
     - net
     - http
     - server
   integration_platforms:
     - native_sim
-
 tests:
   net.http.server.common: {}

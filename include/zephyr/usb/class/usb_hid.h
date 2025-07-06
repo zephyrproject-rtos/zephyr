@@ -24,6 +24,8 @@ extern "C" {
  * @brief usb_hid.h API
  * @defgroup usb_hid_class USB HID class API
  * @ingroup usb
+ * @since 1.11
+ * @version 1.0.0
  * @{
  */
 
@@ -54,9 +56,7 @@ struct hid_ops {
 	 * the next transfer.
 	 */
 	hid_int_ready_callback int_in_ready;
-#ifdef CONFIG_ENABLE_HID_INT_OUT_EP
 	hid_int_ready_callback int_out_ready;
-#endif
 };
 
 /**

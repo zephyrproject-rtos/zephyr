@@ -1,0 +1,6 @@
+board:
+  name: esp32s3_eye
+  full_name: ESP32-S3-EYE
+  vendor: espressif
+  socs:
+  - name: esp32s3

@@ -8,7 +8,6 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 ram: 320
 flash: 64
 supported:
@@ -19,7 +18,6 @@ supported:
   - gpio
   - pwm
   - counter
-  - sdhc
   - usb_device
   - display
   - memc

@@ -29,7 +29,8 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 
-#include "stm32_hsem.h"
+#include <stm32_backup_domain.h>
+#include <stm32_hsem.h>
 
 LOG_MODULE_REGISTER(counter_rtc_stm32, CONFIG_COUNTER_LOG_LEVEL);
 
@@ -185,20 +186,22 @@ static void rtc_stm32_irq_config(const struct device *dev);
 
 static int rtc_stm32_start(const struct device *dev)
 {
-#if defined(CONFIG_SOC_SERIES_STM32WBAX)
+#if defined(CONFIG_SOC_SERIES_STM32WBAX) || defined(CONFIG_SOC_SERIES_STM32U5X)
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	const struct rtc_stm32_config *cfg = dev->config;
 
 	/* Enable RTC bus clock */
 	if (clock_control_on(clk, (clock_control_subsys_t) &cfg->pclken[0]) != 0) {
-		LOG_ERR("clock op failed\n");
+		LOG_ERR("RTC clock enabling failed\n");
 		return -EIO;
 	}
 #else
 	ARG_UNUSED(dev);
 
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
+	stm32_backup_domain_enable_access();
 	LL_RCC_EnableRTC();
+	stm32_backup_domain_disable_access();
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 #endif
 
@@ -208,20 +211,22 @@ static int rtc_stm32_start(const struct device *dev)
 
 static int rtc_stm32_stop(const struct device *dev)
 {
-#if defined(CONFIG_SOC_SERIES_STM32WBAX)
+#if defined(CONFIG_SOC_SERIES_STM32WBAX) || defined(CONFIG_SOC_SERIES_STM32U5X)
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	const struct rtc_stm32_config *cfg = dev->config;
 
-	/* Enable RTC bus clock */
-	if (clock_control_on(clk, (clock_control_subsys_t) &cfg->pclken[0]) != 0) {
-		LOG_ERR("clock op failed\n");
+	/* Disable RTC bus clock */
+	if (clock_control_off(clk, (clock_control_subsys_t) &cfg->pclken[0]) != 0) {
+		LOG_ERR("RTC clock disabling failed\n");
 		return -EIO;
 	}
 #else
 	ARG_UNUSED(dev);
 
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
+	stm32_backup_domain_enable_access();
 	LL_RCC_DisableRTC();
+	stm32_backup_domain_disable_access();
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 #endif
 
@@ -239,12 +244,6 @@ tick_t rtc_stm32_read(const struct device *dev)
 	uint32_t rtc_subseconds;
 #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
 	ARG_UNUSED(dev);
-
-	/* Enable Backup access */
-#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || \
-	defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
-	LL_PWR_EnableBkUpAccess();
-#endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
 
 	/* Read time and date registers. Make sure value of the previous register
 	 * hasn't been changed while reading the next one.
@@ -297,19 +296,11 @@ tick_t rtc_stm32_read(const struct device *dev)
 #else /* defined(COUNTER_NO_DATE) */
 tick_t rtc_stm32_read(const struct device *dev)
 {
-	uint32_t rtc_time, ticks;
+	uint32_t ticks;
 
 	ARG_UNUSED(dev);
 
-	/* Enable Backup access */
-#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || \
-	defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
-	LL_PWR_EnableBkUpAccess();
-#endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
-
-	rtc_time = LL_RTC_TIME_Get(RTC);
-
-	ticks = rtc_time;
+	ticks = LL_RTC_TIME_Get(RTC);
 
 	return ticks;
 }
@@ -418,11 +409,14 @@ static int rtc_stm32_set_alarm(const struct device *dev, uint8_t chan_id,
 	rtc_alarm.AlarmTime.Seconds = remain;
 #endif
 
+	stm32_backup_domain_enable_access();
+
 	LL_RTC_DisableWriteProtection(RTC);
 	ll_func_disable_alarm(RTC);
 	LL_RTC_EnableWriteProtection(RTC);
 
 	if (ll_func_init_alarm(RTC, LL_RTC_FORMAT_BIN, &rtc_alarm) != SUCCESS) {
+		stm32_backup_domain_disable_access();
 		return -EIO;
 	}
 
@@ -436,6 +430,8 @@ static int rtc_stm32_set_alarm(const struct device *dev, uint8_t chan_id,
 	ll_func_clear_alarm_flag(RTC);
 	ll_func_enable_interrupt_alarm(RTC);
 	LL_RTC_EnableWriteProtection(RTC);
+
+	stm32_backup_domain_disable_access();
 
 #ifdef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
 	/* The reference manual says:
@@ -463,11 +459,13 @@ static int rtc_stm32_cancel_alarm(const struct device *dev, uint8_t chan_id)
 {
 	struct rtc_stm32_data *data = dev->data;
 
+	stm32_backup_domain_enable_access();
 	LL_RTC_DisableWriteProtection(RTC);
 	ll_func_clear_alarm_flag(RTC);
 	ll_func_disable_interrupt_alarm(RTC);
 	ll_func_disable_alarm(RTC);
 	LL_RTC_EnableWriteProtection(RTC);
+	stm32_backup_domain_disable_access();
 
 	data->callback = NULL;
 
@@ -517,11 +515,13 @@ void rtc_stm32_isr(const struct device *dev)
 #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
 	) {
 
+		stm32_backup_domain_enable_access();
 		LL_RTC_DisableWriteProtection(RTC);
 		ll_func_clear_alarm_flag(RTC);
 		ll_func_disable_interrupt_alarm(RTC);
 		ll_func_disable_alarm(RTC);
 		LL_RTC_EnableWriteProtection(RTC);
+		stm32_backup_domain_disable_access();
 #ifdef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
 		data->irq_on_late = 0;
 #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
@@ -552,6 +552,7 @@ static int rtc_stm32_init(const struct device *dev)
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	const struct rtc_stm32_config *cfg = dev->config;
 	struct rtc_stm32_data *data = dev->data;
+	int ret = -EIO;
 
 	data->callback = NULL;
 
@@ -568,17 +569,15 @@ static int rtc_stm32_init(const struct device *dev)
 
 	/* Enable Backup access */
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
-#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || \
-	defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
-	LL_PWR_EnableBkUpAccess();
-#endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
+
+	stm32_backup_domain_enable_access();
 
 	/* Enable RTC clock source */
 	if (clock_control_configure(clk,
 				    (clock_control_subsys_t) &cfg->pclken[1],
 				    NULL) != 0) {
 		LOG_ERR("clock configure failed\n");
-		return -EIO;
+		goto out_disable_bkup_access;
 	}
 
 #if !defined(CONFIG_SOC_SERIES_STM32WBAX)
@@ -589,13 +588,13 @@ static int rtc_stm32_init(const struct device *dev)
 
 #if !defined(CONFIG_COUNTER_RTC_STM32_SAVE_VALUE_BETWEEN_RESETS)
 	if (LL_RTC_DeInit(RTC) != SUCCESS) {
-		return -EIO;
+		goto out_disable_bkup_access;
 	}
 #endif
 
 	if (LL_RTC_Init(RTC, ((LL_RTC_InitTypeDef *)
 			      &cfg->ll_rtc_config)) != SUCCESS) {
-		return -EIO;
+		goto out_disable_bkup_access;
 	}
 
 #ifdef RTC_CR_BYPSHAD
@@ -614,28 +613,21 @@ static int rtc_stm32_init(const struct device *dev)
 	LL_EXTI_EnableRisingTrig_0_31(RTC_EXTI_LINE);
 #endif
 
-	rtc_stm32_irq_config(dev);
+	ret = 0;
 
-	return 0;
+out_disable_bkup_access:
+	stm32_backup_domain_disable_access();
+
+	if (ret == 0) {
+		rtc_stm32_irq_config(dev);
+	}
+
+	return ret;
 }
 
 static struct rtc_stm32_data rtc_data;
 
-#if DT_INST_NUM_CLOCKS(0) == 1
-#warning STM32 RTC needs a kernel source clock. Please define it in dts file
-static const struct stm32_pclken rtc_clk[] = {
-	STM32_CLOCK_INFO(0, DT_DRV_INST(0)),
-	/* Use Kconfig to configure source clocks fields (Deprecated) */
-	/* Fortunately, values are consistent across enabled series */
-#ifdef CONFIG_COUNTER_RTC_STM32_CLOCK_LSE
-	{.bus = STM32_SRC_LSE, .enr = RTC_SEL(1)}
-#else
-	{.bus = STM32_SRC_LSI, .enr = RTC_SEL(2)}
-#endif
-};
-#else
 static const struct stm32_pclken rtc_clk[] = STM32_DT_INST_CLOCKS(0);
-#endif
 
 static const struct rtc_stm32_config rtc_config = {
 	.counter_info = {
@@ -686,7 +678,7 @@ static int rtc_stm32_pm_action(const struct device *dev,
 }
 #endif /* CONFIG_PM_DEVICE */
 
-static const struct counter_driver_api rtc_stm32_driver_api = {
+static DEVICE_API(counter, rtc_stm32_driver_api) = {
 	.start = rtc_stm32_start,
 	.stop = rtc_stm32_stop,
 	.get_value = rtc_stm32_get_value,

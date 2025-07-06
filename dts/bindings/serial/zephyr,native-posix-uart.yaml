@@ -6,3 +6,5 @@ description: Native POSIX UART
 compatible: "zephyr,native-posix-uart"
 
 include: uart-controller.yaml
+
+# This binding is deprecated in favor of zephyr,native-pty-uart

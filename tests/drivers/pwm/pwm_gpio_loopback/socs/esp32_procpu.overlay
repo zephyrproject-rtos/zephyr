@@ -1,0 +1,66 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/espressif-esp32-gpio.h>
+
+/ {
+	zephyr,user {
+		/* GPIO input pins order must match PWM pinctrl config */
+		gpios = <&gpio0 2 ESP32_GPIO_PIN_OUT_EN>,
+			<&gpio0 3 ESP32_GPIO_PIN_OUT_EN>,
+			<&gpio0 4 ESP32_GPIO_PIN_OUT_EN>,
+			<&gpio0 5 ESP32_GPIO_PIN_OUT_EN>;
+
+		pwms = <&ledc0 0 160000 PWM_POLARITY_NORMAL>,
+			<&ledc0 5 80000 PWM_POLARITY_INVERTED>,
+			<&ledc0 9 1000000 PWM_POLARITY_NORMAL>,
+			<&ledc0 10 1000000 PWM_POLARITY_INVERTED>;
+	};
+};
+
+&pinctrl {
+	ledc0_default: ledc0_default {
+		group1 {
+			pinmux = <LEDC_CH0_GPIO2>,
+				<LEDC_CH5_GPIO3>,
+				<LEDC_CH9_GPIO4>,
+				<LEDC_CH10_GPIO5>;
+			input-enable;
+		};
+	};
+};
+
+&ledc0 {
+	pinctrl-0 = <&ledc0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel0@0 {
+		reg = <0x0>;
+		timer = <0>;
+	};
+
+	channel5@5 {
+		reg = <0x5>;
+		timer = <1>;
+	};
+
+	/* HS channel */
+	channel9@9 {
+		reg = <0x9>;
+		timer = <0>;
+	};
+
+	/* share same timer with ch9 */
+	channel10@a {
+		reg = <0xa>;
+		timer = <0>;
+	};
+};

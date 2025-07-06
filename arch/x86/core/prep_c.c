@@ -9,6 +9,8 @@
 #include <zephyr/arch/x86/multiboot.h>
 #include <zephyr/arch/x86/efi.h>
 #include <x86_mmu.h>
+#include <zephyr/platform/hooks.h>
+#include <zephyr/arch/cache.h>
 
 extern FUNC_NORETURN void z_cstart(void);
 extern void x86_64_irq_init(void);
@@ -16,6 +18,10 @@ extern void x86_64_irq_init(void);
 #if !defined(CONFIG_X86_64)
 __pinned_data x86_boot_arg_t x86_cpu_boot_arg;
 #endif
+
+
+
+extern int spec_ctrl_init(void);
 
 /* Early global initialization functions, C domain. This runs only on the first
  * CPU for SMP systems.
@@ -25,6 +31,9 @@ FUNC_NORETURN void z_prep_c(void *arg)
 {
 	x86_boot_arg_t *cpu_arg = arg;
 
+#if defined(CONFIG_SOC_PREP_HOOK)
+	soc_prep_hook();
+#endif
 	_kernel.cpus[0].nested = 0;
 
 #ifdef CONFIG_MMU
@@ -52,7 +61,7 @@ FUNC_NORETURN void z_prep_c(void *arg)
 #ifdef CONFIG_X86_VERY_EARLY_CONSOLE
 	z_x86_early_serial_init();
 
-#if defined(CONFIG_BOARD_QEMU_X86) || defined(CONFIG_BOARD_QEMU_X86_64)
+#if defined(CONFIG_QEMU_TARGET)
 	/*
 	 * Under QEMU and SeaBIOS, everything gets to be printed
 	 * immediately after "Booting from ROM.." as there is no newline.
@@ -65,16 +74,18 @@ FUNC_NORETURN void z_prep_c(void *arg)
 #endif
 #endif
 
-#if CONFIG_X86_STACK_PROTECTION
+#ifdef CONFIG_X86_STACK_PROTECTION
 	unsigned int num_cpus = arch_num_cpus();
 
 	for (int i = 0; i < num_cpus; i++) {
 		z_x86_set_stack_guard(z_interrupt_stacks[i]);
 	}
 #endif
-
-#if defined(CONFIG_SMP)
-	arch_smp_init();
+#if CONFIG_ARCH_CACHE
+	arch_cache_init();
+#endif
+#if defined(CONFIG_X86_DISABLE_SSBD) || defined(CONFIG_X86_ENABLE_EXTENDED_IBRS)
+	spec_ctrl_init();
 #endif
 
 	z_cstart();

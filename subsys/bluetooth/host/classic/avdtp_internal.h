@@ -2,6 +2,7 @@
  * avdtp_internal.h - avdtp handling
 
  * Copyright (c) 2015-2016 Intel Corporation
+ * Copyright 2021,2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,11 +47,11 @@
 #define BT_AVDTP_DELAYREPORT          0x0d
 
 /* @brief AVDTP STREAM STATE */
-#define BT_AVDTP_STREAM_STATE_IDLE        0x01
-#define BT_AVDTP_STREAM_STATE_CONFIGURED  0x02
-#define BT_AVDTP_STREAM_STATE_OPEN        0x03
-#define BT_AVDTP_STREAM_STATE_STREAMING   0x04
-#define BT_AVDTP_STREAM_STATE_CLOSING     0x05
+#define BT_AVDTP_STREAM_STATE_IDLE       0x01
+#define BT_AVDTP_STREAM_STATE_CONFIGURED 0x02
+#define BT_AVDTP_STREAM_STATE_OPEN       0x03
+#define BT_AVDTP_STREAM_STATE_STREAMING  0x04
+#define BT_AVDTP_STREAM_STATE_CLOSING    0x05
 
 /* @brief AVDTP Media TYPE */
 #define BT_AVDTP_SERVICE_CAT_MEDIA_TRANSPORT    0x01
@@ -82,22 +83,41 @@
 #define BT_AVDTP_ERR_UNSUPPORTED_CONFIGURAION   0x29
 #define BT_AVDTP_ERR_BAD_STATE                  0x31
 
-#define BT_AVDTP_MAX_MTU BT_L2CAP_RX_MTU
-
 #define BT_AVDTP_MIN_SEID 0x01
 #define BT_AVDTP_MAX_SEID 0x3E
 
+#define BT_AVDTP_RTP_VERSION 2
+
 struct bt_avdtp;
 struct bt_avdtp_req;
+struct bt_avdtp_sep_info;
 
-typedef int (*bt_avdtp_func_t)(struct bt_avdtp *session,
-			       struct bt_avdtp_req *req);
+/** @brief AVDTP SEID Information AVDTP_SPEC V13 Table 8.8 */
+struct bt_avdtp_sep_data {
+#ifdef CONFIG_LITTLE_ENDIAN
+	uint8_t rfa0: 1;
+	uint8_t inuse: 1;
+	uint8_t id: 6;
+	uint8_t rfa1: 3;
+	uint8_t tsep: 1;
+	uint8_t media_type: 4;
+#else
+	uint8_t id: 6;
+	uint8_t inuse: 1;
+	uint8_t rfa0: 1;
+	uint8_t media_type: 4;
+	uint8_t tsep: 1;
+	uint8_t rfa1: 3;
+#endif
+} __packed;
+
+typedef int (*bt_avdtp_func_t)(struct bt_avdtp_req *req, struct net_buf *buf);
 
 struct bt_avdtp_req {
 	uint8_t sig;
 	uint8_t tid;
+	uint8_t status;
 	bt_avdtp_func_t func;
-	struct k_work_delayable timeout_work;
 };
 
 struct bt_avdtp_single_sig_hdr {
@@ -105,47 +125,98 @@ struct bt_avdtp_single_sig_hdr {
 	uint8_t signal_id;
 } __packed;
 
-#define BT_AVDTP_SIG_HDR_LEN sizeof(struct bt_avdtp_single_sig_hdr)
-
-struct bt_avdtp_ind_cb {
-	/*
-	 * discovery_ind;
-	 * get_capabilities_ind;
-	 * set_configuration_ind;
-	 * open_ind;
-	 * start_ind;
-	 * suspend_ind;
-	 * close_ind;
-	 */
-};
-
-struct bt_avdtp_cap {
-	uint8_t cat;
-	uint8_t len;
-	uint8_t data[0];
-};
-
-struct bt_avdtp_sep {
-	uint8_t seid;
-	uint8_t len;
-	struct bt_avdtp_cap caps[0];
-};
+struct bt_avdtp_media_hdr {
+#ifdef CONFIG_LITTLE_ENDIAN
+	uint8_t CSRC_count: 4;
+	uint8_t header_extension: 1;
+	uint8_t padding: 1;
+	uint8_t RTP_version: 2;
+	uint8_t playload_type: 7;
+	uint8_t marker: 1;
+#else
+	uint8_t RTP_version: 2;
+	uint8_t padding: 1;
+	uint8_t header_extension: 1;
+	uint8_t CSRC_count: 4;
+	uint8_t marker: 1;
+	uint8_t playload_type: 7;
+#endif
+	uint16_t sequence_number;
+	uint32_t time_stamp;
+	uint32_t synchronization_source;
+} __packed;
 
 struct bt_avdtp_discover_params {
 	struct bt_avdtp_req req;
-	uint8_t status;
-	struct bt_avdtp_sep *caps;
+};
+
+struct bt_avdtp_get_capabilities_params {
+	struct bt_avdtp_req req;
+	uint8_t stream_endpoint_id;
+};
+
+struct bt_avdtp_set_configuration_params {
+	struct bt_avdtp_req req;
+	struct bt_avdtp_sep *sep;
+	uint8_t acp_stream_ep_id;
+	uint8_t int_stream_endpoint_id;
+	uint8_t media_type;
+	uint8_t media_codec_type;
+	uint8_t codec_specific_ie_len;
+	uint8_t *codec_specific_ie;
+};
+
+/* avdtp_open, avdtp_close, avdtp_start, avdtp_suspend */
+struct bt_avdtp_ctrl_params {
+	struct bt_avdtp_req req;
+	struct bt_avdtp_sep *sep;
+	uint8_t acp_stream_ep_id;
+};
+
+struct bt_avdtp_ops_cb {
+	void (*connected)(struct bt_avdtp *session);
+
+	void (*disconnected)(struct bt_avdtp *session);
+
+	struct net_buf *(*alloc_buf)(struct bt_avdtp *session);
+
+	int (*discovery_ind)(struct bt_avdtp *session, uint8_t *errcode);
+
+	int (*get_capabilities_ind)(struct bt_avdtp *session, struct bt_avdtp_sep *sep,
+				    struct net_buf *rsp_buf, uint8_t *errcode);
+
+	int (*set_configuration_ind)(struct bt_avdtp *session, struct bt_avdtp_sep *sep,
+				     uint8_t int_seid, struct net_buf *buf, uint8_t *errcode);
+
+	int (*re_configuration_ind)(struct bt_avdtp *session, struct bt_avdtp_sep *sep,
+				    uint8_t int_seid, struct net_buf *buf, uint8_t *errcode);
+
+	int (*open_ind)(struct bt_avdtp *session, struct bt_avdtp_sep *sep, uint8_t *errcode);
+
+	int (*close_ind)(struct bt_avdtp *session, struct bt_avdtp_sep *sep, uint8_t *errcode);
+
+	int (*start_ind)(struct bt_avdtp *session, struct bt_avdtp_sep *sep, uint8_t *errcode);
+
+	int (*suspend_ind)(struct bt_avdtp *session, struct bt_avdtp_sep *sep, uint8_t *errcode);
+
+	int (*abort_ind)(struct bt_avdtp *session, struct bt_avdtp_sep *sep, uint8_t *errcode);
+
+	/* stream l2cap is closed */
+	int (*stream_l2cap_disconnected)(struct bt_avdtp *session, struct bt_avdtp_sep *sep);
 };
 
 /** @brief Global AVDTP session structure. */
 struct bt_avdtp {
 	struct bt_l2cap_br_chan br_chan;
-	struct bt_avdtp_stream *streams; /* List of AV streams */
 	struct bt_avdtp_req *req;
+	const struct bt_avdtp_ops_cb *ops;
+	struct bt_avdtp_sep *current_sep;
+	struct k_work_delayable timeout_work;
+	/* semaphore for lock/unlock */
+	struct k_sem sem_lock;
 };
 
 struct bt_avdtp_event_cb {
-	struct bt_avdtp_ind_cb *ind;
 	int (*accept)(struct bt_conn *conn, struct bt_avdtp **session);
 };
 
@@ -162,9 +233,46 @@ int bt_avdtp_connect(struct bt_conn *conn, struct bt_avdtp *session);
 int bt_avdtp_disconnect(struct bt_avdtp *session);
 
 /* AVDTP SEP register function */
-int bt_avdtp_register_sep(uint8_t media_type, uint8_t role,
-				struct bt_avdtp_seid_lsep *sep);
+int bt_avdtp_register_sep(uint8_t media_type, uint8_t sep_type, struct bt_avdtp_sep *sep);
 
 /* AVDTP Discover Request */
-int bt_avdtp_discover(struct bt_avdtp *session,
-		      struct bt_avdtp_discover_params *param);
+int bt_avdtp_discover(struct bt_avdtp *session, struct bt_avdtp_discover_params *param);
+
+/* Parse the sep of discovered result */
+int bt_avdtp_parse_sep(struct net_buf *buf, struct bt_avdtp_sep_info *sep_info);
+
+/* AVDTP Get Capabilities */
+int bt_avdtp_get_capabilities(struct bt_avdtp *session,
+			      struct bt_avdtp_get_capabilities_params *param);
+
+/* Parse the codec type of capabilities */
+int bt_avdtp_parse_capability_codec(struct net_buf *buf, uint8_t *codec_type,
+				    uint8_t **codec_info_element, uint16_t *codec_info_element_len);
+
+/* AVDTP Set Configuration */
+int bt_avdtp_set_configuration(struct bt_avdtp *session,
+			       struct bt_avdtp_set_configuration_params *param);
+
+/* AVDTP reconfigure */
+int bt_avdtp_reconfigure(struct bt_avdtp *session, struct bt_avdtp_set_configuration_params *param);
+
+/* AVDTP OPEN */
+int bt_avdtp_open(struct bt_avdtp *session, struct bt_avdtp_ctrl_params *param);
+
+/* AVDTP CLOSE */
+int bt_avdtp_close(struct bt_avdtp *session, struct bt_avdtp_ctrl_params *param);
+
+/* AVDTP START */
+int bt_avdtp_start(struct bt_avdtp *session, struct bt_avdtp_ctrl_params *param);
+
+/* AVDTP SUSPEND */
+int bt_avdtp_suspend(struct bt_avdtp *session, struct bt_avdtp_ctrl_params *param);
+
+/* AVDTP ABORT */
+int bt_avdtp_abort(struct bt_avdtp *session, struct bt_avdtp_ctrl_params *param);
+
+/* AVDTP send data */
+int bt_avdtp_send_media_data(struct bt_avdtp_sep *sep, struct net_buf *buf);
+
+/* get media l2cap connection MTU */
+uint32_t bt_avdtp_get_media_mtu(struct bt_avdtp_sep *sep);

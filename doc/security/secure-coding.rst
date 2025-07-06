@@ -176,10 +176,10 @@ including the 8 principles from [SALT75]_:
 - limited attack surface (the set of the
   different points where an attacker can try to enter or extract data)
 
-- input validation with whitelists (inputs should typically be checked
+- input validation with allowlists (inputs should typically be checked
   to determine if they are valid before they are accepted; this
-  validation should use whitelists (which only accept known-good
-  values), not blacklists (which attempt to list known-bad values)).
+  validation should use allowlists (which only accept known-good
+  values), not blocklists (which attempt to list known-bad values)).
 
 Vulnerability Knowledge
 =======================

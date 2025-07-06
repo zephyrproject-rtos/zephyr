@@ -1,0 +1,27 @@
+identifier: xg23_rb4210a
+name: EFR32xG23 868-915 MHz 20 dBm Radio Board (xG23-RB4210A, BRD4210A)
+type: mcu
+arch: arm
+ram: 64
+flash: 512
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - clock_control
+  - counter
+  - entropy
+  - flash
+  - gpio
+  - i2c
+  - led
+  - pinctrl
+  - spi
+  - uart
+  - dma
+  - watchdog
+  - comparator
+testing:
+  ignore_tags:
+    - pm
+vendor: silabs

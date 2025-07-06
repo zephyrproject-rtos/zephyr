@@ -3,8 +3,8 @@
 TSC Project Roles
 *****************
 
-Main Roles
-##########
+Project Roles
+#############
 
 TSC projects generally will involve *Maintainers*, *Collaborators*, and
 *Contributors*:
@@ -63,13 +63,25 @@ level to the Zephyr GitHub repository.
 
 You may nominate yourself, or another GitHub user, for promotion to the Triage
 permission level by creating a GitHub issue, using the :github:`nomination
-template <new?assignees=&labels=Role+Nomination&template=006_nomination.md&title=>`.
+template <new?assignees=&labels=Role+Nomination&template=006_nomination.yml>`.
 
 Contributors granted the Triage permission level are permitted to add reviewers
 to a pull request and can be added as a reviewer by other GitHub users.
 Contributor change requests or approval on pull requests are not counted with
 respect to accepting and merging a pull request. However, Contributors comments
 and requested changes should still be considered by the pull request author.
+
+Zephyr Contributor Badge
+++++++++++++++++++++++++
+
+When your first contribution to the Zephyr project gets merged, you'll become eligible to claim your
+Zephyr Contributor Badge. This digital badge can be displayed on your website, blog, social media
+profile, etc. It will allow you to showcase your involvement in the Zephyr project and help raise
+its awareness.
+
+You may apply for your Contributor Badge by filling out the `Zephyr Contributor Badge form`_.
+
+.. _collaborator:
 
 Collaborator
 ++++++++++++
@@ -104,6 +116,9 @@ assignee to advance the review process and resolve any disagreements.
 Collaborator approval of pull requests are counted toward the minimum required
 approvals needed to merge a PR. Other criteria for merging may apply.
 
+
+.. _maintainer:
+
 Maintainer
 ++++++++++
 
@@ -122,13 +137,17 @@ in addition to those listed for Contributors and Collaborators:
   the TSC
 * Responsibility to ensure all contributions of the project have been reviewed
   within reasonable time.
-* Responsibility to enforce the code of conduct.
+* Responsibility to enforce the Code of Conduct. As leaders in the community,
+  maintainers are expected to be role models in upholding the project's code
+  of conduct and creating a welcoming and inclusive environment for everyone.
 * Responsibility to triage static analysis issues in their code area.
   See :ref:`static_analysis`.
 
 Contributors or Collaborators are promoted to the Maintainer role by adding the
 GitHub user name to one or more ``maintainers`` sections of the
-:ref:`maintainers_file` in the Zephyr repository.
+:ref:`maintainers_file` in the Zephyr repository. Candidates who are neither
+Contributors nor Collaborators must be approved by the TSC before they can
+assume the role of Maintainer.
 
 Maintainer approval of pull requests are counted toward the minimum
 required approvals needed to merge a PR. Other criteria for merging may apply.
@@ -159,6 +178,7 @@ Assignees are set either automatically based on the code being changed or set
 by the other Maintainers, the Release Engineering team can set an assignee when
 the latter is not possible.
 
+* Responsibility to drive the pull request to a mergeable state
 * Right to dismiss stale and unrelated reviews or reviews not following
   :ref:`expectations <reviewer-expectations>` from reviewers and seek reviews
   from additional maintainers, developers and contributors
@@ -166,7 +186,6 @@ the latter is not possible.
   requested are addressed
 * Responsibility to re-assign a pull request if they are the original submitter
   of the code
-* Responsibility to drive the pull request to a mergeable state
 * Solicit approvals from maintainers of the subsystems affected
 * Responsibility to drive the :ref:`pr_technical_escalation` process
 
@@ -285,9 +304,6 @@ MAINTAINERS File
 
 Generic guidelines for deciding and filling in the Maintainers' list
 
-* The :zephyr_file:`MAINTAINERS.yml` file shall replace the
-  :zephyr_file:`CODEOWNERS` file and will be used for both setting assignees and
-  reviewers.
 * We should keep the granularity of code maintainership at a manageable level
 * We should be looking for maintainers for areas of code that
   are orphaned (i.e. without an explicit maintainer)
@@ -346,6 +362,7 @@ Release Activity
 Merge Criteria
 ++++++++++++++
 
+* All :ref:`pr_requirements` must be met.
 * Minimal of 2 approvals, including an approval by the designated assignee.
 * Pull requests should be reviewed by at least a maintainer or collaborator of
   each affected area; Unless the changes to a given area are considered trivial
@@ -381,15 +398,13 @@ Merge Criteria
   most of the conditions listed above.
 * All required checks are passing:
 
-  * Codeowners
   * Device Tree
   * Documentation
-  * Gitlint
+  * Code linters (Gitlint, Pylint, Ruff, Sphinx, etc.)
   * Identity/Emails
   * Kconfig
   * License checks
   * Checkpatch (Coding Style)
-  * Pylint
   * Integration Tests (Via twister) on emulation/simulation platforms
   * Simulated Bluetooth Tests
 
@@ -400,3 +415,6 @@ Merge Criteria
   * Coding Guidelines
   * Static Analysis (Coverity)
   * Documentation coverage (APIs)
+
+
+.. _Zephyr Contributor Badge form: https://forms.gle/oCw9iAPLhUsHTapc8

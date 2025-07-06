@@ -26,7 +26,7 @@ See `Peripherals`_ for more information.
 
 .. note::
 
-   | ``native_sim`` is an evolution of the older :ref:`native_posix<native_posix>`.
+   | ``native_sim`` is an evolution of its predecessor ``native_posix``.
    | Some components, code, options names, and documentation will still use the old native_posix
      names. But all components which worked with native_posix will work with native_sim.
 
@@ -310,10 +310,10 @@ The following peripherals are currently provided with this board:
 **UART/Serial**
    Two optional native UART drivers are available:
 
-   **PTTY driver (UART_NATIVE_POSIX)**
-      With this driver, one or two Zephyr UART devices can be created. These
+   **PTY driver (UART_NATIVE_PTY)**
+      With this driver, Zephyr UART devices can be created. These
       can be connected to the Linux process stdin/stdout or a newly created
-      pseudo-tty. For more information refer to the section `PTTY UART`_.
+      pseudo-tty. For more information refer to the section `PTY UART`_.
 
    **TTY driver (UART_NATIVE_TTY)**
       An UART driver for interacting with host-attached serial port devices
@@ -376,8 +376,7 @@ The following peripherals are currently provided with this board:
 
   Note that this device can only be used with Linux hosts.
 
-.. _net-tools:
-   https://github.com/zephyrproject-rtos/net-tools
+.. _`net-tools`: https://github.com/zephyrproject-rtos/net-tools
 
 .. _nsim_per_offloaded_sockets:
 
@@ -426,13 +425,14 @@ The following peripherals are currently provided with this board:
   A display driver is provided that creates a window on the host machine to
   render display content.
 
-  This driver requires a 32-bit version of the `SDL2`_ library on the host
-  machine and ``pkg-config`` settings to correctly pickup the SDL2 install path
-  and compiler flags.
+  When building for the default 32bit ``native_sim`` target this driver requires a 32-bit version of
+  the `SDL2`_ development library on the host machine. For
+  :ref:`64bit native_sim<native_sim32_64>` builds you need to have the 64bit version installed.
+  You may also need to set ``pkg-config`` to correctly pickup the SDL2 install path.
 
-  On a Ubuntu 22.04 host system, for example, install the ``pkg-config`` and
-  ``libsdl2-dev:i386`` packages, and configure the pkg-config search path with
-  these commands:
+  On Ubuntu the package is ``libsdl2-dev`` whose 64bit version is likely installed by default.
+  On an Ubuntu 18.04 host system, you can install the ``pkg-config`` and the 32bit
+  ``libsdl2-dev:i386`` packages, and configure the pkg-config search path with these commands:
 
   .. code-block:: console
 
@@ -442,7 +442,7 @@ The following peripherals are currently provided with this board:
      $ export PKG_CONFIG_PATH=/usr/lib/i386-linux-gnu/pkgconfig
 
 .. _SDL2:
-   https://www.libsdl.org/download-2.0.php
+   https://www.libsdl.org
 
 .. _nsim_per_flash_simu:
 
@@ -469,7 +469,7 @@ The following peripherals are currently provided with this board:
   Some more information can be found in :ref:`the emulators page <emul_flash_simu_brief>`.
 
   The flash content can be accessed from the host system, as explained in the
-  `Host based flash access`_ section.
+  `Host (FUSE) filesystem access`_ section.
 
 **Input events**
   Two optional native input drivers are available:
@@ -500,50 +500,56 @@ The following peripherals are currently provided with this board:
     :ref:`its section <nsim_per_disp_sdl>`.
 
 **CAN controller**
-  It is possible to use a host CAN controller with the native SockerCAN Linux driver. It can be
+  It is possible to use a host CAN controller with the native SocketCAN Linux driver. It can be
   enabled with :kconfig:option:`CONFIG_CAN_NATIVE_LINUX` and configured with the device tree binding
   :dtcompatible:`zephyr,native-linux-can`.
 
+  It is possible to specify which CAN interface will be used by the app using the ``--can-if``
+  command-line option. This option overrides **every** Linux SocketCAN driver instance to use the specified
+  interface.
+
 .. _native_ptty_uart:
 
-PTTY UART
+PTY UART
 =========
 
-This driver can be configured with :kconfig:option:`CONFIG_UART_NATIVE_POSIX`
-to instantiate up to two UARTs. By default only one UART is enabled.
-With :kconfig:option:`CONFIG_UART_NATIVE_POSIX_PORT_1_ENABLE`
-you can enable the second one.
+This driver is automatically enabled when devicetree contains nodes with the
+``"zephyr,native-pty-uart"`` compatible property and ``okay`` status and
+:kconfig:option:`CONFIG_SERIAL` is set.
+By default one ready UART of this type is setup in DTS, but any number can be enabled as desired.
 
-For the first UART, it can link it to a new
-pseudoterminal (i.e. :file:`/dev/pts{<nbr>}`), or map the UART input and
-output to the executable's ``stdin`` and ``stdout``.
-This is chosen by selecting either
-:kconfig:option:`CONFIG_NATIVE_UART_0_ON_OWN_PTY` or
-:kconfig:option:`CONFIG_NATIVE_UART_0_ON_STDINOUT`
-For interactive use with the :ref:`shell_api`, choose the first (OWN_PTY) option.
-The second (STDINOUT) option can be used with the shell for automated
-testing, such as when piping other processes' output to control it.
-This is because the shell subsystem expects access to a raw terminal,
+Normally these UARTs are connected to new pseudoterminals PTYs, i.e. :file:`/dev/pts{<nbr>}`,
+but it is also possible to map one of them to the executable's ``stdin`` and ``stdout``.
+This can be done in two ways, either with the command line option ``--<uart_name>_stdinout``
+(where ``<uart_name>`` is the UART DTS node name), or, for the first PTY UART instance by chosing
+:kconfig:option:`CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT` instead of the default
+:kconfig:option:`CONFIG_UART_NATIVE_PTY_0_ON_OWN_PTY`.
+For interactive use with the :ref:`shell_api`, it is recommended to choose the PTY option.
+The ``STDINOUT`` option can be used for automated testing, such as when piping other processes'
+output to control it. This is because the shell subsystem expects access to a raw terminal,
 which (by default) a normal Linux terminal is not.
 
-When :kconfig:option:`CONFIG_NATIVE_UART_0_ON_OWN_PTY` is chosen, the name of the
-newly created UART pseudo-terminal will be displayed in the console.
-If you want to interact with it manually, you should attach a terminal emulator
-to it. This can be done, for example with the command:
+When a UART is connected to a new PTY, the name of the newly created UART pseudo-terminal will be
+displayed in the console.
+If you want to interact with it manually, you should attach a terminal emulator to it.
+This can be done, for example with the command:
 
 .. code-block:: console
 
-   $ xterm -e screen /dev/<ttyn> &
+   $ xterm -e screen /dev/<ptyn> &
+   # Or if you prefer gnome-terminal:
+   $ gnome-terminal -- screen /dev/<ptyn> &
 
-where :file:`/dev/tty{<n>}` should be replaced with the actual TTY device.
+where :file:`/dev/{<ptyn>}` should be replaced with the actual PTY device.
 
-You may also chose to automatically attach a terminal emulator to the first UART
-by passing the command line option ``-attach_uart`` to the executable.
-The command used for attaching to the new shell can be set with the command line
-option ``-attach_uart_cmd=<"cmd">``. Where the default command is given by
-:kconfig:option:`CONFIG_NATIVE_UART_AUTOATTACH_DEFAULT_CMD`.
-Note that the default command assumes both ``xterm`` and ``screen`` are
-installed in the system.
+You may also chose to automatically attach a terminal emulator to any of these UARTs.
+To automatically attach one to all these UARTs, pass the command line option ``-attach_uart`` to the
+executable. To automatically attach one to a single UART use ``-<uart_name>_attach_uart``
+The command used for attaching to the new shell can be set for all UARTs with the command line
+option ``-attach_uart_cmd=<"cmd">``, or for each individual UART with
+``-<uart_name>_attach_uart_cmd``. Where the default command is given by
+:kconfig:option:`CONFIG_UART_NATIVE_PTY_AUTOATTACH_DEFAULT_CMD`.
+Note that the default command assumes both ``xterm`` and ``screen`` are installed in the system.
 
 This driver only supports poll mode. Interrupt and async mode are not supported.
 Neither runtime configuration or line control are supported.
@@ -553,9 +559,8 @@ Neither runtime configuration or line control are supported.
 TTY UART
 ========
 
-With this driver an application can use the polling UART API (``uart_poll_out``,
-``uart_poll_in``) to write and read characters to and from a connected serial
-port device.
+With this driver an application can use the polling and interrupt based UART APIs to write and read
+characters to and from a connected serial port device.
 
 This driver is automatically enabled when a devicetree contains a node
 with ``"zephyr,native-tty-uart"`` compatible property and ``okay`` status, such
@@ -608,7 +613,7 @@ development by integrating more seamlessly with the host operating system:
   redirect any :c:func:`printk` write to the native host application's
   ``stdout``.
 
-  This driver is selected by default if the `PTTY UART`_ is not compiled in.
+  This driver is selected by default if no UART driver is compiled in.
   Otherwise :kconfig:option:`CONFIG_UART_CONSOLE` will be set to select the UART as
   console backend.
 
@@ -642,21 +647,18 @@ All :ref:`available HW emulators <emulators>` can be used with native_sim.
 
 .. _native_fuse_flash:
 
-Host based flash access
-***********************
+Host (FUSE) filesystem access
+*****************************
 
-If a flash device is present, the file system partitions on the flash
-device can be exposed through the host file system by enabling
-:kconfig:option:`CONFIG_FUSE_FS_ACCESS`. This option enables a FUSE
-(File system in User space) layer that maps the Zephyr file system calls to
-the required UNIX file system calls, and provides access to the flash file
-system partitions with normal operating system commands such as ``cd``,
-``ls`` and ``mkdir``.
+When building Zephyr with a filesystem, the device partitions can be exposed through the host file
+system by enabling :kconfig:option:`CONFIG_FUSE_FS_ACCESS`. This option enables a FUSE
+(File system in User space) layer that mounts the simulated embedded filesystem in the host
+filesystem, maps the Zephyr file system calls to the required UNIX file system calls, and provides
+access to its partitions with normal operating system commands such as ``cd``, ``ls`` and ``mkdir``.
 
 By default the partitions are exposed through the directory :file:`flash/` in the
 current working directory. This directory can be changed via the command line
-option ``--flash-mount``. As this directory operates as a mount point for FUSE
-you have to ensure that it exists before starting the native_sim board.
+option ``--flash-mount``.
 
 On exit, the native_sim board application will take care of unmounting the
 directory. In the unfortunate case that the native_sim board application
@@ -694,16 +696,16 @@ host libC (:kconfig:option:`CONFIG_EXTERNAL_LIBC`):
    :header: Driver class, driver name, driver kconfig, libC choices
 
      ADC, ADC emul, :kconfig:option:`CONFIG_ADC_EMUL`, All
-     Bluetooth, :ref:`Userchan <nsim_bt_host_cont>`, :kconfig:option:`CONFIG_BT_USERCHAN`, Host libC
+     Bluetooth, :ref:`Userchan <nsim_bt_host_cont>`, :kconfig:option:`CONFIG_BT_USERCHAN`, Host and pico libC
      CAN, CAN native Linux, :kconfig:option:`CONFIG_CAN_NATIVE_LINUX`, All
      Console backend, :ref:`POSIX arch console <nsim_back_console>`, :kconfig:option:`CONFIG_POSIX_ARCH_CONSOLE`, All
      Display, :ref:`Display SDL <nsim_per_disp_sdl>`, :kconfig:option:`CONFIG_SDL_DISPLAY`, All
-     Entropy, :ref:`Native posix entropy <nsim_per_entr>`, :kconfig:option:`CONFIG_FAKE_ENTROPY_NATIVE_POSIX`, All
-     EEPROM, EEPROM simulator, :kconfig:option:`CONFIG_EEPROM_SIMULATOR`, Host libC
+     Entropy, :ref:`Native simulator entropy <nsim_per_entr>`, :kconfig:option:`CONFIG_FAKE_ENTROPY_NATIVE_SIM`, All
+     EEPROM, EEPROM simulator, :kconfig:option:`CONFIG_EEPROM_SIMULATOR`, All
      EEPROM, EEPROM emulator, :kconfig:option:`CONFIG_EEPROM_EMULATOR`, All
-     Ethernet, :ref:`Eth native_posix <nsim_per_ethe>`, :kconfig:option:`CONFIG_ETH_NATIVE_POSIX`, All
+     Ethernet, :ref:`Eth native_tap <nsim_per_ethe>`, :kconfig:option:`CONFIG_ETH_NATIVE_TAP`, All
      Flash, :ref:`Flash simulator <nsim_per_flash_simu>`, :kconfig:option:`CONFIG_FLASH_SIMULATOR`, All
-     Flash, :ref:`Host based flash access <native_fuse_flash>`, :kconfig:option:`CONFIG_FUSE_FS_ACCESS`, Host libC
+     FUSE, :ref:`Host based filesystem access <native_fuse_flash>`, :kconfig:option:`CONFIG_FUSE_FS_ACCESS`, All
      GPIO, GPIO emulator, :kconfig:option:`CONFIG_GPIO_EMUL`, All
      GPIO, SDL GPIO emulator, :kconfig:option:`CONFIG_GPIO_EMUL_SDL`, All
      I2C, I2C emulator, :kconfig:option:`CONFIG_I2C_EMUL`, All
@@ -712,9 +714,9 @@ host libC (:kconfig:option:`CONFIG_EXTERNAL_LIBC`):
      Logger backend, :ref:`Native backend <nsim_back_logger>`, :kconfig:option:`CONFIG_LOG_BACKEND_NATIVE_POSIX`, All
      Offloaded sockets, :ref:`nsim_per_offloaded_sockets`, :kconfig:option:`CONFIG_NET_NATIVE_OFFLOADED_SOCKETS`, All
      RTC, RTC emul, :kconfig:option:`CONFIG_RTC_EMUL`, All
-     Serial, :ref:`UART native posix/PTTY <native_ptty_uart>`, :kconfig:option:`CONFIG_UART_NATIVE_POSIX`, All
+     Serial, :ref:`UART native PTY <native_ptty_uart>`, :kconfig:option:`CONFIG_UART_NATIVE_PTY`, All
      Serial, :ref:`UART native TTY <native_tty_uart>`, :kconfig:option:`CONFIG_UART_NATIVE_TTY`, All
      SPI, SPI emul, :kconfig:option:`CONFIG_SPI_EMUL`, All
-     System tick, Native_posix timer, :kconfig:option:`CONFIG_NATIVE_POSIX_TIMER`, All
+     System tick, Native_sim timer, :kconfig:option:`CONFIG_NATIVE_SIM_TIMER`, All
      Tracing, :ref:`Posix tracing backend <nsim_back_trace>`, :kconfig:option:`CONFIG_TRACING_BACKEND_POSIX`, All
      USB, :ref:`USB native posix <nsim_per_usb>`, :kconfig:option:`CONFIG_USB_NATIVE_POSIX`, Host libC

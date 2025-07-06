@@ -19,11 +19,11 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		     char *stack_ptr, k_thread_entry_t entry,
 		     void *p1, void *p2, void *p3)
 {
-	struct __esf *stack_init;
+	struct arch_esf *stack_init;
 
 	/* Initial stack frame for thread */
-	stack_init = (struct __esf *)Z_STACK_PTR_ALIGN(
-				Z_STACK_PTR_TO_FRAME(struct __esf, stack_ptr)
+	stack_init = (struct arch_esf *)Z_STACK_PTR_ALIGN(
+				Z_STACK_PTR_TO_FRAME(struct arch_esf, stack_ptr)
 				);
 
 	/* Setup the initial stack frame */

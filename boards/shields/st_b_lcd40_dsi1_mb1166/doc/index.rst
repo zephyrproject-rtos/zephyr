@@ -1,4 +1,4 @@
-.. _st_b_lcd40_dsi1_mb1166_shield:
+.. _st_b_lcd40_dsi1_mb1166:
 
 ST B-LCD40-DSI1
 ###############
@@ -107,7 +107,7 @@ The shield can be used in any application by setting ``SHIELD`` to
 ``st_b_lcd40_dsi1_mb1166`` or ``st_b_lcd40_dsi1_mb1166_a09`` and adding
 the necessary device tree properties.
 
-Set ``-DSHIELD="st_b_lcd40_dsi1_mb1166"`` when you invoke ``west build``. For example:
+Set ``--shield "st_b_lcd40_dsi1_mb1166"`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/display

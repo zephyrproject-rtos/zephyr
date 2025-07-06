@@ -1,0 +1,8 @@
+# Copyright (c) 2024 The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: Texas Instrument 6 channels 24 bit SPI ADC
+
+compatible: "ti,ads124s06"
+
+include: ti,ads1x4s0x-base.yaml

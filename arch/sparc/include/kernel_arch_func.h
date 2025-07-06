@@ -17,6 +17,8 @@
 
 #include <kernel_arch_data.h>
 
+#include <zephyr/platform/hooks.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -24,6 +26,9 @@ extern "C" {
 #ifndef _ASMLANGUAGE
 static ALWAYS_INLINE void arch_kernel_init(void)
 {
+#ifdef CONFIG_SOC_PER_CORE_INIT_HOOK
+	soc_per_core_init_hook();
+#endif /* CONFIG_SOC_PER_CORE_INIT_HOOK */
 }
 
 void z_sparc_context_switch(struct k_thread *newt, struct k_thread *oldt);
@@ -43,7 +48,7 @@ static inline void arch_switch(void *switch_to, void **switched_from)
 }
 
 FUNC_NORETURN void z_sparc_fatal_error(unsigned int reason,
-				       const z_arch_esf_t *esf);
+				       const struct arch_esf *esf);
 
 static inline bool arch_is_in_isr(void)
 {

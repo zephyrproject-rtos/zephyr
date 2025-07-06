@@ -4,6 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+
+#include "fs_priv.h"
+
 #include <errno.h>
 #include <zephyr/kernel.h>
 #include <limits.h>
@@ -15,18 +20,11 @@
 #include <zephyr/posix/fcntl.h>
 #include <zephyr/fs/fs.h>
 
+int zvfs_fstat(int fd, struct stat *buf);
+
 BUILD_ASSERT(PATH_MAX >= MAX_FILE_NAME, "PATH_MAX is less than MAX_FILE_NAME");
 
-struct posix_fs_desc {
-	union {
-		struct fs_file_t file;
-		struct fs_dir_t dir;
-	};
-	bool is_dir;
-	bool used;
-};
-
-static struct posix_fs_desc desc_array[CONFIG_POSIX_MAX_OPEN_FILES];
+static struct posix_fs_desc desc_array[CONFIG_POSIX_OPEN_MAX];
 
 static struct fs_dirent fdirent;
 static struct dirent pdirent;
@@ -39,7 +37,7 @@ static struct posix_fs_desc *posix_fs_alloc_obj(bool is_dir)
 	struct posix_fs_desc *ptr = NULL;
 	unsigned int key = irq_lock();
 
-	for (i = 0; i < CONFIG_POSIX_MAX_OPEN_FILES; i++) {
+	for (i = 0; i < CONFIG_POSIX_OPEN_MAX; i++) {
 		if (desc_array[i].used == false) {
 			ptr = &desc_array[i];
 			ptr->used = true;
@@ -62,6 +60,7 @@ static int posix_mode_to_zephyr(int mf)
 	int mode = (mf & O_CREAT) ? FS_O_CREATE : 0;
 
 	mode |= (mf & O_APPEND) ? FS_O_APPEND : 0;
+	mode |= (mf & O_TRUNC) ? FS_O_TRUNC : 0;
 
 	switch (mf & O_ACCMODE) {
 	case O_RDONLY:
@@ -80,12 +79,7 @@ static int posix_mode_to_zephyr(int mf)
 	return mode;
 }
 
-/**
- * @brief Open a file.
- *
- * See IEEE 1003.1
- */
-int open(const char *name, int flags, ...)
+int zvfs_open(const char *name, int flags, int mode)
 {
 	int rc, fd;
 	struct posix_fs_desc *ptr = NULL;
@@ -95,37 +89,53 @@ int open(const char *name, int flags, ...)
 		return zmode;
 	}
 
-	fd = z_reserve_fd();
+	fd = zvfs_reserve_fd();
 	if (fd < 0) {
 		return -1;
 	}
 
 	ptr = posix_fs_alloc_obj(false);
 	if (ptr == NULL) {
-		z_free_fd(fd);
-		errno = EMFILE;
-		return -1;
+		rc = -EMFILE;
+		goto out_err;
 	}
 
 	fs_file_t_init(&ptr->file);
 
-	rc = fs_open(&ptr->file, name, zmode);
+	if (flags & O_CREAT) {
+		flags &= ~O_CREAT;
 
-	if (rc < 0) {
-		posix_fs_free_obj(ptr);
-		z_free_fd(fd);
-		errno = -rc;
-		return -1;
+		rc = fs_open(&ptr->file, name, FS_O_CREATE | (mode & O_ACCMODE));
+		if (rc < 0) {
+			goto out_err;
+		}
+		rc = fs_close(&ptr->file);
+		if (rc < 0) {
+			goto out_err;
+		}
 	}
 
-	z_finalize_fd(fd, ptr, &fs_fd_op_vtable);
+	rc = fs_open(&ptr->file, name, zmode);
+	if (rc < 0) {
+		goto out_err;
+	}
 
+	zvfs_finalize_fd(fd, ptr, &fs_fd_op_vtable);
+
+	goto out;
+
+out_err:
+	if (ptr != NULL) {
+		posix_fs_free_obj(ptr);
+	}
+
+	zvfs_free_fd(fd);
+	errno = -rc;
+	return -1;
+
+out:
 	return fd;
 }
-
-#if !defined(CONFIG_NEWLIB_LIBC) && !defined(CONFIG_PICOLIBC)
-FUNC_ALIAS(open, _open, int);
-#endif
 
 static int fs_close_vmeth(void *obj)
 {
@@ -161,7 +171,18 @@ static int fs_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 		}
 		break;
 	}
+	case ZFD_IOCTL_TRUNCATE: {
+		off_t length;
 
+		length = va_arg(args, off_t);
+
+		rc = fs_truncate(&ptr->file, length);
+		if (rc < 0) {
+			errno = -rc;
+			return -1;
+		}
+		break;
+	}
 	default:
 		errno = EOPNOTSUPP;
 		return -1;
@@ -417,17 +438,20 @@ int mkdir(const char *path, mode_t mode)
 	return 0;
 }
 
-/**
- * @brief Truncate file to specified length.
- *
- */
-int ftruncate(int fd, off_t length)
+int fstat(int fildes, struct stat *buf)
 {
-	struct posix_fs_desc *ptr = NULL;
+	return zvfs_fstat(fildes, buf);
+}
+#ifdef CONFIG_POSIX_FILE_SYSTEM_ALIAS_FSTAT
+FUNC_ALIAS(fstat, _fstat, int);
+#endif
 
-	ptr = z_get_fd_obj(fd, NULL, EBADF);
-	if (!ptr)
-		return -1;
-
-	return fs_truncate(&ptr->file, length);
+/**
+ * @brief Remove a directory.
+ *
+ * See IEEE 1003.1
+ */
+int rmdir(const char *path)
+{
+	return unlink(path);
 }

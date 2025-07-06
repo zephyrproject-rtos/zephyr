@@ -6,8 +6,10 @@
 /**
  * @file
  * @brief Xtensa specific kernel interface header
- * This header contains the Xtensa specific kernel interface.  It is included
- * by the generic kernel interface header (include/zephyr/arch/cpu.h)
+ *
+ * This header contains the Xtensa specific kernel interface.  It is
+ * included by the kernel interface architecture-abstraction header
+ * (include/zephyr/arch/cpu.h).
  */
 
 #ifndef ZEPHYR_INCLUDE_ARCH_XTENSA_ARCH_H_
@@ -45,6 +47,7 @@
 
 /**
  * @defgroup xtensa_apis Xtensa APIs
+ * @ingroup arch-interface
  * @{
  * @}
  *
@@ -62,15 +65,25 @@ extern "C" {
 
 struct arch_mem_domain {
 #ifdef CONFIG_XTENSA_MMU
-	uint32_t *ptables __aligned(CONFIG_MMU_PAGE_SIZE);
+	uint32_t *ptables;
 	uint8_t asid;
 	bool dirty;
+
+	/* Following are used to program registers when changing page tables. */
+	uint32_t reg_asid;
+	uint32_t reg_ptevaddr;
+	uint32_t reg_ptepin_as;
+	uint32_t reg_ptepin_at;
+	uint32_t reg_vecpin_as;
+	uint32_t reg_vecpin_at;
 #endif
 #ifdef CONFIG_XTENSA_MPU
 	struct xtensa_mpu_map mpu_map;
 #endif
 	sys_snode_t node;
 };
+
+typedef struct arch_mem_domain arch_mem_domain_t;
 
 /**
  * @brief Generate hardware exception.
@@ -79,7 +92,7 @@ struct arch_mem_domain {
  *
  * @param reason_p Reason for exception.
  */
-extern void xtensa_arch_except(int reason_p);
+void xtensa_arch_except(int reason_p);
 
 /**
  * @brief Generate kernel oops.
@@ -89,7 +102,7 @@ extern void xtensa_arch_except(int reason_p);
  * @param reason_p Reason for exception.
  * @param ssf Stack pointer.
  */
-extern void xtensa_arch_kernel_oops(int reason_p, void *ssf);
+void xtensa_arch_kernel_oops(int reason_p, void *ssf);
 
 #ifdef CONFIG_USERSPACE
 
@@ -114,10 +127,10 @@ extern void xtensa_arch_kernel_oops(int reason_p, void *ssf);
 
 __syscall void xtensa_user_fault(unsigned int reason);
 
-#include <syscalls/arch.h>
+#include <zephyr/syscalls/arch.h>
 
 /* internal routine documented in C file, needed by IRQ_CONNECT() macro */
-extern void z_irq_priority_set(uint32_t irq, uint32_t prio, uint32_t flags);
+void z_irq_priority_set(uint32_t irq, uint32_t prio, uint32_t flags);
 
 #define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 	{ \
@@ -228,7 +241,7 @@ static inline bool arch_mem_coherent(void *ptr)
 
 #if defined(CONFIG_XTENSA_MMU) || defined(__DOXYGEN__)
 /**
- * @brief Peform additional steps after MMU initialization.
+ * @brief Perform additional steps after MMU initialization.
  *
  * This performs additional steps related to memory management
  * after the main MMU initialization code. This needs to defined
@@ -237,7 +250,7 @@ static inline bool arch_mem_coherent(void *ptr)
  * @param is_core0 True if this is called while executing on
  *                 CPU core #0.
  */
-extern void arch_xtensa_mmu_post_init(bool is_core0);
+void arch_xtensa_mmu_post_init(bool is_core0);
 #endif
 
 #ifdef __cplusplus

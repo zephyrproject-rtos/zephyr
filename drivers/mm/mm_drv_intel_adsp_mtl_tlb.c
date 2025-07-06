@@ -26,6 +26,7 @@
 #include <zephyr/drivers/mm/mm_drv_bank.h>
 #include <zephyr/debug/sparse.h>
 #include <zephyr/cache.h>
+#include <kernel_arch_interface.h>
 
 #define SRAM_BANK_PAGE_NUM   (SRAM_BANK_SIZE / CONFIG_MM_DRV_PAGE_SIZE)
 
@@ -186,8 +187,6 @@ int sys_mm_drv_map_page(void *virt, uintptr_t phys, uint32_t flags)
 	uintptr_t pa = POINTER_TO_UINT(sys_cache_cached_ptr_get(UINT_TO_POINTER(phys)));
 	uintptr_t va = POINTER_TO_UINT(sys_cache_cached_ptr_get(virt));
 
-	ARG_UNUSED(flags);
-
 	/* Make sure VA is page-aligned */
 	CHECKIF(!sys_mm_drv_is_addr_aligned(va)) {
 		ret = -EINVAL;
@@ -268,6 +267,9 @@ int sys_mm_drv_map_page(void *virt, uintptr_t phys, uint32_t flags)
 
 	tlb_entries[entry_idx] = entry;
 
+#ifdef CONFIG_MMU
+	arch_mem_map(virt, va, CONFIG_MM_DRV_PAGE_SIZE, flags);
+#endif
 	/*
 	 * Invalid the cache of the newly mapped virtual page to
 	 * avoid stale data.
@@ -329,11 +331,12 @@ int sys_mm_drv_map_array(void *virt, uintptr_t *phys,
 	return sys_mm_drv_simple_map_array(va, phys, cnt, flags);
 }
 
-int sys_mm_drv_unmap_page(void *virt)
+static int sys_mm_drv_unmap_page_wflush(void *virt, bool flush_data)
 {
 	k_spinlock_key_t key;
 	uint32_t entry_idx, bank_idx;
 	uint16_t *tlb_entries = UINT_TO_POINTER(TLB_BASE);
+	uint16_t entry;
 	uintptr_t pa;
 	int ret = 0;
 
@@ -355,14 +358,30 @@ int sys_mm_drv_unmap_page(void *virt)
 
 	key = k_spin_lock(&tlb_lock);
 
+	entry_idx = get_tlb_entry_idx(va);
+	entry = tlb_entries[entry_idx];
+
+	/* Check if the translation is enabled in the TLB entry.
+	 * Attempt to flush the cache of an inactive address will result in a cpu exception.
+	 */
+	if (!(entry & TLB_ENABLE_BIT)) {
+		ret = -EFAULT;
+		goto out_unlock;
+	}
+
 	/*
 	 * Flush the cache to make sure the backing physical page
 	 * has the latest data.
+	 * No flush when called from sys_mm_drv_mm_init().
 	 */
-	sys_cache_data_flush_range(virt, CONFIG_MM_DRV_PAGE_SIZE);
+	if (flush_data) {
+		sys_cache_data_flush_range(virt, CONFIG_MM_DRV_PAGE_SIZE);
+#ifdef CONFIG_MMU
+		arch_mem_unmap(virt, CONFIG_MM_DRV_PAGE_SIZE);
+#endif
+	}
 
-	entry_idx = get_tlb_entry_idx(va);
-	pa = tlb_entry_to_pa(tlb_entries[entry_idx]);
+	pa = tlb_entry_to_pa(entry);
 
 	/* Restore default entry settings with cleared the enable bit. */
 	tlb_entries[entry_idx] = 0;
@@ -385,10 +404,16 @@ int sys_mm_drv_unmap_page(void *virt)
 		}
 	}
 
+out_unlock:
 	k_spin_unlock(&tlb_lock, key);
 
 out:
 	return ret;
+}
+
+int sys_mm_drv_unmap_page(void *virt)
+{
+	return sys_mm_drv_unmap_page_wflush(virt, true);
 }
 
 int sys_mm_drv_unmap_region(void *virt, size_t size)
@@ -436,10 +461,54 @@ int sys_mm_drv_update_page_flags(void *virt, uint32_t flags)
 
 	tlb_entries[entry_idx] = entry;
 
+#ifdef CONFIG_MMU
+	arch_mem_map(virt, va, CONFIG_MM_DRV_PAGE_SIZE, flags);
+#endif
+
 out:
 	k_spin_unlock(&tlb_lock, key);
 	return ret;
 }
+
+#ifdef CONFIG_MM_DRV_INTEL_ADSP_TLB_REMAP_UNUSED_RAM
+static int sys_mm_drv_unmap_region_initial(void *virt_in, size_t size)
+{
+	void *virt = (__sparse_force void *)sys_cache_cached_ptr_get(virt_in);
+
+	k_spinlock_key_t key;
+	int ret = 0;
+	size_t offset;
+
+	CHECKIF(!sys_mm_drv_is_virt_addr_aligned(virt) ||
+		!sys_mm_drv_is_size_aligned(size)) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	key = k_spin_lock(&sys_mm_drv_common_lock);
+
+	for (offset = 0; offset < size; offset += CONFIG_MM_DRV_PAGE_SIZE) {
+		uint8_t *va = (uint8_t *)virt + offset;
+
+		int ret2 = sys_mm_drv_unmap_page_wflush(va, false);
+
+		/* -EFAULT means that this page is not mapped.
+		 * This is not an error since we want to unmap all virtual memory without knowing
+		 * which pages are mapped.
+		 */
+		if (ret2 != 0 && ret2 != -EFAULT) {
+			__ASSERT(false, "cannot unmap %p\n", va);
+
+			ret = ret2;
+		}
+	}
+
+	k_spin_unlock(&sys_mm_drv_common_lock, key);
+
+out:
+	return ret;
+}
+#endif
 
 int sys_mm_drv_page_phys_get(void *virt, uintptr_t *phys)
 {
@@ -721,8 +790,9 @@ static int sys_mm_drv_mm_init(const struct device *dev)
 	size_t unused_size = CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_SIZE -
 			     UNUSED_L2_START_ALIGNED;
 
-	ret = sys_mm_drv_unmap_region(UINT_TO_POINTER(UNUSED_L2_START_ALIGNED),
-				      unused_size);
+	ret = sys_mm_drv_unmap_region_initial(UINT_TO_POINTER(UNUSED_L2_START_ALIGNED),
+					      unused_size);
+
 
 	/* Need to reset max pages statistics after unmap */
 	for (int i = 0; i < L2_SRAM_BANK_NUM; i++) {
@@ -770,18 +840,25 @@ static void adsp_mm_save_context(void *storage_buffer)
 
 		if (((tlb_entries[entry_idx] & TLB_PADDR_MASK) != entry) ||
 		    ((tlb_entries[entry_idx] & TLB_ENABLE_BIT) != TLB_ENABLE_BIT)) {
-			/* this page needs remapping, invalidate cache to avoid stalled data
-			 * all cache data has been flushed before
-			 * do this for pages to remap only
-			 */
-			sys_cache_data_invd_range(UINT_TO_POINTER(phys_addr),
-						  CONFIG_MM_DRV_PAGE_SIZE);
+			/* This page needs remapping */
 
 			/* Enable the translation in the TLB entry */
 			entry |= TLB_ENABLE_BIT;
 
 			/* map the page 1:1 virtual to physical */
 			tlb_entries[entry_idx] = entry;
+
+#ifdef CONFIG_MMU
+			arch_mem_map(UINT_TO_POINTER(phys_addr), phys_addr, CONFIG_MM_DRV_PAGE_SIZE,
+				     K_MEM_CACHE_WB | K_MEM_PERM_RW);
+#endif
+
+			/* Invalidate cache to avoid stalled data
+			 * all cache data has been flushed before
+			 * do this for pages to remap only
+			 */
+			sys_cache_data_invd_range(UINT_TO_POINTER(phys_addr),
+						  CONFIG_MM_DRV_PAGE_SIZE);
 		}
 
 		/* save physical address */

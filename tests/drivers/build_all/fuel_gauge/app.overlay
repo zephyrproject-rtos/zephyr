@@ -1,0 +1,65 @@
+/*
+ * Copyright (c) 2024 TOKITA Hiroshi
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+ #include <zephyr/dt-bindings/i2c/i2c.h>
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			gpio-controller;
+			reg = <0xdeadbeef 0x1000>;
+			#gpio-cells = <0x2>;
+			status = "okay";
+		};
+
+		test_i2c: i2c@11112222 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,i2c";
+			reg = <0x11112222 0x1000>;
+			status = "okay";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+
+			#include "i2c.dtsi"
+		};
+
+		test_adc: adc@adc0adc0 {
+			compatible = "vnd,adc";
+			reg = <0xadc0adc0 0x1000>;
+			#io-channel-cells = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+
+			channel@0 {
+				reg = <0>;
+				zephyr,gain = "ADC_GAIN_1";
+				zephyr,reference = "ADC_REF_VDD_1";
+				zephyr,acquisition-time = <0>;
+			};
+		};
+
+		test_vbatt: vbatt {
+			compatible = "voltage-divider";
+			io-channels = <&test_adc 0>;
+			output-ohms = <180000>;
+			full-ohms = <(1500000 + 180000)>;
+			power-gpios = <&gpio0 16 0>;
+		};
+
+		test_fuel_gauge: fuel_gauge {
+			compatible = "zephyr,fuel-gauge-composite";
+			status = "okay";
+			battery-voltage = <&test_vbatt>;
+			device-chemistry = "lithium-ion-polymer";
+			ocv-capacity-table-0 = <0>;
+			charge-full-design-microamp-hours = <1350000>;
+		};
+	};
+};

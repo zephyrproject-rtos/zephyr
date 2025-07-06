@@ -67,7 +67,7 @@ static void test_config_psk(int s_sock, int c_sock)
 
 	zassert_equal(tls_credential_add(PSK_TAG, TLS_CREDENTIAL_PSK,
 					 psk, sizeof(psk)),
-		      0, "Failed to register PSK %d");
+		      0, "Failed to register PSK");
 	zassert_equal(tls_credential_add(PSK_TAG, TLS_CREDENTIAL_PSK_ID,
 					 psk_id, strlen(psk_id)),
 		      0, "Failed to register PSK ID");
@@ -842,6 +842,7 @@ ZTEST(net_socket_tls, test_close_while_accept)
 	zassert_equal(errno, EINTR, "Unexpected errno value: %d", errno);
 
 	test_work_wait(&close_work_data.work);
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
 }
 
 ZTEST(net_socket_tls, test_close_while_recv)
@@ -915,7 +916,7 @@ ZTEST(net_socket_tls, test_connect_closed_port)
 	zassert_equal(zsock_connect(c_sock, (struct sockaddr *)&s_saddr,
 				    sizeof(s_saddr)),
 		      -1, "connect succeed");
-	zassert_equal(errno, ETIMEDOUT,
+	zassert_equal(errno, ECONNREFUSED,
 		      "connect should fail, got %d", errno);
 
 	test_sockets_close();
@@ -1057,6 +1058,7 @@ ZTEST(net_socket_tls, test_accept_non_block)
 	zassert_equal(errno, EAGAIN, "Unexpected errno value: %d", errno);
 
 	test_sockets_close();
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
 }
 
 ZTEST(net_socket_tls, test_accept_invalid_handshake_data)
@@ -1081,6 +1083,7 @@ ZTEST(net_socket_tls, test_accept_invalid_handshake_data)
 	zassert_equal(errno, ECONNABORTED, "Unexpected errno value: %d", errno);
 
 	test_sockets_close();
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
 }
 
 ZTEST(net_socket_tls, test_recv_non_block)

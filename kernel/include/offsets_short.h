@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_KERNEL_INCLUDE_OFFSETS_SHORT_H_
 #define ZEPHYR_KERNEL_INCLUDE_OFFSETS_SHORT_H_
 
-#include <offsets.h>
+#include <zephyr/offsets.h>
 #include <offsets_short_arch.h>
 
 /* kernel */
@@ -33,9 +33,6 @@
 
 #define _kernel_offset_to_idle \
 	(___kernel_t_idle_OFFSET)
-
-#define _kernel_offset_to_current_fp \
-	(___kernel_t_current_fp_OFFSET)
 
 #define _kernel_offset_to_ready_q_cache \
 	(___kernel_t_ready_q_OFFSET + ___ready_q_t_cache_OFFSET)

@@ -31,18 +31,26 @@
 #include "lll/lll_df_types.h"
 #include "lll_sync.h"
 #include "lll_sync_iso.h"
+#include "lll_conn.h"
+#include "lll_conn_iso.h"
 
 #include "isoal.h"
+
+#include "ull_tx_queue.h"
 
 #include "ull_scan_types.h"
 #include "ull_sync_types.h"
 #include "ull_iso_types.h"
+#include "ull_conn_types.h"
+#include "ull_conn_iso_types.h"
 
 #include "ull_internal.h"
 #include "ull_scan_internal.h"
 #include "ull_sync_internal.h"
 #include "ull_iso_internal.h"
 #include "ull_sync_iso_internal.h"
+#include "ull_conn_internal.h"
+#include "ull_conn_iso_internal.h"
 
 #include "ll.h"
 
@@ -52,7 +60,9 @@
 
 static int init_reset(void);
 static struct ll_sync_iso_set *sync_iso_get(uint8_t handle);
+static struct ll_sync_iso_set *sync_iso_alloc(uint8_t handle);
 static uint8_t sync_iso_handle_get(struct ll_sync_iso_set *sync);
+static uint8_t sync_iso_handle_to_index(uint8_t handle);
 static struct stream *sync_iso_stream_acquire(void);
 static uint16_t sync_iso_stream_handle_get(struct lll_sync_iso_stream *stream);
 static void timeout_cleanup(struct ll_sync_iso_set *sync_iso);
@@ -64,6 +74,8 @@ static void ticker_update_op_cb(uint32_t status, void *param);
 static void ticker_stop_op_cb(uint32_t status, void *param);
 static void sync_iso_disable(void *param);
 static void disabled_cb(void *param);
+static void lll_flush(void *param);
+static void stop_ticker(struct ll_sync_iso_set *sync_iso, ticker_op_func fp_op_func);
 
 static memq_link_t link_lll_prepare;
 static struct mayfly mfy_lll_prepare = {0U, 0U, &link_lll_prepare, NULL, NULL};
@@ -89,23 +101,23 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 	int8_t last_index;
 
 	sync = ull_sync_is_enabled_get(sync_handle);
-	if (!sync || sync->iso.sync_iso) {
+	if (!sync) {
+		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
+	}
+
+	if (sync->iso.sync_iso) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
 	sync_iso = sync_iso_get(big_handle);
-	if (!sync_iso) {
-		/* Host requested more than supported number of ISO Synchronized
-		 * Receivers.
-		 * Or probably HCI handles where not translated to zero-indexed
-		 * controller handles?
-		 */
-		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+	if (sync_iso) {
+		/* BIG handle already in use */
+		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	/* Check if this ISO already is associated with a Periodic Sync */
-	if (sync_iso->sync) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
+	sync_iso = sync_iso_alloc(big_handle);
+	if (!sync_iso) {
+		return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
 	}
 
 	/* TODO: Check remaining parameters */
@@ -123,13 +135,20 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 		last_index = bis[i];
 	}
 
+	/* Check if encryption supported */
+	if (!IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC) &&
+	    encryption) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	};
+
 	/* Check if requested encryption matches */
 	if (encryption != sync->enc) {
 		return BT_HCI_ERR_ENC_MODE_NOT_ACCEPTABLE;
 	}
 
 	/* Check if free BISes available */
-	if (mem_free_count_get(stream_free) < num_bis) {
+	if ((num_bis > BT_CTLR_SYNC_ISO_STREAM_MAX) ||
+	    (mem_free_count_get(stream_free) < num_bis)) {
 		return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
 	}
 
@@ -166,6 +185,7 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 
 	/* Initialize sync LLL context */
 	lll = &sync_iso->lll;
+	lll->lazy_prepare = 0U;
 	lll->latency_prepare = 0U;
 	lll->latency_event = 0U;
 	lll->window_widening_prepare_us = 0U;
@@ -175,7 +195,7 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 	lll->cssn_next = 0U;
 	lll->term_reason = 0U;
 
-	if (encryption) {
+	if (IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC) && encryption) {
 		const uint8_t BIG1[16] = {0x31, 0x47, 0x49, 0x42, };
 		const uint8_t BIG2[4]  = {0x32, 0x47, 0x49, 0x42};
 		uint8_t igltk[16];
@@ -220,11 +240,16 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 
 uint8_t ll_big_sync_terminate(uint8_t big_handle, void **rx)
 {
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, lll_flush};
+
 	struct ll_sync_iso_set *sync_iso;
 	memq_link_t *link_sync_estab;
 	struct node_rx_pdu *node_rx;
 	memq_link_t *link_sync_lost;
 	struct ll_sync_set *sync;
+	struct k_sem sem;
+	uint32_t ret;
 	int err;
 
 	sync_iso = sync_iso_get(big_handle);
@@ -269,12 +294,26 @@ uint8_t ll_big_sync_terminate(uint8_t big_handle, void **rx)
 	}
 
 	err = ull_ticker_stop_with_mark((TICKER_ID_SCAN_SYNC_ISO_BASE +
-					 big_handle), sync_iso, &sync_iso->lll);
-	LL_ASSERT(err == 0 || err == -EALREADY);
+					 sync_iso_handle_to_index(big_handle)),
+					 sync_iso, &sync_iso->lll);
+	LL_ASSERT_INFO2(err == 0 || err == -EALREADY, big_handle, err);
 	if (err) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
+	/* Do a blocking mayfly call to LLL context for flushing any outstanding
+	 * operations.
+	 */
+	sync_iso->flush_sem = &sem;
+	k_sem_init(&sem, 0, 1);
+	mfy.param = &sync_iso->lll;
+
+	ret = mayfly_enqueue(TICKER_USER_ID_THREAD, TICKER_USER_ID_LLL, 0, &mfy);
+	LL_ASSERT(!ret);
+	k_sem_take(&sem, K_FOREVER);
+	sync_iso->flush_sem = NULL;
+
+	/* Release resources */
 	ull_sync_iso_stream_release(sync_iso);
 
 	link_sync_lost = sync_iso->node_rx_lost.rx.hdr.link;
@@ -307,9 +346,9 @@ int ull_sync_iso_reset(void)
 	return 0;
 }
 
-uint8_t ull_sync_iso_lll_handle_get(struct lll_sync_iso *lll)
+uint8_t ull_sync_iso_lll_index_get(struct lll_sync_iso *lll)
 {
-	return sync_iso_handle_get(HDR_LLL2ULL(lll));
+	return ARRAY_INDEX(ll_sync_iso, HDR_LLL2ULL(lll));
 }
 
 struct ll_sync_iso_set *ull_sync_iso_by_stream_get(uint16_t handle)
@@ -380,8 +419,6 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	struct pdu_big_info *bi;
 	uint32_t ready_delay_us;
 	uint32_t ticks_expire;
-	uint32_t ctrl_spacing;
-	uint32_t pdu_spacing;
 	uint32_t interval_us;
 	uint32_t ticks_diff;
 	struct pdu_adv *pdu;
@@ -448,14 +485,29 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	lll->sub_interval = PDU_BIG_INFO_SUB_INTERVAL_GET(bi);
 	lll->max_pdu = bi->max_pdu;
 	lll->pto = PDU_BIG_INFO_PTO_GET(bi);
+	lll->bis_spacing = PDU_BIG_INFO_SPACING_GET(bi);
+	lll->irc = PDU_BIG_INFO_IRC_GET(bi);
 	if (lll->pto) {
-		lll->ptc = lll->bn;
+		uint8_t nse;
+
+		nse = lll->irc * lll->bn; /* 4 bits * 3 bits, total 7 bits */
+		if (nse >= lll->nse) {
+			return;
+		}
+
+		lll->ptc = lll->nse - nse;
+
+		/* FIXME: Do not remember why ptc is 4 bits, it should be 5 bits as ptc is a
+		 *        running buffer offset related to nse.
+		 *        Fix ptc and ptc_curr definitions, until then we keep an assertion check
+		 *        here.
+		 */
+		LL_ASSERT(lll->ptc <= BIT_MASK(4));
 	} else {
 		lll->ptc = 0U;
 	}
-	lll->bis_spacing = PDU_BIG_INFO_SPACING_GET(bi);
-	lll->irc = PDU_BIG_INFO_IRC_GET(bi);
 	lll->sdu_interval = PDU_BIG_INFO_SDU_INTERVAL_GET(bi);
+	lll->max_sdu = PDU_BIG_INFO_MAX_SDU_GET(bi);
 
 	/* Pick the 39-bit payload count, 1 MSb is framing bit */
 	lll->payload_count = (uint64_t)bi->payload_count_framing[0];
@@ -463,8 +515,13 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	lll->payload_count |= (uint64_t)bi->payload_count_framing[2] << 16;
 	lll->payload_count |= (uint64_t)bi->payload_count_framing[3] << 24;
 	lll->payload_count |= (uint64_t)(bi->payload_count_framing[4] & 0x7f) << 32;
+	lll->framing = (bi->payload_count_framing[4] & 0x80) >> 7;
 
-	if (lll->enc && (bi_size == PDU_BIG_INFO_ENCRYPTED_SIZE)) {
+	/* Set establishment event countdown */
+	lll->establish_events = CONN_ESTAB_COUNTDOWN;
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC) &&
+	    lll->enc && (bi_size == PDU_BIG_INFO_ENCRYPTED_SIZE)) {
 		const uint8_t BIG3[4]  = {0x33, 0x47, 0x49, 0x42};
 		struct ccm *ccm_rx;
 		uint8_t gsk[16];
@@ -526,10 +583,15 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	sync_iso_offset_us += PDU_BIG_INFO_OFFS_GET(bi) *
 			      lll->window_size_event_us;
 	/* Skip to first selected BIS subevent */
-	/* FIXME: add support for interleaved packing */
 	stream = ull_sync_iso_stream_get(lll->stream_handle[0]);
-	sync_iso_offset_us += (stream->bis_index - 1U) * lll->sub_interval *
-			      ((lll->irc * lll->bn) + lll->ptc);
+	if (lll->bis_spacing >= (lll->sub_interval * lll->nse)) {
+		sync_iso_offset_us += (stream->bis_index - 1U) *
+				      lll->sub_interval *
+				      ((lll->irc * lll->bn) + lll->ptc);
+	} else {
+		sync_iso_offset_us += (stream->bis_index - 1U) *
+				      lll->bis_spacing;
+	}
 	sync_iso_offset_us -= PDU_AC_US(pdu->len, sync_iso->sync->lll.phy,
 					ftr->phy_flags);
 	sync_iso_offset_us -= EVENT_TICKER_RES_MARGIN_US;
@@ -539,11 +601,6 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	interval_us -= lll->window_widening_periodic_us;
 
 	/* Calculate ISO Receiver BIG event timings */
-	pdu_spacing = PDU_BIS_US(lll->max_pdu, lll->enc, lll->phy,
-				 PHY_FLAGS_S8) +
-		      EVENT_MSS_US;
-	ctrl_spacing = PDU_BIS_US(sizeof(struct pdu_big_ctrl), lll->enc,
-				  lll->phy, PHY_FLAGS_S8);
 
 	/* Number of maximum BISes to sync from the first BIS to sync */
 	/* NOTE: When ULL scheduling is implemented for subevents, then update
@@ -563,42 +620,48 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	 */
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_ISO_RESERVE_MAX)) {
-		/* Maximum time reservation for both sequential and interleaved
+		uint32_t ctrl_spacing_us;
+
+		/* Maximum time reservation for sequential and interleaved
 		 * packing.
 		 */
-		slot_us = (pdu_spacing * lll->nse * num_bis) + ctrl_spacing;
+		if (lll->bis_spacing >= (lll->sub_interval * lll->nse)) {
+			slot_us = lll->sub_interval * lll->nse * num_bis;
+		} else {
+			slot_us = lll->bis_spacing * lll->nse * num_bis;
+		}
+
+		ctrl_spacing_us = PDU_BIS_US(sizeof(struct pdu_big_ctrl),
+					     lll->enc, lll->phy, PHY_FLAGS_S8);
+		slot_us += ctrl_spacing_us;
 
 	} else if (lll->bis_spacing >= (lll->sub_interval * lll->nse)) {
-		/* Time reservation omitting PTC subevents in sequetial
+		/* Time reservation omitting PTC subevents in sequential
 		 * packing.
 		 */
-		slot_us = pdu_spacing * ((lll->nse * num_bis) - lll->ptc);
+		slot_us = lll->sub_interval * ((lll->nse * num_bis) - lll->ptc);
 
 	} else {
 		/* Time reservation omitting PTC subevents in interleaved
 		 * packing.
 		 */
-		slot_us = pdu_spacing * ((lll->nse - lll->ptc) * num_bis);
+		slot_us = lll->bis_spacing * ((lll->nse - lll->ptc) * num_bis);
 	}
 
 	/* Add radio ready delay */
 	slot_us += ready_delay_us;
+	slot_us += lll->window_widening_periodic_us << 1U;
+	slot_us += EVENT_JITTER_US << 1U;
+	slot_us += EVENT_TICKER_RES_MARGIN_US << 2U;
 
 	/* Add implementation defined radio event overheads */
 	if (IS_ENABLED(CONFIG_BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX)) {
 		slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 	}
 
-	/* TODO: active_to_start feature port */
-	sync_iso->ull.ticks_active_to_start = 0U;
-	sync_iso->ull.ticks_prepare_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
-	sync_iso->ull.ticks_preempt_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
 	sync_iso->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(slot_us);
 
-	ticks_slot_offset = MAX(sync_iso->ull.ticks_active_to_start,
-				sync_iso->ull.ticks_prepare_to_start);
+	ticks_slot_offset = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 		ticks_slot_overhead = ticks_slot_offset;
 	} else {
@@ -627,7 +690,8 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 
 	handle = sync_iso_handle_get(sync_iso);
 	ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
-			   (TICKER_ID_SCAN_SYNC_ISO_BASE + handle),
+			   (TICKER_ID_SCAN_SYNC_ISO_BASE +
+			    sync_iso_handle_to_index(handle)),
 			   ftr->ticks_anchor - ticks_slot_offset,
 			   HAL_TICKER_US_TO_TICKS(sync_iso_offset_us),
 			   HAL_TICKER_US_TO_TICKS(interval_us),
@@ -651,22 +715,33 @@ void ull_sync_iso_estab_done(struct node_rx_event_done *done)
 	struct node_rx_sync_iso *se;
 	struct node_rx_pdu *rx;
 
-	/* switch to normal prepare */
-	mfy_lll_prepare.fp = lll_sync_iso_prepare;
+	if (done->extra.trx_cnt || done->extra.estab_failed) {
+		/* Switch to normal prepare */
+		mfy_lll_prepare.fp = lll_sync_iso_prepare;
 
-	/* Get reference to ULL context */
-	sync_iso = CONTAINER_OF(done->param, struct ll_sync_iso_set, ull);
+		/* Get reference to ULL context */
+		sync_iso = CONTAINER_OF(done->param, struct ll_sync_iso_set, ull);
 
-	/* Prepare BIG Sync Established */
-	rx = (void *)sync_iso->sync->iso.node_rx_estab;
-	rx->hdr.type = NODE_RX_TYPE_SYNC_ISO;
-	rx->hdr.handle = sync_iso_handle_get(sync_iso);
-	rx->rx_ftr.param = sync_iso;
+		/* Prepare BIG Sync Established */
+		rx = (void *)sync_iso->sync->iso.node_rx_estab;
+		rx->hdr.type = NODE_RX_TYPE_SYNC_ISO;
+		rx->hdr.handle = sync_iso_handle_get(sync_iso);
+		rx->rx_ftr.param = sync_iso;
 
-	se = (void *)rx->pdu;
-	se->status = BT_HCI_ERR_SUCCESS;
+		/* status value is stored in the PDU member of the node rx */
+		se = (void *)rx->pdu;
+		if (done->extra.estab_failed) {
+			if (sync_iso->lll.term_reason != BT_HCI_ERR_SUCCESS) {
+				se->status = sync_iso->lll.term_reason;
+			} else {
+				se->status = BT_HCI_ERR_CONN_FAIL_TO_ESTAB;
+			}
+		} else {
+			se->status = BT_HCI_ERR_SUCCESS;
+		}
 
-	ll_rx_put_sched(rx->hdr.link, rx);
+		ll_rx_put_sched(rx->hdr.link, rx);
+	}
 
 	ull_sync_iso_done(done);
 }
@@ -688,10 +763,14 @@ void ull_sync_iso_done(struct node_rx_event_done *done)
 
 	/* Events elapsed used in timeout checks below */
 	latency_event = lll->latency_event;
-	if (lll->latency_prepare) {
-		elapsed_event = latency_event + lll->latency_prepare;
-	} else {
-		elapsed_event = latency_event + 1U;
+
+	/* Check for establishmet failure */
+	if (done->extra.estab_failed) {
+		/* Stop Sync ISO Ticker directly. Establishment failure has been
+		 * notified.
+		 */
+		stop_ticker(sync_iso, NULL);
+		return;
 	}
 
 	/* Sync drift compensation and new skip calculation
@@ -716,6 +795,8 @@ void ull_sync_iso_done(struct node_rx_event_done *done)
 			sync_iso->timeout_expire = sync_iso->timeout_reload;
 		}
 	}
+
+	elapsed_event = lll->lazy_prepare + 1U;
 
 	/* check timeout */
 	force = 0U;
@@ -756,7 +837,7 @@ void ull_sync_iso_done(struct node_rx_event_done *done)
 		ticker_status = ticker_update(TICKER_INSTANCE_ID_CTLR,
 					      TICKER_USER_ID_ULL_HIGH,
 					      (TICKER_ID_SCAN_SYNC_ISO_BASE +
-					       handle),
+					       sync_iso_handle_to_index(handle)),
 					      ticks_drift_plus,
 					      ticks_drift_minus, 0U, 0U,
 					      lazy, force,
@@ -773,8 +854,6 @@ void ull_sync_iso_done_terminate(struct node_rx_event_done *done)
 	struct ll_sync_iso_set *sync_iso;
 	struct lll_sync_iso *lll;
 	struct node_rx_pdu *rx;
-	uint8_t handle;
-	uint32_t ret;
 
 	/* Get reference to ULL context */
 	sync_iso = CONTAINER_OF(done->param, struct ll_sync_iso_set, ull);
@@ -788,24 +867,7 @@ void ull_sync_iso_done_terminate(struct node_rx_event_done *done)
 	*((uint8_t *)rx->pdu) = lll->term_reason;
 
 	/* Stop Sync ISO Ticker */
-	handle = sync_iso_handle_get(sync_iso);
-	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
-			  (TICKER_ID_SCAN_SYNC_ISO_BASE + handle),
-			  ticker_stop_op_cb, (void *)sync_iso);
-	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
-		  (ret == TICKER_STATUS_BUSY));
-}
-
-uint32_t ull_big_sync_delay(const struct lll_sync_iso *lll_iso)
-{
-	/* BT Core v5.4 - Vol 6, Part B, Section 4.4.6.4:
-	 * BIG_Sync_Delay = (Num_BIS – 1) × BIS_Spacing + (NSE – 1) × Sub_Interval + MPT.
-	 */
-	return (lll_iso->num_bis - 1) * lll_iso->bis_spacing +
-		(lll_iso->nse - 1) * lll_iso->sub_interval +
-		BYTES2US(PDU_OVERHEAD_SIZE(lll_iso->phy) +
-			lll_iso->max_pdu + (lll_iso->enc ? 4 : 0),
-			lll_iso->phy);
+	stop_ticker(sync_iso, ticker_stop_op_cb);
 }
 
 static void disable(uint8_t sync_idx)
@@ -815,9 +877,14 @@ static void disable(uint8_t sync_idx)
 
 	sync_iso = &ll_sync_iso[sync_idx];
 
+	/* Stop any active resume ticker */
+	(void)ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
+			  TICKER_ID_SCAN_SYNC_ISO_RESUME_BASE + sync_idx,
+			  NULL, NULL);
+
 	err = ull_ticker_stop_with_mark(TICKER_ID_SCAN_SYNC_ISO_BASE +
 					sync_idx, sync_iso, &sync_iso->lll);
-	LL_ASSERT(err == 0 || err == -EALREADY);
+	LL_ASSERT_INFO2(err == 0 || err == -EALREADY, sync_idx, err);
 }
 
 static int init_reset(void)
@@ -840,16 +907,35 @@ static int init_reset(void)
 
 static struct ll_sync_iso_set *sync_iso_get(uint8_t handle)
 {
-	if (handle >= CONFIG_BT_CTLR_SCAN_SYNC_ISO_SET) {
-		return NULL;
+	for (uint8_t idx = 0; idx < CONFIG_BT_CTLR_SCAN_SYNC_ISO_SET; idx++) {
+		if (ll_sync_iso[idx].sync && ll_sync_iso[idx].big_handle == handle) {
+			return &ll_sync_iso[idx];
+		}
 	}
 
-	return &ll_sync_iso[handle];
+	return NULL;
+}
+
+static struct ll_sync_iso_set *sync_iso_alloc(uint8_t handle)
+{
+	for (uint8_t idx = 0; idx < CONFIG_BT_CTLR_SCAN_SYNC_ISO_SET; idx++) {
+		if (!ll_sync_iso[idx].sync) {
+			ll_sync_iso[idx].big_handle = handle;
+			return &ll_sync_iso[idx];
+		}
+	}
+
+	return NULL;
 }
 
 static uint8_t sync_iso_handle_get(struct ll_sync_iso_set *sync)
 {
-	return mem_index_get(sync, ll_sync_iso, sizeof(*sync));
+	return sync->big_handle;
+}
+
+static uint8_t sync_iso_handle_to_index(uint8_t handle)
+{
+	return ARRAY_INDEX(ll_sync_iso, sync_iso_get(handle));
 }
 
 static struct stream *sync_iso_stream_acquire(void)
@@ -865,23 +951,22 @@ static uint16_t sync_iso_stream_handle_get(struct lll_sync_iso_stream *stream)
 static void timeout_cleanup(struct ll_sync_iso_set *sync_iso)
 {
 	struct node_rx_pdu *rx;
-	uint8_t handle;
-	uint32_t ret;
 
 	/* Populate the Sync Lost which will be enqueued in disabled_cb */
 	rx = (void *)&sync_iso->node_rx_lost;
 	rx->hdr.handle = sync_iso_handle_get(sync_iso);
-	rx->hdr.type = NODE_RX_TYPE_SYNC_ISO_LOST;
 	rx->rx_ftr.param = sync_iso;
-	*((uint8_t *)rx->pdu) = BT_HCI_ERR_CONN_TIMEOUT;
+
+	if (mfy_lll_prepare.fp == lll_sync_iso_prepare) {
+		rx->hdr.type = NODE_RX_TYPE_SYNC_ISO_LOST;
+		*((uint8_t *)rx->pdu) = BT_HCI_ERR_CONN_TIMEOUT;
+	} else {
+		rx->hdr.type = NODE_RX_TYPE_SYNC_ISO;
+		*((uint8_t *)rx->pdu) = BT_HCI_ERR_CONN_FAIL_TO_ESTAB;
+	}
 
 	/* Stop Sync ISO Ticker */
-	handle = sync_iso_handle_get(sync_iso);
-	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
-			  (TICKER_ID_SCAN_SYNC_ISO_BASE + handle),
-			  ticker_stop_op_cb, (void *)sync_iso);
-	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
-		  (ret == TICKER_STATUS_BUSY));
+	stop_ticker(sync_iso, ticker_stop_op_cb);
 }
 
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
@@ -988,11 +1073,30 @@ static void sync_iso_disable(void *param)
 	}
 }
 
+static void lll_flush(void *param)
+{
+	struct ll_sync_iso_set *sync_iso;
+	uint8_t handle;
+
+	/* Get reference to ULL context */
+	sync_iso = HDR_LLL2ULL(param);
+	handle = sync_iso_handle_get(sync_iso);
+
+	lll_sync_iso_flush(handle, param);
+
+	if (sync_iso->flush_sem) {
+		k_sem_give(sync_iso->flush_sem);
+	}
+}
+
 static void disabled_cb(void *param)
 {
+	static memq_link_t mfy_link;
+	static struct mayfly mfy = {0U, 0U, &mfy_link, NULL, lll_flush};
 	struct ll_sync_iso_set *sync_iso;
 	struct node_rx_pdu *rx;
 	memq_link_t *link;
+	uint32_t ret;
 
 	/* Get reference to ULL context */
 	sync_iso = HDR_LLL2ULL(param);
@@ -1005,4 +1109,30 @@ static void disabled_cb(void *param)
 
 	/* Enqueue the BIG sync lost towards ULL context */
 	ll_rx_put_sched(link, rx);
+
+	mfy.param = param;
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
+			     TICKER_USER_ID_LLL, 0U, &mfy);
+	LL_ASSERT(!ret);
+}
+
+static void stop_ticker(struct ll_sync_iso_set *sync_iso, ticker_op_func fp_op_func)
+{
+
+	uint8_t handle;
+	uint32_t ret;
+
+	handle = sync_iso_handle_get(sync_iso);
+
+	(void)ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
+			  TICKER_ID_SCAN_SYNC_ISO_RESUME_BASE +
+			  sync_iso_handle_to_index(handle), NULL, NULL);
+
+	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
+			  TICKER_ID_SCAN_SYNC_ISO_BASE +
+			  sync_iso_handle_to_index(handle),
+			  fp_op_func, fp_op_func ? (void *)sync_iso : NULL);
+
+	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+		  (ret == TICKER_STATUS_BUSY));
 }

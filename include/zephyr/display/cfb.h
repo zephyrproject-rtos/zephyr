@@ -9,8 +9,8 @@
  * @brief Public Monochrome Character Framebuffer API
  */
 
-#ifndef __CFB_H__
-#define __CFB_H__
+#ifndef ZEPHYR_INCLUDE_DISPLAY_CFB_H_
+#define ZEPHYR_INCLUDE_DISPLAY_CFB_H_
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/display.h>
@@ -28,7 +28,7 @@ extern "C" {
  */
 
 enum cfb_display_param {
-	CFB_DISPLAY_HEIGH		= 0,
+	CFB_DISPLAY_HEIGHT		= 0,
 	CFB_DISPLAY_WIDTH,
 	CFB_DISPLAY_PPT,
 	CFB_DISPLAY_ROWS,
@@ -137,6 +137,17 @@ int cfb_draw_rect(const struct device *dev, const struct cfb_position *start,
 		  const struct cfb_position *end);
 
 /**
+ * @brief Draw a circle.
+ *
+ * @param dev Pointer to device structure for driver instance
+ * @param start Center position of the circle
+ * @param radius Radius of the circle
+ *
+ * @return 0 on success, negative value otherwise
+ */
+int cfb_draw_circle(const struct device *dev, const struct cfb_position *start, uint16_t radius);
+
+/**
  * @brief Clear framebuffer.
  *
  * @param dev Pointer to device structure for driver instance
@@ -241,6 +252,13 @@ int cfb_get_numof_fonts(const struct device *dev);
  */
 int cfb_framebuffer_init(const struct device *dev);
 
+/**
+ * @brief Deinitialize Character Framebuffer.
+ *
+ * @param dev Pointer to device structure for driver instance
+ */
+void cfb_framebuffer_deinit(const struct device *dev);
+
 #ifdef __cplusplus
 }
 #endif
@@ -249,4 +267,4 @@ int cfb_framebuffer_init(const struct device *dev);
  * @}
  */
 
-#endif /* __CFB_H__ */
+#endif /* ZEPHYR_INCLUDE_DISPLAY_CFB_H_ */

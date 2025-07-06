@@ -23,7 +23,7 @@ static int64_t disk_access_device_size(struct ext2_data *fs)
 {
 	struct disk_data *disk = fs->backend;
 
-	return disk->sector_count * disk->sector_size;
+	return (uint64_t)disk->sector_count * (uint64_t)disk->sector_size;
 }
 
 static int64_t disk_access_write_size(struct ext2_data *fs)

@@ -66,14 +66,14 @@ Freedom-K64F Board
 ===================
 
 These are instructions for how to use this sample application running on a
-Freedom-K64F board. Unlike running it on QEMU, :ref:`Freedom-K64F board
+Freedom-K64F board. Unlike running it on QEMU, :zephyr:board:`Freedom-K64F board
 <frdm_k64f>` network configuration for IPv4 will rely on DHCPv4. You cad modify
 the :file:`prj_frdm_k64f.conf` to set static IPv4 addresses if it is really needed.
 
 For detailed instructions about building, flashing and using the serial console
-logs, follow the  :ref:`Freedom-K64F board <frdm_k64f>` documentation section.
+logs, follow the  :zephyr:board:`Freedom-K64F board <frdm_k64f>` documentation section.
 
-Connect ethernet cable from :ref:`Freedom-K64F <frdm_k64f>` board to a
+Connect ethernet cable from :zephyr:board:`Freedom-K64F <frdm_k64f>` board to a
 local network providing IPv4 address configuration via DHCPv4. Creating your own
 DHCP server on a local network is not in the scope of this README.
 
@@ -85,7 +85,7 @@ Build Zephyr samples/net/telnet application:
    :goals: build
    :compact:
 
-Flash the resulting Zephyr binary following the :ref:`Freedom-K64F <frdm_k64f>`
+Flash the resulting Zephyr binary following the :zephyr:board:`Freedom-K64F <frdm_k64f>`
 board documentation noted above.
 
 From your host computer, open a serial console to your board:
@@ -94,7 +94,7 @@ From your host computer, open a serial console to your board:
 
     $ sudo screen /dev/ttyACM0 115200
 
-Plug the Ethernet cable to the :ref:`Freedom-K64F <frdm_k64f>` board.
+Plug the Ethernet cable to the :zephyr:board:`Freedom-K64F <frdm_k64f>` board.
 Reset the board, you should see first on the console:
 
 .. code-block:: console
@@ -128,3 +128,9 @@ On your linux host:
 
 You are now connected, and as for the UART console, you can type in
 your commands and get the output through your telnet client.
+
+Wi-Fi
+=====
+
+The IPv4 Wi-Fi support can be enabled in the sample with
+:ref:`Wi-Fi snippet <snippet-wifi-ipv4>`.

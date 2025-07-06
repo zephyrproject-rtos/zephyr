@@ -1,0 +1,19 @@
+identifier: ek_ra8d1
+name: Renesas EK-RA8D1
+type: mcu
+arch: arm
+ram: 1024
+flash: 2048
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - uart
+  - watchdog
+  - usbd
+  - display
+  - counter
+  - i2s
+  - i3c
+vendor: renesas

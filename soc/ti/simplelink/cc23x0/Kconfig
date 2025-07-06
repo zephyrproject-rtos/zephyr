@@ -1,0 +1,49 @@
+# Copyright (c) 2024 Texas Instruments Incorporated
+# Copyright (c) 2024 BayLibre, SAS
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_CC23X0
+	select ARM
+	select CPU_CORTEX_M0PLUS
+	select CPU_CORTEX_M_HAS_VTOR
+	select SOC_RESET_HOOK
+	select TICKLESS_KERNEL
+	select DYNAMIC_INTERRUPTS
+	select HAS_CC23X0_SDK
+	select HAS_TI_CCFG
+	select TI_SIMPLELINK_DYNAMIC_DPL_OBJECTS
+	select EVENTS
+	select DYNAMIC_THREAD
+	select DYNAMIC_THREAD_ALLOC
+	select THREAD_STACK_INFO
+	select BUILD_OUTPUT_HEX
+	select BUILD_NO_GAP_FILL
+
+menu "Bootloader Configuration"
+depends on SOC_SERIES_CC23X0
+
+choice CC23X0_BLDR_VTOR_TYPE
+	prompt "Pointer to user bootloader vector table"
+	default CC23X0_BLDR_VTOR_TYPE_UNDEF
+
+config CC23X0_BLDR_VTOR_TYPE_UNDEF
+	bool "ROM serial bootloader"
+
+config CC23X0_BLDR_VTOR_TYPE_FORBID
+	bool "No bootloader invoked"
+
+config CC23X0_BLDR_VTOR_TYPE_USE_FCFG
+	bool "Use factory configuration"
+
+config CC23X0_BLDR_VTOR_TYPE_FLASH
+	bool "Use valid main flash address"
+
+endchoice # CC23X0_BLDR_VTOR_TYPE
+
+config CC23X0_BLDR_ENABLED
+	bool "Bootloader commands"
+	help
+	  If n, bootloader ignores all commands.
+
+endmenu # "Bootloader Configuration"

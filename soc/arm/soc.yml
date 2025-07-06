@@ -3,14 +3,22 @@ family:
   series:
   - name: mps2
     socs:
+    - name: an383
     - name: an385
+    - name: an386
+    - name: an500
     - name: an521
       cpuclusters:
       - name: cpu0
       - name: cpu1
   - name: mps3
     socs:
-    - name: an547
+    - name: corstone300
+    - name: corstone310
+  - name: mps4
+    socs:
+    - name: corstone315
+    - name: corstone320
   - name: musca
     socs:
     - name: musca_b1

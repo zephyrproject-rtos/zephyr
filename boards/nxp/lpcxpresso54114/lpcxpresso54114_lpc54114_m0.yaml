@@ -14,7 +14,6 @@ testing:
   ignore_tags:
     - net
 toolchain:
-  - xtools
   - zephyr
   - gnuarmemb
 vendor: nxp

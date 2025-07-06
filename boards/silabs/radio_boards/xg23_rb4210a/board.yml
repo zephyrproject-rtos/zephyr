@@ -1,0 +1,6 @@
+board:
+  name: xg23_rb4210a
+  full_name: EFR32xG23 868-915 MHz 20 dBm (xG23-RB4210A)
+  vendor: silabs
+  socs:
+    - name: efr32zg23b020f512im48

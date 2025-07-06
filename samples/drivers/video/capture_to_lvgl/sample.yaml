@@ -1,0 +1,23 @@
+sample:
+  name: Video capture to LVGL
+tests:
+  sample.video.capture_to_lvgl.shield.weact_ov2640_cam_module:
+    tags:
+      - video
+      - shield
+      - samples
+    extra_args: SHIELD=weact_ov2640_cam_module
+    harness: console
+    harness_config:
+      fixture: fixture_camera
+      type: multi_line
+      ordered: true
+      regex:
+        - "Device name"
+        - "Format"
+        - "Capture started"
+    platform_allow:
+      - mini_stm32h743
+    depends_on: video
+    integration_platforms:
+      - mini_stm32h743

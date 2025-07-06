@@ -64,4 +64,4 @@ Using other custom ISR
 ======================
 In order to provide a custom debug monitor interrupt, override ``z_arm_debug_monitor``
 symbol. Additionally, manual configuration of some registers is required
-(see :ref:`debug monitor sample<debugmon-sample>`).
+(see :zephyr:code-sample:`debugmon` sample).

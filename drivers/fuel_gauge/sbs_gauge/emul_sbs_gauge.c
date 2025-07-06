@@ -291,8 +291,9 @@ static int emul_sbs_fuel_gauge_set_battery_charging(const struct emul *target, u
 {
 	struct sbs_gauge_emul_data *data = target->data;
 
-	if (uV == 0 || uA == 0)
+	if (uV == 0 || uA == 0) {
 		return -EINVAL;
+	}
 
 	data->batt_state.uA = uA;
 	data->batt_state.uV = uV;

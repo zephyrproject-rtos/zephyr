@@ -194,7 +194,7 @@ extern const struct bt_mesh_comp comp;
  * with a 100ms interval.
  */
 static struct bt_mesh_test_gatt gatt_param = {
-#if defined(CONFIG_BT_EXT_ADV)
+#if !defined(CONFIG_BT_CTLR_LOW_LAT)
 	/* (total transmit duration) / (transmit interval) */
 	.transmits = 1500 / 100,
 	.interval = 100,
@@ -295,6 +295,9 @@ static void dut_pub_common(bool disable_bt)
 		ASSERT_OK_MSG(k_sem_take(&publish_sem, K_SECONDS(30)), "Pub timed out");
 	}
 
+	/* Allow publishing to finish before suspending. */
+	k_sleep(K_MSEC(100));
+
 	ASSERT_OK_MSG(bt_mesh_suspend(), "Failed to suspend Mesh.");
 
 	if (disable_bt) {
@@ -318,8 +321,29 @@ static void dut_pub_common(bool disable_bt)
 	ASSERT_OK(bt_mesh_suspend());
 }
 
+static void send_start(uint16_t duration, int err, void *cb_data)
+{
+	if (err) {
+		FAIL("Failed to send message (err %d)", err);
+	}
+}
+
+static void send_end(int err, void *cb_data)
+{
+	k_sem_give((struct k_sem *)cb_data);
+}
+
 static void dut_gatt_common(bool disable_bt)
 {
+	struct k_sem send_sem;
+
+	k_sem_init(&send_sem, 0, 1);
+
+	const struct bt_mesh_send_cb send_cb = {
+		.start = send_start,
+		.end = send_end,
+	};
+
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
 	bt_mesh_device_setup(&prov, &comp);
 	ASSERT_OK_MSG(bt_mesh_prov_enable(BT_MESH_PROV_GATT), "Failed to enable GATT provisioner");
@@ -336,8 +360,9 @@ static void dut_gatt_common(bool disable_bt)
 
 	/* Send a mesh message to notify Tester that DUT is about to be suspended. */
 	dut_status = DUT_SUSPENDED;
-	bt_mesh_test_send_over_adv(&dut_status, sizeof(enum dut_mesh_status));
-	k_sleep(K_MSEC(150));
+	bt_mesh_test_send_over_adv_cb(&dut_status, sizeof(enum dut_mesh_status), &send_cb,
+				      &send_sem);
+	ASSERT_OK(k_sem_take(&send_sem, K_MSEC(200)));
 
 	ASSERT_OK_MSG(bt_mesh_suspend(), "Failed to suspend Mesh.");
 
@@ -424,6 +449,11 @@ static void test_tester_gatt(void)
 	gatt_param.service = MESH_SERVICE_PROXY;
 	ASSERT_OK(bt_mesh_test_wait_for_packet(gatt_scan_cb, &publish_sem, 10));
 
+	/* Delay for low latency feature */
+	#if defined(CONFIG_BT_CTLR_LOW_LAT)
+	k_sleep(K_MSEC(100));
+	#endif
+
 	/* Allow DUT to suspend before scanning for gatt proxy beacons */
 	ASSERT_OK(bt_mesh_test_wait_for_packet(suspend_state_change_cb, &publish_sem, 20));
 	ASSERT_EQUAL(dut_status, DUT_SUSPENDED);
@@ -435,6 +465,34 @@ static void test_tester_gatt(void)
 	ASSERT_OK(bt_mesh_test_wait_for_packet(suspend_state_change_cb, &publish_sem, 20));
 	ASSERT_EQUAL(dut_status, DUT_RUNNING);
 	ASSERT_OK(bt_mesh_test_wait_for_packet(gatt_scan_cb, &publish_sem, 10));
+
+	PASS();
+}
+
+static void test_dut_suspend_resume_unref(void)
+{
+	const struct bt_mesh_test_cfg tx_cfg = {
+		.addr = 0x0001,
+		.dev_key = {0x01},
+	};
+
+	bt_mesh_test_cfg_set(&tx_cfg, 2 * WAIT_TIME);
+	bt_mesh_test_setup();
+
+	for (uint16_t count = 0; count < 2 * CONFIG_BT_MESH_ADV_BUF_COUNT; count++) {
+		LOG_DBG("Step %d", count);
+
+		ASSERT_OK_MSG(bt_mesh_test_send_data(BT_MESH_ADDR_ALL_NODES, NULL,
+						     (uint8_t *)&count, sizeof(count), NULL, NULL),
+			      "Cannot send data");
+		ASSERT_OK_MSG(bt_mesh_test_send_data(BT_MESH_ADDR_ALL_NODES, NULL,
+						     (uint8_t *)&count, sizeof(count), NULL, NULL),
+			      "Cannot send data");
+
+		ASSERT_OK_MSG(bt_mesh_suspend(), "Failed to suspend Mesh.");
+		k_sleep(K_MSEC(500));
+		ASSERT_OK_MSG(bt_mesh_resume(), "Failed to resume Mesh.");
+	}
 
 	PASS();
 }
@@ -454,6 +512,8 @@ static const struct bst_test_instance test_suspend[] = {
 			 "Suspend and resume Mesh with GATT proxy advs"),
 	TEST_CASE(dut, gatt_suspend_disable_resume,
 			 "Suspend and resume Mesh (and disable/enable BT) with GATT proxy advs"),
+	TEST_CASE(dut, suspend_resume_unref,
+			 "Suspend and resume Mesh twice adv more than advertiser pool size times"),
 
 	TEST_CASE(tester, pub, "Scan and verify behavior of periodic publishing adv"),
 	TEST_CASE(tester, gatt, "Scan and verify behavior of GATT proxy adv"),

@@ -41,13 +41,13 @@ Network Configuration
 
 Open the project configuration file for your platform, for example:
 :file:`prj_frdm_k64f.conf` is the configuration file for the
-:ref:`frdm_k64f` board.
+:zephyr:board:`frdm_k64f` board.
 
 In this sample application, both static or DHCPv4 IP addresses are supported.
 Static IP addresses are specified in the project configuration file,
 for example:
 
-.. code-block:: console
+.. code-block:: cfg
 
 	CONFIG_NET_CONFIG_MY_IPV6_ADDR="2001:db8::1"
 	CONFIG_NET_CONFIG_PEER_IPV6_ADDR="2001:db8::2"
@@ -58,9 +58,9 @@ respectively.
 DNS server
 ==========
 
-The dnsmasq tool may be used for testing purposes. Sample dnsmasq start
-script can be downloaded from the zephyrproject-rtos/net-tools project area:
-https://github.com/zephyrproject-rtos/net-tools
+The dnsmasq tool may be used for testing purposes. On a Zephyr project default
+installation, the sample dnsmasq start script can be found in the `net-tools`_
+project or downloaded from https://github.com/zephyrproject-rtos/net-tools.
 
 Open a terminal window and type:
 
@@ -75,7 +75,7 @@ the appropriate 'prj.conf' file and update the DNS server addresses.  For
 instance, if using the usual IP addresses assigned to testing, update them
 to the following values:
 
-.. code-block:: console
+.. code-block:: cfg
 
     CONFIG_DNS_SERVER1="192.0.2.2:5353"
     CONFIG_DNS_SERVER2="[2001:db8::2]:5353"
@@ -106,6 +106,7 @@ For testing mDNS, use Avahi script in net-tools project:
     $ cd net-tools
     $ ./avahi-daemon.sh
 
+.. _`net-tools`: https://github.com/zephyrproject-rtos/net-tools
 
 LLMNR Responder
 ===============
@@ -113,7 +114,7 @@ LLMNR Responder
 If you want Zephyr to respond to a LLMNR DNS request that Windows host is
 sending, then following config options could be set:
 
-.. code-block:: console
+.. code-block:: cfg
 
     CONFIG_NET_HOSTNAME_ENABLE=y
     CONFIG_NET_HOSTNAME="zephyr-device"
@@ -141,7 +142,7 @@ Open a terminal window and type:
    :goals: build flash
    :compact:
 
-See :ref:`Freedom-K64F board documentation <frdm_k64f>` for more information
+See :zephyr:board:`Freedom-K64F board documentation <frdm_k64f>` for more information
 about this board.
 
 Open a terminal window and type:
@@ -154,3 +155,9 @@ Open a terminal window and type:
 Use 'dmesg' to find the right USB device.
 
 Once the binary is loaded into the FRDM board, press the RESET button.
+
+Wi-Fi
+=====
+
+The IPv4 Wi-Fi support can be enabled in the sample with
+:ref:`Wi-Fi snippet <snippet-wifi-ipv4>`.

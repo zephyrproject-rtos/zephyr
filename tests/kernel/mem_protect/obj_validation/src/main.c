@@ -83,7 +83,7 @@ void object_permission_checks(struct k_sem *sem, bool skip_init)
  */
 ZTEST(object_validation, test_generic_object)
 {
-	struct k_sem stack_sem;
+	struct k_sem stack_sem = {};
 
 	/* None of these should be even in the table */
 	zassert_false(test_object(&stack_sem, -EBADF));

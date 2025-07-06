@@ -1,7 +1,4 @@
-.. _frdm_k22f:
-
-NXP FRDM-K22F
-##############
+.. zephyr:board:: frdm_k22f
 
 Overview
 ********
@@ -19,14 +16,10 @@ MCUs.
   running an open source bootloader, offers options for serial communication,
   flash programming, and run-control debugging
 
-.. image:: frdm_k22f.jpg
-   :align: center
-   :alt: FRDM-K22F
-
 Hardware
 ********
 
-- MK22FN512VLH12 (120 MHz, 1 MB flash memory, 256 KB RAM, low-power,
+- MK22FN512VLH12 (120 MHz, 512 KB flash memory, 128 KB RAM, low-power,
   crystal-less USB, and 64 pin Low profile Quad Flat Package (LQFP))
 - Dual role USB interface with micro-B USB connector
 - RGB LED
@@ -57,55 +50,15 @@ For more information about the K22F SoC and FRDM-K22F board:
 Supported Features
 ==================
 
-The frdm_k22f board configuration supports the hardware features listed
-below.  For additional features not yet supported, please also refer to the
-:ref:`frdm_k64f`, which is the superset board in NXP's Kinetis K series.
-NXP prioritizes enabling the superset board with NXP's Full Platform Support for
-Zephyr.  Therefore, the frdm_k64f board may have additional features
-already supported, which can also be re-used on this frdm_k22f board:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | soc flash                           |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | USB device                          |
-+-----------+------------+-------------------------------------+
-| SENSOR    | off-chip   | fxos8700 polling;                   |
-|           |            | fxos8700 trigger                    |
-+-----------+------------+-------------------------------------+
-| RNGA      | on-chip    | entropy;                            |
-|           |            | random                              |
-+-----------+------------+-------------------------------------+
-| FTFE      | on-chip    | flash programming                   |
-+-----------+------------+-------------------------------------+
+.. note::
 
-The default configuration can be found in the defconfig file:
-
-:zephyr_file:`boards/nxp/frdm_k22f/frdm_k22f_defconfig`
-
-Other hardware features are not currently supported by the port.
+   For additional features not yet supported, please also refer to the
+   :zephyr:board:`frdm_k64f`, which is the superset board in NXP's Kinetis K series.
+   NXP prioritizes enabling the superset board with NXP's Full Platform Support for
+   Zephyr.  Therefore, the frdm_k64f board may have additional features
+   already supported, which can also be re-used on this frdm_k22f board.
 
 Connections and IOs
 ===================
@@ -175,6 +128,8 @@ Only USB device function is supported in Zephyr at the moment.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -191,11 +146,25 @@ instructions to update from the CMSIS-DAP bootloader to the DAPLink bootloader.
 Option 1: :ref:`opensda-daplink-onboard-debug-probe` (Recommended)
 ------------------------------------------------------------------
 
-Install the :ref:`pyocd-debug-host-tools` and make sure they are in your search
-path.
-
 Follow the instructions in :ref:`opensda-daplink-onboard-debug-probe` to program
 the `OpenSDA DAPLink FRDM-K22F Firmware`_.
+
+Install the :ref:`linkserver-debug-host-tools` and make sure they are in your
+search path.  LinkServer works with the default CMSIS-DAP firmware included in
+the on-board debugger.
+
+Linkserver is the default for this board, ``west flash`` and ``west debug`` will
+call the linkserver runner.
+
+.. code-block:: console
+
+    west flash
+
+Alternatively, pyOCD can be used to flash and debug the board by using the
+``-r pyocd`` option with West. pyOCD is installed when you complete the
+:ref:`gs_python_deps` step in the Getting Started Guide. The runners supported
+by NXP are LinkServer and JLink. pyOCD is another potential option, but NXP
+does not test or support the pyOCD runner.
 
 Option 2: :ref:`opensda-jlink-onboard-debug-probe`
 --------------------------------------------------
@@ -237,7 +206,7 @@ etc.):
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -255,7 +224,7 @@ see the following message in the terminal:
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -269,6 +238,9 @@ should see the following message in the terminal:
 
    ***** Booting Zephyr OS v2.0.0 *****
    Hello World! frdm_k22f
+
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
 
 .. _FRDM-K22F Website:
    https://www.nxp.com/support/developer-resources/evaluation-and-development-boards/freedom-development-boards/mcu-boards/nxp-freedom-development-platform-for-kinetis-k22-mcus:FRDM-K22F

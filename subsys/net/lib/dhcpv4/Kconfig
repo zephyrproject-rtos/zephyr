@@ -9,6 +9,7 @@ config NET_DHCPV4
 	bool "DHCPv4 client"
 	select NET_MGMT
 	select NET_MGMT_EVENT
+	select NET_MGMT_EVENT_INFO if NET_IPV4_ACD
 	depends on NET_IPV4 && NET_UDP
 
 if NET_DHCPV4
@@ -21,7 +22,6 @@ source "subsys/net/Kconfig.template.log_config.net"
 
 config NET_DHCPV4_INITIAL_DELAY_MAX
 	int "Maximum time out for initial discover request"
-	depends on NET_DHCPV4
 	default 10
 	range 2 10
 	help
@@ -30,7 +30,6 @@ config NET_DHCPV4_INITIAL_DELAY_MAX
 
 config NET_DHCPV4_OPTION_CALLBACKS
 	bool "Option callbacks"
-	depends on NET_DHCPV4
 	help
 	  If set, custom callbacks for arbitrary DHCP options
 	  can be added. These can be used to support otherwise
@@ -38,9 +37,9 @@ config NET_DHCPV4_OPTION_CALLBACKS
 
 config NET_DHCPV4_MAX_REQUESTED_OPTIONS
 	int "Maximum number of requested options"
-	depends on NET_DHCPV4 && NET_DHCPV4_OPTION_CALLBACKS
+	depends on NET_DHCPV4_OPTION_CALLBACKS
 	default 10
-	range 3 255
+	range 3 $(UINT8_MAX)
 	help
 	  Maximum number of requested options that can be added to the
 	  DHCPv4 request message. The options are added using the
@@ -48,7 +47,6 @@ config NET_DHCPV4_MAX_REQUESTED_OPTIONS
 
 config NET_DHCPV4_OPTION_CALLBACKS_VENDOR_SPECIFIC
 	bool "Encapsulated vendor specific option callbacks"
-	depends on NET_DHCPV4
 	select NET_DHCPV4_OPTION_CALLBACKS
 	help
 	  If set, custom callbacks for encapsulated vendor-specific
@@ -56,7 +54,6 @@ config NET_DHCPV4_OPTION_CALLBACKS_VENDOR_SPECIFIC
 
 config NET_DHCPV4_ACCEPT_UNICAST
 	bool "Accept unicast DHCPv4 traffic"
-	depends on NET_DHCPV4
 	default y
 	help
 	  If set, the network stack will accept unicast DHCPv4 responses from
@@ -64,7 +61,6 @@ config NET_DHCPV4_ACCEPT_UNICAST
 
 config NET_DHCPV4_VENDOR_CLASS_IDENTIFIER
 	bool "Send vendor class identifier in DHCPv4 request"
-	depends on NET_DHCPV4
 	help
 	  If set, the network stack will include the specified string in the
 	  DHCPv4 vendor class identifier option in the DHCPv4 request.
@@ -84,6 +80,46 @@ config NET_DHCPV4_OPTION_NTP_SERVER
 	help
 	  If this option is set, then the NTP server can be set from the
 	  DHCPv4 option.
+
+config NET_DHCPV4_OPTION_DNS_ADDRESS
+	bool "Use DNS server from DHCPv4 option and save it in the DNS resolver default context"
+	default y
+	depends on DNS_RESOLVER
+	help
+	  If this option is set, then the DNS server can be set from the
+	  DHCPv4 option.
+
+config NET_DHCPV4_OPTION_PRINT_IGNORED
+	bool "Print information about ignored options"
+	help
+	  If this option is set, then we print information about options that we
+	  received and ignored. If this is not set, then we print these as unknown
+	  options.
+
+config NET_DHCPV4_DNS_SERVER_VIA_INTERFACE
+	bool "Make DNS servers specific to the network interface"
+	depends on NET_DHCPV4_OPTION_DNS_ADDRESS
+	default y
+	help
+	  If this is set, then if the system has multiple network interfaces
+	  and each has DHCP enabled, then assign DNS servers received from that
+	  network interface, to that specific interface.
+	  If this option is not set, then any interface can be used for all
+	  the configured DNS server addresses when doing DNS queries.
+	  Example: We receive DNS server 192.0.2.53 DHCPv4 option from Wi-Fi
+	  interface and DNS server 198.51.100.53 from Ethernet interface.
+	  When this option is set, the DNS resolver will use DNS server
+	  192.0.2.53 when sending DNS query to the Wi-Fi interface and DNS
+	  server 198.51.100.53 when sending DNS query to the Ethernet
+	  interface.
+
+config NET_DHCPV4_INIT_REBOOT
+	bool "Support INIT-REBOOT"
+	default y
+	help
+	  Initialization with a known network address, if the DHCPv4 client has
+	  been assigned an address before, it begins in INIT-REBOOT state and
+	  sends a DHCPREQUEST message.
 
 endif # NET_DHCPV4
 
@@ -120,7 +156,7 @@ config NET_DHCPV4_SERVER_ADDR_COUNT
 
 config NET_DHCPV4_SERVER_ADDR_LEASE_TIME
 	int "Lease time for IPv4 addresses assigned by the server (seconds)"
-	range 0 4294967295
+	range 0 $(UINT32_MAX)
 	default 86400
 	help
 	  Lease time in seconds for IPv4 addresses assigned by the server.
@@ -129,7 +165,7 @@ config NET_DHCPV4_SERVER_ADDR_LEASE_TIME
 
 config NET_DHCPV4_SERVER_ADDR_DECLINE_TIME
 	int "The time IPv4 addresses remains blocked after conflict detection (seconds)"
-	range 0 4294967295
+	range 0 $(UINT32_MAX)
 	default 86400
 	help
 	  In case IPv4 address becomes blocked (either because of receiving
@@ -140,7 +176,7 @@ config NET_DHCPV4_SERVER_ADDR_DECLINE_TIME
 	  case it runs out of free addresses to assign.
 
 config NET_DHCPV4_SERVER_ICMP_PROBE_TIMEOUT
-	int "Timeout for ICMP probes sent by the server (miliseconds)"
+	int "Timeout for ICMP probes sent by the server (milliseconds)"
 	range 0 60000
 	default 1000
 	help
@@ -160,5 +196,25 @@ config NET_DHCPV4_SERVER_NAK_UNRECOGNIZED_REQUESTS
 	  instead of staying silent for unrecognized Request messages, the server
 	  will send a NAK, informing the client it should proceed with a full
 	  procedure.
+
+config NET_DHCPV4_SERVER_OPTION_DNS_ADDRESS
+	string "DNS Server address"
+	default DNS_SERVER1 if DNS_SERVER_IP_ADDRESSES
+	default ""
+	help
+	  This configuration option specifies the DNS server address that the DHCPv4
+	  server should provide to clients when they request an IP address. The
+	  DHCPv4 server adds this DNS server address in the DHCP offer and
+	  acknowledgment messages sent to the clients, allowing them to use the
+	  specified DNS server for name resolution.
+
+config NET_DHCPV4_SERVER_OPTION_ROUTER
+	bool "Set the router option in the DHCP server response"
+	default y
+	help
+	  If enabled, set the DHCP router option pointing to the interface own
+	  gateway address in responses from the DHCP server. This can be
+	  disabled so that the client does not try to forward traffic to our
+	  device.
 
 endif # NET_DHCPV4_SERVER

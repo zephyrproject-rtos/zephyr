@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 NXP
+ * Copyright 2022,2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -535,7 +535,6 @@ static int card_read(struct sd_card *card, uint8_t *rbuf, uint32_t start_block, 
 	ret = sdmmc_wait_ready(card);
 	if (ret) {
 		LOG_ERR("Card did not return to ready state");
-		k_mutex_unlock(&card->lock);
 		return -ETIMEDOUT;
 	}
 	return 0;
@@ -774,6 +773,13 @@ int card_write_blocks(struct sd_card *card, const uint8_t *wbuf, uint32_t start_
 /* IO Control handler for SD MMC */
 int card_ioctl(struct sd_card *card, uint8_t cmd, void *buf)
 {
+	int ret;
+
+	ret = k_mutex_lock(&card->lock, K_MSEC(CONFIG_SD_DATA_TIMEOUT));
+	if (ret) {
+		LOG_WRN("Could not get SD card mutex");
+		return ret;
+	}
 	switch (cmd) {
 	case DISK_IOCTL_GET_SECTOR_COUNT:
 		(*(uint32_t *)buf) = card->block_count;
@@ -787,9 +793,21 @@ int card_ioctl(struct sd_card *card, uint8_t cmd, void *buf)
 		 * Note that SD stack does not support enabling caching, so
 		 * cache flush is not required here
 		 */
-		return sdmmc_wait_ready(card);
+		ret = sdmmc_wait_ready(card);
+		break;
+	case DISK_IOCTL_CTRL_DEINIT:
+		/* Ensure card is not busy with data write */
+		ret = sdmmc_wait_ready(card);
+		if (ret < 0) {
+			LOG_WRN("Card busy when powering off");
+		}
+		/* Power down the card */
+		card->bus_io.power_mode = SDHC_POWER_OFF;
+		ret = sdhc_set_io(card->sdhc, &card->bus_io);
+		break;
 	default:
-		return -ENOTSUP;
+		ret = -ENOTSUP;
 	}
-	return 0;
+	k_mutex_unlock(&card->lock);
+	return ret;
 }

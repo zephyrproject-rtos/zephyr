@@ -8,6 +8,10 @@
 	status = "okay";
 };
 
+&timers1 {
+	st,prescaler = <10000>;
+};
+
 &pwm1 {
 	status = "okay";
 };

@@ -165,6 +165,25 @@
 #define ADC_CHANNEL_ID		1
 #define ADC_1ST_CHANNEL_INPUT	NRF_SAADC_INPUT_AIN1
 
+#elif DT_HAS_COMPAT_STATUS_OKAY(renesas_ra_dac)
+
+#define DAC_DEVICE_NODE DT_NODELABEL(dac0)
+#define DAC_RESOLUTION  12
+#define DAC_CHANNEL_ID  0
+
+#define ADC_DEVICE_NODE      DT_NODELABEL(adc0)
+#define ADC_RESOLUTION       12
+#define ADC_GAIN             ADC_GAIN_1
+#define ADC_REFERENCE        ADC_REF_INTERNAL
+#define ADC_ACQUISITION_TIME ADC_ACQ_TIME_DEFAULT
+#if defined(CONFIG_BOARD_EK_RA4L1)
+#define ADC_CHANNEL_ID 1
+#elif defined(CONFIG_BOARD_EK_RA4W1)
+#define ADC_CHANNEL_ID 4
+#else
+#define ADC_CHANNEL_ID 0
+#endif
+
 #else
 #error "Unsupported board."
 #endif
@@ -172,7 +191,11 @@
 static const struct dac_channel_cfg dac_ch_cfg = {
 	.channel_id = DAC_CHANNEL_ID,
 	.resolution = DAC_RESOLUTION,
-	.buffered = true
+#if defined(CONFIG_DAC_BUFFER_NOT_SUPPORT)
+	.buffered = false,
+#else
+	.buffered = true,
+#endif /* CONFIG_DAC_BUFFER_NOT_SUPPORT */
 };
 
 static const struct adc_channel_cfg adc_ch_cfg = {
@@ -198,8 +221,7 @@ static const struct device *init_dac(void)
 	zassert_true(device_is_ready(dac_dev), "DAC device is not ready");
 
 	ret = dac_channel_setup(dac_dev, &dac_ch_cfg);
-	zassert_equal(ret, 0,
-		"Setting up of the first channel failed with code %d", ret);
+	zassert_ok(ret, "Setting up of the first channel failed with code %d", ret);
 
 	return dac_dev;
 }
@@ -213,8 +235,7 @@ static const struct device *init_adc(void)
 	zassert_true(device_is_ready(adc_dev), "ADC device is not ready");
 
 	ret = adc_channel_setup(adc_dev, &adc_ch_cfg);
-	zassert_equal(ret, 0,
-		"Setting up of the ADC channel failed with code %d", ret);
+	zassert_ok(ret, "Setting up of the ADC channel failed with code %d", ret);
 
 	return adc_dev;
 }
@@ -236,7 +257,7 @@ static int test_task_loopback(void)
 	/* write a value of half the full scale resolution */
 	ret = dac_write_value(dac_dev, DAC_CHANNEL_ID,
 		(1U << DAC_RESOLUTION) / 2);
-	zassert_equal(ret, 0, "dac_write_value() failed with code %d", ret);
+	zassert_ok(ret, "dac_write_value() failed with code %d", ret);
 
 	/* wait to let DAC output settle */
 	k_sleep(K_MSEC(10));
@@ -250,7 +271,7 @@ static int test_task_loopback(void)
 	};
 
 	ret = adc_read(adc_dev, &sequence);
-	zassert_equal(ret, 0, "adc_read() failed with code %d", ret);
+	zassert_ok(ret, "adc_read() failed with code %d", ret);
 	zassert_within(m_sample_buffer[0],
 		(1U << ADC_RESOLUTION) / 2, 32,
 		"Value %d read from ADC does not match expected range.",

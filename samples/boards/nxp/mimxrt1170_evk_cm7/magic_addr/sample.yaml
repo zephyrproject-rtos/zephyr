@@ -1,0 +1,17 @@
+sample:
+  description: RT11xx FLEXRAM Magic Addr example
+  name: magic addr
+common:
+  integration_platforms:
+    - mimxrt1170_evk/mimxrt1176/cm7
+    - mimxrt1160_evk/mimxrt1166/cm7
+  tags:
+    - pytest
+tests:
+  sample.boards.magic_addr:
+    filter: CONFIG_NXP_FLEXRAM and
+            dt_node_prop_enabled("flexram", "flexram,has-magic-addr")
+    extra_args:
+      - platform:mimxrt1170_evk/mimxrt1176/cm7:"DTC_OVERLAY_FILE=flexram.overlay"
+      - platform:mimxrt1160_evk/mimxrt1166/cm7:"DTC_OVERLAY_FILE=flexram.overlay"
+    harness: pytest

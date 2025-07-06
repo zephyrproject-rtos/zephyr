@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2024 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Device tree declarations of npcm soc family */
+#include <mem.h>
+#include "npcm/npcm4.dtsi"
+
+/ {
+	flash0: flash@80000 {
+		reg = <0x00080000 DT_SIZE_M(1)>;
+	};
+
+	sram0: memory@10008000 {
+		compatible = "mmio-sram";
+		reg = <0x10008000 DT_SIZE_K(764)>;
+	};
+
+	soc {
+	};
+};

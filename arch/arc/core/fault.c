@@ -53,9 +53,8 @@ static const struct z_exc_handle exceptions[] = {
  */
 static bool z_check_thread_stack_fail(const uint32_t fault_addr, uint32_t sp)
 {
-	uint32_t guard_end, guard_start;
-
 #if defined(CONFIG_MULTITHREADING)
+	uint32_t guard_end, guard_start;
 	const struct k_thread *thread = _current;
 
 	if (!thread) {
@@ -90,7 +89,6 @@ static bool z_check_thread_stack_fail(const uint32_t fault_addr, uint32_t sp)
 		guard_end = thread->stack_info.start;
 		guard_start = guard_end - Z_ARC_STACK_GUARD_SIZE;
 	}
-#endif /* CONFIG_MULTITHREADING */
 
 	 /* treat any MPU exceptions within the guard region as a stack
 	  * overflow.As some instrustions
@@ -101,6 +99,7 @@ static bool z_check_thread_stack_fail(const uint32_t fault_addr, uint32_t sp)
 	if (fault_addr < guard_end && fault_addr >= guard_start) {
 		return true;
 	}
+#endif /* CONFIG_MULTITHREADING */
 
 	return false;
 }
@@ -347,7 +346,7 @@ static void dump_exception_info(uint32_t vector, uint32_t cause, uint32_t parame
  * invokes the user provided routine k_sys_fatal_error_handler() which is
  * responsible for implementing the error handling policy.
  */
-void _Fault(z_arch_esf_t *esf, uint32_t old_sp)
+void z_arc_fault(struct arch_esf *esf, uint32_t old_sp)
 {
 	uint32_t vector, cause, parameter;
 	uint32_t exc_addr = z_arc_v2_aux_reg_read(_ARC_V2_EFA);

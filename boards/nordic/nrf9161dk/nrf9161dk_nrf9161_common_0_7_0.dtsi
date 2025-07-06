@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Remove v0.9.0 variant flash */
+/delete-node/ &gd25wb256;
+
 &spi3 {
 	gd25lb256: gd25lb256e3ir@1 {
 		compatible = "jedec,spi-nor";
@@ -21,11 +24,5 @@
 		has-dpd;
 		t-enter-dpd = <3000>;
 		t-exit-dpd = <30000>;
-	};
-};
-
-/ {
-	aliases {
-		spi-flash0 = &gd25lb256;
 	};
 };

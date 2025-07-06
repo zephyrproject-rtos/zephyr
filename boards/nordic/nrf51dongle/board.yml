@@ -1,5 +1,6 @@
 board:
   name: nrf51dongle
+  full_name: nRF51 Dongle
   vendor: nordic
   socs:
   - name: nrf51822

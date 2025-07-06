@@ -12,16 +12,16 @@
 
 #define DETACH_THR_ID 2
 
-#define N_THR_E 3
-#define N_THR_T 4
-#define BOUNCES 64
+#define N_THR_E    3
+#define N_THR_T    4
+#define BOUNCES    64
 #define ONE_SECOND 1
 
 /* Macros to test invalid states */
 #define PTHREAD_CANCEL_INVALID -1
-#define SCHED_INVALID -1
-#define PRIO_INVALID -1
-#define PTHREAD_INVALID -1
+#define SCHED_INVALID          -1
+#define PRIO_INVALID           -1
+#define PTHREAD_INVALID        -1
 
 static void *thread_top_exec(void *p1);
 static void *thread_top_term(void *p1);
@@ -57,13 +57,13 @@ static int barrier_return[N_THR_E];
 
 static void *thread_top_exec(void *p1)
 {
-	int i, j, id = (int) POINTER_TO_INT(p1);
+	int i, j, id = (int)POINTER_TO_INT(p1);
 	int policy;
 	struct sched_param schedparam;
 
 	pthread_getschedparam(pthread_self(), &policy, &schedparam);
-	printk("Thread %d starting with scheduling policy %d & priority %d\n",
-		 id, policy, schedparam.sched_priority);
+	printk("Thread %d starting with scheduling policy %d & priority %d\n", id, policy,
+	       schedparam.sched_priority);
 	/* Try a double-lock here to exercise the failing case of
 	 * trylock.  We don't support RECURSIVE locks, so this is
 	 * guaranteed to fail.
@@ -143,6 +143,14 @@ static void *thread_top_exec(void *p1)
 	return NULL;
 }
 
+static void *timedjoin_thread(void *p1)
+{
+	int sleep_duration_ms = POINTER_TO_INT(p1);
+
+	usleep(USEC_PER_MSEC * sleep_duration_ms);
+	return NULL;
+}
+
 static int bounce_test_done(void)
 {
 	int i;
@@ -193,11 +201,9 @@ static void *thread_top_term(void *p1)
 		      "Unable to set thread priority!");
 
 	zassert_false(pthread_getschedparam(self, &policy, &getschedparam),
-			"Unable to get thread priority!");
+		      "Unable to get thread priority!");
 
-	printk("Thread %d starting with a priority of %d\n",
-			id,
-			getschedparam.sched_priority);
+	printk("Thread %d starting with a priority of %d\n", id, getschedparam.sched_priority);
 
 	if (id % 2) {
 		ret = pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
@@ -296,8 +302,7 @@ ZTEST(pthread, test_pthread_execution)
 	zassert_false(ret, "Set thread name failed!");
 
 	/* TESTPOINT: Try getting thread name */
-	ret = pthread_getname_np(newthread[0], thr_name_buf,
-				 sizeof(thr_name_buf));
+	ret = pthread_getname_np(newthread[0], thr_name_buf, sizeof(thr_name_buf));
 	zassert_false(ret, "Get thread name failed!");
 
 	/* TESTPOINT: Thread names match */
@@ -371,6 +376,68 @@ ZTEST(pthread, test_pthread_termination)
 	zassert_equal(ret, ESRCH, "cancelled a terminated thread!");
 }
 
+ZTEST(pthread, test_pthread_tryjoin)
+{
+	pthread_t th = {0};
+	int sleep_duration_ms = 200;
+	void *retval;
+
+	/* Creating a thread that exits after 200ms*/
+	zassert_ok(pthread_create(&th, NULL, timedjoin_thread, INT_TO_POINTER(sleep_duration_ms)));
+
+	/* Attempting to join, when thread is still running, should fail */
+	usleep(USEC_PER_MSEC * sleep_duration_ms / 2);
+	zassert_equal(pthread_tryjoin_np(th, &retval), EBUSY);
+
+	/* Sleep so thread will exit */
+	usleep(USEC_PER_MSEC * sleep_duration_ms);
+
+	/* Attempting to join without blocking should succeed now */
+	zassert_ok(pthread_tryjoin_np(th, &retval));
+}
+
+ZTEST(pthread, test_pthread_timedjoin)
+{
+	pthread_t th = {0};
+	int sleep_duration_ms = 200;
+	void *ret;
+	struct timespec not_done;
+	struct timespec done;
+	struct timespec invalid[] = {
+		{.tv_nsec = -1},
+		{.tv_nsec = NSEC_PER_SEC},
+	};
+
+	/* setup timespecs when the thread is still running and when it is done */
+	clock_gettime(CLOCK_MONOTONIC, &not_done);
+	clock_gettime(CLOCK_MONOTONIC, &done);
+	not_done.tv_nsec += sleep_duration_ms / 2 * NSEC_PER_MSEC;
+	done.tv_nsec += sleep_duration_ms * 1.5 * NSEC_PER_MSEC;
+	while (not_done.tv_nsec >= NSEC_PER_SEC) {
+		not_done.tv_sec++;
+		not_done.tv_nsec -= NSEC_PER_SEC;
+	}
+	while (done.tv_nsec >= NSEC_PER_SEC) {
+		done.tv_sec++;
+		done.tv_nsec -= NSEC_PER_SEC;
+	}
+
+	/* Creating a thread that exits after 200ms*/
+	zassert_ok(pthread_create(&th, NULL, timedjoin_thread, INT_TO_POINTER(sleep_duration_ms)));
+
+	/* pthread_timedjoin-np must return EINVAL for invalid struct timespecs */
+	zassert_equal(pthread_timedjoin_np(th, &ret, NULL), EINVAL);
+	for (size_t i = 0; i < ARRAY_SIZE(invalid); ++i) {
+		zassert_equal(pthread_timedjoin_np(th, &ret, &invalid[i]), EINVAL);
+	}
+
+	/* Attempting to join with a timeout, when the thread is still running should fail */
+	zassert_equal(pthread_timedjoin_np(th, &ret, &not_done), ETIMEDOUT);
+
+	/* Attempting to join with a timeout, when the thread is done, should succeed */
+	zassert_ok(pthread_timedjoin_np(th, &ret, &done));
+}
+
 static void *create_thread1(void *p1)
 {
 	/* do nothing */
@@ -382,91 +449,17 @@ ZTEST(pthread, test_pthread_descriptor_leak)
 	pthread_t pthread1;
 
 	/* If we are leaking descriptors, then this loop will never complete */
-	for (size_t i = 0; i < CONFIG_MAX_PTHREAD_COUNT * 2; ++i) {
+	for (size_t i = 0; i < CONFIG_POSIX_THREAD_THREADS_MAX * 2; ++i) {
 		zassert_ok(pthread_create(&pthread1, NULL, create_thread1, NULL),
 			   "unable to create thread %zu", i);
 		zassert_ok(pthread_join(pthread1, NULL), "unable to join thread %zu", i);
 	}
 }
 
-ZTEST(pthread, test_sched_getparam)
-{
-	struct sched_param param;
-	int rc = sched_getparam(0, &param);
-	int err = errno;
-
-	zassert_true((rc == -1 && err == ENOSYS));
-}
-
-ZTEST(pthread, test_sched_getscheduler)
-{
-	int rc = sched_getscheduler(0);
-	int err = errno;
-
-	zassert_true((rc == -1 && err == ENOSYS));
-}
-ZTEST(pthread, test_sched_setparam)
-{
-	struct sched_param param = {
-		.sched_priority = 2,
-	};
-	int rc = sched_setparam(0, &param);
-	int err = errno;
-
-	zassert_true((rc == -1 && err == ENOSYS));
-}
-
-ZTEST(pthread, test_sched_setscheduler)
-{
-	struct sched_param param = {
-		.sched_priority = 2,
-	};
-	int policy = 0;
-	int rc = sched_setscheduler(0, policy, &param);
-	int err = errno;
-
-	zassert_true((rc == -1 && err == ENOSYS));
-}
-
-ZTEST(pthread, test_sched_rr_get_interval)
-{
-	struct timespec interval = {
-		.tv_sec = 0,
-		.tv_nsec = 0,
-	};
-	int rc = sched_rr_get_interval(0, &interval);
-	int err = errno;
-
-	zassert_true((rc == -1 && err == ENOSYS));
-}
-
 ZTEST(pthread, test_pthread_equal)
 {
 	zassert_true(pthread_equal(pthread_self(), pthread_self()));
 	zassert_false(pthread_equal(pthread_self(), (pthread_t)4242));
-}
-
-ZTEST(pthread, test_pthread_set_get_concurrency)
-{
-	/* EINVAL if the value specified by new_level is negative */
-	zassert_equal(EINVAL, pthread_setconcurrency(-42));
-
-	/*
-	 * Note: the special value 0 indicates the implementation will
-	 * maintain the concurrency level at its own discretion.
-	 *
-	 * pthread_getconcurrency() should return a value of 0 on init.
-	 */
-	zassert_equal(0, pthread_getconcurrency());
-
-	for (int i = 0; i <= CONFIG_MP_MAX_NUM_CPUS; ++i) {
-		zassert_ok(pthread_setconcurrency(i));
-		/* verify parameter is saved */
-		zassert_equal(i, pthread_getconcurrency());
-	}
-
-	/* EAGAIN if the a system resource to be exceeded */
-	zassert_equal(EAGAIN, pthread_setconcurrency(CONFIG_MP_MAX_NUM_CPUS + 1));
 }
 
 static void cleanup_handler(void *arg)

@@ -7,5 +7,6 @@ config PWM_NXP_S32_EMIOS
 	depends on DT_HAS_NXP_S32_EMIOS_PWM_ENABLED
 	select NXP_S32_EMIOS
 	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	select PINCTRL
 	help
 	  Enable support for the NXP S32 PWM-eMIOS.

@@ -76,7 +76,7 @@ ZTEST(posix_headers, test_netdb_h)
 	zassert_not_equal(-1, EAI_SYSTEM);
 	zassert_not_equal(-1, EAI_OVERFLOW);
 
-	if (IS_ENABLED(CONFIG_POSIX_API)) {
+	if (IS_ENABLED(CONFIG_POSIX_NETWORKING)) {
 		zassert_not_null(endhostent);
 		zassert_not_null(endnetent);
 		zassert_not_null(endprotoent);

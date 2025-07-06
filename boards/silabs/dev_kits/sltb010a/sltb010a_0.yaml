@@ -1,0 +1,19 @@
+identifier: sltb010a@0
+name: Thunderboard EFR32BG22 (SLTB010A, BRD4184A)
+type: mcu
+arch: arm
+ram: 32
+flash: 512
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - bluetooth
+  - counter
+  - gpio
+  - uart
+  - i2c
+  - dma
+  - spi
+  - clock_control
+vendor: silabs

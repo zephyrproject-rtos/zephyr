@@ -60,25 +60,19 @@ void lock_unlock_check(const void *arg)
 ZTEST(cmsis_kernel, test_kernel_apis)
 {
 	versionInfo version = {
-		.os_info = {
-			.api = 0xfefefefe,
-			.kernel = 0xfdfdfdfd,
-		},
-		.info = "local function call info is uninitialized"
+		.os_info = {.api = 0xfefefefe, .kernel = 0xfdfdfdfd},
+		.info = "local function call info is uninitialized",
 	};
 	versionInfo version_irq = {
-		.os_info = {
-			.api = 0xfcfcfcfc,
-			.kernel = 0xfbfbfbfb,
-		},
-		.info = "irq_offload function call info is uninitialized"
+		.os_info = {.api = 0xfcfcfcfc, .kernel = 0xfbfbfbfb},
+		.info = "irq_offload function call info is uninitialized",
 	};
 
 	get_version_check(&version);
 	irq_offload(get_version_check, (const void *)&version_irq);
 
 	/* Check if the version value retrieved in ISR and thread is same */
-	zassert_equal(strcmp(version.info, version_irq.info), 0);
+	zassert_str_equal(version.info, version_irq.info);
 	zassert_equal(version.os_info.api, version_irq.os_info.api);
 	zassert_equal(version.os_info.kernel, version_irq.os_info.kernel);
 

@@ -105,10 +105,7 @@ void *z_thread_aligned_alloc(size_t align, size_t size);
  * @return A pointer to the allocated memory, or NULL if there is insufficient
  * RAM in the pool or there is no pool to draw memory from
  */
-static inline void *z_thread_malloc(size_t size)
-{
-	return z_thread_aligned_alloc(0, size);
-}
+void *z_thread_malloc(size_t size);
 
 
 #ifdef CONFIG_USE_SWITCH
@@ -140,7 +137,7 @@ extern void smp_timer_init(void);
 
 extern void z_early_rand_get(uint8_t *buf, size_t length);
 
-#if CONFIG_STACK_POINTER_RANDOM
+#if defined(CONFIG_STACK_POINTER_RANDOM) && (CONFIG_STACK_POINTER_RANDOM != 0)
 extern int z_stack_adjust_initialized;
 #endif /* CONFIG_STACK_POINTER_RANDOM */
 
@@ -152,6 +149,7 @@ extern struct k_thread z_idle_threads[CONFIG_MP_MAX_NUM_CPUS];
 #endif /* CONFIG_MULTITHREADING */
 K_KERNEL_PINNED_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_MAX_NUM_CPUS,
 				    CONFIG_ISR_STACK_SIZE);
+K_THREAD_STACK_DECLARE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
 
 #ifdef CONFIG_GEN_PRIV_STACKS
 extern uint8_t *z_priv_stack_find(k_thread_stack_t *stack);
@@ -220,7 +218,7 @@ void z_mem_manage_init(void);
 void z_mem_manage_boot_finish(void);
 
 
-void z_handle_obj_poll_events(sys_dlist_t *events, uint32_t state);
+bool z_handle_obj_poll_events(sys_dlist_t *events, uint32_t state);
 
 #ifdef CONFIG_PM
 
@@ -242,26 +240,6 @@ void z_handle_obj_poll_events(sys_dlist_t *events, uint32_t state);
  * @return True if the system suspended, otherwise return false
  */
 bool pm_system_suspend(int32_t ticks);
-
-/**
- * Notify exit from kernel idling after PM operations
- *
- * This function would notify exit from kernel idling if a corresponding
- * pm_system_suspend() notification was handled and did not return
- * PM_STATE_ACTIVE.
- *
- * This function would be called from the ISR context of the event
- * that caused the exit from kernel idling. This will be called immediately
- * after interrupts are enabled. This is called to give a chance to do
- * any operations before the kernel would switch tasks or processes nested
- * interrupts. This is required for cpu low power states that would require
- * interrupts to be enabled while entering low power states. e.g. C1 in x86. In
- * those cases, the ISR would be invoked immediately after the event wakes up
- * the CPU, before code following the CPU wait, gets a chance to execute. This
- * can be ignored if no operation needs to be done at the wake event
- * notification.
- */
-void pm_system_resume(void);
 
 #endif /* CONFIG_PM */
 

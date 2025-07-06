@@ -318,17 +318,16 @@ static int rzt2m_gpio_pin_interrupt_configure(const struct device *dev, gpio_pin
 		return -ENOTSUP;
 	}
 
-	uint8_t irq = rzt2m_gpio_get_pin_irq(dev, pin);
-	bool irq_used_by_other = rzt2m_gpio_is_irq_used_by_other_pin(dev, pin, irq);
-
+	int irq = rzt2m_gpio_get_pin_irq(dev, pin);
 	if (irq < 0) {
 		return -ENOTSUP;
 	}
-
 	/* secure range - currently not supported*/
 	if (irq >= NS_IRQ_COUNT) {
 		return -ENOSYS;
 	}
+
+	bool irq_used_by_other = rzt2m_gpio_is_irq_used_by_other_pin(dev, pin, irq);
 
 	if (mode == GPIO_INT_MODE_DISABLED) {
 		rzt2m_gpio_unlock();
@@ -360,6 +359,9 @@ static int rzt2m_gpio_pin_interrupt_configure(const struct device *dev, gpio_pin
 		break;
 	case GPIO_INT_TRIG_BOTH:
 		md_mode = INT_BOTH_EDGE;
+		break;
+	default:
+		return -EINVAL;
 	}
 
 	rzt2m_gpio_unlock();
@@ -390,7 +392,7 @@ static int rzt2m_gpio_manage_callback(const struct device *dev, struct gpio_call
 	return gpio_manage_callback(&data->cb, cb, set);
 }
 
-static const struct gpio_driver_api rzt2m_gpio_driver_api = {
+static DEVICE_API(gpio, rzt2m_gpio_driver_api) = {
 	.pin_configure = rzt2m_gpio_configure,
 	.port_get_raw = rzt2m_gpio_get_raw,
 	.port_set_masked_raw = rzt2m_port_set_masked_raw,

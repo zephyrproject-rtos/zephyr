@@ -12,7 +12,21 @@ hardware supports them and your Zephyr board directory's :file:`board.cmake`
 file declares that support properly. See :ref:`west-build-flash-debug` for
 more information on these commands.
 
+.. _runner_blackmagicprobe:
+
+Black Magic Probe
+*****************
+
+Black Magic Probe (BMP) is an open-source debugging hardware incorporating GDB debug
+server functionality into the firmware.
+There is no need for a GDB server program, so there is no program equivalent
+to host-tool.
+
+For more details, including usage instructions and supported targets,
+see :ref:`black-magic-probe`.
+
 .. _atmel_sam_ba_bootloader:
+.. _runner_bossac:
 
 SAM Boot Assistant (SAM-BA)
 ***************************
@@ -28,7 +42,14 @@ The typical command to flash the board is:
 
 .. code-block:: console
 
-	west flash [ -r bossac ] [ -p /dev/ttyX ]
+	west flash [ -r bossac ] [ -p /dev/ttyX ] [ --erase ]
+
+.. note::
+
+    By default, flashing with bossac will only erase the flash pages containing
+    the flashed application, leaving other pages untouched. Should you wish to
+    erase the entire flash of the target when flashing, pass the ``--erase``
+    parameter when flashing.
 
 Flash configuration for devices:
 
@@ -176,10 +197,10 @@ options are available passing the runner option, for instance
 More implementation details can be found in the :ref:`boards` documentation.
 As a quick reference, see these three board documentation pages:
 
-  - :ref:`sam4e_xpro` (ROM bootloader)
-  - :ref:`adafruit_feather_m0_basic_proto` (Adafruit UF2 bootloader)
-  - :ref:`arduino_nano_33_iot` (Arduino bootloader)
-  - :ref:`arduino_nano_33_ble` (Arduino legacy bootloader)
+  - :zephyr:board:`sam4e_xpro` (ROM bootloader)
+  - :zephyr:board:`adafruit_feather_m0_basic_proto` (Adafruit UF2 bootloader)
+  - :zephyr:board:`arduino_nano_33_iot` (Arduino bootloader)
+  - :zephyr:board:`arduino_nano_33_ble` (Arduino legacy bootloader)
 
 Enabling BOSSAC on Windows Native [Experimental]
 ------------------------------------------------
@@ -200,6 +221,7 @@ Windows PATH. A specific bossac executable can be used by passing the
 
 
 .. _linkserver-debug-host-tools:
+.. _runner_linkserver:
 
 LinkServer Debug  Host Tools
 ****************************
@@ -270,7 +292,12 @@ LinkServer west runner   ``--probe`` option to pass the probe index.
 
    west flash --runner=linkserver --override /device/memory/5/flash-driver=MIMXRT500_SFDP_MXIC_OSPI_S.cfx
 
+4. LinkServer does not install an implicit breakpoint at the reset handler. If
+   you would like to single step from the start of their application, you
+   will need to add a breakpoint at ``main`` or the reset handler manually.
+
 .. _jlink-debug-host-tools:
+.. _runner_jlink:
 
 J-Link Debug Host Tools
 ***********************
@@ -301,6 +328,7 @@ required.
 Note that the J-Link GDB server does not yet support Zephyr RTOS-awareness.
 
 .. _openocd-debug-host-tools:
+.. _runner_openocd:
 
 OpenOCD Debug Host Tools
 ************************
@@ -328,6 +356,7 @@ Check if your SoC is listed in `OpenOCD Supported Devices`_.
    - Add ``C:\Program Files\OpenOCD\bin`` to 'PATH' environment variable
 
 .. _pyocd-debug-host-tools:
+.. _runner_pyocd:
 
 pyOCD Debug Host Tools
 **********************
@@ -347,6 +376,7 @@ These debug host tools are compatible with the following debug probes:
 Check if your SoC is listed in `pyOCD Supported Devices`_.
 
 .. _lauterbach-trace32-debug-host-tools:
+.. _runner_trace32:
 
 Lauterbach TRACE32 Debug Host Tools
 ***********************************
@@ -398,6 +428,7 @@ To enable Zephyr RTOS awareness follow the steps described in
 `Lauterbach TRACE32 Zephyr OS Awareness Manual`_.
 
 .. _nxp-s32-debug-host-tools:
+.. _runner_nxp_s32dbg:
 
 NXP S32 Debug Probe Host Tools
 ******************************
@@ -460,6 +491,155 @@ afterwards detach the debug session:
 
    west debug --tool-opt='--batch'
 
+.. _runner_probe_rs:
+
+probe-rs Debug Host Tools
+*************************
+
+probe-rs is an open-source embedded toolkit written in Rust. It provides
+out-of-the-box support for a variety of debug probes, including CMSIS-DAP,
+ST-Link, SEGGER J-Link, FTDI and built-in USB-JTAG interface on ESP32 devices.
+
+Check `probe-rs Installation`_ for more setup details.
+
+Check if your SoC is listed in `probe-rs Supported Devices`_.
+
+.. _runner_rfp:
+
+Renesas Flash Programmer (RFP) Host Tools
+*****************************************
+
+Renesas provides `Renesas Flash Programmer`_ as an official programming tool for Renesas boards
+using the Renesas standard boot firmware. It is available as a GUI and CLI.
+
+For boards configured with the ``rfp`` west runner, the RFP CLI can be easily used to flash Zephyr.
+
+Supported west commands:
+
+1. flash
+
+Once downloaded, if ``rfp-cli`` is not placed somewhere in your system PATH, you can pass the location
+to ``rfp-cli`` when flashing:
+
+.. code-block:: console
+
+   west flash --rfp-cli ~/Downloads/RFP_CLI_Linux_V31800_x64/linux-x64/rfp-cli
+
+.. _stm32cubeclt-host-tools:
+.. _runner_stlink_gdbserver:
+
+STM32CubeCLT Flash & Debug Host Tools
+*************************************
+
+STMicroelectronics provides `STM32CubeCLT`_ as an official all-in-one toolset compatible with
+Linux |reg|, macOS |reg| and Windows |reg|, allowing the use of STMicroelectronics proprietary
+tools within third-party development environments.
+
+It notably provides a GDB debugging server (the *ST-LINK GDB Server*) that can be used to debug
+applications on STM32 boards thanks to on-board or external ST-LINK debug probes.
+
+It is compatible with the following debug probes:
+
+- :ref:`stlink-v21-onboard-debug-probe`
+- Standalone `ST-LINK-V2`_, `ST-LINK-V3`_, and `STLINK-V3PWR`_ probes
+
+Install STM32CubeCLT
+--------------------
+
+The easiest way to get the ST-LINK GDB Server is to install `STM32CubeCLT`_ from STMicroelectronics' website.
+A valid email address is needed to receive the downloading link.
+
+Basic usage
+-----------
+
+The ST-Link GDB Server can be used through the ``west attach``, ``west debug`` or ``west debugserver`` commands
+to debug Zephyr applications.
+
+.. code-block:: console
+
+   west debug --runner stlink_gdbserver
+
+.. note::
+
+   The `STM32CubeProgrammer`_ version contained in the `STM32CubeCLT`_ installation can also be used to flash
+   applications. To do so, the dedicated :ref:`STM32CubeProgrammer runner <runner_stm32cubeprogrammer>` should
+   be used instead of ``stlink_gdbserver``, as done in the following example:
+
+   .. code-block:: console
+
+      west flash --runner stm32cubeprogrammer
+
+.. _stm32cubeprog-flash-host-tools:
+.. _runner_stm32cubeprogrammer:
+
+STM32CubeProgrammer Flash Host Tools
+************************************
+
+STMicroelectronics provides `STM32CubeProgrammer`_ (STM32CubeProg) as an official programming tool
+for STM32 boards on Linux |reg|, macOS |reg|, and Windows |reg| operating systems.
+
+It provides an easy-to-use and efficient environment for reading, writing, and verifying device memory
+through both the debug interface (JTAG and SWD) and the bootloader interface (UART and USB DFU, I2C, SPI, and CAN).
+
+It offers a wide range of features to program STM32 internal memories (such as flash, RAM, and OTP)
+as well as external memories.
+
+It also allows option programming and upload, programming content verification, and programming automation
+through scripting.
+
+It is delivered in GUI (graphical user interface) and CLI (command-line interface) versions.
+
+It is compatible with the following debug probes:
+
+- :ref:`stlink-v21-onboard-debug-probe`
+- :ref:`jlink-external-debug-probe`
+- Standalone `ST-LINK-V2`_, `ST-LINK-V3`_, and `STLINK-V3PWR`_ probes
+
+Install STM32CubeProgrammer
+---------------------------
+
+The easiest way to get `STM32CubeProgrammer`_ is to download it from STMicroelectronics website.
+A valid email address is needed to receive the downloading link.
+
+Alternatively, it can be installed as part of `STM32CubeCLT`_ all-in-one multi-OS command-line toolset
+which also includes GDB debugger client and server.
+
+If you have STM32CubeIDE installed on your system, then STM32CubeProg is already present.
+
+Basic usage
+-----------
+
+`STM32CubeProgrammer`_ is setup as the default west runner for all active STM32 boards supported by Zephyr.
+It can be used through the ``west flash`` command to flash Zephyr applications.
+
+.. code-block:: console
+
+   west flash --runner stm32cubeprogrammer
+
+For advanced usage via the GUI or CLI, check out the `STM32CubeProgrammer User Manual`_.
+
+.. _runner_uf2:
+
+UF2 Uploader
+************
+
+The uf2 runner supports flashing some boards using the UF2 (USB Flashing Format).
+UF2 is a user-friendly file format designed for drag-and-drop programming via a USB mass storage device.
+
+It relies on the target device entering a special bootloader mode where it appears to the host
+as a USB mass storage device.
+Once in this mode, the application image can be uploaded by copying a ``.uf2`` file to the
+mounted volume.
+
+.. code-block:: console
+
+   west flash --runner uf2
+
+If the UF2 volume is not automatically detected, you may need to manually specify the mount point
+using the ``--device`` option:
+
+For more about the UF2 format and its tooling, see `USB Flashing Format (UF2)`_.
+
 .. _J-Link Software and Documentation Pack:
    https://www.segger.com/downloads/jlink/#J-LinkSoftwareAndDocumentationPack
 
@@ -502,5 +682,35 @@ afterwards detach the debug session:
 .. _NXP S32 Design Studio for S32 Platform:
    https://www.nxp.com/design/software/development-software/s32-design-studio-ide/s32-design-studio-for-s32-platform:S32DS-S32PLATFORM
 
+.. _Renesas Flash Programmer:
+   https://www.renesas.com/en/software-tool/renesas-flash-programmer-programming-gui
+
 .. _S32 Design Studio for S32 Platform Installation User Guide:
    https://www.nxp.com/webapp/Download?colCode=S32DSIG
+
+.. _probe-rs Installation:
+   https://probe.rs/docs/getting-started/installation/
+
+.. _probe-rs Supported Devices:
+   https://probe.rs/targets/
+
+.. _STM32CubeCLT:
+   https://www.st.com/en/development-tools/stm32cubeclt.html
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html
+
+.. _STM32CubeProgrammer User Manual:
+   https://www.st.com/resource/en/user_manual/um2237-stm32cubeprogrammer-software-description-stmicroelectronics.pdf
+
+.. _ST-LINK-V2:
+   https://www.st.com/en/development-tools/st-link-v2.html
+
+.. _ST-LINK-V3:
+   https://www.st.com/en/development-tools/stlink-v3set.html
+
+.. _STLINK-V3PWR:
+   https://www.st.com/en/development-tools/stlink-v3pwr.html
+
+.. _USB Flashing Format (UF2):
+   https://github.com/microsoft/uf2

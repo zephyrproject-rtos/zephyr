@@ -26,7 +26,7 @@ extern "C" {
  * @brief Connection Manager Connectivity API
  * @defgroup conn_mgr_connectivity Connection Manager Connectivity API
  * @since 3.4
- * @version 0.1.0
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */
@@ -35,30 +35,40 @@ extern "C" {
 /** @cond INTERNAL_HIDDEN */
 
 /* Connectivity Events */
-#define _NET_MGMT_CONN_LAYER			NET_MGMT_LAYER(NET_MGMT_LAYER_L2)
-#define _NET_MGMT_CONN_CODE			NET_MGMT_LAYER_CODE(0x207)
-#define _NET_MGMT_CONN_BASE			(_NET_MGMT_CONN_LAYER | _NET_MGMT_CONN_CODE | \
+#define NET_MGMT_CONN_LAYER			NET_MGMT_LAYER(NET_MGMT_LAYER_L2)
+#define NET_MGMT_CONN_CODE			NET_MGMT_LAYER_CODE(NET_MGMT_LAYER_CODE_CONN)
+#define NET_MGMT_CONN_BASE			(NET_MGMT_CONN_LAYER | NET_MGMT_CONN_CODE | \
 						 NET_MGMT_EVENT_BIT)
-#define _NET_MGMT_CONN_IF_EVENT			(NET_MGMT_IFACE_BIT | _NET_MGMT_CONN_BASE)
+#define NET_MGMT_CONN_IF_EVENT			(NET_MGMT_IFACE_BIT | NET_MGMT_CONN_BASE)
 
-/** @endcond */
+enum {
+	NET_EVENT_CONN_CMD_IF_TIMEOUT_VAL,
+	NET_EVENT_CONN_CMD_IF_FATAL_ERROR_VAL,
+
+	NET_EVENT_CONN_CMD_MAX
+};
+
+BUILD_ASSERT(NET_EVENT_CONN_CMD_MAX <= NET_MGMT_MAX_COMMANDS,
+	     "Number of events in net_event_conn_cmd exceeds the limit");
 
 enum net_event_conn_cmd {
-	NET_EVENT_CONN_CMD_IF_TIMEOUT = 1,
-	NET_EVENT_CONN_CMD_IF_FATAL_ERROR,
+	NET_MGMT_CMD(NET_EVENT_CONN_CMD_IF_TIMEOUT),
+	NET_MGMT_CMD(NET_EVENT_CONN_CMD_IF_FATAL_ERROR),
 };
+
+/** @endcond */
 
 /**
  * @brief net_mgmt event raised when a connection attempt times out
  */
 #define NET_EVENT_CONN_IF_TIMEOUT					\
-	(_NET_MGMT_CONN_IF_EVENT | NET_EVENT_CONN_CMD_IF_TIMEOUT)
+	(NET_MGMT_CONN_IF_EVENT | NET_EVENT_CONN_CMD_IF_TIMEOUT)
 
 /**
  * @brief net_mgmt event raised when a non-recoverable connectivity error occurs on an iface
  */
 #define NET_EVENT_CONN_IF_FATAL_ERROR					\
-	(_NET_MGMT_CONN_IF_EVENT | NET_EVENT_CONN_CMD_IF_FATAL_ERROR)
+	(NET_MGMT_CONN_IF_EVENT | NET_EVENT_CONN_CMD_IF_FATAL_ERROR)
 
 
 /**
@@ -90,6 +100,12 @@ enum conn_mgr_if_flag {
 	CONN_MGR_IF_NO_AUTO_DOWN,
 
 /** @cond INTERNAL_HIDDEN */
+	/**
+	 * Internal flag indicating that the interface is in active (application initiated)
+	 * disconnect.
+	 */
+	CONN_MGR_IF_DISCONNECTING,
+
 	/* Total number of flags - must be at the end of the enum */
 	CONN_MGR_NUM_IF_FLAGS,
 /** @endcond */
@@ -121,7 +137,7 @@ int conn_mgr_if_connect(struct net_if *iface);
 /**
  * @brief Disconnect interface
  *
- * If the provided iface has been bound to a connectivity implementation, disconnect/dissassociate
+ * If the provided iface has been bound to a connectivity implementation, disconnect/disassociate
  * it from the network, and cancel any pending attempts to connect/associate.
  *
  * Does nothing if the iface is currently admin-down.
@@ -255,7 +271,9 @@ int conn_mgr_if_set_timeout(struct net_if *iface, int timeout);
 /**
  * @brief Connection Manager Bulk API
  * @defgroup conn_mgr_connectivity_bulk Connection Manager Connectivity Bulk API
- * @ingroup networking
+ * @since 3.4
+ * @version 0.1.0
+ * @ingroup conn_mgr_connectivity
  * @{
  */
 

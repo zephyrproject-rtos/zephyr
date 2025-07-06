@@ -29,6 +29,9 @@ ZTEST(rtc_api, test_time_counting)
 
 	gmtime_r(&timer_set, (struct tm *)(&datetime_set));
 
+	datetime_set.tm_isdst = -1;
+	datetime_set.tm_nsec = 0;
+
 	zassert_equal(rtc_set_time(rtc, &datetime_set), 0, "Failed to set time");
 
 	for (i = 0; i < RTC_TEST_TIME_COUNTING_POLL_LIMIT; i++) {

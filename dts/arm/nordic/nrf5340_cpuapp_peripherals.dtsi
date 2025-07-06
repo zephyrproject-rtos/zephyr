@@ -4,22 +4,61 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/regulator/nrf5x.h>
+
 dcnf: dcnf@0 {
 	compatible = "nordic,nrf-dcnf";
 	reg = <0x0 0x1000>;
 	status = "okay";
 };
 
-oscillators: oscillator@4000 {
-	compatible = "nordic,nrf-oscillators";
+oscillators: clock-controller@4000 {
+	compatible = "nordic,nrf53-oscillators";
 	reg = <0x4000 0x1000>;
-	status = "okay";
+
+	lfxo: lfxo {
+		compatible = "nordic,nrf53-lfxo";
+		#clock-cells = <0>;
+		clock-frequency = <32768>;
+	};
+
+	hfxo: hfxo {
+		compatible = "nordic,nrf53-hfxo";
+		#clock-cells = <0>;
+		clock-frequency = <DT_FREQ_M(32)>;
+		startup-time-us = <1400>;
+	};
 };
 
 regulators: regulator@4000 {
-	compatible = "nordic,nrf-regulators";
+	compatible = "nordic,nrf53x-regulators";
 	reg = <0x4000 0x1000>;
 	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	vregmain: regulator@4704 {
+		compatible = "nordic,nrf5x-regulator";
+		reg = <0x4704 0x1>;
+		status = "okay";
+		regulator-name = "VREGMAIN";
+		regulator-initial-mode = <NRF5X_REG_MODE_LDO>;
+	};
+
+	vregradio: regulator@4904 {
+		compatible = "nordic,nrf5x-regulator";
+		reg = <0x4904 0x1>;
+		status = "okay";
+		regulator-name = "VREGRADIO";
+		regulator-initial-mode = <NRF5X_REG_MODE_LDO>;
+	};
+
+	vregh: regulator@4b00 {
+		compatible = "nordic,nrf53x-regulator-hv";
+		reg = <0x4b00 0x44>;
+		status = "disabled";
+		regulator-name = "VREGH";
+	};
 };
 
 clock: clock@5000 {
@@ -77,10 +116,10 @@ i2c0: i2c@8000 {
 	#address-cells = <1>;
 	#size-cells = <0>;
 	reg = <0x8000 0x1000>;
-	clock-frequency = <I2C_BITRATE_STANDARD>;
 	interrupts = <8 NRF_DEFAULT_IRQ_PRIORITY>;
 	easydma-maxcnt-bits = <16>;
 	status = "disabled";
+	zephyr,pm-device-runtime-auto;
 };
 
 spi0: spi@8000 {
@@ -118,10 +157,10 @@ i2c1: i2c@9000 {
 	#address-cells = <1>;
 	#size-cells = <0>;
 	reg = <0x9000 0x1000>;
-	clock-frequency = <I2C_BITRATE_STANDARD>;
 	interrupts = <9 NRF_DEFAULT_IRQ_PRIORITY>;
 	easydma-maxcnt-bits = <16>;
 	status = "disabled";
+	zephyr,pm-device-runtime-auto;
 };
 
 spi1: spi@9000 {
@@ -172,10 +211,10 @@ i2c2: i2c@b000 {
 	#address-cells = <1>;
 	#size-cells = <0>;
 	reg = <0xb000 0x1000>;
-	clock-frequency = <I2C_BITRATE_STANDARD>;
 	interrupts = <11 NRF_DEFAULT_IRQ_PRIORITY>;
 	easydma-maxcnt-bits = <16>;
 	status = "disabled";
+	zephyr,pm-device-runtime-auto;
 };
 
 spi2: spi@b000 {
@@ -213,10 +252,10 @@ i2c3: i2c@c000 {
 	#address-cells = <1>;
 	#size-cells = <0>;
 	reg = <0xc000 0x1000>;
-	clock-frequency = <I2C_BITRATE_STANDARD>;
 	interrupts = <12 NRF_DEFAULT_IRQ_PRIORITY>;
 	easydma-maxcnt-bits = <16>;
 	status = "disabled";
+	zephyr,pm-device-runtime-auto;
 };
 
 spi3: spi@c000 {
@@ -249,6 +288,7 @@ adc: adc@e000 {
 	interrupts = <14 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
 	#io-channel-cells = <1>;
+	zephyr,pm-device-runtime-auto;
 };
 
 timer0: timer@f000 {
@@ -301,7 +341,7 @@ rtc1: rtc@15000 {
 	prescaler = <1>;
 };
 
-dppic: dppic@17000 {
+dppic0: dppic: dppic@17000 {
 	compatible = "nordic,nrf-dppic";
 	reg = <0x17000 0x1000>;
 	status = "okay";
@@ -323,16 +363,13 @@ wdt1: watchdog@19000 {
 
 comp: comparator@1a000 {
 	/*
-	 * This comparator node can be COMP or LPCOMP,
-	 * for the user to pick:
-	 * compatible = "nordic,nrf-comp" or
-	 *              "nordic,nrf-lpcomp".
+	 * Use compatible "nordic,nrf-comp" to configure as COMP
+	 * Use compatible "nordic,nrf-lpcomp" to configure as LPCOMP
 	 */
 	compatible = "nordic,nrf-comp";
 	reg = <0x1a000 0x1000>;
 	interrupts = <26 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
-	#io-channel-cells = <1>;
 };
 
 egu0: egu@1b000 {

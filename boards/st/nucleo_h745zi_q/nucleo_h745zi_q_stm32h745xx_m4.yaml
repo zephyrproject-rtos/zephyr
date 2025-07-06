@@ -5,13 +5,13 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 ram: 288
 flash: 1024
 supported:
   - arduino_gpio
   - gpio
   - netif:eth
+  - spi
 testing:
   ignore_tags:
     - mpu

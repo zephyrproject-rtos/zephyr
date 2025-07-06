@@ -1,12 +1,14 @@
 common:
   depends_on: watchdog
+  expect_reboot: true
   tags:
     - drivers
     - watchdog
 tests:
   drivers.watchdog:
     filter: >
-      not (CONFIG_WDT_SAM or dt_compat_enabled("st,stm32-window-watchdog")
+      not (CONFIG_WDT_SAM or CONFIG_WDT_SAM4L
+       or dt_compat_enabled("st,stm32-window-watchdog")
        or dt_compat_enabled("st,stm32-watchdog") or CONFIG_SOC_FAMILY_LPC or
        CONFIG_SOC_SERIES_IMXRT6XX or CONFIG_SOC_SERIES_IMXRT5XX or
        CONFIG_SOC_FAMILY_GD_GD32 or SOC_SERIES_GD32VF103)
@@ -16,6 +18,20 @@ tests:
       - s32z2xxdc2/s32z270/rtu1
       - s32z2xxdc2@D/s32z270/rtu0
       - s32z2xxdc2@D/s32z270/rtu1
+      - mps2/an383
+      - mps2/an386
+      - mps2/an500
+      - panb511evb/nrf54l15/cpuapp
+      - panb511evb/nrf54l15/cpuapp/ns
+      - panb511evb/nrf54l15/cpuflpr
+      - panb511evb/nrf54l15/cpuflpr/xip
+      - mimxrt700_evk/mimxrt798s/cm33_cpu1
+      - nrf54l15dk/nrf54l15/cpuapp/ns
+      - nrf54l15dk/nrf54l10/cpuapp/ns
+      - bl54l15_dvk/nrf54l10/cpuapp/ns
+      - bl54l15_dvk/nrf54l15/cpuapp/ns
+      - bl54l15u_dvk/nrf54l15/cpuapp/ns
+      - raytac_an54l15q_db/nrf54l15/cpuapp/ns
   drivers.watchdog.stm32wwdg:
     filter: dt_compat_enabled("st,stm32-window-watchdog") or dt_compat_enabled("st,stm32-watchdog")
     extra_args: DTC_OVERLAY_FILE="boards/stm32_wwdg.overlay"
@@ -35,16 +51,19 @@ tests:
       - nucleo_wb55rg
       - nucleo_wl55jc
       - b_u585i_iot02a
+      - nucleo_u385rg_q
       - nucleo_u575zi_q
       - nucleo_c031c6
       - stm32h573i_dk
-      - nucleo_wba52cg
+      - nucleo_wba55cg
     integration_platforms:
       - nucleo_f091rc
   drivers.watchdog.stm32wwdg_h7:
     filter: dt_compat_enabled("st,stm32-window-watchdog") or dt_compat_enabled("st,stm32-watchdog")
     extra_args: DTC_OVERLAY_FILE="boards/stm32_wwdg_h7.overlay"
     platform_allow:
+      - nucleo_h7s3l8
+      - stm32h7s78_dk
       - nucleo_h753zi
       - nucleo_h743zi
   drivers.watchdog.stm32iwdg:
@@ -71,7 +90,10 @@ tests:
       - nucleo_h743zi
       - nucleo_c031c6
       - nucleo_h753zi
-      - nucleo_wba52cg
+      - nucleo_h7s3l8
+      - stm32h7s78_dk
+      - nucleo_u385rg_q
+      - nucleo_wba55cg
     integration_platforms:
       - nucleo_f091rc
   drivers.watchdog.mec15xxevb_assy6853:
@@ -80,7 +102,7 @@ tests:
   drivers.watchdog.counter_watchdog:
     platform_allow: nrf52840dk/nrf52840
     extra_args:
-      - OVERLAY_CONFIG="boards/nrf52840dk_nrf52840_counter.conf"
+      - EXTRA_CONF_FILE="boards/nrf52840dk_nrf52840_counter.conf"
       - DTC_OVERLAY_FILE="boards/nrf52840dk_nrf52840_counter.overlay"
   drivers.watchdog.gd32fwdgt:
     filter: dt_compat_enabled("gd,gd32-fwdgt")
@@ -122,7 +144,9 @@ tests:
       - s32z2xxdc2@D/s32z270/rtu0
       - s32z2xxdc2@D/s32z270/rtu1
       - mr_canhubk3
+    integration_platforms:
+      - s32z2xxdc2/s32z270/rtu0
   drivers.watchdog.mimxrt1050_evk_ti_tps382x:
     filter: dt_compat_enabled("ti,tps382x")
-    platform_allow: mimxrt1050_evk
+    platform_allow: mimxrt1050_evk/mimxrt1052/hyperflash
     extra_args: DTC_OVERLAY_FILE="boards/mimxrt1050_evk_ti_tps382x.overlay"

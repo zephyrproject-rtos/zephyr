@@ -14,3 +14,4 @@ config SOC_SERIES_STM32L4X
 	select HAS_SWO
 	select HAS_PM
 	select HAS_POWEROFF
+	select SOC_EARLY_INIT_HOOK

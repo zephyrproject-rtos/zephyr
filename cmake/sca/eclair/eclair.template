@@ -1,0 +1,37 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2024, Baumer (www.baumer.com)
+
+# Everything before `--` are arguments for cmake invocation, those must be ignored.
+# The first argument after `--` is the start of the compiler call, which is
+# what we want to get to invoke ECLAIR with the compiler call which is used in the zephyr
+# environment
+foreach(i RANGE ${CMAKE_ARGC})
+  if("${CMAKE_ARGV${i}}" STREQUAL "--")
+    math(EXPR end_of_options "${i} + 1")
+    break()
+  endif()
+endforeach()
+
+foreach(i RANGE ${end_of_options} ${CMAKE_ARGC})
+  list(APPEND ZEPHYR_COMPILER_CALL ${CMAKE_ARGV${i}})
+endforeach()
+
+list(APPEND ECLAIR_ARGS +incremental
+                        -project_name=@ECLAIR_PROJECT_NAME@ -project_root=@ZEPHYR_BASE@
+                        -eval_file=@ECLAIR_ECL_DIR@/analysis.ecl
+                        -eval_file=@ECLAIR_ANALYSIS_ECL_DIR@/analysis_@ECLAIR_RULESET@.ecl
+                        @ECLAIR_ENV_ADDITIONAL_OPTIONS@)
+
+execute_process(
+  COMMAND @CMAKE_COMMAND@ -E env
+    ECLAIR_DIAGNOSTICS_OUTPUT=@ECLAIR_DIAGNOSTICS_OUTPUT@
+    ECLAIR_DATA_DIR=@ECLAIR_ANALYSIS_DATA_DIR@
+    CC_ALIASES=@CC_ALIASES@
+    CXX_ALIASES=@CXX_ALIASES@
+    AS_ALIASES=@AS_ALIASES@
+    LD_ALIASES=@LD_ALIASES@
+    AR_ALIASES=@AR_ALIASES@
+    @ECLAIR_ENV@ ${ECLAIR_ARGS} -- ${ZEPHYR_COMPILER_CALL}
+  COMMAND_ERROR_IS_FATAL ANY
+)

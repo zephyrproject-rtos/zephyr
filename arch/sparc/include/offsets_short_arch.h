@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_ARCH_SPARC_INCLUDE_OFFSETS_SHORT_ARCH_H_
 #define ZEPHYR_ARCH_SPARC_INCLUDE_OFFSETS_SHORT_ARCH_H_
 
-#include <offsets.h>
+#include <zephyr/offsets.h>
 
 #define _thread_offset_to_y \
 	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_y_OFFSET)

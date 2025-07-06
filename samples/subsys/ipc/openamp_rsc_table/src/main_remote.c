@@ -17,18 +17,26 @@
 #include <metal/sys.h>
 #include <metal/io.h>
 #include <resource_table.h>
+#include <addr_translation.h>
 
 #ifdef CONFIG_SHELL_BACKEND_RPMSG
 #include <zephyr/shell/shell_rpmsg.h>
 #endif
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(openamp_rsc_table, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(openamp_rsc_table);
 
 #define SHM_DEVICE_NAME	"shm"
 
 #if !DT_HAS_CHOSEN(zephyr_ipc_shm)
 #error "Sample requires definition of shared memory for rpmsg"
+#endif
+
+#if CONFIG_IPM_MAX_DATA_SIZE > 0
+
+#define	IPM_SEND(dev, w, id, d, s) ipm_send(dev, w, id, d, s)
+#else
+#define IPM_SEND(dev, w, id, d, s) ipm_send(dev, w, id, NULL, 0)
 #endif
 
 /* Constants derived from device tree */
@@ -53,6 +61,7 @@ static const struct device *const ipm_handle =
 	DEVICE_DT_GET(DT_CHOSEN(zephyr_ipc));
 
 static metal_phys_addr_t shm_physmap = SHM_START_ADDR;
+static metal_phys_addr_t rsc_tab_physmap;
 
 static struct metal_io_region shm_io_data; /* shared memory */
 static struct metal_io_region rsc_io_data; /* rsc_table memory */
@@ -132,14 +141,13 @@ int mailbox_notify(void *priv, uint32_t id)
 	ARG_UNUSED(priv);
 
 	LOG_DBG("%s: msg received", __func__);
-	ipm_send(ipm_handle, 0, id, NULL, 0);
+	IPM_SEND(ipm_handle, 0, id, &id, 4);
 
 	return 0;
 }
 
 int platform_init(void)
 {
-	void *rsc_tab_addr;
 	int rsc_size;
 	struct metal_init_params metal_params = METAL_INIT_DEFAULTS;
 	int status;
@@ -152,14 +160,14 @@ int platform_init(void)
 
 	/* declare shared memory region */
 	metal_io_init(shm_io, (void *)SHM_START_ADDR, &shm_physmap,
-		      SHM_SIZE, -1, 0, NULL);
+		      SHM_SIZE, -1, 0, addr_translation_get_ops(shm_physmap));
 
 	/* declare resource table region */
-	rsc_table_get(&rsc_tab_addr, &rsc_size);
-	rsc_table = (struct st_resource_table *)rsc_tab_addr;
+	rsc_table_get(&rsc_table, &rsc_size);
+	rsc_tab_physmap = (uintptr_t)rsc_table;
 
 	metal_io_init(rsc_io, rsc_table,
-		      (metal_phys_addr_t *)rsc_table, rsc_size, -1, 0, NULL);
+		      &rsc_tab_physmap, rsc_size, -1, 0, NULL);
 
 	/* setup IPM */
 	if (!device_is_ready(ipm_handle)) {
@@ -299,7 +307,7 @@ void app_rpmsg_tty(void *arg1, void *arg2, void *arg3)
 		k_sem_take(&data_tty_sem,  K_FOREVER);
 		if (tty_msg.len) {
 			LOG_INF("[Linux TTY] incoming msg: %.*s",
-				tty_msg.len, (char *)tty_msg.data);
+				(int)tty_msg.len, (char *)tty_msg.data);
 			snprintf(tx_buff, 13, "TTY 0x%04x: ", tty_ept.addr);
 			memcpy(&tx_buff[12], tty_msg.data, tty_msg.len);
 			rpmsg_send(&tty_ept, tx_buff, tty_msg.len + 12);

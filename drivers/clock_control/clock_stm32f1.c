@@ -21,10 +21,16 @@
 #define STM32_USB_PRE_ENABLED	RCC_CFGR_OTGFSPRE
 #endif
 
-#define z_adc_prescaler(v) LL_RCC_ADC_CLKSRC_PCLK2_DIV_ ## v
-#define adc_prescaler(v) z_adc_prescaler(v)
-
 #if defined(STM32_PLL_ENABLED)
+
+uint32_t get_pllout_frequency(void)
+{
+	/* Stub implementation for compatibility with clock_stm32_ll_common.
+	 * The PLL domain clock is only used for MCO configuration, but the
+	 * MCO driver never queries the PLL output clock frequency.
+	 */
+	return 0;
+}
 
 /*
  * Select PLL source for STM32F1 Connectivity line devices (STM32F105xx and

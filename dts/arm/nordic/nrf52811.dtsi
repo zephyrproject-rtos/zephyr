@@ -6,9 +6,12 @@
 
 #include <arm/armv7-m.dtsi>
 #include <nordic/nrf_common.dtsi>
+#include <zephyr/dt-bindings/adc/nrf-saadc-v2.h>
+#include <zephyr/dt-bindings/regulator/nrf5x.h>
 
 / {
 	chosen {
+		zephyr,bt-hci = &bt_hci_controller;
 		zephyr,entropy = &rng;
 		zephyr,flash-controller = &flash_controller;
 	};
@@ -29,6 +32,15 @@
 				reg = <0xe0000000 0x1000>;
 				swo-ref-frequency = <32000000>;
 			};
+		};
+	};
+
+	clocks {
+		hfxo: hfxo {
+			compatible = "nordic,nrf52-hfxo";
+			clock-frequency = <64000000>;
+			startup-time-us = <1400>;
+			#clock-cells = <0>;
 		};
 	};
 
@@ -80,6 +92,13 @@
 				reg = <0x40000520 0x1>;
 				status = "okay";
 			};
+
+			reg: regulator@40000578 {
+				compatible = "nordic,nrf5x-regulator";
+				reg = <0x40000578 0x1>;
+				regulator-name = "REG";
+				regulator-initial-mode = <NRF5X_REG_MODE_LDO>;
+			};
 		};
 
 		bprot: bprot@40000000 {
@@ -101,6 +120,14 @@
 			ieee802154: ieee802154 {
 				compatible = "nordic,nrf-ieee802154";
 				status = "disabled";
+			};
+
+			/* Note: In the nRF Connect SDK the SoftDevice Controller
+			 * is added and set as the default Bluetooth Controller.
+			 */
+			bt_hci_controller: bt_hci_controller {
+				compatible = "zephyr,bt-hci-ll-sw-split";
+				status = "okay";
 			};
 		};
 
@@ -125,10 +152,10 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003000 0x1000>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <3 NRF_DEFAULT_IRQ_PRIORITY>;
 			easydma-maxcnt-bits = <14>;
 			status = "disabled";
+			zephyr,pm-device-runtime-auto;
 		};
 
 		spi1: spi@40003000 {
@@ -182,6 +209,7 @@
 			interrupts = <7 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "disabled";
 			#io-channel-cells = <1>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		timer0: timer@40008000 {
@@ -282,7 +310,6 @@
 			reg = <0x40013000 0x1000>;
 			interrupts = <19 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "disabled";
-			#io-channel-cells = <1>;
 		};
 
 		egu0: swi0: egu@40014000 {

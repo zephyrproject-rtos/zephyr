@@ -10,6 +10,8 @@
  *
  * @brief Zperf API
  * @defgroup zperf Zperf API
+ * @since 3.3
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */
@@ -24,13 +26,33 @@
 extern "C" {
 #endif
 
+/** @cond INTERNAL_HIDDEN */
+
 enum zperf_status {
 	ZPERF_SESSION_STARTED,
+	ZPERF_SESSION_PERIODIC_RESULT,
 	ZPERF_SESSION_FINISHED,
 	ZPERF_SESSION_ERROR
 } __packed;
 
+/**
+ * @brief Zperf callback function to load custom data for upload
+ *
+ * @param user_ctx User context for data load
+ * @param offset Current offset of custom data
+ * @param data Pointer to load data into
+ * @param len Length of data to load in bytes
+ *
+ * @retval 0 On successful data load
+ * @retval -errno Data load failed, terminate data upload
+ */
+typedef int (*zperf_data_load_custom)(void *user_ctx, uint64_t offset,
+				      uint8_t *data, uint32_t len);
+
 struct zperf_upload_params {
+	uint64_t unix_offset_us;
+	zperf_data_load_custom data_loader;
+	void *data_loader_ctx;
 	struct sockaddr peer_addr;
 	uint32_t duration_ms;
 	uint32_t rate_kbps;
@@ -40,6 +62,11 @@ struct zperf_upload_params {
 		uint8_t tos;
 		int tcp_nodelay;
 		int priority;
+#ifdef CONFIG_ZPERF_SESSION_PER_THREAD
+		int thread_priority;
+		bool wait_for_start;
+#endif
+		uint32_t report_interval_ms;
 	} options;
 };
 
@@ -49,17 +76,20 @@ struct zperf_download_params {
 	char if_name[IFNAMSIZ];
 };
 
+/** @endcond */
+
+/** Performance results */
 struct zperf_results {
-	uint32_t nb_packets_sent;
-	uint32_t nb_packets_rcvd;
-	uint32_t nb_packets_lost;
-	uint32_t nb_packets_outorder;
-	uint64_t total_len;
-	uint64_t time_in_us;
-	uint32_t jitter_in_us;
-	uint64_t client_time_in_us;
-	uint32_t packet_size;
-	uint32_t nb_packets_errors;
+	uint32_t nb_packets_sent;     /**< Number of packets sent */
+	uint32_t nb_packets_rcvd;     /**< Number of packets received */
+	uint32_t nb_packets_lost;     /**< Number of packets lost */
+	uint32_t nb_packets_outorder; /**< Number of packets out of order */
+	uint64_t total_len;           /**< Total length of the transferred data */
+	uint64_t time_in_us;          /**< Total time of the transfer in microseconds */
+	uint32_t jitter_in_us;        /**< Jitter in microseconds */
+	uint64_t client_time_in_us;   /**< Client connection time in microseconds */
+	uint32_t packet_size;         /**< Packet size */
+	uint32_t nb_packets_errors;   /**< Number of packet errors */
 };
 
 /**

@@ -1,5 +1,5 @@
 .. zephyr:code-sample:: soc-flash-nrf
-   :name: nRF SoC flash
+   :name: nRF SoC Internal Storage
    :relevant-api: flash_interface flash_area_api
 
    Use the flash API to interact with the SoC flash.
@@ -7,10 +7,11 @@
 Overview
 ********
 
-This sample demonstrates using the :ref:`Flash API <flash_api>` on an SoC internal flash.
-The sample uses :ref:`Flash map API <flash_map_api>` to obtain device for flash, using
-DTS node label, and then directly uses :ref:`Flash API <flash_api>` to perform
-flash operations.
+This sample demonstrates using the :ref:`Flash API <flash_api>` on an SoC internal storage.
+The sample uses :ref:`Flash map API <flash_map_api>` to obtain a device that has one
+partition defined with the label ``storage_partition``, then uses :ref:`Flash API <flash_api>`
+to directly access and modify the contents of a device within the area defined for said
+partition.
 
 Within the sample, user may observe how read/write/erase operations
 are performed on a device, and how to first check whether device is
@@ -19,11 +20,9 @@ ready for operation.
 Building and Running
 ********************
 
-The application will build for any SoC with internal flash memory
-access enabled, as it is default for SoC devices, and fixed-partition
-defined over that internal flash labeled `slot1_partition`, when
-:kconfig:option:`CONFIG_TRUSTED_EXECUTION_NONSECURE` is not selected,
-or `slot1_ns_partition`, when the Kconfig option is selected.
+The sample will be built for any SoC with internal storage, as long as
+there is a fixed-partition named ``storage_partition`` defined
+on that internal storage.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/soc_flash_nrf
@@ -38,8 +37,8 @@ Sample Output
 
    *** Booting Zephyr OS build v2.7.99-17621-g54832687bcbb ***
 
-   Nordic nRF5 Flash Testing
-   =========================
+   Nordic nRF5 Internal Storage Sample
+   ===================================
 
    Test 1: Flash erase page at 0x82000
       Flash erase succeeded!

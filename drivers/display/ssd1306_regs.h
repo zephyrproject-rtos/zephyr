@@ -76,7 +76,11 @@
 
 #define SSD1306_SET_PADS_HW_CONFIG		0xda /* double byte command */
 #define SSD1306_SET_PADS_HW_SEQUENTIAL		0x02
-#define SSD1306_SET_PADS_HW_ALTERNATIVE		0x12
+#define SSD1306_SET_PADS_HW_ALTERNATIVE         0x12
+
+#define SSD1306_SET_IREF_MODE			0xad
+#define SSD1306_SET_IREF_MODE_INTERNAL		0x30
+#define SSD1306_SET_IREF_MODE_EXTERNAL		0x00
 
 
 /*
@@ -114,5 +118,6 @@
 
 /* time constants in ms */
 #define SSD1306_RESET_DELAY			1
+#define SSD1306_SUPPLY_DELAY			20
 
 #endif

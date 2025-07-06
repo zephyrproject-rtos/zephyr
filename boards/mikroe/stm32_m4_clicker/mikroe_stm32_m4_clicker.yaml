@@ -1,0 +1,16 @@
+identifier: mikroe_stm32_m4_clicker
+name: Mikroe STM32 M4 Clicker
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 128
+flash: 1024
+supported:
+  - uart
+  - gpio
+  - i2c
+  - spi
+  - usb_device
+vendor: mikroe

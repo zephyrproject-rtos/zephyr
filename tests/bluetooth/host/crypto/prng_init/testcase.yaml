@@ -1,7 +1,0 @@
-common:
-  tags:
-    - bluetooth
-    - host
-tests:
-  bluetooth.host.prng_init.default:
-    type: unit

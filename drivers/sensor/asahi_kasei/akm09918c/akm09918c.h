@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Google LLC
+ * Copyright (c) 2024 Florian Weber <Florian.Weber@live.de>
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -34,6 +35,16 @@ struct akm09918c_data {
 	int16_t y_sample;
 	int16_t z_sample;
 	uint8_t mode;
+#ifdef CONFIG_SENSOR_ASYNC_API
+	struct akm09918c_async_fetch_ctx {
+		struct rtio_iodev_sqe *iodev_sqe;
+		uint64_t timestamp;
+		struct k_work_delayable async_fetch_work;
+	} work_ctx;
+	/* for communication to the bus controller */
+	struct rtio *rtio_ctx;
+	struct rtio_iodev *iodev;
+#endif
 };
 
 struct akm09918c_config {
@@ -74,25 +85,34 @@ static inline void akm09918c_reg_to_hz(uint8_t reg, struct sensor_value *val)
 		break;
 	}
 }
+int akm09918c_start_measurement_blocking(const struct device *dev, enum sensor_channel chan);
 
+int akm09918c_fetch_measurement_blocking(const struct device *dev, int16_t *x, int16_t *y,
+					 int16_t *z);
 /*
  * RTIO types
  */
 
 struct akm09918c_decoder_header {
 	uint64_t timestamp;
-} __attribute__((__packed__));
+} __packed;
 
 struct akm09918c_encoded_data {
 	struct akm09918c_decoder_header header;
-	int16_t readings[3];
+	struct __packed {
+		uint8_t st1;
+		int16_t data[3];
+		uint8_t tmps; /* not used  - only for padding */
+		uint8_t st2;  /* not used but includes overflow data */
+	} reading;
 };
 
-int akm09918c_sample_fetch_helper(const struct device *dev, enum sensor_channel chan, int16_t *x,
-				  int16_t *y, int16_t *z);
+void akm09918_async_fetch(struct k_work *work);
 
 int akm09918c_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder);
 
-int akm09918c_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
+void akm09918c_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
+void akm09918_after_start_cb(struct rtio *rtio_ctx, const struct rtio_sqe *sqe, void *arg0);
+void akm09918_complete_cb(struct rtio *rtio_ctx, const struct rtio_sqe *sqe, void *arg0);
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_AKM09918C_AKM09918C_H_ */

@@ -119,7 +119,7 @@ static int udc_skeleton_ep_dequeue(const struct device *dev,
 
 	lock_key = irq_lock();
 
-	buf = udc_buf_get_all(dev, cfg->addr);
+	buf = udc_buf_get_all(cfg);
 	if (buf) {
 		udc_submit_ep_event(dev, buf, -ECONNABORTED);
 	}
@@ -209,7 +209,7 @@ static int udc_skeleton_enable(const struct device *dev)
 
 static int udc_skeleton_disable(const struct device *dev)
 {
-	LOG_DBG("Enable device %p", dev);
+	LOG_DBG("Disable device %p", dev);
 
 	return 0;
 }
@@ -231,6 +231,10 @@ static int udc_skeleton_init(const struct device *dev)
 				   USB_EP_TYPE_CONTROL, 64, 0)) {
 		LOG_ERR("Failed to enable control endpoint");
 		return -EIO;
+	}
+
+	if (IS_ENABLED(CONFIG_UDC_ENABLE_SOF)) {
+		LOG_INF("Enable SOF interrupt");
 	}
 
 	return 0;
@@ -323,14 +327,14 @@ static int udc_skeleton_driver_preinit(const struct device *dev)
 	return 0;
 }
 
-static int udc_skeleton_lock(const struct device *dev)
+static void udc_skeleton_lock(const struct device *dev)
 {
-	return udc_lock_internal(dev, K_FOREVER);
+	udc_lock_internal(dev, K_FOREVER);
 }
 
-static int udc_skeleton_unlock(const struct device *dev)
+static void udc_skeleton_unlock(const struct device *dev)
 {
-	return udc_unlock_internal(dev);
+	udc_unlock_internal(dev);
 }
 
 /*
@@ -363,7 +367,8 @@ static const struct udc_api udc_skeleton_api = {
  * driver, even if your platform does not require it.
  */
 #define UDC_SKELETON_DEVICE_DEFINE(n)						\
-	K_THREAD_STACK_DEFINE(udc_skeleton_stack_##n, CONFIG_UDC_SKELETON);	\
+	K_THREAD_STACK_DEFINE(udc_skeleton_stack_##n,				\
+			      CONFIG_UDC_SKELETON_STACK_SIZE);			\
 										\
 	static void udc_skeleton_thread_##n(void *dev, void *arg1, void *arg2)	\
 	{									\

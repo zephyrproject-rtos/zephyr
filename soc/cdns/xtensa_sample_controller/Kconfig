@@ -3,5 +3,5 @@
 
 config SOC_XTENSA_SAMPLE_CONTROLLER
 	select XTENSA
-	select XTENSA_HAL
+	select XTENSA_HAL if ("$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xcc" && "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xt-clang")
 	select ARCH_SUPPORTS_COREDUMP

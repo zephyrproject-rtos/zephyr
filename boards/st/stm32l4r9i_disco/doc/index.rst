@@ -1,7 +1,4 @@
-.. _stm32l4r9i_disco_board:
-
-ST STM32L4R9I Discovery
-#######################
+.. zephyr:board:: stm32l4r9i_disco
 
 Overview
 ********
@@ -18,10 +15,6 @@ support for AMOLED DSI round LCD display.
 For even more user-friendliness, the on-board ST-LINK/V2-1 debugger provides out-of-the-box
 programming and debugging capabilities.
 
-.. image:: img/stm32l4r9i_disco.jpg
-    :align: center
-    :alt: STM32L4R9I-DISCO
-
 More information about the board can be found at the `STM32L4R9I-DISCOVERY website`_.
 More information about STM32L4R9 can be found here:
 
@@ -32,41 +25,7 @@ More information about STM32L4R9 can be found here:
 Supported Features
 ==================
 
-The current Zephyr stm32l4r9i_disco board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling                 |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | on-chip flash memory;               |
-|           |            | external OctoSPI memory             |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | ADC Controller                      |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | Real Time Clock                     |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| SDMMC     | on-chip    | sd/mmc                              |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on Zephyr porting.
-
-The default configuration can be found in the defconfig file:
-
-	:zephyr_file:`boards/st/stm32l4r9i_disco/stm32l4r9i_disco_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========
@@ -91,8 +50,7 @@ ST-LINK Virtual COM port interface. Default communication settings are 115200 8N
 Programming and Debugging
 *************************
 
-Flashing
-========
+.. zephyr:board-supported-runners::
 
 The STM32L4R9I Discovery board includes an ST-LINK/V2-1 debug tool.
 
@@ -100,6 +58,19 @@ Applications for the ``stm32l4r9i_disco`` board configuration can be
 built and flashed in the usual way (see :ref:`build_an_application`
 and :ref:`application_run` for more details).
 
+Flashing
+========
+
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, OpenOCD or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
 
 Flashing an application to STM32L4R9I Discovery
 -----------------------------------------------
@@ -112,7 +83,7 @@ USB port, then run a serial host program to connect with the board. For example:
    $ minicom -b 115200 -D /dev/ttyACM0
 
 You can then build and flash applications in the usual way.
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -130,7 +101,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
     :zephyr-app: samples/hello_world
@@ -148,3 +119,6 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32L4R5xx/R7xx/R9xx datasheet:
     https://www.st.com/resource/en/datasheet/stm32l4r5vi.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

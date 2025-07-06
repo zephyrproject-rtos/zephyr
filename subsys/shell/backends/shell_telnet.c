@@ -39,10 +39,10 @@ struct shell_telnet *sh_telnet;
 
 /* Basic TELNET implementation. */
 
-static void telnet_server_cb(struct k_work *work);
+static void telnet_server_cb(struct net_socket_service_event *evt);
 static int telnet_init(struct shell_telnet *ctx);
 
-NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(telnet_server, NULL, telnet_server_cb,
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(telnet_server, telnet_server_cb,
 				      SHELL_TELNET_POLLFD_COUNT);
 
 
@@ -462,10 +462,8 @@ error:
 	}
 }
 
-static void telnet_server_cb(struct k_work *work)
+static void telnet_server_cb(struct net_socket_service_event *evt)
 {
-	struct net_socket_service_event *evt =
-		CONTAINER_OF(work, struct net_socket_service_event, work);
 	int sock_error;
 	socklen_t optlen = sizeof(int);
 
@@ -480,7 +478,8 @@ static void telnet_server_cb(struct k_work *work)
 		NET_ERR("Telnet socket %d error (%d)", evt->event.fd, sock_error);
 
 		if (evt->event.fd == sh_telnet->fds[SOCK_ID_CLIENT].fd) {
-			return telnet_end_client_connection();
+			telnet_end_client_connection();
+			return;
 		}
 
 		goto error;
@@ -491,11 +490,14 @@ static void telnet_server_cb(struct k_work *work)
 	}
 
 	if (evt->event.fd == sh_telnet->fds[SOCK_ID_IPV4_LISTEN].fd) {
-		return telnet_accept(&sh_telnet->fds[SOCK_ID_IPV4_LISTEN]);
+		telnet_accept(&sh_telnet->fds[SOCK_ID_IPV4_LISTEN]);
+		return;
 	} else if (evt->event.fd == sh_telnet->fds[SOCK_ID_IPV6_LISTEN].fd) {
-		return telnet_accept(&sh_telnet->fds[SOCK_ID_IPV6_LISTEN]);
+		telnet_accept(&sh_telnet->fds[SOCK_ID_IPV6_LISTEN]);
+		return;
 	} else if (evt->event.fd == sh_telnet->fds[SOCK_ID_CLIENT].fd) {
-		return telnet_recv(&sh_telnet->fds[SOCK_ID_CLIENT]);
+		telnet_recv(&sh_telnet->fds[SOCK_ID_CLIENT]);
+		return;
 	}
 
 	NET_ERR("Unexpected FD received for telnet, restarting service.");
@@ -657,8 +659,8 @@ static int enable(const struct shell_transport *transport, bool blocking)
 	return 0;
 }
 
-static int write(const struct shell_transport *transport,
-		 const void *data, size_t length, size_t *cnt)
+static int telnet_write(const struct shell_transport *transport,
+			const void *data, size_t length, size_t *cnt)
 {
 	struct shell_telnet_line_buf *lb;
 	size_t copy_len;
@@ -704,7 +706,12 @@ static int write(const struct shell_transport *transport,
 			err = telnet_send(true);
 			if (err != 0) {
 				*cnt = length;
-				return err;
+				if ((err == -ENOTCONN) || (err == -ENETDOWN)) {
+					LOG_ERR("Network disconnected, shutting down");
+				} else {
+					LOG_ERR("Error %d, shutting down", err);
+				}
+				return 0; /* Return 0 to not trigger ASSERT in shell_ops.c */
 			}
 		}
 
@@ -725,8 +732,8 @@ static int write(const struct shell_transport *transport,
 	return 0;
 }
 
-static int read(const struct shell_transport *transport,
-		void *data, size_t length, size_t *cnt)
+static int telnet_read(const struct shell_transport *transport,
+		       void *data, size_t length, size_t *cnt)
 {
 	size_t read_len;
 
@@ -772,8 +779,8 @@ const struct shell_transport_api shell_telnet_transport_api = {
 	.init = init,
 	.uninit = uninit,
 	.enable = enable,
-	.write = write,
-	.read = read
+	.write = telnet_write,
+	.read = telnet_read
 };
 
 static int enable_shell_telnet(void)
@@ -786,10 +793,6 @@ static int enable_shell_telnet(void)
 
 	return shell_init(&shell_telnet, NULL, cfg_flags, log_backend, level);
 }
-
-BUILD_ASSERT(CONFIG_SHELL_TELNET_INIT_PRIORITY > CONFIG_NET_SOCKETS_SERVICE_INIT_PRIO,
-	     "CONFIG_SHELL_TELNET_INIT_PRIORITY must be higher than "
-	     "CONFIG_NET_SOCKETS_SERVICE_INIT_PRIO");
 
 SYS_INIT(enable_shell_telnet, APPLICATION, CONFIG_SHELL_TELNET_INIT_PRIORITY);
 

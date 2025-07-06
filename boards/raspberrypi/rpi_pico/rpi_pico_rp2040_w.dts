@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Dave Rensberger - Beechwoods Software
+ * Copyright (c) 2024 Steve Boylan <stephen.boylan@beechwoods.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,3 +8,60 @@
 /dts-v1/;
 
 #include "rpi_pico-common.dtsi"
+
+&pinctrl {
+	pio0_spi0_default: pio0_spi0_default {
+		/* gpio 25 is used for chip select, not assigned to the PIO */
+		group1 {
+			pinmux = <PIO0_P29>;
+		};
+	};
+
+	airoc_wifi_default: airoc_wifi_default {
+		/* Control of GPIO24 is done through the WiFi driver */
+		group1 {
+			pinmux = <PIO0_P24>;
+			input-enable;
+		};
+	};
+
+	airoc_wifi_host_wake: airoc_wifi_host_wake {
+		/* Assign GPIO24 to SIO (GPIO) for use as an interrupt source */
+		group1 {
+			/* Lacking a specific SIO pin definition, use the RP2040_PINMUX macro */
+			pinmux = <RP2XXX_PINMUX(24, RP2_PINCTRL_GPIO_FUNC_SIO)>;
+			input-enable;
+		};
+	};
+};
+
+&pio0 {
+	status = "okay";
+
+	pio0_spi0: pio0_spi0 {
+		compatible = "raspberrypi,pico-spi-pio";
+		clocks = < &clocks RPI_PICO_CLKID_CLK_SYS >;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		cs-gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+		clk-gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>;
+		sio-gpios = <&gpio0 24 GPIO_ACTIVE_HIGH>;
+		pinctrl-0 = <&pio0_spi0_default>;
+		pinctrl-names = "default";
+		status = "okay";
+		airoc-wifi@0 {
+			compatible = "infineon,airoc-wifi";
+			reg = < 0 >;
+			wifi-reg-on-gpios = < &gpio0 23 GPIO_ACTIVE_HIGH >;
+			bus-select-gpios = < &gpio0 24 GPIO_ACTIVE_HIGH >;
+			wifi-host-wake-gpios = < &gpio0 24 GPIO_ACTIVE_HIGH >;
+			spi-max-frequency = < 10000000 >;
+			spi-half-duplex;
+			spi-data-irq-shared;
+			pinctrl-0 = <&airoc_wifi_default>;
+			pinctrl-1 = <&airoc_wifi_host_wake>;
+			pinctrl-names = "default", "host_wake";
+			status = "okay";
+		};
+	};
+};

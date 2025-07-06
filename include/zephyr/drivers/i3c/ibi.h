@@ -14,10 +14,11 @@
  * @{
  */
 
+#include <stdint.h>
+
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
-#include <zephyr/types.h>
-#include <zephyr/sys/util.h>
+#include <zephyr/sys/slist.h>
 
 #ifndef CONFIG_I3C_IBI_MAX_PAYLOAD_SIZE
 #define CONFIG_I3C_IBI_MAX_PAYLOAD_SIZE 0
@@ -86,13 +87,7 @@ struct i3c_ibi_payload {
  * @brief Node about a queued IBI.
  */
 struct i3c_ibi_work {
-	/**
-	 * @cond INTERNAL_HIDDEN
-	 *
-	 * Used for keeping track of work in a queue.
-	 */
 	sys_snode_t node;
-	/** @endcond */
 
 	/**
 	 * k_work struct.
@@ -188,6 +183,21 @@ int i3c_ibi_work_enqueue(struct i3c_ibi_work *ibi_work);
  */
 int i3c_ibi_work_enqueue_target_irq(struct i3c_device_desc *target,
 				    uint8_t *payload, size_t payload_len);
+
+/**
+ * @brief Queue a controllership request IBI for future processing.
+ *
+ * This queues up a controllership request IBI in the IBI workqueue
+ * for future processing.
+ *
+ * @param target Pointer to target device descriptor.
+ *
+ * @retval 0 If work item is successfully queued.
+ * @retval -ENOMEM If no more free internal node to
+ *                 store IBI work item.
+ * @retval Others @see k_work_submit_to_queue
+ */
+int i3c_ibi_work_enqueue_controller_request(struct i3c_device_desc *target);
 
 /**
  * @brief Queue a hot join IBI for future processing.

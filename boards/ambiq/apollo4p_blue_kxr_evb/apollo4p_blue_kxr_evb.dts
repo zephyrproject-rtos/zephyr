@@ -1,5 +1,6 @@
 /dts-v1/;
 #include <ambiq/ambiq_apollo4p_blue.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 #include "apollo4p_blue_kxr_evb-pinctrl.dtsi"
 
@@ -15,6 +16,7 @@
 		zephyr,shell-uart = &uart0;
 		zephyr,uart-pipe = &uart0;
 		zephyr,flash-controller = &flash;
+		zephyr,bt-hci = &bt_hci_apollo;
 	};
 
 	aliases {
@@ -44,13 +46,18 @@
 
 	buttons {
 		compatible = "gpio-keys";
+		polling-mode;
 		button0: button_0 {
 			gpios = <&gpio0_31 17 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "BTN0";
+			zephyr,code = <INPUT_KEY_0>;
+			status = "okay";
 		};
 		button1: button_1 {
 			gpios = <&gpio0_31 19 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "BTN1";
+			zephyr,code = <INPUT_KEY_1>;
+			status = "okay";
 		};
 	};
 };
@@ -62,8 +69,19 @@
 	status = "okay";
 };
 
-&counter0 {
+&itm {
+	pinctrl-0 = <&itm_default>;
+	pinctrl-names = "default";
 	status = "okay";
+};
+
+&counter0 {
+	status = "disabled";
+};
+
+&rtc0 {
+	status = "disabled";
+	clock = "XTAL";
 };
 
 &wdt0 {
@@ -71,31 +89,38 @@
 };
 
 &iom0 {
-	compatible = "ambiq,i2c";
-	pinctrl-0 = <&i2c0_default>;
-	pinctrl-names = "default";
-	clock-frequency = <I2C_BITRATE_STANDARD>;
-	status = "okay";
+	i2c0: i2c {
+		pinctrl-0 = <&i2c0_default>;
+		pinctrl-names = "default";
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		scl-gpios = <&gpio0_31 5 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
+		sda-gpios = <&gpio0_31 6 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
+		status = "disabled";
+	};
 };
 
 &iom1 {
-	compatible = "ambiq,spi";
-	pinctrl-0 = <&spi1_default>;
-	pinctrl-names = "default";
-	clock-frequency = <DT_FREQ_M(1)>;
-	status = "okay";
+	spi1: spi {
+		pinctrl-0 = <&spi1_default>;
+		pinctrl-names = "default";
+		cs-gpios = <&gpio0_31 11 GPIO_ACTIVE_LOW>;
+		clock-frequency = <DT_FREQ_M(1)>;
+		status = "disabled";
+	};
 };
 
 &iom4 {
-	pinctrl-0 = <&spi4_default>;
-	pinctrl-names = "default";
-	status = "okay";
+	spi4: spi {
+		pinctrl-0 = <&spi4_default>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
 };
 
 &mspi0 {
 	pinctrl-0 = <&mspi0_default>;
 	pinctrl-names = "default";
-	status = "okay";
+	status = "disabled";
 };
 
 &flash0 {
@@ -115,6 +140,10 @@
 	};
 };
 
+&stimer0 {
+	clk-source = <3>;
+};
+
 &xo32m {
 	pinctrl-0 = <&xo32m_default>;
 	pinctrl-names = "default";
@@ -124,6 +153,12 @@
 &xo32k {
 	pinctrl-0 = <&xo32k_default>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+zephyr_udc0: &usb {
+	vddusb33-gpios = <&gpio0_31 13 (GPIO_PULL_UP)>;
+	vddusb0p9-gpios = <&gpio0_31 15 (GPIO_PULL_UP)>;
 	status = "okay";
 };
 

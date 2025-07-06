@@ -1,7 +1,4 @@
-.. _segger_trb_stm32f407:
-
-Cortex-M Trace Reference Board V1.2
-###################################
+.. zephyr:board:: segger_trb_stm32f407
 
 Overview
 ********
@@ -11,12 +8,6 @@ board is a reference board, based on the ST Microelectronics STM32F407VE
 ARM Cortex-M4 CPU, to test hardware tracing with the SEGGER Trace-Pro
 debuggers. It is not meant for general prototype development because
 it is extremely limited when it comes to IO, and only has 3 LEDs.
-
-.. figure:: img/segger_trb_stm32f407.jpg
-     :align: center
-     :alt: SEGGER-TRB-STM32F407
-
-     SEGGER-TRB-STM32F407
 
 Hardware
 ********
@@ -28,28 +19,7 @@ and the datasheet.
 Supported Features
 ==================
 
-The SEGGER-TRB-STM32F407 board configuration supports the following
-hardware features:
-
-+------------+------------+------------------------------+
-| Interface  | Controller | Driver/Component             |
-+============+============+==============================+
-| NVIC       | on-chip    | nested vectored              |
-|            |            | interrupt controller         |
-+------------+------------+------------------------------+
-| SYSTICK    | on-chip    | system clock                 |
-+------------+------------+------------------------------+
-| GPIO       | on-chip    | gpio                         |
-+------------+------------+------------------------------+
-| WATCHDOG   | on-chip    | independent watchdog         |
-+------------+------------+------------------------------+
-| COUNTER    | on-chip    | rtc                          |
-+------------+------------+------------------------------+
-| RNG        | on-chip    | True Random number generator |
-+------------+------------+------------------------------+
-
-
-Other hardware features have not been enabled yet for this board.
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========
@@ -100,6 +70,9 @@ master clock, which can be set as high as 168 MHz.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
+
 The SEGGER-TRB-STM32F407 board is specially designed to test the SEGGER
 Trace-Pro debuggers, so this example assumes a J-Trace or J-Link is used.
 

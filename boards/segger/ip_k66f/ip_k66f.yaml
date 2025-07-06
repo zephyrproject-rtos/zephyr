@@ -5,7 +5,6 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - counter
   - gpio
@@ -15,4 +14,3 @@ supported:
   - netif:eth
 ram: 256
 flash: 2048
-vendor: nxp

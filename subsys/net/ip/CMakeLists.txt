@@ -19,7 +19,7 @@ zephyr_library_sources(
   )
 
 if(CONFIG_NET_OFFLOAD)
-zephyr_library_sources(net_context.c net_pkt.c net_tc.c)
+zephyr_library_sources(net_context.c net_pkt.c)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_NET_MGMT_EVENT   net_mgmt.c)
@@ -33,12 +33,16 @@ zephyr_library_sources_ifdef(CONFIG_NET_IP           connection.c)
 zephyr_library_sources_ifdef(CONFIG_NET_6LO          6lo.c)
 zephyr_library_sources_ifdef(CONFIG_NET_IPV4_AUTO    ipv4_autoconf.c)
 zephyr_library_sources_ifdef(CONFIG_NET_IPV4         icmpv4.c ipv4.c)
+zephyr_library_sources_ifdef(CONFIG_NET_IPV4_ACD     ipv4_acd.c)
 zephyr_library_sources_ifdef(CONFIG_NET_IPV4_IGMP    igmp.c)
 zephyr_library_sources_ifdef(CONFIG_NET_IPV6         icmpv6.c nbr.c
                                                      ipv6.c ipv6_nbr.c)
 zephyr_library_sources_ifdef(CONFIG_NET_IPV6_MLD     ipv6_mld.c)
+zephyr_library_sources_ifdef(CONFIG_NET_IPV6_PE      ipv6_pe.c)
 zephyr_library_sources_ifdef(CONFIG_NET_IPV6_FRAGMENT     ipv6_fragment.c)
 zephyr_library_sources_ifdef(CONFIG_NET_IPV4_FRAGMENT     ipv4_fragment.c)
+zephyr_library_sources_ifdef(CONFIG_NET_MGMT_EVENT   net_mgmt.c)
+zephyr_library_sources_ifdef(CONFIG_NET_PMTU         pmtu.c)
 zephyr_library_sources_ifdef(CONFIG_NET_ROUTE        route.c)
 zephyr_library_sources_ifdef(CONFIG_NET_STATISTICS   net_stats.c)
 zephyr_library_sources_ifdef(CONFIG_NET_TCP          tcp.c)
@@ -51,9 +55,15 @@ zephyr_library_sources_ifdef(CONFIG_NET_CONNECTION_SOCKETS  connection.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SOCKETS_PACKET      packet_socket.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SOCKETS_CAN         canbus_socket.c)
 
-if(CONFIG_NET_TCP_ISN_RFC6528)
+if(CONFIG_NET_TCP_ISN_RFC6528 OR CONFIG_NET_IPV6_PE OR CONFIG_NET_IPV6_IID_STABLE)
   zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
 endif()
+endif()
+
+if(CONFIG_NET_PKT_ALLOC_STATS)
+  zephyr_linker_sources(DATA_SECTIONS iterables_net_pkt_alloc_stats.ld)
+  zephyr_iterable_section(NAME net_pkt_alloc_stats_slab GROUP DATA_REGION
+    ${XIP_ALIGN_WITH_INPUT})
 endif()
 
 # To get private includes like net_shell.h

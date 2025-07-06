@@ -720,7 +720,7 @@ static void test_args(int argc, char **argv)
 		ptr = strstr(argv[0], "notify_size=");
 		if (ptr != NULL) {
 			ptr += strlen("notify_size=");
-			notification_size = atol(ptr);
+			notification_size = strtol(ptr, NULL, 10);
 			notification_size = MIN(NOTIFICATION_DATA_LEN, notification_size);
 		}
 	}
@@ -731,7 +731,7 @@ static void test_args(int argc, char **argv)
 		ptr = strstr(argv[1], "conn_interval=");
 		if (ptr != NULL) {
 			ptr += strlen("conn_interval=");
-			conn_interval_max = atol(ptr);
+			conn_interval_max = strtol(ptr, NULL, 10);
 		}
 	}
 
@@ -744,7 +744,7 @@ static const struct bst_test_instance test_def[] = {
 		.test_id = "central",
 		.test_descr = "Central Connection Stress",
 		.test_args_f = test_args,
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_main_f = test_central_main
 	},
 	BSTEST_END_MARKER

@@ -1,0 +1,13 @@
+# Copyright (c) 2024 TDK Invensense
+
+# ICP101xx High Accuracy, Low Power, Barometric Pressure and Temperature Sensor option
+
+# SPDX-License-Identifier: Apache-2.0
+config ICP101XX
+	bool "ICP101XX Barometric Pressure and Temperature Sensor"
+	default y
+	depends on DT_HAS_INVENSENSE_ICP101XX_ENABLED
+	select I2C
+	select USE_EMD_ICP101XX
+	help
+		Enable driver for ICP101XX barometric pressure/temperature sensors.

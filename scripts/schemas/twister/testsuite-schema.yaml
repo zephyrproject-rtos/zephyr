@@ -20,6 +20,16 @@ schema;scenario-schema:
     "arch_allow":
       type: any
       required: false
+    "vendor_exclude":
+      type: seq
+      required: false
+      sequence:
+        - type: str
+    "vendor_allow":
+      type: seq
+      required: false
+      sequence:
+        - type: str
     "testcases":
       type: seq
       required: false
@@ -60,6 +70,9 @@ schema;scenario-schema:
     "extra_sections":
       type: any
       required: false
+    "expect_reboot":
+      type: bool
+      required: false
     "required_snippets":
       type: seq
       required: false
@@ -79,6 +92,11 @@ schema;scenario-schema:
       required: false
       sequence:
         - type: str
+    "integration_toolchains":
+      type: seq
+      required: false
+      sequence:
+        - type: str
     "ignore_faults":
       type: bool
       required: false
@@ -92,6 +110,23 @@ schema;scenario-schema:
       type: map
       required: false
       mapping:
+        "power_measurements":
+          type: any
+          required: false
+        "shell_commands_file":
+          type: str
+          required: false
+        "shell_commands":
+          type: seq
+          required: false
+          sequence:
+            - type: map
+              mapping:
+                "command":
+                  type: str
+                  required: true
+                "expected":
+                  type: str
         "type":
           type: str
           required: false
@@ -100,9 +135,6 @@ schema;scenario-schema:
           required: false
         "ordered":
           type: bool
-          required: false
-        "repeat":
-          type: int
           required: false
         "pytest_root":
           type: seq
@@ -118,23 +150,50 @@ schema;scenario-schema:
           type: str
           enum: ["function", "class", "module", "package", "session"]
           required: false
+        "ctest_args":
+          type: seq
+          required: false
+          sequence:
+            - type: str
         "regex":
           type: seq
           required: false
           sequence:
             - type: str
-        "robot_test_path":
-          type: str
+        "robot_testsuite":
+          type: any
+          required: false
+        "robot_option":
+          type: any
           required: false
         "record":
           type: map
           required: false
           mapping:
             "regex":
-              type: str
+              type: seq
               required: true
+              sequence:
+                - type: str
+            "merge":
+              type: bool
+              required: false
+            "as_json":
+              type: seq
+              required: false
+              sequence:
+                - type: str
         "bsim_exe_name":
           type: str
+          required: false
+        "ztest_suite_repeat":
+          type: int
+          required: false
+        "ztest_test_repeat":
+          type: int
+          required: false
+        "ztest_test_shuffle":
+          type: bool
           required: false
     "min_ram":
       type: int

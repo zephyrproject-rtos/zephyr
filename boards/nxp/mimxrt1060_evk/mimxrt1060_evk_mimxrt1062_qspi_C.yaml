@@ -1,0 +1,33 @@
+#
+# Copyright (c) 2022, Whisper.ai
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: mimxrt1060_evk@C/mimxrt1062/qspi
+name: NXP MIMXRT1060-EVKC
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 32768
+flash: 8192
+supported:
+  - adc
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_serial
+  - arduino_spi
+  - can
+  - counter
+  - display
+  - dma
+  - gpio
+  - i2c
+  - netif:eth
+  - sdhc
+  - spi
+  - usbd
+  - watchdog
+vendor: nxp

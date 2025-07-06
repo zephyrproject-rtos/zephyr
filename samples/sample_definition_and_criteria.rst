@@ -11,11 +11,13 @@ more features, subsystems, or modules. This includes kernel services, drivers, p
 Samples should be limited in scope and should focus only on demonstrating non-trivial or
 essential aspects of the subsystem(s) or module(s) being highlighted.
 
+Samples are recommended when submitting new features; however, they are not mandatory.
+
 Sample Criteria
 ===============
 
-1. Samples must not be used as a testcase.
-++++++++++++++++++++++++++++++++++++++++++
+1. Samples must not be used to test features or verify platforms
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
   * The primary purpose of a sample is to provide a reference to the user.
   * Samples must not use Zephyr's testing framework.
 
@@ -25,7 +27,13 @@ Sample Criteria
   * If a sample can provide output that can be verified, then output should be evaluated against
     expected value to have some level of testing for the sample itself.
     Refer to :ref:`twister_script` for more details.
-  * Samples are optional.
+
+  * Although being able to run a sample successfully does verify the
+    functionality is working as expected, this should not replace dedicated and
+    comprehensive tests with full coverage to be submitted into the
+    :zephyr_file:`tests/` folder.  In a sample, the only thing you test is
+    buildability and, in some cases, if a sample is performing as expected, i.e. you
+    are testing the sample, not the subsystem it builds on top.
 
 2. Twister should be able to build every sample.
 ++++++++++++++++++++++++++++++++++++++++++++++++
@@ -39,36 +47,42 @@ Sample Criteria
         sample.kernel.cond_var:
           integration_platforms:
             - native_sim
-          tags: kernel condition_variables
+          tags:
+            - kernel
+            - condition_variables
           harness: console
           harness_config:
             type: one_line
             regex:
               - ".*Waited and joined with 3 threads"
 
-  **Guidelines for Samples:**
-    * Minimize the use of ``platform_allow`` and architecture filters.
-    * Do not mark the test as build only unless necessary.
-    * Any test case-specific configuration options are added using ``extra_args`` or
-      ``extra_configs`` options in the YAML file. The `prj.conf` file should have the in-common
-      configuration options.
-    * The sample itself can be evaluated using multiple configurations in the sample's YAML file.
-      For example, the sample is used to run with different logging modes using multiple scenarios
-      in ``samples/subsys/logging/syst``.
-    * Sample output can be validated leveraging the ``harness_config`` regex option,
-      wherever applicable.
-
-3. Samples should target multiple platforms and architectures.
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-  * Minimize the use of ``platform_allow`` and architecture filters as it limits the scope
-    of testing to the mentioned platforms and architectures.
-    Reference: :ref:`twister_script`
+  * Do not mark the test as build only. A sample should be able to build *and*
+    run on the documented platforms. Use the ``harness`` option to skip the
+    execution. Twister only attempts to flash and execute the build binary if
+    the harness is set to ``ztest`` or ``console``.
+  * The default configuration for the sample must be in the :file:`prj.conf`
+    file and should be operational on all supported platforms. Do not rely on the
+    ``extra_args`` or ``extra_configs`` options in the YAML file to build the
+    sample.
+  * The tests should verify the default configuration of the sample and any
+    optional features documented in the sample's README file. Sample should
+    never be used to test functionality of the subsystem or module the sample
+    belongs to.
+  * Any documented configuration options related to the sample and its
+    operation can be verified using ``extra_args`` or
+    ``extra_configs`` options in the YAML file. The :file:`prj.conf` file should have the
+    base configuration options.
+  * Sample output can be validated by leveraging the ``harness_config`` regex option,
+    wherever applicable.
+  * Use ``platform_allow`` to limit test to the platforms the sample was actually
+    verified on. Those platforms should be listed in the sample's README file.
   * Make use of ``integration_platforms`` to limit the scope when there are timing or
-    resource constraints.
+    resource constraints. Ideally, one platform should be enough to verify the
+    sample when changes are submitted to the Zephyr tree via a pull-request.
   * Make the sample as generic as possible. Avoid making a sample platform specific unless it is
     for particular hardware.
 
-4. A sample should provide sufficient coverage of a subsystem, feature, or module.
+3. A sample should provide sufficient coverage of a subsystem, feature, or module.
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
   **DO's:**
     * Cover the most common and important use cases of the functionality.
@@ -78,17 +92,17 @@ Sample Criteria
     * Samples must not test the negative or edge case behaviors.
     * Must not be unit tests.
 
-5. Samples must be documented.
+4. Samples must be documented.
 ++++++++++++++++++++++++++++++
   * Samples must have a ``README.rst`` file in the samples folder.
     Example: ``samples/subsys/foo/README.rst``. clearly explaining the purpose of the sample, its
-    HW requirements, and the expected sample output, if applicable.
+    hardware requirements, and the expected sample output, if applicable.
   * Ensure that the ``README.rst`` file is accessible in the sample hierarchy starting at
     ``samples/index.rst``.
 
   **README Template:**
     * Overview, if applicable.
-    * SW/HW requirements
+    * Software/Hardware requirements
     * Building & Running instructions
     * Sample output, if applicable.
 

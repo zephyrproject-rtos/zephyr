@@ -15,6 +15,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/kernel.h>
+#include <zephyr/pm/device_runtime.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,12 +28,21 @@ enum spi_ctx_runtime_op_mode {
 
 struct spi_context {
 	const struct spi_config *config;
+#ifdef CONFIG_MULTITHREADING
 	const struct spi_config *owner;
+#endif
 	const struct gpio_dt_spec *cs_gpios;
 	size_t num_cs_gpios;
 
+#ifdef CONFIG_MULTITHREADING
 	struct k_sem lock;
 	struct k_sem sync;
+#else
+	/* An atomic flag that signals completed transfer
+	 * when threads are not enabled.
+	 */
+	atomic_t ready;
+#endif /* CONFIG_MULTITHREADING */
 	int sync_status;
 
 #ifdef CONFIG_SPI_ASYNC
@@ -75,31 +85,46 @@ struct spi_context {
 	},										\
 	._ctx_name.num_cs_gpios = DT_PROP_LEN_OR(_node_id, cs_gpios, 0),
 
+/*
+ * Checks if a spi config is the same as the one stored in the spi_context
+ * The intention of this function is to be used to check if a driver can skip
+ * some reconfiguration for a transfer in a fast code path.
+ */
 static inline bool spi_context_configured(struct spi_context *ctx,
 					  const struct spi_config *config)
 {
 	return !!(ctx->config == config);
 }
 
+/* Returns true if the spi configuration stored for this context
+ * specifies a slave mode configuration, returns false otherwise
+ */
 static inline bool spi_context_is_slave(struct spi_context *ctx)
 {
 	return (ctx->config->operation & SPI_OP_MODE_SLAVE);
 }
 
+/*
+ * The purpose of the context lock is to synchronize the usage of the driver/hardware.
+ * The driver should call this function to claim or wait for ownership of the spi resource.
+ * Usually the appropriate time to call this is at the start of the transceive API implementation.
+ */
 static inline void spi_context_lock(struct spi_context *ctx,
 				    bool asynchronous,
 				    spi_callback_t callback,
 				    void *callback_data,
 				    const struct spi_config *spi_cfg)
 {
-	if ((spi_cfg->operation & SPI_LOCK_ON) &&
-		(k_sem_count_get(&ctx->lock) == 0) &&
-		(ctx->owner == spi_cfg)) {
-			return;
-	}
+#ifdef CONFIG_MULTITHREADING
+	bool already_locked = (spi_cfg->operation & SPI_LOCK_ON) &&
+			      (k_sem_count_get(&ctx->lock) == 0) &&
+			      (ctx->owner == spi_cfg);
 
-	k_sem_take(&ctx->lock, K_FOREVER);
-	ctx->owner = spi_cfg;
+	if (!already_locked) {
+		k_sem_take(&ctx->lock, K_FOREVER);
+		ctx->owner = spi_cfg;
+	}
+#endif /* CONFIG_MULTITHREADING */
 
 #ifdef CONFIG_SPI_ASYNC
 	ctx->asynchronous = asynchronous;
@@ -108,8 +133,16 @@ static inline void spi_context_lock(struct spi_context *ctx,
 #endif /* CONFIG_SPI_ASYNC */
 }
 
+/*
+ * This function must be called by a driver which has called spi_context_lock in order
+ * to release the ownership of the spi resource.
+ * Usually the appropriate time to call this would be at the end of a transfer that was
+ * initiated by a transceive API call, except in the case that the SPI_LOCK_ON bit was set
+ * in the configuration.
+ */
 static inline void spi_context_release(struct spi_context *ctx, int status)
 {
+#ifdef CONFIG_MULTITHREADING
 #ifdef CONFIG_SPI_SLAVE
 	if (status >= 0 && (ctx->config->operation & SPI_LOCK_ON)) {
 		return;
@@ -127,11 +160,19 @@ static inline void spi_context_release(struct spi_context *ctx, int status)
 		k_sem_give(&ctx->lock);
 	}
 #endif /* CONFIG_SPI_ASYNC */
+#endif /* CONFIG_MULTITHREADING */
 }
 
 static inline size_t spi_context_total_tx_len(struct spi_context *ctx);
 static inline size_t spi_context_total_rx_len(struct spi_context *ctx);
 
+/* This function essentially is a way for a driver to seamlessly implement both the
+ * synchronous transceive API and the asynchronous transceive_async API in the same way.
+ *
+ * The exact way this function is used may depend on driver implementation, but
+ * essentially this will block waiting for a signal from spi_context_complete,
+ * unless the transfer is asynchronous, in which case it does nothing in master mode.
+ */
 static inline int spi_context_wait_for_completion(struct spi_context *ctx)
 {
 	int status = 0;
@@ -145,6 +186,7 @@ static inline int spi_context_wait_for_completion(struct spi_context *ctx)
 
 	if (wait) {
 		k_timeout_t timeout;
+		uint32_t timeout_ms;
 
 		/* Do not use any timeout in the slave mode, as in this case
 		 * it is not known when the transfer will actually start and
@@ -152,10 +194,10 @@ static inline int spi_context_wait_for_completion(struct spi_context *ctx)
 		 */
 		if (IS_ENABLED(CONFIG_SPI_SLAVE) && spi_context_is_slave(ctx)) {
 			timeout = K_FOREVER;
+			timeout_ms = UINT32_MAX;
 		} else {
 			uint32_t tx_len = spi_context_total_tx_len(ctx);
 			uint32_t rx_len = spi_context_total_rx_len(ctx);
-			uint32_t timeout_ms;
 
 			timeout_ms = MAX(tx_len, rx_len) * 8 * 1000 /
 				     ctx->config->frequency;
@@ -163,11 +205,38 @@ static inline int spi_context_wait_for_completion(struct spi_context *ctx)
 
 			timeout = K_MSEC(timeout_ms);
 		}
-
+#ifdef CONFIG_MULTITHREADING
 		if (k_sem_take(&ctx->sync, timeout)) {
 			LOG_ERR("Timeout waiting for transfer complete");
 			return -ETIMEDOUT;
 		}
+#else
+		if (timeout_ms == UINT32_MAX) {
+			/* In slave mode, we wait indefinitely, so we can go idle. */
+			unsigned int key = irq_lock();
+
+			while (!atomic_get(&ctx->ready)) {
+				k_cpu_atomic_idle(key);
+				key = irq_lock();
+			}
+
+			ctx->ready = 0;
+			irq_unlock(key);
+		} else {
+			const uint32_t tms = k_uptime_get_32();
+
+			while (!atomic_get(&ctx->ready) && (k_uptime_get_32() - tms < timeout_ms)) {
+				k_busy_wait(1);
+			}
+
+			if (!ctx->ready) {
+				LOG_ERR("Timeout waiting for transfer complete");
+				return -ETIMEDOUT;
+			}
+
+			ctx->ready = 0;
+		}
+#endif /* CONFIG_MULTITHREADING */
 		status = ctx->sync_status;
 	}
 
@@ -180,6 +249,12 @@ static inline int spi_context_wait_for_completion(struct spi_context *ctx)
 	return status;
 }
 
+/* For synchronous transfers, this will signal to a thread waiting
+ * on spi_context_wait for completion.
+ *
+ * For asynchronous tranfers, this will call the async callback function
+ * with the user data.
+ */
 static inline void spi_context_complete(struct spi_context *ctx,
 					const struct device *dev,
 					int status)
@@ -205,13 +280,26 @@ static inline void spi_context_complete(struct spi_context *ctx,
 			ctx->owner = NULL;
 			k_sem_give(&ctx->lock);
 		}
+
 	}
 #else
 	ctx->sync_status = status;
+#ifdef CONFIG_MULTITHREADING
 	k_sem_give(&ctx->sync);
+#else
+	atomic_set(&ctx->ready, 1);
+#endif /* CONFIG_MULTITHREADING */
 #endif /* CONFIG_SPI_ASYNC */
 }
 
+/*
+ * This function initializes all the chip select GPIOs associated with a spi controller.
+ * The context first must be initialized using the SPI_CONTEXT_CS_GPIOS_INITIALIZE macro.
+ * This function should be called during the device init sequence so that
+ * all the CS lines are configured properly before the first transfer begins.
+ * Note: If a controller has native CS control in SPI hardware, they should also be initialized
+ * during device init by the driver with hardware-specific code.
+ */
 static inline int spi_context_cs_configure_all(struct spi_context *ctx)
 {
 	int ret;
@@ -233,6 +321,46 @@ static inline int spi_context_cs_configure_all(struct spi_context *ctx)
 	return 0;
 }
 
+/* Helper function to power manage the GPIO CS pins, not meant to be used directly by drivers */
+static inline int _spi_context_cs_pm_all(struct spi_context *ctx, bool get)
+{
+	const struct gpio_dt_spec *cs_gpio;
+	int ret;
+
+	for (cs_gpio = ctx->cs_gpios; cs_gpio < &ctx->cs_gpios[ctx->num_cs_gpios]; cs_gpio++) {
+		if (get) {
+			ret = pm_device_runtime_get(cs_gpio->port);
+		} else {
+			ret = pm_device_runtime_put(cs_gpio->port);
+		}
+
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+/* This function should be called by drivers to pm get all the chip select lines in
+ * master mode in the case of any CS being a GPIO. This should be called from the
+ * drivers pm action hook on pm resume.
+ */
+static inline int spi_context_cs_get_all(struct spi_context *ctx)
+{
+	return _spi_context_cs_pm_all(ctx, true);
+}
+
+/* This function should be called by drivers to pm put all the chip select lines in
+ * master mode in the case of any CS being a GPIO. This should be called from the
+ * drivers pm action hook on pm suspend.
+ */
+static inline int spi_context_cs_put_all(struct spi_context *ctx)
+{
+	return _spi_context_cs_pm_all(ctx, false);
+}
+
+/* Helper function to control the GPIO CS, not meant to be used directly by drivers */
 static inline void _spi_context_cs_control(struct spi_context *ctx,
 					   bool on, bool force_off)
 {
@@ -252,22 +380,40 @@ static inline void _spi_context_cs_control(struct spi_context *ctx,
 	}
 }
 
+/* This function should be called by drivers to control the chip select line in master mode
+ * in the case of the CS being a GPIO. The de facto usage of the zephyr SPI API expects that the
+ * chip select be asserted throughout the entire transfer specified by a transceive call,
+ * ie all buffers in a spi_buf_set should be finished before deasserting CS. And usually
+ * the deassertion is at the end of the transfer, except in the case that the
+ * SPI_HOLD_ON_CS bit was set in the configuration.
+ */
 static inline void spi_context_cs_control(struct spi_context *ctx, bool on)
 {
 	_spi_context_cs_control(ctx, on, false);
 }
 
+/* Forcefully releases the spi context and removes the owner, allowing taking the lock
+ * with spi_context_lock without the previous owner releasing the lock.
+ * This is usually used to aid in implementation of the spi_release driver API.
+ */
 static inline void spi_context_unlock_unconditionally(struct spi_context *ctx)
 {
 	/* Forcing CS to go to inactive status */
 	_spi_context_cs_control(ctx, false, true);
 
+#ifdef CONFIG_MULTITHREADING
 	if (!k_sem_count_get(&ctx->lock)) {
 		ctx->owner = NULL;
 		k_sem_give(&ctx->lock);
 	}
+#endif /* CONFIG_MULTITHREADING */
 }
 
+/*
+ * Helper function for incrementing buffer pointer.
+ * Generally not needed to be used directly by drivers.
+ * Use spi_context_update_(tx/rx) instead.
+ */
 static inline void *spi_context_get_next_buf(const struct spi_buf **current,
 					     size_t *count,
 					     size_t *buf_len,
@@ -287,6 +433,17 @@ static inline void *spi_context_get_next_buf(const struct spi_buf **current,
 	return NULL;
 }
 
+/*
+ * The spi context private api works with the driver by providing code to
+ * keep track of how much of the transfer has been completed. The driver
+ * calls functions to report when some tx or rx has finished, and the driver
+ * then can use the spi context to keep track of how much is left to do.
+ */
+
+/*
+ * This function must be called at the start of a transfer by the driver
+ * to initialize the spi context fields for tracking the progress.
+ */
 static inline
 void spi_context_buffers_setup(struct spi_context *ctx,
 			       const struct spi_buf_set *tx_bufs,
@@ -321,6 +478,12 @@ void spi_context_buffers_setup(struct spi_context *ctx,
 		(void *)ctx->rx_buf, ctx->rx_len);
 }
 
+/*
+ * Should be called to update the tracking of TX being completed.
+ *
+ * Parameter "dfs" is the number of bytes needed to store a data frame.
+ * Parameter "len" is the number of data frames of TX that were sent.
+ */
 static ALWAYS_INLINE
 void spi_context_update_tx(struct spi_context *ctx, uint8_t dfs, uint32_t len)
 {
@@ -349,18 +512,30 @@ void spi_context_update_tx(struct spi_context *ctx, uint8_t dfs, uint32_t len)
 	LOG_DBG("tx buf/len %p/%zu", (void *)ctx->tx_buf, ctx->tx_len);
 }
 
+/* Returns true if there is still TX buffers left in the spi_buf_set
+ * even if they are "null" (nop) buffers.
+ */
 static ALWAYS_INLINE
 bool spi_context_tx_on(struct spi_context *ctx)
 {
 	return !!(ctx->tx_len);
 }
 
+/* Similar to spi_context_tx_on, but only returns true if the current buffer is
+ * not a null/NOP placeholder.
+ */
 static ALWAYS_INLINE
 bool spi_context_tx_buf_on(struct spi_context *ctx)
 {
 	return !!(ctx->tx_buf && ctx->tx_len);
 }
 
+/*
+ * Should be called to update the tracking of RX being completed.
+ *
+ * @param dfs is the number of bytes needed to store a data frame.
+ * @param len is the number of data frames of RX that were received.
+ */
 static ALWAYS_INLINE
 void spi_context_update_rx(struct spi_context *ctx, uint8_t dfs, uint32_t len)
 {
@@ -396,12 +571,18 @@ void spi_context_update_rx(struct spi_context *ctx, uint8_t dfs, uint32_t len)
 	LOG_DBG("rx buf/len %p/%zu", (void *)ctx->rx_buf, ctx->rx_len);
 }
 
+/* Returns true if there is still RX buffers left in the spi_buf_set
+ * even if they are "null" (nop) buffers.
+ */
 static ALWAYS_INLINE
 bool spi_context_rx_on(struct spi_context *ctx)
 {
 	return !!(ctx->rx_len);
 }
 
+/* Similar to spi_context_rx_on, but only returns true if the current buffer is
+ * not a null/NOP placeholder.
+ */
 static ALWAYS_INLINE
 bool spi_context_rx_buf_on(struct spi_context *ctx)
 {
@@ -412,6 +593,10 @@ bool spi_context_rx_buf_on(struct spi_context *ctx)
  * Returns the maximum length of a transfer for which all currently active
  * directions have a continuous buffer, i.e. the maximum SPI transfer that
  * can be done with DMA that handles only non-scattered buffers.
+ *
+ * In other words, returns the length of the smaller of the current RX or current TX buffer.
+ * Except if either RX or TX buf length is 0, returns the length of the other.
+ * And if both are 0 then will return 0 and should indicate transfer completion.
  */
 static inline size_t spi_context_max_continuous_chunk(struct spi_context *ctx)
 {
@@ -424,33 +609,69 @@ static inline size_t spi_context_max_continuous_chunk(struct spi_context *ctx)
 	return MIN(ctx->tx_len, ctx->rx_len);
 }
 
+/* Returns the length of the longer of the current RX or current TX buffer. */
 static inline size_t spi_context_longest_current_buf(struct spi_context *ctx)
 {
 	return ctx->tx_len > ctx->rx_len ? ctx->tx_len : ctx->rx_len;
 }
 
-static inline size_t spi_context_total_tx_len(struct spi_context *ctx)
+/* Helper function, not intended to be used by drivers directly */
+static size_t spi_context_count_tx_buf_lens(struct spi_context *ctx, size_t start_index)
 {
 	size_t n;
 	size_t total_len = 0;
 
-	for (n = 0; n < ctx->tx_count; ++n) {
+	for (n = start_index; n < ctx->tx_count; ++n) {
 		total_len += ctx->current_tx[n].len;
 	}
 
 	return total_len;
 }
 
-static inline size_t spi_context_total_rx_len(struct spi_context *ctx)
+/* Helper function, not intended to be used by drivers directly */
+static size_t spi_context_count_rx_buf_lens(struct spi_context *ctx, size_t start_index)
 {
 	size_t n;
 	size_t total_len = 0;
 
-	for (n = 0; n < ctx->rx_count; ++n) {
+	for (n = start_index; n < ctx->rx_count; ++n) {
 		total_len += ctx->current_rx[n].len;
 	}
 
 	return total_len;
+}
+
+
+/* Returns the length of the sum of the remaining TX buffers in the buf set, including
+ * the current buffer in the total.
+ */
+static inline size_t spi_context_total_tx_len(struct spi_context *ctx)
+{
+	return spi_context_count_tx_buf_lens(ctx, 0);
+}
+
+/* Returns the length of the sum of the remaining RX buffers in the buf set, including
+ * the current buffer in the total.
+ */
+static inline size_t spi_context_total_rx_len(struct spi_context *ctx)
+{
+	return spi_context_count_rx_buf_lens(ctx, 0);
+}
+
+/* Similar to spi_context_total_tx_len, except does not count words that have been finished
+ * in the current buffer, ie only including what is remaining in the current buffer in the sum.
+ */
+static inline size_t spi_context_tx_len_left(struct spi_context *ctx, uint8_t dfs)
+{
+	return (ctx->tx_len * dfs) + spi_context_count_tx_buf_lens(ctx, 1);
+}
+
+/* Similar to spi_context_total_rx_len, except does not count words that have been finished
+ * in the current buffer, ie only including what is remaining in the current buffer in the sum.
+ */
+static inline size_t spi_context_rx_len_left(struct spi_context *ctx, uint8_t dfs)
+{
+	return (ctx->rx_len * dfs) + spi_context_count_rx_buf_lens(ctx, 1);
 }
 
 #ifdef __cplusplus

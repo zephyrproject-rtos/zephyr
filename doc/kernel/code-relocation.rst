@@ -14,15 +14,23 @@ This script provides a robust way to re-order the memory contents without
 actually having to modify the code.  In simple terms this script will do the job
 of ``__attribute__((section("name")))`` for a bunch of files together.
 
+A regular expression filter can be used to select only the required sections to be relocated.
+
 Details
 *******
-The memory region and file are given to the :ref:`gen_relocate_app.py` script in the form of a string.
+The memory region and file are given to the :ref:`gen_relocate_app.py` script
+through a file where each line specifies a list of files to be placed in the
+given region.
 
-An example of such a string is:
-``SRAM2:/home/xyz/zephyr/samples/hello_world/src/main.c,SRAM1:/home/xyz/zephyr/samples/hello_world/src/main2.c``
+An example of such a file is:
+
+  .. code-block:: none
+
+     SRAM2:/home/xyz/zephyr/samples/hello_world/src/main.c,
+     SRAM1:/home/xyz/zephyr/samples/hello_world/src/main2.c,
 
 This script is invoked with the following parameters:
-``python3 gen_relocate_app.py -i input_string -o generated_linker -c generated_code``
+``python3 gen_relocate_app.py -i input_file -o generated_linker -c generated_code``
 
 Kconfig :kconfig:option:`CONFIG_CODE_DATA_RELOCATION` option,  when enabled in
 ``prj.conf``, will invoke the script and do the required relocation.
@@ -66,36 +74,55 @@ for  data copy operations from ROM to required memory type.
 Additional Configurations
 =========================
 This section shows additional configuration options that can be set in
-``CMakeLists.txt``
+``CMakeLists.txt``.
 
-* if the memory is SRAM1, SRAM2, CCD, or AON, then place the full object in the
-  sections for example:
+* If the memory is ``SRAM1``, ``SRAM2``, ``CCD``, or ``AON``, then place the
+  full object in the sections. For example:
 
   .. code-block:: none
 
      zephyr_code_relocate(FILES src/file1.c LOCATION SRAM2)
      zephyr_code_relocate(FILES src/file2.c LOCATION SRAM)
 
-* if the memory type is appended with _DATA, _TEXT, _RODATA or _BSS, only the
-  selected memory is placed in the required memory region.
-  for example:
+* If the memory type is appended with ``_DATA``, ``_TEXT``, ``_RODATA``,
+  ``_BSS`` or ``_NOINIT``, only the selected memory is placed in the required
+  memory region. For example:
 
   .. code-block:: none
 
      zephyr_code_relocate(FILES src/file1.c LOCATION SRAM2_DATA)
      zephyr_code_relocate(FILES src/file2.c LOCATION SRAM2_TEXT)
 
-* Multiple regions can also be appended together such as: SRAM2_DATA_BSS.
-  This will place data and bss inside SRAM2.
+* Multiple regions can also be appended together such as:
+  ``SRAM2_DATA_BSS_NOINIT``. This will place all data: value-initialized,
+  zero-initialized and uninitialized inside ``SRAM2``.
 
-* Multiple files can be passed to the FILES argument, or CMake generator
-  expressions can be used to relocate a comma-separated list of files
+* Multiple files can be passed to the ``FILES`` argument, or CMake generator
+  expressions can be used to relocate a comma-separated list of files.
 
   .. code-block:: none
 
      file(GLOB sources "file*.c")
      zephyr_code_relocate(FILES ${sources} LOCATION SRAM)
      zephyr_code_relocate(FILES $<TARGET_PROPERTY:my_tgt,SOURCES> LOCATION SRAM)
+
+Section Filtering
+=================
+
+By default, all sections of the specified files will be relocated. If
+``FILTER`` is used, a regular expression is provided to select only
+the sections to be relocated.
+
+The regular expression applies to sections names which can be used to
+select the file's symbols when this one has been built with
+``-ffunction-sections`` and ``-fdata-sections`` which is the case by
+default.
+
+  .. code-block:: none
+
+     zephyr_code_relocate(FILES src/file1.c FILTER ".*\\.func1|.*\\.func2" LOCATION SRAM2_TEXT)
+
+The example above will only relocate ``func1()`` and ``func2()`` of file ``src/file1.c``
 
 NOKEEP flag
 ===========
@@ -135,12 +162,20 @@ Relocating libraries
 
 Libraries can be relocated using the LIBRARY argument to
 ``zephyr_code_relocation()`` with the library name. For example, the following
-snippet will relocate kernel code to ITCM and serial drivers to SRAM2:
+snippet will relocate serial drivers to SRAM2:
 
   .. code-block:: none
 
-    zephyr_code_relocate(LIBRARY kernel LOCATION ITCM_TEXT)
     zephyr_code_relocate(LIBRARY drivers__serial LOCATION SRAM2)
+
+Tips
+====
+
+Take care if relocating kernel/arch files, some contain early initialization
+code that executes before code relocation takes place.
+
+Additional MPU/MMU configuration may be required to ensure that the
+destination memory region is configured to allow code execution.
 
 Samples/ Tests
 ==============
@@ -153,5 +188,4 @@ This test shows how the code relocation feature is used.
 This test will place .text, .data, .bss from 3 files to various parts in the SRAM
 using a custom linker file derived from ``include/zephyr/arch/arm/cortex_m/scripts/linker.ld``
 
-A sample showcasing the NOCOPY flag is provided at
-``$ZEPHYR_BASE/samples/application_development/code_relocation_nocopy/``
+A sample showcasing the NOCOPY flag is provided here: :zephyr:code-sample:`code_relocation_nocopy`.

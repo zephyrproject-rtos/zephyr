@@ -38,15 +38,15 @@ static inline void z_vrfy_ztest_set_fault_valid(bool valid)
 {
 	z_impl_ztest_set_fault_valid(valid);
 }
-#include <syscalls/ztest_set_fault_valid_mrsh.c>
+#include <zephyr/syscalls/ztest_set_fault_valid_mrsh.c>
 #endif
 
 __weak void ztest_post_fatal_error_hook(unsigned int reason,
-		const z_arch_esf_t *pEsf)
+		const struct arch_esf *pEsf)
 {
 }
 
-void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
 {
 	k_tid_t curr_tid = k_current_get();
 	bool valid_fault = (curr_tid == valid_fault_tid) || fault_in_isr;
@@ -100,7 +100,7 @@ static inline void z_vrfy_ztest_set_assert_valid(bool valid)
 {
 	z_impl_ztest_set_assert_valid(valid);
 }
-#include <syscalls/ztest_set_assert_valid_mrsh.c>
+#include <zephyr/syscalls/ztest_set_assert_valid_mrsh.c>
 #endif
 
 __weak void ztest_post_assert_fail_hook(void)

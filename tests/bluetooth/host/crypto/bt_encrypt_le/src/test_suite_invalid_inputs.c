@@ -87,7 +87,7 @@ ZTEST(bt_encrypt_le_invalid_cases, test_tc_aes128_set_encrypt_key_fails)
 	const uint8_t plaintext[16] = {0};
 	uint8_t enc_data[16] = {0};
 
-	tc_aes128_set_encrypt_key_fake.return_val = TC_CRYPTO_FAIL;
+	psa_import_key_fake.return_val = PSA_ERROR_GENERIC_ERROR;
 
 	err = bt_encrypt_le(key, plaintext, enc_data);
 
@@ -98,8 +98,8 @@ ZTEST(bt_encrypt_le_invalid_cases, test_tc_aes128_set_encrypt_key_fails)
  *  Test bt_encrypt_le() fails when tc_aes_encrypt() fails
  *
  *  Constraints:
- *   - tc_aes128_set_encrypt_key() succeeds and returns 'TC_CRYPTO_SUCCESS'.
- *   - tc_aes_encrypt() fails and returns 'TC_CRYPTO_FAIL'.
+ *   - psa_import_key() succeeds and returns 'PSA_SUCCESS'.
+ *   - psa_cipher_encrypt() fails and returns '-EINVAL'.
  *
  *  Expected behaviour:
  *   - bt_encrypt_le() returns a negative error code '-EINVAL' (failure)
@@ -111,10 +111,10 @@ ZTEST(bt_encrypt_le_invalid_cases, test_tc_aes_encrypt_fails)
 	const uint8_t plaintext[16] = {0};
 	uint8_t enc_data[16] = {0};
 
-	tc_aes128_set_encrypt_key_fake.return_val = TC_CRYPTO_SUCCESS;
-	tc_aes_encrypt_fake.return_val = TC_CRYPTO_FAIL;
+	psa_import_key_fake.return_val = PSA_SUCCESS;
+	psa_cipher_encrypt_fake.return_val = -EINVAL;
 
 	err = bt_encrypt_le(key, plaintext, enc_data);
 
-	zassert_true(err == -EINVAL, "Unexpected error code '%d' was returned", err);
+	zassert_true(err == -EIO, "Unexpected error code '%d' was returned", err);
 }

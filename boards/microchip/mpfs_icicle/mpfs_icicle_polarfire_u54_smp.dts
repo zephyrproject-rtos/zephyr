@@ -1,0 +1,18 @@
+/dts-v1/;
+#include "mpfs_icicle_polarfire_u54.dts"
+
+/ {
+	compatible = "microchip,mpfs-icicle-kit", "microchip,mpfs";
+
+	chosen {
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,sram = &sram1;
+	};
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	clock-frequency = <150000000>;
+};

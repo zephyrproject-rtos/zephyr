@@ -1,7 +1,4 @@
-.. _mm_feather:
-
-MadMachine SwiftIO Feather
-##########################
+.. zephyr:board:: mm_feather
 
 Overview
 ********
@@ -15,10 +12,6 @@ at:
 
 - `MadMachine Homepage`_
 - `SwiftIO API Reference`_
-
-.. image:: mm_feather.jpg
-   :align: center
-   :alt: SwiftIO Feather Board
 
 Hardware
 ********
@@ -51,33 +44,7 @@ Hardware
 Supported Features
 ==================
 
-The mm_feather board configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| DISPLAY   | on-chip    | display                             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| I2S       | on-chip    | I2S                                 |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | USB device                          |
-+-----------+------------+-------------------------------------+
-
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -173,8 +140,10 @@ The Swift ID is not the same as the Zephyr driver ID.
 +-----------+---------------+----------+---------------+----------+---------------+
 
 
-Programming and Flash
-*************************
+Programming and Flashing
+************************
+
+.. zephyr:board-supported-runners::
 
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -195,7 +164,7 @@ etc.):
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 Connect a DAPLink debugger from your PC to corresponding SWD pins of SwiftIO Feather.
 
@@ -215,7 +184,7 @@ see the following message in the terminal:
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

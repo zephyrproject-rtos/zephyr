@@ -1,5 +1,6 @@
 board:
   name: npcx7m6fb_evb
+  full_name: NPCX7M6FB_EVB
   vendor: nuvoton
   socs:
   - name: npcx7m6fb

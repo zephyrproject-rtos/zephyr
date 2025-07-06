@@ -1,0 +1,24 @@
+identifier: max32662evkit
+name: max32662evkit
+vendor: adi
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - dma
+  - gpio
+  - i2c
+  - serial
+  - trng
+  - watchdog
+  - spi
+  - adc
+  - counter
+  - rtc_counter
+  - pwm
+  - flash
+  - can
+ram: 80
+flash: 256

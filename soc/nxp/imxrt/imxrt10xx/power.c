@@ -240,7 +240,7 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 }
 
 /* Initialize power system */
-static int rt10xx_power_init(void)
+void rt10xx_power_init(void)
 {
 	dcdc_internal_regulator_config_t reg_config;
 
@@ -268,9 +268,4 @@ static int rt10xx_power_init(void)
 
 	/* Enable high gate drive on power FETs to reduce leakage current */
 	PMU_CoreEnableIncreaseGateDrive(PMU, true);
-
-
-	return 0;
 }
-
-SYS_INIT(rt10xx_power_init, PRE_KERNEL_2, 0);

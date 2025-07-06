@@ -6,10 +6,78 @@
 
 #include <zephyr/modem/pipe.h>
 
-#include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(modem_pipe, CONFIG_MODEM_MODULES_LOG_LEVEL);
+#define PIPE_EVENT_OPENED_BIT        BIT(0)
+#define PIPE_EVENT_CLOSED_BIT        BIT(1)
+#define PIPE_EVENT_RECEIVE_READY_BIT BIT(2)
+#define PIPE_EVENT_TRANSMIT_IDLE_BIT BIT(3)
 
-void modem_pipe_init(struct modem_pipe *pipe, void *data, struct modem_pipe_api *api)
+static void pipe_set_callback(struct modem_pipe *pipe,
+			      modem_pipe_api_callback callback,
+			      void *user_data)
+{
+	K_SPINLOCK(&pipe->spinlock) {
+		pipe->callback = callback;
+		pipe->user_data = user_data;
+	}
+}
+
+static void pipe_call_callback(struct modem_pipe *pipe, enum modem_pipe_event event)
+{
+	K_SPINLOCK(&pipe->spinlock) {
+		if (pipe->callback != NULL) {
+			pipe->callback(pipe, event, pipe->user_data);
+		}
+	}
+}
+
+static uint32_t pipe_test_events(struct modem_pipe *pipe, uint32_t events)
+{
+	return k_event_test(&pipe->event, events);
+}
+
+static uint32_t pipe_await_events(struct modem_pipe *pipe,
+				  uint32_t events,
+				  k_timeout_t timeout)
+{
+	return k_event_wait(&pipe->event, events, false, timeout);
+}
+
+static void pipe_post_events(struct modem_pipe *pipe, uint32_t events)
+{
+	k_event_post(&pipe->event, events);
+}
+
+static void pipe_clear_events(struct modem_pipe *pipe, uint32_t events)
+{
+	k_event_clear(&pipe->event, events);
+}
+
+static void pipe_set_events(struct modem_pipe *pipe, uint32_t events)
+{
+	k_event_set(&pipe->event, events);
+}
+
+static int pipe_call_open(struct modem_pipe *pipe)
+{
+	return pipe->api->open(pipe->data);
+}
+
+static int pipe_call_transmit(struct modem_pipe *pipe, const uint8_t *buf, size_t size)
+{
+	return pipe->api->transmit(pipe->data, buf, size);
+}
+
+static int pipe_call_receive(struct modem_pipe *pipe, uint8_t *buf, size_t size)
+{
+	return pipe->api->receive(pipe->data, buf, size);
+}
+
+static int pipe_call_close(struct modem_pipe *pipe)
+{
+	return pipe->api->close(pipe->data);
+}
+
+void modem_pipe_init(struct modem_pipe *pipe, void *data, const struct modem_pipe_api *api)
 {
 	__ASSERT_NO_MSG(pipe != NULL);
 	__ASSERT_NO_MSG(data != NULL);
@@ -19,216 +87,128 @@ void modem_pipe_init(struct modem_pipe *pipe, void *data, struct modem_pipe_api 
 	pipe->api = api;
 	pipe->callback = NULL;
 	pipe->user_data = NULL;
-	pipe->state = MODEM_PIPE_STATE_CLOSED;
-	pipe->receive_ready_pending = false;
-	pipe->transmit_idle_pending = true;
-
-	k_mutex_init(&pipe->lock);
-	k_condvar_init(&pipe->condvar);
+	k_event_init(&pipe->event);
 }
 
-int modem_pipe_open(struct modem_pipe *pipe)
+int modem_pipe_open(struct modem_pipe *pipe, k_timeout_t timeout)
 {
 	int ret;
 
-	k_mutex_lock(&pipe->lock, K_FOREVER);
-	if (pipe->state == MODEM_PIPE_STATE_OPEN) {
-		k_mutex_unlock(&pipe->lock);
+	if (pipe_test_events(pipe, PIPE_EVENT_OPENED_BIT)) {
 		return 0;
 	}
 
-	ret = pipe->api->open(pipe->data);
+	ret = pipe_call_open(pipe);
 	if (ret < 0) {
-		k_mutex_unlock(&pipe->lock);
 		return ret;
 	}
 
-	if (pipe->state == MODEM_PIPE_STATE_OPEN) {
-		k_mutex_unlock(&pipe->lock);
-		return 0;
+	if (!pipe_await_events(pipe, PIPE_EVENT_OPENED_BIT, timeout)) {
+		return -EAGAIN;
 	}
 
-	k_condvar_wait(&pipe->condvar, &pipe->lock, K_MSEC(10000));
-	ret = (pipe->state == MODEM_PIPE_STATE_OPEN) ? 0 : -EAGAIN;
-	k_mutex_unlock(&pipe->lock);
-	return ret;
+	return 0;
 }
 
 int modem_pipe_open_async(struct modem_pipe *pipe)
 {
-	int ret;
-
-	k_mutex_lock(&pipe->lock, K_FOREVER);
-	if (pipe->state == MODEM_PIPE_STATE_OPEN) {
-		if (pipe->callback != NULL) {
-			pipe->callback(pipe, MODEM_PIPE_EVENT_OPENED, pipe->user_data);
-		}
-
-		k_mutex_unlock(&pipe->lock);
+	if (pipe_test_events(pipe, PIPE_EVENT_OPENED_BIT)) {
+		pipe_call_callback(pipe, MODEM_PIPE_EVENT_OPENED);
 		return 0;
 	}
 
-	ret = pipe->api->open(pipe->data);
-	k_mutex_unlock(&pipe->lock);
-	return ret;
+	return pipe_call_open(pipe);
 }
 
 void modem_pipe_attach(struct modem_pipe *pipe, modem_pipe_api_callback callback, void *user_data)
 {
-	k_mutex_lock(&pipe->lock, K_FOREVER);
-	pipe->callback = callback;
-	pipe->user_data = user_data;
+	pipe_set_callback(pipe, callback, user_data);
 
-	if (pipe->receive_ready_pending && (pipe->callback != NULL)) {
-		pipe->callback(pipe, MODEM_PIPE_EVENT_RECEIVE_READY, pipe->user_data);
+	if (pipe_test_events(pipe, PIPE_EVENT_RECEIVE_READY_BIT)) {
+		pipe_call_callback(pipe, MODEM_PIPE_EVENT_RECEIVE_READY);
 	}
 
-	if (pipe->transmit_idle_pending && (pipe->callback != NULL)) {
-		pipe->callback(pipe, MODEM_PIPE_EVENT_TRANSMIT_IDLE, pipe->user_data);
+	if (pipe_test_events(pipe, PIPE_EVENT_TRANSMIT_IDLE_BIT)) {
+		pipe_call_callback(pipe, MODEM_PIPE_EVENT_TRANSMIT_IDLE);
 	}
-
-	k_mutex_unlock(&pipe->lock);
 }
 
 int modem_pipe_transmit(struct modem_pipe *pipe, const uint8_t *buf, size_t size)
 {
-	int ret;
-
-	k_mutex_lock(&pipe->lock, K_FOREVER);
-
-	if (pipe->state == MODEM_PIPE_STATE_CLOSED) {
-		k_mutex_unlock(&pipe->lock);
+	if (!pipe_test_events(pipe, PIPE_EVENT_OPENED_BIT)) {
 		return -EPERM;
 	}
 
-	ret = pipe->api->transmit(pipe->data, buf, size);
-	pipe->transmit_idle_pending = false;
-	k_mutex_unlock(&pipe->lock);
-	return ret;
+	pipe_clear_events(pipe, PIPE_EVENT_TRANSMIT_IDLE_BIT);
+	return pipe_call_transmit(pipe, buf, size);
 }
 
 int modem_pipe_receive(struct modem_pipe *pipe, uint8_t *buf, size_t size)
 {
-	int ret;
-
-	k_mutex_lock(&pipe->lock, K_FOREVER);
-
-	if (pipe->state == MODEM_PIPE_STATE_CLOSED) {
-		k_mutex_unlock(&pipe->lock);
+	if (!pipe_test_events(pipe, PIPE_EVENT_OPENED_BIT)) {
 		return -EPERM;
 	}
 
-	ret = pipe->api->receive(pipe->data, buf, size);
-	pipe->receive_ready_pending = false;
-	k_mutex_unlock(&pipe->lock);
-	return ret;
+	pipe_clear_events(pipe, PIPE_EVENT_RECEIVE_READY_BIT);
+	return pipe_call_receive(pipe, buf, size);
 }
 
 void modem_pipe_release(struct modem_pipe *pipe)
 {
-	k_mutex_lock(&pipe->lock, K_FOREVER);
-	pipe->callback = NULL;
-	pipe->user_data = NULL;
-	k_mutex_unlock(&pipe->lock);
+	pipe_set_callback(pipe, NULL, NULL);
 }
 
-int modem_pipe_close(struct modem_pipe *pipe)
+int modem_pipe_close(struct modem_pipe *pipe, k_timeout_t timeout)
 {
 	int ret;
 
-	k_mutex_lock(&pipe->lock, K_FOREVER);
-	if (pipe->state == MODEM_PIPE_STATE_CLOSED) {
-		k_mutex_unlock(&pipe->lock);
+	if (pipe_test_events(pipe, PIPE_EVENT_CLOSED_BIT)) {
 		return 0;
 	}
 
-	ret = pipe->api->close(pipe->data);
+	ret = pipe_call_close(pipe);
 	if (ret < 0) {
-		k_mutex_unlock(&pipe->lock);
 		return ret;
 	}
 
-	if (pipe->state == MODEM_PIPE_STATE_CLOSED) {
-		k_mutex_unlock(&pipe->lock);
-		return 0;
+	if (!pipe_await_events(pipe, PIPE_EVENT_CLOSED_BIT, timeout)) {
+		return -EAGAIN;
 	}
 
-	k_condvar_wait(&pipe->condvar, &pipe->lock, K_MSEC(10000));
-	ret = (pipe->state == MODEM_PIPE_STATE_CLOSED) ? 0 : -EAGAIN;
-	k_mutex_unlock(&pipe->lock);
-	return ret;
+	return 0;
 }
 
 int modem_pipe_close_async(struct modem_pipe *pipe)
 {
-	int ret;
-
-	k_mutex_lock(&pipe->lock, K_FOREVER);
-	if (pipe->state == MODEM_PIPE_STATE_CLOSED) {
-		if (pipe->callback != NULL) {
-			pipe->callback(pipe, MODEM_PIPE_EVENT_CLOSED, pipe->user_data);
-		}
-
-		k_mutex_unlock(&pipe->lock);
+	if (pipe_test_events(pipe, PIPE_EVENT_CLOSED_BIT)) {
+		pipe_call_callback(pipe, MODEM_PIPE_EVENT_CLOSED);
 		return 0;
 	}
 
-	ret = pipe->api->close(pipe->data);
-	k_mutex_unlock(&pipe->lock);
-	return ret;
+	return pipe_call_close(pipe);
 }
 
 void modem_pipe_notify_opened(struct modem_pipe *pipe)
 {
-	k_mutex_lock(&pipe->lock, K_FOREVER);
-	pipe->state = MODEM_PIPE_STATE_OPEN;
-
-	if (pipe->callback != NULL) {
-		pipe->callback(pipe, MODEM_PIPE_EVENT_OPENED, pipe->user_data);
-		pipe->callback(pipe, MODEM_PIPE_EVENT_TRANSMIT_IDLE, pipe->user_data);
-	}
-
-	k_condvar_signal(&pipe->condvar);
-	k_mutex_unlock(&pipe->lock);
+	pipe_set_events(pipe, PIPE_EVENT_OPENED_BIT | PIPE_EVENT_TRANSMIT_IDLE_BIT);
+	pipe_call_callback(pipe, MODEM_PIPE_EVENT_OPENED);
+	pipe_call_callback(pipe, MODEM_PIPE_EVENT_TRANSMIT_IDLE);
 }
 
 void modem_pipe_notify_closed(struct modem_pipe *pipe)
 {
-	k_mutex_lock(&pipe->lock, K_FOREVER);
-	pipe->state = MODEM_PIPE_STATE_CLOSED;
-	pipe->receive_ready_pending = false;
-	pipe->transmit_idle_pending = true;
-
-	if (pipe->callback != NULL) {
-		pipe->callback(pipe, MODEM_PIPE_EVENT_CLOSED, pipe->user_data);
-	}
-
-	k_condvar_signal(&pipe->condvar);
-	k_mutex_unlock(&pipe->lock);
+	pipe_set_events(pipe, PIPE_EVENT_TRANSMIT_IDLE_BIT | PIPE_EVENT_CLOSED_BIT);
+	pipe_call_callback(pipe, MODEM_PIPE_EVENT_CLOSED);
 }
 
 void modem_pipe_notify_receive_ready(struct modem_pipe *pipe)
 {
-	k_mutex_lock(&pipe->lock, K_FOREVER);
-
-	pipe->receive_ready_pending = true;
-
-	if (pipe->callback != NULL) {
-		pipe->callback(pipe, MODEM_PIPE_EVENT_RECEIVE_READY, pipe->user_data);
-	}
-
-	k_mutex_unlock(&pipe->lock);
+	pipe_post_events(pipe, PIPE_EVENT_RECEIVE_READY_BIT);
+	pipe_call_callback(pipe, MODEM_PIPE_EVENT_RECEIVE_READY);
 }
 
 void modem_pipe_notify_transmit_idle(struct modem_pipe *pipe)
 {
-	k_mutex_lock(&pipe->lock, K_FOREVER);
-
-	pipe->transmit_idle_pending = true;
-
-	if (pipe->callback != NULL) {
-		pipe->callback(pipe, MODEM_PIPE_EVENT_TRANSMIT_IDLE, pipe->user_data);
-	}
-
-	k_mutex_unlock(&pipe->lock);
+	pipe_post_events(pipe, PIPE_EVENT_TRANSMIT_IDLE_BIT);
+	pipe_call_callback(pipe, MODEM_PIPE_EVENT_TRANSMIT_IDLE);
 }

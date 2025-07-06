@@ -117,7 +117,7 @@ static void clock_init_usb1_pll(const clock_usb_pll_config_t *config)
 
 static void flexspi_enter_critical(void)
 {
-#if DT_SAME_NODE(DT_NODELABEL(flexspi2), DT_PARENT(DT_CHOSEN(flash)))
+#if DT_SAME_NODE(DT_NODELABEL(flexspi2), DT_PARENT(DT_CHOSEN(zephyr_flash)))
 	/* Wait for flexspi to be inactive, and gate the clock */
 	while (!((FLEXSPI2->STS0 & FLEXSPI_STS0_ARBIDLE_MASK) &&
 			(FLEXSPI2->STS0 & FLEXSPI_STS0_SEQIDLE_MASK))) {
@@ -128,7 +128,7 @@ static void flexspi_enter_critical(void)
 	CCM->CCGR7 &= (~CCM_CCGR7_CG1_MASK);
 #endif
 
-#if DT_SAME_NODE(DT_NODELABEL(flexspi), DT_PARENT(DT_CHOSEN(flash)))
+#if DT_SAME_NODE(DT_NODELABEL(flexspi), DT_PARENT(DT_CHOSEN(zephyr_flash)))
 	/* Wait for flexspi to be inactive, and gate the clock */
 	while (!((FLEXSPI->STS0 & FLEXSPI_STS0_ARBIDLE_MASK) &&
 			(FLEXSPI->STS0 & FLEXSPI_STS0_SEQIDLE_MASK))) {
@@ -142,7 +142,7 @@ static void flexspi_enter_critical(void)
 
 static void flexspi_exit_critical(void)
 {
-#if DT_SAME_NODE(DT_NODELABEL(flexspi2), DT_PARENT(DT_CHOSEN(flash)))
+#if DT_SAME_NODE(DT_NODELABEL(flexspi2), DT_PARENT(DT_CHOSEN(zephyr_flash)))
 	/* Enable clock gate of flexspi2. */
 	CCM->CCGR7 |= (CCM_CCGR7_CG1_MASK);
 
@@ -153,7 +153,7 @@ static void flexspi_exit_critical(void)
 	while (!((FLEXSPI2->STS0 & FLEXSPI_STS0_ARBIDLE_MASK) &&
 		(FLEXSPI2->STS0 & FLEXSPI_STS0_SEQIDLE_MASK))) {
 	}
-#elif DT_SAME_NODE(DT_NODELABEL(flexspi), DT_PARENT(DT_CHOSEN(flash)))
+#elif DT_SAME_NODE(DT_NODELABEL(flexspi), DT_PARENT(DT_CHOSEN(zephyr_flash)))
 	/* Enable clock of flexspi. */
 	CCM->CCGR6 |= CCM_CCGR6_CG5_MASK;
 
@@ -211,11 +211,11 @@ void clock_full_power(void)
 #endif
 
 	/* Set Flexspi divider before increasing frequency of PLL3 PDF0. */
-#if DT_SAME_NODE(DT_NODELABEL(flexspi), DT_PARENT(DT_CHOSEN(flash)))
+#if DT_SAME_NODE(DT_NODELABEL(flexspi), DT_PARENT(DT_CHOSEN(zephyr_flash)))
 	clock_set_div(kCLOCK_FlexspiDiv, flexspi_div);
 	clock_set_mux(kCLOCK_FlexspiMux, 3);
 #endif
-#if DT_SAME_NODE(DT_NODELABEL(flexspi2), DT_PARENT(DT_CHOSEN(flash)))
+#if DT_SAME_NODE(DT_NODELABEL(flexspi2), DT_PARENT(DT_CHOSEN(zephyr_flash)))
 	clock_set_div(kCLOCK_Flexspi2Div, flexspi_div);
 	clock_set_mux(kCLOCK_Flexspi2Mux, 1);
 #endif
@@ -258,12 +258,12 @@ void clock_low_power(void)
 	CCM_ANALOG->PLL_USB1_SET = CCM_ANALOG_PLL_USB1_ENABLE_MASK;
 	CCM_ANALOG->PFD_480_CLR = CCM_ANALOG_PFD_480_PFD0_CLKGATE_MASK;
 	/* Change flexspi to use PLL3 PFD0 with no divisor (24M flexspi clock) */
-#if DT_SAME_NODE(DT_NODELABEL(flexspi), DT_PARENT(DT_CHOSEN(flash)))
+#if DT_SAME_NODE(DT_NODELABEL(flexspi), DT_PARENT(DT_CHOSEN(zephyr_flash)))
 	clock_set_div(kCLOCK_FlexspiDiv, 0);
 	/* FLEXSPI1 mux to PLL3 PFD0 BYPASS */
 	clock_set_mux(kCLOCK_FlexspiMux, 3);
 #endif
-#if DT_SAME_NODE(DT_NODELABEL(flexspi2), DT_PARENT(DT_CHOSEN(flash)))
+#if DT_SAME_NODE(DT_NODELABEL(flexspi2), DT_PARENT(DT_CHOSEN(zephyr_flash)))
 	clock_set_div(kCLOCK_Flexspi2Div, 0);
 	/* FLEXSPI2 mux to PLL3 PFD0 BYPASS */
 	clock_set_mux(kCLOCK_Flexspi2Mux, 1);
@@ -339,7 +339,7 @@ void clock_lpm_init(void)
 	XTALOSC24M->OSC_CONFIG1 = tmp_reg;
 }
 
-static int imxrt_lpm_init(void)
+void imxrt_lpm_init(void)
 {
 
 	struct clock_callbacks callbacks;
@@ -464,8 +464,4 @@ static int imxrt_lpm_init(void)
 
 	/* Install LPM callbacks */
 	imxrt_clock_pm_callbacks_register(&callbacks);
-	return 0;
 }
-
-
-SYS_INIT(imxrt_lpm_init, PRE_KERNEL_1, 0);

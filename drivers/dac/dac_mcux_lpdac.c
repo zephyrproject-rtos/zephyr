@@ -41,6 +41,11 @@ static int mcux_lpdac_channel_setup(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+	if (channel_cfg->internal) {
+		LOG_ERR("Internal channels not supported");
+		return -ENOTSUP;
+	}
+
 	DAC_GetDefaultConfig(&dac_config);
 	dac_config.referenceVoltageSource = config->ref_voltage;
 #if defined(FSL_FEATURE_LPDAC_HAS_GCR_BUF_SPD_CTRL) && FSL_FEATURE_LPDAC_HAS_GCR_BUF_SPD_CTRL
@@ -86,7 +91,7 @@ static int mcux_lpdac_init(const struct device *dev)
 	return 0;
 }
 
-static const struct dac_driver_api mcux_lpdac_driver_api = {
+static DEVICE_API(dac, mcux_lpdac_driver_api) = {
 	.channel_setup = mcux_lpdac_channel_setup,
 	.write_value = mcux_lpdac_write_value,
 };

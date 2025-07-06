@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2024, TDK Invensense
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Get a node identifier for TDK IMU sensor supporting APEX feature.
+ */
+/ {
+	aliases {
+		tdk-apex-sensor0 = &icm42670p;
+	};
+};
+
+/*
+ * Example configuration of a ICM42670-P device on i2c0 compatible with an Arduino I2C bus.
+ *
+ * Device address 0x68 is assumed. Your device may have a different
+ * address; check your device documentation if unsure.
+ */
+&arduino_i2c {
+	status = "okay";
+	icm42670p: icm42670p@68 {
+		compatible = "invensense,icm42670p";
+		reg = <0x68>;
+		int-gpios = <&arduino_header 8 GPIO_ACTIVE_HIGH>; /* D2 */
+		accel-hz = <50>;
+		gyro-hz = <50>;
+		accel-fs = <16>;
+		gyro-fs = <2000>;
+		apex = "pedometer";
+	};
+};

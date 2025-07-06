@@ -1,10 +1,9 @@
 identifier: nrf9160dk@0.7.0/nrf9160/ns
-name: nRF9160-DK-NRF9160-Non-Secure
+name: nRF9160-DK-NRF9160-Non-Secure (rev. 0.7.0)
 type: mcu
 arch: arm
 toolchain:
   - gnuarmemb
-  - xtools
   - zephyr
 ram: 128
 flash: 192
@@ -19,3 +18,4 @@ supported:
   - netif:modem
   - gpio
 vendor: nordic
+sysbuild: true

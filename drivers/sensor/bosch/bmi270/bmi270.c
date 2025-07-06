@@ -769,7 +769,7 @@ static int bmi270_init(const struct device *dev)
 	return ret;
 }
 
-static const struct sensor_driver_api bmi270_driver_api = {
+static DEVICE_API(sensor, bmi270_driver_api) = {
 	.sample_fetch = bmi270_sample_fetch,
 	.channel_get = bmi270_channel_get,
 	.attr_set = bmi270_attr_set,
@@ -793,7 +793,7 @@ static const struct bmi270_feature_config bmi270_feature_base = {
 };
 
 #define BMI270_FEATURE(inst) (						\
-	DT_NODE_HAS_COMPAT(DT_DRV_INST(inst), bosch_bmi270_base) ?	\
+	DT_INST_NODE_HAS_COMPAT(inst, bosch_bmi270_base) ?	        \
 		&bmi270_feature_base :					\
 		&bmi270_feature_max_fifo)
 

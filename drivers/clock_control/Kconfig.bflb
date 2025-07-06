@@ -1,0 +1,7 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_BOUFFALOLAB_BL60X
+	bool "Bouffalolab BL60x Clock Control"
+	default y
+	depends on DT_HAS_BFLB_BL60X_CLOCK_CONTROLLER_ENABLED

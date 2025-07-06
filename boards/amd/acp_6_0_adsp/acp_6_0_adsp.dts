@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2024 AMD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <amd/acp_6_0.dtsi>
+
+/ {
+	model = "AMD ACP_6_0  Audio DSP";
+	compatible = "acp_6_0";
+};

@@ -61,7 +61,7 @@ static inline int parse_device(const struct shell *sh, size_t argc, char *argv[]
 		return -EINVAL;
 	}
 
-	*bbram_dev = device_get_binding(argv[1]);
+	*bbram_dev = shell_device_get_binding(argv[1]);
 	if (!*bbram_dev) {
 		shell_error(sh, "Given BBRAM device was not found");
 		return -ENODEV;

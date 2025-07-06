@@ -132,12 +132,12 @@ size_t gcov_calculate_buff_size(struct gcov_info *info)
 }
 
 /**
- * gcov_to_gcda - convert from gcov data set (info) to
+ * gcov_populate_buffer - convert from gcov data set (info) to
  * .gcda file format.
  * This buffer will now have info similar to a regular gcda
  * format.
  */
-size_t gcov_to_gcda(uint8_t *buffer, struct gcov_info *info)
+size_t gcov_populate_buffer(uint8_t *buffer, struct gcov_info *info)
 {
 	struct gcov_fn_info *functions;
 	struct gcov_ctr_info *counters_per_func;
@@ -232,6 +232,53 @@ size_t gcov_to_gcda(uint8_t *buffer, struct gcov_info *info)
 	return buffer_write_position;
 }
 
+void gcov_reset_counts(struct gcov_info *info)
+{
+	struct gcov_fn_info *functions;
+	struct gcov_ctr_info *counters_per_func;
+	uint32_t iter_functions;
+	uint32_t iter_counts;
+	uint32_t iter_counter_values;
+
+	for (iter_functions = 0U;
+		iter_functions < info->n_functions;
+		iter_functions++) {
+
+		functions = info->functions[iter_functions];
+		counters_per_func = functions->ctrs;
+
+		for (iter_counts = 0U;
+			iter_counts < GCOV_COUNTERS;
+			iter_counts++) {
+			for (iter_counter_values = 0U;
+				iter_counter_values < counters_per_func->num;
+				iter_counter_values++) {
+				counters_per_func->values[iter_counter_values] = 0;
+			}
+		}
+	}
+}
+
+void gcov_reset_all_counts(void)
+{
+	struct gcov_info *gcov_list = NULL;
+
+#ifdef CONFIG_MULTITHREADING
+	k_sched_lock();
+#endif
+
+	gcov_list = gcov_get_list_head();
+
+	while (gcov_list) {
+		gcov_reset_counts(gcov_list);
+		gcov_list = gcov_list->next;
+	}
+
+#ifdef CONFIG_MULTITHREADING
+	k_sched_unlock();
+#endif
+}
+
 void dump_on_console_start(const char *filename)
 {
 	printk("\n%c", FILE_START_INDICATOR);
@@ -261,7 +308,11 @@ void gcov_coverage_dump(void)
 	struct gcov_info *gcov_list_first = gcov_info_head;
 	struct gcov_info *gcov_list = gcov_info_head;
 
-	k_sched_lock();
+	if (!k_is_in_isr()) {
+#ifdef CONFIG_MULTITHREADING
+		k_sched_lock();
+#endif
+	}
 	printk("\nGCOV_COVERAGE_DUMP_START");
 	while (gcov_list) {
 
@@ -274,7 +325,7 @@ void gcov_coverage_dump(void)
 			goto coverage_dump_end;
 		}
 
-		written_size = gcov_to_gcda(buffer, gcov_list);
+		written_size = gcov_populate_buffer(buffer, gcov_list);
 		if (written_size != size) {
 			printk("Write Error on buff\n");
 			goto coverage_dump_end;
@@ -290,7 +341,11 @@ void gcov_coverage_dump(void)
 	}
 coverage_dump_end:
 	printk("\nGCOV_COVERAGE_DUMP_END\n");
-	k_sched_unlock();
+	if (!k_is_in_isr()) {
+#ifdef CONFIG_MULTITHREADING
+		k_sched_unlock();
+#endif
+	}
 	return;
 }
 

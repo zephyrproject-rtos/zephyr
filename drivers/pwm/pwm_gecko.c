@@ -72,7 +72,7 @@ static int pwm_gecko_get_cycles_per_sec(const struct device *dev,
 	return 0;
 }
 
-static const struct pwm_driver_api pwm_gecko_driver_api = {
+static DEVICE_API(pwm, pwm_gecko_driver_api) = {
 	.set_cycles = pwm_gecko_set_cycles,
 	.get_cycles_per_sec = pwm_gecko_get_cycles_per_sec,
 };

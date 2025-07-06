@@ -120,7 +120,7 @@ static void swerv_pic_irq_handler(const void *arg)
 {
 	uint32_t tmp;
 	uint32_t irq;
-	struct _isr_table_entry *ite;
+	const struct _isr_table_entry *ite;
 
 	/* trigger the capture of the interrupt source ID */
 	__asm__ swerv_pic_writecsr(meicpct, 0);
@@ -136,7 +136,7 @@ static void swerv_pic_irq_handler(const void *arg)
 	irq += RISCV_MAX_GENERIC_IRQ;
 
 	/* Call the corresponding IRQ handler in _sw_isr_table */
-	ite = (struct _isr_table_entry *)&_sw_isr_table[irq];
+	ite = (const struct _isr_table_entry *)&_sw_isr_table[irq];
 	if (ite->isr) {
 		ite->isr(ite->arg);
 	}
@@ -229,8 +229,9 @@ int arch_irq_is_enabled(unsigned int irq)
 {
 	uint32_t mie;
 
-	if (irq > RISCV_MAX_GENERIC_IRQ)
+	if (irq > RISCV_MAX_GENERIC_IRQ) {
 		return swerv_pic_irq_is_enabled(irq);
+	}
 
 	__asm__ volatile ("csrr %0, mie" : "=r" (mie));
 

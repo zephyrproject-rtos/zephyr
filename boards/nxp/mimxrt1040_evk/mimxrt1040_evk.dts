@@ -18,6 +18,8 @@
 		led0 = &green_led;
 		sw0 = &user_button;
 		pwm-0 = &flexpwm1_pwm3;
+		accel0 = &fxls8974;
+		mcuboot-button0 = &user_button;
 	};
 
 	chosen {
@@ -29,12 +31,40 @@
 		zephyr,flash = &w25q64jvssiq;
 		zephyr,flash-controller = &w25q64jvssiq;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &lpuart1;
 	};
 
 	sdram0: memory@80000000 {
 		/* Winbond W9825G6KH SDRAM */
 		device_type = "memory";
 		reg = <0x80000000 DT_SIZE_M(32)>;
+	};
+
+	/*
+	 * This node describes the GPIO pins of the parallel FPC interface,
+	 * This interface is standard to several NXP EVKs, and is used with
+	 * several parallel LCD displays (available as zephyr shields)
+	 */
+	nxp_parallel_lcd_connector: parallel-connector {
+		compatible = "nxp,parallel-lcd-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<0  0 &gpio2 31 0>;	/* Pin 1, BL+ */
+	};
+
+	/*
+	 * This node describes the GPIO pins of the I2C display FPC interface,
+	 * This interface is standard to several NXP EVKs, and is used with
+	 * several parallel LCD displays (available as zephyr shields)
+	 */
+	nxp_i2c_touch_fpc: i2c-touch-connector {
+		compatible = "nxp,i2c-tsc-fpc";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<1  0 &gpio1 19 0>,	/* Pin 2, LCD touch RST */
+				<2  0 &gpio1 11 0>;	/* Pin 3, LCD touch INT */
 	};
 
 	leds {
@@ -101,21 +131,26 @@
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
+
+			/*
+			 * Partition sizes must be aligned
+			 * to the flash memory sector size of 4KB.
+			 */
 			boot_partition: partition@0 {
 				label = "mcuboot";
-				reg = <0x00000000 DT_SIZE_K(64)>;
+				reg = <0x00000000 DT_SIZE_K(128)>;
 			};
-			slot0_partition: partition@10000 {
+			slot0_partition: partition@20000 {
 				label = "image-0";
-				reg = <0x00010000 DT_SIZE_M(3)>;
+				reg = <0x00020000 DT_SIZE_M(3)>;
 			};
-			slot1_partition: partition@310000 {
+			slot1_partition: partition@320000 {
 				label = "image-1";
-				reg = <0x00310000 DT_SIZE_M(3)>;
+				reg = <0x00320000 DT_SIZE_M(3)>;
 			};
-			storage_partition: partition@610000 {
+			storage_partition: partition@620000 {
 				label = "storage";
-				reg = <0x00610000 DT_SIZE_K(1984)>;
+				reg = <0x00620000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
 			};
 		};
 	};
@@ -160,10 +195,31 @@
 	pinctrl-names = "default";
 };
 
-/* Leave LPI2C3 disabled by default, since it conflicts with LPSPI1 pins */
-&lpi2c3 {
+nxp_touch_i2c: &lpi2c1 {};
+
+zephyr_lcdif: &lcdif {
+	pinctrl-0 = <&pinmux_lcdif>;
+	pinctrl-names = "default";
+};
+
+lpi2c3: &lpi2c3 {
 	pinctrl-0 = <&pinmux_lpi2c3>;
 	pinctrl-names = "default";
+	status = "okay";
+
+	fxls8974: fxls8974@18 {
+		compatible = "nxp,fxls8974";
+		reg = <0x18>;
+		status = "okay";
+
+		/* Two zero ohm resistors (R115 and R122) isolate sensor
+		 * interrupt gpios from the soc and are unpopulated by default.
+		 * Note that if you populate them, they conflict with JTAG_TDO and
+		 * ethernet PHY interrupt signals.
+		 * int1-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
+		 * int2-gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;
+		 */
+	};
 };
 
 /* GPT and Systick are enabled. If power management is enabled, the GPT
@@ -177,3 +233,7 @@
 &systick {
 	status = "okay";
 };
+
+m2_hci_bt_uart: &lpuart3 {};
+
+m2_wifi_sdio: &usdhc1 {};

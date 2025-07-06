@@ -1,7 +1,4 @@
-.. _rddrone_fmuk66:
-
-NXP RDDRONE-FMUK66
-##################
+.. zephyr:board:: rddrone_fmuk66
 
 Overview
 ********
@@ -10,10 +7,6 @@ The RDDRONE FMUK66 is an drone control board with commonly used peripheral
 connectors and a Kinetis K66 on board.
 
 - Comes with a J-Link Edu Mini for programming and UART console.
-
-.. image:: rddrone_fmuk66.jpg
-   :align: center
-   :alt: RDDRONE-FMUK66
 
 Hardware
 ********
@@ -43,51 +36,7 @@ For more information about the K64F SoC and FRDM-K64F board:
 Supported Features
 ==================
 
-The rddrone-fmuk66 board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| DAC       | on-chip    | dac                                 |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| ETHERNET  | on-chip    | ethernet                            |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | soc flash                           |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | USB device                          |
-+-----------+------------+-------------------------------------+
-| CAN       | on-chip    | can                                 |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | rtc                                 |
-+-----------+------------+-------------------------------------+
-| DMA       | on-chip    | dma                                 |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in
-:zephyr_file:`boards/nxp/rddrone_fmuk66/rddrone_fmuk66_defconfig`
-
-Other hardware features are not currently supported by the port.
+.. zephyr:board-supported-hw::
 
 System Clock
 ============
@@ -111,6 +60,8 @@ Only USB device function is supported in Zephyr at the moment.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -144,7 +95,7 @@ etc.):
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -162,7 +113,7 @@ see the following message in the terminal:
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -176,6 +127,9 @@ should see the following message in the terminal:
 
    ***** Booting Zephyr OS v2.7.0 *****
    Hello World! rddrone-fmuk66
+
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
 
 .. _RDDRONE-FMUK66 Website:
 

@@ -1,0 +1,12 @@
+# TMP114 temperature sensor configuration options
+
+# Copyright (c) 2024 Fredrik Gihl
+# SPDX-License-Identifier: Apache-2.0
+
+config TMP114
+	bool "TMP114 Temperature Sensor"
+	default y
+	depends on DT_HAS_TI_TMP114_ENABLED
+	select I2C
+	help
+	  Enable driver for TMP114 temperature sensors.

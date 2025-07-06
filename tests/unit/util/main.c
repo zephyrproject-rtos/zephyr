@@ -6,6 +6,7 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/sys/util.h>
+#include <stdio.h>
 #include <string.h>
 
 ZTEST(util, test_u8_to_dec) {
@@ -14,49 +15,44 @@ ZTEST(util, test_u8_to_dec) {
 
 	len = u8_to_dec(text, sizeof(text), 0);
 	zassert_equal(len, 1, "Length of 0 is not 1");
-	zassert_equal(strcmp(text, "0"), 0,
-		      "Value=0 is not converted to \"0\"");
+	zassert_str_equal(text, "0", "Value=0 is not converted to \"0\"");
 
 	len = u8_to_dec(text, sizeof(text), 1);
 	zassert_equal(len, 1, "Length of 1 is not 1");
-	zassert_equal(strcmp(text, "1"), 0,
-		      "Value=1 is not converted to \"1\"");
+	zassert_str_equal(text, "1", "Value=1 is not converted to \"1\"");
 
 	len = u8_to_dec(text, sizeof(text), 11);
 	zassert_equal(len, 2, "Length of 11 is not 2");
-	zassert_equal(strcmp(text, "11"), 0,
-		      "Value=10 is not converted to \"11\"");
+	zassert_str_equal(text, "11", "Value=10 is not converted to \"11\"");
 
 	len = u8_to_dec(text, sizeof(text), 100);
 	zassert_equal(len, 3, "Length of 100 is not 3");
-	zassert_equal(strcmp(text, "100"), 0,
-		      "Value=100 is not converted to \"100\"");
+	zassert_str_equal(text, "100",
+			  "Value=100 is not converted to \"100\"");
 
 	len = u8_to_dec(text, sizeof(text), 101);
 	zassert_equal(len, 3, "Length of 101 is not 3");
-	zassert_equal(strcmp(text, "101"), 0,
-		      "Value=101 is not converted to \"101\"");
+	zassert_str_equal(text, "101",
+			  "Value=101 is not converted to \"101\"");
 
 	len = u8_to_dec(text, sizeof(text), 255);
 	zassert_equal(len, 3, "Length of 255 is not 3");
-	zassert_equal(strcmp(text, "255"), 0,
-		      "Value=255 is not converted to \"255\"");
+	zassert_str_equal(text, "255",
+			  "Value=255 is not converted to \"255\"");
 
 	memset(text, 0, sizeof(text));
 	len = u8_to_dec(text, 2, 123);
 	zassert_equal(len, 2,
 		      "Length of converted value using 2 byte buffer isn't 2");
-	zassert_equal(
-		strcmp(text, "12"), 0,
-		"Value=123 is not converted to \"12\" using 2-byte buffer");
+	zassert_str_equal(text, "12",
+			  "Value=123 is not converted to \"12\" using 2-byte buffer");
 
 	memset(text, 0, sizeof(text));
 	len = u8_to_dec(text, 1, 123);
 	zassert_equal(len, 1,
 		      "Length of converted value using 1 byte buffer isn't 1");
-	zassert_equal(
-		strcmp(text, "1"), 0,
-		"Value=123 is not converted to \"1\" using 1-byte buffer");
+	zassert_str_equal(text, "1",
+			  "Value=123 is not converted to \"1\" using 1-byte buffer");
 
 	memset(text, 0, sizeof(text));
 	len = u8_to_dec(text, 0, 123);
@@ -80,6 +76,27 @@ ZTEST(util, test_sign_extend) {
 	u32 = 0xfffffff;
 	zassert_equal(sign_extend(u32, 27), -1);
 	zassert_equal(sign_extend(u32, 28), 0xfffffff);
+}
+
+ZTEST(util, test_arithmetic_shift_right)
+{
+	/* Test positive number */
+	zassert_equal(arithmetic_shift_right(0x8, 2), 0x2);
+	zassert_equal(arithmetic_shift_right(0x10, 3), 0x2);
+	zassert_equal(arithmetic_shift_right(0x20, 4), 0x2);
+
+	/* Test negative number */
+	zassert_equal(arithmetic_shift_right(-0x8, 2), -0x2);
+	zassert_equal(arithmetic_shift_right(-0x10, 3), -0x2);
+	zassert_equal(arithmetic_shift_right(-0x20, 4), -0x2);
+
+	/* Test zero shift */
+	zassert_equal(arithmetic_shift_right(0x2A, 0), 0x2A);
+	zassert_equal(arithmetic_shift_right(-0x2A, 0), -0x2A);
+
+	/* Test large shifts */
+	zassert_equal(arithmetic_shift_right(0x7FFFFFFFFFFFFFFF, 63), 0x0);
+	zassert_equal(arithmetic_shift_right(0x8000000000000000, 63), -0x1);
 }
 
 ZTEST(util, test_sign_extend_64) {
@@ -400,6 +417,11 @@ ZTEST(util, test_IS_EQ) {
 	zassert_true(IS_EQ(0, 0), "Unexpected IS_EQ result");
 	zassert_true(IS_EQ(1, 1), "Unexpected IS_EQ result");
 	zassert_true(IS_EQ(7, 7), "Unexpected IS_EQ result");
+	zassert_true(IS_EQ(0U, 0U), "Unexpected IS_EQ result");
+	zassert_true(IS_EQ(1U, 1U), "Unexpected IS_EQ result");
+	zassert_true(IS_EQ(7U, 7U), "Unexpected IS_EQ result");
+	zassert_true(IS_EQ(1, 1U), "Unexpected IS_EQ result");
+	zassert_true(IS_EQ(1U, 1), "Unexpected IS_EQ result");
 
 	zassert_false(IS_EQ(0, 1), "Unexpected IS_EQ result");
 	zassert_false(IS_EQ(1, 7), "Unexpected IS_EQ result");
@@ -419,9 +441,9 @@ ZTEST(util, test_LIST_DROP_EMPTY) {
 	};
 
 	zassert_equal(ARRAY_SIZE(arr), 3, "Failed to cleanup list");
-	zassert_equal(strcmp(arr[0], "Henry"), 0, "Failed at 0");
-	zassert_equal(strcmp(arr[1], "Dorsett"), 0, "Failed at 1");
-	zassert_equal(strcmp(arr[2], "Case"), 0, "Failed at 0");
+	zassert_str_equal(arr[0], "Henry", "Failed at 0");
+	zassert_str_equal(arr[1], "Dorsett", "Failed at 1");
+	zassert_str_equal(arr[2], "Case", "Failed at 0");
 }
 
 ZTEST(util, test_nested_FOR_EACH) {
@@ -696,6 +718,62 @@ skipped_c:
 	#undef test_IF_DISABLED_FLAG_B
 }
 
+ZTEST(util, test_bytecpy)
+{
+	/* Test basic byte-by-byte copying */
+	uint8_t src1[16] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+			    0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10};
+	uint8_t dst1[16] = {0};
+	uint8_t expected1[16] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+				 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10};
+
+	bytecpy(dst1, src1, sizeof(src1));
+	zassert_mem_equal(dst1, expected1, sizeof(expected1), "Basic byte-by-byte copy failed");
+
+	/* Test copying with different sizes */
+	uint8_t src2[8] = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x11, 0x22};
+	uint8_t dst2[8] = {0};
+	uint8_t expected2[8] = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x11, 0x22};
+
+	bytecpy(dst2, src2, sizeof(src2));
+	zassert_mem_equal(dst2, expected2, sizeof(expected2), "Copy with different size failed");
+
+	/* Test copying with zero size */
+	uint8_t src3[4] = {0x11, 0x22, 0x33, 0x44};
+	uint8_t dst3[4] = {0xAA, 0xBB, 0xCC, 0xDD};
+	uint8_t expected3[4] = {0xAA, 0xBB, 0xCC, 0xDD}; /* Should remain unchanged */
+
+	bytecpy(dst3, src3, 0);
+	zassert_mem_equal(dst3, expected3, sizeof(expected3),
+			  "Zero size copy should not modify destination");
+
+	/* Test copying with overlapping memory regions */
+	uint8_t buf[8] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88};
+	uint8_t expected4[8] = {0x11, 0x22, 0x33, 0x44, 0x11, 0x22, 0x33, 0x44};
+
+	bytecpy(&buf[4], buf, 4); /* Copy first 4 bytes to last 4 bytes */
+	zassert_mem_equal(buf, expected4, sizeof(expected4), "Overlapping memory copy failed");
+}
+
+ZTEST(util, test_byteswp)
+{
+	uint8_t a1 = 0xAAU;
+	uint8_t b1 = 0x55U;
+	uint32_t a2 = 0x12345678U;
+	uint32_t b2 = 0xABCDEF00U;
+
+	byteswp(&a1, &b1, sizeof(a1));
+	zassert_equal(a1, 0x55U, "Failed to swap single bytes");
+	zassert_equal(b1, 0xAAU, "Failed to swap single bytes");
+	byteswp(&a1, &b1, 0);
+	zassert_equal(a1, 0x55U, "Zero size swap should not modify values");
+	zassert_equal(b1, 0xAAU, "Zero size swap should not modify values");
+
+	byteswp(&a2, &b2, sizeof(a2));
+	zassert_equal(a2, 0xABCDEF00U, "Failed to swap multiple bytes");
+	zassert_equal(b2, 0x12345678U, "Failed to swap multiple bytes");
+}
+
 ZTEST(util, test_mem_xor_n)
 {
 	const size_t max_len = 128;
@@ -801,6 +879,181 @@ ZTEST(util, test_CONCAT)
 			12345678);
 
 	zassert_equal(CONCAT(CAT_PART1, CONCAT(CAT_PART2, CAT_PART3)), 123);
+}
+
+ZTEST(util, test_SIZEOF_FIELD)
+{
+	struct test_t {
+		uint32_t a;
+		uint8_t b;
+		uint8_t c[17];
+		int16_t d;
+	};
+
+	BUILD_ASSERT(SIZEOF_FIELD(struct test_t, a) == 4, "The a member is 4-byte wide.");
+	BUILD_ASSERT(SIZEOF_FIELD(struct test_t, b) == 1, "The b member is 1-byte wide.");
+	BUILD_ASSERT(SIZEOF_FIELD(struct test_t, c) == 17, "The c member is 17-byte wide.");
+	BUILD_ASSERT(SIZEOF_FIELD(struct test_t, d) == 2, "The d member is 2-byte wide.");
+}
+
+ZTEST(util, test_utf8_trunc_truncated)
+{
+	struct {
+		char input[20];
+		char expected[20];
+	} tests[] = {
+		{"ééé", "éé"},                    /* 2-byte UTF-8 characters */
+		{"€€€", "€€"},                    /* 3-byte UTF-8 characters */
+		{"𠜎𠜎𠜎", "𠜎𠜎"},                 /* 4-byte UTF-8 characters */
+		{"Hello 世界!🌍", "Hello 世界!"},   /* mixed UTF-8 characters */
+	};
+
+	for (size_t i = 0; i < ARRAY_SIZE(tests); i++) {
+		tests[i].input[strlen(tests[i].input) - 1] = '\0';
+		utf8_trunc(tests[i].input);
+		zassert_str_equal(tests[i].input, tests[i].expected, "Failed to truncate");
+	}
+}
+
+ZTEST(util, test_utf8_trunc_not_truncated)
+{
+	struct {
+		char input[20];
+		char expected[20];
+	} tests[] = {
+		{"abc", "abc"},                    /* 1-byte ASCII characters */
+		{"ééé", "ééé"},                    /* 2-byte UTF-8 characters */
+		{"€€€", "€€€"},                    /* 3-byte UTF-8 characters */
+		{"𠜎𠜎𠜎", "𠜎𠜎𠜎"},                /* 4-byte UTF-8 characters */
+		{"Hello 世界!🌍", "Hello 世界!🌍"},  /* mixed UTF-8 characters */
+	};
+
+	for (size_t i = 0; i < ARRAY_SIZE(tests); i++) {
+		utf8_trunc(tests[i].input);
+		zassert_str_equal(tests[i].input, tests[i].expected, "No-op truncation failed");
+	}
+}
+
+ZTEST(util, test_utf8_trunc_zero_length)
+{
+	/* Attempt to truncate a valid UTF8 string and verify no changed */
+	char test_str[] = "";
+	char expected_result[] = "";
+
+	utf8_trunc(test_str);
+
+	zassert_str_equal(test_str, expected_result, "Failed to truncate");
+}
+
+ZTEST(util, test_utf8_lcpy_truncated)
+{
+	/* dest_str size is based on storing 2 * € plus the null terminator plus an extra space to
+	 * verify that it's truncated properly
+	 */
+	char dest_str[strlen("€") * 2 + 1 + 1];
+	char test_str[] = "€€€";
+	char expected_result[] = "€€";
+
+	utf8_lcpy(dest_str, test_str, sizeof((dest_str)));
+
+	zassert_str_equal(dest_str, expected_result, "Failed to copy");
+}
+
+ZTEST(util, test_utf8_lcpy_not_truncated)
+{
+	/* dest_str size is based on storing 3 * € plus the null terminator  */
+	char dest_str[strlen("€") * 3 + 1];
+	char test_str[] = "€€€";
+	char expected_result[] = "€€€";
+
+	utf8_lcpy(dest_str, test_str, sizeof((dest_str)));
+
+	zassert_str_equal(dest_str, expected_result, "Failed to truncate");
+}
+
+ZTEST(util, test_utf8_lcpy_zero_length_copy)
+{
+	/* dest_str size is based on the null terminator */
+	char dest_str[1];
+	char test_str[] = "";
+	char expected_result[] = "";
+
+	utf8_lcpy(dest_str, test_str, sizeof((dest_str)));
+
+	zassert_str_equal(dest_str, expected_result, "Failed to truncate");
+}
+
+ZTEST(util, test_utf8_lcpy_zero_length_dest)
+{
+	char dest_str[] = "A";
+	char test_str[] = "";
+	char expected_result[] = "A"; /* expect no changes to dest_str */
+
+	utf8_lcpy(dest_str, test_str, 0);
+
+	zassert_str_equal(dest_str, expected_result, "Failed to truncate");
+}
+
+ZTEST(util, test_utf8_lcpy_null_termination)
+{
+	char dest_str[] = "DEADBEEF";
+	char test_str[] = "DEAD";
+	char expected_result[] = "DEAD";
+
+	utf8_lcpy(dest_str, test_str, sizeof(dest_str));
+
+	zassert_str_equal(dest_str, expected_result, "Failed to truncate");
+}
+
+ZTEST(util, test_util_eq)
+{
+	uint8_t src1[16];
+	uint8_t src2[16];
+
+	bool mem_area_matching_1;
+	bool mem_area_matching_2;
+
+	memset(src1, 0, sizeof(src1));
+	memset(src2, 0, sizeof(src2));
+
+	for (size_t i = 0U; i < 16; i++) {
+		src1[i] = 0xAB;
+		src2[i] = 0xAB;
+	}
+
+	src1[15] = 0xCD;
+	src2[15] = 0xEF;
+
+	mem_area_matching_1 = util_eq(src1, sizeof(src1), src2, sizeof(src2));
+	mem_area_matching_2 = util_eq(src1, sizeof(src1) - 1, src2, sizeof(src2) - 1);
+
+	zassert_false(mem_area_matching_1);
+	zassert_true(mem_area_matching_2);
+}
+
+ZTEST(util, test_util_memeq)
+{
+	uint8_t src1[16];
+	uint8_t src2[16];
+	uint8_t src3[16];
+
+	bool mem_area_matching_1;
+	bool mem_area_matching_2;
+
+	memset(src1, 0, sizeof(src1));
+	memset(src2, 0, sizeof(src2));
+
+	for (size_t i = 0U; i < 16; i++) {
+		src1[i] = 0xAB;
+		src2[i] = 0xAB;
+		src3[i] = 0xCD;
+	}
+
+	mem_area_matching_1 = util_memeq(src1, src2, sizeof(src1));
+	mem_area_matching_2 = util_memeq(src1, src3, sizeof(src1));
+
+	zassert_true(mem_area_matching_1);
+	zassert_false(mem_area_matching_2);
 }
 
 ZTEST_SUITE(util, NULL, NULL, NULL, NULL, NULL);

@@ -4,16 +4,15 @@ type: mcu
 arch: arm
 toolchain:
   - gnuarmemb
-  - xtools
   - zephyr
 ram: 448
 flash: 1024
 supported:
+  - ble
   - gpio
   - i2c
   - pwm
   - watchdog
-  - usb_cdc
   - usb_device
   - netif:openthread
 vendor: nordic

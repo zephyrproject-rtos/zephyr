@@ -37,7 +37,7 @@ endif # !LOG_MODE_MINIMAL
 
 if LOG_FRONTEND
 
-rsource "Kconfig.frontends"
+rsource "frontends/Kconfig"
 
 endif #LOG_FRONTEND
 

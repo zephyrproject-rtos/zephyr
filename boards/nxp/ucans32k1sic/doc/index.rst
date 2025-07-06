@@ -1,7 +1,4 @@
-.. _ucans32k1sic:
-
-NXP UCANS32K1SIC
-################
+.. zephyr:board:: ucans32k1sic
 
 Overview
 ********
@@ -10,10 +7,6 @@ Overview
 board designed for both automotive and industrial applications. The UCANS32K1SIC
 provides two CAN SIC interfaces and is based on the 32-bit Arm Cortex-M4F
 `NXP S32K146`_ microcontroller.
-
-.. image:: img/ucans32k1sic_top.webp
-     :align: center
-     :alt: NXP UCANS32K1SIC (TOP)
 
 Hardware
 ********
@@ -38,25 +31,7 @@ More information about the hardware and design resources can be found at
 Supported Features
 ==================
 
-The ``ucans32k1sic`` board configuration supports the following hardware features:
-
-============  ==========  ================================
-Interface     Controller  Driver/Component
-============  ==========  ================================
-SYSMPU        on-chip     mpu
-PORT          on-chip     pinctrl
-GPIO          on-chip     gpio
-LPUART        on-chip     serial
-LPI2C         on-chip     i2c
-LPSPI         on-chip     spi
-FTM           on-chip     pwm
-FlexCAN       on-chip     can
-Watchdog      on-chip     watchdog
-RTC           on-chip     counter
-============  ==========  ================================
-
-The default configuration can be found in the Kconfig file
-:zephyr_file:`boards/nxp/ucans32k1sic/ucans32k1sic_defconfig`.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -66,7 +41,7 @@ This board has 5 GPIO ports named from ``gpioa`` to ``gpioe``.
 Pin control can be further configured from your application overlay by adding
 children nodes with the desired pinmux configuration to the singleton node
 ``pinctrl``. Supported properties are described in
-:zephyr_file:`dts/bindings/pinctrl/nxp,kinetis-pinctrl.yaml`.
+:zephyr_file:`dts/bindings/pinctrl/nxp,port-pinctrl.yaml`.
 
 LEDs
 ----
@@ -130,6 +105,8 @@ The Arm Cortex-M4F core is configured to run at 80 MHz (RUN mode).
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``ucans32k1sic`` board can be built in the usual way as
 documented in :ref:`build_an_application`.
 
@@ -178,6 +155,9 @@ Debugging
 Run the ``west debug`` command to start a GDB session using SEGGER J-Link.
 Alternatively, run ``west debug -r trace32`` to launch the Lauterbach TRACE32
 software debugging interface.
+
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
 
 References
 **********

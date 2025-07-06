@@ -31,11 +31,11 @@ GEN_OFFSET_SYM(_callee_saved_t, i6);
 GEN_OFFSET_SYM(_callee_saved_t, o6);
 
 /* esf member offsets */
-GEN_OFFSET_SYM(z_arch_esf_t, out);
-GEN_OFFSET_SYM(z_arch_esf_t, global);
-GEN_OFFSET_SYM(z_arch_esf_t, npc);
-GEN_OFFSET_SYM(z_arch_esf_t, psr);
-GEN_OFFSET_SYM(z_arch_esf_t, tbr);
-GEN_ABSOLUTE_SYM(__z_arch_esf_t_SIZEOF, STACK_ROUND_UP(sizeof(z_arch_esf_t)));
+GEN_OFFSET_STRUCT(arch_esf, out);
+GEN_OFFSET_STRUCT(arch_esf, global);
+GEN_OFFSET_STRUCT(arch_esf, npc);
+GEN_OFFSET_STRUCT(arch_esf, psr);
+GEN_OFFSET_STRUCT(arch_esf, tbr);
+GEN_ABSOLUTE_SYM(__struct_arch_esf_SIZEOF, sizeof(struct arch_esf));
 
 GEN_ABS_SYM_END

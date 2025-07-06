@@ -56,9 +56,9 @@
 		};
 
 		test_phandles: phandle-holder-0 {
-                        /*
-                         * There should only be one vnd,phandle-holder in the entire DTS.
-                         */
+			/*
+			 * There should only be one vnd,phandle-holder in the entire DTS.
+			 */
 			compatible = "vnd,phandle-holder";
 			/*
 			 * At least one of these phandles must refer to
@@ -114,6 +114,16 @@
 			compatible = "vnd,enum-required-false-holder-inst";
 		};
 
+		test_enum_string_array: enum-8 {
+			compatible = "vnd,enum-string-array-holder";
+			val = "foo", "zoo", "foo";
+		};
+
+		test_enum_int_array: enum-9 {
+			compatible = "vnd,enum-int-array-holder";
+			val = <4 3 4 0>;
+		};
+
 		/*
 		 * disabled/reserved should be the only nodes with their
 		 * compatible in the tree.
@@ -164,7 +174,7 @@
 			#baz-cells = < 0x1 >;
 			interrupts = <4 3>;
 			status = "okay";
-                        ngpios = <100>;
+			ngpios = <100>;
 
 			test_gpio_hog_1 {
 				gpio-hog;
@@ -189,7 +199,7 @@
 			#baz-cells = < 0x1 >;
 			interrupts = <5 2>;
 			status = "okay";
-                        ngpios = <200>;
+			ngpios = <200>;
 
 			test_gpio_hog_3 {
 				gpio-hog;
@@ -496,6 +506,71 @@
 			status = "okay";
 		};
 
+		test_video0: video@10010000 {
+			compatible = "vnd,video-single-port";
+			reg = <0x10010000 0x1000>;
+
+			test_video0_port: port {
+				test_video0_out: endpoint {
+					remote-endpoint-label = "test_video2_port0_in0";
+				};
+			};
+		};
+
+		test_video1: video@10011000 {
+			compatible = "vnd,video-single-port";
+			reg = <0x10011000 0x1000>;
+
+			test_video1_port: port {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				test_video1_out0: endpoint@0 {
+					reg = <0x0>;
+					remote-endpoint-label = "test_video2_port0_in1";
+				};
+
+				test_video1_out1: endpoint@1 {
+					reg = <0x1>;
+					remote-endpoint-label = "test_video2_port1_in";
+				};
+			};
+		};
+
+		test_video2: video@10012000 {
+			compatible = "vnd,video-multi-port";
+			reg = <0x10012000 0x1000>;
+
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				test_video2_port0: port@0 {
+					reg = <0x0>;
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					test_video2_port0_in0: endpoint@0 {
+						reg = <0x0>;
+						remote-endpoint-label = "test_video0_out";
+					};
+
+					test_video2_port0_in1: endpoint@1 {
+						reg = <0x1>;
+						remote-endpoint-label = "test_video1_out0";
+					};
+				};
+
+				test_video2_port1: port@1 {
+					reg = <0x1>;
+
+					test_video2_port1_in: endpoint {
+						remote-endpoint-label = "test_video1_out1";
+					};
+				};
+			};
+		};
+
 		test_pwm1: pwm@55551111 {
 			compatible = "vnd,pwm";
 			#pwm-cells = <3>;
@@ -528,7 +603,6 @@
 		test_can0: can@55553333 {
 			compatible = "vnd,can-controller";
 			reg = < 0x55553333 0x1000 >;
-			bus-speed = <125000>;
 			status = "okay";
 			phys = <&test_transceiver0>;
 		};
@@ -536,7 +610,6 @@
 		test_can1: can@55554444 {
 			compatible = "vnd,can-controller";
 			reg = < 0x55554444 0x1000 >;
-			bus-speed = <125000>;
 			status = "okay";
 
 			can-transceiver {
@@ -548,7 +621,6 @@
 		test_can2: can@55555555 {
 			compatible = "vnd,can-controller";
 			reg = < 0x55555555 0x1000 >;
-			bus-speed = <125000>;
 			status = "okay";
 
 			can-transceiver {
@@ -559,9 +631,20 @@
 		test_can3: can@55557777 {
 			compatible = "vnd,can-controller";
 			reg = < 0x55556666 0x1000 >;
-			bus-speed = <125000>;
 			status = "okay";
 			phys = <&test_transceiver1>;
+		};
+
+		test_parent: test-parent {
+			compatible = "vnd,parent-bindings";
+
+			test_parent_a: parent-a {
+				val = <0>;
+
+				test_parent_b: parent-b {
+					val = <0>;
+				};
+			};
 		};
 
 		/* there should only be one of these */
@@ -615,7 +698,7 @@
 				#size-cells = <1>;
 
 				ranges = <0x0 0x0 0x0 0x3eff0000 0x10000>,
-				         <0x0 0x10000000 0x0 0x10000000 0x2eff0000>;
+					 <0x0 0x10000000 0x0 0x10000000 0x2eff0000>;
 			};
 
 			test_ranges_empty: empty@2 {
@@ -632,18 +715,22 @@
 			status = "okay";
 			foo = <1>;
 			bar = <2>;
+			bool-foo;
+			bool-bar;
 		};
 
 		device-with-props-1 {
 			compatible = "vnd,device-with-props";
 			status = "okay";
 			foo = <2>;
+			bool-foo;
 		};
 
 		device-with-props-2 {
 			compatible = "vnd,device-with-props";
 			status = "disabled";
 			baz = <1>;
+			bool-baz;
 		};
 
 		test_string_token_0: string-token-0 {
@@ -691,6 +778,20 @@
 			val = "XA XPLUS XB";
 		};
 
+		test_str_unquoted_esc_t: string-unquoted-escape-t {
+			compatible = "vnd,string-unquoted";
+			val = "XA\nXPLUS\nXB";
+		};
+
+		/*
+		 * Tests expect all vnd,string-unquoted instances to evaluate to doubles,
+		 * so use vnd,string instead.
+		 */
+		test_str_unquoted_esc_s: string-unquoted-escape-s {
+			compatible = "vnd,string";
+			val = "XSTR1 \" plus \" XSTR2";
+		};
+
 		test_stra_unquoted_f0: string-array-unquoted-f0 {
 			compatible = "vnd,string-array-unquoted";
 			val = "1.0e2", "2.0e2", "3.0e2", "4.0e2";
@@ -704,6 +805,43 @@
 		test_stra_unquoted_t: string-array-unquoted-t {
 			compatible = "vnd,string-array-unquoted";
 			val = "XA XPLUS XB", "XC XPLUS XD", "XA XMINUS XB", "XC XMINUS XD";
+		};
+
+		/*
+		 * Tests expect all vnd,string-array-unquoted instances to evaluate to doubles,
+		 * so use vnd,string-array instead.
+		 */
+		test_stra_unquoted_esc: string-array-unquoted-escape {
+			compatible = "vnd,string-array";
+			val = "XA\nXPLUS\nXB", "XSTR1 \" plus \" XSTR2";
+		};
+
+		test_str_escape_0: string-escape-0 {
+			compatible = "vnd,string";
+			val = "\a\b\f\n\r\t\v";
+		};
+
+		test_str_escape_1: string-escape-1 {
+			compatible = "vnd,string";
+			val = "\'single\' \"double\"";
+		};
+
+		test_str_escape_2: string-escape-2 {
+			compatible = "vnd,string";
+			val = "first\nsecond";
+		};
+
+		test_str_escape_3: string-escape-3 {
+			compatible = "vnd,string";
+			val = "\x01\x7F";
+		};
+
+		test_stra_escape: string-array-escape {
+			compatible = "vnd,string-array";
+			val = "\a\b\f\n\r\t\v",
+			      "\'single\' \"double\"",
+			      "first\nsecond",
+			      "\x01\x7F";
 		};
 
 		test-mtd@ffeeddcc {
@@ -723,9 +861,29 @@
 						reg = < 0x0 0xc0 >;
 						label = "test-partition-0";
 					};
+
 					partition@c0 {
 						reg = < 0xc0 0x40 >;
 						label = "test-partition-1";
+					};
+
+					partition@100 {
+						compatible = "fixed-subpartitions";
+						label = "test-subpartitions";
+						reg = <0x00000100 0x100>;
+						ranges = <0x0 0x100 0x100>;
+						#address-cells = <1>;
+						#size-cells = <1>;
+
+						partition@0 {
+							label = "test-subpartition-0";
+							reg = <0x00000000 0x40>;
+						};
+
+						partition@40 {
+							label = "test-subpartition-1";
+							reg = <0x00000040 0xc0>;
+						};
 					};
 				};
 			};
@@ -759,8 +917,8 @@
 		};
 	};
 
-        non-deprecated-label {
-                compatible = "vnd,non-deprecated-label";
-                label = "FOO";
-        };
+	non-deprecated-label {
+		compatible = "vnd,non-deprecated-label";
+		label = "FOO";
+	};
 };

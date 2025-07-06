@@ -6,6 +6,10 @@ find_package(BabbleSim)
 
 zephyr_library()
 
+if (CONFIG_BOARD_NRF54L15BSIM_NRF54L15_CPUFLPR)
+	message(FATAL_ERROR "Targeting the nrf54l15bsim/nrf54l15/cpuflpr core is not yet supported")
+endif()
+
 # Due to the BLE controller assumption about enum size
 zephyr_compile_options(
   -fshort-enums
@@ -20,6 +24,7 @@ zephyr_library_sources(
 	cpu_wait.c
 	argparse.c
 	nsi_if.c
+	native_remap.c
 	soc/nrfx_coredep.c
 	common/bstests_entry.c
 	common/cmsis/cmsis.c
@@ -51,6 +56,7 @@ zephyr_include_directories(
   common
   common/cmsis
   ${NSI_DIR}/common/src/include
+  ${ZEPHYR_BASE}/soc/nordic/common
 )
 
 zephyr_library_include_directories(

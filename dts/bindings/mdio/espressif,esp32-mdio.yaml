@@ -1,10 +1,16 @@
 # Copyright (c) 2022 Grant Ramsay <grant.ramsay@hotmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
-description: ESP32 MDIO Driver node
+description: ESP32 MDIO controller
 
 compatible: "espressif,esp32-mdio"
 
 include:
   - name: mdio-controller.yaml
   - name: pinctrl-device.yaml
+
+properties:
+  ref-clk-output-gpios:
+    type: phandle-array
+    description: |
+      GPIO to output RMII Clock.

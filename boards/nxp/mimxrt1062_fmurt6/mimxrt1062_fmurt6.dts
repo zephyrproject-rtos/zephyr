@@ -29,6 +29,7 @@
 		zephyr,flash-controller = &s26ks512s0;
 		zephyr,flash = &s26ks512s0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &lpuart7;
 		zephyr,sram = &ocram;
 		zephyr,itcm = &itcm;
 		zephyr,dtcm = &dtcm;
@@ -109,7 +110,6 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexcan1>;
 	pinctrl-names = "default";
-	bus-speed = <125000>;
 	can-transceiver {
 		max-bitrate = <5000000>;
 	};
@@ -119,7 +119,6 @@
 	status = "disabled";
 	pinctrl-0 = <&pinmux_flexcan2>;
 	pinctrl-names = "default";
-	bus-speed = <125000>;
 	can-transceiver {
 		max-bitrate = <5000000>;
 	};
@@ -129,8 +128,6 @@
 	status = "disabled";
 	pinctrl-0 = <&pinmux_flexcan3>;
 	pinctrl-names = "default";
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 	can-transceiver {
 		max-bitrate = <5000000>;
 	};
@@ -196,14 +193,14 @@
 		word-addressable;
 		cs-interval-unit = <1>;
 		cs-interval = <2>;
-		cs-hold-time = <0>;
+		cs-hold-time = <3>;
 		cs-setup-time = <3>;
 		data-valid-time = <1>;
 		column-space = <3>;
 		ahb-write-wait-unit = <2>;
 		ahb-write-wait-interval = <20>;
 		status = "okay";
-		erase-block-size = <4096>;
+		erase-block-size = <DT_SIZE_K(256)>;
 		write-block-size = <16>;
 
 		partitions {
@@ -211,6 +208,10 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
+			/*
+			 * Partition sizes must be aligned
+			 * to the flash memory sector size of 256KB.
+			 */
 			boot_partition: partition@0 {
 				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(256)>;
@@ -225,7 +226,7 @@
 			};
 			storage_partition: partition@640000 {
 				label = "storage";
-				reg = <0x00640000 (DT_SIZE_M(557) + DT_SIZE_K(768))>;
+				reg = <0x00640000 (DT_SIZE_M(58) - DT_SIZE_K(256))>;
 			};
 		};
 	};
@@ -386,12 +387,17 @@
 	nxp,prescaler = <64>;
 };
 
+&enet2 {
+	status = "okay";
+};
+
 &enet2_mac {
 	pinctrl-0 = <&pinmux_enet>;
 	pinctrl-names = "default";
 	zephyr,random-mac-address;
 	phy-connection-type = "rmii";
 	phy-handle = <&phy>;
+	status = "okay";
 };
 
 &enet2_mdio {
@@ -421,6 +427,7 @@ zephyr_udc0: &usb1 {
 	pinctrl-names = "default", "slow", "med", "fast";
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
 		status = "okay";
 	};
 };

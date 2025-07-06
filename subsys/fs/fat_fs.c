@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 Intel Corporation.
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +15,10 @@
 #include <zephyr/fs/fs_sys.h>
 #include <zephyr/sys/__assert.h>
 #include <ff.h>
+#include <diskio.h>
+#include <zfs_diskio.h> /* Zephyr specific FatFS API */
+#include <zephyr/logging/log.h>
+LOG_MODULE_DECLARE(fs, CONFIG_FS_LOG_LEVEL);
 
 #define FATFS_MAX_FILE_NAME 12 /* Uses 8.3 SFN */
 
@@ -58,6 +63,23 @@ static int translate_error(int error)
 	case FR_DISK_ERR:
 	case FR_INT_ERR:
 	case FR_NOT_READY:
+		return -EIO;
+	}
+
+	return -EIO;
+}
+
+static int translate_disk_error(int error)
+{
+	switch (error) {
+	case RES_OK:
+		return 0;
+	case RES_WRPRT:
+		return -EPERM;
+	case RES_PARERR:
+		return -EINVAL;
+	case RES_NOTRDY:
+	case RES_ERROR:
 		return -EIO;
 	}
 
@@ -154,10 +176,11 @@ static int fatfs_rename(struct fs_mount_t *mountp, const char *from,
 
 	/* Check if 'to' path exists; remove it if it does */
 	res = f_stat(translate_path(to), &fno);
-	if (FR_OK == res) {
+	if (res == FR_OK) {
 		res = f_unlink(translate_path(to));
-		if (FR_OK != res)
+		if (res != FR_OK) {
 			return translate_error(res);
+		}
 	}
 
 	res = f_rename(translate_path(from), translate_path(to));
@@ -463,10 +486,23 @@ static int fatfs_mount(struct fs_mount_t *mountp)
 static int fatfs_unmount(struct fs_mount_t *mountp)
 {
 	FRESULT res;
+	DRESULT disk_res;
+	uint8_t param = DISK_IOCTL_POWER_OFF;
 
 	res = f_mount(NULL, translate_path(mountp->mnt_point), 0);
+	if (res != FR_OK) {
+		LOG_ERR("Unmount failed (%d)", res);
+		return translate_error(res);
+	}
 
-	return translate_error(res);
+	/* Make direct disk IOCTL call to deinit disk */
+	disk_res = disk_ioctl(((FATFS *)mountp->fs_data)->pdrv, CTRL_POWER, &param);
+	if (disk_res != RES_OK) {
+		LOG_ERR("Could not power off disk (%d)", disk_res);
+		return translate_disk_error(disk_res);
+	}
+
+	return 0;
 }
 
 #if defined(CONFIG_FILE_SYSTEM_MKFS) && defined(CONFIG_FS_FATFS_MKFS)
@@ -521,10 +557,82 @@ static const struct fs_file_system_t fatfs_fs = {
 #endif
 };
 
+#define DT_DRV_COMPAT zephyr_fstab_fatfs
+
+#define DEFINE_FS(inst)                                                                            \
+	BUILD_ASSERT(DT_INST_PROP(inst, disk_access), "FATFS needs disk-access");                  \
+	BUILD_ASSERT(!DT_INST_PROP(inst, read_only),                                               \
+		     "READ_ONLY not supported for individual instances see FS_FATFS_READ_ONLY");   \
+	BUILD_ASSERT(!DT_INST_PROP(inst, no_format),                                               \
+		     "NO_FORMAT not supported for individual instanzes FS_FATFS_MKFS");            \
+	static FATFS fs_data_##inst;                                                               \
+	struct fs_mount_t FS_FSTAB_ENTRY(DT_DRV_INST(inst)) = {                                    \
+		.type = FS_FATFS,                                                                  \
+		.mnt_point = DT_INST_PROP(inst, mount_point),                                      \
+		.fs_data = &fs_data_##inst,                                                        \
+		.storage_dev = NULL,                                                               \
+		.flags = FSTAB_ENTRY_DT_MOUNT_FLAGS(DT_DRV_INST(inst)),                            \
+	};
+
+DT_INST_FOREACH_STATUS_OKAY(DEFINE_FS);
+
+#ifdef CONFIG_FS_FATFS_FSTAB_AUTOMOUNT
+#define REFERENCE_MOUNT(inst) (&FS_FSTAB_ENTRY(DT_DRV_INST(inst))),
+
+static void automount_if_enabled(struct fs_mount_t *mountp)
+{
+	int ret = 0;
+
+	if ((mountp->flags & FS_MOUNT_FLAG_AUTOMOUNT) != 0) {
+		ret = fs_mount(mountp);
+		if (ret < 0) {
+			LOG_ERR("Error mounting filesystem: at %s: %d", mountp->mnt_point, ret);
+		} else {
+			LOG_DBG("FATFS Filesystem \"%s\" initialized", mountp->mnt_point);
+		}
+	}
+}
+#endif /* CONFIG_FS_FATFS_FSTAB_AUTOMOUNT */
+
+#if CONFIG_FS_FATFS_CUSTOM_MOUNT_POINT_COUNT
+const char *VolumeStr[CONFIG_FS_FATFS_CUSTOM_MOUNT_POINT_COUNT];
+#endif /* CONFIG_FS_FATFS_CUSTOM_MOUNT_POINT_COUNT */
+
 static int fatfs_init(void)
 {
+#if CONFIG_FS_FATFS_CUSTOM_MOUNT_POINT_COUNT
+	static char mount_points[] = CONFIG_FS_FATFS_CUSTOM_MOUNT_POINTS;
+	int mount_point_count = 0;
 
-	return fs_register(FS_FATFS, &fatfs_fs);
+	VolumeStr[0] = mount_points;
+	for (int i = 0; i < ARRAY_SIZE(mount_points) - 1; i++) {
+		if (mount_points[i] == ',') {
+			mount_points[i] = 0;
+			mount_point_count++;
+			if (mount_point_count >= ARRAY_SIZE(VolumeStr)) {
+				LOG_ERR("Mount point count not sufficient for defined mount "
+					"points.");
+				return -1;
+			}
+			VolumeStr[mount_point_count] = &mount_points[i + 1];
+		}
+	}
+#endif /* CONFIG_FS_FATFS_CUSTOM_MOUNT_POINT_COUNT */
+	int rc = fs_register(FS_FATFS, &fatfs_fs);
+
+#ifdef CONFIG_FS_FATFS_FSTAB_AUTOMOUNT
+	if (rc == 0) {
+		struct fs_mount_t *partitions[] = {DT_INST_FOREACH_STATUS_OKAY(REFERENCE_MOUNT)};
+
+		for (size_t i = 0; i < ARRAY_SIZE(partitions); i++) {
+			struct fs_mount_t *mpi = partitions[i];
+
+			automount_if_enabled(mpi);
+		}
+	}
+#endif /* CONFIG_FS_FATFS_FSTAB_AUTOMOUNT */
+
+	return rc;
 }
 
 SYS_INIT(fatfs_init, POST_KERNEL, CONFIG_FILE_SYSTEM_INIT_PRIORITY);

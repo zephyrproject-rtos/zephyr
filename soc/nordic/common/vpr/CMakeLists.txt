@@ -3,4 +3,7 @@
 
 zephyr_include_directories(.)
 
-zephyr_library_sources(soc_idle.c soc_irq.S soc_irq.c vector.S)
+zephyr_library_sources(soc_context.S soc_init.c)
+zephyr_library_sources_ifdef(CONFIG_ARCH_HAS_CUSTOM_CPU_IDLE soc_idle.c)
+
+set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/riscv/common/linker.ld CACHE INTERNAL "")

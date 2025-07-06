@@ -199,9 +199,10 @@ static int handle_ipv4_echo_reply(struct net_icmp_ctx *ctx,
 
 static int parse_arg(size_t *i, size_t argc, char *argv[])
 {
-	int res = -1;
+	int res;
+	int err;
+	int base;
 	const char *str = argv[*i] + 2;
-	char *endptr;
 
 	if (*str == 0) {
 		if (*i + 1 >= argc) {
@@ -212,14 +213,15 @@ static int parse_arg(size_t *i, size_t argc, char *argv[])
 		str = argv[*i];
 	}
 
-	errno = 0;
 	if (strncmp(str, "0x", 2) == 0) {
-		res = strtol(str, &endptr, 16);
+		base = 16;
 	} else {
-		res = strtol(str, &endptr, 10);
+		base = 10;
 	}
 
-	if (errno || (endptr == str)) {
+	err = 0;
+	res = shell_strtol(str, base, &err);
+	if (err != 0) {
 		return -1;
 	}
 
@@ -270,11 +272,11 @@ static void ping_work(struct k_work *work)
 	params.data = NULL;
 	params.data_size = ctx->payload_size;
 
-	ret = net_icmp_send_echo_request(&ctx->icmp,
-					 ctx->iface,
-					 &ctx->addr,
-					 &params,
-					 ctx);
+	ret = net_icmp_send_echo_request_no_wait(&ctx->icmp,
+						 ctx->iface,
+						 &ctx->addr,
+						 &params,
+						 ctx);
 	if (ret != 0) {
 		PR_WARNING("Failed to send ping, err: %d", ret);
 		ping_done(ctx);
@@ -497,4 +499,4 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_ping,
 
 SHELL_SUBCMD_ADD((net), ping, &net_cmd_ping,
 		 "Ping a network host.",
-		 cmd_net_ping, 1, 13);
+		 cmd_net_ping, 2, 12);

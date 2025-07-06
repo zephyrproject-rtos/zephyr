@@ -1,0 +1,54 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_MCXC
+	select ARM
+	select CPU_CORTEX_M0PLUS
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_CORTEX_M_HAS_VTOR
+	select CLOCK_CONTROL
+	select SOC_RESET_HOOK
+	select HAS_MCUX
+	select HAS_MCUX_ADC16
+	select HAS_MCUX_SIM
+	select HAS_MCUX_RCM
+	select HAS_MCUX_FTFX
+	select HAS_MCUX_LPUART
+	select HAS_MCUX_LPI2C
+	select HAS_MCUX_TPM
+	select SOC_EARLY_INIT_HOOK
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
+
+if SOC_SERIES_MCXC
+
+config MCXC_FLASH_CONFIG
+	bool "MCXC flash configuration field"
+	default y if XIP && !BOOTLOADER_MCUBOOT
+	help
+	  Include the 16-byte flash configuration field that stores default
+	  protection settings (loaded on reset) and security information that
+	  allows the MCU to restrict access to the FTFx module.
+
+if MCXC_FLASH_CONFIG
+
+config MCXC_FLASH_CONFIG_OFFSET
+	hex
+	default $(dt_node_int_prop_hex,/soc/flash-controller@40020000,config-field-offset)
+
+endif # MCXC_FLASH_CONFIG
+
+config WDOG_ENABLE_AT_BOOT
+	bool "Keep watchdog timer enabled at boot"
+	help
+	  Leave SOC watchdog timer enabled at boot. The specific timeout
+	  and clock configuration of the watchdog at boot is SOC dependent.
+	  Note: if the watchdog timer is enabled at boot, the user will
+	  need to configure the watchdog using z_arm_watchdog_init, as
+	  the SOC requires watchdog configuration before initial expiration
+
+# Enable watchdog configuration function if watchdog is left enabled at boot
+config WDOG_INIT
+	bool
+	default WDOG_ENABLE_AT_BOOT
+
+endif # SOC_FAMILY_MCXC

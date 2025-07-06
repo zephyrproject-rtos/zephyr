@@ -11,7 +11,7 @@
  *
  * Microchip XEC documentation uses octal GPIO pin
  * numbering. These macros do not require the user to do octal arithmetic
- * to derive the pin's bit postion.
+ * to derive the pin's bit position.
  *
  * Example DT usage:
  *

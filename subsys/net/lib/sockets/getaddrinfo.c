@@ -346,7 +346,7 @@ out:
 
 	return ret;
 }
-#include <syscalls/z_zsock_getaddrinfo_internal_mrsh.c>
+#include <zephyr/syscalls/z_zsock_getaddrinfo_internal_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 #endif /* defined(CONFIG_DNS_RESOLVER) */
@@ -433,7 +433,7 @@ int zsock_getaddrinfo(const char *host, const char *service,
 		      const struct zsock_addrinfo *hints,
 		      struct zsock_addrinfo **res)
 {
-	if (IS_ENABLED(CONFIG_NET_SOCKETS_OFFLOAD)) {
+	if (socket_offload_dns_is_enabled()) {
 		return socket_offload_getaddrinfo(host, service, hints, res);
 	}
 
@@ -471,8 +471,9 @@ int zsock_getaddrinfo(const char *host, const char *service,
 
 void zsock_freeaddrinfo(struct zsock_addrinfo *ai)
 {
-	if (IS_ENABLED(CONFIG_NET_SOCKETS_OFFLOAD)) {
-		return socket_offload_freeaddrinfo(ai);
+	if (socket_offload_dns_is_enabled()) {
+		socket_offload_freeaddrinfo(ai);
+		return;
 	}
 
 	free(ai);
@@ -487,9 +488,18 @@ const char *zsock_gai_strerror(int errcode)
 	ERR(EAI_AGAIN);
 	ERR(EAI_FAIL);
 	ERR(EAI_NODATA);
+	ERR(EAI_FAMILY);
+	ERR(EAI_SOCKTYPE);
+	ERR(EAI_SERVICE);
+	ERR(EAI_ADDRFAMILY);
 	ERR(EAI_MEMORY);
 	ERR(EAI_SYSTEM);
-	ERR(EAI_SERVICE);
+	ERR(EAI_OVERFLOW);
+	ERR(EAI_INPROGRESS);
+	ERR(EAI_CANCELED);
+	ERR(EAI_NOTCANCELED);
+	ERR(EAI_ALLDONE);
+	ERR(EAI_IDN_ENCODE);
 
 	default:
 		return "EAI_UNKNOWN";

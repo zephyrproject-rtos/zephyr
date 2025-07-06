@@ -14,6 +14,7 @@
 #include <xtensa/config/core-isa.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/arch/xtensa/arch.h>
 
 /**
  * @defgroup xtensa_mmu_internal_apis Xtensa Memory Management Unit (MMU) Internal APIs
@@ -41,11 +42,6 @@
 
 #define XTENSA_MMU_PTEBASE_MASK 0xFFC00000
 
-#define XTENSA_MMU_PTE(paddr, ring, attr) \
-	(((paddr) & XTENSA_MMU_PTE_PPN_MASK) | \
-	(((ring) << XTENSA_MMU_PTE_RING_SHIFT) & XTENSA_MMU_PTE_RING_MASK) | \
-	((attr) & XTENSA_MMU_PTE_ATTR_MASK))
-
 /** Number of bits to shift for PPN in PTE */
 #define XTENSA_MMU_PTE_PPN_SHIFT		12U
 
@@ -55,10 +51,24 @@
 /** Number of bits to shift for ring in PTE */
 #define XTENSA_MMU_PTE_RING_SHIFT		4U
 
+/** Number of bits to shift for SW reserved ared in PTE */
+#define XTENSA_MMU_PTE_SW_SHIFT		6U
+
+/** Mask for SW bits in PTE */
+#define XTENSA_MMU_PTE_SW_MASK		0x00000FC0U
+
+/**
+ * Internal bit just used to indicate that the attr field must
+ * be set in the SW bits too. It is used later when duplicating the
+ * kernel page tables.
+ */
+#define XTENSA_MMU_PTE_ATTR_ORIGINAL BIT(31)
+
 /** Construct a page table entry (PTE) */
-#define XTENSA_MMU_PTE(paddr, ring, attr) \
+#define XTENSA_MMU_PTE(paddr, ring, sw, attr) \
 	(((paddr) & XTENSA_MMU_PTE_PPN_MASK) | \
 	 (((ring) << XTENSA_MMU_PTE_RING_SHIFT) & XTENSA_MMU_PTE_RING_MASK) | \
+	 (((sw) << XTENSA_MMU_PTE_SW_SHIFT) & XTENSA_MMU_PTE_SW_MASK) | \
 	 ((attr) & XTENSA_MMU_PTE_ATTR_MASK))
 
 /** Get the attributes from a PTE */
@@ -67,7 +77,15 @@
 
 /** Set the attributes in a PTE */
 #define XTENSA_MMU_PTE_ATTR_SET(pte, attr) \
-	(((pte) & ~XTENSA_MMU_PTE_ATTR_MASK) | (attr))
+	(((pte) & ~XTENSA_MMU_PTE_ATTR_MASK) | (attr & XTENSA_MMU_PTE_ATTR_MASK))
+
+/** Set the SW field in a PTE */
+#define XTENSA_MMU_PTE_SW_SET(pte, sw) \
+	(((pte) & ~XTENSA_MMU_PTE_SW_MASK) | (sw << XTENSA_MMU_PTE_SW_SHIFT))
+
+/** Get the SW field from a PTE */
+#define XTENSA_MMU_PTE_SW_GET(pte) \
+	(((pte) & XTENSA_MMU_PTE_SW_MASK) >> XTENSA_MMU_PTE_SW_SHIFT)
 
 /** Set the ring in a PTE */
 #define XTENSA_MMU_PTE_RING_SET(pte, ring) \
@@ -76,7 +94,7 @@
 
 /** Get the ring from a PTE */
 #define XTENSA_MMU_PTE_RING_GET(pte) \
-	(((pte) & ~XTENSA_MMU_PTE_RING_MASK) >> XTENSA_MMU_PTE_RING_SHIFT)
+	(((pte) & XTENSA_MMU_PTE_RING_MASK) >> XTENSA_MMU_PTE_RING_SHIFT)
 
 /** Get the ASID from the RASID register corresponding to the ring in a PTE */
 #define XTENSA_MMU_PTE_ASID_GET(pte, rasid) \
@@ -347,6 +365,29 @@ static inline void xtensa_tlb_autorefill_invalidate(void)
 }
 
 /**
+ * @brief Invalidate all autorefill DTLB entries.
+ *
+ * This should be used carefully since all refill entries in the data
+ * TLBs are affected. The current stack page will be repopulated by
+ * this code as it returns.
+ */
+static inline void xtensa_dtlb_autorefill_invalidate(void)
+{
+	uint8_t way, i, entries;
+
+	entries = BIT(XCHAL_DTLB_ARF_ENTRIES_LOG2);
+
+	for (way = 0; way < XTENSA_MMU_NUM_TLB_AUTOREFILL_WAYS; way++) {
+		for (i = 0; i < entries; i++) {
+			uint32_t entry = way + (i << XTENSA_MMU_PTE_PPN_SHIFT);
+
+			xtensa_dtlb_entry_invalidate(entry);
+		}
+	}
+	__asm__ volatile("isync");
+}
+
+/**
  * @brief Set the page tables.
  *
  * The page tables is set writing ptevaddr address.
@@ -492,18 +533,22 @@ static inline void xtensa_dtlb_vaddr_invalidate(void *vaddr)
 
 /**
  * @brief Tell hardware to use a page table very first time after boot.
- *
- * @param l1_page Pointer to the page table to be used.
  */
-void xtensa_init_paging(uint32_t *l1_page);
+void xtensa_mmu_init_paging(void);
 
 /**
  * @brief Switch to a new page table.
  *
- * @param asid The ASID of the memory domain associated with the incoming page table.
- * @param l1_page Page table to be switched to.
+ * @param domain Architecture-specific memory domain data.
  */
-void xtensa_set_paging(uint32_t asid, uint32_t *l1_page);
+void xtensa_mmu_set_paging(struct arch_mem_domain *domain);
+
+/**
+ * @brief Computer the necessary register values when changing page tables.
+ *
+ * @param domain Architecture-specific memory domain data.
+ */
+void xtensa_mmu_compute_domain_regs(struct arch_mem_domain *domain);
 
 /**
  * @}

@@ -61,9 +61,11 @@ static ssize_t offload_write(void *obj, const void *buffer, size_t count)
 	return 0;
 }
 
-static int offload_close(void *obj)
+static int offload_close(void *obj, int fd)
 {
 	struct test_socket_calls *ctx = obj;
+
+	ARG_UNUSED(fd);
 
 	ctx->close_called = true;
 
@@ -252,7 +254,7 @@ static const struct socket_op_vtable offload_1_socket_fd_op_vtable = {
 	.fd_vtable = {
 		.read = offload_read,
 		.write = offload_write,
-		.close = offload_close,
+		.close2 = offload_close,
 		.ioctl = offload_ioctl,
 	},
 	.shutdown = offload_shutdown,
@@ -271,15 +273,15 @@ static const struct socket_op_vtable offload_1_socket_fd_op_vtable = {
 
 int offload_1_socket(int family, int type, int proto)
 {
-	int fd = z_reserve_fd();
+	int fd = zvfs_reserve_fd();
 
 	if (fd < 0) {
 		return -1;
 	}
 
-	z_finalize_fd(fd, &test_socket_ctx[OFFLOAD_1],
-		      (const struct fd_op_vtable *)
-					&offload_1_socket_fd_op_vtable);
+	zvfs_finalize_typed_fd(fd, &test_socket_ctx[OFFLOAD_1],
+			    (const struct fd_op_vtable *)&offload_1_socket_fd_op_vtable,
+			    ZVFS_MODE_IFSOCK);
 
 	test_socket_ctx[OFFLOAD_1].socket_called = true;
 
@@ -314,7 +316,7 @@ static const struct socket_op_vtable offload_2_socket_fd_op_vtable = {
 	.fd_vtable = {
 		.read = offload_read,
 		.write = offload_write,
-		.close = offload_close,
+		.close2 = offload_close,
 		.ioctl = offload_ioctl,
 	},
 	.shutdown = offload_shutdown,
@@ -333,15 +335,15 @@ static const struct socket_op_vtable offload_2_socket_fd_op_vtable = {
 
 int offload_2_socket(int family, int type, int proto)
 {
-	int fd = z_reserve_fd();
+	int fd = zvfs_reserve_fd();
 
 	if (fd < 0) {
 		return -1;
 	}
 
-	z_finalize_fd(fd, &test_socket_ctx[OFFLOAD_2],
-		      (const struct fd_op_vtable *)
-					&offload_2_socket_fd_op_vtable);
+	zvfs_finalize_typed_fd(fd, &test_socket_ctx[OFFLOAD_2],
+			    (const struct fd_op_vtable *)&offload_2_socket_fd_op_vtable,
+			    ZVFS_MODE_IFSOCK);
 
 	test_socket_ctx[OFFLOAD_2].socket_called = true;
 
@@ -775,7 +777,7 @@ ZTEST(net_socket_offload_tls, test_tls_native_iface_offloaded)
 	zassert_false(test_socket_ctx[OFFLOAD_2].socket_called,
 		     "TLS socket dispatched to wrong iface");
 
-	obj = z_get_fd_obj_and_vtable(test_sock, &vtable, NULL);
+	obj = zvfs_get_fd_obj_and_vtable(test_sock, &vtable, NULL);
 	zassert_not_null(obj, "No obj found");
 	zassert_true(net_socket_is_tls(obj), "Socket is not a native TLS sock");
 
@@ -822,7 +824,7 @@ ZTEST(net_socket_offload_tls, test_tls_native_iface_native)
 	zassert_false(test_socket_ctx[OFFLOAD_2].socket_called,
 		     "TLS socket dispatched to wrong iface");
 
-	obj = z_get_fd_obj_and_vtable(test_sock, &vtable, NULL);
+	obj = zvfs_get_fd_obj_and_vtable(test_sock, &vtable, NULL);
 	zassert_not_null(obj, "No obj found");
 	zassert_true(net_socket_is_tls(obj), "Socket is not a native TLS sock");
 

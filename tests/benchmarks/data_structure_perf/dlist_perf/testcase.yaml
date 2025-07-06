@@ -1,5 +1,7 @@
 tests:
   benchmark.data_structure_perf.dlist:
+    platform_key:
+      - arch
     tags:
       - benchmark
       - dlist

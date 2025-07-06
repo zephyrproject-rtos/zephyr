@@ -16,7 +16,8 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 #include <zephyr/net/coap_link_format.h>
 #include <zephyr/net/coap_mgmt.h>
 #include <zephyr/net/coap_service.h>
-#include <zephyr/posix/fcntl.h>
+#include <zephyr/sys/fdtable.h>
+#include <zephyr/zvfs/eventfd.h>
 
 #if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
 /* Lowest priority cooperative thread */
@@ -33,12 +34,12 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 #define MAX_OPTIONS    CONFIG_COAP_SERVER_MESSAGE_OPTIONS
 #define MAX_PENDINGS   CONFIG_COAP_SERVICE_PENDING_MESSAGES
 #define MAX_OBSERVERS  CONFIG_COAP_SERVICE_OBSERVERS
-#define MAX_POLL_FD    CONFIG_NET_SOCKETS_POLL_MAX
+#define MAX_POLL_FD    CONFIG_ZVFS_POLL_MAX
 
-BUILD_ASSERT(CONFIG_NET_SOCKETS_POLL_MAX > 0, "CONFIG_NET_SOCKETS_POLL_MAX can't be 0");
+BUILD_ASSERT(CONFIG_ZVFS_POLL_MAX > 0, "CONFIG_ZVFS_POLL_MAX can't be 0");
 
 static K_MUTEX_DEFINE(lock);
-static int control_socks[2];
+static int control_sock;
 
 #if defined(CONFIG_COAP_SERVER_PENDING_ALLOCATOR_STATIC)
 K_MEM_SLAB_DEFINE_STATIC(pending_data, CONFIG_COAP_SERVER_MESSAGE_SIZE,
@@ -92,7 +93,7 @@ static int coap_service_remove_observer(const struct coap_service *service,
 		/* Prefer addr+token to find the observer */
 		obs = coap_find_observer(service->data->observers, MAX_OBSERVERS, addr, token, tkl);
 	} else if (tkl > 0) {
-		/* Then try to to find the observer by token */
+		/* Then try to find the observer by token */
 		obs = coap_find_observer_by_token(service->data->observers, MAX_OBSERVERS, token,
 						  tkl);
 	} else if (addr != NULL) {
@@ -135,10 +136,13 @@ static int coap_server_process(int sock_fd)
 	uint8_t type;
 	ssize_t received;
 	int ret;
+	int flags = ZSOCK_MSG_DONTWAIT;
 
-	received = zsock_recvfrom(sock_fd, buf, sizeof(buf), ZSOCK_MSG_DONTWAIT, &client_addr,
-				  &client_addr_len);
-	__ASSERT_NO_MSG(received <= sizeof(buf));
+	if (IS_ENABLED(CONFIG_COAP_SERVER_TRUNCATE_MSGS)) {
+		flags |= ZSOCK_MSG_TRUNC;
+	}
+
+	received = zsock_recvfrom(sock_fd, buf, sizeof(buf), flags, &client_addr, &client_addr_len);
 
 	if (received < 0) {
 		if (errno == EWOULDBLOCK) {
@@ -149,7 +153,7 @@ static int coap_server_process(int sock_fd)
 		return -errno;
 	}
 
-	ret = coap_packet_parse(&request, buf, received, options, opt_num);
+	ret = coap_packet_parse(&request, buf, MIN(received, sizeof(buf)), options, opt_num);
 	if (ret < 0) {
 		LOG_ERR("Failed To parse coap message (%d)", ret);
 		return ret;
@@ -169,6 +173,42 @@ static int coap_server_process(int sock_fd)
 	}
 
 	type = coap_header_get_type(&request);
+
+	if (received > sizeof(buf)) {
+		/* The message was truncated and can't be processed further */
+		struct coap_packet response;
+		uint8_t token[COAP_TOKEN_MAX_LEN];
+		uint8_t tkl = coap_header_get_token(&request, token);
+		uint16_t id = coap_header_get_id(&request);
+
+		if (type == COAP_TYPE_CON) {
+			type = COAP_TYPE_ACK;
+		} else {
+			type = COAP_TYPE_NON_CON;
+		}
+
+		ret = coap_packet_init(&response, buf, sizeof(buf), COAP_VERSION_1, type, tkl,
+				       token, COAP_RESPONSE_CODE_REQUEST_TOO_LARGE, id);
+		if (ret < 0) {
+			LOG_ERR("Failed to init response (%d)", ret);
+			goto unlock;
+		}
+
+		ret = coap_append_option_int(&response, COAP_OPTION_SIZE1,
+					     CONFIG_COAP_SERVER_MESSAGE_SIZE);
+		if (ret < 0) {
+			LOG_ERR("Failed to add SIZE1 option (%d)", ret);
+			goto unlock;
+		}
+
+		ret = coap_service_send(service, &response, &client_addr, client_addr_len, NULL);
+		if (ret < 0) {
+			LOG_ERR("Failed to reply \"Request Entity Too Large\" (%d)", ret);
+			goto unlock;
+		}
+
+		goto unlock;
+	}
 
 	pending = coap_pending_received(&request, service->data->pending, MAX_PENDINGS);
 	if (pending) {
@@ -331,7 +371,7 @@ static int coap_server_poll_timeout(void)
 
 static void coap_server_update_services(void)
 {
-	if (zsock_send(control_socks[1], &(char){0}, 1, 0) < 0) {
+	if (zvfs_eventfd_write(control_sock, 1)) {
 		LOG_ERR("Failed to notify server thread (%d)", errno);
 	}
 }
@@ -345,7 +385,7 @@ static inline bool coap_service_in_section(const struct coap_service *service)
 	       STRUCT_SECTION_END(coap_service) > service;
 }
 
-static inline void coap_service_raise_event(const struct coap_service *service, uint32_t mgmt_event)
+static inline void coap_service_raise_event(const struct coap_service *service, uint64_t mgmt_event)
 {
 #if defined(CONFIG_NET_MGMT_EVENT_INFO)
 	const struct net_event_coap_service net_event = {
@@ -374,6 +414,7 @@ int coap_service_start(const struct coap_service *service)
 	} addr_ptrs = {
 		.addr = (struct sockaddr *)&addr_storage,
 	};
+	int proto = IPPROTO_UDP;
 
 	if (!coap_service_in_section(service)) {
 		__ASSERT_NO_MSG(false);
@@ -423,13 +464,39 @@ int coap_service_start(const struct coap_service *service)
 		goto end;
 	}
 
-	service->data->sock_fd = zsock_socket(af, SOCK_DGRAM, IPPROTO_UDP);
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+	if (service->sec_tag_list != NULL) {
+		proto = IPPROTO_DTLS_1_2;
+	}
+#endif
+
+	service->data->sock_fd = zsock_socket(af, SOCK_DGRAM, proto);
 	if (service->data->sock_fd < 0) {
 		ret = -errno;
 		goto end;
 	}
 
-	ret = zsock_fcntl(service->data->sock_fd, F_SETFL, O_NONBLOCK);
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+	if (service->sec_tag_list != NULL) {
+		int role = TLS_DTLS_ROLE_SERVER;
+
+		ret = zsock_setsockopt(service->data->sock_fd, SOL_TLS, TLS_SEC_TAG_LIST,
+				       service->sec_tag_list, service->sec_tag_list_size);
+		if (ret < 0) {
+			ret = -errno;
+			goto close;
+		}
+
+		ret = zsock_setsockopt(service->data->sock_fd, SOL_TLS, TLS_DTLS_ROLE,
+				       &role, sizeof(role));
+		if (ret < 0) {
+			ret = -errno;
+			goto close;
+		}
+	}
+#endif
+
+	ret = zsock_fcntl(service->data->sock_fd, ZVFS_F_SETFL, ZVFS_O_NONBLOCK);
 	if (ret < 0) {
 		ret = -errno;
 		goto close;
@@ -658,6 +725,12 @@ int coap_resource_parse_observe(struct coap_resource *resource, const struct coa
 		ret = coap_service_remove_observer(service, resource, addr, token, tkl);
 		if (ret < 0) {
 			LOG_WRN("Failed to remove observer (%d)", ret);
+			goto unlock;
+		}
+
+		if (ret == 0) {
+			/* Observer not found */
+			ret = -ENOENT;
 		}
 	}
 
@@ -724,23 +797,10 @@ static void coap_server_thread(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
-	/* Create a socket pair to wake zsock_poll */
-	ret = zsock_socketpair(AF_UNIX, SOCK_STREAM, 0, control_socks);
-	if (ret < 0) {
-		LOG_ERR("Failed to create socket pair (%d)", ret);
+	control_sock = zvfs_eventfd(0, ZVFS_EFD_NONBLOCK);
+	if (control_sock < 0) {
+		LOG_ERR("Failed to create event fd (%d)", -errno);
 		return;
-	}
-
-	for (int i = 0; i < 2; ++i) {
-		ret = zsock_fcntl(control_socks[i], F_SETFL, O_NONBLOCK);
-
-		if (ret < 0) {
-			zsock_close(control_socks[0]);
-			zsock_close(control_socks[1]);
-
-			LOG_ERR("Failed to set socket pair [%d] non-blocking (%d)", i, ret);
-			return;
-		}
 	}
 
 	COAP_SERVICE_FOREACH(svc) {
@@ -760,7 +820,7 @@ static void coap_server_thread(void *p1, void *p2, void *p3)
 			}
 			if (sock_nfds >= MAX_POLL_FD) {
 				LOG_ERR("Maximum active CoAP services reached (%d), "
-					"increase CONFIG_NET_SOCKETS_POLL_MAX to support more.",
+					"increase CONFIG_ZVFS_POLL_MAX to support more.",
 					MAX_POLL_FD);
 				break;
 			}
@@ -771,9 +831,9 @@ static void coap_server_thread(void *p1, void *p2, void *p3)
 			sock_nfds++;
 		}
 
-		/* Add socket pair FD to allow wake up */
+		/* Add event FD to allow wake up */
 		if (sock_nfds < MAX_POLL_FD) {
-			sock_fds[sock_nfds].fd = control_socks[0];
+			sock_fds[sock_nfds].fd = control_sock;
 			sock_fds[sock_nfds].events = ZSOCK_POLLIN;
 			sock_fds[sock_nfds].revents = 0;
 			sock_nfds++;
@@ -789,11 +849,11 @@ static void coap_server_thread(void *p1, void *p2, void *p3)
 
 		for (int i = 0; i < sock_nfds; ++i) {
 			/* Check the wake up event */
-			if (sock_fds[i].fd == control_socks[0] &&
+			if (sock_fds[i].fd == control_sock &&
 			    sock_fds[i].revents & ZSOCK_POLLIN) {
-				char tmp;
+				zvfs_eventfd_t tmp;
 
-				zsock_recv(sock_fds[i].fd, &tmp, 1, 0);
+				zvfs_eventfd_read(sock_fds[i].fd, &tmp);
 				continue;
 			}
 
@@ -807,7 +867,7 @@ static void coap_server_thread(void *p1, void *p2, void *p3)
 				LOG_ERR("Poll error on %d", sock_fds[i].fd);
 			}
 			if (sock_fds[i].revents & ZSOCK_POLLHUP) {
-				LOG_ERR("Poll hup on %d", sock_fds[i].fd);
+				LOG_DBG("Poll hup on %d", sock_fds[i].fd);
 			}
 			if (sock_fds[i].revents & ZSOCK_POLLNVAL) {
 				LOG_ERR("Poll invalid on %d", sock_fds[i].fd);

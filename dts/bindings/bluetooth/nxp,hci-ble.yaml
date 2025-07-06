@@ -1,0 +1,14 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP BLE HCI information
+
+compatible: "nxp,hci-ble"
+
+include: bt-hci.yaml
+
+properties:
+  bt-hci-name:
+    default: "BT NXP"
+  bt-hci-bus:
+    default: "ipm"

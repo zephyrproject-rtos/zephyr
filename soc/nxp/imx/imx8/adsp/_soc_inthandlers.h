@@ -83,7 +83,7 @@
 #error core-isa.h interrupt level does not match dispatcher!
 #endif
 
-static inline int _xtensa_handle_one_int1(unsigned int mask)
+static inline int _xtensa_handle_one_int1(unsigned int set, unsigned int mask)
 {
 	int irq;
 
@@ -98,25 +98,26 @@ handle_irq:
 	return mask;
 }
 
-static inline int _xtensa_handle_one_int2(unsigned int mask)
+static inline int _xtensa_handle_one_int2(unsigned int set, unsigned int mask)
 {
 	int irq;
 	int i = 0;
 
 	mask &= XCHAL_INTLEVEL2_MASK;
-	for (i = 0; i <= 31; i++)
+	for (i = 0; i <= 31; i++) {
 		if (mask & BIT(i)) {
 			mask = BIT(i);
 			irq = i;
 			goto handle_irq;
 		}
+	}
 	return 0;
 handle_irq:
 	_sw_isr_table[irq].isr(_sw_isr_table[irq].arg);
 	return mask;
 }
 
-static inline int _xtensa_handle_one_int3(unsigned int mask)
+static inline int _xtensa_handle_one_int3(unsigned int set, unsigned int mask)
 {
 	int irq;
 
@@ -141,7 +142,7 @@ handle_irq:
 	return mask;
 }
 
-static inline int _xtensa_handle_one_int5(unsigned int mask)
+static inline int _xtensa_handle_one_int5(unsigned int set, unsigned int mask)
 {
 	int irq;
 
@@ -156,22 +157,22 @@ handle_irq:
 	return mask;
 }
 
-static inline int _xtensa_handle_one_int0(unsigned int mask)
+static inline int _xtensa_handle_one_int0(unsigned int set, unsigned int mask)
 {
 	return 0;
 }
 
-static inline int _xtensa_handle_one_int4(unsigned int mask)
+static inline int _xtensa_handle_one_int4(unsigned int set, unsigned int mask)
 {
 	return 0;
 }
 
-static inline int _xtensa_handle_one_int6(unsigned int mask)
+static inline int _xtensa_handle_one_int6(unsigned int set, unsigned int mask)
 {
 	return 0;
 }
 
-static inline int _xtensa_handle_one_int7(unsigned int mask)
+static inline int _xtensa_handle_one_int7(unsigned int set, unsigned int mask)
 {
 	return 0;
 }

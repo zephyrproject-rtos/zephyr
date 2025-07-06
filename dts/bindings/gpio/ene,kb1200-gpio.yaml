@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    ENE KB1200 GPIO(General purpose IO) Port node
+    ENE KB1200 GPIO Port
 
     The GPIO controller provides group control of GPIO functions. Each port
     group contains 32 pins. GPIO_00~GPIO_1F belong to the Port0 group,

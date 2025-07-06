@@ -13,6 +13,11 @@ tests:
     harness_config:
       fixture: gpio_loopback
     depends_on: gpio
+    extra_args:
+      - platform:lpcxpresso55s69/lpc55s69/cpu0:"DTC_OVERLAY_FILE=nxp/dut_flexcomm2.overlay"
+      - platform:mimxrt685_evk/mimxrt685s/cm33:"DTC_OVERLAY_FILE=nxp/dut_flexcomm4.overlay"
+      - platform:mimxrt595_evk/mimxrt595s/cm33:"DTC_OVERLAY_FILE=nxp/dut_flexcomm12.overlay"
+      - platform:frdm_rw612/rw612:"DTC_OVERLAY_FILE=nxp/dut_lpc_flexcomm0.overlay"
   drivers.uart.wide:
     filter: CONFIG_SERIAL_SUPPORT_ASYNC and not CONFIG_UART_MCUX_LPUART
     harness: ztest
@@ -25,15 +30,6 @@ tests:
     platform_allow: nucleo_h743zi
     integration_platforms:
       - nucleo_h743zi
-  drivers.uart.async_api.nrf_uarte_new:
-    platform_allow: nrf52840dk/nrf52840 nrf52_bsim
-    filter: CONFIG_SERIAL_SUPPORT_ASYNC
-    harness: ztest
-    harness_config:
-      fixture: gpio_loopback
-    depends_on: gpio
-    extra_configs:
-      - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=n
   drivers.uart.async_api.nrf_uart:
     filter: CONFIG_SERIAL_SUPPORT_ASYNC
     harness: ztest
@@ -58,9 +54,51 @@ tests:
     integration_platforms:
       - qemu_cortex_m0
   drivers.uart.async_api.lpuart:
-    filter: CONFIG_SERIAL_SUPPORT_ASYNC and CONFIG_UART_MCUX_LPUART
+    filter: CONFIG_SERIAL_SUPPORT_ASYNC and CONFIG_UART_MCUX_LPUART and not CONFIG_CPU_HAS_DCACHE
+    harness: ztest
+    harness_config:
+      fixture: gpio_loopback
+    depends_on: dma
+    extra_configs:
+      - CONFIG_USERSPACE=n
+      - CONFIG_TEST_USERSPACE=n
+    extra_args:
+      - platform:frdm_k82f/mk82f25615:"DTC_OVERLAY_FILE=nxp/dut_lpuart0_loopback.overlay"
+      - platform:frdm_mcxa156/mcxa156:"DTC_OVERLAY_FILE=nxp/dut_lpuart1.overlay"
+      - platform:frdm_mcxa153/mcxa153:"DTC_OVERLAY_FILE=nxp/dut_lpuart2_loopback.overlay;nxp/enable_edma0.overlay"
+      - platform:frdm_mcxa166/mcxa166:"DTC_OVERLAY_FILE=nxp/dut_lpuart3_loopback.overlay;nxp/enable_edma0.overlay"
+      - platform:frdm_mcxa276/mcxa276:"DTC_OVERLAY_FILE=nxp/dut_lpuart3_loopback.overlay;nxp/enable_edma0.overlay"
+      - platform:mimxrt1160_evk/mimxrt1166/cm4:"DTC_OVERLAY_FILE=nxp/dut_lpuart2_loopback.overlay"
+      - platform:mimxrt1170_evk@A/mimxrt1176/cm4:"DTC_OVERLAY_FILE=nxp/dut_lpuart2_loopback.overlay"
+      - platform:mimxrt1170_evk@B/mimxrt1176/cm4:"DTC_OVERLAY_FILE=nxp/dut_lpuart2_loopback.overlay"
+      - platform:frdm_mcxn236/mcxn236:"DTC_OVERLAY_FILE=nxp/dut_flexcomm2_lpuart2.overlay"
+      - platform:frdm_mcxn947/mcxn947/cpu0:"DTC_OVERLAY_FILE=nxp/dut_flexcomm2_lpuart2.overlay"
+      - platform:frdm_mcxn947/mcxn947/cpu0/qspi:"DTC_OVERLAY_FILE=nxp/dut_flexcomm2_lpuart2.overlay"
+  drivers.uart.async_api.lpuart.rt_nocache:
+    filter: CONFIG_SERIAL_SUPPORT_ASYNC and CONFIG_UART_MCUX_LPUART and CONFIG_CPU_HAS_DCACHE
     harness: ztest
     depends_on: dma
+    extra_configs:
+      - CONFIG_DCACHE=y
+      - CONFIG_NOCACHE_MEMORY=y
+      - CONFIG_USERSPACE=n
+      - CONFIG_TEST_USERSPACE=n
+    extra_args:
+      - platform:mimxrt1010_evk/mimxrt1011:"DTC_OVERLAY_FILE=nxp/dut_lpuart4_loopback.overlay"
+      - platform:mimxrt1015_evk/mimxrt1015:"DTC_OVERLAY_FILE=nxp/dut_lpuart4_loopback.overlay"
+      - platform:mimxrt1020_evk/mimxrt1021:"DTC_OVERLAY_FILE=nxp/dut_lpuart2_loopback.overlay"
+      - platform:mimxrt1024_evk/mimxrt1024:"DTC_OVERLAY_FILE=nxp/dut_lpuart2_loopback.overlay"
+      - platform:mimxrt1160_evk/mimxrt1166/cm7:"DTC_OVERLAY_FILE=nxp/dut_lpuart2_loopback.overlay"
+      - platform:mimxrt1170_evk@A/mimxrt1176/cm7:"DTC_OVERLAY_FILE=nxp/dut_lpuart2_loopback.overlay"
+      - platform:mimxrt1170_evk@B/mimxrt1176/cm7:"DTC_OVERLAY_FILE=nxp/dut_lpuart2_loopback.overlay"
+      - platform:vmu_rt1170/mimxrt1176/cm7:"DTC_OVERLAY_FILE=nxp/dut_lpuart4_loopback.overlay"
+      - platform:mimxrt1180_evk/mimxrt1189/cm33:"DTC_OVERLAY_FILE=nxp/dut_lpuart3_loopback.overlay"
+      - platform:mimxrt1050_evk/mimxrt1052/hyperflash:"DTC_OVERLAY_FILE=nxp/dut_lpuart3_loopback.overlay"
+      - platform:mimxrt1060_evk/mimxrt1062/hyperflash:"DTC_OVERLAY_FILE=nxp/dut_lpuart3_loopback.overlay"
+      - platform:mimxrt1060_evk@A/mimxrt1062/qspi:"DTC_OVERLAY_FILE=nxp/dut_lpuart3_loopback.overlay"
+      - platform:mimxrt1060_evk@B/mimxrt1062/qspi:"DTC_OVERLAY_FILE=nxp/dut_lpuart3_loopback.overlay"
+      - platform:mimxrt1060_evk@C/mimxrt1062/qspi:"DTC_OVERLAY_FILE=nxp/dut_lpuart3_loopback.overlay"
+      - platform:mimxrt1064_evk/mimxrt1064:"DTC_OVERLAY_FILE=nxp/dut_lpuart3_loopback.overlay"
   drivers.uart.async_api.sam0:
     filter: CONFIG_SERIAL_SUPPORT_ASYNC and CONFIG_SOC_FAMILY_ATMEL_SAM0
     platform_allow:
@@ -74,3 +112,41 @@ tests:
       - CONFIG_UART_SAM0_ASYNC=y
       - CONFIG_DMA=y
     build_only: true
+    integration_platforms:
+      - samc21n_xpro
+  drivers.uart.async_api.nocache_mem:
+    # nocache memory region is defined by the linker
+    filter: CONFIG_SERIAL_SUPPORT_ASYNC and CONFIG_CPU_HAS_DCACHE
+    harness: ztest
+    harness_config:
+      fixture: gpio_loopback
+    depends_on: gpio
+    platform_allow:
+      - nucleo_f746zg
+      - nucleo_h723zg
+    extra_args:
+      - EXTRA_CONF_FILE=stm32_nocache_mem.conf
+  drivers.uart.async_api.nocache_mem_dt.nucleo_f746zg:
+    # nocache memory region is defined in DT
+    harness: ztest
+    harness_config:
+      fixture: gpio_loopback
+    depends_on: gpio
+    platform_allow:
+      - nucleo_f746zg
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/nucleo_f746zg.overlay;boards/nucleo_f746zg_nocachemem.overlay"
+      - EXTRA_CONF_FILE=stm32_nocache_mem_dt.conf
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=n
+  drivers.uart.async_api.nocache_mem_dt.nucleo_h723zg:
+    # nocache memory region is defined in DT
+    harness: ztest
+    harness_config:
+      fixture: gpio_loopback
+    depends_on: gpio
+    platform_allow:
+      - nucleo_h723zg
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/nucleo_h723zg.overlay;boards/nucleo_h723zg_nocachemem.overlay"
+      - EXTRA_CONF_FILE=stm32_nocache_mem_dt.conf

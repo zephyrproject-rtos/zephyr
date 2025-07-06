@@ -12,6 +12,6 @@ __syscall void test_helpers_log_setup(void);
 __syscall int test_helpers_cycle_get(void);
 __syscall bool test_helpers_log_dropped_pending(void);
 
-#include <syscalls/test_helpers.h>
+#include <zephyr/syscalls/test_helpers.h>
 
 #endif /* SRC_TEST_HELPERS_H__ */

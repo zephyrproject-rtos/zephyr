@@ -1,0 +1,185 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_mcxc444.dtsi>
+#include "frdm_mcxc444-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "NXP FRDM-MCXC444 board";
+	compatible = "nxp,mcxc444", "nxp,mcx";
+
+	aliases {
+		led0 = &red_led;
+		led1 = &green_led;
+		led2 = &blue_led;
+		pwm-led0 = &red_pwm_led;
+		pwm-led1 = &green_pwm_led;
+		pwm-led2 = &blue_pwm_led;
+		red-pwm-led = &red_pwm_led;
+		green-pwm-led = &green_pwm_led;
+		blue-pwm-led = &blue_pwm_led;
+		sw0 = &user_button_2;
+		sw1 = &user_button_3;
+		accel0 = &fxls8974;
+		pwm-0 = &tpm0;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &lpuart0;
+		zephyr,shell-uart = &lpuart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led: led_0 {
+			gpios = <&gpioe 31 GPIO_ACTIVE_LOW>;
+			label = "Red LED";
+		};
+		green_led: led_1 {
+			gpios = <&gpiod 5 GPIO_ACTIVE_LOW>;
+			label = "Green LED";
+		};
+		blue_led: led_2 {
+			gpios = <&gpioe 29 GPIO_ACTIVE_LOW>;
+			label = "Blue LED";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		status = "disabled";
+		red_pwm_led: pwm_led_0 {
+			pwms = <&tpm0 4 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "PWM Red LED";
+		};
+		green_pwm_led: pwm_led_1 {
+			pwms = <&tpm0 5 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "PWM Green LED";
+		};
+		blue_pwm_led: pwm_led_2 {
+			pwms = <&tpm0 2 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "PWM Blue LED";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button_2: button_2 {
+			label = "User SW2";
+			gpios = <&gpioc 3 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		user_button_3: button_3 {
+			label = "User SW3";
+			gpios = <&gpioa 4 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+};
+
+&sim {
+	pllfll-select = <KINETIS_SIM_PLLFLLSEL_MCGPLLCLK>;
+	er32k-select = <KINETIS_SIM_ER32KSEL_OSC32KCLK>;
+};
+
+&cpu0 {
+	clock-frequency = <48000000>;
+};
+
+&osc {
+	clock-frequency = <32768>;
+	mode = "low-power";
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&gpioe {
+	status = "okay";
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_adc0>;
+	pinctrl-names = "default";
+};
+
+i2c0: &i2c0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_i2c0>;
+	pinctrl-names = "default";
+
+	fxls8974: fxls8974@18 {
+		status = "okay";
+		compatible = "nxp,fxls8974";
+		reg = <0x18>;
+		int1-gpios = <&gpiod 1 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&lpuart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart0>;
+	pinctrl-names = "default";
+};
+
+&lptmr0 {
+	status = "okay";
+};
+
+&uart2 {
+	status = "disabled";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_uart2>;
+	pinctrl-names = "default";
+};
+
+&rtc {
+	status = "okay";
+};
+
+&pit0 {
+	status = "okay";
+};
+
+&pit0_channel0 {
+	status = "okay";
+};
+
+&pit0_channel1 {
+	status = "okay";
+};
+
+&tpm0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_tpm0>;
+	pinctrl-names = "default";
+	clocks = <&sim KINETIS_SIM_OSCERCLK 0x103C 24>;
+};
+
+zephyr_udc0: &usb {
+	status = "okay";
+	num-bidir-endpoints = <8>;
+};

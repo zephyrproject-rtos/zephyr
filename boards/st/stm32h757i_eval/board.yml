@@ -1,0 +1,6 @@
+board:
+  name: stm32h757i_eval
+  full_name: STM32H757I Eval
+  vendor: st
+  socs:
+    - name: stm32h757xx
