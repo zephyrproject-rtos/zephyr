@@ -606,6 +606,10 @@ _excint_noflush_\@:
 	/* Restore A1 stack pointer from "next" handle. */
 	mov a1, a6
 
+#ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
+	call4 z_thread_mark_switched_in
+#endif
+
 _restore_\@:
 	j _restore_context
 .endm
