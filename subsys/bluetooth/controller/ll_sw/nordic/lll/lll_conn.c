@@ -165,15 +165,16 @@ int lll_conn_central_is_abort_cb(void *next, void *curr,
 {
 	struct lll_conn *lll = curr;
 
-	/* Do not abort if near supervision timeout */
-	if (lll->forced) {
-		return 0;
-	}
+	if (next != curr) {
+		/* Do not be aborted by a different event if near supervision timeout */
+		if ((lll->forced == 1U) && (trx_cnt < 1U)) {
+			return 0;
+		}
 
-	/* Do not be aborted by same event if a single central trx has not been
-	 * exchanged.
-	 */
-	if ((next == curr) && (trx_cnt < 1U)) {
+	} else if ((next == curr) && (trx_cnt < 1U)) {
+		/* Do not be aborted by same event if a single central's Rx has not completed.
+		 * Cases where single trx duration can be greater than connection interval.
+		 */
 		return -EBUSY;
 	}
 
@@ -187,15 +188,16 @@ int lll_conn_peripheral_is_abort_cb(void *next, void *curr,
 {
 	struct lll_conn *lll = curr;
 
-	/* Do not abort if near supervision timeout */
-	if (lll->forced) {
-		return 0;
-	}
+	if (next != curr) {
+		/* Do not be aborted by a different event if near supervision timeout */
+		if ((lll->forced == 1U) && (tx_cnt < 1U)) {
+			return 0;
+		}
 
-	/* Do not be aborted by same event if a single peripheral trx has not
-	 * been exchanged.
-	 */
-	if ((next == curr) && (tx_cnt < 1U)) {
+	} else if ((next == curr) && (tx_cnt < 1U)) {
+		/* Do not be aborted by same event if a single peripheral's Tx has not completed.
+		 * Cases where single trx duration can be greater than connection interval.
+		 */
 		return -EBUSY;
 	}
 
