@@ -343,13 +343,8 @@ typedef int (*video_api_frmival_t)(const struct device *dev, struct video_frmiva
  */
 typedef int (*video_api_enum_frmival_t)(const struct device *dev, struct video_frmival_enum *fie);
 
-/**
- * @typedef video_api_enqueue_t
- * @brief Enqueue a buffer in the driver’s incoming queue.
- *
- * See video_enqueue() for argument descriptions.
- */
-typedef int (*video_api_enqueue_t)(const struct device *dev, struct video_buffer *buf);
+typedef void (*video_api_iodev_submit_t)(const struct device *dev,
+					 struct rtio_iodev_sqe *iodev_sqe);
 
 /**
  * @typedef video_api_flush_t
@@ -415,7 +410,6 @@ __subsystem struct video_driver_api {
 	video_api_set_stream_t set_stream;
 	video_api_get_caps_t get_caps;
 	/* optional callbacks */
-	video_api_enqueue_t enqueue;
 	video_api_flush_t flush;
 	video_api_ctrl_t set_ctrl;
 	video_api_ctrl_t get_volatile_ctrl;
@@ -425,6 +419,7 @@ __subsystem struct video_driver_api {
 	video_api_enum_frmival_t enum_frmival;
 	video_api_selection_t set_selection;
 	video_api_selection_t get_selection;
+	video_api_iodev_submit_t iodev_submit;
 };
 
 /**

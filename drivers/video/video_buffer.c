@@ -133,14 +133,7 @@ RTIO_DEFINE(rtio, CONFIG_VIDEO_BUFFER_POOL_NUM_MAX, CONFIG_VIDEO_BUFFER_POOL_NUM
 
 int video_enqueue(const struct device *dev, struct video_buffer *buf)
 {
-	int ret;
-
 	__ASSERT_NO_MSG(dev != NULL);
-
-	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
-	if (api->enqueue == NULL) {
-		return -ENOSYS;
-	}
 
 	if (video_buf[buf->index].type != buf->type ||
 	    video_buf[buf->index].memory != buf->memory ||
@@ -154,11 +147,6 @@ int video_enqueue(const struct device *dev, struct video_buffer *buf)
 		}
 
 		video_buf[buf->index].buffer = buf->buffer;
-	}
-
-	ret = api->enqueue(dev, &video_buf[buf->index]);
-	if (ret < 0) {
-		return ret;
 	}
 
 	/* RTIO submission */
@@ -192,26 +180,6 @@ void video_release_buf(struct rtio_cqe *cqe)
 	rtio_cqe_release(&rtio, cqe);
 }
 
-struct video_buffer *video_get_buf_sqe(struct mpsc *io_q)
-{
-	struct mpsc_node *node = mpsc_pop(io_q);
-	if (node == NULL) {
-		return NULL;
-	}
-
-	struct rtio_iodev_sqe *iodev_sqe = CONTAINER_OF(node, struct rtio_iodev_sqe, q);
-	struct rtio_sqe *sqe = &iodev_sqe->sqe;
-
-	if (sqe->op != RTIO_OP_RX) {
-		LOG_ERR("Invalid operation %d of length %u for submission %p", sqe->op,
-			sqe->rx.buf_len, (void *)iodev_sqe);
-		rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
-		return NULL;
-	}
-
-	return sqe->userdata;
-}
-
 struct rtio_iodev_sqe *video_pop_io_q(struct mpsc *io_q)
 {
 	struct mpsc_node *node;
@@ -242,6 +210,11 @@ struct rtio_iodev_sqe *video_pop_io_q(struct mpsc *io_q)
 static void video_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
 {
 	struct video_interface *vi = iodev_sqe->sqe.iodev->data;
+	const struct video_driver_api *api = vi->dev->api;
+
+	if (api->iodev_submit != NULL) {
+		api->iodev_submit(vi->dev, iodev_sqe);
+	}
 
 	mpsc_push(vi->io_q, &iodev_sqe->q);
 }
