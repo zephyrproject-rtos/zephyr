@@ -11,6 +11,8 @@
 #if defined(CONFIG_SOC_SERIES_RP2040)
 #include <hardware/structs/vreg_and_chip_reset.h>
 #else
+#include <zephyr/sys/byteorder.h>
+#include <pico/bootrom.h>
 #include <hardware/structs/powman.h>
 #endif
 
@@ -29,6 +31,17 @@
 ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
 	uint8_t id[FLASH_RUID_DATA_BYTES];
+
+#if defined(CONFIG_SOC_SERIES_RP2350)
+	rom_get_sys_info_fn get_sys_info = (rom_get_sys_info_fn)
+					rom_func_lookup_inline(ROM_FUNC_GET_SYS_INFO);
+	/* Words: CHIP_INFO, PACKAGE_SEL, DEVICE_ID, WAFER_ID */
+	uint32_t words[4];
+	(void)get_sys_info(words, 4, SYS_INFO_CHIP_INFO);
+
+	/* Use DEVICE_ID + WAFER_ID, like BootROM uses for its USB ID */
+	sys_put_be(id, &words[2], sizeof(id));
+#else
 	uint32_t key;
 
 	/*
@@ -40,6 +53,7 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 	key = irq_lock();
 	flash_get_unique_id(id);
 	irq_unlock(key);
+#endif /* defined(CONFIG_SOC_SERIES_RP2350) */
 
 	if (length > sizeof(id)) {
 		length = sizeof(id);
