@@ -634,7 +634,14 @@ int ataes132a_aes_ecb_block(const struct device *dev,
 	param_buffer[1] = key_id;
 	param_buffer[2] = 0x0;
 	memcpy(param_buffer + 3, pkt->in_buf, buf_len);
-	(void)memset(param_buffer + 3 + buf_len, 0x0, 16 - buf_len);
+	/* skip memset() if buf_len==16.
+	 * Indeed, calling memset(&param_buffer[19], 0x0, 0)
+	 * is an undefined behaviour in C as &param_buffer[19] is
+	 * an invalid pointer (even if size is 0).
+	 */
+	if (buf_len < 16) {
+		(void)memset(param_buffer + 3 + buf_len, 0x0, 16 - buf_len);
+	}
 
 	return_code = ataes132a_send_command(dev, ATAES_LEGACY_OP, 0x00,
 					     param_buffer, buf_len + 3,
