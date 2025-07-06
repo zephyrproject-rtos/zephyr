@@ -19,6 +19,7 @@
 #include <fsl_cache.h>
 #endif
 
+#include "video_buffer.h"
 #include "video_device.h"
 
 struct video_mcux_csi_config {
@@ -40,11 +41,9 @@ static void __frame_done_cb(CSI_Type *base, csi_handle_t *handle, status_t statu
 	const struct device *dev = data->dev;
 	const struct video_mcux_csi_config *config = dev->config;
 	enum video_signal_result result = VIDEO_BUF_DONE;
-	// struct video_buffer *vbuf, *vbuf_first = NULL;
 	uint32_t buffer_addr;
 
 	/* IRQ context */
-
 	if (status != kStatus_CSI_FrameDone) {
 		return;
 	}
@@ -55,22 +54,24 @@ static void __frame_done_cb(CSI_Type *base, csi_handle_t *handle, status_t statu
 		return;
 	}
 
-	struct video_buffer *vbuf = video_get_buf_sqe(&data->io_q);
+	struct rtio_iodev_sqe *iodev_sqe = video_pop_io_q(&data->io_q);
+
+	if (iodev_sqe == NULL) {
+		return;
+	}
+
+
+	struct video_buffer *vbuf = iodev_sqe->sqe.userdata;
+
+#ifdef CONFIG_HAS_MCUX_CACHE
+	DCACHE_InvalidateByRange(buffer_addr, vbuf->bytesused);
+#endif
 
 	if ((uint32_t)vbuf->buffer != buffer_addr) {
 		return;
 	}
 
 	vbuf->timestamp = k_uptime_get_32();
-
-#ifdef CONFIG_HAS_MCUX_CACHE
-	DCACHE_InvalidateByRange(buffer_addr, vbuf->bytesused);
-#endif
-
-	// k_fifo_put(&data->fifo_out, vbuf);
-
-	struct mpsc_node *node = mpsc_pop(&data->io_q);
-	struct rtio_iodev_sqe *iodev_sqe = CONTAINER_OF(node, struct rtio_iodev_sqe, q);
 
 	rtio_iodev_sqe_ok(iodev_sqe, 0);
 
@@ -307,35 +308,70 @@ static int video_mcux_csi_enum_frmival(const struct device *dev, struct video_fr
 	return ret;
 }
 
-static int video_mcux_csi_enqueue(const struct device *dev, struct video_buffer *vbuf)
+// static int video_mcux_csi_enqueue(const struct device *dev, struct video_buffer *vbuf)
+// {
+// 	const struct video_mcux_csi_config *config = dev->config;
+// 	struct video_mcux_csi_data *data = dev->data;
+// 	unsigned int to_read;
+// 	status_t ret;
+
+// 	struct rtio_iodev_sqe *iodev_sqe = video_pop_io_q(&data->io_q);
+
+// 	if (iodev_sqe == NULL) {
+// 		return -EIO;
+// 	}
+
+// 	struct video_buffer *vbuf = iodev_sqe->sqe.userdata;
+
+// 	to_read = data->csi_config.linePitch_Bytes * data->csi_config.height;
+// 	vbuf->bytesused = to_read;
+// 	vbuf->line_offset = 0;
+
+// 	ret = CSI_TransferSubmitEmptyBuffer(config->base, &data->csi_handle,
+// 					    (uint32_t)vbuf->buffer);
+// 	if (ret != kStatus_Success) {
+// 		return -EIO;
+// 	}
+
+// 	return 0;
+// }
+
+static void video_mcux_csi_iodev_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 {
+
 	const struct video_mcux_csi_config *config = dev->config;
 	struct video_mcux_csi_data *data = dev->data;
-	unsigned int to_read;
+	struct video_buffer *vbuf = iodev_sqe->sqe.userdata;
 	status_t ret;
 
-	to_read = data->csi_config.linePitch_Bytes * data->csi_config.height;
-	vbuf->bytesused = to_read;
+	// struct rtio_iodev_sqe *iodev_sqe = video_pop_io_q(&data->io_q);
+
+	// if (iodev_sqe == NULL) {
+	// 	return -EIO;
+	// }
+
+	vbuf->bytesused = data->csi_config.linePitch_Bytes * data->csi_config.height;
 	vbuf->line_offset = 0;
 
 	ret = CSI_TransferSubmitEmptyBuffer(config->base, &data->csi_handle,
 					    (uint32_t)vbuf->buffer);
 	if (ret != kStatus_Success) {
-		return -EIO;
+		return;
 	}
 
-	return 0;
+	return;
 }
 
 static DEVICE_API(video, video_mcux_csi_driver_api) = {
 	.set_format = video_mcux_csi_set_fmt,
 	.get_format = video_mcux_csi_get_fmt,
 	.set_stream = video_mcux_csi_set_stream,
-	.enqueue = video_mcux_csi_enqueue,
+	// .enqueue = video_mcux_csi_enqueue,
 	.get_caps = video_mcux_csi_get_caps,
 	.set_frmival = video_mcux_csi_set_frmival,
 	.get_frmival = video_mcux_csi_get_frmival,
 	.enum_frmival = video_mcux_csi_enum_frmival,
+	.iodev_submit = video_mcux_csi_iodev_submit,
 };
 
 #if 1 /* Unique Instance */
