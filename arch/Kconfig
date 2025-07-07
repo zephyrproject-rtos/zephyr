@@ -611,7 +611,7 @@ config IRQ_OFFLOAD_NESTED
 config EXCEPTION_DEBUG
 	bool "Unhandled exception debugging"
 	default y
-	depends on PRINTK || LOG
+	depends on LOG || (ARC && PRINTK)
 	help
 	  Install handlers for various CPU exception/trap vectors to
 	  make debugging them easier, at a small expense in code size.
