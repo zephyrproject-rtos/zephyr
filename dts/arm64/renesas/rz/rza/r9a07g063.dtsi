@@ -482,5 +482,93 @@
 				status = "disabled";
 			};
 		};
+
+		intc: intc@110a0000 {
+			compatible = "renesas,rz-intc";
+			reg = <0x110a0000 DT_SIZE_K(64)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupt-parent = <&gic>;
+
+			nmi: nmi {
+				compatible = "renesas,rz-ext-irq";
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts = <GIC_SPI 0 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
+			irq0: irq@0 {
+				compatible = "renesas,rz-ext-irq";
+				reg = <0x0>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts = <GIC_SPI 1 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
+			irq1: irq@1 {
+				compatible = "renesas,rz-ext-irq";
+				reg = <0x1>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts = <GIC_SPI 2 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
+			irq2: irq@2 {
+				compatible = "renesas,rz-ext-irq";
+				reg = <0x2>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts = <GIC_SPI 3 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
+			irq3: irq@3 {
+				compatible = "renesas,rz-ext-irq";
+				reg = <0x3>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts = <GIC_SPI 4 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
+			irq4: irq@4 {
+				compatible = "renesas,rz-ext-irq";
+				reg = <0x4>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts = <GIC_SPI 5 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
+			irq5: irq@5 {
+				compatible = "renesas,rz-ext-irq";
+				reg = <0x5>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts = <GIC_SPI 6 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
+			irq6: irq@6 {
+				compatible = "renesas,rz-ext-irq";
+				reg = <0x6>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts = <GIC_SPI 7 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
+			irq7: irq@7 {
+				compatible = "renesas,rz-ext-irq";
+				reg = <0x7>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts = <GIC_SPI 8 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+		};
 	};
 };
