@@ -2094,11 +2094,11 @@ static struct out_of_order_check_struct out_of_order_check_list[] = {
 	{ 0,  10, 10, 0},
 	{ 10, 10, 40, 0}, /* First sequence complete */
 	{ 32,  6, 40, 0}, /* Invalid seqnum (old) */
-	{ 30, 16, 40, 0}, /* Partial data valid (not supported yet) */
-	{ 50,  6, 40, 0},
-	{ 50,  3, 40, 0}, /* Discardable packet */
-	{ 55,  5, 40, 0},
-	{ 40, 10, 60, 0}, /* Some bigger data */
+	{ 30, 16, 46, 0}, /* Partial data valid */
+	{ 50,  6, 46, 0},
+	{ 50,  3, 46, 0}, /* Discardable packet */
+	{ 55,  5, 46, 0},
+	{ 30, 20, 60, 0}, /* Partial data valid with pending data merge */
 	{ 61,  2, 60, 0},
 	{ 60,  5, 65, 0}, /* Over lapped incoming packet */
 	{ 66,  4, 65, 0},
