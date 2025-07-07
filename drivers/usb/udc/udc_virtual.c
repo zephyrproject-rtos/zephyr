@@ -531,14 +531,7 @@ static int udc_vrt_init(const struct device *dev)
 {
 	const struct udc_vrt_config *config = dev->config;
 
-	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT,
-				   USB_EP_TYPE_CONTROL, 64, 0)) {
-		LOG_ERR("Failed to enable control endpoint");
-		return -EIO;
-	}
-
-	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_IN,
-				   USB_EP_TYPE_CONTROL, 64, 0)) {
+	if (udc_ep_enable_control(dev, 64)) {
 		LOG_ERR("Failed to enable control endpoint");
 		return -EIO;
 	}
@@ -550,12 +543,7 @@ static int udc_vrt_shutdown(const struct device *dev)
 {
 	const struct udc_vrt_config *config = dev->config;
 
-	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT)) {
-		LOG_ERR("Failed to disable control endpoint");
-		return -EIO;
-	}
-
-	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_IN)) {
+	if (udc_ep_disable_control(dev)) {
 		LOG_ERR("Failed to disable control endpoint");
 		return -EIO;
 	}

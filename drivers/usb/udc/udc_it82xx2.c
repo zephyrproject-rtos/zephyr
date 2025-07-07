@@ -1469,30 +1469,18 @@ static int it82xx2_init(const struct device *dev)
 
 	it82xx2_usb_dc_ip_init(dev);
 
-	ret = udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT, USB_EP_TYPE_CONTROL,
-				     config->ep_cfg_out[0].caps.mps, 0);
+	ret = udc_ep_enable_control(dev, config->ep_cfg_out[0].caps.mps);
 	if (ret) {
-		LOG_ERR("Failed to enable ep 0x%02x", USB_CONTROL_EP_OUT);
+		LOG_ERR("Failed to enable control endpoint");
 		return ret;
 	}
 
-	ret = udc_ep_enable_internal(dev, USB_CONTROL_EP_IN, USB_EP_TYPE_CONTROL,
-				     config->ep_cfg_in[0].caps.mps, 0);
-	if (ret) {
-		LOG_ERR("Failed to enable ep 0x%02x", USB_CONTROL_EP_IN);
-		return ret;
-	}
 	return 0;
 }
 
 static int it82xx2_shutdown(const struct device *dev)
 {
-	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT)) {
-		LOG_ERR("Failed to disable control endpoint");
-		return -EIO;
-	}
-
-	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_IN)) {
+	if (udc_ep_disable_control(dev)) {
 		LOG_ERR("Failed to disable control endpoint");
 		return -EIO;
 	}

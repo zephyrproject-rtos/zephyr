@@ -201,6 +201,33 @@ int udc_ep_enable_internal(const struct device *dev,
 			   const uint8_t interval);
 
 /**
+ * @brief Helper function to enable control endpoint.
+ *
+ * This function can be used by the driver to enable control endpoint.
+ *
+ * @param[in] dev Pointer to device struct of the driver instance
+ * @param[in] mps Maximum packet size (same as wMaxPacketSize)
+ *
+ * @return 0 on success, all other values should be treated as error.
+ * @retval -ENODEV endpoint is not assigned or no configuration found
+ * @retval -EALREADY endpoint is already enabled
+ */
+static inline int udc_ep_enable_control(const struct device *dev,
+					const uint16_t mps)
+{
+	int err;
+
+	err = udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT,
+				     USB_EP_TYPE_CONTROL, mps, 0);
+	if (err) {
+		return err;
+	}
+
+	return udc_ep_enable_internal(dev, USB_CONTROL_EP_IN,
+				      USB_EP_TYPE_CONTROL, mps, 0);
+}
+
+/**
  * @brief Helper function to disable endpoint.
  *
  * This function can be used by the driver to disable control IN/OUT endpoint.
@@ -210,10 +237,33 @@ int udc_ep_enable_internal(const struct device *dev,
  *
  * @return 0 on success, all other values should be treated as error.
  * @retval -ENODEV endpoint is not assigned or no configuration found
- * @retval -EALREADY endpoint is already enabled
+ * @retval -EALREADY endpoint is already disabled
  */
 int udc_ep_disable_internal(const struct device *dev,
 			    const uint8_t ep);
+
+/**
+ * @brief Helper function to disable control endpoint.
+ *
+ * This function can be used by the driver to disable control endpoint.
+ *
+ * @param[in] dev Pointer to device struct of the driver instance
+ *
+ * @return 0 on success, all other values should be treated as error.
+ * @retval -ENODEV endpoint is not assigned or no configuration found
+ * @retval -EALREADY endpoint is already disabled
+ */
+static inline int udc_ep_disable_control(const struct device *dev)
+{
+	int err;
+
+	err = udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT);
+	if (err) {
+		return err;
+	}
+
+	return udc_ep_disable_internal(dev, USB_CONTROL_EP_IN);
+}
 
 /**
  * @brief Helper function to register endpoint configuration.
