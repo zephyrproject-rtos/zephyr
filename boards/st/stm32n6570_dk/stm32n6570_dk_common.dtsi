@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/flash_controller/xspi.h>
 #include <zephyr/dt-bindings/gpio/raspberrypi-csi-connector.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-sw.h>
 #include <zephyr/dt-bindings/video/video-interfaces.h>
 #include "arduino_r3_connector.dtsi"
 
@@ -42,7 +43,7 @@
 		compatible = "zephyr,memory-region";
 		reg = <0x90000000 DT_SIZE_M(32)>;
 		zephyr,memory-region = "PSRAM";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) | DT_MEM_SW_ALLOC_CACHE )>;
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) | DT_MEM_SW_ALLOC_NON_CACHE )>;
 	};
 
 	leds: leds {
