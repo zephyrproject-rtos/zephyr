@@ -330,6 +330,7 @@ int udc_ep_enable_internal(const struct device *dev,
 			   const uint8_t ep,
 			   const uint8_t attributes,
 			   const uint16_t mps,
+			   const uint16_t m_mps,
 			   const uint8_t interval)
 {
 	const struct udc_api *api = dev->api;
@@ -353,6 +354,7 @@ int udc_ep_enable_internal(const struct device *dev,
 
 	cfg->attributes = attributes;
 	cfg->mps = mps;
+	cfg->m_mps = m_mps;
 	cfg->interval = interval;
 
 	cfg->stat.odd = 0;
@@ -368,6 +370,7 @@ int udc_ep_enable(const struct device *dev,
 		  const uint8_t ep,
 		  const uint8_t attributes,
 		  const uint16_t mps,
+		  const uint16_t m_mps,
 		  const uint8_t interval)
 {
 	const struct udc_api *api = dev->api;
@@ -384,7 +387,7 @@ int udc_ep_enable(const struct device *dev,
 		goto ep_enable_error;
 	}
 
-	ret = udc_ep_enable_internal(dev, ep, attributes, mps, interval);
+	ret = udc_ep_enable_internal(dev, ep, attributes, mps, m_mps, interval);
 
 ep_enable_error:
 	api->unlock(dev);
