@@ -153,6 +153,8 @@ config NRFX_NFCT
 	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_NFCT))
 	select NRFX_TIMER4 if SOC_SERIES_NRF52X
 	select NRFX_TIMER2 if SOC_SERIES_NRF53X
+	select NRFX_TIMER24 if SOC_SERIES_NRF54LX
+	select NRFX_TIMER137 if SOC_SERIES_NRF54HX
 
 config NRFX_NVMC
 	bool "NVMC driver"
