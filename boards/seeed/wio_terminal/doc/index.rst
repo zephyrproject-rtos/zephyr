@@ -69,6 +69,8 @@ characters back to the host PC.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The Wio Terminal ships with an UF2 bootloader that is BOSSA compatible. The
 bootloader can be entered by quickly tapping the reset button twice.
 

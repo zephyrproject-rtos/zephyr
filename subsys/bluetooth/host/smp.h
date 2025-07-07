@@ -9,6 +9,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdbool.h>
+#include <stdint.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/toolchain.h>
+
 struct bt_smp_hdr {
 	uint8_t  code;
 } __packed;

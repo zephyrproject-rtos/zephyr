@@ -32,7 +32,7 @@ static void thread_entry_abort(void *p1, void *p2, void *p3)
 }
 /**
  * @ingroup kernel_thread_tests
- * @brief Validate k_thread_abort() when called by current thread
+ * @brief Validate aborting a thread when called by current thread
  *
  * @details Create a user thread and let the thread execute.
  * Then call k_thread_abort() and check if the thread is terminated.
@@ -52,7 +52,7 @@ ZTEST_USER(threads_lifecycle, test_threads_abort_self)
 
 /**
  * @ingroup kernel_thread_tests
- * @brief Validate k_thread_abort() when called by other thread
+ * @brief Validate aborting a thread when called by other thread
  *
  * @details Create a user thread and abort the thread before its
  * execution. Create a another user thread and abort the thread
@@ -85,7 +85,7 @@ ZTEST_USER(threads_lifecycle, test_threads_abort_others)
 
 /**
  * @ingroup kernel_thread_tests
- * @brief Test abort on a terminated thread
+ * @brief Test abort on an already terminated thread
  *
  * @see k_thread_abort()
  */

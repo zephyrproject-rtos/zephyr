@@ -92,6 +92,9 @@ struct netc_eth_config {
 	const struct pinctrl_dev_config *pincfg;
 	uint8_t tx_intr_msg_data;
 	uint8_t rx_intr_msg_data;
+#ifdef CONFIG_PTP_CLOCK_NXP_NETC
+	const struct device *ptp_clock;
+#endif
 };
 
 typedef uint8_t rx_buffer_t[NETC_RX_RING_BUF_SIZE_ALIGN];
@@ -102,7 +105,6 @@ struct netc_eth_data {
 	uint8_t mac_addr[6];
 	/* TX */
 	struct k_mutex tx_mutex;
-	netc_tx_frame_info_t tx_info;
 	uint8_t *tx_buff;
 	volatile bool tx_done;
 	/* RX */
@@ -118,5 +120,7 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt);
 enum ethernet_hw_caps netc_eth_get_capabilities(const struct device *dev);
 int netc_eth_set_config(const struct device *dev, enum ethernet_config_type type,
 			const struct ethernet_config *config);
-
+#ifdef CONFIG_PTP_CLOCK_NXP_NETC
+const struct device *netc_eth_get_ptp_clock(const struct device *dev);
+#endif
 #endif /* ZEPHYR_DRIVERS_ETHERNET_ETH_NXP_IMX_NETC_PRIV_H_ */

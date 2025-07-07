@@ -6,10 +6,12 @@
 set(hal_dir         ${ZEPHYR_HAL_INFINEON_MODULE_DIR}/mtb-hal-cat1)
 set(hal_cat1a_dir   ${hal_dir}/COMPONENT_CAT1A)
 set(hal_cat1b_dir   ${hal_dir}/COMPONENT_CAT1B)
+set(hal_cat1c_dir   ${hal_dir}/COMPONENT_CAT1C)
 
 # PSOC 6 family defines
 zephyr_compile_definitions_ifdef(CONFIG_SOC_FAMILY_INFINEON_CAT1A COMPONENT_CAT1A)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_FAMILY_INFINEON_CAT1B COMPONENT_CAT1B)
+zephyr_compile_definitions_ifdef(CONFIG_SOC_FAMILY_INFINEON_CAT1C COMPONENT_CAT1C)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_FAMILY_INFINEON_CAT1 COMPONENT_CAT1)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_FAMILY_INFINEON_CAT1 CY_USING_HAL)
 
@@ -18,6 +20,7 @@ zephyr_include_directories(${hal_dir}/include)
 zephyr_include_directories(${hal_dir}/include_pvt)
 zephyr_include_directories_ifdef(CONFIG_SOC_FAMILY_INFINEON_CAT1A ${hal_cat1a_dir}/include)
 zephyr_include_directories_ifdef(CONFIG_SOC_FAMILY_INFINEON_CAT1B ${hal_cat1b_dir}/include)
+zephyr_include_directories_ifdef(CONFIG_SOC_FAMILY_INFINEON_CAT1C ${hal_cat1c_dir}/include)
 
 # Packages sources
 zephyr_library_sources_ifdef(CONFIG_SOC_PACKAGE_PSOC6_01_104_M_CSP_BLE
@@ -59,6 +62,9 @@ zephyr_library_sources_ifdef(CONFIG_SOC_PACKAGE_PSOC6_04_80_TQFP
 
 zephyr_library_sources_ifdef(CONFIG_SOC_PACKAGE_CYW20829_56_QFN
   ${hal_cat1b_dir}/source/pin_packages/cyhal_cyw20829_56_qfn.c)
+
+zephyr_library_sources_ifdef(CONFIG_SOC_PACKAGE_XMC7200_272_BGA
+  ${hal_cat1c_dir}/source/pin_packages/cyhal_xmc7200_272_bga.c)
 
 zephyr_library_sources_ifdef(CONFIG_SOC_DIE_CYW20829
   ${hal_cat1b_dir}/source/triggers/cyhal_triggers_cyw20829.c)

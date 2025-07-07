@@ -6,7 +6,8 @@
 
 / {
 	zephyr,user {
-		io-channels = <&adc0 0>, <&adc0 1>, <&adc0 2>, <&adc0 9>;
+		io-channels = <&arduino_adc 0>, <&arduino_adc 1>, <&arduino_adc 2>,
+			      <&arduino_adc 3>, <&arduino_adc 4>, <&arduino_adc 5>;
 	};
 };
 
@@ -44,6 +45,24 @@
 
 	channel@9 {
 		reg = <9>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,resolution = <12>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,vref-mv = <5000>;
+	};
+
+	channel@21 {
+		reg = <21>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,resolution = <12>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,vref-mv = <5000>;
+	};
+
+	channel@22 {
+		reg = <22>;
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_VDD_1";
 		zephyr,resolution = <12>;

@@ -117,6 +117,8 @@ multiplexer ARDUINO_MUX_CTRL is in the default mode (GPIO).
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Required Hardware and Software
 ==============================
 

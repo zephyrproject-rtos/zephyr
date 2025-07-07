@@ -224,23 +224,19 @@ static int cmd_delete(const struct shell *shell_ptr, size_t argc, char *argv[])
 
 SHELL_STATIC_SUBCMD_SET_CREATE(settings_cmds,
 	SHELL_CMD_ARG(list, NULL,
-		"List all settings in a subtree (omit to list all)\n"
-		"Usage: settings list [subtree]",
-		cmd_list, 1, 1),
+		      SHELL_HELP("List all settings in a subtree (omit to list all)", "[subtree]"),
+		      cmd_list, 1, 1),
 	SHELL_CMD_ARG(read, NULL,
-		"Read a specific setting\n"
-		"Usage: settings read [type] <name>\n"
-		"type: string or hex (default: hex)",
-		cmd_read, 2, 1),
+		      SHELL_HELP("Read a specific setting", "[type] <name>\n"
+							    "type: string or hex (default: hex)"),
+		      cmd_read, 2, 1),
 	SHELL_CMD_ARG(write, NULL,
-		"Write to a specific setting\n"
-		"Usage: settings write [type] <name> <value>\n"
-		"type: string or hex (default: hex)",
-		cmd_write, 3, 1),
-	SHELL_CMD_ARG(delete, NULL,
-		"Delete a specific setting\n"
-		"Usage: settings delete <name>",
-		cmd_delete, 2, 0),
+		      SHELL_HELP("Write to a specific setting",
+				 "[type] <name> <value>\n"
+				 "type: string or hex (default: hex)"),
+		      cmd_write, 3, 1),
+	SHELL_CMD_ARG(delete, NULL, SHELL_HELP("Delete a specific setting", "<name>"), cmd_delete,
+		      2, 0),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 

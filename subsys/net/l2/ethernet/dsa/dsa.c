@@ -38,7 +38,7 @@ bool dsa_is_port_master(struct net_if *iface)
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
 		/* Check its capabilities */
 		if (net_eth_get_hw_capabilities(iface) &
-		    ETHERNET_DSA_MASTER_PORT) {
+		    ETHERNET_DSA_CONDUIT_PORT) {
 			return true;
 		}
 	}
@@ -62,8 +62,8 @@ static int dsa_check_iface(struct net_if *iface)
 		return -ENOENT;
 	}
 
-	if (!((net_eth_get_hw_capabilities(iface) & ETHERNET_DSA_MASTER_PORT) ||
-	    (net_eth_get_hw_capabilities(iface) & ETHERNET_DSA_SLAVE_PORT))) {
+	if (!((net_eth_get_hw_capabilities(iface) & ETHERNET_DSA_CONDUIT_PORT) ||
+	    (net_eth_get_hw_capabilities(iface) & ETHERNET_DSA_USER_PORT))) {
 		return -ESRCH;
 	}
 

@@ -40,3 +40,14 @@ tests:
     timeout: 400
     extra_args:
       DTC_OVERLAY_FILE="boards/mimxrt685_evk_rtc_1khz.overlay"
+  drivers.counter.basic_api.standby.lpc_rtc_highres:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    platform_allow: frdm_rw612
+    timeout: 400
+    extra_configs:
+      - CONFIG_TEST_DRIVER_COUNTER_MCUX_LPC_RTC_HIGHRES=n
+    extra_args:
+      DTC_OVERLAY_FILE="enable_standby.overlay"

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2024 NXP
+ * Copyright 2023-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,6 +32,11 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_PWM_LOG_LEVEL);
  * the HAL over configuration tool due to limitation of the integration
  */
 #if EMIOS_PWM_IP_USED
+
+#if defined(CONFIG_SOC_SERIES_S32ZE)
+#define eMios_Icu_Ip_IndexInChState eMios_Icu_Ip_u8IndexInChState
+#endif
+
 extern uint8 eMios_Pwm_Ip_IndexInChState[EMIOS_PWM_IP_INSTANCE_COUNT][EMIOS_PWM_IP_CHANNEL_COUNT];
 #define EMIOS_PWM_MASTER_CHANNEL(channel, bus)					\
 	((bus == EMIOS_PWM_IP_BUS_A) ? 23 :					\
@@ -44,7 +49,7 @@ extern uint8 eMios_Icu_Ip_IndexInChState[EMIOS_ICU_IP_INSTANCE_COUNT][EMIOS_ICU_
 
 #define EMIOS_ICU_MASTER_CHANNEL(channel, bus)					\
 	((bus == EMIOS_ICU_BUS_A) ? 23 :					\
-	((bus == EMIOS_ICU_BUS_F) ? 22 :					\
+	(IF_DISABLED(CONFIG_SOC_SERIES_S32ZE, (bus == EMIOS_ICU_BUS_F) ? 22 :)	\
 	((bus == EMIOS_ICU_BUS_DIVERSE) ? ((channel >> 3) * 8) : channel)))
 
 /* We need maximum three edges for measure both period and cycle */
@@ -732,17 +737,17 @@ static DEVICE_API(pwm, pwm_nxp_s32_driver_api) = {
 };
 
 #define EMIOS_PWM_IS_MODE_OPWFMB(node_id)							\
-	DT_ENUM_HAS_VALUE(node_id, pwm_mode, OPWFMB)
+	DT_ENUM_HAS_VALUE(node_id, pwm_mode, opwfmb)
 
 #define EMIOS_PWM_IS_MODE_OPWMCB(node_id)							\
-	UTIL_OR(DT_ENUM_HAS_VALUE(node_id, pwm_mode, OPWMCB_TRAIL_EDGE),			\
-		DT_ENUM_HAS_VALUE(node_id, pwm_mode, OPWMCB_LEAD_EDGE))				\
+	UTIL_OR(DT_ENUM_HAS_VALUE(node_id, pwm_mode, opwmcb_trail_edge),			\
+		DT_ENUM_HAS_VALUE(node_id, pwm_mode, opwmcb_lead_edge))				\
 
 #define EMIOS_PWM_IS_MODE_OPWMB(node_id)							\
-	DT_ENUM_HAS_VALUE(node_id, pwm_mode, OPWMB)
+	DT_ENUM_HAS_VALUE(node_id, pwm_mode, opwmb)
 
 #define EMIOS_PWM_IS_MODE_SAIC(node_id)								\
-	DT_ENUM_HAS_VALUE(node_id, pwm_mode, SAIC)
+	DT_ENUM_HAS_VALUE(node_id, pwm_mode, saic)
 
 #define EMIOS_PWM_IS_CAPTURE_MODE(node_id)							\
 	EMIOS_PWM_IS_MODE_SAIC(node_id)
@@ -778,26 +783,26 @@ static DEVICE_API(pwm, pwm_nxp_s32_driver_api) = {
 	BUILD_ASSERT(!DT_NODE_HAS_PROP(node_id, prescaler),					\
 		     EMIOS_PWM_LOG(node_id, "prescaler is not used,"				\
 		     " driver takes the value from master bus"));				\
-	BUILD_ASSERT(DT_ENUM_HAS_VALUE(node_id, prescaler_src, PRESCALED_CLOCK),		\
+	BUILD_ASSERT(DT_ENUM_HAS_VALUE(node_id, prescaler_src, prescaled_clock),		\
 		     EMIOS_PWM_LOG(node_id, "prescaler-src is not used,"			\
 		     " always use prescalered source"));					\
 
 #define EMIOS_PWM_VERIFY_MODE_OPWMB(node_id)							\
 	EMIOS_PWM_PULSE_GEN_COMMON_VERIFY(node_id)						\
-	BUILD_ASSERT(DT_ENUM_HAS_VALUE(DT_PHANDLE(node_id, master_bus),	mode, MCB_UP_COUNTER),	\
+	BUILD_ASSERT(DT_ENUM_HAS_VALUE(DT_PHANDLE(node_id, master_bus),	mode, mcb_up_counter),	\
 		     EMIOS_PWM_LOG(node_id, "master-bus must be configured in MCB up"));	\
 	BUILD_ASSERT(DT_PROP(node_id, dead_time) == 0,						\
 		     EMIOS_PWM_LOG(node_id, "dead-time is not used"));				\
 	BUILD_ASSERT(!DT_NODE_HAS_PROP(node_id, prescaler),					\
 		     EMIOS_PWM_LOG(node_id, "prescaler is not used"));				\
-	BUILD_ASSERT(DT_ENUM_HAS_VALUE(node_id, prescaler_src, PRESCALED_CLOCK),		\
+	BUILD_ASSERT(DT_ENUM_HAS_VALUE(node_id, prescaler_src, prescaled_clock),		\
 		     EMIOS_PWM_LOG(node_id, "prescaler-src is not used,"			\
 		     " always use prescalered source"));					\
 
 #define EMIOS_PWM_VERIFY_MODE_SAIC(node_id)							\
 	IF_ENABLED(DT_NODE_HAS_PROP(node_id, master_bus),					\
 		  (BUILD_ASSERT(								\
-		   DT_ENUM_HAS_VALUE(DT_PHANDLE(node_id, master_bus), mode, MCB_UP_COUNTER),	\
+		   DT_ENUM_HAS_VALUE(DT_PHANDLE(node_id, master_bus), mode, mcb_up_counter),	\
 		   EMIOS_PWM_LOG(node_id, "master-bus must be configured in MCB up"));))	\
 	IF_ENABLED(UTIL_NOT(DT_NODE_HAS_PROP(node_id, master_bus)),				\
 		   (BUILD_ASSERT(								\
@@ -808,7 +813,7 @@ static DEVICE_API(pwm, pwm_nxp_s32_driver_api) = {
 		   (BUILD_ASSERT(DT_NODE_HAS_PROP(node_id, prescaler),				\
 		    EMIOS_PWM_LOG(node_id, "if use internal counter, prescaler must"		\
 		    " be configured"))));							\
-	BUILD_ASSERT(DT_ENUM_HAS_VALUE(node_id, prescaler_src, PRESCALED_CLOCK),		\
+	BUILD_ASSERT(DT_ENUM_HAS_VALUE(node_id, prescaler_src, prescaled_clock),		\
 		     EMIOS_PWM_LOG(node_id, "prescaler-src is not used,"			\
 		     " always use prescalered source"));
 
@@ -882,7 +887,9 @@ static DEVICE_API(pwm, pwm_nxp_s32_driver_api) = {
 #define EMIOS_ICU_BUS_C				EMIOS_ICU_BUS_DIVERSE
 #define EMIOS_ICU_BUS_D				EMIOS_ICU_BUS_DIVERSE
 #define EMIOS_ICU_BUS_E				EMIOS_ICU_BUS_DIVERSE
+#if !defined(CONFIG_SOC_SERIES_S32ZE)
 #define EMIOS_ICU_BUS_F				EMIOS_ICU_BUS_F
+#endif
 
 #define DIGITAL_FILTER_0			EMIOS_DIGITAL_FILTER_BYPASSED
 #define DIGITAL_FILTER_2			EMIOS_DIGITAL_FILTER_02

@@ -20,7 +20,11 @@ static void dyn_isr(const void *arg)
 }
 
 #if defined(CONFIG_GEN_SW_ISR_TABLE)
-extern struct _isr_table_entry _sw_isr_table[];
+extern
+#ifndef CONFIG_DYNAMIC_INTERRUPTS
+const
+#endif
+struct _isr_table_entry _sw_isr_table[];
 
 #if defined(CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET)
 #define IRQ_OFFSET CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET
@@ -114,7 +118,7 @@ extern const void *x86_irq_args[];
 
 	/**TESTPOINT: pass word-sized parameter to interrupt */
 	zassert_equal(handler_test_result, ISR_DYN_ARG,
-			"parameter(0x%lx) in handler is not correct",
+			"parameter(0x%" PRIxPTR ") in handler is not correct",
 			handler_test_result);
 
 	trigger_irq(vector_num);

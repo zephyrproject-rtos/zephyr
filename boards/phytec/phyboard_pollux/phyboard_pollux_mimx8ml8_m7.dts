@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <nxp/nxp_imx8ml_m7.dtsi>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include "phyboard_pollux-pinctrl.dtsi"
 
 / {
@@ -60,6 +61,47 @@
 	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart4_default>;
+	pinctrl-names = "default";
+};
+
+/*
+ * Has PMIC and EEPROM connected to it.
+ * Used by u-boot and Linux.
+ */
+&i2c1 {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+};
+
+/*
+ * Has PCA9533 I2C expander and a EEPROM connected.
+ * There is no driver for the PCA9533 in zephyr yet.
+ * Accessible via X6(Expansion header) and X10(mini PCIe).
+ */
+&i2c2 {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c2_default>;
+	pinctrl-names = "default";
+};
+
+/*
+ * Nothing connected.
+ * Accessible via connector X11 (phyCAM-M).
+ */
+&i2c3 {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c3_default>;
+	pinctrl-names = "default";
+};
+
+/*
+ * Nothing connected.
+ * Accessible via connector X15(A/V), X24(Display) and X21(MIPI-DSI).
+ */
+&i2c4 {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c4_default>;
 	pinctrl-names = "default";
 };
 

@@ -54,6 +54,8 @@ configured for the console and is available as a Virtual COM Port via the USB2 c
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing the Zephyr project onto SAM E70 MCU requires the `OpenOCD tool`_.
 Both west flash and west debug commands should correctly work with both USB0 and USB1
 connected and the board powered.

@@ -38,3 +38,4 @@ structures are thread safe in specific usage scenarios (see
   ring_buffers.rst
   mpsc_lockfree.rst
   spsc_lockfree.rst
+  min_heap.rst

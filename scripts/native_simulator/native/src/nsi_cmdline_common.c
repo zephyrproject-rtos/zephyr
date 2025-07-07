@@ -123,44 +123,44 @@ void nsi_cmd_read_option_value(const char *str, void *dest, const char type,
 			   const char *option)
 {
 	int error = 0;
-	char *endptr = NULL;
+	const char *endptr = NULL;
 
 	switch (type) {
 	case 'b':
 		if (strcasecmp(str, "false") == 0) {
 			*(bool *)dest = false;
-			endptr = (char *)str + 5;
+			endptr = (const char *)str + 5;
 		} else if (strcmp(str, "0") == 0) {
 			*(bool *)dest = false;
-			endptr = (char *)str + 1;
+			endptr = (const char *)str + 1;
 		} else if (strcasecmp(str, "true") == 0) {
 			*(bool *)dest = true;
-			endptr = (char *)str + 4;
+			endptr = (const char *)str + 4;
 		} else if (strcmp(str, "1") == 0) {
 			*(bool *)dest = true;
-			endptr = (char *)str + 1;
+			endptr = (const char *)str + 1;
 		} else {
 			error = 1;
 		}
 		break;
 	case 's':
-		*(char **)dest = (char *)str;
-		endptr = (char *)str + strlen(str);
+		*(const char **)dest = (const char *)str;
+		endptr = (const char *)str + strlen(str);
 		break;
 	case 'u':
-		*(uint32_t *)dest = strtoul(str, &endptr, 0);
+		*(uint32_t *)dest = strtoul(str, (char **)&endptr, 0);
 		break;
 	case 'U':
-		*(uint64_t *)dest = strtoull(str, &endptr, 0);
+		*(uint64_t *)dest = strtoull(str, (char **)&endptr, 0);
 		break;
 	case 'i':
-		*(int32_t *)dest = strtol(str, &endptr, 0);
+		*(int32_t *)dest = strtol(str, (char **)&endptr, 0);
 		break;
 	case 'I':
-		*(int64_t *)dest = strtoll(str, &endptr, 0);
+		*(int64_t *)dest = strtoll(str, (char **)&endptr, 0);
 		break;
 	case 'd':
-		*(double *)dest = strtod(str, &endptr);
+		*(double *)dest = strtod(str, (char **)&endptr);
 		break;
 	default:
 		nsi_print_error_and_exit(CMD_TYPE_ERROR, type);

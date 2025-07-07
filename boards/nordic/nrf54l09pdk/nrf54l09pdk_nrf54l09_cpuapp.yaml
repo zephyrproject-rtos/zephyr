@@ -14,3 +14,4 @@ flash: 200
 supported:
   - counter
   - gpio
+  - watchdog

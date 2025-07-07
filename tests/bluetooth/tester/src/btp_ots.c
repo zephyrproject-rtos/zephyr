@@ -5,16 +5,25 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <errno.h>
+#include <inttypes.h>
+#include <stdint.h>
+#include <string.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/services/ots.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/logging/log.h>
 
 #include <zephyr/sys/byteorder.h>
-#include <stdint.h>
-
-#include <zephyr/logging/log.h>
-#define LOG_MODULE_NAME bttester_ots
-LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
+#include <zephyr/sys/util.h>
+#include <sys/types.h>
 
 #include "btp/btp.h"
+
+#define LOG_MODULE_NAME bttester_ots
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
 #define OBJ_POOL_SIZE CONFIG_BT_OTS_MAX_OBJ_CNT
 #define OBJ_MAX_SIZE  100
@@ -42,10 +51,8 @@ static uint8_t ots_supported_commands(const void *cmd, uint16_t cmd_len,
 {
 	struct btp_ots_read_supported_commands_rp *rp = rsp;
 
-	tester_set_bit(rp->data, BTP_OTS_READ_SUPPORTED_COMMANDS);
-	tester_set_bit(rp->data, BTP_OTS_REGISTER_OBJECT);
-
-	*rsp_len = sizeof(*rp) + 1;
+	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_OTS, rp->data);
+	*rsp_len += sizeof(*rp);
 
 	return BTP_STATUS_SUCCESS;
 }

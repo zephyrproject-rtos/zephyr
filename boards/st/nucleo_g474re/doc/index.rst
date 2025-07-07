@@ -150,6 +150,8 @@ low power mode.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Nucleo G474RE board includes an ST-LINK/V3E embedded debug tool interface.
 
 Applications for the ``nucleo_g474re`` board configuration can be built and

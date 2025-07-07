@@ -88,16 +88,16 @@
 };
 
 &i2c0 {
-	clock-frequency = <I2C_BITRATE_FAST>;
 	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
-&i2c1 {
+zephyr_i2c: &i2c1 {
+	status = "okay";
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 

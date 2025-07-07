@@ -372,7 +372,10 @@ void z_log_msg_runtime_vcreate(uint8_t domain_id, const void *source,
 	struct log_msg_desc desc =
 		Z_LOG_MSG_DESC_INITIALIZER(domain_id, level, plen, dlen);
 
-	if (IS_ENABLED(CONFIG_LOG_MODE_DEFERRED) && BACKENDS_IN_USE()) {
+	if (IS_ENABLED(CONFIG_USERSPACE) && k_is_user_context()) {
+		pkg = alloca(plen);
+		msg = NULL;
+	} else if (IS_ENABLED(CONFIG_LOG_MODE_DEFERRED) && BACKENDS_IN_USE()) {
 		msg = z_log_msg_alloc(msg_wlen);
 		if (IS_ENABLED(CONFIG_LOG_FRONTEND) && msg == NULL) {
 			pkg = alloca(plen);
@@ -389,12 +392,17 @@ void z_log_msg_runtime_vcreate(uint8_t domain_id, const void *source,
 		__ASSERT_NO_MSG(plen >= 0);
 	}
 
-	if (IS_ENABLED(CONFIG_LOG_FRONTEND) && frontend_runtime_filtering(source, desc.level)) {
-		log_frontend_msg(source, desc, pkg, data);
-	}
+	if (IS_ENABLED(CONFIG_USERSPACE) && k_is_user_context()) {
+		z_log_msg_static_create(source, desc, pkg, data);
+	} else {
+		if (IS_ENABLED(CONFIG_LOG_FRONTEND) &&
+		    frontend_runtime_filtering(source, desc.level)) {
+			log_frontend_msg(source, desc, pkg, data);
+		}
 
-	if (BACKENDS_IN_USE()) {
-		z_log_msg_finalize(msg, source, desc, data);
+		if (BACKENDS_IN_USE()) {
+			z_log_msg_finalize(msg, source, desc, data);
+		}
 	}
 }
 EXPORT_SYMBOL(z_log_msg_runtime_vcreate);

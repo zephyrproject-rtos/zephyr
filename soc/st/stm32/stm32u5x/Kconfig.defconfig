@@ -10,6 +10,19 @@ rsource "Kconfig.defconfig.stm32u5*"
 config ROM_START_OFFSET
 	default 0x400 if BOOTLOADER_MCUBOOT
 
+config ICACHE
+	default y
+
+config DCACHE
+	default y
+
+config CACHE_MANAGEMENT
+	default y
+
+choice CACHE_TYPE
+	default EXTERNAL_CACHE
+endchoice
+
 if STM32_STOP3_LP_MODE
 
 config COUNTER

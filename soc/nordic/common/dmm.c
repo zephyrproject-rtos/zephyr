@@ -44,6 +44,7 @@ struct dmm_region {
 struct dmm_heap {
 	struct sys_heap heap;
 	const struct dmm_region *region;
+	struct k_spinlock lock;
 };
 
 static const struct dmm_region dmm_regions[] = {
@@ -53,6 +54,7 @@ static const struct dmm_region dmm_regions[] = {
 struct {
 	struct dmm_heap dmm_heaps[ARRAY_SIZE(dmm_regions)];
 } dmm_heaps_data;
+
 
 static struct dmm_heap *dmm_heap_find(void *region)
 {
@@ -113,13 +115,25 @@ static size_t dmm_heap_size_get(struct dmm_heap *dh)
 
 static void *dmm_buffer_alloc(struct dmm_heap *dh, size_t length)
 {
+	void *ret;
+	k_spinlock_key_t key;
+
 	length = ROUND_UP(length, dh->region->dt_align);
-	return sys_heap_aligned_alloc(&dh->heap, dh->region->dt_align, length);
+
+	key = k_spin_lock(&dh->lock);
+	ret = sys_heap_aligned_alloc(&dh->heap, dh->region->dt_align, length);
+	k_spin_unlock(&dh->lock, key);
+
+	return ret;
 }
 
 static void dmm_buffer_free(struct dmm_heap *dh, void *buffer)
 {
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&dh->lock);
 	sys_heap_free(&dh->heap, buffer);
+	k_spin_unlock(&dh->lock, key);
 }
 
 int dmm_buffer_out_prepare(void *region, void const *user_buffer, size_t user_length,

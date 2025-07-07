@@ -283,7 +283,7 @@ int z_impl_zsock_socketpair(int family, int type, int proto, int *sv)
 	size_t i;
 	struct spair *obj[2] = {};
 
-	SYS_PORT_TRACING_OBJ_FUNC_ENTER(socket, socketpair, family, type, proto, sv);
+	SYS_PORT_TRACING_FUNC_ENTER(socket, socketpair, family, type, proto, sv);
 
 	if (family != AF_UNIX) {
 		errno = EAFNOSUPPORT;
@@ -326,7 +326,7 @@ int z_impl_zsock_socketpair(int family, int type, int proto, int *sv)
 		k_sem_give(&obj[0]->sem);
 	}
 
-	SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, socketpair, sv[0], sv[1], 0);
+	SYS_PORT_TRACING_FUNC_EXIT(socket, socketpair, sv[0], sv[1], 0);
 
 	return 0;
 
@@ -336,7 +336,7 @@ cleanup:
 	}
 
 errout:
-	SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, socketpair, -1, -1, -errno);
+	SYS_PORT_TRACING_FUNC_EXIT(socket, socketpair, -1, -1, -errno);
 
 	return res;
 }
@@ -1161,10 +1161,12 @@ static int spair_setsockopt(void *obj, int level, int optname,
 	return -1;
 }
 
-static int spair_close(void *obj)
+static int spair_close(void *obj, int fd)
 {
 	struct spair *const spair = (struct spair *)obj;
 	int res;
+
+	ARG_UNUSED(fd);
 
 	res = k_sem_take(&spair->sem, K_FOREVER);
 	__ASSERT(res == 0, "failed to take local sem: %d", res);
@@ -1181,7 +1183,7 @@ static const struct socket_op_vtable spair_fd_op_vtable = {
 	.fd_vtable = {
 		.read = spair_read,
 		.write = spair_write,
-		.close = spair_close,
+		.close2 = spair_close,
 		.ioctl = spair_ioctl,
 	},
 	.bind = spair_bind,

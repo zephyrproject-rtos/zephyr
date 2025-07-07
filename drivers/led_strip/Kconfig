@@ -37,4 +37,6 @@ source "drivers/led_strip/Kconfig.tlc5971"
 
 source "drivers/led_strip/Kconfig.tlc59731"
 
+source "drivers/led_strip/Kconfig.modulino"
+
 endif # LED_STRIP

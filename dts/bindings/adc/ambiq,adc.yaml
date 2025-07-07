@@ -23,5 +23,19 @@ properties:
     required: true
     description: Indicates the reference voltage of the ADC in mV.
 
+  dma-mode:
+    description: Enables DMA over ADC.
+    type: boolean
+
+  dma-buffer-location:
+    type: string
+    description: |
+      Define the DMA buffer location section
+
+  dma-buffer-size:
+    type: int
+    description: |
+      Define the DMA buffer size in (4-byte) words
+
 io-channel-cells:
   - input

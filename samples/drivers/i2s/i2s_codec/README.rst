@@ -8,7 +8,7 @@ Overview
 ********
 
 This sample demonstrates how to use an I2S driver in a simple processing of
-an audio stream. It configures and starts from memory buffer or from DMIC to
+an audio stream. It configures and starts from memory buffer (sample sine wave) or from DMIC to
 record i2s data and send to codec with DMA.
 
 Requirements
@@ -30,4 +30,4 @@ To build and flash the application:
    :compact:
 
 To run you can connect earphones to the lineout connect and hear the sound
-from DMIC or from memory buffer.
+from DMIC or from memory buffer. Sample sine wave is included for reference.

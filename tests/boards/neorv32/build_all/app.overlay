@@ -9,6 +9,15 @@
 	ngpios = <32>;
 };
 
+&gptmr {
+	status = "okay";
+	prescaler = <2>;
+};
+
+&pwm {
+	status = "okay";
+};
+
 &trng {
 	status = "okay";
 };

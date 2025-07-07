@@ -4,25 +4,38 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <errno.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 #include <sys/types.h>
 
-#include <zephyr/sys/byteorder.h>
-
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/hci.h>
-#include <zephyr/bluetooth/buf.h>
-#include <zephyr/sys/check.h>
-
 #include "addr_internal.h"
-#include "hci_core.h"
+#include "common/bt_str.h"
 #include "conn_internal.h"
+#include "hci_core.h"
 #include "id.h"
 #include "scan.h"
 
-#include "common/bt_str.h"
-
 #define LOG_LEVEL CONFIG_BT_HCI_CORE_LOG_LEVEL
-#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_adv);
 
 enum adv_name_type {
@@ -322,7 +335,7 @@ int bt_le_adv_set_enable_legacy(struct bt_le_ext_adv *adv, bool enable)
 	struct bt_hci_cmd_state_set state;
 	int err;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_ENABLE, 1);
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -351,7 +364,7 @@ int bt_le_adv_set_enable_ext(struct bt_le_ext_adv *adv,
 	struct bt_hci_cmd_state_set state;
 	int err;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_EXT_ADV_ENABLE, 6);
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -538,7 +551,7 @@ static int hci_set_ad(uint16_t hci_op, const struct bt_ad *ad, size_t ad_len)
 	struct net_buf *buf;
 	int err;
 
-	buf = bt_hci_cmd_create(hci_op, sizeof(*set_data));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -572,7 +585,7 @@ static int hci_set_adv_ext_complete(struct bt_le_ext_adv *adv, uint16_t hci_op,
 
 	cmd_size = sizeof(*set_data) + total_data_len;
 
-	buf = bt_hci_cmd_create(hci_op, cmd_size);
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -612,7 +625,7 @@ static int hci_set_adv_ext_fragmented(struct bt_le_ext_adv *adv, uint16_t hci_op
 		const size_t data_len = MIN(BT_HCI_LE_EXT_ADV_FRAG_MAX_LEN, stream.remaining_size);
 		const size_t cmd_size = sizeof(*set_data) + data_len;
 
-		buf = bt_hci_cmd_create(hci_op, cmd_size);
+		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (!buf) {
 			return -ENOBUFS;
 		}
@@ -725,7 +738,7 @@ static int hci_set_per_adv_data(const struct bt_le_ext_adv *adv,
 		const size_t data_len = MIN(BT_HCI_LE_PER_ADV_FRAG_MAX_LEN, stream.remaining_size);
 		const size_t cmd_size = sizeof(*set_data) + data_len;
 
-		buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_PER_ADV_DATA, cmd_size);
+		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (!buf) {
 			return -ENOBUFS;
 		}
@@ -1043,7 +1056,7 @@ int bt_le_adv_start_legacy(struct bt_le_ext_adv *adv,
 		set_param.type = BT_HCI_ADV_NONCONN_IND;
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_PARAM, sizeof(set_param));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -1155,7 +1168,7 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 		size = sizeof(struct bt_hci_cp_le_set_ext_adv_param);
 	}
 
-	buf = bt_hci_cmd_create(opcode, size);
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -1516,7 +1529,7 @@ void bt_le_adv_resume(void)
 	int err;
 
 	if (!adv) {
-		LOG_DBG("No valid legacy adv");
+		LOG_ERR("No valid legacy adv");
 		return;
 	}
 
@@ -1531,7 +1544,7 @@ void bt_le_adv_resume(void)
 
 	err = le_adv_start_add_conn(adv, &conn);
 	if (err) {
-		LOG_DBG("Host cannot resume connectable advertising (%d)", err);
+		LOG_ERR("Host cannot resume connectable advertising (%d)", err);
 		return;
 	}
 
@@ -1555,7 +1568,7 @@ void bt_le_adv_resume(void)
 
 	err = bt_le_adv_set_enable(adv, true);
 	if (err) {
-		LOG_DBG("Controller cannot resume connectable advertising (%d)", err);
+		LOG_ERR("Controller cannot resume connectable advertising (%d)", err);
 		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 
 		/* Temporarily clear persist flag to avoid recursion in
@@ -1579,9 +1592,42 @@ void bt_le_adv_resume(void)
 int bt_le_ext_adv_get_info(const struct bt_le_ext_adv *adv,
 			   struct bt_le_ext_adv_info *info)
 {
+	if (!IS_ARRAY_ELEMENT(adv_pool, adv)) {
+		LOG_DBG("adv %p is a valid pointer from bt_le_ext_adv_create", adv);
+		return -EINVAL;
+	}
+
+	if (!atomic_test_bit(adv->flags, BT_ADV_CREATED)) {
+		LOG_DBG("Advertising set %p is not created", adv);
+		return -EINVAL;
+	}
+
+	if (info == NULL) {
+		LOG_DBG("info is NULL");
+		return -EINVAL;
+	}
+
 	info->id = adv->id;
 	info->tx_power = adv->tx_power;
 	info->addr = &adv->random_addr;
+
+	if (atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
+		info->ext_adv_state = BT_LE_EXT_ADV_STATE_ENABLED;
+	} else {
+		info->ext_adv_state = BT_LE_EXT_ADV_STATE_DISABLED;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_PER_ADV)) {
+		if (atomic_test_bit(adv->flags, BT_PER_ADV_ENABLED)) {
+			info->per_adv_state = BT_LE_PER_ADV_STATE_ENABLED;
+		} else if (atomic_test_bit(adv->flags, BT_PER_ADV_PARAMS_SET)) {
+			info->per_adv_state = BT_LE_PER_ADV_STATE_DISABLED;
+		} else {
+			info->per_adv_state = BT_LE_PER_ADV_STATE_NONE;
+		}
+	} else {
+		info->per_adv_state = BT_LE_PER_ADV_STATE_NONE;
+	}
 
 	return 0;
 }
@@ -1808,7 +1854,7 @@ int bt_le_ext_adv_delete(struct bt_le_ext_adv *adv)
 		return -EINVAL;
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_REMOVE_ADV_SET, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		LOG_WRN("No HCI buffers");
 		return -ENOBUFS;
@@ -1907,7 +1953,7 @@ int bt_le_per_adv_set_param(struct bt_le_ext_adv *adv,
 		return -ENOTSUP;
 	}
 
-	buf = bt_hci_cmd_create(opcode, size);
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -2016,7 +2062,7 @@ int bt_le_per_adv_set_subevent_data(const struct bt_le_ext_adv *adv, uint8_t num
 		return -EINVAL;
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_PER_ADV_SUBEVENT_DATA, (uint8_t)cmd_length);
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -2063,7 +2109,7 @@ static int bt_le_per_adv_enable(struct bt_le_ext_adv *adv, bool enable)
 		return -EALREADY;
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_PER_ADV_ENABLE, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -2217,8 +2263,7 @@ int bt_le_per_adv_set_info_transfer(const struct bt_le_ext_adv *adv,
 		return -ENOTSUP;
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_PER_ADV_SET_INFO_TRANSFER,
-				sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}

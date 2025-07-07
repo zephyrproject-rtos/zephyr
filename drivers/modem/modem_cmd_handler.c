@@ -486,6 +486,34 @@ int modem_cmd_handler_update_cmds(struct modem_cmd_handler_data *data,
 	return 0;
 }
 
+int modem_cmd_handler_await(struct modem_cmd_handler_data *data,
+			    struct k_sem *sem, k_timeout_t timeout)
+{
+	int ret = k_sem_take(sem, timeout);
+
+	if (ret == 0) {
+		ret = modem_cmd_handler_get_error(data);
+	} else if (ret == -EAGAIN) {
+		ret = -ETIMEDOUT;
+	}
+
+	return ret;
+}
+
+int modem_cmd_send_data_nolock(struct modem_iface *iface,
+			       const uint8_t *buf, size_t len)
+{
+#if defined(CONFIG_MODEM_CONTEXT_VERBOSE_DEBUG)
+	if (len > 256) {
+		/* Truncate the message, since too long log messages gets dropped somewhere. */
+		LOG_HEXDUMP_DBG(buf, 256, "SENT DIRECT DATA (truncated)");
+	} else {
+		LOG_HEXDUMP_DBG(buf, len, "SENT DIRECT DATA");
+	}
+#endif
+	return iface->write(iface, buf, len);
+}
+
 int modem_cmd_send_ext(struct modem_iface *iface,
 		       struct modem_cmd_handler *handler,
 		       const struct modem_cmd *handler_cmds,
@@ -542,13 +570,7 @@ int modem_cmd_send_ext(struct modem_iface *iface,
 	iface->write(iface, data->eol, data->eol_len);
 
 	if (sem) {
-		ret = k_sem_take(sem, timeout);
-
-		if (ret == 0) {
-			ret = data->last_error;
-		} else if (ret == -EAGAIN) {
-			ret = -ETIMEDOUT;
-		}
+		ret = modem_cmd_handler_await(data, sem, timeout);
 	}
 
 	if (!(flags & MODEM_NO_UNSET_CMDS)) {

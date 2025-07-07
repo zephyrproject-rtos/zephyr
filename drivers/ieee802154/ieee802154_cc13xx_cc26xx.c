@@ -128,7 +128,7 @@ ieee802154_cc13xx_cc26xx_get_capabilities(const struct device *dev)
 {
 	return IEEE802154_HW_FCS | IEEE802154_HW_FILTER |
 	       IEEE802154_HW_RX_TX_ACK | IEEE802154_HW_TX_RX_ACK | IEEE802154_HW_CSMA |
-	       IEEE802154_HW_RETRANSMISSION;
+	       IEEE802154_HW_RETRANSMISSION | IEEE802154_HW_ENERGY_SCAN;
 }
 
 static int ieee802154_cc13xx_cc26xx_cca(const struct device *dev)
@@ -522,6 +522,64 @@ static int ieee802154_cc13xx_cc26xx_attr_get(const struct device *dev, enum ieee
 		&drv_attr.phy_supported_channels, value);
 }
 
+static void cmd_ieee_ed_scan_callback(RF_Handle aRfHandle,
+				      RF_CmdHandle aRfCmdHandle,
+				      RF_EventMask aRfEventMask)
+{
+	const struct device *const dev = DEVICE_DT_INST_GET(0);
+	struct ieee802154_cc13xx_cc26xx_data *drv_data = dev->data;
+	int maxRssi = IEEE802154_MAC_RSSI_DBM_UNDEFINED;
+
+	if (drv_data->cmd_ieee_ed_scan.status != IEEE_DONE_OK) {
+		LOG_DBG("ED Scan failed (%x)", drv_data->cmd_ieee_ed_scan.status);
+	} else {
+		maxRssi = drv_data->cmd_ieee_ed_scan.maxRssi;
+	}
+
+	drv_data->ed_scan_done_cb(dev, maxRssi);
+}
+
+int ieee802154_cc13xx_cc26xx_ed_scan(const struct device *dev,
+				     uint16_t duration,
+				     energy_scan_done_cb_t done_cb)
+{
+	int ret = 0;
+	int channel;
+	RF_EventMask reason;
+	RF_ScheduleCmdParams sched_params = {
+		.allowDelay = true,
+	};
+	struct ieee802154_cc13xx_cc26xx_data *drv_data = dev->data;
+
+	channel = drv_data->cmd_ieee_rx.channel;
+
+	drv_data->cmd_ieee_ed_scan.status = IDLE;
+	drv_data->cmd_ieee_ed_scan.channel = channel;
+	drv_data->cmd_ieee_ed_scan.endTime =
+		duration * (CC13XX_CC26XX_RAT_CYCLES_PER_SECOND / 1000);
+	drv_data->ed_scan_done_cb = done_cb;
+
+	/* Abort FG and BG processes */
+	if (ieee802154_cc13xx_cc26xx_stop(dev) < 0) {
+		return -EIO;
+	}
+
+	/* Block TX while starting the ED scan */
+	k_mutex_lock(&drv_data->tx_mutex, K_FOREVER);
+
+	reason = RF_runScheduleCmd(drv_data->rf_handle,
+		(RF_Op *)&drv_data->cmd_ieee_ed_scan, &sched_params,
+		cmd_ieee_ed_scan_callback, RF_EventLastCmdDone);
+	if ((reason & RF_EventLastCmdDone) == 0) {
+		LOG_DBG("Failed to run command (0x%" PRIx64 ")",
+			reason);
+		ret = -EIO;
+	}
+
+	k_mutex_unlock(&drv_data->tx_mutex);
+	return ret;
+}
+
 static void ieee802154_cc13xx_cc26xx_data_init(const struct device *dev)
 {
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = dev->data;
@@ -584,6 +642,7 @@ static const struct ieee802154_radio_api ieee802154_cc13xx_cc26xx_radio_api = {
 	.stop = ieee802154_cc13xx_cc26xx_stop_if,
 	.configure = ieee802154_cc13xx_cc26xx_configure,
 	.attr_get = ieee802154_cc13xx_cc26xx_attr_get,
+	.ed_scan = ieee802154_cc13xx_cc26xx_ed_scan,
 };
 
 /** RF patches to use (note: RF core keeps a pointer to this, so no stack). */
@@ -679,7 +738,11 @@ static struct ieee802154_cc13xx_cc26xx_data ieee802154_cc13xx_cc26xx_data = {
 			.bStrictLenFilter = 1
 		},
 		.frameTypes = {
+#if defined(CONFIG_NET_L2_OPENTHREAD)
+			.bAcceptFt0Beacon = 1,
+#else
 			.bAcceptFt0Beacon = 0,
+#endif
 			.bAcceptFt1Data = 1,
 			.bAcceptFt2Ack = 0,
 			.bAcceptFt3MacCmd = 1,
@@ -799,6 +862,37 @@ static struct ieee802154_cc13xx_cc26xx_data ieee802154_cc13xx_cc26xx_data = {
 		},
 		.txPower = 0x2853, /* 0 dBm */
 		.pRegOverride = overrides
+	},
+
+	.cmd_ieee_ed_scan = {
+		.commandNo = CMD_IEEE_ED_SCAN,
+		.status = IDLE,
+		.pNextOp = NULL,
+		.startTrigger.triggerType = TRIG_NOW,
+		.condition.rule = COND_NEVER,
+		.endTrigger = {
+			.triggerType = TRIG_REL_START,
+			.pastTrig = 1,
+		},
+		.ccaRssiThr = CC13XX_CC26XX_RECEIVER_SENSITIVITY + 10,
+		.ccaOpt = {
+#if IEEE802154_PHY_CCA_MODE == 1
+			.ccaEnEnergy = 1,
+			.ccaEnCorr = 0,
+#elif IEEE802154_PHY_CCA_MODE == 2
+			.ccaEnEnergy = 0,
+			.ccaEnCorr = 1,
+#elif IEEE802154_PHY_CCA_MODE == 3
+			.ccaEnEnergy = 1,
+			.ccaEnCorr = 1,
+#else
+#error "Invalid CCA mode"
+#endif
+			.ccaEnSync = 1,
+			.ccaSyncOp = 0,
+			.ccaCorrOp = 1,
+			.ccaCorrThr = 3,
+		},
 	},
 };
 

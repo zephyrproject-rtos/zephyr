@@ -335,6 +335,18 @@
 			status = "disabled";
 		};
 
+		dcmi: dcmi@50050000 {
+			compatible = "st,stm32-dcmi";
+			reg = <0x50050000 0x400>;
+			interrupts = <85 0>;
+			interrupt-names = "dcmi";
+			clocks = <&rcc STM32_CLOCK(AHB2, 14U)>;
+			dmas = <&dma1 0 91 (STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_PERIPH_NO_INC |
+				STM32_DMA_MEM_INC | STM32_DMA_PERIPH_8BITS | STM32_DMA_MEM_32BITS |
+				STM32_DMA_PRIORITY_HIGH) STM32_DMA_FIFO_1_4>;
+			status = "disabled";
+		};
+
 		sdmmc1: sdmmc@50062400 {
 			compatible = "st,stm32-sdmmc";
 			reg = <0x50062400 0x400>;
@@ -342,6 +354,7 @@
 				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
 			resets = <&rctl STM32_RESET(AHB2, 22U)>;
 			interrupts = <49 0>;
+			idma;
 			status = "disabled";
 		};
 
@@ -352,6 +365,7 @@
 				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
 			resets = <&rctl STM32_RESET(AHB2, 23U)>;
 			interrupts = <47 0>;
+			idma;
 			status = "disabled";
 		};
 
@@ -365,7 +379,7 @@
 
 		octospi1: spi@a0001000 {
 			compatible = "st,stm32-ospi";
-			reg = <0xa0001000 0x400>;
+			reg = <0xa0001000 0x400>, <0x90000000 DT_SIZE_M(256)>;
 			interrupts = <71 0>;
 			clock-names = "ospix", "ospi-ker", "ospi-mgr";
 			clocks = <&rcc STM32_CLOCK(AHB3, 8U)>,
@@ -373,13 +387,13 @@
 				<&rcc STM32_CLOCK(AHB2, 20U)>;
 
 			#address-cells = <1>;
-			#size-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 
 		octospi2: spi@a0001400 {
 			compatible = "st,stm32-ospi";
-			reg = <0xa0001400 0x400>;
+			reg = <0xa0001400 0x400>, <0x70000000 DT_SIZE_M(256)>;
 			interrupts = <76 0>;
 			clock-names = "ospix", "ospi-ker", "ospi-mgr";
 			clocks = <&rcc STM32_CLOCK(AHB3, 9U)>,
@@ -387,7 +401,7 @@
 				<&rcc STM32_CLOCK(AHB2, 20U)>;
 
 			#address-cells = <1>;
-			#size-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 	};

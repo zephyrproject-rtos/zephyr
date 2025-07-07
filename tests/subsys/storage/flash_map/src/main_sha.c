@@ -100,7 +100,7 @@ ZTEST(flash_map_sha, test_flash_area_check_int_sha256)
 	rc = flash_area_open(SLOT1_PARTITION_ID, &fa);
 	zassert_true(rc == 0, "flash_area_open() fail, error %d\n", rc);
 	rc = flash_area_erase(fa, 0, fa->fa_size);
-	zassert_true(rc == 0, "Flash erase failure (%d), error %d\n", rc);
+	zassert_true(rc == 0, "Flash erase failure, error %d\n", rc);
 	rc = flash_area_write(fa, 0, tst_vec, sizeof(tst_vec));
 	zassert_true(rc == 0, "Flash img write, error %d\n", rc);
 

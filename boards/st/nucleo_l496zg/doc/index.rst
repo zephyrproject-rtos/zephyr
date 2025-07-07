@@ -146,6 +146,8 @@ Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Nucleo L496ZG board includes an ST-LINK/V2-1 embedded debug tool interface.
 
 Applications for the ``nucleo_l496zg`` board configuration can be built and

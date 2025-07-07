@@ -268,6 +268,19 @@ without either of the aforementioned features::
    # and supported features index
    make html-fast
 
+When working with documentation for boards from a specific vendor, it is also
+possible to limit generation of the list of supported features to subset of board
+vendors. This can be done by setting the following option when invoking cmake::
+
+   -DHW_FEATURES_VENDOR_FILTER=vendor1,vendor2
+
+This option can also be used with the :command:`make` wrapper::
+
+   cd ~/zephyrproject/zephyr/doc
+
+   # To generate HTML output with supported features limited to a subset of vendors
+   make html HW_FEATURES_VENDOR_FILTER=vendor1,vendor2
+
 Viewing generated documentation locally
 ***************************************
 

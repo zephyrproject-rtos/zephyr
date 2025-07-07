@@ -32,48 +32,7 @@ For more information about the MCXW71 SoC and FRDM-MCXW71 board, see:
 Supported Features
 ==================
 
-The ``frdm_mcxw71`` board target in Zephyr currently supports the following features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinctrl                             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| LPUART    | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| LPI2C     | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| LPSPI     | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| FMU       | on-chip    | flash                               |
-+-----------+------------+-------------------------------------+
-| TPM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| WDOG32    | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| LPTMR     | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| BLE       | on-chip    | Bluetooth                           |
-+-----------+------------+-------------------------------------+
-| FLEXCAN   | on-chip    | can                                 |
-+-----------+------------+-------------------------------------+
-| VREF      | on-chip    | regulator                           |
-+-----------+------------+-------------------------------------+
-| LPADC     | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| ELE       | on-chip    | entropy                             |
-+-----------+------------+-------------------------------------+
-| PHY       | on-chip    | ieee802154                          |
-+-----------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 Fetch Binary Blobs
 ******************
@@ -87,6 +46,8 @@ achieved by running the following command:
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).

@@ -2,6 +2,7 @@ common:
   integration_platforms:
     - native_sim
     - nrf54l15dk/nrf54l15/cpuapp
+    - ophelia4ev/nrf54l15/cpuapp
   platform_exclude:
     - qemu_cortex_m0 # settings subsystem initialization fails
   timeout: 600
@@ -23,6 +24,7 @@ tests:
       - nrf9151dk/nrf9151
       - nrf9160dk/nrf9160
       - nrf9161dk/nrf9161
+      - ophelia4ev/nrf54l15/cpuapp
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE=zms.overlay
       - EXTRA_CONF_FILE=overlay-secure_storage.conf;overlay-store_zms.conf;overlay-transform_default.conf

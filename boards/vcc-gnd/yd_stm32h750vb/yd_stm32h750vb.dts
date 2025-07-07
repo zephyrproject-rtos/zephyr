@@ -103,6 +103,7 @@
 		     &sdmmc1_d2_pc10 &sdmmc1_d3_pc11
 		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
 	cd-gpios = <&gpioa 8 GPIO_ACTIVE_LOW>;
+	disk-name = "SD";
 	status = "okay";
 };
 
@@ -113,9 +114,10 @@
 		     &quadspi_bk1_io2_pe2 &quadspi_bk1_io3_pd13>;
 	status = "okay";
 
-	w25q128jv: qspi-nor-flash@90000000 {
+	w25q128jv: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
-		reg = <0x90000000 DT_SIZE_M(16)>;
+		reg = <0>;
+		size = <DT_SIZE_M(128)>; /* 128 Mbits */
 		qspi-max-frequency = <80000000>;
 		spi-bus-width = <4>;
 		status = "okay";

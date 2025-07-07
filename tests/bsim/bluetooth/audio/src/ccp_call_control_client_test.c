@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stddef.h>
-#include <stdint.h>
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/ccp.h>
@@ -89,7 +88,7 @@ static void test_main(void)
 
 	setup_connectable_adv(&ext_adv);
 
-	printk("Advertising successfully started\n");
+	LOG_INF("Advertising successfully started\n");
 
 	WAIT_FOR_FLAG(flag_connected);
 

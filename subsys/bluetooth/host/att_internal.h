@@ -1,6 +1,16 @@
 /* att_internal.h - Attribute protocol handling */
 
+#include <stdint.h>
+#include <stddef.h>
+
+#include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys_clock.h>
 
 /*
  * Copyright (c) 2015-2016 Intel Corporation

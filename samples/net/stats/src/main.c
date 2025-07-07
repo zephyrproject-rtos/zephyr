@@ -32,25 +32,25 @@ static void print_stats(struct net_if *iface, struct net_stats *data)
 	}
 
 #if defined(CONFIG_NET_IPV6)
-	printk("IPv6 recv      %d\tsent\t%d\tdrop\t%d\tforwarded\t%d\n",
+	printk("IPv6 recv      %u\tsent\t%u\tdrop\t%u\tforwarded\t%u\n",
 	       GET_STAT(iface, ipv6.recv),
 	       GET_STAT(iface, ipv6.sent),
 	       GET_STAT(iface, ipv6.drop),
 	       GET_STAT(iface, ipv6.forwarded));
 #if defined(CONFIG_NET_IPV6_ND)
-	printk("IPv6 ND recv   %d\tsent\t%d\tdrop\t%d\n",
+	printk("IPv6 ND recv   %u\tsent\t%u\tdrop\t%u\n",
 	       GET_STAT(iface, ipv6_nd.recv),
 	       GET_STAT(iface, ipv6_nd.sent),
 	       GET_STAT(iface, ipv6_nd.drop));
 #endif /* CONFIG_NET_IPV6_ND */
 #if defined(CONFIG_NET_IPV6_PMTU)
-	printk("IPv6 PMTU recv %d\tsent\t%d\tdrop\t%d\n",
+	printk("IPv6 PMTU recv %u\tsent\t%u\tdrop\t%u\n",
 	       GET_STAT(iface, ipv6_pmtu.recv),
 	       GET_STAT(iface, ipv6_pmtu.sent),
 	       GET_STAT(iface, ipv6_pmtu.drop));
 #endif /* CONFIG_NET_IPV6_PMTU */
 #if defined(CONFIG_NET_STATISTICS_MLD)
-	printk("IPv6 MLD recv  %d\tsent\t%d\tdrop\t%d\n",
+	printk("IPv6 MLD recv  %u\tsent\t%u\tdrop\t%u\n",
 	       GET_STAT(iface, ipv6_mld.recv),
 	       GET_STAT(iface, ipv6_mld.sent),
 	       GET_STAT(iface, ipv6_mld.drop));
@@ -58,70 +58,70 @@ static void print_stats(struct net_if *iface, struct net_stats *data)
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
-	printk("IPv4 recv      %d\tsent\t%d\tdrop\t%d\tforwarded\t%d\n",
+	printk("IPv4 recv      %u\tsent\t%u\tdrop\t%u\tforwarded\t%u\n",
 	       GET_STAT(iface, ipv4.recv),
 	       GET_STAT(iface, ipv4.sent),
 	       GET_STAT(iface, ipv4.drop),
 	       GET_STAT(iface, ipv4.forwarded));
 #endif /* CONFIG_NET_IPV4 */
 
-	printk("IP vhlerr      %d\thblener\t%d\tlblener\t%d\n",
+	printk("IP vhlerr      %u\thblener\t%u\tlblener\t%u\n",
 	       GET_STAT(iface, ip_errors.vhlerr),
 	       GET_STAT(iface, ip_errors.hblenerr),
 	       GET_STAT(iface, ip_errors.lblenerr));
-	printk("IP fragerr     %d\tchkerr\t%d\tprotoer\t%d\n",
+	printk("IP fragerr     %u\tchkerr\t%u\tprotoer\t%u\n",
 	       GET_STAT(iface, ip_errors.fragerr),
 	       GET_STAT(iface, ip_errors.chkerr),
 	       GET_STAT(iface, ip_errors.protoerr));
 
 #if defined(CONFIG_NET_IPV4_PMTU)
-	printk("IPv4 PMTU recv %d\tsent\t%d\tdrop\t%d\n",
+	printk("IPv4 PMTU recv %u\tsent\t%u\tdrop\t%u\n",
 	       GET_STAT(iface, ipv4_pmtu.recv),
 	       GET_STAT(iface, ipv4_pmtu.sent),
 	       GET_STAT(iface, ipv4_pmtu.drop));
 #endif /* CONFIG_NET_IPV4_PMTU */
 
-	printk("ICMP recv      %d\tsent\t%d\tdrop\t%d\n",
+	printk("ICMP recv      %u\tsent\t%u\tdrop\t%u\n",
 	       GET_STAT(iface, icmp.recv),
 	       GET_STAT(iface, icmp.sent),
 	       GET_STAT(iface, icmp.drop));
-	printk("ICMP typeer    %d\tchkerr\t%d\n",
+	printk("ICMP typeer    %u\tchkerr\t%u\n",
 	       GET_STAT(iface, icmp.typeerr),
 	       GET_STAT(iface, icmp.chkerr));
 
 #if defined(CONFIG_NET_UDP)
-	printk("UDP recv       %d\tsent\t%d\tdrop\t%d\n",
+	printk("UDP recv       %u\tsent\t%u\tdrop\t%u\n",
 	       GET_STAT(iface, udp.recv),
 	       GET_STAT(iface, udp.sent),
 	       GET_STAT(iface, udp.drop));
-	printk("UDP chkerr     %d\n",
+	printk("UDP chkerr     %u\n",
 	       GET_STAT(iface, udp.chkerr));
 #endif
 
 #if defined(CONFIG_NET_STATISTICS_TCP)
-	printk("TCP bytes recv %u\tsent\t%d\n",
+	printk("TCP bytes recv %llu\tsent\t%llu\n",
 	       GET_STAT(iface, tcp.bytes.received),
 	       GET_STAT(iface, tcp.bytes.sent));
-	printk("TCP seg recv   %d\tsent\t%d\tdrop\t%d\n",
+	printk("TCP seg recv   %u\tsent\t%u\tdrop\t%u\n",
 	       GET_STAT(iface, tcp.recv),
 	       GET_STAT(iface, tcp.sent),
 	       GET_STAT(iface, tcp.drop));
-	printk("TCP seg resent %d\tchkerr\t%d\tackerr\t%d\n",
+	printk("TCP seg resent %u\tchkerr\t%u\tackerr\t%u\n",
 	       GET_STAT(iface, tcp.resent),
 	       GET_STAT(iface, tcp.chkerr),
 	       GET_STAT(iface, tcp.ackerr));
-	printk("TCP seg rsterr %d\trst\t%d\tre-xmit\t%d\n",
+	printk("TCP seg rsterr %u\trst\t%u\tre-xmit\t%u\n",
 	       GET_STAT(iface, tcp.rsterr),
 	       GET_STAT(iface, tcp.rst),
 	       GET_STAT(iface, tcp.rexmit));
-	printk("TCP conn drop  %d\tconnrst\t%d\n",
+	printk("TCP conn drop  %u\tconnrst\t%u\n",
 	       GET_STAT(iface, tcp.conndrop),
 	       GET_STAT(iface, tcp.connrst));
 #endif
 
-	printk("Bytes received %u\n", GET_STAT(iface, bytes.received));
-	printk("Bytes sent     %u\n", GET_STAT(iface, bytes.sent));
-	printk("Processing err %d\n", GET_STAT(iface, processing_error));
+	printk("Bytes received %llu\n", GET_STAT(iface, bytes.received));
+	printk("Bytes sent     %llu\n", GET_STAT(iface, bytes.sent));
+	printk("Processing err %u\n", GET_STAT(iface, processing_error));
 }
 
 #if defined(CONFIG_NET_STATISTICS_PER_INTERFACE)
@@ -141,8 +141,8 @@ static void print_eth_stats(struct net_if *iface, struct net_stats_eth *data)
 	printk("Statistics for Ethernet interface %p [%d]\n", iface,
 	       net_if_get_by_iface(iface));
 
-	printk("Bytes received   : %u\n", data->bytes.received);
-	printk("Bytes sent       : %u\n", data->bytes.sent);
+	printk("Bytes received   : %llu\n", data->bytes.received);
+	printk("Bytes sent       : %llu\n", data->bytes.sent);
 	printk("Packets received : %u\n", data->pkts.rx);
 	printk("Packets sent     : %u\n", data->pkts.tx);
 	printk("Bcast received   : %u\n", data->broadcast.rx);

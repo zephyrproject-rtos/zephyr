@@ -359,7 +359,7 @@ ZTEST(lib_stream_flash, test_stream_flash_buffered_write_callback)
 	cmp_ctx = bad_ctx;
 	/* Just flush buffer */
 	rc = stream_flash_buffered_write(&bad_ctx, write_buf, 0, true);
-	zassert_equal(rc, -EINVAL, "expected failure from flash_sync", rc);
+	zassert_equal(rc, -EINVAL, "expected failure from flash_sync got %d", rc);
 	zassert_equal(ctx.buf_bytes, BUF_LEN, "Expected bytes to be left in buffer");
 
 	/* Pretend flashed context and attempt write write block - 1 bytes to trigger unaligned
@@ -373,7 +373,7 @@ ZTEST(lib_stream_flash, test_stream_flash_buffered_write_callback)
 	size_t tow = (wblock == 1) ? 1 : wblock - 1;
 
 	rc = stream_flash_buffered_write(&bad_ctx, write_buf, tow, true);
-	zassert_equal(rc, -EINVAL, "expected failure from flash_sync", rc);
+	zassert_equal(rc, -EINVAL, "expected failure from flash_sync got %d", rc);
 	zassert_equal(cmp_ctx.bytes_written, bad_ctx.bytes_written,
 		      "Expected bytes_written not modified");
 	/* The write failed but bytes have already been added to buffer and buffer offset

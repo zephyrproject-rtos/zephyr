@@ -50,62 +50,11 @@ Supported Features
 NXP considers the MIMXRT685-EVK as a superset board for the i.MX RT6xx
 family of MCUs.  This board is a focus for NXP's Full Platform Support for
 Zephyr, to better enable the entire RT6xx family.  NXP prioritizes enabling
-this board with new support for Zephyr features.  The mimxrt685_evk board
-configuration supports the hardware features below.  Another very similar
+this board with new support for Zephyr features.  Another very similar
 board is the :zephyr:board:`mimxrt595_evk`, and that board may have additional features
-already supported, which can also be re-used on this mimxrt685_evk board:
+already supported, which can also be re-used on this mimxrt685_evk board.
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| OS_TIMER  | on-chip    | os timer                            |
-+-----------+------------+-------------------------------------+
-| IOCON     | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | OctalSPI Flash                      |
-+-----------+------------+-------------------------------------+
-| USART     | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| I2S       | on-chip    | i2s                                 |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock_control                       |
-+-----------+------------+-------------------------------------+
-| HWINFO    | on-chip    | Unique device serial number         |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| WDT       | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| SDHC      | on-chip    | disk access                         |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | USB device                          |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| CTIMER    | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| TRNG      | on-chip    | entropy                             |
-+-----------+------------+-------------------------------------+
-| FLEXSPI   | on-chip    | flash programming                   |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in
-:zephyr_file:`boards/nxp/mimxrt685_evk/mimxrt685_evk_mimxrt685s_cm33_defconfig`
-
-Other hardware features are not currently supported by the port.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -207,6 +156,8 @@ configured as USART for the console and the remaining are not used.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -343,6 +294,42 @@ steps:
 
 #. Reset by pressing SW3
 
+HiFi 4 DSP core
+===============
+
+The Cadence HiFi 4 DSP core instantiated in the i.MX RT685 microcontroller is
+supported and works with both the proprietary Xtensa toolchains (``xcc`` in
+earlier packages and ``xt-lang`` newer ones) and the
+``xtensa-nxp_rt600_adsp_zephyr-elf`` GCC variant distributed in the Zephyr SDK.
+
+To build a project:
+
+- Set up toolchain environment
+   - No special configuration needed for the GCC variant in the Zephyr SDK.
+   - For the proprietary Xtensa toolchain, set ``XTENSA_CORE``,
+     ``XTENSA_TOOLCHAIN_PATH`` and ``TOOLCHAIN_VER`` according to your
+     installed version. ``ZEPHYR_TOOLCHAIN_VARIANT`` should be either ``xcc``
+     or ``xt-clang``.
+- Build the project with:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: mimxrt685_evk/mimxrt685s/hifi4
+   :goals: build
+
+Debugging can be directly carried out using the J-Link GDB server with
+``xt-gdb`` (Xtensa proprietary) or ``gdb`` (Zephyr SDK) connected. It's
+also possible to debug the HiFi 4 DSP in tandem with the CM33 core using the
+``xt-ocd`` daemon. See `RT600 Dual-Core Communication and Debugging`_
+for details.
+
+As the HiFi 4 DSP is positioned as a secondary core, explicit initialisation
+must be done in order for it to be functional. The ``nxp_rtxxx_adsp_ctrl``,
+instantiated in the RT685's CM33 domain, takes care of this. Power domains
+and clocks are set up upon it initialising. This is sufficient for
+attaching a debugger to the core. For the use in an AMP system, this driver
+handles code loading and run control.
+
 .. include:: ../../common/board-footer.rst
    :start-after: nxp-board-footer
 
@@ -363,3 +350,6 @@ steps:
 
 .. _i.MX RT685 Reference Manual:
    https://www.nxp.com/webapp/Download?colCode=UM11147
+
+.. _RT600 Dual-Core Communication and Debugging:
+   https://www.nxp.com/docs/en/application-note/AN12789.pdf

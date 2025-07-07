@@ -8,19 +8,157 @@
 
 adi_tmc50xx: adi_tmc50xx@0 {
 	compatible = "adi,tmc50xx";
+	status = "okay";
 	reg = <0x0>;
-	spi-max-frequency = <0>;
+	spi-max-frequency = <8000000>;
+	label = "tmc5041_0";
+
 	#address-cells = <1>;
 	#size-cells = <0>;
-	clock-frequency = <1>;
+
+	poscmp-enable; test-mode; lock-gconf; /* ADI TMC Global configuration flags */
+	clock-frequency = <16000000>; /* Internal/External Clock frequency */
 
 	tmc50xx_0: tmc50xx_0@0 {
 		status = "okay";
 		reg = <0>;
+
+		/* common stepper controller settings */
+		invert-direction;
+		micro-step-res = <256>;
+
+		/* ADI TMC stallguard settings specific to TMC50XX */
+		activate-stallguard2;
+		stallguard-velocity-check-interval-ms=<100>;
+		stallguard2-threshold=<9>;
+		stallguard-threshold-velocity=<500000>;
+
+		/* ADI TMC ramp generator as well as current settings */
+		vstart = <10>;
+		a1 = <20>;
+		v1 = <30>;
+		d1 = <40>;
+		vmax = <50>;
+		amax = <60>;
+		dmax = <70>;
+		tzerowait = <80>;
+		vhigh = <90>;
+		vcoolthrs = <100>;
+		ihold = <1>;
+		irun = <2>;
+		iholddelay = <3>;
 	};
 
 	tmc50xx_1: tmc50xx_1@1 {
 		status = "okay";
 		reg = <1>;
+
+		/* common stepper controller settings */
+		invert-direction;
+		micro-step-res = <256>;
+
+		/* ADI TMC stallguard settings specific to TMC50XX */
+		activate-stallguard2;
+		stallguard-velocity-check-interval-ms=<100>;
+		stallguard2-threshold=<9>;
+		stallguard-threshold-velocity=<500000>;
+
+		/* ADI TMC ramp generator as well as current settings */
+		vstart = <10>;
+		a1 = <20>;
+		v1 = <30>;
+		d1 = <40>;
+		vmax = <50>;
+		amax = <60>;
+		dmax = <70>;
+		tzerowait = <80>;
+		vhigh = <90>;
+		vcoolthrs = <100>;
+		ihold = <1>;
+		irun = <2>;
+		iholddelay = <3>;
 	};
+};
+
+adi_tmc51xx_1: adi_tmc51xx@1 {
+	compatible = "adi,tmc51xx";
+	status = "okay";
+	reg = <0x01>;
+	spi-max-frequency = <8000000>;
+	label = "tmc5160_1";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	en-pwm-mode; test-mode; /* ADI TMC Global configuration flags */
+	clock-frequency = <16000000>; /* Internal/External Clock frequency */
+
+	/* common stepper controller settings */
+	invert-direction;
+	micro-step-res = <256>;
+
+	/* ADI TMC stallguard settings specific to TMC5160 */
+	activate-stallguard2;
+	stallguard-velocity-check-interval-ms = <100>;
+	stallguard2-threshold = <9>;
+	stallguard-threshold-velocity = <50000>;
+
+	/* ADI TMC ramp generator as well as current settings */
+	vstart = <10>;
+	a1 = <20>;
+	v1 = <30>;
+	d1 = <40>;
+	vmax = <50>;
+	amax = <60>;
+	dmax = <70>;
+	tzerowait = <80>;
+	thigh = <90>;
+	tcoolthrs = <100>;
+	tpwmthrs = <110>;
+	tpowerdown = <120>;
+	ihold = <1>;
+	irun = <2>;
+	iholddelay = <3>;
+};
+
+adi_tmc51xx_2: adi_tmc51xx@2 {
+	compatible = "adi,tmc51xx";
+	status = "okay";
+	reg = <0x02>;
+	spi-max-frequency = <8000000>;
+	label = "tmc5160_2";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+	diag0-gpios = <&test_gpio 0x01 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>; /* DIAG pin @0x01 */
+
+	en-pwm-mode; test-mode; /* ADI TMC Global configuration flags */
+	clock-frequency = <16000000>; /* Internal/External Clock frequency */
+
+	/* common stepper controller settings */
+	invert-direction;
+	micro-step-res = <256>;
+
+	/* ADI TMC stallguard settings specific to TMC5160 */
+	activate-stallguard2;
+	stallguard-velocity-check-interval-ms = <100>;
+	stallguard2-threshold = <9>;
+	stallguard-threshold-velocity = <50000>;
+
+	/* ADI TMC ramp generator as well as current settings */
+	vstart = <10>;
+	a1 = <20>;
+	v1 = <30>;
+	d1 = <40>;
+	vmax = <50>;
+	amax = <60>;
+	dmax = <70>;
+	tzerowait = <80>;
+	thigh = <90>;
+	tcoolthrs = <100>;
+	tpwmthrs = <110>;
+	tpowerdown = <120>;
+	ihold = <1>;
+	irun = <2>;
+	iholddelay = <3>;
 };

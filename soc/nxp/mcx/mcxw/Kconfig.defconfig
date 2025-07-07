@@ -27,6 +27,12 @@ config BT_LONG_WQ_STACK_SIZE
 config SYSTEM_WORKQUEUE_STACK_SIZE
 	default 2048
 
+config BT_BUF_EVT_RX_COUNT
+	default 16
+
+config BT_BUF_ACL_TX_COUNT
+	default 12
+
 if SHELL
 
 config SHELL_STACK_SIZE
@@ -49,13 +55,13 @@ config HCI_NXP_RX_THREAD
 
 endif # BT
 
-if NET_L2_IEEE802154 || NET_L2_OPENTHREAD
+if IEEE802154
 
 # Include intercore messaging component
 config NXP_RF_IMU
 	default y
 
-endif # NET_L2_IEEE802154 || NET_L2_OPENTHREAD
+endif # IEEE802154
 
 
 endif # SOC_SERIES_MCXW

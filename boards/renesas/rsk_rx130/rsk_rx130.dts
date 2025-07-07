@@ -1,0 +1,126 @@
+/*
+ * Copyright (c) 2024 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <renesas/r5f51308axfp.dtsi>
+#include <dt-bindings/gpio/gpio.h>
+#include "rsk_rx130_512kb-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Renesas RSK+RX130-512KB KIT";
+	compatible = "renesas,rsk_rx130_512kb","renesas,rxv1";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &code_flash;
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led1: led1 {
+			gpios = <&ioportd 3 GPIO_ACTIVE_LOW>;
+			label = "LED1";
+		};
+
+		led3: led3 {
+			gpios = <&ioporte 6 GPIO_ACTIVE_LOW>;
+			label = "LED3";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		sw1: button {
+			label = "sw1";
+			gpios = <&ioport3 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &led1;
+		led1 = &led3;
+		sw0 = &sw1;
+	};
+};
+
+&xtal {
+	clock-frequency = <DT_FREQ_M(8)>;
+	mosel = <0>;
+	#clock-cells = <0>;
+	status = "okay";
+};
+
+&subclk {
+	status = "okay";
+};
+
+&pll {
+	div = <2>;
+	mul = <RX_PLL_MUL_8>;
+	status = "okay";
+};
+
+&cmt {
+	clock-frequency = <4000000>;
+	status = "okay";
+};
+
+&ioport3 {
+	status = "okay";
+};
+
+&ioportd {
+	status = "okay";
+};
+
+&ioporte {
+	status = "okay";
+};
+
+&sci1 {
+	pinctrl-0 = <&sci1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	uart1: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
+&rspi0 {
+	pinctrl-0 = <&rspi0_default>;
+	pinctrl-names = "default";
+	ssl-assert = <0>;
+	status = "okay";
+};
+
+&i2c0 {
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	clock-frequency = <DT_FREQ_K(400)>;
+};
+
+&port_irq1 {
+	status = "okay";
+};
+
+&mtu1 {
+	status = "okay";
+	pinctrl-0 = <&pwm1_default>;
+	pinctrl-names = "default";
+
+	pwm1: pwm {
+		status = "okay";
+	};
+};

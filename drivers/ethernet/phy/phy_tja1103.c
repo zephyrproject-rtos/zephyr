@@ -338,17 +338,6 @@ static void phy_tja1103_cfg_irq_poll(const struct device *dev)
 	}
 }
 
-static int phy_tja1103_cfg_link(const struct device *dev, enum phy_link_speed adv_speeds)
-{
-	ARG_UNUSED(dev);
-
-	if (adv_speeds & LINK_FULL_100BASE_T) {
-		return 0;
-	}
-
-	return -ENOTSUP;
-}
-
 static int phy_tja1103_init(const struct device *dev)
 {
 	const struct phy_tja1103_config *const cfg = dev->config;
@@ -360,7 +349,7 @@ static int phy_tja1103_init(const struct device *dev)
 	data->dev = dev;
 	data->cb = NULL;
 	data->state.is_up = false;
-	data->state.speed = LINK_FULL_100BASE_T;
+	data->state.speed = LINK_FULL_100BASE;
 
 	ret = WAIT_FOR(!phy_tja1103_id(dev, &phy_id) && phy_id == TJA1103_ID,
 		       TJA1103_AWAIT_RETRY_COUNT * TJA1103_AWAIT_DELAY_POLL_US,
@@ -437,7 +426,6 @@ static int phy_tja1103_link_cb_set(const struct device *dev, phy_callback_t cb, 
 
 static DEVICE_API(ethphy, phy_tja1103_api) = {
 	.get_link = phy_tja1103_get_link_state,
-	.cfg_link = phy_tja1103_cfg_link,
 	.link_cb_set = phy_tja1103_link_cb_set,
 	.read = phy_tja1103_reg_read,
 	.write = phy_tja1103_reg_write,

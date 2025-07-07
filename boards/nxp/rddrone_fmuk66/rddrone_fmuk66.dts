@@ -25,6 +25,7 @@
 		red-pwm-led = &red_pwm_led;
 		green-pwm-led = &green_pwm_led;
 		blue-pwm-led = &blue_pwm_led;
+		accel0 = &fxos8700;
 	};
 
 	chosen {
@@ -235,25 +236,26 @@ zephyr_udc0: &usbotg {
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		/*
+		 * Partition sizes must be aligned
+		 * to the flash memory sector size of 4KB.
+		 */
 		boot_partition: partition@0 {
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;
 			read-only;
 		};
-		/* The MCUBoot swap-move algorithm uses the last 3 sectors
-		 * of the primary slot0 for swap status and move.
-		 */
 		slot0_partition: partition@10000 {
 			label = "image-0";
-			reg = <0x00010000 (DT_SIZE_K(928) + DT_SIZE_K(12))>;
+			reg = <0x00010000 DT_SIZE_K(932)>;
 		};
-		slot1_partition: partition@FB000 {
+		slot1_partition: partition@F9000 {
 			label = "image-1";
-			reg = <0x000FB000 DT_SIZE_K(928)>;
+			reg = <0x000F9000 DT_SIZE_K(932)>;
 		};
-		storage_partition: partition@1E3000 {
+		storage_partition: partition@1E2000 {
 			label = "storage";
-			reg = <0x001E3000 DT_SIZE_K(116)>;
+			reg = <0x001E2000 DT_SIZE_K(120)>;
 		};
 	};
 };
@@ -347,7 +349,7 @@ zephyr_udc0: &usbotg {
 	clock-frequency = <DT_FREQ_M(1)>;
 
 
-	fxos8700@0 {
+	fxos8700: fxos8700@0 {
 		compatible = "nxp,fxos8700";
 		reg = <0>;
 		spi-max-frequency = <DT_FREQ_M(1)>;
@@ -357,7 +359,7 @@ zephyr_udc0: &usbotg {
 		status = "okay";
 	};
 
-	fxas21002@1 {
+	fxas21002: fxas21002@1 {
 		compatible = "nxp,fxas21002";
 		reg = <1>;
 		spi-max-frequency = <DT_FREQ_M(1)>;

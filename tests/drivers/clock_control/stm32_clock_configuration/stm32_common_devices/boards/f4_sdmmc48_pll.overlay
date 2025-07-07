@@ -31,4 +31,5 @@
 			&sdio_d2_pc10 &sdio_d3_pc11>;
 	pinctrl-names = "default";
 	status = "okay";
+	disk-name = "SD";
 };

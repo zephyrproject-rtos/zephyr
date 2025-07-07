@@ -1,0 +1,34 @@
+# Copyright (c) 2024 KWS Computersysteme Gmbh
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_PICO_SPE
+
+if I2C_DW
+
+config I2C_DW_CLOCK_SPEED
+	default 125
+
+endif # I2C_DW
+
+config USB_SELF_POWERED
+	default n
+
+config PHY_INIT_PRIORITY
+	default 82
+	depends on NET_L2_ETHERNET && ETH_DRIVER
+
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+
+if ETH_LAN865X
+
+config NET_IF_MAX_IPV4_COUNT
+	default 2
+
+endif # ETH_LAN865X
+
+endif # NETWORKING
+
+endif # BOARD_PICO_SPE

@@ -242,6 +242,10 @@ static int driver_open(const struct device *dev, bt_hci_recv_t recv)
 /*  HCI driver send.  */
 static int driver_send(const struct device *dev, struct net_buf *buf)
 {
+	uint8_t type = net_buf_pull_u8(buf);
+
+	zassert_true(type == BT_HCI_H4_CMD, "Unexpected command buffer, got %u", type);
+
 	zassert_true(cmd_handle(dev, buf, cmds, ARRAY_SIZE(cmds)) == 0, "Unknown HCI command");
 
 	net_buf_unref(buf);

@@ -124,7 +124,7 @@ void sys_clock_disable(void)
 static int sys_clock_driver_init(void)
 {
 
-	tick_period = 1000000ul / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+	tick_period = 1000000UL / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 
 	last_tick_time = nsi_hws_get_time();
 	hwtimer_enable(tick_period);

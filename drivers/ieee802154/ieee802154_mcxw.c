@@ -326,9 +326,8 @@ static int handle_ack(struct mcxw_context *mcxw_radio)
 		goto free_ack;
 	}
 
-	/* Use some fake values for LQI and RSSI. */
-	net_pkt_set_ieee802154_lqi(pkt, 80);
-	net_pkt_set_ieee802154_rssi_dbm(pkt, -40);
+	net_pkt_set_ieee802154_lqi(pkt, mcxw_radio->rx_ack_frame.lqi);
+	net_pkt_set_ieee802154_rssi_dbm(pkt, mcxw_radio->rx_ack_frame.rssi);
 
 	net_pkt_set_timestamp_ns(pkt, mcxw_radio->rx_ack_frame.timestamp);
 
@@ -377,7 +376,6 @@ static int mcxw_tx(const struct device *dev, enum ieee802154_tx_mode mode, struc
 	rf_set_channel(mcxw_radio->channel);
 
 	msg->msgType = gPdDataReq_c;
-	msg->msgData.dataReq.slottedTx = gPhyUnslottedMode_c;
 	msg->msgData.dataReq.psduLength = mcxw_radio->tx_frame.length;
 	msg->msgData.dataReq.CCABeforeTx = gPhyNoCCABeforeTx_c;
 	msg->msgData.dataReq.startTime = gPhySeqStartAsap_c;
@@ -458,7 +456,7 @@ static int mcxw_tx(const struct device *dev, enum ieee802154_tx_mode mode, struc
 					msg->msgData.dataReq.startTime =
 						PhyTime_ReadClock() + TX_ENCRYPT_DELAY_SYM;
 
-					hdr_time_us = mcxw_get_time(NULL) +
+					hdr_time_us = (mcxw_get_time(NULL) / NSEC_PER_USEC) +
 						    (TX_ENCRYPT_DELAY_SYM +
 						     IEEE802154_PHY_SHR_LEN_SYM) *
 							    IEEE802154_SYMBOL_TIME_US;
@@ -748,12 +746,12 @@ static void set_csl_sample_time(void)
 
 	macToPlmeMessage_t msg;
 	uint32_t csl_period = mcxw_ctx.csl_period * 10 * IEEE802154_SYMBOL_TIME_US;
-	uint32_t dt = mcxw_ctx.csl_sample_time - (uint32_t)mcxw_get_time(NULL);
+	uint32_t dt = mcxw_ctx.csl_sample_time - (uint32_t)(mcxw_get_time(NULL) / NSEC_PER_USEC);
 
 	/* next channel sample should be in the future */
 	while ((dt <= CMP_OVHD) || (dt > (CMP_OVHD + 2 * csl_period))) {
 		mcxw_ctx.csl_sample_time += csl_period;
-		dt = mcxw_ctx.csl_sample_time - (uint32_t)mcxw_get_time(NULL);
+		dt = mcxw_ctx.csl_sample_time - (uint32_t)(mcxw_get_time(NULL) / NSEC_PER_USEC);
 	}
 
 	/* The CSL sample time is in microseconds and PHY function expects also microseconds */
@@ -862,7 +860,7 @@ static int mcxw_cca(const struct device *dev)
 
 	k_sem_take(&mcxw_radio->cca_wait, K_FOREVER);
 
-	return (mcxw_radio->tx_status == OT_ERROR_CHANNEL_ACCESS_FAILURE) ? -EBUSY : 0;
+	return (mcxw_radio->tx_status > 0) ? -EBUSY : 0;
 }
 
 static int mcxw_set_channel(const struct device *dev, uint16_t channel)
@@ -920,7 +918,7 @@ static net_time_t mcxw_get_time(const struct device *dev)
 
 	irq_unlock(key);
 
-	return (net_time_t)sw_timestamp;
+	return (net_time_t)sw_timestamp * NSEC_PER_USEC;
 }
 
 static void rf_set_tx_power(int8_t tx_power)
@@ -945,7 +943,7 @@ static uint64_t rf_adjust_tstamp_from_phy(uint64_t ts)
 	delta = (now >= ts) ? (now - ts) : ((PHY_TMR_MAX_VALUE + now) - ts);
 	delta *= IEEE802154_SYMBOL_TIME_US;
 
-	return mcxw_get_time(NULL) - delta;
+	return (mcxw_get_time(NULL) / NSEC_PER_USEC) - delta;
 }
 
 #if CONFIG_IEEE802154_CSL_ENDPOINT || CONFIG_NET_PKT_TXTIME
@@ -953,7 +951,7 @@ static uint32_t rf_adjust_tstamp_from_app(uint32_t time)
 {
 	/* The phy timestamp is in symbols so we need to convert it to microseconds */
 	uint64_t ts = PhyTime_ReadClock() * IEEE802154_SYMBOL_TIME_US;
-	uint32_t delta = time - (uint32_t)mcxw_get_time(NULL);
+	uint32_t delta = time - (uint32_t)(mcxw_get_time(NULL) / NSEC_PER_USEC);
 
 	return (uint32_t)(ts + delta);
 }
@@ -988,6 +986,8 @@ phyStatus_t pd_mac_sap_handler(void *msg, instanceId_t instance)
 
 		mcxw_ctx.rx_ack_frame.channel = mcxw_ctx.channel;
 		mcxw_ctx.rx_ack_frame.length = data_msg->msgData.dataCnf.ackLength;
+		mcxw_ctx.rx_ack_frame.lqi = data_msg->msgData.dataCnf.ppduLinkQuality;
+		mcxw_ctx.rx_ack_frame.rssi = data_msg->msgData.dataCnf.ppduRssi;
 		mcxw_ctx.rx_ack_frame.timestamp = data_msg->msgData.dataCnf.timeStamp;
 		memcpy(mcxw_ctx.rx_ack_frame.psdu, data_msg->msgData.dataCnf.ackData,
 		       mcxw_ctx.rx_ack_frame.length);
@@ -1195,9 +1195,6 @@ static int mcxw_configure(const struct device *dev, enum ieee802154_config_type 
 	case IEEE802154_CONFIG_EVENT_HANDLER:
 		break;
 
-	case IEEE802154_OPENTHREAD_CONFIG_MAX_EXTRA_CCA_ATTEMPTS:
-		break;
-
 	default:
 		return -EINVAL;
 	}
@@ -1229,8 +1226,7 @@ static enum ieee802154_hw_caps mcxw_get_capabilities(const struct device *dev)
 	       IEEE802154_HW_TX_RX_ACK | IEEE802154_HW_RX_TX_ACK | IEEE802154_HW_ENERGY_SCAN |
 	       IEEE802154_HW_TXTIME | IEEE802154_HW_RXTIME | IEEE802154_HW_SLEEP_TO_TX |
 	       IEEE802154_RX_ON_WHEN_IDLE | IEEE802154_HW_TX_SEC |
-	       IEEE802154_OPENTHREAD_HW_MULTIPLE_CCA | IEEE802154_HW_SELECTIVE_TXCHANNEL |
-	       IEEE802154_OPENTHREAD_HW_CST;
+	       IEEE802154_HW_SELECTIVE_TXCHANNEL;
 	return caps;
 }
 
@@ -1356,5 +1352,11 @@ static const struct ieee802154_radio_api mcxw71_radio_api = {
 #define MTU         CONFIG_NET_L2_CUSTOM_IEEE802154_MTU
 #endif
 
+#if defined(CONFIG_NET_L2_PHY_IEEE802154)
 NET_DEVICE_DT_INST_DEFINE(0, mcxw_init, NULL, &mcxw_ctx, NULL, CONFIG_IEEE802154_MCXW_INIT_PRIO,
-			  &mcxw71_radio_api, L2, L2_CTX_TYPE, MTU);
+	&mcxw71_radio_api, L2, L2_CTX_TYPE, MTU);
+#else
+DEVICE_DT_INST_DEFINE(0, mcxw_init, NULL, &mcxw_ctx, NULL,
+			POST_KERNEL, CONFIG_IEEE802154_MCXW_INIT_PRIO,
+			&mcxw71_radio_api);
+#endif

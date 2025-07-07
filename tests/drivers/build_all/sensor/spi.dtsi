@@ -6,6 +6,8 @@
  * Application overlay for spi devices
  */
 
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
 /****************************************
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
  ***************************************/
@@ -412,4 +414,48 @@ paa3905: paa3905@32 {
 	spi-max-frequency = <0>;
 	reg = <0x32>;
 	int-gpios = <&test_gpio 0 0>;
+};
+
+test_spi_pat9136: pat9136@33 {
+	compatible = "pixart,pat9136";
+	reg = <0x33>;
+	spi-max-frequency = <0>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_spi_icp201xx: icp201xx@34 {
+	compatible = "invensense,icp201xx";
+	reg = <0x34>;
+	spi-max-frequency = <0>;
+	int-gpios = <&test_gpio 0 0>;
+	op-mode = "mode0";
+	drive-strength = "current_12mA_1_8V";
+};
+
+test_spi_ad2s1210: ad2s1210@35 {
+	compatible = "adi,ad2s1210";
+	reg = <0x35>;
+	spi-max-frequency = <0>;
+	sample-gpios = <&test_gpio 0 (GPIO_ACTIVE_LOW)>;
+	mode-gpios = <&test_gpio 1 (GPIO_ACTIVE_HIGH)>, <&test_gpio 2 (GPIO_ACTIVE_HIGH)>;
+	reset-gpios = <&test_gpio 7 (GPIO_ACTIVE_LOW)>;
+	clock-frequency = <8192000>;
+};
+
+test_spi_fxls8974: fxls8974@36 {
+	compatible = "nxp,fxls8974";
+	reg = <0x36>;
+	spi-max-frequency = <0>;
+	reset-gpios = <&test_gpio 0 0>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+};
+
+test_spi_adxl366: adxl366@37 {
+	compatible = "adi,adxl366";
+	reg = <0x37>;
+	spi-max-frequency = <0>;
+	int1-gpios = <&test_gpio 0 0>;
+	odr = <4>;
+	fifo-mode = <0>;
 };

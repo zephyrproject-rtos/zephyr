@@ -25,3 +25,23 @@ config I2S_STM32_TX_BLOCK_COUNT
 	default 4
 
 endif # I2S_STM32
+
+menuconfig I2S_STM32_SAI
+	bool "STM32 MCU I2S controller driver"
+	default y
+	depends on DT_HAS_ST_STM32_SAI_ENABLED
+	select CACHE_MANAGEMENT if CPU_HAS_DCACHE
+	select DMA
+	select USE_STM32_HAL_DMA
+	select USE_STM32_HAL_DMA_EX
+	select USE_STM32_HAL_SAI
+	help
+	  Enable SAI support on the STM32U5 family of processors.
+
+if I2S_STM32_SAI
+
+config I2S_STM32_SAI_BLOCK_COUNT
+	int "SAI queue length"
+	default 4
+
+endif # I2S_STM32_SAI

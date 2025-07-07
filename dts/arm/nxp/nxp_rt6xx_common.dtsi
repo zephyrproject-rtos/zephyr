@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
+#include <zephyr/dt-bindings/misc/nxp_rtxxx_dsp_ctrl.h>
 
 / {
 	chosen {
@@ -46,6 +47,31 @@
 				power-state-name = "suspend-to-idle";
 				min-residency-us = <1000>;
 			};
+		};
+	};
+
+	dsp: dsp {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		compatible = "nxp,rtxxx-dsp-ctrl";
+		sysctl = <&sysctl0>;
+
+		status = "disabled";
+
+		region@24020000 {
+			reg = <0x24020000 DT_SIZE_K(1)>;
+			type = <NXP_RTXXX_DSP_REGION_RESET>;
+		};
+
+		region@20400000 {
+			reg = <0x20400000 DT_SIZE_K(256)>;
+			type = <NXP_RTXXX_DSP_REGION_TEXT>;
+		};
+
+		region@20440000 {
+			reg = <0x20440000 DT_SIZE_K(256)>;
+			type = <NXP_RTXXX_DSP_REGION_DATA>;
 		};
 	};
 };
@@ -108,6 +134,15 @@
 		compatible = "nxp,lpc-syscon";
 		reg = <0x1000 0x1000>;
 		#clock-cells = <1>;
+	};
+
+	/*
+	 * Dummy node - it does not instantiate a real driver, rather it provide the
+	 * base address of the SYSCTL0 block for use with the "dsp" node.
+	 */
+	sysctl0: sysctl@2000 {
+		reg = <0x2000 0x2000>;
+		compatible = "nxp,rt6xx-sysctl";
 	};
 
 	iocon: iocon@4000 {
@@ -588,6 +623,18 @@
 			reg = <3>;
 			status = "disabled";
 		};
+	};
+
+	mbox: mbox@110000 {
+		#mbox-cells = <1>;
+
+		compatible = "nxp,mbox-imx-mu";
+		reg = <0x110000 0x1000>;
+
+		interrupts = <34 0>;
+		rx-channels = <4>;
+
+		status = "disabled";
 	};
 };
 

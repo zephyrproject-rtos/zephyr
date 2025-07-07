@@ -144,6 +144,8 @@ main processor (Rockchip PX30) and SPI2 is connected to CN39.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 

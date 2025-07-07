@@ -24,7 +24,7 @@ For sensor evaluation and rapid prototyping multiple shields are available:
 
 - `Panasonic Grid-EYE Evaluation Shield`_
 
- .. figure:: AMG88XX_panasonic_grid_eye_evaluation_shield.png
+ .. figure:: amg88xx_grid_eye_eval_shield.png
      :width: 300px
      :align: center
      :alt: Panasonic Grid-EYE Evaluation Shield
@@ -45,7 +45,7 @@ also could be used as an Arduino shield.
 
 - Panasonic Grid-EYE Evaluation Kit
 
- .. figure:: AMG88XX_panasonic_grid_eye_evaluation_kit.png
+ .. figure:: amg88xx_eval_kit.png
       :width: 250px
       :align: center
       :alt: Panasonic Grid-EYE Evaluation Kit (deprecated)

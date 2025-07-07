@@ -143,7 +143,10 @@ static void user_thread_entry(void *p1, void *p2, void *p3)
 	barrier_isync_fence_full();
 #endif
 }
-
+/**
+ * @brief Test ARM thread swap mechanism
+ * @ingroup kernel_arch_sched_tests
+ */
 ZTEST(arm_thread_swap, test_arm_syscalls)
 {
 	int i = 0;
@@ -288,6 +291,3 @@ ZTEST(arm_thread_swap, test_arm_syscalls)
 }
 
 #endif /* CONFIG_USERSPACE */
-/**
- * @}
- */

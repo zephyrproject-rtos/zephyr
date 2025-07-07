@@ -202,6 +202,8 @@ in reference section below.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Setup
 =====
 #. If you use Dediprog SF100 programmer, then setup it.

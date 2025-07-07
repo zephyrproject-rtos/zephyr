@@ -361,7 +361,7 @@ static void uart_sam0_rx_timeout(struct k_work *work)
 		return;
 	}
 
-	uint32_t now = k_uptime_get_32();
+	uint32_t now = USEC_PER_MSEC * k_uptime_get_32();
 	uint32_t elapsed = now - dev_data->rx_timeout_start;
 
 	if (elapsed >= dev_data->rx_timeout_time) {
@@ -762,7 +762,7 @@ static void uart_sam0_isr(const struct device *dev)
 		 */
 		if (dev_data->rx_timeout_time != SYS_FOREVER_US) {
 			dev_data->rx_timeout_from_isr = true;
-			dev_data->rx_timeout_start = k_uptime_get_32();
+			dev_data->rx_timeout_start = USEC_PER_MSEC * k_uptime_get_32();
 			k_work_reschedule(&dev_data->rx_timeout_work,
 					      K_USEC(dev_data->rx_timeout_chunk));
 		}

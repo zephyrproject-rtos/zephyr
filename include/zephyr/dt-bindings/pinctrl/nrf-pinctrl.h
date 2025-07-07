@@ -172,6 +172,20 @@
 #define NRF_FUN_GRTC_CLKOUT_FAST 55U
 /** GRTC slow clock output */
 #define NRF_FUN_GRTC_CLKOUT_32K  56U
+/** TDM SCK in master mode */
+#define NRF_FUN_TDM_SCK_M        71U
+/** TDM SCK in slave mode */
+#define NRF_FUN_TDM_SCK_S        72U
+/** TDM LRCK in master mode */
+#define NRF_FUN_TDM_FSYNC_M      73U
+/** TDM LRCK in slave mode */
+#define NRF_FUN_TDM_FSYNC_S      74U
+/** TDM SDIN */
+#define NRF_FUN_TDM_SDIN         75U
+/** TDM SDOUT */
+#define NRF_FUN_TDM_SDOUT        76U
+/** TDM MCK */
+#define NRF_FUN_TDM_MCK          77U
 
 /** @} */
 

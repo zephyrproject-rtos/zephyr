@@ -24,10 +24,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led: led_1 {
 			gpios = <&gpioc 2 GPIO_ACTIVE_LOW>;
 			label = "User LD2";
 		};
+
 		green_led: led_2 {
 			gpios = <&gpioc 3 GPIO_ACTIVE_LOW>;
 			label = "User LD1";
@@ -36,6 +38,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
@@ -139,6 +142,7 @@
 		     &eth_txd1_pb13>;
 	pinctrl-names = "default";
 	phy-connection-type = "rmii";
+	phy-handle = <&eth_phy>;
 	status = "okay";
 };
 
@@ -147,10 +151,9 @@
 	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
 	pinctrl-names = "default";
 
-	ethernet-phy@0 {
+	eth_phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";
 		reg = <0x00>;
-		status = "okay";
 	};
 };
 
@@ -163,6 +166,7 @@
 		     &sdmmc1_cmd_pd2>;
 	pinctrl-names = "default";
 	cd-gpios = <&gpiof 5 GPIO_ACTIVE_LOW>;
+	disk-name = "SD";
 };
 
 &octospi1 {
@@ -176,23 +180,24 @@
 
 	status = "okay";
 
-	mx25lm51245: ospi-nor-flash@90000000 {
+	mx25lm51245: ospi-nor-flash@0 {
 		compatible = "st,stm32-ospi-nor";
-		reg = <0x90000000 DT_SIZE_M(64)>; /* 512 Mbits */
+		reg = <0>;
+		size = <DT_SIZE_M(512)>; /* 512 Megabits */
 		ospi-max-frequency = <DT_FREQ_M(50)>;
 		spi-bus-width = <OSPI_OPI_MODE>;
 		data-rate = <OSPI_DTR_TRANSFER>;
 		status = "okay";
 
 		partitions {
-			   compatible = "fixed-partitions";
-			   #address-cells = <1>;
-			   #size-cells = <1>;
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-			   partition@0 {
-			       label = "nor";
-			       reg = <0x00000000 DT_SIZE_M(4)>;
-			   };
+			partition@0 {
+				label = "nor";
+				reg = <0x00000000 DT_SIZE_M(4)>;
+			};
 		};
 	};
 };

@@ -50,33 +50,41 @@ void stream_rx_recv(struct bt_bap_stream *bap_stream, const struct bt_iso_recv_i
 	struct stream_rx *stream = CONTAINER_OF(bap_stream, struct stream_rx, stream);
 
 #if CONFIG_INFO_REPORTING_INTERVAL > 0
-	if ((stream->reporting_info.recv_cnt % CONFIG_INFO_REPORTING_INTERVAL) == 0U) {
-		log_stream_rx(stream, info, buf);
+	bool do_log = false;
+
+	stream->reporting_info.recv_cnt++;
+	if (stream->reporting_info.recv_cnt == 1U) {
+		/* Log first reception */
+		do_log = true;
+
+	} else if ((stream->reporting_info.recv_cnt % CONFIG_INFO_REPORTING_INTERVAL) == 0U) {
+		/* Log once for every CONFIG_INFO_REPORTING_INTERVAL reception */
+		do_log = true;
 	}
 
-	if (stream->reporting_info.recv_cnt > 0U && info->ts == stream->reporting_info.last_ts) {
-		log_stream_rx(stream, info, buf);
-		LOG_WRN("Duplicated timestamp received: %u\n", stream->reporting_info.last_ts);
+	if (stream->reporting_info.recv_cnt > 1U && info->ts == stream->reporting_info.last_ts) {
 		stream->reporting_info.dup_ts_cnt++;
+		do_log = true;
+		LOG_WRN("Duplicated timestamp received: %u", stream->reporting_info.last_ts);
 	}
 
-	if (stream->reporting_info.recv_cnt > 0U &&
+	if (stream->reporting_info.recv_cnt > 1U &&
 	    info->seq_num == stream->reporting_info.last_seq_num) {
-		log_stream_rx(stream, info, buf);
-		LOG_WRN("Duplicated PSN received: %u\n", stream->reporting_info.last_seq_num);
 		stream->reporting_info.dup_psn_cnt++;
+		do_log = true;
+		LOG_WRN("Duplicated PSN received: %u", stream->reporting_info.last_seq_num);
 	}
 
 	if (info->flags & BT_ISO_FLAGS_ERROR) {
-		log_stream_rx(stream, info, buf);
-		LOG_DBG("ISO receive error\n");
 		stream->reporting_info.error_cnt++;
+		do_log = true;
+		LOG_DBG("ISO receive error");
 	}
 
 	if (info->flags & BT_ISO_FLAGS_LOST) {
-		log_stream_rx(stream, info, buf);
-		LOG_DBG("ISO receive lost\n");
 		stream->reporting_info.loss_cnt++;
+		do_log = true;
+		LOG_DBG("ISO receive lost");
 	}
 
 	if (info->flags & BT_ISO_FLAGS_VALID) {
@@ -87,9 +95,12 @@ void stream_rx_recv(struct bt_bap_stream *bap_stream, const struct bt_iso_recv_i
 		}
 	}
 
+	if (do_log) {
+		log_stream_rx(stream, info, buf);
+	}
+
 	stream->reporting_info.last_seq_num = info->seq_num;
 	stream->reporting_info.last_ts = info->ts;
-	stream->reporting_info.recv_cnt++;
 #endif /* CONFIG_INFO_REPORTING_INTERVAL > 0 */
 
 	total_rx_iso_packet_count++;

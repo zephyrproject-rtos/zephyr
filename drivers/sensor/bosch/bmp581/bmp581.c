@@ -105,13 +105,14 @@ static int set_power_mode(enum bmp5_powermode powermode, const struct device *de
 
 static int get_power_mode(enum bmp5_powermode *powermode, const struct device *dev)
 {
-	struct bmp581_config *conf = (struct bmp581_config *)dev->config;
+	const struct bmp581_config *conf;
 	int ret = BMP5_OK;
 
 	CHECKIF(powermode == NULL || dev == NULL) {
 		return -EINVAL;
 	}
 
+	conf = (const struct bmp581_config *)dev->config;
 	uint8_t reg = 0;
 	uint8_t raw_power_mode = 0;
 
@@ -186,22 +187,26 @@ static int power_up_check(const struct device *dev)
 
 static int get_interrupt_status(uint8_t *int_status, const struct device *dev)
 {
-	struct bmp581_config *conf = (struct bmp581_config *)dev->config;
+	const struct bmp581_config *conf;
 
 	CHECKIF(int_status == NULL || dev == NULL) {
 		return -EINVAL;
 	}
+
+	conf = (const struct bmp581_config *)dev->config;
 
 	return i2c_reg_read_byte_dt(&conf->i2c, BMP5_REG_INT_STATUS, int_status);
 }
 
 static int get_nvm_status(uint8_t *nvm_status, const struct device *dev)
 {
-	struct bmp581_config *conf = (struct bmp581_config *)dev->config;
+	const struct bmp581_config *conf;
 
 	CHECKIF(nvm_status == NULL || dev == NULL) {
 		return -EINVAL;
 	}
+
+	conf = (const struct bmp581_config *)dev->config;
 
 	return i2c_reg_read_byte_dt(&conf->i2c, BMP5_REG_STATUS, nvm_status);
 }
@@ -231,7 +236,7 @@ static int validate_chip_id(struct bmp581_data *drv)
 static int get_osr_odr_press_config(struct bmp581_osr_odr_press_config *osr_odr_press_cfg,
 				    const struct device *dev)
 {
-	struct bmp581_config *conf = (struct bmp581_config *)dev->config;
+	const struct bmp581_config *conf;
 
 	/* Variable to store the function result */
 	int8_t rslt = 0;
@@ -242,6 +247,8 @@ static int get_osr_odr_press_config(struct bmp581_osr_odr_press_config *osr_odr_
 	CHECKIF(osr_odr_press_cfg == NULL || dev == NULL) {
 		return -EINVAL;
 	}
+
+	conf = (const struct bmp581_config *)dev->config;
 
 	/* Get OSR and ODR configuration in burst read */
 	rslt = i2c_burst_read_dt(&conf->i2c, BMP5_REG_OSR_CONFIG, reg_data, 2);
@@ -376,14 +383,14 @@ static int bmp581_sample_fetch(const struct device *dev, enum sensor_channel cha
 		drv->last_sample.temperature.val2 = (data[1] << 8 | data[0]) * 10;
 
 		if (drv->osr_odr_press_config.press_en == BMP5_ENABLE) {
-			uint32_t raw_pressure = (uint32_t)((uint32_t)(data[5] << 16) |
-							   (uint16_t)(data[4] << 8) | data[3]);
 			/* convert raw sensor data to sensor_value. Shift the decimal part by
 			 * 4 decimal places to compensate for the conversion in
 			 * sensor_value_to_double()
 			 */
-			drv->last_sample.pressure.val1 = raw_pressure >> 6;
-			drv->last_sample.pressure.val2 = (raw_pressure & BIT_MASK(6)) * 10000;
+			uint32_t raw_pressure = (uint32_t)((uint32_t)(data[5] << 16) |
+							   (uint16_t)(data[4] << 8) | data[3]) >> 6;
+			drv->last_sample.pressure.val1 = raw_pressure / 1000;
+			drv->last_sample.pressure.val2 = (raw_pressure % 1000) * 1000;
 		} else {
 			drv->last_sample.pressure.val1 = 0;
 			drv->last_sample.pressure.val2 = 0;
@@ -404,7 +411,7 @@ static int bmp581_channel_get(const struct device *dev, enum sensor_channel chan
 
 	switch (chan) {
 	case SENSOR_CHAN_PRESS:
-		/* returns pressure in Pa */
+		/* returns pressure in kPa */
 		*val = drv->last_sample.pressure;
 		return BMP5_OK;
 	case SENSOR_CHAN_AMBIENT_TEMP:

@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(bt_apollox_driver);
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/clock_control_ambiq.h>
 
-#include <am_mcu_apollo.h>
+#include <soc.h>
 #include "apollox_blue.h"
 #if (CONFIG_SOC_SERIES_APOLLO4X)
 #include "am_devices_cooper.h"
@@ -396,8 +396,7 @@ static int bt_apollo_set_nvds(void)
 #else
 	uint8_t *p;
 
-	buf = bt_hci_cmd_create(HCI_VSC_UPDATE_NVDS_CFG_CMD_OPCODE,
-				HCI_VSC_UPDATE_NVDS_CFG_CMD_LENGTH);
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}

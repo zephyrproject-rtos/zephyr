@@ -24,8 +24,10 @@ supported:
   - i2c
   - i2s
   - i3c
+  - nvs
   - pwm
   - regulator
+  - rtc
   - sdhc
   - spi
   - usb_device

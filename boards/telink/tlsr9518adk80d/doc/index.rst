@@ -106,6 +106,8 @@ The default settings are 115200 8N1.
 Programming and debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Building
 ========
 

@@ -42,7 +42,7 @@
 #include "hdlc_interface.hpp"
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_PLATFORM_LOG_LEVEL);
 #include <zephyr/kernel.h>
 #include <zephyr/net/net_pkt.h>
 #include <openthread-system.h>

@@ -17,6 +17,9 @@
 #include <errno.h>
 #include <ksched.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 static inline void flag_clear(uint32_t *flagp,
 			      uint32_t bit)
@@ -262,7 +265,7 @@ static inline int queue_submit_locked(struct k_work_q *queue,
 	}
 
 	int ret;
-	bool chained = (_current == &queue->thread) && !k_is_in_isr();
+	bool chained = (_current == queue->thread_id) && !k_is_in_isr();
 	bool draining = flag_test(&queue->flags, K_WORK_QUEUE_DRAIN_BIT);
 	bool plugged = flag_test(&queue->flags, K_WORK_QUEUE_PLUGGED_BIT);
 
@@ -599,6 +602,52 @@ bool k_work_cancel_sync(struct k_work *work,
 	return pending;
 }
 
+#if defined(CONFIG_WORKQUEUE_WORK_TIMEOUT)
+static void work_timeout_handler(struct _timeout *record)
+{
+	struct k_work_q *queue = CONTAINER_OF(record, struct k_work_q, work_timeout_record);
+	struct k_work *work;
+	k_work_handler_t handler;
+	const char *name;
+	const char *space = " ";
+
+	K_SPINLOCK(&lock) {
+		work = queue->work;
+		handler = work->handler;
+	}
+
+	name = k_thread_name_get(queue->thread_id);
+	if (name == NULL) {
+		name = "";
+		space = "";
+	}
+
+	LOG_ERR("queue %p%s%s blocked by work %p with handler %p",
+		queue, space, name, work, handler);
+
+	k_thread_abort(queue->thread_id);
+}
+
+static void work_timeout_start_locked(struct k_work_q *queue, struct k_work *work)
+{
+	if (K_TIMEOUT_EQ(queue->work_timeout, K_FOREVER)) {
+		return;
+	}
+
+	queue->work = work;
+	z_add_timeout(&queue->work_timeout_record, work_timeout_handler, queue->work_timeout);
+}
+
+static void work_timeout_stop_locked(struct k_work_q *queue)
+{
+	if (K_TIMEOUT_EQ(queue->work_timeout, K_FOREVER)) {
+		return;
+	}
+
+	z_abort_timeout(&queue->work_timeout_record);
+}
+#endif /* defined(CONFIG_WORKQUEUE_WORK_TIMEOUT) */
+
 /* Loop executed by a work queue thread.
  *
  * @param workq_ptr pointer to the work queue structure
@@ -678,6 +727,10 @@ static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 			continue;
 		}
 
+#if defined(CONFIG_WORKQUEUE_WORK_TIMEOUT)
+		work_timeout_start_locked(queue, work);
+#endif /* defined(CONFIG_WORKQUEUE_WORK_TIMEOUT) */
+
 		k_spin_unlock(&lock, key);
 
 		__ASSERT_NO_MSG(handler != NULL);
@@ -689,6 +742,10 @@ static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 		 * yield to prevent starving other threads.
 		 */
 		key = k_spin_lock(&lock);
+
+#if defined(CONFIG_WORKQUEUE_WORK_TIMEOUT)
+		work_timeout_stop_locked(queue);
+#endif /* defined(CONFIG_WORKQUEUE_WORK_TIMEOUT) */
 
 		flag_clear(&work->flags, K_WORK_RUNNING_BIT);
 		if (flag_test(&work->flags, K_WORK_FLUSHING_BIT)) {
@@ -722,6 +779,36 @@ void k_work_queue_init(struct k_work_q *queue)
 	SYS_PORT_TRACING_OBJ_INIT(k_work_queue, queue);
 }
 
+void k_work_queue_run(struct k_work_q *queue, const struct k_work_queue_config *cfg)
+{
+	__ASSERT_NO_MSG(!flag_test(&queue->flags, K_WORK_QUEUE_STARTED_BIT));
+
+	uint32_t flags = K_WORK_QUEUE_STARTED;
+
+	if ((cfg != NULL) && cfg->no_yield) {
+		flags |= K_WORK_QUEUE_NO_YIELD;
+	}
+
+	if ((cfg != NULL) && (cfg->name != NULL)) {
+		k_thread_name_set(_current, cfg->name);
+	}
+
+#if defined(CONFIG_WORKQUEUE_WORK_TIMEOUT)
+	if ((cfg != NULL) && (cfg->work_timeout_ms)) {
+		queue->work_timeout = K_MSEC(cfg->work_timeout_ms);
+	} else {
+		queue->work_timeout = K_FOREVER;
+	}
+#endif /* defined(CONFIG_WORKQUEUE_WORK_TIMEOUT) */
+
+	sys_slist_init(&queue->pending);
+	z_waitq_init(&queue->notifyq);
+	z_waitq_init(&queue->drainq);
+	queue->thread_id = _current;
+	flags_set(&queue->flags, flags);
+	work_queue_main(queue, NULL, NULL);
+}
+
 void k_work_queue_start(struct k_work_q *queue,
 			k_thread_stack_t *stack,
 			size_t stack_size,
@@ -731,6 +818,7 @@ void k_work_queue_start(struct k_work_q *queue,
 	__ASSERT_NO_MSG(queue);
 	__ASSERT_NO_MSG(stack);
 	__ASSERT_NO_MSG(!flag_test(&queue->flags, K_WORK_QUEUE_STARTED_BIT));
+
 	uint32_t flags = K_WORK_QUEUE_STARTED;
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work_queue, start, queue);
@@ -761,7 +849,16 @@ void k_work_queue_start(struct k_work_q *queue,
 		queue->thread.base.user_options |= K_ESSENTIAL;
 	}
 
+#if defined(CONFIG_WORKQUEUE_WORK_TIMEOUT)
+	if ((cfg != NULL) && (cfg->work_timeout_ms)) {
+		queue->work_timeout = K_MSEC(cfg->work_timeout_ms);
+	} else {
+		queue->work_timeout = K_FOREVER;
+	}
+#endif /* defined(CONFIG_WORKQUEUE_WORK_TIMEOUT) */
+
 	k_thread_start(&queue->thread);
+	queue->thread_id = &queue->thread;
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_work_queue, start, queue);
 }
@@ -841,7 +938,7 @@ int k_work_queue_stop(struct k_work_q *queue, k_timeout_t timeout)
 	notify_queue_locked(queue);
 	k_spin_unlock(&lock, key);
 	SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_work_queue, stop, queue, timeout);
-	if (k_thread_join(&queue->thread, timeout)) {
+	if (k_thread_join(queue->thread_id, timeout)) {
 		key = k_spin_lock(&lock);
 		flag_clear(&queue->flags, K_WORK_QUEUE_STOP_BIT);
 		k_spin_unlock(&lock, key);

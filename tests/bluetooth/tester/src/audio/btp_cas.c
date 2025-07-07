@@ -5,13 +5,19 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr/bluetooth/audio/cap.h>
-
-#include "btp/btp.h"
-#include "zephyr/sys/byteorder.h"
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/cap.h>
+#include <zephyr/bluetooth/audio/csip.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
+
+#include "btp/btp.h"
+
 #define LOG_MODULE_NAME bttester_cas
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
@@ -22,12 +28,8 @@ static uint8_t cas_supported_commands(const void *cmd, uint16_t cmd_len,
 {
 	struct btp_cas_read_supported_commands_rp *rp = rsp;
 
-	/* octet 0 */
-	tester_set_bit(rp->data, BTP_CAS_READ_SUPPORTED_COMMANDS);
-	tester_set_bit(rp->data, BTP_CAS_SET_MEMBER_LOCK);
-	tester_set_bit(rp->data, BTP_CAS_GET_MEMBER_RSI);
-
-	*rsp_len = sizeof(*rp) + 1;
+	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_CAS, rp->data);
+	*rsp_len += sizeof(*rp);
 
 	return BTP_STATUS_SUCCESS;
 }

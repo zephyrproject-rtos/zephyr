@@ -97,10 +97,10 @@ zephyr_udc0: &usb {
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(48)>;
 		};
+
 		slot0_partition: partition@c000 {
 			label = "image-0";
 			reg = <0x0000c000 DT_SIZE_K(400)>;
 		};
-
 	};
 };

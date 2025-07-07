@@ -80,9 +80,12 @@ Supported Features
 
    - For using Ethernet module on EK-RA8M1, remove jumper J61 to enable Ethernet B
    - For using SDHC driver on EK-RA8M1, remove jumper J61 to use with channel 0
+   - For using I3C driver on EK-RA8M1, install jumper J61 to use with channel 0
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``ek_ra8m1`` board configuration can be
 built, flashed, and debugged in the usual way. See

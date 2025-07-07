@@ -221,6 +221,11 @@ function(create_section)
   else()
     set(parent ${SECTION_SYSTEM})
   endif()
+  if(SECTION_TYPE STREQUAL "LINKER_SCRIPT_FOOTER")
+    set(SECTION_VMA) # pretend that we have no VMA, so the section ends up in
+                     # the general heap of sections directly below the system
+    set(parent ${SECTION_SYSTEM})
+  endif()
 
   set_property(GLOBAL PROPERTY SECTION_${SECTION_NAME}_PARENT ${parent})
   add_section(OBJECT ${parent} SECTION ${SECTION_NAME} ADDRESS ${SECTION_ADDRESS} VMA ${SECTION_VMA})

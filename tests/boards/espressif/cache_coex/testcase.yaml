@@ -1,7 +1,7 @@
 tests:
   boards.esp32.cache_coex:
     platform_allow:
-      - esp32_devkitc_wrover/esp32/procpu
+      - esp32_devkitc/esp32/procpu
       - esp32s2_saola
       - esp32s3_devkitm/esp32s3/procpu
     tags:

@@ -23,12 +23,6 @@ properties:
   interrupt-parent:
     required: true
 
-  dmas:
-    required: true
-
-  dma-names:
-    required: true
-
   unit:
     type: int
     required: true

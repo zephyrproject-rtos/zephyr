@@ -95,6 +95,8 @@ External GPS Antenna @ J3
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 The byteSENSI-L board can be flashed with the SEGGER JLink programmer.

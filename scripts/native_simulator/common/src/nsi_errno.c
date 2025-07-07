@@ -18,6 +18,7 @@ struct nsi_errno_mid_map {
 #define ERR(_name) {_name, NSI_ERRNO_MID_##_name}
 
 static const struct nsi_errno_mid_map map[] = {
+	{0, 0},
 	ERR(EPERM),
 	ERR(ENOENT),
 	ERR(ESRCH),
@@ -101,10 +102,6 @@ static const struct nsi_errno_mid_map map[] = {
 
 int nsi_errno_to_mid(int err)
 {
-	if (err == 0) {
-		return err;
-	}
-
 	for (int i = 0; i < NSI_ARRAY_SIZE(map); i++) {
 		if (map[i].err == err) {
 			return map[i].mid_err;
@@ -116,10 +113,6 @@ int nsi_errno_to_mid(int err)
 
 int nsi_errno_from_mid(int err)
 {
-	if (err == 0) {
-		return err;
-	}
-
 	for (int i = 0; i < NSI_ARRAY_SIZE(map); i++) {
 		if (map[i].mid_err == err) {
 			return map[i].err;

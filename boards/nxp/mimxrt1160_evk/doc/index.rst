@@ -91,64 +91,15 @@ This platform has the following external memories:
 Supported Features
 ==================
 
-The mimxrt1160_evk board configuration supports the hardware features listed
-below.  For additional features not yet supported, please also refer to the
-:zephyr:board:`mimxrt1170_evk` , which is the superset board in NXP's i.MX RT11xx family.
-NXP prioritizes enabling the superset board with NXP's Full Platform Support for
-Zephyr.  Therefore, the mimxrt1170_evk board may have additional features
-already supported, which can also be re-used on this mimxrt1160_evk board:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| COUNTER   | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| CAN       | on-chip    | flexcan                             |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| DMA       | on-chip    | dma                                 |
-+-----------+------------+-------------------------------------+
-| GPT       | on-chip    | gpt                                 |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | USB Device                          |
-+-----------+------------+-------------------------------------+
-| HWINFO    | on-chip    | Unique device serial number         |
-+-----------+------------+-------------------------------------+
-| CAAM RNG  | on-chip    | entropy                             |
-+-----------+------------+-------------------------------------+
-| FLEXSPI   | on-chip    | flash programming                   |
-+-----------+------------+-------------------------------------+
-| PIT       | on-chip    | pit                                 |
-+-----------+------------+-------------------------------------+
-| DISPLAY   | on-chip    | eLCDIF; MIPI-DSI. Tested with       |
-|           |            | :ref:`rk055hdmipi4m`,               |
-|           |            | :ref:`rk055hdmipi4ma0`,             |
-|           |            | and :ref:`g1120b0mipi` shields      |
-+-----------+------------+-------------------------------------+
+.. note::
 
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/nxp/mimxrt1160_evk/mimxrt1160_evk_mimxrt1166_cm7_defconfig`
-
-Other hardware features are not currently supported by the port.
-
+   For additional features not yet supported, please also refer to the
+   :zephyr:board:`mimxrt1170_evk` , which is the superset board in NXP's i.MX RT11xx family.
+   NXP prioritizes enabling the superset board with NXP's Full Platform Support for
+   Zephyr.  Therefore, the mimxrt1170_evk board may have additional features
+   already supported, which can also be re-used on this mimxrt1160_evk board:
 
 Connections and I/Os
 ====================
@@ -239,6 +190,8 @@ remaining are not used.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -255,15 +208,6 @@ The secondary core can be debugged normally in single core builds
 (where the target is ``mimxrt1160_evk/mimxrt1166/cm4``). For dual core builds, the
 secondary core should be placed into a loop, then a debugger can be attached
 (see `AN13264`_, section 4.2.3 for more information)
-
-Configuring a Debug Probe
-=========================
-
-A debug probe is used for both flashing and debugging the board. This board is
-configured by default to use the :ref:`opensda-daplink-onboard-debug-probe`,
-however the :ref:`pyocd-debug-host-tools` do not yet support programming the
-external flashes on this board so you must reconfigure the board for one of the
-following debug probes instead.
 
 Launching Images Targeting M4 Core
 ==================================
@@ -284,26 +228,34 @@ so:
 If desired, this behavior can be disabled by building with
 ``-DSB_CONFIG_SECOND_CORE_MCUX_LAUNCHER=n``
 
-Using J-Link
-------------
+Configuring a Debug Probe
+=========================
 
-Install the :ref:`jlink-debug-host-tools` and make sure they are in your search
-path.
-
-There are two options: the onboard debug circuit can be updated with Segger
-J-Link firmware, or :ref:`jlink-external-debug-probe` can be attached to the
-EVK. See `Using J-Link with MIMXRT1160-EVK or MIMXRT1170-EVK`_ for more details.
+A debug probe is used for both flashing and debugging the board. The on-board
+debugger :ref:`opensda-daplink-onboard-debug-probe`
+works with the LinkServer runner, or can be reprogrammed with JLink firmware.
 
 Using LinkServer
 ----------------
 
 Install the :ref:`linkserver-debug-host-tools` and make sure they are in your
-search path.  LinkServer works with the CMSIS-DAP firmware include in LinkServer
-install. Please follow the ``LPCScrypt\docs\Debug_Probe_Firmware_Programming.pdf``
-for more details.
+search path. LinkServer works with the default CMSIS-DAP firmware included in
+the on-board debugger.
 
-Linkserver is the default runner. You may also se the ``-r linkserver`` option
-with West to use the LinkServer runner.
+Using J-Link
+------------
+
+Install the :ref:`jlink-debug-host-tools` and make sure they are in your search path.
+
+The on-board debug circuit can be updated with Segger J-Link firmware,
+or :ref:`jlink-external-debug-probe` can be attached to the
+EVK. See `Using J-Link with MIMXRT1160-EVK or MIMXRT1170-EVK`_ for more details.
+
+Use the ``-r jlink`` option with West to use the jlink runner.
+
+.. code-block:: console
+
+   west flash -r jlink
 
 Configuring a Console
 =====================

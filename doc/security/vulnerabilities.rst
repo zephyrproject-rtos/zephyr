@@ -1904,3 +1904,25 @@ This has been fixed in main for v4.1.0
 
 - `PR 82288 fix for 3.7
   <https://github.com/zephyrproject-rtos/zephyr/pull/82288>`_
+
+:cve:`2025-2962`
+----------------
+
+Infinite loop in dns_copy_qname
+
+A denial-of-service issue in the dns implementation could cause an
+infinite loop.
+
+- `Zephyr project bug tracker GHSA-2qp5-c2vq-g2ww
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-2qp5-c2vq-g2ww>`_
+
+This has been fixed in main for v4.2.0
+
+- `PR 87753 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/87753>`_
+
+- `PR 87925 fix for 4.1
+  <https://github.com/zephyrproject-rtos/zephyr/pull/87925>`_
+
+- `PR 87949 fix for 3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/87949>`_

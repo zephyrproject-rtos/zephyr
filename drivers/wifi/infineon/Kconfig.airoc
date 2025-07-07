@@ -35,6 +35,9 @@ config AIROC_WIFI_BUS_SPI
 	help
 	  Enable SPI bus support
 
+config AIROC_WIFI6
+	bool
+
 config AIROC_WIFI_EVENT_TASK_STACK_SIZE
 	int "Event Task Stack Size"
 	default 4096
@@ -47,6 +50,14 @@ config AIROC_WLAN_MFG_FIRMWARE
 	bool "WLAN Manufacturing Firmware"
 	help
 	  Enable WLAN Manufacturing Firmware.
+
+config WHD_WIFI_COUNTRY
+	string "Wifi couuntry option"
+	default "WHD_COUNTRY_UNITED_STATES" if CYW55572 || CYW55500
+	default "WHD_COUNTRY_AUSTRALIA"
+	help
+	  Sets the country, this will operate in for wifi initialization
+	  parameters. See the wifi-host-driver's whd_country_code_t for legal options.
 
 config AIROC_WIFI_CUSTOM
 	bool "Custom CYW43xx device/module"
@@ -80,6 +91,13 @@ config CYW43012
 	  More information about CYW43012 device you can find on
 	  https://www.infineon.com/cms/en/product/wireless-connectivity/airoc-wi-fi-plus-bluetooth-combos/cyw43012/
 
+config CYW43022
+	bool "CYW43022"
+	help
+	  Enable Infineon AIROC CYW43022 Wi-Fi connectivity,
+	  More information about CYW43022 device you can find on
+	  https://www.infineon.com/cms/en/product/wireless-connectivity/airoc-wi-fi-plus-bluetooth-combos/wi-fi-5-802.11ac/cyw43022/
+
 config CYW43438
 	bool "CYW43438"
 	help
@@ -93,6 +111,23 @@ config CYW43439
 	  Enable Infineon AIROC CYW43439 Wi-Fi connectivity,
 	  More information about CYW43439 device you can find on
 	  https://www.infineon.com/cms/en/product/wireless-connectivity/airoc-wi-fi-plus-bluetooth-combos/cyw43439/
+
+config CYW55500
+	bool "CYW55500"
+	select AIROC_WIFI6
+	help
+	  Enable Infineon AIROC CYW55500 Wi-Fi connectivity,
+	  More information about CYW55500 device you can find on
+	  https://www.infineon.com/cms/en/product/wireless-connectivity/airoc-wi-fi-plus-bluetooth-combos/wi-fi-6-6e-802.11ax/cyw55511/
+
+config CYW55572
+	bool "CYW55572"
+	select AIROC_WIFI6
+	help
+	  Enable Infineon AIROC CYW55572 Wi-Fi connectivity,
+	  More information about CYW55572 device you can find on
+	  https://www.infineon.com/cms/en/product/wireless-connectivity/airoc-wi-fi-plus-bluetooth-combos/wi-fi-6-6e-802.11ax/cyw55572/
+
 endchoice
 
 choice CYW43012_MODULE
@@ -109,6 +144,19 @@ config CYW43012_MURATA_1LV
 
 	  Detailed information about Murata Type 1LV module you can find on
 	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/type1lv
+endchoice
+
+choice CYW43022_MODULE
+	prompt "Select CYW43022 module"
+	depends on CYW43022 && !AIROC_WIFI_CUSTOM
+
+config CYW43022CUB
+	bool "CYW43022CUB"
+	help
+	  Infineon CYW43022CUB M2 module
+
+	  Detailed information about CYW43022CUB module you can find on
+	  https://www.infineon.com/cms/en/product/wireless-connectivity/airoc-wi-fi-plus-bluetooth-combos/wi-fi-5-802.11ac/cyw43022/
 endchoice
 
 choice CYW4343W_MODULE
@@ -131,13 +179,30 @@ choice CYW4373_MODULE
 	prompt "Select CYW4373 module"
 	depends on CYW4373 && !AIROC_WIFI_CUSTOM
 
+
+config CYW4373_MURATA_2AE
+	bool "CYW4373_MURATA_2AE"
+	help
+	  Murata Type 2AE modules based on Infineon CYW4373 combo chipset
+
+	  Detailed information about Murata Type 2AE module you can find on
+	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/type2ae
+
+config CYW4373_MURATA_2BC
+	bool "CYW4373_MURATA_2BC"
+	help
+	  Murata Type 2BC modules based on Infineon CYW4373 combo chipset
+
+	  Detailed information about Murata Type 2BC module you can find on
+	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/type2bc
+
 config CYW4373_STERLING_LWB5PLUS
 	bool "STERLING-LWB5plus"
 	help
 	  Ezurio Sterling LWB5+ 802.11ac / Bluetooth 5.0 M.2 Carrier Board
 	  (E-Type Key w/ SDIO/UART)
 
-	  Detailed information about Type Sterling LWB5+ module you can find on
+	  Detailed information about Sterling LWB5+ module you can find on
 	  https://www.ezurio.com/wireless-modules/wifi-modules-bluetooth/sterling-lwb5-plus-wifi-5-bluetooth-5-module
 endchoice
 
@@ -155,6 +220,34 @@ config CYW43439_MURATA_1YN
 
 	  Detailed information about Murata Type 1YN module you can find on
 	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/type1yn
+
+config CYW43439_STERLING_LWBPLUS
+	bool "STERLING-LWBplus"
+	help
+	  Ezurio Sterling-LWB+ WiFi 4 with Bluetooth 5.2 module
+	  Detailed information about this module you can find on
+	  https://www.ezurio.com/wireless-modules/wifi-modules-bluetooth/sterling-lwb-wifi-4-and-bluetooth-52-modules
+
+endchoice
+
+choice CYW55500_MODULE
+	prompt "Select CYW55500 module"
+	depends on CYW55500 && !AIROC_WIFI_CUSTOM
+
+config CYW955513SDM2WLIPA_SM
+	bool "CYW955513SDM2WLIPA_SM"
+	help
+	  Infineon CYW955513SDM2WLIPA (SM) module
+endchoice
+
+choice CYW55572_MODULE
+	prompt "Select CYW55572 module"
+	depends on CYW55572 && !AIROC_WIFI_CUSTOM
+
+config CYW955573M2IPA1_SM
+	bool "CYW955573M2IPA1_SM"
+	help
+	  Infineon CYW955573M2IPA1 (SM) module
 endchoice
 
 endif # AIROC_WIFI

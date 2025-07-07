@@ -21,6 +21,8 @@ Supported Features
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``waveshare_open103z`` board configuration can be built and
 flashed in the usual way.
 

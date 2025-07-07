@@ -6,19 +6,27 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#include <zephyr/kernel.h>
+#include <errno.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <string.h>
-#include <zephyr/types.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/uart.h>
-#include <zephyr/toolchain.h>
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/uart_pipe.h>
-
+#include <zephyr/kernel.h>
+#include <zephyr/kernel/thread_stack.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/types.h>
+
 #define LOG_MODULE_NAME bttester
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
@@ -355,4 +363,24 @@ void tester_rsp(uint8_t service, uint8_t opcode, uint8_t status)
 
 	(void)memset(cmd, 0, sizeof(*cmd));
 	k_fifo_put(&avail_queue, cmd);
+}
+
+uint16_t tester_supported_commands(uint8_t service, uint8_t *cmds)
+{
+	uint8_t opcode_max = 0;
+
+	__ASSERT_NO_MSG(service <= BTP_SERVICE_ID_MAX);
+
+	for (size_t i = 0; i < service_handler[service].num; i++) {
+		const struct btp_handler *handler = &service_handler[service].handlers[i];
+
+		tester_set_bit(cmds, handler->opcode);
+
+		if (handler->opcode > opcode_max) {
+			opcode_max = handler->opcode;
+		}
+	}
+
+	/* bytes used to store supported commands bitmask */
+	return (opcode_max / 8) + 1;
 }

@@ -11,7 +11,6 @@ menuconfig HAWKBIT
 	depends on IMG_MANAGER
 	depends on NETWORKING
 	depends on HTTP_CLIENT
-	depends on DNS_RESOLVER
 	depends on JSON_LIBRARY
 	depends on BOOTLOADER_MCUBOOT
 	depends on SMF
@@ -48,6 +47,17 @@ config HAWKBIT_SHELL
 	help
 	  Activate shell module that provides hawkBit commands.
 
+config HAWKBIT_SHELL_AUTOHANDLER_TIMEOUT
+	int "hawkBit shell autohandler timeout"
+	default 200
+	depends on HAWKBIT_SHELL
+	help
+	  Set the timeout in milliseconds for the hawkBit shell autohandler. During
+	  the timeout, the hawkBit shell autohandler blocks the shell and waits for
+	  the hawkBit autohandler to finish. During this time, log messages for the
+	  shell logger are not printed, so this timeout should be set to a value that
+	  is not too long, to not drop the logs.
+
 config HAWKBIT_TENANT
 	string "Tenant name for the hawkbit server"
 	default "default"
@@ -57,7 +67,8 @@ config HAWKBIT_TENANT
 config HAWKBIT_SERVER
 	string "User address for the hawkbit server"
 	help
-	  Configure the hawkbit server address.
+	  Configure the hawkbit server address. If the address is not an IP address,
+	  CONFIG_DNS_RESOLVER must be enabled to resolve the hostname.
 
 config HAWKBIT_PORT
 	int "Port number for the hawkbit server"
@@ -70,24 +81,50 @@ config HAWKBIT_SET_SETTINGS_RUNTIME
 	help
 	  Enable to set hawkbit settings at runtime.
 
+config HAWKBIT_USE_DOMAIN_NAME
+	bool "Use server_domain for domain name instead of server_addr"
+	depends on HAWKBIT_SET_SETTINGS_RUNTIME
+	help
+	  Enable to use the server_domain field for TLS and HTTP. If enabled,
+	  server_addr can accept an already resolved IP address, and the domain name
+	  can be provided via server_domain.
+
+config HAWKBIT_DOMAIN_NAME_MAX_LEN
+	int "The buffer size for storing the domain name string"
+	default DNS_RESOLVER_MAX_QUERY_LEN if DNS_RESOLVER
+	default 255
+	depends on HAWKBIT_USE_DOMAIN_NAME
+	help
+	  The size for the internal buffer used to hold the domain name string.
+
 choice HAWKBIT_DDI_SECURITY
 	prompt "hawkBit DDI API authentication modes"
 	default HAWKBIT_DDI_NO_SECURITY
 
 config HAWKBIT_DDI_NO_SECURITY
 	bool "No authentication security"
+	select DEPRECATED
 	help
-	  No authentication security for the hawkBit DDI API.
+	  No authentication security for the hawkBit DDI API. Support for this
+	  had been removed from the hawkBit server in version 0.8.0. Use gateway
+	  security token authentication instead, if you want something similar.
 
 config HAWKBIT_DDI_TARGET_SECURITY
 	bool "Use target security token authentication"
 	help
 	  Use target security token authentication for the hawkBit DDI API.
+	  Here the security token is unique for each device and is generated
+	  during the device registration process. The device has to be registered
+	  in the hawkBit server before using this authentication mode.
 
 config HAWKBIT_DDI_GATEWAY_SECURITY
 	bool "Use gateway security token authentication"
 	help
 	  Use gateway security token authentication for the hawkBit DDI API.
+	  Here the security token is shared between all devices in the same
+	  tenant. The device can register itself in the hawkBit server on
+	  first connection to the server. The device does not need to be registered
+	  in the hawkBit server before using this authentication mode.
 
 endchoice
 

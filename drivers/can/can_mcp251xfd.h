@@ -524,6 +524,7 @@ struct mcp251xfd_config {
 
 	/* IO Config */
 	bool sof_on_clko;
+	bool xstby_enable;
 	bool pll_enable;
 	uint8_t clko_div;
 

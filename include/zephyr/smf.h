@@ -18,7 +18,7 @@
 /**
  * @brief State Machine Framework API
  * @defgroup smf State Machine Framework API
- * @version 0.1.0
+ * @version 0.2.0
  * @ingroup os_services
  * @{
  */
@@ -32,6 +32,7 @@
  * @param _parent  State parent object or NULL
  * @param _initial State initial transition object or NULL
  */
+/* clang-format off */
 #define SMF_CREATE_STATE(_entry, _run, _exit, _parent, _initial)           \
 {                                                                          \
 	.entry   = _entry,                                                 \
@@ -40,6 +41,7 @@
 	IF_ENABLED(CONFIG_SMF_ANCESTOR_SUPPORT, (.parent = _parent,))      \
 	IF_ENABLED(CONFIG_SMF_INITIAL_TRANSITION, (.initial = _initial,))  \
 }
+/* clang-format on */
 
 /**
  * @brief Macro to cast user defined object to state machine
@@ -56,23 +58,43 @@ extern "C" {
 #include <zephyr/kernel.h>
 
 /**
- * @brief Function pointer that implements a portion of a state
+ * @brief enum for the return value of a state_execution function
+ */
+enum smf_state_result {
+	SMF_EVENT_HANDLED,
+	SMF_EVENT_PROPAGATE,
+};
+
+/**
+ * @brief Function pointer that implements a entry and exit actions
+ *        of a state
  *
  * @param obj pointer user defined object
  */
-typedef void (*state_execution)(void *obj);
+typedef void (*state_method)(void *obj);
+
+/**
+ * @brief Function pointer that implements a the run action of a state
+ *
+ * @param obj pointer user defined object
+ * @return If the event should be propagated to parent states or not
+ *         (Ignored when CONFIG_SMF_ANCESTOR_SUPPORT not defined)
+ */
+typedef enum smf_state_result (*state_execution)(void *obj);
 
 /** General state that can be used in multiple state machines. */
 struct smf_state {
 	/** Optional method that will be run when this state is entered */
-	const state_execution entry;
+	const state_method entry;
+
 	/**
 	 * Optional method that will be run repeatedly during state machine
 	 * loop.
 	 */
 	const state_execution run;
+
 	/** Optional method that will be run when this state exists */
-	const state_execution exit;
+	const state_method exit;
 #ifdef CONFIG_SMF_ANCESTOR_SUPPORT
 	/**
 	 * Optional parent state that contains common entry/run/exit
@@ -146,15 +168,6 @@ void smf_set_state(struct smf_ctx *ctx, const struct smf_state *new_state);
  *             function.
  */
 void smf_set_terminate(struct smf_ctx *ctx, int32_t val);
-
-/**
- * @brief Tell the SMF to stop propagating the event to ancestors. This allows
- *        HSMs to implement 'programming by difference' where substates can
- *        handle events on their own or propagate up to a common handler.
- *
- * @param ctx  State machine context
- */
-void smf_set_handled(struct smf_ctx *ctx);
 
 /**
  * @brief Runs one iteration of a state machine (including any parent states)

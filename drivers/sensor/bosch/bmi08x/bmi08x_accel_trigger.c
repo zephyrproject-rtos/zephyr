@@ -20,15 +20,6 @@ static void bmi08x_handle_drdy_acc(const struct device *dev)
 {
 	struct bmi08x_accel_data *data = dev->data;
 
-#ifdef CONFIG_PM_DEVICE
-	enum pm_device_state state;
-
-	(void)pm_device_state_get(dev, &state);
-	if (state != PM_DEVICE_STATE_ACTIVE) {
-		return;
-	}
-#endif
-
 	if (data->handler_drdy_acc) {
 		data->handler_drdy_acc(dev, data->drdy_trig_acc);
 	}
@@ -120,7 +111,7 @@ int bmi08x_acc_trigger_mode_init(const struct device *dev)
 #endif
 
 #if BMI08X_ACCEL_ANY_INST_HAS_DATA_SYNC
-	if (config->data_sync != 0) {
+	if (cfg->data_sync != 0) {
 		/* set accel ints */
 		ret = bmi08x_accel_byte_write(dev, BMI08X_REG_ACCEL_INT1_MAP, cfg->int1_map);
 		if (ret < 0) {

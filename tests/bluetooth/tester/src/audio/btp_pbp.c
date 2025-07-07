@@ -5,18 +5,31 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <errno.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
 
-#include "btp/btp.h"
-
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/pbp.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/crypto.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/uuid.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
-#define LOG_MODULE_NAME bttester_pbp
-LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
+#include <zephyr/sys/util_macro.h>
 
 #include "btp_bap_broadcast.h"
+#include "btp/btp.h"
+
+#define LOG_MODULE_NAME bttester_pbp
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
 #define PBP_EXT_ADV_METADATA_LEN_MAX 128
 
@@ -45,7 +58,7 @@ static bool scan_get_data(struct bt_data *data, void *user_data)
 	uint32_t broadcast_id;
 	uint8_t *metadata;
 	struct bt_uuid_16 adv_uuid;
-	struct btp_pbp_ev_public_broadcast_anouncement_found_rp *ev = user_data;
+	struct btp_pbp_ev_public_broadcast_announcement_found_ev *ev = user_data;
 
 	switch (data->type) {
 	case BT_DATA_BROADCAST_NAME:
@@ -89,7 +102,7 @@ static void pbp_scan_recv(const struct bt_le_scan_recv_info *info, struct net_bu
 	net_buf_simple_clone(ad, &ad_copy);
 	bt_data_parse(&ad_copy, scan_get_broadcast_name_len, &broadcast_name_len);
 
-	struct btp_pbp_ev_public_broadcast_anouncement_found_rp *ev_ptr;
+	struct btp_pbp_ev_public_broadcast_announcement_found_ev *ev_ptr;
 
 	tester_rsp_buffer_lock();
 	tester_rsp_buffer_allocate(sizeof(*ev_ptr) + broadcast_name_len, (uint8_t **)&ev_ptr);
@@ -105,7 +118,7 @@ static void pbp_scan_recv(const struct bt_le_scan_recv_info *info, struct net_bu
 
 	if (sys_get_le24(ev_ptr->broadcast_id) != BT_BAP_INVALID_BROADCAST_ID &&
 	    ev_ptr->pba_features != 0U && ev_ptr->broadcast_name_len > 0) {
-		tester_event(BTP_SERVICE_ID_PBP, BTP_PBP_EV_PUBLIC_BROADCAST_ANOUNCEMENT_FOUND,
+		tester_event(BTP_SERVICE_ID_PBP, BTP_PBP_EV_PUBLIC_BROADCAST_ANNOUNCEMENT_FOUND,
 			     ev_ptr, sizeof(*ev_ptr) + broadcast_name_len);
 	}
 
@@ -122,13 +135,8 @@ static uint8_t pbp_read_supported_commands(const void *cmd, uint16_t cmd_len, vo
 {
 	struct btp_pbp_read_supported_commands_rp *rp = rsp;
 
-	tester_set_bit(rp->data, BTP_PBP_READ_SUPPORTED_COMMANDS);
-	tester_set_bit(rp->data, BTP_PBP_SET_PUBLIC_BROADCAST_ANNOUNCEMENT);
-	tester_set_bit(rp->data, BTP_PBP_SET_BROADCAST_NAME);
-	tester_set_bit(rp->data, BTP_PBP_BROADCAST_SCAN_START);
-	tester_set_bit(rp->data, BTP_PBP_BROADCAST_SCAN_STOP);
-
-	*rsp_len = sizeof(*rp) + 1;
+	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_PBP, rp->data);
+	*rsp_len += sizeof(*rp);
 
 	return BTP_STATUS_SUCCESS;
 }
@@ -200,6 +208,13 @@ static uint8_t pbp_set_public_broadcast_announcement(const void *cmd, uint16_t c
 {
 	const struct btp_pbp_set_public_broadcast_announcement_cmd *cp = cmd;
 	int err = -EINVAL;
+
+	if (cp->features == 0U || cp->features > (BT_PBP_ANNOUNCEMENT_FEATURE_ENCRYPTION |
+						  BT_PBP_ANNOUNCEMENT_FEATURE_STANDARD_QUALITY |
+						  BT_PBP_ANNOUNCEMENT_FEATURE_HIGH_QUALITY)) {
+		LOG_DBG("Invalid features: %u", cp->features);
+		return BTP_STATUS_FAILED;
+	}
 
 	if (cp->metadata_len <= PBP_EXT_ADV_METADATA_LEN_MAX) {
 		pbp_features_cached = cp->features;

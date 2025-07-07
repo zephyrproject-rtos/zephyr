@@ -56,15 +56,30 @@
 	};
 };
 
+&clk_hse {
+	hse-div2;
+	clock-frequency = <DT_FREQ_M(48)>;
+	status = "okay";
+};
+
 &clk_hsi {
 	hsi-div = <1>;
 	status = "okay";
 };
 
 &pll1 {
-	clocks = <&clk_hsi>;
-	div-m = <4>;
-	mul-n = <75>;
+	clocks = <&clk_hse>;
+	div-m = <3>;
+	mul-n = <150>;
+	div-p1 = <1>;
+	div-p2 = <1>;
+	status = "okay";
+};
+
+&pll3 {
+	clocks = <&clk_hse>;
+	div-m = <3>;
+	mul-n = <125>;
 	div-p1 = <1>;
 	div-p2 = <1>;
 	status = "okay";
@@ -72,18 +87,24 @@
 
 &ic1 {
 	pll-src = <1>;
-	ic-div = <2>;
+	ic-div = <3>;
 	status = "okay";
 };
 
 &ic2 {
 	pll-src = <1>;
-	ic-div = <3>;
+	ic-div = <6>;
+	status = "okay";
+};
+
+&ic3 {
+	pll-src = <1>;
+	ic-div = <6>;
 	status = "okay";
 };
 
 &ic6 {
-	pll-src = <1>;
+	pll-src = <3>;
 	ic-div = <2>;
 	status = "okay";
 };
@@ -101,7 +122,7 @@
 
 &cpusw {
 	clocks = <&rcc STM32_SRC_IC1 CPU_SEL(3)>;
-	clock-frequency = <DT_FREQ_M(600)>;
+	clock-frequency = <DT_FREQ_M(800)>;
 	status = "okay";
 };
 
@@ -110,10 +131,7 @@
 	clocks = <&ic2>;
 	clock-frequency = <DT_FREQ_M(400)>;
 	ahb-prescaler = <2>;
-	apb1-prescaler = <1>;
-	apb2-prescaler = <1>;
-	apb4-prescaler = <1>;
-	apb5-prescaler = <1>;
+	timg-prescaler = <2>;
 };
 
 &adc1 {
@@ -177,6 +195,10 @@
 	status = "okay";
 };
 
+zephyr_udc0: &usbotg_hs1 {
+	status = "okay";
+};
+
 &mac {
 	status = "okay";
 	pinctrl-0 = <&eth1_rmii_ref_clk_pf7
@@ -188,6 +210,7 @@
 		     &eth1_rmii_txd1_pf13>;
 	pinctrl-names = "default";
 	phy-connection-type = "rmii";
+	phy-handle = <&eth_phy>;
 };
 
 &mdio {
@@ -195,10 +218,9 @@
 	pinctrl-0 = <&eth1_mdio_pf4 &eth1_mdc_pg11>;
 	pinctrl-names = "default";
 
-	ethernet-phy@0 {
+	eth_phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";
 		reg = <0x0>;
-		status = "okay";
 	};
 };
 
@@ -208,11 +230,15 @@
 		     &xspim_p2_io3_pn5 &xspim_p2_io4_pn8 &xspim_p2_io5_pn9
 		     &xspim_p2_io6_pn10 &xspim_p2_io7_pn11>;
 	pinctrl-names = "default";
+	clocks = <&rcc STM32_CLOCK(AHB5, 12)>,
+		 <&rcc STM32_SRC_IC3 XSPI1_SEL(2)>,
+		 <&rcc STM32_CLOCK(AHB5, 13)>;
 	status = "okay";
 
-	mx25um51245g: ospi-nor-flash@70000000 {
+	mx25um51245g: ospi-nor-flash@0 {
 		compatible = "st,stm32-xspi-nor";
-		reg = <0x70000000 DT_SIZE_M(64)>; /* 512 Mbits */
+		reg = <0>;
+		size = <DT_SIZE_M(512)>; /* 512 Mbits */
 		ospi-max-frequency = <DT_FREQ_M(200)>;
 		spi-bus-width = <XSPI_OCTO_MODE>;
 		data-rate = <XSPI_DTR_TRANSFER>;

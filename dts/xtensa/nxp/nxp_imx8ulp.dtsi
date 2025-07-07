@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 NXP
+ * Copyright 2023-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,16 +17,16 @@
 			device_type = "cpu";
 			compatible = "cdns,tensilica-xtensa-lx7";
 			reg = <0>;
-		};
 
-		#address-cells = <1>;
-		#size-cells = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 
-		clic: interrupt-controller@0 {
-			compatible = "cdns,xtensa-core-intc";
-			reg = <0>;
-			interrupt-controller;
-			#interrupt-cells = <3>;
+			clic: interrupt-controller@0 {
+				compatible = "cdns,xtensa-core-intc";
+				reg = <0>;
+				interrupt-controller;
+				#interrupt-cells = <3>;
+			};
 		};
 	};
 
@@ -96,6 +96,16 @@
 		dmas = <&edma2 0 72>, <&edma2 1 71>;
 		dma-names = "tx", "rx";
 		dai-index = <6>;
+		status = "disabled";
+	};
+
+	mu3: mbox@2da20000 {
+		compatible = "nxp,mbox-imx-mu";
+		reg = <0x2da20000 DT_SIZE_K(64)>;
+		interrupt-parent = <&clic>;
+		interrupts = <15 0 0>;
+		rx-channels = <4>;
+		#mbox-cells = <1>;
 		status = "disabled";
 	};
 };

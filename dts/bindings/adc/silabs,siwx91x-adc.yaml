@@ -1,0 +1,38 @@
+description: Silicon Labs siwx91x ADC
+
+compatible: "silabs,siwx91x-adc"
+
+include: [adc-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  silabs,adc-ref-voltage:
+    type: int
+    description: |
+        ADC reference volatge in mv. This voltage is common for all
+        the channels.
+        Valid range: 1800 - 3600
+    required: true
+
+  silabs,adc-sampling-rate:
+    type: int
+    default: 100000
+    description: |
+        ADC sampling rate in Hz (1-2500000 Hz).
+    required: true
+
+  "#io-channel-cells":
+    const: 1
+    description: |
+        ADC channels should be declared in a sequential manner.
+        Since the hardware allows any pin to be mapped to any channel,
+        enforcing sequential channel declarations does not restrict
+        or limit any functional capability.
+
+io-channel-cells:
+  - input

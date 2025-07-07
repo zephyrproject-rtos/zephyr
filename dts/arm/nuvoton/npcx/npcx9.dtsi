@@ -98,6 +98,7 @@
 			clocks = <&pcc NPCX_CLOCK_BUS_LFCLK NPCX_PWDWN_CTL4 0
 				  &pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL7 5>;
 			interrupts = <28 1>; /* Event timer interrupt */
+			clock-frequency = <15000000>; /* Set for SYS_CLOCK_HW_CYCLES_PER_SEC */
 		};
 
 		uart1: serial@400e0000 {
@@ -407,6 +408,13 @@
 			compatible = "nuvoton,npcx-rst";
 			reg = <0x400c3100 0x14>;
 			#reset-cells = <1>;
+			status = "disabled";
+		};
+
+		ramlock0: ramlock@4000c02e {
+			compatible = "syscon";
+			reg = <0x4000c02e 0x52>;
+			reg-io-width = <1>;
 			status = "disabled";
 		};
 	};

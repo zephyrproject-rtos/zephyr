@@ -63,6 +63,8 @@ two cores. This is done in 3 ways:
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``arduino_giga_r1`` board should be built per core target,
 using either ``arduino_giga_r1/stm32h747xx/m7`` or ``arduino_giga_r1/stm32h747xx/m4`` as the target.
 

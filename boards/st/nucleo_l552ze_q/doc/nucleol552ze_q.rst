@@ -227,6 +227,8 @@ UART2. Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Nucleo L552ZE Q board includes an ST-LINK/V2-1 embedded debug tool interface.
 
 Applications for the ``nucleo_l552ze_q`` board configuration can be built and

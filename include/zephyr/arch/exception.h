@@ -18,8 +18,6 @@
 #include <zephyr/arch/arm/exception.h>
 #elif defined(CONFIG_ARC)
 #include <zephyr/arch/arc/v2/exception.h>
-#elif defined(CONFIG_NIOS2)
-#include <zephyr/arch/nios2/exception.h>
 #elif defined(CONFIG_RISCV)
 #include <zephyr/arch/riscv/exception.h>
 #elif defined(CONFIG_XTENSA)
@@ -30,6 +28,8 @@
 #include <zephyr/arch/posix/exception.h>
 #elif defined(CONFIG_SPARC)
 #include <zephyr/arch/sparc/exception.h>
+#elif defined(CONFIG_RX)
+#include <zephyr/arch/rx/exception.h>
 #endif
 
 #endif /* ZEPHYR_INCLUDE_ARCH_EXCEPTION_H_ */

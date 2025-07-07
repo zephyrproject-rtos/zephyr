@@ -82,49 +82,15 @@ This platform has the following external memories:
 Supported Features
 ==================
 
-The mimxrt1040_evk board configuration supports the hardware features listed
-below.  For additional features not yet supported, please also refer to the
-:zephyr:board:`mimxrt1064_evk` , which is the superset board in NXP's i.MX RT10xx family.
-NXP prioritizes enabling the superset board with NXP's Full Platform Support for
-Zephyr.  Therefore, the mimxrt1064_evk board may have additional features
-already supported, which can also be re-used on this mimxrt1040_evk board:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+-------------------------------------------------+
-| Interface | Controller | Driver/Component                                |
-+===========+============+=================================================+
-| NVIC      | on-chip    | nested vector interrupt controller              |
-+-----------+------------+-------------------------------------------------+
-| SYSTICK   | on-chip    | systick                                         |
-+-----------+------------+-------------------------------------------------+
-| GPIO      | on-chip    | gpio                                            |
-+-----------+------------+-------------------------------------------------+
-| UART      | on-chip    | serial port-polling;                            |
-|           |            | serial port-interrupt                           |
-+-----------+------------+-------------------------------------------------+
-| PWM       | on-chip    | pwm                                             |
-+-----------+------------+-------------------------------------------------+
-| ADC       | on-chip    | adc                                             |
-+-----------+------------+-------------------------------------------------+
-| SPI       | on-chip    | spi                                             |
-+-----------+------------+-------------------------------------------------+
-| DMA       | on-chip    | dma                                             |
-+-----------+------------+-------------------------------------------------+
-| I2C       | on-chip    | i2c                                             |
-+-----------+------------+-------------------------------------------------+
-| GPT       | on-chip    | gpt                                             |
-+-----------+------------+-------------------------------------------------+
-| DISPLAY   | on-chip    | eLCDIF. Tested with                             |
-|           |            | :ref:`rk043fn02h_ct`, and                       |
-|           |            | :ref:`rk043fn66hs_ctg` shields                  |
-+-----------+------------+-------------------------------------------------+
-| UART      | NXP IW61x  | M.2 WIFI/BT module                              |
-|           |            | (select :kconfig:option:`CONFIG_BT_NXP_NW612`)  |
-+-----------+------------+-------------------------------------------------+
+.. note::
 
-The default configuration can be found in
-:zephyr_file:`boards/nxp/mimxrt1040_evk/mimxrt1040_evk_defconfig`
-
-Other hardware features are not currently supported by the port.
+   For additional features not yet supported, please also refer to the
+   :zephyr:board:`mimxrt1064_evk` , which is the superset board in NXP's i.MX RT10xx family.
+   NXP prioritizes enabling the superset board with NXP's Full Platform Support for
+   Zephyr.  Therefore, the mimxrt1064_evk board may have additional features
+   already supported, which can also be re-used on this mimxrt1040_evk board.
 
 Connections and IOs
 ===================
@@ -205,6 +171,8 @@ that run the command:
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 This board supports 3 debug host tools. Please install your preferred host
 tool, then follow the instructions in `Configuring a Debug Probe`_ to
@@ -325,7 +293,7 @@ steps:
 Bluetooth Module
 ----------------
 
-For Murate 2EL M.2 Mdoule, the following hardware rework needs to be applied,
+For the :ref:`nxp_m2_wifi_bt` shield, the following hardware rework needs to be applied,
 Solder 0 ohm resistors for R96, and R93.
 Remove resistors from R497, R498, R456 and R457.
 

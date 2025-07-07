@@ -58,6 +58,8 @@ accessible through the BoosterPack, are not currently supported.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 TI officially supports development on the CC3220SF using the TI
 `CC3220 SDK`_ on Windows and Linux using TI tools: Code Composer
 Studio for debugging and `UniFlash`_ for flashing.

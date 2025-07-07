@@ -79,6 +79,26 @@ You can also pass additional arguments to rimage thanks to [sign] and
 [rimage] sections in your west config file(s); this is especially useful
 when invoking west sign _indirectly_ through CMake/ninja. See how at
 https://docs.zephyrproject.org/latest/develop/west/sign.html
+
+silabs_commander
+----------------
+
+To create a signed binary with the silabs_commander tool, run this from your
+build directory:
+
+   west sign -t silabs_commander -- [--sign PRIVATE.pem] [--encrypt KEY] [--mic KEY]
+
+For this to work, either "commander" must be installed or you must pass
+the path to "commander" using the -p option.
+
+If an argument is not specified, the value provided by Kconfig
+(CONFIG_SIWX91X_SIGN_KEY, CONFIG_SIWX91X_MIC_KEY and CONFIG_SIWX91X_ENCRYPT)
+is used.
+
+The exact behavior of these option are described in Silabs UG574[1] or in the
+output of "commander rps converter --help"
+
+[1]: https://www.silabs.com/documents/public/user-guides/ug574-siwx917-soc-manufacturing-utility-user-guide.pdf
 '''
 
 class ToggleAction(argparse.Action):
@@ -112,8 +132,8 @@ class Sign(Forceable):
 
         # general options
         group = parser.add_argument_group('tool control options')
-        group.add_argument('-t', '--tool', choices=['imgtool', 'rimage'],
-                           help='''image signing tool name; imgtool and rimage
+        group.add_argument('-t', '--tool', choices=['imgtool', 'rimage', 'silabs_commander'],
+                           help='''image signing tool name; imgtool, rimage and silabs_commander
                            are currently supported (imgtool is deprecated)''')
         group.add_argument('-p', '--tool-path', default=None,
                            help='''path to the tool itself, if needed''')
@@ -195,6 +215,8 @@ schema (rimage "target") is not defined in board.cmake.''')
             signer = ImgtoolSigner()
         elif args.tool == 'rimage':
             signer = RimageSigner()
+        elif args.tool == 'silabs_commander':
+            signer = CommanderSigner()
         # (Add support for other signers here in elif blocks)
         else:
             if args.tool is None:
@@ -633,3 +655,54 @@ class RimageSigner(Signer):
 
         os.remove(out_bin)
         os.rename(out_tmp, out_bin)
+
+class CommanderSigner(Signer):
+    @staticmethod
+    def get_tool(command):
+        if command.args.tool_path:
+            tool = command.args.tool_path
+            if not os.path.isfile(tool):
+                command.die(f'--tool-path {tool}: no such file')
+        else:
+            tool = shutil.which('commander')
+            if not tool:
+                command.die('"commander" not found; either install it or provide --tool-path')
+        return tool
+
+    @staticmethod
+    def get_keys(command, build_conf):
+        sign_key = getattr(command.args, 'sign',
+                           build_conf.get('CONFIG_SIWX91X_SIGN_KEY', None))
+        mic_key = getattr(command.args, 'mic',
+                          build_conf.get('CONFIG_SIWX91X_MIC_KEY', None))
+        encrypt_key = None
+        if build_conf.get('CONFIG_SIWX91X_ENCRYPT', False):
+            encrypt_key = mic_key
+        encrypt_key = getattr(command.args, 'encrypt', encrypt_key)
+        return (sign_key, mic_key, encrypt_key)
+
+    @staticmethod
+    def get_input_output(command, build_dir, build_conf):
+        kernel_prefix = (pathlib.Path(build_dir) / 'zephyr' /
+                         build_conf.get('CONFIG_KERNEL_BIN_NAME', "zephyr"))
+        in_file = f'{kernel_prefix}.rps'
+        out_file = command.args.sbin or f'{kernel_prefix}.signed.rps'
+        return (in_file, out_file)
+
+    def sign(self, command, build_dir, build_conf, formats):
+        tool = self.get_tool(command)
+        in_file, out_file = self.get_input_output(command, build_dir, build_conf)
+        sign_key, mic_key, encrypt_key = self.get_keys(command, build_conf)
+
+        commandline = [ tool, "rps", "convert", out_file, "--app", in_file ]
+        if mic_key:
+            commandline.extend(["--mic", mic_key])
+        if encrypt_key:
+            commandline.extend(["--encrypt", encrypt_key])
+        if sign_key:
+            commandline.extend(["--sign", sign_key])
+        commandline.extend(command.args.tool_args)
+
+        if not command.args.quiet:
+            command.inf("Signing with:", ' '.join(commandline))
+        subprocess.run(commandline, check=True)

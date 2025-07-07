@@ -3,11 +3,11 @@
  */
 
 #include <stddef.h>
-
-#include <zephyr/bluetooth/conn.h>
-#include <zephyr/sys/atomic_builtin.h>
-
+#include <stdint.h>
 #include <testlib/conn.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/atomic_builtin.h>
 
 /**
  * @file

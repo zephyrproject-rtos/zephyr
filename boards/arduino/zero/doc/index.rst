@@ -74,6 +74,8 @@ Arduino Zero, the DAC is available on pin A0.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The Arduino Zero comes with a Atmel Embedded Debugger (EDBG).  This
 provides a debug interface to the SAMD21 chip and is supported by
 OpenOCD.

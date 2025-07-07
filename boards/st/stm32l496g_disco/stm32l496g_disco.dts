@@ -24,6 +24,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		green_led_2: led_2 {
 			gpios = <&gpiob 13 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
@@ -32,26 +33,31 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		joy_sel: joystick_select {
 			label = "joystick select";
 			gpios = <&gpioc 13 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 			zephyr,code = <INPUT_KEY_ENTER>;
 		};
+
 		joy_down: joystick_down {
 			label = "joystick down";
 			gpios = <&gpioi 10 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 			zephyr,code = <INPUT_KEY_DOWN>;
 		};
+
 		joy_up: joystick_up {
 			label = "joystick up";
 			gpios = <&gpioi 8 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 			zephyr,code = <INPUT_KEY_UP>;
 		};
+
 		joy_left: joystick_left {
 			label = "joystick left";
 			gpios = <&gpioi 9 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 			zephyr,code = <INPUT_KEY_LEFT>;
 		};
+
 		joy_right: joystick_right {
 			label = "joystick right";
 			gpios = <&gpiof 11 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
@@ -69,7 +75,6 @@
 		volt-sensor0 = &vref;
 		volt-sensor1 = &vbat;
 	};
-
 };
 
 &clk_lsi {
@@ -158,6 +163,7 @@
 		     &sdmmc1_d2_pc10 &sdmmc1_d3_pc11
 		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
 	pinctrl-names = "default";
+	disk-name = "SD";
 	status = "okay";
 };
 
@@ -200,9 +206,10 @@ zephyr_udc0: &usbotg_fs {
 	flash-id = <1>;
 	status = "okay";
 
-	mx25r6435: qspi-nor-flash@90000000 {
+	mx25r6435: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
-		reg = <0x90000000 DT_SIZE_M(8)>; /* 64 Mbits */
+		reg = <0>;
+		size = <DT_SIZE_M(64)>; /* 64 Mbits */
 		qspi-max-frequency = <8000000>;
 		status = "okay";
 		spi-bus-width = <4>;

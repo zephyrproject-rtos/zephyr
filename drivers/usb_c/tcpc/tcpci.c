@@ -598,10 +598,36 @@ int tcpci_tcpm_set_roles(const struct i2c_dt_spec *bus, enum pd_rev_type pd_rev,
 				 TCPC_REG_MSG_HDR_INFO_SET(pd_rev, data_role, power_role));
 }
 
-int tcpci_tcpm_set_drp_toggle(const struct i2c_dt_spec *bus, bool enable)
+int tcpci_tcpm_set_drp_toggle(const struct i2c_dt_spec *bus, uint8_t pd_int_rev, bool enable)
 {
-	return tcpci_update_reg8(bus, TCPC_REG_ROLE_CTRL, TCPC_REG_ROLE_CTRL_DRP_MASK,
-				 TCPC_REG_ROLE_CTRL_SET(enable, 0, 0, 0));
+	int ret;
+
+	/* Set auto drp toggle */
+	ret = tcpci_update_reg8(bus, TCPC_REG_ROLE_CTRL, TCPC_REG_ROLE_CTRL_DRP_MASK,
+				TCPC_REG_ROLE_CTRL_SET(enable, 0, 0, 0));
+	if (ret != 0) {
+		return ret;
+	}
+
+	/*
+	 * For TCPCI Rev 2.0, unless the TCPM sets TCPC_REG_TCPC_CTRL_EN_LOOK4CONNECTION_ALERT,
+	 * TCPC by default masks Alert assertion when CC_STATUS_LOOK4CONNECTION changes state.
+	 */
+	if (pd_int_rev >= PD_INT_REV20) {
+		ret = tcpci_update_reg8(bus, TCPC_REG_TCPC_CTRL,
+					TCPC_REG_TCPC_CTRL_EN_LOOK4CONNECTION_ALERT,
+					enable ? TCPC_REG_TCPC_CTRL_EN_LOOK4CONNECTION_ALERT : 0);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
+	if (enable) {
+		/* Set Look4Connection command */
+		return tcpci_write_reg8(bus, TCPC_REG_COMMAND, TCPC_REG_COMMAND_LOOK4CONNECTION);
+	}
+
+	return 0;
 }
 
 int tcpci_tcpm_set_rx_type(const struct i2c_dt_spec *bus, uint8_t rx_type)
@@ -683,4 +709,55 @@ int tcpci_tcpm_mask_status_register(const struct i2c_dt_spec *bus, enum tcpc_sta
 		LOG_ERR("Not a TCPCI-specified reg address");
 		return -EINVAL;
 	}
+}
+
+int tcpci_tcpm_set_snk_ctrl(const struct i2c_dt_spec *bus, bool enable)
+{
+	return tcpci_write_reg8(bus, TCPC_REG_COMMAND,
+			enable ? TCPC_REG_COMMAND_SNK_CTRL_HIGH : TCPC_REG_COMMAND_SNK_CTRL_LOW);
+}
+
+int tcpci_tcpm_set_src_ctrl(const struct i2c_dt_spec *bus, bool enable)
+{
+	return tcpci_write_reg8(bus, TCPC_REG_COMMAND,
+			enable ? TCPC_REG_COMMAND_SRC_CTRL_DEF : TCPC_REG_COMMAND_SRC_CTRL_LOW);
+}
+
+int tcpci_tcpm_get_snk_ctrl(const struct i2c_dt_spec *bus, bool *sinking)
+{
+	uint16_t reg;
+	int ret;
+
+	ret = tcpci_tcpm_get_status_register(bus, TCPC_REG_POWER_STATUS, &reg);
+	if (ret == 0) {
+		*sinking = reg & TCPC_REG_POWER_STATUS_SINKING_VBUS;
+	}
+
+	return ret;
+}
+
+int tcpci_tcpm_get_src_ctrl(const struct i2c_dt_spec *bus, bool *sourcing)
+{
+	uint16_t reg;
+	int ret;
+
+	ret = tcpci_tcpm_get_status_register(bus, TCPC_REG_POWER_STATUS, &reg);
+	if (ret == 0) {
+		*sourcing = reg & TCPC_REG_POWER_STATUS_SOURCING_VBUS;
+	}
+
+	return ret;
+}
+
+int tcpci_tcpm_set_debug_accessory(const struct i2c_dt_spec *bus, bool enable)
+{
+	return tcpci_update_reg8(bus, TCPC_REG_CONFIG_STD_OUTPUT,
+				 TCPC_REG_CONFIG_STD_OUTPUT_DBG_ACC_CONN_N,
+				 enable ? 0 : TCPC_REG_CONFIG_STD_OUTPUT_DBG_ACC_CONN_N);
+}
+
+int tcpci_tcpm_set_low_power_mode(const struct i2c_dt_spec *bus, bool enable)
+{
+	return tcpci_write_reg8(bus, TCPC_REG_COMMAND,
+			enable ? TCPC_REG_COMMAND_I2CIDLE : TCPC_REG_COMMAND_WAKE_I2C);
 }

@@ -183,6 +183,7 @@ Default Zephyr Peripheral Mapping:
 - LD4 (blue) : PM3
 - ADC1 channel 6 input : PF12
 - USB OTG FS DM/DP : PM12/PM11
+- XSPI1 NCS/DQS0/DQS1/CLK/IO: PO0/PO2/PO3/PO4/PP0..15
 
 System Clock
 ------------
@@ -205,6 +206,8 @@ USB port2 (FS) is supported.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 STM32H7S78-DK Discovery board includes an ST-LINK/V3E embedded debug tool interface.
 

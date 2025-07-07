@@ -204,8 +204,12 @@ static int uart_litex_fifo_fill(const struct device *dev,
 	const struct uart_litex_device_config *config = dev->config;
 	int i;
 
+	litex_write8(UART_EV_RX, config->ev_pending_addr);
 	for (i = 0; i < size && !litex_read8(config->txfull_addr); i++) {
 		litex_write8(tx_data[i], config->rxtx_addr);
+	}
+	while (!litex_read8(config->txfull_addr)) {
+		litex_write8(0, config->rxtx_addr);
 	}
 
 	return i;
@@ -288,7 +292,9 @@ static void uart_litex_irq_handler(const struct device *dev)
 	}
 
 	/* Clear RX events, TX events still needed to enqueue the next transfer */
-	litex_write8(UART_EV_RX, config->ev_pending_addr);
+	if (litex_read8(config->rxempty_addr)) {
+		litex_write8(UART_EV_RX, config->ev_pending_addr);
+	}
 
 	irq_unlock(key);
 }

@@ -1,0 +1,257 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <st/mp13/stm32mp135.dtsi>
+#include <st/mp13/stm32mp135faex-pinctrl.dtsi>
+#include "zephyr/dt-bindings/display/panel.h"
+#include <zephyr/dt-bindings/gpio/raspberrypi-csi-connector.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/video/video-interfaces.h>
+
+/ {
+	model = "STMicroelectronics STM32MP135-DK board";
+	compatible = "st,stm32mp135f-dk";
+
+	chosen {
+		zephyr,flash = &ddr_code;
+		zephyr,sram = &ddr_data;
+		zephyr,console = &uart4;
+		zephyr,shell-uart = &uart4;
+		zephyr,display = &ltdc;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button: button {
+			label = "User 1";
+			gpios = <&gpioa 13 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		blue_led_1: led_1 {
+			gpios = <&gpioa 14 GPIO_ACTIVE_LOW>;
+			label = "LD3";
+		};
+
+		red_led_2: led_2 {
+			gpios = <&gpioa 13 GPIO_ACTIVE_LOW>;
+			label = "LD4";
+		};
+
+		green_led_3: led_3 {
+			gpios = <&mcp23017 14 GPIO_ACTIVE_HIGH>;
+			label = "LD7";
+		};
+
+		orange_led_4: led_4 {
+			gpios = <&mcp23017 15 GPIO_ACTIVE_HIGH>;
+			label = "LD6";
+		};
+	};
+
+	aliases {
+		led0 = &blue_led_1;
+		led1 = &red_led_2;
+		sw0 = &user_button;
+	};
+
+	csi_connector: connector_csi {
+		compatible = "raspberrypi,csi-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <CSI_IO0  0 &mcp23017 4  0>,
+			   <CSI_IO1  0 &mcp23017 3  0>;
+	};
+};
+
+&clk_hsi {
+	clock-frequency = <DT_FREQ_M(64)>;
+	status = "okay";
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(24)>;
+	status = "okay";
+};
+
+&cpusw {
+	clocks = <&clk_hsi>;
+	clock-frequency = <DT_FREQ_M(64)>;
+	status = "okay";
+};
+
+&pll1 {
+	clocks = <&clk_hse>;
+	div-m = <2>;
+	mul-n = <83>;
+	div-p = <1>;
+	fracn = <2730>;
+	status = "okay";
+};
+
+&pll2 {
+	clocks = <&clk_hse>;
+	div-m = <3>;
+	mul-n = <66>;
+	div-p = <2>;
+	div-q = <2>;
+	div-r = <1>;
+	fracn = <5120>;
+	status = "okay";
+};
+
+&rcc {
+	clock-frequency = <DT_FREQ_M(1000)>;
+	clocks = <&pll>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+};
+
+&uart4 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart4_tx_pd6 &uart4_rx_pd8>;
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c1_scl_pd12 &i2c1_sda_pe8>;
+	status = "okay";
+
+	mcp23017: pinctrl@21 {
+		compatible = "microchip,mcp23017";
+		reg = <0x21>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <16>;
+	};
+};
+
+&i2c4 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c4_scl_pe15 &i2c4_sda_pb9>;
+	status = "okay";
+};
+
+csi_i2c: &i2c5 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c5_scl_pd1 &i2c5_sda_ph6>;
+	status = "okay";
+
+	mipid02: bridge@14 {
+		compatible = "st,mipid02";
+		reg = <0x14>;
+		reset-gpios = <&mcp23017 2 GPIO_ACTIVE_LOW>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			port@0 {
+				reg = <0>;
+
+				csi_ep_in: endpoint {
+					remote-endpoint-label = "";
+				};
+			};
+
+			port@2 {
+				reg = <2>;
+
+				mipid02_2: endpoint {
+					bus-width = <8>;
+					hsync-active = <0>;
+					vsync-active = <0>;
+					pclk-sample = <0>;
+					remote-endpoint-label = "dcmipp_ep_in";
+				};
+			};
+		};
+	};
+};
+
+csi_interface: &dcmipp {
+	pinctrl-0 = <&dcmipp_d0_pa9 &dcmipp_d1_pd0 &dcmipp_d2_pg10 &dcmipp_d3_pe4
+		     &dcmipp_d4_pd11 &dcmipp_d5_pd3 &dcmipp_d6_pb8 &dcmipp_d7_pe14
+		     &dcmipp_pixclk_pb7 &dcmipp_vsync_pg9 &dcmipp_hsync_ph8>;
+	pinctrl-names = "default";
+
+	ports {
+		port@0 {
+			dcmipp_ep_in: endpoint {
+				bus-width = <8>;
+				hsync-active = <0>;
+				vsync-active = <0>;
+				pclk-sample = <0>;
+				bus-type = <VIDEO_BUS_TYPE_PARALLEL>;
+				remote-endpoint-label = "mipid02_2";
+			};
+		};
+
+		port@1 {
+			csi_capture_port: endpoint { };
+		};
+	};
+};
+
+&ltdc {
+	pinctrl-0 = <&ltdc_r2_pg7 &ltdc_r3_pb12
+			&ltdc_r4_pd14 &ltdc_r5_pe7 &ltdc_r6_pe13 &ltdc_r7_pe9
+			&ltdc_g2_ph13 &ltdc_g3_pf3
+			&ltdc_g4_pd5 &ltdc_g5_pg0 &ltdc_g6_pc7 &ltdc_g7_pa15
+			&ltdc_b2_pd10 &ltdc_b3_pf2
+			&ltdc_b4_ph14 &ltdc_b5_pe0 &ltdc_b6_pb6 &ltdc_b7_pf1
+			&ltdc_de_ph9 &ltdc_clk_pd9 &ltdc_hsync_pc6 &ltdc_vsync_pg4>;
+	pinctrl-names = "default";
+	disp-on-gpios = <&gpioi 7 GPIO_ACTIVE_HIGH>;
+	bl-ctrl-gpios = <&gpioe 12 GPIO_ACTIVE_HIGH>;
+
+	status = "okay";
+
+	width = <480>;
+	height = <272>;
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+
+	display-timings {
+		compatible = "zephyr,panel-timing";
+		de-active = <0>;
+		pixelclk-active = <0>;
+		hsync-active = <0>;
+		vsync-active = <0>;
+		hsync-len = <41>;
+		vsync-len = <10>;
+		hback-porch = <13>;
+		vback-porch = <2>;
+		hfront-porch = <32>;
+		vfront-porch = <2>;
+	};
+
+	def-back-color-red = <0xFF>;
+	def-back-color-green = <0xFF>;
+	def-back-color-blue = <0xFF>;
+};
+
+/*
+ * MCO1 is used to clock ST-MIPID02, keep disabled here, will be
+ * enabled by a shield when camera pipeline is enabled
+ */
+&mco1 {
+	clocks = <&rcc STM32_SRC_HSE MCO1_SEL(MCO1_SEL_HSE)>;
+	prescaler = <MCO1_PRE(MCO_PRE_DIV_1)>;
+	pinctrl-0 = <&rcc_mco_1_pd7>;
+	pinctrl-names = "default";
+
+	status = "disabled";
+};

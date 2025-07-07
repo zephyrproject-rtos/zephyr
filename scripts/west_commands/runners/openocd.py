@@ -59,7 +59,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                  gdb_client_port=DEFAULT_OPENOCD_GDB_PORT,
                  gdb_init=None, no_load=False,
                  target_handle=DEFAULT_OPENOCD_TARGET_HANDLE,
-                 rtt_port=DEFAULT_OPENOCD_RTT_PORT):
+                 rtt_port=DEFAULT_OPENOCD_RTT_PORT, rtt_server=False):
         super().__init__(cfg)
 
         if not path.exists(cfg.board_dir):
@@ -120,6 +120,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         self.load_arg = [] if no_load else ['-ex', 'load']
         self.target_handle = target_handle
         self.rtt_port = rtt_port
+        self.rtt_server = rtt_server
 
     @classmethod
     def name(cls):
@@ -194,6 +195,10 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                             ''')
         parser.add_argument('--rtt-port', default=DEFAULT_OPENOCD_RTT_PORT,
                             help='openocd rtt port, defaults to 5555')
+        parser.add_argument('--rtt-server', default=False, action='store_true',
+                            help='''start the RTT server while debugging.
+                            To view the RTT log, connect to the rtt port using
+                            a command like telnet.''')
 
 
     @classmethod
@@ -210,7 +215,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             telnet_port=args.telnet_port, gdb_port=args.gdb_port,
             gdb_client_port=args.gdb_client_port, gdb_init=args.gdb_init,
             no_load=args.no_load, target_handle=args.target_handle,
-            rtt_port=args.rtt_port)
+            rtt_port=args.rtt_port, rtt_server=args.rtt_server)
 
     def print_gdbserver_message(self):
         if not self.thread_info_enabled:
@@ -233,7 +238,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                                 stderr=subprocess.STDOUT).decode()
 
         # Account for version info format of ADI fork of OpenOCD as well
-        version_match = re.search(r"Open On-Chip Debugger.* v?(\d+.\d+.\d+)[ \n]", out)
+        version_match = re.search(r"Open On-Chip Debugger.* v?(\d+.\d+.\d+)", out)
         version = version_match.group(1).split('.')
 
         return [to_num(i) for i in version]
@@ -389,6 +394,19 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                        '-c', f'gdb_port {self.gdb_port}'] +
                       pre_init_cmd + self.init_arg + self.targets_arg +
                       self.halt_arg)
+
+        if self.rtt_server and command != 'rtt':
+            rtt_address = self.get_rtt_address()
+            if rtt_address is None:
+                raise ValueError("RTT Control block not found")
+
+            server_cmd = (
+                server_cmd
+                + ['-c', f'rtt setup 0x{rtt_address:x} 0x10 "SEGGER RTT"']
+                + ['-c', 'rtt start']
+                + ['-c', f'rtt server start {self.rtt_port} 0']
+            )
+
         gdb_cmd = (self.gdb_cmd + self.tui_arg +
                    ['-ex', f'target extended-remote :{self.gdb_client_port}',
                     self.elf_name])
@@ -401,7 +419,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         if command == 'rtt':
             rtt_address = self.get_rtt_address()
             if rtt_address is None:
-                raise ValueError("RTT Control block not be found")
+                raise ValueError("RTT Control block not found")
 
             # cannot prompt the user to press return for automation purposes
             gdb_cmd.extend(['-ex', 'set pagination off'])
@@ -471,5 +489,18 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                 '-c', f'gdb_port {self.gdb_port}'] +
                pre_init_cmd + self.init_arg + self.targets_arg +
                ['-c', self.reset_halt_cmd])
+
+        if self.rtt_server:
+            rtt_address = self.get_rtt_address()
+            if rtt_address is None:
+                raise ValueError("RTT Control block not found")
+
+            cmd = (
+                cmd
+                + ['-c', f'rtt setup 0x{rtt_address:x} 0x10 "SEGGER RTT"']
+                + ['-c', 'rtt start']
+                + ['-c', f'rtt server start {self.rtt_port} 0']
+            )
+
         self.print_gdbserver_message()
         self.check_call(cmd)

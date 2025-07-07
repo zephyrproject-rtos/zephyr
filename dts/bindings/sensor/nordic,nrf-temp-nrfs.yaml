@@ -6,4 +6,4 @@ description: |
 
 compatible: "nordic,nrf-temp-nrfs"
 
-include: base.yaml
+include: [base.yaml, sensor-device.yaml]

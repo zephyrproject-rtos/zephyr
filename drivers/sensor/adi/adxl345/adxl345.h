@@ -14,6 +14,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 
+#include <zephyr/dt-bindings/sensor/adxl345.h>
+
 #ifdef CONFIG_ADXL345_STREAM
 #include <zephyr/rtio/rtio.h>
 #endif /* CONFIG_ADXL345_STREAM */
@@ -117,12 +119,12 @@
 #define ADXL345_BUS_SPI 1
 
 enum adxl345_odr {
-	ADXL345_ODR_12HZ = 0x7,
-	ADXL345_ODR_25HZ,
-	ADXL345_ODR_50HZ,
-	ADXL345_ODR_100HZ,
-	ADXL345_ODR_200HZ,
-	ADXL345_ODR_400HZ
+	ADXL345_ODR_12_5HZ = ADXL345_DT_ODR_12_5,
+	ADXL345_ODR_25HZ = ADXL345_DT_ODR_25,
+	ADXL345_ODR_50HZ = ADXL345_DT_ODR_50,
+	ADXL345_ODR_100HZ = ADXL345_DT_ODR_100,
+	ADXL345_ODR_200HZ = ADXL345_DT_ODR_200,
+	ADXL345_ODR_400HZ = ADXL345_DT_ODR_400,
 };
 
 enum adxl345_fifo_trigger {
@@ -149,10 +151,11 @@ enum adxl345_op_mode {
 };
 
 struct adxl345_dev_data {
-	unsigned int sample_number;
-	int16_t bufx[ADXL345_MAX_FIFO_SIZE];
-	int16_t bufy[ADXL345_MAX_FIFO_SIZE];
-	int16_t bufz[ADXL345_MAX_FIFO_SIZE];
+	struct {
+		int16_t x;
+		int16_t y;
+		int16_t z;
+	} samples;
 	struct adxl345_fifo_config fifo_config;
 	uint8_t is_full_res;
 	uint8_t selected_range;
@@ -271,8 +274,8 @@ int adxl345_reg_write_byte(const struct device *dev, uint8_t addr, uint8_t val);
 int adxl345_reg_read_byte(const struct device *dev, uint8_t addr, uint8_t *buf);
 
 int adxl345_set_op_mode(const struct device *dev, enum adxl345_op_mode op_mode);
-#ifdef CONFIG_SENSOR_ASYNC_API
 int adxl345_read_sample(const struct device *dev, struct adxl345_sample *sample);
+#ifdef CONFIG_SENSOR_ASYNC_API
 void adxl345_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
 int adxl345_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder);
 void adxl345_accel_convert(struct sensor_value *val, int16_t sample);

@@ -17,6 +17,7 @@
 		i2c-0 = &flexcomm2;
 		pwm-0 = &sctimer;
 		sw0 = &user_button_0;
+		ambient-temp0 = &p3t1755;
 	};
 
 	chosen {
@@ -62,6 +63,7 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_flexcomm3_usart>;
 	pinctrl-names = "default";
+	wakeup-source;
 };
 
 &flexcomm0 {
@@ -74,6 +76,14 @@
 
 &hsgpio0 {
 	status = "okay";
+	pinctrl-0 = <&pinmux_hsgpio0>;
+	pinctrl-names = "default";
+};
+
+&hsgpio1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_hsgpio1>;
+	pinctrl-names = "default";
 };
 
 &flexspi {
@@ -91,6 +101,7 @@
 		reg = <0>;
 		size = <DT_SIZE_M(64 * 8)>;
 		status = "okay";
+		jedec-id = [ef 40 20];
 		erase-block-size = <4096>;
 		write-block-size = <1>;
 		spi-max-frequency = <104000000>;
@@ -100,24 +111,25 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
+			/*
+			 * Partition sizes must be aligned
+			 * to the flash memory sector size of 4KB.
+			 */
 			boot_partition: partition@0 {
 				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
 			};
-			/* The MCUBoot swap-move algorithm uses the last 2 sectors
-			 * of the primary slot0 for swap status and move.
-			 */
 			slot0_partition: partition@20000 {
 				label = "image-0";
-				reg = <0x00020000 (DT_SIZE_M(3) + DT_SIZE_K(2 * 4))>;
+				reg = <0x00020000 DT_SIZE_M(3)>;
 			};
-			slot1_partition: partition@323000 {
+			slot1_partition: partition@320000 {
 				label = "image-1";
-				reg = <0x00323000 DT_SIZE_M(3)>;
+				reg = <0x00320000 DT_SIZE_M(3)>;
 			};
-			storage_partition: partition@623000 {
+			storage_partition: partition@620000 {
 				label = "storage";
-				reg = <0x00623000 (DT_SIZE_M(58) - DT_SIZE_K(136))>;
+				reg = <0x00620000 (DT_SIZE_M(58) - DT_SIZE_K(128))>;
 			};
 		};
 	};
@@ -152,7 +164,7 @@
 	pinctrl-0 = <&pinmux_enet>;
 	pinctrl-names = "default";
 	phy-handle = <&phy>;
-	zephyr,random-mac-address;
+	nxp,unique-mac;
 	phy-connection-type = "rmii";
 };
 
@@ -228,6 +240,11 @@
 	wakeup-source;
 };
 
+&imu {
+	status = "okay";
+	wakeup-source;
+};
+
 zephyr_udc0: &usb_otg {
 	status = "okay";
 };
@@ -255,6 +272,12 @@ arduino_i2c: &flexcomm2 {
 	#size-cells = <0>;
 	pinctrl-0 = <&pinmux_flexcomm2_i2c>;
 	pinctrl-names = "default";
+
+	p3t1755: p3t1755@48 {
+		compatible = "nxp,p3t1755";
+		reg = <0x48>;
+		status = "okay";
+	};
 };
 
 zephyr_mipi_dbi_spi: &lcdic {

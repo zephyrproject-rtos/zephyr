@@ -94,62 +94,9 @@ Supported Features
 NXP considers the MIMXRT1064-EVK as the superset board for the i.MX RT10xx
 family of MCUs.  This board is a focus for NXP's Full Platform Support for
 Zephyr, to better enable the entire RT10xx family.  NXP prioritizes enabling
-this board with new support for Zephyr features.  The mimxrt1064_evk board
-configuration supports the following hardware features:
+this board with new support for Zephyr features.
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| DISPLAY   | on-chip    | eLCDIF. Tested with                 |
-|           |            | :ref:`rk043fn02h_ct`, and           |
-|           |            | :ref:`rk043fn66hs_ctg` shields      |
-+-----------+------------+-------------------------------------+
-| VIDEO     | on-chip    | video, using CSI                    |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | QSPI flash                          |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| SDHC      | on-chip    | disk access                         |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| ENET      | on-chip    | ethernet                            |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | USB device                          |
-+-----------+------------+-------------------------------------+
-| CAN       | on-chip    | can                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| GPT       | on-chip    | gpt                                 |
-+-----------+------------+-------------------------------------+
-| DMA       | on-chip    | dma                                 |
-+-----------+------------+-------------------------------------+
-| HWINFO    | on-chip    | Unique device serial number         |
-+-----------+------------+-------------------------------------+
-| TRNG      | on-chip    | entropy                             |
-+-----------+------------+-------------------------------------+
-| FLEXSPI   | on-chip    | flash programming                   |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in
-:zephyr_file:`boards/nxp/mimxrt1064_evk/mimxrt1064_evk_defconfig`
-
-Other hardware features are not currently supported by the port.
+.. zephyr:board-supported-hw::
 
 Connections and I/Os
 ====================
@@ -310,11 +257,13 @@ and the remaining are not used.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 This board supports 3 debug host tools. Please install your preferred host
 tool, then follow the instructions in `Configuring a Debug Probe`_ to
 configure the board appropriately.
 
-* :ref:`jlink-debug-host-tools` (Default, Supported by NXP)
+* :ref:`jlink-debug-host-tools` (Supported by NXP)
 * :ref:`linkserver-debug-host-tools` (Supported by NXP)
 * :ref:`pyocd-debug-host-tools` (Not supported by NXP)
 
@@ -326,9 +275,10 @@ Configuring a Debug Probe
 =========================
 
 .. note::
-	When the device transitions into low power states, the debugger may be
-	unable to access the chip. Use caution when enabling ``CONFIG_PM``, and
-	if the debugger cannot flash the part, see :ref:`Troubleshooting RT1064`
+	* To boot from the QSPI flash, make sure SW7 is set to 0010 and SW5 is set to 0000.
+	* When the device transitions into low power states, the debugger may be
+	  unable to access the chip. Use caution when enabling ``CONFIG_PM``, and
+	  if the debugger cannot flash the part, see :ref:`Troubleshooting RT1064`
 
 For the RT1064, J47/J48 are the SWD isolation jumpers, J42 is the DFU
 mode jumper, and J21 is the 20 pin JTAG/SWD header.
@@ -447,7 +397,7 @@ connected to the EVK properly.
    https://www.nxp.com/webapp/Download?colCode=IMXRT1064QSG
 
 .. _MIMXRT1064-EVK User Guide:
-   https://www.nxp.com/docs/en/data-sheet/MIMXRT10601064EKBHUG.pdf
+   https://www.nxp.com/webapp/Download?colCode=MIMXRT10601064EKBHUG
 
 .. _MIMXRT1064-EVK Debug Firmware:
    https://www.nxp.com/docs/en/application-note/AN13206.pdf

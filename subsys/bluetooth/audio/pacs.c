@@ -64,8 +64,8 @@ static uint32_t pacs_snk_location;
 #endif /* CONFIG_BT_PAC_SNK_LOC */
 #endif /* CONFIG_BT_PAC_SNK */
 
-static uint16_t src_available_contexts = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
-static uint16_t snk_available_contexts = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
+static uint16_t src_available_contexts = BT_AUDIO_CONTEXT_TYPE_NONE;
+static uint16_t snk_available_contexts = BT_AUDIO_CONTEXT_TYPE_NONE;
 
 enum {
 	FLAG_ACTIVE,
@@ -308,7 +308,7 @@ static uint16_t supported_context_get(enum bt_audio_dir dir)
 		break;
 	}
 
-	return BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
+	return BT_AUDIO_CONTEXT_TYPE_NONE;
 }
 
 static ssize_t supported_context_read(struct bt_conn *conn,
@@ -1553,15 +1553,15 @@ enum bt_audio_context bt_pacs_get_available_contexts(enum bt_audio_dir dir)
 		if (atomic_test_bit(pacs.flags, PACS_FLAG_SNK_PAC)) {
 			return snk_available_contexts;
 		}
-		return -EINVAL;
+		break;
 	case BT_AUDIO_DIR_SOURCE:
 		if (atomic_test_bit(pacs.flags, PACS_FLAG_SRC_PAC)) {
 			return src_available_contexts;
 		}
-		return -EINVAL;
+		break;
 	}
 
-	return BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
+	return BT_AUDIO_CONTEXT_TYPE_NONE;
 }
 
 enum bt_audio_context bt_pacs_get_available_contexts_for_conn(struct bt_conn *conn,
@@ -1569,7 +1569,7 @@ enum bt_audio_context bt_pacs_get_available_contexts_for_conn(struct bt_conn *co
 {
 	CHECKIF(conn == NULL) {
 		LOG_ERR("NULL conn");
-		return BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
+		return BT_AUDIO_CONTEXT_TYPE_NONE;
 	}
 
 	return pacs_get_available_contexts_for_conn(conn, dir);

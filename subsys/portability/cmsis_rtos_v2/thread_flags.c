@@ -109,6 +109,24 @@ uint32_t osThreadFlagsWait(uint32_t flags, uint32_t options, uint32_t timeout)
 
 		time_stamp_start = (uint64_t)k_cycle_get_32();
 
+		sig = tid->signal_results & flags;
+
+		if (options & osFlagsWaitAll) {
+			/* Check if all events we are waiting on have
+			 * been signalled
+			 */
+			if (sig == flags) {
+				break;
+			}
+		} else {
+			/* Check if any events we are waiting on have
+			 * been signalled
+			 */
+			if (sig != 0) {
+				break;
+			}
+		}
+
 		switch (timeout) {
 		case 0:
 			retval = k_poll(&tid->poll_event, 1, K_NO_WAIT);
@@ -138,40 +156,27 @@ uint32_t osThreadFlagsWait(uint32_t flags, uint32_t options, uint32_t timeout)
 		tid->poll_event.signal->signaled = 0U;
 		tid->poll_event.state = K_POLL_STATE_NOT_READY;
 
-		if (options & osFlagsWaitAll) {
-			/* Check if all events we are waiting on have
-			 * been signalled
-			 */
-			if ((tid->signal_results & flags) == flags) {
-				break;
-			}
+		/* If we need to wait on more signals, we need to
+		 * adjust the timeout value accordingly based on
+		 * the time that has already elapsed.
+		 */
+		hwclk_cycles_delta = (uint64_t)k_cycle_get_32() - time_stamp_start;
 
-			/* If we need to wait on more signals, we need to
-			 * adjust the timeout value accordingly based on
-			 * the time that has already elapsed.
-			 */
-			hwclk_cycles_delta = (uint64_t)k_cycle_get_32() - time_stamp_start;
+		time_delta_ns = (uint32_t)k_cyc_to_ns_floor64(hwclk_cycles_delta);
 
-			time_delta_ns = (uint32_t)k_cyc_to_ns_floor64(hwclk_cycles_delta);
+		time_delta_ms = (uint32_t)time_delta_ns / NSEC_PER_MSEC;
 
-			time_delta_ms = (uint32_t)time_delta_ns / NSEC_PER_MSEC;
-
-			if (timeout_ms > time_delta_ms) {
-				timeout_ms -= time_delta_ms;
-			} else {
-				timeout_ms = 0U;
-			}
+		if (timeout_ms > time_delta_ms) {
+			timeout_ms -= time_delta_ms;
 		} else {
-			break;
+			timeout_ms = 0U;
 		}
 	}
 
-	sig = tid->signal_results;
 	if (!(options & osFlagsNoClear)) {
-
 		/* Clear signal flags as the thread is ready now */
 		key = irq_lock();
-		tid->signal_results &= ~(flags);
+		tid->signal_results &= ~(sig);
 		irq_unlock(key);
 	}
 

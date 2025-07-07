@@ -9,7 +9,7 @@ Suite Teardown      Terminate All Processes    kill=True
 
 *** Variables ***
 ${csv_file}         zbus_dyn_benchmark_256kb.csv
-${board}            hifive1@B
+${board}            hifive1_revb
 ${serial_port}      /dev/ttyACM0
 
 

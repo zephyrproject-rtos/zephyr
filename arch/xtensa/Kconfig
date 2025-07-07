@@ -169,7 +169,6 @@ config XTENSA_MMU
 	bool "Xtensa MMU Support"
 	select MMU
 	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE
-	select XTENSA_SMALL_VECTOR_TABLE_ENTRY
 	select KERNEL_VM_USE_CUSTOM_MEM_RANGE_CHECK if XTENSA_RPO_CACHE
 	select CURRENT_THREAD_USE_NO_TLS if USERSPACE
 	help
@@ -206,7 +205,7 @@ config XTENSA_MMU_NUM_L1_TABLES
 	default 1 if !USERSPACE
 	default 4
 	help
-	  This option specifies the maximum number of traslation tables.
+	  This option specifies the maximum number of translation tables.
 	  Translation tables are directly related to the number of
 	  memory domains in the target, considering the kernel itself requires one.
 
@@ -223,15 +222,16 @@ config XTENSA_MMU_DOUBLE_MAP
 	  This option specifies that the memory is mapped in two
 	  distinct region, cached and uncached.
 
-	config XTENSA_INVALIDATE_MEM_DOMAIN_TLB_ON_SWAP
-		bool
-		help
-		  This invalidates all TLBs referred by the incoming thread's
-		  memory domain when swapping page tables.
-
 config PRIVILEGED_STACK_SIZE
 	# Must be multiple of CONFIG_MMU_PAGE_SIZE
 	default 4096
+
+config XTENSA_MMU_FLUSH_AUTOREFILL_DTLBS_ON_SWAP
+	bool "Flush all auto-refill data TLBs when swapping page tables"
+	depends on USERSPACE
+	help
+	  This flushes (invalidates) all auto-refill data TLBs when page
+	  tables are swapped.
 
 endif # XTENSA_MMU
 

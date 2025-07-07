@@ -95,6 +95,17 @@ LOG_MODULE_REGISTER(uart_nrfx_uarte, CONFIG_UART_LOG_LEVEL);
 #define UARTE_HAS_FRAME_TIMEOUT 1
 #endif
 
+/* Frame timeout has a bug that countdown counter may not be triggered in some
+ * specific condition. It may happen if RX is manually started after ENDRX (STOPRX
+ * task was not triggered) and there is ongoing reception of a byte. RXDRDY event
+ * triggered by the reception of that byte may not trigger frame timeout counter.
+ * If this is the last byte of a transfer then without the workaround there will
+ * be no expected RX timeout.
+ */
+#ifdef UARTE_HAS_FRAME_TIMEOUT
+#define RX_FRAMETIMEOUT_WORKAROUND 1
+#endif
+
 #define INSTANCE_NEEDS_CACHE_MGMT(unused, prefix, i, prop) UARTE_IS_CACHEABLE(prefix##i)
 
 #if UARTE_FOR_EACH_INSTANCE(INSTANCE_NEEDS_CACHE_MGMT, (+), (0), _)
@@ -118,10 +129,11 @@ LOG_MODULE_REGISTER(uart_nrfx_uarte, CONFIG_UART_LOG_LEVEL);
 			(0))), (0))
 
 #if UARTE_FOR_EACH_INSTANCE(INSTANCE_IS_FAST_PD, (||), (0))
-/* Instance in fast power domain (PD) requires special PM treatment so device runtime PM must
- * be enabled.
+/* Instance in fast power domain (PD) requires special PM treatment and clock control, so
+ * device runtime PM and clock control must be enabled.
  */
 BUILD_ASSERT(IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME));
+BUILD_ASSERT(IS_ENABLED(CONFIG_CLOCK_CONTROL));
 #define UARTE_ANY_FAST_PD 1
 #endif
 #endif
@@ -251,6 +263,8 @@ struct uarte_nrfx_data {
 #define UARTE_FLAG_LOW_POWER (UARTE_FLAG_LOW_POWER_TX | UARTE_FLAG_LOW_POWER_RX)
 #define UARTE_FLAG_TRIG_RXTO BIT(2)
 #define UARTE_FLAG_POLL_OUT BIT(3)
+/* Flag indicating that a workaround for not working frame timeout is active. */
+#define UARTE_FLAG_FTIMEOUT_WATCH BIT(4)
 
 /* If enabled then ENDTX is PPI'ed to TXSTOP */
 #define UARTE_CFG_FLAG_PPI_ENDTX   BIT(0)
@@ -265,6 +279,9 @@ struct uarte_nrfx_data {
 
 /* If enabled then UARTE peripheral is using memory which is cacheable. */
 #define UARTE_CFG_FLAG_CACHEABLE BIT(3)
+
+/* Indicates that workaround for spurious RXTO during restart shall be applied. */
+#define UARTE_CFG_FLAG_SPURIOUS_RXTO BIT(3)
 
 /* Formula for getting the baudrate settings is following:
  * 2^12 * (2^20 / (f_PCLK / desired_baudrate)) where f_PCLK is a frequency that
@@ -370,6 +387,8 @@ static inline NRF_UARTE_Type *get_uarte_instance(const struct device *dev)
 	return config->uarte_regs;
 }
 
+#if !defined(CONFIG_UART_NRFX_UARTE_NO_IRQ)
+
 static void endtx_isr(const struct device *dev)
 {
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
@@ -384,6 +403,8 @@ static void endtx_isr(const struct device *dev)
 	irq_unlock(key);
 
 }
+
+#endif
 
 /** @brief Disable UARTE peripheral is not used by RX or TX.
  *
@@ -423,7 +444,7 @@ static void uarte_disable_locked(const struct device *dev, uint32_t dis_mask)
 	nrf_uarte_disable(get_uarte_instance(dev));
 }
 
-#ifdef UARTE_ANY_NONE_ASYNC
+#if defined(UARTE_ANY_NONE_ASYNC) && !defined(CONFIG_UART_NRFX_UARTE_NO_IRQ)
 /**
  * @brief Interrupt service routine.
  *
@@ -500,7 +521,7 @@ static void uarte_nrfx_isr_int(const void *arg)
 	}
 #endif /* UARTE_INTERRUPT_DRIVEN */
 }
-#endif /* UARTE_ANY_NONE_ASYNC */
+#endif /* UARTE_ANY_NONE_ASYNC && !CONFIG_UART_NRFX_UARTE_NO_IRQ */
 
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 /**
@@ -1310,9 +1331,22 @@ static void rx_timeout(struct k_timer *timer)
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 
 #ifdef UARTE_HAS_FRAME_TIMEOUT
-	if (!nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXDRDY)) {
-		nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPRX);
+	struct uarte_nrfx_data *data = dev->data;
+	struct uarte_async_rx *async_rx = &data->async->rx;
+	bool rxdrdy = nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXDRDY);
+
+	if (IS_ENABLED(RX_FRAMETIMEOUT_WORKAROUND) &&
+	    (atomic_and(&data->flags, ~UARTE_FLAG_FTIMEOUT_WATCH) & UARTE_FLAG_FTIMEOUT_WATCH)) {
+		if (rxdrdy) {
+			nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXDRDY);
+			k_timer_start(&async_rx->timer, async_rx->timeout, K_NO_WAIT);
+		}
+	} else {
+		if (!rxdrdy) {
+			nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPRX);
+		}
 	}
+
 	return;
 #else /* UARTE_HAS_FRAME_TIMEOUT */
 	struct uarte_nrfx_data *data = dev->data;
@@ -1538,6 +1572,7 @@ static void endrx_isr(const struct device *dev)
 	async_rx->offset = 0;
 
 	if (async_rx->enabled) {
+		bool start_timeout = false;
 		/* If there is a next buffer, then STARTRX will have already been
 		 * invoked by the short (the next buffer will be filling up already)
 		 * and here we just do the swap of which buffer the driver is following,
@@ -1546,12 +1581,28 @@ static void endrx_isr(const struct device *dev)
 		unsigned int key = irq_lock();
 
 		if (async_rx->buf) {
+
+#if CONFIG_UART_NRFX_UARTE_SPURIOUS_RXTO_WORKAROUND
+			/* Check for spurious RXTO event. */
+			const struct uarte_nrfx_config *config = dev->config;
+
+			if ((config->flags & UARTE_CFG_FLAG_SPURIOUS_RXTO) &&
+			    nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXTO)) {
+				nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXTO);
+			}
+#endif
+
 			/* Check is based on assumption that ISR handler handles
 			 * ENDRX before RXSTARTED so if short was set on time, RXSTARTED
 			 * event will be set.
 			 */
 			if (!nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXSTARTED)) {
 				nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STARTRX);
+				nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXTO);
+				if (IS_ENABLED(RX_FRAMETIMEOUT_WORKAROUND)) {
+					data->flags |= UARTE_FLAG_FTIMEOUT_WATCH;
+					start_timeout = true;
+				}
 			}
 			/* Remove the short until the subsequent next buffer is setup */
 			nrf_uarte_shorts_disable(uarte, NRF_UARTE_SHORT_ENDRX_STARTRX);
@@ -1560,6 +1611,11 @@ static void endrx_isr(const struct device *dev)
 		}
 
 		irq_unlock(key);
+		if (IS_ENABLED(UARTE_HAS_FRAME_TIMEOUT)) {
+			if (start_timeout && !K_TIMEOUT_EQ(async_rx->timeout, K_NO_WAIT)) {
+				k_timer_start(&async_rx->timer, async_rx->timeout, K_NO_WAIT);
+			}
+		}
 	}
 
 #if !defined(CONFIG_UART_NRFX_UARTE_ENHANCED_RX)
@@ -1616,6 +1672,12 @@ static void rxto_isr(const struct device *dev)
 	const struct uarte_nrfx_config *config = dev->config;
 	struct uarte_nrfx_data *data = dev->data;
 	struct uarte_async_rx *async_rx = &data->async->rx;
+
+	if (IS_ENABLED(RX_FRAMETIMEOUT_WORKAROUND)) {
+		if (atomic_test_and_clear_bit(&data->flags, UARTE_FLAG_FTIMEOUT_WATCH)) {
+			k_timer_stop(&async_rx->timer);
+		}
+	}
 
 	if (async_rx->buf) {
 #ifdef CONFIG_HAS_NORDIC_DMM
@@ -1964,7 +2026,8 @@ static void uarte_nrfx_poll_out(const struct device *dev, unsigned char c)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) || LOW_POWER_ENABLED(config)) {
+	if (!IS_ENABLED(CONFIG_UART_NRFX_UARTE_NO_IRQ) &&
+	    (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) || LOW_POWER_ENABLED(config))) {
 		nrf_uarte_int_enable(uarte, NRF_UARTE_INT_TXSTOPPED_MASK);
 	}
 
@@ -1972,6 +2035,27 @@ static void uarte_nrfx_poll_out(const struct device *dev, unsigned char c)
 	tx_start(dev, config->poll_out_byte, 1);
 
 	irq_unlock(key);
+
+	if (IS_ENABLED(CONFIG_UART_NRFX_UARTE_NO_IRQ)) {
+		key = wait_tx_ready(dev);
+		if (!IS_ENABLED(UARTE_HAS_ENDTX_STOPTX_SHORT) &&
+		    !(config->flags & UARTE_CFG_FLAG_PPI_ENDTX)) {
+			nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPTX);
+			nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_TXSTOPPED);
+			while (!nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_TXSTOPPED)) {
+			}
+		}
+
+		if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+			if (!(data->flags & UARTE_FLAG_POLL_OUT)) {
+				data->flags &= ~UARTE_FLAG_POLL_OUT;
+				pm_device_runtime_put(dev);
+			}
+		} else if (LOW_POWER_ENABLED(config)) {
+			uarte_disable_locked(dev, UARTE_FLAG_LOW_POWER_TX);
+		}
+		irq_unlock(key);
+	}
 }
 
 
@@ -2239,7 +2323,7 @@ static void wait_for_tx_stopped(const struct device *dev)
 	NRFX_WAIT_FOR(nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_TXSTOPPED),
 		      1000, 1, res);
 
-	if (!ppi_endtx) {
+	if (!ppi_endtx && !IS_ENABLED(CONFIG_UART_NRFX_UARTE_NO_IRQ)) {
 		nrf_uarte_int_enable(uarte, NRF_UARTE_INT_ENDTX_MASK);
 	}
 }
@@ -2384,7 +2468,9 @@ static int uarte_tx_path_init(const struct device *dev)
 		}
 		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDTX);
 		nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPTX);
-		nrf_uarte_int_enable(uarte, NRF_UARTE_INT_ENDTX_MASK);
+		if (!IS_ENABLED(CONFIG_UART_NRFX_UARTE_NO_IRQ)) {
+			nrf_uarte_int_enable(uarte, NRF_UARTE_INT_ENDTX_MASK);
+		}
 	}
 	while (!nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_TXSTOPPED)) {
 	}
@@ -2435,11 +2521,31 @@ static int uarte_instance_init(const struct device *dev,
 	return pm_device_driver_init(dev, uarte_nrfx_pm_action);
 }
 
-#define UARTE_IRQ_CONFIGURE(idx, isr_handler)				       \
-	do {								       \
-		IRQ_CONNECT(DT_IRQN(UARTE(idx)), DT_IRQ(UARTE(idx), priority), \
-			    isr_handler, DEVICE_DT_GET(UARTE(idx)), 0);	       \
-		irq_enable(DT_IRQN(UARTE(idx)));			       \
+#define UARTE_GET_ISR(idx) \
+	COND_CODE_1(CONFIG_UART_##idx##_ASYNC, (uarte_nrfx_isr_async), (uarte_nrfx_isr_int))
+
+/* Declare interrupt handler for direct ISR. */
+#define UARTE_DIRECT_ISR_DECLARE(idx)					       \
+	IF_ENABLED(CONFIG_UART_NRFX_UARTE_DIRECT_ISR, (			       \
+		ISR_DIRECT_DECLARE(uarte_##idx##_direct_isr)		       \
+		{							       \
+			ISR_DIRECT_PM();				       \
+			UARTE_GET_ISR(idx)(DEVICE_DT_GET(UARTE(idx)));	       \
+			return 1;					       \
+		}							       \
+		))
+
+/* Depending on configuration standard or direct IRQ is connected. */
+#define UARTE_IRQ_CONNECT(idx, irqn, prio)							\
+	COND_CODE_1(CONFIG_UART_NRFX_UARTE_NO_IRQ, (), \
+		(COND_CODE_1(CONFIG_UART_NRFX_UARTE_DIRECT_ISR,					\
+		    (IRQ_DIRECT_CONNECT(irqn, prio, uarte_##idx##_direct_isr, 0)),		\
+		    (IRQ_CONNECT(irqn, prio, UARTE_GET_ISR(idx), DEVICE_DT_GET(UARTE(idx)), 0)))))
+
+#define UARTE_IRQ_CONFIGURE(idx)							   \
+	do {										   \
+		UARTE_IRQ_CONNECT(idx, DT_IRQN(UARTE(idx)), DT_IRQ(UARTE(idx), priority)); \
+		irq_enable(DT_IRQN(UARTE(idx)));					   \
 	} while (false)
 
 /* Low power mode is used when disable_rx is not defined or in async mode if
@@ -2482,7 +2588,7 @@ static int uarte_instance_init(const struct device *dev,
  */
 #define UARTE_INIT_PRIO(idx)								\
 	COND_CODE_1(INSTANCE_IS_FAST_PD(_, /*empty*/, idx, _),				\
-		    (UTIL_INC(CONFIG_CLOCK_CONTROL_NRF2_GLOBAL_HSFLL_INIT_PRIORITY)),	\
+		    (UTIL_INC(CONFIG_CLOCK_CONTROL_NRF_HSFLL_GLOBAL_INIT_PRIORITY)),	\
 		    (CONFIG_SERIAL_INIT_PRIORITY))
 
 /* Macro for setting nRF specific configuration structures. */
@@ -2511,6 +2617,18 @@ static int uarte_instance_init(const struct device *dev,
 			     ? UART_CFG_FLOW_CTRL_RTS_CTS		       \
 			     : UART_CFG_FLOW_CTRL_NONE,			       \
 	}
+
+/* Macro determines if PM actions are interrupt safe. They are in case of
+ * asynchronous API (except for instance in fast power domain) and non-asynchronous
+ * API if RX is disabled. Macro must resolve to a literal 1 or 0.
+ */
+#define UARTE_PM_ISR_SAFE(idx)						       \
+	COND_CODE_1(INSTANCE_IS_FAST_PD(_, /*empty*/, idx, _),		       \
+		    (0),						       \
+		    (COND_CODE_1(CONFIG_UART_##idx##_ASYNC,		       \
+				 (PM_DEVICE_ISR_SAFE),			       \
+				 (COND_CODE_1(UARTE_PROP(idx, disable_rx),     \
+					      (PM_DEVICE_ISR_SAFE), (0))))))   \
 
 #define UART_NRF_UARTE_DEVICE(idx)					       \
 	NRF_DT_CHECK_NODE_HAS_PINCTRL_SLEEP(UARTE(idx));		       \
@@ -2555,6 +2673,9 @@ static int uarte_instance_init(const struct device *dev,
 			(!IS_ENABLED(CONFIG_HAS_NORDIC_DMM) ? 0 :	       \
 			  (UARTE_IS_CACHEABLE(idx) ?			       \
 				UARTE_CFG_FLAG_CACHEABLE : 0)) |	       \
+			(IS_ENABLED(CONFIG_UART_NRFX_UARTE_SPURIOUS_RXTO_WORKAROUND) && \
+			 INSTANCE_IS_HIGH_SPEED(_, /*empty*/, idx, _) ?	       \
+			 UARTE_CFG_FLAG_SPURIOUS_RXTO : 0) |		       \
 			USE_LOW_POWER(idx),				       \
 		UARTE_DISABLE_RX_INIT(UARTE(idx)),			       \
 		.poll_out_byte = &uarte##idx##_poll_out_byte,		       \
@@ -2573,19 +2694,17 @@ static int uarte_instance_init(const struct device *dev,
 				.precision = NRF_CLOCK_CONTROL_PRECISION_DEFAULT,\
 				},))					       \
 	};								       \
+	UARTE_DIRECT_ISR_DECLARE(idx)					       \
 	static int uarte_##idx##_init(const struct device *dev)		       \
 	{								       \
-		COND_CODE_1(CONFIG_UART_##idx##_ASYNC,			       \
-			   (UARTE_IRQ_CONFIGURE(idx, uarte_nrfx_isr_async);),  \
-			   (UARTE_IRQ_CONFIGURE(idx, uarte_nrfx_isr_int);))    \
+		UARTE_IRQ_CONFIGURE(idx);				       \
 		return uarte_instance_init(				       \
 			dev,						       \
 			IS_ENABLED(CONFIG_UART_##idx##_INTERRUPT_DRIVEN));     \
 	}								       \
 									       \
 	PM_DEVICE_DT_DEFINE(UARTE(idx), uarte_nrfx_pm_action,		       \
-			    COND_CODE_1(INSTANCE_IS_FAST_PD(_, /*empty*/, idx, _),\
-				    (0), (PM_DEVICE_ISR_SAFE)));	       \
+			    UARTE_PM_ISR_SAFE(idx));			       \
 									       \
 	DEVICE_DT_DEFINE(UARTE(idx),					       \
 		      uarte_##idx##_init,				       \

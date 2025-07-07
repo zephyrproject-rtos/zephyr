@@ -669,6 +669,10 @@ int64_t ext2_inode_remove_blocks(struct ext2_inode *inode, uint32_t first)
 
 	max_lvl = get_level_offsets(inode->i_fs, first, offsets);
 
+	if (max_lvl < 0) {
+		return max_lvl;
+	}
+
 	if (all_zero(&offsets[1], max_lvl)) {
 		/* The first block to remove is either:
 		 *  - one of the first 12 blocks in the indode

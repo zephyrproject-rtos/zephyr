@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 Linaro Limited.
+ * Copyright (c) 2025 Atmosic
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -96,8 +97,7 @@ static int gpio_cmsdk_ahb_port_toggle_bits(const struct device *dev,
 	return 0;
 }
 
-static int cmsdk_ahb_gpio_config(const struct device *dev, uint32_t mask,
-				 gpio_flags_t flags)
+int cmsdk_ahb_gpio_config(const struct device *dev, uint32_t mask, gpio_flags_t flags)
 {
 	const struct gpio_cmsdk_ahb_cfg * const cfg = dev->config;
 
@@ -134,6 +134,23 @@ static int cmsdk_ahb_gpio_config(const struct device *dev, uint32_t mask,
 
 	return 0;
 }
+
+#ifdef CONFIG_GPIO_GET_CONFIG
+static int gpio_cmsdk_ahb_get_config(const struct device *dev, gpio_pin_t pin, gpio_flags_t *flags)
+{
+	const struct gpio_cmsdk_ahb_cfg *const cfg = dev->config;
+
+	uint32_t mask = BIT(pin);
+
+	*flags = GPIO_DISCONNECTED;
+
+	if (cfg->port->outenableset & mask) {
+		*flags |= (cfg->port->dataout & mask) ? GPIO_OUTPUT_HIGH : GPIO_OUTPUT_LOW;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_GPIO_GET_CONFIG */
 
 /**
  * @brief Configure pin or port
@@ -218,6 +235,9 @@ static int gpio_cmsdk_ahb_manage_callback(const struct device *dev,
 
 static DEVICE_API(gpio, gpio_cmsdk_ahb_drv_api_funcs) = {
 	.pin_configure = gpio_cmsdk_ahb_config,
+#ifdef CONFIG_GPIO_GET_CONFIG
+	.pin_get_config = gpio_cmsdk_ahb_get_config,
+#endif
 	.port_get_raw = gpio_cmsdk_ahb_port_get_raw,
 	.port_set_masked_raw = gpio_cmsdk_ahb_port_set_masked_raw,
 	.port_set_bits_raw = gpio_cmsdk_ahb_port_set_bits_raw,

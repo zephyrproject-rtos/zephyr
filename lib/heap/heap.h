@@ -232,14 +232,25 @@ static inline chunksz_t chunksz(size_t bytes)
 	return (bytes + CHUNK_UNIT - 1U) / CHUNK_UNIT;
 }
 
-static inline chunksz_t bytes_to_chunksz(struct z_heap *h, size_t bytes)
+/**
+ * Convert the number of requested bytes to chunks and clamp it to facilitate
+ * error handling. As some of the heap is used for metadata, there will never
+ * be enough space for 'end_chunk' chunks. Also note that since 'size_t' may
+ * be 64-bits wide, clamping guards against overflow when converting to the
+ * 32-bit wide 'chunksz_t'.
+ */
+static ALWAYS_INLINE chunksz_t bytes_to_chunksz(struct z_heap *h, size_t bytes, size_t extra)
 {
-	return chunksz(chunk_header_bytes(h) + bytes);
+	size_t chunks = (bytes / CHUNK_UNIT) + (extra / CHUNK_UNIT);
+	size_t oddments = ((bytes % CHUNK_UNIT) + (extra % CHUNK_UNIT) +
+			   chunk_header_bytes(h) + CHUNK_UNIT - 1U) / CHUNK_UNIT;
+
+	return (chunksz_t)MIN(chunks + oddments, h->end_chunk);
 }
 
 static inline chunksz_t min_chunk_size(struct z_heap *h)
 {
-	return bytes_to_chunksz(h, 1);
+	return chunksz(chunk_header_bytes(h) + 1);
 }
 
 static inline size_t chunksz_to_bytes(struct z_heap *h, chunksz_t chunksz_in)
@@ -251,15 +262,6 @@ static inline int bucket_idx(struct z_heap *h, chunksz_t sz)
 {
 	unsigned int usable_sz = sz - min_chunk_size(h) + 1;
 	return 31 - __builtin_clz(usable_sz);
-}
-
-static inline bool size_too_big(struct z_heap *h, size_t bytes)
-{
-	/*
-	 * Quick check to bail out early if size is too big.
-	 * Also guards against potential arithmetic overflows elsewhere.
-	 */
-	return (bytes / CHUNK_UNIT) >= h->end_chunk;
 }
 
 static inline void get_alloc_info(struct z_heap *h, size_t *alloc_bytes,

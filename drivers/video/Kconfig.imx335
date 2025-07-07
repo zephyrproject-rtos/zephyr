@@ -1,0 +1,12 @@
+# IMX335
+
+# Copyright (c) 2025 STMicroelectronics.
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_IMX335
+	bool "IMX335 CMOS digital image sensor"
+	select I2C
+	depends on DT_HAS_SONY_IMX335_ENABLED
+	default y
+	help
+	  Enable driver for IMX335 CMOS digital image sensor device

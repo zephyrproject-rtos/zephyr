@@ -59,7 +59,7 @@ int z_impl_flash_fill(const struct device *dev, uint8_t val, off_t offset,
 
 		rc = api->write(dev, offset + stored, filler, chunk);
 		if (rc < 0) {
-			LOG_DBG("Fill to dev %p failed at offset 0x%zx\n",
+			LOG_ERR("Fill to dev %p failed at offset 0x%zx\n",
 				dev, (size_t)offset + stored);
 			break;
 		}

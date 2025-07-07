@@ -70,6 +70,11 @@
 					compatible = "nxp,imx95-pinctrl", "nxp,imx93-pinctrl";
 				};
 			};
+
+			scmi_cpu: protocol@82 {
+				compatible = "nxp,scmi-cpu";
+				reg = <0x82>;
+			};
 		};
 	};
 
@@ -82,6 +87,16 @@
 		dtcm: dtcm@20000000 {
 			compatible = "nxp,imx-dtcm";
 			reg = <0x20000000 DT_SIZE_K(256)>;
+		};
+
+		flexspi: spi@425e0000 {
+			compatible = "nxp,imx-flexspi";
+			reg = <0x425e0000 0x4000>, <0x28000000 DT_SIZE_M(128)>;
+			interrupts = <48 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			clocks = <&scmi_clk IMX95_CLK_FLEXSPI1>;
 		};
 
 		gpio1: gpio@47400000 {
@@ -130,11 +145,16 @@
 		};
 
 		edma2: dma@42000000 {
-			compatible = "nxp,edma";
-			reg = <0x42000000 (DT_SIZE_K(64) * 33)>;
-			valid-channels = <30>, <31>;
-			interrupts = <143 0>, <143 0>;
+			compatible = "nxp,mcux-edma";
+			reg = <0x42000000 0x4000>;
 			#dma-cells = <2>;
+			nxp,version = <5>;
+			dma-channels = <64>;
+			dma-requests = <92>;
+			no-error-irq;
+			interrupts = <128 0>, <129 0>, <143 0>;
+			channels-shared-irq-mask = <0x00000003 0x00000000 0x0000000C 0x00000000
+						0x00000030 0x00000000>;
 			status = "disabled";
 		};
 
@@ -229,6 +249,8 @@
 			reg = <0x42570000 DT_SIZE_K(64)>;
 			interrupts = <64 3>;
 			clocks = <&scmi_clk IMX95_CLK_LPUART3>;
+			dmas = <&edma2 0 17>, <&edma2 1 18>;
+			dma-names = "tx", "rx";
 			status = "disabled";
 		};
 
@@ -245,6 +267,8 @@
 			reg = <0x42590000 DT_SIZE_K(64)>;
 			interrupts = <66 3>;
 			clocks = <&scmi_clk IMX95_CLK_LPUART5>;
+			dmas = <&edma2 2 21>, <&edma2 3 22>;
+			dma-names = "tx", "rx";
 			status = "disabled";
 		};
 
@@ -264,7 +288,7 @@
 			interrupts = <170 0>;
 			dai-index = <3>;
 			mclk-is-output;
-			dmas = <&edma2 30 60>, <&edma2 31 61>;
+			dmas = <&edma2 4 60>, <&edma2 5 61>;
 			dma-names = "tx", "rx";
 			status = "disabled";
 		};
@@ -459,6 +483,18 @@
 			status = "disabled";
 		};
 
+		lptmr2: timer@424d0000 {
+			compatible = "nxp,lptmr";
+			reg = <0x424d0000 DT_SIZE_K(4)>;
+			interrupts = <63 0>;
+			clocks = <&scmi_clk IMX95_CLK_LPTMR2>;
+			clock-frequency = <32000>;
+			clk-source = <2>;
+			prescaler = <1>;
+			resolution = <32>;
+			status = "disabled";
+		};
+
 		mu5: mailbox@44610000 {
 			compatible = "nxp,mbox-imx-mu";
 			reg = <0x44610000 DT_SIZE_K(4)>;
@@ -528,6 +564,13 @@
 				reg = <0x4cc80000 0x10000>;
 				mac-index = <2>;
 				si-index = <2>;
+				status = "disabled";
+			};
+
+			enetc_ptp_clock: ptp_clock@4ccc0000 {
+				compatible = "nxp,netc-ptp-clock";
+				reg = <0x4ccc0000 0x10000>;
+				clocks = <&scmi_clk IMX95_CLK_ENET>;
 				status = "disabled";
 			};
 		};

@@ -39,6 +39,10 @@
  */
 #define IRQ0_PRIO	2
 #define IRQ1_PRIO	1
+#ifdef CONFIG_BOARD_QEMU_CORTEX_M3
+#define IRQ0_LINE	42
+#define IRQ1_LINE	41
+#endif
 #elif defined(CONFIG_GIC)
 /*
  * For the platforms that use the ARM GIC, use the SGI (software generated
@@ -56,13 +60,20 @@
  */
 #define IRQ0_PRIO	IRQ_DEFAULT_PRIORITY
 #define IRQ1_PRIO	0x0
-#elif defined(CONFIG_SOC_SERIES_NRF54LX) && defined(CONFIG_RISCV_CORE_NORDIC_VPR)
+#elif (defined(CONFIG_SOC_SERIES_NRF54LX) || defined(CONFIG_SOC_NRF54H20_CPUFLPR)) && \
+	defined(CONFIG_RISCV_CORE_NORDIC_VPR)
 #define IRQ0_LINE	16
 #define IRQ1_LINE	17
 
 #define IRQ0_PRIO	1
 #define IRQ1_PRIO	2
-#elif defined(CONFIG_SOC_NRF54H20_CPUPPR)
+#elif defined(CONFIG_SOC_SERIES_NRF54HX) && defined(CONFIG_RISCV_CORE_NORDIC_VPR)
+#define IRQ0_LINE	14
+#define IRQ1_LINE	15
+
+#define IRQ0_PRIO	1
+#define IRQ1_PRIO	2
+#elif defined(CONFIG_SOC_NRF9280_CPUPPR)
 #define IRQ0_LINE	14
 #define IRQ1_LINE	15
 
@@ -141,17 +152,24 @@ void isr0(const void *param)
 ZTEST(interrupt_feature, test_nested_isr)
 {
 	/* Resolve test IRQ line numbers */
-#if defined(CONFIG_CPU_CORTEX_M)
+#if defined(IRQ0_LINE) && defined(IRQ1_LINE)
+	irq_line_0 = IRQ0_LINE;
+	irq_line_1 = IRQ1_LINE;
+#elif defined(CONFIG_CPU_CORTEX_M) && defined(CONFIG_DYNAMIC_INTERRUPTS)
 	irq_line_0 = get_available_nvic_line(CONFIG_NUM_IRQS);
 	irq_line_1 = get_available_nvic_line(irq_line_0);
 #else
-	irq_line_0 = IRQ0_LINE;
-	irq_line_1 = IRQ1_LINE;
+	ztest_test_skip();
 #endif
 
 	/* Connect and enable test IRQs */
+#if defined(IRQ0_LINE) && defined(IRQ1_LINE)
+	IRQ_CONNECT(IRQ0_LINE, IRQ0_PRIO, isr0, 0, 0);
+	IRQ_CONNECT(IRQ1_LINE, IRQ1_PRIO, isr1, 0, 0);
+#else
 	arch_irq_connect_dynamic(irq_line_0, IRQ0_PRIO, isr0, NULL, 0);
 	arch_irq_connect_dynamic(irq_line_1, IRQ1_PRIO, isr1, NULL, 0);
+#endif
 
 	irq_enable(irq_line_0);
 	irq_enable(irq_line_1);

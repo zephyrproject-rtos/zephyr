@@ -22,6 +22,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(phy_qc_ar8031, CONFIG_PHY_LOG_LEVEL);
 
+#include "phy_mii.h"
+
 #define AR8031_PHY_ID1           0x004DU
 #define PHY_READID_TIMEOUT_COUNT 1000U
 
@@ -188,22 +190,22 @@ static int qc_ar8031_update_link_state(const struct device *dev)
 
 	switch (speed | duplex) {
 	case PHY_SPEED_10M | PHY_DUPLEX_FULL:
-		data->state.speed = LINK_FULL_10BASE_T;
+		data->state.speed = LINK_FULL_10BASE;
 		break;
 	case PHY_SPEED_10M | PHY_DUPLEX_HALF:
-		data->state.speed = LINK_HALF_10BASE_T;
+		data->state.speed = LINK_HALF_10BASE;
 		break;
 	case PHY_SPEED_100M | PHY_DUPLEX_FULL:
-		data->state.speed = LINK_FULL_100BASE_T;
+		data->state.speed = LINK_FULL_100BASE;
 		break;
 	case PHY_SPEED_100M | PHY_DUPLEX_HALF:
-		data->state.speed = LINK_HALF_100BASE_T;
+		data->state.speed = LINK_HALF_100BASE;
 		break;
 	case PHY_SPEED_1000M | PHY_DUPLEX_FULL:
-		data->state.speed = LINK_FULL_1000BASE_T;
+		data->state.speed = LINK_FULL_1000BASE;
 		break;
 	case PHY_SPEED_1000M | PHY_DUPLEX_HALF:
-		data->state.speed = LINK_HALF_1000BASE_T;
+		data->state.speed = LINK_HALF_1000BASE;
 		break;
 	}
 
@@ -253,69 +255,32 @@ static void monitor_work_handler(struct k_work *work)
 	k_work_reschedule(&data->monitor_work, K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
 }
 
-static int qc_ar8031_cfg_link(const struct device *dev, enum phy_link_speed adv_speeds)
+static int qc_ar8031_cfg_link(const struct device *dev, enum phy_link_speed speeds,
+			      enum phy_cfg_link_flag flags)
 {
-	uint32_t anar_reg;
 	uint32_t bmcr_reg;
-	uint32_t c1kt_reg;
+	int ret;
 
-	if (qc_ar8031_read(dev, MII_ANAR, &anar_reg) < 0) {
-		return -EIO;
+	if (flags & PHY_FLAG_AUTO_NEGOTIATION_DISABLED) {
+		LOG_ERR("Disabling auto-negotiation is not supported by this driver");
+		return -ENOTSUP;
 	}
 
 	if (qc_ar8031_read(dev, MII_BMCR, &bmcr_reg) < 0) {
 		return -EIO;
 	}
 
-	if (qc_ar8031_read(dev, MII_1KTCR, &c1kt_reg) < 0) {
+	ret = phy_mii_set_anar_reg(dev, speeds);
+	if ((ret < 0) && (ret != -EALREADY)) {
 		return -EIO;
 	}
 
-	if (adv_speeds & LINK_FULL_10BASE_T) {
-		anar_reg |= MII_ADVERTISE_10_FULL;
-	} else {
-		anar_reg &= ~MII_ADVERTISE_10_FULL;
-	}
-
-	if (adv_speeds & LINK_HALF_10BASE_T) {
-		anar_reg |= MII_ADVERTISE_10_HALF;
-	} else {
-		anar_reg &= ~MII_ADVERTISE_10_HALF;
-	}
-
-	if (adv_speeds & LINK_FULL_100BASE_T) {
-		anar_reg |= MII_ADVERTISE_100_FULL;
-	} else {
-		anar_reg &= ~MII_ADVERTISE_100_FULL;
-	}
-
-	if (adv_speeds & LINK_HALF_100BASE_T) {
-		anar_reg |= MII_ADVERTISE_100_HALF;
-	} else {
-		anar_reg &= ~MII_ADVERTISE_100_HALF;
-	}
-
-	if (adv_speeds & LINK_FULL_1000BASE_T) {
-		c1kt_reg |= MII_ADVERTISE_1000_FULL;
-	} else {
-		c1kt_reg &= ~MII_ADVERTISE_1000_FULL;
-	}
-
-	if (adv_speeds & LINK_HALF_1000BASE_T) {
-		c1kt_reg |= MII_ADVERTISE_1000_HALF;
-	} else {
-		c1kt_reg &= ~MII_ADVERTISE_1000_HALF;
-	}
-
-	if (qc_ar8031_write(dev, MII_1KTCR, c1kt_reg) < 0) {
+	ret = phy_mii_set_c1kt_reg(dev, speeds);
+	if ((ret < 0) && (ret != -EALREADY)) {
 		return -EIO;
 	}
 
 	bmcr_reg |= MII_BMCR_AUTONEG_ENABLE | MII_BMCR_AUTONEG_RESTART;
-
-	if (qc_ar8031_write(dev, MII_ANAR, anar_reg) < 0) {
-		return -EIO;
-	}
 
 	if (qc_ar8031_write(dev, MII_BMCR, bmcr_reg) < 0) {
 		return -EIO;
@@ -463,17 +428,17 @@ static int qc_ar8031_init(const struct device *dev)
 		}
 
 		const static int speed_to_phy_link_speed[] = {
-			LINK_HALF_10BASE_T,  LINK_FULL_10BASE_T,   LINK_HALF_100BASE_T,
-			LINK_FULL_100BASE_T, LINK_HALF_1000BASE_T, LINK_FULL_1000BASE_T,
+			LINK_HALF_10BASE,  LINK_FULL_10BASE,   LINK_HALF_100BASE,
+			LINK_FULL_100BASE, LINK_HALF_1000BASE, LINK_FULL_1000BASE,
 		};
 
 		data->state.speed = speed_to_phy_link_speed[cfg->fixed_speed];
 		data->state.is_up = true;
 	} else { /* Auto negotiation */
 		/* Advertise all speeds */
-		qc_ar8031_cfg_link(dev, LINK_HALF_10BASE_T | LINK_FULL_10BASE_T |
-						LINK_HALF_100BASE_T | LINK_FULL_100BASE_T |
-						LINK_HALF_1000BASE_T | LINK_FULL_1000BASE_T);
+		qc_ar8031_cfg_link(dev, LINK_HALF_10BASE | LINK_FULL_10BASE |
+						LINK_HALF_100BASE | LINK_FULL_100BASE |
+						LINK_HALF_1000BASE | LINK_FULL_1000BASE, 0);
 
 		k_work_init_delayable(&data->monitor_work, monitor_work_handler);
 

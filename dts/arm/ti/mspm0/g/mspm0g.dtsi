@@ -1,0 +1,62 @@
+/*
+ * Copyright (c) 2025 Texas Instruments
+ * Copyright (c) 2025 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <ti/mspm0/mspm0.dtsi>
+
+/{
+	clocks: clocks {
+		pll: pll {
+			compatible = "ti,mspm0-pll";
+			clocks = <&sysosc>;
+			p-div = <2>;
+			q-div = <5>;
+			clk1-div = <2>;
+			clk2x-div = <2>;
+			#clock-cells = <0>;
+			status = "okay";
+		};
+
+		syspll2x: syspll2x {
+			#clock-cells = <1>;
+			compatible = "ti,mspm0-clk";
+			status = "disabled";
+		};
+	};
+
+	soc {
+		timg0: timg@40084000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x40084000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_LFCLK>;
+			interrupts = <16 0>;
+			ti,clk-prescaler = <255>;
+			ti,clk-div = <1>;
+			status = "disabled";
+
+			counter0: counter {
+				compatible = "ti,mspm0-timer-counter";
+				resolution = <16>;
+			};
+		};
+
+		tima0: tima@40860000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x40860000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_MCLK>;
+			interrupts = <18 0>;
+			ti,clk-prescaler = <0>;
+			ti,clk-div = <1>;
+			status = "disabled";
+
+			pwma0: pwma0 {
+				compatible = "ti,mspm0-timer-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+	};
+};

@@ -23,64 +23,16 @@ Hardware
 Supported Features
 ==================
 
-+-----------+------------+-----------------------------------+
-| Interface | Controller | Driver/Component                  |
-+===========+============+===================================+
-| NVIC      | on-chip    | nested vector interrupt controller|
-+-----------+------------+-----------------------------------+
-| SYSTICK   | on-chip    | systick                           |
-+-----------+------------+-----------------------------------+
-| MCI_IOMUX | on-chip    | pinmux                            |
-+-----------+------------+-----------------------------------+
-| GPIO      | on-chip    | gpio                              |
-+-----------+------------+-----------------------------------+
-| USART     | on-chip    | serial                            |
-+-----------+------------+-----------------------------------+
-| DMA       | on-chip    | dma                               |
-+-----------+------------+-----------------------------------+
-| SPI       | on-chip    | spi                               |
-+-----------+------------+-----------------------------------+
-| I2C       | on-chip    | i2c                               |
-+-----------+------------+-----------------------------------+
-| TRNG      | on-chip    | entropy                           |
-+-----------+------------+-----------------------------------+
-| WWDT      | on-chip    | watchdog                          |
-+-----------+------------+-----------------------------------+
-| USBOTG    | on-chip    | usb                               |
-+-----------+------------+-----------------------------------+
-| CTIMER    | on-chip    | counter                           |
-+-----------+------------+-----------------------------------+
-| SCTIMER   | on-chip    | pwm                               |
-+-----------+------------+-----------------------------------+
-| MRT       | on-chip    | counter                           |
-+-----------+------------+-----------------------------------+
-| OS_TIMER  | on-chip    | os timer                          |
-+-----------+------------+-----------------------------------+
-| PM        | on-chip    | power management; uses SoC Power  |
-|           |            | Modes 1 and 2                     |
-+-----------+------------+-----------------------------------+
-| BLE       | on-chip    | Bluetooth                         |
-+-----------+------------+-----------------------------------+
-| ADC       | on-chip    | adc                               |
-+-----------+------------+-----------------------------------+
-| DAC       | on-chip    | dac                               |
-+-----------+------------+-----------------------------------+
-| ENET      | on-chip    | ethernet                          |
-+-----------+------------+-----------------------------------+
-| Wi-Fi     | on-chip    | Wi-Fi                             |
-+-----------+------------+-----------------------------------+
-| LCDIC     | on-chip    | mipi-dbi. Tested with             |
-|           |            | :ref:`lcd_par_s035`               |
-+-----------+------------+-----------------------------------+
+.. zephyr:board-supported-hw::
 
-The default configuration can be found in the defconfig file:
+.. note::
 
-   :zephyr_file:`boards/nxp/frdm_rw612/frdm_rw612_defconfig`
-
-Other hardware features are not currently supported
+   Power modes 1, 2 and 3 are supported when using System Power Management.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -188,8 +140,22 @@ frdm_rw612 platform supports the monolithic feature. The required binary blob
 ``<zephyr workspace>/modules/hal/nxp/zephyr/blobs/rw61x_sb_wifi_a2.bin`` will be linked
 with the application image directly, forming one single monolithic image.
 
+RTC Sub-Second Counter
+======================
+
+To use the RTC sub-second counter which is clocked at a 32kHZ rate, make the
+following modifications to the board hardware:
+
+1. Move the short on SJ21 from 1 and 2 to short 2 and 3.
+2. Move the short on SJ22 from 1 and 2 to short 2 and 3.
+
+After this change, the ENET will stop functioning on the board.
+
 .. include:: ../../common/board-footer.rst
    :start-after: nxp-board-footer
+
+Resources
+*********
 
 .. _RW612 Website:
    https://www.nxp.com/products/wireless-connectivity/wi-fi-plus-bluetooth-plus-802-15-4/wireless-mcu-with-integrated-tri-radiobr1x1-wi-fi-6-plus-bluetooth-low-energy-5-3-802-15-4:RW612

@@ -26,10 +26,12 @@
 
 	leds: leds {
 		compatible = "gpio-leds";
+
 		green_led: led_0 {
 			gpios = <&gpiob 0 GPIO_ACTIVE_HIGH>;
 			label = "User LD1";
 		};
+
 		yellow_led: led_1 {
 			gpios = <&gpioe 1 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
@@ -46,6 +48,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button_0 {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
@@ -54,6 +57,7 @@
 	};
 
 	aliases {
+		die-temp0 = &die_temp;
 		led0 = &green_led;
 		led1 = &yellow_led;
 		pwm-led0 = &red_pwm_led;
@@ -107,6 +111,13 @@
 	d3ppre = <2>;
 };
 
+&lpuart1 {
+	pinctrl-0 = <&lpuart1_tx_pb6 &lpuart1_rx_pb7>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
 &usart3 {
 	pinctrl-0 = <&usart3_tx_pd8 &usart3_rx_pd9>;
 	pinctrl-names = "default";
@@ -152,6 +163,18 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 };
 
+&adc3 {
+	pinctrl-0 = <&adc3_inp5_pf3>;
+	pinctrl-names = "default";
+	st,adc-clock-source = "SYNC";
+	st,adc-prescaler = <4>;
+	status = "okay";
+};
+
+&die_temp {
+	status = "okay";
+};
+
 &rng {
 	status = "okay";
 };
@@ -183,6 +206,7 @@ zephyr_udc0: &usbotg_fs {
 		     &eth_txd1_pb13>;
 	pinctrl-names = "default";
 	phy-connection-type = "rmii";
+	phy-handle = <&eth_phy>;
 };
 
 &mdio {
@@ -190,10 +214,9 @@ zephyr_udc0: &usbotg_fs {
 	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
 	pinctrl-names = "default";
 
-	ethernet-phy@0 {
+	eth_phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";
 		reg = <0x00>;
-		status = "okay";
 	};
 };
 
@@ -240,6 +263,5 @@ zephyr_udc0: &usbotg_fs {
 			label = "image-scratch";
 			reg = <0x000c0000 DT_SIZE_K(128)>;
 		};
-
 	};
 };

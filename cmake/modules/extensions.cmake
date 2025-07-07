@@ -428,6 +428,8 @@ endmacro()
 
 # Constructor with a directory-inferred name
 macro(zephyr_library)
+  zephyr_check_no_arguments(zephyr_library ${ARGN})
+
   zephyr_library_get_current_dir_lib_name(${ZEPHYR_BASE} lib_name)
   zephyr_library_named(${lib_name})
 endmacro()
@@ -452,6 +454,8 @@ endmacro()
 
 # Constructor with an explicitly given name.
 macro(zephyr_library_named name)
+  zephyr_check_no_arguments(zephyr_library_named ${ARGN})
+
   # This is a macro because we need add_library() to be executed
   # within the scope of the caller.
   set(ZEPHYR_CURRENT_LIBRARY ${name})
@@ -585,7 +589,7 @@ endfunction()
 # constructor but must be called explicitly on CMake libraries that do
 # not use a zephyr library constructor.
 function(zephyr_append_cmake_library library)
-  if(TARGET zephyr_prebuilt)
+  if(TARGET zephyr_pre0)
     message(WARNING
       "zephyr_library() or zephyr_library_named() called in Zephyr CMake "
       "application mode. `${library}` will not be treated as a Zephyr library."
@@ -3049,28 +3053,28 @@ endfunction()
 #
 # Zephyr string function extension.
 # This function extends the CMake string function by providing additional
-# manipulation arguments to CMake string.
+# manipulation options for the <mode> argument:
 #
-# ESCAPE:   Ensure that any single '\', except '\"', in the input string is
-#           escaped with the escape char '\'. For example the string 'foo\bar'
-#           will be escaped so that it becomes 'foo\\bar'.
-#           Backslashes which are already escaped will not be escaped further,
-#           for example 'foo\\bar' will not be modified.
-#           This is useful for handling of windows path separator in strings or
-#           when strings contains newline escapes such as '\n' and this can
-#           cause issues when writing to a file where a '\n' is desired in the
-#           string instead of a newline.
+# ESCAPE: Ensure that every character of the input arguments is considered
+#         by CMake as a literal by prefixing the escape character '\' where
+#         appropriate. This is useful for handling Windows path separators in
+#         strings, or when it is desired to write "\n" as an actual string of
+#         four characters instead of a single newline.
+#         Note that this operation must be performed exactly once during the
+#         lifetime of a string, or previous escape characters will be treated
+#         as literals and escaped further.
 #
 # SANITIZE: Ensure that the output string does not contain any special
 #           characters. Special characters, such as -, +, =, $, etc. are
-#           converted to underscores '_'.
+#           converted to underscores '_'. Multiple arguments are concatenated.
 #
 # SANITIZE TOUPPER: Ensure that the output string does not contain any special
-#                   characters. Special characters, such as -, +, =, $, etc. are
-#                   converted to underscores '_'.
+#                   characters. Special characters, such as -, +, =, $, etc.
+#                   are converted to underscores '_'. Multiple arguments are
+#                   concatenated.
 #                   The sanitized string will be returned in UPPER case.
 #
-# returns the updated string
+# Returns the updated string in <out-var>.
 function(zephyr_string)
   set(options SANITIZE TOUPPER ESCAPE)
   cmake_parse_arguments(ZEPHYR_STRING "${options}" "" "" ${ARGN})
@@ -3084,21 +3088,20 @@ function(zephyr_string)
   list(GET ZEPHYR_STRING_UNPARSED_ARGUMENTS 0 return_arg)
   list(REMOVE_AT ZEPHYR_STRING_UNPARSED_ARGUMENTS 0)
 
-  list(JOIN ZEPHYR_STRING_UNPARSED_ARGUMENTS "" work_string)
-
   if(ZEPHYR_STRING_SANITIZE)
+    list(JOIN ZEPHYR_STRING_UNPARSED_ARGUMENTS "" work_string)
     string(REGEX REPLACE "[^a-zA-Z0-9_]" "_" work_string ${work_string})
-  endif()
-
-  if(ZEPHYR_STRING_TOUPPER)
-    string(TOUPPER ${work_string} work_string)
-  endif()
-
-  if(ZEPHYR_STRING_ESCAPE)
-    # If a single '\' is discovered, such as 'foo\bar', then it must be escaped like: 'foo\\bar'
-    # \\1 and \\2 are keeping the match patterns, the \\\\ --> \\ meaning an escaped '\',
-    # which then becomes a single '\' in the final string.
-    string(REGEX REPLACE "([^\\][\\])([^\\\"])" "\\1\\\\\\2" work_string "${ZEPHYR_STRING_UNPARSED_ARGUMENTS}")
+    if(ZEPHYR_STRING_TOUPPER)
+      string(TOUPPER ${work_string} work_string)
+    endif()
+  elseif(ZEPHYR_STRING_ESCAPE)
+    # Escape every instance of '\' or '"' in the <input> arguments.
+    # Note that:
+    #  - backslashes must be replaced first to avoid duplicating the '\' in \"
+    #  - "\\\\" is seen by CMake as \\, meaning an escaped '\', which then
+    #    becomes a single '\' in the final string.
+    string(REGEX REPLACE "\\\\" "\\\\\\\\" work_string "${ZEPHYR_STRING_UNPARSED_ARGUMENTS}")
+    string(REGEX REPLACE "\"" "\\\\\"" work_string "${work_string}")
   endif()
 
   set(${return_arg} ${work_string} PARENT_SCOPE)
@@ -3817,9 +3820,13 @@ endfunction()
 #   alias at the beginning of a path interchangeably with the full
 #   path to the aliased node in these functions. The usage comments
 #   will make this clear in each case.
+#
+# - These methods are also available to sysbuild. To retrieve the DT
+#   information of some <image>, after its CMake configuration step,
+#   the dt_* function call must include a "TARGET <image>" argument.
 
 # Usage:
-#   dt_nodelabel(<var> NODELABEL <label>)
+#   dt_nodelabel(<var> NODELABEL <label> [REQUIRED] [TARGET <target>])
 #
 # Function for retrieving the node path for the node having nodelabel
 # <label>.
@@ -3843,10 +3850,14 @@ endfunction()
 # <var>              : Return variable where the node path will be stored
 # NODELABEL <label>  : Node label
 # REQUIRED           : Generate a fatal error if the node-label is not found
+# TARGET <target>    : Optional target to retrieve devicetree information from
 function(dt_nodelabel var)
   set(options "REQUIRED")
   set(req_single_args "NODELABEL")
-  cmake_parse_arguments(DT_LABEL "${options}" "${req_single_args}" "" ${ARGN})
+  set(single_args "TARGET")
+  cmake_parse_arguments(DT_LABEL "${options}" "${req_single_args};${single_args}" "" ${ARGN})
+
+  dt_target_internal(DT_LABEL_TARGET)
 
   if(${ARGV0} IN_LIST req_single_args)
     message(FATAL_ERROR "dt_nodelabel(${ARGV0} ...) missing return parameter.")
@@ -3860,7 +3871,7 @@ function(dt_nodelabel var)
     endif()
   endforeach()
 
-  get_target_property(${var} devicetree_target "DT_NODELABEL|${DT_LABEL_NODELABEL}")
+  get_target_property(${var} ${DT_LABEL_TARGET} "DT_NODELABEL|${DT_LABEL_NODELABEL}")
   if(${${var}} STREQUAL ${var}-NOTFOUND)
     if(DT_LABEL_REQUIRED)
       message(FATAL_ERROR "required nodelabel not found: ${DT_LABEL_NODELABEL}")
@@ -3872,7 +3883,7 @@ function(dt_nodelabel var)
 endfunction()
 
 # Usage:
-#   dt_alias(<var> PROPERTY <prop>)
+#   dt_alias(<var> PROPERTY <prop> [REQUIRED] [TARGET <target>])
 #
 # Get a node path for an /aliases node property.
 #
@@ -3891,10 +3902,14 @@ endfunction()
 # <var>           : Return variable where the node path will be stored
 # PROPERTY <prop> : The alias to check
 # REQUIRED        : Generate a fatal error if the alias is not found
+# TARGET <target> : Optional target to retrieve devicetree information from
 function(dt_alias var)
   set(options "REQUIRED")
   set(req_single_args "PROPERTY")
-  cmake_parse_arguments(DT_ALIAS "${options}" "${req_single_args}" "" ${ARGN})
+  set(single_args "TARGET")
+  cmake_parse_arguments(DT_ALIAS "${options}" "${req_single_args};${single_args}" "" ${ARGN})
+
+  dt_target_internal(DT_ALIAS_TARGET)
 
   if(${ARGV0} IN_LIST req_single_args)
     message(FATAL_ERROR "dt_alias(${ARGV0} ...) missing return parameter.")
@@ -3908,7 +3923,7 @@ function(dt_alias var)
     endif()
   endforeach()
 
-  get_target_property(${var} devicetree_target "DT_ALIAS|${DT_ALIAS_PROPERTY}")
+  get_target_property(${var} ${DT_ALIAS_TARGET} "DT_ALIAS|${DT_ALIAS_PROPERTY}")
   if(${${var}} STREQUAL ${var}-NOTFOUND)
     if(DT_ALIAS_REQUIRED)
       message(FATAL_ERROR "required alias not found: ${DT_ALIAS_PROPERTY}")
@@ -3920,7 +3935,7 @@ function(dt_alias var)
 endfunction()
 
 # Usage:
-#   dt_node_exists(<var> PATH <path>)
+#   dt_node_exists(<var> PATH <path> [TARGET <target>])
 #
 # Tests whether a node with path <path> exists in the devicetree.
 #
@@ -3933,11 +3948,15 @@ endfunction()
 # The result of the check, either TRUE or FALSE, will be returned in
 # the <var> parameter.
 #
-# <var>       : Return variable where the check result will be returned
-# PATH <path> : Node path
+# <var>           : Return variable where the check result will be returned
+# PATH <path>     : Node path
+# TARGET <target> : Optional target to retrieve devicetree information from
 function(dt_node_exists var)
   set(req_single_args "PATH")
-  cmake_parse_arguments(DT_NODE "" "${req_single_args}" "" ${ARGN})
+  set(single_args "TARGET")
+  cmake_parse_arguments(DT_NODE "" "${req_single_args};${single_args}" "" ${ARGN})
+
+  dt_target_internal(DT_NODE_TARGET)
 
   if(${ARGV0} IN_LIST req_single_args)
     message(FATAL_ERROR "dt_node_exists(${ARGV0} ...) missing return parameter.")
@@ -3951,7 +3970,7 @@ function(dt_node_exists var)
     endif()
   endforeach()
 
-  dt_path_internal(canonical "${DT_NODE_PATH}")
+  dt_path_internal(canonical "${DT_NODE_PATH}" "${DT_NODE_TARGET}")
   if (DEFINED canonical)
     set(${var} TRUE PARENT_SCOPE)
   else()
@@ -3960,7 +3979,7 @@ function(dt_node_exists var)
 endfunction()
 
 # Usage:
-#   dt_node_has_status(<var> PATH <path> STATUS <status>)
+#   dt_node_has_status(<var> PATH <path> STATUS <status> [TARGET <target>])
 #
 # Tests whether <path> refers to a node which:
 # - exists in the devicetree, and
@@ -3980,9 +3999,13 @@ endfunction()
 # <var>           : Return variable where the check result will be returned
 # PATH <path>     : Node path
 # STATUS <status> : Status to check
+# TARGET <target> : Optional target to retrieve devicetree information from
 function(dt_node_has_status var)
   set(req_single_args "PATH;STATUS")
-  cmake_parse_arguments(DT_NODE "" "${req_single_args}" "" ${ARGN})
+  set(single_args "TARGET")
+  cmake_parse_arguments(DT_NODE "" "${req_single_args};${single_args}" "" ${ARGN})
+
+  dt_target_internal(DT_NODE_TARGET)
 
   if(${ARGV0} IN_LIST req_single_args)
     message(FATAL_ERROR "dt_node_has_status(${ARGV0} ...) missing return parameter.")
@@ -3996,13 +4019,13 @@ function(dt_node_has_status var)
     endif()
   endforeach()
 
-  dt_path_internal(canonical ${DT_NODE_PATH})
+  dt_path_internal(canonical ${DT_NODE_PATH} ${DT_NODE_TARGET})
   if(NOT DEFINED canonical)
     set(${var} FALSE PARENT_SCOPE)
     return()
   endif()
 
-  dt_prop(status PATH ${canonical} PROPERTY status)
+  dt_prop(status PATH ${canonical} PROPERTY status TARGET ${DT_NODE_TARGET})
 
   if(NOT DEFINED status OR status STREQUAL "ok")
     set(status "okay")
@@ -4017,7 +4040,7 @@ endfunction()
 
 # Usage:
 #
-#   dt_prop(<var> PATH <path> PROPERTY <prop> [INDEX <idx>])
+#   dt_prop(<var> PATH <path> PROPERTY <prop> [INDEX <idx>] [REQUIRED] [TARGET <target>])
 #
 # Get a devicetree property value. The value will be returned in the
 # <var> parameter.
@@ -4066,11 +4089,14 @@ endfunction()
 #                  appears in the DTS source
 # INDEX <idx>    : Optional index when retrieving a value in an array property
 # REQUIRED       : Generate a fatal error if the property is not found
+# TARGET <target>: Optional target to retrieve devicetree information from
 function(dt_prop var)
   set(options "REQUIRED")
   set(req_single_args "PATH;PROPERTY")
-  set(single_args "INDEX")
+  set(single_args "INDEX;TARGET")
   cmake_parse_arguments(DT_PROP "${options}" "${req_single_args};${single_args}" "" ${ARGN})
+
+  dt_target_internal(DT_PROP_TARGET)
 
   if(${ARGV0} IN_LIST req_single_args)
     message(FATAL_ERROR "dt_prop(${ARGV0} ...) missing return parameter.")
@@ -4084,8 +4110,8 @@ function(dt_prop var)
     endif()
   endforeach()
 
-  dt_path_internal(canonical "${DT_PROP_PATH}")
-  get_property(exists TARGET devicetree_target
+  dt_path_internal(canonical "${DT_PROP_PATH}" "${DT_PROP_TARGET}")
+  get_property(exists TARGET ${DT_PROP_TARGET}
       PROPERTY "DT_PROP|${canonical}|${DT_PROP_PROPERTY}"
       SET
   )
@@ -4098,7 +4124,7 @@ function(dt_prop var)
     return()
   endif()
 
-  get_target_property(val devicetree_target
+  get_target_property(val ${DT_PROP_TARGET}
       "DT_PROP|${canonical}|${DT_PROP_PROPERTY}"
   )
 
@@ -4112,7 +4138,7 @@ endfunction()
 
 # Usage:
 #
-#   dt_comp_path(<var> COMPATIBLE <compatible> [INDEX <idx>])
+#   dt_comp_path(<var> COMPATIBLE <compatible> [INDEX <idx>] [TARGET <target>])
 #
 # Get a list of paths for the nodes with the given compatible. The value will
 # be returned in the <var> parameter.
@@ -4125,11 +4151,14 @@ endfunction()
 # COMPATIBLE <compatible>: Compatible for which the list of paths should be
 #                          returned, as it appears in the DTS source
 # INDEX <idx>            : Optional index when retrieving a value in an array property
+# TARGET <target>        : Optional target to retrieve devicetree information from
 
 function(dt_comp_path var)
   set(req_single_args "COMPATIBLE")
-  set(single_args "INDEX")
+  set(single_args "INDEX;TARGET")
   cmake_parse_arguments(DT_COMP "" "${req_single_args};${single_args}" "" ${ARGN})
+
+  dt_target_internal(DT_COMP_TARGET)
 
   if(${ARGV0} IN_LIST req_single_args)
     message(FATAL_ERROR "dt_comp_path(${ARGV0} ...) missing return parameter.")
@@ -4143,7 +4172,7 @@ function(dt_comp_path var)
     endif()
   endforeach()
 
-  get_property(exists TARGET devicetree_target
+  get_property(exists TARGET ${DT_COMP_TARGET}
       PROPERTY "DT_COMP|${DT_COMP_COMPATIBLE}"
       SET
   )
@@ -4153,7 +4182,7 @@ function(dt_comp_path var)
     return()
   endif()
 
-  get_target_property(val devicetree_target
+  get_target_property(val ${DT_COMP_TARGET}
       "DT_COMP|${DT_COMP_COMPATIBLE}"
   )
 
@@ -4166,7 +4195,7 @@ function(dt_comp_path var)
 endfunction()
 
 # Usage:
-#   dt_num_regs(<var> PATH <path>)
+#   dt_num_regs(<var> PATH <path> [TARGET <target>])
 #
 # Get the number of register blocks in the node's reg property;
 # this may be zero.
@@ -4181,9 +4210,13 @@ endfunction()
 #
 # <var>          : Return variable where the property value will be stored
 # PATH <path>    : Node path
+# TARGET <target>: Optional target to retrieve devicetree information from
 function(dt_num_regs var)
   set(req_single_args "PATH")
-  cmake_parse_arguments(DT_REG "" "${req_single_args}" "" ${ARGN})
+  set(single_args "TARGET")
+  cmake_parse_arguments(DT_REG "" "${req_single_args};${single_args}" "" ${ARGN})
+
+  dt_target_internal(DT_REG_TARGET)
 
   if(${ARGV0} IN_LIST req_single_args)
     message(FATAL_ERROR "dt_num_regs(${ARGV0} ...) missing return parameter.")
@@ -4197,14 +4230,14 @@ function(dt_num_regs var)
     endif()
   endforeach()
 
-  dt_path_internal(canonical "${DT_REG_PATH}")
-  get_target_property(${var} devicetree_target "DT_REG|${canonical}|NUM")
+  dt_path_internal(canonical "${DT_REG_PATH}" "${DT_REG_TARGET}")
+  get_target_property(${var} ${DT_REG_TARGET} "DT_REG|${canonical}|NUM")
 
   set(${var} ${${var}} PARENT_SCOPE)
 endfunction()
 
 # Usage:
-#   dt_reg_addr(<var> PATH <path> [INDEX <idx>] [NAME <name>])
+#   dt_reg_addr(<var> PATH <path> [INDEX <idx>] [NAME <name>] [TARGET <target>])
 #
 # Get the base address of the register block at index <idx>, or with
 # name <name>. If <idx> and <name> are both omitted, the value at
@@ -4227,10 +4260,13 @@ endfunction()
 # PATH <path>    : Node path
 # INDEX <idx>    : Register block index number
 # NAME <name>    : Register block name
+# TARGET <target>: Optional target to retrieve devicetree information from
 function(dt_reg_addr var)
   set(req_single_args "PATH")
-  set(single_args "INDEX;NAME")
+  set(single_args "INDEX;NAME;TARGET")
   cmake_parse_arguments(DT_REG "" "${req_single_args};${single_args}" "" ${ARGN})
+
+  dt_target_internal(DT_REG_TARGET)
 
   if(${ARGV0} IN_LIST req_single_args)
     message(FATAL_ERROR "dt_reg_addr(${ARGV0} ...) missing return parameter.")
@@ -4249,15 +4285,16 @@ function(dt_reg_addr var)
   elseif(NOT DEFINED DT_REG_INDEX AND NOT DEFINED DT_REG_NAME)
     set(DT_REG_INDEX 0)
   elseif(DEFINED DT_REG_NAME)
-    dt_reg_index_private(DT_REG_INDEX "${DT_REG_PATH}" "${DT_REG_NAME}")
+    dt_prop(reg_names PATH "${DT_REG_PATH}" PROPERTY "reg-names" TARGET "${DT_REG_TARGET}")
+    list(FIND reg_names "${DT_REG_NAME}" DT_REG_INDEX)
     if(DT_REG_INDEX EQUAL "-1")
       set(${var} PARENT_SCOPE)
       return()
     endif()
   endif()
 
-  dt_path_internal(canonical "${DT_REG_PATH}")
-  get_target_property(${var}_list devicetree_target "DT_REG|${canonical}|ADDR")
+  dt_path_internal(canonical "${DT_REG_PATH}" "${DT_REG_TARGET}")
+  get_target_property(${var}_list ${DT_REG_TARGET} "DT_REG|${canonical}|ADDR")
 
   list(GET ${var}_list ${DT_REG_INDEX} ${var})
 
@@ -4269,7 +4306,7 @@ function(dt_reg_addr var)
 endfunction()
 
 # Usage:
-#   dt_reg_size(<var> PATH <path> [INDEX <idx>] [NAME <name>])
+#   dt_reg_size(<var> PATH <path> [INDEX <idx>] [NAME <name>] [TARGET <target>])
 #
 # Get the size of the register block at index <idx>, or with
 # name <name>. If <idx> and <name> are both omitted, the value at
@@ -4287,10 +4324,13 @@ endfunction()
 # PATH <path>    : Node path
 # INDEX <idx>    : Register block index number
 # NAME <name>    : Register block name
+# TARGET <target>: Optional target to retrieve devicetree information from
 function(dt_reg_size var)
   set(req_single_args "PATH")
-  set(single_args "INDEX;NAME")
+  set(single_args "INDEX;NAME;TARGET")
   cmake_parse_arguments(DT_REG "" "${req_single_args};${single_args}" "" ${ARGN})
+
+  dt_target_internal(DT_REG_TARGET)
 
   if(${ARGV0} IN_LIST req_single_args)
     message(FATAL_ERROR "dt_reg_size(${ARGV0} ...) missing return parameter.")
@@ -4309,15 +4349,16 @@ function(dt_reg_size var)
   elseif(NOT DEFINED DT_REG_INDEX AND NOT DEFINED DT_REG_NAME)
     set(DT_REG_INDEX 0)
   elseif(DEFINED DT_REG_NAME)
-    dt_reg_index_private(DT_REG_INDEX "${DT_REG_PATH}" "${DT_REG_NAME}")
+    dt_prop(reg_names PATH "${DT_REG_PATH}" PROPERTY "reg-names" TARGET "${DT_REG_TARGET}")
+    list(FIND reg_names "${DT_REG_NAME}" DT_REG_INDEX)
     if(DT_REG_INDEX EQUAL "-1")
       set(${var} PARENT_SCOPE)
       return()
     endif()
   endif()
 
-  dt_path_internal(canonical "${DT_REG_PATH}")
-  get_target_property(${var}_list devicetree_target "DT_REG|${canonical}|SIZE")
+  dt_path_internal(canonical "${DT_REG_PATH}" "${DT_REG_TARGET}")
+  get_target_property(${var}_list ${DT_REG_TARGET} "DT_REG|${canonical}|SIZE")
 
   list(GET ${var}_list ${DT_REG_INDEX} ${var})
 
@@ -4328,19 +4369,8 @@ function(dt_reg_size var)
   set(${var} ${${var}} PARENT_SCOPE)
 endfunction()
 
-# Internal helper for dt_reg_addr/dt_reg_size; not meant to be used directly
-function(dt_reg_index_private var path name)
-  dt_prop(reg_names PATH "${path}" PROPERTY "reg-names")
-  if(NOT DEFINED reg_names)
-    set(index "-1")
-  else()
-    list(FIND reg_names "${name}" index)
-  endif()
-  set(${var} "${index}" PARENT_SCOPE)
-endfunction()
-
 # Usage:
-#   dt_has_chosen(<var> PROPERTY <prop>)
+#   dt_has_chosen(<var> PROPERTY <prop> [TARGET <target>])
 #
 # Test if the devicetree's /chosen node has a given property
 # <prop> which contains the path to a node.
@@ -4364,9 +4394,13 @@ endfunction()
 #
 # <var>           : Return variable
 # PROPERTY <prop> : Chosen property
+# TARGET <target> : Optional target to retrieve devicetree information from
 function(dt_has_chosen var)
   set(req_single_args "PROPERTY")
-  cmake_parse_arguments(DT_CHOSEN "" "${req_single_args}" "" ${ARGN})
+  set(single_args "TARGET")
+  cmake_parse_arguments(DT_CHOSEN "" "${req_single_args};${single_args}" "" ${ARGN})
+
+  dt_target_internal(DT_CHOSEN_TARGET)
 
   if(${ARGV0} IN_LIST req_single_args)
     message(FATAL_ERROR "dt_has_chosen(${ARGV0} ...) missing return parameter.")
@@ -4380,7 +4414,7 @@ function(dt_has_chosen var)
     endif()
   endforeach()
 
-  get_target_property(exists devicetree_target "DT_CHOSEN|${DT_CHOSEN_PROPERTY}")
+  get_target_property(exists ${DT_CHOSEN_TARGET} "DT_CHOSEN|${DT_CHOSEN_PROPERTY}")
 
   if(${exists} STREQUAL exists-NOTFOUND)
     set(${var} FALSE PARENT_SCOPE)
@@ -4390,7 +4424,7 @@ function(dt_has_chosen var)
 endfunction()
 
 # Usage:
-#   dt_chosen(<var> PROPERTY <prop>)
+#   dt_chosen(<var> PROPERTY <prop> [TARGET <target>])
 #
 # Get a node path for a /chosen node property.
 #
@@ -4399,9 +4433,13 @@ endfunction()
 #
 # <var>           : Return variable where the node path will be stored
 # PROPERTY <prop> : Chosen property
+# TARGET <target> : Optional target to retrieve devicetree information from
 function(dt_chosen var)
   set(req_single_args "PROPERTY")
-  cmake_parse_arguments(DT_CHOSEN "" "${req_single_args}" "" ${ARGN})
+  set(single_args "TARGET")
+  cmake_parse_arguments(DT_CHOSEN "" "${req_single_args};${single_args}" "" ${ARGN})
+
+  dt_target_internal(DT_CHOSEN_TARGET)
 
   if(${ARGV0} IN_LIST req_single_args)
     message(FATAL_ERROR "dt_chosen(${ARGV0} ...) missing return parameter.")
@@ -4415,12 +4453,31 @@ function(dt_chosen var)
     endif()
   endforeach()
 
-  get_target_property(${var} devicetree_target "DT_CHOSEN|${DT_CHOSEN_PROPERTY}")
+  get_target_property(${var} ${DT_CHOSEN_TARGET} "DT_CHOSEN|${DT_CHOSEN_PROPERTY}")
 
   if(${${var}} STREQUAL ${var}-NOTFOUND)
     set(${var} PARENT_SCOPE)
   else()
     set(${var} ${${var}} PARENT_SCOPE)
+  endif()
+endfunction()
+
+# Internal helper. Check that the CMake target named by variable 'var' is valid
+# for use in other dt_* functions. If 'var' is undefined, set it to the default
+# name of "devicetree_target", which is initialized in cmake/modules/dts.cmake.
+# In general, a valid target is one that has been passed to zephyr_dt_import().
+function(dt_target_internal var)
+  if(NOT DEFINED ${var})
+    set(${var} devicetree_target)
+    set(${var} ${${var}} PARENT_SCOPE)
+  endif()
+
+  set(devicetree_imported FALSE)
+  if(TARGET ${${var}})
+    dt_path_internal_exists(devicetree_imported "/" ${${var}})
+  endif()
+  if(NOT devicetree_imported)
+    message(FATAL_ERROR "devicetree is not yet imported into target '${${var}}'")
   endif()
 endfunction()
 
@@ -4444,17 +4501,17 @@ endfunction()
 #
 # Example usage:
 #
-#   dt_path_internal(ret "/foo/bar")     # sets ret to "/foo/bar"
-#   dt_path_internal(ret "my-alias")     # sets ret to "/foo/bar"
-#   dt_path_internal(ret "my-alias/baz") # sets ret to "/foo/bar/baz"
-#   dt_path_internal(ret "/blub")        # ret is undefined
-function(dt_path_internal var path)
+#   dt_path_internal(ret "/foo/bar" target)     # sets ret to "/foo/bar"
+#   dt_path_internal(ret "my-alias" target)     # sets ret to "/foo/bar"
+#   dt_path_internal(ret "my-alias/baz" target) # sets ret to "/foo/bar/baz"
+#   dt_path_internal(ret "/blub" target)        # ret is undefined
+function(dt_path_internal var path target)
   string(FIND "${path}" "/" slash_index)
 
   if("${slash_index}" EQUAL 0)
     # If the string starts with a slash, it should be an existing
     # canonical path.
-    dt_path_internal_exists(check "${path}")
+    dt_path_internal_exists(check "${path}" "${target}")
     if (check)
       set(${var} "${path}" PARENT_SCOPE)
       return()
@@ -4462,7 +4519,7 @@ function(dt_path_internal var path)
   else()
     # Otherwise, try to expand a leading alias.
     string(SUBSTRING "${path}" 0 "${slash_index}" alias_name)
-    dt_alias(alias_path PROPERTY "${alias_name}")
+    dt_alias(alias_path PROPERTY "${alias_name}" TARGET "${target}")
 
     # If there is a leading alias, append the rest of the string
     # onto it and see if that's an existing node.
@@ -4471,7 +4528,7 @@ function(dt_path_internal var path)
       if (NOT "${slash_index}" EQUAL -1)
         string(SUBSTRING "${path}" "${slash_index}" -1 rest)
       endif()
-      dt_path_internal_exists(expanded_path_exists "${alias_path}${rest}")
+      dt_path_internal_exists(expanded_path_exists "${alias_path}${rest}" "${target}")
       if (expanded_path_exists)
         set(${var} "${alias_path}${rest}" PARENT_SCOPE)
         return()
@@ -4486,8 +4543,8 @@ endfunction()
 # Internal helper. Set 'var' to TRUE if a canonical path 'path' refers
 # to an existing node. Set it to FALSE otherwise. See
 # dt_path_internal for a definition and examples of 'canonical' paths.
-function(dt_path_internal_exists var path)
-  get_target_property(path_prop devicetree_target "DT_NODE|${path}")
+function(dt_path_internal_exists var path target)
+  get_target_property(path_prop "${target}" "DT_NODE|${path}")
   if (path_prop)
     set(${var} TRUE PARENT_SCOPE)
   else()
@@ -4624,6 +4681,45 @@ function(zephyr_dt_preprocess)
   if(NOT "${ret}" STREQUAL "0")
     message(FATAL_ERROR "failed to preprocess devicetree files (error code ${ret}): ${DT_PREPROCESS_SOURCE_FILES}")
   endif()
+endfunction()
+
+# Usage:
+#   zephyr_dt_import(EDT_PICKLE_FILE <file> TARGET <target>)
+#
+# Parse devicetree information and make it available to CMake, so that
+# it can be accessed by the dt_* CMake extensions from section 4.1.
+#
+# This requires running a Python script, which can take the output of
+# edtlib and generate a CMake source file from it. If that script fails,
+# a fatal error occurs.
+#
+# EDT_PICKLE_FILE <file> : Input edtlib.EDT object in pickle format
+# TARGET <target>        : Target to populate with devicetree properties
+#
+function(zephyr_dt_import)
+  set(req_single_args "EDT_PICKLE_FILE;TARGET")
+  cmake_parse_arguments(arg "" "${req_single_args}" "" ${ARGN})
+  zephyr_check_arguments_required_all(${CMAKE_CURRENT_FUNCTION} arg ${req_single_args})
+
+  set(gen_dts_cmake_script ${ZEPHYR_BASE}/scripts/dts/gen_dts_cmake.py)
+  set(gen_dts_cmake_output ${arg_EDT_PICKLE_FILE}.cmake)
+
+  if((${arg_EDT_PICKLE_FILE} IS_NEWER_THAN ${gen_dts_cmake_output}) OR
+     (${gen_dts_cmake_script} IS_NEWER_THAN ${gen_dts_cmake_output})
+  )
+    execute_process(
+      COMMAND ${PYTHON_EXECUTABLE} ${gen_dts_cmake_script}
+      --edt-pickle ${arg_EDT_PICKLE_FILE}
+      --cmake-out ${gen_dts_cmake_output}
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+      RESULT_VARIABLE ret
+      COMMAND_ERROR_IS_FATAL ANY
+    )
+  endif()
+  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${gen_dts_cmake_script})
+
+  set(DEVICETREE_TARGET ${arg_TARGET})
+  include(${gen_dts_cmake_output})
 endfunction()
 
 ########################################################
@@ -4809,7 +4905,7 @@ function(zephyr_linker_dts_section)
 
   dt_reg_addr(addr PATH ${DTS_SECTION_PATH})
 
-  zephyr_linker_section(NAME ${name} ADDRESS ${addr} VMA ${name} TYPE NOLOAD)
+  zephyr_linker_section(NAME ${name} VMA ${name} TYPE NOLOAD)
 
 endfunction()
 
@@ -5075,6 +5171,10 @@ endfunction()
 #                       the given passes. Empty list means no passes.
 #                       PASS NOT [<p1>] [<p2>...] makes the section present in
 #                       all but the given passes. Empty list means all passes.
+# TYPE <type>         : Tag section for special treatment.
+#                       NOLOAD, BSS - Ensure that the section is NOLOAD
+#                       LINKER_SCRIPT_FOOTER - One single section to be
+#                                              generated last
 # Note: VMA and LMA are mutual exclusive with GROUP
 #
 function(zephyr_linker_section)
@@ -5192,6 +5292,7 @@ function(zephyr_iterable_section)
   set(options     "ALIGN_WITH_INPUT;NUMERIC")
   set(single_args "GROUP;LMA;NAME;SUBALIGN;VMA")
   set(multi_args  "")
+  set(subalign "")
   set(align_input)
   cmake_parse_arguments(SECTION "${options}" "${single_args}" "${multi_args}" ${ARGN})
 
@@ -5201,10 +5302,8 @@ function(zephyr_iterable_section)
     )
   endif()
 
-  if(NOT DEFINED SECTION_SUBALIGN)
-    message(FATAL_ERROR "zephyr_iterable_section(${ARGV0} ...) missing "
-                        "required argument: SUBALIGN"
-    )
+  if(DEFINED SECTION_SUBALIGN)
+    set(subalign "SUBALIGN ${SECTION_SUBALIGN}")
   endif()
 
   if(SECTION_ALIGN_WITH_INPUT)
@@ -5225,7 +5324,7 @@ function(zephyr_iterable_section)
     NAME ${SECTION_NAME}_area
     GROUP "${SECTION_GROUP}"
     VMA "${SECTION_VMA}" LMA "${SECTION_LMA}"
-    NOINPUT ${align_input} SUBALIGN ${SECTION_SUBALIGN}
+    NOINPUT ${align_input} ${subalign}
   )
   zephyr_linker_section_configure(
     SECTION ${SECTION_NAME}_area
@@ -5644,6 +5743,20 @@ macro(zephyr_check_flags_exclusive function prefix)
   endif()
 endmacro()
 
+#
+# Helper macro for verifying that no unexpected arguments are provided.
+#
+# A FATAL_ERROR will be raised if any unexpected argument is given.
+#
+# Usage:
+#   zephyr_check_no_arguments(<function_name> ${ARGN})
+#
+macro(zephyr_check_no_arguments function)
+  if(${ARGC} GREATER 1)
+    message(FATAL_ERROR "${function} called with unexpected argument(s): ${ARGN}")
+  endif()
+endmacro()
+
 ########################################################
 # 7. Linkable loadable extensions (llext)
 ########################################################
@@ -5859,11 +5972,13 @@ function(add_llext_target target_name)
             $<TARGET_PROPERTY:bintools,elfconvert_flag>
             $<TARGET_PROPERTY:bintools,elfconvert_flag_strip_unneeded>
             $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.xt.*
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.xtensa.info
             $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${llext_pkg_input}
             $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${llext_pkg_output}
             $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
     COMMAND ${slid_inject_cmd}
     DEPENDS ${llext_proc_target} ${llext_pkg_input}
+    COMMAND_EXPAND_LISTS
   )
 
   # Add user-visible target and dependency, and fill in properties

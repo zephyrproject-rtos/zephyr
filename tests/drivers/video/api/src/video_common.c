@@ -36,40 +36,34 @@ ZTEST(video_common, test_video_format_caps_index)
 
 	fmt.width = 100;
 	fmt.height = 100;
-	fmt.pitch = 100 * 2;
 	ret = video_format_caps_index(fmts, &fmt, &idx);
 	zassert_ok(ret, "expecting minimum value to match");
 	zassert_equal(idx, YUYV_A);
 
 	fmt.width = 1000;
 	fmt.height = 1000;
-	fmt.pitch = 1000 * 2;
 	ret = video_format_caps_index(fmts, &fmt, &idx);
 	zassert_ok(ret, "expecting maximum value to match");
 	zassert_equal(idx, YUYV_A);
 
 	fmt.width = 1920;
 	fmt.height = 1080;
-	fmt.pitch = 1920 * 2;
 	ret = video_format_caps_index(fmts, &fmt, &idx);
 	zassert_ok(ret, "expecting exact match to work");
 	zassert_equal(idx, YUYV_B);
 
 	fmt.width = 1001;
 	fmt.height = 1000;
-	fmt.pitch = 1001 * 2;
 	ret = video_format_caps_index(fmts, &fmt, &idx);
 	zassert_not_ok(ret, "expecting 1 above maximum width to mismatch");
 
 	fmt.width = 1000;
 	fmt.height = 1001;
-	fmt.pitch = 1000 * 2;
 	ret = video_format_caps_index(fmts, &fmt, &idx);
 	zassert_not_ok(ret, "expecting 1 above maximum height to mismatch");
 
 	fmt.width = 1280;
 	fmt.height = 720;
-	fmt.pitch = 1280 * 2;
 	ret = video_format_caps_index(fmts, &fmt, &idx);
 	zassert_not_ok(ret);
 	zassert_not_ok(ret, "expecting wrong format to mismatch");
@@ -78,13 +72,11 @@ ZTEST(video_common, test_video_format_caps_index)
 
 	fmt.width = 1000;
 	fmt.height = 1000;
-	fmt.pitch = 1000 * 2;
 	ret = video_format_caps_index(fmts, &fmt, &idx);
 	zassert_not_ok(ret, "expecting wrong format to mismatch");
 
 	fmt.width = 1280;
 	fmt.height = 720;
-	fmt.pitch = 1280 * 2;
 	ret = video_format_caps_index(fmts, &fmt, &idx);
 	zassert_ok(ret, "expecting exact match to work");
 	zassert_equal(idx, RGB565);

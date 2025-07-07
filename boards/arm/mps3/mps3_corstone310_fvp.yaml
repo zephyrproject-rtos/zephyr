@@ -1,4 +1,4 @@
-# Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# Copyright 2024-2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 identifier: mps3/corstone310/fvp
@@ -16,6 +16,8 @@ toolchain:
 supported:
   - gpio
 testing:
+  default: true
+  timeout_multiplier: 4
   ignore_tags:
     - drivers
     - bluetooth

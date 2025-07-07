@@ -35,44 +35,24 @@
 			cpu-power-states = <&d0i3 &d3>;
 		};
 
-		cpu3: cpu@3 {
-			device_type = "cpu";
-			compatible = "cdns,tensilica-xtensa-lx7";
-			reg = <3>;
-			cpu-power-states = <&d0i3 &d3>;
+		power-states {
+			d0i3: idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+				min-residency-us = <200>;
+				exit-latency-us = <100>;
+			};
+			/* PM_STATE_SOFT_OFF can be entered only by calling pm_state_force.
+			 * The procedure is triggered by IPC from the HOST (SET_DX).
+			 */
+			d3: off {
+				compatible = "zephyr,power-state";
+				power-state-name = "soft-off";
+				min-residency-us = <0>;
+				exit-latency-us = <0>;
+				status = "disabled";
+			};
 		};
-
-		cpu4: cpu@4 {
-			device_type = "cpu";
-			compatible = "cdns,tensilica-xtensa-lx7";
-			reg = <4>;
-			cpu-power-states = <&d0i3 &d3>;
-		};
-	};
-
-	power-states {
-		d0i3: idle {
-			compatible = "zephyr,power-state";
-			power-state-name = "runtime-idle";
-			min-residency-us = <200>;
-			exit-latency-us = <100>;
-		};
-		/* PM_STATE_SOFT_OFF can be entered only by calling pm_state_force.
-		 * The procedure is triggered by IPC from the HOST (SET_DX).
-		 */
-		d3: off {
-			compatible = "zephyr,power-state";
-			power-state-name = "soft-off";
-			min-residency-us = <0>;
-			exit-latency-us = <0>;
-			status = "disabled";
-		};
-	};
-
-	sram0: memory@a0020000 {
-		device_type = "memory";
-		compatible = "mmio-sram";
-		reg = <0xa0020000 DT_SIZE_K(4608)>;
 	};
 
 	sram0virtual: virtualmemory@a0020000 {
@@ -137,6 +117,11 @@
 		l1pcfg: l1pcfg@3fe80088 {
 			compatible = "intel,adsp-l1pcfg";
 			reg = <0x3fe80088 0x4>;
+		};
+
+		hsbcap: hsbcap@71d00 {
+			compatible = "intel,adsp-hsbcap";
+			reg = <0x71d00 0x4>;
 		};
 
 		lsbpm: lsbpm@71d80 {
@@ -441,6 +426,14 @@
 			};
 		};
 
+		mic_privacy: mic-prv@71a40  {
+			compatible = "intel,adsp-mic-privacy";
+			reg = <0x71a40  0x8000>;
+			interrupts = <29 0 0>;
+			interrupt-parent = <&ace_intc>;
+			status = "okay";
+		};
+
 		mem_window0: mem_window@70200 {
 			compatible = "intel,adsp-mem-window";
 			reg = <0x70200 0x8>;
@@ -618,7 +611,7 @@
 			interrupt-controller;
 			#interrupt-cells = <3>;
 			interrupts = <4 0 0>;
-			num-irqs = <28>;
+			num-irqs = <30>;
 			interrupt-parent = <&core_intc>;
 		};
 

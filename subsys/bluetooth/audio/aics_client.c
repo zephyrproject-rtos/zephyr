@@ -32,6 +32,7 @@
 #include <zephyr/types.h>
 
 #include "aics_internal.h"
+#include "common/bt_str.h"
 
 LOG_MODULE_REGISTER(bt_aics_client, CONFIG_BT_AICS_CLIENT_LOG_LEVEL);
 
@@ -60,8 +61,8 @@ uint8_t aics_client_notify_handler(struct bt_conn *conn, struct bt_gatt_subscrib
 {
 	uint16_t handle = params->value_handle;
 	struct bt_aics *inst;
-	struct bt_aics_state *state;
-	uint8_t *status;
+	const struct bt_aics_state *state;
+	const uint8_t *status;
 
 	if (conn == NULL) {
 		return BT_GATT_ITER_CONTINUE;
@@ -80,7 +81,7 @@ uint8_t aics_client_notify_handler(struct bt_conn *conn, struct bt_gatt_subscrib
 
 	if (handle == inst->cli.state_handle) {
 		if (length == sizeof(*state)) {
-			state = (struct bt_aics_state *)data;
+			state = (const struct bt_aics_state *)data;
 			LOG_DBG("Inst %p: Gain %d, mute %u, gain_mode %u, counter %u", inst,
 				state->gain, state->mute, state->gain_mode, state->change_counter);
 
@@ -94,7 +95,7 @@ uint8_t aics_client_notify_handler(struct bt_conn *conn, struct bt_gatt_subscrib
 		}
 	} else if (handle == inst->cli.status_handle) {
 		if (length == sizeof(*status)) {
-			status = (uint8_t *)data;
+			status = (const uint8_t *)data;
 			LOG_DBG("Inst %p: Status %u", inst, *status);
 			if (inst->cli.cb && inst->cli.cb->status) {
 				inst->cli.cb->status(inst, 0, *status);
@@ -116,6 +117,8 @@ uint8_t aics_client_notify_handler(struct bt_conn *conn, struct bt_gatt_subscrib
 		if (inst->cli.cb && inst->cli.cb->description) {
 			inst->cli.cb->description(inst, 0, desc);
 		}
+	} else {
+		LOG_DBG("Receive notification on unexpected handle 0x%04X", handle);
 	}
 
 	return BT_GATT_ITER_CONTINUE;
@@ -127,7 +130,7 @@ static uint8_t aics_client_read_state_cb(struct bt_conn *conn, uint8_t err,
 {
 	int cb_err = err;
 	struct bt_aics *inst = lookup_aics_by_handle(conn, params->single.handle);
-	struct bt_aics_state *state = (struct bt_aics_state *)data;
+	const struct bt_aics_state *state = (const struct bt_aics_state *)data;
 
 	memset(params, 0, sizeof(*params));
 
@@ -176,7 +179,8 @@ static uint8_t aics_client_read_gain_settings_cb(struct bt_conn *conn, uint8_t e
 {
 	int cb_err = err;
 	struct bt_aics *inst = lookup_aics_by_handle(conn, params->single.handle);
-	struct bt_aics_gain_settings *gain_settings = (struct bt_aics_gain_settings *)data;
+	const struct bt_aics_gain_settings *gain_settings =
+		(const struct bt_aics_gain_settings *)data;
 
 	memset(params, 0, sizeof(*params));
 
@@ -223,7 +227,7 @@ static uint8_t aics_client_read_type_cb(struct bt_conn *conn, uint8_t err,
 					const void *data, uint16_t length)
 {
 	int cb_err = err;
-	uint8_t *type = (uint8_t *)data;
+	const uint8_t *type = (const uint8_t *)data;
 	struct bt_aics *inst = lookup_aics_by_handle(conn, params->single.handle);
 
 	memset(params, 0, sizeof(*params));
@@ -268,7 +272,7 @@ static uint8_t aics_client_read_status_cb(struct bt_conn *conn, uint8_t err,
 					  const void *data, uint16_t length)
 {
 	int cb_err = err;
-	uint8_t *status = (uint8_t *)data;
+	const uint8_t *status = (const uint8_t *)data;
 	struct bt_aics *inst = lookup_aics_by_handle(conn, params->single.handle);
 
 	memset(params, 0, sizeof(*params));
@@ -352,7 +356,7 @@ static uint8_t internal_read_state_cb(struct bt_conn *conn, uint8_t err,
 {
 	int cb_err = err;
 	struct bt_aics *inst = lookup_aics_by_handle(conn, params->single.handle);
-	struct bt_aics_state *state = (struct bt_aics_state *)data;
+	const struct bt_aics_state *state = (const struct bt_aics_state *)data;
 
 	memset(params, 0, sizeof(*params));
 
@@ -389,6 +393,9 @@ static uint8_t internal_read_state_cb(struct bt_conn *conn, uint8_t err,
 			LOG_DBG("Invalid length %u (expected %zu)", length, sizeof(*state));
 			cb_err = BT_ATT_ERR_UNLIKELY;
 		}
+	} else {
+		/* Since we return BT_GATT_ITER_STOP this should never happen */
+		__ASSERT(false, "Unexpected NULL data without error");
 	}
 
 	if (cb_err) {
@@ -439,6 +446,8 @@ static void aics_client_write_aics_cp_cb(struct bt_conn *conn, uint8_t err,
 			/* Wait for read callback */
 			return;
 		}
+	} else {
+		/* Write failed, fallthrough and notify application */
 	}
 
 	atomic_clear_bit(inst->cli.flags, BT_AICS_CLIENT_FLAG_CP_RETRIED);
@@ -550,13 +559,74 @@ static bool valid_inst_discovered(struct bt_aics *inst)
 	       inst->cli.desc_handle;
 }
 
+static int store_attr_handle_and_subscribe(struct bt_aics_client *client_inst, struct bt_conn *conn,
+					   const struct bt_gatt_chrc *chrc)
+{
+	struct bt_gatt_subscribe_params *sub_params = NULL;
+
+	if (bt_uuid_cmp(chrc->uuid, BT_UUID_AICS_STATE) == 0U) {
+		LOG_DBG("Audio Input state");
+		client_inst->state_handle = chrc->value_handle;
+		sub_params = &client_inst->state_sub_params;
+	} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_AICS_GAIN_SETTINGS) == 0U) {
+		LOG_DBG("Gain settings");
+		client_inst->gain_handle = chrc->value_handle;
+	} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_AICS_INPUT_TYPE) == 0U) {
+		LOG_DBG("Input type");
+		client_inst->type_handle = chrc->value_handle;
+	} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_AICS_INPUT_STATUS) == 0U) {
+		LOG_DBG("Input status");
+		client_inst->status_handle = chrc->value_handle;
+		sub_params = &client_inst->status_sub_params;
+	} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_AICS_CONTROL) == 0U) {
+		LOG_DBG("Control point");
+		client_inst->control_handle = chrc->value_handle;
+	} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_AICS_DESCRIPTION) == 0U) {
+		LOG_DBG("Description");
+		client_inst->desc_handle = chrc->value_handle;
+		if ((chrc->properties & BT_GATT_CHRC_NOTIFY) != 0U) {
+			sub_params = &client_inst->desc_sub_params;
+		}
+
+		if ((chrc->properties & BT_GATT_CHRC_WRITE_WITHOUT_RESP) != 0U) {
+			atomic_set_bit(client_inst->flags, BT_AICS_CLIENT_FLAG_DESC_WRITABLE);
+		}
+	} else {
+		__ASSERT(false, "Unexpected UUID %s discovered", bt_uuid_str(chrc->uuid));
+	}
+
+	if (sub_params != NULL) {
+		int err;
+
+		sub_params->value = BT_GATT_CCC_NOTIFY;
+		sub_params->value_handle = chrc->value_handle;
+		/*
+		 * TODO: Don't assume that CCC is at value handle + 1;
+		 * do proper discovery;
+		 */
+		sub_params->ccc_handle = chrc->value_handle + 1;
+		sub_params->notify = aics_client_notify_handler;
+		atomic_set_bit(sub_params->flags, BT_GATT_SUBSCRIBE_FLAG_VOLATILE);
+
+		err = bt_gatt_subscribe(conn, sub_params);
+		if (err != 0 && err != -EALREADY) {
+			LOG_ERR("Failed to subscribe: %d", err);
+
+			return err;
+		}
+	}
+
+	return 0;
+}
+
 static uint8_t aics_discover_func(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				  struct bt_gatt_discover_params *params)
 {
-	struct bt_aics_client *client_inst = CONTAINER_OF(params,
-							  struct bt_aics_client,
-							  discover_params);
+	struct bt_aics_client *client_inst =
+		CONTAINER_OF(params, struct bt_aics_client, discover_params);
 	struct bt_aics *inst = CONTAINER_OF(client_inst, struct bt_aics, cli);
+	const struct bt_gatt_chrc *chrc;
+	int err;
 
 	if (!attr) {
 		LOG_DBG("Discovery complete for AICS %p", inst);
@@ -566,7 +636,7 @@ static uint8_t aics_discover_func(struct bt_conn *conn, const struct bt_gatt_att
 		atomic_clear_bit(inst->cli.flags, BT_AICS_CLIENT_FLAG_BUSY);
 
 		if (inst->cli.cb && inst->cli.cb->discover) {
-			int err = valid_inst_discovered(inst) ? 0 : -ENOENT;
+			err = valid_inst_discovered(inst) ? 0 : -ENOENT;
 
 			inst->cli.cb->discover(inst, err);
 		}
@@ -576,69 +646,21 @@ static uint8_t aics_discover_func(struct bt_conn *conn, const struct bt_gatt_att
 
 	LOG_DBG("[ATTRIBUTE] handle 0x%04X", attr->handle);
 
-	if (params->type == BT_GATT_DISCOVER_CHARACTERISTIC) {
-		struct bt_gatt_subscribe_params *sub_params = NULL;
-		struct bt_gatt_chrc *chrc;
+	__ASSERT_NO_MSG(params->type == BT_GATT_DISCOVER_CHARACTERISTIC);
 
-		chrc = (struct bt_gatt_chrc *)attr->user_data;
-		if (inst->cli.start_handle == 0) {
-			inst->cli.start_handle = chrc->value_handle;
-		}
-		inst->cli.end_handle = chrc->value_handle;
+	chrc = (const struct bt_gatt_chrc *)attr->user_data;
+	if (inst->cli.start_handle == 0U) { /* if start handle is unset */
+		inst->cli.start_handle = chrc->value_handle;
+	}
+	inst->cli.end_handle = chrc->value_handle;
 
-		if (!bt_uuid_cmp(chrc->uuid, BT_UUID_AICS_STATE)) {
-			LOG_DBG("Audio Input state");
-			inst->cli.state_handle = chrc->value_handle;
-			sub_params = &inst->cli.state_sub_params;
-		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_AICS_GAIN_SETTINGS)) {
-			LOG_DBG("Gain settings");
-			inst->cli.gain_handle = chrc->value_handle;
-		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_AICS_INPUT_TYPE)) {
-			LOG_DBG("Input type");
-			inst->cli.type_handle = chrc->value_handle;
-		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_AICS_INPUT_STATUS)) {
-			LOG_DBG("Input status");
-			inst->cli.status_handle = chrc->value_handle;
-			sub_params = &inst->cli.status_sub_params;
-		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_AICS_CONTROL)) {
-			LOG_DBG("Control point");
-			inst->cli.control_handle = chrc->value_handle;
-		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_AICS_DESCRIPTION)) {
-			LOG_DBG("Description");
-			inst->cli.desc_handle = chrc->value_handle;
-			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
-				sub_params = &inst->cli.desc_sub_params;
-			}
-
-			if (chrc->properties & BT_GATT_CHRC_WRITE_WITHOUT_RESP) {
-				atomic_set_bit(inst->cli.flags, BT_AICS_CLIENT_FLAG_DESC_WRITABLE);
-			}
+	err = store_attr_handle_and_subscribe(client_inst, conn, chrc);
+	if (err != 0) {
+		if (client_inst->cb && client_inst->cb->discover) {
+			client_inst->cb->discover(inst, err);
 		}
 
-		if (sub_params) {
-			int err;
-
-			sub_params->value = BT_GATT_CCC_NOTIFY;
-			sub_params->value_handle = chrc->value_handle;
-			/*
-			 * TODO: Don't assume that CCC is at handle + 2;
-			 * do proper discovery;
-			 */
-			sub_params->ccc_handle = attr->handle + 2;
-			sub_params->notify = aics_client_notify_handler;
-			atomic_set_bit(sub_params->flags, BT_GATT_SUBSCRIBE_FLAG_VOLATILE);
-
-			err = bt_gatt_subscribe(conn, sub_params);
-			if (err != 0 && err != -EALREADY) {
-				LOG_ERR("Failed to subscribe: %d", err);
-
-				if (inst->cli.cb && inst->cli.cb->discover) {
-					inst->cli.cb->discover(inst, err);
-				}
-
-				return BT_GATT_ITER_STOP;
-			}
-		}
+		return BT_GATT_ITER_STOP;
 	}
 
 	return BT_GATT_ITER_CONTINUE;

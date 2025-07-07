@@ -92,6 +92,8 @@ ST-LINK/V3.0. Virtual COM port interface. Default communication settings are
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 STM32U5A9J Discovery kit includes an ST-LINK/V3 embedded debug tool interface.
 This probe allows to flash and debug the board using various tools.
 

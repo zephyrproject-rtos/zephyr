@@ -1,11 +1,12 @@
 # Copyright (c) 2025 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+title: Renesas RZ/N2L Pin Controller
 
 description: |
-    The Renesas RZ/N2L pin controller is a node responsible for controlling
-    pin function selection and pin properties, such as routing the TX and RX of UART0
-    to pin 5 and pin 6 of port 16.
+    Singleton node responsible for controlling pin function selection and pin
+    properties, such as routing the TX and RX of UART0 to pin 5 and pin 6 of
+    port 16.
 
     The node has the 'pinctrl' node label set in your SoC's devicetree,
     so you can modify it like this:

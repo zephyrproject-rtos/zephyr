@@ -10,6 +10,7 @@
 #include <esp_private/cache_utils.h>
 #include <esp_private/system_internal.h>
 #include <esp_timer.h>
+#include <efuse_virtual.h>
 #include <psram.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <zephyr/sys/printk.h>
@@ -41,7 +42,7 @@ void IRAM_ATTR __esp_platform_app_start(void)
 
 	esp_flash_config();
 
-	esp_intr_initialize();
+	esp_efuse_init_virtual();
 
 #if CONFIG_ESP_SPIRAM
 	esp_init_psram();
@@ -62,8 +63,6 @@ void IRAM_ATTR __esp_platform_app_start(void)
 
 void IRAM_ATTR __esp_platform_mcuboot_start(void)
 {
-	esp_intr_initialize();
-
 	/* Start Zephyr */
 	z_prep_c();
 
@@ -82,5 +81,5 @@ int IRAM_ATTR arch_printk_char_out(int c)
 
 void sys_arch_reboot(int type)
 {
-	esp_restart_noos();
+	esp_restart();
 }

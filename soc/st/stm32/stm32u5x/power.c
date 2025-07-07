@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/kernel.h>
+#include <zephyr/cache.h>
 #include <zephyr/pm/pm.h>
 #include <soc.h>
 #include <zephyr/init.h>
@@ -12,7 +13,6 @@
 #include <stm32u5xx_ll_bus.h>
 #include <stm32u5xx_ll_cortex.h>
 #include <stm32u5xx_ll_pwr.h>
-#include <stm32u5xx_ll_icache.h>
 #include <stm32u5xx_ll_rcc.h>
 #include <stm32u5xx_ll_system.h>
 #include <clock_control/clock_stm32_ll_common.h>
@@ -34,22 +34,6 @@ static void pwr_stop3_isr(const struct device *dev)
 
 	/* Clear all wake-up flags */
 	LL_PWR_ClearFlag_WU();
-}
-
-static void disable_cache(void)
-{
-	/* Disabling ICACHE */
-	LL_ICACHE_Disable();
-	while (LL_ICACHE_IsEnabled() == 1U) {
-	}
-
-	/* Wait until ICACHE_SR.BUSYF is cleared */
-	while (LL_ICACHE_IsActiveFlag_BUSY() == 1U) {
-	}
-
-	/* Wait until ICACHE_SR.BSYENDF is set */
-	while (LL_ICACHE_IsActiveFlag_BSYEND() == 0U) {
-	}
 }
 #endif
 
@@ -82,7 +66,7 @@ void set_mode_stop(uint8_t substate_id)
 		LL_PWR_ClearFlag_SB();
 		LL_PWR_ClearFlag_WU();
 
-		disable_cache();
+		sys_cache_instr_disable();
 
 		LL_PWR_SetPowerMode(LL_PWR_STOP3_MODE);
 		break;
@@ -135,10 +119,7 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 		} else if (substate_id == 4) {
 			stm32_clock_control_standby_exit();
 
-			LL_ICACHE_SetMode(LL_ICACHE_1WAY);
-			LL_ICACHE_Enable();
-			while (LL_ICACHE_IsEnabled() == 0U) {
-			}
+			sys_cache_instr_enable();
 
 			LL_LPM_DisableSleepOnExit();
 			LL_LPM_EnableSleep();

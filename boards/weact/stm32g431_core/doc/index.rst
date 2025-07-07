@@ -80,6 +80,8 @@ PLL instead of the internal 48 MHz oscillator.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The MCU is normally programmed using the ROM bootloader or the exposed SWD port.
 
 Please note that some laptops may not detect the ROM bootloader correctly if the CCx

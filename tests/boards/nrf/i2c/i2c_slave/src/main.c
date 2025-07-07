@@ -21,8 +21,14 @@
 #define I2C_S_INSTANCE 1
 #elif CONFIG_NRFX_TWIS2
 #define I2C_S_INSTANCE 2
+#elif CONFIG_NRFX_TWIS20
+#define I2C_S_INSTANCE 20
+#elif CONFIG_NRFX_TWIS21
+#define I2C_S_INSTANCE 21
 #elif CONFIG_NRFX_TWIS22
 #define I2C_S_INSTANCE 22
+#elif CONFIG_NRFX_TWIS30
+#define I2C_S_INSTANCE 30
 #elif CONFIG_NRFX_TWIS131
 #define I2C_S_INSTANCE 131
 #else
@@ -125,7 +131,7 @@ ZTEST_USER_F(i2c_api_twis, test_i2c_read_write)
 ZTEST_USER_F(i2c_api_twis, test_i2c_read)
 {
 	/* Prepare slave data */
-	strncpy(fixture->slave_buffer, msg, TEST_DATA_SIZE);
+	memcpy(fixture->slave_buffer, msg, TEST_DATA_SIZE);
 	zassert_mem_equal(fixture->slave_buffer, msg, TEST_DATA_SIZE);
 
 	int ret = i2c_read(fixture->dev, fixture->master_buffer, TEST_DATA_SIZE, fixture->addr);

@@ -5,19 +5,28 @@
  */
 
 #include <errno.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
-#include <zephyr/kernel.h>
-#include <zephyr/settings/settings.h>
-#include <common/bt_settings_commit.h>
-
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/settings/settings.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
+#include "common/bt_settings_commit.h"
 #include "common/bt_str.h"
-
 #include "hci_core.h"
 #include "settings.h"
+#include "sys/types.h"
 
 #define LOG_LEVEL CONFIG_BT_SETTINGS_LOG_LEVEL
 #include <zephyr/logging/log.h>

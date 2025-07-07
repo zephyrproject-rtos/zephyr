@@ -8,6 +8,7 @@ config UDC_AMBIQ
 	select GPIO
 	select AMBIQ_HAL
 	select AMBIQ_HAL_USE_USB
+	select UDC_DRIVER_HAS_HIGH_SPEED_SUPPORT
 	help
 	  Enable USB Device Controller Driver.
 
@@ -25,12 +26,50 @@ config UDC_AMBIQ_THREAD_PRIORITY
 	help
 	  AMBIQ driver thread priority.
 
-
 config UDC_AMBIQ_MAX_QMESSAGES
 	int "UDC AMBIQ maximum number of ISR event messages"
 	range 4 64
 	default 8
 	help
 	  AMBIQ maximum number of ISR event messages.
+
+choice UDC_AMBIQ_DMA_MODE
+	prompt "DMA mode for non-control USB endpoints"
+	default UDC_AMBIQ_DMA0_MODE
+	depends on SOC_SERIES_APOLLO5X
+
+config UDC_AMBIQ_DMA0_MODE
+	bool "DMA0 transfer mode"
+	help
+	  Select this option when synchronous endpoint is used.
+
+config UDC_AMBIQ_DMA1_MODE
+	bool "DMA1 transfer mode"
+	help
+	  This option gives best throughput when endpoint buffer is greater than Max
+	  Packet Size. However this option cannot be chosen when synchronous
+	  endpoint is used.
+
+config UDC_AMBIQ_PIO_MODE
+	bool "PIO transfer mode"
+	help
+	  Select this option when cache coherency handling is to be avoided.
+endchoice
+
+config UDC_AMBIQ_DEB_ENABLE
+	hex "EP Double Buffer Enable"
+	default 0x0000
+	depends on SOC_SERIES_APOLLO5X
+	help
+	  Double Endpoint Buffer acceleration (DEB) is doubles an EP's FIFO size so
+	  that USB transfer could continue to happen while waiting for DMA/CPU to
+	  load/unload data from the EP FIFO. This hex value is a bitmap of endpoints
+	  for DEB to be enabled. BIT0-4 represents OUT_EP 1-5, while BIT16-20
+	  represents IN_EP 1-5. Take note that this feature is limited by total EP
+	  FIFO size. Proper calculation should be done before enabling DEB such that
+	  the total usage of FIFO for all endpoint doesn't exceed the FIFO available
+	  on SoC. The list of Soc with its FIFO size is listed below. The FIFO size
+	  here includes 128 bytes required by control endpoints.
+	  - Apollo510: (4096 Bytes FIFO)
 
 endif # UDC_AMBIQ

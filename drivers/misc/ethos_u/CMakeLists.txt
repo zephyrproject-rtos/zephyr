@@ -3,4 +3,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_library()
-zephyr_library_sources(ethos_u.c)
+zephyr_library_sources(ethos_u_common.c)
+zephyr_library_sources_ifdef(CONFIG_ETHOS_U_ARM ethos_u_arm.c)

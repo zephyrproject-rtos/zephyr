@@ -19,6 +19,9 @@
 	chosen {
 		zephyr,sram = &atcm;
 		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
+		zephyr,ipc = &ipc0;
+		zephyr,ipc_shm = &ddr0;
 	};
 
 	cpus {
@@ -42,6 +45,12 @@
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0xa2200000 DT_SIZE_M(14)>;
 		zephyr,memory-region = "DRAM";
+	};
+
+	ipc0: ipc {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&mbox1 0>, <&mbox1 1>;
+		mbox-names = "tx", "rx";
 	};
 };
 

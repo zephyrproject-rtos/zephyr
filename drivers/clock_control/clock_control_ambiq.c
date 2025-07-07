@@ -11,7 +11,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/clock_control_ambiq.h>
-#include <am_mcu_apollo.h>
+#include <soc.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control_ambiq, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
@@ -45,6 +45,7 @@ static int ambiq_clock_on(const struct device *dev, clock_control_subsys_t sub_s
 		break;
 	case CLOCK_CONTROL_AMBIQ_TYPE_LFXTAL:
 		ret = am_hal_mcuctrl_control(AM_HAL_MCUCTRL_CONTROL_EXTCLK32K_ENABLE, 0);
+		break;
 	default:
 		ret = -ENOTSUP;
 		break;

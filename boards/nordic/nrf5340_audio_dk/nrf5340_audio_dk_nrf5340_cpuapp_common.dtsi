@@ -20,6 +20,7 @@
 	gpio_fwd: nrf-gpio-forwarder {
 		compatible = "nordic,nrf-gpio-forwarder";
 		status = "okay";
+
 		uart {
 			gpios = <&gpio1 9 0>, <&gpio1 8 0>, <&gpio1 11 0>, <&gpio1 10 0>;
 		};
@@ -51,12 +52,15 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		rgb1_red_pwm_led: pwm_led_0 {
 			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
+
 		rgb1_green_pwm_led: pwm_led_1 {
 			pwms = <&pwm0 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
+
 		rgb1_blue_pwm_led: pwm_led_2 {
 			pwms = <&pwm0 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
@@ -103,6 +107,10 @@
 		zephyr,resolution = <12>;
 		zephyr,oversampling = <8>;
 	};
+};
+
+&nfct {
+	status = "okay";
 };
 
 &gpiote {
@@ -208,17 +216,18 @@ arduino_spi: &spi4 {
 	pinctrl-0 = <&spi4_default>;
 	pinctrl-1 = <&spi4_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	sdhc0: sdhc@1 {
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <1>;
 		status = "okay";
+		spi-max-frequency = <8000000>;
+
 		sdmmc {
 			compatible = "zephyr,sdmmc-disk";
 			disk-name = "SD";
 			status = "okay";
 		};
-
-		spi-max-frequency = <8000000>;
 	};
 
 	cs47l63: cs47l63@2 {
@@ -255,5 +264,5 @@ zephyr_udc0: &usbd {
 };
 
 /* Include default memory partition configuration file */
-#include <common/nordic/nrf5340_cpuapp_partition.dtsi>
+#include <nordic/nrf5340_cpuapp_partition.dtsi>
 #include "nrf5340_audio_dk_nrf5340_shared.dtsi"

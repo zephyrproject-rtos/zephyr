@@ -338,7 +338,7 @@ static int st7567_reset(const struct device *dev)
 static int st7567_clear(const struct device *dev)
 {
 	const struct st7567_config *config = dev->config;
-	int ret;
+	int ret = 0;
 	uint8_t buf = 0;
 
 	uint8_t cmd_buf[] = {
@@ -454,6 +454,7 @@ static DEVICE_API(display, st7567_driver_api) = {
 	.blanking_on = st7567_suspend,
 	.blanking_off = st7567_resume,
 	.write = st7567_write,
+	.clear = st7567_clear,
 	.set_contrast = st7567_set_contrast,
 	.get_capabilities = st7567_get_capabilities,
 	.set_pixel_format = st7567_set_pixel_format,

@@ -83,7 +83,7 @@
 };
 
 /* I2C1 in datasheet */
-&i2c1 {
+zephyr_i2c: &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_FAST>;
@@ -179,9 +179,10 @@
 	pinctrl-names = "default";
 	status = "okay";
 
-	mx25l12833f: qspi-nor-flash@90000000 {
+	mx25l12833f: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
-		reg = < 0x90000000 DT_SIZE_M(16) >; /* 128 MBits */
+		reg = <0>;
+		size = <DT_SIZE_M(128)>; /* 128 Mbits */
 		qspi-max-frequency = < 40000000 >;
 		sfdp-bfp = [ e5 20 f1 ff  ff ff ff 07  44 eb 08 6b  08 3b 04 bb
 			     fe ff ff ff  ff ff 00 ff  ff ff 44 eb  0c 20 0f 52
@@ -223,6 +224,7 @@
 		      &eth_txd0_pg13 >;
 	pinctrl-names = "default";
 	phy-connection-type = "rmii";
+	phy-handle = <&eth_phy>;
 	status = "okay";
 };
 
@@ -231,10 +233,9 @@
 	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
 	pinctrl-names = "default";
 
-	ethernet-phy@0 {
+	eth_phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";
 		reg = <0x00>;
-		status = "okay";
 	};
 };
 

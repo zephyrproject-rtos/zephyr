@@ -49,6 +49,8 @@ class Shields(WestCommand):
             The following arguments are available:
 
             - name: shield name
+            - full_name: shield full name (typically, its commercial name)
+            - vendor: shield vendor
             - dir: directory that contains the shield definition
             '''))
 
@@ -82,4 +84,9 @@ class Shields(WestCommand):
         for shield in list_shields.find_shields(args):
             if name_re is not None and not name_re.search(shield.name):
                 continue
-            self.inf(args.format.format(name=shield.name, dir=shield.dir))
+            self.inf(args.format.format(
+                name=shield.name,
+                dir=shield.dir,
+                vendor=shield.vendor if hasattr(shield, 'vendor') else '',
+                full_name=shield.full_name if hasattr(shield, 'full_name') else shield.name
+            ))

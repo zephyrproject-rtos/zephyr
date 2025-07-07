@@ -12,6 +12,7 @@ Zephyr OS is ported to run on the Cortex®-M4 core of the STM32MP157F.
   - OSD32MP15x SiP:
 
     - STM32MP15x microprocessor:
+
       - Dual-core Arm® Cortex®-A7 up to 800 MHz, 32 bits
       - Cortex®-M4 up to 209 MHz, 32 bits
       - Embedded SRAM (448 Kbytes) for Cortex®-M4.
@@ -23,10 +24,12 @@ Zephyr OS is ported to run on the Cortex®-M4 core of the STM32MP157F.
     - Over 100 passive components
 
   - Small form factor:
+
     - Dimensions: 75 mm x 46 mm (3 in x 1.8 in)
     - Breadboard-compatible with access to 106 I/Os via two 2x30 100-mil headers
 
   - Built-in features:
+
     - μUSB
     - ST-Link header
     - UART
@@ -59,9 +62,11 @@ The OSD32MP15x SiP in integration with the STM32MP17 SoC provides the following 
 
   - 512 MB DDR3L memory (on SiP)
   - 708 Kbytes of internal SRAM:
+
     - 256 KB AXI SYSRAM
     - 384 KB AHB SRAM
     - 64 KB AHB SRAM in backup domain
+
   - Dual mode Quad-SPI memory interface
   - Flexible external memory controller with up to 16-bit data bus
   - Integrated 4 KB EEPROM (on SiP)
@@ -73,12 +78,16 @@ The OSD32MP15x SiP in integration with the STM32MP17 SoC provides the following 
 - Clock management:
 
   - Internal oscillators:
+
     - 64 MHz HSI oscillator
     - 4 MHz CSI oscillator
     - 32 kHz LSI oscillator
+
   - External oscillators:
+
     - 8-48 MHz HSE oscillator
     - 32.768 kHz LSE oscillator
+
   - 6 × PLLs with fractional mode
   - MEMS oscillator (on SiP)
 
@@ -185,6 +194,8 @@ Default USART settings are 115200 8N1.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 The STM32MP157F doesn't have QSPI flash for Cortex®-M4 and it needs to be
 started by the Cortex®-A7 core. The Cortex®-A7 core is responsible for loading the

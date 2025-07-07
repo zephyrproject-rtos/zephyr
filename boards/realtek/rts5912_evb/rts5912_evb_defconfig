@@ -20,3 +20,6 @@ CONFIG_GPIO=y
 
 # Input Driver
 CONFIG_INPUT=y
+
+# Enable ADC
+CONFIG_ADC=y

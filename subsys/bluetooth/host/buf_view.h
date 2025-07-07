@@ -11,6 +11,8 @@
 #ifndef ZEPHYR_SUBSYS_BLUETOOTH_HOST_BUF_VIEW_H_
 #define ZEPHYR_SUBSYS_BLUETOOTH_HOST_BUF_VIEW_H_
 
+#include <stddef.h>
+
 #include <zephyr/net_buf.h>
 
 

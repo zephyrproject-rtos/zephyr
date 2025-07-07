@@ -26,7 +26,7 @@ static const struct device_subsys_data subsys_data[] = {
 
 static const struct device_data devices[] = {
 	{
-		.dev = DEVICE_DT_GET_ONE(espressif_esp32_rtc),
+		.dev = DEVICE_DT_GET_ONE(espressif_esp32_clock),
 		.subsys_data =  subsys_data,
 		.subsys_cnt = ARRAY_SIZE(subsys_data)
 	}

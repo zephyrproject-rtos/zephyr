@@ -173,6 +173,11 @@ arduino_i2c: &i2c0 {
 		reg = <0x6b>;
 	};
 
+	lsm9ds1_mag: lsm9ds1_mag@1e {
+		compatible = "st,lsm9ds1_mag";
+		reg = <0x1e>;
+	};
+
 };
 
 /* SPI2 is used because SPI1/0 shares conflicts with I2C1/0 */

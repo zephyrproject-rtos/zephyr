@@ -638,6 +638,11 @@ void arch_coredump_info_dump(const struct arch_esf *esf);
  */
 uint16_t arch_coredump_tgt_code_get(void);
 
+/**
+ * @brief Get the stack pointer of the thread.
+ */
+uintptr_t arch_coredump_stack_ptr_get(const struct k_thread *thread);
+
 #if defined(CONFIG_USERSPACE) || defined(__DOXYGEN__)
 
 /**

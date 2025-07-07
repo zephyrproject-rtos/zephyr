@@ -6,6 +6,7 @@ config UDC_VIRTUAL
 	select UVB
 	default y
 	depends on DT_HAS_ZEPHYR_UDC_VIRTUAL_ENABLED
+	select UDC_DRIVER_HAS_HIGH_SPEED_SUPPORT
 	help
 	  Virtual USB device controller driver.
 

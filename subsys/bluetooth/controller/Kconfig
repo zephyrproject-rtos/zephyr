@@ -128,7 +128,7 @@ config BT_CTLR_SUBRATING_SUPPORT
 config BT_CTLR_CHANNEL_SOUNDING_SUPPORT
 	bool
 
-# Virtual option that all local LL implemenations should select
+# Virtual option that all local LL implementations should select
 config HAS_BT_CTLR
 	bool
 
@@ -685,7 +685,7 @@ config BT_CTLR_PRIVACY
 	  in the Controller.
 
 config BT_CTLR_FAL_SIZE
-	int "LE Controller-based Privacy White List size"
+	int "LE Controller-based Privacy Accept List size"
 	depends on BT_CTLR_FILTER_ACCEPT_LIST
 	default 8
 	range 1 8  if  (SOC_COMPATIBLE_NRF || SOC_OPENISA_RV32M1)
@@ -887,7 +887,7 @@ endif # BT_CTLR_SYNC_PERIODIC
 config BT_CTLR_SYNC_TRANSFER_SENDER
 	bool "Periodic Advertising Sync Transfer sender"
 	depends on BT_CTLR_SYNC_TRANSFER_SENDER_SUPPORT
-	select BT_TICKER_LAZY_GET
+	select BT_TICKER_LAZY_GET if BT_LL_SW_SPLIT
 	default BT_PER_ADV_SYNC_TRANSFER_SENDER
 	help
 	  Enable support for the Periodic Advertising Sync Transfer control procedure

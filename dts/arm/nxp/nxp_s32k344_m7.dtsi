@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2024 NXP
+ * Copyright 2023-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 #include <mem.h>
 #include <zephyr/dt-bindings/clock/nxp_s32k344_clock.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
 / {
 	cpus {
@@ -45,12 +46,14 @@
 			compatible = "zephyr,memory-region", "arm,itcm";
 			reg = <0x00000000 DT_SIZE_K(64)>;
 			zephyr,memory-region = "ITCM";
+			zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_FLASH) )>;
 		};
 
 		dtcm: memory@20000000 {
 			compatible = "zephyr,memory-region", "arm,dtcm";
 			reg = <0x20000000 DT_SIZE_K(128)>;
 			zephyr,memory-region = "DTCM";
+			zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
 		};
 
 		sram0_1: sram0_1@20400000 {

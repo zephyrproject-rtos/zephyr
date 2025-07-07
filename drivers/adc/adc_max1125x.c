@@ -403,9 +403,17 @@ static int max1125x_read_sample(const struct device *dev)
 	 * the available input range is limited to the minimum or maximum
 	 * data value.
 	 */
+
+	if (config->resolution > 24 || config->resolution < 1) {
+		LOG_ERR("Unsupported ADC resolution: %u", config->resolution);
+		return -EINVAL;
+	}
+
 	is_positive = buffer_rx[(config->resolution / 8)] >> 7;
+
 	if (is_positive) {
-		*data->buffer++ = sys_get_be24(buffer_rx) - (1 << (config->resolution - 1));
+		/* Ensure left shift is done using unsigned literal to avoid overflow. */
+		*data->buffer++ = sys_get_be24(buffer_rx) - (1U << (config->resolution - 1));
 	} else {
 		*data->buffer++ = sys_get_be24(buffer_rx + 1);
 	}
@@ -791,7 +799,7 @@ static DEVICE_API(adc, max1125x_api) = {
 		.gpio.gpio1_enable = DT_PROP_OR(DT_INST_MAX1125X(n, t), gpio1_enable, 0),          \
 		.gpio.gpio0_direction = DT_PROP_OR(DT_INST_MAX1125X(n, t), gpio0_direction, 0),    \
 		.gpio.gpio1_direction = DT_PROP_OR(DT_INST_MAX1125X(n, t), gpio1_direction, 0),    \
-		.gpo.gpo0_enable = DT_PROP_OR(DT_INST_MAX1125X(n, t), gpo1_enable, 0),             \
+		.gpo.gpo0_enable = DT_PROP_OR(DT_INST_MAX1125X(n, t), gpo0_enable, 0),             \
 		.gpo.gpo1_enable = DT_PROP_OR(DT_INST_MAX1125X(n, t), gpo1_enable, 0),             \
 	};                                                                                         \
 	static struct max1125x_data max##t##_data_##n = {                                          \

@@ -72,7 +72,7 @@ K_HEAP_DEFINE(tiny_heap, 1);
 volatile uint32_t heap_guard1;
 
 /** @brief Test a minimum-size static k_heap
- *  @ingroup kernel_kheap_api_tests
+ *  @ingroup k_heap_api_tests
  *
  * @details Create a minimum size (1-byte) static heap, verify that it
  * works to allocate that byte at runtime and that it doesn't overflow
@@ -103,9 +103,9 @@ ZTEST(k_heap_api, test_k_heap_min_size)
 }
 
 /**
- * @brief Test to demonstrate k_heap_alloc() and k_heap_free() API usage
+ * @brief Test k_heap_alloc() and k_heap_free() API usage
  *
- * @ingroup kernel_kheap_api_tests
+ * @ingroup k_heap_api_tests
  *
  * @details The test allocates 1024 bytes from 2048 byte heap,
  * and checks if allocation is successful or not
@@ -127,9 +127,9 @@ ZTEST(k_heap_api, test_k_heap_alloc)
 
 
 /**
- * @brief Test to demonstrate k_heap_alloc() and k_heap_free() API usage
+ * @brief Test k_heap_alloc() and k_heap_free() API usage
  *
- * @ingroup kernel_kheap_api_tests
+ * @ingroup k_heap_api_tests
  *
  * @details The test allocates 2049 bytes, which is greater than the heap
  * size(2048 bytes), and checks for NULL return from k_heap_alloc
@@ -149,9 +149,9 @@ ZTEST(k_heap_api, test_k_heap_alloc_fail)
 
 
 /**
- * @brief Test to demonstrate k_heap_free() API functionality.
+ * @brief Test k_heap_free() API functionality.
  *
- * @ingroup kernel_kheap_api_tests
+ * @ingroup k_heap_api_tests
  *
  * @details The test validates k_heap_free()
  * API, by using below steps
@@ -184,7 +184,7 @@ ZTEST(k_heap_api, test_k_heap_free)
  * @details The test validates k_heap_alloc() in isr context, the timeout
  * param should be K_NO_WAIT, because this situation isn't allow to wait.
  *
- * @ingroup kernel_heap_tests
+ * @ingroup k_heap_api_tests
  */
 ZTEST(k_heap_api, test_kheap_alloc_in_isr_nowait)
 {
@@ -198,7 +198,7 @@ ZTEST(k_heap_api, test_kheap_alloc_in_isr_nowait)
  * child thread. If there isn't enough space in the heap, the child thread
  * will wait timeout long until main thread free the buffer to heap.
  *
- * @ingroup kernel_heap_tests
+ * @ingroup k_heap_api_tests
  */
 ZTEST(k_heap_api, test_k_heap_alloc_pending)
 {
@@ -235,7 +235,7 @@ ZTEST(k_heap_api, test_k_heap_alloc_pending)
  * will wait timeout long until main thread free one of the buffer to heap, space in
  * the heap is still not enough and then return null after timeout.
  *
- * @ingroup kernel_heap_tests
+ * @ingroup k_heap_api_tests
  */
 ZTEST(k_heap_api, test_k_heap_alloc_pending_null)
 {
@@ -269,9 +269,9 @@ ZTEST(k_heap_api, test_k_heap_alloc_pending_null)
 }
 
 /**
- * @brief Test to demonstrate k_heap_calloc() and k_heap_free() API usage
+ * @brief Test k_heap_calloc() and k_heap_free() API usage
  *
- * @ingroup kernel_kheap_api_tests
+ * @ingroup k_heap_api_tests
  *
  * @details The test allocates 256 unsigned integers of 4 bytes for a
  * total of 1024 bytes from the 2048 byte heap. It checks if allocation
@@ -288,6 +288,146 @@ ZTEST(k_heap_api, test_k_heap_calloc)
 	for (int i = 0; i < CALLOC_NUM; i++) {
 		zassert_equal(p[i], 0U);
 	}
+
+	k_heap_free(&k_heap_test, p);
+}
+
+/**
+ * @brief Test k_heap_array_get()
+ *
+ * @ingroup kernel_kheap_api_tests
+ *
+ * @details The test ensures that valid values are returned
+ *
+ * @see k_heap_array_get()
+ */
+ZTEST(k_heap_api, test_k_heap_array_get)
+{
+	struct k_heap *ha = NULL;
+	bool test_heap_found = false;
+	int n;
+
+	n = k_heap_array_get(&ha);
+	zassert_not_equal(0, n, "No heaps returned");
+	zassert_not_null(ha, "Heap array pointer not populated");
+
+	/* Ensure that k_heap_test exists in the array */
+	for (int i = 0; i < n; i++) {
+		if (&k_heap_test == &ha[i]) {
+			test_heap_found = true;
+		}
+	}
+	zassert_true(test_heap_found);
+}
+
+/**
+ * @brief Test k_heap_realloc() API functionality.
+ *
+ * @ingroup k_heap_api_tests
+ *
+ * @details The test validates k_heap_realloc() API by:
+ * 1. Allocating memory and reallocating to a larger size
+ * 2. Reallocating to a smaller size
+ * 3. Verifying data integrity after reallocation
+ *
+ * @see k_heap_realloc()
+ */
+ZTEST(k_heap_api, test_k_heap_realloc)
+{
+	k_timeout_t timeout = Z_TIMEOUT_US(TIMEOUT);
+	char *p, *p2, *p3;
+
+	p = (char *)k_heap_alloc(&k_heap_test, ALLOC_SIZE_1, timeout);
+	zassert_not_null(p, "k_heap_alloc operation failed");
+
+	/* Fill the allocated memory with a pattern */
+	for (int i = 0; i < ALLOC_SIZE_1; i++) {
+		p[i] = 'A' + (i % 26);
+	}
+
+	/* Reallocate to a larger size */
+	p2 = (char *)k_heap_realloc(&k_heap_test, p, ALLOC_SIZE_2, timeout);
+	zassert_not_null(p2, "k_heap_realloc operation failed");
+
+	/* Verify the original data is preserved */
+	for (int i = 0; i < ALLOC_SIZE_1; i++) {
+		zassert_equal(p2[i], 'A' + (i % 26), "Data integrity check failed");
+	}
+
+	/* Reallocate to a smaller size */
+	p3 = (char *)k_heap_realloc(&k_heap_test, p2, ALLOC_SIZE_1 / 2, timeout);
+	zassert_not_null(p3, "k_heap_realloc operation failed");
+
+	/* Verify the data is preserved up to the new size */
+	for (int i = 0; i < ALLOC_SIZE_1 / 2; i++) {
+		zassert_equal(p3[i], 'A' + (i % 26), "Data integrity check failed");
+	}
+
+	k_heap_free(&k_heap_test, p3);
+}
+
+/**
+ * @brief Test k_heap_realloc() with NULL pointer.
+ *
+ * @ingroup k_heap_api_tests
+ *
+ * @details The test validates that k_heap_realloc() behaves like k_heap_alloc()
+ * when called with a NULL pointer.
+ *
+ * @see k_heap_realloc()
+ */
+ZTEST(k_heap_api, test_k_heap_realloc_null)
+{
+	k_timeout_t timeout = Z_TIMEOUT_US(TIMEOUT);
+	char *p = (char *)k_heap_realloc(&k_heap_test, NULL, ALLOC_SIZE_1, timeout);
+
+	zassert_not_null(p, "k_heap_realloc with NULL pointer failed");
+	k_heap_free(&k_heap_test, p);
+}
+
+/**
+ * @brief Test k_heap_realloc() with size 0.
+ *
+ * @ingroup k_heap_api_tests
+ *
+ * @details The test validates that k_heap_realloc() behaves like k_heap_free()
+ * when called with size 0.
+ *
+ * @see k_heap_realloc()
+ */
+ZTEST(k_heap_api, test_k_heap_realloc_zero)
+{
+	char *p, *p2;
+
+	p = (char *)k_heap_alloc(&k_heap_test, ALLOC_SIZE_1, K_NO_WAIT);
+	zassert_not_null(p, "k_heap_alloc operation failed");
+
+	/* Realloc with size 0 should free the memory */
+	p2 = (char *)k_heap_realloc(&k_heap_test, p, 0, K_NO_WAIT);
+	zassert_is_null(p2, "k_heap_realloc with size 0 should return NULL");
+}
+
+/**
+ * @brief Test k_heap_realloc() failure case.
+ *
+ * @ingroup k_heap_api_tests
+ *
+ * @details The test validates that k_heap_realloc() returns NULL when
+ * trying to reallocate to a size larger than the heap.
+ *
+ * @see k_heap_realloc()
+ */
+ZTEST(k_heap_api, test_k_heap_realloc_fail)
+{
+	k_timeout_t timeout = Z_TIMEOUT_US(TIMEOUT);
+	char *p, *p2;
+
+	p = (char *)k_heap_alloc(&k_heap_test, ALLOC_SIZE_1, timeout);
+	zassert_not_null(p, "k_heap_alloc operation failed");
+
+	/* Try to reallocate to a size larger than the heap */
+	p2 = (char *)k_heap_realloc(&k_heap_test, p, HEAP_SIZE + 1, timeout);
+	zassert_is_null(p2, "k_heap_realloc should fail for size larger than heap");
 
 	k_heap_free(&k_heap_test, p);
 }

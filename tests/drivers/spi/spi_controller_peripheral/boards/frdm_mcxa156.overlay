@@ -1,0 +1,31 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <lpspi1_header.overlay>
+
+/ {
+	zephyr,user {
+		peripheral-cs = <1>;
+	};
+};
+
+&lpspi0 {
+	dut_spi_dt: test-spi-dev@0 {
+		compatible = "vnd,spi-device";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+	};
+	transfer-delay = <100>;
+	sck-pcs-delay = <10>;
+	pcs-sck-delay = <10>;
+	/* lower the master interrupt priority so slave can interrupt */
+	interrupts = <28 1>;
+	label = "spi_master";
+};
+
+dut_spis: &lpspi1 {
+	label = "spi_slave";
+};

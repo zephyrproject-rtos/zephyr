@@ -21,10 +21,10 @@ extern "C" {
 
 /** The type of operation that is being requested for a given file access callback. */
 enum fs_mgmt_file_access_types {
-	/** Access to read file (file upload). */
+	/** Access to read file (file download). */
 	FS_MGMT_FILE_ACCESS_READ,
 
-	/** Access to write file (file download). */
+	/** Access to write file (file upload). */
 	FS_MGMT_FILE_ACCESS_WRITE,
 
 	/** Access to get status of file. */

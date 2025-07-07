@@ -1,6 +1,8 @@
 # Copyright (c) 2024 Silicon Labs
 # SPDX-License-Identifier: Apache-2.0
 
+title: Silicon Labs Series 2 DBUS (Digital Bus) Pin Controller
+
 description: |
     The Silabs pin controller is a singleton node responsible for controlling
     pin function selection and pin properties. For example, you can use this

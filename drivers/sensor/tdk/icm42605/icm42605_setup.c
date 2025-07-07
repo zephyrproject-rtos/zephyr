@@ -431,8 +431,8 @@ int icm42605_turn_off_sensor(const struct device *dev)
 
 	result = inv_spi_read(&cfg->spi, REG_PWR_MGMT0, &v, 1);
 
-	v ^= BIT_ACCEL_MODE_LNM;
-	v ^= BIT_GYRO_MODE_LNM;
+	v &= ~BIT_ACCEL_MODE_LNM;
+	v &= ~BIT_GYRO_MODE_LNM;
 
 	result = inv_spi_single_write(&cfg->spi, REG_PWR_MGMT0, &v);
 	if (result) {

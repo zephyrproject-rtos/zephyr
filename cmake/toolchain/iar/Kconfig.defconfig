@@ -8,9 +8,6 @@ config TOOLCHAIN_SUPPORTS_VLA_IN_STATEMENTS
 config PICOLIBC_SUPPORTED
 	default n
 
-config TOOLCHAIN_HAS_BUILTIN_FFS
-	default n
-
 config IAR_LIBC_SUPPORTED
 	default y
 

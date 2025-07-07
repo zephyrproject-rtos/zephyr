@@ -324,7 +324,7 @@ static int _sock_send(struct esp_socket *sock, struct net_pkt *pkt)
 	frag = pkt->frags;
 	while (frag && pkt_len) {
 		write_len = MIN(pkt_len, frag->len);
-		dev->mctx.iface.write(&dev->mctx.iface, frag->data, write_len);
+		modem_cmd_send_data_nolock(&dev->mctx.iface, frag->data, write_len);
 		pkt_len -= write_len;
 		frag = frag->frags;
 	}
@@ -474,7 +474,7 @@ static int esp_send(struct net_pkt *pkt,
 
 #define CIPRECVDATA_CMD_MIN_LEN (sizeof("+CIPRECVDATA,L:") - 1)
 
-#if defined(CONFIG_WIFI_ESP_AT_CIPDINFO_USE)
+#if defined(CONFIG_WIFI_ESP_AT_CIPDINFO_USE) && !defined(CONFIG_WIFI_ESP_AT_VERSION_1_7)
 #define CIPRECVDATA_CMD_MAX_LEN (sizeof("+CIPRECVDATA,LLLL,\"255.255.255.255\",65535:") - 1)
 #else
 #define CIPRECVDATA_CMD_MAX_LEN (sizeof("+CIPRECVDATA,LLLL:") - 1)
@@ -501,7 +501,7 @@ static int cmd_ciprecvdata_parse(struct esp_socket *sock,
 
 	*data_len = strtol(&cmd_buf[len], &endptr, 10);
 
-#if defined(CONFIG_WIFI_ESP_AT_CIPDINFO_USE)
+#if defined(CONFIG_WIFI_ESP_AT_CIPDINFO_USE) && !defined(CONFIG_WIFI_ESP_AT_VERSION_1_7)
 	char *strstart = endptr + 1;
 	char *strend = strchr(strstart, ',');
 
@@ -547,11 +547,17 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ciprecvdata)
 {
 	struct esp_data *dev = CONTAINER_OF(data, struct esp_data,
 					    cmd_handler_data);
-	struct esp_socket *sock = dev->rx_sock;
+	struct esp_socket *sock;
 	int data_offset, data_len;
 	int err;
 
-#if defined(CONFIG_WIFI_ESP_AT_CIPDINFO_USE)
+	sock = esp_socket_ref(dev->rx_sock);
+	if (!sock) {
+		LOG_ERR("No rx_sock socket");
+		return -ENOTCONN;
+	}
+
+#if defined(CONFIG_WIFI_ESP_AT_CIPDINFO_USE) && !defined(CONFIG_WIFI_ESP_AT_VERSION_1_7)
 	char raw_remote_ip[INET_ADDRSTRLEN + 3] = {0};
 	int port = 0;
 
@@ -563,13 +569,13 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ciprecvdata)
 #endif
 	if (err) {
 		if (err == -EAGAIN) {
-			return -EAGAIN;
+			goto socket_unref;
 		}
 
-		return err;
+		goto socket_unref;
 	}
 
-#if defined(CONFIG_WIFI_ESP_AT_CIPDINFO_USE)
+#if defined(CONFIG_WIFI_ESP_AT_CIPDINFO_USE) && !defined(CONFIG_WIFI_ESP_AT_VERSION_1_7)
 	struct sockaddr_in *recv_addr =
 			(struct sockaddr_in *) &sock->context->remote;
 
@@ -591,12 +597,18 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ciprecvdata)
 	if (net_addr_pton(AF_INET, remote_ip_addr, &recv_addr->sin_addr) < 0) {
 		LOG_ERR("Invalid src addr %s", remote_ip_addr);
 		err = -EIO;
-		return err;
+		goto socket_unref;
 	}
 #endif
 	esp_socket_rx(sock, data->rx_buf, data_offset, data_len);
 
-	return data_offset + data_len;
+	err = data_offset + data_len;
+	goto socket_unref;
+
+socket_unref:
+	esp_socket_unref(sock);
+
+	return err;
 }
 
 void esp_recvdata_work(struct k_work *work)

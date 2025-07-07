@@ -1217,7 +1217,7 @@ static void adin2111_port_iface_init(struct net_if *iface)
 static enum ethernet_hw_caps adin2111_port_get_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
-	return ETHERNET_LINK_10BASE_T |
+	return ETHERNET_LINK_10BASE |
 		ETHERNET_HW_FILTERING
 #if defined(CONFIG_NET_LLDP)
 		| ETHERNET_LLDP

@@ -1,0 +1,19 @@
+family:
+- name: ti_mspm0
+  series:
+  - name: mspm0g
+    socs:
+    - name: mspm0g1105
+    - name: mspm0g1106
+    - name: mspm0g1107
+    - name: mspm0g1505
+    - name: mspm0g1506
+    - name: mspm0g1507
+    - name: mspm0g1519
+    - name: mspm0g3105
+    - name: mspm0g3106
+    - name: mspm0g3107
+    - name: mspm0g3505
+    - name: mspm0g3506
+    - name: mspm0g3507
+    - name: mspm0g3519

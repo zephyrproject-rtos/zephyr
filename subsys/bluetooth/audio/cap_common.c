@@ -43,11 +43,10 @@ void bt_cap_common_clear_active_proc(void)
 	(void)memset(&active_proc, 0, sizeof(active_proc));
 }
 
-void bt_cap_common_start_proc(enum bt_cap_common_proc_type proc_type, size_t proc_cnt)
+void bt_cap_common_set_proc(enum bt_cap_common_proc_type proc_type, size_t proc_cnt)
 {
 	LOG_DBG("Setting proc to %d for %zu streams", proc_type, proc_cnt);
 
-	atomic_set_bit(active_proc.proc_state_flags, BT_CAP_COMMON_PROC_STATE_ACTIVE);
 	active_proc.proc_cnt = proc_cnt;
 	active_proc.proc_type = proc_type;
 	active_proc.proc_done_cnt = 0U;
@@ -98,6 +97,12 @@ struct bt_conn *bt_cap_common_get_member_conn(enum bt_cap_set_type type,
 	}
 
 	return member->member;
+}
+
+bool bt_cap_common_test_and_set_proc_active(void)
+{
+	return atomic_test_and_set_bit(active_proc.proc_state_flags,
+				       BT_CAP_COMMON_PROC_STATE_ACTIVE);
 }
 
 bool bt_cap_common_proc_is_active(void)

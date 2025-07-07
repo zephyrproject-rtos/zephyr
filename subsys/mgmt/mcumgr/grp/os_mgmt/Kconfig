@@ -25,7 +25,7 @@ if REBOOT
 config MCUMGR_GRP_OS_RESET_MS
 	int "Delay before executing reset command (ms)"
 	default 250
-	depends on REBOOT
+	depends on MULTITHREADING
 	help
 	  When a reset command is received, the system waits this many milliseconds
 	  before performing the reset.  This delay allows time for the MCUmgr
@@ -33,7 +33,6 @@ config MCUMGR_GRP_OS_RESET_MS
 
 config MCUMGR_GRP_OS_RESET_HOOK
 	bool "Reset hook"
-	depends on REBOOT
 	depends on MCUMGR_MGMT_NOTIFICATION_HOOKS
 	help
 	  Allows applications to control and get notifications of when a reset
@@ -43,6 +42,14 @@ config MCUMGR_GRP_OS_RESET_HOOK
 	  application will be notified that a reset command has been received
 	  and will allow the application to perform any required operations
 	  before accepting or declining the reset request.
+
+config MCUMGR_GRP_OS_RESET_BOOT_MODE
+	bool "Boot mode"
+	depends on RETENTION_BOOT_MODE
+	help
+	  Allows applications to set the boot mode using the retention boot mode module which
+	  allows for booting other images e.g. as part of a bootloader. This is done with an
+	  optional field in the reset command which specifies the value of the boot mode.
 
 endif
 
@@ -71,15 +78,15 @@ choice MCUMGR_GRP_OS_TASKSTAT_THREAD_NAME_CHOICE
 	  Select what will serve as thread name in "taskstat" response.
 	  By default taskstat responses use thread priority, when THREAD_NAME is disabled,
 
-	config MCUMGR_GRP_OS_TASKSTAT_USE_THREAD_NAME_FOR_NAME
-		bool "Thread name"
-		depends on THREAD_NAME
+config MCUMGR_GRP_OS_TASKSTAT_USE_THREAD_NAME_FOR_NAME
+	bool "Thread name"
+	depends on THREAD_NAME
 
-	config MCUMGR_GRP_OS_TASKSTAT_USE_THREAD_IDX_FOR_NAME
-		bool "Thread index"
+config MCUMGR_GRP_OS_TASKSTAT_USE_THREAD_IDX_FOR_NAME
+	bool "Thread index"
 
-	config MCUMGR_GRP_OS_TASKSTAT_USE_THREAD_PRIO_FOR_NAME
-		bool "Thread priority"
+config MCUMGR_GRP_OS_TASKSTAT_USE_THREAD_PRIO_FOR_NAME
+	bool "Thread priority"
 
 endchoice
 

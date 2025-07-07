@@ -55,15 +55,15 @@
 				/* read-only; */
 			};
 
-			test_i2c_tmp116: tmp116@2 {
+			test_i2c_tmp11x: tmp11x@2 {
 				status = "okay";
-				compatible = "ti,tmp116";
+				compatible = "ti,tmp11x";
 				reg = <0x2>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 
-				test_tmp116_eeprom: ti_tmp116_eeprom@0 {
-					compatible = "ti,tmp116-eeprom";
+				test_tmp11x_eeprom: ti_tmp11x_eeprom@0 {
+					compatible = "ti,tmp11x-eeprom";
 					reg = <0x0>;
 					read-only;
 				};

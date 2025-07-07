@@ -56,51 +56,9 @@ Supported Features
 NXP considers the MIMXRT700-EVK as a superset board for the i.MX RT7xx
 family of MCUs. This board is a focus for NXP's Full Platform Support for
 Zephyr, to better enable the entire RT7xx family. NXP prioritizes enabling
-this board with new support for Zephyr features. The ``mimxrt700_evk/mimxrt798s
-/cm33_cpu0`` and ``mimxrt700_evk/mimxrt798s/cm33_cpu1`` board targets support
-the hardware features below.
+this board with new support for Zephyr features.
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| CTIMER    | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| SCTimer   | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| IOCON     | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock_control                       |
-+-----------+------------+-------------------------------------+
-| MRT       | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| OS_TIMER  | on-chip    | os timer                            |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | USB device                          |
-+-----------+------------+-------------------------------------+
-| WWDT      | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in the defconfig file:
-
-   :zephyr_file:`boards/nxp/mimxrt700_evk/mimxrt700_evk_mimxrt798s_cm33_cpu0_defconfig`
-   :zephyr_file:`boards/nxp/mimxrt700_evk/mimxrt700_evk_mimxrt798s_cm33_cpu1_defconfig`
-
-Other hardware features are not currently supported by the port.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -172,6 +130,8 @@ To build the hello_world sample for the i.MX RT700 HiFi 4 DSP core:
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -258,3 +218,24 @@ should see the following message in the terminal:
 
 .. _MIMXRT700-EVK Debug Firmware:
    https://www.nxp.com/docs/en/application-note/AN13206.pdf
+
+Display Support
+***************
+
+The mimxrt700_evk board supports following in-tree display module(s). Setup for
+each module is described below:
+
+NXP G1120B0MIPI MIPI Display
+============================
+
+The :ref:`g1120b0mipi` connects to the board's MIPI connector J52
+directly, but some modifications are required (see
+:zephyr_file:`boards/shields/g1120b0mipi/boards/mimxrt700_evk_mimxrt798s_cm33_cpu0.overlay`
+for a list). The display sample can be built for this module like so:
+
+.. zephyr-app-commands::
+   :board: mimxrt700_evk
+   :shield: g1120b0mipi
+   :zephyr-app: samples/drivers/display
+   :goals: build
+   :compact:

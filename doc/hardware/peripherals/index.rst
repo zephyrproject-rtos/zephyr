@@ -47,6 +47,7 @@ Peripherals
    pcie.rst
    peci.rst
    ps2.rst
+   psi5.rst
    pwm.rst
    rtc.rst
    regulators.rst
@@ -54,6 +55,7 @@ Peripherals
    retained_mem.rst
    sdhc.rst
    sensor/index.rst
+   sent.rst
    spi.rst
    stepper.rst
    smbus.rst

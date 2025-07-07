@@ -12,6 +12,9 @@ config GEN_SW_ISR_TABLE
 config GEN_IRQ_VECTOR_TABLE
 	default n
 
+config ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
+	default n
+
 config DYNAMIC_INTERRUPTS
 	default y if !SOC_ESP32C6_LPCORE
 
@@ -39,9 +42,6 @@ config SOC_FLASH_ESP32
 	default y
 
 if BOOTLOADER_MCUBOOT
-
-config HAS_FLASH_LOAD_OFFSET
-	default y
 
 config MCUBOOT_GENERATE_UNSIGNED_IMAGE
 	default y
@@ -87,9 +87,6 @@ config MINIMAL_LIBC_OPTIMIZE_STRING_FOR_SIZE
 	default n
 
 if BOOTLOADER_MCUBOOT
-
-config HAS_FLASH_LOAD_OFFSET
-	default y
 
 config MCUBOOT_GENERATE_UNSIGNED_IMAGE
 	default y

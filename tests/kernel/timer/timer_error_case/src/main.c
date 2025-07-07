@@ -325,8 +325,8 @@ ZTEST_USER(timer_api_error, test_timer_user_data_set_null)
 	k_thread_join(tid, K_FOREVER);
 }
 
-extern void z_add_timeout(struct _timeout *to, _timeout_func_t fn,
-			  k_timeout_t timeout);
+extern k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t timeout);
+
 static void test_timer_handle(struct _timeout *t)
 {
 	/**do nothing here**/

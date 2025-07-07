@@ -68,7 +68,7 @@ config EEPROM_AT24
 	  - ST M24xxx
 
 config EEPROM_AT25
-	bool "SPI EEPROMs compatibile with Atmel's AT25 family"
+	bool "SPI EEPROMs compatible with Atmel's AT25 family"
 	default y
 	depends on DT_HAS_ATMEL_AT25_ENABLED
 	select SPI
@@ -96,7 +96,7 @@ config EEPROM_AT2X_INIT_PRIORITY
 source "drivers/eeprom/Kconfig.lpc11u6x"
 source "drivers/eeprom/Kconfig.stm32"
 source "drivers/eeprom/Kconfig.eeprom_emu"
-source "drivers/eeprom/Kconfig.tmp116"
+source "drivers/eeprom/Kconfig.tmp11x"
 source "drivers/eeprom/Kconfig.xec"
 source "drivers/eeprom/Kconfig.mb85rcxx"
 source "drivers/eeprom/Kconfig.mb85rsxx"

@@ -47,12 +47,18 @@
 	((uint64_t)sys_clock_hw_cycles_per_sec() / (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
 #define COUNTER_SPAN (GRTC_SYSCOUNTERL_VALUE_Msk | ((uint64_t)GRTC_SYSCOUNTERH_VALUE_Msk << 32))
+#define MAX_ABS_TICKS (COUNTER_SPAN / CYC_PER_TICK)
+
 #define MAX_TICKS                                                                                  \
 	(((COUNTER_SPAN / CYC_PER_TICK) > INT_MAX) ? INT_MAX : (COUNTER_SPAN / CYC_PER_TICK))
 
 #define MAX_CYCLES (MAX_TICKS * CYC_PER_TICK)
 
+#if DT_NODE_HAS_STATUS_OKAY(LFCLK_NODE)
 #define LFCLK_FREQUENCY_HZ DT_PROP(LFCLK_NODE, clock_frequency)
+#else
+#define LFCLK_FREQUENCY_HZ CONFIG_CLOCK_CONTROL_NRF_K32SRC_FREQUENCY
+#endif
 
 #if defined(CONFIG_TEST)
 const int32_t z_sys_timer_irq_for_test = DT_IRQN(GRTC_NODE);
@@ -64,6 +70,7 @@ static struct k_spinlock lock;
 static uint64_t last_count; /* Time (SYSCOUNTER value) @last sys_clock_announce() */
 static atomic_t int_mask;
 static uint8_t ext_channels_allocated;
+static uint64_t grtc_start_value;
 static nrfx_grtc_channel_t system_clock_channel_data = {
 	.handler = sys_clock_timeout_handler,
 	.p_context = NULL,
@@ -289,30 +296,17 @@ void z_nrf_grtc_timer_abort(int32_t chan)
 
 uint64_t z_nrf_grtc_timer_get_ticks(k_timeout_t t)
 {
-	uint64_t curr_time;
-	int64_t curr_tick;
-	int64_t result;
-	int64_t abs_ticks;
-	int64_t grtc_ticks;
+	int64_t abs_ticks = Z_TICK_ABS(t.ticks);
 
-	curr_time = counter();
-	curr_tick = sys_clock_tick_get();
-
-	grtc_ticks = t.ticks * CYC_PER_TICK;
-	abs_ticks = Z_TICK_ABS(t.ticks);
 	if (Z_IS_TIMEOUT_RELATIVE(t)) {
+		int64_t grtc_ticks = t.ticks * CYC_PER_TICK;
+
 		return (grtc_ticks > (int64_t)COUNTER_SPAN) ?
-			-EINVAL : (curr_time + grtc_ticks);
+			-EINVAL : (counter() + grtc_ticks);
 	}
 
 	/* absolute timeout */
-	result = (abs_ticks - curr_tick) * CYC_PER_TICK;
-
-	if (result > (int64_t)COUNTER_SPAN) {
-		return -EINVAL;
-	}
-
-	return curr_time + result;
+	return (abs_ticks > MAX_ABS_TICKS) ? -EINVAL : (abs_ticks * CYC_PER_TICK);
 }
 
 int z_nrf_grtc_timer_capture_prepare(int32_t chan)
@@ -367,6 +361,11 @@ int z_nrf_grtc_timer_capture_read(int32_t chan, uint64_t *captured_time)
 	*captured_time = capt_time;
 
 	return 0;
+}
+
+uint64_t z_nrf_grtc_timer_startup_value_get(void)
+{
+	return grtc_start_value;
 }
 
 #if defined(CONFIG_POWEROFF) && defined(CONFIG_NRF_GRTC_START_SYSCOUNTER)
@@ -425,16 +424,9 @@ int z_nrf_grtc_wakeup_prepare(uint64_t wake_time_us)
 
 	/* This mechanism ensures that stored CC value is latched. */
 	uint32_t wait_time =
-		nrfy_grtc_timeout_get(NRF_GRTC) * CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / 32768 +
-		MAX_CC_LATCH_WAIT_TIME_US;
+		nrfy_grtc_timeout_get(NRF_GRTC) * CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC /
+		LFCLK_FREQUENCY_HZ + MAX_CC_LATCH_WAIT_TIME_US;
 	k_busy_wait(wait_time);
-#if NRF_GRTC_HAS_CLKSEL
-#if defined(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC)
-	nrfx_grtc_clock_source_set(NRF_GRTC_CLKSEL_LFLPRC);
-#elif DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lfxo))
-	nrfx_grtc_clock_source_set(NRF_GRTC_CLKSEL_LFXO);
-#endif
-#endif
 	k_spin_unlock(&lock, key);
 	return 0;
 }
@@ -474,6 +466,18 @@ static int sys_clock_driver_init(void)
 	IRQ_CONNECT(DT_IRQN(GRTC_NODE), DT_IRQ(GRTC_NODE, priority), nrfx_isr,
 		    nrfx_grtc_irq_handler, 0);
 
+#if defined(CONFIG_NRF_GRTC_TIMER_CLOCK_MANAGEMENT) && NRF_GRTC_HAS_CLKSEL
+#if defined(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC)
+	/* Switch to LFPRC as the low-frequency clock source. */
+	nrfx_grtc_clock_source_set(NRF_GRTC_CLKSEL_LFLPRC);
+#elif DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lfxo))
+	/* Switch to LFXO as the low-frequency clock source. */
+	nrfx_grtc_clock_source_set(NRF_GRTC_CLKSEL_LFXO);
+#else
+	nrfx_grtc_clock_source_set(NRF_GRTC_CLKSEL_LFCLK);
+#endif
+#endif
+
 	err_code = nrfx_grtc_init(0);
 	if (err_code != NRFX_SUCCESS) {
 		return -EPERM;
@@ -491,6 +495,8 @@ static int sys_clock_driver_init(void)
 	}
 #endif /* CONFIG_NRF_GRTC_START_SYSCOUNTER */
 
+	last_count = (counter() / CYC_PER_TICK) * CYC_PER_TICK;
+	grtc_start_value = last_count;
 	int_mask = NRFX_GRTC_CONFIG_ALLOWED_CC_CHANNELS_MASK;
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		system_timeout_set_relative(CYC_PER_TICK);
@@ -505,16 +511,6 @@ static int sys_clock_driver_init(void)
 				   : CLOCK_CONTROL_NRF_LF_START_STABLE);
 
 	z_nrf_clock_control_lf_on(mode);
-#endif
-
-#if defined(CONFIG_NRF_GRTC_TIMER_CLOCK_MANAGEMENT) && NRF_GRTC_HAS_CLKSEL
-#if defined(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC)
-	/* Switch to LFPRC as the low-frequency clock source. */
-	nrfx_grtc_clock_source_set(NRF_GRTC_CLKSEL_LFLPRC);
-#elif DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lfxo))
-	/* Switch to LFXO as the low-frequency clock source. */
-	nrfx_grtc_clock_source_set(NRF_GRTC_CLKSEL_LFXO);
-#endif
 #endif
 
 #if defined(CONFIG_NRF_GRTC_ALWAYS_ON)

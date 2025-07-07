@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Silicon Signals Pvt. Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_CODEC_MAX98091
+	bool "Maxim MAX98091 codec support"
+	default y
+	select I2C
+	depends on DT_HAS_MAXIM_MAX98091_ENABLED
+	help
+	  Enable support for the MAX98091 I2S codec via I2C.

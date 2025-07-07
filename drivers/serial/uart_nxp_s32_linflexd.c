@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 NXP
+ * Copyright 2022-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/clock_control.h>
 
 #include <Linflexd_Uart_Ip.h>
 #include <Linflexd_Uart_Ip_Irq.h>
@@ -295,13 +296,35 @@ static int uart_nxp_s32_init(const struct device *dev)
 {
 	const struct uart_nxp_s32_config *config = dev->config;
 	int err;
+	uint32_t clock_rate;
+	Linflexd_Uart_Ip_StatusType status;
 
 	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (err < 0) {
 		return err;
 	}
 
+	if (!device_is_ready(config->clock_dev)) {
+		return -ENODEV;
+	}
+
+	err = clock_control_on(config->clock_dev, config->clock_subsys);
+	if (err) {
+		return err;
+	}
+
+	err = clock_control_get_rate(config->clock_dev, config->clock_subsys, &clock_rate);
+	if (err) {
+		return err;
+	}
+
 	Linflexd_Uart_Ip_Init(config->instance, &config->hw_cfg);
+
+	status = Linflexd_Uart_Ip_SetBaudrate(config->instance, config->hw_cfg.BaudRate,
+					      clock_rate);
+	if (status != LINFLEXD_UART_IP_STATUS_SUCCESS) {
+		return -EIO;
+	}
 
 	return 0;
 }
@@ -345,14 +368,30 @@ static DEVICE_API(uart, uart_nxp_s32_driver_api) = {
 
 #define UART_NXP_S32_HW_CONFIG(n)						\
 	{									\
-		.BaudRate = 115200,						\
+		.BaudRate = DT_INST_PROP(n, current_speed),			\
 		.BaudRateMantissa = 26U,					\
 		.BaudRateDivisor = 16U,						\
 		.BaudRateFractionalDivisor = 1U,				\
-		.ParityCheck = false,						\
-		.ParityType = LINFLEXD_UART_IP_PARITY_EVEN,			\
-		.StopBitsCount = LINFLEXD_UART_IP_ONE_STOP_BIT,			\
-		.WordLength = LINFLEXD_UART_IP_8_BITS,				\
+		.ParityCheck = DT_INST_ENUM_IDX(n, parity) ==			\
+				UART_CFG_PARITY_NONE ? false : true,		\
+		.ParityType = DT_INST_ENUM_IDX(n, parity) ==			\
+					UART_CFG_PARITY_ODD ?			\
+				LINFLEXD_UART_IP_PARITY_ODD :			\
+				(DT_INST_ENUM_IDX(n, parity) ==			\
+						UART_CFG_PARITY_EVEN ?		\
+					LINFLEXD_UART_IP_PARITY_ONE :		\
+					(DT_INST_ENUM_IDX(n, parity) ==		\
+							UART_CFG_PARITY_MARK ?	\
+						LINFLEXD_UART_IP_PARITY_EVEN :	\
+						LINFLEXD_UART_IP_PARITY_ZERO)),	\
+		.StopBitsCount = DT_INST_ENUM_IDX(n, stop_bits) ==		\
+						UART_CFG_STOP_BITS_1 ?		\
+					LINFLEXD_UART_IP_ONE_STOP_BIT :		\
+					LINFLEXD_UART_IP_TWO_STOP_BIT,		\
+		.WordLength = DT_INST_ENUM_IDX(n, data_bits) ==			\
+						UART_CFG_DATA_BITS_7 ?		\
+					LINFLEXD_UART_IP_7_BITS	:		\
+					LINFLEXD_UART_IP_8_BITS,		\
 		.TransferType = LINFLEXD_UART_IP_USING_INTERRUPTS,		\
 		.StateStruct = &Linflexd_Uart_Ip_apStateStructure[n],		\
 		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (			\
@@ -362,6 +401,17 @@ static DEVICE_API(uart, uart_nxp_s32_driver_api) = {
 	}
 
 #define UART_NXP_S32_INIT_DEVICE(n)						\
+	BUILD_ASSERT(DT_INST_ENUM_IDX(n, stop_bits) == UART_CFG_STOP_BITS_1 ||	\
+		DT_INST_ENUM_IDX(n, stop_bits) == UART_CFG_STOP_BITS_2,		\
+		"Node " DT_NODE_PATH(DT_DRV_INST(n))				\
+		" has unsupported stop bits configuration");			\
+	BUILD_ASSERT(DT_INST_ENUM_IDX(n, data_bits) == UART_CFG_DATA_BITS_7 ||	\
+		DT_INST_ENUM_IDX(n, data_bits) == UART_CFG_DATA_BITS_8,		\
+		"Node " DT_NODE_PATH(DT_DRV_INST(n))				\
+		" has unsupported data bits configuration");			\
+	BUILD_ASSERT(DT_INST_PROP(n, hw_flow_control) == UART_CFG_FLOW_CTRL_NONE,\
+		"Node " DT_NODE_PATH(DT_DRV_INST(n))				\
+		" has unsupported flow control configuration");			\
 	PINCTRL_DT_INST_DEFINE(n);						\
 	IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN,				\
 		(static struct uart_nxp_s32_data uart_nxp_s32_data_##n;))	\
@@ -370,6 +420,9 @@ static DEVICE_API(uart, uart_nxp_s32_driver_api) = {
 		.base = (LINFLEXD_Type *)DT_INST_REG_ADDR(n),			\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 		.hw_cfg = UART_NXP_S32_HW_CONFIG(n),				\
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
+		.clock_subsys = (clock_control_subsys_t)			\
+				DT_INST_CLOCKS_CELL(n, name),			\
 	};									\
 	static int uart_nxp_s32_init_##n(const struct device *dev)		\
 	{									\

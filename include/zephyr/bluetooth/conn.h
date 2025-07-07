@@ -21,12 +21,16 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/addr.h>
-#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/direction.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -1559,7 +1563,7 @@ enum bt_conn_le_cs_procedure_enable_state {
 	BT_CONN_LE_CS_PROCEDURES_ENABLED = BT_HCI_OP_LE_CS_PROCEDURES_ENABLED,
 };
 
-/** CS Test Tone Antennna Config Selection.
+/** CS Test Tone Antenna Config Selection.
  *
  *  These enum values are indices in the following table, where N_AP is the maximum
  *  number of antenna paths (in the range [1, 4]).
@@ -1876,35 +1880,50 @@ struct bt_conn_cb {
 #if defined(CONFIG_BT_CHANNEL_SOUNDING)
 	/** @brief LE CS Read Remote Supported Capabilities Complete event.
 	 *
-	 *  This callback notifies the application that the remote channel
+	 *  This callback notifies the application that a Channel Sounding
+	 *  Capabilities Exchange procedure has completed.
+	 *
+	 *  If status is BT_HCI_ERR_SUCCESS, the remote channel
 	 *  sounding capabilities have been received from the peer.
 	 *
 	 *  @param conn Connection object.
-	 *  @param remote_cs_capabilities Remote Channel Sounding Capabilities.
+	 *  @param status HCI status of complete event.
+	 *  @param remote_cs_capabilities Pointer to CS Capabilities on success or NULL otherwise.
 	 */
-	void (*le_cs_remote_capabilities_available)(struct bt_conn *conn,
-						    struct bt_conn_le_cs_capabilities *params);
+	void (*le_cs_read_remote_capabilities_complete)(struct bt_conn *conn,
+							uint8_t status,
+							struct bt_conn_le_cs_capabilities *params);
 
 	/** @brief LE CS Read Remote FAE Table Complete event.
 	 *
-	 *  This callback notifies the application that the remote mode-0
+	 *  This callback notifies the application that a Channel Sounding
+	 *  Mode-0 FAE Table Request procedure has completed.
+	 *
+	 *  If status is BT_HCI_ERR_SUCCESS, the remote mode-0
 	 *  FAE Table has been received from the peer.
 	 *
 	 *  @param conn Connection object.
-	 *  @param params FAE Table.
+	 *  @param status HCI status of complete event.
+	 *  @param params Pointer to FAE Table on success or NULL otherwise.
 	 */
-	void (*le_cs_remote_fae_table_available)(struct bt_conn *conn,
-						 struct bt_conn_le_cs_fae_table *params);
+	void (*le_cs_read_remote_fae_table_complete)(struct bt_conn *conn,
+						     uint8_t status,
+						     struct bt_conn_le_cs_fae_table *params);
 
 	/** @brief LE CS Config created.
 	 *
 	 *  This callback notifies the application that a Channel Sounding
-	 *  Configuration procedure has completed and a new CS config is created
+	 *  Configuration procedure has completed.
+	 *
+	 *  If status is BT_HCI_ERR_SUCCESS, a new CS config is created.
 	 *
 	 *  @param conn Connection object.
-	 *  @param config CS configuration.
+	 *  @param status HCI status of complete event.
+	 *  @param config Pointer to CS configuration on success or NULL otherwise.
 	 */
-	void (*le_cs_config_created)(struct bt_conn *conn, struct bt_conn_le_cs_config *config);
+	void (*le_cs_config_complete)(struct bt_conn *conn,
+				      uint8_t status,
+				      struct bt_conn_le_cs_config *config);
 
 	/** @brief LE CS Config removed.
 	 *
@@ -1930,22 +1949,29 @@ struct bt_conn_cb {
 	/** @brief LE CS Security Enabled.
 	 *
 	 *  This callback notifies the application that a Channel Sounding
-	 *  Security Enable procedure has completed
+	 *  Security Enable procedure has completed.
+	 *
+	 *  If status is BT_HCI_ERR_SUCCESS, CS Security is enabled.
 	 *
 	 *  @param conn Connection object.
+	 *  @param status HCI status of complete event.
 	 */
-	void (*le_cs_security_enabled)(struct bt_conn *conn);
+	void (*le_cs_security_enable_complete)(struct bt_conn *conn, uint8_t status);
 
 	/** @brief LE CS Procedure Enabled.
 	 *
 	 *  This callback notifies the application that a Channel Sounding
-	 *  Procedure Enable procedure has completed
+	 *  Procedure Enable procedure has completed.
+	 *
+	 *  If status is BT_HCI_ERR_SUCCESS, CS procedure is enabled.
 	 *
 	 *  @param conn Connection object.
-	 *  @param params CS Procedure Enable parameters
+	 *  @param status HCI status.
+	 *  @param params Pointer to CS Procedure Enable parameters on success or NULL otherwise.
 	 */
-	void (*le_cs_procedure_enabled)(
-		struct bt_conn *conn, struct bt_conn_le_cs_procedure_enable_complete *params);
+	void (*le_cs_procedure_enable_complete)(
+		struct bt_conn *conn, uint8_t status,
+		struct bt_conn_le_cs_procedure_enable_complete *params);
 
 #endif
 
@@ -2237,10 +2263,11 @@ struct bt_conn_auth_cb {
 	 *  as if the Kconfig flag was not set.
 	 *
 	 *  For BR/EDR Secure Simple Pairing (SSP), this callback is called
-	 *  when receiving the BT_HCI_EVT_IO_CAPA_REQ hci event.
+	 *  when receiving the BT_HCI_EVT_IO_CAPA_REQ hci event. The feat is
+	 *  NULL here.
 	 *
 	 *  @param conn Connection where pairing is initiated.
-	 *  @param feat Pairing req/resp info.
+	 *  @param feat Pairing req/resp info. It is NULL in BR/EDR SSP.
 	 */
 	enum bt_security_err (*pairing_accept)(struct bt_conn *conn,
 			      const struct bt_conn_pairing_feat *const feat);
@@ -2441,6 +2468,17 @@ struct bt_conn_auth_info_cb {
 	 *  @param peer Remote address.
 	 */
 	void (*bond_deleted)(uint8_t id, const bt_addr_le_t *peer);
+
+#if defined(CONFIG_BT_CLASSIC)
+	/** @brief Notify that bond of classic has been deleted.
+	 *
+	 *  This callback notifies the application that the bond information of classic
+	 *  for the remote peer has been deleted
+	 *
+	 *  @param peer Remote address.
+	 */
+	void (*br_bond_deleted)(const bt_addr_t *peer);
+#endif /* CONFIG_BT_CLASSIC */
 
 	/** Internally used field for list handling */
 	sys_snode_t node;

@@ -60,6 +60,19 @@ config ESPI_NPCX_PERIPHERAL_DEBUG_PORT_80_RING_BUF_SIZE
 	  The size of the ring buffer in byte used by the Port80 ISR to store
 	  Postcodes from Host.
 
+config ESPI_NPCX_VWIRE_ENABLE_SEND_CHECK
+	bool "Check the value was read by host after wire bits changed"
+	help
+	  This option enables the function to check whether the host has read the value
+	  after the wire data changes.
+
+config ESPI_NPCX_WIRE_SEND_TIMEOUT_US
+	int "eSPI virtual wire send timeout count"
+	default 1000
+	help
+	  The times to check status after sending the eSPI virtual wire signal. The unit
+	  is microseconds (µs).
+
 config ESPI_TAF_NPCX
 	bool "Nuvoton NPCX embedded controller (EC) ESPI TAF driver"
 	depends on SOC_SERIES_NPCX4

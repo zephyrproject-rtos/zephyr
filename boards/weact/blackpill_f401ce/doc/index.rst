@@ -78,6 +78,8 @@ to achieve a stable USB clock (42MHz).
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 There are 2 main entry points for flashing STM32F4X SoCs, one using the ROM
 bootloader, and another by using the SWD debug port (which requires additional
 hardware). Flashing using the ROM bootloader requires a special activation

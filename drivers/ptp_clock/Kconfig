@@ -9,11 +9,20 @@ menuconfig PTP_CLOCK
 if PTP_CLOCK
 
 source "drivers/ptp_clock/Kconfig.nxp_enet"
+source "drivers/ptp_clock/Kconfig.nxp_netc"
 
 config PTP_CLOCK_INIT_PRIORITY
 	int "Init priority"
 	default 75
 	help
 	  PTP Clock device driver initialization priority
+
+config PTP_CLOCK_SHELL
+	bool "PTP Clock Shell"
+	depends on SHELL
+	help
+	  Enable PTP Clock Shell.
+
+	  The PTP clock shell currently supports clock operations.
 
 endif # PTP_CLOCK

@@ -74,6 +74,8 @@ The steval_fcu001v1 board has one I2C. The default I2C mapping for Zephyr is:
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``steval_fcu001v1`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).

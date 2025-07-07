@@ -184,7 +184,7 @@ static int native_tty_uart_fifo_fill(const struct device *dev,
 {
 	struct native_tty_data *data = dev->data;
 
-	return nsi_host_write(data->fd, (void *)tx_data, size);
+	return nsi_host_write(data->fd, (const void *)tx_data, size);
 }
 
 static int native_tty_uart_fifo_read(const struct device *dev,

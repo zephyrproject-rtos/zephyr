@@ -82,7 +82,7 @@ static int cmd_net_udp_bind(const struct shell *sh, size_t argc, char *argv[])
 		return -EINVAL;
 	}
 
-	if (udp_ctx && net_context_is_used(udp_ctx)) {
+	if (udp_ctx != NULL && net_context_is_used(udp_ctx)) {
 		PR_WARNING("Network context already in use\n");
 		return -EALREADY;
 	}
@@ -191,6 +191,7 @@ static int cmd_net_udp_send(const struct shell *sh, size_t argc, char *argv[])
 	uint16_t port;
 	uint8_t *payload = NULL;
 	int ret;
+	bool should_release_ctx = false;
 
 	struct net_if *iface;
 	struct sockaddr addr;
@@ -210,11 +211,6 @@ static int cmd_net_udp_send(const struct shell *sh, size_t argc, char *argv[])
 		return -EINVAL;
 	}
 
-	if (udp_ctx && net_context_is_used(udp_ctx)) {
-		PR_WARNING("Network context already in use\n");
-		return -EALREADY;
-	}
-
 	memset(&addr, 0, sizeof(addr));
 	ret = net_ipaddr_parse(host, strlen(host), &addr);
 	if (ret < 0) {
@@ -222,11 +218,14 @@ static int cmd_net_udp_send(const struct shell *sh, size_t argc, char *argv[])
 		return ret;
 	}
 
-	ret = net_context_get(addr.sa_family, SOCK_DGRAM, IPPROTO_UDP,
-			      &udp_ctx);
-	if (ret < 0) {
-		PR_WARNING("Cannot get UDP context (%d)\n", ret);
-		return ret;
+	/* Re-use already bound context if possible, or allocate temporary one. */
+	if (udp_ctx == NULL || !net_context_is_used(udp_ctx)) {
+		ret = net_context_get(addr.sa_family, SOCK_DGRAM, IPPROTO_UDP, &udp_ctx);
+		if (ret < 0) {
+			PR_WARNING("Cannot get UDP context (%d)\n", ret);
+			return ret;
+		}
+		should_release_ctx = true;
 	}
 
 	udp_shell = sh;
@@ -274,9 +273,11 @@ static int cmd_net_udp_send(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 release_ctx:
-	ret = net_context_put(udp_ctx);
-	if (ret < 0) {
-		PR_WARNING("Cannot put UDP context (%d)\n", ret);
+	if (should_release_ctx) {
+		ret = net_context_put(udp_ctx);
+		if (ret < 0) {
+			PR_WARNING("Cannot put UDP context (%d)\n", ret);
+		}
 	}
 
 	return 0;

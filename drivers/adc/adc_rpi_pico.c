@@ -27,9 +27,9 @@ LOG_MODULE_REGISTER(adc_rpi, CONFIG_ADC_LOG_LEVEL);
 #define ADC_RPI_CHANNEL_NUM (ADC_CS_RROBIN_MSB - ADC_CS_RROBIN_LSB + 1)
 
 /**
- * @brief RaspberryPi Pico ADC config
+ * @brief Raspberry Pi Pico ADC config
  *
- * This structure contains constant data for given instance of RaspberryPi Pico ADC.
+ * This structure contains constant data for given instance of Raspberry Pi Pico ADC.
  */
 struct adc_rpi_config {
 	/** Number of supported channels */
@@ -47,14 +47,14 @@ struct adc_rpi_config {
 };
 
 /**
- * @brief RaspberryPi Pico ADC data
+ * @brief Raspberry Pi Pico ADC data
  *
- * This structure contains data structures used by a RaspberryPi Pico ADC.
+ * This structure contains data structures used by a Raspberry Pi Pico ADC.
  */
 struct adc_rpi_data {
 	/** Structure that handle state of ongoing read operation */
 	struct adc_context ctx;
-	/** Pointer to RaspberryPi Pico ADC own device structure */
+	/** Pointer to Raspberry Pi Pico ADC own device structure */
 	const struct device *dev;
 	/** Pointer to memory where next sample will be written */
 	uint16_t *buf;
@@ -127,7 +127,7 @@ static int adc_rpi_channel_setup(const struct device *dev,
 /**
  * @brief Check if buffer in @p sequence is big enough to hold all ADC samples
  *
- * @param dev RaspberryPi Pico ADC device
+ * @param dev Raspberry Pi Pico ADC device
  * @param sequence ADC sequence description
  *
  * @return 0 on success
@@ -162,7 +162,7 @@ static int adc_rpi_check_buffer_size(const struct device *dev,
 /**
  * @brief Start processing read request
  *
- * @param dev RaspberryPi Pico ADC device
+ * @param dev Raspberry Pi Pico ADC device
  * @param sequence ADC sequence description
  *
  * @return 0 on success
@@ -290,10 +290,10 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 }
 
 /**
- * @brief Function called on init for each RaspberryPi Pico ADC device. It setups all
+ * @brief Function called on init for each Raspberry Pi Pico ADC device. It setups all
  *        channels to return constant 0 mV and create acquisition thread.
  *
- * @param dev RaspberryPi Pico ADC device
+ * @param dev Raspberry Pi Pico ADC device
  *
  * @return 0 on success
  */

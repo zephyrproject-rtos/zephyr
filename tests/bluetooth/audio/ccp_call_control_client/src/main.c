@@ -210,3 +210,27 @@ static ZTEST_F(ccp_call_control_client_test_suite,
 	err = bt_ccp_call_control_client_discover(&fixture->conn, NULL);
 	zassert_equal(-EINVAL, err, "Unexpected return value %d", err);
 }
+
+static ZTEST_F(ccp_call_control_client_test_suite, test_ccp_call_control_client_get_bearers)
+{
+	struct bt_ccp_call_control_client_bearers bearers;
+	int err;
+
+	err = bt_ccp_call_control_client_register_cb(&mock_ccp_call_control_client_cb);
+	zassert_equal(0, err, "Unexpected return value %d", err);
+
+	err = bt_ccp_call_control_client_discover(&fixture->conn, &fixture->client);
+	zassert_equal(0, err, "Unexpected return value %d", err);
+
+	err = bt_ccp_call_control_client_get_bearers(fixture->client, &bearers);
+	zassert_equal(0, err, "Unexpected return value %d", err);
+
+#if defined(CONFIG_BT_TBS_CLIENT_GTBS)
+	zassert_not_null(bearers.gtbs_bearer);
+#endif /* CONFIG_BT_TBS_CLIENT_GTBS */
+
+#if defined(CONFIG_BT_TBS_CLIENT_TBS)
+	zassert_equal(CONFIG_BT_TBS_CLIENT_MAX_TBS_INSTANCES, bearers.tbs_count);
+	zassert_not_null(bearers.tbs_bearers);
+#endif /* CONFIG_BT_TBS_CLIENT_TBS */
+}

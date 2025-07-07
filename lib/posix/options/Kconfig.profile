@@ -2,17 +2,25 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+config POSIX_SYSTEM_HEADERS
+	bool
+	depends on !NATIVE_APPLICATION
+	select NATIVE_LIBC_INCOMPATIBLE
+	help
+	  Make POSIX headers available to the system without the "zephyr/posix" prefix.
+
 config POSIX_API
 	bool "POSIX APIs"
 	depends on !NATIVE_APPLICATION
 	select NATIVE_LIBC_INCOMPATIBLE
+	select POSIX_SYSTEM_HEADERS
 	select POSIX_BASE_DEFINITIONS # clock_gettime(), pthread_create(), sem_get(), etc
 	select POSIX_AEP_REALTIME_MINIMAL # CLOCK_MONOTONIC, pthread_attr_setstack(), etc
 	select POSIX_NETWORKING if NETWORKING # inet_ntoa(), socket(), etc
 	imply EVENTFD # eventfd(), eventfd_read(), eventfd_write()
 	imply POSIX_FD_MGMT # open(), close(), read(), write()
-	imply POSIX_MESSAGE_PASSING # mq_open(), etc
 	imply POSIX_MULTI_PROCESS # sleep(), getpid(), etc
+	imply XSI_SINGLE_PROCESS # gettimeofday()
 	help
 	  This option enables the required POSIX System Interfaces (base definitions), all of PSE51,
 	  and some features found in PSE52.
@@ -99,6 +107,7 @@ endchoice # POSIX_AEP_CHOICE
 # Base Definitions (System Interfaces)
 config POSIX_BASE_DEFINITIONS
 	bool
+	select POSIX_SYSTEM_HEADERS
 	select POSIX_ASYNCHRONOUS_IO
 	select POSIX_BARRIERS
 	select POSIX_CLOCK_SELECTION

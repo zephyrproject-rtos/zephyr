@@ -393,8 +393,10 @@ void ztest_skip_failed_assumption(void)
 {
 	if (IS_ENABLED(CONFIG_ZTEST_FAIL_ON_ASSUME)) {
 		current_test_failed_assumption = true;
+		ztest_test_fail();
+	} else {
+		ztest_test_skip();
 	}
-	ztest_test_skip();
 }
 
 #ifndef KERNEL
@@ -602,6 +604,7 @@ void ztest_test_pass(void)
 		if (cur_phase == TEST_PHASE_BEFORE) {
 			test_finalize();
 		}
+		break;
 	}
 }
 EXPORT_SYMBOL(ztest_test_pass);

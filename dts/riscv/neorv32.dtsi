@@ -8,6 +8,7 @@
 
 #include <skeleton.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
 	chosen {
@@ -79,6 +80,22 @@
 			reg = <0xffe00000 0x10000>;
 		};
 
+		pwm: pwm@fff00000 {
+			compatible = "neorv32,pwm";
+			status = "disabled";
+			reg = <0xfff00000 0x10000>;
+			syscon = <&sysinfo>;
+			#pwm-cells = <3>;
+		};
+
+		gptmr: timer@fff10000 {
+			compatible = "neorv32,gptmr";
+			status = "disabled";
+			reg = <0xfff10000 0x10000>;
+			interrupts = <12>;
+			syscon = <&sysinfo>;
+		};
+
 		clint: clint@fff40000 {
 			compatible = "neorv32,clint", "sifive,clint0";
 			status = "disabled";
@@ -123,6 +140,7 @@
 			compatible = "neorv32,gpio";
 			status = "disabled";
 			reg = <0xfffc0000 0x10000>;
+			interrupts = <8>;
 			syscon = <&sysinfo>;
 			gpio-controller;
 			ngpios = <32>;

@@ -1,0 +1,6 @@
+board:
+  name: ai_wb2_12f
+  full_name: Ai-Thinker WB2-12F development board
+  vendor: aithinker
+  socs:
+    - name: bl602c00q2i

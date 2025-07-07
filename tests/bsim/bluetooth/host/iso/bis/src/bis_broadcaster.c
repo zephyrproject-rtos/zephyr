@@ -104,9 +104,45 @@ static void iso_connected_cb(struct bt_iso_chan *chan)
 		.pid = BT_ISO_DATA_PATH_HCI,
 		.format = BT_HCI_CODING_FORMAT_TRANSPARENT,
 	};
+	struct bt_iso_info info;
 	int err;
 
 	LOG_INF("ISO Channel %p connected", chan);
+
+	err = bt_iso_chan_get_info(chan, &info);
+	TEST_ASSERT(err == 0, "Failed to get BIS info: %d", err);
+
+	TEST_ASSERT(!info.can_recv);
+	TEST_ASSERT(info.can_send);
+	TEST_ASSERT(info.type == BT_ISO_CHAN_TYPE_BROADCASTER);
+	TEST_ASSERT((BT_GAP_ISO_INTERVAL_TO_US(info.iso_interval) % SDU_INTERVAL_US) == 0U,
+		    "ISO interval %u (%u) shall be a multiple of the SDU interval %u",
+		    BT_GAP_ISO_INTERVAL_TO_US(info.iso_interval), info.iso_interval,
+		    SDU_INTERVAL_US);
+	TEST_ASSERT(IN_RANGE(info.iso_interval, BT_ISO_ISO_INTERVAL_MIN, BT_ISO_ISO_INTERVAL_MAX),
+		    "Invalid ISO interval 0x%04x", info.iso_interval);
+	TEST_ASSERT(IN_RANGE(info.max_subevent, BT_ISO_NSE_MIN, BT_ISO_NSE_MAX),
+		    "Invalid subevent number 0x%02x", info.max_subevent);
+	TEST_ASSERT(IN_RANGE(info.broadcaster.sync_delay, BT_HCI_LE_BIG_SYNC_DELAY_MIN,
+			     BT_HCI_LE_BIG_SYNC_DELAY_MAX),
+		    "Invalid sync delay 0x%06x", info.broadcaster.sync_delay);
+	TEST_ASSERT(IN_RANGE(info.broadcaster.latency, BT_HCI_LE_TRANSPORT_LATENCY_BIG_MIN,
+			     BT_HCI_LE_TRANSPORT_LATENCY_BIG_MAX),
+		    "Invalid transport latency 0x%06x", info.broadcaster.latency);
+	TEST_ASSERT((info.broadcaster.pto % info.iso_interval) == 0U,
+		    "PTO in ms %u shall be a multiple of the ISO interval %u", info.broadcaster.pto,
+		    info.iso_interval);
+	TEST_ASSERT(IN_RANGE((info.broadcaster.pto / info.iso_interval), BT_ISO_PTO_MIN,
+			     BT_ISO_PTO_MAX),
+		    "Invalid PTO 0x%x", (info.broadcaster.pto / info.iso_interval));
+	TEST_ASSERT(info.broadcaster.phy == BT_GAP_LE_PHY_1M ||
+			    info.broadcaster.phy == BT_GAP_LE_PHY_2M ||
+			    info.broadcaster.phy == BT_GAP_LE_PHY_CODED,
+		    "Invalid PHY 0x%02x", info.broadcaster.phy);
+	TEST_ASSERT(IN_RANGE(info.broadcaster.bn, BT_ISO_BN_MIN, BT_ISO_BN_MAX),
+		    "Invalid BN 0x%02x", info.broadcaster.bn);
+	TEST_ASSERT(IN_RANGE(info.broadcaster.irc, BT_ISO_IRC_MIN, BT_ISO_IRC_MAX),
+		    "Invalid IRC 0x%02x", info.broadcaster.irc);
 
 	if (chan == default_chan) {
 		seq_num = 0U;

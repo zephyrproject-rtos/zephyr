@@ -65,6 +65,8 @@ serial port that echos characters back to the host PC.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The Grand Central ships with a BOSSA compatible UF2 bootloader.
 The bootloader can be entered by quickly tapping the reset button twice.
 

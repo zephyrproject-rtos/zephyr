@@ -5,6 +5,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/types.h>
@@ -61,9 +62,10 @@ ssize_t bt_audio_ccc_cfg_write(struct bt_conn *conn, const struct bt_gatt_attr *
 			       uint16_t value);
 
 /** Helper to define LE Audio CCC descriptor. */
-#define BT_AUDIO_CCC(_changed)								\
-	BT_GATT_CCC_MANAGED(((struct _bt_gatt_ccc[])					\
-		{BT_GATT_CCC_INITIALIZER(_changed, bt_audio_ccc_cfg_write, NULL)}),	\
+#define BT_AUDIO_CCC(_changed)                                                                     \
+	BT_GATT_CCC_MANAGED(                                                                       \
+		((struct bt_gatt_ccc_managed_user_data[]){BT_GATT_CCC_MANAGED_USER_DATA_INIT(      \
+			_changed, bt_audio_ccc_cfg_write, NULL)}),                                 \
 		(BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT))
 
 static inline const char *bt_audio_dir_str(enum bt_audio_dir dir)
@@ -73,9 +75,9 @@ static inline const char *bt_audio_dir_str(enum bt_audio_dir dir)
 		return "sink";
 	case BT_AUDIO_DIR_SOURCE:
 		return "source";
+	default:
+		return "Unknown";
 	}
-
-	return "Unknown";
 }
 
 bool bt_audio_valid_ltv(const uint8_t *data, uint8_t data_len);

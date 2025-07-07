@@ -15,6 +15,7 @@ supported:
   - arduino_gpio
   - arduino_i2c
 testing:
+  timeout_multiplier: 6
   ignore_tags:
     - net
     - bluetooth

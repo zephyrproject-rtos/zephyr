@@ -472,7 +472,7 @@ def parse_args():
     parser.add_argument("--pinpartitions", action="store", required=False, default="",
                         help="Comma separated names of partitions to be pinned in physical memory")
 
-    args = parser.parse_args()
+    args, _ = parser.parse_known_args()
 
 
 def main():

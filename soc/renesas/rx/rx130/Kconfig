@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RX130
+	select RX
+	select CPU_RXV1
+	select XIP
+	select CLOCK_CONTROL_RENESAS_RX_CGC if CLOCK_CONTROL
+	select HAS_RENESAS_RX_RDP
+	select CLOCK_CONTROL

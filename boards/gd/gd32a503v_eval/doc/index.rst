@@ -50,6 +50,8 @@ is UART0 at PIN-72 and PIN-73.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Before program your board make sure to configure boot setting and serial port.
 The default serial port is USART0.
 

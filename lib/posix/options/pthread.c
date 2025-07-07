@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "posix_clock.h"
 #include "posix_internal.h"
 #include "pthread_sched.h"
 
@@ -81,7 +82,6 @@ BUILD_ASSERT((PTHREAD_CANCEL_ENABLE == 0 || PTHREAD_CANCEL_DISABLE == 0) &&
 BUILD_ASSERT(CONFIG_POSIX_PTHREAD_ATTR_STACKSIZE_BITS + CONFIG_POSIX_PTHREAD_ATTR_GUARDSIZE_BITS <=
 	     32);
 
-int64_t timespec_to_timeoutms(const struct timespec *abstime);
 static void posix_thread_recycle(void);
 
 __pinned_data
@@ -1149,15 +1149,13 @@ static int pthread_timedjoin_internal(pthread_t pthread, void **status, k_timeou
  */
 int pthread_timedjoin_np(pthread_t pthread, void **status, const struct timespec *abstime)
 {
-	if (abstime == NULL) {
+	if ((abstime == NULL) || !timespec_is_valid(abstime)) {
+		LOG_DBG("%s is invalid", "abstime");
 		return EINVAL;
 	}
 
-	if (abstime->tv_sec < 0 || abstime->tv_nsec < 0 || abstime->tv_nsec >= NSEC_PER_SEC) {
-		return EINVAL;
-	}
-
-	return pthread_timedjoin_internal(pthread, status, K_MSEC(timespec_to_timeoutms(abstime)));
+	return pthread_timedjoin_internal(pthread, status,
+					  K_MSEC(timespec_to_timeoutms(CLOCK_REALTIME, abstime)));
 }
 
 /**

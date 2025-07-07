@@ -1,9 +1,9 @@
 # Copyright (c) 2024 Silicon Laboratories Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-description: |
-  Silicon Labs Series 2 DC-DC converter.
+title: Silicon Labs Series 2 DC-DC converter
 
+description: |
   Include the bindings header file <zephyr/dt-bindings/regulator/silabs_dcdc.h> to get
   access to relevant symbols for configuration.
 

@@ -46,6 +46,8 @@ CH04E serial connector with Mini-USB.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Using J-Link
 =============
 

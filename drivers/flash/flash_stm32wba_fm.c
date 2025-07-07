@@ -18,6 +18,8 @@ LOG_MODULE_REGISTER(flash_stm32wba, CONFIG_FLASH_LOG_LEVEL);
 #include "flash_manager.h"
 #include "flash_driver.h"
 
+#include <stm32_ll_utils.h>
+
 /* Let's wait for double the max erase time to be sure that the operation is
  * completed.
  */
@@ -93,7 +95,7 @@ static int flash_stm32_erase(const struct device *dev, off_t offset,
 			     size_t len)
 {
 	int rc;
-	int sect_num = (len / FLASH_PAGE_SIZE) + 1;
+	int sect_num;
 
 	if (!flash_stm32_valid_range(dev, offset, len, true)) {
 		LOG_ERR("Erase range invalid. Offset: %p, len: %zu",
@@ -104,6 +106,9 @@ static int flash_stm32_erase(const struct device *dev, off_t offset,
 	if (!len) {
 		return 0;
 	}
+
+	/* len is a multiple of FLASH_PAGE_SIZE */
+	sect_num = len / FLASH_PAGE_SIZE;
 
 	flash_stm32_sem_take(dev);
 
@@ -163,6 +168,16 @@ static const struct flash_parameters *
 	return &flash_stm32_parameters;
 }
 
+/* Gives the total logical device size in bytes and return 0. */
+static int flash_stm32wba_get_size(const struct device *dev, uint64_t *size)
+{
+	ARG_UNUSED(dev);
+
+	*size = (uint64_t)LL_GetFlashSize() * 1024U;
+
+	return 0;
+}
+
 static struct flash_stm32_priv flash_data = {
 	.regs = (FLASH_TypeDef *) DT_INST_REG_ADDR(0),
 };
@@ -192,6 +207,7 @@ static DEVICE_API(flash, flash_stm32_api) = {
 	.write = flash_stm32_write,
 	.read = flash_stm32_read,
 	.get_parameters = flash_stm32_get_parameters,
+	.get_size = flash_stm32wba_get_size,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_stm32wba_page_layout,
 #endif

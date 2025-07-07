@@ -134,6 +134,8 @@ echo demo. More information at :zephyr:code-sample:`sockets-echo-server` and
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The SAM R21 Xplained Pro comes with a Atmel Embedded Debugger (EDBG).  This
 provides a debug interface to the SAMR21 chip and is supported by
 OpenOCD.

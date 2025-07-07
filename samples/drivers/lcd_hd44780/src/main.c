@@ -148,7 +148,7 @@
 #define GPIO_PIN_CFG(dev, pin, dir)						\
 	do {									\
 		if (gpio_pin_configure((dev), (pin), (dir))) {			\
-			printk("Err cfg " GPIO_NAME "%d! %x\n", (pin), (dir));	\
+			printk("Err cfg " GPIO_NAME "%d! %lx\n", (pin), (dir));	\
 		}								\
 	} while (0)
 

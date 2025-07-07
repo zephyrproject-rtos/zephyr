@@ -119,7 +119,7 @@ static int udc_skeleton_ep_dequeue(const struct device *dev,
 
 	lock_key = irq_lock();
 
-	buf = udc_buf_get_all(dev, cfg->addr);
+	buf = udc_buf_get_all(cfg);
 	if (buf) {
 		udc_submit_ep_event(dev, buf, -ECONNABORTED);
 	}
@@ -231,6 +231,10 @@ static int udc_skeleton_init(const struct device *dev)
 				   USB_EP_TYPE_CONTROL, 64, 0)) {
 		LOG_ERR("Failed to enable control endpoint");
 		return -EIO;
+	}
+
+	if (IS_ENABLED(CONFIG_UDC_ENABLE_SOF)) {
+		LOG_INF("Enable SOF interrupt");
 	}
 
 	return 0;

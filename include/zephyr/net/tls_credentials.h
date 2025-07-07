@@ -70,8 +70,10 @@ enum tls_credential_type {
  * @note Some TLS credentials come in pairs:
  *    - TLS_CREDENTIAL_PUBLIC_CERTIFICATE with TLS_CREDENTIAL_PRIVATE_KEY,
  *    - TLS_CREDENTIAL_PSK with TLS_CREDENTIAL_PSK_ID.
- *    Such pairs of credentials must be assigned the same secure tag to be
- *    correctly handled in the system.
+ *    Such pairs of credentials should generally be assigned the same secure tag
+ *    when used with subsystems that support fetching multiple credentials per tag,
+ *    such as TLS sockets. However, note that certain subsystems or implementations
+ *    may expect only one credential per secure tag.
  *
  * @note Negative values are reserved for internal use.
  */

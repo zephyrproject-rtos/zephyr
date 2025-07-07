@@ -1,5 +1,5 @@
 .. zephyr:code-sample:: lps22hh
-   :name: LPSS22HH Temperature and Pressure Sensor
+   :name: LPS22HH Temperature and Pressure Sensor
    :relevant-api: sensor_interface
 
    Get pressure and temperature data from an LPS22HH sensor (polling & trigger mode).

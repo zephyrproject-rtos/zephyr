@@ -10,7 +10,7 @@ on:
       - "tests/bsim/**"
       - "boards/nordic/nrf5*/*dt*"
       - "dts/*/nordic/**"
-      - "tests/bluetooth/common/testlib/**"
+      - "tests/bluetooth/**"
       - "samples/bluetooth/**"
       - "boards/native/**"
       - "soc/native/**"
@@ -27,6 +27,7 @@ on:
       - "include/zephyr/net/ieee802154*"
       - "drivers/serial/*nrfx*"
       - "tests/drivers/uart/**"
+      - '!**.rst'
 
 permissions:
   contents: read
@@ -41,7 +42,7 @@ jobs:
     runs-on:
       group: zephyr-runner-v2-linux-x64-4xlarge
     container:
-      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.27.4.20241026
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.28.1.20250624
       options: '--entrypoint /bin/bash'
     env:
       ZEPHYR_TOOLCHAIN_VARIANT: zephyr
@@ -97,7 +98,7 @@ jobs:
           echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )" >> $GITHUB_ENV
 
       - name: Check common triggering files
-        uses: tj-actions/changed-files@2f7c5bfce28377bc069a65ba478de0a74aa0ca32 # v46.0.1
+        uses: tj-actions/changed-files@ed68ef82c095e0d48ec87eccea555d944a631a4c # v46.0.5
         id: check-common-files
         with:
           files: |
@@ -116,16 +117,17 @@ jobs:
             modules/hal_nordic/**
 
       - name: Check if Bluethooth files changed
-        uses: tj-actions/changed-files@2f7c5bfce28377bc069a65ba478de0a74aa0ca32 # v46.0.1
+        uses: tj-actions/changed-files@ed68ef82c095e0d48ec87eccea555d944a631a4c # v46.0.5
         id: check-bluetooth-files
         with:
           files: |
-            tests/bsim/bluetooth/
             samples/bluetooth/
             subsys/bluetooth/
+            tests/bluetooth/
+            tests/bsim/bluetooth/
 
       - name: Check if Networking files changed
-        uses: tj-actions/changed-files@2f7c5bfce28377bc069a65ba478de0a74aa0ca32 # v46.0.1
+        uses: tj-actions/changed-files@ed68ef82c095e0d48ec87eccea555d944a631a4c # v46.0.5
         id: check-networking-files
         with:
           files: |
@@ -138,7 +140,7 @@ jobs:
             include/zephyr/net/ieee802154*
 
       - name: Check if UART files changed
-        uses: tj-actions/changed-files@2f7c5bfce28377bc069a65ba478de0a74aa0ca32 # v46.0.1
+        uses: tj-actions/changed-files@ed68ef82c095e0d48ec87eccea555d944a631a4c # v46.0.5
         id: check-uart-files
         with:
           files: |
@@ -178,13 +180,12 @@ jobs:
 
       - name: Merge Test Results
         run: |
-          pip install junitparser junit2html
           junitparser merge --glob "./bsim_*/*bsim_results.*.xml" "./twister-out/twister.xml" junit.xml
           junit2html junit.xml junit.html
 
       - name: Upload Unit Test Results in HTML
         if: always()
-        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: HTML Unit Test Results
           if-no-files-found: ignore
@@ -192,7 +193,7 @@ jobs:
             junit.html
 
       - name: Publish Unit Test Results
-        uses: EnricoMi/publish-unit-test-result-action@170bf24d20d201b842d7a52403b73ed297e6645b # v2.18.0
+        uses: EnricoMi/publish-unit-test-result-action@3a74b2957438d0b6e2e61d67b05318aa25c9e6c6 # v2.20.0
         with:
           check_name: Bsim Test Results
           files: "junit.xml"
@@ -200,7 +201,7 @@ jobs:
 
       - name: Upload Event Details
         if: always()
-        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: event
           path: |

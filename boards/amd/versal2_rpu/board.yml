@@ -1,0 +1,6 @@
+board:
+  name: versal2_rpu
+  full_name: Versal 2 RPU development board
+  vendor: amd
+  socs:
+  - name: amd_versal2_rpu

@@ -7,6 +7,16 @@ if SOC_SERIES_STM32WBAX
 
 rsource "Kconfig.defconfig.stm32wba*"
 
+config ICACHE
+	default y
+
+config CACHE_MANAGEMENT
+	default y
+
+choice CACHE_TYPE
+	default EXTERNAL_CACHE
+endchoice
+
 config STM32_LPTIM_TIMER
 	default y if PM
 

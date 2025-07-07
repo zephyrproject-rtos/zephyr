@@ -171,6 +171,13 @@ int arch_gdb_remove_breakpoint(struct gdb_ctx *ctx, uint8_t type,
 	return -2;
 }
 
+__weak
+void arch_gdb_post_memory_write(uintptr_t addr, size_t len, uint8_t align)
+{
+	ARG_UNUSED(addr);
+	ARG_UNUSED(len);
+	ARG_UNUSED(align);
+}
 
 /**
  * Add preamble and termination to the given data.
@@ -548,6 +555,9 @@ static int gdb_mem_write(const uint8_t *buf, uintptr_t addr,
 		ret = gdb_mem_write_unaligned(buf, addr, len);
 	}
 
+
+	arch_gdb_post_memory_write(addr, len, align);
+
 out:
 	return ret;
 }
@@ -881,6 +891,7 @@ int gdb_init(void)
 	return 0;
 }
 
+#ifdef CONFIG_GDBSTUB_ENTER_IMMEDIATELY
 #ifdef CONFIG_XTENSA
 /*
  * Interrupt stacks are being setup during init and are not
@@ -893,4 +904,5 @@ int gdb_init(void)
 SYS_INIT(gdb_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #else
 SYS_INIT(gdb_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+#endif
 #endif

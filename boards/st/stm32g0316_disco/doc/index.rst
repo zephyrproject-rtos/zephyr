@@ -52,6 +52,8 @@ Default Zephyr Peripheral Mapping:
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The STM32G0316-DISCO board includes an ST-LINK/V2-1 embedded debug tool interface.
 
 Applications for the ``stm32g0316_disco`` board configuration can be built the

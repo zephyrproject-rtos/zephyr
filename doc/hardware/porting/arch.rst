@@ -83,7 +83,7 @@ Some examples of architecture-specific steps that have to be taken:
   in an unknown or broken state.
 * Initialize a board-specific watchdog on Cortex-M3/4.
 * Switch stacks from MSP to PSP on Cortex-M.
-* Use a different approach than calling into _Swap() on Cortex-M to prevent
+* Use a different approach than calling into z_swap() on Cortex-M to prevent
   race conditions.
 * Setup FIRQ and regular IRQ handling on ARCv2.
 
@@ -149,8 +149,8 @@ parameter.
   parameter from the separate table. This approach is commonly used in the ARC
   and ARM architectures via the :kconfig:option:`CONFIG_GEN_ISR_TABLES` implementation.
   You can find examples of the stubs by looking at :code:`_interrupt_enter()` in
-  x86, :code:`_IntExit()` in ARM, :code:`_isr_wrapper()` in ARM, or the full
-  implementation description for ARC in :zephyr_file:`arch/arc/core/isr_wrapper.S`.
+  x86, :code:`_isr_wrapper()` in ARM, or the full implementation description for
+  ARC in :zephyr_file:`arch/arc/core/isr_wrapper.S`.
 
 Each architecture also has to implement primitives for interrupt control:
 
@@ -176,15 +176,16 @@ Thread Context Switching
 ************************
 
 Multi-threading is the basic purpose to have a kernel at all. Zephyr supports
-two types of threads: preemptible and cooperative.
+two types of threads: preemptible and cooperative. The rules for determining
+the next thread to schedule are handled by the kernel. However, it is up to
+the architecture port to implement the method of the context switch itself.
 
-Two crucial concepts when writing an architecture port are the following:
-
-* Cooperative threads run at a higher priority than preemptible ones, and
-  always preempt them.
-
-* After handling an interrupt, if a cooperative thread was interrupted, the
-  kernel always goes back to running that thread, since it is not preemptible.
+Zephyr provides two mutually exclusive interfaces for context switching. The
+preferred interface to use is :code:`arch_switch` which is selected when
+:kconfig:option:`CONFIG_USE_SWITCH` is enabled. The alternative interface is
+:code:`arch_swap`--selected when :kconfig:option:`CONFIG_USE_SWITCH`
+is disabled. When porting to a new architecture, only one of these needs to
+implemented; however, for SMP platforms it must be :code:`arch_switch`.
 
 A context switch can happen in several circumstances:
 
@@ -203,9 +204,6 @@ A context switch can happen in several circumstances:
   threads. For example, referencing invalid memory,
 
 Therefore, the context switching must thus be able to handle all these cases.
-
-The kernel keeps the next thread to run in a "cache", and thus the context
-switching code only has to fetch from that cache to select which thread to run.
 
 There are two types of context switches: :dfn:`cooperative` and :dfn:`preemptive`.
 
@@ -228,57 +226,46 @@ There are two types of context switches: :dfn:`cooperative` and :dfn:`preemptive
   running thread.
 
 A cooperative context switch is always done by having a thread call the
-:code:`_Swap()` kernel internal symbol. When :code:`_Swap` is called, the
-kernel logic knows that a context switch has to happen: :code:`_Swap` does not
-check to see if a context switch must happen. Rather, :code:`_Swap` decides
-what thread to context switch in. :code:`_Swap` is called by the kernel logic
-when an object being operated on is unavailable, and some thread
-yielding/sleeping primitives.
+internal kernel routine :code:`z_swap` (or one of its variants). This in turn
+will call either :code:`arch_switch` or :code:`arch_swap` as appropriate.
+When these are called, no checks are done to determine if the context switch is
+to happen--the context switch must happen.
 
 .. note::
 
-  On x86 and Nios2, :code:`_Swap` is generic enough and the architecture
-  flexible enough that :code:`_Swap` can be called when exiting an interrupt
-  to provoke the context switch. This should not be taken as a rule, since
-  neither the ARM Cortex-M or ARCv2 port do this.
+  On x86 and Nios2, :code:`arch_swap` is generic enough and the architecture
+  flexible enough that it can be called when exiting an interrupt to provoke
+  the context switch. This should not be taken as a rule, since
+  neither the ARM Cortex-M nor ARCv2 port do this.
 
-Since :code:`_Swap` is cooperative, the caller-saved registers from the ABI are
+Since :code:`z_swap` is cooperative, the caller-saved registers from the ABI are
 already on the stack. There is no need to save them in the k_thread structure.
 
 A context switch can also be performed preemptively. This happens upon exiting
 an ISR, in the kernel interrupt exit stub:
 
 * :code:`_interrupt_enter` on x86 after the handler is called.
-* :code:`_IntExit` on ARM.
+* :code:`z_arm_exc_exit` and :code:`z_arm_int_exit` on ARM.
 * :code:`_firq_exit` and :code:`_rirq_exit` on ARCv2.
 
-In this case, the context switch must only be invoked when the interrupted
-thread was preemptible, not when it was a cooperative one, and only when the
-current interrupt is not nested.
+The decision logic to invoke the context switch is simple and is only performed
+when exiting a non-nested interrupt:
 
-The kernel also has the concept of "locking the scheduler". This is a concept
-similar to locking the interrupts, but lighter-weight since interrupts can
-still occur. If a thread has locked the scheduler, is it temporarily
-non-preemptible.
+When :kconfig:option:`CONFIG_USE_SWITCH` is enabled ...
 
-So, the decision logic to invoke the context switch when exiting an interrupt
-is simple:
+* The interrupt exit code shall call :c:func:`z_get_next_switch_handle`, and
+  return to the thread context identified by the returned switch handle
 
-* If the interrupted thread is not preemptible, do not invoke it.
-* Else, fetch the cached thread from the ready queue, and:
+When :kconfig:option:`CONFIG_USE_SWITCH` is not enabled ...
+
+* The interrupt exit code shall fetch the cached thread from the ready queue, and:
 
   * If the cached thread is not the current thread, invoke the context switch.
-  * Else, do not invoke it.
+  * Otherwise do not invoke it.
 
 This is simple, but crucial: if this is not implemented correctly, the kernel
 will not function as intended and will experience bizarre crashes, mostly due
 to stack corruption.
-
-.. note::
-
-  If running a coop-only system, i.e. if :kconfig:option:`CONFIG_NUM_PREEMPT_PRIORITIES`
-  is 0, no preemptive context switch ever happens. The interrupt code can be
-  optimized to not take any scheduling decision when this is the case.
 
 Thread Creation and Termination
 *******************************

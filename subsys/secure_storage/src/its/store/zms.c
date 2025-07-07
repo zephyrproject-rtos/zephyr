@@ -5,9 +5,6 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/fs/zms.h>
 #include <zephyr/storage/flash_map.h>
-#ifdef CONFIG_SECURE_STORAGE_ITS_IMPLEMENTATION_ZEPHYR
-#include <zephyr/secure_storage/its/transform.h>
-#endif
 
 LOG_MODULE_DECLARE(secure_storage, CONFIG_SECURE_STORAGE_LOG_LEVEL);
 
@@ -108,15 +105,15 @@ psa_status_t secure_storage_its_store_get(secure_storage_its_uid_t uid, size_t d
 
 psa_status_t secure_storage_its_store_remove(secure_storage_its_uid_t uid)
 {
-	int zms_ret;
+	int ret;
 	const uint32_t zms_id = zms_id_from(uid);
 
 	if (has_forbidden_bits_set(uid)) {
 		return PSA_ERROR_INVALID_ARGUMENT;
 	}
 
-	zms_ret = zms_delete(&s_zms, zms_id);
-	LOG_DBG("%s 0x%x. (%d)", zms_ret ? "Failed to delete" : "Deleted", zms_id, zms_ret);
-	BUILD_ASSERT(PSA_SUCCESS == 0);
-	return zms_ret;
+	ret = zms_delete(&s_zms, zms_id);
+	LOG_DBG("%s 0x%x. (%d)", ret ? "Failed to delete" : "Deleted", zms_id, ret);
+
+	return ret ? PSA_ERROR_STORAGE_FAILURE : PSA_SUCCESS;
 }

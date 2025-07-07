@@ -20,7 +20,7 @@ extern "C" {
  * The ZMS entry ID for the setting's value is determined implicitly based on
  * the ID of the ZMS entry for the setting's name, once that is found. The
  * difference between name and value ID is constant and equal to
- * ZMS_NAME_ID_OFFSET.
+ * ZMS_DATA_ID_OFFSET.
  *
  * Setting's name is hashed into 29 bits minus hash_collisions_bits.
  * The 2 MSB_bits have always the same value 10, the LL_bit for the name's hash is 0
@@ -63,22 +63,32 @@ extern "C" {
 
 /* some useful macros */
 #define ZMS_NAME_ID_FROM_LL_NODE(x) (x & ~BIT(0))
+#define ZMS_LL_NODE_FROM_NAME_ID(x) (x | BIT(0))
 #define ZMS_UPDATE_COLLISION_NUM(x, y)                                                             \
 	((x & ~ZMS_COLLISIONS_MASK) | ((y << 1) & ZMS_COLLISIONS_MASK))
-#define ZMS_COLLISION_NUM(x) ((x & ZMS_COLLISIONS_MASK) >> 1)
+#define ZMS_COLLISION_NUM(x)     ((x & ZMS_COLLISIONS_MASK) >> 1)
+#define ZMS_NAME_ID_FROM_HASH(x) ((x & ZMS_HASH_TOTAL_MASK) | BIT(31))
+#define ZMS_DATA_ID_FROM_HASH(x) (ZMS_NAME_ID_FROM_HASH(x) + ZMS_DATA_ID_OFFSET)
+#define ZMS_DATA_ID_FROM_NAME(x) (x + ZMS_DATA_ID_OFFSET)
+#define ZMS_DATA_ID_FROM_LL_NODE(x) (ZMS_NAME_ID_FROM_LL_NODE(x) + ZMS_DATA_ID_OFFSET)
+
+struct settings_hash_linked_list {
+	uint32_t previous_hash;
+	uint32_t next_hash;
+};
 
 struct settings_zms {
 	struct settings_store cf_store;
 	struct zms_fs cf_zms;
 	const struct device *flash_dev;
+#if CONFIG_SETTINGS_ZMS_LL_CACHE
+	struct settings_hash_linked_list ll_cache[CONFIG_SETTINGS_ZMS_LL_CACHE_SIZE];
+	uint32_t ll_cache_next;
+	bool ll_has_changed;
+#endif /* CONFIG_SETTINGS_ZMS_LL_CACHE */
 	uint32_t last_hash_id;
 	uint32_t second_to_last_hash_id;
 	uint8_t hash_collision_num;
-};
-
-struct settings_hash_linked_list {
-	uint32_t previous_hash;
-	uint32_t next_hash;
 };
 
 #ifdef __cplusplus

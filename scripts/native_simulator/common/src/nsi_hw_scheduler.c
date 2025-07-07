@@ -163,4 +163,5 @@ void nsi_hws_init(void)
  */
 void nsi_hws_cleanup(void)
 {
+	/* Nothing to be done so far */
 }

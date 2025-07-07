@@ -74,152 +74,18 @@ Default Zephyr Peripheral Mapping:
 Programming and Debugging
 *************************
 
-Flashing
-========
+.. zephyr:board-supported-runners::
 
-Using SEGGER JLink
-------------------
+The overall explanation regarding flashing and debugging is the same as or :zephyr:board:`rpi_pico`.
+See :ref:`rpi_pico_programming_and_debugging` in :zephyr:board:`rpi_pico` documentation. N.b. OpenOCD support requires using Raspberry Pi's forked version of OpenOCD.
 
-You can Flash the w5500_evb_pico with a SEGGER JLink debug probe as described in
-:ref:`Building, Flashing and Debugging <west-flashing>`.
-
-Here is an example of building and flashing the :zephyr:code-sample:`blinky` application.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/basic/blinky
-   :board: w5500_evb_pico
-   :goals: build
-
-.. code-block:: bash
-
-  west flash --runner jlink
-
-Using OpenOCD
--------------
-
-To use PicoProbe, You must configure **udev**.
-
-Create a file in /etc/udev.rules.d with any name, and write the line below.
-
-.. code-block:: bash
-
-   ATTRS{idVendor}=="2e8a", ATTRS{idProduct}=="000c", MODE="660", GROUP="plugdev", TAG+="uaccess"
-
-This example is valid for the case that the user joins to ``plugdev`` groups.
-
-The Raspberry Pi Pico, and thus the W55500 Evaluation Board, has an SWD
-interface that can be used to program and debug the on board RP2040. This
-interface can be utilized by OpenOCD. To use it with the RP2040, OpenOCD
-version 0.12.0 or later is needed.
-
-If you are using a Debian based system (including RaspberryPi OS, Ubuntu. and
-more), using the `pico_setup.sh`_ script is a convenient way to set up the
-forked version of OpenOCD.
-
-Depending on the interface used (such as JLink), you might need to
-checkout to a branch that supports this interface, before proceeding.
-Build and install OpenOCD as described in the README.
-
-Here is an example of building and flashing the :zephyr:code-sample:`blinky`
-application.
+Below is an example of building and flashing the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
    :board: w5500_evb_pico
    :goals: build flash
-   :gen-args: -DOPENOCD=/usr/local/bin/openocd -DOPENOCD_DEFAULT_PATH=/usr/local/share/openocd/scripts -DRPI_PICO_DEBUG_ADAPTER=picoprobe
-
-Set the environment variables **OPENOCD** to :file:`/usr/local/bin/openocd` and
-**OPENOCD_DEFAULT_PATH** to :file:`/usr/local/share/openocd/scripts`. This should
-work with the OpenOCD that was installed with the default configuration. This
-configuration also works with an environment that is set up by the
-`pico_setup.sh`_ script.
-
-**RPI_PICO_DEBUG_ADAPTER** specifies what debug adapter is used for debugging.
-
-If **RPI_PICO_DEBUG_ADAPTER** was not assigned, ``picoprobe`` is used by default.
-The other supported adapters are ``raspberrypi-swd``, ``jlink`` and
-``blackmagicprobe``. How to connect ``picoprobe`` and ``raspberrypi-swd`` is
-described in `Getting Started with Raspberry Pi Pico`_. Any other SWD debug
-adapter maybe also work with this configuration.
-
-The value of **RPI_PICO_DEBUG_ADAPTER** is cached, so it can be omitted from
-``west flash`` and ``west debug`` if it was previously set while running
-``west build``.
-
-**RPI_PICO_DEBUG_ADAPTER** is used in an argument to OpenOCD as
-``"source [find interface/${RPI_PICO_DEBUG_ADAPTER}.cfg]"``. Thus,
-**RPI_PICO_DEBUG_ADAPTER** needs to be assigned the file name of the debug
-adapter.
-
-You can also flash the board with the following
-command that directly calls OpenOCD (assuming a SEGGER JLink adapter is used):
-
-.. code-block:: console
-
-   $ openocd -f interface/jlink.cfg -c 'transport select swd' -f target/rp2040.cfg -c "adapter speed 2000" -c 'targets rp2040.core0' -c 'program path/to/zephyr.elf verify reset exit'
-
-Using UF2
----------
-
-If you don't have an SWD adapter, you can flash the Raspberry Pi Pico with
-a UF2 file. By default, building an app for this board will generate a
-:file:`build/zephyr/zephyr.uf2` file. If the Pico is powered on with the ``BOOTSEL``
-button pressed, it will appear on the host as a mass storage device. The
-UF2 file should be drag-and-dropped to the device, which will flash the Pico.
-
-Debugging
-=========
-
-The SWD interface can also be used to debug the board. To achieve this, you can
-either use SEGGER JLink or OpenOCD.
-
-Using SEGGER JLink
-------------------
-
-Use a SEGGER JLink debug probe and follow the instruction in
-:ref:`Building, Flashing and Debugging<west-debugging>`.
-
-
-Using OpenOCD
--------------
-
-Install OpenOCD as described for flashing the board.
-
-Here is an example for debugging the :zephyr:code-sample:`blinky` application.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/basic/blinky
-   :board: w5500_evb_pico
-   :maybe-skip-config:
-   :goals: debug
-   :gen-args: -DOPENOCD=/usr/local/bin/openocd -DOPENOCD_DEFAULT_PATH=/usr/local/share/openocd/scripts -DRPI_PICO_DEBUG_ADAPTER=raspberrypi-swd
-
-As with flashing, you can specify the debug adapter by specifying
-**RPI_PICO_DEBUG_ADAPTER** at ``west build`` time. No needs to specify it at
-``west debug`` time.
-
-You can also debug with OpenOCD and gdb launching from command-line.
-Run the following command:
-
-.. code-block:: console
-
-   $ openocd -f interface/jlink.cfg -c 'transport select swd' -f target/rp2040.cfg -c "adapter speed 2000" -c 'targets rp2040.core0'
-
-On another terminal, run:
-
-.. code-block:: console
-
-   $ gdb-multiarch
-
-Inside gdb, run:
-
-.. code-block:: console
-
-   (gdb) tar ext :3333
-   (gdb) file path/to/zephyr.elf
-
-You can then start debugging the board.
+   :flash-args: --openocd /usr/local/bin/openocd
 
 .. target-notes::
 

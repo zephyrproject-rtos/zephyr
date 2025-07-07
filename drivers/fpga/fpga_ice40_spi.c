@@ -15,7 +15,7 @@
 
 #include "fpga_ice40_common.h"
 
-LOG_MODULE_DECLARE(fpga_ice40);
+LOG_MODULE_DECLARE(fpga_ice40, CONFIG_FPGA_LOG_LEVEL);
 
 static int fpga_ice40_load(const struct device *dev, uint32_t *image_ptr, uint32_t img_size)
 {

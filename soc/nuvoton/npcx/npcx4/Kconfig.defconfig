@@ -6,7 +6,7 @@
 if SOC_SERIES_NPCX4
 
 config NUM_IRQS
-	default 128
+	default 86
 
 config CORTEX_M_SYSTICK
 	default !NPCX_ITIM_TIMER
@@ -14,5 +14,8 @@ config CORTEX_M_SYSTICK
 config ESPI_TAF_NPCX
 	default y
 	depends on ESPI_TAF
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_nodelabel_int_prop,itims,clock-frequency)
 
 endif # SOC_SERIES_NPCX4

@@ -22,6 +22,7 @@
 		zephyr,flash = &spi_flash;
 		zephyr,console = &scif1;
 		zephyr,shell-uart = &scif1;
+		zephyr,canbus = &canfd0;
 	};
 
 	aliases {
@@ -74,6 +75,19 @@
 		reg = <0x80200000 DT_SIZE_K(256)>;
 	};
 
+	transceiver0: can-phy0 {
+		compatible = "can-transceiver-gpio";
+		standby-gpios = <&gpio13 0 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <8000000>;
+		#phy-cells = <0>;
+	};
+
+	transceiver1: can-phy1 {
+		compatible = "can-transceiver-gpio";
+		standby-gpios = <&gpio13 1 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <8000000>;
+		#phy-cells = <0>;
+	};
 };
 
 &scif1 {
@@ -83,14 +97,36 @@
 	status = "okay";
 };
 
-&gpio0{
+&spi0 {
+	pinctrl-0 = <&spi0_pins>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
-&gpio18{
+&gpio0 {
+	status = "okay";
+};
+
+&gpio13{
+	status = "okay";
+};
+
+&gpio18 {
 	status = "okay";
 };
 
 &adc {
 	status = "okay";
+};
+
+&canfd_global {
+	status = "okay";
+};
+
+&canfd0 {
+	pinctrl-0 = <&can0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+	rx-max-filters = <32>;
+	phys = <&transceiver0>;
 };

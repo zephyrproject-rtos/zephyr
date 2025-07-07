@@ -44,16 +44,23 @@ LOG_MODULE_REGISTER(bt_tbs, CONFIG_BT_TBS_LOG_LEVEL);
 
 struct tbs_flags {
 	bool bearer_provider_name_changed: 1;
+	bool bearer_provider_name_dirty: 1;
 	bool bearer_technology_changed: 1;
 	bool bearer_uri_schemes_supported_list_changed: 1;
+	bool bearer_uri_schemes_supported_list_dirty: 1;
 	bool bearer_signal_strength_changed: 1;
 	bool bearer_list_current_calls_changed: 1;
+	bool bearer_list_current_calls_dirty: 1;
 	bool status_flags_changed: 1;
 	bool incoming_call_target_bearer_uri_changed: 1;
+	bool incoming_call_target_bearer_uri_dirty: 1;
 	bool call_state_changed: 1;
+	bool call_state_dirty: 1;
 	bool termination_reason_changed: 1;
 	bool incoming_call_changed: 1;
+	bool incoming_call_dirty: 1;
 	bool call_friendly_name_changed: 1;
+	bool call_friendly_name_dirty: 1;
 };
 
 /* A service instance can either be a GTBS or a TBS instance */
@@ -628,6 +635,7 @@ static void set_call_state_changed_cb(struct tbs_flags *flags)
 	}
 
 	flags->call_state_changed = true;
+	flags->call_state_dirty = true;
 }
 
 static void set_list_current_calls_changed_cb(struct tbs_flags *flags)
@@ -637,6 +645,7 @@ static void set_list_current_calls_changed_cb(struct tbs_flags *flags)
 	}
 
 	flags->bearer_list_current_calls_changed = true;
+	flags->bearer_list_current_calls_dirty = true;
 }
 
 static int inst_notify_calls(struct tbs_inst *inst)
@@ -950,12 +959,33 @@ static void notify_work_handler(struct k_work *work)
 static ssize_t read_provider_name(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
 				  uint16_t len, uint16_t offset)
 {
-	const struct tbs_inst *inst = BT_AUDIO_CHRC_USER_DATA(attr);
+	struct tbs_inst *inst = BT_AUDIO_CHRC_USER_DATA(attr);
+	struct tbs_flags *flags = &inst->flags[bt_conn_index(conn)];
+	ssize_t ret;
+	int err;
 
-	LOG_DBG("Index %u, Provider name %s", inst_index(inst), inst->provider_name);
+	err = k_mutex_lock(&inst->mutex, MUTEX_TIMEOUT);
+	if (err != 0) {
+		LOG_DBG("Failed to lock mutex");
+		return -EBUSY;
+	}
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, inst->provider_name,
-				 strlen(inst->provider_name));
+	if (offset != 0 && flags->bearer_provider_name_dirty) {
+		LOG_DBG("Value dirty for %p", (void *)conn);
+		ret = BT_GATT_ERR(BT_TBS_ERR_VAL_CHANGED);
+	} else {
+		flags->bearer_provider_name_dirty = false;
+
+		LOG_DBG("Index %u, Provider name %s", inst_index(inst), inst->provider_name);
+
+		ret = bt_gatt_attr_read(conn, attr, buf, len, offset, inst->provider_name,
+					strlen(inst->provider_name));
+	}
+
+	err = k_mutex_unlock(&inst->mutex);
+	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+
+	return ret;
 }
 
 static void provider_name_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
@@ -1000,32 +1030,56 @@ static void technology_cfg_changed(const struct bt_gatt_attr *attr, uint16_t val
 static ssize_t read_uri_scheme_list(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				    void *buf, uint16_t len, uint16_t offset)
 {
-	const struct tbs_inst *inst = BT_AUDIO_CHRC_USER_DATA(attr);
+	struct tbs_inst *inst = BT_AUDIO_CHRC_USER_DATA(attr);
+	struct tbs_flags *flags = &inst->flags[bt_conn_index(conn)];
+	ssize_t ret;
+	int err;
 
-	net_buf_simple_reset(&read_buf);
-
-	net_buf_simple_add_mem(&read_buf, inst->uri_scheme_list, strlen(inst->uri_scheme_list));
-
-	if (inst_is_gtbs(inst)) {
-		/* TODO: Make uri schemes unique */
-		for (size_t i = 0; i < ARRAY_SIZE(svc_insts); i++) {
-			size_t uri_len = strlen(svc_insts[i].uri_scheme_list);
-
-			if (read_buf.len + uri_len >= read_buf.size) {
-				LOG_WRN("Cannot fit all TBS instances in GTBS "
-					"URI scheme list");
-				break;
-			}
-
-			net_buf_simple_add_mem(&read_buf, svc_insts[i].uri_scheme_list, uri_len);
-		}
-
-		LOG_DBG("GTBS: URI scheme %.*s", read_buf.len, read_buf.data);
-	} else {
-		LOG_DBG("Index %u: URI scheme %.*s", inst_index(inst), read_buf.len, read_buf.data);
+	err = k_mutex_lock(&inst->mutex, MUTEX_TIMEOUT);
+	if (err != 0) {
+		LOG_DBG("Failed to lock mutex");
+		return -EBUSY;
 	}
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, read_buf.data, read_buf.len);
+	if (offset != 0 && flags->bearer_uri_schemes_supported_list_dirty) {
+		LOG_DBG("Value dirty for %p", (void *)conn);
+		ret = BT_GATT_ERR(BT_TBS_ERR_VAL_CHANGED);
+	} else {
+		flags->bearer_uri_schemes_supported_list_dirty = false;
+
+		net_buf_simple_reset(&read_buf);
+
+		net_buf_simple_add_mem(&read_buf, inst->uri_scheme_list,
+				       strlen(inst->uri_scheme_list));
+
+		if (inst_is_gtbs(inst)) {
+			/* TODO: Make uri schemes unique */
+			for (size_t i = 0; i < ARRAY_SIZE(svc_insts); i++) {
+				size_t uri_len = strlen(svc_insts[i].uri_scheme_list);
+
+				if (read_buf.len + uri_len >= read_buf.size) {
+					LOG_WRN("Cannot fit all TBS instances in GTBS "
+						"URI scheme list");
+					break;
+				}
+
+				net_buf_simple_add_mem(&read_buf, svc_insts[i].uri_scheme_list,
+						       uri_len);
+			}
+
+			LOG_DBG("GTBS: URI scheme %.*s", read_buf.len, read_buf.data);
+		} else {
+			LOG_DBG("Index %u: URI scheme %.*s", inst_index(inst), read_buf.len,
+				read_buf.data);
+		}
+
+		ret = bt_gatt_attr_read(conn, attr, buf, len, offset, read_buf.data, read_buf.len);
+	}
+
+	err = k_mutex_unlock(&inst->mutex);
+	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+
+	return ret;
 }
 
 static void uri_scheme_list_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
@@ -1110,17 +1164,38 @@ static void current_calls_cfg_changed(const struct bt_gatt_attr *attr, uint16_t 
 static ssize_t read_current_calls(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
 				  uint16_t len, uint16_t offset)
 {
-	const struct tbs_inst *inst = BT_AUDIO_CHRC_USER_DATA(attr);
+	struct tbs_inst *inst = BT_AUDIO_CHRC_USER_DATA(attr);
+	struct tbs_flags *flags = &inst->flags[bt_conn_index(conn)];
+	ssize_t ret;
+	int err;
 
-	LOG_DBG("Index %u", inst_index(inst));
-
-	net_buf_put_current_calls(inst, &read_buf);
-
-	if (offset == 0) {
-		LOG_HEXDUMP_DBG(read_buf.data, read_buf.len, "Current calls");
+	err = k_mutex_lock(&inst->mutex, MUTEX_TIMEOUT);
+	if (err != 0) {
+		LOG_DBG("Failed to lock mutex");
+		return -EBUSY;
 	}
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, read_buf.data, read_buf.len);
+	if (offset != 0 && flags->bearer_list_current_calls_dirty) {
+		LOG_DBG("Value dirty for %p", (void *)conn);
+		ret = BT_GATT_ERR(BT_TBS_ERR_VAL_CHANGED);
+	} else {
+		flags->bearer_list_current_calls_dirty = false;
+
+		LOG_DBG("Index %u", inst_index(inst));
+
+		net_buf_put_current_calls(inst, &read_buf);
+
+		if (offset == 0) {
+			LOG_HEXDUMP_DBG(read_buf.data, read_buf.len, "Current calls");
+		}
+
+		ret = bt_gatt_attr_read(conn, attr, buf, len, offset, read_buf.data, read_buf.len);
+	}
+
+	err = k_mutex_unlock(&inst->mutex);
+	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+
+	return ret;
 }
 
 static ssize_t read_ccid(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
@@ -1157,24 +1232,46 @@ static void status_flags_cfg_changed(const struct bt_gatt_attr *attr, uint16_t v
 static ssize_t read_incoming_uri(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
 				 uint16_t len, uint16_t offset)
 {
-	const struct tbs_inst *inst = BT_AUDIO_CHRC_USER_DATA(attr);
-	const struct bt_tbs_in_uri *inc_call_target;
-	size_t val_len;
+	struct tbs_inst *inst = BT_AUDIO_CHRC_USER_DATA(attr);
+	struct tbs_flags *flags = &inst->flags[bt_conn_index(conn)];
+	ssize_t ret;
+	int err;
 
-	inc_call_target = &inst->incoming_uri;
-
-	LOG_DBG("Index %u: call index 0x%02x, URI %s", inst_index(inst),
-		inc_call_target->call_index, inc_call_target->uri);
-
-	if (!inc_call_target->call_index) {
-		LOG_DBG("URI not set");
-
-		return bt_gatt_attr_read(conn, attr, buf, len, offset, NULL, 0);
+	err = k_mutex_lock(&inst->mutex, MUTEX_TIMEOUT);
+	if (err != 0) {
+		LOG_DBG("Failed to lock mutex");
+		return -EBUSY;
 	}
 
-	val_len = sizeof(inc_call_target->call_index) + strlen(inc_call_target->uri);
+	if (offset != 0 && flags->incoming_call_target_bearer_uri_dirty) {
+		LOG_DBG("Value dirty for %p", (void *)conn);
+		ret = BT_GATT_ERR(BT_TBS_ERR_VAL_CHANGED);
+	} else {
+		const struct bt_tbs_in_uri *inc_call_target;
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, inc_call_target, val_len);
+		flags->incoming_call_target_bearer_uri_dirty = false;
+
+		inc_call_target = &inst->incoming_uri;
+
+		LOG_DBG("Index %u: call index 0x%02x, URI %s", inst_index(inst),
+			inc_call_target->call_index, inc_call_target->uri);
+
+		if (!inc_call_target->call_index) {
+			LOG_DBG("URI not set");
+
+			ret = 0U;
+		} else {
+			const size_t val_len =
+				sizeof(inc_call_target->call_index) + strlen(inc_call_target->uri);
+			ret = bt_gatt_attr_read(conn, attr, buf, len, offset, inc_call_target,
+						val_len);
+		}
+	}
+
+	err = k_mutex_unlock(&inst->mutex);
+	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+
+	return ret;
 }
 
 static void incoming_uri_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
@@ -1189,17 +1286,38 @@ static void incoming_uri_cfg_changed(const struct bt_gatt_attr *attr, uint16_t v
 static ssize_t read_call_state(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
 			       uint16_t len, uint16_t offset)
 {
-	const struct tbs_inst *inst = BT_AUDIO_CHRC_USER_DATA(attr);
+	struct tbs_inst *inst = BT_AUDIO_CHRC_USER_DATA(attr);
+	struct tbs_flags *flags = &inst->flags[bt_conn_index(conn)];
+	ssize_t ret;
+	int err;
 
-	LOG_DBG("Index %u", inst_index(inst));
-
-	net_buf_put_call_states(inst, &read_buf);
-
-	if (offset == 0) {
-		LOG_HEXDUMP_DBG(read_buf.data, read_buf.len, "Call state");
+	err = k_mutex_lock(&inst->mutex, MUTEX_TIMEOUT);
+	if (err != 0) {
+		LOG_DBG("Failed to lock mutex");
+		return -EBUSY;
 	}
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, read_buf.data, read_buf.len);
+	if (offset != 0 && flags->call_state_dirty) {
+		LOG_DBG("Value dirty for %p", (void *)conn);
+		ret = BT_GATT_ERR(BT_TBS_ERR_VAL_CHANGED);
+	} else {
+		flags->call_state_dirty = false;
+
+		LOG_DBG("Index %u", inst_index(inst));
+
+		net_buf_put_call_states(inst, &read_buf);
+
+		if (offset == 0) {
+			LOG_HEXDUMP_DBG(read_buf.data, read_buf.len, "Call state");
+		}
+
+		ret = bt_gatt_attr_read(conn, attr, buf, len, offset, read_buf.data, read_buf.len);
+	}
+
+	err = k_mutex_unlock(&inst->mutex);
+	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+
+	return ret;
 }
 
 static void call_state_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
@@ -1754,21 +1872,44 @@ static void terminate_reason_cfg_changed(const struct bt_gatt_attr *attr, uint16
 static ssize_t read_friendly_name(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
 				  uint16_t len, uint16_t offset)
 {
-	const struct tbs_inst *inst = BT_AUDIO_CHRC_USER_DATA(attr);
-	const struct bt_tbs_in_uri *friendly_name = &inst->friendly_name;
-	size_t val_len;
+	struct tbs_inst *inst = BT_AUDIO_CHRC_USER_DATA(attr);
+	struct tbs_flags *flags = &inst->flags[bt_conn_index(conn)];
+	ssize_t ret;
+	int err;
 
-	LOG_DBG("Index: 0x%02x call index 0x%02x, URI %s", inst_index(inst),
-		friendly_name->call_index, friendly_name->uri);
-
-	if (friendly_name->call_index == BT_TBS_FREE_CALL_INDEX) {
-		LOG_DBG("URI not set");
-		return bt_gatt_attr_read(conn, attr, buf, len, offset, NULL, 0);
+	err = k_mutex_lock(&inst->mutex, MUTEX_TIMEOUT);
+	if (err != 0) {
+		LOG_DBG("Failed to lock mutex");
+		return -EBUSY;
 	}
 
-	val_len = sizeof(friendly_name->call_index) + strlen(friendly_name->uri);
+	if (offset != 0 && flags->call_friendly_name_dirty) {
+		LOG_DBG("Value dirty for %p", (void *)conn);
+		ret = BT_GATT_ERR(BT_TBS_ERR_VAL_CHANGED);
+	} else {
+		const struct bt_tbs_in_uri *friendly_name = &inst->friendly_name;
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, friendly_name, val_len);
+		flags->call_friendly_name_dirty = false;
+
+		LOG_DBG("Index: 0x%02x call index 0x%02x, URI %s", inst_index(inst),
+			friendly_name->call_index, friendly_name->uri);
+
+		if (friendly_name->call_index == BT_TBS_FREE_CALL_INDEX) {
+			LOG_DBG("URI not set");
+			ret = 0;
+		} else {
+			const size_t val_len =
+				sizeof(friendly_name->call_index) + strlen(friendly_name->uri);
+
+			ret = bt_gatt_attr_read(conn, attr, buf, len, offset, friendly_name,
+						val_len);
+		}
+	}
+
+	err = k_mutex_unlock(&inst->mutex);
+	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+
+	return ret;
 }
 
 static void friendly_name_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
@@ -1783,22 +1924,44 @@ static void friendly_name_cfg_changed(const struct bt_gatt_attr *attr, uint16_t 
 static ssize_t read_incoming_call(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
 				  uint16_t len, uint16_t offset)
 {
-	const struct tbs_inst *inst = BT_AUDIO_CHRC_USER_DATA(attr);
-	const struct bt_tbs_in_uri *remote_uri = &inst->in_call;
-	size_t val_len;
+	struct tbs_inst *inst = BT_AUDIO_CHRC_USER_DATA(attr);
+	struct tbs_flags *flags = &inst->flags[bt_conn_index(conn)];
+	ssize_t ret;
+	int err;
 
-	LOG_DBG("Index: 0x%02x call index 0x%02x, URI %s", inst_index(inst), remote_uri->call_index,
-		remote_uri->uri);
-
-	if (remote_uri->call_index == BT_TBS_FREE_CALL_INDEX) {
-		LOG_DBG("URI not set");
-
-		return bt_gatt_attr_read(conn, attr, buf, len, offset, NULL, 0);
+	err = k_mutex_lock(&inst->mutex, MUTEX_TIMEOUT);
+	if (err != 0) {
+		LOG_DBG("Failed to lock mutex");
+		return -EBUSY;
 	}
 
-	val_len = sizeof(remote_uri->call_index) + strlen(remote_uri->uri);
+	if (offset != 0 && flags->incoming_call_dirty) {
+		LOG_DBG("Value dirty for %p", (void *)conn);
+		ret = BT_GATT_ERR(BT_TBS_ERR_VAL_CHANGED);
+	} else {
+		const struct bt_tbs_in_uri *remote_uri = &inst->in_call;
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, remote_uri, val_len);
+		flags->incoming_call_dirty = false;
+
+		LOG_DBG("Index: 0x%02x call index 0x%02x, URI %s", inst_index(inst),
+			remote_uri->call_index, remote_uri->uri);
+
+		if (remote_uri->call_index == BT_TBS_FREE_CALL_INDEX) {
+			LOG_DBG("URI not set");
+
+			ret = 0;
+		} else {
+			const size_t val_len =
+				sizeof(remote_uri->call_index) + strlen(remote_uri->uri);
+
+			ret = bt_gatt_attr_read(conn, attr, buf, len, offset, remote_uri, val_len);
+		}
+	}
+
+	err = k_mutex_unlock(&inst->mutex);
+	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+
+	return ret;
 }
 
 static void in_call_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
@@ -2511,6 +2674,7 @@ static void set_incoming_call_target_bearer_uri_changed_cb(struct tbs_flags *fla
 	}
 
 	flags->incoming_call_target_bearer_uri_changed = true;
+	flags->incoming_call_target_bearer_uri_dirty = true;
 }
 
 static void set_incoming_call_changed_cb(struct tbs_flags *flags)
@@ -2520,6 +2684,7 @@ static void set_incoming_call_changed_cb(struct tbs_flags *flags)
 	}
 
 	flags->incoming_call_changed = true;
+	flags->incoming_call_dirty = true;
 }
 
 static void set_call_friendly_name_changed_cb(struct tbs_flags *flags)
@@ -2529,6 +2694,7 @@ static void set_call_friendly_name_changed_cb(struct tbs_flags *flags)
 	}
 
 	flags->call_friendly_name_changed = true;
+	flags->call_friendly_name_dirty = true;
 }
 
 static void tbs_inst_remote_incoming(struct tbs_inst *inst, const char *to, const char *from,
@@ -2609,6 +2775,7 @@ int bt_tbs_remote_incoming(uint8_t bearer_index, const char *to, const char *fro
 static void set_bearer_provider_name_changed_cb(struct tbs_flags *flags)
 {
 	flags->bearer_provider_name_changed = true;
+	flags->bearer_provider_name_dirty = true;
 }
 
 int bt_tbs_set_bearer_provider_name(uint8_t bearer_index, const char *name)
@@ -2747,6 +2914,7 @@ int bt_tbs_set_status_flags(uint8_t bearer_index, uint16_t status_flags)
 static void set_bearer_uri_schemes_supported_list_changed_cb(struct tbs_flags *flags)
 {
 	flags->bearer_uri_schemes_supported_list_changed = true;
+	flags->bearer_uri_schemes_supported_list_dirty = true;
 }
 
 int bt_tbs_set_uri_scheme_list(uint8_t bearer_index, const char **uri_list, uint8_t uri_count)

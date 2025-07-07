@@ -561,10 +561,10 @@
 					 NO_FUNC  NO_FUNC  0xf03e11 NO_FUNC>;
 			func3-en-mask = <0x04     0x08     0x02     0x02
 					 0        0        0x10     0      >;
-			func4-gcr =     <NO_FUNC NO_FUNC   NO_FUNC  NO_FUNC
-					 NO_FUNC NO_FUNC   NO_FUNC  NO_FUNC>;
-			func4-en-mask = <0       0         0        0
-					 0       0         0        0      >;
+			func4-gcr =     <0xf03e17 NO_FUNC  NO_FUNC  NO_FUNC
+					 NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC>;
+			func4-en-mask = <BIT(5)   0        0        0
+					 0        0        0        0      >;
 			volt-sel =      <0xf0164d 0xf0164d 0xf0164d 0xf0164d
 					 0xf0164d 0xf0164d 0xf0164d 0xf0164d>;
 			volt-sel-mask = <BIT(0)   BIT(1)   BIT(2)   BIT(3)

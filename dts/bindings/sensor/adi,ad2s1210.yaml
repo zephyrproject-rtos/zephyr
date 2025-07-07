@@ -1,0 +1,102 @@
+# Copyright (c) 2025 Kickmaker
+# SPDX-License-Identifier: Apache-2.0
+#
+# This file contains the binding for ad2s1210 sensor
+
+title: AD2S1210 resolution tracking resolver-to-digital converter
+
+description: |
+  The AD2S1210 is a complete 10-bit to 16-bit resolution tracking
+  resolver-to-digital converter, integrating an on-board programmable
+  sinusoidal oscillator that provides sine wave excitation for
+  resolvers.
+
+  The AD2S1210 allows the user to read the angular position or the
+  angular velocity data directly from the parallel outputs or through
+  the serial interface.
+
+  The mode of operation of the communication channel (parallel or serial) is
+  selected by the A0 and A1 input pins. In normal mode, data is latched by
+  toggling the SAMPLE line and can then be read directly. In configuration mode,
+  data is read or written using a register access scheme (address byte with
+  read/write flag and data byte).
+
+    A1  A0  Result
+     0   0  Normal mode - position output
+     0   1  Normal mode - velocity output
+     1   0  Reserved
+     1   1  Configuration mode
+
+  In normal mode, the resolution of the digital output is selected using
+  the RES0 and RES1 input pins. In configuration mode, the resolution is
+  selected by setting the RES0 and RES1 bits in the control register.
+
+  RES1  RES0  Resolution (Bits)
+     0     0  10
+     0     1  12
+     1     0  14
+     1     1  16
+
+  Note on SPI connections: The CS line on the AD2S1210 should hard-wired to
+  logic low and the WR/FSYNC line on the AD2S1210 should be connected to the
+  SPI CSn output of the SPI controller.
+
+  Datasheet:
+  https://www.analog.com/media/en/technical-documentation/data-sheets/ad2s1210.pdf
+
+compatible: "adi,ad2s1210"
+
+include: [spi-device.yaml, sensor-device.yaml]
+
+properties:
+  sample-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO connected to the /SAMPLE pin. As the line needs to be low to trigger
+      a sample, it should be configured as GPIO_ACTIVE_LOW.
+
+  mode-gpios:
+    type: phandle-array
+    required: true
+    description:
+      GPIO lines connected to the A0 and A1 pins. These pins select the data
+      transfer mode.
+
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description:
+      GPIO connected to the /RESET pin. As the line needs to be low for the
+      reset to be active, it should be configured as GPIO_ACTIVE_LOW.
+
+  resolution-gpios:
+    type: phandle-array
+    description:
+      GPIO lines connected to the RES0 and RES1 pins. These pins select the
+      resolution of the digital output. If omitted, it is assumed that the
+      RES0 and RES1 pins are hard-wired to match the assigned-resolution-bits
+      property.
+
+  fault-gpios:
+    type: phandle-array
+    description:
+      GPIO lines connected to the LOT and DOS pins. These pins combined indicate
+      the type of fault present, if any. As these pins a pulled low to indicate
+      a fault condition, they should be configured as GPIO_ACTIVE_LOW.
+
+  assigned-resolution-bits:
+    type: int
+    default: 12
+    description:
+      Resolution of the digital output required by the application. This
+      determines the precision of the angle and/or the maximum speed that can
+      be measured. If resolution-gpios is omitted, it is assumed that RES0 and
+      RES1 are hard-wired to match this value. Default resolution at power up
+      for the configuration mode is 12 bits so we are using 12 bits as default
+      here as well.
+    enum: [10, 12, 14, 16]
+
+  clock-frequency:
+    type: int
+    required: true
+    description: Frequency of the resolver clock input signal in Hz. Range is 6144000 and 10240000.

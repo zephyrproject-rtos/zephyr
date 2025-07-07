@@ -110,7 +110,7 @@ Details on the configuration settings are captured in the following files:
 - :zephyr_file:`snippets/nus-console/nus-console.conf`.
 - :zephyr_file:`snippets/nus-console/nus-console.overlay`.
 
-Segget RTT
+Segger RTT
 ==========
 
 To configure Segger RTT backend, add the following configurations to your build:
@@ -121,6 +121,27 @@ To configure Segger RTT backend, add the following configurations to your build:
 
 Details on additional configuration settings are captured in:
 :zephyr_file:`samples/subsys/shell/shell_module/prj_minimal_rtt.conf`.
+
+.. _shell_rtt_west:
+
+Using west
+-----------
+
+Attach to and configure RTT with:
+
+.. code-block:: console
+
+   $ west rtt
+
+.. note::
+
+   If your default runner does not have support for RTT, check your board's documentation page for
+   any other runners that support RTT. You may then use the ``--runner`` option to specify a
+   different runner.
+
+  .. code-block:: console
+
+     $ west rtt --runner <runner>
 
 .. _shell_rtt_putty:
 

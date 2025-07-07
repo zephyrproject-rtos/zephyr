@@ -25,17 +25,6 @@
 
 LOG_MODULE_REGISTER(LSM6DSV16X, CONFIG_SENSOR_LOG_LEVEL);
 
-bool lsm6dsv16x_is_active(const struct device *dev)
-{
-#if defined(CONFIG_PM_DEVICE)
-	enum pm_device_state state;
-	(void)pm_device_state_get(dev, &state);
-	return (state == PM_DEVICE_STATE_ACTIVE);
-#else
-	return true;
-#endif /* CONFIG_PM_DEVICE*/
-}
-
 /*
  * values taken from lsm6dsv16x_data_rate_t in hal/st module. The mode/accuracy
  * should be selected through accel-odr property in DT
@@ -165,7 +154,7 @@ static int lsm6dsv16x_accel_set_fs_raw(const struct device *dev, uint8_t fs)
 	return 0;
 }
 
-static int lsm6dsv16x_accel_set_odr_raw(const struct device *dev, uint8_t odr)
+int lsm6dsv16x_accel_set_odr_raw(const struct device *dev, uint8_t odr)
 {
 	const struct lsm6dsv16x_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
@@ -194,15 +183,17 @@ static int lsm6dsv16x_gyro_set_fs_raw(const struct device *dev, uint8_t fs)
 	return 0;
 }
 
-static int lsm6dsv16x_gyro_set_odr_raw(const struct device *dev, uint8_t odr)
+int lsm6dsv16x_gyro_set_odr_raw(const struct device *dev, uint8_t odr)
 {
 	const struct lsm6dsv16x_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	struct lsm6dsv16x_data *data = dev->data;
 
 	if (lsm6dsv16x_gy_data_rate_set(ctx, odr) < 0) {
 		return -EIO;
 	}
 
+	data->gyro_freq = odr;
 	return 0;
 }
 
@@ -435,10 +426,6 @@ static int lsm6dsv16x_attr_set(const struct device *dev,
 	struct lsm6dsv16x_data *data = dev->data;
 #endif /* CONFIG_LSM6DSV16X_SENSORHUB */
 
-	if (!lsm6dsv16x_is_active(dev)) {
-		return -EBUSY;
-	}
-
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
 		return lsm6dsv16x_accel_config(dev, chan, attr, val);
@@ -455,6 +442,10 @@ static int lsm6dsv16x_attr_set(const struct device *dev,
 
 		return lsm6dsv16x_shub_config(dev, chan, attr, val);
 #endif /* CONFIG_LSM6DSV16X_SENSORHUB */
+#ifdef CONFIG_LSM6DSV16X_STREAM
+	case SENSOR_CHAN_GBIAS_XYZ:
+		return lsm6dsv16x_gbias_config(dev, chan, attr, val);
+#endif /* CONFIG_LSM6DSV16X_STREAM */
 	default:
 		LOG_WRN("attr_set() not supported on this channel.");
 		return -ENOTSUP;
@@ -634,15 +625,15 @@ static int lsm6dsv16x_gyro_get_config(const struct device *dev,
 static int lsm6dsv16x_attr_get(const struct device *dev, enum sensor_channel chan,
 			       enum sensor_attribute attr, struct sensor_value *val)
 {
-	if (!lsm6dsv16x_is_active(dev)) {
-		return -EBUSY;
-	}
-
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
 		return lsm6dsv16x_accel_get_config(dev, chan, attr, val);
 	case SENSOR_CHAN_GYRO_XYZ:
 		return lsm6dsv16x_gyro_get_config(dev, chan, attr, val);
+#ifdef CONFIG_LSM6DSV16X_STREAM
+	case SENSOR_CHAN_GBIAS_XYZ:
+		return lsm6dsv16x_gbias_get_config(dev, chan, attr, val);
+#endif /* CONFIG_LSM6DSV16X_STREAM */
 	default:
 		LOG_WRN("attr_get() not supported on this channel.");
 		return -ENOTSUP;
@@ -713,10 +704,6 @@ static int lsm6dsv16x_sample_fetch(const struct device *dev,
 #if defined(CONFIG_LSM6DSV16X_SENSORHUB)
 	struct lsm6dsv16x_data *data = dev->data;
 #endif /* CONFIG_LSM6DSV16X_SENSORHUB */
-
-	if (!lsm6dsv16x_is_active(dev)) {
-		return -EBUSY;
-	}
 
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
@@ -989,10 +976,6 @@ static int lsm6dsv16x_channel_get(const struct device *dev,
 {
 	struct lsm6dsv16x_data *data = dev->data;
 
-	if (!lsm6dsv16x_is_active(dev)) {
-		return -EBUSY;
-	}
-
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X:
 	case SENSOR_CHAN_ACCEL_Y:
@@ -1162,7 +1145,6 @@ static int lsm6dsv16x_init_chip(const struct device *dev)
 
 	odr = cfg->gyro_odr;
 	LOG_DBG("gyro odr is %d", odr);
-	lsm6dsv16x->gyro_freq = odr;
 	if (lsm6dsv16x_gyro_set_odr_raw(dev, odr) < 0) {
 		LOG_ERR("failed to set gyroscope odr %d", odr);
 		return -EIO;
@@ -1378,8 +1360,8 @@ static int lsm6dsv16x_pm_action(const struct device *dev, enum pm_device_action 
 	static struct lsm6dsv16x_data prefix##_data_##inst =	{	\
 		IF_ENABLED(UTIL_AND(CONFIG_LSM6DSV16X_STREAM,		\
 				    CONFIG_I2C_RTIO),			\
-			(.rtio_ctx = &lsm6dsv16x_rtio_ctx_##inst,	\
-			 .iodev = &lsm6dsv16x_iodev_##inst,		\
+			(.rtio_ctx = &prefix##_rtio_ctx_##inst,	\
+			 .iodev = &prefix##_iodev_##inst,		\
 			 .bus_type = BUS_I2C,))				\
 	};								\
 	static const struct lsm6dsv16x_config prefix##_config_##inst =	\

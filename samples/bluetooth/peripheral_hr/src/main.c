@@ -37,11 +37,14 @@ static const struct bt_data sd[] = {
 };
 #endif /* !CONFIG_BT_EXT_ADV */
 
-/* Use atomic variable, 2 bits for connection and disconnection state */
-static ATOMIC_DEFINE(state, 2U);
+enum {
+	STATE_CONNECTED,
+	STATE_DISCONNECTED,
 
-#define STATE_CONNECTED    1U
-#define STATE_DISCONNECTED 2U
+	STATE_BITS,
+};
+
+static ATOMIC_DEFINE(state, STATE_BITS);
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {

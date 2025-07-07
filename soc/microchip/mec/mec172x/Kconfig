@@ -15,9 +15,6 @@ config SOC_SERIES_MEC172X
 
 if SOC_SERIES_MEC172X
 
-config RTOS_TIMER
-	bool "MEC172x RTOS Timer(32KHz) as kernel timer"
-
 choice
 	prompt "MEC172x debug interface general configuration"
 	default SOC_MEC172X_DEBUG_WITHOUT_TRACING

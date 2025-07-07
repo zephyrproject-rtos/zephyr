@@ -464,7 +464,6 @@ static const struct eth_xlnx_gem_dev_cfg eth_xlnx_gem##port##_dev_cfg = {\
 	.enable_ucast_hash		= DT_INST_PROP(port, unicast_hash),\
 	.enable_mcast_hash		= DT_INST_PROP(port, multicast_hash),\
 	.disable_bcast			= DT_INST_PROP(port, reject_broadcast),\
-	.copy_all_frames		= DT_INST_PROP(port, promiscuous_mode),\
 	.discard_non_vlan		= DT_INST_PROP(port, discard_non_vlan),\
 	.enable_fdx			= DT_INST_PROP(port, full_duplex),\
 	.disc_rx_ahb_unavail		= DT_INST_PROP(port, discard_rx_frame_ahb_unavail),\
@@ -477,7 +476,7 @@ static const struct eth_xlnx_gem_dev_cfg eth_xlnx_gem##port##_dev_cfg = {\
 /* Device run-time data declaration macro */
 #define ETH_XLNX_GEM_DEV_DATA(port) \
 static struct eth_xlnx_gem_dev_data eth_xlnx_gem##port##_dev_data = {\
-	.mac_addr        = DT_INST_PROP(port, local_mac_address),\
+	.mac_addr        = DT_INST_PROP_OR(port, local_mac_address, {0}),\
 	.started         = 0,\
 	.eff_link_speed  = LINK_DOWN,\
 	.phy_addr        = 0,\
@@ -722,7 +721,6 @@ struct eth_xlnx_gem_dev_cfg {
 	bool				enable_ucast_hash : 1;
 	bool				enable_mcast_hash : 1;
 	bool				disable_bcast : 1;
-	bool				copy_all_frames : 1;
 	bool				discard_non_vlan : 1;
 	bool				enable_fdx : 1;
 	bool				disc_rx_ahb_unavail : 1;

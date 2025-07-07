@@ -51,6 +51,8 @@ CREATE_FLAG(flag_recv_state_updated_with_bis_sync);
 CREATE_FLAG(flag_recv_state_removed);
 CREATE_FLAG(flag_broadcast_code_requested);
 CREATE_FLAG(flag_incorrect_broadcast_code);
+CREATE_FLAG(flag_remove_source_cb_called);
+CREATE_FLAG(flag_remove_source_rejected);
 
 /* Broadcaster variables */
 static bt_addr_le_t g_broadcaster_addr;
@@ -142,7 +144,7 @@ static void bap_broadcast_assistant_recv_state_cb(
 		SET_FLAG(flag_broadcast_code_requested);
 	} else if (state->encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE) {
 		SET_FLAG(flag_incorrect_broadcast_code);
-		if (memcmp(state->bad_code, INCORRECT_BROADCAST_CODE, BT_ISO_BROADCAST_CODE_SIZE) !=
+		if (memcmp(state->bad_code, BAD_BROADCAST_CODE, BT_ISO_BROADCAST_CODE_SIZE) !=
 		    0) {
 			FAIL("Bad code is not what we sent\n");
 			return;
@@ -256,8 +258,16 @@ static void bap_broadcast_assistant_broadcast_code_cb(struct bt_conn *conn, int 
 
 static void bap_broadcast_assistant_rem_src_cb(struct bt_conn *conn, int err)
 {
+	SET_FLAG(flag_remove_source_cb_called);
+
 	if (err != 0) {
-		FAIL("BASS remove source failed (%d)\n", err);
+		if (err == BT_ATT_ERR_WRITE_REQ_REJECTED) {
+			SET_FLAG(flag_remove_source_rejected);
+			printk("Remove source rejected (expected): err=%d\n", err);
+			return;
+		}
+
+		FAIL("BASS remove source failed (err %d)\n", err);
 		return;
 	}
 
@@ -690,9 +700,20 @@ static void test_bass_remove_source(void)
 	printk("Removing source\n");
 	UNSET_FLAG(flag_cb_called);
 	UNSET_FLAG(flag_write_complete);
+	UNSET_FLAG(flag_remove_source_cb_called);
+	UNSET_FLAG(flag_remove_source_rejected);
+
 	err = bt_bap_broadcast_assistant_rem_src(default_conn, recv_state.src_id);
 	if (err != 0) {
 		FAIL("Could not remove source (err %d)\n", err);
+		return;
+	}
+
+	/* Wait for the remove callback to be invoked */
+	WAIT_FOR_FLAG(flag_remove_source_cb_called);
+
+	if (TEST_FLAG(flag_remove_source_rejected)) {
+		printk("Remove source was rejected as expected\n");
 		return;
 	}
 
@@ -802,6 +823,12 @@ static void test_main_server_sync_client_rem(void)
 
 	printk("Waiting for receive state with BIS sync\n");
 	WAIT_FOR_FLAG(flag_recv_state_updated_with_bis_sync);
+
+	printk("Attempting to remove source for the first time\n");
+	test_bass_remove_source();
+
+	WAIT_FOR_FLAG(flag_remove_source_rejected);
+	printk("First remove source attempt was rejected as expected\n");
 
 	test_bass_remove_source();
 

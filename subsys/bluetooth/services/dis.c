@@ -179,7 +179,7 @@ static ssize_t read_system_id(struct bt_conn *conn, const struct bt_gatt_attr *a
 #endif
 
 #if CONFIG_BT_DIS_UDI
-#define DIS_STR_SIZE(x)           ((x[0]) != '\0' ? strlen(x) + sizeof('\0') : 0)
+#define DIS_STR_SIZE(x)           ((x[0]) != '\0' ? strlen(x) + 1 : 0)
 #define BT_DIS_UDI_FLAG_LABEL     (!!BT_DIS_UDI_LABEL_STR_REF[0])
 #define BT_DIS_UDI_FLAG_DI        (!!BT_DIS_UDI_DI_STR_REF[0])
 #define BT_DIS_UDI_FLAG_ISSUER    (!!BT_DIS_UDI_ISSUER_STR_REF[0])
@@ -196,7 +196,7 @@ static void read_udi_subval(const char *str, uint16_t val_len, char *buf, uint16
 			    uint16_t *index, uint16_t len, uint16_t offset)
 {
 	/* String should not be with included null-terminator if empty */
-	if (val_len == sizeof('\0')) {
+	if (val_len == sizeof("")) {
 		return;
 	}
 

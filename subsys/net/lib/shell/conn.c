@@ -89,6 +89,8 @@ static void conn_handler_cb(struct net_conn *conn, void *user_data)
 
 	} else if (conn->local_addr.sa_family == AF_UNSPEC) {
 		snprintk(addr_local, sizeof(addr_local), "AF_UNSPEC");
+	} else if (conn->local_addr.sa_family == AF_PACKET) {
+		snprintk(addr_local, sizeof(addr_local), "AF_PACKET");
 	} else {
 		snprintk(addr_local, sizeof(addr_local), "AF_UNK(%d)",
 			 conn->local_addr.sa_family);
@@ -145,11 +147,11 @@ static void tcp_sent_list_cb(struct tcp *conn, void *user_data)
 			details->printed_details = true;
 		}
 
-		PR("%p   %ld    %u\t %u\t  %zd\t  %d\t  %d/%d/%d %s\n",
-		   conn, atomic_get(&conn->ref_count), conn->recv_win,
-		   conn->send_win, conn->send_data_total, conn->unacked_len,
-		   conn->in_retransmission, conn->in_connect, conn->in_close,
-		   sys_slist_is_empty(&conn->send_queue) ? "empty" : "data");
+		PR("%p   %ld    %u\t %u\t  %zd\t  %d\t  %d/%d/%d %s\n", conn,
+		   atomic_get(&conn->ref_count), conn->recv_win, conn->send_win,
+		   conn->send_data_total, conn->unacked_len,
+		   conn->data_mode == TCP_DATA_MODE_RESEND ? 1 : 0, conn->in_connect,
+		   conn->in_close, sys_slist_is_empty(&conn->send_queue) ? "empty" : "data");
 
 		details->count++;
 	}

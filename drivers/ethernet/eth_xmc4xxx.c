@@ -866,7 +866,7 @@ static int eth_xmc4xxx_init(const struct device *dev)
 
 	eth_xmc4xxx_mask_unused_interrupts(dev_cfg->regs);
 
-#if !DT_INST_NODE_HAS_PROP(0, local_mac_address)
+#if DT_INST_PROP(0, zephyr_random_mac_address)
 	gen_random_mac(dev_data->mac_addr, INFINEON_OUI_B0, INFINEON_OUI_B1, INFINEON_OUI_B2);
 #endif
 	eth_xmc4xxx_set_mac_address(dev_cfg->regs, dev_data->mac_addr);
@@ -884,7 +884,7 @@ static int eth_xmc4xxx_init(const struct device *dev)
 static enum ethernet_hw_caps eth_xmc4xxx_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
-	enum ethernet_hw_caps caps =  ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T |
+	enum ethernet_hw_caps caps =  ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE |
 	       ETHERNET_HW_TX_CHKSUM_OFFLOAD | ETHERNET_HW_RX_CHKSUM_OFFLOAD;
 
 #if defined(CONFIG_PTP_CLOCK_XMC4XXX)

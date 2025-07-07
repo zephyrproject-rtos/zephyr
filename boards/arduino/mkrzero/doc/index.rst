@@ -78,6 +78,8 @@ Arduino MKR Zero, the DAC is available on pin A0.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The Arduino MKR Zero ships the BOSSA compatible bootloader.  The
 bootloader can be entered by quickly tapping the reset button twice.
 

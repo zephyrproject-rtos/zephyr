@@ -7,8 +7,10 @@
 /**
  * @file
  * @brief SPARC specific kernel interface header
+ *
  * This header contains the SPARC specific kernel interface.  It is
- * included by the generic kernel interface header (arch/cpu.h)
+ * included by the kernel interface architecture-abstraction header
+ * (include/zephyr/arch/cpu.h).
  */
 
 #ifndef ZEPHYR_INCLUDE_ARCH_SPARC_ARCH_H_

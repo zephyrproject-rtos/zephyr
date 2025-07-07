@@ -82,12 +82,13 @@ static int dma_nxp_sdma_consume(struct sdma_channel_data *chan_data, uint32_t by
 	chan_data->stat.read_position += bytes;
 	chan_data->stat.read_position %= chan_data->capacity;
 
-	if (chan_data->stat.read_position > chan_data->stat.write_position)
+	if (chan_data->stat.read_position > chan_data->stat.write_position) {
 		chan_data->stat.free = chan_data->stat.read_position -
 			chan_data->stat.write_position;
-	else
+	} else {
 		chan_data->stat.free = chan_data->capacity -
 			(chan_data->stat.write_position - chan_data->stat.read_position);
+	}
 
 	chan_data->stat.pending_length = chan_data->capacity - chan_data->stat.free;
 
@@ -102,12 +103,13 @@ static int dma_nxp_sdma_produce(struct sdma_channel_data *chan_data, uint32_t by
 	chan_data->stat.write_position += bytes;
 	chan_data->stat.write_position %= chan_data->capacity;
 
-	if (chan_data->stat.write_position > chan_data->stat.read_position)
+	if (chan_data->stat.write_position > chan_data->stat.read_position) {
 		chan_data->stat.pending_length = chan_data->stat.write_position -
 			chan_data->stat.read_position;
-	else
+	} else {
 		chan_data->stat.pending_length = chan_data->capacity -
 			(chan_data->stat.read_position - chan_data->stat.write_position);
+	}
 
 	chan_data->stat.free = chan_data->capacity - chan_data->stat.pending_length;
 
@@ -234,6 +236,8 @@ static void dma_nxp_sdma_setup_bd(const struct device *dev, uint32_t channel,
 	int i;
 
 	chan_data = &dev_data->chan[channel];
+
+	chan_data->capacity = 0;
 
 	/* initialize bd pool */
 	chan_data->bd_pool = &dev_data->bd_pool[channel][0];
@@ -372,11 +376,14 @@ static int dma_nxp_sdma_get_status(const struct device *dev, uint32_t channel,
 {
 	struct sdma_dev_data *dev_data = dev->data;
 	struct sdma_channel_data *chan_data;
+	unsigned int key;
 
 	chan_data = &dev_data->chan[channel];
 
+	key = irq_lock();
 	stat->free = chan_data->stat.free;
 	stat->pending_length = chan_data->stat.pending_length;
+	irq_unlock(key);
 
 	return 0;
 }
@@ -386,16 +393,21 @@ static int dma_nxp_sdma_reload(const struct device *dev, uint32_t channel, uint3
 {
 	struct sdma_dev_data *dev_data = dev->data;
 	struct sdma_channel_data *chan_data;
+	unsigned int key;
 
 	chan_data = &dev_data->chan[channel];
 
-	if (!size)
+	if (!size) {
 		return 0;
+	}
 
-	if (chan_data->direction == MEMORY_TO_PERIPHERAL)
+	key = irq_lock();
+	if (chan_data->direction == MEMORY_TO_PERIPHERAL) {
 		dma_nxp_sdma_produce(chan_data, size);
-	else
+	} else {
 		dma_nxp_sdma_consume(chan_data, size);
+	}
+	irq_unlock(key);
 
 	return 0;
 }
@@ -424,14 +436,17 @@ static bool sdma_channel_filter(const struct device *dev, int chan_id, void *par
 	struct sdma_dev_data *dev_data = dev->data;
 
 	/* chan 0 is reserved for boot channel */
-	if (chan_id == 0)
+	if (chan_id == 0) {
 		return false;
+	}
 
-	if (chan_id >= FSL_FEATURE_SDMA_MODULE_CHANNEL)
+	if (chan_id >= FSL_FEATURE_SDMA_MODULE_CHANNEL) {
 		return false;
+	}
 
 	dev_data->chan[chan_id].event_source = *((int *)param);
 	dev_data->chan[chan_id].index = chan_id;
+	dev_data->chan[chan_id].capacity = 0;
 
 	return true;
 }
@@ -487,7 +502,7 @@ static int dma_nxp_sdma_init(const struct device *dev)
 			    dma_nxp_sdma_isr, DEVICE_DT_INST_GET(inst), 0);	\
 		irq_enable(DT_INST_IRQN(inst));				\
 	}								\
-	DEVICE_DT_INST_DEFINE(inst, &dma_nxp_sdma_init, NULL,		\
+	DEVICE_DT_INST_DEFINE(inst, dma_nxp_sdma_init, NULL,		\
 			      &sdma_data_##inst, &sdma_cfg_##inst,	\
 			      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,	\
 			      &sdma_api);				\

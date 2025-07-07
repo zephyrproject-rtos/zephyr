@@ -2,6 +2,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/kernel.h>
+#include <ksched.h>
 #include <cavs-idc.h>
 #include <adsp_memory.h>
 #include <adsp_shim.h>

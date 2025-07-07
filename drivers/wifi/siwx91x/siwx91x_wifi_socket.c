@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2023 Antmicro
- * Copyright (c) 2024 Silicon Laboratories Inc.
+ * Copyright (c) 2024-2025 Silicon Laboratories Inc.
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/net/net_offload.h>
@@ -19,8 +19,8 @@
 
 LOG_MODULE_DECLARE(siwx91x_wifi);
 
-BUILD_ASSERT(NUMBER_OF_SOCKETS < sizeof(uint32_t) * 8);
-BUILD_ASSERT(NUMBER_OF_SOCKETS < SIZEOF_FIELD(sl_si91x_fd_set, __fds_bits) * 8);
+BUILD_ASSERT(SLI_NUMBER_OF_SOCKETS < sizeof(uint32_t) * 8);
+BUILD_ASSERT(SLI_NUMBER_OF_SOCKETS < SIZEOF_FIELD(sl_si91x_fdset_t, __fds_bits) * 8);
 
 NET_BUF_POOL_FIXED_DEFINE(siwx91x_tx_pool, 1, NET_ETH_MTU, 0, NULL);
 NET_BUF_POOL_FIXED_DEFINE(siwx91x_rx_pool, 10, NET_ETH_MTU, 0, NULL);
@@ -70,13 +70,13 @@ void siwx91x_on_join_ipv4(struct siwx91x_dev *sidev)
 	}
 	/* FIXME: support for static IP configuration */
 	ret = sl_si91x_configure_ip_address(&ip_config4, SL_SI91X_WIFI_CLIENT_VAP_ID);
-	if (!ret) {
-		memcpy(addr4.s4_addr, ip_config4.ip.v4.ip_address.bytes, sizeof(addr4.s4_addr));
-		/* FIXME: also report gateway (net_if_ipv4_router_add()) */
-		net_if_ipv4_addr_add(sidev->iface, &addr4, NET_ADDR_DHCP, 0);
-	} else {
+	if (ret) {
 		LOG_ERR("sl_si91x_configure_ip_address(): %#04x", ret);
+		return;
 	}
+	memcpy(addr4.s4_addr, ip_config4.ip.v4.ip_address.bytes, sizeof(addr4.s4_addr));
+	/* FIXME: also report gateway (net_if_ipv4_router_add()) */
+	net_if_ipv4_addr_add(sidev->iface, &addr4, NET_ADDR_DHCP, 0);
 }
 
 void siwx91x_on_join_ipv6(struct siwx91x_dev *sidev)
@@ -93,19 +93,19 @@ void siwx91x_on_join_ipv6(struct siwx91x_dev *sidev)
 	}
 	/* FIXME: support for static IP configuration */
 	ret = sl_si91x_configure_ip_address(&ip_config6, SL_SI91X_WIFI_CLIENT_VAP_ID);
-	if (!ret) {
-		ARRAY_FOR_EACH(addr6.s6_addr32, i) {
-			addr6.s6_addr32[i] = ntohl(ip_config6.ip.v6.global_address.value[i]);
-		}
-		/* SiWx91x already take care of DAD and sending ND is not
-		 * supported anyway.
-		 */
-		net_if_flag_set(sidev->iface, NET_IF_IPV6_NO_ND);
-		/* FIXME: also report gateway and link local address */
-		net_if_ipv6_addr_add(sidev->iface, &addr6, NET_ADDR_AUTOCONF, 0);
-	} else {
+	if (ret) {
 		LOG_ERR("sl_si91x_configure_ip_address(): %#04x", ret);
+		return;
 	}
+	ARRAY_FOR_EACH(addr6.s6_addr32, i) {
+		addr6.s6_addr32[i] = ntohl(ip_config6.ip.v6.global_address.value[i]);
+	}
+	/* SiWx91x already take care of DAD and sending ND is not
+	 * supported anyway.
+	 */
+	net_if_flag_set(sidev->iface, NET_IF_IPV6_NO_ND);
+	/* FIXME: also report gateway and link local address */
+	net_if_ipv6_addr_add(sidev->iface, &addr6, NET_ADDR_AUTOCONF, 0);
 }
 
 static int siwx91x_sock_recv_sync(struct net_context *context,
@@ -143,8 +143,8 @@ static int siwx91x_sock_recv_sync(struct net_context *context,
 	return ret;
 }
 
-static void siwx91x_sock_on_recv(sl_si91x_fd_set *read_fd, sl_si91x_fd_set *write_fd,
-				 sl_si91x_fd_set *except_fd, int status)
+static void siwx91x_sock_on_recv(sl_si91x_fdset_t *read_fd, sl_si91x_fdset_t *write_fd,
+				 sl_si91x_fdset_t *except_fd, int status)
 {
 	/* When CONFIG_NET_SOCKETS_OFFLOAD is set, only one interface exist */
 	struct siwx91x_dev *sidev = net_if_get_first_wifi()->if_dev->dev->data;
@@ -162,7 +162,7 @@ static void siwx91x_sock_on_recv(sl_si91x_fd_set *read_fd, sl_si91x_fd_set *writ
 		}
 	}
 
-	sl_si91x_select(NUMBER_OF_SOCKETS, &sidev->fds_watch, NULL, NULL, NULL,
+	sl_si91x_select(SLI_NUMBER_OF_SOCKETS, &sidev->fds_watch, NULL, NULL, NULL,
 			siwx91x_sock_on_recv);
 }
 
@@ -189,7 +189,7 @@ static int siwx91x_sock_put(struct net_context *context)
 
 	SL_SI91X_FD_CLR(sockfd, &sidev->fds_watch);
 	memset(&sidev->fds_cb[sockfd], 0, sizeof(sidev->fds_cb[sockfd]));
-	sl_si91x_select(NUMBER_OF_SOCKETS, &sidev->fds_watch, NULL, NULL, NULL,
+	sl_si91x_select(SLI_NUMBER_OF_SOCKETS, &sidev->fds_watch, NULL, NULL, NULL,
 			siwx91x_sock_on_recv);
 	ret = sl_si91x_shutdown(sockfd, 0);
 	if (ret < 0) {
@@ -221,7 +221,7 @@ static int siwx91x_sock_bind(struct net_context *context,
 	/* WiseConnect refuses to run select on TCP listening sockets */
 	if (net_context_get_proto(context) == IPPROTO_UDP) {
 		SL_SI91X_FD_SET(sockfd, &sidev->fds_watch);
-		sl_si91x_select(NUMBER_OF_SOCKETS, &sidev->fds_watch, NULL, NULL, NULL,
+		sl_si91x_select(SLI_NUMBER_OF_SOCKETS, &sidev->fds_watch, NULL, NULL, NULL,
 				siwx91x_sock_on_recv);
 	}
 	return 0;
@@ -243,7 +243,7 @@ static int siwx91x_sock_connect(struct net_context *context,
 		ret = -errno;
 	}
 	SL_SI91X_FD_SET(sockfd, &sidev->fds_watch);
-	sl_si91x_select(NUMBER_OF_SOCKETS, &sidev->fds_watch, NULL, NULL, NULL,
+	sl_si91x_select(SLI_NUMBER_OF_SOCKETS, &sidev->fds_watch, NULL, NULL, NULL,
 			siwx91x_sock_on_recv);
 	net_context_set_state(context, NET_CONTEXT_CONNECTED);
 	if (cb) {
@@ -301,7 +301,7 @@ static int siwx91x_sock_accept(struct net_context *context,
 	siwx91x_sockaddr_swap_bytes(&newcontext->remote, &addr_le, sizeof(addr_le));
 
 	SL_SI91X_FD_SET(ret, &sidev->fds_watch);
-	sl_si91x_select(NUMBER_OF_SOCKETS, &sidev->fds_watch, NULL, NULL, NULL,
+	sl_si91x_select(SLI_NUMBER_OF_SOCKETS, &sidev->fds_watch, NULL, NULL, NULL,
 			siwx91x_sock_on_recv);
 	if (cb) {
 		cb(newcontext, &addr_le, sizeof(addr_le), 0, user_data);
@@ -388,7 +388,7 @@ static int siwx91x_sock_recv(struct net_context *context,
 		SL_SI91X_FD_SET(sockfd, &sidev->fds_watch);
 	}
 
-	sl_si91x_select(NUMBER_OF_SOCKETS, &sidev->fds_watch, NULL, NULL, NULL,
+	sl_si91x_select(SLI_NUMBER_OF_SOCKETS, &sidev->fds_watch, NULL, NULL, NULL,
 			siwx91x_sock_on_recv);
 	return ret;
 }

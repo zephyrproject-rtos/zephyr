@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/logging/log_frontend_stmesp_demux.h>
+#include <zephyr/logging/log_frontend_stmesp.h>
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/sys/mpsc_pbuf.h>
 #include <zephyr/sys/__assert.h>
@@ -43,9 +44,25 @@ struct log_frontend_stmesp_demux_active_entry {
 	int off;
 };
 
-struct log_frontend_stmesp_coop_sources {
+/* Coprocessors (FLPR, PPR) sends location where APP can find strings and logging
+ * source names utilizing the fact that APP has access to FLPR/PPR memory if it is
+ * an owner of that coprocessor. During the initialization FLPR/PPR sends 2 DMTS32
+ * to the specific channel. First word is an address where logging source constant
+ * data section is located and second is where a section with addresses to constant
+ * strings used for logging is located.
+ */
+struct log_frontend_stmesp_coproc_sources {
 	uint32_t m_id;
-	const struct log_source_const_data *log_const;
+	uint32_t data_cnt;
+	union {
+		struct {
+			const struct log_source_const_data *log_const;
+			uintptr_t *log_str_section;
+		} data;
+		struct {
+			uintptr_t data[2];
+		} raw_data;
+	};
 };
 
 struct log_frontend_stmesp_demux {
@@ -72,7 +89,7 @@ struct log_frontend_stmesp_demux {
 
 	uint32_t dropped;
 
-	struct log_frontend_stmesp_coop_sources coop_sources[2];
+	struct log_frontend_stmesp_coproc_sources coproc_sources[2];
 };
 
 struct log_frontend_stmesp_entry_source_pair {
@@ -404,10 +421,33 @@ const char *log_frontend_stmesp_demux_sname_get(uint32_t m_id, uint16_t s_id)
 
 	if (demux.m_ids[m_id] == APP_M_ID) {
 		return log_source_name_get(0, s_id);
-	} else if (m_id == demux.coop_sources[0].m_id) {
-		return demux.coop_sources[0].log_const[s_id].name;
-	} else if (m_id == demux.coop_sources[1].m_id) {
-		return demux.coop_sources[1].log_const[s_id].name;
+	} else if (m_id == demux.coproc_sources[0].m_id) {
+		return demux.coproc_sources[0].data.log_const[s_id].name;
+	} else if (m_id == demux.coproc_sources[1].m_id) {
+		return demux.coproc_sources[1].data.log_const[s_id].name;
+	}
+
+	return "unknown";
+}
+
+const char *log_frontend_stmesp_demux_str_get(uint32_t m_id, uint16_t s_id)
+{
+	if (!IS_ENABLED(CONFIG_LOG_FRONTEND_STMESP_TURBO_LOG)) {
+		return "";
+	}
+
+	uintptr_t *log_str_start = NULL;
+
+	if (demux.m_ids[m_id] == APP_M_ID) {
+		log_str_start = (uintptr_t *)TYPE_SECTION_START(log_stmesp_ptr);
+	} else if (m_id == demux.coproc_sources[0].m_id) {
+		log_str_start = demux.coproc_sources[0].data.log_str_section;
+	} else if (m_id == demux.coproc_sources[1].m_id) {
+		log_str_start = demux.coproc_sources[1].data.log_str_section;
+	}
+
+	if (log_str_start) {
+		return (const char *)log_str_start[s_id];
 	}
 
 	return "unknown";
@@ -439,15 +479,16 @@ int log_frontend_stmesp_demux_packet_start(uint32_t *data, uint64_t *ts)
 
 	if (IS_ENABLED(CONFIG_LOG_FRONTEND_STMESP_TURBO_LOG) &&
 	    (ch == CONFIG_LOG_FRONTEND_STPESP_TURBO_SOURCE_PORT_ID)) {
-		if (demux.m_ids[m] == FLPR_M_ID) {
-			demux.coop_sources[0].m_id = m;
-			demux.coop_sources[0].log_const =
-				(const struct log_source_const_data *)(uintptr_t)*data;
-		} else if (demux.m_ids[m] == PPR_M_ID) {
-			demux.coop_sources[1].m_id = m;
-			demux.coop_sources[1].log_const =
-				(const struct log_source_const_data *)(uintptr_t)*data;
+		struct log_frontend_stmesp_coproc_sources *src =
+			&demux.coproc_sources[demux.m_ids[m] == FLPR_M_ID ? 0 : 1];
+
+		if (src->data_cnt >= 2) {
+			/* Unexpected packet. */
+			return -EINVAL;
 		}
+
+		src->m_id = m;
+		src->raw_data.data[src->data_cnt++] = (uintptr_t)*data;
 		return 0;
 	}
 

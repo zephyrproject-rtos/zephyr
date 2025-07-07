@@ -45,6 +45,13 @@ int main(void)
 	int res;
 	int64_t req_start_uptime;
 	int64_t req_stop_uptime;
+	struct nrf_clock_spec res_spec;
+	const struct nrf_clock_spec req_spec = {
+		.frequency = CONFIG_SAMPLE_CLOCK_FREQUENCY_HZ,
+		.accuracy = CONFIG_SAMPLE_CLOCK_ACCURACY_PPM,
+		.precision = CONFIG_SAMPLE_CLOCK_PRECISION,
+	};
+	uint32_t startup_time_us;
 
 	printk("\n");
 	printk("clock name: %s\n", SAMPLE_CLOCK_NAME);
@@ -52,11 +59,29 @@ int main(void)
 	printk("minimum accuracy request: %uPPM\n", CONFIG_SAMPLE_CLOCK_ACCURACY_PPM);
 	printk("minimum precision request: %u\n", CONFIG_SAMPLE_CLOCK_PRECISION);
 
-	const struct nrf_clock_spec spec = {
-		.frequency = CONFIG_SAMPLE_CLOCK_FREQUENCY_HZ,
-		.accuracy = CONFIG_SAMPLE_CLOCK_ACCURACY_PPM,
-		.precision = CONFIG_SAMPLE_CLOCK_PRECISION,
-	};
+	printk("\n");
+	ret = nrf_clock_control_resolve(sample_clock_dev, &req_spec, &res_spec);
+	if (ret == 0) {
+		printk("resolved frequency request: %uHz\n", res_spec.frequency);
+		printk("resolved accuracy request: %uPPM\n", res_spec.accuracy);
+		printk("resolved precision request: %u\n", res_spec.precision);
+	} else if (ret == -ENOSYS) {
+		printk("resolve not supported\n");
+	} else {
+		printk("minimum clock specs could not be resolved\n");
+		return 0;
+	}
+
+	printk("\n");
+	ret = nrf_clock_control_get_startup_time(sample_clock_dev, &req_spec, &startup_time_us);
+	if (ret == 0) {
+		printk("startup time for requested spec: %uus\n", startup_time_us);
+	} else if (ret == -ENOSYS) {
+		printk("get startup time not supported\n");
+	} else {
+		printk("failed to get startup time\n");
+		return 0;
+	}
 
 	sys_notify_init_callback(&cli.notify, sample_notify_cb);
 
@@ -65,7 +90,7 @@ int main(void)
 	printk("\n");
 	printk("requesting minimum clock specs\n");
 	req_start_uptime = k_uptime_get();
-	ret = nrf_clock_control_request(sample_clock_dev, &spec, &cli);
+	ret = nrf_clock_control_request(sample_clock_dev, &req_spec, &cli);
 	if (ret < 0) {
 		printk("minimum clock specs could not be met\n");
 		return 0;
@@ -95,7 +120,7 @@ int main(void)
 
 	printk("\n");
 	printk("releasing requested clock specs\n");
-	ret = nrf_clock_control_release(sample_clock_dev, &spec);
+	ret = nrf_clock_control_release(sample_clock_dev, &req_spec);
 	if (ret < 0) {
 		printk("failed to release requested clock specs\n");
 		return 0;

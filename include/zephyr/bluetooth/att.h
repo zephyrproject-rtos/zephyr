@@ -17,8 +17,12 @@
  * @{
  */
 
-#include <zephyr/sys/slist.h>
+#include <stdint.h>
+#include <stddef.h>
+
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util_macro.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -118,6 +122,8 @@ extern "C" {
 #if defined(CONFIG_BT_ATT_ERR_TO_STR)
 const char *bt_att_err_to_str(uint8_t att_err);
 #else
+#include <zephyr/toolchain.h>
+
 static inline const char *bt_att_err_to_str(uint8_t att_err)
 {
 	ARG_UNUSED(att_err);
@@ -143,7 +149,7 @@ int bt_eatt_reconfigure(struct bt_conn *conn, uint16_t mtu);
  * may be created.
  *
  * @param conn The connection to send the request on
- * @param num_channels The number of Enhanced ATT beares to request.
+ * @param num_channels The number of Enhanced ATT bearers to request.
  * Must be in the range 1 - @kconfig{CONFIG_BT_EATT_MAX}, inclusive.
  *
  * @return 0 in case of success or negative value in case of error.

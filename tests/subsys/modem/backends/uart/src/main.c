@@ -25,6 +25,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef CONFIG_TEST_HW_FLOW_CONTROL
+#define TEST_BACKEND_RECEIVE_BUFFER_SIZE 256
+#else
+#define TEST_BACKEND_RECEIVE_BUFFER_SIZE 4096
+#endif
+
 /*************************************************************************************************/
 /*                                          Mock pipe                                            */
 /*************************************************************************************************/
@@ -36,7 +42,7 @@ K_SEM_DEFINE(receive_ready_sem, 0, 1);
 /*************************************************************************************************/
 /*                                          Buffers                                              */
 /*************************************************************************************************/
-static uint8_t backend_receive_buffer[4096];
+static uint8_t backend_receive_buffer[TEST_BACKEND_RECEIVE_BUFFER_SIZE];
 static uint8_t backend_transmit_buffer[4096];
 RING_BUF_DECLARE(transmit_ring_buf, 4096);
 static uint8_t receive_buffer[4096];
@@ -131,21 +137,32 @@ static int transmit_prng(uint32_t remaining)
 
 static int receive_prng(void)
 {
-	int ret = 0;
+	int ret;
 
-	if (k_sem_take(&receive_ready_sem, K_NO_WAIT) == 0) {
-		ret = modem_pipe_receive(pipe, receive_buffer, sizeof(receive_buffer));
-		if (ret < 0) {
-			return -EFAULT;
-		}
-		for (uint32_t i = 0; i < (uint32_t)ret; i++) {
-			if (receive_prng_random() != receive_buffer[i]) {
-				return -EFAULT;
-			}
-		}
-		printk("RX: %u\n", (uint32_t)ret);
+	if (k_sem_take(&receive_ready_sem, K_SECONDS(1))) {
+		return -ETIMEDOUT;
 	}
 
+	if (IS_ENABLED(CONFIG_TEST_HW_FLOW_CONTROL)) {
+		k_msleep(100);
+	}
+
+	ret = modem_pipe_receive(pipe, receive_buffer, sizeof(receive_buffer));
+	if (ret == 0) {
+		return -ENODATA;
+	}
+
+	if (ret < 0) {
+		return -EFAULT;
+	}
+
+	for (uint32_t i = 0; i < (uint32_t)ret; i++) {
+		if (receive_prng_random() != receive_buffer[i]) {
+			return -EFAULT;
+		}
+	}
+
+	printk("RX: %u\n", (uint32_t)ret);
 	return ret;
 }
 
@@ -157,9 +174,9 @@ static void *test_modem_backend_uart_setup(void)
 	const struct modem_backend_uart_config config = {
 		.uart = uart,
 		.receive_buf = backend_receive_buffer,
-		.receive_buf_size = 1024,
+		.receive_buf_size = sizeof(backend_receive_buffer),
 		.transmit_buf = backend_transmit_buffer,
-		.transmit_buf_size = 1024,
+		.transmit_buf_size = sizeof(backend_transmit_buffer),
 	};
 
 	pipe = modem_backend_uart_init(&uart_backend, &config);
@@ -172,12 +189,12 @@ static void test_modem_backend_uart_before(void *f)
 	prng_reset();
 	ring_buf_reset(&transmit_ring_buf);
 	k_sem_reset(&receive_ready_sem);
-	__ASSERT_NO_MSG(modem_pipe_open(pipe, K_SECONDS(10)) == 0);
+	__ASSERT_NO_MSG(modem_pipe_open(pipe, K_SECONDS(1)) == 0);
 }
 
 static void test_modem_backend_uart_after(void *f)
 {
-	__ASSERT_NO_MSG(modem_pipe_close(pipe, K_SECONDS(10)) == 0);
+	__ASSERT_NO_MSG(modem_pipe_close(pipe, K_SECONDS(1)) == 0);
 }
 
 /*************************************************************************************************/
@@ -201,7 +218,6 @@ ZTEST(modem_backend_uart_suite, test_transmit_receive)
 			ret = receive_prng();
 			zassert(ret > -1, "Received data is corrupted");
 			received += (uint32_t)ret;
-			k_yield();
 		}
 	}
 }

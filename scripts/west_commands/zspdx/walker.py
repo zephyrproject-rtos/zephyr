@@ -3,22 +3,32 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import os
-import yaml
 import re
 
+import yaml
 from west import log
-from west.util import west_topdir, WestNotFound
+from west.util import WestNotFound, west_topdir
 
+import zspdx.spdxids
 from zspdx.cmakecache import parseCMakeCacheFile
 from zspdx.cmakefileapijson import parseReply
-from zspdx.datatypes import DocumentConfig, Document, File, PackageConfig, Package, RelationshipDataElementType, RelationshipData, Relationship
+from zspdx.datatypes import (
+    Document,
+    DocumentConfig,
+    File,
+    Package,
+    PackageConfig,
+    Relationship,
+    RelationshipData,
+    RelationshipDataElementType,
+)
 from zspdx.getincludes import getCIncludes
-import zspdx.spdxids
+
 
 # WalkerConfig contains configuration data for the Walker.
 class WalkerConfig:
     def __init__(self):
-        super(WalkerConfig, self).__init__()
+        super().__init__()
 
         # prefix for Document namespaces; should not end with "/"
         self.namespacePrefix = ""
@@ -38,7 +48,7 @@ class WalkerConfig:
 class Walker:
     # initialize with WalkerConfig
     def __init__(self, cfg):
-        super(Walker, self).__init__()
+        super().__init__()
 
         # configuration - WalkerConfig
         self.cfg = cfg
@@ -231,7 +241,8 @@ class Walker:
         try:
             relativeBaseDir = west_topdir(self.cm.paths_source)
         except WestNotFound:
-            log.err(f"cannot find west_topdir for CMake Codemodel sources path {self.cm.paths_source}; bailing")
+            log.err("cannot find west_topdir for CMake Codemodel sources path "
+                    f"{self.cm.paths_source}; bailing")
             return False
 
         # set up zephyr sources package
@@ -278,7 +289,7 @@ class Walker:
             module_revision = module.get("revision", None)
 
             if not module_name:
-                log.err(f"cannot find module name in meta file; bailing")
+                log.err("cannot find module name in meta file; bailing")
                 return False
 
             # set up zephyr sources package
@@ -342,7 +353,7 @@ class Walker:
             module_security = module.get("security", None)
 
             if not module_name:
-                log.err(f"cannot find module name in meta file; bailing")
+                log.err("cannot find module name in meta file; bailing")
                 return False
 
             module_ext_ref = []
@@ -375,7 +386,7 @@ class Walker:
                 if not self.setupZephyrDocument(content["zephyr"], content["modules"]):
                     return False
         except (FileNotFoundError, yaml.YAMLError):
-            log.err(f"cannot find a valid zephyr_meta.yml required for SPDX generation; bailing")
+            log.err("cannot find a valid zephyr_meta.yml required for SPDX generation; bailing")
             return False
 
         self.setupAppDocument()
@@ -446,7 +457,8 @@ class Walker:
 
         # don't create build File if artifact path points to nonexistent file
         if not os.path.exists(artifactPath):
-            log.dbg(f"  - target {cfgTarget.name} lists build artifact {artifactPath} but file not found after build; skipping")
+            log.dbg(f"  - target {cfgTarget.name} lists build artifact {artifactPath} "
+                    "but file not found after build; skipping")
             return None
 
         # create build File
@@ -454,7 +466,8 @@ class Walker:
         bf.abspath = artifactPath
         bf.relpath = cfgTarget.target.artifacts[0]
         # can use nameOnDisk b/c it is just the filename w/out directory paths
-        bf.spdxID = zspdx.spdxids.getUniqueFileID(cfgTarget.target.nameOnDisk, self.docBuild.timesSeen)
+        bf.spdxID = zspdx.spdxids.getUniqueFileID(cfgTarget.target.nameOnDisk,
+                                                  self.docBuild.timesSeen)
         # don't fill hashes / licenses / rlns now, we'll do that after walking
 
         # add File to Package
@@ -476,7 +489,7 @@ class Walker:
     #   2) Package for that target
     #   3) build File for that target
     def collectPendingSourceFiles(self, cfgTarget, pkg, bf):
-        log.dbg(f"  - collecting source files and adding to pending queue")
+        log.dbg("  - collecting source files and adding to pending queue")
 
         targetIncludesSet = set()
 
@@ -490,7 +503,8 @@ class Walker:
 
             # check whether it even exists
             if not (os.path.exists(srcAbspath) and os.path.isfile(srcAbspath)):
-                log.dbg(f"  - {srcAbspath} does not exist but is referenced in sources for target {pkg.cfg.name}; skipping")
+                log.dbg(f"  - {srcAbspath} does not exist but is referenced in sources for "
+                        f"target {pkg.cfg.name}; skipping")
                 continue
 
             # add it to pending source files queue
@@ -543,13 +557,17 @@ class Walker:
     def collectIncludes(self, cfgTarget, pkg, bf, src):
         # get the right compile group for this source file
         if len(cfgTarget.target.compileGroups) < (src.compileGroupIndex + 1):
-            log.dbg(f"    - {cfgTarget.target.name} has compileGroupIndex {src.compileGroupIndex} but only {len(cfgTarget.target.compileGroups)} found; skipping included files search")
+            log.dbg(f"    - {cfgTarget.target.name} has compileGroupIndex {src.compileGroupIndex} "
+                    f"but only {len(cfgTarget.target.compileGroups)} found; "
+                    "skipping included files search")
             return []
         cg = cfgTarget.target.compileGroups[src.compileGroupIndex]
 
         # currently only doing C includes
         if cg.language != "C":
-            log.dbg(f"    - {cfgTarget.target.name} has compile group language {cg.language} but currently only searching includes for C files; skipping included files search")
+            log.dbg(f"    - {cfgTarget.target.name} has compile group language {cg.language} "
+                    "but currently only searching includes for C files; "
+                    "skipping included files search")
             return []
 
         srcAbspath = src.path
@@ -619,7 +637,7 @@ class Walker:
     # walk through pending sources and create corresponding files,
     # assigning them to the appropriate Document and Package
     def walkPendingSources(self):
-        log.dbg(f"walking pending sources")
+        log.dbg("walking pending sources")
 
         # only one package in each doc; get it
         pkgZephyr = list(self.docZephyr.pkgs.values())[0]
@@ -640,14 +658,22 @@ class Walker:
             pkgZephyr = self.findZephyrPackage(srcAbspath)
 
             if pkgBuild:
-                log.dbg(f"  - {srcAbspath}: assigning to build document, package {pkgBuild.cfg.name}")
+                log.dbg(f"  - {srcAbspath}: assigning to build document, "
+                        f"package {pkgBuild.cfg.name}")
                 srcDoc = self.docBuild
                 srcPkg = pkgBuild
-            elif self.cfg.includeSDK and os.path.commonpath([srcAbspath, pkgSDK.cfg.relativeBaseDir]) == pkgSDK.cfg.relativeBaseDir:
+            elif (
+                self.cfg.includeSDK
+                and os.path.commonpath([srcAbspath, pkgSDK.cfg.relativeBaseDir])
+                == pkgSDK.cfg.relativeBaseDir
+            ):
                 log.dbg(f"  - {srcAbspath}: assigning to sdk document")
                 srcDoc = self.docSDK
                 srcPkg = pkgSDK
-            elif os.path.commonpath([srcAbspath, pkgApp.cfg.relativeBaseDir]) == pkgApp.cfg.relativeBaseDir:
+            elif (
+                os.path.commonpath([srcAbspath, pkgApp.cfg.relativeBaseDir])
+                == pkgApp.cfg.relativeBaseDir
+            ):
                 log.dbg(f"  - {srcAbspath}: assigning to app document")
                 srcDoc = self.docApp
                 srcPkg = pkgApp
@@ -718,7 +744,9 @@ class Walker:
             rln.refB = spdxIDB
             rln.rlnType = rlnData.rlnType
             rlnsA.append(rln)
-            log.dbg(f"  - adding relationship to {docA.cfg.name}: {rln.refA} {rln.rlnType} {rln.refB}")
+            log.dbg(
+                f"  - adding relationship to {docA.cfg.name}: {rln.refA} {rln.rlnType} {rln.refB}"
+            )
 
     # get owner (left side) document and SPDX ID of Relationship for given RelationshipData
     # returns: doc, spdxID, rlnsArray (for either Document, Package, or File, as applicable)
@@ -727,15 +755,24 @@ class Walker:
             # find the document for this file abspath, and then the specific file's ID
             ownerDoc = self.allFileLinks.get(rlnData.ownerFileAbspath, None)
             if not ownerDoc:
-                log.dbg(f"  - searching for relationship, can't find document with file {rlnData.ownerFileAbspath}; skipping")
+                log.dbg(
+                    "  - searching for relationship, can't find document with file "
+                    f"{rlnData.ownerFileAbspath}; skipping"
+                )
                 return None, None, None
             sf = ownerDoc.fileLinks.get(rlnData.ownerFileAbspath, None)
             if not sf:
-                log.dbg(f"  - searching for relationship for file {rlnData.ownerFileAbspath} points to document {ownerDoc.cfg.name} but file not found; skipping")
+                log.dbg(
+                    f"  - searching for relationship for file {rlnData.ownerFileAbspath} "
+                    f"points to document {ownerDoc.cfg.name} but file not found; skipping"
+                )
                 return None, None, None
             # found it
             if not sf.spdxID:
-                log.dbg(f"  - searching for relationship for file {rlnData.ownerFileAbspath} found file, but empty ID; skipping")
+                log.dbg(
+                    f"  - searching for relationship for file {rlnData.ownerFileAbspath} "
+                    "found file, but empty ID; skipping"
+                )
                 return None, None, None
             return ownerDoc, sf.spdxID, sf.rlns
         elif rlnData.ownerType == RelationshipDataElementType.TARGETNAME:
@@ -746,10 +783,16 @@ class Walker:
             for pkg in ownerDoc.pkgs.values():
                 if pkg.cfg.name == rlnData.ownerTargetName:
                     if not pkg.cfg.spdxID:
-                        log.dbg(f"  - searching for relationship for target {rlnData.ownerTargetName} found package, but empty ID; skipping")
+                        log.dbg(
+                            "  - searching for relationship for target "
+                            f"{rlnData.ownerTargetName} found package, but empty ID; skipping"
+                        )
                         return None, None, None
                     return ownerDoc, pkg.cfg.spdxID, pkg.rlns
-            log.dbg(f"  - searching for relationship for target {rlnData.ownerTargetName}, target not found in build document; skipping")
+            log.dbg(
+                f"  - searching for relationship for target {rlnData.ownerTargetName}, "
+                "target not found in build document; skipping"
+            )
             return None, None, None
         elif rlnData.ownerType == RelationshipDataElementType.DOCUMENT:
             # will always be SPDXRef-DOCUMENT
@@ -764,15 +807,24 @@ class Walker:
             # find the document for this file abspath, and then the specific file's ID
             otherDoc = self.allFileLinks.get(rlnData.otherFileAbspath, None)
             if not otherDoc:
-                log.dbg(f"  - searching for relationship, can't find document with file {rlnData.otherFileAbspath}; skipping")
+                log.dbg(
+                    "  - searching for relationship, can't find document with file "
+                    f"{rlnData.otherFileAbspath}; skipping"
+                )
                 return None
             bf = otherDoc.fileLinks.get(rlnData.otherFileAbspath, None)
             if not bf:
-                log.dbg(f"  - searching for relationship for file {rlnData.otherFileAbspath} points to document {otherDoc.cfg.name} but file not found; skipping")
+                log.dbg(
+                    f"  - searching for relationship for file {rlnData.otherFileAbspath} "
+                    f"points to document {otherDoc.cfg.name} but file not found; skipping"
+                )
                 return None
             # found it
             if not bf.spdxID:
-                log.dbg(f"  - searching for relationship for file {rlnData.otherFileAbspath} found file, but empty ID; skipping")
+                log.dbg(
+                    f"  - searching for relationship for file {rlnData.otherFileAbspath} "
+                    "found file, but empty ID; skipping"
+                )
                 return None
             # figure out whether to append DocumentRef
             spdxIDB = bf.spdxID
@@ -788,14 +840,20 @@ class Walker:
             for pkg in otherDoc.pkgs.values():
                 if pkg.cfg.name == rlnData.otherTargetName:
                     if not pkg.cfg.spdxID:
-                        log.dbg(f"  - searching for relationship for target {rlnData.otherTargetName} found package, but empty ID; skipping")
+                        log.dbg(
+                            f"  - searching for relationship for target {rlnData.otherTargetName}"
+                            " found package, but empty ID; skipping"
+                        )
                         return None
                     spdxIDB = pkg.cfg.spdxID
                     if otherDoc != docA:
                         spdxIDB = otherDoc.cfg.docRefID + ":" + spdxIDB
                         docA.externalDocuments.add(otherDoc)
                     return spdxIDB
-            log.dbg(f"  - searching for relationship for target {rlnData.otherTargetName}, target not found in build document; skipping")
+            log.dbg(
+                f"  - searching for relationship for target {rlnData.otherTargetName}, "
+                "target not found in build document; skipping"
+            )
             return None
         elif rlnData.otherType == RelationshipDataElementType.PACKAGEID:
             # will just be the package ID that was passed in

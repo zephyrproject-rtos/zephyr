@@ -18,12 +18,15 @@
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
+#include <zephyr/toolchain.h>
 #include <soc.h>
+#include <stm32_cache.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
 #include <stm32_ll_adc.h>
 #include <stm32_ll_system.h>
 #if defined(CONFIG_SOC_SERIES_STM32N6X) || \
+	defined(CONFIG_SOC_SERIES_STM32U3X) || \
 	defined(CONFIG_SOC_SERIES_STM32U5X)
 #include <stm32_ll_pwr.h>
 #endif /* CONFIG_SOC_SERIES_STM32U5X */
@@ -53,12 +56,7 @@ LOG_MODULE_REGISTER(adc_stm32);
 #include <stm32_ll_system.h>
 #endif
 
-#ifdef CONFIG_NOCACHE_MEMORY
 #include <zephyr/linker/linker-defs.h>
-#elif defined(CONFIG_CACHE_MANAGEMENT)
-#include <zephyr/arch/cache.h>
-#endif /* CONFIG_NOCACHE_MEMORY */
-
 
 /* Here are some redefinitions of ADC versions for better readability */
 #if defined(CONFIG_SOC_SERIES_STM32F3X)
@@ -205,6 +203,7 @@ static void adc_stm32_enable_dma_support(ADC_TypeDef *adc)
 	LL_ADC_REG_SetDMATransfer(adc, LL_ADC_REG_DMA_TRANSFER_UNLIMITED);
 #elif defined(CONFIG_SOC_SERIES_STM32H7X) || \
 	defined(CONFIG_SOC_SERIES_STM32N6X) || \
+	defined(CONFIG_SOC_SERIES_STM32U3X) || \
 	defined(CONFIG_SOC_SERIES_STM32U5X)
 	/* H72x ADC3 and U5 ADC4 are different from the rest, but this call works also for them,
 	 * so no need to call their specific function
@@ -272,34 +271,6 @@ static int adc_stm32_dma_start(const struct device *dev,
 }
 #endif /* CONFIG_ADC_STM32_DMA */
 
-#if defined(CONFIG_ADC_STM32_DMA) && defined(CONFIG_SOC_SERIES_STM32H7X)
-/* Returns true if given buffer is in a non-cacheable SRAM region.
- * This is determined using the device tree, meaning the .nocache region won't work.
- * The entire buffer must be in a single region.
- * An example of how the SRAM region can be defined in the DTS:
- *	&sram4 {
- *		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) | ... )>;
- *	};
- */
-static bool buf_in_nocache(uintptr_t buf, size_t len_bytes)
-{
-	bool buf_within_nocache = false;
-
-#ifdef CONFIG_NOCACHE_MEMORY
-	buf_within_nocache = (buf >= ((uintptr_t)_nocache_ram_start)) &&
-		((buf + len_bytes - 1) <= ((uintptr_t)_nocache_ram_end));
-	if (buf_within_nocache) {
-		return true;
-	}
-#endif /* CONFIG_NOCACHE_MEMORY */
-
-	buf_within_nocache = mem_attr_check_buf(
-		(void *)buf, len_bytes, DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)) == 0;
-
-	return buf_within_nocache;
-}
-#endif /* defined(CONFIG_ADC_STM32_DMA) && defined(CONFIG_SOC_SERIES_STM32H7X) */
-
 static int check_buffer(const struct adc_sequence *sequence,
 			     uint8_t active_channels)
 {
@@ -317,13 +288,13 @@ static int check_buffer(const struct adc_sequence *sequence,
 		return -ENOMEM;
 	}
 
-#if defined(CONFIG_ADC_STM32_DMA) && defined(CONFIG_SOC_SERIES_STM32H7X)
+#if defined(CONFIG_ADC_STM32_DMA)
 	/* Buffer is forced to be in non-cacheable SRAM region to avoid cache maintenance */
-	if (!buf_in_nocache((uintptr_t)sequence->buffer, needed_buffer_size)) {
-		LOG_ERR("Supplied buffer is not in a non-cacheable region according to DTS.");
+	if (!stm32_buf_in_nocache((uintptr_t)sequence->buffer, needed_buffer_size)) {
+		LOG_ERR("Supplied buffer is not in a non-cacheable region.");
 		return -EINVAL;
 	}
-#endif
+#endif /* CONFIG_ADC_STM32_DMA */
 
 	return 0;
 }
@@ -821,6 +792,9 @@ static void dma_callback(const struct device *dev, void *user_data,
 			LL_ADC_REG_StopConversion(adc);
 #endif
 			dma_stop(data->dma.dma_dev, data->dma.channel);
+			if (data->ctx.options.interval_us != 0U) {
+				adc_context_disable_timer(&data->ctx);
+			}
 			adc_context_complete(&data->ctx, status);
 		}
 	}
@@ -927,6 +901,7 @@ static int set_sequencer(const struct device *dev)
 		if (config->sequencer_type == FULLY_CONFIGURABLE) {
 #if defined(CONFIG_SOC_SERIES_STM32H7X) || \
 	defined(CONFIG_SOC_SERIES_STM32N6X) || \
+	defined(CONFIG_SOC_SERIES_STM32U3X) || \
 	defined(CONFIG_SOC_SERIES_STM32U5X)
 			/*
 			 * Each channel in the sequence must be previously enabled in PCSEL.
@@ -1531,7 +1506,7 @@ static void adc_stm32_enable_analog_supply(void)
 {
 #if defined(CONFIG_SOC_SERIES_STM32N6X)
 	LL_PWR_EnableVddADC();
-#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+#elif defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32U3X)
 	LL_PWR_EnableVDDA();
 #endif /* CONFIG_SOC_SERIES_STM32U5X */
 }
@@ -1541,7 +1516,7 @@ static void adc_stm32_disable_analog_supply(void)
 {
 #if defined(CONFIG_SOC_SERIES_STM32N6X)
 	LL_PWR_DisableVddADC();
-#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+#elif defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32U3X)
 	LL_PWR_DisableVDDA();
 #endif /* CONFIG_SOC_SERIES_STM32U5X */
 }
@@ -1608,6 +1583,7 @@ static int adc_stm32_init(const struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32H7X) || \
 	defined(CONFIG_SOC_SERIES_STM32H7RSX) || \
 	defined(CONFIG_SOC_SERIES_STM32N6X) || \
+	defined(CONFIG_SOC_SERIES_STM32U3X) || \
 	defined(CONFIG_SOC_SERIES_STM32U5X)
 	/*
 	 * L4, WB, G4, H5, H7 and U5 series STM32 needs to be awaken from deep sleep
@@ -1638,6 +1614,7 @@ static int adc_stm32_init(const struct device *dev)
 		}
 	}
 #elif defined(CONFIG_SOC_SERIES_STM32H7X) || \
+	defined(CONFIG_SOC_SERIES_STM32U3X) || \
 	defined(CONFIG_SOC_SERIES_STM32U5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBAX)
 	while (LL_ADC_IsActiveFlag_LDORDY(adc) == 0) {
@@ -1690,6 +1667,7 @@ static int adc_stm32_suspend_setup(const struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32H7X) || \
 	defined(CONFIG_SOC_SERIES_STM32H7RSX) || \
 	defined(CONFIG_SOC_SERIES_STM32N6X) || \
+	defined(CONFIG_SOC_SERIES_STM32U3X) || \
 	defined(CONFIG_SOC_SERIES_STM32U5X)
 	/*
 	 * L4, WB, G4, H5, H7 and U5 series STM32 needs to be put into

@@ -1,7 +1,4 @@
-.. _nrf52dk_nrf52832:
-
-nRF52 DK
-########
+.. zephyr:board:: nrf52dk
 
 Overview
 ********
@@ -25,12 +22,6 @@ the following devices:
 * :abbr:`UART (Universal asynchronous receiver-transmitter)`
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/nrf52dk_nrf52832.jpg
-     :align: center
-     :alt: nRF52 DK
-
-     nRF52 DK (Credit: Nordic Semiconductor)
-
 More information about the board can be found at the
 `nRF52 DK website`_. `nRF52832 Product Specification`_
 contains the processor's information and the datasheet.
@@ -46,42 +37,8 @@ is 32 MHz.
 Supported Features
 ==================
 
-The ``nrf52dk/nrf52832`` board configuration supports the following
-hardware features:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C(M)    | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| RADIO     | on-chip    | Bluetooth            |
-+-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| RTT       | Segger     | console              |
-+-----------+------------+----------------------+
-| SPI(M/S)  | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
-
-Other hardware features have not been enabled yet for this board.
 See `nRF52 DK website`_ and `nRF52832 Product Specification`_
 for a complete list of nRF52 Development Kit board hardware features.
 
@@ -348,6 +305,8 @@ P5/P11
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 
@@ -397,6 +356,32 @@ You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
 :zephyr_file:`boards/nordic/nrf52dk/nrf52dk_nrf52832.dts`.
 
+.. _nrf52dk_nrf52805:
+
+nRF52805 emulation on nRF52 DK
+******************************
+
+The ``nrf52dk/nrf52805`` board is a modified version of the :zephyr:board:`nrf52dk`
+that enforces the limitations imposed by the nRF52805 IC, which is a
+cost-reduced variant of the original nRF52832. Since Nordic does not offer a
+development kit for the nRF52805, you can use this board to develop for this
+IC while using the nRF52 Development Kit (PCA10040).
+
+See `nRF52805 website`_ for the official reference on the IC itself.
+
+.. _nrf52dk_nrf52810:
+
+nRF52810 emulation on nRF52 DK
+******************************
+
+The ``nrf52dk/nrf52810`` board variant is a modified version of the :zephyr:board:`nrf52dk`
+that enforces the limitations imposed by the nRF52810 IC, which is a
+cost-reduced variant of the original nRF52832. Since Nordic does not offer a
+development kit for the nRF52810 you can use this board to develop for this
+IC while using the nRF52 Development Kit (PCA10040).
+
+See `nRF52810 website`_ for the official reference on the IC itself.
+
 References
 **********
 
@@ -404,52 +389,5 @@ References
 
 .. _nRF52 DK website: https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF52-DK
 .. _nRF52832 Product Specification: https://docs.nordicsemi.com/bundle/ps_nrf52832/page/nrf52832_ps.html
-
-.. _nrf52dk_nrf52805:
-
-nRF52805 emulation on nRF52 DK
-##############################
-
-Overview
-********
-
-The ``nrf52dk/nrf52805`` board is a modified version of the :ref:`nrf52dk_nrf52832`
-that enforces the limitations imposed by the nRF52805 IC, which is a
-cost-reduced variant of the original nRF52832. Since Nordic does not offer a
-development kit for the nRF52805, you can use this board to develop for this
-IC while using the nRF52 Development Kit (PCA10040).
-
-See :ref:`nrf52dk_nrf52832` for more information about the development board and
-`nRF52805 website`_ for the official reference on the IC itself.
-
-References
-**********
-
-.. target-notes::
-
 .. _nRF52805 website: https://www.nordicsemi.com/Products/Low-power-short-range-wireless/nRF52805
-
-.. _nrf52dk_nrf52810:
-
-nRF52810 emulation on nRF52 DK
-##############################
-
-Overview
-********
-
-The ``nrf52dk/nrf52810`` board is a modified version of the :ref:`nrf52dk_nrf52832`
-that enforces the limitations imposed by the nRF52810 IC, which is a
-cost-reduced variant of the original nRF52832. Since Nordic does not offer a
-development kit for the nRF52810 you can use this board to develop for this
-IC while using the nRF52 Development Kit (PCA10040).
-
-See :ref:`nrf52dk_nrf52832` for more information about the development board and
-`nRF52810 website`_ for the official reference on the IC itself.
-
-
-References
-**********
-
-.. target-notes::
-
 .. _nRF52810 website: https://www.nordicsemi.com/Products/Low-power-short-range-wireless/nRF52810

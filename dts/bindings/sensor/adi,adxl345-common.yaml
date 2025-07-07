@@ -1,27 +1,41 @@
 # Copyright (c) 2022 Analog Devices Inc.
 # SPDX-License-Identifier: Apache-2.0
 
+description: |
+  ADXL345 3-axis accelerometer
+  When setting the accelerometer DTS properties, make sure to include
+  adxl345.h and use the macros defined there.
+
+  Example:
+  #include <zephyr/dt-bindings/sensor/adxl345.h>
+
+  adxl345: adxl345@1d {
+    ...
+
+    odr = <ADXL345_DT_ODR_25>;
+  };
+
 include: sensor-device.yaml
 
 properties:
   odr:
     type: int
-    default: 0
+    default: 10
     description: |
           Accelerometer sampling frequency (ODR). Default is power on reset value.
-            0 # 12.5Hz
-            1 # 25Hz
-            2 # 50Hz
-            3 # 100Hz
-            4 # 200Hz
-            5 # 400Hz
     enum:
-      - 0
-      - 1
-      - 2
-      - 3
-      - 4
-      - 5
+      - 7 # ADXL345_DT_ODR_12_5
+      - 8 # ADXL345_DT_ODR_25
+      - 9 # ADXL345_DT_ODR_50
+      - 10 # ADXL345_DT_ODR_100
+      - 11 # ADXL345_DT_ODR_200
+      - 12 # ADXL345_DT_ODR_400
+
+  fifo-watermark:
+    type: int
+    description: |
+      Specify the FIFO watermark level in frame count.
+      Valid range: 1 - 31
 
   int2-gpios:
     type: phandle-array

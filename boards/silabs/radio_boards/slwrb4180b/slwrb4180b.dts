@@ -6,7 +6,7 @@
  */
 
 /dts-v1/;
-#include <silabs/efr32mg21a020f1024im32.dtsi>
+#include <silabs/xg21/efr32mg21a020f1024im32.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include "slwrb4180b-pinctrl.dtsi"
 
@@ -15,11 +15,11 @@
 	compatible = "silabs,slwrb4180b", "silabs,efr32mg21";
 
 	chosen {
+		zephyr,code-partition = &slot0_partition;
 		zephyr,console = &usart0;
+		zephyr,flash = &flash0;
 		zephyr,shell-uart = &usart0;
 		zephyr,sram = &sram0;
-		zephyr,flash = &flash0;
-		zephyr,code-partition = &slot0_partition;
 	};
 
 	/* These aliases are provided for compatibility with samples */
@@ -67,25 +67,25 @@
 };
 
 &hfxo {
-	status = "okay";
 	ctune = <129>;
 	precision = <50>;
+	status = "okay";
 };
 
 &lfxo {
-	status = "okay";
 	ctune = <79>;
 	precision = <50>;
+	status = "okay";
 };
 
 &hfrcodpll {
 	clock-frequency = <DT_FREQ_K(76800)>;
 	clocks = <&hfxo>;
-	dpll-n = <3839>;
-	dpll-m = <1919>;
+	dpll-autorecover;
 	dpll-edge = "fall";
 	dpll-lock = "phase";
-	dpll-autorecover;
+	dpll-m = <1919>;
+	dpll-n = <3839>;
 };
 
 &em23grpaclk {
@@ -161,23 +161,23 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(48)>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@c000 {
-			label = "image-0";
 			reg = <0x0000C000 DT_SIZE_K(472)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@82000 {
-			label = "image-1";
 			reg = <0x00082000 DT_SIZE_K(472)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@F8000 {
-			label = "storage";
 			reg = <0x000F8000 DT_SIZE_K(32)>;
+			label = "storage";
 		};
 	};
 };

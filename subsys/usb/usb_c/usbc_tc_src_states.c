@@ -32,7 +32,7 @@ void tc_unattached_src_entry(void *obj)
 	LOG_INF("Unattached.SRC");
 }
 
-void tc_unattached_src_run(void *obj)
+enum smf_state_result tc_unattached_src_run(void *obj)
 {
 	struct tc_sm_t *tc = (struct tc_sm_t *)obj;
 	const struct device *dev = tc->dev;
@@ -47,6 +47,7 @@ void tc_unattached_src_run(void *obj)
 	if (tcpc_is_cc_at_least_one_rd(tc->cc1, tc->cc2)) {
 		tc_set_state(dev, TC_ATTACH_WAIT_SRC_STATE);
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
 /**
@@ -84,7 +85,7 @@ void tc_unattached_wait_src_entry(void *obj)
 	usbc_timer_start(&tc->tc_t_vconn_off);
 }
 
-void tc_unattached_wait_src_run(void *obj)
+enum smf_state_result tc_unattached_wait_src_run(void *obj)
 {
 	struct tc_sm_t *tc = (struct tc_sm_t *)obj;
 	const struct device *dev = tc->dev;
@@ -93,6 +94,7 @@ void tc_unattached_wait_src_run(void *obj)
 	if (usbc_timer_expired(&tc->tc_t_vconn_off)) {
 		tc_set_state(dev, TC_UNATTACHED_SRC_STATE);
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
 void tc_unattached_wait_src_exit(void *obj)
@@ -122,14 +124,19 @@ void tc_unattached_wait_src_exit(void *obj)
 void tc_attach_wait_src_entry(void *obj)
 {
 	struct tc_sm_t *tc = (struct tc_sm_t *)obj;
+	const struct device *dev = tc->dev;
+	struct usbc_port_data *data = dev->data;
+	const struct device *vbus = data->vbus;
 
 	LOG_INF("AttachWait.SRC");
 
 	/* Initialize the cc state to open */
 	tc->cc_state = TC_CC_NONE;
+
+	usbc_vbus_enable(vbus, true);
 }
 
-void tc_attach_wait_src_run(void *obj)
+enum smf_state_result tc_attach_wait_src_run(void *obj)
 {
 	struct tc_sm_t *tc = (struct tc_sm_t *)obj;
 	const struct device *dev = tc->dev;
@@ -144,7 +151,7 @@ void tc_attach_wait_src_run(void *obj)
 	} else {
 		/* No UFP */
 		tc_set_state(dev, TC_UNATTACHED_SRC_STATE);
-		return;
+		return SMF_EVENT_HANDLED;
 	}
 
 	/* Debounce the cc state */
@@ -156,8 +163,8 @@ void tc_attach_wait_src_run(void *obj)
 
 	/* Wait for CC debounce */
 	if (usbc_timer_running(&tc->tc_t_cc_debounce) &&
-		!usbc_timer_expired(&tc->tc_t_cc_debounce)) {
-		return;
+	    !usbc_timer_expired(&tc->tc_t_cc_debounce)) {
+		return SMF_EVENT_PROPAGATE;
 	}
 
 	/*
@@ -170,6 +177,7 @@ void tc_attach_wait_src_run(void *obj)
 			tc_set_state(dev, TC_ATTACHED_SRC_STATE);
 		}
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
 void tc_attach_wait_src_exit(void *obj)
@@ -264,7 +272,7 @@ void tc_attached_src_entry(void *obj)
 	}
 }
 
-void tc_attached_src_run(void *obj)
+enum smf_state_result tc_attached_src_run(void *obj)
 {
 	struct tc_sm_t *tc = (struct tc_sm_t *)obj;
 	const struct device *dev = tc->dev;
@@ -294,6 +302,7 @@ void tc_attached_src_run(void *obj)
 			tc_set_state(dev, TC_UNATTACHED_SRC_STATE);
 		}
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
 void tc_attached_src_exit(void *obj)

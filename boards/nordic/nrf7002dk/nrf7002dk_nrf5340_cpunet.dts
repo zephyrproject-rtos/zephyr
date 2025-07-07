@@ -28,24 +28,28 @@
 	};
 
 	leds {
-			compatible = "gpio-leds";
-			led0: led_0 {
-					gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;
-					label = "Green LED 0";
-			};
-			led1: led_1 {
-					gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>;
-					label = "Green LED 1";
-			};
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+				gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;
+				label = "Green LED 0";
+		};
+
+		led1: led_1 {
+				gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>;
+				label = "Green LED 1";
+		};
 	};
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: button_0 {
 			gpios = <&gpio1 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button 1";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		button1: button_1 {
 			gpios = <&gpio1 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button 2";
@@ -85,7 +89,6 @@
 	nrf_radio_coex: coex {
 		status = "okay";
 		compatible = "nordic,nrf7002-coex";
-
 		req-gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>;
 		status0-gpios = <&gpio0 30 GPIO_ACTIVE_HIGH>;
 		grant-gpios = <&gpio0 24 (GPIO_PULL_DOWN | GPIO_ACTIVE_LOW)>;
@@ -156,14 +159,17 @@ arduino_spi: &spi0 {
 			label = "mcuboot";
 			reg = <0x00000000 0xc000>;
 		};
+
 		slot0_partition: partition@c000 {
 			label = "image-0";
 			reg = <0x0000C000 0x17000>;
 		};
+
 		slot1_partition: partition@23000 {
 			label = "image-1";
 			reg = <0x00023000 0x17000>;
 		};
+
 		storage_partition: partition@3a000 {
 			label = "storage";
 			reg = <0x0003a000 0x6000>;
@@ -176,4 +182,4 @@ arduino_spi: &spi0 {
 };
 
 /* Include default shared RAM configuration file */
-#include <common/nordic/nrf5340_shared_sram_partition.dtsi>
+#include <nordic/nrf5340_shared_sram_partition.dtsi>

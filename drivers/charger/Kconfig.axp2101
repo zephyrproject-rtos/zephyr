@@ -1,0 +1,12 @@
+# Copyright (c) 2025 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config CHARGER_AXP2101
+	bool "X-Powers AXP2101 PMIC charger driver"
+	default y
+	depends on DT_HAS_X_POWERS_AXP2101_CHARGER_ENABLED
+	depends on DT_HAS_X_POWERS_AXP2101_ENABLED
+	select I2C
+	select MFD
+	help
+	  Enable the AXP2101 PMIC charger driver

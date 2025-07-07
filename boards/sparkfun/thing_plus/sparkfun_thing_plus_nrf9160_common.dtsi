@@ -124,7 +124,7 @@
 	pinctrl-names = "default", "sleep";
 };
 
-&i2c1 {
+zephyr_i2c: &i2c1 {
 	compatible = "nordic,nrf-twim";
 	status = "okay";
 
@@ -183,4 +183,4 @@
 };
 
 /* Include default memory partition configuration file */
-#include <common/nordic/nrf91xx_partition.dtsi>
+#include <nordic/nrf91xx_partition.dtsi>

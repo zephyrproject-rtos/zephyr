@@ -68,6 +68,13 @@
 #define IMR_BOOT_LDR_STACK_BASE		(IMR_BOOT_LDR_BSS_BASE + IMR_BOOT_LDR_BSS_SIZE)
 #define IMR_BOOT_LDR_STACK_SIZE		0x1000
 
+/* ROM_EXT sections, used only for MMU mapping */
+#define IMR_ROM_EXT_OFFSET		0xB000
+#define IMR_ROM_EXT_CODE_BASE		(L3_MEM_BASE_ADDR + IMR_ROM_EXT_OFFSET)
+#define IMR_ROM_EXT_CODE_SIZE		0xD000
+#define IMR_ROM_EXT_DATABSS_BASE	(IMR_ROM_EXT_CODE_BASE + IMR_ROM_EXT_CODE_SIZE)
+#define IMR_ROM_EXT_DATABSS_SIZE	0x18000
+
 /* position of L3 heap, size of L3 heap - till end of the L3 memory */
 /* !!! FIXME: L3 heap base MUST be automatically calculated. !!! */
 #define IMR_L3_HEAP_BASE		(IMR_BOOT_LDR_STACK_BASE + IMR_BOOT_LDR_STACK_SIZE)

@@ -1,10 +1,12 @@
 # Copyright (c) 2023 Ambiq Micro Inc. <www.ambiq.com>
 # SPDX-License-Identifier: Apache-2.0
 
+title: Ambiq Apollo3 Pin Controller
+
 description: |
-  The Ambiq Apollo3 pin controller is a node responsible for controlling
-  pin function selection and pin properties, such as routing a UART0 TX
-  to pin 60 and enabling the pullup resistor on that pin.
+  Singleton node responsible for controlling pin function selection and pin
+  properties, such as routing a UART0 TX to pin 60 and enabling the pullup
+  resistor on that pin.
 
   The node has the 'pinctrl' node label set in your SoC's devicetree,
   so you can modify it like this:
@@ -98,7 +100,7 @@ child-binding:
           For Apollo3 these pins are 0-1,5-6,8-9,25,27,39-40,42-43,48-49.
           The default value is 1500 ohms, which is the reset value of
           register PADREGx.PADxRSEL.
-      ambiq,iom-nce-module:
+      ambiq,nce-src:
         type: int
         default: 0
         description: |
@@ -125,3 +127,10 @@ child-binding:
           information and config the pins accordingly, we give a default value
           0 here to make it be consistent with AM_HAL_GPIO_PINCFG_DEFAULT in
           ambiq hal. If the pin is not a CE, this descriptor will be ignored.
+      ambiq,nce-pol:
+        type: int
+        default: 0
+        description: |
+          Polarity select for NCE
+          LOW = 0x0 - Polarity is active low
+          HIGH = 0x1 - Polarity is active high

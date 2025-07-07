@@ -12,4 +12,5 @@ supported:
   - uart
   - usbd
   - watchdog
+  - counter
 vendor: renesas

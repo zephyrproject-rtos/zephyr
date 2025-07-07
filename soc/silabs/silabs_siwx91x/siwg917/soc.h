@@ -7,4 +7,6 @@
 
 #include "si91x_device.h"
 
+#define SYSRTC_IRQHandler IRQ022_Handler
+
 #endif

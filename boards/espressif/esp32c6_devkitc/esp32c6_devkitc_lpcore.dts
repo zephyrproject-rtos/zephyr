@@ -15,5 +15,12 @@
 	chosen {
 		zephyr,sram = &sramlp;
 		zephyr,code-partition = &slot0_lpcore_partition;
+		zephyr,console = &lp_uart;
+		zephyr,shell-uart = &lp_uart;
 	};
+};
+
+&lp_uart {
+	status = "okay";
+	current-speed = <115200>;
 };

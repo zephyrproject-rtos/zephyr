@@ -48,7 +48,7 @@ int beta_handle_export(int (*cb)(const char *name,
 int beta_handle_get(const char *name, char *val, int val_len_max);
 
 /* dynamic main tree handler */
-struct settings_handler alph_handler = {
+struct settings_handler alpha_handler = {
 		.name = "alpha",
 		.h_get = NULL,
 		.h_set = alpha_handle_set,
@@ -455,13 +455,13 @@ static void example_initialization(void)
 
 	printk("settings subsys initialization: OK.\n");
 
-	rc = settings_register(&alph_handler);
+	rc = settings_register(&alpha_handler);
 	if (rc) {
 		printk("subtree <%s> handler registered: fail (err %d)\n",
-		       alph_handler.name, rc);
+		       alpha_handler.name, rc);
 	}
 
-	printk("subtree <%s> handler registered: OK\n", alph_handler.name);
+	printk("subtree <%s> handler registered: OK\n", alpha_handler.name);
 	printk("subtree <alpha/beta> has static handler\n");
 }
 

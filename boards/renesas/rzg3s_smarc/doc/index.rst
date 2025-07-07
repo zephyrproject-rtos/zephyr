@@ -58,43 +58,12 @@ Please see :zephyr:code-sample:`rz-openamp-linux-zephyr` sample for reference.
 Supported Features
 ==================
 
-The ``rzg3s_smarc/r9a08g045s33gbg/cm33`` board target supports the ARM Cortex-M33 System Core without FPU
-and the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | arch/arm                            |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | arch/arm                            |
-+-----------+------------+-------------------------------------+
-| PINCTRL   | on-chip    | pinctrl                             |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| DMA       | on-chip    | dma                                 |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial                              |
-+-----------+------------+-------------------------------------+
-| GTM       | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| GPT       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| INTC      | on-chip    | external interrupt controller       |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock control                       |
-+-----------+------------+-------------------------------------+
-| MHU       | on-chip    | mbox                                |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are currently not supported by the port.
+.. zephyr:board-supported-hw::
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 RZ/G3S-EVKIT is designed to start different systems on different cores.
 It uses Yocto as the build system to build Linux system and boot loaders

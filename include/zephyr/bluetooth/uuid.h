@@ -17,6 +17,7 @@
  * @{
  */
 
+#include <stddef.h>
 #include <stdint.h>
 
 #include <zephyr/sys/util.h>

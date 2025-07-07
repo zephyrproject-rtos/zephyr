@@ -1,0 +1,49 @@
+/*
+ * Copyright (c) 2025 Aesc Silicon
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <freq.h>
+#include <mem.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "litex,vexriscv-standard";
+			device_type = "cpu";
+			reg = <0>;
+			riscv,isa = "rv32imc";
+			status = "okay";
+
+			hlic: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "aesc,nitrogen-soc", "simple-bus";
+		ranges;
+
+		mtimer: machine-timer@f0020000 {
+			compatible = "riscv,machine-timer";
+			reg = <0xf0020000 0x8 0xf0020008 0x8>;
+			reg-names = "mtime", "mtimecmp";
+			interrupts-extended = <&hlic 7>;
+			status = "okay";
+		};
+	};
+};

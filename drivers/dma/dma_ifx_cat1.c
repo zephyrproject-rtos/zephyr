@@ -742,7 +742,7 @@ static DEVICE_API(dma, ifx_cat1_dma_api) = {
 		CONFIGURE_ALL_IRQS(n, DT_NUM_IRQS(DT_DRV_INST(n)));                                \
 	}                                                                                          \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &ifx_cat1_dma_init, NULL, &ifx_cat1_dma_data##n,                  \
+	DEVICE_DT_INST_DEFINE(n, ifx_cat1_dma_init, NULL, &ifx_cat1_dma_data##n,                   \
 			      &ifx_cat1_dma_config##n, PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,     \
 			      &ifx_cat1_dma_api);
 

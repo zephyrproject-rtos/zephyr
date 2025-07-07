@@ -27,6 +27,14 @@
 		sense-gain-mult = <100>;
 	};
 
+	sensor3: tmcs1108A2B {
+		compatible = "current-sense-amplifier";
+		io-channels = <&adc0 2>;
+		sense-resistor-milli-ohms = <1>;
+		sense-gain-mult = <100>;
+		zero-current-voltage-mv = <1650>;
+	};
+
 	adc0: adc {
 		compatible = "zephyr,adc-emul";
 		nchannels = <3>;

@@ -93,13 +93,13 @@ the :term:`SoC series` and :term:`SoC family` levels are not always used.
    +--------------------------------------------+--------------------------+-------------+--------------------+--------------------+----------------+----------------------+
    | :term:`board name`                         | :term:`board qualifiers` | :term:`SoC` | :term:`SoC Series` | :term:`SoC family` | CPU core       | :term:`architecture` |
    +============================================+==========================+=============+====================+====================+================+======================+
-   | :ref:`nrf52dk <nrf52dk_nrf52832>`          | nrf52832                 | nRF52832    | nRF52              | Nordic nRF         | Arm Cortex-M4  | ARMv7-M              |
+   | :zephyr:board:`nrf52dk`                    | nrf52832                 | nRF52832    | nRF52              | Nordic nRF         | Arm Cortex-M4  | ARMv7-M              |
    +--------------------------------------------+--------------------------+-------------+--------------------+--------------------+----------------+----------------------+
    | :zephyr:board:`frdm_k64f <frdm_k64f>`      | mk64f12                  | MK64F12     | Kinetis K6x        | NXP Kinetis        | Arm Cortex-M4  | ARMv7-M              |
    +--------------------------------------------+--------------------------+-------------+--------------------+--------------------+----------------+----------------------+
    | :zephyr:board:`rv32m1_vega <rv32m1_vega>`  | openisa_rv32m1/ri5cy     | RV32M1      | (Not used)         | (Not used)         | RI5CY          | RISC-V RV32          |
    +--------------------------------------------+--------------------------+-------------+--------------------+--------------------+----------------+----------------------+
-   | :ref:`nrf5340dk <nrf5340dk_nrf5340>`       | nrf5340/cpuapp           | nRF5340     | nRF53              | Nordic nRF         | Arm Cortex-M33 | ARMv8-M              |
+   | :zephyr:board:`nrf5340dk`                  | nrf5340/cpuapp           | nRF5340     | nRF53              | Nordic nRF         | Arm Cortex-M33 | ARMv8-M              |
    |                                            +--------------------------+-------------+--------------------+--------------------+----------------+----------------------+
    |                                            | nrf5340/cpunet           | nRF5340     | nRF53              | Nordic nRF         | Arm Cortex-M33 | ARMv8-M              |
    +--------------------------------------------+--------------------------+-------------+--------------------+--------------------+----------------+----------------------+
@@ -164,11 +164,11 @@ The board qualifiers ``nrf5340/cpuapp/ns`` can be read as:
 - ``cpuapp``: The CPU cluster ``cpuapp``, which consists of a single Cortex-M33
   CPU core. The number of cores in a CPU cluster cannot be determined from the
   board qualifiers.
-- ``ns``: a variant, in this case ``ns`` is a common variant name is
+- ``ns``: a variant, in this case ``ns`` is a common variant name in
   Zephyr denoting a non-secure build for boards supporting :ref:`tfm`.
 
 Not all SoCs define CPU clusters or variants. For example a simple board
-like the :ref:`thingy52_nrf52832` contains a single SoC with no CPU clusters and
+like the :zephyr:board:`thingy52` contains a single SoC with no CPU clusters and
 no variants.
 For ``thingy52`` the board target ``thingy52/nrf52832`` can be read as:
 
@@ -591,13 +591,15 @@ files for a board named ``plank``:
   place the adjustments specific for a given SoC or board variant in the
   :file:`plank_<qualifiers>_defconfig`.
 
-  The ``_defconfig`` should contain mandatory settings for your system clock,
+  The ``_defconfig`` should contain mandatory settings for your UART,
   console, etc. The results are architecture-specific, but typically look
   something like this:
 
   .. code-block:: cfg
 
-     CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=120000000  # set up your clock, etc
+     CONFIG_GPIO=y
+     CONFIG_CONSOLE=y
+     CONFIG_UART_CONSOLE=y
      CONFIG_SERIAL=y
 
 :file:`plank_x_y_z_defconfig` / :file:`plank_<qualifiers>_x_y_z_defconfig`
@@ -651,7 +653,7 @@ while porting.
   using the ``zephyr,console`` chosen node in the devicetree.
   Development boards with a built-in debug adapter or USB-to-UART adapter should
   by default configure and use the UART controller connected to that adapter.
-  For boards like :ref:`nRF52840 Dongle <nrf52840dongle_nrf52840>`, that do not
+  For boards like :zephyr:board:`nrf52840dongle`, that do not
   have a debug adapter, but a USB device controller, there is a common
   :zephyr_file:`Kconfig file <boards/common/usb/Kconfig.cdc_acm_serial.defconfig>`
   that must be included in the board's Kconfig.defconfig file and

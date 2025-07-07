@@ -114,8 +114,21 @@ class Binding:
     path:
       The absolute path to the file defining the binding.
 
+    title:
+      The free-form title of the binding (optional).
+
+      When the content in the 'description:' is too long, the 'title:' can
+      be used as a heading for the extended description. Typically, it serves
+      as a description of the hardware model. For example:
+
+      title: Nordic GPIO
+
+      description: |
+        Descriptions and example nodes related to GPIO.
+        ...
+
     description:
-      The free-form description of the binding, or None.
+      The free-form description of the binding.
 
     compatible:
       The compatible string the binding matches.
@@ -173,7 +186,7 @@ class Binding:
 
     def __init__(self, path: Optional[str], fname2path: dict[str, str],
                  raw: Any = None, require_compatible: bool = True,
-                 require_description: bool = True):
+                 require_description: bool = True, require_title: bool = False):
         """
         Binding constructor.
 
@@ -201,6 +214,12 @@ class Binding:
           "description:" line. If False, a missing "description:" is
           not an error. Either way, "description:" must be a string
           if it is present in the binding.
+
+        require_title:
+          If True, it is an error if the binding does not contain a
+          "title:" line. If False, a missing "title:" is not an error.
+          Either way, "title:" must be a string if it is present in
+          the binding.
         """
         self.path: Optional[str] = path
         self._fname2path: dict[str, str] = fname2path
@@ -217,8 +236,8 @@ class Binding:
         self.raw: dict = self._merge_includes(raw, self.path)
 
         # Recursively initialize any child bindings. These don't
-        # require a 'compatible' or 'description' to be well defined,
-        # but they must be dicts.
+        # require a 'compatible', 'description' or 'title' to be well
+        # defined, but they must be dicts.
         if "child-binding" in raw:
             if not isinstance(raw["child-binding"], dict):
                 _err(f"malformed 'child-binding:' in {self.path}, "
@@ -232,7 +251,7 @@ class Binding:
             self.child_binding = None
 
         # Make sure this is a well defined object.
-        self._check(require_compatible, require_description)
+        self._check(require_compatible, require_description, require_title)
 
         # Initialize look up tables.
         self.prop2specs: dict[str, PropertySpec] = {}
@@ -250,6 +269,11 @@ class Binding:
             compat = ""
         basename = os.path.basename(self.path or "")
         return f"<Binding {basename}" + compat + ">"
+
+    @property
+    def title(self) -> Optional[str]:
+        "See the class docstring"
+        return self.raw.get('title')
 
     @property
     def description(self) -> Optional[str]:
@@ -364,7 +388,8 @@ class Binding:
 
         return self._merge_includes(contents, path)
 
-    def _check(self, require_compatible: bool, require_description: bool):
+    def _check(self, require_compatible: bool, require_description: bool,
+               require_title: bool):
         # Does sanity checking on the binding.
 
         raw = self.raw
@@ -378,6 +403,13 @@ class Binding:
         elif require_compatible:
             _err(f"missing 'compatible' in {self.path}")
 
+        if "title" in raw:
+            title = raw["title"]
+            if not isinstance(title, str) or not title:
+                _err(f"malformed or empty 'title' in {self.path}")
+        elif require_title:
+            _err(f"missing 'title' in {self.path}")
+
         if "description" in raw:
             description = raw["description"]
             if not isinstance(description, str) or not description:
@@ -387,8 +419,8 @@ class Binding:
 
         # Allowed top-level keys. The 'include' key should have been
         # removed by _load_raw() already.
-        ok_top = {"description", "compatible", "bus", "on-bus",
-                  "properties", "child-binding"}
+        ok_top = {"title", "description", "compatible", "bus",
+                  "on-bus", "properties", "child-binding"}
 
         # Descriptive errors for legacy bindings.
         legacy_errors = {
@@ -398,7 +430,6 @@ class Binding:
             "parent": "use 'on-bus: <bus>' instead",
             "parent-bus": "use 'on-bus: <bus>' instead",
             "sub-node": "use 'child-binding' instead",
-            "title": "use 'description' instead",
         }
 
         for key in raw:
@@ -889,6 +920,10 @@ class Node:
       node name format ...@<dev>,<func> or ...@<dev> (e.g. "pcie@1,0"), in
       this case None is returned.
 
+    title:
+      The title string from the binding for the node, or None if the node
+      has no binding.
+
     description:
       The description string from the binding for the node, or None if the node
       has no binding. Leading and trailing whitespace (including newlines) is
@@ -1082,6 +1117,13 @@ class Node:
             _err(f"{self!r} has non-hex unit address")
 
         return _translate(addr, self._node)
+
+    @property
+    def title(self) -> Optional[str]:
+        "See the class docstring."
+        if self._binding:
+            return self._binding.title
+        return None
 
     @property
     def description(self) -> Optional[str]:
@@ -1951,6 +1993,7 @@ class EDT:
     def __init__(self,
                  dts: Optional[str],
                  bindings_dirs: list[str],
+                 workspace_dir: Optional[str] = None,
                  warn_reg_unit_address_mismatch: bool = True,
                  default_prop_types: bool = True,
                  support_fixed_partitions_on_any_bus: bool = True,
@@ -1966,6 +2009,10 @@ class EDT:
         bindings_dirs:
           List of paths to directories containing bindings, in YAML format.
           These directories are recursively searched for .yaml files.
+
+        workspace_dir:
+          Path to the root of the Zephyr workspace. This is used as a base
+          directory for relative paths in the generated devicetree comments.
 
         warn_reg_unit_address_mismatch (default: True):
           If True, a warning is logged if a node has a 'reg' property where
@@ -1990,7 +2037,7 @@ class EDT:
           A dict mapping vendor prefixes in compatible properties to their
           descriptions. If given, compatibles in the form "manufacturer,device"
           for which "manufacturer" is neither a key in the dict nor a specially
-          exempt set of grandfathered-in cases will cause warnings.
+          exempt set of legacy cases will cause warnings.
 
         werror (default: False):
           If True, some edtlib specific warnings become errors. This currently
@@ -2035,7 +2082,7 @@ class EDT:
 
         if dts is not None:
             try:
-                self._dt = DT(dts)
+                self._dt = DT(dts, base_dir=workspace_dir)
             except DTError as e:
                 raise EDTError(e) from e
             self._finish_init()
@@ -2484,23 +2531,19 @@ def _dt_compats(dt: DT) -> set[str]:
 
     return {compat
             for node in dt.node_iter()
-                if "compatible" in node.props
-                    for compat in node.props["compatible"].to_strings()}
+            if "compatible" in node.props
+            for compat in node.props["compatible"].to_strings()}
 
 
 def _binding_paths(bindings_dirs: list[str]) -> list[str]:
     # Returns a list with the paths to all bindings (.yaml files) in
     # 'bindings_dirs'
 
-    binding_paths = []
-
-    for bindings_dir in bindings_dirs:
-        for root, _, filenames in os.walk(bindings_dir):
-            for filename in filenames:
-                if filename.endswith(".yaml") or filename.endswith(".yml"):
-                    binding_paths.append(os.path.join(root, filename))
-
-    return binding_paths
+    return [os.path.join(root, filename)
+            for bindings_dir in bindings_dirs
+            for root, _, filenames in os.walk(bindings_dir)
+            for filename in filenames
+            if filename.endswith((".yaml", ".yml"))]
 
 
 def _binding_inc_error(msg):
@@ -2861,8 +2904,14 @@ def _interrupt_parent(start_node: dtlib_Node) -> dtlib_Node:
 
     while node:
         if "interrupt-parent" in node.props:
-            return node.props["interrupt-parent"].to_node()
+            iparent = node.props["interrupt-parent"].to_node()
+            assert "interrupt-controller" in iparent.props or "interrupt-map" in iparent.props
+            return iparent
         node = node.parent
+        if node is None:
+            _err(f"{start_node!r} no interrupt parent found")
+        if ("interrupt-controller" in node.props) or ("interrupt-map" in node.props):
+            return node
 
     _err(f"{start_node!r} has an 'interrupts' property, but neither the node "
          f"nor any of its parents has an 'interrupt-parent' property")
@@ -2918,11 +2967,11 @@ def _map_interrupt(
         # _address_cells(), because it's the #address-cells property on 'node'
         # itself that matters.
 
-        address_cells = node.props.get("#address-cells")
-        if not address_cells:
+        address_cells = _address_cells_self(node)
+        if address_cells is None:
             _err(f"missing #address-cells on {node!r} "
                  "(while handling interrupt-map)")
-        return address_cells.to_num()
+        return address_cells
 
     def spec_len_fn(node):
         # Can't use _address_cells() here, because it's the #address-cells
@@ -2930,7 +2979,7 @@ def _map_interrupt(
         return own_address_cells(node) + _interrupt_cells(node)
 
     parent, raw_spec = _map(
-        "interrupt", child, parent, _raw_unit_addr(child) + child_spec,
+        "interrupt", child, parent, _raw_unit_addr(child, parent) + child_spec,
         spec_len_fn, require_controller=True)
 
     # Strip the parent unit address part, if any
@@ -3094,22 +3143,42 @@ def _pass_thru(
     return res[-len(parent_spec):]
 
 
-def _raw_unit_addr(node: dtlib_Node) -> bytes:
+def _raw_unit_addr(node: dtlib_Node, parent: dtlib_Node) -> bytes:
     # _map_interrupt() helper. Returns the unit address (derived from 'reg' and
     # #address-cells) as a raw 'bytes'
+
+    iparent: Optional[dtlib_Node] = parent
+    iparent_addr_len = _address_cells_self(iparent)
+    parent_addr_len = _address_cells(node)
+
+    if iparent_addr_len is None:
+        iparent_addr_len =  2  # Default value per DT spec.
+
+    if parent_addr_len is None:
+        parent_addr_len =  2  # Default value per DT spec.
+
+    if iparent_addr_len == 0:
+        return b''
 
     if 'reg' not in node.props:
         _err(f"{node!r} lacks 'reg' property "
              "(needed for 'interrupt-map' unit address lookup)")
 
-    addr_len = 4*_address_cells(node)
+    iparent_addr_len *= 4
+    parent_addr_len *= 4
 
-    if len(node.props['reg'].value) < addr_len:
-        _err(f"{node!r} has too short 'reg' property "
+    prop_len = len(node.props['reg'].value)
+    if prop_len < iparent_addr_len or prop_len %4 != 0:
+        _err(f"{node!r} has too short or incorrectly defined 'reg' property "
              "(while doing 'interrupt-map' unit address lookup)")
 
-    return node.props['reg'].value[:addr_len]
+    address = b''
+    if parent_addr_len > iparent_addr_len:
+        address = node.props['reg'].value[iparent_addr_len - parent_addr_len:parent_addr_len]
+    else:
+        address = node.props['reg'].value[:iparent_addr_len]
 
+    return address
 
 def _and(b1: bytes, b2: bytes) -> bytes:
     # Returns the bitwise AND of the two 'bytes' objects b1 and b2. Pads
@@ -3189,15 +3258,24 @@ def _phandle_val_list(
     return res
 
 
-def _address_cells(node: dtlib_Node) -> int:
+def _address_cells_self(node: Optional[dtlib_Node]) -> Optional[int]:
     # Returns the #address-cells setting for 'node', giving the number of <u32>
+    # cells used to encode the address in the 'reg' property
+
+    if node is not None and "#address-cells" in node.props:
+        return node.props["#address-cells"].to_num()
+    return None
+
+def _address_cells(node: dtlib_Node) -> int:
+    # Returns the #address-cells setting for parent node of 'node', giving the number of <u32>
     # cells used to encode the address in the 'reg' property
     if TYPE_CHECKING:
         assert node.parent
 
-    if "#address-cells" in node.parent.props:
-        return node.parent.props["#address-cells"].to_num()
-    return 2  # Default value per DT spec.
+    ret = _address_cells_self(node.parent)
+    if ret is None:
+        return 2  # Default value per DT spec.
+    return int(ret)
 
 
 def _size_cells(node: dtlib_Node) -> int:
@@ -3328,7 +3406,8 @@ _DEFAULT_PROP_BINDING: Binding = Binding(
             for name in _DEFAULT_PROP_TYPES
         },
     },
-    require_compatible=False, require_description=False,
+    require_compatible=False,
+    require_description=False,
 )
 
 _DEFAULT_PROP_SPECS: dict[str, PropertySpec] = {

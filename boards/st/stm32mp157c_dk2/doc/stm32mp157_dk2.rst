@@ -189,6 +189,9 @@ console settings are 115200 8N1.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
+
 The STM32MP157C doesn't have QSPI flash for the Cortex®-M4  and it needs to be
 started by the Cortex®-A7 core. The Cortex®-A7 core is responsible to load the
 Cortex®-M4 binary application into the RAM, and get the Cortex®-M4 out of reset.

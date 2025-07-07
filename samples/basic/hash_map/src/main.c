@@ -77,7 +77,7 @@ int main(void)
 			}
 		}
 	/* These architectures / boards seem to have trouble with basic timekeeping atm */
-	} while (!IS_ENABLED(CONFIG_ARCH_POSIX) && !IS_ENABLED(CONFIG_BOARD_QEMU_NIOS2));
+	} while (!IS_ENABLED(CONFIG_ARCH_POSIX));
 
 out:
 

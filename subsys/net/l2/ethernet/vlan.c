@@ -448,7 +448,7 @@ int net_eth_vlan_enable(struct net_if *iface, uint16_t tag)
 			continue;
 		}
 
-		NET_DBG("[%d] Adding vlan tag %d to iface %d (%p) attached to %d (%p)",
+		NET_DBG("[%zd] Adding vlan tag %d to iface %d (%p) attached to %d (%p)",
 			i, vlan->tag, net_if_get_by_iface(vlan->iface), vlan->iface,
 			net_if_get_by_iface(iface), iface);
 

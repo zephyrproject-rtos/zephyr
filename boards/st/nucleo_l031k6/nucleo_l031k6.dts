@@ -7,7 +7,7 @@
 /dts-v1/;
 #include <st/l0/stm32l031X6.dtsi>
 #include <st/l0/stm32l031k(4-6)tx-pinctrl.dtsi>
-#include "arduino_nano_r3_connector.dtsi"
+#include "arduino_nano_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32L031K6-NUCLEO board";
@@ -22,6 +22,7 @@
 
 	leds: leds {
 		compatible = "gpio-leds";
+
 		green_led_2: led_2 {
 			gpios = <&gpiob 3 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";

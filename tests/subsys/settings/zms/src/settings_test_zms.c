@@ -74,7 +74,8 @@ int c1_handle_set(const char *name, size_t len, settings_read_cb read_cb, void *
 
 	if (settings_name_steq(name, "unaligned", &next) && !next) {
 		val_len = len;
-		zassert_equal(val_len, sizeof(val8_un), "value length: %d, ought equal 1", val_len);
+		zassert_equal(val_len, sizeof(val8_un), "value length: %zd, ought equal 1",
+			      val_len);
 		rc = read_cb(cb_arg, &val8_un, sizeof(val8_un));
 		zassert_true(rc >= 0, "SETTINGS_VALUE_SET callback");
 		return 0;

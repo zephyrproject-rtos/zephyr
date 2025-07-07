@@ -30,6 +30,7 @@
 		led1 = &led1;
 		sw0 = &btn0;
 		sw1 = &btn1;
+		watchdog0 = &wdt0;
 	};
 
 	leds {
@@ -76,4 +77,32 @@
 
 &aes {
 	status = "okay";
+};
+
+&dma {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+	pinctrl-0 = <&spi0_sck_default
+		     &spi0_mosi_default
+		     &spi0_miso_default
+		     &spi0_cs_default>;
+	pinctrl-names = "default";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_ch0
+		     &adc0_ch2
+		     &adc0_ch3
+		     &adc0_ch4
+		     &adc0_ch6
+		     &adc0_ch8>;
+	pinctrl-names = "default";
 };

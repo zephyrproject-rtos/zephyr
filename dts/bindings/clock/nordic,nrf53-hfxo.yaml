@@ -11,6 +11,20 @@ properties:
   clock-frequency:
     const: 32000000
 
+  startup-time-us:
+    type: int
+    required: true
+    description: |
+      Startup time in microseconds.
+
+      The value can be obtained by first measuring the time between
+      TASKS_HFCLKSTART and EVENTS_HFCLKSTARTED. Then multiply
+      the value by 2 to account for temperature and supply variations.
+
+      Note that the startup time will be longer usual on the first
+      power-up and as such should not be used to determine
+      startup-time-us.
+
   load-capacitors:
     type: string
     enum:

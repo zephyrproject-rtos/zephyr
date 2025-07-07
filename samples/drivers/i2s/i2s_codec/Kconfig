@@ -9,7 +9,7 @@ config I2S_INIT_BUFFERS
 	help
 	  Controls the initial count of audio data blocks, which are (optionally)
 	  filled by data from the DMIC peripheral and played back by the I2S
-	  output perihperal.
+	  output peripheral.
 
 config SAMPLE_FREQ
 	int "Sample rate"

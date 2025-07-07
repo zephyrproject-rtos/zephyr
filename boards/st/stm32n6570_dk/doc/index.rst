@@ -66,6 +66,36 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
+USB
+===
+
+The USB pin assignments on the STM32N657XX microcontroller are immutable. This means that the specific
+pins designated for USB functionality are fixed and cannot be changed or reassigned to other functions,
+ensuring consistent and reliable USB communication.
+
+USB PIN (IOs)
+=============
+
++------------------+--------------------------------------+
+| Name             | Description                          |
++==================+======================================+
+| OTG1_HSDM        | USB OTG1 High-Speed Data- (negative) |
++------------------+--------------------------------------+
+| OTG1_HSDP        | USB OTG1 High-Speed Data+ (positive) |
++------------------+--------------------------------------+
+| OTG1_ID          | USB OTG1 ID Pin                      |
++------------------+--------------------------------------+
+| OTG1_TXRTUNE     | USB OTG1 Transmit Retune             |
++------------------+--------------------------------------+
+| OTG2_HSDM        | USB OTG2 High-Speed Data- (negative) |
++------------------+--------------------------------------+
+| OTG2_HSDP        | USB OTG2 High-Speed Data+ (positive) |
++------------------+--------------------------------------+
+| OTG2_ID          | USB OTG2 ID Pin                      |
++------------------+--------------------------------------+
+| OTG2_TXRTUNE     | USB OTG2 Transmit Retune             |
++------------------+--------------------------------------+
+
 Connections and IOs
 ===================
 
@@ -87,6 +117,12 @@ Default Zephyr Peripheral Mapping:
 - I2C4_SDA : PE14
 - LD1 : PO1
 - LD2 : PG10
+- SDMMC2_CK : PC2
+- SDMMC2_CMD : PC3
+- SDMMC2_D0 : PC4
+- SDMMC2_D1 : PC5
+- SDMMC2_D2 : PC0
+- SDMMC2_D3 : PE4
 - SPI5_SCK : PE15
 - SPI5_MOSI : PG2
 - SPI5_MISO : PH8
@@ -140,8 +176,25 @@ Serial Port
 STM32N6570_DK board has 10 U(S)ARTs. The Zephyr console output is assigned to
 USART1. Default settings are 115200 8N1.
 
+Board variants
+**************
+
+Three variants are available with STM32N6570_DK:
+
+- Default variant. Available as a chainloaded application which should be loaded by a
+  bootloader, it has access to the whole AXISRAM1 and AXISRAM2 regions. It is expected to
+  be built using ``--sysbuild`` option exclusively.
+- ``fsbl``: First Stage Boot Loader (FSBL) which is available as an application loaded by the
+  Boot ROM and flashed using ST-Link. This is typically a bootloader image. It runs
+  in RAM LOAD mode on second half of AXISRAM2. 511K are available for the whole image.
+- ``sb``: First Stage Boot Loader - Serial Boot. Equivalent to the FSBL image, but could be
+  loaded using USB and doesn't require switching the bootpins. This is the most practical
+  for developments steps.
+
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 STM32N6570_DK board includes an ST-LINK/V3 embedded debug tool interface.
 This probe allows to flash and debug the board using various tools.
@@ -178,13 +231,26 @@ First, connect the STM32N6570_DK to your host computer using the ST-Link USB por
 
    .. tabs::
 
-      .. group-tab:: ST-Link
+      .. group-tab:: Application image
 
-         Build and flash an application using ``stm32n6570_dk`` target.
+         Build and flash an application loaded by MCUBoot.
 
          .. zephyr-app-commands::
             :zephyr-app: samples/hello_world
             :board: stm32n6570_dk
+            :west-args: --sysbuild
+            :goals: build flash
+
+         By default, application runs in XIP mode. Add ``-DSB_CONFIG_MCUBOOT_MODE_RAM_LOAD=y``
+         to use RAMLOAD mode.
+
+      .. group-tab:: FSBL - ST-Link
+
+         Build and flash an application using ``stm32n6570_dk/stm32n657xx/fsbl`` target.
+
+         .. zephyr-app-commands::
+            :zephyr-app: samples/hello_world
+            :board: stm32n6570_dk//fsbl
             :goals: build flash
 
          .. note::
@@ -199,7 +265,7 @@ First, connect the STM32N6570_DK to your host computer using the ST-Link USB por
 
 	    Power off and on the board again.
 
-      .. group-tab:: Serial Boot Loader (USB)
+      .. group-tab:: FSBL - Serial Boot Loader (USB)
 
          Additionally, connect the STM32N6570_DK to your host computer using the USB port.
          In this configuration, ST-Link is used to power the board and for serial communication
@@ -236,20 +302,28 @@ You should see the following message on the console:
 Debugging
 =========
 
-For now debugging is only available through STM32CubeIDE:
+You can debug an application in the usual way using the :ref:`ST-LINK GDB Server <runner_stlink_gdbserver>`.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
-* Go to File > Import and select C/C++ > STM32 Cortex-M Executable.
-* In Executable field, browse to your <ZEPHYR_PATH>/build/zephyr/zephyr.elf.
-* In MCU field, select STM32N657X0HxQ.
-* Click on Finish.
-* Finally, click on Debug to start the debugging session.
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: stm32n6570_dk
+   :maybe-skip-config:
+   :goals: debug
 
 .. note::
-   For debugging, before powering on the board, set the boot pins in the following configuration:
+   To enable debugging, before powering on the board, set the boot pins in the following configuration:
 
    * BOOT0: 0
    * BOOT1: 1
 
+Another solution for debugging is to use STM32CubeIDE:
+
+* Go to :menuselection:`File --> Import` and select :menuselection:`C/C++ --> STM32 Cortex-M Executable`.
+* In the :guilabel:`Executable` field, browse to your ``<ZEPHYR_PATH>/build/zephyr/zephyr.elf``.
+* In :guilabel:`MCU` field, select ``STM32N657X0HxQ``.
+* Click on :guilabel:`Finish`.
+* Finally, click on :guilabel:`Debug` to start the debugging session.
 
 Running tests with twister
 ==========================

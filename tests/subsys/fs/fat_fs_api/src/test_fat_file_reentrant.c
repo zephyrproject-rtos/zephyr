@@ -27,8 +27,8 @@ static int test_reentrant_access(void)
 	int res;
 
 	TC_PRINT("\nReentrant tests:\n");
-	zassert_ok(k_sem_init(&mutex_unlocked_sem, 0, 1), NULL);
-	zassert_ok(k_sem_init(&run_non_thread_sem, 0, 1), NULL);
+	zassert_ok(k_sem_init(&mutex_unlocked_sem, 0, 1));
+	zassert_ok(k_sem_init(&run_non_thread_sem, 0, 1));
 
 	/* Start mutex locking thread */
 	k_tid_t tid = k_thread_create(&tlock_mutex_data, tlock_mutex_stack_area,
@@ -173,7 +173,7 @@ void tfile2_access(void *p1, void *p2, void *p3)
 
 void test_fat_file_reentrant(void)
 {
-	zassert_true(test_reentrant_access() == TC_PASS, NULL);
-	zassert_true(test_reentrant_parallel_file_access() == TC_PASS, NULL);
+	zassert_true(test_reentrant_access() == TC_PASS);
+	zassert_true(test_reentrant_parallel_file_access() == TC_PASS);
 }
 #endif  /* CONFIG_FS_FATFS_REENTRANT */

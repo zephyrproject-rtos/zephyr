@@ -61,6 +61,14 @@ typedef struct pinctrl_soc_pin_t {
 
 #define RZG_FILTER_ON_OFF(node_id) COND_CODE_0(DT_PROP(node_id, renesas_filter), (0), (1))
 
+#if defined(CONFIG_SOC_SERIES_RZG3S)
+#define RZG_GET_PFC(node_id, state_prop, idx)                                                      \
+	(RZG_GET_FUNC(DT_PROP_BY_IDX(node_id, state_prop, idx)) - 1)
+#else
+#define RZG_GET_PFC(node_id, state_prop, idx)                                                      \
+	(RZG_GET_FUNC(DT_PROP_BY_IDX(node_id, state_prop, idx)))
+#endif
+
 /* Process pinmux cfg */
 #define Z_PINCTRL_PINMUX_INIT(node_id, state_prop, idx)                                            \
 	{                                                                                          \
@@ -75,9 +83,7 @@ typedef struct pinctrl_soc_pin_t {
 				.filonoff_reg = RZG_FILTER_ON_OFF(node_id),                        \
 				.filnum_reg = RZG_GET_FILNUM(node_id),                             \
 				.filclksel_reg = RZG_GET_FILCLKSEL(node_id),                       \
-				.pfc_reg =                                                         \
-					(RZG_GET_FUNC(DT_PROP_BY_IDX(node_id, state_prop, idx)) -  \
-					 1),                                                       \
+				.pfc_reg = RZG_GET_PFC(node_id, state_prop, idx),                  \
 			},                                                                         \
 	},
 
@@ -101,4 +107,4 @@ typedef struct pinctrl_soc_pin_t {
 #ifdef __cplusplus
 }
 #endif
-#endif /*ZEPHYR_SOC_RENESAS_RZ_COMMON_PINCTRL_RZG_H_*/
+#endif /* ZEPHYR_SOC_RENESAS_RZ_COMMON_PINCTRL_RZG_H_ */

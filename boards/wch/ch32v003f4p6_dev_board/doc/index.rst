@@ -4,7 +4,7 @@ Overview
 ********
 
 The `WCH`_ CH32V003F4P6 Development Board hardware provides support for
-QingKe 32-bit RISC-V2A processor and the following devices:
+QingKe V2A 32-bit RISC-V processor and the following devices:
 
 * CLOCK
 * :abbr:`GPIO (General Purpose Input Output)`
@@ -17,7 +17,7 @@ and the datasheet.
 Hardware
 ********
 
-The QingKe 32-bit RISC-V2A processor of the WCH CH32V003F4P6_DEV_BOARD is clocked
+The QingKe V2A 32-bit RISC-V processor of the WCH CH32V003F4P6_DEV_BOARD is clocked
 by an internal RC oscillator and runs at 24 MHz.
 
 Supported Features
@@ -35,6 +35,8 @@ LED
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``ch32v003f4p6_dev_board`` board target can be built and
 flashed in the usual way (see :ref:`build_an_application` and :ref:`application_run`

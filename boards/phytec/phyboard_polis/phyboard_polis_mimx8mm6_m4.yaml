@@ -22,4 +22,3 @@ supported:
   - spi
   - gpio
   - can
-vendor: nxp

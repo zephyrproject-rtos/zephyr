@@ -3,7 +3,7 @@
 Overview
 ********
 
-The `WCH`_ LinkW hardware provides support for QingKe 32-bit RISC-V4C
+The `WCH`_ LinkW hardware provides support for QingKe V4C 32-bit RISC-V
 processor and the following devices:
 
 * CLOCK
@@ -17,7 +17,7 @@ The `WCH webpage on LinkW`_ contains the LinkW's schematic.
 Hardware
 ********
 
-The QingKe 32-bit RISC-V4C processor of the WCH LinkW is clocked by an external
+The QingKe V4C 32-bit RISC-V processor of the WCH LinkW is clocked by an external
 32 MHz crystal or the internal 8 MHz oscillator and runs up to 144 MHz.
 The CH32V208 SoC Features 4 USART, 4 GPIO ports, 2 SPI, 2 I2C, ADC, RTC,
 CAN, 2 USB Device, USB Host, OPA, ETH with PHY, several timers, and BLE 5.3.
@@ -25,23 +25,7 @@ CAN, 2 USB Device, USB Host, OPA, ETH with PHY, several timers, and BLE 5.3.
 Supported Features
 ==================
 
-The ``linkw`` board target supports the following hardware features:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| PINCTRL   | on-chip    | pinctrl              |
-+-----------+------------+----------------------+
-| TIMER     | on-chip    | timer                |
-+-----------+------------+----------------------+
-| UART      | on-chip    | uart                 |
-+-----------+------------+----------------------+
-
-Other hardware features have not been enabled yet for this board.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -60,6 +44,8 @@ Button
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``linkw`` board target can be built and flashed
 in the usual way (see :ref:`build_an_application` and :ref:`application_run`
@@ -92,20 +78,6 @@ Debugging
 =========
 
 This board can be debugged via OpenOCD or ``minichlink``.
-
-Testing the LED on the WCH linkw
-**************************************
-
-There is 1 sample program that allow you to test that the LED on the board is
-working properly with Zephyr:
-
-.. code-block:: console
-
-   samples/basic/blinky
-
-You can build and flash the examples to make sure Zephyr is running
-correctly on your board. The button and LED definitions can be found
-in :zephyr_file:`boards/wch/linkw/linkw.dts`.
 
 References
 **********

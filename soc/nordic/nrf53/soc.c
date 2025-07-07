@@ -38,6 +38,8 @@
 
 #include <cmsis_core.h>
 
+#include "nrf53_cpunet_mgmt.h"
+
 #define PIN_XL1 0
 #define PIN_XL2 1
 
@@ -478,8 +480,7 @@ static int rtc_pretick_init(void)
 }
 #endif /* CONFIG_SOC_NRF53_RTC_PRETICK */
 
-
-static int nordicsemi_nrf53_init(void)
+void soc_early_init_hook(void)
 {
 #if defined(CONFIG_SOC_NRF5340_CPUAPP) && defined(CONFIG_NRF_ENABLE_CACHE)
 #if !defined(CONFIG_BUILD_WITH_TFM)
@@ -553,16 +554,29 @@ static int nordicsemi_nrf53_init(void)
 	nrf_regulators_vreg_enable_set(NRF_REGULATORS, NRF_REGULATORS_VREG_HIGH, true);
 #endif
 
-	return 0;
+#if defined(CONFIG_SOC_NRF53_CPUNET_MGMT)
+	int err = nrf53_cpunet_mgmt_init();
+
+	__ASSERT_NO_MSG(err == 0);
+	(void)err;
+#endif
+}
+
+void soc_late_init_hook(void)
+{
+#ifdef CONFIG_SOC_NRF53_RTC_PRETICK
+	int err = rtc_pretick_init();
+
+	__ASSERT_NO_MSG(err == 0);
+	(void)err;
+#endif
+
+#ifdef CONFIG_SOC_NRF53_CPUNET_ENABLE
+	nrf53_cpunet_init();
+#endif
 }
 
 void arch_busy_wait(uint32_t time_us)
 {
 	nrfx_coredep_delay_us(time_us);
 }
-
-SYS_INIT(nordicsemi_nrf53_init, PRE_KERNEL_1, 0);
-
-#ifdef CONFIG_SOC_NRF53_RTC_PRETICK
-SYS_INIT(rtc_pretick_init, POST_KERNEL, 0);
-#endif

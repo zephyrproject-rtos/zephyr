@@ -1,11 +1,10 @@
 # Copyright (c) 2025 Silicon Laboratories Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-description: |
-    Silicon Labs Series 2 radio interface.
+title: Silicon Labs Series 2 Radio Interface
 
-    This controls the radio transceiver on Silicon Labs Series 2
-    SoCs.
+description: |
+  Controls the radio transceiver on Silicon Labs Series 2 SoCs.
 
 compatible: "silabs,series2-radio"
 

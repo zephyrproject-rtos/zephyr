@@ -42,6 +42,8 @@ virtual COM port via the CN3 USB connector.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Before programming your board make sure to configure boot jumpers as
 follows:
 

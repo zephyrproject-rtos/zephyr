@@ -106,19 +106,19 @@ struct hx8394_config {
 #define HX8394_EXTC3_MAGIC 0x94
 
 
-const uint8_t enable_extension[] = {
+static const uint8_t enable_extension[] = {
 	HX8394_SETEXTC,
 	HX8394_EXTC1_MAGIC,
 	HX8394_EXTC2_MAGIC,
 	HX8394_EXTC3_MAGIC,
 };
 
-const uint8_t address_config[] = {
+static const uint8_t address_config[] = {
 	HX8394_SET_ADDRESS,
 	HX8394_FLIP_HORIZONTAL
 };
 
-const uint8_t power_config[] = {
+static const uint8_t power_config[] = {
 	HX8394_SETPOWER,
 	(HX8394_POWER_HX5186 | HX8394_POWER_AP_1_0UA),
 	HX8394_POWER_VRHP_4_8V,
@@ -134,7 +134,7 @@ const uint8_t power_config[] = {
 	HX8394_POWER_VGLS_12_4V
 };
 
-const uint8_t line_config[] = {
+static const uint8_t line_config[] = {
 	HX8394_SETDISP,
 	HX8394_DISP_COL_INV,
 	HX8394_DISP_MESSI_ENB,
@@ -144,7 +144,7 @@ const uint8_t line_config[] = {
 	HX8394_DISP_RTN_144
 };
 
-const uint8_t cycle_config[] = {
+static const uint8_t cycle_config[] = {
 	HX8394_SETCYC,
 	0x73, /* SPON delay */
 	0x74, /* SPOFF delay */
@@ -169,7 +169,7 @@ const uint8_t cycle_config[] = {
 	0x86 /* SOFF_MPU time */
 };
 
-const uint8_t gip0_config[] = {
+static const uint8_t gip0_config[] = {
 	HX8394_SETGIP0,
 	(HX8394_GIP0_EQ_OPT_BOTH | HX8394_GIP0_EQ_HSYNC_NORMAL),
 	HX8394_GIP0_EQ_VSEL_VSSA,
@@ -210,7 +210,7 @@ const uint8_t gip0_config[] = {
 	0x40
 };
 
-const uint8_t gip1_config[] = {
+static const uint8_t gip1_config[] = {
 	HX8394_SETGIP1,
 	/* Select output clock sources
 	 * See COSn_L/COSn_R values in datasheet
@@ -261,7 +261,7 @@ const uint8_t gip1_config[] = {
 	0x18 /* COS22_R */
 };
 
-const uint8_t gip2_config[] = {
+static const uint8_t gip2_config[] = {
 	HX8394_SETGIP2,
 	/* Select output clock sources for GS mode.
 	 * See COSn_L_GS/COSn_R_GS values in datasheet
@@ -312,13 +312,13 @@ const uint8_t gip2_config[] = {
 	0x18  /* COS22_R_GS */
 };
 
-const uint8_t vcom_config[] = {
+static const uint8_t vcom_config[] = {
 	HX8394_SETVCOM,
 	HX8394_VCMC_F_1_76V,
 	HX8394_VCMC_B_1_76V
 };
 
-const uint8_t gamma_config[] = {
+static const uint8_t gamma_config[] = {
 	HX8394_SETGAMMA,
 	0x00, /* VHP0 */
 	0x0A, /* VHP1 */
@@ -380,31 +380,31 @@ const uint8_t gamma_config[] = {
 	0x7F  /* VLN7 */
 };
 
-const uint8_t hx8394_cmd1[] = {0xC0U, 0x1FU, 0x31U};
+static const uint8_t hx8394_cmd1[] = {0xC0U, 0x1FU, 0x31U};
 
-const uint8_t panel_config[] = {
+static const uint8_t panel_config[] = {
 	HX8394_SETPANEL,
 	(HX8394_COLOR_BGR | HX8394_REV_PANEL)
 };
 
-const uint8_t hx8394_cmd2[] = {0xD4, 0x2};
+static const uint8_t hx8394_cmd2[] = {0xD4, 0x2};
 
-const uint8_t hx8394_bank2[] = {
+static const uint8_t hx8394_bank2[] = {
 	0xD8U, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU,
 	0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU,
 	0xFFU
 };
 
-const uint8_t hx8394_bank1[] = {0xB1U, 0x00U};
+static const uint8_t hx8394_bank1[] = {0xB1U, 0x00U};
 
-const uint8_t hx8394_bank0[] = {
+static const uint8_t hx8394_bank0[] = {
 	0xBFU, 0x40U, 0x81U, 0x50U,
 	0x00U, 0x1AU, 0xFCU, 0x01
 };
 
-const uint8_t hx8394_cmd3[] = {0xC6U, 0xEDU};
+static const uint8_t hx8394_cmd3[] = {0xC6U, 0xEDU};
 
-const uint8_t tear_config[] = {HX8394_SET_TEAR, HX8394_TEAR_VBLANK};
+static const uint8_t tear_config[] = {HX8394_SET_TEAR, HX8394_TEAR_VBLANK};
 
 static ssize_t hx8394_mipi_tx(const struct device *mipi_dev, uint8_t channel,
 			      const void *buf, size_t len)

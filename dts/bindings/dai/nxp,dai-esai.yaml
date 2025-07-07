@@ -1,11 +1,11 @@
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: NXP Enhanced Serial Audio Interface (ESAI)
 
 compatible: "nxp,dai-esai"
 
-include: base.yaml
+include: [base.yaml, pinctrl-device.yaml]
 
 properties:
   reg:

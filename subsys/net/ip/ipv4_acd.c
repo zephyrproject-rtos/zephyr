@@ -74,7 +74,8 @@ static struct net_pkt *ipv4_acd_prepare_arp(struct net_if *iface,
 					    struct in_addr *sender_ip,
 					    struct in_addr *target_ip)
 {
-	struct net_pkt *pkt;
+	struct net_pkt *pkt, *arp;
+	int ret;
 
 	/* We provide AF_UNSPEC to the allocator: this packet does not
 	 * need space for any IPv4 header.
@@ -88,7 +89,13 @@ static struct net_pkt *ipv4_acd_prepare_arp(struct net_if *iface,
 	net_pkt_set_family(pkt, AF_INET);
 	net_pkt_set_ipv4_acd(pkt, true);
 
-	return net_arp_prepare(pkt, target_ip, sender_ip);
+	ret = net_arp_prepare(pkt, target_ip, sender_ip, &arp);
+	if (ret == NET_ARP_PKT_REPLACED) {
+		pkt = arp;
+	} else if (ret < 0)  {
+		pkt = NULL;
+	}
+	return pkt;
 }
 
 static void ipv4_acd_send_probe(struct net_if_addr *ifaddr)

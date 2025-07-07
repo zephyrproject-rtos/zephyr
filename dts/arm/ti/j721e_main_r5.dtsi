@@ -152,6 +152,17 @@
 		status = "disabled";
 	};
 
+	mbox1: mailbox@31f81000 {
+		compatible = "ti,omap-mailbox";
+		reg = <0x31f81000 0x200>;
+		/* TODO: Use interrupt router to map this */
+		interrupts = <0 256 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&vim>;
+		usr-id = <2>;
+		#mbox-cells = <1>;
+		status = "okay";
+	};
+
 	systick_timer: timer@24c0000 {
 		compatible = "ti,am654-timer";
 		reg = <0x24c0000 0x70>;

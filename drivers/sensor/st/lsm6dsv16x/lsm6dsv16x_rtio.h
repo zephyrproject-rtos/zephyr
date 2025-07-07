@@ -12,6 +12,11 @@
 #include <zephyr/device.h>
 #include <zephyr/rtio/rtio.h>
 
+int lsm6dsv16x_gbias_config(const struct device *dev, enum sensor_channel chan,
+			    enum sensor_attribute attr,
+			    const struct sensor_value *val);
+int lsm6dsv16x_gbias_get_config(const struct device *dev, enum sensor_channel chan,
+				enum sensor_attribute attr, struct sensor_value *val);
 void lsm6dsv16x_submit(const struct device *sensor, struct rtio_iodev_sqe *iodev_sqe);
 
 void lsm6dsv16x_submit_stream(const struct device *sensor, struct rtio_iodev_sqe *iodev_sqe);

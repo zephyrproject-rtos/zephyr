@@ -112,9 +112,9 @@ static int payload_cb(int sock, struct http_request *req, void *user_data)
 	return pos;
 }
 
-static void response_cb(struct http_response *rsp,
-			enum http_final_call final_data,
-			void *user_data)
+static int response_cb(struct http_response *rsp,
+		       enum http_final_call final_data,
+		       void *user_data)
 {
 	if (final_data == HTTP_DATA_MORE) {
 		LOG_INF("Partial data received (%zd bytes)", rsp->data_len);
@@ -124,6 +124,8 @@ static void response_cb(struct http_response *rsp,
 
 	LOG_INF("Response to %s", (const char *)user_data);
 	LOG_INF("Response status %s", rsp->http_status);
+
+	return 0;
 }
 
 static int connect_socket(sa_family_t family, const char *server, int port,

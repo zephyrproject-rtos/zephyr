@@ -27,10 +27,6 @@ config BUILD_OUTPUT_ADJUST_LMA
 config BUILD_OUTPUT_HEX
 	default y
 
-config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 1000000 if NRF_GRTC_TIMER
-	default 32768 if NRF_RTC_TIMER
-
 endif # RISCV
 
 config SPI_DW_HSSI
@@ -41,5 +37,11 @@ config SPI_DW_ACCESS_WORD_ONLY
 
 config PM_DEVICE_POWER_DOMAIN
 	default n if PM_DEVICE
+
+config PM_DEVICE_RUNTIME
+	default y if PM_DEVICE
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_nodelabel_int_prop,grtc,clock-frequency) if NRF_GRTC_TIMER
 
 endif # SOC_SERIES_NRF54HX

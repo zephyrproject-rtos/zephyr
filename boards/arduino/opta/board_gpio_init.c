@@ -12,7 +12,7 @@ static int board_gpio_init(void)
 {
 	/* The external oscillator that drives the HSE clock should be enabled
 	 * by setting the GPIOI1 pin. This function is registered at priority
-	 * RE_KERNEL_1 to be executed before the standard STM clock
+	 * PRE_KERNEL_1 to be executed before the standard STM clock
 	 * setup code.
 	 *
 	 * Note that the HSE should be turned on by the M7 only because M4
@@ -36,7 +36,13 @@ static int board_gpio_init(void)
 	LL_GPIO_SetPinMode(GPIOJ, LL_GPIO_PIN_15, LL_GPIO_MODE_OUTPUT);
 	LL_GPIO_SetPinSpeed(GPIOJ, LL_GPIO_PIN_15, LL_GPIO_SPEED_FREQ_LOW);
 	LL_GPIO_SetPinOutputType(GPIOJ, LL_GPIO_PIN_15, LL_GPIO_OUTPUT_PUSHPULL);
-	LL_GPIO_SetPinPull(GPIOJ, LL_GPIO_PIN_15, LL_GPIO_PULL_UP);
+	LL_GPIO_SetPinPull(GPIOJ, LL_GPIO_PIN_15, LL_GPIO_PULL_NO);
+
+	/* No timer active yet, time a >200us pulse with CPU cycles */
+	LL_GPIO_ResetOutputPin(GPIOJ, LL_GPIO_PIN_15);
+	for (int i = 0; i < 50000; i++) {
+		arch_nop();
+	}
 	LL_GPIO_SetOutputPin(GPIOJ, LL_GPIO_PIN_15);
 #endif
 

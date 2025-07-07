@@ -33,11 +33,8 @@ Long Term Support and Maintenance
 =================================
 
 A Zephyr :ref:`Long Term Support (LTS) <release_process_lts>` release is
-published every 2 years and is branched and maintained independently from the
-main tree for at least 2.5 years after it was released.
-
-Support and maintenance for an LTS release stops at least half a year
-after the following LTS release is published.
+published every 2.5 to 3 years and is branched and maintained independently from the
+main tree for approximately 5 years after it was released.
 
 Security Fixes
 ==============
@@ -51,6 +48,7 @@ following releases:
 
 For more information, see  :ref:`Security Vulnerability Reporting <reporting>`.
 
+.. _supported_releases:
 
 Supported Releases
 ******************

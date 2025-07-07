@@ -1,8 +1,9 @@
 # Copyright 2023 NXP
 # SPDX-License-Identifier: Apache-2.0
 
+title: NXP FlexRAM on-chip RAM controller
+
 description: |
-  NXP FlexRAM on-chip ram controller
   If the flexram,bank-spec property is specified, then the flexram will be
   dynamically reconfigured to the configuration specified at runtime. An
   example to configure the flexram dynamically using the

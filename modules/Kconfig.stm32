@@ -117,6 +117,17 @@ config USE_STM32_HAL_DCMI_EX
 	  Enable STM32Cube Extended Digital camera interface (DCM) HAL module
 	  driver
 
+config USE_STM32_HAL_DCMIPP
+	bool
+	help
+	  Enable STM32Cube Digital Camera Interface Pixel Pipeline (DCMIPP) HAL module
+	  driver
+
+config USE_STM32_HAL_DDR
+	bool
+	help
+	  Enable STM32Cube DDR-SDRAM HAL module driver
+
 config USE_STM32_HAL_DFSDM
 	bool
 	help

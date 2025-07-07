@@ -6,7 +6,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdint.h>
+
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/iso.h>
 
 /* BAP commands */
 #define BTP_BAP_READ_SUPPORTED_COMMANDS		0x01
@@ -253,7 +257,7 @@ struct btp_bap_bis_found_ev {
 } __packed;
 
 #define BTP_BAP_EV_BIS_SYNCED			0x86
-struct btp_bap_bis_syned_ev {
+struct btp_bap_bis_synced_ev {
 	bt_addr_le_t address;
 	uint8_t broadcast_id[BT_AUDIO_BROADCAST_ID_SIZE];
 	uint8_t bis_id;

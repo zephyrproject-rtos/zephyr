@@ -17,6 +17,8 @@ M2GL-EVAL-KIT.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Building
 ========
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 NXP
+ * Copyright 2022-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -70,6 +70,33 @@
 				IO_MUX_LCD_SPI_IO48
 				IO_MUX_LCD_SPI_IO49>;
 			slew-rate = "ultra";
+		};
+	};
+
+	pinmux_flexcomm1_i2s: pinmux_flexcomm1_i2s {
+		group0 {
+			pinmux = <IO_MUX_FC1_I2S>;
+			slew-rate = "normal";
+		};
+	};
+
+	pinmux_hsgpio0: pinmux_hsgpio0 {
+		group0 {
+			pinmux = <IO_MUX_GPIO11
+				IO_MUX_GPIO12
+				IO_MUX_GPIO18
+				IO_MUX_GPIO21
+				>;
+			slew-rate = "normal";
+		};
+	};
+
+	pinmux_hsgpio1: pinmux_hsgpio1 {
+		group0 {
+			pinmux = <IO_MUX_GPIO44
+				IO_MUX_GPIO55
+				>;
+			slew-rate = "normal";
 		};
 	};
 };

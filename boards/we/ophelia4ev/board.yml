@@ -1,0 +1,9 @@
+board:
+  name: ophelia4ev
+  full_name: Ophelia-IV DK
+  vendor: we
+  socs:
+  - name: nrf54l15
+    variants:
+    - name: xip
+      cpucluster: cpuflpr

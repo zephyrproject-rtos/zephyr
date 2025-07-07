@@ -14,6 +14,7 @@ Configure Stepper Driver
   and :c:func:`stepper_get_actual_position`.
 - Set **step interval** in nanoseconds between steps using :c:func:`stepper_set_microstep_interval`
 - **Enable** the stepper driver using :c:func:`stepper_enable`.
+- **Disable** the stepper driver using :c:func:`stepper_disable`.
 
 Control Stepper
 ===============
@@ -22,6 +23,7 @@ Control Stepper
 - **Move to** a specific position also known as **absolute movement** using :c:func:`stepper_move_to`.
 - Run continuously with a **constant step interval** in a specific direction until
   a stop is detected using :c:func:`stepper_run`.
+- **Stop** the stepper using :c:func:`stepper_stop`.
 - Check if the stepper is **moving** using :c:func:`stepper_is_moving`.
 - Register an **event callback** using :c:func:`stepper_set_event_callback`.
 
@@ -46,6 +48,45 @@ Zephyr has a `stepper discord`_ channel for stepper related discussions, which
 is open to all.
 
 .. _stepper-api-reference:
+
+Stepper API Test Suite
+======================
+
+The stepper API test suite provides a set of tests that can be used to verify the functionality of
+stepper drivers.
+
+.. zephyr-app-commands::
+   :zephyr-app: tests/drivers/stepper/stepper_api
+   :board: <board>
+   :west-args: --extra-dtc-overlay <path/to/board.overlay>
+   :goals: build flash
+
+Sample Output
+=============
+
+Below is a snippet of the test output for the tmc50xx stepper driver. Since
+:c:func:`stepper_set_microstep_interval` is not implemented by the driver the corresponding tests
+have been skipped.
+
+.. code-block:: console
+
+   ===================================================================
+   TESTSUITE stepper succeeded
+
+   ------ TESTSUITE SUMMARY START ------
+
+   SUITE PASS - 100.00% [stepper]: pass = 4, fail = 0, skip = 2, total = 6 duration = 0.069 seconds
+    - PASS - [stepper.test_actual_position] duration = 0.016 seconds
+    - PASS - [stepper.test_get_micro_step_res] duration = 0.013 seconds
+    - SKIP - [stepper.test_set_micro_step_interval_invalid_zero] duration = 0.007 seconds
+    - PASS - [stepper.test_set_micro_step_res_incorrect] duration = 0.010 seconds
+    - PASS - [stepper.test_stop] duration = 0.016 seconds
+    - SKIP - [stepper.test_target_position_w_fixed_step_interval] duration = 0.007 seconds
+
+   ------ TESTSUITE SUMMARY END ------
+
+   ===================================================================
+   PROJECT EXECUTION SUCCESSFUL
 
 API Reference
 *************

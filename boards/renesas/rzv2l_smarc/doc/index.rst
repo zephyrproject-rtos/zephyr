@@ -57,6 +57,8 @@ Supported Features
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``rzv2l_smarc`` board can be built in the usual way as
 documented in :ref:`build_an_application`.
 

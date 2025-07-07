@@ -7,10 +7,12 @@
 #include <st/wl/stm32wle5ccux-pinctrl.dtsi>
 
 &clk_hse {
+	status = "okay";
 	clock-frequency = <DT_FREQ_M(32)>;
 };
 
 &clk_lse {
+	status = "okay";
 	clock-frequency = <32768>;
 };
 
@@ -18,8 +20,8 @@
 	status = "okay";
 	lora: radio@0 {
 		status = "okay";
-		tx-enable-gpios = <&gpiob 8 GPIO_ACTIVE_LOW>;
-		rx-enable-gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+		tx-enable-gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>; /* FE_CTRL1 */
+		rx-enable-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;  /* FE_CTRL2 */
 		power-amplifier-output = "rfo-hp";
 		rfo-hp-max-power = <22>;
 	};

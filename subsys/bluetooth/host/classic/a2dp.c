@@ -14,6 +14,7 @@
 #include <errno.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/printk.h>
 
@@ -282,8 +283,8 @@ static void bt_a2dp_media_data_callback(struct bt_avdtp_sep *sep, struct net_buf
 	stream = ep->stream;
 	media_hdr = net_buf_pull_mem(buf, sizeof(*media_hdr));
 
-	stream->ops->recv(stream, buf, sys_get_be16((uint8_t *)&media_hdr->sequence_number),
-			  sys_get_be32((uint8_t *)&media_hdr->time_stamp));
+	stream->ops->recv(stream, buf, sys_be16_to_cpu(media_hdr->sequence_number),
+			  sys_be32_to_cpu(media_hdr->time_stamp));
 }
 #endif
 
@@ -400,9 +401,6 @@ static int bt_a2dp_set_config_cb(struct bt_avdtp_req *req, struct net_buf *buf)
 	struct bt_a2dp_stream_ops *ops;
 
 	ep = CONTAINER_OF(a2dp->set_config_param.sep, struct bt_a2dp_ep, sep);
-	if (ep->stream == NULL) {
-		return -EINVAL;
-	}
 
 	if ((ep->stream == NULL) || (SET_CONF_REQ(req) != &a2dp->set_config_param)) {
 		return -EINVAL;
@@ -1013,6 +1011,19 @@ int bt_a2dp_register_ep(struct bt_a2dp_ep *ep, uint8_t media_type, uint8_t sep_t
 	}
 
 	return 0;
+}
+
+struct bt_conn *bt_a2dp_get_conn(struct bt_a2dp *a2dp)
+{
+	CHECKIF(a2dp == NULL) {
+		return NULL;
+	}
+
+	if (!a2dp->session.br_chan.chan.conn) {
+		return NULL;
+	}
+
+	return bt_conn_ref(a2dp->session.br_chan.chan.conn);
 }
 
 int bt_a2dp_register_cb(struct bt_a2dp_cb *cb)

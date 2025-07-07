@@ -42,7 +42,7 @@ properties:
       Delay in milliseconds (defaults to 10ms if not set) after a normal command was sent.
       The default value is based on the original SparkFun SerLCD library
       implementation which assumes 100 kbps I2C configuration. This value
-      might require tweaking if using I2C at a higher bitrare and/or relativily
+      might require tweaking if using I2C at a higher bitrate and/or relatively
       high update frequency of the display.
 
   special-command-delay-ms:
@@ -52,5 +52,5 @@ properties:
       Delay in milliseconds (defaults to 50ms if not set) after a special command was sent.
       The default value is based on the original SparkFun SerLCD library
       implementation which assumes 100 kbps I2C configuration. This value
-      might require tweaking if using I2C at a higher bitrare and/or relativily
+      might require tweaking if using I2C at a higher bitrate and/or relatively
       high update frequency of the display.

@@ -18,18 +18,12 @@ menuconfig SPI_AMBIQ_SPIC
 
 if SPI_AMBIQ_SPIC
 
-config SPI_AMBIQ_DMA
-	bool "AMBIQ APOLLO SPI DMA Support"
-	depends on SPI_AMBIQ_SPIC
+config SPI_AMBIQ_HANDLE_CACHE
+	bool "Turn on cache handling in spi driver"
+	default y
+	depends on CACHE_MANAGEMENT && DCACHE
 	help
-	  Enable DMA for Ambiq SPI.
-
-config SPI_DMA_TCB_BUFFER_SIZE
-	int "DMA Transfer Control Buffer size in words."
-	default 1024
-	depends on SPI_AMBIQ_DMA
-	help
-	  DMA Transfer Control Buffer size in words
+	  Disable this if cache has been handled in upper layers.
 
 endif # SPI_AMBIQ_SPIC
 
@@ -61,7 +55,7 @@ config SPI_AMBIQ_BLEIF_TIMING_TRACE
 	bool "Ambiq SPI-BLEIF timing trace"
 	help
 	  The pins for the SPI transceiver are not exposed from the chips
-	  and no need for user to confiugre them. But the chips design the
+	  and no need for user to configure them. But the chips design the
 	  configurable BLEIF timing observation functions on other exposed
 	  pins. The user can enable it to configure the pins for timing
 	  trace purpose.

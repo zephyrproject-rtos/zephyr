@@ -48,9 +48,3 @@ RunTest proxy_adv_multi_subnet_coex \
 	beacon_tx_proxy_adv_multi_subnet_coex \
 	beacon_rx_proxy_adv_multi_subnet_coex \
 	beacon_tx_proxy_adv_solicit_trigger
-
-overlay=overlay_gatt_conf_overlay_psa_conf
-RunTest proxy_adv_multi_subnet_coex \
-	beacon_tx_proxy_adv_multi_subnet_coex \
-	beacon_rx_proxy_adv_multi_subnet_coex \
-	beacon_tx_proxy_adv_solicit_trigger

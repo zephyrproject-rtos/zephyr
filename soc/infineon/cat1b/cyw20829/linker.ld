@@ -64,33 +64,60 @@ _region_min_align = 4;
 
 #if !defined(CONFIG_CUSTOM_SECTION_ALIGN) && defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
 #define MPU_ALIGN(region_size) \
-    . = ALIGN(_region_min_align); \
-    . = ALIGN( 1 << LOG2CEIL(region_size))
+	. = ALIGN(_region_min_align); \
+	. = ALIGN( 1 << LOG2CEIL(region_size))
 #else
 #define MPU_ALIGN(region_size) \
-    . = ALIGN(_region_min_align)
+	. = ALIGN(_region_min_align)
 #endif
+
+#define BOOTSTRAP_REGION		BOOTSTRAP_FLASH
+
+/* Maximum bootstrap code + data size */
+#define BOOTSTRAP_REGION_SIZE   DT_REG_SIZE(DT_NODELABEL(bootstrap_region))
+
+#if defined(CONFIG_BOOTLOADER_MCUBOOT)
+#define MCUBOOT_HEADER_OFFSET   (0x400)
+#else
+#define MCUBOOT_HEADER_OFFSET   (0)
+#endif
+
+#define FLASH_START_ADDR_CBUS   (CONFIG_CYW20829_FLASH_CBUS_ADDR + CONFIG_FLASH_LOAD_OFFSET + MCUBOOT_HEADER_OFFSET)
+#define FLASH_START_ADDR_SAHB   (CONFIG_CYW20829_FLASH_SAHB_ADDR + CONFIG_FLASH_LOAD_OFFSET + MCUBOOT_HEADER_OFFSET)
+
+#define RAM_START_ADDR_CBUS     CONFIG_CYW20829_SRAM_CBUS_ADDR          /* 0x04000000 */
+#define RAM_START_ADDR_SAHB     CONFIG_CYW20829_SRAM_SAHB_ADDR          /* 0x20000000 */
+
+#define BOOTSTRAP_OFFSET_FLASH  0x00000050 /* toc2=0x10, l1_desc=0x1C, sign_header=0x20 */
+
+/* vma for bootstrap code region */
+#define BS_CODE_VMA_CBUS        RAM_START_ADDR_CBUS + (DT_REG_ADDR(DT_NODELABEL(sram_bootstrap)) - RAM_START_ADDR_SAHB)
+#define BS_CODE_VMA_SAHB        DT_REG_ADDR(DT_NODELABEL(sram_bootstrap))
+
+/* lma for bootstrap code region */
+#define BS_CODE_LMA_CBUS        FLASH_START_ADDR_CBUS + BOOTSTRAP_OFFSET_FLASH
+#define BS_CODE_LMA_SAHB        FLASH_START_ADDR_SAHB + BOOTSTRAP_OFFSET_FLASH
 
 #include <zephyr/linker/linker-devnull.h>
 
 MEMORY
-    {
-    FLASH (rx) : ORIGIN = ROM_ADDR, LENGTH = ROM_SIZE
-    RAM   (wx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
+	{
+	FLASH (rx) : ORIGIN = ROM_ADDR, LENGTH = ROM_SIZE
+	RAM   (wx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
+
 #if defined(CONFIG_LINKER_DEVNULL_MEMORY)
-    DEVNULL_ROM (rx) : ORIGIN = DEVNULL_ADDR, LENGTH = DEVNULL_SIZE
+	DEVNULL_ROM (rx) : ORIGIN = DEVNULL_ADDR, LENGTH = DEVNULL_SIZE
 #endif
-    LINKER_DT_REGIONS()
-    /* Used by and documented in include/linker/intlist.ld */
-    IDT_LIST (wx) : ORIGIN = 0xFFFF7FFF, LENGTH = 32K
-    }
+	LINKER_DT_REGIONS()
+	/* Used by and documented in include/linker/intlist.ld */
+	IDT_LIST (wx) : ORIGIN = 0xFFFF7FFF, LENGTH = 32K
+	}
 
 ENTRY(CONFIG_KERNEL_ENTRY)
 
-#include <bootstrap.ld>
 
 SECTIONS
-    {
+	{
 
 #include <zephyr/linker/rel-sections.ld>
 
@@ -98,27 +125,28 @@ SECTIONS
 #include <zephyr/linker/llext-sections.ld>
 #endif
 
-    /*
-     * .plt and .iplt are here according to 'arm-zephyr-elf-ld --verbose',
-     * before text section.
-     */
-    /DISCARD/ :
+	/*
+	 * .plt and .iplt are here according to 'arm-zephyr-elf-ld --verbose',
+	 * before text section.
+	 */
+	/DISCARD/ :
 	{
 	*(.plt)
 	}
 
-    /DISCARD/ :
+	/DISCARD/ :
 	{
 	*(.iplt)
 	}
 
-    GROUP_START(ROMABLE_REGION)
+	GROUP_START(ROMABLE_REGION)
 
 	__rom_region_start = ROM_ADDR;
-
-    SECTION_PROLOGUE(rom_start,,)
+#include <bootstrap.ld>
+	SECTION_PROLOGUE(rom_start,(ROM_ADDR + BOOTSTRAP_REGION_SIZE + BOOTSTRAP_OFFSET_FLASH),)
 	{
-
+		. = 0x4;
+		. = ALIGN(4);
 
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
@@ -128,10 +156,9 @@ SECTIONS
 
 #endif /* CONFIG_CODE_DATA_RELOCATION */
 
-    SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
+	SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
 	{
 	__text_region_start = .;
-
 #include <zephyr/linker/kobject-text.ld>
 
 	*(.text)
@@ -180,7 +207,7 @@ SECTIONS
 #include <zephyr/linker/common-rom.ld>
 #include <zephyr/linker/thread-local-storage.ld>
 
-    SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
+	SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
 	{
 	*(.rodata)
 	*(".rodata.*")
@@ -209,12 +236,12 @@ SECTIONS
 #include <zephyr/linker/cplusplus-rom.ld>
 
 #if defined(CONFIG_BUILD_ALIGN_LMA)
-    /*
-     * Include a padding section here to make sure that the LMA address
-     * of the sections in the RAMABLE_REGION are aligned with those
-     * section's VMA alignment requirements.
-     */
-    SECTION_PROLOGUE(padding_section,,)
+	/*
+	 * Include a padding section here to make sure that the LMA address
+	 * of the sections in the RAMABLE_REGION are aligned with those
+	 * section's VMA alignment requirements.
+	 */
+	SECTION_PROLOGUE(padding_section,,)
 	{
 	__rodata_region_end = .;
 	MPU_ALIGN(__rodata_region_end - ADDR(rom_start));
@@ -225,20 +252,20 @@ SECTIONS
 #endif
 	__rom_region_end = __rom_region_start + . - ADDR(rom_start);
 
-    GROUP_END(ROMABLE_REGION)
+	GROUP_END(ROMABLE_REGION)
 
-    /*
-     * These are here according to 'arm-zephyr-elf-ld --verbose',
-     * before data section.
-     */
-    /DISCARD/ : {
+	/*
+	 * These are here according to 'arm-zephyr-elf-ld --verbose',
+	 * before data section.
+	 */
+	/DISCARD/ : {
 	*(.got.plt)
 	*(.igot.plt)
 	*(.got)
 	*(.igot)
 	}
 
-    GROUP_START(RAMABLE_REGION)
+	GROUP_START(RAMABLE_REGION)
 
 	. = RAM_ADDR;
 	/* Align the start of image RAM with the
@@ -261,13 +288,13 @@ SECTIONS
 	_app_smem_size = _app_smem_end - _app_smem_start;
 	_app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
 
-    SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
+	SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
 	{
-        /*
-         * For performance, BSS section is assumed to be 4 byte aligned and
-         * a multiple of 4 bytes
-         */
-        . = ALIGN(4);
+		/*
+		 * For performance, BSS section is assumed to be 4 byte aligned and
+		 * a multiple of 4 bytes
+		 */
+		. = ALIGN(4);
 	__bss_start = .;
 	__kernel_ram_start = .;
 
@@ -280,9 +307,9 @@ SECTIONS
 #include <linker_sram_bss_relocate.ld>
 #endif
 
-        /*
-         * As memory is cleared in words only, it is simpler to ensure the BSS
-         * section ends on a 4 byte boundary. This wastes a maximum of 3 bytes.
+		/*
+		 * As memory is cleared in words only, it is simpler to ensure the BSS
+		 * section ends on a 4 byte boundary. This wastes a maximum of 3 bytes.
 		 */
 	__bss_end = ALIGN(4);
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
@@ -291,9 +318,9 @@ SECTIONS
 
 #endif  /* CONFIG_USERSPACE */
 
-    GROUP_START(DATA_REGION)
+	GROUP_START(DATA_REGION)
 
-    SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
+	SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
 	{
 	__data_region_start = .;
 	__data_start = .;
@@ -312,10 +339,10 @@ SECTIONS
 	__data_end = .;
 
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-    __data_size = __data_end - __data_start;
-    __data_load_start = LOADADDR(_DATA_SECTION_NAME);
+	__data_size = __data_end - __data_start;
+	__data_load_start = LOADADDR(_DATA_SECTION_NAME);
 
-    __data_region_load_start = LOADADDR(_DATA_SECTION_NAME);
+	__data_region_load_start = LOADADDR(_DATA_SECTION_NAME);
 
 #include <zephyr/linker/common-ram.ld>
 #include <zephyr/linker/kobject-data.ld>
@@ -327,16 +354,16 @@ SECTIONS
  */
 #include <snippets-data-sections.ld>
 
-    __data_region_end = .;
+	__data_region_end = .;
 
 #ifndef CONFIG_USERSPACE
    SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
 	{
-        /*
-         * For performance, BSS section is assumed to be 4 byte aligned and
-         * a multiple of 4 bytes
-         */
-        . = ALIGN(4);
+		/*
+		 * For performance, BSS section is assumed to be 4 byte aligned and
+		 * a multiple of 4 bytes
+		 */
+		. = ALIGN(4);
 	__bss_start = .;
 	__kernel_ram_start = .;
 
@@ -349,21 +376,21 @@ SECTIONS
 #include <linker_sram_bss_relocate.ld>
 #endif
 
-        /*
-         * As memory is cleared in words only, it is simpler to ensure the BSS
-         * section ends on a 4 byte boundary. This wastes a maximum of 3 bytes.
+		/*
+		 * As memory is cleared in words only, it is simpler to ensure the BSS
+		 * section ends on a 4 byte boundary. This wastes a maximum of 3 bytes.
 		 */
 	__bss_end = ALIGN(4);
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 
-    SECTION_PROLOGUE(_NOINIT_SECTION_NAME,(NOLOAD),)
-        {
-        /*
-         * This section is used for non-initialized objects that
-         * will not be cleared during the boot process.
-         */
-        *(.noinit)
-        *(".noinit.*")
+	SECTION_PROLOGUE(_NOINIT_SECTION_NAME,(NOLOAD),)
+		{
+		/*
+		 * This section is used for non-initialized objects that
+		 * will not be cleared during the boot process.
+		 */
+		*(.noinit)
+		*(".noinit.*")
 	*(".kernel_noinit.*")
 
 /* Located in generated directory. This file is populated by the
@@ -371,13 +398,13 @@ SECTIONS
  */
 #include <snippets-noinit.ld>
 
-        } GROUP_NOLOAD_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
+		} GROUP_NOLOAD_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 #endif /* CONFIG_USERSPACE */
 
-    /* Define linker symbols */
+	/* Define linker symbols */
 
-    __kernel_ram_end = RAM_ADDR + RAM_SIZE;
-    __kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
+	__kernel_ram_end = RAM_ADDR + RAM_SIZE;
+	__kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
 
 #if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_itcm), okay)
 GROUP_START(ITCM)
@@ -448,33 +475,31 @@ GROUP_END(DTCM)
 
 #include <zephyr/linker/ram-end.ld>
 
-    GROUP_END(RAMABLE_REGION)
+	GROUP_END(RAMABLE_REGION)
 
 #include <zephyr/linker/debug-sections.ld>
 
-    /DISCARD/ : { *(.note.GNU-stack) }
+	/DISCARD/ : { *(.note.GNU-stack) }
 
-    SECTION_PROLOGUE(.ARM.attributes, 0,)
+	SECTION_PROLOGUE(.ARM.attributes, 0,)
 	{
 	KEEP(*(.ARM.attributes))
 	KEEP(*(.gnu.attributes))
 	}
 
-    /* Sections generated from 'zephyr,memory-region' nodes */
-    LINKER_DT_SECTIONS()
+	/* Sections generated from 'zephyr,memory-region' nodes */
+	LINKER_DT_SECTIONS()
 
 /* Must be last in romable region */
 SECTION_PROLOGUE(.last_section,,)
 {
-#ifdef CONFIG_LINKER_LAST_SECTION_ID
-  /* Fill last section with a word to ensure location counter and actual rom
-   * region data usage match. */
-  LONG(CONFIG_LINKER_LAST_SECTION_ID_PATTERN)
-#endif
+  /* .last_section contains a fixed word to ensure location counter and actual
+   * rom region data usage match when CONFIG_LINKER_LAST_SECTION_ID=y. */
+  KEEP(*(.last_section))
 } GROUP_LINK_IN(ROMABLE_REGION)
 
 /* To provide the image size as a const expression,
  * calculate this value here. */
 _flash_used = LOADADDR(.last_section) + SIZEOF(.last_section) - __rom_region_start;
 
-    }
+	}

@@ -125,7 +125,7 @@ struct npcx_pinctrl {
 		struct npcx_psl_input psl_in;
 		uint16_t cfg_word;
 	} cfg;
-	struct {
+	struct __packed {
 		/** Indicates the current pinctrl type. */
 		enum npcx_pinctrl_type type :2;
 		/** Properties used for pinmuxing. */

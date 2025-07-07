@@ -56,25 +56,62 @@ struct fw_resource_table {
 #endif
 } METAL_PACKED_END;
 
-void rsc_table_get(struct fw_resource_table **table_ptr, int *length);
+#if (CONFIG_OPENAMP_RSC_TABLE_NUM_RPMSG_BUFF > 0)
+	#define VDEV_OFFSET	offsetof(struct fw_resource_table, vdev),
+#else
+	#define VDEV_OFFSET
+#endif
+
+#if defined(CONFIG_RAM_CONSOLE)
+	#define CM_TRACE_OFFSET	offsetof(struct fw_resource_table, cm_trace),
+#else
+	#define CM_TRACE_OFFSET
+#endif
+
+#define VDEV_ENTRY_HELPER(x)							\
+	.vdev = {RSC_VDEV, VIRTIO_ID_RPMSG, 0, RPMSG_IPU_C0_FEATURES, 0, 0, 0,	\
+		VRING_COUNT, {0, 0},},						\
+	.vring0 = {VRING_TX_ADDRESS, VRING_ALIGNMENT, x, VRING0_ID, 0},		\
+	.vring1 = {VRING_RX_ADDRESS, VRING_ALIGNMENT, x, VRING1_ID, 0},
 
 #if (CONFIG_OPENAMP_RSC_TABLE_NUM_RPMSG_BUFF > 0)
+	#define VDEV_ENTRY							\
+		VDEV_ENTRY_HELPER(CONFIG_OPENAMP_RSC_TABLE_NUM_RPMSG_BUFF)
+#else
+	#define VDEV_ENTRY
+#endif
 
-inline struct fw_rsc_vdev *rsc_table_to_vdev(struct fw_resource_table *rsc_table)
-{
-	return &rsc_table->vdev;
+#if defined(CONFIG_RAM_CONSOLE)
+	#define CM_TRACE_ENTRY							\
+		.cm_trace = {							\
+			RSC_TRACE,						\
+			(uint32_t)ram_console_buf, CONFIG_RAM_CONSOLE_BUFFER_SIZE, 0,\
+			"Zephyr_log",						\
+		},
+#else
+	#define CM_TRACE_ENTRY
+#endif
+
+#define RESOURCE_TABLE_INIT			\
+{						\
+	.hdr = {				\
+		.ver = 1,			\
+		.num = RSC_TABLE_NUM_ENTRY,	\
+	},					\
+	.offset = {				\
+		VDEV_OFFSET			\
+		CM_TRACE_OFFSET			\
+	},					\
+	VDEV_ENTRY				\
+	CM_TRACE_ENTRY				\
 }
 
-inline struct fw_rsc_vdev_vring *rsc_table_get_vring0(struct fw_resource_table *rsc_table)
-{
-	return &rsc_table->vring0;
-}
+void rsc_table_get(void **table_ptr, int *length);
 
-inline struct fw_rsc_vdev_vring *rsc_table_get_vring1(struct fw_resource_table *rsc_table)
-{
-	return &rsc_table->vring1;
-}
-
+#if (CONFIG_OPENAMP_RSC_TABLE_NUM_RPMSG_BUFF > 0)
+struct fw_rsc_vdev *rsc_table_to_vdev(void *rsc_table);
+struct fw_rsc_vdev_vring *rsc_table_get_vring0(void *rsc_table);
+struct fw_rsc_vdev_vring *rsc_table_get_vring1(void *rsc_table);
 #endif
 
 #ifdef __cplusplus

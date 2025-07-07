@@ -6,6 +6,7 @@
 
 #include <zephyr/dt-bindings/clock/ra_clock.h>
 #include <arm/renesas/ra/ra4/ra4-cm4-common.dtsi>
+#include <zephyr/dt-bindings/misc/renesas/ra-elc/ra4m1-elc.h>
 
 / {
 	soc {
@@ -47,6 +48,8 @@
 		sci2: sci2@40070040 {
 			compatible = "renesas,ra-sci";
 			reg = <0x40070040 0x20>;
+			interrupts = <8 1>, <9 1>, <10 1>, <11 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
 			clocks = <&pclka MSTPB 29>;
 			status = "disabled";
 

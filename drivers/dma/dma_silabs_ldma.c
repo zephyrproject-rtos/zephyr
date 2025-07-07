@@ -329,7 +329,7 @@ static int dma_silabs_configure(const struct device *dev, uint32_t channel,
 	LDMA_TransferCfg_t *xfer_config = &chan_conf->xfer_config;
 	int ret;
 
-	if (channel > data->dma_ctx.dma_channels) {
+	if (channel >= data->dma_ctx.dma_channels) {
 		return -EINVAL;
 	}
 
@@ -611,7 +611,7 @@ int silabs_ldma_append_block(const struct device *dev, uint32_t channel, struct 
 		.dma_desc_pool = &desc_pool_##inst                                                 \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, &dma_silabs_init, NULL, &dma_silabs_data_##inst,               \
+	DEVICE_DT_INST_DEFINE(inst, dma_silabs_init, NULL, &dma_silabs_data_##inst,                \
 			      &dma_silabs_config_##inst, PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,   \
 			      &dma_funcs);
 

@@ -1,0 +1,83 @@
+/*
+ * Copyright 2025 Variscite Ltd.
+ * Copyright (c) 2021, Laird Connectivity
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_imx8ml_m7.dtsi>
+#include "imx8mp_var_som-pinctrl.dtsi"
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/delete-node/ &ddr_code;
+/delete-node/ &ddr_sys;
+
+/ {
+	model = "Variscite VAR-SOM-MX8M-PLUS M7 (DDR)";
+	compatible = "nxp,imx8mp_var_som";
+
+	chosen {
+		/* DDR */
+		zephyr,flash = &ddr_code;
+		zephyr,sram = &ddr_sys;
+
+		zephyr,console = &uart4;
+		zephyr,shell-uart = &uart4;
+	};
+
+	soc {
+		ddr_code: code@7b000000 {
+			device_type = "memory";
+			compatible = "nxp,imx-code-bus";
+			reg = <0x7b000000 DT_SIZE_M(2)>;
+		};
+
+		ddr_sys: memory@7b200000 {
+			device_type = "memory";
+			compatible = "nxp,imx-sys-bus";
+			reg = <0x7b200000 DT_SIZE_M(2)>;
+		};
+	};
+
+	aliases {
+		led0 = &blinky0;
+		sw0 = &button0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		blinky0: blinky_0 {
+			gpios = <&gpio3 14 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		button0: btn_0 {
+			label = "BTN0";
+			gpios = <&gpio3 6 (GPIO_PULL_UP|GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+};
+
+&uart4 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart4_default>;
+	pinctrl-names = "default";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&mailbox0 {
+	status = "okay";
+};

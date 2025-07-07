@@ -67,12 +67,22 @@ static int tmp1075_attr_set(const struct device *dev, enum sensor_channel chan,
 
 	switch (attr) {
 #if CONFIG_TMP1075_ALERT_INTERRUPTS
+		int integer, frac;
+
 	case SENSOR_ATTR_LOWER_THRESH:
-		return set_threshold_attribute(dev, TMP1075_REG_TLOW, val->val1 << 8,
+		/* Extract integer and fractional parts from TMP1075 12-bit register value */
+		integer = (val->val1 << TMP1075_DATA_INTE_SHIFT) & TMP1075_DATA_INTE_MASK;
+		frac = ((val->val2 / TMP1075_TEMP_SCALE) << TMP1075_DATA_FRAC_SHIFT) &
+		       TMP1075_DATA_FRAC_MASK;
+		return set_threshold_attribute(dev, TMP1075_REG_TLOW, integer | frac,
 					       "SENSOR_ATTR_LOWER_THRESH");
 
 	case SENSOR_ATTR_UPPER_THRESH:
-		return set_threshold_attribute(dev, TMP1075_REG_THIGH, val->val1 << 8,
+		/* Extract integer and fractional parts from TMP1075 12-bit register value */
+		integer = (val->val1 << TMP1075_DATA_INTE_SHIFT) & TMP1075_DATA_INTE_MASK;
+		frac = ((val->val2 / TMP1075_TEMP_SCALE) << TMP1075_DATA_FRAC_SHIFT) &
+		       TMP1075_DATA_FRAC_MASK;
+		return set_threshold_attribute(dev, TMP1075_REG_THIGH, integer | frac,
 					       "SENSOR_ATTR_UPPER_THRESH");
 #endif
 
@@ -91,7 +101,9 @@ static int get_threshold_attribute(const struct device *dev, uint8_t reg, struct
 		LOG_ERR("Failed to get %s attribute!", error_msg);
 		return -EIO;
 	}
-	val->val1 = value >> 8;
+	val->val1 = (value & TMP1075_DATA_INTE_MASK) >> TMP1075_DATA_INTE_SHIFT;
+	val->val2 =
+		((value & TMP1075_DATA_FRAC_MASK) >> TMP1075_DATA_FRAC_SHIFT) * TMP1075_TEMP_SCALE;
 	return 0;
 }
 #endif

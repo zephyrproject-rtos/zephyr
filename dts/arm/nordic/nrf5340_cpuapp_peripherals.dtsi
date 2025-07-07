@@ -26,6 +26,7 @@ oscillators: clock-controller@4000 {
 		compatible = "nordic,nrf53-hfxo";
 		#clock-cells = <0>;
 		clock-frequency = <DT_FREQ_M(32)>;
+		startup-time-us = <1400>;
 	};
 };
 

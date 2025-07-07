@@ -136,6 +136,9 @@ enum init_level {
 extern const struct init_entry __init_SMP_start[];
 #endif /* CONFIG_SMP */
 
+TYPE_SECTION_START_EXTERN(struct service, service);
+TYPE_SECTION_END_EXTERN(struct service, service);
+
 /*
  * storage space for the interrupt stack
  *
@@ -247,11 +250,16 @@ void z_bss_zero(void)
 	z_early_memset(&__gcov_bss_start, 0,
 		       ((uintptr_t) &__gcov_bss_end - (uintptr_t) &__gcov_bss_start));
 #endif /* CONFIG_COVERAGE_GCOV */
+#ifdef CONFIG_NOCACHE_MEMORY
+z_early_memset(&_nocache_ram_start, 0,
+		   (uintptr_t) &_nocache_ram_end
+		   - (uintptr_t) &_nocache_ram_start);
+#endif
 }
 
 #ifdef CONFIG_LINKER_USE_BOOT_SECTION
 /**
- * @brief Clear BSS within the bot region
+ * @brief Clear BSS within the boot region
  *
  * This routine clears the BSS within the boot region.
  * This is separate from z_bss_zero() as boot region may
@@ -332,6 +340,12 @@ static int do_device_init(const struct device *dev)
 	return rc;
 }
 
+static inline bool is_entry_about_service(const void *obj)
+{
+	return (obj >= (void *)_service_list_start &&
+		obj < (void *)_service_list_end);
+}
+
 /**
  * @brief Execute all the init entry initialization functions at a given level
  *
@@ -360,17 +374,26 @@ static void z_sys_init_run_level(enum init_level level)
 	const struct init_entry *entry;
 
 	for (entry = levels[level]; entry < levels[level+1]; entry++) {
-		const struct device *dev = entry->dev;
 		int result = 0;
 
+		if (unlikely(entry->_init_object == NULL)) {
+			continue;
+		}
+
 		sys_trace_sys_init_enter(entry, level);
-		if (dev != NULL) {
+
+		if (is_entry_about_service(entry->_init_object)) {
+			const struct service *srv = entry->srv;
+
+			result = srv->init();
+		} else {
+			const struct device *dev = entry->dev;
+
 			if ((dev->flags & DEVICE_FLAG_INIT_DEFERRED) == 0U) {
 				result = do_device_init(dev);
 			}
-		} else {
-			result = entry->init_fn();
 		}
+
 		sys_trace_sys_init_exit(entry, level, result);
 	}
 }
@@ -483,6 +506,27 @@ static char **prepare_main_args(int *argc)
 		(*argc)++;
 	}
 }
+
+#endif
+
+#ifdef CONFIG_STATIC_INIT_GNU
+
+extern void (*__zephyr_init_array_start[])();
+extern void (*__zephyr_init_array_end[])();
+
+static void z_static_init_gnu(void)
+{
+	void	(**fn)();
+
+	for (fn = __zephyr_init_array_start; fn != __zephyr_init_array_end; fn++) {
+		/* MWDT toolchain sticks a NULL at the end of the array */
+		if (*fn == NULL) {
+			break;
+		}
+		(**fn)();
+	}
+}
+
 #endif
 
 /**
@@ -524,8 +568,9 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #endif /* CONFIG_STACK_POINTER_RANDOM */
 	boot_banner();
 
-	void z_init_static(void);
-	z_init_static();
+#ifdef CONFIG_STATIC_INIT_GNU
+	z_static_init_gnu();
+#endif /* CONFIG_STATIC_INIT_GNU */
 
 	/* Final init level before app starts */
 	z_sys_init_run_level(INIT_LEVEL_APPLICATION);

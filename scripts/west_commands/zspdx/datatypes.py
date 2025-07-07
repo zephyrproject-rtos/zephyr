@@ -9,7 +9,7 @@ from enum import Enum
 # should be built.
 class DocumentConfig:
     def __init__(self):
-        super(DocumentConfig, self).__init__()
+        super().__init__()
 
         # name of document
         self.name = ""
@@ -27,7 +27,7 @@ class DocumentConfig:
 class Document:
     # initialize with a DocumentConfig
     def __init__(self, cfg):
-        super(Document, self).__init__()
+        super().__init__()
 
         # configuration - DocumentConfig
         self.cfg = cfg
@@ -63,7 +63,7 @@ class Document:
 # be built.
 class PackageConfig:
     def __init__(self):
-        super(PackageConfig, self).__init__()
+        super().__init__()
 
         # package name
         self.name = ""
@@ -106,7 +106,7 @@ class Package:
     # 1) PackageConfig
     # 2) the Document that owns this Package
     def __init__(self, cfg, doc):
-        super(Package, self).__init__()
+        super().__init__()
 
         # configuration - PackageConfig
         self.cfg = cfg
@@ -153,7 +153,7 @@ class RelationshipDataElementType(Enum):
 # Relationship after we have organized the SPDX Package and File data.
 class RelationshipData:
     def __init__(self):
-        super(RelationshipData, self).__init__()
+        super().__init__()
 
         # for the "owner" element (e.g., the left side of the Relationship),
         # is it a filename or a target name (e.g., a Package in the build doc)
@@ -191,7 +191,7 @@ class RelationshipData:
 # Document's context.
 class Relationship:
     def __init__(self):
-        super(Relationship, self).__init__()
+        super().__init__()
 
         # SPDX ID for left side of relationship
         # including "SPDXRef-" as well as "DocumentRef-" if needed
@@ -213,7 +213,7 @@ class File:
     # 1) Document containing this File
     # 2) Package containing this File
     def __init__(self, doc, pkg):
-        super(File, self).__init__()
+        super().__init__()
 
         # absolute path to this file on disk
         self.abspath = ""

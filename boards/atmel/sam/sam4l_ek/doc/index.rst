@@ -73,6 +73,8 @@ between all others headers and RS-485 port.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The SAM4L-EK board have a Segger Embedded Debugger Unit
 `J-Link OB <https://www.segger.com/jlink-ob.html>`_.  This provides a debug
 interface to the SAM4LC4C chip. You can use Ozone or JLink to communicate with

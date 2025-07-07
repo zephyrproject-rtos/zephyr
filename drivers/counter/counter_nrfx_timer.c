@@ -110,7 +110,13 @@ static int stop(const struct device *dev)
 {
 	const struct counter_nrfx_config *config = dev->config;
 
+#if NRF_TIMER_HAS_SHUTDOWN
+	nrf_timer_task_trigger(config->timer, NRF_TIMER_TASK_SHUTDOWN);
+#else
 	nrf_timer_task_trigger(config->timer, NRF_TIMER_TASK_STOP);
+	nrf_timer_task_trigger(config->timer, NRF_TIMER_TASK_CLEAR);
+#endif
+
 #ifdef COUNTER_ANY_FAST
 	struct counter_nrfx_data *data = dev->data;
 
@@ -475,7 +481,7 @@ static DEVICE_API(counter, counter_nrfx_driver_api) = {
  */
 #define TIMER_INIT_PRIO(idx)								\
 	COND_CODE_1(INSTANCE_IS_FAST(idx),						\
-		    (UTIL_INC(CONFIG_CLOCK_CONTROL_NRF2_GLOBAL_HSFLL_INIT_PRIORITY)),	\
+		    (UTIL_INC(CONFIG_CLOCK_CONTROL_NRF_HSFLL_GLOBAL_INIT_PRIORITY)),	\
 		    (CONFIG_COUNTER_INIT_PRIORITY))
 
 /*

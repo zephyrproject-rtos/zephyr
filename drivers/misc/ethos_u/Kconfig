@@ -1,0 +1,14 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "Select vendor Ethos-U NPU driver"
+	depends on ETHOS_U
+	default ETHOS_U_ARM if DT_HAS_ARM_ETHOS_U_ENABLED
+
+config ETHOS_U_ARM
+	bool "Arm Ethos-U NPU driver"
+	help
+	  Enables Arm Ethos-U NPU driver.
+
+endchoice

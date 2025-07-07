@@ -1,7 +1,10 @@
 # Copyright (c) 2025 Silicon Laboratories Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-description: Silicon Labs Series 2 flash controller
+title: Silicon Labs Series 2 MSC (Memory System Controller)
+
+description: |
+  Memory System Controller for Silicon Labs Series 2 SoCs.
 
 compatible: "silabs,series2-flash-controller"
 

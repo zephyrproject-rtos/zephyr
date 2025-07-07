@@ -78,7 +78,7 @@ static void test_central_connect_timeout_with_timeout(uint32_t timeout_ms, bool 
 	if (stack_load) {
 		/* Claim all the buffers so that the stack cannot handle the timeout */
 		for (int i = 0; i < BT_BUF_CMD_TX_COUNT; i++) {
-			bufs[i] = bt_hci_cmd_create(BT_HCI_LE_ADV_ENABLE, 0);
+			bufs[i] = bt_hci_cmd_alloc(K_FOREVER);
 			TEST_ASSERT(bufs[i] != NULL, "Failed to claim all command buffers");
 		}
 		/* Hold all the buffers until after we expect the connection to timeout */

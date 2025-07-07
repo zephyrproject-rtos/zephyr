@@ -10,3 +10,5 @@
  */
 
 int bt_hci_connect_br_cancel(struct bt_conn *conn);
+
+void bt_br_acl_recv(struct bt_conn *conn, struct net_buf *buf, bool complete);

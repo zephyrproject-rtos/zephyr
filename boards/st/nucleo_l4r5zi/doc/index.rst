@@ -182,6 +182,8 @@ Ethernet over USB is configured as the default network interface (EEM)
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The NUCLEO-L4R5ZI board includes a ST-LINK/V2 embedded debug tool interface.
 
 Flashing

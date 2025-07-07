@@ -1,0 +1,6 @@
+board:
+  name: mikroe_quail
+  full_name: MikroE Quail
+  vendor: mikroe
+  socs:
+    - name: stm32f427xx

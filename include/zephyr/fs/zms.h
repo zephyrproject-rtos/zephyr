@@ -92,7 +92,8 @@ struct zms_fs {
 int zms_mount(struct zms_fs *fs);
 
 /**
- * @brief Clear the ZMS file system from device.
+ * @brief Clear the ZMS file system from device. The ZMS file system must be re-mounted after this
+ * operation.
  *
  * @param fs Pointer to the file system.
  *

@@ -302,30 +302,30 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt, bool is_loopback)
 	}
 
 	if (!is_loopback) {
-		if (net_ipv4_is_addr_loopback((struct in_addr *)hdr->dst) ||
-		    net_ipv4_is_addr_loopback((struct in_addr *)hdr->src)) {
+		if (net_ipv4_is_addr_loopback_raw(hdr->dst) ||
+		    net_ipv4_is_addr_loopback_raw(hdr->src)) {
 			NET_DBG("DROP: localhost packet");
 			goto drop;
 		}
 
-		if (net_ipv4_is_my_addr((struct in_addr *)hdr->src)) {
+		if (net_ipv4_is_my_addr_raw(hdr->src)) {
 			NET_DBG("DROP: src addr is %s", "mine");
 			goto drop;
 		}
 	}
 
-	if (net_ipv4_is_addr_mcast((struct in_addr *)hdr->src)) {
+	if (net_ipv4_is_addr_mcast_raw(hdr->src)) {
 		NET_DBG("DROP: src addr is %s", "mcast");
 		goto drop;
 	}
 
-	if (net_ipv4_is_addr_bcast(net_pkt_iface(pkt), (struct in_addr *)hdr->src)) {
+	if (net_ipv4_is_addr_bcast_raw(net_pkt_iface(pkt), hdr->src)) {
 		NET_DBG("DROP: src addr is %s", "bcast");
 		goto drop;
 	}
 
-	if (net_ipv4_is_addr_unspecified((struct in_addr *)hdr->src) &&
-	    !net_ipv4_is_addr_bcast(net_pkt_iface(pkt), (struct in_addr *)hdr->dst) &&
+	if (net_ipv4_is_addr_unspecified_raw(hdr->src) &&
+	    !net_ipv4_is_addr_bcast_raw(net_pkt_iface(pkt), hdr->dst) &&
 	    (hdr->proto != IPPROTO_IGMP)) {
 		NET_DBG("DROP: src addr is %s", "unspecified");
 		goto drop;
@@ -343,20 +343,21 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt, bool is_loopback)
 
 	if (!net_pkt_filter_ip_recv_ok(pkt)) {
 		/* drop the packet */
+		net_stats_update_filter_rx_ipv4_drop(net_pkt_iface(pkt));
 		return NET_DROP;
 	}
 
-	if ((!net_ipv4_is_my_addr((struct in_addr *)hdr->dst) &&
-	     !net_ipv4_is_addr_mcast((struct in_addr *)hdr->dst) &&
+	if ((!net_ipv4_is_my_addr_raw(hdr->dst) &&
+	     !net_ipv4_is_addr_mcast_raw(hdr->dst) &&
 	     !(hdr->proto == IPPROTO_UDP &&
-	       (net_ipv4_addr_cmp((struct in_addr *)hdr->dst, net_ipv4_broadcast_address()) ||
+	       (net_ipv4_addr_cmp_raw(hdr->dst, net_ipv4_broadcast_address()->s4_addr) ||
 		/* RFC 1122 ch. 3.3.6 The 0.0.0.0 is non-standard bcast addr */
 		(IS_ENABLED(CONFIG_NET_IPV4_ACCEPT_ZERO_BROADCAST) &&
-		 net_ipv4_addr_cmp((struct in_addr *)hdr->dst,
-				   net_ipv4_unspecified_address())) ||
+		 net_ipv4_addr_cmp_raw(hdr->dst,
+				       net_ipv4_unspecified_address()->s4_addr)) ||
 		net_dhcpv4_accept_unicast(pkt)))) ||
 	    (hdr->proto == IPPROTO_TCP &&
-	     net_ipv4_is_addr_bcast(net_pkt_iface(pkt), (struct in_addr *)hdr->dst))) {
+	     net_ipv4_is_addr_bcast_raw(net_pkt_iface(pkt), hdr->dst))) {
 		NET_DBG("DROP: not for me");
 		goto drop;
 	}
@@ -382,6 +383,14 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt, bool is_loopback)
 	NET_DBG("IPv4 packet received from %s to %s",
 		net_sprint_ipv4_addr(&hdr->src),
 		net_sprint_ipv4_addr(&hdr->dst));
+
+	ip.ipv4 = hdr;
+
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_INET_RAW)) {
+		if (net_conn_raw_ip_input(pkt, &ip, hdr->proto) == NET_DROP) {
+			goto drop;
+		}
+	}
 
 	switch (hdr->proto) {
 	case IPPROTO_ICMP:
@@ -439,8 +448,6 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt, bool is_loopback)
 	if (verdict == NET_DROP) {
 		goto drop;
 	}
-
-	ip.ipv4 = hdr;
 
 	verdict = net_conn_input(pkt, &ip, hdr->proto, &proto_hdr);
 	if (verdict != NET_DROP) {

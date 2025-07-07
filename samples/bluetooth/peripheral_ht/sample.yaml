@@ -35,3 +35,10 @@ tests:
       - frdm_rw612
     extra_configs:
       - CONFIG_NXP_MONOLITHIC_NBU=n
+  sample.bluetooth.peripheral_ht.nxp_nw612:
+    build_only: true
+    harness: bluetooth
+    platform_allow:
+      - mimxrt1170_evk@B/mimxrt1176/cm7
+    extra_configs:
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y

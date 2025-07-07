@@ -816,6 +816,9 @@ static int uac2_request(struct usbd_class_data *const c_data, struct net_buf *bu
 				       ctx->user_data);
 	} else if (!is_feedback) {
 		ctx->ops->buf_release_cb(dev, terminal, buf->__buf, ctx->user_data);
+		if (buf->frags) {
+			ctx->ops->buf_release_cb(dev, terminal, buf->frags->__buf, ctx->user_data);
+		}
 	}
 
 	usbd_ep_buf_free(uds_ctx, buf);
@@ -890,7 +893,7 @@ static void *uac2_get_desc(struct usbd_class_data *const c_data,
 	struct device *dev = usbd_class_get_private(c_data);
 	const struct uac2_cfg *cfg = dev->config;
 
-	if (speed == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED && speed == USBD_SPEED_HS) {
 		return cfg->hs_descriptors;
 	}
 

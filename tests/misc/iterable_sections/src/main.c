@@ -67,13 +67,13 @@ ZTEST(iterable_sections, test_ram)
 	zassert_equal(out, RAM_EXPECT, "Check value incorrect (got: 0x%08x)", out);
 
 	zassert_equal(ram1.i & CHECK_BIT, CHECK_BIT,
-		      "ram1.i check bit incorrect (got: 0x%x)", ram1.i);
+		      "ram1.i check bit incorrect (got: 0x%x)", (int)ram1.i);
 	zassert_equal(ram2.i & CHECK_BIT, CHECK_BIT,
-		      "ram2.i check bit incorrect (got: 0x%x)", ram2.i);
+		      "ram2.i check bit incorrect (got: 0x%x)", (int)ram2.i);
 	zassert_equal(ram3.i & CHECK_BIT, CHECK_BIT,
-		      "ram3.i check bit incorrect (got: 0x%x)", ram3.i);
+		      "ram3.i check bit incorrect (got: 0x%x)", (int)ram3.i);
 	zassert_equal(ram4.i & CHECK_BIT, CHECK_BIT,
-		      "ram4.i check bit incorrect (got: 0x%x)", ram4.i);
+		      "ram4.i check bit incorrect (got: 0x%x)", (int)ram4.i);
 
 	out = 0;
 	STRUCT_SECTION_FOREACH_ALTERNATE(test_ram2, test_ram, t) {

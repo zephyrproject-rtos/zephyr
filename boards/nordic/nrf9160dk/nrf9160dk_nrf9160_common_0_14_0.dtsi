@@ -39,6 +39,7 @@
 &arduino_spi {
 	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>, /* D10 */
 		   <&gpio0 25 GPIO_ACTIVE_LOW>;
+
 	mx25r64: mx25r6435f@1 {
 		compatible = "jedec,spi-nor";
 		status = "disabled";

@@ -76,8 +76,8 @@ Configuration
 *************
 
 To configure the implementation of the PSA Secure Storage API provided by Zephyr, have a look at the
-``CONFIG_SECURE_STORAGE_.*`` Kconfig options. They are defined in the various Kconfig files found
-under ``subsys/secure_storage/``.
+available :kconfig:option-regex:`Kconfig options <CONFIG_SECURE_STORAGE_.*>`.
+They are defined in the various Kconfig files found under :zephyr_file:`subsys/secure_storage/`.
 
 Customization
 *************
@@ -100,8 +100,9 @@ ITS API
 Zephyr's implementation of the ITS API
 (:kconfig:option:`CONFIG_SECURE_STORAGE_ITS_IMPLEMENTATION_ZEPHYR`)
 makes use of the ITS transform and store modules, which can be configured and customized separately.
-Have a look at the ``CONFIG_SECURE_STORAGE_ITS_(STORE|TRANSFORM)_.*_CUSTOM``
-Kconfig options to see the different customization possibilities.
+Have a look at the :kconfig:option-regex:`ITS transform and store Kconfig options
+<CONFIG_SECURE_STORAGE_ITS_(STORE|TRANSFORM)_.*_CUSTOM>` to see the different customization
+possibilities.
 
 It's especially recommended to implement a custom encryption key provider
 (:kconfig:option:`CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER_CUSTOM`)

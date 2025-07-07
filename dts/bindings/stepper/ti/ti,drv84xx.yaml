@@ -1,0 +1,50 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Navimatix GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  TI DRV84XX stepper motor driver.
+  Compatible with drv8424, drv8425, drv8426, drv8434 and drv8436.
+  SAFETY:
+  The counter needs to support both set_top_value functionalities: Setting a new top value and
+  attaching an ISR to the turnaround.
+  SAFETY:
+  The step gpio pin needs to be connected directly to the SOC GPIO controller, connecting the
+  pin to a controller connected via a bus such as i2c or others will lead to undefined behaviour.
+
+  Example:
+  drv8424: drv8424 {
+    status = "okay";
+    compatible = "ti,drv84xx";
+
+    dir-gpios = <&arduino_header 18 0>;
+    step-gpios = <&arduino_header 19 0>;
+    fault-gpios = <&arduino_header 16 0>;
+    sleep-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>;
+    en-gpios  = <&arduino_header 14 0>;
+    m0-gpios = <&mikroe_stepper_gpios 0 0>;
+    m1-gpios = <&mikroe_stepper_gpios 1 0>;
+    counter = <&counter2>;
+  };
+
+
+compatible: "ti,drv84xx"
+
+include:
+  - name: stepper-controller.yaml
+
+properties:
+  fault-gpios:
+    type: phandle-array
+    description: Fault pin.
+
+  sleep-gpios:
+    type: phandle-array
+    description: Sleep pin (active low).
+
+  m0-gpios:
+    type: phandle-array
+    description: Microstep configuration pin 0.
+
+  m1-gpios:
+    type: phandle-array
+    description: Microstep configuration pin 1.

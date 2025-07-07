@@ -40,9 +40,33 @@ source "drivers/wifi/simplelink/Kconfig.simplelink"
 source "drivers/wifi/eswifi/Kconfig.eswifi"
 source "drivers/wifi/esp_at/Kconfig.esp_at"
 source "drivers/wifi/esp32/Kconfig.esp32"
+source "drivers/wifi/esp_hosted/Kconfig.esp_hosted"
 source "drivers/wifi/nxp/Kconfig.nxp"
 source "drivers/wifi/infineon/Kconfig.airoc"
 source "drivers/wifi/nrf_wifi/Kconfig.nrfwifi"
 source "drivers/wifi/siwx91x/Kconfig.siwx91x"
+
+# Choice is after individual drivers to enable driver specific defaults
+choice WIFI_USAGE_MODE
+	prompt "Application usage of the Wi-Fi driver"
+	default WIFI_USAGE_MODE_STA
+	help
+	  Inform the Wi-Fi driver of which Wi-Fi features the application
+	  will be using. Drivers can use this choice to default appropriate
+	  driver-specific options.
+
+config WIFI_USAGE_MODE_STA
+	bool "Wi-Fi interface(s) acts as a Station"
+
+config WIFI_USAGE_MODE_AP
+	bool "Wi-Fi interface(s) acts as an Access Point"
+
+config WIFI_USAGE_MODE_STA_AP
+	bool "Wi-Fi interface(s) acts as an Access Point and Station"
+
+config WIFI_USAGE_MODE_SCAN_ONLY
+	bool "Wi-Fi interface(s) used for SSID scanning only"
+
+endchoice
 
 endif # WIFI

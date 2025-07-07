@@ -43,6 +43,7 @@
 		systimer: timer@d1000000 {
 			compatible = "nuclei,systimer", "riscv,machine-timer";
 			reg = <0xd1000000 0x8 0xd1000008 0x8>;
+			reg-names = "mtime", "mtimecmp";
 			interrupts-extended = <&eclic 7 0>;
 			clk-divider = <NUCLEI_SYSTIMER_DIVIDER_4>;
 		};
@@ -52,10 +53,7 @@
 			#address-cells = <0>;
 			#interrupt-cells = <2>;
 			interrupt-controller;
-			reg =  <0xd2000000 0x0001
-				0xd2000004 0x0004
-				0xd200000b 0x0001
-				0xd2001000 0x1000>;
+			reg =  <0xd2000000 0x2000>;
 		};
 
 		rcu: reset-clock-controller@40021000 {

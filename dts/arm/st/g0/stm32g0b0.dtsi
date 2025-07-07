@@ -99,10 +99,18 @@
 			interrupt-names = "usb";
 			num-bidir-endpoints = <8>;
 			ram-size = <2048>;
+			maximum-speed = "full-speed";
 			phys = <&usb_fs_phy>;
 			clocks = <&rcc STM32_CLOCK(APB1, 13U)>,
 				 <&rcc STM32_SRC_HSI48 USB_SEL(0)>;
 			status = "disabled";
+		};
+
+		pwr: power@40007000 {
+			wkup-pin@3 {
+				reg = <0x3>;
+				wkup-gpios = <&gpioe 6 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+			};
 		};
 	};
 

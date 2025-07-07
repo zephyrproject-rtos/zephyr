@@ -2564,11 +2564,12 @@ static inline size_t net_pkt_get_len(struct net_pkt *pkt)
 int net_pkt_update_length(struct net_pkt *pkt, size_t length);
 
 /**
- * @brief Remove data from the packet at current location
+ * @brief Remove data from the start of the packet.
  *
- * @details net_pkt's cursor should be properly initialized and,
- *          eventually, properly positioned using net_pkt_skip/read/write.
+ * @details net_pkt's cursor should be properly initialized.
  *          Note that net_pkt's cursor is reset by this function.
+ *          This functions works in similar way as net_buf_pull(),
+ *          but it can handle multiple net_buf fragments.
  *
  * @param pkt    Network packet
  * @param length Number of bytes to be removed

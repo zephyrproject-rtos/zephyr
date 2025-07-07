@@ -26,9 +26,9 @@ void soc_reset_hook(void)
 
 #endif
 
-#define FLEXCOMM_CHECK_2(n)	\
-	BUILD_ASSERT((DT_NODE_HAS_COMPAT(n, nxp_lpuart) == 0) &&		\
-		     (DT_NODE_HAS_COMPAT(n, nxp_lpi2c) == 0),			\
+#define FLEXCOMM_CHECK_2(n)                                                                        \
+	BUILD_ASSERT((DT_NODE_HAS_COMPAT(n, nxp_lpuart) == 0) &&                                   \
+			     (DT_NODE_HAS_COMPAT(n, nxp_lpi2c) == 0),                              \
 		     "Do not enable SPI and UART/I2C on the same Flexcomm node");
 
 /* For SPI node enabled, check if UART or I2C is also enabled on the same parent Flexcomm node */
@@ -39,11 +39,20 @@ void soc_reset_hook(void)
  */
 DT_FOREACH_STATUS_OKAY(nxp_lpspi, FLEXCOMM_CHECK)
 
-#if defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_SOC_MCXN947_CPU0)
+#if defined(CONFIG_SECOND_CORE_MCUX) &&                                                            \
+	(defined(CONFIG_SOC_MCXN947_CPU0) || defined(CONFIG_SOC_MCXN547_CPU0))
 
 /* This function is also called at deep sleep resume. */
 static int second_core_boot(void)
 {
+	/* Configure CPU1 TrustZone access level before CPU1 is enabled */
+	AHBSC->MASTER_SEC_LEVEL |=
+		AHBSC_MASTER_SEC_LEVEL_CPU1(CONFIG_SECOND_CORE_MCUX_ACCESS_LEVEL);
+	AHBSC->MASTER_SEC_ANTI_POL_REG =
+		(~AHBSC->MASTER_SEC_LEVEL &
+		 ~AHBSC_MASTER_SEC_ANTI_POL_REG_MASTER_SEC_LEVEL_ANTIPOL_LOCK_MASK) |
+		AHBSC_MASTER_SEC_ANTI_POL_REG_MASTER_SEC_LEVEL_ANTIPOL_LOCK(2);
+
 	/* Boot source for Core 1 from flash */
 	SYSCON->CPBOOT = ((uint32_t)(char *)DT_REG_ADDR(DT_CHOSEN(zephyr_code_cpu1_partition)) &
 			  SYSCON_CPBOOT_CPBOOT_MASK);

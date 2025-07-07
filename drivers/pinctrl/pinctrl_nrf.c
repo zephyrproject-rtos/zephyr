@@ -108,6 +108,10 @@ static const nrf_gpio_pin_drive_t drive_modes[NRF_DRIVE_COUNT] = {
 #endif
 #endif
 
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_tdm)
+#define NRF_PSEL_TDM(reg, line) ((NRF_TDM_Type *)reg)->PSEL.line
+#endif
+
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			   uintptr_t reg)
 {
@@ -354,6 +358,47 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			input = NRF_GPIO_PIN_INPUT_DISCONNECT;
 			break;
 #endif /* defined(NRF_PSEL_QSPI) */
+#if defined(NRF_PSEL_TDM)
+		case NRF_FUN_TDM_SCK_M:
+			NRF_PSEL_TDM(reg, SCK) = psel;
+			write = 0U;
+			dir = NRF_GPIO_PIN_DIR_OUTPUT;
+			input = NRF_GPIO_PIN_INPUT_DISCONNECT;
+			break;
+		case NRF_FUN_TDM_SCK_S:
+			NRF_PSEL_TDM(reg, SCK) = psel;
+			dir = NRF_GPIO_PIN_DIR_INPUT;
+			input = NRF_GPIO_PIN_INPUT_CONNECT;
+			break;
+		case NRF_FUN_TDM_FSYNC_M:
+			NRF_PSEL_TDM(reg, FSYNC) = psel;
+			write = 0U;
+			dir = NRF_GPIO_PIN_DIR_OUTPUT;
+			input = NRF_GPIO_PIN_INPUT_DISCONNECT;
+			break;
+		case NRF_FUN_TDM_FSYNC_S:
+			NRF_PSEL_TDM(reg, FSYNC) = psel;
+			dir = NRF_GPIO_PIN_DIR_INPUT;
+			input = NRF_GPIO_PIN_INPUT_CONNECT;
+			break;
+		case NRF_FUN_TDM_SDIN:
+			NRF_PSEL_TDM(reg, SDIN) = psel;
+			dir = NRF_GPIO_PIN_DIR_INPUT;
+			input = NRF_GPIO_PIN_INPUT_CONNECT;
+			break;
+		case NRF_FUN_TDM_SDOUT:
+			NRF_PSEL_TDM(reg, SDOUT) = psel;
+			write = 0U;
+			dir = NRF_GPIO_PIN_DIR_OUTPUT;
+			input = NRF_GPIO_PIN_INPUT_DISCONNECT;
+			break;
+		case NRF_FUN_TDM_MCK:
+			NRF_PSEL_TDM(reg, MCK) = psel;
+			write = 0U;
+			dir = NRF_GPIO_PIN_DIR_OUTPUT;
+			input = NRF_GPIO_PIN_INPUT_DISCONNECT;
+			break;
+#endif /* defined(NRF_PSEL_TDM) */
 #if defined(NRF_GRTC_CLKOUT_FAST)
 		case NRF_FUN_GRTC_CLKOUT_FAST:
 #if NRF_GPIO_HAS_SEL && defined(GPIO_PIN_CNF_CTRLSEL_GRTC)
@@ -438,9 +483,13 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 					}
 					gpd_requested = true;
 				}
-
-				nrf_gpio_pin_retain_disable(pin);
 			}
+
+			/*
+			 * Pad power domain now on, retain no longer needed
+			 * as pad config will be persists as pad is powered.
+			 */
+			nrf_gpio_pin_retain_disable(pin);
 #endif /* CONFIG_SOC_NRF54H20_GPD */
 
 			if (write != NO_WRITE) {
@@ -459,7 +508,13 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			nrf_gpio_pin_clock_set(pin, NRF_GET_CLOCKPIN_ENABLE(pins[i]));
 #endif
 #ifdef CONFIG_SOC_NRF54H20_GPD
-			if (NRF_GET_GPD_FAST_ACTIVE1(pins[i]) == 1U) {
+			if (NRF_GET_LP(pins[i]) == NRF_LP_ENABLE) {
+				/*
+				 * Pad power domain may be turned off, and pad is not
+				 * actively used as pincnf is low-power. Enable retain
+				 * to ensure pad output and config persists if pad
+				 * power domain is suspended.
+				 */
 				nrf_gpio_pin_retain_enable(pin);
 			}
 #endif /* CONFIG_SOC_NRF54H20_GPD */

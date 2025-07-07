@@ -1901,16 +1901,13 @@ static void eth0_iface_init(struct net_if *iface)
 #endif
 #endif
 	if (device_is_ready(cfg->phy_dev)) {
+		net_if_carrier_off(iface);
+
 		phy_link_callback_set(cfg->phy_dev, &phy_link_state_changed,
 				      (void *)dev);
 
 	} else {
 		LOG_ERR("PHY device not ready");
-	}
-
-	/* Do not start the interface until PHY link is up */
-	if (!(dev_data->link_up)) {
-		net_if_carrier_off(iface);
 	}
 
 	init_done = true;
@@ -1920,7 +1917,7 @@ static enum ethernet_hw_caps eth_sam_gmac_get_capabilities(const struct device *
 {
 	ARG_UNUSED(dev);
 
-	return ETHERNET_LINK_10BASE_T |
+	return ETHERNET_LINK_10BASE |
 #if defined(CONFIG_NET_VLAN)
 		ETHERNET_HW_VLAN |
 #endif
@@ -1931,7 +1928,7 @@ static enum ethernet_hw_caps eth_sam_gmac_get_capabilities(const struct device *
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
 		ETHERNET_QAV |
 #endif
-		ETHERNET_LINK_100BASE_T;
+		ETHERNET_LINK_100BASE;
 }
 
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1

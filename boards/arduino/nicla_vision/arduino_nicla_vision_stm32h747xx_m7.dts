@@ -95,7 +95,7 @@
 	};
 };
 
-&i2c1 {
+zephyr_i2c: &i2c1 {
 	status = "disabled";
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
@@ -165,9 +165,10 @@
 	pinctrl-names = "default";
 	status = "okay";
 
-	n25q128a1: qspi-nor-flash@90000000 {
+	n25q128a1: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
-		reg = <0x90000000 DT_SIZE_M(16)>; /* 128 Mbits */
+		reg = <0>;
+		size = <DT_SIZE_M(128)>; /* 128 Mbits */
 		qspi-max-frequency = <72000000>;
 		status = "okay";
 
@@ -225,7 +226,7 @@ zephyr_udc0: &usbotg_hs {
 
 		port {
 			gc2145_ep_out: endpoint {
-				remote-endpoint = <&dcmi_ep_in>;
+				remote-endpoint-label = "dcmi_ep_in";
 			};
 		};
 
@@ -240,19 +241,13 @@ zephyr_udc0: &usbotg_hs {
 	pinctrl-names = "default";
 	status = "okay";
 
-	sensor = <&gc2145>;
-	bus-width = <8>;
-	hsync-active = <0>;
-	vsync-active = <0>;
-	pixelclk-active = <0>;
-	capture-rate = <1>;
-	dmas = <&dma1 0 38 (STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_PERIPH_NO_INC |
-		STM32_DMA_MEM_INC | STM32_DMA_PERIPH_8BITS | STM32_DMA_MEM_32BITS |
-		STM32_DMA_PRIORITY_HIGH) STM32_DMA_FIFO_1_4>;
-
 	port {
 		dcmi_ep_in: endpoint {
-			remote-endpoint = <&gc2145_ep_out>;
+			remote-endpoint-label = "gc2145_ep_out";
+			bus-width = <8>;
+			hsync-active = <0>;
+			vsync-active = <0>;
+			pclk-sample = <0>;
 		};
 	};
 };

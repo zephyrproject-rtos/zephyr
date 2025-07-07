@@ -83,6 +83,8 @@ to a FT232, so available through Micro USB connector. Default settings are 11520
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 

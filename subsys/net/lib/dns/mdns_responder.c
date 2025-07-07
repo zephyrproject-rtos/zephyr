@@ -115,8 +115,9 @@ static int setup_dst_addr(int sock, sa_family_t family,
 #define DNS_RESOLVER_BUF_CTR	(DNS_RESOLVER_MIN_BUF + \
 				 CONFIG_MDNS_RESOLVER_ADDITIONAL_BUF_CTR)
 
+#define MDNS_RESOLVER_BUF_SIZE CONFIG_MDNS_RESOLVER_BUF_SIZE
 NET_BUF_POOL_DEFINE(mdns_msg_pool, DNS_RESOLVER_BUF_CTR,
-		    DNS_RESOLVER_MAX_BUF_SIZE, 0, NULL);
+		    MDNS_RESOLVER_BUF_SIZE, 0, NULL);
 
 static void create_ipv6_addr(struct sockaddr_in6 *addr)
 {
@@ -157,7 +158,7 @@ static void mark_needs_announce(struct net_if *iface, bool needs_announce)
 #endif /* CONFIG_MDNS_RESPONDER_PROBE */
 
 static void mdns_iface_event_handler(struct net_mgmt_event_callback *cb,
-				     uint32_t mgmt_event, struct net_if *iface)
+				     uint64_t mgmt_event, struct net_if *iface)
 
 {
 	if (mgmt_event == NET_EVENT_IF_UP) {
@@ -595,7 +596,7 @@ static int dns_read(int sock,
 	int queries;
 	int ret;
 
-	data_len = MIN(len, DNS_RESOLVER_MAX_BUF_SIZE);
+	data_len = MIN(len, MDNS_RESOLVER_BUF_SIZE);
 
 	/* Store the DNS query name into a temporary net_buf, which will be
 	 * eventually used to send a response
@@ -958,7 +959,7 @@ static void probing(struct k_work *work)
 }
 
 static void mdns_addr_event_handler(struct net_mgmt_event_callback *cb,
-				    uint32_t mgmt_event, struct net_if *iface)
+				    uint64_t mgmt_event, struct net_if *iface)
 {
 	uint32_t probe_delay = sys_rand32_get() % 250;
 	bool probe_started = false;
@@ -1089,7 +1090,7 @@ static void mdns_addr_event_handler(struct net_mgmt_event_callback *cb,
 			}
 
 			ret = k_work_reschedule_for_queue(&mdns_work_q,
-							  &v4_ctx[i].probe_timer,
+							  &v6_ctx[i].probe_timer,
 							  K_MSEC(probe_delay));
 			if (ret < 0) {
 				NET_DBG("Cannot schedule %s probe work (%d)", "IPv6", ret);
@@ -1110,7 +1111,7 @@ static void mdns_addr_event_handler(struct net_mgmt_event_callback *cb,
 }
 
 static void mdns_conn_event_handler(struct net_mgmt_event_callback *cb,
-				    uint32_t mgmt_event, struct net_if *iface)
+				    uint64_t mgmt_event, struct net_if *iface)
 {
 	if (mgmt_event == NET_EVENT_L4_DISCONNECTED) {
 		/* Clear the failed probes counter so that we can start
@@ -1823,7 +1824,7 @@ static void do_init_listener(struct k_work *work)
 
 static int mdns_responder_init(void)
 {
-	uint32_t flags = NET_EVENT_IF_UP;
+	uint64_t flags = NET_EVENT_IF_UP;
 	external_records = NULL;
 	external_records_count = 0;
 

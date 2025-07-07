@@ -48,6 +48,8 @@ LED
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``promicro_nrf52840/nrf52840`` board target can be
 built in the usual way (see :ref:`build_an_application` for more details).
 

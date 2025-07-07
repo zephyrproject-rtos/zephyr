@@ -42,11 +42,7 @@ static void *init_stack(struct k_thread *thread, int *stack_top,
 	void *ret;
 	_xtensa_irq_stack_frame_a11_t *frame;
 #ifdef CONFIG_USERSPACE
-	struct xtensa_thread_stack_header *header =
-		(struct xtensa_thread_stack_header *)thread->stack_obj;
-
-	thread->arch.psp = header->privilege_stack +
-		sizeof(header->privilege_stack);
+	thread->arch.psp = NULL;
 #endif
 
 	/* Not-a-cpu ID Ensures that the first time this is run, the
@@ -70,26 +66,19 @@ static void *init_stack(struct k_thread *thread, int *stack_top,
 
 	(void)memset(frame, 0, bsasz);
 
-	frame->bsa.ps = PS_WOE | PS_UM | PS_CALLINC(1);
 #ifdef CONFIG_USERSPACE
-	if ((thread->base.user_options & K_USER) == K_USER) {
-#ifdef CONFIG_INIT_STACKS
-		/* setup_thread_stack() does not initialize the architecture specific
-		 * privileged stack. So we need to do it manually here as this function
-		 * is called by arch_new_thread() via z_setup_new_thread() after
-		 * setup_thread_stack() but before thread starts running.
-		 *
-		 * Note that only user threads have privileged stacks and kernel
-		 * only threads do not.
-		 */
-		(void)memset(&header->privilege_stack[0], 0xaa, sizeof(header->privilege_stack));
-#endif
+	/* _restore_context uses this instead of frame->bsa.ps to
+	 * restore PS value.
+	 */
+	thread->arch.return_ps = PS_WOE | PS_UM | PS_CALLINC(1);
 
+	if ((thread->base.user_options & K_USER) == K_USER) {
 		frame->bsa.pc = (uintptr_t)arch_user_mode_enter;
 	} else {
 		frame->bsa.pc = (uintptr_t)z_thread_entry;
 	}
 #else
+	frame->bsa.ps = PS_WOE | PS_UM | PS_CALLINC(1);
 	frame->bsa.pc = (uintptr_t)z_thread_entry;
 #endif
 
@@ -158,6 +147,30 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 {
 	struct k_thread *current = _current;
 	size_t stack_end;
+
+	struct xtensa_thread_stack_header *header =
+		(struct xtensa_thread_stack_header *)current->stack_obj;
+
+	current->arch.psp = header->privilege_stack +
+		sizeof(header->privilege_stack);
+
+#ifdef CONFIG_INIT_STACKS
+	/* setup_thread_stack() does not initialize the architecture specific
+	 * privileged stack. So we need to do it manually here as this function
+	 * is called by arch_new_thread() via z_setup_new_thread() after
+	 * setup_thread_stack() but before thread starts running.
+	 *
+	 * Note that only user threads have privileged stacks and kernel
+	 * only threads do not.
+	 */
+	(void)memset(&header->privilege_stack[0], 0xaa, sizeof(header->privilege_stack));
+
+#endif
+
+#ifdef CONFIG_KERNEL_COHERENCE
+	sys_cache_data_flush_and_invd_range(&header->privilege_stack[0],
+					    sizeof(header->privilege_stack));
+#endif
 
 	/* Transition will reset stack pointer to initial, discarding
 	 * any old context since this is a one-way operation

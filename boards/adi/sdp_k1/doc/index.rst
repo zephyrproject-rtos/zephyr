@@ -103,6 +103,8 @@ Default Zephyr Peripheral Mapping:
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The ADI SDP-K1 be programmed over USB using the DAPLink firmware running on an
 embedded NXP Freescale microcontroller or a 10-pin ``DEBUG`` header connected
 to a STLINK debugger.

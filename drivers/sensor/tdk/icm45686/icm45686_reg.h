@@ -13,7 +13,7 @@
 #include <zephyr/sys/byteorder.h>
 
 /* Address value has a read bit */
-#define REG_SPI_READ_BIT BIT(7)
+#define REG_READ_BIT BIT(7)
 
 /* Registers */
 /* Register Bank 0 */
@@ -49,6 +49,7 @@
 #define REG_FIFO_CONFIG3			0x21
 #define REG_FIFO_CONFIG4			0x22
 #define REG_DRIVE_CONFIG0			0x32
+#define REG_DRIVE_CONFIG1			0x33
 #define REG_WHO_AM_I				0x72
 #define REG_IREG_ADDR_15_8			0x7C
 #define REG_IREG_ADDR_7_0			0x7D
@@ -74,6 +75,8 @@
 #define REG_GYRO_CONFIG0_FS(val)			(((val) & BIT_MASK(4)) << 4)
 
 #define REG_DRIVE_CONFIG0_SPI_SLEW(val)			(((val) & BIT_MASK(2)) << 1)
+#define REG_DRIVE_CONFIG1_I3C_SLEW(val)			(((val) & BIT_MASK(3)) |		   \
+							 (((val) & BIT_MASK(3)) << 3))
 
 #define REG_MISC2_SOFT_RST(val)				((val << 1) & BIT(1))
 

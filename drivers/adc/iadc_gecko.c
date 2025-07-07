@@ -370,7 +370,7 @@ static int adc_gecko_pm_action(const struct device *dev, enum pm_device_action a
 	if (action == PM_DEVICE_ACTION_RESUME) {
 		err = clock_control_on(config->clock_dev,
 				       (clock_control_subsys_t)&config->clock_cfg);
-		if (err < 0) {
+		if (err < 0 && err != -EALREADY) {
 			return err;
 		}
 

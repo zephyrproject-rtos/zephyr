@@ -143,9 +143,14 @@
 };
 
 &cpusec_cpuapp_ipc {
+	status = "okay";
 	mbox-names = "tx", "rx";
 	tx-region = <&cpuapp_cpusec_ipc_shm>;
 	rx-region = <&cpusec_cpuapp_ipc_shm>;
+};
+
+&cpusec_bellboard {
+	status = "okay";
 };
 
 ipc0: &cpuapp_cpurad_ipc {
@@ -203,6 +208,11 @@ ipc0: &cpuapp_cpurad_ipc {
 	source-memory = <&cpuflpr_code_partition>;
 };
 
+&nfct {
+	status = "okay";
+	memory-regions = <&cpuapp_dma_region>;
+};
+
 &gpiote130 {
 	status = "okay";
 	owned-channels = <0 1 2 3 4 5 6 7>;
@@ -257,7 +267,7 @@ ipc0: &cpuapp_cpurad_ipc {
 	status = "okay";
 
 	mx25uw63: mx25uw6345g@0 {
-		compatible = "jedec,mspi-nor";
+		compatible = "mxicy,mx25u", "jedec,mspi-nor";
 		status = "disabled";
 		reg = <0>;
 		jedec-id = [c2 84 37];

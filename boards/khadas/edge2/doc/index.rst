@@ -25,6 +25,8 @@ uart2 as serial console.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Use the following configuration to run basic Zephyr applications and
 kernel tests on Khadas Edge2 board. For example, with the :zephyr:code-sample:`hello_world`:
 

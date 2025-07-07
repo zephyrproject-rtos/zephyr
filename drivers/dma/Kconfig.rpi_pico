@@ -9,4 +9,4 @@ config DMA_RPI_PICO
 	select PICOSDK_USE_CLAIM
 	depends on RESET
 	help
-	  DMA driver for RaspberryPi Pico.
+	  DMA driver for Raspberry Pi Pico.

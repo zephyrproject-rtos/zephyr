@@ -32,8 +32,23 @@
 #define FAULTY_ADDRESS 0xFFFFFFF0
 #endif
 
+#if !defined(CONFIG_TIMESLICING) || (CONFIG_TIMESLICE_SIZE == 0)
+#define YIELD_KERNEL		z_impl_k_yield()
+#define YIELD_USER		k_yield()
+#else
+#define YIELD_KERNEL
+#define YIELD_USER
+#endif
+
+#define NR_THREADS	(arch_num_cpus() * 4)
+#define MAX_NR_THREADS	(CONFIG_MP_MAX_NUM_CPUS * 4)
+#define STACK_SZ	(1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
+
+struct k_thread stress_threads[MAX_NR_THREADS];
+K_THREAD_STACK_ARRAY_DEFINE(stress_stacks, MAX_NR_THREADS, STACK_SZ);
+
 char kernel_string[BUF_SIZE];
-char kernel_buf[BUF_SIZE];
+char kernel_buf[MAX_NR_THREADS][BUF_SIZE];
 ZTEST_BMEM char user_string[BUF_SIZE];
 
 void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
@@ -46,6 +61,8 @@ void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
 
 size_t z_impl_string_nlen(char *src, size_t maxlen, int *err)
 {
+	YIELD_KERNEL;
+
 	return k_usermode_string_nlen(src, maxlen, err);
 }
 
@@ -55,9 +72,14 @@ static inline size_t z_vrfy_string_nlen(char *src, size_t maxlen, int *err)
 	size_t ret;
 
 	ret = z_impl_string_nlen((char *)src, maxlen, &err_copy);
+
+	YIELD_KERNEL;
+
 	if (!err_copy && K_SYSCALL_MEMORY_READ(src, ret + 1)) {
 		err_copy = -1;
 	}
+
+	YIELD_KERNEL;
 
 	K_OOPS(k_usermode_to_copy((int *)err, &err_copy, sizeof(err_copy)));
 
@@ -67,6 +89,8 @@ static inline size_t z_vrfy_string_nlen(char *src, size_t maxlen, int *err)
 
 int z_impl_string_alloc_copy(char *src)
 {
+	YIELD_KERNEL;
+
 	if (!strcmp(src, kernel_string)) {
 		return 0;
 	} else {
@@ -79,20 +103,31 @@ static inline int z_vrfy_string_alloc_copy(char *src)
 	char *src_copy;
 	int ret;
 
+	YIELD_KERNEL;
+
 	src_copy = k_usermode_string_alloc_copy((char *)src, BUF_SIZE);
 	if (!src_copy) {
 		return -1;
 	}
 
+	YIELD_KERNEL;
+
 	ret = z_impl_string_alloc_copy(src_copy);
+
+	YIELD_KERNEL;
+
 	k_free(src_copy);
 
 	return ret;
 }
 #include <zephyr/syscalls/string_alloc_copy_mrsh.c>
 
-int z_impl_string_copy(char *src)
+int z_impl_string_copy(char *src, int id)
 {
+	ARG_UNUSED(id);
+
+	YIELD_KERNEL;
+
 	if (!strcmp(src, kernel_string)) {
 		return 0;
 	} else {
@@ -100,15 +135,19 @@ int z_impl_string_copy(char *src)
 	}
 }
 
-static inline int z_vrfy_string_copy(char *src)
+static inline int z_vrfy_string_copy(char *src, int id)
 {
-	int ret = k_usermode_string_copy(kernel_buf, (char *)src, BUF_SIZE);
+	YIELD_KERNEL;
+
+	int ret = k_usermode_string_copy(kernel_buf[id], (char *)src, BUF_SIZE);
+
+	YIELD_KERNEL;
 
 	if (ret) {
 		return ret;
 	}
 
-	return z_impl_string_copy(kernel_buf);
+	return z_impl_string_copy(kernel_buf[id], id);
 }
 #include <zephyr/syscalls/string_copy_mrsh.c>
 
@@ -117,18 +156,24 @@ static inline int z_vrfy_string_copy(char *src)
  */
 int z_impl_to_copy(char *dest)
 {
+	YIELD_KERNEL;
+
 	memcpy(dest, kernel_string, BUF_SIZE);
 	return 0;
 }
 
 static inline int z_vrfy_to_copy(char *dest)
 {
+	YIELD_KERNEL;
+
 	return k_usermode_to_copy((char *)dest, user_string, BUF_SIZE);
 }
 #include <zephyr/syscalls/to_copy_mrsh.c>
 
 int z_impl_syscall_arg64(uint64_t arg)
 {
+	YIELD_USER;
+
 	/* "Hash" (heh) the return to avoid accidental false positives
 	 * due to using common/predictable values.
 	 */
@@ -152,6 +197,8 @@ uint64_t z_impl_syscall_arg64_big(uint32_t arg1, uint32_t arg2,
 	uint64_t args[] = { arg1, arg2, arg3, arg4, arg5, arg6 };
 	uint64_t ret = 0xae751a24ef464cc0ULL;
 
+	YIELD_USER;
+
 	for (int i = 0; i < ARRAY_SIZE(args); i++) {
 		ret += args[i];
 		ret = (ret << 11) | (ret >> 53);
@@ -174,6 +221,8 @@ uint32_t z_impl_more_args(uint32_t arg1, uint32_t arg2, uint32_t arg3,
 {
 	uint32_t ret = 0x4ef464cc;
 	uint32_t args[] = { arg1, arg2, arg3, arg4, arg5, arg6, arg7 };
+
+	YIELD_USER;
 
 	for (int i = 0; i < ARRAY_SIZE(args); i++) {
 		ret += args[i];
@@ -210,17 +259,17 @@ ZTEST_USER(syscalls, test_string_nlen)
 	ret = string_nlen(kernel_string, BUF_SIZE, &err);
 	if (arch_is_user_context()) {
 		zassert_equal(err, -1,
-			      "kernel string did not fault on user access");
+			      "kernel string did not fault on user access (%d)", err);
 	} else {
-		zassert_equal(err, 0, "kernel string faulted in kernel mode");
+		zassert_equal(err, 0, "kernel string faulted in kernel mode (%d)", err);
 		zassert_equal(ret, strlen(kernel_string),
-			      "incorrect length returned");
+			      "incorrect length returned (%d)", ret);
 	}
 
 	/* Valid usage */
 	ret = string_nlen(user_string, BUF_SIZE, &err);
-	zassert_equal(err, 0, "user string faulted");
-	zassert_equal(ret, strlen(user_string), "incorrect length returned");
+	zassert_equal(err, 0, "user string faulted (%d)", err);
+	zassert_equal(ret, strlen(user_string), "incorrect length returned (%d)", ret);
 
 	/* Skip this scenario for nsim_sem emulated board, unfortunately
 	 * the emulator doesn't set up memory as specified in DTS and poking
@@ -255,17 +304,17 @@ ZTEST_USER(syscalls, test_user_string_alloc_copy)
 	int ret;
 
 	ret = string_alloc_copy("asdkajshdazskjdh");
-	zassert_equal(ret, -2, "got %d", ret);
+	zassert_equal(ret, -2, "string_alloc_copy: 1: got %d", ret);
 
 	ret = string_alloc_copy(
 	    "asdkajshdazskjdhikfsdjhfskdjfhsdkfjhskdfjhdskfjhs");
-	zassert_equal(ret, -1, "got %d", ret);
+	zassert_equal(ret, -1, "string_alloc_copy: 2: got %d", ret);
 
 	ret = string_alloc_copy(kernel_string);
-	zassert_equal(ret, -1, "got %d", ret);
+	zassert_equal(ret, -1, "string_alloc_copy: 3: got %d", ret);
 
 	ret = string_alloc_copy("this is a kernel string");
-	zassert_equal(ret, 0, "string should have matched");
+	zassert_equal(ret, 0, "string_alloc_copy: string should have matched (%d)", ret);
 }
 
 /**
@@ -279,17 +328,17 @@ ZTEST_USER(syscalls, test_user_string_copy)
 {
 	int ret;
 
-	ret = string_copy("asdkajshdazskjdh");
-	zassert_equal(ret, ESRCH, "got %d", ret);
+	ret = string_copy("asdkajshdazskjdh", 0);
+	zassert_equal(ret, ESRCH, "string_copy: 1: got %d", ret);
 
-	ret = string_copy("asdkajshdazskjdhikfsdjhfskdjfhsdkfjhskdfjhdskfjhs");
-	zassert_equal(ret, EINVAL, "got %d", ret);
+	ret = string_copy("asdkajshdazskjdhikfsdjhfskdjfhsdkfjhskdfjhdskfjhs", 0);
+	zassert_equal(ret, EINVAL, "string_copy: 2: got %d", ret);
 
-	ret = string_copy(kernel_string);
-	zassert_equal(ret, EFAULT, "got %d", ret);
+	ret = string_copy(kernel_string, 0);
+	zassert_equal(ret, EFAULT, "string_copy: 3: got %d", ret);
 
-	ret = string_copy("this is a kernel string");
-	zassert_equal(ret, 0, "string should have matched");
+	ret = string_copy("this is a kernel string", 0);
+	zassert_equal(ret, 0, "string_copy: string should have matched (%d)", ret);
 }
 
 /**
@@ -304,24 +353,24 @@ ZTEST_USER(syscalls, test_to_copy)
 	char buf[BUF_SIZE];
 	int ret;
 
-	ret = to_copy(kernel_buf);
-	zassert_equal(ret, EFAULT, "should have faulted");
+	ret = to_copy(kernel_buf[0]);
+	zassert_equal(ret, EFAULT, "to_copy: should have faulted (%d)", ret);
 
 	ret = to_copy(buf);
-	zassert_equal(ret, 0, "copy should have been a success");
+	zassert_equal(ret, 0, "to_copy: copy should have been a success (%d)", ret);
 	ret = strcmp(buf, user_string);
-	zassert_equal(ret, 0, "string should have matched");
+	zassert_equal(ret, 0, "to_copy: string should have matched (%d)", ret);
 }
 
 void run_test_arg64(void)
 {
 	zassert_equal(syscall_arg64(54321),
 		      z_impl_syscall_arg64(54321),
-		      "syscall didn't match impl");
+		      "syscall (arg64) didn't match impl");
 
 	zassert_equal(syscall_arg64_big(1, 2, 3, 4, 5, 6),
 		      z_impl_syscall_arg64_big(1, 2, 3, 4, 5, 6),
-		      "syscall didn't match impl");
+		      "syscall (arg64_big) didn't match impl");
 }
 
 ZTEST_USER(syscalls, test_arg64)
@@ -333,17 +382,10 @@ ZTEST_USER(syscalls, test_more_args)
 {
 	zassert_equal(more_args(1, 2, 3, 4, 5, 6, 7),
 		      z_impl_more_args(1, 2, 3, 4, 5, 6, 7),
-		      "syscall didn't match impl");
+		      "syscall (more_args) didn't match impl");
 }
 
-#define NR_THREADS	(arch_num_cpus() * 4)
-#define MAX_NR_THREADS	(CONFIG_MP_MAX_NUM_CPUS * 4)
-#define STACK_SZ	(1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
-
-struct k_thread torture_threads[MAX_NR_THREADS];
-K_THREAD_STACK_ARRAY_DEFINE(torture_stacks, MAX_NR_THREADS, STACK_SZ);
-
-void syscall_torture(void *arg1, void *arg2, void *arg3)
+void syscall_switch_stress(void *arg1, void *arg2, void *arg3)
 {
 	int count = 0;
 	uintptr_t id = (uintptr_t)arg1;
@@ -356,20 +398,33 @@ void syscall_torture(void *arg1, void *arg2, void *arg3)
 		 * for concurrency problems.
 		 */
 		ret = string_nlen(user_string, BUF_SIZE, &err);
-		zassert_equal(err, 0, "user string faulted");
+		zassert_equal(err, 0, "stress: user string faulted (%d)", err);
 		zassert_equal(ret, strlen(user_string),
-			      "incorrect length returned");
+			      "stress: incorrect length returned (%d)", ret);
+
+		YIELD_USER;
 
 		ret = string_alloc_copy("this is a kernel string");
-		zassert_equal(ret, 0, "string should have matched");
+		zassert_equal(ret, 0,
+			      "stress: string_alloc_copy: string should have matched (%d)", ret);
 
-		ret = string_copy("this is a kernel string");
-		zassert_equal(ret, 0, "string should have matched");
+		YIELD_USER;
+
+		ret = string_copy("this is a kernel string", (int)id);
+		zassert_equal(ret, 0, "stress: string_copy: string should have matched (%d)", ret);
+
+		YIELD_USER;
 
 		ret = to_copy(buf);
-		zassert_equal(ret, 0, "copy should have been a success");
+		zassert_equal(ret, 0,
+			      "stress: to_copy: copy should have been a success (%d)", ret);
+
+		YIELD_USER;
+
 		ret = strcmp(buf, user_string);
-		zassert_equal(ret, 0, "string should have matched");
+		zassert_equal(ret, 0, "stress: strcmp: string should have matched (%d)", ret);
+
+		YIELD_USER;
 
 		run_test_arg64();
 
@@ -377,24 +432,26 @@ void syscall_torture(void *arg1, void *arg2, void *arg3)
 			printk("%ld", id);
 			count = 0;
 		}
+
+		YIELD_USER;
 	}
 }
 
-ZTEST(syscalls, test_syscall_torture)
+ZTEST(syscalls_extended, test_syscall_switch_stress)
 {
 	uintptr_t i;
 
-	printk("Running syscall torture test with %d threads on %d cpu(s)\n",
+	printk("Running syscall switch stress test with %d threads on %d cpu(s)\n",
 	       NR_THREADS, arch_num_cpus());
 
 	for (i = 0; i < NR_THREADS; i++) {
-		k_thread_create(&torture_threads[i], torture_stacks[i],
-				STACK_SZ, syscall_torture,
+		k_thread_create(&stress_threads[i], stress_stacks[i],
+				STACK_SZ, syscall_switch_stress,
 				(void *)i, NULL, NULL,
 				2, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
 	}
 
-	/* Let the torture threads hog the system for several seconds before
+	/* Let the stress threads hog the system for several seconds before
 	 * we abort them.
 	 * They will all be hammering the cpu(s) with system calls,
 	 * hopefully smoking out any issues and causing a crash.
@@ -402,7 +459,11 @@ ZTEST(syscalls, test_syscall_torture)
 	k_sleep(K_MSEC(SLEEP_MS_LONG));
 
 	for (i = 0; i < NR_THREADS; i++) {
-		k_thread_abort(&torture_threads[i]);
+		k_thread_abort(&stress_threads[i]);
+	}
+
+	for (i = 0; i < NR_THREADS; i++) {
+		k_thread_join(&stress_threads[i], K_FOREVER);
 	}
 
 	printk("\n");
@@ -458,3 +519,4 @@ void *syscalls_setup(void)
 }
 
 ZTEST_SUITE(syscalls, NULL, syscalls_setup, NULL, NULL, NULL);
+ZTEST_SUITE(syscalls_extended, NULL, syscalls_setup, NULL, NULL, NULL);

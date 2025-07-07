@@ -141,8 +141,10 @@ do {                                                                    \
 #define __ramfunc __attribute__((noinline, section(".ramfunc")))
 #endif /* !CONFIG_XIP */
 
+#ifndef __fallthrough
 /* TG-WG: ICCARM does not support __fallthrough */
 #define __fallthrough  [[fallthrough]]
+#endif
 
 #ifndef __packed
 #define __packed        __attribute__((__packed__))
@@ -241,9 +243,13 @@ do {                                                                    \
 #define __WARN1(s) __PRAGMA(message = #s)
 
 /* Generic message */
-#ifndef __DEPRECATED_MACRO
+#ifndef CONFIG_DEPRECATION_TEST
 #define __DEPRECATED_MACRO __WARN("Macro is deprecated")
+#else
+#define __DEPRECATED_MACRO
 #endif
+
+
 
 /* These macros allow having ARM asm functions callable from thumb */
 

@@ -83,7 +83,6 @@ static volatile bool big_synced;
 static volatile bool base_received;
 static struct bt_conn *broadcast_assistant_conn;
 static struct bt_le_ext_adv *ext_adv;
-static volatile uint8_t stream_count;
 
 static const struct bt_audio_codec_cap codec_cap = BT_AUDIO_CODEC_CAP_LC3(
 	BT_AUDIO_CODEC_CAP_FREQ_16KHZ | BT_AUDIO_CODEC_CAP_FREQ_24KHZ,
@@ -91,15 +90,53 @@ static const struct bt_audio_codec_cap codec_cap = BT_AUDIO_CODEC_CAP_LC3(
 	CONFIG_MAX_CODEC_FRAMES_PER_SDU,
 	(BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA));
 
-/* Create a mask for the maximum BIS we can sync to using the number of streams
- * we have. Bit 0 is BIS index 1.
+/**
+ * The base_recv_cb() function will populate struct bis_audio_allocation with channel allocation
+ * information for a BIS.
+ *
+ * The valid value is false if no valid allocation exists.
  */
-static const uint32_t bis_index_mask = BIT_MASK(CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT);
-static uint32_t requested_bis_sync;
-static uint32_t bis_index_bitfield;
+struct bis_audio_allocation {
+	bool valid;
+	enum bt_audio_location value;
+};
+
+/**
+ * The base_recv_cb() function will populate struct base_subgroup_data with the BIS index and
+ * channel allocation information for each BIS in the subgroup.
+ *
+ * The bis_index_bitfield is a bitfield where each bit represents a BIS index. The
+ * first bit (bit 0) represents BIS index 1, the second bit (bit 1) represents BIS index 2,
+ * and so on.
+ *
+ * The audio_allocation array holds the channel allocation information for each BIS in the
+ * subgroup. The first element (index 0) is not used (BIS index 0 does not exist), the second
+ * element (index 1) corresponds to BIS index 1, and so on.
+ */
+struct base_subgroup_data {
+	uint32_t bis_index_bitfield;
+	struct bis_audio_allocation
+		audio_allocation[BT_ISO_BIS_INDEX_MAX + 1]; /* First BIS index is 1 */
+};
+
+/**
+ * The base_recv_cb() function will populate struct base_data with BIS data
+ * for each subgroup.
+ *
+ * The subgroup_cnt is the number of subgroups in the BASE.
+ */
+struct base_data {
+	struct base_subgroup_data subgroup_bis[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS];
+	uint8_t subgroup_cnt;
+};
+
+static struct base_data base_recv_data; /* holds data from base_recv_cb */
+static uint32_t
+	requested_bis_sync[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS]; /* holds data from bis_sync_req_cb */
 static uint8_t sink_broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
 
 static int stop_adv(void);
+static uint8_t get_stream_count(uint32_t bitfield);
 
 static void stream_connected_cb(struct bt_bap_stream *bap_stream)
 {
@@ -165,17 +202,6 @@ static struct bt_bap_stream_ops stream_ops = {
 	.recv = stream_recv_cb,
 };
 
-#if defined(CONFIG_TARGET_BROADCAST_CHANNEL)
-struct bis_channel_allocation_data {
-	struct {
-		bool chan_allocation_available;
-		uint8_t index;
-		enum bt_audio_location chan_allocation;
-	} bis[BT_ISO_BIS_INDEX_MAX];
-
-	uint8_t cnt;
-};
-
 /**
  * This is called for each BIS in a subgroup
  *
@@ -185,13 +211,9 @@ struct bis_channel_allocation_data {
 static bool bis_get_channel_allocation_cb(const struct bt_bap_base_subgroup_bis *bis,
 					  void *user_data)
 {
-	struct bis_channel_allocation_data *data = user_data;
+	struct base_subgroup_data *base_subgroup_bis = user_data;
 	struct bt_audio_codec_cfg codec_cfg;
-	int err, idx;
-
-	idx = data->cnt++;
-	data->bis[idx].index = bis->index;
-	data->bis[idx].chan_allocation_available = false;
+	int err;
 
 	err = bt_bap_base_subgroup_bis_codec_to_codec_cfg(bis, &codec_cfg);
 	if (err != 0) {
@@ -200,8 +222,8 @@ static bool bis_get_channel_allocation_cb(const struct bt_bap_base_subgroup_bis 
 		return true; /* continue to next BIS */
 	}
 
-	err = bt_audio_codec_cfg_get_chan_allocation(&codec_cfg, &data->bis[idx].chan_allocation,
-						     false);
+	err = bt_audio_codec_cfg_get_chan_allocation(
+		&codec_cfg, &base_subgroup_bis->audio_allocation[bis->index].value, true);
 	if (err != 0) {
 		printk("Could not find channel allocation for BIS: %d\n", err);
 
@@ -209,14 +231,14 @@ static bool bis_get_channel_allocation_cb(const struct bt_bap_base_subgroup_bis 
 	}
 
 	/* Channel allocation data available for this bis */
-	data->bis[idx].chan_allocation_available = true;
+	base_subgroup_bis->audio_allocation[bis->index].valid = true;
 
 	return true; /* continue to next BIS */
 }
 
 /**
- * Called for each subgroup in the BASE. Will populate the 32-bit bitfield of BIS indexes if the
- * subgroup contains it.
+ * Called for each subgroup in the BASE. Will populate the struct base_subgroup_data variable with
+ * BIS index and channel allocation information.
  *
  * The channel allocation may
  *  - Not exist at all, implicitly meaning BT_AUDIO_LOCATION_MONO_AUDIO
@@ -224,100 +246,80 @@ static bool bis_get_channel_allocation_cb(const struct bt_bap_base_subgroup_bis 
  *  - Exist only in the BIS codec configuration
  *  - Exist in both the subgroup and BIS codec configuration, in which case, the BIS codec
  *    configuration overwrites the subgroup values
- *
- * This function returns `true` if the subgroup does not support the channels in
- * CONFIG_TARGET_BROADCAST_CHANNEL which makes it iterate over the next subgroup, and
- * returns `false` if this subgroup satisfies our CONFIG_TARGET_BROADCAST_CHANNEL.
  */
 static bool subgroup_get_valid_bis_indexes_cb(const struct bt_bap_base_subgroup *subgroup,
 					      void *user_data)
 {
 	enum bt_audio_location subgroup_chan_allocation;
-	enum bt_audio_location chan_allocation = BT_AUDIO_LOCATION_MONO_AUDIO;
 	bool subgroup_chan_allocation_available = false;
+	struct base_data *data = user_data;
+	struct base_subgroup_data *base_subgroup_bis = &data->subgroup_bis[data->subgroup_cnt];
 	struct bt_audio_codec_cfg codec_cfg;
-	struct bis_channel_allocation_data data = {
-		.cnt = 0,
-	};
-	uint32_t bis_indexes = 0;
 	int err;
 
 	err = bt_bap_base_subgroup_codec_to_codec_cfg(subgroup, &codec_cfg);
 	if (err != 0) {
 		printk("Could not get codec configuration: %d\n", err);
-
-		return true; /* continue to next subgroup */
+		goto next_subgroup;
 	}
 
 	if (codec_cfg.id != BT_HCI_CODING_FORMAT_LC3) {
-		/* Only LC3 codec supported */
-		return false; /* abort */
+		printk("Only LC3 codec supported (%u)\n", codec_cfg.id);
+		goto next_subgroup;
+	}
+
+	/* Get all BIS indexes for subgroup */
+	err = bt_bap_base_subgroup_get_bis_indexes(subgroup,
+						   &base_subgroup_bis->bis_index_bitfield);
+	if (err != 0) {
+		printk("Failed to parse all BIS in subgroup: %d\n", err);
+		goto next_subgroup;
 	}
 
 	/* Get channel allocation at subgroup level */
 	err = bt_audio_codec_cfg_get_chan_allocation(&codec_cfg, &subgroup_chan_allocation, true);
 	if (err == 0) {
-		printk("Channel allocation (subgroup level) 0x%x\n", subgroup_chan_allocation);
+		printk("Channel allocation (subgroup level) 0x%08x\n", subgroup_chan_allocation);
 		subgroup_chan_allocation_available = true;
 	} else {
-		/* subgroup error */
-		return false; /* abort */
+		printk("Subgroup error chan allocation error: %d\n", err);
+		goto next_subgroup;
 	}
 
 	/* Get channel allocation at BIS level */
-	err = bt_bap_base_subgroup_foreach_bis(subgroup, bis_get_channel_allocation_cb, &data);
+	err = bt_bap_base_subgroup_foreach_bis(subgroup, bis_get_channel_allocation_cb,
+					       base_subgroup_bis);
 	if (err != 0) {
-		printk("Get channel allocation error %d\n", err);
-
-		return true; /* continue to next subgroup */
+		printk("Get channel allocation error (BIS level) %d\n", err);
+		goto next_subgroup;
 	}
 
 	/* If no BIS channel allocation available use subgroup channel allocation instead if
 	 * exists (otherwise mono assumed)
 	 */
-	for (uint8_t i = 0U; i < data.cnt; i++) {
-		if (!data.bis[i].chan_allocation_available) {
-			data.bis[i].chan_allocation = subgroup_chan_allocation_available
-							      ? subgroup_chan_allocation
-							      : BT_AUDIO_LOCATION_MONO_AUDIO;
-		}
-	}
-
-	/* Get the BIS indexes */
-	for (uint8_t i = 0U; i < data.cnt; i++) {
-		if ((data.bis[i].chan_allocation == CONFIG_TARGET_BROADCAST_CHANNEL) ||
-		    ((data.bis[i].chan_allocation & CONFIG_TARGET_BROADCAST_CHANNEL) ==
-		     CONFIG_TARGET_BROADCAST_CHANNEL)) {
-			/* Exact match */
-			bis_indexes = BT_ISO_BIS_INDEX_BIT(data.bis[i].index);
-
-			printk("Channel allocation match. BIS index bitfield 0x%x\n", bis_indexes);
-			*(uint32_t *)user_data = bis_indexes;
-
-			return false; /* bis index found */
-		} else if ((data.bis[i].chan_allocation & CONFIG_TARGET_BROADCAST_CHANNEL) != 0) {
-			/* Partial match */
-			chan_allocation |= data.bis[i].chan_allocation;
-			bis_indexes |= BT_ISO_BIS_INDEX_BIT(data.bis[i].index);
-
-			if ((chan_allocation & CONFIG_TARGET_BROADCAST_CHANNEL) ==
-			    CONFIG_TARGET_BROADCAST_CHANNEL) {
-				printk("Channel allocation match. BIS index bitfield 0x%x\n",
-				       bis_indexes);
-				*(uint32_t *)user_data = bis_indexes;
-
-				return false; /* bis indexes found */
+	for (uint8_t idx = 1U; idx <= BT_ISO_BIS_INDEX_MAX; idx++) {
+		if (base_subgroup_bis->bis_index_bitfield & BT_ISO_BIS_INDEX_BIT(idx)) {
+			if (!base_subgroup_bis->audio_allocation[idx].valid) {
+				base_subgroup_bis->audio_allocation[idx].value =
+					subgroup_chan_allocation_available
+						? subgroup_chan_allocation
+						: BT_AUDIO_LOCATION_MONO_AUDIO;
+				base_subgroup_bis->audio_allocation[idx].valid = true;
 			}
+			printk("BIS index 0x%08x allocation = 0x%08x\n", idx,
+			       base_subgroup_bis->audio_allocation[idx].value);
 		}
 	}
+
+next_subgroup:
+	data->subgroup_cnt++;
+
 	return true; /* continue to next subgroup */
 }
-#endif /* CONFIG_TARGET_BROADCAST_CHANNEL */
 
 static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap_base *base,
 			 size_t base_size)
 {
-	uint32_t base_bis_index_bitfield = 0U;
 	int err;
 
 	if (base_received) {
@@ -327,37 +329,22 @@ static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap
 	printk("Received BASE with %d subgroups from broadcast sink %p\n",
 	       bt_bap_base_get_subgroup_count(base), sink);
 
-#if defined(CONFIG_TARGET_BROADCAST_CHANNEL)
-	/**
-	 * Get a 32-bit bitfield of BIS indexes that cover the channel allocation values in
-	 * CONFIG_TARGET_BROADCAST_CHANNEL.
-	 */
-	printk("Target channel location: 0x%x\n", CONFIG_TARGET_BROADCAST_CHANNEL);
+	(void)memset(&base_recv_data, 0, sizeof(base_recv_data));
+
+	/* Get BIS index data for each subgroup */
 	err = bt_bap_base_foreach_subgroup(base, subgroup_get_valid_bis_indexes_cb,
-					   &base_bis_index_bitfield);
-	if ((err != 0 && err != -ECANCELED) ||
-	    (err == -ECANCELED && base_bis_index_bitfield == 0)) {
+					   &base_recv_data);
+	if (err != 0) {
 		printk("Failed to get valid BIS indexes: %d\n", err);
 
 		return;
 	}
-#else
-	err = bt_bap_base_get_bis_indexes(base, &base_bis_index_bitfield);
-	if (err != 0) {
-		printk("Failed to get BIS indexes: %d\n", err);
-
-		return;
-	}
-
-#endif /* CONFIG_TARGET_BROADCAST_CHANNEL */
-
-	bis_index_bitfield = base_bis_index_bitfield & bis_index_mask;
-
-	printk("bis_index_bitfield = 0x%08x\n", bis_index_bitfield);
 
 	if (broadcast_assistant_conn == NULL) {
 		/* No broadcast assistant requesting anything */
-		requested_bis_sync = BT_BAP_BIS_SYNC_NO_PREF;
+		for (int i = 0; i < CONFIG_BT_BAP_BASS_MAX_SUBGROUPS; i++) {
+			requested_bis_sync[i] = BT_BAP_BIS_SYNC_NO_PREF;
+		}
 		k_sem_give(&sem_bis_sync_requested);
 	}
 
@@ -559,45 +546,64 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 			   const struct bt_bap_scan_delegator_recv_state *recv_state,
 			   const uint32_t bis_sync_req[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS])
 {
-	/* Bit field indicating from which subgroup(s) BIS sync is requested */
-	uint32_t requested_subgroup_sync = 0; /* currently only used for printout */
+	bool sync_req = false;
+	bool bis_sync_req_no_pref = true;
+	uint8_t subgroup_sync_req_cnt = 0;
+	uint32_t bis_sync_req_bitfield = 0;
 
-	requested_bis_sync = 0;
+	(void)memset(requested_bis_sync, 0, sizeof(requested_bis_sync));
 
 	for (uint8_t subgroup = 0; subgroup < recv_state->num_subgroups; subgroup++) {
+
+		printk("bis_sync_req[%u] = 0x%0x\n", subgroup, bis_sync_req[subgroup]);
 		if (bis_sync_req[subgroup] != 0) {
-			if (requested_bis_sync == 0) {
-				requested_bis_sync = bis_sync_req[subgroup];
-			} else {
-				if (requested_bis_sync != BT_BAP_BIS_SYNC_NO_PREF &&
-				    bis_sync_req[subgroup] != BT_BAP_BIS_SYNC_NO_PREF) {
-					/* Spec a little bit unclear. Here we choose to say that
-					 * BIS sync request from more than 1 subgroup is not
-					 * possible unless sync value is 0 or
-					 * BT_BAP_BIS_SYNC_NO_PREF
-					 */
-					printk("Unsupported BIS sync request from more than 1 "
-					       "subgroup\n");
-					return -EINVAL;
-				}
+			requested_bis_sync[subgroup] = bis_sync_req[subgroup];
+			if (bis_sync_req[subgroup] != BT_BAP_BIS_SYNC_NO_PREF) {
+				bis_sync_req_no_pref = false;
 			}
-			requested_subgroup_sync |= BIT(subgroup);
+			bis_sync_req_bitfield |= bis_sync_req[subgroup];
+			subgroup_sync_req_cnt++;
+			sync_req = true;
 		}
 	}
 
-	printk("BIS sync req for %p: BIS indexes 0x%08x (subgroup indexes 0x%08x), "
-	       "broadcast id: 0x%06x, (%s)\n",
-	       recv_state, requested_bis_sync, requested_subgroup_sync, recv_state->broadcast_id,
-	       big_synced ? "BIG synced" : "BIG not synced");
+	if (!bis_sync_req_no_pref) {
+		uint8_t stream_count = get_stream_count(bis_sync_req_bitfield);
 
-	if (big_synced && requested_bis_sync == 0) {
+		/* We only want to sync to a single subgroup. If no preference is given, we will
+		 * later set the first possible subgroup as the one to sync to.
+		 */
+		if (subgroup_sync_req_cnt > 1U) {
+			printk("Only request sync to 1 subgroup!\n");
+
+			return -EINVAL;
+		}
+
+		if (stream_count > CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT) {
+			printk("Too many BIS requested for sync: %u > %d\n", stream_count,
+			       CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT);
+
+			return -EINVAL;
+		}
+	}
+
+	printk("BIS sync req for %p, broadcast id: 0x%06x, (%s)\n", recv_state,
+	       recv_state->broadcast_id, big_synced ? "BIG synced" : "BIG not synced");
+
+	if (big_synced) {
 		int err;
 
+		if (sync_req) {
+			printk("Already synced!\n");
+
+			return -EINVAL;
+		}
+
 		/* The stream stopped callback will be called as part of this,
-		 * and we do not need to wait for any events from the
-		 * controller. Thus, when this returns, the `big_synced`
-		 * is back to false.
-		 */
+		* and we do not need to wait for any events from the
+		* controller. Thus, when this returns, the `big_synced`
+		* is back to false.
+		*/
 		err = bt_bap_broadcast_sink_stop(broadcast_sink);
 		if (err != 0) {
 			printk("Failed to stop Broadcast Sink: %d\n", err);
@@ -607,7 +613,7 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 	}
 
 	broadcaster_broadcast_id = recv_state->broadcast_id;
-	if (requested_bis_sync != 0) {
+	if (sync_req) {
 		k_sem_give(&sem_bis_sync_requested);
 	}
 
@@ -890,7 +896,7 @@ static int init(void)
 		lc3_init();
 	}
 
-	if (IS_ENABLED(CONFIG_USB_DEVICE_AUDIO)) {
+	if (IS_ENABLED(CONFIG_USE_USB_AUDIO_OUTPUT)) {
 		usb_init();
 	}
 
@@ -903,12 +909,11 @@ static int reset(void)
 
 	printk("Reset\n");
 
-	bis_index_bitfield = 0U;
-	requested_bis_sync = 0U;
 	req_recv_state = NULL;
 	big_synced = false;
 	base_received = false;
-	stream_count = 0U;
+	(void)memset(&base_recv_data, 0, sizeof(base_recv_data));
+	(void)memset(&requested_bis_sync, 0, sizeof(requested_bis_sync));
 	(void)memset(sink_broadcast_code, 0, sizeof(sink_broadcast_code));
 	(void)memset(&broadcaster_info, 0, sizeof(broadcaster_info));
 	(void)memset(&broadcaster_addr, 0, sizeof(broadcaster_addr));
@@ -1024,6 +1029,113 @@ static int pa_sync_create(void)
 	return bt_le_per_adv_sync_create(&create_params, &pa_sync);
 }
 
+#if !defined(CONFIG_TARGET_BROADCAST_CHANNEL)
+static uint32_t keep_n_least_significant_ones(uint32_t bitfield, uint8_t n)
+{
+	uint32_t result = 0U;
+
+	for (uint8_t i = 0; i < n && bitfield != 0; i++) {
+		uint32_t lsb = bitfield & -bitfield; /* extract lsb */
+
+		result |= lsb;
+		bitfield &= ~lsb; /* clear the extracted bit */
+	}
+
+	return result;
+}
+#endif
+
+static uint8_t get_stream_count(uint32_t bitfield)
+{
+	uint8_t count = 0U;
+
+	for (uint8_t i = 0U; i < BT_ISO_MAX_GROUP_ISO_COUNT; i++) {
+		if ((bitfield & BIT(i)) != 0) {
+			count++;
+		}
+	}
+
+	return count;
+}
+
+static uint32_t select_bis_sync_bitfield(struct base_data *base_sg_data,
+					 uint32_t bis_sync_req[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS])
+
+{
+	uint32_t result = 0U;
+
+#if defined(CONFIG_TARGET_BROADCAST_CHANNEL)
+	for (int i = 0; i < CONFIG_BT_BAP_BASS_MAX_SUBGROUPS; i++) {
+		enum bt_audio_location combine_alloc = BT_AUDIO_LOCATION_MONO_AUDIO;
+		uint32_t combine_bis_sync = 0U;
+
+		if (bis_sync_req[i] == 0) {
+			continue;
+		}
+		/* BIS sync requested in this subgroup. Look for allocation match.
+		 * BIS index 0 is not a valid index, so start from 1.
+		 */
+		for (int idx = 1; idx <= BT_ISO_BIS_INDEX_MAX; idx++) {
+			const struct bis_audio_allocation *bis_alloc =
+				&base_sg_data->subgroup_bis[i].audio_allocation[idx];
+
+			if (!base_sg_data->subgroup_bis[i].audio_allocation[idx].valid) {
+				/* BIS not present or channel allocation not valid for this BIS */
+				continue;
+			}
+			if ((bis_sync_req[i] & BT_ISO_BIS_INDEX_BIT(idx)) == 0) {
+				/* No request to sync to this BIS */
+				continue;
+			}
+			if (bis_alloc->value == CONFIG_TARGET_BROADCAST_CHANNEL) {
+				/* Exact match */
+				result = BT_ISO_BIS_INDEX_BIT(idx);
+				break;
+			} else if ((bis_alloc->value & CONFIG_TARGET_BROADCAST_CHANNEL) != 0) {
+				combine_alloc |= bis_alloc->value;
+				combine_bis_sync |= BT_ISO_BIS_INDEX_BIT(idx);
+				if (combine_alloc == CONFIG_TARGET_BROADCAST_CHANNEL) {
+					/* Combined match */
+					result = combine_bis_sync;
+					break;
+				}
+				/* Partial match */
+				printk("Channel allocation match, partial %d\n", combine_alloc);
+			} else {
+				 /* No action required */
+			}
+		}
+
+		if (result != 0U) {
+			printk("Channel allocation match, result = 0x%08x\n", result);
+			break;
+		}
+	}
+#else  /* !CONFIG_TARGET_BROADCAST_CHANNEL */
+	bool bis_sync_req_no_pref = false;
+
+	for (uint8_t i = 0; i < CONFIG_BT_BAP_BASS_MAX_SUBGROUPS; i++) {
+		if (bis_sync_req[i] != 0) {
+			if (bis_sync_req[i] == BT_BAP_BIS_SYNC_NO_PREF) {
+				bis_sync_req_no_pref = true;
+			}
+			result |=
+				bis_sync_req[i] & base_sg_data->subgroup_bis[i].bis_index_bitfield;
+		}
+	}
+
+	if (bis_sync_req_no_pref) {
+		/** Keep the CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT least significant bits
+		 * of bitfield, as that is the maximum number of BISes we can sync to
+		 */
+		result = keep_n_least_significant_ones(result,
+						       CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT);
+	}
+#endif /* CONFIG_TARGET_BROADCAST_CHANNEL */
+
+	return result;
+}
+
 int main(void)
 {
 	int err;
@@ -1035,6 +1147,7 @@ int main(void)
 	}
 
 	while (true) {
+		uint8_t stream_count;
 		uint32_t sync_bitfield;
 
 		err = reset();
@@ -1184,17 +1297,17 @@ wait_for_pa_sync:
 			continue;
 		}
 
-		sync_bitfield = bis_index_bitfield & requested_bis_sync;
-		stream_count = 0;
-		for (int i = 0; i < BT_ISO_MAX_GROUP_ISO_COUNT; i++) {
-			if ((sync_bitfield & BIT(i)) != 0) {
-				stream_count++;
-			}
+		/* Select BIS'es to sync to */
+		sync_bitfield = select_bis_sync_bitfield(&base_recv_data, requested_bis_sync);
+		if (sync_bitfield == 0U) {
+			printk("No valid BIS sync found, resetting\n");
+			continue;
 		}
 
-		printk("Syncing to broadcast with bitfield: 0x%08x = 0x%08x (bis_index) & 0x%08x "
-		       "(req_bis_sync), stream_count = %u\n",
-		       sync_bitfield, bis_index_bitfield, requested_bis_sync, stream_count);
+		stream_count = get_stream_count(sync_bitfield);
+
+		printk("Syncing to broadcast with bitfield: 0x%08x, stream_count = %u\n",
+		       sync_bitfield, stream_count);
 
 		err = bt_bap_broadcast_sink_sync(broadcast_sink, sync_bitfield, bap_streams_p,
 						 sink_broadcast_code);

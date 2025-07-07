@@ -9,8 +9,12 @@
 #include <zephyr/pm/device_runtime.h>
 
 #include "test_driver.h"
+#include "zephyr/sys/util_macro.h"
+
 
 static const struct device *test_dev;
+
+#ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
 static struct k_thread get_runner_td;
 K_THREAD_STACK_DEFINE(get_runner_stack, 1024);
 
@@ -31,6 +35,7 @@ static void get_runner(void *arg1, void *arg2, void *arg3)
 	ret = pm_device_runtime_get(test_dev);
 	zassert_equal(ret, 0);
 }
+#endif /* CONFIG_PM_DEVICE_RUNTIME_ASYNC */
 
 void test_api_setup(void *data)
 {
@@ -43,7 +48,11 @@ void test_api_setup(void *data)
 	ret = pm_device_runtime_put(test_dev);
 	zassert_equal(ret, 0);
 	ret = pm_device_runtime_put_async(test_dev, K_NO_WAIT);
+#ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
 	zassert_equal(ret, 0);
+#else
+	zassert_equal(ret, -ENOSYS);
+#endif
 
 	/* enable runtime PM */
 	ret = pm_device_runtime_enable(test_dev);
@@ -130,6 +139,7 @@ ZTEST(device_runtime_api, test_api)
 	zassert_equal(ret, -EALREADY);
 	zassert_equal(pm_device_runtime_usage(test_dev), 0);
 
+#ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
 	/*** get + asynchronous put until suspended ***/
 
 	/* usage: 0, +1, resume: yes */
@@ -200,8 +210,10 @@ ZTEST(device_runtime_api, test_api)
 		 */
 		k_thread_create(&get_runner_td, get_runner_stack,
 				K_THREAD_STACK_SIZEOF(get_runner_stack), get_runner,
-				NULL, NULL, NULL, CONFIG_SYSTEM_WORKQUEUE_PRIORITY, 0,
-				K_NO_WAIT);
+				NULL, NULL, NULL,
+				COND_CODE_1(CONFIG_PM_DEVICE_RUNTIME_USE_DEDICATED_WQ,
+				(CONFIG_PM_DEVICE_RUNTIME_DEDICATED_WQ_PRIO),
+				(CONFIG_SYSTEM_WORKQUEUE_PRIORITY)), 0, K_NO_WAIT);
 		k_yield();
 
 		/* let driver suspend to finish and wait until get_runner finishes
@@ -259,6 +271,7 @@ ZTEST(device_runtime_api, test_api)
 	ret = pm_device_runtime_disable(test_dev);
 	zassert_equal(ret, 0);
 	zassert_equal(pm_device_runtime_usage(test_dev), -ENOTSUP);
+#endif /* CONFIG_PM_DEVICE_RUNTIME_ASYNC */
 }
 
 DEVICE_DEFINE(pm_unsupported_device, "PM Unsupported", NULL, NULL, NULL, NULL,
@@ -273,7 +286,11 @@ ZTEST(device_runtime_api, test_unsupported)
 	zassert_equal(pm_device_runtime_disable(dev), -ENOTSUP, "");
 	zassert_equal(pm_device_runtime_get(dev), 0, "");
 	zassert_equal(pm_device_runtime_put(dev), 0, "");
-	zassert_false(pm_device_runtime_put_async(dev, K_NO_WAIT),  "");
+#ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
+	zassert_equal(pm_device_runtime_put_async(dev, K_NO_WAIT), 0, "");
+#else
+	zassert_equal(pm_device_runtime_put_async(dev, K_NO_WAIT), -ENOSYS, "");
+#endif
 }
 
 int dev_pm_control(const struct device *dev, enum pm_device_action action)
@@ -300,7 +317,7 @@ ZTEST(device_runtime_api, test_pm_device_runtime_auto)
 void *device_runtime_api_setup(void)
 {
 	test_dev = device_get_binding("test_driver");
-	zassert_not_null(test_dev, NULL);
+	zassert_not_null(test_dev);
 	return NULL;
 }
 

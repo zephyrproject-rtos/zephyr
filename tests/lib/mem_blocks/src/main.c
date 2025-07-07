@@ -151,8 +151,8 @@ static void alloc_free(sys_mem_blocks_t *mem_block,
 #ifdef CONFIG_SYS_MEM_BLOCKS_LISTENER
 			zassert_equal(listener_heap_id[i],
 				      HEAP_ID_FROM_POINTER(mem_block),
-				      "Heap ID mismatched: 0x%lx != %p",
-				      listener_heap_id[i], mem_block);
+				      "Heap ID mismatched: %p != %p",
+				      (void *)listener_heap_id[i], mem_block);
 			zassert_equal(listener_mem[i], blocks[i][0],
 				      "Heap allocated pointer mismatched: %p != %p",
 				      listener_mem[i], blocks[i][0]);
@@ -160,7 +160,7 @@ static void alloc_free(sys_mem_blocks_t *mem_block,
 				      BIT(mem_block->info.blk_sz_shift),
 				      "Heap allocated sized: %u != %u",
 				      listener_size[i],
-				      BIT(mem_block->info.blk_sz_shift));
+				      (uint32_t)BIT(mem_block->info.blk_sz_shift));
 #endif
 		}
 
@@ -188,8 +188,8 @@ static void alloc_free(sys_mem_blocks_t *mem_block,
 #ifdef CONFIG_SYS_MEM_BLOCKS_LISTENER
 			zassert_equal(listener_heap_id[i],
 				      HEAP_ID_FROM_POINTER(mem_block),
-				      "Heap ID mismatched: 0x%lx != %p",
-				      listener_heap_id[i], mem_block);
+				      "Heap ID mismatched: 0x%p != %p",
+				      (void *)listener_heap_id[i], mem_block);
 			zassert_equal(listener_mem[i], blocks[i][0],
 				      "Heap allocated pointer mismatched: %p != %p",
 				      listener_mem[i], blocks[i][0]);
@@ -197,7 +197,7 @@ static void alloc_free(sys_mem_blocks_t *mem_block,
 				      BIT(mem_block->info.blk_sz_shift),
 				      "Heap allocated sized: %u != %u",
 				      listener_size[i],
-				      BIT(mem_block->info.blk_sz_shift));
+				      (uint32_t)BIT(mem_block->info.blk_sz_shift));
 #endif
 		}
 	}

@@ -106,7 +106,8 @@ static uint8_t cdc_ecm_get_int_in(struct usbd_class_data *const c_data)
 	struct cdc_ecm_eth_data *data = dev->data;
 	struct usbd_cdc_ecm_desc *desc = data->desc;
 
-	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED &&
+	    usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
 		return desc->if0_hs_int_ep.bEndpointAddress;
 	}
 
@@ -120,7 +121,8 @@ static uint8_t cdc_ecm_get_bulk_in(struct usbd_class_data *const c_data)
 	struct cdc_ecm_eth_data *data = dev->data;
 	struct usbd_cdc_ecm_desc *desc = data->desc;
 
-	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED &&
+	    usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
 		return desc->if1_1_hs_in_ep.bEndpointAddress;
 	}
 
@@ -131,7 +133,8 @@ static uint16_t cdc_ecm_get_bulk_in_mps(struct usbd_class_data *const c_data)
 {
 	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 
-	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED &&
+	    usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
 		return 512U;
 	}
 
@@ -145,7 +148,8 @@ static uint8_t cdc_ecm_get_bulk_out(struct usbd_class_data *const c_data)
 	struct cdc_ecm_eth_data *data = dev->data;
 	struct usbd_cdc_ecm_desc *desc = data->desc;
 
-	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED &&
+	    usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
 		return desc->if1_1_hs_out_ep.bEndpointAddress;
 	}
 
@@ -475,7 +479,7 @@ static void *usbd_cdc_ecm_get_desc(struct usbd_class_data *const c_data,
 	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_ecm_eth_data *const data = dev->data;
 
-	if (speed == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED && speed == USBD_SPEED_HS) {
 		return data->hs_desc;
 	}
 
@@ -542,18 +546,11 @@ static int cdc_ecm_set_config(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static int cdc_ecm_get_config(const struct device *dev,
-			      enum ethernet_config_type type,
-			      struct ethernet_config *config)
-{
-	return -ENOTSUP;
-}
-
 static enum ethernet_hw_caps cdc_ecm_get_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return ETHERNET_LINK_10BASE_T;
+	return ETHERNET_LINK_10BASE;
 }
 
 static int cdc_ecm_iface_start(const struct device *dev)
@@ -635,7 +632,6 @@ static struct usbd_class_api usbd_cdc_ecm_api = {
 
 static const struct ethernet_api cdc_ecm_eth_api = {
 	.iface_api.init = cdc_ecm_iface_init,
-	.get_config = cdc_ecm_get_config,
 	.set_config = cdc_ecm_set_config,
 	.get_capabilities = cdc_ecm_get_capabilities,
 	.send = cdc_ecm_send,

@@ -846,7 +846,7 @@ static int shi_npcx_enable(const struct device *dev)
 	/* Configure pin control for SHI */
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("shi_npcx pinctrl setup failed (%d)", ret);
+		LOG_ERR("Pinctrl apply DEFAULT fail (%d)", ret);
 		return ret;
 	}
 
@@ -877,7 +877,7 @@ static int shi_npcx_disable(const struct device *dev)
 	/* Configure pin control back to GPIO */
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
 	if (ret < 0) {
-		LOG_ERR("KB Raw pinctrl setup failed (%d)", ret);
+		LOG_ERR("Pinctrl apply SLEEP fail (%d)", ret);
 		return ret;
 	}
 
@@ -999,8 +999,6 @@ static int shi_npcx_init_registers(const struct device *dev)
 	/* SHI interrupt installation */
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), shi_npcx_isr, DEVICE_DT_INST_GET(0),
 		    0);
-
-	shi_npcx_enable(dev);
 
 	return ret;
 }

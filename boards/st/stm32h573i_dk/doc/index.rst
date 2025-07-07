@@ -180,9 +180,21 @@ Serial Port
 STM32H573I-DK Discovery board has 3 U(S)ARTs. The Zephyr console output is
 assigned to USART1. Default settings are 115200 8N1.
 
+TFT LCD screen and touch panel
+------------------------------
+
+The TFT LCD screen and touch panel are supported for the STM32H573I-DK Discovery board.
+They can be tested using :zephyr:code-sample:`lvgl` sample:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/display/lvgl
+   :board: stm32h573i_dk
+   :goals: build
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 STM32H573I-DK Discovery board includes an ST-LINK/V3E embedded debug tool interface.
 

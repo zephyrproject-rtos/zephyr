@@ -2,18 +2,18 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config REGULATOR_RPI_PICO
-	bool "RaspberryPi Pico regulator driver"
+	bool "Raspberry Pi Pico regulator driver"
 	default y
 	depends on DT_HAS_RASPBERRYPI_CORE_SUPPLY_REGULATOR_ENABLED
 	help
-	  Enable support for the RaspberryPi Pico regulator.
+	  Enable support for the Raspberry Pi Pico regulator.
 
 if REGULATOR_RPI_PICO
 
 config REGULATOR_RPI_PICO_INIT_PRIORITY
-	int "RaspberryPi Pico regulator driver init priority"
+	int "Raspberry Pi Pico regulator driver init priority"
 	default KERNEL_INIT_PRIORITY_DEVICE
 	help
-	  Init priority for the RaspberryPi Pico regulator driver.
+	  Init priority for the Raspberry Pi Pico regulator driver.
 
 endif

@@ -8,7 +8,7 @@ tests:
     extra_configs:
       - CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4=y
     platform_allow:
-      - esp32_devkitc_wrover/esp32/procpu
+      - esp32_devkitc/esp32/procpu
       - esp32s2_saola
       - esp32s3_devkitm/esp32s3/procpu
       - esp32c3_devkitm
@@ -20,7 +20,7 @@ tests:
       - CONFIG_WIFI_TEST_AUTH_MODE_WPA2=y
       - CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4=y
     platform_allow:
-      - esp32_devkitc_wrover/esp32/procpu
+      - esp32_devkitc/esp32/procpu
       - esp32s2_saola
       - esp32s3_devkitm/esp32s3/procpu
       - esp32c3_devkitm
@@ -32,7 +32,7 @@ tests:
       - CONFIG_WIFI_TEST_AUTH_MODE_WPA3=y
       - CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4=y
     platform_allow:
-      - esp32_devkitc_wrover/esp32/procpu
+      - esp32_devkitc/esp32/procpu
       - esp32s2_saola
       - esp32s3_devkitm/esp32s3/procpu
       - esp32c3_devkitm

@@ -229,7 +229,6 @@ extern "C" {
 
 /**
  * @name SPI GPIO Chip Select control
- * @anchor spi_gpio_cs
  * @{
  */
 
@@ -658,16 +657,16 @@ struct spi_device_state {
 	}
 /** @endcond */
 
-#define SPI_DEVICE_DT_DEFINE(node_id, init_fn, pm_device,		\
-			     data_ptr, cfg_ptr, level, prio,		\
-			     api_ptr, ...)				\
+#define SPI_DEVICE_DT_DEINIT_DEFINE(node_id, init_fn, deinit_fn,	\
+				    pm_device, data_ptr, cfg_ptr,	\
+				    level, prio, api_ptr, ...)		\
 	Z_SPI_DEVICE_STATE_DEFINE(Z_DEVICE_DT_DEV_ID(node_id));		\
 	Z_SPI_INIT_FN(Z_DEVICE_DT_DEV_ID(node_id), init_fn)		\
 	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id),		\
 			DEVICE_DT_NAME(node_id),			\
 			&UTIL_CAT(Z_DEVICE_DT_DEV_ID(node_id), _init),	\
-			NULL, Z_DEVICE_DT_FLAGS(node_id), pm_device,	\
-			data_ptr, cfg_ptr, level, prio,			\
+			deinit_fn, Z_DEVICE_DT_FLAGS(node_id),		\
+			pm_device, data_ptr, cfg_ptr, level, prio,	\
 			api_ptr,					\
 			&(Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_ID(node_id)).devstate), \
 			__VA_ARGS__)
@@ -699,11 +698,51 @@ static inline void spi_transceive_stats(const struct device *dev, int error,
 
 /**
  * @name SPI DT Device Macros
- * @anchor spi_dt_dev
  * @{
  */
+
 /**
- * @brief Like DEVICE_DT_DEFINE() with SPI specifics.
+ * @brief Like DEVICE_DT_DEINIT_DEFINE() with SPI specifics.
+ *
+ * @details Defines a device which implements the SPI API. May
+ * generate a custom device_state container struct and init_fn
+ * wrapper when needed depending on SPI @kconfig{CONFIG_SPI_STATS}.
+ *
+ * @param node_id The devicetree node identifier.
+ * @param init_fn Name of the init function of the driver.
+ * @param deinit_fn Name of the deinit function of the driver.
+ * @param pm PM device resources reference (NULL if device does not use PM).
+ * @param data Pointer to the device's private data.
+ * @param config The address to the structure containing the configuration
+ *                information for this instance of the driver.
+ * @param level The initialization level. See SYS_INIT() for details.
+ * @param prio Priority within the selected initialization level. See SYS_INIT()
+ *             for details.
+ * @param api Provides an initial pointer to the API function struct used by
+ *                the driver. Can be NULL.
+ */
+#define SPI_DEVICE_DT_DEINIT_DEFINE(node_id, init_fn, deinit_fn, pm, data,	\
+				    config, level, prio, api, ...)		\
+	Z_DEVICE_STATE_DEFINE(Z_DEVICE_DT_DEV_ID(node_id));			\
+	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id),			\
+			DEVICE_DT_NAME(node_id), init_fn, deinit_fn,		\
+			Z_DEVICE_DT_FLAGS(node_id), pm, data, config,		\
+			level, prio, api,					\
+			&Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_ID(node_id)),	\
+			__VA_ARGS__)
+
+/** @} */
+
+#define SPI_STATS_RX_BYTES_INC(dev_)
+#define SPI_STATS_TX_BYTES_INC(dev_)
+#define SPI_STATS_TRANSFER_ERROR_INC(dev_)
+
+#define spi_transceive_stats(dev, error, tx_bufs, rx_bufs)
+
+#endif /*CONFIG_SPI_STATS*/
+
+/**
+ * @brief Like DEVICE_DT_DEINIT_DEFINE() without deinit function.
  *
  * @details Defines a device which implements the SPI API. May
  * generate a custom device_state container struct and init_fn
@@ -721,31 +760,25 @@ static inline void spi_transceive_stats(const struct device *dev, int error,
  * @param api Provides an initial pointer to the API function struct used by
  *                the driver. Can be NULL.
  */
-#define SPI_DEVICE_DT_DEFINE(node_id, init_fn, pm,		\
-				data, config, level, prio,	\
-				api, ...)			\
-	Z_DEVICE_STATE_DEFINE(Z_DEVICE_DT_DEV_ID(node_id));			\
-	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id),			\
-			DEVICE_DT_NAME(node_id), init_fn, NULL,			\
-			Z_DEVICE_DT_FLAGS(node_id), pm, data, config,		\
-			level, prio, api,					\
-			&Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_ID(node_id)),	\
-			__VA_ARGS__)
-/** @} */
+#define SPI_DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level, prio,	\
+			     api, ...)						\
+	SPI_DEVICE_DT_DEINIT_DEFINE(node_id, init_fn, NULL, pm, data, config,	\
+				    level, prio, api, __VA_ARGS__)
 
-#define SPI_STATS_RX_BYTES_INC(dev_)
-#define SPI_STATS_TX_BYTES_INC(dev_)
-#define SPI_STATS_TRANSFER_ERROR_INC(dev_)
-
-#define spi_transceive_stats(dev, error, tx_bufs, rx_bufs)
-
-#endif /*CONFIG_SPI_STATS*/
-
+/**
+ * @brief Like SPI_DEVICE_DT_DEINIT_DEFINE(), but uses an instance of a `DT_DRV_COMPAT`
+ * compatible instead of a node identifier.
+ *
+ * @param inst Instance number. The `node_id` argument to SPI_DEVICE_DT_DEINIT_DEFINE() is
+ * set to `DT_DRV_INST(inst)`.
+ * @param ... Other parameters as expected by SPI_DEVICE_DT_DEFINE().
+ */
+#define SPI_DEVICE_DT_INST_DEINIT_DEFINE(inst, ...) \
+	SPI_DEVICE_DT_DEINIT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
 
 /**
  * @brief Like SPI_DEVICE_DT_DEFINE(), but uses an instance of a `DT_DRV_COMPAT`
  * compatible instead of a node identifier.
- * @addtogroup spi_dt_dev
  *
  * @param inst Instance number. The `node_id` argument to SPI_DEVICE_DT_DEFINE() is
  * set to `DT_DRV_INST(inst)`.
@@ -821,7 +854,6 @@ __subsystem struct spi_driver_api {
 
 /**
  * @brief Check if SPI CS is controlled using a GPIO.
- * @addtogroup spi_gpio_cs
  *
  * @param config SPI configuration.
  * @return true If CS is controlled using a GPIO.
@@ -834,7 +866,6 @@ static inline bool spi_cs_is_gpio(const struct spi_config *config)
 
 /**
  * @brief Check if SPI CS in @ref spi_dt_spec is controlled using a GPIO.
- * @addtogroup spi_gpio_cs
  *
  * @param spec SPI specification from devicetree.
  * @return true If CS is controlled using a GPIO.
@@ -902,7 +933,7 @@ static inline bool spi_is_ready_dt(const struct spi_dt_spec *spec)
  * @retval 0 If successful in master mode.
  * @retval -ENOTSUP means some part of the spi config is not supported either by the
  *	   device hardware or the driver software.
- * @retval -EINVAL means that some parameter of the spi_config is invalid for the device.
+ * @retval -EINVAL means that some parameter of the spi_config is invalid.
  * @retval -errno Negative errno code on failure.
  */
 __syscall int spi_transceive(const struct device *dev,
@@ -962,7 +993,9 @@ static inline int spi_transceive_dt(const struct spi_dt_spec *spec,
  *
  * @retval frames Positive number of frames received in slave mode.
  * @retval 0 If successful.
- * @retval -ENOTSUP or -EINVAL means some part of the spi config is not possible for device
+ * @retval -ENOTSUP means some part of the spi config is not supported either by the
+ *	   device hardware or the driver software.
+ * @retval -EINVAL means that some parameter of the spi_config is invalid.
  * @retval -errno Negative errno code on failure.
  */
 static inline int spi_read(const struct device *dev,
@@ -1004,7 +1037,9 @@ static inline int spi_read_dt(const struct spi_dt_spec *spec,
  * @param tx_bufs Buffer array where data to be sent originates from.
  *
  * @retval 0 If successful.
- * @retval -ENOTSUP or -EINVAL means some part of the spi config is not possible for device
+ * @retval -ENOTSUP means some part of the spi config is not supported either by the
+ *	   device hardware or the driver software.
+ * @retval -EINVAL means that some parameter of the spi_config is invalid.
  * @retval -errno Negative errno code on failure.
  */
 static inline int spi_write(const struct device *dev,
@@ -1073,7 +1108,9 @@ static inline int spi_write_dt(const struct spi_dt_spec *spec,
  *
  * @retval frames Positive number of frames received in slave mode.
  * @retval 0 If successful in master mode.
- * @retval -ENOTSUP or -EINVAL means some part of the spi config is not possible for device
+ * @retval -ENOTSUP means some part of the spi config is not supported either by the
+ *	   device hardware or the driver software.
+ * @retval -EINVAL means that some parameter of the spi_config is invalid.
  * @retval -errno Negative errno code on failure.
  */
 static inline int spi_transceive_cb(const struct device *dev,
@@ -1121,7 +1158,9 @@ void z_spi_transfer_signal_cb(const struct device *dev, int result, void *userda
  *
  * @retval frames Positive number of frames received in slave mode.
  * @retval 0 If successful in master mode.
- * @retval -ENOTSUP or -EINVAL means some part of the spi config is not possible for device
+ * @retval -ENOTSUP means some part of the spi config is not supported either by the
+ *	   device hardware or the driver software.
+ * @retval -EINVAL means that some parameter of the spi_config is invalid.
  * @retval -errno Negative errno code on failure.
  */
 static inline int spi_transceive_signal(const struct device *dev,
@@ -1159,7 +1198,9 @@ static inline int spi_transceive_signal(const struct device *dev,
  *
  * @retval frames Positive number of frames received in slave mode.
  * @retval 0 If successful
- * @retval -ENOTSUP or -EINVAL means some part of the spi config is not possible for device
+ * @retval -ENOTSUP means some part of the spi config is not supported either by the
+ *	   device hardware or the driver software.
+ * @retval -EINVAL means that some parameter of the spi_config is invalid.
  * @retval -errno Negative errno code on failure.
  */
 static inline int spi_read_signal(const struct device *dev,
@@ -1191,7 +1232,9 @@ static inline int spi_read_signal(const struct device *dev,
  *        successfully or not).
  *
  * @retval 0 If successful.
- * @retval -ENOTSUP or -EINVAL means some part of the spi config is not possible for device
+ * @retval -ENOTSUP means some part of the spi config is not supported either by the
+ *	   device hardware or the driver software.
+ * @retval -EINVAL means that some parameter of the spi_config is invalid.
  * @retval -errno Negative errno code on failure.
  */
 static inline int spi_write_signal(const struct device *dev,
@@ -1233,7 +1276,9 @@ static inline void spi_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
 	api->iodev_submit(dt_spec->bus, iodev_sqe);
 }
 
+/** @cond INTERNAL_HIDDEN */
 extern const struct rtio_iodev_api spi_iodev_api;
+/** @endcond */
 
 /**
  * @brief Define an iodev for a given dt node on the bus

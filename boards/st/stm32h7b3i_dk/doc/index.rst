@@ -154,6 +154,8 @@ default communication settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 STM32H7B3I Discovery kit includes an STLINK-V3E embedded debug tool interface.
 
 Applications for the ``stm32h7b3i_dk`` board configuration can be built and

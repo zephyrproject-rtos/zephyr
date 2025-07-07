@@ -1,4 +1,4 @@
-description: Silabs SiWx91x Watchdog node
+description: Silabs SiWx91x Watchdog
 
 compatible: "silabs,siwx91x-wdt"
 

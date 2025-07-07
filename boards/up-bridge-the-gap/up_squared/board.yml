@@ -1,5 +1,6 @@
 board:
   name: up_squared
   full_name: UP Squared
+  vendor: up-bridge-the-gap
   socs:
     - name: apollo_lake

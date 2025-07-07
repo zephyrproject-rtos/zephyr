@@ -1,0 +1,89 @@
+/*
+ * Copyright (c) 2025 u-blox AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/rw/RW612-pinctrl.h>
+
+&pinctrl {
+
+	// default-UART
+	pinmux_flexcomm3_usart: pinmux_flexcomm3_usart {
+		group0 {
+			pinmux = <IO_MUX_FC3_USART_DATA>;
+			slew-rate = "normal";
+		};
+	};
+
+	// FCx all default configure as a UART
+	pinmux_flexcomm0_usart: pinmux_flexcomm0_usart {
+		group0 {
+			pinmux = <IO_MUX_FC0_USART_DATA>;
+			slew-rate = "normal";
+		};
+	};
+
+	pinmux_flexcomm2_usart: pinmux_flexcomm2_usart {
+		group0 {
+			pinmux = <IO_MUX_FC2_USART_DATA>;
+			slew-rate = "normal";
+		};
+	};
+
+	pinmux_flexcomm14_usart: pinmux_flexcomm14_usart {
+		group0 {
+			pinmux = <IO_MUX_FC14_USART_DATA>;
+			slew-rate = "normal";
+		};
+	};
+
+	// i2c
+	pinmux_flexcomm2_i2c: pinmux_flexcomm2_i2c {
+		group0 {
+			pinmux = <IO_MUX_FC2_I2C_16_17>;
+			slew-rate = "normal";
+			bias-pull-up;
+		};
+	};
+
+	// spi
+	pinmux_flexcomm0_spi: pinmux_flexcomm0_spi {
+		group0 {
+			pinmux = <IO_MUX_FC0_SPI_SS0>;
+			slew-rate = "ultra";
+		};
+	};
+
+	pinmux_flexcomm1_spi: pinmux_flexcomm1_spi {
+		group0 {
+			pinmux = <IO_MUX_FC1_SPI_SS0>;
+			slew-rate = "ultra";
+		};
+	};
+
+	pinmux_pwm0: pinmux_pwm0 {
+		group0 {
+			pinmux = <IO_MUX_SCT_OUT_0>;
+			slew-rate = "normal";
+		};
+	};
+
+	pinmux_hsgpio0: pinmux_hsgpio0 {
+		group0 {
+			pinmux = <IO_MUX_GPIO11
+				  IO_MUX_GPIO12
+				  IO_MUX_GPIO18
+				  IO_MUX_GPIO21>;
+			slew-rate = "normal";
+		};
+	};
+
+	pinmux_hsgpio1: pinmux_hsgpio1 {
+		group0 {
+			pinmux = <IO_MUX_GPIO44
+				  IO_MUX_GPIO55>;
+			slew-rate = "normal";
+		};
+	};
+};

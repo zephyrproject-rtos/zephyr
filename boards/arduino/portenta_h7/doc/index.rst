@@ -66,7 +66,9 @@ two cores. This is done in 3 ways:
   to avoid potential concurrent access issues.
 
 Building and Flashing
-*************************
+*********************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``arduino_portenta_h7`` board should be built per core target,
 using either ``arduino_portenta_h7_m7`` or ``arduino_portenta_h7_m4`` as the target.

@@ -43,6 +43,7 @@
 		green_led_1:led_1 {
 			status = "okay";
 		};
+
 		orange_led_2:led_2 {
 			status = "okay";
 		};
@@ -145,6 +146,7 @@
 		     &eth_txd1_pg12>;
 	pinctrl-names = "default";
 	phy-connection-type = "rmii";
+	phy-handle = <&eth_phy>;
 };
 
 &mdio {
@@ -152,10 +154,9 @@
 	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
 	pinctrl-names = "default";
 
-	ethernet-phy@0 {
+	eth_phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";
 		reg = <0x00>;
-		status = "okay";
 	};
 };
 
@@ -239,6 +240,7 @@ zephyr_udc0: &usbotg_hs {
 			&sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
 	pinctrl-names = "default";
 	cd-gpios = <&gpioi 8 GPIO_ACTIVE_LOW>;
+	disk-name = "SD";
 };
 
 &quadspi {
@@ -251,28 +253,30 @@ zephyr_udc0: &usbotg_hs {
 	dual-flash;
 	status = "okay";
 
-	mt25ql512ab1: qspi-nor-flash-1@90000000 {
+	mt25ql512ab1: qspi-nor-flash-1@0 {
 		compatible = "st,stm32-qspi-nor";
-		reg = <0x90000000 DT_SIZE_M(64)>; /* 512 Mbits */
+		reg = <0>;
+		size = <DT_SIZE_M(512)>; /* 512 Mbits */
 		qspi-max-frequency = <72000000>;
 		spi-bus-width = <4>;
 		reset-cmd;
 		status = "okay";
 
 		partitions {
-			   compatible = "fixed-partitions";
-			   #address-cells = <1>;
-			   #size-cells = <1>;
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-			   partition@0 {
-			       reg = <0x0 DT_SIZE_M(64)>;
-			   };
+			partition@0 {
+				reg = <0x0 DT_SIZE_M(64)>;
+			};
 		};
 	};
 
-	mt25ql512ab2: qspi-nor-flash-2@90000000 {
+	mt25ql512ab2: qspi-nor-flash-2@0 {
 		compatible = "st,stm32-qspi-nor";
-		reg = <0x90000000 DT_SIZE_M(64)>; /* 512 Mbits */
+		reg = <0>;
+		size = <DT_SIZE_M(512)>; /* 512 Mbits */
 		qspi-max-frequency = <72000000>;
 		status = "okay";
 	};

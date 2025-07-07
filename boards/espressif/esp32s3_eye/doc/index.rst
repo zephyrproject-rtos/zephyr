@@ -3,8 +3,8 @@
 Overview
 ********
 
-The ESP32-S3-EYE is a small-sized AI development board produced by [Espressif](https://espressif.com).
-It is based on the [ESP32-S3](https://www.espressif.com/en/products/socs/esp32-s3) SoC.
+The ESP32-S3-EYE is a small-sized AI development board produced by `Espressif`_.
+It is based on the `ESP32-S3`_ SoC.
 It features a 2-Megapixel camera, an LCD display, and a microphone, which are used for image
 recognition and audio processing. ESP32-S3-EYE offers plenty of storage, with an 8 MB Octal PSRAM
 and a 8 MB flash.
@@ -135,6 +135,8 @@ below to retrieve those files.
 Building & Flashing
 *******************
 
+.. zephyr:board-supported-runners::
+
 Simple boot
 -----------
 
@@ -256,7 +258,7 @@ Debugging
 
 ESP32-S3 modules require patches to OpenOCD that are not upstreamed yet.
 Espressif maintains their own fork of the project. The custom OpenOCD can be obtained at
-`OpenOCD ESP32`_
+`OpenOCD ESP32`_.
 
 The Zephyr SDK uses a bundled version of OpenOCD by default.
 You can overwrite that behavior by adding the
@@ -280,3 +282,7 @@ application.
    :goals: debug
 
 .. _`OpenOCD ESP32`: https://github.com/espressif/openocd-esp32/releases
+
+.. _`Espressif`: https://espressif.com
+
+.. _`ESP32-S3`: https://www.espressif.com/en/products/socs/esp32-s3

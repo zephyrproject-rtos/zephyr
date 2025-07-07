@@ -208,13 +208,14 @@ static void i3c_ibi_work_handler(struct k_work *work)
 		if ((ret != 0) && (ret != -EBUSY)) {
 			LOG_ERR("i3c_do_daa returns %d", ret);
 		}
-
+#ifdef CONFIG_I3C_TARGET
 		if (i3c_bus_has_sec_controller(ibi_node->controller)) {
 			ret = i3c_bus_deftgts(ibi_node->controller);
 			if (ret != 0) {
 				LOG_ERR("Error sending DEFTGTS");
 			}
 		}
+#endif /* CONFIG_I3C_TARGET */
 		break;
 
 	case I3C_IBI_WORKQUEUE_CB:
@@ -224,10 +225,12 @@ static void i3c_ibi_work_handler(struct k_work *work)
 		break;
 
 	case I3C_IBI_CONTROLLER_ROLE_REQUEST:
+#ifdef CONFIG_I3C_TARGET
 		ret = i3c_device_controller_handoff(ibi_node->target, true);
 		if (ret != 0) {
 			LOG_ERR("i3c_device_controller_handoff returns %d", ret);
 		}
+#endif /* CONFIG_I3C_TARGET */
 		break;
 
 	default:

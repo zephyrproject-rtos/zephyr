@@ -54,6 +54,8 @@ is UART0 at PIN-9 and PIN-10.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Before program your board make sure to configure boot setting and serial port.
 The default serial port is USART0.  This port uses header JP-5/6 to route
 signals between USB VBUS/ID and USART J2.

@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(ptp_msg, CONFIG_PTP_LOG_LEVEL);
 
 static struct k_mem_slab msg_slab;
 
-K_MEM_SLAB_DEFINE_STATIC(msg_slab, sizeof(struct ptp_msg), CONFIG_PTP_MSG_POLL_SIZE, 8);
+K_MEM_SLAB_DEFINE_STATIC(msg_slab, sizeof(struct ptp_msg), CONFIG_PTP_MSG_POLL_SIZE, 4);
 
 static const char *msg_type_str(struct ptp_msg *msg)
 {
@@ -275,6 +275,7 @@ struct ptp_msg *ptp_msg_from_pkt(struct net_pkt *pkt)
 		/* remove packet temporarily. */
 		buf = pkt->buffer;
 		pkt->buffer = buf->frags;
+		buf->frags = NULL;
 
 		hdr = net_udp_get_hdr(pkt, NULL);
 

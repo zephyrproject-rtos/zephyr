@@ -231,16 +231,16 @@ ZTEST(desc_sections, test_desc_sections)
 			"USB Configuration structures section");
 
 	head = (struct usb_desc_header *)__usb_descriptor_start;
-	zassert_not_null(head, NULL);
+	zassert_not_null(head);
 
 	zassert_equal(SYMBOL_SPAN(__usb_descriptor_end, __usb_descriptor_start),
-		      TEST_DESCRIPTOR_TABLE_SPAN, NULL);
+		      TEST_DESCRIPTOR_TABLE_SPAN);
 
 	/* Calculate number of structures */
 	zassert_equal(_usb_cfg_data_list_end - _usb_cfg_data_list_start,
-		      NUM_INSTANCES, NULL);
+		      NUM_INSTANCES);
 	zassert_equal(SYMBOL_SPAN(_usb_cfg_data_list_end, _usb_cfg_data_list_start),
-		      NUM_INSTANCES * sizeof(struct usb_cfg_data), NULL);
+		      NUM_INSTANCES * sizeof(struct usb_cfg_data));
 
 	check_endpoint_allocation(head);
 }

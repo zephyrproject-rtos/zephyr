@@ -130,18 +130,11 @@ Raspberry Pi Pico's PIO is a programmable chip that can implement a variety of p
      - :kconfig:option:`CONFIG_LED_STRIP`
      - :dtcompatible:`worldsemi,ws2812-rpi_pico-pio`
 
-Programming and Debugging
-*************************
-
-Applications for the ``rpi_pico`` board configuration can be built and
-flashed in the usual way (see :ref:`build_an_application` and
-:ref:`application_run` for more details).
-
 System requirements
-===================
+*******************
 
 Prerequisites for the Pico W
-----------------------------
+============================
 
 Building for the Raspberry Pi Pico W requires the AIROC binary blobs
 provided by Infineon. Run the command below to retrieve those files:
@@ -154,46 +147,29 @@ provided by Infineon. Run the command below to retrieve those files:
 
    It is recommended running the command above after :file:`west update`.
 
-Debug Probe and Host Tools
---------------------------
+.. _rpi_pico_programming_and_debugging:
+
+Programming and Debugging
+*************************
+
+.. zephyr:board-supported-runners::
+
+Applications for the ``rpi_pico`` board configuration can be built and
+flashed in the usual way (see :ref:`build_an_application` and
+:ref:`application_run` for more details).
 
 Several debugging tools support the Raspberry Pi Pico.
 The `Raspberry Pi Debug Probe`_ is an easy-to-obtain CMSIS-DAP adapter
 officially provided by the Raspberry Pi Foundation,
 making it a convenient choice for debugging ``rpi_pico``.
+It can be used with ``openocd`` or ``pyocd``.
 
-It can be used with
-
-- :ref:`openocd-debug-host-tools`
-- :ref:`pyocd-debug-host-tools`
-
-OpenOCD is the default for ``rpi_pico``.
-
-- `SEGGER J-Link`_
-- `Black Magic Debug Probe <Black Magic Debug>`_
-
-can also be used.
-These are used with dedicated probes.
 
 Flashing
 ========
 
 The ``rpi_pico`` can flash with Zephyr's standard method.
 See also :ref:`Building, Flashing and Debugging<west-flashing>`.
-
-Here is an example of building and flashing the :zephyr:code-sample:`blinky` application.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/basic/blinky
-   :board: rpi_pico
-   :goals: build
-
-.. code-block:: console
-
-  west flash --runner jlink
-
-
-.. _rpi_pico_flashing_using_openocd:
 
 Using OpenOCD
 -------------
@@ -205,7 +181,7 @@ The Raspberry Pi Pico has an SWD interface that can be used to program
 and debug the onboard SoC. This interface can be used with OpenOCD.
 To use it, OpenOCD version 0.12.0 or later is needed.
 
-If you are using a Debian based system (including RaspberryPi OS, Ubuntu. and more),
+If you are using a Debian based system (including Raspberry Pi OS, Ubuntu. and more),
 using the `pico_setup.sh`_ script is a convenient way to set up the forked version of OpenOCD.
 
 Here is an example of building and flashing the :zephyr:code-sample:`blinky` application.
@@ -214,13 +190,14 @@ Here is an example of building and flashing the :zephyr:code-sample:`blinky` app
    :zephyr-app: samples/basic/blinky
    :board: rpi_pico
    :goals: build flash
-   :gen-args: -DOPENOCD=/usr/local/bin/openocd -DRPI_PICO_DEBUG_ADAPTER=cmsis-dap
+   :gen-args: -DRPI_PICO_DEBUG_ADAPTER=cmsis-dap
+   :flash-args: --openocd /usr/local/bin/openocd
 
-Set the CMake option **OPENOCD** to :file:`/usr/local/bin/openocd`. This should work
+Set the flash runner option **--openocd** to :file:`/usr/local/bin/openocd`. This should work
 with the OpenOCD that was installed with the default configuration.
 This configuration also works with an environment that is set up by the `pico_setup.sh`_ script.
 
-**RPI_PICO_DEBUG_ADAPTER** specifies what debug adapter is used for debugging.
+In this sample, **RPI_PICO_DEBUG_ADAPTER** specifies which debug adapter is used for debugging.
 
 If **RPI_PICO_DEBUG_ADAPTER** was not set, ``cmsis-dap`` is used by default.
 The ``raspberrypi-swd`` and ``jlink`` are verified to work.
@@ -234,7 +211,24 @@ The value of **RPI_PICO_DEBUG_ADAPTER** is cached, so it can be omitted from
 **RPI_PICO_DEBUG_ADAPTER** is used in an argument to OpenOCD as ``"source [find interface/${RPI_PICO_DEBUG_ADAPTER}.cfg]"``.
 Thus, **RPI_PICO_DEBUG_ADAPTER** needs to be assigned the file name of the debug adapter.
 
-.. _rpi_pico_flashing_using_uf2:
+
+Using JLink or other supported tools
+------------------------------------
+
+You can Flash with a `SEGGER J-Link`_ debug probe as described in
+:ref:`Building, Flashing and Debugging <west-flashing>`.
+
+Here is an example of building and flashing the :zephyr:code-sample:`blinky` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/blinky
+   :board: rpi_pico
+   :goals: build flash
+   :flash-args: --runner jlink
+
+You can also use other supported tools, such as `Black Magic Probe`_,
+by changing the ``-- runner`` option.
+
 
 Using UF2
 ---------
@@ -242,8 +236,15 @@ Using UF2
 If you don't have an SWD adapter, you can flash the Raspberry Pi Pico with
 a UF2 file. By default, building an app for this board will generate a
 :file:`build/zephyr/zephyr.uf2` file. If the Pico is powered on with the ``BOOTSEL``
-button pressed, it will appear on the host as a mass storage device. The
-UF2 file should be drag-and-dropped to the device, which will flash the Pico.
+button pressed, it will appear on the host as a mass storage device.
+Run the following command, or drag-and-drop the uf2 file to the device,
+which will flash the Pico.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/blinky
+   :board: rpi_pico
+   :goals: flash
+   :flash-args: --runner uf2
 
 Debugging
 =========
@@ -258,14 +259,11 @@ the `Raspberry Pi Debug Probe`_.
    :board: rpi_pico
    :maybe-skip-config:
    :goals: debug
-   :gen-args: -DOPENOCD=/usr/local/bin/openocd -DRPI_PICO_DEBUG_ADAPTER=cmsis-dap
+   :debug-args: --openocd /usr/local/bin/openocd
 
 The default debugging tool is ``openocd``.
 If you use a different tool, specify it with the ``--runner``,
 such as ``jlink``.
-
-If you use OpenOCD, see also the description about flashing :ref:`rpi_pico_flashing_using_uf2`
-for more information.
 
 
 .. target-notes::
@@ -291,5 +289,5 @@ for more information.
 .. _SEGGER J-Link:
    https://www.segger.com/products/debug-probes/j-link/
 
-.. _Black Magic Debug:
+.. _Black Magic Probe:
    https://black-magic.org/

@@ -93,6 +93,7 @@ static enum lorawan_channels_mask_size region_channels_mask_size =
 
 static lorawan_battery_level_cb_t battery_level_cb;
 static lorawan_dr_changed_cb_t dr_changed_cb;
+static lorawan_link_check_ans_cb_t link_check_cb;
 
 /* implementation required by the soft-se (software secure element) */
 void BoardGetUniqueId(uint8_t *id)
@@ -213,8 +214,10 @@ static void mlme_confirm_handler(MlmeConfirm_t *mlme_confirm)
 		LOG_INF("Joined network! DevAddr: %08x", mib_req.Param.DevAddr);
 		break;
 	case MLME_LINK_CHECK:
-		/* Not implemented */
-		LOG_INF("Link check not implemented yet!");
+		if (link_check_cb != NULL) {
+			link_check_cb(mlme_confirm->DemodMargin, mlme_confirm->NbGateways);
+		}
+		LOG_INF("Link check done");
 		break;
 	case MLME_DEVICE_TIME:
 		LOG_INF("DevTimeReq done");
@@ -397,6 +400,27 @@ int lorawan_set_region(enum lorawan_region region)
 	LOG_DBG("Selected region %d", region);
 
 	return 0;
+}
+
+int lorawan_request_link_check(bool force_request)
+{
+	int ret = 0;
+	LoRaMacStatus_t status;
+	MlmeReq_t mlme_req;
+
+	mlme_req.Type = MLME_LINK_CHECK;
+	status = LoRaMacMlmeRequest(&mlme_req);
+	if (status != LORAMAC_STATUS_OK) {
+		LOG_ERR("LinkCheckReq failed: %s", lorawan_status2str(status));
+		ret = lorawan_status2errno(status);
+		return ret;
+	}
+
+	if (force_request) {
+		ret = lorawan_send(0U, "", 0U, LORAWAN_MSG_UNCONFIRMED);
+	}
+
+	return ret;
 }
 
 int lorawan_request_device_time(bool force_request)
@@ -730,6 +754,11 @@ void lorawan_register_downlink_callback(struct lorawan_downlink_cb *cb)
 void lorawan_register_dr_changed_callback(lorawan_dr_changed_cb_t cb)
 {
 	dr_changed_cb = cb;
+}
+
+void lorawan_register_link_check_ans_callback(lorawan_link_check_ans_cb_t cb)
+{
+	link_check_cb = cb;
 }
 
 int lorawan_start(void)

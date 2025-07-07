@@ -38,6 +38,14 @@
 			status = "okay";
 		};
 
+		elc: elc@40041000 {
+			compatible = "renesas,ra-elc";
+			reg = <0x40041000 0x70>;
+			#renesas-elc-cells = <2>;
+			clocks = <&pclkb MSTPC 14>;
+			status = "disabled";
+		};
+
 		ioport0: gpio@40040000 {
 			compatible = "renesas,ra-gpio-ioport";
 			reg = <0x40040000 0x20>;
@@ -613,6 +621,22 @@
 			clocks = <&pclkd MSTPD 6>;
 			reg = <0x40078c00 0x100>;
 			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		eth: ethernet@40064100 {
+			compatible = "renesas,ra-ethernet";
+			reg = <0x40064100 0xfc>;
+			interrupts = <51 0>;
+			local-mac-address = [00 11 22 33 44 55];
+			phy-connection-type = "rmii";
+			status = "disabled";
+		};
+
+		mdio: mdio {
+			compatible = "renesas,ra-mdio";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 

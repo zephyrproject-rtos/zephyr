@@ -66,4 +66,4 @@
 };
 
 /* Include default memory partition configuration file */
-#include <common/nordic/nrf91xx_partition.dtsi>
+#include <nordic/nrf91xx_partition.dtsi>

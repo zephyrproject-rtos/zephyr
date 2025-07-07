@@ -8,28 +8,3 @@ config THINGY53_INIT_PRIORITY
 	default 79
 	help
 	  Initialization priority of the Thingy:53.
-
-if BOARD_THINGY53_NRF5340_CPUAPP || BOARD_THINGY53_NRF5340_CPUAPP_NS
-
-config DOMAIN_CPUNET_BOARD
-	string
-	default "thingy53/nrf5340/cpunet"
-	help
-	  The board which will be used for CPUNET domain when creating a multi
-	  image application where one or more images should be located on
-	  another board. For example hci_ipc on the nRF5340_cpunet for
-	  Bluetooth applications.
-
-endif # BOARD_THINGY53_NRF5340_CPUAPP || BOARD_THINGY53_NRF5340_CPUAPP_NS
-
-if BOARD_THINGY53_NRF5340_CPUNET
-
-config DOMAIN_CPUAPP_BOARD
-	string
-	default "thingy53/nrf5340/cpuapp"
-	help
-	  The board which will be used for CPUAPP domain when creating a multi
-	  image application where one or more images should be located on
-	  another board.
-
-endif # BOARD_THINGY53_NRF5340_CPUNET

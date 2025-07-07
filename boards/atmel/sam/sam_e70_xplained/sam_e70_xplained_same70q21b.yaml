@@ -18,6 +18,7 @@ supported:
   - i2s
   - pwm
   - netif:eth
+  - sdhc
   - spi
   - usb_device
   - watchdog

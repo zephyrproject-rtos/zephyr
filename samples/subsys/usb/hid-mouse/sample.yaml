@@ -22,6 +22,7 @@ tests:
       - stm32f723e_disco
       - nucleo_f413zh
       - mimxrt1060_evk/mimxrt1062/qspi
+      - max32690evkit/max32690/m4
     extra_args:
       - CONF_FILE="usbd_next_prj.conf"
       - EXTRA_DTC_OVERLAY_FILE="usbd_next.overlay"

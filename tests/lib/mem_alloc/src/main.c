@@ -35,8 +35,7 @@ TOOLCHAIN_DISABLE_GCC_WARNING(TOOLCHAIN_WARNING_ALLOC_SIZE_LARGER_THAN)
 /**
  *
  * @brief Test implementation-defined constants library
- * @defgroup libc_api
- * @ingroup all_tests
+ * @ingroup libc_api
  * @{
  *
  */
@@ -293,7 +292,7 @@ ZTEST(c_lib_dynamic_memalloc, test_reallocarray)
 
 	cptr =  reallocarray(ptr, TOO_BIG, sizeof(int));
 	zassert_is_null((ptr), "reallocarray failed, errno: %d", errno);
-	zassert_is_null((cptr), "reallocarray failed, errno: %d");
+	zassert_is_null((cptr), "reallocarray failed, errno: %d", errno);
 	free(cptr);
 
 	ptr = malloc(orig_size);
@@ -350,10 +349,6 @@ ZTEST(c_lib_dynamic_memalloc, test_memalloc_all)
 }
 
 /**
- * @}
- */
-
-/**
  *
  * @brief Test dynamic memory allocation upto maximum size
  * Negative test case
@@ -374,5 +369,9 @@ ZTEST(c_lib_dynamic_memalloc, test_memalloc_max)
 	_test_memalloc_max();
 }
 #endif
+
+/**
+ * @}
+ */
 
 ZTEST_SUITE(c_lib_dynamic_memalloc, NULL, NULL, NULL, NULL, NULL);

@@ -80,6 +80,8 @@ MicroSD is connected to these pins, and CS pin is connected to P0.17.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``nrf52840_blip`` board configuration can be
 built and flashed in the usual way (see :ref:`build_an_application`
 and :ref:`application_run` for more details); The onboard Black Magic

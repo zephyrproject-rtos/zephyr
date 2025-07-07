@@ -63,6 +63,8 @@ The STM32C0116 Discovery board is configured as follows:
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 STM32C0116-DK Discovery kit includes an ST-LINK/V2 embedded debug tool interface.
 
 Applications for the ``stm32c0116_dk`` board configuration can be built and

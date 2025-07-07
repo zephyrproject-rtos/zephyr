@@ -191,6 +191,8 @@ Security components
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The BL5340's application core supports the Armv8-M Security Extension.
 Applications built for the ``bl5340_dvk/nrf5340/cpuapp`` board by default
 boot in the Secure state.

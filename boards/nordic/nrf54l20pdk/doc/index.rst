@@ -1,7 +1,4 @@
-.. _nrf54l20pdk_nrf54l20:
-
-nRF54L20 PDK
-############
+.. zephyr:board:: nrf54l20pdk
 
 Overview
 ********
@@ -36,29 +33,12 @@ internal or external capacitors.
 Supported Features
 ==================
 
-The ``nrf54l20pdk/nrf54l20/cpuapp`` board target configuration supports the following
-hardware features:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| RRAM      | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| GRTC      | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| UARTE     | on-chip    | serial               |
-+-----------+------------+----------------------+
-
-Other hardware features have not been enabled yet for this board.
+.. zephyr:board-supported-hw::
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``nrf54l20pdk/nrf54l20/cpuapp`` board target can be
 built, flashed, and debugged in the usual way. See

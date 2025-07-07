@@ -266,7 +266,7 @@ uint64_t rpi_pico_frequency_count(const struct device *dev, clock_control_subsys
 		fc0_id = CLOCKS_FC0_SRC_VALUE_CLKSRC_GPIN0;
 		break;
 	case rpi_pico_clkid_gpin1:
-		fc0_id = CLOCKS_FC0_SRC_VALUE_CLKSRC_GPIN0;
+		fc0_id = CLOCKS_FC0_SRC_VALUE_CLKSRC_GPIN1;
 		break;
 	default:
 		return -1;

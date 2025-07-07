@@ -1,0 +1,75 @@
+name: RFC / Proposal
+description: Submit a Proposal (RFC)
+labels: ["RFC"]
+type: RFC
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Introduction
+
+        This section targets end users, TSC members, maintainers and anyone else
+        that might need a quick explanation of your proposed change.
+
+  - type: textarea
+    id: problem-description
+    attributes:
+      label: Problem Description
+      description: Why do we want this change and what problem are we trying to address?
+      placeholder: Explain the problem or limitation this RFC is meant to resolve.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-change-summary
+    attributes:
+      label: Proposed Change (Summary)
+      description: A high-level summary of the proposed change.
+      placeholder: Brief summary of what will change if this RFC is implemented.
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ## Detailed RFC
+
+        This section targets the development team. Upon reading it, each engineer
+        should understand what must be done to implement the proposed feature.
+
+  - type: textarea
+    id: detailed-change
+    attributes:
+      label: Proposed Change (Detailed)
+      description: Describe the change in as much detail as possible. Include context or background info, and reuse of existing components if applicable.
+      placeholder: Explain exactly what you’re planning to change and how.
+    validations:
+      required: true
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: Highlight how this change may affect the rest of the project or other teams/components.
+      placeholder: List components, modules, or teams affected.
+    validations:
+      required: false
+
+  - type: textarea
+    id: concerns
+    attributes:
+      label: Concerns and Unresolved Questions
+      description: List any concerns, unknowns, or unresolved questions related to this proposal.
+      placeholder: Any areas of uncertainty?
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: What alternative solutions were considered? Why was this proposal chosen?
+      placeholder: List alternatives and explain the rationale behind your choice.
+    validations:
+      required: false

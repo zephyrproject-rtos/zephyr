@@ -69,6 +69,8 @@ The IOCON controller can be used to configure the LPC11U67 pins.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 

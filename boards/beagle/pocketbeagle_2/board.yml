@@ -1,0 +1,12 @@
+board:
+  name: pocketbeagle_2
+  full_name: PocketBeagle 2
+  vendor: beagle
+  socs:
+    - name: am6232
+  revision:
+    format: custom
+    exact: true
+    default: "A0"
+    revisions:
+      - name: "A0"

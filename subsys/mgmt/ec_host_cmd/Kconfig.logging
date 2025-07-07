@@ -8,7 +8,7 @@ config EC_HOST_CMD_LOG_DBG_BUFFERS
 	depends on EC_HC_LOG_LEVEL_DBG
 	help
 	  Every command is logged with the debug logging level. Use this config
-	  to decide, if full reqest and response buffers are logged alongside
+	  to decide if full request and response buffers are logged alongside
 	  other command parameters.
 
 config EC_HOST_CMD_LOG_SUPPRESSED_NUMBER

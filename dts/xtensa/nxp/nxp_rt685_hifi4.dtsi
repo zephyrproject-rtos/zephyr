@@ -1,0 +1,217 @@
+/*
+ * Copyright 2025 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <xtensa/xtensa.dtsi>
+#include <mem.h>
+#include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	chosen {
+		zephyr,sram = &adsp_data;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "cdns,tensilica-xtensa-lx6";
+			reg = <0>;
+		};
+	};
+
+	soc {
+		interrupt-parent = <&core_intc>;
+
+		/*
+		 * Dummy interrupt controller node - IRQs are handled directly by platform code.
+		 * INPUTMUX (IRQ allocation) is set up in mimxrt685s/hifi4 soc.c.
+		 */
+		core_intc: core_intc@0 {
+			compatible = "cdns,xtensa-core-intc";
+			reg = <0x00 0x400>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+		};
+
+		itcm: memory@24020000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			device_type = "memory";
+			compatible = "mmio-sram";
+
+			reg = <0x24020000 DT_SIZE_K(64)>;
+
+			adsp_reset: memory@24020000 {
+				reg = <0x24020000 DT_SIZE_K(1)>;
+			};
+		};
+
+		dtcm: memory@24000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			device_type = "memory";
+			compatible = "mmio-sram";
+
+			reg = <0x24000000 DT_SIZE_K(64)>;
+		};
+
+		ram0_cached: memory@200000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			device_type = "memory";
+			compatible = "mmio-sram";
+
+			reg = <0x00200000 DT_SIZE_K(512)>;
+		};
+
+		ram0_noncached: memory@20400000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			device_type = "memory";
+			compatible = "mmio-sram";
+
+			reg = <0x20400000 DT_SIZE_K(512)>;
+
+			adsp_text: memory@20400000 {
+				reg = <0x20400000 DT_SIZE_K(256)>;
+			};
+
+			adsp_data: memory@20440000 {
+				reg = <0x20440000 DT_SIZE_K(256)>;
+			};
+		};
+
+		peripheral: peripheral@40000000 {
+			ranges = <0x0 0x40000000 0x10000000>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			clkctl0: clkctl@1000 {
+				/* FIXME This chip does NOT have a syscon */
+				compatible = "nxp,lpc-syscon";
+				reg = <0x1000 0x1000>;
+				#clock-cells = <1>;
+			};
+
+			gpio: gpio@100000 {
+				reg = <0x100000 0x1000>;
+
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				compatible = "nxp,lpc-gpio";
+
+				gpio0: gpio@0 {
+					reg = <0>;
+
+					gpio-controller;
+					#gpio-cells = <2>;
+					int-source = "pint";
+
+					compatible = "nxp,lpc-gpio-port";
+				};
+
+				gpio1: gpio@1 {
+					reg = <1>;
+
+					gpio-controller;
+					#gpio-cells = <2>;
+					int-source = "pint";
+
+					compatible = "nxp,lpc-gpio-port";
+				};
+			};
+
+			pint: pint@25000 {
+				compatible = "nxp,pint";
+				reg = <0x25000 0x1000>;
+				interrupt-controller;
+				#interrupt-cells = <1>;
+				#address-cells = <0>;
+				interrupts = <7 0 0>, <8 0 0>, <9 0 0>, <10 0 0>,
+					<11 0 0>, <12 0 0>, <13 0 0>, <14 0 0>;
+				num-lines = <8>;
+				num-inputs = <64>;
+			};
+
+			iocon: iocon@4000 {
+				compatible = "nxp,lpc-iocon";
+				reg = <0x4000 0x1000>;
+
+				pinctrl: pinctrl {
+					compatible = "nxp,rt-iocon-pinctrl";
+				};
+			};
+
+			clkctl1: clkctl@21000 {
+				compatible = "nxp,lpc-syscon";
+				reg = <0x21000 0x1000>;
+				#clock-cells = <1>;
+			};
+
+			dma1: dma-controller@105000 {
+				compatible = "nxp,lpc-dma";
+				reg = <0x105000 0x1000>;
+				interrupts = <29 0 0>;
+				dma-channels = <33>;
+				status = "disabled";
+				#dma-cells = <1>;
+			};
+
+			i3c0: i3c@36000 {
+				compatible = "nxp,mcux-i3c";
+				reg = <0x36000 0x1000>;
+				#address-cells = <3>;
+				#size-cells = <0>;
+				interrupts = <6 0 0>;
+				clocks = <&clkctl1 MCUX_I3C_CLK>;
+				clk-divider = <2>;
+				clk-divider-slow = <1>;
+				clk-divider-tc = <1>;
+				status = "disabled";
+			};
+
+			flexcomm0: flexcomm@106000 {
+				compatible = "nxp,lpc-flexcomm";
+				reg = <0x106000 0x1000>;
+				clocks = <&clkctl1 MCUX_FLEXCOMM0_CLK>;
+				interrupts = <5 0 0>;
+				status = "disabled";
+			};
+
+			flexcomm1: flexcomm@107000 {
+				compatible = "nxp,lpc-flexcomm";
+				reg = <0x107000 0x1000>;
+				interrupts = <31 0 0>;
+				clocks = <&clkctl1 MCUX_FLEXCOMM1_CLK>;
+				status = "disabled";
+			};
+
+			flexcomm3: flexcomm@109000 {
+				compatible = "nxp,lpc-flexcomm";
+				reg = <0x109000 0x1000>;
+				interrupts = <30 0 0>;
+				clocks = <&clkctl1 MCUX_FLEXCOMM3_CLK>;
+				status = "disabled";
+			};
+
+			mbox: mbox@111000 {
+				#mbox-cells = <1>;
+
+				compatible = "nxp,mbox-imx-mu";
+				reg = <0x111000 0x1000>;
+
+				interrupts = <27 0 0>;
+				rx-channels = <4>;
+
+				status = "disabled";
+			};
+		};
+	};
+};

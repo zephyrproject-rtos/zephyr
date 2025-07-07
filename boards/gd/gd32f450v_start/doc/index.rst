@@ -43,6 +43,8 @@ UART-USB adapter.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Before programming your board make sure to configure boot jumpers as
 follows:
 

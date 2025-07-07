@@ -7,6 +7,7 @@
  */
 
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/sensor/icm42688.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/sys/byteorder.h>
 #include "icm42688.h"
@@ -27,7 +28,7 @@ int icm42688_reset(const struct device *dev)
 	k_msleep(3);
 
 	/* perform a soft reset to ensure a clean slate, reset bit will auto-clear */
-	res = icm42688_spi_single_write(&dev_cfg->spi, REG_DEVICE_CONFIG, BIT_SOFT_RESET);
+	res = icm42688_spi_single_write(&dev_cfg->spi, REG_DEVICE_CONFIG, BIT_SOFT_RESET_CONFIG);
 
 	if (res) {
 		LOG_ERR("write REG_SIGNAL_PATH_RESET failed");
@@ -44,7 +45,7 @@ int icm42688_reset(const struct device *dev)
 		return res;
 	}
 
-	if (FIELD_GET(BIT_INT_STATUS_RESET_DONE, value) != 1) {
+	if (FIELD_GET(BIT_RESET_DONE_INT, value) != 1) {
 		LOG_ERR("unexpected RESET_DONE value, %i", value);
 		return -EINVAL;
 	}
@@ -147,6 +148,41 @@ int icm42688_configure(const struct device *dev, struct icm42688_cfg *cfg)
 	}
 
 	/* TODO maybe do the next few steps intelligently by checking current config */
+
+	/* Select register bank 1 */
+	res = icm42688_spi_single_write(&dev_cfg->spi, REG_BANK_SEL, BIT_BANK1);
+	if (res != 0) {
+		LOG_ERR("Error selecting register bank 1");
+		return -EINVAL;
+	}
+
+	/* Set pin 9 function */
+	uint8_t intf_config5 = FIELD_PREP(MASK_PIN9_FUNCTION, cfg->pin9_function);
+
+	LOG_DBG("INTF_CONFIG5 (0x%lx) 0x%x", FIELD_GET(REG_ADDRESS_MASK, REG_INTF_CONFIG5),
+		intf_config5);
+	res = icm42688_spi_single_write(&dev_cfg->spi, REG_INTF_CONFIG5, intf_config5);
+	if (res != 0) {
+		LOG_ERR("Error writing INTF_CONFIG5");
+		return -EINVAL;
+	}
+
+	/* Select register bank 0 */
+	res = icm42688_spi_single_write(&dev_cfg->spi, REG_BANK_SEL, BIT_BANK0);
+	if (res != 0) {
+		LOG_ERR("Error selecting register bank 0");
+		return -EINVAL;
+	}
+
+	bool is_pin9_clkin = cfg->pin9_function == ICM42688_PIN9_FUNCTION_CLKIN;
+	uint8_t intf_config1 = 0x91 | FIELD_PREP(BIT_RTC_MODE, is_pin9_clkin);
+
+	LOG_DBG("INTF_CONFIG1 (0x%x) 0x%x", REG_INTF_CONFIG1, intf_config1);
+	res = icm42688_spi_single_write(&dev_cfg->spi, REG_INTF_CONFIG1, intf_config1);
+	if (res != 0) {
+		LOG_ERR("Error writing INTF_CONFIG1");
+		return -EINVAL;
+	}
 
 	/* Power management to set gyro/accel modes */
 	uint8_t pwr_mgmt0 = FIELD_PREP(MASK_GYRO_MODE, cfg->gyro_pwr_mode) |
@@ -259,7 +295,9 @@ int icm42688_configure(const struct device *dev, struct icm42688_cfg *cfg)
 			FIELD_PREP(BIT_FIFO_GYRO_EN, 1) |
 			FIELD_PREP(BIT_FIFO_ACCEL_EN, 1) |
 			FIELD_PREP(BIT_FIFO_TMST_FSYNC_EN, 1) |
-			FIELD_PREP(BIT_FIFO_HIRES_EN, 1);
+			FIELD_PREP(BIT_FIFO_HIRES_EN, cfg->fifo_hires);
+
+		LOG_DBG("HIRES MODE ENABLED?: %d", cfg->fifo_hires);
 
 		LOG_DBG("FIFO_CONFIG1 (0x%x) 0x%x", REG_FIFO_CONFIG1, fifo_cfg1);
 		res = icm42688_spi_single_write(&dev_cfg->spi, REG_FIFO_CONFIG1, fifo_cfg1);

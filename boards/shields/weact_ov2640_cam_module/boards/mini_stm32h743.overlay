@@ -44,12 +44,6 @@
 	};
 };
 
-&zephyr_camera_dvp {
-	dmas = <&dma1 0 75 (STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_PERIPH_NO_INC |
-		STM32_DMA_MEM_INC | STM32_DMA_PERIPH_8BITS | STM32_DMA_MEM_32BITS |
-		STM32_DMA_PRIORITY_HIGH) STM32_DMA_FIFO_1_4>;
-};
-
 &dma1 {
 	status = "okay";
 };

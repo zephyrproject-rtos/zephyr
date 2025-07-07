@@ -146,6 +146,7 @@
 		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
 	pinctrl-names = "default";
 	cd-gpios = <&gpiod 4 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+	disk-name = "SD";
 	status = "okay";
 };
 
@@ -165,9 +166,10 @@ zephyr_udc0: &usbotg_fs {
 	flash-id = <1>;
 	status = "okay";
 
-	w25q64_qspi: qspi-nor-flash@90000000 {
+	w25q64_qspi: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
-		reg = <0x90000000 DT_SIZE_M(8)>; /* 64 Mbits */
+		reg = <0>;
+		size = <DT_SIZE_M(64)>; /* 64 Mbits */
 		qspi-max-frequency = <40000000>;
 		status = "okay";
 		spi-bus-width = <4>;

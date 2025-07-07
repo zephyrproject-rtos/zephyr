@@ -25,15 +25,34 @@ config UART_STM32
 
 if UART_STM32
 
-config UART_STM32U5_ERRATA_DMAT
-	bool
-	default y
-	depends on SOC_STM32U575XX || SOC_STM32U585XX || \
+if SOC_STM32U575XX || SOC_STM32U585XX || \
 		   SOC_STM32H562XX || SOC_STM32H563XX || SOC_STM32H573XX
+
+choice UART_STM32U5_ERRATA_DMAT
+	prompt "Workaround for DMAT errata on selected devices"
+	default UART_STM32U5_ERRATA_DMAT_LOWPOWER if PM
+	default UART_STM32U5_ERRATA_DMAT_NOCLEAR if !PM
 	help
 	  Handles erratum "USART does not generate DMA requests after
 	  setting/clearing DMAT bit".
 	  Seen in Errata Sheet 0499 § 2.19.2 and §2.20.1 for stm32u57x/u58x,
 	          Errata Sheet 0565 § 2.14.1 and §2.15.1 for stm32h56x/h57x
 
-endif
+config UART_STM32U5_ERRATA_DMAT_LOWPOWER
+	bool "Send first byte by polling"
+	help
+	  This option sends first byte via software polling and
+	  rest of the buffer is sent via DMA. This option is suitable
+	  for STOP low-power modes.
+
+config UART_STM32U5_ERRATA_DMAT_NOCLEAR
+	bool "Do not clear DMAT"
+	help
+	  This option keeps DMAT bit set. This may cause additional power
+	  consumption in STOP low-power modes.
+
+endchoice
+
+endif # U575 || U585 || H562 || H563 || H573
+
+endif # UART_STM32

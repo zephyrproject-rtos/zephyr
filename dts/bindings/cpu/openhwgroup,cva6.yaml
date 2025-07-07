@@ -1,0 +1,14 @@
+# Copyright (c) 2025 CISPA Helmholtz Center for Information Security gGmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: OpenHW Group CVA6 CPU
+
+compatible: "openhwgroup,cva6"
+
+include: riscv,cpus.yaml
+
+properties:
+  timebase-frequency:
+    required: true
+    type: int
+    description: Clock speed at which the core-local machine timer operates.

@@ -15,6 +15,9 @@ junit2html
 # Script used to build firmware images for NXP LPC MCUs.
 lpc_checksum
 
+# used by NXP platform to generate/flash firmware images
+spsdk == 2.6.0
+
 # used by scripts/build/gen_cfb_font_header.py - helper script for user
 Pillow>=10.3.0
 

@@ -127,6 +127,8 @@ To get the OpenOCD package, it is required that you
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The CY8CKIT-062-WiFi-BT includes an onboard programmer/debugger (KitProg2) with
 mass storage programming to provide debugging, flash programming, and serial
 communication over USB. There are also PSOC 6 program and debug headers J11

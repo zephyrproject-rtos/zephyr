@@ -345,6 +345,10 @@ int dns_dispatcher_unregister(struct dns_socket_dispatcher *ctx)
 			goto out;
 		}
 
+		if (ctx->fds[i].fd < 0) {
+			continue;
+		}
+
 		dispatch_table[ctx->fds[i].fd].ctx = NULL;
 	}
 

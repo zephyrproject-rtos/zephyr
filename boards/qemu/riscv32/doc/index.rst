@@ -8,6 +8,8 @@ The RISCV32 QEMU board configuration is used to emulate the RISCV32 architecture
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``qemu_riscv32`` board configuration can be built and run in
 the usual way for emulated boards (see :ref:`build_an_application` and
 :ref:`application_run` for more details).

@@ -31,6 +31,7 @@
 
 /** @brief RCC_CCIPR register offset */
 #define CCIPR_REG		0x54
+#define CCIPR2_REG		0x58
 
 /** @brief RCC_CSR1 register offset */
 #define CSR1_REG		0x5C
@@ -44,6 +45,8 @@
 #define I2C1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 12, CCIPR_REG)
 #define I2C2_I2S1_SEL(val)	STM32_DT_CLOCK_SELECT((val), 3, 14, CCIPR_REG)
 #define ADC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 30, CCIPR_REG)
+/** CCIPR2 devices */
+#define USB_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 12, CCIPR2_REG)
 /** CSR1 devices */
 #define RTC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 8, CSR1_REG)
 

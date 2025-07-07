@@ -14,6 +14,24 @@ config WIFI_SILABS_SIWX91X
 
 if WIFI_SILABS_SIWX91X
 
+config WIFI_SILABS_SIWX91X_ENHANCED_MAX_PSP
+	bool "Enhanced Max PSP Support"
+	default y
+	help
+	  Enable this option to allow the device to configure
+	  Enhanced Maximum Power Save (PSP) support during
+	  device initialization.
+
+	  **Advantages:**
+	  - Reduces power consumption during low traffic periods.
+	  - Automatically transitions to Fast PSP for improved responsiveness
+	    when traffic is high.
+
+	  **Limitations:**
+	  - Initially uses PS-Poll frames for power management, even if the
+	    user configures NULL frame-based.
+	  - Switches to NULL frame-based only when traffic increases.
+
 choice
 	prompt "Network stack"
 	default WIFI_SILABS_SIWX91X_NET_STACK_NATIVE
@@ -44,6 +62,117 @@ config NET_MGMT_EVENT_STACK_SIZE
 
 config NET_MGMT_EVENT_QUEUE_SIZE
 	default 10
+
+config WIFI_SILABS_SIWX91X_LIMIT_PACKET_BUF_PER_STA
+	bool "Limits the number of packets buffered per STA in AP mode"
+	default y
+	help
+	  In AP mode, if the bit is set, only two packets per Station (STA)
+	  would be buffered when the STA is in Power Save (PS) mode.
+	  This helps manage buffer usage and ensures efficient packet handling.
+
+config WIFI_SILABS_SIWX91X_ENABLE_ROAMING
+	bool "WiFi roaming support"
+	default y
+	help
+	  Enable this option to configure roaming parameters.
+	  Roaming will be enabled automatically when the
+	  background scan is active, improving connectivity
+	  and performance during transitions between access points.
+
+config WIFI_SILABS_SIWX91X_ROAMING_USE_DEAUTH
+	bool "Use deauth frames for roaming"
+	depends on WIFI_SILABS_SIWX91X_ENABLE_ROAMING
+	help
+	  Enable this option to allow roaming using
+	  deauthentication frames. By default, roaming
+	  is performed using Null data packets.
+
+config WIFI_SILABS_SIWX91X_ROAMING_TRIGGER_LEVEL
+	int "Default value of roam trigger level (in dBm)"
+	default -70
+	range -100 -10
+	depends on WIFI_SILABS_SIWX91X_ENABLE_ROAMING
+	help
+	  Sets the default roam trigger level. Higher values trigger
+	  earlier roaming; lower values delay it. It determines
+	  when to start searching for a new AP.
+
+config WIFI_SILABS_SIWX91X_ROAMING_TRIGGER_LEVEL_CHANGE
+	int "Default value of roam trigger level change (in dBm)"
+	default 5
+	range 0 90
+	depends on WIFI_SILABS_SIWX91X_ENABLE_ROAMING
+	help
+	  Configure the default trigger level change for WiFi roaming.
+	  This value determines the change in signal strength (in dBm)
+	  required to initiate a roaming event. A smaller value may result
+	  in more sensitive roaming behavior, while a larger value can
+	  reduce the frequency of roaming events. It determines
+	  the signal difference needed to switch to a new AP.
+
+config WIFI_SILABS_SIWX91X_ADV_SCAN_THRESHOLD
+	int "Advanced scan threshold (in dBm)"
+	default -40
+	help
+	  Configure the default advanced scan threshold for WiFi scanning.
+	  This value determines the signal strength (in dBm) below which
+	  the advanced scan mechanism will be triggered. Adjust this value
+	  to optimize scanning behavior based on your network environment.
+
+config WIFI_SILABS_SIWX91X_ADV_RSSI_TOLERANCE_THRESHOLD
+	int "Advanced RSSI tolerance threshold (in dBm)"
+	default 5
+	help
+	  Configure the default RSSI tolerance threshold for advanced WiFi scanning.
+	  This value determines the acceptable variation in signal strength (in dBm)
+	  during advanced scanning. Adjust this value to fine-tune the sensitivity
+	  of the scanning mechanism to signal fluctuations.
+
+config WIFI_SILABS_SIWX91X_ADV_ACTIVE_SCAN_DURATION
+	int "Advanced active scan duration (in ms)"
+	default 15
+	help
+	  Configure the default advanced active scan duration for WiFi scanning.
+	  This value determines the time (in milliseconds) spent on each
+	  channel during an advanced active scan. Adjust this value to optimize
+	  scanning speed and accuracy based on your network environment.
+
+config WIFI_SILABS_SIWX91X_ADV_PASSIVE_SCAN_DURATION
+	int "Advanced passive scan duration (in ms)"
+	default 20
+	help
+	  Configure the default advanced passive scan duration for WiFi scanning.
+	  This value determines the time (in milliseconds) spent on each
+	  channel during an advanced passive scan. Adjust this value to optimize
+	  scanning speed and accuracy based on your network environment.
+
+config WIFI_SILABS_SIWX91X_ADV_MULTIPROBE
+	int "Advanced multiprobe setting"
+	default 1
+	help
+	  Configure the advanced multiprobe setting for WiFi scanning.
+	  When set to 1, multiple probe requests will be sent to all access
+	  points in addition to the connected SSID during scanning. Adjust
+	  this value to fine-tune scanning behavior based on your network
+	  requirements.
+
+config WIFI_SILABS_SIWX91X_ADV_SCAN_PERIODICITY
+	int "Advanced scan periodicity (in ms)"
+	default 10
+	help
+	  Configure the default advanced scan periodicity for WiFi scanning.
+	  This value determines the interval (in milliseconds) between consecutive
+	  advanced scans. Adjust this value to balance scanning frequency
+	  and power consumption based on your network environment.
+
+config WIFI_SILABS_SIWX91X_ENABLE_INSTANT_SCAN
+	int "Instant scan support"
+	default 1
+	help
+	  Enable support to start an advanced scan immediately. When enabled, the device
+	  can perform an advanced scan without waiting for the periodic
+	  scan interval, enabling quicker detection of available networks.
 
 # Override the WIFI_MGMT_SCAN_SSID_FILT_MAX parameter for the Wi-Fi subsystem.
 # This device supports filtering scan results for only one SSID.

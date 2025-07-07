@@ -30,7 +30,7 @@ to boot a remote core.
    ``-T`` option.
 
 Here's an example to build and flash the sample for the
-:ref:`nrf54h20dk_nrf54h20`, using application and radio cores:
+:zephyr:board:`nrf54h20dk`, using application and radio cores:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sysbuild/hello_world

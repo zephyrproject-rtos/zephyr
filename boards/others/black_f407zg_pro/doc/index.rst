@@ -135,6 +135,8 @@ it to UART2 pins (PA2/PA3).
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``black_f407zg_pro`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).

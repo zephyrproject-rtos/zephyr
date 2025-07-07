@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/iso.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/__assert.h>
@@ -190,6 +191,11 @@ static void cap_initiator_broadcast_to_bap_broadcast_param(
 	} else {
 		memset(bap_param->broadcast_code, 0, BT_ISO_BROADCAST_CODE_SIZE);
 	}
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+	bap_param->irc = cap_param->irc;
+	bap_param->pto = cap_param->pto;
+	bap_param->iso_interval = cap_param->iso_interval;
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 
 	for (size_t i = 0U; i < bap_param->params_count; i++) {
 		const struct bt_cap_initiator_broadcast_subgroup_param *cap_subgroup_param =
@@ -228,6 +234,7 @@ int bt_cap_initiator_broadcast_audio_create(
 	struct bt_bap_broadcast_source_stream_param
 		bap_stream_params[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
 	struct bt_bap_broadcast_source_param bap_create_param = {0};
+	int err;
 
 	CHECKIF(param == NULL) {
 		LOG_DBG("param is NULL");
@@ -243,6 +250,7 @@ int bt_cap_initiator_broadcast_audio_create(
 		return -EINVAL;
 	}
 
+	*broadcast_source = NULL;
 	for (size_t i = 0; i < ARRAY_SIZE(broadcast_sources); i++) {
 		if (broadcast_sources[i].bap_broadcast == NULL) {
 			*broadcast_source = &broadcast_sources[i];
@@ -250,11 +258,28 @@ int bt_cap_initiator_broadcast_audio_create(
 		}
 	}
 
+	if (*broadcast_source == NULL) {
+		LOG_DBG("Failed to allocate a new broadcast source");
+		return -ENOMEM;
+	}
+
 	cap_initiator_broadcast_to_bap_broadcast_param(param, &bap_create_param,
 						       bap_subgroup_params, bap_stream_params);
 
-	return bt_bap_broadcast_source_create(&bap_create_param,
-					      &(*broadcast_source)->bap_broadcast);
+	err = bt_bap_broadcast_source_create(&bap_create_param,
+					     &(*broadcast_source)->bap_broadcast);
+	if (err != 0) {
+		/* Return known errors */
+		if (err == -EINVAL || err == -ENOMEM) {
+			return err;
+		}
+
+		LOG_DBG("Unexpected error from bt_bap_broadcast_source_create: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	return 0;
 }
 
 static struct bt_cap_broadcast_source *get_cap_broadcast_source_by_bap_broadcast_source(
@@ -396,6 +421,9 @@ int bt_cap_initiator_broadcast_get_base(struct bt_cap_broadcast_source *broadcas
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
+static struct bt_cap_unicast_group {
+	struct bt_bap_unicast_group *bap_unicast_group;
+} unicast_groups[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_COUNT];
 
 static enum bt_bap_ep_state stream_get_state(const struct bt_bap_stream *bap_stream)
 {
@@ -753,6 +781,274 @@ int bt_cap_initiator_unicast_discover(struct bt_conn *conn)
 	return bt_cap_common_discover(conn, bt_cap_initiator_discover_complete);
 }
 
+/** Validates that the stream parameter does not contain invalid values  */
+static bool valid_unicast_group_stream_param(const struct bt_cap_unicast_group_stream_param *param)
+{
+	if (param->stream == NULL) {
+		LOG_DBG("param->stream is NULL");
+		return false;
+	}
+
+	/* Remaining values will be validated by BAP */
+
+	return true;
+}
+
+static bool
+valid_group_stream_pair_param(const struct bt_cap_unicast_group_stream_pair_param *pair_param)
+{
+	if (pair_param->rx_param != NULL &&
+	    !valid_unicast_group_stream_param(pair_param->rx_param)) {
+		return false;
+	}
+
+	if (pair_param->tx_param != NULL &&
+	    !valid_unicast_group_stream_param(pair_param->tx_param)) {
+		return false;
+	}
+
+	return true;
+}
+
+static bool valid_unicast_group_param(const struct bt_cap_unicast_group_param *param)
+{
+	if (param == NULL) {
+		LOG_DBG("param is NULL");
+		return false;
+	}
+
+	if (param->params_count > CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT) {
+		LOG_DBG("Too many streams provided: %u/%u", param->params_count,
+			UNICAST_GROUP_STREAM_CNT);
+		return false;
+	}
+
+	for (size_t i = 0U; i < param->params_count; i++) {
+		if (!valid_group_stream_pair_param(&param->params[i])) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+struct cap_to_bap_unicast_params {
+	struct bt_bap_unicast_group_stream_param
+		stream_params[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT +
+			      CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT];
+	struct bt_bap_unicast_group_stream_pair_param
+		pair_params[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT];
+	struct bt_bap_unicast_group_param group_param;
+};
+
+static void cap_to_bap_unicast_group_pair_param(
+	const struct bt_cap_unicast_group_stream_pair_param pair_params[],
+	struct cap_to_bap_unicast_params *bap_params)
+{
+	size_t stream_param_idx = 0U;
+
+	for (size_t i = 0U; i < bap_params->group_param.params_count; i++) {
+		const struct bt_cap_unicast_group_stream_pair_param *pair_param = &pair_params[i];
+		struct bt_bap_unicast_group_stream_pair_param *bap_pair_param =
+			&bap_params->pair_params[i];
+		struct bt_bap_unicast_group_stream_param *bap_stream_param;
+
+		if (pair_param->rx_param != NULL) {
+			bap_stream_param = &bap_params->stream_params[stream_param_idx++];
+
+			bap_stream_param->stream = &pair_param->rx_param->stream->bap_stream;
+			bap_stream_param->qos = pair_param->rx_param->qos_cfg;
+
+			bap_pair_param->rx_param = bap_stream_param;
+		} else {
+			bap_pair_param->rx_param = NULL;
+		}
+
+		if (pair_param->tx_param != NULL) {
+			bap_stream_param = &bap_params->stream_params[stream_param_idx++];
+
+			bap_stream_param->stream = &pair_param->tx_param->stream->bap_stream;
+			bap_stream_param->qos = pair_param->tx_param->qos_cfg;
+
+			bap_pair_param->tx_param = bap_stream_param;
+		} else {
+			bap_pair_param->tx_param = NULL;
+		}
+	}
+}
+
+static void cap_to_bap_unicast_group_param(const struct bt_cap_unicast_group_param *param,
+					   struct cap_to_bap_unicast_params *bap_params)
+{
+	bap_params->group_param.params_count = param->params_count;
+	bap_params->group_param.packing = param->packing;
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+	bap_params->group_param.c_to_p_ft = param->c_to_p_ft;
+	bap_params->group_param.p_to_c_ft = param->p_to_c_ft;
+	bap_params->group_param.iso_interval = param->iso_interval;
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
+	bap_params->group_param.params = bap_params->pair_params;
+
+	cap_to_bap_unicast_group_pair_param(param->params, bap_params);
+}
+
+int bt_cap_unicast_group_create(const struct bt_cap_unicast_group_param *param,
+				struct bt_cap_unicast_group **unicast_group)
+{
+	struct cap_to_bap_unicast_params bap_param = {0};
+	int err;
+
+	static K_MUTEX_DEFINE(list_mutex);
+
+	if (unicast_group == NULL) {
+		LOG_DBG("unicast_group is NULL");
+		return -EINVAL;
+	}
+
+	if (!valid_unicast_group_param(param)) {
+		return -EINVAL;
+	}
+
+	*unicast_group = NULL;
+
+	(void)k_mutex_lock(&list_mutex, K_FOREVER);
+	for (size_t i = 0; i < ARRAY_SIZE(unicast_groups); i++) {
+		if (unicast_groups[i].bap_unicast_group == NULL) {
+			*unicast_group = &unicast_groups[i];
+			break;
+		}
+	}
+
+	if (*unicast_group == NULL) {
+		LOG_DBG("Could not allocate more unicast groups");
+		(void)k_mutex_unlock(&list_mutex);
+		return -ENOMEM;
+	}
+
+	/* Populate the BAP group params based on the CAP params (mostly just a copy) */
+	cap_to_bap_unicast_group_param(param, &bap_param);
+
+	err = bt_bap_unicast_group_create(&bap_param.group_param,
+					  &(*unicast_group)->bap_unicast_group);
+	if (err != 0) {
+		LOG_DBG("Failed to create unicast group: %d", err);
+	}
+	(void)k_mutex_unlock(&list_mutex);
+
+	return err;
+}
+
+int bt_cap_unicast_group_reconfig(struct bt_cap_unicast_group *unicast_group,
+				  const struct bt_cap_unicast_group_param *param)
+{
+	struct cap_to_bap_unicast_params bap_param = {0};
+
+	if (unicast_group == NULL) {
+		LOG_DBG("unicast_group is NULL");
+		return -EINVAL;
+	}
+
+	if (!valid_unicast_group_param(param)) {
+		return -EINVAL;
+	}
+
+	/* Populate the BAP group params based on the CAP params (mostly just a copy) */
+	cap_to_bap_unicast_group_param(param, &bap_param);
+
+	return bt_bap_unicast_group_reconfig(unicast_group->bap_unicast_group,
+					     &bap_param.group_param);
+}
+
+int bt_cap_unicast_group_add_streams(struct bt_cap_unicast_group *unicast_group,
+				     const struct bt_cap_unicast_group_stream_pair_param params[],
+				     size_t num_param)
+{
+	struct cap_to_bap_unicast_params bap_param = {.group_param.params_count = num_param};
+
+	if (unicast_group == NULL) {
+		LOG_DBG("unicast_group is NULL");
+		return -EINVAL;
+	}
+
+	if (params == NULL) {
+		LOG_DBG("params is NULL");
+		return -EINVAL;
+	}
+
+	if (num_param == 0U) {
+		LOG_DBG("num_param is 0");
+		return -EINVAL;
+	}
+
+	for (size_t i = 0U; i < num_param; i++) {
+		if (!valid_group_stream_pair_param(&params[i])) {
+			return -EINVAL;
+		}
+	}
+
+	cap_to_bap_unicast_group_pair_param(params, &bap_param);
+
+	return bt_bap_unicast_group_add_streams(unicast_group->bap_unicast_group,
+						bap_param.pair_params, num_param);
+}
+
+int bt_cap_unicast_group_delete(struct bt_cap_unicast_group *unicast_group)
+{
+	int err;
+
+	if (unicast_group == NULL) {
+		LOG_DBG("unicast_group is NULL");
+		return -EINVAL;
+	}
+
+	err = bt_bap_unicast_group_delete(unicast_group->bap_unicast_group);
+	if (err == 0) {
+		unicast_group->bap_unicast_group = NULL;
+	}
+
+	return err;
+}
+
+struct cap_unicast_group_foreach_stream_data {
+	bt_cap_unicast_group_foreach_stream_func_t func;
+	void *user_data;
+};
+
+static bool bap_unicast_group_foreach_stream_cb(struct bt_bap_stream *bap_stream, void *user_data)
+{
+	struct cap_unicast_group_foreach_stream_data *data = user_data;
+
+	/* Since we are iterating on a CAP unicast group, we can assume that all streams are CAP
+	 * streams
+	 */
+	data->func(CONTAINER_OF(bap_stream, struct bt_cap_stream, bap_stream), data->user_data);
+
+	return false;
+}
+
+int bt_cap_unicast_group_foreach_stream(struct bt_cap_unicast_group *unicast_group,
+					bt_cap_unicast_group_foreach_stream_func_t func,
+					void *user_data)
+{
+	struct cap_unicast_group_foreach_stream_data data = {
+		.func = func,
+		.user_data = user_data,
+	};
+
+	if (unicast_group == NULL) {
+		LOG_DBG("unicast_group is NULL");
+		return -EINVAL;
+	}
+
+	if (func == NULL) {
+		LOG_DBG("func is NULL");
+		return -EINVAL;
+	}
+
+	return bt_bap_unicast_group_foreach_stream(unicast_group->bap_unicast_group,
+						   bap_unicast_group_foreach_stream_cb, &data);
+}
+
 static bool valid_unicast_audio_start_param(const struct bt_cap_unicast_audio_start_param *param)
 {
 	struct bt_bap_unicast_group *unicast_group = NULL;
@@ -971,7 +1267,7 @@ static int cap_initiator_unicast_audio_configure(
 	/* Store the information about the active procedure so that we can
 	 * continue the procedure after each step
 	 */
-	bt_cap_common_start_proc(BT_CAP_COMMON_PROC_TYPE_START, param->count);
+	bt_cap_common_set_proc(BT_CAP_COMMON_PROC_TYPE_START, param->count);
 	bt_cap_common_set_subproc(BT_CAP_COMMON_SUBPROC_TYPE_CODEC_CONFIG);
 
 	proc_param = get_next_proc_param(active_proc);
@@ -1008,15 +1304,16 @@ static int cap_initiator_unicast_audio_configure(
 int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start_param *param)
 {
 	bool all_streaming = true;
-
-	if (bt_cap_common_proc_is_active()) {
-		LOG_DBG("A CAP procedure is already in progress");
-
-		return -EBUSY;
-	}
+	int err;
 
 	if (!valid_unicast_audio_start_param(param)) {
 		return -EINVAL;
+	}
+
+	if (bt_cap_common_test_and_set_proc_active()) {
+		LOG_DBG("A CAP procedure is already in progress");
+
+		return -EBUSY;
 	}
 
 	for (size_t i = 0U; i < param->count; i++) {
@@ -1030,10 +1327,18 @@ int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start
 
 	if (all_streaming) {
 		LOG_DBG("All streams are already in the streaming state");
+
+		bt_cap_common_clear_active_proc();
+
 		return -EALREADY;
 	}
 
-	return cap_initiator_unicast_audio_configure(param);
+	err = cap_initiator_unicast_audio_configure(param);
+	if (err != 0) {
+		bt_cap_common_clear_active_proc();
+	}
+
+	return err;
 }
 
 void bt_cap_initiator_codec_configured(struct bt_cap_stream *cap_stream)
@@ -1639,14 +1944,14 @@ int bt_cap_initiator_unicast_audio_update(const struct bt_cap_unicast_audio_upda
 	size_t meta_len;
 	int err;
 
-	if (bt_cap_common_proc_is_active()) {
+	if (!valid_unicast_audio_update_param(param)) {
+		return -EINVAL;
+	}
+
+	if (bt_cap_common_test_and_set_proc_active()) {
 		LOG_DBG("A CAP procedure is already in progress");
 
 		return -EBUSY;
-	}
-
-	if (!valid_unicast_audio_update_param(param)) {
-		return -EINVAL;
 	}
 
 	for (size_t i = 0U; i < param->count; i++) {
@@ -1663,7 +1968,7 @@ int bt_cap_initiator_unicast_audio_update(const struct bt_cap_unicast_audio_upda
 		       stream_param->meta_len);
 	}
 
-	bt_cap_common_start_proc(BT_CAP_COMMON_PROC_TYPE_UPDATE, param->count);
+	bt_cap_common_set_proc(BT_CAP_COMMON_PROC_TYPE_UPDATE, param->count);
 	bt_cap_common_set_subproc(BT_CAP_COMMON_SUBPROC_TYPE_META_UPDATE);
 
 	proc_param = get_next_proc_param(active_proc);
@@ -1902,14 +2207,14 @@ int bt_cap_initiator_unicast_audio_stop(const struct bt_cap_unicast_audio_stop_p
 	bool can_stop = false;
 	int err;
 
-	if (bt_cap_common_proc_is_active()) {
+	if (!valid_unicast_audio_stop_param(param)) {
+		return -EINVAL;
+	}
+
+	if (bt_cap_common_test_and_set_proc_active()) {
 		LOG_DBG("A CAP procedure is already in progress");
 
 		return -EBUSY;
-	}
-
-	if (!valid_unicast_audio_stop_param(param)) {
-		return -EINVAL;
 	}
 
 	for (size_t i = 0U; i < param->count; i++) {
@@ -1939,10 +2244,13 @@ int bt_cap_initiator_unicast_audio_stop(const struct bt_cap_unicast_audio_stop_p
 		LOG_DBG("Cannot %s any streams", !can_disable ? "disable"
 						 : !can_stop  ? "stop"
 							      : "release");
+
+		bt_cap_common_clear_active_proc();
+
 		return -EALREADY;
 	}
 
-	bt_cap_common_start_proc(BT_CAP_COMMON_PROC_TYPE_STOP, param->count);
+	bt_cap_common_set_proc(BT_CAP_COMMON_PROC_TYPE_STOP, param->count);
 	/** TODO: If this is a CSIP set, then the order of the procedures may
 	 * not match the order in the parameters, and the CSIP ordered access
 	 * procedure should be used.

@@ -34,10 +34,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		green_led_3: led_3 {
 			gpios = <&gpiog 13 GPIO_ACTIVE_HIGH>;
 			label = "User LD3";
 		};
+
 		red_led_4: led_4 {
 			gpios = <&gpiog 14 GPIO_ACTIVE_HIGH>;
 			label = "User LD4";
@@ -46,6 +48,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User";
 			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
@@ -242,6 +245,7 @@
 	width = <240>;
 	height = <320>;
 	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+
 	display-timings {
 		compatible = "zephyr,panel-timing";
 		de-active = <0>;
@@ -255,6 +259,7 @@
 		hfront-porch = <10>;
 		vfront-porch = <4>;
 	};
+
 	def-back-color-red = <0xFF>;
 	def-back-color-green = <0xFF>;
 	def-back-color-blue = <0xFF>;

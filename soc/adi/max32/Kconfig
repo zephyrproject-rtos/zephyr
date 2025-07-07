@@ -9,12 +9,24 @@ config SOC_FAMILY_MAX32
 	select SOC_EARLY_INIT_HOOK
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
 
+config SOC_FAMILY_MAX32_M33
+	select ARM
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select CLOCK_CONTROL
+	select CPU_CORTEX_M33
+	select ARM_TRUSTZONE_M
+	select CPU_HAS_ARM_SAU
+	select ARMV8_M_DSP
+
 config SOC_FAMILY_MAX32_M4
 	select ARM
 	select CPU_CORTEX_M4
 	select CPU_CORTEX_M_HAS_SYSTICK
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU
+	select HAS_PM
 
 config SOC_MAX32655_M4
 	select MAX32_HAS_SECONDARY_RV32
@@ -35,7 +47,7 @@ if SOC_FAMILY_MAX32
 
 config MAX32_ON_ENTER_CPU_IDLE_HOOK
 	bool "CPU idle hook enable"
-	default y
+	default y if !PM
 	imply ARM_ON_ENTER_CPU_IDLE_HOOK
 	help
 	  Enables a hook (z_arm_on_enter_cpu_idle()) that is called when
@@ -56,5 +68,10 @@ config MAX32_SECONDARY_RV32_BOOT_ADDRESS
 	hex "Secondary RISC-V core boot address"
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_RV32_PARTITION))
 	depends on MAX32_SECONDARY_RV32
+
+config BUILD_WITH_TFM
+	default y if TRUSTED_EXECUTION_NONSECURE
+	help
+	  Auto set WITH_TFM for a Non-Secure version of the board,
 
 endif # SOC_FAMILY_MAX32

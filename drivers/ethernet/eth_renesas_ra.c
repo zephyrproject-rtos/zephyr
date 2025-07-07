@@ -134,7 +134,7 @@ static enum ethernet_hw_caps renesas_ra_eth_get_capabilities(const struct device
 {
 	ARG_UNUSED(dev);
 
-	return ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T;
+	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE;
 }
 
 void renesas_ra_eth_callback(ether_callback_args_t *p_args)
@@ -187,23 +187,23 @@ static void phy_link_state_changed(const struct device *pdev, struct phy_link_st
 
 		switch (state->speed) {
 		/* Half duplex link */
-		case LINK_HALF_100BASE_T: {
+		case LINK_HALF_100BASE: {
 			ctx->ctrl.link_speed_duplex = ETHER_PHY_LINK_SPEED_100H;
 			break;
 		}
 
-		case LINK_HALF_10BASE_T: {
+		case LINK_HALF_10BASE: {
 			ctx->ctrl.link_speed_duplex = ETHER_PHY_LINK_SPEED_10H;
 			break;
 		}
 
 		/* Full duplex link */
-		case LINK_FULL_100BASE_T: {
+		case LINK_FULL_100BASE: {
 			ctx->ctrl.link_speed_duplex = ETHER_PHY_LINK_SPEED_100F;
 			break;
 		}
 
-		case LINK_FULL_10BASE_T: {
+		case LINK_FULL_10BASE: {
 			ctx->ctrl.link_speed_duplex = ETHER_PHY_LINK_SPEED_10F;
 			break;
 		}

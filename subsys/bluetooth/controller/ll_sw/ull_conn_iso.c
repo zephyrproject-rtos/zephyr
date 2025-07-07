@@ -345,7 +345,7 @@ ull_conn_iso_lll_stream_sorted_get_by_group(struct lll_conn_iso_group *cig_lll,
 		cis = ll_conn_iso_stream_get(handle);
 
 		/* Match CIS contexts associated with the CIG */
-		if (cis->group == cig) {
+		if ((cis->group == cig) && (cis->lll.active == 1U)) {
 			if (cis_curr && (cis->lll.offset <= cis_offset_curr)) {
 				/* Skip already returned CISes with offsets less
 				 * than the current CIS.
@@ -485,6 +485,8 @@ void ull_conn_iso_done(struct node_rx_event_done *done)
 				if (!cis->event_expire) {
 					struct ll_conn *conn = ll_conn_get(cis->lll.acl_handle);
 
+					LL_ASSERT(conn != NULL);
+
 					cis->event_expire = RADIO_CONN_EVENTS(
 							conn->supervision_timeout * 10U * 1000U,
 							cig->iso_interval * CONN_INT_UNIT_US);
@@ -526,8 +528,11 @@ void ull_conn_iso_done(struct node_rx_event_done *done)
 	if (cis && (ticks_drift_plus || ticks_drift_minus)) {
 		uint8_t ticker_id = TICKER_ID_CONN_ISO_BASE +
 				    ll_conn_iso_group_handle_get(cig);
-		struct ll_conn *conn = ll_connected_get(cis->lll.acl_handle);
 		uint32_t ticker_status;
+		struct ll_conn *conn;
+
+		conn = ll_connected_get(cis->lll.acl_handle);
+		LL_ASSERT(conn != NULL);
 
 		ticker_status = ticker_update(TICKER_INSTANCE_ID_CTLR,
 					      TICKER_USER_ID_ULL_HIGH,
@@ -1227,6 +1232,11 @@ static void cis_disabled_cb(void *param)
 	handle_iter = UINT16_MAX;
 	active_cises = 0;
 
+	if (cig->ull.disabled_cb == cis_disabled_cb) {
+		/* Reset disabled_cb */
+		cig->ull.disabled_cb = NULL;
+	}
+
 	/* Remove all CISes marked for teardown */
 	num_cis = cig->lll.num_cis;
 	for (cis_idx = 0; cis_idx < num_cis; cis_idx++) {
@@ -1247,6 +1257,8 @@ static void cis_disabled_cb(void *param)
 			ll_iso_stream_released_cb_t cis_released_cb;
 
 			conn = ll_conn_get(cis->lll.acl_handle);
+			LL_ASSERT(conn != NULL);
+
 			cis_released_cb = cis->released_cb;
 			cis->released_cb = NULL;
 
@@ -1293,7 +1305,6 @@ static void cis_disabled_cb(void *param)
 		} else if (cis->teardown) {
 			DECLARE_MAYFLY_ARRAY(mfys, cis_tx_lll_flush,
 				CONFIG_BT_CTLR_CONN_ISO_GROUPS);
-			uint32_t ret;
 
 			if (cis->established) {
 				struct node_rx_pdu *node_terminate;
@@ -1310,6 +1321,7 @@ static void cis_disabled_cb(void *param)
 				ll_rx_put_sched(node_terminate->hdr.link, node_terminate);
 			} else {
 				conn = ll_conn_get(cis->lll.acl_handle);
+				LL_ASSERT(conn != NULL);
 
 				/* CIS was not established - complete the procedure with error */
 				if (ull_cp_cc_awaiting_established(conn)) {
@@ -1334,11 +1346,12 @@ static void cis_disabled_cb(void *param)
 			 */
 			cis->lll.flush = LLL_CIS_FLUSH_PENDING;
 
-			mfys[cig->lll.handle].param = &cis->lll;
-			ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
+			/* Ignore enqueue error (already enqueued) as all CISes marked for
+			 * flushing will be handled in cis_tx_lll_flush
+			 */
+			mfys[cig->lll.handle].param = cig;
+			(void)mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
 					     TICKER_USER_ID_LLL, 1, &mfys[cig->lll.handle]);
-			LL_ASSERT(!ret);
-
 			return;
 		}
 	}
@@ -1365,42 +1378,58 @@ static void cis_tx_lll_flush(void *param)
 {
 	DECLARE_MAYFLY_ARRAY(mfys, cis_disabled_cb, CONFIG_BT_CTLR_CONN_ISO_GROUPS);
 
-	struct lll_conn_iso_stream *lll;
-	struct ll_conn_iso_stream *cis;
 	struct ll_conn_iso_group *cig;
-	struct node_tx_iso *tx;
-	memq_link_t *link;
+	uint16_t handle_iter;
+	uint8_t cis_idx;
+	uint8_t num_cis;
 
-	lll = param;
-	lll->active = 0U;
+	cig = param;
+	handle_iter = UINT16_MAX;
+
+	/* Flush all CISes in CIG marked for flush */
+	num_cis = cig->lll.num_cis;
+	for (cis_idx = 0; cis_idx < num_cis; cis_idx++) {
+		struct lll_conn_iso_stream *lll;
+		struct ll_conn_iso_stream *cis;
+		struct node_tx_iso *tx;
+		memq_link_t *link;
+
+		cis = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
+		LL_ASSERT(cis);
+
+		lll = &cis->lll;
+
+		if (lll->flush != LLL_CIS_FLUSH_PENDING) {
+			/* Not flushing this CIS, skip */
+			continue;
+		}
+
+		lll->active = 0U;
 
 #if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
-	lll->prepared = 0U;
+		lll->prepared = 0U;
 #endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
 
+		/* Flush in LLL - may return TX nodes to ack queue */
+		lll_conn_iso_flush(lll->handle, lll);
 
-	cis = ll_conn_iso_stream_get(lll->handle);
-	cig = cis->group;
+		link = memq_dequeue(lll->memq_tx.tail, &lll->memq_tx.head, (void **)&tx);
+		while (link) {
+			link->next = tx->next;
+			tx->next = link;
+			ull_iso_lll_ack_enqueue(lll->handle, tx);
 
-	/* Flush in LLL - may return TX nodes to ack queue */
-	lll_conn_iso_flush(lll->handle, lll);
+			link = memq_dequeue(lll->memq_tx.tail, &lll->memq_tx.head,
+					    (void **)&tx);
+		}
 
-	link = memq_dequeue(lll->memq_tx.tail, &lll->memq_tx.head, (void **)&tx);
-	while (link) {
-		link->next = tx->next;
-		tx->next = link;
-		ull_iso_lll_ack_enqueue(lll->handle, tx);
+		LL_ASSERT(!lll->link_tx_free);
+		link = memq_deinit(&lll->memq_tx.head, &lll->memq_tx.tail);
+		LL_ASSERT(link);
+		lll->link_tx_free = link;
 
-		link = memq_dequeue(lll->memq_tx.tail, &lll->memq_tx.head,
-				    (void **)&tx);
+		lll->flush = LLL_CIS_FLUSH_COMPLETE;
 	}
-
-	LL_ASSERT(!lll->link_tx_free);
-	link = memq_deinit(&lll->memq_tx.head, &lll->memq_tx.tail);
-	LL_ASSERT(link);
-	lll->link_tx_free = link;
-
-	lll->flush = LLL_CIS_FLUSH_COMPLETE;
 
 	/* Resume CIS teardown in ULL_HIGH context */
 	mfys[cig->lll.handle].param = &cig->lll;

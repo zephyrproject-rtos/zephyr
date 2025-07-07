@@ -16,6 +16,10 @@ Directives
 - ``zephyr:code-sample-listing::`` - Shows a listing of code samples found in a given category.
 - ``zephyr:board-catalog::`` - Shows a listing of boards supported by Zephyr.
 - ``zephyr:board::`` - Flags a document as being the documentation page for a board.
+- ``zephyr:board-supported-hw::`` - Shows a table of supported hardware features for all the targets
+  of the board documented in the current page.
+- ``zephyr:board-supported-runners::`` - Shows a table of supported runners for the board documented
+  in the current page.
 
 Roles
 -----
@@ -58,6 +62,7 @@ __version__ = "0.2.0"
 
 
 sys.path.insert(0, str(Path(__file__).parents[4] / "scripts/dts/python-devicetree/src"))
+sys.path.insert(0, str(Path(__file__).parents[4] / "scripts/west_commands"))
 sys.path.insert(0, str(Path(__file__).parents[3] / "_scripts"))
 
 from gen_boards_catalog import get_catalog
@@ -69,15 +74,17 @@ RESOURCES_DIR = Path(__file__).parent / "static"
 # Load and parse binding types from text file
 BINDINGS_TXT_PATH = ZEPHYR_BASE / "dts" / "bindings" / "binding-types.txt"
 ACRONYM_PATTERN = re.compile(r'([a-zA-Z0-9-]+)\s*\((.*?)\)')
+ACRONYM_PATTERN_UPPERCASE_ONLY = re.compile(r'(\b[A-Z0-9-]+)\s*\((.*?)\)')
 BINDING_TYPE_TO_DOCUTILS_NODE = {}
 
 
-def parse_text_with_acronyms(text):
+def parse_text_with_acronyms(text, uppercase_only=False):
     """Parse text that may contain acronyms into a list of nodes."""
     result = nodes.inline()
     last_end = 0
 
-    for match in ACRONYM_PATTERN.finditer(text):
+    pattern = ACRONYM_PATTERN_UPPERCASE_ONLY if uppercase_only else ACRONYM_PATTERN
+    for match in pattern.finditer(text):
         # Add any text before the acronym
         if match.start() > last_end:
             result += nodes.Text(text[last_end : match.start()])
@@ -724,10 +731,14 @@ class BoardDirective(SphinxDirective):
             board_node = BoardNode(id=board_name)
             board_node["full_name"] = board["full_name"]
             board_node["vendor"] = vendors.get(board["vendor"], board["vendor"])
+            board_node["revision_default"] = board["revision_default"]
             board_node["supported_features"] = board["supported_features"]
             board_node["archs"] = board["archs"]
             board_node["socs"] = board["socs"]
             board_node["image"] = board["image"]
+            board_node["supported_runners"] = board["supported_runners"]
+            board_node["flash_runner"] = board["flash_runner"]
+            board_node["debug_runner"] = board["debug_runner"]
             return [board_node]
 
 
@@ -746,8 +757,10 @@ class BoardCatalogDirective(SphinxDirective):
                 "board-catalog.html",
                 {
                     "boards": domain_data["boards"],
+                    "shields": domain_data["shields"],
                     "vendors": domain_data["vendors"],
                     "socs": domain_data["socs"],
+                    "archs": domain_data["archs"],
                     "hw_features_present": self.env.app.config.zephyr_generate_hw_features,
                 },
             )
@@ -825,18 +838,39 @@ class BoardSupportedHardwareDirective(SphinxDirective):
 </div>"""
         result_nodes.append(nodes.raw("", html_contents, format="html"))
 
+        tables_container = nodes.container(ids=[f"{board_node['id']}-hw-features"])
+        result_nodes.append(tables_container)
+
+        board_json = json.dumps(
+            {
+                "board_name": board_node["id"],
+                "revision_default": board_node["revision_default"],
+                "targets": list(supported_features.keys()),
+            }
+        )
+        result_nodes.append(
+            nodes.raw(
+                "",
+                f"""<script>board_data = {board_json}</script>""",
+                format="html",
+            )
+        )
+
         for target, features in sorted(supported_features.items()):
             if not features:
                 continue
 
-            target_heading = nodes.section(ids=[f"{board_node['id']}-{target}-hw-features"])
+            target_heading = nodes.section(ids=[f"{board_node['id']}-{target}-hw-features-section"])
             heading = nodes.title()
             heading += nodes.literal(text=target)
             heading += nodes.Text(" target")
             target_heading += heading
-            result_nodes.append(target_heading)
+            tables_container += target_heading
 
-            table = nodes.table(classes=["colwidths-given", "hardware-features"])
+            table = nodes.table(
+                classes=["colwidths-given", "hardware-features"],
+                ids=[f"{board_node['id']}-{target}-hw-features-table"],
+            )
             tgroup = nodes.tgroup(cols=4)
 
             tgroup += nodes.colspec(colwidth=15, classes=["type"])
@@ -907,7 +941,10 @@ class BoardSupportedHardwareDirective(SphinxDirective):
                     # DESCRIPTION column
                     desc_entry = nodes.entry(classes=["description"])
                     desc_para = nodes.paragraph(classes=["status"])
-                    desc_para += nodes.Text(value["description"])
+                    if value["title"]:
+                        desc_para += parse_text_with_acronyms(value["title"], uppercase_only=True)
+                    else:
+                        desc_para += nodes.Text(value["description"])
 
                     # Add count indicators for okay and not-okay instances
                     okay_nodes = value.get("okay_nodes", [])
@@ -963,9 +1000,130 @@ class BoardSupportedHardwareDirective(SphinxDirective):
 
                     tbody += row
 
+                    # Declare the dts and binding files as dependencies of the board doc page,
+                    # ensuring that the page is rerendered if the files change.
+                    for node in okay_nodes + disabled_nodes:
+                        env.note_dependency(node["dts_path"])
+                        env.note_dependency(node["binding_path"])
+
             tgroup += tbody
             table += tgroup
-            result_nodes.append(table)
+            tables_container += table
+
+        return result_nodes
+
+
+class BoardSupportedRunnersDirective(SphinxDirective):
+    """A directive for showing the supported runners of a board."""
+
+    has_content = False
+    required_arguments = 0
+    optional_arguments = 0
+
+    def run(self):
+        env = self.env
+        docname = env.docname
+
+        matcher = NodeMatcher(BoardNode)
+        board_nodes = list(self.state.document.traverse(matcher))
+        if not board_nodes:
+            logger.warning(
+                "board-supported-runners directive must be used in a board documentation page.",
+                location=(docname, self.lineno),
+            )
+            return []
+
+        if not env.app.config.zephyr_generate_hw_features:
+            note = nodes.admonition()
+            note += nodes.title(text="Note")
+            note["classes"].append("warning")
+            note += nodes.paragraph(
+                text="The list of supported runners was not generated. Run a full documentation "
+                "build for the required metadata to be available."
+            )
+            return [note]
+
+        board_node = board_nodes[0]
+        runners = board_node["supported_runners"]
+        flash_runner = board_node["flash_runner"]
+        debug_runner = board_node["debug_runner"]
+
+        result_nodes = []
+
+        paragraph = nodes.paragraph()
+        paragraph += nodes.Text("The ")
+        paragraph += nodes.literal(text=board_node["id"])
+        paragraph += nodes.Text(
+            " board supports the runners and associated west commands listed below."
+        )
+        result_nodes.append(paragraph)
+
+        env_runners = env.domaindata["zephyr"]["runners"]
+        commands = ["flash", "debug"]
+        for runner in env_runners:
+            if runner in board_node["supported_runners"]:
+                for cmd in env_runners[runner].get("commands", []):
+                    if cmd not in commands:
+                        commands.append(cmd)
+
+        # create the table
+        table = nodes.table(classes=["colwidths-given", "runners-table"])
+        tgroup = nodes.tgroup(cols=len(commands) + 1)  # +1 for the Runner column
+
+        # Add colspec for Runner column
+        tgroup += nodes.colspec(colwidth=15, classes=["type"])
+        # Add colspecs for command columns
+        for _ in commands:
+            tgroup += nodes.colspec(colwidth=15, classes=["type"])
+
+        thead = nodes.thead()
+        row = nodes.row()
+        entry = nodes.entry()
+        row += entry
+        headers = [*commands]
+        for header in headers:
+            entry = nodes.entry(classes=[header.lower()])
+            entry += addnodes.literal_strong(text=header, classes=["command"])
+            row += entry
+        thead += row
+        tgroup += thead
+
+        tbody = nodes.tbody()
+
+        # add a row for each runner
+        for runner in sorted(runners):
+            row = nodes.row()
+            # First column - Runner name
+            entry = nodes.entry()
+
+            xref = addnodes.pending_xref(
+                "",
+                refdomain="std",
+                reftype="ref",
+                reftarget=f"runner_{runner}",
+                refexplicit=True,
+                refwarn=False,
+            )
+            xref += nodes.Text(runner)
+            entry += addnodes.literal_strong("", "", xref)
+            row += entry
+
+            # Add columns for each command
+            for command in commands:
+                entry = nodes.entry()
+                if command in env_runners[runner].get("commands", []):
+                    entry += nodes.Text("✅")
+                    if (command == "flash" and runner == flash_runner) or (
+                        command == "debug" and runner == debug_runner
+                    ):
+                        entry += nodes.Text(" (default)")
+                row += entry
+            tbody += row
+
+        tgroup += tbody
+        table += tgroup
+
+        result_nodes.append(table)
 
         return result_nodes
 
@@ -989,6 +1147,7 @@ class ZephyrDomain(Domain):
         "board-catalog": BoardCatalogDirective,
         "board": BoardDirective,
         "board-supported-hw": BoardSupportedHardwareDirective,
+        "board-supported-runners": BoardSupportedRunnersDirective,
     }
 
     object_types: dict[str, ObjType] = {
@@ -1220,16 +1379,21 @@ def load_board_catalog_into_domain(app: Sphinx) -> None:
     board_catalog = get_catalog(
         generate_hw_features=(
             app.builder.format == "html" and app.config.zephyr_generate_hw_features
-        )
+        ),
+        hw_features_vendor_filter=app.config.zephyr_hw_features_vendor_filter,
     )
     app.env.domaindata["zephyr"]["boards"] = board_catalog["boards"]
+    app.env.domaindata["zephyr"]["shields"] = board_catalog["shields"]
     app.env.domaindata["zephyr"]["vendors"] = board_catalog["vendors"]
     app.env.domaindata["zephyr"]["socs"] = board_catalog["socs"]
+    app.env.domaindata["zephyr"]["archs"] = board_catalog["archs"]
+    app.env.domaindata["zephyr"]["runners"] = board_catalog["runners"]
 
 
 def setup(app):
     app.add_config_value("zephyr_breathe_insert_related_samples", False, "env")
     app.add_config_value("zephyr_generate_hw_features", False, "env")
+    app.add_config_value("zephyr_hw_features_vendor_filter", [], "env", types=[list[str]])
 
     app.add_domain(ZephyrDomain)
 

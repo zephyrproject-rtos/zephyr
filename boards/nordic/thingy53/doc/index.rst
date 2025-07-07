@@ -1,7 +1,4 @@
-.. _thingy53_nrf5340:
-
-Thingy:53
-#########
+.. zephyr:board:: thingy53
 
 Overview
 ********
@@ -25,8 +22,18 @@ support for the network core on the nRF5340 SoC.
 The `Nordic Thingy:53 Hardware guide`_ contains the processor's information and
 the datasheet.
 
+Hardware
+********
+
+Supported Features
+==================
+
+.. zephyr:board-supported-hw::
+
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Flashing
 ========
@@ -41,7 +48,7 @@ Thingy:53 does not have an on-board J-Link debug IC as some other nRF5
 development boards, however, instructions from the :ref:`nordic_segger` page
 also apply to this board, with the additional step of connecting an external
 debugger. A development board with a Debug out connector such as the
-:ref:`nrf5340dk_nrf5340` can be used as a debugger with Thingy:53.
+:zephyr:board:`nrf5340dk` can be used as a debugger with Thingy:53.
 
 References
 **********

@@ -403,6 +403,37 @@ static inline void i2c_ctrl_fifo_clear_status(const struct device *dev)
 	inst->SMBFIF_CTS |= BIT(NPCX_SMBFIF_CTS_CLR_FIFO);
 }
 
+/* I2C target reg access */
+#ifdef CONFIG_I2C_TARGET
+static volatile uint8_t *npcx_i2c_ctrl_target_get_reg_smbaddr(const struct device *i2c_dev,
+							      int index)
+{
+	struct smb_reg *const inst = HAL_I2C_INSTANCE(i2c_dev);
+
+	switch (index) {
+	case 0:
+		return &inst->SMBADDR1;
+	case 1:
+		return &inst->SMBADDR2;
+	case 2:
+		return &inst->SMBADDR3;
+	case 3:
+		return &inst->SMBADDR4;
+	case 4:
+		return &inst->SMBADDR5;
+	case 5:
+		return &inst->SMBADDR6;
+	case 6:
+		return &inst->SMBADDR7;
+	case 7:
+		return &inst->SMBADDR8;
+	default:
+		LOG_ERR("Invalid SMBADDR index: %d", index);
+		return NULL;
+	}
+}
+#endif /* CONFIG_I2C_TARGET */
+
 /*
  * I2C local functions which touch the registers in 'Normal' bank. These
  * utilities will change bank back to FIFO mode when leaving themselves in case
@@ -432,6 +463,16 @@ static void i2c_ctrl_init_module(const struct device *dev)
 
 	/* Enable module - before configuring CTL1 */
 	inst->SMBCTL2  |= BIT(NPCX_SMBCTL2_ENABLE);
+
+#ifdef CONFIG_I2C_TARGET
+	volatile uint8_t *reg_smbaddr;
+
+	/* Clear all the SMBnADDR */
+	for (int i = 0; i < NPCX_I2C_FLAG_COUNT; i++) {
+		reg_smbaddr = npcx_i2c_ctrl_target_get_reg_smbaddr(dev, i);
+		*reg_smbaddr = 0;
+	}
+#endif
 
 	/* Enable SMB interrupt and 'New Address Match' interrupt source */
 	inst->SMBCTL1 |= BIT(NPCX_SMBCTL1_NMINTE) | BIT(NPCX_SMBCTL1_INTEN);
@@ -558,8 +599,7 @@ static int i2c_ctrl_recovery(const struct device *dev)
 	ret = i2c_ctrl_wait_stop_completed(dev, I2C_MAX_TIMEOUT);
 	inst->SMBCST |= BIT(NPCX_SMBCST_BB);
 	if (ret != 0) {
-		LOG_ERR("Abort i2c port%02x fail! Bus might be stalled.",
-								data->port);
+		LOG_ERR("Abort i2c %s::%02x fail! Bus might be stalled.", dev->name, data->port);
 	}
 
 	/*
@@ -571,8 +611,7 @@ static int i2c_ctrl_recovery(const struct device *dev)
 	inst->SMBCTL2 &= ~BIT(NPCX_SMBCTL2_ENABLE);
 	ret = i2c_ctrl_wait_idle_completed(dev, I2C_MAX_TIMEOUT);
 	if (ret != 0) {
-		LOG_ERR("Reset i2c port%02x fail! Bus might be stalled.",
-								data->port);
+		LOG_ERR("Reset i2c %s::%02x fail! Bus might be stalled.", dev->name, data->port);
 		return -EIO;
 	}
 
@@ -630,7 +669,6 @@ static void i2c_ctrl_handle_write_int_event(const struct device *dev)
 		size_t tx_remain = i2c_ctrl_calculate_msg_remains(dev);
 		size_t tx_avail = MIN(tx_remain, i2c_ctrl_fifo_tx_avail(dev));
 
-		LOG_DBG("tx remains %d, avail %d", tx_remain, tx_avail);
 		for (int i = 0U; i < tx_avail; i++) {
 			i2c_ctrl_fifo_write(dev, *(data->ptr_msg++));
 		}
@@ -701,8 +739,6 @@ static void i2c_ctrl_handle_read_int_event(const struct device *dev)
 		size_t rx_remain = i2c_ctrl_calculate_msg_remains(dev);
 		size_t rx_occupied = i2c_ctrl_fifo_rx_occupied(dev);
 
-		LOG_DBG("rx remains %d, occupied %d", rx_remain, rx_occupied);
-
 		/* Is it the last read transaction with STOP condition? */
 		if (rx_occupied >= rx_remain &&
 			(data->msg->flags & I2C_MSG_STOP) != 0) {
@@ -758,7 +794,7 @@ static void i2c_ctrl_handle_read_int_event(const struct device *dev)
 	}
 
 	/* Is the STOP condition issued? */
-	if ((data->msg->flags & I2C_MSG_STOP) != 0) {
+	if (data->msg != NULL && (data->msg->flags & I2C_MSG_STOP) != 0) {
 		/* Clear rx FIFO threshold and status bits */
 		i2c_ctrl_fifo_clear_status(dev);
 
@@ -998,7 +1034,6 @@ static void i2c_ctrl_isr(const struct device *dev)
 	uint8_t status, tmp;
 
 	status = inst->SMBST & NPCX_VALID_SMBST_MASK;
-	LOG_DBG("status: %02x, %d", status, data->oper_state);
 
 #ifdef CONFIG_I2C_TARGET
 	if (atomic_get(&data->registered_target_mask) != (atomic_val_t) 0) {
@@ -1018,7 +1053,7 @@ static void i2c_ctrl_isr(const struct device *dev)
 		/* Make sure slave doesn't hold bus by reading FIFO again */
 		tmp = i2c_ctrl_fifo_read(dev);
 
-		LOG_ERR("Bus error occurred on i2c port%02x!", data->port);
+		LOG_ERR("Bus error occurred on i2c %s::%02x!", dev->name, data->port);
 		data->oper_state = NPCX_I2C_ERROR_RECOVERY;
 
 		/* I/O error occurred */
@@ -1200,33 +1235,6 @@ recover_exit:
 }
 
 #ifdef CONFIG_I2C_TARGET
-static volatile uint8_t *npcx_i2c_ctrl_target_get_reg_smbaddr(const struct device *i2c_dev,
-							      int index)
-{
-	struct smb_reg *const inst = HAL_I2C_INSTANCE(i2c_dev);
-
-	switch (index) {
-	case 0:
-		return &inst->SMBADDR1;
-	case 1:
-		return &inst->SMBADDR2;
-	case 2:
-		return &inst->SMBADDR3;
-	case 3:
-		return &inst->SMBADDR4;
-	case 4:
-		return &inst->SMBADDR5;
-	case 5:
-		return &inst->SMBADDR6;
-	case 6:
-		return &inst->SMBADDR7;
-	case 7:
-		return &inst->SMBADDR8;
-	default:
-		LOG_ERR("Invalid SMBADDR index: %d", index);
-		return NULL;
-	}
-}
 
 int npcx_i2c_ctrl_target_register(const struct device *i2c_dev,
 				 struct i2c_target_config *target_cfg, uint8_t port)
@@ -1243,8 +1251,12 @@ int npcx_i2c_ctrl_target_register(const struct device *i2c_dev,
 	int addr_idx;
 
 	/* A transiaction is ongoing */
-	if (data->oper_state != NPCX_I2C_IDLE) {
+	if (data->oper_state != NPCX_I2C_IDLE && data->oper_state != NPCX_I2C_ERROR_RECOVERY) {
+		LOG_ERR("Reg TGT in err state: %d", data->oper_state);
 		return -EBUSY;
+	}
+	if (data->oper_state == NPCX_I2C_ERROR_RECOVERY) {
+		LOG_WRN("Reg TGT in Recovery");
 	}
 
 	/* Find valid smbaddr location */
@@ -1374,7 +1386,7 @@ int npcx_i2c_ctrl_target_unregister(const struct device *i2c_dev,
 		i2c_ctrl_bank_sel(i2c_dev, NPCX_I2C_BANK_FIFO);
 
 		/* Reconfigure SMBCTL1 */
-		inst->SMBCTL1 |= BIT(NPCX_SMBCTL1_NMINTE) | BIT(NPCX_SMBCTL1_INTEN);
+		inst->SMBCTL1 |= BIT(NPCX_SMBCTL1_INTEN);
 
 		/* Disable irq of smb wake-up event */
 		if (IS_ENABLED(CONFIG_PM)) {
@@ -1394,13 +1406,8 @@ int npcx_i2c_ctrl_target_unregister(const struct device *i2c_dev,
 
 static void i2c_target_wk_isr(const struct device *dev, struct npcx_wui *wui)
 {
-	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
-
 	/* Clear wake up detection event status */
 	npcx_i2c_target_clear_detection_event();
-
-	/* Reconfigure SMBCTL1 */
-	inst->SMBCTL1 |= BIT(NPCX_SMBCTL1_NMINTE) | BIT(NPCX_SMBCTL1_INTEN);
 
 	/*
 	 * Suspend-to-idle stops SMB module clocks (derived from APB2/APB3), which must remain
@@ -1416,7 +1423,7 @@ static void i2c_target_wk_isr(const struct device *dev, struct npcx_wui *wui)
 #endif /* CONFIG_I2C_TARGET */
 
 int npcx_i2c_ctrl_transfer(const struct device *i2c_dev, struct i2c_msg *msgs,
-			      uint8_t num_msgs, uint16_t addr, int port)
+			      uint8_t num_msgs, uint16_t addr, uint8_t port)
 {
 	struct i2c_ctrl_data *const data = i2c_dev->data;
 	int ret = 0;
@@ -1442,7 +1449,7 @@ int npcx_i2c_ctrl_transfer(const struct device *i2c_dev, struct i2c_msg *msgs,
 		    data->oper_state == NPCX_I2C_ERROR_RECOVERY) {
 			ret = npcx_i2c_ctrl_recover_bus(i2c_dev);
 			if (ret != 0) {
-				LOG_ERR("Recover Bus failed");
+				LOG_ERR("Recover Bus failed: %s::%d", i2c_dev->name, port);
 				goto out;
 			}
 
@@ -1483,8 +1490,8 @@ int npcx_i2c_ctrl_transfer(const struct device *i2c_dev, struct i2c_msg *msgs,
 		if (data->trans_err == 0) {
 			data->oper_state = NPCX_I2C_IDLE;
 		} else {
-			LOG_ERR("STOP fail! bus is held on i2c port%02x!",
-								data->port);
+			LOG_ERR("STOP fail! bus is held on i2c %s::%02x!\n", i2c_dev->name,
+				data->port);
 			data->oper_state = NPCX_I2C_ERROR_RECOVERY;
 		}
 	}

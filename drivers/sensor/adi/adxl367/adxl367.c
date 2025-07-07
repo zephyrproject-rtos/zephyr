@@ -1097,7 +1097,7 @@ static int adxl367_init(const struct device *dev)
 #define ADXL367_CFG_IRQ(inst)
 #endif /* CONFIG_ADXL367_TRIGGER */
 
-#define ADXL367_CONFIG(inst, chipid)								\
+#define ADXL367_CONFIG(inst, chipid)							\
 		.odr = DT_INST_PROP(inst, odr),						\
 		.autosleep = false,							\
 		.low_noise = false,							\
@@ -1115,7 +1115,8 @@ static int adxl367_init(const struct device *dev)
 		.inactivity_th.enable =							\
 			IS_ENABLED(CONFIG_ADXL367_INACTIVITY_DETECTION_MODE),		\
 		.inactivity_time = CONFIG_ADXL367_INACTIVITY_TIME,			\
-		.fifo_config.fifo_mode = ADXL367_FIFO_DISABLED,				\
+		.fifo_config.fifo_mode =						\
+		DT_INST_PROP_OR(inst, fifo_mode, ADXL367_FIFO_DISABLED),		\
 		.fifo_config.fifo_format = ADXL367_FIFO_FORMAT_XYZ,			\
 		.fifo_config.fifo_samples = 128,					\
 		.fifo_config.fifo_read_mode = ADXL367_14B_CHID,				\

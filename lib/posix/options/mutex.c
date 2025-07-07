@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "posix_clock.h"
 #include "posix_internal.h"
 
 #include <zephyr/init.h>
@@ -17,8 +18,6 @@
 LOG_MODULE_REGISTER(pthread_mutex, CONFIG_PTHREAD_MUTEX_LOG_LEVEL);
 
 static SYS_SEM_DEFINE(lock, 1, 1);
-
-int64_t timespec_to_timeoutms(const struct timespec *abstime);
 
 #define MUTEX_MAX_REC_LOCK 32767
 
@@ -123,7 +122,7 @@ static int acquire_mutex(pthread_mutex_t *mu, k_timeout_t timeout)
 			SYS_SEM_LOCK_BREAK;
 		}
 
-		LOG_DBG("Locking mutex %p with timeout %llx", m, timeout.ticks);
+		LOG_DBG("Locking mutex %p with timeout %" PRIx64, m, (int64_t)timeout.ticks);
 
 		ret = 0;
 		bit = posix_mutex_to_offset(m);
@@ -212,8 +211,12 @@ int pthread_mutex_trylock(pthread_mutex_t *m)
 int pthread_mutex_timedlock(pthread_mutex_t *m,
 			    const struct timespec *abstime)
 {
-	int32_t timeout = (int32_t)timespec_to_timeoutms(abstime);
-	return acquire_mutex(m, K_MSEC(timeout));
+	if ((abstime == NULL) || !timespec_is_valid(abstime)) {
+		LOG_DBG("%s is invalid", "abstime");
+		return EINVAL;
+	}
+
+	return acquire_mutex(m, K_MSEC(timespec_to_timeoutms(CLOCK_REALTIME, abstime)));
 }
 
 /**

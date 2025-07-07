@@ -19,7 +19,9 @@ struct fake_stepper_data {
 	int32_t actual_position;
 };
 
-DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_enable, const struct device *, bool);
+DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_enable, const struct device *);
+
+DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_disable, const struct device *);
 
 DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_is_moving, const struct device *, bool *);
 
@@ -91,6 +93,7 @@ static void fake_stepper_reset_rule_before(const struct ztest_unit_test *test, v
 	ARG_UNUSED(fixture);
 
 	RESET_FAKE(fake_stepper_enable);
+	RESET_FAKE(fake_stepper_disable);
 	RESET_FAKE(fake_stepper_move_by);
 	RESET_FAKE(fake_stepper_is_moving);
 	RESET_FAKE(fake_stepper_set_microstep_interval);
@@ -128,6 +131,7 @@ static int fake_stepper_init(const struct device *dev)
 
 static DEVICE_API(stepper, fake_stepper_driver_api) = {
 	.enable = fake_stepper_enable,
+	.disable = fake_stepper_disable,
 	.move_by = fake_stepper_move_by,
 	.is_moving = fake_stepper_is_moving,
 	.set_microstep_interval = fake_stepper_set_microstep_interval,

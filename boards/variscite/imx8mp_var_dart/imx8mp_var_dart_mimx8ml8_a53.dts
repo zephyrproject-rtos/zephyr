@@ -1,0 +1,87 @@
+/*
+ * Copyright 2025 Variscite Ltd.
+ * Copyright 2021-2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_mimx8mp_a53.dtsi>
+#include "imx8mp_var_dart-pinctrl.dtsi"
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Variscite DART-MX8M-PLUS A53";
+	compatible = "fsl,mimx8mp";
+
+	chosen {
+		zephyr,console = &uart3;
+		zephyr,shell-uart = &uart3;
+		/* sram node actually locates at DDR DRAM */
+		zephyr,sram = &dram;
+	};
+
+	cpus {
+		cpu@0 {
+			status = "disabled";
+		};
+
+		cpu@1 {
+			status = "disabled";
+		};
+
+		cpu@2 {
+			status = "disabled";
+		};
+	};
+
+	dram: memory@40480000 {
+		reg = <0x40480000 DT_SIZE_M(1)>;
+	};
+
+	soc {
+		uart3: uart@30880000 {
+			compatible = "nxp,imx-iuart";
+			reg = <0x30880000 DT_SIZE_K(64)>;
+			interrupts = <GIC_SPI 28 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_0";
+			interrupt-parent = <&gic>;
+			clocks = <&ccm IMX_CCM_UART3_CLK 0x68 12>;
+			rdc = <(RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW)|\
+				RDC_DOMAIN_PERM(M7_DOMAIN_ID, RDC_DOMAIN_PERM_RW))>;
+			status = "okay";
+			current-speed = <115200>;
+			pinctrl-0 = <&uart3_default>;
+			pinctrl-names = "default";
+		};
+	};
+
+	aliases {
+		led0 = &blinky0;
+		sw0 = &button0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		blinky0: blinky_0 {
+			gpios = <&gpio3 9 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		button0: btn_0 {
+			label = "BTN0";
+			gpios = <&gpio3 8 (GPIO_PULL_UP|GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&gpio3 {
+	status = "okay";
+};

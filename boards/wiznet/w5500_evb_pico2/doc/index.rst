@@ -75,54 +75,18 @@ Default Zephyr Peripheral Mapping:
 Programming and Debugging
 *************************
 
-Flashing
-========
+.. zephyr:board-supported-runners::
 
-Using OpenOCD
--------------
+The overall explanation regarding flashing and debugging is the same as or :zephyr:board:`rpi_pico`.
+See :ref:`rpi_pico_programming_and_debugging` in :zephyr:board:`rpi_pico` documentation. N.b. OpenOCD support requires using Raspberry Pi's forked version of OpenOCD.
 
-The overall explanation regarding flashing and debugging is the same as or
-``rpi_pico``.
-See :ref:`rpi_pico_flashing_using_openocd`. in ``rpi_pico`` documentation.
-
-A typical build command for w5500_evb_pico2 is as follows.
-This assumes a CMSIS-DAP adapter such as the RaspberryPi Debug Probe,
-but if you are using something else, specify ``RPI_PICO_DEBUG_ADAPTER``.
+Below is an example of building and flashing the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: w5500_evb_pico2
+   :board: w5500_evb_pico2/rp2350a/m33
    :goals: build flash
-   :gen-args: -DOPENOCD=/usr/local/bin/openocd
-
-Using UF2
----------
-
-If you don't have an SWD adapter, you can flash the Raspberry Pi Pico with
-a UF2 file. By default, building an app for this board will generate a
-:file:`build/zephyr/zephyr.uf2` file. If the Pico is powered on with the ``BOOTSEL``
-button pressed, it will appear on the host as a mass storage device. The
-UF2 file should be drag-and-dropped to the device, which will flash the Pico.
-
-Debugging
-=========
-
-The SWD interface can also be used to debug the board. To achieve this, you can
-either use SEGGER JLink or OpenOCD.
-
-Using OpenOCD
--------------
-
-Install OpenOCD as described for flashing the board.
-
-Here is an example for debugging the :zephyr:code-sample:`blinky` application.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/basic/blinky
-   :board: w5500_evb_pico2
-   :maybe-skip-config:
-   :goals: debug
-   :gen-args: -DOPENOCD=/usr/local/bin/openocd
+   :flash-args: --openocd /usr/local/bin/openocd
 
 .. target-notes::
 

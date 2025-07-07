@@ -18,9 +18,10 @@
 #define HELP_NONE "[none]"
 #define HELP_INIT "call \"cfb init\" first"
 #define HELP_PRINT "<col: pos> <row: pos> \"<text>\""
-#define HELP_DRAW_POINT "<x> <y0>"
+#define HELP_DRAW_POINT "<x> <y>"
 #define HELP_DRAW_LINE "<x0> <y0> <x1> <y1>"
 #define HELP_DRAW_RECT "<x0> <y0> <x1> <y1>"
+#define HELP_DRAW_CIRCLE "<x> <y> <radius>"
 #define HELP_INVERT "[<x> <y> <width> <height>]"
 
 static const struct device *const dev =
@@ -187,6 +188,27 @@ static int cmd_draw_rect(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 }
 
+static int cmd_draw_circle(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+	struct cfb_position center;
+	uint16_t radius;
+
+	center.x = strtol(argv[1], NULL, 10);
+	center.y = strtol(argv[2], NULL, 10);
+	radius = strtol(argv[3], NULL, 10);
+
+	err = cfb_draw_circle(dev, &center, radius);
+	if (err) {
+		shell_error(sh, "Failed circle drawing to Framebuffer error=%d", err);
+		return err;
+	}
+
+	err = cfb_framebuffer_finalize(dev);
+
+	return err;
+}
+
 static int cmd_scroll_vert(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err = 0;
@@ -282,7 +304,7 @@ static int cmd_set_font(const struct shell *sh, size_t argc, char *argv[])
 		return err;
 	}
 
-	shell_print(sh, "Font idx=%d height=%d widht=%d set", idx, height,
+	shell_print(sh, "Font idx=%d height=%d width=%d set", idx, height,
 		    width);
 
 	return err;
@@ -396,8 +418,8 @@ static int cmd_get_param_height(const struct shell *sh, size_t argc,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell_print(sh, "param: %s=%d", param_name[CFB_DISPLAY_HEIGH],
-		    cfb_get_display_parameter(dev, CFB_DISPLAY_HEIGH));
+	shell_print(sh, "param: %s=%d", param_name[CFB_DISPLAY_HEIGHT],
+		    cfb_get_display_parameter(dev, CFB_DISPLAY_HEIGHT));
 
 	return 0;
 }
@@ -509,6 +531,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_cmd_draw,
 	SHELL_CMD_ARG(point, NULL, HELP_DRAW_POINT, cmd_draw_point, 3, 0),
 	SHELL_CMD_ARG(line, NULL, HELP_DRAW_LINE, cmd_draw_line, 5, 0),
 	SHELL_CMD_ARG(rect, NULL, HELP_DRAW_RECT, cmd_draw_rect, 5, 0),
+	SHELL_CMD_ARG(circle, NULL, HELP_DRAW_RECT, cmd_draw_circle, 4, 0),
 	SHELL_SUBCMD_SET_END
 );
 

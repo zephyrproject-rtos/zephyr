@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Ambiq Micro Inc. <www.ambiq.com>
+ * Copyright (c) 2025, Ambiq Micro Inc. <www.ambiq.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -129,7 +129,7 @@ enum mspi_bus_event {
 
 /**
  * @brief MSPI bus event callback mask
- * This is a  preliminary list same as mspi_bus_event. I encourage the
+ * This is a preliminary list same as mspi_bus_event. I encourage the
  * community to fill it up.
  */
 enum mspi_bus_event_cb_mask {
@@ -145,6 +145,16 @@ enum mspi_bus_event_cb_mask {
 enum mspi_xfer_mode {
 	MSPI_PIO,
 	MSPI_DMA,
+};
+
+/**
+ * @brief MSPI transfer priority
+ * This is a preliminary list of priorities that are typically used with DMA
+ */
+enum mspi_xfer_priority {
+	MSPI_XFER_PRIORITY_LOW,
+	MSPI_XFER_PRIORITY_MEDIUM,
+	MSPI_XFER_PRIORITY_HIGH,
 };
 
 /**
@@ -401,15 +411,13 @@ struct mspi_xfer {
 	bool                        hold_ce;
 	/** @brief  Software CE control          */
 	struct mspi_ce_control      ce_sw_ctrl;
-	/** @brief  Priority 0 = Low (best effort)
-	 *                   1 = High (service immediately)
-	 */
-	uint8_t                     priority;
+	/** @brief  MSPI transfer priority       */
+	enum mspi_xfer_priority     priority;
 	/** @brief  Transfer packets             */
 	const struct mspi_xfer_packet *packets;
 	/** @brief  Number of transfer packets   */
 	uint32_t                    num_packet;
-	/** @brief  Transfer timeout value       */
+	/** @brief  Transfer timeout value(ms)   */
 	uint32_t                    timeout;
 };
 
@@ -805,6 +813,56 @@ static inline int mspi_register_callback(const struct device *controller,
 #endif
 
 #include <zephyr/drivers/mspi/devicetree.h>
+
+/**
+ * @addtogroup mspi_util
+ * @{
+ */
+#include <zephyr/sys/util_macro.h>
+
+/**
+ * @brief Declare the optional XIP config in peripheral driver.
+ */
+#define MSPI_XIP_CFG_STRUCT_DECLARE(_name)                                                        \
+	IF_ENABLED(CONFIG_MSPI_XIP, (struct mspi_xip_cfg _name;))
+
+/**
+ * @brief Declare the optional XIP base address in peripheral driver.
+ */
+#define MSPI_XIP_BASE_ADDR_DECLARE(_name)                                                         \
+	IF_ENABLED(CONFIG_MSPI_XIP, (uint32_t _name;))
+
+/**
+ * @brief Declare the optional scramble config in peripheral driver.
+ */
+#define MSPI_SCRAMBLE_CFG_STRUCT_DECLARE(_name)                                                   \
+	IF_ENABLED(CONFIG_MSPI_SCRAMBLE, (struct mspi_scramble_cfg _name;))
+
+/**
+ * @brief Declare the optional timing config in peripheral driver.
+ */
+#define MSPI_TIMING_CFG_STRUCT_DECLARE(_name)                                                     \
+	IF_ENABLED(CONFIG_MSPI_TIMING, (mspi_timing_cfg _name;))
+
+/**
+ * @brief Declare the optional timing parameter in peripheral driver.
+ */
+#define MSPI_TIMING_PARAM_DECLARE(_name)                                                          \
+	IF_ENABLED(CONFIG_MSPI_TIMING, (mspi_timing_param _name;))
+
+/**
+ * @brief Initialize the optional config structure in peripheral driver.
+ */
+#define MSPI_OPTIONAL_CFG_STRUCT_INIT(code, _name, _object)                                       \
+	IF_ENABLED(code, (._name = _object,))
+
+/**
+ * @brief Initialize the optional XIP base address in peripheral driver.
+ */
+#define MSPI_XIP_BASE_ADDR_INIT(_name, _bus)                                                      \
+	IF_ENABLED(CONFIG_MSPI_XIP, (._name = DT_REG_ADDR_BY_IDX(_bus, 1),))
+
+/** @} */
 
 /**
  * @}

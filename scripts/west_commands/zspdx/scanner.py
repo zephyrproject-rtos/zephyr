@@ -6,6 +6,7 @@ import hashlib
 import os
 import re
 
+from reuse.project import Project
 from west import log
 
 from zspdx.licenses import LICENSES
@@ -16,7 +17,7 @@ from zspdx.util import getHashes
 # Document scanning should occur.
 class ScannerConfig:
     def __init__(self):
-        super(ScannerConfig, self).__init__()
+        super().__init__()
 
         # when assembling a Package's data, should we auto-conclude the
         # Package's license, based on the licenses of its Files?
@@ -63,11 +64,9 @@ def getExpressionData(filePath, numLines):
     """
     log.dbg(f"  - getting licenses for {filePath}")
 
-    with open(filePath, "r") as f:
+    with open(filePath) as f:
         try:
-            lineno = 0
-            for line in f:
-                lineno += 1
+            for lineno, line in enumerate(f, start=1):
                 if lineno > numLines > 0:
                     break
                 expression = parseLineForExpression(line)
@@ -179,6 +178,32 @@ def normalizeExpression(licsConcluded):
     return " AND ".join(revised)
 
 
+def getCopyrightInfo(filePath):
+    """
+    Scans the specified file for copyright information using REUSE tools.
+
+    Arguments:
+        - filePath: path to file to scan
+
+    Returns: list of copyright statements if found; empty list if not found
+    """
+    log.dbg(f"  - getting copyright info for {filePath}")
+
+    try:
+        project = Project(os.path.dirname(filePath))
+        infos = project.reuse_info_of(filePath)
+        copyrights = []
+
+        for info in infos:
+            if info.copyright_lines:
+                copyrights.extend(info.copyright_lines)
+
+        return copyrights
+    except Exception as e:
+        log.wrn(f"Error getting copyright info for {filePath}: {e}")
+        return []
+
+
 def scanDocument(cfg, doc):
     """
     Scan for licenses and calculate hashes for all Files and Packages
@@ -214,6 +239,9 @@ def scanDocument(cfg, doc):
                 if cfg.shouldConcludeFileLicenses:
                     f.concludedLicense = expression
                 f.licenseInfoInFile = splitExpression(expression)
+
+            if copyrights := getCopyrightInfo(f.abspath):
+                f.copyrightText = f"<text>\n{'\n'.join(copyrights)}\n</text>"
 
             # check if any custom license IDs should be flagged for document
             for lic in f.licenseInfoInFile:

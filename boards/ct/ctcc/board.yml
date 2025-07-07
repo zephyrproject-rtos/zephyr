@@ -1,6 +1,7 @@
 board:
   name: ctcc
   full_name: CTHINGS.CO Connectivity Card
+  vendor: ct
   socs:
     - name: nrf52840
     - name: nrf9161

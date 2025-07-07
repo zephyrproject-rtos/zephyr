@@ -24,10 +24,26 @@ LOG_MODULE_REGISTER(spi_nrfx_spis, CONFIG_SPI_LOG_LEVEL);
 #include <nrf/gpd.h>
 #endif
 
+#define SPIS_IS_FAST(idx) IS_EQ(idx, 120)
+
+#define NRFX_SPIS_IS_FAST(unused, prefix, id, _) SPIS_IS_FAST(prefix##id)
+
+#if NRFX_FOREACH_ENABLED(SPIS, NRFX_SPIS_IS_FAST, (+), (0), _)
+/* If fast instances are used then system managed device PM cannot be used because
+ * it may call PM actions from locked context and fast SPIM PM actions can only be
+ * called from a thread context.
+ */
+BUILD_ASSERT(!IS_ENABLED(CONFIG_PM_DEVICE_SYSTEM_MANAGED));
+#endif
+
 struct spi_nrfx_data {
 	struct spi_context ctx;
 	const struct device *dev;
+#ifdef CONFIG_MULTITHREADING
 	struct k_sem wake_sem;
+#else
+	atomic_t woken_up;
+#endif
 	struct gpio_callback wake_cb_data;
 };
 
@@ -181,7 +197,11 @@ static void wake_callback(const struct device *dev, struct gpio_callback *cb,
 
 	(void)gpio_pin_interrupt_configure_dt(&dev_config->wake_gpio,
 					      GPIO_INT_DISABLE);
+#ifdef CONFIG_MULTITHREADING
 	k_sem_give(&dev_data->wake_sem);
+#else
+	atomic_set(&dev_data->woken_up, 1);
+#endif /* CONFIG_MULTITHREADING */
 }
 
 static void wait_for_wake(struct spi_nrfx_data *dev_data,
@@ -194,7 +214,19 @@ static void wait_for_wake(struct spi_nrfx_data *dev_data,
 			     dev_config->wake_gpio.pin) == 0) {
 		(void)gpio_pin_interrupt_configure_dt(&dev_config->wake_gpio,
 						      GPIO_INT_LEVEL_HIGH);
+#ifdef CONFIG_MULTITHREADING
 		(void)k_sem_take(&dev_data->wake_sem, K_FOREVER);
+#else
+		unsigned int key = irq_lock();
+
+		while (!atomic_get(&dev_data->woken_up)) {
+			k_cpu_atomic_idle(key);
+			key = irq_lock();
+		}
+
+		dev_data->woken_up = 0;
+		irq_unlock(key);
+#endif /* CONFIG_MULTITHREADING */
 	}
 }
 
@@ -335,7 +367,7 @@ static void event_handler(const nrfx_spis_evt_t *p_event, void *p_context)
 		spi_context_complete(&dev_data->ctx, dev_data->dev,
 				     p_event->rx_amount);
 
-		pm_device_runtime_put(dev_data->dev);
+		pm_device_runtime_put_async(dev_data->dev, K_NO_WAIT);
 	}
 }
 
@@ -457,7 +489,7 @@ static int spi_nrfx_init(const struct device *dev)
  * - Name-based HAL IRQ handlers, e.g. nrfx_spis_0_irq_handler
  */
 
-#define SPIS_NODE(idx) COND_CODE_1(IS_EQ(idx, 120), (spis##idx), (spi##idx))
+#define SPIS_NODE(idx) COND_CODE_1(SPIS_IS_FAST(idx), (spis##idx), (spi##idx))
 
 #define SPIS(idx) DT_NODELABEL(SPIS_NODE(idx))
 
@@ -470,11 +502,14 @@ static int spi_nrfx_init(const struct device *dev)
 			    nrfx_isr, nrfx_spis_##idx##_irq_handler, 0);       \
 	}								       \
 	static struct spi_nrfx_data spi_##idx##_data = {		       \
-		SPI_CONTEXT_INIT_LOCK(spi_##idx##_data, ctx),		       \
-		SPI_CONTEXT_INIT_SYNC(spi_##idx##_data, ctx),		       \
+		IF_ENABLED(CONFIG_MULTITHREADING,			       \
+			(SPI_CONTEXT_INIT_LOCK(spi_##idx##_data, ctx),))       \
+		IF_ENABLED(CONFIG_MULTITHREADING,			       \
+			(SPI_CONTEXT_INIT_SYNC(spi_##idx##_data, ctx),))       \
 		.dev  = DEVICE_DT_GET(SPIS(idx)),			       \
-		.wake_sem = Z_SEM_INITIALIZER(				       \
-			spi_##idx##_data.wake_sem, 0, 1),		       \
+		IF_ENABLED(CONFIG_MULTITHREADING,			       \
+			(.wake_sem = Z_SEM_INITIALIZER(			       \
+				spi_##idx##_data.wake_sem, 0, 1),))	       \
 	};								       \
 	PINCTRL_DT_DEFINE(SPIS(idx));					       \
 	static const struct spi_nrfx_config spi_##idx##z_config = {	       \
@@ -502,7 +537,8 @@ static int spi_nrfx_init(const struct device *dev)
 	BUILD_ASSERT(!DT_NODE_HAS_PROP(SPIS(idx), wake_gpios) ||	       \
 		     !(DT_GPIO_FLAGS(SPIS(idx), wake_gpios) & GPIO_ACTIVE_LOW),\
 		     "WAKE line must be configured as active high");	       \
-	PM_DEVICE_DT_DEFINE(SPIS(idx), spi_nrfx_pm_action, 1);		       \
+	PM_DEVICE_DT_DEFINE(SPIS(idx), spi_nrfx_pm_action,		       \
+		COND_CODE_1(SPIS_IS_FAST(idx), (0), (PM_DEVICE_ISR_SAFE)));    \
 	SPI_DEVICE_DT_DEFINE(SPIS(idx),					       \
 			    spi_nrfx_init,				       \
 			    PM_DEVICE_DT_GET(SPIS(idx)),		       \

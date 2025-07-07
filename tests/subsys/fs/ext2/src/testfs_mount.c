@@ -64,11 +64,11 @@ ZTEST(ext2tests, test_statvfs)
 			sbuf.f_bsize, sbuf.f_frsize, sbuf.f_blocks, sbuf.f_bfree);
 
 	zassert_equal(sbuf.f_bsize, 1024,
-			"Wrong block size %lu (expected %lu)", sbuf.f_bsize, 1024);
+			"Wrong block size %lu (expected %d)", sbuf.f_bsize, 1024);
 	zassert_equal(sbuf.f_frsize, 1024,
-			"Wrong frag size %lu (expected %lu)", sbuf.f_frsize, 1024);
+			"Wrong frag size %lu (expected %d)", sbuf.f_frsize, 1024);
 	zassert_equal(sbuf.f_blocks, partition_size / 1024,
-			"Wrong block count %lu (expected %lu)",
+			"Wrong block count %lu (expected %zu)",
 			sbuf.f_blocks, partition_size / 1024);
 
 	ret = fs_unmount(mp);
@@ -115,11 +115,11 @@ void mkfs_custom_config(struct ext2_cfg *cfg)
 			sbuf.f_bsize, sbuf.f_frsize, sbuf.f_blocks, sbuf.f_bfree);
 
 	zassert_equal(sbuf.f_bsize, cfg->block_size,
-			"Wrong block size %lu (expected %lu)", sbuf.f_bsize, cfg->block_size);
+			"Wrong block size %lu (expected %u)", sbuf.f_bsize, cfg->block_size);
 	zassert_equal(sbuf.f_frsize, cfg->block_size,
-			"Wrong frag size %lu (expected %lu)", sbuf.f_frsize, cfg->block_size);
+			"Wrong frag size %lu (expected %u)", sbuf.f_frsize, cfg->block_size);
 	zassert_equal(sbuf.f_blocks, partition_size / cfg->block_size,
-			"Wrong block count %lu (expected %lu)",
+			"Wrong block count %lu (expected %zu)",
 			sbuf.f_blocks, partition_size / cfg->block_size);
 
 	ret = fs_unmount(mp);

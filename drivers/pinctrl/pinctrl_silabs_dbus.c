@@ -24,8 +24,12 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 		if (pins[i].en_bit == SILABS_PINCTRL_ANALOG) {
 			enable_reg = DT_INST_REG_ADDR_BY_NAME(0, abus) +
 				     (pins[i].base_offset * sizeof(mem_addr_t));
-			sys_write32(FIELD_PREP(ABUS_MASK(pins[i].mode), pins[i].route_offset),
-				    enable_reg);
+			/* Read-modify-write. */
+			uint32_t reg_val = sys_read32(enable_reg);
+
+			reg_val &= ~ABUS_MASK(pins[i].mode);
+			reg_val |= FIELD_PREP(ABUS_MASK(pins[i].mode), pins[i].route_offset);
+			sys_write32(reg_val, enable_reg);
 			continue;
 		}
 
@@ -37,7 +41,9 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			     (pins[i].base_offset * sizeof(mem_addr_t));
 		route_reg = enable_reg + (pins[i].route_offset * sizeof(mem_addr_t));
 
-		sys_write32(pins[i].port | FIELD_PREP(PIN_MASK, pins[i].pin), route_reg);
+		if (pins[i].route_offset != SILABS_PINCTRL_UNUSED) {
+			sys_write32(pins[i].port | FIELD_PREP(PIN_MASK, pins[i].pin), route_reg);
+		}
 
 		if (pins[i].en_bit != SILABS_PINCTRL_UNUSED) {
 			if (pins[i].mode == gpioModeDisabled) {

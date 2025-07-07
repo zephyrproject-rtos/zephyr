@@ -7,6 +7,7 @@ tests:
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf54l15dk/nrf54l15/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
       - mps2/an385
     integration_platforms:
       - mps2/an385
@@ -26,6 +27,7 @@ tests:
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf54l15dk/nrf54l15/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
       - mps2/an385
     integration_platforms:
       - mps2/an385

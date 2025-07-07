@@ -36,16 +36,6 @@ void soc_early_init_hook(void)
 	SystemCoreClock = 64000000;
 
 	/* Power Configuration */
-#if !defined(SMPS) && \
-		(defined(CONFIG_POWER_SUPPLY_DIRECT_SMPS) || \
-		defined(CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_LDO) || \
-		defined(CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_LDO) || \
-		defined(CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_EXT_AND_LDO) || \
-		defined(CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT_AND_LDO) || \
-		defined(CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_EXT) || \
-		defined(CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT))
-#error Unsupported configuration: Selected SoC do not support SMPS
-#endif
 #if defined(CONFIG_POWER_SUPPLY_DIRECT_SMPS)
 	LL_PWR_ConfigSupply(LL_PWR_DIRECT_SMPS_SUPPLY);
 #elif defined(CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_LDO)

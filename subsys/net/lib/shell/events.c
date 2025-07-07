@@ -20,13 +20,13 @@ LOG_MODULE_DECLARE(net_shell);
 #if defined(CONFIG_NET_MGMT_EVENT_MONITOR)
 #define THREAD_PRIORITY K_PRIO_COOP(2)
 #define MAX_EVENT_INFO_SIZE NET_EVENT_INFO_MAX_SIZE
-#define MONITOR_L2_MASK (_NET_EVENT_IF_BASE)
-#define MONITOR_L3_IPV4_MASK (_NET_EVENT_IPV4_BASE | NET_MGMT_COMMAND_MASK)
-#define MONITOR_L3_IPV6_MASK (_NET_EVENT_IPV6_BASE | NET_MGMT_COMMAND_MASK)
-#define MONITOR_L4_MASK (_NET_EVENT_L4_BASE | NET_MGMT_COMMAND_MASK)
+#define MONITOR_L2_MASK (NET_EVENT_IF_BASE)
+#define MONITOR_L3_IPV4_MASK (NET_EVENT_IPV4_BASE | NET_MGMT_COMMAND_MASK)
+#define MONITOR_L3_IPV6_MASK (NET_EVENT_IPV6_BASE | NET_MGMT_COMMAND_MASK)
+#define MONITOR_L4_MASK (NET_EVENT_L4_BASE | NET_MGMT_COMMAND_MASK)
 
 #if defined(CONFIG_NET_L2_ETHERNET_MGMT)
-#define MONITOR_L2_ETHERNET_MASK (_NET_ETHERNET_BASE)
+#define MONITOR_L2_ETHERNET_MASK (NET_ETHERNET_BASE)
 static struct net_mgmt_event_callback l2_ethernet_cb;
 #endif
 
@@ -44,7 +44,7 @@ static const char unknown_event_str[] = "<unknown event>";
 struct event_msg {
 	struct net_if *iface;
 	size_t len;
-	uint32_t event;
+	uint64_t event;
 	uint8_t data[MAX_EVENT_INFO_SIZE];
 };
 
@@ -52,7 +52,7 @@ K_MSGQ_DEFINE(event_mon_msgq, sizeof(struct event_msg),
 	      CONFIG_NET_MGMT_EVENT_QUEUE_SIZE, sizeof(intptr_t));
 
 static void event_handler(struct net_mgmt_event_callback *cb,
-			  uint32_t mgmt_event, struct net_if *iface)
+			  uint64_t mgmt_event, struct net_if *iface)
 {
 	struct event_msg msg;
 	int ret;
@@ -563,7 +563,7 @@ static void event_mon_handler(const struct shell *sh, void *p2, void *p3)
 		}
 
 		if (desc == unknown_event_str) {
-			PR_INFO("EVENT: %s [%d] %s%s%s%s%s (0x%08x)\n", layer_str,
+			PR_INFO("EVENT: %s [%d] %s%s%s%s%s (0x%" PRIx64 ")\n", layer_str,
 				net_if_get_by_iface(msg.iface), desc,
 				desc2 ? " " : "", desc2 ? desc2 : "",
 				info ? " " : "", info ? info : "", msg.event);

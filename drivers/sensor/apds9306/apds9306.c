@@ -302,19 +302,12 @@ static int apds9306_sensor_setup(const struct device *dev)
 	}
 
 	/* Reset the sensor. */
-	if (i2c_reg_write_byte_dt(&config->i2c, APDS9306_REGISTER_MAIN_CTRL,
-				  APDS9306_BIT_SW_RESET)) {
-		LOG_ERR("Can not reset the sensor!");
-		return -EFAULT;
-	}
+	i2c_reg_write_byte_dt(&config->i2c, APDS9306_REGISTER_MAIN_CTRL, APDS9306_BIT_SW_RESET);
 	k_msleep(10);
 
 	/* Perform a dummy read to avoid bus errors after the reset. See */
 	/* https://lore.kernel.org/lkml/ab1d9746-4d23-efcc-0ee1-d2b8c634becd@tweaklogic.com/ */
-	if (i2c_reg_read_byte_dt(&config->i2c, APDS9306_REGISTER_PART_ID, &temp)) {
-		LOG_ERR("Failed reading chip id!");
-		return -EFAULT;
-	}
+	i2c_reg_read_byte_dt(&config->i2c, APDS9306_REGISTER_PART_ID, &temp);
 
 	return 0;
 }

@@ -23,16 +23,11 @@ config SOC_SERIES_IMXRT11XX
 	select HAS_MCUX_FLEXSPI
 	select HAS_MCUX_FLEXCAN
 	select CPU_HAS_ARM_MPU
-	select INIT_ARM_PLL
-	select INIT_ENET_PLL if NET_L2_ETHERNET && ETH_DRIVER
-	select INIT_VIDEO_PLL
 	select HAS_MCUX_EDMA
 	select CPU_HAS_ICACHE if CPU_CORTEX_M7
 	select CPU_HAS_DCACHE if CPU_CORTEX_M7
 	select CPU_HAS_FPU
 	select CPU_HAS_FPU_DOUBLE_PRECISION if CPU_CORTEX_M7
-	select BYPASS_LDO_LPSR
-	select ADJUST_LDO
 	select HAS_MCUX_PWM
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
@@ -64,9 +59,14 @@ config MCUX_CORE_SUFFIX
 	default "_cm4" if SOC_MIMXRT1176_CM4 || SOC_MIMXRT1166_CM4
 
 config BYPASS_LDO_LPSR
+	default y
 	bool "Bypass LDO lpsr"
 
 config ADJUST_LDO
+	default y
 	bool "Adjust LDO setting"
+
+config INIT_VIDEO_PLL
+	default y
 
 endif # SOC_SERIES_IMXRT11XX

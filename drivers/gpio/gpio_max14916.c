@@ -85,7 +85,7 @@ static int max14916_reg_trans_spi_diag(const struct device *dev, uint8_t addr, u
 		LOG_ERR(" >>> FLT PIN");
 	}
 
-	uint8_t ret = max149x6_reg_transceive(dev, addr, tx, rx_diag_buff, rw);
+	int ret = max149x6_reg_transceive(dev, addr, tx, rx_diag_buff, rw);
 
 	if (max14916_pars_spi_diag(dev, rx_diag_buff, rw)) {
 		ret = -EIO;
