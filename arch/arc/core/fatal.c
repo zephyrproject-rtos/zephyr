@@ -17,7 +17,7 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/logging/log.h>
 #include <kernel_arch_data.h>
-#include <zephyr/arch/arc/v2/exception.h>
+#include <zephyr/arch/exception.h>
 #include <err_dump_handling.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
