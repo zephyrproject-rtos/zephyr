@@ -13,6 +13,7 @@ tests:
       - nucleo_l152re
       - nucleo_l073rz
       - sama7g54_ek
+      - sama7d65_curiosity
     integration_platforms:
       - qemu_x86
   drivers.eeprom.api.w_at2x_emul:
