@@ -306,13 +306,7 @@ zephyr_library_sources(
     ${LVGL_DIR}/src/others/xml/parsers/lv_xml_tabview_parser.c
     ${LVGL_DIR}/src/others/xml/parsers/lv_xml_textarea_parser.c
 
-    ${LVGL_DIR}/src/stdlib/builtin/lv_sprintf_builtin.c
-    ${LVGL_DIR}/src/stdlib/builtin/lv_string_builtin.c
     ${LVGL_DIR}/src/stdlib/builtin/lv_tlsf.c
-
-    ${LVGL_DIR}/src/stdlib/clib/lv_mem_core_clib.c
-    ${LVGL_DIR}/src/stdlib/clib/lv_sprintf_clib.c
-    ${LVGL_DIR}/src/stdlib/clib/lv_string_clib.c
 
     ${LVGL_DIR}/src/stdlib/lv_mem.c
 
