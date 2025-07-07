@@ -23,7 +23,7 @@
 #include <zephyr/arch/common/sys_bitops.h>
 #include "sys-io-common.h"
 
-#include <zephyr/arch/arc/v2/exception.h>
+#include <zephyr/arch/exception.h>
 #include <zephyr/arch/arc/v2/irq.h>
 #include <zephyr/arch/arc/v2/misc.h>
 #include <zephyr/arch/arc/v2/aux_regs.h>
