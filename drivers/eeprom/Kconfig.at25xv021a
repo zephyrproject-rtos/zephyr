@@ -1,0 +1,14 @@
+# Copyright (c) 2025 Cirrus Logic, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config EEPROM_AT25XV021A
+	bool "AT25 SPI EEPROMs variants with protect sector functionality"
+	default y
+	depends on DT_HAS_ATMEL_AT25XV021A_ENABLED
+	select SPI
+	help
+		Enable support for the AT25 variants with protect sector functions.
+
+		Vendors that have manufactured such variants include:
+		- Renesas Electronics
+		- Adesto Technologies

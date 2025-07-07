@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Cirrus Logic, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  AT25 SPI EEPROM variants with protect sector functionality
+
+  Example datasheet: https://www.renesas.com/en/document/dst/at25xv021a-datasheet
+
+  The AT25XV021A variants add sector protect and unprotect features, which
+  requires additional steps to program or erase data from the device when compared
+  to other devices in the AT25 family.
+
+compatible: "atmel,at25xv021a"
+
+include: ["atmel,at25.yaml"]
