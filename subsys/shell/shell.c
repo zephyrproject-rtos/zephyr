@@ -121,8 +121,7 @@ static inline enum shell_state state_get(const struct shell *sh)
 static inline const struct shell_static_entry *
 selected_cmd_get(const struct shell *sh)
 {
-	if (IS_ENABLED(CONFIG_SHELL_CMDS_SELECT)
-	    || (CONFIG_SHELL_CMD_ROOT[0] != 0)) {
+	if (IS_ENABLED(CONFIG_SHELL_CMDS_SELECT) || CONFIG_SHELL_CMD_ROOT[0] != 0) {
 		return sh->ctx->selected_cmd;
 	}
 
@@ -298,7 +297,7 @@ static bool tab_prepare(const struct shell *sh,
 		     isspace((int)sh->ctx->cmd_buff[sh->ctx->cmd_buff_pos - 1]) : 0;
 
 	/* root command completion */
-	if ((*argc == 0) || ((space == 0) && (*argc == 1))) {
+	if (*argc == 0 || (space == 0 && *argc == 1)) {
 		*complete_arg_idx = Z_SHELL_CMD_ROOT_LVL;
 		*cmd = selected_cmd_get(sh);
 		return true;
@@ -313,7 +312,7 @@ static bool tab_prepare(const struct shell *sh,
 	/* if search_argc == 0 (empty command line) shell_get_last_command will
 	 * return NULL tab is allowed, otherwise not.
 	 */
-	if ((*cmd == NULL) && (search_argc != 0)) {
+	if (*cmd == NULL && search_argc != 0) {
 		return false;
 	}
 
@@ -416,7 +415,7 @@ static size_t str_common(const char *s1, const char *s2, size_t n)
 {
 	size_t common = 0;
 
-	while ((n > 0) && (*s1 == *s2) && (*s1 != '\0')) {
+	while (n > 0 && *s1 == *s2 && *s1 != '\0') {
 		s1++;
 		s2++;
 		n--;
@@ -489,7 +488,7 @@ static uint16_t common_beginning_find(const struct shell *sh,
 
 		curr_common = str_common(sh->ctx->temp_buff, match2->syntax,
 					 UINT16_MAX);
-		if ((arg_len == 0U) || (curr_common >= arg_len)) {
+		if (arg_len == 0U || curr_common >= arg_len) {
 			--cnt;
 			common = (curr_common < common) ? curr_common : common;
 		}
@@ -524,7 +523,7 @@ static int exec_cmd(const struct shell *sh, size_t argc, const char **argv,
 	int ret_val = 0;
 
 	if (sh->ctx->active_cmd.handler == NULL) {
-		if ((help_entry != NULL) && IS_ENABLED(CONFIG_SHELL_HELP)) {
+		if (help_entry != NULL && IS_ENABLED(CONFIG_SHELL_HELP)) {
 			if (help_entry->help == NULL) {
 				return -ENOEXEC;
 			}
@@ -586,8 +585,7 @@ static void active_cmd_prepare(const struct shell_static_entry *entry,
 		 * then set remaining arguments to mandatory - 1 so after processing mandatory
 		 * args, handler is passed remaining raw string
 		 */
-		if ((entry->subcmd == NULL)
-		    && entry->args.optional == SHELL_OPT_ARG_RAW) {
+		if (entry->subcmd == NULL && entry->args.optional == SHELL_OPT_ARG_RAW) {
 			*args_left = entry->args.mandatory - 1;
 		}
 	}
@@ -676,16 +674,14 @@ static int execute(const struct shell *sh)
 	}
 
 	/* Below loop is analyzing subcommands of found root command. */
-	while ((argc != 1) && (cmd_lvl < CONFIG_SHELL_ARGC_MAX)
-		&& args_left > 0) {
+	while (argc != 1 && cmd_lvl < CONFIG_SHELL_ARGC_MAX && args_left > 0) {
 		quote = z_shell_make_argv(&argc, argvp, cmd_buf, 2);
 		cmd_buf = (char *)argvp[1];
 
 		if (argc == 0) {
 			return -ENOEXEC;
-		} else if ((argc == 1) && (quote != 0)) {
-			z_shell_fprintf(sh, SHELL_ERROR,
-					"not terminated: %c\n", quote);
+		} else if (argc == 1 && quote != 0) {
+			z_shell_fprintf(sh, SHELL_ERROR, "not terminated: %c\n", quote);
 			return -ENOEXEC;
 		}
 
@@ -767,7 +763,7 @@ static int execute(const struct shell *sh)
 
 	}
 
-	if ((cmd_lvl >= CONFIG_SHELL_ARGC_MAX) && (argc == 2)) {
+	if (cmd_lvl >= CONFIG_SHELL_ARGC_MAX && argc == 2) {
 		/* argc == 2 indicates that when command string was parsed
 		 * there was more characters remaining. It means that number of
 		 * arguments exceeds the limit.
@@ -946,13 +942,12 @@ static void ctrl_metakeys_handle(const struct shell *sh, char data)
 /* Functions returns true if new line character shall be processed */
 static bool process_nl(const struct shell *sh, uint8_t data)
 {
-	if ((data != '\r') && (data != '\n')) {
+	if (data != '\r' && data != '\n') {
 		z_flag_last_nl_set(sh, 0);
 		return false;
 	}
 
-	if ((z_flag_last_nl_get(sh) == 0U) ||
-	    (data == z_flag_last_nl_get(sh))) {
+	if (z_flag_last_nl_get(sh) == 0U || data == z_flag_last_nl_get(sh)) {
 		z_flag_last_nl_set(sh, data);
 		return true;
 	}
@@ -1486,8 +1481,7 @@ int shell_stop(const struct shell *sh)
 
 	enum shell_state state = state_get(sh);
 
-	if ((state == SHELL_STATE_INITIALIZED) ||
-	    (state == SHELL_STATE_UNINITIALIZED)) {
+	if (state == SHELL_STATE_INITIALIZED || state == SHELL_STATE_UNINITIALIZED) {
 		return -ENOTSUP;
 	}
 
@@ -1700,7 +1694,7 @@ int shell_prompt_change(const struct shell *sh, const char *prompt)
 		return -EBUSY;
 	}
 
-	if ((prompt_length + 1 > CONFIG_SHELL_PROMPT_BUFF_SIZE) || (prompt_length == 0)) {
+	if (prompt_length + 1 > CONFIG_SHELL_PROMPT_BUFF_SIZE || prompt_length == 0) {
 		k_mutex_unlock(&sh->ctx->wr_mtx);
 		return -EINVAL;
 	}
