@@ -365,6 +365,26 @@ static void config_baudrate(uint32_t rate)
 	}
 }
 
+static void report_progress(uint32_t start)
+{
+	static const uint32_t inc = CONFIG_UART_ASYNC_DUAL_TEST_TIMEOUT / 20;
+	static uint32_t next;
+	static uint32_t progress;
+
+	if ((k_uptime_get_32() - start < inc) && progress) {
+		/* Reset state. */
+		next = inc;
+		progress = 0;
+	}
+
+	if (k_uptime_get_32() > (start + next)) {
+		progress += 5;
+		TC_PRINT("\r%d%%", progress);
+		next += inc;
+	}
+}
+
+
 /* Test is running following scenario. Transmitter is sending packets which
  * has 1 byte header with length followed by the payload. Transmitter can send
  * packets in two modes: bulk where data is send in chunks without gaps between
@@ -380,6 +400,7 @@ static void var_packet_hwfc(uint32_t baudrate, bool tx_packets, bool cont)
 {
 	int err;
 	uint32_t load = 0;
+	uint32_t start = k_uptime_get_32();
 
 	config_baudrate(baudrate);
 
@@ -420,8 +441,10 @@ static void var_packet_hwfc(uint32_t baudrate, bool tx_packets, bool cont)
 	while (tx_data.cont || rx_data.cont) {
 		fill_tx(&tx_data);
 		k_msleep(1);
+		report_progress(start);
 		try_tx(tx_dev, false);
 	}
+	TC_PRINT("\n");
 
 	if (IS_ENABLED(CONFIG_CPU_LOAD)) {
 		load = cpu_load_get(true);
@@ -653,6 +676,7 @@ static void hci_like_rx(void)
 	uint8_t len;
 	bool cont;
 	bool explicit_pm = IS_ENABLED(CONFIG_PM_RUNTIME_IN_TEST);
+	uint32_t start = k_uptime_get_32();
 
 	while (1) {
 		if (explicit_pm) {
@@ -704,7 +728,9 @@ static void hci_like_rx(void)
 		PM_CHECK(rx_dev, tx_dev, false);
 
 		check_payload(rx_data.buf, len);
+		report_progress(start);
 	}
+	TC_PRINT("\n");
 }
 
 #define HCI_LIKE_TX_STACK_SIZE 2048
