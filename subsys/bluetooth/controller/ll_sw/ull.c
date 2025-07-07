@@ -2578,24 +2578,32 @@ static void rx_demux(void *param)
 	do {
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 		struct node_rx_hdr *rx;
-
-		link = memq_peek(memq_ull_rx.head, memq_ull_rx.tail,
-				 (void **)&rx);
-		if (link) {
 #if defined(CONFIG_BT_CONN)
-			struct node_tx *node_tx;
-			memq_link_t *link_tx;
-			uint16_t handle; /* Handle to Ack TX */
+		struct node_tx *tx;
+		memq_link_t *link_tx;
+		uint8_t ack_last;
+		uint16_t handle; /* Handle to Ack TX */
+
+		/* Save the ack_last, Tx Ack FIFO's last index to avoid the value being changed if
+		 * there were no Rx PDUs and we were pre-empted before calling
+		 * `rx_demux_conn_tx_ack()` in the `else` clause.
+		 */
+		link_tx = ull_conn_ack_peek(&ack_last, &handle, &tx);
+
+		/* Ensure that the value is fetched before call to memq_peek, i.e. compiler shall
+		 * not reorder memory write before above read.
+		 */
+		cpu_dmb();
 #endif /* CONFIG_BT_CONN */
 
+		link = memq_peek(memq_ull_rx.head, memq_ull_rx.tail, (void **)&rx);
+		if (link) {
 			LL_ASSERT(rx);
 
 #if defined(CONFIG_BT_CONN)
-			link_tx = ull_conn_ack_by_last_peek(rx->ack_last,
-							    &handle, &node_tx);
+			link_tx = ull_conn_ack_by_last_peek(rx->ack_last, &handle, &tx);
 			if (link_tx) {
-				rx_demux_conn_tx_ack(rx->ack_last, handle,
-						     link_tx, node_tx);
+				rx_demux_conn_tx_ack(rx->ack_last, handle, link_tx, tx);
 			} else
 #endif /* CONFIG_BT_CONN */
 			{
@@ -2607,21 +2615,14 @@ static void rx_demux(void *param)
 #endif /* !CONFIG_BT_CTLR_LOW_LAT_ULL */
 
 #if defined(CONFIG_BT_CONN)
-		} else {
-			struct node_tx *node_tx;
-			uint8_t ack_last;
-			uint16_t handle;
-
-			link = ull_conn_ack_peek(&ack_last, &handle, &node_tx);
-			if (link) {
-				rx_demux_conn_tx_ack(ack_last, handle,
-						      link, node_tx);
+		} else if (link_tx) {
+			rx_demux_conn_tx_ack(ack_last, handle, link_tx, tx);
 
 #if defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
-				rx_demux_yield();
-#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
-
-			}
+			rx_demux_yield();
+#else /* !CONFIG_BT_CTLR_LOW_LAT_ULL */
+			link = link_tx;
+#endif /* !CONFIG_BT_CTLR_LOW_LAT_ULL */
 #endif /* CONFIG_BT_CONN */
 		}
 
