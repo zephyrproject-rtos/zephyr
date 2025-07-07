@@ -1,11 +1,17 @@
 sample:
   name: USB HID keyboard sample
 common:
-  harness: button
   filter: dt_alias_exists("sw0") and dt_alias_exists("led0")
   depends_on:
     - usbd
     - gpio
+  tags: usb
+  timeout: 15
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "HID keyboard sample is initialized"
   integration_platforms:
     - nrf52840dk/nrf52840
     - nrf54h20dk/nrf54h20/cpuapp
@@ -17,17 +23,13 @@ common:
     - samd21_xpro
     - same54_xpro
 tests:
-  sample.usbd.hid-keyboard:
-    tags: usb
+  sample.usbd.hid-keyboard: {}
   sample.usbd.hid-keyboard.out-report:
-    tags: usb
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE="out_report.overlay"
   sample.usbd.hid-keyboard.large-report:
-    tags: usb
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE="large_in_report.overlay"
   sample.usbd.hid-keyboard.large-out-report:
-    tags: usb
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE="large_out_report.overlay"
