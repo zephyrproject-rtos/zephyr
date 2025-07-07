@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2025, Microchip Technology Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 .section .init,code
 .global __custom_data_init
 .global __custom_data_init_extended

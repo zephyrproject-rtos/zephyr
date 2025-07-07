@@ -1,3 +1,6 @@
+# Copyright (c) 2025, Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
 if SOC_FAMILY_MICROCHIP_DSPIC33
 	rsource "*/Kconfig.defconfig.series"
 endif # SOC_FAMILY_MICROCHIP_DSPIC33
