@@ -69,7 +69,7 @@ config SOC_NRF54H20_CPURAD_COMMON
 
 config SOC_NRF54H20_CPURAD_ENABLE
 	bool "Boot the nRF54H20 Radio core"
-	default y if NRF_802154_SER_HOST
+	default y if NRF_802154_SER_HOST || BT_HCI_HOST
 	depends on SOC_NRF54H20_CPUAPP
 	select NRF_IRONSIDE_CPUCONF_SERVICE
 	help
