@@ -236,6 +236,39 @@ New APIs and options
       :c:func:`bt_br_unpair`.
     * Remove query of the classic bonding information from :c:func:`bt_foreach_bond`, and add
       :c:func:`bt_br_foreach_bond`.
+    * Add a new parameter ``limited`` to :c:func:`bt_br_set_discoverable` to support limited
+      discoverable mode for the classic.
+    * Enable retransmission and flow control for the classic L2CAP, including
+      :kconfig:option:`CONFIG_BT_L2CAP_RET`, :kconfig:option:`CONFIG_BT_L2CAP_FC`,
+      :kconfig:option:`CONFIG_BT_L2CAP_ENH_RET`, and :kconfig:option:`CONFIG_BT_L2CAP_STREAM`.
+    * :c:func:`bt_avrcp_get_cap`
+    * Improve the classic hands-free uint, including
+      :kconfig:option:`CONFIG_BT_HFP_HF_CODEC_NEG`, :kconfig:option:`CONFIG_BT_HFP_HF_ECNR`,
+      :kconfig:option:`CONFIG_BT_HFP_HF_3WAY_CALL`, :kconfig:option:`CONFIG_BT_HFP_HF_ECS`,
+      :kconfig:option:`CONFIG_BT_HFP_HF_ECC`, :kconfig:option:`CONFIG_BT_HFP_HF_VOICE_RECG_TEXT`,
+      :kconfig:option:`CONFIG_BT_HFP_HF_ENH_VOICE_RECG`,
+      :kconfig:option:`CONFIG_BT_HFP_HF_VOICE_RECG`,
+      :kconfig:option:`CONFIG_BT_HFP_HF_HF_INDICATORS`,
+      :kconfig:option:`CONFIG_BT_HFP_HF_HF_INDICATOR_ENH_SAFETY`, and
+      :kconfig:option:`CONFIG_BT_HFP_HF_HF_INDICATOR_BATTERY`.
+    * Improve the classic hands-free audio gateway, including
+      :kconfig:option:`CONFIG_BT_HFP_AG_CODEC_NEG`, :kconfig:option:`CONFIG_BT_HFP_AG_ECNR`,
+      :kconfig:option:`CONFIG_BT_HFP_AG_3WAY_CALL`, :kconfig:option:`CONFIG_BT_HFP_AG_ECS`,
+      :kconfig:option:`CONFIG_BT_HFP_AG_ECC`, :kconfig:option:`CONFIG_BT_HFP_AG_VOICE_RECG_TEXT`,
+      :kconfig:option:`CONFIG_BT_HFP_AG_ENH_VOICE_RECG`,
+      :kconfig:option:`CONFIG_BT_HFP_AG_VOICE_TAG`,
+      :kconfig:option:`CONFIG_BT_HFP_AG_HF_INDICATORS`,
+      :kconfig:option:`CONFIG_BT_HFP_AG_HF_INDICATOR_ENH_SAFETY`,
+      :kconfig:option:`CONFIG_BT_HFP_AG_HF_INDICATOR_BATTERY`, and
+      :kconfig:option:`CONFIG_BT_HFP_AG_REJECT_CALL`.
+    * Add a callback function ``get_ongoing_call()`` to :c:struct:`bt_hfp_ag_cb`.
+    * :c:func:`bt_hfp_ag_ongoing_calls`
+    * Support the classic L2CAP signaling echo request and response feature, including
+      :c:struct:`bt_l2cap_br_echo_cb`, :c:func:`bt_l2cap_br_echo_cb_register`,
+      :c:func:`bt_l2cap_br_echo_cb_unregister`, :c:func:`bt_l2cap_br_echo_req`, and
+      :c:func:`bt_l2cap_br_echo_rsp`.
+    * :c:func:`bt_a2dp_get_conn`
+    * :c:func:`bt_rfcomm_send_rpn_cmd`
 
 * Build system
 
