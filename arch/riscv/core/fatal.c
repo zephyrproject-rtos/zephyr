@@ -91,52 +91,52 @@ FUNC_NORETURN void z_riscv_fatal_error_csf(unsigned int reason, const struct arc
 	__asm__ volatile("csrr %0, mcause" : "=r" (mcause));
 
 	mcause &= CONFIG_RISCV_MCAUSE_EXCEPTION_MASK;
-	LOG_ERR("");
-	LOG_ERR(" mcause: %ld, %s", mcause, z_riscv_mcause_str(mcause));
+	EXCEPTION_DUMP("");
+	EXCEPTION_DUMP(" mcause: %ld, %s", mcause, z_riscv_mcause_str(mcause));
 
 #ifndef CONFIG_SOC_OPENISA_RV32M1
 	unsigned long mtval;
 
 	__asm__ volatile("csrr %0, mtval" : "=r" (mtval));
-	LOG_ERR("  mtval: %lx", mtval);
+	EXCEPTION_DUMP("  mtval: %lx", mtval);
 #endif /* CONFIG_SOC_OPENISA_RV32M1 */
 
 #ifdef CONFIG_EXCEPTION_DEBUG
 	if (esf != NULL) {
-		LOG_ERR("     a0: " PR_REG "    t0: " PR_REG, esf->a0, esf->t0);
-		LOG_ERR("     a1: " PR_REG "    t1: " PR_REG, esf->a1, esf->t1);
-		LOG_ERR("     a2: " PR_REG "    t2: " PR_REG, esf->a2, esf->t2);
+		EXCEPTION_DUMP("     a0: " PR_REG "    t0: " PR_REG, esf->a0, esf->t0);
+		EXCEPTION_DUMP("     a1: " PR_REG "    t1: " PR_REG, esf->a1, esf->t1);
+		EXCEPTION_DUMP("     a2: " PR_REG "    t2: " PR_REG, esf->a2, esf->t2);
 #if defined(CONFIG_RISCV_ISA_RV32E)
-		LOG_ERR("     a3: " PR_REG, esf->a3);
-		LOG_ERR("     a4: " PR_REG, esf->a4);
-		LOG_ERR("     a5: " PR_REG, esf->a5);
+		EXCEPTION_DUMP("     a3: " PR_REG, esf->a3);
+		EXCEPTION_DUMP("     a4: " PR_REG, esf->a4);
+		EXCEPTION_DUMP("     a5: " PR_REG, esf->a5);
 #else
-		LOG_ERR("     a3: " PR_REG "    t3: " PR_REG, esf->a3, esf->t3);
-		LOG_ERR("     a4: " PR_REG "    t4: " PR_REG, esf->a4, esf->t4);
-		LOG_ERR("     a5: " PR_REG "    t5: " PR_REG, esf->a5, esf->t5);
-		LOG_ERR("     a6: " PR_REG "    t6: " PR_REG, esf->a6, esf->t6);
-		LOG_ERR("     a7: " PR_REG, esf->a7);
+		EXCEPTION_DUMP("     a3: " PR_REG "    t3: " PR_REG, esf->a3, esf->t3);
+		EXCEPTION_DUMP("     a4: " PR_REG "    t4: " PR_REG, esf->a4, esf->t4);
+		EXCEPTION_DUMP("     a5: " PR_REG "    t5: " PR_REG, esf->a5, esf->t5);
+		EXCEPTION_DUMP("     a6: " PR_REG "    t6: " PR_REG, esf->a6, esf->t6);
+		EXCEPTION_DUMP("     a7: " PR_REG, esf->a7);
 #endif /* CONFIG_RISCV_ISA_RV32E */
-		LOG_ERR("     sp: " PR_REG, z_riscv_get_sp_before_exc(esf));
-		LOG_ERR("     ra: " PR_REG, esf->ra);
-		LOG_ERR("   mepc: " PR_REG, esf->mepc);
-		LOG_ERR("mstatus: " PR_REG, esf->mstatus);
-		LOG_ERR("");
+		EXCEPTION_DUMP("     sp: " PR_REG, z_riscv_get_sp_before_exc(esf));
+		EXCEPTION_DUMP("     ra: " PR_REG, esf->ra);
+		EXCEPTION_DUMP("   mepc: " PR_REG, esf->mepc);
+		EXCEPTION_DUMP("mstatus: " PR_REG, esf->mstatus);
+		EXCEPTION_DUMP("");
 	}
 
 	if (csf != NULL) {
 #if defined(CONFIG_RISCV_ISA_RV32E)
-		LOG_ERR("     s0: " PR_REG, csf->s0);
-		LOG_ERR("     s1: " PR_REG, csf->s1);
+		EXCEPTION_DUMP("     s0: " PR_REG, csf->s0);
+		EXCEPTION_DUMP("     s1: " PR_REG, csf->s1);
 #else
-		LOG_ERR("     s0: " PR_REG "    s6: " PR_REG, csf->s0, csf->s6);
-		LOG_ERR("     s1: " PR_REG "    s7: " PR_REG, csf->s1, csf->s7);
-		LOG_ERR("     s2: " PR_REG "    s8: " PR_REG, csf->s2, csf->s8);
-		LOG_ERR("     s3: " PR_REG "    s9: " PR_REG, csf->s3, csf->s9);
-		LOG_ERR("     s4: " PR_REG "   s10: " PR_REG, csf->s4, csf->s10);
-		LOG_ERR("     s5: " PR_REG "   s11: " PR_REG, csf->s5, csf->s11);
+		EXCEPTION_DUMP("     s0: " PR_REG "    s6: " PR_REG, csf->s0, csf->s6);
+		EXCEPTION_DUMP("     s1: " PR_REG "    s7: " PR_REG, csf->s1, csf->s7);
+		EXCEPTION_DUMP("     s2: " PR_REG "    s8: " PR_REG, csf->s2, csf->s8);
+		EXCEPTION_DUMP("     s3: " PR_REG "    s9: " PR_REG, csf->s3, csf->s9);
+		EXCEPTION_DUMP("     s4: " PR_REG "   s10: " PR_REG, csf->s4, csf->s10);
+		EXCEPTION_DUMP("     s5: " PR_REG "   s11: " PR_REG, csf->s5, csf->s11);
 #endif /* CONFIG_RISCV_ISA_RV32E */
-		LOG_ERR("");
+		EXCEPTION_DUMP("");
 	}
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
