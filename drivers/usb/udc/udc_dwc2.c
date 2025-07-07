@@ -1112,7 +1112,11 @@ static int dwc2_set_dedicated_fifo(const struct device *dev,
 	/* Keep everything but FIFO number */
 	tmp = *diepctl & ~USB_DWC2_DEPCTL_TXFNUM_MASK;
 
-	reqdep = DIV_ROUND_UP(udc_mps_ep_size(cfg), 4U);
+	/* Use the maximum possible MPS value to ensure that the alternate
+	 * setting does not result in too small memory window being allocated
+	 * and locked because a higher FIFO is still in use.
+	 */
+	reqdep = DIV_ROUND_UP(USB_MPS_EP_SIZE(cfg->m_mps), 4U);
 	if (dwc2_in_buffer_dma_mode(dev)) {
 		/* In DMA mode, TxFIFO capable of holding 2 packets is enough */
 		reqdep *= MIN(2, (1 + addnl));
@@ -1276,7 +1280,7 @@ static int udc_dwc2_ep_activate(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (USB_EP_DIR_IS_IN(cfg->addr) && udc_mps_ep_size(cfg) != 0U) {
+	if (USB_EP_DIR_IS_IN(cfg->addr) && USB_MPS_EP_SIZE(cfg->m_mps) != 0U) {
 		int ret = dwc2_set_dedicated_fifo(dev, cfg, &dxepctl);
 
 		if (ret) {
@@ -1478,7 +1482,7 @@ static int udc_dwc2_ep_deactivate(const struct device *dev,
 	LOG_DBG("Disable ep 0x%02x DxEPCTL%u %x", cfg->addr, ep_idx, dxepctl);
 	dxepctl &= ~USB_DWC2_DEPCTL_USBACTEP;
 
-	if (USB_EP_DIR_IS_IN(cfg->addr) && udc_mps_ep_size(cfg) != 0U &&
+	if (USB_EP_DIR_IS_IN(cfg->addr) && USB_MPS_EP_SIZE(cfg->m_mps) != 0U &&
 	    ep_idx != 0U) {
 		dwc2_unset_dedicated_fifo(dev, cfg, &dxepctl);
 	}
