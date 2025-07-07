@@ -45,11 +45,11 @@
 		reg = <0x20000000 SRAM0_SIZE>;
 
 		/* SRAM aliased address path */
-		sram_sahb: sram_bus_alias@20000000 {
+		sram_sahb: sram_sahb@20000000 {
 			reg = <0x20000000 SRAM0_SIZE>;  /* SAHB address */
 		};
 
-		sram_cbus: sram_bus_alias@4000000 {
+		sram_cbus: sram_cbus@4000000 {
 			reg = <0x04000000 SRAM0_SIZE>;  /* CBUS address */
 		};
 	};
@@ -59,9 +59,20 @@
 	 * (e.g. 0x20000000 + 0x40000 - 12K (0x3000) = 0x2003D000)
 	 */
 	sram_bootstrap: memory@2003D000 {
+		#address-cells = <1>;
+		#size-cells = <1>;
 		compatible = "zephyr,memory-region", "mmio-sram";
 		zephyr,memory-region = "BOOTSTRAP_RAM";
 		reg = <0x2003D000 BOOTSTRAP_SIZE>;
+
+		/* SRAM aliased address path */
+		sram_bootstrap_sahb: sram_bootstrap_sahb@2003D000 {
+			reg = <0x2003D000 BOOTSTRAP_SIZE>;  /* SAHB address */
+		};
+
+		sram_bootstrap_cbus: sram_bootstrap_cbus@403D000 {
+			reg = <0x0403D000 BOOTSTRAP_SIZE>;  /* CBUS address */
+		};
 	};
 
 	qspi_flash: qspi_flash@40890000 {
