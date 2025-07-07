@@ -16,5 +16,13 @@ config PM_RUNTIME_IN_TEST
 	select PM_DEVICE
 	select PM_DEVICE_RUNTIME
 
+config TEST_CHOPPED_TX
+	bool "Test chopped TX data"
+	default y
+	help
+	  When enabled then test cases that transmits TX packets in random chunks are
+	  performed. Some driver implementation do not support case when new TX data
+	  collides with handling of the RX timeout.
+
 # Include Zephyr's Kconfig
 source "Kconfig"
