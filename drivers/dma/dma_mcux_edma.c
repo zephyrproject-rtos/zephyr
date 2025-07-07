@@ -264,17 +264,16 @@ static void dma_mcux_edma_irq_handler(const struct device *dev, uint32_t channel
 static void dma_mcux_edma_error_irq_handler(const struct device *dev)
 {
 	int i = 0;
-	uint32_t flag = 0;
 	uint32_t hw_channel;
 
 	for (i = 0; i < DEV_CFG(dev)->dma_channels; i++) {
 		if (DEV_CHANNEL_DATA(dev, i)->busy) {
 			hw_channel = dma_mcux_edma_add_channel_gap(dev, i);
-			flag = EDMA_GetChannelStatusFlags(DEV_BASE(dev), hw_channel);
-			EDMA_ClearChannelStatusFlags(DEV_BASE(dev), hw_channel, 0xFFFFFFFF);
+			LOG_ERR("channel %d error status is 0x%x", hw_channel,
+					EDMA_GetErrorStatusFlags(DEV_BASE(dev)));
 			EDMA_AbortTransfer(DEV_EDMA_HANDLE(dev, i));
+			EDMA_ClearChannelStatusFlags(DEV_BASE(dev), hw_channel, 0xFFFFFFFF);
 			DEV_CHANNEL_DATA(dev, i)->busy = false;
-			LOG_INF("channel %d error status is 0x%x", hw_channel, flag);
 		}
 	}
 
