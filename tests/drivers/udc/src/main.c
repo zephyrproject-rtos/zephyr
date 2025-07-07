@@ -133,11 +133,14 @@ static void test_udc_ep_enable(const struct device *dev,
 
 	err1 = udc_ep_enable(dev, ed->bEndpointAddress, ed->bmAttributes,
 			     sys_le16_to_cpu(ed->wMaxPacketSize),
+			     sys_le16_to_cpu(ed->wMaxPacketSize),
 			     ed->bInterval);
 	err2 = udc_ep_enable(dev, ed->bEndpointAddress, ed->bmAttributes,
 			     sys_le16_to_cpu(ed->wMaxPacketSize),
+			     sys_le16_to_cpu(ed->wMaxPacketSize),
 			     ed->bInterval);
 	err3 = udc_ep_enable(dev, ctrl_ep, ed->bmAttributes,
+			     sys_le16_to_cpu(ed->wMaxPacketSize),
 			     sys_le16_to_cpu(ed->wMaxPacketSize),
 			     ed->bInterval);
 
@@ -320,6 +323,7 @@ static void test_udc_ep_api(const struct device *dev,
 
 	for (int i = 0; i < num_of_iterations; i++) {
 		err = udc_ep_enable(dev, ed->bEndpointAddress, ed->bmAttributes,
+				    sys_le16_to_cpu(ed->wMaxPacketSize),
 				    sys_le16_to_cpu(ed->wMaxPacketSize),
 				    ed->bInterval);
 		zassert_ok(err, "Failed to enable endpoint");
