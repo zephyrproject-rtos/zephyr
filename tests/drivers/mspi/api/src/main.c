@@ -23,6 +23,8 @@ typedef enum mspi_timing_param mspi_timing_param;
 typedef struct mspi_ambiq_timing_cfg mspi_timing_cfg;
 typedef enum mspi_ambiq_timing_param mspi_timing_param;
 #define MSPI_PORT ((DT_REG_ADDR(MSPI_BUS_NODE) - MSPI0_BASE) / (MSPI1_BASE - MSPI0_BASE))
+#else
+#define MSPI_PORT 0
 #endif
 
 static const struct device *mspi_devices[] = {
