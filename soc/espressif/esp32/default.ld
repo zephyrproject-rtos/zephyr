@@ -362,10 +362,6 @@ SECTIONS
     *libdrivers__flash.a:flash_esp32.*(.literal .text .literal.* .text.*)
     *libdrivers__timer.a:xtensa_sys_timer.*(.literal .text .literal.* .text.*)
     *libdrivers__console.a:uart_console.*(.literal.console_out .text.console_out)
-    *liblib__libc__picolib.a:abort.*(.literal .text .literal.* .text.*)
-    *liblib__libc__minimal.a:string.*(.literal .text .literal.* .text.*)
-    *liblib__libc__newlib.a:string.*(.literal .text .literal.* .text.*)
-    *libc.a:*(.literal .text .literal.* .text.*)
     *libphy.a:( .phyiram .phyiram.*)
     *libgcov.a:(.literal .text .literal.* .text.*)
     *librtc.a:(.literal .text .literal.* .text.*)
@@ -408,8 +404,6 @@ SECTIONS
     *libzephyr.a:spi_flash_chip_winbond.*(.literal .literal.* .text .text.*)
     *libzephyr.a:memspi_host_driver.*(.literal .literal.* .text .text.*)
     *libzephyr.a:flash_brownout_hook.*(.literal .literal.* .text .text.*)
-    *libzephyr.a:spi_flash_wrap.*(.literal .literal.* .text .text.*)
-    *libzephyr.a:spi_flash_hpm_enable.*(.literal .literal.* .text .text.*)
     *libzephyr.a:flash_ops.*(.literal .literal.* .text .text.*)
     *libzephyr.a:flash_qio_mode.*(.literal .literal.* .text .text.*)
 
@@ -433,9 +427,6 @@ SECTIONS
     *libzephyr.a:rtc_clk_init.*(.literal .literal.* .text .text.*)
     *libzephyr.a:rtc_sleep.*(.literal .literal.* .text .text.*)
     *libzephyr.a:rtc_time.*(.literal .literal.* .text .text.*)
-    *libzephyr.a:systimer.*(.literal .literal.* .text .text.*)
-    *libzephyr.a:mspi_timing_config.*(.literal .literal.* .text .text.*)
-    *libzephyr.a:mspi_timing_tuning.*(.literal .literal.* .text .text.*)
     *libzephyr.a:periph_ctrl.*(.literal .text .literal.* .text.*)
     *libzephyr.a:regi2c_ctrl.*(.literal .text .literal.* .text.*)
     *(.literal.sar_periph_ctrl_power_enable .text.sar_periph_ctrl_power_enable)
@@ -444,14 +435,12 @@ SECTIONS
     *libzephyr.a:spi_hal_iram.*(.literal .literal.* .text .text.*)
     *libzephyr.a:spi_slave_hal_iram.*(.literal .literal.* .text .text.*)
     *libzephyr.a:flash_brownout_hook.*(.literal .literal.* .text .text.*)
-    *libzephyr.a:heap_caps_zephyr.*(.literal .literal.* .text .text.*)
 
     /* [mapping:soc_pm] */
     *(.literal.GPIO_HOLD_MASK .text.GPIO_HOLD_MASK)
 
     /* [mapping:esp_rom] */
     *libzephyr.a:esp_rom_spiflash.*(.literal .literal.* .text .text.*)
-    *libzephyr.a:esp_rom_systimer.*(.literal .literal.* .text .text.*)
     *libzephyr.a:esp_rom_wdt.*(.literal .literal.* .text .text.*)
     *libzephyr.a:esp_rom_efuse.*(.literal .literal.* .text .text.*)
 
@@ -625,8 +614,6 @@ SECTIONS
     *libzephyr.a:ledc_hal_iram.*(.rodata .rodata.*)
     *libzephyr.a:i2c_hal_iram.*(.rodata .rodata.*)
     *libzephyr.a:wdt_hal_iram.*(.rodata .rodata.*)
-    *libzephyr.a:systimer_hal.*(.rodata .rodata.*)
-    *libzephyr.a:spi_flash_hal_gpspi.*(.rodata .rodata.*)
 
     /* [mapping:soc] */
     *libzephyr.a:lldesc.*(.rodata .rodata.*)
@@ -650,8 +637,6 @@ SECTIONS
     *libzephyr.a:spi_flash_chip_winbond.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
     *libzephyr.a:memspi_host_driver.*(.rodata .rodata.*)
     *libzephyr.a:flash_brownout_hook.*(.rodata .rodata.*)
-    *libzephyr.a:spi_flash_wrap.*(.rodata .rodata.*)
-    *libzephyr.a:spi_flash_hpm_enable.*(.rodata .rodata.*)
     *libzephyr.a:flash_ops.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
     *libzephyr.a:flash_qio_mode.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
 
@@ -671,9 +656,6 @@ SECTIONS
     *libzephyr.a:esp_memory_utils.*(.rodata .rodata.*)
     *libzephyr.a:rtc_clk.*(.rodata .rodata.*)
     *libzephyr.a:rtc_clk_init.*(.rodata .rodata.*)
-    *libzephyr.a:systimer.*(.rodata .rodata.*)
-    *libzephyr.a:mspi_timing_config.*(.rodata .rodata.*)
-    *libzephyr.a:mspi_timing_tuning.*(.rodata .rodata.*)
     *(.rodata.sar_periph_ctrl_power_enable)
 
     *libzephyr.a:cache_esp32.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
@@ -690,13 +672,9 @@ SECTIONS
     *libzephyr.a:spi_slave_hal_iram.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
     *libzephyr.a:flash_brownout_hook.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
     *libzephyr.a:memspi_host_driver.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
-    *libzephyr.a:spi_flash_wrap.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
-    /* TODO: fix other socs */
-    *libzephyr.a:heap_caps_zephyr.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
 
     /* [mapping:esp_rom] */
     *libzephyr.a:esp_rom_spiflash.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
-    *libzephyr.a:esp_rom_systimer.*(.rodata .rodata.*)
     *libzephyr.a:esp_rom_wdt.*(.rodata .rodata.*)
     *libzephyr.a:esp_rom_efuse.*(.rodata .rodata.*)
 
