@@ -73,3 +73,18 @@ tests:
       - nrf52_bsim
     extra_configs:
       - CONFIG_PM_RUNTIME_IN_TEST=y
+  drivers.uart.async_dual.no_tx_chopped:
+    harness: ztest
+    harness_config:
+      fixture: uart_loopback
+    depends_on: gpio
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54h20dk/nrf54h20/cpurad
+      - nrf54h20dk/nrf54h20/cpuppr
+      - nrf9160dk/nrf9160
+      - nrf52_bsim
+    extra_configs:
+      - CONFIG_TEST_CHOPPED_TX=n
+      - CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER=n
