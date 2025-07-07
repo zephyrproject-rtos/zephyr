@@ -9,9 +9,9 @@ LOG_MODULE_REGISTER(dsa_netc, CONFIG_ETHERNET_LOG_LEVEL);
 
 #include <zephyr/net/ethernet.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/ethernet/nxp_imx_netc.h>
 
 #include "../eth.h"
-#include "nxp_imx_netc.h"
 #include "fsl_netc_switch.h"
 
 #define DT_DRV_COMPAT nxp_netc_switch

@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_DRIVERS_ETHERNET_ETH_NXP_IMX_NETC_PRIV_H_
 #define ZEPHYR_DRIVERS_ETHERNET_ETH_NXP_IMX_NETC_PRIV_H_
 
-#include "nxp_imx_netc.h"
+#include <zephyr/drivers/ethernet/nxp_imx_netc.h>
 #include "fsl_netc_endpoint.h"
 #ifndef CONFIG_ETH_NXP_IMX_NETC_MSI_GIC
 #include "fsl_msgintr.h"
