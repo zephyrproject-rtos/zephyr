@@ -2387,7 +2387,7 @@ static inline uint32_t ticker_job_op_start(struct ticker_instance *instance,
 	ticks_to_expire_prep(ticker, ticks_current, start->ticks_at_start);
 
 	ticker->lazy_current = 0U;
-	ticker->force = 1U;
+	ticker->force = 0U;
 
 	return TICKER_STATUS_SUCCESS;
 }
