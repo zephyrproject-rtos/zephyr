@@ -45,6 +45,7 @@ struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align, k_tim
 	for (i = 0; i < ARRAY_SIZE(video_buf); i++) {
 		if (video_buf[i].buffer == NULL) {
 			vbuf = &video_buf[i];
+			vbuf->index = i;
 			break;
 		}
 	}
@@ -87,6 +88,24 @@ void video_buffer_release(struct video_buffer *vbuf)
 		VIDEO_COMMON_FREE(vbuf->buffer);
 		vbuf->buffer = NULL;
 	}
+}
+
+int video_enqueue(const struct device *dev, struct video_buffer *buf)
+{
+	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
+
+	__ASSERT_NO_MSG(dev != NULL);
+	__ASSERT_NO_MSG(buf != NULL);
+	__ASSERT_NO_MSG(buf->buffer != NULL);
+
+	api = (const struct video_driver_api *)dev->api;
+	if (api->enqueue == NULL) {
+		return -ENOSYS;
+	}
+
+	video_buf[buf->index].type = buf->type;
+
+	return api->enqueue(dev, &video_buf[buf->index]);
 }
 
 int video_format_caps_index(const struct video_format_cap *fmts, const struct video_format *fmt,

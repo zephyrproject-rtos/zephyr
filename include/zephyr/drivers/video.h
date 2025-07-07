@@ -550,21 +550,7 @@ static inline int video_enum_frmival(const struct device *dev, struct video_frmi
  * @retval -EINVAL If parameters are invalid.
  * @retval -EIO General input / output error.
  */
-static inline int video_enqueue(const struct device *dev, struct video_buffer *buf)
-{
-	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
-
-	__ASSERT_NO_MSG(dev != NULL);
-	__ASSERT_NO_MSG(buf != NULL);
-	__ASSERT_NO_MSG(buf->buffer != NULL);
-
-	api = (const struct video_driver_api *)dev->api;
-	if (api->enqueue == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->enqueue(dev, buf);
-}
+int video_enqueue(const struct device *dev, struct video_buffer *buf);
 
 /**
  * @brief Dequeue a video buffer.
