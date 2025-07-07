@@ -98,7 +98,9 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 	}
 
 	/* clean up and prepare SPI hal */
-	memset((uint32_t *)hal->hw->data_buf, 0, sizeof(hal->hw->data_buf));
+	for (size_t i = 0; i < ARRAY_SIZE(hal->hw->data_buf); ++i) {
+		hal->hw->data_buf[i] = 0;
+	}
 	hal_trans->send_buffer = tx_temp ? tx_temp : (uint8_t *)ctx->tx_buf;
 	hal_trans->rcv_buffer = rx_temp ? rx_temp : ctx->rx_buf;
 	hal_trans->tx_bitlen = bit_len;
