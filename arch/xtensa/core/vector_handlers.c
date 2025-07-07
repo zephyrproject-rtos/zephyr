@@ -159,7 +159,7 @@ void xtensa_dump_stack(const void *stack)
 	/* And high registers are always comes in 4 in a block. */
 	reg_blks_remaining = (int)num_high_regs / 4;
 
-	LOG_ERR(" **  A0 %p  SP %p  A2 %p  A3 %p",
+	EXCEPTION_DUMP(" **  A0 %p  SP %p  A2 %p  A3 %p",
 		(void *)bsa->a0,
 		(void *)((char *)bsa + sizeof(*bsa)),
 		(void *)bsa->a2, (void *)bsa->a3);
@@ -167,7 +167,7 @@ void xtensa_dump_stack(const void *stack)
 	if (reg_blks_remaining > 0) {
 		reg_blks_remaining--;
 
-		LOG_ERR(" **  A4 %p  A5 %p  A6 %p  A7 %p",
+		EXCEPTION_DUMP(" **  A4 %p  A5 %p  A6 %p  A7 %p",
 			(void *)frame->blks[reg_blks_remaining].r0,
 			(void *)frame->blks[reg_blks_remaining].r1,
 			(void *)frame->blks[reg_blks_remaining].r2,
@@ -177,7 +177,7 @@ void xtensa_dump_stack(const void *stack)
 	if (reg_blks_remaining > 0) {
 		reg_blks_remaining--;
 
-		LOG_ERR(" **  A8 %p  A9 %p A10 %p A11 %p",
+		EXCEPTION_DUMP(" **  A8 %p  A9 %p A10 %p A11 %p",
 			(void *)frame->blks[reg_blks_remaining].r0,
 			(void *)frame->blks[reg_blks_remaining].r1,
 			(void *)frame->blks[reg_blks_remaining].r2,
@@ -187,7 +187,7 @@ void xtensa_dump_stack(const void *stack)
 	if (reg_blks_remaining > 0) {
 		reg_blks_remaining--;
 
-		LOG_ERR(" ** A12 %p A13 %p A14 %p A15 %p",
+		EXCEPTION_DUMP(" ** A12 %p A13 %p A14 %p A15 %p",
 			(void *)frame->blks[reg_blks_remaining].r0,
 			(void *)frame->blks[reg_blks_remaining].r1,
 			(void *)frame->blks[reg_blks_remaining].r2,
@@ -195,16 +195,16 @@ void xtensa_dump_stack(const void *stack)
 	}
 
 #if XCHAL_HAVE_LOOPS
-	LOG_ERR(" ** LBEG %p LEND %p LCOUNT %p",
+	EXCEPTION_DUMP(" ** LBEG %p LEND %p LCOUNT %p",
 		(void *)bsa->lbeg,
 		(void *)bsa->lend,
 		(void *)bsa->lcount);
 #endif
 
-	LOG_ERR(" ** SAR %p", (void *)bsa->sar);
+	EXCEPTION_DUMP(" ** SAR %p", (void *)bsa->sar);
 
 #if XCHAL_HAVE_THREADPTR
-	LOG_ERR(" **  THREADPTR %p", (void *)bsa->threadptr);
+	EXCEPTION_DUMP(" **  THREADPTR %p", (void *)bsa->threadptr);
 #endif
 }
 
@@ -227,12 +227,12 @@ static void print_fatal_exception(void *print_stack, int cause,
 	__asm__ volatile("rsr.excvaddr %0" : "=r"(vaddr));
 
 	if (is_dblexc) {
-		LOG_ERR(" ** FATAL EXCEPTION (DOUBLE)");
+		EXCEPTION_DUMP(" ** FATAL EXCEPTION (DOUBLE)");
 	} else {
-		LOG_ERR(" ** FATAL EXCEPTION");
+		EXCEPTION_DUMP(" ** FATAL EXCEPTION");
 	}
 
-	LOG_ERR(" ** CPU %d EXCCAUSE %d (%s)",
+	EXCEPTION_DUMP(" ** CPU %d EXCCAUSE %d (%s)",
 		arch_curr_cpu()->id, cause,
 		xtensa_exccause(cause));
 
@@ -241,21 +241,21 @@ static void print_fatal_exception(void *print_stack, int cause,
 	 * Or worse, cause another access violation.
 	 */
 	if (xtensa_is_outside_stack_bounds((uintptr_t)bsa, sizeof(*bsa), UINT32_MAX)) {
-		LOG_ERR(" ** VADDR %p Invalid SP %p", (void *)vaddr, print_stack);
+		EXCEPTION_DUMP(" ** VADDR %p Invalid SP %p", (void *)vaddr, print_stack);
 		return;
 	}
 
 	ps = bsa->ps;
 	pc = (void *)bsa->pc;
 
-	LOG_ERR(" **  PC %p VADDR %p", pc, (void *)vaddr);
+	EXCEPTION_DUMP(" **  PC %p VADDR %p", pc, (void *)vaddr);
 
 	if (is_dblexc) {
-		LOG_ERR(" **  DEPC %p", (void *)depc);
+		EXCEPTION_DUMP(" **  DEPC %p", (void *)depc);
 	}
 
-	LOG_ERR(" **  PS %p", (void *)bsa->ps);
-	LOG_ERR(" **    (INTLEVEL:%d EXCM: %d UM:%d RING:%d WOE:%d OWB:%d CALLINC:%d)",
+	EXCEPTION_DUMP(" **  PS %p", (void *)bsa->ps);
+	EXCEPTION_DUMP(" **    (INTLEVEL:%d EXCM: %d UM:%d RING:%d WOE:%d OWB:%d CALLINC:%d)",
 		get_bits(0, 4, ps), get_bits(4, 1, ps),
 		get_bits(5, 1, ps), get_bits(6, 2, ps),
 		get_bits(18, 1, ps),
@@ -473,7 +473,7 @@ void *xtensa_excint1_c(void *esf)
 	 */
 	case EXCCAUSE_SYSCALL:
 		/* Just report it to the console for now */
-		LOG_ERR(" ** SYSCALL PS %p PC %p",
+		EXCEPTION_DUMP(" ** SYSCALL PS %p PC %p",
 			(void *)bsa->ps, (void *)bsa->pc);
 		xtensa_dump_stack(interrupted_stack);
 
