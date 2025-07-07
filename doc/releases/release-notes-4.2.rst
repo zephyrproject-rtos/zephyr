@@ -49,6 +49,20 @@ The following CVEs are addressed by this release:
   <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-03-2/>`_
 * :cve:`2025-2962` `Infinite loop in dns_copy_qname
   <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-2qp5-c2vq-g2ww>`_
+* :cve:`2025-52496` `Race condition in AESNI support detection
+  <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-06-1/>`_
+* :cve:`2025-52497` `Heap buffer under-read when parsing PEM-encrypted material
+  <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-06-2/>`_
+* :cve:`2025-49600` `Unchecked return value in LMS verification allows signature bypass
+  <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-06-3/>`_
+* :cve:`2025-49601` `Out-of-bounds read in mbedtls_lms_import_public_key()
+  <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-06-4/>`_
+* :cve:`2025-49087` `Timing side-channel in block cipher decryption with PKCS#7 padding
+  <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-06-5/>`_
+* :cve:`2025-48965` `NULL pointer dereference after using mbedtls_asn1_store_named_data()
+  <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-06-6/>`_
+* :cve:`2025-47917` `Misleading memory management in mbedtls_x509_string_to_names()
+  <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-06-7/>`_
 
 More detailed information can be found in:
 https://docs.zephyrproject.org/latest/security/vulnerabilities.html
@@ -1214,8 +1228,11 @@ Other notable changes
   for New Design) and it is not supported anymore in the STM32CubeWBA from version 1.1.0 (July 2023).
   The migration to :zephyr:board:`nucleo_wba55cg` (``nucleo_wba55cg``) is recommended instead.
 
-* Updated Mbed TLS to version 3.6.3 (from 3.6.2). The release notes can be found at:
-  https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.3
+* Updated Mbed TLS to version 3.6.4 (from 3.6.2). Release notes for 3.6.3 and
+  3.6.4 can be found below:
+
+  * 3.6.3: https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.3
+  * 3.6.4: https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.4
 
 * Updated TF-M to version 2.1.2 (from 2.1.1). The release notes can be found at:
   https://trustedfirmware-m.readthedocs.io/en/tf-mv2.1.2/releases/2.1.2.html
