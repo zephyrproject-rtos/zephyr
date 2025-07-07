@@ -198,6 +198,7 @@ int udc_ep_enable_internal(const struct device *dev,
 			   const uint8_t ep,
 			   const uint8_t attributes,
 			   const uint16_t mps,
+			   const uint16_t m_mps,
 			   const uint8_t interval);
 
 /**
@@ -218,13 +219,13 @@ static inline int udc_ep_enable_control(const struct device *dev,
 	int err;
 
 	err = udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT,
-				     USB_EP_TYPE_CONTROL, mps, 0);
+				     USB_EP_TYPE_CONTROL, mps, mps, 0);
 	if (err) {
 		return err;
 	}
 
 	return udc_ep_enable_internal(dev, USB_CONTROL_EP_IN,
-				      USB_EP_TYPE_CONTROL, mps, 0);
+				      USB_EP_TYPE_CONTROL, mps, mps, 0);
 }
 
 /**
