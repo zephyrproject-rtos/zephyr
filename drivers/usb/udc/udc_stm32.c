@@ -646,17 +646,9 @@ static int udc_stm32_enable(const struct device *dev)
 		return -EIO;
 	}
 
-	ret = udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT,
-				     USB_EP_TYPE_CONTROL, cfg->ep0_mps, 0);
+	ret = udc_ep_enable_control(dev, cfg->ep0_mps);
 	if (ret) {
-		LOG_ERR("Failed enabling ep 0x%02x", USB_CONTROL_EP_OUT);
-		return ret;
-	}
-
-	ret |= udc_ep_enable_internal(dev, USB_CONTROL_EP_IN,
-				      USB_EP_TYPE_CONTROL, cfg->ep0_mps, 0);
-	if (ret) {
-		LOG_ERR("Failed enabling ep 0x%02x", USB_CONTROL_EP_IN);
+		LOG_ERR("Failed enabling control endpoint");
 		return ret;
 	}
 
@@ -672,12 +664,7 @@ static int udc_stm32_disable(const struct device *dev)
 
 	irq_disable(UDC_STM32_IRQ);
 
-	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT)) {
-		LOG_ERR("Failed to disable control endpoint");
-		return -EIO;
-	}
-
-	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_IN)) {
+	if (udc_ep_disable_control(dev)) {
 		LOG_ERR("Failed to disable control endpoint");
 		return -EIO;
 	}
