@@ -16,7 +16,7 @@
 #include <zephyr/drivers/video-controls.h>
 #include <zephyr/dt-bindings/video/video-interfaces.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/video/stm32_dcmipp.h>
+#include <zephyr/drivers/video/stm32_dcmipp.h>
 
 #include "video_ctrls.h"
 #include "video_device.h"
