@@ -968,8 +968,8 @@ void ll_reset(void)
 uint8_t ll_rx_get(void **node_rx, uint16_t *handle)
 {
 	struct node_rx_pdu *rx;
-	memq_link_t *link;
 	uint8_t cmplt = 0U;
+	memq_link_t *link;
 
 #if defined(CONFIG_BT_CONN) || \
 	(defined(CONFIG_BT_OBSERVER) && defined(CONFIG_BT_CTLR_ADV_EXT)) || \
@@ -983,6 +983,15 @@ ll_rx_get_again:
 	*/
 
 	*node_rx = NULL;
+
+#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_CTLR_ADV_ISO)
+	/* Save the tx_ack FIFO's last index to avoid the value being changed if there were no
+	 * Rx PDUs and we were pre-empted before calling `tx_cmplt_get()`, that may advance the
+	 * first index beyond ack_last value recorded in node_rx enqueued by `ll_rx_put()` call
+	 * when we are in the `else` clause below.
+	 */
+	uint8_t tx_ack_last = mfifo_fifo_tx_ack.l;
+#endif /* CONFIG_BT_CONN || CONFIG_BT_CTLR_ADV_ISO */
 
 	link = memq_peek(memq_ll_rx.head, memq_ll_rx.tail, (void **)&rx);
 	if (link) {
@@ -1064,8 +1073,7 @@ ll_rx_get_again:
 #if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_CTLR_ADV_ISO)
 		}
 	} else {
-		cmplt = tx_cmplt_get(handle, &mfifo_fifo_tx_ack.f,
-				     mfifo_fifo_tx_ack.l);
+		cmplt = tx_cmplt_get(handle, &mfifo_fifo_tx_ack.f, tx_ack_last);
 #endif /* CONFIG_BT_CONN || CONFIG_BT_CTLR_ADV_ISO */
 	}
 
