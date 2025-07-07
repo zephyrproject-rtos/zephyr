@@ -14,13 +14,23 @@
 #include <soc.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
+#include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/barrier.h>
 
-#include "dma_mcux_edma.h"
+#include <fsl_common.h>
+#include <fsl_edma.h>
+
+#if defined(FSL_FEATURE_SOC_DMAMUX_COUNT) && FSL_FEATURE_SOC_DMAMUX_COUNT
+#include <fsl_dmamux.h>
+#endif
+
+#if defined(FSL_FEATURE_MEMORY_HAS_ADDRESS_OFFSET) && FSL_FEATURE_MEMORY_HAS_ADDRESS_OFFSET
+#include <fsl_memory.h>
+#endif
 
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
