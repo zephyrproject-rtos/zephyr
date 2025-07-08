@@ -276,6 +276,16 @@ if(CONFIG_SOC_GECKO_GPIO)
   )
 endif()
 
+if(CONFIG_SILABS_SISDK_GPIO)
+  zephyr_library_sources(
+    ${PERIPHERAL_DIR}/src/sl_hal_gpio.c
+  )
+  zephyr_library_compile_definitions(
+    SL_CATALOG_GPIO_PRESENT
+    SL_CODE_COMPONENT_HAL_GPIO=hal_gpio
+  )
+endif()
+
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_LETIMER   ${PERIPHERAL_DIR}/src/sl_hal_letimer.c)
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_TIMER     ${PERIPHERAL_DIR}/src/sl_hal_timer.c)
 
