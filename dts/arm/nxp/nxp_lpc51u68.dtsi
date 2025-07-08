@@ -33,12 +33,12 @@
 			};
 		};
 
-		sram0:memory@20000000 {
+		sram0: memory@20000000 {
 			compatible = "mmio-sram";
 			reg = <0x20000000 DT_SIZE_K(64)>;
 		};
 
-		sramx:memory@4000000 {
+		sramx: memory@4000000 {
 			compatible = "mmio-sram";
 			reg = <0x04000000 DT_SIZE_K(32)>;
 		};
