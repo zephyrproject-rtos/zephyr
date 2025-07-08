@@ -379,6 +379,11 @@ static int wdt_npcx_init(const struct device *dev)
 	inst->WDCP = 0x05; /* Prescaler is 32 in Watchdog Timer */
 	inst->TWCP = 0x05; /* Prescaler is 32 in T0 Timer */
 
+#if defined(CONFIG_WDT_NPCX_EX)
+	/* Enable T0OUT if extended driver is enabled */
+	inst->T0CSR |= BIT(NPCX_T0CSR_T0EN);
+#endif /* CONFIG_WDT_NPCX_EX */
+
 	return 0;
 }
 
