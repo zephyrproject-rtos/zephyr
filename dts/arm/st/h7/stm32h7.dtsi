@@ -3,6 +3,7 @@
  * Copyright (c) 2019 Centaur Analytics, Inc
  * Copyright (c) 2020 Teslabs Engineering S.L.
  * Copyright (c) 2024 STMicroelectronics
+ * Copyright (c) 2025 ZAL Zentrum für Angewandte Luftfahrtforschung GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1090,6 +1091,30 @@
 			dmas = <&dma1 0 75 (STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_PERIPH_NO_INC |
 				STM32_DMA_MEM_INC | STM32_DMA_PERIPH_8BITS | STM32_DMA_MEM_32BITS |
 				STM32_DMA_PRIORITY_HIGH) STM32_DMA_FIFO_1_4>;
+			status = "disabled";
+		};
+
+		sai1_a: sai1@40015804 {
+			compatible = "st,stm32-sai";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40015804 0x20>;
+			clocks = <&rcc STM32_CLOCK(APB2, 22)>,
+				 <&rcc STM32_SRC_PLL2_P SAI1_SEL(1)>;
+			dmas = <&dma1 1 87 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
+				STM32_DMA_16BITS) 0>;
+			status = "disabled";
+		};
+
+		sai1_b: sai1@40015824 {
+			compatible = "st,stm32-sai";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40015824 0x20>;
+			clocks = <&rcc STM32_CLOCK(APB2, 22)>,
+				 <&rcc STM32_SRC_PLL2_P SAI1_SEL(1)>;
+			dmas = <&dma1 0 88 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
+				STM32_DMA_16BITS) 0>;
 			status = "disabled";
 		};
 	};
