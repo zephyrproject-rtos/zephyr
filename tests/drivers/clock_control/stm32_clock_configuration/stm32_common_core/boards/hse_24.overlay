@@ -10,7 +10,7 @@
  */
 
 &clk_hse {
-	clock-frequency = <DT_FREQ_M(24)>; /* 24MHz clock */
+	clock-frequency = <DT_FREQ_M(24)>;	/* 24MHz clock */
 	status = "okay";
 };
 

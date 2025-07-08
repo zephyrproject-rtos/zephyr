@@ -11,7 +11,7 @@
 
 &clk_hsi {
 	status = "okay";
-	hsi-div = <8>;		/* HSI RC: 64MHz, hsi_clk = 8MHz */
+	hsi-div = <8>;	/* HSI RC: 64MHz, hsi_clk = 8MHz */
 };
 
 &perck {
