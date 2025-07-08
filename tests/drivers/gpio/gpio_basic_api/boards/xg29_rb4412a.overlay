@@ -11,7 +11,7 @@
 / {
 	resources {
 		compatible = "test-gpio-basic-api";
-		out-gpios = <&gpioc 0 0>; /* WPK EXP4 (PC0) */
-		in-gpios = <&gpioc 1 0>; /* WPK EXP6 (PC1) */
+		out-gpios = <&gpioc 0 0>;	/* WPK EXP4 (PC0) */
+		in-gpios = <&gpioc 1 0>;	/* WPK EXP6 (PC1) */
 	};
 };
