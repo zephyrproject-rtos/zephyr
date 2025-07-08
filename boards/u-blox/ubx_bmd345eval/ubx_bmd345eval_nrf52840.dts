@@ -81,39 +81,39 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <0 0 &gpio0 3 0>,    /* A0 */
-			<1 0 &gpio0 4 0>,    /* A1 */
-			<2 0 &gpio0 28 0>,   /* A2 */
-			<3 0 &gpio0 29 0>,   /* A3 */
-			<4 0 &gpio0 30 0>,   /* A4 */
-			<5 0 &gpio0 31 0>,   /* A5 */
-			<6 0 &gpio1 1 0>,    /* D0 */
-			/* not present */    /* D1 */
-			<8 0 &gpio1 3 0>,    /* D2 */
-			/* not present */    /* D3 */
-			/* not present */    /* D4 */
-			/* not present */    /* D5 */
-			<12 0 &gpio1 7 0>,   /* D6 */
-			<13 0 &gpio1 8 0>,   /* D7 */
-			<14 0 &gpio1 10 0>,  /* D8 */
-			<15 0 &gpio1 11 0>,  /* D9 */
-			<16 0 &gpio1 12 0>,  /* D10 */
-			<17 0 &gpio1 13 0>,  /* D11 */
-			<18 0 &gpio1 14 0>,  /* D12 */
-			<19 0 &gpio1 15 0>,  /* D13 */
-			<20 0 &gpio0 26 0>,  /* D14 */
-			<21 0 &gpio0 27 0>;  /* D15 */
+		gpio-map = <0 0 &gpio0 3 0>,	/* A0 */
+			   <1 0 &gpio0 4 0>,	/* A1 */
+			   <2 0 &gpio0 28 0>,	/* A2 */
+			   <3 0 &gpio0 29 0>,	/* A3 */
+			   <4 0 &gpio0 30 0>,	/* A4 */
+			   <5 0 &gpio0 31 0>,	/* A5 */
+			   <6 0 &gpio1 1 0>,	/* D0 */
+			   /* not present */	/* D1 */
+			   <8 0 &gpio1 3 0>,	/* D2 */
+			   /* not present */	/* D3 */
+			   /* not present */	/* D4 */
+			   /* not present */	/* D5 */
+			   <12 0 &gpio1 7 0>,	/* D6 */
+			   <13 0 &gpio1 8 0>,	/* D7 */
+			   <14 0 &gpio1 10 0>,	/* D8 */
+			   <15 0 &gpio1 11 0>,	/* D9 */
+			   <16 0 &gpio1 12 0>,	/* D10 */
+			   <17 0 &gpio1 13 0>,	/* D11 */
+			   <18 0 &gpio1 14 0>,	/* D12 */
+			   <19 0 &gpio1 15 0>,	/* D13 */
+			   <20 0 &gpio0 26 0>,	/* D14 */
+			   <21 0 &gpio0 27 0>;	/* D15 */
 	};
 
 	arduino_adc: analog-connector {
 		compatible = "arduino,uno-adc";
 		#io-channel-cells = <1>;
-		io-channel-map = <0 &adc 1>,    /* A0 = P0.3 = AIN1 */
-			<1 &adc 2>,    /* A1 = P0.4 = AIN2 */
-			<2 &adc 4>,    /* A2 = P0.28 = AIN4 */
-			<3 &adc 5>,    /* A3 = P0.29 = AIN5 */
-			<4 &adc 6>,    /* A4 = P0.30 = AIN6 */
-			<5 &adc 7>;    /* A5 = P0.31 = AIN7 */
+		io-channel-map = <0 &adc 1>,	/* A0 = P0.3 = AIN1 */
+				 <1 &adc 2>,	/* A1 = P0.4 = AIN2 */
+				 <2 &adc 4>,	/* A2 = P0.28 = AIN4 */
+				 <3 &adc 5>,	/* A3 = P0.29 = AIN5 */
+				 <4 &adc 6>,	/* A4 = P0.30 = AIN6 */
+				 <5 &adc 7>;	/* A5 = P0.31 = AIN7 */
 	};
 
 	nrf_radio_fem: fem {
@@ -233,7 +233,7 @@ arduino_i2c: &i2c0 {
 
 arduino_spi: &spi3 {
 	status = "okay";
-	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>; /* D10 */
+	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>;	/* D10 */
 	pinctrl-0 = <&spi3_default>;
 	pinctrl-1 = <&spi3_sleep>;
 	pinctrl-names = "default", "sleep";
@@ -254,15 +254,15 @@ arduino_spi: &spi3 {
 		sck-frequency = <8000000>;
 		jedec-id = [c2 28 17];
 		sfdp-bfp = [
-			e5 20 f1 ff  ff ff ff 03
-			44 eb 08 6b  08 3b 04 bb
-			ee ff ff ff  ff ff 00 ff
-			ff ff 00 ff  0c 20 0f 52
-			10 d8 00 ff  23 72 f5 00
-			82 ed 04 cc  44 83 68 44
-			30 b0 30 b0  f7 c4 d5 5c
-			00 be 29 ff  f0 d0 ff ff
-		];
+			    e5 20 f1 ff ff ff ff 03
+			    44 eb 08 6b 08 3b 04 bb
+			    ee ff ff ff ff ff 00 ff
+			    ff ff 00 ff 0c 20 0f 52
+			    10 d8 00 ff 23 72 f5 00
+			    82 ed 04 cc 44 83 68 44
+			    30 b0 30 b0 f7 c4 d5 5c
+			    00 be 29 ff f0 d0 ff ff
+			   ];
 		size = <67108864>;
 		has-dpd;
 		t-enter-dpd = <10000>;
