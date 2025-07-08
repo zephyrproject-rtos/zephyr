@@ -35,6 +35,11 @@ config DMA_MCUX_EDMA_V5
 	help
 	  DMA version 5 driver for MCUX series SoCs.
 
+config DMA_MCUX_MAX_DATA_SIZE
+	int
+	default 64 if DMA_MCUX_EDMA_V5 || DMA_MCUX_EDMA_V4 || DMA_MCUX_EDMA_V3
+	default 32
+
 if DMA_MCUX_EDMA || DMA_MCUX_EDMA_V3 || DMA_MCUX_EDMA_V4 || DMA_MCUX_EDMA_V5
 
 config DMA_TCD_QUEUE_SIZE
