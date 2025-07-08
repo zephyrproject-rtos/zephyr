@@ -20,3 +20,7 @@ tests:
       - CONFIG_BT_SCAN_WITH_IDENTITY=y
       - CONFIG_BT_SMP=y
       - CONFIG_BT_PRIVACY=y
+  bluetooth.host.bt_id_set_scan_own_addr.scan_while_advertising:
+    type: unit
+    extra_configs:
+      - CONFIG_BT_BROADCASTER=y
