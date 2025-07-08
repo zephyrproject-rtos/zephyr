@@ -26,7 +26,7 @@
 LOG_MODULE_REGISTER(dma_sam_xdmac);
 
 #define XDMAC_INT_ERR (XDMAC_CIE_RBIE | XDMAC_CIE_WBIE | XDMAC_CIE_ROIE)
-#define DMA_CHANNELS_NO  XDMACCHID_NUMBER
+#define DMA_CHANNELS_MAX 31
 
 /* DMA channel configuration */
 struct sam_xdmac_channel_cfg {
@@ -45,13 +45,15 @@ struct sam_xdmac_dev_cfg {
 
 /* Device run time data */
 struct sam_xdmac_dev_data {
-	struct sam_xdmac_channel_cfg dma_channels[DMA_CHANNELS_NO];
+	struct dma_context dma_ctx;
+	struct sam_xdmac_channel_cfg dma_channels[DMA_CHANNELS_MAX + 1];
 };
 
 static void sam_xdmac_isr(const struct device *dev)
 {
 	const struct sam_xdmac_dev_cfg *const dev_cfg = dev->config;
 	struct sam_xdmac_dev_data *const dev_data = dev->data;
+	uint32_t channel_num = dev_data->dma_ctx.dma_channels;
 
 	Xdmac * const xdmac = dev_cfg->regs;
 	struct sam_xdmac_channel_cfg *channel_cfg;
@@ -61,7 +63,7 @@ static void sam_xdmac_isr(const struct device *dev)
 	/* Get global interrupt status */
 	isr_status = xdmac->XDMAC_GIS;
 
-	for (int channel = 0; channel < DMA_CHANNELS_NO; channel++) {
+	for (int channel = 0; channel < channel_num; channel++) {
 		if (!(isr_status & (1 << channel))) {
 			continue;
 		}
@@ -83,10 +85,13 @@ int sam_xdmac_channel_configure(const struct device *dev, uint32_t channel,
 				struct sam_xdmac_channel_config *param)
 {
 	const struct sam_xdmac_dev_cfg *const dev_cfg = dev->config;
+	struct sam_xdmac_dev_data *const dev_data = dev->data;
+	uint32_t channel_num = dev_data->dma_ctx.dma_channels;
 
 	Xdmac * const xdmac = dev_cfg->regs;
 
-	if (channel >= DMA_CHANNELS_NO) {
+	if (channel >= channel_num) {
+		LOG_ERR("Channel %d out of range", channel);
 		return -EINVAL;
 	}
 
@@ -126,10 +131,13 @@ int sam_xdmac_transfer_configure(const struct device *dev, uint32_t channel,
 				 struct sam_xdmac_transfer_config *param)
 {
 	const struct sam_xdmac_dev_cfg *const dev_cfg = dev->config;
+	struct sam_xdmac_dev_data *const dev_data = dev->data;
+	uint32_t channel_num = dev_data->dma_ctx.dma_channels;
 
 	Xdmac * const xdmac = dev_cfg->regs;
 
-	if (channel >= DMA_CHANNELS_NO) {
+	if (channel >= channel_num) {
+		LOG_ERR("Channel %d out of range", channel);
 		return -EINVAL;
 	}
 
@@ -179,13 +187,15 @@ static int sam_xdmac_config(const struct device *dev, uint32_t channel,
 			    struct dma_config *cfg)
 {
 	struct sam_xdmac_dev_data *const dev_data = dev->data;
+	uint32_t channel_num = dev_data->dma_ctx.dma_channels;
 	struct sam_xdmac_channel_config channel_cfg;
 	struct sam_xdmac_transfer_config transfer_cfg;
 	uint32_t burst_size;
 	uint32_t data_size;
 	int ret;
 
-	if (channel >= DMA_CHANNELS_NO) {
+	if (channel >= channel_num) {
+		LOG_ERR("Channel %d out of range", channel);
 		return -EINVAL;
 	}
 
@@ -300,11 +310,13 @@ static int sam_xdmac_transfer_reload(const struct device *dev, uint32_t channel,
 int sam_xdmac_transfer_start(const struct device *dev, uint32_t channel)
 {
 	const struct sam_xdmac_dev_cfg *config = dev->config;
+	struct sam_xdmac_dev_data *const dev_data = dev->data;
+	uint32_t channel_num = dev_data->dma_ctx.dma_channels;
 
 	Xdmac * const xdmac = config->regs;
 
-	if (channel >= DMA_CHANNELS_NO) {
-		LOG_DBG("Channel %d out of range", channel);
+	if (channel >= channel_num) {
+		LOG_ERR("Channel %d out of range", channel);
 		return -EINVAL;
 	}
 
@@ -325,10 +337,13 @@ int sam_xdmac_transfer_start(const struct device *dev, uint32_t channel)
 int sam_xdmac_transfer_stop(const struct device *dev, uint32_t channel)
 {
 	const struct sam_xdmac_dev_cfg *config = dev->config;
+	struct sam_xdmac_dev_data *const dev_data = dev->data;
+	uint32_t channel_num = dev_data->dma_ctx.dma_channels;
 
 	Xdmac * const xdmac = config->regs;
 
-	if (channel >= DMA_CHANNELS_NO) {
+	if (channel >= channel_num) {
+		LOG_ERR("Channel %d out of range", channel);
 		return -EINVAL;
 	}
 
@@ -352,8 +367,15 @@ int sam_xdmac_transfer_stop(const struct device *dev, uint32_t channel)
 static int sam_xdmac_initialize(const struct device *dev)
 {
 	const struct sam_xdmac_dev_cfg *const dev_cfg = dev->config;
+	struct sam_xdmac_dev_data *const dev_data = dev->data;
 
 	Xdmac * const xdmac = dev_cfg->regs;
+
+	dev_data->dma_ctx.dma_channels = FIELD_GET(XDMAC_GTYPE_NB_CH_Msk, xdmac->XDMAC_GTYPE) + 1;
+	if (dev_data->dma_ctx.dma_channels > DMA_CHANNELS_MAX + 1) {
+		LOG_ERR("Maximum supported channels is %d", DMA_CHANNELS_MAX + 1);
+		return -EINVAL;
+	}
 
 	/* Configure interrupts */
 	dev_cfg->irq_config();
@@ -421,7 +443,12 @@ static DEVICE_API(dma, sam_xdmac_driver_api) = {
 		.irq_id = DT_INST_IRQN(n),					\
 	};									\
 										\
-	static struct sam_xdmac_dev_data dma##n##_data;				\
+	static ATOMIC_DEFINE(dma_channels_atomic_##n, DMA_CHANNELS_MAX);	\
+										\
+	static struct sam_xdmac_dev_data dma##n##_data = {			\
+		.dma_ctx.magic = DMA_MAGIC,					\
+		.dma_ctx.atomic = dma_channels_atomic_##n,			\
+	};									\
 										\
 	DEVICE_DT_INST_DEFINE(n, &sam_xdmac_initialize, NULL,			\
 			      &dma##n##_data, &dma##n##_config, POST_KERNEL,	\
