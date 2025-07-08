@@ -379,6 +379,7 @@
 			compatible = "nuvoton,npcx-watchdog";
 			reg = <0x400d8000 0x2000>;
 			t0-out = <&wui_t0out>;
+			support-npckn-v1;
 		};
 
 		espi0: espi@4000a000 {
