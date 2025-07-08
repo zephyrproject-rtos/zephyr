@@ -132,6 +132,7 @@ void HAL_PCD_ResetCallback(PCD_HandleTypeDef *hpcd)
 				EP_TYPE_CTRL);
 	}
 
+	udc_set_suspended(dev, false);
 	udc_submit_event(priv->dev, UDC_EVT_RESET, 0);
 }
 
@@ -749,6 +750,9 @@ static int udc_stm32_host_wakeup(const struct device *dev)
 	if (status != HAL_OK) {
 		return -EIO;
 	}
+
+	udc_set_suspended(dev, false);
+	udc_submit_event(dev, UDC_EVT_RESUME, 0);
 
 	return 0;
 }
