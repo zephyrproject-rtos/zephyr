@@ -76,6 +76,7 @@ target/
 
 # CI output
 compliance.xml
+dts_linter.patch
 _error.types
 
 # Tag files
@@ -118,3 +119,6 @@ TextEncoding.txt
 YAMLLint.txt
 ZephyrModuleFile.txt
 # zephyr-keep-sorted-stop
+
+# Node dependecies
+node_modules
