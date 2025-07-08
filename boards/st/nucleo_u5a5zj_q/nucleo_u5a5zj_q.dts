@@ -63,7 +63,6 @@
 			label = "storage";
 			reg = <0x003e2000 DT_SIZE_K(120)>;
 		};
-
 	};
 };
 

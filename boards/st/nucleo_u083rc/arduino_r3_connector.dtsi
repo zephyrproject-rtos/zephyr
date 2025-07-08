@@ -35,4 +35,4 @@
 	};
 };
 
-arduino_serial: &usart2 {};
+arduino_serial: &usart2 { };

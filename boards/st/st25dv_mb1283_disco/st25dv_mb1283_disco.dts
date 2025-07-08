@@ -134,7 +134,7 @@
 	status = "okay";
 };
 
-&spi2 { /* Max 20 Mbit/s */
+&spi2 {	/* Max 20 Mbit/s */
 	#address-cells = <1>;
 	#size-cells = <0>;
 	pinctrl-0 = <&spi2_mosi_pc3 &spi2_sck_pb13>;

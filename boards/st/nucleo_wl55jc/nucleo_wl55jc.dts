@@ -135,7 +135,6 @@ stm32_lp_tick_source: &lptim1 {
 	status = "okay";
 };
 
-
 &dac1 {
 	pinctrl-0 = <&dac_out1_pa10>;
 	pinctrl-names = "default";
@@ -151,7 +150,6 @@ stm32_lp_tick_source: &lptim1 {
 		pinctrl-names = "default";
 	};
 };
-
 
 &adc1 {
 	pinctrl-0 = <&adc_in5_pb1 &adc_in0_pb13>;
@@ -182,8 +180,8 @@ stm32_lp_tick_source: &lptim1 {
 
 	lora: radio@0 {
 		status = "okay";
-		tx-enable-gpios = <&gpioc 4 GPIO_ACTIVE_LOW>; /* FE_CTRL1 */
-		rx-enable-gpios = <&gpioc 5 GPIO_ACTIVE_LOW>; /* FE_CTRL2 */
+		tx-enable-gpios = <&gpioc 4 GPIO_ACTIVE_LOW>;	/* FE_CTRL1 */
+		rx-enable-gpios = <&gpioc 5 GPIO_ACTIVE_LOW>;	/* FE_CTRL2 */
 		dio3-tcxo-voltage = <SX126X_DIO3_TCXO_1V7>;
 		tcxo-power-startup-delay-ms = <5>;
 		/* High-power output is selected as a consequence of using

@@ -35,4 +35,4 @@
 	};
 };
 
-arduino_spi: &spi3 {};
+arduino_spi: &spi3 { };
