@@ -279,7 +279,7 @@
 		};
 
 		gpio: gpio@5003c000 {
-			compatible = "silabs,gecko-gpio";
+			compatible = "silabs,gpio";
 			reg = <0x5003C000 0x440>;
 			interrupts = <31 2>, <30 2>;
 			interrupt-names = "GPIO_EVEN", "GPIO_ODD";
@@ -289,7 +289,7 @@
 			#size-cells = <1>;
 
 			gpioa: gpio@5003c030 {
-				compatible = "silabs,gecko-gpio-port";
+				compatible = "silabs,gpio-port";
 				reg = <0x5003C030 0x30>;
 				gpio-controller;
 				#gpio-cells = <2>;
@@ -297,7 +297,7 @@
 			};
 
 			gpiob: gpio@5003c060 {
-				compatible = "silabs,gecko-gpio-port";
+				compatible = "silabs,gpio-port";
 				reg = <0x5003C060 0x30>;
 				gpio-controller;
 				#gpio-cells = <2>;
@@ -305,7 +305,7 @@
 			};
 
 			gpioc: gpio@5003c090 {
-				compatible = "silabs,gecko-gpio-port";
+				compatible = "silabs,gpio-port";
 				reg = <0x5003C090 0x30>;
 				gpio-controller;
 				#gpio-cells = <2>;
@@ -313,7 +313,7 @@
 			};
 
 			gpiod: gpio@5003c0c0 {
-				compatible = "silabs,gecko-gpio-port";
+				compatible = "silabs,gpio-port";
 				reg = <0x5003C0C0 0x30>;
 				gpio-controller;
 				#gpio-cells = <2>;
