@@ -34,6 +34,12 @@ tests:
       - CONFIG_BT_SUBRATING=y
       - CONFIG_BT_LL_SW_SPLIT=n
     build_only: true
+  bluetooth.shell.extended_feature_set:
+    extra_configs:
+      - CONFIG_BT_LE_MAX_LOCAL_SUPPORTED_FEATURE_PAGE=10
+      - CONFIG_BT_LE_EXTENDED_FEAT_SET=y
+      - CONFIG_BT_LL_SW_SPLIT=n
+    build_only: true
   bluetooth.shell.channel_sounding:
     extra_configs:
       - CONFIG_BT_CHANNEL_SOUNDING=y
