@@ -1,0 +1,14 @@
+# TI CC35xxE entropy driver configuration
+
+# Copyright (c) 2025 Conclusive Engineering Sp. z o.o.
+# SPDX-License-Identifier: Apache-2.0
+
+config ENTROPY_CC35XX_RNG
+	bool "TI SimpleLink CC35xxE Hardware Security Module (HSM) Entropy submodule"
+	default n
+	depends on DT_HAS_TI_CC35XX_HSM_TRNG_ENABLED
+	select TI_CC35XX_HSM
+	select ENTROPY_HAS_DRIVER
+	help
+	  This option enables the driver for the HSM Entropy submodule
+	  for TI SimpleLink CC35xx SoCs.
