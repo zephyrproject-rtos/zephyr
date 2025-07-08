@@ -17,10 +17,9 @@
 			d-cache-line-size = <64>;
 			reg = <0>;
 		};
-
 	};
 
-	intc: ioapic@fec00000  {
+	intc: ioapic@fec00000 {
 		compatible = "intel,ioapic";
 		#address-cells = <1>;
 		#interrupt-cells = <3>;
@@ -28,7 +27,7 @@
 		interrupt-controller;
 	};
 
-	intc_loapic: loapic@fee00000  {
+	intc_loapic: loapic@fee00000 {
 		compatible = "intel,loapic";
 		reg = <0xfee00000 0x1000>;
 		interrupt-controller;
@@ -87,6 +86,5 @@
 
 			status = "okay";
 		};
-
 	};
 };
