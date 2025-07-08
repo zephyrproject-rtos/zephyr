@@ -340,13 +340,13 @@ static int i2c_litex_recover_bus(const struct device *dev)
 	i2c_litex_write_settings(dev, 0, 0, true);
 
 	while (!(litex_read8(config->master_status_addr) & BIT(MASTER_STATUS_TX_READY_OFFSET))) {
-		;
+		/* Wait for TX ready */
 	}
 
 	litex_write32(0, config->master_rxtx_addr);
 
 	while (!(litex_read8(config->master_status_addr) & BIT(MASTER_STATUS_RX_READY_OFFSET))) {
-		;
+		/* Wait for RX data */
 	}
 
 	(void)litex_read32(config->master_rxtx_addr);
