@@ -1,0 +1,10 @@
+## Go to Preview View and click a template:
+- [Feature](?expand=1&template=feature.md)
+- [Bugfix](?expand=1&template=bugfix.md)
+- [Docs](?expand=1&template=docs.md)
+- [Test](?expand=1&template=test.md)
+- [Sample](?expand=1&template=sample.md)
+- [New Platform](?expand=1&template=platform.md)
+- [Hardware Support](?expand=1&template=hardware.md)
+- [Tweak](?expand=1&template=tweak.md)
+- [Github](?expand=1&template=github.md)
