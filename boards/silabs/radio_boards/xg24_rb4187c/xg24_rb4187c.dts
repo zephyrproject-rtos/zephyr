@@ -183,7 +183,6 @@
 };
 
 &gpio {
-	location-swo = <0>;
 	status = "okay";
 };
 

@@ -1,0 +1,19 @@
+title: Silicon Labs Series 2 GPIO (General Purpose Input/Output) Port
+
+description: |
+  Single GPIO port on Silicon Labs EFR32 Series 2.
+
+compatible: "silabs,gpio-port"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags
