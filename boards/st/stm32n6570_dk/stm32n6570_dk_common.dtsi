@@ -378,7 +378,7 @@ zephyr_udc0: &usbotg_hs1 {
 };
 
 &mac {
-	status = "okay";
+	status = "disabled";
 	pinctrl-0 = <&eth1_rgmii_gtx_clk_pf0
 		     &eth1_rgmii_clk125_pf2
 		     &eth1_rgmii_rx_clk_pf7
@@ -398,7 +398,7 @@ zephyr_udc0: &usbotg_hs1 {
 };
 
 &mdio {
-	status = "okay";
+	status = "disabled";
 	pinctrl-0 = <&eth1_mdio_pd12 &eth1_mdc_pd1>;
 	pinctrl-names = "default";
 
