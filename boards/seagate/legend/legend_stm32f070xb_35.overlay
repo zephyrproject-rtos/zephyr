@@ -24,7 +24,7 @@
 };
 
 &clk_hse {
-	clock-frequency = <DT_FREQ_M(24)>; /* 24MHz external clock */
+	clock-frequency = <DT_FREQ_M(24)>;	/* 24MHz external clock */
 	status = "okay";
 };
 
@@ -46,7 +46,6 @@
 	chain-length = <12>;
 	status = "okay";
 };
-
 
 &timers3 {
 	status = "okay";
