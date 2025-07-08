@@ -191,7 +191,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x00028100 0x1000
-				   0x00079C00 0x200>;
+			       0x00079C00 0x200>;
 			i2svss = <0x00028C00 0x1000>;
 			interrupts = <0x00 0 0>;
 			interrupt-parent = <&ace_intc>;
@@ -271,7 +271,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x00029100 0x1000
-				   0x00079C00 0x200>;
+			       0x00079C00 0x200>;
 			i2svss = <0x00029C00 0x1000>;
 			interrupts = <0x01 0 0>;
 			interrupt-parent = <&ace_intc>;
@@ -351,7 +351,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x0002a100 0x1000
-				   0x00079C00 0x200>;
+			       0x00079C00 0x200>;
 			i2svss = <0x0002AC00 0x1000>;
 			interrupts = <0x02 0 0>;
 			interrupt-parent = <&ace_intc>;
@@ -426,9 +426,9 @@
 			};
 		};
 
-		mic_privacy: mic-prv@71a40  {
+		mic_privacy: mic-prv@71a40 {
 			compatible = "intel,adsp-mic-privacy";
-			reg = <0x71a40  0x8000>;
+			reg = <0x71a40 0x8000>;
 			interrupts = <29 0 0>;
 			interrupt-parent = <&ace_intc>;
 			status = "okay";
@@ -605,7 +605,7 @@
 		 * masking layer makes it easier for MTL to handle
 		 * this internally.
 		 */
-		ace_intc: ace_intc@94000  {
+		ace_intc: ace_intc@94000 {
 			compatible = "intel,ace-intc";
 			reg = <0x94000 0xc00>;
 			interrupt-controller;
@@ -620,7 +620,7 @@
 			reg = <0x17e000 0x1000>;
 			paddr-size = <12>;
 			exec-bit-idx = <14>;
-			write-bit-idx= <15>;
+			write-bit-idx = <15>;
 		};
 
 		timer: timer {

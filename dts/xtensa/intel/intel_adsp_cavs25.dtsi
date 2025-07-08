@@ -178,7 +178,7 @@
 			interrupt-parent = <&cavs_intc0>;
 		};
 
-		cavs_intc0: cavs@78800  {
+		cavs_intc0: cavs@78800 {
 			compatible = "intel,cavs-intc";
 			reg = <0x78800 0x10>;
 			interrupt-controller;
@@ -187,7 +187,7 @@
 			interrupt-parent = <&core_intc>;
 		};
 
-		cavs_intc1: cavs@78810  {
+		cavs_intc1: cavs@78810 {
 			compatible = "intel,cavs-intc";
 			reg = <0x78810 0x10>;
 			interrupt-controller;
@@ -196,16 +196,16 @@
 			interrupt-parent = <&core_intc>;
 		};
 
-		cavs_intc2: cavs@78820  {
+		cavs_intc2: cavs@78820 {
 			compatible = "intel,cavs-intc";
 			reg = <0x78820 0x10>;
 			interrupt-controller;
 			#interrupt-cells = <3>;
-			interrupts = <0XD 0 0>;
+			interrupts = <0 XD 0 0>;
 			interrupt-parent = <&core_intc>;
 		};
 
-		cavs_intc3: cavs@78830  {
+		cavs_intc3: cavs@78830 {
 			compatible = "intel,cavs-intc";
 			reg = <0x78830 0x10>;
 			interrupt-controller;
