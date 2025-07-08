@@ -22,4 +22,4 @@
 	};
 };
 
-zephyr_i2c: &sercom3 {};
+zephyr_i2c: &sercom3 { };
