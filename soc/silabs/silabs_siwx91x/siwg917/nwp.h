@@ -8,6 +8,7 @@
 #include "sl_wifi.h"
 
 #define SIWX91X_INTERFACE_MASK (0x03)
+#define DEFAULT_COUNTRY_CODE	"US"
 
 /**
  * @brief Switch the Wi-Fi operating mode.
@@ -36,5 +37,24 @@ int siwx91x_nwp_mode_switch(uint8_t oper_mode, bool hidden_ssid, uint8_t max_num
  * @return Corresponding sl_wifi_region_code_t value.
  */
 sl_wifi_region_code_t siwx91x_map_country_code_to_region(const char *country_code);
+
+/**
+ * @brief Store the country code internally for GET operation.
+ *
+ * This function saves the provided country code to a static internal buffer.
+ *
+ * @param[in] country_code  Pointer to a 2-character ISO country code.
+ */
+int siwx91x_store_country_code(const char *country_code);
+
+/**
+ * @brief Retrieve the currently stored country code.
+ *
+ * This function returns a pointer to the internally stored 2-character
+ * country code set by store_country_code().
+ *
+ * @return Pointer to the stored country code string.
+ */
+const char *siwx91x_get_country_code(void);
 
 #endif

@@ -32,6 +32,7 @@ BUILD_ASSERT(DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(195) ||
 	     DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(255) ||
 	     DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(319));
 
+static char current_country_code[WIFI_COUNTRY_CODE_LEN];
 typedef struct {
 	const char *const *codes;
 	size_t count;
@@ -69,6 +70,19 @@ static const region_map_t region_maps[] = {
 	{kr_codes, ARRAY_SIZE(kr_codes), SL_WIFI_REGION_KR},
 	{cn_codes, ARRAY_SIZE(cn_codes), SL_WIFI_REGION_CN},
 };
+
+int siwx91x_store_country_code(const char *country_code)
+{
+	__ASSERT(country_code, "country_code cannot be NULL");
+
+	memcpy(current_country_code, country_code, WIFI_COUNTRY_CODE_LEN);
+	return 0;
+}
+
+const char *siwx91x_get_country_code(void)
+{
+	return current_country_code;
+}
 
 sl_wifi_region_code_t siwx91x_map_country_code_to_region(const char *country_code)
 {
@@ -214,8 +228,8 @@ int siwx91x_get_nwp_config(sl_wifi_device_configuration_t *get_config, uint8_t w
 			   bool hidden_ssid, uint8_t max_num_sta)
 {
 	sl_wifi_device_configuration_t default_config = {
+		.region_code = siwx91x_map_country_code_to_region(DEFAULT_COUNTRY_CODE),
 		.band = SL_SI91X_WIFI_BAND_2_4GHZ,
-		.region_code = DEFAULT_REGION,
 		.boot_option = LOAD_NWP_FW,
 		.boot_config = {
 			.feature_bit_map = SL_SI91X_FEAT_SECURITY_OPEN | SL_SI91X_FEAT_WPS_DISABLE |
@@ -246,6 +260,7 @@ int siwx91x_get_nwp_config(sl_wifi_device_configuration_t *get_config, uint8_t w
 		return -EINVAL;
 	}
 
+	siwx91x_store_country_code(DEFAULT_COUNTRY_CODE);
 	siwx91x_apply_sram_config(boot_config);
 
 	switch (wifi_oper_mode) {
