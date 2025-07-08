@@ -9,8 +9,8 @@
 &pinctrl {
 	/omit-if-no-ref/ sci0_pins: sci0 {
 		sci0-pinmux {
-			pinmux = <RZV_PINMUX(PORT_05, 0, 1)>, /* TXD */
-				 <RZV_PINMUX(PORT_05, 1, 1)>; /* RXD */
+			pinmux = <RZV_PINMUX(PORT_05, 0, 1)>,	/* TXD */
+				 <RZV_PINMUX(PORT_05, 1, 1)>;	/* RXD */
 		};
 	};
 };
