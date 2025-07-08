@@ -73,7 +73,6 @@
 			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
-
 };
 
 &gpiote {
