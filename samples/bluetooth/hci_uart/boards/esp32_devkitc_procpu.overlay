@@ -23,7 +23,6 @@
 			bias-pull-up;
 		};
 	};
-
 };
 
 &uart1 {
