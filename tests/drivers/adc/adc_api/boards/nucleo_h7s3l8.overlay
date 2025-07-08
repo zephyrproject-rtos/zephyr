@@ -12,7 +12,7 @@
 };
 
 &adc1 {
-	pinctrl-0 = <&adc1_inp6_pf12>; /* Arduino A3 */
+	pinctrl-0 = <&adc1_inp6_pf12>;	/* Arduino A3 */
 
 	#address-cells = <1>;
 	#size-cells = <0>;
