@@ -66,7 +66,7 @@
 		col-gpios = <&gpio0 28 GPIO_ACTIVE_LOW>,
 			    <&gpio0 11 GPIO_ACTIVE_LOW>,
 			    <&gpio0 31 GPIO_ACTIVE_LOW>,
-			    <&gpio1  5 GPIO_ACTIVE_LOW>,
+			    <&gpio1 5 GPIO_ACTIVE_LOW>,
 			    <&gpio0 30 GPIO_ACTIVE_LOW>;
 		refresh-frequency = <50>;
 		timer = <&timer4>;
