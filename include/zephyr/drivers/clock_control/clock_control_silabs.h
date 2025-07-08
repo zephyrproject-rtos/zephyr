@@ -11,7 +11,7 @@
 
 #if defined(CONFIG_SOC_SERIES_EFR32MG21)
 #include <zephyr/dt-bindings/clock/silabs/xg21-clock.h>
-#elif defined(CONFIG_SOC_SERIES_EFR32BG22)
+#elif defined(CONFIG_SOC_SERIES_XG22)
 #include <zephyr/dt-bindings/clock/silabs/xg22-clock.h>
 #elif defined(CONFIG_SOC_SERIES_EFR32ZG23)
 #include <zephyr/dt-bindings/clock/silabs/xg23-clock.h>
