@@ -1,0 +1,213 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "frdm_mcxw23-pinctrl.dtsi"
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &flexcomm0;
+		zephyr,console = &flexcomm0;
+		zephyr,shell-uart = &flexcomm0;
+		zephyr,flash-controller = &iap;
+	};
+
+	aliases{
+		led0 = &red_led;
+		led1 = &green_led;
+		led2 = &blue_led;
+		sw0 = &btn_wk;
+		sw1 = &btn_usr;
+		sw2 = &btn_isp;
+		usart-0 = &flexcomm0;
+		magn0 = &fxls8974;
+		accel0 = &fxls8974;
+		mcuboot-button0 = &btn_wk;
+		watchdog0 = &wwdt0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		red_led: led_0 {
+			gpios = <&gpio0 1 1>;
+			label = "Red LED";
+		};
+
+		green_led: led_1 {
+			gpios = <&gpio0 0 1>;
+			label = "Green LED";
+		};
+
+		blue_led: led_2 {
+			gpios = <&gpio0 4 1>;
+			label = "Blue LED";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		btn_wk: button_0 {
+			label = "Wakeup button";
+			gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_WAKEUP>;
+		};
+
+		btn_usr: button_1 {
+			label = "USR button";
+			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		btn_isp: button_2 {
+			label = "ISP button";
+			gpios = <&gpio0 20 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	mikrobus_header: mikrobus-connector {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = /* Not a GPIO*/	/* AN  */
+				/* Not a GPIO*/		/* RST */
+				<2 0 &gpio0 8 0>,	/* CS   */
+				<3 0 &gpio0 10 0>,	/* SCK  */
+				<4 0 &gpio0 7 0>,	/* MISO */
+				<5 0 &gpio0 6 0>,	/* MOSI */
+				<6 0 &gpio0 15 0>,	/* PWM  */
+				<7 0 &gpio0 16 0>,	/* INT  */
+				<8 0 &gpio0 3 0>,	/* RX   */
+				<9 0 &gpio0 2 0>,	/* TX   */
+				<10 0 &gpio0 14 0>,	/* SCL  */
+				<11 0 &gpio0 13 0>;	/* SDA  */
+	};
+
+	arduino_header: arduino-connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <ARDUINO_HEADER_R3_A0 0 &gpio0 16 0>,
+				<ARDUINO_HEADER_R3_A1 0 &gpio0 19 0>,
+				<ARDUINO_HEADER_R3_A2 0 &gpio0 22 0>,
+				<ARDUINO_HEADER_R3_A3 0 &gpio0 20 0>,
+				<ARDUINO_HEADER_R3_A4 0 &gpio0 13 0>,
+				<ARDUINO_HEADER_R3_A5 0 &gpio0 14 0>,
+				<ARDUINO_HEADER_R3_D0 0 &gpio0 2 0>,
+				<ARDUINO_HEADER_R3_D1 0 &gpio0 3 0>,
+				<ARDUINO_HEADER_R3_D2 0 &gpio0 21 0>,
+				<ARDUINO_HEADER_R3_D3 0 &gpio0 18 0>,
+				<ARDUINO_HEADER_R3_D4 0 &gpio0 0 0>,
+				<ARDUINO_HEADER_R3_D5 0 &gpio0 9 0>,
+				<ARDUINO_HEADER_R3_D6 0 &gpio0 4 0>,
+				<ARDUINO_HEADER_R3_D7 0 &gpio0 1 0>,
+				<ARDUINO_HEADER_R3_D8 0 &gpio0 0 0>,	/* D8 is not connected */
+				<ARDUINO_HEADER_R3_D9 0 &gpio0 15 0>,
+				<ARDUINO_HEADER_R3_D10 0 &gpio0 8 0>,
+				<ARDUINO_HEADER_R3_D11 0 &gpio0 6 0>,
+				<ARDUINO_HEADER_R3_D12 0 &gpio0 7 0>,
+				<ARDUINO_HEADER_R3_D13 0 &gpio0 10 0>,
+				<ARDUINO_HEADER_R3_D14 0 &gpio0 13 0>,
+				<ARDUINO_HEADER_R3_D15 0 &gpio0 14 0>;
+	};
+};
+
+&flexcomm0 {
+	status = "okay";
+	compatible = "nxp,lpc-usart";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_flexcomm0_usart>;
+	pinctrl-names = "default";
+};
+
+&flexcomm1 {
+	status = "okay";
+	compatible = "nxp,lpc-i2c";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&pinmux_flexcomm1_i2c>;
+	pinctrl-names = "default";
+
+	fxls8974: fxls8974@19 {
+		compatible = "nxp,fxls8974";
+		reg = <0x19>;
+		status = "okay";
+		int1-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&ctimer0 {
+	status = "okay";
+};
+
+&ctimer1 {
+	status = "okay";
+};
+
+&ctimer2 {
+	status = "okay";
+};
+
+&ctimer3 {
+	status = "okay";
+};
+
+&ctimer4 {
+	status = "okay";
+};
+
+&wwdt0 {
+	status = "okay";
+};
+
+&rtc {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x0 DT_SIZE_K(80)>;
+		};
+
+		slot0_partition: partition@14000 {
+			label = "image-0";
+			reg = <0x00014000 DT_SIZE_K(440)>;
+		};
+
+		slot1_partition: partition@82000 {
+			label = "image-1";
+			reg = <0x0082000 DT_SIZE_K(440)>;
+		};
+
+		storage_partition: partition@f0000 {
+			label = "storage";
+			reg = <0x000f0000 DT_SIZE_K(56)>;
+		};
+	};
+};
+
+arduino_i2c: &flexcomm1 {};
+
+arduino_spi: &flexcomm2 {};
+
+mikrobus_i2c: &flexcomm1 {};
+
+mikrobus_spi: &flexcomm2 {};
