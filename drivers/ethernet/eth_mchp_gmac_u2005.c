@@ -168,6 +168,19 @@ enum queue_idx {
 #error "GMAC_MAX_FRAME_SIZE is invalid, fix it at device tree."
 #endif
 
+#define ETH_MCHP_ESUCCESS 0
+
+#define ETH_MCHP_SHIFT_1_BYTE 8
+#define ETH_MCHP_SHIFT_2_BYTE 16
+#define ETH_MCHP_SHIFT_3_BYTE 24
+
+#define ETH_MCHP_CLOCK_RATE_20MHZ  (20000000U)
+#define ETH_MCHP_CLOCK_RATE_40MHZ  (40000000U)
+#define ETH_MCHP_CLOCK_RATE_80MHZ  (80000000U)
+#define ETH_MCHP_CLOCK_RATE_120MHZ (120000000U)
+#define ETH_MCHP_CLOCK_RATE_160MHZ (160000000U)
+#define ETH_MCHP_CLOCK_RATE_240MHZ (240000000U)
+
 /** Receive/transmit buffer descriptor */
 struct eth_mchp_gmac_desc {
 	uint32_t w0;
@@ -286,14 +299,6 @@ typedef struct eth_mchp_dev_config {
 	.eth_clock.mclk_apb_sys = (void *)DT_INST_CLOCKS_CELL_BY_NAME(n, mclk_apb, subsystem),     \
 	.eth_clock.mclk_ahb_sys = (void *)DT_INST_CLOCKS_CELL_BY_NAME(n, mclk_ahb, subsystem)
 
-#define ETH_MCHP_GET_CLOCK_FREQ(dev, subsys, rate) clock_control_get_rate(dev, subsys, &rate)
-
-#define ETH_MCHP_ENABLE_CLOCK(dev)                                                                 \
-	clock_control_on(((const eth_mchp_dev_config_t *)(dev->config))->eth_clock.clock_dev,      \
-			 (((eth_mchp_dev_config_t *)(dev->config))->eth_clock.mclk_apb_sys));      \
-	clock_control_on(((const eth_mchp_dev_config_t *)(dev->config))->eth_clock.clock_dev,      \
-			 (((eth_mchp_dev_config_t *)(dev->config))->eth_clock.mclk_ahb_sys))
-
 /*
  * Verify Kconfig configuration
  */
@@ -362,15 +367,14 @@ static inline void eth_mchp_dcache_is_enabled(void)
  */
 static inline void eth_mchp_dcache_invalidate(uint32_t addr, uint32_t size)
 {
-	if (!dcache_enabled) {
-		return;
+	if (dcache_enabled == true) {
+
+		/* Make sure it is aligned to 32B */
+		uint32_t start_addr = addr & (uint32_t)~(GMAC_DCACHE_ALIGNMENT - 1);
+		uint32_t size_full = size + addr - start_addr;
+
+		SCB_InvalidateDCache_by_Addr((uint32_t *)start_addr, size_full);
 	}
-
-	/* Make sure it is aligned to 32B */
-	uint32_t start_addr = addr & (uint32_t)~(GMAC_DCACHE_ALIGNMENT - 1);
-	uint32_t size_full = size + addr - start_addr;
-
-	SCB_InvalidateDCache_by_Addr((uint32_t *)start_addr, size_full);
 }
 
 /**
@@ -384,15 +388,14 @@ static inline void eth_mchp_dcache_invalidate(uint32_t addr, uint32_t size)
  */
 static inline void eth_mchp_dcache_clean(uint32_t addr, uint32_t size)
 {
-	if (!dcache_enabled) {
-		return;
+	if (dcache_enabled == true) {
+
+		/* Make sure it is aligned to 32B */
+		uint32_t start_addr = addr & (uint32_t)~(GMAC_DCACHE_ALIGNMENT - 1);
+		uint32_t size_full = size + addr - start_addr;
+
+		SCB_CleanDCache_by_Addr((uint32_t *)start_addr, size_full);
 	}
-
-	/* Make sure it is aligned to 32B */
-	uint32_t start_addr = addr & (uint32_t)~(GMAC_DCACHE_ALIGNMENT - 1);
-	uint32_t size_full = size + addr - start_addr;
-
-	SCB_CleanDCache_by_Addr((uint32_t *)start_addr, size_full);
 }
 #else
 #define eth_mchp_dcache_is_enabled()
@@ -410,10 +413,10 @@ static void eth_mchp_rx(struct eth_mchp_gmac_queue *queue);
  * @param rx_frag_list Pointer to the fragment list.
  * @param len No of fragments in the list.
  */
-static void hal_mchp_eth_free_rx_bufs(struct net_buf **rx_frag_list, uint16_t len)
+static void eth_free_rx_bufs(struct net_buf **rx_frag_list, uint16_t len)
 {
 	for (int i = 0; i < len; i++) {
-		if (rx_frag_list[i]) {
+		if (rx_frag_list[i] != NULL) {
 			net_buf_unref(rx_frag_list[i]);
 			rx_frag_list[i] = NULL;
 		}
@@ -425,48 +428,56 @@ static void hal_mchp_eth_free_rx_bufs(struct net_buf **rx_frag_list, uint16_t le
  *
  * This function is used to Initialize RX descriptor list
  *
- * @param gmac Pointer to gmac registers.
+ * @param gmac_regs Pointer to gmac registers.
  * @param queue Pointer to gmac queue structure.
  *
  * @return 0 if successful, -ENOBUFS if no buffers available.
  */
-static inline int hal_mchp_eth_rx_descriptors_init(gmac_registers_t *gmac,
-						   struct eth_mchp_gmac_queue *queue)
+static inline int eth_rx_descriptors_init(gmac_registers_t *gmac_regs,
+					  struct eth_mchp_gmac_queue *queue)
 {
 	struct eth_mchp_gmac_desc_list *rx_desc_list = &queue->rx_desc_list;
 	struct net_buf **rx_frag_list = queue->rx_frag_list;
 	struct net_buf *rx_buf;
 	uint8_t *rx_buf_addr;
+	int result = ETH_MCHP_ESUCCESS;
 
 	__ASSERT_NO_MSG(rx_frag_list);
 
 	rx_desc_list->tail = 0U;
 
-	for (int i = 0; i < rx_desc_list->len; i++) {
-		rx_buf = net_pkt_get_reserve_rx_data(CONFIG_NET_BUF_DATA_SIZE, K_NO_WAIT);
-		if (rx_buf == NULL) {
-			hal_mchp_eth_free_rx_bufs(rx_frag_list, rx_desc_list->len);
-			LOG_ERR("Failed to reserve data net buffers");
-			return -ENOBUFS;
+	do {
+		for (int i = 0; i < rx_desc_list->len; i++) {
+			rx_buf = net_pkt_get_reserve_rx_data(CONFIG_NET_BUF_DATA_SIZE, K_NO_WAIT);
+			if (rx_buf == NULL) {
+				eth_free_rx_bufs(rx_frag_list, rx_desc_list->len);
+				LOG_ERR("Failed to reserve data net buffers");
+				result = -ENOBUFS;
+				break;
+			}
+
+			rx_frag_list[i] = rx_buf;
+
+			rx_buf_addr = rx_buf->data;
+			__ASSERT(!((uint32_t)rx_buf_addr & ~GMAC_RXW0_ADDR),
+				 "Misaligned RX buffer address");
+			__ASSERT(rx_buf->size == CONFIG_NET_BUF_DATA_SIZE,
+				 "Incorrect length of RX data buffer");
+
+			/* Give ownership to GMAC and remove the wrap bit */
+			rx_desc_list->buf[i].w0 = (uint32_t)rx_buf_addr & GMAC_RXW0_ADDR;
+			rx_desc_list->buf[i].w1 = 0U;
 		}
 
-		rx_frag_list[i] = rx_buf;
+		if (rx_buf == NULL) {
+			break;
+		}
 
-		rx_buf_addr = rx_buf->data;
-		__ASSERT(!((uint32_t)rx_buf_addr & ~GMAC_RXW0_ADDR),
-			 "Misaligned RX buffer address");
-		__ASSERT(rx_buf->size == CONFIG_NET_BUF_DATA_SIZE,
-			 "Incorrect length of RX data buffer");
+		/* Set the wrap bit on the last descriptor */
+		rx_desc_list->buf[rx_desc_list->len - 1U].w0 |= GMAC_RXW0_WRAP;
+	} while (0);
 
-		/* Give ownership to GMAC and remove the wrap bit */
-		rx_desc_list->buf[i].w0 = (uint32_t)rx_buf_addr & GMAC_RXW0_ADDR;
-		rx_desc_list->buf[i].w1 = 0U;
-	}
-
-	/* Set the wrap bit on the last descriptor */
-	rx_desc_list->buf[rx_desc_list->len - 1U].w0 |= GMAC_RXW0_WRAP;
-
-	return 0;
+	return result;
 }
 
 /**
@@ -474,13 +485,11 @@ static inline int hal_mchp_eth_rx_descriptors_init(gmac_registers_t *gmac,
  *
  * This function is used to Initialize TX descriptor list.
  *
- * @param gmac Pointer to gmac registers.
+ * @param gmac_regs Pointer to gmac registers.
  * @param queue Pointer to gmac queue structure.
- *
- * @return 0 if successful, -ENOBUFS if no buffers available.
  */
-static inline void hal_mchp_eth_tx_descriptors_init(gmac_registers_t *gmac,
-						    struct eth_mchp_gmac_queue *queue)
+static inline void eth_tx_descriptors_init(gmac_registers_t *gmac_regs,
+					   struct eth_mchp_gmac_queue *queue)
 {
 	struct eth_mchp_gmac_desc_list *tx_desc_list = &queue->tx_desc_list;
 
@@ -501,13 +510,13 @@ static inline void hal_mchp_eth_tx_descriptors_init(gmac_registers_t *gmac,
  *
  * This function is used to Initialize Non-Priority queue.
  *
- * @param gmac Pointer to gmac registers.
+ * @param gmac_regs Pointer to gmac registers.
  * @param queue Pointer to gmac queue structure.
  *
  * @return 0 if successful, -ENOBUFS if no buffers available.
  */
-static inline int hal_mchp_eth_nonpriority_queue_init(gmac_registers_t *gmac,
-						      struct eth_mchp_gmac_queue *queue)
+static inline int eth_nonpriority_queue_init(gmac_registers_t *gmac_regs,
+					     struct eth_mchp_gmac_queue *queue)
 {
 	int result;
 
@@ -518,49 +527,53 @@ static inline int hal_mchp_eth_nonpriority_queue_init(gmac_registers_t *gmac,
 	__ASSERT(!((uint32_t)queue->tx_desc_list.buf & ~GMAC_TBQB_ADDR_Msk),
 		 "TX descriptors have to be word aligned");
 
-	/* Setup descriptor lists */
-	result = hal_mchp_eth_rx_descriptors_init(gmac, queue);
-	if (result < 0) {
-		return result;
-	}
+	do {
+		/* Setup descriptor lists */
+		result = eth_rx_descriptors_init(gmac_regs, queue);
+		if (result < 0) {
+			break;
+		}
 
-	hal_mchp_eth_tx_descriptors_init(gmac, queue);
+		eth_tx_descriptors_init(gmac_regs, queue);
 
-	/* Initialize TX semaphore. This semaphore is used to wait until the TX
-	 * data has been sent.
-	 */
-	k_sem_init(&queue->tx_sem, 0, 1);
+		/* Initialize TX semaphore. This semaphore is used to wait until the TX
+		 * data has been sent.
+		 */
+		k_sem_init(&queue->tx_sem, 0, 1);
 
-	/* Set Receive Buffer Queue Pointer Register */
-	gmac->GMAC_RBQB = (uint32_t)queue->rx_desc_list.buf;
+		/* Set Receive Buffer Queue Pointer Register */
+		gmac_regs->GMAC_RBQB = (uint32_t)queue->rx_desc_list.buf;
 
-	/* Set Transmit Buffer Queue Pointer Register */
-	gmac->GMAC_TBQB = (uint32_t)queue->tx_desc_list.buf;
+		/* Set Transmit Buffer Queue Pointer Register */
+		gmac_regs->GMAC_TBQB = (uint32_t)queue->tx_desc_list.buf;
 
-	/* Configure GMAC DMA transfer */
-	gmac->GMAC_DCFGR =
+		/* Configure GMAC DMA transfer */
+		gmac_regs->GMAC_DCFGR =
 
-		/* Receive Buffer Size (defined in multiples of 64 bytes) */
-		GMAC_DCFGR_DRBS(CONFIG_NET_BUF_DATA_SIZE >> 6) |
+			/* Receive Buffer Size (defined in multiples of 64 bytes) */
+			GMAC_DCFGR_DRBS(CONFIG_NET_BUF_DATA_SIZE >> 6) |
 #if defined(GMAC_DCFGR_RXBMS)
-		/* Use full receive buffer size on parts where this is selectable */
-		GMAC_DCFGR_RXBMS(3) |
+			/* Use full receive buffer size on parts where this is selectable */
+			GMAC_DCFGR_RXBMS(3) |
 #endif
-		/* Attempt to use INCR4 AHB bursts (Default) */
-		GMAC_DCFGR_FBLDO_INCR4 |
-		/* DMA Queue Flags */
-		GMAC_DMA_QUEUE_FLAGS;
+			/* Attempt to use INCR4 AHB bursts (Default) */
+			GMAC_DCFGR_FBLDO_INCR4 |
+			/* DMA Queue Flags */
+			GMAC_DMA_QUEUE_FLAGS;
 
-	/* Setup RX/TX completion and error interrupts */
-	gmac->GMAC_IER = GMAC_INT_EN_FLAGS;
+		/* Setup RX/TX completion and error interrupts */
+		gmac_regs->GMAC_IER = GMAC_INT_EN_FLAGS;
 
-	queue->err_rx_frames_dropped = 0U;
-	queue->err_rx_flushed_count = 0U;
-	queue->err_tx_flushed_count = 0U;
+		queue->err_rx_frames_dropped = 0U;
+		queue->err_rx_flushed_count = 0U;
+		queue->err_tx_flushed_count = 0U;
 
-	LOG_INF("Queue %d activated", queue->que_idx);
+		result = ETH_MCHP_ESUCCESS;
 
-	return 0;
+		LOG_INF("Queue %d activated", queue->que_idx);
+	} while (0);
+
+	return result;
 }
 
 /**
@@ -572,8 +585,8 @@ static inline int hal_mchp_eth_nonpriority_queue_init(gmac_registers_t *gmac,
  * @param gmac Pointer to gmac registers.
  * @param queue Pointer to gmac queue structure.
  */
-static inline void hal_mchp_eth_set_receive_buf_queue_pointer(gmac_registers_t *gmac,
-							      struct eth_mchp_gmac_queue *queue)
+static inline void eth_set_receive_buf_queue_pointer(gmac_registers_t *gmac,
+						     struct eth_mchp_gmac_queue *queue)
 {
 	gmac->GMAC_RBQB = (uint32_t)queue->rx_desc_list.buf;
 }
@@ -589,9 +602,9 @@ static inline void hal_mchp_eth_set_receive_buf_queue_pointer(gmac_registers_t *
  *
  * @return 0 if successful, -ENOBUFS if no buffers available.
  */
-static inline int hal_mchp_eth_queue_init(gmac_registers_t *gmac, struct eth_mchp_gmac_queue *queue)
+static inline int eth_queue_init(gmac_registers_t *gmac, struct eth_mchp_gmac_queue *queue)
 {
-	return hal_mchp_eth_nonpriority_queue_init(gmac, queue);
+	return eth_nonpriority_queue_init(gmac, queue);
 }
 
 /**
@@ -603,18 +616,19 @@ static inline int hal_mchp_eth_queue_init(gmac_registers_t *gmac, struct eth_mch
  * @param index Index.
  * @param mac_addr MAC Address.
  */
-static void hal_mchp_eth_mac_addr_set(gmac_registers_t *gmac, uint8_t index, uint8_t mac_addr[6])
+static void eth_mac_addr_set(gmac_registers_t *gmac, uint8_t index, uint8_t mac_addr[6])
 {
 	uint32_t bottom_addr = 0;
 	uint32_t top_addr = 0;
 
 	__ASSERT(index < 4, "index has to be in the range 0..3");
 
-	bottom_addr =
-		(mac_addr[3] << 24) | (mac_addr[2] << 16) | (mac_addr[1] << 8) | (mac_addr[0]);
+	bottom_addr = (mac_addr[3] << ETH_MCHP_SHIFT_3_BYTE) |
+		      (mac_addr[2] << ETH_MCHP_SHIFT_2_BYTE) |
+		      (mac_addr[1] << ETH_MCHP_SHIFT_1_BYTE) | (mac_addr[0]);
 	gmac->SA[index].GMAC_SAB = GMAC_SAB_ADDR(bottom_addr);
 
-	top_addr = (mac_addr[5] << 8) | (mac_addr[4]);
+	top_addr = (mac_addr[5] << ETH_MCHP_SHIFT_1_BYTE) | (mac_addr[4]);
 	gmac->SA[index].GMAC_SAT = GMAC_SAT_ADDR(top_addr);
 }
 
@@ -626,8 +640,7 @@ static void hal_mchp_eth_mac_addr_set(gmac_registers_t *gmac, uint8_t index, uin
  * @param gmac Pointer to gmac registers.
  * @param queue Pointer to gmac queue structure.
  */
-static inline void hal_mchp_eth_tx_completed(gmac_registers_t *gmac,
-					     struct eth_mchp_gmac_queue *queue)
+static inline void eth_tx_completed(gmac_registers_t *gmac, struct eth_mchp_gmac_queue *queue)
 {
 	k_sem_give(&queue->tx_sem);
 }
@@ -637,18 +650,17 @@ static inline void hal_mchp_eth_tx_completed(gmac_registers_t *gmac,
  *
  * This function is used to reset TX queue when errors are detected.
  *
- * @param hal Pointer to HAL structure.
+ * @param gmac Pointer to register structure.
  * @param queue Pointer to gmac queue structure.
  */
-static inline void hal_mchp_eth_tx_error_handler(gmac_registers_t *gmac,
-						 struct eth_mchp_gmac_queue *queue)
+static inline void eth_tx_error_handler(gmac_registers_t *gmac, struct eth_mchp_gmac_queue *queue)
 {
 	queue->err_tx_flushed_count++;
 
 	/* Stop transmission, clean transmit pipeline and control registers */
 	gmac->GMAC_NCR &= ~GMAC_NCR_TXEN_Msk;
 
-	hal_mchp_eth_tx_descriptors_init(gmac, queue);
+	eth_tx_descriptors_init(gmac, queue);
 
 	/* Reinitialize TX mutex */
 	k_sem_give(&queue->tx_sem);
@@ -666,8 +678,7 @@ static inline void hal_mchp_eth_tx_error_handler(gmac_registers_t *gmac,
  * @param gmac Pointer to gmac registers.
  * @param queue Pointer to gmac queue structure.
  */
-static inline void hal_mchp_eth_rx_error_handler(gmac_registers_t *gmac,
-						 struct eth_mchp_gmac_queue *queue)
+static inline void eth_rx_error_handler(gmac_registers_t *gmac, struct eth_mchp_gmac_queue *queue)
 {
 	queue->err_rx_flushed_count++;
 
@@ -682,7 +693,7 @@ static inline void hal_mchp_eth_rx_error_handler(gmac_registers_t *gmac,
 		queue->rx_desc_list.buf[i].w0 &= ~GMAC_RXW0_OWNERSHIP;
 	}
 
-	hal_mchp_eth_set_receive_buf_queue_pointer(gmac, queue);
+	eth_set_receive_buf_queue_pointer(gmac, queue);
 
 	/* Restart reception */
 	gmac->GMAC_NCR |= GMAC_NCR_RXEN_Msk;
@@ -698,21 +709,21 @@ static inline void hal_mchp_eth_rx_error_handler(gmac_registers_t *gmac,
  *
  * @return divisor if successful, -ENOTSUP if not supprted.
  */
-static inline int hal_mchp_eth_get_mck_clock_divisor(uint32_t mck)
+static inline int eth_get_mck_clock_divisor(uint32_t mck)
 {
 	uint32_t mck_divisor;
 
-	if (mck <= 20000000U) {
+	if (mck <= ETH_MCHP_CLOCK_RATE_20MHZ) {
 		mck_divisor = GMAC_NCFGR_CLK_MCK8;
-	} else if (mck <= 40000000U) {
+	} else if (mck <= ETH_MCHP_CLOCK_RATE_40MHZ) {
 		mck_divisor = GMAC_NCFGR_CLK_MCK16;
-	} else if (mck <= 80000000U) {
+	} else if (mck <= ETH_MCHP_CLOCK_RATE_80MHZ) {
 		mck_divisor = GMAC_NCFGR_CLK_MCK32;
-	} else if (mck <= 120000000U) {
+	} else if (mck <= ETH_MCHP_CLOCK_RATE_120MHZ) {
 		mck_divisor = GMAC_NCFGR_CLK_MCK48;
-	} else if (mck <= 160000000U) {
+	} else if (mck <= ETH_MCHP_CLOCK_RATE_160MHZ) {
 		mck_divisor = GMAC_NCFGR_CLK_MCK64;
-	} else if (mck <= 240000000U) {
+	} else if (mck <= ETH_MCHP_CLOCK_RATE_240MHZ) {
 		mck_divisor = GMAC_NCFGR_CLK_MCK96;
 	} else {
 		LOG_ERR("No valid MDC clock");
@@ -734,51 +745,56 @@ static inline int hal_mchp_eth_get_mck_clock_divisor(uint32_t mck)
  * @param gmac_ncfgr_val value to be set in the register.
  * @param clk_freq_hz clock frequency.
  *
- * @return divisor if successful, -ENOTSUP if not supprted.
+ * @return divisor if successful, -ENOTSUP if not supprted, -EINVAL if invalid phy connection type.
  */
-static inline int hal_mchp_eth_gmac_init(gmac_registers_t *gmac, uint32_t gmac_ncfgr_val,
-					 uint32_t clk_freq_hz)
+static inline int eth_gmac_init(gmac_registers_t *gmac, uint32_t gmac_ncfgr_val,
+				uint32_t clk_freq_hz)
 {
 	int mck_divisor;
+	int result = ETH_MCHP_ESUCCESS;
 
-	mck_divisor = hal_mchp_eth_get_mck_clock_divisor(clk_freq_hz);
-	if (mck_divisor < 0) {
-		return mck_divisor;
-	}
+	do {
+		mck_divisor = eth_get_mck_clock_divisor(clk_freq_hz);
+		if (mck_divisor < 0) {
+			result = mck_divisor;
+			break;
+		}
 
-	/* Set Network Control Register to its default value, clear stats. */
-	gmac->GMAC_NCR = GMAC_NCR_CLRSTAT_Msk | GMAC_NCR_MPE_Msk;
+		/* Set Network Control Register to its default value, clear stats. */
+		gmac->GMAC_NCR = GMAC_NCR_CLRSTAT_Msk | GMAC_NCR_MPE_Msk;
 
-	/* Disable all interrupts */
-	gmac->GMAC_IDR = UINT32_MAX;
-	/* Clear all interrupts */
-	(void)gmac->GMAC_ISR;
+		/* Disable all interrupts */
+		gmac->GMAC_IDR = UINT32_MAX;
+		/* Clear all interrupts */
+		(void)gmac->GMAC_ISR;
 
-	/* Setup Hash Registers - enable reception of all
-	 * multicast frames when GMAC_NCFGR_MTIHEN is set.
-	 */
-	gmac->GMAC_HRB = UINT32_MAX;
-	gmac->GMAC_HRT = UINT32_MAX;
+		/* Setup Hash Registers - enable reception of all
+		 * multicast frames when GMAC_NCFGR_MTIHEN is set.
+		 */
+		gmac->GMAC_HRB = UINT32_MAX;
+		gmac->GMAC_HRT = UINT32_MAX;
 
-	/* Setup Network Configuration Register */
-	gmac->GMAC_NCFGR = gmac_ncfgr_val | mck_divisor;
+		/* Setup Network Configuration Register */
+		gmac->GMAC_NCFGR = gmac_ncfgr_val | mck_divisor;
 
-	/* Default (RMII) is defined at atmel,gmac-common.yaml file */
-	switch (DT_INST_ENUM_IDX(0, phy_connection_type)) {
-	case 0: /* mii */
-		gmac->GMAC_UR = 0x1;
-		break;
-	case 1: /* rmii */
-		gmac->GMAC_UR = 0x0;
-		break;
-	default:
-		/* Build assert at top of file should catch this case */
-		LOG_ERR("The phy connection type is invalid");
+		/* Default (RMII) is defined at microchip,gmac-u2005-eth.yaml file */
+		switch (DT_INST_ENUM_IDX(0, phy_connection_type)) {
+		case 0: /* mii */
+			gmac->GMAC_UR = 0x1;
+			break;
+		case 1: /* rmii */
+			gmac->GMAC_UR = 0x0;
+			break;
+		default:
+			/* Build assert at top of file should catch this case */
+			LOG_ERR("The phy connection type is invalid");
 
-		return -EINVAL;
-	}
+			result = -EINVAL;
+			break;
+		}
+	} while (0);
 
-	return 0;
+	return result;
 }
 
 /**
@@ -790,11 +806,8 @@ static inline int hal_mchp_eth_gmac_init(gmac_registers_t *gmac, uint32_t gmac_n
  * @param gmac Pointer to gmac registers.
  * @param full_duplex if full duplex or not.
  * @param speed_100M if speed is 100M or not.
- *
- * @return divisor if successful, -ENOTSUP if not supprted.
  */
-static inline void hal_mchp_eth_link_configure(gmac_registers_t *gmac, bool full_duplex,
-					       bool speed_100M)
+static inline void eth_link_configure(gmac_registers_t *gmac, bool full_duplex, bool speed_100M)
 {
 	uint32_t val;
 
@@ -816,7 +829,7 @@ static inline void hal_mchp_eth_link_configure(gmac_registers_t *gmac, bool full
  *
  * @param gmac Pointer to gmac registers.
  */
-static inline void hal_mchp_eth_tx(gmac_registers_t *gmac)
+static inline void eth_tx(gmac_registers_t *gmac)
 {
 	/* Start transmission */
 	gmac->GMAC_NCR |= GMAC_NCR_TSTART_Msk;
@@ -831,8 +844,7 @@ static inline void hal_mchp_eth_tx(gmac_registers_t *gmac)
  * @param gmac Pointer to gmac registers.
  * @param queue Pointer to gmac queue structure.
  */
-static inline void hal_mchp_eth_queue0_isr(gmac_registers_t *gmac,
-					   struct eth_mchp_gmac_queue *queue)
+static inline void eth_queue0_isr(gmac_registers_t *gmac, struct eth_mchp_gmac_queue *queue)
 {
 	struct eth_mchp_gmac_desc_list *rx_desc_list;
 	struct eth_mchp_gmac_desc_list *tx_desc_list;
@@ -847,8 +859,8 @@ static inline void hal_mchp_eth_queue0_isr(gmac_registers_t *gmac,
 	tx_desc_list = &queue->tx_desc_list;
 
 	/* Check if packet received */
-	if (isr & GMAC_INT_RX_ERR_BITS) {
-		hal_mchp_eth_rx_error_handler(gmac, queue);
+	if ((isr & GMAC_INT_RX_ERR_BITS) != 0) {
+		eth_rx_error_handler(gmac, queue);
 	} else if (isr & GMAC_ISR_RCOMP_Msk) {
 		tail_desc = &rx_desc_list->buf[rx_desc_list->tail];
 		LOG_DBG("rx.w1=0x%08x, tail=%d", tail_desc->w1, rx_desc_list->tail);
@@ -856,13 +868,13 @@ static inline void hal_mchp_eth_queue0_isr(gmac_registers_t *gmac,
 	}
 
 	/* Check if TX packet completion */
-	if (isr & GMAC_INT_TX_ERR_BITS) {
-		hal_mchp_eth_tx_error_handler(gmac, queue);
+	if ((isr & GMAC_INT_TX_ERR_BITS) != 0) {
+		eth_tx_error_handler(gmac, queue);
 	} else if (isr & GMAC_ISR_TCOMP_Msk) {
-		hal_mchp_eth_tx_completed(gmac, queue);
+		eth_tx_completed(gmac, queue);
 	}
 
-	if (isr & GMAC_IER_HRESP_Msk) {
+	if ((isr & GMAC_IER_HRESP_Msk) != 0) {
 		LOG_DBG("IER HRESP");
 	}
 }
@@ -875,25 +887,27 @@ static inline void hal_mchp_eth_queue0_isr(gmac_registers_t *gmac,
  *
  * @param mac_addr buffer for the read mac address.
  */
-static void hal_mchp_eth_get_mac_addr_from_i2c_eeprom(uint8_t mac_addr[6])
+static void eth_get_mac_addr_from_i2c_eeprom(uint8_t mac_addr[6])
 {
 	uint32_t iaddr = CONFIG_ETH_MCHP_MAC_I2C_INT_ADDRESS;
 	int ret;
 	const struct i2c_dt_spec i2c = I2C_DT_SPEC_GET(DT_INST_PHANDLE(0, mac_eeprom));
 
-	/* Check if the I2C bus is ready */
-	if (!device_is_ready(i2c.bus)) {
-		LOG_ERR("I2C Bus is not ready");
-		return;
-	}
+	do {
+		/* Check if the I2C bus is ready */
+		if (device_is_ready(i2c.bus) != true) {
+			LOG_ERR("I2C Bus is not ready");
+			break;
+		}
 
-	/* Read the MAc address */
-	ret = i2c_write_read_dt(&i2c, &iaddr, CONFIG_ETH_MCHP_MAC_I2C_INT_ADDRESS_SIZE, mac_addr,
-				6);
-	if (ret != 0) {
-		LOG_ERR("I2C: failed to read MAC addr");
-		return;
-	}
+		/* Read the MAc address */
+		ret = i2c_write_read_dt(&i2c, &iaddr, CONFIG_ETH_MCHP_MAC_I2C_INT_ADDRESS_SIZE,
+					mac_addr, 6);
+		if (ret != 0) {
+			LOG_ERR("I2C: failed to read MAC addr");
+			break;
+		}
+	} while (0);
 }
 #endif
 
@@ -906,17 +920,17 @@ static void hal_mchp_eth_get_mac_addr_from_i2c_eeprom(uint8_t mac_addr[6])
  * @param gmac Pointer to gmac registers.
  * @param mac_addr buffer for the read mac address.
  */
-static inline void hal_mchp_eth_generate_set_mac(gmac_registers_t *gmac, uint8_t mac_addr[6])
+static inline void eth_generate_set_mac(gmac_registers_t *gmac, uint8_t mac_addr[6])
 {
 
 #if DT_INST_NODE_HAS_PROP(0, mac_eeprom)
-	hal_mchp_eth_get_mac_addr_from_i2c_eeprom(mac_addr);
+	eth_get_mac_addr_from_i2c_eeprom(mac_addr);
 #elif DT_INST_PROP(0, zephyr_random_mac_address)
 	gen_random_mac(mac_addr, MCHP_OUI_B0, MCHP_OUI_B1, MCHP_OUI_B2);
 #endif
 
 	/* Set MAC Address for frame filtering logic */
-	hal_mchp_eth_mac_addr_set(gmac, 0, mac_addr);
+	eth_mac_addr_set(gmac, 0, mac_addr);
 }
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
@@ -928,14 +942,14 @@ static inline void hal_mchp_eth_generate_set_mac(gmac_registers_t *gmac, uint8_t
  * @param gmac Pointer to gmac registers.
  * @param eth_stats Pointer to structure in which to fill in the stats data.
  */
-static inline void hal_mchp_eth_get_stats(gmac_registers_t *gmac, struct net_stats_eth *eth_stats)
+static inline void eth_get_stats(gmac_registers_t *gmac, struct net_stats_eth *eth_stats)
 {
-	uint32_t ae = gmac->GMAC_AE;    /* Alignment Error */
-	uint32_t ofr = gmac->GMAC_OFR;  /* Over Length Frames */
-	uint32_t fcs = gmac->GMAC_FCSE; /* FCS Error */
-	uint32_t scf = gmac->GMAC_SCF;  /* Single Collision */
-	uint32_t mcf = gmac->GMAC_MCF;  /* Multiple Collision */
-	uint32_t ecf = gmac->GMAC_EC;   /* Excess Collision */
+	uint32_t err_ae = gmac->GMAC_AE;    /* Alignment Error */
+	uint32_t err_ofr = gmac->GMAC_OFR;  /* Over Length Frames */
+	uint32_t err_fcs = gmac->GMAC_FCSE; /* FCS Error */
+	uint32_t err_scf = gmac->GMAC_SCF;  /* Single Collision */
+	uint32_t err_mcf = gmac->GMAC_MCF;  /* Multiple Collision */
+	uint32_t err_ecf = gmac->GMAC_EC;   /* Excess Collision */
 
 	/*
 	 * No ned to update the bytes rx/tx; bcast rx/tx; pkt rx/tx
@@ -943,21 +957,21 @@ static inline void hal_mchp_eth_get_stats(gmac_registers_t *gmac, struct net_sta
 	 * eth_stats_update_* APIs in eth_stats.h
 	 */
 
-	eth_stats->collisions += scf + mcf + ecf;
+	eth_stats->collisions += err_scf + err_mcf + err_ecf;
 
 	eth_stats->csum.rx_csum_offload_errors += gmac->GMAC_FCSE;
 	eth_stats->csum.rx_csum_offload_good = 0;
 
-	eth_stats->error_details.rx_align_errors += ae;
-	eth_stats->error_details.rx_long_length_errors += ofr;
-	eth_stats->error_details.rx_crc_errors += fcs;
-	eth_stats->error_details.rx_length_errors += ofr;
+	eth_stats->error_details.rx_align_errors += err_ae;
+	eth_stats->error_details.rx_long_length_errors += err_ofr;
+	eth_stats->error_details.rx_crc_errors += err_fcs;
+	eth_stats->error_details.rx_length_errors += err_ofr;
 
 	eth_stats->errors.rx += gmac->GMAC_UCE + gmac->GMAC_TCE + gmac->GMAC_IHCE + gmac->GMAC_ROE +
-				gmac->GMAC_RRE + ae + gmac->GMAC_RSE + gmac->GMAC_LFFE + fcs +
-				gmac->GMAC_JR + ofr + gmac->GMAC_UFR;
+				gmac->GMAC_RRE + err_ae + gmac->GMAC_RSE + gmac->GMAC_LFFE +
+				err_fcs + gmac->GMAC_JR + err_ofr + gmac->GMAC_UFR;
 
-	eth_stats->errors.tx += scf + mcf + ecf + gmac->GMAC_TUR + gmac->GMAC_CSE;
+	eth_stats->errors.tx += err_scf + err_mcf + err_ecf + gmac->GMAC_TUR + gmac->GMAC_CSE;
 
 	eth_stats->multicast.rx += gmac->GMAC_MFR;
 	eth_stats->multicast.tx += gmac->GMAC_MFT;
@@ -1023,11 +1037,11 @@ static struct net_pkt *eth_mchp_frame_get(struct eth_mchp_gmac_queue *queue)
 	tail = rx_desc_list->tail;
 	rx_desc = &rx_desc_list->buf[tail];
 	frame_is_complete = false;
-	while ((rx_desc->w0 & GMAC_RXW0_OWNERSHIP) && !frame_is_complete) {
+	while (((rx_desc->w0 & GMAC_RXW0_OWNERSHIP) != 0) && (frame_is_complete == false)) {
 
-		if (!(uint8_t *)(rx_desc->w0 & GMAC_RXW0_ADDR)) {
+		if (((uint8_t *)(rx_desc->w0 & GMAC_RXW0_ADDR)) == 0) {
 			rx_desc->w0 &= ~GMAC_RXW0_OWNERSHIP;
-			return NULL;
+			break;
 		}
 		frame_is_complete = (bool)(rx_desc->w1 & GMAC_RXW1_EOF);
 		MODULO_INC(tail, rx_desc_list->len);
@@ -1036,7 +1050,7 @@ static struct net_pkt *eth_mchp_frame_get(struct eth_mchp_gmac_queue *queue)
 	/* Frame which is not complete can be dropped by GMAC. Do not process
 	 * it, even partially.
 	 */
-	if (!frame_is_complete) {
+	if (frame_is_complete == false) {
 		return NULL;
 	}
 
@@ -1045,7 +1059,7 @@ static struct net_pkt *eth_mchp_frame_get(struct eth_mchp_gmac_queue *queue)
 	rx_desc = &rx_desc_list->buf[tail];
 	frame_is_complete = false;
 
-	if (rx_desc->w1 & GMAC_RXW1_SOF) {
+	if ((rx_desc->w1 & GMAC_RXW1_SOF) != 0) {
 		rx_frame = net_pkt_rx_alloc(K_NO_WAIT);
 	} else {
 		/* TODO: Don't assume first RX fragment will have SOF (Start of frame)
@@ -1055,14 +1069,14 @@ static struct net_pkt *eth_mchp_frame_get(struct eth_mchp_gmac_queue *queue)
 		return NULL;
 	}
 
-	while ((rx_desc->w0 & GMAC_RXW0_OWNERSHIP) && !frame_is_complete) {
+	while (((rx_desc->w0 & GMAC_RXW0_OWNERSHIP) != 0) && (frame_is_complete == false)) {
 		frag = rx_frag_list[tail];
 		frag_data = (uint8_t *)(rx_desc->w0 & GMAC_RXW0_ADDR);
 
 		__ASSERT(frag->data == frag_data, "RX descriptor and buffer list desynchronized");
 
 		frame_is_complete = (bool)(rx_desc->w1 & GMAC_RXW1_EOF);
-		if (frame_is_complete) {
+		if (frame_is_complete == true) {
 			frag_len = (rx_desc->w1 & GMAC_RXW1_LEN) - frame_len;
 		} else {
 			frag_len = CONFIG_NET_BUF_DATA_SIZE;
@@ -1103,7 +1117,7 @@ static struct net_pkt *eth_mchp_frame_get(struct eth_mchp_gmac_queue *queue)
 		barrier_dmem_fence_full();
 
 		/* Update buffer descriptor address word */
-		wrap = (tail == rx_desc_list->len - 1U ? GMAC_RXW0_WRAP : 0);
+		wrap = (tail == (rx_desc_list->len - 1U) ? GMAC_RXW0_WRAP : 0);
 		rx_desc->w0 = ((uint32_t)frag->data & GMAC_RXW0_ADDR) | wrap;
 
 		MODULO_INC(tail, rx_desc_list->len);
@@ -1135,7 +1149,7 @@ static void eth_mchp_rx(struct eth_mchp_gmac_queue *queue)
 	 * complete frames stored in the GMAC RX descriptor list.
 	 */
 	rx_frame = eth_mchp_frame_get(queue);
-	if (!rx_frame) {
+	if (rx_frame == NULL) {
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 		dev_data->stats.error_details.rx_buf_alloc_failed++;
 #endif
@@ -1169,7 +1183,7 @@ static int eth_mchp_start(const struct device *dev)
 	eth_mchp_dev_data_t *const dev_data = dev->data;
 
 	/* Do not start the interface until PHY link is up */
-	if (!(dev_data->link_up)) {
+	if (dev_data->link_up == false) {
 		net_if_carrier_off(dev_data->iface);
 	} else {
 		net_eth_carrier_on(dev_data->iface);
@@ -1237,7 +1251,7 @@ static int eth_mchp_send(const struct device *dev, struct net_pkt *pkt)
 {
 	const eth_mchp_dev_config_t *const cfg = dev->config;
 	eth_mchp_dev_data_t *const dev_data = dev->data;
-	gmac_registers_t *const hal = cfg->regs;
+	gmac_registers_t *const gmac_regs = cfg->regs;
 	struct eth_mchp_gmac_queue *queue;
 	struct eth_mchp_gmac_desc_list *tx_desc_list;
 	struct eth_mchp_gmac_desc *tx_desc;
@@ -1291,7 +1305,7 @@ static int eth_mchp_send(const struct device *dev, struct net_pkt *pkt)
 	/* Keep reference to the descriptor */
 	tx_first_desc = &tx_desc_list->buf[tx_desc_list->head];
 
-	while (frag) {
+	while (frag != NULL) {
 
 		frag_data = frag->data;
 		frag_len = frag->len;
@@ -1307,10 +1321,10 @@ static int eth_mchp_send(const struct device *dev, struct net_pkt *pkt)
 		/* Update buffer descriptor status word (clear used bit except
 		 * for the first frag).
 		 */
-		tx_desc->w1 = (frag_len & GMAC_TXW1_LEN) |
-			      (!frag->frags ? GMAC_TXW1_LASTBUFFER : 0) |
-			      (tx_desc_list->head == tx_desc_list->len - 1U ? GMAC_TXW1_WRAP : 0) |
-			      (tx_desc == tx_first_desc ? GMAC_TXW1_USED : 0);
+		tx_desc->w1 =
+			(frag_len & GMAC_TXW1_LEN) | (!frag->frags ? GMAC_TXW1_LASTBUFFER : 0) |
+			(tx_desc_list->head == (tx_desc_list->len - 1U) ? GMAC_TXW1_WRAP : 0) |
+			(tx_desc == tx_first_desc ? GMAC_TXW1_USED : 0);
 
 		/* Update descriptor position */
 		MODULO_INC(tx_desc_list->head, tx_desc_list->len);
@@ -1338,7 +1352,7 @@ static int eth_mchp_send(const struct device *dev, struct net_pkt *pkt)
 	barrier_dmem_fence_full();
 
 	/* Start transmission */
-	hal_mchp_eth_tx(hal);
+	eth_tx(gmac_regs);
 
 	/* Wait until the packet is sent */
 	k_sem_take(&queue->tx_sem, K_FOREVER);
@@ -1365,10 +1379,10 @@ static void eth_mchp_queue0_isr(const struct device *dev)
 {
 	const eth_mchp_dev_config_t *const cfg = dev->config;
 	eth_mchp_dev_data_t *const dev_data = dev->data;
-	gmac_registers_t *const hal = cfg->regs;
+	gmac_registers_t *const gmac_regs = cfg->regs;
 	struct eth_mchp_gmac_queue *queue = &dev_data->queue_list[0];
 
-	hal_mchp_eth_queue0_isr(hal, queue);
+	eth_queue0_isr(gmac_regs, queue);
 }
 
 /**
@@ -1388,11 +1402,31 @@ static int eth_mchp_initialize(const struct device *dev)
 
 	cfg->config_func();
 
-	/* Enable clocks */
-	ETH_MCHP_ENABLE_CLOCK(dev);
+	do {
+		/* Enable clocks */
+		retval = clock_control_on(
+			((const eth_mchp_dev_config_t *)(dev->config))->eth_clock.clock_dev,
+			(((eth_mchp_dev_config_t *)(dev->config))->eth_clock.mclk_apb_sys));
+		if ((retval != 0) && (retval != -EALREADY)) {
+			LOG_ERR("Failed to enable the MCLK APB for Ethernet: %d", retval);
+			break;
+		}
 
-	/* Connect pins to the peripheral */
-	retval = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+		retval = clock_control_on(
+			((const eth_mchp_dev_config_t *)(dev->config))->eth_clock.clock_dev,
+			(((eth_mchp_dev_config_t *)(dev->config))->eth_clock.mclk_ahb_sys));
+		if ((retval != 0) && (retval != -EALREADY)) {
+			LOG_ERR("Failed to enable the MCLK AHB for Ethernet: %d", retval);
+			break;
+		}
+
+		/* Connect pins to the peripheral */
+		retval = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+		if (retval != 0) {
+			LOG_ERR("pinctrl_apply_state() Failed for Ethernet driver: %d", retval);
+			break;
+		}
+	} while (0);
 
 	return retval;
 }
@@ -1414,12 +1448,12 @@ static void eth_mchp_phy_link_state_changed(const struct device *pdev, struct ph
 	const struct device *dev = (const struct device *)user_data;
 	eth_mchp_dev_data_t *const dev_data = dev->data;
 	const eth_mchp_dev_config_t *const cfg = dev->config;
-	gmac_registers_t *const hal = cfg->regs;
+	gmac_registers_t *const gmac_regs = cfg->regs;
 	bool is_up;
 
 	is_up = state->is_up;
 
-	if (is_up && !dev_data->link_up) {
+	if ((is_up == true) && (dev_data->link_up == false)) {
 		LOG_INF("Link up");
 
 		/* Announce link up status */
@@ -1427,9 +1461,9 @@ static void eth_mchp_phy_link_state_changed(const struct device *pdev, struct ph
 		net_eth_carrier_on(dev_data->iface);
 
 		/* Set up link */
-		hal_mchp_eth_link_configure(hal, PHY_LINK_IS_FULL_DUPLEX(state->speed),
-					    PHY_LINK_IS_SPEED_100M(state->speed));
-	} else if (!is_up && dev_data->link_up) {
+		eth_link_configure(gmac_regs, PHY_LINK_IS_FULL_DUPLEX(state->speed),
+				   PHY_LINK_IS_SPEED_100M(state->speed));
+	} else if ((is_up == false) && (dev_data->link_up == true)) {
 		LOG_INF("Link down");
 
 		/* Announce link down status */
@@ -1470,7 +1504,7 @@ static void eth_mchp_iface_init(struct net_if *iface)
 	const struct device *dev = net_if_get_device(iface);
 	eth_mchp_dev_data_t *const dev_data = dev->data;
 	const eth_mchp_dev_config_t *const cfg = dev->config;
-	gmac_registers_t *const hal = cfg->regs;
+	gmac_registers_t *const gmac_regs = cfg->regs;
 	static bool init_done;
 	uint32_t gmac_ncfgr_val;
 	int i;
@@ -1484,7 +1518,7 @@ static void eth_mchp_iface_init(struct net_if *iface)
 	ethernet_init(iface);
 
 	/* The rest of initialization should only be done once */
-	if (init_done) {
+	if (init_done == true) {
 		return;
 	}
 
@@ -1499,21 +1533,21 @@ static void eth_mchp_iface_init(struct net_if *iface)
 			 | GMAC_MAX_FRAME_SIZE;
 
 	/* Get Clock frequency */
-	result = ETH_MCHP_GET_CLOCK_FREQ(
+	result = clock_control_get_rate(
 		cfg->eth_clock.clock_dev,
-		(((eth_mchp_dev_config_t *)(dev->config))->eth_clock.mclk_apb_sys), clk_freq_hz);
+		(((eth_mchp_dev_config_t *)(dev->config))->eth_clock.mclk_apb_sys), &clk_freq_hz);
 	if (result < 0) {
 		LOG_ERR("ETH_MCHP_GET_CLOCK_FREQ Failed");
 	}
 
-	result = hal_mchp_eth_gmac_init(hal, gmac_ncfgr_val, clk_freq_hz);
+	result = eth_gmac_init(gmac_regs, gmac_ncfgr_val, clk_freq_hz);
 	if (result < 0) {
 		LOG_ERR("Unable to initialize ETH driver");
 		return;
 	}
 
 	/* Set the MAC address */
-	hal_mchp_eth_generate_set_mac(hal, dev_data->mac_addr);
+	eth_generate_set_mac(gmac_regs, dev_data->mac_addr);
 
 	LOG_INF("MAC: %02x:%02x:%02x:%02x:%02x:%02x", dev_data->mac_addr[0], dev_data->mac_addr[1],
 		dev_data->mac_addr[2], dev_data->mac_addr[3], dev_data->mac_addr[4],
@@ -1525,14 +1559,14 @@ static void eth_mchp_iface_init(struct net_if *iface)
 
 	/* Initialize GMAC queues */
 	for (i = GMAC_QUE_0; i < GMAC_QUEUE_NUM; i++) {
-		result = hal_mchp_eth_queue_init(hal, &dev_data->queue_list[i]);
+		result = eth_queue_init(gmac_regs, &dev_data->queue_list[i]);
 		if (result < 0) {
 			LOG_ERR("Unable to initialize ETH queue%d", i);
 			return;
 		}
 	}
 
-	if (device_is_ready(cfg->phy_dev)) {
+	if (device_is_ready(cfg->phy_dev) == true) {
 		phy_link_callback_set(cfg->phy_dev, &eth_mchp_phy_link_state_changed, (void *)dev);
 
 	} else {
@@ -1556,9 +1590,9 @@ static struct net_stats_eth *eth_mchp_get_stats(const struct device *dev)
 {
 	eth_mchp_dev_data_t *dev_data = dev->data;
 	const eth_mchp_dev_config_t *const cfg = dev->config;
-	gmac_registers_t *const hal = cfg->regs;
+	gmac_registers_t *const gmac_regs = cfg->regs;
 
-	hal_mchp_eth_get_stats(hal, &dev_data->stats);
+	eth_get_stats(gmac_regs, &dev_data->stats);
 
 	return &dev_data->stats;
 }
@@ -1610,12 +1644,12 @@ static int eth_mchp_set_config(const struct device *dev, enum ethernet_config_ty
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS: {
 		eth_mchp_dev_data_t *const dev_data = dev->data;
 		const eth_mchp_dev_config_t *const cfg = dev->config;
-		gmac_registers_t *const hal = cfg->regs;
+		gmac_registers_t *const gmac_regs = cfg->regs;
 
 		memcpy(dev_data->mac_addr, config->mac_address.addr, sizeof(dev_data->mac_addr));
 
 		/* Set MAC Address for frame filtering logic */
-		hal_mchp_eth_mac_addr_set(hal, 0, dev_data->mac_addr);
+		eth_mac_addr_set(gmac_regs, 0, dev_data->mac_addr);
 
 		LOG_INF("%s MAC set to %02x:%02x:%02x:%02x:%02x:%02x", dev->name,
 			dev_data->mac_addr[0], dev_data->mac_addr[1], dev_data->mac_addr[2],

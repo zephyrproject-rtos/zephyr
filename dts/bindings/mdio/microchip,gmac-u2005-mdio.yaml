@@ -1,7 +1,7 @@
-# Copyright (c) 2021 IP-Logix Inc.
+# Copyright (c) 2025 Microchip Technology Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-description: Atmel SAM Family MDIO Driver node
+description: Microchip GMAC MDIO binding
 
 compatible: "microchip,gmac-u2005-mdio"
 

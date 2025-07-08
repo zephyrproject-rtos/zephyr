@@ -13,7 +13,15 @@ config ETH_MCHP_GMAC_U2005
 	help
 	  Enable Microchip MCU Family Ethernet driver.
 
-if ETH_MCHP_GMAC_U2005
+# Define menu symbol for configuring ethernet features
+menuconfig ETH_MCHP_GMAC
+	bool "Microchip GMAC Ethernet driver"
+	default y
+	depends on ETH_MCHP_GMAC_U2005
+	help
+	  Enable support for Microchip clock controller driver.
+
+if ETH_MCHP_GMAC
 
 # Workaround for not being able to have commas in macro arguments
 DT_ETH_MCHP_PATH := $(dt_nodelabel_path,gmac)
@@ -72,6 +80,8 @@ config ETH_MCHP_BUF_RX_COUNT
 	  and the other being processed by the higher layer networking stack.
 
 config ETH_MCHP_MAC_I2C_EEPROM
+	default y
+	select I2C
 	bool "Read from an I2C EEPROM"
 	help
 	  Read MAC address from an I2C EEPROM.
@@ -80,6 +90,7 @@ if ETH_MCHP_MAC_I2C_EEPROM
 
 config ETH_MCHP_MAC_I2C_INT_ADDRESS
 	hex "I2C EEPROM internal address"
+	default 0x9A
 	range 0 0xffffffff
 	help
 	  Internal address of the EEPROM chip where the MAC address is stored.
@@ -102,4 +113,4 @@ config PTP_CLOCK_SAM_GMAC
 	help
 	  Enable SAM GMAC PTP Clock support.
 
-endif # ETH_MCHP_GMAC_U2005
+endif # ETH_MCHP_GMAC
