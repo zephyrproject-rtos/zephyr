@@ -16,9 +16,9 @@
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
-	max17048:max17048@36 {
+	max17048: max17048@36 {
 		compatible = "maxim,max17048";
 		status = "ok";
-		reg = <0x36 >;
+		reg = <0x36>;
 	};
 };

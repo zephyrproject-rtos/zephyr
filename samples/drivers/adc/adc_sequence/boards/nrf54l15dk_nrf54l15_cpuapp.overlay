@@ -19,7 +19,7 @@
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
-		zephyr,input-positive = <NRF_SAADC_AIN4>; /* P1.11 */
+		zephyr,input-positive = <NRF_SAADC_AIN4>;	/* P1.11 */
 	};
 
 	channel@1 {
@@ -27,7 +27,7 @@
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
-		zephyr,input-positive = <NRF_SAADC_AIN2>; /* P1.06 */
+		zephyr,input-positive = <NRF_SAADC_AIN2>;	/* P1.06 */
 	};
 
 	channel@2 {
@@ -35,7 +35,7 @@
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
-		zephyr,input-positive = <NRF_SAADC_DVDD>; /* 0.9 V internal */
+		zephyr,input-positive = <NRF_SAADC_DVDD>;	/* 0.9 V internal */
 	};
 
 	channel@7 {
@@ -43,7 +43,7 @@
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
-		zephyr,input-positive = <NRF_SAADC_AIN6>; /* P1.13 */
-		zephyr,input-negative = <NRF_SAADC_AIN7>; /* P1.14 */
+		zephyr,input-positive = <NRF_SAADC_AIN6>;	/* P1.13 */
+		zephyr,input-negative = <NRF_SAADC_AIN7>;	/* P1.14 */
 	};
 };
