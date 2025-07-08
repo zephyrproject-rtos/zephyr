@@ -407,23 +407,24 @@ static DEVICE_API(dma, sam_xdmac_driver_api) = {
 	.get_status = sam_xdmac_get_status,
 };
 
-/* DMA0 */
+#define DMA_INIT(n)								\
+	static void dma##n##_irq_config(void)					\
+	{									\
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),		\
+			    sam_xdmac_isr, DEVICE_DT_INST_GET(n), 0);		\
+	}									\
+										\
+	static const struct sam_xdmac_dev_cfg dma##n##_config = {		\
+		.regs = (Xdmac *)DT_INST_REG_ADDR(n),				\
+		.irq_config = dma##n##_irq_config,				\
+		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),			\
+		.irq_id = DT_INST_IRQN(n),					\
+	};									\
+										\
+	static struct sam_xdmac_dev_data dma##n##_data;				\
+										\
+	DEVICE_DT_INST_DEFINE(n, &sam_xdmac_initialize, NULL,			\
+			      &dma##n##_data, &dma##n##_config, POST_KERNEL,	\
+			      CONFIG_DMA_INIT_PRIORITY, &sam_xdmac_driver_api);
 
-static void dma0_sam_irq_config(void)
-{
-	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), sam_xdmac_isr,
-		    DEVICE_DT_INST_GET(0), 0);
-}
-
-static const struct sam_xdmac_dev_cfg dma0_sam_config = {
-	.regs = (Xdmac *)DT_INST_REG_ADDR(0),
-	.irq_config = dma0_sam_irq_config,
-	.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(0),
-	.irq_id = DT_INST_IRQN(0),
-};
-
-static struct sam_xdmac_dev_data dma0_sam_data;
-
-DEVICE_DT_INST_DEFINE(0, sam_xdmac_initialize, NULL,
-		    &dma0_sam_data, &dma0_sam_config, POST_KERNEL,
-		    CONFIG_DMA_INIT_PRIORITY, &sam_xdmac_driver_api);
+DT_INST_FOREACH_STATUS_OKAY(DMA_INIT)
