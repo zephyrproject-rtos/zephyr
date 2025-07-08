@@ -69,6 +69,12 @@ config WARN_DEPRECATED
 	  Print a warning when the Kconfig tree is parsed if any deprecated
 	  features are enabled.
 
+config NOT_SECURE
+	bool
+	help
+	  Symbol to be selected by a feature to inidicate that feature is
+	  not secure.
+
 rsource "images/Kconfig"
 
 menu "Build options"

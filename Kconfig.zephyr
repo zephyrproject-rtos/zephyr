@@ -1037,6 +1037,12 @@ config WARN_EXPERIMENTAL
 	  Print a warning when the Kconfig tree is parsed if any experimental
 	  features are enabled.
 
+config NOT_SECURE
+	bool
+	help
+	  Symbol to be selected by a feature to inidicate that feature is
+	  not secure.
+
 config TAINT
 	bool
 	help
