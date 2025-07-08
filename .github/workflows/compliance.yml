@@ -60,6 +60,23 @@ jobs:
         west config manifest.group-filter -- +ci,-optional
         west update -o=--depth=1 -n 2>&1 1> west.update.log || west update -o=--depth=1 -n 2>&1 1> west.update2.log
 
+    - name: Cache npm dependencies
+      uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-npm-
+
+    - name: Setup Node.js
+      uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
+      with:
+        node-version: "lts/*"
+        check-latest: true
+
+    - name: Install Node dependencies
+      run: npm ci
+
     - name: Run Compliance Tests
       continue-on-error: true
       id: compliance
@@ -85,6 +102,14 @@ jobs:
       with:
         name: compliance.xml
         path: compliance.xml
+
+    - name: upload-dts-linter-patch
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      continue-on-error: true
+      if: hashFiles('dts_linter.patch') != ''
+      with:
+        name: dts_linter.patch
+        path: dts_linter.patch
 
     - name: check-warns
       run: |

@@ -2572,6 +2572,11 @@ sub process {
 			next;
 		}
 
+		# skip package-lock.json and package.json files specifically
+		if ($realfile =~ /package(-lock)?\.json$/) {
+			next;
+		}
+
 #make up the handle for any error we report on this line
 		if ($showfile) {
 			$prefix = "$realfile:$realline: "
