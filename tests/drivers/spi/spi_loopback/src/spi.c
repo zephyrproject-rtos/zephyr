@@ -143,16 +143,22 @@ static void to_display_format(const uint8_t *src, size_t size, char *dst)
 static const struct gpio_dt_spec cs_loopback_gpio =
 			GPIO_DT_SPEC_GET_OR(DT_PATH(zephyr_user), cs_loopback_gpios, {0});
 static struct gpio_callback cs_cb_data;
-static K_SEM_DEFINE(cs_sem, 0, UINT_MAX);
+atomic_t cs_count;
 
 static void spi_loopback_gpio_cs_loopback_prepare(void)
 {
-	k_sem_reset(&cs_sem);
+	atomic_set(&cs_count, 0);
 }
 
 static int spi_loopback_gpio_cs_loopback_check(int expected_triggers)
 {
-	return k_sem_count_get(&cs_sem) != expected_triggers;
+	int actual_triggers = atomic_get(&cs_count);
+
+	if (actual_triggers != expected_triggers) {
+		TC_PRINT("Expected %d CS triggers, got %d", expected_triggers, actual_triggers);
+		return -1;
+	}
+	return 0;
 }
 
 static void cs_callback(const struct device *port,
@@ -164,7 +170,7 @@ static void cs_callback(const struct device *port,
 	ARG_UNUSED(pins);
 
 	/* Give semaphore to indicate CS triggered */
-	k_sem_give(&cs_sem);
+	atomic_inc(&cs_count);
 }
 
 static int spi_loopback_gpio_cs_loopback_init(void)
