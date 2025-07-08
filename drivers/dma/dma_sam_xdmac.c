@@ -404,6 +404,74 @@ static int sam_xdmac_initialize(const struct device *dev)
 	return 0;
 }
 
+static int xdmac_suspend(const struct device *dev, uint32_t channel)
+{
+	const struct sam_xdmac_dev_cfg *config = dev->config;
+	struct sam_xdmac_dev_data *const dev_data = dev->data;
+	uint32_t channel_num = dev_data->dma_ctx.dma_channels;
+
+	Xdmac * const xdmac = config->regs;
+
+	if (channel >= channel_num) {
+		LOG_ERR("Channel %d out of range", channel);
+		return -EINVAL;
+	}
+
+	if (!(xdmac->XDMAC_GS & BIT(channel))) {
+		LOG_DBG("Channel %d not enabled", channel);
+		return -EINVAL;
+	}
+
+#if defined(CONFIG_SOC_SERIES_SAMX7X)
+	if (xdmac->XDMAC_GRS & BIT(channel) || xdmac->XDMAC_GWS & BIT(channel)) {
+#elif defined(CONFIG_SOC_SERIES_SAMA7G5)
+	if (xdmac->XDMAC_GRSS & BIT(channel) || xdmac->XDMAC_GWSS & BIT(channel)) {
+#else
+#error Unsupported SoC family
+#endif
+		LOG_DBG("Channel %d already suspended", channel);
+		return 0;
+	}
+
+	xdmac->XDMAC_GRWS |= BIT(channel);
+
+	return 0;
+}
+
+static int xdmac_resume(const struct device *dev, uint32_t channel)
+{
+	const struct sam_xdmac_dev_cfg *config = dev->config;
+	struct sam_xdmac_dev_data *const dev_data = dev->data;
+	uint32_t channel_num = dev_data->dma_ctx.dma_channels;
+
+	Xdmac * const xdmac = config->regs;
+
+	if (channel >= channel_num) {
+		LOG_ERR("Channel %d out of range", channel);
+		return -EINVAL;
+	}
+
+	if (!(xdmac->XDMAC_GS & BIT(channel))) {
+		LOG_DBG("Channel %d not enabled", channel);
+		return -EINVAL;
+	}
+
+#if defined(CONFIG_SOC_SERIES_SAMX7X)
+	if (!(xdmac->XDMAC_GRS & BIT(channel) || xdmac->XDMAC_GWS & BIT(channel))) {
+#elif defined(CONFIG_SOC_SERIES_SAMA7G5)
+	if (!(xdmac->XDMAC_GRSS & BIT(channel) || xdmac->XDMAC_GWSS & BIT(channel))) {
+#else
+#error Unsupported SoC family
+#endif
+		LOG_DBG("Channel %d not suspended", channel);
+		return 0;
+	}
+
+	xdmac->XDMAC_GRWR |= BIT(channel);
+
+	return 0;
+}
+
 static int sam_xdmac_get_status(const struct device *dev, uint32_t channel,
 				struct dma_status *status)
 {
@@ -433,6 +501,8 @@ static DEVICE_API(dma, sam_xdmac_driver_api) = {
 	.reload = sam_xdmac_transfer_reload,
 	.start = sam_xdmac_transfer_start,
 	.stop = sam_xdmac_transfer_stop,
+	.suspend = xdmac_suspend,
+	.resume = xdmac_resume,
 	.get_status = sam_xdmac_get_status,
 };
 
