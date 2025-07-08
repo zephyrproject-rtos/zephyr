@@ -202,11 +202,6 @@ int nrf_wifi_get_power_save_config(const struct device *dev,
 
 	fmac_dev_ctx = rpu_ctx_zep->rpu_ctx;
 
-	if (!rpu_ctx_zep) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
-		goto out;
-	}
-
 	vif_ctx_zep->ps_info = ps_config;
 
 	vif_ctx_zep->ps_config_info_evnt = false;
