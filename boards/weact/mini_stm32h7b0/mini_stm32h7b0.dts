@@ -69,7 +69,7 @@
 			gamctrn1 = [03 1D 07 06 2E 2C 29 2D 2E 2E 37 3F 00 00 02 10];
 			colmod = <5>;
 			/* Set D3 (RGB) bit to 1. LV_COLOR_16_SWAP is enabled by default */
-			madctl = <120>; /* Set to <184> to rotate the image 180 degrees. */
+			madctl = <120>;	/* Set to <184> to rotate the image 180 degrees. */
 			caset = [00 01 00 a0];
 			raset = [00 1a 00 69];
 		};
@@ -138,14 +138,14 @@ zephyr_udc0: &usbotg_hs {
 &octospi1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&octospim_p1_clk_pb2 &octospim_p1_ncs_pb6
-		&octospim_p1_io0_pd11 &octospim_p1_io1_pd12
-		&octospim_p1_io2_pe2 &octospim_p1_io3_pd13>;
+		     &octospim_p1_io0_pd11 &octospim_p1_io1_pd12
+		     &octospim_p1_io2_pe2 &octospim_p1_io3_pd13>;
 	status = "okay";
 
-	w25q64_qspi: ospi-nor-flash@0{
+	w25q64_qspi: ospi-nor-flash@0 {
 		compatible = "st,stm32-ospi-nor";
 		reg = <0>;
-		size = <DT_SIZE_M(64)>; /* 64 Mbits */
+		size = <DT_SIZE_M(64)>;	/* 64 Mbits */
 		ospi-max-frequency = <40000000>;
 		status = "okay";
 		spi-bus-width = <4>;
@@ -172,7 +172,7 @@ zephyr_udc0: &usbotg_hs {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <40000000>;
-		size = <DT_SIZE_M(64)>; /* 64 Mbits */
+		size = <DT_SIZE_M(64)>;	/* 64 Mbits */
 		status = "okay";
 		jedec-id = [ef 40 17];
 		has-dpd;

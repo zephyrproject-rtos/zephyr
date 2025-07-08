@@ -69,7 +69,7 @@
 			gamctrn1 = [03 1D 07 06 2E 2C 29 2D 2E 2E 37 3F 00 00 02 10];
 			colmod = <5>;
 			/* Set D3 (RGB) bit to 1. LV_COLOR_16_SWAP is enabled by default */
-			madctl = <120>; /* Set to <184> to rotate the image 180 degrees. */
+			madctl = <120>;	/* Set to <184> to rotate the image 180 degrees. */
 			caset = [00 01 00 a0];
 			raset = [00 1a 00 69];
 		};
@@ -88,21 +88,21 @@
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
 
-		gpio-map = <3  0 &gpiob 9  0>,  /* DVP_SDA (I2C1_SDA) */
-			   <5  0 &gpiob 8  0>,  /* DVP_SCL (I2C1_SCL) */
-			   <7  0 &gpiob 7  0>,  /* DVP_VSYNC */
-			   <8  0 &gpioa 7  0>,  /* DVP_PWDN */
-			   <9  0 &gpioa 4  0>,  /* DVP_HSYNC */
-			   <12 0 &gpioe 6  0>,  /* DVP_D7 */
-			   <13 0 &gpioa 8  0>,  /* DVP_XCLK (RCC_MCO1) */
-			   <14 0 &gpioe 5  0>,  /* DVP_D6 */
-			   <16 0 &gpiod 3  0>,  /* DVP_D5 */
-			   <17 0 &gpioa 6  0>,  /* DVP_PCLK */
-			   <18 0 &gpioe 4  0>,  /* DVP_D4 */
-			   <19 0 &gpioc 6  0>,  /* DVP_D0 */
-			   <20 0 &gpioe 1  0>,  /* DVP_D3 */
-			   <21 0 &gpioc 7  0>,  /* DVP_D1 */
-			   <22 0 &gpioe 0  0>;  /* DVP_D2 */
+		gpio-map = <3 0 &gpiob 9 0>,	/* DVP_SDA (I2C1_SDA) */
+			   <5 0 &gpiob 8 0>,	/* DVP_SCL (I2C1_SCL) */
+			   <7 0 &gpiob 7 0>,	/* DVP_VSYNC */
+			   <8 0 &gpioa 7 0>,	/* DVP_PWDN */
+			   <9 0 &gpioa 4 0>,	/* DVP_HSYNC */
+			   <12 0 &gpioe 6 0>,	/* DVP_D7 */
+			   <13 0 &gpioa 8 0>,	/* DVP_XCLK (RCC_MCO1) */
+			   <14 0 &gpioe 5 0>,	/* DVP_D6 */
+			   <16 0 &gpiod 3 0>,	/* DVP_D5 */
+			   <17 0 &gpioa 6 0>,	/* DVP_PCLK */
+			   <18 0 &gpioe 4 0>,	/* DVP_D4 */
+			   <19 0 &gpioc 6 0>,	/* DVP_D0 */
+			   <20 0 &gpioe 1 0>,	/* DVP_D3 */
+			   <21 0 &gpioc 7 0>,	/* DVP_D1 */
+			   <22 0 &gpioe 0 0>;	/* DVP_D2 */
 	};
 };
 
@@ -161,15 +161,15 @@ zephyr_udc0: &usbotg_fs {
 &quadspi {
 	pinctrl-names = "default";
 	pinctrl-0 = <&quadspi_clk_pb2 &quadspi_bk1_ncs_pb6
-		&quadspi_bk1_io0_pd11 &quadspi_bk1_io1_pd12
-		&quadspi_bk1_io2_pe2 &quadspi_bk1_io3_pd13>;
+		     &quadspi_bk1_io0_pd11 &quadspi_bk1_io1_pd12
+		     &quadspi_bk1_io2_pe2 &quadspi_bk1_io3_pd13>;
 	flash-id = <1>;
 	status = "okay";
 
 	w25q64_qspi: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
 		reg = <0>;
-		size = <DT_SIZE_M(64)>; /* 64 Mbits */
+		size = <DT_SIZE_M(64)>;	/* 64 Mbits */
 		qspi-max-frequency = <40000000>;
 		status = "okay";
 		spi-bus-width = <4>;
@@ -195,7 +195,7 @@ zephyr_udc0: &usbotg_fs {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <40000000>;
-		size = <DT_SIZE_M(64)>; /* 64 Mbits */
+		size = <DT_SIZE_M(64)>;	/* 64 Mbits */
 		status = "okay";
 		jedec-id = [ef 40 17];
 		has-dpd;
