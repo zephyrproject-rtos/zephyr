@@ -129,7 +129,7 @@
 			 * on part number dtsi level, using
 			 * the `gpio-reserved-ranges` property.
 			 */
-			ngpios = <20>;   /* 0..20 */
+			ngpios = <20>;	/* 0..20 */
 		};
 
 		i2c0: i2c@60013000 {
@@ -204,7 +204,7 @@
 			status = "disabled";
 		};
 
-		wdt0: watchdog@6001f048  {
+		wdt0: watchdog@6001f048 {
 			compatible = "espressif,esp32-watchdog";
 			reg = <0x6001f048 0x20>;
 			interrupts = <TG0_WDT_LEVEL_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
