@@ -13,7 +13,7 @@
 #ifndef _ASMLANGUAGE
 /* CSR access helpers */
 
-static inline unsigned char litex_read8(unsigned long addr)
+static inline uint8_t litex_read8(mem_addr_t addr)
 {
 #if CONFIG_LITEX_CSR_DATA_WIDTH >= 8
 	return sys_read8(addr);
@@ -22,7 +22,7 @@ static inline unsigned char litex_read8(unsigned long addr)
 #endif
 }
 
-static inline unsigned short litex_read16(unsigned long addr)
+static inline uint16_t litex_read16(mem_addr_t addr)
 {
 #if CONFIG_LITEX_CSR_DATA_WIDTH == 8
 	return (sys_read8(addr) << 8)
@@ -34,7 +34,7 @@ static inline unsigned short litex_read16(unsigned long addr)
 #endif
 }
 
-static inline unsigned int litex_read32(unsigned long addr)
+static inline uint32_t litex_read32(mem_addr_t addr)
 {
 #if CONFIG_LITEX_CSR_DATA_WIDTH == 8
 	return (sys_read8(addr) << 24)
@@ -48,7 +48,7 @@ static inline unsigned int litex_read32(unsigned long addr)
 #endif
 }
 
-static inline uint64_t litex_read64(unsigned long addr)
+static inline uint64_t litex_read64(mem_addr_t addr)
 {
 #if CONFIG_LITEX_CSR_DATA_WIDTH == 8
 	return (((uint64_t)sys_read8(addr)) << 56)
@@ -68,7 +68,7 @@ static inline uint64_t litex_read64(unsigned long addr)
 #endif
 }
 
-static inline void litex_write8(unsigned char value, unsigned long addr)
+static inline void litex_write8(uint8_t value, mem_addr_t addr)
 {
 #if CONFIG_LITEX_CSR_DATA_WIDTH >= 8
 	sys_write8(value, addr);
@@ -77,7 +77,7 @@ static inline void litex_write8(unsigned char value, unsigned long addr)
 #endif
 }
 
-static inline void litex_write16(unsigned short value, unsigned long addr)
+static inline void litex_write16(uint16_t value, mem_addr_t addr)
 {
 #if CONFIG_LITEX_CSR_DATA_WIDTH == 8
 	sys_write8(value >> 8, addr);
@@ -89,7 +89,7 @@ static inline void litex_write16(unsigned short value, unsigned long addr)
 #endif
 }
 
-static inline void litex_write32(unsigned int value, unsigned long addr)
+static inline void litex_write32(uint32_t value, mem_addr_t addr)
 {
 #if CONFIG_LITEX_CSR_DATA_WIDTH == 8
 	sys_write8(value >> 24, addr);
@@ -103,7 +103,7 @@ static inline void litex_write32(unsigned int value, unsigned long addr)
 #endif
 }
 
-static inline void litex_write64(uint64_t value, unsigned long addr)
+static inline void litex_write64(uint64_t value, mem_addr_t addr)
 {
 #if CONFIG_LITEX_CSR_DATA_WIDTH == 8
 	sys_write8(value >> 56, addr);
@@ -129,7 +129,7 @@ static inline void litex_write64(uint64_t value, unsigned long addr)
  * Size is in bytes and meaningful are 1, 2 or 4
  * Address must be aligned to 4 bytes
  */
-static inline void litex_write(uint32_t addr, uint32_t size, uint32_t value)
+static inline void litex_write(mem_addr_t addr, uint8_t size, uint32_t value)
 {
 	switch (size) {
 	case 1:
@@ -151,7 +151,7 @@ static inline void litex_write(uint32_t addr, uint32_t size, uint32_t value)
  * Size is in bytes and meaningful are 1, 2 or 4
  * Address must be aligned to 4 bytes
  */
-static inline uint32_t litex_read(uint32_t addr, uint32_t size)
+static inline uint32_t litex_read(mem_addr_t addr, uint32_t size)
 {
 	switch (size) {
 	case 1:
