@@ -29,6 +29,9 @@ family:
     cpuclusters:
     - name: cpu0
     - name: cpu1
+- name: mcxw2x
+  socs:
+  - name: mcxw236
 runners:
   run_once:
     '--erase':
@@ -59,6 +62,8 @@ runners:
         - mcxa266
       - qualifiers:
         - mcxw716c
+      - qualifiers:
+        - mcxw236
     '--reset':
     - run: last
       runners:
@@ -87,3 +92,5 @@ runners:
         - mcxa266
       - qualifiers:
         - mcxw716c
+      - qualifiers:
+        - mcxw236
