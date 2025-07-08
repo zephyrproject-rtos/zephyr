@@ -68,3 +68,7 @@
 #if defined(CONFIG_GNSS_SATELLITES)
 	ITERABLE_SECTION_ROM(gnss_satellites_callback, Z_LINK_ITERABLE_SUBALIGN)
 #endif
+
+#if defined(CONFIG_GNSS_RTK)
+	ITERABLE_SECTION_ROM(gnss_rtk_data_callback, Z_LINK_ITERABLE_SUBALIGN)
+#endif
