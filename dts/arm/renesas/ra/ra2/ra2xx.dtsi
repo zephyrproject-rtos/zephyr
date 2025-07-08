@@ -255,7 +255,7 @@
 			#size-cells = <1>;
 		};
 
-		agt0: agt@40084000  {
+		agt0: agt@40084000 {
 			compatible = "renesas,ra-agt";
 			channel = <0>;
 			reg = <0x40084000 0x100>;
