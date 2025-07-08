@@ -198,7 +198,12 @@ config WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	select MBEDTLS_SERVER_NAME_INDICATION if MBEDTLS_BUILTIN
 	select MBEDTLS_X509_CRL_PARSE_C
 	select MBEDTLS_TLS_VERSION_1_2
+	select NOT_SECURE
 	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
+	help
+	  Enable Enterprise Crypto support for WiFi. This feature
+	  is considered NOT SECURE due the lack of certificate
+	  validation.
 
 if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 config EAP_TLS
