@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+ */
+&nrf70 {
+	qspi-frequency = <8000000>;
+	/* Wi-Fi Pins used */
+	iovdd-ctrl-gpios = <&gpio0 12 (GPIO_ACTIVE_HIGH | NRF_DRIVE_E0E1)>;
+	bucken-gpios = <&gpio0 12 (GPIO_ACTIVE_HIGH | NRF_DRIVE_E0E1)>;
+	host-irq-gpios = <&gpio0 23 GPIO_ACTIVE_HIGH>;
+};

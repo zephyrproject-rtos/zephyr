@@ -1,0 +1,5 @@
+Build command for QSPI -
+west build -p -b nrf7002dk/nrf5340/cpuapp -- -DDTC_OVERLAY_FILE=fpga_qspi.overlay
+
+Build command for SPI -
+west build -p -b nrf5340dk/nrf5340/cpuapp -- -DSHIELD=nrf7002ek -DDTC_OVERLAY_FILE=fpga_spi.overlay
