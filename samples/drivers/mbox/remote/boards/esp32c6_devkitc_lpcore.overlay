@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2024 Felipe Neves.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,ipc_shm = &shmlp;
+		zephyr,ipc = &mbox0;
+	};
+
+	mbox-consumer {
+		compatible = "vnd,mbox-consumer";
+		mboxes = <&mbox0 1>, <&mbox0 0>;
+		mbox-names = "tx", "rx";
+	};
+};
+
+&mbox0 {
+	status = "okay";
+};
+
+&lp_uart {
+	status = "okay";
+};
