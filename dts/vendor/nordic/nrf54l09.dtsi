@@ -80,7 +80,7 @@
 		#size-cells = <1>;
 
  #ifdef USE_NON_SECURE_ADDRESS_MAP
-		/* intentionally empty because UICR is hardware fixed to Secure */
+/* intentionally empty because UICR is hardware fixed to Secure */
  #else
 		uicr: uicr@ffd000 {
 			compatible = "nordic,nrf-uicr";
@@ -528,7 +528,7 @@
 			};
 
  #ifdef USE_NON_SECURE_ADDRESS_MAP
-			/* intentionally empty because WDT30 is hardware fixed to Secure */
+/* intentionally empty because WDT30 is hardware fixed to Secure */
  #else
 			wdt30: watchdog@108000 {
 				compatible = "nordic,nrf-wdt";
@@ -607,7 +607,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			cpuapp_nvic: interrupt-controller@e000e100  {
+			cpuapp_nvic: interrupt-controller@e000e100 {
 				#address-cells = <1>;
 				compatible = "arm,v8m-nvic";
 				reg = <0xe000e100 0xc00>;
