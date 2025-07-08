@@ -9,8 +9,8 @@
 / {
 	pwm_loopback_0 {
 		compatible = "test-pwm-loopback";
-		pwms = <&ftm1 1 0 PWM_POLARITY_NORMAL>, /* PTB3, P1.3 */
-		       <&ftm0 4 0 PWM_POLARITY_NORMAL>; /* PTB4, P1.4 */
+		pwms = <&ftm1 1 0 PWM_POLARITY_NORMAL>,	/* PTB3, P1.3 */
+		       <&ftm0 4 0 PWM_POLARITY_NORMAL>;	/* PTB4, P1.4 */
 	};
 };
 
