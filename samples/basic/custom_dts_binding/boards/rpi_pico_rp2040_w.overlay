@@ -1,0 +1,21 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2025 Beechwoods Software, Inc.
+ */
+
+/ {
+	load_switch: load_switch {
+		compatible = "power-switch";
+
+		gpios = <&gpioa 1 GPIO_ACTIVE_HIGH>;
+	};
+
+	gpioa: gpioa {
+		compatible = "infineon,airoc-gpio";
+		status = "okay";
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <5>;
+	};
+};
