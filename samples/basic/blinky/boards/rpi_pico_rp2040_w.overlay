@@ -1,0 +1,42 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2025 Beechwoods Software, Inc.
+ */
+
+/ {
+	aliases {
+		led0 = &led_green;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_green: led_airoc {
+			gpios = <&gpioa 1 GPIO_ACTIVE_LOW>;
+		};
+
+		led_red: led_gpio0 {
+			gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
+		};
+
+		led_yellow: led_emu {
+			gpios = <&gpioe 1 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	gpioa: gpioa {
+		compatible = "infineon,airoc-gpio";
+		status = "okay";
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <5>;
+	};
+
+	gpioe: gpioe {
+		compatible = "zephyr,gpio-emul";
+		#gpio-cells = <0x2>;
+		status = "okay";
+		gpio-controller;
+	};
+};
