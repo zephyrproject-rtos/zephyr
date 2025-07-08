@@ -34,7 +34,6 @@
 	soc {
 		compatible = "st,stm32l4p5", "st,stm32l4", "simple-bus";
 
-
 		flash-controller@40022000 {
 			flash0: flash@8000000 {
 				erase-block-size = <4096>;
@@ -297,7 +296,7 @@
 			reg = <0x40006400 0x400>;
 			interrupts = <19 0>, <20 0>, <21 0>, <22 0>;
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
-			clocks = <&rcc STM32_CLOCK(APB1, 25U)>; //RCC_APB1ENR1_CAN1EN
+			clocks = <&rcc STM32_CLOCK(APB1, 25U)>;	//RCC_APB1ENR1_CAN1EN
 			status = "disabled";
 		};
 
@@ -331,7 +330,7 @@
 			clocks = <&rcc STM32_CLOCK(AHB1, 2U)>;
 			dma-channels = <14>;
 			dma-generators = <4>;
-			dma-requests= <89>;
+			dma-requests = <89>;
 			status = "disabled";
 		};
 
@@ -383,8 +382,8 @@
 			interrupts = <71 0>;
 			clock-names = "ospix", "ospi-ker", "ospi-mgr";
 			clocks = <&rcc STM32_CLOCK(AHB3, 8U)>,
-				<&rcc STM32_SRC_SYSCLK OSPI_SEL(0)>,
-				<&rcc STM32_CLOCK(AHB2, 20U)>;
+				 <&rcc STM32_SRC_SYSCLK OSPI_SEL(0)>,
+				 <&rcc STM32_CLOCK(AHB2, 20U)>;
 
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -397,8 +396,8 @@
 			interrupts = <76 0>;
 			clock-names = "ospix", "ospi-ker", "ospi-mgr";
 			clocks = <&rcc STM32_CLOCK(AHB3, 9U)>,
-				<&rcc STM32_SRC_SYSCLK OSPI_SEL(0)>,
-				<&rcc STM32_CLOCK(AHB2, 20U)>;
+				 <&rcc STM32_SRC_SYSCLK OSPI_SEL(0)>,
+				 <&rcc STM32_CLOCK(AHB2, 20U)>;
 
 			#address-cells = <1>;
 			#size-cells = <0>;

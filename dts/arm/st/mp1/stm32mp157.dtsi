@@ -208,7 +208,7 @@
 			interrupts = <102 0>;
 			dma-channels = <16>;
 			dma-generators = <8>;
-			dma-requests= <108>;
+			dma-requests = <108>;
 			status = "disabled";
 		};
 
