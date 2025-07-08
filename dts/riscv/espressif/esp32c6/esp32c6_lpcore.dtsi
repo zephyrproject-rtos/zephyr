@@ -41,9 +41,31 @@
 			compatible = "mmio-sram";
 			reg = <0x50000000 DT_SIZE_K(16)>;
 
-			shmlp: memory@0 {
-				reg = <0x0 0x10>;
+			shmlp: memory@50003fb0{
+				reg = <0x50003fb0 0x50>;
 			};
+		};
+
+		mbox0: mbox@50003ff0 {
+			compatible = "espressif,mbox-esp32";
+			reg = <0x50003ff0 0x8>;
+			status = "disabled";
+			shared-memory = <&shmlp>;
+			shared-memory-size = <0x40>;
+			interrupts =
+				<PMU_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+				<LP_CORE_PMU_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			#mbox-cells = <1>;
+		};
+
+		intc: interrupt-controller@50000008 {
+			compatible = "espressif,esp32-intc";
+			#address-cells = <0>;
+			#interrupt-cells = <3>;
+			interrupt-controller;
+			reg = <0x50000008 DT_SIZE_K(4)>;
+			status = "okay";
 		};
 
 		flash: flash-controller@60002000 {
