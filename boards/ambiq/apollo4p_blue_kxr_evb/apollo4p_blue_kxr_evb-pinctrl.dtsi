@@ -118,7 +118,7 @@
 			pinmux = <M7SCK_P22>, <M7MISO_P24>, <M7MOSI_P23>;
 		};
 	};
-	mspi0_default: mspi0_default{
+	mspi0_default: mspi0_default {
 		group1 {
 			pinmux = <MSPI0_0_P64>,
 				 <MSPI0_1_P65>,
@@ -131,7 +131,7 @@
 			ambiq,nce-src = <32>;
 		};
 	};
-	mspi1_default: mspi1_default{
+	mspi1_default: mspi1_default {
 		group1 {
 			pinmux = <MSPI1_0_P37>,
 				 <MSPI1_1_P38>,
@@ -144,7 +144,7 @@
 			ambiq,nce-src = <34>;
 		};
 	};
-	mspi2_default: mspi2_default{
+	mspi2_default: mspi2_default {
 		group1 {
 			pinmux = <MSPI2_0_P74>,
 				 <MSPI2_1_P75>,

@@ -106,14 +106,14 @@
 		};
 	};
 
-	adc0_default: adc0_default{
+	adc0_default: adc0_default {
 		group1 {
 			pinmux = <ADCSE4_P32>, <ADCSE7_P35>;
 			drive-strength = "0.1";
 		};
 	};
 
-	mspi0_default: mspi0_default{
+	mspi0_default: mspi0_default {
 		group1 {
 			pinmux = <MSPI0_0_P22>,
 				 <MSPI0_1_P26>,
@@ -130,7 +130,7 @@
 			ambiq,iom-num = <0>;
 		};
 	};
-	mspi1_default: mspi1_default{
+	mspi1_default: mspi1_default {
 		group1 {
 			pinmux = <MSPI1_0_P51>,
 				 <MSPI1_1_P52>,
@@ -151,7 +151,7 @@
 			ambiq,iom-num = <1>;
 		};
 	};
-	mspi2_default: mspi2_default{
+	mspi2_default: mspi2_default {
 		group1 {
 			pinmux = <MSPI2_0_P64>,
 				 <MSPI2_1_P65>,
@@ -169,7 +169,7 @@
 		};
 	};
 
-	bleif_default: bleif_default{
+	bleif_default: bleif_default {
 		group1 {
 			pinmux = <BLEIF_SCK_P30>,
 				 <BLEIF_MISO_P31>,
