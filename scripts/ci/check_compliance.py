@@ -489,6 +489,105 @@ class DevicetreeBindingsCheck(ComplianceTest):
                     "'required: false' is redundant, please remove"
                 )
 
+
+class DevicetreeLintingCheck(ComplianceTest):
+    """
+    Checks if we are introducing syntax or formatting issues to devicetree files.
+    """
+    name = "DevicetreeLinting"
+    doc = "See https://docs.zephyrproject.org/latest/contribute/style/devicetree.html for more details."
+
+    def _parse_json_output(self, cmd, cwd=None):
+        """Run command and parse single JSON output with issues array"""
+        result = subprocess.run(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            check=False,
+            text=True,
+            cwd=cwd or GIT_TOP
+        )
+
+        if not result.stdout.strip():
+            return None
+
+        try:
+            json_data = json.loads(result.stdout)
+            return json_data
+        except json.JSONDecodeError as e:
+            raise RuntimeError(f"Failed to parse dts-linter JSON output: {e}")
+
+    def run(self):
+        # Get changed DTS files
+        dts_files = [
+            file for file in get_files(filter="d")
+            if file.endswith((".dts", ".dtsi", ".overlay"))
+        ]
+
+        if not dts_files:
+            self.skip('No DTS')
+
+        temp_patch_files = []
+        batch_size = 500
+
+        for i in range(0, len(dts_files), batch_size):
+            batch = dts_files[i:i + batch_size]
+
+            # use a temporary file for each batch
+            temp_patch = f"dts_linter_{i}.patch"
+            temp_patch_files.append(temp_patch)
+
+            cmd = [
+                "npx", "--no", "dts-linter", "--",
+                "--outputFormat", "json",
+                "--format",
+                "--patchFile", temp_patch,
+            ]
+            for file in batch:
+                cmd.extend(["--file", file])
+
+            try:
+                json_output = self._parse_json_output(cmd)
+
+                if json_output and "issues" in json_output:
+                    cwd = json_output.get("cwd", "")
+                    logging.info(f"Processing issues from: {cwd}")
+
+                    for issue in json_output["issues"]:
+                        level = issue.get("level", "unknown")
+                        message = issue.get("message", "")
+
+                        if level == "info":
+                            logging.info(message)
+                        else:
+                            title = issue.get("title", "")
+                            file = issue.get("file", "")
+                            line = issue.get("startLine", None)
+                            col = issue.get("startCol", None)
+                            end_line = issue.get("endLine", None)
+                            end_col = issue.get("endCol", None)
+                            self.fmtd_failure(level, title, file, line, col, message, end_line, end_col)
+
+            except subprocess.CalledProcessError as ex:
+                stderr_output = ex.stderr if ex.stderr else ""
+                if stderr_output.strip():
+                    self.failure(f"dts-linter found issues:\n{stderr_output}")
+                else:
+                    self.failure("dts-linter failed with no output. "
+                                "Make sure you install Node.JS and then run npm ci inside ZEPHYR_BASE")
+            except RuntimeError as ex:
+                self.failure(f"{ex}")
+
+        # merge all temp patch files into one
+        with open("dts_linter.patch", "wb") as final_patch:
+            for patch in temp_patch_files:
+                with open(patch, "rb") as f:
+                    shutil.copyfileobj(f, final_patch)
+
+        # cleanup
+        for patch in temp_patch_files:
+            os.remove(patch)
+
 class KconfigCheck(ComplianceTest):
     """
     Checks is we are introducing any new warnings/errors with Kconfig,
