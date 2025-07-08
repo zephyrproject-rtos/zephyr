@@ -27,19 +27,29 @@ void gnss_ubx_common_pvt_callback(struct modem_ubx *ubx, const struct ubx_frame 
 	if ((nav_pvt->flags & UBX_NAV_PVT_FLAGS_GNSS_FIX_OK) &&
 	    !(nav_pvt->nav.flags3 & UBX_NAV_PVT_FLAGS3_INVALID_LLH)) {
 
-		switch (nav_pvt->fix_type) {
-		case UBX_NAV_FIX_TYPE_DR:
-		case UBX_NAV_FIX_TYPE_GNSS_DR_COMBINED:
+		if (nav_pvt->flags & UBX_NAV_PVT_FLAGS_GNSS_CARR_SOLN_FLOATING) {
+			fix_quality = GNSS_FIX_QUALITY_FLOAT_RTK;
+			fix_status = GNSS_FIX_STATUS_DGNSS_FIX;
+		} else if (nav_pvt->flags & UBX_NAV_PVT_FLAGS_GNSS_CARR_SOLN_FIXED) {
+			fix_quality = GNSS_FIX_QUALITY_RTK;
+			fix_status = GNSS_FIX_STATUS_DGNSS_FIX;
+		} else if (
+			(nav_pvt->fix_type == UBX_NAV_FIX_TYPE_GNSS_DR_COMBINED) ||
+			(nav_pvt->fix_type == UBX_NAV_FIX_TYPE_DR)) {
+
 			fix_quality = GNSS_FIX_QUALITY_ESTIMATED;
 			fix_status = GNSS_FIX_STATUS_ESTIMATED_FIX;
-			break;
-		case UBX_NAV_FIX_TYPE_2D:
-		case UBX_NAV_FIX_TYPE_3D:
+		} else if (
+			(nav_pvt->fix_type == UBX_NAV_FIX_TYPE_2D) ||
+			(nav_pvt->fix_type == UBX_NAV_FIX_TYPE_3D)) {
+
 			fix_quality = GNSS_FIX_QUALITY_GNSS_SPS;
 			fix_status = GNSS_FIX_STATUS_GNSS_FIX;
-			break;
-		default:
-			break;
+		} else {
+			/** This is handled by the already initialized state of
+			 * fix_quality and fix_status, conveying info the fix
+			 * is not valid.
+			 */
 		}
 	}
 
@@ -127,6 +137,7 @@ void gnss_ubx_common_satellite_callback(struct modem_ubx *ubx, const struct ubx_
 			.azimuth = ubx_sat->sat[i].azimuth,
 			.system = gnss_system,
 			.is_tracked = (ubx_sat->sat[i].flags & UBX_NAV_SAT_FLAGS_SV_USED),
+			.is_corrected = (ubx_sat->sat[i].flags & UBX_NAV_SAT_FLAGS_RTCM_CORR_USED)
 		};
 
 		data->satellites.data[i] = sat;
