@@ -26,3 +26,6 @@ PyGithub
 
 # used to generate devicetree dependency graphs
 graphviz
+
+# used by Espressif esptool
+rich_click
