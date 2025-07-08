@@ -4,6 +4,9 @@
 menu "SiSDK configuration"
 	depends on HAS_SILABS_SISDK
 
+config SILABS_SISDK_GPIO
+	bool "Peripheral HAL for GPIO"
+
 config SILABS_SISDK_LETIMER
 	bool "Peripheral HAL for LETIMER"
 
