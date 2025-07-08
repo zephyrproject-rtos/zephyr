@@ -484,38 +484,11 @@ void ull_cp_release_tx(struct ll_conn *conn, struct node_tx *tx)
 	tx_release(tx);
 }
 
-bool ull_cp_awaiting_instant(struct ll_conn *conn)
-{
-	struct proc_ctx *ctx;
-
-	ctx = llcp_lr_peek(conn);
-	if (ctx) {
-		switch (ctx->proc) {
-		case PROC_CONN_PARAM_REQ:
-		case PROC_CONN_UPDATE:
-			return llcp_lp_cu_awaiting_instant(ctx);
-		}
-	}
-
-	ctx = llcp_rr_peek(conn);
-	if (ctx) {
-		switch (ctx->proc) {
-		case PROC_CONN_PARAM_REQ:
-		case PROC_CONN_UPDATE:
-			return llcp_rp_cu_awaiting_instant(ctx);
-		}
-	}
-
-	return false;
-}
-
 static int prt_elapse(uint16_t *expire, uint16_t elapsed_event)
 {
 	if (*expire != 0U) {
 		if (*expire > elapsed_event) {
 			*expire -= elapsed_event;
-
-			return -EBUSY;
 		} else {
 			/* Timer expired */
 			return -ETIMEDOUT;
@@ -560,15 +533,6 @@ int ull_cp_prt_elapse(struct ll_conn *conn, uint16_t elapsed_event, uint8_t *err
 
 	/* Both timers are still running */
 	*error_code = BT_HCI_ERR_SUCCESS;
-
-	if (loc_ret != 0) {
-		return loc_ret;
-	}
-
-	if (rem_ret != 0) {
-		return rem_ret;
-	}
-
 	return 0;
 }
 
