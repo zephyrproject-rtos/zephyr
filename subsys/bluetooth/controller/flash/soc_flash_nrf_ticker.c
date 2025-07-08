@@ -26,14 +26,13 @@
 #define FLASH_SYNC_SWITCHING_TIME (FLASH_RADIO_ABORT_DELAY_US +\
 				   FLASH_RADIO_WORK_DELAY_US)
 
-struct ticker_sync_context {
-	uint32_t interval;    /* timeslot interval. */
-	uint32_t slot;        /* timeslot length. */
-	uint32_t ticks_begin; /* timeslot begin timestamp */
+static struct {
+	uint32_t interval;       /* timeslot interval. */
+	uint32_t slot;           /* timeslot length. */
+	uint32_t ticks_begin;    /* timeslot begin timestamp */
+	uint32_t ticks_previous; /* timeslot previous reference */
 	int result;
-};
-
-static struct ticker_sync_context _ticker_sync_context;
+} _ticker_sync_context;
 
 /* semaphore for synchronization of flash operations */
 static struct k_sem sem_sync;
@@ -151,6 +150,7 @@ static void time_slot_callback_abort(uint32_t ticks_at_expire,
 				     void *context)
 {
 	ll_radio_state_abort();
+
 	time_slot_delay(ticks_at_expire,
 			HAL_TICKER_US_TO_TICKS(FLASH_RADIO_WORK_DELAY_US),
 			time_slot_callback_work,
@@ -163,6 +163,18 @@ static void time_slot_callback_prepare(uint32_t ticks_at_expire,
 				       uint16_t lazy, uint8_t force,
 				       void *context)
 {
+	uint32_t ticks_elapsed;
+	uint32_t ticks_now;
+
+	/* Skip flash operation if in the past, this can be when requested in the past due to
+	 * flash operations requested too often.
+	 */
+	ticks_now = ticker_ticks_now_get();
+	ticks_elapsed = ticker_ticks_diff_get(ticks_now, ticks_at_expire);
+	if (ticks_elapsed > HAL_TICKER_US_TO_TICKS(FLASH_RADIO_WORK_DELAY_US)) {
+		return;
+	}
+
 #if defined(CONFIG_BT_CTLR_LOW_LAT)
 	time_slot_callback_abort(ticks_at_expire, ticks_drift, remainder, lazy,
 				 force, context);
@@ -178,6 +190,7 @@ static void time_slot_callback_prepare(uint32_t ticks_at_expire,
 int nrf_flash_sync_init(void)
 {
 	k_sem_init(&sem_sync, 0, 1);
+
 	return 0;
 }
 
@@ -193,9 +206,27 @@ void nrf_flash_sync_set_context(uint32_t duration)
 int nrf_flash_sync_exe(struct flash_op_desc *op_desc)
 {
 	uint8_t instance_index;
+	uint32_t ticks_elapsed;
+	uint32_t ticks_slot;
+	uint32_t ticks_now;
 	uint8_t ticker_id;
 	uint32_t ret;
 	int result;
+
+	/* Check if flash operation request too often that can starve connection events.
+	 * We will request to start ticker in the past so that it does not `force` itself onto
+	 * scheduling by causing connection events to be skipped.
+	 */
+	ticks_now = ticker_ticks_now_get();
+	ticks_elapsed = ticker_ticks_diff_get(ticks_now, _ticker_sync_context.ticks_previous);
+	_ticker_sync_context.ticks_previous = ticks_now;
+	ticks_slot = HAL_TICKER_US_TO_TICKS(_ticker_sync_context.slot);
+	if (ticks_elapsed < ticks_slot) {
+		uint32_t ticks_interval  = HAL_TICKER_US_TO_TICKS(_ticker_sync_context.interval);
+
+		/* Set ticker start reference one flash slot interval in the past */
+		ticks_now = ticker_ticks_diff_get(ticks_now, ticks_interval);
+	}
 
 	/* Get the ticker instance and ticker id for flash operations */
 	ll_timeslice_ticker_id_get(&instance_index, &ticker_id);
@@ -205,7 +236,7 @@ int nrf_flash_sync_exe(struct flash_op_desc *op_desc)
 			   3, /* user id for thread mode */
 			      /* (MAYFLY_CALL_ID_PROGRAM) */
 			   ticker_id, /* flash ticker id */
-			   ticker_ticks_now_get(), /* current tick */
+			   ticks_now, /* current tick */
 			   0, /* first int. immediately */
 			   /* period */
 			   HAL_TICKER_US_TO_TICKS(
