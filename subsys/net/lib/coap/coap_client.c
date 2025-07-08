@@ -818,7 +818,10 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 	internal_req = get_request_with_token(client, response);
 	if (!internal_req) {
 		LOG_WRN("No matching request for response");
-		(void) send_rst(client, response); /* Ignore errors, unrelated to our queries */
+		if (response_type != COAP_TYPE_ACK) {
+			/* Ignore errors, unrelated to our queries */
+			(void)send_rst(client, response);
+		}
 		return 0;
 	}
 
