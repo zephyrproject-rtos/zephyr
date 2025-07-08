@@ -7,7 +7,7 @@
 
 / {
 	aliases {
-		stepper =  &zephyr_gpio_stepper;
+		stepper = &zephyr_gpio_stepper;
 	};
 };
 
@@ -47,8 +47,8 @@
 		status = "okay";
 		micro-step-res = <2>;
 		gpios = <&gpio1 0 0>,
-				<&gpio2 0 0>,
-				<&gpio3 0 0>,
-				<&gpio4 0 0>;
+			<&gpio2 0 0>,
+			<&gpio3 0 0>,
+			<&gpio4 0 0>;
 	};
 };
