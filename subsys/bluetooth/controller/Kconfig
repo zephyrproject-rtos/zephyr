@@ -128,6 +128,9 @@ config BT_CTLR_SUBRATING_SUPPORT
 config BT_CTLR_CHANNEL_SOUNDING_SUPPORT
 	bool
 
+config BT_CTLR_EXTENDED_FEAT_SET_SUPPORT
+	bool
+
 # Virtual option that all local LL implementations should select
 config HAS_BT_CTLR
 	bool
@@ -1173,6 +1176,14 @@ config BT_CTLR_CHANNEL_SOUNDING
 	help
 	  Enable support for Bluetooth 6.0 Channel Sounding in the
 	  Controller.
+
+config BT_CTLR_EXTENDED_FEAT_SET
+	bool "LL Extended Feature Set support"
+	depends on BT_CTLR_EXTENDED_FEAT_SET_SUPPORT
+	default y if BT_LE_EXTENDED_FEAT_SET
+	help
+	  Enable support for Bluetooth 6.0 LL Extended Feature Set
+	  in the Controller.
 
 rsource "Kconfig.df"
 rsource "Kconfig.ll_sw_split"
