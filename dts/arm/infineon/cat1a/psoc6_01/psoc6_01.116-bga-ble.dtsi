@@ -11,10 +11,10 @@
 
 / {
 	soc {
-		/delete-node/ gpio@40320100; // gpio_prt2
-		/delete-node/ gpio@40320180; // gpio_prt3
-		/delete-node/ gpio@40320200; // gpio_prt4
-		/delete-node/ gpio@40320700; // gpio_prt14
+		/delete-node/ gpio@40320100;	// gpio_prt2
+		/delete-node/ gpio@40320180;	// gpio_prt3
+		/delete-node/ gpio@40320200;	// gpio_prt4
+		/delete-node/ gpio@40320700;	// gpio_prt14
 
 		pinctrl: pinctrl@40310000 {
 			/* scb_i2c_scl */
@@ -250,7 +250,6 @@
 			/omit-if-no-ref/ p13_1_scb6_uart_tx: p13_1_scb6_uart_tx {
 				pinmux = <DT_CAT1_PINMUX(13, 1, HSIOM_SEL_ACT_6)>;
 			};
-
 		};
 	};
 };

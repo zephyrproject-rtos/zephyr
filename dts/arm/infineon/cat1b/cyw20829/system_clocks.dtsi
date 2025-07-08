@@ -133,7 +133,6 @@
 			status = "disabled";
 		};
 
-
 		/* clk_lf */
 		clk_lf: clk_lf {
 			#clock-cells = <0>;
@@ -141,7 +140,5 @@
 			clocks = <&clk_pilo>;
 			status = "okay";
 		};
-
 	};
-
 };
