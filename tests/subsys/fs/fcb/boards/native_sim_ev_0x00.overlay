@@ -5,7 +5,7 @@
  */
 
 &flashcontroller0 {
-	erase-value = < 0x00 >;
+	erase-value = <0x00>;
 };
 
 &flash0 {
