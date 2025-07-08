@@ -7,7 +7,6 @@
 #include <ite/it8801-mfd-gpiocr.dtsi>
 #include <zephyr/dt-bindings/mfd/mfd_it8801_altctrl.h>
 
-
 / {
 	/* GPIO pin mapping to alternate function */
 	it8801-mfd-map {
