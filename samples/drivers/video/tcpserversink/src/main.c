@@ -135,7 +135,11 @@ int main(void)
 {
 	struct sockaddr_in addr, client_addr;
 	socklen_t client_addr_len = sizeof(client_addr);
+#if CONFIG_VIDEO_NUM_FRAMES
+	struct video_buffer *buffers[CONFIG_VIDEO_NUM_FRAMES];
+#else
 	struct video_buffer *buffers[2];
+#endif
 	struct video_buffer *vbuf = &(struct video_buffer){};
 	struct video_buffer *vbuf_out = &(struct video_buffer){};
 	int ret, sock, client;

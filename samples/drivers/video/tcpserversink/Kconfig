@@ -48,6 +48,15 @@ config VIDEO_PIXEL_FORMAT
 	help
 	  Pixel format of the video frame. If not set, the default pixel format is used.
 
+config VIDEO_NUM_FRAMES
+	int "Capture N-buffering"
+	default 0
+	help
+	  Framerate versus memory usage tradeoff.
+	  "2" allows to capture while sending data (optimal framerate).
+	  "1" allows to reduce memory usage but capture framerate is lower.
+	  If not set defaults to "2".
+
 config VIDEO_CTRL_HFLIP
 	bool "Mirror the video frame horizontally"
 	help
