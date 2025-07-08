@@ -80,7 +80,7 @@
 	};
 };
 
-arduino_serial: &lpuart1 {};
+arduino_serial: &lpuart1 { };
 
 &lpuart4 {
 	pinctrl-0 = <&pinmux_lpuart4>;

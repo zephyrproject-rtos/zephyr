@@ -7,7 +7,7 @@
 #include "lpcxpresso54114-pinctrl.dtsi"
 
 / {
-	aliases{
+	aliases {
 		led0 = &red_led;
 		led1 = &green_led;
 		led2 = &blue_led;
