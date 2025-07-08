@@ -1182,6 +1182,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 
 				force = 1U;
 			}
+
 #if defined(CONFIG_BT_CTLR_CONN_RANDOM_FORCE)
 			/* use randomness to force peripheral role when anchor
 			 * points are being missed.
@@ -1207,16 +1208,31 @@ void ull_conn_done(struct node_rx_event_done *done)
 		}
 	}
 
-	lll->forced = force_lll;
-
 	/* check procedure timeout */
 	uint8_t error_code;
+	int err;
 
-	if (-ETIMEDOUT == ull_cp_prt_elapse(conn, elapsed_event, &error_code)) {
+	err = ull_cp_prt_elapse(conn, elapsed_event, &error_code);
+	if (err == -ETIMEDOUT) {
 		conn_cleanup(conn, error_code);
 
 		return;
+	} else if (err == -EBUSY) {
+		force_lll = 1U;
+
+		force = 1U;
 	}
+
+	/* check procedure awaiting instant */
+	bool awaiting_instant = ull_cp_awaiting_instant(conn);
+
+	if (awaiting_instant) {
+		force_lll = 1U;
+
+		force = 1U;
+	}
+
+	lll->forced = force_lll;
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	/* check apto */

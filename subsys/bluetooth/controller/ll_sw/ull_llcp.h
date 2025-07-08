@@ -38,6 +38,11 @@ void ull_cp_update_tx_buffer_queue(struct ll_conn *conn);
 void ull_cp_release_tx(struct ll_conn *conn, struct node_tx *tx);
 
 /**
+ * @brief Check if any control procedure waiting for instant.
+ */
+bool ull_cp_awaiting_instant(struct ll_conn *conn);
+
+/**
  * @brief Procedure Response Timeout Check
  * @param elapsed_event The number of elapsed events.
  * @param[out] error_code The error code for this timeout.
