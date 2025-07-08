@@ -421,7 +421,7 @@ void ull_sync_setup_from_sync_transfer(struct ll_conn *conn, uint16_t service_da
 			   HAL_TICKER_US_TO_TICKS(sync_offset_us),
 			   HAL_TICKER_US_TO_TICKS(interval_us),
 			   HAL_TICKER_REMAINDER(interval_us),
-			   TICKER_NULL_LAZY,
+			   TICKER_NULL_LAZY, TICKER_NULL_LAZY_MAX,
 			   (sync->ull.ticks_slot + ticks_slot_overhead),
 			   ticker_cb, sync,
 			   ticker_start_op_cb, (void *)__LINE__);
@@ -1149,7 +1149,7 @@ void ull_sync_setup(struct ll_scan_set *scan, uint8_t phy,
 			   HAL_TICKER_US_TO_TICKS(sync_offset_us),
 			   HAL_TICKER_US_TO_TICKS(interval_us),
 			   HAL_TICKER_REMAINDER(interval_us),
-			   TICKER_NULL_LAZY,
+			   TICKER_NULL_LAZY, TICKER_NULL_LAZY_MAX,
 			   (sync->ull.ticks_slot + ticks_slot_overhead),
 			   ticker_cb, sync,
 			   ticker_start_op_cb, (void *)__LINE__);

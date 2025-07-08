@@ -876,6 +876,7 @@ void ull_central_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 					HAL_TICKER_US_TO_TICKS(conn_interval_us),
 					HAL_TICKER_REMAINDER(conn_interval_us),
 					TICKER_NULL_LAZY,
+					TICKER_NULL_LAZY_MAX,
 					(conn->ull.ticks_slot + ticks_slot_overhead),
 					ull_central_ticker_cb, conn,
 					ticker_op_cb, (void *)__LINE__);

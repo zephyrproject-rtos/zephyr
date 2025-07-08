@@ -2069,6 +2069,7 @@ void ull_iso_resume_ticker_start(struct lll_event *resume_event,
 			   TICKER_NULL_PERIOD,
 			   TICKER_NULL_REMAINDER,
 			   TICKER_NULL_LAZY,
+			   TICKER_NULL_LAZY_MAX,
 			   TICKER_NULL_SLOT,
 			   ticker_resume_cb, resume_event,
 			   ticker_resume_op_cb, NULL);

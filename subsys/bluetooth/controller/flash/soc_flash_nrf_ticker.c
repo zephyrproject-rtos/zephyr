@@ -124,6 +124,7 @@ static void time_slot_delay(uint32_t ticks_at_expire, uint32_t ticks_delay,
 			   0, /* periodic timeout  */
 			   0, /* periodic remainder */
 			   0, /* lazy, voluntary skips */
+			   0, /* lazy_max, maximum voluntary skips */
 			   0,
 			   callback, /* handler for executing radio abort or */
 				     /* flash work */
@@ -213,6 +214,7 @@ int nrf_flash_sync_exe(struct flash_op_desc *op_desc)
 			   /* period remainder */
 			   HAL_TICKER_REMAINDER(_ticker_sync_context.interval),
 			   0, /* lazy, voluntary skips */
+			   0, /* lazy_max, maximum voluntary skips */
 			   HAL_TICKER_US_TO_TICKS(_ticker_sync_context.slot),
 			   time_slot_callback_prepare,
 			   op_desc,

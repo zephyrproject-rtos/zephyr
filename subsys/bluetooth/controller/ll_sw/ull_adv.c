@@ -1320,7 +1320,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 				   (TICKER_ID_ADV_BASE + handle),
 				   ticks_anchor, 0,
 				   (adv->ull.ticks_slot + ticks_slot_overhead),
-				   TICKER_NULL_REMAINDER, TICKER_NULL_LAZY,
+				   TICKER_NULL_REMAINDER, TICKER_NULL_LAZY, TICKER_NULL_LAZY_MAX,
 				   (adv->ull.ticks_slot + ticks_slot_overhead),
 				   ticker_cb, adv,
 				   ull_ticker_status_give, (void *)&ret_cb
@@ -1341,7 +1341,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 				   HAL_TICKER_US_TO_TICKS(ticks_slot_offset +
 							  (1280 * 1000)),
 				   TICKER_NULL_PERIOD, TICKER_NULL_REMAINDER,
-				   TICKER_NULL_LAZY, TICKER_NULL_SLOT,
+				   TICKER_NULL_LAZY, TICKER_NULL_LAZY_MAX, TICKER_NULL_SLOT,
 				   ticker_stop_cb, adv,
 				   ull_ticker_status_give, (void *)&ret_cb);
 	} else
@@ -1556,6 +1556,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 #else
 				   TICKER_NULL_LAZY,
 #endif /* !CONFIG_BT_TICKER_LOW_LAT && !CONFIG_BT_CTLR_LOW_LAT */
+				   TICKER_NULL_LAZY_MAX,
 				   ticks_slot,
 				   ticker_cb, adv,
 				   ull_ticker_status_give, (void *)&ret_cb

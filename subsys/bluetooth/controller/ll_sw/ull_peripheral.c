@@ -89,6 +89,7 @@ void ull_periph_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 	uint16_t max_rx_time;
 	uint16_t win_offset;
 	memq_link_t *link;
+	uint16_t lazy_max;
 	uint32_t slot_us;
 	uint8_t chan_sel;
 	void *node;
@@ -204,8 +205,17 @@ void ull_periph_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 	lll->periph.window_size_event_us = pdu_adv->connect_ind.win_size *
 		CONN_INT_UNIT_US;
 
-	/* procedure timeouts */
+	/* supervision timeout */
 	conn->supervision_timeout = sys_le16_to_cpu(pdu_adv->connect_ind.timeout);
+
+	/* maximum voluntary skips */
+	lazy_max = RADIO_CONN_EVENTS((conn->supervision_timeout * 10U * USEC_PER_MSEC),
+				     conn_interval_us);
+	if (lazy_max > 6U) {
+		lazy_max -= 6U;
+	} else {
+		lazy_max = 1U;
+	}
 
 	/* Setup the PRT reload */
 	ull_cp_prt_reload_set(conn, conn_interval_us);
@@ -489,7 +499,7 @@ void ull_periph_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 				     HAL_TICKER_US_TO_TICKS(conn_offset_us),
 				     HAL_TICKER_US_TO_TICKS(conn_interval_us),
 				     HAL_TICKER_REMAINDER(conn_interval_us),
-				     TICKER_NULL_LAZY,
+				     TICKER_NULL_LAZY, lazy_max,
 				     (conn->ull.ticks_slot +
 				      ticks_slot_overhead),
 				     ull_periph_ticker_cb, conn, ticker_op_cb,

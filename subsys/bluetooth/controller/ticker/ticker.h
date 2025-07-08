@@ -29,6 +29,7 @@
 #define TICKER_NULL_PERIOD      0
 #define TICKER_NULL_SLOT        0
 #define TICKER_NULL_LAZY        0
+#define TICKER_NULL_LAZY_MAX    0
 #define TICKER_NULL_MUST_EXPIRE 0
 
 /**
@@ -181,7 +182,7 @@ void ticker_job(void *param);
 uint8_t ticker_start(uint8_t instance_index, uint8_t user_id,
 		      uint8_t ticker_id, uint32_t ticks_anchor,
 		      uint32_t ticks_first, uint32_t ticks_periodic,
-		      uint32_t remainder_periodic, uint16_t lazy,
+		      uint32_t remainder_periodic, uint16_t lazy, uint16_t lazy_max,
 		      uint32_t ticks_slot, ticker_timeout_func fp_timeout_func,
 		      void *context, ticker_op_func fp_op_func,
 		      void *op_context);
@@ -189,7 +190,7 @@ uint8_t ticker_start_us(uint8_t instance_index, uint8_t user_id,
 			uint8_t ticker_id, uint32_t ticks_anchor,
 			uint32_t ticks_first, uint32_t remainder_first,
 			uint32_t ticks_periodic, uint32_t remainder_periodic,
-			uint16_t lazy, uint32_t ticks_slot,
+			uint16_t lazy, uint16_t lazy_max, uint32_t ticks_slot,
 			ticker_timeout_func fp_timeout_func, void *context,
 			ticker_op_func fp_op_func, void *op_context);
 uint8_t ticker_update(uint8_t instance_index, uint8_t user_id,
@@ -266,7 +267,7 @@ struct ticker_ext {
 uint8_t ticker_start_ext(uint8_t instance_index, uint8_t user_id,
 			  uint8_t ticker_id, uint32_t ticks_anchor,
 			  uint32_t ticks_first, uint32_t ticks_periodic,
-			  uint32_t remainder_periodic, uint16_t lazy,
+			  uint32_t remainder_periodic, uint16_t lazy, uint16_t lazy_max,
 			  uint32_t ticks_slot,
 			  ticker_timeout_func fp_timeout_func, void *context,
 			  ticker_op_func fp_op_func, void *op_context,

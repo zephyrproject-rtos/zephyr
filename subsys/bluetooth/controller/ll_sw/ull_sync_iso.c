@@ -702,6 +702,7 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 #else
 			   TICKER_NULL_LAZY,
 #endif /* !CONFIG_BT_TICKER_LOW_LAT && !CONFIG_BT_CTLR_LOW_LAT */
+			   TICKER_NULL_LAZY_MAX,
 			   (sync_iso->ull.ticks_slot + ticks_slot_overhead),
 			   ticker_cb, sync_iso,
 			   ticker_start_op_cb, (void *)__LINE__);

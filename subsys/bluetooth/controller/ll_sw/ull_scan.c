@@ -614,7 +614,7 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 			   (ticks_anchor + ticks_offset), 0, ticks_interval,
 			   HAL_TICKER_REMAINDER((uint64_t)lll->interval *
 						SCAN_INT_UNIT_US),
-			   TICKER_NULL_LAZY,
+			   TICKER_NULL_LAZY, TICKER_NULL_LAZY_MAX,
 			   (scan->ull.ticks_slot + ticks_slot_overhead),
 			   ticker_cb, scan,
 			   ull_ticker_status_give, (void *)&ret_cb

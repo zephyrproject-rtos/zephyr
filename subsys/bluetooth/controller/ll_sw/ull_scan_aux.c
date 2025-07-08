@@ -921,6 +921,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 				     TICKER_NULL_PERIOD,
 				     TICKER_NULL_REMAINDER,
 				     TICKER_NULL_LAZY,
+				     TICKER_NULL_LAZY_MAX,
 				     (aux->ull.ticks_slot +
 				      ticks_slot_overhead),
 				     ticker_cb, aux, ticker_op_cb, aux);
@@ -2809,6 +2810,7 @@ static void chain_start_ticker(struct ll_scan_aux_chain *chain, bool replace)
 				     TICKER_NULL_PERIOD,
 				     TICKER_NULL_REMAINDER,
 				     TICKER_NULL_LAZY,
+				     TICKER_NULL_LAZY_MAX,
 				     (scan_aux_set.ull.ticks_slot +
 				      ticks_slot_overhead),
 				     ticker_cb, chain, ticker_op_cb, chain);

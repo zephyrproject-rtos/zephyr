@@ -1094,7 +1094,8 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 					HAL_TICKER_US_TO_TICKS(cig_offset_us),
 					HAL_TICKER_REMAINDER(cig_offset_us),
 					ticks_periodic,	ticks_remainder,
-					TICKER_NULL_LAZY, ticks_slot,
+					TICKER_NULL_LAZY, TICKER_NULL_LAZY_MAX,
+					ticks_slot,
 					ull_conn_iso_ticker_cb, cig,
 					ticker_start_op_cb, NULL);
 	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||

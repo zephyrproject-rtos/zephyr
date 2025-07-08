@@ -495,8 +495,9 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 		/* start window close timeout */
 		ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_LLL, TICKER_ID_SCAN_STOP,
 				   ticks_at_event, lll->ticks_window, TICKER_NULL_PERIOD,
-				   TICKER_NULL_REMAINDER, TICKER_NULL_LAZY, TICKER_NULL_SLOT,
-				   ticker_stop_cb, lll, ticker_op_start_cb, (void *)__LINE__);
+				   TICKER_NULL_REMAINDER, TICKER_NULL_LAZY, TICKER_NULL_LAZY_MAX,
+				   TICKER_NULL_SLOT, ticker_stop_cb, lll, ticker_op_start_cb,
+				   (void *)__LINE__);
 		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 			  (ret == TICKER_STATUS_BUSY));
 	}

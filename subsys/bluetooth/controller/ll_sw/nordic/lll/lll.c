@@ -1154,6 +1154,7 @@ static uint32_t preempt_ticker_start(struct lll_event *first,
 			   TICKER_NULL_PERIOD,
 			   TICKER_NULL_REMAINDER,
 			   TICKER_NULL_LAZY,
+			   TICKER_NULL_LAZY_MAX,
 			   TICKER_NULL_SLOT,
 			   preempt_ticker_cb, first->prepare_param.param,
 			   ticker_start_op_cb, NULL);

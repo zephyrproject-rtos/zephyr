@@ -389,6 +389,7 @@ void ull_peripheral_iso_update_ticker(struct ll_conn_iso_group *cig,
 				     EVENT_US_FRAC_TO_TICKS(iso_interval_us_frac),
 				     EVENT_US_FRAC_TO_REMAINDER(iso_interval_us_frac),
 				     TICKER_NULL_LAZY,
+				     TICKER_NULL_LAZY_MAX,
 				     0,
 				     ull_conn_iso_ticker_cb, cig,
 				     ticker_op_cb, NULL);

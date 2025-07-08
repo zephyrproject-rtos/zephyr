@@ -1330,7 +1330,8 @@ static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 			   ticks_anchor, 0U,
 			   HAL_TICKER_US_TO_TICKS(iso_interval_us),
 			   HAL_TICKER_REMAINDER(iso_interval_us),
-			   TICKER_NULL_LAZY, ticks_slot, ticker_cb, adv_iso,
+			   TICKER_NULL_LAZY, TICKER_NULL_LAZY_MAX,
+			   ticks_slot, ticker_cb, adv_iso,
 			   ull_ticker_status_give, (void *)&ret_cb);
 	ret = ull_ticker_status_take(ret, &ret_cb);
 

@@ -60,6 +60,7 @@ struct ticker_node {
 					     * bottom half of ticker_job.
 					     */
 #endif /* CONFIG_BT_TICKER_PREFER_START_BEFORE_STOP */
+
 	uint32_t ticks_periodic;	    /* If non-zero, interval
 					     * between expirations
 					     */
@@ -69,15 +70,11 @@ struct ticker_node {
 					     * function
 					     */
 	uint32_t ticks_to_expire_minus;	    /* Negative drift correction */
+
 #if !defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
 	uint32_t ticks_slot;		    /* Air-time reservation for node */
 #endif /* CONFIG_BT_TICKER_SLOT_AGNOSTIC */
-	uint16_t lazy_periodic;		    /* Number of timeouts to allow
-					     * skipping
-					     */
-	uint16_t lazy_current;		    /* Current number of timeouts
-					     * skipped = peripheral latency
-					     */
+
 	union {
 #if defined(CONFIG_BT_TICKER_REMAINDER_SUPPORT)
 		uint32_t remainder_periodic;/* Sub-microsecond tick remainder
@@ -100,9 +97,18 @@ struct ticker_node {
 					     */
 	};
 
-#if  defined(CONFIG_BT_TICKER_EXT)
-	struct ticker_ext *ext_data;	    /* Ticker extension data */
-#endif /* CONFIG_BT_TICKER_EXT */
+	uint16_t lazy_periodic;		    /* Number of timeouts to allow
+					     * skipping
+					     */
+	uint16_t lazy_current;		    /* Current number of timeouts
+					     * skipped = peripheral latency
+					     */
+
+	uint16_t lazy_max;		    /* Maximum number of timeouts
+					     * skipped before forcing an
+					     * expiry.
+					     */
+
 #if !defined(CONFIG_BT_TICKER_LOW_LAT) && \
 	!defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
 	uint8_t  must_expire;		    /* Node must expire, even if it
@@ -117,6 +123,10 @@ struct ticker_node {
 #endif /* !CONFIG_BT_TICKER_LOW_LAT &&
 	* !CONFIG_BT_TICKER_SLOT_AGNOSTIC
 	*/
+
+#if  defined(CONFIG_BT_TICKER_EXT)
+	struct ticker_ext *ext_data;	    /* Ticker extension data */
+#endif /* CONFIG_BT_TICKER_EXT */
 };
 
 struct ticker_expire_info_internal {
@@ -176,8 +186,12 @@ struct ticker_user_op_start {
 #endif /* CONFIG_BT_TICKER_START_REMAINDER */
 #endif /* CONFIG_BT_TICKER_REMAINDER_SUPPORT */
 
-	uint16_t lazy;			/* Periodic latency in number of
+	uint16_t lazy;                  /* Periodic latency in number of
 					 * periods
+					 */
+	uint16_t lazy_max;              /* Maximum number of timeouts
+					 * skipped before forcing an
+					 * expiry.
 					 */
 
 #if !defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
@@ -2281,6 +2295,11 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 			ticker->force = 0U;
 #endif /* CONFIG_BT_TICKER_LOW_LAT */
 
+			if ((ticker->lazy_max > ticker->lazy_periodic) &&
+			    (ticker->lazy_current >= ticker->lazy_max)) {
+				ticker->force = 1U;
+			}
+
 			/* Add to insert list */
 			ticker->next = *insert_head;
 			*insert_head = id_expired;
@@ -2376,6 +2395,8 @@ static inline uint32_t ticker_job_op_start(struct ticker_instance *instance,
 	ticker->lazy_periodic =
 		(start->lazy < TICKER_LAZY_MUST_EXPIRE_KEEP) ? start->lazy :
 							       0U;
+	ticker->lazy_max = start->lazy_max;
+
 #if !defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
 	ticker->ticks_slot = start->ticks_slot;
 #endif /* CONFIG_BT_TICKER_SLOT_AGNOSTIC */
@@ -3579,13 +3600,13 @@ void ticker_trigger(uint8_t instance_index)
 #if defined(CONFIG_BT_TICKER_EXT)
 uint8_t ticker_start(uint8_t instance_index, uint8_t user_id, uint8_t ticker_id,
 		   uint32_t ticks_anchor, uint32_t ticks_first, uint32_t ticks_periodic,
-		   uint32_t remainder_periodic, uint16_t lazy, uint32_t ticks_slot,
-		   ticker_timeout_func fp_timeout_func, void *context,
+		   uint32_t remainder_periodic, uint16_t lazy, uint16_t lazy_max,
+		   uint32_t ticks_slot, ticker_timeout_func fp_timeout_func, void *context,
 		   ticker_op_func fp_op_func, void *op_context)
 {
 	return ticker_start_ext(instance_index, user_id, ticker_id,
 				ticks_anchor, ticks_first, ticks_periodic,
-				remainder_periodic, lazy, ticks_slot,
+				remainder_periodic, lazy, lazy_max, ticks_slot,
 				fp_timeout_func, context,
 				fp_op_func, op_context,
 				NULL);
@@ -3595,7 +3616,7 @@ static uint8_t start_us(uint8_t instance_index, uint8_t user_id,
 			uint8_t ticker_id, uint32_t ticks_anchor,
 			uint32_t ticks_first, uint32_t remainder_first,
 			uint32_t ticks_periodic, uint32_t remainder_periodic,
-			uint16_t lazy, uint32_t ticks_slot,
+			uint16_t lazy, uint16_t lazy_max, uint32_t ticks_slot,
 			ticker_timeout_func fp_timeout_func, void *context,
 			ticker_op_func fp_op_func, void *op_context,
 			struct ticker_ext *ext_data);
@@ -3604,14 +3625,14 @@ uint8_t ticker_start_us(uint8_t instance_index, uint8_t user_id,
 			uint8_t ticker_id, uint32_t ticks_anchor,
 			uint32_t ticks_first, uint32_t remainder_first,
 			uint32_t ticks_periodic, uint32_t remainder_periodic,
-			uint16_t lazy, uint32_t ticks_slot,
+			uint16_t lazy, uint16_t lazy_max, uint32_t ticks_slot,
 			ticker_timeout_func fp_timeout_func, void *context,
 			ticker_op_func fp_op_func, void *op_context)
 {
 	return start_us(instance_index, user_id, ticker_id, ticks_anchor,
 			ticks_first, remainder_first,
 			ticks_periodic, remainder_periodic,
-			lazy, ticks_slot,
+			lazy, lazy_max, ticks_slot,
 			fp_timeout_func, context,
 			fp_op_func, op_context,
 			NULL);
@@ -3620,14 +3641,14 @@ uint8_t ticker_start_us(uint8_t instance_index, uint8_t user_id,
 uint8_t ticker_start_ext(uint8_t instance_index, uint8_t user_id, uint8_t ticker_id,
 		       uint32_t ticks_anchor, uint32_t ticks_first,
 		       uint32_t ticks_periodic, uint32_t remainder_periodic,
-		       uint16_t lazy, uint32_t ticks_slot,
+		       uint16_t lazy, uint16_t lazy_max, uint32_t ticks_slot,
 		       ticker_timeout_func fp_timeout_func, void *context,
 		       ticker_op_func fp_op_func, void *op_context,
 		       struct ticker_ext *ext_data)
 {
 	return start_us(instance_index, user_id, ticker_id, ticks_anchor,
 			ticks_first, 0U, ticks_periodic, remainder_periodic,
-			lazy, ticks_slot,
+			lazy, lazy_max, ticks_slot,
 			fp_timeout_func, context,
 			fp_op_func, op_context,
 			ext_data);
@@ -3637,7 +3658,7 @@ static uint8_t start_us(uint8_t instance_index, uint8_t user_id,
 			uint8_t ticker_id, uint32_t ticks_anchor,
 			uint32_t ticks_first, uint32_t remainder_first,
 			uint32_t ticks_periodic, uint32_t remainder_periodic,
-			uint16_t lazy, uint32_t ticks_slot,
+			uint16_t lazy, uint16_t lazy_max, uint32_t ticks_slot,
 			ticker_timeout_func fp_timeout_func, void *context,
 			ticker_op_func fp_op_func, void *op_context,
 			struct ticker_ext *ext_data)
@@ -3645,15 +3666,15 @@ static uint8_t start_us(uint8_t instance_index, uint8_t user_id,
 #else /* !CONFIG_BT_TICKER_EXT */
 uint8_t ticker_start(uint8_t instance_index, uint8_t user_id, uint8_t ticker_id,
 		   uint32_t ticks_anchor, uint32_t ticks_first, uint32_t ticks_periodic,
-		   uint32_t remainder_periodic, uint16_t lazy, uint32_t ticks_slot,
-		   ticker_timeout_func fp_timeout_func, void *context,
+		   uint32_t remainder_periodic, uint16_t lazy, uint16_t lazy_max,
+		   uint32_t ticks_slot, ticker_timeout_func fp_timeout_func, void *context,
 		   ticker_op_func fp_op_func, void *op_context)
 {
 	return ticker_start_us(instance_index, user_id,
 			       ticker_id, ticks_anchor,
 			       ticks_first, 0U,
 			       ticks_periodic, remainder_periodic,
-			       lazy, ticks_slot,
+			       lazy, lazy_max, ticks_slot,
 			       fp_timeout_func, context,
 			       fp_op_func, op_context);
 }
@@ -3662,7 +3683,7 @@ uint8_t ticker_start_us(uint8_t instance_index, uint8_t user_id,
 			uint8_t ticker_id, uint32_t ticks_anchor,
 			uint32_t ticks_first, uint32_t remainder_first,
 			uint32_t ticks_periodic, uint32_t remainder_periodic,
-			uint16_t lazy, uint32_t ticks_slot,
+			uint16_t lazy, uint16_t lazy_max, uint32_t ticks_slot,
 			ticker_timeout_func fp_timeout_func, void *context,
 			ticker_op_func fp_op_func, void *op_context)
 #endif /* !CONFIG_BT_TICKER_EXT */
@@ -3704,7 +3725,11 @@ uint8_t ticker_start_us(uint8_t instance_index, uint8_t user_id,
 #if !defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
 	user_op->params.start.ticks_slot = ticks_slot;
 #endif
+
 	user_op->params.start.lazy = lazy;
+
+	user_op->params.start.lazy_max = lazy_max;
+
 #if defined(CONFIG_BT_TICKER_EXT)
 	user_op->params.start.ext_data = ext_data;
 #endif

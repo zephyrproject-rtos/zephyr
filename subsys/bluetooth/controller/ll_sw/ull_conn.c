@@ -2221,6 +2221,7 @@ static void ull_conn_update_ticker(struct ll_conn *conn,
 				   uint32_t ticks_win_offset,
 				   uint32_t ticks_slot_overhead,
 				   uint32_t periodic_us,
+				   uint16_t lazy_max,
 				   uint32_t ticks_at_expire)
 {
 #if (CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
@@ -2249,6 +2250,7 @@ static void ull_conn_update_ticker(struct ll_conn *conn,
 #else /* !CONFIG_BT_TICKER_LOW_LAT */
 		TICKER_LAZY_MUST_EXPIRE_KEEP,
 #endif /* CONFIG_BT_TICKER_LOW_LAT */
+		lazy_max,
 		(ticks_slot_overhead + conn->ull.ticks_slot),
 #if defined(CONFIG_BT_PERIPHERAL) && defined(CONFIG_BT_CENTRAL)
 		conn->lll.role == BT_HCI_ROLE_PERIPHERAL ?
@@ -2290,6 +2292,7 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 	uint32_t periodic_us;
 	uint16_t latency_upd;
 	struct lll_conn *lll;
+	uint16_t lazy_max;
 
 	lll = &conn->lll;
 
@@ -2454,7 +2457,18 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 	lll->interval = interval;
 	lll->latency = latency;
 
+	/* supervision timeout */
 	conn->supervision_timeout = timeout;
+
+	/* maximum voluntary skips */
+	lazy_max = RADIO_CONN_EVENTS((conn->supervision_timeout * 10U * USEC_PER_MSEC),
+				     conn_interval_us);
+	if (lazy_max > 6U) {
+		lazy_max -= 6U;
+	} else {
+		lazy_max = 1U;
+	}
+
 	ull_cp_prt_reload_set(conn, conn_interval_us);
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
@@ -2474,7 +2488,7 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 	}
 
 	/* Update ACL ticker */
-	ull_conn_update_ticker(conn, ticks_win_offset, ticks_slot_overhead, periodic_us,
+	ull_conn_update_ticker(conn, ticks_win_offset, ticks_slot_overhead, periodic_us, lazy_max,
 			       ticks_at_expire);
 	/* Signal that the prepare needs to be canceled */
 	conn->cancel_prepare = 1U;
@@ -2483,14 +2497,14 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 #if defined(CONFIG_BT_PERIPHERAL)
 void ull_conn_update_peer_sca(struct ll_conn *conn)
 {
-	struct lll_conn *lll;
-
 	uint32_t conn_interval_us;
 	uint32_t periodic_us;
+	struct lll_conn *lll;
+	uint16_t lazy_max;
 
 	lll = &conn->lll;
 
-	/* calculate the window widening and interval */
+	/* calculate the connection interval */
 	if (lll->interval >= BT_HCI_LE_INTERVAL_MIN) {
 		conn_interval_us = lll->interval *
 				   CONN_INT_UNIT_US;
@@ -2500,15 +2514,24 @@ void ull_conn_update_peer_sca(struct ll_conn *conn)
 	}
 	periodic_us = conn_interval_us;
 
+	/* maximum voluntary skips */
+	lazy_max = RADIO_CONN_EVENTS((conn->supervision_timeout * 10U * USEC_PER_MSEC),
+				     conn_interval_us);
+	if (lazy_max > 6U) {
+		lazy_max -= 6U;
+	} else {
+		lazy_max = 1U;
+	}
+
+	/* calculate the window widening and hence the periodic interval */
 	lll->periph.window_widening_periodic_us =
 		DIV_ROUND_UP(((lll_clock_ppm_local_get() +
 				   lll_clock_ppm_get(conn->periph.sca)) *
 				  conn_interval_us), 1000000U);
-
 	periodic_us -= lll->periph.window_widening_periodic_us;
 
 	/* Update ACL ticker */
-	ull_conn_update_ticker(conn, HAL_TICKER_US_TO_TICKS(periodic_us), 0, periodic_us,
+	ull_conn_update_ticker(conn, HAL_TICKER_US_TO_TICKS(periodic_us), 0, periodic_us, lazy_max,
 				   conn->llcp.prep.ticks_at_expire);
 
 }
