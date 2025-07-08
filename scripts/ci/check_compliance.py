@@ -1670,6 +1670,80 @@ flagged.
         "ZTEST_FAIL_TEST_",  # regex in tests/ztest/fail/CMakeLists.txt
         "ZVFS_OPEN_ADD_SIZE_",  # Used as an option matching prefix
         # zephyr-keep-sorted-stop
+        # NCS-specific allow list
+        # zephyr-keep-sorted-start re(^\s+")
+        "APPLICATION",  # Example documentation
+        "BAR",  # Example documentation
+        "BOOT_IMAGE_ACCESS_HOOK",  # MCUboot setting used in documentation
+        "BT_ADV_PROV_",  # Documentation
+        "BT_CTLR_TX_PWR_MINUS",  # CHIP documentation
+        "BT_CTLR_TX_PWR_MINUS_",  # CHIP documentation
+        "BT_CTLR_TX_PWR_PLUS",  # CHIP documentation
+        "BT_CTLR_TX_PWR_PLUS_",  # CHIP documentation
+        "BT_SDC_ADDITIONAL_MEMORY",  # From dragoon repo
+        "CHANNEL",  # NRF desktop
+        "CHANNEL_FETCHED_DATA_MAX_SIZE",  # NRF desktop
+        "CHANNEL_TRANSPORT_DISABLED",  # NRF desktop
+        "CHANNEL_TRANSPORT_IDLE",  # NRF desktop
+        "CHANNEL_TRANSPORT_RSP_READY",  # NRF desktop
+        "CHANNEL_TRANSPORT_WAIT_RSP",  # NRF desktop
+        "CHIP_DFU_OVER_BT_SMP",  # CHIP module
+        "CHIP_LAST_FABRIC_REMOVED_ACTION_DELAY",  # CHIP module
+        "CHIP_LAST_FABRIC_REMOVED_ERASE_AND_PAIRING_START",  # CHIP module
+        "CHIP_LAST_FABRIC_REMOVED_ERASE_AND_REBOOT",  # CHIP module
+        "CHIP_LAST_FABRIC_REMOVED_ERASE_ONLY",  # CHIP module
+        "CHIP_LAST_FABRIC_REMOVED_NONE",  # CHIP module
+        "CHIP_MEMORY_PROFILING",  # CHIP module
+        "CHIP_NUS",  # CHIP module
+        "CHIP_NUS_FIXED_PASSKEY",  # CHIP module
+        "CHIP_NUS_MAX_COMMANDS",  # CHIP module
+        "CHIP_NUS_MAX_COMMAND_LEN",  # CHIP module
+        "CHIP_QSPI_NOR",  # CHIP module
+        "CHIP_SPI_NOR",  # CHIP module
+        "CHIP_WIFI",  # CHIP module
+        "DESKTOP_DVFS_STATE_",  # NRF desktop
+        "DESKTOP_DVFS_STATE_CONFIG_CHANNEL_ENABLE",  # NRF desktop
+        "DESKTOP_DVFS_STATE_INITIALIZING_ENABLE",  # NRF desktop
+        "DESKTOP_DVFS_STATE_LLPM_CONNECTED_ENABLE",  # NRF desktop
+        "DESKTOP_DVFS_STATE_SMP_TRANSFER_ENABLE",  # NRF desktop
+        "DESKTOP_DVFS_STATE_USB_CONNECTED_ENABLE",  # NRF desktop
+        "FACTORY_DATA_CUSTOM_BACKEND",  # CHIP module
+        "MEMFAULT_",  # Documentation
+        "MEMFAULT_NCS",  # Documentation
+        "MEMFAULT_NCS_",  # Documentation
+        "MY_CUSTOM_CONFIG",  # Example documentation
+        "MY_EXT_API_ENABLED",  # Example documentation
+        "MY_EXT_API_REQUIRED",  # Example documentation
+        "NCS_IS_VARIANT_IMAGE",  # Build system defined symbol
+        "NCS_MCUBOOT_UUID_CID_IMAGE_0_VALUE",  # MCUboot
+        "NCS_MCUBOOT_UUID_CID_IMAGE_1_VALUE",  # MCUboot
+        "NCS_VARIANT_MERGE_KCONFIG",  # Build system defined symbol
+        "NRF_MODEM_LIB_TRACE_BACKEND_MY_TRACE_BACKEND",  # Documentation
+        "PM_PARTITION_SIZE",  # Used in search link
+        "PM_PARTITION_SIZE_",  # Used in documentation
+        "PM_PARTITION_SIZE_MEMFAULT_STORAGE",  # Created by Kconfig template
+        "PM_PARTITION_SIZE_SETTINGS",  # Created by Kconfig template
+        "SOC_NRF54H20_CPUSEC",  # Internal
+        "SSF_SERVER_PSA_CRYPTO_SERVICE_ENABLED",  # Internal
+        "STATUS_",  # NRF desktop
+        "STATUS_COUNT",  # NRF desktop
+        "STATUS_DISCONNECTED",  # NRF desktop
+        "STATUS_FETCH",  # NRF desktop
+        "STATUS_GET_BOARD_NAME",  # NRF desktop
+        "STATUS_GET_HWID",  # NRF desktop
+        "STATUS_GET_MAX_MOD_ID",  # NRF desktop
+        "STATUS_GET_PEER",  # NRF desktop
+        "STATUS_GET_PEERS_CACHE",  # NRF desktop
+        "STATUS_INDEX_PEERS",  # NRF desktop
+        "STATUS_LIST",  # NRF desktop
+        "STATUS_PENDING",  # NRF desktop
+        "STATUS_POS",  # NRF desktop
+        "STATUS_REJECT",  # NRF desktop
+        "STATUS_SET",  # NRF desktop
+        "STATUS_SUCCESS",  # NRF desktop
+        "STATUS_TIMEOUT",  # NRF desktop
+        "STATUS_WRITE_FAIL",  # NRF desktop
+        # zephyr-keep-sorted-stop
     }
 
 
