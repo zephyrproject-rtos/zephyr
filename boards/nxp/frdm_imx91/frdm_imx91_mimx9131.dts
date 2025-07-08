@@ -31,3 +31,7 @@
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-names = "default";
 };
+
+&tpm2 {
+	status = "okay";
+};
