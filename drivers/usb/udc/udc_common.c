@@ -65,7 +65,7 @@ void udc_set_suspended(const struct device *dev, const bool value)
 	struct udc_data *data = dev->data;
 
 	if (value == udc_is_suspended(dev)) {
-		LOG_WRN("Spurious suspend/resume event");
+		LOG_WRN("Spurious %s event", value ? "suspend" : "resume");
 	}
 
 	atomic_set_bit_to(&data->status, UDC_STATUS_SUSPENDED, value);
