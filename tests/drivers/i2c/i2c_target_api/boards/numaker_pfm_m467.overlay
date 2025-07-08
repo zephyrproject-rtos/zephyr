@@ -3,15 +3,15 @@
 &pinctrl {
 	i2c1_default: i2c1_default {
 		group0 {
-			pinmux = <PB2MFP_I2C1_SDA>,  /* UNO D0 */
-				 <PB3MFP_I2C1_SCL>;  /* UNO D1 */
+			pinmux = <PB2MFP_I2C1_SDA>,	/* UNO D0 */
+				 <PB3MFP_I2C1_SCL>;	/* UNO D1 */
 		};
 	};
 
 	i2c3_default: i2c3_default {
 		group0 {
-			pinmux = <PG1MFP_I2C3_SDA>,  /* UNO D14 */
-				 <PG0MFP_I2C3_SCL>;  /* UNO D15 */
+			pinmux = <PG1MFP_I2C3_SDA>,	/* UNO D14 */
+				 <PG0MFP_I2C3_SCL>;	/* UNO D15 */
 		};
 	};
 };
