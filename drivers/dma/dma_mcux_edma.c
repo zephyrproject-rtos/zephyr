@@ -150,6 +150,7 @@ struct dma_mcux_edma_data {
 #define EDMA_HW_TCD_CSR(dev, ch)   (DEV_BASE(dev)->CH[ch].TCD_CSR)
 #endif
 
+#if DMA_MCUX_HAS_CHANNEL_GAP
 /*
  * The hardware channel (takes the gap into account) is used when access DMA registers.
  * For data structures in the shim driver still use the primitive channel.
@@ -157,30 +158,24 @@ struct dma_mcux_edma_data {
 static ALWAYS_INLINE uint32_t dma_mcux_edma_add_channel_gap(const struct device *dev,
 							    uint32_t channel)
 {
-#if DMA_MCUX_HAS_CHANNEL_GAP
 	const struct dma_mcux_edma_config *config = DEV_CFG(dev);
 
 	return (channel < config->channel_gap[0]) ? channel :
 		(channel + 1 + config->channel_gap[1] - config->channel_gap[0]);
-#else
-	ARG_UNUSED(dev);
-	return channel;
-#endif
 }
 
 static ALWAYS_INLINE uint32_t dma_mcux_edma_remove_channel_gap(const struct device *dev,
 								uint32_t channel)
 {
-#if DMA_MCUX_HAS_CHANNEL_GAP
 	const struct dma_mcux_edma_config *config = DEV_CFG(dev);
 
 	return (channel < config->channel_gap[0]) ? channel :
 		(channel + config->channel_gap[0] - config->channel_gap[1] - 1);
-#else
-	ARG_UNUSED(dev);
-	return channel;
-#endif
 }
+#else
+#define dma_mcux_edma_add_channel_gap(dev, channel) channel
+#define dma_mcux_edma_remove_channel_gap(dev, channel) channel
+#endif /* DMA_MCUX_HAS_CHANNEL_GAP */
 
 static bool data_size_valid(const size_t data_size)
 {
