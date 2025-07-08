@@ -69,12 +69,14 @@ int hostapd_send_wifi_mgmt_ap_sta_event(struct hostapd_iface *ap_ctx,
 					void *data)
 {
 	struct sta_info *sta = data;
-	char *ifname = ap_ctx->bss[0]->conf->iface;
+	char *ifname;
 	struct wifi_ap_sta_info sta_info = { 0 };
 
 	if (!ap_ctx || !sta) {
 		return -EINVAL;
 	}
+
+	ifname = ap_ctx->bss[0]->conf->iface;
 
 	memcpy(sta_info.mac, sta->addr, sizeof(sta_info.mac));
 
