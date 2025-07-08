@@ -392,6 +392,17 @@ uint32_t crc24_pgp(const uint8_t *data, size_t len);
 uint32_t crc24_pgp_update(uint32_t crc, const uint8_t *data, size_t len);
 
 /**
+ * @brief Calculate an RTCM3 CRC24Q frame checksum
+ *
+ * @param[in] data RTCM3 Frame
+ * @param[in] len Frame length in bytes.
+ *
+ * @return 0 if the data-frame contains a checksum and it matches.
+ * @return Result if data-frame does not contain checksum.
+ */
+uint32_t crc24q_rtcm3(const uint8_t *data, size_t len);
+
+/**
  * @brief Compute a CRC checksum, in a generic way.
  *
  * This is a dispatch function that calls the individual CRC routine
