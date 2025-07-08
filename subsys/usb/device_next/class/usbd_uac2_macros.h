@@ -95,6 +95,25 @@
 #define DESCRIPTOR_UNDEFINED			0x00
 #define EP_GENERAL				0x01
 
+/* A.17.7 Feature Unit Control Selectors */
+#define FU_CONTROL_UNDEFINED            0x00
+#define FU_MUTE_CONTROL                 0x01
+#define FU_VOLUME_CONTROL               0x02
+#define FU_BASS_CONTROL                 0x03
+#define FU_MID_CONTROL                  0x04
+#define FU_TREBLE_CONTROL               0x05
+#define FU_GRAPHIC_EQUALIZER_CONTROL    0x06
+#define FU_AUTOMATIC_GAIN_CONTROL       0x07
+#define FU_DELAY_CONTROL                0x08
+#define FU_BASS_BOOST_CONTROL           0x09
+#define FU_LOUDNESS_CONTROL             0x0A
+#define FU_INPUT_GAIN_CONTROL           0x0B
+#define FU_INPUT_GAIN_PAD_CONTROL       0x0C
+#define FU_PHASE_INVERTER_CONTROL       0x0D
+#define FU_UNDERFLOW_CONTROL            0x0E
+#define FU_OVERFLOW_CONTROL             0x0F
+#define FU_LATENCY_CONTROL              0x10
+
 /* Universal Serial Bus Device Class Definition for Audio Data Formats
  * Release 2.0, May 31, 2006. A.1 Format Type Codes
  * Values are in decimal to facilitate use with IS_EQ() macro.
@@ -164,8 +183,7 @@
 	(DT_ENUM_IDX(entity, clock_type)) |					\
 	(DT_PROP(entity, sof_synchronized) << 2)
 
-/* Control properties are optional enums in devicetree that can either be
- * "read-only" or "host-programmable". If the property is missing, then it means
+/* Control properties are optional enums in devicetree that can either be "read-only" or "host-programmable". If the property is missing, then it means
  * that control is not present. Convert the control property into actual values
  * used by USB Audio Class, i.e. 0b00 when control is not present, 0b01 when
  * control is present but read-only and 0b11 when control can be programmed by
