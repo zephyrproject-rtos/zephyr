@@ -15,6 +15,7 @@ tests:
       - esp32c3_devkitm
       - esp32c6_devkitc/esp32c6/hpcore
       - nucleo_h7s3l8
+      - nucleo_u385rg_q
       - stm32h7s78_dk
     integration_platforms:
       - nrf52840dk/nrf52840
