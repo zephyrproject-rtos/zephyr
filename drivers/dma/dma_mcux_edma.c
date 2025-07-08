@@ -179,14 +179,8 @@ static ALWAYS_INLINE uint32_t dma_mcux_edma_remove_channel_gap(const struct devi
 
 static bool data_size_valid(const size_t data_size)
 {
-	return (data_size == 4U || data_size == 2U ||
-		data_size == 1U || data_size == 8U ||
-		data_size == 16U || data_size == 32U
-#if defined(CONFIG_DMA_MCUX_EDMA_V3) || defined(CONFIG_DMA_MCUX_EDMA_V4) \
-		|| defined(CONFIG_DMA_MCUX_EDMA_V5)
-		|| data_size == 64U
-#endif
-		);
+	return IS_POWER_OF_TWO(data_size) &&
+	       (data_size <= CONFIG_DMA_MCUX_MAX_DATA_SIZE);
 }
 
 static void nxp_edma_callback(edma_handle_t *handle, void *param, bool transferDone,
