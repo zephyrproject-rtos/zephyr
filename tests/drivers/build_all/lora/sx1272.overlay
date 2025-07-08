@@ -24,8 +24,8 @@
 			status = "okay";
 
 			cs-gpios = <&test_gpio 0 0>,
-			<&test_gpio 0 0>,
-			<&test_gpio 0 0>;
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>;
 
 			test_semtech_sx1272: sx1272@1 {
 				compatible = "semtech,sx1272";

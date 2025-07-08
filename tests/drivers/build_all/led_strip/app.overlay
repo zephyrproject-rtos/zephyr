@@ -45,7 +45,7 @@
 				compatible = "ti,tlc59711", "ti,tlc5971";
 				spi-max-frequency = <DT_FREQ_M(1)>;
 				reg = <0x0>;
-				chain-length = <8>; // two TLC5971 devices
+				chain-length = <8>;	// two TLC5971 devices
 				color-mapping = <LED_COLOR_ID_BLUE>,
 						<LED_COLOR_ID_GREEN>,
 						<LED_COLOR_ID_RED>;
@@ -78,8 +78,8 @@
 
 				chain-length = <1>;
 				color-mapping = <LED_COLOR_ID_GREEN>,
-					<LED_COLOR_ID_RED>,
-					<LED_COLOR_ID_BLUE>;
+						<LED_COLOR_ID_RED>,
+						<LED_COLOR_ID_BLUE>;
 				spi-one-frame = <1>;
 				spi-zero-frame = <2>;
 			};
