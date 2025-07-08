@@ -309,7 +309,6 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-
 			flash1: flash@1000000 {
 				compatible = "soc-nv-flash";
 				erase-block-size = <2048>;
