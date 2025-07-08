@@ -8,17 +8,14 @@ description: |
   tmc2209: tmc2209 {
       compatible = "adi,tmc2209";
       enable-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
-      msx-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>,
-                  <&gpio0 2 GPIO_ACTIVE_HIGH>;
-      step-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
-      dir-gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
-      dual-edge-step;
+      m0-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+      m1-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
   }
 
 compatible: "adi,tmc2209"
 
 include:
-  - name: stepper-controller.yaml
+  - name: stepper-driver.yaml
   - name: step-dir-timing.yaml
 
 properties:

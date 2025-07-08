@@ -1,0 +1,22 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2024 Jilay Sandeep Pandya
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "native_sim.overlay"
+
+/ {
+	aliases {
+		stepper = &h_bridge_stepper;
+	};
+
+	h_bridge_stepper: h_bridge_stepper {
+		compatible = "zephyr,h-bridge-stepper";
+		status = "okay";
+		lut-step-gap = <1>;
+		gpios = <&gpio1 0 GPIO_ACTIVE_HIGH>,
+			<&gpio2 0 GPIO_ACTIVE_HIGH>,
+			<&gpio3 0 GPIO_ACTIVE_HIGH>,
+			<&gpio4 0 GPIO_ACTIVE_HIGH>;
+	};
+};
