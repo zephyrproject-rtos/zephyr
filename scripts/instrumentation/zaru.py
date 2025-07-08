@@ -34,7 +34,7 @@ from west.app.main import WestApp
 from west.configuration import Configuration, config
 from west.util import west_topdir
 
-STATUS_REPLY_PATTERN = r"(0|1)\s(0|1)"
+STATUS_REPLY_PATTERN = r"(0|1)\s(0|1)\s(0|1)"
 
 
 LISTSETS_REPLY_PATTERN = r"(trigger|stopper): (0x[0-9A-Fa-f]+)"
@@ -320,8 +320,13 @@ def get_target_status(port, verbose=False):
 
     trace_enabled = r.group(1) == "1"
     profile_enabled = r.group(2) == "1"
+    dynamic_trigger_enabled = r.group(3) == "1"
 
-    return {"trace": trace_enabled, "profile": profile_enabled}
+    return {
+        "trace": trace_enabled,
+        "profile": profile_enabled,
+        "dynamic_trigger": dynamic_trigger_enabled,
+    }
 
 
 def get_trigger_stopper_addr(port):
@@ -375,6 +380,13 @@ def set_trigger_addr(port, addr, verbose=False):
     it is set correctly. If it's correct, 'True' is returned, otherwise 'False'
     is returned. If address '0' is given it disables the trigger.
     """
+
+    status = get_target_status(port, verbose)
+    if not status["dynamic_trigger"]:
+        print(
+            Fore.YELLOW + "Dynamic triggers are not supported. Please enable it via 'menuconfig'."
+        )
+        sys.exit(1)
 
     port.write(b'trigger ' + b'0x' + bytes(addr, "ascii") + b'\r')
 
@@ -1056,9 +1068,11 @@ def status(args):
 
     trace_status = "supported" if status["trace"] else "not supported"
     profile_status = "supported" if status["profile"] else "not supported"
+    dynamic_trigger_status = "supported" if status["dynamic_trigger"] else "not supported"
 
     print(f'Trace {trace_status}.')
     print(f'Profile {profile_status}.')
+    print(f'Dynamic trigger configuration {dynamic_trigger_status}.')
 
 
 def trace(args):
@@ -1105,6 +1119,14 @@ def trace(args):
         args.stopper = args.couple
 
     if args.trigger or args.stopper:
+        if not status['dynamic_trigger']:
+            print(
+                Fore.YELLOW
+                + "Dynamic trigger configuration is not supported. "
+                + "Please enable it via 'menuconfig'."
+            )
+            sys.exit(1)
+
         elf_file = get_elf_file(args, args.verbose)
         addr_to_symbol = get_symbols_from_elf(elf_file, args.verbose)
         symbol_to_addr = generate_reverse_symbol_lookup(addr_to_symbol)
@@ -1115,7 +1137,7 @@ def trace(args):
                 sys.exit(2)
             else:
                 address = symbol_to_addr[args.trigger]
-                if not set_trigger_addr(sport, address):
+                if not set_trigger_addr(sport, address, verbose=args.verbose):
                     print("Failed to set new trigger address! Check target.")
                     sys.exit(2)
                 else:
