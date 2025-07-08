@@ -16,6 +16,14 @@
 BUILD_ASSERT(CONFIG_LITEX_CSR_DATA_WIDTH == 8 || CONFIG_LITEX_CSR_DATA_WIDTH == 32,
 	     "CONFIG_LITEX_CSR_DATA_WIDTH must be 8 or 32 bits");
 
+#define LITEX_CSR_DW_BYTES     (CONFIG_LITEX_CSR_DATA_WIDTH/8)
+#define LITEX_CSR_OFFSET_BYTES 4
+
+static inline size_t litex_num_subregs(size_t csr_bytes)
+{
+	return (csr_bytes - 1) / LITEX_CSR_DW_BYTES + 1;
+}
+
 static inline uint8_t litex_read8(mem_addr_t addr)
 {
 	return sys_read8(addr);
@@ -195,6 +203,34 @@ static inline uint32_t litex_read(mem_addr_t addr, uint32_t size)
 		return litex_read32(addr);
 	default:
 		return 0;
+	}
+}
+
+static inline void litex_write32_array(mem_addr_t addr, uint32_t *buf, size_t cnt)
+{
+	size_t i;
+
+	for (i = 0; i < cnt; i++) {
+#ifdef CONFIG_LITEX_CSR_ORDERING_BIG
+		litex_write32(buf[cnt - 1 - i], addr);
+#else
+		litex_write32(buf[i], addr);
+#endif
+		addr += litex_num_subregs(sizeof(uint32_t)) * LITEX_CSR_OFFSET_BYTES;
+	}
+}
+
+static inline void litex_read32_array(mem_addr_t addr, uint32_t *buf, size_t cnt)
+{
+	size_t i;
+
+	for (i = 0; i < cnt; i++) {
+#ifdef CONFIG_LITEX_CSR_ORDERING_BIG
+		buf[cnt - 1 - i] = litex_read32(addr);
+#else
+		buf[i] = litex_read32(addr);
+#endif
+		addr += litex_num_subregs(sizeof(uint32_t)) * LITEX_CSR_OFFSET_BYTES;
 	}
 }
 
