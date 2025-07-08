@@ -379,7 +379,6 @@
 		pinmux = <&alth_flm_mon_md>;
 	};
 
-
 	/* ADC peripheral interfaces. */
 	/omit-if-no-ref/ adc0_chan0_gp45: periph-adc0-0 {
 		pinmux = <&alt6_adc0_sl>;

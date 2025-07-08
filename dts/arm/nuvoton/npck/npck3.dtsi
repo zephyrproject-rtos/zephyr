@@ -49,8 +49,8 @@
 			reg-names = "evt_itim", "sys_itim";
 			clocks = <&pcc NPCX_CLOCK_BUS_LFCLK NPCX_PWDWN_CTL4 0
 				  &pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 6>;
-			interrupts = <29 1>; /* Event timer interrupt */
-			clock-frequency = <15000000>; /* Set for SYS_CLOCK_HW_CYCLES_PER_SEC */
+			interrupts = <29 1>;	/* Event timer interrupt */
+			clock-frequency = <15000000>;	/* Set for SYS_CLOCK_HW_CYCLES_PER_SEC */
 		};
 
 		uart1: serial@400c4000 {
@@ -64,19 +64,19 @@
 
 		/* Default clock and power settings in npck3 series */
 		pcc: clock-controller@4000d000 {
-			clock-frequency = <DT_FREQ_M(90)>; /* OFMCLK runs at 90MHz */
-			core-prescaler = <6>; /* CORE_CLK runs at 15MHz */
-			apb1-prescaler = <6>; /* APB1_CLK runs at 15MHz */
-			apb2-prescaler = <6>; /* APB2_CLK runs at 15MHz */
-			apb3-prescaler = <6>; /* APB3_CLK runs at 15MHz */
-			ram-pd-depth = <15>; /* Valid bit-depth of RAM_PDn reg */
-			pwdwn-ctl-val = <0xe7 /* Start with PWDWN_CTL0 */
-					 0xfb /* No FIU_PD */
+			clock-frequency = <DT_FREQ_M(90)>;	/* OFMCLK runs at 90MHz */
+			core-prescaler = <6>;	/* CORE_CLK runs at 15MHz */
+			apb1-prescaler = <6>;	/* APB1_CLK runs at 15MHz */
+			apb2-prescaler = <6>;	/* APB2_CLK runs at 15MHz */
+			apb3-prescaler = <6>;	/* APB3_CLK runs at 15MHz */
+			ram-pd-depth = <15>;	/* Valid bit-depth of RAM_PDn reg */
+			pwdwn-ctl-val = <0xe7	/* Start with PWDWN_CTL0 */
+					 0xfb	/* No FIU_PD */
 					 0xff
-					 0x7f /* No GDMA */
-					 0xb7 /* No N2JTAG/SMB_DMA */
-					 0xfa /* No CCD/PSL */
-					 0x7f>; /* No eSPI */
+					 0x7f	/* No GDMA */
+					 0xb7	/* No N2JTAG/SMB_DMA */
+					 0xfa	/* No CCD/PSL */
+					 0x7f>;	/* No eSPI */
 		};
 
 		/* Wake-up input source mapping for GPIOs in npck3 series */
