@@ -32,10 +32,19 @@ BUILD_ASSERT(DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(195) ||
 	     DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(255) ||
 	     DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(319));
 
+extern const sli_si91x_set_region_ap_request_t default_US_region_2_4GHZ_configurations;
+extern const sli_si91x_set_region_ap_request_t default_EU_region_2_4GHZ_configurations;
+extern const sli_si91x_set_region_ap_request_t default_JP_region_2_4GHZ_configurations;
+extern const sli_si91x_set_region_ap_request_t default_KR_region_2_4GHZ_configurations;
+extern const sli_si91x_set_region_ap_request_t default_SG_region_2_4GHZ_configurations;
+extern const sli_si91x_set_region_ap_request_t default_CN_region_2_4GHZ_configurations;
+
+static char current_country_code[WIFI_COUNTRY_CODE_LEN];
 typedef struct {
 	const char *const *codes;
 	size_t num_codes;
 	sl_wifi_region_code_t region_code;
+	const sli_si91x_set_region_ap_request_t *sdk_reg;
 } region_map_t;
 
 static const char *const us_codes[] = {
@@ -63,12 +72,30 @@ static const char *const kr_codes[] = {"KR", "KP"};
 static const char *const cn_codes[] = {"CN"};
 
 static const region_map_t region_maps[] = {
-	{us_codes, ARRAY_SIZE(us_codes), SL_WIFI_REGION_US},
-	{eu_codes, ARRAY_SIZE(eu_codes), SL_WIFI_REGION_EU},
-	{jp_codes, ARRAY_SIZE(jp_codes), SL_WIFI_REGION_JP},
-	{kr_codes, ARRAY_SIZE(kr_codes), SL_WIFI_REGION_KR},
-	{cn_codes, ARRAY_SIZE(cn_codes), SL_WIFI_REGION_CN},
+	{us_codes, ARRAY_SIZE(us_codes), SL_WIFI_REGION_US,
+	 &default_US_region_2_4GHZ_configurations},
+	{eu_codes, ARRAY_SIZE(eu_codes), SL_WIFI_REGION_EU,
+	 &default_EU_region_2_4GHZ_configurations},
+	{jp_codes, ARRAY_SIZE(jp_codes), SL_WIFI_REGION_JP,
+	 &default_JP_region_2_4GHZ_configurations},
+	{kr_codes, ARRAY_SIZE(kr_codes), SL_WIFI_REGION_KR,
+	 &default_KR_region_2_4GHZ_configurations},
+	{cn_codes, ARRAY_SIZE(cn_codes), SL_WIFI_REGION_CN,
+	 &default_CN_region_2_4GHZ_configurations},
 };
+
+int siwx91x_store_country_code(const char *country_code)
+{
+	__ASSERT(country_code, "country_code cannot be NULL");
+
+	memcpy(current_country_code, country_code, WIFI_COUNTRY_CODE_LEN);
+	return 0;
+}
+
+const char *siwx91x_get_country_code(void)
+{
+	return current_country_code;
+}
 
 sl_wifi_region_code_t siwx91x_map_country_code_to_region(const char *country_code)
 {
@@ -83,6 +110,16 @@ sl_wifi_region_code_t siwx91x_map_country_code_to_region(const char *country_cod
 		}
 	}
 	return SL_WIFI_DEFAULT_REGION;
+}
+
+const sli_si91x_set_region_ap_request_t *siwx91x_find_sdk_region_table(uint8_t region_code)
+{
+	ARRAY_FOR_EACH(region_maps, i) {
+		if (region_maps[i].region_code == region_code) {
+			return region_maps[i].sdk_reg;
+		}
+	}
+	return NULL;
 }
 
 static void siwx91x_apply_sram_config(sl_si91x_boot_configuration_t *boot_config)
@@ -214,8 +251,8 @@ int siwx91x_get_nwp_config(sl_wifi_device_configuration_t *get_config, uint8_t w
 			   bool hidden_ssid, uint8_t max_num_sta)
 {
 	sl_wifi_device_configuration_t default_config = {
+		.region_code = siwx91x_map_country_code_to_region(DEFAULT_COUNTRY_CODE),
 		.band = SL_SI91X_WIFI_BAND_2_4GHZ,
-		.region_code = DEFAULT_REGION,
 		.boot_option = LOAD_NWP_FW,
 		.boot_config = {
 			.feature_bit_map = SL_SI91X_FEAT_SECURITY_OPEN | SL_SI91X_FEAT_WPS_DISABLE |
@@ -246,6 +283,7 @@ int siwx91x_get_nwp_config(sl_wifi_device_configuration_t *get_config, uint8_t w
 		return -EINVAL;
 	}
 
+	siwx91x_store_country_code(DEFAULT_COUNTRY_CODE);
 	siwx91x_apply_sram_config(boot_config);
 
 	switch (wifi_oper_mode) {
