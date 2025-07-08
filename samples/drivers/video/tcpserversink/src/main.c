@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2019 Linaro Limited
  * Copyright 2025 NXP
+ * Copyright (c) 2025 STMicroelectronics.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -36,7 +37,7 @@ int main(void)
 {
 	struct sockaddr_in addr, client_addr;
 	socklen_t client_addr_len = sizeof(client_addr);
-	struct video_buffer *buffers[2];
+	struct video_buffer *buffers[CONFIG_VIDEO_CAPTURE_N_BUFFERING];
 	struct video_buffer *vbuf = &(struct video_buffer){};
 	int ret, sock, client;
 	struct video_format fmt;
