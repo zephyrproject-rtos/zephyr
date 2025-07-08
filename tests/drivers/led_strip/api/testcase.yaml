@@ -1,0 +1,9 @@
+tests:
+  drivers.led_strip.api:
+    integration_platforms:
+      - native_sim
+    platform_allow:
+      - native_sim
+    tags:
+      - drivers
+      - led_strip_api

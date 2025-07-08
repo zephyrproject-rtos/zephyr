@@ -1,0 +1,9 @@
+
+/ {
+	rgb_ledstrip: rgb_ledstrip {
+		compatible = "zephyr,fake-led-strip";
+		chain-length = <0x1>;
+		color-mapping = <0x2>, <0x1>, <0x3>;
+		status = "okay";
+	};
+};
