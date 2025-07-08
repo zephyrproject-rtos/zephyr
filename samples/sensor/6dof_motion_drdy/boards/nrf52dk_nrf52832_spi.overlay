@@ -19,12 +19,12 @@
  */
 &arduino_spi {
 	status = "okay";
-	cs-gpios = <&arduino_header 14 GPIO_ACTIVE_LOW>; /* D8 */
+	cs-gpios = <&arduino_header 14 GPIO_ACTIVE_LOW>;	/* D8 */
 	icm42670p: icm42670p@0 {
 		compatible = "invensense,icm42670p";
 		reg = <0>;
-		spi-max-frequency = <1000000>; /* conservatively set to 1MHz */
-		int-gpios = <&arduino_header 8 GPIO_ACTIVE_HIGH>; /* D2 */
+		spi-max-frequency = <1000000>;	/* conservatively set to 1MHz */
+		int-gpios = <&arduino_header 8 GPIO_ACTIVE_HIGH>;	/* D2 */
 		accel-hz = <100>;
 		gyro-hz = <100>;
 		accel-fs = <16>;

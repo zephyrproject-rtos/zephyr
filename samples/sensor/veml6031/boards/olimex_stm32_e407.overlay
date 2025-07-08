@@ -6,19 +6,19 @@
 
 &pinctrl {
 	i2c2_sda_pf0: i2c2_sda_pf0 {
-		pinmux = < 0xa04 >;
+		pinmux = <0xa04>;
 		bias-pull-up;
 		drive-open-drain;
 	};
 	i2c2_scl_pf1: i2c2_scl_pf1 {
-		pinmux = < 0xa24 >;
+		pinmux = <0xa24>;
 		bias-pull-up;
 		drive-open-drain;
 	};
 };
 
 &i2c2 {
-	pinctrl-0 = < &i2c2_scl_pf1 &i2c2_sda_pf0 >;
+	pinctrl-0 = <&i2c2_scl_pf1 &i2c2_sda_pf0>;
 	pinctrl-names = "default";
 	status = "okay";
 	light: light@29 {

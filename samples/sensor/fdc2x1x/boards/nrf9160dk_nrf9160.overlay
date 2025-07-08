@@ -22,7 +22,7 @@
 			fref-divider = <1>;
 			idrive = <10>;
 			fin-sel = <2>;
-			inductance = < 18 >;
+			inductance = <18>;
 		};
 
 		channel_1 {
