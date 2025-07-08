@@ -1,0 +1,28 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/mcx/MCXW236BIHNAR-pinctrl.h>
+
+&pinctrl {
+	/* Configures pin routing and optionally pin electrical features. */
+	pinmux_flexcomm0_usart: pinmux_flexcomm0_usart {
+		group0 {
+			pinmux = <FC0_RXD_SDA_MOSI_PIO0_2>,
+				<FC0_TXD_SCL_MISO_PIO0_3>;
+			slew-rate = "standard";
+		};
+	};
+
+	/* Configures pin routing and optionally pin electrical features. */
+	pinmux_flexcomm1_i2c: pinmux_flexcomm1_i2c {
+		group0 {
+			pinmux = <FC1_RXD_SDA_MOSI_PIO0_13>,
+				<FC1_TXD_SCL_MISO_PIO0_14>;
+			slew-rate = "standard";
+			power-source = "3v3";
+		};
+	};
+};
