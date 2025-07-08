@@ -17,7 +17,7 @@ ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 
 from twisterlib.statuses import TwisterStatus
-from twisterlib.testplan import TestPlan, change_skip_to_error_if_integration
+from twisterlib.testplan import TestPlan, TestConfiguration, change_skip_to_error_if_integration
 from twisterlib.testinstance import TestInstance
 from twisterlib.testsuite import TestSuite
 from twisterlib.platform import Platform
@@ -60,7 +60,7 @@ def test_add_configurations_short(test_data, class_env, board_root_dir):
     """
     class_env.board_roots = [os.path.abspath(test_data + board_root_dir)]
     plan = TestPlan(class_env)
-    plan.parse_configuration(config_file=class_env.test_config)
+    plan.test_config = TestConfiguration(class_env.test_config)
     if board_root_dir == "board_config":
         plan.add_configurations()
         print(sorted(plan.default_platforms))
@@ -69,6 +69,7 @@ def test_add_configurations_short(test_data, class_env, board_root_dir):
         plan.add_configurations()
         assert sorted(plan.default_platforms) != sorted(['demo_board_1'])
 
+    plan.levels = plan.test_config.get_levels(plan.scenarios)
 
 def test_get_all_testsuites_short(class_testplan, all_testsuites_dict):
     """ Testing get_all_testsuites function of TestPlan class in Twister """
@@ -470,12 +471,12 @@ def test_testplan_parse_configuration(tmp_path, config_yaml, expected_scenarios)
         tmp_config_file.write_text(config_yaml)
 
     with pytest.raises(TwisterRuntimeError) if not config_yaml else nullcontext():
-        testplan.parse_configuration(tmp_config_file)
-
-    if not testplan.levels:
-        assert expected_scenarios == {}
-    for level in testplan.levels:
-        assert sorted(level.scenarios) == sorted(expected_scenarios[level.name])
+        tc = TestConfiguration(tmp_config_file)
+        testplan.levels = tc.get_levels(testplan.scenarios)
+        if not testplan.levels:
+            assert expected_scenarios == {}
+        for level in testplan.levels:
+            assert sorted(level.scenarios) == sorted(expected_scenarios[level.name])
 
 
 TESTDATA_2 = [
@@ -535,7 +536,6 @@ TESTDATA_3 = [
     (0, 0, [], False, [], TwisterRuntimeError, []),
     (1, 1, [], False, [], TwisterRuntimeError, []),
     (1, 0, [], True, [], TwisterRuntimeError, ['No quarantine list given to be verified']),
-#    (1, 0, ['qfile.yaml'], False, ['# empty'], None, ['Quarantine file qfile.yaml is empty']),
     (1, 0, ['qfile.yaml'], False, ['- platforms:\n  - demo_board_3\n  comment: "board_3"'], None, []),
 ]
 
@@ -557,15 +557,22 @@ def test_testplan_discover(
     exception,
     expected_logs
 ):
+    # Just a dummy test configuration file
+    tc = "options: {}\n"
+    tmp_tc = tmp_path / 'test_config.yaml'
+    tmp_tc.write_text(tc)
+
     for qf, data in zip(ql, ql_data):
         tmp_qf = tmp_path / qf
         tmp_qf.write_text(data)
 
-    testplan = TestPlan(env=mock.Mock())
+    env = mock.Mock()
+    env.test_config = tmp_tc
+    testplan = TestPlan(env=env)
     testplan.options = mock.Mock(
         test='ts1',
         quarantine_list=[tmp_path / qf for qf in ql],
-        quarantine_verify=qv,
+        quarantine_verify=qv
     )
     testplan.testsuites = {
         'ts1': mock.Mock(id=1),
@@ -576,7 +583,7 @@ def test_testplan_discover(
     testplan.add_testsuites = mock.Mock(return_value=added_testsuite_count)
     testplan.find_subtests = mock.Mock()
     testplan.report_duplicates = mock.Mock()
-    testplan.parse_configuration = mock.Mock()
+    testplan.test_config = mock.Mock()
     testplan.add_configurations = mock.Mock()
 
     with pytest.raises(exception) if exception else nullcontext():
@@ -1113,13 +1120,9 @@ def test_testplan_add_configurations(
     env = mock.Mock(board_roots=[tmp_path / 'boards'], soc_roots=[tmp_path], arch_roots=[tmp_path])
 
     testplan = TestPlan(env=env)
-
-    testplan.test_config = {
-        'platforms': {
-            'override_default_platforms': override_default_platforms,
-            'default_platforms': ['p3', 'p1e1']
-        }
-    }
+    testplan.test_config = mock.Mock()
+    testplan.test_config.override_default_platforms = override_default_platforms
+    testplan.test_config.default_platforms = ['p3', 'p1e1']
 
     def mock_gen_plat(board_roots, soc_roots, arch_roots):
         assert [tmp_path] == board_roots
