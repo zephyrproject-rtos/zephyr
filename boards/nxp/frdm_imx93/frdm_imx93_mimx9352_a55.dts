@@ -127,3 +127,7 @@
 	phys = <&can_phy0>;
 	status = "okay";
 };
+
+&tpm2 {
+	status = "okay";
+};
