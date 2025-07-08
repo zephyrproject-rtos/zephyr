@@ -62,38 +62,6 @@ struct dma_mcux_edma_config {
 	edma_tcd_t (*tcdpool)[CONFIG_DMA_TCD_QUEUE_SIZE];
 };
 
-
-#if defined(CONFIG_HAS_MCUX_CACHE) || defined(CONFIG_HAS_MCUX_XCACHE)
-
-#ifdef CONFIG_DMA_MCUX_USE_DTCM_FOR_DMA_DESCRIPTORS
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm))
-#define EDMA_TCDPOOL_CACHE_ATTR __dtcm_noinit_section
-#else /* DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm)) */
-#error Selected DTCM for MCUX DMA descriptors but no DTCM section.
-#endif /* DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm)) */
-
-#elif defined(CONFIG_NOCACHE_MEMORY)
-#define EDMA_TCDPOOL_CACHE_ATTR __nocache
-#else
-/*
- * Note: the TCD pool *must* be in non cacheable memory. All of the NXP SOCs
- * that support caching memory have their default SRAM regions defined as a
- * non cached memory region, but if the default SRAM region is changed EDMA
- * TCD pools would be moved to cacheable memory, resulting in DMA cache
- * coherency issues.
- */
-
-#define EDMA_TCDPOOL_CACHE_ATTR
-
-#endif /* CONFIG_DMA_MCUX_USE_DTCM_FOR_DMA_DESCRIPTORS */
-
-#else /* CONFIG_HAS_MCUX_CACHE */
-
-#define EDMA_TCDPOOL_CACHE_ATTR
-
-#endif /* CONFIG_HAS_MCUX_CACHE */
-
 struct dma_mcux_channel_transfer_edma_settings {
 	uint32_t source_data_size;
 	uint32_t dest_data_size;
@@ -1019,6 +987,24 @@ static int dma_mcux_edma_init(const struct device *dev)
 #define DMA_TCD_ALIGN_SIZE	64
 #else
 #define DMA_TCD_ALIGN_SIZE	32
+#endif
+
+/*
+ * Note: the TCD pool *must* be in non cacheable memory. All of the NXP SOCs
+ * that support caching memory have their default SRAM regions defined as a
+ * non cached memory region, but if the default SRAM region is changed EDMA
+ * TCD pools would be moved to cacheable memory, resulting in DMA cache
+ * coherency issues.
+ */
+#if !defined(CONFIG_CPU_HAS_DCACHE)
+/* no cache means no worries */
+#define EDMA_TCDPOOL_CACHE_ATTR
+#elif defined(CONFIG_DMA_MCUX_USE_DTCM_FOR_DMA_DESCRIPTORS)
+#define EDMA_TCDPOOL_CACHE_ATTR __dtcm_noinit_section
+#elif defined(CONFIG_NOCACHE_MEMORY)
+#define EDMA_TCDPOOL_CACHE_ATTR __nocache
+#else
+#error Unexpected or disallowed cache situation for dma descriptors
 #endif
 
 /*
