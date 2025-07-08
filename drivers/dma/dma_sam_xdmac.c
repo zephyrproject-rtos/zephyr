@@ -243,6 +243,10 @@ static int sam_xdmac_config(const struct device *dev, uint32_t channel,
 			| XDMAC_CC_MBSIZE(burst_size == 0U ? 0 : burst_size - 1)
 			| XDMAC_CC_SAM_INCREMENTED_AM
 			| XDMAC_CC_DAM_INCREMENTED_AM;
+#if defined(CONFIG_SOC_SERIES_SAMA7G5)
+		/* When a memory-to-memory transfer is performed, configure PERID to 0x7F. */
+		cfg->dma_slot = 0x7F;
+#endif
 		break;
 	case MEMORY_TO_PERIPHERAL:
 		channel_cfg.cfg =
@@ -264,11 +268,14 @@ static int sam_xdmac_config(const struct device *dev, uint32_t channel,
 		return -EINVAL;
 	}
 
-	channel_cfg.cfg |=
-		  XDMAC_CC_DWIDTH(data_size)
-		| XDMAC_CC_SIF_AHB_IF1
-		| XDMAC_CC_DIF_AHB_IF1
-		| XDMAC_CC_PERID(cfg->dma_slot);
+	channel_cfg.cfg |= XDMAC_CC_DWIDTH(data_size) |
+#ifdef XDMAC_CC_SIF_AHB_IF1
+			   XDMAC_CC_SIF_AHB_IF1 |
+#endif
+#ifdef XDMAC_CC_DIF_AHB_IF1
+			   XDMAC_CC_DIF_AHB_IF1 |
+#endif
+			   XDMAC_CC_PERID(cfg->dma_slot);
 	channel_cfg.ds_msp = 0U;
 	channel_cfg.sus = 0U;
 	channel_cfg.dus = 0U;
