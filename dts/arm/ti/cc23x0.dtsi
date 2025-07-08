@@ -69,7 +69,7 @@
 			status = "disabled";
 			gpio-controller;
 			#gpio-cells = <2>;	/* Pin (ID), and flags */
-			ngpios = <26>;		/* Only [DIO0, DIO25] are available */
+			ngpios = <26>;	/* Only [DIO0, DIO25] are available */
 		};
 
 		uart0: uart@40034000 {
@@ -172,7 +172,7 @@
 };
 
 &nvic {
-	arm,num-irq-priority-bits = <2>; /* Interrupt levels are 0-192 in steps of 64 */
+	arm,num-irq-priority-bits = <2>;	/* Interrupt levels are 0-192 in steps of 64 */
 };
 
 &systick {
