@@ -1,10 +1,10 @@
-# Copyright 2024 Espressif Systems (Shanghai) PTE LTD
+# Copyright 2024-2025 Espressif Systems (Shanghai) PTE LTD
 
 if BT_ESP32
 
 config HEAP_MEM_POOL_ADD_SIZE_ESP_BT
 	int
-	default 50000 if SOC_SERIES_ESP32C6
+	default 50000 if SOC_SERIES_ESP32C2 || SOC_SERIES_ESP32C6
 	default 25600
 	default 0
 	help
@@ -269,7 +269,7 @@ config ESP32_BT_CTLR_COEX_PHY_CODED_TX_RX_TLIM_EFF
 
 endmenu # ESP32 Bluetooth Controller Configuration
 
-if SOC_SERIES_ESP32C6
+if SOC_SERIES_ESP32C2 || SOC_SERIES_ESP32C6
 
 menu "Espressif HCI Config"
 
@@ -348,7 +348,8 @@ endif
 config ESP32_BT_LE_MAX_PERIODIC_SYNCS
 	int "Maximum periodic advertising syncs"
 	depends on ESP32_BT_LE_50_FEATURE_SUPPORT
-	range 0 8
+	range 0 3 if SOC_SERIES_ESP32C2
+	range 0 8 if SOC_SERIES_ESP32C6
 	default 1 if ESP32_BT_LE_ENABLE_PERIODIC_ADV
 	default 0
 	help
@@ -364,6 +365,7 @@ config ESP32_BT_LE_MAX_PERIODIC_ADVERTISER_LIST
 
 config ESP32_BT_LE_POWER_CONTROL_ENABLED
 	bool "Controller BLE power control"
+	depends on SOC_SERIES_ESP32C6
 	depends on ESP32_BT_LE_50_FEATURE_SUPPORT
 	help
 	  Allow controller to adjust transmit power based on link quality.
@@ -533,8 +535,10 @@ config ESP32_BT_LE_LL_PEER_SCA
 
 config ESP32_BT_LE_MAX_CONNECTIONS
 	int "Max concurrent connections"
-	range 1 70
-	default 3
+	range 1 2 if SOC_SERIES_ESP32C2
+	range 1 70 if SOC_SERIES_ESP32C6
+	default 2 if SOC_SERIES_ESP32C2
+	default 3 if SOC_SERIES_ESP32C6
 	help
 	  Maximum number of BLE connections. Each uses ~1 KB of DRAM.
 
@@ -585,6 +589,8 @@ config ESP32_BT_LE_USE_ESP_TIMER
 	default y
 	help
 	  Use high-priority esp-timer for controller callouts.
+
+if SOC_SERIES_ESP32C6
 
 config ESP32_BT_LE_SCAN_DUPL
 	bool "BLE scan duplicate filtering"
@@ -638,6 +644,8 @@ config ESP32_BT_LE_MSYS_INIT_IN_CONTROLLER
 	help
 	  Allocate MSYS mbufs within the controller instead of the host.
 
+endif # SOC_SERIES_ESP32C6
+
 config ESP32_BT_LE_TX_CCA_ENABLED
 	bool "TX CCA feature"
 	help
@@ -683,6 +691,10 @@ config BT_CTLR_SCAN_BACKOFF_UPPERLIMITMAX
 	default 32
 	help
 	  Upperlimitmax value (power of 2) for scan backoff procedure.
+
+endif # SOC_SERIES_ESP32C2 || SOC_SERIES_ESP32C6
+
+if SOC_SERIES_ESP32C6
 
 config ESP32_BT_LE_CTLR_CHAN_ASS_EN
 	bool "Channel assessment (experimental)"
