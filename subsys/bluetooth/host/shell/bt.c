@@ -1010,6 +1010,37 @@ void subrate_changed(struct bt_conn *conn,
 }
 #endif
 
+#if defined(CONFIG_BT_LE_EXTENDED_FEAT_SET)
+void read_all_remote_feat_complete(struct bt_conn *conn,
+				   const struct bt_conn_le_read_all_remote_feat_complete *params)
+{
+	if (params->status == BT_HCI_ERR_SUCCESS) {
+		uint8_t number_of_bytes = BT_HCI_LE_BYTES_PAGE_0_FEATURE_PAGE;
+
+		if (params->max_valid_page > 0) {
+			number_of_bytes +=
+				(params->max_valid_page * BT_HCI_LE_BYTES_PER_FEATURE_PAGE);
+		}
+
+		bt_shell_fprintf_print(
+			"Read all remote features complete, Max Remote Page %d, LE Features: 0x",
+			params->max_remote_page);
+
+		for (int i = number_of_bytes - 1; i >= 0; i--) {
+			uint8_t features = params->features[i];
+			char features_str[(2 * sizeof(uint8_t)) + 1];
+
+			bin2hex(&features, sizeof(features), features_str, sizeof(features_str));
+			bt_shell_fprintf_print("%s", features_str);
+		}
+		bt_shell_fprintf_print("\n");
+	} else {
+		bt_shell_print("Read all remote features failed (HCI status 0x%02x)",
+			       params->status);
+	}
+}
+#endif
+
 #if defined(CONFIG_BT_CHANNEL_SOUNDING)
 void print_remote_cs_capabilities(struct bt_conn *conn,
 				  uint8_t status,
@@ -1188,6 +1219,9 @@ static struct bt_conn_cb conn_callbacks = {
 #endif
 #if defined(CONFIG_BT_SUBRATING)
 	.subrate_changed = subrate_changed,
+#endif
+#if defined(CONFIG_BT_LE_EXTENDED_FEAT_SET)
+	.read_all_remote_feat_complete = read_all_remote_feat_complete,
 #endif
 #if defined(CONFIG_BT_CHANNEL_SOUNDING)
 	.le_cs_read_remote_capabilities_complete = print_remote_cs_capabilities,
@@ -3290,6 +3324,34 @@ static int cmd_subrate_request(const struct shell *sh, size_t argc, char *argv[]
 }
 #endif
 
+#if defined(CONFIG_BT_LE_EXTENDED_FEAT_SET)
+static int cmd_read_all_remote_features(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = 0;
+
+	if (default_conn == NULL) {
+		shell_error(sh, "Conn handle error, at least one connection is required.");
+		return -ENOEXEC;
+	}
+
+	uint8_t pages_requested = shell_strtoul(argv[1], 10, &err);
+
+	if (err != 0) {
+		shell_help(sh);
+		shell_error(sh, "Could not parse input for pages_requested");
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	err = bt_conn_le_read_all_remote_features(default_conn, pages_requested);
+	if (err != 0) {
+		shell_error(sh, "bt_conn_le_read_all_remote_features returned error %d", err);
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+#endif
+
 #if defined(CONFIG_BT_CONN)
 #if defined(CONFIG_BT_CENTRAL)
 static int bt_do_connect_le(int *ercd, size_t argc, char *argv[])
@@ -5040,6 +5102,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 		"<min subrate factor> <max subrate factor> <max peripheral latency> "
 		"<min continuation number> <supervision timeout (seconds)>",
 		cmd_subrate_request, 6, 0),
+#endif
+#if defined(CONFIG_BT_LE_EXTENDED_FEAT_SET)
+	SHELL_CMD_ARG(read-all-remote-features, NULL, "<pages_requested>",
+		cmd_read_all_remote_features, 2, 0),
 #endif
 #if defined(CONFIG_BT_BROADCASTER)
 	SHELL_CMD_ARG(advertise, NULL,
