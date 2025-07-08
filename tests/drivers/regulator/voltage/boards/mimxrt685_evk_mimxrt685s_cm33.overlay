@@ -9,19 +9,19 @@
  * so limit regulator voltage to this range.
  * Only test regulators we can safely change voltage to in RUN mode
  */
- &ldo1 {
+&ldo1 {
 	regulator-max-microvolt = <1800000>;
- };
+};
 
- &ldo2 {
+&ldo2 {
 	regulator-max-microvolt = <1800000>;
- };
+};
 
 /* Override LPADC0 pinctrl settings */
 &pinmux_lpadc0 {
 	group0 {
 		pinmux = <ADC0_CH0_PIO0_5>,
-			<ADC0_CH2_PIO0_19>;
+			 <ADC0_CH2_PIO0_19>;
 		slew-rate = "normal";
 		drive-strength = "normal";
 		nxp,analog-mode;
