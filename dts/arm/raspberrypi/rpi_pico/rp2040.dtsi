@@ -129,8 +129,8 @@
 			compatible = "raspberrypi,pico-pll";
 			clocks = <&xosc>;
 			clock-names = "xosc";
-			clock-div= <1>;
-			fb-div= <125>;
+			clock-div = <1>;
+			fb-div = <125>;
 			post-div1 = <6>;
 			post-div2 = <2>;
 			#clock-cells = <0>;
@@ -140,7 +140,7 @@
 			compatible = "raspberrypi,pico-pll";
 			clocks = <&xosc>;
 			clock-names = "xosc";
-			clock-div= <1>;
+			clock-div = <1>;
 			fb-div = <100>;
 			post-div1 = <5>;
 			post-div2 = <5>;
@@ -232,10 +232,10 @@
 				 <&pll_sys>, <&pll_usb>, <&xosc>, <&rosc>, <&rosc_ph>,
 				 <&gpin0>, <&gpin1>;
 			clock-names = "clk_gpout0", "clk_gpout1", "clk_gpout2", "clk_gpout3",
-				 "clk_ref", "clk_sys", "clk_peri",
-				 "clk_usb", "clk_adc", "clk_rtc",
-				 "pll_sys", "pll_usb", "xosc", "rosc", "rosc_ph",
-				 "gpin0", "gpin1";
+				      "clk_ref", "clk_sys", "clk_peri",
+				      "clk_usb", "clk_adc", "clk_rtc",
+				      "pll_sys", "pll_usb", "xosc", "rosc", "rosc_ph",
+				      "gpin0", "gpin1";
 		};
 
 		gpio0_map: gpio@40014000 {
