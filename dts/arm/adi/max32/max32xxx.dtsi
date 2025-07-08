@@ -218,7 +218,7 @@
 			status = "disabled";
 		};
 
-		wdt0: watchdog@40003000  {
+		wdt0: watchdog@40003000 {
 			compatible = "adi,max32-watchdog";
 			reg = <0x40003000 0x400>;
 			interrupts = <1 0>;

@@ -401,7 +401,6 @@
 			/omit-if-no-ref/ wakeup_p3_1: wakeup_p3_1 {
 				pinmux = <MAX32_PINMUX(3, 1, AF2)>;
 			};
-
 		};
 	};
 };

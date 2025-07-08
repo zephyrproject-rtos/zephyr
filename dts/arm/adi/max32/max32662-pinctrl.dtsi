@@ -266,8 +266,6 @@
 				pinmux = <MAX32_PINMUX(0, 13, AF4)>;
 			};
 
-
-
 			/omit-if-no-ref/ pt0a_p0_14: pt0a_p0_14 {
 				pinmux = <MAX32_PINMUX(0, 14, AF1)>;
 			};

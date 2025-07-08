@@ -765,7 +765,6 @@
 			/omit-if-no-ref/ lptmr1b_ioa_p3_7: lptmr1b_ioa_p3_7 {
 				pinmux = <MAX32_PINMUX(3, 7, AF2)>;
 			};
-
 		};
 	};
 };
