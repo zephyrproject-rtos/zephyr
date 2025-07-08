@@ -149,3 +149,7 @@
 &wdog4 {
 	status = "okay";
 };
+
+&tpm2 {
+	status = "okay";
+};
