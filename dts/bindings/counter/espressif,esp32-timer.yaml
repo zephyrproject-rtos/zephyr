@@ -54,4 +54,10 @@ properties:
     type: int
     default: 2
 
+  autoreload:
+    description: |
+      Autoreload causes the timer to never stop. After alarm event timer will
+      be reloaded automatically.
+    type: boolean
+
 compatible: "espressif,esp32-timer"

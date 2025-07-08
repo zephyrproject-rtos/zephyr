@@ -379,7 +379,7 @@ static void counter_esp32_isr(void *arg)
 				.counter_en = TIMER_START,                                         \
 				.intr_type = TIMER_INTR_LEVEL,                                     \
 				.counter_dir = TIMER_COUNT_UP,                                     \
-				.auto_reload = TIMER_AUTORELOAD_DIS,                               \
+				.auto_reload = DT_INST_PROP(idx, autoreload),                      \
 				.divider = ESP32_COUNTER_GET_CLK_DIV(idx),                         \
 			},                                                                         \
 		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(TIMER(idx))),                            \
