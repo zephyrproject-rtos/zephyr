@@ -188,3 +188,7 @@
 		status = "disabled";
 	};
 };
+
+&tpm2 {
+	status = "okay";
+};
