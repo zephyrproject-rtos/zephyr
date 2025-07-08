@@ -130,20 +130,20 @@
 		clint: clint@2000000 {
 			compatible = "sifive,clint0";
 			interrupts-extended = <&hlic0 3 &hlic0 7
-				&hlic1 3 &hlic1 7
-				&hlic2 3 &hlic2 7
-				&hlic3 3 &hlic3 7
-				&hlic4 3 &hlic4 7>;
+					       &hlic1 3 &hlic1 7
+					       &hlic2 3 &hlic2 7
+					       &hlic3 3 &hlic3 7
+					       &hlic4 3 &hlic4 7>;
 			reg = <0x0 0x2000000 0x0 0x10000>;
 		};
 
 		mtimer: timer@200bff8 {
 			compatible = "riscv,machine-timer";
 			interrupts-extended = <&hlic0 7
-						&hlic1 7
-						&hlic2 7
-						&hlic3 7
-						&hlic4 7>;
+					       &hlic1 7
+					       &hlic2 7
+					       &hlic3 7
+					       &hlic4 7>;
 			reg = <0x0 0x200bff8 0x0 0x8 0x0 0x2004000 0x0 0x8>;
 			reg-names = "mtime", "mtimecmp";
 		};
@@ -160,10 +160,10 @@
 			#interrupt-cells = <2>;
 			interrupt-controller;
 			interrupts-extended = <&hlic0 11
-				&hlic1 11
-				&hlic2 11
-				&hlic3 11
-				&hlic4 11>;
+					       &hlic1 11
+					       &hlic2 11
+					       &hlic3 11
+					       &hlic4 11>;
 			reg = <0x0 0x0c000000 0x0 0x04000000>;
 			riscv,max-priority = <7>;
 			riscv,ndev = <52>;
