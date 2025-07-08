@@ -19,6 +19,7 @@
 #include "sl_wifi_callback_framework.h"
 
 #define SIWX91X_DRIVER_VERSION KERNEL_VERSION_STRING
+#define MAX_24GHZ_CHANNELS 14
 
 LOG_MODULE_REGISTER(siwx91x_wifi);
 
@@ -348,10 +349,43 @@ static int siwx91x_get_version(const struct device *dev, struct wifi_version *pa
 	return 0;
 }
 
+static int map_sdk_region_to_zephyr_channel_info(const sli_si91x_set_region_ap_request_t *sdk_reg,
+						 struct wifi_reg_chan_info *z_chan_info,
+						 size_t *num_channels)
+{
+	uint8_t first_channel = sdk_reg->channel_info[0].first_channel;
+	uint8_t channel;
+	uint16_t freq;
+
+	*num_channels = sdk_reg->channel_info[0].no_of_channels;
+	if (*num_channels > MAX_24GHZ_CHANNELS) {
+		return -EOVERFLOW;
+	}
+
+	for (int idx = 0; idx < *num_channels; idx++) {
+		channel = first_channel + idx;
+		freq = 2407 + channel * 5;
+
+		if (freq > 2472) {
+			freq = 2484; /* channel 14 */
+		}
+
+		z_chan_info[idx].center_frequency = freq;
+		z_chan_info[idx].max_power = sdk_reg->channel_info[0].max_tx_power;
+		z_chan_info[idx].supported = 1;
+		z_chan_info[idx].passive_only = 0;
+		z_chan_info[idx].dfs = 0;
+	}
+
+	return 0;
+}
+
 static int siwx91x_wifi_reg_domain(const struct device *dev, struct wifi_reg_domain *reg_domain)
 {
+	const sli_si91x_set_region_ap_request_t *sdk_reg = NULL;
 	sl_wifi_operation_mode_t oper_mode = sli_get_opermode();
 	sl_wifi_region_code_t region_code;
+	const char *country_code;
 	int ret;
 
 	__ASSERT(reg_domain, "reg_domain cannot be NULL");
@@ -365,8 +399,28 @@ static int siwx91x_wifi_reg_domain(const struct device *dev, struct wifi_reg_dom
 		}
 
 		if (region_code == SL_WIFI_DEFAULT_REGION) {
+			siwx91x_store_country_code(DEFAULT_COUNTRY_CODE);
 			LOG_INF("Country code not supported, using default region");
+		} else {
+			siwx91x_store_country_code(reg_domain->country_code);
 		}
+	} else if (reg_domain->oper == WIFI_MGMT_GET) {
+		country_code = siwx91x_get_country_code();
+		memcpy(reg_domain->country_code, country_code, WIFI_COUNTRY_CODE_LEN);
+		region_code = siwx91x_map_country_code_to_region(country_code);
+
+		sdk_reg = siwx91x_find_sdk_region_table(region_code);
+		if (!sdk_reg) {
+			return -ENOENT;
+		}
+
+		ret = map_sdk_region_to_zephyr_channel_info(sdk_reg, reg_domain->chan_info,
+							    &reg_domain->num_channels);
+		if (ret) {
+			return ret;
+		}
+	} else {
+		return -EINVAL;
 	}
 
 	return 0;
