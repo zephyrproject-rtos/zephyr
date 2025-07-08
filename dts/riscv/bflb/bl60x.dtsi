@@ -89,10 +89,10 @@
 
 			interrupt-controller;
 			interrupts-extended = <&ictrl 3 &ictrl 7 &ictrl 11 &ictrl 12>;
-			interrupt-names = "msip", /* Machine Software Interrupt */
-					  "mtip", /* Machine Timer interrupt    */
-					  "meip", /* Machine External Interrupt */
-					  "csip"; /* CLIC Software Interrupt    */
+			interrupt-names = "msip",	/* Machine Software Interrupt */
+					  "mtip",	/* Machine Timer interrupt    */
+					  "meip",	/* Machine External Interrupt */
+					  "csip";	/* CLIC Software Interrupt    */
 		};
 
 		mtimer: timer@200bff8 {
@@ -130,11 +130,11 @@
 			#clock-cells = <1>;
 			status = "okay";
 			clocks = <&clk_rc32m>, <&clk_crystal>, <&clk_root>, <&clk_bclk>,
-				<&clk_pll BL60X_PLL_192MHz>, <&clk_pll BL60X_PLL_160MHz>,
-				<&clk_pll BL60X_PLL_120MHz>, <&clk_pll BL60X_PLL_48MHz>;
+				 <&clk_pll BL60X_PLL_192MHz>, <&clk_pll BL60X_PLL_160MHz>,
+				 <&clk_pll BL60X_PLL_120MHz>, <&clk_pll BL60X_PLL_48MHz>;
 			clock-names = "rc32m", "crystal", "root", "bclk",
-				"pll_192", "pll_160",
-				"pll_120", "pll_48";
+				      "pll_192", "pll_160",
+				      "pll_120", "pll_48";
 			zephyr,deferred-init;
 		};
 
