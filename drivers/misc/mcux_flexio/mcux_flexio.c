@@ -132,6 +132,8 @@ static int mcux_flexio_init(const struct device *dev)
 	k_mutex_init(&data->lock);
 
 	FLEXIO_GetDefaultConfig(&flexio_config);
+	flexio_config.enableInDoze = true;
+
 	FLEXIO_Init(config->base, &flexio_config);
 	config->irq_config_func(dev);
 
