@@ -1810,7 +1810,8 @@ static void le_remote_feat_complete(struct net_buf *buf)
 	atomic_set_bit(conn->flags, BT_CONN_LE_FEATURES_EXCHANGED);
 
 	if (IS_ENABLED(CONFIG_BT_REMOTE_INFO) &&
-	    !IS_ENABLED(CONFIG_BT_REMOTE_VERSION)) {
+	    (!IS_ENABLED(CONFIG_BT_REMOTE_VERSION) ||
+	     atomic_test_bit(conn->flags, BT_CONN_AUTO_VERSION_INFO))) {
 		notify_remote_info(conn);
 	}
 
@@ -2390,7 +2391,8 @@ static void bt_hci_evt_read_remote_version_complete(struct net_buf *buf)
 
 	atomic_set_bit(conn->flags, BT_CONN_AUTO_VERSION_INFO);
 
-	if (IS_ENABLED(CONFIG_BT_REMOTE_INFO)) {
+	if (IS_ENABLED(CONFIG_BT_REMOTE_INFO) &&
+	    atomic_test_bit(conn->flags, BT_CONN_LE_FEATURES_EXCHANGED)) {
 		/* Remote features is already present */
 		notify_remote_info(conn);
 	}
