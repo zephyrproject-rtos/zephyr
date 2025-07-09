@@ -8,6 +8,7 @@ OS Services
 
    binary_descriptors/index.rst
    console.rst
+   cpu_freq/index.rst
    cpu_load/index.rst
    crypto/index
    debugging/index.rst
