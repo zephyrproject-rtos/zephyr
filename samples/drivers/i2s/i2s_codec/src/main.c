@@ -166,7 +166,6 @@ int main(void)
 		while (1) {
 			void *mem_block;
 			uint32_t block_size = BLOCK_SIZE;
-			int ret;
 			int i;
 
 			for (i = 0; i < 2; i++) {

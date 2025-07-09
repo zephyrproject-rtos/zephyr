@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_NRF_IRONSIDE_DVFS_H_
-#define ZEPHYR_INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_NRF_IRONSIDE_DVFS_H_
+#ifndef ZEPHYR_SOC_NORDIC_IRONSIDE_INCLUDE_NRF_IRONSIDE_DVFS_H_
+#define ZEPHYR_SOC_NORDIC_IRONSIDE_INCLUDE_NRF_IRONSIDE_DVFS_H_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -18,15 +18,15 @@ enum ironside_dvfs_oppoint {
 };
 
 /**
- * @brief Number of DVFS oppoints supported by IRONside.
+ * @brief Number of DVFS oppoints supported by IronSide.
  *
- * This is the number of different DVFS oppoints that can be set on IRONside.
+ * This is the number of different DVFS oppoints that can be set on IronSide.
  * The oppoints are defined in the `ironside_dvfs_oppoint` enum.
  */
 #define IRONSIDE_DVFS_OPPOINT_COUNT (3)
 
 /**
- * @name IRONside DVFS service error codes.
+ * @name IronSide DVFS service error codes.
  * @{
  */
 
@@ -49,10 +49,10 @@ enum ironside_dvfs_oppoint {
  * @}
  */
 
-/* IRONside call identifiers with implicit versions.
+/* IronSide call identifiers with implicit versions.
  *
  * With the initial "version 0", the service ABI is allowed to break until the
- * first production release of IRONside SE.
+ * first production release of IronSide SE.
  */
 #define IRONSIDE_CALL_ID_DVFS_SERVICE_V0 3
 
@@ -89,4 +89,4 @@ static inline bool ironside_dvfs_is_oppoint_valid(enum ironside_dvfs_oppoint dvf
 	return true;
 }
 
-#endif /* ZEPHYR_INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_NRF_IRONSIDE_DVFS_H_ */
+#endif /* ZEPHYR_SOC_NORDIC_IRONSIDE_INCLUDE_NRF_IRONSIDE_DVFS_H_ */

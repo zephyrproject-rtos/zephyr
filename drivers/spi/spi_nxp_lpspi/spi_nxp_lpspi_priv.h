@@ -51,6 +51,7 @@ struct lpspi_data {
 	void *driver_data;
 	size_t transfer_len;
 	uint8_t major_version;
+	uint32_t clock_freq;
 };
 
 /* Verifies spi_cfg validity and set up configuration of hardware for xfer

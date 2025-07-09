@@ -105,13 +105,14 @@ static int set_power_mode(enum bmp5_powermode powermode, const struct device *de
 
 static int get_power_mode(enum bmp5_powermode *powermode, const struct device *dev)
 {
-	struct bmp581_config *conf = (struct bmp581_config *)dev->config;
+	const struct bmp581_config *conf;
 	int ret = BMP5_OK;
 
 	CHECKIF(powermode == NULL || dev == NULL) {
 		return -EINVAL;
 	}
 
+	conf = (const struct bmp581_config *)dev->config;
 	uint8_t reg = 0;
 	uint8_t raw_power_mode = 0;
 
@@ -186,22 +187,26 @@ static int power_up_check(const struct device *dev)
 
 static int get_interrupt_status(uint8_t *int_status, const struct device *dev)
 {
-	struct bmp581_config *conf = (struct bmp581_config *)dev->config;
+	const struct bmp581_config *conf;
 
 	CHECKIF(int_status == NULL || dev == NULL) {
 		return -EINVAL;
 	}
+
+	conf = (const struct bmp581_config *)dev->config;
 
 	return i2c_reg_read_byte_dt(&conf->i2c, BMP5_REG_INT_STATUS, int_status);
 }
 
 static int get_nvm_status(uint8_t *nvm_status, const struct device *dev)
 {
-	struct bmp581_config *conf = (struct bmp581_config *)dev->config;
+	const struct bmp581_config *conf;
 
 	CHECKIF(nvm_status == NULL || dev == NULL) {
 		return -EINVAL;
 	}
+
+	conf = (const struct bmp581_config *)dev->config;
 
 	return i2c_reg_read_byte_dt(&conf->i2c, BMP5_REG_STATUS, nvm_status);
 }
@@ -231,7 +236,7 @@ static int validate_chip_id(struct bmp581_data *drv)
 static int get_osr_odr_press_config(struct bmp581_osr_odr_press_config *osr_odr_press_cfg,
 				    const struct device *dev)
 {
-	struct bmp581_config *conf = (struct bmp581_config *)dev->config;
+	const struct bmp581_config *conf;
 
 	/* Variable to store the function result */
 	int8_t rslt = 0;
@@ -242,6 +247,8 @@ static int get_osr_odr_press_config(struct bmp581_osr_odr_press_config *osr_odr_
 	CHECKIF(osr_odr_press_cfg == NULL || dev == NULL) {
 		return -EINVAL;
 	}
+
+	conf = (const struct bmp581_config *)dev->config;
 
 	/* Get OSR and ODR configuration in burst read */
 	rslt = i2c_burst_read_dt(&conf->i2c, BMP5_REG_OSR_CONFIG, reg_data, 2);

@@ -7,13 +7,13 @@
 #define ZEPHYR_INCLUDE_DT_BINDINGS_TI_TMP114_H_
 
 /**
- * @defgroup TMP114 Texas Instruments (TI) TMP114 DT Options
+ * @defgroup tmp114 Texas Instruments (TI) TMP114 DT Options
  * @ingroup sensor_interface
  * @{
  */
 
 /**
- * @defgroup TMP114_ODR Temperature output data rate
+ * @defgroup tmp114_odr Temperature output data rate
  * @{
  */
 #define TMP114_DT_ODR_6_4_MS   0

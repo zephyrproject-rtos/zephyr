@@ -6,6 +6,6 @@ config UPDATE_BLOB_ADDRESS
 	default 0xe100000
 	help
 	  Address of the update blob. The default value matches the placement of the
-	  update blobs delivered with the IRONside SE firmware.
+	  update blobs delivered with the IronSide SE firmware.
 
 source "Kconfig.zephyr"

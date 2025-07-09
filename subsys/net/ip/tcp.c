@@ -1360,10 +1360,8 @@ static bool is_destination_local(struct net_pkt *pkt)
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == AF_INET6) {
-		if (net_ipv6_is_addr_loopback(
-				(struct in6_addr *)NET_IPV6_HDR(pkt)->dst) ||
-		    net_ipv6_is_my_addr(
-				(struct in6_addr *)NET_IPV6_HDR(pkt)->dst)) {
+		if (net_ipv6_is_addr_loopback_raw(NET_IPV6_HDR(pkt)->dst) ||
+		    net_ipv6_is_my_addr_raw(NET_IPV6_HDR(pkt)->dst)) {
 			return true;
 		}
 	}
@@ -1396,9 +1394,12 @@ void net_tcp_reply_rst(struct net_pkt *pkt)
 				      (struct in_addr *)NET_IPV4_HDR(pkt)->dst,
 				      (struct in_addr *)NET_IPV4_HDR(pkt)->src);
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == AF_INET6) {
-		ret =  net_ipv6_create(rst,
-				      (struct in6_addr *)NET_IPV6_HDR(pkt)->dst,
-				      (struct in6_addr *)NET_IPV6_HDR(pkt)->src);
+		struct in6_addr src, dst;
+
+		net_ipv6_addr_copy_raw(src.s6_addr, NET_IPV6_HDR(pkt)->src);
+		net_ipv6_addr_copy_raw(dst.s6_addr, NET_IPV6_HDR(pkt)->dst);
+
+		ret =  net_ipv6_create(rst, &dst, &src);
 	} else {
 		ret = -EINVAL;
 	}
@@ -2863,6 +2864,42 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 		goto out;
 	}
 
+	/* Now validate the ACK flag and ACKnum */
+	if ((conn->state != TCP_LISTEN) && (conn->state != TCP_SYN_SENT)) {
+		uint32_t snduna = conn->seq;
+
+		/* According to RFC 793 ch 3.9 Event Processing,
+		 * drop any received segment if the ACK bit is off.
+		 */
+		if (!FL(&fl, &, ACK)) {
+			net_stats_update_tcp_seg_ackerr(net_pkt_iface(pkt));
+			net_stats_update_tcp_seg_drop(net_pkt_iface(pkt));
+			k_mutex_unlock(&conn->lock);
+			return NET_DROP;
+		}
+
+		/* Accroding to RFC 793, the ACKnum is acceptable if in scope
+		 * SND.UNA =< SEG.ACK =< SND.NXT
+		 * Otherwise, drop the packet and send an ACK back.
+		 */
+
+		if ((conn->state == TCP_SYN_RECEIVED) || (conn->state == TCP_FIN_WAIT_1) ||
+		    (conn->state == TCP_CLOSING) || (conn->state == TCP_LAST_ACK)) {
+			/* SYN or FIN sent, so the snduna should be conn->seq - 1 */
+			snduna -= 1;
+		}
+
+		if (net_tcp_seq_cmp(th_ack(th), snduna) < 0 ||
+		    net_tcp_seq_cmp(th_ack(th), conn->seq + conn->send_data_total) > 0) {
+			net_stats_update_tcp_seg_ackerr(net_pkt_iface(pkt));
+			net_stats_update_tcp_seg_drop(net_pkt_iface(pkt));
+			tcp_out(conn, ACK);
+			k_mutex_unlock(&conn->lock);
+			return NET_DROP;
+		}
+	}
+
+	/* Both the seqnum and the acknum are valid, then do processing. */
 	conn->send_win = ntohs(th_win(th));
 	if (conn->send_win > conn->send_win_max) {
 		NET_DBG("Lowering send window from %u to %u", conn->send_win, conn->send_win_max);
@@ -2910,8 +2947,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 		}
 		break;
 	case TCP_SYN_RECEIVED:
-		if (FL(&fl, &, ACK, th_ack(th) == conn->seq &&
-				th_seq(th) == conn->ack)) {
+		if (th_ack(th) == conn->seq && th_seq(th) == conn->ack) {
 			net_tcp_accept_cb_t accept_cb = NULL;
 			struct net_context *context = NULL;
 
@@ -2941,7 +2977,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 				break;
 			}
 
-			net_ipaddr_copy(&conn->context->remote, &conn->dst.sa);
+			memcpy(&conn->context->remote, &conn->dst.sa, sizeof(conn->dst.sa));
 
 			/* Check if v4-mapping-to-v6 needs to be done for
 			 * the accepted socket.
@@ -3058,7 +3094,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 			conn_ack(conn, + len + 1);
 			keep_alive_timer_stop(conn);
 
-			if (FL(&fl, &, ACK) && (net_tcp_seq_cmp(th_ack(th), conn->seq) > 0)) {
+			if (net_tcp_seq_cmp(th_ack(th), conn->seq) > 0) {
 				uint32_t len_acked = th_ack(th) - conn->seq;
 
 				conn_seq(conn, + len_acked);
@@ -3258,7 +3294,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 		/* Half-close is not supported, so do nothing here */
 		break;
 	case TCP_LAST_ACK:
-		if (FL(&fl, ==, ACK, th_ack(th) == conn->seq)) {
+		if (th_ack(th) == conn->seq) {
 			k_work_cancel_delayable(&conn->send_data_timer);
 			do_close = true;
 			verdict = NET_OK;
@@ -3295,7 +3331,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 			net_tcp_reply_rst(pkt);
 			break;
 		}
-		if (FL(&fl, &, ACK, th_ack(th) == conn->seq)) {
+		if (th_ack(th) == conn->seq) {
 			NET_DBG("conn %p: FIN acknowledged, going to FIN_WAIT_2 "
 				"state seq %u, ack %u",
 				conn, conn->seq, conn->ack);
@@ -3391,7 +3427,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 			break;
 		}
 
-		if (FL(&fl, &, ACK, th_ack(th) == conn->seq)) {
+		if (th_ack(th) == conn->seq) {
 			NET_DBG("conn %p: FIN acknowledged, going to TIME WAIT "
 				"state seq %u, ack %u",
 				conn, conn->seq, conn->ack);

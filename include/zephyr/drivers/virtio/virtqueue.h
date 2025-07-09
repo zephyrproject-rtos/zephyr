@@ -19,11 +19,12 @@ extern "C" {
  * https://docs.oasis-open.org/virtio/virtio/v1.3/csd01/virtio-v1.3-csd01.pdf
  */
 
- /**
-  * @brief Virtqueue Interface
-  * @defgroup virtqueue_interface Virtqueue Interface
-  * @{
-  */
+/**
+ * @brief Virtqueue Interface
+ * @defgroup virtqueue_interface Virtqueue Interface
+ * @ingroup virtio_interface
+ * @{
+ */
 
 /**
  * used in virtq_desc::flags, enables chaining descriptor via virtq_desc::next

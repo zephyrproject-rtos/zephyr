@@ -1,24 +1,24 @@
 .. zephyr:code-sample:: nrf_ironside_update
-   :name: Nordic IRONside SE firmware update
+   :name: Nordic IronSide SE firmware update
 
-   Update the Nordic IRONside SE firmware.
+   Update the Nordic IronSide SE firmware.
 
 Overview
 ********
 
-The Nordic IRONside SE Update sample updates the IRONside SE firmware on a SoC that already has IRONside SE installed.
-It can update both the main image and the recovery image of IRONside SE using the IRONside SE firmware release ZIP file.
+The Nordic IronSide SE Update sample updates the IronSide SE firmware on a SoC that already has IronSide SE installed.
+It can update both the main image and the recovery image of IronSide SE using the IronSide SE firmware release ZIP file.
 
 Update procedure
 ****************
 
 The update procedure works as follows:
 
-1. The application invokes the IRONside SE update service and passes the parameters that correspond to the location of the HEX file of the IRONside SE firmware update.
+1. The application invokes the IronSide SE update service and passes the parameters that correspond to the location of the HEX file of the IronSide SE firmware update.
 
 #. The application prints the return value of the service call and outputs information from the update HEX file.
 
-#. After the service call completes, the IRONside SE firmware updates the internal state of the device.
+#. After the service call completes, the IronSide SE firmware updates the internal state of the device.
 
 #. The firmware installs the update during the next device boot.
    This operation can take several seconds.
@@ -29,9 +29,9 @@ Building and running the application for nrf54h20dk/nrf54h20/cpuapp/iron
 ************************************************************************
 
 .. note::
-   You can use this application only when there is already a version of IRONside SE installed on the device.
+   You can use this application only when there is already a version of IronSide SE installed on the device.
 
-1. Unzip the IRONside SE release ZIP to get the update hex file:
+1. Unzip the IronSide SE release ZIP to get the update hex file:
 
    .. code-block:: console
 
@@ -39,13 +39,13 @@ Building and running the application for nrf54h20dk/nrf54h20/cpuapp/iron
 
 #. Program the appropriate update hex file from the release ZIP using one (not both) of the following commands:
 
-   a) To update IRONside SE firmware:
+   a) To update IronSide SE firmware:
 
       .. code-block:: console
 
          nrfutil device program --traits jlink --firmware update/ironside_se_update.hex
 
-   b) To update IRONside SE recovery firmware:
+   b) To update IronSide SE recovery firmware:
 
       .. code-block:: console
 

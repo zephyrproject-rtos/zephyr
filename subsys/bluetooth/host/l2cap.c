@@ -83,11 +83,6 @@ NET_BUF_POOL_FIXED_DEFINE(disc_pool, 1,
 #define l2cap_remove_ident(conn, ident) __l2cap_lookup_ident(conn, ident, true)
 
 static sys_slist_t servers = SYS_SLIST_STATIC_INIT(&servers);
-
-static void l2cap_tx_buf_destroy(struct bt_conn *conn, struct net_buf *buf, int err)
-{
-	net_buf_unref(buf);
-}
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
 /* L2CAP signalling channel specific context */
@@ -257,6 +252,7 @@ void bt_l2cap_chan_del(struct bt_l2cap_chan *chan)
 {
 	const struct bt_l2cap_chan_ops *ops = chan->ops;
 	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
+	struct net_buf *buf;
 
 	LOG_DBG("conn %p chan %p", chan->conn, chan);
 
@@ -269,9 +265,7 @@ void bt_l2cap_chan_del(struct bt_l2cap_chan *chan)
 	/* Remove buffers on the PDU TX queue. We can't do that in
 	 * `l2cap_chan_destroy()` as it is not called for fixed channels.
 	 */
-	while (chan_has_data(le_chan)) {
-		struct net_buf *buf = k_fifo_get(&le_chan->tx_queue, K_NO_WAIT);
-
+	while ((buf = k_fifo_get(&le_chan->tx_queue, K_NO_WAIT))) {
 		net_buf_unref(buf);
 	}
 
@@ -919,20 +913,22 @@ struct net_buf *l2cap_data_pull(struct bt_conn *conn,
 	 * For SDUs we do the same, we keep it in the queue until all the
 	 * segments have been sent, adding the PDU headers just-in-time.
 	 */
-	struct net_buf *pdu = k_fifo_peek_head(&lechan->tx_queue);
+	struct net_buf *fifo_pdu = k_fifo_peek_head(&lechan->tx_queue);
 
 	/* We don't have anything to send for the current channel. We could
 	 * however have something to send on another channel that is attached to
 	 * the same ACL connection. Re-trigger the TX processor: it will call us
 	 * again and this time we will select another channel to pull data from.
 	 */
-	if (!pdu) {
+	if (!fifo_pdu) {
 		bt_tx_irq_raise();
 		return NULL;
 	}
 
-	if (bt_buf_has_view(pdu)) {
-		LOG_ERR("already have view on %p", pdu);
+	__ASSERT_NO_MSG(conn->state == BT_CONN_CONNECTED);
+
+	if (bt_buf_has_view(fifo_pdu)) {
+		LOG_ERR("already have view on %p", fifo_pdu);
 		return NULL;
 	}
 
@@ -945,6 +941,8 @@ struct net_buf *l2cap_data_pull(struct bt_conn *conn,
 		lower_data_ready(lechan);
 		return NULL;
 	}
+
+	struct net_buf *pdu = net_buf_ref(fifo_pdu);
 
 	/* Add PDU header */
 	if (lechan->_pdu_remaining == 0) {
@@ -975,9 +973,11 @@ struct net_buf *l2cap_data_pull(struct bt_conn *conn,
 
 	if (last_frag && last_seg) {
 		LOG_DBG("last frag of last seg, dequeuing %p", pdu);
-		__maybe_unused struct net_buf *b = k_fifo_get(&lechan->tx_queue, K_NO_WAIT);
+		fifo_pdu = k_fifo_get(&lechan->tx_queue, K_NO_WAIT);
 
-		__ASSERT_NO_MSG(b == pdu);
+		__ASSERT_NO_MSG(fifo_pdu == pdu);
+
+		net_buf_unref(fifo_pdu);
 	}
 
 	if (last_frag && L2CAP_LE_CID_IS_DYN(lechan->tx.cid)) {
@@ -2290,7 +2290,7 @@ static void l2cap_chan_shutdown(struct bt_l2cap_chan *chan)
 
 	/* Remove buffers on the TX queue */
 	while ((buf = k_fifo_get(&le_chan->tx_queue, K_NO_WAIT))) {
-		l2cap_tx_buf_destroy(chan->conn, buf, -ESHUTDOWN);
+		net_buf_unref(buf);
 	}
 
 	/* Remove buffers on the RX queue */

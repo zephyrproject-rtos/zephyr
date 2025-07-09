@@ -25,6 +25,9 @@ tests:
   boot.with_mcumgr.test_upgrade_ble:
     platform_allow:
       - nrf52840dk/nrf52840
+    platform_exclude:
+      - nrf9160dk/nrf9160
+      - nucleo_wba55cg
     integration_platforms:
       - nrf52840dk/nrf52840
     extra_args: EXTRA_CONF_FILE="overlay-bt.conf"

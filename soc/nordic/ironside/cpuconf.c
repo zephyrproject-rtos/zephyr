@@ -9,8 +9,8 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>
 
-#include <zephyr/drivers/firmware/nrf_ironside/call.h>
-#include <zephyr/drivers/firmware/nrf_ironside/cpuconf.h>
+#include <nrf_ironside/call.h>
+#include <nrf_ironside/cpuconf.h>
 
 #define CPU_PARAMS_CPU_OFFSET (0)
 #define CPU_PARAMS_CPU_MASK   (0xF)

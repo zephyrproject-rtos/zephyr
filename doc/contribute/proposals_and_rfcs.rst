@@ -55,9 +55,9 @@ of the changes should however be part of the pull-request:
 - ...
 
 The process in itself consists in creating a GitHub issue with the :ref:`RFC
-label <gh_labels>` that documents the proposal thoroughly. There is an `RFC
-template`_ included in the main Zephyr GitHub repository that serves as a
-guideline to write a new RFC.
+label <gh_labels>` that documents the proposal thoroughly. You are encouraged
+to use the `RFC form`_ to make sure the proposal follows a template which
+project participants are already familiar with.
 
 As with Pull Requests, RFCs might require discussion in the context of one of
 the `Zephyr meetings`_ in order to move it forward in cases where there is
@@ -65,5 +65,5 @@ either disagreement or not enough voiced opinions in order to proceed. Make sure
 to either label it appropriately or include it in the corresponding GitHub
 project in order for it to be examined during the next meeting.
 
-.. _`RFC template`: https://github.com/zephyrproject-rtos/zephyr/blob/main/.github/ISSUE_TEMPLATE/003_rfc-proposal.md
+.. _`RFC form`: https://github.com/zephyrproject-rtos/zephyr/issues/new?template=003_rfc-proposal.yml
 .. _`Zephyr meetings`: https://github.com/zephyrproject-rtos/zephyr/wiki/Zephyr-Committee-and-Working-Groups

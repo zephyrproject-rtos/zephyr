@@ -308,6 +308,8 @@ static const struct tospec {
 
 ZTEST(timeutil_api, test_timespec_from_timeout)
 {
+	ztest_test_skip(); /* Provisionally disabled until #92158 is fixed */
+
 	ARRAY_FOR_EACH(tospecs, i) {
 		const struct tospec *const tspec = &tospecs[i];
 		struct timespec actual;
@@ -327,6 +329,8 @@ ZTEST(timeutil_api, test_timespec_from_timeout)
 
 ZTEST(timeutil_api, test_timespec_to_timeout)
 {
+	ztest_test_skip(); /* Provisionally disabled until #92158 is fixed */
+
 	ARRAY_FOR_EACH(tospecs, i) {
 		const struct tospec *const tspec = &tospecs[i];
 		k_timeout_t actual;

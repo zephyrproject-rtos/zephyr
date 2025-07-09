@@ -138,16 +138,6 @@ static inline bool _is_valid_prio(int prio, k_thread_entry_t entry_point)
 	return true;
 }
 
-static inline void z_sched_lock(void)
-{
-	__ASSERT(!arch_is_in_isr(), "");
-	__ASSERT(_current->base.sched_locked != 1U, "");
-
-	--_current->base.sched_locked;
-
-	compiler_barrier();
-}
-
 static ALWAYS_INLINE _wait_q_t *pended_on_thread(struct k_thread *thread)
 {
 	__ASSERT_NO_MSG(thread->base.pended_on);

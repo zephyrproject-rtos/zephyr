@@ -63,8 +63,13 @@ static int do_transaction(struct mdio_transaction *mdio)
 		ret = -EINVAL;
 		goto done;
 	}
+	base->MAC_MDIO_ADDRESS &= ~(
+		ENET_QOS_REG_PREP(MAC_MDIO_ADDRESS, GOC_1, 0b1) |
+		ENET_QOS_REG_PREP(MAC_MDIO_ADDRESS, GOC_0, 0b1) |
+		ENET_QOS_REG_PREP(MAC_MDIO_ADDRESS, PA, 0b11111) |
+		ENET_QOS_REG_PREP(MAC_MDIO_ADDRESS, RDA, 0b11111));
 
-	base->MAC_MDIO_ADDRESS =
+	base->MAC_MDIO_ADDRESS |=
 		/* OP command */
 		ENET_QOS_REG_PREP(MAC_MDIO_ADDRESS, GOC_1, goc_1_code) |
 		ENET_QOS_REG_PREP(MAC_MDIO_ADDRESS, GOC_0, 0b1) |
@@ -73,7 +78,7 @@ static int do_transaction(struct mdio_transaction *mdio)
 		/* Register address */
 		ENET_QOS_REG_PREP(MAC_MDIO_ADDRESS, RDA, mdio->regaddr);
 
-	base->MAC_MDIO_ADDRESS =
+	base->MAC_MDIO_ADDRESS |=
 		/* Start the transaction */
 		ENET_QOS_REG_PREP(MAC_MDIO_ADDRESS, GB, 0b1);
 

@@ -22,7 +22,7 @@ struct internal_ctx {
 };
 
 #ifdef CONFIG_SMF_ANCESTOR_SUPPORT
-static bool share_paren(const struct smf_state *test_state, const struct smf_state *target_state)
+static bool share_parent(const struct smf_state *test_state, const struct smf_state *target_state)
 {
 	for (const struct smf_state *state = test_state; state != NULL; state = state->parent) {
 		if (target_state == state) {
@@ -70,7 +70,7 @@ static const struct smf_state *get_lca_of(const struct smf_state *source,
 	     ancestor = ancestor->parent) {
 		if (ancestor == dest) {
 			return ancestor->parent;
-		} else if (share_paren(dest, ancestor)) {
+		} else if (share_parent(dest, ancestor)) {
 			return ancestor;
 		}
 	}
@@ -291,10 +291,10 @@ void smf_set_state(struct smf_ctx *const ctx, const struct smf_state *new_state)
 #ifdef CONFIG_SMF_ANCESTOR_SUPPORT
 	const struct smf_state *topmost;
 
-	if (share_paren(ctx->executing, new_state)) {
+	if (share_parent(ctx->executing, new_state)) {
 		/* new state is a parent of where we are now*/
 		topmost = new_state;
-	} else if (share_paren(new_state, ctx->executing)) {
+	} else if (share_parent(new_state, ctx->executing)) {
 		/* we are a parent of the new state */
 		topmost = ctx->executing;
 	} else {

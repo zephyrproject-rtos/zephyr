@@ -53,7 +53,8 @@ You can remove credentials using the :c:func:`wifi_credentials_delete_by_ssid` f
 Shell commands
 **************
 
-``wifi cred`` is an extension to the Wi-Fi command line. It adds the following subcommands to interact with the Wi-Fi credentials library:
+``wifi cred`` is an extension to the Wi-Fi command line.
+It adds the following subcommands to interact with the Wi-Fi credentials library:
 
 .. list-table:: Wi-Fi credentials shell subcommands
    :header-rows: 1

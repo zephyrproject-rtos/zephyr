@@ -6,7 +6,6 @@
 
 / {
 	chosen {
-		zephyr,flash = &w25q512nw;
 		zephyr,flash-controller = &w25q512nw;
 		zephyr,flash = &w25q512nw;
 		zephyr,code-partition = &slot0_partition;

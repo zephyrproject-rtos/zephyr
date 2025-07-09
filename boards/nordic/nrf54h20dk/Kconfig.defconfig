@@ -1,6 +1,9 @@
 # Copyright (c) 2024 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+config HW_STACK_PROTECTION
+	default ARCH_HAS_STACK_PROTECTION
+
 if BOARD_NRF54H20DK_NRF54H20_CPUAPP
 
 config BT_HCI_IPC

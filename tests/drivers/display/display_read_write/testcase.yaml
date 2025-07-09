@@ -12,83 +12,83 @@ tests:
   drivers.display.read_write.sdl.argb8888:
     platform_allow:
       - native_sim
+      - native_sim/native/64
     extra_configs:
       - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_ARGB_8888=y
-      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
   drivers.display.read_write.sdl.rgb888:
     platform_allow:
       - native_sim
+      - native_sim/native/64
     extra_configs:
       - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGB_888=y
-      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
   drivers.display.read_write.sdl.mono01.vtiled.msbfirst:
     platform_allow:
       - native_sim
+      - native_sim/native/64
     extra_configs:
       - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO01=y
-      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
   drivers.display.read_write.sdl.mono10.vtiled.msbfirst:
     platform_allow:
       - native_sim
+      - native_sim/native/64
     extra_configs:
       - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO10=y
-      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
   drivers.display.read_write.sdl.mono01.htiled.msbfirst:
     platform_allow:
       - native_sim
+      - native_sim/native/64
     extra_configs:
       - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO01=y
-      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
       - CONFIG_SDL_DISPLAY_MONO_VTILED=n
   drivers.display.read_write.sdl.mono10.htiled.msbfirst:
     platform_allow:
       - native_sim
+      - native_sim/native/64
     extra_configs:
       - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO10=y
-      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
       - CONFIG_SDL_DISPLAY_MONO_VTILED=n
   drivers.display.read_write.sdl.mono01.vtiled.lsbfirst:
     platform_allow:
       - native_sim
+      - native_sim/native/64
     extra_configs:
       - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO01=y
-      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
       - CONFIG_SDL_DISPLAY_MONO_MSB_FIRST=n
   drivers.display.read_write.sdl.mono10.vtiled.lsbfirst:
     platform_allow:
       - native_sim
+      - native_sim/native/64
     extra_configs:
       - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO10=y
-      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
       - CONFIG_SDL_DISPLAY_MONO_MSB_FIRST=n
   drivers.display.read_write.sdl.mono01.htiled.lsbfirst:
     platform_allow:
       - native_sim
+      - native_sim/native/64
     extra_configs:
       - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO01=y
-      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
       - CONFIG_SDL_DISPLAY_MONO_VTILED=n
       - CONFIG_SDL_DISPLAY_MONO_MSB_FIRST=n
   drivers.display.read_write.sdl.mono10.htiled.lsbfirst:
     platform_allow:
       - native_sim
+      - native_sim/native/64
     extra_configs:
       - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO10=y
-      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
       - CONFIG_SDL_DISPLAY_MONO_VTILED=n
       - CONFIG_SDL_DISPLAY_MONO_MSB_FIRST=n
   drivers.display.read_write.sdl.rgb565:
     platform_allow:
       - native_sim
+      - native_sim/native/64
     extra_configs:
       - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGB_565=y
-      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
   drivers.display.read_write.sdl.bgr565:
     platform_allow:
       - native_sim
+      - native_sim/native/64
     extra_configs:
       - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_BGR_565=y
-      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
   drivers.display.read_write.ili9340:
     tags:
       - shield

@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_VIRTIO_VIRTIO_H_
 #define ZEPHYR_VIRTIO_VIRTIO_H_
 #include <zephyr/device.h>
-#include "virtqueue.h"
+#include "virtio/virtqueue.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -16,9 +16,9 @@ extern "C" {
 /**
  * @brief Virtio Interface
  * @defgroup virtio_interface Virtio Interface
+ * @ingroup io_interfaces
  * @{
  */
-
 
 /**
  * Callback used during virtqueue enumeration

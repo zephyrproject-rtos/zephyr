@@ -260,7 +260,6 @@ static void lpspi_basic_config(const struct device *dev, const struct spi_config
 
 int lpspi_configure(const struct device *dev, const struct spi_config *spi_cfg)
 {
-	const struct lpspi_config *config = dev->config;
 	struct lpspi_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 	bool already_configured = spi_context_configured(ctx, spi_cfg);
@@ -306,10 +305,7 @@ int lpspi_configure(const struct device *dev, const struct spi_config *spi_cfg)
 
 	lpspi_basic_config(dev, spi_cfg);
 
-	ret = clock_control_get_rate(config->clock_dev, config->clock_subsys, &clock_freq);
-	if (ret) {
-		return ret;
-	}
+	clock_freq = data->clock_freq;
 
 	if (SPI_OP_MODE_GET(spi_cfg->operation) == SPI_OP_MODE_MASTER) {
 		uint32_t ccr = 0;
@@ -370,6 +366,11 @@ int spi_nxp_init_common(const struct device *dev)
 	}
 
 	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err) {
+		return err;
+	}
+
+	err = clock_control_get_rate(config->clock_dev, config->clock_subsys, &data->clock_freq);
 	if (err) {
 		return err;
 	}

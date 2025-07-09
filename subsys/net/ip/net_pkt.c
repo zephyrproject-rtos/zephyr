@@ -1943,7 +1943,8 @@ int net_pkt_read_be32(struct net_pkt *pkt, uint32_t *data)
 
 	ret = net_pkt_read(pkt, d32, sizeof(uint32_t));
 
-	*data = d32[0] << 24 | d32[1] << 16 | d32[2] << 8 | d32[3];
+	*data = (uint32_t)d32[0] << 24 | (uint32_t)d32[1] << 16 |
+		(uint32_t)d32[2] << 8 | (uint32_t)d32[3];
 
 	return ret;
 }

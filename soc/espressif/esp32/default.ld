@@ -368,6 +368,7 @@ SECTIONS
     *libc.a:*(.literal .text .literal.* .text.*)
     *libphy.a:( .phyiram .phyiram.*)
     *libgcov.a:(.literal .text .literal.* .text.*)
+    *librtc.a:(.literal .text .literal.* .text.*)
 
     /* [mapping:esp_psram] */
     *libzephyr.a:mmu_psram_flash.*(.literal .literal.* .text .text.*)
@@ -698,6 +699,8 @@ SECTIONS
     *libzephyr.a:esp_rom_systimer.*(.rodata .rodata.*)
     *libzephyr.a:esp_rom_wdt.*(.rodata .rodata.*)
     *libzephyr.a:esp_rom_efuse.*(.rodata .rodata.*)
+
+    *libphy.a:(.rodata .rodata.* .srodata .srodata.*)
 
     KEEP(*(.jcr))
     *(.dram1 .dram1.*)

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/drivers/firmware/nrf_ironside/boot_report.h>
-#include <zephyr/drivers/firmware/nrf_ironside/update.h>
+#include <nrf_ironside/boot_report.h>
+#include <nrf_ironside/update.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(app, LOG_LEVEL_INF);
@@ -28,7 +28,7 @@ int main(void)
 	LOG_HEXDUMP_INF((void *)report->random_data, sizeof(report->random_data), "random data");
 
 	err = ironside_update(update);
-	LOG_INF("IRONside update retval: 0x%x", err);
+	LOG_INF("IronSide update retval: 0x%x", err);
 
 	if (err == 0) {
 		LOG_HEXDUMP_INF(update->manifest, sizeof(update->manifest), "Update manifest:");

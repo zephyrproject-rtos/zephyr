@@ -151,7 +151,7 @@ static void st_lis2duxs12_stream_config_fifo(const struct device *dev,
 	const struct lis2dux12_config *config = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&config->ctx;
 	lis2duxs12_pin_int_route_t pin_int = { 0 };
-	lis2duxs12_fifo_mode_t fifo_mode;
+	lis2duxs12_fifo_mode_t fifo_mode = { 0 };
 
 	/* disable FIFO as first thing */
 	fifo_mode.store = LIS2DUXS12_FIFO_1X;
@@ -167,6 +167,12 @@ static void st_lis2duxs12_stream_config_fifo(const struct device *dev,
 	if (trig_cfg.int_fifo_th || trig_cfg.int_fifo_full) {
 		pin_int.fifo_th = (trig_cfg.int_fifo_th) ? PROPERTY_ENABLE : PROPERTY_DISABLE;
 		pin_int.fifo_full = (trig_cfg.int_fifo_full) ? PROPERTY_ENABLE : PROPERTY_DISABLE;
+
+		if (pin_int.fifo_th) {
+			fifo_mode.fifo_event = LIS2DUXS12_FIFO_EV_WTM;
+		} else if (pin_int.fifo_full) {
+			fifo_mode.fifo_event = LIS2DUXS12_FIFO_EV_FULL;
+		}
 
 		switch (config->fifo_mode_sel) {
 		case 0:

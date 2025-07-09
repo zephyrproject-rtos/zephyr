@@ -10,8 +10,8 @@
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/barrier.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/virtio/virtio.h>
-#include <zephyr/virtio/virtqueue.h>
+#include <zephyr/drivers/virtio.h>
+#include <zephyr/drivers/virtio/virtqueue.h>
 #include "virtio_common.h"
 
 #define DT_DRV_COMPAT virtio_mmio

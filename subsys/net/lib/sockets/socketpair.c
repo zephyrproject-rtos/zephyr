@@ -1161,10 +1161,12 @@ static int spair_setsockopt(void *obj, int level, int optname,
 	return -1;
 }
 
-static int spair_close(void *obj)
+static int spair_close(void *obj, int fd)
 {
 	struct spair *const spair = (struct spair *)obj;
 	int res;
+
+	ARG_UNUSED(fd);
 
 	res = k_sem_take(&spair->sem, K_FOREVER);
 	__ASSERT(res == 0, "failed to take local sem: %d", res);
@@ -1181,7 +1183,7 @@ static const struct socket_op_vtable spair_fd_op_vtable = {
 	.fd_vtable = {
 		.read = spair_read,
 		.write = spair_write,
-		.close = spair_close,
+		.close2 = spair_close,
 		.ioctl = spair_ioctl,
 	},
 	.bind = spair_bind,

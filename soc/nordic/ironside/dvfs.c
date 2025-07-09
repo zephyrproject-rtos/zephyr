@@ -5,8 +5,8 @@
 #include <hal/nrf_hsfll.h>
 #include <zephyr/kernel.h>
 
-#include <zephyr/drivers/firmware/nrf_ironside/dvfs.h>
-#include <zephyr/drivers/firmware/nrf_ironside/call.h>
+#include <nrf_ironside/dvfs.h>
+#include <nrf_ironside/call.h>
 
 static enum ironside_dvfs_oppoint current_dvfs_oppoint = IRONSIDE_DVFS_OPP_HIGH;
 
@@ -15,7 +15,7 @@ static enum ironside_dvfs_oppoint current_dvfs_oppoint = IRONSIDE_DVFS_OPP_HIGH;
 #define ABB_STATUSANA_LOCKED_L_Msk (0x1UL << ABB_STATUSANA_LOCKED_L_Pos)
 #define ABB_STATUSANA_REG_OFFSET   (0x102UL)
 #else
-#error "Unsupported SoC series for IRONside DVFS"
+#error "Unsupported SoC series for IronSide DVFS"
 #endif
 
 struct dvfs_hsfll_data_t {
@@ -133,8 +133,8 @@ static inline bool ironside_dvfs_is_abb_locked(NRF_ABB_Type *abb)
 }
 
 /**
- * @brief Request DVFS oppoint change from IRONside secure domain.
- * This function will send a request over IPC to the IRONside secure domain
+ * @brief Request DVFS oppoint change from IronSide secure domain.
+ * This function will send a request over IPC to the IronSide secure domain
  * This function is synchronous and will return when the request is completed.
  *
  * @param oppoint @ref enum ironside_dvfs_oppoint

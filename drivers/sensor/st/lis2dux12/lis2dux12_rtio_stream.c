@@ -363,8 +363,9 @@ static void lis2dux12_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe,
 		return;
 	}
 
-	if (data_ready->opt == SENSOR_STREAM_DATA_NOP ||
-	    data_ready->opt == SENSOR_STREAM_DATA_DROP) {
+	if (data_ready != NULL &&
+	    (data_ready->opt == SENSOR_STREAM_DATA_NOP ||
+	     data_ready->opt == SENSOR_STREAM_DATA_DROP)) {
 		uint8_t *buf;
 		uint32_t buf_len;
 
@@ -389,6 +390,8 @@ static void lis2dux12_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe,
 		rtio_iodev_sqe_ok(lis2dux12->streaming_sqe, 0);
 		lis2dux12->streaming_sqe = NULL;
 		gpio_pin_interrupt_configure_dt(irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+
+		return;
 	}
 
 	/*

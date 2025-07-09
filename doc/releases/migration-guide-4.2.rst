@@ -20,11 +20,6 @@ the :ref:`release notes<zephyr_4.2>`.
     :local:
     :depth: 2
 
-Common
-******
-
-* The minimum required Python version is now 3.12.1 (from 3.10).
-
 Build System
 ************
 
@@ -88,6 +83,12 @@ Boards
   instead of ``openocd.board.cmake``. The ``openocd-stm32.board.cmake`` file extends the default
   OpenOCD runner with manufacturer-specific configuration like STM32 mass erase commands.
 
+* STM32N6570-DK boards's default variant (``stm32n6570_dk/stm32n657xx``) is now supposed to be a
+  chainloaded application and should be built using ``--sysbuild``. The old default,
+  which built applications to run as First Stage BootLoader, is now available as a dedicated
+  variant (``stm32n6570_dk/stm32n657xx/fsbl``) that must be selected explicitly.
+  See board documentation for more information about these variants.
+
 Device Drivers and Devicetree
 *****************************
 
@@ -146,6 +147,14 @@ Counter
   in favor of :dtcompatible:`zephyr,native-sim-counter`.
   And :kconfig:option:`CONFIG_COUNTER_NATIVE_POSIX` and its related options with
   :kconfig:option:`CONFIG_COUNTER_NATIVE_SIM` (:github:`86616`).
+
+Display
+=======
+
+* On STM32 devices, the LTDC driver (:dtcompatible:`st,stm32-ltdc`) RGB565 format
+  ``PIXEL_FORMAT_RGB565`` has been replaced by ``PIXEL_FORMAT_BGR565`` to match
+  the format expected by Zephyr. This change ensures proper behavior of both
+  display and video capture samples.
 
 Entropy
 =======
