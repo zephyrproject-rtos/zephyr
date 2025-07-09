@@ -521,7 +521,7 @@ macro(zephyr_library_amend)
 endmacro()
 
 function(zephyr_link_interface interface)
-  target_link_libraries(${interface} INTERFACE zephyr_interface)
+  target_link_libraries(zephyr_interface INTERFACE ${interface})
 endfunction()
 
 #
@@ -2124,7 +2124,7 @@ endfunction()
 
 function(zephyr_link_interface_ifdef feature_toggle interface)
   if(${${feature_toggle}})
-    target_link_libraries(${interface} INTERFACE zephyr_interface)
+    target_link_libraries(zephyr_interface INTERFACE ${interface})
   endif()
 endfunction()
 
@@ -2276,7 +2276,7 @@ endfunction()
 
 function(zephyr_link_interface_ifndef feature_toggle interface)
   if(NOT ${feature_toggle})
-    target_link_libraries(${interface} INTERFACE zephyr_interface)
+    target_link_libraries(zephyr_interface INTERFACE ${interface})
   endif()
 endfunction()
 
