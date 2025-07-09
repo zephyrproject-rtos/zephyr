@@ -16,6 +16,7 @@ supported:
   - counter
   - i2c
   - uart
+  - net
 testing:
   binaries:
     - flash.bin
