@@ -1444,7 +1444,7 @@ int bt_le_adv_stop(void)
 	int err;
 
 	if (!adv) {
-		LOG_ERR("No valid legacy adv");
+		LOG_ERR("No valid legacy adv to stop");
 		return 0;
 	}
 
@@ -1529,7 +1529,7 @@ void bt_le_adv_resume(void)
 	int err;
 
 	if (!adv) {
-		LOG_ERR("No valid legacy adv");
+		LOG_ERR("No valid legacy adv to resume");
 		return;
 	}
 
