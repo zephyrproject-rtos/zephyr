@@ -10,9 +10,7 @@ tests:
       type: multi_line
       ordered: true
       regex:
-        - "<inf> mspi_ambiq_timing_scan: TxNeg=0, RxNeg=0, RxCap=0, Turnaround=[0-9]*"
-        - "<inf> mspi_ambiq_timing_scan:     TxDQSDelay: [0-9]*, RxDQSDelay Scan = 0x[0-9]*,(.*)"
-        - "<inf> mspi_ambiq_timing_scan: Selected setting: TxNeg=0, RxNeg=0, RxCap=0, (.*)"
+        - "MSPI Timing Scan is successful."
     platform_allow:
       - apollo510_eb
       - apollo510_evb
@@ -36,9 +34,7 @@ tests:
       type: multi_line
       ordered: true
       regex:
-        - "<inf> mspi_ambiq_timing_scan: TxNeg=0, RxNeg=0, RxCap=0, Turnaround=[0-9]*"
-        - "<inf> mspi_ambiq_timing_scan:     TxDQSDelay: [0-9]*, RxDQSDelay Scan = 0x[0-9]*,(.*)"
-        - "<inf> mspi_ambiq_timing_scan: Selected setting: TxNeg=0, RxNeg=0, RxCap=0, (.*)"
+        - "MSPI Timing Scan is successful."
     platform_allow:
       - apollo510_eb
       - apollo510_evb
