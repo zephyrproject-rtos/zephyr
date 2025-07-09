@@ -455,12 +455,14 @@ ZTEST(timeutil_api, test_timespec_to_timeout)
 	ARRAY_FOR_EACH(tospecs, i) {
 		const struct tospec *const tspec = &tospecs[i];
 		k_timeout_t actual;
+		struct timespec tick_ts;
+		struct timespec rem = {};
 
 		TC_PRINT("%zu: ticks: {%lld}, timespec: {%lld, %lld}\n", i,
 			 (long long)tspec->timeout.ticks, (long long)tspec->tspec.tv_sec,
 			 (long long)tspec->tspec.tv_nsec);
 
-		actual = timespec_to_timeout(&tspec->tspec);
+		actual = timespec_to_timeout(&tspec->tspec, &rem);
 		if (tspec->saturation == 0) {
 			/* exact match or rounding up */
 			if (!tspec->negative &&
@@ -508,20 +510,33 @@ ZTEST(timeutil_api, test_timespec_to_timeout)
 				      "} are unexpectedly different",
 				      i, (int64_t)actual.ticks, (int64_t)K_TICK_MAX);
 		}
+
+		timespec_from_timeout(tspec->timeout, &tick_ts);
+		timespec_add(&tick_ts, &rem);
+		zexpect_true(timespec_equal(&tick_ts, &tspec->tspec),
+			     "%d: {%ld, %ld} and {%ld, %ld} are unexpectedly different", i,
+			     tick_ts.tv_sec, tick_ts.tv_nsec, tspec->tspec.tv_sec,
+			     tspec->tspec.tv_nsec);
 	}
 
 #if defined(CONFIG_TIMEOUT_64BIT) && (CONFIG_SYS_CLOCK_TICKS_PER_SEC == 100)
 	{
+		struct timespec rem = {};
 		k_timeout_t to = K_TICKS(K_TICK_MAX);
 		/* K_TIMESPEC_MAX corresponding K_TICK_MAX with a tick rate of 100 Hz */
 		struct timespec ts = K_TIMESPEC(92233720368547758LL, 70000000L);
 
-		zexpect_true(K_TIMEOUT_EQ(timespec_to_timeout(&ts), to),
+		zexpect_true(K_TIMEOUT_EQ(timespec_to_timeout(&ts, &rem), to),
 			     "timespec_to_timeout(%lld, %lld) != %lld", (long long)ts.tv_sec,
 			     (long long)ts.tv_nsec, (long long)to.ticks);
+		zexpect_true(timespec_equal(&rem, &K_TIMESPEC_NO_WAIT),
+			     "non-zero remainder {%lld, %lld}", (long long)rem.tv_sec,
+			     (long long)rem.tv_nsec);
 
-		TC_PRINT("timespec_to_timeout():\nts: {%lld, %lld} => to: {%lld}\n",
-			 (long long)ts.tv_sec, (long long)ts.tv_nsec, (long long)to.ticks);
+		TC_PRINT("timespec_to_timeout():\nts: {%lld, %lld} => to: {%lld}, rem: {%lld, "
+			 "%lld}\n",
+			 (long long)ts.tv_sec, (long long)ts.tv_nsec, (long long)to.ticks,
+			 (long long)rem.tv_sec, (long long)rem.tv_nsec);
 	}
 #endif
 }

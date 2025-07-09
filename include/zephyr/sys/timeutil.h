@@ -663,22 +663,37 @@ static inline void timespec_from_timeout(k_timeout_t timeout, struct timespec *t
  *
  * Otherwise, this function will return the `k_timeout_t` that is rounded-up to a tick boundary.
  *
+ * If @p rem is not `NULL`, it will be set to the remainder of the conversion, i.e. the difference
+ * between the requested duration and the converted duration as a `timespec` object, approximately
+ * as shown below.
+ *
+ * ```python
+ * rem = requested_duration - converted_duration
+ * ```
+ *
  * @param req the requested `timespec` to convert
+ * @param[out] rem optional pointer to a `timespec` to store the remainder
  * @return the corresponding kernel timeout
  */
-static inline k_timeout_t timespec_to_timeout(const struct timespec *req)
+static inline k_timeout_t timespec_to_timeout(const struct timespec *req, struct timespec *rem)
 {
 	k_timeout_t timeout;
 
 	__ASSERT_NO_MSG((req != NULL) && timespec_is_valid(req));
 
 	if (timespec_compare(req, &K_TIMESPEC_NO_WAIT) <= 0) {
+		if (rem != NULL) {
+			*rem = *req;
+		}
 		/* equivalent of K_NO_WAIT without including kernel.h */
 		timeout.ticks = 0;
 		return timeout;
 	}
 
 	if (timespec_compare(req, &K_TIMESPEC_FOREVER) == 0) {
+		if (rem != NULL) {
+			*rem = K_TIMESPEC_NO_WAIT;
+		}
 		/* equivalent of K_FOREVER without including kernel.h */
 		timeout.ticks = K_TICKS_FOREVER;
 		return timeout;
@@ -692,6 +707,12 @@ static inline k_timeout_t timespec_to_timeout(const struct timespec *req)
 		timeout.ticks = CLAMP(k_ns_to_ticks_ceil64(req->tv_nsec) +
 					      k_sec_to_ticks_ceil64(req->tv_sec),
 				      K_TICK_MIN, K_TICK_MAX);
+	}
+
+	if (rem != NULL) {
+		timespec_from_timeout(timeout, rem);
+		timespec_sub(rem, req);
+		timespec_negate(rem);
 	}
 
 	return timeout;
