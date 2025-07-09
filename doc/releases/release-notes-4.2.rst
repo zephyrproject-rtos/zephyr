@@ -253,33 +253,41 @@ New APIs and options
 
 * Networking:
 
+  * CoAP
+
+    * :c:macro:`COAPS_SERVICE_DEFINE`
+
+  * DHCPv4
+
+    * :kconfig:option:`CONFIG_NET_DHCPV4_INIT_REBOOT`
+
+  * DNS
+
+    * :c:func:`dns_resolve_service`
+    * :c:func:`dns_resolve_reconfigure_with_interfaces`
+
+  * HTTP
+
+    * :kconfig:option:`CONFIG_HTTP_SERVER_COMPRESSION`
+
   * IPv4
 
     * :kconfig:option:`CONFIG_NET_IPV4_MTU`
 
+  * LwM2M
+
+    * :kconfig:option:`CONFIG_LWM2M_SERVER_BOOTSTRAP_ON_FAIL`
+    * Implemented Greater Than, Less Than and Step observe attributes handling
+      (see :kconfig:option:`CONFIG_LWM2M_MAX_NOTIFIED_NUMERICAL_RES_TRACKED`).
+
+  * Misc
+
+    * :c:func:`net_if_oper_state_change_time`
+
   * MQTT
 
     * :kconfig:option:`CONFIG_MQTT_VERSION_5_0`
-
-  * Wi-Fi
-
-    * :kconfig:option:`CONFIG_WIFI_USAGE_MODE`
-    * Added a new section to the Wi-Fi Management documentation (``doc/connectivity/networking/api/wifi.rst``) with step-by-step instructions for generating test certificates for Wi-Fi using FreeRADIUS scripts. This helps users reproduce the process for their own test environments.
-    * Changed the hostap IPC mechanism from socketpair to k_fifo. Depending on the enabled Wi-Fi configuration options, this can save up to 6-8 kB memory when using native Wi-Fi stack.
-
-* Power management
-
-    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_USE_SYSTEM_WQ`
-    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_USE_DEDICATED_WQ`
-    * :kconfig:option:`CONFIG_PM_DEVICE_DRIVER_NEEDS_DEDICATED_WQ`
-    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_DEDICATED_WQ_STACK_SIZE`
-    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_DEDICATED_WQ_PRIO`
-    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_DEDICATED_WQ_INIT_PRIO`
-    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_ASYNC`
-
-  * Sockets
-
-    * :kconfig:option:`CONFIG_NET_SOCKETS_INET_RAW`
+    * :c:member:`mqtt_transport.if_name`
 
   * OpenThread
 
@@ -290,10 +298,46 @@ New APIs and options
     * :kconfig:option:`CONFIG_OPENTHREAD_SYS_INIT`
     * :kconfig:option:`CONFIG_OPENTHREAD_SYS_INIT_PRIORITY`
 
+  * SNTP
+
+    * :c:func:`sntp_init_async`
+    * :c:func:`sntp_send_async`
+    * :c:func:`sntp_read_async`
+    * :c:func:`sntp_close_async`
+
+  * Sockets
+
+    * :kconfig:option:`CONFIG_NET_SOCKETS_INET_RAW`
+    * :c:func:`socket_offload_dns_enable`
+    * Added a new documentation page for :ref:`socket_service_interface` library.
+    * New socket options:
+
+      * :c:macro:`IP_MULTICAST_LOOP`
+      * :c:macro:`IPV6_MULTICAST_LOOP`
+      * :c:macro:`TLS_CERT_VERIFY_RESULT`
+      * :c:macro:`TLS_CERT_VERIFY_RESULT`
+
+  * Wi-Fi
+
+    * :kconfig:option:`CONFIG_WIFI_USAGE_MODE`
+    * Added a new section to the Wi-Fi Management documentation (``doc/connectivity/networking/api/wifi.rst``) with step-by-step instructions for generating test certificates for Wi-Fi using FreeRADIUS scripts. This helps users reproduce the process for their own test environments.
+    * Changed the hostap IPC mechanism from socketpair to k_fifo. Depending on the enabled Wi-Fi configuration options, this can save up to 6-8 kB memory when using native Wi-Fi stack.
+
   * zperf
 
     * :kconfig:option:`CONFIG_ZPERF_SESSION_PER_THREAD`
     * :c:member:`zperf_upload_params.data_loader`
+    * :kconfig:option:`CONFIG_NET_ZPERF_SERVER`
+
+* Power management
+
+    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_USE_SYSTEM_WQ`
+    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_USE_DEDICATED_WQ`
+    * :kconfig:option:`CONFIG_PM_DEVICE_DRIVER_NEEDS_DEDICATED_WQ`
+    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_DEDICATED_WQ_STACK_SIZE`
+    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_DEDICATED_WQ_PRIO`
+    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_DEDICATED_WQ_INIT_PRIO`
+    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_ASYNC`
 
 * Sensor
 
