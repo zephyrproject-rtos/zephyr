@@ -150,6 +150,12 @@ struct dma_mcux_edma_data {
 #define EDMA_HW_TCD_CSR(dev, ch)   (DEV_BASE(dev)->CH[ch].TCD_CSR)
 #endif
 
+#if defined(FSL_FEATURE_MEMORY_HAS_ADDRESS_OFFSET) && FSL_FEATURE_MEMORY_HAS_ADDRESS_OFFSET
+#define EDMA_MMAP_ADDR(addr) MEMORY_ConvertMemoryMapAddress(addr, kMEMORY_Local2DMA)
+#else
+#define EDMA_MMAP_ADDR(addr) addr
+#endif /* FSL_FEATURE_MEMORY_HAS_ADDRESS_OFFSET */
+
 #if DMA_MCUX_HAS_CHANNEL_GAP
 /*
  * The hardware channel (takes the gap into account) is used when access DMA registers.
@@ -359,22 +365,10 @@ static int dma_mcux_edma_configure_sg_loop(const struct device *dev,
 		tcd = &(DEV_CFG(dev)->tcdpool[channel]
 					     [data->transfer_settings.write_idx]);
 
-#if defined(FSL_FEATURE_MEMORY_HAS_ADDRESS_OFFSET) && FSL_FEATURE_MEMORY_HAS_ADDRESS_OFFSET
 		EDMA_TCD_SADDR(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) =
-			MEMORY_ConvertMemoryMapAddress(
-					(uint32_t)(block_config->source_address),
-					kMEMORY_Local2DMA);
+			EDMA_MMAP_ADDR(block_config->source_address);
 		EDMA_TCD_DADDR(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) =
-			MEMORY_ConvertMemoryMapAddress(
-					(uint32_t)(block_config->dest_address),
-					kMEMORY_Local2DMA);
-#else
-
-		EDMA_TCD_SADDR(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) =
-			block_config->source_address;
-		EDMA_TCD_DADDR(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) =
-			block_config->dest_address;
-#endif
+			EDMA_MMAP_ADDR(block_config->dest_address);
 		EDMA_TCD_BITER(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) =
 			block_config->block_size / config->source_data_size;
 		EDMA_TCD_CITER(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) =
@@ -709,15 +703,8 @@ static int edma_reload_loop(const struct device *dev, uint32_t channel,
 	tcd = &(DEV_CFG(dev)->tcdpool[channel][data->transfer_settings.write_idx]);
 	pre_tcd = &(DEV_CFG(dev)->tcdpool[channel][pre_idx]);
 
-#if defined(FSL_FEATURE_MEMORY_HAS_ADDRESS_OFFSET) && FSL_FEATURE_MEMORY_HAS_ADDRESS_OFFSET
-	EDMA_TCD_SADDR(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) =
-		MEMORY_ConvertMemoryMapAddress(src, kMEMORY_Local2DMA);
-	EDMA_TCD_DADDR(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) =
-		MEMORY_ConvertMemoryMapAddress(dst, kMEMORY_Local2DMA);
-#else
-	EDMA_TCD_SADDR(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) = src;
-	EDMA_TCD_DADDR(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) = dst;
-#endif
+	EDMA_TCD_SADDR(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) = EDMA_MMAP_ADDR(src);
+	EDMA_TCD_DADDR(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) = EDMA_MMAP_ADDR(dst);
 	EDMA_TCD_BITER(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) = size;
 	EDMA_TCD_CITER(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) = size;
 	/* Enable automatically stop */
