@@ -15,9 +15,7 @@ tests:
       - nrf54l09pdk/nrf54l09/cpuflpr
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l15dk/nrf54l15/cpuflpr
-      - nrf54l20pdk/nrf54l20/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
-      - nrf54l20pdk/nrf54l20/cpuflpr
       - nrf54lm20dk/nrf54lm20a/cpuflpr
       - nrf5340dk/nrf5340/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
@@ -57,59 +55,45 @@ tests:
   drivers.uart.uart_elementary_dual_nrf54l:
     filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
     platform_allow:
+      - nrf54l09pdk/nrf54l09/cpuapp
+      - nrf54l09pdk/nrf54l09/cpuflpr
       - nrf54l15dk/nrf54l15/cpuapp
-      - nrf54l20pdk/nrf54l20/cpuapp
+      - nrf54l15dk/nrf54l15/cpuflpr
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuflpr
       - ophelia4ev/nrf54l15/cpuapp
-    extra_args: DTC_OVERLAY_FILE="boards/nrf54l15dk_nrf54l15_cpuapp_dual_uart.overlay"
+      - ophelia4ev/nrf54l15/cpuflpr
+    extra_args:
+      - platform:nrf54l09pdk/nrf54l09/cpuapp:"DTC_OVERLAY_FILE=boards/nrf54l09pdk_nrf54l09_dual_uart.overlay"
+      - platform:nrf54l09pdk/nrf54l09/cpuflpr:"DTC_OVERLAY_FILE=boards/nrf54l09pdk_nrf54l09_dual_uart.overlay"
+      - platform:nrf54l15dk/nrf54l15/cpuapp:"DTC_OVERLAY_FILE=boards/nrf54l15dk_nrf54l15_dual_uart.overlay"
+      - platform:nrf54l15dk/nrf54l15/cpuflpr:"DTC_OVERLAY_FILE=boards/nrf54l15dk_nrf54l15_dual_uart.overlay"
+      - platform:nrf54lm20dk/nrf54lm20a/cpuapp:"DTC_OVERLAY_FILE=boards/nrf54lm20dk_nrf54lm20a_dual_uart.overlay"
+      - platform:nrf54lm20dk/nrf54lm20a/cpuflpr:"DTC_OVERLAY_FILE=boards/nrf54lm20dk_nrf54lm20a_dual_uart.overlay"
+      - platform:ophelia4ev/nrf54l15/cpuapp:"DTC_OVERLAY_FILE=boards/nrf54l15dk_nrf54l15_dual_uart.overlay"
+      - platform:ophelia4ev/nrf54l15/cpuflpr:"DTC_OVERLAY_FILE=boards/nrf54l15dk_nrf54l15_dual_uart.overlay"
     extra_configs:
       - CONFIG_DUAL_UART_TEST=y
   drivers.uart.uart_elementary_dual_setup_mismatch_nrf54l:
     filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
     platform_allow:
+      - nrf54l09pdk/nrf54l09/cpuapp
+      - nrf54l09pdk/nrf54l09/cpuflpr
       - nrf54l15dk/nrf54l15/cpuapp
-      - nrf54l20pdk/nrf54l20/cpuapp
+      - nrf54l15dk/nrf54l15/cpuflpr
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuflpr
       - ophelia4ev/nrf54l15/cpuapp
-    extra_args: DTC_OVERLAY_FILE="boards/nrf54l15dk_nrf54l15_cpuapp_dual_uart.overlay"
-    extra_configs:
-      - CONFIG_DUAL_UART_TEST=y
-      - CONFIG_SETUP_MISMATCH_TEST=y
-  drivers.uart.uart_elementary_dual_nrf54l_cpuflpr:
-    filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
-    platform_allow:
-      - nrf54l15dk/nrf54l15/cpuflpr
-      - nrf54l20pdk/nrf54l20/cpuflpr
-      - nrf54lm20dk/nrf54lm20a/cpuflpr
       - ophelia4ev/nrf54l15/cpuflpr
-    extra_args: DTC_OVERLAY_FILE="boards/nrf54l15dk_nrf54l15_cpuflpr_dual_uart.overlay"
-    extra_configs:
-      - CONFIG_DUAL_UART_TEST=y
-  drivers.uart.uart_elementary_dual_setup_mismatch_nrf54l_cpuflpr:
-    filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
-    platform_allow:
-      - nrf54l15dk/nrf54l15/cpuflpr
-      - nrf54l20pdk/nrf54l20/cpuflpr
-      - nrf54lm20dk/nrf54lm20a/cpuflpr
-      - ophelia4ev/nrf54l15/cpuflpr
-    extra_args: DTC_OVERLAY_FILE="boards/nrf54l15dk_nrf54l15_cpuflpr_dual_uart.overlay"
-    extra_configs:
-      - CONFIG_DUAL_UART_TEST=y
-      - CONFIG_SETUP_MISMATCH_TEST=y
-  drivers.uart.uart_elementary_dual_nrf54l09:
-    filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
-    platform_allow:
-      - nrf54l09pdk/nrf54l09/cpuapp
-      - nrf54l09pdk/nrf54l09/cpuflpr
-    extra_args: DTC_OVERLAY_FILE="boards/nrf54l09pdk_nrf54l09_dual_uart.overlay"
-    extra_configs:
-      - CONFIG_DUAL_UART_TEST=y
-  drivers.uart.uart_elementary_dual_setup_mismatch_nrf54l09:
-    filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
-    platform_allow:
-      - nrf54l09pdk/nrf54l09/cpuapp
-      - nrf54l09pdk/nrf54l09/cpuflpr
-    extra_args: DTC_OVERLAY_FILE="boards/nrf54l09pdk_nrf54l09_dual_uart.overlay"
+    extra_args:
+      - platform:nrf54l09pdk/nrf54l09/cpuapp:"DTC_OVERLAY_FILE=boards/nrf54l09pdk_nrf54l09_dual_uart.overlay"
+      - platform:nrf54l09pdk/nrf54l09/cpuflpr:"DTC_OVERLAY_FILE=boards/nrf54l09pdk_nrf54l09_dual_uart.overlay"
+      - platform:nrf54l15dk/nrf54l15/cpuapp:"DTC_OVERLAY_FILE=boards/nrf54l15dk_nrf54l15_dual_uart.overlay"
+      - platform:nrf54l15dk/nrf54l15/cpuflpr:"DTC_OVERLAY_FILE=boards/nrf54l15dk_nrf54l15_dual_uart.overlay"
+      - platform:nrf54lm20dk/nrf54lm20a/cpuapp:"DTC_OVERLAY_FILE=boards/nrf54lm20dk_nrf54lm20a_dual_uart.overlay"
+      - platform:nrf54lm20dk/nrf54lm20a/cpuflpr:"DTC_OVERLAY_FILE=boards/nrf54lm20dk_nrf54lm20a_dual_uart.overlay"
+      - platform:ophelia4ev/nrf54l15/cpuapp:"DTC_OVERLAY_FILE=boards/nrf54l15dk_nrf54l15_dual_uart.overlay"
+      - platform:ophelia4ev/nrf54l15/cpuflpr:"DTC_OVERLAY_FILE=boards/nrf54l15dk_nrf54l15_dual_uart.overlay"
     extra_configs:
       - CONFIG_DUAL_UART_TEST=y
       - CONFIG_SETUP_MISMATCH_TEST=y
