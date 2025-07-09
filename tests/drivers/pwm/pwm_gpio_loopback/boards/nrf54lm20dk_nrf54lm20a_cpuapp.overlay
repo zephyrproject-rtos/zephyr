@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Test requires jumper between:
+ *  - PWM20 OUT[0] at P1.29 <-> GPIO input at P1.00
+ */
+
+/ {
+	zephyr,user {
+		pwms = <&pwm20 0 160000 PWM_POLARITY_NORMAL>;
+		gpios = <&gpio1 0 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&pinctrl {
+	pwm20_alt: pwm20_alt {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 1, 29)>;
+		};
+	};
+
+	pwm20_alt_sleep: pwm20_alt_sleep {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 1, 29)>;
+			low-power-enable;
+		};
+	};
+};
+
+&pwm20 {
+	status = "okay";
+	pinctrl-0 = <&pwm20_alt>;
+	pinctrl-1 = <&pwm20_alt_sleep>;
+	pinctrl-names = "default", "sleep";
+};
