@@ -49,6 +49,8 @@ tests:
     filter: ((CONFIG_FLASH_HAS_DRIVER_ENABLED and not CONFIG_TRUSTED_EXECUTION_NONSECURE)
       and (dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
       or dt_label_with_parent_compat_enabled("storage_partition", "nordic,owned-partitions")))
+    platform_exclude:
+      - nrf54lm20dk/nrf54lm20a/cpuapp
     integration_platforms:
       - qemu_x86
       - mimxrt1060_evk/mimxrt1062/qspi
@@ -58,10 +60,13 @@ tests:
       - nrf54l09pdk/nrf54l09/cpuapp
       - nrf54l15dk/nrf54l10/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
-      - nrf54l20pdk/nrf54l20/cpuapp
-      - nrf54lm20dk/nrf54lm20a/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
+  drivers.flash.common.nrf54lm20a:
+    platform_allow:
+      - nrf54lm20dk/nrf54lm20a/cpuapp
+    harness_config:
+      fixture: external_flash
   drivers.flash.common.tfm_ns:
     build_only: true
     filter: (CONFIG_FLASH_HAS_DRIVER_ENABLED and CONFIG_TRUSTED_EXECUTION_NONSECURE
