@@ -4,4 +4,8 @@ config NUM_IRQS
 	int "Number of IRQs for this test, made overridable in the .conf file"
 	default 3
 
+config ISR_OFFSET
+	int "isr offset from vector table"
+	default 0
+
 source "Kconfig.zephyr"
