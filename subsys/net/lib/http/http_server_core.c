@@ -842,6 +842,10 @@ int http_server_find_file(char *fname, size_t fname_size, size_t *file_size,
 			}
 		}
 	}
+	// Issue: https://github.com/zephyrproject-rtos/zephyr/issues/92917
+	// PR: https://github.com/zephyrproject-rtos/zephyr/pull/92918
+	// No compressed file found, try the original filename
+	fname[len] = '\0';
 	ret = fs_stat(fname, &dirent);
 	if (ret != 0) {
 		return -ENOENT;
