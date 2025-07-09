@@ -1,3 +1,10 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/* Test requires loopbacks:
+ * P1.13 - P1.14
+ * P1.23 - P1.24
+ */
+
 &pinctrl {
 	uart21_default: uart21_default {
 		group1 {
