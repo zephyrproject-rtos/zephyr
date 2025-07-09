@@ -1,9 +1,13 @@
 /*
+ * Copyright 2025 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
  * Two loopbacks are required:
  * P1.13 - P1.14
  * P1.23 - P1.24
  */
-
 
 / {
 	aliases {
@@ -53,6 +57,7 @@ dut_twim: &i2c21 {
 	pinctrl-0 = <&i2c21_default_alt>;
 	pinctrl-1 = <&i2c21_sleep_alt>;
 	pinctrl-names = "default", "sleep";
+
 	sensor: sensor@54 {
 		reg = <0x54>;
 	};
