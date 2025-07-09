@@ -23,6 +23,9 @@ the :ref:`release notes<zephyr_4.2>`.
 Build System
 ************
 
+* HWMv1 support has been removed, any out-of-tree boards or SoCs in HWMv1 format must be migrated
+  to :ref:`HWMv2 <hw_model_v2>` to work with Zephyr v4.2 onwards.
+
 Kernel
 ******
 
