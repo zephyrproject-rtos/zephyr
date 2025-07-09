@@ -18,6 +18,14 @@ tests:
       - platform:mimxrt685_evk/mimxrt685s/cm33:"DTC_OVERLAY_FILE=nxp/dut_flexcomm4.overlay"
       - platform:mimxrt595_evk/mimxrt595s/cm33:"DTC_OVERLAY_FILE=nxp/dut_flexcomm12.overlay"
       - platform:frdm_rw612/rw612:"DTC_OVERLAY_FILE=nxp/dut_lpc_flexcomm0.overlay"
+  drivers.uart.async_api.fast:
+    harness: ztest
+    harness_config:
+      fixture: uart_fast_loopback
+    platform_allow:
+      - nrf54lm20dk/nrf54lm20a/cpuapp
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/nrf54lm20dk_nrf54lm20a_cpuapp_uart00.overlay"
   drivers.uart.wide:
     filter: CONFIG_SERIAL_SUPPORT_ASYNC and not CONFIG_UART_MCUX_LPUART
     harness: ztest
