@@ -242,6 +242,15 @@ New APIs and options
 
   * :c:func:`display_clear`
 
+* Management
+
+  * MCUmgr
+
+    * Firmware loader support added to image mgmt group using
+      :kconfig:option:`CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER`.
+    * Optional boot mode (using retention boot mode) added to OS group reset command using
+      :kconfig:option:`CONFIG_MCUMGR_GRP_OS_RESET_BOOT_MODE`.
+
 * Networking:
 
   * IPv4
