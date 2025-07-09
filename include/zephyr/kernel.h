@@ -4785,7 +4785,7 @@ __syscall int k_msgq_alloc_init(struct k_msgq *msgq, size_t msg_size,
 int k_msgq_cleanup(struct k_msgq *msgq);
 
 /**
- * @brief Send a message to a message queue.
+ * @brief Send a message to the end of a message queue.
  *
  * This routine sends a message to message queue @a q.
  *
@@ -4805,6 +4805,33 @@ int k_msgq_cleanup(struct k_msgq *msgq);
  * @retval -EAGAIN Waiting period timed out.
  */
 __syscall int k_msgq_put(struct k_msgq *msgq, const void *data, k_timeout_t timeout);
+
+/**
+ * @brief Send a message to the front of a message queue.
+ *
+ * This routine sends a message to the beginning (head) of message queue @a q.
+ * Messages sent with this method will be retrieved before any pre-existing
+ * messages in the queue.
+ *
+ * @note if there is no space in the message queue, this function will
+ * behave the same as k_msgq_put.
+ *
+ * @note The message content is copied from @a data into @a msgq and the @a data
+ * pointer is not retained, so the message content will not be modified
+ * by this function.
+ *
+ * @funcprops \isr_ok
+ *
+ * @param msgq Address of the message queue.
+ * @param data Pointer to the message.
+ * @param timeout Waiting period to add the message, or one of the special
+ *                values K_NO_WAIT and K_FOREVER.
+ *
+ * @retval 0 Message sent.
+ * @retval -ENOMSG Returned without waiting or queue purged.
+ * @retval -EAGAIN Waiting period timed out.
+ */
+__syscall int k_msgq_put_front(struct k_msgq *msgq, const void *data, k_timeout_t timeout);
 
 /**
  * @brief Receive a message from a message queue.
