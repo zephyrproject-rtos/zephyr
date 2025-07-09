@@ -15,6 +15,9 @@
 #include "bleplat.h"
 #include "bpka.h"
 #include "linklayer_plat.h"
+#if(CFG_RT_DEBUG_DTB == 1)
+#include "RTDebug_dtb.h"
+#endif /* CFG_RT_DEBUG_DTB */
 
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(ble_plat);
@@ -30,6 +33,12 @@ struct entropy_stm32_rng_dev_cfg {
 	struct stm32_pclken *pclken;
 };
 
+#if(CFG_RT_DEBUG_GPIO_MODULE == 1)
+extern void RT_DEBUG_GPIO_Init(void);
+#endif /* (CFG_RT_DEBUG_GPIO_MODULE == 1) */
+
+
+
 void BLEPLAT_Init(void)
 {
 	BPKA_Reset();
@@ -38,6 +47,15 @@ void BLEPLAT_Init(void)
 	if (!device_is_ready(rng_dev)) {
 		LOG_ERR("error: random device not ready");
 	}
+#if(CFG_RT_DEBUG_DTB == 1)
+  /* DTB initialization and configuration */
+  RT_DEBUG_DTBInit();
+  RT_DEBUG_DTBConfig();
+#endif /* CFG_RT_DEBUG_DTB */
+#if(CFG_RT_DEBUG_GPIO_MODULE == 1)
+  /* RT DEBUG GPIO_Init */
+    RT_DEBUG_GPIO_Init();
+#endif /* (CFG_RT_DEBUG_GPIO_MODULE == 1) */
 }
 
 void BLEPLAT_RngGet(uint8_t n, uint32_t *val)
