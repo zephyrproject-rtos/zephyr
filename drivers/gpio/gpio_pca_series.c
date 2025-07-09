@@ -935,6 +935,9 @@ static int gpio_pca_series_pin_configure(const struct device *dev,
 		/* configure PCA_REG_TYPE_1B_OUTPUT_CONFIG */
 		ret = gpio_pca_series_reg_cache_read(dev,
 			PCA_REG_TYPE_1B_OUTPUT_CONFIG, (uint8_t *)&reg_value);
+		if (ret != 0) {
+			goto out;
+		}
 		reg_value = sys_le32_to_cpu(reg_value);
 		if (flags & GPIO_SINGLE_ENDED) {
 			reg_value |= (BIT(pin)); /* set bit to set open-drain */
@@ -944,6 +947,9 @@ static int gpio_pca_series_pin_configure(const struct device *dev,
 		reg_value = sys_cpu_to_le32(reg_value);
 		ret = gpio_pca_series_reg_write(dev,
 			PCA_REG_TYPE_1B_OUTPUT_CONFIG, (uint8_t *)&reg_value);
+		if (ret != 0) {
+			goto out;
+		}
 	}
 
 	if ((cfg->part_cfg->flags & PCA_HAS_PULL)) {
@@ -951,6 +957,9 @@ static int gpio_pca_series_pin_configure(const struct device *dev,
 			/* configure PCA_REG_TYPE_1B_PULL_SELECT */
 			ret = gpio_pca_series_reg_cache_read(dev,
 				PCA_REG_TYPE_1B_PULL_SELECT, (uint8_t *)&reg_value);
+			if (ret != 0) {
+				goto out;
+			}
 			reg_value = sys_le32_to_cpu(reg_value);
 			if (flags & GPIO_PULL_UP) {
 				reg_value |= (BIT(pin));
@@ -960,10 +969,16 @@ static int gpio_pca_series_pin_configure(const struct device *dev,
 			reg_value = sys_cpu_to_le32(reg_value);
 			ret = gpio_pca_series_reg_write(dev,
 				PCA_REG_TYPE_1B_PULL_SELECT, (uint8_t *)&reg_value);
+			if (ret != 0) {
+				goto out;
+			}
 		}
 		/* configure PCA_REG_TYPE_1B_PULL_ENABLE */
 		ret = gpio_pca_series_reg_cache_read(dev,
 			PCA_REG_TYPE_1B_PULL_ENABLE, (uint8_t *)&reg_value);
+		if (ret != 0) {
+			goto out;
+		}
 		reg_value = sys_le32_to_cpu(reg_value);
 		if ((flags & GPIO_PULL_UP) || (flags & GPIO_PULL_DOWN)) {
 			reg_value |= (BIT(pin)); /* set bit to enable pull */
@@ -973,6 +988,9 @@ static int gpio_pca_series_pin_configure(const struct device *dev,
 		reg_value = sys_cpu_to_le32(reg_value);
 		ret = gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_PULL_ENABLE,
 						(uint8_t *)&reg_value);
+		if (ret != 0) {
+			goto out;
+		}
 	}
 
 	/* configure PCA_REG_TYPE_1B_OUTPUT */
@@ -1013,6 +1031,10 @@ static int gpio_pca_series_pin_configure(const struct device *dev,
 	/* configure PCA_REG_TYPE_1B_CONFIGURATION */
 	ret = gpio_pca_series_reg_cache_read(dev,
 		PCA_REG_TYPE_1B_CONFIGURATION, (uint8_t *)&reg_value);
+	if (ret != 0) {
+		goto out;
+	}
+
 	reg_value = sys_le32_to_cpu(reg_value);
 	if (flags & GPIO_INPUT) {
 		reg_value |= (BIT(pin)); /* set bit to set input */
