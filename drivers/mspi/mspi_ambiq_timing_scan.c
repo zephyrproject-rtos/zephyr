@@ -493,5 +493,5 @@ int mspi_ambiq_timing_scan(const struct device           *dev,
 		}
 	}
 
-	return ret;
+	return 0;
 }
