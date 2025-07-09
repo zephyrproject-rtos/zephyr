@@ -295,25 +295,18 @@
 			status = "disabled";
 		};
 
-		netc: ethernet@4ca00000 {
-			reg = <0x4ca00000 0x500000>;
+		netc: ethernet {
+			compatible = "nxp,imx-netc";
 			interrupts = <294 0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges;
 
-			emdio: mdio@4cde0000 {
-				compatible = "nxp,imx-netc-emdio";
-				reg = <0x4cde0000 0x10000>;
-				clocks = <&scmi_clk IMX943_CLK_ENET>;
-				#address-cells = <1>;
-				#size-cells = <0>;
-				status = "disabled";
-			};
-
 			enetc_psi0: ethernet@4cc80000 {
 				compatible = "nxp,imx-netc-psi";
-				reg = <0x4cc80000 0x10000>;
+				reg = <0x4cc80000 0x10000>,
+				      <0x4cb00000 0x1000>;
+				reg-names = "port", "pfconfig";
 				mac-index = <0>;
 				si-index = <0>;
 				status = "disabled";
@@ -321,7 +314,9 @@
 
 			enetc_psi1: ethernet@4ccc0000 {
 				compatible = "nxp,imx-netc-psi";
-				reg = <0x4ccc0000 0x10000>;
+				reg = <0x4ccc0000 0x10000>,
+				      <0x4cb40000 0x1000>;
+				reg-names = "port", "pfconfig";
 				mac-index = <1>;
 				si-index = <1>;
 				status = "disabled";
@@ -329,7 +324,9 @@
 
 			enetc_psi2: ethernet@4cd00000 {
 				compatible = "nxp,imx-netc-psi";
-				reg = <0x4cd00000 0x10000>;
+				reg = <0x4cd00000 0x10000>,
+				      <0x4cb80000 0x1000>;
+				reg-names = "port", "pfconfig";
 				mac-index = <2>;
 				si-index = <2>;
 				status = "disabled";
@@ -353,6 +350,17 @@
 				compatible = "nxp,netc-ptp-clock";
 				reg = <0x4cdc0000 0x10000>;
 				clocks = <&scmi_clk IMX943_CLK_ENET>;
+				status = "disabled";
+			};
+
+			emdio: mdio@4cde0000 {
+				compatible = "nxp,imx-netc-emdio";
+				reg = <0x4cde0000 0x10000>,
+					<0x4cbc0000 0x40000>;
+				reg-names = "basic", "pfconfig";
+				clocks = <&scmi_clk IMX943_CLK_ENET>;
+				#address-cells = <1>;
+				#size-cells = <0>;
 				status = "disabled";
 			};
 		};
