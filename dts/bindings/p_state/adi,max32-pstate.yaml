@@ -1,0 +1,16 @@
+# Copyright (c) 2025 Analog Devices, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Max32 custom properties for performance state (pstate)
+
+compatible: "adi,max32-pstate"
+
+include: "zephyr,pstate.yaml"
+
+properties:
+  pstate-id:
+    type: int
+    required: true
+    description: |
+      Identifier of performance state which maps to a divider setting.
