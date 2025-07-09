@@ -956,9 +956,13 @@ add_custom_target(${DEVICE_API_LD_TARGET}
 zephyr_linker_include_generated(CMAKE ${DEVICE_API_LINKER_SECTIONS_CMAKE})
 
 # Add a pseudo-target that is up-to-date when all generated headers
-# are up-to-date.
+# are up-to-date. Libraries containing files that include these headers can use
+# add_dependencies or target_link_libraries against this target to ensure that
+# generated headers are up-to-date before the libraries are built. This ordering
+# dependency can be propagated to these libraries' dependenents via the PUBLIC
+# or INTERFACE option of target_link_libraries.
 
-add_custom_target(zephyr_generated_headers)
+add_library(zephyr_generated_headers INTERFACE)
 add_dependencies(zephyr_generated_headers
   offsets_h version_h
   )
@@ -1055,8 +1059,10 @@ if(CONFIG_LLEXT)
   # Weak definitions for these must be added at the end of the link order
   # to avoid shadowing actual implementations.
   add_library(syscall_weakdefs syscall_weakdefs_llext.c)
-  add_dependencies(syscall_weakdefs zephyr_generated_headers)
-  target_link_libraries(syscall_weakdefs zephyr_interface)
+  target_link_libraries(syscall_weakdefs
+    zephyr_generated_headers
+    zephyr_interface
+  )
   list(APPEND NO_WHOLE_ARCHIVE_LIBS syscall_weakdefs)
 endif()
 
