@@ -174,6 +174,35 @@ static inline uint32_t stm32_pinval_get(gpio_pin_t pin)
 	return pinval;
 }
 
+static inline void ll_gpio_pwr_set_standby_retention_config(const struct device *dev,gpio_pin_t pin,uint8_t enable)
+{
+#if defined(CONFIG_SOC_SERIES_STM32WBAX)
+	const struct gpio_stm32_config *cfg = dev->config;
+	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
+	uint32_t pin_ll = stm32_pinval_get(pin);
+	uint32_t pwr_gpio_port = 0;
+
+  	if(gpio == GPIOA){pwr_gpio_port = LL_PWR_GPIO_STATE_RETENTION_ENABLE_PORTA;}
+  	else if(gpio == GPIOB){pwr_gpio_port = LL_PWR_GPIO_STATE_RETENTION_ENABLE_PORTB;}
+  	else if(gpio == GPIOC){pwr_gpio_port = LL_PWR_GPIO_STATE_RETENTION_ENABLE_PORTC;}
+#if defined(PWR_STOP2_SUPPORT)
+  	else if(gpio == GPIOD){pwr_gpio_port = LL_PWR_GPIO_STATE_RETENTION_ENABLE_PORTD;}
+  	else if(gpio == GPIOE){pwr_gpio_port = LL_PWR_GPIO_STATE_RETENTION_ENABLE_PORTE;}
+  	else if(gpio == GPIOG){pwr_gpio_port = LL_PWR_GPIO_STATE_RETENTION_ENABLE_PORTG;}
+#endif
+  	else if(gpio == GPIOH){pwr_gpio_port = LL_PWR_GPIO_STATE_RETENTION_ENABLE_PORTH;}
+	else return;
+	if (enable == 1)
+	{
+		LL_PWR_EnableGPIOStandbyRetention(pwr_gpio_port, pin_ll);
+	}
+	else
+	{
+		LL_PWR_DisableGPIOStandbyRetention(pwr_gpio_port, pin_ll);
+	}
+#endif /* CONFIG_SOC_SERIES_STM32WBAX */
+}
+
 static inline void ll_gpio_set_pin_pull(GPIO_TypeDef *GPIOx, uint32_t Pin, uint32_t Pull)
 {
 #if defined(CONFIG_SOC_SERIES_STM32WB0X)
@@ -535,6 +564,13 @@ static int gpio_stm32_config(const struct device *dev,
 #endif /* CONFIG_POWEROFF */
 	}
 #endif /* CONFIG_STM32_WKUP_PINS */
+
+	if (flags & STM32_GPIO_PWR_RETENTION_STANDBY_ON) {
+		ll_gpio_pwr_set_standby_retention_config(dev,pin,1);
+	}
+	else{
+		ll_gpio_pwr_set_standby_retention_config(dev,pin,0);
+	}
 
 	/* Decrement GPIO usage count only if pin is now disconnected after being connected */
 	if (((flags & GPIO_OUTPUT) == 0) && ((flags & GPIO_INPUT) == 0) &&
