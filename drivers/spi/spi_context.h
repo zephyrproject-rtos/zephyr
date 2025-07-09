@@ -21,6 +21,10 @@
 extern "C" {
 #endif
 
+#if defined(DT_DRV_COMPAT) && !DT_ANY_INST_HAS_PROP_STATUS_OKAY(cs_gpios)
+#define DT_SPI_CTX_HAS_NO_CS_GPIOS 1
+#endif
+
 enum spi_ctx_runtime_op_mode {
 	SPI_CTX_RUNTIME_OP_MODE_MASTER = BIT(0),
 	SPI_CTX_RUNTIME_OP_MODE_SLAVE  = BIT(1),
@@ -31,8 +35,10 @@ struct spi_context {
 #ifdef CONFIG_MULTITHREADING
 	const struct spi_config *owner;
 #endif
+#ifndef DT_SPI_CTX_HAS_NO_CS_GPIOS
 	const struct gpio_dt_spec *cs_gpios;
 	size_t num_cs_gpios;
+#endif /* !DT_SPI_CTX_HAS_NO_CS_GPIOS */
 
 #ifdef CONFIG_MULTITHREADING
 	struct k_sem lock;
@@ -71,6 +77,7 @@ struct spi_context {
 #define SPI_CONTEXT_INIT_SYNC(_data, _ctx_name)				\
 	._ctx_name.sync = Z_SEM_INITIALIZER(_data._ctx_name.sync, 0, 1)
 
+#ifndef DT_SPI_CTX_HAS_NO_CS_GPIOS
 #define SPI_CONTEXT_CS_GPIO_SPEC_ELEM(_node_id, _prop, _idx)		\
 	GPIO_DT_SPEC_GET_BY_IDX(_node_id, _prop, _idx),
 
@@ -84,6 +91,9 @@ struct spi_context {
 			    (SPI_CONTEXT_CS_GPIOS_FOREACH_ELEM(_node_id)), ({0}))	\
 	},										\
 	._ctx_name.num_cs_gpios = DT_PROP_LEN_OR(_node_id, cs_gpios, 0),
+#else /* DT_SPI_CTX_HAS_NO_CS_GPIOS */
+#define SPI_CONTEXT_CS_GPIOS_INITIALIZE(...)
+#endif /* DT_SPI_CTX_HAS_NO_CS_GPIOS */
 
 /*
  * Checks if a spi config is the same as the one stored in the spi_context
@@ -300,8 +310,9 @@ static inline void spi_context_complete(struct spi_context *ctx,
  * Note: If a controller has native CS control in SPI hardware, they should also be initialized
  * during device init by the driver with hardware-specific code.
  */
-static inline int spi_context_cs_configure_all(struct spi_context *ctx)
+static inline int spi_context_cs_configure_all(struct spi_context *ctx __maybe_unused)
 {
+#ifndef DT_SPI_CTX_HAS_NO_CS_GPIOS
 	int ret;
 	const struct gpio_dt_spec *cs_gpio;
 
@@ -317,13 +328,16 @@ static inline int spi_context_cs_configure_all(struct spi_context *ctx)
 			return ret;
 		}
 	}
+#endif /* !DT_SPI_CTX_HAS_NO_CS_GPIOS */
 
 	return 0;
 }
 
 /* Helper function to power manage the GPIO CS pins, not meant to be used directly by drivers */
-static inline int _spi_context_cs_pm_all(struct spi_context *ctx, bool get)
+static inline int _spi_context_cs_pm_all(struct spi_context *ctx __maybe_unused,
+					 bool get __maybe_unused)
 {
+#ifndef DT_SPI_CTX_HAS_NO_CS_GPIOS
 	const struct gpio_dt_spec *cs_gpio;
 	int ret;
 
@@ -338,6 +352,7 @@ static inline int _spi_context_cs_pm_all(struct spi_context *ctx, bool get)
 			return ret;
 		}
 	}
+#endif /* !DT_SPI_CTX_HAS_NO_CS_GPIOS */
 
 	return 0;
 }
@@ -361,9 +376,10 @@ static inline int spi_context_cs_put_all(struct spi_context *ctx)
 }
 
 /* Helper function to control the GPIO CS, not meant to be used directly by drivers */
-static inline void _spi_context_cs_control(struct spi_context *ctx,
-					   bool on, bool force_off)
+static inline void _spi_context_cs_control(struct spi_context *ctx __maybe_unused,
+					   bool on __maybe_unused, bool force_off __maybe_unused)
 {
+#ifndef DT_SPI_CTX_HAS_NO_CS_GPIOS
 	if (ctx->config && spi_cs_is_gpio(ctx->config)) {
 		if (on) {
 			gpio_pin_set_dt(&ctx->config->cs.gpio, 1);
@@ -378,6 +394,7 @@ static inline void _spi_context_cs_control(struct spi_context *ctx,
 			gpio_pin_set_dt(&ctx->config->cs.gpio, 0);
 		}
 	}
+#endif /* !DT_SPI_CTX_HAS_NO_CS_GPIOS */
 }
 
 /* This function should be called by drivers to control the chip select line in master mode
