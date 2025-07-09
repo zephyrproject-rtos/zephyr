@@ -89,6 +89,9 @@ config FLASH_BASE_ADDRESS
 		if $(DT_FLASH_PARENT_IS_XSPI) || $(DT_FLASH_PARENT_IS_OSPI) || $(DT_FLASH_PARENT_IS_QSPI)
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
 
+config STM32_APP_IN_EXT_FLASH
+	default $(DT_FLASH_PARENT_IS_XSPI)
+
 # The XSPI PSRAM driver creates a SMH region with attribute SMH_REG_ATTR_EXTERNAL (2)
 # If applicable set the LTDC / VIDEO_BUFFER SMH attribute to SMH_REG_ATTR_EXTERNAL (2)
 # in order to be able to allocate from the XSPI PSRAM
