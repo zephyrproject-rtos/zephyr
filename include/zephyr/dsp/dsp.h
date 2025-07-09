@@ -30,8 +30,9 @@
 #endif
 
 /**
- * @brief DSP Interface
- * @defgroup math_dsp DSP Interface
+ * @brief Digital Signal Processing (DSP) math functions and utilities.
+ * @defgroup math_dsp DSP (Digital Signal Processing)
+ * @ingroup utilities
  * @since 3.3
  * @version 0.1.0
  */

@@ -771,7 +771,12 @@ void k_sched_lock(void)
 	K_SPINLOCK(&_sched_spinlock) {
 		SYS_PORT_TRACING_FUNC(k_thread, sched_lock);
 
-		z_sched_lock();
+		__ASSERT(!arch_is_in_isr(), "");
+		__ASSERT(_current->base.sched_locked != 1U, "");
+
+		--_current->base.sched_locked;
+
+		compiler_barrier();
 	}
 }
 
@@ -815,7 +820,12 @@ struct k_thread *z_swap_next_thread(void)
 /* Just a wrapper around z_current_thread_set(xxx) with tracing */
 static inline void set_current(struct k_thread *new_thread)
 {
-	z_thread_mark_switched_out();
+	/* If the new thread is the same as the current thread, we
+	 * don't need to do anything.
+	 */
+	if (IS_ENABLED(CONFIG_INSTRUMENT_THREAD_SWITCHING) && new_thread != _current) {
+		z_thread_mark_switched_out();
+	}
 	z_current_thread_set(new_thread);
 }
 

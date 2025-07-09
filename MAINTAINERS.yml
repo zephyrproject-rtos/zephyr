@@ -1531,6 +1531,8 @@ Release Notes:
   maintainers:
     - aaronemassey
     - teburd
+  collaborators:
+    - DBS06
   files:
     - drivers/fuel_gauge/
     - dts/bindings/fuel-gauge/
@@ -3802,6 +3804,7 @@ Intel Platforms (X86):
     - drivers/timer/apic*
   labels:
     - "platform: X86"
+    - "platform: Intel"
 
 Intel Platforms (Xtensa):
   status: maintained
@@ -4132,6 +4135,9 @@ nRF Platforms:
     - tests/drivers/*/*nrf*/
     - snippets/nordic*/
     - tests/boards/nrf/
+  files-exclude:
+    - drivers/wifi/nrf_wifi/
+    - dts/bindings/wifi/
   labels:
     - "platform: nRF"
 
@@ -5367,7 +5373,7 @@ West:
   files:
     - modules/Kconfig.intel
   labels:
-    - "platform: Intel"
+    - "platform: Intel ISH"
 
 "West project: zephyr-lang-rust":
   status: maintained
