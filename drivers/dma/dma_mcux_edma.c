@@ -272,6 +272,45 @@ static void dma_mcux_edma_multi_channels_irq_handler(const struct device *dev, u
 }
 #endif
 
+#if defined(FSL_FEATURE_SOC_DMAMUX_COUNT) && FSL_FEATURE_SOC_DMAMUX_COUNT
+static void edma_configure_dmamux(const struct device *dev, uint32_t channel,
+				   struct dma_config *config, edma_transfer_type_t transfer_type)
+{
+	uint32_t slot = config->dma_slot;
+	uint8_t dmamux_idx, dmamux_channel;
+
+	dmamux_idx = DEV_DMAMUX_IDX(dev, channel);
+	dmamux_channel = DEV_DMAMUX_CHANNEL(dev, channel);
+
+#if DT_INST_PROP(0, nxp_a_on)
+	if (config->source_handshake || config->dest_handshake ||
+	    transfer_type == kEDMA_MemoryToMemory) {
+		/*software trigger make the channel always on*/
+		LOG_DBG("ALWAYS ON");
+		DMAMUX_EnableAlwaysOn(DEV_DMAMUX_BASE(dev, dmamux_idx), dmamux_channel, true);
+	} else {
+		DMAMUX_SetSource(DEV_DMAMUX_BASE(dev, dmamux_idx), dmamux_channel, slot);
+	}
+#else
+	DMAMUX_SetSource(DEV_DMAMUX_BASE(dev, dmamux_idx), dmamux_channel, slot);
+#endif /* nxp_a_on */
+
+	/* dam_imx_rt_set_channel_priority(dev, channel, config); */
+	DMAMUX_EnableChannel(DEV_DMAMUX_BASE(dev, dmamux_idx), dmamux_channel);
+}
+
+static void edma_log_dmamux(const struct device *dev, uint32_t channel)
+{
+	uint8_t dmamux_idx = DEV_DMAMUX_IDX(dev, channel);
+	uint8_t dmamux_channel = DEV_DMAMUX_CHANNEL(dev, channel);
+
+	LOG_DBG("DMAMUX CHCFG 0x%x", DEV_DMAMUX_BASE(dev, dmamux_idx)->CHCFG[dmamux_channel]);
+}
+#else
+#define edma_configure_dmamux(...)
+#define edma_log_dmamux(...)
+#endif /* FSL_FEATURE_SOC_DMA_MUX_COUNT */
+
 static int dma_mcux_edma_configure_sg_loop(const struct device *dev,
 					   uint32_t channel,
 					   struct dma_config *config,
@@ -438,7 +477,6 @@ static int dma_mcux_edma_configure_basic(const struct device *dev,
 	return ret;
 }
 
-
 /* Configure a channel */
 static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 				   struct dma_config *config)
@@ -468,12 +506,6 @@ static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 		return -EINVAL;
 	}
 
-#if defined(FSL_FEATURE_SOC_DMAMUX_COUNT) && FSL_FEATURE_SOC_DMAMUX_COUNT
-	uint8_t dmamux_idx, dmamux_channel;
-
-	dmamux_idx = DEV_DMAMUX_IDX(dev, channel);
-	dmamux_channel = DEV_DMAMUX_CHANNEL(dev, channel);
-#endif
 	data->transfer_settings.valid = false;
 
 	switch (config->channel_direction) {
@@ -523,25 +555,7 @@ static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 	/* Lock and page in the channel configuration */
 	key = irq_lock();
 
-#if defined(FSL_FEATURE_SOC_DMAMUX_COUNT) && FSL_FEATURE_SOC_DMAMUX_COUNT
-
-#if DT_INST_PROP(0, nxp_a_on)
-	if (config->source_handshake || config->dest_handshake ||
-	    transfer_type == kEDMA_MemoryToMemory) {
-		/*software trigger make the channel always on*/
-		LOG_DBG("ALWAYS ON");
-		DMAMUX_EnableAlwaysOn(DEV_DMAMUX_BASE(dev, dmamux_idx), dmamux_channel, true);
-	} else {
-		DMAMUX_SetSource(DEV_DMAMUX_BASE(dev, dmamux_idx), dmamux_channel, slot);
-	}
-#else
-	DMAMUX_SetSource(DEV_DMAMUX_BASE(dev, dmamux_idx), dmamux_channel, slot);
-#endif
-
-	/* dam_imx_rt_set_channel_priority(dev, channel, config); */
-	DMAMUX_EnableChannel(DEV_DMAMUX_BASE(dev, dmamux_idx), dmamux_channel);
-
-#endif
+	edma_configure_dmamux(dev, channel, config, transfer_type);
 
 	if (data->busy) {
 		EDMA_AbortTransfer(p_handle);
@@ -603,12 +617,7 @@ static int dma_mcux_edma_start(const struct device *dev, uint32_t channel)
 
 	LOG_DBG("START TRANSFER");
 
-#if defined(FSL_FEATURE_SOC_DMAMUX_COUNT) && FSL_FEATURE_SOC_DMAMUX_COUNT
-	uint8_t dmamux_idx = DEV_DMAMUX_IDX(dev, channel);
-	uint8_t dmamux_channel = DEV_DMAMUX_CHANNEL(dev, channel);
-
-	LOG_DBG("DMAMUX CHCFG 0x%x", DEV_DMAMUX_BASE(dev, dmamux_idx)->CHCFG[dmamux_channel]);
-#endif
+	edma_log_dmamux(dev, channel);
 
 #if !defined(CONFIG_DMA_MCUX_EDMA_V3) && !defined(CONFIG_DMA_MCUX_EDMA_V4) \
 	&& !defined(CONFIG_DMA_MCUX_EDMA_V5)
@@ -857,12 +866,7 @@ static int dma_mcux_edma_get_status(const struct device *dev, uint32_t channel,
 	}
 	status->dir = DEV_CHANNEL_DATA(dev, channel)->transfer_settings.direction;
 
-#if defined(FSL_FEATURE_SOC_DMAMUX_COUNT) && FSL_FEATURE_SOC_DMAMUX_COUNT
-	uint8_t dmamux_idx = DEV_DMAMUX_IDX(dev, channel);
-	uint8_t dmamux_channel = DEV_DMAMUX_CHANNEL(dev, channel);
-
-	LOG_DBG("DMAMUX CHCFG 0x%x", DEV_DMAMUX_BASE(dev, dmamux_idx)->CHCFG[dmamux_channel]);
-#endif
+	edma_log_dmamux(dev, channel);
 
 #if defined(CONFIG_DMA_MCUX_EDMA_V3) || defined(CONFIG_DMA_MCUX_EDMA_V4)
 	LOG_DBG("DMA MP_CSR 0x%x",  DEV_BASE(dev)->MP_CSR);
