@@ -104,4 +104,12 @@ config STM32_BACKUP_PROTECTION
 	  Enabled for SoCs for which access protection to backup domain
 	  resources needs to be explicitly handled.
 
+config STM32_APP_IN_EXT_FLASH
+	bool
+	help
+	  Allows the SoC clock driver to correctly initialize the
+	  Q/O/XSPI controller clocks when the application is residing
+	  in external Flash and is chainloaded with MCUboot.
+	  Whether the app is eXecuted in Place (XiP) depends on the MCUboot mode used.
+
 endif # SOC_FAMILY_STM32
