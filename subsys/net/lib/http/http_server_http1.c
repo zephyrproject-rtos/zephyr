@@ -554,15 +554,18 @@ int handle_http1_static_fs_resource(struct http_resource_detail_static_fs *stati
 	client->http1_headers_sent = true;
 
 	/* read and send file */
+	// Issue in Zephyr: https://github.com/zephyrproject-rtos/zephyr/issues/92921
+	char body_response[2036];
+	LOG_WRN("STATIC_FS_RESPONSE_SIZE=%d", STATIC_FS_RESPONSE_SIZE);
 	remaining = file_size;
 	while (remaining > 0) {
-		len = fs_read(&file, http_response, sizeof(http_response));
+		len = fs_read(&file, body_response, sizeof(body_response));
 		if (len < 0) {
 			LOG_ERR("Filesystem read error (%d)", len);
 			goto close;
 		}
 
-		ret = http_server_sendall(client, http_response, len);
+		ret = http_server_sendall(client, body_response, len);
 		if (ret < 0) {
 			goto close;
 		}
@@ -919,7 +922,7 @@ int handle_http1_request(struct http_client_ctx *client)
 
 	parsed = http_parser_execute(&client->parser, &client->parser_settings,
 				     client->cursor, client->data_len);
-
+	
 	if (parsed > client->data_len) {
 		LOG_ERR("HTTP/1 parser error, too much data consumed");
 		ret = -EBADMSG;
