@@ -268,7 +268,6 @@ ZTEST(timeutil_api, test_timespec_equal)
 	zexpect_false(timespec_equal(&a, &b));
 }
 
-#define K_TICK_MAX  ((uint64_t)(CONFIG_TIMEOUT_64BIT ? (INT64_MAX) : (UINT32_MAX)))
 #define NS_PER_TICK (NSEC_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
 /* 0 := lower limit, 2 := upper limit */
@@ -280,8 +279,10 @@ static const struct timespec k_timeout_limits[] = {
 	},
 	/* K_FOREVER - 1 tick */
 	{
-		.tv_sec = CLAMP((NS_PER_TICK * K_TICK_MAX) / NSEC_PER_SEC, 0, INT64_MAX),
-		.tv_nsec = CLAMP((NS_PER_TICK * K_TICK_MAX) % NSEC_PER_SEC, 0, NSEC_PER_SEC - 1),
+		.tv_sec = (time_t)CLAMP((NS_PER_TICK * (uint64_t)K_TICK_MAX) / NSEC_PER_SEC, 0,
+					INT64_MAX),
+		.tv_nsec = (long)CLAMP((NS_PER_TICK * (uint64_t)K_TICK_MAX) % NSEC_PER_SEC, 0,
+				       NSEC_PER_SEC - 1),
 	},
 };
 
