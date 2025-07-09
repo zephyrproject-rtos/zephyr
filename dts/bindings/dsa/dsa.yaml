@@ -4,7 +4,9 @@
 description: DSA Device
 
 child-binding:
-  description: Properties of slave port
+  description: Properties of port
+
+  compatible: "zephyr,dsa-port"
 
   include:
     - name: pinctrl-device.yaml
@@ -25,3 +27,8 @@ child-binding:
       description:
         A phandle to a valid Ethernet device node. This host
         device is what the switch port is connected to.
+    dsa-tag-protocol:
+      type: int
+      description:
+        Tag protocol the switch using. The <zephyr/dt-bindings/ethernet/dsa_tag_proto.h>
+        which provides macros should be included to use.
