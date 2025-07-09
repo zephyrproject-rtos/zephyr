@@ -96,6 +96,24 @@
 				<1 0 &gpio2 1 0>,   /* AIN1 */
 				<0 0 &gpio2 0 0>;   /* AIN0 */
 	};
+
+	performance-states {
+		pstate_0: pstate_0 {
+			compatible = "adi,max32-pstate";
+			load-threshold = <50>;
+			pstate-id = <0>;
+		};
+		pstate_1: pstate_1 {
+			compatible = "adi,max32-pstate";
+			load-threshold = <20>;
+			pstate-id = <1>;
+		};
+		pstate_2: pstate_2 {
+			compatible = "adi,max32-pstate";
+			load-threshold = <0>;
+			pstate-id = <2>;
+		};
+	};
 };
 
 &uart0 {
