@@ -20,20 +20,17 @@ message("-- Espressif HAL path: ${ESP_IDF_PATH}")
 
 if((CONFIG_ESP_SIMPLE_BOOT OR CONFIG_MCUBOOT) AND NOT CONFIG_SOC_ESP32C6_LPCORE)
   if(CONFIG_BUILD_OUTPUT_BIN)
-    set(ESPTOOL_PY ${ESP_IDF_PATH}/tools/esptool_py/esptool.py)
-    message("-- Use the esptool.py: ${ESPTOOL_PY}")
-
     set(ELF2IMAGE_ARG "")
     if(NOT CONFIG_MCUBOOT)
       set(ELF2IMAGE_ARG "--ram-only-header")
     endif()
 
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
-      COMMAND ${PYTHON_EXECUTABLE} ${ESPTOOL_PY}
+      COMMAND esptool
       ARGS --chip ${CONFIG_SOC} elf2image ${ELF2IMAGE_ARG}
-      --flash_mode dio
-      --flash_freq ${CONFIG_ESPTOOLPY_FLASHFREQ}
-      --flash_size ${esptoolpy_flashsize}MB
+      --flash-mode dio
+      --flash-freq ${CONFIG_ESPTOOLPY_FLASHFREQ}
+      --flash-size ${esptoolpy_flashsize}MB
       -o ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_BIN_NAME}
       ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME})
   endif()
