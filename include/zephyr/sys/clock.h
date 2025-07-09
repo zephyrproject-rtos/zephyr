@@ -166,6 +166,49 @@ typedef struct {
 /* added tick needed to account for tick in progress */
 #define _TICK_ALIGN 1
 
+/* Maximum and minimum value TIME_T can hold */
+#define SYS_TIME_T_MAX ((((time_t)1 << (8 * sizeof(time_t) - 2)) - 1) * 2 + 1)
+#define SYS_TIME_T_MIN (-SYS_TIME_T_MAX - 1)
+
+/* Converts ticks to seconds, discarding any fractional seconds */
+#define K_TICKS_TO_SECS(ticks)                                                                     \
+	(((uint64_t)(ticks) >= (uint64_t)K_TICKS_FOREVER) ? SYS_TIME_T_MAX                         \
+							  : k_ticks_to_sec_floor64(ticks))
+
+/* Converts ticks to nanoseconds, modulo NSEC_PER_SEC */
+#define K_TICKS_TO_NSECS(ticks)                                                                    \
+	(((uint64_t)(ticks) >= (uint64_t)K_TICKS_FOREVER)                                          \
+		 ? (NSEC_PER_SEC - 1)                                                              \
+		 : k_ticks_to_ns_floor32((uint64_t)(ticks) % CONFIG_SYS_CLOCK_TICKS_PER_SEC))
+
+/* Define a timespec */
+#define K_TIMESPEC(sec, nsec)                                                                      \
+	((struct timespec){                                                                        \
+		.tv_sec = (time_t)(sec),                                                           \
+		.tv_nsec = (long)(nsec),                                                           \
+	})
+
+/* Initialize a struct timespec object from a tick count */
+#define K_TICKS_TO_TIMESPEC(ticks) K_TIMESPEC(K_TICKS_TO_SECS(ticks), K_TICKS_TO_NSECS(ticks))
+
+/* The minimum duration in ticks strictly greater than that of K_NO_WAIT */
+#define K_TICK_MIN ((k_ticks_t)1)
+
+/* The maximum duration in ticks strictly and semantically "less than" K_FOREVER */
+#define K_TICK_MAX ((k_ticks_t)(IS_ENABLED(CONFIG_TIMEOUT_64BIT) ? INT64_MAX : UINT32_MAX - 1))
+
+/* The semantic equivalent of K_NO_WAIT but expressed as a timespec object*/
+#define K_TIMESPEC_NO_WAIT K_TICKS_TO_TIMESPEC(0)
+
+/* The semantic equivalent of K_TICK_MIN but expressed as a timespec object */
+#define K_TIMESPEC_MIN K_TICKS_TO_TIMESPEC(K_TICK_MIN)
+
+/* The semantic equivalent of K_TICK_MAX but expressed as a timespec object */
+#define K_TIMESPEC_MAX K_TICKS_TO_TIMESPEC(K_TICK_MAX)
+
+/* The semantic equivalent of K_FOREVER but expressed as a timespec object*/
+#define K_TIMESPEC_FOREVER K_TIMESPEC(SYS_TIME_T_MAX, NSEC_PER_SEC - 1)
+
 /** @endcond */
 
 #ifndef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
