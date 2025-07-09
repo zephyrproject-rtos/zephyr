@@ -137,6 +137,8 @@ struct dsa_port_config {
 	const struct device *phy_dev;
 	/** PHY mode */
 	const char *phy_mode;
+	/** Tag protocol */
+	const int tag_proto;
 	/** Ethernet device connected to the port */
 	const struct device *ethernet_connection;
 	/** Instance specific config */
