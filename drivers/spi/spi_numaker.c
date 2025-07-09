@@ -129,10 +129,10 @@ static int spi_numaker_configure(const struct device *dev, const struct spi_conf
 	/* Enable the automatic hardware slave select function. Select the SS pin and configure as
 	 * low-active.
 	 */
-	if (data->ctx.num_cs_gpios != 0) {
-		SPI_EnableAutoSS(dev_cfg->spi, SPI_SS, SPI_SS_ACTIVE_LOW);
-	} else {
+	if (UTIL_OR(IS_ENABLED(DT_SPI_CTX_HAS_NO_CS_GPIOS), data->ctx.num_cs_gpios == 0)) {
 		SPI_DisableAutoSS(dev_cfg->spi);
+	} else {
+		SPI_EnableAutoSS(dev_cfg->spi, SPI_SS, SPI_SS_ACTIVE_LOW);
 	}
 
 	/* Be able to set TX/RX FIFO threshold, for ex: SPI_SetFIFO(dev_cfg->spi, 2, 2) */
