@@ -272,6 +272,173 @@ static void dma_mcux_edma_multi_channels_irq_handler(const struct device *dev, u
 }
 #endif
 
+static int dma_mcux_edma_configure_sg_loop(const struct device *dev,
+					   uint32_t channel,
+					   struct dma_config *config,
+					   edma_transfer_type_t transfer_type)
+{
+	uint32_t hw_channel = dma_mcux_edma_add_channel_gap(dev, channel);
+	edma_handle_t *p_handle = DEV_EDMA_HANDLE(dev, channel);
+	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
+	struct dma_block_config *block_config = config->head_block;
+	int ret = 0;
+	edma_tcd_t *tcd = NULL;
+
+	/* Loop SG mode */
+	data->transfer_settings.write_idx = 0;
+	data->transfer_settings.empty_tcds = CONFIG_DMA_TCD_QUEUE_SIZE;
+
+	EDMA_PrepareTransfer(
+		&data->transferConfig, (void *)block_config->source_address,
+		config->source_data_size, (void *)block_config->dest_address,
+		config->dest_data_size, config->source_burst_length,
+		block_config->block_size, transfer_type);
+
+	/* Init all TCDs with the para in transfer config and link them. */
+	for (int i = 0; i < CONFIG_DMA_TCD_QUEUE_SIZE; i++) {
+#if defined(CONFIG_DMA_MCUX_EDMA_V5)
+		EDMA_TcdSetTransferConfigExt(DEV_BASE(dev),
+			&DEV_CFG(dev)->tcdpool[channel][i], &data->transferConfig,
+			&DEV_CFG(dev)->tcdpool[channel][(i + 1) %
+				CONFIG_DMA_TCD_QUEUE_SIZE]);
+		/* Enable Major loop interrupt.*/
+		EDMA_TcdEnableInterruptsExt(DEV_BASE(dev),
+				&DEV_CFG(dev)->tcdpool[channel][i],
+				kEDMA_MajorInterruptEnable);
+#else
+		EDMA_TcdSetTransferConfig(&DEV_CFG(dev)->tcdpool[channel][i],
+				&data->transferConfig,
+				&DEV_CFG(dev)->tcdpool[channel][(i + 1) %
+				CONFIG_DMA_TCD_QUEUE_SIZE]);
+		EDMA_TcdEnableInterrupts(&DEV_CFG(dev)->tcdpool[channel][i],
+				kEDMA_MajorInterruptEnable);
+#endif
+	}
+
+	/* Load valid transfer parameters */
+	while (block_config != NULL && data->transfer_settings.empty_tcds > 0) {
+		tcd = &(DEV_CFG(dev)->tcdpool[channel]
+					     [data->transfer_settings.write_idx]);
+
+#if defined(FSL_FEATURE_MEMORY_HAS_ADDRESS_OFFSET) && FSL_FEATURE_MEMORY_HAS_ADDRESS_OFFSET
+		EDMA_TCD_SADDR(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) =
+			MEMORY_ConvertMemoryMapAddress(
+					(uint32_t)(block_config->source_address),
+					kMEMORY_Local2DMA);
+		EDMA_TCD_DADDR(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) =
+			MEMORY_ConvertMemoryMapAddress(
+					(uint32_t)(block_config->dest_address),
+					kMEMORY_Local2DMA);
+#else
+
+		EDMA_TCD_SADDR(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) =
+			block_config->source_address;
+		EDMA_TCD_DADDR(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) =
+			block_config->dest_address;
+#endif
+		EDMA_TCD_BITER(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) =
+			block_config->block_size / config->source_data_size;
+		EDMA_TCD_CITER(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) =
+			block_config->block_size / config->source_data_size;
+		/*Enable auto stop for last transfer.*/
+		if (block_config->next_block == NULL) {
+			EDMA_TCD_CSR(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) |=
+				DMA_CSR_DREQ(1U);
+		} else {
+			EDMA_TCD_CSR(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) &=
+				~DMA_CSR_DREQ(1U);
+		}
+
+		data->transfer_settings.write_idx =
+			(data->transfer_settings.write_idx + 1) %
+			CONFIG_DMA_TCD_QUEUE_SIZE;
+		data->transfer_settings.empty_tcds--;
+		block_config = block_config->next_block;
+	}
+
+	if (block_config != NULL && data->transfer_settings.empty_tcds == 0) {
+		/* User input more blocks than TCD number, return error */
+		LOG_ERR("Too much request blocks,increase TCD buffer size!");
+		ret = -ENOBUFS;
+	}
+	/* Push the 1st TCD into HW */
+	EDMA_InstallTCD(p_handle->base, hw_channel,
+			&DEV_CFG(dev)->tcdpool[channel][0]);
+
+	return ret;
+}
+
+static int dma_mcux_edma_configure_sg_dynamic(const struct device *dev,
+					      uint32_t channel,
+					      struct dma_config *config,
+					      edma_transfer_type_t transfer_type)
+{
+	edma_handle_t *p_handle = DEV_EDMA_HANDLE(dev, channel);
+	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
+	struct dma_block_config *block_config = config->head_block;
+	int ret = 0;
+
+	/* Dynamic Scatter Gather mode */
+	EDMA_InstallTCDMemory(p_handle, DEV_CFG(dev)->tcdpool[channel],
+			      CONFIG_DMA_TCD_QUEUE_SIZE);
+
+	while (block_config != NULL) {
+		EDMA_PrepareTransfer(&(data->transferConfig),
+				     (void *)block_config->source_address,
+				     config->source_data_size,
+				     (void *)block_config->dest_address,
+				     config->dest_data_size,
+				     config->source_burst_length,
+				     block_config->block_size, transfer_type);
+
+		const status_t submit_status =
+			EDMA_SubmitTransfer(p_handle, &(data->transferConfig));
+
+		if (submit_status != kStatus_Success) {
+			LOG_ERR("Error submitting EDMA Transfer: 0x%x",
+				submit_status);
+			ret = -EFAULT;
+		}
+		block_config = block_config->next_block;
+	}
+
+	return ret;
+}
+
+static int dma_mcux_edma_configure_basic(const struct device *dev,
+					      uint32_t channel,
+					      struct dma_config *config,
+					      edma_transfer_type_t transfer_type)
+{
+	edma_handle_t *p_handle = DEV_EDMA_HANDLE(dev, channel);
+	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
+	struct dma_block_config *block_config = config->head_block;
+	uint32_t hw_channel;
+	int ret = 0;
+
+	/* block_count shall be 1 */
+	LOG_DBG("block size is: %d", block_config->block_size);
+	EDMA_PrepareTransfer(&(data->transferConfig),
+			     (void *)block_config->source_address,
+			     config->source_data_size,
+			     (void *)block_config->dest_address,
+			     config->dest_data_size,
+			     config->source_burst_length,
+			     block_config->block_size, transfer_type);
+
+	const status_t submit_status = EDMA_SubmitTransfer(p_handle, &(data->transferConfig));
+
+	if (submit_status != kStatus_Success) {
+		LOG_ERR("Error submitting EDMA Transfer: 0x%x", submit_status);
+		ret = -EFAULT;
+	}
+
+	LOG_DBG("DMA TCD CSR 0x%x", EDMA_HW_TCD_CSR(dev, hw_channel));
+
+	return ret;
+}
+
+
 /* Configure a channel */
 static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 				   struct dma_config *config)
@@ -281,15 +448,15 @@ static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 		return -EINVAL;
 	}
 
+	uint32_t hw_channel = dma_mcux_edma_add_channel_gap(dev, channel);
 	edma_handle_t *p_handle = DEV_EDMA_HANDLE(dev, channel);
 	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
 	struct dma_block_config *block_config = config->head_block;
+	bool sg_mode = block_config->source_gather_en || block_config->dest_scatter_en;
 	uint32_t slot = config->dma_slot;
-	uint32_t hw_channel;
 	edma_transfer_type_t transfer_type;
 	unsigned int key;
 	int ret = 0;
-	edma_tcd_t *tcd = NULL;
 
 	if (slot >= DEV_CFG(dev)->dma_requests) {
 		LOG_ERR("source number is out of scope %d", slot);
@@ -301,7 +468,6 @@ static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 		return -EINVAL;
 	}
 
-	hw_channel = dma_mcux_edma_add_channel_gap(dev, channel);
 #if defined(FSL_FEATURE_SOC_DMAMUX_COUNT) && FSL_FEATURE_SOC_DMAMUX_COUNT
 	uint8_t dmamux_idx, dmamux_channel;
 
@@ -399,132 +565,12 @@ static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 		       sizeof(DEV_CFG(dev)->tcdpool[channel][i]));
 	}
 
-	if (block_config->source_gather_en || block_config->dest_scatter_en) {
-		if (config->cyclic) {
-			/* Loop SG mode */
-			data->transfer_settings.write_idx = 0;
-			data->transfer_settings.empty_tcds = CONFIG_DMA_TCD_QUEUE_SIZE;
-
-			EDMA_PrepareTransfer(
-				&data->transferConfig, (void *)block_config->source_address,
-				config->source_data_size, (void *)block_config->dest_address,
-				config->dest_data_size, config->source_burst_length,
-				block_config->block_size, transfer_type);
-
-			/* Init all TCDs with the para in transfer config and link them. */
-			for (int i = 0; i < CONFIG_DMA_TCD_QUEUE_SIZE; i++) {
-#if defined(CONFIG_DMA_MCUX_EDMA_V5)
-				EDMA_TcdSetTransferConfigExt(DEV_BASE(dev),
-					&DEV_CFG(dev)->tcdpool[channel][i], &data->transferConfig,
-					&DEV_CFG(dev)->tcdpool[channel][(i + 1) %
-						CONFIG_DMA_TCD_QUEUE_SIZE]);
-				/* Enable Major loop interrupt.*/
-				EDMA_TcdEnableInterruptsExt(DEV_BASE(dev),
-						&DEV_CFG(dev)->tcdpool[channel][i],
-						kEDMA_MajorInterruptEnable);
-#else
-				EDMA_TcdSetTransferConfig(&DEV_CFG(dev)->tcdpool[channel][i],
-						&data->transferConfig,
-						&DEV_CFG(dev)->tcdpool[channel][(i + 1) %
-						CONFIG_DMA_TCD_QUEUE_SIZE]);
-				EDMA_TcdEnableInterrupts(&DEV_CFG(dev)->tcdpool[channel][i],
-						kEDMA_MajorInterruptEnable);
-#endif
-			}
-
-			/* Load valid transfer parameters */
-			while (block_config != NULL && data->transfer_settings.empty_tcds > 0) {
-				tcd = &(DEV_CFG(dev)->tcdpool[channel]
-							     [data->transfer_settings.write_idx]);
-
-#if defined(FSL_FEATURE_MEMORY_HAS_ADDRESS_OFFSET) && FSL_FEATURE_MEMORY_HAS_ADDRESS_OFFSET
-				EDMA_TCD_SADDR(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) =
-					MEMORY_ConvertMemoryMapAddress(
-							(uint32_t)(block_config->source_address),
-							kMEMORY_Local2DMA);
-				EDMA_TCD_DADDR(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) =
-					MEMORY_ConvertMemoryMapAddress(
-							(uint32_t)(block_config->dest_address),
-							kMEMORY_Local2DMA);
-#else
-
-				EDMA_TCD_SADDR(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) =
-					block_config->source_address;
-				EDMA_TCD_DADDR(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) =
-					block_config->dest_address;
-#endif
-				EDMA_TCD_BITER(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) =
-					block_config->block_size / config->source_data_size;
-				EDMA_TCD_CITER(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) =
-					block_config->block_size / config->source_data_size;
-				/*Enable auto stop for last transfer.*/
-				if (block_config->next_block == NULL) {
-					EDMA_TCD_CSR(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) |=
-						DMA_CSR_DREQ(1U);
-				} else {
-					EDMA_TCD_CSR(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) &=
-						~DMA_CSR_DREQ(1U);
-				}
-
-				data->transfer_settings.write_idx =
-					(data->transfer_settings.write_idx + 1) %
-					CONFIG_DMA_TCD_QUEUE_SIZE;
-				data->transfer_settings.empty_tcds--;
-				block_config = block_config->next_block;
-			}
-
-			if (block_config != NULL && data->transfer_settings.empty_tcds == 0) {
-				/* User input more blocks than TCD number, return error */
-				LOG_ERR("Too much request blocks,increase TCD buffer size!");
-				ret = -ENOBUFS;
-			}
-			/* Push the 1st TCD into HW */
-			EDMA_InstallTCD(p_handle->base, hw_channel,
-					&DEV_CFG(dev)->tcdpool[channel][0]);
-
-		} else {
-			/* Dynamic Scatter Gather mode */
-			EDMA_InstallTCDMemory(p_handle, DEV_CFG(dev)->tcdpool[channel],
-					      CONFIG_DMA_TCD_QUEUE_SIZE);
-
-			while (block_config != NULL) {
-				EDMA_PrepareTransfer(&(data->transferConfig),
-						     (void *)block_config->source_address,
-						     config->source_data_size,
-						     (void *)block_config->dest_address,
-						     config->dest_data_size,
-						     config->source_burst_length,
-						     block_config->block_size, transfer_type);
-
-				const status_t submit_status =
-					EDMA_SubmitTransfer(p_handle, &(data->transferConfig));
-				if (submit_status != kStatus_Success) {
-					LOG_ERR("Error submitting EDMA Transfer: 0x%x",
-						submit_status);
-					ret = -EFAULT;
-				}
-				block_config = block_config->next_block;
-			}
-		}
+	if (sg_mode && config->cyclic) {
+		dma_mcux_edma_configure_sg_loop(dev, channel, config, transfer_type);
+	} else if (sg_mode) {
+		dma_mcux_edma_configure_sg_dynamic(dev, channel, config, transfer_type);
 	} else {
-		/* block_count shall be 1 */
-		LOG_DBG("block size is: %d", block_config->block_size);
-		EDMA_PrepareTransfer(&(data->transferConfig),
-				     (void *)block_config->source_address,
-				     config->source_data_size,
-				     (void *)block_config->dest_address,
-				     config->dest_data_size,
-				     config->source_burst_length,
-				     block_config->block_size, transfer_type);
-
-		const status_t submit_status =
-			EDMA_SubmitTransfer(p_handle, &(data->transferConfig));
-		if (submit_status != kStatus_Success) {
-			LOG_ERR("Error submitting EDMA Transfer: 0x%x", submit_status);
-			ret = -EFAULT;
-		}
-
-		LOG_DBG("DMA TCD CSR 0x%x", EDMA_HW_TCD_CSR(dev, hw_channel));
+		dma_mcux_edma_configure_basic(dev, channel, config, transfer_type);
 	}
 
 	if (config->dest_chaining_en) {
