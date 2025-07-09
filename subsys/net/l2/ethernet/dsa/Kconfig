@@ -33,6 +33,16 @@ config DSA_TAG_SIZE
 	help
 	  Set the DSA tag length in bytes.
 
+config DSA_TAG_PROTOCOL_NETC
+	bool "Tag protocol - NETC"
+	default y if $(dt_node_str_prop_equals,$(dt_nodelabel_path,switch_port0),tag-protocol,netc) \
+		|| $(dt_node_str_prop_equals,$(dt_nodelabel_path,switch_port1),tag-protocol,netc) \
+		|| $(dt_node_str_prop_equals,$(dt_nodelabel_path,switch_port2),tag-protocol,netc) \
+		|| $(dt_node_str_prop_equals,$(dt_nodelabel_path,switch_port3),tag-protocol,netc) \
+		|| $(dt_node_str_prop_equals,$(dt_nodelabel_path,switch_port4),tag-protocol,netc)
+	help
+	  NXP NETC tag protocol.
+
 module = NET_DSA
 module-dep = NET_LOG
 module-str = Log level for DSA
