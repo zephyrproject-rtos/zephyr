@@ -408,6 +408,10 @@ static int lis2dw12_sample_fetch(const struct device *dev,
 	case SENSOR_CHAN_DIE_TEMP:
 		lis2dw12_sample_fetch_temp(dev);
 		break;
+	case SENSOR_CHAN_ALL:
+		lis2dw12_sample_fetch_accel(dev);
+		lis2dw12_sample_fetch_temp(dev);
+		break;
 	default:
 		LOG_DBG("Channel not supported");
 		return -ENOTSUP;
