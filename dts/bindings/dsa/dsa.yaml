@@ -4,7 +4,7 @@
 description: DSA Device
 
 child-binding:
-  description: Properties of slave port
+  description: Properties of port
 
   include:
     - name: pinctrl-device.yaml
@@ -25,3 +25,10 @@ child-binding:
       description:
         A phandle to a valid Ethernet device node. This host
         device is what the switch port is connected to.
+    tag-protocol:
+      type: string
+      description:
+        Tag protocol the switch using. Or the switch supports no tag way
+        if it's not specified on CPU port.
+      enum:
+        - "netc"
