@@ -227,6 +227,17 @@ New APIs and options
     * Remove query of the classic bonding information from :c:func:`bt_foreach_bond`, and add
       :c:func:`bt_br_foreach_bond`.
 
+* Build system
+
+  * Sysbuild
+
+    * Firmware loader image setup/selection support added to sysbuild when using
+      :kconfig:option:`SB_CONFIG_MCUBOOT_MODE_FIRMWARE_UPDATER` via
+      ``SB_CONFIG_FIRMWARE_LOADER`` e.g. :kconfig:option:`SB_CONFIG_FIRMWARE_LOADER_IMAGE_SMP_SVR`
+      for selecting :zephyr:code-sample:`smp-svr`.
+    * Single app RAM load support added to sysbuild using
+      :kconfig:option:`SB_CONFIG_MCUBOOT_MODE_SINGLE_APP_RAM_LOAD`.
+
 * Display
 
   * :c:func:`display_clear`
