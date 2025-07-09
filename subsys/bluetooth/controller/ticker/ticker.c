@@ -1380,6 +1380,7 @@ void ticker_worker(void *param)
 			 * ticker_job_reschedule_in_window when completed.
 			 */
 			ticker->lazy_current++;
+			ticker->force = 0U;
 
 			if ((ticker->must_expire == 0U) ||
 			    (ticker->lazy_periodic >= ticker->lazy_current) ||
