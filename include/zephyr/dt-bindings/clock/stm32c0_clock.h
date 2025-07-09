@@ -46,7 +46,7 @@
 #define I2C2_I2S1_SEL(val)	STM32_DT_CLOCK_SELECT((val), 3, 14, CCIPR_REG)
 #define ADC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 30, CCIPR_REG)
 /** CCIPR2 devices */
-#define USB_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 12, CCIPR2_REG)
+#define USB_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 12, CCIPR2_REG)
 /** CSR1 devices */
 #define RTC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 8, CSR1_REG)
 
