@@ -1,0 +1,93 @@
+# Copyright (c) 2025 Petri Oksanen
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_EXECUTORCH_MODULE
+	bool
+
+config EXECUTORCH
+	bool "ExecuTorch Support"
+	select REQUIRES_FULL_LIBCPP
+	help
+	  This option enables the ExecuTorch library.
+
+if EXECUTORCH
+
+rsource "Kconfig.backends"
+
+config EXECUTORCH_ENABLE_LOGGING
+	bool "Enable ExecuTorch logging"
+	default y
+	help
+	  Enable logging within the ExecuTorch runtime.
+
+config EXECUTORCH_ENABLE_EVENT_TRACER
+	bool "Enable ExecuTorch event tracer"
+	default n
+	help
+	  Enable the event tracer for performance profiling.
+
+config EXECUTORCH_ENABLE_PROGRAM_VERIFICATION
+	bool "Enable ExecuTorch program verification"
+	default n
+	help
+	  Enable verification of the ExecuTorch program flatbuffer.
+
+config EXECUTORCH_OPTIMIZE_FOR_SIZE
+	bool "Optimize ExecuTorch for size"
+	default y
+	help
+	  Optimize the ExecuTorch library for size (-Os).
+
+config EXECUTORCH_BUILD_EXECUTOR_RUNNER
+	bool "Build ExecuTorch executor runner"
+	default n
+	help
+	  Build the executor_runner utility. Note: this may require POSIX 
+	  functions not available in Zephyr and is typically not needed 
+	  for embedded applications.
+
+config EXECUTORCH_BUILD_DATA_LOADER
+	bool "Build ExecuTorch data loader extension"
+	default n
+	help
+	  Build the file data loader extension. Note: this requires POSIX 
+	  file I/O functions and is typically not needed for embedded 
+	  applications that load models from memory.
+
+config EXECUTORCH_BUILD_PORTABLE_OPS
+	bool "Build ExecuTorch portable operators library"
+	default y
+	help
+	  Build the default portable operators library that includes all 
+	  available operators. When disabled, you should use selective 
+	  operator building to include only needed operators, but the 
+	  underlying kernel implementations will still be available.
+
+config EXECUTORCH_METHOD_ALLOCATOR_POOL_SIZE
+	int "Method allocator pool size in bytes"
+	default 16384
+	help
+	  Size of the method allocator pool in bytes. This memory is used
+	  for allocating ExecuTorch method instances and their metadata.
+	  Default is 16KB which should be sufficient for most small models.
+	  Larger models may require more memory.
+
+config EXECUTORCH_TEMP_ALLOCATOR_POOL_SIZE
+	int "Temporary allocator pool size in bytes"
+	default 2048
+	help
+	  Size of the temporary allocator pool in bytes. This memory is used
+	  for temporary allocations during model execution such as intermediate
+	  tensor calculations. Default is 2KB which should be sufficient for
+	  simple operations. Complex models may require more memory.
+
+config EXECUTORCH_MODEL_NAME
+	string "Model filename for header generation"
+	default "model_add.pte"
+	help
+	  Filename of the pre-generated .pte model file located in the example_files
+	  directory. This file will be used to generate gen_ops_def.yml and the
+	  corresponding model header file. The model must be generated manually
+	  outside the Zephyr build process.
+
+endif # EXECUTORCH 

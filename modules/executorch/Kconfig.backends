@@ -1,0 +1,27 @@
+# Kconfig for ExecutorCH Backends
+
+choice EXECUTORCH_BACKEND
+	prompt "ExecuTorch backend"
+	default EXECUTORCH_BACKEND_NONE
+	help
+		Select the ExecuTorch backend to build. This will enable the
+		appropriate kernels and libraries for the selected hardware target.
+
+config EXECUTORCH_BACKEND_NONE
+	bool "None"
+	help
+		Do not build any specific backend. Only the core ExecuTorch
+		runtime will be available.
+
+config EXECUTORCH_BACKEND_ARM
+	bool "ARM"
+	help
+		Enable the ARM backend for Cortex-M and Ethos-U targets.
+
+config EXECUTORCH_BACKEND_XNNPACK
+	bool "XNNPACK"
+	help
+		Enable the XNNPACK backend for running on the host CPU. This is
+		useful for testing and development on a laptop or PC.
+
+endchoice 
