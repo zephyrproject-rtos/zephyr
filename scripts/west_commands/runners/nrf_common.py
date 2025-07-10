@@ -43,6 +43,9 @@ UICR_RANGES = {
     'nrf54l': {
         'Application': (0x00FFD000, 0x00FFDA00),
     },
+    'nrf71' : {
+        'Application': (0x00FFD000, 0x00FFDA00),
+    },
     'nrf91': {
         'Application': (0x00FF8000, 0x00FF8800),
     },
@@ -119,7 +122,7 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
     def do_add_parser(cls, parser):
         parser.add_argument('--nrf-family',
                             choices=['NRF51', 'NRF52', 'NRF53', 'NRF54L',
-                                     'NRF54H', 'NRF91', 'NRF92'],
+                                     'NRF54H', 'NRF71', 'NRF91', 'NRF92'],
                             help='''MCU family; still accepted for
                             compatibility only''')
         # Not using a mutual exclusive group for softreset and pinreset due to
@@ -253,6 +256,8 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
             self.family = 'nrf54l'
         elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF54HX'):
             self.family = 'nrf54h'
+        elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF71X'):
+            self.family = 'nrf71'
         elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF91X'):
             self.family = 'nrf91'
         elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF92X'):
@@ -327,10 +332,11 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         self.exec_op('recover')
 
     def _get_core(self):
-        if self.family in ('nrf54h', 'nrf92'):
+        if self.family in ('nrf54h', 'nrf71', 'nrf92'):
             if (self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPUAPP') or
                 self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPUFLPR') or
                 self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPUPPR') or
+                self.build_conf.getboolean('CONFIG_SOC_NRF7120_ENGA_CPUAPP') or
                 self.build_conf.getboolean('CONFIG_SOC_NRF9280_CPUAPP')):
                 return 'Application'
             if (self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPURAD') or
