@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_MICROCHIP_SAM_D5X_E5X
+	bool
+
+config SOC_FAMILY
+	default "microchip_sam_d5x_e5x" if SOC_FAMILY_MICROCHIP_SAM_D5X_E5X
+
+rsource "*/Kconfig.soc"
