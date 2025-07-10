@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <silabs/efm32pg1b200f256gm48.dtsi>
+#include <silabs/xg1/efm32pg1b200f256gm48.dtsi>
 #include "slstk3401a-common.dtsi"
 
 / {
