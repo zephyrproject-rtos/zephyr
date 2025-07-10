@@ -53,6 +53,12 @@
 	pinctrl-names = "default";
 };
 
+&peci0 {
+	status = "okay";
+	pinctrl-0 = <&peci0_gp97>;
+	pinctrl-names = "default";
+};
+
 &dsadc {
 	status = "okay";
 	/* Pin D7 is shared by thermal signal VIN16, THR16, TD2P.

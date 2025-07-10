@@ -6,6 +6,7 @@ zephyr_library()
 zephyr_library_sources_ifdef(CONFIG_BBRAM_SHELL bbram_shell.c)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE bbram_handlers.c)
+zephyr_library_sources_ifdef(CONFIG_BBRAM_NCT bbram_nct.c)
 zephyr_library_sources_ifdef(CONFIG_BBRAM_NPCX bbram_npcx.c)
 zephyr_library_sources_ifdef(CONFIG_BBRAM_NPCX_EMUL bbram_npcx_emul.c)
 zephyr_library_include_directories_ifdef(CONFIG_BBRAM_NPCX .)

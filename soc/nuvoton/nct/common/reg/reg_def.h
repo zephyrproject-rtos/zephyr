@@ -1133,17 +1133,6 @@ struct mswc_reg {
 #define NCT_MSWCTL1_HCFGLK		4
 #define NCT_MSWCTL1_A20MB		7
 
-/*
- * Battery backed RAM (BBRAM) device registers
- */
-struct bbram_reg {
-	/* 0x000: BBRAM space (range is 0-3Fh) */
-	volatile uint8_t BBRAM_SPACE[64];
-	volatile uint8_t reserved[192];
-	/* 0x100: BBRAM status*/
-	volatile uint8_t BKUP_STS;
-};
-
 #define NCT_BKUPSTS_VSB_STS	5
 #define NCT_BKUPSTS_IBBR	7
 

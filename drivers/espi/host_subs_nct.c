@@ -66,29 +66,29 @@
  * This driver introduces four host sub-modules. It includes:
  *
  * 1. KCS/Power Management (PM) channels.
- *   嚙踝蕭嚙?KCS/PM channel registers
- *     嚙踝蕭 Command/Status register
- *     嚙踝蕭 Data register
+ *   KCS/PM channel registers
+ *     Command/Status register
+ *     Data register
  *       channel 1: legacy 62h, 66h; channel 2: legacy 68h, 6Ch
  *       (Zephyr setting: 200h, 204h);
  *       channel 3: legacy 6Ah, 6Eh; channel 4: legacy 6Bh, 6Fh;
- *   嚙踝蕭嚙?KCS/PM interrupt using:
- *     嚙踝蕭 Serial IRQ
- *     嚙踝蕭 SMI
- *     嚙踝蕭 EC_SCI
- *   嚙踝蕭嚙?Configured by four logical devices: KCS/PM1/2/3/4 (LDN 0x11/0x12/0x17/0x1E)
+ *   KCS/PM interrupt using:
+ *     Serial IRQ
+ *     SMI
+ *     EC_SCI
+ *   Configured by four logical devices: KCS/PM1/2/3/4 (LDN 0x11/0x12/0x17/0x1E)
  *
  * 2. Shared Memory mechanism (SHM).
  *   This module allows sharing of the on-chip RAM by both Core and the Host.
  *   It also supports the following features:
- *   嚙踝蕭嚙?Four Core/Host communication windows for direct RAM access
- *   嚙踝蕭嚙?Eight Protection regions for each access window
- *   嚙踝蕭嚙?Host IRQ and SMI generation
- *   嚙踝蕭嚙?Port 80 debug support
- *   嚙踝蕭嚙?Configured by one logical device: SHM (LDN 0x0F)
+ *   Four Core/Host communication windows for direct RAM access
+ *   Eight Protection regions for each access window
+ *   Host IRQ and SMI generation
+ *   Port 80 debug support
+ *   Configured by one logical device: SHM (LDN 0x0F)
  *
  * 3. Core Access to Host Modules (C2H).
- *   嚙踝蕭嚙?A interface to access module registers in host domain.
+ *   A interface to access module registers in host domain.
  *     It enables the Core to access the registers in host domain (i.e., Host
  *     Configuration, Serial Port, SHM, and MSWC), through HMIB.
  *
@@ -119,7 +119,6 @@ struct host_sub_nct_config {
 	struct mswc_reg *const inst_mswc;
 	struct shm_reg *const inst_shm;
 	struct c2h_reg *const inst_c2h;
-	struct bbram_reg *const inst_bbram;
 	struct pmch_reg *const inst_pm_acpi;
 	struct pmch_reg *const inst_pm_hcmd;
 	struct pmch_reg *const inst_pmch3;
@@ -145,7 +144,6 @@ struct host_sub_nct_config host_sub_cfg = {
 	.inst_mswc = (struct mswc_reg *)DT_INST_REG_ADDR_BY_NAME(0, mswc),
 	.inst_shm = (struct shm_reg *)DT_INST_REG_ADDR_BY_NAME(0, shm),
 	.inst_c2h = (struct c2h_reg *)DT_REG_ADDR(DT_NODELABEL(c2h)),
-	.inst_bbram = (struct bbram_reg *)DT_INST_REG_ADDR_BY_NAME(0, bbram),
 	.inst_pm_acpi = (struct pmch_reg *)DT_INST_REG_ADDR_BY_NAME(0, pm_acpi),
 	.inst_pm_hcmd = (struct pmch_reg *)DT_INST_REG_ADDR_BY_NAME(0, pm_hcmd),
 	.inst_pmch3 = (struct pmch_reg *)DT_INST_REG_ADDR_BY_NAME(0, pmch3),
@@ -279,32 +277,6 @@ uint8_t host_mswc_ReadReg(uint8_t index)
 	}
 
 	return ret;
-}
-
-/* BBRAM API */
-uint32_t host_bbram_GetBBramSpaceAdr(void)
-{
-	struct bbram_reg *const inst_bbram = host_sub_cfg.inst_bbram;
-
-	return (uint32_t)inst_bbram->BBRAM_SPACE;
-}
-
-bool host_bbram_BKUPSTS_IsSet(uint8_t mask)
-{
-	struct bbram_reg *const inst_bbram = host_sub_cfg.inst_bbram;
-	bool ret;
-
-	if(inst_bbram->BKUP_STS & mask) {ret = true;}
-	else {ret = false;}
-
-	return ret;
-}
-
-void host_bbram_BKUPSTS_Clear(uint8_t mask)
-{
-	struct bbram_reg *const inst_bbram = host_sub_cfg.inst_bbram;
-
-	inst_bbram->BKUP_STS = mask;
 }
 
 /* Host ACPI sub-device local functions */

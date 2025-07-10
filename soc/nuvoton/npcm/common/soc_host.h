@@ -15,11 +15,6 @@ extern "C" {
 void host_mswc_WriteReg(uint8_t index, uint8_t val);
 uint8_t host_mswc_ReadReg(uint8_t index);
 
-/** BBRAM API **/
-uint32_t host_bbram_GetBBramSpaceAdr(void);
-bool host_bbram_BKUPSTS_IsSet(uint8_t mask);
-void host_bbram_BKUPSTS_Clear(uint8_t mask);
-
 /** SHM API **/
 void host_shm_SetWinBaseAddr(uint8_t win, volatile uint8_t* addr);
 uint32_t host_shm_GetWrProtect(uint8_t win);

@@ -47,9 +47,9 @@ LOG_MODULE_REGISTER(wdt_nct, CONFIG_WDT_LOG_LEVEL);
 
 /*
  * Maximum watchdog window time. Since the watchdog counter is 8-bits, maximum
- * time supported by nct watchdog is 256 * (32 * 32) / 32768 = 8 sec.
+ * time supported by nct watchdog is 256 * (32 * 128) / 32768 = 32 sec.
  */
-#define NCT_WDT_MAX_WND_TIME 8000UL
+#define NCT_WDT_MAX_WND_TIME 32000UL
 
 /*
  * Minimum watchdog window time. Ensure we have waited at least 3 watchdog
@@ -248,7 +248,7 @@ static int wdt_nct_setup(const struct device *dev, uint8_t options)
 				32 * 1000) - 1, 1);
 
 	/* Configure 8-bit watchdog counter */
-	inst->WDCNT = MIN(DIV_ROUND_UP(data->timeout, 32) +
+	inst->WDCNT = MIN(DIV_ROUND_UP(data->timeout, 128) +
 					CONFIG_WDT_NCT_DELAY_CYCLES, 0xff);
 
 	LOG_DBG("WDT setup: TWDT0, WDCNT are %d, %d", inst->TWDT0, inst->WDCNT);
@@ -346,7 +346,7 @@ static int wdt_nct_init(const struct device *dev)
 	 * - Watchdog freq is T0CLK/32 Hz (ie. LFCLK/1024 Hz)
 	 */
 	inst->TWCP = 0x05; /* Prescaler is 32 in T0 Timer */
-	inst->WDCP = 0x05; /* Prescaler is 32 in Watchdog Timer */
+	inst->WDCP = 0x07; /* Prescaler is 128 in Watchdog Timer */
 
 	return 0;
 }

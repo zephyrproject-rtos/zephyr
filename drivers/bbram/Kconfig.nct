@@ -1,0 +1,9 @@
+# Copyright (c) 2021 Google Inc
+# SPDX-License-Identifier: Apache-2.0
+
+config BBRAM_NCT
+	bool "Nuvoton NCT Battery-backed RAM drivers"
+	default y
+	depends on DT_HAS_NUVOTON_NCT_BBRAM_ENABLED
+	help
+	  This option enables the BBRAM driver for NCT family of processors.
