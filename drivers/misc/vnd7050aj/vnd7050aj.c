@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2025, Eduard Iten
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #define DT_DRV_COMPAT st_vnd7050aj
 
 #include <zephyr/kernel.h>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Technical Report Author
+ * Copyright (c) 2025, Eduard Iten
  * SPDX-License-Identifier: Apache-2.0
  */
 

@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2025, Eduard Iten
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Devicetree overlay for VND7050AJ on rpi_pico
+ */
+
+/ {
+	aliases {
+		vnd7050aj = &vnd7050aj;
+	};
+
+	vnd7050aj: vnd7050aj {
+		compatible = "st,vnd7050aj";
+		status = "okay";
+
+		/* Required properties */
+		input0-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+		input1-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+		select0-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+		select1-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+		sense-enable-gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
+		fault-reset-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+		io-channels = <&adc 0>; /* GPIO26 */
+		r-sense-ohms = <1500>;
+
+		/* Optional properties */
+		// k-factor = <1500>;
+		// k-vcc = <8000>;
+		// t-sense-0 = <25>;
+		// v-sense-0 = <2070>;
+		// k-tchip = <-5500>;
+	};
+};
+
+&adc {
+	status = "okay";
+};
