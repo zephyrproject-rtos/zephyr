@@ -1628,21 +1628,26 @@ Documentation Infrastructure:
   collaborators:
     - tomi-font
     - fabiobaltieri
+    - ubieda
   files:
     - doc/hardware/peripherals/gnss.rst
     - drivers/gnss/
     - include/zephyr/data/navigation.h
     - include/zephyr/drivers/gnss.h
     - include/zephyr/drivers/gnss/
+    - include/zephyr/gnss/
     - dts/bindings/gnss/
     - include/zephyr/dt-bindings/gnss/
     - tests/drivers/build_all/gnss/
     - tests/drivers/gnss/
+    - tests/subsys/gnss/
     - samples/drivers/gnss/
+    - subsys/gnss/
   labels:
     - "area: GNSS"
   tests:
     - drivers.gnss
+    - gnss
 
 "Drivers: GPIO":
   status: odd fixes
