@@ -146,7 +146,7 @@ void rts5912_ulpm_enable(void)
 		if (wkup_pins_cfgs[i].pin_mode == RTS5912_ULPM_WKUP_PIN_MODE_VIN) {
 			LOG_DBG("setup VIN%d in ", id);
 			/* Configure Polarity */
-			if (wkup_pins_cfgs[i].pin_pol == RTS5912_ULPM_WKUP_PIN_POL_RISING) {
+			if (wkup_pins_cfgs[i].pin_pol == RTS5912_ULPM_WKUP_PIN_POL_FALLING) {
 				/* Falling Edge */
 				sys_reg->VIVOCTRL |= BIT(SYSTEM_VIVOCTRL_VIN0POL_Pos + id);
 				LOG_DBG("Falling Edge\n");

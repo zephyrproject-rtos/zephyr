@@ -33,6 +33,11 @@ LOG_MODULE_REGISTER(BME280, CONFIG_SENSOR_LOG_LEVEL);
  */
 #define BME280_MEASUREMENT_TIMEOUT_MS 150
 
+/* Start-up time - Time to first communication after both Vdd > 1.58V and
+ * Vddio > 0.65V
+ */
+#define BME280_START_UP_TIME_MS 2
+
 /* Equation 9.1, with the fractional parts rounded down */
 #define BME280_EXPECTED_SAMPLE_TIME_MS                                                             \
 	1 + BME280_TEMP_SAMPLE_TIME + BME280_PRESS_SAMPLE_TIME + BME280_HUMIDITY_SAMPLE_TIME
@@ -331,6 +336,8 @@ static int bme280_chip_init(const struct device *dev)
 		LOG_DBG("bus check failed: %d", err);
 		return err;
 	}
+
+	k_msleep(BME280_START_UP_TIME_MS);
 
 	err = bme280_reg_read(dev, BME280_REG_ID, &data->chip_id, 1);
 	if (err < 0) {
