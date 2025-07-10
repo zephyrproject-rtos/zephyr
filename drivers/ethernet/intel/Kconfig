@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config ETH_INTEL_PLAT
+	bool "Intel Ethernet parent Platform device driver"
+	depends on DT_HAS_INTEL_ETH_PLAT_ENABLED
+	help
+	  Enable Platform driver to retrieve the MMIO mapping details and
+	  share them with all the child devices such as MDIO, PHY, MAC
+	  and PTP_CLOCK.
