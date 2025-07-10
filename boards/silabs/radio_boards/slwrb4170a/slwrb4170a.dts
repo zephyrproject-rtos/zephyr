@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <silabs/efr32mg12p433f1024gm68.dtsi>
+#include <silabs/xg12/efr32mg12p433f1024gm68.dtsi>
 #include "../common/efr32-series1-common.dtsi"
 
 / {

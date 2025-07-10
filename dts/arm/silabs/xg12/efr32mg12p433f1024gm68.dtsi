@@ -5,7 +5,7 @@
  */
 
 #include <mem.h>
-#include <silabs/efr32mg.dtsi>
+#include <silabs/xg12/efr32xg12.dtsi>
 
 / {
 	sram0: memory@20000000 {
@@ -13,7 +13,7 @@
 	};
 
 	soc {
-		compatible = "silabs,efr32mg12p432f1024gl125", "silabs,efr32mg12p", "silabs,efr32",
+		compatible = "silabs,efr32mg12p433f1024gm68", "silabs,efr32mg12p", "silabs,efr32",
 			     "simple-bus";
 
 		flash-controller@400e0000 {
