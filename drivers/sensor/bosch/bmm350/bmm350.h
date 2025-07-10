@@ -151,11 +151,11 @@ extern const struct bmm350_bus_io bmm350_bus_io_i2c;
 
 /**************************** Signed bit macros **********************/
 enum bmm350_signed_bit {
-	BMM350_SIGNED_8_BIT = 8,
-	BMM350_SIGNED_12_BIT = 12,
-	BMM350_SIGNED_16_BIT = 16,
-	BMM350_SIGNED_21_BIT = 21,
-	BMM350_SIGNED_24_BIT = 24
+	BMM350_SIGNED_8_BIT = 7,
+	BMM350_SIGNED_12_BIT = 11,
+	BMM350_SIGNED_16_BIT = 15,
+	BMM350_SIGNED_21_BIT = 20,
+	BMM350_SIGNED_24_BIT = 23
 };
 
 /********************* Power modes *************************/
@@ -471,8 +471,6 @@ struct bmm350_config {
 
 struct bmm350_data {
 
-	/*! Variable to store status of axes enabled */
-	uint8_t axis_en;
 	struct mag_compensate mag_comp;
 	/*! Array to store OTP data */
 	uint16_t otp_data[BMM350_OTP_DATA_LENGTH];
