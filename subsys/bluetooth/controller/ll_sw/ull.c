@@ -2203,6 +2203,17 @@ void ull_prepare_dequeue(uint8_t caller_id)
 
 		MFIFO_DEQUEUE(prep);
 
+		/* Ensure prepare pipeline indices are stored, and compiler does not re-order
+		 * instructions.
+		 */
+		cpu_dmb();
+
+		/* Reset prepare callback being called. This is used to detect race with preempt
+		 * called at same time and mayfly runs them together which a prepare element being
+		 * dequeued.
+		 */
+		next->prepare_ack = next->prepare_req;
+
 		/* Check for anymore more prepare elements in queue */
 		next = ull_prepare_dequeue_get();
 		if (!next) {

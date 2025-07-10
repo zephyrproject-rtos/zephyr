@@ -946,7 +946,11 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 		return -EINPROGRESS;
 	}
 
-	LL_ASSERT(!ready || &ready->prepare_param == prepare_param);
+	if (ready) {
+		LL_ASSERT(&ready->prepare_param == prepare_param);
+
+		ready->prepare_req = ready->prepare_ack + 1U;
+	}
 
 	event.curr.param = prepare_param->param;
 	event.curr.is_abort_cb = is_abort_cb;
@@ -1308,6 +1312,13 @@ preempt_find_preemptor:
 		}
 
 		LL_ASSERT(ready->prepare_param.param == param);
+	}
+
+	if (ready->prepare_req != ready->prepare_ack) {
+		/* prepare_cb and preempt under race being called by mayfly at the same time.
+		 * Do not preempt a just called prepare under this race condition.
+		 */
+		return;
 	}
 
 	/* Check if current event want to continue */

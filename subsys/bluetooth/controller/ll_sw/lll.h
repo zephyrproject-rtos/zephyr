@@ -251,6 +251,8 @@ struct lll_event {
 	lll_prepare_cb_t         prepare_cb;
 	lll_is_abort_cb_t        is_abort_cb;
 	lll_abort_cb_t           abort_cb;
+	uint8_t                  volatile prepare_req;
+	uint8_t                  prepare_ack;
 	uint8_t                  is_resume:1;
 	uint8_t                  is_aborted:1;
 };
