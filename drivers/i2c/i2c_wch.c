@@ -45,6 +45,12 @@ struct i2c_wch_data {
 			uint16_t: 16;
 		};
 	} current;
+
+#ifdef CONFIG_I2C_TARGET
+	bool master_active;
+	bool slave_attached;
+	struct i2c_target_config *slave_cfg;
+#endif /* CONFIG_I2C_TARGET */
 };
 
 static void wch_i2c_handle_start_bit(const struct device *dev)
@@ -137,11 +143,84 @@ static void wch_i2c_handle_rxne(const struct device *dev)
 	}
 }
 
+#if defined(CONFIG_I2C_TARGET)
+
+static void i2c_wch_slave_event_isr(const struct device *dev)
+{
+	const struct i2c_wch_config *cfg = dev->config;
+	struct i2c_wch_data *data = dev->data;
+	I2C_TypeDef *regs = cfg->regs;
+	uint16_t status = regs->STAR1;
+	const struct i2c_target_callbacks *slave_cb =
+		data->slave_cfg->callbacks;
+
+	if (status & I2C_STAR1_ADDR) {
+		if ((regs->STAR2 & I2C_STAR2_TRA)
+			&& (status & I2C_STAR1_TXE)) {
+			uint8_t val;
+			slave_cb->read_requested(data->slave_cfg, &val);
+			regs->DATAR = val;
+		} else {
+			slave_cb->write_requested(data->slave_cfg);
+		}
+	}
+
+	if (status & I2C_STAR1_RXNE) {
+		uint8_t val = (uint8_t)(regs->DATAR & I2C_DR_DATAR);
+		if (slave_cb->write_received(data->slave_cfg, val)) {
+			regs->CTLR1 &= I2C_NACKPosition_Current;
+		}
+		return;
+	}
+
+	if ((status & I2C_STAR1_TXE)
+		&& (status & I2C_STAR1_BTF)) {
+		uint8_t val;
+		slave_cb->read_processed(data->slave_cfg, &val);
+		regs->DATAR = val;
+		return;
+	}
+
+	if (status & I2C_STAR1_STOPF) {
+		regs->CTLR1 &= regs->CTLR1;
+		slave_cb->stop(data->slave_cfg);
+	}
+
+	if (status & I2C_STAR1_AF) {
+		regs->STAR1 &= ~I2C_STAR1_AF;
+	}
+}
+
+static void i2c_wch_slave_error_isr(const struct device *dev)
+{
+	const struct i2c_wch_config *config = dev->config;
+	I2C_TypeDef *regs = config->regs;
+	uint16_t status = regs->STAR1;
+
+	if (status & I2C_STAR1_BERR) {
+		LOG_DBG("BERR");
+	}
+
+	if (status & I2C_STAR1_OVR) {
+		LOG_DBG("OVR");
+	}
+}
+
+#endif /* CONFIG_I2C_TARGET */
+
 static void i2c_wch_event_isr(const struct device *dev)
 {
 	const struct i2c_wch_config *config = dev->config;
 	struct i2c_wch_data *data = dev->data;
 	I2C_TypeDef *regs = config->regs;
+
+#if defined(CONFIG_I2C_TARGET)
+	if (data->slave_attached && !data->master_active) {
+		i2c_wch_slave_event_isr(dev);
+		return;
+	}
+#endif
+
 	uint16_t status = regs->STAR1;
 	bool write;
 
@@ -163,6 +242,14 @@ static void i2c_wch_error_isr(const struct device *dev)
 	const struct i2c_wch_config *config = dev->config;
 	struct i2c_wch_data *data = dev->data;
 	I2C_TypeDef *regs = config->regs;
+
+#if defined(CONFIG_I2C_TARGET)
+	if (data->slave_attached && !data->master_active) {
+		i2c_wch_slave_error_isr(dev);
+		return;
+	}
+#endif
+
 	uint16_t status = regs->STAR1;
 
 	if (status & (I2C_STAR1_AF | I2C_STAR1_ARLO | I2C_STAR1_BERR)) {
@@ -191,6 +278,9 @@ static void wch_i2c_msg_init(const struct device *dev, struct i2c_msg *msg,
 	data->current.idx = 0U;
 	data->current.err = 0U;
 	data->current.addr = addr;
+#if defined(CONFIG_I2C_TARGET)
+	data->master_active = true;
+#endif
 
 	regs->CTLR1 |= I2C_CTLR1_PE;
 	regs->CTLR1 |= I2C_CTLR1_ACK;
@@ -258,6 +348,7 @@ static int32_t wch_i2c_begin_transfer(const struct device *dev, struct i2c_msg *
 static void wch_i2c_finish_transfer(const struct device *dev)
 {
 	const struct i2c_wch_config *config = dev->config;
+	struct i2c_wch_data *data = dev->data;
 	I2C_TypeDef *regs = config->regs;
 
 	wch_i2c_config_interrupts(regs, false);
@@ -265,7 +356,17 @@ static void wch_i2c_finish_transfer(const struct device *dev)
 	while (regs->STAR2 & I2C_STAR2_BUSY) {
 	}
 
+#if defined(CONFIG_I2C_TARGET)
+	data->master_active = false;
+	if (!data->slave_attached) {
+		regs->CTLR1 &= ~I2C_CTLR1_PE;
+	} else {
+		wch_i2c_config_interrupts(regs, true);
+		regs->CTLR1 |= I2C_CTLR1_ACK;
+	}
+#else
 	regs->CTLR1 &= ~I2C_CTLR1_PE;
+#endif
 }
 
 static int wch_i2c_configure_timing(I2C_TypeDef *regs, uint32_t clock_rate,
@@ -376,6 +477,8 @@ static int i2c_wch_init(const struct device *dev)
 
 	k_sem_init(&data->xfer_done, 0, 1);
 
+	config->irq_config_func(dev);
+
 	clk_sys = (clock_control_subsys_t)(uintptr_t)config->clk_id;
 
 	err = clock_control_on(config->clk_dev, clk_sys);
@@ -393,14 +496,112 @@ static int i2c_wch_init(const struct device *dev)
 		return err;
 	}
 
-	config->irq_config_func(dev);
+	return 0;
+}
+
+#if defined(CONFIG_I2C_TARGET)
+
+int i2c_wch_target_register(const struct device *dev, struct i2c_target_config *config)
+{
+	const struct i2c_wch_config *cfg = dev->config;
+	struct i2c_wch_data *data = dev->data;
+	I2C_TypeDef *regs = cfg->regs;
+	int ret;
+
+	if (!config) {
+		return -EINVAL;
+	}
+
+	if (data->slave_attached) {
+		return -EBUSY;
+	}
+
+	if (data->master_active) {
+		return -EBUSY;
+	}
+
+	ret = i2c_wch_configure(dev, I2C_MODE_CONTROLLER | i2c_map_dt_bitrate(cfg->bitrate));
+	if (ret < 0) {
+		LOG_ERR("i2c: failure configure");
+		return ret;
+	}
+
+	data->slave_cfg = config;
+	if (data->slave_cfg->flags == I2C_TARGET_FLAGS_ADDR_10_BITS)	{
+		return -ENOTSUP;
+	}
+
+	// Enable I2C
+	regs->CTLR1 |= I2C_CTLR1_PE;
+
+	// Set OwnAddress1
+	regs->OADDR1 = (config->address << 1U) | I2C_AcknowledgedAddress_7bit;
+	data->slave_attached = true;
+
+	LOG_DBG("i2c: target registered");
+
+	// Enable interrupts
+	wch_i2c_config_interrupts(regs, true);
+
+	// Enable Acknowledge
+	regs->CTLR1 |= I2C_CTLR1_ACK;
 
 	return 0;
 }
 
+int i2c_wch_target_unregister(const struct device *dev, struct i2c_target_config *config)
+{
+	const struct i2c_wch_config *cfg = dev->config;
+	struct i2c_wch_data *data = dev->data;
+	I2C_TypeDef *regs = cfg->regs;
+	uint16_t status = regs->STAR1;
+
+	if (!data->slave_attached) {
+		return -EINVAL;
+	}
+
+	if (data->master_active) {
+		return -EBUSY;
+	}
+
+	wch_i2c_config_interrupts(regs, false);
+
+	// Clear flag AF
+	if (status & I2C_STAR1_AF) {
+		regs->STAR1 &= ~I2C_STAR1_AF;
+	}
+
+	// Clear flag STOP
+	if (status & I2C_CTLR1_STOP) {
+		(void)(regs->STAR1);
+		regs->CTLR1 &= regs->CTLR1;
+	}
+
+	// Clear flag ADDR
+	if (status & I2C_STAR1_ADDR) {
+		(void)(regs->STAR1);
+		(void)(regs->STAR2);
+	}
+
+	// Disable I2C
+	regs->CTLR1 &= ~I2C_CTLR1_PE;
+
+	data->slave_attached = false;
+
+	LOG_DBG("i2c: slave unregistered");
+
+	return 0;
+}
+
+#endif /* CONFIG_I2C_TARGET */
+
 static DEVICE_API(i2c, i2c_wch_api) = {
 	.configure = i2c_wch_configure,
 	.transfer = i2c_wch_transfer,
+#if defined(CONFIG_I2C_TARGET)
+	.target_register = i2c_wch_target_register,
+	.target_unregister = i2c_wch_target_unregister,
+#endif /* CONFIG_I2C_TARGET */
 #ifdef CONFIG_I2C_RTIO
 	.iodev_submit = i2c_iodev_submit_fallback,
 #endif
