@@ -19,8 +19,10 @@
  */
 static inline bool rtio_vrfy_sqe(struct rtio_sqe *sqe)
 {
-	if (sqe->iodev != NULL && K_SYSCALL_OBJ(sqe->iodev, K_OBJ_RTIO_IODEV)) {
-		return false;
+	if (sqe->iodev != NULL) {
+		if (K_SYSCALL_OBJ(sqe->iodev, K_OBJ_RTIO_IODEV)) {
+			return false;
+		}
 	}
 
 	bool valid_sqe = true;
