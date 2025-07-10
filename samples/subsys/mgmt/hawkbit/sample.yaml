@@ -17,8 +17,6 @@ tests:
   sample.net.hawkbit.default: {}
   sample.net.hawkbit.sysbuild:
     sysbuild: true
-    extra_args:
-      - platform:stm32h573i_dk/stm32h573xx:mcuboot_CONFIG_BOOT_MAX_IMG_SECTORS=128
   sample.net.hawkbit.manual:
     extra_configs:
       - CONFIG_HAWKBIT_MANUAL=y
