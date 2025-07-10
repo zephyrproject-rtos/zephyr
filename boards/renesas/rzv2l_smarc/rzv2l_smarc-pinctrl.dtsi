@@ -13,4 +13,16 @@
 				 <RZV_PINMUX(PORT_48, 1, 1)>; /* RXD */
 		};
 	};
+
+	/omit-if-no-ref/ gpt6_pins: gpt6 {
+		gpt6-pinmux {
+			pinmux = <RZV_PINMUX(PORT_43, 0, 3)>; /* GTIOCA */
+		};
+	};
+
+	/omit-if-no-ref/ gpt7_pins: gpt7 {
+		gpt7-pinmux {
+			pinmux = <RZV_PINMUX(PORT_41, 0, 2)>; /* GTIOCA */
+		};
+	};
 };
