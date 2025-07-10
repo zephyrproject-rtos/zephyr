@@ -1,12 +1,9 @@
-/*
- * Copyright (c) 2021 Rafael Dias Menezes <rdmeneze@gmail.com>
- *
- * SPDX-License-Identifier: Apache-2.0
- */
+/* SPDX-License-Identifier: Apache-2.0 */
 
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
 	chosen {
@@ -17,6 +14,10 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-m4f";
+			reg = <0>;
+		};
 	};
 
 	sram0: memory@20000000 {
@@ -42,7 +43,7 @@
 		usart0: usart@40010000 { /* USART0 */
 			compatible = "silabs,gecko-usart";
 			reg = <0x40010000 0x400>;
-			interrupts = <11 0 12 0>;
+			interrupts = <11 0>, <12 0>;
 			interrupt-names = "rx", "tx";
 			peripheral-id = <0>;
 			status = "disabled";
@@ -51,7 +52,7 @@
 		usart1: usart@40010400 { /* USART1 */
 			compatible = "silabs,gecko-usart";
 			reg = <0x40010400 0x400>;
-			interrupts = <19 0 20 0>;
+			interrupts = <19 0>, <20 0>;
 			interrupt-names = "rx", "tx";
 			peripheral-id = <1>;
 			status = "disabled";
@@ -86,7 +87,7 @@
 
 		gpio: gpio@4000a400 {
 			compatible = "silabs,gecko-gpio";
-			reg = <0x4000a400 0xf00>;
+			reg = <0x4000a000 0x1000>;
 			interrupts = <9 2 17 2>;
 			interrupt-names = "GPIO_EVEN", "GPIO_ODD";
 
@@ -130,6 +131,15 @@
 				status = "disabled";
 			};
 
+			gpioe: gpio@4000a0c0 {
+				compatible = "silabs,gecko-gpio-port";
+				reg = <0x4000a0c0 0x30>;
+				peripheral-id = <4>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+
 			gpiof: gpio@4000a0f0 {
 				compatible = "silabs,gecko-gpio-port";
 				reg = <0x4000a0f0 0x30>;
@@ -137,13 +147,6 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				status = "disabled";
-			};
-			pinctrl: pin-controller {
-				/* Pin controller is a "virtual" device since SiLabs SoCs do pin
-				 * control in a distributed way (GPIO registers and PSEL
-				 * registers on each peripheral).
-				 */
-				compatible = "silabs,gecko-pinctrl";
 			};
 		};
 
@@ -154,6 +157,27 @@
 			interrupts = <2 0>;
 			status = "disabled";
 		};
+
+		timer0: timer@40018000 {
+			compatible = "silabs,gecko-timers";
+			reg = <0x40018000 0x400>;
+			status = "disabled";
+
+			pwm {
+				compatible = "silabs,gecko-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+		};
+
+	};
+
+	pinctrl: pin-controller {
+		/* Pin controller is a "virtual" device since SiLabs SoCs do pin
+		 * control in a distributed way (GPIO registers and PSEL
+		 * registers on each peripheral).
+		 */
+		compatible = "silabs,gecko-pinctrl";
 	};
 };
 
