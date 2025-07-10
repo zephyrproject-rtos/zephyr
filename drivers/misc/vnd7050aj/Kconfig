@@ -1,0 +1,31 @@
+config VND7050AJ
+	bool "VND7050AJ driver"
+	default n
+	help
+	    Enable support for the VND7050AJ high-side driver.
+    select ADC
+    select GPIO
+
+if VND7050AJ
+    config VND7050AJ_INIT_PRIORITY
+        int "VND7050AJ initialization priority"
+        default 80
+        help
+            VND7050AJ driver initialization priority. This should be set to a value
+            that ensures the driver is initialized after the required subsystems
+            (like GPIO, ADC) but before application code runs.
+
+    config VND7050AJ_LOG_LEVEL
+        int "VND7050AJ Log level"
+        depends on LOG
+        default 3
+        range 0 4
+        help
+            Sets log level for VND7050AJ driver.
+            Levels are:
+            0 OFF, do not write
+            1 ERROR, only write LOG_ERR
+            2 WARNING, write LOG_WRN in addition to previous level
+            3 INFO, write LOG_INF in addition to previous levels
+            4 DEBUG, write LOG_DBG in addition to previous levels
+endif # VND7050AJ

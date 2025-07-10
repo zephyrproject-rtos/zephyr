@@ -14,6 +14,6 @@ add_subdirectory_ifdef(CONFIG_RENESAS_RA_EXTERNAL_INTERRUPT renesas_ra_external_
 add_subdirectory_ifdef(CONFIG_RENESAS_RX_EXTERNAL_INTERRUPT renesas_rx_external_interrupt)
 add_subdirectory_ifdef(CONFIG_NXP_RTXXX_DSP_CTRL nxp_rtxxx_dsp_ctrl)
 add_subdirectory_ifdef(CONFIG_STM32N6_AXISRAM stm32n6_axisram)
-
+add_subdirectory_ifdef(CONFIG_VND7050AJ vnd7050aj)
 add_subdirectory(coresight)
 add_subdirectory(interconn)

@@ -1,0 +1,92 @@
+# Copyright (c) 2024, Eduard Iten
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STMicroelectronics VND7050AJ dual-channel high-side driver.
+  This is a GPIO and ADC controlled device.
+
+compatible: "st,vnd7050aj"
+
+include: base.yaml
+
+properties:
+  input0-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO to control output channel 0.
+
+  input1-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO to control output channel 1.
+
+  select0-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO for MultiSense selection bit 0.
+
+  select1-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO for MultiSense selection bit 1.
+
+  sense-enable-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO to enable the MultiSense output.
+
+  fault-reset-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO to reset a latched fault (active-low).
+
+  io-channels:
+    type: phandle-array
+    required: true
+    description: |
+      ADC channel connected to the MultiSense pin. This should be an
+      io-channels property pointing to the ADC controller and channel number.
+
+  r-sense-ohms:
+    type: int
+    required: true
+    description: |
+      Value of the external sense resistor connected from the MultiSense
+      pin to GND, specified in Ohms. This is critical for correct
+      conversion of the analog readings.
+
+  k-factor:
+    type: int
+    required: false
+    default: 1500
+    description: |
+      Factor between PowerMOS and SenseMOS.
+
+  k-vcc:
+    type: int
+    required: false
+    default: 8000
+    description: |
+      VCC sense ratio multiplied by 1000. Used for supply voltage calculation.
+
+  t-sense-0:
+    type: int
+    required: false
+    default: 25
+    description: |
+      Temperature sense reference temperature in degrees Celsius.
+
+  v-sense-0:
+    type: int
+    required: false
+    default: 2070
+    description: |
+      Temperature sense reference voltage in millivolts.
+
+  k-tchip:
+    type: int
+    required: false
+    default: -5500
+    description: |
+      Temperature sense gain coefficient multiplied by 1000.
+      Used for chip temperature calculation.
