@@ -261,6 +261,10 @@ content type text/html.
 
     HTTP_SERVER_CONTENT_TYPE(json, "application/json")
 
+When serving files from a static filesystem, the response chunk size can be configured
+using the :kconfig:option:`CONFIG_HTTP_SERVER_STATIC_FS_RESPONSE_SIZE` Kconfig option.
+This determines the size of individual chunks when transmitting file content to clients.
+
 Dynamic resources
 =================
 
