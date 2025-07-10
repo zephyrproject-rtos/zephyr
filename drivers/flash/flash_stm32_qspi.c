@@ -102,6 +102,7 @@ struct flash_stm32_qspi_config {
 	irq_config_func_t irq_config;
 	size_t flash_size;
 	uint32_t max_frequency;
+	uint8_t cs_high_time;
 	const struct pinctrl_dev_config *pcfg;
 #if STM32_QSPI_RESET_GPIO
 	const struct gpio_dt_spec reset;
@@ -1510,6 +1511,8 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	dev_data->hqspi.Init.ClockPrescaler = prescaler;
 	/* Give a bit position from 0 to 31 to the HAL init minus 1 for the DCR1 reg */
 	dev_data->hqspi.Init.FlashSize = find_lsb_set(dev_cfg->flash_size) - 2;
+	dev_data->hqspi.Init.SampleShifting = QSPI_SAMPLE_SHIFTING_HALFCYCLE;
+	dev_data->hqspi.Init.ChipSelectHighTime = dev_cfg->cs_high_time - 1;
 #if DT_PROP(DT_NODELABEL(quadspi), dual_flash) && defined(QUADSPI_CR_DFM)
 	/*
 	 * When the DTS has <dual-flash>, it means Dual Flash Mode
@@ -1517,8 +1520,6 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	 * else the magic nb is wrong (0x46465353)
 	 * That means that the Dual Flash config is set after the SFDP sequence
 	 */
-	dev_data->hqspi.Init.SampleShifting = QSPI_SAMPLE_SHIFTING_HALFCYCLE;
-	dev_data->hqspi.Init.ChipSelectHighTime = QSPI_CS_HIGH_TIME_3_CYCLE;
 	dev_data->hqspi.Init.DualFlash = QSPI_DUALFLASH_DISABLE;
 	/* Set Dual Flash Mode only on MemoryMapped */
 	dev_data->hqspi.Init.FlashID = QSPI_FLASH_ID_1;
@@ -1705,6 +1706,7 @@ static const struct flash_stm32_qspi_config flash_stm32_qspi_cfg = {
 	.irq_config = flash_stm32_qspi_irq_config_func,
 	.flash_size = (DT_INST_PROP(0, size) / 8) << STM32_QSPI_DOUBLE_FLASH,
 	.max_frequency = DT_INST_PROP(0, qspi_max_frequency),
+	.cs_high_time = DT_INST_PROP(0, cs_high_time),
 	.pcfg = PINCTRL_DT_DEV_CONFIG_GET(STM32_QSPI_NODE),
 #if STM32_QSPI_RESET_GPIO
 	.reset = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
