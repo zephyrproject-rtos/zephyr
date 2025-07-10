@@ -8,3 +8,5 @@ config ETH_INTEL_PLAT
 	  Enable Platform driver to retrieve the MMIO mapping details and
 	  share them with all the child devices such as MDIO, PHY, MAC
 	  and PTP_CLOCK.
+
+source "drivers/ethernet/intel/Kconfig.intel_igc"
