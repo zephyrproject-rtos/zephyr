@@ -113,7 +113,7 @@ static int vnd7050aj_init(const struct device *dev)
 		return err;
 	}
 	err = gpio_pin_configure_dt(&config->fault_reset_gpio,
-				    GPIO_OUTPUT_ACTIVE); // Active-low, so init high
+				    GPIO_OUTPUT_ACTIVE); /* Active-low, so init high */
 	if (err) {
 		LOG_ERR("Failed to configure fault reset GPIO: %d", err);
 		return err;
@@ -262,7 +262,7 @@ int vnd7050aj_read_load_current(const struct device *dev, uint8_t channel, int32
 		return err;
 	}
 
-	/* I_OUT = (V_SENSE / R_SENSE) * K_IL */
+	/* Formula according to datasheet: I_OUT = (V_SENSE / R_SENSE) * K_IL */
 	/* To avoid floating point, we calculate in microamps and then convert to milliamps */
 	int64_t current_ua = ((int64_t)sense_mv * 1000 * config->k_factor) / config->r_sense_ohms;
 	*current_ma = (int32_t)(current_ua / 1000);
@@ -304,7 +304,7 @@ int vnd7050aj_read_supply_voltage(const struct device *dev, int32_t *voltage_mv)
 		return err;
 	}
 
-	/* VCC = V_SENSE * K_VCC */
+	/* Formula from datasheet: VCC = V_SENSE * K_VCC */
 	*voltage_mv = (sense_mv * config->k_vcc) / 1000;
 
 	return 0;
@@ -320,7 +320,7 @@ int vnd7050aj_reset_fault(const struct device *dev)
 	if (err) {
 		return err;
 	}
-	k_msleep(1); // Short pulse
+	k_msleep(1); /* Short pulse */
 	err = gpio_pin_set_dt(&config->fault_reset_gpio, 1);
 
 	return err;
