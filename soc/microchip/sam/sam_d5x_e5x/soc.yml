@@ -1,0 +1,39 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+family:
+- name: microchip_sam_d5x_e5x
+  series:
+  - name: atsamd51
+    socs:
+    - name: atsamd51g18a
+    - name: atsamd51g19a
+    - name: atsamd51j18a
+    - name: atsamd51j19a
+    - name: atsamd51j20a
+    - name: atsamd51n19a
+    - name: atsamd51n20a
+    - name: atsamd51p19a
+    - name: atsamd51p20a
+  - name: atsame51
+    socs:
+    - name: atsame51g18a
+    - name: atsame51g19a
+    - name: atsame51j18a
+    - name: atsame51j19a
+    - name: atsame51j20a
+    - name: atsame51n19a
+    - name: atsame51n20a
+  - name: atsame53
+    socs:
+    - name: atsame53j18a
+    - name: atsame53j19a
+    - name: atsame53j20a
+    - name: atsame53n19a
+    - name: atsame53n20a
+  - name: atsame54
+    socs:
+    - name: atsame54n19a
+    - name: atsame54n20a
+    - name: atsame54p19a
+    - name: atsame54p20a
