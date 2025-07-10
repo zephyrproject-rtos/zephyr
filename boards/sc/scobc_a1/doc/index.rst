@@ -70,6 +70,21 @@ After flashing, you should see message similar to the following in the terminal:
 Note, however, that the application was not persisted in flash memory by the
 above steps. It was merely written to internal RAM in the FPGA.
 
+You can flash the board using an external debug adapter such as CMSIS-DAP, FT2232D, or FT232R. By
+default, the SC-OBC Module A1 uses a CMSIS-DAP interface (e.g., Raspberry Pi Pico Debug Probe).
+However, if you're using an adapter such as FT2232D or FT232R, specify the interface via the
+``OPENOCD_INTERFACE`` environment variable before running ``west flash``.
+
+For example:
+
+.. code-block:: console
+
+   $ export OPENOCD_INTERFACE=FT2232D
+   $ west flash
+
+   $ export OPENOCD_INTERFACE=FT232R
+   $ west flash
+
 Debugging
 =========
 
