@@ -110,6 +110,10 @@
 	status = "okay";
 };
 
+&clk_msik {
+	status = "okay";
+};
+
 &clk_msis {
 	status = "okay";
 	msi-pll-mode;
@@ -160,6 +164,8 @@
 };
 
 &rng {
+	clocks = <&rcc STM32_CLOCK(AHB2, 18)>,
+		 <&rcc STM32_SRC_MSIK RNG_SEL(1)>;
 	status = "okay";
 };
 
