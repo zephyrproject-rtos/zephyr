@@ -227,6 +227,14 @@ struct eth_mchp_gmac_queue {
 	enum queue_idx que_idx;
 };
 
+typedef struct eth_mchp_work_data {
+	/* processing rx packets in worker thread */
+	struct k_work rx_work;
+
+	/* Pointer to Rx Queue */
+	struct eth_mchp_gmac_queue *queue;
+} eth_mchp_work_data_t;
+
 /**
  * @brief Run time data structure for the Eth peripheral.
  *
@@ -242,6 +250,9 @@ typedef struct eth_mchp_dev_data {
 
 	/* Link Status */
 	bool link_up;
+
+	/* processing rx packets in worker thread */
+	eth_mchp_work_data_t rx_work_data;
 
 	/* queue list */
 	struct eth_mchp_gmac_queue queue_list[GMAC_QUEUE_NUM];
@@ -339,6 +350,24 @@ static struct net_buf *rx_frag_list_que0[MAIN_QUEUE_RX_DESC_COUNT];
 	{                                                                                          \
 		val = (++val < max) ? val : 0;                                                     \
 	}
+
+static K_THREAD_STACK_DEFINE(eth_mchp_rx_workq_stack, CONFIG_ETH_MCHP_RX_THREAD_STACK_SIZE);
+static struct k_work_q rx_work_queue;
+
+static int rx_work_queue_init(void)
+{
+	struct k_work_queue_config cfg = {.name = "MCHP_RX_PKT"};
+
+	k_work_queue_init(&rx_work_queue);
+
+	k_work_queue_start(&rx_work_queue, eth_mchp_rx_workq_stack,
+			   K_THREAD_STACK_SIZEOF(eth_mchp_rx_workq_stack),
+			   K_PRIO_COOP(CONFIG_ETH_MCHP_RX_THREAD_PRIORITY), &cfg);
+
+	return 0;
+}
+
+SYS_INIT(rx_work_queue_init, POST_KERNEL, 0);
 
 #ifdef __DCACHE_PRESENT
 static bool dcache_enabled;
@@ -862,9 +891,15 @@ static inline void eth_queue0_isr(gmac_registers_t *gmac, struct eth_mchp_gmac_q
 	if ((isr & GMAC_INT_RX_ERR_BITS) != 0) {
 		eth_rx_error_handler(gmac, queue);
 	} else if (isr & GMAC_ISR_RCOMP_Msk) {
+		eth_mchp_dev_data_t *dev_data =
+			CONTAINER_OF(queue, eth_mchp_dev_data_t, queue_list[queue->que_idx]);
+
 		tail_desc = &rx_desc_list->buf[rx_desc_list->tail];
+
 		LOG_DBG("rx.w1=0x%08x, tail=%d", tail_desc->w1, rx_desc_list->tail);
-		eth_mchp_rx(queue);
+
+		dev_data->rx_work_data.queue = queue;
+		k_work_submit_to_queue(&rx_work_queue, &dev_data->rx_work_data.rx_work);
 	}
 
 	/* Check if TX packet completion */
@@ -1169,6 +1204,15 @@ static void eth_mchp_rx(struct eth_mchp_gmac_queue *queue)
 	}
 }
 
+static void eth_mchp_rx_thread(struct k_work *work)
+{
+	eth_mchp_work_data_t *const work_data = CONTAINER_OF(work, eth_mchp_work_data_t, rx_work);
+
+	struct eth_mchp_gmac_queue *queue = work_data->queue;
+
+	eth_mchp_rx(queue);
+}
+
 /**
  * @brief Start the Eth MAC device.
  *
@@ -1398,6 +1442,8 @@ static void eth_mchp_queue0_isr(const struct device *dev)
 static int eth_mchp_initialize(const struct device *dev)
 {
 	const eth_mchp_dev_config_t *const cfg = dev->config;
+	eth_mchp_dev_data_t *const dev_data = dev->data;
+
 	int retval;
 
 	cfg->config_func();
@@ -1426,6 +1472,9 @@ static int eth_mchp_initialize(const struct device *dev)
 			LOG_ERR("pinctrl_apply_state() Failed for Ethernet driver: %d", retval);
 			break;
 		}
+
+		k_work_init(&dev_data->rx_work_data.rx_work, eth_mchp_rx_thread);
+
 	} while (0);
 
 	return retval;

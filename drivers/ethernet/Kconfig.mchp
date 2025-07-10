@@ -113,4 +113,17 @@ config PTP_CLOCK_SAM_GMAC
 	help
 	  Enable SAM GMAC PTP Clock support.
 
+config ETH_MCHP_RX_THREAD_STACK_SIZE
+	int "MCHP RX Work thread stack size"
+	default 1600
+	help
+	  RX thread stack size in bytes.
+
+config ETH_MCHP_RX_THREAD_PRIORITY
+	int "MCHP RX work thread priority"
+	default 2
+	help
+	  Ethernet Driver handles RX in workqueue thread.
+	  This options sets the priority of that thread.
+
 endif # ETH_MCHP_GMAC
