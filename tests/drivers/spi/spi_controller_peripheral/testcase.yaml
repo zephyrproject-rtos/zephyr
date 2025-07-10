@@ -45,6 +45,22 @@ tests:
     integration_platforms:
       - nrf52840dk/nrf52840
 
+  drivers.spi.spi_1M333333Hz:
+    extra_configs:
+      - CONFIG_TESTED_SPI_MODE=0
+    extra_args: EXTRA_DTC_OVERLAY_FILE="boards/1m333333hz.overlay"
+    integration_platforms:
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
+
+  drivers.spi.spi_2M666666Hz:
+    extra_configs:
+      - CONFIG_TESTED_SPI_MODE=0
+    extra_args: EXTRA_DTC_OVERLAY_FILE="boards/2m666666hz.overlay"
+    integration_platforms:
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
+
   drivers.spi.spi_4MHz:
     extra_configs:
       - CONFIG_TESTED_SPI_MODE=2
