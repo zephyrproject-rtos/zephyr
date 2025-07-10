@@ -51,7 +51,7 @@ LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
  * The following defines are used to map the value of the "maxiumum-speed"
  * DT property to the corresponding definition used by the STM32 HAL.
  */
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(USB_OTG_HS_EMB_PHY)
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || USB_OTG_HS_EMB_PHY
 #define UDC_STM32_HIGH_SPEED             USB_OTG_SPEED_HIGH_IN_FULL
 #else
 #define UDC_STM32_HIGH_SPEED             USB_OTG_SPEED_HIGH
