@@ -1315,6 +1315,8 @@ preempt_find_preemptor:
 	}
 
 	if (ready->prepare_req != ready->prepare_ack) {
+		LL_ASSERT(0);
+
 		/* prepare_cb and preempt under race being called by mayfly at the same time.
 		 * Do not preempt a just called prepare under this race condition.
 		 */
