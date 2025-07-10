@@ -53,30 +53,6 @@ static inline bool net_socket_is_tls(void *obj)
 #define sock_is_error(ctx) sock_get_flag(ctx, SOCK_ERROR)
 #define sock_set_error(ctx) sock_set_flag(ctx, SOCK_ERROR, SOCK_ERROR)
 
-struct socket_op_vtable {
-	struct fd_op_vtable fd_vtable;
-	int (*shutdown)(void *obj, int how);
-	int (*bind)(void *obj, const struct sockaddr *addr, socklen_t addrlen);
-	int (*connect)(void *obj, const struct sockaddr *addr,
-		       socklen_t addrlen);
-	int (*listen)(void *obj, int backlog);
-	int (*accept)(void *obj, struct sockaddr *addr, socklen_t *addrlen);
-	ssize_t (*sendto)(void *obj, const void *buf, size_t len, int flags,
-			  const struct sockaddr *dest_addr, socklen_t addrlen);
-	ssize_t (*recvfrom)(void *obj, void *buf, size_t max_len, int flags,
-			    struct sockaddr *src_addr, socklen_t *addrlen);
-	int (*getsockopt)(void *obj, int level, int optname,
-			  void *optval, socklen_t *optlen);
-	int (*setsockopt)(void *obj, int level, int optname,
-			  const void *optval, socklen_t optlen);
-	ssize_t (*sendmsg)(void *obj, const struct msghdr *msg, int flags);
-	ssize_t (*recvmsg)(void *obj, struct msghdr *msg, int flags);
-	int (*getpeername)(void *obj, struct sockaddr *addr,
-			   socklen_t *addrlen);
-	int (*getsockname)(void *obj, struct sockaddr *addr,
-			   socklen_t *addrlen);
-};
-
 size_t msghdr_non_empty_iov_count(const struct msghdr *msg);
 
 #if defined(CONFIG_NET_SOCKETS_OBJ_CORE)
