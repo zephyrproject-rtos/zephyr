@@ -51,10 +51,10 @@
 #define RTC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 8, CSR1_REG)
 
 /** CFGR1 devices */
-#define MCO1_SEL(val)           STM32_DT_CLOCK_SELECT((val), 0x7, 24, CFGR1_REG)
-#define MCO1_PRE(val)           STM32_DT_CLOCK_SELECT((val), 0x7, 28, CFGR1_REG)
-#define MCO2_SEL(val)           STM32_DT_CLOCK_SELECT((val), 0x7, 16, CFGR1_REG)
-#define MCO2_PRE(val)           STM32_DT_CLOCK_SELECT((val), 0x7, 20, CFGR1_REG)
+#define MCO1_SEL(val)           STM32_DT_CLOCK_SELECT((val), 0xf, 24, CFGR1_REG)
+#define MCO1_PRE(val)           STM32_DT_CLOCK_SELECT((val), 0xf, 28, CFGR1_REG)
+#define MCO2_SEL(val)           STM32_DT_CLOCK_SELECT((val), 0xf, 16, CFGR1_REG)
+#define MCO2_PRE(val)           STM32_DT_CLOCK_SELECT((val), 0xf, 20, CFGR1_REG)
 
 /* MCO prescaler : division factor */
 #define MCO_PRE_DIV_1   0
