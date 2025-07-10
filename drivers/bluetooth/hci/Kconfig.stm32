@@ -13,3 +13,290 @@ config BT_STM32WBA_USE_TEMP_BASED_CALIB
 	help
 	  Allows the linklayer to calibrate itself on the current temperature read on the ADC4
 endmenu
+
+menu "STM32WBA RT IO DEBUG Configuration"
+	depends on BT_STM32WBA
+
+config BT_STM32WBA_RT_DEBUG_DTB
+	bool "STM32WBA Real Time Debug module for DTB usage activation"
+	default n
+	help
+	  Allows to activate STM32WBA Real Time Debug module to probe HW signals from RF PHY activity
+
+config BT_STM32WBA_RT_DEBUG_GPIO_MODULE
+	bool "STM32WBA Real Time Debug module activation"
+	default n
+	depends on GPIO
+	help
+	  Allows to activate STM32WBA Real Time Debug module to probe debug signals from Link Layer and system framework
+
+config BT_STM32WBA_USE_RT_DEBUG_CONFIGURATION_SYSTEM
+	bool "RT Debug configuration for System purpose"
+	default n
+	depends on BT_STM32WBA_RT_DEBUG_GPIO_MODULE
+	select BT_STM32WBA_USE_RT_DEBUG_SCM_SYSTEM_CLOCK_CONFIG
+	select BT_STM32WBA_USE_RT_DEBUG_SCM_SETUP
+	select BT_STM32WBA_USE_RT_DEBUG_SCM_HSERDY_ISR
+	select BT_STM32WBA_USE_RT_DEBUG_LOW_POWER_STOP_MODE_ACTIVE
+	select BT_STM32WBA_USE_RT_DEBUG_ADC_ACTIVATION
+	select BT_STM32WBA_USE_RT_DEBUG_ADC_TEMPERATURE_ACQUISITION
+	select BT_STM32WBA_USE_RT_DEBUG_LOW_POWER_STANDBY_MODE_ACTIVE
+	help
+	  Probe signal associated to Debug configuration for System purpose
+
+config BT_STM32WBA_USE_RT_DEBUG_CONFIGURATION_BLE
+	bool "RT Debug configuration for BLE purpose"
+	default n
+	depends on BT_STM32WBA_RT_DEBUG_GPIO_MODULE
+	select BT_STM32WBA_USE_RT_DEBUG_LLWCC_CMN_HG_ISR
+	select BT_STM32WBA_USE_RT_DEBUG_LLHWC_CMN_LW_ISR
+	select BT_STM32WBA_USE_RT_DEBUG_PHY_CLBR_EXEC
+	#select BT_STM32WBA_USE_RT_DEBUG_SCHDLR_EVNT_RGSTR
+	select BT_STM32WBA_USE_RT_DEBUG_SCHDLR_HNDL_MISSED_EVNT
+	select BT_STM32WBA_USE_RT_DEBUG_SCHDLR_HNDL_NXT_TRACE
+	select BT_STM32WBA_USE_RT_DEBUG_SCHDLR_EXEC_EVNT_TRACE
+	select BT_STM32WBA_USE_RT_DEBUG_PHY_CLBR_ISR
+	help
+	  Probe signal associated to Debug configuration for BLE purpose
+
+config BT_STM32WBA_USE_RT_DEBUG_CONFIGURATION_MAC
+	bool "RT Debug configuration for MAC purpose"
+	default n
+	depends on BT_STM32WBA_RT_DEBUG_GPIO_MODULE
+	help
+	  Probe signal associated to Debug configuration for MAC purpose
+
+config BT_STM32WBA_USE_RT_DEBUG_CONFIGURATION_COEX
+	bool "RT Debug configuration for COEX purpose"
+	default n
+	depends on BT_STM32WBA_RT_DEBUG_GPIO_MODULE
+	help
+	  Probe signal associated to Debug configuration for COEX purpose
+
+config BT_STM32WBA_USE_RT_DEBUG_SCM_SYSTEM_CLOCK_CONFIG
+	bool "RT Debug of System clock config in System clock manager"
+	default n
+	depends on BT_STM32WBA_RT_DEBUG_GPIO_MODULE
+	help
+	  Probe signal associated to System clock config in System clock manager
+	  Store GPIOs named 'rt-dbg-scm-sys-clock-config-gpios' in the ``/zephyr,user`` node 
+	  to reconfigure with a devicetree overlay.
+	  For example, with this devicetree overlay:
+		/ {
+			zephyr,user {
+				rt-dbg-scm-sys-clock-config-gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
+				};
+		};
+
+config BT_STM32WBA_USE_RT_DEBUG_SCM_SETUP
+	bool "RT Debug of System clock Setup in System clock manager"
+	default n
+	depends on BT_STM32WBA_RT_DEBUG_GPIO_MODULE
+	help
+	  Probe signal associated to System clock Setup in System clock manager
+	  Store GPIOs named 'rt-dbg-scm-setup-gpios' in the ``/zephyr,user`` node 
+	  to reconfigure with a devicetree overlay.
+	  For example, with this devicetree overlay:
+		/ {
+			zephyr,user {
+				rt-dbg-scm-setup-gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
+				};
+		};
+
+config BT_STM32WBA_USE_RT_DEBUG_SCM_HSERDY_ISR
+	bool "RT Debug of HSE RDY interrupt handling in System clock manager"
+	default n
+	depends on BT_STM32WBA_RT_DEBUG_GPIO_MODULE
+	help
+	  Probe signal associated to HSE RDY interrupt handling in System clock manager
+	  Store GPIOs named 'rt-dbg-scm-hse-isr-gpios' in the ``/zephyr,user`` node 
+	  to reconfigure with a devicetree overlay.
+	  For example, with this devicetree overlay:
+		/ {
+			zephyr,user {
+				rt-dbg-scm-hserdy-isr-gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
+				};
+		};
+
+config BT_STM32WBA_USE_RT_DEBUG_LOW_POWER_STOP_MODE_ACTIVE
+	bool "RT Debug of Low Power Stop Mode activationr"
+	default n
+	depends on BT_STM32WBA_RT_DEBUG_GPIO_MODULE
+	help
+	  Probe signal associated to Low Power Stop Mode activation
+	  Store GPIOs named 'rt-dbg-lowpower-stop-mode-gpios' in the ``/zephyr,user`` node 
+	  to reconfigure with a devicetree overlay.
+	  For example, with this devicetree overlay:
+		/ {
+			zephyr,user {
+				rt-dbg-lowpower-stop-mode-gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
+				};
+		};
+
+config BT_STM32WBA_USE_RT_DEBUG_ADC_ACTIVATION
+	bool "RT Debug of ADC activationr"
+	default n
+	depends on BT_STM32WBA_RT_DEBUG_GPIO_MODULE
+	help
+	  Probe signal associated to ADC activation
+	  Store GPIOs named 'rt-dbg-adc-activation-gpios' in the ``/zephyr,user`` node 
+	  to reconfigure with a devicetree overlay.
+	  For example, with this devicetree overlay:
+		/ {
+			zephyr,user {
+				rt-dbg-adc-activation-gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
+				};
+		};
+
+config BT_STM32WBA_USE_RT_DEBUG_ADC_TEMPERATURE_ACQUISITION
+	bool "RT Debug of ADC Temperature acquisition"
+	default n
+	depends on BT_STM32WBA_RT_DEBUG_GPIO_MODULE
+	help
+	  Probe signal associated to ADC Temperature acquisition
+	  Store GPIOs named 'rt-dbg-adc-temp-acquisition-gpios' in the ``/zephyr,user`` node 
+	  to reconfigure with a devicetree overlay.
+	  For example, with this devicetree overlay:
+		/ {
+			zephyr,user {
+				rt-dbg-adc-temp-acquisition-gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
+				};
+		};
+
+config BT_STM32WBA_USE_RT_DEBUG_LOW_POWER_STANDBY_MODE_ACTIVE
+	bool "RT Debug of Low Power Standby Mode activationr"
+	default n
+	depends on BT_STM32WBA_RT_DEBUG_GPIO_MODULE
+	help
+	  Probe signal associated to Low Power Standby Mode activation
+	  Store GPIOs named 'rt-dbg-lowpower-standby-mode-gpios' in the ``/zephyr,user`` node 
+	  to reconfigure with a devicetree overlay.
+	  For example, with this devicetree overlay:
+		/ {
+			zephyr,user {
+				rt-dbg-lowpower-standby-mode-gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
+				};
+		};
+
+config BT_STM32WBA_USE_RT_DEBUG_LLWCC_CMN_HG_ISR
+	bool "RT Debug of Link Layer time critical interrupt processing"
+	default n
+	depends on BT_STM32WBA_RT_DEBUG_GPIO_MODULE
+	help
+	  Probe signal associated to time critical interrupt processing in the Link Layer
+	  Store GPIOs named 'rt-dbg-llwcc-cmn-hg-isr-gpios' in the ``/zephyr,user`` node 
+	  to reconfigure with a devicetree overlay.
+	  For example, with this devicetree overlay:
+		/ {
+			zephyr,user {
+				rt-dbg-llwcc-cmn-hg-isr-gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
+				};
+		};
+
+config BT_STM32WBA_USE_RT_DEBUG_LLHWC_CMN_LW_ISR
+	bool "RT Debug of Link Layer interrupt processing with no hard time constraints"
+	default n
+	depends on BT_STM32WBA_RT_DEBUG_GPIO_MODULE
+	help
+	  Probe signal associated to interrupt processing done in low priority interrupt ISR context in the Link Layer
+	  Store GPIOs named 'rt-dbg-llhwc-cmn-lw-isr-gpios' in the ``/zephyr,user`` node 
+	  to reconfigure with a devicetree overlay.
+	  For example, with this devicetree overlay:
+		/ {
+			zephyr,user {
+				rt-dbg-llhwc-cmn-lw-isr-gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
+				};
+		};
+
+config BT_STM32WBA_USE_RT_DEBUG_PHY_CLBR_EXEC
+	bool "RT Debug of Link Layer PHY Calibration execution"
+	default n
+	depends on BT_STM32WBA_RT_DEBUG_GPIO_MODULE
+	help
+	  Probe signal associated to PHY Calibration execution in the Link Layer
+	  Store GPIOs named 'rt-dbg-phy-clbr-exec-gpios' in the ``/zephyr,user`` node 
+	  to reconfigure with a devicetree overlay.
+	  For example, with this devicetree overlay:
+		/ {
+			zephyr,user {
+				rt-dbg-phy-clbr-exec-gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
+				};
+		};
+
+config BT_STM32WBA_USE_RT_DEBUG_SCHDLR_EVNT_RGSTR
+	bool "RT Debug of Link Layer when register an event to the event scheduler"
+	default n
+	depends on BT_STM32WBA_RT_DEBUG_GPIO_MODULE
+	help
+	  Probe signal associated to registration of an event to the event scheduler in the Link Layer
+	  Store GPIOs named 'rt-dbg-schdr-evnt-rgstr-gpios' in the ``/zephyr,user`` node 
+	  to reconfigure with a devicetree overlay.
+	  For example, with this devicetree overlay:
+		/ {
+			zephyr,user {
+				rt-dbg-schdr-evnt-rgstr-gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
+				};
+		};
+
+
+config BT_STM32WBA_USE_RT_DEBUG_SCHDLR_HNDL_MISSED_EVNT
+	bool "RT Debug of Link Layer when scheduler handle a missed event"
+	default n
+	depends on BT_STM32WBA_RT_DEBUG_GPIO_MODULE
+	help
+	  Probe signal associated to the handling of a missed event by the scheduler in the Link Layer
+	  Store GPIOs named 'rt-dbg-schdr-hndl-missed-evnt-gpios' in the ``/zephyr,user`` node 
+	  to reconfigure with a devicetree overlay.
+	  For example, with this devicetree overlay:
+		/ {
+			zephyr,user {
+				rt-dbg-schdr-hndl-missed-evnt-gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
+				};
+		};
+
+
+config BT_STM32WBA_USE_RT_DEBUG_SCHDLR_HNDL_NXT_TRACE
+	bool "RT Debug of Link Layer prepares the system to send the next event"
+	default n
+	depends on BT_STM32WBA_RT_DEBUG_GPIO_MODULE
+	help
+	  Probe signal associated to prepararation by the system to send the next event in the Link Layer
+	  Store GPIOs named 'rt-dbg-schdlr-hndl-nxt-trace-gpios' in the ``/zephyr,user`` node 
+	  to reconfigure with a devicetree overlay.
+	  For example, with this devicetree overlay:
+		/ {
+			zephyr,user {
+				rt-dbg-schdlr-hndl-nxt-trace-gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
+				};
+		};
+
+config BT_STM32WBA_USE_RT_DEBUG_SCHDLR_EXEC_EVNT_TRACE
+	bool "RT Debug of Link Layer searches and schedules the nearest and highest priority event to be on the air"
+	default n
+	depends on BT_STM32WBA_RT_DEBUG_GPIO_MODULE
+	help
+	  Probe signal associated to the scheduling of the next event on the air in the Link Layer
+	  Store GPIOs named 'rt-dbg-schdlr-exec-evnt-trace-gpios' in the ``/zephyr,user`` node 
+	  to reconfigure with a devicetree overlay.
+	  For example, with this devicetree overlay:
+		/ {
+			zephyr,user {
+				rt-dbg-schdlr-exec-evnt-trace-gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
+				};
+		};
+
+config BT_STM32WBA_USE_RT_DEBUG_PHY_CLBR_ISR
+	bool "RT Debug of Link Layer PHY Calibration ISR activation"
+	default n
+	depends on BT_STM32WBA_RT_DEBUG_GPIO_MODULE
+	help
+	  Probe signal associated to PHY Calibration ISR activation in the Link Layer
+	  Store GPIOs named 'rt-dbg-phy-clbr-isr-gpios' in the ``/zephyr,user`` node 
+	  to reconfigure with a devicetree overlay.
+	  For example, with this devicetree overlay:
+		/ {
+			zephyr,user {
+				rt-dbg-phy-clbr-isr-gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
+				};
+		};
+endmenu

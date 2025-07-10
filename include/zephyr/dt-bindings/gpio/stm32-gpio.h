@@ -15,6 +15,7 @@
  *
  * - Bit 8: Configure a GPIO pin to power on the system after Poweroff.
  * - Bit 10..9: Configure the output speed of a GPIO pin.
+ * - Bit 11: GPIO PWR retention in Standby mode (0=Disable, 1=Enable)
  *
  * @ingroup gpio_interface
  * @{
@@ -44,6 +45,23 @@
 /** Configure the GPIO pin output speed to be very high */
 #define STM32_GPIO_VERY_HIGH_SPEED (0x3 << STM32_GPIO_SPEED_SHIFT)
 
+/** @} */
+
+/**
+ * @name GPIO PWR retention in Standby mode flags
+ * @brief GPIO PWR retention in Standby mode flags
+ * @{
+ */
+
+/** @cond INTERNAL_HIDDEN */
+#define STM32_GPIO_PWR_RETENTION_STANDBY_SHIFT  11
+#define STM32_GPIO_PWR_RETENTION_STANDBY_MASK   0x0800U
+/** @endcond */
+
+/** Disable GPIO PWR retention in Standby mode */
+#define STM32_GPIO_PWR_RETENTION_STANDBY_OFF (0U << STM32_GPIO_PWR_RETENTION_STANDBY_SHIFT)
+/** Enable GPIO PWR retention in Standby mode */
+#define STM32_GPIO_PWR_RETENTION_STANDBY_ON (1U << STM32_GPIO_PWR_RETENTION_STANDBY_SHIFT)
 /** @} */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_STM32_GPIO_H_ */
