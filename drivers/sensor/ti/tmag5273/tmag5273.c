@@ -58,6 +58,7 @@ struct tmag5273_config {
 	uint8_t temperature_coefficient;
 	uint8_t angle_magnitude_axis;
 	uint8_t ch_mag_gain_correction;
+	uint8_t mag_gain_correction;
 
 	uint8_t operation_mode;
 	uint8_t averaging;
@@ -1075,6 +1076,13 @@ static inline int tmag5273_init_sensor_settings(const struct tmag5273_config *dr
 		return -EIO;
 	}
 
+	retval = i2c_reg_write_byte_dt(&drv_cfg->i2c, TMAG5273_REG_MAG_GAIN_CONFIG,
+				       drv_cfg->mag_gain_correction);
+	if (retval < 0) {
+		LOG_ERR("error setting MAG_GAIN_CONFIG %d", retval);
+		return -EIO;
+	}
+
 	return 0;
 }
 
@@ -1258,6 +1266,7 @@ static DEVICE_API(sensor, tmag5273_driver_api) = {
 			DT_PROP(DT_INST(inst, compat), temperature_coefficient),                   \
 		.angle_magnitude_axis = DT_PROP(DT_INST(inst, compat), angle_magnitude_axis),      \
 		.ch_mag_gain_correction = DT_PROP(DT_INST(inst, compat), ch_mag_gain_correction),  \
+		.mag_gain_correction = DT_PROP(DT_INST(inst, compat), mag_gain_correction),        \
 		.operation_mode = DT_PROP(DT_INST(inst, compat), operation_mode),                  \
 		.averaging = DT_PROP(DT_INST(inst, compat), average_mode),                         \
 		.trigger_conv_via_int =                                                            \
