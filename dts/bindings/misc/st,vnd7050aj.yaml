@@ -85,4 +85,3 @@ properties:
     description: |
       Temperature sense gain coefficient multiplied by 1000.
       Used for chip temperature calculation.
-      
