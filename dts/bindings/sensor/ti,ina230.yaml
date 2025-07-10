@@ -16,15 +16,6 @@ compatible: "ti,ina230"
 include: ti,ina23x-common.yaml
 
 properties:
-  config:
-    type: int
-    deprecated: true
-    default: 0x0000
-    description: |
-      Value of the configuration register
-      e.g shunt voltage and bus voltage ADC conversion
-      times, ADC and averaging, and ADC operating mode.
-
   alert-config:
     type: int
     description: Diag alert register, default matches the power-on reset value
@@ -40,7 +31,7 @@ properties:
       - "Shunt Voltage single shot"
       - "Bus Voltage single shot"
       - "Bus and Shunt Voltage single shot"
-      - "Shutdown continuous"
+      - "invalid"
       - "Shunt voltage continuous"
       - "Bus voltage continuous"
       - "Bus and shunt voltage continuous"
@@ -80,3 +71,7 @@ properties:
     default: 0
     # default alert limit is 0V
     description: Alert register, default matches the power-on reset value
+
+  direction-invert:
+    type: boolean
+    description: Invert the direction of reported current and power flow
