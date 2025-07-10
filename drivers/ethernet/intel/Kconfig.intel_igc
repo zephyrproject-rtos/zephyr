@@ -1,0 +1,29 @@
+# Copyright (c) 2025 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ETH_INTEL_IGC
+	bool "Intel IGC MAC driver"
+	default y
+	depends on DT_HAS_INTEL_IGC_MAC_ENABLED
+	select MDIO
+	select PCIE_MSI_MULTI_VECTOR
+	select PCIE_MSI_X
+	help
+	  Ethernet device driver for Intel i226 MAC.
+
+if ETH_INTEL_IGC
+
+config ETH_INTEL_IGC_INT_PRIORITY
+	int "Interrupt priority"
+	default 6
+	help
+	  MSI-X vectors priority for IGC interrupts.
+
+config ETH_INTEL_IGC_NET_MTU
+	int "MTU size"
+	default 1500
+	range 64 1522
+	help
+	  Maximum Transmission Unit (MTU) size configuration.
+
+endif # ETH_INTEL_IGC
