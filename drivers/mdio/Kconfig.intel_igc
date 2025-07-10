@@ -1,0 +1,20 @@
+# Copyright 2025 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MDIO_INTEL_IGC
+	bool "Intel IGC MDIO driver"
+	default y
+	depends on DT_HAS_INTEL_IGC_MDIO_ENABLED
+	help
+	  Enable Intel IGC MDIO driver.
+
+if MDIO_INTEL_IGC
+
+config MDIO_INTEL_BUSY_CHECK_TIMEOUT
+	int "MDIO_INTEL_IGC busy wait timeout"
+	default 10000
+	help
+	  This timeout in microseconds, specifies the duration to wait for the
+	  completion of an MDIO read or write cycle.
+
+endif # MDIO_INTEL_IGC
