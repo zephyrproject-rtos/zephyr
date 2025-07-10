@@ -10,6 +10,7 @@
  */
 
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
 #include "bmm350.h"
 
 LOG_MODULE_REGISTER(BMM350, CONFIG_SENSOR_LOG_LEVEL);
@@ -70,40 +71,6 @@ static int bmm350_read_otp_word(const struct device *dev, uint8_t addr, uint16_t
 	return ret;
 }
 
-static int32_t fix_sign(uint32_t inval, int8_t number_of_bits)
-{
-	int32_t signed_value = 0;
-	int32_t power = 0;
-
-	switch ((enum bmm350_signed_bit)number_of_bits) {
-	case BMM350_SIGNED_8_BIT:
-		power = 128; /* 2^7 */
-		break;
-	case BMM350_SIGNED_12_BIT:
-		power = 2048; /* 2^11 */
-		break;
-	case BMM350_SIGNED_16_BIT:
-		power = 32768; /* 2^15 */
-		break;
-	case BMM350_SIGNED_21_BIT:
-		power = 1048576; /* 2^20 */
-		break;
-	case BMM350_SIGNED_24_BIT:
-		power = 8388608; /* 2^23 */
-		break;
-	default:
-		power = 0;
-		break;
-	}
-
-	signed_value = (int32_t)inval;
-	if (signed_value >= power) {
-		signed_value = signed_value - (power * 2);
-	}
-
-	return signed_value;
-}
-
 static void bmm350_update_mag_off_sens(struct bmm350_data *data)
 {
 	uint16_t off_x_lsb_msb, off_y_lsb_msb, off_z_lsb_msb, t_off = 0;
@@ -119,11 +86,11 @@ static void bmm350_update_mag_off_sens(struct bmm350_data *data)
 			(data->otp_data[BMM350_MAG_OFFSET_Z] & BMM350_LSB_MASK);
 	t_off = data->otp_data[BMM350_TEMP_OFF_SENS] & BMM350_LSB_MASK;
 
-	data->mag_comp.dut_offset_coef.offset_x = fix_sign(off_x_lsb_msb, BMM350_SIGNED_12_BIT);
-	data->mag_comp.dut_offset_coef.offset_y = fix_sign(off_y_lsb_msb, BMM350_SIGNED_12_BIT);
-	data->mag_comp.dut_offset_coef.offset_z = fix_sign(off_z_lsb_msb, BMM350_SIGNED_12_BIT);
+	data->mag_comp.dut_offset_coef.offset_x = sign_extend(off_x_lsb_msb, BMM350_SIGNED_12_BIT);
+	data->mag_comp.dut_offset_coef.offset_y = sign_extend(off_y_lsb_msb, BMM350_SIGNED_12_BIT);
+	data->mag_comp.dut_offset_coef.offset_z = sign_extend(off_z_lsb_msb, BMM350_SIGNED_12_BIT);
 	data->mag_comp.dut_offset_coef.t_offs =
-		fix_sign(t_off, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
+		sign_extend(t_off, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
 	data->mag_comp.dut_offset_coef.t_offs = data->mag_comp.dut_offset_coef.t_offs / 5;
 
 	sens_x = (data->otp_data[BMM350_MAG_SENS_X] & BMM350_MSB_MASK) >> 8;
@@ -132,13 +99,13 @@ static void bmm350_update_mag_off_sens(struct bmm350_data *data)
 	t_sens = (data->otp_data[BMM350_TEMP_OFF_SENS] & BMM350_MSB_MASK) >> 8;
 
 	data->mag_comp.dut_sensit_coef.sens_x =
-		fix_sign(sens_x, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
+		sign_extend(sens_x, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
 	data->mag_comp.dut_sensit_coef.sens_y =
-		fix_sign(sens_y, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
+		sign_extend(sens_y, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
 	data->mag_comp.dut_sensit_coef.sens_z =
-		fix_sign(sens_z, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
+		sign_extend(sens_z, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
 	data->mag_comp.dut_sensit_coef.t_sens =
-		fix_sign(t_sens, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
+		sign_extend(t_sens, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
 
 	data->mag_comp.dut_sensit_coef.sens_x = (data->mag_comp.dut_sensit_coef.sens_x / 256);
 	data->mag_comp.dut_sensit_coef.sens_y = (data->mag_comp.dut_sensit_coef.sens_y / 256);
@@ -150,11 +117,11 @@ static void bmm350_update_mag_off_sens(struct bmm350_data *data)
 	tco_z = (data->otp_data[BMM350_MAG_TCO_Z] & BMM350_LSB_MASK);
 
 	data->mag_comp.dut_tco.tco_x =
-		fix_sign(tco_x, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
+		sign_extend(tco_x, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
 	data->mag_comp.dut_tco.tco_y =
-		fix_sign(tco_y, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
+		sign_extend(tco_y, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
 	data->mag_comp.dut_tco.tco_z =
-		fix_sign(tco_z, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
+		sign_extend(tco_z, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
 
 	data->mag_comp.dut_tco.tco_x = (data->mag_comp.dut_tco.tco_x / 32);
 	data->mag_comp.dut_tco.tco_y = (data->mag_comp.dut_tco.tco_y / 32);
@@ -165,18 +132,18 @@ static void bmm350_update_mag_off_sens(struct bmm350_data *data)
 	tcs_z = (data->otp_data[BMM350_MAG_TCS_Z] & BMM350_MSB_MASK) >> 8;
 
 	data->mag_comp.dut_tcs.tcs_x =
-		fix_sign(tcs_x, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
+		sign_extend(tcs_x, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
 	data->mag_comp.dut_tcs.tcs_y =
-		fix_sign(tcs_y, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
+		sign_extend(tcs_y, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
 	data->mag_comp.dut_tcs.tcs_z =
-		fix_sign(tcs_z, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
+		sign_extend(tcs_z, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
 
 	data->mag_comp.dut_tcs.tcs_x = (data->mag_comp.dut_tcs.tcs_x / 16384);
 	data->mag_comp.dut_tcs.tcs_y = (data->mag_comp.dut_tcs.tcs_y / 16384);
 	data->mag_comp.dut_tcs.tcs_z = (data->mag_comp.dut_tcs.tcs_z / 16384);
 
 	data->mag_comp.dut_t0 =
-		(fix_sign(data->otp_data[BMM350_MAG_DUT_T_0], BMM350_SIGNED_16_BIT) / 512) + 23;
+		(sign_extend(data->otp_data[BMM350_MAG_DUT_T_0], BMM350_SIGNED_16_BIT) / 512) + 23;
 
 	cross_x_y = (data->otp_data[BMM350_CROSS_X_Y] & BMM350_LSB_MASK);
 	cross_y_x = (data->otp_data[BMM350_CROSS_Y_X] & BMM350_MSB_MASK) >> 8;
@@ -184,13 +151,13 @@ static void bmm350_update_mag_off_sens(struct bmm350_data *data)
 	cross_z_y = (data->otp_data[BMM350_CROSS_Z_Y] & BMM350_MSB_MASK) >> 8;
 
 	data->mag_comp.cross_axis.cross_x_y =
-		fix_sign(cross_x_y, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
+		sign_extend(cross_x_y, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
 	data->mag_comp.cross_axis.cross_y_x =
-		fix_sign(cross_y_x, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
+		sign_extend(cross_y_x, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
 	data->mag_comp.cross_axis.cross_z_x =
-		fix_sign(cross_z_x, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
+		sign_extend(cross_z_x, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
 	data->mag_comp.cross_axis.cross_z_y =
-		fix_sign(cross_z_y, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
+		sign_extend(cross_z_y, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
 
 	data->mag_comp.cross_axis.cross_x_y = (data->mag_comp.cross_axis.cross_x_y / 800);
 	data->mag_comp.cross_axis.cross_y_x = (data->mag_comp.cross_axis.cross_y_x / 800);
@@ -446,25 +413,10 @@ static int bmm350_read_uncomp_mag_temp_data(const struct device *dev,
 		raw_temp = (uint32_t)mag_data[11] + ((uint32_t)mag_data[12] << 8) +
 			   ((uint32_t)mag_data[13] << 16);
 
-		if ((data->axis_en & BMM350_EN_X_MSK) == BMM350_DISABLE) {
-			raw_data->raw_xdata = BMM350_DISABLE;
-		} else {
-			raw_data->raw_xdata = fix_sign(raw_mag_x, BMM350_SIGNED_24_BIT);
-		}
-
-		if ((data->axis_en & BMM350_EN_Y_MSK) == BMM350_DISABLE) {
-			raw_data->raw_ydata = BMM350_DISABLE;
-		} else {
-			raw_data->raw_ydata = fix_sign(raw_mag_y, BMM350_SIGNED_24_BIT);
-		}
-
-		if ((data->axis_en & BMM350_EN_Z_MSK) == BMM350_DISABLE) {
-			raw_data->raw_zdata = BMM350_DISABLE;
-		} else {
-			raw_data->raw_zdata = fix_sign(raw_mag_z, BMM350_SIGNED_24_BIT);
-		}
-
-		raw_data->raw_data_temp = fix_sign(raw_temp, BMM350_SIGNED_24_BIT);
+		raw_data->raw_xdata = sign_extend(raw_mag_x, BMM350_SIGNED_24_BIT);
+		raw_data->raw_ydata = sign_extend(raw_mag_y, BMM350_SIGNED_24_BIT);
+		raw_data->raw_zdata = sign_extend(raw_mag_z, BMM350_SIGNED_24_BIT);
+		raw_data->raw_data_temp = sign_extend(raw_temp, BMM350_SIGNED_24_BIT);
 	}
 
 	return rslt;
@@ -593,23 +545,9 @@ bmm350_get_compensated_mag_xyz_temp_data_fixed(const struct device *dev,
 
 		LOG_DBG("mag data %d %d %d", out_data[0], out_data[1], out_data[2]);
 
-		if ((data->axis_en & BMM350_EN_X_MSK) == BMM350_DISABLE) {
-			mag_temp_data->x = BMM350_DISABLE;
-		} else {
-			mag_temp_data->x = out_data[0];
-		}
-
-		if ((data->axis_en & BMM350_EN_Y_MSK) == BMM350_DISABLE) {
-			mag_temp_data->y = BMM350_DISABLE;
-		} else {
-			mag_temp_data->y = out_data[1];
-		}
-
-		if ((data->axis_en & BMM350_EN_Z_MSK) == BMM350_DISABLE) {
-			mag_temp_data->z = BMM350_DISABLE;
-		} else {
-			mag_temp_data->z = out_data[2];
-		}
+		mag_temp_data->x = out_data[0];
+		mag_temp_data->y = out_data[1];
+		mag_temp_data->z = out_data[2];
 		mag_temp_data->temperature = out_data[3];
 	}
 
@@ -1088,9 +1026,6 @@ static int bmm350_init(const struct device *dev)
 		return -EINVAL;
 	}
 #endif
-
-	/* Assign axis_en with all axis enabled (BMM350_EN_XYZ_MSK) */
-	data->axis_en = BMM350_EN_XYZ_MSK;
 
 	/* Initialize to odr and osr */
 	if (set_mag_odr_osr(dev, &odr, &osr) < 0) {
