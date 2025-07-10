@@ -1,0 +1,62 @@
+/*
+ * Copyright (c) 2025 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <microchip/sam/sam_d5x_e5x/atsame54/atsame54p20a.dtsi>
+#include "sam_e54_xpro-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "SAM E54 Xplained Pro";
+	compatible = "same54,xpro", "microchip,atsame54p20a", "microchip,same54";
+
+	chosen {
+		zephyr,console = &sercom2;
+		zephyr,shell-uart = &sercom2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * The final 16 KiB is reserved for the application.
+		 * Storage partition will be used by FCB/LittleFS/NVS
+		 * if enabled.
+		 */
+		storage_partition: partition@fc000 {
+			label = "storage";
+			reg = <0x000fc000 0x00004000>;
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <48000000>;
+};
+
+&sercom2 {
+	status = "okay";
+	compatible = "microchip,sercom-g1-uart";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+	stop-bits = "1";
+
+	rxpo = <1>;
+	txpo = <0>;
+
+	pinctrl-0 = <&sercom2_uart_default>;
+	pinctrl-names = "default";
+};
