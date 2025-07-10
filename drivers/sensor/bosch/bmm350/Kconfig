@@ -9,6 +9,7 @@ menuconfig BMM350
 	default y
 	depends on DT_HAS_BOSCH_BMM350_ENABLED
 	select I2C
+	select I2C_RTIO
 	help
 	  Enable driver for BMM350 I2C-based Geomagnetic sensor.
 
