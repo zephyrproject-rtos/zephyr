@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +24,13 @@ LOG_MODULE_REGISTER(pwm_renesas_rz_gpt, CONFIG_PWM_LOG_LEVEL);
 
 #define CAPTURE_BOTH_MODE_FIRST_EVENT_IS_CAPTURE_PULSE   1
 #define CAPTURE_BOTH_MODE_SECOND_EVENT_IS_CAPTURE_PERIOD 2
+
+#define RZ_GPT_GTIOR_OAE_Msk    (0x100UL)
+#define RZ_GPT_GTIOR_OADFLT_Pos (6UL)
+#define RZ_GPT_GTIOR_GTIOA_Pos  (0UL)
+#define RZ_GPT_GTIOR_GTIOB_Pos  (16UL)
+#define RZ_GPT_GTIOR_NFAEN_Pos  (13UL)
+#define RZ_GPT_GTIOR_NFBEN_Pos  (29UL)
 
 struct pwm_rz_gpt_capture_data {
 	pwm_capture_callback_handler_t callback;
@@ -53,8 +60,8 @@ struct pwm_rz_gpt_config {
 
 static uint32_t pwm_rz_gpt_gtior_calculate(gpt_pin_level_t const stop_level)
 {
-	/* The stop level is used as both the initial level and the stop level. */
-	uint32_t gtior = R_GPT0_GTIOR_OAE_Msk | ((uint32_t)stop_level << R_GPT0_GTIOR_OADFLT_Pos) |
+	/* The stop level is used as both the initial level and the stop level */
+	uint32_t gtior = RZ_GPT_GTIOR_OAE_Msk | ((uint32_t)stop_level << RZ_GPT_GTIOR_OADFLT_Pos) |
 			 ((uint32_t)stop_level << GPT_PRV_GTIOR_INITIAL_LEVEL_BIT);
 
 	uint32_t gtion = GPT_PRV_GTIO_LOW_COMPARE_MATCH_HIGH_CYCLE_END;
@@ -69,37 +76,28 @@ static int pwm_rz_gpt_apply_gtior_config(gpt_instance_ctrl_t *const p_ctrl,
 					 timer_cfg_t const *const p_cfg)
 {
 	gpt_extended_cfg_t *p_extend = (gpt_extended_cfg_t *)p_cfg->p_extend;
-	uint32_t gtior = p_extend->gtior_setting.gtior;
+	uint32_t gtior = 0;
 
 #if GPT_CFG_OUTPUT_SUPPORT_ENABLE
-	/* Check if custom GTIOR settings are provided. */
-	if (p_extend->gtior_setting.gtior == 0) {
-		/* If custom GTIOR settings are not provided, calculate GTIOR. */
-		if (p_extend->gtioca.output_enabled) {
-			uint32_t gtioca_gtior =
-				pwm_rz_gpt_gtior_calculate(p_extend->gtioca.stop_level);
-			gtior |= gtioca_gtior << R_GPT0_GTIOR_GTIOA_Pos;
-		}
+	/* Calculate GTIOR */
+	if (p_extend->gtioca.output_enabled) {
+		uint32_t gtioca_gtior = pwm_rz_gpt_gtior_calculate(p_extend->gtioca.stop_level);
 
-		if (p_extend->gtiocb.output_enabled) {
-			uint32_t gtiocb_gtior =
-				pwm_rz_gpt_gtior_calculate(p_extend->gtiocb.stop_level);
-			gtior |= gtiocb_gtior << R_GPT0_GTIOR_GTIOB_Pos;
-		}
+		gtior |= gtioca_gtior << RZ_GPT_GTIOR_GTIOA_Pos;
+	}
+
+	if (p_extend->gtiocb.output_enabled) {
+		uint32_t gtiocb_gtior = pwm_rz_gpt_gtior_calculate(p_extend->gtiocb.stop_level);
+
+		gtior |= gtiocb_gtior << RZ_GPT_GTIOR_GTIOB_Pos;
 	}
 #endif
 
-	/* Check if custom GTIOR settings are provided. */
-	if (p_extend->gtior_setting.gtior == 0) {
-		/*
-		 * If custom GTIOR settings are not provided, configure the noise filter for
-		 * the GTIOC pins.
-		 */
-		gtior |= (uint32_t)(p_extend->capture_filter_gtioca << R_GPT0_GTIOR_NFAEN_Pos);
-		gtior |= (uint32_t)(p_extend->capture_filter_gtiocb << R_GPT0_GTIOR_NFBEN_Pos);
-	}
+	/* Configure the noise filter for the GTIOC pins */
+	gtior |= (uint32_t)(p_extend->capture_filter_gtioca << RZ_GPT_GTIOR_NFAEN_Pos);
+	gtior |= (uint32_t)(p_extend->capture_filter_gtiocb << RZ_GPT_GTIOR_NFBEN_Pos);
 
-	/* Set the I/O control register. */
+	/* Set the I/O control register */
 	p_ctrl->p_reg->GTIOR = gtior;
 
 	return 0;
@@ -115,7 +113,7 @@ static int pwm_rz_gpt_set_cycles(const struct device *dev, uint32_t channel, uin
 	fsp_err_t err;
 	uint32_t pin;
 
-	/* gtioca and gtiocb setting */
+	/* GTIOCA and GTIOCB setting */
 	if (channel == RZ_PWM_GPT_IO_A) {
 		pin = GPT_IO_PIN_GTIOCA;
 		fsp_cfg_extend->gtioca.output_enabled = true;
@@ -187,12 +185,7 @@ static int pwm_rz_gpt_get_cycles_per_sec(const struct device *dev, uint32_t chan
 	return 0;
 };
 
-extern void gpt_capture_a_isr(void);
-extern void gpt_capture_b_isr(void);
-extern void gpt_counter_overflow_isr(void);
-
 #ifdef CONFIG_PWM_CAPTURE
-
 static int pwm_rz_gpt_configure_capture(const struct device *dev, uint32_t channel,
 					pwm_flags_t flags, pwm_capture_callback_handler_t cb,
 					void *user_data)
@@ -546,7 +539,6 @@ static void fsp_callback(timer_callback_args_t *p_args)
 		}
 	}
 }
-
 #endif /* CONFIG_PWM_CAPTURE */
 
 static DEVICE_API(pwm, pwm_rz_gpt_driver_api) = {
@@ -572,10 +564,10 @@ static int pwm_rz_gpt_init(const struct device *dev)
 		return err;
 	}
 
-#if defined(CONFIG_PWM_CAPTURE)
+#ifdef CONFIG_PWM_CAPTURE
 	data->fsp_cfg->p_callback = fsp_callback;
 	data->fsp_cfg->p_context = dev;
-#endif /* defined(CONFIG_PWM_CAPTURE) */
+#endif /* CONFIG_PWM_CAPTURE */
 
 	err = cfg->fsp_api->open(data->fsp_ctrl, data->fsp_cfg);
 	if (err != FSP_SUCCESS) {
@@ -591,20 +583,50 @@ static int pwm_rz_gpt_init(const struct device *dev)
 
 #define GPT(idx) DT_INST_PARENT(idx)
 
+#ifdef CONFIG_PWM_CAPTURE
+extern void gpt_capture_compare_a_isr(void);
+extern void gpt_capture_compare_b_isr(void);
+extern void gpt_counter_overflow_isr(void);
+
+static void pwm_rz_gpt_ccmpa_isr(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	gpt_capture_compare_a_isr();
+}
+
+static void pwm_rz_gpt_ccmpb_isr(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	gpt_capture_compare_b_isr();
+}
+
+static void pwm_rz_gpt_ovf_isr(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	gpt_counter_overflow_isr();
+}
+
+#ifdef CONFIG_CPU_CORTEX_M
+#define GPT_GET_IRQ_FLAGS(idx, irq_name) 0
+#else /* Cortex-A/R */
+#define GPT_GET_IRQ_FLAGS(idx, irq_name) DT_IRQ_BY_NAME(GPT(idx), irq_name, flags)
+#endif
+
 #define PWM_RZ_IRQ_CONFIG_INIT(inst)                                                               \
 	do {                                                                                       \
 		IRQ_CONNECT(DT_IRQ_BY_NAME(GPT(inst), ccmpa, irq),                                 \
-			    DT_IRQ_BY_NAME(GPT(inst), ccmpa, priority), gpt_capture_a_isr, NULL,   \
-			    0);                                                                    \
+			    DT_IRQ_BY_NAME(GPT(inst), ccmpa, priority), pwm_rz_gpt_ccmpa_isr,      \
+			    DEVICE_DT_INST_GET(inst), GPT_GET_IRQ_FLAGS(inst, ccmpa));             \
 		IRQ_CONNECT(DT_IRQ_BY_NAME(GPT(inst), ccmpb, irq),                                 \
-			    DT_IRQ_BY_NAME(GPT(inst), ccmpb, priority), gpt_capture_b_isr, NULL,   \
-			    0);                                                                    \
+			    DT_IRQ_BY_NAME(GPT(inst), ccmpb, priority), pwm_rz_gpt_ccmpb_isr,      \
+			    DEVICE_DT_INST_GET(inst), GPT_GET_IRQ_FLAGS(inst, ccmpb));             \
 		IRQ_CONNECT(DT_IRQ_BY_NAME(GPT(inst), ovf, irq),                                   \
-			    DT_IRQ_BY_NAME(GPT(inst), ovf, priority), gpt_counter_overflow_isr,    \
-			    NULL, 0);                                                              \
+			    DT_IRQ_BY_NAME(GPT(inst), ovf, priority), pwm_rz_gpt_ovf_isr,          \
+			    DEVICE_DT_INST_GET(inst), GPT_GET_IRQ_FLAGS(inst, ovf));               \
 	} while (0)
+#endif /* CONFIG_PWM_CAPTURE */
 
-#define PWM_RZG_INIT(inst)                                                                         \
+#define PWM_RZ_INIT(inst)                                                                          \
 	PINCTRL_DT_INST_DEFINE(inst);                                                              \
 	static gpt_instance_ctrl_t g_timer##inst##_ctrl;                                           \
 	static gpt_extended_cfg_t g_timer##inst##_extend = {                                       \
@@ -632,7 +654,6 @@ static int pwm_rz_gpt_init(const struct device *dev)
 		.capture_filter_gtioca = GPT_CAPTURE_FILTER_NONE,                                  \
 		.capture_filter_gtiocb = GPT_CAPTURE_FILTER_NONE,                                  \
 		.p_pwm_cfg = NULL,                                                                 \
-		.gtior_setting.gtior = (0x0U),                                                     \
 	};                                                                                         \
 	static timer_cfg_t g_timer##inst##_cfg = {                                                 \
 		.mode = TIMER_MODE_PWM,                                                            \
@@ -650,7 +671,8 @@ static int pwm_rz_gpt_init(const struct device *dev)
 		.fsp_cfg = &g_timer##inst##_cfg, .fsp_ctrl = &g_timer##inst##_ctrl};               \
 	static int pwm_rz_gpt_init_##inst(const struct device *dev)                                \
 	{                                                                                          \
-		PWM_RZ_IRQ_CONFIG_INIT(inst);                                                      \
+		IF_ENABLED(CONFIG_PWM_CAPTURE,                                 \
+			    (PWM_RZ_IRQ_CONFIG_INIT(inst);))                   \
 		int err = pwm_rz_gpt_init(dev);                                                    \
 		if (err != 0) {                                                                    \
 			return err;                                                                \
@@ -661,4 +683,4 @@ static int pwm_rz_gpt_init(const struct device *dev)
 			      &pwm_rz_gpt_config_##inst, POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,    \
 			      &pwm_rz_gpt_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(PWM_RZG_INIT);
+DT_INST_FOREACH_STATUS_OKAY(PWM_RZ_INIT);
