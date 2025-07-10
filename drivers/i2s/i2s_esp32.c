@@ -1108,37 +1108,12 @@ static int i2s_esp32_configure(const struct device *dev, enum i2s_dir dir,
 #endif /* I2S_ESP32_IS_DIR_EN(tx) */
 		break;
 	case I2S_DIR_BOTH:
-#if I2S_ESP32_IS_DIR_EN(tx)
-		stream = &dev_cfg->tx;
-		if (stream) {
-			err = i2s_esp32_configure_dir(dev, I2S_DIR_TX, stream, i2s_cfg);
-		} else {
-			LOG_ERR("I2S_DIR_TX not enabled");
-			err = -EINVAL;
-		}
-#else
-		LOG_ERR("I2S_DIR_TX not enabled");
-		err = -EINVAL;
-#endif /* I2S_ESP32_IS_DIR_EN(tx) */
-		if (err < 0) {
-			break;
-		}
-#if I2S_ESP32_IS_DIR_EN(rx)
-		stream = &dev_cfg->rx;
-		if (stream) {
-			err = i2s_esp32_configure_dir(dev, I2S_DIR_RX, stream, i2s_cfg);
-		} else {
-			LOG_ERR("I2S_DIR_RX not enabled");
-			err = -EINVAL;
-		}
-#else
-		LOG_ERR("I2S_DIR_RX not enabled");
-		err = -EINVAL;
-#endif /* I2S_ESP32_IS_DIR_EN(rx) */
+		LOG_ERR("I2S_DIR_BOTH not supported");
+		err = -ENOSYS;
 		break;
 	default:
 		LOG_ERR("Invalid direction: %d", (int)dir);
-		return -EINVAL;
+		err = -EINVAL;
 	}
 
 	return err;
@@ -1347,33 +1322,8 @@ static int i2s_esp32_trigger(const struct device *dev, enum i2s_dir dir, enum i2
 #endif /* I2S_ESP32_IS_DIR_EN(tx) */
 		break;
 	case I2S_DIR_BOTH:
-#if I2S_ESP32_IS_DIR_EN(tx)
-		stream = &dev_cfg->tx;
-		if (stream) {
-			err = i2s_esp32_trigger_stream(dev, stream, I2S_DIR_TX, cmd);
-		} else {
-			LOG_ERR("I2S_DIR_TX not enabled");
-			err = -EINVAL;
-		}
-#else
-		LOG_ERR("I2S_DIR_TX not enabled");
-		err = -EINVAL;
-#endif /* I2S_ESP32_IS_DIR_EN(tx) */
-		if (err < 0) {
-			break;
-		}
-#if I2S_ESP32_IS_DIR_EN(rx)
-		stream = &dev_cfg->rx;
-		if (stream) {
-			err = i2s_esp32_trigger_stream(dev, stream, I2S_DIR_RX, cmd);
-		} else {
-			LOG_ERR("I2S_DIR_RX not enabled");
-			err = -EINVAL;
-		}
-#else
-		LOG_ERR("I2S_DIR_RX not enabled");
-		err = -EINVAL;
-#endif /* I2S_ESP32_IS_DIR_EN(rx) */
+		LOG_ERR("I2S_DIR_BOTH not supported");
+		err = -ENOSYS;
 		break;
 	default:
 		LOG_ERR("Invalid direction: %d", (int)dir);
