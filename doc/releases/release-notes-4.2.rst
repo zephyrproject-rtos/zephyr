@@ -63,6 +63,7 @@ The following CVEs are addressed by this release:
   <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-06-6/>`_
 * :cve:`2025-47917` `Misleading memory management in mbedtls_x509_string_to_names()
   <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-06-7/>`_
+* :cve:`2025-7403`: Under embargo until 2025-09-05
 
 More detailed information can be found in:
 https://docs.zephyrproject.org/latest/security/vulnerabilities.html
