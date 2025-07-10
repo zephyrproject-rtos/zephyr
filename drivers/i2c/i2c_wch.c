@@ -170,7 +170,7 @@ static void i2c_wch_slave_event_isr(const struct device *dev)
 		uint8_t val = (uint8_t)(regs->DATAR & I2C_DR_DATAR);
 
 		if (slave_cb->write_received(data->slave_cfg, val)) {
-			regs->CTLR1 &= I2C_NACKPosition_Current;
+			regs->CTLR1 &= ~I2C_CTLR1_ACK;
 		}
 		return;
 	}
@@ -530,7 +530,7 @@ int i2c_wch_target_register(const struct device *dev, struct i2c_target_config *
 	}
 
 	data->slave_cfg = config;
-	if (data->slave_cfg->flags == I2C_TARGET_FLAGS_ADDR_10_BITS)	{
+	if (data->slave_cfg->flags == I2C_TARGET_FLAGS_ADDR_10_BITS) {
 		return -ENOTSUP;
 	}
 
@@ -572,10 +572,11 @@ int i2c_wch_target_unregister(const struct device *dev, struct i2c_target_config
 		regs->STAR1 &= ~I2C_STAR1_AF;
 	}
 
-	if (status & I2C_CTLR1_STOP) {
+	if (status & I2C_STAR1_STOPF) {
 		(void)(regs->STAR1);
 		regs->CTLR1 &= regs->CTLR1;
 	}
+
 	if (status & I2C_STAR1_ADDR) {
 		(void)(regs->STAR1);
 		(void)(regs->STAR2);
