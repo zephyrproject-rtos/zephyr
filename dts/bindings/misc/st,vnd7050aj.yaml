@@ -57,36 +57,32 @@ properties:
 
   k-factor:
     type: int
-    required: false
     default: 1500
     description: |
       Factor between PowerMOS and SenseMOS.
 
   k-vcc:
     type: int
-    required: false
     default: 8000
     description: |
       VCC sense ratio multiplied by 1000. Used for supply voltage calculation.
 
   t-sense-0:
     type: int
-    required: false
     default: 25
     description: |
       Temperature sense reference temperature in degrees Celsius.
 
   v-sense-0:
     type: int
-    required: false
     default: 2070
     description: |
       Temperature sense reference voltage in millivolts.
 
   k-tchip:
     type: int
-    required: false
     default: -5500
     description: |
       Temperature sense gain coefficient multiplied by 1000.
       Used for chip temperature calculation.
+      

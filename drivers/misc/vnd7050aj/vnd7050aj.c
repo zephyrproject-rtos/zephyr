@@ -33,11 +33,11 @@ struct vnd7050aj_config {
 	struct gpio_dt_spec fault_reset_gpio;
 	struct adc_dt_spec io_channels;
 	uint32_t r_sense_ohms;
-	uint32_t k_factor;          /* Current sense ratio */
-	uint32_t k_vcc;             /* VCC sense ratio * 1000 */
-	int32_t t_sense_0;          /* Temp sense reference temperature in °C */
-	uint32_t v_sense_0;         /* Temp sense reference voltage in mV */
-	uint32_t k_tchip;           /* Temp sense gain in °C/mV * 1000 */
+	uint32_t k_factor;  /* Current sense ratio */
+	uint32_t k_vcc;     /* VCC sense ratio * 1000 */
+	int32_t t_sense_0;  /* Temp sense reference temperature in °C */
+	uint32_t v_sense_0; /* Temp sense reference voltage in mV */
+	uint32_t k_tchip;   /* Temp sense gain in °C/mV * 1000 */
 };
 
 struct vnd7050aj_data {
@@ -235,7 +235,7 @@ static int vnd7050aj_read_sense_voltage(const struct device *dev, enum vnd7050aj
 		LOG_ERR("ADC raw to millivolts conversion failed: %d", err);
 		goto cleanup;
 	}
-	LOG_DBG("Raw reading %dmV", *voltage_mv);
+	LOG_DBG("ADC Reading (without processing) %dmV", *voltage_mv);
 
 cleanup:
 	/* Deactivate sense enable to save power */
@@ -280,15 +280,15 @@ int vnd7050aj_read_chip_temp(const struct device *dev, int32_t *temp_c)
 	if (err) {
 		return err;
 	}
-	
+
 	/* Calculate temperature difference in kelvin first to avoid overflow */
 	int32_t voltage_diff = sense_mv - (int32_t)config->v_sense_0;
 	int32_t temp_diff_kelvin = (voltage_diff * 1000) / (int32_t)config->k_tchip;
-	
+
 	*temp_c = config->t_sense_0 + temp_diff_kelvin;
-	
-	LOG_DBG("Voltage diff: %d mV, Temp diff: %d milli°C, Final temp: %d °C",
-		voltage_diff, temp_diff_kelvin, *temp_c);
+
+	LOG_DBG("Voltage diff: %d mV, Temp diff: %d milli°C, Final temp: %d °C", voltage_diff,
+		temp_diff_kelvin, *temp_c);
 
 	return 0;
 }

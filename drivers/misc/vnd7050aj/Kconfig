@@ -1,10 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+
 config VND7050AJ
 	bool "VND7050AJ driver"
 	default n
+	select ADC
+	select GPIO
 	help
 	    Enable support for the VND7050AJ high-side driver.
-    select ADC
-    select GPIO
 
 if VND7050AJ
     config VND7050AJ_INIT_PRIORITY

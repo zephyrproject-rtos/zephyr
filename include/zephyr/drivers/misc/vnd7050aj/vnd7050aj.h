@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_POWER_VND7050AJ_H_
-#define ZEPHYR_INCLUDE_DRIVERS_POWER_VND7050AJ_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_MISC_VND7050AJ_H_
+#define ZEPHYR_INCLUDE_DRIVERS_MISC_VND7050AJ_H_
 
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
@@ -71,4 +71,4 @@ int vnd7050aj_reset_fault(const struct device *dev);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_POWER_VND7050AJ_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_MISC_VND7050AJ_H_ */
