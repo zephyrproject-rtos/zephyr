@@ -393,7 +393,6 @@ int bmm350_magnetic_reset(const struct device *dev)
 static int bmm350_read_uncomp_mag_temp_data(const struct device *dev,
 					    struct bmm350_raw_mag_data *raw_data)
 {
-	struct bmm350_data *data = dev->data;
 	int rslt;
 	uint8_t mag_data[14] = {0};
 	uint32_t raw_mag_x, raw_mag_y, raw_mag_z, raw_temp;
@@ -1003,7 +1002,6 @@ static int bmm350_init(const struct device *dev)
 {
 	int err = 0;
 	const struct bmm350_config *config = dev->config;
-	struct bmm350_data *data = dev->data;
 	const struct sensor_value osr = {config->default_osr, 0};
 	struct sensor_value odr;
 
@@ -1036,8 +1034,6 @@ static int bmm350_init(const struct device *dev)
 	return 0;
 }
 
-/* Initializes a struct bmm350_config for an instance on an I2C bus. */
-#define BMM350_CONFIG_I2C(inst) .bus.i2c = I2C_DT_SPEC_INST_GET(inst), .bus_io = &bmm350_bus_io_i2c,
 #define BMM350_INT_CFG(inst)                                                                       \
 	.drdy_int = GPIO_DT_SPEC_INST_GET_OR(inst, drdy_gpios, {0}),                               \
 	.int_flags =                                                                               \
@@ -1046,10 +1042,18 @@ static int bmm350_init(const struct device *dev)
 		BMM350_INT_CTRL_DRDY_DATA_REG_EN_MSK | BMM350_INT_CTRL_INT_OUTPUT_EN_MSK,
 
 #define BMM350_DEFINE(inst)                                                                        \
+                                                                                                   \
+	RTIO_DEFINE(bmm350_rtio_ctx_##inst, 8, 8);                                                 \
+	I2C_DT_IODEV_DEFINE(bmm350_bus_##inst, DT_DRV_INST(inst));                                 \
+                                                                                                   \
 	static struct bmm350_data bmm350_data_##inst;                                              \
 	static const struct bmm350_config bmm350_config_##inst = {                                 \
-		.bus.i2c = I2C_DT_SPEC_INST_GET(inst),                                             \
-		.bus_io = &bmm350_bus_io_i2c,                                                      \
+		.bus.rtio = {                                                                      \
+			.ctx = &bmm350_rtio_ctx_##inst,                                            \
+			.iodev = &bmm350_bus_##inst,                                               \
+			.type = BMM350_BUS_TYPE_I2C,                                               \
+		},										   \
+		.bus_io = &bmm350_bus_rtio,                                                        \
 		.default_odr = DT_INST_ENUM_IDX(inst, odr) + BMM350_DATA_RATE_400HZ,               \
 		.default_osr = DT_INST_PROP(inst, osr),                                            \
 		.drive_strength = DT_INST_PROP(inst, drive_strength),                              \

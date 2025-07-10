@@ -15,12 +15,22 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/rtio/rtio.h>
 
 #define DT_DRV_COMPAT bosch_bmm350
 
 #define BMM350_BUS_I2C DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 
+enum bmm350_bus_type {
+	BMM350_BUS_TYPE_I2C,
+};
+
 struct bmm350_bus {
+	struct {
+		struct rtio *ctx;
+		struct rtio_iodev *iodev;
+		enum bmm350_bus_type type;
+	} rtio;
 	struct i2c_dt_spec i2c;
 };
 
@@ -35,7 +45,7 @@ struct bmm350_bus_io {
 	bmm350_reg_write_fn write;
 };
 
-extern const struct bmm350_bus_io bmm350_bus_io_i2c;
+extern const struct bmm350_bus_io bmm350_bus_rtio;
 
 #include <zephyr/types.h>
 #include <zephyr/drivers/i2c.h>
