@@ -1,6 +1,11 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
@@ -39,6 +44,15 @@
 				write-block-size = <4>;
 				erase-block-size = <2048>;
 			};
+		};
+
+		adc0: adc@40002000 {
+			compatible = "silabs,gecko-adc";
+			reg = <0x40002000 0x400>;
+			interrupts = <15 0>;
+			frequency = <16000000>;
+			#io-channel-cells = <1>;
+			status = "disabled";
 		};
 
 		usart0: usart@40010000 { /* USART0 */
@@ -116,8 +130,8 @@
 
 		gpio: gpio@4000a400 {
 			compatible = "silabs,gecko-gpio";
-			reg = <0x4000a400 0xc00>;
-			interrupts = <10 2 18 2>;
+			reg = <0x4000a000 0x1000>;
+			interrupts = <10 2>, <18 2>;
 			interrupt-names = "GPIO_EVEN", "GPIO_ODD";
 
 			ranges;
@@ -231,11 +245,6 @@
 			interrupts = <49 0>;
 			status = "disabled";
 		};
-	};
-
-	bt_hci_silabs: bt_hci_silabs {
-		compatible = "silabs,bt-hci-efr32";
-		status = "disabled";
 	};
 
 	pinctrl: pin-controller {

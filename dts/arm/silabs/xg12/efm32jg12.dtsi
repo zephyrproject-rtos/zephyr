@@ -5,13 +5,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <silabs/efm32_jg_pg_12b.dtsi>
+#include <silabs/xg12/xg12.dtsi>
 
-/ {
-	cpus {
-		cpu0: cpu@0 {
-			compatible = "arm,cortex-m3";
-			reg = <0>;
-		};
-	};
+&cpu0 {
+	compatible = "arm,cortex-m3";
+	reg = <0>;
 };
