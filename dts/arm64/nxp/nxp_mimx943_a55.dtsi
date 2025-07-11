@@ -350,6 +350,90 @@
 		ngpios = <16>;
 		status = "disabled";
 	};
+
+	netc_blk_ctrl: netc-blk-ctrl@4ceb0000 {
+		compatible = "nxp,imx-netc-blk-ctrl";
+		reg = <0x4ceb0000 0x10000>,
+		      <0x4cec0000 0x10000>,
+		      <0x4c810000 0x7c>;
+		reg-names = "ierb", "prb", "netcmix";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		netc: ethernet {
+			compatible = "nxp,imx-netc";
+			msi-parent = <&its>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			enetc_psi0: ethernet@4cc80000 {
+				compatible = "nxp,imx-netc-psi";
+				reg = <0x4cc80000 0x40000>,
+				      <0x4cb00000 0x1000>;
+				reg-names = "port", "pfconfig";
+				msi-device-id = <0x65>;
+				mac-index = <0>;
+				si-index = <0>;
+				status = "disabled";
+			};
+
+			enetc_psi1: ethernet@4ccc0000 {
+				compatible = "nxp,imx-netc-psi";
+				reg = <0x4ccc0000 0x40000>,
+				      <0x4cb40000 0x1000>;
+				reg-names = "port", "pfconfig";
+				msi-device-id = <0x66>;
+				mac-index = <1>;
+				si-index = <1>;
+				status = "disabled";
+			};
+
+			enetc_psi2: ethernet@4cd00000 {
+				compatible = "nxp,imx-netc-psi";
+				reg = <0x4cd00000 0x40000>,
+				      <0x4cb80000 0x1000>;
+				reg-names = "port", "pfconfig";
+				msi-device-id = <0x67>;
+				mac-index = <2>;
+				si-index = <2>;
+				status = "disabled";
+			};
+
+			netc_ptp_clock0: ptp_clock@4cd80000 {
+				compatible = "nxp,netc-ptp-clock";
+				reg = <0x4cd80000 0x10000>;
+				clocks = <&scmi_clk IMX943_CLK_ENET>;
+				status = "disabled";
+			};
+
+			netc_ptp_clock1: ptp_clock@4cda0000 {
+				compatible = "nxp,netc-ptp-clock";
+				reg = <0x4cda0000 0x10000>;
+				clocks = <&scmi_clk IMX943_CLK_ENET>;
+				status = "disabled";
+			};
+
+			netc_ptp_clock2: ptp_clock@4cdc0000 {
+				compatible = "nxp,netc-ptp-clock";
+				reg = <0x4cdc0000 0x10000>;
+				clocks = <&scmi_clk IMX943_CLK_ENET>;
+				status = "disabled";
+			};
+
+			emdio: mdio@4cbc0000 {
+				compatible = "nxp,imx-netc-emdio";
+				reg = <0x4cde0000 0x2000>,
+					<0x4cbc0000 0x40000>;
+				reg-names = "basic", "pfconfig";
+				clocks = <&scmi_clk IMX943_CLK_ENET>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+		};
+	};
 };
 
 /*
