@@ -30,3 +30,11 @@ properties:
       Maximum time, in milliseconds, allowed for a single transfer on the MSPI
       bus in communication with the flash chip. The default value is the one
       that was previously hard-coded in the flash_mspi_nor driver.
+
+  use-4byte-addressing:
+    type: boolean
+    description: |
+      Indicates that 4-byte addressing is to be used in communication with
+      the flash chip. The driver will use dedicated instruction codes for
+      commands that require addresses (like Read, Page Program, or Erase)
+      and will switch the flash chip to 4-byte addressing mode if necessary.
