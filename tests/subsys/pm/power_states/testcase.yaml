@@ -13,7 +13,7 @@ common:
       peak_padding: 40
       measurement_duration: 6
       num_of_transitions: 4
-      expected_rms_values: [56.0, 4.0, 1.2, 0.26, 140]
+      expected_rms_values: [5.6, 0.4, 0.14, 0.026, 14]
       tolerance_percentage: 20
     record:
       regex:
