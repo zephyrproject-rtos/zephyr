@@ -29,8 +29,8 @@ void sys_trace_thread_pend_user(struct k_thread *thread);
 void sys_trace_isr_enter_user(void);
 void sys_trace_isr_exit_user(void);
 void sys_trace_idle_user(void);
-void sys_trace_sys_init_enter_user(const struct init_entry *entry, int level);
-void sys_trace_sys_init_exit_user(const struct init_entry *entry, int level, int result);
+void sys_trace_sys_init_enter_user(const union init_entry *entry, int level);
+void sys_trace_sys_init_exit_user(const union init_entry *entry, int level, int result);
 
 void sys_trace_thread_create(struct k_thread *thread);
 void sys_trace_thread_abort(struct k_thread *thread);
@@ -47,8 +47,8 @@ void sys_trace_isr_enter(void);
 void sys_trace_isr_exit(void);
 void sys_trace_idle(void);
 void sys_trace_idle_exit(void);
-void sys_trace_sys_init_enter(const struct init_entry *entry, int level);
-void sys_trace_sys_init_exit(const struct init_entry *entry, int level, int result);
+void sys_trace_sys_init_enter(const union init_entry *entry, int level);
+void sys_trace_sys_init_exit(const union init_entry *entry, int level, int result);
 
 struct gpio_callback;
 typedef uint8_t gpio_pin_t;
