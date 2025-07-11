@@ -5774,13 +5774,6 @@ West:
   tests:
     - thrift
 
-"West project: tinycrypt":
-  status: odd fixes
-  files:
-    - modules/Kconfig.tinycrypt
-  labels:
-    - "area: Crypto / RNG"
-
 "West project: trusted-firmware-a":
   status: maintained
   maintainers:
