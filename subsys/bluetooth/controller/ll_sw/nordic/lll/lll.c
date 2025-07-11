@@ -805,6 +805,8 @@ void lll_isr_early_abort(void *param)
 {
 	int err;
 
+	radio_status_reset();
+
 	radio_isr_set(isr_race, param);
 	if (!radio_is_idle()) {
 		radio_disable();
