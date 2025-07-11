@@ -179,6 +179,8 @@ elseif((${MCUX_DEVICE} MATCHES "MIMXRT(5|6)") OR (${MCUX_DEVICE} MATCHES "RW61")
   set_variable_ifdef(CONFIG_HAS_MCUX_CACHE		CONFIG_MCUX_COMPONENT_driver.cache_cache64)
 elseif((${MCUX_DEVICE} MATCHES "MK(28|66)") OR (${MCUX_DEVICE} MATCHES "MKE(14|16|18)") OR (CONFIG_SOC_MIMXRT1166_CM4) OR (CONFIG_SOC_MIMXRT1176_CM4))
   set_variable_ifdef(CONFIG_HAS_MCUX_CACHE		CONFIG_MCUX_COMPONENT_driver.cache_lmem)
+elseif(CONFIG_CPU_CORTEX_A)
+  set_variable_ifdef(CONFIG_HAS_MCUX_CACHE              CONFIG_MCUX_COMPONENT_driver.cache_armv8_a)
 endif()
   set_variable_ifdef(CONFIG_HAS_MCUX_XCACHE		CONFIG_MCUX_COMPONENT_driver.cache_xcache)
 
