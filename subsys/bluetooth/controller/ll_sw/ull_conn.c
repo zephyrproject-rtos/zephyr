@@ -2179,7 +2179,7 @@ void ull_conn_resume_rx_data(struct ll_conn *conn)
 
 uint16_t ull_conn_event_counter_at_prepare(const struct ll_conn *conn)
 {
-	return conn->lll.event_counter + conn->lll.latency_prepare + conn->llcp.prep.lazy;
+	return conn->event_counter + conn->llcp.prep.lazy;
 }
 
 uint16_t ull_conn_event_counter(struct ll_conn *conn)
@@ -2379,6 +2379,11 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 			conn_interval_old_us - conn_interval_new_us);
 	}
 
+	/* Adjust ULL event counter */
+	conn->event_counter += conn->llcp.prep.lazy;
+	conn->event_counter -= (instant_latency - latency_upd);
+
+	/* Adjust LLL prepare latency */
 	lll->latency_prepare += conn->llcp.prep.lazy;
 	lll->latency_prepare -= (instant_latency - latency_upd);
 
@@ -2391,43 +2396,52 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 
 	/* calculate the window widening and interval */
 	switch (lll->role) {
+
 #if defined(CONFIG_BT_PERIPHERAL)
 	case BT_HCI_ROLE_PERIPHERAL:
 		/* Since LLL prepare doesn't get to run, accumulate window widening here */
 		lll->periph.window_widening_prepare_us += lll->periph.window_widening_periodic_us *
-							  (conn->llcp.prep.lazy + 1);
-		if (lll->periph.window_widening_prepare_us > lll->periph.window_widening_max_us) {
-			lll->periph.window_widening_prepare_us =
-				lll->periph.window_widening_max_us;
-		}
+							  (conn->llcp.prep.lazy + 1U);
 
+		/* Remove old window widening for the latency events */
 		lll->periph.window_widening_prepare_us -=
 			lll->periph.window_widening_periodic_us * instant_latency;
-
-		lll->periph.window_widening_periodic_us =
-			DIV_ROUND_UP(((lll_clock_ppm_local_get() +
-					   lll_clock_ppm_get(conn->periph.sca)) *
-					  conn_interval_us), 1000000U);
-		lll->periph.window_widening_max_us = (conn_interval_us >> 1U) - EVENT_IFS_US;
-		lll->periph.window_size_prepare_us = win_size * CONN_INT_UNIT_US;
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 		conn->periph.ticks_to_offset = 0U;
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
+		/* Calculate new window widening per connection event and permitted maximum value */
+		lll->periph.window_widening_periodic_us =
+			DIV_ROUND_UP(((lll_clock_ppm_local_get() +
+					   lll_clock_ppm_get(conn->periph.sca)) *
+					  conn_interval_us), 1000000U);
+		lll->periph.window_widening_max_us = (conn_interval_us >> 1U) - EVENT_IFS_US;
+
+		/* Use requested window size for anchor point at instant, until successful sync */
+		lll->periph.window_size_prepare_us = win_size * CONN_INT_UNIT_US;
+
+		/* Accumulated new window widening for latency events */
 		lll->periph.window_widening_prepare_us +=
 			lll->periph.window_widening_periodic_us * latency_upd;
 		if (lll->periph.window_widening_prepare_us > lll->periph.window_widening_max_us) {
 			lll->periph.window_widening_prepare_us = lll->periph.window_widening_max_us;
 		}
 
+		/* Adjust for future window widening */
 		ticks_at_expire -= HAL_TICKER_US_TO_TICKS(lll->periph.window_widening_periodic_us *
 							  latency_upd);
+
+		/* Window Offset */
 		ticks_win_offset = HAL_TICKER_US_TO_TICKS((win_offset_us / CONN_INT_UNIT_US) *
 							  CONN_INT_UNIT_US);
+
+		/* Periodic interval considering window widening */
 		periodic_us -= lll->periph.window_widening_periodic_us;
+
 		break;
 #endif /* CONFIG_BT_PERIPHERAL */
+
 #if defined(CONFIG_BT_CENTRAL)
 	case BT_HCI_ROLE_CENTRAL:
 		ticks_win_offset = HAL_TICKER_US_TO_TICKS(win_offset_us);
@@ -2439,6 +2453,7 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 		ticks_win_offset += 1U;
 		break;
 #endif /*CONFIG_BT_CENTRAL */
+
 	default:
 		LL_ASSERT(0);
 		break;
