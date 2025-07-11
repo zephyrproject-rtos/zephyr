@@ -93,6 +93,12 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 
+			scmi_devpd: protocol@11 {
+				compatible = "arm,scmi-power";
+				reg = <0x11>;
+				#power-domain-cells = <1>;
+			};
+
 			scmi_clk: protocol@14 {
 				compatible = "arm,scmi-clock";
 				reg = <0x14>;
