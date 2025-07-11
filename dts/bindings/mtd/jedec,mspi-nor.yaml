@@ -38,3 +38,9 @@ properties:
       the flash chip. The driver will use dedicated instruction codes for
       commands that require addresses (like Read, Page Program, or Erase)
       and will switch the flash chip to 4-byte addressing mode if necessary.
+
+  initial-soft-reset:
+    type: boolean
+    description: |
+      When set, the flash driver performs software reset of the flash chip
+      at initialization.
