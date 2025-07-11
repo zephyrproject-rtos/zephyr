@@ -7,6 +7,15 @@
 #include <st/c0/stm32c031.dtsi>
 
 / {
+	clocks {
+		clk_hsi48: clk-hsi48 {
+			#clock-cells = <0>;
+			compatible = "st,stm32-hsi48-clock";
+			clock-frequency = <DT_FREQ_M(48)>;
+			status = "disabled";
+		};
+	};
+
 	soc {
 		compatible = "st,stm32c071", "st,stm32c0", "simple-bus";
 
