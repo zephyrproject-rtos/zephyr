@@ -93,6 +93,7 @@ static void uac2_terminal_update_cb(const struct device *dev, uint8_t terminal,
 	    !ctx->microphone_enabled) {
 		i2s_trigger(ctx->i2s_dev, I2S_DIR_BOTH, I2S_TRIGGER_DROP);
 		ctx->i2s_started = false;
+		ctx->rx_started = false;
 		ctx->i2s_counter = 0;
 		ctx->plus_ones = ctx->minus_ones = 0;
 		if (ctx->pending_mic_samples) {
@@ -172,6 +173,7 @@ static void uac2_data_recv_cb(const struct device *dev, uint8_t terminal,
 	ret = i2s_write(ctx->i2s_dev, buf, size);
 	if (ret < 0) {
 		ctx->i2s_started = false;
+		ctx->rx_started = false;
 		ctx->i2s_counter = 0;
 		ctx->plus_ones = ctx->minus_ones = 0;
 		if (ctx->pending_mic_samples) {
