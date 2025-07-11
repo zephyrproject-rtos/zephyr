@@ -12,5 +12,6 @@
 #define _SOC_H_
 
 #include "reg_protection.h"
+#include <bsp_api.h>
 
 #endif /* _SOC_H_ */

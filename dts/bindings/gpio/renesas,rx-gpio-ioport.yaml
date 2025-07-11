@@ -1,0 +1,27 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RX GPIO IO port
+
+compatible: "renesas,rx-gpio-ioport"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  port:
+    type: int
+    required: true
+
+  vbatts-pins:
+    type: array
+    description: Array of vbatt pin on port
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags
