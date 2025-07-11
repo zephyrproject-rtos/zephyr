@@ -98,6 +98,7 @@
 
 #define USES_4BYTE_ADDR(inst) \
 	(USES_OCTAL_IO(inst) || \
+	 DT_INST_PROP(inst, use_4byte_addressing) || \
 	 BFP_DW1_ADDRESS_BYTES(inst) == JESD216_SFDP_BFP_DW1_ADDRBYTES_VAL_4B)
 
 #define BFP_ENTER_4BYTE_ADDR_METHODS(inst) \
@@ -345,12 +346,26 @@
 	BUILD_ASSERT(!USES_8D_8D_8D(inst) || \
 		     BFP_DW18_CMD_EXT(inst) <= BFP_DW18_CMD_EXT_INV, \
 		"Unsupported Octal Command Extension mode in " \
+			DT_NODE_FULL_NAME(DT_DRV_INST(inst))); \
+	BUILD_ASSERT(!DT_INST_PROP(inst, use_4byte_addressing) || \
+		     (BFP_DW1_ADDRESS_BYTES(inst) \
+		      != JESD216_SFDP_BFP_DW1_ADDRBYTES_VAL_3B), \
+		"Cannot use 4-byte addressing for " \
+			DT_NODE_FULL_NAME(DT_DRV_INST(inst))); \
+	BUILD_ASSERT(!DT_INST_PROP(inst, use_4byte_addressing) || \
+		     (BFP_ENTER_4BYTE_ADDR_METHODS(inst) \
+		      & (BFP_DW16_4B_ADDR_ENTER_B7 | \
+			 BFP_DW16_4B_ADDR_ENTER_06_B7 | \
+			 BFP_DW16_4B_ADDR_PER_CMD | \
+			 BFP_DW16_4B_ADDR_ALWAYS)), \
+		"No supported method of entering 4-byte addressing mode for " \
 			DT_NODE_FULL_NAME(DT_DRV_INST(inst)))
 
 #else
 
 #define USES_4BYTE_ADDR(inst) \
-	(DT_INST_ENUM_IDX(inst, mspi_io_mode) == MSPI_IO_MODE_OCTAL)
+	(DT_INST_ENUM_IDX(inst, mspi_io_mode) == MSPI_IO_MODE_OCTAL || \
+	 DT_INST_PROP(inst, use_4byte_addressing))
 
 #define DEFAULT_CMD_INFO(inst) { \
 	.pp_cmd = USES_4BYTE_ADDR(inst) \
