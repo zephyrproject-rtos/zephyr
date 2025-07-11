@@ -1318,7 +1318,9 @@ preempt_find_preemptor:
 		/* Returns -EBUSY when same curr and next state/role, do not
 		 * abort same curr and next event.
 		 */
-		if (err != -EBUSY) {
+		if (err == -EBUSY) {
+			ready->prepare_param.defer = 1U;
+		} else {
 			/* Let preemptor LLL know about the cancelled prepare */
 			ready->is_aborted = 1;
 			ready->abort_cb(&ready->prepare_param, ready->prepare_param.param);
