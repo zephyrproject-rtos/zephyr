@@ -134,7 +134,7 @@ jobs:
           EXTRA_TWISTER_FLAGS="-P native_sim --short-build-path -O /tmp/twister-out"
         fi
         BASIC_FLAGS="--runtime-artifact-cleanup --force-color --inline-logs -v $EXTRA_TWISTER_FLAGS"
-        ./scripts/twister --sub-test kernel.multiprocessing.spinlock.minimallibc.spinlock.spinlock_basic --platform qemu_x86 --create-rom-ram-report --footprint-report ROM --enable-size-report --footprint-from-buildlog $BASIC_FLAGS
+        ./scripts/twister --sub-test kernel.multiprocessing.spinlock.minimallibc.spinlock.spinlock_basic --platform qemu_x86 --create-rom-ram-report --footprint-report ROM --enable-size-report --footprint-from-buildlog $BASIC_FLAGS --detailed-test-id
 
     - name: Build firmware No. 7 - list tags
       working-directory: zephyr
@@ -146,7 +146,7 @@ jobs:
           EXTRA_TWISTER_FLAGS="-P native_sim --short-build-path -O /tmp/twister-out"
         fi
         BASIC_FLAGS="--runtime-artifact-cleanup --force-color --inline-logs -v $EXTRA_TWISTER_FLAGS"
-        ./scripts/twister --sub-test kernel.multiprocessing.spinlock.minimallibc.spinlock.spinlock_basic --list-tags $BASIC_FLAGS
+        ./scripts/twister --sub-test kernel.multiprocessing.spinlock.minimallibc.spinlock.spinlock_basic --list-tags $BASIC_FLAGS --detailed-test-id
 
     - name: Build firmware No. 8 - list tests
       working-directory: zephyr
@@ -170,7 +170,7 @@ jobs:
           EXTRA_TWISTER_FLAGS="-P native_sim --short-build-path -O /tmp/twister-out"
         fi
         BASIC_FLAGS="--runtime-artifact-cleanup --force-color --inline-logs -v $EXTRA_TWISTER_FLAGS"
-        ./scripts/twister --sub-test kernel.multiprocessing.spinlock.minimallibc.spinlock.spinlock_basic --platform qemu_x86 --report-dir . --report-name test_name --report-suffix suffix --report-summary 0 --report-all-options --report-filtered $BASIC_FLAGS
+        ./scripts/twister --sub-test kernel.multiprocessing.spinlock.minimallibc.spinlock.spinlock_basic --platform qemu_x86 --report-dir . --report-name test_name --report-suffix suffix --report-summary 0 --report-all-options --report-filtered $BASIC_FLAGS --detailed-test-id
 
     - name: Build firmware No. 10 - force platform and toolchain, log level, timestamps, logfile
       working-directory: zephyr
@@ -182,5 +182,5 @@ jobs:
           EXTRA_TWISTER_FLAGS="-P native_sim --short-build-path -O /tmp/twister-out"
         fi
         BASIC_FLAGS="--runtime-artifact-cleanup --force-color --inline-logs -v $EXTRA_TWISTER_FLAGS"
-        ./scripts/twister --sub-test kernel.multiprocessing.spinlock.minimallibc.spinlock.spinlock_basic --force-platform --platform qemu_x86 --force-toolchain --log-level WARNING --log-file log.file $BASIC_FLAGS
+        ./scripts/twister --sub-test kernel.multiprocessing.spinlock.minimallibc.spinlock.spinlock_basic --force-platform --platform qemu_x86 --force-toolchain --log-level WARNING --log-file log.file $BASIC_FLAGS --detailed-test-id
         rm log.file

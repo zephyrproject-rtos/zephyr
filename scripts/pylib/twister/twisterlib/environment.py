@@ -618,8 +618,8 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
              "and 'sleep.usleep' test Case (where 'sleep' is its Ztest suite name "
              "and 'usleep' is Ztest test name.")
 
-    # Include paths in names by default.
-    parser.set_defaults(detailed_test_id=True)
+    # Do not include paths in names by default.
+    parser.set_defaults(detailed_test_id=False)
 
     parser.add_argument(
         "--detailed-skipped-report", action="store_true",
