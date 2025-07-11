@@ -71,6 +71,10 @@ The ENET0, ENETC1, ENETC2 ports could be enabled for M33 by west build option
 
 The two switch ports could be verified via :zephyr:code-sample:`dsa`.
 
+For A55 Core, ENET0, ENETC1, ENETC2 ports are enabled by default, so no overlay is
+needed, but NETC depends on GIC ITS, so need to make sure to allocate heap memory to
+be larger than 851968 byes by setting CONFIG_HEAP_MEM_POOL_SIZE.
+
 Programming and Debugging (A55)
 *******************************
 
