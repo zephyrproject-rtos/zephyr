@@ -8,6 +8,7 @@ common:
   min_flash: 1024
   platform_allow:
     - mimxrt685_evk/mimxrt685s/cm33
+    - mimxrt700_evk/mimxrt798s/cm33_cpu0
   harness: console
   harness_config:
     type: one_line
