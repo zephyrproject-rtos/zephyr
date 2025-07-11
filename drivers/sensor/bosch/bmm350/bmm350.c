@@ -1,5 +1,7 @@
 /*
  * Copyright (c) 2024 Bosch Sensortec GmbH
+ * Copyright (c) 2025 Croxel, Inc.
+ * Copyright (c) 2025 CogniPilot Foundation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +14,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 #include "bmm350.h"
+#include "bmm350_decoder.h"
 
 LOG_MODULE_REGISTER(BMM350, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -387,184 +390,21 @@ int bmm350_magnetic_reset(const struct device *dev)
 	}
 	return ret;
 }
-/*!
- * @brief This API is used to read uncompensated mag and temperature data.
- */
-static int bmm350_read_uncomp_mag_temp_data(const struct device *dev,
-					    struct bmm350_raw_mag_data *raw_data)
-{
-	int rslt;
-	uint8_t mag_data[14] = {0};
-	uint32_t raw_mag_x, raw_mag_y, raw_mag_z, raw_temp;
-
-	__ASSERT_NO_MSG(raw_data != NULL);
-
-	/* Get uncompensated mag data */
-	rslt = bmm350_reg_read(dev, BMM350_REG_MAG_X_XLSB, mag_data, sizeof(mag_data));
-
-	if (rslt == 0) {
-		raw_mag_x = (uint32_t)mag_data[2] + ((uint32_t)mag_data[3] << 8) +
-			    ((uint32_t)mag_data[4] << 16);
-		raw_mag_y = (uint32_t)mag_data[5] + ((uint32_t)mag_data[6] << 8) +
-			    ((uint32_t)mag_data[7] << 16);
-		raw_mag_z = (uint32_t)mag_data[8] + ((uint32_t)mag_data[9] << 8) +
-			    ((uint32_t)mag_data[10] << 16);
-		raw_temp = (uint32_t)mag_data[11] + ((uint32_t)mag_data[12] << 8) +
-			   ((uint32_t)mag_data[13] << 16);
-
-		raw_data->raw_xdata = sign_extend(raw_mag_x, BMM350_SIGNED_24_BIT);
-		raw_data->raw_ydata = sign_extend(raw_mag_y, BMM350_SIGNED_24_BIT);
-		raw_data->raw_zdata = sign_extend(raw_mag_z, BMM350_SIGNED_24_BIT);
-		raw_data->raw_data_temp = sign_extend(raw_temp, BMM350_SIGNED_24_BIT);
-	}
-
-	return rslt;
-}
-static int read_out_raw_data(const struct device *dev, int32_t *out_data)
-{
-	int rslt;
-	int32_t temp = 0;
-	struct bmm350_raw_mag_data raw_data = {0};
-
-	__ASSERT_NO_MSG(out_data != NULL);
-
-	rslt = bmm350_read_uncomp_mag_temp_data(dev, &raw_data);
-
-	if (rslt == 0) {
-		/* Convert mag lsb to uT and temp lsb to degC */
-		out_data[0] = ((raw_data.raw_xdata * BMM350_LSB_TO_UT_XY_COEFF) /
-			       BMM350_LSB_TO_UT_COEFF_DIV);
-		out_data[1] = ((raw_data.raw_ydata * BMM350_LSB_TO_UT_XY_COEFF) /
-			       BMM350_LSB_TO_UT_COEFF_DIV);
-		out_data[2] = ((raw_data.raw_zdata * BMM350_LSB_TO_UT_Z_COEFF) /
-			       BMM350_LSB_TO_UT_COEFF_DIV);
-		out_data[3] = ((raw_data.raw_data_temp * BMM350_LSB_TO_UT_TEMP_COEFF) /
-			       BMM350_LSB_TO_UT_COEFF_DIV);
-
-		if (out_data[3] > 0) {
-			temp = (out_data[3] - (2549 / 100));
-		} else if (out_data[3] < 0) {
-			temp = (out_data[3] + (2549 / 100));
-		} else {
-			temp = out_data[3];
-		}
-
-		out_data[3] = temp;
-	}
-
-	return rslt;
-}
-
-static int
-bmm350_get_compensated_mag_xyz_temp_data_fixed(const struct device *dev,
-					       struct bmm350_mag_temp_data *mag_temp_data)
-{
-	struct bmm350_data *data = dev->data;
-	int rslt;
-	uint8_t indx;
-	int32_t out_data[4] = {0};
-	int32_t dut_offset_coef[3], dut_sensit_coef[3], dut_tco[3], dut_tcs[3];
-	int32_t cr_ax_comp_x, cr_ax_comp_y, cr_ax_comp_z;
-
-	__ASSERT_NO_MSG(mag_temp_data != NULL);
-
-	/* Reads raw magnetic x,y and z axis along with temperature */
-	rslt = read_out_raw_data(dev, out_data);
-
-	if (rslt == 0) {
-		/* Apply compensation to temperature reading */
-		out_data[3] =
-			(((BMM350_MAG_COMP_COEFF_SCALING + data->mag_comp.dut_sensit_coef.t_sens) *
-			  out_data[3]) +
-			 data->mag_comp.dut_offset_coef.t_offs) /
-			BMM350_MAG_COMP_COEFF_SCALING;
-
-		/* Store magnetic compensation structure to an array */
-		dut_offset_coef[0] = data->mag_comp.dut_offset_coef.offset_x;
-		dut_offset_coef[1] = data->mag_comp.dut_offset_coef.offset_y;
-		dut_offset_coef[2] = data->mag_comp.dut_offset_coef.offset_z;
-
-		dut_sensit_coef[0] = data->mag_comp.dut_sensit_coef.sens_x;
-		dut_sensit_coef[1] = data->mag_comp.dut_sensit_coef.sens_y;
-		dut_sensit_coef[2] = data->mag_comp.dut_sensit_coef.sens_z;
-
-		dut_tco[0] = data->mag_comp.dut_tco.tco_x;
-		dut_tco[1] = data->mag_comp.dut_tco.tco_y;
-		dut_tco[2] = data->mag_comp.dut_tco.tco_z;
-
-		dut_tcs[0] = data->mag_comp.dut_tcs.tcs_x;
-		dut_tcs[1] = data->mag_comp.dut_tcs.tcs_y;
-		dut_tcs[2] = data->mag_comp.dut_tcs.tcs_z;
-
-		/* Compensate raw magnetic data */
-		for (indx = 0; indx < 3; indx++) {
-			out_data[indx] = (out_data[indx] *
-					  (BMM350_MAG_COMP_COEFF_SCALING + dut_sensit_coef[indx])) /
-					 BMM350_MAG_COMP_COEFF_SCALING;
-			out_data[indx] = (out_data[indx] + dut_offset_coef[indx]);
-			out_data[indx] = ((out_data[indx] * BMM350_MAG_COMP_COEFF_SCALING) +
-					  (dut_tco[indx] * (out_data[3] - data->mag_comp.dut_t0))) /
-					 BMM350_MAG_COMP_COEFF_SCALING;
-			out_data[indx] = (out_data[indx] * BMM350_MAG_COMP_COEFF_SCALING) /
-					 (BMM350_MAG_COMP_COEFF_SCALING +
-					  (dut_tcs[indx] * (out_data[3] - data->mag_comp.dut_t0)));
-		}
-
-		cr_ax_comp_x = ((((out_data[0] * BMM350_MAG_COMP_COEFF_SCALING) -
-				  (data->mag_comp.cross_axis.cross_x_y * out_data[1])) *
-				 BMM350_MAG_COMP_COEFF_SCALING) /
-				((BMM350_MAG_COMP_COEFF_SCALING * BMM350_MAG_COMP_COEFF_SCALING) -
-				 (data->mag_comp.cross_axis.cross_y_x *
-				  data->mag_comp.cross_axis.cross_x_y)));
-
-		cr_ax_comp_y = ((((out_data[1] * BMM350_MAG_COMP_COEFF_SCALING) -
-				  (data->mag_comp.cross_axis.cross_y_x * out_data[0])) *
-				 BMM350_MAG_COMP_COEFF_SCALING) /
-				((BMM350_MAG_COMP_COEFF_SCALING * BMM350_MAG_COMP_COEFF_SCALING) -
-				 (data->mag_comp.cross_axis.cross_y_x *
-				  data->mag_comp.cross_axis.cross_x_y)));
-
-		cr_ax_comp_z =
-			(out_data[2] +
-			 (((out_data[0] * ((data->mag_comp.cross_axis.cross_y_x *
-					    data->mag_comp.cross_axis.cross_z_y) -
-					   (data->mag_comp.cross_axis.cross_z_x *
-					    BMM350_MAG_COMP_COEFF_SCALING))) -
-			   (out_data[1] *
-			    ((data->mag_comp.cross_axis.cross_z_y * BMM350_MAG_COMP_COEFF_SCALING) -
-			     (data->mag_comp.cross_axis.cross_x_y *
-			      data->mag_comp.cross_axis.cross_z_x))))) /
-				 (((BMM350_MAG_COMP_COEFF_SCALING * BMM350_MAG_COMP_COEFF_SCALING) -
-				   data->mag_comp.cross_axis.cross_y_x *
-					   data->mag_comp.cross_axis.cross_x_y)));
-
-		out_data[0] = (int32_t)cr_ax_comp_x;
-		out_data[1] = (int32_t)cr_ax_comp_y;
-		out_data[2] = (int32_t)cr_ax_comp_z;
-
-		LOG_DBG("mag data %d %d %d", out_data[0], out_data[1], out_data[2]);
-
-		mag_temp_data->x = out_data[0];
-		mag_temp_data->y = out_data[1];
-		mag_temp_data->z = out_data[2];
-		mag_temp_data->temperature = out_data[3];
-	}
-
-	return rslt;
-}
 
 static int bmm350_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct bmm350_data *drv_data = dev->data;
-	struct bmm350_mag_temp_data mag_temp_data = {0};
+	struct bmm350_raw_mag_data raw_data;
 
-	if (bmm350_get_compensated_mag_xyz_temp_data_fixed(dev, &mag_temp_data) < 0) {
+	if (bmm350_reg_read(dev, BMM350_REG_MAG_X_XLSB, raw_data.buf, sizeof(raw_data.buf)) < 0) {
 		LOG_ERR("failed to read sample");
 		return -EIO;
 	}
-	drv_data->mag_temp_data.x = mag_temp_data.x;
-	drv_data->mag_temp_data.y = mag_temp_data.y;
-	drv_data->mag_temp_data.z = mag_temp_data.z;
+
+	bmm350_decoder_compensate_raw_data(&raw_data,
+					   &drv_data->mag_comp,
+					   &drv_data->mag_temp_data);
+
 	return 0;
 }
 

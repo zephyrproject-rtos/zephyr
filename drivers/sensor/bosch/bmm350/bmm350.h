@@ -454,17 +454,17 @@ struct bmm350_pmu_cmd_status_0 {
  * @brief bmm350 un-compensated (raw) magnetometer data, signed integer
  */
 struct bmm350_raw_mag_data {
-	/*! Raw mag X data */
-	int32_t raw_xdata;
-
-	/*! Raw mag Y data */
-	int32_t raw_ydata;
-
-	/*! Raw mag Z data */
-	int32_t raw_zdata;
-
-	/*! Raw mag temperature value */
-	int32_t raw_data_temp;
+	union {
+		uint8_t buf[17];
+		struct {
+			uint16_t dummy;
+			uint32_t magn_x : 24;
+			uint32_t magn_y : 24;
+			uint32_t magn_z : 24;
+			uint32_t temp : 24;
+			uint32_t ts : 24;
+		} __packed;
+	};
 };
 
 struct bmm350_config {
