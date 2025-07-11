@@ -335,8 +335,9 @@ static struct k_sem sem_ticker_api_cb;
 static struct k_sem *sem_recv;
 
 /* Declare prepare-event FIFO: mfifo_prep.
- * Queue of struct node_rx_event_done
  */
+#define EVENT_PIPELINE_MAX (7U + (EVENT_DEFER_MAX))
+
 static MFIFO_DEFINE(prep, sizeof(struct lll_event), EVENT_PIPELINE_MAX);
 
 /* Declare done-event RXFIFO. This is a composite pool-backed MFIFO for rx_nodes.
@@ -371,12 +372,12 @@ static MFIFO_DEFINE(prep, sizeof(struct lll_event), EVENT_PIPELINE_MAX);
 #if !defined(VENDOR_EVENT_DONE_MAX)
 #if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_OBSERVER)
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-#define EVENT_DONE_MAX 6
+#define EVENT_DONE_MAX (6U + EVENT_DEFER_MAX)
 #else /* !CONFIG_BT_CTLR_PHY_CODED */
-#define EVENT_DONE_MAX 5
+#define EVENT_DONE_MAX (5U + EVENT_DEFER_MAX)
 #endif /* !CONFIG_BT_CTLR_PHY_CODED */
 #else /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_OBSERVER */
-#define EVENT_DONE_MAX 4
+#define EVENT_DONE_MAX (4U + EVENT_DEFER_MAX)
 #endif /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_OBSERVER */
 #else
 #define EVENT_DONE_MAX VENDOR_EVENT_DONE_MAX
