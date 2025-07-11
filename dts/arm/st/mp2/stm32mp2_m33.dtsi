@@ -9,6 +9,7 @@
 #include <mem.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/clock/stm32mp2_clock.h>
+#include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <zephyr/dt-bindings/reset/stm32mp2_reset.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 
@@ -428,6 +429,20 @@
 			reg = <0x44050000 DT_SIZE_K(1)>;
 			clocks = <&rcc STM32_CLOCK(WWDG1, STM32_CLK)>;
 			interrupts = <8 0>;
+			status = "disabled";
+		};
+
+		hpdma3: dma@40420000 {
+			compatible = "st,stm32-dma-v3";
+			reg = <0x40420000 DT_SIZE_K(4)>;
+			#dma-cells = <3>;
+			interrupts = <65 0>, <66 0>, <67 0>, <68 0>,
+				     <69 0>, <70 0>, <71 0>, <72 0>,
+				     <73 0>, <74 0>, <75 0>, <76 0>,
+				     <77 0>, <78 0>;
+			dma-channels = <14>;
+			dma-requests = <183>;
+			dma-offset = <0>;
 			status = "disabled";
 		};
 	};
