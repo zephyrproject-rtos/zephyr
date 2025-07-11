@@ -13,4 +13,5 @@ tests:
       - ip_k66f
       - mimxrt1180_evk/mimxrt1189/cm33
       - mimxrt1180_evk/mimxrt1189/cm7
+      - imx943_evk/mimx94398/m33/ddr
     depends_on: eth
