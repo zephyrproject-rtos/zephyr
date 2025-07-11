@@ -128,6 +128,7 @@ static struct dsa_api dsa_netc_api = {
 		.port_idx = DT_REG_ADDR(port),                                              \
 		.phy_dev = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(port, phy_handle)),             \
 		.phy_mode = DT_PROP_OR(port, phy_connection_type, ""),                      \
+		.tag_proto = DSA_TAG_PROTO_BY_DT(port),                                     \
 		.ethernet_connection = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(port, ethernet)),   \
 		.prv_config = &dsa_netc_##n##_##port##_config,                              \
 	};                                                                                  \
