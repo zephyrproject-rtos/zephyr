@@ -205,8 +205,8 @@ static inline void mss_spi_readwr_fifo(const struct device *dev)
 			rx_raw = mss_spi_read(cfg, MSS_SPI_REG_RX_DATA);
 			if (spi_context_rx_buf_on(ctx)) {
 				UNALIGNED_PUT(rx_raw, (uint8_t *)ctx->rx_buf);
-				spi_context_update_rx(ctx, 1, 1);
 			}
+			spi_context_update_rx(ctx, 1, 1);
 			++transfer_idx;
 		}
 
@@ -214,10 +214,10 @@ static inline void mss_spi_readwr_fifo(const struct device *dev)
 			if (spi_context_tx_buf_on(ctx)) {
 				data8 = ctx->tx_buf[0];
 				mss_spi_write(cfg, MSS_SPI_REG_TX_DATA, data8);
-				spi_context_update_tx(ctx, 1, 1);
 			} else {
 				mss_spi_write(cfg, MSS_SPI_REG_TX_DATA, 0x0);
 			}
+			spi_context_update_tx(ctx, 1, 1);
 		}
 	}
 }
