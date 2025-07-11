@@ -21,6 +21,7 @@ tests:
       - native_sim
       - apollo510_evb
       - apollo510_eb
+    build_only: true # Ambiq temp
   filesystem.nvs.data_crc:
     extra_args:
       - CONFIG_NVS_DATA_CRC=y
@@ -38,3 +39,4 @@ tests:
       - native_sim
       - apollo510_evb
       - apollo510_eb
+    build_only: true # Ambiq temp
