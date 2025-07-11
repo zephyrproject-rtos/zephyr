@@ -30,6 +30,8 @@ LOG_MODULE_REGISTER(nxp_imx_netc_blk);
 #define NETCSR_STATE BIT(1)
 
 /* NETCMIX CFG Link register */
+#ifdef CONFIG_SOC_MIMX9596
+
 #define CFG_LINK_MII_PROT 0x10
 enum {
 	MII,
@@ -44,15 +46,45 @@ enum {
 #define CFG_LINK_MII_PROT_2_SHIFT 8
 #define MII_PROT_N(prot, n)	  ((prot) << CFG_LINK_MII_PROT_##n##_SHIFT)
 
+#elif defined(CONFIG_SOC_MIMX94398)
+
+enum {
+	MII,
+	RMII,
+	RGMII,
+	SGMII,
+};
+
+#define NETC_LINK_CFG0 0x4c
+#define NETC_LINK_CFG1 0x50
+#define NETC_LINK_CFG2 0x54
+#define NETC_LINK_CFG3 0x58
+#define NETC_LINK_CFG4 0x5c
+#define NETC_LINK_CFG5 0x60
+
+#endif
+
 /* NETCMIX PCS protocol register */
 #define CFG_LINK_PCS_PROT_0           0x14
 #define CFG_LINK_PCS_PROT_1           0x18
 #define CFG_LINK_PCS_PROT_2           0x1c
+#if defined(CONFIG_SOC_MIMX94398)
+#define CFG_LINK_PCS_PROT_3           0x20
+#define CFG_LINK_PCS_PROT_4           0x24
+#define CFG_LINK_PCS_PROT_5           0x28
+#endif
 /* PCS Protocols */
 #define CFG_LINK_PCS_PROT_1G_SGMII    BIT(0)
 #define CFG_LINK_PCS_PROT_2500M_SGMII BIT(1)
 #define CFG_LINK_PCS_PROT_XFI         BIT(3)
 #define CFG_LINK_PCS_PROT_10G_SXGMII  BIT(6)
+
+#if defined(CONFIG_SOC_MIMX94398)
+#define EXT_PIN_CONTROL     0x10
+#define MAC2_MAC3_SEL_SHIFT 1
+#define SET_MAC2(x)         ((x) & ~(BIT(MAC2_MAC3_SEL_SHIFT)))
+#define SET_MAC3(x)         ((x) | BIT(MAC2_MAC3_SEL_SHIFT))
+#endif
 
 struct eth_nxp_imx_netc_blk_config {
 	DEVICE_MMIO_NAMED_ROM(ierb);
@@ -154,6 +186,39 @@ static int netcmix_init(const struct device *dev)
 	reg_val = MII_PROT_N(RGMII, 0) | MII_PROT_N(RGMII, 1) | MII_PROT_N(XGMII, 2);
 	sys_write32(reg_val, base + CFG_LINK_MII_PROT);
 	sys_write32(CFG_LINK_PCS_PROT_10G_SXGMII, base + CFG_LINK_PCS_PROT_2);
+
+	return 0;
+}
+#elif defined(CONFIG_SOC_MIMX94398)
+static int ierb_init(const struct device *dev)
+{
+	return 0;
+}
+
+
+static int netcmix_init(const struct device *dev)
+{
+	uintptr_t base = DEVICE_MMIO_NAMED_GET(dev, netcmix);
+	uint32_t reg_val;
+
+	/* ToDo: configure PSC protocol and MII protocol according to PHY mode */
+	sys_write32(CFG_LINK_PCS_PROT_2500M_SGMII, base + CFG_LINK_PCS_PROT_0);
+	sys_write32(CFG_LINK_PCS_PROT_2500M_SGMII, base + CFG_LINK_PCS_PROT_1);
+	sys_write32(CFG_LINK_PCS_PROT_1G_SGMII, base + CFG_LINK_PCS_PROT_2);
+	sys_write32(CFG_LINK_PCS_PROT_1G_SGMII, base + CFG_LINK_PCS_PROT_3);
+	sys_write32(CFG_LINK_PCS_PROT_1G_SGMII, base + CFG_LINK_PCS_PROT_4);
+	sys_write32(CFG_LINK_PCS_PROT_1G_SGMII, base + CFG_LINK_PCS_PROT_5);
+
+	sys_write32(MII, base + NETC_LINK_CFG0);
+	sys_write32(MII, base + NETC_LINK_CFG1);
+	sys_write32(RGMII, base + NETC_LINK_CFG2);
+	sys_write32(RGMII, base + NETC_LINK_CFG3);
+	sys_write32(RGMII, base + NETC_LINK_CFG4);
+	sys_write32(RGMII, base + NETC_LINK_CFG5);
+
+	reg_val = sys_read32(base + EXT_PIN_CONTROL);
+	reg_val = SET_MAC3(reg_val);
+	sys_write32(reg_val, base + EXT_PIN_CONTROL);
 
 	return 0;
 }
