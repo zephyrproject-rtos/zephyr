@@ -350,4 +350,13 @@ int dpp_params_to_cmd(struct wifi_dpp_params *params, char *cmd, size_t max_len)
  */
 int supplicant_dpp_dispatch(const struct device *dev, struct wifi_dpp_params *params);
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
+
+/**
+ * @brief Wi-Fi STA configuration parameter.
+ *
+ * @param dev Wi-Fi interface handle to use
+ * @param params STA parameters
+ * @return 0 for OK; -1 for ERROR
+ */
+int supplicant_config_params(const struct device *dev, struct wifi_config_params *params);
 #endif /* ZEPHYR_SUPP_MGMT_H */
