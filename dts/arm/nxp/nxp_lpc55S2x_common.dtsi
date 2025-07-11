@@ -266,6 +266,14 @@
 		#pwm-cells = <3>;
 	};
 
+	sdif: sdif@9b000 {
+		compatible = "nxp,lpc-sdif";
+		reg = <0x9b000 0x1000>;
+		interrupts = <42 0>;
+		clocks = <&syscon MCUX_SDIF_CLK>;
+		status = "disabled";
+	};
+
 	hs_lspi: spi@9f000 {
 		compatible = "nxp,lpc-spi";
 		/* Enabling cs-gpios below will allow using GPIO CS,
