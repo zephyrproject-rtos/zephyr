@@ -1,7 +1,7 @@
 shields:
-  name: adafruit_featherwing_128x32_OLED
-  full_name: Adafruit 128 x 32 OLED
-  vendor: adafruit
-  supported_features:
-    - display
-    - input
+  - name: adafruit_featherwing_128x32_OLED
+    full_name: Adafruit 128 x 32 OLED
+    vendor: adafruit
+    supported_features:
+      - display
+      - input
