@@ -109,6 +109,8 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_RTS_THRESHOLD,
 	/** Configure AP parameter */
 	NET_REQUEST_WIFI_CMD_AP_CONFIG_PARAM,
+	/** Configure STA parameter */
+	NET_REQUEST_WIFI_CMD_CONFIG_PARAM,
 	/** DPP actions */
 	NET_REQUEST_WIFI_CMD_DPP,
 	/** BSS transition management query */
@@ -266,6 +268,12 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_RTS_THRESHOLD);
 	(NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_AP_CONFIG_PARAM)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_CONFIG_PARAM);
+
+/** Request a Wi-Fi STA parameters configuration */
+#define NET_REQUEST_WIFI_CONFIG_PARAM         \
+	(NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_CONFIG_PARAM)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_CONFIG_PARAM);
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 /** Request a Wi-Fi DPP operation */
@@ -1054,6 +1062,14 @@ struct wifi_ap_config_params {
 #endif
 };
 
+/** @brief Wi-Fi STA configuration parameter */
+struct wifi_config_params {
+	/** Parameter used to identify the different STA parameters */
+	enum wifi_config_param type;
+	/** Parameter used for opportunistic key caching */
+	int okc;
+};
+
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 /** @brief Wi-Fi DPP configuration parameter */
 /** Wi-Fi DPP QR-CODE in string max len for SHA512 */
@@ -1538,7 +1554,14 @@ struct wifi_mgmt_ops {
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*ap_config_params)(const struct device *dev, struct wifi_ap_config_params *params);
-
+	/** Configure STA parameter
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param params STA mode parameter configuration parameter info
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*config_params)(const struct device *dev, struct wifi_config_params *params);
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 	/** Dispatch DPP operations by action enum, with or without arguments in string format
 	 *
