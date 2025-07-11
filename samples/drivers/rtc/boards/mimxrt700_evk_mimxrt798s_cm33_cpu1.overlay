@@ -1,0 +1,15 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+
+/ {
+	aliases {
+		rtc = &rtc1;
+	};
+};
+
+&rtc1 {
+	status = "okay";
+};

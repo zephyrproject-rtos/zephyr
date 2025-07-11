@@ -11,6 +11,7 @@
 
 const struct device *const rtc = DEVICE_DT_GET(DT_ALIAS(rtc));
 
+#if !(DT_PROP(DT_ALIAS(rtc), share_counter))
 static int set_date_time(const struct device *rtc)
 {
 	int ret = 0;
@@ -30,6 +31,7 @@ static int set_date_time(const struct device *rtc)
 	}
 	return ret;
 }
+#endif
 
 static int get_date_time(const struct device *rtc)
 {
@@ -56,7 +58,9 @@ int main(void)
 		return 0;
 	}
 
+#if !(DT_PROP(DT_ALIAS(rtc), share_counter))
 	set_date_time(rtc);
+#endif
 
 	/* Continuously read the current date and time from the RTC */
 	while (get_date_time(rtc) == 0) {

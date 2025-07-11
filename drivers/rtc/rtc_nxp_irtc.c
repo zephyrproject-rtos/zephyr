@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,7 +15,9 @@ struct nxp_irtc_config {
 	RTC_Type *base;
 	void (*irq_config_func)(const struct device *dev);
 	bool is_output_clock_enabled;
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(clock_src)
 	uint8_t clock_src;
+#endif
 	uint8_t alarm_match_flag;
 };
 
@@ -31,9 +33,8 @@ struct nxp_irtc_data {
 /* The IRTC Offset is 2112 instead of 1900 [2112 - 1900] -> [212] */
 #define RTC_NXP_IRTC_YEAR_OFFSET 212
 
-#define RTC_NXP_GET_REG_FIELD(_reg, _name, _field)				\
-	((_reg->_name & RTC_##_name##_##_field##_MASK) >>			\
-	 RTC_##_name##_##_field##_SHIFT)
+#define RTC_NXP_GET_REG_FIELD(_reg, _name, _field)                                                 \
+	((_reg->_name & RTC_##_name##_##_field##_MASK) >> RTC_##_name##_##_field##_SHIFT)
 
 /*
  * The runtime where this is accessed is unknown so we force a lock on the registers then force an
@@ -79,12 +80,12 @@ static int nxp_irtc_set_time(const struct device *dev, const struct rtc_time *ti
 	nxp_irtc_unlock_registers(irtc_reg);
 	irtc_reg->SECONDS = RTC_SECONDS_SEC_CNT(timeptr->tm_sec);
 
-	irtc_reg->HOURMIN = RTC_HOURMIN_MIN_CNT(timeptr->tm_min) |
-		RTC_HOURMIN_HOUR_CNT(timeptr->tm_hour);
+	irtc_reg->HOURMIN =
+		RTC_HOURMIN_MIN_CNT(timeptr->tm_min) | RTC_HOURMIN_HOUR_CNT(timeptr->tm_hour);
 
 	/* 1 is valid for rtc_time.tm_wday property but is out of bounds for IRTC registers */
 	irtc_reg->DAYS = RTC_DAYS_DAY_CNT(timeptr->tm_mday) |
-		      (timeptr->tm_wday == -1 ? 0 : RTC_DAYS_DOW(timeptr->tm_wday));
+			 (timeptr->tm_wday == -1 ? 0 : RTC_DAYS_DOW(timeptr->tm_wday));
 
 	irtc_reg->YEARMON = RTC_YEARMON_MON_CNT(calc_month) | RTC_YEARMON_YROFST(calc_year);
 
@@ -112,8 +113,8 @@ static int nxp_irtc_get_time(const struct device *dev, struct rtc_time *timeptr)
 	timeptr->tm_wday = RTC_NXP_GET_REG_FIELD(irtc_reg, DAYS, DOW);
 	timeptr->tm_mday = RTC_NXP_GET_REG_FIELD(irtc_reg, DAYS, DAY_CNT);
 	timeptr->tm_mon = RTC_NXP_GET_REG_FIELD(irtc_reg, YEARMON, MON_CNT) - 1;
-	timeptr->tm_year = (int8_t)RTC_NXP_GET_REG_FIELD(irtc_reg, YEARMON, YROFST) +
-		RTC_NXP_IRTC_YEAR_OFFSET;
+	timeptr->tm_year =
+		(int8_t)RTC_NXP_GET_REG_FIELD(irtc_reg, YEARMON, YROFST) + RTC_NXP_IRTC_YEAR_OFFSET;
 	if (data->is_dst_enabled) {
 		timeptr->tm_isdst =
 			((irtc_reg->CTRL & RTC_CTRL_DST_EN_MASK) >> RTC_CTRL_DST_EN_SHIFT);
@@ -160,8 +161,9 @@ static int nxp_irtc_alarm_set_time(const struct device *dev, uint16_t id, uint16
 
 	nxp_irtc_unlock_registers(irtc_reg);
 
+	uint16_t tmp_sec = RTC_ALM_SECONDS_ALM_SEC(timeptr->tm_sec);
 	if (mask & RTC_ALARM_TIME_MASK_SECOND) {
-		irtc_reg->ALM_SECONDS = RTC_ALM_SECONDS_ALM_SEC(timeptr->tm_sec);
+		irtc_reg->ALM_SECONDS = tmp_sec;
 	}
 
 	if (mask & RTC_ALARM_TIME_MASK_MINUTE) {
@@ -186,19 +188,24 @@ static int nxp_irtc_alarm_set_time(const struct device *dev, uint16_t id, uint16
 	}
 
 	/* Clearing out the ALARM Flag Field then setting the correct value */
-	irtc_reg->CTRL &= ~(0xC);
-	switch (mask) {
-	case 0x0F:
-		irtc_reg->CTRL |= RTC_CTRL_ALM_MATCH(0x4);
+	irtc_reg->CTRL &= ~((uint16_t)RTC_CTRL_ALM_MATCH_MASK);
+	uint8_t year_month_day_mask = (mask & (BIT(3) | BIT(4) | BIT(5))) >> 3;
+	switch (year_month_day_mask) {
+	case 0x00:
+		irtc_reg->CTRL |= RTC_CTRL_ALM_MATCH(0x0);
 		break;
-	case 0x1F:
-		irtc_reg->CTRL |= RTC_CTRL_ALM_MATCH(0x8);
+	case 0x01:
+		irtc_reg->CTRL |= RTC_CTRL_ALM_MATCH(0x1);
 		break;
-	case 0x3F:
-		irtc_reg->CTRL |= RTC_CTRL_ALM_MATCH(0xC);
+	case 0x03:
+		irtc_reg->CTRL |= RTC_CTRL_ALM_MATCH(0x2);
+		break;
+	case 0x07:
+		irtc_reg->CTRL |= RTC_CTRL_ALM_MATCH(0x3);
 		break;
 	default:
-		irtc_reg->CTRL |= RTC_CTRL_ALM_MATCH(0x0);
+		irq_unlock(key);
+		return -EINVAL;
 	}
 
 	/* Enabling Alarm Interrupts */
@@ -218,39 +225,45 @@ static int nxp_irtc_alarm_get_time(const struct device *dev, uint16_t id, uint16
 	RTC_Type *irtc_reg = config->base;
 	uint16_t curr_alarm_mask = data->alarm_mask;
 	uint16_t return_mask = 0;
+	uint16_t tmp_hourmin = irtc_reg->ALM_HOURMIN;
+	uint16_t tmp_yearmon = irtc_reg->ALM_YEARMON;
 
 	if (id != 0 || !timeptr) {
 		return -EINVAL;
 	}
 
+	memset(timeptr, 0, sizeof(struct rtc_time));
+
 	if (curr_alarm_mask & RTC_ALARM_TIME_MASK_SECOND) {
-		timeptr->tm_sec = RTC_NXP_GET_REG_FIELD(irtc_reg, ALM_SECONDS, ALM_SEC);
+		timeptr->tm_sec = (irtc_reg->ALM_SECONDS) & RTC_ALM_SECONDS_ALM_SEC_MASK;
 		return_mask |= RTC_ALARM_TIME_MASK_SECOND;
 	}
 
 	if (curr_alarm_mask & RTC_ALARM_TIME_MASK_MINUTE) {
-		timeptr->tm_min = RTC_NXP_GET_REG_FIELD(irtc_reg, HOURMIN, MIN_CNT);
+		timeptr->tm_min = tmp_hourmin & RTC_ALM_HOURMIN_ALM_MIN_MASK;
 		return_mask |= RTC_ALARM_TIME_MASK_MINUTE;
 	}
 
 	if (curr_alarm_mask & RTC_ALARM_TIME_MASK_HOUR) {
-		timeptr->tm_hour = RTC_NXP_GET_REG_FIELD(irtc_reg, HOURMIN, HOUR_CNT);
+		timeptr->tm_hour = ((tmp_hourmin & RTC_ALM_HOURMIN_ALM_HOUR_MASK) >>
+				    RTC_ALM_HOURMIN_ALM_HOUR_SHIFT);
 		return_mask |= RTC_ALARM_TIME_MASK_HOUR;
 	}
 
 	if (curr_alarm_mask & RTC_ALARM_TIME_MASK_MONTHDAY) {
-		timeptr->tm_mday = RTC_NXP_GET_REG_FIELD(irtc_reg, DAYS, DAY_CNT);
+		timeptr->tm_mday = (irtc_reg->ALM_DAYS) & RTC_ALM_DAYS_ALM_DAY_MASK;
 		return_mask |= RTC_ALARM_TIME_MASK_MONTHDAY;
 	}
 
 	if (curr_alarm_mask & RTC_ALARM_TIME_MASK_MONTH) {
-		timeptr->tm_mon = RTC_NXP_GET_REG_FIELD(irtc_reg, YEARMON, MON_CNT) - 1;
+		timeptr->tm_mon = (tmp_yearmon & RTC_ALM_YEARMON_ALM_MON_MASK) - 1;
 		return_mask |= RTC_ALARM_TIME_MASK_MONTH;
 	}
 
 	if (curr_alarm_mask & RTC_ALARM_TIME_MASK_YEAR) {
-		timeptr->tm_year = (int8_t)RTC_NXP_GET_REG_FIELD(irtc_reg, YEARMON, YROFST) +
-			RTC_NXP_IRTC_YEAR_OFFSET;
+		timeptr->tm_year = (int8_t)((tmp_yearmon & RTC_ALM_YEARMON_ALM_YEAR_MASK) >>
+					    RTC_ALM_YEARMON_ALM_YEAR_SHIFT) +
+				   RTC_NXP_IRTC_YEAR_OFFSET;
 		return_mask |= RTC_ALARM_TIME_MASK_YEAR;
 	}
 
@@ -261,14 +274,23 @@ static int nxp_irtc_alarm_get_time(const struct device *dev, uint16_t id, uint16
 
 static int nxp_irtc_alarm_is_pending(const struct device *dev, uint16_t id)
 {
-	struct nxp_irtc_data *data = dev->data;
+	const struct nxp_irtc_config *config = dev->config;
 	RTC_Type *irtc_reg = config->base;
 
 	if (id != 0) {
 		return -EINVAL;
 	}
 
-	return RTC_ISR_ALM_IS(0x4);
+	if ((irtc_reg->ISR & RTC_ISR_ALM_IS_MASK) != 0) {
+		/* Clear the Alarm Interrupt */
+		nxp_irtc_unlock_registers(irtc_reg);
+		/* Alarm is pending */
+		irtc_reg->ISR = RTC_ISR_ALM_IS_MASK;
+		return 1;
+	} else {
+		/* Alarm is not pending */
+		return 0;
+	}
 }
 
 static int nxp_irtc_alarm_set_callback(const struct device *dev, uint16_t id,
@@ -325,12 +347,22 @@ static int nxp_irtc_init(const struct device *dev)
 {
 	const struct nxp_irtc_config *config = dev->config;
 	RTC_Type *irtc_reg = config->base;
+	uint16_t reg = 0;
 
 	nxp_irtc_unlock_registers(irtc_reg);
 
-	/* set the control register bits */
-	irtc_reg->CTRL = RTC_CTRL_CLK_SEL(config->clock_src) |
-			       RTC_CTRL_CLKO_DIS(!config->is_output_clock_enabled);
+	reg = irtc_reg->CTRL;
+	reg &= ~(uint16_t)RTC_CTRL_CLKO_DIS_MASK;
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(clock_src)
+	reg &= ~(uint16_t)RTC_CTRL_CLK_SEL_MASK;
+#endif
+
+	reg |= RTC_CTRL_CLKO_DIS(!config->is_output_clock_enabled);
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(clock_src)
+	reg |= RTC_CTRL_CLK_SEL(config->clock_src);
+#endif
+
+	irtc_reg->CTRL = reg;
 
 	config->irq_config_func(dev);
 
@@ -348,7 +380,6 @@ static void nxp_irtc_isr(const struct device *dev)
 	nxp_irtc_unlock_registers(irtc_reg);
 	/* Clearing ISR Register since w1c */
 	irtc_reg->ISR = irtc_reg->ISR;
-
 	if (data->alarm_callback) {
 		data->alarm_callback(dev, 0, data->alarm_user_data);
 	}
@@ -375,17 +406,40 @@ static DEVICE_API(rtc, rtc_nxp_irtc_driver_api) = {
 #endif /* CONFIG_RTC_CALIBRATION */
 };
 
-#define RTC_NXP_IRTC_DEVICE_INIT(n)                                                                \
+#define RTC_NXP_IRTC_IRQ_CONNECT(n, m)                                                             \
+	do {                                                                                       \
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, m, irq), DT_INST_IRQ_BY_IDX(n, m, priority),     \
+			    nxp_irtc_isr, DEVICE_DT_INST_GET(n), 0);                               \
+		irq_enable(DT_INST_IRQ_BY_IDX(n, m, irq));                                         \
+	} while (false)
+
+#if DT_INST_IRQ_HAS_IDX(0, 1)
+#define NXP_IRTC_CONFIG_FUNC(n)                                                                    \
 	static void nxp_irtc_config_func_##n(const struct device *dev)                             \
 	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), nxp_irtc_isr,               \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQN(n));                                                       \
-	}                                                                                          \
+		RTC_NXP_IRTC_IRQ_CONNECT(n, 0);                                                    \
+		RTC_NXP_IRTC_IRQ_CONNECT(n, 1);                                                    \
+	}
+#else
+#define NXP_IRTC_CONFIG_FUNC(n)                                                                    \
+	static void nxp_irtc_config_func_##n(const struct device *dev)                             \
+	{                                                                                          \
+		RTC_NXP_IRTC_IRQ_CONNECT(n, 0);                                                    \
+	}
+#endif
+
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(clock_src)
+#define NXP_IRTC_CLOCK_SELECTION_INIT(n) .clock_src = DT_INST_PROP(n, clock_src),
+#else
+#define NXP_IRTC_CLOCK_SELECTION_INIT(n)
+#endif
+
+#define RTC_NXP_IRTC_DEVICE_INIT(n)                                                                \
+	NXP_IRTC_CONFIG_FUNC(n)                                                                    \
 	static const struct nxp_irtc_config nxp_irtc_config_##n = {                                \
 		.base = (RTC_Type *)DT_INST_REG_ADDR(n),                                           \
-		.clock_src = DT_INST_PROP(n, clock_src),					   \
-		.is_output_clock_enabled = DT_INST_PROP(n, output_clk_en),	                   \
+		NXP_IRTC_CLOCK_SELECTION_INIT(n).is_output_clock_enabled =                         \
+			DT_INST_PROP(n, output_clk_en),                                            \
 		.irq_config_func = nxp_irtc_config_func_##n,                                       \
 	};                                                                                         \
                                                                                                    \
