@@ -1,0 +1,13 @@
+/ {
+	chosen {
+		zephyr,cpu-load-counter = &counter12;
+	};
+};
+
+&timer12{
+	clk-source = "CLK_SELECT_HFRC_DIV4";
+
+	counter12: counter {
+		status = "okay";
+	};
+};

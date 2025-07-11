@@ -24,7 +24,9 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 	switch (state) {
 	case PM_STATE_SUSPEND_TO_IDLE: {
 		/* Put ARM core to normal sleep. */
+		sys_trace_idle();
 		am_hal_sysctrl_sleep(AM_HAL_SYSCTRL_SLEEP_NORMAL);
+		sys_trace_idle_exit();
 		break;
 	}
 	case PM_STATE_SUSPEND_TO_RAM: {
@@ -34,7 +36,9 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 		/* MRAM: power down*/
 		/* ITCM + DTCM: retention, active on request*/
 		/* Sram: retention, active on request*/
+		sys_trace_idle();
 		am_hal_sysctrl_sleep(AM_HAL_SYSCTRL_SLEEP_DEEP);
+		sys_trace_idle_exit();
 		break;
 	}
 	default: {
