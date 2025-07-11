@@ -1,0 +1,15 @@
+/*
+ * Copyright (C) 2025 Savoir-faire Linux, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		dma0 = &hpdma3;
+	};
+};
+
+&hpdma3 {
+	status = "okay";
+};

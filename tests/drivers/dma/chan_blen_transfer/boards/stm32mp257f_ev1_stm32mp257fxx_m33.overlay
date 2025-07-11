@@ -1,0 +1,9 @@
+/*
+ * Copyright (C) 2025 Savoir-faire Linux, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+tst_dma0: &hpdma3 {
+	status = "okay";
+};
