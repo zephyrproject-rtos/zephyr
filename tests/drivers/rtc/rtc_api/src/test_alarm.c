@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022 Bjarki Arge Andreasen
  * Copyright (c) 2024 STMicroelectronics
- *
+ * 
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -174,6 +174,9 @@ ZTEST(rtc_api, test_alarm)
 		}
 	}
 
+	/* Disable RTC IRQ, the default irq will clear the alarm pending flag, thus affects the test */
+	irq_disable(DT_IRQN(DT_ALIAS(rtc)));
+
 	for (uint8_t k = 0; k < 2; k++) {
 		/* Set RTC time */
 		ret = rtc_set_time(rtc, &test_rtc_time_set);
@@ -212,4 +215,7 @@ ZTEST(rtc_api, test_alarm)
 		ret = rtc_alarm_is_pending(rtc, i);
 		zassert_true(ret > -1, "Failed to clear alarm %d pending state", i);
 	}
+
+	/* Re-enable IRQ after test */
+	irq_enable(DT_IRQN(DT_ALIAS(rtc)));
 }
