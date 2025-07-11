@@ -64,6 +64,9 @@ int remove(const char *path);
 #define putc(c, stream) fputc(c, stream)
 #define putchar(c) putc(c, stdout)
 
+int fgetc(FILE *stream);
+#define getc(stream) fgetc(stream)
+
 #ifdef __cplusplus
 }
 #endif
