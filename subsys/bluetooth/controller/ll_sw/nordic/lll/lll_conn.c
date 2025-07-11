@@ -163,11 +163,10 @@ void lll_conn_prepare_reset(void)
 
 #if defined(CONFIG_BT_CENTRAL)
 /* Number of times central event being aborted by same event instance be skipped */
-/* FIXME: Increasing this causes event pipeline overflow assertion, add LLL implementation to
- *        gracefully abort the deferred next event when -EBUSY is returned in this is_abort_cb
- *        interface.
+/* NOTE: Coded PHY S8 coding of 251 byte PDU at 7.5 ms connection interval need up to 4 events
+ *       to be skipped due to large connection event length.
  */
-#define CENTRAL_TRX_BUSY_ITERATION_MAX 0
+#define CENTRAL_TRX_BUSY_ITERATION_MAX MIN(4U, (EVENT_DEFER_MAX))
 
 int lll_conn_central_is_abort_cb(void *next, void *curr,
 				 lll_prepare_cb_t *resume_cb)
@@ -190,17 +189,18 @@ int lll_conn_central_is_abort_cb(void *next, void *curr,
 		return -EBUSY;
 	}
 
+	LL_ASSERT(trx_busy_iteration < CENTRAL_TRX_BUSY_ITERATION_MAX);
+
 	return -ECANCELED;
 }
 #endif /* CONFIG_BT_CENTRAL */
 
 #if defined(CONFIG_BT_PERIPHERAL)
 /* Number of times peripheral event being aborted by same event instance be skipped */
-/* FIXME: Increasing this causes event pipeline overflow assertion, add LLL implementation to
- *        gracefully abort the deferred next event when -EBUSY is returned in this is_abort_cb
- *        interface.
+/* NOTE: Coded PHY S8 coding of 251 byte PDU at 7.5 ms connection interval need up to 4 events
+ *       to be skipped due to large connection event length.
  */
-#define PERIPHERAL_TRX_BUSY_ITERATION_MAX 0
+#define PERIPHERAL_TRX_BUSY_ITERATION_MAX MIN(4U, (EVENT_DEFER_MAX))
 
 int lll_conn_peripheral_is_abort_cb(void *next, void *curr,
 				    lll_prepare_cb_t *resume_cb)
@@ -222,6 +222,8 @@ int lll_conn_peripheral_is_abort_cb(void *next, void *curr,
 		 */
 		return -EBUSY;
 	}
+
+	LL_ASSERT(trx_busy_iteration < PERIPHERAL_TRX_BUSY_ITERATION_MAX);
 
 	return -ECANCELED;
 }
@@ -451,6 +453,11 @@ void lll_conn_isr_rx(void *param)
 			      (pdu_data_rx->md == 0) &&
 			      (pdu_data_tx->md == 0) &&
 			      (pdu_data_tx->len == 0));
+	/* Do not continue anymore if this event had continued despite an abort requested by same
+	 * connection instance when overlapping due to connection event length being larger than
+	 * the connection interval.
+	 */
+	is_done = is_done || (trx_busy_iteration != 0U);
 
 	if (is_done) {
 		radio_isr_set(isr_done, param);
