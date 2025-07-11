@@ -1551,6 +1551,8 @@ int64_t video_get_csi_link_freq(const struct device *dev, uint8_t bpp, uint8_t l
  */
 #define VIDEO_PIX_FMT_XYUV32 VIDEO_FOURCC('X', 'Y', 'U', 'V')
 
+#define VIDEO_PIX_FMT_NV12 VIDEO_FOURCC('N', 'V', '1', '2')
+
 /**
  * @}
  */
@@ -1597,6 +1599,7 @@ static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
 	case VIDEO_PIX_FMT_SGRBG12P:
 	case VIDEO_PIX_FMT_SRGGB12P:
 	case VIDEO_PIX_FMT_Y12P:
+	case VIDEO_PIX_FMT_NV12:
 		return 12;
 	case VIDEO_PIX_FMT_SBGGR14P:
 	case VIDEO_PIX_FMT_SGBRG14P:

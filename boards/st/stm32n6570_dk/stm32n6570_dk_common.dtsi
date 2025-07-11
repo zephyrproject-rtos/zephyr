@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/flash_controller/xspi.h>
 #include <zephyr/dt-bindings/gpio/raspberrypi-csi-connector.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-sw.h>
 #include <zephyr/dt-bindings/video/video-interfaces.h>
 #include "arduino_r3_connector.dtsi"
 
@@ -21,6 +22,7 @@
 		zephyr,canbus = &fdcan1;
 		zephyr,display = &ltdc;
 		zephyr,touch = &gt911;
+		zephyr,videoenc = &venc;
 		spi-flash0 = &mx66uw1g45g;
 		zephyr,flash-controller = &mx66uw1g45g;
 		zephyr,flash = &mx66uw1g45g;
@@ -42,7 +44,7 @@
 		compatible = "zephyr,memory-region";
 		reg = <0x90000000 DT_SIZE_M(32)>;
 		zephyr,memory-region = "PSRAM";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) | DT_MEM_SW_ALLOC_NON_CACHE )>;
 	};
 
 	leds: leds {
@@ -376,7 +378,7 @@ zephyr_udc0: &usbotg_hs1 {
 };
 
 &mac {
-	status = "okay";
+	status = "disabled";
 	pinctrl-0 = <&eth1_rgmii_gtx_clk_pf0
 		     &eth1_rgmii_clk125_pf2
 		     &eth1_rgmii_rx_clk_pf7
@@ -396,7 +398,7 @@ zephyr_udc0: &usbotg_hs1 {
 };
 
 &mdio {
-	status = "okay";
+	status = "disabled";
 	pinctrl-0 = <&eth1_mdio_pd12 &eth1_mdc_pd1>;
 	pinctrl-names = "default";
 
@@ -468,4 +470,8 @@ csi_interface: &dcmipp {
 			csi_capture_port: endpoint@1 { };
 		};
 	};
+};
+
+&venc {
+	status = "okay";
 };
