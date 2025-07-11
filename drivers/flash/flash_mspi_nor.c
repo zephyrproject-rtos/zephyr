@@ -638,31 +638,138 @@ static int dev_pm_action_cb(const struct device *dev,
 static int quad_enable_set(const struct device *dev, bool enable)
 {
 	struct flash_mspi_nor_data *dev_data = dev->data;
+	uint8_t op_code;
+	uint8_t qe_bit;
+	uint8_t status_reg;
+	uint8_t payload_len;
+	uint8_t payload[2];
 	int rc;
 
-	rc = cmd_wren(dev);
-	if (rc < 0) {
-		LOG_ERR("Failed to set write enable: %d", rc);
-		return rc;
-	}
-
-	if (dev_data->switch_info.quad_enable_req == JESD216_DW15_QER_VAL_S1B6) {
-		uint8_t mode_payload = enable ? BIT(6) : 0;
-
-		rc = cmd_wrsr(dev, SPI_NOR_CMD_WRSR, 1, &mode_payload);
-		if (rc < 0) {
-			LOG_ERR("Failed to enable/disable quad mode: %d", rc);
-			return rc;
-		}
-	} else {
-		/* TODO: handle all DW15 QER values */
+	switch (dev_data->switch_info.quad_enable_req) {
+	case JESD216_DW15_QER_VAL_S1B6:
+		op_code = SPI_NOR_CMD_RDSR;
+		qe_bit = BIT(6);
+		break;
+	case JESD216_DW15_QER_VAL_S2B7:
+		/* Use special Read status register 2 instruction. */
+		op_code = 0x3F;
+		qe_bit = BIT(7);
+		break;
+	case JESD216_DW15_QER_VAL_S2B1v1:
+	case JESD216_DW15_QER_VAL_S2B1v4:
+	case JESD216_DW15_QER_VAL_S2B1v5:
+	case JESD216_DW15_QER_VAL_S2B1v6:
+		op_code = SPI_NOR_CMD_RDSR2;
+		qe_bit = BIT(1);
+		break;
+	default:
+		LOG_ERR("Unknown Quad Enable Requirement: %u",
+			dev_data->switch_info.quad_enable_req);
 		return -ENOTSUP;
 	}
 
-	rc = wait_until_ready(dev, K_USEC(1));
-
+	rc = cmd_rdsr(dev, op_code, &status_reg);
 	if (rc < 0) {
-		LOG_ERR("Failed waiting until device ready after enabling quad: %d", rc);
+		return rc;
+	}
+
+	if (((status_reg & qe_bit) != 0) == enable) {
+		/* Nothing to do, the QE bit is already set properly. */
+		return 0;
+	}
+
+	status_reg ^= qe_bit;
+
+	switch (dev_data->switch_info.quad_enable_req) {
+	default:
+	case JESD216_DW15_QER_VAL_S1B6:
+		payload_len = 1;
+		op_code = SPI_NOR_CMD_WRSR;
+		break;
+	case JESD216_DW15_QER_VAL_S2B7:
+		payload_len = 1;
+		/* Use special Write status register 2 instruction. */
+		op_code = 0x3E;
+		break;
+	case JESD216_DW15_QER_VAL_S2B1v1:
+	case JESD216_DW15_QER_VAL_S2B1v4:
+	case JESD216_DW15_QER_VAL_S2B1v5:
+		payload_len = 2;
+		op_code = SPI_NOR_CMD_WRSR;
+		break;
+	case JESD216_DW15_QER_VAL_S2B1v6:
+		payload_len = 1;
+		op_code = SPI_NOR_CMD_WRSR2;
+		break;
+	}
+
+	if (payload_len == 1) {
+		payload[0] = status_reg;
+	} else {
+		payload[1] = status_reg;
+
+		/* When the Write Status command is to be sent with two data
+		 * bytes (this is the case for S2B1v1, S2B1v4, and S2B1v5 QER
+		 * values), the first status register needs to be read and
+		 * sent as the first byte, so that its value is not modified.
+		 */
+		rc = cmd_rdsr(dev, SPI_NOR_CMD_RDSR, &payload[0]);
+		if (rc < 0) {
+			return rc;
+		}
+	}
+
+	rc = cmd_wrsr(dev, op_code, payload_len, payload);
+	if (rc < 0) {
+		return rc;
+	}
+
+	return 0;
+}
+
+static int octal_enable_set(const struct device *dev, bool enable)
+{
+	struct flash_mspi_nor_data *dev_data = dev->data;
+	uint8_t op_code;
+	uint8_t oe_bit;
+	uint8_t status_reg;
+	int rc;
+
+	if (dev_data->switch_info.octal_enable_req != OCTAL_ENABLE_REQ_S2B3) {
+		LOG_ERR("Unknown Octal Enable Requirement: %u",
+			dev_data->switch_info.octal_enable_req);
+		return -ENOTSUP;
+	}
+
+	oe_bit = BIT(3);
+
+	/* Use special Read status register 2 instruction 0x65 with one address
+	 * byte 0x02 and one dummy byte.
+	 */
+	op_code = 0x65;
+	set_up_xfer(dev, MSPI_RX);
+	dev_data->xfer.rx_dummy    = 8;
+	dev_data->xfer.addr_length = 1;
+	dev_data->packet.address   = 0x02;
+	dev_data->packet.num_bytes = sizeof(uint8_t);
+	dev_data->packet.data_buf  = &status_reg;
+	rc = perform_xfer(dev, op_code, false);
+	if (rc < 0) {
+		LOG_ERR("cmd_rdsr 0x%02x failed: %d", op_code, rc);
+		return rc;
+	}
+
+	if (((status_reg & oe_bit) != 0) == enable) {
+		/* Nothing to do, the OE bit is already set properly. */
+		return 0;
+	}
+
+	status_reg ^= oe_bit;
+
+	/* Use special Write status register 2 instruction to clear the bit. */
+	op_code = (status_reg & oe_bit) ? SPI_NOR_CMD_WRSR2 : 0x3E;
+	rc = cmd_wrsr(dev, op_code, 1, &status_reg);
+	if (rc < 0) {
 		return rc;
 	}
 
@@ -699,18 +806,24 @@ static int switch_to_target_io_mode(const struct device *dev)
 	int rc = 0;
 
 	if (dev_data->switch_info.quad_enable_req != JESD216_DW15_QER_VAL_NONE) {
-		/* For Quad 1-1-4 and 1-4-4, entering or leaving mode is defined
-		 * in JEDEC216 BFP DW15 QER
-		 */
-		if (io_mode == MSPI_IO_MODE_SINGLE) {
-			rc = quad_enable_set(dev, false);
-		} else if (io_mode == MSPI_IO_MODE_QUAD_1_1_4 ||
-			   io_mode == MSPI_IO_MODE_QUAD_1_4_4) {
-			rc = quad_enable_set(dev, true);
-		}
+		bool quad_needed = io_mode == MSPI_IO_MODE_QUAD_1_1_4 ||
+				   io_mode == MSPI_IO_MODE_QUAD_1_4_4;
 
+		rc = quad_enable_set(dev, quad_needed);
 		if (rc < 0) {
 			LOG_ERR("Failed to modify Quad Enable bit: %d", rc);
+			return rc;
+		}
+	}
+
+	if (dev_data->switch_info.octal_enable_req != OCTAL_ENABLE_REQ_NONE) {
+		bool octal_needed = io_mode == MSPI_IO_MODE_OCTAL_1_1_8 ||
+				    io_mode == MSPI_IO_MODE_OCTAL_1_8_8;
+
+		rc = octal_enable_set(dev, octal_needed);
+		if (rc < 0) {
+			LOG_ERR("Failed to modify Octal Enable bit: %d", rc);
+			return rc;
 		}
 	}
 
