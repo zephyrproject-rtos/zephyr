@@ -314,7 +314,7 @@ void test_set_role(struct ll_conn *conn, uint8_t role)
 
 void event_prepare(struct ll_conn *conn)
 {
-	struct lll_conn *lll;
+	struct lll_conn *lll = &conn->lll;
 	uint32_t *evt_active = &(event_active[find_idx(conn)]);
 
 	/* Can only be called with no active event */
@@ -323,11 +323,13 @@ void event_prepare(struct ll_conn *conn)
 
 	/*** ULL Prepare ***/
 
+	/* Event counter */
+	conn->event_counter = lll->event_counter + lll->latency_prepare;
+
 	/* Handle any LL Control Procedures */
 	ull_cp_run(conn);
 
 	/*** LLL Prepare ***/
-	lll = &conn->lll;
 
 	/* Save the latency for use in event */
 	lll->latency_prepare += lll->latency;
