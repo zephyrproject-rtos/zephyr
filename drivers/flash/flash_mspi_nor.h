@@ -19,6 +19,9 @@ extern "C" {
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 #define WITH_RESET_GPIO 1
 #endif
+#if DT_ANY_INST_HAS_BOOL_STATUS_OKAY(initial_soft_reset)
+#define WITH_SOFT_RESET 1
+#endif
 
 struct flash_mspi_nor_config {
 	const struct device *bus;
@@ -32,8 +35,8 @@ struct flash_mspi_nor_config {
 #if defined(WITH_RESET_GPIO)
 	struct gpio_dt_spec reset;
 	uint32_t reset_pulse_us;
-	uint32_t reset_recovery_us;
 #endif
+	uint32_t reset_recovery_us;
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	struct flash_pages_layout layout;
 #endif
@@ -41,6 +44,7 @@ struct flash_mspi_nor_config {
 	const struct flash_mspi_nor_cmds *jedec_cmds;
 	struct flash_mspi_nor_quirks *quirks;
 	bool multiperipheral_bus : 1;
+	bool initial_soft_reset  : 1;
 	uint8_t dw15_qer         : 3;
 	uint8_t dw19_oer         : 3;
 	bool cmd_ext_inv	 : 1;

@@ -13,6 +13,8 @@
 
 #include "flash_mspi_nor.h"
 
+#define BFP_DW16_SOFT_RESET_66_99 0x10
+
 #define BFP_DW18_CMD_EXT_SAME 0
 #define BFP_DW18_CMD_EXT_INV  1
 
@@ -779,6 +781,77 @@ static int gpio_reset(const struct device *dev)
 }
 #endif
 
+#if defined(WITH_SOFT_RESET)
+static int soft_reset_66_99(const struct device *dev)
+{
+	int rc;
+
+	setup_xfer(dev, MSPI_TX);
+	rc = perform_xfer(dev, SPI_NOR_CMD_RESET_EN, false);
+	if (rc < 0) {
+		LOG_ERR("CMD_RESET_EN failed: %d", rc);
+		return rc;
+	}
+
+	setup_xfer(dev, MSPI_TX);
+	rc = perform_xfer(dev, SPI_NOR_CMD_RESET_MEM, false);
+	if (rc < 0) {
+		LOG_ERR("CMD_RESET_MEM failed: %d", rc);
+		return rc;
+	}
+
+	return 0;
+}
+
+static int soft_reset(const struct device *dev)
+{
+	const struct flash_mspi_nor_config *dev_config = dev->config;
+	struct flash_mspi_nor_data *dev_data = dev->data;
+	int rc;
+
+	/* If the flash may expect commands sent in multi-line mode,
+	 * send additionally the reset sequence this way.
+	 */
+	if (dev_config->multi_io_cmd) {
+		rc = mspi_dev_config(dev_config->bus, &dev_config->mspi_id,
+				     MSPI_DEVICE_CONFIG_IO_MODE,
+				     &dev_config->mspi_nor_cfg);
+		if (rc < 0) {
+			LOG_ERR("%s: dev_config() failed: %d", __func__, rc);
+			return rc;
+		}
+
+		dev_data->in_target_io_mode = true;
+
+		rc = soft_reset_66_99(dev);
+		if (rc < 0) {
+			return rc;
+		}
+
+		rc = mspi_dev_config(dev_config->bus, &dev_config->mspi_id,
+				     MSPI_DEVICE_CONFIG_IO_MODE,
+				     &dev_config->mspi_nor_init_cfg);
+		if (rc < 0) {
+			LOG_ERR("%s: dev_config() failed: %d", __func__, rc);
+			return rc;
+		}
+
+		dev_data->in_target_io_mode = false;
+	}
+
+	rc = soft_reset_66_99(dev);
+	if (rc < 0) {
+		return rc;
+	}
+
+	if (dev_config->reset_recovery_us != 0) {
+		k_busy_wait(dev_config->reset_recovery_us);
+	}
+
+	return 0;
+}
+#endif /* WITH_SOFT_RESET */
+
 static int flash_chip_init(const struct device *dev)
 {
 	const struct flash_mspi_nor_config *dev_config = dev->config;
@@ -824,6 +897,15 @@ static int flash_chip_init(const struct device *dev)
 	if (rc < 0) {
 		LOG_ERR("Failed to reset with GPIO: %d", rc);
 		return rc;
+	}
+#endif
+
+#if defined(WITH_SOFT_RESET)
+	if (dev_config->initial_soft_reset) {
+		rc = soft_reset(dev);
+		if (rc < 0) {
+			return rc;
+		}
 	}
 #endif
 
@@ -1061,6 +1143,11 @@ BUILD_ASSERT((FLASH_SIZE_INST(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) ==
 		      <= BFP_DW18_CMD_EXT_INV),					\
 		"Unsupported Octal Command Extension mode in "			\
 			DT_NODE_FULL_NAME(DT_DRV_INST(inst)));			\
+	BUILD_ASSERT(!DT_INST_PROP(inst, initial_soft_reset) ||			\
+		     (SFDP_FIELD(inst, sfdp_bfp, 16, GENMASK(13, 8))		\
+		      & BFP_DW16_SOFT_RESET_66_99),				\
+		"Cannot use 66h/99h soft reset sequence for "			\
+			DT_NODE_FULL_NAME(DT_DRV_INST(inst)));			\
 	PM_DEVICE_DT_INST_DEFINE(inst, dev_pm_action_cb);			\
 	static struct flash_mspi_nor_data dev##inst##_data;			\
 	static const struct flash_mspi_nor_config dev##inst##_config = {	\
@@ -1073,10 +1160,10 @@ BUILD_ASSERT((FLASH_SIZE_INST(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) ==
 		(.xip_cfg = MSPI_XIP_CONFIG_DT_INST(inst),))			\
 	IF_ENABLED(WITH_RESET_GPIO,						\
 		(.reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),	\
-		.reset_pulse_us = DT_INST_PROP_OR(inst, t_reset_pulse, 0)	\
-				/ 1000,						\
+		 .reset_pulse_us = DT_INST_PROP_OR(inst, t_reset_pulse, 0)	\
+				 / 1000,))					\
 		.reset_recovery_us = DT_INST_PROP_OR(inst, t_reset_recovery, 0)	\
-				   / 1000,))					\
+				   / 1000,					\
 		FLASH_PAGE_LAYOUT_DEFINE(inst)					\
 		.jedec_id = DT_INST_PROP(inst, jedec_id),			\
 		.jedec_cmds = FLASH_CMDS(inst),					\
