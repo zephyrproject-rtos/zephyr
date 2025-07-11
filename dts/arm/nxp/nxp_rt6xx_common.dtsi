@@ -54,7 +54,7 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		compatible = "nxp,rtxxx-dsp-ctrl";
+		compatible = "nxp,rt600-dsp-ctrl";
 		sysctl = <&sysctl0>;
 
 		status = "disabled";
