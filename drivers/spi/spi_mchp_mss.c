@@ -211,13 +211,15 @@ static inline void mss_spi_readwr_fifo(const struct device *dev)
 		}
 
 		if (!(mss_spi_read(cfg, MSS_SPI_REG_STATUS) & MSS_SPI_STATUS_TXFIFO_FULL)) {
-			if (spi_context_tx_buf_on(ctx)) {
-				data8 = ctx->tx_buf[0];
-				mss_spi_write(cfg, MSS_SPI_REG_TX_DATA, data8);
-			} else {
-				mss_spi_write(cfg, MSS_SPI_REG_TX_DATA, 0x0);
+			if (spi_context_tx_on(ctx)) {
+				if (spi_context_tx_buf_on(ctx)) {
+					data8 = ctx->tx_buf[0];
+					mss_spi_write(cfg, MSS_SPI_REG_TX_DATA, data8);
+				} else {
+					mss_spi_write(cfg, MSS_SPI_REG_TX_DATA, 0x0);
+				}
+				spi_context_update_tx(ctx, 1, 1);
 			}
-			spi_context_update_tx(ctx, 1, 1);
 		}
 	}
 }
