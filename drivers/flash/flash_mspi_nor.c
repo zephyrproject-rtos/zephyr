@@ -12,6 +12,7 @@
 #include <zephyr/pm/device_runtime.h>
 
 #include "flash_mspi_nor.h"
+#include "flash_mspi_nor_sfdp.h"
 #include "flash_mspi_nor_quirks.h"
 
 LOG_MODULE_REGISTER(flash_mspi_nor, CONFIG_FLASH_LOG_LEVEL);
@@ -110,7 +111,9 @@ static inline uint32_t dev_flash_size(const struct device *dev)
 
 static inline uint16_t dev_page_size(const struct device *dev)
 {
-	return SPI_NOR_PAGE_SIZE;
+	const struct flash_mspi_nor_config *dev_config = dev->config;
+
+	return dev_config->page_size;
 }
 
 static int api_read(const struct device *dev, off_t addr, void *dest,
@@ -528,7 +531,7 @@ static int quad_enable_set(const struct device *dev, bool enable)
 		return rc;
 	}
 
-	if (dev_config->dw15_qer == JESD216_DW15_QER_VAL_S1B6) {
+	if (dev_data->switch_info.quad_enable_req == JESD216_DW15_QER_VAL_S1B6) {
 		const struct flash_mspi_nor_cmd cmd_status = {
 			.dir = MSPI_TX,
 			.cmd = SPI_NOR_CMD_WRSR,
@@ -564,10 +567,11 @@ static int quad_enable_set(const struct device *dev, bool enable)
 static int default_io_mode(const struct device *dev)
 {
 	const struct flash_mspi_nor_config *dev_config = dev->config;
+	struct flash_mspi_nor_data *dev_data = dev->data;
 	enum mspi_io_mode io_mode = dev_config->mspi_nor_cfg.io_mode;
 	int rc = 0;
 
-	if (dev_config->dw15_qer != JESD216_DW15_QER_VAL_NONE) {
+	if (dev_data->switch_info.quad_enable_req != JESD216_DW15_QER_VAL_NONE) {
 		/* For Quad 1-1-4 and 1-4-4, entering or leaving mode is defined
 		 * in JEDEC216 BFP DW15 QER
 		 */
@@ -651,7 +655,7 @@ static int flash_chip_init(const struct device *dev)
 	/* Some chips reuse RESET pin for data in Quad modes:
 	 * force single line mode before resetting.
 	 */
-	if (dev_config->dw15_qer != JESD216_DW15_QER_VAL_NONE &&
+	if (dev_data->switch_info.quad_enable_req != JESD216_DW15_QER_VAL_NONE &&
 	    (io_mode == MSPI_IO_MODE_SINGLE ||
 	     io_mode == MSPI_IO_MODE_QUAD_1_1_4 ||
 	     io_mode == MSPI_IO_MODE_QUAD_1_4_4)) {
@@ -743,6 +747,11 @@ static int drv_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	memcpy(dev_data->erase_types, dev_config->default_erase_types,
+	       sizeof(dev_data->erase_types));
+	dev_data->cmd_info = dev_config->default_cmd_info;
+	dev_data->switch_info = dev_config->default_switch_info;
+
 	rc = pm_device_runtime_get(dev_config->bus);
 	if (rc < 0) {
 		LOG_ERR("pm_device_runtime_get() failed: %d", rc);
@@ -793,7 +802,15 @@ static DEVICE_API(flash, drv_api) = {
 	.dqs_enable = false,						\
 }
 
-#define FLASH_SIZE_INST(inst) (DT_INST_PROP(inst, size) / 8)
+#define FLASH_SIZE(inst) \
+	(DT_INST_NODE_HAS_PROP(inst, size) \
+	 ? DT_INST_PROP(inst, size) / 8 \
+	 : BFP_FLASH_DENSITY(SFDP_DW(inst, sfdp_bfp, 2)) / 8)
+
+#define FLASH_PAGE_EXP(inst) SFDP_FIELD(inst, sfdp_bfp, 11, GENMASK(7, 4))
+#define FLASH_PAGE_SIZE(inst) \
+	(FLASH_PAGE_EXP(inst) ? BIT(FLASH_PAGE_EXP(inst)) \
+			      : SPI_NOR_PAGE_SIZE)
 
 /* Define copies of mspi_io_mode enum values, so they can be used inside
  * the COND_CODE_1 macros.
@@ -829,23 +846,17 @@ extern const struct flash_mspi_nor_cmds mspi_io_mode_not_supported;
 
 #define FLASH_QUIRKS(inst) FLASH_MSPI_QUIRKS_GET(DT_DRV_INST(inst))
 
-#define FLASH_DW15_QER_VAL(inst) _CONCAT(JESD216_DW15_QER_VAL_, \
-	DT_INST_STRING_TOKEN(inst, quad_enable_requirements))
-#define FLASH_DW15_QER(inst) COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, quad_enable_requirements), \
-	(FLASH_DW15_QER_VAL(inst)), (JESD216_DW15_QER_VAL_NONE))
-
-
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 BUILD_ASSERT((CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE % 4096) == 0,
 	"MSPI_NOR_FLASH_LAYOUT_PAGE_SIZE must be multiple of 4096");
 #define FLASH_PAGE_LAYOUT_DEFINE(inst) \
 	.layout = { \
 		.pages_size = CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE, \
-		.pages_count = FLASH_SIZE_INST(inst) \
+		.pages_count = FLASH_SIZE(inst) \
 			     / CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE, \
 	},
 #define FLASH_PAGE_LAYOUT_CHECK(inst) \
-BUILD_ASSERT((FLASH_SIZE_INST(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) == 0, \
+BUILD_ASSERT((FLASH_SIZE(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) == 0, \
 	"MSPI_NOR_FLASH_LAYOUT_PAGE_SIZE incompatible with flash size, instance " #inst);
 #else
 #define FLASH_PAGE_LAYOUT_DEFINE(inst)
@@ -867,11 +878,14 @@ BUILD_ASSERT((FLASH_SIZE_INST(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) ==
 		     (DT_INST_ENUM_IDX(inst, mspi_io_mode) ==			\
 		      MSPI_IO_MODE_OCTAL),					\
 		"Only 1x, 1-4-4 and 8x I/O modes are supported for now");	\
+	SFDP_BUILD_ASSERTS(inst);						\
 	PM_DEVICE_DT_INST_DEFINE(inst, dev_pm_action_cb);			\
+	DEFAULT_ERASE_TYPES_DEFINE(inst);					\
 	static struct flash_mspi_nor_data dev##inst##_data;			\
 	static const struct flash_mspi_nor_config dev##inst##_config = {	\
 		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),			\
-		.flash_size = FLASH_SIZE_INST(inst),				\
+		.flash_size = FLASH_SIZE(inst),					\
+		.page_size = FLASH_PAGE_SIZE(inst),				\
 		.mspi_id = MSPI_DEVICE_ID_DT_INST(inst),			\
 		.mspi_nor_cfg = MSPI_DEVICE_CONFIG_DT_INST(inst),		\
 		.mspi_nor_init_cfg = FLASH_INITIAL_CONFIG(inst),		\
@@ -892,7 +906,9 @@ BUILD_ASSERT((FLASH_SIZE_INST(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) ==
 		.jedec_id = DT_INST_PROP(inst, jedec_id),			\
 		.jedec_cmds = FLASH_CMDS(inst),					\
 		.quirks = FLASH_QUIRKS(inst),					\
-		.dw15_qer = FLASH_DW15_QER(inst),				\
+		.default_erase_types = DEFAULT_ERASE_TYPES(inst),		\
+		.default_cmd_info = DEFAULT_CMD_INFO(inst),			\
+		.default_switch_info = DEFAULT_SWITCH_INFO(inst),		\
 	};									\
 	FLASH_PAGE_LAYOUT_CHECK(inst)						\
 	DEVICE_DT_INST_DEFINE(inst,						\
