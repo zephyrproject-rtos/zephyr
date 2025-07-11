@@ -14,7 +14,8 @@
 #define TICKER_USER_ID_ULL_LOW  MAYFLY_CALL_ID_2
 #define TICKER_USER_ID_THREAD   MAYFLY_CALL_ID_PROGRAM
 
-#define EVENT_PIPELINE_MAX 7
+#define EVENT_DEFER_MAX    4U
+#define EVENT_PIPELINE_MAX (7U + (EVENT_DEFER_MAX))
 
 #define ADV_INT_UNIT_US          625U
 #define SCAN_INT_UNIT_US         625U
@@ -236,7 +237,8 @@ struct lll_prepare_param {
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 	int8_t  prio;
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
-	uint8_t force;
+	uint8_t force:1;
+	uint8_t defer:1;
 	void *param;
 };
 
