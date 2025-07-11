@@ -3,6 +3,7 @@
 # Copyright (c) 2016 Intel Corporation
 # Copyright (c) 2019 Song Qiang <songqiang1304521@gmail.com>
 # Copyright (c) 2023 Jeroen van Dooren, Nobleo Technology
+# Copyright (C) 2025 Savoir-faire Linux, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 config DMA_STM32
@@ -12,6 +13,7 @@ config DMA_STM32
 	depends on DT_HAS_ST_STM32_DMA_V1_ENABLED \
 		|| DT_HAS_ST_STM32_DMA_V2_ENABLED \
 		|| DT_HAS_ST_STM32_DMA_V2BIS_ENABLED \
+		|| DT_HAS_ST_STM32_DMA_V3_ENABLED \
 		|| DT_HAS_ST_STM32_BDMA_ENABLED
 	help
 	  Driver for STM32 DMA V1, V2, V2bis and BDMA types.
@@ -43,6 +45,16 @@ config DMA_STM32_V2
 	  peripheral request must be specified in the dma slot of the dma cell
 	  With the versions V2 bis of DMA, the peripheral request (slot) is not
 	  a parameter of the dma-cell.
+
+config DMA_STM32_V3
+	bool "STM32 DMA V3 driver"
+	default y
+	depends on DT_HAS_ST_STM32_DMA_V3_ENABLED
+	help
+	  Driver for STM32 HPDMA (High Performance DMA) type.
+	  It is used in STM32MP2 series SoCs.
+	  It differs from the DMA driver due to advanced features
+	  it supports such as scatter-gather and burst transfers.
 
 config DMAMUX_STM32
 	bool
