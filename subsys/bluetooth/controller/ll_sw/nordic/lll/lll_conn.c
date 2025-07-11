@@ -167,7 +167,7 @@ void lll_conn_prepare_reset(void)
  *        gracefully abort the deferred next event when -EBUSY is returned in this is_abort_cb
  *        interface.
  */
-#define CENTRAL_TRX_BUSY_ITERATION_MAX 0
+#define CENTRAL_TRX_BUSY_ITERATION_MAX 1
 
 int lll_conn_central_is_abort_cb(void *next, void *curr,
 				 lll_prepare_cb_t *resume_cb)
@@ -199,7 +199,7 @@ int lll_conn_central_is_abort_cb(void *next, void *curr,
  *        gracefully abort the deferred next event when -EBUSY is returned in this is_abort_cb
  *        interface.
  */
-#define PERIPHERAL_TRX_BUSY_ITERATION_MAX 0
+#define PERIPHERAL_TRX_BUSY_ITERATION_MAX 1
 
 int lll_conn_peripheral_is_abort_cb(void *next, void *curr,
 				    lll_prepare_cb_t *resume_cb)
