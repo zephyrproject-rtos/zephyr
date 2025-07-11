@@ -24,4 +24,17 @@
  */
 int siwx91x_nwp_mode_switch(uint8_t oper_mode, bool hidden_ssid, uint8_t max_num_sta);
 
+/**
+ * @brief Map an ISO/IEC 3166-1 alpha-2 country code to a Wi-Fi region code.
+ *
+ * This function maps a 2-character country code (e.g., "US", "FR", "JP")
+ * to the corresponding region code defined in the SDK (sl_wifi_region_code_t).
+ * If the country is not explicitly listed, it defaults to the US region.
+ *
+ * @param[in] country_code  Pointer to a 2-character ISO country code.
+ *
+ * @return Corresponding sl_wifi_region_code_t value.
+ */
+sl_wifi_region_code_t siwx91x_map_country_code_to_region(const char *country_code);
+
 #endif
