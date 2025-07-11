@@ -2418,3 +2418,31 @@ int supplicant_dpp_dispatch(const struct device *dev, struct wifi_dpp_params *pa
 	return 0;
 }
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
+
+int supplicant_config_params(const struct device *dev, struct wifi_config_params *params)
+{
+	struct wpa_supplicant *wpa_s;
+	int ret = 0;
+
+	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+
+	wpa_s = get_wpa_s_handle(dev);
+	if (!wpa_s) {
+		ret = -ENOENT;
+		wpa_printf(MSG_ERROR, "Device %s not found", dev->name);
+		goto out;
+	}
+
+	if (params->type & WIFI_CONFIG_PARAM_OKC) {
+		if (!wpa_cli_cmd_v("set okc %d", params->okc)) {
+			ret = -EINVAL;
+			wpa_printf(MSG_ERROR, "Failed to set OKC");
+			goto out;
+		}
+		wpa_printf(MSG_DEBUG, "Set OKC: %d", params->okc);
+	}
+
+out:
+	k_mutex_unlock(&wpa_supplicant_mutex);
+	return ret;
+}
