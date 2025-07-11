@@ -297,6 +297,8 @@ enum bt_a2dp_codec_type {
 	BT_A2DP_MPEG1 = 0x01,
 	/** Codec MPEG-2 */
 	BT_A2DP_MPEG2 = 0x02,
+	/** Codec MPEG-D */
+	BT_A2DP_MPEGD = 0x03,
 	/** Codec ATRAC */
 	BT_A2DP_ATRAC = 0x04,
 	/** Codec Non-A2DP */

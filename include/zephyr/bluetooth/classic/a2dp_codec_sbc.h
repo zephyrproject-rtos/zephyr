@@ -56,6 +56,8 @@ extern "C" {
 #define BT_A2DP_SBC_BLK_LEN(cap)      ((cap->config[1] >> 4) & 0x0f)
 #define BT_A2DP_SBC_SUB_BAND(cap)     ((cap->config[1] >> 2) & 0x03)
 #define BT_A2DP_SBC_ALLOC_MTHD(cap)   ((cap->config[1]) & 0x03)
+#define BT_A2DP_SBC_MIN_BITPOOL_VALUE  2
+#define BT_A2DP_SBC_MAX_BITPOOL_VALUE  250
 
 /** @brief SBC Codec */
 struct bt_a2dp_codec_sbc_params {
