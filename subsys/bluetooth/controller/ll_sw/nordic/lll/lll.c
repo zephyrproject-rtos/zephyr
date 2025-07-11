@@ -901,7 +901,7 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 		LL_ASSERT(next);
 
 #if !defined(CONFIG_BT_CTLR_LOW_LAT)
-		if (is_resume) {
+		if (is_resume || prepare_param->defer) {
 			return -EINPROGRESS;
 		}
 
@@ -1020,7 +1020,8 @@ static inline struct lll_event *prepare_dequeue_iter_ready_get(uint8_t *idx)
 
 	do {
 		ready = ull_prepare_dequeue_iter(idx);
-	} while (ready && (ready->is_aborted || ready->is_resume));
+	} while ((ready != NULL) && ((ready->is_aborted != 0U) || (ready->is_resume != 0U) ||
+				     (ready->prepare_param.defer != 0U)));
 
 	return ready;
 }
@@ -1320,10 +1321,27 @@ preempt_find_preemptor:
 	/* Check if current event want to continue */
 	err = event.curr.is_abort_cb(ready->prepare_param.param, event.curr.param, &resume_cb);
 	if (!err || (err == -EBUSY)) {
-		/* Returns -EBUSY when same curr and next state/role, do not
-		 * abort same curr and next event.
-		 */
-		if (err != -EBUSY) {
+		if (err == -EBUSY) {
+			uint32_t ret;
+
+			/* Returns -EBUSY when same curr and next ready state/role, do not abort
+			 * same curr and next ready event.
+			 */
+			ready->prepare_param.defer = 1U;
+
+			/* Find next prepare that is ready and not a resume */
+			ready = prepare_dequeue_iter_ready_get(&idx);
+			if (ready == NULL) {
+				/* No ready prepare */
+				return;
+			}
+
+			/* Start the preempt timeout for next ready prepare */
+			ret = preempt_ticker_start(ready, NULL, ready);
+			LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+				  (ret == TICKER_STATUS_BUSY));
+
+		} else {
 			/* Let preemptor LLL know about the cancelled prepare */
 			ready->is_aborted = 1;
 			ready->abort_cb(&ready->prepare_param, ready->prepare_param.param);
