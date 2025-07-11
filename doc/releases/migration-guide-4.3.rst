@@ -64,6 +64,11 @@ Ethernet
 Networking
 **********
 
+* The HTTP server now respects the configured ``_config`` value. Check that
+  you provide applicable value to :c:macro:`HTTP_SERVICE_DEFINE_EMPTY`,
+  :c:macro:`HTTPS_SERVICE_DEFINE_EMPTY`, :c:macro:`HTTP_SERVICE_DEFINE` and
+  :c:macro:`HTTPS_SERVICE_DEFINE`.
+
 .. zephyr-keep-sorted-start re(^\w)
 
 .. zephyr-keep-sorted-stop

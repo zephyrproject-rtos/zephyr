@@ -40,7 +40,7 @@ struct app_context {
 #if defined(CONFIG_NET_SAMPLE_HTTP_SERVICE)
 static uint16_t test_http_service_port = CONFIG_NET_SAMPLE_HTTP_SERVER_SERVICE_PORT;
 HTTP_SERVICE_DEFINE(test_http_service, CONFIG_NET_CONFIG_MY_IPV4_ADDR, &test_http_service_port,
-		    CONFIG_HTTP_SERVER_MAX_CLIENTS, 10, NULL, NULL);
+		    CONFIG_HTTP_SERVER_MAX_CLIENTS, 10, NULL, NULL, NULL);
 
 static int dyn_handler(struct http_client_ctx *client, enum http_data_status status,
 		       const struct http_request_ctx *request_ctx,
@@ -99,7 +99,7 @@ const sec_tag_t sec_tag_list_verify_none[] = {
 
 static uint16_t test_https_service_port = CONFIG_NET_SAMPLE_HTTPS_SERVER_SERVICE_PORT;
 HTTPS_SERVICE_DEFINE(test_https_service, CONFIG_NET_CONFIG_MY_IPV4_ADDR, &test_https_service_port,
-		     CONFIG_HTTP_SERVER_MAX_CLIENTS, 10, NULL, NULL, sec_tag_list_verify_none,
+		     CONFIG_HTTP_SERVER_MAX_CLIENTS, 10, NULL, NULL, NULL, sec_tag_list_verify_none,
 		     sizeof(sec_tag_list_verify_none));
 
 HTTP_RESOURCE_DEFINE(index_html_gz_resource_https, test_https_service, "/metrics",
