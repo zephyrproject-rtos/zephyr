@@ -109,7 +109,7 @@ jobs:
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=llvm
 
-          ./scripts/twister -p native_sim --no-detailed-test-id --force-color --inline-logs -M -N -v --retry-failed 2 \
+          ./scripts/twister -p native_sim --force-color --inline-logs -M -N -v --retry-failed 2 \
             -T tests --subset ${{matrix.subset}}/2 -j 16
 
       - name: Print ccache stats
