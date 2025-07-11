@@ -75,6 +75,20 @@
 			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
+
+	transceiver0: can-phy0 {
+		compatible = "can-transceiver-gpio";
+		standby-gpios = <&pioc 15 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <DT_FREQ_M(8)>;
+		#phy-cells = <0>;
+	};
+
+	transceiver1: can-phy1 {
+		compatible = "can-transceiver-gpio";
+		standby-gpios = <&pioc 16 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <DT_FREQ_M(8)>;
+		#phy-cells = <0>;
+	};
 };
 
 &flx3 {
@@ -124,12 +138,14 @@
 	status = "okay";
 	pinctrl-0 = <&pinctrl_can0_default>;
 	pinctrl-names = "default";
+	phys = <&transceiver0>;
 };
 
 &mcan1 {
 	status = "okay";
 	pinctrl-0 = <&pinctrl_can1_default>;
 	pinctrl-names = "default";
+	phys = <&transceiver1>;
 };
 
 &pinctrl {
