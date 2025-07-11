@@ -299,8 +299,7 @@ zephyr_udc0: &usbotg_fs {
 		spi-bus-width = <OSPI_OPI_MODE>;
 		data-rate = <OSPI_STR_TRANSFER>;
 		four-byte-opcodes;
-		sfdp-bfp = [
-			    53 46 44 50 06 01 02 ff
+		sfdp-bfp = [53 46 44 50 06 01 02 ff
 			    00 06 01 10 30 00 00 ff
 			    c2 00 01 04 10 01 00 ff
 			    84 00 01 02 c0 00 00 ff
@@ -324,8 +323,7 @@ zephyr_udc0: &usbotg_fs {
 			    00 00 00 00 00 00 00 00
 			    00 00 00 00 00 00 00 00
 			    00 00 00 00 00 00 00 00
-			    7f ef ff ff 21 5c dc ff
-			   ];
+			    7f ef ff ff 21 5c dc ff];
 
 		partitions {
 			compatible = "fixed-partitions";

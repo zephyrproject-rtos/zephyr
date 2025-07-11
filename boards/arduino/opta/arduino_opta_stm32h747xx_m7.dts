@@ -98,15 +98,13 @@ zephyr_udc0: &usbotg_fs {
 
 /* Assign ethernet to M7 by default */
 &mac {
-	pinctrl-0 = <
-		     &eth_ref_clk_pa1
+	pinctrl-0 = <&eth_ref_clk_pa1
 		     &eth_crs_dv_pa7
 		     &eth_rxd0_pc4
 		     &eth_rxd1_pc5
 		     &eth_tx_en_pg11
 		     &eth_txd1_pg12
-		     &eth_txd0_pg13
-		    >;
+		     &eth_txd0_pg13>;
 	pinctrl-names = "default";
 	phy-connection-type = "rmii";
 	phy-handle = <&eth_phy>;
@@ -126,12 +124,10 @@ zephyr_udc0: &usbotg_fs {
 
 /* Assign Bluetooth to M7 by default */
 &uart4 {
-	pinctrl-0 = <
-		     &uart4_tx_pb9
+	pinctrl-0 = <&uart4_tx_pb9
 		     &uart4_rx_ph14
 		     &uart4_cts_pb15
-		     &uart4_rts_pa15
-		    >;
+		     &uart4_rts_pa15>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
 	hw-flow-control;
@@ -152,14 +148,12 @@ zephyr_udc0: &usbotg_fs {
 
 /* Assign external flash to M7 by default */
 &quadspi {
-	pinctrl-0 = <
-		     &quadspi_bk1_io0_pd11
+	pinctrl-0 = <&quadspi_bk1_io0_pd11
 		     &quadspi_bk1_io1_pd12
 		     &quadspi_bk1_io2_pe2
 		     &quadspi_bk1_io3_pd13
 		     &quadspi_bk1_ncs_pg6
-		     &quadspi_clk_pb2
-		    >;
+		     &quadspi_clk_pb2>;
 	pinctrl-names = "default";
 	status = "okay";
 
