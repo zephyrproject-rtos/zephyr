@@ -15,7 +15,7 @@
 
 static uint16_t test_http_service_port = SERVER_PORT;
 HTTP_SERVICE_DEFINE(test_http_service, SERVER_IPV6_ADDR,
-		    &test_http_service_port, 1, 10, NULL, NULL);
+		    &test_http_service_port, 1, 10, NULL, NULL, NULL);
 
 static const char static_resource_payload[] = LOREM_IPSUM_SHORT;
 struct http_resource_detail_static static_resource_detail = {
