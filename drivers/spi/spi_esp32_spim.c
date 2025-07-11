@@ -99,8 +99,13 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 
 	/* clean up and prepare SPI hal */
 	for (size_t i = 0; i < ARRAY_SIZE(hal->hw->data_buf); ++i) {
+#ifdef CONFIG_SOC_SERIES_ESP32C6
+		hal->hw->data_buf[i].val = 0;
+#else
 		hal->hw->data_buf[i] = 0;
+#endif
 	}
+
 	hal_trans->send_buffer = tx_temp ? tx_temp : (uint8_t *)ctx->tx_buf;
 	hal_trans->rcv_buffer = rx_temp ? rx_temp : ctx->rx_buf;
 	hal_trans->tx_bitlen = bit_len;
