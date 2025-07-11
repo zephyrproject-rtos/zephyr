@@ -126,12 +126,17 @@ static int wdt_ambiq_install_timeout(const struct device *dev, const struct wdt_
 {
 	const struct wdt_ambiq_config *dev_cfg = dev->config;
 	struct wdt_ambiq_data *data = dev->data;
+	uint32_t timeout = cfg->window.max * dev_cfg->clk_freq / 1000;
 
 	if (cfg->window.min != 0U || cfg->window.max == 0U) {
 		return -EINVAL;
 	}
 
-	data->timeout = cfg->window.max * dev_cfg->clk_freq / 1000;
+	if (timeout == 0 || timeout > 256) {
+		return -EINVAL;
+	}
+
+	data->timeout = timeout;
 	data->callback = cfg->callback;
 
 	switch (cfg->flags) {
