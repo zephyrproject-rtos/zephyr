@@ -148,3 +148,15 @@ zephyr_uhc1: &usbhhs {
 	tx-cal-45-dp-ohms = <10>;
 	tx-cal-45-dm-ohms = <10>;
 };
+
+&sdif {
+	status = "okay";
+	pinctrl-0 = <&pinmux_sdif_default>;
+	pinctrl-names = "default";
+
+	mmc {
+		compatible = "zephyr,sdmmc-disk";
+		status = "okay";
+		disk-name = "SD";
+	};
+};
