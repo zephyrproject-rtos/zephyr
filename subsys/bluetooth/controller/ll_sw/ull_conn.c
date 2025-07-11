@@ -2188,7 +2188,7 @@ void ull_conn_resume_rx_data(struct ll_conn *conn)
 
 uint16_t ull_conn_event_counter_at_prepare(const struct ll_conn *conn)
 {
-	return conn->lll.event_counter + conn->lll.latency_prepare + conn->llcp.prep.lazy;
+	return conn->event_counter + conn->llcp.prep.lazy;
 }
 
 uint16_t ull_conn_event_counter(struct ll_conn *conn)
@@ -2388,6 +2388,11 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 			conn_interval_old_us - conn_interval_new_us);
 	}
 
+	/* Adjust ULL event counter */
+	conn->event_counter += conn->llcp.prep.lazy;
+	conn->event_counter -= (instant_latency - latency_upd);
+
+	/* Adjust LLL prepare latency */
 	lll->latency_prepare += conn->llcp.prep.lazy;
 	lll->latency_prepare -= (instant_latency - latency_upd);
 
