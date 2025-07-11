@@ -46,7 +46,7 @@ def test_power_harness(probe_class: PowerMonitor, test_data, request, dut: Devic
     )
 
     # # Convert measured values from amps to milliamps for comparison
-    rms_values_in_milliamps = [value * 1e4 for value in rms_values_measured]
+    rms_values_in_milliamps = [value * 1e3 for value in rms_values_measured]
 
     # # Log the calculated values in milliamps for debugging purposes
     logger.debug(f"Measured RMS values in mA: {rms_values_in_milliamps}")
