@@ -3,7 +3,7 @@
 
 config NXP_RTXXX_DSP_CTRL
 	bool "NXP i.MX RTxxx DSP control"
-	depends on DT_HAS_NXP_RTXXX_DSP_CTRL_ENABLED
+	depends on DT_HAS_NXP_RT600_DSP_CTRL_ENABLED || DT_HAS_NXP_RT700_DSP_CTRL_HIFI4_ENABLED
 	default y
 	help
 	  Enables a DSP control driver for NXP i.MX RTxxx devices.
