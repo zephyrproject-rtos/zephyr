@@ -396,7 +396,7 @@ static int op_done_sync_rx(const struct device *dev)
 
 	status = ral_get_lora_rx_pkt_status(&config->ralf.ral, &pkt_status);
 	if (status == RAL_STATUS_OK) {
-		data->rx_state.sync.rssi_dbm = pkt_status.rssi_pkt_in_dbm;
+		data->rx_state.sync.rssi_dbm = pkt_status.signal_rssi_pkt_in_dbm;
 		data->rx_state.sync.snr_db = pkt_status.snr_pkt_in_db;
 	} else {
 		LOG_WRN("Failed to query packet signal stats");
@@ -415,6 +415,7 @@ static void op_done_async_rx(const struct device *dev)
 	uint8_t rx_buffer[CONFIG_LORA_BASICS_MODEM_ASYNC_RX_MAX_PAYLOAD];
 	ral_status_t status;
 	uint16_t size;
+	int16_t rssi;
 
 	/* Retrieve the packet payload */
 	status = ral_get_pkt_payload(&config->ralf.ral, sizeof(rx_buffer), rx_buffer, &size);
@@ -430,9 +431,13 @@ static void op_done_async_rx(const struct device *dev)
 		LOG_WRN("Failed to query packet signal stats");
 	}
 
+	rssi = IS_ENABLED(CONFIG_LORA_BASICS_MODEM_RSSI_REPORT_TYPE_PACKET)
+		       ? pkt_status.rssi_pkt_in_dbm
+		       : pkt_status.signal_rssi_pkt_in_dbm;
+
 	/* Run the user callback */
-	data->rx_state.async.rx_cb(dev, rx_buffer, size, pkt_status.rssi_pkt_in_dbm,
-				   pkt_status.snr_pkt_in_db, data->rx_state.async.user_data);
+	data->rx_state.async.rx_cb(dev, rx_buffer, size, rssi, pkt_status.snr_pkt_in_db,
+				   data->rx_state.async.user_data);
 }
 
 static void op_done_work_handler(struct k_work *work)
