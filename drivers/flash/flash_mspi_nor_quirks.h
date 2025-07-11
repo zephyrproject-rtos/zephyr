@@ -71,45 +71,29 @@ static inline int mxicy_mx25r_post_switch_mode(const struct device *dev)
 	}
 
 	/* Wait for previous write to finish */
-	do {
-		flash_mspi_command_set(dev, &dev_config->jedec_cmds->status);
-		dev_data->packet.data_buf  = &status;
-		dev_data->packet.num_bytes = sizeof(status);
-		rc = mspi_transceive(dev_config->bus, &dev_config->mspi_id, &dev_data->xfer);
-		if (rc < 0) {
-			return rc;
-		}
-	} while (status & SPI_NOR_WIP_BIT);
+	rc = wait_until_ready(dev, K_USEC(1));
+	if (rc < 0) {
+		return rc;
+	}
 
 	/* Write enable */
-	flash_mspi_command_set(dev, &commands_single.write_en);
-	rc = mspi_transceive(dev_config->bus, &dev_config->mspi_id,
-			     &dev_data->xfer);
+	rc = cmd_wren(dev);
 	if (rc < 0) {
 		return rc;
 	}
 
 	/* Write status and config registers */
-	const struct flash_mspi_nor_cmd cmd_status = {
-		.dir = MSPI_TX,
-		.cmd = SPI_NOR_CMD_WRSR,
-		.cmd_length = 1,
-	};
-
-	flash_mspi_command_set(dev, &cmd_status);
+	set_up_xfer(dev, MSPI_TX);
 	dev_data->packet.data_buf  = mxicy_mx25r_hp_payload;
 	dev_data->packet.num_bytes = sizeof(mxicy_mx25r_hp_payload);
-	rc = mspi_transceive(dev_config->bus, &dev_config->mspi_id, &dev_data->xfer);
+	rc = perform_xfer(dev, SPI_NOR_CMD_WRSR, false);
 	if (rc < 0) {
 		return rc;
 	}
 
 	/* Wait for write to end and verify status register */
 	do {
-		flash_mspi_command_set(dev, &dev_config->jedec_cmds->status);
-		dev_data->packet.data_buf  = &status;
-		dev_data->packet.num_bytes = sizeof(status);
-		rc = mspi_transceive(dev_config->bus, &dev_config->mspi_id, &dev_data->xfer);
+		rc = cmd_rdsr(dev, SPI_NOR_CMD_RDSR, &status);
 		if (rc < 0) {
 			return rc;
 		}
@@ -120,10 +104,10 @@ static inline int mxicy_mx25r_post_switch_mode(const struct device *dev)
 	}
 
 	/* Verify configuration registers */
-	flash_mspi_command_set(dev, &dev_config->jedec_cmds->config);
-	dev_data->packet.data_buf  = config;
+	set_up_xfer(dev, MSPI_RX);
 	dev_data->packet.num_bytes = sizeof(config);
-	rc = mspi_transceive(dev_config->bus, &dev_config->mspi_id, &dev_data->xfer);
+	dev_data->packet.data_buf  = config;
+	rc = perform_xfer(dev, SPI_NOR_CMD_RDCR, false);
 	if (rc < 0) {
 		return rc;
 	}
@@ -161,26 +145,18 @@ static inline int mxicy_mx25u_post_switch_mode(const struct device *dev)
 	}
 
 	/* Write enable */
-	flash_mspi_command_set(dev, &commands_single.write_en);
-	rc = mspi_transceive(dev_config->bus, &dev_config->mspi_id,
-			     &dev_data->xfer);
+	rc = cmd_wren(dev);
 	if (rc < 0) {
 		return rc;
 	}
 
 	/* Write config register 2 */
-	const struct flash_mspi_nor_cmd cmd_status = {
-		.dir = MSPI_TX,
-		.cmd = SPI_NOR_CMD_WR_CFGREG2,
-		.cmd_length = 1,
-		.addr_length = 4,
-	};
-
-	flash_mspi_command_set(dev, &cmd_status);
+	set_up_xfer(dev, MSPI_TX);
+	dev_data->xfer.addr_length = 4;
+	dev_data->packet.address   = 0;
 	dev_data->packet.data_buf  = &mxicy_mx25u_oe_payload;
 	dev_data->packet.num_bytes = sizeof(mxicy_mx25u_oe_payload);
-	rc = mspi_transceive(dev_config->bus, &dev_config->mspi_id, &dev_data->xfer);
-	return rc;
+	return perform_xfer(dev, SPI_NOR_CMD_WR_CFGREG2, false);
 }
 
 static int mxicy_mx25u_pre_init(const struct device *dev)
@@ -208,18 +184,12 @@ static int mxicy_mx25u_pre_init(const struct device *dev)
 	 */
 
 	/* Read configured number of dummy cycles for memory reading commands. */
-	const struct flash_mspi_nor_cmd cmd_rd_cr2 = {
-		.dir = MSPI_RX,
-		.cmd = SPI_NOR_CMD_RD_CFGREG2,
-		.cmd_length = 1,
-		.addr_length = 4,
-	};
-
-	flash_mspi_command_set(dev, &cmd_rd_cr2);
+	set_up_xfer(dev, MSPI_RX);
+	dev_data->xfer.addr_length = 4;
 	dev_data->packet.address   = 0x300;
 	dev_data->packet.data_buf  = &cfg_reg;
 	dev_data->packet.num_bytes = sizeof(cfg_reg);
-	rc = mspi_transceive(dev_config->bus, &dev_config->mspi_id, &dev_data->xfer);
+	rc = perform_xfer(dev, SPI_NOR_CMD_RD_CFGREG2, false);
 	if (rc < 0) {
 		LOG_ERR("Failed to read Dummy Cycle from CFGREG2");
 		return rc;
