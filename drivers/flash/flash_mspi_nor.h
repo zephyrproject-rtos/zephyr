@@ -41,7 +41,13 @@ struct flash_mspi_nor_config {
 	uint8_t jedec_id[SPI_NOR_MAX_ID_LEN];
 	const struct flash_mspi_nor_cmds *jedec_cmds;
 	struct flash_mspi_nor_quirks *quirks;
-	uint8_t dw15_qer;
+	uint8_t dw15_qer         : 3;
+	uint8_t dw19_oer         : 3;
+	bool cmd_ext_inv	 : 1;
+	bool sfdp_addr_4         : 1;
+	bool sfdp_dummy_20       : 1;
+	bool rdsr_addr_4         : 1;
+	uint8_t rdsr_dummy       : 4;
 };
 
 struct flash_mspi_nor_data {

@@ -12,6 +12,13 @@
 #include <zephyr/pm/device_runtime.h>
 
 #include "flash_mspi_nor.h"
+
+#define BFP_DW18_CMD_EXT_SAME 0
+#define BFP_DW18_CMD_EXT_INV  1
+
+#define BFP_DW19_OER_VAL_NONE 0
+#define BFP_DW19_OER_VAL_S2B3 1
+
 #include "flash_mspi_nor_quirks.h"
 
 LOG_MODULE_REGISTER(flash_mspi_nor, CONFIG_FLASH_LOG_LEVEL);
@@ -829,11 +836,47 @@ extern const struct flash_mspi_nor_cmds mspi_io_mode_not_supported;
 
 #define FLASH_QUIRKS(inst) FLASH_MSPI_QUIRKS_GET(DT_DRV_INST(inst))
 
-#define FLASH_DW15_QER_VAL(inst) _CONCAT(JESD216_DW15_QER_VAL_, \
-	DT_INST_STRING_TOKEN(inst, quad_enable_requirements))
-#define FLASH_DW15_QER(inst) COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, quad_enable_requirements), \
-	(FLASH_DW15_QER_VAL(inst)), (JESD216_DW15_QER_VAL_NONE))
+/* 32-bit words in SFDP arrays in devicetree are stored in little-endian byte
+ * order. See jedec,jesd216.yaml
+ */
+#define SFDP_DW_BYTE_0_IDX(dw_no) \
+	UTIL_DEC(UTIL_DEC(UTIL_DEC(UTIL_DEC(UTIL_X2(UTIL_X2(dw_no))))))
+#define SFDP_DW_BYTE_1_IDX(dw_no) \
+	UTIL_DEC(UTIL_DEC(UTIL_DEC(UTIL_X2(UTIL_X2(dw_no)))))
+#define SFDP_DW_BYTE_2_IDX(dw_no) \
+	UTIL_DEC(UTIL_DEC(UTIL_X2(UTIL_X2(dw_no))))
+#define SFDP_DW_BYTE_3_IDX(dw_no) \
+	UTIL_DEC(UTIL_X2(UTIL_X2(dw_no)))
+#define SFDP_DW(inst, prop, dw_no) \
+	((DT_INST_PROP_BY_IDX(inst, prop, SFDP_DW_BYTE_3_IDX(dw_no)) << 24) | \
+	 (DT_INST_PROP_BY_IDX(inst, prop, SFDP_DW_BYTE_2_IDX(dw_no)) << 16) | \
+	 (DT_INST_PROP_BY_IDX(inst, prop, SFDP_DW_BYTE_1_IDX(dw_no)) << 8) | \
+	 (DT_INST_PROP_BY_IDX(inst, prop, SFDP_DW_BYTE_0_IDX(dw_no)) << 0))
 
+#define SFDP_FIELD(inst, prop, dw_no, mask) \
+	COND_CODE_1(DT_INST_PROP_HAS_IDX(inst, prop, SFDP_DW_BYTE_3_IDX(dw_no)), \
+		(FIELD_GET(mask, SFDP_DW(inst, prop, dw_no))), \
+		(0))
+
+#define FLASH_DW15_QER(inst) \
+	DT_INST_ENUM_IDX_OR(inst, quad_enable_requirements, \
+		SFDP_FIELD(inst, sfdp_bfp, 15, GENMASK(22, 20)))
+
+#define OCTAL_SFDP_ENTRIES(inst) \
+	COND_CODE_1(IS_EQ(DT_INST_ENUM_IDX(inst, mspi_io_mode), _MSPI_IO_MODE_OCTAL), \
+		(.dw19_oer = SFDP_FIELD(inst, sfdp_bfp, 19, GENMASK(22, 20)), \
+		 .cmd_ext_inv = SFDP_FIELD(inst, sfdp_bfp, 18, GENMASK(30, 29)) \
+				== BFP_DW18_CMD_EXT_INV, \
+		 .sfdp_addr_4 = SFDP_FIELD(inst, sfdp_ff05, 1, BIT(31)) == 0, \
+		 .sfdp_dummy_20 = SFDP_FIELD(inst, sfdp_ff05, 1, BIT(30)) == 1, \
+		 .rdsr_addr_4 = SFDP_FIELD(inst, sfdp_ff05, 1, BIT(29)) == 1, \
+		 .rdsr_dummy = SFDP_FIELD(inst, sfdp_ff05, 1, BIT(28)) ? 8 : 4), \
+		(.dw19_oer = BFP_DW19_OER_VAL_NONE, \
+		 .cmd_ext_inv = false, \
+		 .sfdp_addr_4 = false, \
+		 .sfdp_dummy_20 = false, \
+		 .rdsr_addr_4 = false, \
+		 .rdsr_dummy = 0))
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 BUILD_ASSERT((CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE % 4096) == 0,
@@ -867,6 +910,20 @@ BUILD_ASSERT((FLASH_SIZE_INST(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) ==
 		     (DT_INST_ENUM_IDX(inst, mspi_io_mode) ==			\
 		      MSPI_IO_MODE_OCTAL),					\
 		"Only 1x, 1-4-4 and 8x I/O modes are supported for now");	\
+	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(inst, sfdp_bfp),			\
+		"sfdp-bfp property needed in "					\
+			DT_NODE_FULL_NAME(DT_DRV_INST(inst)));			\
+	BUILD_ASSERT((DT_INST_ENUM_IDX(inst, mspi_io_mode)			\
+		      != MSPI_IO_MODE_OCTAL) ||					\
+		     DT_INST_NODE_HAS_PROP(inst, sfdp_ff05),			\
+		"sfdp-ff05 property needed in "					\
+			DT_NODE_FULL_NAME(DT_DRV_INST(inst)));			\
+	BUILD_ASSERT((DT_INST_ENUM_IDX(inst, mspi_io_mode)			\
+		      != MSPI_IO_MODE_OCTAL) ||					\
+		     (SFDP_FIELD(inst, sfdp_bfp, 18, GENMASK(30, 29))		\
+		      <= BFP_DW18_CMD_EXT_INV),					\
+		"Unsupported Octal Command Extension mode in "			\
+			DT_NODE_FULL_NAME(DT_DRV_INST(inst)));			\
 	PM_DEVICE_DT_INST_DEFINE(inst, dev_pm_action_cb);			\
 	static struct flash_mspi_nor_data dev##inst##_data;			\
 	static const struct flash_mspi_nor_config dev##inst##_config = {	\
@@ -892,6 +949,7 @@ BUILD_ASSERT((FLASH_SIZE_INST(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) ==
 		.jedec_cmds = FLASH_CMDS(inst),					\
 		.quirks = FLASH_QUIRKS(inst),					\
 		.dw15_qer = FLASH_DW15_QER(inst),				\
+		OCTAL_SFDP_ENTRIES(inst),					\
 	};									\
 	FLASH_PAGE_LAYOUT_CHECK(inst)						\
 	DEVICE_DT_INST_DEFINE(inst,						\
