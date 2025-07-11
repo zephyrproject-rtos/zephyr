@@ -78,6 +78,11 @@
 	status = "okay";
 };
 
+&clk_hsi48 {
+	status = "okay";
+	crs-usb-sof;
+};
+
 &rcc {
 	clocks = <&clk_hse>;
 	clock-frequency = <DT_FREQ_M(48)>;
