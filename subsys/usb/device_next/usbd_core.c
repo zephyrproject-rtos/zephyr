@@ -25,9 +25,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usbd_core, CONFIG_USBD_LOG_LEVEL);
 
-static K_KERNEL_STACK_DEFINE(usbd_stack, CONFIG_USBD_THREAD_STACK_SIZE);
-static struct k_thread usbd_thread_data;
-
 K_MSGQ_DEFINE(usbd_msgq, sizeof(struct udc_event),
 	      CONFIG_USBD_MAX_UDC_MSG, sizeof(uint32_t));
 
@@ -260,13 +257,16 @@ int usbd_device_shutdown_core(struct usbd_context *const uds_ctx)
 
 static int usbd_pre_init(void)
 {
-	k_thread_create(&usbd_thread_data, usbd_stack,
-			K_KERNEL_STACK_SIZEOF(usbd_stack),
-			usbd_thread,
-			NULL, NULL, NULL,
-			K_PRIO_COOP(8), 0, K_NO_WAIT);
 
-	k_thread_name_set(&usbd_thread_data, "usbd");
+	STRUCT_SECTION_FOREACH(usbd_context, ctx) {
+		k_thread_create(ctx->thread_data, ctx->thread_stack,
+				ctx->stack_size,
+				usbd_thread,
+				NULL, NULL, NULL,
+				K_PRIO_COOP(8), 0, K_NO_WAIT);
+
+		k_thread_name_set(ctx->thread_data, ctx->name);
+	}
 
 	LOG_DBG("Available USB class iterators:");
 	STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_fs, usbd_class_node, c_nd) {
