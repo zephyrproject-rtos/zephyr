@@ -6,6 +6,8 @@
 
 #ifdef CONFIG_FLASH_MSPI_NOR_USE_SFDP
 
+#define BFP_DW16_SOFT_RESET_66_99 BIT(4)
+
 #define BFP_DW16_4B_ADDR_ENTER_B7    BIT(0)
 #define BFP_DW16_4B_ADDR_ENTER_06_B7 BIT(1)
 #define BFP_DW16_4B_ADDR_PER_CMD     BIT(5)
@@ -359,6 +361,11 @@
 			 BFP_DW16_4B_ADDR_PER_CMD | \
 			 BFP_DW16_4B_ADDR_ALWAYS)), \
 		"No supported method of entering 4-byte addressing mode for " \
+			DT_NODE_FULL_NAME(DT_DRV_INST(inst))); \
+	BUILD_ASSERT(!DT_INST_PROP(inst, initial_soft_reset) || \
+		     (SFDP_FIELD(inst, sfdp_bfp, 16, GENMASK(13, 8)) \
+		      & BFP_DW16_SOFT_RESET_66_99), \
+		"Cannot use 66h/99h soft reset sequence for " \
 			DT_NODE_FULL_NAME(DT_DRV_INST(inst)))
 
 #else
