@@ -268,6 +268,7 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	conn_lll->df_tx_cfg.cte_rsp_en = 0U;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
 
+	conn->event_counter = 0U;
 	conn->connect_expire = CONN_ESTAB_COUNTDOWN;
 	conn->supervision_expire = 0U;
 	conn_interval_us = (uint32_t)interval * CONN_INT_UNIT_US;
@@ -944,6 +945,9 @@ void ull_central_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	/* Increment prepare reference count */
 	ref = ull_ref_inc(&conn->ull);
 	LL_ASSERT(ref);
+
+	/* Increment event counter */
+	conn->event_counter += (lazy + 1U);
 
 	/* De-mux 2 tx node from FIFO, sufficient to be able to set MD bit */
 	ull_conn_tx_demux(2);
