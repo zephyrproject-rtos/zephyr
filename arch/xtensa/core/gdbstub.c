@@ -1061,11 +1061,11 @@ void arch_gdb_post_memory_write(uintptr_t addr, size_t len, uint8_t align)
 	 *    the modified memory.
 	 * 4. Do another ISYNC.
 	 */
-	arch_dcache_flush_range(addr, len);
+	arch_dcache_flush_range((__sparse_force void __sparse_cache *)addr, len);
 
 	__asm__ volatile("isync; memw");
 
-	arch_icache_invd_range(addr, len);
+	arch_icache_invd_range((__sparse_force void __sparse_cache *)addr, len);
 
 	__asm__ volatile("isync");
 #endif /* CONFIG_ICACHE && CONFIG_DCACHE */
