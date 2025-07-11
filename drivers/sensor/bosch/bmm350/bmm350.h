@@ -39,10 +39,19 @@ typedef int (*bmm350_reg_read_fn)(const struct bmm350_bus *bus, uint8_t start, u
 				  int size);
 typedef int (*bmm350_reg_write_fn)(const struct bmm350_bus *bus, uint8_t reg, uint8_t val);
 
+typedef int (*bmm350_reg_prep_write_async_fn)(const struct bmm350_bus *bus,
+					      uint8_t reg, uint8_t val,
+					      struct rtio_sqe **out);
+typedef int (*bmm350_reg_prep_read_async_fn)(const struct bmm350_bus *bus,
+					     uint8_t reg, uint8_t *buf, size_t len,
+					     struct rtio_sqe **out);
+
 struct bmm350_bus_io {
 	bmm350_bus_check_fn check;
 	bmm350_reg_read_fn read;
 	bmm350_reg_write_fn write;
+	bmm350_reg_prep_write_async_fn write_async_prep;
+	bmm350_reg_prep_read_async_fn read_async_prep;
 };
 
 extern const struct bmm350_bus_io bmm350_bus_rtio;
@@ -336,16 +345,7 @@ enum bmm350_performance_parameters {
  * @brief bmm350 compensated magnetometer data and temperature data
  */
 struct bmm350_mag_temp_data {
-	/*! Compensated mag X data */
-	int32_t x;
-
-	/*! Compensated mag Y data */
-	int32_t y;
-
-	/*! Compensated mag Z data */
-	int32_t z;
-
-	/*! Temperature */
+	int32_t mag[3];
 	int32_t temperature;
 };
 
@@ -467,6 +467,16 @@ struct bmm350_raw_mag_data {
 	};
 };
 
+struct bmm350_encoded_data {
+	struct {
+		uint64_t timestamp;
+		uint8_t events : 1;
+		uint8_t channels : 3;
+	} header;
+	struct mag_compensate comp;
+	struct bmm350_raw_mag_data payload;
+};
+
 struct bmm350_config {
 	struct bmm350_bus bus;
 	const struct bmm350_bus_io *bus_io;
@@ -537,6 +547,24 @@ static inline int bmm350_reg_write(const struct device *dev, uint8_t reg, uint8_
 	const struct bmm350_config *cfg = dev->config;
 
 	return cfg->bus_io->write(&cfg->bus, reg, val);
+}
+
+static inline int bmm350_prep_reg_write_async(const struct device *dev,
+					      uint8_t reg, uint8_t val,
+					      struct rtio_sqe **out)
+{
+	const struct bmm350_config *cfg = dev->config;
+
+	return cfg->bus_io->write_async_prep(&cfg->bus, reg, val, out);
+}
+
+static inline int bmm350_prep_reg_read_async(const struct device *dev,
+					      uint8_t reg, uint8_t *buf, size_t len,
+					      struct rtio_sqe **out)
+{
+	const struct bmm350_config *cfg = dev->config;
+
+	return cfg->bus_io->read_async_prep(&cfg->bus, reg, buf, len, out);
 }
 
 #endif /* __SENSOR_BMM350_H__ */

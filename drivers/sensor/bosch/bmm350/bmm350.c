@@ -13,6 +13,8 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/check.h>
+
 #include "bmm350.h"
 #include "bmm350_decoder.h"
 
@@ -424,18 +426,18 @@ static int bmm350_channel_get(const struct device *dev, enum sensor_channel chan
 
 	switch (chan) {
 	case SENSOR_CHAN_MAGN_X:
-		bmm350_convert(val, drv_data->mag_temp_data.x);
+		bmm350_convert(val, drv_data->mag_temp_data.mag[0]);
 		break;
 	case SENSOR_CHAN_MAGN_Y:
-		bmm350_convert(val, drv_data->mag_temp_data.y);
+		bmm350_convert(val, drv_data->mag_temp_data.mag[1]);
 		break;
 	case SENSOR_CHAN_MAGN_Z:
-		bmm350_convert(val, drv_data->mag_temp_data.z);
+		bmm350_convert(val, drv_data->mag_temp_data.mag[2]);
 		break;
 	case SENSOR_CHAN_MAGN_XYZ:
-		bmm350_convert(val, drv_data->mag_temp_data.x);
-		bmm350_convert(val + 1, drv_data->mag_temp_data.y);
-		bmm350_convert(val + 2, drv_data->mag_temp_data.z);
+		bmm350_convert(val, drv_data->mag_temp_data.mag[0]);
+		bmm350_convert(val + 1, drv_data->mag_temp_data.mag[1]);
+		bmm350_convert(val + 2, drv_data->mag_temp_data.mag[2]);
 		break;
 	default:
 		return -ENOTSUP;
@@ -723,11 +725,121 @@ static int bmm350_attr_get(const struct device *dev, enum sensor_channel chan,
 	return ret;
 }
 
+#ifdef CONFIG_SENSOR_ASYNC_API
+
+static void bmm350_one_shot_complete(struct rtio *ctx, const struct rtio_sqe *sqe, void *arg0)
+{
+	struct rtio_iodev_sqe *iodev_sqe = (struct rtio_iodev_sqe *)arg0;
+	struct sensor_read_config *cfg = (struct sensor_read_config *)iodev_sqe->sqe.iodev->data;
+	const struct device *dev = (const struct device *)sqe->userdata;
+	uint8_t *buf;
+	uint32_t buf_len;
+	struct rtio_cqe *cqe;
+	int err = 0;
+
+	do {
+		cqe = rtio_cqe_consume(ctx);
+		if (cqe == NULL) {
+			continue;
+		}
+
+		/** Keep looping through results until we get the first error.
+		 * Usually this causes the remaining CQEs to result in -ECANCELED.
+		 */
+		if (err == 0) {
+			err = cqe->result;
+		}
+		rtio_cqe_release(ctx, cqe);
+	} while (cqe != NULL);
+
+	if (err != 0) {
+		rtio_iodev_sqe_err(iodev_sqe, err);
+		return;
+	}
+
+	/* We've allocated the data already, just grab the pointer to fill comp-data
+	 * now that the bus transfer is complete.
+	 */
+	err = rtio_sqe_rx_buf(iodev_sqe, 0, 0, &buf, &buf_len);
+
+	CHECKIF(err != 0 || !buf || buf_len < sizeof(struct bmm350_encoded_data)) {
+		rtio_iodev_sqe_err(iodev_sqe, -EIO);
+		return;
+	}
+
+	err = bmm350_encode(dev, cfg, false, buf);
+	if (err != 0) {
+		LOG_ERR("Failed to encode frame: %d", err);
+		rtio_iodev_sqe_err(iodev_sqe, err);
+		return;
+	}
+
+	rtio_iodev_sqe_ok(iodev_sqe, 0);
+}
+
+static void bmm350_submit_one_shot(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+{
+	const struct bmm350_config *cfg = dev->config;
+	const struct bmm350_bus *bus = &cfg->bus;
+	uint8_t *buf = NULL;
+	uint32_t buf_len = 0;
+	int err;
+
+	err = rtio_sqe_rx_buf(iodev_sqe,
+			      sizeof(struct bmm350_encoded_data),
+			      sizeof(struct bmm350_encoded_data),
+			      &buf, &buf_len);
+
+	CHECKIF(err != 0 || buf_len < sizeof(struct bmm350_encoded_data)) {
+		LOG_ERR("Failed to allocate BMM350 encoded buffer: %d", err);
+		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
+		return;
+	}
+
+	struct bmm350_encoded_data *edata = (struct bmm350_encoded_data *)buf;
+	struct rtio_sqe *read_sqe = NULL;
+	struct rtio_sqe *cb_sqe;
+
+	err = bmm350_prep_reg_read_async(dev, BMM350_REG_MAG_X_XLSB,
+					 edata->payload.buf, sizeof(edata->payload.buf),
+					 &read_sqe);
+	if (err < 0 || !read_sqe) {
+		rtio_iodev_sqe_err(iodev_sqe, err);
+		return;
+	}
+	read_sqe->flags |= RTIO_SQE_CHAINED;
+
+	cb_sqe = rtio_sqe_acquire(bus->rtio.ctx);
+
+	rtio_sqe_prep_callback_no_cqe(cb_sqe, bmm350_one_shot_complete,
+				      iodev_sqe, (void *)dev);
+
+	rtio_submit(bus->rtio.ctx, 0);
+}
+
+static void bmm350_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+{
+	struct sensor_read_config *cfg = (struct sensor_read_config *)iodev_sqe->sqe.iodev->data;
+
+	if (!cfg->is_streaming) {
+		bmm350_submit_one_shot(dev, iodev_sqe);
+	} else {
+		LOG_ERR("Streaming mode not supported");
+		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
+	}
+}
+
+#endif /* CONFIG_SENSOR_ASYNC_API */
+
 static DEVICE_API(sensor, bmm350_api_funcs) = {
 	.attr_set = bmm350_attr_set,
 	.attr_get = bmm350_attr_get,
 	.sample_fetch = bmm350_sample_fetch,
 	.channel_get = bmm350_channel_get,
+#ifdef CONFIG_SENSOR_ASYNC_API
+	.get_decoder = bmm350_get_decoder,
+	.submit = bmm350_submit,
+#endif
 #ifdef CONFIG_BMM350_TRIGGER
 	.trigger_set = bmm350_trigger_set,
 #endif
