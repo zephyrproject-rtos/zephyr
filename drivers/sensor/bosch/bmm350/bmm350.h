@@ -480,13 +480,18 @@ struct bmm350_encoded_data {
 struct bmm350_config {
 	struct bmm350_bus bus;
 	const struct bmm350_bus_io *bus_io;
-#ifdef CONFIG_BMM350_TRIGGER
 	struct gpio_dt_spec drdy_int;
 	uint8_t int_flags;
-#endif
 	uint8_t default_odr;
 	uint8_t default_osr;
 	uint8_t drive_strength;
+};
+
+struct bmm350_stream {
+	atomic_t state;
+	const struct device *dev;
+	struct gpio_callback cb;
+	struct rtio_iodev_sqe *iodev_sqe;
 };
 
 struct bmm350_data {
@@ -499,6 +504,10 @@ struct bmm350_data {
 	/*! Variable to enable/disable xy bit reset */
 	uint8_t enable_auto_br;
 	struct bmm350_mag_temp_data mag_temp_data;
+
+#ifdef CONFIG_BMM350_STREAM
+	struct bmm350_stream stream;
+#endif
 
 #ifdef CONFIG_BMM350_TRIGGER
 	struct gpio_callback gpio_cb;
@@ -519,7 +528,7 @@ struct bmm350_data {
 #ifdef CONFIG_BMM350_TRIGGER
 	const struct sensor_trigger *drdy_trigger;
 	sensor_trigger_handler_t drdy_handler;
-#endif /* CONFIG_BMM350_TRIGGER */
+#endif
 };
 
 int bmm350_trigger_mode_init(const struct device *dev);
