@@ -570,6 +570,7 @@ def test_testplan_discover(
     env.test_config = tmp_tc
     testplan = TestPlan(env=env)
     testplan.options = mock.Mock(
+        test_pattern=[],
         test='ts1',
         quarantine_list=[tmp_path / qf for qf in ql],
         quarantine_verify=qv
@@ -589,7 +590,7 @@ def test_testplan_discover(
     with pytest.raises(exception) if exception else nullcontext():
         testplan.discover()
 
-    testplan.add_testsuites.assert_called_once_with(testsuite_filter='ts1')
+    testplan.add_testsuites.assert_called_once_with(testsuite_filter='ts1', testsuite_pattern=[])
     assert all([log in caplog.text for log in expected_logs])
 
 
@@ -1186,7 +1187,7 @@ TESTDATA_9 = [
     (['good_test/dummy.common.1', 'good_test/dummy.common.2', 'good_test/dummy.common.3'], False, True, 3, 1),
     (['good_test/dummy.common.1', 'good_test/dummy.common.2',
       'duplicate_test/dummy.common.1', 'duplicate_test/dummy.common.2'], False, True, 4, 1),
-    (['dummy.common.1', 'dummy.common.2'], False, False, 2, 1),
+    (['dummy.common.1', 'dummy.common.2'], False, False, 2, 2),
     (['good_test/dummy.common.1', 'good_test/dummy.common.2', 'good_test/dummy.common.3'], True, True, 0, 1),
 ]
 
@@ -1314,7 +1315,7 @@ tests:
 
     testplan = TestPlan(env=env)
 
-    res = testplan.add_testsuites(testsuite_filter)
+    res = testplan.add_testsuites(testsuite_filter, testsuite_pattern=[])
 
     assert res == expected_suite_count
     assert testplan.load_errors == expected_errors

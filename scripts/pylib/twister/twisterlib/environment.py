@@ -253,6 +253,12 @@ Artificially long but functional example:
         timeout would be multiplication of test timeout value, board-level timeout multiplier
         and global timeout multiplier (this parameter)""")
 
+    parser.add_argument(
+        "--test-pattern", action="append",
+        help="""Run only the tests matching the specified pattern. The pattern
+        can include regular expressions.
+        """)
+
     test_xor_subtest.add_argument(
         "-s", "--test", "--scenario", action="append", type = norm_path,
         help="""Run only the specified test suite scenario. These are named by
