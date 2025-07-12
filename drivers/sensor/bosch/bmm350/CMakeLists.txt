@@ -9,3 +9,4 @@ zephyr_library_sources(
 	bmm350_decoder.c
 )
 zephyr_library_sources_ifdef(CONFIG_BMM350_TRIGGER bmm350_trigger.c)
+zephyr_library_sources_ifdef(CONFIG_BMM350_STREAM bmm350_stream.c)
