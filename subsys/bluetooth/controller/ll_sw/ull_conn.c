@@ -1910,7 +1910,8 @@ static void conn_cleanup_finalize(struct ll_conn *conn)
 				    TICKER_ID_CONN_BASE + lll->handle,
 				    ticker_stop_op_cb, conn);
 	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
-		  (ticker_status == TICKER_STATUS_BUSY));
+		  (ticker_status == TICKER_STATUS_BUSY) ||
+		  ((void *)conn == ull_disable_mark_get()));
 
 	/* Invalidate the connection context */
 	lll->handle = LLL_HANDLE_INVALID;
@@ -1982,7 +1983,14 @@ static void ticker_stop_op_cb(uint32_t status, void *param)
 	static struct mayfly mfy = {0, 0, &link, NULL, conn_disable};
 	uint32_t ret;
 
-	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+	/* Peripheral ticker_stop succeeds, or it fails in a race condition
+	 * when disconnecting (race with ticker_stop), say on HCI Reset.
+	 */
+	if (status != TICKER_STATUS_SUCCESS) {
+		LL_ASSERT(param == ull_disable_mark_get());
+
+		return;
+	}
 
 	/* Check if any pending LLL events that need to be aborted */
 	mfy.param = param;
