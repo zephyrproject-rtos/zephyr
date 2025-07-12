@@ -49,7 +49,6 @@ sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts", "dts",
 from devicetree import edtlib  # pylint: disable=unused-import
 
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/"))
-
 class Filters:
     # platform keys
     PLATFORM_KEY = 'platform key filter'
@@ -723,6 +722,7 @@ class TestPlan:
     def apply_filters(self, **kwargs):
 
         platform_filter = self.options.platform
+        platform_pattern = self.options.platform_pattern
         vendor_filter = self.options.vendor
         exclude_platform = self.options.exclude_platform
         testsuite_filter = self.run_individual_testsuite
@@ -737,11 +737,12 @@ class TestPlan:
         ignore_platform_key = self.options.ignore_platform_key
         emu_filter = self.options.emulation_only
 
-        logger.debug("platform filter: " + str(platform_filter))
-        logger.debug("  vendor filter: " + str(vendor_filter))
-        logger.debug("    arch_filter: " + str(arch_filter))
-        logger.debug("     tag_filter: " + str(tag_filter))
-        logger.debug("    exclude_tag: " + str(exclude_tag))
+        logger.debug(" platform filter: " + str(platform_filter))
+        logger.debug("platform_pattern: " + str(platform_pattern))
+        logger.debug("   vendor filter: " + str(vendor_filter))
+        logger.debug("     arch_filter: " + str(arch_filter))
+        logger.debug("      tag_filter: " + str(tag_filter))
+        logger.debug("     exclude_tag: " + str(exclude_tag))
 
         default_platforms = False
         vendor_platforms = False
@@ -751,7 +752,7 @@ class TestPlan:
             logger.info("Selecting all possible platforms per testsuite scenario")
             # When --all used, any --platform arguments ignored
             platform_filter = []
-        elif not platform_filter and not emu_filter and not vendor_filter:
+        elif not platform_filter and not emu_filter and not vendor_filter and not platform_pattern:
             logger.info("Selecting default platforms per testsuite scenario")
             default_platforms = True
         elif emu_filter:
@@ -766,6 +767,11 @@ class TestPlan:
             # find in aliases and rename
             platform_filter = self.verify_platforms_existence(platform_filter, "platform_filter")
             platforms = list(filter(lambda p: p.name in platform_filter, self.platforms))
+        elif platform_pattern:
+            platforms = list(
+                filter(lambda p: any(re.match(pat, alias) for pat in platform_pattern \
+                                    for alias in p.aliases), self.platforms)
+            )
         elif emu_filter:
             platforms = list(
                 filter(lambda p: bool(p.simulator_by_name(self.options.sim_name)), self.platforms)
@@ -803,14 +809,14 @@ class TestPlan:
             else:
                 _integration_platforms = []
 
-            if (ts.build_on_all and not platform_filter and
+            if (ts.build_on_all and not platform_filter and not platform_pattern and
                 self.test_config.increased_platform_scope):
                 # if build_on_all is set, we build on all platforms
                 platform_scope = self.platforms
             elif ts.integration_platforms and self.options.integration:
                 # if integration is set, we build on integration platforms
                 platform_scope = _integration_platforms
-            elif ts.integration_platforms and not platform_filter:
+            elif ts.integration_platforms and not platform_filter and not platform_pattern:
                 # if integration platforms are set, we build on those and integration mode is set
                 # for this test suite, we build on integration platforms
                 if any(ts.id.startswith(i) for i in integration_mode_list):
