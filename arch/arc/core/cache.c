@@ -131,6 +131,9 @@ int arch_dcache_invd_range(void *start_addr_ptr, size_t size)
 
 int arch_dcache_flush_and_invd_range(void *start_addr_ptr, size_t size)
 {
+	ARG_UNUSED(start_addr_ptr);
+	ARG_UNUSED(size);
+
 	return -ENOTSUP;
 }
 
