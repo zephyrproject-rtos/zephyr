@@ -721,6 +721,8 @@ int arch_mem_domain_init(struct k_mem_domain *domain)
 int arch_mem_domain_partition_add(struct k_mem_domain *domain,
 				  uint32_t partition_id)
 {
+	ARG_UNUSED(partition_id);
+
 	/* Force resynchronization for every thread using this domain */
 	domain->arch.pmp_update_nr += 1;
 	return 0;
@@ -729,6 +731,8 @@ int arch_mem_domain_partition_add(struct k_mem_domain *domain,
 int arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 				     uint32_t partition_id)
 {
+	ARG_UNUSED(partition_id);
+
 	/* Force resynchronization for every thread using this domain */
 	domain->arch.pmp_update_nr += 1;
 	return 0;
@@ -743,6 +747,8 @@ int arch_mem_domain_thread_add(struct k_thread *thread)
 
 int arch_mem_domain_thread_remove(struct k_thread *thread)
 {
+	ARG_UNUSED(thread);
+
 	return 0;
 }
 
