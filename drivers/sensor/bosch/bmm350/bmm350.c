@@ -17,6 +17,7 @@
 
 #include "bmm350.h"
 #include "bmm350_decoder.h"
+#include "bmm350_stream.h"
 
 LOG_MODULE_REGISTER(BMM350, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -823,6 +824,8 @@ static void bmm350_submit(const struct device *dev, struct rtio_iodev_sqe *iodev
 
 	if (!cfg->is_streaming) {
 		bmm350_submit_one_shot(dev, iodev_sqe);
+	} else if (IS_ENABLED(CONFIG_BMM350_STREAM)) {
+		bmm350_stream_submit(dev, iodev_sqe);
 	} else {
 		LOG_ERR("Streaming mode not supported");
 		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
@@ -976,7 +979,12 @@ static int bmm350_init(const struct device *dev)
 		return -EINVAL;
 	}
 #endif
-
+#ifdef CONFIG_BMM350_STREAM
+	if (bmm350_stream_init(dev) < 0) {
+		LOG_ERR("Cannot set up streaming mode.");
+		return -EINVAL;
+	}
+#endif
 	/* Initialize to odr and osr */
 	if (set_mag_odr_osr(dev, &odr, &osr) < 0) {
 		LOG_ERR("failed to set default odr and osr");
@@ -1009,7 +1017,9 @@ static int bmm350_init(const struct device *dev)
 		.default_odr = DT_INST_ENUM_IDX(inst, odr) + BMM350_DATA_RATE_400HZ,               \
 		.default_osr = DT_INST_PROP(inst, osr),                                            \
 		.drive_strength = DT_INST_PROP(inst, drive_strength),                              \
-		IF_ENABLED(CONFIG_BMM350_TRIGGER, (BMM350_INT_CFG(inst)))};                        \
+		IF_ENABLED(CONFIG_BMM350_TRIGGER, (BMM350_INT_CFG(inst)))                          \
+		IF_ENABLED(CONFIG_BMM350_STREAM, (BMM350_INT_CFG(inst)))                           \
+	};                                                                                         \
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(inst, pm_action);                                                 \
                                                                                                    \
