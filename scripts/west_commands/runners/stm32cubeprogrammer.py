@@ -122,6 +122,10 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
             return Path(os.environ["PROGRAMW6432"]) / cli
 
         if platform.system() == "Darwin":
+            cmd = shutil.which("STM32_Programmer_CLI")
+            if cmd is not None:
+                return Path(cmd)
+
             return (
                 Path("/Applications")
                 / "STMicroelectronics"
