@@ -202,13 +202,12 @@ class TestPlan:
 
     def discover(self):
         self.handle_modules()
-        if self.options.test:
-            self.run_individual_testsuite = self.options.test
-
         self.test_config = TestConfiguration(self.env.test_config)
 
         self.add_configurations()
-        num = self.add_testsuites(testsuite_filter=self.run_individual_testsuite)
+        num = self.add_testsuites(testsuite_filter=self.options.test,
+                                testsuite_pattern=self.options.test_pattern)
+
         if num == 0:
             raise TwisterRuntimeError("No testsuites found at the specified location...")
         if self.load_errors:
@@ -507,9 +506,35 @@ class TestPlan:
                             testcases.remove(case.detailed_name)
         return testcases
 
-    def add_testsuites(self, testsuite_filter=None):
+    def _is_testsuite_selected(self, suite: TestSuite, testsuite_filter, testsuite_patterns_r):
+        """Check if the testsuite is selected by the user."""
+        if not testsuite_filter and not testsuite_patterns_r:
+            # no matching requested, include all testsuites
+            return True
+        if testsuite_filter:
+            scenario = os.path.basename(suite.name)
+            if (
+                suite.name
+                and (suite.name in testsuite_filter or scenario in testsuite_filter)
+            ):
+                return True
+        if testsuite_patterns_r:
+            for r in testsuite_patterns_r:
+                if r.search(suite.id):
+                    return True
+        return False
+
+    def add_testsuites(self, testsuite_filter=None, testsuite_pattern=None):
         if testsuite_filter is None:
             testsuite_filter = []
+
+        testsuite_patterns_r = []
+        if testsuite_pattern is None:
+            testsuite_pattern = []
+        else:
+            for pattern in testsuite_pattern:
+                testsuite_patterns_r.append(re.compile(pattern))
+
         for root in self.env.test_roots:
             root = os.path.abspath(root)
 
@@ -574,14 +599,11 @@ class TestPlan:
                         else:
                             suite.add_subcases(suite_dict)
 
-                        if testsuite_filter:
-                            scenario = os.path.basename(suite.name)
-                            if (
-                                suite.name
-                                and (suite.name in testsuite_filter or scenario in testsuite_filter)
-                            ):
-                                self.testsuites[suite.name] = suite
-                        elif suite.name in self.testsuites:
+                        if not self._is_testsuite_selected(suite, testsuite_filter,
+                                                       testsuite_patterns_r):
+                            # skip testsuite if they were not selected directly by the user
+                            continue
+                        if suite.name in self.testsuites:
                             msg = (
                                 f"test suite '{suite.name}' in '{suite.yamlfile}' is already added"
                             )
