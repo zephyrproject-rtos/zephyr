@@ -32,7 +32,7 @@ if(NOT INDEX EQUAL -1)
   message(FATAL_ERROR "Refusing to run pristine in in-source build folder.")
 endif()
 
-file(GLOB build_dir_contents ${BINARY_DIR}/*)
+file(GLOB build_dir_contents LIST_DIRECTORIES TRUE ${BINARY_DIR}/*)
 foreach(file ${build_dir_contents})
   if (EXISTS ${file})
      file(REMOVE_RECURSE ${file})
