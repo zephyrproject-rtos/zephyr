@@ -12,6 +12,7 @@ tests:
       - platform:mimxrt1170_evk@B/mimxrt1176/cm7:SHIELD="nxp_btb44_ov5640;rk055hdmipi4ma0"
       - platform:frdm_mcxn947/mcxn947/cpu0:SHIELD="dvp_20pin_ov7670;lcd_par_s035_8080"
       - platform:frdm_mcxn236/mcxn236:SHIELD="dvp_20pin_ov7670;lcd_par_s035_8080"
+      - platform:stm32h7b3i_dk:SHIELD="st_b_cams_omv_mb1683"
     extra_configs:
       - CONFIG_TEST=y
       - CONFIG_FPU=y
@@ -34,6 +35,7 @@ tests:
       - frdm_mcxn236/mcxn236
       - mm_swiftio
       - esp32s3_eye/esp32s3/procpu
+      - stm32h7b3i_dk
     depends_on: video
     integration_platforms:
       - mimxrt1064_evk/mimxrt1064
