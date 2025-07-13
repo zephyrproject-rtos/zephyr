@@ -2642,7 +2642,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 		.reset_pulse_duration_ms = (reset_ms),                                             \
 		.startup_time_ms  = (startup_ms),                                                  \
 		.shutdown_time_ms = (shutdown_ms),                                                 \
-		.autostarts       = (start),                                                       \
+		.autostarts = DT_INST_PROP_OR(inst, autostarts, (start)),                          \
 		.set_baudrate_chat_script    = (set_baudrate_script),                              \
 		.init_chat_script            = (init_script),                                      \
 		.dial_chat_script            = (dial_script),                                      \
