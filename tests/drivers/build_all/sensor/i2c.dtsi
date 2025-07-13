@@ -1382,3 +1382,8 @@ test_i2c_lsm9ds1_mag: lsm9ds1_mag@b9 {
 	compatible = "st,lsm9ds1_mag";
 	reg = <0xb9>;
 };
+
+test_i2c_lidar_lite_v4: lidar_lite_v4@ba {
+	compatible = "grmn,lidar-lite-v4";
+	reg = <0xba>;
+};
