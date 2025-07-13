@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config LIDAR_LITE_V4
+	bool "Lidar Lite V4 support"
+	depends on DT_HAS_GRMN_LIDAR_LITE_V4_ENABLED
+	default y
+	select I2C
+	help
+	  Driver for Lidar Lite V4 I2C Operation.
