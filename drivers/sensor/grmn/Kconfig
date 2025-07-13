@@ -1,0 +1,6 @@
+# Copyright (c) 2025 Alex Aylward
+# SPDX-License-Identifier: Apache-2.0
+
+# zephyr-keep-sorted-start
+source "drivers/sensor/grmn/lidar_lite_v4/Kconfig"
+# zephyr-keep-sorted-stop
