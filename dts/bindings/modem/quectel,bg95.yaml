@@ -10,3 +10,11 @@ include: uart-device.yaml
 properties:
   mdm-power-gpios:
     type: phandle-array
+
+  autostarts:
+    type: boolean
+    description: |
+      Set for modem variants or carrier boards that start the module
+      automatically when supply voltage is applied—that is, the modem
+      asserts PWRKEY internally and does not require an external PWRKEY
+      pulse.
