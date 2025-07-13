@@ -1,3 +1,4 @@
+# Copyright (c) 2025 Alex Aylward
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_library()

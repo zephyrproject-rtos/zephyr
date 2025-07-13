@@ -1,3 +1,4 @@
+# Copyright (c) 2025 Alex Aylward
 # SPDX-License-Identifier: Apache-2.0
 
 config LIDAR_LITE_V4
