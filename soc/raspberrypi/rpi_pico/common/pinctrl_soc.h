@@ -13,8 +13,8 @@
  * @brief Type to hold a pin's pinctrl configuration.
  */
 struct rpi_pinctrl_soc_pin {
-	/** Pin number 0..29 */
-	uint32_t pin_num: 5;
+	/** Pin number 0..29 on RP2040, 0..47 on RP2350 */
+	uint32_t pin_num: 6;
 	/** Alternative function (UART, SPI, etc.) */
 	uint32_t alt_func: 5;
 	/** Maximum current used by a pin, in mA */
