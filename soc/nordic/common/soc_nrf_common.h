@@ -236,6 +236,19 @@
 		     DT_PINCTRL_HAS_NAME(node_id, sleep),		       \
 		     DT_NODE_PATH(node_id) " defined without sleep state")
 
+/**
+ * Error out the build if CONFIG_HAS_NORDIC_DMM=y and memory-regions property is not defined
+ * or the status of the selected memory region is not "okay"
+ *
+ * @param node Devicetree node.
+ */
+#define NRF_DT_CHECK_NODE_HAS_REQUIRED_MEMORY_REGIONS(node_id)					 \
+	IF_ENABLED(CONFIG_HAS_NORDIC_DMM,							 \
+		(BUILD_ASSERT((									 \
+			DT_NODE_HAS_PROP(node_id, memory_regions) &&				 \
+			DT_NODE_HAS_STATUS_OKAY(DT_PHANDLE_BY_IDX(node_id, memory_regions, 0))), \
+		DT_NODE_PATH(node_id) " defined without memory regions")))
+
 /** @brief Get clock frequency that is used for the given node.
  *
  * Macro checks if node has clock property and if yes then if clock has clock_frequency property
