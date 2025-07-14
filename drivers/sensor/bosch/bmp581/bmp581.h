@@ -175,10 +175,11 @@
 #define BMP5_ODR_POS 2
 
 /* OSR configurations */
-#define BMP5_TEMP_OS_MSK 0x07
+#define BMP5_TEMP_OSR_MSK 0x07
+#define BMP5_TEMP_OSR_POS 0
 
-#define BMP5_PRESS_OS_MSK 0x38
-#define BMP5_PRESS_OS_POS 3
+#define BMP5_PRESS_OSR_MSK 0x38
+#define BMP5_PRESS_OSR_POS 3
 
 /* Pressure enable */
 #define BMP5_PRESS_EN_MSK 0x40
@@ -186,6 +187,7 @@
 
 /* IIR configurations */
 #define BMP5_SET_IIR_TEMP_MSK 0x07
+#define BMP5_SET_IIR_TEMP_POS 0
 
 #define BMP5_SET_IIR_PRESS_MSK 0x38
 #define BMP5_SET_IIR_PRESS_POS 3
@@ -219,6 +221,7 @@
 
 /* Powermode */
 #define BMP5_POWERMODE_MSK 0x03
+#define BMP5_POWERMODE_POS 0
 
 #define BMP5_DEEP_DISABLE_MSK 0x80
 #define BMP5_DEEP_DISABLE_POS 7
@@ -266,27 +269,27 @@
 struct bmp581_osr_odr_press_config {
 	/*! Temperature oversampling
 	 * Assignable macros :
-	 * - BMP5_OVERSAMPLING_1X
-	 * - BMP5_OVERSAMPLING_2X
-	 * - BMP5_OVERSAMPLING_4X
-	 * - BMP5_OVERSAMPLING_8X
-	 * - BMP5_OVERSAMPLING_16X
-	 * - BMP5_OVERSAMPLING_32X
-	 * - BMP5_OVERSAMPLING_64X
-	 * - BMP5_OVERSAMPLING_128X
+	 * - BMP581_DT_OVERSAMPLING_1X
+	 * - BMP581_DT_OVERSAMPLING_2X
+	 * - BMP581_DT_OVERSAMPLING_4X
+	 * - BMP581_DT_OVERSAMPLING_8X
+	 * - BMP581_DT_OVERSAMPLING_16X
+	 * - BMP581_DT_OVERSAMPLING_32X
+	 * - BMP581_DT_OVERSAMPLING_64X
+	 * - BMP581_DT_OVERSAMPLING_128X
 	 */
 	uint8_t osr_t;
 
 	/*! Pressure oversampling
 	 * Assignable macros :
-	 * - BMP5_OVERSAMPLING_1X
-	 * - BMP5_OVERSAMPLING_2X
-	 * - BMP5_OVERSAMPLING_4X
-	 * - BMP5_OVERSAMPLING_8X
-	 * - BMP5_OVERSAMPLING_16X
-	 * - BMP5_OVERSAMPLING_32X
-	 * - BMP5_OVERSAMPLING_64X
-	 * - BMP5_OVERSAMPLING_128X
+	 * - BMP581_DT_OVERSAMPLING_1X
+	 * - BMP581_DT_OVERSAMPLING_2X
+	 * - BMP581_DT_OVERSAMPLING_4X
+	 * - BMP581_DT_OVERSAMPLING_8X
+	 * - BMP581_DT_OVERSAMPLING_16X
+	 * - BMP581_DT_OVERSAMPLING_32X
+	 * - BMP581_DT_OVERSAMPLING_64X
+	 * - BMP581_DT_OVERSAMPLING_128X
 	 */
 	uint8_t osr_p;
 
@@ -298,6 +301,10 @@ struct bmp581_osr_odr_press_config {
 
 	/*! Output Data Rate */
 	uint8_t odr;
+
+	uint8_t iir_t;
+	uint8_t iir_p;
+	uint8_t power_mode;
 };
 
 struct bmp581_sample {

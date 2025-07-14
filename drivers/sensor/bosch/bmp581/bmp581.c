@@ -254,13 +254,40 @@ static int get_osr_odr_press_config(struct bmp581_osr_odr_press_config *osr_odr_
 	rslt = i2c_burst_read_dt(&conf->i2c, BMP5_REG_OSR_CONFIG, reg_data, 2);
 
 	if (rslt == BMP5_OK) {
-		osr_odr_press_cfg->osr_t = BMP5_GET_BITS_POS_0(reg_data[0], BMP5_TEMP_OS);
-		osr_odr_press_cfg->osr_p = BMP5_GET_BITSLICE(reg_data[0], BMP5_PRESS_OS);
+		osr_odr_press_cfg->osr_t = BMP5_GET_BITS_POS_0(reg_data[0], BMP5_TEMP_OSR);
+		osr_odr_press_cfg->osr_p = BMP5_GET_BITSLICE(reg_data[0], BMP5_PRESS_OSR);
 		osr_odr_press_cfg->press_en = BMP5_GET_BITSLICE(reg_data[0], BMP5_PRESS_EN);
-		osr_odr_press_cfg->odr = BMP5_GET_BITSLICE(reg_data[1], BMP5_ODR);
 	}
 
 	return rslt;
+}
+
+static int set_osr_odr_press_config(const struct bmp581_osr_odr_press_config *osr_odr_press_cfg,
+				    const struct device *dev)
+{
+	const struct bmp581_config *cfg = (const struct bmp581_config *)dev->config;
+	uint8_t reg_data[2] = {0};
+
+	reg_data[0] = BMP5_SET_BITSLICE(reg_data[0], BMP5_TEMP_OSR, osr_odr_press_cfg->osr_t);
+	reg_data[0] = BMP5_SET_BITSLICE(reg_data[0], BMP5_PRESS_OSR, osr_odr_press_cfg->osr_p);
+	reg_data[0] = BMP5_SET_BITSLICE(reg_data[0], BMP5_PRESS_EN, osr_odr_press_cfg->press_en);
+
+	reg_data[1] = BMP5_SET_BITSLICE(reg_data[1], BMP5_POWERMODE, osr_odr_press_cfg->power_mode);
+	reg_data[1] = BMP5_SET_BITSLICE(reg_data[1], BMP5_ODR, osr_odr_press_cfg->odr);
+
+	return i2c_burst_write_dt(&cfg->i2c, BMP5_REG_OSR_CONFIG, reg_data, sizeof(reg_data));
+}
+
+static int set_iir_filters_config(const struct bmp581_osr_odr_press_config *osr_odr_press_cfg,
+				  const struct device *dev)
+{
+	const struct bmp581_config *cfg = (const struct bmp581_config *)dev->config;
+	uint8_t reg_data = 0;
+
+	reg_data = BMP5_SET_BITSLICE(reg_data, BMP5_SET_IIR_TEMP, osr_odr_press_cfg->iir_t);
+	reg_data = BMP5_SET_BITSLICE(reg_data, BMP5_SET_IIR_PRESS, osr_odr_press_cfg->iir_p);
+
+	return i2c_burst_write_dt(&cfg->i2c, BMP5_REG_DSP_IIR, &reg_data, 1);
 }
 
 static int set_osr_config(const struct sensor_value *osr, enum sensor_channel chan,
@@ -282,16 +309,16 @@ static int set_osr_config(const struct sensor_value *osr, enum sensor_channel ch
 	if (ret == BMP5_OK) {
 		switch (chan) {
 		case SENSOR_CHAN_ALL:
-			osr_val = BMP5_SET_BITS_POS_0(osr_val, BMP5_TEMP_OS, oversampling);
-			osr_val = BMP5_SET_BITSLICE(osr_val, BMP5_PRESS_OS, oversampling);
+			osr_val = BMP5_SET_BITS_POS_0(osr_val, BMP5_TEMP_OSR, oversampling);
+			osr_val = BMP5_SET_BITSLICE(osr_val, BMP5_PRESS_OSR, oversampling);
 			osr_val = BMP5_SET_BITSLICE(osr_val, BMP5_PRESS_EN, press_en);
 			break;
 		case SENSOR_CHAN_PRESS:
-			osr_val = BMP5_SET_BITSLICE(osr_val, BMP5_PRESS_OS, oversampling);
+			osr_val = BMP5_SET_BITSLICE(osr_val, BMP5_PRESS_OSR, oversampling);
 			osr_val = BMP5_SET_BITSLICE(osr_val, BMP5_PRESS_EN, press_en);
 			break;
 		case SENSOR_CHAN_AMBIENT_TEMP:
-			osr_val = BMP5_SET_BITS_POS_0(osr_val, BMP5_TEMP_OS, oversampling);
+			osr_val = BMP5_SET_BITS_POS_0(osr_val, BMP5_TEMP_OSR, oversampling);
 			break;
 		default:
 			ret = -ENOTSUP;
@@ -519,7 +546,6 @@ static int bmp581_init(const struct device *dev)
 
 	/* Reset the chip id. */
 	drv->chip_id = 0;
-	memset(&drv->osr_odr_press_config, 0, sizeof(drv->osr_odr_press_config));
 	memset(&drv->last_sample, 0, sizeof(drv->last_sample));
 
 	soft_reset(dev);
@@ -544,6 +570,19 @@ static int bmp581_init(const struct device *dev)
 			BMP5_CHIP_ID_PRIM, BMP5_CHIP_ID_SEC);
 		return -EINVAL;
 	}
+
+	ret = set_iir_filters_config(&drv->osr_odr_press_config, dev);
+	if (ret != 0) {
+		LOG_ERR("Failed to set initial IIR settings: %d", ret);
+		return ret;
+	}
+
+	ret = set_osr_odr_press_config(&drv->osr_odr_press_config, dev);
+	if (ret != 0) {
+		LOG_ERR("Failed to set initial ODR OSR settings: %d", ret);
+		return ret;
+	}
+
 	return ret;
 }
 
@@ -559,7 +598,17 @@ static DEVICE_API(sensor, bmp581_driver_api) = {
 	}
 
 #define BMP581_INIT(i)                                                                             \
-	static struct bmp581_data bmp581_data_##i;                                                 \
+	static struct bmp581_data bmp581_data_##i = {                                              \
+		.osr_odr_press_config = {                                                          \
+			.press_en = 1,                                                             \
+			.odr = DT_INST_PROP(i, odr),                                               \
+			.osr_t = DT_INST_PROP(i, temp_osr),                                        \
+			.osr_p = DT_INST_PROP(i, press_osr),                                       \
+			.iir_t = DT_INST_PROP(i, temp_iir),                                        \
+			.iir_p = DT_INST_PROP(i, press_iir),                                       \
+			.power_mode = DT_INST_PROP(i, power_mode),                                 \
+		},                                                                                 \
+	};                                                                                         \
 	BMP581_CONFIG(i);                                                                          \
                                                                                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(i, bmp581_init, NULL, &bmp581_data_##i, &bmp581_config_##i,   \

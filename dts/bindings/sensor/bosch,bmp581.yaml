@@ -2,6 +2,22 @@ description: |
     The BMP581 is a Barometric pressure sensor. See more info at:
     https://www.bosch-sensortec.com/products/environmental-sensors/pressure-sensors/bmp581/
 
+    When setting the sensor DTS properties, make sure to include
+    bmp581.h and use the macros defined there.
+
+    Example:
+    #include <zephyr/dt-bindings/sensor/bmp581.h>
+
+    bmp581@46 {
+        ...
+        odr = <BMP581_DT_ODR_50_HZ>;
+        press-osr = <BMP581_DT_OVERSAMPLING_8X>;
+        temp-osr = <BMP581_DT_OVERSAMPLING_4X>;
+        press-iir = <BMP581_DT_IIR_FILTER_COEFF_7>;
+        temp-iir = <BMP581_DT_IIR_FILTER_COEFF_3>;
+        power-mode = <BMP581_DT_MODE_NORMAL>;
+    };
+
 compatible: "bosch,bmp581"
 
 include: [sensor-device.yaml, i2c-device.yaml]
@@ -13,3 +29,120 @@ properties:
 
       The interrupt pin of BMP581 is open-drain, active low. If connected directly to the MCU,
       the pin should be configured as pull-up, active low.
+
+  odr:
+    type: int
+    default: 0x1C  # BMP581_DT_ODR_1_HZ
+    description: |
+      Output data rate. Please note this is only valid on BMP581_DT_MODE_NORMAL.
+      Default is power-on reset.
+    enum:
+      - 0x00 # BMP581_DT_ODR_240_HZ
+      - 0x01 # BMP581_DT_ODR_218_5_HZ
+      - 0x02 # BMP581_DT_ODR_199_1_HZ
+      - 0x03 # BMP581_DT_ODR_179_2_HZ
+      - 0x04 # BMP581_DT_ODR_160_HZ
+      - 0x05 # BMP581_DT_ODR_149_3_HZ
+      - 0x06 # BMP581_DT_ODR_140_HZ
+      - 0x07 # BMP581_DT_ODR_129_8_HZ
+      - 0x08 # BMP581_DT_ODR_120_HZ
+      - 0x09 # BMP581_DT_ODR_110_1_HZ
+      - 0x0A # BMP581_DT_ODR_100_2_HZ
+      - 0x0B # BMP581_DT_ODR_89_6_HZ
+      - 0x0C # BMP581_DT_ODR_80_HZ
+      - 0x0D # BMP581_DT_ODR_70_HZ
+      - 0x0E # BMP581_DT_ODR_60_HZ
+      - 0x0F # BMP581_DT_ODR_50_HZ
+      - 0x10 # BMP581_DT_ODR_45_HZ
+      - 0x11 # BMP581_DT_ODR_40_HZ
+      - 0x12 # BMP581_DT_ODR_35_HZ
+      - 0x13 # BMP581_DT_ODR_30_HZ
+      - 0x14 # BMP581_DT_ODR_25_HZ
+      - 0x15 # BMP581_DT_ODR_20_HZ
+      - 0x16 # BMP581_DT_ODR_15_HZ
+      - 0x17 # BMP581_DT_ODR_10_HZ
+      - 0x18 # BMP581_DT_ODR_5_HZ
+      - 0x19 # BMP581_DT_ODR_4_HZ
+      - 0x1A # BMP581_DT_ODR_3_HZ
+      - 0x1B # BMP581_DT_ODR_2_HZ
+      - 0x1C # BMP581_DT_ODR_1_HZ
+      - 0x1D # BMP581_DT_ODR_0_5_HZ
+      - 0x1E # BMP581_DT_ODR_0_250_HZ
+      - 0x1F # BMP581_DT_ODR_0_125_HZ
+
+  press-osr:
+    type: int
+    default: 0x00  # BMP581_DT_OVERSAMPLING_1X
+    description: |
+      Pressure oversampling rate.
+      Default is power-on reset.
+    enum:
+      - 0x00 # BMP581_DT_OVERSAMPLING_1X
+      - 0x01 # BMP581_DT_OVERSAMPLING_2X
+      - 0x02 # BMP581_DT_OVERSAMPLING_4X
+      - 0x03 # BMP581_DT_OVERSAMPLING_8X
+      - 0x04 # BMP581_DT_OVERSAMPLING_16X
+      - 0x05 # BMP581_DT_OVERSAMPLING_32X
+      - 0x06 # BMP581_DT_OVERSAMPLING_64X
+      - 0x07 # BMP581_DT_OVERSAMPLING_128X
+
+  temp-osr:
+    type: int
+    default: 0x00  # BMP581_DT_OVERSAMPLING_1X
+    description: |
+      Temperature oversampling rate.
+      Default is power-on reset.
+    enum:
+      - 0x00 # BMP581_DT_OVERSAMPLING_1X
+      - 0x01 # BMP581_DT_OVERSAMPLING_2X
+      - 0x02 # BMP581_DT_OVERSAMPLING_4X
+      - 0x03 # BMP581_DT_OVERSAMPLING_8X
+      - 0x04 # BMP581_DT_OVERSAMPLING_16X
+      - 0x05 # BMP581_DT_OVERSAMPLING_32X
+      - 0x06 # BMP581_DT_OVERSAMPLING_64X
+      - 0x07 # BMP581_DT_OVERSAMPLING_128X
+
+  power-mode:
+    type: int
+    default: 1  # BMP581_DT_MODE_NORMAL
+    description: |
+      Power mode.
+      Default favors ease of use by simply setting ODR and OSR. Otherwise user
+      needs to look into driver details, as the other modes require some quirks
+      (e.g: Forced mode does not just work).
+    enum:
+      - 1 # BMP581_DT_MODE_NORMAL
+      - 2 # BMP581_DT_MODE_FORCED
+      - 3 # BMP581_DT_MODE_CONTINUOUS
+
+  press-iir:
+    type: int
+    default: 0x00  # BMP581_DT_IIR_FILTER_BYPASS
+    description: |
+      Pressure IIR filter coefficient.
+      Default is power-on reset (bypass).
+    enum:
+      - 0x00 # BMP581_DT_IIR_FILTER_BYPASS
+      - 0x01 # BMP581_DT_IIR_FILTER_COEFF_1
+      - 0x02 # BMP581_DT_IIR_FILTER_COEFF_3
+      - 0x03 # BMP581_DT_IIR_FILTER_COEFF_7
+      - 0x04 # BMP581_DT_IIR_FILTER_COEFF_15
+      - 0x05 # BMP581_DT_IIR_FILTER_COEFF_31
+      - 0x06 # BMP581_DT_IIR_FILTER_COEFF_63
+      - 0x07 # BMP581_DT_IIR_FILTER_COEFF_127
+
+  temp-iir:
+    type: int
+    default: 0x00  # BMP581_DT_IIR_FILTER_BYPASS
+    description: |
+      Temperature IIR filter coefficient.
+      Default is power-on reset (bypass).
+    enum:
+      - 0x00 # BMP581_DT_IIR_FILTER_BYPASS
+      - 0x01 # BMP581_DT_IIR_FILTER_COEFF_1
+      - 0x02 # BMP581_DT_IIR_FILTER_COEFF_3
+      - 0x03 # BMP581_DT_IIR_FILTER_COEFF_7
+      - 0x04 # BMP581_DT_IIR_FILTER_COEFF_15
+      - 0x05 # BMP581_DT_IIR_FILTER_COEFF_31
+      - 0x06 # BMP581_DT_IIR_FILTER_COEFF_63
+      - 0x07 # BMP581_DT_IIR_FILTER_COEFF_127
