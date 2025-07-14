@@ -20,6 +20,8 @@
 #include <zephyr/types.h>
 #include <zephyr/drivers/sensor/bmp581_user.h>
 
+#include "bmp581_bus.h"
+
 #define DT_DRV_COMPAT bosch_bmp581
 
 /* UTILITY MACROS */
@@ -319,7 +321,7 @@ struct bmp581_data {
 };
 
 struct bmp581_config {
-	struct i2c_dt_spec i2c;
+	struct bmp581_bus bus;
 };
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BMP581_BMP581_H_ */
