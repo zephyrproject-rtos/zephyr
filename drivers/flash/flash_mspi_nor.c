@@ -962,7 +962,6 @@ static int flash_chip_init(const struct device *dev)
 {
 	const struct flash_mspi_nor_config *dev_config = dev->config;
 	struct flash_mspi_nor_data *dev_data = dev->data;
-	enum mspi_io_mode io_mode = dev_config->mspi_nor_cfg.io_mode;
 	uint8_t id[JESD216_READ_ID_LEN] = {0};
 	uint16_t dts_cmd = 0;
 	uint32_t sfdp_signature;
@@ -977,28 +976,6 @@ static int flash_chip_init(const struct device *dev)
 	}
 
 	dev_data->in_target_io_mode = false;
-
-	/* Some chips reuse RESET pin for data in Quad modes:
-	 * force single line mode before resetting.
-	 */
-	if (dev_data->switch_info.quad_enable_req != JESD216_DW15_QER_VAL_NONE &&
-	    (io_mode == MSPI_IO_MODE_SINGLE ||
-	     io_mode == MSPI_IO_MODE_QUAD_1_1_4 ||
-	     io_mode == MSPI_IO_MODE_QUAD_1_4_4)) {
-		rc = quad_enable_set(dev, false);
-
-		if (rc < 0) {
-			LOG_ERR("Failed to switch to single line mode: %d", rc);
-			return rc;
-		}
-
-		rc = wait_until_ready(dev, K_USEC(1));
-
-		if (rc < 0) {
-			LOG_ERR("Failed waiting for device after switch to single line: %d", rc);
-			return rc;
-		}
-	}
 
 #if defined(WITH_RESET_GPIO)
 	rc = gpio_reset(dev);
