@@ -172,6 +172,19 @@ config BT_BUF_EVT_DISCARDABLE_COUNT
 	  it will not cause the allocation for other critical events to
 	  block and may even eliminate deadlocks in some cases.
 
+config BT_BUF_EVT_SYNCHRONOUS_COUNT
+	int "Number of synchronous HCI Event buffers"
+	range 1 $(UINT8_MAX)
+	# number of buffer require for bap-broadcast BIS counts
+	default BT_BAP_BROADCAST_SRC_STREAM_COUNT if BT_BAP_BROADCAST_SOURCE
+	default 1
+	help
+	  Number of buffers in a separate pool for events which the HCI
+	  stack depedent to manage it's command buffer queue, host to
+	  controller buffer credits etc. The events command_complete,
+	  number of command processed(nocp) etc considered under this
+	  event pool and processed on priority.
+
 config BT_BUF_CMD_TX_SIZE
 	int "Maximum support HCI Command buffer length"
 	default $(UINT8_MAX) if (BT_EXT_ADV || BT_CLASSIC || BT_ISO_CENTRAL || BT_CHANNEL_SOUNDING)
