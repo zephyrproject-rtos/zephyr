@@ -8,19 +8,15 @@
 #include <silabs/gg12/efm32gg12.dtsi>
 
 / {
-	sram0: memory@20000000 {
-		reg = <0x20000000 DT_SIZE_K(192)>;
-	};
-
 	soc {
-		compatible = "silabs,efm32gg12b", "silabs,efm32gg12",
-			"silabs,efm32", "simple-bus";
-
-		flash-controller@40000000 {
-			flash0: flash@0 {
-				reg = <0 DT_SIZE_K(1024)>;
-			};
-		};
+		compatible = "silabs,efm32gg12b", "silabs,efm32gg12", "silabs,efm32", "simple-bus";
 	};
+};
 
+&flash0 {
+	reg = <0 DT_SIZE_K(1024)>;
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(192)>;
 };
