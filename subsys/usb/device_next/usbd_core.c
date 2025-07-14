@@ -25,39 +25,58 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usbd_core, CONFIG_USBD_LOG_LEVEL);
 
-K_MSGQ_DEFINE(usbd_msgq, sizeof(struct udc_event),
-	      CONFIG_USBD_MAX_UDC_MSG, sizeof(uint32_t));
-
 static int usbd_event_carrier(const struct device *dev,
 			      const struct udc_event *const event)
 {
-	return k_msgq_put(&usbd_msgq, event, K_NO_WAIT);
+	struct usbd_context *const uds_ctx = (void *)udc_get_event_ctx(dev);
+	k_spinlock_key_t key;
+
+	if (event->type == UDC_EVT_EP_REQUEST) {
+		key = k_spin_lock(&uds_ctx->ep_event_lock);
+		sys_slist_append(&uds_ctx->ep_events, &event->buf->node);
+		k_spin_unlock(&uds_ctx->ep_event_lock, key);
+	}
+
+	k_event_post(&uds_ctx->events, BIT(event->type));
+
+	return 0;
 }
 
-static int event_handler_ep_request(struct usbd_context *const uds_ctx,
-				    const struct udc_event *const event)
+static void ep_completion_handler(struct usbd_context *const uds_ctx)
 {
 	struct udc_buf_info *bi;
-	int ret;
+	k_spinlock_key_t key;
+	struct net_buf *buf;
+	sys_snode_t *node;
+	int err;
 
-	bi = udc_get_buf_info(event->buf);
+	while (!sys_slist_is_empty(&uds_ctx->ep_events)) {
+		key = k_spin_lock(&uds_ctx->ep_event_lock);
+		node = sys_slist_get(&uds_ctx->ep_events);
+		k_spin_unlock(&uds_ctx->ep_event_lock, key);
 
-	if (USB_EP_GET_IDX(bi->ep) == 0) {
-		ret = usbd_handle_ctrl_xfer(uds_ctx, event->buf, bi->err);
-	} else {
-		ret = usbd_class_handle_xfer(uds_ctx, event->buf, bi->err);
+		buf = SYS_SLIST_CONTAINER(node, buf, node);
+		if (buf == NULL) {
+			break;
+		}
+
+		bi = udc_get_buf_info(buf);
+		if (USB_EP_GET_IDX(bi->ep) == 0) {
+			err = usbd_handle_ctrl_xfer(uds_ctx, buf, bi->err);
+		} else {
+			err = usbd_class_handle_xfer(uds_ctx, buf, bi->err);
+		}
+
+		if (err) {
+			LOG_ERR("Unrecoverable error %d, ep 0x%02x, buf %p",
+				err, bi->ep, (void *)buf);
+			usbd_msg_pub_simple(uds_ctx, USBD_MSG_STACK_ERROR, err);
+		}
 	}
-
-	if (ret) {
-		LOG_ERR("unrecoverable error %d, ep 0x%02x, buf %p",
-			ret, bi->ep, event->buf);
-	}
-
-	return ret;
 }
 
 static void usbd_class_bcast_event(struct usbd_context *const uds_ctx,
-				   struct udc_event *const event)
+				   enum udc_event_type type)
 {
 	struct usbd_config_node *cfg_nd;
 	struct usbd_class_node *c_nd;
@@ -73,7 +92,7 @@ static void usbd_class_bcast_event(struct usbd_context *const uds_ctx,
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&cfg_nd->class_list, c_nd, node) {
-		switch (event->type) {
+		switch (type) {
 		case UDC_EVT_SUSPEND:
 			usbd_class_suspended(c_nd->c_data);
 			break;
@@ -131,71 +150,75 @@ static int event_handler_bus_reset(struct usbd_context *const uds_ctx)
 
 
 static ALWAYS_INLINE void usbd_event_handler(struct usbd_context *const uds_ctx,
-					     struct udc_event *const event)
+					     const uint32_t event)
 {
 	int err = 0;
 
-	switch (event->type) {
-	case UDC_EVT_VBUS_REMOVED:
+	if (event == BIT(UDC_EVT_VBUS_REMOVED)) {
 		LOG_DBG("VBUS remove event");
 		usbd_msg_pub_simple(uds_ctx, USBD_MSG_VBUS_REMOVED, 0);
-		break;
-	case UDC_EVT_VBUS_READY:
+	}
+
+	if (event == BIT(UDC_EVT_VBUS_READY)) {
 		LOG_DBG("VBUS detected event");
 		usbd_msg_pub_simple(uds_ctx, USBD_MSG_VBUS_READY, 0);
-		break;
-	case UDC_EVT_SUSPEND:
-		LOG_DBG("SUSPEND event");
-		usbd_status_suspended(uds_ctx, true);
-		usbd_class_bcast_event(uds_ctx, event);
-		usbd_msg_pub_simple(uds_ctx, USBD_MSG_SUSPEND, 0);
-		break;
-	case UDC_EVT_RESUME:
-		LOG_DBG("RESUME event");
-		usbd_status_suspended(uds_ctx, false);
-		usbd_class_bcast_event(uds_ctx, event);
-		usbd_msg_pub_simple(uds_ctx, USBD_MSG_RESUME, 0);
-		break;
-	case UDC_EVT_SOF:
-		usbd_class_bcast_event(uds_ctx, event);
-		break;
-	case UDC_EVT_RESET:
+	}
+
+	if (event == BIT(UDC_EVT_RESET)) {
 		LOG_DBG("RESET event");
 		err = event_handler_bus_reset(uds_ctx);
 		usbd_msg_pub_simple(uds_ctx, USBD_MSG_RESET, 0);
-		break;
-	case UDC_EVT_EP_REQUEST:
-		err = event_handler_ep_request(uds_ctx, event);
-		break;
-	case UDC_EVT_ERROR:
+	}
+
+	if (event == BIT(UDC_EVT_SUSPEND)) {
+		LOG_DBG("SUSPEND event");
+		usbd_status_suspended(uds_ctx, true);
+		usbd_class_bcast_event(uds_ctx, UDC_EVT_SUSPEND);
+		usbd_msg_pub_simple(uds_ctx, USBD_MSG_SUSPEND, 0);
+	}
+
+	if (event == BIT(UDC_EVT_RESUME)) {
+		LOG_DBG("RESUME event");
+		usbd_status_suspended(uds_ctx, false);
+		usbd_class_bcast_event(uds_ctx, UDC_EVT_RESUME);
+		usbd_msg_pub_simple(uds_ctx, USBD_MSG_RESUME, 0);
+	}
+
+	if (event == BIT(UDC_EVT_SOF)) {
+		usbd_class_bcast_event(uds_ctx, UDC_EVT_SOF);
+	}
+
+	if (event == BIT(UDC_EVT_ERROR)) {
 		LOG_ERR("UDC error event");
-		usbd_msg_pub_simple(uds_ctx, USBD_MSG_UDC_ERROR, event->status);
-		break;
-	default:
-		break;
-	};
+		usbd_msg_pub_simple(uds_ctx, USBD_MSG_UDC_ERROR, 0);
+	}
 
 	if (err) {
 		usbd_msg_pub_simple(uds_ctx, USBD_MSG_STACK_ERROR, err);
 	}
 }
 
-static void usbd_thread(void *p1, void *p2, void *p3)
+static void usbd_thread(void *const p1, void *p2, void *p3)
 {
-	ARG_UNUSED(p1);
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
-
-	struct usbd_context *uds_ctx;
-	struct udc_event event;
+	struct usbd_context *const uds_ctx = p1;
 
 	while (true) {
-		k_msgq_get(&usbd_msgq, &event, K_FOREVER);
+		uint32_t events;
 
-		uds_ctx = (void *)udc_get_event_ctx(event.dev);
-		__ASSERT(uds_ctx != NULL && usbd_is_initialized(uds_ctx),
-			 "USB device is not initialized");
-		usbd_event_handler(uds_ctx, &event);
+		events = k_event_wait(&uds_ctx->events, UINT32_MAX, false, K_FOREVER);
+		__ASSERT(usbd_is_initialized(uds_ctx), "USB device is not initialized");
+		k_event_clear(&uds_ctx->events, events);
+
+		if (events == BIT(UDC_EVT_EP_REQUEST)) {
+			ep_completion_handler(uds_ctx);
+			events &= ~BIT(UDC_EVT_EP_REQUEST);
+		}
+
+		if (events) {
+			usbd_event_handler(uds_ctx, events);
+		}
 	}
 }
 
@@ -259,10 +282,11 @@ static int usbd_pre_init(void)
 {
 
 	STRUCT_SECTION_FOREACH(usbd_context, ctx) {
+		k_event_init(&ctx->events);
 		k_thread_create(ctx->thread_data, ctx->thread_stack,
 				ctx->stack_size,
 				usbd_thread,
-				NULL, NULL, NULL,
+				ctx, NULL, NULL,
 				K_PRIO_COOP(8), 0, K_NO_WAIT);
 
 		k_thread_name_set(ctx->thread_data, ctx->name);

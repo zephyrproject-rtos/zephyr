@@ -5,6 +5,7 @@
 menuconfig USB_DEVICE_STACK_NEXT
 	bool "New USB device stack"
 	select UDC_DRIVER
+	select EVENTS
 	imply HWINFO
 	help
 	  New USB device stack.
@@ -66,12 +67,6 @@ config USBD_THREAD_STACK_SIZE
 	default 1024
 	help
 	  USB device stack thread stack size in bytes.
-
-config USBD_MAX_UDC_MSG
-	int "Maximum number of UDC events"
-	default 10
-	help
-	  Maximum number of USB device controller events that can be queued.
 
 config USBD_MSG_DEFERRED_MODE
 	bool "Execute message callback from system workqueue"
