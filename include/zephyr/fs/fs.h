@@ -87,6 +87,10 @@ enum {
 
 /**
  * @brief File system mount info structure
+ *
+ * For LittleFS, storage_dev must be a flash area ID cast to void*:
+ *     (void *)FIXED_PARTITION_ID(storage)
+ * NOT a pointer to a device.
  */
 struct fs_mount_t {
 	/** Entry for the fs_mount_list list */

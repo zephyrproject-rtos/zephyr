@@ -647,12 +647,29 @@ static lfs_size_t get_block_size(const struct flash_area *fa)
 #endif
 }
 
+/*
+ * NOTE TO USERS:
+ * .storage_dev must be a casted partition ID like:
+ *   .storage_dev = (void *)FIXED_PARTITION_ID(storage_partition)
+ *
+ * Passing a `device *` pointer here (e.g. from device_get_binding)
+ * will NOT work — it will be interpreted as a numeric flash_area ID.
+ *
+ * Valid flash_area IDs are in the range [0, 255].
+ */
 static int littlefs_flash_init(struct fs_littlefs *fs, void *dev_id)
 {
-	unsigned int area_id = POINTER_TO_UINT(dev_id);
+	uintptr_t raw = POINTER_TO_UINT(dev_id);
+	uint8_t area_id = (uint8_t)raw;
 	const struct flash_area **fap = (const struct flash_area **)&fs->backend;
 	const struct device *dev;
 	int ret;
+
+	if (raw > UINT8_MAX) {
+		LOG_ERR("Warning: invalid .storage_dev (0x%x) — must be FIXED_PARTITION_ID cast to void *\n",
+			(unsigned int)raw);
+		return -EINVAL;
+	}
 
 	/* Open flash area */
 	ret = flash_area_open(area_id, fap);
