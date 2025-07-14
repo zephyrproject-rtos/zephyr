@@ -10,3 +10,6 @@ zephyr_library_sources(
 	bmp581.c
 	bmp581_bus.c
 )
+zephyr_library_sources_ifdef(CONFIG_SENSOR_ASYNC_API
+	bmp581_decoder.c
+)
