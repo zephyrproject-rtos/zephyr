@@ -586,6 +586,8 @@ void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
 	"mov   r3, #0\n"
 	"ldr   r4, =z_thread_entry\n"
 	"bx    r4\n"		/* We don’t intend to return, so there is no need to link. */
+	/* Force a literal pool placement for the addresses referenced above */
+	".ltorg\n"
 	:
 	: "r" (_main), "r" (stack_ptr)
 	: "r0", "r1", "r2", "r3", "r4", "ip", "lr", "memory");
@@ -653,6 +655,8 @@ FUNC_NORETURN void z_arm_switch_to_main_no_multithreading(
 	"ldr r0, =arch_irq_lock_outlined\n"
 	"blx r0\n"
 	"loop: b loop\n\t"    /* while (true); */
+	/* Force a literal pool placement for the addresses referenced above */
+	".ltorg\n"
 	:
 	: [_p1]"r" (p1), [_p2]"r" (p2), [_p3]"r" (p3),
 	  [_psp]"r" (psp), [_main_entry]"r" (main_entry)
