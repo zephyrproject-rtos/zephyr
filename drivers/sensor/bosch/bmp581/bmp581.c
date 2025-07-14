@@ -8,6 +8,7 @@
 #include "bmp581.h"
 #include "bmp581_bus.h"
 #include "bmp581_decoder.h"
+#include "bmp581_stream.h"
 
 #include <math.h>
 
@@ -584,6 +585,14 @@ static int bmp581_init(const struct device *dev)
 		return ret;
 	}
 
+	if (IS_ENABLED(CONFIG_BMP581_STREAM)) {
+		ret = bmp581_stream_init(dev);
+		if (ret != 0) {
+			LOG_ERR("Failed to initialize streaming support: %d", ret);
+			return ret;
+		}
+	}
+
 	return ret;
 }
 
@@ -671,6 +680,8 @@ static void bmp581_submit(const struct device *dev, struct rtio_iodev_sqe *iodev
 
 	if (!cfg->is_streaming) {
 		bmp581_submit_one_shot(dev, iodev_sqe);
+	} else if (IS_ENABLED(CONFIG_BMP581_STREAM)) {
+		bmp581_stream_submit(dev, iodev_sqe);
 	} else {
 		LOG_ERR("Streaming not supported");
 		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
@@ -712,6 +723,7 @@ static DEVICE_API(sensor, bmp581_driver_api) = {
 			.iodev = &bmp581_bus_##i,                                                  \
 			.type = BMP581_BUS_TYPE_I2C,                                               \
 		},                                                                                 \
+		.int_gpio = GPIO_DT_SPEC_INST_GET_OR(i, int_gpios, {0}),                           \
 	};                                                                                         \
                                                                                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(i, bmp581_init, NULL, &bmp581_data_##i, &bmp581_config_##i,   \
