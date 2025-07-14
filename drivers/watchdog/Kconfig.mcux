@@ -50,5 +50,6 @@ config WDT_MCUX_COP
 	default y
 	depends on DT_HAS_NXP_COP_ENABLED
 	select HAS_WDT_NO_CALLBACKS
+	select HAS_WDT_DISABLE_AT_BOOT
 	help
 	  Enable the mcux cop driver.
