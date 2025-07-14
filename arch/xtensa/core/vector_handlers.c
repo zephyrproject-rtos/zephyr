@@ -439,7 +439,7 @@ static inline DEF_INT_C_HANDLER(1)
  */
 void *xtensa_excint1_c(void *esf)
 {
-	int cause, reason;
+	int reason;
 	int *interrupted_stack = &((struct arch_esf *)esf)->dummy;
 	_xtensa_irq_bsa_t *bsa = (void *)*(int **)interrupted_stack;
 	bool is_fatal_error = false;
@@ -450,14 +450,14 @@ void *xtensa_excint1_c(void *esf)
 
 #ifdef CONFIG_XTENSA_MMU
 	depc = XTENSA_RSR(ZSR_DEPC_SAVE_STR);
-	cause = XTENSA_RSR(ZSR_EXCCAUSE_SAVE_STR);
+	bsa->exccause = XTENSA_RSR(ZSR_EXCCAUSE_SAVE_STR);
 
 	is_dblexc = (depc != 0U);
 #else /* CONFIG_XTENSA_MMU */
-	__asm__ volatile("rsr.exccause %0" : "=r"(cause));
+	__asm__ volatile("rsr.exccause %0" : "=r"(bsa->exccause));
 #endif /* CONFIG_XTENSA_MMU */
 
-	switch (cause) {
+	switch (bsa->exccause) {
 	case EXCCAUSE_LEVEL1_INTERRUPT:
 #ifdef CONFIG_XTENSA_MMU
 		if (!is_dblexc) {
@@ -511,13 +511,13 @@ void *xtensa_excint1_c(void *esf)
 		 * Kernel OOPS has to be explicity raised so we can simply
 		 * set the reason and continue.
 		 */
-		if (cause == EXCCAUSE_ILLEGAL) {
+		if (bsa->exccause == EXCCAUSE_ILLEGAL) {
 			if (pc == (void *)&xtensa_arch_except_epc) {
-				cause = 63;
-				__asm__ volatile("wsr.exccause %0" : : "r"(cause));
+				bsa->exccause = 63;
+				__asm__ volatile("wsr.exccause %0" : : "r"(bsa->exccause));
 				reason = bsa->a2;
 			} else if (pc == (void *)&xtensa_arch_kernel_oops_epc) {
-				cause = 64; /* kernel oops */
+				bsa->exccause = 64; /* kernel oops */
 				reason = K_ERR_KERNEL_OOPS;
 
 				/* A3 contains the second argument to
@@ -531,7 +531,7 @@ void *xtensa_excint1_c(void *esf)
 
 skip_checks:
 		if (reason != K_ERR_KERNEL_OOPS) {
-			print_fatal_exception(print_stack, cause, is_dblexc, depc);
+			print_fatal_exception(print_stack, bsa->exccause, is_dblexc, depc);
 		}
 
 		/* FIXME: legacy xtensa port reported "HW" exception
@@ -544,7 +544,7 @@ skip_checks:
 	}
 
 #ifdef CONFIG_XTENSA_MMU
-	switch (cause) {
+	switch (bsa->exccause) {
 	case EXCCAUSE_LEVEL1_INTERRUPT:
 #ifndef CONFIG_USERSPACE
 	case EXCCAUSE_SYSCALL:

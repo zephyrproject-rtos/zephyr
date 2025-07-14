@@ -128,8 +128,6 @@ void arch_coredump_info_dump(const struct arch_esf *esf)
 	/* Set in top-level CMakeLists.txt for use with Xtensa coredump */
 	arch_blk.toolchain = XTENSA_TOOLCHAIN_VARIANT;
 
-	__asm__ volatile("rsr.exccause %0" : "=r"(arch_blk.r.exccause));
-
 	_xtensa_irq_stack_frame_raw_t *frame = (void *)esf;
 	_xtensa_irq_bsa_t *bsa = frame->ptr_to_bsa;
 	uintptr_t num_high_regs;
@@ -145,6 +143,7 @@ void arch_coredump_info_dump(const struct arch_esf *esf)
 	arch_blk.r.pc = bsa->pc;
 	__asm__ volatile("rsr.excvaddr %0" : "=r"(arch_blk.r.excvaddr));
 	arch_blk.r.ps = bsa->ps;
+	arch_blk.r.exccause = bsa->exccause;
 #if XCHAL_HAVE_S32C1I
 	arch_blk.r.scompare1 = bsa->scompare1;
 #endif
