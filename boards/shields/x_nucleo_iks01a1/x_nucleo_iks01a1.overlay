@@ -4,6 +4,11 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+/ {
+	aliases {
+		accel0 = &lsm6ds0_x_nucleo_iks01a1;
+	};
+};
 
 &arduino_i2c {
 
