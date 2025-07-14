@@ -1,7 +1,0 @@
-common:
-  tags:
-    - bluetooth
-    - host
-tests:
-  bluetooth.host.cs.bt_le_cs_parse_pct:
-    type: unit
