@@ -89,8 +89,37 @@ Supported Features
 
    - Other hardware features are currently not supported by the port.
 
+Dual Core Operation
+*******************
+
+The EK-RA8P1 supports dual core operation with both the Cortex-M85 (CPU0) and Cortex-M33 (CPU1) cores.
+By default, the CM85 core is the boot core and is responsible for initializing the system and
+starting the CM33 core.
+
+Memory Usage
+============
+
+By default, Flash (MRAM) and SRAM are split evenly between the two cores.
+Users can manually change the address and size for Flash and SRAM as follows node:
+
+   - CPU0: &flash0, &sram0
+   - CPU1: &flash1, &sram1
+
+.. note::
+
+   - Flash usable range: 0x0200_0000 ... 0x0290_0000
+   - SRAM usable range: 0x2200_0000 ... 0x221D_4000
+
+Dual Core Flashing
+==================
+
+When flashing or debugging dual-core samples, ensure that CONFIG_SOC_RA_ENABLE_START_SECOND_CORE is selected
+for the CM85 image. The CM85 core is responsible for starting the CM33 core in soc_late_init_hook.
+
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``ek_ra8p1`` board configuration can be
 built, flashed, and debugged in the usual way. See
