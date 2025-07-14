@@ -1,0 +1,12 @@
+# Intel SoC BBRAM configuration options
+
+# Copyright (c) 2025 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config BBRAM_MOTOROLA_MC146818
+	bool "BBRAM driver for x86 CMOS/RTC clock's bbram"
+	default y if !COUNTER
+	select MFD
+	depends on DT_HAS_MOTOROLA_MC146818_BBRAM_ENABLED
+	help
+	  Enable driver for Motorola mc146818 BBRAM.
