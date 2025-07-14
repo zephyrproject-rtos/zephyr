@@ -20,6 +20,11 @@
 		zephyr,ieee802154 = &ieee802154;
 		zephyr,boot-mode = &boot_mode0;
 	};
+
+	aliases {
+		mcuboot-button0 = &button0;
+		mcuboot-led0 = &led0;
+	};
 };
 
 &cpuapp_sram {
