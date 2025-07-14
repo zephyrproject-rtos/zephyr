@@ -109,12 +109,20 @@ def main():
     else:
         logger.setLevel(logging.INFO)
 
+    log_parser = parserlib.get_log_parser(args.dbfile, logger)
+
     logdata = read_log_file(args)
     if logdata is None:
         logger.error("ERROR: cannot read log from file: %s, exiting...", args.logfile)
         sys.exit(1)
 
-    parserlib.parser(logdata, args.dbfile, logger)
+    parsed_data_offset = parserlib.parser(logdata, log_parser, logger)
+    if parsed_data_offset != len(logdata):
+        logger.error(
+            'ERROR: Not all data was parsed, %d bytes left unparsed',
+            len(logdata) - parsed_data_offset,
+        )
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
