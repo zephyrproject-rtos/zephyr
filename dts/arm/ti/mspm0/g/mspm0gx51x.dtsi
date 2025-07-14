@@ -1,3 +1,16 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
 #include <ti/mspm0/g/mspm0g.dtsi>
+
+/{
+	soc {
+		gpioc: gpio@400a4000 {
+			compatible = "ti,mspm0-gpio";
+			reg = <0x400a4000 0x2000>;
+			interrupts = <1 0>;
+			status = "disabled";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+	};
+};
