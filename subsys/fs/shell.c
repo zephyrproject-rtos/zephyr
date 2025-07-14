@@ -17,9 +17,6 @@
 #include <inttypes.h>
 #include <limits.h>
 
-#define STORAGE_PARTITION    storage_partition
-#define STORAGE_PARTITION_ID FIXED_PARTITION_ID(STORAGE_PARTITION)
-
 #ifdef CONFIG_FILE_SYSTEM_SHELL_MOUNT_COMMAND
 /* FAT */
 #ifdef CONFIG_FAT_FILESYSTEM_ELM
@@ -64,6 +61,15 @@ static struct fs_mount_t littlefs_mnt = {
 };
 #else
 #include <zephyr/storage/flash_map.h>
+
+#define STORAGE_PARTIION_NODE_ID DT_PHANDLE(DT_INST(0, zephyr_fstab_littlefs), partition)
+
+#if DT_FIXED_PARTITION_EXISTS(STORAGE_PARTIION_NODE_ID)
+#define STORAGE_PARTITION_ID DT_FIXED_PARTITION_ID(STORAGE_PARTIION_NODE_ID)
+#else
+#define STORAGE_PARTITION    storage_partition
+#define STORAGE_PARTITION_ID FIXED_PARTITION_ID(STORAGE_PARTITION)
+#endif
 
 FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(lfs_data);
 static struct fs_mount_t littlefs_mnt = {
