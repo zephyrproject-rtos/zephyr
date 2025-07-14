@@ -38,18 +38,10 @@ static int regulator_gpio_apply_state(const struct device *dev, uint32_t state)
 		int ret;
 		int new_state_of_gpio = (state >> gpio_idx) & 0x1;
 
-		ret = gpio_pin_get_dt(&cfg->gpios[gpio_idx]);
+		ret = gpio_pin_set_dt(&cfg->gpios[gpio_idx], new_state_of_gpio);
 		if (ret < 0) {
-			LOG_ERR("%s: can't get pin state", dev->name);
+			LOG_ERR("%s: can't set pin state", dev->name);
 			return ret;
-		}
-
-		if (ret != new_state_of_gpio) {
-			ret = gpio_pin_set_dt(&cfg->gpios[gpio_idx], new_state_of_gpio);
-			if (ret < 0) {
-				LOG_ERR("%s: can't set pin state", dev->name);
-				return ret;
-			}
 		}
 	}
 
