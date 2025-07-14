@@ -7,6 +7,7 @@
 
 #include "bmp581.h"
 #include "bmp581_bus.h"
+#include "bmp581_decoder.h"
 
 #include <math.h>
 
@@ -586,10 +587,106 @@ static int bmp581_init(const struct device *dev)
 	return ret;
 }
 
+#ifdef CONFIG_SENSOR_ASYNC_API
+
+static void bmp581_complete_result(struct rtio *ctx, const struct rtio_sqe *sqe, void *arg)
+{
+	struct rtio_iodev_sqe *iodev_sqe = (struct rtio_iodev_sqe *)arg;
+	struct rtio_cqe *cqe;
+	int err = 0;
+
+	do {
+		cqe = rtio_cqe_consume(ctx);
+		if (cqe != NULL) {
+			err = cqe->result;
+			rtio_cqe_release(ctx, cqe);
+		}
+	} while (cqe != NULL);
+
+	if (err != 0) {
+		rtio_iodev_sqe_err(iodev_sqe, err);
+	} else {
+		rtio_iodev_sqe_ok(iodev_sqe, 0);
+	}
+}
+
+static void bmp581_submit_one_shot(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+{
+	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
+	uint32_t min_buf_len = sizeof(struct bmp581_encoded_data);
+	int err;
+	uint8_t *buf;
+	uint32_t buf_len;
+	struct bmp581_encoded_data *edata;
+	const struct bmp581_config *conf = dev->config;
+
+	err = rtio_sqe_rx_buf(iodev_sqe, min_buf_len, min_buf_len, &buf, &buf_len);
+	CHECKIF((err < 0) || (buf_len < min_buf_len) || !buf) {
+		LOG_ERR("Failed to get a read buffer of size %u bytes", min_buf_len);
+		rtio_iodev_sqe_err(iodev_sqe, err);
+		return;
+	}
+
+	edata = (struct bmp581_encoded_data *)buf;
+
+	err = bmp581_encode(dev, cfg, 0, buf);
+	if (err != 0) {
+		LOG_ERR("Failed to encode sensor data");
+		rtio_iodev_sqe_err(iodev_sqe, err);
+		return;
+	}
+
+	struct rtio_sqe *read_sqe;
+
+	err = bmp581_prep_reg_read_rtio_async(&conf->bus, BMP5_REG_TEMP_DATA_XLSB,
+					      edata->payload, sizeof(edata->payload),
+					      &read_sqe);
+	if (err < 0) {
+		LOG_ERR("Failed to prepare async read operation");
+		rtio_iodev_sqe_err(iodev_sqe, err);
+		return;
+	}
+	read_sqe->flags |= RTIO_SQE_CHAINED;
+
+	struct rtio_sqe *complete_sqe = rtio_sqe_acquire(conf->bus.rtio.ctx);
+
+	if (!complete_sqe) {
+		LOG_ERR("Failed to acquire completion SQE");
+		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
+		rtio_sqe_drop_all(conf->bus.rtio.ctx);
+		return;
+	}
+
+	rtio_sqe_prep_callback_no_cqe(complete_sqe,
+				      bmp581_complete_result,
+				      iodev_sqe,
+				      (void *)dev);
+
+	rtio_submit(conf->bus.rtio.ctx, 0);
+}
+
+static void bmp581_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+{
+	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
+
+	if (!cfg->is_streaming) {
+		bmp581_submit_one_shot(dev, iodev_sqe);
+	} else {
+		LOG_ERR("Streaming not supported");
+		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
+	}
+}
+
+#endif /* #ifdef CONFIG_SENSOR_ASYNC_API */
+
 static DEVICE_API(sensor, bmp581_driver_api) = {
 	.sample_fetch = bmp581_sample_fetch,
 	.channel_get = bmp581_channel_get,
 	.attr_set = bmp581_attr_set,
+#ifdef CONFIG_SENSOR_ASYNC_API
+	.submit = bmp581_submit,
+	.get_decoder = bmp581_get_decoder,
+#endif
 };
 
 #define BMP581_INIT(i)                                                                             \
