@@ -32,6 +32,7 @@ struct i2c_nrfx_twim_data {
 	struct k_sem transfer_sync;
 	struct k_sem completion_sync;
 	volatile nrfx_err_t res;
+	uint8_t *buf_ptr;
 };
 
 int i2c_nrfx_twim_exclusive_access_acquire(const struct device *dev, k_timeout_t timeout)
@@ -69,6 +70,7 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 	uint16_t msg_buf_size = dev_config->msg_buf_size;
 	uint8_t *buf;
 	uint16_t buf_len;
+	uint8_t *dma_buf;
 
 	(void)i2c_nrfx_twim_exclusive_access_acquire(dev, K_FOREVER);
 
@@ -133,6 +135,23 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 			buf = msg_buf;
 			buf_len = msg_buf_used;
 		}
+
+		if (msgs[i].flags & I2C_MSG_READ) {
+			ret = dmm_buffer_in_prepare(dev_config->mem_reg, buf, buf_len,
+							(void **)&dma_buf);
+		} else {
+			ret = dmm_buffer_out_prepare(dev_config->mem_reg, buf, buf_len,
+							(void **)&dma_buf);
+		}
+
+		if (ret < 0) {
+			LOG_ERR("Failed to prepare buffer: %d", ret);
+			return ret;
+		}
+
+		dev_data->buf_ptr = buf;
+		buf = dma_buf;
+
 		ret = i2c_nrfx_twim_msg_transfer(dev, msgs[i].flags, buf, buf_len, addr);
 		if (ret < 0) {
 			break;
@@ -198,6 +217,23 @@ static void event_handler(nrfx_twim_evt_t const *p_event, void *p_context)
 
 	switch (p_event->type) {
 	case NRFX_TWIM_EVT_DONE:
+		const struct i2c_nrfx_twim_common_config *config = dev->config;
+		int ret = 0;
+
+		if (p_event->xfer_desc.type == NRFX_TWIM_XFER_TX) {
+			ret = dmm_buffer_out_release(config->mem_reg,
+				(void **)&p_event->xfer_desc.p_primary_buf);
+		} else {
+			ret = dmm_buffer_in_release(config->mem_reg, dev_data->buf_ptr,
+				p_event->xfer_desc.primary_length,
+				p_event->xfer_desc.p_primary_buf);
+		}
+
+		if (ret < 0) {
+			dev_data->res = NRFX_ERROR_INTERNAL;
+			break;
+		}
+
 		dev_data->res = NRFX_SUCCESS;
 		break;
 	case NRFX_TWIM_EVT_ADDRESS_NACK:
@@ -282,6 +318,7 @@ static DEVICE_API(i2c, i2c_nrfx_twim_driver_api) = {
 			(.msg_buf = twim_##idx##_msg_buf,))		       \
 		.max_transfer_size = BIT_MASK(				       \
 				DT_PROP(I2C(idx), easydma_maxcnt_bits)),       \
+		.mem_reg = DMM_DEV_TO_REG(I2C(idx)),			       \
 	};								       \
 	PM_DEVICE_DT_DEFINE(I2C(idx), twim_nrfx_pm_action,                     \
 			PM_DEVICE_ISR_SAFE);                                   \
