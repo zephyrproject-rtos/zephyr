@@ -20,6 +20,9 @@ config MCG_FRDIV
 config MCG_FCRDIV
 	default 0
 
+config WDT_DISABLE_AT_BOOT
+	default y
+
 if FXOS8700
 
 choice FXOS8700_MODE
