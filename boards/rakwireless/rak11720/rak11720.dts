@@ -32,7 +32,6 @@
 		led0 = &blue_led;
 		led1 = &green_led;
 		lora0 = &lora;
-		bootloader-led0 = &blue_led;
 		mcuboot-led0 = &blue_led;
 	};
 

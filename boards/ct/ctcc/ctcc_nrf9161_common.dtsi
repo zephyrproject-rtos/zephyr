@@ -33,7 +33,6 @@
 		led0 = &led1;
 		led1 = &led2;
 		mcuboot-led0 = &led1;
-		bootloader-led0 = &led1;
 		watchdog0 = &wdt0;
 		spi-flash0 = &mx25r6435;
 	};

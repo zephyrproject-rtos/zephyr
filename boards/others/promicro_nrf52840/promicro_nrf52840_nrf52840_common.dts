@@ -41,7 +41,6 @@
 		led0 = &led0;
 		pwm-led0 = &red_pwm_led;
 		red-pwm-led = &red_pwm_led;
-		bootloader-led0 = &led0;
 		mcuboot-led0 = &led0;
 		spi = &spi2;
 		watchdog0 = &wdt0;
