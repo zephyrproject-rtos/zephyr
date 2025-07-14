@@ -18,11 +18,11 @@
 		};
 
 		flash0: serial-flash@0 {
-			reg = <0x0 DT_SIZE_K(256)>;
+			reg = <0x0 DT_SIZE_K(128)>;
 		};
 
 		flash1: serial-flash@40000 {
-			reg = <0x40000 DT_SIZE_K(256)>;
+			reg = <0x40000 DT_SIZE_K(128)>;
 		};
 
 		flash2: serial-flash@41e00000 {
