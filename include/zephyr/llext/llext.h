@@ -83,7 +83,6 @@ struct llext {
 
 #ifdef CONFIG_USERSPACE
 	struct k_mem_partition mem_parts[LLEXT_MEM_PARTITIONS];
-	struct k_mem_domain mem_domain;
 #endif
 
 	/** @endcond */
