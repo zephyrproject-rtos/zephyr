@@ -151,6 +151,7 @@
 
 /* Interrupt configurations */
 #define BMP5_INT_MODE_MSK 0x01
+#define BMP5_INT_MODE_POS 0
 
 #define BMP5_INT_POL_MSK 0x02
 #define BMP5_INT_POL_POS 1
@@ -162,6 +163,7 @@
 #define BMP5_INT_EN_POS 3
 
 #define BMP5_INT_DRDY_EN_MSK 0x01
+#define BMP5_INT_DRDY_EN_POS 0
 
 #define BMP5_INT_FIFO_FULL_EN_MSK 0x02
 #define BMP5_INT_FIFO_FULL_EN_POS 1
@@ -314,14 +316,23 @@ struct bmp581_sample {
 	struct sensor_value temperature;
 };
 
+struct bmp581_stream {
+	const struct device *dev;
+	struct gpio_callback cb;
+	struct rtio_iodev_sqe *iodev_sqe;
+	atomic_t state;
+};
+
 struct bmp581_data {
 	uint8_t chip_id;
 	struct bmp581_sample last_sample;
 	struct bmp581_osr_odr_press_config osr_odr_press_config;
+	struct bmp581_stream stream;
 };
 
 struct bmp581_config {
 	struct bmp581_bus bus;
+	struct gpio_dt_spec int_gpio;
 };
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BMP581_BMP581_H_ */
