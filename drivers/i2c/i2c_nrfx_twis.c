@@ -325,6 +325,7 @@ static int shim_nrf_twis_deinit(const struct device *dev)
 	_CONCAT_4(shim_nrf_twis_, name, _, id)
 
 #define SHIM_NRF_TWIS_DEVICE_DEFINE(id)								\
+	NRF_DT_CHECK_NODE_HAS_REQUIRED_MEMORY_REGIONS(SHIM_NRF_TWIS_NODE(id));			\
 	static void SHIM_NRF_TWIS_NAME(id, irq_connect)(void)					\
 	{											\
 		IRQ_CONNECT(									\
