@@ -112,6 +112,15 @@ Other subsystems
 
 .. zephyr-keep-sorted-start re(^\w)
 
+Logging
+=======
+
+* The UART dictionary log parsing script
+  :zephyr_file:`scripts/logging/dictionary/log_parser_uart.py` has been deprecated. Instead, the
+  more generic script of :zephyr_file:`scripts/logging/dictionary/live_log_parser.py` should be
+  used. The new script supports the same functionality (and more), but requires different command
+  line arguments when invoked.
+
 .. zephyr-keep-sorted-stop
 
 Modules
