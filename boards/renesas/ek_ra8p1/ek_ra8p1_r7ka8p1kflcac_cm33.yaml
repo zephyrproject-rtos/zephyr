@@ -7,4 +7,7 @@ flash: 1024
 toolchain:
   - zephyr
   - gnuarmemb
+supported:
+  - gpio
+  - uart
 vendor: renesas
