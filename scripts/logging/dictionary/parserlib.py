@@ -13,29 +13,23 @@ input binary data to the log using log database.
 """
 
 import logging
-import sys
 
 import dictionary_parser
 from dictionary_parser.log_database import LogDatabase
 
 
-def parser(logdata, dbfile, logger):
-    """function of serial parser"""
-    # Read from database file
-    database = LogDatabase.read_json_database(dbfile)
+def get_log_parser(dbfile, logger):
+    """Get the log parser for the given database.
 
-    if not isinstance(logger, logging.Logger):
-        raise ValueError("Invalid logger instance. Please configure the logger!")
+    In addition to creating the parser, the function prints general information about the parser.
+    """
+    database = LogDatabase.read_json_database(dbfile)
 
     if database is None:
         logger.error("ERROR: Cannot open database file:  exiting...")
-        sys.exit(1)
-
-    if logdata is None:
-        logger.error("ERROR: cannot read log from file:  exiting...")
-        sys.exit(1)
-
+        raise ValueError(f"Cannot open database file: {dbfile}")
     log_parser = dictionary_parser.get_parser(database)
+
     if log_parser is not None:
         logger.debug("# Build ID: %s", database.get_build_id())
         logger.debug("# Target: %s, %d-bit", database.get_arch(), database.get_tgt_bits())
@@ -43,10 +37,22 @@ def parser(logdata, dbfile, logger):
             logger.debug("# Endianness: Little")
         else:
             logger.debug("# Endianness: Big")
-
-        ret = log_parser.parse_log_data(logdata)
-        if not ret:
-            logger.error("ERROR: there were error(s) parsing log data")
-            sys.exit(1)
     else:
         logger.error("ERROR: Cannot find a suitable parser matching database version!")
+        raise ValueError("Cannot create parser.")
+
+    return log_parser
+
+
+def parser(logdata, log_parser, logger):
+    """function of serial parser"""
+
+    if not isinstance(logger, logging.Logger):
+        raise ValueError("Invalid logger instance. Please configure the logger!")
+
+    if logdata is None:
+        logger.error("ERROR: cannot read log from file:  exiting...")
+        raise ValueError("Cannot read log data.")
+
+    ret = log_parser.parse_log_data(logdata)
+    return ret
