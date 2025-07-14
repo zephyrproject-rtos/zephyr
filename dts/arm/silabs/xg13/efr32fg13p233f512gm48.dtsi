@@ -9,18 +9,16 @@
 #include <silabs/xg13/efr32xg13.dtsi>
 
 / {
-	sram0: memory@20000000 {
-		reg = <0x20000000 DT_SIZE_K(64)>;
-	};
-
 	soc {
 		compatible = "silabs,efr32fg13p233f512gm48", "silabs,efr32xg13p", "silabs,efr32",
 			     "simple-bus";
-
-		flash-controller@400e0000 {
-			flash0: flash@0 {
-				reg = <0 DT_SIZE_K(512)>;
-			};
-		};
 	};
+};
+
+&flash0 {
+	reg = <0 DT_SIZE_K(512)>;
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(64)>;
 };
