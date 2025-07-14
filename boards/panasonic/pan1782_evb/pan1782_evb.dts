@@ -89,7 +89,7 @@
 		pwm-led0 = &pwm_evb_led1;
 		sw0 = &evb_sw1;
 		sw1 = &evb_sw2;
-		bootloader-led0 = &evb_led1;
+		mcuboot-led0 = &evb_led1;
 		watchdog0 = &wdt0;
 	};
 };
