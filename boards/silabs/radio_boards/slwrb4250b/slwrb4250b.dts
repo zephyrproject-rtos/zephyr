@@ -6,8 +6,8 @@
 
 /dts-v1/;
 #include <silabs/xg1/efr32fg1p133f256gm48.dtsi>
-#include <silabs/xg1/efr32xg1-pinctrl.dtsi>
 #include "../common/efr32-series1-common.dtsi"
+#include "slwrb4250b-pinctrl.dtsi"
 
 / {
 	model = "Silicon Labs BRD4250B (Flex Gecko 1 Radio Board)";
