@@ -15,6 +15,7 @@
 #include <zephyr/usb/class/usbd_uac2.h>
 #include <zephyr/drivers/i2s.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/linker/devicetree_regions.h>
 
 LOG_MODULE_REGISTER(uac2_sample, LOG_LEVEL_INF);
 
@@ -31,16 +32,22 @@ LOG_MODULE_REGISTER(uac2_sample, LOG_LEVEL_INF);
 #define BLOCK_SIZE          (SAMPLES_PER_SOF * BYTES_PER_SLOT)
 #define MAX_BLOCK_SIZE      ((SAMPLES_PER_SOF + 1) * BYTES_PER_SLOT)
 
+#define I2S_MEMORY_SECTION							\
+       COND_CODE_1(DT_NODE_HAS_PROP(DT_NODELABEL(i2s_rxtx), memory_regions),	\
+               (Z_GENERIC_SECTION(LINKER_DT_NODE_REGION_NAME_TOKEN(		\
+                       DT_PHANDLE(DT_NODELABEL(i2s_rxtx), memory_regions)))),	\
+               (__noinit))
+
 /* Absolute minimum is 5 TX buffers (1 actively consumed by I2S, 2nd queued as
  * next buffer, 3rd acquired by USB stack to receive data to, and 2 to handle
  * SOF/I2S offset errors), but add 2 additional buffers to prevent out of memory
  * errors when USB host decides to perform rapid terminal enable/disable cycles.
  */
 #define I2S_BLOCKS          7
-K_MEM_SLAB_DEFINE_STATIC(i2s_tx_slab, ROUND_UP(MAX_BLOCK_SIZE, UDC_BUF_GRANULARITY),
-			 I2S_BLOCKS, UDC_BUF_ALIGN);
-K_MEM_SLAB_DEFINE_STATIC(i2s_rx_slab, ROUND_UP(MAX_BLOCK_SIZE, UDC_BUF_GRANULARITY),
-			 I2S_BLOCKS, UDC_BUF_ALIGN);
+K_MEM_SLAB_DEFINE_IN_SECT_STATIC(i2s_tx_slab, I2S_MEMORY_SECTION,
+	ROUND_UP(MAX_BLOCK_SIZE, UDC_BUF_GRANULARITY), I2S_BLOCKS, UDC_BUF_ALIGN);
+K_MEM_SLAB_DEFINE_IN_SECT_STATIC(i2s_rx_slab, I2S_MEMORY_SECTION,
+	ROUND_UP(MAX_BLOCK_SIZE, UDC_BUF_GRANULARITY), I2S_BLOCKS, UDC_BUF_ALIGN);
 
 struct usb_i2s_ctx {
 	const struct device *i2s_dev;
