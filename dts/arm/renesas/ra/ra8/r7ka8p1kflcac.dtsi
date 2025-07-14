@@ -9,11 +9,11 @@
 
 / {
 	soc {
-		flash-controller@4013c000 {
-			flash0: flash@2000000 {
-				compatible = "soc-nv-flash";
-				reg = <0x2000000 DT_SIZE_M(1)>;
-			};
+		sram: memory@22000000 {
+			compatible = "mmio-sram";
+			reg = <0x22000000 0x1d4000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 		};
 
 		sdram: sdram-controller@40002000 {
