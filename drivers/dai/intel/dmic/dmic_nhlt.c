@@ -296,23 +296,6 @@ static inline void dai_dmic_clock_select_set(const struct dai_intel_dmic *dmic, 
 }
 
 /*
- * @brief Get clock source used by device
- *
- * @return Clock source index
- */
-static inline uint32_t dai_dmic_clock_select_get(const struct dai_intel_dmic *dmic)
-{
-	uint32_t val;
-#if defined(CONFIG_SOC_INTEL_ACE20_LNL) || defined(CONFIG_SOC_INTEL_ACE30) /* ACE 2.0,3.0 */
-	val = sys_read32(dmic->vshim_base + DMICLVSCTL_OFFSET);
-	return FIELD_GET(DMICLVSCTL_MLCS, val);
-#else
-	val = sys_read32(dmic->shim_base + DMICLCTL_OFFSET);
-	return FIELD_GET(DMICLCTL_MLCS, val);
-#endif
-}
-
-/*
  * @brief Set clock source used by device
  *
  * @param source Clock source index
