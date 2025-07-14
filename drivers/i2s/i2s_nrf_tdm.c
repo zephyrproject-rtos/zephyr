@@ -1192,6 +1192,7 @@ static DEVICE_API(i2s, tdm_nrf_drv_api) = {
 	BUILD_ASSERT((TDM_SCK_CLK_SRC(idx) != ACLK && TDM_MCK_CLK_SRC(idx) != ACLK) ||             \
 			     DT_NODE_HAS_STATUS_OKAY(NODE_ACLK),                                   \
 		     "Clock source ACLK requires the audiopll node.");                             \
+	NRF_DT_CHECK_NODE_HAS_REQUIRED_MEMORY_REGIONS(TDM(idx));                                   \
 	DEVICE_DT_DEFINE(TDM(idx), tdm_nrf_init##idx, NULL, &tdm_nrf_data##idx, &tdm_nrf_cfg##idx, \
 			 POST_KERNEL, CONFIG_I2S_INIT_PRIORITY, &tdm_nrf_drv_api);
 
