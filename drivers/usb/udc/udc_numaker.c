@@ -1205,7 +1205,7 @@ static void numaker_usbd_msg_handler(const struct device *dev)
 	}
 }
 
-static void numaker_udbd_isr(const struct device *dev)
+static void numaker_usbd_isr(const struct device *dev)
 {
 	const struct udc_numaker_config *config = dev->config;
 	struct udc_numaker_data *priv = udc_get_private(dev);
@@ -1747,7 +1747,7 @@ static const struct udc_api udc_numaker_api = {
                                                                                                    \
 	static void udc_numaker_irq_config_func_##inst(const struct device *dev)                   \
 	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), numaker_udbd_isr,     \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), numaker_usbd_isr,     \
 			    DEVICE_DT_INST_GET(inst), 0);                                          \
                                                                                                    \
 		irq_enable(DT_INST_IRQN(inst));                                                    \
