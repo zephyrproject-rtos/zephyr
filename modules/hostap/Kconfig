@@ -37,6 +37,8 @@ config WIFI_NM_WPA_SUPPLICANT_THREAD_STACK_SIZE
 	# TODO: Providing higher stack size for Enterprise mode to fix stack
 	# overflow issues. Need to identify the cause for higher stack usage.
 	default 8192 if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+	# This is needed to handle stack overflow issues on nRF Wi-Fi drivers.
+	default 5900 if WIFI_NM_WPA_SUPPLICANT_AP
 	default 5800
 
 config WIFI_NM_WPA_SUPPLICANT_WQ_STACK_SIZE
