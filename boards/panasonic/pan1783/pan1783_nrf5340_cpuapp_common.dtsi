@@ -152,7 +152,6 @@
 		sw1 = &evb_sw2;
 		sw2 = &evb_sw3;
 		sw3 = &evb_sw4;
-		bootloader-led0 = &evb_led1;
 		mcuboot-button0 = &evb_sw1;
 		mcuboot-led0 = &evb_led1;
 		watchdog0 = &wdt0;
