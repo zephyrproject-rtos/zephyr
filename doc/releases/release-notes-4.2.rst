@@ -1376,3 +1376,9 @@ Other notable changes
   :ref:`shields` build system feature (``west build --shield``) to interface
   any connectorized i2c module to any board with a compatible i2c port,
   regardless of the specific i2c connector branding.
+
+* Reverted deprecation of receiver option in Nordic UART driver. Receiver mode which is using
+  additional TIMER peripheral to count received bytes was previously deprecated
+  (e.g. :kconfig:option:`CONFIG_CONFIG_UART_0_NRF_HW_ASYNC`). However, it turned out that this
+  previously mode is the only one that is capable of reliably receive data without Hardware
+  Flow Control so it should stay in the driver.
