@@ -176,6 +176,7 @@ static inline void numaker_usbd_sw_connect(const struct device *dev)
 		      USBD_INT_WAKEUP;
 
 	/* Clear SE0 for connect */
+	base->ATTR |= USBD_ATTR_DPPUEN_Msk;
 	base->SE0 &= ~USBD_DRVSE0;
 }
 
@@ -345,8 +346,8 @@ static int numaker_usbd_hw_setup(const struct device *dev)
 
 	/* Initialize USBD engine */
 	/* NOTE: BSP USBD driver: ATTR = 0x7D0 */
-	base->ATTR = USBD_ATTR_BYTEM_Msk | BIT(9) | USBD_ATTR_DPPUEN_Msk | USBD_ATTR_USBEN_Msk |
-		     BIT(6) | USBD_ATTR_PHYEN_Msk;
+	base->ATTR = USBD_ATTR_BYTEM_Msk | BIT(9) | USBD_ATTR_USBEN_Msk | BIT(6) |
+		     USBD_ATTR_PHYEN_Msk;
 
 	/* Set SE0 for S/W disconnect */
 	numaker_usbd_sw_disconnect(dev);
