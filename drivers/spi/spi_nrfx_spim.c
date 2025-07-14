@@ -912,6 +912,7 @@ static int spi_nrfx_deinit(const struct device *dev)
 
 #define SPI_NRFX_SPIM_DEFINE(idx)					       \
 	NRF_DT_CHECK_NODE_HAS_PINCTRL_SLEEP(SPIM(idx));			       \
+	NRF_DT_CHECK_NODE_HAS_REQUIRED_MEMORY_REGIONS(SPIM(idx));	       \
 	static void irq_connect##idx(void)				       \
 	{								       \
 		IRQ_CONNECT(DT_IRQN(SPIM(idx)), DT_IRQ(SPIM(idx), priority),   \

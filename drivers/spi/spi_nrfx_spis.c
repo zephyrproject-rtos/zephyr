@@ -571,6 +571,7 @@ static int spi_nrfx_init(const struct device *dev)
 }
 
 #define SPI_NRFX_SPIS_DEFINE(idx)					       \
+	NRF_DT_CHECK_NODE_HAS_REQUIRED_MEMORY_REGIONS(SPIS(idx));	       \
 	static void irq_connect##idx(void)				       \
 	{								       \
 		IRQ_CONNECT(DT_IRQN(SPIS(idx)), DT_IRQ(SPIS(idx), priority),   \

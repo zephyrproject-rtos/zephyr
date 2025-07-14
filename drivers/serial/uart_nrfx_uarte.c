@@ -2714,6 +2714,7 @@ static int uarte_instance_init(const struct device *dev,
 
 #define UART_NRF_UARTE_DEVICE(idx)					       \
 	NRF_DT_CHECK_NODE_HAS_PINCTRL_SLEEP(UARTE(idx));		       \
+	NRF_DT_CHECK_NODE_HAS_REQUIRED_MEMORY_REGIONS(UARTE(idx));	       \
 	UARTE_INT_DRIVEN(idx);						       \
 	PINCTRL_DT_DEFINE(UARTE(idx));					       \
 	IF_ENABLED(CONFIG_UART_##idx##_ASYNC, (				       \
