@@ -1,0 +1,53 @@
+/*
+ * Copyright (c) 2025 Shontal Biton
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/silabs/xg28-pinctrl.h>
+
+&pinctrl {
+	eusart1_default: eusart1_default {
+		group0 {
+			pins = <EUSART1_TX_PC1>, <EUSART1_SCLK_PC3>;
+			drive-push-pull;
+			output-high;
+		};
+
+		group1 {
+			pins = <EUSART1_RX_PC2>;
+			input-enable;
+			silabs,input-filter;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group0 {
+			pins = <I2C0_SCL_PC5>, <I2C0_SDA_PC7>;
+			drive-open-drain;
+			bias-pull-up;
+		};
+	};
+
+	timer0_default: timer0_default {
+		group0 {
+			pins = <TIMER0_CC0_PB2>, <TIMER0_CC1_PD3>;
+			drive-push-pull;
+			output-high;
+		};
+	};
+
+	usart0_default: usart0_default {
+		group0 {
+			pins = <USART0_TX_PA8>;
+			drive-push-pull;
+			output-high;
+		};
+
+		group1 {
+			pins = <USART0_RX_PA9>;
+			input-enable;
+			silabs,input-filter;
+		};
+	};
+};
