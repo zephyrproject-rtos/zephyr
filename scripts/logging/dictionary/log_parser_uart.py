@@ -13,15 +13,10 @@ the log messages.
 """
 
 import argparse
-import logging
 import sys
-import time
 
-import parserlib
-import serial
+import live_log_parser
 
-LOGGER_FORMAT = "%(message)s"
-logger = logging.getLogger("parser")
 
 def parse_args():
     """Parse command line arguments"""
@@ -35,34 +30,31 @@ def parse_args():
 
     return argparser.parse_args()
 
+
 def main():
     """function of serial parser"""
+
+    print("This script is deprecated. Use 'live_log_parser.py' instead.",
+          file=sys.stderr)
+
+    # Convert the arguments to the format expected by live_log_parser, and invoke it directly.
     args = parse_args()
 
-    if args.dbfile is None or '.json' not in args.dbfile:
-        logger.error("ERROR: invalid log database path: %s, exiting...", args.dbfile)
-        sys.exit(1)
-
-    logging.basicConfig(format=LOGGER_FORMAT)
-
+    sys.argv = [
+        'live_log_parser.py',
+        args.dbfile,
+    ]
     if args.debug:
-        logger.setLevel(logging.DEBUG)
-    else:
-        logger.setLevel(logging.INFO)
+        sys.argv.append('--debug')
 
-    log_parser = parserlib.get_log_parser(args.dbfile, logger)
+    sys.argv += [
+        'serial',
+        args.serialPort,
+        args.baudrate
+    ]
 
-    # Parse the log every second from serial port
-    data = b''
-    with serial.Serial(args.serialPort, args.baudrate) as ser:
-        ser.timeout = 2
-        while True:
-            size = ser.inWaiting()
-            if size:
-                data += ser.read(size)
-                parsed_data_offset = parserlib.parser(data, log_parser, logger)
-                data = data[parsed_data_offset:]
-            time.sleep(1)
+    live_log_parser.main()
+
 
 if __name__ == "__main__":
     main()
