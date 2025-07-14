@@ -16,7 +16,7 @@
 
 void z_arm_save_fp_context(struct fpu_ctx_full *buffer)
 {
-#if defined(CONFIG_FPU_SHARING)
+#if defined(CONFIG_FPU)
 	__ASSERT_NO_MSG(buffer != NULL);
 
 	uint32_t CONTROL = __get_CONTROL();
@@ -44,7 +44,7 @@ void z_arm_save_fp_context(struct fpu_ctx_full *buffer)
 
 void z_arm_restore_fp_context(const struct fpu_ctx_full *buffer)
 {
-#if defined(CONFIG_FPU_SHARING)
+#if defined(CONFIG_FPU)
 	if (buffer->ctx_saved) {
 		/* Set FPCA first so it is set even if an interrupt happens
 		 * during restoration.
