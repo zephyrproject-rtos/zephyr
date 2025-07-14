@@ -1753,7 +1753,10 @@ static int udc_dwc2_ep_set_halt(const struct device *dev,
 	if (ep_idx != 0) {
 		cfg->stat.halted = true;
 	} else {
+		struct udc_dwc2_data *const priv = udc_get_private(dev);
+
 		/* Data/Status stage is STALLed, allow receiving next SETUP */
+		priv->pending_dout_feed = 0;
 		dwc2_ensure_setup_ready(dev);
 	}
 
@@ -3320,6 +3323,8 @@ static ALWAYS_INLINE void dwc2_thread_handler(void *const arg)
 	if (evt & BIT(DWC2_DRV_EVT_ENUM_DONE)) {
 		k_event_clear(&priv->drv_evt, BIT(DWC2_DRV_EVT_ENUM_DONE));
 
+		/* Any potential transfer on control IN endpoint is cancelled */
+		priv->pending_dout_feed = 0;
 		dwc2_ensure_setup_ready(dev);
 	}
 
