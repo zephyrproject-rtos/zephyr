@@ -36,7 +36,6 @@ static int cmd_uart_write(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
-
 static int cmd_uart_read(const struct shell *sh, size_t argc, char **argv)
 {
 	char *s_dev_name = argv[1];
@@ -71,13 +70,38 @@ static int cmd_uart_read(const struct shell *sh, size_t argc, char **argv)
 			shell_error(sh, "Failed to read from UART (%d)", ret);
 			return ret;
 		}
+		ret = uart_err_check(dev);
+		if (ret != 0 && != -ENOSYS) {
+			switch (ret) {
+			case UART_ERROR_OVERRUN:
+				shell_error(sh, "Overrun error");
+				break;
+			case UART_ERROR_PARITY:
+				shell_error(sh, "Parity error");
+				break;
+			case UART_ERROR_FRAMING:
+				shell_error(sh, "Framing error");
+				break;
+			case UART_BREAK:
+				shell_error(sh, "Break interrupt");
+				break;
+			case UART_ERROR_COLLISION:
+				shell_error(sh, "Collision error");
+				break;
+			case UART_ERROR_NOISE:
+				shell_error(sh, "Noise error");
+				break;
+			default:
+				shell_error(sh, "Unknown error (%d)", ret);
+			}
+			return ret;
+		}
 	}
 
 	shell_fprintf_normal(sh, "\n");
 
 	return 0;
 }
-
 
 static int cmd_uart_baudrate(const struct shell *sh, size_t argc, char **argv)
 {
