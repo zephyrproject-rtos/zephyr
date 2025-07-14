@@ -61,11 +61,6 @@
 	soc {
 		interrupt-parent = <&nvic>;
 
-		sram0: memory@22000000 {
-			compatible = "mmio-sram";
-			reg = <0x22000000 DT_SIZE_K(1664)>;
-		};
-
 		system: system@4001e000 {
 			compatible = "renesas,ra-system";
 			reg = <0x4001e000 0x1000>;
