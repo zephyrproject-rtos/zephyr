@@ -36,7 +36,6 @@ static int cmd_uart_write(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
-
 static int cmd_uart_read(const struct shell *sh, size_t argc, char **argv)
 {
 	char *s_dev_name = argv[1];
@@ -71,13 +70,17 @@ static int cmd_uart_read(const struct shell *sh, size_t argc, char **argv)
 			shell_error(sh, "Failed to read from UART (%d)", ret);
 			return ret;
 		}
+		ret = uart_err_check(dev);
+		if (ret != -ENOSYS) {
+			shell_error(sh, "Failed to read from UART (%d)", ret);
+			return ret;
+		}
 	}
 
 	shell_fprintf_normal(sh, "\n");
 
 	return 0;
 }
-
 
 static int cmd_uart_baudrate(const struct shell *sh, size_t argc, char **argv)
 {
