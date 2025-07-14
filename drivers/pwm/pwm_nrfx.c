@@ -496,6 +496,7 @@ static int pwm_nrfx_init(const struct device *dev)
 
 #define PWM_NRFX_DEVICE(idx)						      \
 	NRF_DT_CHECK_NODE_HAS_PINCTRL_SLEEP(PWM(idx));			      \
+	NRF_DT_CHECK_NODE_HAS_REQUIRED_MEMORY_REGIONS(PWM(idx));	      \
 	static struct pwm_nrfx_data pwm_nrfx_##idx##_data;		      \
 	static uint16_t pwm_##idx##_seq_values[NRF_PWM_CHANNEL_COUNT]	      \
 			PWM_MEMORY_SECTION(idx);			      \

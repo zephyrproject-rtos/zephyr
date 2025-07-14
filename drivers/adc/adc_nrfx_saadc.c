@@ -709,5 +709,7 @@ static DEVICE_API(adc, adc_nrfx_driver_api) = {
 /* Validate configuration of all channels. */
 DT_FOREACH_CHILD(DT_DRV_INST(0), VALIDATE_CHANNEL_CONFIG)
 
+NRF_DT_CHECK_NODE_HAS_REQUIRED_MEMORY_REGIONS(DT_DRV_INST(0));
+
 DEVICE_DT_INST_DEFINE(0, init_saadc, NULL, NULL, NULL, POST_KERNEL,
 		      CONFIG_ADC_INIT_PRIORITY, &adc_nrfx_driver_api);
