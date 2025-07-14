@@ -180,7 +180,7 @@ static int regulator_gpio_init(const struct device *dev)
 			return -ENODEV;
 		}
 
-		ret = gpio_pin_configure_dt(&cfg->enable, GPIO_OUTPUT | GPIO_OUTPUT_INIT_LOW);
+		ret = gpio_pin_configure_dt(&cfg->enable, GPIO_OUTPUT_INACTIVE);
 		if (ret < 0) {
 			LOG_ERR("%s: can't configure enable pin (%d) as output", dev->name,
 				cfg->enable.pin);
