@@ -283,7 +283,7 @@ static int gain_set(nrf_saadc_channel_config_t *ch_cfg, enum adc_gain gain)
 #endif
 	default:
 #else
-	if (ch_cfg->gain != ADC_GAIN_1) {
+	if (gain != ADC_GAIN_1) {
 #endif /* defined(NRF_SAADC_HAS_CH_GAIN) */
 		LOG_ERR("Selected ADC gain is not valid");
 		return -EINVAL;
