@@ -27,8 +27,9 @@
 #define STM32_SRC_HSI48		(STM32_SRC_HSI14 + 1)
 /** Bus clock */
 #define STM32_SRC_PCLK		(STM32_SRC_HSI48 + 1)
+#define STM32_SRC_TIMPCLK1	(STM32_SRC_PCLK + 1)
 /** PLL clock */
-#define STM32_SRC_PLLCLK	(STM32_SRC_PCLK + 1)
+#define STM32_SRC_PLLCLK	(STM32_SRC_TIMPCLK1 + 1)
 
 /** @brief RCC_CFGRx register offset */
 #define CFGR1_REG               0x04
