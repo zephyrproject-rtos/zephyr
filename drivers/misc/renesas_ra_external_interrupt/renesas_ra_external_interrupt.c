@@ -149,6 +149,8 @@ static int gpio_ra_interrupt_init(const struct device *dev)
 	return 0;
 }
 
+#define EVENT_ICU_IRQ(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_ICU_IRQ, channel))
+
 #define GPIO_INTERRUPT_INIT(index)                                                                 \
 	static const struct gpio_ra_irq_config gpio_ra_irq_config##index = {                       \
 		.reg = DT_INST_REG_ADDR(index),                                                    \
@@ -164,7 +166,10 @@ static int gpio_ra_interrupt_init(const struct device *dev)
 	static int gpio_ra_irq_init##index(const struct device *dev)                               \
 	{                                                                                          \
 		R_ICU->IELSR[DT_INST_IRQ(index, irq)] =                                            \
-			BSP_PRV_IELS_ENUM(UTIL_CAT(EVENT_ICU_IRQ, DT_INST_PROP(index, channel)));  \
+			EVENT_ICU_IRQ(DT_INST_PROP(index, channel));                               \
+                                                                                                   \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_ICU_IRQ(DT_INST_PROP(index, channel)));     \
+                                                                                                   \
 		IRQ_CONNECT(DT_INST_IRQ(index, irq), DT_INST_IRQ(index, priority), gpio_ra_isr,    \
 			    DEVICE_DT_INST_GET(index), 0);                                         \
 		return gpio_ra_interrupt_init(dev);                                                \
