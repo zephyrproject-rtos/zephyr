@@ -1,0 +1,29 @@
+# Copyright (c) 2021, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32H5 RCC (Reset and Clock controller).
+
+  For more description confere st,stm32-rcc.yaml
+
+compatible: "st,stm32h5-rcc"
+
+include:
+  - name: st,stm32u5-rcc.yaml
+    property-blocklist:
+      - undershoot-prevention
+
+properties:
+  timpre:
+    type: boolean
+    description: |
+        Timers clocks prescalers selection
+        Used to control the clock frequency of all the timers connected to APB1 and APB2 domain.
+        - 0: If the APB prescaler (PPRE1, PPRE2 in the RCC_CFGR2 register) is configured to a
+          division factor of 1, TIMxCLK = HCKL. Otherwise, the timer clock frequencies are set to
+          twice to the frequency of the APB domain to which the timers are connected:
+          TIMxCLK = 2xPCLKx.
+        - 1: If the APB prescaler (PPRE1, PPRE2 in the RCC_CFGR2 register) is configured to a
+          division factor of 1 or 2, TIMxCLK = HCKL. Otherwise, the timer clock frequencies are set
+          to four times to the frequency of the APB domain to which the timers are connected:
+          TIMxCLK = 4xPCLKx.
