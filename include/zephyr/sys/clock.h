@@ -378,6 +378,9 @@ static inline bool sys_timepoint_expired(k_timepoint_t timepoint)
 /** @cond INTERNAL_HIDDEN */
 /* forward declaration as workaround for time.h */
 struct timespec;
+
+/* Convert a POSIX clock (cast to int) to a sys_clock identifier */
+int sys_clock_from_clockid(int clock_id);
 /** @endcond INTERNAL_HIDDEN */
 
 /**

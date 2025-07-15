@@ -18,7 +18,7 @@ int clock_gettime(clockid_t clock_id, struct timespec *ts)
 {
 	int ret;
 
-	ret = sys_clock_gettime((int)clock_id, ts);
+	ret = sys_clock_gettime(sys_clock_from_clockid((int)clock_id), ts);
 	if (ret < 0) {
 		errno = -ret;
 		return -1;
@@ -61,7 +61,7 @@ int clock_settime(clockid_t clock_id, const struct timespec *tp)
 {
 	int ret;
 
-	ret = sys_clock_settime((int)clock_id, tp);
+	ret = sys_clock_settime(sys_clock_from_clockid((int)clock_id), tp);
 	if (ret < 0) {
 		errno = -ret;
 		return -1;
