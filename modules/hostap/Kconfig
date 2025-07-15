@@ -101,6 +101,17 @@ config WIFI_NM_WPA_SUPPLICANT_DEBUG_LEVEL
 	  runtime filtering can also be configured in addition to the compile-time
 	  filtering.
 
+config WIFI_NM_WPA_SUPPLICANT_DEBUG_SHOW_KEYS
+	bool "Include key material in debug output"
+	help
+	  This option enables inclusion of key material (passwords, encryption keys,
+	  etc.) in debug output. This is equivalent to the -K command line flag
+	  in wpa_supplicant.
+
+	  WARNING: This is a security risk and should only be enabled during
+	  development or debugging. Key material should never be logged in production
+	  systems as it can compromise network security.
+
 if WIFI_NM_WPA_SUPPLICANT_LOG_LEVEL_DBG
 # hostap debug is very verbose and despite large log buffer sizes
 # log messages can be lost. So, we set the log mode to immediate
