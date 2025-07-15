@@ -1,0 +1,9 @@
+tests:
+  settings.retention:
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - qemu_cortex_m3
+    min_ram: 8
+    tags:
+      - settings
+      - retention
