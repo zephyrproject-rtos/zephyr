@@ -202,14 +202,15 @@ class ZephyrInitLevels:
                     raise ValueError(f"no symbol at addr {addr:08x}")
                 obj, size, shidx = self._objects[addr]
 
-                arg_name = self._object_name(self._initlevel_pointer(addr, 0, shidx))
+                arg0_name = self._object_name(self._initlevel_pointer(addr, 0, shidx))
+                arg1_name = self._object_name(self._initlevel_pointer(addr, 1, shidx))
 
-                self.initlevels[level].append(f"{obj}: {arg_name}")
+                self.initlevels[level].append(f"{obj}: {arg0_name}({arg1_name})")
 
-                ordinal = self._device_ord_from_name(arg_name)
+                ordinal = self._device_ord_from_name(arg1_name)
                 if ordinal:
                     prio = Priority(level, priority)
-                    self.devices[ordinal] = prio
+                    self.devices[ordinal] = (prio, arg0_name)
 
                 addr += size
                 priority += 1
@@ -255,8 +256,8 @@ class Validator():
                 self.log.info(f"Ignoring priority: {dev_node._binding.compatible}")
                 return
 
-        dev_prio = self._obj.devices.get(dev_ord, None)
-        dep_prio = self._obj.devices.get(dep_ord, None)
+        dev_prio, dev_init = self._obj.devices.get(dev_ord, (None, None))
+        dep_prio, dep_init = self._obj.devices.get(dep_ord, (None, None))
 
         if not dev_prio or not dep_prio:
             return
@@ -271,12 +272,12 @@ class Validator():
                                "the devicetree dependencies.")
             self.errors += 1
             self.log.error(
-                    f"{dev_node.path} is initialized before its dependency "
-                    f"{dep_node.path} ({dev_prio} < {dep_prio})")
+                    f"{dev_node.path} <{dev_init}> is initialized before its dependency "
+                    f"{dep_node.path} <{dep_init}> ({dev_prio} < {dep_prio})")
         else:
             self.log.info(
-                    f"{dev_node.path} {dev_prio} > "
-                    f"{dep_node.path} {dep_prio}")
+                    f"{dev_node.path} <{dev_init}> {dev_prio} > "
+                    f"{dep_node.path} <{dep_init}> {dep_prio}")
 
     def check_edt(self):
         """Scan through all known devices and validate the init priorities."""
