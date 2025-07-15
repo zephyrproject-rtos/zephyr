@@ -68,8 +68,7 @@ static inline enum net_verdict process_data(struct net_pkt *pkt)
 {
 	int ret;
 
-	/* Initial call will forward packets to SOCK_RAW packet sockets. */
-	ret = net_packet_socket_input(pkt, ETH_P_ALL);
+	ret = net_packet_socket_input(pkt, ETH_P_ALL, SOCK_RAW);
 	if (ret != NET_CONTINUE) {
 		return ret;
 	}
@@ -82,7 +81,7 @@ static inline enum net_verdict process_data(struct net_pkt *pkt)
 		return NET_DROP;
 	}
 
-	if (!net_pkt_is_loopback(pkt) && !net_pkt_is_l2_processed(pkt)) {
+	if (!net_pkt_is_l2_processed(pkt)) {
 		ret = net_if_recv_data(net_pkt_iface(pkt), pkt);
 		net_pkt_set_l2_processed(pkt, true);
 		if (ret != NET_CONTINUE) {
@@ -102,10 +101,7 @@ static inline enum net_verdict process_data(struct net_pkt *pkt)
 	net_pkt_cursor_init(pkt);
 
 	if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET_DGRAM)) {
-		/* Consecutive call will forward packets to SOCK_DGRAM packet sockets
-		 * (after L2 removed header).
-		 */
-		ret = net_packet_socket_input(pkt, net_pkt_ll_proto_type(pkt));
+		ret = net_packet_socket_input(pkt, net_pkt_ll_proto_type(pkt), SOCK_DGRAM);
 		if (ret != NET_CONTINUE) {
 			return ret;
 		}
@@ -410,6 +406,7 @@ int net_try_send_data(struct net_pkt *pkt, k_timeout_t timeout)
 		 */
 		NET_DBG("Loopback pkt %p back to us", pkt);
 		net_pkt_set_loopback(pkt, true);
+		net_pkt_set_l2_processed(pkt, true);
 		processing_data(pkt);
 		ret = 0;
 		goto err;
@@ -482,6 +479,7 @@ static void net_rx(struct net_if *iface, struct net_pkt *pkt)
 #ifdef CONFIG_NET_L2_DUMMY
 		if (net_if_l2(iface) == &NET_L2_GET_NAME(DUMMY)) {
 			net_pkt_set_loopback(pkt, true);
+			net_pkt_set_l2_processed(pkt, true);
 		}
 #endif
 	}
