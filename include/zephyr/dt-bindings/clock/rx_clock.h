@@ -76,7 +76,6 @@
 #define RX_PLL_MUL_7   13 /**< PLL multiplier ×7 */
 #define RX_PLL_MUL_7_5 14 /**< PLL multiplier ×7.5 */
 #define RX_PLL_MUL_8   15 /**< PLL multiplier ×7 */
-
 #define RX_PLL_MUL_10   19 /**< PLL multiplier ×10 */
 #define RX_PLL_MUL_10_5 20 /**< PLL multiplier ×10.5 */
 #define RX_PLL_MUL_11   21 /**< PLL multiplier ×11 */
@@ -129,6 +128,8 @@
 #define MSTPB 1 /**< Module stop control register B */
 #define MSTPC 2 /**< Module stop control register C */
 #define MSTPD 3 /**< Module stop control register D */
+#define MSTPE 4 /**< Module stop control register E */
+#define MSTPF 5 /**< Module stop control register F */
 
 /** @} */
 
