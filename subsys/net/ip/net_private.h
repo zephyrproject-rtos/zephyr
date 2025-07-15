@@ -183,25 +183,21 @@ extern void loopback_enable_address_swap(bool swap_addresses);
 #endif /* CONFIG_NET_TEST */
 
 #if defined(CONFIG_NET_NATIVE)
-enum net_verdict net_ipv4_input(struct net_pkt *pkt, bool is_loopback);
-enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback);
+enum net_verdict net_ipv4_input(struct net_pkt *pkt);
+enum net_verdict net_ipv6_input(struct net_pkt *pkt);
 extern void net_tc_tx_init(void);
 extern void net_tc_rx_init(void);
 #else
-static inline enum net_verdict net_ipv4_input(struct net_pkt *pkt,
-					      bool is_loopback)
+static inline enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 {
 	ARG_UNUSED(pkt);
-	ARG_UNUSED(is_loopback);
 
 	return NET_CONTINUE;
 }
 
-static inline enum net_verdict net_ipv6_input(struct net_pkt *pkt,
-					      bool is_loopback)
+static inline enum net_verdict net_ipv6_input(struct net_pkt *pkt)
 {
 	ARG_UNUSED(pkt);
-	ARG_UNUSED(is_loopback);
 
 	return NET_CONTINUE;
 }

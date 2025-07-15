@@ -1067,9 +1067,9 @@ static void test_virtual_recv_data_from_tunnel(int remote_ip,
 	net_pkt_cursor_init(outer);
 
 	if (peer_addr.sa_family == AF_INET) {
-		verdict = net_ipv4_input(outer, false);
+		verdict = net_ipv4_input(outer);
 	} else {
-		verdict = net_ipv6_input(outer, false);
+		verdict = net_ipv6_input(outer);
 	}
 
 	if (expected_ok) {

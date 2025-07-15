@@ -64,8 +64,7 @@ LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 #include "net_stats.h"
 
 #if defined(CONFIG_NET_NATIVE)
-static inline enum net_verdict process_data(struct net_pkt *pkt,
-					    bool is_loopback)
+static inline enum net_verdict process_data(struct net_pkt *pkt)
 {
 	int ret;
 	bool locally_routed = false;
@@ -93,7 +92,7 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 		return NET_DROP;
 	}
 
-	if (!is_loopback && !locally_routed) {
+	if (!net_pkt_is_loopback(pkt) && !locally_routed) {
 		ret = net_if_recv_data(net_pkt_iface(pkt), pkt);
 		if (ret != NET_CONTINUE) {
 			if (ret == NET_DROP) {
@@ -131,9 +130,9 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 		uint8_t vtc_vhl = NET_IPV6_HDR(pkt)->vtc & 0xf0;
 
 		if (IS_ENABLED(CONFIG_NET_IPV6) && vtc_vhl == 0x60) {
-			return net_ipv6_input(pkt, is_loopback);
+			return net_ipv6_input(pkt);
 		} else if (IS_ENABLED(CONFIG_NET_IPV4) && vtc_vhl == 0x40) {
-			return net_ipv4_input(pkt, is_loopback);
+			return net_ipv4_input(pkt);
 		}
 
 		NET_DBG("Unknown IP family packet (0x%x)", NET_IPV6_HDR(pkt)->vtc & 0xf0);
@@ -148,10 +147,10 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 	return NET_DROP;
 }
 
-static void processing_data(struct net_pkt *pkt, bool is_loopback)
+static void processing_data(struct net_pkt *pkt)
 {
 again:
-	switch (process_data(pkt, is_loopback)) {
+	switch (process_data(pkt)) {
 	case NET_CONTINUE:
 		if (IS_ENABLED(CONFIG_NET_L2_VIRTUAL)) {
 			/* If we have a tunneling packet, feed it back
@@ -421,7 +420,8 @@ int net_try_send_data(struct net_pkt *pkt, k_timeout_t timeout)
 		 * to RX processing.
 		 */
 		NET_DBG("Loopback pkt %p back to us", pkt);
-		processing_data(pkt, true);
+		net_pkt_set_loopback(pkt, true);
+		processing_data(pkt);
 		ret = 0;
 		goto err;
 	}
@@ -481,7 +481,6 @@ err:
 
 static void net_rx(struct net_if *iface, struct net_pkt *pkt)
 {
-	bool is_loopback = false;
 	size_t pkt_len;
 
 	pkt_len = net_pkt_get_len(pkt);
@@ -493,12 +492,12 @@ static void net_rx(struct net_if *iface, struct net_pkt *pkt)
 	if (IS_ENABLED(CONFIG_NET_LOOPBACK)) {
 #ifdef CONFIG_NET_L2_DUMMY
 		if (net_if_l2(iface) == &NET_L2_GET_NAME(DUMMY)) {
-			is_loopback = true;
+			net_pkt_set_loopback(pkt, true);
 		}
 #endif
 	}
 
-	processing_data(pkt, is_loopback);
+	processing_data(pkt);
 
 	net_print_statistics();
 	net_pkt_print();

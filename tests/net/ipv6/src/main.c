@@ -1735,7 +1735,7 @@ static enum net_verdict recv_msg(struct in6_addr *src, struct in6_addr *dst)
 	/* We by-pass the normal packet receiving flow in this case in order
 	 * to simplify the testing.
 	 */
-	return net_ipv6_input(pkt, false);
+	return net_ipv6_input(pkt);
 }
 
 static int send_msg(struct in6_addr *src, struct in6_addr *dst)
