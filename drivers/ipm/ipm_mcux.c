@@ -21,7 +21,7 @@
 #define MCUX_IPM_MAX_ID_VAL 0
 
 #if (defined(LPC55S69_cm33_core0_SERIES) || defined(LPC55S69_cm33_core1_SERIES) || \
-defined(CONFIG_SOC_SERIES_MCXN))
+defined(CONFIG_SOC_FAMILY_MCXN))
 #if (defined(LPC55S69_cm33_core0_SERIES) || defined(MCXN947_cm33_core0_SERIES) || \
 defined(MCXN946_cm33_core0_SERIES) || defined(MCXN547_cm33_core0_SERIES) || \
 defined(MCXN546_cm33_core0_SERIES))
