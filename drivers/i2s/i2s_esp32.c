@@ -55,7 +55,6 @@ struct i2s_esp32_stream_data {
 	struct i2s_config i2s_cfg;
 	void *mem_block;
 	size_t mem_block_len;
-	bool last_block;
 	bool stop_without_draining;
 	struct k_msgq queue;
 	struct intr_handle_data_t *irq_handle;
@@ -175,6 +174,18 @@ static void i2s_esp32_rx_callback(void *arg, int status)
 	const struct i2s_esp32_stream *stream = &dev_cfg->rx;
 	int err;
 
+	if (!stream->data->dma_pending) {
+		return;
+	}
+
+	stream->data->dma_pending = false;
+
+	if (stream->data->mem_block == NULL) {
+		LOG_ERR("RX mem_block NULL");
+		stream->data->state = I2S_STATE_ERROR;
+		goto rx_disable;
+	}
+
 #if SOC_GDMA_SUPPORTED
 	if (status < 0) {
 #else
@@ -183,16 +194,6 @@ static void i2s_esp32_rx_callback(void *arg, int status)
 		stream->data->state = I2S_STATE_ERROR;
 		LOG_ERR("RX status bad: %d", status);
 		goto rx_disable;
-	}
-
-	if (stream->data->mem_block == NULL) {
-		if (stream->data->state != I2S_STATE_READY) {
-			stream->data->state = I2S_STATE_ERROR;
-			LOG_ERR("RX mem_block NULL");
-			goto rx_disable;
-		} else {
-			return;
-		}
 	}
 
 #if SOC_GDMA_SUPPORTED
@@ -339,11 +340,8 @@ static void i2s_esp32_rx_stop_transfer(const struct device *dev)
 	i2s_hal_clear_intr_status(hal, I2S_INTR_MAX);
 #endif /* SOC_GDMA_SUPPORTED */
 
-	if (stream->data->mem_block != NULL) {
-		k_mem_slab_free(stream->data->i2s_cfg.mem_slab, stream->data->mem_block);
-		stream->data->mem_block = NULL;
-		stream->data->mem_block_len = 0;
-	}
+	stream->data->mem_block = NULL;
+	stream->data->mem_block_len = 0;
 }
 
 #endif /* I2S_ESP32_IS_DIR_EN(rx) */
@@ -361,7 +359,6 @@ static void i2s_esp32_tx_callback(void *arg, int status)
 	const struct i2s_esp32_cfg *const dev_cfg = dev->config;
 	const struct i2s_esp32_stream *stream = &dev_cfg->tx;
 	struct queue_item item;
-	void *mem_block_tmp;
 	int err;
 
 	if (!stream->data->dma_pending) {
@@ -369,6 +366,14 @@ static void i2s_esp32_tx_callback(void *arg, int status)
 	}
 
 	stream->data->dma_pending = false;
+
+	if (stream->data->mem_block == NULL) {
+		LOG_ERR("TX mem_block NULL");
+		stream->data->state = I2S_STATE_ERROR;
+		goto tx_disable;
+	}
+
+	k_mem_slab_free(stream->data->i2s_cfg.mem_slab, stream->data->mem_block);
 
 #if SOC_GDMA_SUPPORTED
 	if (status < 0) {
@@ -380,30 +385,12 @@ static void i2s_esp32_tx_callback(void *arg, int status)
 		goto tx_disable;
 	}
 
-	if (stream->data->mem_block == NULL) {
-		if (stream->data->state != I2S_STATE_READY) {
-			stream->data->state = I2S_STATE_ERROR;
-			LOG_ERR("TX mem_block NULL");
-			goto tx_disable;
-		} else {
-			return;
-		}
-	}
-
 	if (stream->data->state == I2S_STATE_STOPPING) {
-		if (k_msgq_num_used_get(&stream->data->queue) == 0) {
-			stream->data->state = I2S_STATE_READY;
-			goto tx_disable;
-		} else if (stream->data->stop_without_draining == true) {
-			stream->conf->queue_drop(stream);
+		if (k_msgq_num_used_get(&stream->data->queue) == 0 ||
+		    stream->data->stop_without_draining == true) {
 			stream->data->state = I2S_STATE_READY;
 			goto tx_disable;
 		}
-	}
-
-	if (stream->data->last_block) {
-		stream->data->state = I2S_STATE_READY;
-		goto tx_disable;
 	}
 
 	err = k_msgq_get(&stream->data->queue, &item, K_NO_WAIT);
@@ -412,8 +399,6 @@ static void i2s_esp32_tx_callback(void *arg, int status)
 		LOG_ERR("TX queue empty: %d", err);
 		goto tx_disable;
 	}
-
-	mem_block_tmp = stream->data->mem_block;
 
 	stream->data->mem_block = item.buffer;
 	stream->data->mem_block_len = item.size;
@@ -424,8 +409,6 @@ static void i2s_esp32_tx_callback(void *arg, int status)
 		LOG_ERR("Failed to restart TX transfer: %d", err);
 		goto tx_disable;
 	}
-
-	k_mem_slab_free(stream->data->i2s_cfg.mem_slab, mem_block_tmp);
 
 	return;
 
@@ -502,11 +485,8 @@ static void i2s_esp32_tx_stop_transfer(const struct device *dev)
 	i2s_hal_clear_intr_status(hal, I2S_INTR_MAX);
 #endif /* SOC_GDMA_SUPPORTED */
 
-	if (stream->data->mem_block != NULL) {
-		k_mem_slab_free(stream->data->i2s_cfg.mem_slab, stream->data->mem_block);
-		stream->data->mem_block = NULL;
-		stream->data->mem_block_len = 0;
-	}
+	stream->data->mem_block = NULL;
+	stream->data->mem_block_len = 0;
 }
 
 #endif /* I2S_ESP32_IS_DIR_EN(tx) */
@@ -663,7 +643,6 @@ static int i2s_esp32_start_dma(const struct device *dev, enum i2s_dir dir)
 		LOG_ERR("Failed to start DMA channel: %"PRIu32, stream->conf->dma_channel);
 		goto unlock;
 	}
-	stream->data->dma_pending = true;
 #else
 #if I2S_ESP32_IS_DIR_EN(rx)
 	if (dir == I2S_DIR_RX) {
@@ -681,6 +660,8 @@ static int i2s_esp32_start_dma(const struct device *dev, enum i2s_dir dir)
 	}
 #endif /* I2S_ESP32_IS_DIR_EN(tx) */
 #endif /* SOC_GDMA_SUPPORTED */
+
+	stream->data->dma_pending = true;
 
 unlock:
 	irq_unlock(key);
@@ -1227,7 +1208,6 @@ static int i2s_esp32_trigger_stream(const struct device *dev, const struct i2s_e
 			irq_unlock(key);
 			return -EIO;
 		}
-		stream->data->last_block = false;
 		stream->data->state = I2S_STATE_RUNNING;
 		irq_unlock(key);
 		break;
@@ -1245,7 +1225,6 @@ static int i2s_esp32_trigger_stream(const struct device *dev, const struct i2s_e
 			stream->data->state = I2S_STATE_STOPPING;
 		} else {
 			stream->conf->stop_transfer(dev);
-			stream->data->last_block = true;
 			stream->data->state = I2S_STATE_READY;
 		}
 
@@ -1280,7 +1259,6 @@ static int i2s_esp32_trigger_stream(const struct device *dev, const struct i2s_e
 				stream->data->state = I2S_STATE_STOPPING;
 			} else {
 				stream->conf->stop_transfer(dev);
-				stream->data->last_block = true;
 				stream->data->state = I2S_STATE_READY;
 			}
 		}
@@ -1494,7 +1472,6 @@ static DEVICE_API(i2s, i2s_esp32_driver_api) = {
 		.i2s_cfg = {0},                                                                    \
 		.mem_block = NULL,                                                                 \
 		.mem_block_len = 0,                                                                \
-		.last_block = false,                                                               \
 		.stop_without_draining = false,                                                    \
 		.queue = {},                                                                       \
 		.irq_handle = NULL,                                                                \
