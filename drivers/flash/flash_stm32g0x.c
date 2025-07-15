@@ -239,6 +239,21 @@ uint32_t flash_stm32_option_bytes_read(const struct device *dev)
 	return regs->OPTR;
 }
 
+#if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION)
+uint8_t flash_stm32_get_rdp_level(const struct device *dev)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+
+	return (regs->OPTR & FLASH_OPTR_RDP_Msk) >> FLASH_OPTR_RDP_Pos;
+}
+
+void flash_stm32_set_rdp_level(const struct device *dev, uint8_t level)
+{
+	flash_stm32_option_bytes_write(dev, FLASH_OPTR_RDP_Msk,
+				       (uint32_t)level << FLASH_OPTR_RDP_Pos);
+}
+#endif /* CONFIG_FLASH_STM32_READOUT_PROTECTION */
+
 /*
  * The address space is always continuous, even though a subset of G0 SoCs has
  * two flash banks.
