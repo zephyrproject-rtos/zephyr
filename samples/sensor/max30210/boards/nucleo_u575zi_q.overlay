@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2025 Analog Devices Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+spi: &arduino_spi {
+	max30011: max30011@0 {
+		compatible = "adi,max30011";
+		reg = <0x0>;
+		status = "okay";
+		spi-max-frequency = <DT_FREQ_M(1)>;
+		int1-gpios = <&arduino_header 13 0>; /* D7, Dx + 6 */
+
+		ecg1: ecg1 {
+			ecg-p = "el1";
+			ecg-n = "el2";
+		};
+	};
+};
