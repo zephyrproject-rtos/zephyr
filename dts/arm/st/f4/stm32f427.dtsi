@@ -12,6 +12,10 @@
 	soc {
 		compatible = "st,stm32f427", "st,stm32f4", "simple-bus";
 
+		rcc: rcc@40023800 {
+			compatible = "st,stm32f4-rcc";
+		};
+
 		pinctrl: pin-controller@40020000 {
 			reg = <0x40020000 0x2C00>;
 
