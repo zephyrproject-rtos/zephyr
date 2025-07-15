@@ -29,10 +29,10 @@
 #define BMP5_SET_HIGH_BYTE 0xFF00u
 
 /* BIT SLICE GET AND SET FUNCTIONS */
-#define BMP5_GET_BITSLICE(regvar, bitname) ((regvar & bitname##_MSK) >> bitname##_POS)
+#define BMP5_GET_BITSLICE(regvar, bitname) (((regvar) & (bitname##_MSK)) >> (bitname##_POS))
 
 #define BMP5_SET_BITSLICE(regvar, bitname, val)                                                    \
-	((regvar & ~bitname##_MSK) | ((val << bitname##_POS) & bitname##_MSK))
+	(((regvar) & ~(bitname##_MSK)) | (((val) << (bitname##_POS)) & (bitname##_MSK)))
 
 #define BMP5_GET_LSB(var) (uint8_t)(var & BMP5_SET_LOW_BYTE)
 #define BMP5_GET_MSB(var) (uint8_t)((var & BMP5_SET_HIGH_BYTE) >> 8)
