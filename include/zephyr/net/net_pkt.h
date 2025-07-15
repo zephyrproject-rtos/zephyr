@@ -237,6 +237,7 @@ struct net_pkt {
 	uint8_t chksum_done : 1; /* Checksum has already been computed for
 				  * the packet.
 				  */
+	uint8_t loopback : 1; /* Packet is a loop back packet. */
 #if defined(CONFIG_NET_IP_FRAGMENT)
 	uint8_t ip_reassembled : 1; /* Packet is a reassembled IP packet. */
 #endif
@@ -1019,6 +1020,17 @@ static inline void net_pkt_set_ipv6_fragment_id(struct net_pkt *pkt,
 	ARG_UNUSED(id);
 }
 #endif /* CONFIG_NET_IPV6_FRAGMENT */
+
+static inline bool net_pkt_is_loopback(struct net_pkt *pkt)
+{
+	return !!(pkt->loopback);
+}
+
+static inline void net_pkt_set_loopback(struct net_pkt *pkt,
+					bool loopback)
+{
+	pkt->loopback = loopback;
+}
 
 #if defined(CONFIG_NET_IP_FRAGMENT)
 static inline bool net_pkt_is_ip_reassembled(struct net_pkt *pkt)
