@@ -346,6 +346,8 @@ int enabled_clock(uint32_t src_clk)
 	    ((src_clk == STM32_SRC_PLL2_R) && IS_ENABLED(STM32_PLL2_R_ENABLED)) ||
 	    ((src_clk == STM32_SRC_PLL3_P) && IS_ENABLED(STM32_PLL3_P_ENABLED)) ||
 	    ((src_clk == STM32_SRC_PLL3_Q) && IS_ENABLED(STM32_PLL3_Q_ENABLED)) ||
+	    (src_clk == STM32_SRC_TIMPCLK1) ||
+	    (src_clk == STM32_SRC_TIMPCLK2) ||
 #if defined(CONFIG_SOC_SERIES_STM32H7RSX)
 	    (src_clk == STM32_SRC_HCLK1) ||
 	    (src_clk == STM32_SRC_HCLK2) ||
@@ -637,6 +639,36 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 	/* PLL 3  has no T-divider */
 #endif /* CONFIG_SOC_SERIES_STM32H7RSX */
 #endif /* STM32_PLL3_ENABLED */
+	case STM32_SRC_TIMPCLK1:
+#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+		if (IS_ENABLED(STM32_TIMER_PRESCALER)) {
+			*rate = STM32_PPRE1 <= 4 ? ahb_clock : apb1_clock * 4;
+		} else {
+			*rate = STM32_PPRE1 <= 2 ? ahb_clock : apb1_clock * 2;
+		}
+#else /* CONFIG_SOC_SERIES_STM32H7RSX */
+		if (IS_ENABLED(STM32_TIMER_PRESCALER)) {
+			*rate = STM32_D2PPRE1 <= 4 ? ahb_clock : apb1_clock * 4;
+		} else {
+			*rate = STM32_D2PPRE1 <= 2 ? ahb_clock : apb1_clock * 2;
+		}
+#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
+		break;
+	case STM32_SRC_TIMPCLK2:
+#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+		if (IS_ENABLED(STM32_TIMER_PRESCALER)) {
+			*rate = STM32_PPRE2 <= 4 ? ahb_clock : apb2_clock * 4;
+		} else {
+			*rate = STM32_PPRE2 <= 2 ? ahb_clock : apb2_clock * 2;
+		}
+#else /* CONFIG_SOC_SERIES_STM32H7RSX */
+		if (IS_ENABLED(STM32_TIMER_PRESCALER)) {
+			*rate = STM32_D2PPRE2 <= 4 ? ahb_clock : apb1_clock * 4;
+		} else {
+			*rate = STM32_D2PPRE2 <= 2 ? ahb_clock : apb1_clock * 2;
+		}
+#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
+		break;
 	default:
 		return -ENOTSUP;
 	}
@@ -1095,6 +1127,12 @@ int stm32_clock_control_init(const struct device *dev)
 
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 #endif /* CONFIG_CPU_CORTEX_M7 */
+
+	if (IS_ENABLED(STM32_TIMER_PRESCALER)) {
+		LL_RCC_SetTIMPrescaler(LL_RCC_TIM_PRESCALER_FOUR_TIMES);
+	} else {
+		LL_RCC_SetTIMPrescaler(LL_RCC_TIM_PRESCALER_TWICE);
+	}
 
 	ARG_UNUSED(dev);
 
