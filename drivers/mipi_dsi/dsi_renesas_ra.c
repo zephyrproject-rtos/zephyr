@@ -299,6 +299,7 @@ static int mipi_dsi_renesas_ra_init(const struct device *dev)
 	{                                                                                          \
 		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(id, sq0, irq)] =                                  \
 			BSP_PRV_IELS_ENUM(EVENT_MIPIDSI_SEQ0);                                     \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(BSP_PRV_IELS_ENUM(EVENT_MIPIDSI_SEQ0));           \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(id, sq0, irq),                                     \
 			    DT_INST_IRQ_BY_NAME(id, sq0, priority), mipi_dsi_seq0_isr, NULL, 0);   \
 		irq_enable(DT_INST_IRQ_BY_NAME(id, sq0, irq));                                     \
