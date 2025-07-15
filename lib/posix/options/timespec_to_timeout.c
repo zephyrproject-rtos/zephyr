@@ -17,7 +17,7 @@ uint32_t timespec_to_timeoutms(int clock_id, const struct timespec *abstime)
 {
 	struct timespec curtime;
 
-	if (sys_clock_gettime(clock_id, &curtime) < 0) {
+	if (sys_clock_gettime(sys_clock_from_clockid(clock_id), &curtime) < 0) {
 		return 0;
 	}
 
