@@ -62,6 +62,7 @@
 	status = "okay";
 
 	pllp: pllp {
+		freq = <DT_FREQ_M(600)>;
 		status = "okay";
 	};
 };
