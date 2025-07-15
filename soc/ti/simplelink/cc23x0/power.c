@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Texas Instruments Incorporated
+ * Copyright (c) 2025 Texas Instruments Incorporated
  * Copyright (c) 2024 Baylibre, SAS
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -7,6 +7,7 @@
 
 #include <stdbool.h>
 
+#include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/sys/reboot.h>
@@ -266,6 +267,10 @@ void sys_arch_reboot(int type)
 
 static int power_initialize(void)
 {
+	unsigned int ret;
+
+	ret = irq_lock();
+
 	Power_init();
 
 	if (DT_HAS_COMPAT_STATUS_OKAY(ti_cc23x0_lf_xosc)) {
@@ -273,6 +278,8 @@ static int power_initialize(void)
 	}
 
 	PMCTLSetVoltageRegulator(PMCTL_VOLTAGE_REGULATOR_DCDC);
+
+	irq_unlock(ret);
 
 	return 0;
 }
