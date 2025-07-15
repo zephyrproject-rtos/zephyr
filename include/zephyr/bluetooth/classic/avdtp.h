@@ -15,6 +15,10 @@
 extern "C" {
 #endif
 
+#define AVDTP_VERSION_1_3 0x0103 /**< AVDTP version 1.3 value */
+
+#define AVDTP_VERSION AVDTP_VERSION_1_3 /**< AVDTP version used by Zephyr */
+
 /**
  * @brief AVDTP error code
  */
