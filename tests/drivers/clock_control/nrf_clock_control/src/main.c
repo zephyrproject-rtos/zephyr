@@ -225,10 +225,13 @@ static void test_request_release_clock_spec(const struct device *clk_dev,
 static void test_clock_control_request(const struct test_clk_context *clk_contexts,
 				       size_t contexts_size)
 {
+	int ret;
 	const struct test_clk_context *clk_context;
 	size_t clk_specs_size;
 	const struct device *clk_dev;
-	const struct nrf_clock_spec *clk_spec;
+	const struct nrf_clock_spec *req_spec;
+	struct nrf_clock_spec res_spec;
+	uint32_t startup_time_us;
 
 	for (size_t i = 0; i < contexts_size; i++) {
 		clk_context = &clk_contexts[i];
@@ -236,16 +239,42 @@ static void test_clock_control_request(const struct test_clk_context *clk_contex
 
 		for (size_t u = 0; u < clk_specs_size; u++) {
 			clk_dev = clk_context->clk_dev;
-			clk_spec = &clk_context->clk_specs[u];
+			req_spec = &clk_context->clk_specs[u];
 
-			zassert_true(device_is_ready(clk_dev),
-				     "%s is not ready", clk_dev->name);
+			zassert_true(device_is_ready(clk_dev), "%s is not ready", clk_dev->name);
 
-			TC_PRINT("Applying clock (%s) spec: frequency %d, accuracy %d, precision "
+			TC_PRINT("Requested clock (%s) spec: frequency %d, accuracy %d, precision "
 				 "%d\n",
-				 clk_dev->name, clk_spec->frequency, clk_spec->accuracy,
-				 clk_spec->precision);
-			test_request_release_clock_spec(clk_dev, clk_spec);
+				 clk_dev->name, req_spec->frequency, req_spec->accuracy,
+				 req_spec->precision);
+
+			ret = nrf_clock_control_resolve(clk_dev, req_spec, &res_spec);
+			zassert(ret == 0 || ret == -ENOSYS,
+				"minimum clock specs could not be resolved");
+			if (ret == 0) {
+				TC_PRINT("Resolved spec: frequency %d, accuracy %d, precision "
+					 "%d\n",
+					 res_spec.frequency, res_spec.accuracy, res_spec.precision);
+			} else if (ret == -ENOSYS) {
+				TC_PRINT("resolve not supported\n");
+				res_spec.frequency = req_spec->frequency;
+				res_spec.accuracy = req_spec->accuracy;
+				res_spec.precision = req_spec->precision;
+			}
+
+			ret = nrf_clock_control_get_startup_time(clk_dev, &res_spec,
+								 &startup_time_us);
+			zassert(ret == 0 || ret == -ENOSYS, "failed to get startup time");
+			if (ret == 0) {
+				TC_PRINT("startup time for resloved spec: %uus\n", startup_time_us);
+			} else if (ret == -ENOSYS) {
+				TC_PRINT("get startup time not supported\n");
+			}
+
+			TC_PRINT("Applying spec: frequency %d, accuracy %d, precision "
+				 "%d\n",
+				 res_spec.frequency, res_spec.accuracy, res_spec.precision);
+			test_request_release_clock_spec(clk_dev, &res_spec);
 		}
 	}
 }
