@@ -203,10 +203,14 @@ DEVICE_DT_DEFINE(DT_COMPAT_GET_ANY_STATUS_OKAY(renesas_ra_acmphs_global),
 		 acmphs_renesas_ra_global_init, NULL, NULL, &acmphs_renesas_ra_global_config,
 		 PRE_KERNEL_2, CONFIG_COMPARATOR_INIT_PRIORITY, NULL)
 
+#define EVENT_ACMPHS_INT(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_ACMPHS, channel, _INT))
+
 #define ACMPHS_RENESAS_RA_IRQ_INIT(idx)                                                            \
 	{                                                                                          \
 		R_ICU->IELSR_b[DT_INST_IRQ_BY_NAME(idx, hs, irq)].IELS =                           \
-			BSP_PRV_IELS_ENUM(CONCAT(EVENT_ACMPHS, DT_INST_PROP(idx, channel), _INT)); \
+			EVENT_ACMPHS_INT(DT_INST_PROP(idx, channel));                              \
+                                                                                                   \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_ACMPHS_INT(DT_INST_PROP(idx, channel)));    \
                                                                                                    \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(idx, hs, irq),                                     \
 			    DT_INST_IRQ_BY_NAME(idx, hs, priority), comp_hs_int_isr,               \
