@@ -71,7 +71,8 @@
 		timers1: timers@40012c00 {
 			compatible = "st,stm32-timers";
 			reg = <0x40012c00 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB2, 11U)>;
+			clocks = <&rcc STM32_CLOCK(APB2, 11)>,
+				 <&rcc STM32_SRC_TIMPCLK2 TIM1_SEL(0)>;
 			resets = <&rctl STM32_RESET(APB2, 11U)>;
 			interrupts = <24 0>, <25 0>, <26 0>, <27 0>;
 			interrupt-names = "brk", "up", "trgcom", "cc";
@@ -85,21 +86,19 @@
 			};
 		};
 
-		timers4: timers@40000800 {
-			compatible = "st,stm32-timers";
-			reg = <0x40000800 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 2U)>;
-			resets = <&rctl STM32_RESET(APB1, 2U)>;
-			interrupts = <30 0>;
-			interrupt-names = "global";
-			st,prescaler = <0>;
-			status = "disabled";
+		timers15: timers@40014000 {
+			clocks = <&rcc STM32_CLOCK(APB2, 16)>,
+				 <&rcc STM32_SRC_TIMPCLK2 TIM15_SEL(0)>;
+		};
 
-			pwm {
-				compatible = "st,stm32-pwm";
-				status = "disabled";
-				#pwm-cells = <3>;
-			};
+		timers16: timers@40014400 {
+			clocks = <&rcc STM32_CLOCK(APB2, 17)>,
+				 <&rcc STM32_SRC_TIMPCLK2 TIM16_SEL(0)>;
+		};
+
+		timers17: timers@40014800 {
+			clocks = <&rcc STM32_CLOCK(APB2, 18)>,
+				 <&rcc STM32_SRC_TIMPCLK2 TIM17_SEL(0)>;
 		};
 
 		adc1: adc@50000000 {
