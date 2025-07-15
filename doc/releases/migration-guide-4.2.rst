@@ -92,6 +92,11 @@ Boards
   variant (``stm32n6570_dk/stm32n657xx/fsbl``) that must be selected explicitly.
   See board documentation for more information about these variants.
 
+* STM32 boards that embed TF-M BL2 boot stage (``b_u585i_iot02a//ns``, ``nucleo_l552ze_q//ns``
+  and ``stm32l562e_dk//ns``) do not embed HW crypto accelerator drivers in BL2 as they previously
+  did, now relying on Mbed TLS software implementation. This is related to the upgrade to TF-M
+  v2.2. HW crypto accelerators are still supported in TF-M, but only in the runtime secure firmware.
+
 Device Drivers and Devicetree
 *****************************
 
