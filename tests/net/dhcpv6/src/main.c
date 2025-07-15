@@ -636,7 +636,7 @@ ZTEST(dhcpv6_tests, test_input_reject_client_initiated_messages)
 						 set_generic_client_options);
 		zassert_not_null(pkt, "Failed to create fake pkt");
 
-		result = net_ipv6_input(pkt, false);
+		result = net_ipv6_input(pkt);
 		zassert_equal(result, NET_DROP, "Should've drop the message");
 
 		net_pkt_unref(pkt);
@@ -719,7 +719,7 @@ ZTEST(dhcpv6_tests, test_input_advertise)
 						 set_advertise_options);
 		zassert_not_null(pkt, "Failed to create pkt");
 
-		result = net_ipv6_input(pkt, false);
+		result = net_ipv6_input(pkt);
 
 		switch (state) {
 		case NET_DHCPV6_SOLICITING:
@@ -826,7 +826,7 @@ ZTEST(dhcpv6_tests, test_input_reply)
 						 set_reply_options);
 		zassert_not_null(pkt, "Failed to create pkt");
 
-		result = net_ipv6_input(pkt, false);
+		result = net_ipv6_input(pkt);
 
 		switch (state) {
 		case NET_DHCPV6_CONFIRMING:
@@ -891,7 +891,7 @@ static void test_solicit_expect_request_send_reply(struct net_if *iface,
 					   set_reply_options);
 	zassert_not_null(reply, "Failed to create pkt");
 
-	result = net_ipv6_input(reply, false);
+	result = net_ipv6_input(reply);
 	zassert_equal(result, NET_OK, "Message should've been processed");
 
 	/* Verify client state */
@@ -936,7 +936,7 @@ static void test_solicit_expect_solicit_send_advertise(struct net_if *iface,
 					   set_advertise_options);
 	zassert_not_null(reply, "Failed to create pkt");
 
-	result = net_ipv6_input(reply, false);
+	result = net_ipv6_input(reply);
 	zassert_equal(result, NET_OK, "Message should've been processed");
 
 	/* Verify client state */
@@ -993,7 +993,7 @@ static void expect_request_send_reply(struct net_if *iface, struct net_pkt *pkt)
 					   set_reply_options);
 	zassert_not_null(reply, "Failed to create pkt");
 
-	result = net_ipv6_input(reply, false);
+	result = net_ipv6_input(reply);
 	zassert_equal(result, NET_OK, "Message should've been processed");
 
 	k_sem_give(&test_ctx.exchange_complete_sem);
@@ -1013,7 +1013,7 @@ static void expect_solicit_send_advertise(struct net_if *iface, struct net_pkt *
 					   set_advertise_options);
 	zassert_not_null(reply, "Failed to create pkt");
 
-	result = net_ipv6_input(reply, false);
+	result = net_ipv6_input(reply);
 	zassert_equal(result, NET_OK, "Message should've been processed");
 }
 
@@ -1058,7 +1058,7 @@ static void test_confirm_expect_confirm_send_reply(struct net_if *iface,
 					   set_reply_options);
 	zassert_not_null(reply, "Failed to create pkt");
 
-	result = net_ipv6_input(reply, false);
+	result = net_ipv6_input(reply);
 	zassert_equal(result, NET_OK, "Message should've been processed");
 
 	/* Verify client state */
@@ -1127,7 +1127,7 @@ static void test_rebind_expect_rebind_send_reply(struct net_if *iface,
 					   set_reply_options);
 	zassert_not_null(reply, "Failed to create pkt");
 
-	result = net_ipv6_input(reply, false);
+	result = net_ipv6_input(reply);
 	zassert_equal(result, NET_OK, "Message should've been processed");
 
 	/* Verify client state */
@@ -1201,7 +1201,7 @@ static void test_renew_expect_renew_send_reply(struct net_if *iface,
 					   set_reply_options);
 	zassert_not_null(reply, "Failed to create pkt");
 
-	result = net_ipv6_input(reply, false);
+	result = net_ipv6_input(reply);
 	zassert_equal(result, NET_OK, "Message should've been processed");
 
 	/* Verify client state */
