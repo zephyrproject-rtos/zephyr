@@ -1,28 +1,27 @@
 # Copyright 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_MCXC
+config SOC_FAMILY_MCXC
 	bool
-	select SOC_FAMILY_NXP_MCX
 
-config SOC_SERIES
-	default "mcxc" if SOC_SERIES_MCXC
+config SOC_FAMILY
+	default "mcxc" if SOC_FAMILY_MCXC
 
 config SOC_MCXC141
 	bool
-	select SOC_SERIES_MCXC
+	select SOC_FAMILY_MCXC
 
 config SOC_MCXC142
 	bool
-	select SOC_SERIES_MCXC
+	select SOC_FAMILY_MCXC
 
 config SOC_MCXC242
 	bool
-	select SOC_SERIES_MCXC
+	select SOC_FAMILY_MCXC
 
 config SOC_MCXC444
 	bool
-	select SOC_SERIES_MCXC
+	select SOC_FAMILY_MCXC
 
 config SOC
 	default "mcxc141" if SOC_MCXC141

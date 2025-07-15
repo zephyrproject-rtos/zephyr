@@ -1,36 +1,34 @@
 family:
-- name: nxp_mcx
-  series:
-  - name: mcxn
-    socs:
-    - name: mcxn947
-      cpuclusters:
-      - name: cpu0
-      - name: cpu1
-    - name: mcxn547
-      cpuclusters:
-      - name: cpu0
-      - name: cpu1
-    - name: mcxn236
-  - name: mcxc
-    socs:
-    - name: mcxc141
-    - name: mcxc142
-    - name: mcxc242
-    - name: mcxc444
-  - name: mcxa
-    socs:
-    - name: mcxa153
-    - name: mcxa156
-    - name: mcxa166
-    - name: mcxa276
-  - name: mcxw
-    socs:
-    - name: mcxw716c
-    - name: mcxw727c
-      cpuclusters:
-      - name: cpu0
-      - name: cpu1
+- name: mcxn
+  socs:
+  - name: mcxn947
+    cpuclusters:
+    - name: cpu0
+    - name: cpu1
+  - name: mcxn547
+    cpuclusters:
+    - name: cpu0
+    - name: cpu1
+  - name: mcxn236
+- name: mcxc
+  socs:
+  - name: mcxc141
+  - name: mcxc142
+  - name: mcxc242
+  - name: mcxc444
+- name: mcxa
+  socs:
+  - name: mcxa153
+  - name: mcxa156
+  - name: mcxa166
+  - name: mcxa276
+- name: mcxw
+  socs:
+  - name: mcxw716c
+  - name: mcxw727c
+    cpuclusters:
+    - name: cpu0
+    - name: cpu1
 runners:
   run_once:
     '--erase':

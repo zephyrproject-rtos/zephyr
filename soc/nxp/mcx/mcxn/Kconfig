@@ -1,7 +1,7 @@
 # Copyright 2024-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_MCXN
+config SOC_FAMILY_MCXN
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
 	select CLOCK_CONTROL
 	select ARM
@@ -46,7 +46,7 @@ config SOC_MCXN236
 	select SOC_RESET_HOOK
 	select ARM_TRUSTZONE_M
 
-if SOC_SERIES_MCXN
+if SOC_FAMILY_MCXN
 
 if SOC_MCXN947 || SOC_MCXN547
 
@@ -100,4 +100,4 @@ endif # NXP_FLEXSPI_BOOT_HEADER
 
 rsource "../../common/Kconfig.flexspi_xip"
 
-endif # SOC_SERIES_MCXN
+endif # SOC_FAMILY_MCXN

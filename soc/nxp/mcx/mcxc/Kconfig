@@ -1,7 +1,7 @@
 # Copyright 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_MCXC
+config SOC_FAMILY_MCXC
 	select ARM
 	select CPU_CORTEX_M0PLUS
 	select CPU_CORTEX_M_HAS_SYSTICK
@@ -19,7 +19,7 @@ config SOC_SERIES_MCXC
 	select SOC_EARLY_INIT_HOOK
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
 
-if SOC_SERIES_MCXC
+if SOC_FAMILY_MCXC
 
 config MCXC_FLASH_CONFIG
 	bool "MCXC flash configuration field"
