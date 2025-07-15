@@ -1,7 +1,7 @@
 # Copyright 2023-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_MCXW
+if SOC_FAMILY_MCXW
 
 config CORTEX_M_SYSTICK
 	default n if MCUX_LPTMR_TIMER
@@ -64,4 +64,4 @@ config NXP_RF_IMU
 endif # IEEE802154
 
 
-endif # SOC_SERIES_MCXW
+endif # SOC_FAMILY_MCXW
