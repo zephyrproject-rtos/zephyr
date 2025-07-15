@@ -47,9 +47,8 @@ static DEVICE_API(clock_control, clock_control_renesas_rx_root_api) = {
 	static const struct clock_control_rx_root_cfg clock_control_rx_root_cfg##idx = {           \
 		.rate = DT_INST_PROP(idx, clock_frequency),                                        \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(idx, NULL, NULL, NULL,                             \
-			      &clock_control_rx_root_cfg##idx, PRE_KERNEL_1,                       \
-			      CONFIG_CLOCK_CONTROL_INIT_PRIORITY,                                  \
+	DEVICE_DT_INST_DEFINE(idx, NULL, NULL, NULL, &clock_control_rx_root_cfg##idx,              \
+			      PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,                    \
 			      &clock_control_renesas_rx_root_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ROOT_CLK_INIT);
