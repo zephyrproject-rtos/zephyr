@@ -107,6 +107,8 @@
 #define STM32_ADC12_PRESCALER	DT_PROP(DT_NODELABEL(rcc), adc12_prescaler)
 #define STM32_ADC34_PRESCALER	DT_PROP(DT_NODELABEL(rcc), adc34_prescaler)
 
+#define STM32_TIMER_PRESCALER	DT_PROP(DT_NODELABEL(rcc), timpre)
+
 /** STM2H7RS specific RCC dividers */
 #if defined(CONFIG_SOC_SERIES_STM32H7RSX)
 #define STM32_D1CPRE	DT_PROP(DT_NODELABEL(rcc), dcpre)
