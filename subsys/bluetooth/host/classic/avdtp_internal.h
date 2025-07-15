@@ -153,6 +153,7 @@ struct bt_avdtp_discover_params {
 struct bt_avdtp_get_capabilities_params {
 	struct bt_avdtp_req req;
 	uint8_t stream_endpoint_id;
+	bool get_all_caps;
 };
 
 struct bt_avdtp_set_configuration_params {
@@ -183,7 +184,7 @@ struct bt_avdtp_ops_cb {
 	int (*discovery_ind)(struct bt_avdtp *session, uint8_t *errcode);
 
 	int (*get_capabilities_ind)(struct bt_avdtp *session, struct bt_avdtp_sep *sep,
-				    struct net_buf *rsp_buf, uint8_t *errcode);
+				    struct net_buf *rsp_buf, bool get_all_caps, uint8_t *errcode);
 
 	int (*set_configuration_ind)(struct bt_avdtp *session, struct bt_avdtp_sep *sep,
 				     uint8_t int_seid, struct net_buf *buf, uint8_t *errcode);
