@@ -99,7 +99,7 @@ static struct bt_sdp_attribute a2dp_sink_attrs[] = {
 			},
 			{
 				BT_SDP_TYPE_SIZE(BT_SDP_UINT16), /* 09 */
-				BT_SDP_ARRAY_16(0x0100U) /* AVDTP version: 01 00 */
+				BT_SDP_ARRAY_16(0x0103U) /* AVDTP version: 01 03 */
 			},
 			)
 		},
@@ -168,7 +168,7 @@ static struct bt_sdp_attribute a2dp_source_attrs[] = {
 			},
 			{
 				BT_SDP_TYPE_SIZE(BT_SDP_UINT16),
-				BT_SDP_ARRAY_16(0x0100U)
+				BT_SDP_ARRAY_16(0x0103U)
 			},
 			)
 		},
@@ -193,7 +193,7 @@ static struct bt_sdp_attribute a2dp_source_attrs[] = {
 		},
 		)
 	),
-	BT_SDP_SERVICE_NAME("A2DPSink"),
+	BT_SDP_SERVICE_NAME("A2DPSource"),
 	BT_SDP_SUPPORTED_FEATURES(0x0001U),
 };
 
@@ -677,13 +677,26 @@ struct bt_a2dp_discover_param discover_param = {
 
 static int cmd_get_peer_eps(const struct shell *sh, int32_t argc, char *argv[])
 {
+	int err = 0;
+
 	if (a2dp_initied == 0) {
 		shell_print(sh, "need to register a2dp connection callbacks");
 		return -ENOEXEC;
 	}
 
 	if (default_a2dp != NULL) {
-		int err = bt_a2dp_discover(default_a2dp, &discover_param);
+		if (argc > 1) {
+			discover_param.avdtp_version = (uint16_t)shell_strtoul(argv[1], 0, &err);
+			if (err != 0) {
+				shell_error(sh, "failed to parse avdtp version: %d", err);
+
+				return -ENOEXEC;
+			}
+		} else {
+			discover_param.avdtp_version = 0U;
+		}
+
+		err = bt_a2dp_discover(default_a2dp, &discover_param);
 
 		if (err) {
 			shell_error(sh, "discover fail");
@@ -798,7 +811,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(a2dp_cmds,
 			cmd_register_ep, 3, 0),
 	SHELL_CMD_ARG(connect, NULL, HELP_NONE, cmd_connect, 1, 0),
 	SHELL_CMD_ARG(disconnect, NULL, HELP_NONE, cmd_disconnect, 1, 0),
-	SHELL_CMD_ARG(discover_peer_eps, NULL, HELP_NONE, cmd_get_peer_eps, 1, 0),
+	SHELL_CMD_ARG(discover_peer_eps, NULL, "[avdtp version value]", cmd_get_peer_eps, 1, 1),
 	SHELL_CMD_ARG(configure, NULL, "\"configure/enable the stream\"", cmd_configure, 1, 0),
 	SHELL_CMD_ARG(establish, NULL, "\"establish the stream\"", cmd_establish, 1, 0),
 	SHELL_CMD_ARG(reconfigure, NULL, "\"reconfigure the stream\"", cmd_reconfigure, 1, 0),
