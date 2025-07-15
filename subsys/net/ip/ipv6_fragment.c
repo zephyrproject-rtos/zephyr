@@ -346,9 +346,9 @@ static void reassemble_packet(struct net_ipv6_reassembly *reass)
 	/* We need to use the queue when feeding the packet back into the
 	 * IP stack as we might run out of stack if we call processing_data()
 	 * directly. As the packet does not contain link layer header, we
-	 * MUST NOT pass it to L2 so there will be a special check for that
-	 * in process_data() when handling the packet.
+	 * MUST NOT pass it to L2 so mark it as l2_processed.
 	 */
+	net_pkt_set_l2_processed(pkt, true);
 	if (net_recv_data(net_pkt_iface(pkt), pkt) >= 0) {
 		return;
 	}
