@@ -356,7 +356,8 @@ static struct bt_avdtp_sep *avdtp_get_cmd_sep(struct net_buf *buf, uint8_t *erro
 	return sep;
 }
 
-static void avdtp_get_capabilities_cmd(struct bt_avdtp *session, struct net_buf *buf, uint8_t tid)
+static void avdtp_get_caps_cmd_internal(struct bt_avdtp *session, struct net_buf *buf, uint8_t tid,
+					bool get_all_caps)
 {
 	int err = 0;
 	struct net_buf *rsp_buf;
@@ -369,12 +370,14 @@ static void avdtp_get_capabilities_cmd(struct bt_avdtp *session, struct net_buf 
 		err = -ENOTSUP;
 	} else {
 		rsp_buf = avdtp_create_reply_pdu(BT_AVDTP_ACCEPT, BT_AVDTP_PACKET_TYPE_SINGLE,
+						 get_all_caps ? BT_AVDTP_GET_ALL_CAPABILITIES :
 						 BT_AVDTP_GET_CAPABILITIES, tid);
 		if (!rsp_buf) {
 			return;
 		}
 
-		err = session->ops->get_capabilities_ind(session, sep, rsp_buf, &error_code);
+		err = session->ops->get_capabilities_ind(session, sep, rsp_buf, get_all_caps,
+							 &error_code);
 		if (err) {
 			net_buf_unref(rsp_buf);
 		}
@@ -382,6 +385,7 @@ static void avdtp_get_capabilities_cmd(struct bt_avdtp *session, struct net_buf 
 
 	if (err) {
 		rsp_buf = avdtp_create_reply_pdu(BT_AVDTP_REJECT, BT_AVDTP_PACKET_TYPE_SINGLE,
+						 get_all_caps ? BT_AVDTP_GET_ALL_CAPABILITIES :
 						 BT_AVDTP_GET_CAPABILITIES, tid);
 		if (!rsp_buf) {
 			return;
@@ -401,6 +405,17 @@ static void avdtp_get_capabilities_cmd(struct bt_avdtp *session, struct net_buf 
 		LOG_ERR("Error:L2CAP send fail - result = %d", err);
 		return;
 	}
+}
+
+static void avdtp_get_capabilities_cmd(struct bt_avdtp *session, struct net_buf *buf, uint8_t tid)
+{
+	avdtp_get_caps_cmd_internal(session, buf, tid, false);
+}
+
+static void avdtp_get_all_capabilities_cmd(struct bt_avdtp *session,
+					   struct net_buf *buf, uint8_t tid)
+{
+	avdtp_get_caps_cmd_internal(session, buf, tid, true);
 }
 
 static void avdtp_get_capabilities_rsp(struct bt_avdtp *session, struct net_buf *buf,
@@ -1103,19 +1118,19 @@ void bt_avdtp_l2cap_disconnected(struct bt_l2cap_chan *chan)
 }
 
 void (*cmd_handler[])(struct bt_avdtp *session, struct net_buf *buf, uint8_t tid) = {
-	avdtp_discover_cmd,          /* BT_AVDTP_DISCOVER */
-	avdtp_get_capabilities_cmd,  /* BT_AVDTP_GET_CAPABILITIES */
-	avdtp_set_configuration_cmd, /* BT_AVDTP_SET_CONFIGURATION */
-	NULL,                        /* BT_AVDTP_GET_CONFIGURATION */
-	avdtp_re_configure_cmd,      /* BT_AVDTP_RECONFIGURE */
-	avdtp_open_cmd,              /* BT_AVDTP_OPEN */
-	avdtp_start_cmd,             /* BT_AVDTP_START */
-	avdtp_close_cmd,             /* BT_AVDTP_CLOSE */
-	avdtp_suspend_cmd,           /* BT_AVDTP_SUSPEND */
-	avdtp_abort_cmd,             /* BT_AVDTP_ABORT */
-	NULL,                        /* BT_AVDTP_SECURITY_CONTROL */
-	NULL,                        /* BT_AVDTP_GET_ALL_CAPABILITIES */
-	NULL,                        /* BT_AVDTP_DELAYREPORT */
+	avdtp_discover_cmd,              /* BT_AVDTP_DISCOVER */
+	avdtp_get_capabilities_cmd,      /* BT_AVDTP_GET_CAPABILITIES */
+	avdtp_set_configuration_cmd,     /* BT_AVDTP_SET_CONFIGURATION */
+	NULL,                            /* BT_AVDTP_GET_CONFIGURATION */
+	avdtp_re_configure_cmd,          /* BT_AVDTP_RECONFIGURE */
+	avdtp_open_cmd,                  /* BT_AVDTP_OPEN */
+	avdtp_start_cmd,                 /* BT_AVDTP_START */
+	avdtp_close_cmd,                 /* BT_AVDTP_CLOSE */
+	avdtp_suspend_cmd,               /* BT_AVDTP_SUSPEND */
+	avdtp_abort_cmd,                 /* BT_AVDTP_ABORT */
+	NULL,                            /* BT_AVDTP_SECURITY_CONTROL */
+	avdtp_get_all_capabilities_cmd,  /* BT_AVDTP_GET_ALL_CAPABILITIES */
+	NULL,                            /* BT_AVDTP_DELAYREPORT */
 };
 
 void (*rsp_handler[])(struct bt_avdtp *session, struct net_buf *buf, uint8_t msg_type) = {
@@ -1130,7 +1145,7 @@ void (*rsp_handler[])(struct bt_avdtp *session, struct net_buf *buf, uint8_t msg
 	avdtp_suspend_rsp,           /* BT_AVDTP_SUSPEND */
 	avdtp_abort_rsp,             /* BT_AVDTP_ABORT */
 	NULL,                        /* BT_AVDTP_SECURITY_CONTROL */
-	NULL,                        /* BT_AVDTP_GET_ALL_CAPABILITIES */
+	avdtp_get_capabilities_rsp,  /* BT_AVDTP_GET_ALL_CAPABILITIES */
 	NULL,                        /* BT_AVDTP_DELAYREPORT */
 };
 
@@ -1436,6 +1451,7 @@ int bt_avdtp_get_capabilities(struct bt_avdtp *session,
 	}
 
 	buf = avdtp_create_pdu(BT_AVDTP_CMD, BT_AVDTP_PACKET_TYPE_SINGLE,
+			       param->get_all_caps ? BT_AVDTP_GET_ALL_CAPABILITIES :
 			       BT_AVDTP_GET_CAPABILITIES);
 	if (!buf) {
 		LOG_ERR("Error: No Buff available");
