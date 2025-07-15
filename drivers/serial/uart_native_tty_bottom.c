@@ -15,6 +15,7 @@
 #include <termios.h>
 #include <unistd.h>
 
+#include <nsi_errno.h>
 #include <nsi_tracing.h>
 
 #define WARN(...)  nsi_print_warning(__VA_ARGS__)
@@ -91,6 +92,31 @@ static inline void native_tty_baud_speed_set(struct termios *ter, int baudrate)
 }
 
 /**
+ * @brief Get the baud rate speed from the termios structure
+ *
+ * @param ter
+ * @param baudrate
+ */
+static inline void native_tty_baud_speed_get(const struct termios *ter, uint32_t *baudrate)
+{
+	speed_t ispeed = cfgetispeed(ter);
+	speed_t ospeed = cfgetospeed(ter);
+
+	if (ispeed != ospeed) {
+		ERROR("Input and output baud rates differ: %d vs %d\n", ispeed, ospeed);
+	}
+
+	for (int i = 0; i < ARRAY_SIZE(baudrate_lut); i++) {
+		if (baudrate_lut[i].termios_baudrate == ispeed) {
+			*baudrate = baudrate_lut[i].baudrate;
+			return;
+		}
+	}
+
+	ERROR("Unsupported termios baudrate: %d\n", ispeed);
+}
+
+/**
  * @brief Set parity setting in the termios structure
  *
  * @param ter
@@ -118,6 +144,24 @@ static inline void native_tty_baud_parity_set(struct termios *ter,
 }
 
 /**
+ * @brief Get the parity setting from the termios structure
+ *
+ * @param ter
+ * @param parity
+ */
+static inline void native_tty_baud_parity_get(const struct termios *ter,
+					     enum native_tty_bottom_parity *parity)
+{
+	if ((ter->c_cflag & PARENB) == 0) {
+		*parity = NTB_PARITY_NONE;
+	} else if (ter->c_cflag & PARODD) {
+		*parity = NTB_PARITY_ODD;
+	} else {
+		*parity = NTB_PARITY_EVEN;
+	}
+}
+
+/**
  * @brief Set the number of stop bits in the termios structure
  *
  * @param ter
@@ -138,6 +182,18 @@ static inline void native_tty_stop_bits_set(struct termios *ter,
 		/* Anything else is not supported in termios. */
 		ERROR("Could not set number of data bits.\n");
 	}
+}
+
+/**
+ * @brief Get the number of stop bits from the termios structure
+ *
+ * @param ter
+ * @param stop_bits
+ */
+static inline void native_tty_stop_bits_get(const struct termios *ter,
+					   enum native_tty_bottom_stop_bits *stop_bits)
+{
+	*stop_bits = (ter->c_cflag & CSTOPB) ? NTB_STOP_BITS_2 : NTB_STOP_BITS_1;
 }
 
 /**
@@ -173,6 +229,33 @@ static inline void native_tty_data_bits_set(struct termios *ter,
 	/* Clear all bits that set the data size */
 	ter->c_cflag &= ~CSIZE;
 	ter->c_cflag |= data_bits_to_set;
+}
+
+/**
+ * @brief Get the number of data bits from the termios structure
+ *
+ * @param ter
+ * @param data_bits
+ */
+static inline void native_tty_data_bits_get(const struct termios *ter,
+					   enum native_tty_bottom_data_bits *data_bits)
+{
+	switch (ter->c_cflag & CSIZE) {
+	case CS5:
+		*data_bits = NTB_DATA_BITS_5;
+		break;
+	case CS6:
+		*data_bits = NTB_DATA_BITS_6;
+		break;
+	case CS7:
+		*data_bits = NTB_DATA_BITS_7;
+		break;
+	case CS8:
+		*data_bits = NTB_DATA_BITS_8;
+		break;
+	default:
+		ERROR("Unsupported data bits setting in termios.\n");
+	}
 }
 
 int native_tty_poll_bottom(int fd)
@@ -249,6 +332,29 @@ int native_tty_configure_bottom(int fd, struct native_tty_bottom_cfg *cfg)
 		WARN("Could not flush serial port\n");
 		return rc;
 	}
+
+	return 0;
+}
+
+int native_tty_read_bottom_cfg(int fd, struct native_tty_bottom_cfg *cfg)
+{
+	struct termios ter;
+	int rc = 0;
+
+	rc = tcgetattr(fd, &ter);
+	if (rc != 0) {
+		int err = 0;
+
+		err = errno;
+		WARN("Could not read terminal driver settings: %s\n", strerror(err));
+		return -nsi_errno_to_mid(err);
+	}
+
+	native_tty_baud_speed_get(&ter, &cfg->baudrate);
+	native_tty_baud_parity_get(&ter, &cfg->parity);
+	native_tty_data_bits_get(&ter, &cfg->data_bits);
+	native_tty_stop_bits_get(&ter, &cfg->stop_bits);
+	cfg->flow_ctrl = NTB_FLOW_CTRL_NONE;
 
 	return 0;
 }
