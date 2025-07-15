@@ -1,7 +1,7 @@
 # Copyright 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_MCXA
+if SOC_FAMILY_MCXA
 
 config CORTEX_M_SYSTICK
 	default n if MCUX_LPTMR_TIMER
@@ -18,4 +18,4 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config FLASH_FILL_BUFFER_SIZE
 	default 128
 
-endif # SOC_SERIES_MCXA
+endif # SOC_FAMILY_MCXA
