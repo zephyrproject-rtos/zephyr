@@ -26,6 +26,7 @@ tests:
     filter: dt_alias_exists("gy271") and CONFIG_I2C_RENESAS_RA_SCI_B
     platform_allow:
       - ek_ra8p1/r7ka8p1kflcac/cm85
+      - ek_ra8p1/r7ka8p1kflcac/cm33
     extra_args:
       - DTC_OVERLAY_FILE="./boards/${BOARD}${NORMALIZED_BOARD_QUALIFIERS}_sci_b_i2c.overlay"
       - CONF_FILE="./prj.conf ./boards/${BOARD}${NORMALIZED_BOARD_QUALIFIERS}_sci_b_i2c.conf"
