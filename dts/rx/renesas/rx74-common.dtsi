@@ -6,7 +6,7 @@
 
 #include <mem.h>
 #include <zephyr/dt-bindings/clock/rx_clock.h>
-#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-rx.h>
+#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-rx-pfs.h>
 
 / {
 	#address-cells = <1>;
@@ -431,9 +431,9 @@
 			};
 		};
 
-		pinctrl: pin-controller@87c00000 {
-			compatible = "renesas,rx-pinctrl";
-			reg = <0x87C00000 0x3c0>;
+		pinctrl: pin-controller@87c00800 {
+			compatible = "renesas,rx-pinctrl-pfs";
+			reg = <0x87c00800 0x3c0>;
 			status = "okay";
 		};
 
