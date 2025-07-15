@@ -1,0 +1,36 @@
+# Copyright (c) 2025, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP i.MX DPU controller
+
+compatible: "nxp,dpu"
+
+include: [base.yaml, display-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  hsw:
+    type: int
+    description: HSYNC pulse width in display clock cycles
+
+  hfp:
+    type: int
+    description: Horizontal front porch in display clock cycles
+
+  hbp:
+    type: int
+    description: Horizontal back porch in display clock cycles
+
+  vsw:
+    type: int
+    description: VSYNC pulse width in display clock cycles
+
+  vfp:
+    type: int
+    description: Vertical front porch in display clock cycles
+
+  vbp:
+    type: int
+    description: Vertical back porch in display clock cycles
