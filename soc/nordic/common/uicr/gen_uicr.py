@@ -258,7 +258,7 @@ def extract_and_combine_periphconfs(elf_files: list[argparse.FileType]) -> bytes
 def parse_kconfig(content: str) -> dict[str, str | None]:
     result = defaultdict(None)
     match_iter = re.finditer(
-        r"^(?P<config>(SB_)?CONFIG_[^=\s]+)=(?P<value>[^\s#])+$", content, re.MULTILINE
+        r"^(?P<config>(SB_)?CONFIG_[^=\s]+)=(?P<value>[^\s#]+)$", content, re.MULTILINE
     )
     for match in match_iter:
         result[match["config"]] = match["value"]
