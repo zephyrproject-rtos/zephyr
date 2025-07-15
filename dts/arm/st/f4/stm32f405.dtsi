@@ -15,6 +15,10 @@
 	soc {
 		compatible = "st,stm32f405", "st,stm32f4", "simple-bus";
 
+		rcc: rcc@40023800 {
+			compatible = "st,stm32-rcc";
+		};
+
 		pinctrl: pin-controller@40020000 {
 			reg = <0x40020000 0x2400>;
 
@@ -73,7 +77,8 @@
 		timers6: timers@40001000 {
 			compatible = "st,stm32-timers";
 			reg = <0x40001000 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 4U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 4)>,
+				 <&rcc STM32_SRC_TIMPCLK1 NO_SEL>;
 			resets = <&rctl STM32_RESET(APB1, 4U)>;
 			interrupts = <54 0>;
 			interrupt-names = "global";
@@ -89,7 +94,8 @@
 		timers7: timers@40001400 {
 			compatible = "st,stm32-timers";
 			reg = <0x40001400 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 5U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 5)>,
+				 <&rcc STM32_SRC_TIMPCLK1 NO_SEL>;
 			resets = <&rctl STM32_RESET(APB1, 5U)>;
 			interrupts = <55 0>;
 			interrupt-names = "global";
@@ -105,7 +111,8 @@
 		timers8: timers@40010400 {
 			compatible = "st,stm32-timers";
 			reg = <0x40010400 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB2, 1U)>;
+			clocks = <&rcc STM32_CLOCK(APB2, 1)>,
+				 <&rcc STM32_SRC_TIMPCLK2 NO_SEL>;
 			resets = <&rctl STM32_RESET(APB2, 1U)>;
 			interrupts = <43 0>, <44 0>, <45 0>, <46 0>;
 			interrupt-names = "brk", "up", "trgcom", "cc";
@@ -128,7 +135,8 @@
 		timers12: timers@40001800 {
 			compatible = "st,stm32-timers";
 			reg = <0x40001800 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 6U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 6)>,
+				 <&rcc STM32_SRC_TIMPCLK1 NO_SEL>;
 			resets = <&rctl STM32_RESET(APB1, 6U)>;
 			interrupts = <43 0>;
 			interrupt-names = "global";
@@ -150,7 +158,8 @@
 		timers13: timers@40001c00 {
 			compatible = "st,stm32-timers";
 			reg = <0x40001c00 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 7U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 7)>,
+				 <&rcc STM32_SRC_TIMPCLK1 NO_SEL>;
 			resets = <&rctl STM32_RESET(APB1, 7U)>;
 			interrupts = <44 0>;
 			interrupt-names = "global";
@@ -172,7 +181,8 @@
 		timers14: timers@40002000 {
 			compatible = "st,stm32-timers";
 			reg = <0x40002000 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 8U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 8)>,
+				 <&rcc STM32_SRC_TIMPCLK1 NO_SEL>;
 			resets = <&rctl STM32_RESET(APB1, 8U)>;
 			interrupts = <45 0>;
 			interrupt-names = "global";
