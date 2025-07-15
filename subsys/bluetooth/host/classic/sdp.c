@@ -2974,7 +2974,8 @@ int bt_sdp_get_proto_param(const struct net_buf *buf, enum bt_sdp_proto proto,
 	struct bt_sdp_uuid_desc pd;
 	int res;
 
-	if (proto != BT_SDP_PROTO_RFCOMM && proto != BT_SDP_PROTO_L2CAP) {
+	if (proto != BT_SDP_PROTO_RFCOMM && proto != BT_SDP_PROTO_L2CAP &&
+	    proto != BT_SDP_PROTO_AVDTP) {
 		LOG_ERR("Invalid protocol specifier");
 		return -EINVAL;
 	}
@@ -3001,7 +3002,8 @@ int bt_sdp_get_addl_proto_param(const struct net_buf *buf, enum bt_sdp_proto pro
 	struct bt_sdp_uuid_desc pd;
 	int res;
 
-	if (proto != BT_SDP_PROTO_RFCOMM && proto != BT_SDP_PROTO_L2CAP) {
+	if (proto != BT_SDP_PROTO_RFCOMM && proto != BT_SDP_PROTO_L2CAP &&
+	    proto != BT_SDP_PROTO_AVDTP) {
 		LOG_ERR("Invalid protocol specifier");
 		return -EINVAL;
 	}
