@@ -50,6 +50,22 @@ static void timespec_from_ticks(uint64_t ticks, struct timespec *ts)
 	};
 }
 
+int sys_clock_from_clockid(int clock_id)
+{
+	switch (clock_id) {
+#if defined(CLOCK_REALTIME) || defined(_POSIX_C_SOURCE)
+	case (int)CLOCK_REALTIME:
+		return SYS_CLOCK_REALTIME;
+#endif
+#if defined(CLOCK_MONOTONIC) || defined(_POSIX_MONOTONIC_CLOCK)
+	case (int)CLOCK_MONOTONIC:
+		return SYS_CLOCK_MONOTONIC;
+#endif
+	default:
+		return -EINVAL;
+	}
+}
+
 int sys_clock_gettime(int clock_id, struct timespec *ts)
 {
 	if (!is_valid_clock_id(clock_id)) {
