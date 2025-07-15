@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -75,6 +75,42 @@ static int soc_init(void)
 	}
 #endif
 
+#if defined(CONFIG_MIPI_DSI_NXP_DWC)
+	struct scmi_power_state_config pwr_cfg = {0};
+	uint32_t power_state = POWER_DOMAIN_STATE_OFF;
+
+	/* Power up DISPLAYMIX */
+	pwr_cfg.domain_id = IMX95_PD_DISPLAY;
+	pwr_cfg.power_state = POWER_DOMAIN_STATE_ON;
+	ret = scmi_power_state_set(&pwr_cfg);
+	if (ret) {
+		return ret;
+	}
+
+	while (power_state != POWER_DOMAIN_STATE_ON) {
+		ret = scmi_power_state_get(IMX95_PD_DISPLAY, &power_state);
+		if (ret) {
+			return ret;
+		}
+	}
+
+	/* Power up CAMERAMIX */
+	pwr_cfg.domain_id = IMX95_PD_CAMERA;
+	pwr_cfg.power_state = POWER_DOMAIN_STATE_ON;
+
+	ret = scmi_power_state_set(&pwr_cfg);
+	if (ret) {
+		return ret;
+	}
+
+	while (power_state != POWER_DOMAIN_STATE_ON) {
+		ret = scmi_power_state_get(IMX95_PD_CAMERA, &power_state);
+		if (ret) {
+			return ret;
+		}
+	}
+#endif
+
 #if defined(CONFIG_NXP_SCMI_CPU_DOMAIN_HELPERS)
 	cpu_cfg.cpu_id = CPU_IDX_M7P;
 	cpu_cfg.sleep_mode = CPU_SLEEP_MODE_RUN;
@@ -84,7 +120,6 @@ static int soc_init(void)
 		return ret;
 	}
 #endif /* CONFIG_NXP_SCMI_CPU_DOMAIN_HELPERS */
-
 	return ret;
 }
 
