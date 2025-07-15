@@ -67,21 +67,11 @@ LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 static inline enum net_verdict process_data(struct net_pkt *pkt)
 {
 	int ret;
-	bool locally_routed = false;
-
-	net_pkt_set_l2_processed(pkt, false);
 
 	/* Initial call will forward packets to SOCK_RAW packet sockets. */
 	ret = net_packet_socket_input(pkt, ETH_P_ALL);
 	if (ret != NET_CONTINUE) {
 		return ret;
-	}
-
-	/* If the packet is routed back to us when we have reassembled an IPv4 or IPv6 packet,
-	 * then do not pass it to L2 as the packet does not have link layer headers in it.
-	 */
-	if (net_pkt_is_ip_reassembled(pkt)) {
-		locally_routed = true;
 	}
 
 	/* If there is no data, then drop the packet. */
@@ -92,8 +82,9 @@ static inline enum net_verdict process_data(struct net_pkt *pkt)
 		return NET_DROP;
 	}
 
-	if (!net_pkt_is_loopback(pkt) && !locally_routed) {
+	if (!net_pkt_is_loopback(pkt) && !net_pkt_is_l2_processed(pkt)) {
 		ret = net_if_recv_data(net_pkt_iface(pkt), pkt);
+		net_pkt_set_l2_processed(pkt, true);
 		if (ret != NET_CONTINUE) {
 			if (ret == NET_DROP) {
 				NET_DBG("Packet %p discarded by L2", pkt);
@@ -104,8 +95,6 @@ static inline enum net_verdict process_data(struct net_pkt *pkt)
 			return ret;
 		}
 	}
-
-	net_pkt_set_l2_processed(pkt, true);
 
 	/* L2 has modified the buffer starting point, it is easier
 	 * to re-initialize the cursor rather than updating it.
