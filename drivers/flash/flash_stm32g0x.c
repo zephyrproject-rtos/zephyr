@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include <zephyr/device.h>
 #include <string.h>
 #include <zephyr/drivers/flash.h>
+#include <zephyr/sys/barrier.h>
 #include <zephyr/init.h>
 #include <soc.h>
 
@@ -193,6 +194,49 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 	}
 
 	return rc;
+}
+
+int flash_stm32_option_bytes_write(const struct device *dev, uint32_t mask,
+				   uint32_t value)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+	int rc;
+
+	if (regs->CR & FLASH_CR_OPTLOCK) {
+		return -EIO;
+	}
+
+	if ((regs->OPTR & mask) == value) {
+		return 0;
+	}
+
+	rc = flash_stm32_wait_flash_idle(dev);
+	if (rc < 0) {
+		return rc;
+	}
+
+	regs->OPTR = (regs->OPTR & ~mask) | value;
+	regs->CR |= FLASH_CR_OPTSTRT;
+
+	/* Make sure previous write is completed. */
+	barrier_dsync_fence_full();
+
+	rc = flash_stm32_wait_flash_idle(dev);
+	if (rc < 0) {
+		return rc;
+	}
+
+	/* Force the option byte loading */
+	regs->CR |= FLASH_CR_OBL_LAUNCH;
+
+	return flash_stm32_wait_flash_idle(dev);
+}
+
+uint32_t flash_stm32_option_bytes_read(const struct device *dev)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+
+	return regs->OPTR;
 }
 
 /*
