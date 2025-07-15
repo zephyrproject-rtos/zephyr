@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+
+if SOC_QEMU_HEXAGON_VIRT
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 1000000
+
+config NUM_IRQS
+	default 32
+
+endif # SOC_QEMU_HEXAGON_VIRT
