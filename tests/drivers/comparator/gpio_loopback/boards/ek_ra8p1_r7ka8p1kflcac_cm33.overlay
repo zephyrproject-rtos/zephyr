@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		test-comp = &acmphs0;
+	};
+
+	zephyr,user {
+		test-gpios = <&ioport6 0 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&pinctrl {
+	acmphs0_ivcmp0: acmphs0_ivcmp0 {
+		group1 {
+			/* CH0 IVCMP0 */
+			psels = <RA_PSEL(RA_PSEL_ACMPHS, 8, 5)>;
+			renesas,analog-enable;
+		};
+	};
+};
+
+&acmphs_global {
+	status = "okay";
+
+	acmphs0 {
+		pinctrl-0 = <&acmphs0_ivcmp0>;
+		pinctrl-names = "default";
+		interrupts = <90 12>;
+		interrupt-names = "hs";
+		reference-input-source = "ivref2";
+		compare-input-source = "ivcmp0";
+		noise-filter = <1>;
+		status = "okay";
+	};
+};
