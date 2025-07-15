@@ -87,6 +87,7 @@ struct i2s_esp32_cfg {
 	clock_control_subsys_t clock_subsys;
 	struct i2s_esp32_stream rx;
 	struct i2s_esp32_stream tx;
+	bool full_duplex;
 };
 
 struct i2s_esp32_data {
@@ -989,51 +990,37 @@ static int i2s_esp32_configure_dir(const struct device *dev, enum i2s_dir dir,
 		return -EINVAL;
 	}
 
+	if (dev_cfg->full_duplex) {
+		i2s_ll_share_bck_ws(hal->dev, true);
+	} else {
+		i2s_ll_share_bck_ws(hal->dev, false);
+	}
+
 	if (dir == I2S_DIR_TX) {
 #if I2S_ESP32_IS_DIR_EN(tx)
-		i2s_hal_std_enable_tx_channel(hal);
-		if (dev_cfg->rx.data != NULL && dev_cfg->rx.data->state != I2S_STATE_NOT_READY) {
-			if (stream->data->is_slave && !dev_cfg->rx.data->is_slave) { /*full duplex*/
-				i2s_ll_share_bck_ws(hal->dev, true);
-			} else {
-				i2s_ll_share_bck_ws(hal->dev, false);
-			}
-		} else {
-			i2s_ll_share_bck_ws(hal->dev, false);
-		}
-
 		i2s_hal_std_set_tx_slot(hal, stream->data->is_slave, &slot_cfg);
 		i2s_hal_set_tx_clock(hal, &i2s_hal_clock_info, I2S_ESP32_CLK_SRC);
+		i2s_ll_tx_enable_std(hal->dev);
 
 #if SOC_I2S_HW_VERSION_2
-		if (dev_cfg->rx.data != NULL && dev_cfg->rx.data->state != I2S_STATE_NOT_READY) {
-			if (stream->data->is_slave && !dev_cfg->rx.data->is_slave) { /*full duplex*/
-				i2s_ll_mclk_bind_to_rx_clk(hal->dev);
-			}
+		if (stream->data->is_slave && !dev_cfg->full_duplex) {
+			i2s_ll_mclk_bind_to_tx_clk(hal->dev);
 		}
 #endif /* SOC_I2S_HW_VERSION_2 */
 #endif /* I2S_ESP32_IS_DIR_EN(tx) */
 	} else if (dir == I2S_DIR_RX) {
 #if I2S_ESP32_IS_DIR_EN(rx)
-		i2s_hal_std_enable_rx_channel(hal);
-		if (dev_cfg->tx.data != NULL && dev_cfg->tx.data->state != I2S_STATE_NOT_READY) {
-			if (stream->data->is_slave && !dev_cfg->tx.data->is_slave) { /*full duplex*/
-				i2s_ll_share_bck_ws(hal->dev, true);
-			} else {
-				i2s_ll_share_bck_ws(hal->dev, false);
-			}
-		} else {
-			i2s_ll_share_bck_ws(hal->dev, false);
+		if (dev_cfg->full_duplex) {
+			stream->data->is_slave = true;
 		}
 
 		i2s_hal_std_set_rx_slot(hal, stream->data->is_slave, &slot_cfg);
 		i2s_hal_set_rx_clock(hal, &i2s_hal_clock_info, I2S_ESP32_CLK_SRC);
+		i2s_ll_rx_enable_std(hal->dev);
 
 #if SOC_I2S_HW_VERSION_2
-		if (dev_cfg->tx.data != NULL && dev_cfg->tx.data->state != I2S_STATE_NOT_READY) {
-			if (stream->data->is_slave && !dev_cfg->tx.data->is_slave) { /*full duplex*/
-				i2s_ll_mclk_bind_to_tx_clk(hal->dev);
-			}
+		if (!stream->data->is_slave && !dev_cfg->full_duplex) {
+			i2s_ll_mclk_bind_to_rx_clk(hal->dev);
 		}
 #endif /* SOC_I2S_HW_VERSION_2 */
 #endif /* I2S_ESP32_IS_DIR_EN(rx) */
@@ -1459,6 +1446,7 @@ static DEVICE_API(i2s, i2s_esp32_driver_api) = {
                                                                                                    \
 	static const struct i2s_esp32_cfg i2s_esp32_config_##index = {                             \
 		.unit = DT_PROP(DT_DRV_INST(index), unit),                                         \
+		.full_duplex = DT_INST_PROP(index, full_duplex) ? true : false,                    \
 		.hal = {.dev = (i2s_dev_t *)DT_INST_REG_ADDR(index)},                              \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                     \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(index)),                            \
