@@ -1383,6 +1383,7 @@ static int i2s_esp32_read(const struct device *dev, void **mem_block, size_t *si
 #if I2S_ESP32_IS_DIR_EN(rx)
 	const struct i2s_esp32_cfg *dev_cfg = dev->config;
 	const struct i2s_esp32_stream *stream = &dev_cfg->rx;
+	enum i2s_state state = stream->data->state;
 	struct queue_item item;
 	int err;
 
@@ -1394,26 +1395,26 @@ static int i2s_esp32_read(const struct device *dev, void **mem_block, size_t *si
 		return -EINVAL;
 	}
 
-	if (stream->data->state == I2S_STATE_NOT_READY) {
+	if (state == I2S_STATE_NOT_READY) {
 		LOG_ERR("RX invalid state: %d", (int)stream->data->state);
-		return -EIO;
-	} else if (stream->data->state == I2S_STATE_ERROR &&
-		   k_msgq_num_used_get(&stream->data->queue) == 0) {
-		LOG_ERR("RX queue empty");
 		return -EIO;
 	}
 
 	err = k_msgq_get(&stream->data->queue, &item,
-			 K_MSEC(stream->data->i2s_cfg.timeout));
-	if (err < 0) {
+			 (state == I2S_STATE_ERROR) ? K_NO_WAIT
+						    : K_MSEC(stream->data->i2s_cfg.timeout));
+	if (err == 0) {
+		*mem_block = item.buffer;
+		*size = item.size;
+	} else {
 		LOG_ERR("RX queue empty");
-		return err;
+
+		if (err == -ENOMSG) {
+			err = -EIO;
+		}
 	}
 
-	*mem_block = item.buffer;
-	*size = item.size;
-
-	return 0;
+	return err;
 #else
 	*mem_block = NULL;
 	*size = 0;
@@ -1428,6 +1429,7 @@ static int i2s_esp32_write(const struct device *dev, void *mem_block, size_t siz
 #if I2S_ESP32_IS_DIR_EN(tx)
 	const struct i2s_esp32_cfg *dev_cfg = dev->config;
 	const struct i2s_esp32_stream *stream = &dev_cfg->tx;
+	enum i2s_state state = stream->data->state;
 	int err;
 
 	if (!stream) {
@@ -1435,15 +1437,14 @@ static int i2s_esp32_write(const struct device *dev, void *mem_block, size_t siz
 		return -EINVAL;
 	}
 
-	if (stream->data->state != I2S_STATE_RUNNING &&
-	    stream->data->state != I2S_STATE_READY) {
-		LOG_ERR("TX Invalid state: %d", (int)stream->data->state);
-		return -EIO;
-	}
-
 	if (size > stream->data->i2s_cfg.block_size) {
 		LOG_ERR("Max write size is: %zu", stream->data->i2s_cfg.block_size);
 		return -EINVAL;
+	}
+
+	if (state != I2S_STATE_RUNNING && state != I2S_STATE_READY) {
+		LOG_ERR("TX Invalid state: %d", (int)state);
+		return -EIO;
 	}
 
 	struct queue_item item = {.buffer = mem_block, .size = size};
@@ -1452,10 +1453,9 @@ static int i2s_esp32_write(const struct device *dev, void *mem_block, size_t siz
 			 K_MSEC(stream->data->i2s_cfg.timeout));
 	if (err < 0) {
 		LOG_ERR("TX queue full");
-		return err;
 	}
 
-	return 0;
+	return err;
 #else
 	LOG_ERR("I2S_DIR_TX not enabled");
 	return -EINVAL;
