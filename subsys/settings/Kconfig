@@ -31,6 +31,13 @@ config SETTINGS_DYNAMIC_HANDLERS
 config SETTINGS_ENCODE_LEN
 	bool
 
+DT_CHOSEN_ZEPHYR_SETTINGS_PARTITION := zephyr,settings-partition
+DT_ZEPHYR_RETENTION := zephyr,retention
+
+config SETTINGS_SUPPORTED_RETENTION
+	bool
+	default y if RETENTION && $(dt_chosen_has_compat,$(DT_CHOSEN_ZEPHYR_SETTINGS_PARTITION),$(DT_ZEPHYR_RETENTION))
+
 choice SETTINGS_BACKEND
 	prompt "Storage back-end"
 	default SETTINGS_ZMS if ZMS
@@ -38,6 +45,7 @@ choice SETTINGS_BACKEND
 	default SETTINGS_FCB if FCB
 	default SETTINGS_FILE if FILE_SYSTEM
 	default SETTINGS_TFM_ITS if TFM_PARTITION_INTERNAL_TRUSTED_STORAGE
+	default SETTINGS_RETENTION if SETTINGS_SUPPORTED_RETENTION
 	default SETTINGS_NONE
 	help
 	  Storage back-end to be used by the settings subsystem.
@@ -105,6 +113,12 @@ config SETTINGS_NVS_NAME_CACHE_SIZE
 	  Number of entries in Settings NVS name cache.
 
 endif # SETTINGS_NVS
+
+config SETTINGS_RETENTION
+	bool "Retention storage support"
+	depends on SETTINGS_SUPPORTED_RETENTION
+	help
+	  Enables retention storage support (bulk load/save supported only).
 
 config SETTINGS_CUSTOM
 	bool "CUSTOM"
