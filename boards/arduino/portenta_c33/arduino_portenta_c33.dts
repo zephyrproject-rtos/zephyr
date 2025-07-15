@@ -95,15 +95,39 @@
 	};
 };
 
-&option_setting_s {
+&option_setting_ofs0 {
 	status = "disabled";
 };
 
-&option_setting_sas {
+&option_setting_dualsel {
 	status = "disabled";
 };
 
-&option_setting_ofs {
+&option_setting_ofs1_sec {
+	status = "disabled";
+};
+
+&option_setting_banksel_sec {
+	status = "disabled";
+};
+
+&option_setting_bps_sec {
+	status = "disabled";
+};
+
+&option_setting_pbps_sec {
+	status = "disabled";
+};
+
+&option_setting_ofs1_sel {
+	status = "disabled";
+};
+
+&option_setting_banksel_sel {
+	status = "disabled";
+};
+
+&option_setting_bps_sel {
 	status = "disabled";
 };
 
