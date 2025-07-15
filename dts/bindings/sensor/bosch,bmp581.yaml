@@ -146,3 +146,10 @@ properties:
       - 0x05 # BMP581_DT_IIR_FILTER_COEFF_31
       - 0x06 # BMP581_DT_IIR_FILTER_COEFF_63
       - 0x07 # BMP581_DT_IIR_FILTER_COEFF_127
+
+  fifo-watermark:
+    type: int
+    description: |
+      Specify the FIFO watermark level in frame count.
+      Only supports frames with both Pressure and Temperature
+      Valid range: 1 - 15

@@ -221,7 +221,7 @@ static int validate_chip_id(struct bmp581_data *drv)
 		return -EINVAL;
 	}
 
-	if ((drv->chip_id == BMP5_CHIP_ID_PRIM) || (drv->chip_id == BMP5_CHIP_ID_SEC)) {
+	if (drv->chip_id == BMP5_CHIP_ID_PRIM || drv->chip_id == BMP5_CHIP_ID_SEC) {
 		rslt = BMP5_OK;
 	} else {
 		drv->chip_id = 0;
@@ -457,7 +457,7 @@ static int set_iir_config(const struct sensor_value *iir, const struct device *d
 	struct bmp581_config *conf = (struct bmp581_config *)dev->config;
 	int ret = BMP5_OK;
 
-	CHECKIF((iir == NULL) | (dev == NULL)) {
+	CHECKIF(iir == NULL || dev == NULL) {
 		return -EINVAL;
 	}
 
@@ -707,7 +707,14 @@ static DEVICE_API(sensor, bmp581_driver_api) = {
 
 #define BMP581_INIT(i)                                                                             \
                                                                                                    \
-	RTIO_DEFINE(bmp581_rtio_ctx_##i, 8, 8);                                                    \
+	BUILD_ASSERT(COND_CODE_1(DT_INST_NODE_HAS_PROP(i, fifo_watermark),                         \
+				 (DT_INST_PROP(i, fifo_watermark) > 0 &&                           \
+				  DT_INST_PROP(i, fifo_watermark) < 16),                           \
+				 (true)),                                                          \
+		     "fifo-watermark must be between 1 and 15. Please set it in "                  \
+		     "the device-tree node properties");                                           \
+                                                                                                   \
+	RTIO_DEFINE(bmp581_rtio_ctx_##i, 16, 16);                                                  \
 	I2C_DT_IODEV_DEFINE(bmp581_bus_##i, DT_DRV_INST(i));                                       \
                                                                                                    \
 	static struct bmp581_data bmp581_data_##i = {                                              \
@@ -719,6 +726,9 @@ static DEVICE_API(sensor, bmp581_driver_api) = {
 			.iir_t = DT_INST_PROP(i, temp_iir),                                        \
 			.iir_p = DT_INST_PROP(i, press_iir),                                       \
 			.power_mode = DT_INST_PROP(i, power_mode),                                 \
+		},                                                                                 \
+		.stream = {                                                                        \
+			.fifo_thres = DT_INST_PROP_OR(i, fifo_watermark, 0),                       \
 		},                                                                                 \
 	};                                                                                         \
                                                                                                    \
