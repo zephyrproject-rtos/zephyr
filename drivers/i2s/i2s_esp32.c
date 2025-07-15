@@ -916,12 +916,22 @@ static int i2s_esp32_configure_dir(const struct device *dev, enum i2s_dir dir,
 		return 0;
 	}
 
+	if (i2s_cfg->mem_slab == NULL) {
+		LOG_ERR("Memory slab is NULL");
+		return -EINVAL;
+	}
+
 	data_format = i2s_cfg->format & I2S_FMT_DATA_FORMAT_MASK;
 
 	if (data_format != I2S_FMT_DATA_FORMAT_I2S &&
 	    data_format != I2S_FMT_DATA_FORMAT_LEFT_JUSTIFIED &&
 	    data_format != I2S_FMT_DATA_FORMAT_RIGHT_JUSTIFIED) {
 		LOG_ERR("Invalid data format: %u", (unsigned int)data_format);
+		return -EINVAL;
+	}
+
+	if (data_format == I2S_FMT_DATA_FORMAT_I2S && i2s_cfg->format & I2S_FMT_DATA_ORDER_LSB) {
+		LOG_ERR("Invalid format: %u", (unsigned int)i2s_cfg->format);
 		return -EINVAL;
 	}
 
@@ -980,8 +990,10 @@ static int i2s_esp32_configure_dir(const struct device *dev, enum i2s_dir dir,
 #endif /* SOC_I2S_HW_VERSION_2 */
 		} else {
 			LOG_ERR("Unsupported data format: %u", (unsigned int)data_format);
+			return -EINVAL;
 		}
 	}
+
 	slot_cfg.std.ws_width = slot_cfg.slot_bit_width;
 	slot_cfg.std.slot_mask = I2S_STD_SLOT_BOTH;
 #if SOC_I2S_HW_VERSION_1
@@ -1517,8 +1529,7 @@ static DEVICE_API(i2s, i2s_esp32_driver_api) = {
 	I2S_ESP32_STREAM_DECL_DMA_DESC(index, tx);                                                 \
 	I2S_ESP32_STREAM_DECL(index, tx);                                                          \
                                                                                                    \
-	static struct i2s_esp32_data i2s_esp32_data_##index = {                                    \
-		.clk_info = {0}};                                                                  \
+	static struct i2s_esp32_data i2s_esp32_data_##index = {.clk_info = {0}};                   \
                                                                                                    \
 	static const struct i2s_esp32_cfg i2s_esp32_config_##index = {                             \
 		.unit = DT_PROP(DT_DRV_INST(index), unit),                                         \
@@ -1526,7 +1537,8 @@ static DEVICE_API(i2s, i2s_esp32_driver_api) = {
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                     \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(index)),                            \
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(index, offset),        \
-		I2S_ESP32_STREAM_INIT(index, rx), I2S_ESP32_STREAM_INIT(index, tx)};               \
+		I2S_ESP32_STREAM_INIT(index, rx),                                                  \
+		I2S_ESP32_STREAM_INIT(index, tx)};                                                 \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(index, &i2s_esp32_initialize, NULL, &i2s_esp32_data_##index,         \
 			      &i2s_esp32_config_##index, POST_KERNEL, CONFIG_I2S_INIT_PRIORITY,    \
