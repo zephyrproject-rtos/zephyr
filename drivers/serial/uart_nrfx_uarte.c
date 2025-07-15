@@ -870,6 +870,78 @@ static void tx_start(const struct device *dev, const uint8_t *buf, size_t len)
 static void rx_timeout(struct k_timer *timer);
 static void tx_timeout(struct k_timer *timer);
 
+static void user_callback(const struct device *dev, struct uart_event *evt)
+{
+	struct uarte_nrfx_data *data = dev->data;
+
+	if (data->async->user_callback) {
+		data->async->user_callback(dev, evt, data->async->user_data);
+	}
+}
+
+static void rx_buf_release(const struct device *dev, uint8_t *buf)
+{
+	struct uart_event evt = {
+		.type = UART_RX_BUF_RELEASED,
+		.data.rx_buf.buf = buf,
+	};
+
+	user_callback(dev, &evt);
+}
+
+static void notify_rx_disable(const struct device *dev)
+{
+	const struct uarte_nrfx_config *cfg = dev->config;
+	struct uart_event evt = {
+		.type = UART_RX_DISABLED,
+	};
+
+	if (LOW_POWER_ENABLED(cfg)) {
+		uint32_t key = irq_lock();
+
+		uarte_disable_locked(dev, UARTE_FLAG_LOW_POWER_RX);
+		irq_unlock(key);
+	}
+
+	user_callback(dev, (struct uart_event *)&evt);
+
+	/* runtime PM is put after the callback. In case uart is re-enabled from that
+	 * callback we avoid suspending/resuming the device.
+	 */
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_put_async(dev, K_NO_WAIT);
+	}
+}
+
+static int uarte_nrfx_rx_disable(const struct device *dev)
+{
+	struct uarte_nrfx_data *data = dev->data;
+	struct uarte_async_rx *async_rx = &data->async->rx;
+	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
+	int key;
+
+	if (async_rx->buf == NULL) {
+		return -EFAULT;
+	}
+
+	k_timer_stop(&async_rx->timer);
+
+	key = irq_lock();
+
+	if (async_rx->next_buf != NULL) {
+		nrf_uarte_shorts_disable(uarte, NRF_UARTE_SHORT_ENDRX_STARTRX);
+		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXSTARTED);
+	}
+
+	async_rx->enabled = false;
+	async_rx->discard_fifo = true;
+
+	nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPRX);
+	irq_unlock(key);
+
+	return 0;
+}
+
 #if !defined(CONFIG_UART_NRFX_UARTE_ENHANCED_RX)
 static void timer_handler(nrf_timer_event_t event_type, void *p_context) { }
 
@@ -1068,15 +1140,6 @@ static int uarte_nrfx_tx_abort(const struct device *dev)
 	return 0;
 }
 
-static void user_callback(const struct device *dev, struct uart_event *evt)
-{
-	struct uarte_nrfx_data *data = dev->data;
-
-	if (data->async->user_callback) {
-		data->async->user_callback(dev, evt, data->async->user_data);
-	}
-}
-
 static void notify_uart_rx_rdy(const struct device *dev, size_t len)
 {
 	struct uarte_nrfx_data *data = dev->data;
@@ -1088,29 +1151,6 @@ static void notify_uart_rx_rdy(const struct device *dev, size_t len)
 	};
 
 	user_callback(dev, &evt);
-}
-
-static void rx_buf_release(const struct device *dev, uint8_t *buf)
-{
-	struct uart_event evt = {
-		.type = UART_RX_BUF_RELEASED,
-		.data.rx_buf.buf = buf,
-	};
-
-	user_callback(dev, &evt);
-}
-
-static void notify_rx_disable(const struct device *dev)
-{
-	struct uart_event evt = {
-		.type = UART_RX_DISABLED,
-	};
-
-	user_callback(dev, (struct uart_event *)&evt);
-
-	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
-		pm_device_runtime_put_async(dev, K_NO_WAIT);
-	}
 }
 
 #ifdef UARTE_HAS_FRAME_TIMEOUT
@@ -1335,35 +1375,6 @@ static int uarte_nrfx_callback_set(const struct device *dev,
 
 	data->async->user_callback = callback;
 	data->async->user_data = user_data;
-
-	return 0;
-}
-
-static int uarte_nrfx_rx_disable(const struct device *dev)
-{
-	struct uarte_nrfx_data *data = dev->data;
-	struct uarte_async_rx *async_rx = &data->async->rx;
-	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
-	int key;
-
-	if (async_rx->buf == NULL) {
-		return -EFAULT;
-	}
-
-	k_timer_stop(&async_rx->timer);
-
-	key = irq_lock();
-
-	if (async_rx->next_buf != NULL) {
-		nrf_uarte_shorts_disable(uarte, NRF_UARTE_SHORT_ENDRX_STARTRX);
-		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXSTARTED);
-	}
-
-	async_rx->enabled = false;
-	async_rx->discard_fifo = true;
-
-	nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPRX);
-	irq_unlock(key);
 
 	return 0;
 }
