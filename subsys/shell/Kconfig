@@ -8,7 +8,7 @@
 menuconfig SHELL
 	bool "Shell"
 	imply LOG_RUNTIME_FILTERING
-	select POLL
+	select EVENTS
 
 if SHELL
 
