@@ -647,6 +647,9 @@ Build system:
     - scripts/list_boards.py
     - scripts/list_hardware.py
     - scripts/schemas/*-schema.yml
+    - tests/misc/test_build/
+    - tests/application_development/
+    - samples/application_development/
   labels:
     - "area: Build System"
   tests:
@@ -842,6 +845,7 @@ Common Architecture Interface:
     - include/zephyr/arch/common/
     - tests/arch/common/
     - doc/hardware/porting/arch.rst
+    - doc/hardware/arch/
   labels:
     - "area: Architectures"
   tests:
@@ -874,7 +878,7 @@ Debug:
     - doc/services/profiling/perf.rst
     - samples/subsys/profiling/perf/
     - scripts/profiling/stackcollapse.py
-    - subsys/profiling/perf/
+    - subsys/profiling/
   labels:
     - "area: Debugging"
   tests:
@@ -1015,7 +1019,9 @@ Display drivers:
     - samples/subsys/display/
     - tests/subsys/display/
     - doc/hardware/peripherals/display/
-    - tests/drivers/*/display/
+    - tests/drivers/display/
+    - tests/drivers/build_all/display/
+    - samples/drivers/display/
   labels:
     - "area: Display"
   tests:
@@ -1116,6 +1122,8 @@ Release Notes:
     - include/zephyr/audio/
     - doc/hardware/peripherals/audio/
     - samples/drivers/audio/
+    - tests/drivers/build_all/audio/
+    - tests/drivers/audio/
   labels:
     - "area: Audio"
 
@@ -1146,6 +1154,8 @@ Release Notes:
     - dts/bindings/auxdisplay/*
     - doc/hardware/peripherals/auxdisplay.rst
     - samples/drivers/auxdisplay/
+    - tests/drivers/build_all/auxdisplay/
+    - samples/drivers/auxdisplay_*/
   labels:
     - "area: Aux display"
   tests:
@@ -1223,6 +1233,7 @@ Release Notes:
     - tests/drivers/clock_control/
     - include/zephyr/drivers/clock_control/
     - doc/hardware/peripherals/clock_control.rst
+    - samples/drivers/clock_control_*/
   labels:
     - "area: Clock control"
   tests:
@@ -1398,6 +1409,7 @@ Release Notes:
     - samples/subsys/edac/
     - tests/subsys/edac/
     - doc/hardware/peripherals/edac/
+    - include/zephyr/drivers/edac/
   labels:
     - "area: EDAC"
   tests:
@@ -1502,6 +1514,7 @@ Release Notes:
     - include/zephyr/drivers/flash/
     - tests/drivers/flash_simulator/
     - tests/drivers/build_all/flash/
+    - tests/drivers/flash_api/
   labels:
     - "area: Flash"
   tests:
@@ -1540,6 +1553,7 @@ Release Notes:
     - tests/drivers/fuel_gauge/
     - doc/hardware/peripherals/fuel_gauge.rst
     - samples/drivers/fuel_gauge/
+    - tests/drivers/build_all/fuel_gauge/
   labels:
     - "area: Fuel Gauge"
   tests:
@@ -1711,6 +1725,8 @@ Release Notes:
     - samples/drivers/mbox/
     - dts/bindings/mbox/
     - doc/hardware/peripherals/mbox.rst
+    - tests/drivers/mbox/
+    - samples/drivers/mbox_data/
   labels:
     - "area: mbox"
   tests:
@@ -1792,6 +1808,7 @@ Release Notes:
     - include/zephyr/drivers/reset.h
     - dts/bindings/reset/
     - include/zephyr/dt-bindings/reset/
+    - tests/drivers/reset/
 
 "Interrupt Handling":
   status: odd fixes
@@ -1899,6 +1916,7 @@ Release Notes:
     - tests/drivers/build_all/modem/
     - dts/bindings/modem/
     - include/zephyr/drivers/modem/
+    - tests/drivers/modem/
   labels:
     - "area: Modem Drivers"
   tests:
@@ -2032,6 +2050,8 @@ Release Notes:
     - include/zephyr/drivers/psi5/
     - dts/bindings/psi5/
     - doc/hardware/peripherals/psi5.rst
+    - tests/drivers/psi5/
+    - samples/drivers/psi5/
   labels:
     - "area: PSI5"
   tests:
@@ -2142,6 +2162,7 @@ Release Notes:
     - include/zephyr/dt-bindings/sensor/
     - doc/hardware/peripherals/sensor/
     - tests/drivers/build_all/sensor/
+    - include/zephyr/drivers/sensor_*
   labels:
     - "area: Sensors"
   tests:
@@ -2159,6 +2180,8 @@ Release Notes:
     - include/zephyr/drivers/sent/
     - dts/bindings/sent/
     - doc/hardware/peripherals/sent.rst
+    - tests/drivers/sent/
+    - samples/drivers/sent/
   labels:
     - "area: SENT"
   tests:
@@ -2194,6 +2217,8 @@ Release Notes:
     - dts/bindings/spi/
     - include/zephyr/dt-bindings/spi/
     - doc/hardware/peripherals/spi.rst
+    - tests/drivers/build_all/spi/
+    - samples/drivers/spi_*/
   labels:
     - "area: SPI"
   tests:
@@ -2253,6 +2278,7 @@ Release Notes:
     - tests/drivers/*/video/
     - dts/bindings/video/
     - samples/drivers/video/
+    - tests/drivers/video/
   labels:
     - "area: Video"
   tests:
@@ -2270,6 +2296,7 @@ Release Notes:
     - dts/bindings/virtio/
     - include/zephyr/drivers/virtio.h
     - include/zephyr/drivers/virtio/
+    - tests/drivers/build_all/virtio/
   labels:
     - "area: VIRTIO"
 
@@ -2323,6 +2350,7 @@ Release Notes:
   files:
     - drivers/wifi/
     - dts/bindings/wifi/
+    - tests/drivers/build_all/wifi/
   labels:
     - "area: Wi-Fi"
 
@@ -2788,6 +2816,8 @@ LoRa and LoRaWAN:
     - include/zephyr/dt-bindings/lora/
     - dts/bindings/lora/
     - doc/connectivity/lora_lorawan/index.rst
+    - tests/subsys/lorawan/
+    - tests/drivers/build_all/lora/
   labels:
     - "area: LoRa"
   tests:
@@ -3254,9 +3284,9 @@ Open AMP:
   status: maintained
   maintainers:
     - carlocaione
+    - iuliana-prodan
   collaborators:
     - uLipe
-    - iuliana-prodan
   files:
     - lib/open-amp/
     - samples/subsys/ipc/openamp/
@@ -3331,6 +3361,7 @@ Power management:
     - drivers/power_domain/
     - dts/bindings/power/
     - include/zephyr/dt-bindings/power/
+    - tests/drivers/build_all/power_domain/
   labels:
     - "area: Power Management"
   tests:
@@ -3401,6 +3432,7 @@ Samples:
   collaborators:
     - nashif
   files:
+    - samples/sample_definition_and_criteria.rst
     - samples/
   labels:
     - "area: Samples"
@@ -3458,6 +3490,7 @@ Twister:
     - tests/test_config.yaml
     - scripts/utils/twister_to_list.py
     - tests/robot/common.robot
+    - scripts/pylib/*-twister-harness/
   labels:
     - "area: Twister"
 
@@ -3469,6 +3502,7 @@ Settings:
     - tests/subsys/settings/
     - samples/subsys/settings/
     - doc/services/storage/settings/
+    - tests/subsys/settings_commit_prio/
   labels:
     - "area: Settings"
   tests:
@@ -4074,6 +4108,7 @@ Microchip MEC Platforms:
     - tests/boards/mec172xevb_assy6906/
     - dts/bindings/*/microchip,mec*
     - dts/bindings/*/microchip,xec*
+    - samples/boards/microchip/
   labels:
     - "platform: Microchip MEC"
 
@@ -4096,7 +4131,6 @@ Microchip SAM Platforms:
   maintainers:
     - nandojve
   collaborators:
-    - attie-argentum
     - pdgendt
     - mnkp
     - stephanosio
@@ -4221,6 +4255,8 @@ Renesas RA Platforms:
     - dts/bindings/*/*renesas,ra*
     - soc/renesas/ra/
     - samples/boards/renesas/
+    - tests/boards/renesas/
+    - include/zephyr/drivers/misc/renesas_ra_external_interrupt/
   labels:
     - "platform: Renesas RA"
   description: >-
@@ -4562,6 +4598,20 @@ Sensry Platforms:
     - .*sy1xx.*
   labels:
     - "platform: sensry"
+
+SPDX Tooling:
+  status: maintained
+  maintainers:
+    - kartben
+  collaborators:
+    - pdgendt
+    - swinslow
+  files:
+    - scripts/west_commands/spdx.py
+    - scripts/west_commands/zspdx/
+    - tests/application_development/software_bill_of_materials/
+  labels:
+    - "area: SPDX Tooling"
 
 Storage:
   status: odd fixes
@@ -5768,6 +5818,7 @@ Xtensa arch:
     - soc/cdns/dc233c/
     - soc/cdns/xtensa_sample_controller/
     - tests/arch/xtensa/
+    - doc/hardware/arch/xtensa.rst
   labels:
     - "area: Xtensa"
 
@@ -5866,6 +5917,7 @@ Random:
   files:
     - subsys/random/
     - include/zephyr/random/
+    - tests/subsys/random/
   labels:
     - "area: Random"
 
@@ -5955,6 +6007,7 @@ RX arch:
     - boards/qemu/rx/
     - soc/renesas/rx/
     - tests/arch/rx/
+    - include/zephyr/drivers/misc/renesas_rx_external_interrupt/
   labels:
     - "area: RX"
   tests:

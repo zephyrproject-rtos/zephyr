@@ -193,6 +193,10 @@ SECTIONS {
 		*(".data.*")
 		*(".kernel.*")
 
+/* This is an MWDT-specific section, created when -Hccm option is enabled */
+		*(".rodata_in_data")
+		*(".rodata_in_data.*")
+
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
  */

@@ -10,4 +10,3 @@ include: uart-device.yaml
 properties:
   mdm-power-gpios:
     type: phandle-array
-    required: true

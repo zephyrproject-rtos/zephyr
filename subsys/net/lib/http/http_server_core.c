@@ -800,11 +800,10 @@ int http_server_find_file(char *fname, size_t fname_size, size_t *file_size,
 			  uint8_t supported_compression, enum http_compression *chosen_compression)
 {
 	struct fs_dirent dirent;
-	size_t len;
 	int ret;
 
-	len = strlen(fname);
 	if (IS_ENABLED(CONFIG_HTTP_SERVER_COMPRESSION)) {
+		const size_t len = strlen(fname);
 		*chosen_compression = HTTP_NONE;
 		if (IS_BIT_SET(supported_compression, HTTP_BR)) {
 			snprintk(fname + len, fname_size - len, ".br");
@@ -846,6 +845,8 @@ int http_server_find_file(char *fname, size_t fname_size, size_t *file_size,
 				goto return_filename;
 			}
 		}
+		/* No compressed file found, try the original filename */
+		fname[len] = '\0';
 	}
 	ret = fs_stat(fname, &dirent);
 	if (ret != 0) {

@@ -55,7 +55,7 @@ def compare_with_hardened_conf(kconf, hardened_kconf_filename):
                                   recommended=recommended, symbol=symbol))
     for node in kconf.node_iter():
         for select in node.selects:
-            if kconf.syms["EXPERIMENTAL"] in select or kconf.syms["DEPRECATED"] in select:
+            if kconf.syms["EXPERIMENTAL"] in select or kconf.syms["DEPRECATED"] in select or kconf.syms["NOT_SECURE"] in select:
                 options.append(Option(name=node.item.name, current=node.item.str_value, recommended='n', symbol=node.item))
 
     return options

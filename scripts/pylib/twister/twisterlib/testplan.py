@@ -69,13 +69,77 @@ class Filters:
     MODULE = 'Module filter'
     # in case of missing env. variable required for a platform
     ENVIRONMENT = 'Environment filter'
-
-
 class TestLevel:
     name = None
     levels = []
     scenarios = []
+class TestConfiguration:
+    tc_schema_path = os.path.join(
+        ZEPHYR_BASE,
+        "scripts",
+        "schemas",
+        "twister",
+        "test-config-schema.yaml"
+    )
 
+    def __init__(self, config_file):
+        self.test_config = None
+        self.override_default_platforms = False
+        self.increased_platform_scope = True
+        self.default_platforms = []
+        self.parse(config_file)
+
+    def parse(self, config_file):
+        if os.path.exists(config_file):
+            tc_schema = scl.yaml_load(self.tc_schema_path)
+            self.test_config = scl.yaml_load_verify(config_file, tc_schema)
+        else:
+            raise TwisterRuntimeError(f"File {config_file} not found.")
+
+        platform_config = self.test_config.get('platforms', {})
+
+        self.override_default_platforms = platform_config.get('override_default_platforms', False)
+        self.increased_platform_scope = platform_config.get('increased_platform_scope', True)
+        self.default_platforms = platform_config.get('default_platforms', [])
+
+        self.options = self.test_config.get('options', {})
+
+
+    @staticmethod
+    def get_level(levels, name):
+        level = next((lvl for lvl in levels if lvl.name == name), None)
+        return level
+
+    def get_levels(self, scenarios):
+        levels = []
+        configured_levels = self.test_config.get('levels', [])
+
+        # Do first pass on levels to get initial data.
+        for level in configured_levels:
+            adds = []
+            for s in  level.get('adds', []):
+                r = re.compile(s)
+                adds.extend(list(filter(r.fullmatch, scenarios)))
+
+            test_level = TestLevel()
+            test_level.name = level['name']
+            test_level.scenarios = adds
+            test_level.levels = level.get('inherits', [])
+            levels.append(test_level)
+
+        # Go over levels again to resolve inheritance.
+        for level in configured_levels:
+            inherit = level.get('inherits', [])
+            _level = self.get_level(levels, level['name'])
+            if inherit:
+                for inherted_level in inherit:
+                    _inherited = self.get_level(levels, inherted_level)
+                    assert _inherited, "Unknown inherited level {inherted_level}"
+                    _inherited_scenarios = _inherited.scenarios
+                    level_scenarios = _level.scenarios if _level else []
+                    level_scenarios.extend(_inherited_scenarios)
+
+        return levels
 
 class TestPlan:
     __test__ = False  # for pytest to skip this class when collects tests
@@ -88,14 +152,6 @@ class TestPlan:
     quarantine_schema = scl.yaml_load(
         os.path.join(ZEPHYR_BASE,
                      "scripts", "schemas", "twister", "quarantine-schema.yaml"))
-
-    tc_schema_path = os.path.join(
-        ZEPHYR_BASE,
-        "scripts",
-        "schemas",
-        "twister",
-        "test-config-schema.yaml"
-    )
 
     SAMPLE_FILENAME = 'sample.yaml'
     TESTSUITE_FILENAME = 'testcase.yaml'
@@ -126,47 +182,9 @@ class TestPlan:
 
         self.run_individual_testsuite = []
         self.levels = []
-        self.test_config =  {}
+        self.test_config =  None
 
         self.name = "unnamed"
-
-    def get_level(self, name):
-        level = next((lvl for lvl in self.levels if lvl.name == name), None)
-        return level
-
-    def parse_configuration(self, config_file):
-        if os.path.exists(config_file):
-            tc_schema = scl.yaml_load(self.tc_schema_path)
-            self.test_config = scl.yaml_load_verify(config_file, tc_schema)
-        else:
-            raise TwisterRuntimeError(f"File {config_file} not found.")
-
-        levels = self.test_config.get('levels', [])
-
-        # Do first pass on levels to get initial data.
-        for level in levels:
-            adds = []
-            for s in  level.get('adds', []):
-                r = re.compile(s)
-                adds.extend(list(filter(r.fullmatch, self.scenarios)))
-
-            tl = TestLevel()
-            tl.name = level['name']
-            tl.scenarios = adds
-            tl.levels = level.get('inherits', [])
-            self.levels.append(tl)
-
-        # Go over levels again to resolve inheritance.
-        for level in levels:
-            inherit = level.get('inherits', [])
-            _level = self.get_level(level['name'])
-            if inherit:
-                for inherted_level in inherit:
-                    _inherited = self.get_level(inherted_level)
-                    assert _inherited, "Unknown inherited level {inherted_level}"
-                    _inherited_scenarios = _inherited.scenarios
-                    level_scenarios = _level.scenarios if _level else []
-                    level_scenarios.extend(_inherited_scenarios)
 
     def find_subtests(self):
         sub_tests = self.options.sub_test
@@ -188,6 +206,8 @@ class TestPlan:
         if self.options.test:
             self.run_individual_testsuite = self.options.test
 
+        self.test_config = TestConfiguration(self.env.test_config)
+
         self.add_configurations()
         num = self.add_testsuites(testsuite_filter=self.run_individual_testsuite)
         if num == 0:
@@ -203,7 +223,7 @@ class TestPlan:
             self.scenarios.append(ts.id)
 
         self.report_duplicates()
-        self.parse_configuration(config_file=self.env.test_config)
+        self.levels = self.test_config.get_levels(self.scenarios)
 
         # handle quarantine
         ql = self.options.quarantine_list
@@ -219,6 +239,10 @@ class TestPlan:
                 except scl.EmptyYamlFileException:
                     logger.debug(f'Quarantine file {quarantine_file} is empty')
             self.quarantine = Quarantine(ql)
+
+    def get_level(self, name):
+        level = next((lvl for lvl in self.levels if lvl.name == name), None)
+        return level
 
     def load(self):
 
@@ -440,19 +464,16 @@ class TestPlan:
         soc_roots = self.env.soc_roots
         arch_roots = self.env.arch_roots
 
-        platform_config = self.test_config.get('platforms', {})
-
         for platform in generate_platforms(board_roots, soc_roots, arch_roots):
             if not platform.twister:
                 continue
             self.platforms.append(platform)
 
-            if not platform_config.get('override_default_platforms', False):
+            if not self.test_config.override_default_platforms:
                 if platform.default:
                     self.default_platforms.append(platform.name)
-                    #logger.debug(f"adding {platform.name} to default platforms")
                 continue
-            for pp in platform_config.get('default_platforms', []):
+            for pp in self.test_config.default_platforms:
                 if pp in platform.aliases:
                     logger.debug(f"adding {platform.name} to default platforms (override  mode)")
                     self.default_platforms.append(platform.name)
@@ -767,9 +788,8 @@ class TestPlan:
         else:
             platforms = self.platforms
 
-        platform_config = self.test_config.get('platforms', {})
         # test configuration options
-        test_config_options = self.test_config.get('options', {})
+        test_config_options = self.test_config.options
         integration_mode_list = test_config_options.get('integration_mode', [])
 
         logger.info("Building initial testsuite list...")
@@ -784,7 +804,7 @@ class TestPlan:
                 _integration_platforms = []
 
             if (ts.build_on_all and not platform_filter and
-                platform_config.get('increased_platform_scope', True)):
+                self.test_config.increased_platform_scope):
                 # if build_on_all is set, we build on all platforms
                 platform_scope = self.platforms
             elif ts.integration_platforms and self.options.integration:
@@ -808,7 +828,7 @@ class TestPlan:
                 ts.platform_allow
                 and not platform_filter
                 and not integration
-                and platform_config.get('increased_platform_scope', True)
+                and self.test_config.increased_platform_scope
             ):
                 a = set(platform_scope)
                 b = set(filter(lambda item: item.name in ts.platform_allow, self.platforms))

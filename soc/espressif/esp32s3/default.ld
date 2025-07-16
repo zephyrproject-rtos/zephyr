@@ -380,10 +380,6 @@ SECTIONS
     *libzephyr.a:hw_init.*(.literal .text .literal.* .text.*)
     *libzephyr.a:soc_random.*(.literal .text .literal.* .text.*)
     *libzephyr.a:esp_mmu_map.*(.literal .literal.* .text .text.*)
-    *libdrivers__interrupt_controller.a:(.literal .literal.* .text .text.*)
-    *liblib__libc__minimal.a:string.*(.literal .text .literal.* .text.*)
-    *liblib__libc__newlib.a:string.*(.literal .text .literal.* .text.*)
-    *liblib__libc__picolibc.a:string.*(.literal .text .literal.* .text.*)
     *libphy.a:(.phyiram .phyiram.*)
     *libgcov.a:(.literal .text .literal.* .text.*)
     *librtc.a:(.literal .text .literal.* .text.*)
@@ -629,7 +625,6 @@ SECTIONS
     *libdrivers__serial.a:uart_esp32.*(.rodata .rodata.*)
     *libdrivers__flash.a:flash_esp32.*(.rodata .rodata.*)
     *libzephyr.a:esp_mmu_map.*(.rodata .rodata.*)
-    *libdrivers__interrupt_controller.a:(.rodata .rodata.*)
 
     /* APPCPU_ENABLE */
     *libzephyr.a:esp32s3-mp.*(.rodata .rodata.*)

@@ -11,7 +11,7 @@ tests:
     harness_config:
       pytest_dut_scope: session
       fixture: usb_hci
-    timeout: 700
+    timeout: 800
   bluetooth.classic.rfcomm.client.no_blobs:
     platform_allow:
     - mimxrt1170_evk@B/mimxrt1176/cm7
@@ -20,5 +20,5 @@ tests:
     - rfcomm
     extra_args:
     - CONFIG_BUILD_ONLY_NO_BLOBS=y
-    timeout: 700
+    timeout: 800
     build_only: true

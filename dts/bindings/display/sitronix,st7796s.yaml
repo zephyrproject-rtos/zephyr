@@ -1,7 +1,11 @@
 # Copyright 2023 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-description: ST7796S Display controller
+title: Sitronix ST7796S Display controller
+
+description: |
+  The Sitronix ST7796S is a 262K colors TFT-LCD controller
+  with a maximum 320RGBx480 resolution.
 
 compatible: "sitronix,st7796s"
 

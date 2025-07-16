@@ -33,6 +33,20 @@ We are pleased to announce the release of Zephyr version 4.2.0.
 
 Major enhancements with this release include:
 
+- Initial support for the **Renesas RX** 32-bit architecture has been added, including a QEMU-based
+  :zephyr:board:`board target <qemu_rx>`.
+
+- The USB device stack now supports **USB Video Class** (UVC).
+
+- The networking stack now includes full support for the **MQTT 5.0** protocol.
+
+- Zbus graduates to stable status with the release of API version v1.0.0.
+
+- **Bluetooth Classic** stack now supports **Hands-Free Profile** (HFP) for both Audio Gateway (AG)
+  and Hands-Free (HF) roles.
+
+- **96 new boards** have been added since the last release.
+
 An overview of the changes required or recommended when migrating your application from Zephyr
 v4.1.0 to Zephyr v4.2.0 can be found in the separate :ref:`migration guide<migration_4.2>`.
 
@@ -63,6 +77,7 @@ The following CVEs are addressed by this release:
   <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-06-6/>`_
 * :cve:`2025-47917` `Misleading memory management in mbedtls_x509_string_to_names()
   <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-06-7/>`_
+* :cve:`2025-7403`: Under embargo until 2025-09-05
 
 More detailed information can be found in:
 https://docs.zephyrproject.org/latest/security/vulnerabilities.html
@@ -85,7 +100,9 @@ Removed APIs and options
 * Removed :dtcompatible:`meas,ms5837` and replaced with :dtcompatible:`meas,ms5837-30ba`
   and :dtcompatible:`meas,ms5837-02ba`.
 
-* Removed the ``get_ctrl`` video driver API
+* Removed the ``get_ctrl`` driver API from :c:struct:`video_driver_api`.
+
+* Removed ``CONFIG_I3C_USE_GROUP_ADDR`` and support for group addresses for I3C devices.
 
 Deprecated APIs and options
 ===========================
@@ -166,6 +183,14 @@ New APIs and options
   * :c:macro:`I2C_DEVICE_DT_DEINIT_DEFINE`
   * :c:macro:`I2C_DEVICE_DT_INST_DEINIT_DEFINE`
 
+* I3C
+
+  * :kconfig:option:`CONFIG_I3C_MODE`
+  * :kconfig:option:`CONFIG_I3C_CONTROLLER_ROLE_ONLY`
+  * :kconfig:option:`CONFIG_I3C_TARGET_ROLE_ONLY`
+  * :kconfig:option:`CONFIG_I3C_DUAL_ROLE`
+  * :c:func:`i3c_ccc_do_rstdaa`
+
 * SPI
 
   * :c:macro:`SPI_DEVICE_DT_DEINIT_DEFINE`
@@ -211,40 +236,101 @@ New APIs and options
       :c:func:`bt_br_unpair`.
     * Remove query of the classic bonding information from :c:func:`bt_foreach_bond`, and add
       :c:func:`bt_br_foreach_bond`.
+    * Add a new parameter ``limited`` to :c:func:`bt_br_set_discoverable` to support limited
+      discoverable mode for the classic.
+    * Enable retransmission and flow control for the classic L2CAP, including
+      :kconfig:option:`CONFIG_BT_L2CAP_RET`, :kconfig:option:`CONFIG_BT_L2CAP_FC`,
+      :kconfig:option:`CONFIG_BT_L2CAP_ENH_RET`, and :kconfig:option:`CONFIG_BT_L2CAP_STREAM`.
+    * :c:func:`bt_avrcp_get_cap`
+    * Improve the classic hands-free uint, including
+      :kconfig:option:`CONFIG_BT_HFP_HF_CODEC_NEG`, :kconfig:option:`CONFIG_BT_HFP_HF_ECNR`,
+      :kconfig:option:`CONFIG_BT_HFP_HF_3WAY_CALL`, :kconfig:option:`CONFIG_BT_HFP_HF_ECS`,
+      :kconfig:option:`CONFIG_BT_HFP_HF_ECC`, :kconfig:option:`CONFIG_BT_HFP_HF_VOICE_RECG_TEXT`,
+      :kconfig:option:`CONFIG_BT_HFP_HF_ENH_VOICE_RECG`,
+      :kconfig:option:`CONFIG_BT_HFP_HF_VOICE_RECG`,
+      :kconfig:option:`CONFIG_BT_HFP_HF_HF_INDICATORS`,
+      :kconfig:option:`CONFIG_BT_HFP_HF_HF_INDICATOR_ENH_SAFETY`, and
+      :kconfig:option:`CONFIG_BT_HFP_HF_HF_INDICATOR_BATTERY`.
+    * Improve the classic hands-free audio gateway, including
+      :kconfig:option:`CONFIG_BT_HFP_AG_CODEC_NEG`, :kconfig:option:`CONFIG_BT_HFP_AG_ECNR`,
+      :kconfig:option:`CONFIG_BT_HFP_AG_3WAY_CALL`, :kconfig:option:`CONFIG_BT_HFP_AG_ECS`,
+      :kconfig:option:`CONFIG_BT_HFP_AG_ECC`, :kconfig:option:`CONFIG_BT_HFP_AG_VOICE_RECG_TEXT`,
+      :kconfig:option:`CONFIG_BT_HFP_AG_ENH_VOICE_RECG`,
+      :kconfig:option:`CONFIG_BT_HFP_AG_VOICE_TAG`,
+      :kconfig:option:`CONFIG_BT_HFP_AG_HF_INDICATORS`,
+      :kconfig:option:`CONFIG_BT_HFP_AG_HF_INDICATOR_ENH_SAFETY`,
+      :kconfig:option:`CONFIG_BT_HFP_AG_HF_INDICATOR_BATTERY`, and
+      :kconfig:option:`CONFIG_BT_HFP_AG_REJECT_CALL`.
+    * Add a callback function ``get_ongoing_call()`` to :c:struct:`bt_hfp_ag_cb`.
+    * :c:func:`bt_hfp_ag_ongoing_calls`
+    * Support the classic L2CAP signaling echo request and response feature, including
+      :c:struct:`bt_l2cap_br_echo_cb`, :c:func:`bt_l2cap_br_echo_cb_register`,
+      :c:func:`bt_l2cap_br_echo_cb_unregister`, :c:func:`bt_l2cap_br_echo_req`, and
+      :c:func:`bt_l2cap_br_echo_rsp`.
+    * :c:func:`bt_a2dp_get_conn`
+    * :c:func:`bt_rfcomm_send_rpn_cmd`
+
+* Build system
+
+  * Sysbuild
+
+    * Firmware loader image setup/selection support added to sysbuild when using
+      :kconfig:option:`SB_CONFIG_MCUBOOT_MODE_FIRMWARE_UPDATER` via
+      ``SB_CONFIG_FIRMWARE_LOADER`` e.g. :kconfig:option:`SB_CONFIG_FIRMWARE_LOADER_IMAGE_SMP_SVR`
+      for selecting :zephyr:code-sample:`smp-svr`.
+    * Single app RAM load support added to sysbuild using
+      :kconfig:option:`SB_CONFIG_MCUBOOT_MODE_SINGLE_APP_RAM_LOAD`.
 
 * Display
 
   * :c:func:`display_clear`
 
+* Management
+
+  * MCUmgr
+
+    * Firmware loader support added to image mgmt group using
+      :kconfig:option:`CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER`.
+    * Optional boot mode (using retention boot mode) added to OS group reset command using
+      :kconfig:option:`CONFIG_MCUMGR_GRP_OS_RESET_BOOT_MODE`.
+
 * Networking:
+
+  * CoAP
+
+    * :c:macro:`COAPS_SERVICE_DEFINE`
+
+  * DHCPv4
+
+    * :kconfig:option:`CONFIG_NET_DHCPV4_INIT_REBOOT`
+
+  * DNS
+
+    * :c:func:`dns_resolve_service`
+    * :c:func:`dns_resolve_reconfigure_with_interfaces`
+
+  * HTTP
+
+    * :kconfig:option:`CONFIG_HTTP_SERVER_COMPRESSION`
 
   * IPv4
 
     * :kconfig:option:`CONFIG_NET_IPV4_MTU`
 
+  * LwM2M
+
+    * :kconfig:option:`CONFIG_LWM2M_SERVER_BOOTSTRAP_ON_FAIL`
+    * Implemented Greater Than, Less Than and Step observe attributes handling
+      (see :kconfig:option:`CONFIG_LWM2M_MAX_NOTIFIED_NUMERICAL_RES_TRACKED`).
+
+  * Misc
+
+    * :c:func:`net_if_oper_state_change_time`
+
   * MQTT
 
     * :kconfig:option:`CONFIG_MQTT_VERSION_5_0`
-
-  * Wi-Fi
-
-    * :kconfig:option:`CONFIG_WIFI_USAGE_MODE`
-    * Added a new section to the Wi-Fi Management documentation (``doc/connectivity/networking/api/wifi.rst``) with step-by-step instructions for generating test certificates for Wi-Fi using FreeRADIUS scripts. This helps users reproduce the process for their own test environments.
-    * Changed the hostap IPC mechanism from socketpair to k_fifo. Depending on the enabled Wi-Fi configuration options, this can save up to 6-8 kB memory when using native Wi-Fi stack.
-
-* Power management
-
-    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_USE_SYSTEM_WQ`
-    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_USE_DEDICATED_WQ`
-    * :kconfig:option:`CONFIG_PM_DEVICE_DRIVER_NEEDS_DEDICATED_WQ`
-    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_DEDICATED_WQ_STACK_SIZE`
-    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_DEDICATED_WQ_PRIO`
-    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_DEDICATED_WQ_INIT_PRIO`
-    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_ASYNC`
-
-  * Sockets
-
-    * :kconfig:option:`CONFIG_NET_SOCKETS_INET_RAW`
+    * :c:member:`mqtt_transport.if_name`
 
   * OpenThread
 
@@ -255,10 +341,46 @@ New APIs and options
     * :kconfig:option:`CONFIG_OPENTHREAD_SYS_INIT`
     * :kconfig:option:`CONFIG_OPENTHREAD_SYS_INIT_PRIORITY`
 
+  * SNTP
+
+    * :c:func:`sntp_init_async`
+    * :c:func:`sntp_send_async`
+    * :c:func:`sntp_read_async`
+    * :c:func:`sntp_close_async`
+
+  * Sockets
+
+    * :kconfig:option:`CONFIG_NET_SOCKETS_INET_RAW`
+    * :c:func:`socket_offload_dns_enable`
+    * Added a new documentation page for :ref:`socket_service_interface` library.
+    * New socket options:
+
+      * :c:macro:`IP_MULTICAST_LOOP`
+      * :c:macro:`IPV6_MULTICAST_LOOP`
+      * :c:macro:`TLS_CERT_VERIFY_RESULT`
+      * :c:macro:`TLS_CERT_VERIFY_RESULT`
+
+  * Wi-Fi
+
+    * :kconfig:option:`CONFIG_WIFI_USAGE_MODE`
+    * Added a new section to the Wi-Fi Management documentation (``doc/connectivity/networking/api/wifi.rst``) with step-by-step instructions for generating test certificates for Wi-Fi using FreeRADIUS scripts. This helps users reproduce the process for their own test environments.
+    * Changed the hostap IPC mechanism from socketpair to k_fifo. Depending on the enabled Wi-Fi configuration options, this can save up to 6-8 kB memory when using native Wi-Fi stack.
+
   * zperf
 
     * :kconfig:option:`CONFIG_ZPERF_SESSION_PER_THREAD`
     * :c:member:`zperf_upload_params.data_loader`
+    * :kconfig:option:`CONFIG_NET_ZPERF_SERVER`
+
+* Power management
+
+    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_USE_SYSTEM_WQ`
+    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_USE_DEDICATED_WQ`
+    * :kconfig:option:`CONFIG_PM_DEVICE_DRIVER_NEEDS_DEDICATED_WQ`
+    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_DEDICATED_WQ_STACK_SIZE`
+    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_DEDICATED_WQ_PRIO`
+    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_DEDICATED_WQ_INIT_PRIO`
+    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_ASYNC`
 
 * Sensor
 
@@ -290,10 +412,22 @@ New APIs and options
 
 * Video
 
-  * :c:func:`video_api_ctrl_t`
+  * :c:type:`video_api_ctrl_t`
   * :c:func:`video_query_ctrl`
   * :c:func:`video_print_ctrl`
+  * :c:type:`video_api_selection_t`
+  * :c:func:`video_set_selection`
+  * :c:func:`video_get_selection`
   * :ref:`video-sw-generator <snippet-video-sw-generator>`
+  * :c:func:`video_get_csi_link_freq`
+  * :c:macro:`VIDEO_CID_LINK_FREQ`
+  * :c:macro:`VIDEO_CID_AUTO_WHITE_BALANCE` and other controls from the BASE control class.
+  * :c:macro:`VIDEO_CID_EXPOSURE_ABSOLUTE` and other controls from the CAMERA control class.
+  * :c:macro:`VIDEO_PIX_FMT_Y10` and ``Y12``, ``Y14``, ``Y16`` variants
+  * :c:macro:`VIDEO_PIX_FMT_SRGGB10P` and ``12P``, ``14P`` variants, for all 4 bayer variants.
+  * ``video_buffer.index`` field
+  * ``video_ctrl_query.int_menu`` field
+  * :c:macro:`VIDEO_MIPI_CSI2_DT_NULL` and other MIPI standard values
 
 * PCIe
 

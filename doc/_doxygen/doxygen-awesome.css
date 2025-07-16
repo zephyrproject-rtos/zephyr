@@ -160,6 +160,9 @@ html {
     --toc-background: var(--side-nav-background);
     --toc-foreground: var(--side-nav-foreground);
 
+    /* page navigation colors */
+    --page-outline-vis: #f0f2f4;
+
     /* height of an item in any tree / collapsible table */
     --tree-item-height: 30px;
 
@@ -202,6 +205,7 @@ html {
         --page-secondary-foreground-color: #859399;
         --separator-color: #38393b;
         --side-nav-background: #252628;
+        --page-outline-vis: #323539;
 
         --code-background: #2a2c2f;
 
@@ -263,6 +267,7 @@ html.dark-mode {
     --page-secondary-foreground-color: #859399;
     --separator-color: #38393b;
     --side-nav-background: #252628;
+    --page-outline-vis: #323539;
 
     --code-background: #2a2c2f;
 
@@ -363,6 +368,7 @@ a.anchor {
 #main-nav {
     flex-grow: 5;
     padding: var(--spacing-small) var(--spacing-medium);
+    border-bottom: none;
 }
 
 #titlearea {
@@ -776,7 +782,7 @@ html.dark-mode iframe#MSearchResults {
  Tree view
  */
 
-#side-nav {
+#side-nav, #page-nav {
     padding: 0 !important;
     background: var(--side-nav-background);
     min-width: 8px;
@@ -793,9 +799,14 @@ html.dark-mode iframe#MSearchResults {
     }
 }
 
+ul.page-outline li.vis {
+    background-color: var(--page-outline-vis);
+}
+
 #nav-tree {
     background: transparent;
     margin-right: 1px;
+    border-right: none;
 }
 
 #nav-tree .label {
@@ -841,7 +852,7 @@ html.dark-mode iframe#MSearchResults {
 }
 
 
-#nav-tree a {
+#nav-tree a, #page-nav-tree a {
     color: var(--side-nav-foreground) !important;
     font-weight: normal;
 }
@@ -860,7 +871,8 @@ html.dark-mode iframe#MSearchResults {
     cursor: pointer;
     font-size: 45%;
     vertical-align: middle;
-    margin-right: 2px;
+    padding-bottom: 4px;
+    padding-right: 4px;
     font-family: serif;
     height: auto;
     text-align: right;
@@ -989,7 +1001,7 @@ html.dark-mode div.contents .dotgraph iframe
     filter: brightness(89%) hue-rotate(180deg) invert();
 }
 
-h2.groupheader {
+td h2.groupheader, h2.groupheader {
     border-bottom: 0px;
     color: var(--page-foreground-color);
     box-shadow:
@@ -1799,6 +1811,7 @@ table.memberdecls .memTemplParams {
     border-top: 1px solid var(--separator-color);
     border-bottom: 1px solid var(--separator-color);
     background-color: var(--fragment-background);
+    border-top-color: var(--separator-color) !important;
 }
 
 table.memberdecls .memTemplItemLeft,
@@ -1843,6 +1856,9 @@ table.memberdecls .memItemRight  {
 }
 
 table.memberdecls .mdescLeft, table.memberdecls .mdescRight {
+    border-bottom-color: var(--separator-color);
+    border-left: none;
+    border-right: none;
     background: none;
     color: var(--page-foreground-color);
     padding: var(--spacing-small) 0;

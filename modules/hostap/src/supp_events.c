@@ -304,12 +304,14 @@ int supplicant_send_wifi_mgmt_ap_sta_event(void *ctx,
 {
 	struct sta_info *sta = data;
 	struct wpa_supplicant *ap_ctx = ctx;
-	char *ifname = ap_ctx->ifname;
+	char *ifname;
 	struct wifi_ap_sta_info sta_info = { 0 };
 
 	if (!ap_ctx || !sta) {
 		return -EINVAL;
 	}
+
+	ifname = ap_ctx->ifname;
 
 	memcpy(sta_info.mac, sta->addr, sizeof(sta_info.mac));
 

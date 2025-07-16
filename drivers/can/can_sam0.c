@@ -113,20 +113,22 @@ static int can_sam0_get_core_clock(const struct device *dev, uint32_t *rate)
 
 static void can_sam0_clock_enable(const struct can_sam0_config *cfg)
 {
+	uint8_t gen_index = cfg->gclk_gen;
+
 	*cfg->mclk |= cfg->mclk_mask;
 
 	GCLK->PCHCTRL[cfg->gclk_id].reg = GCLK_PCHCTRL_CHEN
-					| GCLK_PCHCTRL_GEN(cfg->gclk_gen);
+					| GCLK_PCHCTRL_GEN(gen_index);
 
-	/* Enable the GLCK7 with DIV*/
+	/* Enable the GLCK<gen_index> with DIV*/
 #if defined(CONFIG_SOC_SERIES_SAME51) || defined(CONFIG_SOC_SERIES_SAME54)
 	/*DFFL has to be used as clock source for the ATSAME51/54 family of SoCs*/
-	GCLK->GENCTRL[7].reg = GCLK_GENCTRL_SRC(GCLK_GENCTRL_SRC_DFLL)
+	GCLK->GENCTRL[gen_index].reg = GCLK_GENCTRL_SRC(GCLK_GENCTRL_SRC_DFLL)
 			     | GCLK_GENCTRL_DIV(cfg->divider)
 			     | GCLK_GENCTRL_GENEN;
 #elif defined(CONFIG_SOC_SERIES_SAMC21)
 	/*OSC48M has to be used as clock source for the ATSAMC21 family of SoCs*/
-	GCLK->GENCTRL[7].reg = GCLK_GENCTRL_SRC(GCLK_GENCTRL_SRC_OSC48M)
+	GCLK->GENCTRL[gen_index].reg = GCLK_GENCTRL_SRC(GCLK_GENCTRL_SRC_OSC48M)
 			     | GCLK_GENCTRL_DIV(cfg->divider)
 			     | GCLK_GENCTRL_GENEN;
 #endif

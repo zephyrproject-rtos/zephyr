@@ -193,7 +193,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_spi_cmds,
 			       SHELL_CMD_ARG(cs, &dsub_device_name,
 					     "Assign CS GPIO to SPI device\n"
 					     "Usage: spi cs <gpio-device> <pin> [<gpio flags>]"
-					     "example: spi conf gpio1 3 0x01",
+					     "example: spi cs gpio1 3 0x01",
 					     cmd_spi_conf_cs, 3, 1),
 			       SHELL_CMD_ARG(transceive, NULL,
 					     "Transceive data to and from an SPI device\n"

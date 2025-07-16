@@ -1291,8 +1291,8 @@ int supplicant_status(const struct device *dev, struct wifi_iface_status *status
 		struct wpa_ssid *ssid = wpa_s->current_ssid;
 		u8 channel;
 		struct signal_poll_resp signal_poll;
-		u8 *_ssid = ssid->ssid;
-		size_t ssid_len = ssid->ssid_len;
+		u8 *_ssid;
+		size_t ssid_len;
 		struct status_resp cli_status;
 		int proto;
 		int key_mgmt;
@@ -1303,6 +1303,8 @@ int supplicant_status(const struct device *dev, struct wifi_iface_status *status
 			goto out;
 		}
 
+		_ssid = ssid->ssid;
+		ssid_len = ssid->ssid_len;
 		proto = ssid->proto;
 		key_mgmt = ssid->key_mgmt;
 		sae_pwe = wpa_s->conf->sae_pwe;
@@ -1493,9 +1495,15 @@ int supplicant_11k_cfg(const struct device *dev, struct wifi_11k_params *params)
 
 int supplicant_11k_neighbor_request(const struct device *dev, struct wifi_11k_params *params)
 {
-	int ssid_len = strlen(params->ssid);
+	int ssid_len;
 
-	if (params != NULL && ssid_len > 0) {
+	if (params == NULL) {
+		return -1;
+	}
+
+	ssid_len = strlen(params->ssid);
+
+	if (ssid_len > 0) {
 		if (ssid_len > WIFI_SSID_MAX_LEN) {
 			wpa_printf(MSG_ERROR, "%s: ssid too long %u",
 				   __func__, ssid_len);

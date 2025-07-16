@@ -83,9 +83,8 @@ The list of command line options supported by twister can be viewed using:
 
    .. group-tab:: Linux
 
-      .. code-block:: bash
-
-         $ ./scripts/twister --help
+      .. command-output:: $ZEPHYR_BASE/scripts/twister --help
+         :shell:
 
    .. group-tab:: Windows
 

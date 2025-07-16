@@ -76,6 +76,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.graphviz",
     "sphinxcontrib.jquery",
+    "sphinxcontrib.programoutput",
     "zephyr.application",
     "zephyr.html_redirects",
     "zephyr.kconfig",

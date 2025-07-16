@@ -1926,3 +1926,8 @@ This has been fixed in main for v4.2.0
 
 - `PR 87949 fix for 3.7
   <https://github.com/zephyrproject-rtos/zephyr/pull/87949>`_
+
+:cve:`2025-7403`
+----------------
+
+Under embargo until 2025-09-05

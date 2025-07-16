@@ -1,7 +1,22 @@
 # Copyright (c) 2020, Rohit Gujarathi
 # SPDX-License-Identifier: Apache-2.0
 
-description: Sharp memory display controller
+title: Sharp LS0XX memory display controller
+
+description: |
+    Sharp LS0XX series has an eclectic range of TFT-LCD controllers,
+    mostly monochrome TFT-LCD controller up to 400x240 resolution.
+
+    Example supported references:
+    LS012B7DD01
+    LS013B7DH03
+    LS013B7DH05
+    LS027B7DH01A
+    LS032B7DD02
+    LS044Q7DH01
+
+    Adafruit 1.3" SHARP Memory LCD display is a breakout board for
+    LS013B4DN04, and 2.7" for LS027B7DH01.
 
 compatible: "sharp,ls0xx"
 

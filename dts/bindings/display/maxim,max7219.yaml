@@ -1,8 +1,12 @@
 # Copyright (c) 2022 Jimmy Ou <yanagiis@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
+title: Maxim MAX7219 LED display driver
+
 description: |
-  Maxim MAX7219 LED display driver
+  The Maxim MAX7219 is a 8x8 dot-matrix LED controller.
+  It can drive 7-segment displays of up to 8 digits,
+  or 64 individual matrixed LEDs.
 
 compatible: "maxim,max7219"
 

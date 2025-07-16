@@ -1,7 +1,11 @@
 # Copyright (c) 2020, Teslabs Engineering S.L.
 # SPDX-License-Identifier: Apache-2.0
 
-description: ILI9488 320x480 display controller
+title: Ilitek ILI9488 display controller
+
+description: |
+   The Ilitek ILI9488 is a 16.7M colors TFT-LCD controller
+   with a maximum 320RGBx480 resolution.
 
 compatible: "ilitek,ili9488"
 

@@ -189,7 +189,17 @@ STRIP_FROM_PATH        = @ZEPHYR_BASE@/include
 # specify the list of include paths that are normally passed to the compiler
 # using the -I flag.
 
-STRIP_FROM_INC_PATH    =
+# TODO: Once https://github.com/doxygen/doxygen/pull/11657 is accepted and
+# available in a released Doxygen version, the entry
+# "@ZEPHYR_BASE@/lib/libc/minimal/include/" should be added to this list.
+# In the meantime, API from headers contained in this folder (e.g. errno.h) will
+# continue to show incorrect include path in the generated docs.
+
+STRIP_FROM_INC_PATH    = @ZEPHYR_BASE@/include/ \
+                         @ZEPHYR_BASE@/kernel/include/ \
+                         @ZEPHYR_BASE@/subsys/testsuite/include/ \
+                         @ZEPHYR_BASE@/subsys/secure_storage/include/internal \
+                         @ZEPHYR_BASE@/subsys/secure_storage/include
 
 # If the SHORT_NAMES tag is set to YES, Doxygen will generate much shorter (but
 # less readable) file names. This can be useful is your file systems doesn't
@@ -995,6 +1005,10 @@ WARN_LOGFILE           =
 # directories like /usr/src/myproject. Separate the files or directories with
 # spaces. See also FILE_PATTERNS and EXTENSION_MAPPING
 # Note: If this tag is empty the current directory is searched.
+
+# Note that when adding paths to INPUT you most likely want to add them
+# to STRIP_FROM_INC_PATH as well, which will remove those parts from
+# the paths of the #include examples in the generated documentation.
 
 INPUT                  = @ZEPHYR_BASE@/doc/_doxygen/mainpage.md \
                          @ZEPHYR_BASE@/doc/_doxygen/groups.dox \

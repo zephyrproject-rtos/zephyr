@@ -4221,7 +4221,7 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_GATT_DEVT_VAL 0x2b90
 /**
- *  @brief GATT Characteristic String
+ *  @brief GATT Characteristic Device Time
  */
 #define BT_UUID_GATT_DEVT \
 	BT_UUID_DECLARE_16(BT_UUID_GATT_DEVT_VAL)
