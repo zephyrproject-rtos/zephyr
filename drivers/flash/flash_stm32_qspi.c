@@ -580,19 +580,92 @@ end:
 	return ret;
 }
 
+static int qspi_read_status_register(const struct device *dev, uint8_t reg_num, uint8_t *reg)
+{
+	QSPI_CommandTypeDef cmd = {
+		.InstructionMode = QSPI_INSTRUCTION_1_LINE,
+		.DataMode = QSPI_DATA_1_LINE,
+	};
+
+	switch (reg_num) {
+	case 1U:
+		cmd.Instruction = SPI_NOR_CMD_RDSR;
+		break;
+	case 2U:
+		cmd.Instruction = SPI_NOR_CMD_RDSR2;
+		break;
+	case 3U:
+		cmd.Instruction = SPI_NOR_CMD_RDSR3;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return qspi_read_access(dev, &cmd, reg, sizeof(*reg));
+}
+
+static int qspi_write_status_register(const struct device *dev, uint8_t reg_num, uint8_t reg)
+{
+	struct flash_stm32_qspi_data *dev_data = dev->data;
+	size_t size;
+	uint8_t regs[4] = { 0 };
+	uint8_t *regs_p;
+	int ret;
+
+	QSPI_CommandTypeDef cmd = {
+		.Instruction = SPI_NOR_CMD_WRSR,
+		.InstructionMode = QSPI_INSTRUCTION_1_LINE,
+		.DataMode = QSPI_DATA_1_LINE,
+	};
+
+	if (reg_num == 1U) {
+		size = 1U;
+		regs[0] = reg;
+		regs_p = &regs[0];
+		/* 1 byte write clears SR2, write SR2 as well */
+		if (dev_data->qer_type == JESD216_DW15_QER_S2B1v1) {
+			ret = qspi_read_status_register(dev, 2, &regs[1]);
+			if (ret < 0) {
+				return ret;
+			}
+			size = 2U;
+		}
+	} else if (reg_num == 2U) {
+		cmd.Instruction = SPI_NOR_CMD_WRSR2;
+		size = 1U;
+		regs[1] = reg;
+		regs_p = &regs[1];
+		/* if SR2 write needs SR1 */
+		if ((dev_data->qer_type == JESD216_DW15_QER_VAL_S2B1v1) ||
+		    (dev_data->qer_type == JESD216_DW15_QER_VAL_S2B1v4) ||
+		    (dev_data->qer_type == JESD216_DW15_QER_VAL_S2B1v5)) {
+			ret = qspi_read_status_register(dev, 1, &regs[0]);
+			if (ret < 0) {
+				return ret;
+			}
+			cmd.Instruction = SPI_NOR_CMD_WRSR;
+			size = 2U;
+			regs_p = &regs[0];
+		}
+	} else if (reg_num == 3U) {
+		cmd.Instruction = SPI_NOR_CMD_WRSR3;
+		size = 1U;
+		regs[2] = reg;
+		regs_p = &regs[2];
+	} else {
+		return -EINVAL;
+	}
+
+	return qspi_write_access(dev, &cmd, regs_p, size);
+}
+
 static int qspi_wait_until_ready(const struct device *dev)
 {
 	uint8_t reg;
 	int ret;
 
-	QSPI_CommandTypeDef cmd = {
-		.Instruction = SPI_NOR_CMD_RDSR,
-		.InstructionMode = QSPI_INSTRUCTION_1_LINE,
-		.DataMode = QSPI_DATA_1_LINE,
-	};
-
 	do {
-		ret = qspi_read_access(dev, &cmd, &reg, sizeof(reg));
+		ret = qspi_read_status_register(dev, 1, &reg);
 	} while (!ret && (reg & SPI_NOR_WIP_BIT));
 
 	return ret;
@@ -1086,85 +1159,6 @@ static int qspi_program_addr_4b(const struct device *dev, bool write_enable)
 	 */
 
 	return qspi_send_cmd(dev, &cmd);
-}
-
-static int qspi_read_status_register(const struct device *dev, uint8_t reg_num, uint8_t *reg)
-{
-	QSPI_CommandTypeDef cmd = {
-		.InstructionMode = QSPI_INSTRUCTION_1_LINE,
-		.DataMode = QSPI_DATA_1_LINE,
-	};
-
-	switch (reg_num) {
-	case 1U:
-		cmd.Instruction = SPI_NOR_CMD_RDSR;
-		break;
-	case 2U:
-		cmd.Instruction = SPI_NOR_CMD_RDSR2;
-		break;
-	case 3U:
-		cmd.Instruction = SPI_NOR_CMD_RDSR3;
-		break;
-	default:
-		return -EINVAL;
-	}
-
-	return qspi_read_access(dev, &cmd, reg, sizeof(*reg));
-}
-
-static int qspi_write_status_register(const struct device *dev, uint8_t reg_num, uint8_t reg)
-{
-	struct flash_stm32_qspi_data *dev_data = dev->data;
-	size_t size;
-	uint8_t regs[4] = { 0 };
-	uint8_t *regs_p;
-	int ret;
-
-	QSPI_CommandTypeDef cmd = {
-		.Instruction = SPI_NOR_CMD_WRSR,
-		.InstructionMode = QSPI_INSTRUCTION_1_LINE,
-		.DataMode = QSPI_DATA_1_LINE,
-	};
-
-	if (reg_num == 1) {
-		size = 1U;
-		regs[0] = reg;
-		regs_p = &regs[0];
-		/* 1 byte write clears SR2, write SR2 as well */
-		if (dev_data->qer_type == JESD216_DW15_QER_S2B1v1) {
-			ret = qspi_read_status_register(dev, 2, &regs[1]);
-			if (ret < 0) {
-				return ret;
-			}
-			size = 2U;
-		}
-	} else if (reg_num == 2) {
-		cmd.Instruction = SPI_NOR_CMD_WRSR2;
-		size = 1U;
-		regs[1] = reg;
-		regs_p = &regs[1];
-		/* if SR2 write needs SR1 */
-		if ((dev_data->qer_type == JESD216_DW15_QER_VAL_S2B1v1) ||
-		    (dev_data->qer_type == JESD216_DW15_QER_VAL_S2B1v4) ||
-		    (dev_data->qer_type == JESD216_DW15_QER_VAL_S2B1v5)) {
-			ret = qspi_read_status_register(dev, 1, &regs[0]);
-			if (ret < 0) {
-				return ret;
-			}
-			cmd.Instruction = SPI_NOR_CMD_WRSR;
-			size = 2U;
-			regs_p = &regs[0];
-		}
-	} else if (reg_num == 3) {
-		cmd.Instruction = SPI_NOR_CMD_WRSR3;
-		size = 1U;
-		regs[2] = reg;
-		regs_p = &regs[2];
-	} else {
-		return -EINVAL;
-	}
-
-	return qspi_write_access(dev, &cmd, regs_p, size);
 }
 
 static int qspi_write_enable(const struct device *dev)
