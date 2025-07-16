@@ -82,10 +82,10 @@ static inline int ptp_clock_adjust(const struct device *dev, int increment)
 }
 
 /**
- * @brief Adjust the PTP clock time change rate when compared to its neighbor.
+ * @brief Adjust the PTP clock rate ratio based on its nominal frequency
  *
  * @param dev PTP clock device
- * @param rate Rate of the clock time change
+ * @param rate Rate ratio based on its nominal frequency
  *
  * @return 0 if ok, <0 if error
  */
