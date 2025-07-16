@@ -23,7 +23,28 @@ const static struct device *const video_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_cam
 /* Format capabilities of video_dev, used everywhere through the sample */
 static struct video_caps video_caps = {.type = VIDEO_BUF_TYPE_OUTPUT};
 
-static int app_add_format(uint32_t pixfmt, uint32_t width, uint32_t height)
+/* Pixel formats present in one of the UVC 1.5 standard */
+static bool app_is_supported_format(uint32_t pixfmt)
+{
+	return pixfmt == VIDEO_PIX_FMT_JPEG ||
+	       pixfmt == VIDEO_PIX_FMT_YUYV ||
+	       pixfmt == VIDEO_PIX_FMT_NV12;
+}
+
+static bool app_has_supported_format(void)
+{
+	const struct video_format_cap *fmts = video_caps.format_caps;
+
+	for (int i = 0; fmts[i].pixelformat != 0; i++) {
+		if (app_is_supported_format(fmts[i].pixelformat)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static int app_add_format(uint32_t pixfmt, uint32_t width, uint32_t height, bool has_sup_fmts)
 {
 	struct video_format fmt = {
 		.pixelformat = pixfmt,
@@ -32,6 +53,11 @@ static int app_add_format(uint32_t pixfmt, uint32_t width, uint32_t height)
 		.type = VIDEO_BUF_TYPE_OUTPUT,
 	};
 	int ret;
+
+	/* If the system has any standard pixel format, only propose them to the host */
+	if (has_sup_fmts && !app_is_supported_format(pixfmt)) {
+		return 0;
+	}
 
 	/* Set the format to get the size */
 	ret = video_set_format(video_dev, &fmt);
@@ -58,18 +84,21 @@ static int app_add_format(uint32_t pixfmt, uint32_t width, uint32_t height)
 /* Submit to UVC only the formats expected to be working (enough memory for the size, etc.) */
 static int app_add_filtered_formats(void)
 {
+	const bool has_sup_fmts = app_has_supported_format();
 	int ret;
 
 	for (int i = 0; video_caps.format_caps[i].pixelformat != 0; i++) {
 		const struct video_format_cap *vcap = &video_caps.format_caps[i];
 
-		ret = app_add_format(vcap->pixelformat, vcap->width_min, vcap->height_min);
+		ret = app_add_format(vcap->pixelformat, vcap->width_min, vcap->height_min,
+				     has_sup_fmts);
 		if (ret != 0) {
 			return ret;
 		}
 
 		if (vcap->width_min != vcap->width_max || vcap->height_min != vcap->height_max) {
-			ret = app_add_format(vcap->pixelformat, vcap->width_max, vcap->height_max);
+			ret = app_add_format(vcap->pixelformat, vcap->width_max, vcap->height_max,
+					     has_sup_fmts);
 			if (ret != 0) {
 				return ret;
 			}
