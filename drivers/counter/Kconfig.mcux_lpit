@@ -1,0 +1,11 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+# MCUXpresso SDK Low Power Periodic Interrupt Timer (LPIT)
+config COUNTER_MCUX_LPIT
+	bool "NXP LPIT driver"
+	default y
+	depends on DT_HAS_NXP_LPIT_CHANNEL_ENABLED && \
+			DT_HAS_NXP_LPIT_ENABLED
+	help
+	  Enable support for the NXP Low Power Periodic Interrupt Timer (LPIT).
