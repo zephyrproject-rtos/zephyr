@@ -1816,7 +1816,7 @@ class KeepSorted(ComplianceTest):
 
     MARKER = "zephyr-keep-sorted"
 
-    def block_check_sorted(self, block_data, regex):
+    def block_check_sorted(self, block_data, *, regex, strip):
         def _test_indent(txt: str):
             return txt.startswith((" ", "\t"))
 
@@ -1838,6 +1838,9 @@ class KeepSorted(ComplianceTest):
             else:
                 if _test_indent(line):
                     continue
+
+                if strip is not None:
+                    line = line.strip(strip)
 
                 # Fold back indented lines after the current one
                 for cont in takewhile(_test_indent, lines[idx + 1:]):
@@ -1862,8 +1865,10 @@ class KeepSorted(ComplianceTest):
         start_marker = f"{self.MARKER}-start"
         stop_marker = f"{self.MARKER}-stop"
         regex_marker = r"re\((.+)\)"
+        strip_marker = r"strip\((.+)\)"
         start_line = 0
         regex = None
+        strip = None
 
         for line_num, line in enumerate(fp.readlines(), start=1):
             if start_marker in line:
@@ -1878,6 +1883,9 @@ class KeepSorted(ComplianceTest):
                 # Test for a regex block
                 match = re.search(regex_marker, line)
                 regex = match.group(1) if match else None
+
+                match = re.search(strip_marker, line)
+                strip = match.group(1) if match else None
             elif stop_marker in line:
                 if not in_block:
                     desc = f"{stop_marker} without {start_marker}"
@@ -1885,7 +1893,7 @@ class KeepSorted(ComplianceTest):
                                      desc=desc)
                 in_block = False
 
-                idx = self.block_check_sorted(block_data, regex)
+                idx = self.block_check_sorted(block_data, regex=regex, strip=strip)
                 if idx >= 0:
                     desc = f"sorted block has out-of-order line at {start_line + idx}"
                     self.fmtd_failure("error", "KeepSorted", file, line_num,
