@@ -963,7 +963,7 @@ struct shell_ctx {
 
 	struct k_event signal_event;
 
-	struct k_mutex wr_mtx;
+	struct k_sem lock_sem;
 	k_tid_t tid;
 	int ret_val;
 };

@@ -181,7 +181,7 @@ static void process_log_msg(const struct shell *sh,
 		if (k_is_in_isr()) {
 			key = irq_lock();
 		} else {
-			k_mutex_lock(&sh->ctx->wr_mtx, K_FOREVER);
+			z_shell_lock(sh);
 		}
 		if (!z_flag_cmd_ctx_get(sh)) {
 			z_shell_cmd_line_erase(sh);
@@ -197,7 +197,7 @@ static void process_log_msg(const struct shell *sh,
 		if (k_is_in_isr()) {
 			irq_unlock(key);
 		} else {
-			k_mutex_unlock(&sh->ctx->wr_mtx);
+			z_shell_unlock(sh);
 		}
 	}
 }

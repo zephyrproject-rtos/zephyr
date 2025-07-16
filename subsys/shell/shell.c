@@ -562,11 +562,11 @@ static int exec_cmd(const struct shell *sh, size_t argc, const char **argv,
 		/* Unlock thread mutex in case command would like to borrow
 		 * shell context to other thread to avoid mutex deadlock.
 		 */
-		k_mutex_unlock(&sh->ctx->wr_mtx);
+		z_shell_unlock(sh);
 		ret_val = sh->ctx->active_cmd.handler(sh, argc,
 							 (char **)argv);
 		/* Bring back mutex to shell thread. */
-		k_mutex_lock(&sh->ctx->wr_mtx, K_FOREVER);
+		z_shell_lock(sh);
 		z_flag_cmd_ctx_set(sh, false);
 	}
 
@@ -1217,7 +1217,7 @@ static int instance_init(const struct shell *sh,
 	history_init(sh);
 
 	k_event_init(&sh->ctx->signal_event);
-	k_mutex_init(&sh->ctx->wr_mtx);
+	k_sem_init(&sh->ctx->lock_sem, 1, 1);
 
 	if (IS_ENABLED(CONFIG_SHELL_STATS)) {
 		sh->stats->log_lost_cnt = 0;
@@ -1342,7 +1342,7 @@ void shell_thread(void *shell_handle, void *arg_log_backend,
 			     false,
 			     K_FOREVER);
 
-		k_mutex_lock(&sh->ctx->wr_mtx, K_FOREVER);
+		z_shell_lock(sh);
 
 		shell_signal_handle(sh, SHELL_SIGNAL_KILL, kill_handler);
 		shell_signal_handle(sh, SHELL_SIGNAL_RXRDY, shell_process);
@@ -1355,7 +1355,7 @@ void shell_thread(void *shell_handle, void *arg_log_backend,
 			sh->iface->api->update(sh->iface);
 		}
 
-		k_mutex_unlock(&sh->ctx->wr_mtx);
+		z_shell_unlock(sh);
 	}
 }
 
@@ -1420,7 +1420,7 @@ int shell_start(const struct shell *sh)
 		z_shell_log_backend_enable(sh->log_backend, (void *)sh, sh->ctx->log_level);
 	}
 
-	if (k_mutex_lock(&sh->ctx->wr_mtx, SHELL_TX_MTX_TIMEOUT) != 0) {
+	if (!z_shell_trylock(sh, SHELL_TX_MTX_TIMEOUT)) {
 		return -EBUSY;
 	}
 
@@ -1442,7 +1442,7 @@ int shell_start(const struct shell *sh)
 	 */
 	z_shell_backend_rx_buffer_flush(sh);
 
-	k_mutex_unlock(&sh->ctx->wr_mtx);
+	z_shell_unlock(sh);
 
 	return 0;
 }
@@ -1524,7 +1524,7 @@ void shell_vfprintf(const struct shell *sh, enum shell_vt100_color color,
 		return;
 	}
 
-	if (k_mutex_lock(&sh->ctx->wr_mtx, SHELL_TX_MTX_TIMEOUT) != 0) {
+	if (!z_shell_trylock(sh, SHELL_TX_MTX_TIMEOUT)) {
 		return;
 	}
 
@@ -1537,7 +1537,7 @@ void shell_vfprintf(const struct shell *sh, enum shell_vt100_color color,
 	}
 	z_transport_buffer_flush(sh);
 
-	k_mutex_unlock(&sh->ctx->wr_mtx);
+	z_shell_unlock(sh);
 }
 
 /* These functions mustn't be used from shell context to avoid deadlock:
@@ -1664,12 +1664,12 @@ int shell_prompt_change(const struct shell *sh, const char *prompt)
 
 	size_t prompt_length = z_shell_strlen(prompt);
 
-	if (k_mutex_lock(&sh->ctx->wr_mtx, SHELL_TX_MTX_TIMEOUT) != 0) {
+	if (!z_shell_trylock(sh, SHELL_TX_MTX_TIMEOUT)) {
 		return -EBUSY;
 	}
 
 	if ((prompt_length + 1 > CONFIG_SHELL_PROMPT_BUFF_SIZE) || (prompt_length == 0)) {
-		k_mutex_unlock(&sh->ctx->wr_mtx);
+		z_shell_unlock(sh);
 		return -EINVAL;
 	}
 
@@ -1677,7 +1677,7 @@ int shell_prompt_change(const struct shell *sh, const char *prompt)
 
 	sh->ctx->vt100_ctx.cons.name_len = prompt_length;
 
-	k_mutex_unlock(&sh->ctx->wr_mtx);
+	z_shell_unlock(sh);
 
 	return 0;
 #else
@@ -1687,11 +1687,11 @@ int shell_prompt_change(const struct shell *sh, const char *prompt)
 
 void shell_help(const struct shell *sh)
 {
-	if (k_mutex_lock(&sh->ctx->wr_mtx, SHELL_TX_MTX_TIMEOUT) != 0) {
+	if (!z_shell_trylock(sh, SHELL_TX_MTX_TIMEOUT)) {
 		return;
 	}
 	shell_internal_help_print(sh);
-	k_mutex_unlock(&sh->ctx->wr_mtx);
+	z_shell_unlock(sh);
 }
 
 int shell_execute_cmd(const struct shell *sh, const char *cmd)
@@ -1722,11 +1722,11 @@ int shell_execute_cmd(const struct shell *sh, const char *cmd)
 	sh->ctx->cmd_buff_len = cmd_len;
 	sh->ctx->cmd_buff_pos = cmd_len;
 
-	if (k_mutex_lock(&sh->ctx->wr_mtx, SHELL_TX_MTX_TIMEOUT) != 0) {
+	if (!z_shell_trylock(sh, SHELL_TX_MTX_TIMEOUT)) {
 		return -ENOEXEC;
 	}
 	ret_val = execute(sh);
-	k_mutex_unlock(&sh->ctx->wr_mtx);
+	z_shell_unlock(sh);
 
 	cmd_buffer_clear(sh);
 
