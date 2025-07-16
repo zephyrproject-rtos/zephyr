@@ -3284,9 +3284,9 @@ Open AMP:
   status: maintained
   maintainers:
     - carlocaione
+    - iuliana-prodan
   collaborators:
     - uLipe
-    - iuliana-prodan
   files:
     - lib/open-amp/
     - samples/subsys/ipc/openamp/
