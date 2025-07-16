@@ -273,12 +273,6 @@ static int uart_esp32_configure(const struct device *dev, const struct uart_conf
 	uint32_t sclk_freq;
 	uint32_t inv_mask = 0;
 
-	int ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
-
-	if (ret < 0) {
-		return ret;
-	}
-
 	if (!device_is_ready(config->clock_dev)) {
 		return -ENODEV;
 	}
@@ -939,17 +933,23 @@ unlock:
 
 static int uart_esp32_init(const struct device *dev)
 {
+	int ret;
 	struct uart_esp32_data *data = dev->data;
-	int ret = uart_esp32_configure(dev, &data->uart_config);
+	const struct uart_esp32_config *config = dev->config;
 
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		LOG_ERR("Error configuring UART pins (%d)", ret);
+		return ret;
+	}
+
+	ret = uart_esp32_configure(dev, &data->uart_config);
 	if (ret < 0) {
 		LOG_ERR("Error configuring UART (%d)", ret);
 		return ret;
 	}
 
 #if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API
-	const struct uart_esp32_config *config = dev->config;
-
 	ret = esp_intr_alloc(config->irq_source,
 			ESP_PRIO_TO_FLAGS(config->irq_priority) |
 			ESP_INT_FLAGS_CHECK(config->irq_flags),
