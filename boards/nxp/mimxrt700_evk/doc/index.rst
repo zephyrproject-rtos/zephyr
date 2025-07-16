@@ -175,6 +175,9 @@ Connect a USB cable from your PC to J54, and use the serial terminal of your cho
 Flashing
 ========
 
+The DIP switch SW10 selects the boot options.  Set SW10 to Off-On (01) to boot from the default
+external flash on XSPI0.
+
 Here is an example for the :zephyr:code-sample:`hello_world` application. This example uses the
 :ref:`jlink-debug-host-tools` as default.
 
