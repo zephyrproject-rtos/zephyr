@@ -1221,6 +1221,18 @@
 		interrupts = <17 0>;
 		status = "disabled";
 	};
+
+	mbox4: mbox@189000 {
+		#mbox-cells = <1>;
+
+		compatible = "nxp,mbox-imx-mu";
+		reg = <0x189000 0x1000>;
+
+		interrupts = <31 0>;
+		rx-channels = <4>;
+
+		status = "disabled";
+	};
 };
 
 &systick {
