@@ -763,6 +763,7 @@ static int flash_stm32_qspi_write(const struct device *dev, off_t addr,
 				  const void *data, size_t size)
 {
 	int ret = 0;
+	size_t page_size = SPI_NOR_PAGE_SIZE << STM32_QSPI_DOUBLE_FLASH;
 
 	if (!qspi_address_is_valid(dev, addr, size)) {
 		LOG_DBG("Error: address or size exceeds expected values: "
@@ -807,15 +808,13 @@ static int flash_stm32_qspi_write(const struct device *dev, off_t addr,
 		size_t to_write = size;
 
 		/* Don't write more than a page. */
-		if (to_write >= SPI_NOR_PAGE_SIZE) {
-			to_write = SPI_NOR_PAGE_SIZE;
+		if (to_write >= page_size) {
+			to_write = page_size;
 		}
 
 		/* Don't write across a page boundary */
-		if (((addr + to_write - 1U) / SPI_NOR_PAGE_SIZE)
-		    != (addr / SPI_NOR_PAGE_SIZE)) {
-			to_write = SPI_NOR_PAGE_SIZE -
-						(addr % SPI_NOR_PAGE_SIZE);
+		if (((addr + to_write - 1U) / page_size) != (addr / page_size)) {
+			to_write = page_size - (addr % page_size);
 		}
 
 		ret = qspi_send_cmd(dev, &cmd_write_en);
@@ -1371,7 +1370,7 @@ static int spi_nor_process_bfp(const struct device *dev,
 		++etp;
 	}
 
-	data->page_size = jesd216_bfp_page_size(php, bfp);
+	data->page_size = jesd216_bfp_page_size(php, bfp) << STM32_QSPI_DOUBLE_FLASH;
 
 	LOG_DBG("Page size %u bytes", data->page_size);
 	LOG_DBG("Flash size %u bytes", flash_size);
