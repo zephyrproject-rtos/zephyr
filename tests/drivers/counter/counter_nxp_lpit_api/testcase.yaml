@@ -1,0 +1,10 @@
+tests:
+  drivers.counter.nxp_lpit_api:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    platform_allow:
+      - mimxrt1180_evk/mimxrt1189/cm33
+      - mimxrt1180_evk/mimxrt1189/cm7
+    timeout: 600
