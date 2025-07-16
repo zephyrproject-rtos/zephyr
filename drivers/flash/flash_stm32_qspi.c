@@ -395,7 +395,7 @@ static int qspi_read_sfdp(const struct device *dev, off_t addr, void *data,
 
 	LOG_INF("Reading SFDP");
 
-#if DT_PROP(DT_NODELABEL(quadspi), dual_flash) && defined(QUADSPI_CR_DFM)
+#if STM32_QSPI_DOUBLE_FLASH
 	/*
 	 * In dual flash mode, reading the SFDP table would cause the parameters from both flash
 	 * memories to be read (first byte read would be the first SFDP byte from the first flash,
@@ -406,7 +406,7 @@ static int qspi_read_sfdp(const struct device *dev, off_t addr, void *data,
 	 */
 	MODIFY_REG(dev_data->hqspi.Instance->CR, QUADSPI_CR_DFM, QSPI_DUALFLASH_DISABLE);
 	LOG_DBG("Dual flash mode disabled while reading SFDP");
-#endif /* dual_flash */
+#endif /* STM32_QSPI_DOUBLE_FLASH */
 
 	QSPI_CommandTypeDef cmd = {
 		.Instruction = JESD216_CMD_READ_SFDP,
@@ -438,7 +438,7 @@ static int qspi_read_sfdp(const struct device *dev, off_t addr, void *data,
 	dev_data->cmd_status = 0;
 
 end:
-#if DT_PROP(DT_NODELABEL(quadspi), dual_flash) && defined(QUADSPI_CR_DFM)
+#if STM32_QSPI_DOUBLE_FLASH
 	/* Re-enable the dual flash mode */
 	MODIFY_REG(dev_data->hqspi.Instance->CR, QUADSPI_CR_DFM, QSPI_DUALFLASH_ENABLE);
 #endif /* dual_flash */
@@ -1551,7 +1551,7 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	dev_data->hqspi.Init.ClockPrescaler = prescaler;
 	/* Give a bit position from 0 to 31 to the HAL init minus 1 for the DCR1 reg */
 	dev_data->hqspi.Init.FlashSize = find_lsb_set(dev_cfg->flash_size) - 2;
-#if DT_PROP(DT_NODELABEL(quadspi), dual_flash) && defined(QUADSPI_CR_DFM)
+#if STM32_QSPI_DOUBLE_FLASH
 	dev_data->hqspi.Init.SampleShifting = QSPI_SAMPLE_SHIFTING_HALFCYCLE;
 	dev_data->hqspi.Init.ChipSelectHighTime = QSPI_CS_HIGH_TIME_3_CYCLE;
 	dev_data->hqspi.Init.DualFlash = QSPI_DUALFLASH_ENABLE;
@@ -1566,7 +1566,7 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	 * is disabled.
 	 */
 	dev_data->hqspi.Init.FlashID = QSPI_FLASH_ID_1;
-#endif /* dual_flash */
+#endif /* STM32_QSPI_DOUBLE_FLASH */
 
 	HAL_QSPI_Init(&dev_data->hqspi);
 
