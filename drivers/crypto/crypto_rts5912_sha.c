@@ -89,14 +89,16 @@ static int rts5912_sha256_process(const struct device *dev, uint8_t *input, size
 		uint32_t _wf_cycle_count =
 			k_us_to_cyc_ceil32(RTS5912_MAXIMUM_CRYPTO_POLLING_TIME_US);
 		uint32_t _wf_start = k_cycle_get_32();
+		uint32_t _wf_now = _wf_start;
 
 		while (!((sha2dma_regs->interrupt_status & INT_COMPLETE_MASK) != 0) &&
-		       (_wf_cycle_count > (k_cycle_get_32() - _wf_start))) {
+		       (_wf_cycle_count > (_wf_now - _wf_start))) {
 			k_msleep(1);
 			Z_SPIN_DELAY(10);
+			_wf_now = k_cycle_get_32();
 		}
 
-		if (_wf_cycle_count < (k_cycle_get_32() - _wf_start)) {
+		if (_wf_cycle_count < (_wf_now - _wf_start)) {
 			LOG_ERR("SHA2DMA reach timeout and breach");
 			return -EIO;
 		}
