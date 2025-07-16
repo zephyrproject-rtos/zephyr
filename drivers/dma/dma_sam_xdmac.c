@@ -28,11 +28,19 @@ LOG_MODULE_REGISTER(dma_sam_xdmac);
 #define XDMAC_INT_ERR (XDMAC_CIE_RBIE | XDMAC_CIE_WBIE | XDMAC_CIE_ROIE)
 #define DMA_CHANNELS_MAX 31
 
+enum dma_state {
+	DMA_STATE_INIT = 0,
+	DMA_STATE_CONFIGURED,
+	DMA_STATE_RUNNING,
+	DMA_STATE_SUSPENDED,
+};
+
 /* DMA channel configuration */
 struct sam_xdmac_channel_cfg {
 	void *user_data;
 	dma_callback_t callback;
 	uint32_t data_size;
+	enum dma_state state;
 };
 
 /* Device constant configuration parameters */
@@ -68,6 +76,7 @@ static void sam_xdmac_isr(const struct device *dev)
 			continue;
 		}
 
+		dev_data->dma_channels[channel].state = DMA_STATE_CONFIGURED;
 		channel_cfg = &dev_data->dma_channels[channel];
 
 		/* Get channel errors */
@@ -180,6 +189,8 @@ int sam_xdmac_transfer_configure(const struct device *dev, uint32_t channel,
 	/* Set next descriptor configuration */
 	xdmac->XDMAC_CHID[channel].XDMAC_CNDC = param->ndc;
 
+	dev_data->dma_channels[channel].state = DMA_STATE_CONFIGURED;
+
 	return 0;
 }
 
@@ -196,6 +207,12 @@ static int sam_xdmac_config(const struct device *dev, uint32_t channel,
 
 	if (channel >= channel_num) {
 		LOG_ERR("Channel %d out of range", channel);
+		return -EINVAL;
+	}
+
+	if (dev_data->dma_channels[channel].state != DMA_STATE_INIT &&
+	    dev_data->dma_channels[channel].state != DMA_STATE_CONFIGURED) {
+		LOG_ERR("Config Channel %d at invalidate state", channel);
 		return -EINVAL;
 	}
 
@@ -327,6 +344,12 @@ int sam_xdmac_transfer_start(const struct device *dev, uint32_t channel)
 		return -EINVAL;
 	}
 
+	if (dev_data->dma_channels[channel].state != DMA_STATE_CONFIGURED &&
+	    dev_data->dma_channels[channel].state != DMA_STATE_RUNNING) {
+		LOG_ERR("Start Channel %d at invalidate state", channel);
+		return -EINVAL;
+	}
+
 	/* Check if the channel is enabled */
 	if (xdmac->XDMAC_GS & (XDMAC_GS_ST0 << channel)) {
 		LOG_DBG("Channel %d already enabled", channel);
@@ -337,6 +360,8 @@ int sam_xdmac_transfer_start(const struct device *dev, uint32_t channel)
 	xdmac->XDMAC_GIE = XDMAC_GIE_IE0 << channel;
 	/* Enable channel */
 	xdmac->XDMAC_GE = XDMAC_GE_EN0 << channel;
+
+	dev_data->dma_channels[channel].state = DMA_STATE_RUNNING;
 
 	return 0;
 }
@@ -354,6 +379,11 @@ int sam_xdmac_transfer_stop(const struct device *dev, uint32_t channel)
 		return -EINVAL;
 	}
 
+	if (dev_data->dma_channels[channel].state == DMA_STATE_INIT) {
+		LOG_ERR("Channel %d not configured", channel);
+		return -EINVAL;
+	}
+
 	/* Check if the channel is enabled */
 	if (!(xdmac->XDMAC_GS & (XDMAC_GS_ST0 << channel))) {
 		return 0;
@@ -367,6 +397,8 @@ int sam_xdmac_transfer_stop(const struct device *dev, uint32_t channel)
 	xdmac->XDMAC_CHID[channel].XDMAC_CID = 0xFF;
 	/* Clear the pending Interrupt Status bit(s) */
 	(void)xdmac->XDMAC_CHID[channel].XDMAC_CIS;
+
+	dev_data->dma_channels[channel].state = DMA_STATE_CONFIGURED;
 
 	return 0;
 }
@@ -417,6 +449,16 @@ static int xdmac_suspend(const struct device *dev, uint32_t channel)
 		return -EINVAL;
 	}
 
+	switch (dev_data->dma_channels[channel].state) {
+	case DMA_STATE_RUNNING:
+		break;
+	case DMA_STATE_SUSPENDED:
+		return 0;
+	default:
+		LOG_ERR("Suspend Channel %d at invalidate state", channel);
+		return -EINVAL;
+	}
+
 	if (!(xdmac->XDMAC_GS & BIT(channel))) {
 		LOG_DBG("Channel %d not enabled", channel);
 		return -EINVAL;
@@ -435,6 +477,8 @@ static int xdmac_suspend(const struct device *dev, uint32_t channel)
 
 	xdmac->XDMAC_GRWS |= BIT(channel);
 
+	dev_data->dma_channels[channel].state = DMA_STATE_SUSPENDED;
+
 	return 0;
 }
 
@@ -448,6 +492,16 @@ static int xdmac_resume(const struct device *dev, uint32_t channel)
 
 	if (channel >= channel_num) {
 		LOG_ERR("Channel %d out of range", channel);
+		return -EINVAL;
+	}
+
+	switch (dev_data->dma_channels[channel].state) {
+	case DMA_STATE_SUSPENDED:
+		break;
+	case DMA_STATE_RUNNING:
+		return 0;
+	default:
+		LOG_ERR("Resume Channel %d at invalidate state", channel);
 		return -EINVAL;
 	}
 
@@ -468,6 +522,8 @@ static int xdmac_resume(const struct device *dev, uint32_t channel)
 	}
 
 	xdmac->XDMAC_GRWR |= BIT(channel);
+
+	dev_data->dma_channels[channel].state = DMA_STATE_RUNNING;
 
 	return 0;
 }
