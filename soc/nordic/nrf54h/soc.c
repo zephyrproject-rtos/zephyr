@@ -60,6 +60,26 @@ sys_snode_t soc_node;
 				      ADDRESS_DOMAIN_Msk |                     \
 				      ADDRESS_BUS_Msk)))
 
+void nrf_soc_memconf_retain_set(bool enable)
+{
+	uint32_t ret_mask = BIT(RAMBLOCK_RET_BIT_ICACHE) | BIT(RAMBLOCK_RET_BIT_DCACHE);
+
+	nrf_memconf_ramblock_ret_mask_enable_set(NRF_MEMCONF, 0, ret_mask, enable);
+	nrf_memconf_ramblock_ret_mask_enable_set(NRF_MEMCONF, 1, ret_mask, enable);
+
+#if defined(RAMBLOCK_RET2_MASK)
+	ret_mask = 0;
+#if defined(RAMBLOCK_RET2_BIT_ICACHE)
+	ret_mask |= BIT(RAMBLOCK_RET2_BIT_ICACHE);
+#endif
+#if defined(RAMBLOCK_RET2_BIT_DCACHE)
+	ret_mask |= BIT(RAMBLOCK_RET2_BIT_DCACHE);
+#endif
+	nrf_memconf_ramblock_ret2_mask_enable_set(NRF_MEMCONF, 0, ret_mask, enable);
+	nrf_memconf_ramblock_ret2_mask_enable_set(NRF_MEMCONF, 1, ret_mask, enable);
+#endif /* defined(RAMBLOCK_RET2_MASK) */
+}
+
 static void power_domain_init(void)
 {
 	/*
@@ -75,28 +95,12 @@ static void power_domain_init(void)
 
 	soc_lrcconf_poweron_request(&soc_node, NRF_LRCCONF_POWER_DOMAIN_0);
 	nrf_lrcconf_poweron_force_set(NRF_LRCCONF010, NRF_LRCCONF_POWER_MAIN, false);
-
-	nrf_memconf_ramblock_ret_enable_set(NRF_MEMCONF, 0, RAMBLOCK_RET_BIT_ICACHE, false);
-	nrf_memconf_ramblock_ret_enable_set(NRF_MEMCONF, 0, RAMBLOCK_RET_BIT_DCACHE, false);
-	nrf_memconf_ramblock_ret_enable_set(NRF_MEMCONF, 1, RAMBLOCK_RET_BIT_ICACHE, false);
-	nrf_memconf_ramblock_ret_enable_set(NRF_MEMCONF, 1, RAMBLOCK_RET_BIT_DCACHE, false);
-#if defined(RAMBLOCK_RET2_BIT_ICACHE)
-	nrf_memconf_ramblock_ret2_enable_set(NRF_MEMCONF, 0, RAMBLOCK_RET2_BIT_ICACHE, false);
-	nrf_memconf_ramblock_ret2_enable_set(NRF_MEMCONF, 1, RAMBLOCK_RET2_BIT_ICACHE, false);
-#endif
-#if defined(RAMBLOCK_RET2_BIT_DCACHE)
-	nrf_memconf_ramblock_ret2_enable_set(NRF_MEMCONF, 0, RAMBLOCK_RET2_BIT_DCACHE, false);
-	nrf_memconf_ramblock_ret2_enable_set(NRF_MEMCONF, 1, RAMBLOCK_RET2_BIT_DCACHE, false);
-#endif
+	nrf_soc_memconf_retain_set(false);
 	nrf_memconf_ramblock_ret_mask_enable_set(NRF_MEMCONF, 0, RAMBLOCK_RET_MASK, true);
 	nrf_memconf_ramblock_ret_mask_enable_set(NRF_MEMCONF, 1, RAMBLOCK_RET_MASK, true);
 #if defined(RAMBLOCK_RET2_MASK)
-	/*
-	 * TODO: Use nrf_memconf_ramblock_ret2_mask_enable_set() function
-	 * when will be provided by HAL.
-	 */
-	NRF_MEMCONF->POWER[0].RET2 = RAMBLOCK_RET2_MASK;
-	NRF_MEMCONF->POWER[1].RET2 = RAMBLOCK_RET2_MASK;
+	nrf_memconf_ramblock_ret2_mask_enable_set(NRF_MEMCONF, 0, RAMBLOCK_RET2_MASK, true);
+	nrf_memconf_ramblock_ret2_mask_enable_set(NRF_MEMCONF, 1, RAMBLOCK_RET2_MASK, true);
 #endif
 }
 
