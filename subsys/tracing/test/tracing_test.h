@@ -312,6 +312,14 @@
 	sys_trace_k_msgq_put_blocking(msgq, data, timeout)
 #define sys_port_trace_k_msgq_put_exit(msgq, timeout, ret)                                         \
 	sys_trace_k_msgq_put_exit(msgq, data, timeout, ret)
+
+#define sys_port_trace_k_msgq_put_front_enter(msgq, timeout)                                       \
+	sys_trace_k_msgq_put_front_enter(msgq, data, timeout)
+#define sys_port_trace_k_msgq_put_front_blocking(msgq, timeout)                                    \
+	sys_trace_k_msgq_put_front_blocking(msgq, data, timeout)
+#define sys_port_trace_k_msgq_put_front_exit(msgq, timeout, ret)                                   \
+	sys_trace_k_msgq_put_front_exit(msgq, data, timeout, ret)
+
 #define sys_port_trace_k_msgq_get_enter(msgq, timeout)                                             \
 	sys_trace_k_msgq_get_enter(msgq, data, timeout)
 #define sys_port_trace_k_msgq_get_blocking(msgq, timeout)                                          \
@@ -684,6 +692,11 @@ void sys_trace_k_msgq_cleanup_exit(struct k_msgq *msgq, int ret);
 void sys_trace_k_msgq_put_enter(struct k_msgq *msgq, const void *data, k_timeout_t timeout);
 void sys_trace_k_msgq_put_blocking(struct k_msgq *msgq, const void *data, k_timeout_t timeout);
 void sys_trace_k_msgq_put_exit(struct k_msgq *msgq, const void *data, k_timeout_t timeout, int ret);
+void sys_trace_k_msgq_put_front_enter(struct k_msgq *msgq, const void *data, k_timeout_t timeout);
+void sys_trace_k_msgq_put_front_blocking(struct k_msgq *msgq, const void *data,
+					k_timeout_t timeout);
+void sys_trace_k_msgq_put_front_exit(struct k_msgq *msgq, const void *data, k_timeout_t timeout,
+					int ret);
 void sys_trace_k_msgq_get_enter(struct k_msgq *msgq, const void *data, k_timeout_t timeout);
 void sys_trace_k_msgq_get_blocking(struct k_msgq *msgq, const void *data, k_timeout_t timeout);
 void sys_trace_k_msgq_get_exit(struct k_msgq *msgq, const void *data, k_timeout_t timeout, int ret);

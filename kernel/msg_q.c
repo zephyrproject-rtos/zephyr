@@ -136,7 +136,11 @@ static inline int put_msg_in_queue(struct k_msgq *msgq, const void *data,
 
 	key = k_spin_lock(&msgq->lock);
 
-	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_msgq, put, msgq, timeout);
+	if (put_at_back) {
+		SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_msgq, put, msgq, timeout);
+	} else {
+		SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_msgq, put_front, msgq, timeout);
+	}
 
 	if (msgq->used_msgs < msgq->max_msgs) {
 		/* message queue isn't full */
@@ -183,17 +187,31 @@ static inline int put_msg_in_queue(struct k_msgq *msgq, const void *data,
 		/* don't wait for message space to become available */
 		result = -ENOMSG;
 	} else {
-		SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_msgq, put, msgq, timeout);
+		if (put_at_back) {
+			SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_msgq, put, msgq, timeout);
+		} else {
+			SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_msgq, put_front, msgq, timeout);
+		}
 
 		/* wait for put message success, failure, or timeout */
 		_current->base.swap_data = (void *) data;
 
 		result = z_pend_curr(&msgq->lock, key, &msgq->wait_q, timeout);
-		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, put, msgq, timeout, result);
+
+		if (put_at_back) {
+			SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, put, msgq, timeout, result);
+		} else {
+			SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, put_front, msgq, timeout, result);
+		}
+
 		return result;
 	}
 
-	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, put, msgq, timeout, result);
+	if (put_at_back) {
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, put, msgq, timeout, result);
+	} else {
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, put_front, msgq, timeout, result);
+	}
 
 	if (resched) {
 		z_reschedule(&msgq->lock, key);
