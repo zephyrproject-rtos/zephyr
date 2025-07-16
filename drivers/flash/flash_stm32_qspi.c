@@ -580,7 +580,7 @@ end:
 	return ret;
 }
 
-static int qspi_wait_until_ready(const struct device *dev)
+static int qspi_wait_until_ready(const struct device *dev, k_timeout_t poll_period)
 {
 	uint8_t reg;
 	int ret;
@@ -593,6 +593,7 @@ static int qspi_wait_until_ready(const struct device *dev)
 
 	do {
 		ret = qspi_read_access(dev, &cmd, &reg, sizeof(reg));
+		k_sleep(poll_period);
 	} while (!ret && (reg & SPI_NOR_WIP_BIT));
 
 	return ret;
@@ -672,7 +673,7 @@ static int flash_stm32_qspi_write(const struct device *dev, off_t addr,
 		data = (const uint8_t *)data + to_write;
 		addr += to_write;
 
-		ret = qspi_wait_until_ready(dev);
+		ret = qspi_wait_until_ready(dev, K_MSEC(1));
 		if (ret != 0) {
 			break;
 		}
@@ -762,7 +763,8 @@ static int flash_stm32_qspi_erase(const struct device *dev, off_t addr,
 				ret = -EINVAL;
 			}
 		}
-		qspi_wait_until_ready(dev);
+
+		qspi_wait_until_ready(dev, K_MSEC(10));
 	}
 	goto end;
 
@@ -1240,7 +1242,7 @@ static int qspi_program_quad_io(const struct device *dev)
 		return ret;
 	}
 
-	ret = qspi_wait_until_ready(dev);
+	ret = qspi_wait_until_ready(dev, K_USEC(1));
 	if (ret < 0) {
 		return ret;
 	}
