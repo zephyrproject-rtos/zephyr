@@ -182,6 +182,14 @@ Logging
   used. The new script supports the same functionality (and more), but requires different command
   line arguments when invoked.
 
+RTIO
+====
+
+* Callback operations now take an additional argument corresponding to the result code of the first
+  error in the chain.
+* Callback operations are always called regardless of success/error status of previous submissions
+  in the chain.
+
 Secure storage
 ==============
 

@@ -790,14 +790,15 @@ static bool cb_no_cqe_run;
 /**
  * Callback for testing with
  */
-void rtio_callback_chaining_cb(struct rtio *r, const struct rtio_sqe *sqe, void *arg0)
+void rtio_callback_chaining_cb(struct rtio *r, const struct rtio_sqe *sqe, int result, void *arg0)
 {
-	TC_PRINT("chaining callback with userdata %p\n", arg0);
+	TC_PRINT("chaining callback with result %d and userdata %p\n", result, arg0);
 }
 
-void rtio_callback_chaining_cb_no_cqe(struct rtio *r, const struct rtio_sqe *sqe, void *arg0)
+void rtio_callback_chaining_cb_no_cqe(struct rtio *r, const struct rtio_sqe *sqe,
+				      int result, void *arg0)
 {
-	TC_PRINT("Chaining callback with userdata %p (No CQE)\n", arg0);
+	TC_PRINT("Chaining callback with result %d and userdata %p (No CQE)\n", result, arg0);
 	cb_no_cqe_run = true;
 }
 
@@ -1041,6 +1042,68 @@ ZTEST(rtio_api, test_rtio_await)
 	test_rtio_await_(&r_await0, &r_await1);
 	test_rtio_await_executor_(&r_await0, &r_await1);
 }
+
+
+
+RTIO_DEFINE(r_callback_result, SQE_POOL_SIZE, CQE_POOL_SIZE);
+RTIO_IODEV_TEST_DEFINE(iodev_test_callback_result);
+static int callback_count;
+static int callback_result;
+static int expected_callback_result;
+
+void callback_update_data(struct rtio *r, const struct rtio_sqe *sqe,
+			  int result, void *arg0)
+{
+	_iodev_data_iodev_test_callback_result.result = expected_callback_result;
+	callback_count++;
+}
+
+void callback_stash_result(struct rtio *r, const struct rtio_sqe *sqe,
+			int result, void *arg0)
+{
+	callback_result = result;
+	callback_count++;
+}
+
+/*
+ * Ensure callbacks work as expected.
+ *
+ * 1. Callbacks always occur
+ * 2. The result code always contains the first error result
+ */
+ZTEST(rtio_api, test_rtio_callbacks)
+{
+	struct rtio *r = &r_callback_result;
+	struct rtio_iodev *iodev = &iodev_test_callback_result;
+	struct rtio_sqe *nop1 = rtio_sqe_acquire(r);
+	struct rtio_sqe *cb1 = rtio_sqe_acquire(r);
+	struct rtio_sqe *nop2 = rtio_sqe_acquire(r);
+	struct rtio_sqe *nop3 = rtio_sqe_acquire(r);
+	struct rtio_sqe *cb2 = rtio_sqe_acquire(r);
+
+	rtio_iodev_test_init(&iodev_test_callback_result);
+
+	callback_result = 0;
+	callback_count = 0;
+	expected_callback_result = -EIO;
+
+	rtio_sqe_prep_nop(nop1, iodev, NULL);
+	nop1->flags |= RTIO_SQE_CHAINED;
+	rtio_sqe_prep_callback(cb1, callback_update_data, NULL, NULL);
+	cb1->flags |= RTIO_SQE_CHAINED;
+	rtio_sqe_prep_nop(nop2, iodev, NULL);
+	nop2->flags |= RTIO_SQE_CHAINED;
+	rtio_sqe_prep_nop(nop3, iodev, NULL);
+	nop3->flags |= RTIO_SQE_CHAINED;
+	rtio_sqe_prep_callback(cb2, callback_stash_result, NULL, NULL);
+
+	rtio_submit(r, 5);
+
+	zassert_equal(callback_result, expected_callback_result,
+		      "expected results given to second callback to be an predefine error");
+	zassert_equal(callback_count, 2, "expected two callbacks to complete");
+}
+
 
 static void *rtio_api_setup(void)
 {

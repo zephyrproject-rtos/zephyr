@@ -65,8 +65,11 @@ static int perform_reg_ops(const struct device *dev, const struct reg_val_pair *
 
 static void pat9136_complete_result(struct rtio *ctx,
 				    const struct rtio_sqe *sqe,
+				    int result,
 				    void *arg)
 {
+	ARG_UNUSED(result);
+
 	struct rtio_iodev_sqe *iodev_sqe = (struct rtio_iodev_sqe *)sqe->userdata;
 	struct rtio_cqe *cqe;
 	int err = 0;
