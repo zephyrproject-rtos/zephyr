@@ -12,7 +12,7 @@
 
 LOG_MODULE_DECLARE(ADXL372, CONFIG_SENSOR_LOG_LEVEL);
 
-static void adxl372_irq_en_cb(struct rtio *r, const struct rtio_sqe *sqr, void *arg)
+static void adxl372_irq_en_cb(struct rtio *r, const struct rtio_sqe *sqe, int result, void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
 	const struct adxl372_dev_config *cfg = dev->config;
@@ -125,7 +125,8 @@ void adxl372_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iode
 	data->sqe = iodev_sqe;
 }
 
-static void adxl372_fifo_read_cb(struct rtio *rtio_ctx, const struct rtio_sqe *sqe, void *arg)
+static void adxl372_fifo_read_cb(struct rtio *rtio_ctx, const struct rtio_sqe *sqe,
+				 int result, void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
 	const struct adxl372_dev_config *cfg = (const struct adxl372_dev_config *)dev->config;
@@ -162,7 +163,8 @@ size_t adxl372_get_packet_size(const struct adxl372_dev_config *cfg)
 	return packet_size;
 }
 
-static void adxl372_process_fifo_samples_cb(struct rtio *r, const struct rtio_sqe *sqr, void *arg)
+static void adxl372_process_fifo_samples_cb(struct rtio *r, const struct rtio_sqe *sqr,
+					    int result, void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
 	struct adxl372_data *data = (struct adxl372_data *)dev->data;
@@ -293,7 +295,8 @@ static void adxl372_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 	rtio_submit(data->rtio_ctx, 0);
 }
 
-static void adxl372_process_status1_cb(struct rtio *r, const struct rtio_sqe *sqr, void *arg)
+static void adxl372_process_status1_cb(struct rtio *r, const struct rtio_sqe *sqr,
+				       int result, void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
 	struct adxl372_data *data = (struct adxl372_data *)dev->data;
