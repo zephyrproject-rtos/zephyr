@@ -761,6 +761,14 @@ State Machine Framework
 * Flat state machines ignore the return value; returning :c:enum:`SMF_EVENT_HANDLED`
   would be the most technically accurate response.
 
+Modbus
+======
+
+* The ``client_stop_bits`` field in :c:struct:`modbus_serial_param` has been renamed into ``stop_bits``.
+  The setting is valid in both client and server modes.
+* Custom stop-bit settings are disabled by default and should be enabled
+  by :kconfig:option:`CONFIG_MODBUS_NONCOMPLIANT_SERIAL_MODE`.
+
 Modules
 *******
 
