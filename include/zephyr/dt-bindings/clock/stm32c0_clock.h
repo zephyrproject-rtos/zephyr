@@ -46,6 +46,7 @@
 /** @brief Device domain clocks selection helpers */
 /** CCIPR devices */
 #define USART1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 0, CCIPR_REG)
+#define FDCAN_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 8, CCIPR_REG)
 #define I2C1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 12, CCIPR_REG)
 #define I2C2_I2S1_SEL(val)	STM32_DT_CLOCK_SELECT((val), 3, 14, CCIPR_REG)
 #define ADC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 30, CCIPR_REG)
