@@ -89,6 +89,7 @@ set_variable_ifdef(CONFIG_WDT_MCUX_WDOG         CONFIG_MCUX_COMPONENT_driver.wdo
 set_variable_ifdef(CONFIG_WDT_MCUX_WDOG32       CONFIG_MCUX_COMPONENT_driver.wdog32)
 set_variable_ifdef(CONFIG_COUNTER_MCUX_GPT      CONFIG_MCUX_COMPONENT_driver.gpt)
 set_variable_ifdef(CONFIG_MCUX_GPT_TIMER        CONFIG_MCUX_COMPONENT_driver.gpt)
+set_variable_ifdef(CONFIG_COUNTER_MCUX_LPIT      CONFIG_MCUX_COMPONENT_driver.lpit)
 set_variable_ifdef(CONFIG_DISPLAY_MCUX_ELCDIF   CONFIG_MCUX_COMPONENT_driver.elcdif)
 set_variable_ifdef(CONFIG_MCUX_PXP              CONFIG_MCUX_COMPONENT_driver.pxp)
 set_variable_ifdef(CONFIG_LV_USE_GPU_NXP_PXP    CONFIG_MCUX_COMPONENT_driver.pxp)
