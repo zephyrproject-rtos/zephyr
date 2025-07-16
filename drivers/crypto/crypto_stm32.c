@@ -448,7 +448,7 @@ static int crypto_stm32_session_setup(const struct device *dev,
 			ctx->ops.ctr_crypt_hndlr = crypto_stm32_ctr_encrypt;
 			break;
 		default:
-			break;
+			CODE_UNREACHABLE;
 		}
 	} else {
 		switch (mode) {
@@ -471,7 +471,7 @@ static int crypto_stm32_session_setup(const struct device *dev,
 			ctx->ops.ctr_crypt_hndlr = crypto_stm32_ctr_decrypt;
 			break;
 		default:
-			break;
+			CODE_UNREACHABLE;
 		}
 	}
 
