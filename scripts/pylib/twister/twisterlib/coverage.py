@@ -538,7 +538,7 @@ def try_making_symlink(source: str, link: str):
         os.symlink(source, link)
     except OSError as e:
         logger.error(
-            "Error creating symlink: %s, attempting to copy.". str(e)
+            "Error creating symlink: %s, attempting to copy.", str(e)
         )
         shutil.copy(source, link)
 
