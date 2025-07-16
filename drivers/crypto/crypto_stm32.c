@@ -91,6 +91,8 @@ typedef status_t (*hal_cryp_aes_op_func_t)(CRYP_HandleTypeDef *hcryp, uint8_t *i
 #ifdef STM32_CRYPTO_GCM_CCM_SUPPORTED
 #define hal_gcm_encrypt_op hal_encrypt
 #define hal_gcm_decrypt_op hal_decrypt
+#define hal_ccm_encrypt_op hal_encrypt
+#define hal_ccm_decrypt_op hal_decrypt
 #endif /* STM32_CRYPTO_GCM_CCM_SUPPORTED */
 #endif /* !DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes) */
 
@@ -437,6 +439,175 @@ static int crypto_stm32_gcm_decrypt(struct cipher_ctx *ctx, struct cipher_aead_p
 
 	return ret;
 }
+
+static int crypto_stm32_ccm(struct cipher_ctx *ctx, hal_cryp_aes_op_func_t fn,
+			    struct cipher_aead_pkt *apkt, uint8_t *nonce, uint8_t **b1)
+{
+	struct crypto_stm32_session *const session = CRYPTO_STM32_SESSN(ctx);
+	size_t b1_padded_len;
+	uint8_t b0[BLOCK_LEN_BYTES] = {0};
+	uint8_t q;
+	int ret;
+
+	/* tag length: 4, 6, 8, 10, 12, 14, 16 */
+	if ((ctx->mode_params.ccm_info.tag_len < 4) ||
+	    (ctx->mode_params.ccm_info.tag_len > 16) ||
+	    (ctx->mode_params.ccm_info.tag_len % 2) != 0) {
+		return -EINVAL;
+	}
+
+	/* nonce length [7, 13] */
+	if ((ctx->mode_params.ccm_info.nonce_len < 7) ||
+	    (ctx->mode_params.ccm_info.nonce_len > 13)) {
+		return -EINVAL;
+	}
+
+	/* bytes left for payload length */
+	q = (15 - ctx->mode_params.ccm_info.nonce_len);
+
+	/* check if payload length fits into q bytes */
+	if (apkt->pkt->in_len > BIT_MASK(8U * q)) {
+		return -EINVAL;
+	}
+
+	if (apkt->ad_len == 0) {
+		session->config.Header = NULL;
+		session->config.HeaderSize = 0U;
+	} else {
+		uint8_t header_len;
+
+		if (apkt->ad_len < 0xFF00U) {
+			header_len = 2;
+		} else if (apkt->ad_len < 0xFFFFFFFFU) {
+			header_len = 6;
+		} else {
+			return -ENOTSUP;
+		}
+
+		b1_padded_len =
+			(((apkt->ad_len + header_len) / BLOCK_LEN_BYTES) + 1) * BLOCK_LEN_BYTES;
+
+		*b1 = k_calloc(1, b1_padded_len);
+		if (*b1 == NULL) {
+			return -ENOMEM;
+		}
+
+		if (header_len == 2) {
+			sys_put_be16(apkt->ad_len, *b1);
+		} else {
+			*b1[0] = 0xFFU;
+			*b1[1] = 0xFEU;
+			sys_put_be32(apkt->ad_len, *b1 + 2);
+		}
+
+		memcpy(*b1 + header_len, apkt->ad, apkt->ad_len);
+
+		/* blocks (B) associated to the Associated Data (A) */
+		session->config.Header = CAST_VEC(*b1);
+		session->config.HeaderSize = b1_padded_len / sizeof(uint32_t);
+		session->config.HeaderWidthUnit = CRYP_HEADERWIDTHUNIT_WORD;
+
+		/* set AD presence flag */
+		b0[0] = BIT(6);
+	}
+
+	/* encode leftover flags */
+	b0[0] |= ((ctx->mode_params.gcm_info.tag_len - 2) / 2) << 3;
+	b0[0] |= q - 1;
+
+	/* encode nonce */
+	memcpy(&b0[1], nonce, ctx->mode_params.ccm_info.nonce_len);
+
+	/* encode payload length */
+	for (unsigned int i = 0; i < q; i++) {
+		b0[15 - i] = (uint8_t)((apkt->pkt->in_len >> (8U * i)) & 0xFFU);
+	}
+
+	/* set B0 */
+	for (unsigned int i = 0; i < sizeof(b0); i += sizeof(uint32_t)) {
+		sys_mem_swap(&b0[i], sizeof(uint32_t));
+	}
+
+	session->config.B0 = CAST_VEC(b0);
+
+	ret = do_aes(ctx, fn, apkt->pkt->in_buf, apkt->pkt->in_len, apkt->pkt->out_buf);
+	if (ret < 0) {
+		k_free(*b1);
+		*b1 = NULL;
+	}
+
+	return ret;
+}
+
+static int crypto_stm32_ccm_encrypt(struct cipher_ctx *ctx, struct cipher_aead_pkt *apkt,
+				    uint8_t *nonce)
+{
+	struct crypto_stm32_data *const data = CRYPTO_STM32_DATA(ctx->device);
+	uint8_t *b1 = NULL;
+	int ret;
+
+	k_sem_take(&data->device_sem, K_FOREVER);
+
+	ret = crypto_stm32_ccm(ctx, hal_ccm_encrypt_op, apkt, nonce, &b1);
+	if (ret < 0) {
+		/* crypto_stm32_ccm deallocates b1 upon error */
+		k_sem_give(&data->device_sem);
+		return ret;
+	}
+
+	if (HAL_CRYPEx_AESCCM_GenerateAuthTAG(&data->hcryp, CAST_VEC(apkt->tag),
+					      HAL_MAX_DELAY) != HAL_OK) {
+		ret = -EIO;
+	}
+
+	k_sem_give(&data->device_sem);
+
+	k_free(b1);
+
+	if (ret < 0) {
+		apkt->pkt->out_len = 0;
+	} else {
+		apkt->pkt->out_len = apkt->pkt->in_len;
+	}
+
+	return ret;
+}
+
+static int crypto_stm32_ccm_decrypt(struct cipher_ctx *ctx, struct cipher_aead_pkt *apkt,
+				    uint8_t *nonce)
+{
+	struct crypto_stm32_data *const data = CRYPTO_STM32_DATA(ctx->device);
+	uint8_t *b1 = NULL;
+	uint32_t tag[BLOCK_LEN_WORDS] = {0};
+	int ret;
+
+	k_sem_take(&data->device_sem, K_FOREVER);
+
+	ret = crypto_stm32_ccm(ctx, hal_ccm_decrypt_op, apkt, nonce, &b1);
+	if (ret < 0) {
+		k_sem_give(&data->device_sem);
+		return ret;
+	}
+
+	if (HAL_CRYPEx_AESCCM_GenerateAuthTAG(&data->hcryp, CAST_VEC(tag), HAL_MAX_DELAY) !=
+	    HAL_OK) {
+		ret = -EIO;
+	}
+
+	k_sem_give(&data->device_sem);
+
+	k_free(b1);
+
+	if (memcmp(tag, apkt->tag, ctx->mode_params.ccm_info.tag_len) != 0) {
+		/* auth/tag verification fails */
+		apkt->pkt->out_len = 0;
+		ret = -EFAULT;
+	} else {
+		apkt->pkt->out_len = apkt->pkt->in_len;
+	}
+
+	return ret;
+}
 #endif /* STM32_CRYPTO_GCM_CCM_SUPPORTED */
 
 static int crypto_stm32_get_unused_session_index(const struct device *dev)
@@ -558,6 +729,10 @@ static int crypto_stm32_session_setup(const struct device *dev,
 			session->config.Algorithm = CRYP_AES_GCM;
 			ctx->ops.gcm_crypt_hndlr = crypto_stm32_gcm_encrypt;
 			break;
+		case CRYPTO_CIPHER_MODE_CCM:
+			session->config.Algorithm = CRYP_AES_CCM;
+			ctx->ops.ccm_crypt_hndlr = crypto_stm32_ccm_encrypt;
+			break;
 #endif /* STM32_CRYPTO_GCM_CCM_SUPPORTED */
 		default:
 			return -EINVAL;
@@ -586,6 +761,10 @@ static int crypto_stm32_session_setup(const struct device *dev,
 		case CRYPTO_CIPHER_MODE_GCM:
 			session->config.Algorithm = CRYP_AES_GCM;
 			ctx->ops.gcm_crypt_hndlr = crypto_stm32_gcm_decrypt;
+			break;
+		case CRYPTO_CIPHER_MODE_CCM:
+			session->config.Algorithm = CRYP_AES_CCM;
+			ctx->ops.ccm_crypt_hndlr = crypto_stm32_ccm_decrypt;
 			break;
 #endif /* STM32_CRYPTO_GCM_CCM_SUPPORTED */
 		default:
