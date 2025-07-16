@@ -112,14 +112,10 @@ static int copy_words_adjust_endianness(uint8_t *dst_buf, int dst_len, const uin
 }
 
 static int do_aes(struct cipher_ctx *ctx, hal_cryp_aes_op_func_t fn, uint8_t *in_buf, int in_len,
-		      uint8_t *out_buf)
+		  uint8_t *out_buf)
 {
-	status_t status;
-
 	struct crypto_stm32_data *data = CRYPTO_STM32_DATA(ctx->device);
 	struct crypto_stm32_session *session = CRYPTO_STM32_SESSN(ctx);
-
-	k_sem_take(&data->device_sem, K_FOREVER);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
 	/* Device is initialized from the configuration in the encryption/decryption function
@@ -127,22 +123,16 @@ static int do_aes(struct cipher_ctx *ctx, hal_cryp_aes_op_func_t fn, uint8_t *in
 	 */
 	memcpy(&data->hcryp.Init, &session->config, sizeof(session->config));
 #else
-	status = HAL_CRYP_SetConfig(&data->hcryp, &session->config);
-	if (status != HAL_OK) {
+	if (HAL_CRYP_SetConfig(&data->hcryp, &session->config) != HAL_OK) {
 		LOG_ERR("Configuration error");
-		k_sem_give(&data->device_sem);
 		return -EIO;
 	}
 #endif
 
-	status = fn(&data->hcryp, in_buf, in_len, out_buf, HAL_MAX_DELAY);
-	if (status != HAL_OK) {
+	if (fn(&data->hcryp, in_buf, in_len, out_buf, HAL_MAX_DELAY) != HAL_OK) {
 		LOG_ERR("Encryption/decryption error");
-		k_sem_give(&data->device_sem);
 		return -EIO;
 	}
-
-	k_sem_give(&data->device_sem);
 
 	return 0;
 }
@@ -166,6 +156,7 @@ static status_t hal_decrypt(CRYP_HandleTypeDef *hcryp, uint8_t *pCypherData, uin
 static int crypto_stm32_ecb_encrypt(struct cipher_ctx *ctx,
 				    struct cipher_pkt *pkt)
 {
+	struct crypto_stm32_data *const data = CRYPTO_STM32_DATA(ctx->device);
 	int ret;
 
 	/* For security reasons, ECB mode should not be used to encrypt
@@ -176,7 +167,12 @@ static int crypto_stm32_ecb_encrypt(struct cipher_ctx *ctx,
 		return -EINVAL;
 	}
 
+	k_sem_take(&data->device_sem, K_FOREVER);
+
 	ret = do_aes(ctx, hal_ecb_encrypt_op, pkt->in_buf, pkt->in_len, pkt->out_buf);
+
+	k_sem_give(&data->device_sem);
+
 	if (ret == 0) {
 		pkt->out_len = 16;
 	}
@@ -187,6 +183,7 @@ static int crypto_stm32_ecb_encrypt(struct cipher_ctx *ctx,
 static int crypto_stm32_ecb_decrypt(struct cipher_ctx *ctx,
 				    struct cipher_pkt *pkt)
 {
+	struct crypto_stm32_data *const data = CRYPTO_STM32_DATA(ctx->device);
 	int ret;
 
 	/* For security reasons, ECB mode should not be used to encrypt
@@ -197,7 +194,12 @@ static int crypto_stm32_ecb_decrypt(struct cipher_ctx *ctx,
 		return -EINVAL;
 	}
 
+	k_sem_take(&data->device_sem, K_FOREVER);
+
 	ret = do_aes(ctx, hal_ecb_decrypt_op, pkt->in_buf, pkt->in_len, pkt->out_buf);
+
+	k_sem_give(&data->device_sem);
+
 	if (ret == 0) {
 		pkt->out_len = 16;
 	}
@@ -208,11 +210,11 @@ static int crypto_stm32_ecb_decrypt(struct cipher_ctx *ctx,
 static int crypto_stm32_cbc_encrypt(struct cipher_ctx *ctx,
 				    struct cipher_pkt *pkt, uint8_t *iv)
 {
+	struct crypto_stm32_data *const data = CRYPTO_STM32_DATA(ctx->device);
+	struct crypto_stm32_session *const session = CRYPTO_STM32_SESSN(ctx);
 	int ret;
 	uint32_t vec[BLOCK_LEN_WORDS];
 	int out_offset = 0;
-
-	struct crypto_stm32_session *session = CRYPTO_STM32_SESSN(ctx);
 
 	(void)copy_words_adjust_endianness((uint8_t *)vec, sizeof(vec), iv, BLOCK_LEN_BYTES);
 
@@ -224,7 +226,12 @@ static int crypto_stm32_cbc_encrypt(struct cipher_ctx *ctx,
 		out_offset = 16;
 	}
 
+	k_sem_take(&data->device_sem, K_FOREVER);
+
 	ret = do_aes(ctx, hal_cbc_encrypt_op, pkt->in_buf, pkt->in_len, pkt->out_buf + out_offset);
+
+	k_sem_give(&data->device_sem);
+
 	if (ret == 0) {
 		pkt->out_len = pkt->in_len + out_offset;
 	}
@@ -235,11 +242,11 @@ static int crypto_stm32_cbc_encrypt(struct cipher_ctx *ctx,
 static int crypto_stm32_cbc_decrypt(struct cipher_ctx *ctx,
 				    struct cipher_pkt *pkt, uint8_t *iv)
 {
+	struct crypto_stm32_data *const data = CRYPTO_STM32_DATA(ctx->device);
+	struct crypto_stm32_session *const session = CRYPTO_STM32_SESSN(ctx);
 	int ret;
 	uint32_t vec[BLOCK_LEN_WORDS];
 	int in_offset = 0;
-
-	struct crypto_stm32_session *session = CRYPTO_STM32_SESSN(ctx);
 
 	(void)copy_words_adjust_endianness((uint8_t *)vec, sizeof(vec), iv, BLOCK_LEN_BYTES);
 
@@ -249,7 +256,12 @@ static int crypto_stm32_cbc_decrypt(struct cipher_ctx *ctx,
 		in_offset = 16;
 	}
 
+	k_sem_take(&data->device_sem, K_FOREVER);
+
 	ret = do_aes(ctx, hal_cbc_decrypt_op, pkt->in_buf + in_offset, pkt->in_len, pkt->out_buf);
+
+	k_sem_give(&data->device_sem);
+
 	if (ret == 0) {
 		pkt->out_len = pkt->in_len - in_offset;
 	}
@@ -260,11 +272,11 @@ static int crypto_stm32_cbc_decrypt(struct cipher_ctx *ctx,
 static int crypto_stm32_ctr_encrypt(struct cipher_ctx *ctx,
 				    struct cipher_pkt *pkt, uint8_t *iv)
 {
+	struct crypto_stm32_data *const data = CRYPTO_STM32_DATA(ctx->device);
+	struct crypto_stm32_session *const session = CRYPTO_STM32_SESSN(ctx);
 	int ret;
 	uint32_t ctr[BLOCK_LEN_WORDS] = {0};
 	int ivlen = BLOCK_LEN_BYTES - (ctx->mode_params.ctr_info.ctr_len >> 3);
-
-	struct crypto_stm32_session *session = CRYPTO_STM32_SESSN(ctx);
 
 	if (copy_words_adjust_endianness((uint8_t *)ctr, sizeof(ctr), iv, ivlen) != 0) {
 		return -EIO;
@@ -272,7 +284,12 @@ static int crypto_stm32_ctr_encrypt(struct cipher_ctx *ctx,
 
 	session->config.pInitVect = CAST_VEC(ctr);
 
+	k_sem_take(&data->device_sem, K_FOREVER);
+
 	ret = do_aes(ctx, hal_ctr_encrypt_op, pkt->in_buf, pkt->in_len, pkt->out_buf);
+
+	k_sem_give(&data->device_sem);
+
 	if (ret == 0) {
 		pkt->out_len = pkt->in_len;
 	}
@@ -283,11 +300,11 @@ static int crypto_stm32_ctr_encrypt(struct cipher_ctx *ctx,
 static int crypto_stm32_ctr_decrypt(struct cipher_ctx *ctx,
 				    struct cipher_pkt *pkt, uint8_t *iv)
 {
+	struct crypto_stm32_data *const data = CRYPTO_STM32_DATA(ctx->device);
+	struct crypto_stm32_session *const session = CRYPTO_STM32_SESSN(ctx);
 	int ret;
 	uint32_t ctr[BLOCK_LEN_WORDS] = {0};
 	int ivlen = BLOCK_LEN_BYTES - (ctx->mode_params.ctr_info.ctr_len >> 3);
-
-	struct crypto_stm32_session *session = CRYPTO_STM32_SESSN(ctx);
 
 	if (copy_words_adjust_endianness((uint8_t *)ctr, sizeof(ctr), iv, ivlen) != 0) {
 		return -EIO;
@@ -295,7 +312,12 @@ static int crypto_stm32_ctr_decrypt(struct cipher_ctx *ctx,
 
 	session->config.pInitVect = CAST_VEC(ctr);
 
+	k_sem_take(&data->device_sem, K_FOREVER);
+
 	ret = do_aes(ctx, hal_ctr_decrypt_op, pkt->in_buf, pkt->in_len, pkt->out_buf);
+
+	k_sem_give(&data->device_sem);
+
 	if (ret == 0) {
 		pkt->out_len = pkt->in_len;
 	}
