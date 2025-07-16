@@ -114,7 +114,7 @@
 ACPI:
   status: maintained
   maintainers:
-    - najumon1980
+    - kumarnac
   files:
     - lib/acpi/
     - include/zephyr/acpi/
@@ -3821,7 +3821,7 @@ Intel Platforms (X86):
   maintainers:
     - edersondisouza
   collaborators:
-    - najumon1980
+    - kumarnac
     - teburd
     - dcpleung
     - ceolin
@@ -4900,7 +4900,7 @@ West:
 "West project: acpica":
   status: maintained
   maintainers:
-    - najumon1980
+    - kumarnac
   files:
     - modules/acpica/
   labels:
@@ -5818,7 +5818,7 @@ x86 arch:
     - dcpleung
     - ceolin
     - laurenmurphyx64
-    - najumon1980
+    - kumarnac
     - nashif
   files:
     - arch/x86/
