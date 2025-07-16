@@ -1553,7 +1553,7 @@ struct net_if_addr *net_if_ipv6_addr_lookup_by_iface_raw(struct net_if *iface,
  * @return Pointer to interface address, NULL if not found.
  */
 struct net_if_addr *net_if_ipv6_addr_lookup_by_iface(struct net_if *iface,
-						     struct in6_addr *addr);
+						     const struct in6_addr *addr);
 
 /**
  * @brief Check if this IPv6 address belongs to one of the interface indices.
@@ -1576,7 +1576,7 @@ __syscall int net_if_ipv6_addr_lookup_by_index(const struct in6_addr *addr);
  * @return Pointer to interface address, NULL if cannot be added
  */
 struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
-					 struct in6_addr *addr,
+					 const struct in6_addr *addr,
 					 enum net_addr_type addr_type,
 					 uint32_t vlifetime);
 
@@ -1591,7 +1591,7 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
  * @return True if ok, false if address could not be added
  */
 __syscall bool net_if_ipv6_addr_add_by_index(int index,
-					     struct in6_addr *addr,
+					     const struct in6_addr *addr,
 					     enum net_addr_type addr_type,
 					     uint32_t vlifetime);
 
@@ -1828,7 +1828,7 @@ struct net_if_ipv6_prefix *net_if_ipv6_prefix_get(struct net_if *iface,
  * @return Pointer to prefix, NULL if not found.
  */
 struct net_if_ipv6_prefix *net_if_ipv6_prefix_lookup(struct net_if *iface,
-						     struct in6_addr *addr,
+						     const struct in6_addr *addr,
 						     uint8_t len);
 
 /**
@@ -1842,7 +1842,7 @@ struct net_if_ipv6_prefix *net_if_ipv6_prefix_lookup(struct net_if *iface,
  * @return Pointer to prefix, NULL if the prefix was not added.
  */
 struct net_if_ipv6_prefix *net_if_ipv6_prefix_add(struct net_if *iface,
-						  struct in6_addr *prefix,
+						  const struct in6_addr *prefix,
 						  uint8_t len,
 						  uint32_t lifetime);
 
@@ -1855,7 +1855,7 @@ struct net_if_ipv6_prefix *net_if_ipv6_prefix_add(struct net_if *iface,
  *
  * @return True if successfully removed, false otherwise
  */
-bool net_if_ipv6_prefix_rm(struct net_if *iface, struct in6_addr *addr,
+bool net_if_ipv6_prefix_rm(struct net_if *iface, const struct in6_addr *addr,
 			   uint8_t len);
 
 /**
@@ -1896,7 +1896,7 @@ void net_if_ipv6_prefix_unset_timer(struct net_if_ipv6_prefix *prefix);
  *
  * @return True if address is part of our subnet, false otherwise
  */
-bool net_if_ipv6_addr_onlink(struct net_if **iface, struct in6_addr *addr);
+bool net_if_ipv6_addr_onlink(struct net_if **iface, const struct in6_addr *addr);
 
 /**
  * @brief Get the IPv6 address of the given router
@@ -1934,7 +1934,7 @@ static inline struct in6_addr *net_if_router_ipv6(struct net_if_router *router)
  * @return Pointer to router information, NULL if cannot be found
  */
 struct net_if_router *net_if_ipv6_router_lookup(struct net_if *iface,
-						struct in6_addr *addr);
+						const struct in6_addr *addr);
 
 /**
  * @brief Find default router for this IPv6 address.
@@ -1946,7 +1946,7 @@ struct net_if_router *net_if_ipv6_router_lookup(struct net_if *iface,
  * @return Pointer to router information, NULL if cannot be found
  */
 struct net_if_router *net_if_ipv6_router_find_default(struct net_if *iface,
-						      struct in6_addr *addr);
+						      const struct in6_addr *addr);
 
 /**
  * @brief Update validity lifetime time of a router.
@@ -1967,7 +1967,7 @@ void net_if_ipv6_router_update_lifetime(struct net_if_router *router,
  * @return Pointer to router information, NULL if could not be added
  */
 struct net_if_router *net_if_ipv6_router_add(struct net_if *iface,
-					     struct in6_addr *addr,
+					     const struct in6_addr *addr,
 					     uint16_t router_lifetime);
 
 /**
@@ -2421,7 +2421,7 @@ struct net_if_addr *net_if_ipv4_addr_lookup(const struct in_addr *addr,
  * @return Pointer to interface address, NULL if cannot be added
  */
 struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
-					 struct in_addr *addr,
+					 const struct in_addr *addr,
 					 enum net_addr_type addr_type,
 					 uint32_t vlifetime);
 
@@ -2456,7 +2456,7 @@ __syscall int net_if_ipv4_addr_lookup_by_index(const struct in_addr *addr);
  * @return True if ok, false if the address could not be added
  */
 __syscall bool net_if_ipv4_addr_add_by_index(int index,
-					     struct in_addr *addr,
+					     const struct in_addr *addr,
 					     enum net_addr_type addr_type,
 					     uint32_t vlifetime);
 
@@ -2597,7 +2597,7 @@ static inline struct in_addr *net_if_router_ipv4(struct net_if_router *router)
  * @return Pointer to router information, NULL if cannot be found
  */
 struct net_if_router *net_if_ipv4_router_lookup(struct net_if *iface,
-						struct in_addr *addr);
+						const struct in_addr *addr);
 
 /**
  * @brief Find default router for this IPv4 address.
@@ -2609,7 +2609,7 @@ struct net_if_router *net_if_ipv4_router_lookup(struct net_if *iface,
  * @return Pointer to router information, NULL if cannot be found
  */
 struct net_if_router *net_if_ipv4_router_find_default(struct net_if *iface,
-						      struct in_addr *addr);
+						      const struct in_addr *addr);
 /**
  * @brief Add IPv4 router to the system.
  *
@@ -2621,7 +2621,7 @@ struct net_if_router *net_if_ipv4_router_find_default(struct net_if *iface,
  * @return Pointer to router information, NULL if could not be added
  */
 struct net_if_router *net_if_ipv4_router_add(struct net_if *iface,
-					     struct in_addr *addr,
+					     const struct in_addr *addr,
 					     bool is_default,
 					     uint16_t router_lifetime);
 
