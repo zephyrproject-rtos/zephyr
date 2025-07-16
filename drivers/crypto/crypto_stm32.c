@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020 Markus Fuchs <markus.fuchs@de.sauter-bc.com>
+ * Copyright (c) 2025 Georgij Cernysiov <geo.cgv@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -45,6 +46,12 @@ LOG_MODULE_REGISTER(crypto_stm32);
 #define STM32_CRYPTO_TYPEDEF            AES_TypeDef
 #endif
 
+#if defined(CONFIG_SOC_STM32H723XX) || defined(CONFIG_SOC_STM32H725XX) ||	\
+	defined(CONFIG_SOC_STM32H730XX) || defined(CONFIG_SOC_STM32H730XXQ) ||	\
+	defined(CONFIG_SOC_STM32H735XX)
+#define STM32_CRYPTO_GCM_CCM_SUPPORTED
+#endif
+
 struct crypto_stm32_session crypto_stm32_sessions[CRYPTO_MAX_SESSION];
 
 typedef HAL_StatusTypeDef status_t;
@@ -81,7 +88,11 @@ typedef status_t (*hal_cryp_aes_op_func_t)(CRYP_HandleTypeDef *hcryp, uint8_t *i
 #define hal_cbc_decrypt_op hal_decrypt
 #define hal_ctr_encrypt_op hal_encrypt
 #define hal_ctr_decrypt_op hal_decrypt
-#endif
+#ifdef STM32_CRYPTO_GCM_CCM_SUPPORTED
+#define hal_gcm_encrypt_op hal_encrypt
+#define hal_gcm_decrypt_op hal_decrypt
+#endif /* STM32_CRYPTO_GCM_CCM_SUPPORTED */
+#endif /* !DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes) */
 
 /* L4 HAL driver uses uint8_t pointers for input/output data while the generic HAL driver uses
  * uint32_t pointers.
@@ -325,6 +336,109 @@ static int crypto_stm32_ctr_decrypt(struct cipher_ctx *ctx,
 	return ret;
 }
 
+#ifdef STM32_CRYPTO_GCM_CCM_SUPPORTED
+static int crypto_stm32_gcm(struct cipher_ctx *ctx, hal_cryp_aes_op_func_t fn,
+			    struct cipher_aead_pkt *apkt, uint8_t *nonce)
+{
+	struct crypto_stm32_session *const session = CRYPTO_STM32_SESSN(ctx);
+	uint32_t iv[4] = {0};
+
+	if (ctx->mode_params.gcm_info.nonce_len != 12) {
+		return -EINVAL;
+	}
+
+	if (ctx->mode_params.gcm_info.tag_len != BLOCK_LEN_BYTES) {
+		return -EINVAL;
+	}
+
+	if (copy_words_adjust_endianness((uint8_t *)iv, sizeof(iv), nonce,
+					 ctx->mode_params.gcm_info.nonce_len) != 0) {
+		return -EIO;
+	}
+
+	iv[3] = 0x00000002U;
+
+	session->config.pInitVect = CAST_VEC(iv);
+
+	if (apkt->ad_len == 0) {
+		session->config.Header = NULL;
+		session->config.HeaderSize = 0;
+	} else {
+		session->config.Header = CAST_VEC(apkt->ad);
+		session->config.HeaderSize = apkt->ad_len;
+		session->config.HeaderWidthUnit = CRYP_HEADERWIDTHUNIT_BYTE;
+	}
+
+	return do_aes(ctx, fn, apkt->pkt->in_buf, apkt->pkt->in_len, apkt->pkt->out_buf);
+}
+
+static int crypto_stm32_gcm_encrypt(struct cipher_ctx *ctx, struct cipher_aead_pkt *apkt,
+				    uint8_t *nonce)
+{
+	struct crypto_stm32_data *const data = CRYPTO_STM32_DATA(ctx->device);
+	int ret;
+
+	k_sem_take(&data->device_sem, K_FOREVER);
+
+	ret = crypto_stm32_gcm(ctx, hal_gcm_encrypt_op, apkt, nonce);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (HAL_CRYPEx_AESGCM_GenerateAuthTAG(&data->hcryp, CAST_VEC(apkt->tag),
+					      HAL_MAX_DELAY) != HAL_OK) {
+		ret = -EIO;
+	}
+
+	k_sem_give(&data->device_sem);
+
+	if (ret < 0) {
+		apkt->pkt->out_len = 0;
+	} else {
+		apkt->pkt->out_len = apkt->pkt->in_len;
+	}
+
+	return ret;
+}
+
+static int crypto_stm32_gcm_decrypt(struct cipher_ctx *ctx, struct cipher_aead_pkt *apkt,
+				    uint8_t *nonce)
+{
+	struct crypto_stm32_data *const data = CRYPTO_STM32_DATA(ctx->device);
+	uint32_t tag[4] = {0};
+	int ret;
+
+	k_sem_take(&data->device_sem, K_FOREVER);
+
+	ret = crypto_stm32_gcm(ctx, hal_gcm_decrypt_op, apkt, nonce);
+	if (ret < 0) {
+		k_sem_give(&data->device_sem);
+		return ret;
+	}
+
+	if (HAL_CRYPEx_AESGCM_GenerateAuthTAG(&data->hcryp, CAST_VEC(tag),
+					      HAL_MAX_DELAY) != HAL_OK) {
+		ret = -EIO;
+	}
+
+	k_sem_give(&data->device_sem);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (memcmp(tag, apkt->tag, ctx->mode_params.gcm_info.tag_len) != 0) {
+		/* auth/tag verification fails */
+		apkt->pkt->out_len = 0;
+		ret = -EFAULT;
+	} else {
+		apkt->pkt->out_len = apkt->pkt->in_len;
+	}
+
+	return ret;
+}
+#endif /* STM32_CRYPTO_GCM_CCM_SUPPORTED */
+
 static int crypto_stm32_get_unused_session_index(const struct device *dev)
 {
 	int i;
@@ -365,21 +479,13 @@ static int crypto_stm32_session_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
-	/* The CRYP peripheral supports the AES ECB, CBC, CTR, CCM and GCM
-	 * modes of operation, of which ECB, CBC, CTR and CCM are supported
-	 * through the crypto API. However, in CCM mode, although the STM32Cube
-	 * HAL driver follows the documentation (cf. RM0090, par. 23.3) by
-	 * padding incomplete input data blocks in software prior encryption,
-	 * incorrect authentication tags are returned for input data which is
-	 * not a multiple of 128 bits. Therefore, CCM mode is not supported by
-	 * this driver.
-	 */
-	if ((mode != CRYPTO_CIPHER_MODE_ECB) &&
-	    (mode != CRYPTO_CIPHER_MODE_CBC) &&
-	    (mode != CRYPTO_CIPHER_MODE_CTR)) {
+#ifndef STM32_CRYPTO_GCM_CCM_SUPPORTED
+	if ((mode == CRYPTO_CIPHER_MODE_CCM) ||
+	    (mode == CRYPTO_CIPHER_MODE_GCM)) {
 		LOG_ERR("Unsupported mode");
 		return -EINVAL;
 	}
+#endif /* STM32_CRYPTO_GCM_CCM_SUPPORTED */
 
 	/* The STM32F4 CRYP peripheral supports key sizes of 128, 192 and 256
 	 * bits.
@@ -447,6 +553,12 @@ static int crypto_stm32_session_setup(const struct device *dev,
 #endif
 			ctx->ops.ctr_crypt_hndlr = crypto_stm32_ctr_encrypt;
 			break;
+#ifdef STM32_CRYPTO_GCM_CCM_SUPPORTED
+		case CRYPTO_CIPHER_MODE_GCM:
+			session->config.Algorithm = CRYP_AES_GCM;
+			ctx->ops.gcm_crypt_hndlr = crypto_stm32_gcm_encrypt;
+			break;
+#endif /* STM32_CRYPTO_GCM_CCM_SUPPORTED */
 		default:
 			return -EINVAL;
 		}
@@ -470,6 +582,12 @@ static int crypto_stm32_session_setup(const struct device *dev,
 #endif
 			ctx->ops.ctr_crypt_hndlr = crypto_stm32_ctr_decrypt;
 			break;
+#ifdef STM32_CRYPTO_GCM_CCM_SUPPORTED
+		case CRYPTO_CIPHER_MODE_GCM:
+			session->config.Algorithm = CRYP_AES_GCM;
+			ctx->ops.gcm_crypt_hndlr = crypto_stm32_gcm_decrypt;
+			break;
+#endif /* STM32_CRYPTO_GCM_CCM_SUPPORTED */
 		default:
 			return -EINVAL;
 		}
