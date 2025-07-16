@@ -82,6 +82,15 @@ Display
   This has now been fixed. Boards and applications that were tested or developed based on the
   previous sample may be affected by this change (see :github:`79996` for more information).
 
+PTP Clock
+*********
+
+* The doc of :c:func:`ptp_clock_rate_adjust` API didn't provide proper and clear function description.
+  Drivers implemented it to adjust rate ratio relatively based on current frequency.
+  Now PI servo is introduced in both PTP and gPTP, and this API function is changed to use for rate
+  ratio adjusting based on nominal frequency. Drivers implementing :c:func:`ptp_clock_rate_adjust`
+  should be adjusted to account for the new behavior.
+
 Other subsystems
 ****************
 
