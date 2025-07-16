@@ -28,6 +28,17 @@ config WS2812_STRIP_SPI_FORCE_NOCACHE
 
 endif
 
+config WS2812_STRIP_UART
+	bool "WS2812 LED strip UART driver"
+	default y
+	depends on DT_HAS_WORLDSEMI_WS2812_UART_ENABLED
+	select UART
+	select UART_ASYNC_API
+	help
+	  Enable driver for WS2812 (and compatibles) LED strip using UART.
+	  This method requires a high-speed UART and carefully crafted
+	  byte frames to meet the strict WS2812 timing protocol.
+
 config WS2812_STRIP_I2S
 	bool "WS2812 LED strip I2S driver"
 	default y
