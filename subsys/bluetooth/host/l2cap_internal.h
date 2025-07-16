@@ -125,6 +125,9 @@ struct bt_l2cap_le_credits {
 	uint16_t credits;
 } __packed;
 
+#define BT_L2CAP_ECRED_CREDITS_MIN      1
+#define BT_L2CAP_ECRED_CREDITS_MAX      UINT16_MAX
+
 #define BT_L2CAP_ECRED_CONN_REQ         0x17
 struct bt_l2cap_ecred_conn_req {
 	uint16_t psm;
