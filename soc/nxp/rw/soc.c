@@ -17,9 +17,17 @@
 #include <fsl_clock.h>
 #include <fsl_common.h>
 #include <fsl_device_registers.h>
+#include <fsl_io_mux.h>
 #include "soc.h"
 #include "flexspi_clock_setup.h"
 #include "fsl_ocotp.h"
+
+#define NON_AON_PINS_START      0
+#define NON_AON_PINS_BREAK      21
+#define NON_AON_PINS_RESTART    28
+#define NON_AON_PINS_END        63
+#define RF_CNTL_PINS_START      0
+#define RF_CNTL_PINS_END        3
 
 extern void nxp_nbu_init(void);
 #ifdef CONFIG_NXP_RW6XX_BOOT_HEADER
@@ -325,6 +333,20 @@ void soc_early_init_hook(void)
 #endif
 #if CONFIG_PM
 	nxp_rw6xx_power_init();
+
+	int32_t i;
+	/* Set all non-AON pins output low level in sleep mode. */
+	for (i = NON_AON_PINS_START; i <= NON_AON_PINS_BREAK; i++) {
+		IO_MUX_SetPinOutLevelInSleep(i, IO_MUX_SleepPinLevelLow);
+	}
+	for (i = NON_AON_PINS_RESTART; i <= NON_AON_PINS_END; i++) {
+		IO_MUX_SetPinOutLevelInSleep(i, IO_MUX_SleepPinLevelLow);
+	}
+
+	/* Set RF_CNTL 0-3 output low level in sleep mode. */
+	for (i = RF_CNTL_PINS_START; i <= RF_CNTL_PINS_END; i++) {
+		IO_MUX_SetRfPinOutLevelInSleep(i, IO_MUX_SleepPinLevelLow);
+	}
 #endif
 
 #if defined(CONFIG_BT) || defined(CONFIG_IEEE802154)
