@@ -446,6 +446,22 @@
 		status = "disabled";
 	};
 
+	edma4_2: edma@42000000 {
+		compatible = "nxp,mcux-edma";
+		nxp,version = <4>;
+		no-error-irq;
+		dma-requests = <159>;
+		reg = <0x42000000 0x400000>;
+		dma-channels = <4>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 128 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_SPI 128 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_SPI 129 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_SPI 129 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		#dma-cells = <2>;
+		status = "disabled";
+	};
+
 	sai3: dai@42660000 {
 		compatible = "nxp,dai-sai";
 		reg = <0x42660000 DT_SIZE_K(64)>;
@@ -457,6 +473,24 @@
 		dai-index = <3>;
 		dmas = <&edma4 0 60>, <&edma4 1 61>;
 		dma-names = "tx", "rx";
+		status = "disabled";
+	};
+
+	sai3_2: sai@42660000 {
+		compatible = "nxp,mcux-i2s";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x42660000 DT_SIZE_K(64)>;
+		clocks = <&ccm IMX_CCM_SAI3_CLK 0x0 0x0>;
+		clock-names = "mclk1";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 171 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		dma-names = "tx", "rx";
+		dmas = <&edma4_2 2 60>, <&edma4_2 3 61>;
+		nxp,tx-channel = <1>;
+		nxp,tx-dma-channel = <2>;
+		nxp,rx-dma-channel = <3>;
+		nxp,rx-sync-mode;
 		status = "disabled";
 	};
 
