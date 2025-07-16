@@ -265,7 +265,9 @@ struct flash_flexspi_hyperflash_data {
 	struct device controller;
 	flexspi_device_config_t config;
 	flexspi_port_t port;
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	struct flash_pages_layout layout;
+#endif
 	struct flash_parameters flash_parameters;
 };
 
@@ -613,7 +615,7 @@ static const struct flash_parameters *flash_flexspi_hyperflash_get_parameters(
 	return &data->flash_parameters;
 }
 
-
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
 static void flash_flexspi_hyperflash_pages_layout(const struct device *dev,
 		const struct flash_pages_layout **layout,
 		size_t *layout_size)
@@ -623,6 +625,7 @@ static void flash_flexspi_hyperflash_pages_layout(const struct device *dev,
 	*layout = &data->layout;
 	*layout_size = 1;
 }
+#endif
 
 static int flash_flexspi_hyperflash_init(const struct device *dev)
 {
@@ -711,11 +714,12 @@ static DEVICE_API(flash, flash_flexspi_hyperflash_api) = {
 		flash_flexspi_hyperflash_data_##n = {			\
 		.config = FLASH_FLEXSPI_DEVICE_CONFIG(n),		\
 		.port = DT_INST_REG_ADDR(n),				\
-		.layout = {						\
+		IF_ENABLED(CONFIG_FLASH_PAGE_LAYOUT,	\
+		(.layout = {						\
 			.pages_count = DT_INST_PROP(n, size) / 8	\
 				/ SPI_HYPERFLASH_SECTOR_SIZE,		\
 			.pages_size = SPI_HYPERFLASH_SECTOR_SIZE,	\
-		},							\
+		},))							\
 		.flash_parameters = {					\
 			.write_block_size = DT_INST_PROP(n, write_block_size), \
 			.erase_value = HYPERFLASH_ERASE_VALUE,		\
