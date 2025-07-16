@@ -1,8 +1,7 @@
 name: Code Coverage with codecov
 
 on:
-  schedule:
-    - cron: '25 06,18 * * *'
+  dispatch
 
 permissions:
   contents: read
@@ -13,25 +12,17 @@ concurrency:
 
 jobs:
   codecov:
-    if: github.repository_owner == 'zephyrproject-rtos'
-    runs-on:
-      group: zephyr-runner-v2-linux-x64-4xlarge
+    runs-on: ubuntu-24.04
     container:
       image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.28.1.20250624
       options: '--entrypoint /bin/bash'
     strategy:
       fail-fast: false
       matrix:
-        platform: ["mps2/an385", "native_sim", "qemu_x86", "unit_testing"]
+        platform: ["native_sim"]
         include:
-          - platform: 'mps2/an385'
-            normalized: 'mps2_an385'
           - platform: 'native_sim'
             normalized: 'native_sim'
-          - platform: 'qemu_x86'
-            normalized: 'qemu_x86'
-          - platform: 'unit_testing'
-            normalized: 'unit_testing'
     env:
       CCACHE_DIR: /node-cache/ccache-zephyr
       CCACHE_REMOTE_STORAGE: "redis://cache-*.keydb-cache.svc.cluster.local|shards=1,2,3"
@@ -110,7 +101,7 @@ jobs:
           ./scripts/twister \
             -i --force-color -N -v --filter runnable -p ${{ matrix.platform }} --coverage \
             -T tests --coverage-tool gcovr -xCONFIG_TEST_EXTRA_STACK_SIZE=4096 -e nano \
-            --timeout-multiplier 2
+            --timeout-multiplier 2 --coverage-per-instance
 
       - name: Print ccache stats
         if: always()
@@ -121,6 +112,20 @@ jobs:
         if: always()
         run: |
           mv twister-out/coverage.json coverage/reports/${{matrix.normalized}}.json
+          DEST_DIR="coverage/individual"
+
+          # Create the destination directory if it doesn't exist
+          mkdir -p "$DEST_DIR"
+
+          # Find all coverage.json files and copy them with new names
+          find . -type f -name "coverage.json" | while read -r file; do
+            echo $(basename "$(dirname "$file")")
+            parent_dir=$(basename "$(dirname "$file")")
+            cp "$file" "$DEST_DIR/${parent_dir}.json"
+          done
+
+          echo "All coverage.json files have been copied to $DEST_DIR."
+
 
       - name: Upload Coverage Results
         if: always()
@@ -130,112 +135,4 @@ jobs:
           path: |
             coverage/reports/${{ matrix.normalized }}.json
             ${{ matrix.normalized }}-testplan.json
-
-  codecov-results:
-    name: "Publish Coverage Results"
-    needs: codecov
-    runs-on: ubuntu-24.04
-    # the codecov job might be skipped, we don't need to run this job then
-    if: success() || failure()
-
-    steps:
-      - name: checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          fetch-depth: 0
-
-      - name: Set up Python
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
-        with:
-          python-version: 3.12
-          cache: pip
-          cache-dependency-path: scripts/requirements-actions.txt
-
-      - name: Install Python packages
-        run: |
-          pip install -r scripts/requirements-actions.txt --require-hashes
-
-      - name: Download Artifacts
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          path: coverage/reports
-
-      - name: Move coverage files
-        run: |
-          ls -lRt  ./coverage/reports
-          mv ./coverage/reports/*/*testplan.json .
-          mv ./coverage/reports/*/coverage/reports/*.json ./coverage/reports
-          ls -la ./coverage/reports
-
-      - name: Generate list of coverage files
-        id: get-coverage-files
-        shell: cmake -P {0}
-        run: |
-          file(GLOB INPUT_FILES_LIST  "coverage/reports/*.json")
-          set(MERGELIST "")
-          set(FILELIST "")
-          foreach(ITEM ${INPUT_FILES_LIST})
-            get_filename_component(f ${ITEM} NAME)
-            if(FILELIST STREQUAL "")
-              set(FILELIST "${f}")
-            else()
-              set(FILELIST "${FILELIST},${f}")
-            endif()
-          endforeach()
-          foreach(ITEM ${INPUT_FILES_LIST})
-            get_filename_component(f ${ITEM} NAME)
-            if(MERGELIST STREQUAL "")
-              set(MERGELIST "--add-tracefile ${f}")
-            else()
-              set(MERGELIST "${MERGELIST} -a ${f}")
-            endif()
-          endforeach()
-          file(APPEND $ENV{GITHUB_OUTPUT} "mergefiles=${MERGELIST}\n")
-          file(APPEND $ENV{GITHUB_OUTPUT} "covfiles=${FILELIST}\n")
-
-      - name: Merge coverage files
-        run: |
-          pushd ./coverage/reports
-          gcovr ${{ steps.get-coverage-files.outputs.mergefiles }}  --merge-mode-functions=separate --json merged.json
-          gcovr ${{ steps.get-coverage-files.outputs.mergefiles }} --merge-mode-functions=separate --cobertura merged.xml
-          popd
-
-      - name: Get current date
-        id: run_date
-        run: |
-            echo "run_date=$(date --iso-8601=minutes)" >> "$GITHUB_OUTPUT"
-            echo "run_date_short=$(date +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
-            echo "run_date_year=$(date +'%Y')" >> "$GITHUB_OUTPUT"
-            echo "run_date_month=$(date +'%m')" >> "$GITHUB_OUTPUT"
-
-      - name: Generate Coverage Report
-        if: always()
-        run: |
-          python3 ./scripts/ci/coverage/coverage_analysis.py \
-            -t native_sim-testplan.json \
-            -m MAINTAINERS.yml \
-            -c coverage/reports/merged.json \
-            -o coverage-report-${{ steps.run_date.outputs.run_date_short }} \
-            -f all
-          cp coverage-report-* coverage/reports/
-
-      - name: Upload Merged Coverage Results and Report
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: Coverage Data and report
-          path: |
-            coverage/reports/merged.json
-            coverage/reports/merged.xml
-            coverage/reports/coverage-report-${{ steps.run_date.outputs.run_date_short }}.json
-            coverage/reports/coverage-report-${{ steps.run_date.outputs.run_date_short }}.xlsx
-
-      - name: Upload coverage to Codecov
-        if: always()
-        uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5.4.3
-        with:
-          env_vars: OS,PYTHON
-          fail_ci_if_error: false
-          verbose: true
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: coverage/reports/merged.xml
+            coverage/individual
