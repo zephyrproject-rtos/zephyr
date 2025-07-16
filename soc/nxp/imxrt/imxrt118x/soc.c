@@ -614,6 +614,16 @@ __weak void clock_init(void)
 
 #endif /* CONFIG_IMX_USDHC */
 
+#ifdef CONFIG_COUNTER_MCUX_LPIT
+	/* LPIT1 use BUS_AON, LPIT2 use BUS_WAKEUP, which have been configured */
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpit3), okay)
+	/* Configure LPIT3 using SysPll3Div2 */
+	rootCfg.mux = kCLOCK_LPIT3_ClockRoot_MuxSysPll3Div2;
+	rootCfg.div = 3;
+	CLOCK_SetRootClock(kCLOCK_Root_Lpit3, &rootCfg);
+#endif
+#endif /* CONFIG_COUNTER_MCUX_LPIT */
+
 	/* Keep core clock ungated during WFI */
 	CCM->LPCG[1].LPM0 = 0x33333333;
 	CCM->LPCG[1].LPM1 = 0x33333333;
