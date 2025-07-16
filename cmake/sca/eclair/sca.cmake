@@ -24,6 +24,7 @@ endif()
 
 # ECLAIR Settings
 set(ECLAIR_PROJECT_NAME "Zephyr-${BOARD}${BOARD_QUALIFIERS}")
+set(ECLAIR_PROJECT_ROOT "${ZEPHYR_BASE}")
 set(ECLAIR_OUTPUT_DIR "${CMAKE_BINARY_DIR}/sca/eclair")
 set(ECLAIR_ECL_DIR "${ZEPHYR_BASE}/cmake/sca/eclair/ECL")
 set(ECLAIR_ANALYSIS_ECL_DIR "${ZEPHYR_BASE}/cmake/sca/eclair/ECL")
@@ -112,12 +113,15 @@ if (ECLAIR_FULL_HTL)
   list(APPEND ECLAIR_REPORT_ADDITIONAL_OPTIONS "-full_html=${ECLAIR_OUTPUT_DIR}/report_full_html")
 endif()
 
-message(STATUS "ECLAIR outputs have been written to: ${ECLAIR_OUTPUT_DIR}")
-message(STATUS "ECLAIR ECB files have been written to: ${ECLAIR_ANALYSIS_DATA_DIR}")
+message(STATUS "ECLAIR project name: ${ECLAIR_PROJECT_NAME}")
+message(STATUS "ECLAIR project root is: ${ECLAIR_PROJECT_ROOT}")
+message(STATUS "ECLAIR outputs will be written to: ${ECLAIR_OUTPUT_DIR}")
+message(STATUS "ECLAIR ECB files will be written to: ${ECLAIR_ANALYSIS_DATA_DIR}")
 
 list(APPEND ECLAIR_CLEAN_ARGS
                         +clean
-                        -project_name=${ECLAIR_PROJECT_NAME} -project_root=${ZEPHYR_BASE}
+                        -project_name=${ECLAIR_PROJECT_NAME}
+                        -project_root=${ECLAIR_PROJECT_ROOT}
                         -eval_file=${ECLAIR_ECL_DIR}/analysis.ecl
                         -eval_file=${ECLAIR_ANALYSIS_ECL_DIR}/analysis_${ECLAIR_RULESET}.ecl
                         ${ECLAIR_ENV_ADDITIONAL_OPTIONS})
@@ -142,7 +146,8 @@ set(CMAKE_C_COMPILER_LAUNCHER ${launch_environment} CACHE INTERNAL "")
 
 list(APPEND ECLAIR_PROJECT_ARGS
                         +project
-                        -project_name=${ECLAIR_PROJECT_NAME} -project_root=${ZEPHYR_BASE}
+                        -project_name=${ECLAIR_PROJECT_NAME}
+                        -project_root=${ECLAIR_PROJECT_ROOT}
                         -eval_file=${ECLAIR_ECL_DIR}/analysis.ecl
                         -eval_file=${ECLAIR_ANALYSIS_ECL_DIR}/analysis_${ECLAIR_RULESET}.ecl
                         ${ECLAIR_ENV_ADDITIONAL_OPTIONS})
