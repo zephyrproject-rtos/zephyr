@@ -2,4 +2,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_FRDM_RW612
-	select SOC_PART_NUMBER_RW612ETA2I
+	select SOC_PART_NUMBER_RW610ETA2I
