@@ -4902,6 +4902,7 @@ West:
     - mbolivar
     - carlescufi
     - swinslow
+    - marc-hb
   files:
     - scripts/west-commands.yml
     - scripts/west_commands/
