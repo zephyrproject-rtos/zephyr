@@ -1259,6 +1259,22 @@ int mtp_commands_handler(struct mtp_context *ctx, struct net_buf *buf_in, struct
 		return buf_resp->len;
 	}
 
+	if (buf_in == NULL) {
+		LOG_ERR("%s: NULL Buffer", __func__);
+		LOG_ERR("session_opened: %d", ctx->session_opened);
+		LOG_ERR("transaction_id: %u", ctx->transaction_id);
+		LOG_ERR("max_packet_size: %u", ctx->max_packet_size);
+		LOG_ERR("transfer_state.file: %p", &ctx->transfer_state.file);
+		LOG_ERR("transfer_state.filepath: %s", ctx->transfer_state.filepath);
+		LOG_ERR("transfer_state.total_size: %u", ctx->transfer_state.total_size);
+		LOG_ERR("transfer_state.transferred: %u", ctx->transfer_state.transferred);
+		LOG_ERR("transfer_state.chunks_sent: %u", ctx->transfer_state.chunks_sent);
+		LOG_ERR("transfer_state.storage_id: %u", ctx->transfer_state.storage_id);
+		LOG_ERR("op_state.phase: %d", ctx->op_state.phase);
+		LOG_ERR("op_state.code: %d", ctx->op_state.code);
+		__ASSERT(false, "mtp_commands_handler: NULL Buffer");
+	}
+
 	ctx->op_state.code = mtp_command->hdr.code;
 	LOG_DBG(GREEN "[%s]" RESET, mtp_code_to_string(mtp_command->hdr.code));
 
