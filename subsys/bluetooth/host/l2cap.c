@@ -1475,11 +1475,6 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 
 	LOG_DBG("psm 0x%02x scid 0x%04x mtu %u mps %u credits %u", psm, scid, mtu, mps, credits);
 
-	if (mtu < L2CAP_LE_MIN_MTU || mps < L2CAP_LE_MIN_MPS) {
-		LOG_ERR("Invalid LE-Conn Req params: mtu %u mps %u", mtu, mps);
-		return;
-	}
-
 	buf = l2cap_create_le_sig_pdu(BT_L2CAP_LE_CONN_RSP, ident,
 				      sizeof(*rsp));
 	if (!buf) {
@@ -1488,6 +1483,16 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 
 	rsp = net_buf_add(buf, sizeof(*rsp));
 	(void)memset(rsp, 0, sizeof(*rsp));
+
+	/* Validate parameters. Requirements are from Core Spec v6.0, Vol 3.A.4.22. Valid credit
+	 * range is from 0 to UINT16_MAX, thus no credit validation is needed.
+	 */
+	if (!IN_RANGE(mtu, L2CAP_LE_MIN_MTU, BT_L2CAP_MAX_MTU) ||
+	    !IN_RANGE(mps, L2CAP_LE_MIN_MPS, BT_L2CAP_MAX_MPS)) {
+		LOG_ERR("Invalid le conn req params: mtu %u mps %u", mtu, mps);
+		result = BT_L2CAP_LE_ERR_UNACCEPT_PARAMS;
+		goto rsp;
+	}
 
 	/* Check if there is a server registered */
 	server = bt_l2cap_server_lookup_psm(psm);
@@ -1574,8 +1579,12 @@ static void le_ecred_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 
 	LOG_DBG("psm 0x%02x mtu %u mps %u credits %u", psm, mtu, mps, credits);
 
-	if (mtu < BT_L2CAP_ECRED_MIN_MTU || mps < BT_L2CAP_ECRED_MIN_MPS) {
-		LOG_ERR("Invalid ecred conn req params. mtu %u mps %u", mtu, mps);
+	/* Validate parameters. Requirements are from Core Spec v6.0, Vol 3.A.4.25. */
+	if (!IN_RANGE(mtu, BT_L2CAP_ECRED_MIN_MTU, BT_L2CAP_MAX_MTU) ||
+	    !IN_RANGE(mps, BT_L2CAP_ECRED_MIN_MPS, BT_L2CAP_MAX_MPS) ||
+	    !IN_RANGE(credits, BT_L2CAP_ECRED_CREDITS_MIN, BT_L2CAP_ECRED_CREDITS_MAX)) {
+		LOG_ERR("Invalid le ecred conn req params: mtu %u mps %u credits %u", mtu, mps,
+			credits);
 		result = BT_L2CAP_LE_ERR_INVALID_PARAMS;
 		goto response;
 	}
@@ -1978,13 +1987,24 @@ static void le_ecred_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 
 			LOG_DBG("dcid 0x%04x", dcid);
 
-			/* If a Destination CID is 0x0000, the channel was not
+			/* Validate parameters before assignment. Requirements are from Core Spec
+			 * v6.0, Vol 3.A.4.26. If a Destination CID is 0x0000, the channel was not
 			 * established.
 			 */
-			if (!dcid) {
+			if (dcid == 0U) {
 				bt_l2cap_chan_remove(conn, &chan->chan);
 				bt_l2cap_chan_del(&chan->chan);
 				continue;
+			} else if (!L2CAP_LE_CID_IS_DYN(dcid) ||
+				   !IN_RANGE(mtu, BT_L2CAP_ECRED_MIN_MTU, BT_L2CAP_MAX_MTU) ||
+				   !IN_RANGE(mps, BT_L2CAP_ECRED_MIN_MPS, BT_L2CAP_MAX_MPS) ||
+				   !IN_RANGE(credits, BT_L2CAP_ECRED_CREDITS_MIN,
+					     BT_L2CAP_ECRED_CREDITS_MAX)) {
+				LOG_WRN("Invalid ecred conn rsp params: dcid 0x%04x mtu %u mps %u "
+					"credits %u. Disconnecting.",
+					dcid, mtu, mps, credits);
+				bt_conn_disconnect(conn, BT_HCI_ERR_UNACCEPT_CONN_PARAM);
+				return;
 			}
 
 			c = bt_l2cap_le_lookup_tx_cid(conn, dcid);
@@ -2082,6 +2102,20 @@ static void le_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 
 	switch (result) {
 	case BT_L2CAP_LE_SUCCESS:
+		/* Validate parameters on successful connection. Requirements are from Core Spec
+		 * v6.0, Vol 3.A.4.23. Valid credit range is from 0 to UINT16_MAX, thus no credit
+		 * validation is needed.
+		 */
+		if ((!L2CAP_LE_CID_IS_DYN(dcid) ||
+		     !IN_RANGE(mtu, L2CAP_LE_MIN_MTU, BT_L2CAP_MAX_MTU) ||
+		     !IN_RANGE(mps, L2CAP_LE_MIN_MPS, BT_L2CAP_MAX_MPS))) {
+			LOG_WRN("Invalid conn rsp params: dcid 0x%04x mtu %u mps %u. "
+				"Disconnecting.",
+				dcid, mtu, mps);
+			bt_conn_disconnect(conn, BT_HCI_ERR_UNACCEPT_CONN_PARAM);
+			return;
+		}
+
 		chan->tx.cid = dcid;
 		chan->tx.mtu = mtu;
 		chan->tx.mps = mps;
