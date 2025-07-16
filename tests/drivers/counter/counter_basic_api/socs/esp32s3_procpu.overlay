@@ -1,4 +1,4 @@
-&timer3 {
+&timer0 {
 	status = "okay";
 	counter {
 		status = "okay";
