@@ -1192,7 +1192,7 @@ static int setup_pages_layout(const struct device *dev)
 		return -ENOTSUP;
 	}
 
-	uint32_t erase_size = BIT(exp) << STM32_QSPI_DOUBLE_FLASH;
+	uint32_t erase_size = BIT(exp);
 
 	/* We need layout page size to be compatible with erase size */
 	if ((layout_page_size % erase_size) != 0) {
@@ -1364,6 +1364,13 @@ static int spi_nor_process_bfp(const struct device *dev,
 	memset(data->erase_types, 0, sizeof(data->erase_types));
 	for (uint8_t ti = 1; ti <= ARRAY_SIZE(data->erase_types); ++ti) {
 		if (jesd216_bfp_erase(bfp, ti, etp) == 0) {
+			/* In dual-flash mode, the erase size is doubled since each erase operation
+			 * is executed on both flash memories.
+			 */
+			if (IS_ENABLED(STM32_QSPI_DOUBLE_FLASH)) {
+				etp->exp++;
+			}
+
 			LOG_DBG("Erase %u with %02x",
 					(uint32_t)BIT(etp->exp), etp->cmd);
 		}
