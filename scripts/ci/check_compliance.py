@@ -1816,7 +1816,7 @@ class KeepSorted(ComplianceTest):
 
     MARKER = "zephyr-keep-sorted"
 
-    def block_check_sorted(self, block_data, *, regex, strip):
+    def block_check_sorted(self, block_data, *, regex, strip, fold):
         def _test_indent(txt: str):
             return txt.startswith((" ", "\t"))
 
@@ -1842,9 +1842,10 @@ class KeepSorted(ComplianceTest):
                 if strip is not None:
                     line = line.strip(strip)
 
-                # Fold back indented lines after the current one
-                for cont in takewhile(_test_indent, lines[idx + 1:]):
-                    line += cont.strip()
+                if fold:
+                    # Fold back indented lines after the current one
+                    for cont in takewhile(_test_indent, lines[idx + 1:]):
+                        line += cont.strip()
 
             if line < last:
                 return idx
@@ -1866,9 +1867,11 @@ class KeepSorted(ComplianceTest):
         stop_marker = f"{self.MARKER}-stop"
         regex_marker = r"re\((.+)\)"
         strip_marker = r"strip\((.+)\)"
+        nofold_marker = "nofold"
         start_line = 0
         regex = None
         strip = None
+        fold = True
 
         for line_num, line in enumerate(fp.readlines(), start=1):
             if start_marker in line:
@@ -1886,6 +1889,8 @@ class KeepSorted(ComplianceTest):
 
                 match = re.search(strip_marker, line)
                 strip = match.group(1) if match else None
+
+                fold = nofold_marker not in line
             elif stop_marker in line:
                 if not in_block:
                     desc = f"{stop_marker} without {start_marker}"
@@ -1893,7 +1898,7 @@ class KeepSorted(ComplianceTest):
                                      desc=desc)
                 in_block = False
 
-                idx = self.block_check_sorted(block_data, regex=regex, strip=strip)
+                idx = self.block_check_sorted(block_data, regex=regex, strip=strip, fold=fold)
                 if idx >= 0:
                     desc = f"sorted block has out-of-order line at {start_line + idx}"
                     self.fmtd_failure("error", "KeepSorted", file, line_num,
