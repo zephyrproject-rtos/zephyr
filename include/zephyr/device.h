@@ -1260,7 +1260,7 @@ device_get_dt_nodelabels(const struct device *dev)
 #define Z_DEVICE_INIT_ENTRY_DEFINE(node_id, dev_id, level, prio)                                   \
 	Z_DEVICE_CHECK_INIT_LEVEL(level)                                                           \
                                                                                                    \
-	static const Z_DECL_ALIGN(struct init_entry) __used __noasan Z_INIT_ENTRY_SECTION(         \
+	static const Z_DECL_ALIGN(union init_entry) __used __noasan Z_INIT_ENTRY_SECTION(          \
 		level, prio, Z_DEVICE_INIT_SUB_PRIO(node_id))                                      \
 		Z_INIT_ENTRY_NAME(DEVICE_NAME_GET(dev_id)) = {                                     \
 			.dev = (const struct device *)&DEVICE_NAME_GET(dev_id),                    \

@@ -24,8 +24,8 @@ void __weak sys_trace_thread_priority_set_user(struct k_thread *thread, int prio
 void __weak sys_trace_isr_enter_user(void) {}
 void __weak sys_trace_isr_exit_user(void) {}
 void __weak sys_trace_idle_user(void) {}
-void __weak sys_trace_sys_init_enter_user(const struct init_entry *entry, int level) {}
-void __weak sys_trace_sys_init_exit_user(const struct init_entry *entry, int level, int result) {}
+void __weak sys_trace_sys_init_enter_user(const union init_entry *entry, int level) {}
+void __weak sys_trace_sys_init_exit_user(const union init_entry *entry, int level, int result) {}
 void __weak sys_trace_gpio_pin_interrupt_configure_enter_user(const struct device *port,
 							      gpio_pin_t pin, gpio_flags_t flags) {}
 void __weak sys_trace_gpio_pin_interrupt_configure_exit_user(const struct device *port,
@@ -157,12 +157,12 @@ void sys_trace_idle_exit(void)
 	}
 }
 
-void sys_trace_sys_init_enter(const struct init_entry *entry, int level)
+void sys_trace_sys_init_enter(const union init_entry *entry, int level)
 {
 	sys_trace_sys_init_enter_user(entry, level);
 }
 
-void sys_trace_sys_init_exit(const struct init_entry *entry, int level, int result)
+void sys_trace_sys_init_exit(const union init_entry *entry, int level, int result)
 {
 	sys_trace_sys_init_exit_user(entry, level, result);
 }

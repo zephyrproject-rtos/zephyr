@@ -52,7 +52,7 @@ extern "C" {
 struct device;
 
 /**
- * @brief Structure to store initialization entry information.
+ * @brief Type to store initialization entry information.
  *
  * @internal
  * Init entries need to be defined following these rules:
@@ -65,16 +65,14 @@ struct device;
  * See SYS_INIT_NAMED() for an example.
  * @endinternal
  */
-struct init_entry {
+union init_entry {
 	/**
 	 * An init entry can be about a device or a service, _init_object
 	 * will be used to differentiate depending on relative sections.
 	 */
-	union {
-		const void *_init_object;
-		const struct device *dev;
-		const struct service *srv;
-	};
+	const void *_init_object;
+	const struct device *dev;
+	const struct service *srv;
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -166,7 +164,7 @@ struct init_entry {
  */
 #define SYS_INIT_NAMED(name, init_fn_, level, prio)                                       \
 	Z_SERVICE_DEFINE(name, init_fn_, level, prio);                                    \
-	static const Z_DECL_ALIGN(struct init_entry)                                      \
+	static const Z_DECL_ALIGN(union init_entry)                                      \
 		Z_INIT_ENTRY_SECTION(level, prio, 0) __used __noasan                      \
 		Z_INIT_ENTRY_NAME(name) = {                                               \
 			.srv = (const struct service *)&Z_SERVICE_NAME_GET(name)          \

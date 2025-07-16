@@ -113,13 +113,13 @@ static void z_init_static_threads(void)
 #define z_init_static_threads() do { } while (false)
 #endif /* CONFIG_MULTITHREADING */
 
-extern const struct init_entry __init_start[];
-extern const struct init_entry __init_EARLY_start[];
-extern const struct init_entry __init_PRE_KERNEL_1_start[];
-extern const struct init_entry __init_PRE_KERNEL_2_start[];
-extern const struct init_entry __init_POST_KERNEL_start[];
-extern const struct init_entry __init_APPLICATION_start[];
-extern const struct init_entry __init_end[];
+extern const union init_entry __init_start[];
+extern const union init_entry __init_EARLY_start[];
+extern const union init_entry __init_PRE_KERNEL_1_start[];
+extern const union init_entry __init_PRE_KERNEL_2_start[];
+extern const union init_entry __init_POST_KERNEL_start[];
+extern const union init_entry __init_APPLICATION_start[];
+extern const union init_entry __init_end[];
 
 enum init_level {
 	INIT_LEVEL_EARLY = 0,
@@ -133,7 +133,7 @@ enum init_level {
 };
 
 #ifdef CONFIG_SMP
-extern const struct init_entry __init_SMP_start[];
+extern const union init_entry __init_SMP_start[];
 #endif /* CONFIG_SMP */
 
 TYPE_SECTION_START_EXTERN(struct service, service);
@@ -359,7 +359,7 @@ static inline bool is_entry_about_service(const void *obj)
  */
 static void z_sys_init_run_level(enum init_level level)
 {
-	static const struct init_entry *levels[] = {
+	static const union init_entry *levels[] = {
 		__init_EARLY_start,
 		__init_PRE_KERNEL_1_start,
 		__init_PRE_KERNEL_2_start,
@@ -371,7 +371,7 @@ static void z_sys_init_run_level(enum init_level level)
 		/* End marker */
 		__init_end,
 	};
-	const struct init_entry *entry;
+	const union init_entry *entry;
 
 	for (entry = levels[level]; entry < levels[level+1]; entry++) {
 		int result = 0;
