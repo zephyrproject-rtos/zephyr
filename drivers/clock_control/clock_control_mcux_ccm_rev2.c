@@ -256,7 +256,25 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		clock_root = kCLOCK_Root_Bus + instance;
 		break;
 #endif
-
+#ifdef CONFIG_COUNTER_MCUX_LPIT
+#if defined(CONFIG_SOC_SERIES_IMXRT118X)
+	case IMX_CCM_LPIT_CLK:
+		switch (instance) {
+		case 0:
+			clock_root = kCLOCK_Root_Bus_Aon;
+			break;
+		case 1:
+			clock_root = kCLOCK_Root_Bus_Wakeup;
+			break;
+		case 2:
+			clock_root = kCLOCK_Root_Lpit3;
+			break;
+		default:
+			return -EINVAL;
+		}
+		break;
+#endif
+#endif
 #ifdef CONFIG_ADC_MCUX_LPADC
 	case IMX_CCM_LPADC1_CLK:
 		clock_root = kCLOCK_Root_Adc1 + instance;
