@@ -75,6 +75,12 @@ Display
   This has now been fixed. Boards and applications that were tested or developed based on the
   previous sample may be affected by this change (see :github:`79996` for more information).
 
+PTP Clock
+*********
+
+* Changed the function of :c:func:`ptp_clock_rate_adjust` API for general ratio adjustment
+  based on nominal frequency, but not for only gPTP neighbor ratio adjustment.
+
 Other subsystems
 ****************
 
