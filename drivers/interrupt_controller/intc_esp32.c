@@ -866,7 +866,7 @@ void IRAM_ATTR esp_intr_noniram_disable(void)
 	unsigned int key = irq_lock();
 	int oldint;
 	int cpu = esp_cpu_get_core_id();
-	int non_iram_ints = ~non_iram_int_mask[cpu];
+	int non_iram_ints = non_iram_int_mask[cpu];
 
 	if (non_iram_int_disabled_flag[cpu]) {
 		abort();
