@@ -287,6 +287,11 @@ config USE_RZ_FSP_SCI_UART
 	help
 	  Enable RZ FSP SCI UART driver
 
+config USE_RZ_FSP_MTU
+	bool
+	help
+	  Enable RZ FSP MTU driver
+
 endif
 
 config HAS_RENESAS_RX_RDP
