@@ -25,7 +25,7 @@ int main(void)
 	printf("MAX30210 device is ready: %s\n", max30210_dev->name);
 
 	struct sensor_value temp_sampling_freq = {
-		.val1 = SENSOR_SAMPLING_RATE_MAX30210_2, // Set your desired sampling frequency in Hz
+		.val1 = 2, // Set your desired sampling frequency in Hz
 		.val2 = 0
 	};
 	
