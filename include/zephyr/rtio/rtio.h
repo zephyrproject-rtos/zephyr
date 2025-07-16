@@ -277,9 +277,20 @@ struct rtio_iodev_sqe;
  * @brief Callback signature for RTIO_OP_CALLBACK
  * @param r RTIO context being used with the callback
  * @param sqe Submission for the callback op
- * @param arg0 Argument option as part of the sqe
+ * @param res Result of the previously linked submission.
+ * @param arg0 Pointer to immutable argument option as part of the sqe
  */
-typedef void (*rtio_callback_t)(struct rtio *r, const struct rtio_sqe *sqe, void *arg0);
+typedef void (*rtio_callback_t)(struct rtio *r, const struct rtio_sqe *sqe, int res, const void *arg0);
+
+/**
+ * @typedef rtio_callback_mut_t
+ * @brief Callback signature for RTIO_OP_CALLBACK
+ * @param r RTIO context being used with the callback
+ * @param sqe Submission for the callback op
+ * @param res Result of the previously linked submission.
+ * @param arg0 Pointer to mutable argument option as part of the sqe
+ */
+typedef void (*rtio_callback_mut_t)(struct rtio *r, const struct rtio_sqe *sqe, int res, void *arg0);
 
 /**
  * @typedef rtio_signaled_t
@@ -335,8 +346,14 @@ struct rtio_sqe {
 		/** OP_CALLBACK */
 		struct {
 			rtio_callback_t callback;
-			void *arg0; /**< Last argument given to callback */
+			const void *arg0; /**< Last argument given to callback */
 		} callback;
+
+		/** OP_CALLBACK_MUT */
+		struct {
+			rtio_callback_t callback;
+			void *arg0; /**< Last argument given to callback */
+		} callback_mut;
 
 		/** OP_TXRX */
 		struct {
@@ -556,11 +573,14 @@ struct rtio_iodev {
 /** An operation that transmits tiny writes by copying the data to write */
 #define RTIO_OP_TINY_TX (RTIO_OP_TX+1)
 
-/** An operation that calls a given function (callback) */
+/** An operation that calls a given function (callback) with immutable data */
 #define RTIO_OP_CALLBACK (RTIO_OP_TINY_TX+1)
 
+/** An operation that calls a given function (callback) with mutable data */
+#define RTIO_OP_CALLBACK_MUT (RTIO_OP_CALLBACK+1)
+
 /** An operation that transceives (reads and writes simultaneously) */
-#define RTIO_OP_TXRX (RTIO_OP_CALLBACK+1)
+#define RTIO_OP_TXRX (RTIO_OP_CALLBACK_MUT+1)
 
 /** An operation that takes a specified amount of time (asynchronously) before completing */
 #define RTIO_OP_DELAY (RTIO_OP_TXRX+1)
@@ -693,7 +713,7 @@ static inline void rtio_sqe_prep_tiny_write(struct rtio_sqe *sqe,
  */
 static inline void rtio_sqe_prep_callback(struct rtio_sqe *sqe,
 					  rtio_callback_t callback,
-					  void *arg0,
+					  const void *arg0,
 					  void *userdata)
 {
 	memset(sqe, 0, sizeof(struct rtio_sqe));
@@ -721,6 +741,43 @@ static inline void rtio_sqe_prep_callback_no_cqe(struct rtio_sqe *sqe,
 						 void *userdata)
 {
 	rtio_sqe_prep_callback(sqe, callback, arg0, userdata);
+	sqe->flags |= RTIO_SQE_NO_RESPONSE;
+}
+
+
+/**
+ * @brief Prepare a callback mut op submission
+ *
+ * A somewhat special operation in that it may only be done in kernel mode.
+ *
+ * Used where general purpose logic is required in a queue of io operations to do
+ * transforms or logic with a mutable argument passed to the function
+ */
+static inline void rtio_sqe_prep_callback_mut(struct rtio_sqe *sqe,
+					  rtio_callback_t callback,
+					  void *arg0,
+					  void *userdata)
+{
+	memset(sqe, 0, sizeof(struct rtio_sqe));
+	sqe->op = RTIO_OP_CALLBACK;
+	sqe->prio = 0;
+	sqe->iodev = NULL;
+	sqe->callback.callback = callback;
+	sqe->callback.arg0 = arg0;
+	sqe->userdata = userdata;
+}
+
+/**
+ * @brief Prepare a callback op submission that does not create a CQE
+ *
+ * Similar to @ref rtio_sqe_prep_callback_no_cqe, but the arg0 is mutable.
+ */
+static inline void rtio_sqe_prep_callback_mut_no_cqe(struct rtio_sqe *sqe,
+						 rtio_callback_t callback,
+						 void *arg0,
+						 void *userdata)
+{
+	rtio_sqe_prep_callback_mut(sqe, callback, arg0, userdata);
 	sqe->flags |= RTIO_SQE_NO_RESPONSE;
 }
 

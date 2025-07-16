@@ -15,13 +15,17 @@ LOG_MODULE_REGISTER(rtio_executor, CONFIG_RTIO_LOG_LEVEL);
 /**
  * @brief Executor handled submissions
  */
-static void rtio_executor_op(struct rtio_iodev_sqe *iodev_sqe)
+static void rtio_executor_op(struct rtio_iodev_sqe *iodev_sqe, int last_result)
 {
 	const struct rtio_sqe *sqe = &iodev_sqe->sqe;
 
 	switch (sqe->op) {
 	case RTIO_OP_CALLBACK:
-		sqe->callback.callback(iodev_sqe->r, sqe, sqe->callback.arg0);
+		sqe->callback.callback(iodev_sqe->r, sqe, last_result, sqe->callback.arg0);
+		rtio_iodev_sqe_ok(iodev_sqe, 0);
+		break;
+	case RTIO_OP_CALLBACK_MUT:
+		sqe->callback_mut.callback(iodev_sqe->r, sqe, last_result, sqe->callback.arg0);
 		rtio_iodev_sqe_ok(iodev_sqe, 0);
 		break;
 	case RTIO_OP_DELAY:
@@ -40,7 +44,7 @@ static void rtio_executor_op(struct rtio_iodev_sqe *iodev_sqe)
  *
  * @param iodev_sqe Submission to work on
  */
-static inline void rtio_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
+static inline void rtio_iodev_submit(struct rtio_iodev_sqe *iodev_sqe, int last_result)
 {
 	if (FIELD_GET(RTIO_SQE_CANCELED, iodev_sqe->sqe.flags)) {
 		rtio_iodev_sqe_err(iodev_sqe, -ECANCELED);
@@ -49,7 +53,7 @@ static inline void rtio_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
 
 	/* No iodev means its an executor specific operation */
 	if (iodev_sqe->sqe.iodev == NULL) {
-		rtio_executor_op(iodev_sqe);
+		rtio_executor_op(iodev_sqe, result);
 		return;
 	}
 
@@ -113,7 +117,7 @@ void rtio_executor_submit(struct rtio *r)
 		curr->next = NULL;
 		curr->r = r;
 
-		rtio_iodev_submit(iodev_sqe);
+		rtio_iodev_submit(iodev_sqe, 0);
 
 		node = mpsc_pop(&r->sq);
 	}
@@ -183,7 +187,7 @@ static inline void rtio_executor_done(struct rtio_iodev_sqe *iodev_sqe, int resu
 
 	/* curr should now be the last sqe in the transaction if that is what completed */
 	if (sqe_flags & RTIO_SQE_CHAINED) {
-		rtio_iodev_submit(curr);
+		rtio_iodev_submit(curr, result);
 	}
 }
 
