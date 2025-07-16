@@ -60,7 +60,6 @@ struct eth_stm32_hal_dev_data {
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 	const struct device *ptp_clock;
 	float clk_ratio;
-	float clk_ratio_adj;
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	struct net_stats_eth stats;
