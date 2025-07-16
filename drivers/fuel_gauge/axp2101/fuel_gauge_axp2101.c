@@ -25,8 +25,12 @@ LOG_MODULE_REGISTER(fuel_gauge_axp2101, CONFIG_FUEL_GAUGE_LOG_LEVEL);
 /* registers */
 #define AXP2101_STATUS1			0x00
 	#define BAT_PRESENT_MASK	BIT(3)
+#define AXP2101_STATUS2			0x01
+	#define BAT_CURRENT_DIR		GENMASK(6, 5)
 #define AXP2101_CHARGE_GAUGE_WDT_CTRL	0x18
 	#define GAUGE_ENABLE_MASK	BIT(3)
+#define AXP2101_LOW_BAT_WARN_THR	0x1A
+	#define LOW_BAT_WARN_THR_MASK	GENMASK(7, 4)
 #define AXP2101_ADC_DATA_VBAT_H		0x34
 	#define GAUGE_VBAT_H_MASK	0x1F
 #define AXP2101_ADC_DATA_VBAT_L		0x35
@@ -141,6 +145,48 @@ static int get_bat_voltage(const struct device *dev, union fuel_gauge_prop_val *
 	return 0;
 }
 
+static int get_current_direction(const struct device *dev, union fuel_gauge_prop_val *val)
+{
+	const struct axp2101_config *cfg = dev->config;
+	struct axp2101_data *data = dev->data;
+	uint8_t tmp;
+	int ret;
+
+	if ((data->features & GAUGE_FEATURE_GAUGE) == 0) {
+		return -ENOTSUP;
+	}
+
+	ret = i2c_reg_read_byte_dt(&cfg->i2c, AXP2101_STATUS2, &tmp);
+	if (ret < 0) {
+		return ret;
+	}
+	val->current_direction = FIELD_GET(BAT_CURRENT_DIR, tmp);
+
+	return 0;
+}
+
+static int get_state_of_charge_alarm(const struct device *dev, union fuel_gauge_prop_val *val)
+{
+	const struct axp2101_config *cfg = dev->config;
+	struct axp2101_data *data = dev->data;
+	uint8_t tmp;
+	int ret;
+
+	if ((data->features & GAUGE_FEATURE_GAUGE) == 0) {
+		return -ENOTSUP;
+	}
+
+	ret = i2c_reg_read_byte_dt(&cfg->i2c, AXP2101_LOW_BAT_WARN_THR, &tmp);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* 5 - 20% in 1% step (0000 = 5 ; 0001 = 6 ; etc.) */
+	val->state_of_charge_alarm = FIELD_GET(LOW_BAT_WARN_THR_MASK, tmp) + 5;
+
+	return 0;
+}
+
 static int axp2101_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 			    union fuel_gauge_prop_val *val)
 {
@@ -153,6 +199,10 @@ static int axp2101_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 	case FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE:
 	case FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE:
 		return get_battery_percent(dev, val);
+	case FUEL_GAUGE_CURRENT_DIRECTION:
+		return get_current_direction(dev, val);
+	case FUEL_GAUGE_STATE_OF_CHARGE_ALARM:
+		return get_state_of_charge_alarm(dev, val);
 	default:
 		return -ENOTSUP;
 	}
