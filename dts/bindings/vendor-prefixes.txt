@@ -594,7 +594,7 @@ sancloud	Sancloud Ltd
 sandisk	Sandisk Corporation
 satoz	Satoz International Co., Ltd
 sbs	Smart Battery System
-sc	Space Cubics, LLC
+sc	Space Cubics Inc.
 schindler	Schindler
 sciosense	Sciosense B.V.
 seagate	Seagate Technology PLC
