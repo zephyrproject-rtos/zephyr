@@ -4556,6 +4556,19 @@ Panasonic Platforms:
   labels:
     - "platform: Panasonic"
 
+"Python Tooling: ruff":
+  status: maintained
+  maintainers:
+    - pdgendt
+  collaborators:
+    - kartben
+  files:
+    - .ruff.toml
+    - .ruff-excludes.toml
+    - scripts/ruff/
+  labels:
+    - "area: Python Tooling"
+
 RTIO:
   status: maintained
   maintainers:
