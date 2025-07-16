@@ -1,0 +1,87 @@
+/*
+ * Copyright (c) 2025 Gomaa Eldebaby <gomaaeldebaby2211@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	model = "STM32 Minimum Development Board (Blue)";
+	compatible = "stm32_min_dev_blue", "st,stm32f103c8";
+
+	aliases {
+		pwm-led0 = &pwm_led_0;
+		pwm-led1 = &pwm_led_1;
+		pwm-led2 = &pwm_led_2;
+		pwm-led3 = &pwm_led_3;
+	};
+
+	pwmleds: pwmleds {
+		compatible = "pwm-leds";
+		status = "okay";
+
+		pwm_led_0: pwm_led0 {
+			pwms = <&pwm1 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "PWM LED 0";
+		};
+
+		pwm_led_1: pwm_led1 {
+			pwms = <&pwm1 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "PWM LED 1";
+		};
+
+		pwm_led_2: pwm_led2 {
+			pwms = <&pwm2 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "PWM LED 2";
+		};
+
+		pwm_led_3: pwm_led3 {
+			pwms = <&pwm2 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "PWM LED 3";
+		};
+	};
+};
+
+&timers1 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm1: pwm {
+		pinctrl-0 = <&tim1_ch1_pwm_out_pa8 &tim1_ch2_pwm_out_pa9>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+&timers2 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm2: pwm {
+		pinctrl-0 = <&tim2_ch1_pwm_out_pa0 &tim2_ch2_pwm_out_pa1>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+&tim1_ch1_pwm_out_pa8{
+	slew-rate = "max-speed-50mhz";
+	bias-pull-up;
+	drive-push-pull;
+};
+
+&tim1_ch2_pwm_out_pa9{
+	slew-rate = "max-speed-50mhz";
+	bias-pull-up;
+	drive-push-pull;
+};
+
+&tim2_ch1_pwm_out_pa0 {
+	slew-rate = "max-speed-50mhz";
+	bias-pull-up;
+	drive-push-pull;
+};
+
+&tim2_ch2_pwm_out_pa1{
+	slew-rate = "max-speed-50mhz";
+	bias-pull-up;
+	drive-push-pull;
+};
