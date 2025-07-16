@@ -1915,6 +1915,7 @@ static void le_ecred_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 	uint16_t dcid, mtu, mps, credits, result, psm;
 	uint8_t attempted = 0;
 	uint8_t succeeded = 0;
+	bool valid_params = true;
 
 	if (buf->len < sizeof(*rsp)) {
 		LOG_ERR("Too small ecred conn rsp packet size");
@@ -1928,6 +1929,26 @@ static void le_ecred_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 	result = sys_le16_to_cpu(rsp->result);
 
 	LOG_DBG("mtu 0x%04x mps 0x%04x credits 0x%04x result %u", mtu, mps, credits, result);
+
+	/* Validate parameters. There are no limits for
+	 * credits as values from 0 to UINT16_MAX are valid.
+	 */
+	if (!IN_RANGE(mtu, BT_L2CAP_ECRED_MIN_MTU, UINT16_MAX)) {
+		LOG_WRN("Invalid mtu %u", mtu);
+		valid_params = false;
+	} else if (!IN_RANGE(mps, BT_L2CAP_ECRED_MIN_MPS, BT_L2CAP_MAX_MPS)) {
+		LOG_WRN("Invalid mps %u", mps);
+		valid_params = false;
+	}
+
+	if (!valid_params) {
+		LOG_WRN("Invalid ecred conn rsp parameters, terminating connection");
+		while ((chan = l2cap_remove_ident(conn, ident))) {
+			bt_l2cap_chan_remove(conn, &chan->chan);
+			bt_l2cap_chan_del(&chan->chan);
+		}
+		return;
+	}
 
 	chan = l2cap_lookup_ident(conn, ident);
 	if (chan) {
@@ -1978,9 +1999,9 @@ static void le_ecred_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 			LOG_DBG("dcid 0x%04x", dcid);
 
 			/* If a Destination CID is 0x0000, the channel was not
-			 * established.
+			 * established. The DCID shall also be from the dynamic range.
 			 */
-			if (!dcid) {
+			if (!dcid || !L2CAP_LE_CID_IS_DYN(dcid)) {
 				bt_l2cap_chan_remove(conn, &chan->chan);
 				bt_l2cap_chan_del(&chan->chan);
 				continue;
@@ -2043,6 +2064,7 @@ static void le_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 	struct bt_l2cap_le_chan *chan;
 	struct bt_l2cap_le_conn_rsp *rsp = (void *)buf->data;
 	uint16_t dcid, mtu, mps, credits, result;
+	bool valid_params = true;
 
 	if (buf->len != sizeof(*rsp)) {
 		LOG_ERR("Invalid LE conn rsp packet size (%u != %zu)",
@@ -2058,6 +2080,32 @@ static void le_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 
 	LOG_DBG("dcid 0x%04x mtu %u mps %u credits %u result 0x%04x", dcid, mtu, mps, credits,
 		result);
+
+	/* Validate parameters. There are no limits for
+	 * credits as values from 0 to UINT16_MAX are valid.
+	 */
+	if (!L2CAP_LE_CID_IS_DYN(dcid)) {
+		LOG_WRN("dcid 0x%04x is not dynamic", dcid);
+		valid_params = false;
+	} else if (!IN_RANGE(mtu, L2CAP_LE_MIN_MTU, UINT16_MAX)) {
+		LOG_WRN("Invalid mtu: %u", mtu);
+		valid_params = false;
+	} else if (!IN_RANGE(mps, L2CAP_LE_MIN_MPS, BT_L2CAP_MAX_MPS)) {
+		LOG_WRN("Invalid mps: %u", mps);
+		valid_params = false;
+	}
+
+	if (!valid_params) {
+		LOG_WRN("Invalid conn rsp parameters, terminating connection");
+		chan = l2cap_remove_ident(conn, ident);
+		if (chan) {
+			bt_l2cap_chan_remove(conn, &chan->chan);
+			bt_l2cap_chan_del(&chan->chan);
+		} else {
+			LOG_WRN("Cannot find channel for ident %u", ident);
+		}
+		return;
+	}
 
 	/* Keep the channel in case of security errors */
 	if (result == BT_L2CAP_LE_SUCCESS ||
