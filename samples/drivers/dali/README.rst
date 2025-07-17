@@ -20,6 +20,21 @@ access to the DALI bus. See the predefined overlays in
 
 .. note:: For proper operation a DALI specific physcial interface is required.
 
+Building and Running for NXP LPCXpresso11U68
+============================================
+The :zephyr_file:`samples/drivers/dali/boards/lpcxpresso11u68.overlay`
+is specifically for the Mikroe-2672 DALI2 click development board
+used as physical interface to the DALI bus. This board uses negative
+logic for signal transmission (Tx Low <-> DALI Bus Idle).
+The sample can be build and executed for the
+:zephyr:board:`lpcxpresso11u68` as follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/dali
+   :board: lpcxpresso11u68
+   :goals: build flash
+   :compact:
+
 Sample outout
 =============
 
