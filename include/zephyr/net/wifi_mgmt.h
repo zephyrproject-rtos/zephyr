@@ -568,43 +568,130 @@ struct wifi_connect_req_params {
 	uint8_t bssid[WIFI_MAC_ADDR_LEN];
 	/** Connect timeout in seconds, SYS_FOREVER_MS for no timeout */
 	int timeout;
-	/** anonymous identity */
+	/**
+	 * Anonymous identity used in EAP authentication (Phase 1) for Wi-Fi Enterprise networks.
+	 * In EAP methods such as PEAP or TTLS, the anonymous identity is sent in the initial
+	 * outer authentication exchange to protect the user's real identity (eap_identity).
+	 * This value is not always required; if not set, the real identity may be exposed.
+	 * Only used in Phase 1 (outer authentication).
+	 */
 	const uint8_t *anon_id;
-	/** anon_id length, max 64 */
+
+	/** Length of the anonymous identity, maximum 64 bytes. */
 	uint8_t aid_length;
-	/** Private key passwd for enterprise mode */
+
+	/**
+	 * Private key password for Wi-Fi Enterprise authentication.
+	 * Used when a client certificate and private key are required (e.g., EAP-TLS).
+	 * This is the password protecting the private key file.
+	 * Applies to Phase 1 (outer authentication) when client certificates are used.
+	 */
 	const uint8_t *key_passwd;
-	/** Private key passwd length, max 128 */
+
+	/** Length of the private key password, maximum 128 bytes. */
 	uint8_t key_passwd_length;
-	/** private key2 passwd */
+
+	/**
+	 * Password for a secondary private key, if required by the authentication method.
+	 * Rarely used; typically only needed for advanced enterprise setups.
+	 * Applies to Phase 1 (outer authentication) if a second private key is used.
+	 */
 	const uint8_t *key2_passwd;
-	/** key2 passwd length, max 128 */
+
+	/** Length of the secondary private key password, maximum 128 bytes. */
 	uint8_t key2_passwd_length;
-	/** wpa3 enterprise mode */
+
+	/**
+	 * WPA3 Enterprise mode type.
+	 * Selects the WPA3 Enterprise authentication variant to use.
+	 * WPA3 Enterprise is a security protocol for Wi-Fi networks, often used in organizations,
+	 * that provides enhanced security over WPA2. This field is only relevant for enterprise
+	 * networks.
+	 * Applies to Phase 1 (outer authentication).
+	 */
 	enum wifi_wpa3_enterprise_type wpa3_ent_mode;
-	/** TLS cipher */
+
+	/**
+	 * TLS cipher suite to use for EAP-TLS authentication.
+	 * This selects the cryptographic algorithms used for the secure connection.
+	 * Only relevant for enterprise networks using EAP-TLS or similar methods.
+	 * Applies to Phase 1 (outer authentication).
+	 */
 	uint8_t TLS_cipher;
-	/** eap version */
+
+	/**
+	 * EAP (Extensible Authentication Protocol) version to use.
+	 * EAP is a framework for network authentication, commonly used in enterprise Wi-Fi.
+	 * This field allows specifying the protocol version if required by the network.
+	 * Applies to Phase 1 (outer authentication).
+	 */
 	int eap_ver;
-	/** Identity for EAP */
+
+	/**
+	 * Identity string for EAP authentication (Phase 2, inner authentication).
+	 * This is the real username or identity presented to the authentication server
+	 * after the secure tunnel is established (e.g., inside PEAP or TTLS).
+	 * Required for most enterprise Wi-Fi networks (e.g., WPA2/WPA3 Enterprise).
+	 * Applies to Phase 2 (inner authentication).
+	 */
 	const uint8_t *eap_identity;
-	/** eap identity length, max 64 */
+
+	/** Length of the EAP identity, maximum 64 bytes. */
 	uint8_t eap_id_length;
-	/** Password string for EAP. */
+
+	/**
+	 * Password string for EAP authentication (Phase 2, inner authentication).
+	 * Used in EAP methods that require a password (e.g., PEAP, TTLS, EAP-FAST).
+	 * This is the user's password for the enterprise Wi-Fi network.
+	 * Applies to Phase 2 (inner authentication).
+	 */
 	const uint8_t *eap_password;
-	/** eap passwd length, max 128 */
+
+	/** Length of the EAP password, maximum 128 bytes. */
 	uint8_t eap_passwd_length;
-	/** Whether verify peer with CA or not: false-not verify, true-verify. */
+
+	/**
+	 * Whether to verify the server's certificate authority (CA) during authentication.
+	 * Set to true to require validation of the server's certificate (recommended for security).
+	 * Set to false to skip CA verification (not recommended, but sometimes used for testing).
+	 * Applies to Phase 1 (outer authentication).
+	 */
 	bool verify_peer_cert;
-	/** Fast BSS Transition used */
+
+	/**
+	 * Indicates if Fast BSS Transition (802.11r) is used.
+	 * Fast BSS Transition allows seamless roaming between access points in enterprise networks.
+	 * Applies to the overall connection, not specific to EAP phases.
+	 */
 	bool ft_used;
-	/** Number of EAP users */
+
+	/**
+	 * Number of EAP user identities provided.
+	 * Used for advanced enterprise authentication scenarios where multiple user credentials
+	 * are needed.
+	 * Applies to Phase 2 (inner authentication).
+	 */
 	int nusers;
-	/** Number of EAP passwds */
+
+	/**
+	 * Number of EAP passwords provided.
+	 * Used in conjunction with multiple user identities for enterprise authentication.
+	 * Applies to Phase 2 (inner authentication).
+	 */
 	uint8_t passwds;
-	/** User Identities */
+
+	/**
+	 * Array of pointers to user identity strings for EAP authentication.
+	 * Used for enterprise Wi-Fi networks that require multiple user identities.
+	 * Applies to Phase 2 (inner authentication).
+	 */
 	const uint8_t *identities[WIFI_ENT_IDENTITY_MAX_USERS];
-	/** User Passwords */
+
+	/**
+	 * Array of pointers to user password strings for EAP authentication.
+	 * Used for enterprise Wi-Fi networks that require multiple user passwords.
+	 * Applies to Phase 2 (inner authentication).
+	 */
 	const uint8_t *passwords[WIFI_ENT_IDENTITY_MAX_USERS];
 	/** Hidden SSID configure
 	 * 0: disabled (default)
