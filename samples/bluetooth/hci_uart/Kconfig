@@ -1,19 +1,19 @@
+# Copyright (c) 2021 Zephyr Project members and individual contributors
 # SPDX-License-Identifier: Apache-2.0
-#
 
 mainmenu "Bluetooth: HCI UART"
 
 menu "HCI UART"
 
 config HCI_UART_APP_DEFAULT_FEATURES
-    bool "Enable default HCI UART features"
-    imply BT_CTLR_ASSERT_HANDLER
-    imply BT_CTLR_DTM_HCI
-    default y
+	bool "Enable default HCI UART features"
+	imply BT_CTLR_ASSERT_HANDLER
+	imply BT_CTLR_DTM_HCI
+	default y
 
 config BT_CTLR_PRIVACY
-    bool "Enable privacy feature"
-    default n if HCI_UART_APP_DEFAULT_FEATURES
+	bool "Enable privacy feature"
+	default n if HCI_UART_APP_DEFAULT_FEATURES
 
 endmenu
 
