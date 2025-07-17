@@ -38,7 +38,6 @@
 #include <kswap.h>
 #include <zephyr/timing/timing.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/pm/device_runtime.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/arch/common/init.h>
 
@@ -194,34 +193,20 @@ extern volatile uintptr_t __stack_chk_guard;
 __pinned_bss
 bool z_sys_post_kernel;
 
-static int do_device_init(const struct device *dev)
+/* defined in device.c */
+extern int do_device_init(const struct device *dev);
+
+/**
+ * @brief Initialize state for all static devices.
+ *
+ * The state object is always zero-initialized, but this may not be
+ * sufficient.
+ */
+static void z_device_state_init(void)
 {
-	int rc = 0;
-
-	if (dev->ops.init != NULL) {
-		rc = dev->ops.init(dev);
-		/* Mark device initialized. If initialization
-		 * failed, record the error condition.
-		 */
-		if (rc != 0) {
-			if (rc < 0) {
-				rc = -rc;
-			}
-			if (rc > UINT8_MAX) {
-				rc = UINT8_MAX;
-			}
-			dev->state->init_res = rc;
-		}
+	STRUCT_SECTION_FOREACH(device, dev) {
+		k_object_init(dev);
 	}
-
-	dev->state->initialized = true;
-
-	if (rc == 0) {
-		/* Run automatic device runtime enablement */
-		(void)pm_device_runtime_auto_enable(dev);
-	}
-
-	return rc;
 }
 
 /**
@@ -267,26 +252,7 @@ static void z_sys_init_run_level(enum init_level level)
 	}
 }
 
-
-int z_impl_device_init(const struct device *dev)
-{
-	if (dev->state->initialized) {
-		return -EALREADY;
-	}
-
-	return do_device_init(dev);
-}
-
-#ifdef CONFIG_USERSPACE
-static inline int z_vrfy_device_init(const struct device *dev)
-{
-	K_OOPS(K_SYSCALL_OBJ_INIT(dev, K_OBJ_ANY));
-
-	return z_impl_device_init(dev);
-}
-#include <zephyr/syscalls/device_init_mrsh.c>
-#endif
-
+/* defined in banner.c */
 extern void boot_banner(void);
 
 
