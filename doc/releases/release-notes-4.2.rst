@@ -299,6 +299,13 @@ New APIs and options
 
   * :c:func:`display_clear`
 
+* LVGL (Light and Versatile Graphics Library)
+
+    * The LVGL module was synchronized to v9.3, bringing numerous upstream improvements and new features.
+    * LVGL subsystem now supports multiple simultaneous displays, including proper input device-to-display binding.
+    * Added L8/Y8 pixel format support for displays such as SSD1327, SSD1320, SSD1322, and ST75256.
+    * :kconfig:option:`CONFIG_LV_Z_COLOR_MONO_HW_INVERSION`
+
 * Management
 
   * MCUmgr
@@ -464,10 +471,6 @@ New APIs and options
 * USB
 
   * :c:func:`uvc_set_video_dev`
-
-* Other
-
-  * :kconfig:option:`CONFIG_LV_Z_COLOR_MONO_HW_INVERSION`
 
 * ZBus
 
