@@ -133,17 +133,27 @@ def get_module_setting_root(root, settings_file):
 
 def get_vendor_prefixes(path, errfn = print) -> set[str]:
     vendor_prefixes = set()
-    with open(path) as fp:
-        for line in fp.readlines():
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-            try:
-                vendor, _ = line.split("\t", 2)
-                vendor_prefixes.add(vendor)
-            except ValueError:
-                errfn(f"Invalid line in {path}:\"{line}\".")
-                errfn("Did you forget the tab character?")
+    open_params = {}
+    if os.name == 'nt':
+        open_params['encoding'] = 'utf-8'
+    try:
+        with open(path, **open_params) as fp:
+            for line in fp.readlines():
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                try:
+                    vendor, _ = line.split("\t", 2)
+                    vendor_prefixes.add(vendor)
+                except ValueError:
+                    errfn(f"Invalid line in {path}:\"{line}\".")
+                    errfn("Did you forget the tab character?")
+    except UnicodeDecodeError as e:
+        errfn(f"Encoding error reading {path}: {str(e)}")
+        if os.name == 'nt':
+            errfn("TIP: Use UTF-8 encoding for Windows compatibility")
+    except FileNotFoundError:
+        errfn(f"Vendor prefixes file not found: {path}")
     return vendor_prefixes
 
 class FmtdFailure(Failure):
@@ -333,15 +343,27 @@ class BoardYmlCheck(ComplianceTest):
 
     def check_board_file(self, file, vendor_prefixes):
         """Validate a single board file."""
-        with open(file) as fp:
-            for line_num, line in enumerate(fp.readlines(), start=1):
-                if "vendor:" in line:
-                    _, vnd = line.strip().split(":", 2)
-                    vnd = vnd.strip()
-                    if vnd not in vendor_prefixes:
-                        desc = f"invalid vendor: {vnd}"
-                        self.fmtd_failure("error", "BoardYml", file, line_num,
-                                          desc=desc)
+        open_params = {}
+        if os.name == 'nt':
+            open_params['encoding'] = 'utf-8'
+        try:
+            with open(file, **open_params) as fp:
+                for line_num, line in enumerate(fp.readlines(), start=1):
+                    if "vendor:" in line:
+                        _, vnd = line.strip().split(":", 2)
+                        vnd = vnd.strip()
+                        if vnd not in vendor_prefixes:
+                            desc = f"invalid vendor: {vnd}"
+                            self.fmtd_failure("error", "BoardYml", file, line_num,
+                                            desc=desc)
+        except UnicodeDecodeError as e:
+            self.fmtd_failure("critical", "BoardYml", file, 0, 
+                            desc=f"Unicode decode error: {str(e)}")
+            if os.name == 'nt':
+                self.fmtd_failure("info", "BoardYml", file, 0,
+                                desc="TIP: Save files in 'UTF-8 without BOM' format")
+                self.fmtd_failure("info", "BoardYml", file, 0,
+                                desc="FIX: Update encoding settings in your editor")
 
     def run(self):
         path = resolve_path_hint(self.path_hint)
