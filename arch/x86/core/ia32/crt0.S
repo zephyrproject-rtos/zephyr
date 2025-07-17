@@ -30,7 +30,7 @@
 
 	/* externs */
 	GTEXT(z_prep_c)
-	GTEXT(z_bss_zero)
+	GTEXT(arch_bss_zero)
 	GTEXT(z_data_copy)
 
 	GDATA(_idt_base_address)
@@ -265,10 +265,10 @@ __csSet:
 #endif
 	/* Clear BSS */
 #ifdef CONFIG_LINKER_USE_BOOT_SECTION
-	call	z_bss_zero_boot
+	call	arch_bss_zero_boot
 #endif
 #ifdef CONFIG_LINKER_USE_PINNED_SECTION
-	call	z_bss_zero_pinned
+	call	arch_bss_zero_pinned
 #endif
 #ifdef CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT
 	/* Don't clear BSS if the section is not present
@@ -276,7 +276,7 @@ __csSet:
 	 * faults. Zeroing BSS will be done later once the
 	 * paging mechanism has been initialized.
 	 */
-	call	z_bss_zero
+	call	arch_bss_zero
 #endif
 
 #ifdef CONFIG_X86_CET

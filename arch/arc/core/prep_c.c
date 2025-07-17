@@ -92,7 +92,7 @@ void z_prep_c(void)
 	arc_cluster_scm_enable();
 #endif
 
-	z_bss_zero();
+	arch_bss_zero();
 #ifdef __CCAC__
 	dev_state_zero();
 #endif
