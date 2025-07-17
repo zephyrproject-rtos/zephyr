@@ -180,6 +180,7 @@ SOURCE_CODE_INCLUDES = """
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
+#include <zephyr/arch/common/init.h>
 """
 
 EXTERN_LINKER_VAR_DECLARATION = """

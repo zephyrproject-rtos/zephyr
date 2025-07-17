@@ -14,7 +14,7 @@
 #include <efuse_virtual.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <zephyr/kernel_structs.h>
-#include <kernel_internal.h>
+#include <zephyr/arch/common/init.h>
 
 extern void esp_reset_reason_init(void);
 

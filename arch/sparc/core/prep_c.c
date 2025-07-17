@@ -8,10 +8,11 @@
  * @file
  * @brief Full C support initialization
  */
-
-#include <kernel_internal.h>
+#include <zephyr/kernel.h>
 #include <zephyr/platform/hooks.h>
 #include <zephyr/arch/cache.h>
+#include <zephyr/arch/common/xip.h>
+#include <zephyr/arch/common/init.h>
 
 /**
  * @brief Prepare to and run C code
