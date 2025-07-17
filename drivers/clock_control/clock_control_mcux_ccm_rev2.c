@@ -299,6 +299,12 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		break;
 #endif
 
+#ifdef CONFIG_INPUT_MCUX_KPP
+	case IMX_CCM_KPP_CLK:
+		clock_root = kCLOCK_CpuClk;
+		break;
+#endif
+
 	default:
 		return -EINVAL;
 	}
