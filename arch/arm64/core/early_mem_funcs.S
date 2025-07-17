@@ -51,9 +51,9 @@ SECTION_FUNC(TEXT, arch_early_memset)
 
 4:	ret
 
-/* void z_early_memcpy(void *dst, const void *src, size_t n) */
-GTEXT(z_early_memcpy)
-SECTION_FUNC(TEXT, z_early_memcpy)
+/* void arch_early_memcpy(void *dst, const void *src, size_t n) */
+GTEXT(arch_early_memcpy)
+SECTION_FUNC(TEXT, arch_early_memcpy)
 
 	/* are dst and src pointers 8-bytes aligned? */
 	orr	x8, x1, x0
