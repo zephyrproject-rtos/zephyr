@@ -1501,8 +1501,11 @@ void bt_conn_unref(struct bt_conn *conn)
 
 	old = atomic_dec(&conn->ref);
 	/* Prevent from accessing connection object */
-	conn = NULL;
 	deallocated = (atomic_get(&old) == 1);
+	IF_ENABLED(CONFIG_BT_CONN_TX,
+		   (__ASSERT(!(deallocated && k_work_is_pending(&conn->tx_complete_work)),
+			     "tx_complete_work is pending when conn is deallocated")));
+	conn = NULL;
 
 	LOG_DBG("handle %u ref %ld -> %ld", conn_handle, old, (old - 1));
 
