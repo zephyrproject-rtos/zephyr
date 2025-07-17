@@ -532,6 +532,12 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 	} break;
 #endif
 
+#ifdef CONFIG_INPUT_KPP
+	case IMX_CCM_KPP_CLK:
+		*rate = CLOCK_GetFreq(kCLOCK_CpuClk);
+		break;
+#endif
+
 #ifdef CONFIG_SPI_MCUX_ECSPI
 	case IMX_CCM_ECSPI1_CLK:
 		*rate = CLOCK_GetPllFreq(kCLOCK_SystemPll1Ctrl) /
