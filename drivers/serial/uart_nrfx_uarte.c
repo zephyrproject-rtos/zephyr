@@ -2593,6 +2593,11 @@ static int uarte_instance_init(const struct device *dev,
 	return pm_device_driver_init(dev, uarte_nrfx_pm_action);
 }
 
+static int uarte_instance_deinit(const struct device *dev)
+{
+	return pm_device_driver_deinit(dev, uarte_nrfx_pm_action);
+}
+
 #define UARTE_GET_ISR(idx) \
 	COND_CODE_1(CONFIG_UART_##idx##_ASYNC, (uarte_nrfx_isr_async), (uarte_nrfx_isr_int))
 
@@ -2800,8 +2805,9 @@ static int uarte_instance_init(const struct device *dev,
 	PM_DEVICE_DT_DEFINE(UARTE(idx), uarte_nrfx_pm_action,		       \
 			    UARTE_PM_ISR_SAFE(idx));			       \
 									       \
-	DEVICE_DT_DEFINE(UARTE(idx),					       \
+	DEVICE_DT_DEINIT_DEFINE(UARTE(idx),				       \
 		      uarte_##idx##_init,				       \
+		      uarte_instance_deinit,				       \
 		      PM_DEVICE_DT_GET(UARTE(idx)),			       \
 		      &uarte_##idx##_data,				       \
 		      &uarte_##idx##z_config,				       \
