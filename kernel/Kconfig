@@ -880,16 +880,6 @@ config BUSYWAIT_CPU_LOOPS_PER_USEC
 	  system timer support. If accuracy is very important then
 	  implementing arch_busy_wait() should be considered.
 
-config XIP
-	bool "Execute in place"
-	help
-	  This option allows the kernel to operate with its text and read-only
-	  sections residing in ROM (or similar read-only memory). Not all boards
-	  support this option so it must be used with care; you must also
-	  supply a linker command file when building your image. Enabling this
-	  option increases both the code and data footprint of the image.
-
-
 menu "Security Options"
 
 config REQUIRES_STACK_CANARIES
