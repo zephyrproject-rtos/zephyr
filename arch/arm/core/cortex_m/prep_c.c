@@ -61,7 +61,7 @@ void __weak relocate_vector_table(void)
 	/* Copy vector table to its location in SRAM */
 	size_t vector_size = (size_t)_vector_end - (size_t)_vector_start;
 
-	z_early_memcpy(_sram_vector_start, _vector_start, vector_size);
+	arch_early_memcpy(_sram_vector_start, _vector_start, vector_size);
 #endif
 	SCB->VTOR = VECTOR_ADDRESS & VTOR_MASK;
 	barrier_dsync_fence_full();
