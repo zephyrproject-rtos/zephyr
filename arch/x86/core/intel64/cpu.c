@@ -118,7 +118,7 @@ FUNC_NORETURN void z_x86_cpu_init(struct x86_cpuboot *cpuboot)
 
 	if (cpuboot->cpu_id == 0U) {
 		/* Only need to do these once per boot */
-		z_bss_zero();
+		arch_bss_zero();
 		z_data_copy();
 	}
 

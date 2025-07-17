@@ -33,7 +33,7 @@ K_KERNEL_PINNED_STACK_ARRAY_DEFINE(z_initialization_process_stacks, CONFIG_MP_MA
  */
 void z_prep_c(void)
 {
-	z_bss_zero();
+	arch_bss_zero();
 
 	z_data_copy();
 

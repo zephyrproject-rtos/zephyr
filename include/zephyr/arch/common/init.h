@@ -12,21 +12,21 @@ FUNC_NORETURN void z_cstart(void);
 void arch_early_memset(void *dst, int c, size_t n);
 void arch_early_memcpy(void *dst, const void *src, size_t n);
 
-void z_bss_zero(void);
+void arch_bss_zero(void);
 
 #ifdef CONFIG_LINKER_USE_BOOT_SECTION
-void z_bss_zero_boot(void);
+void arch_bss_zero_boot(void);
 #else
-static inline void z_bss_zero_boot(void)
+static inline void arch_bss_zero_boot(void)
 {
 	/* Do nothing */
 }
 #endif /* CONFIG_LINKER_USE_BOOT_SECTION */
 
 #ifdef CONFIG_LINKER_USE_PINNED_SECTION
-void z_bss_zero_pinned(void);
+void arch_bss_zero_pinned(void);
 #else
-static inline void z_bss_zero_pinned(void)
+static inline void arch_bss_zero_pinned(void)
 {
 	/* Do nothing */
 }

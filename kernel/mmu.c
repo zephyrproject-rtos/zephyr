@@ -1177,7 +1177,7 @@ void z_mem_manage_init(void)
 	 * and the BSS pages can be brought into physical
 	 * memory to be cleared.
 	 */
-	z_bss_zero();
+	arch_bss_zero();
 #endif /* CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT */
 }
 
