@@ -381,6 +381,8 @@ struct bt_conn *bt_conn_new(struct bt_conn *conns, size_t size)
 	k_work_init_delayable(&conn->deferred_work, deferred_work);
 #endif /* CONFIG_BT_CONN */
 #if defined(CONFIG_BT_CONN_TX)
+	__ASSERT(!k_work_is_pending(&conn->tx_complete_work),
+		 "tx_complete_work is pending, performing k_work_init will break the workqueue");
 	k_work_init(&conn->tx_complete_work, tx_complete_work);
 #endif /* CONFIG_BT_CONN_TX */
 
