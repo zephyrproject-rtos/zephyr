@@ -41,7 +41,7 @@ void z_prep_c(void)
 #endif
 
 	arch_bss_zero();
-	z_data_copy();
+	arch_data_copy();
 #if defined(CONFIG_RISCV_SOC_INTERRUPT_INIT)
 	soc_interrupt_init();
 #endif
