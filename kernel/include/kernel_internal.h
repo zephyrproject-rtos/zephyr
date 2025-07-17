@@ -36,14 +36,6 @@ void z_early_memset(void *dst, int c, size_t n);
 void z_early_memcpy(void *dst, const void *src, size_t n);
 
 void z_bss_zero(void);
-#ifdef CONFIG_XIP
-void z_data_copy(void);
-#else
-static inline void z_data_copy(void)
-{
-	/* Do nothing */
-}
-#endif /* CONFIG_XIP */
 
 #ifdef CONFIG_LINKER_USE_BOOT_SECTION
 void z_bss_zero_boot(void);
