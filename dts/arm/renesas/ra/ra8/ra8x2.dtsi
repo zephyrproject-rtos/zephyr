@@ -477,7 +477,7 @@
 			compatible = "renesas,ra-pwm";
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_0>;
-			clocks = <&pclkd MSTPE 31>;
+			clocks = <&gptclk MSTPE 31>;
 			reg = <0x40322000 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
@@ -487,7 +487,7 @@
 			compatible = "renesas,ra-pwm";
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_1>;
-			clocks = <&pclkd MSTPE 30>;
+			clocks = <&gptclk MSTPE 30>;
 			reg = <0x40322100 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
@@ -497,7 +497,7 @@
 			compatible = "renesas,ra-pwm";
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_2>;
-			clocks = <&pclkd MSTPE 29>;
+			clocks = <&gptclk MSTPE 29>;
 			reg = <0x40322200 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
@@ -507,7 +507,7 @@
 			compatible = "renesas,ra-pwm";
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_3>;
-			clocks = <&pclkd MSTPE 28>;
+			clocks = <&gptclk MSTPE 28>;
 			reg = <0x40322300 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
@@ -517,7 +517,7 @@
 			compatible = "renesas,ra-pwm";
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_4>;
-			clocks = <&pclkd MSTPE 27>;
+			clocks = <&gptclk MSTPE 27>;
 			reg = <0x40322400 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
@@ -527,7 +527,7 @@
 			compatible = "renesas,ra-pwm";
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_5>;
-			clocks = <&pclkd MSTPE 27>;
+			clocks = <&gptclk MSTPE 27>;
 			reg = <0x40322500 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
@@ -537,7 +537,7 @@
 			compatible = "renesas,ra-pwm";
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_6>;
-			clocks = <&pclkd MSTPE 27>;
+			clocks = <&gptclk MSTPE 27>;
 			reg = <0x40322600 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
@@ -547,7 +547,7 @@
 			compatible = "renesas,ra-pwm";
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_7>;
-			clocks = <&pclkd MSTPE 27>;
+			clocks = <&gptclk MSTPE 27>;
 			reg = <0x40322700 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
@@ -557,7 +557,7 @@
 			compatible = "renesas,ra-pwm";
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_8>;
-			clocks = <&pclkd MSTPE 27>;
+			clocks = <&gptclk MSTPE 27>;
 			reg = <0x40322800 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
@@ -567,7 +567,7 @@
 			compatible = "renesas,ra-pwm";
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_9>;
-			clocks = <&pclkd MSTPE 27>;
+			clocks = <&gptclk MSTPE 27>;
 			reg = <0x40322900 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
@@ -577,7 +577,7 @@
 			compatible = "renesas,ra-pwm";
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_10>;
-			clocks = <&pclkd MSTPE 21>;
+			clocks = <&gptclk MSTPE 21>;
 			reg = <0x40322a00 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
@@ -587,7 +587,7 @@
 			compatible = "renesas,ra-pwm";
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_11>;
-			clocks = <&pclkd MSTPE 20>;
+			clocks = <&gptclk MSTPE 20>;
 			reg = <0x40322b00 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
@@ -597,7 +597,7 @@
 			compatible = "renesas,ra-pwm";
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_12>;
-			clocks = <&pclkd MSTPE 19>;
+			clocks = <&gptclk MSTPE 19>;
 			reg = <0x40322c00 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
@@ -607,7 +607,7 @@
 			compatible = "renesas,ra-pwm";
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_13>;
-			clocks = <&pclkd MSTPE 18>;
+			clocks = <&gptclk MSTPE 18>;
 			reg = <0x40322d00 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
