@@ -107,18 +107,32 @@ struct mc_t1s_data {
 static int phy_mc_t1s_read(const struct device *dev, uint16_t reg, uint32_t *data)
 {
 	const struct mc_t1s_config *cfg = dev->config;
+	int ret;
 
 	/* Make sure excessive bits 16-31 are reset */
 	*data = 0U;
 
-	return mdio_read(cfg->mdio, cfg->phy_addr, reg, (uint16_t *)data);
+	mdio_bus_enable(cfg->mdio);
+
+	ret = mdio_read(cfg->mdio, cfg->phy_addr, reg, (uint16_t *)data);
+
+	mdio_bus_disable(cfg->mdio);
+
+	return ret;
 }
 
 static int phy_mc_t1s_write(const struct device *dev, uint16_t reg, uint32_t data)
 {
 	const struct mc_t1s_config *cfg = dev->config;
+	int ret;
 
-	return mdio_write(cfg->mdio, cfg->phy_addr, reg, (uint16_t)data);
+	mdio_bus_enable(cfg->mdio);
+
+	ret = mdio_write(cfg->mdio, cfg->phy_addr, reg, (uint16_t)data);
+
+	mdio_bus_disable(cfg->mdio);
+
+	return ret;
 }
 
 static int mdio_setup_c45_indirect_access(const struct device *dev, uint16_t devad, uint16_t reg)
@@ -150,13 +164,20 @@ static int phy_mc_t1s_c45_read(const struct device *dev, uint8_t devad, uint16_t
 		return mdio_read_c45(cfg->mdio, cfg->phy_addr, devad, reg, val);
 	}
 
+	mdio_bus_enable(cfg->mdio);
+
 	/* Read C45 registers using C22 indirect access registers */
 	ret = mdio_setup_c45_indirect_access(dev, devad, reg);
 	if (ret) {
+		mdio_bus_disable(cfg->mdio);
 		return ret;
 	}
 
-	return mdio_read(cfg->mdio, cfg->phy_addr, MII_MMD_AADR, val);
+	ret = mdio_read(cfg->mdio, cfg->phy_addr, MII_MMD_AADR, val);
+
+	mdio_bus_disable(cfg->mdio);
+
+	return ret;
 }
 
 static int phy_mc_t1s_c45_write(const struct device *dev, uint8_t devad, uint16_t reg, uint16_t val)
@@ -170,13 +191,20 @@ static int phy_mc_t1s_c45_write(const struct device *dev, uint8_t devad, uint16_
 		return mdio_write_c45(cfg->mdio, cfg->phy_addr, devad, reg, val);
 	}
 
+	mdio_bus_enable(cfg->mdio);
+
 	/* Write C45 registers using C22 indirect access registers */
 	ret = mdio_setup_c45_indirect_access(dev, devad, reg);
 	if (ret) {
+		mdio_bus_disable(cfg->mdio);
 		return ret;
 	}
 
-	return mdio_write(cfg->mdio, cfg->phy_addr, MII_MMD_AADR, val);
+	ret = mdio_write(cfg->mdio, cfg->phy_addr, MII_MMD_AADR, val);
+
+	mdio_bus_disable(cfg->mdio);
+
+	return ret;
 }
 
 static int phy_mc_t1s_get_link(const struct device *dev, struct phy_link_state *state)
