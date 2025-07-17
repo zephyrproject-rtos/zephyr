@@ -41,7 +41,6 @@
 			compatible = "renesas,ra-cgc-subclk";
 			clock-frequency = <32768>;
 			#clock-cells = <0>;
-			status = "disabled";
 		};
 
 		pll: pll {
@@ -64,16 +63,16 @@
 
 			pllq: pllq {
 				compatible = "renesas,ra-cgc-pll-out";
-				div = <2>;
-				freq = <DT_FREQ_M(1000)>;
+				div = <6>;
+				freq = <333333333>;
 				status = "disabled";
 				#clock-cells = <0>;
 			};
 
 			pllr: pllr {
 				compatible = "renesas,ra-cgc-pll-out";
-				div = <2>;
-				freq = <DT_FREQ_M(1000)>;
+				div = <5>;
+				freq = <DT_FREQ_M(400)>;
 				status = "disabled";
 				#clock-cells = <0>;
 			};
