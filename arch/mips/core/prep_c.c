@@ -50,7 +50,7 @@ void z_prep_c(void)
 #if defined(CONFIG_SOC_PREP_HOOK)
 	soc_prep_hook();
 #endif
-	z_bss_zero();
+	arch_bss_zero();
 
 	interrupt_init();
 #if CONFIG_ARCH_CACHE

@@ -131,7 +131,7 @@ extern char __kernel_ram_start[];
 extern char __kernel_ram_end[];
 extern char __kernel_ram_size[];
 
-/* Used by z_bss_zero or arch-specific implementation */
+/* Used by arch_bss_zero or arch-specific implementation */
 extern char __bss_start[];
 extern char __bss_end[];
 
