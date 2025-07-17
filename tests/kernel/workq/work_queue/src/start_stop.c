@@ -24,9 +24,9 @@ static void work_handler(struct k_work *work)
 ZTEST(workqueue_api, test_k_work_queue_start_stop)
 {
 	size_t i;
-	struct k_work work;
+	struct k_work work = {0};
 	struct k_work_q work_q = {0};
-	struct k_work works[NUM_TEST_ITEMS];
+	struct k_work works[NUM_TEST_ITEMS] = {0};
 	struct k_work_queue_config cfg = {
 		.name = "test_work_q",
 		.no_yield = true,
@@ -82,9 +82,9 @@ ZTEST(workqueue_api, test_k_work_queue_run_stop)
 	int rc;
 	size_t i;
 	struct k_thread thread;
-	struct k_work work;
+	struct k_work work = {0};
 	struct k_work_q work_q = {0};
-	struct k_work works[NUM_TEST_ITEMS];
+	struct k_work works[NUM_TEST_ITEMS] = {0};
 	struct k_sem ret_sem;
 
 	k_sem_init(&ret_sem, 0, 1);

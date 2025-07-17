@@ -16,6 +16,7 @@
 #include <zephyr/spinlock.h>
 #include <errno.h>
 #include <ksched.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/logging/log.h>
 
@@ -155,6 +156,7 @@ void k_work_init(struct k_work *work,
 {
 	__ASSERT_NO_MSG(work != NULL);
 	__ASSERT_NO_MSG(handler != NULL);
+	__ASSERT_NO_MSG(!k_work_is_pending(work));
 
 	*work = (struct k_work)Z_WORK_INITIALIZER(handler);
 
@@ -986,6 +988,7 @@ void k_work_init_delayable(struct k_work_delayable *dwork,
 {
 	__ASSERT_NO_MSG(dwork != NULL);
 	__ASSERT_NO_MSG(handler != NULL);
+	__ASSERT_NO_MSG(!k_work_delayable_is_pending(dwork));
 
 	*dwork = (struct k_work_delayable){
 		.work = {
