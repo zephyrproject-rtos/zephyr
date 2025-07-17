@@ -1,11 +1,9 @@
 # Copyright (c) 2023 SILA Embedded Solutions GmbH
+# Copyright 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
-
-description: PCAL6416A 16-bit I2C-based I/O expander
-
-compatible: "nxp,pcal6416a"
-
-include: nxp,pcal64xxa-base.yaml
+description: NXP PCAL6416A I2C GPIO expander node
+compatible: nxp,pcal6416a
+include: nxp,pca_series.yaml
 
 properties:
   ngpios:
