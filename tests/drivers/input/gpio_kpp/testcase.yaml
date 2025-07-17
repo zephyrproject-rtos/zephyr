@@ -1,0 +1,5 @@
+tests:
+  drivers.input.kpp_scan:
+    tags: drivers input kpp
+    filter: dt_compat_enabled("nxp,mcux-kpp")
+    depends_on: kpp
