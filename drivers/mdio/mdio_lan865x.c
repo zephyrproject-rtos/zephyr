@@ -64,6 +64,6 @@ static DEVICE_API(mdio, mdio_lan865x_api) = {
 		.dev = DEVICE_DT_GET(DT_INST_PARENT(n)),                                           \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, &mdio_lan865x_config_##n, POST_KERNEL,          \
-			      CONFIG_MDIO_LAN865X_INIT_PRIORITY, &mdio_lan865x_api);
+			      CONFIG_MDIO_INIT_PRIORITY, &mdio_lan865x_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MICROCHIP_LAN865X_MDIO_INIT)

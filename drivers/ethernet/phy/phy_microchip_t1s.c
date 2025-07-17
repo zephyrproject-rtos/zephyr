@@ -551,6 +551,6 @@ static DEVICE_API(ethphy, mc_t1s_phy_api) = {
 	static struct mc_t1s_data mc_t1s_##n##_data;                                               \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, &phy_mc_t1s_init, NULL, &mc_t1s_##n##_data, &mc_t1s_##n##_config, \
-			      POST_KERNEL, CONFIG_PHY_MICROCHIP_T1S_INIT_PRIORITY, &mc_t1s_phy_api);
+			      POST_KERNEL, CONFIG_PHY_INIT_PRIORITY, &mc_t1s_phy_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MICROCHIP_T1S_PHY_INIT);
