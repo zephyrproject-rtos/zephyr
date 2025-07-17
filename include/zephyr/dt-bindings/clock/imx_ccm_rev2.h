@@ -155,6 +155,9 @@
 #define IMX_CCM_LPIT2_CLK 0x2301UL
 #define IMX_CCM_LPIT3_CLK 0x2302UL
 
+/* KPP */
+#define IMX_CCM_KPP_CLK                0x2400UL
+
 /* QTMR */
 #define IMX_CCM_QTMR_CLK               0x6000UL
 #define IMX_CCM_QTMR1_CLK              0x6000UL
