@@ -211,7 +211,7 @@ MEMCPY_TEMPLATE = """
 """
 
 MEMSET_TEMPLATE = """
-	z_early_memset(&__{mem}_bss_reloc_start, 0,
+	arch_early_memset(&__{mem}_bss_reloc_start, 0,
 		           (size_t) &__{mem}_bss_reloc_size);
 """
 
