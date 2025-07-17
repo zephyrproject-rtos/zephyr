@@ -33,19 +33,33 @@ We are pleased to announce the release of Zephyr version 4.2.0.
 
 Major enhancements with this release include:
 
-- Initial support for the **Renesas RX** 32-bit architecture has been added, including a QEMU-based
+**Initial Support for Renesas RX**
+  The Renesas RX architecture is now supported, including a QEMU-based
   :zephyr:board:`board target <qemu_rx>`.
 
-- The USB device stack now supports **USB Video Class** (UVC).
+**USB Video Class Driver**
+  The USB device stack now supports USB Video Class (UVC) allowing camera devices and other
+  image/video sources to be exposed as standard USB video devices. See :zephyr:code-sample:`uvc` to
+  get started.
 
-- The networking stack now includes full support for the **MQTT 5.0** protocol.
+**Twister Power Harness**
+  A :ref:`new Twister harness <twister_power_harness>` enables measurement of the power consumption
+  of the device under test and ensures it remains within a given tolerance.
 
-- Zbus graduates to stable status with the release of API version v1.0.0.
+**MQTT 5.0**
+  The networking stack now includes full support for the :ref:`MQTT 5.0 <mqtt_socket_interface>`
+  protocol.
 
-- **Bluetooth Classic** stack now supports **Hands-Free Profile** (HFP) for both Audio Gateway (AG)
-  and Hands-Free (HF) roles.
+**Bluetooth Classic improvements**
+  The Bluetooth Classic stack now includes support for **Hands-Free Profile** (HFP) for both Audio
+  Gateway (AG) and Hands-Free (HF) roles.
 
-- **96 new boards** have been added since the last release.
+**Zbus**
+  The :ref:`Zbus library <zbus>` graduates to stable status with the release of API version v1.0.0.
+
+**Expanded Board Support**
+  Support for 96 :ref:`new boards <boards_added_in_zephyr_4_2>` and 22
+  :ref:`new shields <shields_added_in_zephyr_4_2>` has been added in this release.
 
 An overview of the changes required or recommended when migrating your application from Zephyr
 v4.1.0 to Zephyr v4.2.0 can be found in the separate :ref:`migration guide<migration_4.2>`.
@@ -468,6 +482,8 @@ New APIs and options
   * :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_NONE`
   * :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_POOL_SIZE`
 
+
+.. _boards_added_in_zephyr_4_2:
 
 New Boards
 **********
