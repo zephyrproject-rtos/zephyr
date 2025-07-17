@@ -1661,8 +1661,8 @@ static int compute_best_vector(void)
 				continue;
 			}
 
-			tmp = (int)challenger->steps_removed -
-				((int)ntohs(best_vector->steps_removed) + 1);
+			tmp = (int)(challenger->steps_removed + 1) -
+				(int)ntohs(best_vector->steps_removed);
 			if (tmp < 0) {
 				best_vector = challenger;
 				best_port = port;
