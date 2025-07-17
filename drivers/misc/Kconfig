@@ -21,5 +21,6 @@ source "drivers/misc/renesas_ra_external_interrupt/Kconfig"
 source "drivers/misc/renesas_rx_external_interrupt/Kconfig"
 source "drivers/misc/nxp_rtxxx_dsp_ctrl/Kconfig"
 source "drivers/misc/stm32n6_axisram/Kconfig"
+source "drivers/misc/nxp_inputmux/Kconfig"
 
 endmenu
