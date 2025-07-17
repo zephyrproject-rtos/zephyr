@@ -31,7 +31,7 @@
 	/* externs */
 	GTEXT(z_prep_c)
 	GTEXT(arch_bss_zero)
-	GTEXT(z_data_copy)
+	GTEXT(arch_data_copy)
 
 	GDATA(_idt_base_address)
 	GDATA(z_interrupt_stacks)
@@ -226,11 +226,11 @@ __csSet:
 	 * This is a must is CONFIG_GDT_DYNAMIC is enabled,
 	 * as _gdt needs to be in RAM.
 	 */
-	call	z_data_copy
+	call	arch_data_copy
 #endif
 
 	/* Note that installing page tables must be done after
-	 * z_data_copy() as the page tables are being copied into
+	 * arch_data_copy() as the page tables are being copied into
 	 * RAM there.
 	 */
 	install_page_tables
