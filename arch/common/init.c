@@ -37,7 +37,7 @@ void __weak arch_early_memset(void *dst, int c, size_t n)
  * may override this with their own safe implementation.
  */
 __boot_func
-void __weak z_early_memcpy(void *dst, const void *src, size_t n)
+void __weak arch_early_memcpy(void *dst, const void *src, size_t n)
 {
 	(void) memcpy(dst, src, n);
 }
