@@ -5,6 +5,7 @@
 
 menuconfig ENTROPY_GENERATOR
 	bool "Entropy drivers"
+	default y if (BOARD_LP_EM_CC2745R10_Q1 && BT)
 	help
 	  Include entropy drivers in system config.
 
