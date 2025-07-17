@@ -1459,6 +1459,10 @@ static int i2c_it51xxx_transfer(const struct device *dev, struct i2c_msg *msgs, 
 #endif
 	/* Lock mutex of i2c controller */
 	k_mutex_lock(&data->mutex, K_FOREVER);
+#ifdef CONFIG_PM
+	/* Block to enter power policy. */
+	i2c_ite_pm_policy_state_lock_get(data, I2CM_ITE_PM_POLICY_FLAG);
+#endif
 	/*
 	 * If the transaction of write to read is divided into two transfers, the repeat start
 	 * transfer uses this flag to exclude checking bus busy.
@@ -1473,9 +1477,8 @@ static int i2c_it51xxx_transfer(const struct device *dev, struct i2c_msg *msgs, 
 			 * (No external pull-up), drop the transaction.
 			 */
 			if (i2c_bus_not_available(dev)) {
-				/* Unlock mutex of i2c controller */
-				k_mutex_unlock(&data->mutex);
-				return -EIO;
+				ret = -EIO;
+				goto done;
 			}
 		}
 
@@ -1490,13 +1493,6 @@ static int i2c_it51xxx_transfer(const struct device *dev, struct i2c_msg *msgs, 
 	data->msg_index = 0;
 
 	bool fifo_mode_enable = fifo_mode_allowed(dev, msgs);
-
-	if (fifo_mode_enable) {
-#ifdef CONFIG_PM
-		/* Block to enter power policy. */
-		i2c_ite_pm_policy_state_lock_get(data, I2CM_ITE_PM_POLICY_FLAG);
-#endif
-	}
 #endif
 	for (int i = 0; i < num_msgs; i++) {
 		data->widx = 0;
@@ -1572,10 +1568,6 @@ static int i2c_it51xxx_transfer(const struct device *dev, struct i2c_msg *msgs, 
 		if (data->num_msgs == 2) {
 			i2c_fifo_en_w2r(dev, false);
 		}
-#ifdef CONFIG_PM
-		/* Permit to enter power policy. */
-		i2c_ite_pm_policy_state_lock_put(data, I2CM_ITE_PM_POLICY_FLAG);
-#endif
 	}
 #endif
 	/* Reset i2c channel status */
@@ -1586,6 +1578,11 @@ static int i2c_it51xxx_transfer(const struct device *dev, struct i2c_msg *msgs, 
 	/* Save return value. */
 	ret = i2c_parsing_return_value(dev);
 
+done:
+#ifdef CONFIG_PM
+	/* Permit to enter power policy. */
+	i2c_ite_pm_policy_state_lock_put(data, I2CM_ITE_PM_POLICY_FLAG);
+#endif
 	/* Unlock mutex of i2c controller */
 	k_mutex_unlock(&data->mutex);
 
