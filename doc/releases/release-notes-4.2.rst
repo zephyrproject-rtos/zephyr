@@ -297,7 +297,8 @@ New APIs and options
 
 * Display
 
-  * :c:func:`display_clear`
+    * Added :c:func:`display_clear` API to allow clearing the display content in a standardized way.
+    * Character Frame Buffer (CFB) subsystem now supports drawing circles via :c:func:`cfb_draw_circle`.
 
 * LVGL (Light and Versatile Graphics Library)
 
