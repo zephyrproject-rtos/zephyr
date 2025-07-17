@@ -18,6 +18,7 @@
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/platform/hooks.h>
 #include <zephyr/arch/cache.h>
+#include <zephyr/arch/common/xip.h>
 
 extern void z_arm64_mm_init(bool is_primary_core);
 

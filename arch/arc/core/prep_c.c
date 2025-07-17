@@ -23,6 +23,7 @@
 #include <zephyr/arch/arc/cluster.h>
 #include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
+#include <zephyr/arch/common/xip.h>
 #include <zephyr/platform/hooks.h>
 #include <zephyr/arch/cache.h>
 

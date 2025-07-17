@@ -124,12 +124,6 @@ list(APPEND kernel_files
      thread_monitor.c)
 endif()
 
-
-if(CONFIG_XIP)
-list(APPEND kernel_files
-     xip.c)
-endif()
-
 if(CONFIG_DEMAND_PAGING_STATS)
 list(APPEND kernel_files
      paging/statistics.c)
