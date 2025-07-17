@@ -215,6 +215,11 @@ static enum ethernet_hw_caps eth_nxp_enet_qos_get_capabilities(const struct devi
 	return ETHERNET_LINK_100BASE | ETHERNET_LINK_10BASE | ENET_MAC_PACKET_FILTER_PM_MASK;
 }
 
+static bool software_owns_descriptor(volatile union nxp_enet_qos_rx_desc *desc)
+{
+	return (desc->write.control3 & OWN_FLAG) != OWN_FLAG;
+}
+
 static void eth_nxp_enet_qos_rx(struct k_work *work)
 {
 	struct nxp_enet_qos_rx_data *rx_data =
@@ -222,25 +227,20 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 	struct nxp_enet_qos_mac_data *data =
 		CONTAINER_OF(rx_data, struct nxp_enet_qos_mac_data, rx);
 	volatile union nxp_enet_qos_rx_desc *desc_arr = data->rx.descriptors;
-	volatile union nxp_enet_qos_rx_desc *desc;
-	uint32_t desc_idx;
+	uint32_t desc_idx = rx_data->next_desc_idx;
+	volatile union nxp_enet_qos_rx_desc *desc = &desc_arr[desc_idx];
 	struct net_pkt *pkt = NULL;
 	struct net_buf *new_buf;
 	struct net_buf *buf;
 	size_t pkt_len;
 	size_t processed_len;
 
-	LOG_DBG("iteration work:%p, rx_data:%p, data:%p", work, rx_data, data);
-	/* We are going to find all of the descriptors we own and update them */
-	for (int i = 0; i < NUM_RX_BUFDESC; i++) {
-		desc_idx = rx_data->next_desc_idx;
-		desc = &desc_arr[desc_idx];
+	LOG_DBG("RX work start: %p", work);
 
-		if (desc->write.control3 & OWN_FLAG) {
-			/* The DMA owns the descriptor, we have processed all */
-			break;
-		}
-
+	/* Walk through the descriptor ring and refresh the descriptors we own so that the
+	 * DMA can use them for receiving again. We stop when we reach DMA owned part of ring.
+	 */
+	while (software_owns_descriptor(desc)) {
 		rx_data->next_desc_idx = (desc_idx + 1U) % NUM_RX_BUFDESC;
 
 		if (pkt == NULL) {
@@ -251,7 +251,7 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 				LOG_ERR("Rx descriptor does not have first descriptor flag, drop");
 				desc->read.control = rx_desc_refresh_flags;
 				/* Error statistics for this packet already updated earlier */
-				continue;
+				goto next;
 			}
 
 			/* Otherwise, we found a packet that we need to process */
@@ -262,7 +262,7 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 				/* error: no new buffer, reuse previous immediately */
 				desc->read.control = rx_desc_refresh_flags;
 				eth_stats_update_errors_rx(data->iface);
-				continue;
+				goto next;
 			}
 
 			processed_len = 0U;
@@ -285,7 +285,7 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 			pkt = NULL;
 			desc->read.control = rx_desc_refresh_flags;
 			eth_stats_update_errors_rx(data->iface);
-			continue;
+			goto next;
 		}
 
 		/* We need to know if we can replace the reserved fragment in advance.
@@ -305,7 +305,7 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 			pkt = NULL;
 			desc->read.control = rx_desc_refresh_flags;
 			eth_stats_update_errors_rx(data->iface);
-			continue;
+			goto next;
 		}
 
 		/* Append buffer to a packet */
@@ -334,6 +334,10 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 		data->rx.reserved_bufs[desc_idx] = new_buf;
 		desc->read.buf1_addr = (uint32_t)new_buf->data;
 		desc->read.control = rx_desc_refresh_flags;
+
+next:
+		desc_idx = rx_data->next_desc_idx;
+		desc = &desc_arr[desc_idx];
 	}
 
 	if (pkt != NULL) {
@@ -361,7 +365,7 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 			ENET_QOS_ALIGN_ADDR_SHIFT((uint32_t)&rx_data->descriptors[NUM_RX_BUFDESC]));
 	}
 
-	LOG_DBG("end loop normally");
+	LOG_DBG("End RX work normally");
 	return;
 }
 
