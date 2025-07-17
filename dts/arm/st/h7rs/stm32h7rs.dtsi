@@ -830,6 +830,30 @@
 			dma-offset = <0>;
 			status = "disabled";
 		};
+
+		sai1_a: sai1@42005804 {
+			compatible = "st,stm32-sai";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x42005804 0x20>;
+			clocks = <&rcc STM32_CLOCK(APB2, 22)>,
+				 <&rcc STM32_SRC_PLL3_P SAI1_SEL(2)>;
+			dmas = <&gpdma1 1 63 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
+				STM32_DMA_16BITS)>;
+			status = "disabled";
+		};
+
+		sai1_b: sai1@42005824 {
+			compatible = "st,stm32-sai";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x42005824 0x20>;
+			clocks = <&rcc STM32_CLOCK(APB2, 22)>,
+				 <&rcc STM32_SRC_PLL3_P SAI1_SEL(2)>;
+			dmas = <&gpdma1 0 64 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
+				STM32_DMA_16BITS)>;
+			status = "disabled";
+		};
 	};
 
 	otgfs_phy: otgfs_phy {
