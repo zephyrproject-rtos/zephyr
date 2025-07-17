@@ -836,12 +836,11 @@ static int enhanced_i2c_cmd_queue_trans(const struct device *dev)
 	IT8XXX2_I2C_MODE_SEL(base) = 0;
 	IT8XXX2_I2C_CTR2(base) = 1;
 	/*
-	 * The EC processor(CPU) cannot be in the k_cpu_idle() and power
-	 * policy during the transactions with the CQ mode(DMA mode).
+	 * The EC processor(CPU) cannot be in the k_cpu_idle() during the
+	 * transactions with the CQ mode(DMA mode).
 	 * Otherwise, the EC processor would be clock gated.
 	 */
 	chip_block_idle();
-	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 	/* Start */
 	IT8XXX2_I2C_CTR(base) = E_START_CQ;
 
@@ -876,8 +875,7 @@ static int i2c_enhance_cq_transfer(const struct device *dev,
 			config->port, data->addr_16bit, I2C_RC_TIMEOUT);
 	}
 
-	/* Permit to enter power policy and idle mode. */
-	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	/* Permit to enter idle mode. */
 	chip_permit_idle();
 
 	return data->err;
@@ -966,6 +964,8 @@ static int i2c_enhance_transfer(const struct device *dev,
 #endif
 	/* Lock mutex of i2c controller */
 	k_mutex_lock(&data->mutex, K_FOREVER);
+	/* Block to enter power policy. */
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 
 	data->num_msgs = num_msgs;
 	data->addr_16bit = addr;
@@ -984,9 +984,8 @@ static int i2c_enhance_transfer(const struct device *dev,
 			 * (No external pull-up), drop the transaction.
 			 */
 			if (i2c_bus_not_available(dev)) {
-				/* Unlock mutex of i2c controller */
-				k_mutex_unlock(&data->mutex);
-				return -EIO;
+				ret = -EIO;
+				goto done;
 			}
 		}
 	}
@@ -1001,6 +1000,10 @@ static int i2c_enhance_transfer(const struct device *dev,
 	}
 	/* Save return value. */
 	ret = i2c_parsing_return_value(dev);
+
+done:
+	/* Permit to enter power policy */
+	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 	/* Unlock mutex of i2c controller */
 	k_mutex_unlock(&data->mutex);
 
