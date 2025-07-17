@@ -24,7 +24,7 @@
 #include <esp_cpu.h>
 
 #include <zephyr/linker/linker-defs.h>
-#include <kernel_internal.h>
+#include <zephyr/arch/common/init.h>
 
 #if CONFIG_SOC_SERIES_ESP32C6
 #include <soc/hp_apm_reg.h>

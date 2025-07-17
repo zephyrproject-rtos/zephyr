@@ -14,6 +14,7 @@
 #include <x86_mmu.h>
 #include <zephyr/drivers/interrupt_controller/loapic.h>
 #include <zephyr/arch/common/xip.h>
+#include <zephyr/arch/common/init.h>
 #ifdef CONFIG_ACPI
 #include <zephyr/arch/x86/cpuid.h>
 #include <zephyr/acpi/acpi.h>
