@@ -31,29 +31,6 @@ void z_init_cpu(int id);
 void z_init_thread_base(struct _thread_base *thread_base, int priority,
 			uint32_t initial_state, unsigned int options);
 
-/* Early boot functions */
-void z_early_memset(void *dst, int c, size_t n);
-void z_early_memcpy(void *dst, const void *src, size_t n);
-
-void z_bss_zero(void);
-
-#ifdef CONFIG_LINKER_USE_BOOT_SECTION
-void z_bss_zero_boot(void);
-#else
-static inline void z_bss_zero_boot(void)
-{
-	/* Do nothing */
-}
-#endif /* CONFIG_LINKER_USE_BOOT_SECTION */
-
-#ifdef CONFIG_LINKER_USE_PINNED_SECTION
-void z_bss_zero_pinned(void);
-#else
-static inline void z_bss_zero_pinned(void)
-{
-	/* Do nothing */
-}
-#endif /* CONFIG_LINKER_USE_PINNED_SECTION */
 
 FUNC_NORETURN void z_cstart(void);
 
