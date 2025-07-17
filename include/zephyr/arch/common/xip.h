@@ -12,9 +12,9 @@ extern "C" {
 #endif
 
 #ifdef CONFIG_XIP
-void z_data_copy(void);
+void arch_data_copy(void);
 #else
-static inline void z_data_copy(void)
+static inline void arch_data_copy(void)
 {
 	/* Do nothing */
 }

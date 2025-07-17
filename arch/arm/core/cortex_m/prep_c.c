@@ -206,7 +206,7 @@ void z_prep_c(void)
 	z_arm_floating_point_init();
 #endif
 	arch_bss_zero();
-	z_data_copy();
+	arch_data_copy();
 #if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 	/* Invoke SoC-specific interrupt controller initialization */
 	z_soc_irq_init();
