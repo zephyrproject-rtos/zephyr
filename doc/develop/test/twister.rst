@@ -883,6 +883,9 @@ pytest_dut_scope: <function|class|module|package|session> (default function)
               - test_file_2.py::test_A
               - test_file_2.py::test_B[param_a]
 
+
+.. _twister_console_harness:
+
 Console
 =======
 
@@ -972,6 +975,8 @@ record: <recording options> (optional)
           }
       ]
 
+.. _twister_robot_harness:
+
 Robot
 =====
 
@@ -984,8 +989,11 @@ robot_testsuite: <robot file path> (default empty)
 robot_option: <robot option> (default empty)
     One or more options to be send to robotframework.
 
+.. _twister_power_harness:
+
 Power
 =====
+
 The ``power`` harness is used to measure and validate the current consumption.
 It integrates with 'pytest' to perform automated data collection and analysis using a hardware power monitor.
 
@@ -1022,6 +1030,8 @@ The harness executes the following steps:
 - **expected_rms_values** – Target RMS values for each identified execution phase (in milliamps).
 - **tolerance_percentage** – Allowed deviation percentage from the expected RMS values.
 
+.. _twister_bsim_harness:
+
 Bsim
 ====
 
@@ -1039,6 +1049,8 @@ bsim_exe_name: <string>
     If provided, the executable filename when copying to BabbleSim's bin
     directory, will be ``bs_<platform_name>_<bsim_exe_name>`` instead of the
     default based on the test path and scenario name.
+
+.. _twister_shell_harness:
 
 Shell
 =====
