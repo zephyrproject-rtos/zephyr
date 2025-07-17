@@ -8,9 +8,6 @@ compatible: "nxp,imx-netc"
 include: [base.yaml]
 
 properties:
-  reg:
-    required: true
-
   msi-parent:
     type: phandle
     description: MSI controller
