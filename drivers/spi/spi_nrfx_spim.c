@@ -734,10 +734,10 @@ static int spi_nrfx_init(const struct device *dev)
 	struct spi_nrfx_data *dev_data = dev->data;
 	int err;
 
-	err = pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_DEFAULT);
-	if (err < 0) {
-		return err;
-	}
+	/* Apply sleep state by default.
+	 * If PM is disabled, the default state will be applied in pm_device_driver_init.
+	 */
+	(void)pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_SLEEP);
 
 	if (dev_config->wake_pin != WAKE_PIN_NOT_USED) {
 		err = spi_nrfx_wake_init(&dev_config->wake_gpiote, dev_config->wake_pin);
