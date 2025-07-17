@@ -116,6 +116,12 @@ list(APPEND kernel_files
 endif()
 
 
+if (CONFIG_BOOTARGS)
+list(APPEND kernel_files
+  boot_args.c
+  )
+endif()
+
 if(CONFIG_THREAD_MONITOR)
 list(APPEND kernel_files
      thread_monitor.c)
