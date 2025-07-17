@@ -12,6 +12,12 @@
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/atmel_sam_pmc.h>
+#include <zephyr/drivers/pwm/pwm_utils.h>
+#include <zephyr/spinlock.h>
+
+#ifdef CONFIG_PWM_EVENT
+#include <zephyr/irq.h>
+#endif
 
 #include <zephyr/logging/log.h>
 
@@ -35,6 +41,16 @@ struct sam_pwm_config {
 	const struct pinctrl_dev_config *pcfg;
 	uint8_t prescaler;
 	uint8_t divider;
+#ifdef CONFIG_PWM_EVENT
+	void (*irq_config)(void);
+#endif /* CONFIG_PWM_EVENT */
+};
+
+struct sam_pwm_data {
+#ifdef CONFIG_PWM_EVENT
+	sys_slist_t event_callbacks;
+	struct k_spinlock lock;
+#endif /* CONFIG_PWM_EVENT */
 };
 
 static int sam_pwm_get_cycles_per_sec(const struct device *dev,
@@ -99,6 +115,77 @@ static int sam_pwm_set_cycles(const struct device *dev, uint32_t channel,
 	return 0;
 }
 
+#ifdef CONFIG_PWM_EVENT
+static void update_interrupts(const struct device *dev)
+{
+	const struct sam_pwm_config *config = dev->config;
+	struct sam_pwm_data *data = dev->data;
+	struct pwm_event_callback *cb, *tmp;
+	Pwm *const pwm = config->regs;
+	uint32_t pwm_ier1 = 0;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&data->event_callbacks, cb, tmp, node) {
+		if ((cb->event_mask & PWM_EVENT_TYPE_PERIOD) != 0) {
+			pwm_ier1 |= PWM_IER1_CHID0 << cb->channel;
+		}
+		if ((cb->event_mask & PWM_EVENT_TYPE_FAULT) != 0) {
+			pwm_ier1 |= PWM_IER1_FCHID0 << cb->channel;
+		}
+	}
+
+	/* Disable all interrupts */
+	pwm->PWM_IDR1 = UINT32_MAX;
+
+	/* Dummy read to clear status register */
+	(void)pwm->PWM_ISR1;
+
+	/* Reenable interrupts */
+	pwm->PWM_IER1 = pwm_ier1;
+}
+
+static void sam_pwm_isr(const struct device *dev)
+{
+	const struct sam_pwm_config *config = dev->config;
+	struct sam_pwm_data *data = dev->data;
+	Pwm *const pwm = config->regs;
+	pwm_flags_t events;
+
+	uint32_t status = pwm->PWM_ISR1;
+
+	for (uint32_t i = 0; i < PWMCHNUM_NUMBER; i++) {
+		events = 0;
+		if ((status & (PWM_ISR1_CHID0 << i)) != 0) {
+			events |= PWM_EVENT_TYPE_PERIOD;
+		}
+		if ((status & (PWM_ISR1_FCHID0 << i)) != 0) {
+			events |= PWM_EVENT_TYPE_FAULT;
+		}
+
+		if (events > 0) {
+			pwm_fire_event_callbacks(&data->event_callbacks, dev, i, events);
+		}
+	}
+}
+
+static int sam_pwm_manage_event_callback(const struct device *dev,
+					 struct pwm_event_callback *callback, bool set)
+{
+	struct sam_pwm_data *data = dev->data;
+	int ret;
+
+	ret = pwm_manage_event_callback(&data->event_callbacks, callback, set);
+	if (ret < 0) {
+		return ret;
+	}
+
+	K_SPINLOCK(&data->lock) {
+		update_interrupts(dev);
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PWM_EVENT */
+
 static int sam_pwm_init(const struct device *dev)
 {
 	const struct sam_pwm_config *config = dev->config;
@@ -109,6 +196,13 @@ static int sam_pwm_init(const struct device *dev)
 	int retval;
 
 	/* FIXME: way to validate prescaler & divider */
+
+#ifdef CONFIG_PWM_EVENT
+	struct sam_pwm_data *data = dev->data;
+
+	sys_slist_init(&data->event_callbacks);
+	config->irq_config();
+#endif
 
 	/* Enable PWM clock in PMC */
 	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
@@ -128,23 +222,41 @@ static int sam_pwm_init(const struct device *dev)
 static DEVICE_API(pwm, sam_pwm_driver_api) = {
 	.set_cycles = sam_pwm_set_cycles,
 	.get_cycles_per_sec = sam_pwm_get_cycles_per_sec,
+#ifdef CONFIG_PWM_EVENT
+	.manage_event_callback = sam_pwm_manage_event_callback,
+#endif /* CONFIG_PWM_EVENT */
 };
+
+#define SAM_PWM_INTERRUPT_INIT(inst)                                                               \
+	static void sam_pwm_irq_config_##inst(void)                                                \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(inst), 0, sam_pwm_isr, DEVICE_DT_INST_GET(inst), 0);      \
+		irq_enable(DT_INST_IRQN(inst));                                                    \
+	}
 
 #define SAM_INST_INIT(inst)						\
 	PINCTRL_DT_INST_DEFINE(inst);					\
+									\
+	IF_ENABLED(CONFIG_PWM_EVENT, (SAM_PWM_INTERRUPT_INIT(inst)))	\
+									\
 	static const struct sam_pwm_config sam_pwm_config_##inst = {	\
 		.regs = (Pwm *)DT_INST_REG_ADDR(inst),			\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),		\
 		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(inst),		\
 		.prescaler = DT_INST_PROP(inst, prescaler),		\
 		.divider = DT_INST_PROP(inst, divider),			\
+		IF_ENABLED(CONFIG_PWM_EVENT,				\
+			   (.irq_config = sam_pwm_irq_config_##inst,))	\
 	};								\
 									\
+	static struct sam_pwm_data sam_pwm_data_##inst;			\
+									\
 	DEVICE_DT_INST_DEFINE(inst,					\
-			    &sam_pwm_init, NULL,			\
-			    NULL, &sam_pwm_config_##inst,		\
-			    POST_KERNEL,				\
-			    CONFIG_PWM_INIT_PRIORITY,			\
-			    &sam_pwm_driver_api);
+			      &sam_pwm_init, NULL,			\
+			      &sam_pwm_data_##inst,			\
+			      &sam_pwm_config_##inst,			\
+			      POST_KERNEL,				\
+			      CONFIG_PWM_INIT_PRIORITY,			\
+			      &sam_pwm_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SAM_INST_INIT)
