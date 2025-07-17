@@ -9,7 +9,7 @@
 FUNC_NORETURN void z_cstart(void);
 
 /* Early boot functions */
-void z_early_memset(void *dst, int c, size_t n);
+void arch_early_memset(void *dst, int c, size_t n);
 void z_early_memcpy(void *dst, const void *src, size_t n);
 
 void z_bss_zero(void);
