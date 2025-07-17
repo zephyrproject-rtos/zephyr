@@ -7,6 +7,9 @@
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #include <fsl_clock.h>
 #include <fsl_spc.h>
+#if defined(CONFIG_PM) || defined(CONFIG_POWEROFF)
+#include <fsl_vbat.h>
+#endif
 #include <soc.h>
 
 /* Core clock frequency: 180MHz */
@@ -250,6 +253,9 @@ void board_early_init_hook(void)
  */
 #if DT_PROP(DT_NODELABEL(lptmr0), clk_source) == 0x1
 	CLOCK_SetupFRO16KClocking(kCLKE_16K_SYSTEM | kCLKE_16K_COREMAIN);
+#if defined(CONFIG_PM) || defined(CONFIG_POWEROFF)
+	VBAT_EnableFRO16k(VBAT0, true);
+#endif
 #elif DT_PROP(DT_NODELABEL(lptmr0), clk_source) == 0x3
 	CLOCK_AttachClk(kFRO_LF_DIV_to_LPTMR0);
 	CLOCK_SetClockDiv(kCLOCK_DivLPTMR0, 1u);
