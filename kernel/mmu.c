@@ -19,6 +19,7 @@
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/timing/timing.h>
+#include <zephyr/arch/common/init.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 

@@ -23,6 +23,7 @@
 #include <zephyr/platform/hooks.h>
 #include <zephyr/arch/cache.h>
 #include <zephyr/arch/common/xip.h>
+#include <zephyr/arch/common/init.h>
 
 /*
  * GCC can detect if memcpy is passed a NULL argument, however one of
