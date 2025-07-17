@@ -22,6 +22,7 @@
 #include <zephyr/arch/x86/multiboot.h>
 #include <x86_mmu.h>
 #include <zephyr/kernel/mm.h>
+#include <zephyr/arch/common/xip.h>
 
 	/* exports (private APIs) */
 
