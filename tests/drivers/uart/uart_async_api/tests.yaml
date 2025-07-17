@@ -3,6 +3,10 @@ common:
     - stamp_c3
     - wio_terminal
     - xiao_esp32c3
+    - max32657evkit/max32657
+    - max32657evkit/max32657/ns
+    - max32658evkit/max32658
+    - max32658evkit/max32658/ns
   tags:
     - drivers
     - uart
