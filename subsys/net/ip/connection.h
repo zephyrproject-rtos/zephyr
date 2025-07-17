@@ -191,10 +191,8 @@ int net_conn_update(struct net_conn_handle *handle,
  * @param proto LL protocol for the connection
  * @param type socket type
  *
- * @return NET_OK if the packet was consumed, NET_CONTINUE if the packet should
- * be processed further in the stack.
  */
-enum net_verdict net_conn_packet_input(struct net_pkt *pkt,
+void net_conn_packet_input(struct net_pkt *pkt,
 				       uint16_t proto,
 				       enum net_sock_type type);
 
