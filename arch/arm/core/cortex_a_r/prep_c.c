@@ -24,6 +24,7 @@
 #include <zephyr/arch/arm/cortex_a_r/lib_helpers.h>
 #include <zephyr/platform/hooks.h>
 #include <zephyr/arch/cache.h>
+#include <zephyr/arch/common/xip.h>
 
 #if defined(CONFIG_ARMV7_R) || defined(CONFIG_ARMV7_A)
 #include <cortex_a_r/stack.h>
