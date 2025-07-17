@@ -2,10 +2,10 @@
  * Copyright The Zephyr Project contributors
  */
 
- #include <zephyr/sys/util.h>
- #include <ctype.h>
- #include <zephyr/logging/log.h>
- LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
+#include <zephyr/sys/util.h>
+#include <ctype.h>
+#include <zephyr/logging/log.h>
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 extern const char *get_bootargs(void);
 char **prepare_main_args(int *argc)
