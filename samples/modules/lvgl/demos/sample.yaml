@@ -72,7 +72,7 @@ tests:
   sample.modules.lvgl.demos.rtk7eka6m3b00001bu:
     platform_allow: ek_ra8d1
     extra_args:
-      - SHIELD=rtk7eka6m3b00001bu
+      - SHIELD="rtk7eka6m3b00001bu;ek_ra8d1_rtk7eka6m3b00001bu"
       - DTC_OVERLAY_FILE=rtk7eka6m3b00001bu.overlay
     extra_configs:
       - CONFIG_LV_DEMO_MUSIC_LANDSCAPE=y
