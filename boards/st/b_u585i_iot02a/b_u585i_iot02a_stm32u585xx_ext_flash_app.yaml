@@ -1,0 +1,10 @@
+identifier: b_u585i_iot02a/stm32u585xx/ext_flash_app
+name: ST B_U585I_IOT02A Discovery kit ext_flash_app target
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 786
+flash: 416
+vendor: st
