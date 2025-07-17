@@ -24,7 +24,7 @@
  * may override this with their own safe implementation.
  */
 __boot_func
-void __weak z_early_memset(void *dst, int c, size_t n)
+void __weak arch_early_memset(void *dst, int c, size_t n)
 {
 	(void) memset(dst, c, n);
 }
@@ -54,19 +54,19 @@ void z_bss_zero(void)
 		return;
 	}
 
-	z_early_memset(__bss_start, 0, __bss_end - __bss_start);
+	arch_early_memset(__bss_start, 0, __bss_end - __bss_start);
 #if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_ccm))
-	z_early_memset(&__ccm_bss_start, 0,
+	arch_early_memset(&__ccm_bss_start, 0,
 		       (uintptr_t) &__ccm_bss_end
 		       - (uintptr_t) &__ccm_bss_start);
 #endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm))
-	z_early_memset(&__dtcm_bss_start, 0,
+	arch_early_memset(&__dtcm_bss_start, 0,
 		       (uintptr_t) &__dtcm_bss_end
 		       - (uintptr_t) &__dtcm_bss_start);
 #endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_ocm))
-	z_early_memset(&__ocm_bss_start, 0,
+	arch_early_memset(&__ocm_bss_start, 0,
 		       (uintptr_t) &__ocm_bss_end
 		       - (uintptr_t) &__ocm_bss_start);
 #endif
@@ -76,11 +76,11 @@ void z_bss_zero(void)
 	bss_zeroing_relocation();
 #endif	/* CONFIG_CODE_DATA_RELOCATION */
 #ifdef CONFIG_COVERAGE_GCOV
-	z_early_memset(&__gcov_bss_start, 0,
+	arch_early_memset(&__gcov_bss_start, 0,
 		       ((uintptr_t) &__gcov_bss_end - (uintptr_t) &__gcov_bss_start));
 #endif /* CONFIG_COVERAGE_GCOV */
 #ifdef CONFIG_NOCACHE_MEMORY
-	z_early_memset(&_nocache_ram_start, 0,
+	arch_early_memset(&_nocache_ram_start, 0,
 			(uintptr_t) &_nocache_ram_end - (uintptr_t) &_nocache_ram_start);
 #endif
 }
@@ -97,7 +97,7 @@ void z_bss_zero(void)
 __boot_func
 void z_bss_zero_boot(void)
 {
-	z_early_memset(&lnkr_boot_bss_start, 0,
+	arch_early_memset(&lnkr_boot_bss_start, 0,
 		       (uintptr_t)&lnkr_boot_bss_end
 		       - (uintptr_t)&lnkr_boot_bss_start);
 }
@@ -119,7 +119,7 @@ __pinned_func
 #endif /* CONFIG_LINKER_USE_BOOT_SECTION */
 void z_bss_zero_pinned(void)
 {
-	z_early_memset(&lnkr_pinned_bss_start, 0,
+	arch_early_memset(&lnkr_pinned_bss_start, 0,
 		       (uintptr_t)&lnkr_pinned_bss_end
 		       - (uintptr_t)&lnkr_pinned_bss_start);
 }
