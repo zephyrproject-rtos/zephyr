@@ -877,6 +877,11 @@ static uint8_t select_attrs(struct bt_sdp_attribute *attr, uint8_t att_idx,
 			     (space < seq_size + sad->cont_state_size))) {
 				/* Packet exhausted */
 				sad->state->pkt_full = true;
+
+				/* This case mean packet is exhausted, state stays at
+				 * the previous attr, we should break the loop.
+				 */
+				break;
 			}
 		}
 
@@ -1316,6 +1321,19 @@ static uint16_t sdp_svc_search_att_req(struct bt_sdp *sdp, struct net_buf *buf,
 			}
 
 			rsp_buf_cpy = NULL;
+			/*
+			 * If current service is the same as the next service,
+			 * then we should continue from the last attribute.
+			 */
+			if (state.current_svc == next_svc) {
+				next_att = state.last_att;
+			}
+
+			/* continue from the last attribute, just dry run. */
+			att_list_len += create_attr_list(sdp, record, filter,
+						num_filters, max_att_len,
+						SDP_SSA_CONT_STATE_SIZE + 1,
+						next_att, &state, rsp_buf_cpy);
 		}
 
 		next_att = 0U;
