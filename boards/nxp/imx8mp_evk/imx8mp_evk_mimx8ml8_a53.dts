@@ -111,11 +111,12 @@
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 
 	gpio_exp1: pca6416@20 {
-		compatible = "nxp,pca6416";
+		compatible = "nxp,pca6416a";
 		reg = <0x20>;
 		gpio-controller;
 		#gpio-cells = <2>;
-		interrupt-gpios = <&gpio1 12 (GPIO_ACTIVE_LOW|GPIO_PULL_UP)>;
+		ngpios = <16>;
+		int-gpios = <&gpio1 12 (GPIO_ACTIVE_LOW|GPIO_PULL_UP)>;
 		status = "okay";
 	};
 };

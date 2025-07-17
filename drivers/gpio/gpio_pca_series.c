@@ -47,6 +47,8 @@ enum gpio_pca_series_part_no {
 	PCA_PART_NO_PCA9539,
 	PCA_PART_NO_PCA9554,
 	PCA_PART_NO_PCA9555,
+	PCA_PART_NO_PCA6408A,
+	PCA_PART_NO_PCA6416A,
 	PCA_PART_NO_PCAL9538,
 	PCA_PART_NO_PCAL9539,
 	PCA_PART_NO_PCAL6408A,
@@ -2037,7 +2039,7 @@ const struct gpio_pca_series_part_config gpio_pca_series_part_cfg_pca9538 = {
 };
 
 /**
- * pca9555 share the same register layout with pca9539, with
+ * pca9554 share the same register layout with pca9538, with
  * RESET pin repurposed to another address strapping pin.
  * no difference from driver perspective.
  */
@@ -2053,6 +2055,28 @@ const struct gpio_pca_series_part_config gpio_pca_series_part_cfg_pca9554 = {
 #ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
 # ifdef GPIO_NXP_PCA_SERIES_DEBUG
 	.cache_size = GPIO_PCA_GET_CACHE_SIZE_BY_PART_NO(PCA_PART_NO_PCA9554),
+# endif /* GPIO_NXP_PCA_SERIES_DEBUG */
+	.cache_map = gpio_pca_series_cache_map_pca953x,
+#endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
+};
+
+/**
+ * pca6408a share the same register layout with pca9538, with
+ * RESET pin repurposed to another address strapping pin.
+ * no difference from driver perspective.
+ */
+
+#define GPIO_PCA_PORT_NO_PCA_PART_NO_PCA6408A GPIO_PCA_PORT_NO_PCA_PART_NO_PCA9538
+#define GPIO_PCA_FLAG_PCA_PART_NO_PCA6408A GPIO_PCA_FLAG_PCA_PART_NO_PCA9538
+#define GPIO_PCA_PART_CFG_PCA_PART_NO_PCA6408A (&gpio_pca_series_part_cfg_pca6408a)
+
+const struct gpio_pca_series_part_config gpio_pca_series_part_cfg_pca6408a = {
+	.port_no = GPIO_PCA_PORT_NO_PCA_PART_NO_PCA6408A,
+	.flags = GPIO_PCA_FLAG_PCA_PART_NO_PCA6408A,
+	.regs = gpio_pca_series_reg_pca9538,
+#ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
+# ifdef GPIO_NXP_PCA_SERIES_DEBUG
+	.cache_size = GPIO_PCA_GET_CACHE_SIZE_BY_PART_NO(PCA_PART_NO_PCA6408A),
 # endif /* GPIO_NXP_PCA_SERIES_DEBUG */
 	.cache_map = gpio_pca_series_cache_map_pca953x,
 #endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
@@ -2117,6 +2141,28 @@ const struct gpio_pca_series_part_config gpio_pca_series_part_cfg_pca9555 = {
 #ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
 # ifdef GPIO_NXP_PCA_SERIES_DEBUG
 	.cache_size = GPIO_PCA_GET_CACHE_SIZE_BY_PART_NO(PCA_PART_NO_PCA9555),
+# endif /* GPIO_NXP_PCA_SERIES_DEBUG */
+	.cache_map = gpio_pca_series_cache_map_pca953x,
+#endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
+};
+
+/**
+ * pca6416a share the same register layout with pca9539, with
+ * RESET pin repurposed to another address strapping pin.
+ * no difference from driver perspective.
+ */
+
+#define GPIO_PCA_PORT_NO_PCA_PART_NO_PCA6416A GPIO_PCA_PORT_NO_PCA_PART_NO_PCA9539
+#define GPIO_PCA_FLAG_PCA_PART_NO_PCA6416A GPIO_PCA_FLAG_PCA_PART_NO_PCA9539
+#define GPIO_PCA_PART_CFG_PCA_PART_NO_PCA6416A (&gpio_pca_series_part_cfg_pca6416a)
+
+const struct gpio_pca_series_part_config gpio_pca_series_part_cfg_pca6416a = {
+	.port_no = GPIO_PCA_PORT_NO_PCA_PART_NO_PCA6408A,
+	.flags = GPIO_PCA_FLAG_PCA_PART_NO_PCA6408A,
+	.regs = gpio_pca_series_reg_pca9539,
+#ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
+# ifdef GPIO_NXP_PCA_SERIES_DEBUG
+	.cache_size = GPIO_PCA_GET_CACHE_SIZE_BY_PART_NO(PCA_PART_NO_PCA6408A),
 # endif /* GPIO_NXP_PCA_SERIES_DEBUG */
 	.cache_map = gpio_pca_series_cache_map_pca953x,
 #endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
@@ -2480,6 +2526,14 @@ DT_INST_FOREACH_STATUS_OKAY_VARGS(GPIO_PCA_SERIES_DEVICE_INSTANCE, PCA_PART_NO_P
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT nxp_pca9555
 DT_INST_FOREACH_STATUS_OKAY_VARGS(GPIO_PCA_SERIES_DEVICE_INSTANCE, PCA_PART_NO_PCA9555)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT nxp_pca6408a
+DT_INST_FOREACH_STATUS_OKAY_VARGS(GPIO_PCA_SERIES_DEVICE_INSTANCE, PCA_PART_NO_PCA6408A)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT nxp_pca6416a
+DT_INST_FOREACH_STATUS_OKAY_VARGS(GPIO_PCA_SERIES_DEVICE_INSTANCE, PCA_PART_NO_PCA6416A)
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT nxp_pcal9538
