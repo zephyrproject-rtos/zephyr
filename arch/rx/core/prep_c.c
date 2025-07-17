@@ -35,7 +35,7 @@ void z_prep_c(void)
 {
 	arch_bss_zero();
 
-	z_data_copy();
+	arch_data_copy();
 
 	z_cstart();
 	CODE_UNREACHABLE;

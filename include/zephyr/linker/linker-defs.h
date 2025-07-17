@@ -135,7 +135,7 @@ extern char __kernel_ram_size[];
 extern char __bss_start[];
 extern char __bss_end[];
 
-/* Used by z_data_copy() or arch-specific implementation */
+/* Used by arch_data_copy() or arch-specific implementation */
 #ifdef CONFIG_XIP
 extern char __data_region_load_start[];
 extern char __data_region_start[];
