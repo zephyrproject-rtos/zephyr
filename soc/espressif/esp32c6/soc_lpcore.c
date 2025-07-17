@@ -12,7 +12,6 @@
 #include "ulp_lp_core_memory_shared.h"
 #include "ulp_lp_core_print.h"
 #include <soc.h>
-#include <kernel_internal.h>
 
 extern void main(void);
 
