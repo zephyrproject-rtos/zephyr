@@ -48,7 +48,7 @@ void __weak arch_early_memcpy(void *dst, const void *src, size_t n)
  * This routine clears the BSS region, so all bytes are 0.
  */
 __boot_func
-void z_bss_zero(void)
+void arch_bss_zero(void)
 {
 	if (IS_ENABLED(CONFIG_SKIP_BSS_CLEAR)) {
 		return;
@@ -90,12 +90,12 @@ void z_bss_zero(void)
  * @brief Clear BSS within the boot region
  *
  * This routine clears the BSS within the boot region.
- * This is separate from z_bss_zero() as boot region may
+ * This is separate from arch_bss_zero() as boot region may
  * contain symbols required for the boot process before
  * paging is initialized.
  */
 __boot_func
-void z_bss_zero_boot(void)
+void arch_bss_zero_boot(void)
 {
 	arch_early_memset(&lnkr_boot_bss_start, 0,
 		       (uintptr_t)&lnkr_boot_bss_end
@@ -108,7 +108,7 @@ void z_bss_zero_boot(void)
  * @brief Clear BSS within the pinned region
  *
  * This routine clears the BSS within the pinned region.
- * This is separate from z_bss_zero() as pinned region may
+ * This is separate from arch_bss_zero() as pinned region may
  * contain symbols required for the boot process before
  * paging is initialized.
  */
@@ -117,7 +117,7 @@ __boot_func
 #else
 __pinned_func
 #endif /* CONFIG_LINKER_USE_BOOT_SECTION */
-void z_bss_zero_pinned(void)
+void arch_bss_zero_pinned(void)
 {
 	arch_early_memset(&lnkr_pinned_bss_start, 0,
 		       (uintptr_t)&lnkr_pinned_bss_end

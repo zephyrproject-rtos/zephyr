@@ -40,7 +40,7 @@ void z_prep_c(void)
 	/* Initialize tpidrro_el0 with our struct _cpu instance address */
 	write_tpidrro_el0((uintptr_t)&_kernel.cpus[0]);
 
-	z_bss_zero();
+	arch_bss_zero();
 	z_data_copy();
 #ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK
 	/* After bss clean, _kernel.cpus is in bss section */

@@ -65,7 +65,7 @@ void IRAM_ATTR __appcpu_start(void)
 		: "r"(&_init_start));
 
 	/* Zero out BSS.  Clobber _bss_start to avoid memset() elision. */
-	z_bss_zero();
+	arch_bss_zero();
 
 	__asm__ __volatile__ (
 		""

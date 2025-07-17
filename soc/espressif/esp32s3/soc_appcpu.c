@@ -57,7 +57,7 @@ void IRAM_ATTR __appcpu_start(void)
 	__asm__ __volatile__("wsr %0, vecbase" : : "r"(&_init_start));
 
 	/* Zero out BSS.  Clobber _bss_start to avoid memset() elision. */
-	z_bss_zero();
+	arch_bss_zero();
 
 	__asm__ __volatile__("" : : "g"(&__bss_start) : "memory");
 
