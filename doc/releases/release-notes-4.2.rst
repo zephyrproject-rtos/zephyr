@@ -88,7 +88,7 @@ API Changes
 Removed APIs and options
 ========================
 
-* Removed the deprecated the ``net_buf_put()`` and ``net_buf_get()`` API functions.
+* Removed the deprecated ``net_buf_put()`` and ``net_buf_get()`` API functions.
 
 * Removed the deprecated ``include/zephyr/net/buf.h`` header file.
 
@@ -114,8 +114,8 @@ Deprecated APIs and options
 * The :kconfig:option:`CONFIG_LWM2M_ENGINE_MESSAGE_HEADER_SIZE` Kconfig option has been removed.
   The required header size should be included in the message size, configured using
   :kconfig:option:`CONFIG_LWM2M_COAP_MAX_MSG_SIZE`. Special care should be taken to ensure that
-  used CoAP block size :kconfig:option:`CONFIG_LWM2M_COAP_BLOCK_SIZE` can fit given message size
-  with headers. Previous headroom was 48 bytes.
+  the CoAP block size used (:kconfig:option:`CONFIG_LWM2M_COAP_BLOCK_SIZE`) can fit the given
+  message size with headers. Previous headroom was 48 bytes.
 
 * TLS credential type ``TLS_CREDENTIAL_SERVER_CERTIFICATE`` was renamed and
   deprecated, use :c:enumerator:`TLS_CREDENTIAL_PUBLIC_CERTIFICATE` instead.
@@ -242,7 +242,7 @@ New APIs and options
       :kconfig:option:`CONFIG_BT_L2CAP_RET`, :kconfig:option:`CONFIG_BT_L2CAP_FC`,
       :kconfig:option:`CONFIG_BT_L2CAP_ENH_RET`, and :kconfig:option:`CONFIG_BT_L2CAP_STREAM`.
     * :c:func:`bt_avrcp_get_cap`
-    * Improve the classic hands-free uint, including
+    * Improve the classic hands-free unit, including
       :kconfig:option:`CONFIG_BT_HFP_HF_CODEC_NEG`, :kconfig:option:`CONFIG_BT_HFP_HF_ECNR`,
       :kconfig:option:`CONFIG_BT_HFP_HF_3WAY_CALL`, :kconfig:option:`CONFIG_BT_HFP_HF_ECS`,
       :kconfig:option:`CONFIG_BT_HFP_HF_ECC`, :kconfig:option:`CONFIG_BT_HFP_HF_VOICE_RECG_TEXT`,
@@ -358,12 +358,14 @@ New APIs and options
       * :c:macro:`IP_MULTICAST_LOOP`
       * :c:macro:`IPV6_MULTICAST_LOOP`
       * :c:macro:`TLS_CERT_VERIFY_RESULT`
-      * :c:macro:`TLS_CERT_VERIFY_RESULT`
 
   * Wi-Fi
 
     * :kconfig:option:`CONFIG_WIFI_USAGE_MODE`
-    * Added a new section to the Wi-Fi Management documentation (``doc/connectivity/networking/api/wifi.rst``) with step-by-step instructions for generating test certificates for Wi-Fi using FreeRADIUS scripts. This helps users reproduce the process for their own test environments.
+    * Added a new section to the Wi-Fi Management documentation
+      (``doc/connectivity/networking/api/wifi.rst``) with step-by-step instructions for generating
+      test certificates for Wi-Fi using FreeRADIUS scripts. This helps users reproduce the process
+      for their own test environments.
     * Changed the hostap IPC mechanism from socketpair to k_fifo. Depending on the enabled Wi-Fi configuration options, this can save up to 6-8 kB memory when using native Wi-Fi stack.
 
   * zperf
@@ -425,8 +427,8 @@ New APIs and options
   * :c:macro:`VIDEO_CID_EXPOSURE_ABSOLUTE` and other controls from the CAMERA control class.
   * :c:macro:`VIDEO_PIX_FMT_Y10` and ``Y12``, ``Y14``, ``Y16`` variants
   * :c:macro:`VIDEO_PIX_FMT_SRGGB10P` and ``12P``, ``14P`` variants, for all 4 bayer variants.
-  * ``video_buffer.index`` field
-  * ``video_ctrl_query.int_menu`` field
+  * :c:member:`video_buffer.index` field
+  * :c:member:`video_ctrl_query.int_menu` field
   * :c:macro:`VIDEO_MIPI_CSI2_DT_NULL` and other MIPI standard values
 
 * PCIe
@@ -725,7 +727,7 @@ New Boards
 .. _shields_added_in_zephyr_4_2:
 
 New shields
-============
+===========
 
 * :ref:`Arduino Giga Display Shield <arduino_giga_display_shield>`
 * :ref:`Arduino Modulino Buttons <arduino_modulino_buttons>`
@@ -1014,7 +1016,7 @@ New Drivers
    * :dtcompatible:`x-powers,axp192-led`
    * :dtcompatible:`x-powers,axp2101-led`
 
-* :abbr:`LED (Light Emitting Diode)`
+* :abbr:`LED (Light Emitting Diode)` strip
 
    * :dtcompatible:`arduino,modulino-smartleds`
 
@@ -1355,11 +1357,11 @@ Other notable changes
 * Added support for Armv8.1-M MPU's PXN (Privileged Execute Never) attribute.
   With this, the MPU attributes for ``__ramfunc`` and ``__ram_text_reloc`` were modified such that,
   PXN attribute is set for these regions if compiled with ``CONFIG_ARM_MPU_PXN`` and ``CONFIG_USERSPACE``.
-  This results in a change in behaviour for code being executed from these regions because,
+  This results in a change in behavior for code being executed from these regions because,
   if these regions have pxn attribute set in them, they cannot be executed in privileged mode.
 
 * Removed support for Nucleo WBA52CG board (``nucleo_wba52cg``) since it is NRND (Not Recommended
-  for New Design) and it is not supported anymore in the STM32CubeWBA from version 1.1.0 (July 2023).
+  for New Design) and is no longer supported in the STM32CubeWBA from version 1.1.0 (July 2023).
   The migration to :zephyr:board:`nucleo_wba55cg` (``nucleo_wba55cg``) is recommended instead.
 
 * Updated Mbed TLS to version 3.6.4 (from 3.6.2). Release notes for 3.6.3 and
