@@ -2490,6 +2490,11 @@ static int uarte_instance_init(const struct device *dev,
 		((struct pinctrl_dev_config *)cfg->pcfg)->reg = (uintptr_t)cfg->uarte_regs;
 	}
 
+	/* Apply sleep state by default.
+	 * If PM is disabled, the default state will be applied in pm_device_driver_init.
+	 */
+	(void)pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_SLEEP);
+
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	err = uarte_nrfx_configure(dev, &((struct uarte_nrfx_data *)dev->data)->uart_config);
 	if (err) {
