@@ -17,6 +17,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>
+#include <zephyr/dt-bindings/gpio/pca-series-gpio.h>
 #include <zephyr/drivers/i2c.h>
 
 #define LOG_LEVEL CONFIG_GPIO_LOG_LEVEL
@@ -146,6 +147,18 @@ enum PCA_INTERRUPT_config_extended {
 	PCA_INTERRUPT_RISING_EDGE,
 	PCA_INTERRUPT_FALLING_EDGE,
 	PCA_INTERRUPT_EITHER_EDGE,
+};
+
+/**
+ * @brief drive strength for output_drive_strength register
+ *
+ * @note Only applies to part no with PCA_HAS_LATCH capability.
+ */
+enum gpio_pca_series_drive_strength {
+	PCA_SERIES_DRIVE_STRENGTH_X1 = 0U, /** Lowest strength */
+	PCA_SERIES_DRIVE_STRENGTH_X2,
+	PCA_SERIES_DRIVE_STRENGTH_X3,
+	PCA_SERIES_DRIVE_STRENGTH_X4,      /** Highest strength, reset default */
 };
 
 struct gpio_pca_series_part_config {
@@ -930,6 +943,46 @@ void gpio_pca_series_cache_test(const struct device *dev)
 #endif /* GPIO_NXP_PCA_SERIES_DEBUG */
 
 /**
+ * @brief Configure the output drive strength for a specific GPIO pin.
+ *
+ * This function sets the drive strength of the specified pin on the device.
+ *
+ * @param dev Pointer to the device structure.
+ * @param pin GPIO pin number to configure.
+ * @param strength Desired drive strength setting.
+ * @return int 0 on success,
+ *             -EIO if an I2C communication error occurs.
+ */
+static int gpio_pca_series_pin_drive_strength_configure(
+		const struct device *dev, gpio_pin_t pin,
+		enum gpio_pca_series_drive_strength strength)
+{
+	const struct gpio_pca_series_config *cfg = dev->config;
+	int ret;
+	uint32_t reg_cfg_shift = pin << 1U;
+	uint64_t reg_cfg_mask = ((uint64_t)0x3) << reg_cfg_shift;
+	uint64_t reg_value;
+
+	if ((cfg->part_cfg->flags & PCA_HAS_LATCH) == 0U) {
+		return -ENOTSUP;
+	}
+
+	ret = gpio_pca_series_reg_cache_read(dev, PCA_REG_TYPE_2B_OUTPUT_DRIVE_STRENGTH,
+						 (uint8_t *)&reg_value);
+	if (ret) {
+		goto out;
+	}
+	reg_value = sys_le64_to_cpu(reg_value);
+	reg_value = (reg_value & (~reg_cfg_mask)) | ((uint64_t)strength << reg_cfg_shift);
+	reg_value = sys_cpu_to_le64(reg_value);
+	ret = gpio_pca_series_reg_write(dev, PCA_REG_TYPE_2B_OUTPUT_DRIVE_STRENGTH,
+					(uint8_t *)&reg_value);
+
+out:
+	return ret;
+}
+
+/**
  * }
  * gpio_pca_custom_api
  */
@@ -975,7 +1028,9 @@ static int gpio_pca_series_pin_configure(const struct device *dev,
 		if ((cfg->part_cfg->flags & PCA_HAS_PULL) == 0U) {
 			return -ENOTSUP;
 		}
-	} /* Can't do I2C bus operations from an ISR */
+	}
+
+	/* Can't do I2C bus operations from an ISR */
 	if (k_is_in_isr()) {
 		return -EWOULDBLOCK;
 	}
@@ -1051,6 +1106,21 @@ static int gpio_pca_series_pin_configure(const struct device *dev,
 						(uint8_t *)&reg_value);
 		if (ret != 0) {
 			goto out;
+		}
+	}
+
+	if (PCA_SERIES_GPIO_DRIVE_STRENGTH_ENABLE(flags)) {
+		ret = gpio_pca_series_pin_drive_strength_configure(dev, pin,
+			(enum gpio_pca_series_drive_strength)
+				PCA_SERIES_GPIO_DRIVE_STRENGTH_CONFIG(flags));
+		if (ret) {
+			if (ret == -ENOTSUP) {
+				LOG_WRN("Drive strength not supported for device %s, "
+					"ignoring drive strength setting for pin %d",
+					dev->name, pin);
+			} else {
+				goto out;
+			}
 		}
 	}
 
