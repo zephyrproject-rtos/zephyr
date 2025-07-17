@@ -254,6 +254,7 @@ static void phy_monitor_work_handler(struct k_work *work)
 	const struct device *dev = data->dev;
 
 	if (!data->cb) {
+		k_work_reschedule(&data->phy_monitor_work, K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
 		return;
 	}
 
