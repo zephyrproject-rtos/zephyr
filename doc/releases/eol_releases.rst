@@ -20,6 +20,7 @@ Release Notes
    release-notes-1.*
    release-notes-2.[0-6]
    release-notes-3.[0-6]
+   release-notes-4.[0-0]
 
 .. _eol_releases_migration_guides:
 
