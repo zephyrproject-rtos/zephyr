@@ -1,9 +1,12 @@
 /*
- * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2024-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdbool.h>
+
+#include <zephyr/fff.h>
 #include <zephyr/kernel.h>
 
 #include "kernel.h"
@@ -22,6 +25,7 @@ DEFINE_FAKE_VALUE_FUNC(int, k_work_submit, struct k_work *);
 DEFINE_FAKE_VALUE_FUNC(int, k_work_submit_to_queue, struct k_work_q *, struct k_work *);
 DEFINE_FAKE_VALUE_FUNC(int, k_work_reschedule, struct k_work_delayable *, k_timeout_t);
 DEFINE_FAKE_VALUE_FUNC(int, k_work_schedule, struct k_work_delayable *, k_timeout_t);
+DEFINE_FAKE_VALUE_FUNC(int, k_work_busy_get, const struct k_work *);
 DEFINE_FAKE_VOID_FUNC(k_queue_init, struct k_queue *);
 DEFINE_FAKE_VOID_FUNC(k_queue_append, struct k_queue *, void *);
 DEFINE_FAKE_VALUE_FUNC(int, k_queue_is_empty, struct k_queue *);

@@ -1,8 +1,9 @@
 /*
- * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2024-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdbool.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/fff.h>
@@ -42,6 +43,7 @@ DECLARE_FAKE_VOID_FUNC(k_sem_give, struct k_sem *);
 DECLARE_FAKE_VALUE_FUNC(k_tid_t, k_sched_current_thread_query);
 DECLARE_FAKE_VOID_FUNC(k_work_init, struct k_work *, k_work_handler_t);
 DECLARE_FAKE_VOID_FUNC(k_work_init_delayable, struct k_work_delayable *, k_work_handler_t);
+DECLARE_FAKE_VALUE_FUNC(int, k_work_busy_get, const struct k_work *);
 DECLARE_FAKE_VALUE_FUNC(int, k_work_cancel_delayable, struct k_work_delayable *);
 DECLARE_FAKE_VALUE_FUNC(bool, k_work_flush, struct k_work *, struct k_work_sync *);
 DECLARE_FAKE_VALUE_FUNC(int, k_work_submit, struct k_work *);
