@@ -657,7 +657,7 @@ out:
  * device if reset_pin is present. Otherwise it write
  * reset value to device registers.
  */
-static inline void gpio_pca_series_reset(const struct device *dev)
+static inline int gpio_pca_series_reset(const struct device *dev)
 {
 	const struct gpio_pca_series_config *cfg = dev->config;
 	const uint8_t reset_value_0[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
@@ -666,55 +666,82 @@ static inline void gpio_pca_series_reset(const struct device *dev)
 
 	/** Reset pin connected, do hardware reset */
 	if (cfg->gpio_rst.port != NULL) {
-		if (!device_is_ready(cfg->gpio_rst.port)) {
+		if (!gpio_is_ready_dt(&cfg->gpio_rst)) {
+			LOG_ERR("reset gpio device is not ready, "
+				"fallback to software reset", dev->name);
 			goto sw_rst;
 		}
 		/* Reset gpio should be set to active LOW in dts */
 		ret = gpio_pin_configure_dt(&cfg->gpio_rst,
-			GPIO_OUTPUT_HIGH | GPIO_OUTPUT_INIT_LOGICAL);
+			GPIO_OUTPUT_ACTIVE);
 		if (ret) {
-			goto sw_rst;
+			return -EIO;
 		}
-		k_sleep(K_USEC(1));
+		k_busy_wait(1);
 		ret = gpio_pin_set_dt(&cfg->gpio_rst, 0U);
 		if (ret) {
-			goto sw_rst;
+			return -EIO;
 		}
-		k_sleep(K_USEC(1));
-		return;
+		k_busy_wait(1);
+		return 0;
 	}
 
 sw_rst:
-	/** Warn that gpio configured but failed */
-	if (cfg->gpio_rst.port != NULL) {
-		LOG_WRN("gpio reset failed, fallback to soft reset");
-	}
 	/**
-	 * Reset pin not connected, write reset value to registers
-	 * No need to check return, as unsupported reg will return early with error
+	 * Reset pin not connected or not ready, write reset value to registers.
+	 * Note that it could fail if the reset pin is activated by default.
 	 */
-	gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_OUTPUT_PORT, reset_value_1);
-	gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_CONFIGURATION, reset_value_1);
+	ret = gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_OUTPUT_PORT, reset_value_1);
+	if (ret) {
+		return ret;
+	}
+	ret = gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_CONFIGURATION, reset_value_1);
+	if (ret) {
+		return ret;
+	}
 	if (cfg->part_cfg->flags & PCA_HAS_LATCH) {
-		gpio_pca_series_reg_write(dev, PCA_REG_TYPE_2B_OUTPUT_DRIVE_STRENGTH,
+		ret = gpio_pca_series_reg_write(dev, PCA_REG_TYPE_2B_OUTPUT_DRIVE_STRENGTH,
 			reset_value_1);
-		gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_INPUT_LATCH, reset_value_0);
+		if (ret) {
+			return ret;
+		}
+		ret = gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_INPUT_LATCH, reset_value_0);
+		if (ret) {
+			return ret;
+		}
 	}
 	if (cfg->part_cfg->flags & PCA_HAS_PULL) {
-		gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_PULL_ENABLE, reset_value_0);
-		gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_PULL_SELECT, reset_value_1);
+		ret = gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_PULL_ENABLE, reset_value_0);
+		if (ret) {
+			return ret;
+		}
+		ret = gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_PULL_SELECT, reset_value_1);
+		if (ret) {
+			return ret;
+		}
 	}
 	if (cfg->part_cfg->flags & PCA_HAS_OUT_CONFIG) {
-		gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_OUTPUT_CONFIG, reset_value_0);
+		ret = gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_OUTPUT_CONFIG, reset_value_0);
+		if (ret) {
+			return ret;
+		}
 	}
 #ifdef CONFIG_GPIO_PCA_SERIES_INTERRUPT
 	if (cfg->part_cfg->flags & PCA_HAS_INT_MASK) {
-		gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_INTERRUPT_MASK, reset_value_1);
+		ret = gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_INTERRUPT_MASK, reset_value_1);
+		if (ret) {
+			return ret;
+		}
 	}
 	if (cfg->part_cfg->flags & PCA_HAS_INT_EXTEND) {
-		gpio_pca_series_reg_write(dev, PCA_REG_TYPE_2B_INTERRUPT_EDGE, reset_value_0);
+		ret = gpio_pca_series_reg_write(dev, PCA_REG_TYPE_2B_INTERRUPT_EDGE, reset_value_0);
+		if (ret) {
+			return ret;
+		}
 	}
 #endif /* CONFIG_GPIO_PCA_SERIES_INTERRUPT */
+
+	return ret;
 }
 
 #ifdef GPIO_NXP_PCA_SERIES_DEBUG
@@ -1710,18 +1737,37 @@ static int gpio_pca_series_init(const struct device *dev)
 	struct gpio_pca_series_data *data = dev->data;
 	int ret = 0;
 
+	/** With deferred initialization, context checking is also required here */
+	if (k_is_in_isr()) {
+		LOG_ERR("Cannot initialize from ISR context");
+		return -EWOULDBLOCK;
+	}
+
 	if (!device_is_ready(cfg->i2c.bus)) {
 		LOG_ERR("i2c bus device not found");
 		goto out_bus;
 	}
 
 	/** device reset */
-	gpio_pca_series_reset(dev);
-	LOG_DBG("device reset done");
+	ret = gpio_pca_series_reset(dev);
+	if (ret) {
+		LOG_ERR("device reset error %d", ret);
+		goto out_bus;
+	} else {
+		LOG_DBG("device reset done");
+	}
 
 #ifdef GPIO_NXP_PCA_SERIES_DEBUG
 # ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
 	gpio_pca_series_cache_test(dev);
+	/** Device needs to be reset again after test */
+	ret = gpio_pca_series_reset(dev);
+	if (ret) {
+		LOG_ERR("device reset error %d", ret);
+		goto out_bus;
+	} else {
+		LOG_DBG("device reset done");
+	}
 # endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
 #endif /* GPIO_NXP_PCA_SERIES_DEBUG */
 
