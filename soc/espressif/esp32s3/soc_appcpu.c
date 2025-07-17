@@ -16,7 +16,7 @@
 #include <zephyr/toolchain/gcc.h>
 #include <zephyr/types.h>
 #include <zephyr/linker/linker-defs.h>
-#include <kernel_internal.h>
+#include <zephyr/arch/common/init.h>
 #include <zephyr/sys/util.h>
 
 #include <esp_private/system_internal.h>

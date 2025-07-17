@@ -9,6 +9,7 @@
 #include <zephyr/kernel.h>
 #include <kernel_internal.h>
 #include <zephyr/linker/linker-defs.h>
+#include <zephyr/arch/common/init.h>
 
 #ifdef CONFIG_REQUIRES_STACK_CANARIES
 #ifdef CONFIG_STACK_CANARIES_TLS

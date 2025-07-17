@@ -18,10 +18,10 @@
 #include <stddef.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/kernel_structs.h>
-#include <kernel_internal.h>
 #include <zephyr/platform/hooks.h>
 #include <zephyr/arch/cache.h>
 #include <zephyr/arch/common/xip.h>
+#include <zephyr/arch/common/init.h>
 
 #if defined(CONFIG_RISCV_SOC_INTERRUPT_INIT)
 void soc_interrupt_init(void);

@@ -17,7 +17,7 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 #include <zephyr/linker/linker-defs.h>
-#include <kernel_internal.h>
+#include <zephyr/arch/common/init.h>
 
 #include <esp_private/system_internal.h>
 #include <esp32s3/rom/cache.h>
