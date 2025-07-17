@@ -34,6 +34,10 @@ config PINCTRL_DYNAMIC
 	  runtime. This can be useful, for example, to change the pins assigned to a
 	  peripheral at early boot stages depending on a certain input.
 
+config PINCTRL_KEEP_SLEEP_STATE
+	bool "Keep sleep state"
+	default y if PM || PM_DEVICE || DEVICE_DEINIT_SUPPORT
+
 source "drivers/pinctrl/Kconfig.b91"
 source "drivers/pinctrl/Kconfig.bflb"
 source "drivers/pinctrl/Kconfig.ambiq"
