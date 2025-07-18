@@ -738,10 +738,6 @@ static int sys_mm_drv_mm_init(const struct device *dev)
 
 	L2_PHYS_SRAM_REGION.info.num_blocks = avalible_memory_size / CONFIG_MM_DRV_PAGE_SIZE;
 
-	ret = calculate_memory_regions(UNUSED_L2_START_ALIGNED);
-	CHECKIF(ret != 0) {
-		return ret;
-	}
 	/*
 	 * Initialize memblocks that will store physical
 	 * page usage. Initially all physical pages are
