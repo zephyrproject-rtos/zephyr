@@ -124,11 +124,49 @@ match this node:
         compatible = "manufacturer,device-v2", "manufacturer,device";
     };
 
-Each node's ``compatible`` property is tried in order. The first matching
-binding is used. The :ref:`on-bus: <dt-bindings-on-bus>` key can be used to
-refine the search.
+Each node's ``compatible`` property is tried in order. The
+:ref:`bindings <dt-binding-compat>` are uniquely identified by a pair of
+(:ref:`compatible <dt-bindings-compatible>`,
+:ref:`on-bus <dt-bindings-on-bus>`), where the
+:ref:`on-bus <dt-bindings-on-bus>` may be unspecified. A specified
+:ref:`on-bus <dt-bindings-on-bus>` takes precedence over unspecified. The
+first matching binding is used.
 
-If more than one binding for a compatible is found, an error is raised.
+For the following device:
+
+.. code-block:: devicetree
+
+   spi-bus {
+           device-3 {
+                   compatible = "manufacturer,device";
+           };
+   };
+
+The following two bindings can coexist and would match in the following order:
+
+``manufacturer,device-spi.yaml``
+
+.. code-block:: YAML
+
+   compatible: "manufacturer,device"
+   on-bus: spi
+
+``manufacturer,device.yaml``
+
+.. code-block:: YAML
+
+   compatible: "manufacturer,device"
+
+The following binding can coexist but would not match.
+
+``manufacturer,device-i2c.yaml``
+
+.. code-block:: YAML
+
+   compatible: "manufacturer,device"
+   on-bus: i2c
+
+If more than one matching binding for a compatible is found, an error is raised.
 
 The ``manufacturer`` prefix identifies the device vendor. See
 :zephyr_file:`dts/bindings/vendor-prefixes.txt` for a list of accepted vendor
