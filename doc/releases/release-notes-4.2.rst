@@ -171,50 +171,18 @@ Stable API changes in this release
 New APIs and options
 ====================
 
+..
+  Link to new APIs here, in a group if you think it's necessary, no need to get
+  fancy just list the link, that should contain the documentation. If you feel
+  like you need to add more details, add them in the API documentation code
+  instead.
+
 * Architectures
 
   * NIOS2 Architecture was removed from Zephyr.
   * :kconfig:option:`ARCH_HAS_VECTOR_TABLE_RELOCATION`
   * :kconfig:option:`CONFIG_SRAM_VECTOR_TABLE` moved from ``zephyr/Kconfig.zephyr`` to
     ``zephyr/arch/Kconfig`` and added dependencies to it.
-
-* Kernel
-
- * :c:macro:`K_TIMEOUT_ABS_SEC`
- * :c:func:`timespec_add`
- * :c:func:`timespec_compare`
- * :c:func:`timespec_equal`
- * :c:func:`timespec_is_valid`
- * :c:func:`timespec_negate`
- * :c:func:`timespec_normalize`
- * :c:func:`timespec_from_timeout`
- * :c:func:`timespec_to_timeout`
- * :c:func:`k_heap_array_get`
-
-* I2C
-
-  * :c:func:`i2c_configure_dt`.
-  * :c:macro:`I2C_DEVICE_DT_DEINIT_DEFINE`
-  * :c:macro:`I2C_DEVICE_DT_INST_DEINIT_DEFINE`
-
-* I3C
-
-  * :kconfig:option:`CONFIG_I3C_MODE`
-  * :kconfig:option:`CONFIG_I3C_CONTROLLER_ROLE_ONLY`
-  * :kconfig:option:`CONFIG_I3C_TARGET_ROLE_ONLY`
-  * :kconfig:option:`CONFIG_I3C_DUAL_ROLE`
-  * :c:func:`i3c_ccc_do_rstdaa`
-
-* SPI
-
-  * :c:macro:`SPI_DEVICE_DT_DEINIT_DEFINE`
-  * :c:macro:`SPI_DEVICE_DT_INST_DEINIT_DEFINE`
-
-..
-  Link to new APIs here, in a group if you think it's necessary, no need to get
-  fancy just list the link, that should contain the documentation. If you feel
-  like you need to add more details, add them in the API documentation code
-  instead.
 
 * Bluetooth
 
@@ -295,10 +263,49 @@ New APIs and options
     * Single app RAM load support added to sysbuild using
       :kconfig:option:`SB_CONFIG_MCUBOOT_MODE_SINGLE_APP_RAM_LOAD`.
 
+* Counter
+
+  * :c:func:`counter_reset`
+
+* Debug
+
+  * Core Dump
+
+    * :kconfig:option:`CONFIG_DEBUG_COREDUMP_THREAD_STACK_TOP`, enabled by default for ARM Cortex M when :kconfig:option:`CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_MIN` is selected.
+    * :kconfig:option:`CONFIG_DEBUG_COREDUMP_BACKEND_IN_MEMORY`
+    * :kconfig:option:`CONFIG_DEBUG_COREDUMP_BACKEND_IN_MEMORY_SIZE`
+
 * Display
 
     * Added :c:func:`display_clear` API to allow clearing the display content in a standardized way.
     * Character Frame Buffer (CFB) subsystem now supports drawing circles via :c:func:`cfb_draw_circle`.
+
+* I2C
+
+  * :c:func:`i2c_configure_dt`.
+  * :c:macro:`I2C_DEVICE_DT_DEINIT_DEFINE`
+  * :c:macro:`I2C_DEVICE_DT_INST_DEINIT_DEFINE`
+
+* I3C
+
+  * :kconfig:option:`CONFIG_I3C_MODE`
+  * :kconfig:option:`CONFIG_I3C_CONTROLLER_ROLE_ONLY`
+  * :kconfig:option:`CONFIG_I3C_TARGET_ROLE_ONLY`
+  * :kconfig:option:`CONFIG_I3C_DUAL_ROLE`
+  * :c:func:`i3c_ccc_do_rstdaa`
+
+* Kernel
+
+ * :c:macro:`K_TIMEOUT_ABS_SEC`
+ * :c:func:`timespec_add`
+ * :c:func:`timespec_compare`
+ * :c:func:`timespec_equal`
+ * :c:func:`timespec_is_valid`
+ * :c:func:`timespec_negate`
+ * :c:func:`timespec_normalize`
+ * :c:func:`timespec_from_timeout`
+ * :c:func:`timespec_to_timeout`
+ * :c:func:`k_heap_array_get`
 
 * LVGL (Light and Versatile Graphics Library)
 
@@ -306,6 +313,9 @@ New APIs and options
     * LVGL subsystem now supports multiple simultaneous displays, including proper input device-to-display binding.
     * Added L8/Y8 pixel format support for displays such as SSD1327, SSD1320, SSD1322, and ST75256.
     * :kconfig:option:`CONFIG_LV_Z_COLOR_MONO_HW_INVERSION`
+
+* LoRaWAN
+   * :c:func:`lorawan_request_link_check`
 
 * Management
 
@@ -396,6 +406,10 @@ New APIs and options
     * :c:member:`zperf_upload_params.data_loader`
     * :kconfig:option:`CONFIG_NET_ZPERF_SERVER`
 
+* PCIe
+
+   * :kconfig:option:`CONFIG_NVME_PRP_PAGE_SIZE`
+
 * Power management
 
     * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_USE_SYSTEM_WQ`
@@ -405,6 +419,11 @@ New APIs and options
     * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_DEDICATED_WQ_PRIO`
     * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_DEDICATED_WQ_INIT_PRIO`
     * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_ASYNC`
+
+* SPI
+
+  * :c:macro:`SPI_DEVICE_DT_DEINIT_DEFINE`
+  * :c:macro:`SPI_DEVICE_DT_INST_DEINIT_DEFINE`
 
 * Sensor
 
@@ -419,10 +438,6 @@ New APIs and options
 
   * :c:func:`flash_area_copy()`
 
-* Counter
-
-  * :c:func:`counter_reset`
-
 * Sys
 
   * :c:func:`util_eq`
@@ -431,8 +446,13 @@ New APIs and options
   * :c:func:`sys_clock_settime`
   * :c:func:`sys_clock_nanosleep`
 
-* LoRaWAN
-   * :c:func:`lorawan_request_link_check`
+* USB
+
+  * :c:func:`uvc_set_video_dev`
+
+* UpdateHub
+
+  * :c:func:`updatehub_report_error`
 
 * Video
 
@@ -452,26 +472,6 @@ New APIs and options
   * :c:member:`video_buffer.index` field
   * :c:member:`video_ctrl_query.int_menu` field
   * :c:macro:`VIDEO_MIPI_CSI2_DT_NULL` and other MIPI standard values
-
-* PCIe
-
-   * :kconfig:option:`CONFIG_NVME_PRP_PAGE_SIZE`
-
-* Debug
-
-  * Core Dump
-
-    * :kconfig:option:`CONFIG_DEBUG_COREDUMP_THREAD_STACK_TOP`, enabled by default for ARM Cortex M when :kconfig:option:`CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_MIN` is selected.
-    * :kconfig:option:`CONFIG_DEBUG_COREDUMP_BACKEND_IN_MEMORY`
-    * :kconfig:option:`CONFIG_DEBUG_COREDUMP_BACKEND_IN_MEMORY_SIZE`
-
-* UpdateHub
-
-  * :c:func:`updatehub_report_error`
-
-* USB
-
-  * :c:func:`uvc_set_video_dev`
 
 * ZBus
 
