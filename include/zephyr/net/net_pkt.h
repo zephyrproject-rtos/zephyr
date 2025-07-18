@@ -231,8 +231,17 @@ struct net_pkt {
 				   * preserved. Useful only if
 				   * defined(CONFIG_NET_ETHERNET_BRIDGE).
 				   */
+	uint8_t raw_processed : 1; /* Set to 1 if this packet has already been
+				    * processed by SOCK_RAW
+				    */
+	uint8_t dgram_processed : 1; /* Set to 1 if this packet has already been
+				      * processed by SOCK_DGRAM
+				      */
 	uint8_t l2_processed : 1; /* Set to 1 if this packet has already been
 				   * processed by the L2
+				   */
+	uint8_t l3_processed : 1; /* Set to 1 if this packet has already been
+				   * processed by the L3
 				   */
 	uint8_t chksum_done : 1; /* Checksum has already been computed for
 				  * the packet.
@@ -554,6 +563,28 @@ static inline void net_pkt_set_l2_bridged(struct net_pkt *pkt, bool is_l2_bridge
 	}
 }
 
+static inline bool net_pkt_is_raw_processed(struct net_pkt *pkt)
+{
+	return !!(pkt->raw_processed);
+}
+
+static inline void net_pkt_set_raw_processed(struct net_pkt *pkt,
+					    bool is_raw_processed)
+{
+	pkt->raw_processed = is_raw_processed;
+}
+
+static inline bool net_pkt_is_dgram_processed(struct net_pkt *pkt)
+{
+	return !!(pkt->dgram_processed);
+}
+
+static inline void net_pkt_set_dgram_processed(struct net_pkt *pkt,
+					    bool is_dgram_processed)
+{
+	pkt->dgram_processed = is_dgram_processed;
+}
+
 static inline bool net_pkt_is_l2_processed(struct net_pkt *pkt)
 {
 	return !!(pkt->l2_processed);
@@ -563,6 +594,17 @@ static inline void net_pkt_set_l2_processed(struct net_pkt *pkt,
 					    bool is_l2_processed)
 {
 	pkt->l2_processed = is_l2_processed;
+}
+
+static inline bool net_pkt_is_l3_processed(struct net_pkt *pkt)
+{
+	return !!(pkt->l3_processed);
+}
+
+static inline void net_pkt_set_l3_processed(struct net_pkt *pkt,
+					    bool is_l3_processed)
+{
+	pkt->l3_processed = is_l3_processed;
 }
 
 static inline bool net_pkt_is_chksum_done(struct net_pkt *pkt)

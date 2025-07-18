@@ -214,6 +214,7 @@ static void reassemble_packet(struct net_ipv4_reassembly *reass)
 	 * MUST NOT pass it to L2 so mark it as l2_processed.
 	 */
 	net_pkt_set_l2_processed(pkt, true);
+	net_pkt_set_l3_processed(pkt, false);
 	if (net_recv_data(net_pkt_iface(pkt), pkt) >= 0) {
 		return;
 	}
