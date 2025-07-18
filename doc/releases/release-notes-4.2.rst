@@ -177,6 +177,8 @@ New APIs and options
   like you need to add more details, add them in the API documentation code
   instead.
 
+.. zephyr-keep-sorted-start re(^\* \w)
+
 * Architectures
 
   * NIOS2 Architecture was removed from Zephyr.
@@ -486,6 +488,7 @@ New APIs and options
   * :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_NONE`
   * :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_POOL_SIZE`
 
+.. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_2:
 

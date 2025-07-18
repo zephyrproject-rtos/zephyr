@@ -100,6 +100,8 @@ Boards
 Device Drivers and Devicetree
 *****************************
 
+.. zephyr-keep-sorted-start re(^\w)
+
 Audio
 =====
 
@@ -491,8 +493,12 @@ qSPI/oSPI/xSPI
   Note that the property gives the actual size of the memory device in bits.
   Previous mapping address information is now described in xspi, ospi or qspi nodes at SoC dtsi level.
 
+.. zephyr-keep-sorted-stop
+
 Bluetooth
 *********
+
+.. zephyr-keep-sorted-start re(^\w)
 
 Bluetooth Audio
 ===============
@@ -549,6 +555,8 @@ Bluetooth Host
 
 * The ``CONFIG_BT_ISO_TX_FRAG_COUNT`` Kconfig option was removed as it was completely unused.
   Any uses of it can simply be removed. (:github:`89836`)
+
+.. zephyr-keep-sorted-stop
 
 Networking
 **********
@@ -632,6 +640,8 @@ Networking
   :c:func:`dns_resolve_reconfigure_with_interfaces` now require that the user supplies
   the source of the DNS server information. For example when DNS server information is
   received via DHCPv4, then :c:enumerator:`DNS_SOURCE_DHCPV4` needs to be specified.
+
+.. zephyr-keep-sorted-start re(^\w)
 
 LwM2M
 =====
@@ -738,9 +748,13 @@ OpenThread
   * You can now use OpenThread directly, without enabling Zephyr's L2 or IEEE802.15.4 layers, if
     your use case allows.
 
+.. zephyr-keep-sorted-stop
+
 
 Other subsystems
 ****************
+
+.. zephyr-keep-sorted-start re(^\w)
 
 Modbus
 ======
@@ -768,8 +782,12 @@ hawkBit
   be prepended with :kconfig:option:`CONFIG_BOARD`. It is the user's responsibility to write a
   callback that prepends the board name if needed.
 
+.. zephyr-keep-sorted-stop
+
 Modules
 *******
+
+.. zephyr-keep-sorted-start re(^\w)
 
 CMSIS
 =====
@@ -784,6 +802,8 @@ CMSIS
   which can be accessed via the :kconfig:option:`CONFIG_ZEPHYR_CMSIS_6_MODULE_DIR` configuration.
 
   Note: Zephyr will continue using the older ``cmsis`` module for Cortex-A and Cortex-R targets.
+
+.. zephyr-keep-sorted-stop
 
 Architectures
 *************
