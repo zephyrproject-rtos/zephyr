@@ -1,0 +1,6 @@
+board:
+  name: xg28_pk2506a
+  full_name: PG28 Pro Kit PK2506A Rev. A03
+  vendor: silabs
+  socs:
+    - name: efm32pg28b310f1024im68
