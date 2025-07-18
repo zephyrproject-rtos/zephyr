@@ -24,7 +24,7 @@ manifest:
     - name: babblesim
       url-base: https://github.com/BabbleSim
 
-  group-filter: [-babblesim, -optional]
+  group-filter: [-babblesim, -optional, -testing]
 
   #
   # Please add items below based on alphabetical order
@@ -363,6 +363,11 @@ manifest:
       path: modules/debug/segger
       groups:
         - debug
+    - name: tf-m-tests
+      revision: a90702bcb8fadb6f70daf0ffbb13888dfe63fc99
+      path: modules/tee/tf-m/tf-m-tests
+      groups:
+        - testing
     - name: trusted-firmware-a
       revision: 0a29cac8fe0f7bdb835b469d9ea11b8e17377a92
       path: modules/tee/tf-a/trusted-firmware-a
