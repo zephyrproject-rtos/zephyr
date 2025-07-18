@@ -67,6 +67,27 @@ LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 #include "net_stats.h"
 
 #if defined(CONFIG_NET_NATIVE)
+static void net_queue_rx(struct net_if *iface, struct net_pkt *pkt);
+
+static void update_priority_l2(struct net_pkt *pkt)
+{
+	/* This is just an example.
+	 * Similar infrastructure with custom application rules like
+	 * net_pkt_filter could be established
+	 */
+	if (net_pkt_ll_proto_type(pkt) ==  NET_ETH_PTYPE_PTP) {
+		net_pkt_set_priority(pkt, NET_PRIORITY_IC);
+	}
+}
+
+static bool being_processed_by_correct_thread(struct net_pkt *pkt)
+{
+	uint8_t prio = net_pkt_priority(pkt);
+	uint8_t tc = net_rx_priority2tc(prio);
+
+	return net_tc_rx_is_current_thread(tc);
+}
+
 static inline enum net_verdict process_data(struct net_pkt *pkt)
 {
 	int ret;
@@ -77,21 +98,29 @@ static inline enum net_verdict process_data(struct net_pkt *pkt)
 	if (!pkt->frags) {
 		NET_DBG("Corrupted packet (frags %p)", pkt->frags);
 		net_stats_update_processing_error(net_pkt_iface(pkt));
-
 		return NET_DROP;
 	}
 
 	if (!net_pkt_is_l2_processed(pkt)) {
-		ret = net_if_recv_data(net_pkt_iface(pkt), pkt);
 		net_pkt_set_l2_processed(pkt, true);
+		ret = net_if_recv_data(net_pkt_iface(pkt), pkt);
 		if (ret != NET_CONTINUE) {
 			if (ret == NET_DROP) {
 				NET_DBG("Packet %p discarded by L2", pkt);
 				net_stats_update_processing_error(
 							net_pkt_iface(pkt));
 			}
-
 			return ret;
+		}
+		/* L2 has modified the buffer starting point, it is easier
+		 * to re-initialize the cursor rather than updating it.
+		 */
+		net_pkt_cursor_init(pkt);
+
+		update_priority_l2(pkt);
+		if (!being_processed_by_correct_thread(pkt)) {
+			net_queue_rx(net_pkt_iface(pkt), pkt);
+			return NET_OK;
 		}
 	}
 
@@ -116,8 +145,7 @@ static inline enum net_verdict process_data(struct net_pkt *pkt)
 		} else if (IS_ENABLED(CONFIG_NET_IPV4) && vtc_vhl == 0x40) {
 			return net_ipv4_input(pkt);
 		}
-
-		NET_DBG("Unknown IP family packet (0x%x)", NET_IPV6_HDR(pkt)->vtc & 0xf0);
+		NET_DBG("Unknown protocol family packet (0x%x)", family);
 		net_stats_update_ip_errors_protoerr(net_pkt_iface(pkt));
 		net_stats_update_ip_errors_vhlerr(net_pkt_iface(pkt));
 		return NET_DROP;
@@ -128,6 +156,7 @@ static inline enum net_verdict process_data(struct net_pkt *pkt)
 	NET_DBG("Unknown protocol family packet (0x%x)", family);
 	return NET_DROP;
 }
+
 
 static void processing_data(struct net_pkt *pkt)
 {
