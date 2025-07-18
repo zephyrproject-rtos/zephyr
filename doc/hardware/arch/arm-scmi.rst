@@ -191,6 +191,17 @@ example, ``CPU_SLEEP_MODE_SET``.
 	This driver is NXP-specific. As such, it may only be used on NXP
 	system that uses SCMI for cpu domain management operations.
 
+NXP - BBNSM management
+***************************
+
+This protocol is intended for management of bbnsm domain interface such button or rtc.
+This is done via a set of functions implementing various commands, for
+example, ``scmi_bbm_button_notify``.
+
+.. note::
+	This driver is NXP-specific. As such, it may only be used on NXP
+	system that uses SCMI for bbnsm domain management operations.
+
 Enabling the SCMI support
 *************************
 
