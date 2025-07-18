@@ -2,4 +2,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_BLACKPILL_H523CE
-	select SOC_STM32H533XX
+	select SOC_STM32H523XX

@@ -3,8 +3,8 @@
 Overview
 ********
 The WeAct STM32H523CE Core Board is a low cost and bare-bone development
-board made in famous "blackpill" package. It features STM32H523CE, high
-performance microcontroller based on a Arm Cortex M33 processor.
+board made in famous "blackpill" package. It features STM32H523CE, a high
+performance microcontroller based on an Arm Cortex M33 processor.
 
 Hardware
 ********
@@ -13,7 +13,7 @@ The STM32H523CE based Black Pill board provides the following hardware
 components:
 
 - STM32H523CE in 48 pin package
-- ARM 32-bit Cortex -M33 CPU with FPU
+- ARM 32-bit Cortex-M33 CPU with FPU
 - 250 MHz max CPU frequency
 - VDD from 1.7 V to 3.6 V
 - 512 kB Flash
@@ -63,11 +63,11 @@ Flashing
 Installing dfu-util
 -------------------
 
-It is recommended to use at least v0.8 of `dfu-util`_. The package available in
-debian/ubuntu can be quite old, so you might have to build dfu-util from source.
+It is recommended to use at least v0.8 of `dfu-util <https://dfu-util.sourceforge.net/>`_. The package available in
+Debian/Ubuntu can be quite old, so you might have to build dfu-util from source.
 
 There is also a Windows version which works, but you may have to install the
-right USB drivers with a tool like `Zadig`_.
+right USB drivers with a tool like `Zadig <https://zadig.akeo.ie/>`_.
 
 Flashing an Application
 -----------------------
@@ -79,10 +79,10 @@ The dfu-util runner is supported on this board and so a sample can be built and
 tested easily.
 
 .. zephyr-app-commands::
+
    :zephyr-app: samples/basic/blinky
    :board: blackpill_h523ce
    :goals: build flash
-
 
 Debugging
 =========
@@ -97,10 +97,10 @@ References
 .. target-notes::
 
 .. _WeAct Github:
-https://github.com/WeActStudio/WeActStudio.STM32H523CoreBoard/tree/master
+   https://github.com/WeActStudio/WeActStudio.STM32H523CoreBoard/tree/master
 
 .. _STM32H523CE website:
-https://www.st.com/en/microcontrollers-microprocessors/stm32h523ce.html
+   https://www.st.com/en/microcontrollers-microprocessors/stm32h523ce.html
 
 .. _STM32H523CE reference manual:
-https://www.st.com/en/microcontrollers-microprocessors/stm32h523ce.html#
+   https://www.st.com/en/microcontrollers-microprocessors/stm32h523ce.html#
