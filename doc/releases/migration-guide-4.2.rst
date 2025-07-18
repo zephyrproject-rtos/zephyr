@@ -412,6 +412,12 @@ Flash
 * Separate the ``compatible`` from ``renesas,ra-nv-flash`` to :dtcompatible:`renesas,ra-nv-code-flash.yaml`
   and :dtcompatible:`renesas,ra-nv-data-flash.yaml`.
 
+SD Host Controller
+==================
+
+* Moved extra fields from :c:struct:`sdhc_host_caps` to :c:struct:`sdhc_host_props` as per the
+  `SD Host Controller Specification <https://www.sdcard.org/downloads/pls/pdf/?p=PartA2_SD%20Host_Controller_Simplified_Specification_Ver4.20.jpg>`_.
+
 
 Stepper
 =======
