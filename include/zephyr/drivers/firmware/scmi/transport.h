@@ -31,8 +31,9 @@ struct scmi_channel;
  *
  * @param chan pointer to SCMI channel on which the reply
  * arrived
+ * @param msg pointer to message which cb get from shmem region
  */
-typedef void (*scmi_channel_cb)(struct scmi_channel *chan);
+typedef void (*scmi_channel_cb)(struct scmi_channel *chan, struct scmi_message msg);
 
 /**
  * @struct scmi_channel

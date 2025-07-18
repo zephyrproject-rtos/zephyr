@@ -70,6 +70,13 @@
 		    (extern struct scmi_channel					\
 		     SCMI_TRANSPORT_CHAN_NAME(SCMI_PROTOCOL_BASE, 0);))		\
 
+#define DT_SCMI_TRANSPORT_RX_CHAN_DECLARE(node_id)				\
+	COND_CODE_1(DT_SCMI_TRANSPORT_PROTO_HAS_CHAN(node_id, 1),		\
+		    (extern struct scmi_channel					\
+		     SCMI_TRANSPORT_CHAN_NAME(DT_REG_ADDR_RAW(node_id), 1);),	\
+		    (extern struct scmi_channel					\
+		     SCMI_TRANSPORT_CHAN_NAME(SCMI_PROTOCOL_BASE, 1);))		\
+
 /**
  * @brief Declare SCMI TX/RX channels
  *
@@ -84,6 +91,7 @@
  */
 #define DT_SCMI_TRANSPORT_CHANNELS_DECLARE(node_id)				\
 	DT_SCMI_TRANSPORT_TX_CHAN_DECLARE(node_id)				\
+	DT_SCMI_TRANSPORT_RX_CHAN_DECLARE(node_id)				\
 
 /**
  * @brief Declare SCMI TX/RX channels using node instance number
@@ -113,6 +121,10 @@
 		    (&SCMI_TRANSPORT_CHAN_NAME(DT_REG_ADDR_RAW(node_id), 0)),	\
 		    (&SCMI_TRANSPORT_CHAN_NAME(SCMI_PROTOCOL_BASE, 0)))
 
+#define DT_SCMI_TRANSPORT_RX_CHAN(node_id)					\
+	COND_CODE_1(DT_SCMI_TRANSPORT_PROTO_HAS_CHAN(node_id, 1),		\
+		    (&SCMI_TRANSPORT_CHAN_NAME(DT_REG_ADDR_RAW(node_id), 1)),	\
+		    (&SCMI_TRANSPORT_CHAN_NAME(SCMI_PROTOCOL_BASE, 1)))
 /**
  * @brief Define an SCMI channel for a protocol
  *
@@ -146,12 +158,15 @@
  * @param proto protocol ID in decimal format
  * @param pdata protocol private data
  */
-#define DT_SCMI_PROTOCOL_DATA_DEFINE(node_id, proto, pdata)			\
-	STRUCT_SECTION_ITERABLE(scmi_protocol, SCMI_PROTOCOL_NAME(proto)) =	\
-	{									\
-		.id = proto,							\
-		.tx = DT_SCMI_TRANSPORT_TX_CHAN(node_id),			\
-		.data = pdata,							\
+#define DT_SCMI_PROTOCOL_DATA_DEFINE(node_id, proto, pdata)				\
+	STRUCT_SECTION_ITERABLE(scmi_protocol, SCMI_PROTOCOL_NAME(proto)) =		\
+	{										\
+		.id = proto,								\
+		.tx = DT_SCMI_TRANSPORT_TX_CHAN(node_id),				\
+		.rx = COND_CODE_1(DT_PROP_HAS_IDX(DT_PARENT(node_id), shmem, 1),	\
+				(DT_SCMI_TRANSPORT_RX_CHAN(node_id)),			\
+				(NULL)),						\
+		.data = pdata,								\
 	}
 
 #else /* CONFIG_ARM_SCMI_TRANSPORT_HAS_STATIC_CHANNELS */

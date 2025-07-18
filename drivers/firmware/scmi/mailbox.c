@@ -9,15 +9,52 @@
 
 LOG_MODULE_REGISTER(scmi_mbox);
 
-static void scmi_mbox_cb(const struct device *mbox,
-			 mbox_channel_id_t channel_id,
-			 void *user_data,
-			 struct mbox_msg *data)
+/* tx scmi channel call back: handle scmi command and delayed reply */
+static void scmi_mbox_tx_reply_cb(const struct device *mbox,
+				mbox_channel_id_t channel_id,
+				void *user_data,
+				struct mbox_msg *data)
 {
 	struct scmi_channel *scmi_chan = user_data;
+	struct scmi_message msg;
+	uint8_t msg_type;
+
+	scmi_mbox_get_pending_msg(scmi_chan, &msg);
+	msg_type = SCMI_MESSAGE_HDR_EX_TYPE(msg.hdr);
 
 	if (scmi_chan->cb) {
-		scmi_chan->cb(scmi_chan);
+		if ((msg_type == SCMI_COMMAND) || (msg_type == SCMI_DELAYED_REPLY)) {
+			scmi_chan->cb(scmi_chan, msg);
+		} else {
+			LOG_WRN("Unexpected message type %u on tx channel", msg_type);
+		}
+	}
+}
+
+/* rx scmi channel callback: handles only notification message */
+static void scmi_mbox_notify_cb(const struct device *mbox,
+				mbox_channel_id_t channel_id,
+				void *user_data,
+				struct mbox_msg *data)
+{
+	struct scmi_message msg;
+	uint8_t msg_type;
+	struct scmi_channel *scmi_chan = user_data;
+	struct scmi_mbox_channel *mbox_chan = scmi_chan->data;
+	const struct device *shmem = mbox_chan->shmem;
+	bool a2p = false;
+
+	scmi_mbox_get_pending_msg(scmi_chan, &msg);
+	msg_type = SCMI_MESSAGE_HDR_EX_TYPE(msg.hdr);
+
+	if (scmi_chan->cb) {
+		if (msg_type == SCMI_NOTIFICATION) {
+			scmi_chan->cb(scmi_chan, msg);
+			/* clear channel status */
+			scmi_shmem_clear_channel_status(shmem, a2p);
+		} else {
+			LOG_WRN("Unexpected message type %u on rx channel", msg_type);
+		}
 	}
 }
 
@@ -71,29 +108,34 @@ static int scmi_mbox_setup_chan(const struct device *transport,
 {
 	int ret;
 	struct scmi_mbox_channel *mbox_chan;
-	struct mbox_dt_spec *tx_reply;
+	struct mbox_dt_spec *mbox_spec;
 
 	mbox_chan = chan->data;
 
-	if (!tx) {
-		return -ENOTSUP;
-	}
-
-	if (mbox_chan->tx_reply.dev) {
-		tx_reply = &mbox_chan->tx_reply;
+	if (tx) {
+		mbox_spec = mbox_chan->tx_reply.dev ? &mbox_chan->tx_reply : &mbox_chan->tx;
+		ret = mbox_register_callback_dt(mbox_spec, scmi_mbox_tx_reply_cb, chan);
+		if (ret < 0) {
+			LOG_ERR("failed to register reply cb on %s",
+					mbox_chan->tx_reply.dev ? "tx_reply" : "tx");
+			return ret;
+		}
 	} else {
-		tx_reply = &mbox_chan->tx;
+		if (!mbox_chan->rx.dev) {
+			LOG_ERR("RX channel not defined");
+			return -ENOTSUP;
+		}
+		mbox_spec = &mbox_chan->rx;
+		ret = mbox_register_callback_dt(&mbox_chan->rx, scmi_mbox_notify_cb, chan);
+		if (ret < 0) {
+			LOG_ERR("failed to register notify cb on rx");
+			return ret;
+		}
 	}
 
-	ret = mbox_register_callback_dt(tx_reply, scmi_mbox_cb, chan);
+	ret = mbox_set_enabled_dt(mbox_spec, true);
 	if (ret < 0) {
-		LOG_ERR("failed to register tx reply cb");
-		return ret;
-	}
-
-	ret = mbox_set_enabled_dt(tx_reply, true);
-	if (ret < 0) {
-		LOG_ERR("failed to enable tx reply dbell");
+		LOG_ERR("failed to enable %s dbell", tx ? "tx" : "rx");
 	}
 
 	/* enable interrupt-based communication */
