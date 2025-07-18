@@ -170,8 +170,7 @@ int siwx91x_scan(const struct device *dev, struct wifi_scan_params *z_scan_confi
 		return -EINVAL;
 	}
 
-	if (sidev->state != WIFI_STATE_DISCONNECTED && sidev->state != WIFI_STATE_INACTIVE &&
-	    sidev->state != WIFI_STATE_COMPLETED) {
+	if (sidev->state == WIFI_STATE_INTERFACE_DISABLED) {
 		LOG_ERR("Command given in invalid state");
 		return -EBUSY;
 	}
