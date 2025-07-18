@@ -79,13 +79,4 @@ static inline uintptr_t tlb_entry_to_pa(uint16_t tlb_entry)
 		CONFIG_MM_DRV_PAGE_SIZE) + TLB_PHYS_BASE);
 }
 
-/**
- * Calculate virtual memory regions allocation based on
- * info from linker script.
- *
- * @param End address of staticaly allocated memory.
- * @return Error Code.
- */
-int calculate_memory_regions(uintptr_t static_alloc_end_ptr);
-
 #endif /* ZEPHYR_DRIVERS_SYSTEM_MM_DRV_INTEL_MTL_ */
