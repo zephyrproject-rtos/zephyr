@@ -88,9 +88,18 @@ static void lis2mdl_config(const struct device *lis2mdl)
 #endif
 }
 
+#include "norm.h"
+
 static void lsm6dso16is_config(const struct device *lsm6dso16is)
 {
 	struct sensor_value odr_attr, fs_attr, mode_attr;
+
+	/* upload norm ISPU example */
+	if (sensor_upload_fw(lsm6dso16is, ispu_conf_conf_0,
+			    (sizeof(ispu_conf_conf_0) / sizeof(struct mems_conf_op))) < 0) {
+		printk("Cannot upload ISPU\n");
+		return;
+	}
 
 	mode_attr.val1 = 0; /* HP */
 
