@@ -36,3 +36,5 @@
 };
 
 arduino_spi: &spi3 {};
+
+arduino_i2c: &i2c1 {};
