@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/cache.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
@@ -17,6 +18,14 @@
 /* SCMI power domain states */
 #define POWER_DOMAIN_STATE_ON  0x00000000
 #define POWER_DOMAIN_STATE_OFF 0x40000000
+
+void soc_early_init_hook(void)
+{
+#ifdef CONFIG_CACHE_MANAGEMENT
+	sys_cache_data_enable();
+	sys_cache_instr_enable();
+#endif
+}
 
 #if defined(CONFIG_ETH_NXP_IMX_NETC) && (DT_CHILD_NUM_STATUS_OKAY(DT_NODELABEL(netc)) != 0)
 /* The function is to reuse code for 250MHz NETC system clock and MACs clocks initialization */
