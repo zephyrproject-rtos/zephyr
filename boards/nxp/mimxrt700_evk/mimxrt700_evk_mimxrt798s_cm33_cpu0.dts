@@ -24,6 +24,7 @@
 		pwm-0 = &sc_timer;
 		i2s-codec-tx = &sai0;
 		i2s-tx = &sai0;
+		rtc = &rtc0;
 	};
 
 	chosen {
@@ -245,3 +246,7 @@ zephyr_udc0: &usb0 {
 };
 
 p3t1755dp_ard_i2c_interface: &flexcomm8_lpi2c8 {};
+
+&rtc0 {
+	status = "okay";
+};
