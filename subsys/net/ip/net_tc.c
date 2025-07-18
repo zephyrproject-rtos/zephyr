@@ -235,6 +235,21 @@ static uint8_t rx_tc2thread(uint8_t tc)
 }
 #endif
 
+bool net_tc_rx_is_current_thread(uint8_t tc)
+{
+	uint8_t thread_priority;
+	int priority;
+	int desired_priority;
+
+	thread_priority = rx_tc2thread(tc);
+	desired_priority = IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE) ?
+		K_PRIO_COOP(thread_priority) :
+		K_PRIO_PREEMPT(thread_priority);
+	priority = k_thread_priority_get(k_current_get());
+
+	return priority == desired_priority;
+}
+
 #if defined(CONFIG_NET_STATISTICS)
 /* Fixup the traffic class statistics so that "net stats" shell command will
  * print output correctly.
