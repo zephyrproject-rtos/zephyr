@@ -16,6 +16,7 @@
 #include <kernel_internal.h>
 
 extern void esp_reset_reason_init(void);
+extern FUNC_NORETURN void z_cstart(void);
 
 void IRAM_ATTR __esp_platform_app_start(void)
 {
