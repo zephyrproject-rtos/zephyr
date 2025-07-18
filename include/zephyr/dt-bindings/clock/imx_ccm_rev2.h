@@ -159,6 +159,10 @@
 /* KPP */
 #define IMX_CCM_KPP_CLK                0x2400UL
 
+/* USB */
+#define IMX_CCM_USB_CLK                0x2500UL
+#define IMX_CCM_USB_PHY_CLK            0x2600UL
+
 /* QTMR */
 #define IMX_CCM_QTMR_CLK               0x6000UL
 #define IMX_CCM_QTMR1_CLK              0x6000UL
