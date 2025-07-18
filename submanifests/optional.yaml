@@ -16,12 +16,6 @@ manifest:
       remote: upstream
       groups:
         - optional
-    - name: lz4
-      revision: 11b8a1e22fa651b524494e55d22b69d3d9cebcfd
-      path: modules/lib/lz4
-      remote: upstream
-      groups:
-        - optional
     - name: sof
       revision: ba8de7551f88a4f8d4533791274fa85b37ec332e
       path: modules/audio/sof
