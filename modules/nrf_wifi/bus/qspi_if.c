@@ -23,8 +23,8 @@
 #include <hal/nrf_clock.h>
 #include <hal/nrf_gpio.h>
 
+#include <zephyr/drivers/wifi/nrf_wifi/bus/rpu_hw_if.h>
 #include "spi_nor.h"
-#include "osal_api.h"
 
 /* The QSPI bus node which the NRF70 is on */
 #define QSPI_IF_BUS_NODE DT_NODELABEL(qspi)
@@ -1290,15 +1290,14 @@ int qspi_read(unsigned int addr, void *data, int len)
 int qspi_hl_readw(unsigned int addr, void *data)
 {
 	int status;
-	uint8_t *rxb = NULL;
 	uint32_t len = 4;
+	uint8_t rxb[4 + (NRF_WIFI_QSPI_SLAVE_MAX_LATENCY * 4)];
 
-	len = len + (4 * qspi_cfg->qspi_slave_latency);
+	len += (4 * qspi_cfg->qspi_slave_latency);
 
-	rxb = nrf_wifi_osal_mem_alloc(len);
-
-	if (rxb == NULL) {
-		LOG_ERR("%s: ERROR ENOMEM line %d", __func__, __LINE__);
+	if (len > sizeof(rxb)) {
+		LOG_ERR("%s: len exceeded, check NRF_WIFI_QSPI_SLAVE_MAX_LATENCY (len=%u, rxb=%zu)",
+			__func__, (unsigned int)len, sizeof(rxb));
 		return -ENOMEM;
 	}
 
@@ -1313,8 +1312,6 @@ int qspi_hl_readw(unsigned int addr, void *data)
 	k_sem_give(&qspi_cfg->lock);
 
 	*(uint32_t *)data = *(uint32_t *)(rxb + (len - 4));
-
-	nrf_wifi_osal_mem_free(rxb);
 
 	return status;
 }
