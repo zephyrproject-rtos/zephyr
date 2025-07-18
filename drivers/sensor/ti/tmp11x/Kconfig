@@ -10,3 +10,12 @@ config TMP11X
 	select I2C
 	help
 	  Enable driver for TMP116, TMP117 and TMP119 temperature sensors.
+
+if TMP11X
+
+module = TMP11X
+thread_priority = 10
+thread_stack_size = 1024
+source "drivers/sensor/Kconfig.trigger_template"
+
+endif
