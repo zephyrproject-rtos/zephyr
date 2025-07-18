@@ -562,7 +562,9 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 	for (i = 0; i < LLEXT_MEM_COUNT; ++i) {
 		if (ext->mem[i]) {
 			sys_cache_data_flush_range(ext->mem[i], ext->mem_size[i]);
-			sys_cache_instr_invd_range(ext->mem[i], ext->mem_size[i]);
+			if (i == LLEXT_MEM_TEXT && !ldr_parm->pre_located) {
+				sys_cache_instr_invd_range(ext->mem[i], ext->mem_size[i]);
+			}
 		}
 	}
 
@@ -575,7 +577,9 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 				void *base = llext_peek(ldr, shdr->sh_offset);
 
 				sys_cache_data_flush_range(base, shdr->sh_size);
-				sys_cache_instr_invd_range(base, shdr->sh_size);
+				if (shdr->sh_flags & SHF_EXECINSTR && !ldr_parm->pre_located) {
+					sys_cache_instr_invd_range(base, shdr->sh_size);
+				}
 			}
 		}
 	}
