@@ -1,5 +1,6 @@
 tests:
   drivers.clock.nrf5_clock_calibration:
+    timeout: 30
     tags:
       - drivers
       - clock_control
@@ -9,7 +10,6 @@ tests:
       - nrf52840dk/nrf52840
       - nrf54l09pdk/nrf54l09/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
-      - nrf54l20pdk/nrf54l20/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
     integration_platforms:

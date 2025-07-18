@@ -34,11 +34,13 @@
 	pinctrl-names = "default", "sleep";
 	overrun-character = <0x00>;
 	zephyr,pm-device-runtime-auto;
+
 	slow@0 {
 		compatible = "test-spi-loopback-slow";
 		reg = <0>;
 		spi-max-frequency = <DT_FREQ_M(2)>;
 	};
+
 	dut_fast: fast@0 {
 		compatible = "test-spi-loopback-fast";
 		reg = <0>;
