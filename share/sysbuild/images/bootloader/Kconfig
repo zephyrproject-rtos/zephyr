@@ -32,7 +32,9 @@ if BOOTLOADER_MCUBOOT
 
 choice MCUBOOT_MODE
 	prompt "Mode of operation"
-	default MCUBOOT_MODE_SWAP_USING_MOVE
+	# Should be removed if board dts is updated
+	default MCUBOOT_MODE_SWAP_USING_MOVE if SOC_FAMILY_STM32
+	default MCUBOOT_MODE_SWAP_USING_OFFSET
 	help
 	  The operating mode of MCUboot (which will also be propagated to the application).
 
@@ -45,7 +47,6 @@ config MCUBOOT_MODE_SINGLE_APP
 
 config MCUBOOT_MODE_SWAP_USING_OFFSET
 	bool "Swap using offset"
-	select EXPERIMENTAL
 	help
 	  MCUboot expects slot0_partition and slot1_partition to be present in DT and application
 	  will boot from slot0_partition. MCUBOOT_BOOTLOADER_NO_DOWNGRADE should also be selected
