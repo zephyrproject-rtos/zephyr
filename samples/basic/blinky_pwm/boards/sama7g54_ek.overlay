@@ -1,0 +1,21 @@
+/*
+ * Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+/ {
+	aliases {
+		pwm-led0 = &pwm_led_green;
+	};
+
+};
+
+&pwmleds {
+	status = "okay";
+};
+
+&pwm {
+	status = "okay";
+};
