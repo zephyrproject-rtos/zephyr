@@ -154,7 +154,7 @@
 
 &scg {
 	bus_clk {
-		clock-div = <2>;
+		clock-div = <4>;
 	};
 };
 
