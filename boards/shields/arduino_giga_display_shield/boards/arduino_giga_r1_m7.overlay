@@ -14,11 +14,11 @@
 
 	aliases {
 		accel0 = &gt911;
+		touch = &gt911;
 	};
 
 	chosen {
 		zephyr,display = &zephyr_lcd_controller;
-		zephyr,touch = &gt911;
 	};
 };
 

@@ -13,12 +13,12 @@
 
 LOG_MODULE_REGISTER(sample, LOG_LEVEL_INF);
 
-#if !DT_NODE_EXISTS(DT_CHOSEN(zephyr_touch))
-#error "Unsupported board: zephyr,touch is not assigned"
+#if !DT_NODE_EXISTS(DT_ALIAS(touch))
+#error "Unsupported board: 'touch' alias is not assigned in devicetree"
 #endif
 
 #if !DT_NODE_EXISTS(DT_CHOSEN(zephyr_display))
-#error "Unsupported board: zephyr,display is not assigned"
+#error "Unsupported board: 'zephyr,display' chosen property is not assigned in devicetree"
 #endif
 
 #define WIDTH     (DT_PROP(DT_CHOSEN(zephyr_display), width))
@@ -32,7 +32,7 @@ LOG_MODULE_REGISTER(sample, LOG_LEVEL_INF);
 #define REFRESH_RATE 100
 
 static const struct device *const display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
-static const struct device *const touch_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_touch));
+static const struct device *const touch_dev = DEVICE_DT_GET(DT_ALIAS(touch));
 static struct display_buffer_descriptor buf_desc = {
 	.buf_size = BUFFER_SIZE, .pitch = CROSS_DIM, .width = CROSS_DIM, .height = CROSS_DIM};
 

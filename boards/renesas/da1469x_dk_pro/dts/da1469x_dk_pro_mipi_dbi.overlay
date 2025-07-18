@@ -10,7 +10,6 @@
 / {
 	chosen {
 		zephyr,display = &ili9340;
-		zephyr,touch = &display_touch;
 	};
 
 	lvgl_pointer {
@@ -19,6 +18,10 @@
 		swap-xy;
 		invert-x;
 		invert-y;
+	};
+
+	aliases {
+		touch = &display_touch;
 	};
 };
 
