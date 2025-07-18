@@ -17,4 +17,5 @@ supported:
   - uart
   - netif:eth
   - gpio
+  - pwm
 vendor: nxp
