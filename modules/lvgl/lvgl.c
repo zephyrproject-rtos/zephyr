@@ -221,7 +221,7 @@ static int lvgl_allocate_rendering_buffers(lv_display_t *display)
 
 #ifdef CONFIG_LV_Z_RUN_LVGL_ON_WORKQUEUE
 
-K_THREAD_STACK_DEFINE(lvgl_workqueue_stack, CONFIG_LV_Z_LVGL_WORKQUEUE_STACK_SIZE);
+static K_THREAD_STACK_DEFINE(lvgl_workqueue_stack, CONFIG_LV_Z_LVGL_WORKQUEUE_STACK_SIZE);
 static struct k_work_q lvgl_workqueue;
 
 static void lvgl_timer_handler_work(struct k_work *work)
@@ -229,15 +229,19 @@ static void lvgl_timer_handler_work(struct k_work *work)
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	uint32_t wait_time = lv_timer_handler();
 
-	/*schedule next timer verification*/
+	/* schedule next timer verification */
 	if (wait_time == LV_NO_TIMER_READY) {
 		wait_time = CONFIG_LV_DEF_REFR_PERIOD;
 	}
 
 	k_work_schedule_for_queue(&lvgl_workqueue, dwork, K_MSEC(wait_time));
 }
-K_WORK_DEFINE(lvgl_work, lvgl_timer_handler_work);
+static K_WORK_DELAYABLE_DEFINE(lvgl_work, lvgl_timer_handler_work);
 
+struct k_work_q *lvgl_get_workqueue(void)
+{
+	return &lvgl_workqueue;
+}
 #endif /* CONFIG_LV_Z_RUN_LVGL_ON_WORKQUEUE */
 
 void lv_mem_init(void)
@@ -353,7 +357,7 @@ int lvgl_init(void)
 			   K_THREAD_STACK_SIZEOF(lvgl_workqueue_stack),
 			   CONFIG_LV_Z_LVGL_WORKQUEUE_PRIORITY, NULL);
 
-	k_work_submit_to_queue(&lvgl_workqueue, &lvgl_work);
+	k_work_submit_to_queue(&lvgl_workqueue, &lvgl_work.work);
 #endif
 
 	return 0;
