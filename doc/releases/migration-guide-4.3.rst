@@ -41,6 +41,13 @@ Networking
 Other subsystems
 ****************
 
+Shell
+=====
+
+* The MQTT topics related to  :kconfig:option:`SHELL_BACKEND_MQTT`  have been renamed. Renamed
+  ``<device_id>_rx`` to ``<device_id>/sh/rx`` and ``<device_id>_tx`` to ``<device_id>/sh/rx``.
+  (:github:`92677`).
+
 Modules
 *******
 
