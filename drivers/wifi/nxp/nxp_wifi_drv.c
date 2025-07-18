@@ -1945,7 +1945,7 @@ static NXP_WIFI_SET_FUNC_ATTR int nxp_wifi_send(const struct device *dev, struct
 #endif
 
 	/* Enqueue packet for transmission */
-	if (nxp_wifi_internal_tx(dev, pkt) != WM_SUCCESS) {
+	if (nxp_wifi_internal_tx(dev, pkt, 0) != WM_SUCCESS) {
 		goto out;
 	}
 
