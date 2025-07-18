@@ -220,12 +220,37 @@ static bool software_owns_descriptor(volatile union nxp_enet_qos_rx_desc *desc)
 	return (desc->write.control3 & OWN_FLAG) != OWN_FLAG;
 }
 
+/* this function resumes the rx dma in case of underrun */
+static void enet_qos_dma_rx_resume(const struct device *dev)
+{
+	const struct nxp_enet_qos_mac_config *config = dev->config;
+	enet_qos_t *base = config->base;
+	struct nxp_enet_qos_mac_data *data = dev->data;
+	struct nxp_enet_qos_rx_data *rx_data = &data->rx;
+
+	if (!atomic_cas(&rx_data->rbu_flag, 1, 0)) {
+		/* no RBU flag means no underrun happened */
+		return;
+	}
+
+	LOG_DBG("Handle RX underrun");
+
+	/* We need to just touch the tail ptr to make sure it resumes if underrun happened.
+	 * Then it will resume if there are DMA owned descriptors queued up in the ring properly.
+	 */
+	base->DMA_CH[0].DMA_CHX_RXDESC_TAIL_PTR = ENET_QOS_REG_PREP(
+		DMA_CH_DMA_CHX_RXDESC_TAIL_PTR, RDTP,
+		ENET_QOS_ALIGN_ADDR_SHIFT((uint32_t)&rx_data->descriptors[NUM_RX_BUFDESC]));
+}
+
+
 static void eth_nxp_enet_qos_rx(struct k_work *work)
 {
 	struct nxp_enet_qos_rx_data *rx_data =
 		CONTAINER_OF(work, struct nxp_enet_qos_rx_data, rx_work);
 	struct nxp_enet_qos_mac_data *data =
 		CONTAINER_OF(rx_data, struct nxp_enet_qos_mac_data, rx);
+	const struct device *dev = data->iface->if_dev->dev;
 	volatile union nxp_enet_qos_rx_desc *desc_arr = data->rx.descriptors;
 	uint32_t desc_idx = rx_data->next_desc_idx;
 	volatile union nxp_enet_qos_rx_desc *desc = &desc_arr[desc_idx];
@@ -350,20 +375,8 @@ next:
 		eth_stats_update_errors_rx(data->iface);
 	}
 
-	/* try to restart if halted */
-	const struct device *dev = net_if_get_device(data->iface);
-
-	if (atomic_cas(&rx_data->rbu_flag, 1, 0)) {
-		LOG_DBG("handle RECEIVE BUFFER UNDERRUN in worker");
-
-		/* When the DMA reaches the tail pointer, it suspends. Set to last descriptor */
-		const struct nxp_enet_qos_mac_config *config = dev->config;
-		enet_qos_t *const base = config->base;
-
-		base->DMA_CH[0].DMA_CHX_RXDESC_TAIL_PTR = ENET_QOS_REG_PREP(
-			DMA_CH_DMA_CHX_RXDESC_TAIL_PTR, RDTP,
-			ENET_QOS_ALIGN_ADDR_SHIFT((uint32_t)&rx_data->descriptors[NUM_RX_BUFDESC]));
-	}
+	/* now that we updated the descriptors, resume in case we are suspended */
+	enet_qos_dma_rx_resume(dev);
 
 	LOG_DBG("End RX work normally");
 	return;
@@ -373,6 +386,7 @@ static void eth_nxp_enet_qos_mac_isr(const struct device *dev)
 {
 	const struct nxp_enet_qos_mac_config *config = dev->config;
 	struct nxp_enet_qos_mac_data *data = dev->data;
+	struct nxp_enet_qos_rx_data *rx_data = &data->rx;
 	enet_qos_t *base = config->base;
 
 	/* cleared on read */
@@ -398,23 +412,21 @@ static void eth_nxp_enet_qos_mac_isr(const struct device *dev)
 
 		if (ENET_QOS_REG_GET(DMA_CH_DMA_CHX_STAT, RI, dma_ch0_interrupts)) {
 			/* add pending rx to queue */
-			k_work_submit_to_queue(&rx_work_queue, &data->rx.rx_work);
+			k_work_submit_to_queue(&rx_work_queue, &rx_data->rx_work);
 		}
 		if (ENET_QOS_REG_GET(DMA_CH_DMA_CHX_STAT, FBE, dma_ch0_interrupts)) {
-			LOG_ERR("fatal bus error: RX:%x, TX:%x", (dma_ch0_interrupts >> 19) & 0x07,
+			LOG_ERR("Fatal bus error: RX:%x, TX:%x", (dma_ch0_interrupts >> 19) & 0x07,
 				(dma_ch0_interrupts >> 16) & 0x07);
 		}
 		if (ENET_QOS_REG_GET(DMA_CH_DMA_CHX_STAT, RBU, dma_ch0_interrupts)) {
-			LOG_ERR("RECEIVE BUFFER UNDERRUN in ISR");
+			LOG_WRN("RX buffer underrun");
 			if (!ENET_QOS_REG_GET(DMA_CH_DMA_CHX_STAT, RI, dma_ch0_interrupts)) {
-				/* RBU migth happen without RI, schedule worker */
-				k_work_submit_to_queue(&rx_work_queue, &data->rx.rx_work);
+				/* RBU might happen without RI, schedule worker */
+				k_work_submit_to_queue(&rx_work_queue, &rx_data->rx_work);
 			}
 		}
 		if (ENET_QOS_REG_GET(DMA_CH_DMA_CHX_STAT, TBU, dma_ch0_interrupts)) {
-			/* actually this is not an error
-			 * LOG_ERR("TRANSMIT BUFFER UNDERRUN");
-			 */
+			/* by design for now */
 		}
 	}
 }
