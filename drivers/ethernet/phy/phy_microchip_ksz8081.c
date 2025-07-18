@@ -236,7 +236,7 @@ static int phy_mc_ksz8081_static_cfg(const struct device *dev)
 
 	omso &= ~PHY_MC_KSZ8081_OMSO_FACTORY_MODE_MASK &
 		~PHY_MC_KSZ8081_OMSO_NAND_TREE_MASK;
-	if (config->phy_iface == KSZ8081_RMII) {
+	if (config->phy_iface == KSZ8081_RMII || config->phy_iface == KSZ8081_RMII_25MHZ) {
 		omso &= ~PHY_MC_KSZ8081_OMSO_MII_OVERRIDE_MASK;
 		omso |= PHY_MC_KSZ8081_OMSO_RMII_OVERRIDE_MASK;
 	}
