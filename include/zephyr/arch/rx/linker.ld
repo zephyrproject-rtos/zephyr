@@ -61,10 +61,22 @@ SECTIONS
 	. = ROM_START;   /* for kernel logging */
 	PLACE_SYMBOL_HERE(__rodata_region_start);
 
-	 .fvectors 0xFFFFFF80: AT(0xFFFFFF80)
+#if CONFIG_HAS_EXCEPT_VECTOR_TABLE
+	.exvectors 0xFFFFFF80: AT(0xFFFFFF80)
+	{
+		KEEP(*(.exvectors))
+	} GROUP_LINK_IN(ROMABLE_REGION)
+
+	 .fvectors 0xFFFFFFFC: AT(0xFFFFFFFC)
 	{
 		KEEP(*(.fvectors))
 	} GROUP_LINK_IN(ROMABLE_REGION)
+#else
+	.fvectors 0xFFFFFF80: AT(0xFFFFFF80)
+	{
+		KEEP(*(.fvectors))
+	} GROUP_LINK_IN(ROMABLE_REGION)
+#endif
 
 	SECTION_PROLOGUE(_TEXT_SECTION_NAME,ROM_START,)
 	{

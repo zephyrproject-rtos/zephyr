@@ -11,6 +11,11 @@ config ARCH
 	string
 	default "rx"
 
+config HAS_EXCEPT_VECTOR_TABLE
+	bool
+	help
+	  Set if the processor has the exception vector table.
+
 config CPU_RXV1
 	bool
 	help
@@ -18,18 +23,15 @@ config CPU_RXV1
 
 config CPU_RXV2
 	bool
+	select HAS_EXCEPT_VECTOR_TABLE
 	help
 	  Set if the processor supports the Renesas RXv2 instruction set.
 
 config CPU_RXV3
 	bool
+	select HAS_EXCEPT_VECTOR_TABLE
 	help
 	  Set if the processor supports the Renesas RXv3 instruction set.
-
-config HAS_EXCEPT_VECTOR_TABLE
-	bool
-	help
-	  Set if the processor has the exception vector table.
 
 config XIP
 	default y
