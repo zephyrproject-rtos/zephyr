@@ -71,39 +71,39 @@ static inline enum net_verdict process_data(struct net_pkt *pkt)
 	if (!net_pkt_is_raw_processed(pkt)) {
 		net_pkt_set_raw_processed(pkt, true);
 		net_packet_socket_input(pkt, ETH_P_ALL, SOCK_RAW);
+		return NET_CONTINUE;
 	}
 
 	/* If there is no data, then drop the packet. */
 	if (!pkt->frags) {
 		NET_DBG("Corrupted packet (frags %p)", pkt->frags);
 		net_stats_update_processing_error(net_pkt_iface(pkt));
-
 		return NET_DROP;
 	}
 
 	if (!net_pkt_is_l2_processed(pkt)) {
-		ret = net_if_recv_data(net_pkt_iface(pkt), pkt);
 		net_pkt_set_l2_processed(pkt, true);
+		ret = net_if_recv_data(net_pkt_iface(pkt), pkt);
 		if (ret != NET_CONTINUE) {
 			if (ret == NET_DROP) {
 				NET_DBG("Packet %p discarded by L2", pkt);
 				net_stats_update_processing_error(
 							net_pkt_iface(pkt));
 			}
-
 			return ret;
 		}
-
 		/* L2 has modified the buffer starting point, it is easier
 		 * to re-initialize the cursor rather than updating it.
 		 */
 		net_pkt_cursor_init(pkt);
+		return NET_CONTINUE;
 	}
 
 	if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET_DGRAM) &&
 	    !net_pkt_is_dgram_processed(pkt)) {
 		net_pkt_set_dgram_processed(pkt, true);
 		net_packet_socket_input(pkt, net_pkt_ll_proto_type(pkt), SOCK_DGRAM);
+		return NET_CONTINUE;
 	}
 
 	if (net_pkt_is_l3_processed(pkt)) {
@@ -128,7 +128,6 @@ static inline enum net_verdict process_data(struct net_pkt *pkt)
 		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) && family == AF_CAN) {
 			return net_canbus_socket_input(pkt);
 		}
-
 		NET_DBG("Unknown protocol family packet (0x%x)", family);
 		return NET_DROP;
 	}
@@ -137,29 +136,47 @@ static inline enum net_verdict process_data(struct net_pkt *pkt)
 
 }
 
+static void update_priority(struct net_pkt *pkt)
+{
+	/* This is just an example.
+	 * Similar infrastructure with custom application rules like
+	 * net_pkt_filter could be established
+	 */
+	if (net_pkt_is_l2_processed(pkt)) {
+		if (net_pkt_ll_proto_type(pkt) ==  NET_ETH_PTYPE_PTP) {
+			net_pkt_set_priority(pkt, NET_PRIORITY_IC);
+		}
+	}
+}
+
+static bool being_processed_by_correct_thread(struct net_pkt *pkt)
+{
+	uint8_t prio = net_pkt_priority(pkt);
+	uint8_t tc = net_rx_priority2tc(prio);
+
+	return net_tc_is_current_thread(tc);
+}
+
 static void processing_data(struct net_pkt *pkt)
 {
-again:
-	switch (process_data(pkt)) {
-	case NET_CONTINUE:
-		if (IS_ENABLED(CONFIG_NET_L2_VIRTUAL)) {
-			/* If we have a tunneling packet, feed it back
-			 * to the stack in this case.
-			 */
-			goto again;
-		} else {
-			NET_DBG("Dropping pkt %p", pkt);
-			net_pkt_unref(pkt);
+	enum net_verdict verdict = NET_CONTINUE;
+
+	do {
+		verdict = process_data(pkt);
+		if (verdict != NET_CONTINUE) {
+			break;
 		}
-		break;
-	case NET_OK:
-		NET_DBG("Consumed pkt %p", pkt);
-		break;
-	case NET_DROP:
-	default:
-		NET_DBG("Dropping pkt %p", pkt);
+
+		update_priority(pkt);
+
+		if (!being_processed_by_correct_thread(pkt)) {
+			net_queue_rx(net_pkt_iface(pkt), pkt);
+		}
+
+	} while (true);
+
+	if (verdict != NET_OK) {
 		net_pkt_unref(pkt);
-		break;
 	}
 }
 

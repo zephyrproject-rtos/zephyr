@@ -65,6 +65,21 @@ static struct net_traffic_class tx_classes[NET_TC_TX_COUNT];
 static struct net_traffic_class rx_classes[NET_TC_RX_COUNT];
 #endif
 
+bool net_tc_is_current_thread(uint8_t tc)
+{
+	uint8_t thread_priority;
+	int priority;
+	int desired_priority;
+
+	thread_priority = tx_tc2thread(tc);
+	desired_priority = IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE) ?
+		K_PRIO_COOP(thread_priority) :
+		K_PRIO_PREEMPT(thread_priority);
+	priority = k_thread_priority_get(k_current_get());
+
+	return priority == desired_priority;
+}
+
 enum net_verdict net_tc_try_submit_to_tx_queue(uint8_t tc, struct net_pkt *pkt,
 					       k_timeout_t timeout)
 {
