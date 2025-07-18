@@ -10,22 +10,22 @@
 	};
 
 	buttons {
-        compatible = "gpio-keys";
+		compatible = "gpio-keys";
 
 		buttonA: button_A {
 			gpios = <&feather_header 16 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; /* D9 */
 			label = "Button A";
-			zephyr,code = <INPUT_KEY_1>;
+			zephyr,code = <INPUT_KEY_A>;
 		};
 		buttonB: button_B {
 			gpios = <&feather_header 15 GPIO_ACTIVE_LOW>; /* D6 */
 			label = "Button B";
-			zephyr,code = <INPUT_KEY_2>;
+			zephyr,code = <INPUT_KEY_B>;
 		};
 		buttonC: button_C {
 			gpios = <&feather_header 14 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;	/* D5 */
 			label = "Button C";
-			zephyr,code = <INPUT_KEY_3>;
+			zephyr,code = <INPUT_KEY_C>;
 		};
 	};
 };
