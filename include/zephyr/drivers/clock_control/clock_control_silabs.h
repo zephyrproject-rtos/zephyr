@@ -19,6 +19,10 @@
 #include <zephyr/dt-bindings/clock/silabs/xg24-clock.h>
 #elif defined(CONFIG_SOC_SERIES_EFR32BG27)
 #include <zephyr/dt-bindings/clock/silabs/xg27-clock.h>
+#elif defined(CONFIG_SOC_SERIES_EFM32PG23)
+#include <zephyr/dt-bindings/clock/silabs/xg23-clock.h>
+#elif defined(CONFIG_SOC_SERIES_EFM32PG28)
+#include <zephyr/dt-bindings/clock/silabs/xg28-clock.h>
 #elif defined(CONFIG_SOC_SERIES_EFR32BG29) || defined(CONFIG_SOC_SERIES_EFR32MG29)
 #include <zephyr/dt-bindings/clock/silabs/xg29-clock.h>
 #endif
