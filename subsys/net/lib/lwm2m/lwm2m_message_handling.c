@@ -2881,6 +2881,16 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, uint8_t *buf, uint16_t buf_
 
 		LOG_DBG("reply %p handled and removed", reply);
 		goto client_unlock;
+	} else if (pending && coap_header_get_type(&response) == COAP_TYPE_RESET) {
+		msg = find_msg(pending, NULL);
+		if (msg == NULL) {
+			LOG_ERR("Orphaned pending %p.", pending);
+			coap_pending_clear(pending);
+			goto client_unlock;
+		}
+
+		lwm2m_reset_message(msg, true);
+		goto client_unlock;
 	}
 
 	lwm2m_client_unlock(client_ctx);
