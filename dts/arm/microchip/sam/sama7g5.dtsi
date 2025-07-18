@@ -502,6 +502,18 @@
 			clock-names = "td_slck", "md_slck", "main_xtal";
 		};
 
+		pwm: pwm@e1604000 {
+			compatible = "atmel,sam-pwm";
+			reg = <0xe1604000 0x4000>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 77 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 77>;
+			prescaler = <10>;
+			divider = <1>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
 		sdmmc0: mmc@e1204000 {
 			compatible = "microchip,sama7g5-sdmmc";
 			reg = <0xe1204000 0x4000>;
