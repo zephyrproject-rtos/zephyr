@@ -131,6 +131,17 @@
 		#reset-cells = <1>;
 	};
 
+	rtc1: rtc@69000 {
+		compatible = "nxp,irtc";
+		reg = <0x69000 0x1000>;
+		interrupts = <23 0>, <24 0>;
+		clock-frequency = <32768>;
+		prescaler = <1>;
+		alarms-count = <1>;
+		share-counter;
+		status = "disabled";
+	};
+
 	clkctl1: clkctl@41000 {
 		compatible = "nxp,lpc-syscon";
 		reg = <0x41000 0x1000>;

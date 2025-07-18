@@ -4,6 +4,8 @@ tests:
   sample.drivers.rtc:
     platform_allow:
       - stm32f3_disco
+      - mimxrt700_evk/mimxrt798s/cm33_cpu0
+      - mimxrt700_evk/mimxrt798s/cm33_cpu1
     integration_platforms:
       - stm32f3_disco
     tags:
