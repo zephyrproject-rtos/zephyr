@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+config INPUT_CHSC5X
+	bool "CHSC5X capacitive touch panel driver"
+	default y
+	depends on DT_HAS_CHIPSEMI_CHSC5X_ENABLED
+	select GPIO
+	select I2C
+	select INPUT_TOUCH
+	help
+	  Enable CHSC5X driver for Chipsemi capacitive touch panel controller.
