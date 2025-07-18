@@ -6160,12 +6160,6 @@ West:
   labels:
     - "area: Rust"
 
-"West project: zscilib":
-  status: maintained
-  maintainers:
-    - microbuilder
-  files: []
-
 Wurth Elektronik Platforms:
   status: maintained
   maintainers:
