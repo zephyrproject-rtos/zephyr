@@ -1,19 +1,21 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #define DT_DRV_COMPAT nxp_ehci
 
-#include <soc.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdint.h>
+#include <soc.h>
 
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/usb/udc.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/clock_control.h>
 
 #include "udc_common.h"
 #include "usb.h"
@@ -44,6 +46,12 @@ struct udc_mcux_config {
 	uintptr_t base;
 	const struct pinctrl_dev_config *pincfg;
 	usb_phy_config_struct_t *phy_config;
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
+	clock_control_subsys_rate_t clock_rate;
+	const struct device *phy_clock_dev;
+	clock_control_subsys_t phy_clock_subsys;
+	clock_control_subsys_rate_t phy_clock_rate;
 };
 
 struct udc_mcux_data {
@@ -777,6 +785,22 @@ static int udc_mcux_driver_preinit(const struct device *dev)
 		return -ENOMEM;
 	}
 
+	if (config->clock_dev && config->clock_rate) {
+		clock_control_set_rate(
+			config->clock_dev,
+			config->clock_subsys,
+			config->clock_rate
+		);
+	}
+
+	if (config->phy_clock_dev && config->phy_clock_rate) {
+		clock_control_set_rate(
+			config->phy_clock_dev,
+			config->phy_clock_subsys,
+			config->phy_clock_rate
+		);
+	}
+
 	k_mutex_init(&data->mutex);
 	k_fifo_init(&priv->fifo);
 	k_work_init(&priv->work, udc_mcux_work_handler);
@@ -859,6 +883,28 @@ static const usb_device_controller_interface_struct_t udc_mcux_if = {
 	USB_DeviceEhciRecv, USB_DeviceEhciCancel, USB_DeviceEhciControl
 };
 
+#define UDC_MCUX_USB_CLK_DEFINE(n)							\
+	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_IDX(n, 0)),			\
+	.clock_subsys = (clock_control_subsys_t)					\
+		DT_INST_CLOCKS_CELL_BY_IDX(n, 0, name),					\
+	.clock_rate = (void *)(uintptr_t)DT_INST_PROP_BY_IDX(n, clock_rates, 0),
+
+#define UDC_MCUX_USB_CLK_DEFINE_OR(n)							\
+	IF_ENABLED(DT_INST_CLOCKS_HAS_IDX(n, 0),					\
+		   (IF_ENABLED(DT_INST_PROP_HAS_IDX(n, clock_rates, 0),			\
+			       (UDC_MCUX_USB_CLK_DEFINE(n)))))
+
+#define UDC_MCUX_USB_PHY_CLK_DEFINE(n)							\
+	.phy_clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_IDX(n, 1)),		\
+	.phy_clock_subsys = (clock_control_subsys_t)					\
+		DT_INST_CLOCKS_CELL_BY_IDX(n, 1, name),					\
+	.phy_clock_rate = (void *)(uintptr_t)DT_INST_PROP_BY_IDX(n, clock_rates, 1),
+
+#define UDC_MCUX_USB_PHY_CLK_DEFINE_OR(n)						\
+	IF_ENABLED(DT_INST_CLOCKS_HAS_IDX(n, 1),					\
+		   (IF_ENABLED(DT_INST_PROP_HAS_IDX(n, clock_rates, 1),			\
+			       (UDC_MCUX_USB_PHY_CLK_DEFINE(n)))))
+
 #define UDC_MCUX_PHY_DEFINE(n)								\
 static usb_phy_config_struct_t phy_config_##n = {					\
 	.D_CAL = DT_PROP_OR(DT_INST_PHANDLE(n, phy_handle), tx_d_cal, 0),		\
@@ -913,6 +959,8 @@ static usb_phy_config_struct_t phy_config_##n = {					\
 		.mcux_if = &udc_mcux_if,						\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				\
 		.phy_config = UDC_MCUX_PHY_CFG_PTR_OR_NULL(n),				\
+		UDC_MCUX_USB_CLK_DEFINE_OR(n)						\
+		UDC_MCUX_USB_PHY_CLK_DEFINE_OR(n)					\
 	};										\
 											\
 	static struct udc_mcux_data priv_data_##n = {					\
