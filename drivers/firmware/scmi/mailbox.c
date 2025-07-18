@@ -75,10 +75,6 @@ static int scmi_mbox_setup_chan(const struct device *transport,
 
 	mbox_chan = chan->data;
 
-	if (!tx) {
-		return -ENOTSUP;
-	}
-
 	if (mbox_chan->tx_reply.dev) {
 		tx_reply = &mbox_chan->tx_reply;
 	} else {

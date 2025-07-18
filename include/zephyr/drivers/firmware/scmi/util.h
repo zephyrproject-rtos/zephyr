@@ -53,7 +53,7 @@
 #define SCMI_TRANSPORT_CHAN_NAME(proto, idx) CONCAT(scmi_channel_, proto, _, idx)
 
 /**
- * @brief Declare a TX SCMI channel
+ * @brief Declare TX SCMI channel
  *
  * Given a node_id for a protocol, this macro declares the SCMI
  * TX channel statically bound to said protocol via the "extern"
@@ -71,19 +71,40 @@
 		     SCMI_TRANSPORT_CHAN_NAME(SCMI_PROTOCOL_BASE, 0);))		\
 
 /**
+ * @brief Declare RX SCMI channel
+ *
+ * Given a node_id for a protocol, this macro declares the SCMI
+ * RX channel statically bound to said protocol via the "extern" qualifier.
+ * The declaration depends on both the current protocol node
+ * and the SCMI parent node. The logic follows this priority:
+ * 1. First check if RX channel exists in the current protocol node
+ * 2. If not found, check the parent SCMI node for RX channel
+ * 3. If neither the current protocol node nor parent node has RX channel,
+ *    set it to NULL
+ *
+ * @param node_id protocol node identifier
+ */
+#define DT_SCMI_TRANSPORT_RX_CHAN_DECLARE(node_id)				\
+	COND_CODE_1(DT_SCMI_TRANSPORT_PROTO_HAS_CHAN(node_id, 1),		\
+		    (extern struct scmi_channel					\
+		     SCMI_TRANSPORT_CHAN_NAME(DT_REG_ADDR_RAW(node_id), 1);),	\
+		     (COND_CODE_1(DT_PROP_HAS_IDX(DT_PARENT(node_id), shmem, 1),\
+				  (extern struct scmi_channel			\
+				   SCMI_TRANSPORT_CHAN_NAME(SCMI_PROTOCOL_BASE, 1);), \
+				   (/* no decl when NULL */))))
+
+/**
  * @brief Declare SCMI TX/RX channels
  *
  * Given a node_id for a protocol, this macro declares the
  * SCMI TX and RX channels statically bound to said protocol via
- * the "extern" qualifier. Since RX channels are currently not
- * supported, this is equivalent to DT_SCMI_TRANSPORT_TX_CHAN_DECLARE().
- * Despite this, users should opt for this macro instead of the TX-specific
- * one.
+ * the "extern" qualifier.
  *
  * @param node_id protocol node identifier
  */
 #define DT_SCMI_TRANSPORT_CHANNELS_DECLARE(node_id)				\
 	DT_SCMI_TRANSPORT_TX_CHAN_DECLARE(node_id)				\
+	DT_SCMI_TRANSPORT_RX_CHAN_DECLARE(node_id)				\
 
 /**
  * @brief Declare SCMI TX/RX channels using node instance number
@@ -112,6 +133,25 @@
 	COND_CODE_1(DT_SCMI_TRANSPORT_PROTO_HAS_CHAN(node_id, 0),		\
 		    (&SCMI_TRANSPORT_CHAN_NAME(DT_REG_ADDR_RAW(node_id), 0)),	\
 		    (&SCMI_TRANSPORT_CHAN_NAME(SCMI_PROTOCOL_BASE, 0)))
+
+/**
+ * @brief Get a reference to a protocol's SCMI RX channel
+ *
+ * Given a node_id for a protocol, this macro returns a
+ * reference to an SCMI RX channel statically bound to said
+ * protocol.
+ *
+ * @param node_id protocol node identifier
+ *
+ * @return reference to the struct scmi_channel of the RX channel
+ * bound to the protocol identifier by node_id
+ */
+#define DT_SCMI_TRANSPORT_RX_CHAN(node_id)						\
+	COND_CODE_1(DT_SCMI_TRANSPORT_PROTO_HAS_CHAN(node_id, 1),			\
+		    (&SCMI_TRANSPORT_CHAN_NAME(DT_REG_ADDR_RAW(node_id), 1)),		\
+			(COND_CODE_1(DT_PROP_HAS_IDX(DT_PARENT(node_id), shmem, 1),	\
+				(&SCMI_TRANSPORT_CHAN_NAME(SCMI_PROTOCOL_BASE, 1)),	\
+				(NULL))))
 
 /**
  * @brief Define an SCMI channel for a protocol
@@ -151,6 +191,7 @@
 	{									\
 		.id = proto,							\
 		.tx = DT_SCMI_TRANSPORT_TX_CHAN(node_id),			\
+		.rx = DT_SCMI_TRANSPORT_RX_CHAN(node_id),			\
 		.data = pdata,							\
 	}
 

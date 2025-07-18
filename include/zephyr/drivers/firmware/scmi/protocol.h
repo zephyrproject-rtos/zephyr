@@ -76,6 +76,8 @@ struct scmi_protocol {
 	uint32_t id;
 	/** TX channel */
 	struct scmi_channel *tx;
+	/** RX channel */
+	struct scmi_channel *rx;
 	/** transport layer device */
 	const struct device *transport;
 	/** protocol private data */
