@@ -26,6 +26,11 @@ struct scmi_shmem_data {
 	mm_reg_t regmap;
 };
 
+/* p2a channel header token should be increased to match scmi platform
+ * set scmi_p2a_header_token variable to record and increase this value
+ */
+uint32_t scmi_p2a_header_token;
+
 int scmi_shmem_get_channel_status(const struct device *dev, uint32_t *status)
 {
 	struct scmi_shmem_data *data;
@@ -58,6 +63,31 @@ __weak int scmi_shmem_vendor_write_message(struct scmi_shmem_layout *layout)
 	return 0;
 }
 
+int scmi_shmem_read_hdr(const struct device *shmem, struct scmi_message *msg)
+{
+	struct scmi_shmem_layout *layout;
+	struct scmi_shmem_data *data;
+	const struct scmi_shmem_config *cfg;
+
+	data = shmem->data;
+	cfg = shmem->config;
+	layout = (struct scmi_shmem_layout *)data->regmap;
+
+	/* some sanity checks first */
+	if (!msg) {
+		return -EINVAL;
+	}
+
+	if (scmi_shmem_vendor_read_message(layout) < 0) {
+		LOG_ERR("vendor specific validation failed");
+		return -EINVAL;
+	}
+
+	scmi_shmem_memcpy(POINTER_TO_UINT(&msg->hdr),
+			data->regmap + SCMI_SHMEM_CHAN_MSG_HDR_OFFSET, sizeof(uint32_t));
+
+	return 0;
+}
 int scmi_shmem_read_message(const struct device *shmem, struct scmi_message *msg)
 {
 	struct scmi_shmem_layout *layout;
@@ -115,7 +145,9 @@ int scmi_shmem_write_message(const struct device *shmem, struct scmi_message *ms
 	struct scmi_shmem_layout *layout;
 	struct scmi_shmem_data *data;
 	const struct scmi_shmem_config *cfg;
+	uint8_t msg_type;
 
+	msg_type = SCMI_HEADER_TYPE_EX(msg->hdr);
 	data = shmem->data;
 	cfg = shmem->config;
 	layout = (struct scmi_shmem_layout *)data->regmap;
@@ -133,8 +165,14 @@ int scmi_shmem_write_message(const struct device *shmem, struct scmi_message *ms
 		return -EINVAL;
 	}
 
-	if (!(layout->chan_status & SCMI_SHMEM_CHAN_STATUS_BUSY_BIT)) {
-		return -EBUSY;
+	if (msg_type == SCMI_COMMAND) {
+		if (!(layout->chan_status & SCMI_SHMEM_CHAN_STATUS_BUSY_BIT)) {
+			return -EBUSY;
+		}
+	} else {
+		if (layout->chan_status & SCMI_SHMEM_CHAN_STATUS_BUSY_BIT) {
+			return -EBUSY;
+		}
 	}
 
 	layout->len = sizeof(layout->msg_hdr) + msg->len;
@@ -149,8 +187,13 @@ int scmi_shmem_write_message(const struct device *shmem, struct scmi_message *ms
 		return -EINVAL;
 	}
 
-	/* done, mark channel as busy and proceed */
-	layout->chan_status &= ~SCMI_SHMEM_CHAN_STATUS_BUSY_BIT;
+	if (msg_type == SCMI_COMMAND) {
+		/* done, mark channel as busy and proceed */
+		layout->chan_status &= ~SCMI_SHMEM_CHAN_STATUS_BUSY_BIT;
+	} else {
+		/* done, mark channel as free, otherwise scmi platform will check status fail */
+		layout->chan_status |= SCMI_SHMEM_CHAN_STATUS_BUSY_BIT;
+	}
 
 	return 0;
 }
