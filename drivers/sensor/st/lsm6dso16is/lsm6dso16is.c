@@ -353,6 +353,22 @@ static int lsm6dso16is_sample_fetch_temp(const struct device *dev)
 }
 #endif
 
+#if defined(CONFIG_USE_ST_MEMS_ISPU)
+static int lsm6dso16is_sample_fetch_ispu(const struct device *dev)
+{
+	const struct lsm6dso16is_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	struct lsm6dso16is_data *data = dev->data;
+
+	if (lsm6dso16is_ispu_read_data_raw_get(ctx, &data->ispu[0], 64) < 0) {
+		LOG_DBG("Failed to read sample");
+		return -EIO;
+	}
+
+	return 0;
+}
+#endif
+
 #if defined(CONFIG_LSM6DSO16IS_SENSORHUB)
 static int lsm6dso16is_sample_fetch_shub(const struct device *dev)
 {
@@ -384,11 +400,19 @@ static int lsm6dso16is_sample_fetch(const struct device *dev,
 		lsm6dso16is_sample_fetch_temp(dev);
 		break;
 #endif
+#if defined(CONFIG_USE_ST_MEMS_ISPU)
+	case SENSOR_CHAN_ST_ISPU:
+		lsm6dso16is_sample_fetch_ispu(dev);
+		break;
+#endif
 	case SENSOR_CHAN_ALL:
 		lsm6dso16is_sample_fetch_accel(dev);
 		lsm6dso16is_sample_fetch_gyro(dev);
 #if defined(CONFIG_LSM6DSO16IS_ENABLE_TEMP)
 		lsm6dso16is_sample_fetch_temp(dev);
+#endif
+#if defined(CONFIG_USE_ST_MEMS_ISPU)
+		lsm6dso16is_sample_fetch_ispu(dev);
 #endif
 #if defined(CONFIG_LSM6DSO16IS_SENSORHUB)
 		if (data->shub_inited) {
@@ -663,6 +687,12 @@ static int lsm6dso16is_channel_get(const struct device *dev,
 		lsm6dso16is_gyro_channel_get_temp(val, data);
 		break;
 #endif
+#if defined(CONFIG_USE_ST_MEMS_ISPU)
+	case SENSOR_CHAN_ST_ISPU:
+		val->val1 = data->ispu[12];
+		val->val2 = 0;
+		break;
+#endif
 #if defined(CONFIG_LSM6DSO16IS_SENSORHUB)
 	case SENSOR_CHAN_MAGN_X:
 	case SENSOR_CHAN_MAGN_Y:
@@ -710,6 +740,31 @@ static int lsm6dso16is_channel_get(const struct device *dev,
 	return 0;
 }
 
+static int lsm6dso16is_upload_ispu(const struct device *dev,
+				   const void *fw_buf,
+				   size_t fw_len)
+{
+	const struct lsm6dso16is_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	const struct mems_conf_op *bufp = (const struct mems_conf_op *)fw_buf;
+	int i;
+
+	/* Load ISPU configuration */
+	for ( i = 0; i < fw_len; i++ ) {
+		switch(bufp[i].type) {
+		case MEMS_CONF_OP_TYPE_DELAY:
+			k_msleep(bufp[i].data);
+			break;
+
+		case MEMS_CONF_OP_TYPE_WRITE:
+			ctx->write_reg(ctx->handle, bufp[i].address, (uint8_t *)&bufp[i].data, 1);
+			break;
+		}
+	}
+
+	return 0;
+}
+
 static DEVICE_API(sensor, lsm6dso16is_driver_api) = {
 	.attr_set = lsm6dso16is_attr_set,
 #if CONFIG_LSM6DSO16IS_TRIGGER
@@ -717,6 +772,7 @@ static DEVICE_API(sensor, lsm6dso16is_driver_api) = {
 #endif
 	.sample_fetch = lsm6dso16is_sample_fetch,
 	.channel_get = lsm6dso16is_channel_get,
+	.upload_fw = lsm6dso16is_upload_ispu,
 };
 
 static int lsm6dso16is_init_chip(const struct device *dev)
