@@ -42,6 +42,9 @@ configdefault NET_MGMT_EVENT_STACK_SIZE
 configdefault NET_SOCKETS_SERVICE_STACK_SIZE
 	default 8192
 
+configdefault UDC_WORKQUEUE_STACK_SIZE
+	default 4096
+
 endif # BOARD_FRDM_IMX93_MIMX9352_A55
 
 if IMX_USDHC
