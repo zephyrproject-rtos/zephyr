@@ -25,8 +25,7 @@
 extern "C" {
 #endif
 
-void z_dspic_save_context(void);
-void z_dspic_do_swap(void);
+extern uint32_t vector_start;
 
 /* dsPIC33A interrupt functionality initialization */
 static ALWAYS_INLINE void z_dspic_interrupt_init(void)
@@ -35,7 +34,6 @@ static ALWAYS_INLINE void z_dspic_interrupt_init(void)
 	 * clear all the interrupts, set the interrupt flag status
 	 * registers to zero.
 	 */
-
 	IFS0 = 0x0;
 	IFS1 = 0x0;
 	IFS2 = 0x0;
@@ -45,11 +43,21 @@ static ALWAYS_INLINE void z_dspic_interrupt_init(void)
 	IFS6 = 0x0;
 	IFS7 = 0x0;
 	IFS8 = 0x0;
-
 	/* enable nested interrupts */
 	INTCON1bits.NSTDIS = 0;
 	/* enable global interrupts */
 	INTCON1bits.GIE = 1;
+
+	/**
+	 * After a reset default values IVTBASEWR will be having value 1, IVTBASELK will be 0
+	 * even though writing to these bits to make sure IVTBASE register is writable.
+	 */
+	PACCON1bits.IVTBASELK = 0;
+	PACCON1bits.IVTBASEWR = 1;
+	/* set the new base address */
+	IVTBASE = (uint32_t)((void *)&vector_start);
+	PACCON1bits.IVTBASEWR = 0;
+	PACCON1bits.IVTBASELK = 1;
 }
 
 /* dsPIC33A fault initialization */

@@ -8,10 +8,16 @@ config ARCH
 	string
 	default "dspic"
 
+config GEN_ISR_TABLES
+	default y
+
+config DYNAMIC_INTERRUPTS
+	default n
+
 config NUM_IRQS
-	default 287
+	default 279
 
 config GEN_IRQ_START_VECTOR
-	default 8
+	default 0
 
 endmenu

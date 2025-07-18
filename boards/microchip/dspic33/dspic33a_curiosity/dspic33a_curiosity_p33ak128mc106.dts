@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2025, Microchip Technology Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "p33ak128mc106.dtsi"
+
+/ {
+	model = "Microchip dsPIC33A Curiosity Platform Development Board";
+	compatible = "microchip,dspic33a-criosity-p33ak128mc106";
+
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,sram = &sram0;
+		zephyr,serial = &uart1;
+		zephyr,console = &uart1;
+	};
+
+	aliases {
+		uart-0 = &uart1;
+	};
+};
+
+&cpu0 {
+	clock-frequency = <8000000>;
+	status = "okay";
+	cpu-power-states = <&idle>;
+};
+
+&timer1 {
+	clock-frequency = <8000000>;
+	status = "okay";
+};
+
+&uart1 {
+	status = "okay";
+};

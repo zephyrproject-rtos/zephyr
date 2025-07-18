@@ -6552,9 +6552,7 @@ __syscall int k_poll_signal_raise(struct k_poll_signal *sig, int result);
  */
 static inline void k_cpu_idle(void)
 {
-#ifdef TO_BE_IMPLEMENTED_LATER
 	arch_cpu_idle();
-#endif
 }
 
 /**

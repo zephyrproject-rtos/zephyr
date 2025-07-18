@@ -1,4 +1,5 @@
 zephyr_include_directories(.)
+zephyr_include_directories(${XCDSC_TOOLCHAIN_PATH}/support/generic/h)
 zephyr_sources_ifdef(CONFIG_PM power.c )
 
 set(SOC_LINKER_SCRIPT

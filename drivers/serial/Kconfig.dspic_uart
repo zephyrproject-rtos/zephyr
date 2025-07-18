@@ -1,0 +1,10 @@
+# Copyright (c) 2025, Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+
+config UART_DSPIC
+	bool "dsPIC33A UART driver"
+	default y
+	select SERIAL_HAS_DRIVER
+	help
+	  Enable support for the dsPIC33A UART driver.

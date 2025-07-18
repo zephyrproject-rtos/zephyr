@@ -1,12 +1,10 @@
 /*
+ * Copyright (c) 2025, Microchip Technology Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
  * Generic Zephyr Linker Script
- *.
- * Note: For some of the input sections such as init levels and
- *       data sections and kernel objects needs to be added via
- *       linker script fragment files, At this point, only have added those
- *       input sections required and kept minimal because when adding
- *       linker script linker fragment files, it affects the syntax of
- *       XC-DSC Linker.
  */
 
 #include <zephyr/linker/sections.h>
@@ -27,20 +25,18 @@
 #define ROMABLE_REGION program
 #define RAMABLE_REGION data
 
-OUTPUT_ARCH("33AK128MC106")
+
 CRT0_STARTUP(reset0.S.obj)
 CRT1_STARTUP(reset1.S.obj)
 CRT_STARTMODE(crt_start_mode_normal)
-
 MEMORY
 {
     /* Memory map from the original target-specific script */
     program (xr) : ORIGIN = FLASH_BASE_ADDRESS, LENGTH = (FLASH_SIZE * 1K)
     data (a!xr) : ORIGIN = SRAM_BASE_ADDRESS, LENGTH = (SRAM_SIZE * 1K)
     /* Used by and documented in include/linker/intlist.ld */
-    IDT_LIST (wx) : ORIGIN = 0xFFFFFFFF, LENGTH = 0
+    IDT_LIST (wx) : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
 }
-
 SECTIONS
 {
     /* Start of the ROM-based sections */
@@ -55,7 +51,6 @@ SECTIONS
         * table and debug information.
         */
         #include <snippets-rom-start.ld>
-
     } GROUP_LINK_IN(ROMABLE_REGION)
 
     /*
@@ -67,6 +62,7 @@ SECTIONS
     SECTION_PROLOGUE(._TEXT_SECTION_NAME,,)
     {
         __text_region_start = .;
+        #include <zephyr/linker/kobject-text.ld>
         *(.init);
         *(.text);
         *(.text*);
@@ -74,18 +70,33 @@ SECTIONS
         KEEP (*(.handle));
         KEEP (*(.isr*));
         *(.lib*);
-	    ___rodata_region_start = .;
-	    *(.rodata) *(.rodata.*)
-	    ___rodata_region_end = .;
-        *(.rodata)         /* Read-Only Data */
-        ___static_thread_data_list_start = .;
-        KEEP(*(SORT(.static_thread_data*)))
-        ___static_thread_data_list_end = .;
+        __text_region_end = .;
         . = ALIGN(4);
     } GROUP_LINK_IN(ROMABLE_REGION)
-    __text_region_end = .;
-    ITERABLE_SECTION_ROM_NUMERIC(service, Z_LINK_ITERABLE_SUBALIGN)
+
+    ___rodata_region_start = .;
+    #include <zephyr/linker/common-rom.ld>
+
+    /* Located in generated directory. This file is populated by calling
+    * zephyr_linker_sources(ROM_SECTIONS ...). Useful for grouping iterable RO structs.
+    */
+    #include <snippets-rom-sections.ld>
+    #include <zephyr/linker/thread-local-storage.ld>
+
+    SECTION_PROLOGUE(.rodata,,)
+    {
+        *(.rodata)
+        *(.rodata.*)
+        /* Located in generated directory. This file is populated by the
+        * zephyr_linker_sources() Cmake function.
+        */
+        #include <snippets-rodata.ld>
+        #include <zephyr/linker/kobject-rom.ld>
+    } GROUP_LINK_IN(ROMABLE_REGION)
+
     . = ALIGN(4);
+    ___rodata_region_end = .;
+    #include <zephyr/linker/cplusplus-rom.ld>
     GROUP_END(ROMABLE_REGION)
 
     /* Start of the RAM-based sections */
@@ -108,27 +119,32 @@ SECTIONS
         __data_region_start = .;
         *(.data)
         *(".data.*")
-        __device_list_start = .;
-        KEEP(*(SORT(.z_device*)))
-        __device_list_end = .;
-        /* Initialization levels: Early -> Application */
-        ___init_EARLY_start = .;
-        KEEP(*(SORT(.init_EARLY*)))
-        ___init_PRE_KERNEL_1_start = .;
-        KEEP(*(SORT(.init_PRE_KERNEL_1*)))
-        ___init_PRE_KERNEL_2_start = .;
-        KEEP(*(SORT(.init_PRE_KERNEL_2*)))
-        ___init_POST_KERNEL_start = .;
-        KEEP(*(SORT(.init_POST_KERNEL*)))
-        ___init_APPLICATION_start = .;
-        KEEP(*(SORT(.init_APPLICATION*)))
-        ___init_SMP_start = .;
-        KEEP(*(SORT(.init_SMP*)))
-        ___init_end = .;
-        __data_region_start = .;
+	    *(".kernel.*")
 
+        /* Located in generated directory. This file is populated by the
+        * zephyr_linker_sources() Cmake function.
+        */
+        #include <snippets-rwdata.ld>
+        __data_region_end = .;
     } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
+    #include <zephyr/linker/common-ram.ld>
+
+    #include <zephyr/linker/kobject-data.ld>
+
+    #include <zephyr/linker/cplusplus-ram.ld>
+
+    /* Located in generated directory. This file is populated by the
+    * zephyr_linker_sources() Cmake function.
+    */
+    #include <snippets-data-sections.ld>
+
+    /* Located in generated directory. This file is populated by the
+    * zephyr_linker_sources() Cmake function.
+    */
+    #include <snippets-sections.ld>
+
+    #include <zephyr/linker/debug-sections.ld>
 
     /*
      * This section handles uninitialized data (BSS). It occupies space
@@ -145,7 +161,9 @@ SECTIONS
         ___bss_end = .;
     } GROUP_LINK_IN(RAMABLE_REGION)
 
+
     GROUP_END(RAMABLE_REGION)
+
 }
 
 /*

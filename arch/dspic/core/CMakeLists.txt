@@ -15,4 +15,4 @@ zephyr_library_sources(
     reset1.S
 )
 
-zephyr_linker_sources(ROM_START SORT_KEY 0x04 vector_table.ld)
+zephyr_linker_sources(ROM_START SORT_KEY 0x00 vector_table.ld)

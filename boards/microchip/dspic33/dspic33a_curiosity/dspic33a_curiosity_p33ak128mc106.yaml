@@ -1,0 +1,14 @@
+identifier: dspic33a_curiosity/p33ak128mc106
+name: EV74H48A EVB DSPIC33AK128MC106
+type: mcu
+arch: dspic
+toolchain:
+  - xcdsc
+ram: 16
+flash: 128
+supported:
+  - uart
+  - timer
+testing:
+  default: true
+vendor: microchip

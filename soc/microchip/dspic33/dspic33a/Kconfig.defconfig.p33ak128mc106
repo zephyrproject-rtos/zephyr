@@ -3,20 +3,17 @@
 
 if SOC_P33AK128MC106
 
-config UART_CONSOLE
-	default n
-
-config FLASH_SIZE
-	default 128
-
-config FLASH_BASE_ADDRESS
-	default 0x00800000
-
 config SRAM_SIZE
-	default 80
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_SRAM),0,K)
 
 config SRAM_BASE_ADDRESS
-	default 0x010000
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SRAM))
+
+config FLASH_SIZE
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K)
+
+config FLASH_BASE_ADDRESS
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
 
 config MAIN_STACK_SIZE
 	default 128

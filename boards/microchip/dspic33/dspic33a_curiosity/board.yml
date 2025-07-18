@@ -1,5 +1,5 @@
 board:
-  name: ev74h48a
+  name: dspic33a_curiosity
   full_name: dsPIC33A Curiosity Platform Development Board
   vendor: microchip
   socs:

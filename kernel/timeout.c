@@ -78,11 +78,7 @@ static int32_t elapsed(void)
 	 * will be non-zero while sys_clock_announce() is executing and zero
 	 * otherwise.
 	 */
-#ifdef TO_BE_IMPLEMENTED_LATER
 	return announce_remaining == 0 ? sys_clock_elapsed() : 0U;
-#else
-	return 0;
-#endif
 }
 
 static int32_t next_timeout(int32_t ticks_elapsed)

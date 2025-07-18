@@ -4,6 +4,10 @@
 config SOC_FAMILY_MICROCHIP_DSPIC33
 	bool
 
+config BUILD_OUTPUT_HEX
+	bool
+	default y
+
 config SOC_FAMILY
 	default "microchip_dspic33" if SOC_FAMILY_MICROCHIP_DSPIC33
 
