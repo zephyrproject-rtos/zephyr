@@ -28,12 +28,6 @@ manifest:
       remote: upstream
       groups:
         - optional
-    - name: tf-m-tests
-      revision: a90702bcb8fadb6f70daf0ffbb13888dfe63fc99
-      path: modules/tee/tf-m/tf-m-tests
-      remote: upstream
-      groups:
-        - optional
     - name: tflite-micro
       revision: 8d404de73acf7687831e16d88e86e4f73cfddf8e
       path: optional/modules/lib/tflite-micro
