@@ -33,7 +33,7 @@ if(CONFIG_NXP_IMXRT_BOOT_HEADER)
     # This configuration block may need modification if another SDRAM chip
     # is used on your custom board.
     zephyr_compile_definitions(XIP_BOOT_HEADER_XMCD_ENABLE=1)
-    zephyr_library_sources(${RT1170_BOARD_DIR}/xmcd/xmcd.c)
+    zephyr_library_sources(${RT1170_BOARD_DIR}/xmcd.c)
   else()
     if(CONFIG_SRAM_BASE_ADDRESS EQUAL 0x80000000)
       message(WARNING "You are using SDRAM as RAM but no external memory"
