@@ -2647,6 +2647,7 @@ static int lwm2m_response_promote_to_con(struct lwm2m_message *msg)
 
 	msg->type = COAP_TYPE_CON;
 	msg->mid = coap_next_id();
+	msg->acknowledged = false;
 
 	/* Since the response CoAP packet is already generated at this point,
 	 * tweak the specific fields manually:
