@@ -137,6 +137,12 @@
 	soc {
 		compatible = "ambiq,apollo510", "ambiq,apollo5x", "simple-bus";
 
+		trng: trng@40014aa0 {
+			compatible = "ambiq,puf-trng";
+			reg = <0x40014aa0 0x4>;
+			status = "disabled";
+		};
+
 		stimer0: stimer@STIMER_BASE_NAME {
 			compatible = "ambiq,stimer";
 			reg = <STIMER_REG_BASE STIMER_REG_SIZE>;
