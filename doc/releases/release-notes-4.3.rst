@@ -63,6 +63,10 @@ New APIs and options
   like you need to add more details, add them in the API documentation code
   instead.
 
+* Architectures
+
+  * :kconfig:option:`CONFIG_SRAM_SW_ISR_TABLE`
+
 New Boards
 **********
 

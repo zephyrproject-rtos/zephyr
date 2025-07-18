@@ -1,0 +1,19 @@
+common:
+  tags: linker
+tests:
+  application_development.ram_context_for_isr.arm:
+    arch_allow: arm
+    filter: CONFIG_CPU_CORTEX_M_HAS_VTOR
+    extra_configs:
+      - CONFIG_CODE_DATA_RELOCATION_SRAM=y
+      # In case you want to add this config, place all the possible called code in RAM
+      - CONFIG_TRACING_ISR=n
+      - CONFIG_STACK_SENTINEL=n
+      - CONFIG_PM=n
+    # Exclude mps3/corstone310 because it uses another mechanism to support relocation
+    # of the vector table (CONFIG_ROMSTART_RELOCATION_ROM).
+    platform_exclude:
+      - mps3/corstone310/an555
+      - mps3/corstone310/fvp
+      - mps4/corstone315/fvp
+      - mps4/corstone320/fvp

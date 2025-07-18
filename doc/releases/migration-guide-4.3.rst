@@ -46,3 +46,6 @@ Modules
 
 Architectures
 *************
+
+* The :kconfig:option:`CONFIG_DYNAMIC_INTERRUPTS` option has a new dependency on
+  :kconfig:option:`CONFIG_SRAM_SW_ISR_TABLE`.
