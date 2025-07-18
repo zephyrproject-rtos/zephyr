@@ -63,7 +63,7 @@
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
 	modem: modem {
-		compatible = "quectel,bg95";
+		compatible = "quectel,bg9x";
 		mdm-power-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
 		status = "okay";
 	};

@@ -1,4 +1,4 @@
-# Copyright (c) 2020 Analog Life LLC
+# Copyright (c) 2023 Bjarki Arge Andreasen
 # SPDX-License-Identifier: Apache-2.0
 
 description: quectel BG9x modem
@@ -10,7 +10,6 @@ include: uart-device.yaml
 properties:
   mdm-power-gpios:
     type: phandle-array
-    required: true
 
   mdm-reset-gpios:
     type: phandle-array

@@ -31,7 +31,7 @@
 	status = "okay";
 
 	modem: modem {
-		compatible = "quectel,bg95";
+		compatible = "quectel,bg9x";
 		mdm-power-gpios = <&gpioe 2 GPIO_ACTIVE_HIGH>;
 		status = "okay";
 	};
