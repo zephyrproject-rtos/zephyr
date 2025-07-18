@@ -1,4 +1,4 @@
-# Copyright 2023 NXP
+# Copyright 2023,2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: NXP EHCI USB device mode
@@ -10,3 +10,8 @@ include: "nxp,mcux-usbd.yaml"
 properties:
   phy-handle:
     type: phandle
+
+  clock-rates:
+    type: array
+    description: |
+      Optional rate given to each clock provider in the "clocks" property.
