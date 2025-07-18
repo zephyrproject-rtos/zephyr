@@ -705,6 +705,9 @@ struct sensor_read_config {
 /* Used to submit an RTIO sqe to the sensor's iodev */
 typedef void (*sensor_submit_t)(const struct device *sensor, struct rtio_iodev_sqe *sqe);
 
+/* Used to provide a driver specific callback to upload a f/w in the sensor */
+typedef int (*sensor_upload_fw_t)(const struct device *dev, const void *fw_buf, size_t fw_len);
+
 /* The default decoder API */
 extern const struct sensor_decoder_api __sensor_default_decoder;
 
@@ -719,6 +722,7 @@ __subsystem struct sensor_driver_api {
 	sensor_channel_get_t channel_get;
 	sensor_get_decoder_t get_decoder;
 	sensor_submit_t submit;
+	sensor_upload_fw_t upload_fw;
 };
 
 /**
@@ -915,6 +919,32 @@ static inline int z_impl_sensor_channel_get(const struct device *dev,
 		(const struct sensor_driver_api *)dev->api;
 
 	return api->channel_get(dev, chan, val);
+}
+
+/**
+ * @brief Upload a Firmware to the sensor
+ *
+ * @param[in] dev The sensor device
+ * @param[in] fw_buf Pointer to the Firmware buffer
+ * @param[in] fw_len Length of Firmware
+ * @return 0 on success
+ * @return < 0 on error
+ */
+__syscall int sensor_upload_fw(const struct device *dev,
+			       const void *fw_buf, size_t fw_len);
+
+static inline int z_impl_sensor_upload_fw(const struct device *dev,
+					  const void *fw_buf, size_t fw_len)
+{
+	const struct sensor_driver_api *api = (const struct sensor_driver_api *)dev->api;
+
+	__ASSERT_NO_MSG(api != NULL);
+
+	if (api->upload_fw == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->upload_fw(dev, fw_buf, fw_len);
 }
 
 #if defined(CONFIG_SENSOR_ASYNC_API) || defined(__DOXYGEN__)
