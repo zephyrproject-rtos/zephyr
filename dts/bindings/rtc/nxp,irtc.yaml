@@ -1,4 +1,4 @@
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: IRTC
@@ -15,7 +15,6 @@ properties:
 
   clock-src:
     type: int
-    required: true
     enum:
       - 0
       - 1
@@ -40,3 +39,9 @@ properties:
       3 <- Coarse 1Hz
       Default value ensures the output clock is turned off.
       This is the reset value.
+
+  share-counter:
+    type: boolean
+    description: |
+      This secondary IRTC instance shares the data and time counters of the primary IRTC instance.
+      This means the code cannot set the data and time counters, but can only read them.
