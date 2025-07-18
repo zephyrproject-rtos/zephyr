@@ -694,9 +694,13 @@ static int uvc_get_vs_probe(const struct device *dev, struct net_buf *const buf,
 			    const struct usb_setup_packet *const setup)
 {
 	struct uvc_data *data = dev->data;
-	const size_t size = MIN(sizeof(struct uvc_probe), net_buf_tailroom(buf));
+	size_t size;
 	struct uvc_probe probe = {0};
 	int ret;
+
+	size = net_buf_tailroom(buf);
+	size = MIN(size, sizeof(struct uvc_probe));
+	size = MIN(size, setup->wLength);
 
 	switch (setup->bRequest) {
 	case UVC_GET_INFO:
@@ -912,11 +916,15 @@ static int uvc_get_vc_ctrl(const struct device *dev, struct net_buf *const buf,
 	const struct device *video_dev = data->video_dev;
 	struct video_ctrl_query cq = {.id = map->cid, .dev = video_dev};
 	struct video_control ctrl = {.id = map->cid};
-	size_t size = MIN(setup->wLength, net_buf_tailroom(buf));
+	size_t size;
 	int64_t val64;
 	int ret;
 
 	__ASSERT_NO_MSG(video_dev != NULL);
+
+	size = net_buf_tailroom(buf);
+	size = MIN(size, sizeof(struct uvc_probe));
+	size = MIN(size, setup->wLength);
 
 	ret = video_query_ctrl(&cq);
 	if (ret != 0) {
@@ -1104,7 +1112,11 @@ static int uvc_get_errno(const struct device *dev, struct net_buf *const buf,
 			       const struct usb_setup_packet *const setup)
 {
 	struct uvc_data *data = dev->data;
-	size_t size = MIN(setup->wLength, net_buf_tailroom(buf));
+	size_t size;
+
+	size = net_buf_tailroom(buf);
+	size = MIN(size, sizeof(struct uvc_probe));
+	size = MIN(size, setup->wLength);
 
 	switch (setup->bRequest) {
 	case UVC_GET_INFO:
