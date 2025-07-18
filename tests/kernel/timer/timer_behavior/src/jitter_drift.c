@@ -237,8 +237,8 @@ static void do_test_using(void (*sample_collection_fn)(void), const char *mechan
 		- expected_time_drift_us;
 	double time_diff_us_abs = time_diff_us >= 0.0 ? time_diff_us : -time_diff_us;
 
-	/* If max stddev is lower than a single clock cycle then round it up. */
-	uint32_t max_stddev = MAX(k_cyc_to_us_ceil32(1), CONFIG_TIMER_TEST_MAX_STDDEV);
+	/* If max stddev is lower than a single clock tick then round it up. */
+	uint32_t max_stddev = MAX(k_ticks_to_us_ceil32(1), CONFIG_TIMER_TEST_MAX_STDDEV);
 
 	TC_PRINT("timer clock rate %u, kernel tick rate %d\n",
 		 sys_clock_hw_cycles_per_sec(), CONFIG_SYS_CLOCK_TICKS_PER_SEC);
