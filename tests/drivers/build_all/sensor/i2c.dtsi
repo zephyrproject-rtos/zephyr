@@ -483,6 +483,7 @@ test_i2c_tmp11x: tmp11x@47 {
 	reg = <0x47>;
 	odr = <TMP11X_DT_ODR_125_MS>;
 	oversampling = <TMP11X_DT_OVERSAMPLING_32>;
+	alert-gpios = <&test_gpio 0 0>;
 };
 
 test_i2c_bq274xx: bq27xx@48 {
