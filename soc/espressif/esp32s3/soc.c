@@ -18,6 +18,7 @@
 
 extern void z_prep_c(void);
 extern void esp_reset_reason_init(void);
+extern FUNC_NORETURN void z_cstart(void);
 
 static void IRAM_ATTR esp_errata(void)
 {
