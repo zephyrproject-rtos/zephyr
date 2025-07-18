@@ -22,12 +22,6 @@ manifest:
       remote: upstream
       groups:
         - optional
-    - name: psa-arch-tests
-      revision: 2cadb02a72eacda7042505dcbdd492371e8ce024
-      path: modules/tee/tf-m/psa-arch-tests
-      remote: upstream
-      groups:
-        - optional
     - name: sof
       revision: bc08c9c606324cfba0c104f4ffaf5dd456cb11d6
       path: modules/audio/sof
