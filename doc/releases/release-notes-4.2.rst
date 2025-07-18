@@ -924,7 +924,8 @@ New Drivers
    * :dtcompatible:`microchip,vsc8541`
    * :dtcompatible:`nxp,netc-ptp-clock`
    * :dtcompatible:`nxp,tja11xx`
-   * :dtcompatible:`st,stm32-ethernet-controller`
+   * :dtcompatible:`st,stm32-ethernet-controller` has been introduced to ease interoperability
+     with :dtcompatible:`st,stm32-mdio`.
    * :dtcompatible:`st,stm32n6-ethernet`
    * :dtcompatible:`ti,dp83867`
    * :dtcompatible:`xlnx,axi-ethernet-1.00.a`
