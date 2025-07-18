@@ -32,6 +32,20 @@ extern "C" {
  */
 int lvgl_init(void);
 
+#ifdef CONFIG_LV_Z_RUN_LVGL_ON_WORKQUEUE
+/**
+ * @brief Gets the instance of LVGL's workqueue
+ *
+ * This function returns the workqueue instance used
+ * by LVGL core, allowing user to submit their own
+ * work items to it.
+ *
+ * @return pointer to LVGL's workqueue instance
+ */
+struct k_work_q *lvgl_get_workqueue(void);
+
+#endif /* CONFIG_LV_Z_RUN_LVGL_ON_WORKQUEUE */
+
 #ifdef __cplusplus
 }
 #endif
