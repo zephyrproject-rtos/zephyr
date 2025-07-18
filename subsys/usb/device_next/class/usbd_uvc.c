@@ -694,7 +694,8 @@ static int uvc_get_vs_probe(const struct device *dev, struct net_buf *const buf,
 			    const struct usb_setup_packet *const setup)
 {
 	struct uvc_data *data = dev->data;
-	const size_t size = MIN(sizeof(struct uvc_probe), net_buf_tailroom(buf));
+	const size_t size = MIN(net_buf_tailroom(buf),
+				MIN(sizeof(struct uvc_probe), setup->wLength));
 	struct uvc_probe probe = {0};
 	int ret;
 
@@ -912,7 +913,8 @@ static int uvc_get_vc_ctrl(const struct device *dev, struct net_buf *const buf,
 	const struct device *video_dev = data->video_dev;
 	struct video_ctrl_query cq = {.id = map->cid, .dev = video_dev};
 	struct video_control ctrl = {.id = map->cid};
-	size_t size = MIN(setup->wLength, net_buf_tailroom(buf));
+	const size_t size = MIN(net_buf_tailroom(buf),
+				MIN(sizeof(struct uvc_probe), setup->wLength));
 	int64_t val64;
 	int ret;
 
@@ -1104,7 +1106,8 @@ static int uvc_get_errno(const struct device *dev, struct net_buf *const buf,
 			       const struct usb_setup_packet *const setup)
 {
 	struct uvc_data *data = dev->data;
-	size_t size = MIN(setup->wLength, net_buf_tailroom(buf));
+	const size_t size = MIN(net_buf_tailroom(buf),
+				MIN(sizeof(struct uvc_probe), setup->wLength));
 
 	switch (setup->bRequest) {
 	case UVC_GET_INFO:
