@@ -10,6 +10,9 @@ common:
     - arch
     - simulation
   filter: not CONFIG_NATIVE_APPLICATION
+  arch_exclude:
+    # see #89839
+    - rx
 tests:
   libraries.libc.c11_threads.minimal:
     tags: minimal_libc
