@@ -63,6 +63,11 @@ New APIs and options
   like you need to add more details, add them in the API documentation code
   instead.
 
+* Toolchain
+
+  * :c:macro:`__deprecated_version`
+
+
 New Boards
 **********
 

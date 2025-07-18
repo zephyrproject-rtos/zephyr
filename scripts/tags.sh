@@ -58,7 +58,7 @@ exuberant()
 	-I __initdata,__exitdata,__initconst,			\
 	-I __initdata_memblock					\
 	-I __refdata,__attribute,__maybe_unused,__always_unused \
-	-I __acquires,__releases,__deprecated			\
+	-I __acquires,__releases,__deprecated,__deprecated_version	\
 	-I __read_mostly,__aligned,____cacheline_aligned        \
 	-I ____cacheline_aligned_in_smp                         \
 	-I __cacheline_aligned,__cacheline_aligned_in_smp	\
