@@ -430,11 +430,14 @@ void z_shell_print_prompt_and_cmd(const struct shell *sh)
 
 static void shell_pend_on_txdone(const struct shell *sh)
 {
-	if (IS_ENABLED(CONFIG_MULTITHREADING) &&
-	    (sh->ctx->state < SHELL_STATE_PANIC_MODE_ACTIVE)) {
+#if CONFIG_MULTITHREADING
+	if (sh->ctx->state < SHELL_STATE_PANIC_MODE_ACTIVE) {
 		k_event_wait(&sh->ctx->signal_event, SHELL_SIGNAL_TXDONE, false, K_FOREVER);
 		k_event_clear(&sh->ctx->signal_event, SHELL_SIGNAL_TXDONE);
 	} else {
+#else
+	{
+#endif
 		/* Blocking wait in case of bare metal. */
 		while (!z_flag_tx_rdy_get(sh)) {
 		}
