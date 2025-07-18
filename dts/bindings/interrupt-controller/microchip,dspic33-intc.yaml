@@ -1,0 +1,19 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip dsPIC33 Interrupt Controller
+
+compatible: "microchip,dspic33-intc"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  interrupt-controller:
+    type: boolean
+
+  "#interrupt-cells":
+    const: 2
+
+interrupt-cells:
+  - irq
+  - priority

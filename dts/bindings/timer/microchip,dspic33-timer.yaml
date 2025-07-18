@@ -1,0 +1,26 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip DSPIC33 timer
+
+compatible: "microchip,dspic33-timer"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clock-frequency:
+    type: int
+    required: true
+
+  prescalar:
+    type: int
+    required: true
+
+  interrupts:
+    required: true
+
+  label:
+    type: string

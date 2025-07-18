@@ -1,0 +1,14 @@
+/ {
+	chosen {
+		zephyr,ram-console = &snippet_ram_console;
+	};
+
+    #address-cells = <1>;
+    #size-cells = <1>;
+
+	snippet_ram_console: memory@5000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x5000 0x400>;
+		zephyr,memory-region = "RAM_CONSOLE";
+	};
+};

@@ -2,7 +2,7 @@ set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_PROCESSOR ${ARCH})
 # Find and validate the xc-dsc-gcc compiler binary
 find_program(CMAKE_C_COMPILER xc-dsc-gcc PATHS ${XCDSC_TOOLCHAIN_PATH}/bin/ NO_DEFAULT_PATH REQUIRED )
-add_definitions(-D__XC_DSC__)
+set(CMAKE_C_FLAGS -D__XC_DSC__)
 # Get compiler version
 execute_process(
 	COMMAND ${CMAKE_C_COMPILER} --version

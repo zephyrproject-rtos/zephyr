@@ -1,0 +1,19 @@
+# microchip,dspic33-uart.yaml
+
+description: Microchip dsPIC33 UART controller
+
+compatible: "microchip,dspic33-uart"
+
+include: uart-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  clock-frequency:
+    type: int
+    required: true
+
+  status:
+    type: string
+    required: true

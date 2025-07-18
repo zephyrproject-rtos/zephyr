@@ -16,18 +16,18 @@ extern "C" {
 
 struct arch_esf {
 	uint32_t PC;     /* Program counter*/
-	uint32_t FRAME;  /* Previous frame pointer*/
 	uint32_t RCOUNT; /* repeat count register*/
 	uint32_t FSR;    /* Floating point status register */
 	uint32_t FCR;    /* Floating point control register*/
 	uint32_t W0;     /* working register W0 */
-	uint32_t W1;     /* working register W0 */
-	uint32_t W2;     /* working register W0 */
-	uint32_t W3;     /* working register W0 */
-	uint32_t W4;     /* working register W0 */
-	uint32_t W5;     /* working register W0 */
-	uint32_t W6;     /* working register W0 */
-	uint32_t W7;     /* working register W0 */
+	uint32_t W1;     /* working register W1 */
+	uint32_t W2;     /* working register W2 */
+	uint32_t W3;     /* working register W3 */
+	uint32_t W4;     /* working register W4 */
+	uint32_t W5;     /* working register W5 */
+	uint32_t W6;     /* working register W6 */
+	uint32_t W7;     /* working register W7 */
+	uint32_t W8;     /* working register W8 */
 	uint32_t F0;     /* Floating point register F0 */
 	uint32_t F1;     /* Floating point register F1 */
 	uint32_t F2;     /* Floating point register F2 */
@@ -36,6 +36,7 @@ struct arch_esf {
 	uint32_t F5;     /* Floating point register F5 */
 	uint32_t F6;     /* Floating point register F6 */
 	uint32_t F7;     /* Floating point register F7 */
+	uint32_t FRAME;  /* Previous frame pointer*/
 };
 typedef struct arch_esf arch_esf_t;
 

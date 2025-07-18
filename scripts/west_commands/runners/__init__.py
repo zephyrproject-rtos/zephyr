@@ -40,6 +40,7 @@ _names = [
     'hifive1',
     'intel_adsp',
     'intel_cyclonev',
+    'ipecmd',
     'jlink',
     'linkserver',
     'lldbac',

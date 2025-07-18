@@ -30,3 +30,6 @@ boards:
   imx93_evk/mimx9352/a55:
     append:
       EXTRA_DTC_OVERLAY_FILE: boards/imx93_evk_mimx9352_a55.overlay
+  dspic33a_curiosity/p33ak128mc106:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: boards/dspic33a_curiosity_p33ak128mc106.overlay

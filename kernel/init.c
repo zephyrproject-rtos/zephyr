@@ -555,12 +555,12 @@ FUNC_NORETURN void z_cstart(void)
 	z_device_state_init();
 
 #if CONFIG_SOC_EARLY_INIT_HOOK
-#ifdef TO_BE_IMPLEMENTED_LATER
+#ifndef CONFIG_DSPIC
 	soc_early_init_hook();
 #endif
 #endif
 #if CONFIG_BOARD_EARLY_INIT_HOOK
-#ifdef TO_BE_IMPLEMENTED_LATER
+#ifndef CONFIG_DSPIC
 	board_early_init_hook();
 #endif
 #endif

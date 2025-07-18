@@ -19,10 +19,15 @@
 
 #define ARCH_STACK_PTR_ALIGN 4
 
+#define IRQ_KEY_ILR_IRQ_MASK 0x7
+
 #define DSPIC_STATUS_DEFAULT 0
-
+#define DSPIC_PRIORITY_BITS  3u
+#define DSPIC_PRIORITY_WIDTH DSPIC_PRIORITY_BITS + 1u
+#define DSPIC_IRQ_PER_REG    8u
+#define DSPIC_PRIORITY_MASK  ((1u << DSPIC_PRIORITY_BITS) - 1u)
 #ifndef _ASMLANGUAGE
-
+#include <xc.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -31,6 +36,9 @@ void arch_irq_enable(unsigned int irq);
 void arch_irq_disable(unsigned int irq);
 int arch_irq_is_enabled(unsigned int irq);
 void z_irq_spurious(const void *unused);
+
+/* dsPIC has no MMU, so device_map() is replaced with a direct assignment */
+#define device_map(virt, phys, size, flags) *(virt) = (phys)
 
 /**
  * Configure a static interrupt.
@@ -51,9 +59,9 @@ void z_irq_spurious(const void *unused);
 		z_dspic_irq_priority_set(irq_p, priority_p, flags_p);                              \
 	}
 
-#define ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p)                    \
+#define ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p)                                 \
 	{                                                                                          \
-		Z_ISR_DECLARE_DIRECT(irq_p, ISR_FLAG_DIRECT, isr_p, isr_param_p);                  \
+		Z_ISR_DECLARE_DIRECT(irq_p, ISR_FLAG_DIRECT, isr_p);                               \
 		z_dspic_irq_priority_set(irq_p, priority_p, flags_p);                              \
 	}
 
@@ -61,25 +69,37 @@ void z_irq_spurious(const void *unused);
 static ALWAYS_INLINE void z_dspic_irq_priority_set(unsigned int irq, unsigned int prio,
 						   uint32_t flags)
 {
+	ARG_UNUSED(flags);
+	volatile unsigned int reg_index = irq / DSPIC_IRQ_PER_REG;
+	volatile unsigned int bit_pos = (irq % DSPIC_IRQ_PER_REG) * (DSPIC_PRIORITY_WIDTH);
+	volatile uint32_t *prior_reg = (volatile uint32_t *)(&IPC0 + reg_index);
+	*prior_reg &= ~(DSPIC_PRIORITY_MASK << bit_pos);
+	*prior_reg |= (prio & DSPIC_PRIORITY_MASK) << bit_pos;
 }
 
 static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 {
+	__builtin_write_DISICTL(key & IRQ_KEY_ILR_IRQ_MASK);
+	__builtin_enable_interrupts();
 }
 
 static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 {
-	return 0;
+	return ((key & IRQ_KEY_ILR_IRQ_MASK) == IRQ_KEY_ILR_IRQ_MASK) ? false : true;
 }
 
 static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 {
-	return 0;
+	volatile unsigned int key;
+
+	key = __builtin_write_DISICTL(IRQ_KEY_ILR_IRQ_MASK);
+	__builtin_disable_interrupts();
+	return key;
 }
 
 static ALWAYS_INLINE bool arch_is_in_isr(void)
 {
-	return 0;
+	return ((INTTREGbits.VECNUM) ? (true) : (false));
 }
 
 static ALWAYS_INLINE void arch_nop(void)
@@ -91,11 +111,7 @@ extern uint32_t sys_clock_cycle_get_32(void);
 
 static inline uint32_t arch_k_cycle_get_32(void)
 {
-#ifdef TO_BE_IMPLEMENTED_LATER
 	return sys_clock_cycle_get_32();
-#else
-	return 0;
-#endif
 }
 
 extern uint64_t sys_clock_cycle_get_64(void);

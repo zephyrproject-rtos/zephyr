@@ -58,7 +58,7 @@ static int ram_console_init(void)
 #endif
 	__printk_hook_install(ram_console_out);
 
-#ifdef TO_BE_IMPLEMENTED_LATER
+#ifndef CONFIG_DSPIC
 	__stdout_hook_install(ram_console_out);
 #endif
 	return 0;

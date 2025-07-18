@@ -7,6 +7,7 @@
 #include <string.h>
 
 #define RAM_END 0x00007FFC
+#define DSPIC_STATUS_DEFAULT 0
 
 void z_thread_entry(k_thread_entry_t thread, void *arg1, void *arg2, void *arg3);
 
@@ -36,7 +37,12 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack, char *sta
 	 * Z_thread_entry(entry, p1, p2, p3)
 	 */
 	init_frame->PC = (uint32_t)z_thread_entry;
-	init_frame->FRAME = (uint32_t)(void *)init_frame - (uint32_t)1;
+	/* FRAME pointer used as LR for initial swap function
+	 * In swap function we enter with one SP and exits with another SP
+	 * As the swap function is a naked function, it won't use FP but use that
+	 * place for LR (for the 1st swap, we need to populate initial LR in FP)
+	 */
+	init_frame->FRAME = (uint32_t)(void *)init_frame + (sizeof(struct arch_esf));
 
 	/**
 	 * Set the stack top to the esf structure. The context switch
@@ -44,7 +50,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack, char *sta
 	 * the switched thread
 	 */
 	thread->callee_saved.stack = (uint32_t)(void *)init_frame + (sizeof(struct arch_esf));
-	thread->callee_saved.frame = (uint32_t)&init_frame->RCOUNT;
+	thread->callee_saved.frame = (uint32_t)thread->callee_saved.stack;
 	/*TODO: Need to handle splim properly*/
 	thread->callee_saved.splim = RAM_END;
 }

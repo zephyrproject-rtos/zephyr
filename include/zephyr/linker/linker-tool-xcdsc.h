@@ -1,12 +1,11 @@
 /*
- * Copyright (c) 2023, Google, Inc.
- *
+ * Copyright (c) 2025, Microchip Technology Inc.
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /**
  * @file
- * @brief LLVM LLD linker defs
+ * @brief XCDSC LD linker defs
  *
  * This header file defines the necessary macros used by the linker script for
  * use with the XCDSC Linker.
@@ -14,8 +13,54 @@
 
 #ifndef ZEPHYR_INCLUDE_LINKER_LINKER_TOOL_XCDSC_H_
 #define ZEPHYR_INCLUDE_LINKER_LINKER_TOOL_XCDSC_H_
+#include <zephyr/kernel/mm.h>
 
-#include <zephyr/linker/linker-tool-gcc.h>
+OUTPUT_FORMAT("elf32-pic30")
+OUTPUT_ARCH("33AK128MC106")
+
+/*
+ * The GROUP_START() and GROUP_END() macros are used to define a group
+ * of sections located in one memory area, such as RAM, ROM, etc.
+ * The <where> parameter is the name of the memory area.
+ */
+#define GROUP_START(where)
+#define GROUP_END(where)
+
+/**
+ * @def GROUP_LINK_IN
+ *
+ * Route memory to a specified memory area
+ *
+ * The GROUP_LINK_IN() macro is located at the end of the section
+ * description and tells the linker that this section is located in
+ * the memory area specified by 'where' argument.
+ *
+ * This macro is intentionally undefined for CONFIG_MMU systems when
+ * CONFIG_KERNEL_VM_BASE is not the same as CONFIG_SRAM_BASE_ADDRESS,
+ * as both the LMA and VMA destinations must be known for all sections
+ * as this corresponds to physical vs. virtual location.
+ *
+ * @param where Destination memory area
+ */
+#define GROUP_LINK_IN(where) > where
+
+/**
+ * @def GROUP_DATA_LINK_IN
+ *
+ * Route memory for read-write sections that are loaded.
+ *
+ * Used for initialized data sections that on XIP platforms must be copied at
+ * startup.
+ *
+ * @param vregion Output VMA
+ * @param lregion Output LMA (only used if CONFIG_MMU if VMA != LMA,
+ *		  or CONFIG_XIP)
+ */
+#define GROUP_DATA_LINK_IN(vregion, lregion) > vregion
+/*
+ * xcdsc linker doesn't have the following directives
+ */
+#define SUBALIGN(x)                          ALIGN(x)
 
 /**
  * @def SECTION_PROLOGUE
@@ -55,5 +100,26 @@
  */
 #undef SECTION_DATA_PROLOGUE
 #define SECTION_DATA_PROLOGUE(name, options, align) SECTION_PROLOGUE(name, options, align)
+
+/**
+ * @def GROUP_ROM_LINK_IN
+ *
+ * Route memory for a read-only section
+ *
+ * The GROUP_ROM_LINK_IN() macro is located at the end of the section
+ * description and tells the linker that this a read-only section
+ * that is physically placed at the 'lregion` argument.
+ *
+ * If CONFIG_XIP is active, the 'lregion' area is flash memory.
+ *
+ * If CONFIG_MMU is active, the vregion argument will be used to
+ * determine where this is located in the virtual memory map, otherwise
+ * it is ignored.
+ *
+ * @param vregion Output VMA (only used if CONFIG_MMU where LMA != VMA)
+ * @param lregion Output LMA
+ */
+#undef GROUP_ROM_LINK_IN
+#define GROUP_ROM_LINK_IN(vregion, lregion) > vregion
 
 #endif /* ZEPHYR_INCLUDE_LINKER_LINKER_TOOL_XCDSC_H_ */

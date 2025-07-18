@@ -6,6 +6,13 @@
 #ifndef ZEPHYR_INCLUDE_TOOLCHAIN_XCDSC_H_
 #define ZEPHYR_INCLUDE_TOOLCHAIN_XCDSC_H_
 
+#ifndef __COUNTER__
+/* XCC (GCC-based compiler) doesn't support __COUNTER__
+ * but this should be good enough
+ */
+#define __COUNTER__ __LINE__
+#endif
+
 #ifndef ZEPHYR_INCLUDE_TOOLCHAIN_H_
 #error Please do not include toolchain-specific headers directly, use <zephyr/toolchain.h> instead
 #endif
@@ -19,6 +26,11 @@
 /* Double indirection to ensure section names are expanded before
  * stringification
  */
+#define __GENERIC_SECTION(segment) __attribute__((section(STRINGIFY(segment))))
+#define Z_GENERIC_SECTION(segment) __GENERIC_SECTION(segment)
+
+#define __GENERIC_DOT_SECTION(segment) __attribute__((section("." STRINGIFY(segment))))
+#define Z_GENERIC_DOT_SECTION(segment) __GENERIC_DOT_SECTION(segment)
 /*
  * XC-DSC does not support using deprecated attribute in enum,
  * so just nullify it here to avoid compilation errors.
@@ -34,7 +46,6 @@
 	__attribute__((section("." STRINGIFY(seg) "." STRINGIFY(__COUNTER__) "." STRINGIFY(name))))
 #define CODE_UNREACHABLE __builtin_unreachable()
 
-#define __used         __attribute__((__used__))
 #define __unused       __attribute__((__unused__))
 #define __maybe_unused __attribute__((__unused__))
 
@@ -216,4 +227,23 @@ static inline int popcount(unsigned int x)
  */
 
 #define ZRESTRICT restrict
+
+/* Double indirection to ensure section names are expanded before
+ * stringification
+ */
+#define __GENERIC_SECTION(segment) __attribute__((section(STRINGIFY(segment))))
+#define Z_GENERIC_SECTION(segment) __GENERIC_SECTION(segment)
+
+#define __GENERIC_DOT_SECTION(segment) __attribute__((section("." STRINGIFY(segment))))
+#define Z_GENERIC_DOT_SECTION(segment) __GENERIC_DOT_SECTION(segment)
+
 #endif /* ZEPHYR_INCLUDE_TOOLCHAIN_XSDSC_H_ */
+
+/* Double indirection to ensure section names are expanded before
+ * stringification
+ */
+#define __GENERIC_SECTION(segment) __attribute__((section(STRINGIFY(segment))))
+#define Z_GENERIC_SECTION(segment) __GENERIC_SECTION(segment)
+
+#define __GENERIC_DOT_SECTION(segment) __attribute__((section("." STRINGIFY(segment))))
+#define Z_GENERIC_DOT_SECTION(segment) __GENERIC_DOT_SECTION(segment)

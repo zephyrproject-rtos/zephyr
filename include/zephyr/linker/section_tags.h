@@ -17,7 +17,16 @@
 
 #define __noinit		__in_section_unique(_NOINIT_SECTION_NAME)
 #define __noinit_named(name)	__in_section_unique_named(_NOINIT_SECTION_NAME, name)
-#define __irq_vector_table	Z_GENERIC_SECTION(_IRQ_VECTOR_TABLE_SECTION_NAME)
+/* The XC-DSC linker mandates that the input and output sections in the linker script must
+ * have matching attributes. To resolve this, the prog attribute is explicitly
+ * added to the isr_vector_table section.
+ */
+#ifdef CONFIG_DSPIC
+#define __irq_vector_table                                                                         \
+	Z_GENERIC_SECTION(_IRQ_VECTOR_TABLE_SECTION_NAME) __attribute__((space(prog)))
+#else
+#define __irq_vector_table Z_GENERIC_SECTION(_IRQ_VECTOR_TABLE_SECTION_NAME)
+#endif
 #define __sw_isr_table		Z_GENERIC_SECTION(_SW_ISR_TABLE_SECTION_NAME)
 
 #ifdef CONFIG_SHARED_INTERRUPTS

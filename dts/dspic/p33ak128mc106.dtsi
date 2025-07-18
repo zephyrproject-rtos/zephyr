@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2025, Microchip Technology Inc.
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,26 +35,47 @@
 
 
 	soc: soc {
-	compatible = "microchip,p33ak128mc106-soc";
+		compatible = "microchip,p33ak128mc106-soc";
 		#address-cells = <1>;
-		#size-cells = <0>;
+		#size-cells = <1>;
 
-		flash0: flash@800004 {
+		flash0: flash@800000 {
 			compatible = "zephyr,flash";
-			reg = <0x800004 0x1FFFC>;
+			reg = <0x800000 0x20000>;
 			label = "FLASH";
 		};
 
 		sram0: memory@4000 {
 			compatible = "zephyr,memory";
-			reg = <0x4000 0x4000>;
+			reg = <0x4000 0x20000>;
 			label = "SRAM";
+		};
+
+		intc0: interrupt-controller@0 {
+			compatible = "microchip,dspic33-intc";
+			reg = <0x0 0x1>;
+			interrupt-controller;
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
 		};
 
 		timer1: timer@1E00 {
 			compatible = "microchip,dspic33-timer";
-			reg = <0x1E00 0x10>;
+			reg = <0x1E00 0xC>;
+			clock-frequency = <4000000>;
+			prescalar = <8>;
+			interrupt-parent = <&intc0>;
+			interrupts = <48 1>;
 			label = "TIMER_1";
+			status = "okay";
+		};
+
+		uart1: uart@1700 {
+			compatible = "microchip,dspic33-uart";
+			reg = <0x1700 0x28>;
+			clock-frequency = <4000000>;
+			current-speed = <115200>;
+			status = "okay";
 		};
 	};
 };
