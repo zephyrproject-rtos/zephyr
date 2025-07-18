@@ -1,0 +1,231 @@
+/*
+ * Copyright (c) 2025 - 2026 Texas Instruments Incorporated
+ * Copyright (c) 2024 BayLibre, SAS
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/cc27xx-pinctrl.h>
+
+&pinctrl {
+	/* UART0 */
+	uart0_tx_default: uart0_tx_default {
+		pinmux = <1 DIO1_UART0_TXD>;
+		bias-disable;
+	};
+
+	uart0_rx_default: uart0_rx_default {
+		pinmux = <2 DIO2_UART0_RXD>;
+		bias-pull-up;
+		input-enable;
+	};
+
+	/* UART1 */
+	uart1_tx_default: uart1_tx_default {
+		pinmux = <21 DIO21_UART1_TXD>;
+		bias-disable;
+	};
+
+	uart1_rx_default: uart1_rx_default {
+		pinmux = <22 DIO22_UART1_RXD>;
+		bias-pull-up;
+		input-enable;
+	};
+
+	/* I2C0 */
+	i2c0_scl_default: i2c0_scl_default {
+		pinmux = <27 DIO27_I2C0_SCL>;
+		bias-pull-up;
+		drive-open-drain;
+		input-enable;
+	};
+
+	i2c0_sda_default: i2c0_sda_default {
+		pinmux = <28 DIO28_I2C0_SDA>;
+		bias-pull-up;
+		drive-open-drain;
+		input-enable;
+	};
+
+	/* SPI0 */
+	spi0_sck_default: spi0_sck_default {
+		pinmux = <3 DIO3_SPI0_SCLK>;
+		input-enable;
+		input-schmitt-enable;
+		bias-disable;
+	};
+
+	spi0_mosi_default: spi0_mosi_default {
+		pinmux = <5 DIO5_SPI0_PICO>;
+		input-enable;
+		input-schmitt-enable;
+		bias-disable;
+	};
+
+	spi0_miso_default: spi0_miso_default {
+		pinmux = <4 DIO4_SPI0_POCI>;
+		input-enable;
+		input-schmitt-enable;
+		bias-disable;
+	};
+
+	spi0_cs_default: spi0_cs_default {
+		pinmux = <19 DIO19_GPIO19>;
+		input-enable;
+		input-schmitt-enable;
+		bias-disable;
+	};
+
+	spi0_sck_sleep: spi0_sck_sleep {
+		pinmux = <3 DIO3_GPIO3>;
+		input-enable;
+		input-schmitt-enable;
+		bias-disable;
+	};
+
+	spi0_mosi_sleep: spi0_mosi_sleep {
+		pinmux = <5 DIO5_GPIO5>;
+		input-enable;
+		input-schmitt-enable;
+		bias-disable;
+	};
+
+	spi0_miso_sleep: spi0_miso_sleep {
+		pinmux = <4 DIO4_GPIO4>;
+		input-enable;
+		input-schmitt-enable;
+		bias-disable;
+	};
+
+	spi0_cs_sleep: spi0_cs_sleep {
+		pinmux = <19 DIO19_GPIO19>;
+		input-enable;
+		input-schmitt-enable;
+		bias-disable;
+	};
+
+	spi0_flash_cs: spi0_flash_cs {
+		pinmux = <19 DIO19_GPIO19>;
+		bias-pull-up;
+	};
+
+	/* SPI1 */
+	spi1_sck_default: spi1_sck_default {
+		pinmux = <15 DIO15_SPI1_SCLK>;
+		input-enable;
+		input-schmitt-enable;
+		bias-disable;
+	};
+
+	spi1_mosi_default: spi1_mosi_default {
+		pinmux = <11 DIO11_SPI1_PICO>;
+		input-enable;
+		input-schmitt-enable;
+		bias-disable;
+	};
+
+	spi1_miso_default: spi1_miso_default {
+		pinmux = <12 DIO12_SPI1_POCI>;
+		input-enable;
+		input-schmitt-enable;
+		bias-disable;
+	};
+
+	spi1_cs_default: spi1_cs_default {
+		pinmux = <16 DIO16_GPIO16>;
+		input-enable;
+		input-schmitt-enable;
+		bias-disable;
+	};
+
+	spi1_sck_sleep: spi1_sck_sleep {
+		pinmux = <15 DIO15_GPIO15>;
+		input-enable;
+		input-schmitt-enable;
+		bias-disable;
+	};
+
+	spi1_mosi_sleep: spi1_mosi_sleep {
+		pinmux = <11 DIO11_GPIO11>;
+		input-enable;
+		input-schmitt-enable;
+		bias-disable;
+	};
+
+	spi1_miso_sleep: spi1_miso_sleep {
+		pinmux = <12 DIO12_GPIO12>;
+		input-enable;
+		input-schmitt-enable;
+		bias-disable;
+	};
+
+	spi1_cs_sleep: spi1_cs_sleep {
+		pinmux = <16 DIO16_GPIO16>;
+		input-enable;
+		input-schmitt-enable;
+		bias-disable;
+	};
+
+	/* ADC channels. */
+
+	adc0_ch0: adc0_ch0 {
+		pinmux = <28 DIO28_ADC0_AREFM>;
+		bias-disable;
+		input-enable;
+	};
+
+	adc0_ch1: adc0_ch1 {
+		pinmux = <27 DIO27_ADC1_AREFP>;
+		bias-disable;
+		input-enable;
+	};
+
+	adc0_ch3: adc0_ch3 {
+		pinmux = <22 DIO22_ADC3>;
+		bias-disable;
+		input-enable;
+	};
+
+	adc0_ch4: adc0_ch4 {
+		pinmux = <21 DIO21_ADC4_LPCP_LPCM>;
+		bias-disable;
+		input-enable;
+	};
+
+	adc0_ch5: adc0_ch5 {
+		pinmux = <20 DIO20_ADC5_LPCP_LPCM>;
+		bias-disable;
+		input-enable;
+	};
+
+	adc0_ch6: adc0_ch6 {
+		pinmux = <19 DIO19_ADC6_LPCP>;
+		bias-disable;
+		input-enable;
+	};
+
+	adc0_ch7: adc0_ch7 {
+		pinmux = <18 DIO18_ADC7>;
+		bias-disable;
+		input-enable;
+	};
+
+	adc0_ch8: adc0_ch8 {
+		pinmux = <17 DIO17_ADC8>;
+		bias-disable;
+		input-enable;
+	};
+
+	/* LGPT1 ch0 output (DIO15, T1_C0N) */
+	pwm3_default: lgpt1_chan0_default {
+		pinmux = <15 DIO15_T1_C0N>;
+		bias-disable;
+	};
+
+	/* LGPT0 ch0 capture input (DIO0, T0_C0) */
+	pwm0_capture: lgpt0_chan0_capture {
+		pinmux = <0 DIO0_T0_C0>;
+		bias-disable;
+		input-enable;
+	};
+};

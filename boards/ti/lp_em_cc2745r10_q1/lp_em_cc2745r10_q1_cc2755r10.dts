@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2025 Texas Instruments Incorporated
+ * Copyright (c) 2024 BayLibre, SAS
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <ti/cc2755r10.dtsi>
+#include "boosterpack_connector.dtsi"
+#include "lp_em_cc2745r10_q1_cc2755r10-pinctrl.dtsi"
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+#include "lp_em_cc2745r10_q1_common.dtsi"
+
+/ {
+	model = "TI CC2745R10_Q1 LaunchPad with CC2755R10 SoC";
+};

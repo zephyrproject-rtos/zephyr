@@ -1,0 +1,76 @@
+/*
+ * Copyright (c) 2025 Texas Instruments Incorporated
+ * Copyright (c) 2024 BayLibre, SAS
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <ti/cc2745r10_q1.dtsi>
+#include "boosterpack_connector.dtsi"
+#include "lp_em_cc2745r10_q1_cc2745r10_q1-pinctrl.dtsi"
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+#include "lp_em_cc2745r10_q1_common.dtsi"
+
+/ {
+	model = "TI CC2745R10_Q1 LaunchPad with CC2745R10_Q1 SoC";
+
+	aliases {
+		pwm-led0 = &pwm_led0;
+		pwm-led1 = &pwm_led1;
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led0: pwm_led0 {
+			/* Use LGPT3 output 1 (pwm10) on DIO12 where Green LED is */
+			/* LGPT3 is 24-bit timer, supporting longer periods for led_blink */
+			pwms = <&pwm10 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+
+		pwm_led1: pwm_led1 {
+			/* Use LGPT3 output 0 (pwm9) on DIO16 where Red LED is */
+			pwms = <&pwm9 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+	};
+};
+
+/* Enable LGPT3 timer for PWM LEDs:
+ * - PWM9 (channel 0) on DIO16 for Red LED
+ * - PWM10 (channel 1) on DIO12 for Green LED
+ * LGPT3 is a 24-bit timer, supporting periods up to ~44 seconds at 375kHz
+ */
+&lgpt3 {
+	status = "okay";
+	/* Prescaler at 96MHz: Effective clock = 96MHz / (31 + 1) = 3MHz */
+	clk-prescale = <31>;
+};
+
+&pwm9 {
+	status = "okay";
+	pinctrl-0 = <&pwm9_default>;
+	pinctrl-names = "default";
+};
+
+&pwm10 {
+	status = "okay";
+	pinctrl-0 = <&pwm10_default>;
+	pinctrl-names = "default";
+};
+
+/* Enable LGPT2 timer for PWM7 (channel 1) on DIO5 (BP15) */
+&lgpt2 {
+	status = "okay";
+	clk-prescale = <31>;
+};
+
+&pwm7 {
+	status = "okay";
+	pinctrl-0 = <&pwm7_default>;
+	pinctrl-names = "default";
+};
