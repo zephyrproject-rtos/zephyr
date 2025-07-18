@@ -62,6 +62,11 @@ SYS_MEM_BLOCKS_DEFINE_WITH_EXT_BUF(
 		L2_SRAM_PAGES_NUM,
 		(uint8_t *) L2_SRAM_BASE);
 
+uintptr_t adsp_mm_get_unused_l2_start_aligned(void)
+{
+	return UNUSED_L2_START_ALIGNED;
+}
+
 /**
  * Calculate the index to the TLB table.
  *
