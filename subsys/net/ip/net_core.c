@@ -68,7 +68,10 @@ static inline enum net_verdict process_data(struct net_pkt *pkt)
 {
 	int ret;
 
-	net_packet_socket_input(pkt, ETH_P_ALL, SOCK_RAW);
+	if (!net_pkt_is_raw_processed(pkt)) {
+		net_pkt_set_raw_processed(pkt, true);
+		net_packet_socket_input(pkt, ETH_P_ALL, SOCK_RAW);
+	}
 
 	/* If there is no data, then drop the packet. */
 	if (!pkt->frags) {
@@ -90,40 +93,48 @@ static inline enum net_verdict process_data(struct net_pkt *pkt)
 
 			return ret;
 		}
+
+		/* L2 has modified the buffer starting point, it is easier
+		 * to re-initialize the cursor rather than updating it.
+		 */
+		net_pkt_cursor_init(pkt);
 	}
 
-	/* L2 has modified the buffer starting point, it is easier
-	 * to re-initialize the cursor rather than updating it.
-	 */
-	net_pkt_cursor_init(pkt);
-
-	if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET_DGRAM)) {
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET_DGRAM) &&
+	    !net_pkt_is_dgram_processed(pkt)) {
+		net_pkt_set_dgram_processed(pkt, true);
 		net_packet_socket_input(pkt, net_pkt_ll_proto_type(pkt), SOCK_DGRAM);
 	}
 
-	uint8_t family = net_pkt_family(pkt);
+	if (!net_pkt_is_l3_processed(pkt)) {
+		net_pkt_set_l3_processed(pkt, true);
+		uint8_t family = net_pkt_family(pkt);
 
-	if (IS_ENABLED(CONFIG_NET_IP) && (family == AF_INET || family == AF_INET6 ||
-					  family == AF_UNSPEC || family == AF_PACKET)) {
-		/* IP version and header length. */
-		uint8_t vtc_vhl = NET_IPV6_HDR(pkt)->vtc & 0xf0;
+		if (IS_ENABLED(CONFIG_NET_IP) && (family == AF_INET || family == AF_INET6 ||
+					family == AF_UNSPEC || family == AF_PACKET)) {
+			/* IP version and header length. */
+			uint8_t vtc_vhl = NET_IPV6_HDR(pkt)->vtc & 0xf0;
 
-		if (IS_ENABLED(CONFIG_NET_IPV6) && vtc_vhl == 0x60) {
-			return net_ipv6_input(pkt);
-		} else if (IS_ENABLED(CONFIG_NET_IPV4) && vtc_vhl == 0x40) {
-			return net_ipv4_input(pkt);
+			if (IS_ENABLED(CONFIG_NET_IPV6) && vtc_vhl == 0x60) {
+				return net_ipv6_input(pkt);
+			} else if (IS_ENABLED(CONFIG_NET_IPV4) && vtc_vhl == 0x40) {
+				return net_ipv4_input(pkt);
+			}
+
+			NET_DBG("Unknown IP family packet (0x%x)", NET_IPV6_HDR(pkt)->vtc & 0xf0);
+			net_stats_update_ip_errors_protoerr(net_pkt_iface(pkt));
+			net_stats_update_ip_errors_vhlerr(net_pkt_iface(pkt));
+			return NET_DROP;
+		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) && family == AF_CAN) {
+			return net_canbus_socket_input(pkt);
 		}
 
-		NET_DBG("Unknown IP family packet (0x%x)", NET_IPV6_HDR(pkt)->vtc & 0xf0);
-		net_stats_update_ip_errors_protoerr(net_pkt_iface(pkt));
-		net_stats_update_ip_errors_vhlerr(net_pkt_iface(pkt));
+		NET_DBG("Unknown protocol family packet (0x%x)", family);
 		return NET_DROP;
-	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) && family == AF_CAN) {
-		return net_canbus_socket_input(pkt);
 	}
 
-	NET_DBG("Unknown protocol family packet (0x%x)", family);
 	return NET_DROP;
+
 }
 
 static void processing_data(struct net_pkt *pkt)
