@@ -16,7 +16,6 @@ Pins Assignment of the Adafruit
 +-----------------------+---------------------------------------------+
 | Shield Connector Pin  | Function                                    |
 +=======================+=============================================+
-+-----------------------+---------------------------------------------+
 | SDA                   | SSD1306 I2C SDA                             |
 +-----------------------+---------------------------------------------+
 | SCL                   | SSD1306 I2C SCL                             |
@@ -32,10 +31,9 @@ Pins Assignment of the Adafruit
 
 Requirements
 ************
-This shield can only be used with a board which provides a configuration for Feather connectors and
-defines a node aliases for I2C (see :ref:`shields` for more details).
 
-
+This shield can only be used with a board which provides a configuration for Feather connector and
+defines a node alias for I2C (see :ref:`shields` for more details).
 
 Programming
 ***********
