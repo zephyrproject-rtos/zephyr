@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/toolchain.h>
 #include "soc/soc_caps.h"
 #include "esp_rom_caps.h"
 #include "rom/ets_sys.h"
@@ -14,6 +15,7 @@
 #include <soc.h>
 
 extern void main(void);
+extern FUNC_NORETURN void z_cstart(void);
 
 /* Initialize lp core related system functions before calling user's main*/
 void lp_core_startup(void)
