@@ -17,6 +17,7 @@
 #include <zephyr/sys/util.h>
 #include <stmemsc.h>
 #include "lsm6dso16is_reg.h"
+#include "mems_conf_shared_types.h"
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 #include <zephyr/drivers/spi.h>
