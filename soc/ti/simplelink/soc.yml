@@ -21,6 +21,7 @@ family:
   - name: cc27xx
     socs:
     - name: cc2745r10_q1
+    - name: cc2755r10
   - name: cc32xx
     socs:
     - name: cc3220sf
