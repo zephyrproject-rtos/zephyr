@@ -1171,13 +1171,21 @@ static void state_collect(const struct shell *sh)
 static void transport_evt_handler(enum shell_transport_evt evt_type, void *ctx)
 {
 	struct shell *sh = (struct shell *)ctx;
+
+#if CONFIG_MULTITHREADING
 	enum shell_signal sig = evt_type == SHELL_TRANSPORT_EVT_RX_RDY
 			      ? SHELL_SIGNAL_RXRDY
 			      : SHELL_SIGNAL_TXDONE;
 
 	k_event_post(&sh->ctx->signal_event, sig);
+#endif
+
+	if (evt_type == SHELL_TRANSPORT_EVT_TX_RDY) {
+		z_flag_tx_rdy_set(sh, true);
+	}
 }
 
+#if CONFIG_MULTITHREADING
 static void shell_log_process(const struct shell *sh)
 {
 	bool processed = false;
@@ -1201,6 +1209,7 @@ static void shell_log_process(const struct shell *sh)
 
 	} while (processed && !k_event_test(&sh->ctx->signal_event, SHELL_SIGNAL_RXRDY));
 }
+#endif
 
 static int instance_init(const struct shell *sh,
 			 const void *transport_config,
@@ -1216,8 +1225,10 @@ static int instance_init(const struct shell *sh,
 
 	history_init(sh);
 
+#if CONFIG_MULTITHREADING
 	k_event_init(&sh->ctx->signal_event);
 	k_sem_init(&sh->ctx->lock_sem, 1, 1);
+#endif
 
 	if (IS_ENABLED(CONFIG_SHELL_STATS)) {
 		sh->stats->log_lost_cnt = 0;
@@ -1284,6 +1295,7 @@ static int instance_uninit(const struct shell *sh)
 	return 0;
 }
 
+#if CONFIG_MULTITHREADING
 typedef void (*shell_signal_handler_t)(const struct shell *sh);
 
 static void shell_signal_handle(const struct shell *sh,
@@ -1358,6 +1370,7 @@ void shell_thread(void *shell_handle, void *arg_log_backend,
 		z_shell_unlock(sh);
 	}
 }
+#endif
 
 int shell_init(const struct shell *sh, const void *transport_config,
 	       struct shell_backend_config_flags cfg_flags,
@@ -1366,9 +1379,11 @@ int shell_init(const struct shell *sh, const void *transport_config,
 	__ASSERT_NO_MSG(sh);
 	__ASSERT_NO_MSG(sh->ctx && sh->iface && sh->default_prompt);
 
+#if CONFIG_MULTITHREADING
 	if (sh->ctx->tid) {
 		return -EALREADY;
 	}
+#endif
 
 	int err = instance_init(sh, transport_config, cfg_flags);
 
@@ -1376,6 +1391,7 @@ int shell_init(const struct shell *sh, const void *transport_config,
 		return err;
 	}
 
+#if CONFIG_MULTITHREADING
 	k_tid_t tid = k_thread_create(sh->thread,
 				  sh->stack, CONFIG_SHELL_STACK_SIZE,
 				  shell_thread, (void *)sh, (void *)log_backend,
@@ -1384,6 +1400,7 @@ int shell_init(const struct shell *sh, const void *transport_config,
 
 	sh->ctx->tid = tid;
 	k_thread_name_set(tid, sh->name);
+#endif
 
 	return 0;
 }
@@ -1392,10 +1409,9 @@ void shell_uninit(const struct shell *sh, shell_uninit_cb_t cb)
 {
 	__ASSERT_NO_MSG(sh);
 
-	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
-		k_event_post(&sh->ctx->signal_event, SHELL_SIGNAL_KILL);
-		return;
-	}
+#if CONFIG_MULTITHREADING
+	k_event_post(&sh->ctx->signal_event, SHELL_SIGNAL_KILL);
+#else
 
 	int err = instance_uninit(sh);
 
@@ -1404,6 +1420,7 @@ void shell_uninit(const struct shell *sh, shell_uninit_cb_t cb)
 	} else {
 		__ASSERT_NO_MSG(0);
 	}
+#endif
 }
 
 int shell_start(const struct shell *sh)

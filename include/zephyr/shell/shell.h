@@ -961,10 +961,11 @@ struct shell_ctx {
 	volatile union shell_backend_cfg cfg;
 	volatile union shell_backend_ctx ctx;
 
+#if CONFIG_MULTITHREADING
 	struct k_event signal_event;
-
 	struct k_sem lock_sem;
 	k_tid_t tid;
+#endif
 	int ret_val;
 };
 
@@ -1000,12 +1001,28 @@ struct shell {
 	LOG_INSTANCE_PTR_DECLARE(log);
 
 	const char *name;
+
+#if CONFIG_MULTITHREADING
 	struct k_thread *thread;
 	k_thread_stack_t *stack;
+#endif
 };
 
 extern void z_shell_print_stream(const void *user_ctx, const char *data,
 				 size_t data_len);
+
+#if CONFIG_MULTITHREADING
+#define Z_SHELL_THREAD_DEFINE(_name)                                                               \
+	static K_KERNEL_STACK_DEFINE(_name##_stack, CONFIG_SHELL_STACK_SIZE);                      \
+	static struct k_thread _name##_thread
+
+#define Z_SHELL_THREAD_INIT(_name)                                                                 \
+	.thread = &_name##_thread,                                                                 \
+	.stack = _name##_stack,
+#else
+#define Z_SHELL_THREAD_DEFINE(_name)
+#define Z_SHELL_THREAD_INIT(_name)
+#endif
 
 /** @brief Internal macro for defining a shell instance.
  *
@@ -1027,8 +1044,7 @@ extern void z_shell_print_stream(const void *user_ctx, const char *data,
 			       IS_ENABLED(CONFIG_SHELL_PRINTF_AUTOFLUSH), z_shell_print_stream);   \
 	LOG_INSTANCE_REGISTER(shell, _name, CONFIG_SHELL_LOG_LEVEL);                               \
 	Z_SHELL_STATS_DEFINE(_name);                                                               \
-	static K_KERNEL_STACK_DEFINE(_name##_stack, CONFIG_SHELL_STACK_SIZE);                      \
-	static struct k_thread _name##_thread;                                                     \
+	Z_SHELL_THREAD_DEFINE(_name);                                                              \
 	static const STRUCT_SECTION_ITERABLE(shell, _name) = {                                     \
 		.default_prompt = _prompt,                                                         \
 		.iface = _transport_iface,                                                         \
@@ -1038,8 +1054,9 @@ extern void z_shell_print_stream(const void *user_ctx, const char *data,
 		.fprintf_ctx = &_name##_fprintf,                                                   \
 		.stats = Z_SHELL_STATS_PTR(_name),                                                 \
 		.log_backend = _log_backend,                                                       \
-		LOG_INSTANCE_PTR_INIT(log, shell, _name).name =                                    \
-			STRINGIFY(_name), .thread = &_name##_thread, .stack = _name##_stack}
+		LOG_INSTANCE_PTR_INIT(log, shell, _name).name = STRINGIFY(_name),                  \
+		Z_SHELL_THREAD_INIT(_name)                                                         \
+	}
 
 /**
  * @brief Macro for defining a shell instance.
