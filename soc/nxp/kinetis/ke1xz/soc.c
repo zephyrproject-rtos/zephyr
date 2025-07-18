@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  * Copyright (c) 2019-2021 Vestas Wind Systems A/S
  *
  * Based on NXP k6x soc.c, which is:
@@ -43,6 +43,12 @@ static const scg_sys_clk_config_t scg_sys_clk_config = {
 	.src     = kSCG_SysClkSrcSirc,
 #elif DT_SAME_NODE(DT_CLOCKS_CTLR(SCG_CLOCK_NODE(core_clk)), SCG_CLOCK_NODE(firc_clk))
 	.src     = kSCG_SysClkSrcFirc,
+#elif DT_SAME_NODE(DT_CLOCKS_CTLR(SCG_CLOCK_NODE(core_clk)), SCG_CLOCK_NODE(lpfll_clk))
+	.src     = kSCG_SysClkSrcLpFll,
+#elif DT_SAME_NODE(DT_CLOCKS_CTLR(SCG_CLOCK_NODE(core_clk)), SCG_CLOCK_NODE(sosc_clk))
+	.src     = kSCG_SysClkSrcSysOsc,
+#else
+#error Invalid SCG core clock selected
 #endif
 };
 
@@ -66,7 +72,7 @@ ASSERT_ASYNC_CLK_DIV_VALID(SCG_CLOCK_DIV(fircdiv2_clk),
 		       "Invalid SCG FIRC divider 2 value");
 static const scg_firc_config_t scg_firc_config = {
 	.enableMode = kSCG_FircEnable,
-	.div2       = TO_ASYNC_CLK_DIV(SCG_CLOCK_DIV(fircdiv2_clk)), /* b20253 */
+	.div2       = TO_ASYNC_CLK_DIV(SCG_CLOCK_DIV(fircdiv2_clk)),
 #if MHZ(48) == DT_PROP(SCG_CLOCK_NODE(firc_clk), clock_frequency)
 	.range      = kSCG_FircRange48M,
 #elif MHZ(52) == DT_PROP(SCG_CLOCK_NODE(firc_clk), clock_frequency)
@@ -81,30 +87,89 @@ static const scg_firc_config_t scg_firc_config = {
 	.trimConfig = NULL
 };
 
+#if DT_NODE_HAS_STATUS_OKAY(SCG_CLOCK_NODE(sosc_clk))
+/* System Oscillator (SOSC) configuration */
+ASSERT_ASYNC_CLK_DIV_VALID(SCG_CLOCK_DIV(soscdiv2_clk)),
+			"Invalid SCG SOSC divider 2 value");
+static const scg_sosc_config_t scg_sosc_config = {
+	.freq        = DT_PROP(SCG_CLOCK_NODE(sosc_clk), clock_frequency),
+	.monitorMode = kSCG_SysOscMonitorDisable,
+	.enableMode  = kSCG_SysOscEnable | kSCG_SysOscEnableInLowPower,
+	.div2        = TO_ASYNC_CLK_DIV(SCG_CLOCK_DIV(soscdiv2_clk)),
+	.workMode    = DT_PROP(DT_INST(0, nxp_kinetis_scg), sosc_mode)
+};
+#endif
+
+
+static const scg_lpfll_config_t scg_lpfll_config = {
+	.enableMode = kSCG_LpFllEnable,
+	.div2       = TO_ASYNC_CLK_DIV(SCG_CLOCK_DIV(flldiv2_clk)),
+#if MHZ(48) == DT_PROP(SCG_CLOCK_NODE(lpfll_clk), clock_frequency)
+	.range      = kSCG_LpFllRange48M,
+#elif MHZ(72) == DT_PROP(SCG_CLOCK_NODE(lpfll_clk), clock_frequency)
+	.range      = kSCG_LpFllRange72M,
+#elif MHZ(96) == DT_PROP(SCG_CLOCK_NODE(lpfll_clk), clock_frequency)
+	.range      = kSCG_LpFllRange96M,
+#else
+#error Invalid SCG FLL clock frequency
+#endif
+	.trimConfig = NULL,
+};
+
+
+static void CLOCK_CONFIG_FircSafeConfig(const scg_firc_config_t *fircConfig)
+{
+	scg_sys_clk_config_t curConfig;
+	const scg_sirc_config_t scgSircConfig       = {.enableMode = kSCG_SircEnable,
+						.div2       = kSCG_AsyncClkDivBy2,
+						.range      = kSCG_SircRangeHigh};
+	scg_sys_clk_config_t sysClkSafeConfigSource = {
+		.divSlow = kSCG_SysClkDivBy4, /* Slow clock divider */
+		.divCore = kSCG_SysClkDivBy1, /* Core clock divider */
+		.src     = kSCG_SysClkSrcSirc /* System clock source */
+	};
+	/* Init Sirc. */
+	CLOCK_InitSirc(&scgSircConfig);
+	/* Change to use SIRC as system clock source to prepare to change FIRCCFG register. */
+	CLOCK_SetRunModeSysClkConfig(&sysClkSafeConfigSource);
+	/* Wait for clock source switch finished. */
+	do {
+		CLOCK_GetCurSysClkConfig(&curConfig);
+	} while (curConfig.src != sysClkSafeConfigSource.src);
+
+	/* Init Firc. */
+	CLOCK_InitFirc(fircConfig);
+	/* Change back to use FIRC as system clock source in order to configure SIRC if needed. */
+	sysClkSafeConfigSource.src = kSCG_SysClkSrcFirc;
+	CLOCK_SetRunModeSysClkConfig(&sysClkSafeConfigSource);
+	/* Wait for clock source switch finished. */
+	do {
+		CLOCK_GetCurSysClkConfig(&curConfig);
+	} while (curConfig.src != sysClkSafeConfigSource.src);
+}
+
+
 __weak void clk_init(void)
 {
-	const scg_sys_clk_config_t scg_sys_clk_config_safe = {
-		.divSlow = kSCG_SysClkDivBy4,
-		.divCore = kSCG_SysClkDivBy1,
-		.src     = kSCG_SysClkSrcSirc
-	};
 	scg_sys_clk_config_t current;
 
-	/* Configure SIRC */
-	CLOCK_InitSirc(&scg_sirc_config);
-
-	/* Temporary switch to safe SIRC in order to configure FIRC */
-	CLOCK_SetRunModeSysClkConfig(&scg_sys_clk_config_safe);
+#if DT_NODE_HAS_STATUS_OKAY(SCG_CLOCK_NODE(sosc_clk))
+	/* Init SOSC according to board configuration. */
+	CLOCK_InitSysOsc(&scg_sosc_config);
+	CLOCK_SetXtal0Freq(scg_sosc_config.freq);
+#endif
+	/* Init FIRC. */
+	CLOCK_CONFIG_FircSafeConfig(&scg_firc_config);
+	/* Init SIRC. */
+    	CLOCK_InitSirc(&scg_sirc_config);
+    	/* Init LPFLL. */
+    	CLOCK_InitLpFll(&scg_lpfll_config);
+    	/* Finally init the App desired clock */
+    	CLOCK_SetRunModeSysClkConfig(&scg_sys_clk_config);
 	do {
-		CLOCK_GetCurSysClkConfig(&current);
-	} while (current.src != scg_sys_clk_config_safe.src);
-	CLOCK_InitFirc(&scg_firc_config);
-
-	/* Only RUN mode supported for now */
-	CLOCK_SetRunModeSysClkConfig(&scg_sys_clk_config);
-	do {
-		CLOCK_GetCurSysClkConfig(&current);
+	     CLOCK_GetCurSysClkConfig(&current);
 	} while (current.src != scg_sys_clk_config.src);
+
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart0))
 	CLOCK_SetIpSrc(kCLOCK_Lpuart0,

@@ -89,9 +89,16 @@
 				#clock-cells = <0>;
 			};
 
+			lpfll_clk: lpfll_clk {
+				compatible = "fixed-clock";
+				clock-frequency = <72000000>;
+				#clock-cells = <0>;
+			};
+
 			core_clk: core_clk {
 				compatible = "fixed-factor-clock";
-				clocks = <&firc_clk>;
+				#clocks = <&firc_clk>;
+				clocks = <&lpfll_clk>;
 				clock-div = <1>;
 				#clock-cells = <0>;
 			};
@@ -114,6 +121,13 @@
 				compatible = "fixed-factor-clock";
 				clocks = <&firc_clk>;
 				clock-div = <1>;
+				#clock-cells = <0>;
+			};
+
+			flldiv2_clk: flldiv2_clk {
+				compatible = "fixed-factor-clock";
+				clocks = <&lpfll_clk>;
+				clock-div = <2>;
 				#clock-cells = <0>;
 			};
 		};
