@@ -27,8 +27,12 @@ static int scmi_mbox_send_message(const struct device *transport,
 {
 	struct scmi_mbox_channel *mbox_chan;
 	int ret;
+	struct mbox_dt_spec tx;
+	uint8_t msg_type;
 
+	msg_type = SCMI_HEADER_TYPE_EX(msg->hdr);
 	mbox_chan = chan->data;
+	tx = (msg_type == SCMI_COMMAND) ? mbox_chan->tx : mbox_chan->rx;
 
 	ret = scmi_shmem_write_message(mbox_chan->shmem, msg);
 	if (ret < 0) {
@@ -36,7 +40,7 @@ static int scmi_mbox_send_message(const struct device *transport,
 		return ret;
 	}
 
-	ret = mbox_send_dt(&mbox_chan->tx, NULL);
+	ret = mbox_send_dt(&tx, NULL);
 	if (ret < 0) {
 		LOG_ERR("failed to ring doorbell: %d", ret);
 		return ret;
@@ -71,29 +75,29 @@ static int scmi_mbox_setup_chan(const struct device *transport,
 {
 	int ret;
 	struct scmi_mbox_channel *mbox_chan;
-	struct mbox_dt_spec *tx_reply;
+	struct mbox_dt_spec *mbox_spec;
 
 	mbox_chan = chan->data;
 
-	if (!tx) {
-		return -ENOTSUP;
-	}
-
-	if (mbox_chan->tx_reply.dev) {
-		tx_reply = &mbox_chan->tx_reply;
+	if (tx) {
+		mbox_spec = mbox_chan->tx_reply.dev ? &mbox_chan->tx_reply : &mbox_chan->tx;
 	} else {
-		tx_reply = &mbox_chan->tx;
+		if (!mbox_chan->rx.dev) {
+			LOG_ERR("RX channel not defined");
+			return -ENOTSUP;
+		}
+		mbox_spec = &mbox_chan->rx;
 	}
 
-	ret = mbox_register_callback_dt(tx_reply, scmi_mbox_cb, chan);
+	ret = mbox_register_callback_dt(mbox_spec, scmi_mbox_cb, chan);
 	if (ret < 0) {
-		LOG_ERR("failed to register tx reply cb");
+		LOG_ERR("failed to register %s cb", tx ? "tx" : "rx");
 		return ret;
 	}
 
-	ret = mbox_set_enabled_dt(tx_reply, true);
+	ret = mbox_set_enabled_dt(mbox_spec, true);
 	if (ret < 0) {
-		LOG_ERR("failed to enable tx reply dbell");
+		LOG_ERR("failed to enable %s dbell", tx ? "tx" : "rx");
 	}
 
 	/* enable interrupt-based communication */

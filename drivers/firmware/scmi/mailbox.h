@@ -16,10 +16,8 @@
 #define DT_DRV_COMPAT arm_scmi
 
 /* get a `struct device` for a protocol's shared memory area */
-#define _SCMI_MBOX_SHMEM_BY_IDX(node_id, idx)					\
-	COND_CODE_1(DT_PROP_HAS_IDX(node_id, shmem, idx),			\
-		    (DEVICE_DT_GET(DT_PROP_BY_IDX(node_id, shmem, idx))),	\
-		    (NULL))
+#define _SCMI_MBOX_SHMEM_BY_IDX(idx)					\
+	DEVICE_DT_GET(DT_INST_PHANDLE_BY_IDX(0, shmems, idx))
 
 /* get the name of mailbox channel's private data */
 #define _SCMI_MBOX_CHAN_NAME(proto, idx)\
@@ -35,9 +33,17 @@
 #define _SCMI_MBOX_CHAN_DEFINE_PRIV_TX(node_id, proto)			\
 	static struct scmi_mbox_channel _SCMI_MBOX_CHAN_NAME(proto, 0) =\
 	{								\
-		.shmem = _SCMI_MBOX_SHMEM_BY_IDX(node_id, 0),		\
+		.shmem = _SCMI_MBOX_SHMEM_BY_IDX(0),			\
 		.tx = _SCMI_MBOX_CHAN_DBELL(node_id, tx),		\
 		.tx_reply = _SCMI_MBOX_CHAN_DBELL(node_id, tx_reply),	\
+	}
+
+/* define private data for a protocol RX channel */
+#define _SCMI_MBOX_CHAN_DEFINE_PRIV_RX(node_id, proto)			\
+	static struct scmi_mbox_channel _SCMI_MBOX_CHAN_NAME(proto, 1) =\
+	{								\
+		.shmem = _SCMI_MBOX_SHMEM_BY_IDX(1),			\
+		.rx = _SCMI_MBOX_CHAN_DBELL(node_id, rx),		\
 	}
 
 /*
@@ -46,8 +52,13 @@
  *	2) Define the mailbox-specific private data for said
  *	channel (i.e: a struct scmi_mbox_channel)
  */
-#define _SCMI_MBOX_CHAN_DEFINE(node_id, proto, idx)				\
+#define _SCMI_MBOX_CHAN_DEFINE_TX(node_id, proto, idx)				\
 	_SCMI_MBOX_CHAN_DEFINE_PRIV_TX(node_id, proto);				\
+	DT_SCMI_TRANSPORT_CHAN_DEFINE(node_id, idx, proto,			\
+				    &(_SCMI_MBOX_CHAN_NAME(proto, idx)));	\
+
+#define _SCMI_MBOX_CHAN_DEFINE_RX(node_id, proto, idx)				\
+	_SCMI_MBOX_CHAN_DEFINE_PRIV_RX(node_id, proto);				\
 	DT_SCMI_TRANSPORT_CHAN_DEFINE(node_id, idx, proto,			\
 				    &(_SCMI_MBOX_CHAN_NAME(proto, idx)));	\
 
@@ -71,22 +82,24 @@
 /* define and validate base protocol TX channel */
 #define DT_INST_SCMI_MBOX_BASE_CHAN_DEFINE(inst)			\
 	BUILD_ASSERT(DT_INST_PROP_LEN(inst, mboxes) != 1 ||		\
-		     (DT_INST_PROP_HAS_IDX(inst, shmem, 0) &&		\
+		     (DT_INST_PROP_HAS_IDX(inst, shmems, 0) &&		\
 		     DT_INST_PROP_HAS_NAME(inst, mboxes, tx)),		\
 		     "bad bidirectional channel description");		\
 									\
 	BUILD_ASSERT(DT_INST_PROP_LEN(inst, mboxes) != 2 ||		\
-		     (DT_INST_PROP_HAS_NAME(inst, mboxes, tx) &&	\
-		     DT_INST_PROP_HAS_NAME(inst, mboxes, tx_reply)),	\
+		     ((DT_INST_PROP_HAS_NAME(inst, mboxes, tx) &&	\
+		     (DT_INST_PROP_HAS_NAME(inst, mboxes, tx_reply) ||  \
+		      DT_INST_PROP_HAS_NAME(inst, mboxes, rx)))),       \
 		     "bad unidirectional channel description");		\
 									\
-	BUILD_ASSERT(DT_INST_PROP_LEN(inst, shmem) == 1,		\
+	BUILD_ASSERT(DT_INST_PROP_LEN(inst, shmems) >= 1,		\
 		     "bad SHMEM count");				\
 									\
 	BUILD_ASSERT(DT_INST_PROP_LEN(inst, mboxes) <= 2,		\
 		     "bad mbox count");					\
 									\
-	_SCMI_MBOX_CHAN_DEFINE(DT_INST(inst, DT_DRV_COMPAT), SCMI_PROTOCOL_BASE, 0)
+	_SCMI_MBOX_CHAN_DEFINE_TX(DT_INST(inst, DT_DRV_COMPAT), SCMI_PROTOCOL_BASE, 0) \
+	_SCMI_MBOX_CHAN_DEFINE_RX(DT_INST(inst, DT_DRV_COMPAT), SCMI_PROTOCOL_BASE, 1) \
 
 /*
  * Define the mailbox-based transport layer. What this does is:
@@ -112,6 +125,8 @@ struct scmi_mbox_channel {
 	struct mbox_dt_spec tx;
 	/* TX reply dbell */
 	struct mbox_dt_spec tx_reply;
+	/* RX dbell */
+	struct mbox_dt_spec rx;
 };
 
 #endif /* _ZEPHYR_DRIVERS_FIRMWARE_SCMI_MAILBOX_H_ */

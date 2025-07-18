@@ -34,6 +34,15 @@
 	 SCMI_FIELD_MAKE(proto, GENMASK(7, 0), 10) |	\
 	 SCMI_FIELD_MAKE(token, GENMASK(9, 0), 18))
 
+/**
+ * @brief SCMI header extraction
+ *
+ */
+#define SCMI_HEADER_MSG_EX(header)  (((header) & 0xFFU) >> 0U)
+#define SCMI_HEADER_TYPE_EX(header)  (((header) & 0x300U) >> 8U)
+#define SCMI_HEADER_PROTOCOL_EX(header)  (((header) & 0x3FC00U) >> 10U)
+#define SCMI_HEADER_TOKEN_EX(header)  (((header) & 0x0FFC0000U) >> 18U)
+
 struct scmi_channel;
 
 /**
@@ -76,6 +85,8 @@ struct scmi_protocol {
 	uint32_t id;
 	/** TX channel */
 	struct scmi_channel *tx;
+	/** RX channel */
+	struct scmi_channel *rx;
 	/** transport layer device */
 	const struct device *transport;
 	/** protocol private data */
@@ -125,5 +136,19 @@ int scmi_status_to_errno(int scmi_status);
 int scmi_send_message(struct scmi_protocol *proto,
 		      struct scmi_message *msg, struct scmi_message *reply,
 		      bool use_polling);
+
+/**
+ * @brief Read an SCMI message and send reply into scmi platform
+ *
+ * Blocking function used to read an SCMI message over
+ * a given channel and give reply into scmi platform
+ *
+ * @param proto pointer to SCMI protocol
+ * @param msg pointer to SCMI message to read and reply
+ *
+ * @retval 0 if successful
+ * @retval negative errno if failure
+ */
+int scmi_read_message(struct scmi_protocol *proto, struct scmi_message *msg);
 
 #endif /* _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_PROTOCOL_H_ */
