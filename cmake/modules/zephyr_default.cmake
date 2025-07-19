@@ -101,10 +101,6 @@ list(APPEND zephyr_cmake_modules hwm_v2)
 list(APPEND zephyr_cmake_modules configuration_files)
 list(APPEND zephyr_cmake_modules generated_file_directories)
 
-# Include board specific device-tree flags before parsing.
-set(pre_dt_board "\${BOARD_DIR}/pre_dt_board.cmake" OPTIONAL)
-list(APPEND zephyr_cmake_modules "\${pre_dt_board}")
-
 # DTS should be close to kconfig because CONFIG_ variables from
 # kconfig and dts should be available at the same time.
 list(APPEND zephyr_cmake_modules dts)
@@ -122,12 +118,6 @@ foreach(component ${SUB_COMPONENTS})
 endforeach()
 
 foreach(module IN LISTS zephyr_cmake_modules)
-  # Ensures any module of type `${module}` are properly expanded to list before
-  # passed on the `include(${module})`.
-  # This is done twice to support cases where the content of `${module}` itself
-  # contains a variable, like `${BOARD_DIR}`.
-  string(CONFIGURE "${module}" module)
-  string(CONFIGURE "${module}" module)
   include(${module})
 
   list(REMOVE_ITEM SUB_COMPONENTS ${module})
