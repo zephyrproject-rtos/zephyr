@@ -22,6 +22,7 @@ set(BLOBS_DIR      ${ZEPHYR_HAL_SILABS_MODULE_DIR}/zephyr/blobs/simplicity_sdk)
 # Translate the SoC name and part number into the gecko device and cpu name
 # respectively.
 string(TOUPPER ${CONFIG_SOC_SERIES} SILABS_DEVICE_FAMILY)
+string(TOUPPER ${CONFIG_SOC} SILABS_DEVICE_PART_NUMBER)
 
 # Get SoC series number, i.e. translate efr32bg22 -> 22, mgm240p -> 24, simg301 -> 301
 if(CONFIG_SOC_SERIES MATCHES "^ef[rm]32")
@@ -33,8 +34,6 @@ elseif(CONFIG_SOC_SERIES MATCHES "^.gm")
 else()
   message(FATAL_ERROR "unknown part")
 endif()
-
-set(SILABS_DEVICE_PART_NUMBER ${CONFIG_SOC_PART_NUMBER})
 
 function(add_prebuilt_library lib_name prebuilt_path)
   if(NOT CONFIG_BUILD_ONLY_NO_BLOBS)
