@@ -1,0 +1,16 @@
+# Copyright 2025 Tomas Jurena
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "FCB Sample Configuration"
+menu "Sample configuration"
+config FCB_SECTOR_CNT
+	int "Number of FCB sectors"
+	default 2
+	help
+		"Minimum value is 2 but any number larger than this can be used.
+		The number have impact on memory footprint as this is then used for a pool
+		where details about sectors are stored."
+endmenu
+menu "Zephyr"
+source "Kconfig.zephyr"
+endmenu
