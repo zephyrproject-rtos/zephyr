@@ -29,7 +29,7 @@
 		};
 	};
 
-	sram0: memory@1FFFF000 {
+	sram0: memory@1fffe000 {
 		compatible = "mmio-sram";
 	};
 
@@ -329,7 +329,7 @@
 };
 
 &sram0 {
-	reg = <0x1FFFE000 DT_SIZE_K(32)>;
+	reg = <0x1fffe000 DT_SIZE_K(32)>;
 };
 
 &flash0 {
