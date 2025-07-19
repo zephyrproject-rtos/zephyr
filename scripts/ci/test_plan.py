@@ -280,6 +280,19 @@ class Filters:
             logging.info(f'Potential board filters...')
             self.get_plan(_options)
 
+    def is_in_testsuite_root(self, new_testsuite_root):
+        # verify if proposed testsuite matches the one already provided
+        # to prevent executing tests which were not in the scope
+        result = False
+        if not self.testsuite_root:
+            result = True
+        else:
+            for root in self.testsuite_root:
+                if root in new_testsuite_root:
+                    result = True
+                    break
+        return result
+
     def find_tests(self):
         tests = set()
         for f in self.modified_files:
@@ -291,16 +304,19 @@ class Filters:
                 head, tail = os.path.split(d)
                 if os.path.exists(os.path.join(d, "testcase.yaml")) or \
                     os.path.exists(os.path.join(d, "sample.yaml")):
-                    tests.add(d)
-                    # Modified file is treated as resolved, since a matching scope was found
-                    self.resolved_files.append(f)
-                    scope_found = True
+                    if self.is_in_testsuite_root(d):
+                        tests.add(d)
+                        # Modified file is treated as resolved, since a matching scope was found
+                        self.resolved_files.append(f)
+                        scope_found = True
+                    else:
+                        d = os.path.dirname(d)
                 elif tail == "common":
                     # Look for yamls in directories collocated with common
 
                     yamls_found = [yaml for yaml in glob.iglob(head + '/**/testcase.yaml', recursive=True)]
                     yamls_found.extend([yaml for yaml in glob.iglob(head + '/**/sample.yaml', recursive=True)])
-                    if yamls_found:
+                    if yamls_found and self.is_in_testsuite_root(head):
                         for yaml in yamls_found:
                             tests.add(os.path.dirname(yaml))
                         self.resolved_files.append(f)
