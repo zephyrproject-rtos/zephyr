@@ -447,6 +447,7 @@ New APIs and options
   * :c:func:`sys_clock_gettime`
   * :c:func:`sys_clock_settime`
   * :c:func:`sys_clock_nanosleep`
+  * :c:func:`zephyr_count_bits`
 
 * USB
 
