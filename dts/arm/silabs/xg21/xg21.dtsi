@@ -275,7 +275,7 @@
 			};
 		};
 
-		usart0: usart@50058000 { /* USART0 */
+		usart0: usart@50058000 {	/* USART0 */
 			compatible = "silabs,usart-uart";
 			reg = <0x50058000 0x400>;
 			interrupts = <11 0>, <12 0>;
@@ -284,7 +284,7 @@
 			status = "disabled";
 		};
 
-		usart1: usart@5005c000 { /* USART1 */
+		usart1: usart@5005c000 {	/* USART1 */
 			compatible = "silabs,usart-uart";
 			reg = <0x5005c000 0x400>;
 			interrupts = <13 2>, <14 2>;
@@ -293,7 +293,7 @@
 			status = "disabled";
 		};
 
-		usart2: usart@50060000 { /* USART2 */
+		usart2: usart@50060000 {	/* USART2 */
 			compatible = "silabs,usart-uart";
 			reg = <0x50060000 0x400>;
 			interrupts = <15 2>, <16 2>;
@@ -397,7 +397,7 @@
 			status = "okay";
 		};
 
-		dma0: dma@40040000{
+		dma0: dma@40040000 {
 			compatible = "silabs,ldma";
 			reg = <0x40040000 0x4000>;
 			interrupts = <21 0>;

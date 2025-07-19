@@ -76,7 +76,7 @@
 		};
 	};
 
-	ram0:memory@80000000 {
+	ram0: memory@80000000 {
 		device_type = "memory";
 		reg = <0x0 0x80000000 0x2 0x0>;
 	};
@@ -134,7 +134,7 @@
 			#interrupt-cells = <2>;
 			interrupt-controller;
 			interrupts-extended = <&cpu0intctrl 11 &cpu0intctrl 9
-					       &cpu1intctrl 11 &cpu1intctrl 9 >;
+					       &cpu1intctrl 11 &cpu1intctrl 9>;
 			reg = <0x0 0x0c000000 0x0 0x04000000>;
 			riscv,max-priority = <7>;
 			riscv,ndev = <127>;
@@ -173,7 +173,7 @@
 			reg = <0x0 0x11880000 0x0 0x10000>;
 			reg-shift = <2>;
 			clocks = <&hs_uartclk>, <&apb1clk>;
-			clock-names = "baudclk","apb_pclk";
+			clock-names = "baudclk", "apb_pclk";
 			clock-frequency = <74250000>;
 			current-speed = <115200>;
 			status = "disabled";

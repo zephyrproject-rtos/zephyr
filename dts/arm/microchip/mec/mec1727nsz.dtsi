@@ -59,7 +59,6 @@
 	soc {
 		#include "mec172x_common.dtsi"
 	};
-
 };
 
 &spi0 {
@@ -67,15 +66,15 @@
 	clock-frequency = <12000000>;
 	lines = <2>;
 	chip-select = <0>;
-	pinctrl-0 = < &gpspi_cs_n_gpio116
-		      &gpspi_clk_gpio117
-		      &gpspi_io0_gpio074
-		      &gpspi_io1_gpio075
-		      &gpspi_wp_n_gpio076 >;
+	pinctrl-0 = <&gpspi_cs_n_gpio116
+		     &gpspi_clk_gpio117
+		     &gpspi_io0_gpio074
+		     &gpspi_io1_gpio075
+		     &gpspi_wp_n_gpio076>;
 	pinctrl-names = "default";
 
 	int_flash: sst25pf040@0 {
-		compatible ="jedec,spi-nor";
+		compatible = "jedec,spi-nor";
 		/* 4 Mbit Flash */
 		size = <DT_SIZE_M(4)>;
 		reg = <0>;

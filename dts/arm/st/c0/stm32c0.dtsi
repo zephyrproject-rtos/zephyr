@@ -135,7 +135,7 @@
 
 	soc {
 		flash: flash-controller@40022000 {
-			compatible = "st,stm32-flash-controller" , "st,stm32g0-flash-controller";
+			compatible = "st,stm32-flash-controller", "st,stm32g0-flash-controller";
 			reg = <0x40022000 0x400>;
 			interrupts = <3 0>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 8U)>;
@@ -217,10 +217,10 @@
 
 		pwr: power@40007000 {
 			compatible = "st,stm32-pwr";
-			reg = <0x40007000 0x400>; /* PWR register bank */
+			reg = <0x40007000 0x400>;	/* PWR register bank */
 			status = "disabled";
 
-			wkup-pins-nb = <6>; /* 6 system wake-up pins */
+			wkup-pins-nb = <6>;	/* 6 system wake-up pins */
 			wkup-pins-pol;
 			wkup-pins-pupd;
 
@@ -441,7 +441,7 @@
 			interrupts = <11 0>;
 			dma-channels = <3>;
 			dma-generators = <4>;
-			dma-requests= <49>;
+			dma-requests = <49>;
 			status = "disabled";
 		};
 	};

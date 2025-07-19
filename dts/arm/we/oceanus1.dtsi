@@ -27,9 +27,9 @@
 	status = "okay";
 	lora: radio@0 {
 		status = "okay";
-		antenna-enable-gpios = <&gpiob 12 GPIO_ACTIVE_HIGH>; /* RF_SW_VCC */
-		tx-enable-gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>; /* RF_SW_CTRL1 */
-		rx-enable-gpios = <&gpioc 13 GPIO_ACTIVE_LOW>; /* RF_SW_CTRL1 */
+		antenna-enable-gpios = <&gpiob 12 GPIO_ACTIVE_HIGH>;	/* RF_SW_VCC */
+		tx-enable-gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;	/* RF_SW_CTRL1 */
+		rx-enable-gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;	/* RF_SW_CTRL1 */
 		dio3-tcxo-voltage = <SX126X_DIO3_TCXO_1V8>;
 		tcxo-power-startup-delay-ms = <1>;
 		power-amplifier-output = "rfo-lp";

@@ -101,6 +101,5 @@
 			current-speed = <115200>;
 			status = "disabled";
 		};
-
 	};
 };

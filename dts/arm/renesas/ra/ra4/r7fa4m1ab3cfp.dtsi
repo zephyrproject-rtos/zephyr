@@ -10,11 +10,11 @@
 
 / {
 	soc {
-		 flash-controller@407e0000 {
-			  flash0: flash@0 {
+		flash-controller@407e0000 {
+			flash0: flash@0 {
 				compatible = "soc-nv-flash";
 				reg = <0x0 DT_SIZE_K(256)>;
-			  };
-		 };
+			};
+		};
 	};
 };

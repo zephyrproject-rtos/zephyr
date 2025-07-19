@@ -63,7 +63,6 @@
 		compatible = "simple-bus";
 		ranges;
 
-
 		uart0: uart@f0004000 {
 			compatible = "ns16550";
 			clock-frequency = <DT_APB_CLK_HZ>;

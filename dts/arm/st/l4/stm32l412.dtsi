@@ -20,7 +20,6 @@
 	soc {
 		compatible = "st,stm32l412", "st,stm32l4", "simple-bus";
 
-
 		rng: rng@50060800 {
 			clocks = <&rcc STM32_CLOCK(AHB2, 18U)>,
 				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;

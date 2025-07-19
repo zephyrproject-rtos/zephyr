@@ -37,7 +37,6 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 			};
-
 		};
 
 		rng: rng@50060800 {

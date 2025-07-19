@@ -19,24 +19,24 @@
 		};
 	};
 
-	sram0:memory@10000000 {
+	sram0: memory@10000000 {
 		compatible = "mmio-sram";
 	};
 
-	sram1:memory@20000000 {
+	sram1: memory@20000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x20000000 0x800>;
 		zephyr,memory-region = "SRAM1";
 	};
 
-	sram2:memory@20004000 {
+	sram2: memory@20004000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x20004000 0x800>;
 		zephyr,memory-region = "SRAM2";
 	};
 
 	soc {
-		flash0:flash@0 {
+		flash0: flash@0 {
 			compatible = "soc-nv-flash";
 		};
 
@@ -81,7 +81,7 @@
 		gpio0: gpio@0 {
 			compatible = "nxp,lpc11u6x-gpio";
 			reg = <0xa0000000 0x8000>, <0x40048000 0x400>;
-			interrupts = <0 2>, <1 2>, <2 2>, <3 2>, \
+			interrupts = <0 2>, <1 2>, <2 2>, <3 2>,
 				     <4 2>, <5 2>, <6 2>, <7 2>;
 
 			gpio-controller;
@@ -98,7 +98,7 @@
 		gpio1: gpio@1 {
 			compatible = "nxp,lpc11u6x-gpio";
 			reg = <0xa0000000 0x8000>, <0x40048000 0x400>;
-			interrupts = <0 2>, <1 2>, <2 2>, <3 2>, \
+			interrupts = <0 2>, <1 2>, <2 2>, <3 2>,
 				     <4 2>, <5 2>, <6 2>, <7 2>;
 
 			gpio-controller;
@@ -114,7 +114,7 @@
 		gpio2: gpio@2 {
 			compatible = "nxp,lpc11u6x-gpio";
 			reg = <0xa0000000 0x8000>, <0x40048000 0x400>;
-			interrupts = <0 2>, <1 2>, <2 2>, <3 2>, \
+			interrupts = <0 2>, <1 2>, <2 2>, <3 2>,
 				     <4 2>, <5 2>, <6 2>, <7 2>;
 
 			gpio-controller;

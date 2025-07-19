@@ -31,7 +31,7 @@
 		};
 
 		dmamux1: dmamux@40020800 {
-			dma-requests= <57>;
+			dma-requests = <57>;
 		};
 
 		ucpd1: ucpd@4000a000 {

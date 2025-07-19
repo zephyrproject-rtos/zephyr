@@ -948,7 +948,6 @@
 			clock-names = "pclk";
 			status = "disabled";
 		};
-
 	};
 
 	usbfs_phy: usbfs-phy {

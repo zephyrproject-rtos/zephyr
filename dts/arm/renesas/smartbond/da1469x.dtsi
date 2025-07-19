@@ -203,9 +203,9 @@
 				#gpio-cells = <2>;
 				ngpios = <32>;
 				reg = <0x50020a00 20
-					   0x50020a18 128
-					   0x50000070 12
-					   0x50000114 36>;
+				       0x50020a18 128
+				       0x50000070 12
+				       0x50000114 36>;
 				reg-names = "data", "mode", "latch", "wkup";
 				interrupts = <38 0>;
 			};
@@ -216,9 +216,9 @@
 				#gpio-cells = <2>;
 				ngpios = <23>;
 				reg = <0x50020a04 20
-					   0x50020a98 92
-					   0x5000007c 12
-					   0x50000118 36>;
+				       0x50020a98 92
+				       0x5000007c 12
+				       0x50000118 36>;
 				reg-names = "data", "mode", "latch", "wkup";
 				interrupts = <39 0>;
 			};
@@ -381,7 +381,7 @@
 			compatible = "renesas,smartbond-usbd";
 			reg = <0x50040000 0x1B0>;
 			dmas = <&dma 0 DMA_SMARTBOND_TRIG_MUX_USB>,
-				<&dma 1 DMA_SMARTBOND_TRIG_MUX_USB>;
+			       <&dma 1 DMA_SMARTBOND_TRIG_MUX_USB>;
 			dma-names = "rx", "tx";
 			dma-min-transfer-size = <65>;
 			fifo-read-threshold = <4>;

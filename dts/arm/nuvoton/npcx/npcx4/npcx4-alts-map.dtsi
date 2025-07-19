@@ -103,7 +103,7 @@
 		altj_cr_sout1_sl1: altj1 {
 			alts = <&scfg 0x12 0x1 0>;
 		};
-		altj_cr_sin1_sl2:  altj2 {
+		altj_cr_sin1_sl2: altj2 {
 			alts = <&scfg 0x12 0x2 0>;
 		};
 		altj_cr_sout1_sl2: altj3 {
@@ -134,7 +134,7 @@
 		altl_adc14_sl: altl1 {
 			alts = <&scfg 0x14 0x1 0>;
 		};
-		altl_adc15_sl:  altl2 {
+		altl_adc15_sl: altl2 {
 			alts = <&scfg 0x14 0x2 0>;
 		};
 		altl_adc16_sl: altl3 {
@@ -160,7 +160,7 @@
 		altm_adc22_sl: altm1 {
 			alts = <&scfg 0x15 0x1 0>;
 		};
-		altm_adc23_sl:  altm2 {
+		altm_adc23_sl: altm2 {
 			alts = <&scfg 0x15 0x2 0>;
 		};
 		altm_adc24_sl: altm3 {
@@ -177,7 +177,7 @@
 		altn_i3c2_sl: altn1 {
 			alts = <&scfg 0x16 0x1 0>;
 		};
-		altn_i3c3_sl:  altn2 {
+		altn_i3c3_sl: altn2 {
 			alts = <&scfg 0x16 0x2 0>;
 		};
 	};

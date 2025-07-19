@@ -255,7 +255,7 @@
 		altb_cts_sl: altb3 {
 			alts = <&scfg 0x0B 0x3 0>;
 		};
-		altb_ri_sl:  altb4 {
+		altb_ri_sl: altb4 {
 			alts = <&scfg 0x0B 0x4 0>;
 		};
 		altb_dtr_bout_sl: altb5 {

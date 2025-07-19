@@ -286,11 +286,11 @@
 			#size-cells = <0>;
 			compatible = "intel,ssp";
 			reg = <0x00028000 0x1000
-				   0x00079C00 0x200>;
+			       0x00079C00 0x200>;
 			interrupts = <0x00 0 0>;
 			interrupt-parent = <&ace_intc>;
 			dmas = <&lpgpdma0 2
-					&lpgpdma0 3>;
+				&lpgpdma0 3>;
 			dma-names = "tx", "rx";
 			ssp-index = <0>;
 			status = "okay";
@@ -309,11 +309,11 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x00029000 0x1000
-				   0x00079C00 0x200>;
+			       0x00079C00 0x200>;
 			interrupts = <0x01 0 0>;
 			interrupt-parent = <&ace_intc>;
 			dmas = <&lpgpdma0 4
-					&lpgpdma0 5>;
+				&lpgpdma0 5>;
 			dma-names = "tx", "rx";
 			ssp-index = <1>;
 			status = "okay";
@@ -332,11 +332,11 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x0002a000 0x1000
-				   0x00079C00 0x200>;
+			       0x00079C00 0x200>;
 			interrupts = <0x02 0 0>;
 			interrupt-parent = <&ace_intc>;
 			dmas = <&lpgpdma0 6
-					&lpgpdma0 7>;
+				&lpgpdma0 7>;
 			dma-names = "tx", "rx";
 			ssp-index = <2>;
 			status = "okay";
@@ -544,7 +544,7 @@
 		 * masking layer makes it easier for MTL to handle
 		 * this internally.
 		 */
-		ace_intc: ace_intc@7ac00  {
+		ace_intc: ace_intc@7ac00 {
 			compatible = "intel,ace-intc";
 			reg = <0x7ac00 0xc00>;
 			interrupt-controller;
@@ -606,7 +606,7 @@
 			reg = <0x17e000 0x1000>;
 			paddr-size = <12>;
 			exec-bit-idx = <14>;
-			write-bit-idx= <15>;
+			write-bit-idx = <15>;
 		};
 
 		timer: timer {

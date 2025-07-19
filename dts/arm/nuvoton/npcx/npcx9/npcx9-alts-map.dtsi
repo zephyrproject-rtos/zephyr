@@ -71,7 +71,7 @@
 		altj_cr_sout1_sl1: altj1 {
 			alts = <&scfg 0x12 0x1 0>;
 		};
-		altj_cr_sin1_sl2:  altj2 {
+		altj_cr_sin1_sl2: altj2 {
 			alts = <&scfg 0x12 0x2 0>;
 		};
 		altj_cr_sout1_sl2: altj3 {

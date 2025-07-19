@@ -22,7 +22,6 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
-
 	};
 
 	sram0: memory@20000000 {
@@ -45,7 +44,7 @@
 			};
 		};
 
-		usart0: usart@40010000 { /* USART0 */
+		usart0: usart@40010000 {	/* USART0 */
 			compatible = "silabs,gecko-usart";
 			reg = <0x40010000 0x400>;
 			interrupts = <12 0 13 0>;
@@ -54,7 +53,7 @@
 			status = "disabled";
 		};
 
-		usart1: usart@40010400 { /* USART1 */
+		usart1: usart@40010400 {	/* USART1 */
 			compatible = "silabs,gecko-usart";
 			reg = <0x40010400 0x400>;
 			interrupts = <20 0 21 0>;
@@ -63,7 +62,7 @@
 			status = "disabled";
 		};
 
-		usart2: usart@40010800 { /* USART2 */
+		usart2: usart@40010800 {	/* USART2 */
 			compatible = "silabs,gecko-usart";
 			reg = <0x40010800 0x400>;
 			interrupts = <40 0 41 0>;
@@ -72,7 +71,7 @@
 			status = "disabled";
 		};
 
-		usart3: usart@40010c00 { /* USART3 */
+		usart3: usart@40010c00 {	/* USART3 */
 			compatible = "silabs,gecko-usart";
 			reg = <0x40010c00 0x400>;
 			interrupts = <43 0 44 0>;
@@ -81,7 +80,7 @@
 			status = "disabled";
 		};
 
-		leuart0: leuart@4004a000 { /* LEUART0 */
+		leuart0: leuart@4004a000 {	/* LEUART0 */
 			compatible = "silabs,gecko-leuart";
 			reg = <0x4004a000 0x400>;
 			interrupts = <22 0>;

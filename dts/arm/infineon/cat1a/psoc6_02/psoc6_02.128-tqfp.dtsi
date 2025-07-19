@@ -378,7 +378,6 @@
 			/omit-if-no-ref/ p13_5_scb12_uart_tx: p13_5_scb12_uart_tx {
 				pinmux = <DT_CAT1_PINMUX(13, 5, HSIOM_SEL_ACT_6)>;
 			};
-
 		};
 	};
 };
