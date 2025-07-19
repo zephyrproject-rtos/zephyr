@@ -8,7 +8,9 @@ if(CONFIG_STM32N6_BOOT_SERIAL)
 else()
   board_runner_args(stm32cubeprogrammer "--port=swd")
   board_runner_args(stm32cubeprogrammer "--tool-opt= mode=HOTPLUG ap=1")
-  board_runner_args(stm32cubeprogrammer "--extload=MX66UW1G45G_STM32N6570-DK.stldr")
+  if(CONFIG_XIP AND (CONFIG_STM32_MEMMAP OR CONFIG_BOOTLOADER_MCUBOOT))
+    board_runner_args(stm32cubeprogrammer "--extload=MX66UW1G45G_STM32N6570-DK.stldr")
+  endif()
 
   set(app_base_addr 0x70000000)
   if(CONFIG_BOOTLOADER_MCUBOOT)
@@ -20,7 +22,9 @@ else()
 endif()
 
 board_runner_args(stlink_gdbserver "--apid=1")
-board_runner_args(stlink_gdbserver "--extload=MX66UW1G45G_STM32N6570-DK.stldr")
+if(CONFIG_XIP AND (CONFIG_STM32_MEMMAP OR CONFIG_BOOTLOADER_MCUBOOT))
+  board_runner_args(stlink_gdbserver "--extload=MX66UW1G45G_STM32N6570-DK.stldr")
+endif()
 
 
 include(${ZEPHYR_BASE}/boards/common/stm32cubeprogrammer.board.cmake)

@@ -2,11 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # keep first
-if(CONFIG_STM32_MEMMAP)
 board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw")
-board_runner_args(stm32cubeprogrammer "--extload=MX25LM51245G_STM32H7B3I-DISCO.stldr")
-else()
-board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw" )
+if(CONFIG_XIP AND (CONFIG_STM32_MEMMAP OR CONFIG_BOOTLOADER_MCUBOOT))
+  board_runner_args(stm32cubeprogrammer "--extload=MX25LM51245G_STM32H7B3I-DISCO.stldr")
 endif()
 
 board_runner_args(jlink "--device=STM32H7B3LI" "--speed=4000")

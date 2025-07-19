@@ -2,7 +2,9 @@
 
 # keep first
 board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw")
-board_runner_args(stm32cubeprogrammer "--extload=N25Q128A_STM32F746G-DISCO.stldr")
+if(CONFIG_XIP AND (CONFIG_STM32_MEMMAP OR CONFIG_BOOTLOADER_MCUBOOT))
+  board_runner_args(stm32cubeprogrammer "--extload=N25Q128A_STM32F746G-DISCO.stldr")
+endif()
 
 board_runner_args(jlink "--device=STM32F746NG" "--speed=4000")
 
