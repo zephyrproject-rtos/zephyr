@@ -94,7 +94,7 @@
 
 &clk_hse {
 	hse-bypass;
-	clock-frequency = <DT_FREQ_M(8)>; /* STLink 8MHz clock */
+	clock-frequency = <DT_FREQ_M(8)>;	/* STLink 8MHz clock */
 	status = "okay";
 };
 
@@ -149,7 +149,7 @@
 		compatible = "st,lis2dh", "st,lsm303dlhc-accel";
 		reg = <0x19>;
 		irq-gpios = <&gpioe 4 GPIO_ACTIVE_HIGH>,
-			  <&gpioe 5 GPIO_ACTIVE_HIGH>;
+			    <&gpioe 5 GPIO_ACTIVE_HIGH>;
 	};
 };
 

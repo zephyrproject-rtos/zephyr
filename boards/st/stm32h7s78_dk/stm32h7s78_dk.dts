@@ -77,7 +77,7 @@
 		reg = <0x70000000 DT_SIZE_M(64)>;
 		zephyr,memory-region = "EXTMEM";
 		/* The ATTR_MPU_EXTMEM attribut causing a MPU FAULT */
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
+		zephyr,memory-attr = <(DT_MEM_ARM(ATTR_MPU_IO))>;
 	};
 };
 
@@ -91,7 +91,7 @@
 
 &clk_hse {
 	clock-frequency = <DT_FREQ_M(24)>;
-	hse-bypass; /* X3 is a 24MHz oscillator on PH0 */
+	hse-bypass;	/* X3 is a 24MHz oscillator on PH0 */
 	status = "okay";
 };
 
@@ -167,7 +167,7 @@
 };
 
 &adc1 {
-	pinctrl-0 = <&adc1_inp6_pf12>; /* Arduino A3 */
+	pinctrl-0 = <&adc1_inp6_pf12>;	/* Arduino A3 */
 	pinctrl-names = "default";
 	st,adc-clock-source = "SYNC";
 	st,adc-prescaler = <4>;
@@ -175,7 +175,7 @@
 };
 
 &adc2 {
-	pinctrl-0 = <&adc2_inp2_pf13>; /* Arduino A4 */
+	pinctrl-0 = <&adc2_inp2_pf13>;	/* Arduino A4 */
 	pinctrl-names = "default";
 	st,adc-clock-source = "SYNC";
 	st,adc-prescaler = <4>;
@@ -210,7 +210,7 @@
 	memc: aps256xxn-obr@0 {
 		compatible = "st,stm32-xspi-psram";
 		reg = <0>;
-		size = <DT_SIZE_M(256)>; /* 256 Mbits */
+		size = <DT_SIZE_M(256)>;	/* 256 Mbits */
 		max-frequency = <DT_FREQ_M(200)>;
 		fixed-latency;
 		io-x16-mode;
@@ -249,7 +249,7 @@
 	mx66uw1g45: xspi-nor-flash@0 {
 		compatible = "st,stm32-xspi-nor";
 		reg = <0>;
-		size = <DT_SIZE_M(1024)>; /* 1 Gbits */
+		size = <DT_SIZE_M(1024)>;	/* 1 Gbits */
 		ospi-max-frequency = <DT_FREQ_M(50)>;
 		spi-bus-width = <XSPI_OCTO_MODE>;
 		data-rate = <XSPI_DTR_TRANSFER>;
@@ -302,4 +302,4 @@ usb2: &usbotg_fs {
 	status = "okay";
 };
 
-zephyr_udc0: &usb2 {};
+zephyr_udc0: &usb2 { };

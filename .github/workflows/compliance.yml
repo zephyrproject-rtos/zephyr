@@ -60,6 +60,14 @@ jobs:
         west config manifest.group-filter -- +ci,-optional
         west update -o=--depth=1 -n 2>&1 1> west.update.log || west update -o=--depth=1 -n 2>&1 1> west.update2.log
 
+    - name: Setup Node.js
+      uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
+      with:
+        node-version: "20"
+
+    - name: Install dependencies
+      run: npm i -g dts-linter@0.0.0-beta4
+
     - name: Run Compliance Tests
       continue-on-error: true
       id: compliance

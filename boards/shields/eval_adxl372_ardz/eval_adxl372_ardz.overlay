@@ -6,7 +6,6 @@
 
 #include <zephyr/dt-bindings/sensor/adxl372.h>
 
-
 &arduino_spi {
 	status = "okay";
 

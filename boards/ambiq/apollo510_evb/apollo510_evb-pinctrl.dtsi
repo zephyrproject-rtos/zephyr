@@ -30,7 +30,7 @@
 		};
 	};
 
-	adc0_default: adc0_default{
+	adc0_default: adc0_default {
 		group1 {
 			pinmux = <ADCSE5_P14>, <ADCSE6_P13>;
 			drive-strength = "0.1";
@@ -357,30 +357,30 @@
 
 	mspi0_psram: mspi0_psram {
 		group0 {
-			pinmux = <MSPI0_0_P64>,   /* D0 */
-				 <MSPI0_1_P65>,   /* D1 */
-				 <MSPI0_2_P66>,   /* D2 */
-				 <MSPI0_3_P67>,   /* D3 */
-				 <MSPI0_4_P68>,   /* D4 */
-				 <MSPI0_5_P69>,   /* D5 */
-				 <MSPI0_6_P70>,   /* D6 */
-				 <MSPI0_7_P71>,   /* D7 */
-				 <MSPI0_9_P73>,   /* DQS0 */
-				 <MSPI0_10_P37>,  /* D8 */
-				 <MSPI0_11_P38>,  /* D9 */
-				 <MSPI0_12_P39>,  /* D10 */
-				 <MSPI0_13_P40>,  /* D11 */
-				 <MSPI0_14_P41>,  /* D12 */
-				 <MSPI0_15_P42>,  /* D13 */
-				 <MSPI0_16_P43>,  /* D14 */
-				 <MSPI0_17_P44>,  /* D15 */
-				 <MSPI0_18_P45>,  /* DQS1 */
-				 <MNCE0_0_P199>;  /* CE0 */
+			pinmux = <MSPI0_0_P64>,	/* D0 */
+				 <MSPI0_1_P65>,	/* D1 */
+				 <MSPI0_2_P66>,	/* D2 */
+				 <MSPI0_3_P67>,	/* D3 */
+				 <MSPI0_4_P68>,	/* D4 */
+				 <MSPI0_5_P69>,	/* D5 */
+				 <MSPI0_6_P70>,	/* D6 */
+				 <MSPI0_7_P71>,	/* D7 */
+				 <MSPI0_9_P73>,	/* DQS0 */
+				 <MSPI0_10_P37>,	/* D8 */
+				 <MSPI0_11_P38>,	/* D9 */
+				 <MSPI0_12_P39>,	/* D10 */
+				 <MSPI0_13_P40>,	/* D11 */
+				 <MSPI0_14_P41>,	/* D12 */
+				 <MSPI0_15_P42>,	/* D13 */
+				 <MSPI0_16_P43>,	/* D14 */
+				 <MSPI0_17_P44>,	/* D15 */
+				 <MSPI0_18_P45>,	/* DQS1 */
+				 <MNCE0_0_P199>;	/* CE0 */
 			drive-strength = "0.5";
 		};
 
 		group1 {
-			pinmux = <MSPI0_8_P72>;   /* SCK */
+			pinmux = <MSPI0_8_P72>;	/* SCK */
 			drive-strength = "0.75";
 		};
 	};

@@ -15,7 +15,7 @@
 		 * connector in default hardware configuration.
 		 * Only the connected pins are provided here.
 		 */
-		gpio-map = <14 0 &gpiob 15 0>,  /* D8 */
+		gpio-map = <14 0 &gpiob 15 0>,	/* D8 */
 			   <16 0 &gpioa 9 0>,	/* D10 */
 			   <17 0 &gpioa 11 0>,	/* D11 */
 			   <18 0 &gpioa 8 0>,	/* D12 */
@@ -25,6 +25,6 @@
 	};
 };
 
-arduino_i2c: &i2c1 {};
-arduino_serial: &usart1 {};
-arduino_spi: &spi3 {};
+arduino_i2c: &i2c1 { };
+arduino_serial: &usart1 { };
+arduino_spi: &spi3 { };

@@ -29,7 +29,7 @@
 		compatible = "gpio-leds";
 
 		led_act: led-act {
-			gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>; /* GPIO 42 */
+			gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;	/* GPIO 42 */
 			label = "ACT";
 		};
 	};

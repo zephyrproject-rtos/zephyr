@@ -34,7 +34,6 @@
 			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 			label = "PWM LED 1 Blue";
 		};
-
 	};
 
 	/* These aliases are provided for compatibility with samples */

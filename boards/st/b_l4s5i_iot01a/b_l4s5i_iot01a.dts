@@ -241,7 +241,7 @@ zephyr_udc0: &usbotg_fs {
 		     &octospim_p1_io2_pe14 &octospim_p1_io3_pe15>;
 	pinctrl-names = "default";
 
-	dmas = <&dma1 0 40 STM32_DMA_PERIPH_RX>; /* request 40 for OCTOSPI1 */
+	dmas = <&dma1 0 40 STM32_DMA_PERIPH_RX>;	/* request 40 for OCTOSPI1 */
 	dma-names = "tx_rx";
 
 	status = "okay";
@@ -249,11 +249,11 @@ zephyr_udc0: &usbotg_fs {
 	mx25r6435f: ospi-nor-flash@0 {
 		compatible = "st,stm32-ospi-nor";
 		reg = <0>;
-		size = <DT_SIZE_M(64)>; /* 64 Megabits */
-		ospi-max-frequency = <DT_FREQ_M(26)>; /* for Voltage Range 2 */
+		size = <DT_SIZE_M(64)>;	/* 64 Megabits */
+		ospi-max-frequency = <DT_FREQ_M(26)>;	/* for Voltage Range 2 */
 		spi-bus-width = <OSPI_QUAD_MODE>;
 		data-rate = <OSPI_STR_TRANSFER>;
-		writeoc="PP_1_4_4";
+		writeoc = "PP_1_4_4";
 
 		status = "okay";
 

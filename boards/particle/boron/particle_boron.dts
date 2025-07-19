@@ -19,7 +19,8 @@
 		vctl1-gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 		/* on Boron VCTL2 is inverted VCTL1 signal via SN74LVC1G04
 		 * single inverter gate -- requires a definition below,
-		 * but is not used in board.c */
+		 * but is not used in board.c
+		 */
 		vctl2-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
 	};
 
@@ -44,7 +45,7 @@
 	gpio-as-nreset;
 };
 
-&i2c1 { /* power monitoring */
+&i2c1 {	/* power monitoring */
 	compatible = "nordic,nrf-twi";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
@@ -53,7 +54,7 @@
 	pinctrl-names = "default", "sleep";
 };
 
-&uart1 { /* u-blox SARA-U2 or SARA-R4 */
+&uart1 {	/* u-blox SARA-U2 or SARA-R4 */
 	compatible = "nordic,nrf-uarte";
 	current-speed = <115200>;
 	status = "okay";

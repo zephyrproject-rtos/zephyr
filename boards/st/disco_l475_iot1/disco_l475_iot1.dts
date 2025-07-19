@@ -98,7 +98,7 @@
 &clk_msi {
 	status = "okay";
 	msi-pll-mode;
-	msi-range = <11>; /* 48MHz USB bus clk */
+	msi-range = <11>;	/* 48MHz USB bus clk */
 };
 
 &pll {
@@ -189,7 +189,9 @@
 	status = "okay";
 };
 
-&spi3_miso_pc11 { slew-rate = "very-high-speed"; };
+&spi3_miso_pc11 {
+	slew-rate = "very-high-speed";
+};
 
 &spi3 {
 	status = "okay";
@@ -250,7 +252,7 @@
 
 	pwm2: pwm {
 		status = "okay";
-		pinctrl-0 = <&tim2_ch1_pa15>; /* CN1 pin 2 (ARD.D9-PWM) */
+		pinctrl-0 = <&tim2_ch1_pa15>;	/* CN1 pin 2 (ARD.D9-PWM) */
 		pinctrl-names = "default";
 	};
 };
@@ -261,7 +263,7 @@
 
 	pwm15: pwm {
 		status = "okay";
-		pinctrl-0 = <&tim15_ch1_pb14>; /* LED2 */
+		pinctrl-0 = <&tim15_ch1_pb14>;	/* LED2 */
 		pinctrl-names = "default";
 	};
 };
@@ -328,7 +330,7 @@ zephyr_udc0: &usbotg_fs {
 	mx25r6435f: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
 		reg = <0>;
-		size = <DT_SIZE_M(64)>; /* 64 Mbits */
+		size = <DT_SIZE_M(64)>;	/* 64 Mbits */
 		qspi-max-frequency = <50000000>;
 		status = "okay";
 

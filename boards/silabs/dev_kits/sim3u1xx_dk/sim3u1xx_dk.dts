@@ -11,7 +11,7 @@
 
 / {
 	model = "Silicon Labs SiM3U1xx-B-DK";
-	compatible = "gardena,sim3u1xx-dk", "silabs,sim3u167","silabs,sim3u";
+	compatible = "gardena,sim3u1xx-dk", "silabs,sim3u167", "silabs,sim3u";
 
 	aliases {
 		led0 = &led_yellow;
@@ -114,7 +114,7 @@
 };
 
 &dma {
-	dma-channels = <8>; /* Crypto DMA channels have ID 5, 6, and 7 */
+	dma-channels = <8>;	/* Crypto DMA channels have ID 5, 6, and 7 */
 	status = "okay";
 };
 

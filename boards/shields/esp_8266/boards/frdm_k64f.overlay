@@ -5,8 +5,8 @@
  */
 
 /* ENET MUST be disabled because share
-* pins with UART-3
-*/
+ * pins with UART-3
+ */
 &enet_mac {
 	status = "disabled";
 };

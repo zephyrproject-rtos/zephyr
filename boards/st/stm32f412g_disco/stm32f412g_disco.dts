@@ -94,7 +94,7 @@
 
 &clk_hse {
 	hse-bypass;
-	clock-frequency = <DT_FREQ_M(8)>; /* STLink 8MHz clock */
+	clock-frequency = <DT_FREQ_M(8)>;	/* STLink 8MHz clock */
 	status = "okay";
 };
 
@@ -159,7 +159,7 @@
 	n25q128a1: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
 		reg = <0>;
-		size = <DT_SIZE_M(128)>; /* 128 Mbits */
+		size = <DT_SIZE_M(128)>;	/* 128 Mbits */
 		qspi-max-frequency = <72000000>;
 		status = "okay";
 	};

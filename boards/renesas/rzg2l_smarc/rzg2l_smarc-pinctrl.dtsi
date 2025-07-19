@@ -9,15 +9,15 @@
 &pinctrl {
 	/omit-if-no-ref/ scif0_pins: scif0 {
 		scif0-pinmux {
-			pinmux = <RZG_PINMUX(PORT_38, 0, 1)>, /* TXD */
-				 <RZG_PINMUX(PORT_38, 1, 1)>; /* RXD */
+			pinmux = <RZG_PINMUX(PORT_38, 0, 1)>,	/* TXD */
+				 <RZG_PINMUX(PORT_38, 1, 1)>;	/* RXD */
 		};
 	};
 
 	/omit-if-no-ref/ scif2_pins: scif2 {
 		scif2-pinmux {
-			pinmux = <RZG_PINMUX(PORT_48, 0, 1)>, /* TXD */
-				 <RZG_PINMUX(PORT_48, 1, 1)>; /* RXD */
+			pinmux = <RZG_PINMUX(PORT_48, 0, 1)>,	/* TXD */
+				 <RZG_PINMUX(PORT_48, 1, 1)>;	/* RXD */
 		};
 	};
 };

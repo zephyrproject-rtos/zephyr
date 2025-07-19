@@ -29,4 +29,4 @@
 	interrupt-parent = <&intmux_ch16>;
 };
 
-arduino_spi: &spi6 {};
+arduino_spi: &spi6 { };

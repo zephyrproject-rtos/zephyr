@@ -108,21 +108,21 @@
 	uart0_default: uart0_default {
 		group1 {
 			pinmux = <PA9A_UART0_RXD>,
-				<PA10A_UART0_TXD>;
+				 <PA10A_UART0_TXD>;
 		};
 	};
 
 	uart1_default: uart1_default {
 		group1 {
 			pinmux = <PA5C_UART1_RXD>,
-				<PA6C_UART1_TXD>;
+				 <PA6C_UART1_TXD>;
 		};
 	};
 
 	uart2_default: uart2_default {
 		group1 {
 			pinmux = <PD25C_UART2_RXD>,
-				<PD26C_UART2_TXD>;
+				 <PD26C_UART2_TXD>;
 		};
 	};
 
