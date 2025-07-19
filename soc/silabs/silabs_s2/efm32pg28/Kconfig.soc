@@ -1,0 +1,21 @@
+# Copyright (c) 2025 Christoph Jans
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_EFM32PG28
+	bool
+	select SOC_FAMILY_SILABS_S2
+	help
+	  Silicon Labs EFM32PG28 Series MCU
+
+config SOC_PART_NUMBER_EFM32PG28B310F1024IM68
+	bool
+	select SOC_SERIES_EFM32PG28
+
+config SOC_SERIES
+	default "efm32pg28" if SOC_SERIES_EFM32PG28
+
+config SOC
+	default "efm32pg28b310f1024im68" if SOC_PART_NUMBER_EFM32PG28B310F1024IM68
+
+config SOC_PART_NUMBER
+	default "EFM32PG28B310F1024IM68" if SOC_PART_NUMBER_EFM32PG28B310F1024IM68

@@ -1,0 +1,23 @@
+# Copyright (c) 2025 Christoph Jans
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_EFM32PG23
+	bool
+	select SOC_FAMILY_SILABS_S2
+	help
+	  Silicon Labs EFM32PG23 Series MCU
+
+config SOC_PART_NUMBER_EFM32PG23B310F512IM48
+	bool
+	select SOC_SERIES_EFM32PG23
+	help
+	  Silicon Labs PG23 Pro Kit PK2504A EFM32PG23 Series MCU Revision A02
+
+config SOC_SERIES
+	default "efm32pg23" if SOC_SERIES_EFM32PG23
+
+config SOC
+	default "efm32pg23b310f512im48" if SOC_PART_NUMBER_EFM32PG23B310F512IM48
+
+config SOC_PART_NUMBER
+	default "EFM32PG23B310F512IM48" if SOC_PART_NUMBER_EFM32PG23B310F512IM48
