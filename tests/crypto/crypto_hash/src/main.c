@@ -13,6 +13,8 @@
 #define CRYPTO_DRV_NAME CONFIG_CRYPTO_MBEDTLS_SHIM_DRV_NAME
 #elif DT_HAS_COMPAT_STATUS_OKAY(renesas_smartbond_crypto)
 #define CRYPTO_DEV_COMPAT renesas_smartbond_crypto
+#elif DT_HAS_COMPAT_STATUS_OKAY(raspberrypi_pico_sha256)
+#define CRYPTO_DEV_COMPAT raspberrypi_pico_sha256
 #else
 #error "You need to enable one crypto device"
 #endif
