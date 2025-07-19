@@ -25,6 +25,7 @@ enum ep_op {
 static int handle_ep_op(struct usbd_context *const uds_ctx,
 			const enum ep_op op,
 			struct usb_ep_descriptor *const ed,
+			const uint16_t m_mps,
 			uint32_t *const ep_bm)
 {
 	const uint8_t ep = ed->bEndpointAddress;
@@ -35,7 +36,7 @@ static int handle_ep_op(struct usbd_context *const uds_ctx,
 		ret = 0;
 		break;
 	case EP_OP_UP:
-		ret = usbd_ep_enable(uds_ctx->dev, ed, ep_bm);
+		ret = usbd_ep_enable(uds_ctx->dev, ed, m_mps, ep_bm);
 		break;
 	case EP_OP_DOWN:
 		ret = usbd_ep_disable(uds_ctx->dev, ep, ep_bm);
@@ -48,6 +49,50 @@ static int handle_ep_op(struct usbd_context *const uds_ctx,
 	}
 
 	return ret;
+}
+
+/*
+ * This function is intended to be called from the interface descriptor
+ * position, where it can iterate over the endpoint descriptor and any
+ * alternate settings. It returns wMaxPacketSize for the largest possible total
+ * data payload for a specific endpoint within an interface descriptor.
+ */
+static uint16_t interface_find_mps(struct usbd_context *const uds_ctx,
+				   struct usb_desc_header **const dhp,
+				   const uint8_t iface,
+				   const uint8_t ep)
+{
+	struct usb_desc_header **tmp = dhp;
+	uint16_t m_mps = 0;
+
+	while (*tmp != NULL && (*tmp)->bLength != 0) {
+		struct usb_if_descriptor *ifd;
+		struct usb_ep_descriptor *ed;
+		uint16_t mps;
+
+		if ((*tmp)->bDescriptorType == USB_DESC_INTERFACE) {
+			ifd = (struct usb_if_descriptor *)(*tmp);
+
+			if (ifd->bInterfaceNumber != iface) {
+				break;
+			}
+		}
+
+		if ((*tmp)->bDescriptorType == USB_DESC_ENDPOINT) {
+			ed = (struct usb_ep_descriptor *)(*tmp);
+			mps = sys_le16_to_cpu(ed->wMaxPacketSize);
+
+			if (ep == ed->bEndpointAddress &&
+			    USB_MPS_TO_TPL(mps) > USB_MPS_TO_TPL(m_mps)) {
+				m_mps = mps;
+			}
+		}
+
+		tmp++;
+	}
+
+
+	return m_mps;
 }
 
 static int usbd_interface_modify(struct usbd_context *const uds_ctx,
@@ -68,6 +113,7 @@ static int usbd_interface_modify(struct usbd_context *const uds_ctx,
 	while (*dhp != NULL && (*dhp)->bLength != 0) {
 		struct usb_if_descriptor *ifd;
 		struct usb_ep_descriptor *ed;
+		uint16_t m_mps = 0;
 
 		if ((*dhp)->bDescriptorType == USB_DESC_INTERFACE) {
 			ifd = (struct usb_if_descriptor *)(*dhp);
@@ -89,7 +135,13 @@ static int usbd_interface_modify(struct usbd_context *const uds_ctx,
 
 		if ((*dhp)->bDescriptorType == USB_DESC_ENDPOINT && found_iface) {
 			ed = (struct usb_ep_descriptor *)(*dhp);
-			ret = handle_ep_op(uds_ctx, op, ed, &c_nd->ep_active);
+
+			if (op == EP_OP_UP) {
+				m_mps = interface_find_mps(uds_ctx, dhp,
+							   iface, ed->bEndpointAddress);
+			}
+
+			ret = handle_ep_op(uds_ctx, op, ed, m_mps, &c_nd->ep_active);
 			if (ret) {
 				return ret;
 			}

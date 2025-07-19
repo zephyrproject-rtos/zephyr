@@ -120,6 +120,8 @@ struct udc_ep_config {
 	uint8_t attributes;
 	/** Maximum packet size */
 	uint16_t mps;
+	/** Maximum possible MPS within all interface settings */
+	uint16_t m_mps;
 	/** Polling interval */
 	uint8_t interval;
 };
@@ -558,6 +560,7 @@ int udc_ep_try_config(const struct device *dev,
  * @param[in] ep         Endpoint address (same as bEndpointAddress)
  * @param[in] attributes Endpoint attributes (same as bmAttributes)
  * @param[in] mps        Maximum packet size (same as wMaxPacketSize)
+ * @param[in] m_mps      Maximum possible wMaxPacketSize within interface settings
  * @param[in] interval   Polling interval (same as bInterval)
  *
  * @return 0 on success, all other values should be treated as error.
@@ -570,6 +573,7 @@ int udc_ep_enable(const struct device *dev,
 		  const uint8_t ep,
 		  const uint8_t attributes,
 		  const uint16_t mps,
+		  const uint16_t m_mps,
 		  const uint8_t interval);
 
 /**

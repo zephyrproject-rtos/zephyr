@@ -1364,7 +1364,11 @@ static int dwc2_set_dedicated_fifo(const struct device *dev,
 	/* Keep everything but FIFO number */
 	tmp = *diepctl & ~USB_DWC2_DEPCTL_TXFNUM_MASK;
 
-	reqdep = DIV_ROUND_UP(udc_mps_ep_size(cfg), 4U);
+	/* Use the maximum possible MPS value to ensure that the alternate
+	 * setting does not result in too small memory window being allocated
+	 * and locked because a higher FIFO is still in use.
+	 */
+	reqdep = DIV_ROUND_UP(USB_MPS_EP_SIZE(cfg->m_mps), 4U);
 	if (dwc2_in_buffer_dma_mode(dev)) {
 		/* In DMA mode, TxFIFO capable of holding 2 packets is enough */
 		reqdep *= MIN(2, (1 + addnl));
@@ -2197,14 +2201,7 @@ static int udc_dwc2_init_controller(const struct device *dev)
 			i, priv->max_txfifo_depth[i], dwc2_get_txfaddr(dev, i));
 	}
 
-	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT,
-				   USB_EP_TYPE_CONTROL, 64, 0)) {
-		LOG_ERR("Failed to enable control endpoint");
-		return -EIO;
-	}
-
-	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_IN,
-				   USB_EP_TYPE_CONTROL, 64, 0)) {
+	if (udc_ep_enable_control(dev, 64)) {
 		LOG_ERR("Failed to enable control endpoint");
 		return -EIO;
 	}
@@ -2267,12 +2264,7 @@ static int udc_dwc2_disable(const struct device *dev)
 
 	LOG_DBG("Disable device %p", dev);
 
-	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT)) {
-		LOG_DBG("Failed to disable control endpoint");
-		return -EIO;
-	}
-
-	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_IN)) {
+	if (udc_ep_disable_control(dev)) {
 		LOG_DBG("Failed to disable control endpoint");
 		return -EIO;
 	}
