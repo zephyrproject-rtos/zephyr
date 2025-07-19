@@ -20,21 +20,14 @@
 
 #define SCROLL_SPEED   300
 
-#define BUZZER_PWM_CHANNEL 0
-#define BEEP_DURATION  K_MSEC(60)
-
 #define SEQ_PER_BIT  976
 #define SEQ_PAGE     (NRF_FICR->CODEPAGESIZE * (NRF_FICR->CODESIZE - 1))
 #define SEQ_MAX      (NRF_FICR->CODEPAGESIZE * 8 * SEQ_PER_BIT)
 
 static const struct gpio_dt_spec button_a =
-	GPIO_DT_SPEC_GET(DT_NODELABEL(buttona), gpios);
+	GPIO_DT_SPEC_GET(DT_ALIAS(sw0), gpios);
 static const struct gpio_dt_spec button_b =
-	GPIO_DT_SPEC_GET(DT_NODELABEL(buttonb), gpios);
-static const struct device *const nvm =
-	DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
-static const struct device *const pwm =
-	DEVICE_DT_GET_ANY(nordic_nrf_sw_pwm);
+	GPIO_DT_SPEC_GET(DT_ALIAS(sw1), gpios);
 
 static struct k_work button_work;
 
@@ -63,6 +56,13 @@ static void button_pressed(const struct device *dev, struct gpio_callback *cb,
 		}
 	}
 }
+
+#if defined(CONFIG_PWM)
+#define BUZZER_PWM_CHANNEL 0
+#define BEEP_DURATION  K_MSEC(60)
+
+static const struct device *const pwm =
+	DEVICE_DT_GET_ANY(nordic_nrf_sw_pwm);
 
 static const struct {
 	char  note;
@@ -139,6 +139,11 @@ void board_play_tune(const char *str)
 		pwm_set(pwm, BUZZER_PWM_CHANNEL, 0, 0, 0);
 	}
 }
+#else
+void board_play_tune(const char *str)
+{
+}
+#endif /* CONFIG_PWM */
 
 void board_heartbeat(uint8_t hops, uint16_t feat)
 {
@@ -266,13 +271,6 @@ static int configure_buttons(void)
 int board_init(uint16_t *addr)
 {
 	struct mb_display *disp = mb_display_get();
-
-	if (!(device_is_ready(nvm) && device_is_ready(pwm) &&
-	      gpio_is_ready_dt(&button_a) &&
-	      gpio_is_ready_dt(&button_b))) {
-		printk("One or more devices are not ready\n");
-		return -ENODEV;
-	}
 
 	*addr = NRF_UICR->CUSTOMER[0];
 	if (!*addr || *addr == 0xffff) {
