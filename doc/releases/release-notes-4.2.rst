@@ -427,6 +427,13 @@ New APIs and options
   * :c:macro:`SPI_DEVICE_DT_DEINIT_DEFINE`
   * :c:macro:`SPI_DEVICE_DT_INST_DEINIT_DEFINE`
 
+* RTIO
+
+  * :c:func:`rtio_is_spi`
+  * :c:func:`rtio_is_cspi`
+  * :c:func:`rtio_is_i3c`
+  * :c:func:`rtio_read_regs_async`
+
 * Sensor
 
   * :c:func:`sensor_value_to_deci`
