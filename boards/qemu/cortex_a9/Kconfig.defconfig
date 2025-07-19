@@ -29,6 +29,9 @@ if NETWORKING
 config NET_L2_ETHERNET
 	default y
 
+config MDIO
+	default y
+
 config NET_TX_STACK_SIZE
 	default 8192
 
