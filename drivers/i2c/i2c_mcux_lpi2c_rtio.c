@@ -28,7 +28,7 @@
 #endif /* CONFIG_I2C_MCUX_LPI2C_BUS_RECOVERY */
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(mcux_lpi2c);
+LOG_MODULE_REGISTER(mcux_lpi2c, CONFIG_I2C_LOG_LEVEL);
 
 #include "i2c-priv.h"
 /* Wait for the duration of 12 bits to detect a NAK after a bus
