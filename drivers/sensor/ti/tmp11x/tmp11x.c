@@ -7,7 +7,6 @@
 #define DT_DRV_COMPAT ti_tmp11x
 
 #include <zephyr/device.h>
-#include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/sensor/tmp11x.h>
 #include <zephyr/dt-bindings/sensor/tmp11x.h>
@@ -25,8 +24,7 @@
 
 LOG_MODULE_REGISTER(TMP11X, CONFIG_SENSOR_LOG_LEVEL);
 
-static int tmp11x_reg_read(const struct device *dev, uint8_t reg,
-			   uint16_t *val)
+int tmp11x_reg_read(const struct device *dev, uint8_t reg, uint16_t *val)
 {
 	const struct tmp11x_dev_config *cfg = dev->config;
 
@@ -40,8 +38,7 @@ static int tmp11x_reg_read(const struct device *dev, uint8_t reg,
 	return 0;
 }
 
-static int tmp11x_reg_write(const struct device *dev, uint8_t reg,
-			    uint16_t val)
+int tmp11x_reg_write(const struct device *dev, uint8_t reg, uint16_t val)
 {
 	const struct tmp11x_dev_config *cfg = dev->config;
 	uint8_t tx_buf[3] = {reg, val >> 8, val & 0xFF};
@@ -69,6 +66,31 @@ int tmp11x_write_config(const struct device *dev, uint16_t mask, uint16_t conf)
 static inline bool tmp11x_is_offset_supported(const struct tmp11x_data *drv_data)
 {
 	return drv_data->id == TMP117_DEVICE_ID || drv_data->id == TMP119_DEVICE_ID;
+}
+
+/**
+ * @brief Convert sensor_value temperature to TMP11X register format
+ *
+ * This function converts a temperature from sensor_value format (val1 in degrees C,
+ * val2 in micro-degrees C) to the TMP11X register format. It uses 64-bit arithmetic
+ * to prevent overflow and clamps the result to the valid int16_t range.
+ *
+ * @param val Pointer to sensor_value containing temperature
+ * @return Temperature value in TMP11X register format (int16_t)
+ */
+static inline int16_t tmp11x_sensor_value_to_reg_format(const struct sensor_value *val)
+{
+	int64_t temp_micro = ((int64_t)val->val1 * 1000000) + val->val2;
+	int64_t temp_scaled = (temp_micro * 10) / TMP11X_RESOLUTION;
+
+	/* Clamp to int16_t range */
+	if (temp_scaled > INT16_MAX) {
+		return INT16_MAX;
+	} else if (temp_scaled < INT16_MIN) {
+		return INT16_MIN;
+	} else {
+		return (int16_t)temp_scaled;
+	}
 }
 
 static bool check_eeprom_bounds(const struct device *dev, off_t offset,
@@ -310,8 +332,7 @@ static int tmp11x_attr_set(const struct device *dev,
 		/*
 		 * The offset is encoded into the temperature register format.
 		 */
-		value = (((val->val1) * 10000000) + ((val->val2) * 10))
-						/ (int32_t)TMP11X_RESOLUTION;
+		value = tmp11x_sensor_value_to_reg_format(val);
 
 		return tmp11x_reg_write(dev, TMP117_REG_TEMP_OFFSET, value);
 
@@ -346,6 +367,34 @@ static int tmp11x_attr_set(const struct device *dev,
 
 	case SENSOR_ATTR_TMP11X_ONE_SHOT_MODE:
 		return tmp11x_write_config(dev, TMP11X_CFGR_MODE, TMP11X_MODE_ONE_SHOT);
+
+#ifdef CONFIG_TMP11X_TRIGGER
+	case SENSOR_ATTR_TMP11X_ALERT_PIN_POLARITY:
+		if (val->val1 == TMP11X_ALERT_PIN_ACTIVE_HIGH) {
+			return tmp11x_write_config(dev, TMP11X_CFGR_ALERT_PIN_POL,
+						   TMP11X_CFGR_ALERT_PIN_POL);
+		} else {
+			return tmp11x_write_config(dev, TMP11X_CFGR_ALERT_PIN_POL, 0);
+		}
+
+	case SENSOR_ATTR_TMP11X_ALERT_PIN_MODE:
+		if (val->val1 == TMP11X_ALERT_PIN_THERM_MODE) {
+			return tmp11x_write_config(dev, TMP11X_CFGR_ALERT_PIN_MODE,
+						   TMP11X_CFGR_ALERT_PIN_MODE);
+		} else {
+			return tmp11x_write_config(dev, TMP11X_CFGR_ALERT_PIN_MODE, 0);
+		}
+
+	case SENSOR_ATTR_UPPER_THRESH:
+		/* Convert temperature to register format */
+		value = tmp11x_sensor_value_to_reg_format(val);
+		return tmp11x_reg_write(dev, TMP11X_REG_HIGH_LIM, value);
+
+	case SENSOR_ATTR_LOWER_THRESH:
+		/* Convert temperature to register format */
+		value = tmp11x_sensor_value_to_reg_format(val);
+		return tmp11x_reg_write(dev, TMP11X_REG_LOW_LIM, value);
+#endif /* CONFIG_TMP11X_TRIGGER */
 
 	default:
 		return -ENOTSUP;
@@ -385,6 +434,25 @@ static int tmp11x_attr_get(const struct device *dev, enum sensor_channel chan,
 		}
 
 		return rc;
+
+#ifdef CONFIG_TMP11X_TRIGGER
+	case SENSOR_ATTR_UPPER_THRESH:
+		rc = tmp11x_reg_read(dev, TMP11X_REG_HIGH_LIM, &data);
+		if (rc == 0) {
+			tmp11x_temperature_to_sensor_value(data, val);
+		}
+
+		return rc;
+
+	case SENSOR_ATTR_LOWER_THRESH:
+		rc = tmp11x_reg_read(dev, TMP11X_REG_LOW_LIM, &data);
+		if (rc == 0) {
+			tmp11x_temperature_to_sensor_value(data, val);
+		}
+
+		return rc;
+#endif /* CONFIG_TMP11X_TRIGGER */
+
 	default:
 		return -ENOTSUP;
 	}
@@ -394,7 +462,10 @@ static DEVICE_API(sensor, tmp11x_driver_api) = {
 	.attr_set = tmp11x_attr_set,
 	.attr_get = tmp11x_attr_get,
 	.sample_fetch = tmp11x_sample_fetch,
-	.channel_get = tmp11x_channel_get
+	.channel_get = tmp11x_channel_get,
+#ifdef CONFIG_TMP11X_TRIGGER
+	.trigger_set = tmp11x_trigger_set,
+#endif
 };
 
 static int tmp11x_init(const struct device *dev)
@@ -424,16 +495,26 @@ static int tmp11x_init(const struct device *dev)
 
 	rc = tmp11x_write_config(dev, TMP11X_CFGR_AVG, cfg->oversampling);
 
+#ifdef CONFIG_TMP11X_TRIGGER
+	drv_data->dev = dev;
+	rc = tmp11x_init_interrupt(dev);
+	if (rc < 0) {
+		LOG_ERR("%s: Failed to initialize alert pin", dev->name);
+		return rc;
+	}
+#endif /* CONFIG_TMP11X_TRIGGER */
+
 	return rc;
 }
-
 #define DEFINE_TMP11X(_num) \
 	static struct tmp11x_data tmp11x_data_##_num; \
 	static const struct tmp11x_dev_config tmp11x_config_##_num = { \
 		.bus = I2C_DT_SPEC_INST_GET(_num), \
 		.odr = DT_INST_PROP(_num, odr), \
 		.oversampling = DT_INST_PROP(_num, oversampling), \
-	}; \
+		IF_ENABLED(CONFIG_TMP11X_TRIGGER, \
+			(.alert_gpio = GPIO_DT_SPEC_INST_GET_OR(_num, alert_gpios, {}),))\
+	};\
 	SENSOR_DEVICE_DT_INST_DEFINE(_num, tmp11x_init, NULL, \
 		&tmp11x_data_##_num, &tmp11x_config_##_num, POST_KERNEL, \
 		CONFIG_SENSOR_INIT_PRIORITY, &tmp11x_driver_api);

@@ -38,3 +38,9 @@ properties:
       - 0x20 # TMP11X_DT_OVERSAMPLING_8
       - 0x40 # TMP11X_DT_OVERSAMPLING_32
       - 0x60 # TMP11X_DT_OVERSAMPLING_64
+  alert-gpios:
+    type: phandle-array
+    description: |
+      GPIO pin used for alert/interrupt functionality.
+      Supported on TMP116, TMP117, and TMP119 devices.
+      Alert pin functionality depends on Therm/alert modus.
