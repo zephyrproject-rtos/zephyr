@@ -63,6 +63,11 @@ New APIs and options
   like you need to add more details, add them in the API documentation code
   instead.
 
+* Utilities
+
+  * Add a set of Disjoint-set functions (:c:func:`uf_find`, :c:func:`uf_union`) to
+    handle queries between sets. They are declared in :zephyr_file:`include/zephyr/sys/uf.h`.
+
 New Boards
 **********
 
