@@ -69,8 +69,12 @@ config SOC_MAX32680_M4
 	select SOC_MAX32680
 	select SOC_FAMILY_MAX32_M4
 
+config HAS_ADC_MAX32_REVB_ME18
+	bool "revb"
+
 config SOC_MAX32690
 	bool
+	select HAS_ADC_MAX32_REVB_ME18
 
 config SOC_MAX32690_M4
 	bool
