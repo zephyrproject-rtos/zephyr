@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) 2024 Realtek Semiconductor, Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <realtek/fingerprint/rts5817/rts5817.dtsi>
+#include "rts5817_maa_evb-pinctrl.dtsi"
+
+/ {
+	model = "Realtek rts5817_maa_evb";
+	compatible = "realtek,rts5817_maa_evb";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+};
+
+&clks {
+	status = "okay";
+};
+
+&reset {
+	status = "okay";
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&uart0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart0_default>;
+	current-speed = <57600>;
+	status = "okay";
+};
+
+&uart1 {
+	status = "disabled";
+};

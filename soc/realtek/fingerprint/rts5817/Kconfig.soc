@@ -1,0 +1,16 @@
+# Copyright (c) 2024 Realtek Semiconductor, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RTS5817
+	bool
+	select SOC_FAMILY_FINGERPRINT
+
+config SOC_RTS5817
+	bool
+	select SOC_SERIES_RTS5817
+
+config SOC
+	default "rts5817" if SOC_RTS5817
+
+config SOC_SERIES
+	default "rts5817" if SOC_SERIES_RTS5817
