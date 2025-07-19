@@ -126,8 +126,11 @@ config MCUBOOT_MODE_FIRMWARE_UPDATER
 	  mechanism defined for entering the slot1_partition which is a dedicated firmware updater
 	  application used to update the slot0_partition application.
 
+endchoice
+
 config MCUBOOT_MODE_SINGLE_APP_RAM_LOAD
 	bool "Single app RAM load mode"
+	depends on MCUBOOT_MODE_RAM_LOAD
 	help
 	  MCUboot can load the image to RAM from an arbitrary location. In this mode,
 	  MCUboot will copy the image to RAM and begin execution from there. The image
@@ -138,8 +141,6 @@ config MCUBOOT_MODE_SINGLE_APP_RAM_LOAD
 	  This option automatically selects MCUBOOT_BOOTLOADER_NO_DOWNGRADE as it is
 	  not possible to swap back to older version of the application. In fact, none
 	  of the swap operations are supported in this mode.
-
-endchoice
 
 config MCUBOOT_MODE_FIRMWARE_UPDATER_BOOT_MODE_ENTRANCE
 	bool "Firmware updater retention boot mode entrance"
