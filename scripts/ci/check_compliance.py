@@ -2195,6 +2195,8 @@ def _main(args):
             test.run()
         except EndTest:
             pass
+        except BaseException:
+            test.failure(f"An exception occurred in {test.name}:\n{traceback.format_exc()}")
 
         # Annotate if required
         if args.annotate:
