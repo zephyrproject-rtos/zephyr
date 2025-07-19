@@ -19,6 +19,7 @@
 		led0 = &red_led;
 		sw0 = &user_button_1;
 		ambient-temp0 = &p3t1755;
+		rtc = &rtc1;
 	};
 
 	chosen {
@@ -96,4 +97,8 @@
 		reg = <0x48 0x0236 0x152a0090>;
 		status = "okay";
 	};
+};
+
+&rtc1 {
+	status = "okay";
 };
