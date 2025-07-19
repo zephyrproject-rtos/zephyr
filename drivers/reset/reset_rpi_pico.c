@@ -12,6 +12,8 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/reset.h>
 
+#include <hardware/structs/resets.h>
+
 struct reset_rpi_config {
 	DEVICE_MMIO_ROM;
 	uint8_t reg_width;
@@ -106,7 +108,21 @@ static int reset_rpi_update(const struct device *dev, uint32_t id, uint8_t asser
 		value &= ~BIT(regbit);
 	}
 
-	return reset_rpi_write_register(dev, offset, value);
+	ret = reset_rpi_write_register(dev, offset, value);
+	if (ret) {
+		return ret;
+	}
+
+	/* Wait for the peripheral to come out of reset */
+	value = 0;
+	do {
+		ret = reset_rpi_read_register(dev, RESETS_RESET_DONE_OFFSET, &value);
+		if (ret) {
+			return ret;
+		}
+	} while (!assert && !(value & BIT(regbit)));
+
+	return 0;
 }
 
 static int reset_rpi_line_assert(const struct device *dev, uint32_t id)
