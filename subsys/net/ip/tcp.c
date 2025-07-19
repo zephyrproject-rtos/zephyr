@@ -1550,6 +1550,60 @@ static int tcp_pkt_pull(struct net_pkt *pkt, size_t len)
 	return ret;
 }
 
+static int tcp_pkt_trim_data(struct tcp *conn, struct net_pkt *pkt, size_t data_len,
+			     size_t trim_len)
+{
+	struct net_pkt *new_pkt = NULL;
+	int total = net_pkt_get_len(pkt);
+	int ret = 0;
+	struct tcphdr *th = NULL;
+	size_t hdrlen;
+
+	if ((data_len > total) || (trim_len > data_len)) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	hdrlen = total - data_len;
+
+	/* First allocate a new pkt with header room only - 4B reserved room */
+	new_pkt = tcp_pkt_alloc(conn, 4);
+	if (new_pkt == NULL) {
+		ret = -ENOBUFS;
+		goto out;
+	}
+
+	/* Then, copy the header part */
+	net_pkt_cursor_init(pkt);
+	ret = net_pkt_copy(new_pkt, pkt, hdrlen);
+	if (ret < 0) {
+		goto out;
+	}
+
+	/* Last, append the valid data part to the new_pkt */
+	ret = tcp_pkt_pull(pkt, hdrlen + trim_len);
+	if (ret < 0) {
+		goto out;
+	}
+	net_pkt_append_buffer(new_pkt, pkt->buffer);
+
+	/* After trim, re-link the data to the 'pkt' */
+	pkt->buffer = new_pkt->buffer;
+	new_pkt->buffer = NULL;
+
+	net_pkt_cursor_init(pkt);
+
+	/* Adjust TCP seqnum */
+	th = th_get(pkt);
+	UNALIGNED_PUT(htonl(th_seq(th) + trim_len), &th->th_seq);
+
+out:
+	if (new_pkt != NULL) {
+		net_pkt_unref(new_pkt);
+	}
+	return ret;
+}
+
 static int tcp_pkt_peek(struct net_pkt *to, struct net_pkt *from, size_t pos,
 			size_t len)
 {
@@ -3244,6 +3298,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 
 		if (th_seq(th) == conn->ack) {
 			if (len > 0) {
+data_recv:
 				bool psh = FL(&fl, &, PSH);
 
 				verdict = tcp_data_received(conn, pkt, &len, psh);
@@ -3256,16 +3311,17 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 				verdict = NET_OK;
 			}
 		} else if (net_tcp_seq_greater(conn->ack, th_seq(th))) {
-			/* This should handle the acknowledgements of keep alive
-			 * packets and retransmitted data.
-			 * RISK:
-			 * There is a tiny risk of creating a ACK loop this way when
-			 * both ends of the connection are out of order due to packet
-			 * loss is a simultaneous bidirectional data flow.
+			/* Here must have new data, otherwise the seq_validation
+			 * has handled it, like the acknowledgements of keep alive.
 			 */
-			tcp_out(conn, ACK); /* peer has resent */
+			int32_t new_len = tcp_compute_new_length(conn, th, len, false);
 
-			net_stats_update_tcp_seg_ackerr(conn->iface);
+			if (tcp_pkt_trim_data(conn, pkt, len, (size_t)(len - new_len)) == 0) {
+				len = new_len;
+				goto data_recv;
+			} else {
+				tcp_out(conn, ACK);
+			}
 			verdict = NET_OK;
 		} else if (CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT) {
 			tcp_out_of_order_data(conn, pkt, len, th_seq(th));
