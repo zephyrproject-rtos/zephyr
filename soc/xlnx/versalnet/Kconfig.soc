@@ -11,10 +11,17 @@ config SOC_AMD_VERSALNET_RPU
 	bool
 	select SOC_AMD_VERSALNET
 	help
-	  AMD Versal NET SoC
+	  AMD Versal NET SoC RPU
+
+config SOC_AMD_VERSALNET_APU
+	bool
+	select SOC_AMD_VERSALNET
+	help
+	  AMD Versal NET SoC APU
 
 config SOC_FAMILY
 	default "amd_versalnet" if SOC_AMD_VERSALNET
 
 config SOC
 	default "amd_versalnet_rpu" if SOC_AMD_VERSALNET_RPU
+	default "amd_versalnet_apu" if SOC_AMD_VERSALNET_APU
