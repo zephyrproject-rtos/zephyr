@@ -22,6 +22,7 @@ from twisterlib.harness import (
     Bsim,
     Console,
     Gtest,
+    Cpputest,
     Harness,
     HarnessImporter,
     Pytest,
@@ -53,6 +54,17 @@ SAMPLE_GTEST_END = (
 SAMPLE_GTEST_END_VARIANT = (
     "[00:00:00.000,000] [0m<inf> label:  [----------] Global test environment tear-down[0m"
 )
+
+SAMPLE_CPPUTEST_NO_TESTS = (
+    "Errors (ran nothing, 0 tests, 0 ran, 0 checks, 0 ignored, 0 filtered out, 0 ms)")
+SAMPLE_CPPUTEST_START_FMT = "[00:00:00.000,000] [0m<inf> label:  TEST({suite}, {test})[0m"
+SAMPLE_CPPUTEST_END_PASS_FMT = "[00:00:00.000,000] [0m<inf> label:  OK ({tests} tests" \
+                               ", {ran} ran, {checks} checks, {ignored} ignored," \
+                               " {filtered} filtered out, {time} ms)[0m"
+SAMPLE_CPPUTEST_FAIL_FMT = "[00:00:00.000,000] [0m<inf> label:  Failure in TEST({suite}, {test})[0m"
+SAMPLE_CPPUTEST_END_FAIL_FMT = "[00:00:00.000,000] [0m<inf> label:  Errors({failures} failures" \
+                               ", {tests} tests, {ran} ran, {checks} checks, {ignored} ignored," \
+                               " {filtered} filtered out, {time} ms)[0m"
 
 
 def process_logs(harness, logs):
@@ -1235,3 +1247,122 @@ def test_bsim_build(monkeypatch, tmp_path):
     with open(new_exe_path, "r") as file:
         exe_content = file.read()
     assert "TEST_EXE" in exe_content
+
+@pytest.fixture
+def cpputest(tmp_path):
+    mock_platform = mock.Mock()
+    mock_platform.name = "mock_platform"
+    mock_platform.normalized_name = "mock_platform"
+    mock_testsuite = mock.Mock()
+    mock_testsuite.name = "mock_testsuite"
+    mock_testsuite.detailed_test_id = True
+    mock_testsuite.id = "id"
+    mock_testsuite.testcases = []
+    mock_testsuite.harness_config = {}
+    outdir = tmp_path / 'cpputest_out'
+    outdir.mkdir()
+
+    instance = TestInstance(
+        testsuite=mock_testsuite, platform=mock_platform, toolchain='zephyr', outdir=outdir
+    )
+
+    harness = Cpputest()
+    harness.configure(instance)
+    return harness
+
+
+def test_cpputest_start_test_no_suites_detected(cpputest):
+    process_logs(cpputest, [SAMPLE_CPPUTEST_NO_TESTS])
+    assert len(cpputest.detected_suite_names) == 0
+    assert cpputest.status == TwisterStatus.NONE
+
+
+def test_cpputest_start_test(cpputest):
+    process_logs(
+        cpputest,
+        [
+            SAMPLE_CPPUTEST_START_FMT.format(
+                suite="suite_name", test="test_name"
+            ),
+        ],
+    )
+    assert cpputest.status == TwisterStatus.NONE
+    assert len(cpputest.detected_suite_names) == 1
+    assert cpputest.detected_suite_names[0] == "suite_name"
+    assert cpputest.instance.get_case_by_name("id.suite_name.test_name") is not None
+    assert (
+        cpputest.instance.get_case_by_name("id.suite_name.test_name").status == TwisterStatus.STARTED
+    )
+
+
+def test_cpputest_one_test_passed(cpputest):
+    process_logs(
+        cpputest,
+        [
+            SAMPLE_CPPUTEST_START_FMT.format(
+                suite="suite_name", test="test_name"
+            ),
+            SAMPLE_CPPUTEST_END_PASS_FMT.format(
+                tests=1, ran=1, checks=5, ignored=0, filtered=0, time=10
+            )
+        ],
+    )
+    assert len(cpputest.detected_suite_names) == 1
+    assert cpputest.detected_suite_names[0] == "suite_name"
+    assert cpputest.instance.get_case_by_name("id.suite_name.test_name") != TwisterStatus.NONE
+    assert cpputest.instance.get_case_by_name("id.suite_name.test_name").status == TwisterStatus.PASS
+
+
+def test_cpputest_multiple_test_passed(cpputest):
+    logs = []
+    total_passed_tests = 5
+    for i in range(0, total_passed_tests):
+        logs.append(SAMPLE_CPPUTEST_START_FMT.format(suite="suite_name",
+                                                     test=f"test_name_{i}"))
+    logs.append(SAMPLE_CPPUTEST_END_PASS_FMT.format(
+        tests=total_passed_tests, ran=total_passed_tests, checks=5, ignored=0, filtered=0, time=10
+    ))
+    process_logs(cpputest, logs)
+    assert len(cpputest.detected_suite_names) == 1
+    assert cpputest.detected_suite_names[0] == "suite_name"
+    for i in range(0, total_passed_tests):
+        test_name = f"id.suite_name.test_name_{i}"
+        assert cpputest.instance.get_case_by_name(test_name) != TwisterStatus.NONE
+        assert cpputest.instance.get_case_by_name(test_name).status == TwisterStatus.PASS
+
+
+def test_cpputest_test_failed(cpputest):
+    process_logs(
+        cpputest,
+        [
+            SAMPLE_CPPUTEST_START_FMT.format(
+                suite="suite_name", test="test_name"
+            ),
+            SAMPLE_CPPUTEST_FAIL_FMT.format(
+                suite="suite_name", test="test_name"
+            )
+        ],
+    )
+    assert cpputest.status == TwisterStatus.NONE
+    assert len(cpputest.detected_suite_names) == 1
+    assert cpputest.detected_suite_names[0] == "suite_name"
+    assert cpputest.instance.get_case_by_name("id.suite_name.test_name") != TwisterStatus.NONE
+    assert cpputest.instance.get_case_by_name("id.suite_name.test_name").status == TwisterStatus.FAIL
+
+
+def test_cpputest_test_repeated(cpputest):
+    with pytest.raises(
+        AssertionError,
+        match=r"CppUTest error, id.suite_name.test_name running twice",
+    ):
+        process_logs(
+            cpputest,
+            [
+                SAMPLE_CPPUTEST_START_FMT.format(
+                    suite="suite_name", test="test_name"
+                ),
+                SAMPLE_CPPUTEST_START_FMT.format(
+                    suite="suite_name", test="test_name"
+                ),
+            ],
+        )
