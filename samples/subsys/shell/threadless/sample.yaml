@@ -1,0 +1,18 @@
+sample:
+  description: Threadless shell using uart backend
+  name: Threadless shell
+tests:
+  sample.subsys.shell.threadless:
+    tags: threadless
+    min_ram: 2
+    min_flash: 32
+    filter: CONFIG_ARCH_HAS_SINGLE_THREAD_SUPPORT and
+            dt_chosen_enabled("zephyr,shell-uart")
+    harness: shell
+    harness_config:
+      shell_commands:
+        - command: "sample foobar"
+          expected: "foobar"
+    platform_exclude:
+      - qemu_cortex_a53
+      - qemu_cortex_a53/qemu_cortex_a53/smp

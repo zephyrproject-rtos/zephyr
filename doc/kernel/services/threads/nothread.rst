@@ -119,3 +119,18 @@ peripheral drivers.
 
 *List/table of supported drivers to go here, including which API options
 are supported*
+
+Shell
+=====
+
+The :ref:`shell_api` along with a subset of backends are expected to work
+given the application calls :c:func:`shell_start` to start the shell
+backend, and intermittently calls :c:func:`shell_process` to check for and
+process new input.
+
+The following backends are supported:
+
+* Serial shell backend :kconfig:option:`CONFIG_SHELL_BACKEND_SERIAL`
+  configured to use either
+  :kconfig:option:`CONFIG_SHELL_BACKEND_SERIAL_API_INTERRUPT_DRIVEN` or
+  :kconfig:option:`CONFIG_SHELL_BACKEND_SERIAL_API_ASYNC`
