@@ -1,0 +1,5 @@
+board:
+  name: rtl872xda_evb
+  vendor: realtek
+  socs:
+    - name: amebadplus
