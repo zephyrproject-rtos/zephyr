@@ -602,6 +602,7 @@ int bt_sdp_discover_cancel(struct bt_conn *conn,
 
 /** @brief Protocols to be asked about specific parameters */
 enum bt_sdp_proto {
+	BT_SDP_PROTO_SDP    = 0x0001,
 	BT_SDP_PROTO_RFCOMM = 0x0003,
 	BT_SDP_PROTO_L2CAP  = 0x0100,
 };
