@@ -1956,7 +1956,9 @@ int bt_bap_unicast_client_ep_qos(struct bt_bap_ep *ep, struct net_buf_simple *bu
 
 	LOG_DBG("ep %p buf %p qos %p", ep, buf, qos);
 
-	if (!ep) {
+	if (ep == NULL || ep->iso == NULL || ep->iso->chan.iso == NULL) {
+		LOG_DBG("Invalid endpoint %p (%p (%p))", ep, ep == NULL ? NULL : ep->iso,
+			(ep == NULL || ep->iso == NULL) ? NULL : ep->iso->chan.iso);
 		return -EINVAL;
 	}
 
@@ -1980,7 +1982,6 @@ int bt_bap_unicast_client_ep_qos(struct bt_bap_ep *ep, struct net_buf_simple *bu
 
 	req = net_buf_simple_add(buf, sizeof(*req));
 	req->ase = ep->status.id;
-	/* TODO: don't hardcode CIG and CIS, they should come from ISO */
 	req->cig = conn_iso->cig_id;
 	req->cis = conn_iso->cis_id;
 	sys_put_le24(qos->interval, req->interval);
