@@ -5,7 +5,7 @@ source "Kconfig.zephyr"
 
 config I2S_INIT_BUFFERS
 	int "Initial count of audio data blocks"
-	default 2
+	default 4
 	help
 	  Controls the initial count of audio data blocks, which are (optionally)
 	  filled by data from the DMIC peripheral and played back by the I2S
@@ -13,9 +13,17 @@ config I2S_INIT_BUFFERS
 
 config SAMPLE_FREQ
 	int "Sample rate"
-	default 48000
+	default 16000
 	help
 	  Sample frequency of the system.
+
+config CODEC_MASTER
+	bool "Configure the selected codec device as a master device."
+	default true
+
+config I2S_MASTER
+	bool "Configure the selected I2S peripheral as a master device."
+	default true
 
 config USE_DMIC
 	bool "Use DMIC as an audio input"
