@@ -34,6 +34,11 @@ Device Drivers and Devicetree
 
 .. zephyr-keep-sorted-start re(^\w)
 
+Stepper
+=======
+
+* :dtcompatible:`zephyr,gpio-stepper` has been replaced by :dtcompatible:`zephyr,h-bridge-stepper`.
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth
