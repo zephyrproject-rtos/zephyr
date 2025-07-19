@@ -1,0 +1,11 @@
+shield:
+  name: npm1304_ek
+  full_name: nPM1304 EK
+  vendor: nordic
+  supported_features:
+    - mfd
+    - input
+    - gpio
+    - led
+    - regulator
+    - sensor
