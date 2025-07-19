@@ -62,6 +62,14 @@ typedef struct pinctrl_soc_pin_t {
 
 #define RZA_FILTER_ON_OFF(node_id) COND_CODE_0(DT_PROP(node_id, renesas_filter), (0), (1))
 
+#if defined(CONFIG_SOC_SERIES_RZA3M)
+#define RZA_GET_PFC(node_id, state_prop, idx)                                                      \
+	(RZA_GET_FUNC(DT_PROP_BY_IDX(node_id, state_prop, idx)) - 1)
+#else
+#define RZA_GET_PFC(node_id, state_prop, idx)                                                      \
+	(RZA_GET_FUNC(DT_PROP_BY_IDX(node_id, state_prop, idx)))
+#endif
+
 /* Process pinmux cfg */
 #define Z_PINCTRL_PINMUX_INIT(node_id, state_prop, idx)                                            \
 	{                                                                                          \
@@ -77,7 +85,7 @@ typedef struct pinctrl_soc_pin_t {
 				.filonoff_reg = RZA_FILTER_ON_OFF(node_id),                        \
 				.filnum_reg = RZA_GET_FILNUM(node_id),                             \
 				.filclksel_reg = RZA_GET_FILCLKSEL(node_id),                       \
-				.pfc_reg = RZA_GET_FUNC(DT_PROP_BY_IDX(node_id, state_prop, idx)), \
+				.pfc_reg = RZA_GET_PFC(node_id, state_prop, idx),                  \
 			},                                                                         \
 	},
 
