@@ -1,0 +1,9 @@
+# NXP PxP driver configuration option
+
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_MCUX_PXP
+	bool "NXP MCUX PxP driver"
+	default y
+	depends on DT_HAS_NXP_PXP_ENABLED
