@@ -170,11 +170,14 @@ static inline void finalize_spi_transaction(const struct device *dev, bool deact
 
 static inline uint32_t get_nrf_spim_frequency(uint32_t frequency)
 {
+	if (NRF_SPIM_HAS_PRESCALER) {
+		return frequency;
+	}
 	/* Get the highest supported frequency not exceeding the requested one.
 	 */
-	if (frequency >= MHZ(32) && (NRF_SPIM_HAS_32_MHZ_FREQ || NRF_SPIM_HAS_PRESCALER)) {
+	if (frequency >= MHZ(32) && NRF_SPIM_HAS_32_MHZ_FREQ) {
 		return MHZ(32);
-	} else if (frequency >= MHZ(16) && (NRF_SPIM_HAS_16_MHZ_FREQ || NRF_SPIM_HAS_PRESCALER)) {
+	} else if (frequency >= MHZ(16) && NRF_SPIM_HAS_16_MHZ_FREQ) {
 		return MHZ(16);
 	} else if (frequency >= MHZ(8)) {
 		return MHZ(8);
