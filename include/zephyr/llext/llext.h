@@ -447,7 +447,7 @@ int llext_relink_dependency(struct llext *ext, unsigned int n_ext);
  * During suspend the user has saved all the extension and loader descriptors
  * and related objects and called @ref llext_relink_dependency() to prepare
  * dependency pointers.
- * When resuming llext_alloc() has to be used to re-allocate all the objects,
+ * When resuming llext_alloc_data() has to be used to re-allocate all the objects,
  * therefore the user needs support from LLEXT core to accomplish that.
  * This function takes arrays of pointers to saved copies of extensions and
  * loaders as arguments and re-allocates all the objects, while also adding them

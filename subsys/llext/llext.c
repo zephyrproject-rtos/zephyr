@@ -179,7 +179,7 @@ int llext_load(struct llext_loader *ldr, const char *name, struct llext **ext,
 		goto out;
 	}
 
-	*ext = llext_alloc(sizeof(struct llext));
+	*ext = llext_alloc_data(sizeof(struct llext));
 	if (*ext == NULL) {
 		LOG_ERR("Not enough memory for extension metadata");
 		ret = -ENOMEM;
