@@ -444,8 +444,8 @@ def parse_args():
                 "corresponding tests .yaml files. These scenarios "
                 "will be skipped with quarantine as the reason.")
 
-    # Include paths in names by default.
-    parser.set_defaults(detailed_test_id=True)
+    # Do not include paths in names by default.
+    parser.set_defaults(detailed_test_id=False)
 
     return parser.parse_args()
 
