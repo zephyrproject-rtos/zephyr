@@ -411,6 +411,11 @@ config ARC_EARLY_SOC_INIT
 	  (before C runtime initialization). Setup code is called in form of
 	  soc_early_asm_init_percpu assembler macro.
 
+# ARC vector table must be aligned to 1KiB boundary, and will be at the
+# start of the ROM region.
+config ROM_START_OFFSET
+	default 0x400 if BOOTLOADER_MCUBOOT
+
 config MAIN_STACK_SIZE
 	default 4096 if 64BIT
 

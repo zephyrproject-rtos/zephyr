@@ -23,6 +23,14 @@ config ISR_TABLE_SHELL
 	help
 	  This option enables a shell command to dump the ISR tables.
 
+config ARCH_SUPPORTS_ROM_OFFSET
+	bool
+	default y
+	depends on  (ARM || X86 || ARM64 || RISCV || ARC)
+	help
+	  Hidden option to enable support for ROM offset within the linker
+	  script, which will place a block of 0x0 of size
+	  CONFIG_ROM_START_OFFSET at the start of the ROM region.
 
 config ARM_MPU
 	bool "ARM MPU Support"
