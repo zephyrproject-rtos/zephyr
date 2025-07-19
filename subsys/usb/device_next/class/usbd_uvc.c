@@ -34,6 +34,7 @@ LOG_MODULE_REGISTER(usbd_uvc, CONFIG_USBD_VIDEO_LOG_LEVEL);
 #define UVC_VBUF_DONE 1
 #define UVC_MAX_FS_DESC (CONFIG_USBD_VIDEO_MAX_FORMATS + 13)
 #define UVC_MAX_HS_DESC (CONFIG_USBD_VIDEO_MAX_FORMATS + 13)
+#define UVC_MAX_SS_DESC (CONFIG_USBD_VIDEO_MAX_FORMATS + 14)
 #define UVC_IDX_VC_UNIT 3
 #define UVC_MAX_HEADER_LENGTH 0xff
 
@@ -92,6 +93,8 @@ struct uvc_desc {
 	struct uvc_color_descriptor if1_color;
 	struct usb_ep_descriptor if1_ep_fs;
 	struct usb_ep_descriptor if1_ep_hs;
+	struct usb_ep_descriptor if1_ep_ss;
+	struct usb_ss_endpoint_companion_descriptor if1_ep_ss_co;
 };
 
 struct uvc_data {
@@ -122,6 +125,7 @@ struct uvc_data {
 	/* Index where newly generated descriptors are appened */
 	unsigned int fs_desc_idx;
 	unsigned int hs_desc_idx;
+	unsigned int ss_desc_idx;
 	unsigned int fmt_desc_idx;
 	/* UVC error from latest request */
 	uint8_t err;
@@ -139,6 +143,7 @@ struct uvc_config {
 	/* Array of pointers to descriptors sent to the USB device stack and the host */
 	struct usb_desc_header **fs_desc;
 	struct usb_desc_header **hs_desc;
+	struct usb_desc_header **ss_desc;
 };
 
 /* Specialized version of UDC net_buf metadata with extra fields */
@@ -435,6 +440,11 @@ static uint8_t uvc_get_bulk_in(const struct device *dev)
 	struct usbd_context *uds_ctx = usbd_class_get_ctx(cfg->c_data);
 	struct uvc_desc *desc = cfg->desc;
 
+	if (USBD_SUPPORTS_SUPER_SPEED &&
+	    usbd_bus_speed(uds_ctx) == USBD_SPEED_SS) {
+		return desc->if1_ep_ss.bEndpointAddress;
+	}
+
 	if (USBD_SUPPORTS_HIGH_SPEED &&
 	    usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
 		return desc->if1_ep_hs.bEndpointAddress;
@@ -446,6 +456,11 @@ static uint8_t uvc_get_bulk_in(const struct device *dev)
 static size_t uvc_get_bulk_mps(struct usbd_class_data *const c_data)
 {
 	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
+
+	if (USBD_SUPPORTS_SUPER_SPEED &&
+	    usbd_bus_speed(uds_ctx) == USBD_SPEED_SS) {
+		return 1024U;
+	}
 
 	if (USBD_SUPPORTS_HIGH_SPEED &&
 	    usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
@@ -1343,6 +1358,11 @@ static void *uvc_get_desc(struct usbd_class_data *const c_data, const enum usbd_
 	const struct uvc_config *const cfg = dev->config;
 	struct uvc_desc *desc = cfg->desc;
 
+	if (USBD_SUPPORTS_SUPER_SPEED && speed == USBD_SPEED_SS) {
+		desc->if1_hdr.bEndpointAddress = desc->if1_ep_ss.bEndpointAddress;
+		return cfg->ss_desc;
+	}
+
 	if (USBD_SUPPORTS_HIGH_SPEED && speed == USBD_SPEED_HS) {
 		desc->if1_hdr.bEndpointAddress = desc->if1_ep_hs.bEndpointAddress;
 		return cfg->hs_desc;
@@ -1353,7 +1373,7 @@ static void *uvc_get_desc(struct usbd_class_data *const c_data, const enum usbd_
 }
 
 static int uvc_assign_desc(const struct device *dev, void *const desc,
-			   const bool add_to_fs, const bool add_to_hs)
+			   const bool add_to_fs, const bool add_to_hs, const bool add_to_ss)
 {
 	const struct uvc_config *cfg = dev->config;
 	struct uvc_data *data = dev->data;
@@ -1376,6 +1396,16 @@ static int uvc_assign_desc(const struct device *dev, void *const desc,
 		data->hs_desc_idx++;
 		cfg->hs_desc[data->hs_desc_idx] = (struct usb_desc_header *)&nil_desc;
 	}
+
+	if (add_to_ss) {
+		if (data->ss_desc_idx + 1 >= UVC_MAX_SS_DESC) {
+			goto err;
+		}
+		cfg->ss_desc[data->ss_desc_idx] = (struct usb_desc_header *)desc;
+		data->ss_desc_idx++;
+		cfg->ss_desc[data->ss_desc_idx] = (struct usb_desc_header *)&nil_desc;
+	}
+
 
 	return 0;
 err:
@@ -1404,7 +1434,7 @@ static union uvc_fmt_desc *uvc_new_fmt_desc(const struct device *dev)
 
 	LOG_DBG("Allocated format/frame descriptor %u (%p)", data->fmt_desc_idx, desc);
 
-	ret = uvc_assign_desc(dev, desc, true, true);
+	ret = uvc_assign_desc(dev, desc, true, true, true);
 	if (ret != 0) {
 		return NULL;
 	}
@@ -1676,7 +1706,7 @@ static int uvc_init(struct usbd_class_data *const c_data)
 		if (prev_pixfmt != cap->pixelformat) {
 			if (prev_pixfmt != 0) {
 				cfg->desc->if1_hdr.wTotalLength += cfg->desc->if1_color.bLength;
-				uvc_assign_desc(dev, &cfg->desc->if1_color, true, true);
+				uvc_assign_desc(dev, &cfg->desc->if1_color, true, true, true);
 			}
 
 			ret = uvc_add_vs_format_desc(dev, &format_desc, cap);
@@ -1701,9 +1731,11 @@ static int uvc_init(struct usbd_class_data *const c_data)
 	}
 
 	cfg->desc->if1_hdr.wTotalLength += cfg->desc->if1_color.bLength;
-	uvc_assign_desc(dev, &cfg->desc->if1_color, true, true);
-	uvc_assign_desc(dev, &cfg->desc->if1_ep_fs, true, false);
-	uvc_assign_desc(dev, &cfg->desc->if1_ep_hs, false, true);
+	uvc_assign_desc(dev, &cfg->desc->if1_color, true, true, true);
+	uvc_assign_desc(dev, &cfg->desc->if1_ep_fs, true, false, false);
+	uvc_assign_desc(dev, &cfg->desc->if1_ep_hs, false, true, false);
+	uvc_assign_desc(dev, &cfg->desc->if1_ep_ss, false, false, true);
+	uvc_assign_desc(dev, &cfg->desc->if1_ep_ss_co, false, false, true);
 
 	cfg->desc->if1_hdr.wTotalLength = sys_cpu_to_le16(cfg->desc->if1_hdr.wTotalLength);
 
@@ -2296,6 +2328,23 @@ static struct uvc_desc uvc_desc_##n = {						\
 		.wMaxPacketSize = sys_cpu_to_le16(512),				\
 		.bInterval = 0,							\
 	},									\
+										\
+	.if1_ep_ss = {								\
+		.bLength = sizeof(struct usb_ep_descriptor),			\
+		.bDescriptorType = USB_DESC_ENDPOINT,				\
+		.bEndpointAddress = 0x81,					\
+		.bmAttributes = USB_EP_TYPE_BULK,				\
+		.wMaxPacketSize = sys_cpu_to_le16(1024),			\
+		.bInterval = 0,							\
+	},									\
+										\
+	.if1_ep_ss_co = {							\
+		.bLength = sizeof(struct usb_ss_endpoint_companion_descriptor),	\
+		.bDescriptorType = USB_DESC_ENDPOINT_COMPANION,			\
+		.bMaxBurst = 15,						\
+		.bmAttributes = 0x00,						\
+		.wBytesPerInterval = 0x00,					\
+	},									\
 };										\
 										\
 struct usb_desc_header *uvc_fs_desc_##n[UVC_MAX_FS_DESC] = {			\
@@ -2328,6 +2377,23 @@ struct usb_desc_header *uvc_hs_desc_##n[UVC_MAX_HS_DESC] = {			\
 	/* More pointers are generated here at runtime */			\
 	(struct usb_desc_header *) &uvc_desc_##n.if1_ep_hs,			\
 	(struct usb_desc_header *) NULL,					\
+};										\
+										\
+struct usb_desc_header *uvc_ss_desc_##n[UVC_MAX_SS_DESC] = {			\
+	(struct usb_desc_header *) &uvc_desc_##n.iad,				\
+	(struct usb_desc_header *) &uvc_desc_##n.if0,				\
+	(struct usb_desc_header *) &uvc_desc_##n.if0_hdr,			\
+	(struct usb_desc_header *) &uvc_desc_##n.if0_ct,			\
+	(struct usb_desc_header *) &uvc_desc_##n.if0_su,			\
+	(struct usb_desc_header *) &uvc_desc_##n.if0_pu,			\
+	(struct usb_desc_header *) &uvc_desc_##n.if0_xu,			\
+	(struct usb_desc_header *) &uvc_desc_##n.if0_ot,			\
+	(struct usb_desc_header *) &uvc_desc_##n.if1,				\
+	(struct usb_desc_header *) &uvc_desc_##n.if1_hdr,			\
+	/* More pointers are generated here at runtime */			\
+	(struct usb_desc_header *) &uvc_desc_##n.if1_ep_ss,			\
+	(struct usb_desc_header *) &uvc_desc_##n.if1_ep_ss_co,			\
+	(struct usb_desc_header *) NULL,					\
 };
 
 #define USBD_VIDEO_DT_DEVICE_DEFINE(n)						\
@@ -2341,11 +2407,13 @@ struct usb_desc_header *uvc_hs_desc_##n[UVC_MAX_HS_DESC] = {			\
 		.desc = &uvc_desc_##n,						\
 		.fs_desc = uvc_fs_desc_##n,					\
 		.hs_desc = uvc_hs_desc_##n,					\
+		.ss_desc = uvc_ss_desc_##n,					\
 	};									\
 										\
 	struct uvc_data uvc_data_##n = {					\
 		.fs_desc_idx = 10,						\
 		.hs_desc_idx = 10,						\
+		.ss_desc_idx = 10,						\
 	};									\
 										\
 	DEVICE_DT_INST_DEFINE(n, uvc_preinit, NULL, &uvc_data_##n, &uvc_cfg_##n,\

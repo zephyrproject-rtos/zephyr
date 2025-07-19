@@ -25,6 +25,9 @@ USBD_CONFIGURATION_DEFINE(test_hs_config,
 			  USB_SCD_SELF_POWERED | USB_SCD_REMOTE_WAKEUP,
 			  200, NULL);
 
+USBD_CONFIGURATION_DEFINE(test_ss_config,
+			  USB_SCD_SELF_POWERED | USB_SCD_REMOTE_WAKEUP,
+			  200, NULL);
 
 USBD_DESC_LANG_DEFINE(test_lang);
 USBD_DESC_STRING_DEFINE(test_mfg, "ZEPHYR", 1);
@@ -390,8 +393,14 @@ static void *usb_test_enable(void)
 	err = usbd_add_descriptor(&test_usbd, &test_sn);
 	zassert_equal(err, 0, "Failed to initialize descriptor (%d)", err);
 
+	if (USBD_SUPPORTS_SUPER_SPEED &&
+	    usbd_caps_speed(&test_usbd) >= USBD_SPEED_SS) {
+		err = usbd_add_configuration(&test_usbd, USBD_SPEED_SS, &test_ss_config);
+		zassert_equal(err, 0, "Failed to add configuration (%d)");
+	}
+
 	if (USBD_SUPPORTS_HIGH_SPEED &&
-	    usbd_caps_speed(&test_usbd) == USBD_SPEED_HS) {
+	    usbd_caps_speed(&test_usbd) >= USBD_SPEED_HS) {
 		err = usbd_add_configuration(&test_usbd, USBD_SPEED_HS, &test_hs_config);
 		zassert_equal(err, 0, "Failed to add configuration (%d)", err);
 	}
@@ -409,6 +418,18 @@ static void *usb_test_enable(void)
 
 		err = usbd_register_class(&test_usbd, "loopback_0", USBD_SPEED_HS, 1);
 		zassert_equal(err, 0, "Failed to register loopback_0 class (%d)", err);
+	}
+
+	if (USBD_SUPPORTS_SUPER_SPEED &&
+	    usbd_caps_speed(&test_usbd) >= USBD_SPEED_SS) {
+		err = usbd_register_all_classes(&test_usbd, USBD_SPEED_SS, 1, NULL);
+		zassert_equal(err, 0, "Failed to unregister all instances(%d)");
+
+		err = usbd_unregister_all_classes(&test_usbd, USBD_SPEED_SS, 1);
+		zassert_equal(err, 0, "Failed to unregister all instances(%d)");
+
+		err = usbd_register_class(&test_usbd, "loopback_0", USBD_SPEED_SS, 1);
+		zassert_equal(err, 0, "Failed to register loopback_0 class (%d)");
 	}
 
 	err = usbd_register_all_classes(&test_usbd, USBD_SPEED_FS, 1, NULL);
