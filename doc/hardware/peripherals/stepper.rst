@@ -38,7 +38,7 @@ be used in a boards devicetree to configure a stepper driver to its initial stat
 
 See examples in:
 
-- :dtcompatible:`zephyr,gpio-stepper`
+- :dtcompatible:`zephyr,h-bridge-stepper`
 - :dtcompatible:`adi,tmc50xx`
 
 Discord
