@@ -31,6 +31,8 @@
 #include <zephyr/arch/arm/structs.h>
 #elif defined(CONFIG_X86) && !defined(CONFIG_X86_64)
 #include <zephyr/arch/x86/ia32/structs.h>
+#elif defined(CONFIG_XTENSA)
+#include <zephyr/arch/xtensa/structs.h>
 #else
 
 /* Default definitions when no architecture specific definitions exist. */

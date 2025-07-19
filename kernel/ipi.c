@@ -105,4 +105,8 @@ void z_sched_ipi(void)
 		z_time_slice();
 	}
 #endif /* CONFIG_TIMESLICING */
+
+#ifdef CONFIG_ARCH_IPI_LAZY_COPROCESSORS_SAVE
+	arch_ipi_lazy_coprocessors_save();
+#endif
 }

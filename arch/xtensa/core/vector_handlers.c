@@ -31,6 +31,16 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 extern char xtensa_arch_except_epc[];
 extern char xtensa_arch_kernel_oops_epc[];
 
+extern void xtensa_lazy_hifi_save(uint8_t *regs);
+extern void xtensa_lazy_hifi_load(uint8_t *regs);
+
+#if defined(CONFIG_XTENSA_LAZY_HIFI_SHARING) && (CONFIG_MP_MAX_NUM_CPUS > 1)
+#define LAZY_COPROCESSOR_LOCK
+
+static struct k_spinlock coprocessor_lock;
+#endif
+
+
 bool xtensa_is_outside_stack_bounds(uintptr_t addr, size_t sz, uint32_t ps)
 {
 	uintptr_t start, end;
@@ -279,6 +289,88 @@ static inline void *return_to(void *interrupted)
 #endif /* CONFIG_MULTITHREADING */
 }
 
+#if defined(LAZY_COPROCESSOR_LOCK)
+/**
+ * Spin until thread is no longer the HiFi owner on specified CPU.
+ * Note: Interrupts are locked on entry. Unlock before spinning to allow
+ * an IPI to be caught and processed; restore them afterwards.
+ */
+static void spin_while_hifi_owner(struct _cpu *cpu, struct k_thread *thread)
+{
+	unsigned int key;
+	unsigned int original;
+	unsigned int unlocked;
+
+	__asm__ volatile("rsr.ps %0" : "=r"(original));
+	unlocked = original & ~PS_INTLEVEL_MASK;
+	__asm__ volatile("wsr.ps %0; rsync" :: "r"(unlocked) : "memory");
+
+	/* Spin until thread is no longer the HiFi owner on the other CPU */
+
+	while ((struct k_thread *)
+	       atomic_ptr_get(&cpu->arch.hifi_owner) == thread) {
+		key = arch_irq_lock();
+		arch_spin_relax();
+		arch_irq_unlock(key);
+	}
+
+	__asm__ volatile("wsr.ps %0; rsync" :: "r"(original) : "memory");
+}
+
+/**
+ * Determine if the thread is the owner of a HiFi on another CPU. This is
+ * called with the coprocessor lock held
+ */
+static struct _cpu *thread_hifi_owner_elsewhere(struct k_thread *thread)
+{
+	struct _cpu *this_cpu = arch_curr_cpu();
+	struct k_thread *owner;
+
+	for (unsigned int i = 0; i < CONFIG_MP_MAX_NUM_CPUS; i++) {
+		owner = (struct k_thread *)
+			atomic_ptr_get(&_kernel.cpus[i].arch.hifi_owner);
+		if ((this_cpu != &_kernel.cpus[i]) && (owner == thread)) {
+			return &_kernel.cpus[i];
+		}
+	}
+	return NULL;
+}
+#endif
+
+/**
+ * This routine only needed for SMP systems with HiFi sharing. It handles the
+ * IPI sent to save the HiFi registers so the owner can load them onto another
+ * CPU.
+ */
+void arch_ipi_lazy_coprocessors_save(void)
+{
+#if defined(LAZY_COPROCESSOR_LOCK)
+	k_spinlock_key_t key = k_spin_lock(&coprocessor_lock);
+	struct _cpu *cpu = arch_curr_cpu();
+	struct k_thread *save_hifi = (struct k_thread *)
+				     atomic_ptr_get(&cpu->arch.save_hifi);
+	struct k_thread *hifi_owner = (struct k_thread *)
+				      atomic_ptr_get(&cpu->arch.hifi_owner);
+
+	if ((save_hifi == hifi_owner) && (save_hifi != NULL)) {
+		unsigned int cp;
+
+		__asm__ volatile("rsr.cpenable %0" : "=r"(cp));
+		cp |= BIT(XCHAL_CP_ID_AUDIOENGINELX);
+		__asm__ volatile("wsr.cpenable %0" :: "r"(cp));
+
+		xtensa_lazy_hifi_save(save_hifi->arch.hifi_regs);
+
+		cp &= ~BIT(XCHAL_CP_ID_AUDIOENGINELX);
+		__asm__ volatile("wsr.cpenable %0" :: "r"(cp));
+
+		atomic_ptr_set(&cpu->arch.hifi_owner, NULL);
+	}
+	atomic_ptr_set(&cpu->arch.save_hifi, NULL);
+	k_spin_unlock(&coprocessor_lock, key);
+#endif
+}
+
 /* The wrapper code lives here instead of in the python script that
  * generates _xtensa_handle_one_int*().  Seems cleaner, still kind of
  * ugly.
@@ -484,6 +576,59 @@ void *xtensa_excint1_c(void *esf)
 		bsa->pc += 3;
 		break;
 #endif /* !CONFIG_USERSPACE */
+#ifdef CONFIG_XTENSA_LAZY_HIFI_SHARING
+	case EXCCAUSE_CP_DISABLED(XCHAL_CP_ID_AUDIOENGINELX):
+		/* Identify the interrupted thread and the old HiFi owner */
+		struct k_thread *thread = _current;
+		struct k_thread *owner;
+		unsigned int cp;
+
+#if defined(LAZY_COPROCESSOR_LOCK)
+		/*
+		 * If the interrupted thread is a HiFi owner on another CPU,
+		 * then send an IPI to that CPU to have it save its HiFi state
+		 * and then return. This CPU will continue to raise the current
+		 * exception (and send IPIs) until the other CPU has both saved
+		 * the HiFi registers and cleared its HiFi owner.
+		 */
+
+		k_spinlock_key_t key  = k_spin_lock(&coprocessor_lock);
+		struct _cpu *cpu = thread_hifi_owner_elsewhere(thread);
+
+		if (cpu != NULL) {
+			cpu->arch.save_hifi = thread;
+			arch_sched_directed_ipi(BIT(cpu->id));
+			k_spin_unlock(&coprocessor_lock, key);
+			spin_while_hifi_owner(cpu, thread);
+			key = k_spin_lock(&coprocessor_lock);
+		}
+#endif
+		owner = (struct k_thread *)
+			atomic_ptr_get(&arch_curr_cpu()->arch.hifi_owner);
+
+		/* Enable the HiFi coprocessor */
+		__asm__ volatile("rsr.cpenable %0" : "=r"(cp));
+		cp |= BIT(XCHAL_CP_ID_AUDIOENGINELX);
+		__asm__ volatile("wsr.cpenable %0" :: "r"(cp));
+
+		if (owner == thread) {
+#if defined(LAZY_COPROCESSOR_LOCK)
+			k_spin_unlock(&coprocessor_lock, key);
+#endif
+			break;
+		}
+
+		if (owner != NULL) {
+			xtensa_lazy_hifi_save(owner->arch.hifi_regs);
+		}
+
+		atomic_ptr_set(&arch_curr_cpu()->arch.hifi_owner, thread);
+#if defined(LAZY_COPROCESSOR_LOCK)
+		k_spin_unlock(&coprocessor_lock, key);
+#endif
+		xtensa_lazy_hifi_load(thread->arch.hifi_regs);
+		break;
+#endif /* CONFIG_XTENSA_LAZY_HIFI_SHARING */
 	default:
 		reason = K_ERR_CPU_EXCEPTION;
 
@@ -549,6 +694,9 @@ skip_checks:
 #ifndef CONFIG_USERSPACE
 	case EXCCAUSE_SYSCALL:
 #endif /* !CONFIG_USERSPACE */
+#ifdef CONFIG_XTENSA_LAZY_HIFI_SHARING
+	case EXCCAUSE_CP_DISABLED(XCHAL_CP_ID_AUDIOENGINELX):
+#endif /* CONFIG_XTENSA_LAZY_HIFI_SHARING */
 		is_fatal_error = false;
 		break;
 	default:

@@ -67,11 +67,13 @@ ZTEST(hifi, test_register_coherence)
 		k_thread_create(&thread[i], thread_stack[i], STACK_SIZE,
 				thread_entry, (void *)(uintptr_t)i, NULL, NULL,
 				priority - 1, 0, K_FOREVER);
-
-
 	}
 
 	k_thread_start(&thread[0]);
+
+	for (i = 0; i < NUM_THREADS; i++) {
+		k_thread_join(&thread[i], K_FOREVER);
+	}
 }
 
 ZTEST_SUITE(hifi, NULL, NULL, NULL, NULL, NULL);
