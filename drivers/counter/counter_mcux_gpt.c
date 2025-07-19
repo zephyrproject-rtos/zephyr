@@ -199,7 +199,7 @@ static int mcux_gpt_init(const struct device *dev)
 
 	/* Adjust divider to match expected freq */
 	if (clock_freq % config->info.freq) {
-		LOG_ERR("Cannot Adjust GPT freq to %u\n", config->info.freq);
+		LOG_ERR("Cannot Adjust GPT freq to %llu\n", config->info.freq);
 		LOG_ERR("clock src is %u\n", clock_freq);
 		return -EINVAL;
 	}
