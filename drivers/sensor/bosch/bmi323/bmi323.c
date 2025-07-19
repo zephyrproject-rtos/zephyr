@@ -108,15 +108,6 @@ static void bosch_bmi323_value_to_sensor_value(struct sensor_value *result, int1
 	result->val2 = frac_part;
 }
 
-static void bosch_bmi323_sensor_value_from_micro(struct sensor_value *result, int64_t micro)
-{
-	int32_t int_part = (int32_t)(micro / 1000000);
-	int32_t frac_part = (int32_t)(micro % 1000000);
-
-	result->val1 = int_part;
-	result->val2 = frac_part;
-}
-
 static bool bosch_bmi323_value_is_valid(int16_t value)
 {
 	return ((uint16_t)value == 0x8000) ? false : true;
@@ -995,9 +986,9 @@ static int bosch_bmi323_driver_api_fetch_temperature(const struct device *dev)
 
 	micro += IMU_BOSCH_DIE_TEMP_OFFSET_MICRO_DEG_CELSIUS;
 
-	bosch_bmi323_sensor_value_from_micro(&data->temperature, micro);
+	ret = sensor_value_from_micro(&data->temperature, micro);
 
-	data->temperature_valid = true;
+	data->temperature_valid = (ret == 0);
 
 	return 0;
 }
