@@ -38,11 +38,11 @@ LOG_MODULE_REGISTER(gdbstub);
 
 static bool not_first_start;
 
-/* Empty memory region array */
-__weak const struct gdb_mem_region gdb_mem_region_array[0];
-
 /* Number of memory regions */
 __weak const size_t gdb_mem_num_regions;
+
+/* Fall-back memory region array */
+__weak const struct gdb_mem_region gdb_mem_region_array[1];
 
 /**
  * Given a starting address and length of a memory block, find a memory
