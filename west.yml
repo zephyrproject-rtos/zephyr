@@ -240,8 +240,9 @@ manifest:
       groups:
         - hal
     - name: hal_st
-      revision: 9f81b4427e955885398805b7bca0da3a8cd9109c
+      revision: pull/26/head
       path: modules/hal/st
+      submodules: true
       groups:
         - hal
     - name: hal_stm32

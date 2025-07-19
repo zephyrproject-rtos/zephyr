@@ -710,6 +710,31 @@ static int lsm6dso16is_channel_get(const struct device *dev,
 	return 0;
 }
 
+static int lsm6dso16is_upload_ispu(const struct device *dev,
+				   const void *fw_buf,
+				   size_t fw_len)
+{
+	const struct lsm6dso16is_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	const struct mems_conf_op *bufp = (const struct mems_conf_op *)fw_buf;
+	int i;
+
+	/* Load ISPU configuration */
+	for ( i = 0; i < fw_len; i++ ) {
+		switch(bufp[i].type) {
+		case MEMS_CONF_OP_TYPE_DELAY:
+			k_msleep(bufp[i].data);
+			break;
+
+		case MEMS_CONF_OP_TYPE_WRITE:
+			ctx->write_reg(ctx->handle, bufp[i].address, (uint8_t *)&bufp[i].data, 1);
+			break;
+		}
+	}
+
+	return 0;
+}
+
 static DEVICE_API(sensor, lsm6dso16is_driver_api) = {
 	.attr_set = lsm6dso16is_attr_set,
 #if CONFIG_LSM6DSO16IS_TRIGGER
@@ -717,6 +742,7 @@ static DEVICE_API(sensor, lsm6dso16is_driver_api) = {
 #endif
 	.sample_fetch = lsm6dso16is_sample_fetch,
 	.channel_get = lsm6dso16is_channel_get,
+	.upload_fw = lsm6dso16is_upload_ispu,
 };
 
 static int lsm6dso16is_init_chip(const struct device *dev)
