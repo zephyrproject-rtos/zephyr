@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2025 Tenstorrent AI ULC
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,14 +13,12 @@
 #include <zephyr/pm/device_runtime.h>
 
 #include "flash_mspi_nor.h"
-#include "flash_mspi_nor_quirks.h"
 
 LOG_MODULE_REGISTER(flash_mspi_nor, CONFIG_FLASH_LOG_LEVEL);
 
 void flash_mspi_command_set(const struct device *dev, const struct flash_mspi_nor_cmd *cmd)
 {
 	struct flash_mspi_nor_data *dev_data = dev->data;
-	const struct flash_mspi_nor_config *dev_config = dev->config;
 
 	memset(&dev_data->xfer, 0, sizeof(dev_data->xfer));
 	memset(&dev_data->packet, 0, sizeof(dev_data->packet));
@@ -32,9 +31,9 @@ void flash_mspi_command_set(const struct device *dev, const struct flash_mspi_no
 	dev_data->xfer.cmd_length = cmd->cmd_length;
 	dev_data->xfer.addr_length = cmd->addr_length;
 	dev_data->xfer.tx_dummy = (cmd->dir == MSPI_TX) ?
-				  cmd->tx_dummy : dev_config->mspi_nor_cfg.tx_dummy;
+				  cmd->tx_dummy : FLASH_MODE_DATA(dev)->dev_cfg.tx_dummy;
 	dev_data->xfer.rx_dummy = (cmd->dir == MSPI_RX) ?
-				  cmd->rx_dummy : dev_config->mspi_nor_cfg.rx_dummy;
+				  cmd->rx_dummy : FLASH_MODE_DATA(dev)->dev_cfg.rx_dummy;
 
 	dev_data->packet.dir = cmd->dir;
 	dev_data->packet.cmd = cmd->cmd;
@@ -74,7 +73,7 @@ static int acquire(const struct device *dev)
 		 */
 		rc = mspi_dev_config(dev_config->bus, &dev_config->mspi_id,
 				     dev_config->mspi_nor_cfg_mask,
-				     &dev_config->mspi_nor_cfg);
+				     &FLASH_MODE_DATA(dev)->dev_cfg);
 		if (rc < 0) {
 			LOG_ERR("mspi_dev_config() failed: %d", rc);
 		} else {
@@ -103,9 +102,7 @@ static void release(const struct device *dev)
 
 static inline uint32_t dev_flash_size(const struct device *dev)
 {
-	const struct flash_mspi_nor_config *dev_config = dev->config;
-
-	return dev_config->flash_size;
+	return FLASH_DATA(dev)->flash_size;
 }
 
 static inline uint16_t dev_page_size(const struct device *dev)
@@ -134,10 +131,19 @@ static int api_read(const struct device *dev, off_t addr, void *dest,
 		return rc;
 	}
 
-	if (dev_config->jedec_cmds->read.force_single) {
+
+	if ((FLASH_MODE_DATA(dev)->quirks != NULL) &&
+	    (FLASH_MODE_DATA(dev)->quirks->pre_read != NULL)) {
+		rc = FLASH_MODE_DATA(dev)->quirks->pre_read(dev, addr, dest, size);
+		if (rc < 0) {
+			return rc;
+		}
+	}
+
+	if (FLASH_MODE_DATA(dev)->jedec_cmds->read.force_single) {
 		rc = dev_cfg_apply(dev, &dev_config->mspi_nor_init_cfg);
 	} else {
-		rc = dev_cfg_apply(dev, &dev_config->mspi_nor_cfg);
+		rc = dev_cfg_apply(dev, &FLASH_MODE_DATA(dev)->dev_cfg);
 	}
 
 	if (rc < 0) {
@@ -145,19 +151,28 @@ static int api_read(const struct device *dev, off_t addr, void *dest,
 	}
 
 	/* TODO: get rid of all these hard-coded values for MX25Ux chips */
-	flash_mspi_command_set(dev, &dev_config->jedec_cmds->read);
+	flash_mspi_command_set(dev, &FLASH_MODE_DATA(dev)->jedec_cmds->read);
 	dev_data->packet.address   = addr;
 	dev_data->packet.data_buf  = dest;
 	dev_data->packet.num_bytes = size;
 	rc = mspi_transceive(dev_config->bus, &dev_config->mspi_id,
 			     &dev_data->xfer);
 
-	release(dev);
-
 	if (rc < 0) {
 		LOG_ERR("Read xfer failed: %d", rc);
 		return rc;
 	}
+
+	if ((FLASH_MODE_DATA(dev)->quirks != NULL) &&
+	    (FLASH_MODE_DATA(dev)->quirks->post_read != NULL)) {
+		rc = FLASH_MODE_DATA(dev)->quirks->post_read(dev, addr, dest, size);
+		if (rc < 0) {
+			return rc;
+		}
+	}
+
+	release(dev);
+
 
 	return 0;
 }
@@ -169,10 +184,10 @@ static int status_get(const struct device *dev, uint8_t *status)
 	int rc;
 
 	/* Enter command mode */
-	if (dev_config->jedec_cmds->status.force_single) {
+	if (FLASH_MODE_DATA(dev)->jedec_cmds->status.force_single) {
 		rc = dev_cfg_apply(dev, &dev_config->mspi_nor_init_cfg);
 	} else {
-		rc = dev_cfg_apply(dev, &dev_config->mspi_nor_cfg);
+		rc = dev_cfg_apply(dev, &FLASH_MODE_DATA(dev)->dev_cfg);
 	}
 
 	if (rc < 0) {
@@ -180,7 +195,7 @@ static int status_get(const struct device *dev, uint8_t *status)
 		return rc;
 	}
 
-	flash_mspi_command_set(dev, &dev_config->jedec_cmds->status);
+	flash_mspi_command_set(dev, &FLASH_MODE_DATA(dev)->jedec_cmds->status);
 	dev_data->packet.data_buf  = status;
 	dev_data->packet.num_bytes = sizeof(uint8_t);
 
@@ -223,17 +238,17 @@ static int write_enable(const struct device *dev)
 	struct flash_mspi_nor_data *dev_data = dev->data;
 	int rc;
 
-	if (dev_config->jedec_cmds->write_en.force_single) {
+	if (FLASH_MODE_DATA(dev)->jedec_cmds->write_en.force_single) {
 		rc = dev_cfg_apply(dev, &dev_config->mspi_nor_init_cfg);
 	} else {
-		rc = dev_cfg_apply(dev, &dev_config->mspi_nor_cfg);
+		rc = dev_cfg_apply(dev, &FLASH_MODE_DATA(dev)->dev_cfg);
 	}
 
 	if (rc < 0) {
 		return rc;
 	}
 
-	flash_mspi_command_set(dev, &dev_config->jedec_cmds->write_en);
+	flash_mspi_command_set(dev, &FLASH_MODE_DATA(dev)->jedec_cmds->write_en);
 	return mspi_transceive(dev_config->bus, &dev_config->mspi_id, &dev_data->xfer);
 }
 
@@ -265,22 +280,31 @@ static int api_write(const struct device *dev, off_t addr, const void *src,
 		uint16_t page_left = page_size - page_offset;
 		uint16_t to_write = (uint16_t)MIN(size, page_left);
 
+
+		if ((FLASH_MODE_DATA(dev)->quirks != NULL) &&
+		    (FLASH_MODE_DATA(dev)->quirks->pre_write != NULL)) {
+			rc = FLASH_MODE_DATA(dev)->quirks->pre_write(dev, addr, src, to_write);
+			if (rc < 0) {
+				break;
+			}
+		}
+
 		if (write_enable(dev) < 0) {
 			LOG_ERR("Write enable xfer failed: %d", rc);
 			break;
 		}
 
-		if (dev_config->jedec_cmds->page_program.force_single) {
+		if (FLASH_MODE_DATA(dev)->jedec_cmds->page_program.force_single) {
 			rc = dev_cfg_apply(dev, &dev_config->mspi_nor_init_cfg);
 		} else {
-			rc = dev_cfg_apply(dev, &dev_config->mspi_nor_cfg);
+			rc = dev_cfg_apply(dev, &FLASH_MODE_DATA(dev)->dev_cfg);
 		}
 
 		if (rc < 0) {
 			return rc;
 		}
 
-		flash_mspi_command_set(dev, &dev_config->jedec_cmds->page_program);
+		flash_mspi_command_set(dev, &FLASH_MODE_DATA(dev)->jedec_cmds->page_program);
 		dev_data->packet.address   = addr;
 		dev_data->packet.data_buf  = (uint8_t *)src;
 		dev_data->packet.num_bytes = to_write;
@@ -298,6 +322,14 @@ static int api_write(const struct device *dev, off_t addr, const void *src,
 		rc = wait_until_ready(dev, K_MSEC(1));
 		if (rc < 0) {
 			break;
+		}
+
+		if ((FLASH_MODE_DATA(dev)->quirks != NULL) &&
+		    (FLASH_MODE_DATA(dev)->quirks->post_write != NULL)) {
+			rc = FLASH_MODE_DATA(dev)->quirks->post_write(dev, addr, src, to_write);
+			if (rc < 0) {
+				break;
+			}
 		}
 	}
 
@@ -339,31 +371,32 @@ static int api_erase(const struct device *dev, off_t addr, size_t size)
 
 		if (size == flash_size) {
 			/* Chip erase. */
-			if (dev_config->jedec_cmds->chip_erase.force_single) {
+			if (FLASH_MODE_DATA(dev)->jedec_cmds->chip_erase.force_single) {
 				rc = dev_cfg_apply(dev, &dev_config->mspi_nor_init_cfg);
 			} else {
-				rc = dev_cfg_apply(dev, &dev_config->mspi_nor_cfg);
+				rc = dev_cfg_apply(dev, &FLASH_MODE_DATA(dev)->dev_cfg);
 			}
 
 			if (rc < 0) {
 				return rc;
 			}
 
-			flash_mspi_command_set(dev, &dev_config->jedec_cmds->chip_erase);
+			flash_mspi_command_set(dev, &FLASH_MODE_DATA(dev)->jedec_cmds->chip_erase);
 			size -= flash_size;
 		} else {
 			/* Sector erase. */
-			if (dev_config->jedec_cmds->sector_erase.force_single) {
+			if (FLASH_MODE_DATA(dev)->jedec_cmds->sector_erase.force_single) {
 				rc = dev_cfg_apply(dev, &dev_config->mspi_nor_init_cfg);
 			} else {
-				rc = dev_cfg_apply(dev, &dev_config->mspi_nor_cfg);
+				rc = dev_cfg_apply(dev, &FLASH_MODE_DATA(dev)->dev_cfg);
 			}
 
 			if (rc < 0) {
 				return rc;
 			}
 
-			flash_mspi_command_set(dev, &dev_config->jedec_cmds->sector_erase);
+			flash_mspi_command_set(dev,
+				&FLASH_MODE_DATA(dev)->jedec_cmds->sector_erase);
 			dev_data->packet.address = addr;
 			addr += SPI_NOR_SECTOR_SIZE;
 			size -= SPI_NOR_SECTOR_SIZE;
@@ -400,23 +433,23 @@ struct flash_parameters *api_get_parameters(const struct device *dev)
 	return &parameters;
 }
 
-static int read_jedec_id(const struct device *dev, uint8_t *id)
+int read_jedec_id(const struct device *dev, uint8_t *id)
 {
 	const struct flash_mspi_nor_config *dev_config = dev->config;
 	struct flash_mspi_nor_data *dev_data = dev->data;
 	int rc;
 
-	if (dev_config->jedec_cmds->id.force_single) {
+	if (FLASH_MODE_DATA(dev)->jedec_cmds->id.force_single) {
 		rc = dev_cfg_apply(dev, &dev_config->mspi_nor_init_cfg);
 	} else {
-		rc = dev_cfg_apply(dev, &dev_config->mspi_nor_cfg);
+		rc = dev_cfg_apply(dev, &FLASH_MODE_DATA(dev)->dev_cfg);
 	}
 
 	if (rc < 0) {
 		return rc;
 	}
 
-	flash_mspi_command_set(dev, &dev_config->jedec_cmds->id);
+	flash_mspi_command_set(dev, &FLASH_MODE_DATA(dev)->jedec_cmds->id);
 	dev_data->packet.data_buf  = id;
 	dev_data->packet.num_bytes = JESD216_READ_ID_LEN;
 
@@ -434,9 +467,7 @@ static void api_page_layout(const struct device *dev,
 			     const struct flash_pages_layout **layout,
 			     size_t *layout_size)
 {
-	const struct flash_mspi_nor_config *dev_config = dev->config;
-
-	*layout = &dev_config->layout;
+	*layout = &FLASH_DATA(dev)->layout;
 	*layout_size = 1;
 }
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
@@ -454,21 +485,22 @@ static int api_sfdp_read(const struct device *dev, off_t addr, void *dest,
 	}
 
 	rc = acquire(dev);
+
 	if (rc < 0) {
 		return rc;
 	}
 
-	if (dev_config->jedec_cmds->sfdp.force_single) {
+	if (FLASH_MODE_DATA(dev)->jedec_cmds->sfdp.force_single) {
 		rc = dev_cfg_apply(dev, &dev_config->mspi_nor_init_cfg);
 	} else {
-		rc = dev_cfg_apply(dev, &dev_config->mspi_nor_cfg);
+		rc = dev_cfg_apply(dev, &FLASH_MODE_DATA(dev)->dev_cfg);
 	}
 
 	if (rc < 0) {
 		return rc;
 	}
 
-	flash_mspi_command_set(dev, &dev_config->jedec_cmds->sfdp);
+	flash_mspi_command_set(dev, &FLASH_MODE_DATA(dev)->jedec_cmds->sfdp);
 	dev_data->packet.address   = addr;
 	dev_data->packet.data_buf  = dest;
 	dev_data->packet.num_bytes = size;
@@ -528,7 +560,8 @@ static int quad_enable_set(const struct device *dev, bool enable)
 		return rc;
 	}
 
-	if (dev_config->dw15_qer == JESD216_DW15_QER_VAL_S1B6) {
+	switch (FLASH_DATA(dev)->dw15_qer) {
+	case JESD216_DW15_QER_VAL_S1B6:
 		const struct flash_mspi_nor_cmd cmd_status = {
 			.dir = MSPI_TX,
 			.cmd = SPI_NOR_CMD_WRSR,
@@ -545,7 +578,10 @@ static int quad_enable_set(const struct device *dev, bool enable)
 			LOG_ERR("Failed to enable/disable quad mode: %d", rc);
 			return rc;
 		}
-	} else {
+		break;
+	case JESD216_DW15_QER_VAL_NONE:
+		return 0;
+	default:
 		/* TODO: handle all DW15 QER values */
 		return -ENOTSUP;
 	}
@@ -563,11 +599,10 @@ static int quad_enable_set(const struct device *dev, bool enable)
 
 static int default_io_mode(const struct device *dev)
 {
-	const struct flash_mspi_nor_config *dev_config = dev->config;
-	enum mspi_io_mode io_mode = dev_config->mspi_nor_cfg.io_mode;
+	enum mspi_io_mode io_mode = FLASH_MODE_DATA(dev)->dev_cfg.io_mode;
 	int rc = 0;
 
-	if (dev_config->dw15_qer != JESD216_DW15_QER_VAL_NONE) {
+	if (FLASH_DATA(dev)->dw15_qer != JESD216_DW15_QER_VAL_NONE) {
 		/* For Quad 1-1-4 and 1-4-4, entering or leaving mode is defined
 		 * in JEDEC216 BFP DW15 QER
 		 */
@@ -583,8 +618,9 @@ static int default_io_mode(const struct device *dev)
 		}
 	}
 
-	if ((dev_config->quirks != NULL) && (dev_config->quirks->post_switch_mode != NULL)) {
-		rc = dev_config->quirks->post_switch_mode(dev);
+	if ((FLASH_MODE_DATA(dev)->quirks != NULL) &&
+	    (FLASH_MODE_DATA(dev)->quirks->post_switch_mode != NULL)) {
+		rc = FLASH_MODE_DATA(dev)->quirks->post_switch_mode(dev);
 	}
 
 	if (rc < 0) {
@@ -592,7 +628,7 @@ static int default_io_mode(const struct device *dev)
 		return rc;
 	}
 
-	return dev_cfg_apply(dev, &dev_config->mspi_nor_cfg);
+	return dev_cfg_apply(dev, &FLASH_MODE_DATA(dev)->dev_cfg);
 }
 
 #if defined(WITH_RESET_GPIO)
@@ -638,7 +674,7 @@ static int flash_chip_init(const struct device *dev)
 {
 	const struct flash_mspi_nor_config *dev_config = dev->config;
 	struct flash_mspi_nor_data *dev_data = dev->data;
-	enum mspi_io_mode io_mode = dev_config->mspi_nor_cfg.io_mode;
+	enum mspi_io_mode io_mode = FLASH_MODE_DATA(dev)->dev_cfg.io_mode;
 	uint8_t id[JESD216_READ_ID_LEN] = {0};
 	int rc;
 
@@ -651,7 +687,7 @@ static int flash_chip_init(const struct device *dev)
 	/* Some chips reuse RESET pin for data in Quad modes:
 	 * force single line mode before resetting.
 	 */
-	if (dev_config->dw15_qer != JESD216_DW15_QER_VAL_NONE &&
+	if (FLASH_DATA(dev)->dw15_qer != JESD216_DW15_QER_VAL_NONE &&
 	    (io_mode == MSPI_IO_MODE_SINGLE ||
 	     io_mode == MSPI_IO_MODE_QUAD_1_1_4 ||
 	     io_mode == MSPI_IO_MODE_QUAD_1_4_4)) {
@@ -700,7 +736,7 @@ static int flash_chip_init(const struct device *dev)
 	/* Reading JEDEC ID for mode that forces single lane would be redundant,
 	 * since it switches back to single lane mode. Use ID from previous read.
 	 */
-	if (!dev_config->jedec_cmds->id.force_single) {
+	if (!FLASH_MODE_DATA(dev)->jedec_cmds->id.force_single) {
 		rc = read_jedec_id(dev, id);
 		if (rc < 0) {
 			LOG_ERR("Failed to read JEDEC ID in final line mode: %d", rc);
@@ -708,15 +744,27 @@ static int flash_chip_init(const struct device *dev)
 		}
 	}
 
-	if (memcmp(id, dev_config->jedec_id, sizeof(id)) != 0) {
+#if defined(CONFIG_FLASH_MSPI_NOR_RUNTIME_PROBE)
+	int i;
+
+	for (i = 0; i < vendor_count; i++) {
+		if (vendors[i]->probe_dev(dev, FLASH_MODE_DATA(dev),
+		    vendors[i]->vendor_devs, vendors[i]->dev_count) == 0) {
+			return 0;
+		}
+	}
+#else
+	/* Validate JEDEC ID */
+	if (memcmp(id, FLASH_DATA(dev)->jedec_id, sizeof(id)) != 0) {
 		LOG_ERR("JEDEC ID mismatch, read: %02x %02x %02x, "
 			"expected: %02x %02x %02x",
 			id[0], id[1], id[2],
-			dev_config->jedec_id[0],
-			dev_config->jedec_id[1],
-			dev_config->jedec_id[2]);
+			FLASH_DATA(dev)->jedec_id[0],
+			FLASH_DATA(dev)->jedec_id[1],
+			FLASH_DATA(dev)->jedec_id[2]);
 		return -ENODEV;
 	}
+#endif
 
 #if defined(CONFIG_MSPI_XIP)
 	/* Enable XIP access for this chip if specified so in DT. */
@@ -793,7 +841,7 @@ static DEVICE_API(flash, drv_api) = {
 	.dqs_enable = false,						\
 }
 
-#define FLASH_SIZE_INST(inst) (DT_INST_PROP(inst, size) / 8)
+#define FLASH_SIZE_INST(inst) (DT_INST_PROP_OR(inst, size, 0) / 8)
 
 /* Define copies of mspi_io_mode enum values, so they can be used inside
  * the COND_CODE_1 macros.
@@ -827,8 +875,6 @@ extern const struct flash_mspi_nor_cmds mspi_io_mode_not_supported;
 	)) \
 )
 
-#define FLASH_QUIRKS(inst) FLASH_MSPI_QUIRKS_GET(DT_DRV_INST(inst))
-
 #define FLASH_DW15_QER_VAL(inst) _CONCAT(JESD216_DW15_QER_VAL_, \
 	DT_INST_STRING_TOKEN(inst, quad_enable_requirements))
 #define FLASH_DW15_QER(inst) COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, quad_enable_requirements), \
@@ -838,18 +884,18 @@ extern const struct flash_mspi_nor_cmds mspi_io_mode_not_supported;
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 BUILD_ASSERT((CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE % 4096) == 0,
 	"MSPI_NOR_FLASH_LAYOUT_PAGE_SIZE must be multiple of 4096");
-#define FLASH_PAGE_LAYOUT_DEFINE(inst) \
+#define _FLASH_PAGE_LAYOUT_DEFINE(inst) \
 	.layout = { \
 		.pages_size = CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE, \
 		.pages_count = FLASH_SIZE_INST(inst) \
 			     / CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE, \
 	},
-#define FLASH_PAGE_LAYOUT_CHECK(inst) \
+#define _FLASH_PAGE_LAYOUT_CHECK(inst) \
 BUILD_ASSERT((FLASH_SIZE_INST(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) == 0, \
 	"MSPI_NOR_FLASH_LAYOUT_PAGE_SIZE incompatible with flash size, instance " #inst);
 #else
-#define FLASH_PAGE_LAYOUT_DEFINE(inst)
-#define FLASH_PAGE_LAYOUT_CHECK(inst)
+#define _FLASH_PAGE_LAYOUT_DEFINE(inst)
+#define _FLASH_PAGE_LAYOUT_CHECK(inst)
 #endif
 
 /* MSPI bus must be initialized before this device. */
@@ -859,7 +905,36 @@ BUILD_ASSERT((FLASH_SIZE_INST(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) ==
 #define INIT_PRIORITY UTIL_INC(CONFIG_MSPI_INIT_PRIORITY)
 #endif
 
+#define _FLASH_DATA_DEFINE(inst)						\
+	struct flash_mspi_device_data flash_dev_##inst = {                     \
+		.dw15_qer = FLASH_DW15_QER(inst),                              \
+		.flash_size = FLASH_SIZE_INST(inst),                           \
+		.jedec_id = DT_INST_PROP_OR(inst, jedec_id, {0}),		\
+		_FLASH_PAGE_LAYOUT_DEFINE(inst)                                \
+	};                                                                     \
+	struct flash_mspi_mode_data flash_dev_mode_##inst = {                  \
+		.jedec_cmds = FLASH_CMDS(inst),                                \
+		.flash_data = &flash_dev_##inst,                               \
+		.dev_cfg = MSPI_DEVICE_CONFIG_DT_INST(inst),		       \
+	};
+
+#define _FLASH_SUPPORT_MACRO(compat, io_mode)                                   \
+	DT_CAT4(FLASH_, compat, _, io_mode)
+
+#define FLASH_SUPPORT_MACRO(inst)                                               \
+	_FLASH_SUPPORT_MACRO(DT_INST_STRING_TOKEN_BY_IDX(inst, compatible, 0),  \
+		DT_INST_STRING_TOKEN(inst, mspi_io_mode))
+
+#define FLASH_DATA_DEFINE(inst, flash_macro)                                    \
+	COND_CODE_1(DT_CAT(flash_macro, _SUPPORTED),                            \
+	(), (_FLASH_DATA_DEFINE(inst)))
+
+#define FLASH_DATA_INIT(inst, flash_macro)                                      \
+	.mode_data = COND_CODE_1(DT_CAT(flash_macro, _SUPPORTED),               \
+		(&DT_CAT(flash_macro, _DATA)), (&flash_dev_mode_##inst))
+
 #define FLASH_MSPI_NOR_INST(inst)						\
+	FLASH_DATA_DEFINE(inst, FLASH_SUPPORT_MACRO(inst))                      \
 	BUILD_ASSERT((DT_INST_ENUM_IDX(inst, mspi_io_mode) ==			\
 		      MSPI_IO_MODE_SINGLE) ||					\
 		     (DT_INST_ENUM_IDX(inst, mspi_io_mode) ==			\
@@ -868,12 +943,9 @@ BUILD_ASSERT((FLASH_SIZE_INST(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) ==
 		      MSPI_IO_MODE_OCTAL),					\
 		"Only 1x, 1-4-4 and 8x I/O modes are supported for now");	\
 	PM_DEVICE_DT_INST_DEFINE(inst, dev_pm_action_cb);			\
-	static struct flash_mspi_nor_data dev##inst##_data;			\
 	static const struct flash_mspi_nor_config dev##inst##_config = {	\
 		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),			\
-		.flash_size = FLASH_SIZE_INST(inst),				\
 		.mspi_id = MSPI_DEVICE_ID_DT_INST(inst),			\
-		.mspi_nor_cfg = MSPI_DEVICE_CONFIG_DT_INST(inst),		\
 		.mspi_nor_init_cfg = FLASH_INITIAL_CONFIG(inst),		\
 		.mspi_nor_cfg_mask = DT_PROP(DT_INST_BUS(inst),			\
 					 software_multiperipheral)		\
@@ -887,13 +959,14 @@ BUILD_ASSERT((FLASH_SIZE_INST(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) ==
 				/ 1000,						\
 		.reset_recovery_us = DT_INST_PROP_OR(inst, t_reset_recovery, 0)	\
 				   / 1000,))					\
-		FLASH_PAGE_LAYOUT_DEFINE(inst)					\
-		.jedec_id = DT_INST_PROP(inst, jedec_id),			\
-		.jedec_cmds = FLASH_CMDS(inst),					\
-		.quirks = FLASH_QUIRKS(inst),					\
-		.dw15_qer = FLASH_DW15_QER(inst),				\
+	COND_CODE_1(CONFIG_FLASH_MSPI_NOR_RUNTIME_PROBE, (),			\
+		(FLASH_DATA_INIT(inst, FLASH_SUPPORT_MACRO(inst))))		\
 	};									\
-	FLASH_PAGE_LAYOUT_CHECK(inst)						\
+	static struct flash_mspi_nor_data dev##inst##_data = {			\
+	COND_CODE_1(CONFIG_FLASH_MSPI_NOR_RUNTIME_PROBE,			\
+		(FLASH_DATA_INIT(inst, FLASH_SUPPORT_MACRO(inst))), ())		\
+	};									\
+	_FLASH_PAGE_LAYOUT_CHECK(inst)						\
 	DEVICE_DT_INST_DEFINE(inst,						\
 		drv_init, PM_DEVICE_DT_INST_GET(inst),				\
 		&dev##inst##_data, &dev##inst##_config,				\
