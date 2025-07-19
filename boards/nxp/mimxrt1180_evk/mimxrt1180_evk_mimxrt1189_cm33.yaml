@@ -30,4 +30,5 @@ supported:
   - watchdog
   - usbd
   - sdhc
+  - kpp
 vendor: nxp
