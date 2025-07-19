@@ -1,0 +1,24 @@
+# Copyright 2024-2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MIMX9596_A55
+
+# GIC ITS depends on kernel heap which init priority is 30, so set
+# GIC to be 31, mailbox and SCMI will be initialized by the order
+# according to dts dependency although they use the same init priority.
+config INTC_INIT_PRIORITY
+	default 31
+
+config MBOX_INIT_PRIORITY
+	default 31
+
+config ARM_SCMI_SHMEM_INIT_PRIORITY
+	default 31
+
+config ARM_SCMI_TRANSPORT_INIT_PRIORITY
+	default 31
+
+config CLOCK_CONTROL_INIT_PRIORITY
+	default 31
+
+endif
