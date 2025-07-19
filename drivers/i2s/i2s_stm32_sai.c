@@ -276,8 +276,8 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 	/* HACK: This field is used to inform driver that it is overridden */
 	dma_cfg.linked_channel = STM32_DMA_HAL_OVERRIDE;
 
-	/* Because of the STREAM OFFSET, the DMA channel given here is from 1 -  */
-	ret = dma_config(stream->dma_dev, stream->dma_channel, &dma_cfg);
+	/* Because of the STREAM OFFSET, the DMA channel given here is from 1 - 8 */
+	ret = dma_config(stream->dma_dev, stream->dma_channel + STM32_DMA_STREAM_OFFSET, &dma_cfg);
 
 	if (ret != 0) {
 		LOG_ERR("Failed to configure DMA channel %d",
@@ -285,6 +285,33 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 		return ret;
 	}
 
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+
+	hdma->Instance = __LL_DMA_GET_STREAM_INSTANCE(stream->reg, stream->dma_channel);
+	hdma->Init.Request = dma_cfg.dma_slot;
+	hdma->Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
+	hdma->Init.MemDataAlignment = DMA_PDATAALIGN_HALFWORD;
+	hdma->Init.Mode = DMA_NORMAL;
+	hdma->Init.Priority = DMA_PRIORITY_HIGH;
+	hdma->Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+
+	if (stream->dma_cfg.channel_direction == (enum dma_channel_direction)MEMORY_TO_PERIPHERAL) {
+		hdma->Init.Direction = DMA_MEMORY_TO_PERIPH;
+		hdma->Init.PeriphInc = DMA_PINC_DISABLE;
+		hdma->Init.MemInc = DMA_MINC_ENABLE;
+		__HAL_LINKDMA(hsai, hdmatx, dev_data->hdma);
+	} else {
+		hdma->Init.Direction = DMA_PERIPH_TO_MEMORY;
+		hdma->Init.PeriphInc = DMA_PINC_ENABLE;
+		hdma->Init.MemInc = DMA_MINC_DISABLE;
+		__HAL_LINKDMA(hsai, hdmarx, dev_data->hdma);
+	}
+
+	if (HAL_DMA_Init(&dev_data->hdma) != HAL_OK) {
+		LOG_ERR("HAL_DMA_Init: <FAILED>");
+		return -EIO;
+	}
+#else
 	hdma->Instance = LL_DMA_GET_CHANNEL_INSTANCE(stream->reg, stream->dma_channel);
 	hdma->Init.Request = dma_cfg.dma_slot;
 	hdma->Init.BlkHWRequest = DMA_BREQ_SINGLE_BURST;
@@ -318,6 +345,7 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 		LOG_ERR("HAL_DMA_ConfigChannelAttributes: <Failed>");
 		return -EIO;
 	}
+#endif
 
 	return 0;
 }
