@@ -9,9 +9,9 @@
 #include <zephyr/xen/events.h>
 #include <zephyr/xen/generic.h>
 #include <zephyr/xen/hvm.h>
-#include <zephyr/xen/public/io/console.h>
-#include <zephyr/xen/public/sched.h>
-#include <zephyr/xen/public/xen.h>
+#include <xen/public/io/console.h>
+#include <xen/public/sched.h>
+#include <xen/public/xen.h>
 
 #include <zephyr/device.h>
 #include <zephyr/init.h>
