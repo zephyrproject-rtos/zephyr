@@ -1,0 +1,11 @@
+sample:
+  name: VND7050AJ High-Side Driver Sample
+  description: A sample application for the VND7050AJ high-side driver.
+  platforms:
+    - weact_stm32g431_core
+    - nrf52840dk_nrf52840
+    - nucleo_f401re
+    - stm32f4_disco
+    - nrf52dk_nrf52832
+    - nucleo_f767zi
+    - rpi_pico
