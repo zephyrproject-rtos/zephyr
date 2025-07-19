@@ -374,7 +374,7 @@ static enum net_verdict interface_recv(struct net_if *iface,
 
 		net_pkt_cursor_restore(pkt, &hdr_start);
 
-		return net_ipv6_input(pkt, false);
+		return net_ipv6_input(pkt);
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {
@@ -421,7 +421,7 @@ static enum net_verdict interface_recv(struct net_if *iface,
 
 		net_pkt_cursor_restore(pkt, &hdr_start);
 
-		return net_ipv4_input(pkt, false);
+		return net_ipv4_input(pkt);
 	}
 
 	return NET_CONTINUE;
