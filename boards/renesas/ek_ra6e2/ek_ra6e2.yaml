@@ -11,4 +11,5 @@ supported:
   - gpio
   - watchdog
   - counter
+  - crc
 vendor: renesas

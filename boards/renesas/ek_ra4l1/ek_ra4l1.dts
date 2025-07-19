@@ -22,6 +22,7 @@
 		zephyr,console = &uart5;
 		zephyr,shell-uart = &uart5;
 		zephyr,canbus = &canfd0;
+		zephyr,crc = &crc;
 	};
 
 	leds {
@@ -224,4 +225,8 @@
 			reg = <0x0 DT_SIZE_K(8)>;
 		};
 	};
+};
+
+&crc {
+	status = "okay";
 };
