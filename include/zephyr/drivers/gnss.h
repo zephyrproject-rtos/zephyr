@@ -211,6 +211,8 @@ struct gnss_satellite {
 	enum gnss_system system;
 	/** True if satellite is being tracked */
 	uint8_t is_tracked : 1;
+	/** True if satellite tracking has RTK corrections */
+	uint8_t is_corrected : 1;
 };
 
 /** Template for GNSS satellites callback */
