@@ -751,6 +751,11 @@ OpenThread
 .. zephyr-keep-sorted-stop
 
 
+Display
+=======
+
+* The RGB565 and BGR565 interchange issue has been fixed in the display sample.
+
 Other subsystems
 ****************
 
