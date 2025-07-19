@@ -1,0 +1,16 @@
+/ {
+	aliases {
+		lora0 = &lora;
+	};
+};
+
+&usart1 {
+	current-speed = <9600>;
+	lora: daphnis-i {
+		status = "okay";
+		compatible = "we,wsen-daphnis-i";
+		reset-gpios = <&gpioa 10 GPIO_ACTIVE_HIGH>;
+		wakeup-gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
+		boot-gpios = <&gpioa 7 GPIO_ACTIVE_HIGH>;
+	};
+};

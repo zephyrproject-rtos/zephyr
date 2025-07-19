@@ -4,3 +4,5 @@
 
 config HAS_WESENSORS
 	bool
+config HAS_WEMODULES
+	bool
