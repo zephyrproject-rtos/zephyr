@@ -34,6 +34,7 @@ add_custom_command(
     --only-section=sw_isr_table
     --only-section=device_area
     --only-section=device_states
+    --only-section=service_area
     --only-section=.noinit
     --only-section=.data
     --only-section=.bss
