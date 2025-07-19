@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
+ * Copyright (c) 2025 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +23,21 @@
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/cache.h>
 #include <zephyr/arch/cache.h>
+#include <zephyr/arch/arm/cortex_m/scb.h>
+
+/* For historical reasons, in Cortex-M family, CMSIS code calls System Handler Priority
+ * register SHP or SHPR. This code defines the name of the register
+ * according to the specific Cortex-M variant.
+ */
+#if defined(CONFIG_CPU_CORTEX_M0)  || \
+	defined(CONFIG_CPU_CORTEX_M0PLUS)  || \
+	defined(CONFIG_CPU_CORTEX_M1)  || \
+	defined(CONFIG_CPU_CORTEX_M3) || \
+	defined(CONFIG_CPU_CORTEX_M4)
+#define SHPR_FIELD_NAME SHP
+#else
+#define SHPR_FIELD_NAME SHPR
+#endif
 
 #if defined(CONFIG_CPU_HAS_NXP_SYSMPU)
 #include <fsl_sysmpu.h>
@@ -151,3 +167,78 @@ void z_arm_init_arch_hw_at_boot(void)
 	barrier_isync_fence_full();
 }
 #endif /* CONFIG_INIT_ARCH_HW_AT_BOOT */
+
+/**
+ * @brief Save essential SCB registers into a provided context structure.
+ *
+ * This function reads the current values of critical System Control Block (SCB)
+ * registers that are safe to backup, and stores them into the `context` structure.
+ * Access to SCB registers requires atomicity and consistency, so calling code
+ * should guarantee that interrupts are disabled.
+ *
+ * @param context Pointer to an `scb_context` structure where the register
+ * values will be stored. Must not be NULL.
+ */
+void z_arm_save_scb_context(struct scb_context *context)
+{
+	__ASSERT_NO_MSG(context != NULL);
+
+#if defined(CONFIG_CPU_CORTEX_M_HAS_VTOR)
+	context->vtor  = SCB->VTOR;
+#endif
+	context->aircr = SCB->AIRCR;
+	context->scr   = SCB->SCR;
+	context->ccr   = SCB->CCR;
+
+	/* Backup System Handler Priority Registers */
+	__IOM uint32_t *shpr = (__IOM uint32_t *) SCB->SHPR_FIELD_NAME;
+	for (int i = 0; i < SHPR_SIZE_W; i++) {
+		context->shpr[i] = shpr[i];
+	}
+
+	context->shcsr = SCB->SHCSR;
+}
+
+/**
+ * @brief Restores essential SCB registers from a provided context structure.
+ *
+ * This function writes the values from the `context` structure back to the
+ * respective System Control Block (SCB) registers. Access to SCB registers
+ * requires atomicity and consistency, so calling code should guarantee that
+ * interrupts are disabled.
+ *
+ * @warning The ICSR register is NOT restored directly due to its volatile nature
+ * and presence of read-only status bits and write-only clear/set bits.
+ * Direct restoration can lead to undefined behavior or corrupt interrupt state.
+ * If specific ICSR bits need to be managed as part of a context,
+ * a separate, highly controlled mechanism should be implemented.
+ *
+ * @param context Pointer to a `scb_context` structure containing the
+ * register values to be restored. Must not be NULL.
+ */
+void z_arm_restore_scb_context(const struct scb_context *context)
+{
+	__ASSERT_NO_MSG(context != NULL);
+
+#if defined(CONFIG_CPU_CORTEX_M_HAS_VTOR)
+	/* Restore Vector Table Offset Register first if it was modified. */
+	SCB->VTOR = context->vtor;
+#endif
+	/* Restore AIRCR: Must write the VECTKEY (0x05FA) along with the desired bits.
+	 * Ensure only the relevant modifiable bits are restored.
+	 */
+	SCB->AIRCR = (context->aircr & ~SCB_AIRCR_VECTKEY_Msk) |
+					(0x05FAUL << SCB_AIRCR_VECTKEY_Pos);
+
+	SCB->SCR = context->scr;
+	SCB->CCR = context->ccr;
+
+	/* Restore System Handler Priority Registers */
+	__IOM uint32_t *shpr = (__IOM uint32_t *) SCB->SHPR_FIELD_NAME;
+	for (int i = 0; i < SHPR_SIZE_W; i++) {
+		shpr[i] = context->shpr[i];
+	}
+
+	/* Restore SHCSR */
+	SCB->SHCSR = context->shcsr;
+}
