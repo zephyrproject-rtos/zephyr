@@ -10,6 +10,7 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/zbus/zbus.h>
+#include <zephyr/zbus/zbus_publisher.h>
 LOG_MODULE_REGISTER(zbus, CONFIG_ZBUS_LOG_LEVEL);
 
 #if defined(CONFIG_ZBUS_PRIORITY_BOOST)
@@ -18,6 +19,14 @@ static struct k_spinlock _zbus_chan_slock;
 #endif /* CONFIG_ZBUS_PRIORITY_BOOST */
 
 static struct k_spinlock obs_slock;
+
+#if defined(CONFIG_ZBUS_WQ_ENABLE)
+static K_THREAD_STACK_DEFINE(zbus_wq_stack, CONFIG_ZBUS_WQ_STACK_SIZE);
+static struct k_work_q _zbus_workq;
+struct k_work_q *const zbus_workq = &_zbus_workq;
+#else
+struct k_work_q *const zbus_workq = &k_sys_work_q;
+#endif /* CONFIG_ZBUS_WQ_ENABLE */
 
 #if defined(CONFIG_ZBUS_MSG_SUBSCRIBER)
 
@@ -57,6 +66,14 @@ int _zbus_init(void)
 
 	const struct zbus_channel *curr = NULL;
 	const struct zbus_channel *prev = NULL;
+
+#if defined(CONFIG_ZBUS_WQ_ENABLE)
+	struct k_work_queue_config cfg = {
+		.name = "zbus_workq",
+	};
+	k_work_queue_start(zbus_workq, zbus_wq_stack, K_KERNEL_STACK_SIZEOF(zbus_wq_stack),
+			   CONFIG_ZBUS_WQ_PRIORITY, &cfg);
+#endif
 
 	STRUCT_SECTION_FOREACH(zbus_channel_observation, observation) {
 		curr = observation->chan;
@@ -618,4 +635,15 @@ int zbus_obs_set_enable(const struct zbus_observer *obs, bool enabled)
 	}
 
 	return 0;
+}
+
+void zbus_publisher_work_handler(struct k_work *work)
+{
+	struct zbus_publisher *publisher = CONTAINER_OF(work, struct zbus_publisher, work.work);
+
+	zbus_chan_pub(publisher->chan, publisher->data, K_MSEC(CONFIG_ZBUS_PUBLISHER_MAX_WAIT_MS));
+
+	if (!K_TIMEOUT_EQ(publisher->period, K_NO_WAIT)) {
+		zbus_chan_publisher_reschedule(publisher, publisher->period);
+	}
 }
