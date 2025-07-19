@@ -156,3 +156,7 @@
 		reg = <0x19>;
 	};
 };
+
+&edma {
+	status = "okay";
+};
