@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2020 Xilinx, Inc.
+# Copyright (c) 2025 YWL, Tron Future Tech.
+
+menuconfig RF
+    bool "RF driver"
+    help
+      Drivers related to RF devices such like baseband, beamformer
+
+
+if RF
+
+module = RF
+module-str = rf
+source "drivers/rf/Kconfig.rfdc"
+endif # RF
