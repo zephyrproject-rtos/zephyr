@@ -8,7 +8,7 @@
 	ranges = <0x0 0x30000000 DT_SIZE_K(112)>;
 
 	stcm1: system_memory@1a000 {
-		compatible = "zephyr,memory-region","mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x1a000 DT_SIZE_K(4)>;
 		zephyr,memory-region = "RetainedMem";
 	};
