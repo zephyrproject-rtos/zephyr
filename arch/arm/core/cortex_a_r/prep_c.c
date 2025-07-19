@@ -24,6 +24,8 @@
 #include <zephyr/arch/arm/cortex_a_r/lib_helpers.h>
 #include <zephyr/platform/hooks.h>
 #include <zephyr/arch/cache.h>
+#include <zephyr/arch/common/xip.h>
+#include <zephyr/arch/common/init.h>
 
 #if defined(CONFIG_ARMV7_R) || defined(CONFIG_ARMV7_A)
 #include <cortex_a_r/stack.h>
@@ -107,8 +109,8 @@ void z_prep_c(void)
 #if defined(CONFIG_CPU_HAS_FPU)
 	z_arm_floating_point_init();
 #endif
-	z_bss_zero();
-	z_data_copy();
+	arch_bss_zero();
+	arch_data_copy();
 #if ((defined(CONFIG_ARMV7_R) || defined(CONFIG_ARMV7_A)) && defined(CONFIG_INIT_STACKS))
 	z_arm_init_stacks();
 #endif
