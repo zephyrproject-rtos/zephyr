@@ -253,6 +253,15 @@ zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_EMU          ${EMLIB_DIR}/src/em_e
 if(CONFIG_SOC_GECKO_GPIO)
   zephyr_library_sources(
     ${EMLIB_DIR}/src/em_gpio.c
+  )
+  zephyr_library_compile_definitions(
+    SL_CATALOG_GPIO_PRESENT
+    SL_CODE_COMPONENT_HAL_GPIO=hal_gpio
+  )
+endif()
+
+if(CONFIG_SILABS_SISDK_GPIO)
+  zephyr_library_sources(
     ${DRIVER_DIR}/gpio/src/sl_gpio.c
     ${PERIPHERAL_DIR}/src/sl_hal_gpio.c
   )
