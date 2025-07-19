@@ -438,7 +438,9 @@ static void lp_cu_send_conn_update_ind_finalize(struct ll_conn *conn, struct pro
 static void lp_cu_send_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				       void *param)
 {
-	if (llcp_lr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
+	if (llcp_lr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx) ||
+	    ull_conn_tx_enqueue_count_get(conn) != 0U) {
+		llcp_tx_pause_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_CONN_UPD);
 		ctx->state = LP_CU_STATE_WAIT_TX_CONN_UPDATE_IND;
 	} else {
 		/* ensure alloc of TX node, before possibly waiting for NTF node */
@@ -448,6 +450,7 @@ static void lp_cu_send_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ct
 			ctx->state = LP_CU_STATE_WAIT_NTF_AVAIL;
 		} else {
 			lp_cu_send_conn_update_ind_finalize(conn, ctx, evt, param);
+			llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_CONN_UPD);
 		}
 	}
 }
@@ -459,6 +462,7 @@ static void lp_cu_st_wait_ntf_avail(struct ll_conn *conn, struct proc_ctx *ctx, 
 	case LP_CU_EVT_RUN:
 		if (llcp_ntf_alloc_is_available()) {
 			lp_cu_send_conn_update_ind_finalize(conn, ctx, evt, param);
+			llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_CONN_UPD);
 		}
 		break;
 	default:

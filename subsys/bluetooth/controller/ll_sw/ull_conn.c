@@ -127,23 +127,18 @@ static uint8_t force_md_cnt_calc(struct lll_conn *lll_conn, uint32_t tx_rate);
 				(LL_LENGTH_OCTETS_TX_MAX + \
 				BT_CTLR_USER_TX_BUFFER_OVERHEAD))
 
-#define CONN_DATA_BUFFERS CONFIG_BT_BUF_ACL_TX_COUNT
-
-static MFIFO_DEFINE(conn_tx, sizeof(struct lll_tx), CONN_DATA_BUFFERS);
+static MFIFO_DEFINE(conn_tx, sizeof(struct lll_tx), CONFIG_BT_BUF_ACL_TX_COUNT);
 static MFIFO_DEFINE(conn_ack, sizeof(struct lll_tx),
-		    (CONN_DATA_BUFFERS +
-		     LLCP_TX_CTRL_BUF_COUNT));
+		    (CONFIG_BT_BUF_ACL_TX_COUNT + LLCP_TX_CTRL_BUF_COUNT));
 
 static struct {
 	void *free;
-	uint8_t pool[CONN_TX_BUF_SIZE * CONN_DATA_BUFFERS];
+	uint8_t pool[CONN_TX_BUF_SIZE * CONFIG_BT_BUF_ACL_TX_COUNT];
 } mem_conn_tx;
 
 static struct {
 	void *free;
-	uint8_t pool[sizeof(memq_link_t) *
-		     (CONN_DATA_BUFFERS +
-		      LLCP_TX_CTRL_BUF_COUNT)];
+	uint8_t pool[sizeof(memq_link_t) * (CONFIG_BT_BUF_ACL_TX_COUNT + LLCP_TX_CTRL_BUF_COUNT)];
 } mem_link_tx;
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
@@ -1483,6 +1478,21 @@ void ull_conn_tx_lll_enqueue(struct ll_conn *conn, uint8_t count)
 	}
 }
 
+uint16_t ull_conn_tx_enqueue_count_get(struct ll_conn *conn)
+{
+	uint16_t count = 0;
+	memq_link_t *curr;
+
+	curr = memq_peek(conn->lll.memq_tx.head, conn->lll.memq_tx.tail, NULL);
+	while (curr != NULL) {
+		count++;
+
+		curr = memq_peek(curr->next, conn->lll.memq_tx.tail, NULL);
+	}
+
+	return count;
+}
+
 void ull_conn_link_tx_release(void *link)
 {
 	mem_release(link, &mem_link_tx.free);
@@ -1693,14 +1703,11 @@ static int init_reset(void)
 	}
 
 	/* Initialize tx pool. */
-	mem_init(mem_conn_tx.pool, CONN_TX_BUF_SIZE, CONN_DATA_BUFFERS,
-		 &mem_conn_tx.free);
+	mem_init(mem_conn_tx.pool, CONN_TX_BUF_SIZE, CONFIG_BT_BUF_ACL_TX_COUNT, &mem_conn_tx.free);
 
 	/* Initialize tx link pool. */
 	mem_init(mem_link_tx.pool, sizeof(memq_link_t),
-		 (CONN_DATA_BUFFERS +
-		  LLCP_TX_CTRL_BUF_COUNT),
-		 &mem_link_tx.free);
+		 (CONFIG_BT_BUF_ACL_TX_COUNT + LLCP_TX_CTRL_BUF_COUNT), &mem_link_tx.free);
 
 	/* Initialize control procedure system. */
 	ull_cp_init();
