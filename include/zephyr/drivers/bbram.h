@@ -72,12 +72,21 @@ typedef int (*bbram_api_read_t)(const struct device *dev, size_t offset, size_t 
 typedef int (*bbram_api_write_t)(const struct device *dev, size_t offset, size_t size,
 			       const uint8_t *data);
 
+/**
+ * @driver_api{BBRAM}
+ */
 __subsystem struct bbram_driver_api {
+	/** @copydoc bbram_check_invalid */
 	bbram_api_check_invalid_t check_invalid;
+	/** @copydoc bbram_check_standby_power */
 	bbram_api_check_standby_power_t check_standby_power;
+	/** @copydoc bbram_check_power */
 	bbram_api_check_power_t check_power;
+	/** @copydoc bbram_get_size */
 	bbram_api_get_size_t get_size;
+	/** @copydoc bbram_read */
 	bbram_api_read_t read;
+	/** @copydoc bbram_write */
 	bbram_api_write_t write;
 };
 
