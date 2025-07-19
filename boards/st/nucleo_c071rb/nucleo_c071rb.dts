@@ -135,8 +135,9 @@
 };
 
 &spi1 {
-	pinctrl-0 = <&spi1_nss_pb0 &spi1_sck_pb3
-		     &spi1_miso_pb4 &spi1_mosi_pb5>;
+	/* Note: PA5 is shared with green led0 */
+	pinctrl-0 = <&spi1_nss_pa15 &spi1_sck_pa5
+		     &spi1_miso_pa6 &spi1_mosi_pa7>;
 	pinctrl-names = "default";
 	status = "okay";
 };
