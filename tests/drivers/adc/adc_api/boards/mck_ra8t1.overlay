@@ -24,6 +24,8 @@
 &adc1 {
 	pinctrl-0 = <&adc1_default>;
 	pinctrl-names = "default";
+	interrupts = <95 12>;
+	interrupt-names = "scanend";
 	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
