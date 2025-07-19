@@ -283,6 +283,11 @@ static void bt_a2dp_media_data_callback(struct bt_avdtp_sep *sep, struct net_buf
 	stream = ep->stream;
 	media_hdr = net_buf_pull_mem(buf, sizeof(*media_hdr));
 
+	if (stream->ops == NULL || stream->ops->recv == NULL) {
+		LOG_WRN("No recv callback registered for stream");
+		return;
+	}
+
 	stream->ops->recv(stream, buf, sys_be16_to_cpu(media_hdr->sequence_number),
 			  sys_be32_to_cpu(media_hdr->time_stamp));
 }
