@@ -24,8 +24,11 @@
 /* defined in stm32_common_clocks.h */
 /** Fixed clocks  */
 /* Low speed clocks defined in stm32_common_clocks.h */
+/* STM32_SRC_HSI relates to HSI48 clock mentioned in RM0490 Reference Manual */
 #define STM32_SRC_HSI		(STM32_SRC_LSI + 1)
-#define STM32_SRC_HSE		(STM32_SRC_HSI + 1)
+/* STM32_SRC_HSI48 relates to HSIUSB48 mentioned in RM0490 Reference Manual */
+#define STM32_SRC_HSI48		(STM32_SRC_HSI + 1)
+#define STM32_SRC_HSE		(STM32_SRC_HSI48 + 1)
 /** Peripheral bus clock */
 #define STM32_SRC_PCLK		(STM32_SRC_HSE + 1)
 
