@@ -156,9 +156,11 @@ ZTEST(k_heap_api, test_k_heap_alloc_fail)
  * @details The test validates k_heap_free()
  * API, by using below steps
  * 1. allocate the memory from the heap,
- * 2. free the allocated memory
- * 3. allocate  memory more than the first allocation.
- * the allocation in the 3rd step should succeed if k_heap_free()
+ * 2. Freeing a NULL pointer (should have no effect)
+ * 3. free the allocated memory
+ * 4. allocate  memory more than the first allocation.
+ * 5. Double-freeing a pointer (asserts, but should not crash)
+ * the allocation in the 4th step should succeed if k_heap_free()
  * works as expected
  *
  * @see k_heap_alloc, k_heap_free()
@@ -169,6 +171,10 @@ ZTEST(k_heap_api, test_k_heap_free)
 	char *p = (char *)k_heap_alloc(&k_heap_test, ALLOC_SIZE_1, timeout);
 
 	zassert_not_null(p, "k_heap_alloc operation failed");
+
+	/* Free NULL pointer: should not crash or corrupt heap */
+	k_heap_free(&k_heap_test, NULL);
+
 	k_heap_free(&k_heap_test, p);
 	p = (char *)k_heap_alloc(&k_heap_test, ALLOC_SIZE_2, timeout);
 	zassert_not_null(p, "k_heap_alloc operation failed");
@@ -176,6 +182,11 @@ ZTEST(k_heap_api, test_k_heap_free)
 		p[i] = '0';
 	}
 	k_heap_free(&k_heap_test, p);
+
+#ifndef CONFIG_ASSERT
+	/* Double free: should not crash, but behavior is otherwise undefined */
+	k_heap_free(&k_heap_test, p);
+#endif
 }
 
 /**
@@ -275,7 +286,8 @@ ZTEST(k_heap_api, test_k_heap_alloc_pending_null)
  *
  * @details The test allocates 256 unsigned integers of 4 bytes for a
  * total of 1024 bytes from the 2048 byte heap. It checks if allocation
- * and initialization are successful or not
+ * and initialization are successful or not.
+ * Also tests k_heap_calloc() overflow and zero-size edge cases
  *
  * @see k_heap_calloc(), k_heap_free()
  */
@@ -290,6 +302,14 @@ ZTEST(k_heap_api, test_k_heap_calloc)
 	}
 
 	k_heap_free(&k_heap_test, p);
+
+	/* Overflow: num * size wraps around */
+	p = k_heap_calloc(&k_heap_test, SIZE_MAX, SIZE_MAX, K_NO_WAIT);
+	zassert_is_null(p, "k_heap_calloc with overflow should fail");
+
+	/* Zero-size, should not crash */
+	p = k_heap_calloc(&k_heap_test, 0, 0, K_NO_WAIT);
+	(void)p;
 }
 
 /**
@@ -430,4 +450,35 @@ ZTEST(k_heap_api, test_k_heap_realloc_fail)
 	zassert_is_null(p2, "k_heap_realloc should fail for size larger than heap");
 
 	k_heap_free(&k_heap_test, p);
+}
+
+/**
+ * @brief Test k_heap_aligned_alloc() API usage and edge cases
+ *
+ * @ingroup k_heap_api_tests
+ *
+ * @details Allocates a block with a specific alignment from the heap
+ * and checks alignment, then tries oversize and invalid alignment.
+ *
+ * @see k_heap_aligned_alloc()
+ */
+ZTEST(k_heap_api, test_k_heap_aligned_alloc)
+{
+	void *p;
+
+	/* Allocate 128 bytes aligned to 16 bytes */
+	p = k_heap_aligned_alloc(&k_heap_test, 16, 128, K_NO_WAIT);
+	zassert_not_null(p, "k_heap_aligned_alloc failed");
+	zassert_true(((uintptr_t)p % 16) == 0, "Pointer not 16-byte aligned");
+	k_heap_free(&k_heap_test, p);
+
+	/* Oversize allocation returns NULL */
+	p = k_heap_aligned_alloc(&k_heap_test, 8, HEAP_SIZE * 2, K_NO_WAIT);
+	zassert_is_null(p, "k_heap_aligned_alloc with oversize should fail");
+
+	/* With non-power-of-two alignment, Zephyr internally rewrites the alignment
+	 * and proceeds, so this should not assert or necessarily fail.
+	 */
+	p = k_heap_aligned_alloc(&k_heap_test, 3, 64, K_NO_WAIT);
+	(void)p;
 }
