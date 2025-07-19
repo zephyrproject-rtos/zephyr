@@ -31,7 +31,14 @@ LOG_MODULE_DECLARE(llext, CONFIG_LLEXT_LOG_LEVEL);
 struct k_heap llext_heap;
 bool llext_heap_inited;
 #else
-K_HEAP_DEFINE(llext_heap, CONFIG_LLEXT_HEAP_SIZE * 1024);
+#ifdef CONFIG_HARVARD
+Z_HEAP_DEFINE_IN_SECT(llext_instr_heap, (CONFIG_LLEXT_INSTR_HEAP_SIZE * KB(1)),
+		      __attribute__((section(".rodata.llext_instr_heap"))));
+Z_HEAP_DEFINE_IN_SECT(llext_data_heap, (CONFIG_LLEXT_DATA_HEAP_SIZE * KB(1)),
+		      __attribute__((section(".data.llext_data_heap"))));
+#else
+K_HEAP_DEFINE(llext_heap, CONFIG_LLEXT_HEAP_SIZE * KB(1));
+#endif
 #endif
 
 /*
@@ -149,7 +156,12 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 	}
 
 	/* Allocate a suitably aligned area for the region. */
-	ext->mem[mem_idx] = llext_aligned_alloc(region_align, region_alloc);
+	if (region->sh_flags & SHF_EXECINSTR) {
+		ext->mem[mem_idx] = llext_aligned_alloc_instr(region_align, region_alloc);
+	} else {
+		ext->mem[mem_idx] = llext_aligned_alloc_data(region_align, region_alloc);
+	}
+
 	if (!ext->mem[mem_idx]) {
 		LOG_ERR("Failed allocating %zd bytes %zd-aligned for region %d",
 			(size_t)region_alloc, (size_t)region_align, mem_idx);
@@ -296,7 +308,13 @@ void llext_free_regions(struct llext *ext)
 #endif
 		if (ext->mem_on_heap[i]) {
 			LOG_DBG("freeing memory region %d", i);
-			llext_free(ext->mem[i]);
+
+			if (i == LLEXT_MEM_TEXT) {
+				llext_free_instr(ext->mem[i]);
+			} else {
+				llext_free(ext->mem[i]);
+			}
+
 			ext->mem[i] = NULL;
 		}
 	}
