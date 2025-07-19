@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Nordic Semiconductor ASA
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +18,7 @@
 
 #include <openthread/instance.h>
 #include <zephyr/net/net_pkt.h>
+#include <zephyr/net/openthread.h>
 
 /**
  * This function initializes the alarm service used by OpenThread.
@@ -116,5 +118,9 @@ int notify_new_rx_frame(struct net_pkt *pkt);
  * Notify OpenThread task about new tx message.
  */
 int notify_new_tx_frame(struct net_pkt *pkt);
+
+#if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER)
+otError infra_if_init(otInstance *instance, struct net_if *ail_iface);
+#endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER */
 
 #endif /* PLATFORM_ZEPHYR_H_ */

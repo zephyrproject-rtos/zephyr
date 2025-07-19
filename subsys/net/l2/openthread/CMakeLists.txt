@@ -12,3 +12,5 @@ zephyr_library_sources(
   openthread.c
   openthread_utils.c
   )
+
+  zephyr_library_sources_ifdef(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER openthread_border_router.c)
