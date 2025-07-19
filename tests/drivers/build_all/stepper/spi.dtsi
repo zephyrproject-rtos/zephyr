@@ -162,3 +162,20 @@ adi_tmc51xx_2: adi_tmc51xx@2 {
 	irun = <2>;
 	iholddelay = <3>;
 };
+
+adi_tmc2130: tmc2130@3 {
+	compatible = "adi,tmc2130";
+	reg = <3>;
+	spi-max-frequency = <8000000>;
+
+	dir-gpios = <&test_gpio 0 0>;
+	step-gpios = <&test_gpio 1 0>;
+	en-gpios  = <&test_gpio 2 GPIO_ACTIVE_LOW>;
+	counter = <&counter0>;
+	irun = <20>;
+	ihold = <20>;
+	iholddelay = <15>;
+	tpwmthrs = <110>;
+	tpowerdown = <120>;
+	en-pwm-mode;
+};

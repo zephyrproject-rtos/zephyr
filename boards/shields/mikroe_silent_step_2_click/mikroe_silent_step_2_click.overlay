@@ -1,0 +1,42 @@
+/*
+ * Copyright (c) 2025 Navimatix GmbH
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&mikrobus_i2c {
+	status = "okay";
+	pca9538a_mikroe_silent_step_2_click: pca9538a@70 {
+		status = "okay";
+		compatible = "nxp,pca9538";
+
+		reg = <0x70>;
+
+		gpio-controller;
+		ngpios = <8>;
+		#gpio-cells = <2>;
+
+		gpio-reserved-ranges = <3 1>;
+
+		gpio-line-names =
+			"EN",
+			"FT1",
+			"FT2";
+	};
+};
+
+&mikrobus_spi {
+	cs-gpios = <&mikrobus_header 2 GPIO_ACTIVE_LOW>;
+	status = "okay";
+	tmc2130_mikroe_silent_step_2_click: tmc2130@0 {
+		compatible = "adi,tmc2130";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
+
+		dir-gpios = <&mikrobus_header 0 0>;
+		step-gpios = <&mikrobus_header 6 0>;
+		en-gpios  = <&pca9538a_mikroe_silent_step_2_click 0 GPIO_ACTIVE_LOW>;
+		irun = <20>;
+		ihold = <20>;
+		en-pwm-mode;
+	};
+};
