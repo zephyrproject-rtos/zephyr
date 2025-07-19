@@ -3,22 +3,26 @@
 Steppers
 ########
 
-The stepper driver API provides a set of functions for controlling and configuring stepper drivers.
+The stepper driver subsystem consists of two APIs:
 
-Configure Stepper Driver
-========================
+Stepper Driver API
+==================
 
-- Configure **micro-stepping resolution** using :c:func:`stepper_set_micro_step_res`
-  and :c:func:`stepper_get_micro_step_res`.
+The stepper driver API provides a common interface for stepper drivers.
+
+- Configure **micro-stepping resolution** using :c:func:`stepper_drv_set_micro_step_res`
+  and :c:func:`stepper_drv_get_micro_step_res`.
+- **Enable** the stepper driver using :c:func:`stepper_drv_enable`.
+- **Disable** the stepper driver using :c:func:`stepper_drv_disable`.
+
+Stepper API
+===========
+
+The stepper API provides a common interface for stepper controllers.
+
 - Configure **reference position** in microsteps using :c:func:`stepper_set_reference_position`
   and :c:func:`stepper_get_actual_position`.
 - Set **step interval** in nanoseconds between steps using :c:func:`stepper_set_microstep_interval`
-- **Enable** the stepper driver using :c:func:`stepper_enable`.
-- **Disable** the stepper driver using :c:func:`stepper_disable`.
-
-Control Stepper
-===============
-
 - **Move by** +/- micro-steps also known as **relative movement** using :c:func:`stepper_move_by`.
 - **Move to** a specific position also known as **absolute movement** using :c:func:`stepper_move_to`.
 - Run continuously with a **constant step interval** in a specific direction until
@@ -38,7 +42,7 @@ be used in a boards devicetree to configure a stepper driver to its initial stat
 
 See examples in:
 
-- :dtcompatible:`zephyr,gpio-stepper`
+- :dtcompatible:`zephyr,h-bridge-stepper`
 - :dtcompatible:`adi,tmc50xx`
 
 Discord
@@ -48,6 +52,7 @@ Zephyr has a `stepper discord`_ channel for stepper related discussions, which
 is open to all.
 
 .. _stepper-api-reference:
+.. _stepper-drv-api-reference:
 
 Stepper API Test Suite
 ======================
@@ -92,6 +97,10 @@ API Reference
 *************
 
 A common set of functions which should be implemented by all stepper drivers.
+
+.. doxygengroup:: stepper_drv_interface
+
+A common set of functions which should be implemented by all stepper controllers.
 
 .. doxygengroup:: stepper_interface
 

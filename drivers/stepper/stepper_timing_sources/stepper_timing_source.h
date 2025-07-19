@@ -7,32 +7,56 @@
 #define ZEPHYR_DRIVER_STEPPER_STEP_DIR_STEPPER_TIMING_SOURCE_H_
 
 #include <zephyr/device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/counter.h>
+
+struct timing_source_config {
+	const struct device *counter;
+};
+
+struct timing_source_data {
+	const struct device *motion_control_dev;
+	uint64_t microstep_interval_ns;
+	struct k_work_delayable stepper_dwork;
+	void (*stepper_handle_timing_signal_cb)(const struct device *dev);
+
+#ifdef CONFIG_STEPPER_TIMING_SOURCES_COUNTER_TIMING
+	struct counter_top_cfg counter_top_cfg;
+	bool counter_running;
+#endif /* CONFIG_STEPPER_TIMING_SOURCES_COUNTER_TIMING */
+};
 
 /**
  * @brief Initialize the stepper timing source.
  *
- * @param dev Pointer to the device structure.
+ * @param config Pointer to the timing source configuration structure.
+ * @param data Pointer to the timing source data structure.
  * @return 0 on success, or a negative error code on failure.
  */
-typedef int (*stepper_timing_source_init)(const struct device *dev);
+typedef int (*stepper_timing_source_init)(const struct timing_source_config *config,
+					  struct timing_source_data *data);
 
 /**
  * @brief Update the stepper timing source.
  *
- * @param dev Pointer to the device structure.
+ * @param config Pointer to the timing source configuration structure.
+ * @param data Pointer to the timing source data structure.
  * @param microstep_interval_ns Step interval in nanoseconds.
  * @return 0 on success, or a negative error code on failure.
  */
-typedef int (*stepper_timing_source_update)(const struct device *dev,
+typedef int (*stepper_timing_source_update)(const struct timing_source_config *config,
+					    struct timing_source_data *data,
 					    uint64_t microstep_interval_ns);
 
 /**
  * @brief Start the stepper timing source.
  *
- * @param dev Pointer to the device structure.
+ * @param config Pointer to the timing source configuration structure.
+ * @param data Pointer to the timing source data structure.
  * @return 0 on success, or a negative error code on failure.
  */
-typedef int (*stepper_timing_source_start)(const struct device *dev);
+typedef int (*stepper_timing_source_start)(const struct timing_source_config *config,
+					   struct timing_source_data *data);
 
 /**
  * @brief Whether the stepper timing source requires rescheduling (keeps running
@@ -46,18 +70,21 @@ typedef bool (*stepper_timing_sources_requires_reschedule)(const struct device *
 /**
  * @brief Stop the stepper timing source.
  *
- * @param dev Pointer to the device structure.
+ * @param config Pointer to the timing source configuration structure.
+ * @param data Pointer to the timing source data structure.
  * @return 0 on success, or a negative error code on failure.
  */
-typedef int (*stepper_timing_source_stop)(const struct device *dev);
+typedef int (*stepper_timing_source_stop)(const struct timing_source_config *config,
+					  struct timing_source_data *data);
 
 /**
  * @brief Check if the stepper timing source is running.
  *
- * @param dev Pointer to the device structure.
+ * @param data Pointer to the timing source data structure.
  * @return true if the timing source is running, false otherwise.
  */
-typedef bool (*stepper_timing_source_is_running)(const struct device *dev);
+typedef bool (*stepper_timing_source_is_running)(const struct timing_source_config *config,
+						 struct timing_source_data *data);
 
 /**
  * @brief Stepper timing source API.
@@ -72,8 +99,8 @@ struct stepper_timing_source_api {
 };
 
 extern const struct stepper_timing_source_api step_work_timing_source_api;
-#ifdef CONFIG_STEP_DIR_STEPPER_COUNTER_TIMING
+#ifdef CONFIG_STEPPER_TIMING_SOURCES_COUNTER_TIMING
 extern const struct stepper_timing_source_api step_counter_timing_source_api;
-#endif /* CONFIG_STEP_DIR_STEPPER_COUNTER_TIMING */
+#endif /* CONFIG_STEPPER_TIMING_SOURCES_COUNTER_TIMING */
 
 #endif /* ZEPHYR_DRIVER_STEPPER_STEP_DIR_STEPPER_TIMING_SOURCE_H_ */

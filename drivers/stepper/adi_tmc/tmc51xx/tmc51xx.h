@@ -25,14 +25,7 @@ struct tmc51xx_config {
 	uint8_t comm_type;
 	const uint32_t gconf;
 	const uint32_t clock_frequency;
-	const uint16_t default_micro_step_res;
-	const int8_t sg_threshold;
-	const bool is_sg_enabled;
-	const uint32_t sg_velocity_check_interval_ms;
-	const uint32_t sg_threshold_velocity;
-#ifdef CONFIG_STEPPER_ADI_TMC51XX_RAMP_GEN
-	const struct tmc_ramp_generator_data default_ramp_config;
-#endif
+	const struct device **steppers;
 #if TMC51XX_BUS_UART
 	const struct gpio_dt_spec sw_sel_gpio;
 	uint8_t uart_addr;
@@ -44,9 +37,27 @@ struct tmc51xx_config {
 
 struct tmc51xx_data {
 	struct k_sem sem;
-	struct k_work_delayable stallguard_dwork;
-	struct k_work_delayable rampstat_callback_dwork;
+	const struct device *dev;
 	struct gpio_callback diag0_cb;
+	struct k_work_delayable rampstat_callback_dwork;
+};
+
+struct tmc51xx_stepper_config {
+	const uint8_t index;
+	const uint16_t default_micro_step_res;
+	const int8_t sg_threshold;
+	const bool is_sg_enabled;
+	const uint32_t sg_velocity_check_interval_ms;
+	const uint32_t sg_threshold_velocity;
+	/* parent controller required for bus communication */
+	const struct device *controller;
+#ifdef CONFIG_STEPPER_ADI_TMC51XX_RAMP_GEN
+	const struct tmc_ramp_generator_data default_ramp_config;
+#endif
+};
+
+struct tmc51xx_stepper_data {
+	struct k_work_delayable stallguard_dwork;
 	const struct device *stepper;
 	stepper_event_callback_t callback;
 	void *event_cb_user_data;
