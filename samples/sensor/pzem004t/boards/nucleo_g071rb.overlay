@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2025, Srishtik Bhandarkar
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		pzem004t = &pzem004t;
+	};
+};
+
+&arduino_serial {
+	status = "okay";
+
+	modbus: modbus {
+		compatible = "zephyr,modbus-serial";
+		status = "okay";
+		label = "MODBUS_1";
+
+		pzem004t: pzem004t {
+			compatible = "peacefair,pzem004t";
+		};
+	};
+};
