@@ -81,57 +81,42 @@ ENTRY(rom_entry);
 MEMORY {
   vector_base_text :
 	org = VECBASE_RESET_PADDR_SRAM,
-        len = MEM_VECBASE_LIT_SIZE
-  vector_int2_lit :
-	org = INTLEVEL2_VECTOR_PADDR_SRAM - MEM_VECT_LIT_SIZE,
-        len = MEM_VECT_LIT_SIZE
+	len = MEM_VECBASE_LIT_SIZE
   vector_int2_text :
-        org = INTLEVEL2_VECTOR_PADDR_SRAM,
-        len = MEM_VECT_TEXT_SIZE
-  vector_int3_lit :
-	org = INTLEVEL3_VECTOR_PADDR_SRAM - MEM_VECT_LIT_SIZE,
-        len = MEM_VECT_LIT_SIZE
+	org = INTLEVEL2_VECTOR_PADDR_SRAM,
+	len = MEM_VECT_TEXT_SIZE + MEM_VECT_LIT_SIZE
   vector_int3_text :
 	org = INTLEVEL3_VECTOR_PADDR_SRAM,
-        len = MEM_VECT_TEXT_SIZE
-  vector_int4_lit :
-	org = INTLEVEL4_VECTOR_PADDR_SRAM - MEM_VECT_LIT_SIZE,
-        len = MEM_VECT_LIT_SIZE
+	len = MEM_VECT_TEXT_SIZE + MEM_VECT_LIT_SIZE
   vector_int4_text :
 	org = INTLEVEL4_VECTOR_PADDR_SRAM,
-        len = MEM_VECT_TEXT_SIZE
-  vector_int7_lit :
-	org = INTLEVEL7_VECTOR_PADDR_SRAM - MEM_VECT_LIT_SIZE,
-        len = MEM_VECT_LIT_SIZE
+	len = MEM_VECT_TEXT_SIZE + MEM_VECT_LIT_SIZE
   vector_int7_text :
 	org = INTLEVEL7_VECTOR_PADDR_SRAM,
-        len = MEM_VECT_TEXT_SIZE
-  vector_kernel_lit :
-	org = KERNEL_VECTOR_PADDR_SRAM - MEM_VECT_LIT_SIZE,
-        len = MEM_VECT_LIT_SIZE
+	len = MEM_VECT_TEXT_SIZE + MEM_VECT_LIT_SIZE
   vector_kernel_text :
 	org = KERNEL_VECTOR_PADDR_SRAM,
-        len = MEM_VECT_TEXT_SIZE
+	len = MEM_VECT_TEXT_SIZE
   vector_user_lit :
 	org = USER_VECTOR_PADDR_SRAM - MEM_VECT_LIT_SIZE,
-        len = MEM_VECT_LIT_SIZE
+	len = MEM_VECT_LIT_SIZE
   vector_user_text :
 	org = USER_VECTOR_PADDR_SRAM,
-        len = MEM_VECT_TEXT_SIZE
+	len = MEM_VECT_TEXT_SIZE
   vector_double_lit :
 	org = DOUBLEEXC_VECTOR_PADDR_SRAM - MEM_VECT_LIT_SIZE,
-        len = MEM_VECT_LIT_SIZE
+	len = MEM_VECT_LIT_SIZE
   vector_double_text :
 	org = DOUBLEEXC_VECTOR_PADDR_SRAM,
-        len = MEM_VECT_TEXT_SIZE
+	len = MEM_VECT_TEXT_SIZE
 #ifdef CONFIG_XTENSA_MMU
   xtensa_vector_code :
 	org = DOUBLEEXC_VECTOR_PADDR_SRAM + MEM_VECT_TEXT_SIZE,
 	len = RAM_BASE - (DOUBLEEXC_VECTOR_PADDR_SRAM + MEM_VECT_TEXT_SIZE)
 #endif
   imr :
-        org = IMR_BOOT_LDR_TEXT_ENTRY_BASE,
-        len = 0x100000
+	org = IMR_BOOT_LDR_TEXT_ENTRY_BASE,
+	len = 0x100000
   ram :
 	org = RAM_BASE,
 	len = RAM_SIZE
@@ -149,8 +134,8 @@ MEMORY {
 	org = LP_SRAM_BASE,
 	len = LP_SRAM_SIZE
   noload :
-        org = NOLOAD_BASE,
-        len = NOLOAD_SIZE
+	org = NOLOAD_BASE,
+	len = NOLOAD_SIZE
 }
 
 SECTIONS {
@@ -194,61 +179,26 @@ SECTIONS {
     KEEP (*(.WindowVectors.text))
     _WindowVectors_text_end = .;
   } >vector_base_text
-  .Level2InterruptVector.literal : {
-    _Level2InterruptVector_literal_start = .;
-    *(.Level2InterruptVector.literal)
-    _Level2InterruptVector_literal_end = .;
-  } >vector_int2_lit
   .Level2InterruptVector.text : {
     _Level2InterruptVector_text_start = .;
     KEEP (*(.Level2InterruptVector.text))
     _Level2InterruptVector_text_end = .;
   } >vector_int2_text
-  .Level3InterruptVector.literal : {
-    _Level3InterruptVector_literal_start = .;
-    *(.Level3InterruptVector.literal)
-    _Level3InterruptVector_literal_end = .;
-  } >vector_int3_lit
   .Level3InterruptVector.text : {
     _Level3InterruptVector_text_start = .;
     KEEP (*(.Level3InterruptVector.text))
     _Level3InterruptVector_text_end = .;
   } >vector_int3_text
-  .Level4InterruptVector.literal : {
-    _Level4InterruptVector_literal_start = .;
-    *(.Level4InterruptVector.literal)
-    _Level4InterruptVector_literal_end = .;
-  } >vector_int4_lit
   .Level4InterruptVector.text : {
     _Level4InterruptVector_text_start = .;
     KEEP (*(.Level4InterruptVector.text))
     _Level4InterruptVector_text_end = .;
   } >vector_int4_text
-  .DebugExceptionVector.literal : {
-    _DebugExceptionVector_literal_start = .;
-    *(.DebugExceptionVector.literal)
-    _DebugExceptionVector_literal_end = .;
-  } >vector_int4_lit
-  .DebugExceptionVector.text : {
-    _DebugExceptionVector_text_start = .;
-    KEEP (*(.DebugExceptionVector.text))
-    _DebugExceptionVector_text_end = .;
-  } >vector_int4_text
-  .NMIExceptionVector.literal : {
-    _NMIExceptionVector_literal_start = .;
-    *(.NMIExceptionVector.literal)
-    _NMIExceptionVector_literal_end = .;
-  } >vector_int7_lit
   .NMIExceptionVector.text : {
     _NMIExceptionVector_text_start = .;
     KEEP (*(.NMIExceptionVector.text))
     _NMIExceptionVector_text_end = .;
   } >vector_int7_text
-  .KernelExceptionVector.literal : {
-    _KernelExceptionVector_literal_start = .;
-    *(.KernelExceptionVector.literal)
-    _KernelExceptionVector_literal_end = .;
-  } >vector_kernel_lit
   .KernelExceptionVector.text : {
     _KernelExceptionVector_text_start = .;
     KEEP (*(.KernelExceptionVector.text))
