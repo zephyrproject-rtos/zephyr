@@ -821,7 +821,26 @@ static int handle_info_get(const struct bt_mesh_model *mod, struct bt_mesh_msg_c
 	net_buf_simple_add_u8(&rsp, BLOB_BLOCK_SIZE_LOG_MIN);
 	net_buf_simple_add_u8(&rsp, BLOB_BLOCK_SIZE_LOG_MAX);
 	net_buf_simple_add_le16(&rsp, CONFIG_BT_MESH_BLOB_CHUNK_COUNT_MAX);
+
+#if defined(CONFIG_BT_MESH_LOW_POWER)
+	/* If friendship is established, then chunk size is according to friend's queue size.
+	 * Chunk size = (Queue size * Bytes per segment) - Opcode - Chunk Number - 8 byte MIC (max)
+	 */
+	if (bt_mesh.lpn.established && bt_mesh.lpn.queue_size > 0) {
+		uint16_t chunk_size = (bt_mesh.lpn.queue_size * 12) - 11;
+
+		chunk_size = MIN(chunk_size, BLOB_RX_CHUNK_SIZE);
+		net_buf_simple_add_le16(&rsp, chunk_size);
+		if (bt_mesh.lpn.queue_size <= 2) {
+			LOG_WRN("FndQ too small %u", bt_mesh.lpn.queue_size);
+		}
+	} else {
+		net_buf_simple_add_le16(&rsp, BLOB_RX_CHUNK_SIZE);
+	}
+#else
 	net_buf_simple_add_le16(&rsp, BLOB_RX_CHUNK_SIZE);
+#endif
+
 	net_buf_simple_add_le32(&rsp, CONFIG_BT_MESH_BLOB_SIZE_MAX);
 	net_buf_simple_add_le16(&rsp, MTU_SIZE_MAX);
 	net_buf_simple_add_u8(&rsp, BT_MESH_BLOB_XFER_MODE_ALL);
