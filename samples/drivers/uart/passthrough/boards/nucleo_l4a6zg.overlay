@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2025 Joel Guittet
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		uart,passthrough = &uartbb0;
+	};
+
+	uartbb0: uartbb0 {
+		compatible = "zephyr,uart-bitbang";
+		tx-gpios = <&gpiod 0 GPIO_ACTIVE_HIGH>;
+		rx-gpios = <&gpiod 1 GPIO_ACTIVE_HIGH>;
+		current-speed = <19200>;
+		data-bits = <8>;
+		stop-bits = "1";
+		parity = "none";
+		tx-timer = <&timers6>;
+		rx-timer = <&timers7>;
+		status = "okay";
+	};
+};
+
+&timers6 {
+	status = "okay";
+	counter {
+		status = "okay";
+	};
+};
+
+&timers7 {
+	status = "okay";
+	counter {
+		status = "okay";
+	};
+};
