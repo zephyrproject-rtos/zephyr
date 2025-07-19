@@ -1,16 +1,16 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /dts-v1/;
 
-#include <nxp/nxp_mimx95_19x19_a55.dtsi>
-#include "imx95_evk-pinctrl.dtsi"
+#include <nxp/nxp_mimx95_15x15_a55.dtsi>
+#include "imx95_evk_15x15-pinctrl.dtsi"
 
 / {
-	model = "NXP i.MX95 A55";
+	model = "NXP i.MX95 15x15 A55";
 	compatible = "fsl,mimx95";
 
 	chosen {
@@ -45,18 +45,6 @@
 	dram: memory@d0000000 {
 		reg = <0xd0000000 DT_SIZE_M(1)>;
 	};
-};
-
-&lpi2c5 {
-	pinctrl-0 = <&lpi2c5_default>;
-	pinctrl-names = "default";
-	status = "okay";
-};
-
-&lpi2c7 {
-	pinctrl-0 = <&lpi2c7_default>;
-	pinctrl-names = "default";
-	status = "okay";
 };
 
 &lpuart1 {
