@@ -1747,6 +1747,7 @@ static void update_bmca(int port,
 		bmca_data->master_priority.port_number = htons(port);
 		bmca_data->master_priority.src_port_id.port_number =
 			htons(port);
+		bmca_data->master_priority.steps_removed = gm_prio->steps_removed;
 	}
 
 	switch (bmca_data->info_is) {
