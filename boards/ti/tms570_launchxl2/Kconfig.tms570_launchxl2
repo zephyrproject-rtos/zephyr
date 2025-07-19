@@ -1,0 +1,6 @@
+# Copyright (c) 2025 ispace, inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_TMS570_LAUNCHXL2
+	select SOC_TI_TMS570LC43X if BOARD_TMS570_LAUNCHXL2
