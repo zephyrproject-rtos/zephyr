@@ -21,6 +21,7 @@ tests:
       - hifive_unmatched/fu740/u74
       - mimxrt1170_evk/mimxrt1176/cm7
       - mimxrt1170_evk/mimxrt1176/cm4
+      - nrf54lm20dk/nrf54lm20a/cpuapp
     filter: dt_compat_enabled("jedec,spi-nor") or dt_compat_enabled("jedec,mspi-nor")
     depends_on: spi
   sample.drivers.jesd216.nrf52840dk_spi:
@@ -29,6 +30,18 @@ tests:
     platform_allow: nrf52840dk/nrf52840
     integration_platforms:
       - nrf52840dk/nrf52840
+  sample.drivers.jesd216.nrf54lm20:
+    platform_allow:
+      - nrf54lm20dk/nrf54lm20a/cpuapp
+    integration_platforms:
+      - nrf54lm20dk/nrf54lm20a/cpuapp
+    harness_config:
+      fixture: external_flash
+      type: multi_line
+      ordered: true
+      regex:
+        - "sfdp-bfp ="
+        - "jedec-id ="
   sample.drivers.stm32.jesd216:
     filter: dt_compat_enabled("st,stm32-xspi-nor")
       or dt_compat_enabled("st,stm32-ospi-nor")

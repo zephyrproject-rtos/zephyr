@@ -14,7 +14,6 @@ tests:
       - nrf54l15dk/nrf54l05/cpuapp
       - nrf54l15dk/nrf54l10/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
-      - nrf54l20pdk/nrf54l20/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
     harness: console
     harness_config:
@@ -34,7 +33,6 @@ tests:
       - nrf54l15dk/nrf54l05/cpuapp
       - nrf54l15dk/nrf54l10/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
-      - nrf54l20pdk/nrf54l20/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
     extra_configs:
       - CONFIG_APP_USE_RETAINED_MEM=y
@@ -54,7 +52,6 @@ tests:
       - nrf54l15dk/nrf54l05/cpuapp
       - nrf54l15dk/nrf54l10/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
-      - nrf54l20pdk/nrf54l20/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
     extra_configs:
       - CONFIG_GRTC_WAKEUP_ENABLE=y
@@ -79,7 +76,6 @@ tests:
       - nrf54l15dk/nrf54l05/cpuapp
       - nrf54l15dk/nrf54l10/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
-      - nrf54l20pdk/nrf54l20/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
     extra_configs:
       - CONFIG_APP_USE_RETAINED_MEM=y

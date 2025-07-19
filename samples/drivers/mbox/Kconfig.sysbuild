@@ -21,7 +21,6 @@ config REMOTE_BOARD
 	default "nrf54h20dk/nrf54h20/cpuapp" if "$(BOARD)${BOARD_QUALIFIERS}" = "nrf54h20dk/nrf54h20/cpurad"
 	default "nrf54l09pdk/nrf54l09/cpuflpr" if $(BOARD) = "nrf54l09pdk"
 	default "nrf54l15dk/nrf54l15/cpuflpr" if $(BOARD) = "nrf54l15dk"
-	default "nrf54l20pdk/nrf54l20/cpuflpr" if $(BOARD) = "nrf54l20pdk"
 	default "nrf54lm20dk/nrf54lm20a/cpuflpr" if $(BOARD) = "nrf54lm20dk"
 	default "ophelia4ev/cpuflpr" if $(BOARD) = "ophelia4ev"
 	default "stm32h747i_disco/stm32h747xx/m4" if $(BOARD) = "stm32h747i_disco"
