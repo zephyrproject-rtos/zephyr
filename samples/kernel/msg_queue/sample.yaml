@@ -1,0 +1,17 @@
+sample:
+  description: A message queue usage sample
+  name: message queue sample
+common:
+  tags:
+    - message_queue
+tests:
+  sample.kernel.msgqueue:
+    integration_platforms:
+      - native_sim
+    tags:
+      - message_queue
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - ".*CBA012345"
