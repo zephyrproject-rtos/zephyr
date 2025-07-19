@@ -4,6 +4,7 @@ awscli
 canopen
 clang-format>=15.0.0
 elasticsearch<9
+esptool>=5.0.1
 exceptiongroup>=1.0.0rc8
 gcovr==6.0
 gitlint>=0.19.1
