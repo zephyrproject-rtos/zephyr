@@ -26,6 +26,12 @@ config LED_SHELL
 	help
 	  Enable LED shell for testing.
 
+config LED_BLINK_SOFTWARE
+	bool "LED Blink fallback"
+	help
+	  Provides a software implementation of LED blink API.
+	  This could be used when the LED controller doesn't support blinking.
+
 # zephyr-keep-sorted-start
 source "drivers/led/Kconfig.axp192"
 source "drivers/led/Kconfig.dac"
