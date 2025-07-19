@@ -159,6 +159,9 @@ class Binding:
     raw:
       The binding as an object parsed from YAML.
 
+    binding_type:
+      The type of device described by the binding.
+
     bus:
       If nodes with this binding's 'compatible' describe a bus, a string
       describing the bus type (like "i2c") or a list describing supported
@@ -234,6 +237,11 @@ class Binding:
         # inherited child binding definitions, so it has to be done
         # before initializing those.
         self.raw: dict = self._merge_includes(raw, self.path)
+
+        if path is not None:
+            type_match = re.search(r'dts/bindings/(\w+)',
+                                   str(path).replace('\\', '/'))
+            self.binding_type: str = type_match.group(1) if type_match else 'unknown'
 
         # Recursively initialize any child bindings. These don't
         # require a 'compatible', 'description' or 'title' to be well
