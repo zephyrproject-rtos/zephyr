@@ -348,7 +348,7 @@ struct rtio_sqe {
 		/** OP_DELAY */
 		struct {
 			k_timeout_t timeout; /**< Delay timeout. */
-			struct _timeout to; /**< Timeout struct. Used internally. */
+			struct k_timeout_record record; /**< Timeout record. Used internally. */
 		} delay;
 
 		/** OP_I2C_CONFIGURE */
