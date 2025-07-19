@@ -14,7 +14,7 @@ properties:
       WDI gpio. If WDI remains high or low longer than the timeout period,
       then reset is triggered. The reset has a typical delay time of 200 ms for
       TPS3823/4/8, TPS3823A. The timer clears when reset is asserted or
-      when WDI sees a rising edge or a falling edge. If unused, the WDI
+      when WDI sees a falling edge. If unused, the WDI
       connection must be high impedance to prevent it from causing a reset
       event.
 
