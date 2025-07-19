@@ -56,9 +56,14 @@ struct bt_aics *bt_aics_client_free_instance_get(void)
 int bt_aics_discover(struct bt_conn *conn, struct bt_aics *aics,
 		     const struct bt_aics_discover_param *param)
 {
+
+	if (aics == NULL) {
+		return -EINVAL;
+	}
+
 	aics->conn = conn;
 
-	if (aics != NULL && aics->cb != NULL && aics->cb->discover != NULL) {
+	if (aics->cb != NULL && aics->cb->discover != NULL) {
 		aics->cb->discover(aics, 0);
 	}
 
