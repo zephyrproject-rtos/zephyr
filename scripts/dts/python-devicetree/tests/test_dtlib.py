@@ -2166,9 +2166,9 @@ def test_reprs():
 
     assert re.fullmatch(r"DT\(filename='.*', include_path=.'foo', 'bar'.\)",
                         repr(dt))
-    assert re.fullmatch("<Property 'x' at '/' in '.*'>",
+    assert re.fullmatch("<Property 'x' on / in .*:5>",
                         repr(dt.root.props["x"]))
-    assert re.fullmatch("<Node /sub in '.*'>",
+    assert re.fullmatch("<Node /sub in .*:6>",
                         repr(dt.root.nodes["sub"]))
 
     dt = parse(dts, include_path=iter(("foo", "bar")))
