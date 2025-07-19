@@ -7,6 +7,11 @@ compatible: "st,stm32-fmc-mipi-dbi"
 include: ["mipi-dbi-controller.yaml"]
 
 properties:
+  bank-address:
+    type: int
+    description: |
+      Optional property to provide FMC Bank address.
+
   reset-gpios:
     type: phandle-array
     description: |
