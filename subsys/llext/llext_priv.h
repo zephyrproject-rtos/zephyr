@@ -30,6 +30,15 @@ int llext_copy_regions(struct llext_loader *ldr, struct llext *ext,
 void llext_free_regions(struct llext *ext);
 void llext_adjust_mmu_permissions(struct llext *ext);
 
+#ifdef CONFIG_HARVARD
+extern struct k_heap llext_instr_heap;
+extern struct k_heap llext_data_heap;
+#else
+extern struct k_heap llext_heap;
+#define llext_instr_heap llext_heap
+#define llext_data_heap  llext_heap
+#endif
+
 static inline bool llext_heap_is_inited(void)
 {
 #ifdef CONFIG_LLEXT_HEAP_DYNAMIC
@@ -41,34 +50,51 @@ static inline bool llext_heap_is_inited(void)
 #endif
 }
 
-static inline void *llext_alloc(size_t bytes)
+static inline void *llext_alloc_data(size_t bytes)
 {
-	extern struct k_heap llext_heap;
-
 	if (!llext_heap_is_inited()) {
 		return NULL;
 	}
-	return k_heap_alloc(&llext_heap, bytes, K_NO_WAIT);
+
+	/* Used for LLEXT metadata */
+	return k_heap_alloc(&llext_data_heap, bytes, K_NO_WAIT);
 }
 
-static inline void *llext_aligned_alloc(size_t align, size_t bytes)
+static inline void *llext_aligned_alloc_data(size_t align, size_t bytes)
 {
-	extern struct k_heap llext_heap;
-
 	if (!llext_heap_is_inited()) {
 		return NULL;
 	}
-	return k_heap_aligned_alloc(&llext_heap, align, bytes, K_NO_WAIT);
+
+	/* Used for LLEXT metadata OR non-executable section */
+	return k_heap_aligned_alloc(&llext_data_heap, align, bytes, K_NO_WAIT);
 }
 
 static inline void llext_free(void *ptr)
 {
-	extern struct k_heap llext_heap;
-
 	if (!llext_heap_is_inited()) {
 		return;
 	}
-	k_heap_free(&llext_heap, ptr);
+
+	k_heap_free(&llext_data_heap, ptr);
+}
+
+static inline void *llext_aligned_alloc_instr(size_t align, size_t bytes)
+{
+	if (!llext_heap_is_inited()) {
+		return NULL;
+	}
+
+	return k_heap_aligned_alloc(&llext_instr_heap, align, bytes, K_NO_WAIT);
+}
+
+static inline void llext_free_instr(void *ptr)
+{
+	if (!llext_heap_is_inited()) {
+		return;
+	}
+
+	k_heap_free(&llext_instr_heap, ptr);
 }
 
 /*
