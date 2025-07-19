@@ -90,7 +90,8 @@ if(NOT CONFIG_RISCV_ISA_EXT_M AND
 endif()
 
 list(APPEND TOOLCHAIN_C_FLAGS -mabi=${riscv_mabi} -march=${riscv_march})
-list(APPEND TOOLCHAIN_LD_FLAGS NO_SPLIT -mabi=${riscv_mabi} -march=${riscv_march})
+list(APPEND RISCV_LD_FLAGS -mabi=${riscv_mabi} -march=${riscv_march})
+list(APPEND TOOLCHAIN_GROUPED_LD_FLAGS RISCV_LD_FLAGS)
 
 # Flags not supported by llext linker
 # (regexps are supported and match whole word)
