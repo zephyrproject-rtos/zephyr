@@ -22,3 +22,9 @@ properties:
     type: int
     description: |
       Minimum time, in nanoseconds, the flash chip needs to recover after reset.
+
+  initial-soft-reset:
+    type: boolean
+    description: |
+      When set, the flash driver performs software reset of the flash chip
+      at initialization.
