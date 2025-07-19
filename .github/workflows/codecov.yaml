@@ -110,7 +110,7 @@ jobs:
           ./scripts/twister \
             -i --force-color -N -v --filter runnable -p ${{ matrix.platform }} --coverage \
             -T tests --coverage-tool gcovr -xCONFIG_TEST_EXTRA_STACK_SIZE=4096 -e nano \
-            --timeout-multiplier 2
+            --timeout-multiplier 2 --quarantine-list scripts/ci/quarantine.yaml
 
       - name: Print ccache stats
         if: always()
