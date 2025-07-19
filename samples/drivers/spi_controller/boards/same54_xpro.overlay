@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2025 Toney Abraham <toneyabraham37@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/
+{
+	aliases
+	{
+		spi0 = &sercom4;
+	};
+};
+
+&dmac {
+	status = "okay";
+};
+
+&sercom4 {
+	dmas = <&dmac 0 0x0d>,<&dmac 1 0x0c>;
+	dma-names = "tx","rx";
+};
