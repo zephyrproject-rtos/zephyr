@@ -6,6 +6,7 @@
 #include <arm/armv8-m.dtsi>
 #include <mem.h>
 #include <freq.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 
 / {
 	compatible = "renesas,r9a07g054";
@@ -32,6 +33,17 @@
 	};
 
 	soc {
+		adc: adc@40059000 {
+			compatible = "renesas,rz-adc-c";
+			reg = <0x40059000 DT_SIZE_K(1)>;
+			interrupts = <347 3>;
+			interrupt-names = "scanend";
+			#io-channel-cells = <1>;
+			vref-mv = <1800>;
+			channel-available-mask = <0xFF>;
+			status = "disabled";
+		};
+
 		pinctrl: pin-controller@41030000 {
 			compatible = "renesas,rzv-pinctrl";
 			reg = <0x41030000 DT_SIZE_K(64)>;
