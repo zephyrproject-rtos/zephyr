@@ -1,0 +1,42 @@
+/*
+ * Copyright 2022, 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		poweroff-wakeup-source = &rtc_highres;
+	};
+};
+
+&rtc {
+	status = "disabled";
+	rtc_highres: rtc_highres {
+		status = "okay";
+		wakeup-source;
+	};
+};
+
+/* MIMXRT595 poweroff corresponds to its full deep power down mode.
+ * In this mode, external supplies are powered off except for VDD_AO1V8.
+ * VDD_CORE (PMIC SW1 output), VDD1V8 (PMIC SW2 output), VDD_IO (PMIC LDO2 output)
+ * need to be turned off.
+ */
+&pca9420 {
+	pca9420_sw1: BUCK1 {
+		nxp,mode3-microvolt = < 0x0 >;
+	};
+
+	pca9420_sw2: BUCK2 {
+		nxp,mode3-microvolt = < 0x0 >;
+	};
+
+	pca9420_ldo1: LDO1 {
+		nxp,mode3-microvolt = < 1800000 >;
+	};
+
+	pca9420_ldo2: LDO2 {
+		nxp,mode3-microvolt = < 0x0 >;
+	};
+};

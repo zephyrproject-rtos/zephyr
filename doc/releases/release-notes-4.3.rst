@@ -90,6 +90,8 @@ New Samples
   Same as above for boards and drivers, this will also be recomputed at the time of the release.
  Just link the sample, further details go in the sample documentation itself.
 
+* :zephyr:code-sample:`nxp_poweroff`
+
 Other notable changes
 *********************
 

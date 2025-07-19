@@ -1,0 +1,22 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "NXP MCU POWER OFF DEMO"
+
+config COUNTER_WAKEUP_ENABLE
+	bool
+	select COUNTER
+	default y if BOARD_FRDM_MCXA153 || BOARD_FRDM_MCXA156 || \
+				BOARD_FRDM_MCXA166 || BOARD_FRDM_MCXA276 || \
+				BOARD_FRDM_MCXN947 || BOARD_MIMXRT595_EVK
+	help
+	  Use counter to wake up device from poweroff.
+
+config GPIO_WAKEUP_ENABLE
+	bool
+	select GPIO
+	default y if BOARD_FRDM_MCXN236
+	help
+	  Use gpio to wake up device from poweroff.
+
+source "Kconfig.zephyr"
