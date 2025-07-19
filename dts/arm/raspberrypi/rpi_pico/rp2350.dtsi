@@ -192,7 +192,7 @@
 
 		qmi: flash-controller@400d0000 {
 			compatible = "raspberrypi,pico-flash-controller";
-			reg = <0x400d0000 0xfc>;
+			reg = <0x400d0000 0x54>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -202,7 +202,6 @@
 				write-block-size = <1>;
 				erase-block-size = <DT_SIZE_K(4)>;
 			};
-			status = "disabled";
 		};
 
 		reset: reset-controller@40020000 {
