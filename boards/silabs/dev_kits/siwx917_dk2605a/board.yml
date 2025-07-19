@@ -1,0 +1,6 @@
+board:
+  name: siwx917_dk2605a
+  full_name: SiWx917 Wi-Fi 6 and Bluetooth LE SoC Dev Kit (BRD2605A)
+  vendor: silabs
+  socs:
+    - name: siwg917m111mgtba
