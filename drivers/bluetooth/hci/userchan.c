@@ -308,7 +308,7 @@ static int uc_open(const struct device *dev, bt_hci_recv_t recv)
 	k_thread_create(&rx_thread_data, rx_thread_stack,
 			K_KERNEL_STACK_SIZEOF(rx_thread_stack),
 			rx_thread, (void *)dev, NULL, NULL,
-			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO),
+			K_PRIO_COOP(CONFIG_BT_RX_HIGH_PRIO),
 			0, K_NO_WAIT);
 
 	LOG_DBG("returning");

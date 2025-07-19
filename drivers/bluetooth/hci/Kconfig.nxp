@@ -25,6 +25,7 @@ config HCI_NXP_SET_CAL_DATA_ANNEX100
 
 config HCI_NXP_RX_THREAD
 	bool "Process RX buffers in a dedicated thread"
+	select BT_DRV_RX_SUPPORT
 	help
 	  Some platforms receive the HCI RX buffers in ISR context.
 	  If enabled, the HCI RX message is queued by the ISR, and the message is processed
