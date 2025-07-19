@@ -195,5 +195,6 @@ source "drivers/modem/Kconfig.at_shell"
 
 source "drivers/modem/Kconfig.hl7800"
 source "drivers/modem/Kconfig.simcom-sim7080"
+source "drivers/modem/nordic/Kconfig"
 
 endif # MODEM
