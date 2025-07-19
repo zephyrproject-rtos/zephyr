@@ -9,9 +9,28 @@
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <soc.h>
+#include <zephyr/multi_heap/shared_multi_heap.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(memc_stm32_sdram, CONFIG_MEMC_LOG_LEVEL);
+
+#ifdef CONFIG_SHARED_MULTI_HEAP
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(sdram1), okay)
+	struct shared_multi_heap_region smh_sdram1 = {
+		.addr = DT_REG_ADDR(DT_NODELABEL(sdram1)),
+		.size = DT_REG_SIZE(DT_NODELABEL(sdram1)),
+		.attr = SMH_REG_ATTR_EXTERNAL,
+	};
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(sdram2), okay)
+	struct shared_multi_heap_region smh_sdram2 = {
+		.addr = DT_REG_ADDR(DT_NODELABEL(sdram2)),
+		.size = DT_REG_SIZE(DT_NODELABEL(sdram2)),
+		.attr = SMH_REG_ATTR_EXTERNAL,
+	};
+#endif
+#endif
 
 /** SDRAM controller register offset. */
 #define SDRAM_OFFSET 0x140U
@@ -83,6 +102,23 @@ static int memc_stm32_sdram_init(const struct device *dev)
 
 	/* program refresh count */
 	(void)HAL_SDRAM_ProgramRefreshRate(&sdram, config->refresh_rate);
+
+	#ifdef CONFIG_SHARED_MULTI_HEAP
+		shared_multi_heap_pool_init();
+		int ret;
+		#if DT_NODE_HAS_STATUS(DT_NODELABEL(sdram1), okay)
+			ret = shared_multi_heap_add(&smh_sdram1, NULL);
+			if (ret < 0) {
+				return ret;
+			}
+		#endif
+		#if DT_NODE_HAS_STATUS(DT_NODELABEL(sdram2), okay)
+			ret = shared_multi_heap_add(&smh_sdram2, NULL);
+			if (ret < 0) {
+				return ret;
+			}
+		#endif
+	#endif
 
 	return 0;
 }
