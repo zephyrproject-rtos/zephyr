@@ -328,6 +328,10 @@ New APIs and options
     * Optional boot mode (using retention boot mode) added to OS group reset command using
       :kconfig:option:`CONFIG_MCUMGR_GRP_OS_RESET_BOOT_MODE`.
 
+* Logging
+
+  * :kconfig:option:`CONFIG_LOG_BACKEND_SWO_SYNC_PACKETS`
+
 * Networking:
 
   * CoAP
