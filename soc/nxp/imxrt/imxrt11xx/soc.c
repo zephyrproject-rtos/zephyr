@@ -202,7 +202,6 @@ __weak void clock_init(void)
 	 * changed in the following PLL/PFD configuration code.
 	 */
 
-
 	static const clock_arm_pll_config_t armPllConfig = {
 		.postDivider = CONCAT(kCLOCK_PllPostDiv, DT_PROP(DT_NODELABEL(arm_pll), clock_div)),
 		.loopDivider = DT_PROP(DT_NODELABEL(arm_pll), clock_mult) * 2,
@@ -525,7 +524,7 @@ __weak void clock_init(void)
 #endif
 #endif
 
-#if CONFIG_IMX_USDHC
+#if defined(CONFIG_IMX_USDHC)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc1))
 	/* Configure USDHC1 using  SysPll2Pfd2*/
 	rootCfg.mux = kCLOCK_USDHC1_ClockRoot_MuxSysPll2Pfd2;
@@ -741,6 +740,25 @@ static int imxrt_init(void)
 
 	/* Initialize system clock */
 	clock_init();
+
+#if defined(CONFIG_IMX_USDHC) && defined(CONFIG_CPU_CORTEX_M7) &&                                  \
+	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc1)) ||                                          \
+	 DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc2)))
+	/* USDHC ERR050396 workaround */
+
+	/* ERR050396
+	 * Errata description:
+	 *  AXI to AHB conversion for CM7 AHBS port (port to access CM7 to TCM) is by a NIC301
+	 *  block, instead of XHB400 block. NIC301 doesn't support sparse write conversion.
+	 *  Any AXI to AHB conversion need XHB400, not by NIC. This will result in data corruption
+	 *  in case of AXI sparse write reaches the NIC301 ahead of AHBS.
+	 * Errata workaround:
+	 *  For uSDHC, don't set the bit#1 of IOMUXC_GPR28 (AXI transaction is cacheable), if write
+	 *  data to TCM aligned in 4 bytes; No such write access limitation for OCRAM or external
+	 *  RAM
+	 */
+	IOMUXC_GPR->GPR28 &= (~IOMUXC_GPR_GPR28_AWCACHE_USDHC_MASK);
+#endif
 
 	return 0;
 }
