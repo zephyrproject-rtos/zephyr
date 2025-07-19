@@ -19,8 +19,10 @@
  */
 static inline bool rtio_vrfy_sqe(struct rtio_sqe *sqe)
 {
-	if (sqe->iodev != NULL && K_SYSCALL_OBJ(sqe->iodev, K_OBJ_RTIO_IODEV)) {
-		return false;
+	if (sqe->iodev != NULL) {
+		if (K_SYSCALL_OBJ(sqe->iodev, K_OBJ_RTIO_IODEV)) {
+			return false;
+		}
 	}
 
 	bool valid_sqe = true;
@@ -133,3 +135,22 @@ static inline int z_vrfy_rtio_submit(struct rtio *r, uint32_t wait_count)
 	return z_impl_rtio_submit(r, wait_count);
 }
 #include <zephyr/syscalls/rtio_submit_mrsh.c>
+
+
+static inline struct rtio * z_vrfy_rtio_pool_acquire(struct rtio_pool *rpool)
+{
+	K_OOPS(K_SYSCALL_OBJ(rpool, K_OBJ_RTIO_POOL));
+
+	return z_impl_rtio_pool_acquire(rpool);
+}
+#include <zephyr/sysaclls/rtio_pool_acquire_mrsh.c>
+
+
+static inline void z_vrfy_rtio_pool_release(struct rtio_pool *rpool, struct rtio *r)
+{
+	K_OOPS(K_SYSCALL_OBJ(rpool, K_OBJ_RTIO_POOL));
+	K_OOPS(K_SYSCALL_OBJ(r, K_OBJ_RTIO));
+
+	z_impl_rtio_pool_release(rpool, r);
+}
+#include <zephyr/sysaclls/rtio_pool_acquire_mrsh.c>
