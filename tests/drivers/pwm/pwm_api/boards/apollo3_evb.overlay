@@ -1,0 +1,15 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2025 Ambiq
+ */
+
+/ {
+	aliases {
+		pwm-0 = &pwm2;
+	};
+};
+
+&pwm2 {
+	status = "okay";
+};
