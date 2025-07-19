@@ -26,13 +26,12 @@ config STEPPER_SHELL
 
 comment "Stepper Driver Common"
 
-rsource "step_dir/Kconfig"
+rsource "motion_controller/Kconfig"
 
 comment "Stepper Drivers"
 
 # zephyr-keep-sorted-start
 rsource "Kconfig.fake"
-rsource "Kconfig.gpio"
 rsource "adi_tmc/Kconfig"
 rsource "allegro/Kconfig"
 rsource "ti/Kconfig"

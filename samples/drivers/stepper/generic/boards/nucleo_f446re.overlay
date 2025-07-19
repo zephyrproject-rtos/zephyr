@@ -1,0 +1,37 @@
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		stepper = &tmc2209;
+	};
+
+	chosen {
+		zephyr,shell-uart = &usart2;
+	};
+};
+
+&timers2 {
+	status = "okay";
+
+	counter2: counter {
+		status = "okay";
+
+		pwm {
+			status = "disabled";
+		};
+	};
+};
+
+/ {
+
+	tmc2209: adi_tmc2209 {
+		status = "okay";
+		compatible = "adi,tmc2209";
+
+		step-gpios = <&gpioa 10 GPIO_ACTIVE_HIGH>; /* D2 */
+		dir-gpios = <&gpiob 3 GPIO_ACTIVE_HIGH>; /* D3 */
+		en-gpios = <&gpiob 5 GPIO_ACTIVE_HIGH>; /* D4 */
+
+		counter = <&counter2>;
+	};
+};
