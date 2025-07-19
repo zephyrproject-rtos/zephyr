@@ -147,6 +147,12 @@ static int memc_stm32_nor_psram_init(const struct device *dev)
 	  }                                                                     \
 	},
 
+#define BUILD_ASSERT_BANK_CONFIG(node_id)                                       \
+	BUILD_ASSERT(IS_FMC_NORSRAM_BANK(DT_REG_ADDR(node_id)),                 \
+		     "NSBank " STRINGIFY(DT_REG_ADDR(node_id)) " is not a NORSRAM bank");
+
+DT_INST_FOREACH_CHILD(0, BUILD_ASSERT_BANK_CONFIG);
+
 /** SRAM bank/s configuration. */
 static const struct memc_stm32_nor_psram_bank_config bank_config[] = {
 	DT_INST_FOREACH_CHILD(0, BANK_CONFIG)
