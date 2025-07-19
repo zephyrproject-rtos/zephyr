@@ -343,13 +343,6 @@
 			};
 		};
 
-		id_code: id_code@100a150 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0100a150 0x10>;
-			zephyr,memory-region = "ID_CODE";
-			status = "okay";
-		};
-
 		port_irq0: external-interrupt@40006000 {
 			compatible = "renesas,ra-external-interrupt";
 			reg = <0x40006000 0x1>;

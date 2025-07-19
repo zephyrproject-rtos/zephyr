@@ -960,7 +960,7 @@ static int uart_ra_sci_init(const struct device *dev)
 	data->fsp_config_extend.p_baud_setting = &data->fsp_baud_setting;
 #if defined(CONFIG_UART_ASYNC_API)
 	data->fsp_config.p_callback = uart_ra_sci_callback_adapter;
-	data->fsp_config.p_context = dev;
+	data->fsp_config.p_context = (void *)dev;
 	k_work_init_delayable(&data->tx_timeout, uart_ra_sci_tx_timeout_handler);
 	k_work_init_delayable(&data->rx_timeout_work, uart_ra_sci_rx_timeout_handler);
 #endif /* defined(CONFIG_UART_ASYNC_API) */
