@@ -11,6 +11,7 @@
 
 /delete-node/ &eth;
 /delete-node/ &mdio;
+/delete-node/ &qspi0;
 
 / {
 	soc {
