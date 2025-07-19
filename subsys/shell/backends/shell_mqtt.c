@@ -513,11 +513,13 @@ static void network_evt_handler(struct net_mgmt_event_callback *cb, uint64_t mgm
 {
 	struct shell_mqtt *sh = sh_mqtt;
 
-	if ((mgmt_event == NET_EVENT_L4_CONNECTED) &&
-	    (sh->network_state == SHELL_MQTT_NETWORK_DISCONNECTED)) {
-		LOG_WRN("Network %s", "connected");
-		sh->network_state = SHELL_MQTT_NETWORK_CONNECTED;
-		(void)sh_mqtt_work_reschedule(&sh->connect_dwork, K_SECONDS(1));
+	if (mgmt_event == NET_EVENT_L4_CONNECTED) {
+		(void)k_work_cancel(&sh->net_disconnected_work);
+		if (sh->network_state == SHELL_MQTT_NETWORK_DISCONNECTED) {
+			LOG_WRN("Network %s", "connected");
+			sh->network_state = SHELL_MQTT_NETWORK_CONNECTED;
+			(void)sh_mqtt_work_reschedule(&sh->connect_dwork, K_SECONDS(1));
+		}
 	} else if ((mgmt_event == NET_EVENT_L4_DISCONNECTED) &&
 		   (sh->network_state == SHELL_MQTT_NETWORK_CONNECTED)) {
 		(void)sh_mqtt_work_submit(&sh->net_disconnected_work);
