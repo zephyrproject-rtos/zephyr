@@ -1,0 +1,12 @@
+tests:
+  message_bus.zbus.async_listeners:
+    tags: zbus
+    integration_platforms:
+      - qemu_x86
+    platform_exclude:
+      - qemu_leon3
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "^.*?E: could not deliver notification to observer . Error code -12"
