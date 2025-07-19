@@ -8,6 +8,12 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_EXCEPTION_H_
 #define ZEPHYR_INCLUDE_ARCH_EXCEPTION_H_
 
+#if defined(CONFIG_LOG)
+#define EXCEPTION_DUMP(...) LOG_ERR(__VA_ARGS__)
+#else
+#define EXCEPTION_DUMP(format, ...) printk(format "\n", ##__VA_ARGS__)
+#endif
+
 #if defined(CONFIG_X86_64)
 #include <zephyr/arch/x86/intel64/exception.h>
 #elif defined(CONFIG_X86)

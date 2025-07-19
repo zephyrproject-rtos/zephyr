@@ -22,13 +22,18 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 #ifdef CONFIG_EXCEPTION_DEBUG
 static void dump_rx_esf(const struct arch_esf *esf)
 {
-	LOG_ERR(" ACC_L: 0x%08x  ACC_H:  0x%08x", esf->acc_l, esf->acc_h);
-	LOG_ERR(" r1:    0x%08x  r2:     0x%08x  r3:     0x%08x", esf->r1, esf->r2, esf->r3);
-	LOG_ERR(" r4:    0x%08x  r5:     0x%08x  r6:     0x%08x", esf->r4, esf->r5, esf->r6);
-	LOG_ERR(" r7:    0x%08x  r8:     0x%08x  r9:     0x%08x", esf->r7, esf->r8, esf->r9);
-	LOG_ERR(" r10:   0x%08x  r11:    0x%08x  r12:    0x%08x", esf->r10, esf->r11, esf->r12);
-	LOG_ERR(" r13:   0x%08x  r14:    0x%08x  r15:    0x%08x", esf->r13, esf->r14, esf->r15);
-	LOG_ERR(" PC:    0x%08x  PSW:    0x%08x", esf->entry_point, esf->psw);
+	EXCEPTION_DUMP(" ACC_L: 0x%08x  ACC_H:  0x%08x", esf->acc_l, esf->acc_h);
+	EXCEPTION_DUMP(" r1:    0x%08x  r2:     0x%08x  r3:     0x%08x",
+			esf->r1, esf->r2, esf->r3);
+	EXCEPTION_DUMP(" r4:    0x%08x  r5:     0x%08x  r6:     0x%08x",
+			esf->r4, esf->r5, esf->r6);
+	EXCEPTION_DUMP(" r7:    0x%08x  r8:     0x%08x  r9:     0x%08x",
+			esf->r7, esf->r8, esf->r9);
+	EXCEPTION_DUMP(" r10:   0x%08x  r11:    0x%08x  r12:    0x%08x",
+			esf->r10, esf->r11, esf->r12);
+	EXCEPTION_DUMP(" r13:   0x%08x  r14:    0x%08x  r15:    0x%08x",
+			esf->r13, esf->r14, esf->r15);
+	EXCEPTION_DUMP(" PC:    0x%08x  PSW:    0x%08x", esf->entry_point, esf->psw);
 }
 #endif
 
