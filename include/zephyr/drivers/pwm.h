@@ -70,12 +70,29 @@ extern "C" {
 /** @} */
 
 /**
+ * @name PWM interrupt configuration flags
+ * @anchor PWM_INTERRUPT_FLAGS
+ * @{
+ */
+
+#define PWM_INTERRUPT_TYPE_SHIFT	0U
+
+/** Configure the interrupt to trigger at the end of each PWM period */
+#define PWM_INTERRUPT_TYPE_PERIOD	(1U << PWM_INTERRUPT_TYPE_SHIFT)
+
+/** Configure the interrupt to trigger at a fault */
+#define PWM_INTERRUPT_TYPE_FAULT	(2U << PWM_INTERRUPT_TYPE_SHIFT)
+
+/** @} */
+
+/**
  * @brief Provides a type to hold PWM configuration flags.
  *
  * The lower 8 bits are used for standard flags.
  * The upper 8 bits are reserved for SoC specific flags.
  *
  * @see @ref PWM_CAPTURE_FLAGS.
+ * @see @ref PWM_INTERRUPT_FLAGS.
  */
 
 typedef uint16_t pwm_flags_t;
@@ -394,6 +411,23 @@ typedef void (*pwm_capture_callback_handler_t)(const struct device *dev,
 					       uint32_t pulse_cycles,
 					       int status, void *user_data);
 
+/**
+ * @brief PWM interrupt callback handler function signature
+ *
+ * @note The callback handler will be called in interrupt context.
+ *
+ * @note @kconfig{CONFIG_PWM_INTERRUPT} must be selected to enable PWM interrupt
+ * support.
+ *
+ * @param[in] dev PWM device instance.
+ * @param channel PWM channel.
+ * @param flags Interrupt type. See @ref PWM_INTERRUPT_FLAGS
+ * @param user_data User data passed to pwm_configure_interrupt()
+ *
+ */
+typedef void (*pwm_interrupt_callback_handler_t)(const struct device *dev, uint32_t channel,
+						 pwm_flags_t flags, void *user_data);
+
 /** @cond INTERNAL_HIDDEN */
 /**
  * @brief PWM driver API call to configure PWM pin period and pulse width.
@@ -434,6 +468,29 @@ typedef int (*pwm_disable_capture_t)(const struct device *dev,
 				     uint32_t channel);
 #endif /* CONFIG_PWM_CAPTURE */
 
+#ifdef CONFIG_PWM_INTERRUPT
+/**
+ * @brief PWM driver API to configure PWM interrupts
+ * @see pwm_configure_interrupt() for argument description
+ */
+typedef int (*pwm_configure_interrupt_t)(const struct device *dev,
+					 pwm_interrupt_callback_handler_t cb, void *user_data);
+
+/**
+ * @brief PWM driver API to enable PWM interrupts
+ * @see pwm_enable_interrupt() for arguments description
+ */
+typedef int (*pwm_enable_interrupt_t)(const struct device *dev, uint32_t channel,
+				      pwm_flags_t flags);
+
+/**
+ * @brief PWM driver API to disable PWM interrupts
+ * @see pwm_disable_interrupt() for arguments description
+ */
+typedef int (*pwm_disable_interrupt_t)(const struct device *dev, uint32_t channel,
+				       pwm_flags_t flags);
+#endif /* CONFIG_PWM_INTERRUPT */
+
 /** @brief PWM driver API definition. */
 __subsystem struct pwm_driver_api {
 	pwm_set_cycles_t set_cycles;
@@ -443,6 +500,11 @@ __subsystem struct pwm_driver_api {
 	pwm_enable_capture_t enable_capture;
 	pwm_disable_capture_t disable_capture;
 #endif /* CONFIG_PWM_CAPTURE */
+#ifdef CONFIG_PWM_INTERRUPT
+	pwm_configure_interrupt_t configure_interrupt;
+	pwm_enable_interrupt_t enable_interrupt;
+	pwm_disable_interrupt_t disable_interrupt;
+#endif /* CONFIG_PWM_INTERRUPT */
 };
 /** @endcond */
 
@@ -926,6 +988,97 @@ static inline int pwm_capture_nsec(const struct device *dev, uint32_t channel,
 
 	return 0;
 }
+
+#if defined(CONFIG_PWM_INTERRUPT) || defined(__DOXYGEN__)
+/**
+ * @brief Configure pwm interrupt callback
+ *
+ * After configuring the callback, the interrupts can be enabled or disabled
+ * using pwm_enable_interrupt() and pwm_disable_interrupt
+ *
+ * @note @kconfig{CONFIG_PWM_INTERRUPT} must be selected for this function to be
+ * available.
+ *
+ * @param[in] dev PWM device instance.
+ * @param[in] cb Callback handler function to be called upon interrupt
+ * @param[in] user_data User data to pass to the application callback handler
+ *                      function
+ *
+ * @retval 0 If successful
+ */
+static inline int pwm_configure_interrupt(const struct device *dev,
+					  pwm_interrupt_callback_handler_t cb, void *user_data)
+{
+	const struct pwm_driver_api *api = (const struct pwm_driver_api *)dev->api;
+
+	if (api->configure_interrupt == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->configure_interrupt(dev, cb, user_data);
+}
+#endif /* CONFIG_PWM_INTERRUPT */
+
+/**
+ * @brief Enable the PWM interrupts
+ *
+ * A callback must be configured using pwm_configure_interrupt() prior to
+ * calling this function
+ *
+ * @note @kconfig{CONFIG_PWM_INTERRUPT} must be selected for this function to be
+ * available.
+ *
+ * @param[in] dev PWM device instance.
+ * @param channel PWM channel.
+ * @param flags Interrupt(s) to be enabled. See @ref PWM_INTERRUPT_FLAGS
+ *
+ * @retval 0 If successful
+ */
+__syscall int pwm_enable_interrupt(const struct device *dev, uint32_t channel, pwm_flags_t flags);
+
+#ifdef CONFIG_PWM_INTERRUPT
+static inline int z_impl_pwm_enable_interrupt(const struct device *dev, uint32_t channel,
+					      pwm_flags_t flags)
+{
+	const struct pwm_driver_api *api =
+		(const struct pwm_driver_api *)dev->api;
+
+	if (api->enable_interrupt == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->enable_interrupt(dev, channel, flags);
+}
+#endif /* CONFIG_PWM_INTERRUPT */
+
+/**
+ * @brief Disable the PWM interrupts
+ *
+ * @note @kconfig{CONFIG_PWM_INTERRUPT} must be selected for this function to be
+ * available.
+ *
+ * @param[in] dev PWM device instance.
+ * @param channel PWM channel.
+ * @param flags Interrupt(s) to be disabled. See @ref PWM_INTERRUPT_FLAGS
+ *
+ * @retval 0 If successful
+ */
+__syscall int pwm_disable_interrupt(const struct device *dev, uint32_t channel, pwm_flags_t flags);
+
+#ifdef CONFIG_PWM_INTERRUPT
+static inline int z_impl_pwm_disable_interrupt(const struct device *dev, uint32_t channel,
+					       pwm_flags_t flags)
+{
+	const struct pwm_driver_api *api =
+		(const struct pwm_driver_api *)dev->api;
+
+	if (api->disable_interrupt == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->disable_interrupt(dev, channel, flags);
+}
+#endif /* CONFIG_PWM_INTERRUPT */
 
 /**
  * @brief Validate that the PWM device is ready.
