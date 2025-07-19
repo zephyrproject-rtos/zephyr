@@ -127,7 +127,6 @@ static int phy_mc_ksz8081_autonegotiate(const struct device *dev)
 			 */
 			return -ENETDOWN;
 		}
-		k_msleep(100);
 
 		ret = phy_mc_ksz8081_read(dev, MII_BMSR, &bmsr);
 		if (ret) {
