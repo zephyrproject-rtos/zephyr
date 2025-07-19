@@ -108,9 +108,9 @@ zephyr_i2c: &i2c1 {
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
-	vl53l1x: vl53l1x@52 {
+	vl53l1x: vl53l1x@29 {
 		compatible = "st,vl53l1x";
-		reg = <0x52>;
+		reg = <0x29>;
 		status = "okay";
 		xshut-gpios = <&gpiog 10 GPIO_ACTIVE_HIGH>;
 		int-gpios = <&gpiod 8 GPIO_ACTIVE_HIGH>;
