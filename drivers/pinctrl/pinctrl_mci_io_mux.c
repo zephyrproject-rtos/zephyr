@@ -59,6 +59,19 @@ static void configure_pin_props(uint32_t pin_mux, uint8_t gpio_idx)
 	/* Set slew rate */
 	set = IOMUX_PAD_GET_SLEW(pin_mux) << ((gpio_idx & 0xF) << 1);
 	*slew_reg = (*slew_reg & ~mask) | set;
+
+	/* Set sleep force enable bit */
+	mask = (0x1 << (gpio_idx & 0x1F));
+	/* Check if we should leave the pin unchanged in sleep mode */
+	if (IOMUX_PAD_GET_SLEEP_FORCE(pin_mux) == 2) {
+		/* Disable forcing output during sleep and leave the pin unchanged */
+		*sleep_force_en = (*sleep_force_en & ~mask);
+	} else {
+		/* Enable forcing output during sleep */
+		*sleep_force_en = (*sleep_force_en | mask);
+		set = (IOMUX_PAD_GET_SLEEP_FORCE_VAL(pin_mux) << (gpio_idx & 0x1F));
+		*sleep_force_val = (*sleep_force_val & ~mask) | set;
+	}
 }
 
 static void select_gpio_mode(uint8_t gpio_idx)
