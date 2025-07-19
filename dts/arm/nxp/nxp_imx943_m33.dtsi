@@ -169,6 +169,38 @@
 			status = "disabled";
 		};
 
+		flexio1: flexio@425c0000 {
+			compatible = "nxp,flexio";
+			reg = <0x425c0000 DT_SIZE_K(4)>;
+			interrupts = <48 0>;
+			clocks = <&scmi_clk IMX943_CLK_FLEXIO1>;
+			status = "disabled";
+		};
+
+		flexio2: flexio@425d0000 {
+			compatible = "nxp,flexio";
+			reg = <0x425d0000 DT_SIZE_K(4)>;
+			interrupts = <49 0>;
+			clocks = <&scmi_clk IMX943_CLK_FLEXIO2>;
+			status = "disabled";
+		};
+
+		flexio3: flexio@4d100000 {
+			compatible = "nxp,flexio";
+			reg = <0x4d100000 DT_SIZE_K(4)>;
+			interrupts = <50 0>;
+			clocks = <&scmi_clk IMX943_CLK_FLEXIO3>;
+			status = "disabled";
+		};
+
+		flexio4: flexio@4d110000 {
+			compatible = "nxp,flexio";
+			reg = <0x4d110000 DT_SIZE_K(4)>;
+			interrupts = <51 0>;
+			clocks = <&scmi_clk IMX943_CLK_FLEXIO4>;
+			status = "disabled";
+		};
+
 		gpio2: gpio@43810000 {
 			compatible = "nxp,imx-rgpio";
 			reg = <0x43810000 DT_SIZE_K(64)>;
