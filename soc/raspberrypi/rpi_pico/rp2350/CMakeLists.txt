@@ -7,4 +7,7 @@ zephyr_library_sources(soc.c)
 
 zephyr_include_directories(.)
 
-set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld CACHE INTERNAL "")
+# Add the image definition block if required
+zephyr_linker_sources(ROM_START rom_start.ld)
+
+set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "")
