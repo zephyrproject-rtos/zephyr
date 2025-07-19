@@ -303,6 +303,16 @@
 				status = "disabled";
 			};
 
+			/* Internal port */
+			enetc_psi3: ethernet@4cd40000 {
+				compatible = "nxp,imx-netc-psi";
+				reg = <0x4cd40000 0x10000>;
+				mac-index = <3>;
+				si-index = <3>;
+				phy-connection-type = "internal";
+				status = "disabled";
+			};
+
 			netc_ptp_clock0: ptp_clock@4cd80000 {
 				compatible = "nxp,netc-ptp-clock";
 				reg = <0x4cd80000 0x10000>;
@@ -322,6 +332,38 @@
 				reg = <0x4cdc0000 0x10000>;
 				clocks = <&scmi_clk IMX943_CLK_ENET>;
 				status = "disabled";
+			};
+
+			netc_switch: switch {
+				compatible = "nxp,netc-switch";
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				switch_port0: switch_port@0 {
+					reg = <0>;
+					status = "disabled";
+				};
+
+				switch_port1: switch_port@1 {
+					reg = <1>;
+					status = "disabled";
+				};
+
+				/* Parallel interface is muxed with enetc_psi0. */
+				switch_port2: switch_port@2 {
+					reg = <2>;
+					status = "disabled";
+				};
+
+				/* Internal port */
+				switch_port3: switch_port@3 {
+					reg = <3>;
+					ethernet = <&enetc_psi3>;
+					phy-connection-type = "internal";
+					tag-protocol = "netc";
+					status = "disabled";
+				};
 			};
 		};
 	};

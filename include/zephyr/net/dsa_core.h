@@ -75,6 +75,12 @@ extern "C" {
 	};                                                                                         \
 	DT_INST_FOREACH_CHILD_STATUS_OKAY_VARGS(n, fn, n);
 
+#define DSA_TAG_PROTO_NONE	0
+#define DSA_TAG_PROTO_NETC	1
+
+#define DSA_TAG_PROTO_BY_DT(node_id) \
+	(DT_ENUM_HAS_VALUE(node_id, tag_protocol, netc) ? DSA_TAG_PROTO_NETC : DSA_TAG_PROTO_NONE)
+
 /** DSA switch context data */
 struct dsa_switch_context {
 	/** Pointers to all DSA user network interfaces */
@@ -137,6 +143,8 @@ struct dsa_port_config {
 	const struct device *phy_dev;
 	/** PHY mode */
 	const char *phy_mode;
+	/** Tag protocol */
+	const int tag_proto;
 	/** Ethernet device connected to the port */
 	const struct device *ethernet_connection;
 	/** Instance specific config */
