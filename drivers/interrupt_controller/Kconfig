@@ -114,4 +114,6 @@ source "drivers/interrupt_controller/Kconfig.wch_pfic"
 
 source "drivers/interrupt_controller/Kconfig.wch_exti"
 
+source "drivers/interrupt_controller/Kconfig.tic"
+
 endmenu

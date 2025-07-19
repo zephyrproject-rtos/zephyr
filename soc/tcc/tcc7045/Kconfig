@@ -1,0 +1,18 @@
+# Copyright 2024 Hounjoung Rim <hounjoung@tsnlab.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_TCC7045
+	select ARM
+	select CPU_CORTEX_R5
+	select CPU_HAS_ARM_MPU
+	select VFP_DP_D16
+	select CPU_HAS_FPU
+	select ARMV7_R
+	select ARMV7_R_FP
+	select SOC_EARLY_INIT_HOOK
+	select TIC
+	select TCC_VCPTTC_TIMER
+	select CLOCK_CONTROL
+	select CLOCK_CONTROL_TCC_CCU
+	select SYSCON
+	select TIMEOUT_64BIT
