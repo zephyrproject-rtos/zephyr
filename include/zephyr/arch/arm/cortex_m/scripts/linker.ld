@@ -196,6 +196,7 @@ SECTIONS
  */
 #include <snippets-rom-sections.ld>
 #include <zephyr/linker/thread-local-storage.ld>
+#include <zephyr/linker/cplusplus-rom.ld>
 
     SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
 	{
@@ -221,9 +222,15 @@ SECTIONS
 	 * usually 4k aligned.
 	 */
 	. = ALIGN(4);
-	} GROUP_LINK_IN(ROMABLE_REGION)
 
-#include <zephyr/linker/cplusplus-rom.ld>
+#if !defined(CONFIG_XIP)
+	/*
+	 * RODATA must be the last section so that the size of the entire read
+	 * only area will be filled to a power of 2.
+	 */
+	MPU_ALIGN(ABSOLUTE(.) - __rom_region_start);
+#endif
+	} GROUP_LINK_IN(ROMABLE_REGION)
 
 #if defined(CONFIG_BUILD_ALIGN_LMA)
     /*
