@@ -730,6 +730,7 @@ static const struct _dmic_ops dmic_ops = {
 		.clk_src = PDM_CLK_SRC(idx),				     \
 		.mem_reg = DMM_DEV_TO_REG(PDM(idx)),			     \
 	};								     \
+	NRF_DT_CHECK_NODE_HAS_REQUIRED_MEMORY_REGIONS(PDM(idx));	     \
 	BUILD_ASSERT(PDM_CLK_SRC(idx) != ACLK ||			     \
 		     NRF_PDM_HAS_SELECTABLE_CLOCK,			     \
 		"Clock source ACLK is not available.");			     \
