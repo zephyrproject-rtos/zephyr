@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2025 Daniel Kampert
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+
+	aliases {
+		light-sensor = &apds9306;
+	};
+};
+
+&i2c0 {
+	apds9306: apds9306@52 {
+		status = "okay";
+		compatible = "avago,apds9306";
+		reg = <0x52>;
+		gain = <1>;
+		resolution = <13>;
+		measurement-period = <2000>;
+	};
+};
