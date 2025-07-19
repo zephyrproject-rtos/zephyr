@@ -62,6 +62,8 @@ int lll_prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 	prepare_param->prio = prio;
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 
+	prepare_param->defer = 0U;
+
 	err = lll_prepare_resolve(is_abort_cb, abort_cb, prepare_cb, prepare_param, 0U, 0U);
 
 	return err;
