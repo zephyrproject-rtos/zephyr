@@ -317,6 +317,7 @@ New APIs and options
     * :kconfig:option:`CONFIG_LV_Z_COLOR_MONO_HW_INVERSION`
 
 * LoRaWAN
+
    * :c:func:`lorawan_request_link_check`
 
 * Management
