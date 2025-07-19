@@ -165,6 +165,11 @@ mapping:
          type: seq
          sequence:
             - type: str
+       external-references-comment:
+         required: false
+         type: seq
+         sequence:
+            - type: str
   package-managers:
     required: false
     type: map
