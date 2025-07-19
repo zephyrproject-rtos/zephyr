@@ -56,6 +56,7 @@ config EC_HOST_CMD_BACKEND_SHI_NPCX
 	depends on DT_HAS_NUVOTON_NPCX_SHI_ENABLED || \
 		   DT_HAS_NUVOTON_NPCX_SHI_ENHANCED_ENABLED
 	select PINCTRL
+	select PM_DEVICE_RUNTIME
 	help
 	  This option enables the driver for SHI backend in the
 	  Nuvoton NPCX chip.
