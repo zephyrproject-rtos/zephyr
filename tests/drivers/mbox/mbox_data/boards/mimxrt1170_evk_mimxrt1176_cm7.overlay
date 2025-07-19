@@ -17,7 +17,7 @@
 		/delete-node/ mailbox@40c48000;
 
 		/* Attach MBOX driver to MU Unit */
-		mbox:mbox@40c48000 {
+		mbox: mbox@40c48000 {
 			compatible = "nxp,mbox-imx-mu";
 			reg = <0x40c48000 0x4000>;
 			interrupts = <118 0>;

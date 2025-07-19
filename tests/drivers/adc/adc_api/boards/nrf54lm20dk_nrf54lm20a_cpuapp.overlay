@@ -6,7 +6,7 @@
 
 / {
 	zephyr,user {
-		io-channels = <&adc 0>, <&adc 1> , <&adc 2>;
+		io-channels = <&adc 0>, <&adc 1>, <&adc 2>;
 	};
 };
 
@@ -20,7 +20,7 @@
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 10)>;
-		zephyr,input-positive = <NRF_SAADC_AIN1>;  /* P1.31 */
+		zephyr,input-positive = <NRF_SAADC_AIN1>;	/* P1.31 */
 		zephyr,resolution = <10>;
 	};
 
@@ -29,7 +29,7 @@
 		zephyr,gain = "ADC_GAIN_1_4";
 		zephyr,reference = "ADC_REF_EXTERNAL0";
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
-		zephyr,input-positive = <NRF_SAADC_AIN2>;  /* P1.30 */
+		zephyr,input-positive = <NRF_SAADC_AIN2>;	/* P1.30 */
 		zephyr,resolution = <12>;
 	};
 
@@ -38,7 +38,7 @@
 		zephyr,gain = "ADC_GAIN_2_3";
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 10)>;
-		zephyr,input-positive = <NRF_SAADC_AIN4>;  /* P1.06 */
+		zephyr,input-positive = <NRF_SAADC_AIN4>;	/* P1.06 */
 		zephyr,resolution = <10>;
 	};
 };

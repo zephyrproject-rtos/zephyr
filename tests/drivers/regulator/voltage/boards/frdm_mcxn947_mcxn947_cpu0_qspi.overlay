@@ -33,7 +33,7 @@
 	/* In this case, the LPADC reference source cannot be set to VREFO,
 	 * switch the reference source to VDD_ANA.
 	 */
-	voltage-ref= <2>;
+	voltage-ref = <2>;
 
 	channel@0 {
 		reg = <0>;

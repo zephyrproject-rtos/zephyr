@@ -61,7 +61,6 @@
 	};
 };
 
-
 &timers12 {
 	st,prescaler = <79>;
 	counter {

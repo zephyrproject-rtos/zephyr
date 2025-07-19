@@ -1,7 +1,7 @@
 / {
 	aliases {
 		dut-cache = &spi1;
-		dut-nocache= &spi3;
+		dut-nocache = &spi3;
 	};
 };
 
@@ -37,8 +37,7 @@
 	};
 };
 
-&spi1
-{
+&spi1 {
 	compatible = "nordic,nrf-spim";
 	status = "okay";
 	pinctrl-0 = <&spi1_default_alt>;
@@ -46,8 +45,7 @@
 	pinctrl-names = "default", "sleep";
 };
 
-&spi3
-{
+&spi3 {
 	compatible = "nordic,nrf-spim";
 	status = "okay";
 	pinctrl-0 = <&spi3_default_alt>;

@@ -18,7 +18,6 @@
 	};
 };
 
-
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb11>;
 	pinctrl-names = "default";

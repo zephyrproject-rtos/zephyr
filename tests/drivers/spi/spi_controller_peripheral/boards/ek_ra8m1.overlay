@@ -8,8 +8,8 @@
 		group1 {
 			/* MISO MOSI RSPCK SSL */
 			psels = <RA_PSEL(RA_PSEL_SPI, 7, 0)>,
-			<RA_PSEL(RA_PSEL_SPI, 7, 1)>,
-			<RA_PSEL(RA_PSEL_SPI, 7, 2)>;
+				<RA_PSEL(RA_PSEL_SPI, 7, 1)>,
+				<RA_PSEL(RA_PSEL_SPI, 7, 2)>;
 		};
 	};
 
@@ -17,9 +17,9 @@
 		group1 {
 			/* MISO MOSI RSPCK SSL */
 			psels = <RA_PSEL(RA_PSEL_SPI, 4, 10)>,
-			<RA_PSEL(RA_PSEL_SPI, 4, 11)>,
-			<RA_PSEL(RA_PSEL_SPI, 4, 12)>,
-			<RA_PSEL(RA_PSEL_SPI, 4, 13)>;
+				<RA_PSEL(RA_PSEL_SPI, 4, 11)>,
+				<RA_PSEL(RA_PSEL_SPI, 4, 12)>,
+				<RA_PSEL(RA_PSEL_SPI, 4, 13)>;
 		};
 	};
 };

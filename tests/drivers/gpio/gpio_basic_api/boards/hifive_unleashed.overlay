@@ -7,7 +7,7 @@
 / {
 	resources {
 		compatible = "test-gpio-basic-api";
-		out-gpios = <&gpio0 0 0>; /* GPIO-A */
-		in-gpios = <&gpio0 1 0>;  /* GPIO-B */
+		out-gpios = <&gpio0 0 0>;	/* GPIO-A */
+		in-gpios = <&gpio0 1 0>;	/* GPIO-B */
 	};
 };

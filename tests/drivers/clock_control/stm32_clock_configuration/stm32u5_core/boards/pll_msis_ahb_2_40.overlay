@@ -30,7 +30,7 @@
 
 &rcc {
 	clocks = <&pll1>;
-	ahb-prescaler = <2>;              /* Use AHB prescaler to reduce HCLK */
+	ahb-prescaler = <2>;	/* Use AHB prescaler to reduce HCLK */
 	clock-frequency = <DT_FREQ_M(40)>;
 	apb1-prescaler = <1>;
 	apb2-prescaler = <1>;

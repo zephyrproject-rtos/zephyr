@@ -8,9 +8,9 @@
 	mbox-consumer {
 		compatible = "vnd,mbox-consumer";
 		mboxes = <&mru4 0>, <&mru4 0>, <&mru4 1>, <&mru4 1>,
-			<&mru4 2>, <&mru4 2>, <&mru4 3>, <&mru4 3>;
+			 <&mru4 2>, <&mru4 2>, <&mru4 3>, <&mru4 3>;
 		mbox-names = "tx0", "rx0", "tx1", "rx1",
-			"tx2", "rx2", "tx3", "rx3";
+			     "tx2", "rx2", "tx3", "rx3";
 	};
 };
 

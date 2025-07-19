@@ -34,9 +34,9 @@
 			data-source = <&out_terminal>;
 			mute-control = "host-programmable";
 			automatic-gain-control =
-				"host-programmable" /* Primary */,
-				"host-programmable" /* Channel 1 */,
-				"host-programmable" /* Channel 2 */;
+						 "host-programmable",	/* Primary */
+						 "host-programmable",	/* Channel 1 */
+						 "host-programmable";	/* Channel 2 */
 		};
 
 		headphones_output: headphones {
@@ -65,8 +65,8 @@
 			data-source = <&mic_input>;
 			mute-control = "host-programmable";
 			automatic-gain-control =
-				"not-present" /* Primary */,
-				"host-programmable" /* Channel 1 */;
+						 "not-present",	/* Primary */
+						 "host-programmable";	/* Channel 1 */
 		};
 
 		in_terminal: in_terminal {

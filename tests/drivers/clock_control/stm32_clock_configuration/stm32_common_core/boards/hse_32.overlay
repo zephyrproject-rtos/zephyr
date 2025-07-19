@@ -10,7 +10,7 @@
  */
 
 &clk_hse {
-	clock-frequency = <DT_FREQ_M(32)>; /* 32MHz oscillator */
+	clock-frequency = <DT_FREQ_M(32)>;	/* 32MHz oscillator */
 	status = "okay";
 };
 

@@ -12,7 +12,7 @@
 
 &clk_msi {
 	status = "okay";
-	msi-range = <6>; /* default value */
+	msi-range = <6>;	/* default value */
 };
 
 &pll {

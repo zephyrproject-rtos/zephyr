@@ -6,7 +6,7 @@
 
 &comp {
 	main-mode = "SE";
-	psel = "AIN0"; /* P0.04 */
+	psel = "AIN0";	/* P0.04 */
 	refsel = "VDD";
 	sp-mode = "HIGH";
 	th-up = <34>;

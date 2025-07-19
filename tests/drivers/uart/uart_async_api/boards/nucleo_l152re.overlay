@@ -5,7 +5,7 @@ dut: &usart3 {
 	pinctrl-names = "default";
 	current-speed = <115200>;
 	dmas = <&dma1 2 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>,
-		<&dma1 3 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
+	       <&dma1 3 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
 	dma-names = "tx", "rx";
 	status = "okay";
 };
