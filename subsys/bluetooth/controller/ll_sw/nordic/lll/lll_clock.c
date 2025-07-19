@@ -127,7 +127,7 @@ int lll_hfclock_on_wait(void)
 
 int lll_hfclock_off(void)
 {
-	if (hf_refcnt < 1) {
+	if (atomic_get(&hf_refcnt) < 1) {
 		return -EALREADY;
 	}
 

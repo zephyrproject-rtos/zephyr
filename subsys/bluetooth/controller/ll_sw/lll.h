@@ -231,12 +231,16 @@ struct lll_hdr {
 
 struct lll_prepare_param {
 	uint32_t ticks_at_expire;
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+	uint32_t ticks_drift;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
 	uint32_t remainder;
 	uint16_t lazy;
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 	int8_t  prio;
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
-	uint8_t force;
+	uint8_t force:1;
+	uint8_t defer:1;
 	void *param;
 };
 
