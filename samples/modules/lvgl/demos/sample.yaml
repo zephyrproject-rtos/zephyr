@@ -41,6 +41,13 @@ tests:
   sample.modules.lvgl.demo_render:
     extra_configs:
       - CONFIG_LV_Z_DEMO_RENDER=y
+  sample.modules.lvgl.demo_benchmark.lvgl_auto:
+    extra_configs:
+      - CONFIG_LV_Z_DEMO_BENCHMARK=y
+      - CONFIG_LV_USE_DEMO_WIDGETS=y
+      - CONFIG_LV_Z_RUN_LVGL_ON_WORKQUEUE=y
+      - CONFIG_LV_Z_LVGL_WORKQUEUE_STACK_SIZE=8192
+      - CONFIG_LV_Z_LVGL_WORKQUEUE_PRIORITY=0
   sample.modules.lvgl.demos.st_b_lcd40_dsi1_mb1166:
     filter: dt_compat_enabled("orisetech,otm8009a")
     platform_allow: stm32h747i_disco/stm32h747xx/m7
