@@ -154,7 +154,9 @@ tests:
 
   # Test dynamic heap allocation
   llext.dynamic_heap:
-    arch_allow: arm
+    arch_allow:
+      - arm
+      - arc
     filter: not CONFIG_MPU and not CONFIG_MMU
     extra_conf_files: ['no_mem_protection.conf']
     extra_configs:

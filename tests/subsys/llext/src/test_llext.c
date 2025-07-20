@@ -659,17 +659,33 @@ ZTEST(llext, test_ext_syscall_fail)
 }
 
 #ifdef CONFIG_LLEXT_HEAP_DYNAMIC
+#ifdef CONFIG_HARVARD
+#define TEST_LLEXT_INSTR_HEAP_DYNAMIC_SIZE KB(16)
+static uint8_t llext_instr_heap_data[TEST_LLEXT_INSTR_HEAP_DYNAMIC_SIZE] Z_GENERIC_SECTION(.rodata);
+#define TEST_LLEXT_DATA_HEAP_DYNAMIC_SIZE KB(48)
+static uint8_t llext_data_heap_data[TEST_LLEXT_DATA_HEAP_DYNAMIC_SIZE];
+#else
 #define TEST_LLEXT_HEAP_DYNAMIC_SIZE KB(64)
 static uint8_t llext_heap_data[TEST_LLEXT_HEAP_DYNAMIC_SIZE];
+#endif
 #endif
 
 static void *ztest_suite_setup(void)
 {
 #ifdef CONFIG_LLEXT_HEAP_DYNAMIC
+#ifdef CONFIG_HARVARD
+	zassert_ok(llext_heap_init_harvard(llext_instr_heap_data, sizeof(llext_instr_heap_data),
+					   llext_data_heap_data, sizeof(llext_data_heap_data)));
+	LOG_INF("Allocated LLEXT dynamic instruction heap of size %uKB\n",
+		(unsigned int)(sizeof(llext_instr_heap_data) / KB(1)));
+	LOG_INF("Allocated LLEXT dynamic data heap of size %uKB\n",
+		(unsigned int)(sizeof(llext_data_heap_data) / KB(1)));
+#else
 	/* Test runtime allocation of the LLEXT loader heap */
 	zassert_ok(llext_heap_init(llext_heap_data, sizeof(llext_heap_data)));
 	LOG_INF("Allocated LLEXT dynamic heap of size %uKB\n",
 			(unsigned int)(sizeof(llext_heap_data)/KB(1)));
+#endif
 #endif
 	return NULL;
 }
