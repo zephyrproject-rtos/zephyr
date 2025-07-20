@@ -394,7 +394,7 @@ static void rfcomm_session_disconnect(struct bt_rfcomm_session *session)
 
 	session->state = BT_RFCOMM_STATE_DISCONNECTING;
 	rfcomm_send_disc(session, 0);
-	k_work_reschedule(&session->rtx_work, RFCOMM_DISC_TIMEOUT);
+	bt_work_reschedule(&session->rtx_work, RFCOMM_DISC_TIMEOUT);
 }
 
 static struct net_buf *rfcomm_make_uih_msg(struct bt_rfcomm_session *session,
@@ -475,7 +475,7 @@ static void rfcomm_dlc_init(struct bt_rfcomm_dlc *dlc,
 	k_work_init_delayable(&dlc->rtx_work, rfcomm_dlc_rtx_timeout);
 
 	/* Start a conn timer which includes auth as well */
-	k_work_schedule(&dlc->rtx_work, RFCOMM_CONN_TIMEOUT);
+	bt_work_schedule(&dlc->rtx_work, RFCOMM_CONN_TIMEOUT);
 
 	dlc->_next = session->dlcs;
 	session->dlcs = dlc;
@@ -644,7 +644,7 @@ static void rfcomm_dlc_tx_thread(void *p1, void *p2, void *p3)
 
 	if (dlc->state == BT_RFCOMM_STATE_DISCONNECTING) {
 		rfcomm_send_disc(dlc->session, dlc->dlci);
-		k_work_reschedule(&dlc->rtx_work, RFCOMM_DISC_TIMEOUT);
+		bt_work_reschedule(&dlc->rtx_work, RFCOMM_DISC_TIMEOUT);
 	} else {
 		rfcomm_dlc_destroy(dlc);
 	}
@@ -917,7 +917,7 @@ static int rfcomm_dlc_close(struct bt_rfcomm_dlc *dlc)
 	case BT_RFCOMM_STATE_CONFIG:
 		dlc->state = BT_RFCOMM_STATE_DISCONNECTING;
 		rfcomm_send_disc(dlc->session, dlc->dlci);
-		k_work_reschedule(&dlc->rtx_work, RFCOMM_DISC_TIMEOUT);
+		bt_work_reschedule(&dlc->rtx_work, RFCOMM_DISC_TIMEOUT);
 		break;
 	case BT_RFCOMM_STATE_CONNECTED:
 		dlc->state = BT_RFCOMM_STATE_DISCONNECTING;
@@ -1346,8 +1346,8 @@ static void rfcomm_handle_disc(struct bt_rfcomm_session *session, uint8_t dlci)
 
 		if (!session->dlcs) {
 			/* Start a session idle timer */
-			k_work_reschedule(&dlc->session->rtx_work,
-					  RFCOMM_IDLE_TIMEOUT);
+			bt_work_reschedule(&dlc->session->rtx_work,
+					   RFCOMM_IDLE_TIMEOUT);
 		}
 	} else {
 		/* Cancel idle timer */
@@ -1805,7 +1805,7 @@ int bt_rfcomm_dlc_disconnect(struct bt_rfcomm_dlc *dlc)
 		k_fifo_put(&dlc->tx_queue,
 			    net_buf_alloc(&dummy_pool, K_NO_WAIT));
 
-		k_work_reschedule(&dlc->rtx_work, RFCOMM_DISC_TIMEOUT);
+		bt_work_reschedule(&dlc->rtx_work, RFCOMM_DISC_TIMEOUT);
 
 		return 0;
 	}
