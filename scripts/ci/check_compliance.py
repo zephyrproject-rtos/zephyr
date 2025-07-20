@@ -723,58 +723,6 @@ class KconfigCheck(ComplianceTest):
             # Clean up the temporary directory
             shutil.rmtree(kconfiglib_dir)
 
-    def module_kconfigs(self, regex):
-        manifest = Manifest.from_file()
-        kconfigs = ""
-
-        for project in manifest.get_projects([]):
-            if not manifest.is_active(project):
-                continue
-
-            if not project.is_cloned():
-                continue
-
-            module_path = PurePath(project.abspath)
-            module_yml = module_path.joinpath('zephyr/module.yml')
-
-            if not Path(module_yml).is_file():
-                module_yml = module_path.joinpath('zephyr/module.yaml')
-
-            if Path(module_yml).is_file():
-                dirs = []
-
-                with Path(module_yml).open('r', encoding='utf-8') as f:
-                    meta = yaml.load(f.read(), Loader=SafeLoader)
-
-                for folder_type in ['samples', 'tests']:
-                    if folder_type in meta:
-                        for path_ext in meta[folder_type]:
-                            path_full = module_path.joinpath(path_ext)
-
-                            if Path(path_full).is_dir():
-                                dirs.append(":" + path_ext)
-
-                # Add ext. module root, if one is defined. For zephyr, the base one is added
-                # directly since in CMake it is added statically instead of by parsing the
-                # zephyr module file
-                if module_path == ZEPHYR_BASE:
-                    dirs.append(":" + str(module_path / "modules"))
-                elif 'build' in meta and 'settings' in meta['build'] and \
-                     'module_ext_root' in meta['build']['settings']:
-                    path_full = module_path.joinpath(meta['build']['settings']['module_ext_root'])
-
-                    if Path(path_full).is_dir():
-                        dirs.append(":" + meta['build']['settings']['module_ext_root'])
-
-            if len(dirs) > 0:
-                tmp_output = git("grep", "-I", "-h", "--perl-regexp", regex, "--",
-                                 *dirs, cwd=module_path, ignore_non_zero=True)
-
-                if len(tmp_output) > 0:
-                    kconfigs += tmp_output + "\n"
-
-        return kconfigs
-
     def get_logging_syms(self, kconf):
         # Returns a set() with the names of the Kconfig symbols generated with
         # logging template in samples/tests folders. The Kconfig symbols doesn't
@@ -795,8 +743,9 @@ class KconfigCheck(ComplianceTest):
         # Warning: Needs to work with both --perl-regexp and the 're' module.
         regex = r"^\s*(?:module\s*=\s*)([A-Z0-9_]+)\s*(?:#|$)"
 
-        # Grep samples/ and tests/ for symbol definitions in all modules
-        grep_stdout = self.module_kconfigs(regex)
+        # Grep samples/ and tests/ for symbol definitions
+        grep_stdout = git("grep", "-I", "-h", "--perl-regexp", regex, "--",
+                          ":samples", ":tests", cwd=ZEPHYR_BASE)
 
         names = re.findall(regex, grep_stdout, re.MULTILINE)
 
@@ -949,8 +898,9 @@ Found disallowed Kconfig symbol in SoC Kconfig files: {sym_name:35}
         # (?:...) is a non-capturing group.
         regex = r"^\s*(?:menu)?config\s*([A-Z0-9_]+)\s*(?:#|$)"
 
-        # Grep samples/ and tests/ for symbol definitions in all modules
-        grep_stdout = self.module_kconfigs(regex)
+        # Grep samples/ and tests/ for symbol definitions
+        grep_stdout = git("grep", "-I", "-h", "--perl-regexp", regex, "--",
+                          ":samples", ":tests", cwd=ZEPHYR_BASE)
 
         # Generate combined list of configs and choices from the main Kconfig tree.
         kconf_syms = kconf.unique_defined_syms + kconf.unique_choices
