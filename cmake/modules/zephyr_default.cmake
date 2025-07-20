@@ -101,10 +101,6 @@ list(APPEND zephyr_cmake_modules hwm_v2)
 list(APPEND zephyr_cmake_modules configuration_files)
 list(APPEND zephyr_cmake_modules generated_file_directories)
 
-# Include board specific device-tree flags before parsing.
-set(pre_dt_board "\${BOARD_DIR}/pre_dt_board.cmake" OPTIONAL)
-list(APPEND zephyr_cmake_modules "\${pre_dt_board}")
-
 # DTS should be close to kconfig because CONFIG_ variables from
 # kconfig and dts should be available at the same time.
 list(APPEND zephyr_cmake_modules dts)
