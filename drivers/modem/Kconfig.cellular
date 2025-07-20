@@ -40,8 +40,11 @@ config MODEM_CELLULAR
 if MODEM_CELLULAR
 
 config MODEM_CELLULAR_APN
-	string "APN"
+	string "Static APN"
 	default "internet"
+	help
+	  If left empty the driver will wait for the application to call
+	  cellular_set_apn() before it proceeds to the dial phase.
 
 config MODEM_CELLULAR_PERIODIC_SCRIPT_MS
 	int "Periodic script interval in milliseconds"
