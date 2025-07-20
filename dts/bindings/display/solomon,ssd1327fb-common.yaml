@@ -77,6 +77,6 @@ properties:
     type: boolean
     description: Turn on display color inverting
 
-  greyscale-table:
+  grayscale-table:
     type: uint8-array
     description: 15 elements array defines gamma settings for each brightness levels.
