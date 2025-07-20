@@ -57,6 +57,10 @@ option.
    large enough to allow the extension sections to be allocated with the
    alignment required by the architecture.
 
+.. note::
+   On Harvard architectures, applications must call
+   :c:func:`llext_heap_init_harvard`.
+
 .. _llext_kconfig_type:
 
 ELF object type
