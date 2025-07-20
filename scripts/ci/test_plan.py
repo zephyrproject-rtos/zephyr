@@ -102,7 +102,7 @@ class Tag:
 
 class Filters:
     def __init__(self, modified_files, ignore_path, alt_tags, testsuite_root,
-                 pull_request=False, platforms=[], detailed_test_id=True, quarantine_list=None, tc_roots_th=20):
+                 pull_request=False, platforms=[], detailed_test_id=False, quarantine_list=None, tc_roots_th=20):
         self.modified_files = modified_files
         self.testsuite_root = testsuite_root
         self.resolved_files = []
@@ -137,8 +137,8 @@ class Filters:
     def get_plan(self, options, integration=False, use_testsuite_root=True):
         fname = "_test_plan_partial.json"
         cmd = [f"{zephyr_base}/scripts/twister", "-c"] + options + ["--save-tests", fname ]
-        if not self.detailed_test_id:
-            cmd += ["--no-detailed-test-id"]
+        if self.detailed_test_id:
+            cmd += ["--detailed-test-id"]
         if self.testsuite_root and use_testsuite_root:
             for root in self.testsuite_root:
                 cmd+=["-T", root]
