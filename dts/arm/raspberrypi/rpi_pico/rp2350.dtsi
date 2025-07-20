@@ -207,8 +207,6 @@
 		reset: reset-controller@40020000 {
 			compatible = "raspberrypi,pico-reset";
 			reg = <0x40020000 DT_SIZE_K(4)>;
-			reg-width = <4>;
-			active-low = <0>;
 			#reset-cells = <1>;
 		};
 
