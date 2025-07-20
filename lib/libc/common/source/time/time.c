@@ -5,7 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <errno.h>
 #include <time.h>
 
 #include <zephyr/sys/clock.h>
@@ -17,7 +16,6 @@ time_t time(time_t *tloc)
 
 	ret = sys_clock_gettime(SYS_CLOCK_REALTIME, &ts);
 	if (ret < 0) {
-		errno = -ret;
 		return (time_t) -1;
 	}
 
