@@ -485,12 +485,13 @@ if __name__ == "__main__":
         n = ts.get("name")
         a = ts.get("arch")
         p = ts.get("platform")
+        t = ts.get("toolchain")
         if TwisterStatus(ts.get('status')) == TwisterStatus.ERROR:
             logging.info(f"Error found: {n} on {p} ({ts.get('reason')})")
             errors += 1
-        if (n, a, p,) not in dup_free_set:
+        if (n, a, p, t) not in dup_free_set:
             dup_free.append(ts)
-            dup_free_set.add((n, a, p,))
+            dup_free_set.add((n, a, p, t,))
 
     logging.info(f'Total tests to be run: {len(dup_free)}')
     with open(".testplan", "w") as tp:
