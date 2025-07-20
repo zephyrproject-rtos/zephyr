@@ -171,12 +171,8 @@ void nrf_wifi_event_proc_scan_done_zep(void *vif_ctx,
 	switch (vif_ctx_zep->scan_type) {
 #ifdef CONFIG_NET_L2_WIFI_MGMT
 	case SCAN_DISPLAY:
-		status = nrf_wifi_disp_scan_res_get_zep(vif_ctx_zep);
-		if (status != NRF_WIFI_STATUS_SUCCESS) {
-			LOG_ERR("%s: nrf_wifi_disp_scan_res_get_zep failed", __func__);
-			return;
-		}
-		vif_ctx_zep->scan_in_progress = false;
+		/* Schedule scan result processing in system workqueue to avoid deadlock */
+		k_work_submit(&vif_ctx_zep->disp_scan_res_work);
 		break;
 #endif /* CONFIG_NET_L2_WIFI_MGMT */
 #ifdef CONFIG_NRF70_STA_MODE
@@ -239,6 +235,26 @@ void nrf_wifi_scan_timeout_work(struct k_work *work)
 #endif /* CONFIG_NRF70_STA_MODE */
 	}
 
+	vif_ctx_zep->scan_in_progress = false;
+}
+
+void nrf_wifi_disp_scan_res_work_handler(struct k_work *work)
+{
+	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
+	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
+
+	vif_ctx_zep = CONTAINER_OF(work, struct nrf_wifi_vif_ctx_zep, disp_scan_res_work);
+
+	if (!vif_ctx_zep) {
+		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
+		return;
+	}
+
+	status = nrf_wifi_disp_scan_res_get_zep(vif_ctx_zep);
+	if (status != NRF_WIFI_STATUS_SUCCESS) {
+		LOG_ERR("%s: nrf_wifi_disp_scan_res_get_zep failed", __func__);
+		return;
+	}
 	vif_ctx_zep->scan_in_progress = false;
 }
 
@@ -837,6 +853,8 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 #else
 	k_work_init_delayable(&vif_ctx_zep->scan_timeout_work,
 			      nrf_wifi_scan_timeout_work);
+	k_work_init(&vif_ctx_zep->disp_scan_res_work,
+		    nrf_wifi_disp_scan_res_work_handler);
 #endif /* CONFIG_NRF70_RADIO_TEST */
 
 	k_mutex_init(&rpu_drv_priv_zep.rpu_ctx_zep.rpu_lock);

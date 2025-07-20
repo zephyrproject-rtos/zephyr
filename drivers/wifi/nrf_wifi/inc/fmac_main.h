@@ -52,6 +52,7 @@ struct nrf_wifi_vif_ctx_zep {
 	uint16_t max_bss_cnt;
 	unsigned int scan_res_cnt;
 	struct k_work_delayable scan_timeout_work;
+	struct k_work disp_scan_res_work;
 
 	struct net_eth_addr mac_addr;
 	int if_type;
