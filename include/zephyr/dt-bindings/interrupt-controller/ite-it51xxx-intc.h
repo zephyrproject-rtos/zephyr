@@ -59,6 +59,8 @@
 #define IT51XXX_IRQ_WU67       55
 /* Group 7 */
 #define IT51XXX_IRQ_TIMER2     58
+/* Group 8 */
+#define IT51XXX_IRQ_PMC3_IBF   67
 /* Group 9 */
 #define IT51XXX_IRQ_WU70       72
 #define IT51XXX_IRQ_WU71       73
