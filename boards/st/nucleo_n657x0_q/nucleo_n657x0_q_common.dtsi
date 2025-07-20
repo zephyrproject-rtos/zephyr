@@ -7,6 +7,7 @@
 #include <st/n6/stm32n657X0.dtsi>
 #include <st/n6/stm32n657x0hxq-pinctrl.dtsi>
 #include <zephyr/dt-bindings/flash_controller/xspi.h>
+#include <zephyr/dt-bindings/gpio/raspberrypi-csi-connector.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include "arduino_r3_connector.dtsi"
 
@@ -53,6 +54,15 @@
 		led1 = &blue_led;
 		led2 = &red_led;
 		sw0 = &user_button;
+	};
+
+	csi_connector: connector_csi {
+		compatible = "raspberrypi,csi-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <CSI_IO0  0 &gpioo 5  0>,
+			   <CSI_IO1  0 &gpioa 0  0>;
 	};
 };
 
@@ -109,6 +119,19 @@
 	status = "okay";
 };
 
+&ic17 {
+	pll-src = <1>;
+	ic-div = <4>;
+	status = "okay";
+};
+
+/* IC18 must be enabled for the 27MHz CSIPHY */
+&ic18 {
+	pll-src = <1>;
+	ic-div = <60>;
+	status = "okay";
+};
+
 &perck {
 	clocks = <&rcc STM32_SRC_HSI PER_SEL(0)>;
 	status = "okay";
@@ -149,6 +172,15 @@
 	clocks = <&rcc STM32_CLOCK(APB1, 21)>,
 		 <&rcc STM32_SRC_CKPER I2C1_SEL(1)>;
 	pinctrl-0 = <&i2c1_scl_ph9 &i2c1_sda_pc1>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
+};
+
+csi_i2c: &i2c2 {
+	clocks = <&rcc STM32_CLOCK(APB1, 22)>,
+		 <&rcc STM32_SRC_CKPER I2C2_SEL(1)>;
+	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb11>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	status = "okay";
@@ -255,5 +287,11 @@ zephyr_udc0: &usbotg_hs1 {
 				reg = <0x3ff0000 (DT_SIZE_K(64) - 32)>;
 			};
 		};
+	};
+};
+
+csi_interface: &dcmipp {
+	port {
+		csi_ep_in: endpoint {};
 	};
 };
