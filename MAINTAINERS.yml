@@ -4106,8 +4106,8 @@ Realtek EC Platforms:
 Release Notes:
   status: maintained
   maintainers:
-    - danieldegrasse
-    - dkalowsk
+    - cfriedt
+    - jhedberg
   collaborators:
     - kartben
   files:
