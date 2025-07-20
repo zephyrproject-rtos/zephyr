@@ -29,6 +29,7 @@ tests:
       - nrf54l15dk/nrf54l15/cpuflpr
       - nrf54lm20dk/nrf54lm20a/cpuapp
       - nrf9160dk/nrf9160
+      - sama7g54_ek
       - samd20_xpro
       - bl5340_dvk/nrf5340/cpuapp
       - gd32e103v_eval
