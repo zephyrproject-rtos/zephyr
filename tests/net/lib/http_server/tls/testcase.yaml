@@ -6,11 +6,17 @@ common:
     - net
     - server
     - socket
-  integration_platforms:
-    - native_sim
-    - qemu_x86
-  platform_allow:
-    - native_sim
-    - qemu_x86
 tests:
-  net.http.server.tls: {}
+  net.http.server.tls:
+    platform_allow:
+      - qemu_x86
+    integration_platforms:
+      - qemu_x86
+  net.http.server.tls.toolchain:
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    integration_toolchains:
+      - host
+      - llvm
