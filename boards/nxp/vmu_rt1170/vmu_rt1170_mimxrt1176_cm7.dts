@@ -506,10 +506,11 @@
 
 &enet1g_mdio {
 	status = "okay";
-	enet1g_phy: phy@1 {
-		status = "okay";
-		int-gpios = <&gpio5 10 GPIO_ACTIVE_HIGH>;
-	};
+};
+
+&enet1g_phy {
+	status = "okay";
+	int-gpios = <&gpio5 10 GPIO_ACTIVE_HIGH>;
 };
 
 zephyr_udc0: &usb1 {
