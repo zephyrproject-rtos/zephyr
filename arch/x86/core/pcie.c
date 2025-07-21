@@ -260,7 +260,7 @@ uint8_t arch_pcie_msi_vectors_allocate(unsigned int priority,
 		}
 
 		if ((irq == PCIE_CONF_INTR_IRQ_NONE) || (irq == -1)) {
-			return -1;
+			return 0;
 		}
 
 		vector = z_x86_allocate_vector(priority, prev_vector);
