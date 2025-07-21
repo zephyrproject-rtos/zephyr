@@ -65,6 +65,10 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w)
 
+* Settings
+
+   * :kconfig:option:`CONFIG_SETTINGS_TFM_ITS`
+
 .. zephyr-keep-sorted-stop
 
 New Boards
