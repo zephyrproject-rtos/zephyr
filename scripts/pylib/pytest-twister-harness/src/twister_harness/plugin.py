@@ -127,6 +127,11 @@ def pytest_addoption(parser: pytest.Parser):
         help='The scope for which `dut` and `shell` fixtures are shared.'
     )
     twister_harness_group.addoption(
+        '--required-build', action='append', default=[], metavar='PATH',
+        help='Required build directory / shared applications for the test. '
+             'May be given multiple times.'
+    )
+    twister_harness_group.addoption(
         '--twister-fixture', action='append', dest='fixtures', metavar='FIXTURE', default=[],
         help='Twister fixture supported by this platform. May be given multiple times.'
     )

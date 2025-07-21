@@ -11,12 +11,12 @@ from unittest import mock
 import os
 import pathlib
 import pytest
-import queue
 import re
 import subprocess
 import sys
 import yaml
 
+from collections import deque
 from contextlib import nullcontext
 from elftools.elf.sections import SymbolTableSection
 from typing import List
@@ -1490,7 +1490,7 @@ def test_projectbuilder_process(
     expected_skipped,
     expected_missing
 ):
-    def mock_pipeline_put(msg):
+    def mock_processing_queue_append(msg):
         if isinstance(pipeline_runtime_error, type) and \
            issubclass(pipeline_runtime_error, Exception):
             raise RuntimeError('Pipeline Error!')
@@ -1530,8 +1530,8 @@ def test_projectbuilder_process(
     pb.run = mock.Mock()
     pb.gather_metrics = mock.Mock(return_value=metrics_res)
 
-    pipeline_mock = mock.Mock(put=mock.Mock(side_effect=mock_pipeline_put))
-    done_mock = mock.Mock()
+    processing_queue_mock = mock.Mock(append=mock.Mock(side_effect=mock_processing_queue_append))
+    processing_ready_mock = mock.Mock()
     lock_mock = mock.Mock(
         __enter__=mock.Mock(return_value=(mock.Mock(), mock.Mock())),
         __exit__=mock.Mock(return_value=None)
@@ -1539,12 +1539,12 @@ def test_projectbuilder_process(
     results_mock = mock.Mock()
     results_mock.filtered_runtime = 0
 
-    pb.process(pipeline_mock, done_mock, message, lock_mock, results_mock)
+    pb.process(processing_queue_mock, processing_ready_mock, message, lock_mock, results_mock)
 
     assert all([log in caplog.text for log in expected_logs])
 
     if resulting_message:
-        pipeline_mock.put.assert_called_with(resulting_message)
+        processing_queue_mock.append.assert_called_with(resulting_message)
 
     assert pb.instance.status == expected_status
     assert pb.instance.reason == expected_reason
@@ -2513,18 +2513,17 @@ def test_twisterrunner_run(
     jobclient_mock = mock.Mock()
     jobclient_mock().name='JobClient'
 
-    pipeline_q = queue.LifoQueue()
-    done_q = queue.LifoQueue()
-    done_instance = mock.Mock(
+    processing_queue = deque()
+    processing_ready = {}
+    processing_instance = mock.Mock(
         metrics={'k': 'v2'},
         execution_time=30
     )
-    done_instance.name='dummy instance'
-    done_q.put(done_instance)
+    processing_instance.name='dummy instance'
+    processing_ready[processing_instance.name] = processing_instance
     manager_mock = mock.Mock()
-    manager_mock().LifoQueue = mock.Mock(
-        side_effect=iter([pipeline_q, done_q])
-    )
+    manager_mock().deque = mock.Mock(return_value=processing_queue)
+    manager_mock().get_dict = mock.Mock(return_value=processing_ready)
 
     results_mock = mock.Mock()
     results_mock().error = 1
@@ -2734,10 +2733,10 @@ def test_twisterrunner_add_tasks_to_queue(
     )
     tr.results = mock.Mock(iteration=0)
 
-    pipeline_mock = mock.Mock()
+    processing_queue_mock = mock.Mock()
 
     tr.add_tasks_to_queue(
-        pipeline_mock,
+        processing_queue_mock,
         build_only,
         test_only,
         retry_build_errors
@@ -2751,10 +2750,10 @@ def test_twisterrunner_add_tasks_to_queue(
     if retry_build_errors:
         tr.get_cmake_filter_stages.assert_any_call('some', mock.ANY)
 
-    print(pipeline_mock.put.call_args_list)
+    print(processing_queue_mock.append.call_args_list)
     print([mock.call(el) for el in expected_pipeline_elements])
 
-    assert pipeline_mock.put.call_args_list == \
+    assert processing_queue_mock.append.call_args_list == \
            [mock.call(el) for el in expected_pipeline_elements]
 
 
@@ -2769,12 +2768,12 @@ TESTDATA_19 = [
 )
 def test_twisterrunner_pipeline_mgr(mocked_jobserver, platform):
     counter = 0
-    def mock_get_nowait():
+    def mock_pop():
         nonlocal counter
         counter += 1
         if counter > 5:
-            raise queue.Empty()
-        return {'test': 'dummy'}
+            raise IndexError
+        return {'test': mock.Mock(required_applications=[])}
 
     instances = {}
     suites = []
@@ -2787,16 +2786,16 @@ def test_twisterrunner_pipeline_mgr(mocked_jobserver, platform):
         )
     )
 
-    pipeline_mock = mock.Mock()
-    pipeline_mock.get_nowait = mock.Mock(side_effect=mock_get_nowait)
-    done_queue_mock = mock.Mock()
+    processing_queue_mock = mock.Mock()
+    processing_queue_mock.pop = mock.Mock(side_effect=mock_pop)
+    processing_ready_mock = mock.Mock()
     lock_mock = mock.Mock()
     results_mock = mock.Mock()
 
     with mock.patch('sys.platform', platform), \
          mock.patch('twisterlib.runner.ProjectBuilder',\
                     return_value=mock.Mock()) as pb:
-        tr.pipeline_mgr(pipeline_mock, done_queue_mock, lock_mock, results_mock)
+        tr.pipeline_mgr(processing_queue_mock, processing_ready_mock, lock_mock, results_mock)
 
     assert len(pb().process.call_args_list) == 5
 
