@@ -3298,8 +3298,10 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 
 		if (th_seq(th) == conn->ack) {
 			if (len > 0) {
+				bool psh;
+
 data_recv:
-				bool psh = FL(&fl, &, PSH);
+				psh = FL(&fl, &, PSH);
 
 				verdict = tcp_data_received(conn, pkt, &len, psh);
 				if (verdict == NET_OK) {
