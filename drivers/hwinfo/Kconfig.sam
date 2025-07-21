@@ -1,0 +1,10 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config HWINFO_SAM
+	bool "Atmel SAM device ID"
+	default y
+	depends on SOC_FAMILY_ATMEL_SAM && !SOC_SERIES_SAM4L
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable Atmel SAM device ID hwinfo driver.
