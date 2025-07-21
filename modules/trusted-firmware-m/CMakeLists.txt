@@ -496,13 +496,17 @@ if (CONFIG_BUILD_WITH_TFM)
     endif()
   endif()
 
-  function(tfm_sign OUT_ARG SUFFIX HEADER TRAILER MAX_SECTORS INPUT_FILE OUTPUT_FILE)
+  function(tfm_sign OUT_ARG SUFFIX HEADER TRAILER CONFIRM MAX_SECTORS INPUT_FILE OUTPUT_FILE)
     if(HEADER AND TRAILER)
       set(pad_args --pad --pad-header)
     elseif(HEADER)
       set(pad_args --pad-header)
     elseif(TRAILER)
       set(pad_args --pad)
+    endif()
+    if(CONFIRM)
+      # --confirm imply PAD
+      set(confirm --confirm)
     endif()
     # Secure + Non-secure images are signed the same way as a secure only
     # build, but with a different layout file.
@@ -523,6 +527,7 @@ if (CONFIG_BUILD_WITH_TFM)
       --max-sectors ${MAX_SECTORS}
       -v ${CONFIG_TFM_IMAGE_VERSION_${SUFFIX}}
       ${pad_args}
+      ${confirm}
       ${HEX_ADDR_ARGS_${SUFFIX}}
       ${ADD_${SUFFIX}_IMAGE_MIN_VER}
       -s ${CONFIG_TFM_IMAGE_SECURITY_COUNTER}
@@ -561,7 +566,7 @@ if (CONFIG_BUILD_WITH_TFM)
     )
 
   elseif(CONFIG_TFM_MCUBOOT_IMAGE_NUMBER STREQUAL "1")
-    tfm_sign(sign_cmd S_NS TRUE TRUE ${S_NS_MAX_SECTORS} ${S_NS_FILE} ${S_NS_SIGNED_FILE})
+    tfm_sign(sign_cmd S_NS TRUE TRUE TRUE ${S_NS_MAX_SECTORS} ${S_NS_FILE} ${S_NS_SIGNED_FILE})
 
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
       COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/mergehex.py
@@ -586,12 +591,12 @@ if (CONFIG_BUILD_WITH_TFM)
 
   else()
     if (CONFIG_TFM_USE_NS_APP)
-      tfm_sign(sign_cmd_ns NS TRUE TRUE ${S_NS_MAX_SECTORS} ${NS_APP_FILE} ${NS_SIGNED_FILE})
+      tfm_sign(sign_cmd_ns NS TRUE TRUE TRUE ${S_NS_MAX_SECTORS} ${NS_APP_FILE} ${NS_SIGNED_FILE})
     else()
-      tfm_sign(sign_cmd_ns NS FALSE TRUE ${S_NS_MAX_SECTORS} ${NS_APP_FILE} ${NS_SIGNED_FILE})
+      tfm_sign(sign_cmd_ns NS FALSE TRUE TRUE ${S_NS_MAX_SECTORS} ${NS_APP_FILE} ${NS_SIGNED_FILE})
     endif()
 
-    tfm_sign(sign_cmd_s S TRUE TRUE ${S_NS_MAX_SECTORS} $<TARGET_PROPERTY:tfm,TFM_S_HEX_FILE>
+    tfm_sign(sign_cmd_s S TRUE TRUE TRUE ${S_NS_MAX_SECTORS} $<TARGET_PROPERTY:tfm,TFM_S_HEX_FILE>
       ${S_SIGNED_FILE})
 
     #Create and sign for concatenated binary image, should align with the TF-M BL2
