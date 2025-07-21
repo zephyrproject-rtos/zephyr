@@ -7,4 +7,15 @@ config SOC_FAMILY_MICROCHIP_SAM_D5X_E5X
 config SOC_FAMILY
 	default "microchip_sam_d5x_e5x" if SOC_FAMILY_MICROCHIP_SAM_D5X_E5X
 
+# List of Peripheral IPs available in SOC_FAMILY_MICROCHIP_SAM_D5X_E5X family
+if SOC_FAMILY_MICROCHIP_SAM_D5X_E5X
+
+config PINCTRL_MCHP_PORT_U2210_2_2_0
+	bool
+	default y
+	help
+	  Enable PORT pinctrl peripheral IP version 2.2.0 (U2210).
+
+endif # SOC_FAMILY_MICROCHIP_SAM_D5X_E5X
+
 rsource "*/Kconfig.soc"
