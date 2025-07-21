@@ -574,6 +574,14 @@
 			clocks = <&cmu CLOCK_ACMP0 CLOCK_BRANCH_EM01GRPACLK>;
 			status = "disabled";
 		};
+
+		acmp1: acmp@5900c000 {
+			compatible = "silabs,acmp";
+			reg = <0x5900c000 0x4000>;
+			interrupts = <42 2>;
+			clocks = <&cmu CLOCK_ACMP1 CLOCK_BRANCH_EM01GRPACLK>;
+			status = "disabled";
+		};
 	};
 
 	hwinfo: hwinfo {
