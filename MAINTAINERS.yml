@@ -3875,6 +3875,7 @@ Open AMP:
     - iuliana-prodan
   collaborators:
     - uLipe
+    - arnopo
   files:
     - lib/open-amp/
     - samples/subsys/ipc/openamp/
