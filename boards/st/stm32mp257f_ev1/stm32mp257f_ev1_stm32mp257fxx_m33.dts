@@ -45,6 +45,15 @@
 	};
 };
 
+&clk_hsi {
+	status = "okay";
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(40)>;
+	status = "okay";
+};
+
 &rcc {
 	clock-frequency = <DT_FREQ_M(400)>;
 };
