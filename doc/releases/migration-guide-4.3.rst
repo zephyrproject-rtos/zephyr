@@ -29,6 +29,8 @@ Kernel
 Boards
 ******
 
+* NXP ``frdm_mcxa166`` is renamed to ``frdm_mcxa346``.
+
 Device Drivers and Devicetree
 *****************************
 
