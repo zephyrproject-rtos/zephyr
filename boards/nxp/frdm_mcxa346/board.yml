@@ -1,0 +1,6 @@
+board:
+  name: frdm_mcxa346
+  full_name: FRDM-MCXA346
+  vendor: nxp
+  socs:
+  - name: mcxa346

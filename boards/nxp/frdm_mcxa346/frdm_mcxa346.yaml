@@ -4,8 +4,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-identifier: frdm_mcxa166
-name: NXP FRDM MCXA166
+identifier: frdm_mcxa346
+name: NXP FRDM MCXA346
 type: mcu
 arch: arm
 ram: 240

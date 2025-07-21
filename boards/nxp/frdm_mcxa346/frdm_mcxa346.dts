@@ -6,13 +6,13 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_mcxa166.dtsi>
-#include "frdm_mcxa166-pinctrl.dtsi"
+#include <nxp/nxp_mcxa346.dtsi>
+#include "frdm_mcxa346-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "NXP FRDM_MCXA166 board";
-	compatible = "nxp,mcxa166", "nxp,mcx";
+	model = "NXP FRDM_MCXA346 board";
+	compatible = "nxp,mcxa346", "nxp,mcx";
 
 	aliases{
 		led0 = &red_led;

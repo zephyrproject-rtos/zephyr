@@ -20,7 +20,7 @@ family:
   socs:
   - name: mcxa153
   - name: mcxa156
-  - name: mcxa166
+  - name: mcxa346
   - name: mcxa276
 - name: mcxw
   socs:
@@ -54,7 +54,7 @@ runners:
       - qualifiers:
         - mcxa156
       - qualifiers:
-        - mcxa166
+        - mcxa346
       - qualifiers:
         - mcxa276
       - qualifiers:
@@ -82,7 +82,7 @@ runners:
       - qualifiers:
         - mcxa156
       - qualifiers:
-        - mcxa166
+        - mcxa346
       - qualifiers:
         - mcxa276
       - qualifiers:
