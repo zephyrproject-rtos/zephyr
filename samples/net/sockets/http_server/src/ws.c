@@ -331,7 +331,7 @@ int ws_echo_setup(int ws_socket, struct http_request_ctx *request_ctx, void *use
 			K_NO_WAIT);
 
 	if (IS_ENABLED(CONFIG_THREAD_NAME)) {
-#define MAX_NAME_LEN sizeof("ws[xx]")
+#define MAX_NAME_LEN (sizeof("ws[xxxxxxxxxx]"))
 		char name[MAX_NAME_LEN];
 
 		snprintk(name, sizeof(name), "ws[%d]", slot);
