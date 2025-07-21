@@ -27,7 +27,7 @@ void modem_pipelink_attach(struct modem_pipelink *link,
 
 bool modem_pipelink_is_connected(struct modem_pipelink *link)
 {
-	bool connected;
+	bool connected = false;
 
 	K_SPINLOCK(&link->spinlock) {
 		connected = link->connected;
