@@ -40,4 +40,11 @@ endchoice
 
 endif # SERIAL
 
+config DCACHE_LINE_SIZE
+	default 32 if CPU_HAS_DCACHE
+
+config ICACHE_LINE_SIZE
+	default 32 if CPU_HAS_ICACHE
+
+
 endif # SOC_SERIES_AM261X
