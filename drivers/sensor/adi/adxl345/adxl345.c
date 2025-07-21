@@ -263,6 +263,32 @@ static int adxl345_attr_set_odr(const struct device *dev,
 				      ADXL345_ODR_MODE(odr));
 }
 
+#if !defined(CONFIG_ADXL345_STREAM)
+/*
+ * In RTIO the watermark i.e. FIFO entries, will be used to lay out the memory
+ * pool for elements to hold. Thus watermark needs to be defined in the
+ * devicetree. If by attriute setting a greater number of entries will be set,
+ * it would crash.
+ */
+static int adxl345_attr_set_watermark(const struct device *dev,
+				      enum sensor_channel chan,
+				      enum sensor_attribute attr,
+				      const struct sensor_value *val)
+{
+	struct adxl345_dev_data *data = dev->data;
+	uint8_t wm = val->val1;
+
+	if (wm < 1 || wm > ADXL345_MAX_FIFO_SIZE) {
+		return -EINVAL;
+	}
+
+	data->fifo_config.fifo_samples = wm;
+
+	return adxl345_reg_write_mask(dev, ADXL345_FIFO_CTL_REG,
+				      ADXL345_FIFO_CTL_SAMPLES_MSK, wm);
+}
+#endif
+
 static int adxl345_attr_set(const struct device *dev,
 			    enum sensor_channel chan,
 			    enum sensor_attribute attr,
@@ -273,6 +299,10 @@ static int adxl345_attr_set(const struct device *dev,
 		return adxl345_attr_set_odr(dev, chan, attr, val);
 	case SENSOR_ATTR_UPPER_THRESH:
 		return adxl345_reg_write_byte(dev, ADXL345_THRESH_ACT_REG, val->val1);
+#if !defined(CONFIG_ADXL345_STREAM)
+	case SENSOR_ATTR_MAX:
+		return adxl345_attr_set_watermark(dev, chan, attr, val);
+#endif
 	default:
 		return -ENOTSUP;
 	}
@@ -435,6 +465,7 @@ static int adxl345_init(const struct device *dev)
 	enum adxl345_fifo_mode fifo_mode;
 	uint8_t dev_id;
 	uint8_t int_en;
+	uint8_t fifo_samples;
 	uint8_t regval;
 	int rc;
 
@@ -483,6 +514,7 @@ static int adxl345_init(const struct device *dev)
 	}
 
 	fifo_mode = ADXL345_FIFO_BYPASSED;
+	fifo_samples = 0;
 	int_en = 0x00;
 #if defined(CONFIG_ADXL345_TRIGGER) || defined(CONFIG_ADXL345_STREAM)
 	if (adxl345_init_interrupt(dev)) {
@@ -491,6 +523,7 @@ static int adxl345_init(const struct device *dev)
 	} else {
 		LOG_INF("Set FIFO STREAMED mode");
 		fifo_mode = ADXL345_FIFO_STREAMED;
+		fifo_samples = cfg->fifo_samples;
 
 		/*
 		 * Currently, map all interrupts to the (same) gpio line
@@ -508,8 +541,7 @@ static int adxl345_init(const struct device *dev)
 		}
 	}
 #endif
-	rc = adxl345_configure_fifo(dev, fifo_mode, ADXL345_INT_UNSET,
-				    ADXL345_FIFO_CTL_SAMPLES_MSK);
+	rc = adxl345_configure_fifo(dev, fifo_mode, ADXL345_INT_UNSET, fifo_samples);
 	if (rc) {
 		return rc;
 	}
@@ -525,7 +557,8 @@ static int adxl345_init(const struct device *dev)
 #define ADXL345_CFG_IRQ(inst) \
 	.gpio_int1 = GPIO_DT_SPEC_INST_GET_OR(inst, int1_gpios, {0}),	\
 	.gpio_int2 = GPIO_DT_SPEC_INST_GET_OR(inst, int2_gpios, {0}),	\
-	.drdy_pad = DT_INST_PROP_OR(inst, drdy_pin, -1),
+	.drdy_pad = DT_INST_PROP_OR(inst, drdy_pin, -1),		\
+	.fifo_samples = DT_INST_PROP_OR(inst, fifo_watermark, 1),
 #else
 #define ADXL345_CFG_IRQ(inst)
 #endif /* CONFIG_ADXL345_TRIGGER */
@@ -562,9 +595,9 @@ static int adxl345_init(const struct device *dev)
 	COND_CODE_1(DT_INST_ON_BUS(inst, i2c),							   \
 				(ADXL345_RTIO_I2C_DEFINE(inst)),				   \
 				())								   \
-	RTIO_DEFINE(adxl345_rtio_ctx_##inst,							   \
-		    2 * DT_INST_PROP(inst, fifo_watermark) + 2,					   \
-		    2 * DT_INST_PROP(inst, fifo_watermark) + 2);
+	RTIO_DEFINE(adxl345_rtio_ctx_##inst,				\
+			4 * ADXL345_MAX_FIFO_SIZE,			\
+			4 * ADXL345_MAX_FIFO_SIZE);
 
 #define ADXL345_CONFIG(inst)									   \
 		.odr = DT_INST_PROP_OR(inst, odr, ADXL345_RATE_25HZ),

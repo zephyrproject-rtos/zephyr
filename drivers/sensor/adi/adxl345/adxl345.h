@@ -221,7 +221,6 @@ struct adxl345_dev_data {
 	uint8_t reg_fifo_status; /* FIFO status register */
 	uint64_t timestamp;
 	struct rtio *r_cb;
-	uint8_t fifo_watermark_irq;
 #endif /* CONFIG_ADXL345_STREAM */
 };
 
