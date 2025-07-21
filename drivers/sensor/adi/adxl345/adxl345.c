@@ -100,20 +100,20 @@ int adxl345_reg_read_byte(const struct device *dev, uint8_t addr, uint8_t *buf)
 }
 
 int adxl345_reg_write_mask(const struct device *dev,
-			       uint8_t reg_addr,
-			       uint8_t mask,
-			       uint8_t data)
+			   uint8_t reg_addr,
+			   uint8_t mask,
+			   uint8_t data)
 {
+	uint8_t regval, tmp;
 	int ret;
-	uint8_t tmp;
 
-	ret = adxl345_reg_read_byte(dev, reg_addr, &tmp);
+	ret = adxl345_reg_read_byte(dev, reg_addr, &regval);
 	if (ret) {
 		return ret;
 	}
 
-	tmp &= ~mask;
-	tmp |= data;
+	tmp = regval & ~mask;
+	tmp |= data & mask;
 
 	return adxl345_reg_write_byte(dev, reg_addr, tmp);
 }
