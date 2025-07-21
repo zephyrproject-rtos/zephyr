@@ -1785,6 +1785,23 @@ class ModulesMaintainers(ComplianceTest):
                 self.failure(f"Missing {maintainers_file} entry for: \"{area}\"")
 
 
+class ZephyrModuleFile(ComplianceTest):
+    """
+    Check that no zephyr/module.yml file has been added to the Zephyr repository
+    """
+    name = "ZephyrModuleFile"
+    doc = "Check that no zephyr/module.yml file has been added to the Zephyr repository."
+
+    def run(self):
+        module_files = [ZEPHYR_BASE / 'zephyr' / 'module.yml',
+                        ZEPHYR_BASE / 'zephyr' / 'module.yaml']
+
+        for file in module_files:
+            if os.path.exists(file):
+                self.failure("A zephyr module file has been added to the Zephyr repository")
+                break
+
+
 class YAMLLint(ComplianceTest):
     """
     YAMLLint
