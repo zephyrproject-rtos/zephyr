@@ -3954,7 +3954,7 @@ Open AMP:
     - uLipe
     - arnopo
   files:
-    - lib/open-amp/
+    - subsys/ipc/open-amp/
     - samples/subsys/ipc/openamp/
     - samples/subsys/ipc/openamp_rsc_table/
     - samples/subsys/ipc/rpmsg_service/
