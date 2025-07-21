@@ -31,6 +31,8 @@ Boards
 
 * mimxrt11x0: renamed lpadc1 to lpadc2 and renamed lpadc0 to lpadc1.
 
+* NXP ``frdm_mcxa166`` is renamed to ``frdm_mcxa346``.
+
 Device Drivers and Devicetree
 *****************************
 
