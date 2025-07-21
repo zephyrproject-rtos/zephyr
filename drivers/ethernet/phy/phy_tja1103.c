@@ -55,6 +55,13 @@ LOG_MODULE_REGISTER(phy_tja1103, CONFIG_PHY_LOG_LEVEL);
 #define TJA1103_ALWAYS_ACCESSIBLE               (0x801F)
 #define TJA1103_ALWAYS_ACCESSIBLE_FUSA_PASS_IRQ BIT(4)
 
+#define MASTER_SLAVE_DEFAULT 0
+#define MASTER_SLAVE_MASTER  1
+#define MASTER_SLAVE_SLAVE   2
+#define MASTER_SLAVE_AUTO    3
+
+#define SWITCH_WAIT_RANGE(min, max) ((min) + (sys_rand16_get() % ((max) - (min))))
+
 struct phy_tja1103_config {
 	const struct device *mdio;
 	struct gpio_dt_spec gpio_interrupt;
@@ -70,8 +77,7 @@ struct phy_tja1103_data {
 	struct gpio_callback phy_tja1103_int_callback;
 	void *cb_data;
 	struct k_work_delayable phy_work;
-	uint64_t start_time;
-	uint32_t wait_time;
+	k_timepoint_t timeout;
 };
 
 static inline int phy_tja1103_c22_read(const struct device *dev, uint16_t reg, uint16_t *val)
@@ -154,20 +160,30 @@ static int phy_tja1103_id(const struct device *dev, uint32_t *phy_id)
 static int phy_tja1103_get_link_state(const struct device *dev, struct phy_link_state *state)
 {
 	struct phy_tja1103_data *const data = dev->data;
+
+	state->speed = data->state.speed;
+	state->is_up = data->state.is_up;
+
+	return 0;
+}
+
+static int phy_tja1103_update_link_state(const struct device *dev, struct phy_link_state *state)
+{
+	struct phy_tja1103_data *const data = dev->data;
 	uint16_t val;
 	int rc = 0;
-
-	k_sem_take(&data->sem, K_FOREVER);
 
 	if (phy_tja1103_c45_read(dev, MDIO_MMD_VENDOR_SPECIFIC1, TJA1103_PHY_STATUS, &val) < 0) {
 		return -EIO;
 	}
 
-	k_sem_give(&data->sem);
+	k_sem_take(&data->sem, K_FOREVER);
 
 	/* TJA1103 Only supports 100BASE Full-duplex */
 	state->speed = LINK_FULL_100BASE;
 	state->is_up = (val & TJA1103_PHY_STATUS_LINK_STAT) != 0;
+
+	k_sem_give(&data->sem);
 
 	LOG_DBG("TJA1103 Link state %i", state->is_up);
 
@@ -216,22 +232,21 @@ static void phy_work_handler(struct k_work *work)
 	int rc;
 	const struct phy_tja1103_config *const cfg = dev->config;
 
-	rc = phy_tja1103_get_link_state(dev, &state);
+	rc = phy_tja1103_update_link_state(dev, &state);
 
 	/* Update link state and trigger callback if changed */
-	if (rc == 0 && (state.speed != data->state.speed || state.is_up != data->state.is_up)) {
+	if (rc == 0 && state.is_up != data->state.is_up) {
 		memcpy(&data->state, &state, sizeof(struct phy_link_state));
 		if (data->cb) {
 			data->cb(dev, &data->state, data->cb_data);
 		}
 	}
 
-	if (cfg->master_slave == 3 && !data->state.is_up &&
-	    k_uptime_delta(&data->start_time) > data->wait_time) {
+	if (cfg->master_slave == MASTER_SLAVE_AUTO && !data->state.is_up &&
+	    sys_timepoint_expired(data->timeout)) {
 		uint16_t val;
 
-		data->start_time = k_uptime_get();
-		data->wait_time = 1000 + (sys_rand32_get() % 2001);
+		data->timeout = sys_timepoint_calc(K_MSEC(SWITCH_WAIT_RANGE(1000, 3000)));
 
 		phy_tja1103_c45_read(dev, MDIO_MMD_PMAPMD, MDIO_PMA_PMD_BT1_CTRL, &val);
 
@@ -244,8 +259,8 @@ static void phy_work_handler(struct k_work *work)
 	if (cfg->gpio_interrupt.port) {
 		phy_tja1103_ack_irq(dev);
 
-		if (cfg->master_slave == 3 && !data->state.is_up) {
-			k_work_reschedule(&data->phy_work, K_MSEC(data->wait_time + 10));
+		if (cfg->master_slave == MASTER_SLAVE_AUTO && !data->state.is_up) {
+			k_work_reschedule(&data->phy_work, sys_timepoint_timeout(data->timeout));
 		}
 
 		return;
@@ -301,8 +316,7 @@ static void phy_tja1103_cfg_irq_poll(const struct device *dev)
 	}
 #endif
 
-	data->start_time = k_uptime_get();
-	data->wait_time = 1000 + (sys_rand32_get() % 4001);
+	data->timeout = sys_timepoint_calc(K_MSEC(SWITCH_WAIT_RANGE(1000, 3000)));
 
 	k_work_init_delayable(&data->phy_work, phy_work_handler);
 
@@ -350,9 +364,9 @@ static int phy_tja1103_init(const struct device *dev)
 	}
 
 	/* Change master/slave mode if need */
-	if (cfg->master_slave == 1) {
+	if (cfg->master_slave == MASTER_SLAVE_MASTER) {
 		val |= MDIO_PMA_PMD_BT1_CTRL_CFG_MST;
-	} else if (cfg->master_slave == 2) {
+	} else if (cfg->master_slave == MASTER_SLAVE_SLAVE) {
 		val &= ~MDIO_PMA_PMD_BT1_CTRL_CFG_MST;
 	}
 
@@ -388,11 +402,7 @@ static int phy_tja1103_link_cb_set(const struct device *dev, phy_callback_t cb, 
 	data->cb = cb;
 	data->cb_data = user_data;
 
-	rc = phy_tja1103_get_link_state(dev, &data->state);
-
-	if (rc == 0) {
-		data->cb(dev, &data->state, data->cb_data);
-	}
+	data->cb(dev, &data->state, data->cb_data);
 
 	return rc;
 }
