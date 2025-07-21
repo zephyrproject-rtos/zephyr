@@ -1,0 +1,11 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config HWINFO_NUMAKER
+	bool "NuMaker hwinfo"
+	default y
+	depends on SOC_SERIES_M46X || SOC_SERIES_M55M1X
+	select HWINFO_HAS_DRIVER
+	select HAS_NUMAKER_FMC
+	help
+	  Enable Nuvoton NuMaker hwinfo driver
