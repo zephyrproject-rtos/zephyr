@@ -538,84 +538,87 @@ if (CONFIG_BUILD_WITH_TFM)
       PARENT_SCOPE)
   endfunction()
 
-  set(MERGED_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_merged.hex)
-  set(S_NS_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_zephyr_ns.hex)
-  set(S_NS_SIGNED_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_zephyr_ns_signed.hex)
-  set(NS_SIGNED_FILE ${CMAKE_BINARY_DIR}/zephyr/zephyr_ns_signed.hex)
-  set(S_SIGNED_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_signed.hex)
+  set(MERGED_HEX_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_merged.hex)
+  set(S_NS_HEX_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_zephyr_ns.hex)
+  set(S_NS_SIGNED_HEX_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_zephyr_ns_signed.hex)
+  set(NS_SIGNED_HEX_FILE ${CMAKE_BINARY_DIR}/zephyr/zephyr_ns_signed.hex)
+  set(S_SIGNED_HEX_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_signed.hex)
 
   if (CONFIG_TFM_USE_NS_APP)
     # Use the TF-M NS binary as the Non-Secure application firmware image
-    set(NS_APP_FILE $<TARGET_PROPERTY:tfm,TFM_NS_HEX_FILE>)
+    set(NS_HEX_APP_FILE $<TARGET_PROPERTY:tfm,TFM_NS_HEX_FILE>)
   else()
     # Use the Zephyr binary as the Non-Secure application firmware image
-    set(NS_APP_FILE ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_HEX_NAME})
+    set(NS_HEX_APP_FILE ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_HEX_NAME})
   endif()
 
   if (NOT CONFIG_TFM_BL2)
     # Merge tfm_s and zephyr (NS) image to a single binary.
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
       COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/mergehex.py
-        -o ${MERGED_FILE}
+        -o ${MERGED_HEX_FILE}
         $<TARGET_PROPERTY:tfm,TFM_S_HEX_FILE>
-        ${NS_APP_FILE}
+        ${NS_HEX_APP_FILE}
     )
 
     set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts
-      ${MERGED_FILE}
+      ${MERGED_HEX_FILE}
     )
 
   elseif(CONFIG_TFM_MCUBOOT_IMAGE_NUMBER STREQUAL "1")
-    tfm_sign(sign_cmd S_NS TRUE TRUE TRUE ${S_NS_MAX_SECTORS} ${S_NS_FILE} ${S_NS_SIGNED_FILE})
+    tfm_sign(sign_cmd_s_ns_hex S_NS TRUE TRUE TRUE ${S_NS_MAX_SECTORS} ${S_NS_HEX_FILE}
+      ${S_NS_SIGNED_HEX_FILE})
 
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
       COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/mergehex.py
-        -o ${S_NS_FILE}
+        -o ${S_NS_HEX_FILE}
         $<TARGET_PROPERTY:tfm,TFM_S_HEX_FILE>
-        ${NS_APP_FILE}
+        ${NS_HEX_APP_FILE}
 
-      COMMAND ${sign_cmd}
+      COMMAND ${sign_cmd_s_ns_hex}
 
       COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/mergehex.py
-        -o ${MERGED_FILE}
+        -o ${MERGED_HEX_FILE}
         $<$<BOOL:${CONFIG_TFM_BL1}>:$<TARGET_PROPERTY:tfm,BL2_SIGNED_HEX_FILE>>
         $<$<NOT:$<BOOL:${CONFIG_TFM_BL1}>>:$<TARGET_PROPERTY:tfm,BL2_HEX_FILE>>
-        ${S_NS_SIGNED_FILE}
+        ${S_NS_SIGNED_HEX_FILE}
     )
 
     set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts
-      ${S_NS_FILE}
-      ${S_NS_SIGNED_FILE}
-      ${MERGED_FILE}
+      ${S_NS_HEX_FILE}
+      ${S_NS_SIGNED_HEX_FILE}
+      ${MERGED_HEX_FILE}
     )
 
   else()
     if (CONFIG_TFM_USE_NS_APP)
-      tfm_sign(sign_cmd_ns NS TRUE TRUE TRUE ${S_NS_MAX_SECTORS} ${NS_APP_FILE} ${NS_SIGNED_FILE})
+      tfm_sign(sign_cmd_ns_hex NS TRUE TRUE TRUE ${S_NS_MAX_SECTORS} ${NS_HEX_APP_FILE}
+        ${NS_SIGNED_HEX_FILE})
     else()
-      tfm_sign(sign_cmd_ns NS FALSE TRUE TRUE ${S_NS_MAX_SECTORS} ${NS_APP_FILE} ${NS_SIGNED_FILE})
+      tfm_sign(sign_cmd_ns NS FALSE TRUE TRUE ${S_NS_MAX_SECTORS} ${NS_HEX_APP_FILE}
+        ${NS_SIGNED_HEX_FILE})
     endif()
 
-    tfm_sign(sign_cmd_s S TRUE TRUE TRUE ${S_NS_MAX_SECTORS} $<TARGET_PROPERTY:tfm,TFM_S_HEX_FILE>
-      ${S_SIGNED_FILE})
+    tfm_sign(sign_cmd_s_hex S TRUE TRUE TRUE ${S_NS_MAX_SECTORS}
+      $<TARGET_PROPERTY:tfm,TFM_S_HEX_FILE> ${S_SIGNED_HEX_FILE})
 
     #Create and sign for concatenated binary image, should align with the TF-M BL2
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
-      COMMAND ${sign_cmd_ns}
-      COMMAND ${sign_cmd_s}
+      COMMAND ${sign_cmd_ns_hex}
+      COMMAND ${sign_cmd_s_hex}
 
       COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/mergehex.py
-        -o ${MERGED_FILE}
+        -o ${MERGED_HEX_FILE}
         $<$<BOOL:${CONFIG_TFM_BL1}>:$<TARGET_PROPERTY:tfm,BL2_SIGNED_HEX_FILE>>
         $<$<NOT:$<BOOL:${CONFIG_TFM_BL1}>>:$<TARGET_PROPERTY:tfm,BL2_HEX_FILE>>
-        ${S_SIGNED_FILE}
-        ${NS_SIGNED_FILE}
+        ${S_SIGNED_HEX_FILE}
+        ${NS_SIGNED_HEX_FILE}
     )
 
     set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts
-      ${S_SIGNED_FILE}
-      ${NS_SIGNED_FILE}
-      ${MERGED_FILE}
+      ${S_SIGNED_HEX_FILE}
+      ${NS_SIGNED_HEX_FILE}
+      ${MERGED_HEX_FILE}
     )
   endif()
 
