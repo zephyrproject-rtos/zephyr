@@ -1,10 +1,12 @@
-/* Copyright The Zephyr Project Contributors */
-/* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Header providing constants for Rockchip pinctrl bindings.
  *
- * Copyright (c) 2013 MundoReader S.L.
- * Author: Heiko Stuebner <heiko@sntech.de>
+ * Based on definitions from Linux kernel, but independently implemented
+ * for Zephyr compatibility.
  */
 
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_ROCKCHIP_PINCTRL_H_
