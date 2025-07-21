@@ -746,6 +746,43 @@ required_snippets: <list of needed snippets>
               - cdc-acm-console
               - user-snippet-example
 
+required_applications: <list of required applications> (default empty)
+    Specify a list of test applications that must be built before current test can run.
+    It enables sharing of built applications between test scenarios, allowing tests
+    to access build artifacts from other applications.
+
+    Each required application entry supports:
+    - ``name``: Test scenario identifier (required)
+    - ``platform``: Target platform (optional, defaults to current test's platform)
+
+    Required applications must be available in the source tree (specified with ``-T``
+    and/or ``-s`` options). When reusing build directories (e.g., with ``--no-clean``),
+    Twister can find required applications in the current build directory.
+
+    How it works:
+
+    - Twister builds the required applications first
+    - The main test application waits for required applications to complete
+    - Build directories of required applications are made available to the test harness
+    - For pytest harness, build directories are passed via ``--required-build`` arguments
+      and accessible through the ``required_build_dirs`` fixture
+
+    Example configuration:
+
+    .. code-block:: yaml
+
+        tests:
+          sample.required_app_demo:
+            harness: pytest
+            required_applications:
+              - name: sample.shared_app
+              - name: sample.basic.helloworld
+                platform: native_sim
+          sample.shared_app:
+            build_only: true
+
+    Limitations: Not supported with ``--subset`` or ``--runtime-artifact-cleanup`` options.
+
 expect_reboot: <True|False> (default False)
     Notify twister that the test scenario is expected to reboot while executing.
     When enabled, twister will suppress warnings about unexpected multiple runs
