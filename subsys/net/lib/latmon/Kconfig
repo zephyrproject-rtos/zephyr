@@ -9,6 +9,7 @@ config NET_LATMON
 	help
 	  This option enables the latency monitoring support for Zephyr
 
+if NET_LATMON
 config NET_LATMON_PORT
 	int "Latmon - Latmus communication port"
 	default 2306
@@ -56,3 +57,5 @@ module-dep = NET_LOG
 module-str = Latency monitoring Service
 module-help = This option enables the latency monitoring support for Zephyr
 source "subsys/net/Kconfig.template.log_config.net"
+
+endif
