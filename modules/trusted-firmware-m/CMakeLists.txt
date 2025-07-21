@@ -531,6 +531,8 @@ if (CONFIG_BUILD_WITH_TFM)
   set(S_NS_SIGNED_HEX_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_zephyr_ns_signed.hex)
   set(NS_SIGNED_HEX_FILE ${CMAKE_BINARY_DIR}/zephyr/zephyr_ns_signed.hex)
   set(S_SIGNED_HEX_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_signed.hex)
+  set(NS_SIGNED_BIN_FILE ${CMAKE_BINARY_DIR}/zephyr/zephyr_ns_signed.bin)
+  set(S_SIGNED_BIN_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_signed.bin)
 
   if (CONFIG_TFM_USE_NS_APP)
     # Use the TF-M NS binary as the Non-Secure application firmware image
@@ -580,16 +582,21 @@ if (CONFIG_BUILD_WITH_TFM)
   else()
     if (CONFIG_TFM_USE_NS_APP)
       tfm_sign(sign_cmd_ns_hex NS TRUE TRUE TRUE ${NS_MAX_SECTORS} ${NS_APP_FILE} ${NS_SIGNED_HEX_FILE})
+      tfm_sign(sign_cmd_ns_bin NS TRUE TRUE FALSE ${NS_MAX_SECTORS} ${NS_APP_FILE} ${NS_SIGNED_BIN_FILE})
     else()
       tfm_sign(sign_cmd_ns_hex NS FALSE TRUE TRUE ${NS_MAX_SECTORS} ${NS_APP_FILE} ${NS_SIGNED_HEX_FILE})
+      tfm_sign(sign_cmd_ns_bin NS FALSE TRUE FALSE ${NS_MAX_SECTORS} ${NS_APP_FILE} ${NS_SIGNED_BIN_FILE})
     endif()
 
     tfm_sign(sign_cmd_s_hex S TRUE TRUE TRUE ${S_MAX_SECTORS} $<TARGET_PROPERTY:tfm,TFM_S_HEX_FILE> ${S_SIGNED_HEX_FILE})
+    tfm_sign(sign_cmd_s_bin S TRUE TRUE FALSE ${S_MAX_SECTORS} $<TARGET_PROPERTY:tfm,TFM_S_BIN_FILE> ${S_SIGNED_BIN_FILE})
 
     #Create and sign for concatenated binary image, should align with the TF-M BL2
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
       COMMAND ${sign_cmd_ns_hex}
+      COMMAND ${sign_cmd_ns_bin}
       COMMAND ${sign_cmd_s_hex}
+      COMMAND ${sign_cmd_s_bin}
 
       COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/mergehex.py
         -o ${MERGED_HEX_FILE}
@@ -601,7 +608,9 @@ if (CONFIG_BUILD_WITH_TFM)
 
     set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts
       ${S_SIGNED_HEX_FILE}
+      ${S_SIGNED_BIN_FILE}
       ${NS_SIGNED_HEX_FILE}
+      ${NS_SIGNED_BIN_FILE}
       ${MERGED_HEX_FILE}
     )
   endif()
