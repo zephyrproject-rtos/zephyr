@@ -17,6 +17,8 @@ extern "C" {
 /**
  * @brief Modem Pipe
  * @defgroup modem_pipe Modem Pipe
+ * @since 3.5
+ * @version 1.0.0
  * @ingroup modem
  * @{
  */
