@@ -2805,7 +2805,9 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 		/* send ACK for non-RST packet */
 		if (FL(&fl, &, RST)) {
 			net_stats_update_tcp_seg_rsterr(net_pkt_iface(pkt));
-		} else if ((len > 0) || FL(&fl, &, FIN)) {
+		} else if ((len > 0) || FL(&fl, &, FIN) ||
+			   /* Keep-alive probe */
+			   ((len == 0) && FL(&fl, &, ACK))) {
 			tcp_out(conn, ACK);
 		}
 		k_mutex_unlock(&conn->lock);
