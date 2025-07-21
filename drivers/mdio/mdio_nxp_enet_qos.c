@@ -32,6 +32,7 @@ struct mdio_transaction {
 	};
 	uint8_t portaddr;
 	uint8_t regaddr;
+	uint16_t regaddr_c45;
 	enet_qos_t *base;
 	struct k_mutex *mdio_bus_mutex;
 };
@@ -44,7 +45,7 @@ static bool check_busy(enet_qos_t *base)
 	return ENET_QOS_REG_GET(MAC_MDIO_ADDRESS, GB, val);
 }
 
-static int do_transaction(struct mdio_transaction *mdio)
+static int do_transaction(struct mdio_transaction *mdio, bool clause45)
 {
 	enet_qos_t *base = mdio->base;
 	uint8_t goc_1_code;
@@ -52,24 +53,45 @@ static int do_transaction(struct mdio_transaction *mdio)
 
 	k_mutex_lock(mdio->mdio_bus_mutex, K_FOREVER);
 
-	if (mdio->op == MDIO_OP_C22_WRITE) {
-		base->MAC_MDIO_DATA =
-			/* Prepare the data to be written */
-			ENET_QOS_REG_PREP(MAC_MDIO_DATA, GD, mdio->write_data);
-		goc_1_code = 0b0;
-	} else if (mdio->op == MDIO_OP_C22_READ) {
-		goc_1_code = 0b1;
+	if (clause45) {
+		if (mdio->op == MDIO_OP_C45_WRITE) {
+			goc_1_code = 0b0;
+			base->MAC_MDIO_DATA =
+				/* Prepare the data and regaddr to be written */
+				ENET_QOS_REG_PREP(MAC_MDIO_DATA, GD, mdio->write_data) |
+				ENET_QOS_REG_PREP(MAC_MDIO_DATA, RA, mdio->regaddr_c45);
+		} else if (mdio->op == MDIO_OP_C45_READ) {
+			goc_1_code = 0b1;
+			base->MAC_MDIO_DATA =
+				/* Prepare the regaddr to be written */
+				ENET_QOS_REG_PREP(MAC_MDIO_DATA, RA, mdio->regaddr_c45);
+		} else {
+			ret = -EINVAL;
+			goto done;
+		}
 	} else {
-		ret = -EINVAL;
-		goto done;
+		if (mdio->op == MDIO_OP_C22_WRITE) {
+			base->MAC_MDIO_DATA =
+				/* Prepare the data to be written */
+				ENET_QOS_REG_PREP(MAC_MDIO_DATA, GD, mdio->write_data);
+			goc_1_code = 0b0;
+		} else if (mdio->op == MDIO_OP_C22_READ) {
+			goc_1_code = 0b1;
+		} else {
+			ret = -EINVAL;
+			goto done;
+		}
 	}
 	base->MAC_MDIO_ADDRESS &= ~(
+		ENET_QOS_REG_PREP(MAC_MDIO_ADDRESS, C45E, 0b1) |
 		ENET_QOS_REG_PREP(MAC_MDIO_ADDRESS, GOC_1, 0b1) |
 		ENET_QOS_REG_PREP(MAC_MDIO_ADDRESS, GOC_0, 0b1) |
 		ENET_QOS_REG_PREP(MAC_MDIO_ADDRESS, PA, 0b11111) |
 		ENET_QOS_REG_PREP(MAC_MDIO_ADDRESS, RDA, 0b11111));
 
 	base->MAC_MDIO_ADDRESS |=
+		/* C45E */
+		ENET_QOS_REG_PREP(MAC_MDIO_ADDRESS, C45E, clause45) |
 		/* OP command */
 		ENET_QOS_REG_PREP(MAC_MDIO_ADDRESS, GOC_1, goc_1_code) |
 		ENET_QOS_REG_PREP(MAC_MDIO_ADDRESS, GOC_0, 0b1) |
@@ -81,7 +103,6 @@ static int do_transaction(struct mdio_transaction *mdio)
 	base->MAC_MDIO_ADDRESS |=
 		/* Start the transaction */
 		ENET_QOS_REG_PREP(MAC_MDIO_ADDRESS, GB, 0b1);
-
 
 	ret = -ETIMEDOUT;
 	for (int i = CONFIG_MDIO_NXP_ENET_QOS_RECHECK_COUNT; i > 0; i--) {
@@ -97,7 +118,7 @@ static int do_transaction(struct mdio_transaction *mdio)
 		goto done;
 	}
 
-	if (mdio->op == MDIO_OP_C22_READ) {
+	if (mdio->op == MDIO_OP_C22_READ || mdio->op == MDIO_OP_C45_READ) {
 		uint32_t val = mdio->base->MAC_MDIO_DATA;
 
 		*mdio->read_data =
@@ -127,7 +148,7 @@ static int nxp_enet_qos_mdio_read(const struct device *dev,
 		.mdio_bus_mutex = &data->mdio_mutex,
 	};
 
-	return do_transaction(&mdio_read);
+	return do_transaction(&mdio_read, false);
 }
 
 static int nxp_enet_qos_mdio_write(const struct device *dev,
@@ -146,12 +167,52 @@ static int nxp_enet_qos_mdio_write(const struct device *dev,
 		.mdio_bus_mutex = &data->mdio_mutex,
 	};
 
-	return do_transaction(&mdio_write);
+	return do_transaction(&mdio_write, false);
+}
+
+static int nxp_enet_qos_mdio_read_c45(const struct device *dev, uint8_t portaddr, uint8_t devaddr,
+				      uint16_t regaddr, uint16_t *read_data)
+{
+	const struct nxp_enet_qos_mdio_config *config = dev->config;
+	struct nxp_enet_qos_mdio_data *data = dev->data;
+	enet_qos_t *base = ENET_QOS_MODULE_CFG(config->enet_dev)->base;
+	struct mdio_transaction mdio_read = {
+		.op = MDIO_OP_C45_READ,
+		.read_data = read_data,
+		.portaddr = portaddr,
+		.regaddr = devaddr,
+		.regaddr_c45 = regaddr,
+		.base = base,
+		.mdio_bus_mutex = &data->mdio_mutex,
+	};
+
+	return do_transaction(&mdio_read, true);
+}
+
+int nxp_enet_qos_mdio_write_c45(const struct device *dev, uint8_t portaddr, uint8_t devaddr,
+				uint16_t regaddr, uint16_t write_data)
+{
+	const struct nxp_enet_qos_mdio_config *config = dev->config;
+	struct nxp_enet_qos_mdio_data *data = dev->data;
+	enet_qos_t *base = ENET_QOS_MODULE_CFG(config->enet_dev)->base;
+	struct mdio_transaction mdio_write = {
+		.op = MDIO_OP_C45_WRITE,
+		.write_data = write_data,
+		.portaddr = portaddr,
+		.regaddr = devaddr,
+		.regaddr_c45 = regaddr,
+		.base = base,
+		.mdio_bus_mutex = &data->mdio_mutex,
+	};
+
+	return do_transaction(&mdio_write, true);
 }
 
 static DEVICE_API(mdio, nxp_enet_qos_mdio_api) = {
 	.read = nxp_enet_qos_mdio_read,
 	.write = nxp_enet_qos_mdio_write,
+	.read_c45 = nxp_enet_qos_mdio_read_c45,
+	.write_c45 = nxp_enet_qos_mdio_write_c45,
 };
 
 static int nxp_enet_qos_mdio_init(const struct device *dev)
