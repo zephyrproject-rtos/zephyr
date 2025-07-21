@@ -32,14 +32,30 @@ Boards
 Device Drivers and Devicetree
 *****************************
 
+.. zephyr-keep-sorted-start re(^\w)
+
+.. zephyr-keep-sorted-stop
+
 Bluetooth
 *********
+
+.. zephyr-keep-sorted-start re(^\w)
+
+.. zephyr-keep-sorted-stop
 
 Networking
 **********
 
+.. zephyr-keep-sorted-start re(^\w)
+
+.. zephyr-keep-sorted-stop
+
 Other subsystems
 ****************
+
+.. zephyr-keep-sorted-start re(^\w)
+
+.. zephyr-keep-sorted-stop
 
 Modules
 *******

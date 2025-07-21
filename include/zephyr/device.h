@@ -1263,6 +1263,7 @@ device_get_dt_nodelabels(const struct device *dev)
 	static const Z_DECL_ALIGN(struct init_entry) __used __noasan Z_INIT_ENTRY_SECTION(         \
 		level, prio, Z_DEVICE_INIT_SUB_PRIO(node_id))                                      \
 		Z_INIT_ENTRY_NAME(DEVICE_NAME_GET(dev_id)) = {                                     \
+			.init_fn = NULL,                                                           \
 			.dev = (const struct device *)&DEVICE_NAME_GET(dev_id),                    \
 		}
 

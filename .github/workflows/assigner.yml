@@ -44,7 +44,7 @@ jobs:
 
     - name: Run assignment script
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.ZB_PR_ASSIGNER_GITHUB_TOKEN }}
       run: |
         FLAGS="-v"
         FLAGS+=" -o ${{ github.event.repository.owner.login }}"
