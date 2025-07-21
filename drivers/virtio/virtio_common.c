@@ -7,6 +7,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/virtio.h>
+#include <zephyr/drivers/virtio/virtio_config.h>
 #include <zephyr/drivers/virtio/virtqueue.h>
 #include "virtio_common.h"
 
