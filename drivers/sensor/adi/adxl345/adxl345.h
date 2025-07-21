@@ -285,7 +285,6 @@ int adxl345_reg_write_byte(const struct device *dev, uint8_t addr, uint8_t val);
 
 int adxl345_reg_read_byte(const struct device *dev, uint8_t addr, uint8_t *buf);
 
-int adxl345_set_op_mode(const struct device *dev, enum adxl345_op_mode op_mode);
 int adxl345_read_sample(const struct device *dev, struct adxl345_sample *sample);
 #ifdef CONFIG_SENSOR_ASYNC_API
 void adxl345_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);

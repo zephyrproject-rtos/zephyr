@@ -189,20 +189,6 @@ int adxl345_configure_fifo(const struct device *dev,
 	return 0;
 }
 
-/**
- * Set the mode of operation.
- * @param dev - The device structure.
- * @param op_mode - Mode of operation.
- *		Accepted values: ADXL345_STANDBY
- *				 ADXL345_MEASURE
- * @return 0 in case of success, negative error code otherwise.
- */
-int adxl345_set_op_mode(const struct device *dev, enum adxl345_op_mode op_mode)
-{
-	return adxl345_reg_write_mask(dev, ADXL345_POWER_CTL_REG,
-					   ADXL345_POWER_CTL_MEASURE_MSK,
-					   ADXL345_POWER_CTL_MEASURE_MODE(op_mode));
-}
 
 /**
  * Set Output data rate.
