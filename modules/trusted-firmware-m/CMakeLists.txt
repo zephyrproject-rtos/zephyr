@@ -444,6 +444,33 @@ if (CONFIG_BUILD_WITH_TFM)
     set(HEX_ADDR_ARGS_NS "--hex-addr=${TFM_HEX_BASE_ADDRESS_NS}")
   endif()
 
+  dt_chosen(chosen_flash PROPERTY "zephyr,flash")
+
+  dt_prop(flash_write_block_size PATH ${chosen_flash} PROPERTY write-block-size)
+  if("${flash_write_block_size}" STREQUAL "")
+    set(flash_write_block_size 1)
+  endif()
+
+  # The alignment is determined by the minimal amount of bytes necessary to
+  # be written in the flash sector. Ex., assuming that the sector erase
+  # operation is 1KiB and, on that sector, the minimal amount of bytes that
+  # must be writen is 8 bytes than the alignment is 8.
+  #
+  # Current MCUboot maximum alignment is 32 bytes.
+  if(flash_write_block_size GREATER 0)
+    if(flash_write_block_size GREATER 32)
+      message(WARNING
+        "imgtool max alignment is 32 and current value is ${flash_write_block_size}.
+	      Keep default image alignment of 1."
+        )
+      set(image_alignment 1)
+    else()
+      set(image_alignment ${flash_write_block_size})
+    endif()
+  else()
+    set(image_alignment 1)
+  endif()
+
   function(tfm_sign OUT_ARG SUFFIX PAD INPUT_FILE OUTPUT_FILE)
     if(PAD)
       set(pad_args --pad --pad-header)
@@ -463,7 +490,7 @@ if (CONFIG_BUILD_WITH_TFM)
       --layout ${layout_file}
       -k ${CONFIG_TFM_KEY_FILE_${SUFFIX}}
       --public-key-format ${TFM_PUBLIC_KEY_FORMAT}
-      --align 1
+      --align ${image_alignment}
       -v ${CONFIG_TFM_IMAGE_VERSION_${SUFFIX}}
       ${pad_args}
       ${HEX_ADDR_ARGS_${SUFFIX}}
