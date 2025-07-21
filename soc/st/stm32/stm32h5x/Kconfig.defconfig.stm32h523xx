@@ -1,0 +1,11 @@
+# STMicroelectronics STM32H523XX MCU
+
+# Copyright (c) Filip Stojanovic
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32H523XX
+
+config NUM_IRQS
+	default 133
+
+endif # SOC_STM32H523XX
