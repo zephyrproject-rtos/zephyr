@@ -183,7 +183,7 @@ if (CONFIG_BUILD_WITH_TFM)
   set(TFM_S_ELF_FILE ${TFM_BINARY_DIR}/bin/tfm_s.elf)
   set(TFM_S_BIN_FILE ${TFM_BINARY_DIR}/bin/tfm_s.bin)
   set(TFM_S_HEX_FILE ${TFM_BINARY_DIR}/bin/tfm_s.hex)
-  set(TFM_NS_BIN_FILE ${TFM_BINARY_DIR}/bin/tfm_ns.bin)
+  set(TFM_NS_BIN_FILE ${CMAKE_BINARY_DIR}/tfm_ns/bin/tfm_ns.bin)
   set(TFM_NS_HEX_FILE ${CMAKE_BINARY_DIR}/tfm_ns/bin/tfm_ns.hex)
   set(TFM_S_SIGNED_BIN_FILE ${TFM_BINARY_DIR}/bin/tfm_s_signed.bin)
   set(TFM_NS_SIGNED_BIN_FILE ${TFM_BINARY_DIR}/bin/tfm_ns_signed.bin)
@@ -543,13 +543,17 @@ if (CONFIG_BUILD_WITH_TFM)
   set(S_NS_SIGNED_HEX_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_zephyr_ns_signed.hex)
   set(NS_SIGNED_HEX_FILE ${CMAKE_BINARY_DIR}/zephyr/zephyr_ns_signed.hex)
   set(S_SIGNED_HEX_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_signed.hex)
+  set(NS_SIGNED_BIN_FILE ${CMAKE_BINARY_DIR}/zephyr/zephyr_ns_signed.bin)
+  set(S_SIGNED_BIN_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_signed.bin)
 
   if (CONFIG_TFM_USE_NS_APP)
     # Use the TF-M NS binary as the Non-Secure application firmware image
     set(NS_HEX_APP_FILE $<TARGET_PROPERTY:tfm,TFM_NS_HEX_FILE>)
+    set(NS_BIN_APP_FILE $<TARGET_PROPERTY:tfm,TFM_NS_BIN_FILE>)
   else()
     # Use the Zephyr binary as the Non-Secure application firmware image
     set(NS_HEX_APP_FILE ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_HEX_NAME})
+    set(NS_BIN_APP_FILE ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_BIN_NAME})
   endif()
 
   if (NOT CONFIG_TFM_BL2)
@@ -594,18 +598,26 @@ if (CONFIG_BUILD_WITH_TFM)
     if (CONFIG_TFM_USE_NS_APP)
       tfm_sign(sign_cmd_ns_hex NS TRUE TRUE TRUE ${S_NS_MAX_SECTORS} ${NS_HEX_APP_FILE}
         ${NS_SIGNED_HEX_FILE})
+      tfm_sign(sign_cmd_ns_bin NS TRUE TRUE FALSE ${S_NS_MAX_SECTORS} ${NS_BIN_APP_FILE}
+        ${NS_SIGNED_BIN_FILE})
     else()
       tfm_sign(sign_cmd_ns NS FALSE TRUE TRUE ${S_NS_MAX_SECTORS} ${NS_HEX_APP_FILE}
         ${NS_SIGNED_HEX_FILE})
+      tfm_sign(sign_cmd_ns_bin NS FALSE FALSE FALSE ${S_NS_MAX_SECTORS} ${NS_BIN_APP_FILE}
+        ${NS_SIGNED_BIN_FILE})
     endif()
 
     tfm_sign(sign_cmd_s_hex S TRUE TRUE TRUE ${S_NS_MAX_SECTORS}
       $<TARGET_PROPERTY:tfm,TFM_S_HEX_FILE> ${S_SIGNED_HEX_FILE})
+    tfm_sign(sign_cmd_s_bin S TRUE TRUE FALSE ${S_NS_MAX_SECTORS}
+      $<TARGET_PROPERTY:tfm,TFM_S_BIN_FILE> ${S_SIGNED_BIN_FILE})
 
     #Create and sign for concatenated binary image, should align with the TF-M BL2
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
       COMMAND ${sign_cmd_ns_hex}
+      COMMAND ${sign_cmd_ns_bin}
       COMMAND ${sign_cmd_s_hex}
+      COMMAND ${sign_cmd_s_bin}
 
       COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/mergehex.py
         -o ${MERGED_HEX_FILE}
@@ -617,7 +629,9 @@ if (CONFIG_BUILD_WITH_TFM)
 
     set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts
       ${S_SIGNED_HEX_FILE}
+      ${S_SIGNED_BIN_FILE}
       ${NS_SIGNED_HEX_FILE}
+      ${NS_SIGNED_BIN_FILE}
       ${MERGED_HEX_FILE}
     )
   endif()
