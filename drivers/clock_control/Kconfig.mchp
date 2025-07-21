@@ -1,0 +1,32 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# Symbol for enabling clock driver for a family
+config CLOCK_CONTROL_MCHP_SAM_D5X_E5X
+	bool
+	default y
+	depends on DT_HAS_MICROCHIP_SAM_D5X_E5X_CLOCK_ENABLED
+	help
+	  This symbol define clock driver for Microchip SAM_D5X_E5X family.
+
+# Define menu symbol for configuring clock features
+menuconfig CLOCK_CONTROL_MCHP
+	bool "Microchip clock controller driver"
+	default y
+	depends on CLOCK_CONTROL_MCHP_SAM_D5X_E5X
+	help
+	  Enable support for Microchip clock controller driver.
+
+# Common features for all SOC families
+if CLOCK_CONTROL_MCHP
+
+# Enable get rate API. Since, clock rate for multiple levels of clock sources are to be
+# calculated, this feature consumes some program size, and can be optional.
+config CLOCK_CONTROL_MCHP_GET_RATE
+	bool "Get clock rate"
+	default y
+	help
+	  This option enables get rate API.
+
+
+endif # CLOCK_CONTROL_MCHP
