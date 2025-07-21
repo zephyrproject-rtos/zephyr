@@ -73,7 +73,10 @@ int siwx91x_status(const struct device *dev, struct wifi_iface_status *status)
 	if (FIELD_GET(SIWX91X_INTERFACE_MASK, interface) == SL_WIFI_CLIENT_INTERFACE) {
 		sl_wifi_operational_statistics_t operational_statistics = { };
 
-		status->link_mode = WIFI_LINK_MODE_UNKNOWN;
+		/* The Wiseconnect wireless_mode values match the values expected by
+		 * Zephyr's link_mode, even though the enum type differs.
+		 */
+		status->link_mode = wlan_info.wireless_mode;
 		status->iface_mode = WIFI_MODE_INFRA;
 		status->channel = wlan_info.channel_number;
 		status->twt_capable = true;
