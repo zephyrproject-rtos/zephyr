@@ -10,12 +10,9 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/kernel.h>
 #include <fsl_lcdifv3.h>
-
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 #include <zephyr/cache.h>
-
-#define MCUX_LCDIFV3_FB_NUM 1
 
 LOG_MODULE_REGISTER(display_mcux_lcdifv3, CONFIG_DISPLAY_LOG_LEVEL);
 
@@ -40,56 +37,103 @@ struct mcux_lcdifv3_config {
 	lcdifv3_buffer_config_t buffer_config;
 	lcdifv3_display_config_t display_config;
 	enum display_pixel_format pixel_format;
-	size_t pixel_bytes;
+	uint8_t *fb_ptr;
 	size_t fb_bytes;
 };
 
 struct mcux_lcdifv3_data {
 	DEVICE_MMIO_NAMED_RAM(reg_base);
-	uint8_t *fb_ptr;
-	uint8_t *fb[MCUX_LCDIFV3_FB_NUM];
+	/* Pointer to active framebuffer */
+	const uint8_t *active_fb;
+	uint8_t *fb[CONFIG_MCUX_LCDIFV3_FB_NUM];
+	uint8_t pixel_bytes;
 	struct k_sem sem;
-	uint8_t write_idx;
+	/* Tracks index of next active driver framebuffer */
+	uint8_t next_idx;
 };
+
+static void dump_reg(LCDIF_Type *base)
+{
+	/* Dump LCDIF Registers */
+	LOG_DBG("CTRL: 0x%x", base->CTRL.RW);
+	LOG_DBG("DISP_PARA: 0x%x", base->DISP_PARA);
+	LOG_DBG("DISP_SIZE: 0x%x", base->DISP_SIZE);
+	LOG_DBG("HSYN_PARA: 0x%x", base->HSYN_PARA);
+	LOG_DBG("VSYN_PARA: 0x%x", base->VSYN_PARA);
+	LOG_DBG("VSYN_HSYN_WIDTH: 0x%x", base->VSYN_HSYN_WIDTH);
+	LOG_DBG("INT_STATUS_D0: 0x%x", base->INT_STATUS_D0);
+	LOG_DBG("INT_STATUS_D1: 0x%x", base->INT_STATUS_D1);
+	LOG_DBG("CTRLDESCL_1: 0x%x", base->CTRLDESCL_1[0]);
+	LOG_DBG("CTRLDESCL_3: 0x%x", base->CTRLDESCL_3[0]);
+	LOG_DBG("CTRLDESCL_LOW_4: 0x%x", base->CTRLDESCL_LOW_4[0]);
+	LOG_DBG("CTRLDESCL_HIGH_4: 0x%x", base->CTRLDESCL_HIGH_4[0]);
+	LOG_DBG("CTRLDESCL_5: 0x%x", base->CTRLDESCL_5[0]);
+}
 
 static int mcux_lcdifv3_write(const struct device *dev, const uint16_t x, const uint16_t y,
 			      const struct display_buffer_descriptor *desc, const void *buf)
 {
 	const struct mcux_lcdifv3_config *config = dev->config;
-	struct mcux_lcdifv3_data *dev_data = dev->data;
+	struct mcux_lcdifv3_data *data = dev->data;
 	LCDIF_Type *base = (LCDIF_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+	uint32_t h_idx;
+	const uint8_t *src;
+	uint8_t *dst;
 
-	if ((config->pixel_bytes * desc->pitch * desc->height) > desc->buf_size) {
-		LOG_ERR("Input buffer too small");
-		return -ENOTSUP;
+	__ASSERT((data->pixel_bytes * desc->pitch * desc->height) <= desc->buf_size,
+		 "Input buffer too small");
+
+	LOG_DBG("W=%d, H=%d @%d,%d", desc->width, desc->height, x, y);
+
+	if ((x == 0) && (y == 0) && (desc->width == config->display_config.panelWidth) &&
+	    (desc->height == config->display_config.panelHeight) && (desc->pitch == desc->width)) {
+		/* We can use the display buffer directly, without copying */
+		LOG_DBG("Setting FB from %p->%p", (void *)data->active_fb, (void *)buf);
+		data->active_fb = buf;
+	} else {
+		/* We must use partial framebuffer copy */
+		if (CONFIG_MCUX_LCDIFV3_FB_NUM == 0) {
+			LOG_ERR("Partial display refresh requires driver framebuffers");
+			return -ENOTSUP;
+		} else if (data->active_fb != data->fb[data->next_idx]) {
+			/*
+			 * Copy the entirety of the current framebuffer to new
+			 * buffer, since we are changing the active buffer address
+			 */
+			src = data->active_fb;
+			dst = data->fb[data->next_idx];
+			memcpy(dst, src, config->fb_bytes);
+		}
+		/* Write the display update to the active framebuffer */
+		src = buf;
+		dst = data->fb[data->next_idx];
+		dst += data->pixel_bytes * (y * config->display_config.panelWidth + x);
+
+		for (h_idx = 0; h_idx < desc->height; h_idx++) {
+			memcpy(dst, src, data->pixel_bytes * desc->width);
+			src += data->pixel_bytes * desc->pitch;
+			dst += data->pixel_bytes * config->display_config.panelWidth;
+		}
+		LOG_DBG("Setting FB from %p->%p", (void *)data->active_fb,
+			(void *)data->fb[data->next_idx]);
+		/* Set new active framebuffer */
+		data->active_fb = data->fb[data->next_idx];
 	}
 
-	LOG_DBG("W=%d, H=%d, @%d,%d", desc->width, desc->height, x, y);
+	sys_cache_data_flush_and_invd_range((void *)data->active_fb, config->fb_bytes);
 
-	/* Dump LCDIF Registers */
-	LOG_DBG("CTRL: 0x%x\n", base->CTRL.RW);
-	LOG_DBG("DISP_PARA: 0x%x\n", base->DISP_PARA);
-	LOG_DBG("DISP_SIZE: 0x%x\n", base->DISP_SIZE);
-	LOG_DBG("HSYN_PARA: 0x%x\n", base->HSYN_PARA);
-	LOG_DBG("VSYN_PARA: 0x%x\n", base->VSYN_PARA);
-	LOG_DBG("VSYN_HSYN_WIDTH: 0x%x\n", base->VSYN_HSYN_WIDTH);
-	LOG_DBG("INT_STATUS_D0: 0x%x\n", base->INT_STATUS_D0);
-	LOG_DBG("INT_STATUS_D1: 0x%x\n", base->INT_STATUS_D1);
-	LOG_DBG("CTRLDESCL_1: 0x%x\n", base->CTRLDESCL_1[0]);
-	LOG_DBG("CTRLDESCL_3: 0x%x\n", base->CTRLDESCL_3[0]);
-	LOG_DBG("CTRLDESCL_LOW_4: 0x%x\n", base->CTRLDESCL_LOW_4[0]);
-	LOG_DBG("CTRLDESCL_HIGH_4: 0x%x\n", base->CTRLDESCL_HIGH_4[0]);
-	LOG_DBG("CTRLDESCL_5: 0x%x\n", base->CTRLDESCL_5[0]);
+	k_sem_reset(&data->sem);
 
-	/* wait for the next frame done */
-	k_sem_reset(&dev_data->sem);
-
-	sys_cache_data_flush_and_invd_range((void *)buf, desc->buf_size);
-	LCDIFV3_SetLayerSize(base, 0, desc->width, desc->height);
-	LCDIFV3_SetLayerBufferAddr(base, 0, (uint32_t)(uintptr_t)buf);
+	/* Set new framebuffer */
+	LCDIFV3_SetLayerBufferAddr(base, 0, (uint32_t)(uintptr_t)data->active_fb);
 	LCDIFV3_TriggerLayerShadowLoad(base, 0);
 
-	k_sem_take(&dev_data->sem, K_FOREVER);
+#if CONFIG_MCUX_LCDIFV3_FB_NUM != 0
+	/* Update index of active framebuffer */
+	data->next_idx = (data->next_idx + 1) % CONFIG_MCUX_LCDIFV3_FB_NUM;
+#endif
+	/* Wait for frame to complete */
+	k_sem_take(&data->sem, K_FOREVER);
 
 	return 0;
 }
@@ -105,25 +149,25 @@ static void *mcux_lcdifv3_get_framebuffer(const struct device *dev)
 {
 	struct mcux_lcdifv3_data *dev_data = dev->data;
 
-	return dev_data->fb_ptr;
+	return (void *)dev_data->active_fb;
 }
 
 static int mcux_lcdifv3_display_blanking_off(const struct device *dev)
 {
-	LOG_ERR("Blanking off not implemented");
-	return -ENOTSUP;
+	LOG_WRN("Blanking off not implemented");
+	return 0;
 }
 
 static int mcux_lcdifv3_display_blanking_on(const struct device *dev)
 {
-	LOG_ERR("Blanking on not implemented");
-	return -ENOTSUP;
+	LOG_WRN("Blanking on not implemented");
+	return 0;
 }
 
 static int mcux_lcdifv3_set_brightness(const struct device *dev, const uint8_t brightness)
 {
 	LOG_WRN("Set brightness not implemented");
-	return -ENOTSUP;
+	return 0;
 }
 
 static int mcux_lcdifv3_set_contrast(const struct device *dev, const uint8_t contrast)
@@ -135,8 +179,8 @@ static int mcux_lcdifv3_set_contrast(const struct device *dev, const uint8_t con
 static int mcux_lcdifv3_set_pixel_format(const struct device *dev,
 					 const enum display_pixel_format pixel_format)
 {
-	LOG_ERR("Set pixel format not implemented");
-	return -ENOTSUP;
+	LOG_WRN("Set pixel format not implemented");
+	return 0;
 }
 
 static int mcux_lcdifv3_set_orientation(const struct device *dev,
@@ -217,21 +261,28 @@ static int mcux_axi_apb_configure_clock(const struct device *dev)
 static int mcux_lcdifv3_init(const struct device *dev)
 {
 	const struct mcux_lcdifv3_config *config = dev->config;
-	struct mcux_lcdifv3_data *dev_data = dev->data;
+	struct mcux_lcdifv3_data *data = dev->data;
 	uint32_t clk_freq;
 
 	DEVICE_MMIO_NAMED_MAP(dev, reg_base, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
 	LCDIF_Type *base = (LCDIF_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 
-	dev_data->fb[0] = dev_data->fb_ptr;
-
-	k_sem_init(&dev_data->sem, 1, 1);
-
 	config->irq_config_func(dev);
+
+	for (int i = 0; i < CONFIG_MCUX_LCDIFV3_FB_NUM; i++) {
+		/* Record pointers to each driver framebuffer */
+		data->fb[i] = config->fb_ptr + (config->fb_bytes * i);
+	}
+	data->active_fb = config->fb_ptr;
+
+	k_sem_init(&data->sem, 1, 1);
+
+	/* Clear external memory, as it is uninitialized */
+	memset(config->fb_ptr, 0, config->fb_bytes * CONFIG_MCUX_LCDIFV3_FB_NUM);
 
 	/* configure disp_pix_clk */
 	if (!device_is_ready(config->disp_pix_clk_dev)) {
-		LOG_ERR("cam_pix clock control device not ready\n");
+		LOG_ERR("cam_pix clock control device not ready");
 		return -ENODEV;
 	}
 
@@ -240,7 +291,7 @@ static int mcux_lcdifv3_init(const struct device *dev)
 
 	if (clock_control_get_rate(config->disp_pix_clk_dev, config->disp_pix_clk_subsys,
 				   &clk_freq)) {
-		LOG_ERR("Failed to get disp_pix_clk\n");
+		LOG_ERR("Failed to get disp_pix_clk");
 		return -EINVAL;
 	}
 	LOG_INF("disp_pix clock frequency %d", clk_freq);
@@ -264,11 +315,13 @@ static int mcux_lcdifv3_init(const struct device *dev)
 	LCDIFV3_SetLayerSize(base, 0, display_config.panelWidth, display_config.panelHeight);
 	LCDIFV3_EnableLayer(base, 0, true);
 	LCDIFV3_EnablePlanePanic(base);
-	LCDIFV3_SetLayerBufferAddr(base, 0, (uint64_t)dev_data->fb[0]);
+	LCDIFV3_SetLayerBufferAddr(base, 0, (uint64_t)data->fb[0]);
 	LCDIFV3_TriggerLayerShadowLoad(base, 0);
 	LCDIFV3_EnableInterrupts(base, kLCDIFV3_VerticalBlankingInterrupt);
 
-	LOG_INF("%s init succeeded\n", dev->name);
+	LOG_INF("%s init succeeded", dev->name);
+
+	dump_reg(base);
 
 	return 0;
 }
@@ -297,6 +350,12 @@ static const struct display_driver_api mcux_lcdifv3_api = {
 		 ? 2                                                                               \
 		 : ((DT_INST_ENUM_IDX(id, pixel_format) == 1) ? 3 : 4))
 
+#define MCUX_LCDIFV3_FRAMEBUFFER_DECL(id)                                                          \
+	uint8_t __aligned(64)                                                                      \
+	mcux_lcdifv3_frame_buffer_##id[DT_INST_PROP(id, width) * DT_INST_PROP(id, height) *        \
+				       GET_PIXEL_BYTES(id) * CONFIG_MCUX_LCDIFV3_FB_NUM]
+#define MCUX_LCDIFV3_FRAMEBUFFER(id) mcux_lcdifv3_frame_buffer_##id
+
 #define MCUX_LCDIFV3_DEVICE_INIT(id)                                                               \
 	static void mcux_lcdifv3_config_func_##id(const struct device *dev)                        \
 	{                                                                                          \
@@ -304,6 +363,11 @@ static const struct display_driver_api mcux_lcdifv3_api = {
 			    DEVICE_DT_INST_GET(id), 0);                                            \
 		irq_enable(DT_INST_IRQN(id));                                                      \
 	}                                                                                          \
+	MCUX_LCDIFV3_FRAMEBUFFER_DECL(id);                                                         \
+	static struct mcux_lcdifv3_data mcux_lcdifv3_data_##id = {                                 \
+		.next_idx = 0,                                                                     \
+		.pixel_bytes = GET_PIXEL_BYTES(id),                                                \
+	};                                                                                         \
 	static const struct mcux_lcdifv3_config mcux_lcdifv3_config_##id = {                       \
 		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(id)),                             \
 		.disp_pix_clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_IDX(id, 0)),              \
@@ -350,15 +414,9 @@ static const struct display_driver_api mcux_lcdifv3_api = {
 						 : kLCDIFV3_DriveDataOnFallingClkEdge),            \
 			},                                                                         \
 		.pixel_format = GET_PIXEL_FORMAT(id),                                              \
-		.pixel_bytes = GET_PIXEL_BYTES(id),                                                \
+		.fb_ptr = MCUX_LCDIFV3_FRAMEBUFFER(id),                                            \
 		.fb_bytes =                                                                        \
 			DT_INST_PROP(id, width) * DT_INST_PROP(id, height) * GET_PIXEL_BYTES(id),  \
-	};                                                                                         \
-	static uint8_t                                                                             \
-		__aligned(64) frame_buffer_##id[MCUX_LCDIFV3_FB_NUM * DT_INST_PROP(id, width) *    \
-						DT_INST_PROP(id, height) * GET_PIXEL_BYTES(id)];   \
-	static struct mcux_lcdifv3_data mcux_lcdifv3_data_##id = {                                 \
-		.fb_ptr = frame_buffer_##id,                                                       \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(id, &mcux_lcdifv3_init, NULL, &mcux_lcdifv3_data_##id,               \
 			      &mcux_lcdifv3_config_##id, POST_KERNEL,                              \
