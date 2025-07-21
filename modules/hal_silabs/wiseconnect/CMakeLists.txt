@@ -94,6 +94,10 @@ zephyr_compile_definitions_ifdef(CONFIG_ADC_SILABS_SIWX91X
   ADC_CONTEXT_USES_KERNEL_TIMER
 )
 
+zephyr_compile_definitions_ifdef(CONFIG_DMA_SILABS_SIWX91X_GPDMA
+  GPDMA_ROMDRIVER_PRESENT
+)
+
 zephyr_library_sources_ifdef(CONFIG_DMA_SILABS_SIWX91X
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/rom_driver/src/rsi_rom_table_si91x.c
 )
