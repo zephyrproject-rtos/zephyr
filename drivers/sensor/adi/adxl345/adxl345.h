@@ -166,7 +166,7 @@ struct adxl345_dev_data {
 		int16_t z;
 	} samples;
 	struct adxl345_fifo_config fifo_config;
-	uint8_t is_full_res;
+	bool is_full_res;
 	uint8_t selected_range;
 	enum adxl345_odr odr;
 #ifdef CONFIG_ADXL345_TRIGGER
