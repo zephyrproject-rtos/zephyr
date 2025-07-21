@@ -18,6 +18,8 @@ extern "C" {
 /**
  * @brief Modem pipelink
  * @defgroup modem_pipelink Modem pipelink
+ * @since 3.7
+ * @version 1.0.0
  * @ingroup modem
  * @{
  */
