@@ -569,6 +569,9 @@ config ACS
 config IEEE80211AC
 	bool
 
+config HS20
+	bool
+
 config IEEE80211R
 	bool
 	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
