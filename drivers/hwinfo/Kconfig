@@ -25,295 +25,37 @@ config HWINFO_SHELL
 	help
 	  Enable hwinfo Shell for testing.
 
-menuconfig HWINFO_CC13XX_CC26XX
-	bool "TI SimpleLink CC13xx/CC26xx hwinfo driver"
-	default y
-	depends on SOC_SERIES_CC13X2_CC26X2 || SOC_SERIES_CC13X2X7_CC26X2X7
-	select HWINFO_HAS_DRIVER
-	help
-	  Enable TI SimpleLink CC13xx/CC26xx hwinfo driver.
-
-if HWINFO_CC13XX_CC26XX
-
-config HWINFO_CC13XX_CC26XX_ALWAYS_USE_FACTORY_DEFAULT
-	bool "Ignore CCFG and always use factory value"
-	default y
-	help
-	  Always return factory pre-programmed values, stored in FCFG and ignore
-	  values provided in CCFG (Customer Configuration).
-
-choice
-	prompt "Select MAC address type for device ID"
-	default HWINFO_CC13XX_CC26XX_USE_IEEE_MAC
-	help
-	  Specify the MAC address type to be used as device ID by the driver.
-
-config HWINFO_CC13XX_CC26XX_USE_IEEE_MAC
-	bool "Use IEEE 802.15.4 extended address"
-	help
-	  Use 8-bytes length IEEE 802.15.4 extended address as device ID value.
-
-config HWINFO_CC13XX_CC26XX_USE_BLE_MAC
-	bool "Use BLE MAC address"
-	help
-	  Use 6-bytes length BLE MAC address as device ID value.
-
-endchoice
-
-endif # HWINFO_CC13XX_CC26XX
-
-config HWINFO_CC23X0
-	bool "TI CC23X0 hwinfo"
-	default y
-	depends on SOC_FAMILY_TI_SIMPLELINK && SOC_SERIES_CC23X0
-	select HWINFO_HAS_DRIVER
-	help
-	  Enable CC23X0 hwinfo driver.
-
-config HWINFO_STM32
-	bool "STM32 hwinfo"
-	default y
-	depends on SOC_FAMILY_STM32 && !SOC_SERIES_STM32WB0X
-	select HWINFO_HAS_DRIVER
-	help
-	  Enable STM32 hwinfo driver.
-
-config HWINFO_NRF
-	bool "NRF device ID"
-	default y
-	depends on SOC_FAMILY_NORDIC_NRF
-	depends on SOC_SERIES_NRF54HX || NRF_SOC_SECURE_SUPPORTED
-	select HWINFO_HAS_DRIVER
-	help
-	  Enable Nordic NRF hwinfo driver.
-
-config HWINFO_MCUX_MCX_CMC
-	bool "NXP MCX CMC reset cause"
-	default y
-	depends on HAS_MCUX_MCX_CMC
-	select HWINFO_HAS_DRIVER
-	help
-	  Enable NXP kinetis mcux CMC hwinfo driver.
-
-config HWINFO_MCUX_RCM
-	bool "NXP kinetis reset cause"
-	default y
-	depends on HAS_MCUX_RCM
-	select HWINFO_HAS_DRIVER
-	help
-	  Enable NXP kinetis mcux RCM hwinfo driver.
-
-config HWINFO_MCUX_SIM
-	bool "NXP kinetis SIM device ID"
-	default y
-	depends on HAS_MCUX_SIM
-	select HWINFO_HAS_DRIVER
-	help
-	  Enable NXP kinetis mcux SIM hwinfo driver.
-
-config HWINFO_MCUX_SRC
-	bool "NXP SRC reset cause"
-	default y
-	depends on HAS_MCUX_SRC
-	select HWINFO_HAS_DRIVER
-	help
-	  Enable NXP i.MX mcux SRC hwinfo driver.
-
-config HWINFO_MCUX_SRC_V2
-	bool "NXP SRC reset cause (multicore devices)"
-	default y
-	depends on HAS_MCUX_SRC_V2
-	select HWINFO_HAS_DRIVER
-	help
-	  Enable version 2 multicore NXP i.MX mcux SRC hwinfo driver.
-
-config HWINFO_MCUX_SYSCON
-	bool "NXP LPC device ID"
-	default y
-	depends on DT_HAS_NXP_LPC_UID_ENABLED
-	select HWINFO_HAS_DRIVER
-	help
-	  Enable NXP LPC mcux hwinfo driver.
-
-config HWINFO_IMXRT
-	bool "NXP i.mx RT device ID"
-	default y
-	depends on SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX || SOC_SERIES_IMXRT118X
-	select HWINFO_HAS_DRIVER
-	help
-	  Enable NXP i.mx RT hwinfo driver.
-
-config HWINFO_RPI_PICO
-	bool "Raspberry Pi Pico hwinfo driver"
-	default y
-	depends on SOC_FAMILY_RPI_PICO
-	select HWINFO_HAS_DRIVER
-	select PICOSDK_USE_FLASH
-	help
-	  Enable Raspberry Pi Pico hwinfo driver.
-
-config HWINFO_RPI_PICO_CHIP_ID
-	bool "Use chip ID as device ID for RP2350"
-	default n
-	depends on SOC_SERIES_RP2350
-	depends on HWINFO_RPI_PICO
-	help
-	  Use the chip ID as device ID for RP2350 instead of the default
-	  flash RUID. This is useful for RP2350 boards that do not have a
-	  flash, or when OTP ID is preferred over flash RUID.
-	  This option is recommended for new RP2350 designs, but defaults to n
-	  to prevent existing devices from changing their serial numbers.
-
-config HWINFO_SAM_RSTC
-	bool "Atmel SAM reset cause"
-	default y
-	depends on SOC_FAMILY_ATMEL_SAM && !SOC_SERIES_SAM4L
-	select HWINFO_HAS_DRIVER
-	help
-	  Enable Atmel SAM reset cause hwinfo driver.
-
-config HWINFO_SAM
-	bool "Atmel SAM device ID"
-	default y
-	depends on SOC_FAMILY_ATMEL_SAM && !SOC_SERIES_SAM4L
-	select HWINFO_HAS_DRIVER
-	help
-	  Enable Atmel SAM device ID hwinfo driver.
-
-config HWINFO_SAM4L
-	bool "Atmel SAM4L device ID"
-	default y
-	depends on SOC_SERIES_SAM4L
-	select HWINFO_HAS_DRIVER
-	help
-	  Enable Atmel SAM4L hwinfo driver.
-
-config HWINFO_SAM0
-	bool "Atmel SAM0 device ID"
-	default y
-	depends on SOC_FAMILY_ATMEL_SAM0
-	select HWINFO_HAS_DRIVER
-	help
-	  Enable Atmel SAM0 hwinfo driver.
-
-config HWINFO_SMARTBOND
-	bool "Smartbond device reset cause"
-	default y
-	depends on SOC_FAMILY_RENESAS_SMARTBOND
-	select HWINFO_HAS_DRIVER
-	help
-	  Enable Smartbond reset cause hwinfo driver.
-
-config HWINFO_ESP32
-	bool "ESP32 device ID"
-	default y
-	depends on SOC_FAMILY_ESPRESSIF_ESP32
-	select HWINFO_HAS_DRIVER
-	help
-	  Enable ESP32 hwinfo driver.
-
-config HWINFO_LITEX
-	bool "LiteX device ID"
-	default y
-	depends on SOC_LITEX_VEXRISCV
-	depends on DT_HAS_LITEX_DNA0_ENABLED
-	select HWINFO_HAS_DRIVER
-	help
-	  Enable LiteX hwinfo driver
-
-config HWINFO_PSOC6
-	bool "Cypress PSOC 6 unique device ID"
-	default y
-	depends on SOC_FAMILY_PSOC6_LEGACY
-	select HWINFO_HAS_DRIVER
-	help
-	  Enable Cypress PSOC 6 hwinfo driver.
-
-config HWINFO_GECKO
-	bool "GECKO hwinfo"
-	default y
-	depends on SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1
-	select HWINFO_HAS_DRIVER
-	select SOC_GECKO_RMU
-	help
-	  Enable Silabs GECKO hwinfo driver.
-
-config HWINFO_SILABS_S2
-	bool "Silabs Series 2 hwinfo"
-	default y
-	depends on SOC_FAMILY_SILABS_S2
-	select HWINFO_HAS_DRIVER
-	select SOC_GECKO_RMU
-	help
-	  Enable Silabs Series 2 hwinfo driver.
-
-config HWINFO_ANDES
-	bool "Andes system ID"
-	default y
-	depends on SOC_FAMILY_ANDES_V5
-	depends on SYSCON
-	select HWINFO_HAS_DRIVER
-	help
-	  Enable Andes hwinfo driver
-
-config HWINFO_RW61X
-	bool "RW61X hwinfo"
-	default y
-	depends on SOC_SERIES_RW6XX
-	select HWINFO_HAS_DRIVER
-	help
-	  Enable RW61X hwinfo driver
-
-config HWINFO_AMBIQ
-	bool "AMBIQ hwinfo"
-	default y
-	depends on SOC_SERIES_APOLLO4X || SOC_SERIES_APOLLO5X
-	select HWINFO_HAS_DRIVER
-	select AMBIQ_HAL
-	select AMBIQ_HAL_USE_HWINFO
-	help
-	  Enable AMBIQ hwinfo driver
-
-config HWINFO_NUMAKER
-	bool "NuMaker hwinfo"
-	default y
-	depends on SOC_SERIES_M46X || SOC_SERIES_M55M1X
-	select HWINFO_HAS_DRIVER
-	select HAS_NUMAKER_FMC
-	help
-	  Enable Nuvoton NuMaker hwinfo driver
-
-config HWINFO_NUMAKER_RMC
-	bool "NuMaker hwinfo backed up by RMC"
-	default y
-	depends on SOC_SERIES_M2L31X
-	select HWINFO_HAS_DRIVER
-	select HAS_NUMAKER_RMC
-	help
-	  Enable Nuvoton NuMaker hwinfo driver backed up by RMC
-
-config HWINFO_MAX32
-	bool "MAX32 hwinfo"
-	default y
-	depends on SOC_FAMILY_MAX32
-	depends on !TRUSTED_EXECUTION_NONSECURE
-	select HWINFO_HAS_DRIVER
-	help
-	  Enable MAX32 hwinfo driver.
-
-config HWINFO_RENESAS_RA
-	bool "Renesas RA device ID"
-	default y
-	depends on SOC_FAMILY_RENESAS_RA
-	select HWINFO_HAS_DRIVER
-	help
-	  Enable RENESAS RA hwinfo driver
-
-config HWINFO_MSPM0
-	bool "TI MSPM0 hwinfo"
-	default y
-	depends on SOC_FAMILY_TI_MSPM0
-	help
-	  Enable TI MSPM0 hwinfo driver
+# zephyr-keep-sorted-start
+rsource "Kconfig.ambiq"
+rsource "Kconfig.andes"
+rsource "Kconfig.cc13xx_cc26xx"
+rsource "Kconfig.cc23x0"
+rsource "Kconfig.esp32"
+rsource "Kconfig.gecko"
+rsource "Kconfig.imxrt"
+rsource "Kconfig.litex"
+rsource "Kconfig.max32"
+rsource "Kconfig.mcux_mcx_cmc"
+rsource "Kconfig.mcux_rcm"
+rsource "Kconfig.mcux_sim"
+rsource "Kconfig.mcux_src"
+rsource "Kconfig.mcux_src_rev2"
+rsource "Kconfig.mcux_syscon"
+rsource "Kconfig.mspm0"
+rsource "Kconfig.nrf"
+rsource "Kconfig.numaker"
+rsource "Kconfig.numaker_rmc"
+rsource "Kconfig.psoc6"
+rsource "Kconfig.renesas_ra"
+rsource "Kconfig.rpi_pico"
+rsource "Kconfig.rw61x"
+rsource "Kconfig.sam"
+rsource "Kconfig.sam0"
+rsource "Kconfig.sam4l"
+rsource "Kconfig.sam_rstc"
+rsource "Kconfig.silabs_series2"
+rsource "Kconfig.smartbond"
+rsource "Kconfig.stm32"
+# zephyr-keep-sorted-stop
 
 endif

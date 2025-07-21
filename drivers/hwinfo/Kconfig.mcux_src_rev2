@@ -1,0 +1,10 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config HWINFO_MCUX_SRC_V2
+	bool "NXP SRC reset cause (multicore devices)"
+	default y
+	depends on HAS_MCUX_SRC_V2
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable version 2 multicore NXP i.MX mcux SRC hwinfo driver.
