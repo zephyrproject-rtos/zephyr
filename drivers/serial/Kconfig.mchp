@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_MCHP_SERCOM_G1
+	bool "Microchip SERCOM G1 UART driver"
+	default y
+	depends on DT_HAS_MICROCHIP_SERCOM_G1_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select PINCTRL
+	help
+	  This option enables UART driver for group (g1) of SERCOM peripherals.
