@@ -203,6 +203,16 @@ static inline int z_swap_irqlock(unsigned int key)
 {
 	int ret;
 	z_check_stack_sentinel();
+
+#ifdef CONFIG_SPIN_VALIDATE
+	/* Refer to comment in do_swap() above for details */
+# ifndef CONFIG_ARM64
+	__ASSERT(arch_irq_unlocked(key) ||
+		 _current->base.thread_state & (_THREAD_DUMMY | _THREAD_DEAD),
+		 "Context switching while holding lock!");
+# endif /* CONFIG_ARM64 */
+#endif /* CONFIG_SPIN_VALIDATE */
+
 	ret = arch_swap(key);
 	return ret;
 }
