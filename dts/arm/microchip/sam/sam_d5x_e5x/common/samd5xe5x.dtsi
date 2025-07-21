@@ -53,6 +53,29 @@
 				#clock-cells = <1>;
 			};
 		};
+
+		pinctrl: pinctrl@41008000 {
+			compatible = "microchip,port-g1-pinctrl";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x41008000 0x41008000 0x200>;
+
+			porta: gpio@41008000 {
+				reg = <0x41008000 0x80>;
+			};
+
+			portb: gpio@41008080 {
+				reg = <0x41008080 0x80>;
+			};
+
+			portc: gpio@41008100 {
+				reg = <0x41008100 0x80>;
+			};
+
+			portd: gpio@41008180 {
+				reg = <0x41008180 0x80>;
+			};
+		};
 	};
 };
 
