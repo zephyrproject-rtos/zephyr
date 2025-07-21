@@ -1,0 +1,15 @@
+# Copyright (c) 2025 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+config VHOST
+	bool "support for VIRTIO"
+	help
+	  Enable options for VIRTIO
+
+if VHOST
+
+endif # VIRTIO
+
+module = VHOST
+module-str = VHOST
+source "subsys/logging/Kconfig.template.log_config"
