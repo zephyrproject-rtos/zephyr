@@ -79,12 +79,26 @@ Flashing and Debugging
 ----------------------
 
 Running build system targets like ``ninja flash``, ``ninja debug``,
-etc. is just a call to the corresponding :ref:`west command
-<west-build-flash-debug>`. For example, ``ninja flash`` calls ``west
-flash``\ [#wbninja]_. If you don't have west installed on your system, running
-those targets will fail. You can of course still flash and debug using
-any :ref:`flash-debug-host-tools` which work for your board (and which those
-west commands wrap).
+etc. by default is just a call to the corresponding :ref:`west command
+<west-build-flash-debug>`. For example, ``ninja flash`` calls ``west flash``\
+[#wbninja]_. If you don't have west installed on your system, running those
+targets will fail. You can of course still flash and debug using any
+:ref:`flash-debug-host-tools` which work for your board (and which those west
+commands wrap).
+
+Alternatively, the build system can be configured to call a custom script
+instead of ``west`` to handle targets such as ``flash`` and ``debug``. This can
+be done by setting the CMake ``FLASH_COMMAND`` variable to point to a custom
+script. The script is going to run from the build directory and will be called
+with the target name as its only argument, similarly to how ``west`` would be
+invoked.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :tool: cmake
+   :goals: flash
+   :gen-args: -DFLASH_COMMAND=/path/to/custom/flash/script
+   :compact:
 
 If you want to use these build system targets but do not want to
 install west on your system using ``pip``, it is possible to do so
