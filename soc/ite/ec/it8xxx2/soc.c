@@ -46,6 +46,9 @@ COND_CODE_1(DT_NODE_EXISTS(DT_INST(1, ite_it8xxx2_usbpd)), (2), (1))
 #define PLL_FREQ_AUTO_CAL_START    BIT(0)
 #define AUTO_CAL_ENABLE_AND_START  (AUTO_CAL_ENABLE | PLL_FREQ_AUTO_CAL_START)
 
+#define SSPI_CLOCK_GATING      BIT(1)
+#define AUTO_SSPI_CLOCK_GATING BIT(4)
+
 uint32_t chip_get_pll_freq(void)
 {
 	uint32_t pllfreq;
@@ -454,6 +457,10 @@ static int ite_it8xxx2_init(void)
 	gpio_regs->GPIO_GCR1 |= IT8XXX2_GPIO_U2CTRL_SIN1_SOUT1_EN;
 
 #endif /* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart2)) */
+
+	/* disable sspi clock and disable automatic clock gating */
+	IT8XXX2_ECPM_CGCTRL3R |= SSPI_CLOCK_GATING;
+	IT8XXX2_ECPM_AUTOCG &= ~AUTO_SSPI_CLOCK_GATING;
 
 #if (SOC_USBPD_ITE_PHY_PORT_COUNT > 0)
 	int port;
