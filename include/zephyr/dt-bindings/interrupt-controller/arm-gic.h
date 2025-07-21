@@ -23,6 +23,8 @@
 
 #define	GIC_SPI			0x0
 #define	GIC_PPI			0x1
+#define	GIC_ESPI		0x2
+#define	GIC_EPPI		0x3
 
 #define IRQ_DEFAULT_PRIORITY	0xa0
 
