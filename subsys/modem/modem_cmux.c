@@ -915,9 +915,19 @@ static void modem_cmux_receive_handler(struct k_work *item)
 	struct k_work_delayable *dwork = k_work_delayable_from_work(item);
 	struct modem_cmux *cmux = CONTAINER_OF(dwork, struct modem_cmux, receive_work);
 	int ret;
+	uint8_t *buf;
+	uint16_t buf_len;
+
+	/*
+	 * Use remaining data receive buffer as frame receive buffer. The frame
+	 * receive buffer will be overwritten by data one byte at a time as it
+	 * is processed.
+	 */
+	buf = cmux->receive_buf + cmux->receive_buf_len;
+	buf_len = cmux->receive_buf_size - cmux->receive_buf_len;
 
 	/* Receive data from pipe */
-	ret = modem_pipe_receive(cmux->pipe, cmux->work_buf, sizeof(cmux->work_buf));
+	ret = modem_pipe_receive(cmux->pipe, buf, buf_len);
 	if (ret < 1) {
 		if (ret < 0) {
 			LOG_ERR("Pipe receiving error: %d", ret);
@@ -927,7 +937,7 @@ static void modem_cmux_receive_handler(struct k_work *item)
 
 	/* Process received data */
 	for (int i = 0; i < ret; i++) {
-		modem_cmux_process_received_byte(cmux, cmux->work_buf[i]);
+		modem_cmux_process_received_byte(cmux, buf[i]);
 	}
 
 	/* Reschedule received work */
