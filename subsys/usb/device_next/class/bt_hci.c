@@ -35,6 +35,113 @@
 #include <zephyr/drivers/bluetooth.h>
 #include <zephyr/sys/atomic.h>
 
+// FIXME: HACK
+// subsys/bluetooth/controller/ll_sw/lll.h
+/* Define the Broadcast ISO Stream Handle base value */
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+#define BT_CTLR_ADV_ISO_STREAM_MAX CONFIG_BT_CTLR_ADV_ISO_STREAM_MAX
+#if defined(CONFIG_BT_MAX_CONN)
+#define BT_CTLR_ADV_ISO_STREAM_HANDLE_BASE (CONFIG_BT_MAX_CONN)
+#else /* !CONFIG_BT_MAX_CONN */
+#define BT_CTLR_ADV_ISO_STREAM_HANDLE_BASE 0
+#endif /* !CONFIG_BT_MAX_CONN */
+#define LL_BIS_ADV_HANDLE_FROM_IDX(stream_handle) \
+	((stream_handle) + (BT_CTLR_ADV_ISO_STREAM_HANDLE_BASE))
+#else /* !CONFIG_BT_CTLR_ADV_ISO */
+#define BT_CTLR_ADV_ISO_STREAM_MAX 0
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
+
+/* Define the ISO Synchronized Receiver Stream Handle base value */
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+#define BT_CTLR_SYNC_ISO_STREAM_MAX CONFIG_BT_CTLR_SYNC_ISO_STREAM_MAX
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+#define BT_CTLR_SYNC_ISO_STREAM_HANDLE_BASE \
+	(BT_CTLR_ADV_ISO_STREAM_HANDLE_BASE + \
+	 CONFIG_BT_CTLR_ADV_ISO_STREAM_COUNT)
+#elif defined(CONFIG_BT_MAX_CONN)
+#define BT_CTLR_SYNC_ISO_STREAM_HANDLE_BASE (CONFIG_BT_MAX_CONN)
+#else /* !CONFIG_BT_MAX_CONN */
+#define BT_CTLR_SYNC_ISO_STREAM_HANDLE_BASE 0
+#endif /* !CONFIG_BT_MAX_CONN */
+#define LL_BIS_SYNC_HANDLE_FROM_IDX(stream_handle) \
+	((stream_handle) + (BT_CTLR_SYNC_ISO_STREAM_HANDLE_BASE))
+#else /* !CONFIG_BT_CTLR_SYNC_ISO */
+#define BT_CTLR_SYNC_ISO_STREAM_MAX 0
+#endif /* !CONFIG_BT_CTLR_SYNC_ISO */
+
+/* Define the ISO Connections Stream Handle base value */
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+#define BT_CTLR_CONN_ISO_STREAM_HANDLE_BASE \
+	(BT_CTLR_SYNC_ISO_STREAM_HANDLE_BASE + \
+	 CONFIG_BT_CTLR_SYNC_ISO_STREAM_COUNT)
+#elif defined(CONFIG_BT_CTLR_ADV_ISO)
+#define BT_CTLR_CONN_ISO_STREAM_HANDLE_BASE \
+	(BT_CTLR_ADV_ISO_STREAM_HANDLE_BASE + \
+	 CONFIG_BT_CTLR_ADV_ISO_STREAM_COUNT)
+#else /* !CONFIG_BT_CTLR_ADV_ISO && !CONFIG_BT_CTLR_SYNC_ISO */
+#define BT_CTLR_CONN_ISO_STREAM_HANDLE_BASE (CONFIG_BT_MAX_CONN)
+#endif /* !CONFIG_BT_CTLR_ADV_ISO && !CONFIG_BT_CTLR_SYNC_ISO */
+#define LL_CIS_HANDLE_BASE (BT_CTLR_CONN_ISO_STREAM_HANDLE_BASE)
+#define LL_CIS_IDX_FROM_HANDLE(handle) \
+	((handle) - LL_CIS_HANDLE_BASE)
+#endif /* CONFIG_BT_CTLR_CONN_ISO */
+
+// FIXME: HACK
+// subsys/bluetooth/controller/ll_sw/ull_iso_types.h
+/* BIS Broadcaster */
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+#define LL_BIS_ADV_HANDLE_BASE BT_CTLR_ADV_ISO_STREAM_HANDLE_BASE
+#define LL_BIS_ADV_IDX_FROM_HANDLE(conn_handle) \
+	((conn_handle) - (LL_BIS_ADV_HANDLE_BASE))
+/* Conditional compile to prevent coverity issue CWE570, comparison of unsigned int to 0 */
+#if (LL_BIS_ADV_HANDLE_BASE > 0)
+#define IS_ADV_ISO_HANDLE(conn_handle) \
+	(((conn_handle) >= (LL_BIS_ADV_HANDLE_BASE)) && \
+	 ((conn_handle) <= ((LL_BIS_ADV_HANDLE_BASE) + \
+			    (BT_CTLR_ADV_ISO_STREAM_MAX) - 1U)))
+#else
+#define IS_ADV_ISO_HANDLE(conn_handle) \
+	((conn_handle) <= ((LL_BIS_ADV_HANDLE_BASE) + \
+			   (BT_CTLR_ADV_ISO_STREAM_MAX) - 1U))
+#endif /* LL_BIS_ADV_HANDLE_BASE */
+#else
+#define LL_BIS_ADV_IDX_FROM_HANDLE(conn_handle) 0U
+#define IS_ADV_ISO_HANDLE(conn_handle) 0U
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
+
+/* BIS Synchronized Receiver */
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+#define LL_BIS_SYNC_HANDLE_BASE BT_CTLR_SYNC_ISO_STREAM_HANDLE_BASE
+#define LL_BIS_SYNC_IDX_FROM_HANDLE(conn_handle) \
+	((conn_handle) - (LL_BIS_SYNC_HANDLE_BASE))
+/* Conditional compile to prevent coverity issue CWE570, comparison of unsigned int to 0 */
+#if (LL_BIS_SYNC_HANDLE_BASE > 0)
+#define IS_SYNC_ISO_HANDLE(conn_handle) \
+	(((conn_handle) >= (LL_BIS_SYNC_HANDLE_BASE)) && \
+	 ((conn_handle) <= ((LL_BIS_SYNC_HANDLE_BASE) + \
+			    (BT_CTLR_SYNC_ISO_STREAM_MAX) - 1U)))
+#else
+#define IS_SYNC_ISO_HANDLE(conn_handle) \
+	((conn_handle) <= ((LL_BIS_SYNC_HANDLE_BASE) + \
+			   (BT_CTLR_SYNC_ISO_STREAM_MAX) - 1U))
+#endif /* LL_BIS_SYNC_HANDLE_BASE */
+#else
+#define LL_BIS_SYNC_IDX_FROM_HANDLE(conn_handle) 0U
+#define IS_SYNC_ISO_HANDLE(conn_handle) 0U
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
+
+/* CIS */
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
+#define LL_CIS_HANDLE_LAST \
+	(CONFIG_BT_CTLR_CONN_ISO_STREAMS + LL_CIS_HANDLE_BASE - 1)
+#define IS_CIS_HANDLE(_handle) \
+	(((_handle) >= LL_CIS_HANDLE_BASE) && \
+	((_handle) <= LL_CIS_HANDLE_LAST))
+#else
+#define IS_CIS_HANDLE(_handle) 0
+#endif /* CONFIG_BT_CTLR_CONN_ISO */
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_hci, CONFIG_USBD_BT_HCI_LOG_LEVEL);
 
@@ -218,6 +325,7 @@ static void bt_hci_tx_thread(void *p1, void *p2, void *p3)
 			ep = bt_hci_get_int_in(c_data);
 			break;
 		case BT_HCI_H4_ACL:
+		case BT_HCI_H4_ISO:
 			ep = bt_hci_get_bulk_in(c_data);
 			break;
 		default:
@@ -326,14 +434,34 @@ static int bt_hci_acl_out_cb(struct usbd_class_data *const c_data,
 	}
 
 	if (hci_data->acl_buf == NULL) {
-		hci_data->acl_buf = bt_buf_get_tx(BT_BUF_ACL_OUT, K_FOREVER,
+		uint8_t type = BT_HCI_H4_ACL;
+
+		// FIXME: remove?
+		LOG_HEXDUMP_DBG(buf->data, buf->len, "ACL data received from USB");
+
+		struct bt_hci_iso_hdr *hdr = (struct bt_hci_iso_hdr *)buf->data;
+
+		LOG_DBG("ACL data received, len %zu, handle %u", buf->len, hdr->handle);
+
+		uint16_t handle = bt_acl_handle(sys_le16_to_cpu(hdr->handle));
+
+		// TODO: snoop ISO handles from ISO commands
+		// this would allow to use controllers other than ll_sw
+		if (IS_CIS_HANDLE(handle) || 
+			IS_ADV_ISO_HANDLE(handle) ||
+		    IS_SYNC_ISO_HANDLE(handle)) {
+			LOG_DBG("CIS/ISO handle %u, type %u", handle, type);
+			type = BT_HCI_H4_ISO;
+		}
+
+		hci_data->acl_buf = bt_buf_get_tx(bt_buf_type_from_h4(type, BT_BUF_OUT), K_FOREVER,
 						  buf->data, buf->len);
 		if (hci_data->acl_buf == NULL) {
 			LOG_ERR("Failed to allocate net_buf");
 			goto restart_out_transfer;
 		}
 
-		hci_data->acl_len = hci_pkt_get_len(BT_HCI_H4_ACL,
+		hci_data->acl_len = hci_pkt_get_len(type,
 						    buf->data,
 						    buf->len);
 
