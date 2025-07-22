@@ -1,9 +1,9 @@
-# Copyright (c) 2024-2025 Renesas Electronics Corporation
+# Copyright (c) 2025 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 description: Renesas RZ I2C controller
 
-compatible: "renesas,rz-riic"
+compatible: "renesas,rz-iic"
 
 include: [i2c-controller.yaml, pinctrl-device.yaml]
 
@@ -39,6 +39,5 @@ properties:
     default: 1
     enum:
       - 1
-      - 2
-      - 3
-      - 4
+    description: |
+      Set the noise filter stages. Currently, only single-stage filter is supported.
