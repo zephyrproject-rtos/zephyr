@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Exceenis SAS
+# SPDX-License-Identifier: Apache-2.0
+#
+# Zephyr sy24561 fuel-gauge device
+
+config SY24561
+	bool "SILERGY SY24561 fuel gauge"
+	default y
+	depends on DT_HAS_SILERGY_SY24561_ENABLED
+	select I2C
+	help
+	  Enable driver for the silergy sy24561 fuel gauge device.
