@@ -16,6 +16,7 @@ REDIRECTS = [
     # zephyr-keep-sorted-start
     ('application/index', 'develop/application/index'),
     ('boards/arduino/uno_r4_minima/doc/index', 'boards/arduino/uno_r4/doc/index'),
+    ('boards/nordic/nrf54l20pdk/doc/index', 'boards/nordic/nrf54lm20dk/doc/index'),
     ('boards/phytec/mimx8mm_phyboard_polis/doc/index', 'boards/phytec/phyboard_polis/doc/index'),
     ('boards/phytec/mimx8mp_phyboard_pollux/doc/index', 'boards/phytec/phyboard_pollux/doc/index'),
     ('boards/rak/index', 'boards/rakwireless/index'),
