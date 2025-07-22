@@ -9,7 +9,6 @@
 #include <zephyr/drivers/comparator/nrf_lpcomp.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/device.h>
-#include "comparator_nrf_common.h"
 
 #include <string.h>
 
@@ -125,94 +124,6 @@ static int shim_nrf_lpcomp_pm_callback(const struct device *dev, enum pm_device_
 	return 0;
 }
 
-#if (NRF_LPCOMP_HAS_AIN_AS_PIN)
-static int shim_nrf_lpcomp_psel_to_nrf(enum comp_nrf_lpcomp_psel shim,
-				       nrf_lpcomp_input_t *nrf)
-{
-	if (shim >= ARRAY_SIZE(shim_nrf_comp_ain_map)) {
-		return -EINVAL;
-	}
-
-	*nrf = shim_nrf_comp_ain_map[(uint32_t)shim];
-	return 0;
-}
-#else
-static int shim_nrf_lpcomp_psel_to_nrf(enum comp_nrf_lpcomp_psel shim,
-				       nrf_lpcomp_input_t *nrf)
-{
-	switch (shim) {
-	case COMP_NRF_LPCOMP_PSEL_AIN0:
-		*nrf = NRF_LPCOMP_INPUT_0;
-		break;
-
-	case COMP_NRF_LPCOMP_PSEL_AIN1:
-		*nrf = NRF_LPCOMP_INPUT_1;
-		break;
-
-	case COMP_NRF_LPCOMP_PSEL_AIN2:
-		*nrf = NRF_LPCOMP_INPUT_2;
-		break;
-
-	case COMP_NRF_LPCOMP_PSEL_AIN3:
-		*nrf = NRF_LPCOMP_INPUT_3;
-		break;
-
-	case COMP_NRF_LPCOMP_PSEL_AIN4:
-		*nrf = NRF_LPCOMP_INPUT_4;
-		break;
-
-	case COMP_NRF_LPCOMP_PSEL_AIN5:
-		*nrf = NRF_LPCOMP_INPUT_5;
-		break;
-
-	case COMP_NRF_LPCOMP_PSEL_AIN6:
-		*nrf = NRF_LPCOMP_INPUT_6;
-		break;
-
-	case COMP_NRF_LPCOMP_PSEL_AIN7:
-		*nrf = NRF_LPCOMP_INPUT_7;
-		break;
-
-	default:
-		return -EINVAL;
-	}
-
-	return 0;
-}
-#endif
-
-#if (NRF_LPCOMP_HAS_AIN_AS_PIN)
-static int shim_nrf_lpcomp_extrefsel_to_nrf(enum comp_nrf_lpcomp_extrefsel shim,
-					    nrf_lpcomp_ext_ref_t *nrf)
-{
-	if (shim >= ARRAY_SIZE(shim_nrf_comp_ain_map)) {
-		return -EINVAL;
-	}
-
-	*nrf = shim_nrf_comp_ain_map[shim];
-	return 0;
-}
-#else
-static int shim_nrf_lpcomp_extrefsel_to_nrf(enum comp_nrf_lpcomp_extrefsel shim,
-					    nrf_lpcomp_ext_ref_t *nrf)
-{
-	switch (shim) {
-	case COMP_NRF_LPCOMP_EXTREFSEL_AIN0:
-		*nrf = NRF_LPCOMP_EXT_REF_REF0;
-		break;
-
-	case COMP_NRF_LPCOMP_EXTREFSEL_AIN1:
-		*nrf = NRF_LPCOMP_EXT_REF_REF1;
-		break;
-
-	default:
-		return -EINVAL;
-	}
-
-	return 0;
-}
-#endif
-
 static int shim_nrf_lpcomp_refsel_to_nrf(enum comp_nrf_lpcomp_refsel shim,
 					 nrf_lpcomp_ref_t *nrf)
 {
@@ -297,9 +208,8 @@ static int shim_nrf_lpcomp_config_to_nrf(const struct comp_nrf_lpcomp_config *sh
 		return -EINVAL;
 	}
 
-	if (shim_nrf_lpcomp_extrefsel_to_nrf(shim->extrefsel, &nrf->ext_ref)) {
-		return -EINVAL;
-	}
+	nrf->ext_ref = (nrfx_analog_input_t)shim->extrefsel;
+	nrf->input = (nrfx_analog_input_t)shim->psel;
 
 #if NRF_LPCOMP_HAS_HYST
 	if (shim->enable_hyst) {
@@ -312,10 +222,6 @@ static int shim_nrf_lpcomp_config_to_nrf(const struct comp_nrf_lpcomp_config *sh
 		return -EINVAL;
 	}
 #endif
-
-	if (shim_nrf_lpcomp_psel_to_nrf(shim->psel, &nrf->input)) {
-		return -EINVAL;
-	}
 
 	return 0;
 }
