@@ -114,6 +114,12 @@ static const char *const sensor_channel_name[SENSOR_CHAN_COMMON_COUNT] = {
 	[SENSOR_CHAN_GAME_ROTATION_VECTOR] = "game_rotation_vector",
 	[SENSOR_CHAN_GRAVITY_VECTOR] = "gravity_vector",
 	[SENSOR_CHAN_GBIAS_XYZ] = "gbias_xyz",
+	[SENSOR_CHAN_HEARTRATE] = "heartrate",
+	[SENSOR_CHAN_BLOOD_OXYGEN_SATURATION] = "blood_oxygen_saturation",
+	[SENSOR_CHAN_RESPIRATION_RATE] = "respiration_rate",
+	[SENSOR_CHAN_SKIN_CONTACT] = "skin_contact",
+	[SENSOR_CHAN_ACTIVITY] = "activity",
+	[SENSOR_CHAN_STEP_COUNTER] = "step_counter",
 	[SENSOR_CHAN_ALL] = "all",
 };
 
@@ -136,6 +142,11 @@ static const char *const sensor_attribute_name[SENSOR_ATTR_COMMON_COUNT] = {
 	[SENSOR_ATTR_BATCH_DURATION] = "batch_dur",
 	[SENSOR_ATTR_GAIN] = "gain",
 	[SENSOR_ATTR_RESOLUTION] = "resolution",
+	[SENSOR_ATTR_OP_MODE] = "op_mode",
+	[SENSOR_ATTR_GENDER] = "gender",
+	[SENSOR_ATTR_AGE] = "age",
+	[SENSOR_ATTR_WEIGHT] = "weight",
+	[SENSOR_ATTR_HEIGHT] = "height",
 };
 
 enum sample_stats_state {

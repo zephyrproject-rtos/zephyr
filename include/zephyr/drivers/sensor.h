@@ -201,7 +201,19 @@ enum sensor_channel {
 	SENSOR_CHAN_GRAVITY_VECTOR,
 	/** Gyroscope bias (X/Y/Z components in radians/s) */
 	SENSOR_CHAN_GBIAS_XYZ,
-
+	/** Heart rate value (bpm) */
+	SENSOR_CHAN_HEARTRATE,
+	/** SpO2 value (%) */
+	SENSOR_CHAN_BLOOD_OXYGEN_SATURATION,
+	/** Respiration rate (breaths per minute) */
+	SENSOR_CHAN_RESPIRATION_RATE,
+	/** Skin contact (1 -> Skin contact, 0, no contact) */
+	SENSOR_CHAN_SKIN_CONTACT,
+	/** Activity class (index). */
+	/** The reported index is vendor specific. */
+	SENSOR_CHAN_ACTIVITY,
+	/** Step counter */
+	SENSOR_CHAN_STEP_COUNTER,
 	/** All channels. */
 	SENSOR_CHAN_ALL,
 
@@ -339,8 +351,13 @@ enum sensor_attribute {
 	 * algorithms to calibrate itself on a certain axis, or all of them.
 	 */
 	SENSOR_ATTR_CALIB_TARGET,
-	/** Configure the operating modes of a sensor. */
+	/** Get / Set the configuration of a sensor. */
 	SENSOR_ATTR_CONFIGURATION,
+	/**
+	 * Get / Set the operation mode of a sensor. This can be used to
+	 * switch between different measurement modes when a sensor supports them.
+	 */
+	SENSOR_ATTR_OP_MODE,
 	/** Set a calibration value needed by a sensor. */
 	SENSOR_ATTR_CALIBRATION,
 	/** Enable/disable sensor features */
@@ -356,10 +373,18 @@ enum sensor_attribute {
 
 	/** Hardware batch duration in ticks */
 	SENSOR_ATTR_BATCH_DURATION,
-	/* Configure the gain of a sensor. */
+	/** Configure the gain of a sensor. */
 	SENSOR_ATTR_GAIN,
-	/* Configure the resolution of a sensor. */
+	/** Configure the resolution of a sensor. */
 	SENSOR_ATTR_RESOLUTION,
+	/** Gender of the subject being monitored */
+	SENSOR_ATTR_GENDER,
+	/** Age of the subject being monitored */
+	SENSOR_ATTR_AGE,
+	/** Weight of the subject being monitored */
+	SENSOR_ATTR_WEIGHT,
+	/** Height of the subject being monitored */
+	SENSOR_ATTR_HEIGHT,
 	/**
 	 * Number of all common sensor attributes.
 	 */
