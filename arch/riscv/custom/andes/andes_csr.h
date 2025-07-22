@@ -1,11 +1,14 @@
 /*
- * Copyright (c) 2021 Andes Technology Corporation
- *
+ * Copyright (c) 2025 Andes Technology Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __RISCV_ANDES_V5_SOC_V5_H_
-#define __RISCV_ANDES_V5_SOC_V5_H_
+#ifndef ZEPHYR_ARCH_RISCV_CUSTOM_ANDES_CSR_H_
+#define ZEPHYR_ARCH_RISCV_CUSTOM_ANDES_CSR_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Control and Status Registers (CSRs) available for Andes V5 SoCs */
 #define NDS_MMISC_CTL                0x7D0
@@ -46,4 +49,8 @@
 #define NDS_PMAADDR14                0xBDE
 #define NDS_PMAADDR15                0xBDF
 
-#endif /* __RISCV_ANDES_V5_SOC_V5_H_ */
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* ZEPHYR_ARCH_RISCV_CUSTOM_ANDES_CSR_H_ */
