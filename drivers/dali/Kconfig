@@ -10,6 +10,8 @@ menuconfig DALI
 
 if DALI
 
+source "drivers/dali/Kconfig.lpc11u6x"
+
 module = DALI_LOW_LEVEL
 module-str = dali_low_level
 source "subsys/logging/Kconfig.template.log_config"
