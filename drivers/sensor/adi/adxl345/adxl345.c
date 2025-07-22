@@ -118,11 +118,23 @@ int adxl345_reg_write_mask(const struct device *dev,
 	return adxl345_reg_write_byte(dev, reg_addr, tmp);
 }
 
+int adxl345_reg_assign_bits(const struct device *dev, uint8_t reg, uint8_t mask,
+			    bool en)
+{
+	return adxl345_reg_write_mask(dev, reg, mask, en ? mask : 0x00);
+}
+
 static inline bool adxl345_bus_is_ready(const struct device *dev)
 {
 	const struct adxl345_dev_config *cfg = dev->config;
 
 	return cfg->bus_is_ready(&cfg->bus);
+}
+
+int adxl345_set_measure_en(const struct device *dev, bool en)
+{
+	return adxl345_reg_assign_bits(dev, ADXL345_POWER_CTL_REG,
+				       ADXL345_POWER_CTL_MODE_MSK, en);
 }
 
 int adxl345_get_status(const struct device *dev,
@@ -408,6 +420,7 @@ static int adxl345_init(const struct device *dev)
 	int rc;
 	struct adxl345_dev_data *data = dev->data;
 	const struct adxl345_dev_config *cfg = dev->config;
+	enum adxl345_fifo_mode fifo_mode;
 	uint8_t dev_id, full_res;
 
 	if (!adxl345_bus_is_ready(dev)) {
@@ -452,11 +465,7 @@ static int adxl345_init(const struct device *dev)
 		return rc;
 	}
 
-	rc = adxl345_reg_write_byte(dev, ADXL345_POWER_CTL_REG, ADXL345_ENABLE_MEASURE_BIT);
-	if (rc < 0) {
-		LOG_ERR("Enable measure bit failed\n");
-		return -EIO;
-	}
+	fifo_mode = data->fifo_config.fifo_mode;
 
 #ifdef CONFIG_ADXL345_TRIGGER
 	rc = adxl345_init_interrupt(dev);
@@ -483,6 +492,11 @@ static int adxl345_init(const struct device *dev)
 	uint8_t is_full_res_set = (full_res & ADXL345_DATA_FORMAT_FULL_RES) != 0;
 
 	data->is_full_res = is_full_res_set;
+
+	if (fifo_mode == ADXL345_FIFO_BYPASSED) {
+		return adxl345_set_measure_en(dev, true);
+	}
+
 	return 0;
 }
 

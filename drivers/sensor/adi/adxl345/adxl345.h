@@ -58,7 +58,7 @@
 #define ADXL345_RANGE_8G           0x2
 #define ADXL345_RANGE_16G          0x3
 #define ADXL345_RATE_25HZ          0x8
-#define ADXL345_ENABLE_MEASURE_BIT (1 << 3)
+
 #define ADXL345_FIFO_STREAM_MODE   (1 << 7)
 #define ADXL345_FIFO_COUNT_MASK    0x3f
 #define ADXL345_COMPLEMENT_MASK(x) GENMASK(15, (x))
@@ -110,9 +110,7 @@
 #define ADXL345_POWER_CTL_WAKEUP_2HZ_MODE(x) (((x) & 0x1) << 1)
 #define ADXL345_POWER_CTL_SLEEP              BIT(2)
 #define ADXL345_POWER_CTL_SLEEP_MODE(x)      (((x) & 0x1) << 2)
-#define ADXL345_POWER_CTL_MEASURE_MSK        GENMASK(3, 3)
-#define ADXL345_POWER_CTL_MEASURE_MODE(x)    (((x) & 0x1) << 3)
-#define ADXL345_POWER_CTL_STANDBY_MODE(x)    (((x) & 0x0) << 3)
+#define ADXL345_POWER_CTL_MODE_MSK           BIT(3)
 
 /* ADXL345_FIFO_CTL */
 #define ADXL345_FIFO_CTL_MODE_MSK        GENMASK(7, 6)
@@ -152,11 +150,6 @@ struct adxl345_fifo_config {
 	enum adxl345_fifo_mode fifo_mode;
 	enum adxl345_fifo_trigger fifo_trigger;
 	uint8_t fifo_samples;
-};
-
-enum adxl345_op_mode {
-	ADXL345_STANDBY,
-	ADXL345_MEASURE
 };
 
 struct adxl345_dev_data {
@@ -251,6 +244,8 @@ struct adxl345_dev_config {
 #endif
 };
 
+int adxl345_set_measure_en(const struct device *dev, bool en);
+
 void adxl345_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
 void adxl345_stream_irq_handler(const struct device *dev);
 
@@ -270,6 +265,9 @@ int adxl345_reg_write_mask(const struct device *dev,
 			       uint8_t reg_addr,
 			       uint8_t mask,
 			       uint8_t data);
+
+int adxl345_reg_assign_bits(const struct device *dev, uint8_t reg, uint8_t mask,
+			    bool en);
 
 int adxl345_reg_access(const struct device *dev, uint8_t cmd, uint8_t addr,
 				     uint8_t *data, size_t len);
