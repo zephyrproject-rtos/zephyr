@@ -132,7 +132,7 @@ int adxl345_get_status(const struct device *dev,
 	uint8_t buf[2], length = 1U;
 	int ret;
 
-	ret = adxl345_reg_read(dev, ADXL345_INT_SOURCE, buf, length);
+	ret = adxl345_reg_read(dev, ADXL345_INT_SOURCE_REG, buf, length);
 
 	*status1 = buf[0];
 	ret = adxl345_reg_read(dev, ADXL345_FIFO_STATUS_REG, buf+1, length);

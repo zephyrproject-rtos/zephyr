@@ -387,7 +387,7 @@ void adxl345_stream_irq_handler(const struct device *dev)
 	struct rtio_sqe *write_status_addr = rtio_sqe_acquire(data->rtio_ctx);
 	struct rtio_sqe *read_status_reg = rtio_sqe_acquire(data->rtio_ctx);
 	struct rtio_sqe *check_status_reg = rtio_sqe_acquire(data->rtio_ctx);
-	uint8_t reg = ADXL345_REG_READ(ADXL345_INT_SOURCE);
+	uint8_t reg = ADXL345_REG_READ(ADXL345_INT_SOURCE_REG);
 
 	rtio_sqe_prep_tiny_write(write_status_addr, data->iodev, RTIO_PRIO_NORM, &reg, 1, NULL);
 	write_status_addr->flags |= RTIO_SQE_TRANSACTION;
