@@ -9,7 +9,6 @@
 #include <zephyr/drivers/comparator/nrf_comp.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/device.h>
-#include "comparator_nrf_common.h"
 
 #define DT_DRV_COMPAT nordic_nrf_comp
 
@@ -249,11 +248,12 @@ static int shim_nrf_comp_pm_callback(const struct device *dev, enum pm_device_ac
 static int shim_nrf_comp_psel_to_nrf(enum comp_nrf_comp_psel shim,
 				     nrf_comp_input_t *nrf)
 {
-	if (shim >= ARRAY_SIZE(shim_nrf_comp_ain_map)) {
+	nrfx_err_t err = nrfx_comp_input_convert(shim, nrf);
+
+	if (err != NRFX_SUCCESS) {
 		return -EINVAL;
 	}
 
-	*nrf = shim_nrf_comp_ain_map[(uint32_t)shim];
 	return 0;
 }
 #else
@@ -385,11 +385,12 @@ static int shim_nrf_comp_isource_to_nrf(enum comp_nrf_comp_isource shim,
 static int shim_nrf_comp_extrefsel_to_nrf(enum comp_nrf_comp_extrefsel shim,
 					  nrf_comp_ext_ref_t *nrf)
 {
-	if (shim >= ARRAY_SIZE(shim_nrf_comp_ain_map)) {
+	nrfx_err_t err = nrfx_comp_input_convert(shim, nrf);
+
+	if (err != NRFX_SUCCESS) {
 		return -EINVAL;
 	}
 
-	*nrf = shim_nrf_comp_ain_map[(uint32_t)shim];
 	return 0;
 }
 #else
