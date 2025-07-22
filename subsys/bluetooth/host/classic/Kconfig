@@ -449,6 +449,14 @@ config BT_AVDTP_RTP_VERSION
 	help
 	  This option sets the AVDTP RTP protocol version
 
+config BT_AVDTP_SIGNAL_SDU_MAX
+	int "Maximum size of AVDTP signaling SDU"
+	default 512
+	range 48 $(UINT16_MAX)
+	help
+	  This option sets the maximum size of AVDTP signaling SDU.
+	  The default value is 512 bytes.
+
 endif # BT_AVDTP
 
 if BT_A2DP
