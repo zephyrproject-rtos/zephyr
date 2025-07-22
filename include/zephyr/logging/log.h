@@ -103,10 +103,9 @@ extern "C" {
  */
 #define LOG_WRN_ONCE(...)					\
 	do {							\
-		static uint8_t __warned;			\
-		if (unlikely(__warned == 0)) {			\
+		static atomic_t __warned;			\
+		if (unlikely(atomic_cas(&__warned, 0, 1))) {	\
 			Z_LOG(LOG_LEVEL_WRN, __VA_ARGS__);	\
-			__warned = 1;				\
 		}						\
 	} while (0)
 
