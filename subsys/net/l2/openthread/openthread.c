@@ -82,6 +82,8 @@ static void ot_l2_state_changed_handler(uint32_t flags, void *context)
 	struct openthread_state_changed_cb *entry, *next;
 
 #if defined(CONFIG_OPENTHREAD_INTERFACE_EARLY_UP)
+	bool is_up = otIp6IsEnabled(openthread_get_default_instance());
+
 	if (is_up) {
 		net_if_dormant_off(ot_context->iface);
 	} else {
