@@ -129,6 +129,8 @@ static bool is_valid_gap_packet_len(const struct btp_hdr *hdr, struct net_buf_si
 	case BTP_GAP_SET_EXTENDED_ADVERTISING:
 		return buf_simple->len == sizeof(struct btp_gap_set_extended_advertising_rp);
 	case BTP_GAP_PADV_CONFIGURE:
+		return buf_simple->len == sizeof(struct btp_gap_padv_configure_rp);
+	case BTP_GAP_PADV_START:
 		return buf_simple->len == sizeof(struct btp_gap_padv_start_rp);
 	case BTP_GAP_PADV_STOP:
 		return buf_simple->len == sizeof(struct btp_gap_padv_stop_rp);
@@ -141,6 +143,12 @@ static bool is_valid_gap_packet_len(const struct btp_hdr *hdr, struct net_buf_si
 	case BTP_GAP_PADV_SYNC_TRANSFER_START:
 		return buf_simple->len == 0U;
 	case BTP_GAP_PADV_SYNC_TRANSFER_RECV:
+		return buf_simple->len == 0U;
+	case BTP_GAP_BIG_CREATE_SYNC:
+		return buf_simple->len == 0U;
+	case BTP_GAP_CREATE_BIG:
+		return buf_simple->len == 0U;
+	case BTP_GAP_BIS_BROADCAST:
 		return buf_simple->len == 0U;
 
 	/* events */
@@ -194,6 +202,23 @@ static bool is_valid_gap_packet_len(const struct btp_hdr *hdr, struct net_buf_si
 		return buf_simple->len == sizeof(struct btp_gap_ev_periodic_transfer_received_ev);
 	case BTP_GAP_EV_ENCRYPTION_CHANGE:
 		return buf_simple->len == sizeof(struct btp_gap_encryption_change_ev);
+	case BTP_GAP_EV_BIG_SYNC_ESTABLISHED:
+		return buf_simple->len == sizeof(struct btp_gap_big_sync_established_ev);
+	case BTP_GAP_EV_BIG_SYNC_LOST:
+		return buf_simple->len == sizeof(struct btp_gap_big_sync_lost_ev);
+	case BTP_GAP_EV_BIS_DATA_PATH_SETUP:
+		return buf_simple->len == sizeof(struct btp_gap_bis_data_path_setup_ev);
+	case BTP_GAP_EV_BIS_STREAM_RECEIVED:
+		if (hdr->len >= sizeof(struct btp_gap_bis_stream_received_ev)) {
+			const struct btp_gap_bis_stream_received_ev *ev = net_buf_simple_pull_mem(
+				buf_simple, sizeof(struct btp_gap_bis_stream_received_ev));
+
+			return ev->data_len == buf_simple->len;
+		} else {
+			return false;
+		}
+	case BTP_GAP_EV_PERIODIC_BIGINFO:
+		return buf_simple->len == sizeof(struct btp_gap_periodic_biginfo_ev);
 	default:
 		LOG_ERR("Unhandled opcode 0x%02X", hdr->opcode);
 		return false;
