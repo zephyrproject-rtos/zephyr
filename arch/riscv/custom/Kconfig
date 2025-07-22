@@ -1,0 +1,34 @@
+# Copyright (c) 2025 Andes Technology Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+# Configuration options for RISC-V cores with custom CSR support
+
+config RISCV_CUSTOM_CSR_ANDES
+	bool
+	depends on DT_HAS_ANDESTECH_ANDESCORE_V5_ENABLED
+	help
+	  The RISC-V core supports Andes-specific custom CSRs.
+
+config RISCV_CUSTOM_CSR_CVA6
+	bool
+	depends on DT_HAS_OPENHWGROUP_CVA6_ENABLED
+	help
+	  The RISC-V core supports CVA6-specific custom CSRs.
+
+config RISCV_CUSTOM_CSR_NUCLEI
+	bool
+	depends on DT_HAS_NUCLEI_BUMBLEBEE_ENABLED
+	help
+	  The RISC-V core supports Nuclei-specific custom CSRs.
+
+config RISCV_CUSTOM_CSR_RI5CY
+	bool
+	depends on DT_HAS_OPENISA_RI5CY_ENABLED
+	help
+	  The RISC-V core supports RI5CY-specific custom CSRs.
+
+config RISCV_CUSTOM_CSR_ZERO_RISCY
+	bool
+	depends on DT_HAS_OPENISA_ZERO_RI5CY_ENABLED
+	help
+	  The RISC-V core supports Zero-Riscy-specific custom CSRs.

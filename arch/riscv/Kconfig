@@ -121,6 +121,11 @@ config RISCV_PRIVILEGED
 	help
 	  Option selected by SoCs implementing the RISC-V privileged ISA.
 
+config RISCV_CUSTOM_CSR
+	bool
+	help
+	  Option selected by SoCs implementing the custom CSR.
+
 config RISCV_SOC_HAS_ISR_STACKING
 	bool
 	depends on !USERSPACE
@@ -493,5 +498,11 @@ config ARCH_HAS_STACKWALK
 	  and it can be enabled.
 
 rsource "Kconfig.isa"
+
+if RISCV_CUSTOM_CSR
+
+rsource "custom/Kconfig"
+
+endif # RISCV_CUSTOM_CSR
 
 endmenu
