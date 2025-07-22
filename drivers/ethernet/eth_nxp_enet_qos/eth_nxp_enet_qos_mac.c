@@ -121,6 +121,7 @@ static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 
 	/* One TX at a time in the current implementation */
 	k_sem_take(&data->tx.tx_sem, K_FOREVER);
+	LOG_DBG("Took driver TX sem %p by thread %p", &data->tx.tx_sem, k_current_get());
 
 	net_pkt_ref(pkt);
 
@@ -170,12 +171,10 @@ static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static void tx_dma_done(struct k_work *work)
+static void tx_dma_done(const struct device *dev)
 {
-	struct nxp_enet_qos_tx_data *tx_data =
-		CONTAINER_OF(work, struct nxp_enet_qos_tx_data, tx_done_work);
-	struct nxp_enet_qos_mac_data *data =
-		CONTAINER_OF(tx_data, struct nxp_enet_qos_mac_data, tx);
+	struct nxp_enet_qos_mac_data *data = dev->data;
+	struct nxp_enet_qos_tx_data *tx_data = &data->tx;
 	struct net_pkt *pkt = tx_data->pkt;
 	struct net_buf *fragment = pkt->frags;
 
@@ -194,6 +193,7 @@ static void tx_dma_done(struct k_work *work)
 
 	/* Allows another send */
 	k_sem_give(&data->tx.tx_sem);
+	LOG_DBG("Gave driver TX sem %p by thread %p", &data->tx.tx_sem, k_current_get());
 }
 
 static enum ethernet_hw_caps eth_nxp_enet_qos_get_capabilities(const struct device *dev)
@@ -375,7 +375,7 @@ static void eth_nxp_enet_qos_mac_isr(const struct device *dev)
 	if (ENET_QOS_REG_GET(DMA_INTERRUPT_STATUS, DC0IS, dma_interrupts)) {
 		if (ENET_QOS_REG_GET(DMA_CH_DMA_CHX_STAT, TI, dma_ch0_interrupts)) {
 			/* add pending tx to queue */
-			k_work_submit(&data->tx.tx_done_work);
+			tx_dma_done(dev);
 		}
 
 		if (ENET_QOS_REG_GET(DMA_CH_DMA_CHX_STAT, RI, dma_ch0_interrupts)) {
@@ -717,9 +717,6 @@ static int eth_nxp_enet_qos_mac_init(const struct device *dev)
 
 	/* Work upon a reception of a packet to a buffer */
 	k_work_init(&data->rx.rx_work, eth_nxp_enet_qos_rx);
-
-	/* Work upon a complete transmission by a channel's TX DMA */
-	k_work_init(&data->tx.tx_done_work, tx_dma_done);
 
 	return ret;
 }
