@@ -66,7 +66,7 @@
 
 #define ADXL345_MAX_FIFO_SIZE      32
 
-#define ADXL345_INT_ENABLE 0x2Eu
+#define ADXL345_INT_ENABLE_REG			0x2E
 #define ADXL345_INT_MAP    0x2Fu
 #define ADXL345_INT_SOURCE 0x30u
 

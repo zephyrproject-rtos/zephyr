@@ -144,7 +144,7 @@ int adxl345_trigger_set(const struct device *dev,
 	(void)adxl345_configure_fifo(dev, ADXL345_FIFO_BYPASSED, ADXL345_INT2, 0);
 #endif
 
-	ret = adxl345_reg_write_mask(dev, ADXL345_INT_ENABLE, int_mask, 0);
+	ret = adxl345_reg_write_mask(dev, ADXL345_INT_ENABLE_REG, int_mask, 0);
 	if (ret < 0) {
 		return ret;
 	}
@@ -170,7 +170,7 @@ int adxl345_trigger_set(const struct device *dev,
 		return ret;
 	}
 
-	ret = adxl345_reg_write_mask(dev, ADXL345_INT_ENABLE, int_mask, int_en);
+	ret = adxl345_reg_write_mask(dev, ADXL345_INT_ENABLE_REG, int_mask, int_en);
 	if (ret < 0) {
 		return ret;
 	}
