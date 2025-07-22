@@ -282,17 +282,12 @@ int adxl345_read_sample(const struct device *dev,
 			       struct adxl345_sample *sample)
 {
 	int16_t raw_x, raw_y, raw_z;
-	uint8_t axis_data[6], status1;
 	struct adxl345_dev_data *data = dev->data;
+	uint8_t axis_data[6];
+	int rc;
 
-	if (!IS_ENABLED(CONFIG_ADXL345_TRIGGER)) {
-		do {
-			adxl345_get_status(dev, &status1);
-		} while (!(ADXL345_STATUS_DATA_RDY(status1)));
-	}
-
-	int rc = adxl345_reg_read(dev, ADXL345_REG_DATA_XYZ_REGS,
-				  axis_data, ADXL345_FIFO_SAMPLE_SIZE);
+	rc = adxl345_reg_read(dev, ADXL345_REG_DATA_XYZ_REGS,
+			      axis_data, ADXL345_FIFO_SAMPLE_SIZE);
 	if (rc < 0) {
 		LOG_ERR("Samples read failed with rc=%d\n", rc);
 		return rc;
