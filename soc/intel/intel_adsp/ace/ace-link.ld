@@ -499,6 +499,9 @@ SECTIONS {
   /* Heap start and end markers. Used to reserve system heap memory. */
   .heap_mem SEGSTART_UNCACHED (NOLOAD) :
   {
+    _shared_heap_start = .;
+    *(.shared_heap_mem)
+    _shared_heap_end = .;
     _heap_start = .;
     *(.heap_mem)
   } >ucram
