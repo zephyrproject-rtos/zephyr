@@ -5920,7 +5920,8 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 	len = bt_iso_hdr_len(sys_le16_to_cpu(iso_hdr->len));
 
 	if (buf->len < len) {
-		LOG_ERR("Invalid HCI ISO packet length");
+		LOG_ERR("Invalid HCI ISO packet length: %u < %u",
+			buf->len, len);
 		return -EINVAL;
 	}
 
