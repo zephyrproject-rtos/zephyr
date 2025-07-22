@@ -1,0 +1,49 @@
+description: PWM based DALI interface
+
+compatible: "zephyr,dali-pwm"
+
+include: base.yaml
+
+properties:
+  pwms:
+    type: phandle-array
+    required: true
+
+  tx-flank-shift-us:
+    type: int
+    description: |
+      Difference in propagation delay in ns between the falling and rising edge.
+      If for example the high to low delay is 8 us and low to high is 22 us, then enter
+      (-14) here. Keep in low µs range.
+
+  rx-flank-shift-us:
+    type: int
+    description: |
+      Difference in propagation delay in ns between the falling and rising edge.
+      If for example the high to low delay is 47 us and low to high is 15 us, then enter
+      (32) here. Keep in low µs range.
+
+  tx-rx-propagation-max-us:
+    type: int
+    description: |
+      The maximal time from a transmitted change to read observation.
+      This value needs to be set for proper collision detection.
+      The delay is measured in micro seconds.
+
+  rx-finish-work-delay-us:
+    type: int
+    description: |
+      This is the time that elapses from the time the stop bit period has
+      expired until the corresponding workqueue processing has started.
+      This time depends on the clockrate and architecture of the target system.
+      This parameter might need adjustment to pass the test item 3.15 of
+      the DALI tests. The delay is measured in micro seconds.
+
+  rx-capture-work-delay-us:
+    type: int
+    description: |
+      This is time that elapses from the moment a DALI bus event is
+      captured until the corresponding workqueue pricessing has started.
+      This time depends on the clockrate and architecture of the target system.
+      This parameter might need adjustment to pass the test item 3.14 of
+      the DALI tests. The delay is measured in micro seconds.
