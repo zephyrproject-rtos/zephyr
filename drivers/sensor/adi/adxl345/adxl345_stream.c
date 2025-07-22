@@ -16,13 +16,11 @@ void adxl345_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iode
 	const struct sensor_read_config *cfg =
 			(const struct sensor_read_config *) iodev_sqe->sqe.iodev->data;
 	struct adxl345_dev_data *data = (struct adxl345_dev_data *)dev->data;
-	const struct adxl345_dev_config *cfg_345 = dev->config;
 	uint8_t int_value = (uint8_t)~ADXL345_INT_MAP_WATERMARK_MSK;
 	uint8_t fifo_watermark_irq = 0;
-	int rc = gpio_pin_interrupt_configure_dt(&cfg_345->interrupt,
-					      GPIO_INT_DISABLE);
+	int rc;
 
-	if (rc < 0) {
+	if (adxl345_set_gpios_en(dev, false)) {
 		return;
 	}
 
@@ -35,11 +33,6 @@ void adxl345_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iode
 		uint8_t status;
 	if (fifo_watermark_irq != data->fifo_watermark_irq) {
 		data->fifo_watermark_irq = fifo_watermark_irq;
-		rc = adxl345_reg_write_mask(dev, ADXL345_INT_MAP_REG, ADXL345_INT_MAP_WATERMARK_MSK,
-					    cfg_345->route_to_int2 ? int_value : ~int_value);
-		if (rc < 0) {
-			return;
-		}
 
 		/* Flush the FIFO by disabling it. Save current mode for after the reset. */
 		enum adxl345_fifo_mode current_fifo_mode = data->fifo_config.fifo_mode;
@@ -54,11 +47,10 @@ void adxl345_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iode
 		rc = adxl345_reg_read_byte(dev, ADXL345_FIFO_STATUS_REG, &status);
 	}
 
-	rc = gpio_pin_interrupt_configure_dt(&cfg_345->interrupt,
-					      GPIO_INT_EDGE_TO_ACTIVE);
-	if (rc < 0) {
+	if (adxl345_set_gpios_en(dev, true)) {
 		return;
 	}
+
 	data->sqe = iodev_sqe;
 }
 
@@ -67,9 +59,8 @@ static void adxl345_irq_en_cb(struct rtio *r, const struct rtio_sqe *sqe, int re
 	ARG_UNUSED(result);
 
 	const struct device *dev = (const struct device *)arg;
-	const struct adxl345_dev_config *cfg = dev->config;
 
-	gpio_pin_interrupt_configure_dt(&cfg->interrupt, GPIO_INT_EDGE_TO_ACTIVE);
+	adxl345_set_gpios_en(dev, true);
 }
 
 static void adxl345_fifo_flush_rtio(const struct device *dev)
@@ -111,13 +102,12 @@ static void adxl345_fifo_read_cb(struct rtio *rtio_ctx, const struct rtio_sqe *s
 
 	const struct device *dev = (const struct device *)arg;
 	struct adxl345_dev_data *data = (struct adxl345_dev_data *) dev->data;
-	const struct adxl345_dev_config *cfg = (const struct adxl345_dev_config *) dev->config;
 	struct rtio_iodev_sqe *iodev_sqe = sqe->userdata;
 
 	if (data->fifo_samples == 0) {
 		data->fifo_total_bytes = 0;
 		rtio_iodev_sqe_ok(iodev_sqe, 0);
-		gpio_pin_interrupt_configure_dt(&cfg->interrupt, GPIO_INT_EDGE_TO_ACTIVE);
+		adxl345_set_gpios_en(dev, true);
 	}
 
 }
@@ -140,7 +130,7 @@ static void adxl345_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 	/* Not inherently an underrun/overrun as we may have a buffer to fill next time */
 	if (current_sqe == NULL) {
 		LOG_ERR("No pending SQE");
-		gpio_pin_interrupt_configure_dt(&cfg->interrupt, GPIO_INT_EDGE_TO_ACTIVE);
+		adxl345_set_gpios_en(dev, true);
 		return;
 	}
 
@@ -153,7 +143,7 @@ static void adxl345_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 	if (rtio_sqe_rx_buf(current_sqe, min_read_size, ideal_read_size, &buf, &buf_len) != 0) {
 		LOG_ERR("Failed to get buffer");
 		rtio_iodev_sqe_err(current_sqe, -ENOMEM);
-		gpio_pin_interrupt_configure_dt(&cfg->interrupt, GPIO_INT_EDGE_TO_ACTIVE);
+		adxl345_set_gpios_en(dev, true);
 		return;
 	}
 	LOG_DBG("Requesting buffer [%u, %u] got %u", (unsigned int)min_read_size,
@@ -265,7 +255,7 @@ static void adxl345_process_status1_cb(struct rtio *r, const struct rtio_sqe *sq
 		return;
 	}
 
-	gpio_pin_interrupt_configure_dt(&cfg->interrupt, GPIO_INT_DISABLE);
+	adxl345_set_gpios_en(dev, false);
 
 	struct sensor_stream_trigger *fifo_wmark_cfg = NULL;
 
@@ -284,7 +274,7 @@ static void adxl345_process_status1_cb(struct rtio *r, const struct rtio_sqe *sq
 	}
 
 	if (!fifo_full_irq) {
-		gpio_pin_interrupt_configure_dt(&cfg->interrupt, GPIO_INT_EDGE_TO_ACTIVE);
+		adxl345_set_gpios_en(dev, true);
 		return;
 	}
 
@@ -324,7 +314,7 @@ static void adxl345_process_status1_cb(struct rtio *r, const struct rtio_sqe *sq
 		if (rtio_sqe_rx_buf(current_sqe, sizeof(struct adxl345_fifo_data),
 				    sizeof(struct adxl345_fifo_data), &buf, &buf_len) != 0) {
 			rtio_iodev_sqe_err(current_sqe, -ENOMEM);
-			gpio_pin_interrupt_configure_dt(&cfg->interrupt, GPIO_INT_EDGE_TO_ACTIVE);
+			adxl345_set_gpios_en(dev, true);
 			return;
 		}
 
@@ -342,7 +332,7 @@ static void adxl345_process_status1_cb(struct rtio *r, const struct rtio_sqe *sq
 			adxl345_fifo_flush_rtio(dev);
 		}
 
-		gpio_pin_interrupt_configure_dt(&cfg->interrupt, GPIO_INT_EDGE_TO_ACTIVE);
+		adxl345_set_gpios_en(dev, true);
 		return;
 	}
 

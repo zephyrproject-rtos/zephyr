@@ -52,9 +52,10 @@ void adxl345_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 		__ASSERT_NO_MSG(req);
 
 		rtio_work_req_submit(req, iodev_sqe, adxl345_submit_fetch);
-	} else if (IS_ENABLED(CONFIG_ADXL345_STREAM)) {
-		adxl345_submit_stream(dev, iodev_sqe);
-	} else {
-		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
 	}
+#if defined(CONFIG_ADXL345_STREAM)
+		adxl345_submit_stream(dev, iodev_sqe);
+#else
+		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
+#endif
 }

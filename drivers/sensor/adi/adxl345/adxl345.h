@@ -163,7 +163,8 @@ struct adxl345_dev_data {
 	uint8_t selected_range;
 	enum adxl345_odr odr;
 #ifdef CONFIG_ADXL345_TRIGGER
-	struct gpio_callback gpio_cb;
+	struct gpio_callback int1_cb;
+	struct gpio_callback int2_cb;
 
 	sensor_trigger_handler_t th_handler;
 	const struct sensor_trigger *th_trigger;
@@ -239,11 +240,13 @@ struct adxl345_dev_config {
 	struct adxl345_fifo_config fifo_config;
 	uint8_t bus_type;
 #ifdef CONFIG_ADXL345_TRIGGER
-	struct gpio_dt_spec interrupt;
-	bool route_to_int2;
+	struct gpio_dt_spec gpio_int1;
+	struct gpio_dt_spec gpio_int2;
+	int8_t drdy_pad;
 #endif
 };
 
+int adxl345_set_gpios_en(const struct device *dev, bool enable);
 int adxl345_set_measure_en(const struct device *dev, bool en);
 
 void adxl345_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
