@@ -5,7 +5,7 @@
 config CACHE_ANDES
 bool "ANDES external cache driver"
 	default y
-	depends on SOC_FAMILY_ANDES_V5
+	depends on RISCV_CUSTOM_CSR_ANDES
 	select CACHE_HAS_DRIVER
 	help
 	  This option enables the CACHE driver for ANDES V5 series SOC.

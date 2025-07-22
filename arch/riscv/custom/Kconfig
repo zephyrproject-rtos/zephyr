@@ -32,3 +32,9 @@ config RISCV_CUSTOM_CSR_ZERO_RISCY
 	depends on DT_HAS_OPENISA_ZERO_RI5CY_ENABLED
 	help
 	  The RISC-V core supports Zero-Riscy-specific custom CSRs.
+
+if RISCV_CUSTOM_CSR_ANDES
+
+rsource "andes/Kconfig"
+
+endif # RISCV_CUSTOM_CSR_ANDES
