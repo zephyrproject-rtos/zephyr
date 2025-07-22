@@ -5965,6 +5965,14 @@ function(add_llext_target target_name)
     set(slid_inject_cmd ${CMAKE_COMMAND} -E true)
   endif()
 
+  # The LLEXT loader cannot load ELF files where regions overlap, so
+  # reorder the sections in these cases
+  set(reorder_sects_cmd
+    ${PYTHON_EXECUTABLE}
+    ${ZEPHYR_BASE}/scripts/build/llext_reorder_sects.py
+    ${llext_pkg_output}
+  )
+
   # Remove sections that are unused by the llext loader
   add_custom_command(
     OUTPUT ${llext_pkg_output}
@@ -5976,6 +5984,7 @@ function(add_llext_target target_name)
             $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${llext_pkg_input}
             $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${llext_pkg_output}
             $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
+    COMMAND ${reorder_sects_cmd}
     COMMAND ${slid_inject_cmd}
     DEPENDS ${llext_proc_target} ${llext_pkg_input}
     COMMAND_EXPAND_LISTS
