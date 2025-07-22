@@ -10,13 +10,27 @@
 #include <zephyr/logging/log_instance.h>
 #include <zephyr/logging/log_core.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util_macro.h>
 
 #if CONFIG_USERSPACE && CONFIG_LOG_ALWAYS_RUNTIME
 #include <zephyr/app_memory/app_memdomain.h>
 #endif
 
+#ifdef CONFIG_LOG_RATELIMIT
+#include <zephyr/kernel.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#ifdef CONFIG_LOG_RATELIMIT
+#define LOG_RATELIMIT_INTERVAL_MS CONFIG_LOG_RATELIMIT_INTERVAL_MS
+
+#else
+#define LOG_RATELIMIT_INTERVAL_MS 0
+
 #endif
 
 /**
@@ -95,6 +109,389 @@ extern "C" {
 			__warned = 1;				\
 		}						\
 	} while (0)
+
+/**
+ * @brief Core rate-limited logging macro for regular messages
+ *
+ * @details Internal macro that provides rate-limited logging functionality
+ * for regular log messages. Uses atomic operations to ensure thread safety
+ * in multi-threaded environments. Only one thread can successfully log a
+ * message within the specified rate limit period.
+ *
+ * @param _level Log level (LOG_LEVEL_ERR, LOG_LEVEL_WRN, etc.)
+ * @param _rate_ms Minimum interval in milliseconds between log messages.
+ * @param ... Arguments to pass to the logging function.
+ */
+#define _LOG_RATELIMIT_CORE(_level, _rate_ms, ...)                                                 \
+	do {                                                                                       \
+		static atomic_t __last_log_time;                                                   \
+		static atomic_t __skipped_count;                                                   \
+		uint32_t __now = k_uptime_get_32();                                                \
+		uint32_t __last = atomic_get(&__last_log_time);                                    \
+		uint32_t __diff = __now - __last;                                                  \
+		if (unlikely(__diff >= (_rate_ms))) {                                              \
+			if (atomic_cas(&__last_log_time, __last, __now)) {                         \
+				uint32_t __skipped = atomic_clear(&__skipped_count);               \
+				if (__skipped > 0) {                                               \
+					Z_LOG(_level, "Skipped %d messages", __skipped);           \
+				}                                                                  \
+				Z_LOG(_level, __VA_ARGS__);                                        \
+			} else {                                                                   \
+				atomic_inc(&__skipped_count);                                      \
+			}                                                                          \
+		} else {                                                                           \
+			atomic_inc(&__skipped_count);                                              \
+		}                                                                                  \
+	} while (0)
+
+/**
+ * @brief Rate-limited logging macros
+ *
+ * @details These macros provide rate-limited logging functionality to prevent
+ * log flooding when messages are generated frequently. Each macro ensures that
+ * log messages are not output more frequently than a specified interval.
+ * Rate limiting is per-macro-call-site, meaning each unique call has its own
+ * independent rate limit.
+ *
+ * The macros use atomic operations to ensure thread safety in multi-threaded
+ * environments. Only one thread can successfully log a message within the
+ * specified rate limit period.
+ *
+ * @see CONFIG_LOG_RATELIMIT_INTERVAL_MS
+ */
+
+/**
+ * @brief Core rate-limited logging macro with level parameter
+ *
+ * @details Internal macro that provides rate-limited logging functionality
+ * with configurable log level. Uses atomic operations to ensure thread safety
+ * in multi-threaded environments.
+ *
+ * @param _level Log level (LOG_LEVEL_ERR, LOG_LEVEL_WRN, etc.)
+ * @param _rate_ms Minimum interval in milliseconds between log messages.
+ * @param ... Arguments to pass to the logging function.
+ */
+#define _LOG_RATELIMIT_LVL(_level, _rate_ms, ...) \
+	do { \
+		if (IS_ENABLED(CONFIG_LOG_RATELIMIT)) { \
+			_LOG_RATELIMIT_CORE(_level, _rate_ms, __VA_ARGS__); \
+		} else if (IS_ENABLED(CONFIG_LOG_RATELIMIT_FALLBACK_DROP)) { \
+			(void)0; \
+		} else { \
+			Z_LOG(_level, __VA_ARGS__); \
+		} \
+	} while (0)
+
+/**
+ * @brief Writes a WARNING level message to the log with rate limiting.
+ *
+ * @details It's meant for situations that warrant investigation but could clutter
+ * the logs if output too frequently. The message will be logged at most once
+ * per default interval (see CONFIG_LOG_RATELIMIT_INTERVAL_MS).
+ *
+ * @param ... A string optionally containing printk valid conversion specifier,
+ * followed by as many values as specifiers.
+ */
+#define LOG_WRN_RATELIMIT(...) \
+	_LOG_RATELIMIT_LVL(LOG_LEVEL_WRN, LOG_RATELIMIT_INTERVAL_MS, \
+			   __VA_ARGS__)
+
+/**
+ * @brief Writes an ERROR level message to the log with rate limiting.
+ *
+ * @details It's meant to report severe errors, such as those from which it's
+ * not possible to recover, but with rate limiting to prevent log flooding.
+ * The message will be logged at most once per default interval (see
+ * CONFIG_LOG_RATELIMIT_INTERVAL_MS).
+ *
+ * @param ... A string optionally containing printk valid conversion specifier,
+ * followed by as many values as specifiers.
+ */
+#define LOG_ERR_RATELIMIT(...) \
+	_LOG_RATELIMIT_LVL(LOG_LEVEL_ERR, LOG_RATELIMIT_INTERVAL_MS, \
+			   __VA_ARGS__)
+
+/**
+ * @brief Writes an INFO level message to the log with rate limiting.
+ *
+ * @details It's meant to write generic user oriented messages with rate limiting
+ * to prevent log flooding. The message will be logged at most once per default
+ * interval (see CONFIG_LOG_RATELIMIT_INTERVAL_MS).
+ *
+ * @param ... A string optionally containing printk valid conversion specifier,
+ * followed by as many values as specifiers.
+ */
+#define LOG_INF_RATELIMIT(...) \
+	_LOG_RATELIMIT_LVL(LOG_LEVEL_INF, LOG_RATELIMIT_INTERVAL_MS, \
+			   __VA_ARGS__)
+
+/**
+ * @brief Writes a DEBUG level message to the log with rate limiting.
+ *
+ * @details It's meant to write developer oriented information with rate limiting
+ * to prevent log flooding. The message will be logged at most once per default
+ * interval (see CONFIG_LOG_RATELIMIT_INTERVAL_MS).
+ *
+ * @param ... A string optionally containing printk valid conversion specifier,
+ * followed by as many values as specifiers.
+ */
+#define LOG_DBG_RATELIMIT(...) \
+	_LOG_RATELIMIT_LVL(LOG_LEVEL_DBG, LOG_RATELIMIT_INTERVAL_MS, \
+			   __VA_ARGS__)
+
+/**
+ * @brief Core rate-limited logging macro for hexdump messages
+ *
+ * @details Internal macro that provides rate-limited logging functionality
+ * for hexdump log messages. Uses atomic operations to ensure thread safety
+ * in multi-threaded environments. Only one thread can successfully log a
+ * message within the specified rate limit period.
+ *
+ * @param _level Log level (LOG_LEVEL_ERR, LOG_LEVEL_WRN, etc.)
+ * @param _rate_ms Minimum interval in milliseconds between log messages.
+ * @param _data    Pointer to the data to be logged.
+ * @param _length  Length of data (in bytes).
+ * @param _str     Persistent, raw string.
+ */
+#define _LOG_HEXDUMP_RATELIMIT_CORE(_level, _rate_ms, _data, _length, _str)                        \
+	do {                                                                                       \
+		static atomic_t __last_log_time;                                                   \
+		static atomic_t __skipped_count;                                                   \
+		uint32_t __now = k_uptime_get_32();                                                \
+		uint32_t __last = atomic_get(&__last_log_time);                                    \
+		uint32_t __diff = __now - __last;                                                  \
+		if (unlikely(__diff >= (_rate_ms))) {                                              \
+			if (atomic_cas(&__last_log_time, __last, __now)) {                         \
+				uint32_t __skipped = atomic_clear(&__skipped_count);               \
+				if (__skipped > 0) {                                               \
+					Z_LOG(_level, "Skipped %d hexdump messages", __skipped);   \
+				}                                                                  \
+				Z_LOG_HEXDUMP(_level, _data, _length, _str);                       \
+			} else {                                                                   \
+				atomic_inc(&__skipped_count);                                      \
+			}                                                                          \
+		} else {                                                                           \
+			atomic_inc(&__skipped_count);                                              \
+		}                                                                                  \
+	} while (0)
+
+/**
+ * @brief Core rate-limited hexdump logging macro with level parameter
+ *
+ * @details Internal macro that provides rate-limited hexdump logging functionality
+ * with configurable log level. Uses atomic operations to ensure thread safety
+ * in multi-threaded environments.
+ *
+ * @param _level Log level (LOG_LEVEL_ERR, LOG_LEVEL_WRN, etc.)
+ * @param _rate_ms Minimum interval in milliseconds between log messages.
+ * @param _data    Pointer to the data to be logged.
+ * @param _length  Length of data (in bytes).
+ * @param _str     Persistent, raw string.
+ */
+#define _LOG_HEXDUMP_RATELIMIT_LVL(_level, _rate_ms, _data, _length, _str) \
+	do { \
+		if (IS_ENABLED(CONFIG_LOG_RATELIMIT)) { \
+			_LOG_HEXDUMP_RATELIMIT_CORE(_level, _rate_ms, _data, _length, _str); \
+		} else if (IS_ENABLED(CONFIG_LOG_RATELIMIT_FALLBACK_DROP)) { \
+			(void)0; \
+		} else { \
+			Z_LOG_HEXDUMP(_level, _data, _length, _str); \
+		} \
+	} while (0)
+
+/**
+ * @brief Writes an ERROR level hexdump message to the log with rate limiting.
+ *
+ * @details It's meant to report severe errors, such as those from which it's
+ * not possible to recover, but with rate limiting to prevent log flooding.
+ * The message will be logged at most once per default interval (see
+ * CONFIG_LOG_RATELIMIT_INTERVAL_MS).
+ *
+ * @param _data    Pointer to the data to be logged.
+ * @param _length  Length of data (in bytes).
+ * @param _str     Persistent, raw string.
+ */
+#define LOG_HEXDUMP_ERR_RATELIMIT(_data, _length, _str) \
+	_LOG_HEXDUMP_RATELIMIT_LVL(LOG_LEVEL_ERR, LOG_RATELIMIT_INTERVAL_MS, \
+				   _data, _length, _str)
+
+/**
+ * @brief Writes a WARNING level hexdump message to the log with rate limiting.
+ *
+ * @details It's meant to register messages related to unusual situations that
+ * are not necessarily errors, but with rate limiting to prevent log flooding.
+ * The message will be logged at most once per default interval (see
+ * CONFIG_LOG_RATELIMIT_INTERVAL_MS).
+ *
+ * @param _data    Pointer to the data to be logged.
+ * @param _length  Length of data (in bytes).
+ * @param _str     Persistent, raw string.
+ */
+#define LOG_HEXDUMP_WRN_RATELIMIT(_data, _length, _str) \
+	_LOG_HEXDUMP_RATELIMIT_LVL(LOG_LEVEL_WRN, LOG_RATELIMIT_INTERVAL_MS, \
+				   _data, _length, _str)
+
+/**
+ * @brief Writes an INFO level hexdump message to the log with rate limiting.
+ *
+ * @details It's meant to write generic user oriented messages with rate limiting
+ * to prevent log flooding. The message will be logged at most once per default
+ * interval (see CONFIG_LOG_RATELIMIT_INTERVAL_MS).
+ *
+ * @param _data    Pointer to the data to be logged.
+ * @param _length  Length of data (in bytes).
+ * @param _str     Persistent, raw string.
+ */
+#define LOG_HEXDUMP_INF_RATELIMIT(_data, _length, _str) \
+	_LOG_HEXDUMP_RATELIMIT_LVL(LOG_LEVEL_INF, LOG_RATELIMIT_INTERVAL_MS, \
+				   _data, _length, _str)
+
+/**
+ * @brief Writes a DEBUG level hexdump message to the log with rate limiting.
+ *
+ * @details It's meant to write developer oriented information with rate limiting
+ * to prevent log flooding. The message will be logged at most once per default
+ * interval (see CONFIG_LOG_RATELIMIT_INTERVAL_MS).
+ *
+ * @param _data    Pointer to the data to be logged.
+ * @param _length  Length of data (in bytes).
+ * @param _str     Persistent, raw string.
+ */
+#define LOG_HEXDUMP_DBG_RATELIMIT(_data, _length, _str) \
+	_LOG_HEXDUMP_RATELIMIT_LVL(LOG_LEVEL_DBG, LOG_RATELIMIT_INTERVAL_MS, \
+				   _data, _length, _str)
+
+/**
+ * @brief Rate-limited logging macros with custom rate
+ *
+ * @details These macros provide rate-limited logging functionality with custom
+ * rate intervals. They take an explicit rate parameter (in milliseconds) that
+ * specifies the minimum interval between log messages.
+ */
+
+/**
+ * @brief Writes an ERROR level message to the log with custom rate limiting.
+ *
+ * @details It's meant to report severe errors, such as those from which it's
+ * not possible to recover, but with rate limiting to prevent log flooding.
+ * The message will be logged at most once per specified interval.
+ *
+ * @param _rate_ms Minimum interval in milliseconds between log messages.
+ * @param ... A string optionally containing printk valid conversion specifier,
+ * followed by as many values as specifiers.
+ */
+#define LOG_ERR_RATELIMIT_RATE(_rate_ms, ...) \
+	_LOG_RATELIMIT_LVL(LOG_LEVEL_ERR, _rate_ms, \
+			   __VA_ARGS__)
+
+/**
+ * @brief Writes a WARNING level message to the log with custom rate limiting.
+ *
+ * @details It's meant for situations that warrant investigation but could clutter
+ * the logs if output too frequently. The message will be logged at most once
+ * per specified interval.
+ *
+ * @param _rate_ms Minimum interval in milliseconds between log messages.
+ * @param ... A string optionally containing printk valid conversion specifier,
+ * followed by as many values as specifiers.
+ */
+#define LOG_WRN_RATELIMIT_RATE(_rate_ms, ...) \
+	_LOG_RATELIMIT_LVL(LOG_LEVEL_WRN, _rate_ms, \
+			   __VA_ARGS__)
+
+/**
+ * @brief Writes an INFO level message to the log with custom rate limiting.
+ *
+ * @details It's meant to write generic user oriented messages with rate limiting
+ * to prevent log flooding. The message will be logged at most once per specified
+ * interval.
+ *
+ * @param _rate_ms Minimum interval in milliseconds between log messages.
+ * @param ... A string optionally containing printk valid conversion specifier,
+ * followed by as many values as specifiers.
+ */
+#define LOG_INF_RATELIMIT_RATE(_rate_ms, ...) \
+	_LOG_RATELIMIT_LVL(LOG_LEVEL_INF, _rate_ms, \
+			   __VA_ARGS__)
+
+/**
+ * @brief Writes a DEBUG level message to the log with custom rate limiting.
+ *
+ * @details It's meant to write developer oriented information with rate limiting
+ * to prevent log flooding. The message will be logged at most once per specified
+ * interval.
+ *
+ * @param _rate_ms Minimum interval in milliseconds between log messages.
+ * @param ... A string optionally containing printk valid conversion specifier,
+ * followed by as many values as specifiers.
+ */
+#define LOG_DBG_RATELIMIT_RATE(_rate_ms, ...) \
+	_LOG_RATELIMIT_LVL(LOG_LEVEL_DBG, _rate_ms, \
+			   __VA_ARGS__)
+
+/**
+ * @brief Writes an ERROR level hexdump message to the log with custom rate limiting.
+ *
+ * @details It's meant to report severe errors, such as those from which it's
+ * not possible to recover, but with rate limiting to prevent log flooding.
+ * The message will be logged at most once per specified interval.
+ *
+ * @param _rate_ms Minimum interval in milliseconds between log messages.
+ * @param _data    Pointer to the data to be logged.
+ * @param _length  Length of data (in bytes).
+ * @param _str     Persistent, raw string.
+ */
+#define LOG_HEXDUMP_ERR_RATELIMIT_RATE(_rate_ms, _data, _length, _str) \
+	_LOG_HEXDUMP_RATELIMIT_LVL(LOG_LEVEL_ERR, _rate_ms, \
+				   _data, _length, _str)
+
+/**
+ * @brief Writes a WARNING level hexdump message to the log with custom rate limiting.
+ *
+ * @details It's meant to register messages related to unusual situations that
+ * are not necessarily errors, but with rate limiting to prevent log flooding.
+ * The message will be logged at most once per specified interval.
+ *
+ * @param _rate_ms Minimum interval in milliseconds between log messages.
+ * @param _data    Pointer to the data to be logged.
+ * @param _length  Length of data (in bytes).
+ * @param _str     Persistent, raw string.
+ */
+#define LOG_HEXDUMP_WRN_RATELIMIT_RATE(_rate_ms, _data, _length, _str) \
+	_LOG_HEXDUMP_RATELIMIT_LVL(LOG_LEVEL_WRN, _rate_ms, \
+				   _data, _length, _str)
+
+/**
+ * @brief Writes an INFO level hexdump message to the log with custom rate limiting.
+ *
+ * @details It's meant to write generic user oriented messages with rate limiting
+ * to prevent log flooding. The message will be logged at most once per specified
+ * interval.
+ *
+ * @param _rate_ms Minimum interval in milliseconds between log messages.
+ * @param _data    Pointer to the data to be logged.
+ * @param _length  Length of data (in bytes).
+ * @param _str     Persistent, raw string.
+ */
+#define LOG_HEXDUMP_INF_RATELIMIT_RATE(_rate_ms, _data, _length, _str) \
+	_LOG_HEXDUMP_RATELIMIT_LVL(LOG_LEVEL_INF, _rate_ms, \
+				   _data, _length, _str)
+
+/**
+ * @brief Writes a DEBUG level hexdump message to the log with custom rate limiting.
+ *
+ * @details It's meant to write developer oriented information with rate limiting
+ * to prevent log flooding. The message will be logged at most once per specified
+ * interval.
+ *
+ * @param _rate_ms Minimum interval in milliseconds between log messages.
+ * @param _data    Pointer to the data to be logged.
+ * @param _length  Length of data (in bytes).
+ * @param _str     Persistent, raw string.
+ */
+#define LOG_HEXDUMP_DBG_RATELIMIT_RATE(_rate_ms, _data, _length, _str) \
+	_LOG_HEXDUMP_RATELIMIT_LVL(LOG_LEVEL_DBG, _rate_ms, \
+				   _data, _length, _str)
 
 /**
  * @brief Unconditionally print raw log message.
@@ -499,6 +896,46 @@ extern struct k_mem_partition k_log_partition;
 #define LOG_HEXDUMP_WRN(...) (void) 0
 #define LOG_HEXDUMP_DBG(...) (void) 0
 #define LOG_HEXDUMP_INF(...) (void) 0
+
+#undef LOG_ERR_RATELIMIT
+#undef LOG_WRN_RATELIMIT
+#undef LOG_INF_RATELIMIT
+#undef LOG_DBG_RATELIMIT
+
+#undef LOG_ERR_RATELIMIT_RATE
+#undef LOG_WRN_RATELIMIT_RATE
+#undef LOG_INF_RATELIMIT_RATE
+#undef LOG_DBG_RATELIMIT_RATE
+
+#undef LOG_HEXDUMP_ERR_RATELIMIT
+#undef LOG_HEXDUMP_WRN_RATELIMIT
+#undef LOG_HEXDUMP_INF_RATELIMIT
+#undef LOG_HEXDUMP_DBG_RATELIMIT
+
+#undef LOG_HEXDUMP_ERR_RATELIMIT_RATE
+#undef LOG_HEXDUMP_WRN_RATELIMIT_RATE
+#undef LOG_HEXDUMP_INF_RATELIMIT_RATE
+#undef LOG_HEXDUMP_DBG_RATELIMIT_RATE
+
+#define LOG_ERR_RATELIMIT(...) (void) 0
+#define LOG_WRN_RATELIMIT(...) (void) 0
+#define LOG_INF_RATELIMIT(...) (void) 0
+#define LOG_DBG_RATELIMIT(...) (void) 0
+
+#define LOG_HEXDUMP_ERR_RATELIMIT(...) (void) 0
+#define LOG_HEXDUMP_WRN_RATELIMIT(...) (void) 0
+#define LOG_HEXDUMP_INF_RATELIMIT(...) (void) 0
+#define LOG_HEXDUMP_DBG_RATELIMIT(...) (void) 0
+
+#define LOG_ERR_RATELIMIT_RATE(...) (void) 0
+#define LOG_WRN_RATELIMIT_RATE(...) (void) 0
+#define LOG_INF_RATELIMIT_RATE(...) (void) 0
+#define LOG_DBG_RATELIMIT_RATE(...) (void) 0
+
+#define LOG_HEXDUMP_ERR_RATELIMIT_RATE(...) (void) 0
+#define LOG_HEXDUMP_WRN_RATELIMIT_RATE(...) (void) 0
+#define LOG_HEXDUMP_INF_RATELIMIT_RATE(...) (void) 0
+#define LOG_HEXDUMP_DBG_RATELIMIT_RATE(...) (void) 0
 #endif
 
 /**
