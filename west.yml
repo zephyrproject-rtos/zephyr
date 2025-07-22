@@ -346,7 +346,7 @@ manifest:
         - debug
     - name: picolibc
       path: modules/lib/picolibc
-      revision: 560946f26db075c296beea5b39d99e6de43c9010
+      revision: c0902a4b372c969be10204a9945c2480a395681b
     - name: segger
       revision: cf56b1d9c80f81a26e2ac5727c9cf177116a4692
       path: modules/debug/segger
