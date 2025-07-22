@@ -9,17 +9,17 @@
 
 #include <zephyr/drivers/clock_control.h>
 
-#if defined(CONFIG_SOC_SERIES_EFR32MG21)
+#if defined(CONFIG_SOC_SILABS_XG21)
 #include <zephyr/dt-bindings/clock/silabs/xg21-clock.h>
-#elif defined(CONFIG_SOC_SERIES_EFR32BG22)
+#elif defined(CONFIG_SOC_SILABS_XG22)
 #include <zephyr/dt-bindings/clock/silabs/xg22-clock.h>
-#elif defined(CONFIG_SOC_SERIES_EFR32ZG23)
+#elif defined(CONFIG_SOC_SILABS_XG23)
 #include <zephyr/dt-bindings/clock/silabs/xg23-clock.h>
-#elif defined(CONFIG_SOC_SERIES_XG24)
+#elif defined(CONFIG_SOC_SILABS_XG24)
 #include <zephyr/dt-bindings/clock/silabs/xg24-clock.h>
-#elif defined(CONFIG_SOC_SERIES_EFR32BG27)
+#elif defined(CONFIG_SOC_SILABS_XG27)
 #include <zephyr/dt-bindings/clock/silabs/xg27-clock.h>
-#elif defined(CONFIG_SOC_SERIES_EFR32BG29) || defined(CONFIG_SOC_SERIES_EFR32MG29)
+#elif defined(CONFIG_SOC_SILABS_XG29)
 #include <zephyr/dt-bindings/clock/silabs/xg29-clock.h>
 #endif
 
