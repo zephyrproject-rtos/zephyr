@@ -128,11 +128,25 @@ static const uint8_t adxl345_range_init[] = {
 #define ADXL345_POWER_CTL_MODE_MSK           BIT(3)
 
 /* ADXL345_FIFO_CTL */
-#define ADXL345_FIFO_CTL_MODE_MSK        GENMASK(7, 6)
-#define ADXL345_FIFO_CTL_MODE_MODE(x)    (((x) & 0x3) << 6)
-#define ADXL345_FIFO_CTL_TRIGGER_MSK     BIT(5)
-#define ADXL345_FIFO_CTL_TRIGGER_MODE(x) (((x) & 0x1) << 5)
-#define ADXL345_FIFO_CTL_SAMPLES_MODE(x) ((x) & 0x1F)
+#define ADXL345_FIFO_CTL_MODE_MSK		GENMASK(7, 6)
+#define ADXL345_FIFO_CTL_MODE_BYPASSED		0x0
+#define ADXL345_FIFO_CTL_MODE_OLD_SAVED		0x40
+#define ADXL345_FIFO_CTL_MODE_STREAMED		0x80
+#define ADXL345_FIFO_CTL_MODE_TRIGGERED		0xc0
+
+enum adxl345_fifo_mode {
+	ADXL345_FIFO_BYPASSED,
+	ADXL345_FIFO_OLD_SAVED,
+	ADXL345_FIFO_STREAMED,
+	ADXL345_FIFO_TRIGGERED,
+};
+
+static const uint8_t adxl345_fifo_ctl_mode_init[] = {
+	[ADXL345_FIFO_BYPASSED] = ADXL345_FIFO_CTL_MODE_BYPASSED,
+	[ADXL345_FIFO_OLD_SAVED] = ADXL345_FIFO_CTL_MODE_OLD_SAVED,
+	[ADXL345_FIFO_STREAMED] = ADXL345_FIFO_CTL_MODE_STREAMED,
+	[ADXL345_FIFO_TRIGGERED] = ADXL345_FIFO_CTL_MODE_TRIGGERED,
+};
 
 #define ADXL345_ODR_MSK				GENMASK(3, 0)
 #define ADXL345_ODR_MODE(x)			FIELD_GET(ADXL345_ODR_MSK, x)
@@ -149,16 +163,14 @@ enum adxl345_odr {
 	ADXL345_ODR_400HZ = ADXL345_DT_ODR_400,
 };
 
+#define ADXL345_FIFO_CTL_TRIGGER_INT1	0x0
+#define ADXL345_FIFO_CTL_TRIGGER_INT2	BIT(5)
+#define ADXL345_FIFO_CTL_TRIGGER_UNSET	0x0
+
 enum adxl345_fifo_trigger {
 	ADXL345_INT1,
-	ADXL345_INT2
-};
-
-enum adxl345_fifo_mode {
-	ADXL345_FIFO_BYPASSED,
-	ADXL345_FIFO_OLD_SAVED,
-	ADXL345_FIFO_STREAMED,
-	ADXL345_FIFO_TRIGGERED
+	ADXL345_INT2,
+	ADXL345_INT_UNSET,
 };
 
 struct adxl345_fifo_config {
@@ -307,9 +319,9 @@ int adxl345_get_decoder(const struct device *dev, const struct sensor_decoder_ap
 void adxl345_accel_convert(struct sensor_value *val, int16_t sample);
 #endif /* CONFIG_SENSOR_ASYNC_API */
 
-#ifdef CONFIG_ADXL345_STREAM
 int adxl345_configure_fifo(const struct device *dev, enum adxl345_fifo_mode mode,
-		enum adxl345_fifo_trigger trigger, uint16_t fifo_samples);
+		enum adxl345_fifo_trigger trigger, uint8_t fifo_samples);
+#ifdef CONFIG_ADXL345_STREAM
 size_t adxl345_get_packet_size(const struct adxl345_dev_config *cfg);
 #endif /* CONFIG_ADXL345_STREAM */
 #endif /* ZEPHYR_DRIVERS_SENSOR_ADX345_ADX345_H_ */

@@ -17,6 +17,12 @@
 
 LOG_MODULE_REGISTER(ADXL345, CONFIG_SENSOR_LOG_LEVEL);
 
+static const uint8_t adxl345_fifo_ctl_trigger_init[] = {
+	[ADXL345_FIFO_CTL_TRIGGER_INT1] = ADXL345_INT1,
+	[ADXL345_FIFO_CTL_TRIGGER_INT2] = ADXL345_INT2,
+	[ADXL345_FIFO_CTL_TRIGGER_UNSET] = ADXL345_INT_UNSET,
+};
+
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 static bool adxl345_bus_is_ready_i2c(const union adxl345_bus *bus)
 {
@@ -155,50 +161,69 @@ int adxl345_get_status(const struct device *dev, uint8_t *status)
 	return adxl345_reg_read_byte(dev, ADXL345_INT_SOURCE_REG, status);
 }
 
+int adxl345_flush_fifo(const struct device *dev)
+{
+#ifdef CONFIG_ADXL345_TRIGGER
+	int8_t sample_number;
+	uint8_t regval;
+	int rc;
+
+	rc = adxl345_set_measure_en(dev, false);
+	if (rc) {
+		return rc;
+	}
+
+	sample_number = adxl345_get_fifo_entries(dev);
+	while (sample_number >= 0) { /* Read FIFO entries + 1 sample lines */
+		rc = adxl345_reg_read(dev, ADXL345_REG_DATA_XYZ_REGS,
+				      &regval, ADXL345_FIFO_SAMPLE_SIZE);
+		if (rc) {
+			return rc;
+		}
+
+		sample_number--;
+	}
+#endif /* CONFIG_ADXL345_TRIGGER */
+
+	return adxl345_set_measure_en(dev, true);
+}
+
 /**
  * Configure the operating parameters for the FIFO.
  * @param dev - The device structure.
- * @param mode - FIFO Mode. Specifies FIFO operating mode.
- *		Accepted values: ADXL345_FIFO_BYPASSED
- *				 ADXL345_FIFO_STREAMED
- *				 ADXL345_FIFO_TRIGGERED
- *				 ADXL345_FIFO_OLD_SAVED
- * @param trigger - FIFO trigger. Links trigger event to appropriate INT.
- *		Accepted values: ADXL345_INT1
- *				 ADXL345_INT2
+ * @param mode - FIFO Mode. Specifies FIFO operating mode, currently either
+ *		ADXL345_FIFO_BYPASSED or ADXL345_FIFO_STREAMED.
+ * @param trigger - Currently ignored, thus set to ADXL345_INT_UNSET.
  * @param fifo_samples - FIFO Samples. Watermark number of FIFO samples that
  *			triggers a FIFO_FULL condition when reached.
  *			Values range from 0 to 32.
-
+ *
+ * Note: The terms "trigger", "ADXL345_FIFO_TRIGGERED", "ADXL345_FIFO_STREAMED"
+ * and "ADXL345_FIFO_BYPASSED" in this context are specific to the ADXL345
+ * sensor and are defined in its datasheet. These terms are unrelated to
+ * Zephyr's TRIGGER or STREAM APIs.
+ *
  * @return 0 in case of success, negative error code otherwise.
  */
 int adxl345_configure_fifo(const struct device *dev,
 				  enum adxl345_fifo_mode mode,
 				  enum adxl345_fifo_trigger trigger,
-				  uint16_t fifo_samples)
+				  uint8_t fifo_samples)
 {
 	struct adxl345_dev_data *data = dev->data;
 	uint8_t fifo_config;
-	int ret;
 
-	if (fifo_samples > 32) {
-		return -EINVAL;
-	}
-
-	fifo_config = (ADXL345_FIFO_CTL_TRIGGER_MODE(trigger) |
-		       ADXL345_FIFO_CTL_MODE_MODE(mode) |
-		       ADXL345_FIFO_CTL_SAMPLES_MODE(fifo_samples));
-
-	ret = adxl345_reg_write_byte(dev, ADXL345_FIFO_CTL_REG, fifo_config);
-	if (ret) {
-		return ret;
-	}
-
-	data->fifo_config.fifo_trigger = trigger;
+	fifo_config = adxl345_fifo_ctl_mode_init[mode];
 	data->fifo_config.fifo_mode = mode;
+
+	fifo_config |= adxl345_fifo_ctl_trigger_init[trigger];
+	data->fifo_config.fifo_trigger = trigger;
+
+	fifo_samples = MIN(fifo_samples, ADXL345_FIFO_CTL_SAMPLES_MSK);
+	fifo_config |= fifo_samples;
 	data->fifo_config.fifo_samples = fifo_samples;
 
-	return 0;
+	return adxl345_reg_write_byte(dev, ADXL345_FIFO_CTL_REG, fifo_config);
 }
 
 static int adxl345_attr_set_odr(const struct device *dev,
@@ -357,38 +382,13 @@ static DEVICE_API(sensor, adxl345_api_funcs) = {
 #endif
 };
 
-#ifdef CONFIG_ADXL345_TRIGGER
-/**
- * Configure the INT1 and INT2 interrupt pins.
- * @param dev - The device structure.
- * @param int1 -  INT1 interrupt pins.
- * @return 0 in case of success, negative error code otherwise.
- */
-static int adxl345_interrupt_config(const struct device *dev,
-				    uint8_t int1)
-{
-	int ret;
-
-	ret = adxl345_reg_write_byte(dev, ADXL345_INT_ENABLE_REG, int1);
-	if (ret) {
-		return ret;
-	}
-
-	uint8_t samples;
-
-	ret = adxl345_reg_read_byte(dev, ADXL345_INT_MAP_REG, &samples);
-	ret = adxl345_reg_read_byte(dev, ADXL345_INT_ENABLE_REG, &samples);
-
-	return 0;
-}
-#endif
-
 static int adxl345_init(const struct device *dev)
 {
 	struct adxl345_dev_data *data = dev->data;
 	const struct adxl345_dev_config *cfg = dev->config;
 	enum adxl345_fifo_mode fifo_mode;
 	uint8_t dev_id;
+	uint8_t int_en;
 	uint8_t regval;
 	int rc;
 
@@ -429,15 +429,6 @@ static int adxl345_init(const struct device *dev)
 		return -EIO;
 	}
 
-	rc = adxl345_configure_fifo(dev,
-				    IS_ENABLED(CONFIG_ADXL345_STREAM) ? ADXL345_FIFO_STREAMED :
-									ADXL345_FIFO_BYPASSED,
-				    ADXL345_INT2,
-				    cfg->fifo_config.fifo_samples);
-	if (rc) {
-		return rc;
-	}
-
 	rc = adxl345_reg_write_mask(dev, ADXL345_RATE_REG, ADXL345_ODR_MSK,
 				    ADXL345_ODR_MODE(cfg->odr));
 	if (rc) {
@@ -445,24 +436,37 @@ static int adxl345_init(const struct device *dev)
 		return rc;
 	}
 
-	fifo_mode = data->fifo_config.fifo_mode;
+	fifo_mode = ADXL345_FIFO_BYPASSED;
+	int_en = 0x00;
+#if defined(CONFIG_ADXL345_TRIGGER) || defined(CONFIG_ADXL345_STREAM)
+	if (adxl345_init_interrupt(dev)) {
+		LOG_INF("No IRQ lines specified, fallback to FIFO BYPASSED");
+		fifo_mode = ADXL345_FIFO_BYPASSED;
+	} else {
+		LOG_INF("Set FIFO STREAMED mode");
+		fifo_mode = ADXL345_FIFO_STREAMED;
 
-#ifdef CONFIG_ADXL345_TRIGGER
-	rc = adxl345_init_interrupt(dev);
-	if (rc < 0) {
-		LOG_ERR("Failed to initialize interrupt!");
-		return -EIO;
-	}
+		/*
+		 * Currently, map all interrupts to the (same) gpio line
+		 * configured in the device tree. This is usually sufficient,
+		 * also since not every hardware will have both gpio lines
+		 * soldered. Anyway, for individual interrupt mapping, set up
+		 * DTB bindings.
+		 */
+		uint8_t int_mask = UCHAR_MAX;
 
-	rc = adxl345_interrupt_config(dev, ADXL345_INT_MAP_WATERMARK_MSK);
-	if (rc) {
-		return rc;
-	}
-	rc = adxl345_interrupt_config(dev, ADXL345_INT_MAP_ACT_MSK);
-	if (rc) {
-		return rc;
+		rc = adxl345_reg_assign_bits(dev, ADXL345_INT_MAP_REG, int_mask,
+					     (cfg->drdy_pad == 2));
+		if (rc) {
+			return rc;
+		}
 	}
 #endif
+	rc = adxl345_configure_fifo(dev, fifo_mode, ADXL345_INT_UNSET,
+				    ADXL345_FIFO_CTL_SAMPLES_MSK);
+	if (rc) {
+		return rc;
+	}
 
 	if (fifo_mode == ADXL345_FIFO_BYPASSED) {
 		return adxl345_set_measure_en(dev, true);

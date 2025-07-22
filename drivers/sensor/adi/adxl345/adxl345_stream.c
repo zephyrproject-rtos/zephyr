@@ -68,9 +68,9 @@ static void adxl345_fifo_flush_rtio(const struct device *dev)
 	struct adxl345_dev_data *data = dev->data;
 	uint8_t fifo_config;
 
-	fifo_config = (ADXL345_FIFO_CTL_TRIGGER_MODE(data->fifo_config.fifo_trigger) |
-		       ADXL345_FIFO_CTL_MODE_MODE(ADXL345_FIFO_BYPASSED) |
-		       ADXL345_FIFO_CTL_SAMPLES_MODE(data->fifo_config.fifo_samples));
+	fifo_config = ADXL345_FIFO_CTL_TRIGGER_UNSET |
+			adxl345_fifo_ctl_mode_init[ADXL345_FIFO_BYPASSED] |
+			data->fifo_config.fifo_samples;
 
 	struct rtio_sqe *write_fifo_addr = rtio_sqe_acquire(data->rtio_ctx);
 	const uint8_t reg_addr_w2[2] = {ADXL345_FIFO_CTL_REG, fifo_config};
@@ -78,9 +78,9 @@ static void adxl345_fifo_flush_rtio(const struct device *dev)
 	rtio_sqe_prep_tiny_write(write_fifo_addr, data->iodev, RTIO_PRIO_NORM, reg_addr_w2,
 					2, NULL);
 
-	fifo_config = (ADXL345_FIFO_CTL_TRIGGER_MODE(data->fifo_config.fifo_trigger) |
-		       ADXL345_FIFO_CTL_MODE_MODE(data->fifo_config.fifo_mode) |
-		       ADXL345_FIFO_CTL_SAMPLES_MODE(data->fifo_config.fifo_samples));
+	fifo_config = ADXL345_FIFO_CTL_TRIGGER_UNSET |
+			adxl345_fifo_ctl_mode_init[data->fifo_config.fifo_mode] |
+			data->fifo_config.fifo_samples;
 
 	write_fifo_addr = rtio_sqe_acquire(data->rtio_ctx);
 	const uint8_t reg_addr_w3[2] = {ADXL345_FIFO_CTL_REG, fifo_config};
