@@ -5321,11 +5321,16 @@ West:
   maintainers:
     - dleach02
     - mmahadevan108
-  collaborators:
     - decsny
+  collaborators:
     - manuargue
     - PetervdPerk-NXP
     - bperseghetti
+    - JiafeiPan
+    - ZhaoxiangJin
+    - EmilioCBen
+    - MaochenWang1
+    - axelnxp
   files:
     - modules/hal_nxp/
   labels:
