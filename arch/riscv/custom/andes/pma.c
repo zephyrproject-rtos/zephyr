@@ -1,16 +1,14 @@
 /*
- * Copyright (c) 2021 Andes Technology Corporation
- *
+ * Copyright (c) 2025 Andes Technology Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#include "soc_v5.h"
 
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/arch/riscv/csr.h>
+#include <andes_csr.h>
 
 #ifndef CONFIG_ASSERT
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
@@ -149,7 +147,7 @@ static void region_init(const uint32_t index,
 static int pma_region_is_valid(const struct pma_region *region)
 {
 	/* Region size must greater or equal to the minimum PMA region size */
-	if (region->size < CONFIG_SOC_ANDES_V5_PMA_REGION_MIN_ALIGN_AND_SIZE) {
+	if (region->size < CONFIG_RISCV_CUSTOM_CSR_ANDES_PMA_NAPOT_GRANULARITY) {
 		return -EINVAL;
 	}
 
@@ -204,10 +202,10 @@ void pma_init(void)
 		/* This CPU doesn't support PMA */
 
 		__ASSERT(0, "CPU doesn't support PMA. "
-			    "Please disable CONFIG_SOC_ANDES_V5_PMA\n");
+			"Please disable CONFIG_RISCV_CUSTOM_CSR_ANDES_PMA\n");
 #ifndef CONFIG_ASSERT
 		LOG_ERR("CPU doesn't support PMA. "
-			"Please disable CONFIG_SOC_ANDES_V5_PMA");
+			"Please disable CONFIG_RISCV_CUSTOM_CSR_ANDES_PMA");
 #endif
 		return;
 	}
