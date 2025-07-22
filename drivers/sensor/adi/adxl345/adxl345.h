@@ -250,8 +250,8 @@ void adxl345_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iode
 void adxl345_stream_irq_handler(const struct device *dev);
 
 #ifdef CONFIG_ADXL345_TRIGGER
-int adxl345_get_status(const struct device *dev,
-		       uint8_t *status, uint16_t *fifo_entries);
+int adxl345_get_fifo_entries(const struct device *dev);
+int adxl345_get_status(const struct device *dev, uint8_t *status);
 
 int adxl345_trigger_set(const struct device *dev,
 			const struct sensor_trigger *trig,

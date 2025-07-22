@@ -137,22 +137,22 @@ int adxl345_set_measure_en(const struct device *dev, bool en)
 				       ADXL345_POWER_CTL_MODE_MSK, en);
 }
 
-int adxl345_get_status(const struct device *dev,
-			   uint8_t *status1,
-			   uint16_t *fifo_entries)
+int adxl345_get_fifo_entries(const struct device *dev)
 {
-	uint8_t buf[2], length = 1U;
-	int ret;
+	uint8_t regval;
+	int rc;
 
-	ret = adxl345_reg_read(dev, ADXL345_INT_SOURCE_REG, buf, length);
-
-	*status1 = buf[0];
-	ret = adxl345_reg_read(dev, ADXL345_FIFO_STATUS_REG, buf+1, length);
-	if (fifo_entries) {
-		*fifo_entries = buf[1] & 0x3F;
+	rc = adxl345_reg_read_byte(dev, ADXL345_FIFO_STATUS_REG, &regval);
+	if (rc) {
+		return rc;
 	}
 
-	return ret;
+	return FIELD_GET(ADXL345_FIFO_ENTRIES_MSK, regval);
+}
+
+int adxl345_get_status(const struct device *dev, uint8_t *status)
+{
+	return adxl345_reg_read_byte(dev, ADXL345_INT_SOURCE_REG, status);
 }
 
 /**
@@ -200,7 +200,6 @@ int adxl345_configure_fifo(const struct device *dev,
 
 	return 0;
 }
-
 
 /**
  * Set Output data rate.
@@ -285,7 +284,7 @@ int adxl345_read_sample(const struct device *dev,
 
 	if (!IS_ENABLED(CONFIG_ADXL345_TRIGGER)) {
 		do {
-			adxl345_get_status(dev, &status1, NULL);
+			adxl345_get_status(dev, &status1);
 		} while (!(ADXL345_STATUS_DATA_RDY(status1)));
 	}
 

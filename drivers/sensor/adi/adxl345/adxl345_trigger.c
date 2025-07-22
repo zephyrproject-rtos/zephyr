@@ -25,7 +25,7 @@ static void adxl345_thread_cb(const struct device *dev)
 	int ret;
 
 	/* Clear the status */
-	if (adxl345_get_status(dev, &status1, NULL) < 0) {
+	if (adxl345_get_status(dev, &status1) < 0) {
 		return;
 	}
 
