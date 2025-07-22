@@ -395,7 +395,7 @@ static int adxl345_interrupt_config(const struct device *dev,
 	int ret;
 	const struct adxl345_dev_config *cfg = dev->config;
 
-	ret = adxl345_reg_write_byte(dev, ADXL345_INT_MAP, cfg->route_to_int2 ? int1 : ~int1);
+	ret = adxl345_reg_write_byte(dev, ADXL345_INT_MAP_REG, cfg->route_to_int2 ? int1 : ~int1);
 	if (ret) {
 		return ret;
 	}
@@ -407,7 +407,7 @@ static int adxl345_interrupt_config(const struct device *dev,
 
 	uint8_t samples;
 
-	ret = adxl345_reg_read_byte(dev, ADXL345_INT_MAP, &samples);
+	ret = adxl345_reg_read_byte(dev, ADXL345_INT_MAP_REG, &samples);
 	ret = adxl345_reg_read_byte(dev, ADXL345_INT_ENABLE_REG, &samples);
 #ifdef CONFIG_ADXL345_TRIGGER
 	gpio_pin_interrupt_configure_dt(&cfg->interrupt,

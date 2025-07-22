@@ -149,7 +149,7 @@ int adxl345_trigger_set(const struct device *dev,
 		return ret;
 	}
 
-	ret = adxl345_reg_write_mask(dev, ADXL345_INT_MAP, int_mask,
+	ret = adxl345_reg_write_mask(dev, ADXL345_INT_MAP_REG, int_mask,
 				     cfg->route_to_int2 ? int_en : ~int_en);
 	if (ret < 0) {
 		return ret;
