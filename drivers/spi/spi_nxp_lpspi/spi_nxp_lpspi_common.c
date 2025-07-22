@@ -132,7 +132,10 @@ static uint8_t lpspi_calc_delay_scaler(uint32_t desired_delay_ns,
 	delay_cycles = (uint64_t)prescaled_clock * desired_delay_ns;
 	delay_cycles = DIV_ROUND_UP(delay_cycles, NSEC_PER_SEC);
 
-       /* what the min_cycles parameter is about is that
+	/* clamp to minimally possible cycles to avoid underflow */
+	delay_cycles = MAX(delay_cycles, min_cycles);
+
+	/* what the min_cycles parameter is about is that
 	* PCSSCK and SCKPSC are +1 cycles of the programmed value,
 	* while DBT is +2 cycles of the programmed value.
 	* So this calculates the value to program to the register.
