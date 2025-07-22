@@ -5307,6 +5307,9 @@ West:
 "West project: hal_nuvoton":
   status: maintained
   maintainers:
+    - cyliangtw
+    - ccli8
+  collaborators:
     - ssekar15
   files:
     - modules/Kconfig.nuvoton
