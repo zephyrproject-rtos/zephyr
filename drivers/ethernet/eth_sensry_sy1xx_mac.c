@@ -103,7 +103,7 @@ struct sy1xx_mac_dev_data {
 };
 
 /* prototypes */
-static int sy1xx_mac_set_mac_addr(const struct device *dev, uint8_t *mac_addr);
+static int sy1xx_mac_set_mac_addr(const struct device *dev);
 static int sy1xx_mac_set_promiscuous_mode(const struct device *dev, bool promiscuous_mode);
 static int sy1xx_mac_set_config(const struct device *dev, enum ethernet_config_type type,
 				const struct ethernet_config *config);
