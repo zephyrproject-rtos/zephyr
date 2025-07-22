@@ -210,9 +210,7 @@ static void spi_it8xxx2_complete(const struct device *dev, const int status)
 	struct spi_context *ctx = &data->ctx;
 
 	spi_context_complete(ctx, dev, status);
-	if (spi_cs_is_gpio(ctx->config)) {
-		spi_context_cs_control(ctx, false);
-	}
+
 	/* Permit to enter power policy and idle mode. */
 	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 	chip_permit_idle();
@@ -326,10 +324,6 @@ static int spi_it8xxx2_next_xfer(const struct device *dev)
 	if (spi_it8xxx2_transfer_done(ctx)) {
 		spi_it8xxx2_complete(dev, 0);
 		return 0;
-	}
-
-	if (spi_cs_is_gpio(ctx->config)) {
-		spi_context_cs_control(ctx, true);
 	}
 
 	if (spi_context_longest_current_buf(ctx) > SPI_CMDQ_DATA_LEN_MAX) {
@@ -522,7 +516,7 @@ static DEVICE_API(spi, spi_it8xxx2_driver_api) = {
 	static struct spi_it8xxx2_data spi_it8xxx2_data_##n = {                                    \
 		SPI_CONTEXT_INIT_LOCK(spi_it8xxx2_data_##n, ctx),                                  \
 		SPI_CONTEXT_INIT_SYNC(spi_it8xxx2_data_##n, ctx),                                  \
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)};                             \
+	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, &spi_it8xxx2_init, NULL, &spi_it8xxx2_data_##n,                   \
 			      &spi_it8xxx2_cfg_##n, POST_KERNEL,                                   \
