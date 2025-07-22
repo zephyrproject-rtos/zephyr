@@ -53,10 +53,25 @@
 
 #define ADXL345_PART_ID            0xe5
 
-#define ADXL345_RANGE_2G           0x0
-#define ADXL345_RANGE_4G           0x1
-#define ADXL345_RANGE_8G           0x2
-#define ADXL345_RANGE_16G          0x3
+#define ADXL345_DATA_FORMAT_RANGE_2G		0x0
+#define ADXL345_DATA_FORMAT_RANGE_4G		0x1
+#define ADXL345_DATA_FORMAT_RANGE_8G		0x2
+#define ADXL345_DATA_FORMAT_RANGE_16G		0x3
+
+enum adxl345_range {
+	ADXL345_RANGE_2G,
+	ADXL345_RANGE_4G,
+	ADXL345_RANGE_8G,
+	ADXL345_RANGE_16G,
+};
+
+static const uint8_t adxl345_range_init[] = {
+	[ADXL345_RANGE_2G] = ADXL345_DATA_FORMAT_RANGE_2G,
+	[ADXL345_RANGE_4G] = ADXL345_DATA_FORMAT_RANGE_4G,
+	[ADXL345_RANGE_8G] = ADXL345_DATA_FORMAT_RANGE_8G,
+	[ADXL345_RANGE_16G] = ADXL345_DATA_FORMAT_RANGE_16G,
+};
+
 #define ADXL345_RATE_25HZ          0x8
 
 #define ADXL345_FIFO_STREAM_MODE   (1 << 7)
@@ -160,7 +175,7 @@ struct adxl345_dev_data {
 	} samples;
 	struct adxl345_fifo_config fifo_config;
 	bool is_full_res;
-	uint8_t selected_range;
+	enum adxl345_range selected_range;
 	enum adxl345_odr odr;
 #ifdef CONFIG_ADXL345_TRIGGER
 	struct gpio_callback int1_cb;
@@ -199,7 +214,7 @@ struct adxl345_dev_data {
 struct adxl345_fifo_data {
 	uint8_t is_fifo: 1;
 	uint8_t is_full_res: 1;
-	uint8_t selected_range: 2;
+	enum adxl345_range selected_range: 2;
 	uint8_t sample_set_size: 4;
 	uint8_t int_status;
 	uint16_t accel_odr: 4;

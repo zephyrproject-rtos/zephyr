@@ -52,7 +52,7 @@ static const uint32_t range_to_shift[] = {
 };
 
 static inline void adxl345_accel_convert_q31(q31_t *out, int16_t sample,
-					     int32_t range,
+					     enum adxl345_range range,
 					     bool is_full_res)
 {
 	if (is_full_res) {
@@ -114,11 +114,12 @@ static int adxl345_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 	}
 
 	struct sensor_three_axis_data *data = (struct sensor_three_axis_data *)data_out;
+	enum adxl345_range selected_range = enc_data->selected_range;
 
 	memset(data, 0, sizeof(struct sensor_three_axis_data));
 	data->header.base_timestamp_ns = enc_data->timestamp;
 	data->header.reading_count = 1;
-	data->shift = range_to_shift[enc_data->selected_range];
+	data->shift = range_to_shift[selected_range];
 
 	buffer += sizeof(struct adxl345_fifo_data);
 
@@ -148,15 +149,15 @@ static int adxl345_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 			uint8_t buff_offset = 0;
 
 			adxl345_accel_convert_q31(&data->readings[count].x, *(int16_t *)buffer,
-					enc_data->selected_range, is_full_res);
+						  selected_range, is_full_res);
 			buff_offset = 2;
 			adxl345_accel_convert_q31(&data->readings[count].y,
-						*(int16_t *)(buffer + buff_offset),
-							enc_data->selected_range, is_full_res);
+						  *(int16_t *)(buffer + buff_offset),
+						  selected_range, is_full_res);
 			buff_offset += 2;
 			adxl345_accel_convert_q31(&data->readings[count].z,
-						*(int16_t *)(buffer + buff_offset),
-							enc_data->selected_range, is_full_res);
+						  *(int16_t *)(buffer + buff_offset),
+						  selected_range, is_full_res);
 			break;
 		default:
 			return -ENOTSUP;

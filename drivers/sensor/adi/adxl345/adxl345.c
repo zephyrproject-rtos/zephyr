@@ -385,11 +385,12 @@ static int adxl345_interrupt_config(const struct device *dev,
 
 static int adxl345_init(const struct device *dev)
 {
-	int rc;
 	struct adxl345_dev_data *data = dev->data;
 	const struct adxl345_dev_config *cfg = dev->config;
 	enum adxl345_fifo_mode fifo_mode;
-	uint8_t dev_id, full_res;
+	uint8_t dev_id;
+	uint8_t regval;
+	int rc;
 
 	if (!adxl345_bus_is_ready(dev)) {
 		LOG_ERR("bus not ready");
@@ -409,14 +410,24 @@ static int adxl345_init(const struct device *dev)
 		return -EIO;
 	}
 #endif
+	data->selected_range = ADXL345_RANGE_8G;
+	data->is_full_res = true;
 
-	rc = adxl345_reg_write_byte(dev, ADXL345_DATA_FORMAT_REG, ADXL345_RANGE_8G);
+	/*
+	 * Reset the following sensor fields (in case of warm starts)
+	 * - turn off measurements as MSB values, use left justified vals
+	 * - configure full resolution accordingly
+	 * - turn off interrupt inversion
+	 * - turn off 3-wire SPI
+	 * - turn off self test mode
+	 */
+	regval = (data->is_full_res ? ADXL345_DATA_FORMAT_FULL_RES : 0x00);
+	regval |= adxl345_range_init[data->selected_range];
+	rc = adxl345_reg_write_byte(dev, ADXL345_DATA_FORMAT_REG, regval);
 	if (rc < 0) {
 		LOG_ERR("Data format set failed\n");
 		return -EIO;
 	}
-
-	data->selected_range = ADXL345_RANGE_8G;
 
 	rc = adxl345_configure_fifo(dev,
 				    IS_ENABLED(CONFIG_ADXL345_STREAM) ? ADXL345_FIFO_STREAMED :
@@ -452,11 +463,6 @@ static int adxl345_init(const struct device *dev)
 		return rc;
 	}
 #endif
-
-	rc = adxl345_reg_read_byte(dev, ADXL345_DATA_FORMAT_REG, &full_res);
-	uint8_t is_full_res_set = (full_res & ADXL345_DATA_FORMAT_FULL_RES) != 0;
-
-	data->is_full_res = is_full_res_set;
 
 	if (fifo_mode == ADXL345_FIFO_BYPASSED) {
 		return adxl345_set_measure_en(dev, true);
