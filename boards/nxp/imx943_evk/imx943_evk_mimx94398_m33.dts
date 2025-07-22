@@ -99,6 +99,12 @@
 	};
 };
 
+&lpi2c6 {
+	pinctrl-0 = <&lpi2c6_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &lpuart8 {
 	status = "okay";
 	current-speed = <115200>;
