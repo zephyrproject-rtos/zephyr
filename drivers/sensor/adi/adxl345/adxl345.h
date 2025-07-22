@@ -243,7 +243,6 @@ struct adxl345_dev_config {
 	adxl345_bus_is_ready_fn bus_is_ready;
 	adxl345_reg_access_fn reg_access;
 	enum adxl345_odr odr;
-	bool op_mode;
 	struct adxl345_fifo_config fifo_config;
 	uint8_t bus_type;
 #ifdef CONFIG_ADXL345_TRIGGER
