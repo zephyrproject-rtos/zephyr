@@ -151,7 +151,7 @@ enum adxl345_fifo_mode {
 struct adxl345_fifo_config {
 	enum adxl345_fifo_mode fifo_mode;
 	enum adxl345_fifo_trigger fifo_trigger;
-	uint16_t fifo_samples;
+	uint8_t fifo_samples;
 };
 
 enum adxl345_op_mode {
