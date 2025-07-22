@@ -1,0 +1,16 @@
+# DALI configuration options
+
+# Copyright (c) 2025 by Sven Hädrich <sven.haedrich@sevenlab.de>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig DALI
+	bool "Digital Addressable Lighting Interface (DALI) drivers"
+	help
+	  Enable generic support for DALI bus (IEC 62386).
+
+if DALI
+
+module = DALI_LOW_LEVEL
+module-str = dali_low_level
+source "subsys/logging/Kconfig.template.log_config"
+endif # DALI
