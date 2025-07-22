@@ -769,7 +769,6 @@ static int i2s_esp32_initialize(const struct device *dev)
 #if !SOC_GDMA_SUPPORTED
 	const i2s_hal_context_t *hal = &(dev_cfg->hal);
 #endif /* !SOC_GDMA_SUPPORTED */
-
 	if (!device_is_ready(clk_dev)) {
 		LOG_ERR("clock control device not ready");
 		return -ENODEV;
@@ -848,6 +847,12 @@ static int i2s_esp32_initialize(const struct device *dev)
 #if !SOC_GDMA_SUPPORTED
 	i2s_ll_clear_intr_status(hal->dev, I2S_INTR_MAX);
 #endif /* !SOC_GDMA_SUPPORTED */
+
+	err = pinctrl_apply_state(dev_cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (err < 0) {
+		LOG_ERR("Pins setup failed: %d", err);
+		return -EIO;
+	}
 
 	LOG_DBG("%s initialized", dev->name);
 
@@ -1044,11 +1049,6 @@ static int i2s_esp32_configure_dir(const struct device *dev, enum i2s_dir dir,
 #endif /* I2S_ESP32_IS_DIR_EN(rx) */
 	}
 
-	err = pinctrl_apply_state(dev_cfg->pcfg, PINCTRL_STATE_DEFAULT);
-	if (err < 0) {
-		LOG_ERR("Pins setup failed: %d", err);
-		return -EIO;
-	}
 
 	memcpy(&stream->data->i2s_cfg, i2s_cfg, sizeof(struct i2s_config));
 
