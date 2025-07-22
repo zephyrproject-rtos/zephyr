@@ -316,6 +316,16 @@ config USERSPACE
 	  privileged mode or handling a system call; to ensure these are always
 	  caught, enable CONFIG_HW_STACK_PROTECTION.
 
+config NOINIT_SNIPPET_FIRST
+	bool "Place the no-init linker script snippet first"
+	help
+	  By default the include/zephyr/linker/common-noinit.ld file inserts the
+	  snippets-noinit.ld file at the end of the section.  There are times when
+	  the directives in the snippets-noinit.ld file apply to the other directives
+	  in this file.  And in that case the include statement for the snippets-noinit.ld
+	  file needs to come at the start of the section.  This configuration option
+	  allows that to happen.
+
 config PRIVILEGED_STACK_SIZE
 	int "Size of privileged stack"
 	default 2048 if EMUL
