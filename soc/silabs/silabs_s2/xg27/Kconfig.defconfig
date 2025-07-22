@@ -1,7 +1,7 @@
 # Copyright (c) 2023 Antmicro <www.antmicro.com>
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_EFR32BG27
+if SOC_SILABS_XG27
 
 config NUM_IRQS
 	# must be >= the highest interrupt number used
