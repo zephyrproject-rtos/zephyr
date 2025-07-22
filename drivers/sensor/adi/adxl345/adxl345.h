@@ -39,7 +39,7 @@
 
 #define ADXL345_FIFO_SAMPLE_SIZE		6
 #define ADXL345_FIFO_ENTRIES_MSK		GENMASK(5, 0) /* FIFO status entries */
-#define ADXL345_FIFO_CTL_SAMPLES_MSK		GENMASK(4, 0) /* FIFO control, samples */
+#define ADXL345_FIFO_CTL_SAMPLES_MSK		GENMASK(4, 0) /* FIFO control samples */
 
 /* Registers */
 #define ADXL345_DEVICE_ID_REG           0x00
