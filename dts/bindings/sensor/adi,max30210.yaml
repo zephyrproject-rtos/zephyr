@@ -1,0 +1,20 @@
+# Copyright (c) 2025 Kickmaker
+# SPDX-License-Identifier: Apache-2.0
+#
+# This file contains the binding for ad2s1210 sensor
+
+description: MAX30210, a high-accuracy digital temperature sensor from Analog Devices.
+
+compatible: "adi,max30210"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupt-gpios:
+    type: phandle-array
+    description: |
+      The INT1 pin defaults to active low when produced by the sensor. The property value should
+      ensure the flags properly describe the signal that is presented to the driver.

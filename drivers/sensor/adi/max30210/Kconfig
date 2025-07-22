@@ -1,0 +1,68 @@
+menuconfig MAX30210
+	bool "MAX30210 Temperature Sensor"
+	default y
+	depends on DT_HAS_ADI_MAX30210_ENABLED
+	select I2C
+	help
+	  Enable driver for the MAX30210 temperature sensor.
+
+if MAX30210
+
+config MAX30210_TRIGGER
+	bool
+
+choice MAX30210_TRIGGER_MODE
+	prompt "Sets trigger mode"
+	default MAX30210_TRIGGER_NONE
+	help
+	  Sets thread type for the interrupt handler.
+
+config MAX30210_TRIGGER_NONE
+	bool "No trigger"
+
+config MAX30210_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ADI_MAX30210),interrupt-gpios)
+	select GPIO
+	select MAX30210_TRIGGER
+	help
+	  Use a global thread for the interrupt handler.
+
+config MAX30210_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ADI_MAX30210),interrupt-gpios)
+	select GPIO
+	select MAX30210_TRIGGER
+	help
+	  Use a separate thread for the interrupt handler.
+
+endchoice # MAX30210_TRIGGER_MODE
+
+config MAX30210_STREAM
+	bool "Use FIFO to stream data"
+	select MAX30210_TRIGGER
+	default y
+	depends on I2C_RTIO
+	depends on SENSOR_ASYNC_API
+	help
+	  Use this configuration option to enable streaming sensor data via RTIO.
+
+if MAX30210_TRIGGER_OWN_THREAD
+
+config MAX30210_THREAD_PRIORITY
+	int "Thread priority of the interrupt handler"
+	default 1
+	help
+	  Thread priority of the interrupt handler. A higher number implies a
+	  higher priority. The thread is cooperative and will not be interrupted by
+	  another thread until execution is released.
+
+config MAX30210_THREAD_STACK_SIZE
+	int "Stack size of the interrupt handler thread"
+	default 512
+	help
+	  Stack size of the interrupt handler thread.
+
+endif # MAX30210_TRIGGER_OWN_THREAD
+
+endif # MAX30210
