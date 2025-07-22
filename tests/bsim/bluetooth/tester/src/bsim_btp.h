@@ -11,6 +11,7 @@
 #include <string.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/iso.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/byteorder.h>
 
@@ -107,6 +108,25 @@ static inline void bsim_btp_wait_for_lock(void)
 	TEST_ASSERT(ev->status == BT_ATT_ERR_SUCCESS);
 
 	net_buf_unref(buf);
+}
+
+static inline void bsim_btp_gap_set_connectable(bool enable)
+{
+	struct btp_gap_set_connectable_cmd *cmd;
+	struct btp_hdr *cmd_hdr;
+
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_GAP;
+	cmd_hdr->opcode = BTP_GAP_SET_CONNECTABLE;
+	cmd_hdr->index = BTP_INDEX;
+	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
+	cmd->connectable = enable ? 1 : 0;
+
+	cmd_hdr->len = sys_cpu_to_le16(cmd_buffer.len - sizeof(*cmd_hdr));
+
+	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
 }
 
 static inline void bsim_btp_gap_set_discoverable(uint8_t discoverable)
@@ -600,4 +620,323 @@ static inline void bsim_btp_wait_for_micp_state(bt_addr_le_t *address, uint8_t *
 
 	net_buf_unref(buf);
 }
+
+static inline void bsim_btp_gap_set_extended_advertising(bool enable)
+{
+	struct btp_gap_set_extended_advertising_cmd *cmd;
+	struct btp_hdr *cmd_hdr;
+
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_GAP;
+	cmd_hdr->opcode = BTP_GAP_SET_EXTENDED_ADVERTISING;
+	cmd_hdr->index = BTP_INDEX;
+	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
+	cmd->settings = enable ? BIT(0) : 0;
+
+	cmd_hdr->len = sys_cpu_to_le16(cmd_buffer.len - sizeof(*cmd_hdr));
+
+	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
+
+static inline void bsim_btp_gap_padv_configure(uint8_t flags, uint16_t interval_min,
+					       uint16_t interval_max)
+{
+	struct btp_gap_padv_configure_cmd *cmd;
+	struct btp_hdr *cmd_hdr;
+
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_GAP;
+	cmd_hdr->opcode = BTP_GAP_PADV_CONFIGURE;
+	cmd_hdr->index = BTP_INDEX;
+	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
+	cmd->flags = flags;
+	cmd->interval_min = sys_cpu_to_le16(interval_min);
+	cmd->interval_max = sys_cpu_to_le16(interval_max);
+
+	cmd_hdr->len = sys_cpu_to_le16(cmd_buffer.len - sizeof(*cmd_hdr));
+
+	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
+
+static inline void bsim_btp_gap_padv_start(void)
+{
+	struct btp_gap_padv_start_cmd *cmd;
+	struct btp_hdr *cmd_hdr;
+
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_GAP;
+	cmd_hdr->opcode = BTP_GAP_PADV_START;
+	cmd_hdr->index = BTP_INDEX;
+	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
+	cmd->flags = 0;
+
+	cmd_hdr->len = sys_cpu_to_le16(cmd_buffer.len - sizeof(*cmd_hdr));
+
+	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
+
+static inline void bsim_btp_gap_padv_stop(void)
+{
+	struct btp_gap_padv_stop_cmd *cmd;
+	struct btp_hdr *cmd_hdr;
+
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_GAP;
+	cmd_hdr->opcode = BTP_GAP_PADV_STOP;
+	cmd_hdr->index = BTP_INDEX;
+	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
+
+	cmd_hdr->len = sys_cpu_to_le16(cmd_buffer.len - sizeof(*cmd_hdr));
+
+	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
+
+static inline void bsim_btp_gap_padv_create_sync(bt_addr_le_t *addr, uint8_t sid, uint16_t skip,
+						 uint16_t sync_timeout, uint8_t flags)
+{
+	struct btp_gap_padv_create_sync_cmd *cmd;
+	struct btp_hdr *cmd_hdr;
+
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_GAP;
+	cmd_hdr->opcode = BTP_GAP_PADV_CREATE_SYNC;
+	cmd_hdr->index = BTP_INDEX;
+	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
+	bt_addr_le_copy(&cmd->address, addr);
+	cmd->advertiser_sid = sid;
+	cmd->skip = sys_cpu_to_le16(skip);
+	cmd->sync_timeout = sys_cpu_to_le16(sync_timeout);
+	cmd->flags = flags;
+
+	cmd_hdr->len = sys_cpu_to_le16(cmd_buffer.len - sizeof(*cmd_hdr));
+
+	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
+
+static inline void bsim_btp_wait_for_gap_periodic_sync_established(bt_addr_le_t *address,
+								   uint16_t *sync_handle,
+								   uint8_t *status)
+{
+	struct btp_gap_ev_periodic_sync_established_ev *ev;
+	struct net_buf *buf;
+
+	bsim_btp_wait_for_evt(BTP_SERVICE_ID_GAP, BTP_GAP_EV_PERIODIC_SYNC_ESTABLISHED, &buf);
+	ev = net_buf_pull_mem(buf, sizeof(*ev));
+	if (address != NULL) {
+		bt_addr_le_copy(address, &ev->address);
+	}
+
+	if (sync_handle != NULL) {
+		*sync_handle = ev->sync_handle;
+	}
+
+	if (status != NULL) {
+		*status = ev->status;
+	}
+
+	net_buf_unref(buf);
+}
+
+static inline void bsim_btp_wait_for_gap_periodic_sync_lost(uint16_t *sync_handle, uint8_t *reason)
+{
+	struct btp_gap_ev_periodic_sync_lost_ev *ev;
+	struct net_buf *buf;
+
+	bsim_btp_wait_for_evt(BTP_SERVICE_ID_GAP, BTP_GAP_EV_PERIODIC_SYNC_LOST, &buf);
+	ev = net_buf_pull_mem(buf, sizeof(*ev));
+	if (sync_handle != NULL) {
+		*sync_handle = ev->sync_handle;
+	}
+
+	if (reason != NULL) {
+		*reason = ev->reason;
+	}
+
+	net_buf_unref(buf);
+}
+
+static inline void bsim_btp_wait_for_gap_periodic_biginfo(bt_addr_le_t *address, uint8_t *sid,
+							  uint8_t *num_bis, uint8_t *encryption)
+{
+	struct btp_gap_periodic_biginfo_ev *ev;
+	struct net_buf *buf;
+
+	bsim_btp_wait_for_evt(BTP_SERVICE_ID_GAP, BTP_GAP_EV_PERIODIC_BIGINFO, &buf);
+	ev = net_buf_pull_mem(buf, sizeof(*ev));
+	if (address != NULL) {
+		bt_addr_le_copy(address, &ev->address);
+	}
+
+	if (sid != NULL) {
+		*sid = ev->sid;
+	}
+
+	if (num_bis != NULL) {
+		*num_bis = ev->num_bis;
+	}
+
+	if (encryption != NULL) {
+		*encryption = ev->encryption;
+	}
+
+	net_buf_unref(buf);
+}
+
+static inline void bsim_btp_gap_big_create_sync(bt_addr_le_t *address, uint8_t sid, uint8_t num_bis,
+						uint32_t bis_bitfield, uint32_t mse,
+						uint16_t sync_timeout, bool encryption,
+						uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE])
+{
+	struct btp_gap_big_create_sync_cmd *cmd;
+	struct btp_hdr *cmd_hdr;
+
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_GAP;
+	cmd_hdr->opcode = BTP_GAP_BIG_CREATE_SYNC;
+	cmd_hdr->index = BTP_INDEX;
+	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
+	bt_addr_le_copy(&cmd->address, address);
+	cmd->sid = sid;
+	cmd->num_bis = num_bis;
+	cmd->bis_bitfield = sys_cpu_to_le32(bis_bitfield);
+	cmd->mse = sys_cpu_to_le32(mse);
+	cmd->sync_timeout = sys_cpu_to_le16(sync_timeout);
+	cmd->encryption = encryption;
+	if (encryption) {
+		net_buf_simple_add(&cmd_buffer, BT_ISO_BROADCAST_CODE_SIZE);
+		memcpy(cmd->broadcast_code, broadcast_code, BT_ISO_BROADCAST_CODE_SIZE);
+	}
+
+	cmd_hdr->len = sys_cpu_to_le16(cmd_buffer.len - sizeof(*cmd_hdr));
+
+	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
+
+static inline void bsim_btp_wait_for_gap_big_sync_established(bt_addr_le_t *address)
+{
+	struct btp_gap_big_sync_established_ev *ev;
+	struct net_buf *buf;
+
+	bsim_btp_wait_for_evt(BTP_SERVICE_ID_GAP, BTP_GAP_EV_BIG_SYNC_ESTABLISHED, &buf);
+	ev = net_buf_pull_mem(buf, sizeof(*ev));
+	if (address != NULL) {
+		bt_addr_le_copy(address, &ev->address);
+	}
+
+	net_buf_unref(buf);
+}
+
+static inline void bsim_btp_gap_create_big(uint8_t num_bis, uint32_t interval, uint16_t latency,
+					   bool encryption,
+					   uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE])
+{
+	struct btp_gap_create_big_cmd *cmd;
+	struct btp_hdr *cmd_hdr;
+
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_GAP;
+	cmd_hdr->opcode = BTP_GAP_CREATE_BIG;
+	cmd_hdr->index = BTP_INDEX;
+	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
+	cmd->id = 0;
+	cmd->num_bis = num_bis;
+	cmd->interval = sys_cpu_to_le32(interval);
+	cmd->latency = sys_cpu_to_le16(latency);
+	cmd->rtn = 2;
+	cmd->phy = BT_GAP_LE_PHY_2M;
+	cmd->packing = BT_ISO_PACKING_SEQUENTIAL;
+	cmd->framing = BT_ISO_FRAMING_UNFRAMED;
+	cmd->encryption = encryption;
+	if (encryption) {
+		net_buf_simple_add(&cmd_buffer, BT_ISO_BROADCAST_CODE_SIZE);
+		memcpy(cmd->broadcast_code, broadcast_code, BT_ISO_BROADCAST_CODE_SIZE);
+	}
+
+	cmd_hdr->len = sys_cpu_to_le16(cmd_buffer.len - sizeof(*cmd_hdr));
+
+	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
+
+static inline void bsim_btp_wait_for_gap_bis_data_path_setup(bt_addr_le_t *address, uint8_t *bis_id)
+{
+	struct btp_gap_bis_data_path_setup_ev *ev;
+	struct net_buf *buf;
+
+	bsim_btp_wait_for_evt(BTP_SERVICE_ID_GAP, BTP_GAP_EV_BIS_DATA_PATH_SETUP, &buf);
+	ev = net_buf_pull_mem(buf, sizeof(*ev));
+	if (address != NULL) {
+		bt_addr_le_copy(address, &ev->address);
+	}
+
+	if (bis_id != NULL) {
+		*bis_id = ev->bis_id;
+	}
+
+	net_buf_unref(buf);
+}
+
+static inline void bsim_btp_gap_bis_broadcast(uint8_t bis_id, struct net_buf_simple *buf)
+{
+	struct btp_gap_bis_broadcast_cmd *cmd;
+	struct btp_hdr *cmd_hdr;
+
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_GAP;
+	cmd_hdr->opcode = BTP_GAP_BIS_BROADCAST;
+	cmd_hdr->index = BTP_INDEX;
+	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
+	__ASSERT(buf->len <= net_buf_simple_tailroom(&cmd_buffer), "No more tail room");
+	cmd->bis_id = bis_id;
+	cmd->data_len = buf->len;
+	net_buf_simple_add_mem(&cmd_buffer, buf->data, buf->len);
+
+	cmd_hdr->len = sys_cpu_to_le16(cmd_buffer.len - sizeof(*cmd_hdr));
+
+	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
+
+static inline void bsim_btp_wait_for_gap_bis_stream_received(struct net_buf_simple *rx)
+{
+	struct net_buf *buf;
+
+	bsim_btp_wait_for_evt(BTP_SERVICE_ID_GAP, BTP_GAP_EV_BIS_STREAM_RECEIVED, &buf);
+	__ASSERT(buf->len <= net_buf_simple_tailroom(rx), "No more tail room");
+	net_buf_simple_add_mem(rx, buf->data, buf->len);
+	net_buf_unref(buf);
+}
+
+static inline void bsim_btp_wait_for_gap_big_sync_lost(bt_addr_le_t *address, uint8_t *reason)
+{
+	struct btp_gap_big_sync_lost_ev *ev;
+	struct net_buf *buf;
+
+	bsim_btp_wait_for_evt(BTP_SERVICE_ID_GAP, BTP_GAP_EV_BIG_SYNC_LOST, &buf);
+	ev = net_buf_pull_mem(buf, sizeof(*ev));
+	if (address != NULL) {
+		bt_addr_le_copy(address, &ev->address);
+	}
+
+	if (reason != NULL) {
+		*reason = ev->reason;
+	}
+
+	net_buf_unref(buf);
+}
+
 #endif /* BSIM_BTP_H_ */
