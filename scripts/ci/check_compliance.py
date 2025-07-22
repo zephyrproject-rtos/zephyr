@@ -1831,6 +1831,9 @@ class KeepSorted(ComplianceTest):
                 # Ignore blank lines
                 continue
 
+            if strip is not None:
+                line = line.strip(strip)
+
             if regex:
                 # check for regex
                 if not re.match(regex, line):
@@ -1838,9 +1841,6 @@ class KeepSorted(ComplianceTest):
             else:
                 if _test_indent(line):
                     continue
-
-                if strip is not None:
-                    line = line.strip(strip)
 
                 if fold:
                     # Fold back indented lines after the current one
@@ -1865,8 +1865,8 @@ class KeepSorted(ComplianceTest):
 
         start_marker = f"{self.MARKER}-start"
         stop_marker = f"{self.MARKER}-stop"
-        regex_marker = r"re\((.+)\)"
-        strip_marker = r"strip\((.+)\)"
+        regex_marker = r"re\(([^)]+)\)"
+        strip_marker = r"strip\(([^)]+)\)"
         nofold_marker = "nofold"
         start_line = 0
         regex = None
