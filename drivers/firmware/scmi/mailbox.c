@@ -6,8 +6,57 @@
 
 #include <zephyr/logging/log.h>
 #include "mailbox.h"
+#if defined(CONFIG_NXP_SCMI_BBM_HELPERS)
+#include "zephyr/drivers/firmware/scmi/nxp/bbm.h"
+#endif
+#include "zephyr/drivers/firmware/scmi/protocol.h"
 
 LOG_MODULE_REGISTER(scmi_mbox);
+
+static int scmi_mbox_p2a_pending(const struct device *transport,
+				struct scmi_channel *chan)
+{
+	struct scmi_message p2amsg;
+	uint32_t context = 0x0;
+	int ret;
+	uint32_t protocolId, messageId;
+	struct scmi_mbox_channel *mbox_chan;
+
+	mbox_chan = chan->data;
+
+	p2amsg.hdr = 0x0;
+	p2amsg.len = sizeof(uint32_t);
+	p2amsg.content = &context;
+
+	ret = scmi_shmem_read_hdr(mbox_chan->shmem, &p2amsg);
+	if (ret < 0) {
+		LOG_ERR("failed to read message to shmem: %d", ret);
+		return ret;
+	}
+
+	/* extract header protocol and message ID according into head */
+	protocolId = SCMI_HEADER_PROTOCOL_EX(p2amsg.hdr);
+	messageId = SCMI_HEADER_MSG_EX(p2amsg.hdr);
+
+#if defined(CONFIG_NXP_SCMI_BBM_HELPERS)
+	uint32_t flags;
+
+	if (protocolId == SCMI_PROTOCOL_BBM) {
+		if (messageId == SCMI_PROTO_BBM_PROTOCOL_BUTTON_EVENT) {
+			ret = scmi_bbm_button_event(&flags);
+			if (ret < 0) {
+				LOG_ERR("failed to read bbm button event to shmem: %d", ret);
+				return ret;
+			}
+			printf("SCMI BBM BUTTON notification: flags=0x%08X\n", flags);
+		} else {
+			/* To do: add other BBM protocol notification message */
+		}
+	}
+#endif
+
+	return 0;
+}
 
 static void scmi_mbox_cb(const struct device *mbox,
 			 mbox_channel_id_t channel_id,
@@ -19,6 +68,9 @@ static void scmi_mbox_cb(const struct device *mbox,
 	if (scmi_chan->cb) {
 		scmi_chan->cb(scmi_chan);
 	}
+
+	/* Check and handle whether there is any p2a pending notification information */
+	scmi_mbox_p2a_pending(mbox, scmi_chan);
 }
 
 static int scmi_mbox_send_message(const struct device *transport,
