@@ -125,6 +125,16 @@ struct bt_avdtp_single_sig_hdr {
 	uint8_t signal_id;
 } __packed;
 
+struct bt_avdtp_start_sig_hdr {
+	uint8_t hdr;
+	uint8_t num_of_signal_pkts;
+	uint8_t signal_id;
+} __packed;
+
+struct bt_avdtp_continue_end_sig_hdr {
+	uint8_t hdr;
+} __packed;
+
 struct bt_avdtp_media_hdr {
 #ifdef CONFIG_LITTLE_ENDIAN
 	uint8_t CSRC_count: 4;
@@ -263,6 +273,9 @@ struct bt_avdtp {
 	struct k_work_delayable timeout_work;
 	/* semaphore for lock/unlock */
 	struct k_sem sem_lock;
+	struct net_buf *reasm_buf;
+	uint8_t num_of_signal_pkts;
+	uint8_t tid_sent;
 };
 
 struct bt_avdtp_event_cb {
