@@ -51,19 +51,51 @@ static void adxl345_thread_cb(const struct device *dev)
 	uint8_t status;
 	int ret;
 
-	/* Clear the status */
-	if (adxl345_get_status(dev, &status) < 0) {
-		return;
+	ret = adxl345_get_status(dev, &status);
+	__ASSERT(ret == 0, "Interrupt configuration failed");
+
+	if (FIELD_GET(ADXL345_INT_DATA_RDY, status)) {
+		if (drv_data->drdy_handler) {
+			/*
+			 * A handler needs to flush FIFO, i.e. fetch and get
+			 * samples to get new events
+			 */
+			drv_data->drdy_handler(dev, drv_data->drdy_trigger);
+		}
 	}
 
-	if ((drv_data->drdy_handler != NULL) &&
-		ADXL345_STATUS_DATA_RDY(status)) {
-		drv_data->drdy_handler(dev, drv_data->drdy_trigger);
+	if (FIELD_GET(ADXL345_INT_WATERMARK, status)) {
+		if (drv_data->wm_handler) {
+			/*
+			 * A handler needs to implement fetch, then get FIFO
+			 * entries according to configured watermark in order
+			 * to obtain new sensor events
+			 */
+			drv_data->wm_handler(dev, drv_data->wm_trigger);
+		}
 	}
 
-	if ((drv_data->act_handler != NULL) &&
-		ADXL345_STATUS_ACTIVITY(status)) {
-		drv_data->act_handler(dev, drv_data->act_trigger);
+	/* handle FIFO: overrun */
+	if (FIELD_GET(ADXL345_INT_OVERRUN, status)) {
+		if (drv_data->overrun_handler) {
+			/*
+			 * A handler may handle read outs, the fallback flushes
+			 * the fifo and interrupt status register
+			 */
+			drv_data->overrun_handler(dev, drv_data->overrun_trigger);
+		}
+
+		/*
+		 * If overrun handling is enabled, reset status register and
+		 * fifo here, if not handled before in any way
+		 */
+		adxl345_flush_fifo(dev);
+	}
+
+	if (drv_data->act_trigger && FIELD_GET(ADXL345_INT_ACT, status)) {
+		if (drv_data->act_handler) {
+			drv_data->act_handler(dev, drv_data->act_trigger);
+		}
 	}
 
 	ret = adxl345_set_gpios_en(dev, true);
@@ -135,37 +167,71 @@ int adxl345_trigger_set(const struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler)
 {
+	const struct adxl345_dev_config *cfg = dev->config;
 	struct adxl345_dev_data *drv_data = dev->data;
-	struct adxl345_sample sample;
-	uint8_t int_mask, int_en;
-	uint8_t samples_count;
 	int ret;
 
+	if (!cfg->gpio_int1.port && !cfg->gpio_int2.port) {
+		/* might be in FIFO BYPASS mode */
+		goto done;
+	}
+
+	/* generally turn off interrupts */
 	ret = adxl345_set_gpios_en(dev, false);
 	if (ret) {
-		return ret;
+		goto done;
+	}
+
+	if (!handler) {
+		goto done;
 	}
 
 	switch (trig->type) {
 	case SENSOR_TRIG_DATA_READY:
 		drv_data->drdy_handler = handler;
 		drv_data->drdy_trigger = trig;
-		/** Enabling DRDY means not using Watermark interrupt as both
-		 * are served by reading data-register: two clients can't be
-		 * served simultaneously.
-		 */
-		int_mask = ADXL345_INT_DATA_RDY |
-			   ADXL345_INT_OVERRUN |
-			   ADXL345_INT_WATERMARK;
+
+		ret = adxl345_reg_assign_bits(dev, ADXL345_INT_ENABLE_REG,
+					      ADXL345_INT_DATA_RDY,
+					      true);
+		if (ret) {
+			return ret;
+		}
+		break;
+	case SENSOR_TRIG_FIFO_WATERMARK:
+		drv_data->wm_handler = handler;
+		drv_data->wm_trigger = trig;
+		ret = adxl345_reg_assign_bits(dev, ADXL345_INT_ENABLE_REG,
+					      ADXL345_INT_WATERMARK,
+					      true);
+		if (ret) {
+			return ret;
+		}
+		break;
+	case SENSOR_TRIG_FIFO_FULL:
+		drv_data->overrun_handler = handler;
+		drv_data->overrun_trigger = trig;
+		ret = adxl345_reg_assign_bits(dev, ADXL345_INT_ENABLE_REG,
+					      ADXL345_INT_OVERRUN,
+					      true);
+		if (ret) {
+			return ret;
+		}
 		break;
 	case SENSOR_TRIG_MOTION:
 		drv_data->act_handler = handler;
 		drv_data->act_trigger = trig;
-		int_mask = ADXL345_INT_ACT;
 		ret = adxl345_reg_write_byte(dev, ADXL345_ACT_INACT_CTL_REG,
 					ADXL345_ACT_AC_DC | ADXL345_ACT_X_EN |
 					ADXL345_ACT_Y_EN | ADXL345_ACT_Z_EN);
-		if (ret < 0) {
+		if (ret) {
+			return ret;
+		}
+
+		ret = adxl345_reg_assign_bits(dev, ADXL345_INT_ENABLE_REG,
+					      ADXL345_INT_ACT,
+					      true);
+		if (ret) {
 			return ret;
 		}
 		break;
@@ -174,41 +240,13 @@ int adxl345_trigger_set(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if (handler) {
-		int_en = ADXL345_INT_DATA_RDY;
-	} else {
-		int_en = 0U;
-	}
-
-#ifdef CONFIG_ADXL345_STREAM
-	(void)adxl345_configure_fifo(dev, ADXL345_FIFO_BYPASSED, ADXL345_INT2, 0);
-#endif
-
-	ret = adxl345_reg_write_mask(dev, ADXL345_INT_ENABLE_REG, int_mask, 0);
-	if (ret < 0) {
-		return ret;
-	}
-
-	/* Clear status and read sample-set to clear interrupt flag */
-	(void)adxl345_read_sample(dev, &sample);
-
-	ret = adxl345_reg_read_byte(dev, ADXL345_FIFO_STATUS_REG, &samples_count);
-	if (ret < 0) {
-		LOG_ERR("Failed to read FIFO status rc = %d\n", ret);
-		return ret;
-	}
-
+done:
 	ret = adxl345_set_gpios_en(dev, true);
 	if (ret) {
 		return ret;
 	}
 
-	ret = adxl345_reg_write_mask(dev, ADXL345_INT_ENABLE_REG, int_mask, int_en);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return 0;
+	return adxl345_flush_fifo(dev);
 }
 
 int adxl345_init_interrupt(const struct device *dev)
@@ -270,7 +308,7 @@ int adxl345_init_interrupt(const struct device *dev)
 
 	if (cfg->gpio_int2.port) {
 		ret = gpio_pin_configure_dt(&cfg->gpio_int2, GPIO_INPUT);
-		if (ret < 0) {
+		if (ret) {
 			return ret;
 		}
 
@@ -278,7 +316,7 @@ int adxl345_init_interrupt(const struct device *dev)
 				   BIT(cfg->gpio_int2.pin));
 
 		ret = gpio_add_callback(cfg->gpio_int2.port, &drv_data->int2_cb);
-		if (ret < 0) {
+		if (ret) {
 			LOG_ERR("Failed to set INT_2 gpio callback!");
 			return -EIO;
 		}

@@ -185,12 +185,14 @@ struct adxl345_dev_data {
 	struct gpio_callback int1_cb;
 	struct gpio_callback int2_cb;
 
-	sensor_trigger_handler_t th_handler;
-	const struct sensor_trigger *th_trigger;
 	sensor_trigger_handler_t drdy_handler;
 	const struct sensor_trigger *drdy_trigger;
 	sensor_trigger_handler_t act_handler;
 	const struct sensor_trigger *act_trigger;
+	sensor_trigger_handler_t wm_handler;
+	const struct sensor_trigger *wm_trigger;
+	sensor_trigger_handler_t overrun_handler;
+	const struct sensor_trigger *overrun_trigger;
 	const struct device *dev;
 
 #if defined(CONFIG_ADXL345_TRIGGER_OWN_THREAD)
@@ -266,6 +268,7 @@ struct adxl345_dev_config {
 
 int adxl345_set_gpios_en(const struct device *dev, bool enable);
 int adxl345_set_measure_en(const struct device *dev, bool en);
+int adxl345_flush_fifo(const struct device *dev);
 
 void adxl345_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
 void adxl345_stream_irq_handler(const struct device *dev);
