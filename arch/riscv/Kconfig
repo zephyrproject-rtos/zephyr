@@ -528,4 +528,6 @@ config RISCV_NO_MTVAL_ON_FP_TRAP
 rsource "Kconfig.isa"
 rsource "core/Kconfig"
 
+rsource "custom/Kconfig"
+
 endmenu
