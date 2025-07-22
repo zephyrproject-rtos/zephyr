@@ -1,15 +1,21 @@
 # Copyright (c) 2025 Silicon Laboratories Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_EFR32BG29
+config SOC_SILABS_XG29
 	bool
 	select SOC_FAMILY_SILABS_S2
+	help
+	  Silicon Labs XG29 Series SoC and modules
+
+config SOC_SERIES_EFR32BG29
+	bool
+	select SOC_SILABS_XG29
 	help
 	  Silicon Labs EFR32BG29 (Blue Gecko) Series MCU
 
 config SOC_SERIES_EFR32MG29
 	bool
-	select SOC_FAMILY_SILABS_S2
+	select SOC_SILABS_XG29
 	help
 	  Silicon Labs EFR32MG29 (Mighty Gecko) Series MCU
 
