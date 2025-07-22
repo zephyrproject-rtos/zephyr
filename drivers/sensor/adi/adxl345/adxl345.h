@@ -119,8 +119,8 @@
 #define ADXL345_FIFO_CTL_TRIGGER_MODE(x) (((x) & 0x1) << 5)
 #define ADXL345_FIFO_CTL_SAMPLES_MODE(x) ((x) & 0x1F)
 
-#define ADXL345_ODR_MSK     GENMASK(3, 0)
-#define ADXL345_ODR_MODE(x) ((x) & 0xF)
+#define ADXL345_ODR_MSK				GENMASK(3, 0)
+#define ADXL345_ODR_MODE(x)			FIELD_GET(ADXL345_ODR_MSK, x)
 
 #define ADXL345_BUS_I2C 0
 #define ADXL345_BUS_SPI 1

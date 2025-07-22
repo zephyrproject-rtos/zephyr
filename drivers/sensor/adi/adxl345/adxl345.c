@@ -201,25 +201,6 @@ int adxl345_configure_fifo(const struct device *dev,
 	return 0;
 }
 
-/**
- * Set Output data rate.
- * @param dev - The device structure.
- * @param odr - Output data rate.
- *		Accepted values: ADXL345_ODR_12_5HZ
- *				 ADXL345_ODR_25HZ
- *				 ADXL345_ODR_50HZ
- *				 ADXL345_ODR_100HZ
- *				 ADXL345_ODR_200HZ
- *				 ADXL345_ODR_400HZ
- * @return 0 in case of success, negative error code otherwise.
- */
-static int adxl345_set_odr(const struct device *dev, enum adxl345_odr odr)
-{
-	return adxl345_reg_write_mask(dev, ADXL345_RATE_REG,
-					   ADXL345_ODR_MSK,
-					   ADXL345_ODR_MODE(odr));
-}
-
 static int adxl345_attr_set_odr(const struct device *dev,
 				enum sensor_channel chan,
 				enum sensor_attribute attr,
@@ -251,13 +232,10 @@ static int adxl345_attr_set_odr(const struct device *dev,
 		return -EINVAL;
 	}
 
-	int ret = adxl345_set_odr(dev, odr);
+	data->odr = odr;
 
-	if (ret == 0) {
-		data->odr = odr;
-	}
-
-	return ret;
+	return adxl345_reg_write_mask(dev, ADXL345_RATE_REG, ADXL345_ODR_MSK,
+				      ADXL345_ODR_MODE(odr));
 }
 
 static int adxl345_attr_set(const struct device *dev,
@@ -440,18 +418,19 @@ static int adxl345_init(const struct device *dev)
 
 	data->selected_range = ADXL345_RANGE_8G;
 
-	rc = adxl345_reg_write_byte(dev, ADXL345_RATE_REG, ADXL345_RATE_25HZ);
-	if (rc < 0) {
-		LOG_ERR("Rate setting failed\n");
-		return -EIO;
-	}
-
 	rc = adxl345_configure_fifo(dev,
 				    IS_ENABLED(CONFIG_ADXL345_STREAM) ? ADXL345_FIFO_STREAMED :
 									ADXL345_FIFO_BYPASSED,
 				    ADXL345_INT2,
 				    cfg->fifo_config.fifo_samples);
 	if (rc) {
+		return rc;
+	}
+
+	rc = adxl345_reg_write_mask(dev, ADXL345_RATE_REG, ADXL345_ODR_MSK,
+				    ADXL345_ODR_MODE(cfg->odr));
+	if (rc) {
+		LOG_ERR("Rate setting failed\n");
 		return rc;
 	}
 
@@ -464,10 +443,6 @@ static int adxl345_init(const struct device *dev)
 		return -EIO;
 	}
 
-	rc = adxl345_set_odr(dev, cfg->odr);
-	if (rc) {
-		return rc;
-	}
 	rc = adxl345_interrupt_config(dev, ADXL345_INT_MAP_WATERMARK_MSK);
 	if (rc) {
 		return rc;
@@ -536,7 +511,7 @@ static int adxl345_init(const struct device *dev)
 		    2 * DT_INST_PROP(inst, fifo_watermark) + 2);
 
 #define ADXL345_CONFIG(inst)									   \
-		.odr = DT_INST_PROP(inst, odr),							   \
+		.odr = DT_INST_PROP_OR(inst, odr, ADXL345_RATE_25HZ),				   \
 		.fifo_config.fifo_mode = ADXL345_FIFO_STREAMED,					   \
 		.fifo_config.fifo_trigger = ADXL345_INT2,					   \
 		.fifo_config.fifo_samples = DT_INST_PROP_OR(inst, fifo_watermark, 0),
