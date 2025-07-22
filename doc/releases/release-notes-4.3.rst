@@ -103,3 +103,6 @@ Other notable changes
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
   a paragraph or is it enough to link to the api/driver/Kconfig/board page above?
+
+* Removed support for Nordic Semiconductor nRF54L20 PDK (``nrf54l20pdk``) since it is
+  replaced with :zephyr:board:`nrf54lm20dk` (``nrf54lm20dk``).
