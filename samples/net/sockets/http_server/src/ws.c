@@ -251,6 +251,10 @@ static int netstats_collect(char *buf, size_t maxlen)
 	return ret;
 }
 
+#define WS_NETSTATS_STACK_SIZE 2048
+K_THREAD_STACK_DEFINE(ws_netstats_stack, WS_NETSTATS_STACK_SIZE);
+struct k_work_q ws_netstats_queue;
+
 static void netstats_handler(struct k_work *work)
 {
 	int ret;
@@ -271,7 +275,8 @@ static void netstats_handler(struct k_work *work)
 		goto unregister;
 	}
 
-	ret = k_work_reschedule(&ctx->work, K_MSEC(CONFIG_NET_SAMPLE_WEBSOCKET_STATS_INTERVAL));
+	ret = k_work_reschedule_for_queue(&ws_netstats_queue, &ctx->work,
+					  K_MSEC(CONFIG_NET_SAMPLE_WEBSOCKET_STATS_INTERVAL));
 	if (ret < 0) {
 		LOG_ERR("Failed to schedule netstats work, err %d", ret);
 		goto unregister;
@@ -286,6 +291,11 @@ unregister:
 
 int ws_netstats_init(void)
 {
+	struct k_work_queue_config cfg = {.name = "ws_netstats_q"};
+
+	k_work_queue_init(&ws_netstats_queue);
+	k_work_queue_start(&ws_netstats_queue, ws_netstats_stack, WS_NETSTATS_STACK_SIZE, 0, &cfg);
+
 	for (int i = 0; i < CONFIG_NET_SAMPLE_NUM_WEBSOCKET_HANDLERS; i++) {
 		netstats_ctx[i].sock = -1;
 		k_work_init_delayable(&netstats_ctx[i].work, netstats_handler);
@@ -344,7 +354,7 @@ int ws_netstats_setup(int ws_socket, struct http_request_ctx *request_ctx, void 
 
 	netstats_ctx[slot].sock = ws_socket;
 
-	ret = k_work_reschedule(&netstats_ctx[slot].work, K_NO_WAIT);
+	ret = k_work_reschedule_for_queue(&ws_netstats_queue, &netstats_ctx[slot].work, K_NO_WAIT);
 	if (ret < 0) {
 		LOG_ERR("Failed to schedule netstats work, err %d", ret);
 		return ret;
