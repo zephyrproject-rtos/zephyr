@@ -13,13 +13,26 @@ menuconfig CRYPTO_STM32
 	help
 	  Enable STM32 HAL-based Cryptographic Accelerator driver.
 
+if CRYPTO_STM32
+
 config CRYPTO_STM32_MAX_SESSION
 	int "Maximum of sessions STM32 crypto driver can handle"
 	default 2
-	depends on CRYPTO_STM32
 	help
 	  This can be used to tweak the amount of sessions the driver
 	  can handle in parallel.
+
+config CRYPTO_STM32_USE_MBEDTLS_CT_MEMCMP
+	bool "Use mbedtls_ct_memcmp for constant-time comparisons"
+	default y
+	depends on MBEDTLS
+	help
+	  When disabled, operations such as authentication tag validation
+	  use memcmp, which is known to be vulnerable to timing attacks.
+	  It is recommended to use a constant-time comparison method
+	  to enhance security.
+
+endif # CRYPTO_STM32
 
 config CRYPTO_STM32_HASH
 	bool "STM32 Hash Accelerator driver"

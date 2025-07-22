@@ -57,6 +57,14 @@ LOG_MODULE_REGISTER(crypto_stm32);
 #warning "CCM AD support requires CONFIG_HEAP_MEM_POOL_SIZE > 0"
 #endif
 
+#if IS_ENABLED(CONFIG_CRYPTO_STM32_USE_MBEDTLS_CT_MEMCMP)
+#include <mbedtls/constant_time.h>
+#define STM32_CRYPTO_MEMCMP(a, b, n) mbedtls_ct_memcmp((a), (b), (n))
+#else
+/* memcmp is vulnerable to timing attacks */
+#define STM32_CRYPTO_MEMCMP(a, b, n) memcmp((a), (b), (n))
+#endif
+
 struct crypto_stm32_session crypto_stm32_sessions[CRYPTO_MAX_SESSION];
 
 typedef HAL_StatusTypeDef status_t;
@@ -429,8 +437,7 @@ out:
 		return ret;
 	}
 
-	/* memcmp is vulnerable to timing attacks */
-	if (memcmp(tag, apkt->tag, ctx->mode_params.gcm_info.tag_len) != 0) {
+	if (STM32_CRYPTO_MEMCMP(tag, apkt->tag, ctx->mode_params.gcm_info.tag_len) != 0) {
 		/* auth/tag verification fails */
 		return -EFAULT;
 	}
@@ -594,8 +601,7 @@ static int crypto_stm32_ccm_decrypt(struct cipher_ctx *ctx, struct cipher_aead_p
 		return ret;
 	}
 
-	/* memcmp is vulnerable to timing attacks */
-	if (memcmp(tag, apkt->tag, ctx->mode_params.ccm_info.tag_len) != 0) {
+	if (STM32_CRYPTO_MEMCMP(tag, apkt->tag, ctx->mode_params.ccm_info.tag_len) != 0) {
 		/* auth/tag verification fails */
 		return -EFAULT;
 	}
