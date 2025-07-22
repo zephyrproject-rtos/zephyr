@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Alex Aylward
+# SPDX-License-Identifier: Apache-2.0
+
+description: Garmin LIDAR-Lite v4 laser rangefinder
+
+compatible: "grmn,lidar-lite-v4"
+
+include: [sensor-device.yaml, i2c-device.yaml]
