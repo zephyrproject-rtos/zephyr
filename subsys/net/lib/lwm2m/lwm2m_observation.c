@@ -550,10 +550,9 @@ static int resource_value_as_double(const struct lwm2m_obj_path *path,
 }
 
 static bool value_conditions_satisfied(const struct lwm2m_obj_path *path,
-				       uint16_t srv_obj_inst)
+				       struct notification_attrs *attrs)
 {
 	struct lwm2m_notify_value_register *last_notified;
-	struct notification_attrs attrs = { 0 };
 	double res_value, old_value;
 	void *ref;
 	int ret;
@@ -563,15 +562,10 @@ static bool value_conditions_satisfied(const struct lwm2m_obj_path *path,
 		return true;
 	}
 
-	ret = engine_observe_get_attributes(path, &attrs, srv_obj_inst);
-	if (ret < 0) {
-		return true;
-	}
-
 	/* Check if any of the value attributes is actually set. */
-	if ((attrs.flags & (BIT(LWM2M_ATTR_GT) |
-			    BIT(LWM2M_ATTR_LT) |
-			    BIT(LWM2M_ATTR_STEP))) == 0) {
+	if ((attrs->flags & (BIT(LWM2M_ATTR_GT) |
+			     BIT(LWM2M_ATTR_LT) |
+			     BIT(LWM2M_ATTR_STEP))) == 0) {
 		return true;
 	}
 
@@ -603,25 +597,25 @@ static bool value_conditions_satisfied(const struct lwm2m_obj_path *path,
 		return true;
 	}
 
-	if ((attrs.flags & BIT(LWM2M_ATTR_STEP)) != 0) {
+	if ((attrs->flags & BIT(LWM2M_ATTR_STEP)) != 0) {
 		double res_diff = old_value > res_value ?
 				  old_value - res_value : res_value - old_value;
 
-		if (res_diff >= attrs.st) {
+		if (res_diff >= attrs->st) {
 			return true;
 		}
 	}
 
-	if ((attrs.flags & BIT(LWM2M_ATTR_GT)) != 0) {
-		if ((old_value <= attrs.gt && res_value > attrs.gt) ||
-		    (old_value >= attrs.gt && res_value < attrs.gt)) {
+	if ((attrs->flags & BIT(LWM2M_ATTR_GT)) != 0) {
+		if ((old_value <= attrs->gt && res_value > attrs->gt) ||
+		    (old_value >= attrs->gt && res_value < attrs->gt)) {
 			return true;
 		}
 	}
 
-	if ((attrs.flags & BIT(LWM2M_ATTR_LT)) != 0) {
-		if ((old_value <= attrs.lt && res_value > attrs.lt) ||
-		    (old_value >= attrs.lt && res_value < attrs.lt)) {
+	if ((attrs->flags & BIT(LWM2M_ATTR_LT)) != 0) {
+		if ((old_value <= attrs->lt && res_value > attrs->lt) ||
+		    (old_value >= attrs->lt && res_value < attrs->lt)) {
 			return true;
 		}
 	}
@@ -661,7 +655,7 @@ int lwm2m_notify_observer_path(const struct lwm2m_obj_path *path)
 					return ret;
 				}
 
-				if (!value_conditions_satisfied(path, sock_ctx[i]->srv_obj_inst)) {
+				if (!value_conditions_satisfied(path, &res_attrs)) {
 					continue;
 				}
 
