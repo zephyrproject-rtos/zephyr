@@ -88,9 +88,40 @@ static int soc_init(void)
 	return ret;
 }
 
+void pm_state_before(void)
+{
+	struct scmi_cpu_pd_lpm_config cpu_pd_lpm_cfg;
+
+	/*
+	 * 1. Set M7 mix as power on state in suspend mode
+	 * 2. Keep wakeupmix power on whatever low power mode, as lpuart3(console) in there.
+	 * To do: in order to reduce power consumption, the M7 core in the i.MX95
+	 * should be powered down during suspend.
+	 * However, after being woken up by a wakeup source, the M7 CPU will restart
+	 * execution from the vector table address, which is not the desired behavior.
+	 * Instead, the vector value should be set to the address where the CPU
+	 * was before entering suspend, and the CPU state should be restored to
+	 * what it was prior to suspend.
+	 */
+
+	cpu_pd_lpm_cfg.cpu_id = CPU_IDX_M7P;
+	cpu_pd_lpm_cfg.num_cfg = 2;
+	cpu_pd_lpm_cfg.cfgs[0].domain_id = PWR_MIX_SLICE_IDX_M7;
+	cpu_pd_lpm_cfg.cfgs[0].lpm_setting = SCMI_CPU_LPM_SETTING_ON_ALWAYS;
+	cpu_pd_lpm_cfg.cfgs[0].ret_mask = 1U << PWR_MEM_SLICE_IDX_M7;
+	cpu_pd_lpm_cfg.cfgs[1].domain_id = PWR_MIX_SLICE_IDX_WAKEUP;
+	cpu_pd_lpm_cfg.cfgs[1].lpm_setting = SCMI_CPU_LPM_SETTING_ON_ALWAYS;
+	cpu_pd_lpm_cfg.cfgs[1].ret_mask = 0;
+
+	scmi_cpu_pd_lpm_set(&cpu_pd_lpm_cfg);
+}
+
+
 void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
 	struct scmi_cpu_sleep_mode_config cpu_cfg = {0};
+
+	pm_state_before();
 
 	/* iMX95 M7 core is based on ARMv7-M architecture. For this architecture,
 	 * the current implementation of arch_irq_lock of zephyr is based on BASEPRI,
