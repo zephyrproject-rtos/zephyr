@@ -1,9 +1,15 @@
 # Copyright (c) 2020 TriaGnoSys GmbH
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_EFR32MG21
+config SOC_SILABS_XG21
 	bool
 	select SOC_FAMILY_SILABS_S2
+	help
+	  Silicon Labs XG21 Generic Family SoC and modules
+
+config SOC_SERIES_EFR32MG21
+	bool
+	select SOC_SILABS_XG21
 	help
 	  Silicon Labs EFR32MG21 (Mighty Gecko) Series MCU
 

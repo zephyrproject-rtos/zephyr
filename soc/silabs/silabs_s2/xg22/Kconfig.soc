@@ -1,9 +1,15 @@
 # Copyright (c) 2021 Sateesh Kotapati
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_EFR32BG22
+config SOC_SILABS_XG22
 	bool
 	select SOC_FAMILY_SILABS_S2
+	help
+	  Silicon Labs XG22 Series SoC and modules
+
+config SOC_SERIES_EFR32BG22
+	bool
+	select SOC_SILABS_XG22
 	help
 	  Silicon Labs EFR32BG22 (Blue Gecko) Series MCU
 
