@@ -25,4 +25,11 @@
 			pinmux = <RZV_PINMUX(PORT_41, 0, 2)>; /* GTIOCA */
 		};
 	};
+
+	/omit-if-no-ref/ i2c3_pins: i2c3 {
+		i2c3-pinmux {
+			pinmux = <RZV_PINMUX(PORT_18, 0, 3)>, /* SDA */
+				 <RZV_PINMUX(PORT_18, 1, 3)>; /* SCL */
+		};
+	};
 };

@@ -27,4 +27,11 @@
 			pinmux = <RZA_PINMUX(PORT_04, 2, 4)>; /* MTIOCA */
 		};
 	};
+
+	/omit-if-no-ref/ i2c1_pins: i2c1 {
+		i2c1-spins {
+			pins = <BSP_IO_RIIC1_SDA>, <BSP_IO_RIIC1_SCL>;
+			input-enable;
+		};
+	};
 };
