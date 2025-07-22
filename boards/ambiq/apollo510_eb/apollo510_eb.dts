@@ -10,6 +10,7 @@
 		zephyr,itcm = &itcm;
 		zephyr,dtcm = &dtcm;
 		zephyr,sram = &sram0;
+		zephyr,flash-controller = &flash;
 		zephyr,flash = &flash0;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
@@ -313,4 +314,18 @@ zephyr_udc0: &usb {
 
 &gpio192_223 {
 	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Set 4KB of storage at the end of bank0 , 0xff000 is offset from base address */
+		storage_partition: partition@ff000 {
+			label = "storage";
+			reg = <0xff000 DT_SIZE_K(4)>;
+		};
+	};
 };

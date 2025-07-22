@@ -86,10 +86,22 @@
 	};
 
 	/* MRAM region */
-	flash0: flash@MRAM_BASE_NAME {
-		compatible = "soc-nv-flash";
+	flash: flash-controller@MRAM_BASE_NAME {
+		compatible = "ambiq,flash-controller";
 		reg = <MRAM_BASE_ADDR MRAM_MAX_SIZE>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Flash region */
+		flash0: flash@MRAM_BASE_NAME {
+			compatible = "soc-nv-flash";
+			reg = <MRAM_BASE_ADDR MRAM_MAX_SIZE>;
+			erase-block-size = <2048>;
+			write-block-size = <16>;
+		};
 	};
+
 
 	/* TCM */
 	itcm: itcm@ITCM_BASE_NAME {

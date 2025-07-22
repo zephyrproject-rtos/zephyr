@@ -17,6 +17,9 @@ supported:
   - pdm
   - i2s
   - mspi
+  - flash
+  - nvs
+  - zms
 testing:
   ignore_tags:
     - net

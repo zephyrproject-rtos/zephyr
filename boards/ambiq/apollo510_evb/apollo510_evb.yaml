@@ -25,6 +25,9 @@ supported:
   - mspi
   - sdhc
   - mipi_dsi
+  - flash
+  - nvs
+  - zms
 testing:
   ignore_tags:
     - net
