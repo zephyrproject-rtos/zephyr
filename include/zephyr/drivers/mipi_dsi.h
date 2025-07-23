@@ -6,7 +6,8 @@
 
 /**
  * @file
- * @brief Public APIs for MIPI-DSI drivers
+ * @ingroup mipi_dsi_interface
+ * @brief Main header file for MIPI-DSI (Display Serial Interface) driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_MIPI_DSI_H_

@@ -5,9 +5,9 @@
  */
 
 /**
- * @file drivers/tee.h
- *
- * @brief Public APIs for the tee driver.
+ * @file
+ * @ingroup tee_interface
+ * @brief Main header file for TEE (Trusted Execution Environment) driver API.
  */
 
 /*

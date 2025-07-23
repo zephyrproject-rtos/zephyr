@@ -6,7 +6,8 @@
 
 /**
  * @file
- * @brief Public APIs for coredump pseudo-device driver
+ * @ingroup coredump_device_interface
+ * @brief Main header file for coredump pseudo-device driver API.
  */
 
 #ifndef INCLUDE_ZEPHYR_DRIVERS_COREDUMP_H_

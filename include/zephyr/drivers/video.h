@@ -1,9 +1,3 @@
-/**
- * @file
- *
- * @brief Public APIs for Video.
- */
-
 /*
  * Copyright (c) 2019 Linaro Limited.
  * Copyright 2025 NXP
@@ -11,6 +5,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @ingroup video_interface
+ * @brief Main header file for video driver API.
+ */
+
 #ifndef ZEPHYR_INCLUDE_VIDEO_H_
 #define ZEPHYR_INCLUDE_VIDEO_H_
 

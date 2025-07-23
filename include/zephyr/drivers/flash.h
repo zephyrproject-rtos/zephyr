@@ -7,7 +7,8 @@
 
 /**
  * @file
- * @brief Public API for FLASH drivers
+ * @ingroup flash_interface
+ * @brief Main header file for Flash driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_FLASH_H_

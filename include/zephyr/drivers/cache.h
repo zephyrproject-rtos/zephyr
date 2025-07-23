@@ -6,7 +6,8 @@
 
 /**
  * @file
- * Public APIs for external cache controller drivers
+ * @ingroup cache_external_interface
+ * @brief Main header file for external cache controller driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_CACHE_H_

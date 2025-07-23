@@ -7,7 +7,8 @@
 
 /**
  * @file
- * @brief Public APIs for UART drivers
+ * @ingroup uart_interface
+ * @brief Main header file for UART driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_UART_H_

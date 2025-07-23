@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @ingroup ptp_clock_interface
+ * @brief Main header file for PTP (Precision Time Protocol) clock driver API.
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_PTP_CLOCK_H_
 #define ZEPHYR_INCLUDE_DRIVERS_PTP_CLOCK_H_
 

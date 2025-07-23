@@ -7,7 +7,8 @@
 
 /**
  * @file
- * @brief Public API for controlling linear strips of LEDs.
+ * @ingroup led_strip_interface
+ * @brief Main header file for LED strip driver API.
  *
  * This library abstracts the chipset drivers for individually
  * addressable strips of LEDs.

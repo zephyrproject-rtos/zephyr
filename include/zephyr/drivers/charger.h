@@ -6,7 +6,8 @@
 
 /**
  * @file
- * @brief Charger APIs
+ * @ingroup charger_interface
+ * @brief Main header file for battery charger driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_CHARGER_H_

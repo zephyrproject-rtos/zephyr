@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @ingroup hwspinlock_interface
+ * @brief Main header file for hardware spinlock driver API.
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_HWSPINLOCK_H_
 #define ZEPHYR_INCLUDE_DRIVERS_HWSPINLOCK_H_
 

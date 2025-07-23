@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @ingroup espi_emul_interface
+ * @brief Main header file for eSPI emulation driver API.
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_ESPI_SPI_EMUL_H_
 #define ZEPHYR_INCLUDE_DRIVERS_ESPI_SPI_EMUL_H_
 
@@ -12,12 +18,6 @@
 #include <zephyr/drivers/espi.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/types.h>
-
-/**
- * @file
- *
- * @brief Public APIs for the eSPI emulation drivers.
- */
 
 /**
  * @brief eSPI Emulation Interface

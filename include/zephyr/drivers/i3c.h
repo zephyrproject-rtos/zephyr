@@ -5,6 +5,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @ingroup i3c_interface
+ * @brief Main header file for I3C (Inter-Integrated Circuit) driver API.
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_I3C_H_
 #define ZEPHYR_INCLUDE_DRIVERS_I3C_H_
 

@@ -1,13 +1,13 @@
-/**
- * @file
- *
- * @brief Public APIs to get device Information.
- */
-
 /*
  * Copyright (c) 2018 Alexander Wachter
  *
  * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ * @file
+ * @ingroup hwinfo_interface
+ * @brief Main header file for hardware information (hwinfo) driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_HWINFO_H_

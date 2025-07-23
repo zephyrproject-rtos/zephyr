@@ -6,7 +6,8 @@
 
 /**
  * @file
- * @brief Public APIs for the I2S (Inter-IC Sound) bus drivers.
+ * @ingroup i2s_interface
+ * @brief Main header file for I2S (Inter-IC Sound) driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_I2S_H_

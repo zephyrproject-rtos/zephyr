@@ -6,7 +6,8 @@
 
 /**
  * @file
- * @brief Public Platform Environment Control Interface driver APIs
+ * @ingroup peci_interface
+ * @brief Main header file for PECI (Platform Environment Control Interface) driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_PECI_H_

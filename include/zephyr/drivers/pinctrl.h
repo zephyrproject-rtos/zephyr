@@ -5,7 +5,8 @@
 
 /**
  * @file
- * Public APIs for pin control drivers
+ * @brief Main header file for pin control driver API.
+ * @ingroup pinctrl_interface
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_PINCTRL_H_
