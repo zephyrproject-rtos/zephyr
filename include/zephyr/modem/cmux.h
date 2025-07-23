@@ -155,6 +155,9 @@ struct modem_cmux {
 	struct ring_buf transmit_rb;
 	struct k_mutex transmit_rb_lock;
 
+	/* Maximum Transmission Unit */
+	uint16_t mtu;
+
 	/* Received frame */
 	struct modem_cmux_frame frame;
 	uint8_t frame_header[5];
@@ -193,8 +196,8 @@ struct modem_cmux_config {
 	/**
 	 * Size of receive buffer in bytes.
 	 *
-	 * Minimum and recommended size is CONFIG_MODEM_CMUX_MTU + 7 which
-	 * is the maximum CMUX frame size.
+	 * Minimum and recommended size is the MTU size + 7 which is
+	 * the maximum CMUX frame size.
 	 */
 	uint16_t receive_buf_size;
 	/** Transmit buffer */
@@ -202,11 +205,19 @@ struct modem_cmux_config {
 	/**
 	 * Size of transmit buffer in bytes.
 	 *
-	 * Minimum and recommended size is CONFIG_MODEM_CMUX_MTU + 22 which
-	 * is the maximum CMUX frame size plus the reserved CMUX command
+	 * Minimum and recommended size is the MTU size + 22 which is
+	 * the maximum CMUX frame size plus the reserved CMUX command
 	 * frame used for the control channel.
 	 */
 	uint16_t transmit_buf_size;
+	/**
+	 * Maximun Transmission Unit (MTU)
+	 *
+	 * Minimum size is 15 which is required for the control
+	 * channel. Recommended size is 127. Theoretical maximum size
+	 * is 16384.
+	 */
+	uint16_t mtu;
 };
 
 /**
@@ -227,7 +238,7 @@ struct modem_cmux_dlci_config {
 	/**
 	 * Size of receive buffer in bytes.
 	 *
-	 * Minimum size is CONFIG_MODEM_CMUX_MTU which is the maximum amount
+	 * Minimum size is the MTU size which is the maximum amount
 	 * of data which can be stored in a single CMUX data frame.
 	 */
 	uint16_t receive_buf_size;

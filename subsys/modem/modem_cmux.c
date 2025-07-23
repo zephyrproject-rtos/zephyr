@@ -27,6 +27,12 @@ LOG_MODULE_REGISTER(modem_cmux, CONFIG_MODEM_CMUX_LOG_LEVEL);
 #define MODEM_CMUX_CMD_FRAME_SIZE_MAX		(MODEM_CMUX_FRAME_SIZE_MAX + \
 						 MODEM_CMUX_CMD_DATA_SIZE_MAX)
 
+#define MODEM_CMUX_MTU_MIN_SIZE			(15)
+#define MODEM_CMUX_MTU_MAX_SIZE			(16384)
+#define MODEM_CMUX_RECEIVE_BUF_RESERVED		(MODEM_CMUX_FRAME_SIZE_MAX)
+#define MODEM_CMUX_TRANSMIT_BUF_RESERVED	(MODEM_CMUX_FRAME_SIZE_MAX + \
+						 MODEM_CMUX_CMD_FRAME_SIZE_MAX)
+
 #define MODEM_CMUX_T1_TIMEOUT			(K_MSEC(330))
 #define MODEM_CMUX_T2_TIMEOUT			(K_MSEC(660))
 
@@ -274,7 +280,7 @@ static uint16_t modem_cmux_transmit_frame(struct modem_cmux *cmux,
 
 	space = ring_buf_space_get(&cmux->transmit_rb) - MODEM_CMUX_FRAME_SIZE_MAX;
 	data_len = MIN(space, frame->data_len);
-	data_len = MIN(data_len, CONFIG_MODEM_CMUX_MTU);
+	data_len = MIN(data_len, cmux->mtu);
 
 	/* SOF */
 	buf[0] = 0xF9;
@@ -798,7 +804,7 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t by
 			break;
 		}
 
-		if (cmux->frame.data_len > CONFIG_MODEM_CMUX_MTU) {
+		if (cmux->frame.data_len > cmux->mtu) {
 			LOG_ERR("Too large frame");
 			cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_DROP;
 			break;
@@ -823,7 +829,7 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t by
 		/* Get last 8 bits of data length */
 		cmux->frame.data_len |= ((uint16_t)byte) << 7;
 
-		if (cmux->frame.data_len > CONFIG_MODEM_CMUX_MTU) {
+		if (cmux->frame.data_len > cmux->mtu) {
 			LOG_ERR("Too large frame");
 			cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_DROP;
 			break;
@@ -1261,18 +1267,20 @@ void modem_cmux_init(struct modem_cmux *cmux, const struct modem_cmux_config *co
 {
 	__ASSERT_NO_MSG(cmux != NULL);
 	__ASSERT_NO_MSG(config != NULL);
+	__ASSERT_NO_MSG(config->mtu >= MODEM_CMUX_MTU_MIN_SIZE);
+	__ASSERT_NO_MSG(config->mtu <= MODEM_CMUX_MTU_MAX_SIZE);
 	__ASSERT_NO_MSG(config->receive_buf != NULL);
-	__ASSERT_NO_MSG(config->receive_buf_size >=
-			(CONFIG_MODEM_CMUX_MTU + MODEM_CMUX_FRAME_SIZE_MAX));
+	__ASSERT_NO_MSG(config->receive_buf_size >= config->mtu + MODEM_CMUX_FRAME_SIZE_MAX);
 	__ASSERT_NO_MSG(config->transmit_buf != NULL);
 	__ASSERT_NO_MSG(config->transmit_buf_size >=
-			(CONFIG_MODEM_CMUX_MTU + MODEM_CMUX_FRAME_SIZE_MAX));
+		(config->mtu + MODEM_CMUX_FRAME_SIZE_MAX + MODEM_CMUX_CMD_FRAME_SIZE_MAX));
 
 	memset(cmux, 0x00, sizeof(*cmux));
 	cmux->callback = config->callback;
 	cmux->user_data = config->user_data;
 	cmux->receive_buf = config->receive_buf;
 	cmux->receive_buf_size = config->receive_buf_size;
+	cmux->mtu = config->mtu;
 	sys_slist_init(&cmux->dlcis);
 	cmux->state = MODEM_CMUX_STATE_DISCONNECTED;
 	ring_buf_init(&cmux->transmit_rb, config->transmit_buf_size, config->transmit_buf);

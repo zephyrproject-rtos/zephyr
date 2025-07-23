@@ -93,8 +93,8 @@ struct modem_cellular_data {
 
 	/* CMUX */
 	struct modem_cmux cmux;
-	uint8_t cmux_receive_buf[CONFIG_MODEM_CMUX_MTU + 7];
-	uint8_t cmux_transmit_buf[CONFIG_MODEM_CMUX_MTU + 22];
+	uint8_t cmux_receive_buf[CONFIG_MODEM_CELLULAR_CMUX_MTU + 7];
+	uint8_t cmux_transmit_buf[CONFIG_MODEM_CELLULAR_CMUX_MTU + 22];
 
 	struct modem_cmux_dlci dlci1;
 	struct modem_cmux_dlci dlci2;
@@ -102,9 +102,9 @@ struct modem_cellular_data {
 	struct modem_pipe *dlci2_pipe;
 	/* Points to dlci2_pipe or NULL. Used for shutdown script if not NULL */
 	struct modem_pipe *cmd_pipe;
-	uint8_t dlci1_receive_buf[CONFIG_MODEM_CMUX_MTU];
+	uint8_t dlci1_receive_buf[CONFIG_MODEM_CELLULAR_CMUX_MTU];
 	/* DLCI 2 is only used for chat scripts. */
-	uint8_t dlci2_receive_buf[CONFIG_MODEM_CMUX_MTU];
+	uint8_t dlci2_receive_buf[CONFIG_MODEM_CELLULAR_CMUX_MTU];
 
 	/* Modem chat */
 	struct modem_chat chat;
@@ -1868,6 +1868,7 @@ static int modem_cellular_init(const struct device *dev)
 			.receive_buf_size = ARRAY_SIZE(data->cmux_receive_buf),
 			.transmit_buf = data->cmux_transmit_buf,
 			.transmit_buf_size = ARRAY_SIZE(data->cmux_transmit_buf),
+			.mtu = CONFIG_MODEM_CELLULAR_CMUX_MTU,
 		};
 
 		modem_cmux_init(&data->cmux, &cmux_config);
