@@ -163,3 +163,8 @@ tests:
     extra_args:
       - DTC_OVERLAY_FILE="./boards/${BOARD}_ospi_b_nor.overlay"
       - CONF_FILE="./prj.conf ./boards/${BOARD}_ospi_b_nor.conf"
+  drivers.flash.common.mspi_single_io:
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=boards/mx25uw63_single_io.overlay
