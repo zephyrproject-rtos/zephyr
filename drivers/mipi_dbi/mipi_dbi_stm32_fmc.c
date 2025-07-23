@@ -93,9 +93,11 @@ int mipi_dbi_stm32_fmc_command_write(const struct device *dev,
 
 	for (i = 0U; i < len; i++) {
 		sys_write16((uint16_t)data_buf[i], config->data_addr);
-		if (IS_ENABLED(CONFIG_MIPI_DBI_STM32_FMC_MEM_BARRIER)) {
-			barrier_dsync_fence_full();
-		}
+	}
+
+	if (IS_ENABLED(CONFIG_MIPI_DBI_STM32_FMC_MEM_BARRIER) && (len != 0U)) {
+		/* barrier is only needed if the loop wrote data */
+		barrier_dsync_fence_full();
 	}
 
 	return 0;
@@ -118,9 +120,10 @@ static int mipi_dbi_stm32_fmc_write_display(const struct device *dev,
 
 	for (i = 0U; i < desc->buf_size; i += 2) {
 		sys_write16(sys_get_le16(&framebuf[i]), config->data_addr);
-		if (IS_ENABLED(CONFIG_MIPI_DBI_STM32_FMC_MEM_BARRIER)) {
-			barrier_dsync_fence_full();
-		}
+	}
+
+	if (IS_ENABLED(CONFIG_MIPI_DBI_STM32_FMC_MEM_BARRIER)) {
+		barrier_dsync_fence_full();
 	}
 
 	return 0;
