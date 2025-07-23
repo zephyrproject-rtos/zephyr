@@ -57,6 +57,8 @@ int main(void)
 			}
 			printk("\n");
 		}
+
+		k_msleep(1000);
 	}
 	return 0;
 }
