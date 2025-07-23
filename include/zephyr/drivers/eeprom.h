@@ -10,7 +10,8 @@
 
 /**
  * @file
- * @brief Public API for EEPROM drivers
+ * @ingroup eeprom_interface
+ * @brief Main header file for EEPROM driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_EEPROM_H_

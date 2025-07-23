@@ -1,16 +1,17 @@
-/**
- * @file
- *
- * @brief Public APIs for the DMA drivers.
- */
 
 /*
- * Copyright (c) 2016 Intel Corporation
- *
- * SPDX-License-Identifier: Apache-2.0
+* Copyright (c) 2016 Intel Corporation
+*
+* SPDX-License-Identifier: Apache-2.0
+*/
+
+/**
+ * @file
+ * @ingroup dma_interface
+ * @brief Main header file for DMA (Direct Memory Access) driver API.
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_DMA_H_
+ #ifndef ZEPHYR_INCLUDE_DRIVERS_DMA_H_
 #define ZEPHYR_INCLUDE_DRIVERS_DMA_H_
 
 #include <zephyr/kernel.h>

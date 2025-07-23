@@ -6,8 +6,9 @@
  */
 
 /**
- * @file
- * @brief Public 1-Wire Driver APIs
+ * @file zephyr/drivers/w1.h
+ * @ingroup w1_interface
+ * @brief Main header file for 1-Wire driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_W1_H_

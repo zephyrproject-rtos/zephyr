@@ -6,7 +6,8 @@
 
 /**
  * @file
- * @brief Public API for retained memory drivers
+ * @ingroup retained_mem_interface
+ * @brief Main header file for retained memory driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_RETAINED_MEM_
