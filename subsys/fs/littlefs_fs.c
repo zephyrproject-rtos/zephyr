@@ -582,6 +582,25 @@ static int littlefs_statvfs(struct fs_mount_t *mountp,
 	return lfs_to_errno(ret);
 }
 
+#if defined(CONFIG_FILE_SYSTEM_GC)
+
+static int littlefs_gc(struct fs_mount_t *mountp)
+{
+	ssize_t ret;
+	struct fs_littlefs *fs = mountp->fs_data;
+	struct lfs *lfs = &fs->lfs;
+
+	fs_lock(fs);
+
+	ret = lfs_fs_gc(lfs);
+
+	fs_unlock(fs);
+
+	return lfs_to_errno(ret);
+}
+
+#endif /* CONFIG_FILE_SYSTEM_GC */
+
 #ifdef CONFIG_FS_LITTLEFS_FMP_DEV
 
 #if defined(CONFIG_FLASH_HAS_EXPLICIT_ERASE)
@@ -1056,6 +1075,9 @@ static const struct fs_file_system_t littlefs_fs = {
 	.mkdir = littlefs_mkdir,
 	.stat = littlefs_stat,
 	.statvfs = littlefs_statvfs,
+#if defined(CONFIG_FILE_SYSTEM_GC)
+	.gc = littlefs_gc,
+#endif
 #if defined(CONFIG_FILE_SYSTEM_MKFS)
 	.mkfs = littlefs_mkfs,
 #endif

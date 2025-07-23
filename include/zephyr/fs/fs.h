@@ -691,6 +691,21 @@ int fs_register(int type, const struct fs_file_system_t *fs);
 int fs_unregister(int type, const struct fs_file_system_t *fs);
 
 /**
+ * @brief Attempt to proactively clean file system
+ *
+ * Returns a negative error code on failure.
+ * Ignored cleaning request is not a failure.
+ *
+ * @param mp Pointer to the mounted fs_mount_t structure.
+ *
+ * @retval 0 on success;
+ * @retval -EINVAL when a bad path to a directory, or a file, is given;
+ * @retval -ENOTSUP when not implemented by underlying file system driver;
+ * @retval <0 an other negative errno code on error.
+ */
+int fs_gc(struct fs_mount_t *mp);
+
+/**
  * @}
  */
 
