@@ -6,7 +6,7 @@
 #
 
 # TODO: Use DTS generated Kconfig once the board support is added
-DT_COMPAT_NORDIC_WIFI71 := nordic,wifi71
+DT_COMPAT_NORDIC_WIFI71 := nordic,nrf7120
 
 menuconfig WIFI_NRF70
 	bool "nRF70 driver"
