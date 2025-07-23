@@ -1,0 +1,19 @@
+# Copyright 2024 Hounjoung Rim <hounjoung@tsnlab.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config TCC_VCPTTC_TIMER
+	bool "Telechips VCP ttc timer support"
+	default y
+	depends on DT_HAS_TCC_TTCVCP_ENABLED
+	help
+	  This module implements a kernel device driver for the Telechips VCP
+	  platform provides the standard "system clock driver" interfaces.
+	  If unchecked, no timer will be used.
+
+config TCC_VCPTTC_TIMER_INDEX
+	int "Telechips VCP ttc timer index"
+	range 0 9
+	default 0
+	depends on TCC_VCPTTC_TIMER
+	help
+	  This is the index of TTC timer picked to provide system clock.
