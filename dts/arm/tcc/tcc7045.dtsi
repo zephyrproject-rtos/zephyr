@@ -1,0 +1,31 @@
+/*
+ * Copyright 2024 Hounjoung Rim <hounjoung@tsnlab.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/tcc/tcc70xx.dtsi>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			clock-frequency = <12000000>;
+			compatible = "arm,cortex-r5f";
+			reg = <0>;
+		};
+
+		tic: interrupt-controller@a0f10000 {
+			compatible = "tcc,tic";
+			reg = <0xa0f10000 0x1000>,
+				<0xa0f20000 0x20000>;
+			interrupt-controller;
+			#interrupt-cells = <4>;
+			#address-cells = <1>;
+			status = "disabled";
+		};
+	};
+};
