@@ -93,8 +93,11 @@ ZTEST(comparator_runtime_configure, test_comp_config_se_vdd)
 
 #ifdef COMP_REFSEL_REFSEL_AVDDAO1V8
 	conf.refsel = COMP_NRF_COMP_REFSEL_AVDDAO1V8;
-#else
+#elif defined(COMP_REFSEL_REFSEL_VDD)
 	conf.refsel = COMP_NRF_COMP_REFSEL_VDD;
+#else
+	/* Use internal 1.2 V derived from VDD */
+	conf.refsel = COMP_NRF_COMP_REFSEL_INT_1V2;
 #endif
 	rc = comp_nrf_comp_configure_se(test_dev, &conf);
 	zassert_equal(rc, 0, "Cannot configure comparator.");
