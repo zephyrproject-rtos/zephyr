@@ -10,6 +10,7 @@
 #include <zephyr/drivers/mipi_dbi.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/memc/memc_stm32.h>
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/sys/barrier.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/byteorder.h>
@@ -186,7 +187,7 @@ static DEVICE_API(mipi_dbi, mipi_dbi_stm32_fmc_driver_api) = {
 					UTIL_INC(DT_REG_ADDR_RAW(DT_INST_PARENT(n))))
 
 #define MIPI_DBI_FMC_GET_DATA_ADDRESS(n)                                                           \
-	MIPI_DBI_FMC_GET_ADDRESS(n) + (1 << (DT_INST_PROP(n, register_select_pin) + 1))
+	MIPI_DBI_FMC_GET_ADDRESS(n) + BIT(DT_INST_PROP(n, register_select_pin) + 1)
 
 #define MIPI_DBI_STM32_FMC_INIT(n)                                                                 \
 	static const struct mipi_dbi_stm32_fmc_config mipi_dbi_stm32_fmc_config_##n = {            \
