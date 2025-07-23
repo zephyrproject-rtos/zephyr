@@ -17,6 +17,7 @@ config SOC_SERIES_EFR32MG24
 	select SOC_GECKO_CMU
 	select SOC_GECKO_EMU
 	select SOC_GECKO_GPIO
+	select SILABS_SISDK_GPIO
 	select SOC_GECKO_DEV_INIT
 	select SOC_GECKO_SE
 	select HAS_PM
@@ -36,6 +37,7 @@ config SOC_SERIES_MGM24
 	select SOC_GECKO_CMU
 	select SOC_GECKO_EMU
 	select SOC_GECKO_GPIO
+	select SILABS_SISDK_GPIO
 	select SOC_GECKO_DEV_INIT
 	select SOC_GECKO_SE
 	select HAS_PM
