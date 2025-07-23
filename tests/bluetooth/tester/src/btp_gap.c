@@ -2028,6 +2028,7 @@ int tester_gap_padv_configure(struct bt_le_ext_adv *ext_adv,
 						     BTP_GAP_ADDR_TYPE_IDENTITY, ad, 1, NULL, 0,
 						     NULL, &ext_adv);
 		if (err != 0) {
+			LOG_ERR("Failed to create adv instance (err %d)\n", err);
 			return -EINVAL;
 		}
 	}
@@ -2037,7 +2038,7 @@ int tester_gap_padv_configure(struct bt_le_ext_adv *ext_adv,
 	 */
 	err = bt_le_per_adv_set_param(ext_adv, param);
 	if (err != 0) {
-		LOG_DBG("Failed to set periodic advertising parameters (err %d)\n", err);
+		LOG_ERR("Failed to set periodic advertising parameters (err %d)\n", err);
 	}
 
 	return err;
