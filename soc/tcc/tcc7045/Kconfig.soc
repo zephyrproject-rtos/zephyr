@@ -1,0 +1,11 @@
+# Copyright 2024 Hounjoung Rim <hounjoung@tsnlab.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_TCC7045
+	bool
+
+config SOC
+	default "tcc7045" if SOC_TCC7045
+
+config SYS_CLOCK_TICKS_PER_SEC
+	def_int 1000 if SOC_TCC7045

@@ -1,0 +1,38 @@
+# Copyright 2024 Hounjoung Rim <hounjoung@tsnlab.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_TCC7045
+
+config ARM_CUSTOM_INTERRUPT_CONTROLLER
+	default y
+
+config GEN_IRQ_VECTOR_TABLE
+	default y
+
+config SHARED_INTERRUPTS
+	def_bool y
+
+config NUM_IRQS
+	default 220
+
+config TICKLESS_KERNEL
+	def_bool n
+
+config TCCVCP_CONSOLE
+	def_bool y
+
+config ARM_MPU
+	def_bool y
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+DT_CHOSEN_Z_FLASH := zephyr,flash
+
+config FLASH_SIZE
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K)
+
+config FLASH_BASE_ADDRESS
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
+
+endif
