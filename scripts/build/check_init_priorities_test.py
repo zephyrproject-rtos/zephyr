@@ -210,15 +210,19 @@ class testZephyrInitLevels(unittest.TestCase):
                 0x04: ("b", 4, 0),
                 0x08: ("c", 4, 0),
                 }
+        obj._object_addr = {
+                "__device_dts_ord_11": 0x00,
+                "__device_dts_ord_22": 0x04,
+                }
 
         mock_ip.side_effect = lambda *args: args
 
         def mock_obj_name(*args):
-            if args[0] == (0, 0, 0):
+            if args[0] == (0, 5, 0):
                 return "i0"
             elif args[0] == (0, 1, 0):
                 return "__device_dts_ord_11"
-            elif args[0] == (4, 0, 0):
+            elif args[0] == (4, 5, 0):
                 return "i1"
             elif args[0] == (4, 1, 0):
                 return "__device_dts_ord_22"

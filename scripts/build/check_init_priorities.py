@@ -49,6 +49,9 @@ _IGNORE_COMPATIBLES = frozenset([
         "zephyr,cdc-acm-uart",
         ])
 
+# The offset of the init pointer in "struct device", in number of pointers.
+DEVICE_INIT_OFFSET = 5
+
 class Priority:
     """Parses and holds a device initialization priority.
 
@@ -108,6 +111,7 @@ class ZephyrInitLevels:
     def _load_objects(self):
         """Initialize the object table."""
         self._objects = {}
+        self._object_addr = {}
 
         for section in self._elf.iter_sections():
             if not isinstance(section, SymbolTableSection):
@@ -119,6 +123,7 @@ class ZephyrInitLevels:
                     sym.entry.st_info.type in ["STT_OBJECT", "STT_FUNC"]):
                     self._objects[sym.entry.st_value] = (
                             sym.name, sym.entry.st_size, sym.entry.st_shndx)
+                    self._object_addr[sym.name] = sym.entry.st_value
 
     def _load_level_addr(self):
         """Find the address associated with known init levels."""
@@ -205,12 +210,17 @@ class ZephyrInitLevels:
                 arg0_name = self._object_name(self._initlevel_pointer(addr, 0, shidx))
                 arg1_name = self._object_name(self._initlevel_pointer(addr, 1, shidx))
 
-                self.initlevels[level].append(f"{obj}: {arg0_name}({arg1_name})")
-
                 ordinal = self._device_ord_from_name(arg1_name)
                 if ordinal:
+                    dev_addr = self._object_addr[arg1_name]
+                    _, _, shidx = self._objects[dev_addr]
+                    arg0_name = self._object_name(self._initlevel_pointer(
+                        dev_addr, DEVICE_INIT_OFFSET, shidx))
+
                     prio = Priority(level, priority)
                     self.devices[ordinal] = (prio, arg0_name)
+
+                self.initlevels[level].append(f"{obj}: {arg0_name}({arg1_name})")
 
                 addr += size
                 priority += 1
