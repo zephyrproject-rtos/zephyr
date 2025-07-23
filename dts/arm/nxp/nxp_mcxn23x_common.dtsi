@@ -729,6 +729,11 @@
 		nxp,references = <&vref 1800>;
 	};
 
+	temp0: temp0 {
+		compatible = "nxp,lpadc-temp40";
+		status = "disabled";
+	};
+
 	lpadc1: lpadc@10e000 {
 		compatible = "nxp,lpc-lpadc";
 		reg = <0x10e000 0x1000>;
