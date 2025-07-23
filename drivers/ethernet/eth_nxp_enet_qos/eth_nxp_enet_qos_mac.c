@@ -104,6 +104,7 @@ static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 
 	struct net_buf *fragment = pkt->frags;
 	int frags_count = 0, total_bytes = 0;
+	int ret;
 
 	/* Only allow send of the maximum normal packet size */
 	while (fragment != NULL) {
@@ -120,8 +121,14 @@ static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 
 
 	/* One TX at a time in the current implementation */
-	k_sem_take(&data->tx.tx_sem, K_FOREVER);
-	LOG_DBG("Took driver TX sem %p by thread %p", &data->tx.tx_sem, k_current_get());
+	ret = k_sem_take(&data->tx.tx_sem, K_NO_WAIT);
+	if (ret) {
+		LOG_DBG("%s TX busy, rejected thread %s", dev->name,
+							  k_thread_name_get(k_current_get()));
+		return ret;
+	}
+	LOG_DBG("Took driver TX sem %p by thread %s", &data->tx.tx_sem,
+						      k_thread_name_get(k_current_get()));
 
 	net_pkt_ref(pkt);
 
@@ -193,7 +200,8 @@ static void tx_dma_done(const struct device *dev)
 
 	/* Allows another send */
 	k_sem_give(&data->tx.tx_sem);
-	LOG_DBG("Gave driver TX sem %p by thread %p", &data->tx.tx_sem, k_current_get());
+	LOG_DBG("Gave driver TX sem %p by thread %s", &data->tx.tx_sem,
+						      k_thread_name_get(k_current_get()));
 }
 
 static enum ethernet_hw_caps eth_nxp_enet_qos_get_capabilities(const struct device *dev)
