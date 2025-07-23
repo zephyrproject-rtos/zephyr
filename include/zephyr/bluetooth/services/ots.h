@@ -1157,12 +1157,10 @@ void bt_ots_metadata_display(struct bt_ots_obj_metadata *metadata,
  * @return CRC32 value.
  *
  */
-#if defined(CONFIG_BT_OTS_OACP_CHECKSUM_SUPPORT)
 static inline uint32_t bt_ots_client_calc_checksum(const uint8_t *data, size_t len)
 {
 	return crc32_ieee(data, len);
 }
-#endif
 
 #ifdef __cplusplus
 }
