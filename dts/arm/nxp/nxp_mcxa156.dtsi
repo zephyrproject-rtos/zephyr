@@ -493,6 +493,11 @@
 			status = "disabled";
 		};
 
+		temp0: temp0 {
+			compatible = "nxp,lpadc-temp40";
+			status = "disabled";
+		};
+
 		usb: usbd@400a4000 {
 			compatible = "nxp,kinetis-usbd";
 			reg = <0x400a4000 0x1000>;
