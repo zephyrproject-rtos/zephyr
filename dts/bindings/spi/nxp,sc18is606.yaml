@@ -1,0 +1,8 @@
+description: |
+  SC18IS60S6 I2C to SPI Bridge with Selectable GPIOs
+
+compatible: "nxp,sc18is606"
+include: [spi-controller.yaml, i2c-device.yaml]
+properties:
+  reg:
+    required: true
