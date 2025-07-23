@@ -28,6 +28,7 @@
 		watchdog0 = &wwdt0;
 		pwm-0 = &flexpwm1_pwm0;
 		rtc = &rtc;
+		die-temp0 = &temp0;
 	};
 
 	arduino_header: arduino-connector {
