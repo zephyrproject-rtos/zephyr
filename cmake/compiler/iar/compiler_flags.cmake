@@ -120,6 +120,7 @@ set_property(TARGET compiler-cpp PROPERTY dialect_cpp17 --libc++)
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp2a --libc++)
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp20 --libc++)
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp2b --libc++)
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp23 --libc++)
 
 # Flag for disabling strict aliasing rule in C and C++
 set_compiler_property(PROPERTY no_strict_aliasing)
