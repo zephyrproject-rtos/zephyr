@@ -95,7 +95,7 @@
 	status = "okay";
 };
 
-&pdm20 {
+dmic_dev: &pdm20 {
 	status = "okay";
 };
 
