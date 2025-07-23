@@ -31,6 +31,12 @@ properties:
     description: |
       Number of configured IN endpoints including control endpoint.
 
+  gsnpsid:
+    type: int
+    description: |
+      Value of the GSNPSID register, used to identify the version of the core
+      and avoid mismatch by checking the register at runtime.
+
   ghwcfg1:
     type: int
     required: true
@@ -43,6 +49,12 @@ properties:
     required: true
     description: |
       Value of the GHWCFG2 register. It is used to determine available endpoint
+      types during driver pre-initialization.
+
+  ghwcfg3:
+    type: int
+    description: |
+      Value of the GHWCFG3 register. It is used to determine available endpoint
       types during driver pre-initialization.
 
   ghwcfg4:
