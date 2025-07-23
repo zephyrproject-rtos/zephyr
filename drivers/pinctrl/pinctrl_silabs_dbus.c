@@ -7,7 +7,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/arch/cpu.h>
 
-#include <em_gpio.h>
+#include <sl_hal_gpio.h>
 
 #define DT_DRV_COMPAT silabs_dbus_pinctrl
 #define PIN_MASK      0xF0000UL
@@ -34,7 +34,11 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 		}
 
 		/* Configure GPIO */
-		GPIO_PinModeSet(pins[i].port, pins[i].pin, pins[i].mode, pins[i].dout);
+		sl_gpio_t gpio = {
+			.port = pins[i].port,
+			.pin = pins[i].pin,
+		};
+		sl_hal_gpio_set_pin_mode(&gpio, pins[i].mode, pins[i].dout);
 
 		/* Configure DBUS */
 		enable_reg = DT_INST_REG_ADDR_BY_NAME(0, dbus) +
@@ -46,7 +50,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 		}
 
 		if (pins[i].en_bit != SILABS_PINCTRL_UNUSED) {
-			if (pins[i].mode == gpioModeDisabled) {
+			if (pins[i].mode == SL_GPIO_MODE_DISABLED) {
 				sys_clear_bit(enable_reg, pins[i].en_bit);
 			} else {
 				sys_set_bit(enable_reg, pins[i].en_bit);
