@@ -419,7 +419,7 @@ static int bt_a2dp_set_config_cb(struct bt_avdtp_req *req, struct net_buf *buf)
 	}
 
 	ops = stream->ops;
-	if ((!req->status) && (ops->configured != NULL)) {
+	if ((!req->status) && (ops != NULL) && (ops->configured != NULL)) {
 		ops->configured(stream);
 	}
 	return 0;
