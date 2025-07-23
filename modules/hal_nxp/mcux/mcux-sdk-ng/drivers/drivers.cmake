@@ -185,6 +185,12 @@ endif()
   set_variable_ifdef(CONFIG_HAS_MCUX_XCACHE		CONFIG_MCUX_COMPONENT_driver.cache_xcache)
 
 if((${MCUX_DEVICE} MATCHES "MIMX9596") OR (${MCUX_DEVICE} MATCHES "MIMX8UD7") OR (${MCUX_DEVICE} MATCHES "MIMXRT118") OR (CONFIG_SOC_MIMX94398) OR (CONFIG_SOC_MIMXRT798S))
+
+  if(CONFIG_SOC_MIMX94398_M33)
+    set(CONFIG_MCUX_COMPONENT_driver.irqsteer_1 ON)
+    set(CONFIG_MCUX_COMPONENT_driver.irqsteer_1_soc.cm33_core1 ON)
+  endif()
+
   set_variable_ifdef(CONFIG_IPM_IMX	CONFIG_MCUX_COMPONENT_driver.mu1)
   set_variable_ifdef(CONFIG_MBOX_NXP_IMX_MU	CONFIG_MCUX_COMPONENT_driver.mu1)
 else()
