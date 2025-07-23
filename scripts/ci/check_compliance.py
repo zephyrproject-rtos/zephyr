@@ -1213,6 +1213,7 @@ flagged.
         "BOOT_SERIAL_CDC_ACM",       # Used in (sysbuild-based) test
         "BOOT_SERIAL_ENTRANCE_GPIO", # Used in (sysbuild-based) test
         "BOOT_SERIAL_IMG_GRP_HASH",  # Used in documentation
+        "BOOT_SERIAL_UART",          # Used in (sysbuild-based) test
         "BOOT_SHARE_BACKEND_RETENTION", # Used in Kconfig text
         "BOOT_SHARE_DATA",           # Used in Kconfig text
         "BOOT_SHARE_DATA_BOOTINFO", # Used in (sysbuild-based) test
