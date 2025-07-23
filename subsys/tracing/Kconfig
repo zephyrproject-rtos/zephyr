@@ -207,6 +207,12 @@ config TRACING_OBJECT_TRACKING
 
 menu "Tracing Configuration"
 
+config TRACING_IDLE
+	bool "Tracing Idle"
+	default y
+	help
+	  Enable tracing Idles.
+
 config TRACING_SYSCALL
 	bool "Tracing Syscalls"
 	default y

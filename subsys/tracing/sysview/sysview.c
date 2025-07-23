@@ -63,7 +63,9 @@ void sys_trace_isr_exit_to_scheduler(void)
 
 void sys_trace_idle(void)
 {
-	SEGGER_SYSVIEW_OnIdle();
+	if(IS_ENABLED(CONFIG_TRACING_IDLE)) {
+		SEGGER_SYSVIEW_OnIdle();
+	}
 }
 
 void sys_trace_named_event(const char *name, uint32_t arg0, uint32_t arg1)
