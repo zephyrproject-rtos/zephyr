@@ -210,6 +210,17 @@ properties:
     description: |
       Number of cells in power-domains property
 
+  hwlocks:
+    type: phandle-array
+    description: |
+      HW spinlock id relevant to the device.
+    specifier-space: hwlock
+
+  hwlock-names:
+    type: string-array
+    description: |
+      Optional names given to the hwlock specifiers in the "hwlocks" property.
+
   zephyr,deferred-init:
     type: boolean
     description: |
