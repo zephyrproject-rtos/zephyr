@@ -17,6 +17,14 @@
 extern "C" {
 #endif
 
+/**
+ * @defgroup fpga_interface FPGA Interface.
+ * @since 2.7
+ * @version 0.1.0
+ * @ingroup io_interfaces
+ * @{
+ */
+
 enum FPGA_status {
 	/* Inactive is when the FPGA cannot accept the bitstream
 	 * and will not be programmed correctly
@@ -171,6 +179,8 @@ static inline int fpga_off(const struct device *dev)
 
 	return api->off(dev);
 }
+
+/** @} */
 
 #ifdef __cplusplus
 }
