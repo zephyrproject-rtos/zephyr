@@ -5297,9 +5297,16 @@ West:
   status: maintained
   maintainers:
     - anangl
+    - nika-nordic
+    - masz-nordic
   collaborators:
     - hubertmis
     - nordic-krch
+    - kl-cruz
+    - magp-nordic
+    - jaz1-nordic
+    - mif1-nordic
+    - adamkondraciuk
   files:
     - modules/hal_nordic/
   labels:
