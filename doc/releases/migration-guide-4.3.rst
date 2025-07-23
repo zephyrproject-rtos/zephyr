@@ -34,6 +34,12 @@ Device Drivers and Devicetree
 
 .. zephyr-keep-sorted-start re(^\w)
 
+Sensors
+=======
+
+* Nodes with compatible property :dtcompatible:`invensense,icm42688` now additionally need to also
+  include :dtcompatible:`invensense,icm4268x` in order to work.
+
 Stepper
 =======
 
