@@ -97,6 +97,22 @@ config PHY_QUALCOMM_AR8031
 	help
 	  Enable Qualcomm Atheros AR8031 Ethernet PHY Driver
 
+config PHY_MARVELL_ALASKA_88E1XXX
+	bool "Marvell Alaska 88E1xxx PHY Driver"
+	default y
+	depends on DT_HAS_MARVELL_88E1XXX_ENABLED
+	depends on MDIO
+	help
+	  Enable Marvell Alaska 88E1xxx PHY Driver
+
+config PHY_TI_DP83822
+	bool "TI DP83822 PHY Driver"
+	default y
+	depends on DT_HAS_TI_DP83822_ENABLED
+	depends on MDIO
+	help
+	  Enable TI DP83822 PHY Driver
+
 config PHY_AUTONEG_TIMEOUT_MS
 	int "Auto-negotiation timeout value in milliseconds"
 	default 4000
