@@ -15,5 +15,20 @@ properties:
     type: int
     required: true
 
+  reg-width:
+    type: int
+    enum:
+      - 1
+      - 2
+      - 4
+    required: true
+    description: |
+      Register width for a single spinlock in bytes.
+      Depending on the platform, the register used to write the cluster identifier
+      may vary in size.
+        - 1: cluster id register fit in a single byte
+        - 2: cluster id register span across 2 bytes
+        - 4: cluster id register span across 4 bytes
+
 hwlock-cells:
   - id
