@@ -6,7 +6,10 @@ common:
 tests:
   drivers.gpio.build:
     min_ram: 32
-    platform_exclude: serpente
+    platform_exclude:
+      - serpente
+      - nrf54l15dk/nrf54l15/cpuflpr
+      - nrf54l15dk/nrf54l15/cpuflpr/xip
     depends_on:
       - gpio
       - spi
@@ -66,3 +69,10 @@ tests:
     platform_allow: qemu_cortex_m3
     depends_on: gpio
     extra_args: DTC_OVERLAY_FILE="iproc.overlay"
+
+  drivers.gpio.build.nrf54l15_cpuflpr:
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuflpr
+      - nrf54l15dk/nrf54l15/cpuflpr/xip
+    depends_on: gpio
+    extra_args: DTC_OVERLAY_FILE="nrf54l15dk_nrf54l15_cpuflpr.overlay"
