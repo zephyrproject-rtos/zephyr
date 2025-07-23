@@ -7,7 +7,8 @@
 
 /**
  * @file
- * @brief Public API for counter and timer drivers
+ * @ingroup counter_interface
+ * @brief Main header file for counter driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_COUNTER_H_

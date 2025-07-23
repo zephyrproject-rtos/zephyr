@@ -6,7 +6,8 @@
 
 /**
  * @file
- * @brief Public SMBus Driver APIs
+ * @ingroup smbus_interface
+ * @brief Main header file for SMBus (System Management Bus) driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_SMBUS_H_

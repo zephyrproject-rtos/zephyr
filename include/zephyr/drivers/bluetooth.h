@@ -5,6 +5,13 @@
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @ingroup bt_hci_api
+ * @brief Main header file for Bluetooth HCI driver API.
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_BLUETOOTH_H_
 #define ZEPHYR_INCLUDE_DRIVERS_BLUETOOTH_H_
 

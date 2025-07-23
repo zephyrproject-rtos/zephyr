@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @ingroup fpga_interface
+ * @brief Main header file for FPGA driver API.
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_FPGA_H_
 #define ZEPHYR_INCLUDE_DRIVERS_FPGA_H_
 

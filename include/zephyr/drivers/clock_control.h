@@ -8,7 +8,8 @@
 
 /**
  * @file
- * @brief Public Clock Control APIs
+ * @ingroup clock_control_interface
+ * @brief Main header file for clock control driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_H_
