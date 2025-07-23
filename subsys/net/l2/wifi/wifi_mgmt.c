@@ -442,7 +442,6 @@ static int wifi_connect(uint64_t mgmt_request, struct net_if *iface,
 	}
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
-	memset(&roaming_params, 0x0, sizeof(roaming_params));
 	roaming_params.is_11r_used = params->ft_used;
 #endif
 
