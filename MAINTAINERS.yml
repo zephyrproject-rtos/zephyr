@@ -3642,7 +3642,7 @@ Networking:
     - jukkar
     - rlubos
   collaborators:
-    - mrodgers-witekio
+    - matt-rodgers
   files:
     - doc/connectivity/networking/api/http*.rst
     - include/zephyr/net/http/
