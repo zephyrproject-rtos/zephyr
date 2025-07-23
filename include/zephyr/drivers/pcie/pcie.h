@@ -8,9 +8,15 @@
 #define ZEPHYR_INCLUDE_DRIVERS_PCIE_PCIE_H_
 
 /**
- * @brief PCIe Host Interface
- * @defgroup pcie_host_interface PCIe Host Interface
+ * @brief Interfaces for PCIe devices.
+ * @defgroup pcie_interface PCIe
  * @ingroup io_interfaces
+ * @{
+ * @}
+ *
+ * @brief Interfaces for PCIe Host.
+ * @defgroup pcie_host_interface PCIe Host
+ * @ingroup pcie_interface
  * @{
  */
 
