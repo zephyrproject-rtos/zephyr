@@ -90,6 +90,15 @@ New Drivers
   Same as above for boards, this will also be recomputed at the time of the release.
   Just link the driver, further details go in the binding description
 
+* Interrupt controller
+
+   * STM32 EXTI interrupt/event controller (:dtcompatible:`st,stm32-exti`) has a dedicated driver and API now, separate from STM32 GPIO Interrupt Control driver.
+
+* RTC
+
+   * STM32 RTC driver has been updated to use the new STM32 EXTI interrupt controller API
+
+
 New Samples
 ***********
 
