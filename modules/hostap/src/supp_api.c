@@ -1528,13 +1528,26 @@ int supplicant_11k_cfg(const struct device *dev, struct wifi_11k_params *params)
 
 int supplicant_11k_neighbor_request(const struct device *dev, struct wifi_11k_params *params)
 {
+	struct wpa_supplicant *wpa_s;
 	int ssid_len;
 
-	if (params == NULL) {
+	wpa_s = get_wpa_s_handle(dev);
+	if (!wpa_s) {
+		wpa_printf(MSG_ERROR, "Device %s not found", dev->name);
 		return -1;
 	}
 
-	ssid_len = strlen(params->ssid);
+	if (wpa_s->reassociate || (wpa_s->wpa_state >= WPA_AUTHENTICATING &&
+	    wpa_s->wpa_state < WPA_COMPLETED)) {
+		wpa_printf(MSG_INFO, "Reassociation is in progress, skip");
+		return 0;
+	}
+
+	if (params) {
+		ssid_len = strlen(params->ssid);
+	} else {
+		ssid_len = 0;
+	}
 
 	if (ssid_len > 0) {
 		if (ssid_len > WIFI_SSID_MAX_LEN) {
