@@ -6,3 +6,26 @@ include: [spi-controller.yaml, i2c-device.yaml]
 properties:
   reg:
     required: true
+    description: I2C address of the bridge
+
+  spi-clock-frequency:
+    type: int
+    required: false
+    default: 1875000
+    enum:
+      - 1875000
+      - 455000
+      - 115000
+      - 58000
+    description: SPI CLock frequency in Hz
+
+  spi-mode:
+    type: int
+    required: false
+    default: 0
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+    description: SPI mode CPOL and CPHA combination
