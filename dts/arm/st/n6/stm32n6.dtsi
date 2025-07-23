@@ -1274,6 +1274,14 @@
 				STM32_DMA_16BITS)>;
 			status = "disabled";
 		};
+
+		npu: npu@580c0000 {
+			compatible = "st,stm32-npu";
+			reg = <0x580c0000 0x1000>;
+			clocks = <&rcc STM32_CLOCK(AHB5, 31)>;
+			resets = <&rctl STM32_RESET(AHB5, 31)>;
+			status = "disabled";
+		};
 	};
 };
 
