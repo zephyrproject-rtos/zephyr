@@ -24,6 +24,11 @@
 #define RX_LPT_CLOCKS_NON_USE                     2
 #define RX_LPT_CLOCKS_SOURCE_CLOCK_LOCO           3
 
+#ifdef CONFIG_SOC_SERIES_RX26T
+#define RX_PLL_CLOCKS_SOURCE_CLOCK_MAIN_OSC 0
+#define RX_PLL_CLOCKS_SOURCE_CLOCK_HOCO     1
+#endif /* CONFIG_SOC_SERIES_RX26T */
+
 #define RX_PLL_MUL_4   7
 #define RX_PLL_MUL_4_5 8
 #define RX_PLL_MUL_5   9
