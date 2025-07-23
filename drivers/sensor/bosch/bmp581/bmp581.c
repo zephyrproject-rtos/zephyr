@@ -550,10 +550,15 @@ static int bmp581_init(const struct device *dev)
 	drv->chip_id = 0;
 	memset(&drv->last_sample, 0, sizeof(drv->last_sample));
 
-	soft_reset(dev);
+	ret = soft_reset(dev);
+	if (ret != BMP5_OK) {
+		LOG_ERR("Failed to perform soft-reset: %d", ret);
+		return ret;
+	}
 
 	ret = bmp581_reg_read_rtio(&conf->bus, BMP5_REG_CHIP_ID, &drv->chip_id, 1);
 	if (ret != BMP5_OK) {
+		LOG_ERR("Failed to read chip ID: %d", ret);
 		return ret;
 	}
 
