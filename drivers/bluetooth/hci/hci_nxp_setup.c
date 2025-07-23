@@ -77,6 +77,10 @@ static void fw_upload_gen_crc32_table(void)
 	int i, j;
 	unsigned long crc_accum;
 
+	if (made_table) {
+		return;
+	}
+
 	for (i = 0; i < 256; i++) {
 		crc_accum = ((unsigned long)i << 24);
 		for (j = 0; j < 8; j++) {
@@ -88,6 +92,9 @@ static void fw_upload_gen_crc32_table(void)
 		}
 		crc_table[i] = crc_accum;
 	}
+
+	/* Mark CRC32 table generation complete */
+	made_table = true;
 }
 
 static unsigned char fw_upload_crc8(unsigned char *array, unsigned char len)
