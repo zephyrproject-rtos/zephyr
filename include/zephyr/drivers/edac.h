@@ -6,7 +6,8 @@
 
 /**
  * @file
- * @brief EDAC API header file
+ * @ingroup edac_interface
+ * @brief Main header file for EDAC (Error Detection and Correction) driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_EDAC_H_

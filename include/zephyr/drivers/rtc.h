@@ -7,7 +7,8 @@
 
 /**
  * @file drivers/rtc.h
- * @brief Public real time clock driver API
+ * @ingroup rtc_interface
+ * @brief Main header file for real-time clock (RTC) driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_RTC_H_

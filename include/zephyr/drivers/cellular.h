@@ -6,8 +6,9 @@
  */
 
 /**
- * @file drivers/cellular.h
- * @brief Public cellular network API
+ * @file
+ * @ingroup cellular_interface
+ * @brief Main header file for cellular modem driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_CELLULAR_H_

@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @ingroup virtio_interface
+ * @brief Main header file for Virtio driver API.
+ */
+
 #ifndef ZEPHYR_VIRTIO_VIRTIO_H_
 #define ZEPHYR_VIRTIO_VIRTIO_H_
 #include <zephyr/device.h>

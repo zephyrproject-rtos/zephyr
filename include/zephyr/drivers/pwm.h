@@ -7,7 +7,8 @@
 
 /**
  * @file
- * @brief Public PWM Driver APIs
+ * @ingroup pwm_interface
+ * @brief Main header file for PWM (Pulse Width Modulation) driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_PWM_H_

@@ -6,7 +6,8 @@
 
 /**
  * @file
- * @brief Public API for display drivers and applications
+ * @ingroup display_interface
+ * @brief Main header file for display driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_DISPLAY_H_
