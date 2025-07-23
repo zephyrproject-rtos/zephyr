@@ -10,7 +10,7 @@
 
 /**
  * @brief Emulators used to test drivers and higher-level code that uses them
- * @defgroup io_emulators Emulator interface
+ * @defgroup io_emulators Emulator interfaces
  * @ingroup testing
  * @{
  */
