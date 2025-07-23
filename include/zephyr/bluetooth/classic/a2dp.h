@@ -832,7 +832,6 @@ int bt_a2dp_stream_abort(struct bt_a2dp_stream *stream);
  */
 uint32_t bt_a2dp_get_mtu(struct bt_a2dp_stream *stream);
 
-#if defined(CONFIG_BT_A2DP_SOURCE)
 /** @brief send a2dp media data
  *
  * Only A2DP source side can call this function.
@@ -846,7 +845,6 @@ uint32_t bt_a2dp_get_mtu(struct bt_a2dp_stream *stream);
  */
 int bt_a2dp_stream_send(struct bt_a2dp_stream *stream, struct net_buf *buf, uint16_t seq_num,
 			uint32_t ts);
-#endif
 
 #ifdef __cplusplus
 }
