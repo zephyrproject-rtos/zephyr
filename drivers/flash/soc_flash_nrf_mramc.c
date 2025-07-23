@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- #include <string.h>
+#include <string.h>
 
- #include <zephyr/drivers/flash.h>
- #include <zephyr/logging/log.h>
- #include <nrfx_mramc.h>
- #if defined(CONFIG_SOC_FLASH_NRF_MRAMC_FLUSH_CACHE)
- #include <hal/nrf_cache.h>
- #endif
+#include <zephyr/drivers/flash.h>
+#include <zephyr/logging/log.h>
+#include <nrfx_mramc.h>
+#if defined(CONFIG_SOC_FLASH_NRF_MRAMC_FLUSH_CACHE)
+#include <hal/nrf_cache.h>
+#endif
 
 LOG_MODULE_REGISTER(flash_nrf_mramc, CONFIG_FLASH_LOG_LEVEL);
 
