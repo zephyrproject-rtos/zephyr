@@ -598,7 +598,7 @@ static int dwc2_tx_fifo_write(const struct device *dev,
 		return -ENOENT;
 	}
 
-	if (is_iso) {
+	if (!IS_ENABLED(CONFIG_UDC_DWC2_PTI) && is_iso) {
 		/* Queue transfer on next SOF. TODO: allow stack to explicitly
 		 * specify on which (micro-)frame the data should be sent.
 		 */
@@ -740,11 +740,13 @@ static void dwc2_prep_rx(const struct device *dev, struct net_buf *buf,
 			return;
 		}
 
-		/* Set the Even/Odd (micro-)frame appropriately */
-		if (priv->sof_num & 1) {
-			doepctl |= USB_DWC2_DEPCTL_SETEVENFR;
-		} else {
-			doepctl |= USB_DWC2_DEPCTL_SETODDFR;
+		if (!IS_ENABLED(CONFIG_UDC_DWC2_PTI)) {
+			/* Set the Even/Odd (micro-)frame appropriately */
+			if (priv->sof_num & 1) {
+				doepctl |= USB_DWC2_DEPCTL_SETEVENFR;
+			} else {
+				doepctl |= USB_DWC2_DEPCTL_SETODDFR;
+			}
 		}
 	} else {
 		xfersize = net_buf_tailroom(buf);
@@ -1982,10 +1984,13 @@ static int udc_dwc2_init_controller(const struct device *dev)
 	mem_addr_t gahbcfg_reg = (mem_addr_t)&base->gahbcfg;
 	mem_addr_t gusbcfg_reg = (mem_addr_t)&base->gusbcfg;
 	mem_addr_t dcfg_reg = (mem_addr_t)&base->dcfg;
+	mem_addr_t dctl_reg = (mem_addr_t)&base->dctl;
 	uint32_t gsnpsid;
 	uint32_t dcfg;
+	uint32_t dctl;
 	uint32_t gusbcfg;
 	uint32_t gahbcfg;
+	uint32_t gintmsk;
 	uint32_t ghwcfg2;
 	uint32_t ghwcfg3;
 	uint32_t ghwcfg4;
@@ -2143,6 +2148,13 @@ static int udc_dwc2_init_controller(const struct device *dev)
 	sys_write32(gusbcfg, gusbcfg_reg);
 	sys_write32(dcfg, dcfg_reg);
 
+	/* Configure Periodic Transfer Interrupt feature */
+	dctl = USB_DWC2_DCTL_SFTDISCON;
+	if (IS_ENABLED(CONFIG_UDC_DWC2_PTI)) {
+		dctl |= USB_DWC2_DCTL_IGNRFRMNUM;
+	}
+	sys_write32(dctl, dctl_reg);
+
 	priv->outeps = 0U;
 	for (uint8_t i = 0U; i < priv->numdeveps; i++) {
 		uint32_t epdir = usb_dwc2_get_ghwcfg1_epdir(priv->ghwcfg1, i);
@@ -2222,14 +2234,21 @@ static int udc_dwc2_init_controller(const struct device *dev)
 	}
 
 	/* Unmask interrupts */
-	sys_write32(IF_ENABLED(CONFIG_UDC_ENABLE_SOF, (USB_DWC2_GINTSTS_SOF |
-						       USB_DWC2_GINTSTS_INCOMPISOOUT |
-						       USB_DWC2_GINTSTS_INCOMPISOIN |))
-		    USB_DWC2_GINTSTS_OEPINT | USB_DWC2_GINTSTS_IEPINT |
-		    USB_DWC2_GINTSTS_ENUMDONE | USB_DWC2_GINTSTS_USBRST |
-		    USB_DWC2_GINTSTS_WKUPINT | USB_DWC2_GINTSTS_USBSUSP |
-		    USB_DWC2_GINTSTS_GOUTNAKEFF,
-		    (mem_addr_t)&base->gintmsk);
+	gintmsk = USB_DWC2_GINTSTS_OEPINT | USB_DWC2_GINTSTS_IEPINT |
+		  USB_DWC2_GINTSTS_ENUMDONE | USB_DWC2_GINTSTS_USBRST |
+		  USB_DWC2_GINTSTS_WKUPINT | USB_DWC2_GINTSTS_USBSUSP |
+		  USB_DWC2_GINTSTS_GOUTNAKEFF;
+
+	if (IS_ENABLED(CONFIG_UDC_ENABLE_SOF)) {
+		gintmsk |= USB_DWC2_GINTSTS_SOF;
+
+		if (!IS_ENABLED(CONFIG_UDC_DWC2_PTI)) {
+			gintmsk |= USB_DWC2_GINTSTS_INCOMPISOOUT |
+				   USB_DWC2_GINTSTS_INCOMPISOIN;
+		}
+	}
+
+	sys_write32(gintmsk, (mem_addr_t)&base->gintmsk);
 
 	return 0;
 }
@@ -3156,11 +3175,13 @@ static void udc_dwc2_isr_handler(const struct device *dev)
 		}
 
 		if (IS_ENABLED(CONFIG_UDC_ENABLE_SOF) &&
+		    !IS_ENABLED(CONFIG_UDC_DWC2_PTI) &&
 		    int_status & USB_DWC2_GINTSTS_INCOMPISOIN) {
 			dwc2_handle_incompisoin(dev);
 		}
 
 		if (IS_ENABLED(CONFIG_UDC_ENABLE_SOF) &&
+		    !IS_ENABLED(CONFIG_UDC_DWC2_PTI) &&
 		    int_status & USB_DWC2_GINTSTS_INCOMPISOOUT) {
 			dwc2_handle_incompisoout(dev);
 		}
