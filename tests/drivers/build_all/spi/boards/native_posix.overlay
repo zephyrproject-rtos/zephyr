@@ -7,7 +7,14 @@
 
 / {
 	i2c0: i2c@88888880 {
-		compatible = nxp,sc18is606;
-		reg = <0x28>
+		status = "okay";
+		spi0: spi0@0 {
+			compatible = "nxp, sc18is606";
+			reg = <0x28>;
+			status = "okay";
+			#size-cells = 0;
+			#address-cells = 1;
+			clock-frequency = 100000;
+		};
 	};
 };
