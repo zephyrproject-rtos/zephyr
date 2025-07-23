@@ -1800,9 +1800,25 @@ int supplicant_bss_ext_capab(const struct device *dev, int capab)
 
 int supplicant_legacy_roam(const struct device *dev)
 {
+	struct wpa_supplicant *wpa_s;
 	int ret = -1;
 
 	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+
+	wpa_s = get_wpa_s_handle(dev);
+	if (!wpa_s) {
+		ret = -1;
+		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
+		goto out;
+	}
+
+	if (wpa_s->reassociate || (wpa_s->wpa_state >= WPA_AUTHENTICATING &&
+	    wpa_s->wpa_state < WPA_COMPLETED)) {
+		wpa_printf(MSG_INFO, "Reassociation is in progress, skip");
+		ret = 0;
+		goto out;
+	}
+
 	if (!wpa_cli_cmd_v("scan")) {
 		goto out;
 	}
@@ -1827,6 +1843,13 @@ int supplicant_btm_query(const struct device *dev, uint8_t reason)
 	if (!wpa_s) {
 		ret = -1;
 		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
+		goto out;
+	}
+
+	if (wpa_s->reassociate || (wpa_s->wpa_state >= WPA_AUTHENTICATING &&
+	    wpa_s->wpa_state < WPA_COMPLETED)) {
+		wpa_printf(MSG_INFO, "Reassociation is in progress, skip");
+		ret = 0;
 		goto out;
 	}
 
