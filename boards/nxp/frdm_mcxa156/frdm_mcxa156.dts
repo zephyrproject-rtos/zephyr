@@ -25,6 +25,7 @@
 		mcuboot-button0 = &user_button_2;
 		watchdog0 = &wwdt0;
 		ambient-temp0 = &p3t1755;
+		die-temp0 = &temp0;
 	};
 
 	chosen {
