@@ -21,6 +21,8 @@
 #define EVENT_CMUX_DLCI1_RX_DATA BIT(6)
 #define EVENT_CMUX_DLCI2_RX_DATA BIT(7)
 
+#define TEST_CMUX_MTU_SIZE 64
+
 /* CMUX DTE variables */
 static struct modem_cmux cmux_dte;
 static uint8_t cmux_receive_buf[127];
@@ -221,6 +223,7 @@ static void cmux_dte_init(void)
 		.receive_buf_size = sizeof(cmux_receive_buf),
 		.transmit_buf = cmux_transmit_buf,
 		.transmit_buf_size = ARRAY_SIZE(cmux_transmit_buf),
+		.mtu = TEST_CMUX_MTU_SIZE,
 	};
 
 	const struct modem_backend_mock_config bus_mock_config = {
@@ -263,6 +266,7 @@ static void cmux_dce_init(void)
 		.receive_buf_size = sizeof(cmux_receive_buf_dce),
 		.transmit_buf = cmux_transmit_buf_dce,
 		.transmit_buf_size = ARRAY_SIZE(cmux_transmit_buf_dce),
+		.mtu = TEST_CMUX_MTU_SIZE,
 	};
 
 	const struct modem_backend_mock_config bus_mock_config = {

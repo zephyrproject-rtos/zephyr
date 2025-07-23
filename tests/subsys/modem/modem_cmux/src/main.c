@@ -27,6 +27,7 @@
 #define EVENT_CMUX_DLCI1_CLOSED		BIT(7)
 #define EVENT_CMUX_DLCI2_CLOSED		BIT(8)
 #define EVENT_CMUX_DISCONNECTED		BIT(9)
+#define TEST_CMUX_MTU_SIZE		64
 #define CMUX_BASIC_HRD_SMALL_SIZE	6
 #define CMUX_BASIC_HRD_LARGE_SIZE	7
 
@@ -280,6 +281,7 @@ static void *test_modem_cmux_setup(void)
 		.receive_buf_size = sizeof(cmux_receive_buf),
 		.transmit_buf = cmux_transmit_buf,
 		.transmit_buf_size = ARRAY_SIZE(cmux_transmit_buf),
+		.mtu = TEST_CMUX_MTU_SIZE,
 	};
 
 	modem_cmux_init(&cmux, &cmux_config);
@@ -875,14 +877,14 @@ ZTEST(modem_cmux, test_modem_cmux_split_large_data)
 
 	ret = modem_pipe_transmit(dlci2_pipe, cmux_frame_data_large,
 				  sizeof(cmux_frame_data_large));
-	zassert_true(ret == CONFIG_MODEM_CMUX_MTU, "Failed to split large data %d", ret);
+	zassert_true(ret == TEST_CMUX_MTU_SIZE, "Failed to split large data %d", ret);
 
 	events = k_event_wait(&cmux_event, EVENT_CMUX_DLCI2_TRANSMIT_IDLE, false, K_MSEC(200));
 	zassert_equal(events, EVENT_CMUX_DLCI2_TRANSMIT_IDLE,
 		      "Transmit idle event not received for DLCI2 pipe");
 
 	ret = modem_backend_mock_get(&bus_mock, buffer2, sizeof(buffer2));
-	zassert_true(ret == CONFIG_MODEM_CMUX_MTU + CMUX_BASIC_HRD_SMALL_SIZE,
+	zassert_true(ret == TEST_CMUX_MTU_SIZE + CMUX_BASIC_HRD_SMALL_SIZE,
 		     "Incorrect number of bytes transmitted %d", ret);
 }
 
