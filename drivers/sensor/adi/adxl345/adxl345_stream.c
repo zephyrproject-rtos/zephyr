@@ -131,7 +131,7 @@ static void adxl345_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 	struct adxl345_dev_data *data = (struct adxl345_dev_data *) dev->data;
 	const struct adxl345_dev_config *cfg = (const struct adxl345_dev_config *) dev->config;
 	struct rtio_iodev_sqe *current_sqe = data->sqe;
-	uint16_t fifo_samples = (data->fifo_ent[0]) & SAMPLE_MASK;
+	uint16_t fifo_samples = (data->fifo_ent[0]) & ADXL345_FIFO_ENTRIES_MSK;
 	size_t sample_set_size = ADXL345_FIFO_SAMPLE_SIZE;
 	uint16_t fifo_bytes = fifo_samples * ADXL345_FIFO_SAMPLE_SIZE;
 

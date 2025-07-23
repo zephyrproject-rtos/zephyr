@@ -38,8 +38,8 @@
 #define ADXL345_REG_READ(x)	((x & 0xFF) | ADXL345_READ_CMD)
 
 #define ADXL345_FIFO_SAMPLE_SIZE		6
-#define SAMPLE_MASK 0x3F
-#define SAMPLE_NUM  0x1F
+#define ADXL345_FIFO_ENTRIES_MSK		GENMASK(5, 0) /* FIFO status entries */
+#define ADXL345_FIFO_CTL_SAMPLES_MSK		GENMASK(4, 0) /* FIFO control, samples */
 
 /* Registers */
 #define ADXL345_DEVICE_ID_REG           0x00
@@ -119,7 +119,6 @@
 #define ADXL345_FIFO_CTL_MODE_MODE(x)    (((x) & 0x3) << 6)
 #define ADXL345_FIFO_CTL_TRIGGER_MSK     BIT(5)
 #define ADXL345_FIFO_CTL_TRIGGER_MODE(x) (((x) & 0x1) << 5)
-#define ADXL345_FIFO_CTL_SAMPLES_MSK     BIT(0)
 #define ADXL345_FIFO_CTL_SAMPLES_MODE(x) ((x) & 0x1F)
 
 #define ADXL345_ODR_MSK     GENMASK(3, 0)
