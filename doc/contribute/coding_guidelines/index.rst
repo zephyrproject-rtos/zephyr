@@ -951,7 +951,7 @@ should comply with the rules listed below.
 
          .. _MisraC_Rule_21_13:
     * -  130
-      -  Any value passed to a function in <ctype.h> shall be representable as an unsigned char or be the value EO
+      -  Any value passed to a function in <ctype.h> shall be representable as an unsigned char or be the value EOF
       -  `Rule 21.13 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_21_13.c>`_
       -  Mandatory
       -  N/A
