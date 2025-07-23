@@ -23,7 +23,8 @@ extern "C" {
 /**
  * @brief Fuel gauge backend emulator APIs
  * @defgroup fuel_gauge_emulator_backend Fuel gauge backend emulator APIs
- * @ingroup io_interfaces
+ * @ingroup io_emulators
+ * @ingroup fuel_gauge_interface
  * @{
  */
 
