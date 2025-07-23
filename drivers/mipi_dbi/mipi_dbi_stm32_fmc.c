@@ -8,7 +8,6 @@
 
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/mipi_dbi.h>
-#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/memc/memc_stm32.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys/barrier.h>
