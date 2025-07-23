@@ -98,6 +98,11 @@ config LV_Z_COLOR_MONO_HW_INVERSION
 	bool "Hardware pixel inversion (disables software pixel inversion)."
 	depends on LV_COLOR_DEPTH_1
 
+config LV_Z_COLOR_24_BGR_TO_RGB
+	bool "Convert BGR888 to RGB888 color before flushing"
+	default y
+	depends on LV_COLOR_DEPTH_24
+
 config LV_Z_FLUSH_THREAD
 	bool "Flush LVGL frames in a separate thread"
 	help
