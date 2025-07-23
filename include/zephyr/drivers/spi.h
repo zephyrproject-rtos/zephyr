@@ -6,7 +6,8 @@
 
 /**
  * @file
- * @brief Public API for SPI drivers and applications
+ * @ingroup spi_interface
+ * @brief Main header file for SPI (Serial Peripheral Interface) driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_SPI_H_

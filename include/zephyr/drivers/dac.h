@@ -6,7 +6,8 @@
 
 /**
  * @file
- * @brief DAC public API header file.
+ * @ingroup dac_interface
+ * @brief Main header file for DAC (Digital-to-Analog Converter) driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_DAC_H_
