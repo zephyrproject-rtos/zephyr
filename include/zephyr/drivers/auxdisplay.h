@@ -6,7 +6,8 @@
 
 /**
  * @file
- * @brief Public API for auxiliary (textual/non-graphical) display drivers
+ * @ingroup auxdisplay_interface
+ * @brief Main header file for auxiliary (textual/non-graphical) display driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_AUXDISPLAY_H_

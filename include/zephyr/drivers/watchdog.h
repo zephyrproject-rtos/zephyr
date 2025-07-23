@@ -5,6 +5,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @ingroup watchdog_interface
+ * @brief Main header file for watchdog driver API.
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_WATCHDOG_H_
 #define ZEPHYR_INCLUDE_DRIVERS_WATCHDOG_H_
 

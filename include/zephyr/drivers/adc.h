@@ -1,13 +1,14 @@
-/**
- * @file
- * @brief ADC public API header file.
- */
-
 /*
  * Copyright (c) 2018 Nordic Semiconductor ASA
  * Copyright (c) 2015 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ * @file
+ * @ingroup adc_interface
+ * @brief Main header file for ADC (Analog-to-Digital Converter) driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_ADC_H_

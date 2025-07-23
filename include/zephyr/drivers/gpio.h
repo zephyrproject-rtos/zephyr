@@ -9,8 +9,8 @@
 
 /**
  * @file
- * @brief Public APIs for GPIO drivers
  * @ingroup gpio_interface
+ * @brief Main header file for GPIO driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_GPIO_H_

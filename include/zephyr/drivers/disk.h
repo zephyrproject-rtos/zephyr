@@ -7,7 +7,8 @@
 
 /**
  * @file
- * @brief Disk Driver Interface
+ * @ingroup disk_driver_interface
+ * @brief Main header file for disk driver API.
  *
  * This file contains interface for disk access. Apart from disks, various
  * other storage media like Flash and RAM disks may implement this interface to

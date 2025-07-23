@@ -6,7 +6,8 @@
 
 /**
  * @file
- * @brief Public LED driver APIs
+ * @ingroup led_interface
+ * @brief Main header file for LED driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_LED_H_
