@@ -63,13 +63,10 @@ means Pin number 0 on PORT2, as used in the board's datasheets and manuals.
 Programming and Debugging
 *************************
 
-The XIAO nRF54L15 contains an SAMD11 with CMSIS-DAP, allowing flashing, debugging, logging, etc. over
-the USB port. Doing so requires a version of OpenOCD that includes support for the flash on the nRF54L15
-MCU. Until those changes are included in stock OpenOCD, the version bundled with Arduino can be
-used, or can be installed from the `OpenOCD Arduino`_.
+.. zephyr:board-supported-runners::
 
-When flashing, debugging, etc. you may need to include ``--openocd=/usr/local/bin/openocd
---openocd-search=/usr/local/share/openocd/scripts/`` options to the command.
+The XIAO nRF54L15 contains a SAMD11 with CMSIS-DAP, allowing flashing, debugging, logging, etc. over
+the USB port.
 
 Flashing
 ========
