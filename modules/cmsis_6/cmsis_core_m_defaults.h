@@ -147,4 +147,10 @@ typedef enum {
 #error "Unknown Cortex-M device"
 #endif
 
+#ifdef CONFIG_ARM_PAC
+/* This provides apis to set/get PAC keys */
+#define __ARM_FEATURE_PAUTH 1
+#include <m-profile/armv81m_pac.h>
+#endif
+
 #endif /* ZEPHYR_MODULES_CMSIS_6_CMSIS_CORE_M_DEFAULTS_H_ */
