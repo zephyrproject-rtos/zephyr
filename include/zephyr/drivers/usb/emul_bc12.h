@@ -22,7 +22,7 @@ extern "C" {
 /**
  * @brief BC1.2 backend emulator APIs
  * @defgroup b12_emulator_backend BC1.2 backed emulator APIs
- * @ingroup io_interfaces
+ * @ingroup io_emulators
  * @{
  */
 
