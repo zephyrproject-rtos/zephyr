@@ -91,10 +91,12 @@ choice
 
 	config PTP_UDP_IPv4_PROTOCOL
 		bool "UDP with IPv4"
+		depends on NET_IPV4
 		select NET_IPV4_IGMP
 
 	config PTP_UDP_IPv6_PROTOCOL
 		bool "UDP with IPv6"
+		depends on NET_IPV6
 		select NET_IPV6_MLD
 endchoice
 
