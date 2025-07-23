@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @ingroup haptics_interface
+ * @brief Main header file for haptics driver API.
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_HAPTICS_H_
 #define ZEPHYR_INCLUDE_DRIVERS_HAPTICS_H_
 

@@ -6,7 +6,8 @@
 
 /**
  * @file
- * @brief Public SYSCON driver APIs
+ * @ingroup syscon_interface
+ * @brief Main header file for SYSCON (System Control) driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_SYSCON_H_
