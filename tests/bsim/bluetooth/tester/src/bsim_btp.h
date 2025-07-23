@@ -37,7 +37,7 @@ static inline void bsim_btp_core_register(uint8_t id)
 	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
 	cmd->id = id;
 
-	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+	cmd_hdr->len = sys_cpu_to_le16(cmd_buffer.len - sizeof(*cmd_hdr));
 
 	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
 }
@@ -143,7 +143,7 @@ static inline void bsim_btp_gap_set_discoverable(uint8_t discoverable)
 	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
 	cmd->discoverable = discoverable;
 
-	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+	cmd_hdr->len = sys_cpu_to_le16(cmd_buffer.len - sizeof(*cmd_hdr));
 
 	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
 }
@@ -173,7 +173,7 @@ static inline void bsim_btp_gap_start_advertising(uint8_t adv_data_len, uint8_t 
 	net_buf_simple_add_le32(&cmd_buffer, 0xFFFF); /* unused in Zephyr */
 	net_buf_simple_add_u8(&cmd_buffer, own_addr_type);
 
-	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+	cmd_hdr->len = sys_cpu_to_le16(cmd_buffer.len - sizeof(*cmd_hdr));
 
 	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
 }
@@ -192,7 +192,7 @@ static inline void bsim_btp_gap_start_discovery(uint8_t flags)
 	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
 	cmd->flags = flags;
 
-	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+	cmd_hdr->len = sys_cpu_to_le16(cmd_buffer.len - sizeof(*cmd_hdr));
 
 	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
 }
@@ -207,7 +207,7 @@ static inline void bsim_btp_gap_stop_discovery(void)
 	cmd_hdr->service = BTP_SERVICE_ID_GAP;
 	cmd_hdr->opcode = BTP_GAP_STOP_DISCOVERY;
 	cmd_hdr->index = BTP_INDEX;
-	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+	cmd_hdr->len = sys_cpu_to_le16(cmd_buffer.len - sizeof(*cmd_hdr));
 
 	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
 }
@@ -241,7 +241,7 @@ static inline void bsim_btp_gap_connect(const bt_addr_le_t *address, uint8_t own
 	bt_addr_le_copy(&cmd->address, address);
 	cmd->own_addr_type = own_addr_type;
 
-	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+	cmd_hdr->len = sys_cpu_to_le16(cmd_buffer.len - sizeof(*cmd_hdr));
 
 	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
 }
@@ -274,7 +274,7 @@ static inline void bsim_btp_gap_disconnect(const bt_addr_le_t *address)
 	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
 	bt_addr_le_copy(&cmd->address, address);
 
-	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+	cmd_hdr->len = sys_cpu_to_le16(cmd_buffer.len - sizeof(*cmd_hdr));
 
 	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
 }
@@ -307,7 +307,7 @@ static inline void bsim_btp_gap_pair(const bt_addr_le_t *address)
 	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
 	bt_addr_le_copy(&cmd->address, address);
 
-	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+	cmd_hdr->len = sys_cpu_to_le16(cmd_buffer.len - sizeof(*cmd_hdr));
 
 	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
 }
@@ -400,7 +400,7 @@ static inline void bsim_btp_vcp_discover(const bt_addr_le_t *address)
 	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
 	bt_addr_le_copy(&cmd->address, address);
 
-	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+	cmd_hdr->len = sys_cpu_to_le16(cmd_buffer.len - sizeof(*cmd_hdr));
 
 	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
 }
@@ -437,7 +437,7 @@ static inline void bsim_btp_vcp_ctlr_set_vol(const bt_addr_le_t *address, uint8_
 	bt_addr_le_copy(&cmd->address, address);
 	cmd->volume = volume;
 
-	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+	cmd_hdr->len = sys_cpu_to_le16(cmd_buffer.len - sizeof(*cmd_hdr));
 
 	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
 }
@@ -478,7 +478,7 @@ static inline void bsim_btp_vocs_state_set(const bt_addr_le_t *address, int16_t 
 	bt_addr_le_copy(&cmd->address, address);
 	cmd->offset = sys_cpu_to_le16(offset);
 
-	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+	cmd_hdr->len = sys_cpu_to_le16(cmd_buffer.len - sizeof(*cmd_hdr));
 
 	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
 }
@@ -519,7 +519,7 @@ static inline void bsim_btp_aics_set_gain(const bt_addr_le_t *address, int8_t ga
 	bt_addr_le_copy(&cmd->address, address);
 	cmd->gain = gain;
 
-	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+	cmd_hdr->len = sys_cpu_to_le16(cmd_buffer.len - sizeof(*cmd_hdr));
 
 	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
 }
@@ -559,7 +559,7 @@ static inline void bsim_btp_micp_discover(const bt_addr_le_t *address)
 	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
 	bt_addr_le_copy(&cmd->address, address);
 
-	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+	cmd_hdr->len = sys_cpu_to_le16(cmd_buffer.len - sizeof(*cmd_hdr));
 
 	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
 }
@@ -595,7 +595,7 @@ static inline void bsim_btp_micp_ctlr_mute(const bt_addr_le_t *address)
 	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
 	bt_addr_le_copy(&cmd->address, address);
 
-	cmd_hdr->len = cmd_buffer.len - sizeof(*cmd_hdr);
+	cmd_hdr->len = sys_cpu_to_le16(cmd_buffer.len - sizeof(*cmd_hdr));
 
 	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
 }
