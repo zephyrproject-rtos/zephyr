@@ -22,7 +22,7 @@
 		ramcfg@42023100 {
 			axisram3: memory@34200000 {
 				reg = <0x34200000 DT_SIZE_K(448)>;
-				status = "okay";
+				status = "disabled";
 			};
 		};
 
