@@ -437,7 +437,7 @@ New Boards
 
 * Nordic Semiconductor
 
-   * :zephyr:board:`nrf54l09pdk` (``nrf54l09pdk``)
+   * nRF54L09 PDK (``nrf54l09pdk``)
 
 * Norik Systems
 
