@@ -37,7 +37,7 @@
 
 #define ADXL345_REG_READ(x)	((x & 0xFF) | ADXL345_READ_CMD)
 
-#define SAMPLE_SIZE 6
+#define ADXL345_FIFO_SAMPLE_SIZE		6
 #define SAMPLE_MASK 0x3F
 #define SAMPLE_NUM  0x1F
 

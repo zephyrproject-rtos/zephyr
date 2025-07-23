@@ -132,8 +132,8 @@ static void adxl345_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 	const struct adxl345_dev_config *cfg = (const struct adxl345_dev_config *) dev->config;
 	struct rtio_iodev_sqe *current_sqe = data->sqe;
 	uint16_t fifo_samples = (data->fifo_ent[0]) & SAMPLE_MASK;
-	size_t sample_set_size = SAMPLE_SIZE;
-	uint16_t fifo_bytes = fifo_samples * SAMPLE_SIZE;
+	size_t sample_set_size = ADXL345_FIFO_SAMPLE_SIZE;
+	uint16_t fifo_bytes = fifo_samples * ADXL345_FIFO_SAMPLE_SIZE;
 
 	data->sqe = NULL;
 
@@ -222,8 +222,8 @@ static void adxl345_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 		write_fifo_addr->flags |= RTIO_SQE_TRANSACTION;
 		rtio_sqe_prep_read(read_fifo_data, data->iodev, RTIO_PRIO_NORM,
 							read_buf + data->fifo_total_bytes,
-							SAMPLE_SIZE, current_sqe);
-		data->fifo_total_bytes += SAMPLE_SIZE;
+							ADXL345_FIFO_SAMPLE_SIZE, current_sqe);
+		data->fifo_total_bytes += ADXL345_FIFO_SAMPLE_SIZE;
 		if (cfg->bus_type == ADXL345_BUS_I2C) {
 			read_fifo_data->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
 		}
