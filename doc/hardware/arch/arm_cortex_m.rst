@@ -459,6 +459,11 @@ automatically selected based on the branch protection option chosen for
 :kconfig:option:`CONFIG_ARM_PACBTI`. These configuration options enforce PACBTI by enabling
 corresponding PACBTI bits in CONTROL register and in the FVP.
 
+To further enhance pointer authentication, Zephyr supports using cryptographically secure,
+per-thread PAC keys by enabling :kconfig:option:`CONFIG_ARM_PAC_PER_THREAD`.
+For more details on key generation sources and configuration, refer to the Kconfig help for
+:kconfig:option:`CONFIG_ARM_PAC_PER_THREAD`.
+
 **Limitations:**
 
 - Only builds targeting Armv8.1-M Mainline processors with PACBTI hardware support (e.g.,

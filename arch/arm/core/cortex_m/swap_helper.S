@@ -2,6 +2,7 @@
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  * Copyright (c) 2017-2019 Nordic Semiconductor ASA.
  * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
+ * Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -312,6 +313,18 @@ SECTION_FUNC(TEXT, z_arm_pendsv)
     isb
 
 #endif
+
+#ifdef CONFIG_ARM_PAC_PER_THREAD
+    /* Read thread's dedicated PAC key and write them in the privileged PAC key registers.
+     */
+    add r0, r2, #_thread_offset_to_pac_keys
+    ldmia r0!, {r3-r6}
+    msr  PAC_KEY_P_0, r3
+    msr  PAC_KEY_P_1, r4
+    msr  PAC_KEY_P_2, r5
+    msr  PAC_KEY_P_3, r6
+    clrm {r3-r6}
+#endif /* CONFIG_ARM_PAC_PER_THREAD */
 
     /* load callee-saved + psp from thread */
     add r0, r2, #_thread_offset_to_callee_saved

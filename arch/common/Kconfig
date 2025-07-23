@@ -76,6 +76,23 @@ config ARM_MPU
 	  of full partitioning the default behavior for the ARMv8-M and ARMv8-R MPU
 	  driver.
 
+config ARM_PAC_PER_THREAD
+	bool "Set cryptographically secure PAC key per thread"
+	depends on ARM_PAC
+	depends on ENTROPY_DEVICE_RANDOM_GENERATOR || TIMER_RANDOM_GENERATOR
+	depends on !USERSPACE
+	help
+	  Select this option to generate and use unique keys per thread to generate Pointer
+	  Authentication Code.
+	  Internally, sys_csrand_get() is used as part of arch_new_thread() to generate
+	  cryptographically secure random keys, which are saved in the thread's
+	  architecture-specific context. These keys are then loaded into the PAC key registers
+	  before switching to the thread during context switches.
+	  Applications can chose to have hardware based random keys generator by selecting the right
+	  generator from RNG_GENERATOR_CHOICE or by selecting TIMER_RANDOM_GENERATOR for testing
+	  with pseudo random keys.
+	  Note: GCC version 14.3 or higher is needed to support this option.
+
 config ARM_PAC
 	bool
 	help
