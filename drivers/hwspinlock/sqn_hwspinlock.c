@@ -32,7 +32,8 @@ struct sqn_hwspinlock_data {
 
 struct sqn_hwspinlock_config {
 	DEVICE_MMIO_ROM;
-	uint32_t num_locks;
+	uint16_t num_locks;
+	uint16_t reg_width;
 };
 
 #define DEV_DATA(dev) ((struct sqn_hwspinlock_data *)dev->data)
@@ -46,7 +47,7 @@ struct sqn_hwspinlock_config {
 
 static inline mem_addr_t get_lock_addr(const struct device *dev, uint32_t id)
 {
-	return (mem_addr_t)(DEVICE_MMIO_GET(dev) + id * sizeof(uint32_t));
+	return (mem_addr_t)(DEVICE_MMIO_GET(dev) + id * DEV_CFG(dev)->reg_width);
 }
 
 static int sqn_hwspinlock_trylock(const struct device *dev, uint32_t id)
@@ -115,6 +116,7 @@ static int sqn_hwspinlock_init(const struct device *dev)
 	static struct sqn_hwspinlock_data sqn_hwspinlock##idx##_data;                              \
 	static const struct sqn_hwspinlock_config sqn_hwspinlock##idx##_config = {                 \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(idx)),                                            \
+		.reg_width = DT_INST_PROP_OR(idx, reg_width, 1),                                   \
 		.num_locks = DT_INST_PROP(idx, num_locks),                                         \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(idx, sqn_hwspinlock_init, NULL, &sqn_hwspinlock##idx##_data,         \
