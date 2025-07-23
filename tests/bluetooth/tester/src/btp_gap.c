@@ -831,7 +831,8 @@ int tester_gap_create_adv_instance(struct bt_le_adv_param *param,
 
 		err = bt_le_ext_adv_create(param, NULL, &ext_adv_sets[index]);
 		if (err != 0) {
-			return BTP_STATUS_FAILED;
+			LOG_ERR("Failed to create ext adv(err %d)", err);
+			return err;
 		}
 
 		err = bt_le_ext_adv_set_data(ext_adv_sets[index], ad, ad_len, sd_len ?
