@@ -390,6 +390,25 @@ typedef int (*video_api_set_signal_t)(const struct device *dev, struct k_poll_si
  */
 typedef int (*video_api_selection_t)(const struct device *dev, struct video_selection *sel);
 
+/**
+ * @typedef video_api_get_snapshot_mode_t
+ * @brief Function pointer type for video_get_snapshot_mode()
+ *
+ * @param dev Pointer to the device structure.
+ * @param snapshot_mode pointer to Turn Snaphsot mode on or off..
+ */
+typedef int (*video_api_get_snapshot_mode_t)(const struct device *dev, bool *snapshot_mode);
+
+/**
+ * @typedef video_api_set_snapshot_mode_t
+ * @brief Function pointer type for video_set_snapshot_mode()
+ *
+ * @param dev Pointer to the device structure.
+ * @param snapshot_mode Turn Snaphsot mode on or off..
+ */
+typedef int (*video_api_set_snapshot_mode_t)(const struct device *dev, bool snapshot_mode);
+
+
 __subsystem struct video_driver_api {
 	/* mandatory callbacks */
 	video_api_format_t set_format;
@@ -408,6 +427,8 @@ __subsystem struct video_driver_api {
 	video_api_enum_frmival_t enum_frmival;
 	video_api_selection_t set_selection;
 	video_api_selection_t get_selection;
+	video_api_get_snapshot_mode_t get_snapshot_mode;
+	video_api_set_snapshot_mode_t set_snapshot_mode;
 };
 
 /**
@@ -883,6 +904,48 @@ static inline int video_get_selection(const struct device *dev, struct video_sel
 	}
 
 	return api->get_selection(dev, sel);
+}
+
+
+/**
+ * @brief returns if snapshot mode is turned on or off.
+ *
+ * @param dev Pointer to the device structure.
+ * @param snapshot_mode pointer to Turn Snaphsot mode on or off..
+ */
+static inline int video_get_snapshot_mode(const struct device *dev, bool *snapshot_mode)
+{
+	const struct video_driver_api *api;
+
+	__ASSERT_NO_MSG(dev != NULL);
+	__ASSERT_NO_MSG(snapshot_mode != NULL);
+
+	api = (const struct video_driver_api *)dev->api;
+	if (api->get_snapshot_mode == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->get_snapshot_mode(dev, snapshot_mode);
+}
+
+/**
+ * @brief Function pointer type for video_set_snapshot_mode()
+ *
+ * @param dev Pointer to the device structure.
+ * @param snapshot_mode Turn Snaphsot mode on or off..
+ */
+static inline int video_set_snapshot_mode(const struct device *dev, bool snapshot_mode)
+{
+	const struct video_driver_api *api;
+
+	__ASSERT_NO_MSG(dev != NULL);
+
+	api = (const struct video_driver_api *)dev->api;
+	if (api->set_snapshot_mode == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->set_snapshot_mode(dev, snapshot_mode);
 }
 
 /**
