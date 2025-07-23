@@ -1,0 +1,9 @@
+description: Telechips UART
+
+compatible: "tcc,tccvcp-uart"
+
+include: uart-controller.yaml
+
+properties:
+  reg:
+    required: true
