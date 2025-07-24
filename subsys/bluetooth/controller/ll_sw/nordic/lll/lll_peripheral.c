@@ -154,23 +154,20 @@ static int prepare_cb(struct lll_prepare_param *p)
 	}
 
 	/* Accumulate window widening */
-	lll->periph.window_widening_prepare_us +=
-	    lll->periph.window_widening_periodic_us * (lll->lazy_prepare + 1U);
-	if (lll->periph.window_widening_prepare_us >
-	    lll->periph.window_widening_max_us) {
-		lll->periph.window_widening_prepare_us =
-			lll->periph.window_widening_max_us;
+	lll->periph.window_widening_prepare_us += lll->periph.window_widening_periodic_us *
+						  lll->lazy_prepare;
+	if (lll->periph.window_widening_prepare_us > lll->periph.window_widening_max_us) {
+		lll->periph.window_widening_prepare_us = lll->periph.window_widening_max_us;
 	}
 
-	/* current window widening */
-	lll->periph.window_widening_event_us +=
-		lll->periph.window_widening_prepare_us;
-	lll->periph.window_widening_prepare_us = 0;
-	if (lll->periph.window_widening_event_us >
-	    lll->periph.window_widening_max_us) {
-		lll->periph.window_widening_event_us =
-			lll->periph.window_widening_max_us;
+	/* Current window widening */
+	lll->periph.window_widening_event_us += lll->periph.window_widening_prepare_us;
+	if (lll->periph.window_widening_event_us > lll->periph.window_widening_max_us) {
+		lll->periph.window_widening_event_us = lll->periph.window_widening_max_us;
 	}
+
+	/* Pre-increment window widening */
+	lll->periph.window_widening_prepare_us = lll->periph.window_widening_periodic_us;
 
 	/* current window size */
 	lll->periph.window_size_event_us +=
