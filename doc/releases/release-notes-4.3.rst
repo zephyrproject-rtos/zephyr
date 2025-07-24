@@ -279,6 +279,12 @@ New APIs and options
 
   * :c:macro:`__deprecated_version`
 
+* USB
+
+  * Video
+
+    * :c:func:`uvc_add_format`
+
 * Video
 
   * :c:member:`video_format.size` field
