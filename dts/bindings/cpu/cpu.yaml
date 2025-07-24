@@ -15,9 +15,39 @@ properties:
   i-cache-line-size:
     type: int
     description: i-cache line size
+  i-cache-size:
+    type: int
+    description: Size of the instruction cache in bytes
+  i-cache-sets:
+    type: int
+    description: Number of sets in the instruction cache
   d-cache-line-size:
     type: int
     description: d-cache line size
+  d-cache-size:
+    type: int
+    description: Size of the data cache in bytes
+  d-cache-sets:
+    type: int
+    description: Number of sets in the data cache
   enable-method:
     type: string
     description: Enable method for cpu, either it is "psci" or "spin-table"
+  capacity-dmips-mhz:
+    type: int
+    description: CPU capacity in DMIPS/MHz
+  cpu-idle-states:
+    type: phandles
+    description: List of idle power management states supported by this cpu
+  next-level-cache:
+    type: phandle
+    description: Reference to the next level cache in the cache hierarchy
+  dynamic-power-coefficient:
+    type: int
+    description: Dynamic power coefficient for thermal and power management
+  operating-points-v2:
+    type: phandle
+    description: Reference to the operating points table for DVFS (Dynamic Voltage and Frequency Scaling)
+  cpu-supply:
+    type: phandle
+    description: Reference to the power supply (voltage regulator) for this CPU
