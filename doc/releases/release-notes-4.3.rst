@@ -230,6 +230,12 @@ New APIs and options
 
   * :kconfig:option:`CONFIG_TASK_WDT_DUMMY`
 
+* USB
+
+  * Video
+
+    * :c:func:`uvc_add_format`
+
 .. zephyr-keep-sorted-stop
 
 New Boards
