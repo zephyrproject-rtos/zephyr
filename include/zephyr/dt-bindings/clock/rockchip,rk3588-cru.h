@@ -1,0 +1,14 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_ROCKCHIP_RK3588_CRU_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_ROCKCHIP_RK3588_CRU_H_
+
+#define SCMI_CLK_CPUL			0
+#define SCMI_CLK_CPUB01			2
+#define SCMI_CLK_CPUB23			3
+
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_ROCKCHIP_RK3588_CRU_H_ */
