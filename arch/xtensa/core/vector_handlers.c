@@ -259,10 +259,13 @@ static void print_fatal_exception(void *print_stack, int cause,
 
 	EXCEPTION_DUMP(" **  PS %p", (void *)bsa->ps);
 	EXCEPTION_DUMP(" **    (INTLEVEL:%d EXCM: %d UM:%d RING:%d WOE:%d OWB:%d CALLINC:%d)",
-		get_bits(0, 4, ps), get_bits(4, 1, ps),
-		get_bits(5, 1, ps), get_bits(6, 2, ps),
-		get_bits(18, 1, ps),
-		get_bits(8, 4, ps), get_bits(16, 2, ps));
+		       get_bits(XCHAL_PS_INTLEVEL_SHIFT, XCHAL_PS_INTLEVEL_BITS, ps),
+		       get_bits(XCHAL_PS_EXCM_SHIFT, XCHAL_PS_EXCM_BITS, ps),
+		       get_bits(XCHAL_PS_UM_SHIFT, XCHAL_PS_UM_BITS, ps),
+		       get_bits(XCHAL_PS_RING_SHIFT, XCHAL_PS_RING_BITS, ps),
+		       get_bits(XCHAL_PS_WOE_SHIFT, XCHAL_PS_WOE_BITS, ps),
+		       get_bits(XCHAL_PS_OWB_SHIFT, XCHAL_PS_OWB_BITS, ps),
+		       get_bits(XCHAL_PS_CALLINC_SHIFT, XCHAL_PS_CALLINC_BITS, ps));
 }
 
 static ALWAYS_INLINE void usage_stop(void)
