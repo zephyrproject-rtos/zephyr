@@ -96,6 +96,7 @@ wifi:
     - include/zephyr/net/wifi_mgmt.h
     - include/zephyr/net/wifi_nm.h
     - include/zephyr/net/wifi_utils.h
+    - modules/nrf_wifi/
 # zephyr-keep-sorted-stop
 
 # cbprintf:
