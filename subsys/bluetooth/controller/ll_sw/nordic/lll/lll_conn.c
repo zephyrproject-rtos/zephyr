@@ -254,13 +254,10 @@ void lll_conn_abort_cb(struct lll_prepare_param *prepare_param, void *param)
 #if defined(CONFIG_BT_PERIPHERAL)
 	if (lll->role == BT_HCI_ROLE_PERIPHERAL) {
 		/* Accumulate window widening */
-		lll->periph.window_widening_prepare_us +=
-		    lll->periph.window_widening_periodic_us *
-		    (prepare_param->lazy + 1);
-		if (lll->periph.window_widening_prepare_us >
-		    lll->periph.window_widening_max_us) {
-			lll->periph.window_widening_prepare_us =
-				lll->periph.window_widening_max_us;
+		lll->periph.window_widening_prepare_us += lll->periph.window_widening_periodic_us *
+							  (prepare_param->lazy + 1);
+		if (lll->periph.window_widening_prepare_us > lll->periph.window_widening_max_us) {
+			lll->periph.window_widening_prepare_us = lll->periph.window_widening_max_us;
 		}
 	}
 #endif /* CONFIG_BT_PERIPHERAL */
