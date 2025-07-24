@@ -680,6 +680,7 @@ techstar	Shenzhen Techstar Electronics Co., Ltd.
 telink	Telink Semiconductor
 telit	Telit Cinterion
 tempo	Tempo Semiconductor
+tenstorrent	Tenstorrent AI ULC
 terasic	Terasic Inc.
 tfc	Three Five Corp
 thine	THine Electronics, Inc.

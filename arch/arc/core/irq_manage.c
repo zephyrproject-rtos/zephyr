@@ -25,7 +25,10 @@
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/irq_multilevel.h>
+#include <zephyr/irq_nextlevel.h>
 
+#include "../../common/include/sw_isr_common.h"
 
 /*
  * storage space for the interrupt stack of fast_irq
@@ -187,11 +190,46 @@ int arch_irq_is_enabled(unsigned int irq)
 #else
 void arch_irq_enable(unsigned int irq)
 {
+#ifdef CONFIG_MULTI_LEVEL_INTERRUPTS
+	unsigned int level = irq_get_level(irq);
+	const struct device *dev;
+
+#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
+	if (level == 3) {
+		dev = z_get_sw_isr_device_from_irq(irq);
+		irq_enable_next_level(dev, irq_from_level_3(irq));
+		return;
+} else
+#endif
+	if (level == 2) {
+		dev = z_get_sw_isr_device_from_irq(irq);
+		irq_enable_next_level(dev, irq_from_level_2(irq));
+		return;
+	}
+#endif
 	z_arc_v2_irq_unit_int_enable(irq);
 }
 
 void arch_irq_disable(unsigned int irq)
 {
+#ifdef CONFIG_MULTI_LEVEL_INTERRUPTS
+	unsigned int level = irq_get_level(irq);
+	const struct device *dev;
+
+#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
+	if (level == 3) {
+		dev = z_get_sw_isr_device_from_irq(irq);
+		irq_disable_next_level(dev, irq_from_level_3(irq));
+		return;
+} else
+#endif
+	if (level == 2) {
+		dev = z_get_sw_isr_device_from_irq(irq);
+		irq_disable_next_level(dev, irq_from_level_2(irq));
+		return;
+	}
+#endif
+
 	z_arc_v2_irq_unit_int_disable(irq);
 }
 

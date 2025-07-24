@@ -59,6 +59,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                  gdb_host='',
                  gdb_port=DEFAULT_JLINK_GDB_PORT,
                  rtt_port=DEFAULT_JLINK_RTT_PORT,
+                 rtt_quiet=False,
                  tui=False, tool_opt=None):
         super().__init__(cfg)
         self.file = cfg.file
@@ -84,6 +85,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         self.tui_arg = ['-tui'] if tui else []
         self.loader = loader
         self.rtt_port = rtt_port
+        self.rtt_quiet = rtt_quiet
 
         self.tool_opt = []
         if tool_opt is not None:
@@ -174,6 +176,8 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                             help='RTT client, default is JLinkRTTClient')
         parser.add_argument('--rtt-port', default=DEFAULT_JLINK_RTT_PORT,
                             help=f'jlink rtt port, defaults to {DEFAULT_JLINK_RTT_PORT}')
+        parser.add_argument('--rtt-quiet', action='store_true',
+                            help='only output rtt to stdout, not that of subprocesses')
         parser.add_argument('--flash-sram', default=False, action='store_true',
                             help='if given, flashing the image to SRAM and '
                             'modify PC register to be SRAM base address')
@@ -196,9 +200,13 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                                  gdb_host=args.gdb_host,
                                  gdb_port=args.gdb_port,
                                  rtt_port=args.rtt_port,
+                                 rtt_quiet=args.rtt_quiet,
                                  tui=args.tui, tool_opt=args.tool_opt)
 
     def print_gdbserver_message(self):
+        if self.rtt_quiet:
+            return
+
         if not self.thread_info_enabled:
             thread_msg = '; no thread info available'
         elif self.supports_thread_info:
@@ -209,6 +217,9 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                          f'{self.gdb_port}{thread_msg}')
 
     def print_rttserver_message(self):
+        if self.rtt_quiet:
+            return
+
         self.logger.info(f'J-Link RTT server running on port {self.rtt_port}')
 
     @property
@@ -322,10 +333,14 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
             self.print_gdbserver_message()
             self.check_call(server_cmd)
         elif command == 'rtt':
+            rtt_quiet_kwargs = {'stdout': subprocess.DEVNULL,
+                                'stderr': subprocess.DEVNULL} if self.rtt_quiet else {}
+
             self.print_gdbserver_message()
             self.print_rttserver_message()
             server_cmd += ['-nohalt']
-            server_proc = self.popen_ignore_int(server_cmd)
+            server_proc = self.popen_ignore_int(server_cmd, **rtt_quiet_kwargs)
+            time.sleep(1)
             try:
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 # wait for the port to be open

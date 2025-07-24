@@ -1107,12 +1107,13 @@ static int i2c_dw_set_slave_mode(const struct device *dev, uint8_t addr)
 
 	write_con(ic_con.raw, reg_base);
 	write_sar(addr, reg_base);
-	write_intr_mask(~DW_INTR_MASK_RESET, reg_base);
+	write_intr_mask(DW_DISABLE_ALL_I2C_INT, reg_base);
 
 	set_bit_enable_en(reg_base);
 
 	write_tx_tl(0, reg_base);
 	write_rx_tl(0, reg_base);
+
 
 	LOG_DBG("I2C: Host registered as Slave Device");
 
@@ -1367,9 +1368,102 @@ static int i2c_dw_initialize(const struct device *dev)
 	static void i2c_config_##n(const struct device *port)                                      \
 	{                                                                                          \
 		ARG_UNUSED(port);                                                                  \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), i2c_dw_isr,                 \
+		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(n,0), DT_INST_IRQ_BY_IDX(n,0,priority), i2c_dw_isr,                 \
 			    DEVICE_DT_INST_GET(n), I2C_DW_IRQ_FLAGS(n));                           \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+		irq_enable(DT_INST_IRQN_BY_IDX(n,0));                                                       \
+\
+		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(n,1), DT_INST_IRQ_BY_IDX(n,1,priority), i2c_dw_isr,                 \
+			    DEVICE_DT_INST_GET(n), I2C_DW_IRQ_FLAGS(n));                           \
+		irq_enable(DT_INST_IRQN_BY_IDX(n,1));                                                       \
+\
+		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(n,2), DT_INST_IRQ_BY_IDX(n,2,priority), i2c_dw_isr,                 \
+			    DEVICE_DT_INST_GET(n), I2C_DW_IRQ_FLAGS(n));                           \
+		irq_enable(DT_INST_IRQN_BY_IDX(n,2));                                                       \
+\
+		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(n,3), DT_INST_IRQ_BY_IDX(n,3,priority), i2c_dw_isr,                 \
+			    DEVICE_DT_INST_GET(n), I2C_DW_IRQ_FLAGS(n));                           \
+		irq_enable(DT_INST_IRQN_BY_IDX(n,3));                                                       \
+\
+		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(n,4), DT_INST_IRQ_BY_IDX(n,4,priority), i2c_dw_isr,                 \
+			    DEVICE_DT_INST_GET(n), I2C_DW_IRQ_FLAGS(n));                           \
+		irq_enable(DT_INST_IRQN_BY_IDX(n,4));                                                       \
+\
+		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(n,5), DT_INST_IRQ_BY_IDX(n,5,priority), i2c_dw_isr,                 \
+			    DEVICE_DT_INST_GET(n), I2C_DW_IRQ_FLAGS(n));                           \
+		irq_enable(DT_INST_IRQN_BY_IDX(n,5));                                                       \
+\
+		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(n,6), DT_INST_IRQ_BY_IDX(n,6,priority), i2c_dw_isr,                 \
+			    DEVICE_DT_INST_GET(n), I2C_DW_IRQ_FLAGS(n));                           \
+		irq_enable(DT_INST_IRQN_BY_IDX(n,6));                                                       \
+\
+		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(n,7), DT_INST_IRQ_BY_IDX(n,7,priority), i2c_dw_isr,                 \
+			    DEVICE_DT_INST_GET(n), I2C_DW_IRQ_FLAGS(n));                           \
+		irq_enable(DT_INST_IRQN_BY_IDX(n,7));                                                       \
+\
+		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(n,8), DT_INST_IRQ_BY_IDX(n,8,priority), i2c_dw_isr,                 \
+			    DEVICE_DT_INST_GET(n), I2C_DW_IRQ_FLAGS(n));                           \
+		irq_enable(DT_INST_IRQN_BY_IDX(n,8));                                                       \
+\
+		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(n,9), DT_INST_IRQ_BY_IDX(n,9,priority), i2c_dw_isr,                 \
+			    DEVICE_DT_INST_GET(n), I2C_DW_IRQ_FLAGS(n));                           \
+		irq_enable(DT_INST_IRQN_BY_IDX(n,9));                                                       \
+\
+		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(n,10), DT_INST_IRQ_BY_IDX(n,10,priority), i2c_dw_isr,                 \
+			    DEVICE_DT_INST_GET(n), I2C_DW_IRQ_FLAGS(n));                           \
+		irq_enable(DT_INST_IRQN_BY_IDX(n,10));                                                       \
+\
+		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(n,11), DT_INST_IRQ_BY_IDX(n,11,priority), i2c_dw_isr,                 \
+			    DEVICE_DT_INST_GET(n), I2C_DW_IRQ_FLAGS(n));                           \
+		irq_enable(DT_INST_IRQN_BY_IDX(n,11));                                                       \
+\
+		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(n,12), DT_INST_IRQ_BY_IDX(n,12,priority), i2c_dw_isr,                 \
+				DEVICE_DT_INST_GET(n), I2C_DW_IRQ_FLAGS(n));                           \
+		irq_enable(DT_INST_IRQN_BY_IDX(n,12));                                                       \
+\
+		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(n,13), DT_INST_IRQ_BY_IDX(n,13,priority), i2c_dw_isr,                 \
+				DEVICE_DT_INST_GET(n), I2C_DW_IRQ_FLAGS(n));                           \
+		irq_enable(DT_INST_IRQN_BY_IDX(n,13));                                                       \
+\
+		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(n,14), DT_INST_IRQ_BY_IDX(n,14,priority), i2c_dw_isr,                 \
+				DEVICE_DT_INST_GET(n), I2C_DW_IRQ_FLAGS(n));                           \
+		irq_enable(DT_INST_IRQN_BY_IDX(n,14));                                                       \
+\
+		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(n,15), DT_INST_IRQ_BY_IDX(n,15,priority), i2c_dw_isr,                 \
+				DEVICE_DT_INST_GET(n), I2C_DW_IRQ_FLAGS(n));                           \
+		irq_enable(DT_INST_IRQN_BY_IDX(n,15));                                                       \
+\
+		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(n,16), DT_INST_IRQ_BY_IDX(n,16,priority), i2c_dw_isr,                 \
+				DEVICE_DT_INST_GET(n), I2C_DW_IRQ_FLAGS(n));                           \
+		irq_enable(DT_INST_IRQN_BY_IDX(n,16));                                                       \
+\
+		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(n,17), DT_INST_IRQ_BY_IDX(n,17,priority), i2c_dw_isr,                 \
+				DEVICE_DT_INST_GET(n), I2C_DW_IRQ_FLAGS(n));                           \
+		irq_enable(DT_INST_IRQN_BY_IDX(n,17));                                                       \
+\
+		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(n,18), DT_INST_IRQ_BY_IDX(n,18,priority), i2c_dw_isr,                 \
+				DEVICE_DT_INST_GET(n), I2C_DW_IRQ_FLAGS(n));                           \
+		irq_enable(DT_INST_IRQN_BY_IDX(n,18));                                                       \
+\
+		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(n,19), DT_INST_IRQ_BY_IDX(n,19,priority), i2c_dw_isr,                 \
+				DEVICE_DT_INST_GET(n), I2C_DW_IRQ_FLAGS(n));                           \
+		irq_enable(DT_INST_IRQN_BY_IDX(n,19));                                                       \
+\
+		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(n,20), DT_INST_IRQ_BY_IDX(n,20,priority), i2c_dw_isr,                 \
+				DEVICE_DT_INST_GET(n), I2C_DW_IRQ_FLAGS(n));                           \
+		irq_enable(DT_INST_IRQN_BY_IDX(n,20));                                                       \
+\
+		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(n,21), DT_INST_IRQ_BY_IDX(n,21,priority), i2c_dw_isr,                 \
+				DEVICE_DT_INST_GET(n), I2C_DW_IRQ_FLAGS(n));                           \
+		irq_enable(DT_INST_IRQN_BY_IDX(n,21));                                                       \
+\
+		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(n,22), DT_INST_IRQ_BY_IDX(n,22,priority), i2c_dw_isr,                 \
+				DEVICE_DT_INST_GET(n), I2C_DW_IRQ_FLAGS(n));                           \
+		irq_enable(DT_INST_IRQN_BY_IDX(n,22));                                                       \
+\
+		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(n,23), DT_INST_IRQ_BY_IDX(n,23,priority), i2c_dw_isr,                 \
+				DEVICE_DT_INST_GET(n), I2C_DW_IRQ_FLAGS(n));                           \
+		irq_enable(DT_INST_IRQN_BY_IDX(n,23));                                                       \
+\
 	}
 
 /* PCI(e) with auto IRQ detection */

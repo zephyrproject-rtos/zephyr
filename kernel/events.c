@@ -36,9 +36,10 @@
 
 #define K_EVENT_WAIT_ANY      0x00   /* Wait for any events */
 #define K_EVENT_WAIT_ALL      0x01   /* Wait for all events */
-#define K_EVENT_WAIT_MASK     0x01
-
 #define K_EVENT_WAIT_RESET    0x02   /* Reset events prior to waiting */
+#define K_EVENT_WAIT_REMOVE   0x04   /* Remove matched events from the event object */
+
+#define K_EVENT_WAIT_MASK K_EVENT_WAIT_ALL
 
 struct event_walk_data {
 	struct k_thread  *head;
@@ -77,7 +78,7 @@ void z_vrfy_k_event_init(struct k_event *event)
 #endif /* CONFIG_USERSPACE */
 
 /**
- * @brief determine if desired set of events been satisfied
+ * @brief determine the set of events that have been been satisfied
  *
  * This routine determines if the current set of events satisfies the desired
  * set of events. If @a wait_condition is K_EVENT_WAIT_ALL, then at least
@@ -85,30 +86,39 @@ void z_vrfy_k_event_init(struct k_event *event)
  * wait_condition is not K_EVENT_WAIT_ALL, it is assumed to be K_EVENT_WAIT_ANY.
  * In the K_EVENT_WAIT_ANY case, the request is satisfied when any of the
  * current set of events are present in the desired set of events.
+ *
+ * @return 0 if the wait condition is not satisfied, otherwise the set of
+ * events that satisfy the wait condition.
  */
-static bool are_wait_conditions_met(uint32_t desired, uint32_t current,
-				    unsigned int wait_condition)
+static uint32_t are_wait_conditions_met(uint32_t desired, uint32_t current,
+					unsigned int wait_condition)
 {
-	uint32_t  match = current & desired;
+	uint32_t match = current & desired;
 
-	if (wait_condition == K_EVENT_WAIT_ALL) {
-		return match == desired;
+	if ((wait_condition == K_EVENT_WAIT_ALL) && (match != desired)) {
+		return 0;
 	}
 
 	/* wait_condition assumed to be K_EVENT_WAIT_ANY */
 
-	return match != 0;
+	return match;
 }
 
 static int event_walk_op(struct k_thread *thread, void *data)
 {
+	uint32_t match;
 	unsigned int      wait_condition;
 	struct event_walk_data *event_data = data;
 
 	wait_condition = thread->event_options & K_EVENT_WAIT_MASK;
 
-	if (are_wait_conditions_met(thread->events, event_data->events,
-				    wait_condition)) {
+	match = are_wait_conditions_met(thread->events, event_data->events, wait_condition);
+	if (match != 0) {
+
+		/*
+		 * Overwrite the threads mask of events with the exact match.
+		 */
+		thread->events = match;
 
 		/*
 		 * Events create a list of threads to wake up. We do
@@ -166,7 +176,6 @@ static uint32_t k_event_post_internal(struct k_event *event, uint32_t events,
 		struct k_thread *next;
 		do {
 			arch_thread_return_value_set(thread, 0);
-			thread->events = events;
 			next = thread->next_event_link;
 			z_sched_wake_thread(thread, false);
 			thread = next;
@@ -268,16 +277,17 @@ static uint32_t k_event_wait_internal(struct k_event *event, uint32_t events,
 
 	/* Test if the wait conditions have already been met. */
 
-	if (are_wait_conditions_met(events, event->events, wait_condition)) {
-		rv = event->events;
-
-		k_spin_unlock(&event->lock, key);
-		goto out;
+	rv = are_wait_conditions_met(events, event->events, wait_condition);
+	if ((rv != 0) && ((options & K_EVENT_WAIT_REMOVE) != 0)) {
+		/* Remove events that have been received */
+		event->events &= ~rv;
 	}
 
-	/* Match conditions have not been met. */
-
-	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT) || (rv != 0)) {
+		/*
+		 * Match conditions have either already been met, or the caller specified
+		 * K_NO_WAIT, and match conditions have not been met.
+		 */
 		k_spin_unlock(&event->lock, key);
 		goto out;
 	}
@@ -294,15 +304,17 @@ static uint32_t k_event_wait_internal(struct k_event *event, uint32_t events,
 					   options, timeout);
 
 	if (z_pend_curr(&event->lock, key, &event->wait_q, timeout) == 0) {
-		/* Retrieve the set of events that woke the thread */
 		rv = thread->events;
+		if (options & K_EVENT_WAIT_REMOVE) {
+			/* Remove events that have been received */
+			event->events &= ~rv;
+		}
 	}
 
 out:
-	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_event, wait, event,
-				       events, rv & events);
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_event, wait, event, events, rv);
 
-	return rv & events;
+	return rv;
 }
 
 /**
@@ -345,6 +357,36 @@ uint32_t z_vrfy_k_event_wait_all(struct k_event *event, uint32_t events,
 	return z_impl_k_event_wait_all(event, events, reset, timeout);
 }
 #include <zephyr/syscalls/k_event_wait_all_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
+uint32_t z_impl_k_event_wait_safe(struct k_event *event, uint32_t events, k_timeout_t timeout)
+{
+	return k_event_wait_internal(event, events, K_EVENT_WAIT_REMOVE, timeout);
+}
+
+#ifdef CONFIG_USERSPACE
+uint32_t z_vrfy_k_event_wait_safe(struct k_event *event, uint32_t events,
+				  k_timeout_t timeout)
+{
+	K_OOPS(K_SYSCALL_OBJ(event, K_OBJ_EVENT));
+	return z_impl_k_event_wait_safe(event, events, timeout);
+}
+#include <zephyr/syscalls/k_event_wait_safe_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
+uint32_t z_impl_k_event_wait_all_safe(struct k_event *event, uint32_t events, k_timeout_t timeout)
+{
+	return k_event_wait_internal(event, events, K_EVENT_WAIT_ALL | K_EVENT_WAIT_REMOVE,
+				     timeout);
+}
+
+#ifdef CONFIG_USERSPACE
+uint32_t z_vrfy_k_event_wait_all_safe(struct k_event *event, uint32_t events, k_timeout_t timeout)
+{
+	K_OOPS(K_SYSCALL_OBJ(event, K_OBJ_EVENT));
+	return z_impl_k_event_wait_all_safe(event, events, timeout);
+}
+#include <zephyr/syscalls/k_event_wait_all_safe_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_OBJ_CORE_EVENT

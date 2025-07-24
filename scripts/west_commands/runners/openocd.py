@@ -59,7 +59,8 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                  gdb_client_port=DEFAULT_OPENOCD_GDB_PORT,
                  gdb_init=None, no_load=False,
                  target_handle=DEFAULT_OPENOCD_TARGET_HANDLE,
-                 rtt_port=DEFAULT_OPENOCD_RTT_PORT, rtt_server=False):
+                 rtt_port=DEFAULT_OPENOCD_RTT_PORT, rtt_server=False,
+                 rtt_quiet=False, rtt_no_reset=False):
         super().__init__(cfg)
 
         if not path.exists(cfg.board_dir):
@@ -121,6 +122,8 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         self.target_handle = target_handle
         self.rtt_port = rtt_port
         self.rtt_server = rtt_server
+        self.rtt_quiet = rtt_quiet
+        self.rtt_no_reset = rtt_no_reset
 
     @classmethod
     def name(cls):
@@ -195,6 +198,10 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                             ''')
         parser.add_argument('--rtt-port', default=DEFAULT_OPENOCD_RTT_PORT,
                             help='openocd rtt port, defaults to 5555')
+        parser.add_argument('--rtt-quiet', action='store_true',
+                            help='only output rtt to stdout, not that of subprocesses')
+        parser.add_argument('--rtt-no-reset', action='store_true',
+                            help='skip reset when configuring rtt')
         parser.add_argument('--rtt-server', default=False, action='store_true',
                             help='''start the RTT server while debugging.
                             To view the RTT log, connect to the rtt port using
@@ -215,7 +222,8 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             telnet_port=args.telnet_port, gdb_port=args.gdb_port,
             gdb_client_port=args.gdb_client_port, gdb_init=args.gdb_init,
             no_load=args.no_load, target_handle=args.target_handle,
-            rtt_port=args.rtt_port, rtt_server=args.rtt_server)
+            rtt_port=args.rtt_port, rtt_server=args.rtt_server,
+            rtt_no_reset=args.rtt_no_reset)
 
     def print_gdbserver_message(self):
         if not self.thread_info_enabled:
@@ -228,6 +236,9 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                          f'{self.gdb_port}{thread_msg}')
 
     def print_rttserver_message(self):
+        if self.rtt_quiet:
+            return
+
         self.logger.info(f'OpenOCD RTT server running on port {self.rtt_port}')
 
     def read_version(self):
@@ -407,7 +418,12 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                 + ['-c', f'rtt server start {self.rtt_port} 0']
             )
 
-        gdb_cmd = (self.gdb_cmd + self.tui_arg +
+        if command == 'rtt':
+            # Run GDB in batch mode. This will disable pagination automatically
+            gdb_args = ['--batch']
+        else:
+            gdb_args = []
+        gdb_cmd = (self.gdb_cmd + gdb_args + self.tui_arg +
                    ['-ex', f'target extended-remote :{self.gdb_client_port}',
                     self.elf_name])
         if command == 'debug':
@@ -421,12 +437,13 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             if rtt_address is None:
                 raise ValueError("RTT Control block not found")
 
-            # cannot prompt the user to press return for automation purposes
-            gdb_cmd.extend(['-ex', 'set pagination off'])
             # start the internal openocd rtt service via gdb monitor commands
             gdb_cmd.extend(
                 ['-ex', f'monitor rtt setup 0x{rtt_address:x} 0x10 "SEGGER RTT"'])
-            gdb_cmd.extend(['-ex', 'monitor reset run'])
+            if self.rtt_no_reset:
+                gdb_cmd.extend(['-ex', 'monitor resume'])
+            else:
+                gdb_cmd.extend(['-ex', 'monitor reset run'])
             gdb_cmd.extend(['-ex', 'monitor rtt start'])
             gdb_cmd.extend(
                 ['-ex', f'monitor rtt server start {self.rtt_port} 0'])
@@ -444,8 +461,11 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                 server_proc.terminate()
                 server_proc.wait()
         elif command == 'rtt':
+            rtt_quiet_kwargs = {'stdout': subprocess.DEVNULL,
+                                'stderr': subprocess.DEVNULL} if self.rtt_quiet else {}
+
             self.print_rttserver_message()
-            server_proc = self.popen_ignore_int(server_cmd)
+            server_proc = self.popen_ignore_int(server_cmd, **rtt_quiet_kwargs)
 
             if os_name != 'nt':
                 # Save the terminal settings
@@ -462,7 +482,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
 
             try:
                 # run the binary with gdb, set up the rtt server (runs to completion)
-                subprocess.run(gdb_cmd)
+                subprocess.run(gdb_cmd, **rtt_quiet_kwargs)
                 # run the rtt client in the foreground
                 self.run_telnet_client('localhost', self.rtt_port)
             finally:

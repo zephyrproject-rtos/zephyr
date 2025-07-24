@@ -291,7 +291,7 @@ class CheckPatch(ComplianceTest):
             cmd = [checkpatch]
 
         cmd.extend(['--mailback', '--no-tree', '-'])
-        diff = subprocess.Popen(('git', 'diff', '--no-ext-diff', COMMIT_RANGE),
+        diff = subprocess.Popen(('git', 'diff', '--no-ext-diff', COMMIT_RANGE, '--', ':!*.diff', ':!*.patch'),
                                 stdout=subprocess.PIPE,
                                 cwd=GIT_TOP)
         try:
@@ -900,7 +900,7 @@ Found disallowed Kconfig symbol in SoC Kconfig files: {sym_name:35}
 
         # Grep samples/ and tests/ for symbol definitions
         grep_stdout = git("grep", "-I", "-h", "--perl-regexp", regex, "--",
-                          ":samples", ":tests", cwd=ZEPHYR_BASE)
+                          ":samples", ":tests", cwd=Path(GIT_TOP))
 
         # Generate combined list of configs and choices from the main Kconfig tree.
         kconf_syms = kconf.unique_defined_syms + kconf.unique_choices
@@ -1185,6 +1185,7 @@ flagged.
         "CRC",  # Used in TI CC13x2 / CC26x2 SDK comment
         "DEEP_SLEEP",  # #defined by RV32M1 in ext/
         "DESCRIPTION",
+        "DMC_RUN_SMBUS_TESTS",
         "ERR",
         "ESP_DIF_LIBRARY",  # Referenced in CMake comment
         "EXPERIMENTAL",
@@ -1244,6 +1245,7 @@ flagged.
         "SHIFT",
         "SINGLE_APPLICATION_SLOT", # Used in sysbuild for MCUboot configuration
         "SINGLE_APPLICATION_SLOT_RAM_LOAD", # Used in sysbuild for MCUboot configuration
+        "SKIP_ZERO_DUTY_CYCLE_TEST",
         "SOC_SDKNG_UNSUPPORTED", # Used in modules/hal_nxp/mcux/CMakeLists.txt
         "SOC_SERIES_", # Used as regex in scripts/utils/board_v1_to_v2.py
         "SOC_WATCH",  # Issue 13749
@@ -1330,6 +1332,7 @@ class SysbuildKconfigCheck(KconfigCheck):
     # A different allowlist is used for symbols prefixed with SB_CONFIG_ (omitted here).
     UNDEF_KCONFIG_ALLOWLIST = {
         # zephyr-keep-sorted-start re(^\s+")
+        "DMC_BOARD",
         "FOO",
         "MY_IMAGE", # Used in sysbuild documentation as example
         "OTHER_APP_IMAGE_NAME", # Used in sysbuild documentation as example
@@ -1854,6 +1857,11 @@ class KeepSorted(ComplianceTest):
         mime_type = magic.from_file(os.fspath(file), mime=True)
 
         if not mime_type.startswith("text/"):
+            return
+
+        skip_exts = {".patch", ".diff"}
+        _, ext = os.path.splitext(file)
+        if ext in skip_exts:
             return
 
         block_data = ""

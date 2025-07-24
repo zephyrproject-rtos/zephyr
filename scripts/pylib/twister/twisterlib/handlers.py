@@ -16,6 +16,7 @@ import re
 import select
 import shlex
 import signal
+import stat
 import subprocess
 import sys
 import threading
@@ -544,9 +545,9 @@ class DeviceHandler(Handler):
                 proc.communicate()
                 logger.error(f"{script} timed out")
 
-    def _create_command(self, runner, hardware):
+    def _create_command(self, base_command, runner, hardware):
         if (self.options.west_flash is not None) or runner:
-            command = ["west", "flash", "--skip-rebuild", "-d", self.build_dir]
+            command = base_command
             command_extra_args = []
 
             # There are three ways this option is used.
@@ -705,6 +706,27 @@ class DeviceHandler(Handler):
 
         return serial_device, ser_pty_process
 
+    def _create_serial_pty_script(self, runner, hardware):
+        serial_pty = self.build_dir + '/rtt.sh'
+
+        rtt_cmd = ["west", "-qqqqq", "rtt", "-d", self.build_dir, "--skip-rebuild", "--rtt-quiet"]
+        rtt_cmd = self._create_command(rtt_cmd, runner, hardware)
+
+        with open(serial_pty, 'w') as f:
+            f.write("#!/bin/sh\n");
+            for cmd in rtt_cmd:
+                if " " in cmd:
+                    f.write(f"'{cmd}' ")
+                else:
+                    f.write(f"{cmd} ")
+
+        st = os.stat(serial_pty)
+        os.chmod(serial_pty, st.st_mode | stat.S_IEXEC)
+
+        logger.debug(f'RTT command is "{rtt_cmd}"')
+
+        return serial_pty
+
     def handle(self, harness):
         runner = None
         hardware = self.get_hardware()
@@ -716,11 +738,17 @@ class DeviceHandler(Handler):
         runner = hardware.runner or self.options.west_runner
         serial_pty = hardware.serial_pty
 
-        serial_device, ser_pty_process = self._get_serial_device(serial_pty, hardware.serial)
+        if serial_pty == 'rtt':
+            serial_pty = self._create_serial_pty_script(runner, hardware)
+            logger.debug(f'Created RTT script {serial_pty}')
 
-        logger.debug(f"Using serial device {serial_device} @ {hardware.baud} baud")
+        if not hardware.flash_before:
+            serial_device, ser_pty_process = self._get_serial_device(
+                serial_pty, hardware.serial)
+            logger.debug(f"Using serial device {serial_device} @ {hardware.baud} baud")
 
-        command = self._create_command(runner, hardware)
+        base_command = ["west", "flash", "--skip-rebuild", "-d", self.build_dir]
+        command = self._create_command(base_command, runner, hardware)
 
         pre_script = hardware.pre_script
         post_flash_script = hardware.post_flash_script
@@ -737,28 +765,27 @@ class DeviceHandler(Handler):
         if hardware.flash_with_test:
             flash_timeout += self.get_test_timeout()
 
-        serial_port = None
-        if hardware.flash_before is False:
-            serial_port = serial_device
+        halt_monitor_evt = None
+        t = None
+        if not hardware.flash_before:
+            try:
+                ser = self._create_serial_connection(
+                    hardware,
+                    serial_device,
+                    hardware.baud,
+                    flash_timeout,
+                    serial_pty,
+                    ser_pty_process
+                )
+            except serial.SerialException:
+                return
 
-        try:
-            ser = self._create_serial_connection(
-                hardware,
-                serial_port,
-                hardware.baud,
-                flash_timeout,
-                serial_pty,
-                ser_pty_process
-            )
-        except serial.SerialException:
-            return
+            halt_monitor_evt = threading.Event()
 
-        halt_monitor_evt = threading.Event()
-
-        t = threading.Thread(target=self.monitor_serial, daemon=True,
-                             args=(ser, halt_monitor_evt, harness))
-        start_time = time.time()
-        t.start()
+            t = threading.Thread(target=self.monitor_serial, daemon=True,
+                                 args=(ser, halt_monitor_evt, harness))
+            start_time = time.time()
+            t.start()
 
         d_log = f"{self.instance.build_dir}/device.log"
         logger.debug(f'Flash command: {command}', )
@@ -777,7 +804,8 @@ class DeviceHandler(Handler):
                         flash_error = True
                         with open(d_log, "w") as dlog_fp:
                             dlog_fp.write(stderr.decode())
-                        halt_monitor_evt.set()
+                        if halt_monitor_evt:
+                            halt_monitor_evt.set()
                 except subprocess.TimeoutExpired:
                     logger.warning("Flash operation timed out.")
                     self.terminate(proc)
@@ -790,7 +818,8 @@ class DeviceHandler(Handler):
                 dlog_fp.write(stderr.decode())
 
         except subprocess.CalledProcessError:
-            halt_monitor_evt.set()
+            if halt_monitor_evt:
+                halt_monitor_evt.set()
             self.instance.status = TwisterStatus.ERROR
             self.instance.reason = "Device issue (Flash error)"
             flash_error = True
@@ -801,26 +830,43 @@ class DeviceHandler(Handler):
                 timeout = script_param.get("post_flash_timeout", timeout)
             self.run_custom_script(post_flash_script, timeout)
 
-        # Connect to device after flashing it
         if hardware.flash_before:
+            serial_device, ser_pty_process = self._get_serial_device(
+                serial_pty, hardware.serial)
+            logger.debug(f"Using serial device {serial_device} @ {hardware.baud} baud")
+
             try:
-                logger.debug(f"Attach serial device {serial_device} @ {hardware.baud} baud")
-                ser.port = serial_device
-                ser.open()
+                ser = self._create_serial_connection(
+                    hardware,
+                    serial_device,
+                    hardware.baud,
+                    flash_timeout,
+                    serial_pty,
+                    ser_pty_process
+                )
             except serial.SerialException as e:
                 self._handle_serial_exception(e, hardware, serial_pty, ser_pty_process)
                 return
 
+            halt_monitor_evt = threading.Event()
+
+            t = threading.Thread(target=self.monitor_serial, daemon=True,
+                                 args=(ser, halt_monitor_evt, harness))
+            start_time = time.time()
+            t.start()
+
         if not flash_error:
             # Always wait at most the test timeout here after flashing.
-            t.join(self.get_test_timeout())
+            if t:
+                t.join(self.get_test_timeout())
         else:
             # When the flash error is due exceptions,
             # twister tell the monitor serial thread
             # to close the serial. But it is necessary
             # for this thread being run first and close
             # have the change to close the serial.
-            t.join(0.1)
+            if t:
+                t.join(0.1)
 
         if t.is_alive():
             logger.debug(

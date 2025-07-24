@@ -337,6 +337,8 @@ static int do_device_init(const struct device *dev)
 	return rc;
 }
 
+__weak int tt_init_status;
+
 /**
  * @brief Execute all the init entry initialization functions at a given level
  *
@@ -375,6 +377,9 @@ static void z_sys_init_run_level(enum init_level level)
 			}
 		} else {
 			result = entry->init_fn();
+		}
+		if (result != 0 && tt_init_status == 0) {
+			tt_init_status = result;
 		}
 		sys_trace_sys_init_exit(entry, level, result);
 	}

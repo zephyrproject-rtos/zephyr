@@ -1,0 +1,14 @@
+# Copyright (c) 2025 Tenstorrent AI ULC
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+mainmenu "PWM API test"
+
+config SKIP_ZERO_DUTY_CYCLE_TEST
+	bool "Skip zero duty cycle_test"
+    default n
+	help
+	  Will skip test attempting to set zero duty cycle
+
+source "Kconfig.zephyr"
