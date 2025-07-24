@@ -748,11 +748,12 @@ config NRF_WIFI_RPU_RECOVERY_PS_ACTIVE_TIMEOUT_MS
 
 config NRF_WIFI_RPU_MIN_TIME_TO_ENTER_SLEEP_MS
 	int "Minimum idle time to enter sleep in milliseconds"
-	range 100 5000
-	default 1000
+	range 100 40000
+	default 5000
 	help
 	  Minimum time the host should de-assert WAKEUP_NOW and let RPU enter
-	  sleep mode, assuming there is no activity.
+	  sleep mode, assuming there is no activity. Please note that higher values
+	  of this value may increase the power consumption.
 
 config NRF_WIFI_RPU_RECOVERY_DEBUG
 	bool "RPU recovery debug logs"
