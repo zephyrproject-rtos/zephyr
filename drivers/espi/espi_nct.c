@@ -40,13 +40,13 @@ struct espi_nct_config {
 struct espi_nct_data {
 	sys_slist_t callbacks;
 	uint8_t plt_rst_asserted;
-	uint8_t espi_rst_asserted;
+	uint8_t espi_rst_deasserted;
 	uint8_t sx_state;
-#if defined(CONFIG_ESPI_OOB_CHANNEL)
-#if !defined(CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC)
-	struct k_sem oob_rx_lock;
-#endif
-#endif
+// #if defined(CONFIG_ESPI_OOB_CHANNEL)
+// #if !defined(CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC)
+// 	struct k_sem oob_rx_lock;
+// #endif
+// #endif
 #if defined(CONFIG_ESPI_FLASH_CHANNEL)
 	struct k_sem flash_rx_lock;
 	struct k_sem tafs_tx_lock;
@@ -96,8 +96,6 @@ struct espi_nct_data {
 #define ESPI_OOB_GET_CYCLE_TYPE                    0x21
 #define ESPI_OOB_TAG                               0x00
 #define ESPI_OOB_MAX_TIMEOUT                       500ul /* 500 ms */
-
-#define VWGPMS_DIRECTION	7
 
 /* eSPI bus interrupt configuration structure and macro function */
 struct espi_bus_isr {
@@ -150,6 +148,8 @@ static const struct nct_vw_in_config vw_in_tbl[] = {
 	/* index 42h (In)  */
 	NCT_DT_VW_IN_CONF(ESPI_VWIRE_SIGNAL_SLP_LAN, vw_slp_lan),
 	NCT_DT_VW_IN_CONF(ESPI_VWIRE_SIGNAL_SLP_WLAN, vw_slp_wlan),
+	/* index 4Ah (In)  */
+	/* NCT_DT_VW_IN_CONF(ESPI_VWIRE_SIGNAL_DNX_WARN, vw_dnx_warn), */
 };
 
 static const struct nct_vw_out_config vw_out_tbl[] = {
@@ -169,6 +169,7 @@ static const struct nct_vw_out_config vw_out_tbl[] = {
 	NCT_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_HOST_RST_ACK, vw_host_rst_ack),
 	/* index 40h (Out) */
 	NCT_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_SUS_ACK, vw_sus_ack),
+	NCT_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_DNX_ACK, vw_dnx_ack),
 };
 
 /*  Virtual wire GPIOs for platform level usage (High at Reset state) */
@@ -344,10 +345,19 @@ static void espi_bus_vw_update_isr(const struct device *dev)
 	uint8_t i;
 	struct espi_event evt = { ESPI_BUS_EVENT_VWIRE_RECEIVED, 0, 0 };
 
+	for (i = 0; i < ARRAY_SIZE(inst->VWEVMS); i++) {
+		if (IS_BIT_SET(inst->VWEVMS[i], NCT_VWEVMS_MODIFIED)) {
+			inst->VWEVMS[i] |= BIT(NCT_VWEVMS_MODIFIED);
+			evt.evt_details = (NCT_VWEV_M_TO_S << NCT_VWEVMS_DIRECTION_POS) | i;
+			evt.evt_data = (uint8_t)(inst->VWEVMS[i] & 0xFF);
+			espi_send_callbacks(&data->callbacks, dev, evt);
+		}
+	}
+
 	for (i = 0; i < ARRAY_SIZE(inst->VWGPMS); i++) {
 		if (IS_BIT_SET(inst->VWGPMS[i], NCT_VWGPMS_MODIFIED)) {
 			inst->VWGPMS[i] |= BIT(NCT_VWGPMS_MODIFIED);
-			evt.evt_details = (NCT_VWGP_M_TO_S << VWGPMS_DIRECTION) | i;
+			evt.evt_details = (NCT_VWGP_M_TO_S << NCT_VWGPMS_DIRECTION_POS) | i;
 			evt.evt_data = (uint8_t)(inst->VWGPMS[i] & 0xFF);
 			espi_send_callbacks(&data->callbacks, dev, evt);
 		}
@@ -358,7 +368,7 @@ static void espi_bus_vw_update_isr(const struct device *dev)
 static void espi_bus_oob_rx_isr(const struct device *dev)
 {
 	struct espi_nct_data *const data = DRV_DATA(dev);
-#if defined(CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC)
+// #if defined(CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC)
 	struct espi_reg *const inst = HAL_INSTANCE(dev);
 	struct espi_event evt = {
 			.evt_type = ESPI_BUS_EVENT_OOB_RECEIVED,
@@ -369,10 +379,10 @@ static void espi_bus_oob_rx_isr(const struct device *dev)
 	/* Get received package length and set to additional detail of event */
 	evt.evt_details = NCT_OOB_RX_PACKAGE_LEN(inst->OOBRXBUF[0]);
 	espi_send_callbacks(&data->callbacks, dev, evt);
-#else
-	LOG_DBG("%s", __func__);
-	k_sem_give(&data->oob_rx_lock);
-#endif
+// #else
+// 	LOG_DBG("%s", __func__);
+// 	k_sem_give(&data->oob_rx_lock);
+// #endif
 }
 #endif
 
@@ -578,25 +588,30 @@ static void espi_vw_notify_system_state(const struct device *dev,
 static void espi_vw_notify_host_warning(const struct device *dev,
 				enum espi_vwire_signal signal)
 {
-	uint8_t wire;
+	uint8_t wire = 0;
 
 	espi_nct_receive_vwire(dev, signal, &wire);
 
 	k_busy_wait(NCT_ESPI_VWIRE_ACK_DELAY);
 	switch (signal) {
+	case ESPI_VWIRE_SIGNAL_OOB_RST_WARN:
+		espi_nct_send_vwire(dev, ESPI_VWIRE_SIGNAL_OOB_RST_ACK,
+				wire);
+		break;
 	case ESPI_VWIRE_SIGNAL_HOST_RST_WARN:
-		espi_nct_send_vwire(dev,
-				ESPI_VWIRE_SIGNAL_HOST_RST_ACK,
+		espi_nct_send_vwire(dev, ESPI_VWIRE_SIGNAL_HOST_RST_ACK,
 				wire);
 		break;
 	case ESPI_VWIRE_SIGNAL_SUS_WARN:
 		espi_nct_send_vwire(dev, ESPI_VWIRE_SIGNAL_SUS_ACK,
 				wire);
 		break;
-	case ESPI_VWIRE_SIGNAL_OOB_RST_WARN:
-		espi_nct_send_vwire(dev, ESPI_VWIRE_SIGNAL_OOB_RST_ACK,
-				wire);
-		break;
+	/*
+	 * case ESPI_VWIRE_SIGNAL_DNX_WARN:
+	 * 	espi_nct_send_vwire(dev, ESPI_VWIRE_SIGNAL_DNX_ACK,
+	 * 			wire);
+	 * 	break;
+	 */
 	default:
 		break;
 	}
@@ -631,7 +646,7 @@ static void espi_vw_notify_plt_rst(const struct device *dev)
 static void espi_vw_send_bootload_done(const struct device *dev)
 {
 	int ret;
-	uint8_t boot_done;
+	uint8_t boot_done = 0;
 
 	ret = espi_nct_receive_vwire(dev,
 			ESPI_VWIRE_SIGNAL_TARGET_BOOT_DONE, &boot_done);
@@ -668,9 +683,10 @@ static void espi_vw_generic_isr(const struct device *dev, struct nct_wui *wui)
 		|| signal == ESPI_VWIRE_SIGNAL_SLP_S5
 		|| signal == ESPI_VWIRE_SIGNAL_SLP_A) {
 		espi_vw_notify_system_state(dev, signal);
-	} else if (signal == ESPI_VWIRE_SIGNAL_HOST_RST_WARN
+	} else if (signal == ESPI_VWIRE_SIGNAL_OOB_RST_WARN
+		|| signal == ESPI_VWIRE_SIGNAL_HOST_RST_WARN
 		|| signal == ESPI_VWIRE_SIGNAL_SUS_WARN
-		|| signal == ESPI_VWIRE_SIGNAL_OOB_RST_WARN) {
+		/* || signal == ESPI_VWIRE_SIGNAL_DNX_WARN */) {
 		espi_vw_notify_host_warning(dev, signal);
 	} else if (signal == ESPI_VWIRE_SIGNAL_PLTRST) {
 		espi_vw_notify_plt_rst(dev);
@@ -683,11 +699,11 @@ static void espi_vw_espi_rst_isr(const struct device *dev, struct nct_wui *wui)
 	struct espi_nct_data *const data = DRV_DATA(dev);
 	struct espi_event evt = { ESPI_BUS_RESET, 0, 0 };
 
-	data->espi_rst_asserted = IS_BIT_SET(inst->ESPISTS,
+	data->espi_rst_deasserted = IS_BIT_SET(inst->ESPISTS,
 						NCT_ESPISTS_ESPIRST_DEASSERT);
-	LOG_DBG("eSPI RST asserted is %d!", data->espi_rst_asserted);
+	LOG_DBG("eSPI RST is %d!", data->espi_rst_deasserted);
 
-	evt.evt_data = data->espi_rst_asserted;
+	evt.evt_data = data->espi_rst_deasserted;
 	espi_send_callbacks(&data->callbacks, dev, evt);
 }
 
@@ -866,6 +882,7 @@ static int espi_nct_receive_vwire(const struct device *dev,
 {
 	struct espi_reg *const inst = HAL_INSTANCE(dev);
 	uint8_t reg_idx, bitmask, sig_idx, val;
+	uint8_t ignore_valid_bit = !!(*level & ESPI_VW_READ_IGNORE_VALID_BIT);
 
 	/* Find signal in VW input table */
 	for (sig_idx = 0; sig_idx < ARRAY_SIZE(vw_in_tbl); sig_idx++)
@@ -875,8 +892,10 @@ static int espi_nct_receive_vwire(const struct device *dev,
 
 			val = GET_FIELD(inst->VWEVMS[reg_idx],
 							NCT_VWEVMS_WIRE);
-			val &= GET_FIELD(inst->VWEVMS[reg_idx],
-							NCT_VWEVMS_VALID);
+			if (!ignore_valid_bit) {
+				val &= GET_FIELD(inst->VWEVMS[reg_idx],
+								NCT_VWEVMS_VALID);
+			}
 
 			*level = !!(val & bitmask);
 			return 0;
@@ -890,8 +909,11 @@ static int espi_nct_receive_vwire(const struct device *dev,
 
 			val = GET_FIELD(inst->VWEVSM[reg_idx],
 							NCT_VWEVSM_WIRE);
-			val &= GET_FIELD(inst->VWEVSM[reg_idx],
-							NCT_VWEVSM_VALID);
+			if (!ignore_valid_bit) {
+				val &= GET_FIELD(inst->VWEVSM[reg_idx],
+								NCT_VWEVSM_VALID);
+			}
+
 			*level = !!(val & bitmask);
 			return 0;
 		}
@@ -1009,17 +1031,17 @@ static int espi_nct_receive_oob(const struct device *dev,
 		return -EIO;
 	}
 
-#if !defined(CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC)
-	struct espi_nct_data *const data = DRV_DATA(dev);
-	int ret;
+// #if !defined(CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC)
+// 	struct espi_nct_data *const data = DRV_DATA(dev);
+// 	int ret;
 
-	/* Wait until get oob package or timeout */
-	ret = k_sem_take(&data->oob_rx_lock, K_MSEC(ESPI_OOB_MAX_TIMEOUT));
-	if (ret == -EAGAIN) {
-		LOG_ERR("%s: Timeout", __func__);
-		return -ETIMEDOUT;
-	}
-#endif
+// 	/* Wait until get oob package or timeout */
+// 	ret = k_sem_take(&data->oob_rx_lock, K_MSEC(ESPI_OOB_MAX_TIMEOUT));
+// 	if (ret == -EAGAIN) {
+// 		LOG_ERR("%s: Timeout", __func__);
+// 		return -ETIMEDOUT;
+// 	}
+// #endif
 
 	/*
 	 * PUT_OOB header (first 4 bytes) in nct 32-bits rx buffer
@@ -1431,11 +1453,11 @@ static int espi_nct_init(const struct device *dev)
 		inst->ESPIWE |= BIT(espi_bus_isr_tbl[i].wake_en_bit);
 	}
 
-#if defined(CONFIG_ESPI_OOB_CHANNEL)
-#if !defined(CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC)
-	k_sem_init(&data->oob_rx_lock, 0, 1);
-#endif
-#endif
+// #if defined(CONFIG_ESPI_OOB_CHANNEL)
+// #if !defined(CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC)
+// 	k_sem_init(&data->oob_rx_lock, 0, 1);
+// #endif
+// #endif
 
 #if defined(CONFIG_ESPI_FLASH_CHANNEL)
 	k_sem_init(&data->flash_rx_lock, 0, 1);

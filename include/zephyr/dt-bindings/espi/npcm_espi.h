@@ -16,7 +16,6 @@
 #define NPCM_VWEVMS6 6
 #define NPCM_VWEVMS7 7
 #define NPCM_VWEVMS8 8
-#define NPCM_VWEVMS9 9
 
 /* eSPI VW Slave to Master Register Index */
 #define NPCM_VWEVSM0 0
@@ -29,8 +28,6 @@
 #define NPCM_VWEVSM7 7
 #define NPCM_VWEVSM8 8
 #define NPCM_VWEVSM9 9
-#define NPCM_VWEVSM10 10
-#define NPCM_VWEVSM11 11
 
 /* eSPI VW GPIO Master to Slave Register Index */
 #define NPCM_VWGPMS0 0

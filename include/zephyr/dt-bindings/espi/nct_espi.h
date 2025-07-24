@@ -16,7 +16,6 @@
 #define NCT_VWEVMS6 6
 #define NCT_VWEVMS7 7
 #define NCT_VWEVMS8 8
-#define NCT_VWEVMS9 9
 
 /* eSPI VW Slave to Master Register Index */
 #define NCT_VWEVSM0 0
@@ -29,8 +28,6 @@
 #define NCT_VWEVSM7 7
 #define NCT_VWEVSM8 8
 #define NCT_VWEVSM9 9
-#define NCT_VWEVSM10 10
-#define NCT_VWEVSM11 11
 
 /* eSPI VW GPIO Master to Slave Register Index */
 #define NCT_VWGPMS0 0

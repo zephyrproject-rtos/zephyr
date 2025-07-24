@@ -210,10 +210,11 @@
 		compatible ="nuvoton,nct-nor";
 		size = <DT_SIZE_M(32 * 8)>;
 		reg = <0>;
-		enter-4byte-addr = <0x2>;
+		enter-4byte-addr = <0x0>;
 		status = "okay";
 		quad-enable-requirements = "S2B1v1";
 		rd-mode = "NCT_RD_MODE_QUAD";
+
 		/* quad spi bus configuration of nor flash device */
 		qspi-flags = <NCT_QSPI_SW_CS1>;
 		mapped-addr = <0x70000000>;

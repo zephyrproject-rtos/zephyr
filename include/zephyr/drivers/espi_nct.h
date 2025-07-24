@@ -50,4 +50,6 @@ struct espi_flash_cmplt {
 
 #define ESPI_FLASH_RESP_LEN	3
 
+#define ESPI_VW_READ_IGNORE_VALID_BIT 0x80
+
 #endif

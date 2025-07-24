@@ -1018,8 +1018,12 @@ struct espi_reg {
 #define NPCM_ESPISTS_DNX_RST             29
 #define NPCM_VWEVMS_WIRE                 FIELD(0, 4)
 #define NPCM_VWEVMS_VALID                FIELD(4, 4)
+#define NPCM_VWEVMS_MODIFIED             16
+#define NPCM_VWEV_S_TO_M                 0
+#define NPCM_VWEV_M_TO_S                 1
+#define NPCM_VWEVMS_DIRECTION_POS        7
 #define NPCM_VWEVMS_IE                   18
-#define NPCM_VWEVMS_WE                   20
+#define NPCM_VWEVMS_WE                   24
 #define NPCM_VWEVSM_WIRE                 FIELD(0, 4)
 #define NPCM_VWEVSM_VALID                FIELD(4, 4)
 #define NPCM_VWEVSM_BIT_VALID(n)         (4+n)
@@ -1037,6 +1041,7 @@ struct espi_reg {
 #define NPCM_VWGPMS_ENESPIRST            19
 #define NPCM_VWGP_S_TO_M                 0
 #define NPCM_VWGP_M_TO_S                 1
+#define NPCM_VWGPMS_DIRECTION_POS        7
 #define NPCM_OOBCTL_OOB_FREE             0
 #define NPCM_OOBCTL_OOB_AVAIL            1
 #define NPCM_OOBCTL_RSTBUFHEADS          2

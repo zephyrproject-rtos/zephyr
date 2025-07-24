@@ -16,13 +16,14 @@
  * | 07h[S] | VWEVMS2 | Reserved     | Reserved     | Reserved  | HOS_RST_WARN|
  * | 41h[P] | VWEVMS3 | SLP_A#       | Reserved     | SUS_PDNACK| SUS_WARN#   |
  * | 42h[P] | VWEVMS4 | Reserved     | Reserved     | SLP_WLAN# | SLP_LAN#    |
+ * | 4Ah[P] | VWEVMS8 | Reserved     | Reserved     | DNX_WARN# | Reserved    |
  * |--------------------------------------------------------------------------|
  * |                Output (Slave-to-Master) Virtual Wires                    |
  * |--------------------------------------------------------------------------|
  * | 04h[S] | VWEVSM0 | PME#         | WAKE#        | Reserved  | OOB_RST_ACK |
  * | 05h[S] | VWEVSM1 | SLV_BOOT_STS | ERR_NONFATAL | ERR_FATAL | SLV_BT_DONE |
  * | 06h[S] | VWEVSM2 | HOST_RST_ACK | Reserved     | SMI#      | SCI#        |
- * | 40h[P] | VWEVSM3 | Reserved     | Reserved     | Reserved  | SUS_ACK#    |
+ * | 40h[P] | VWEVSM3 | Reserved     | Reserved     | DNX_ACK#  | SUS_ACK#    |
  * |--------------------------------------------------------------------------|
  *  [S] System-/[P] Platform-Specific Virtual Wires
  */
@@ -90,6 +91,14 @@
 			vw-wui = <&wui_vw_slp_wlan>;
 		};
 
+		/* index 4Ah (In) */
+		/*
+		 * vw-dnx-warn {
+		 * 	vw-reg = <NPCM_VWEVMS8 0x02>;
+		 * 	vw-wui = <&wui_vw_dnx_warn>;
+		 * };
+		 */
+
 		/* eSPI Virtual Vire (VW) output configuration */
 		/* index 04h (Out) */
 		vw-oob-rst-ack {
@@ -134,6 +143,9 @@
 		/* index 40h (Out) */
 		vw-sus-ack {
 			vw-reg = <NPCM_VWEVSM3 0x01>;
+		};
+		vw-dnx-ack {
+			vw-reg = <NPCM_VWEVSM3 0x02>;
 		};
 	};
 };

@@ -415,7 +415,7 @@
 			miwus = <&miwu2 2 0>; /* SLP_LAN_L */
 		};
 		wui_vw_slp_wlan: wui2-3-1 {
-			miwus = <&miwu2 2 1>; /* SLP_WLAN_L) */
+			miwus = <&miwu2 2 1>; /* SLP_WLAN_L */
 		};
 		wui_vw_pch_to_ec_gen_0: wui2-3-4 {
 			miwus = <&miwu2 2 4>; /* PCH_TO_EC_GENERIC_0 */
