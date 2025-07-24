@@ -177,7 +177,7 @@ static int power_up_check(const struct device *dev)
 
 	if (rslt == BMP5_OK) {
 		/* Check if nvm_rdy status = 1 and nvm_err status = 0 to proceed */
-		if ((nvm_status & BMP5_INT_NVM_RDY) && (!(nvm_status & BMP5_INT_NVM_ERR))) {
+		if ((nvm_status & BMP5_INT_NVM_RDY) != 0 && (nvm_status & BMP5_INT_NVM_ERR) == 0) {
 			rslt = BMP5_OK;
 		} else {
 			rslt = -EFAULT;
@@ -375,7 +375,7 @@ static int soft_reset(const struct device *dev)
 		k_usleep(BMP5_DELAY_US_SOFT_RESET);
 		ret = get_interrupt_status(&int_status, dev);
 		if (ret == BMP5_OK) {
-			if (int_status & BMP5_INT_ASSERTED_POR_SOFTRESET_COMPLETE) {
+			if ((int_status & BMP5_INT_ASSERTED_POR_SOFTRESET_COMPLETE) != 0) {
 				ret = BMP5_OK;
 			} else {
 				ret = -EFAULT;
@@ -635,7 +635,7 @@ static void bmp581_submit_one_shot(const struct device *dev, struct rtio_iodev_s
 	const struct bmp581_config *conf = dev->config;
 
 	err = rtio_sqe_rx_buf(iodev_sqe, min_buf_len, min_buf_len, &buf, &buf_len);
-	CHECKIF((err < 0) || (buf_len < min_buf_len) || !buf) {
+	CHECKIF(err < 0 || buf_len < min_buf_len || !buf) {
 		LOG_ERR("Failed to get a read buffer of size %u bytes", min_buf_len);
 		rtio_iodev_sqe_err(iodev_sqe, err);
 		return;
