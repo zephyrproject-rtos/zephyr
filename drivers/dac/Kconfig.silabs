@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config DAC_SILABS_VDAC
+	bool "Silabs DAC driver for VDAC"
+	default y
+	depends on DT_HAS_SILABS_VDAC_ENABLED
+	select PINCTRL
+	select SILABS_SISDK_VDAC
+	help
+	  Enable the Digital-to-Analog Converter driver for the
+	  VDAC hardware block present on Silicon Labs devices.
