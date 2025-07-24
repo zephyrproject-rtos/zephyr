@@ -33,11 +33,11 @@ def fixture_initialize(request, shell: Shell, dut: DeviceAdapter):
     assert hci is not None
 
     shell.exec_command("bt init")
-    lines = dut.readlines_until("Settings Loaded")
-    regex = r'Identity: *(?P<bd_addr>([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2}) *\((.*?)\))'
+    dut.readlines_until("Settings Loaded")
+    regex = r'(?P<bd_addr>([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2}) *\((.*?)\))'
     bd_addr = None
+    lines = shell.exec_command("bt id-show")
     for line in lines:
-        logger.info(f"Shell log {line}")
         m = re.search(regex, line)
         if m:
             bd_addr = m.group('bd_addr')
