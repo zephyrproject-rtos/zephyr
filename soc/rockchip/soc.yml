@@ -6,5 +6,6 @@ family:
           - name: rk3399
       - name: rk35
         socs:
+          - name: rk3588
           - name: rk3588s
           - name: rk3568

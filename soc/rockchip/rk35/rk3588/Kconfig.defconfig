@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright The Zephyr Project Contributors
+
+if SOC_RK3588
+
+rsource "Kconfig.defconfig.rk3588"
+
+endif

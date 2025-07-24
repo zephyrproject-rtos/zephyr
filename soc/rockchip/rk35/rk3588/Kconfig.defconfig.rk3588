@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright The Zephyr Project Contributors
+
+if SOC_RK3588
+
+config NUM_IRQS
+	default 544
+
+config FLASH_SIZE
+	default 0
+
+config FLASH_BASE_ADDRESS
+	default 0
+
+config UART_NS16550_ACCESS_WORD_ONLY
+	default y
+	depends on UART_NS16550
+
+endif
