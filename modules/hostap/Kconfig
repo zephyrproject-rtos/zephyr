@@ -639,4 +639,14 @@ config WIFI_NM_HOSTAPD_REGULATORY_ENV
 	  All supported environments of current region can be used with
 	  default value of 0x20 or 32.
 
+config WIFI_NM_WPA_SUPPLICANT_KEEP_ALIVE_EARLY_MS
+	int "Select Wi-Fi keep-alive advance timing (ms before max idle timeout)"
+	range 100 1000
+	default 100
+	help
+	  The supplicant schedules the keep-alive timer 100 ms prior to the BSS
+	  Max Idle time specified by the AP. This offset is currently fixed. However,
+	  due to scheduling and processing delays, some devices may require additional
+	  time to transmit the packet. Introducing a configurable option to schedule
+	  the keep-alive earlier would provide better flexibility for such cases.
 endif # WIFI_NM_WPA_SUPPLICANT
