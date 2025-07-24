@@ -353,6 +353,9 @@ ZTEST(net_content_plain_text, test_get_s64)
 	char * const payload[] = {
 		"0", "9223372036854775807", "-9223372036854775808"
 	};
+	char * const payload_overflow[] = {
+		"9223372036854775808", "-9223372036854775809"
+	};
 	int64_t expected_value[] = { 0, INT64_MAX, INT64_MIN };
 	int64_t value;
 
@@ -365,6 +368,13 @@ ZTEST(net_content_plain_text, test_get_s64)
 		zassert_equal(value, expected_value[i], "Invalid value parsed");
 		zassert_equal(test_in.offset, strlen(payload[i]) + 1,
 			      "Invalid packet offset");
+	}
+
+	for (i = 0; i < ARRAY_SIZE(payload_overflow); i++) {
+		test_payload_set(payload_overflow[i]);
+
+		ret = plain_text_reader.get_s64(&test_in, &value);
+		zassert_equal(ret, -EINVAL, "Error expected on too large value");
 	}
 }
 
