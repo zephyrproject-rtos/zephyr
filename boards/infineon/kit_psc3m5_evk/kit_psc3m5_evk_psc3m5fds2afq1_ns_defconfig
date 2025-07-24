@@ -11,3 +11,6 @@ CONFIG_TRUSTED_EXECUTION_NONSECURE=y
 
 # Enable GPIO driver
 CONFIG_GPIO=y
+
+# Enable clock controller
+CONFIG_CLOCK_CONTROL=y
