@@ -175,6 +175,43 @@ struct bt_avrcp_get_cap_rsp {
 	uint8_t cap[];   /**< 1 or 3 octets each depends on cap_id */
 };
 
+/** @brief AVRCP Media Attribute IDs */
+typedef enum __packed {
+	BT_AVRCP_MEDIA_ATTR_TITLE = 0x01,
+	BT_AVRCP_MEDIA_ATTR_ARTIST = 0x02,
+	BT_AVRCP_MEDIA_ATTR_ALBUM = 0x03,
+	BT_AVRCP_MEDIA_ATTR_TRACK_NUMBER = 0x04,
+	BT_AVRCP_MEDIA_ATTR_TOTAL_TRACKS = 0x05,
+	BT_AVRCP_MEDIA_ATTR_GENRE = 0x06,
+	BT_AVRCP_MEDIA_ATTR_PLAYING_TIME = 0x07,
+} bt_avrcp_media_attr_t;
+
+/** @brief AVRCP Character Set IDs */
+typedef enum __packed {
+	BT_AVRCP_CHARSET_UTF8 = 0x006A,
+} bt_avrcp_charset_t;
+
+/** @brief AVRCP Media Attribute structure */
+struct bt_avrcp_media_attr {
+	uint32_t attr_id;		/**< Media attribute ID, see @ref bt_avrcp_media_attr_t */
+	uint16_t charset_id;		/**< Character set ID, see @ref bt_avrcp_charset_t */
+	uint16_t attr_len;		/**< Length of attribute value */
+	const uint8_t *attr_val;	/**< Attribute value data */
+};
+
+/** @brief GetElementAttributes command request structure */
+struct bt_avrcp_get_element_attrs_cmd {
+	uint64_t identifier;		/**< Element identifier (0x0 for currently playing) */
+	uint8_t num_attrs;		/**< Number of attributes requested (0 = all) */
+	const uint32_t *attr_ids;	/**< Array of requested attribute IDs */
+};
+
+/** @brief GetElementAttributes response structure */
+struct bt_avrcp_get_element_attrs_rsp {
+	uint8_t num_attrs;			/**< Number of attributes in response */
+	const struct bt_avrcp_media_attr *attrs;	/**< Array of media attributes */
+};
+
 struct bt_avrcp_ct_cb {
 	/** @brief An AVRCP CT connection has been established.
 	 *
@@ -239,6 +276,16 @@ struct bt_avrcp_ct_cb {
 	 */
 	void (*passthrough_rsp)(struct bt_avrcp_ct *ct, uint8_t tid, bt_avrcp_rsp_t result,
 				const struct bt_avrcp_passthrough_rsp *rsp);
+	/** @brief Callback function for bt_avrcp_ct_get_element_attrs().
+	 *
+	 *  Called when the get element attributes process is completed.
+	 *
+	 *  @param ct AVRCP CT connection object.
+	 *  @param tid The transaction label of the response.
+	 *  @param rsp The response for Get Element Attributes command.
+	 */
+	void (*get_element_attrs_rsp)(struct bt_avrcp_ct *ct, uint8_t tid,
+				      const struct bt_avrcp_get_element_attrs_rsp *rsp);
 };
 
 /** @brief Connect AVRCP.
@@ -326,6 +373,22 @@ int bt_avrcp_ct_get_subunit_info(struct bt_avrcp_ct *ct, uint8_t tid);
 int bt_avrcp_ct_passthrough(struct bt_avrcp_ct *ct, uint8_t tid, uint8_t opid, uint8_t state,
 			    const uint8_t *payload, uint8_t len);
 
+/** @brief Get AVRCP Element Attributes.
+ *
+ *  This function requests the attributes of the element specified by the identifier.
+ *  If no identifier is provided (identifier is 0), the attributes of the currently
+ *  playing media element are requested.
+ *
+ *  @param ct The AVRCP CT instance.
+ *  @param tid The transaction label of the response, valid from 0 to 15.
+ *  @param identifier The identifier of the element. Use 0 for currently playing element.
+ *  @param attr_ids Array of attribute IDs to request. NULL for all attributes.
+ *  @param num_attrs Number of attributes in attr_ids array. 0 for all attributes.
+ *
+ *  @return 0 in case of success or error code in case of error.
+ */
+int bt_avrcp_ct_get_element_attrs(struct bt_avrcp_ct *ct, uint8_t tid, uint64_t identifier,
+				  const uint32_t *attr_ids, uint8_t num_attrs);
 struct bt_avrcp_tg_cb {
 	/** @brief An AVRCP TG connection has been established.
 	 *
@@ -354,6 +417,27 @@ struct bt_avrcp_tg_cb {
 	 *  @param tg AVRCP TG connection object.
 	 */
 	void (*unit_info_req)(struct bt_avrcp_tg *tg, uint8_t tid);
+
+	/** @brief Get capabilities request callback.
+	 *
+	 *  This callback is called whenever an AVRCP get capabilities command is received.
+	 *
+	 *  @param tg AVRCP TG connection object.
+	 *  @param tid The transaction label of the request.
+	 *  @param cap_id The capability ID requested.
+	 */
+	void (*get_cap_cmd_req)(struct bt_avrcp_tg *tg, uint8_t tid, uint8_t cap_id);
+
+	/** @brief GetElementAttributes command request callback.
+	 *
+	 *  This callback is called whenever an AVRCP GetElementAttributes command is received.
+	 *
+	 *  @param tg AVRCP TG connection object.
+	 *  @param tid The transaction label of the request.
+	 *  @param cmd The GetElementAttributes command parameters.
+	 */
+	void (*get_element_attrs_cmd_req)(struct bt_avrcp_tg *tg, uint8_t tid,
+					  const struct bt_avrcp_get_element_attrs_cmd *cmd);
 };
 
 /** @brief Register callback.
@@ -378,6 +462,33 @@ int bt_avrcp_tg_register_cb(const struct bt_avrcp_tg_cb *cb);
  */
 int bt_avrcp_tg_send_unit_info_rsp(struct bt_avrcp_tg *tg, uint8_t tid,
 				   struct bt_avrcp_unit_info_rsp *rsp);
+
+/** @brief Send GET_CAPABILITIES response.
+ *
+ *  This function is called by the application to send the GET_CAPABILITIES response.
+ *
+ *  @param tg The AVRCP TG instance.
+ *  @param tid The transaction label of the response, valid from 0 to 15.
+ *  @param rsp The response for GET_CAPABILITIES command.
+ *
+ *  @return 0 in case of success or error code in case of error.
+ */
+int bt_avrcp_tg_send_get_cap_rsp(struct bt_avrcp_tg *tg, uint8_t tid,
+				 const struct bt_avrcp_get_cap_rsp *rsp);
+
+/** @brief Send GetElementAttributes response.
+ *
+ *  This function is called by the application to send the GetElementAttributes response.
+ *  It automatically handles fragmentation if the response is too large for a single packet.
+ *
+ *  @param tg The AVRCP TG instance.
+ *  @param tid The transaction label of the response, valid from 0 to 15.
+ *  @param rsp The response for GetElementAttributes command.
+ *
+ *  @return 0 in case of success or error code in case of error.
+ */
+int bt_avrcp_tg_send_get_element_attrs_rsp(struct bt_avrcp_tg *tg, uint8_t tid,
+					   const struct bt_avrcp_get_element_attrs_rsp *rsp);
 #ifdef __cplusplus
 }
 #endif
