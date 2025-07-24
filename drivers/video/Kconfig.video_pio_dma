@@ -1,0 +1,10 @@
+# Copyright (c) 2025 The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+config VIDEO_PIO_DMA
+	bool "Raspberrypi PIO DMA video receiver"
+	depends on DT_HAS_RASPBERRYPI_VIDEO_PIO_DMA_ENABLED
+	select PICOSDK_USE_PIO
+	select PICOSDK_USE_CLAIM
+	default y
+	help
+	  Enable driver for the receiver video pio dma.

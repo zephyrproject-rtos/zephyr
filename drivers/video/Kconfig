@@ -98,4 +98,6 @@ source "drivers/video/Kconfig.st_mipid02"
 
 source "drivers/video/Kconfig.stm32_dcmipp"
 
+source "drivers/video/Kconfig.video_pio_dma"
+
 endif # VIDEO

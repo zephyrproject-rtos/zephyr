@@ -1,0 +1,61 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# example:
+# &pio0 {
+# 	status = "okay";
+# 	video_pio_dma: video_pio_dma{
+# 		compatible = "raspberrypi,video-pio-dma";
+# 		vsync-gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
+# 		hsync-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+# 		pclk-gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
+# 		data-gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
+# 		pinctrl-0 = <&pio0_hm01b0_default>;
+# 		pinctrl-names = "default";
+# 		status = "okay";
+# 		dma = <&dma>;
+# 		port {
+# 			video_pio_dma_ep_in: endpoint {
+# 				remote-endpoint-label = "hm01b0_ep_out";
+# 			};
+# 		};
+# 	};
+# };
+
+
+description: Raspberrypi PIO-DMA Video Driver
+
+compatible: "raspberrypi,video-pio-dma"
+
+include: ["raspberrypi,pico-pio-device.yaml"]
+
+properties:
+  vsync-gpios:
+    required: true
+    type: phandle-array
+    description: |
+      GPIO to use for VSYNC input.
+  hsync-gpios:
+    required: true
+    type: phandle-array
+    description: |
+      GPIO to use for HSYNC input.
+  pclk-gpios:
+    required: true
+    type: phandle-array
+    description: |
+      GPIO to use for PCLK input.
+  data-gpios:
+    required: true
+    type: phandle-array
+    description: |
+      GPIO to use for PCLK input.
+  dma:
+    required: true
+    type: phandle
+    description: |
+      DMA device handle to configure with the PIO engine.
+
+child-binding:
+  child-binding:
+    include: video-interfaces.yaml
