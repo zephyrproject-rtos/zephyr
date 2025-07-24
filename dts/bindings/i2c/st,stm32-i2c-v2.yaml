@@ -67,3 +67,13 @@ properties:
     description: |
       Names of the optional DMA channels. Expected values are "tx" for
       the TX channel and "rx" for the RX channel.
+
+  transfer-timeout:
+    type: int
+    default: 500000
+    description: |
+        I2C transfer timeout in microseconds.
+
+        This timeout is applied to message read and message write.
+        In non-interrupt mode the timeout may be applied again when
+        stop is transmitted.

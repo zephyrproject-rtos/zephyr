@@ -569,6 +569,8 @@ static const struct i2c_stm32_config i2c_stm32_cfg_##index = {					\
 			sizeof(i2c_timings_##index) / (sizeof(struct i2c_config_timing)),))	\
 	I2C_DMA_INIT(index, tx)									\
 	I2C_DMA_INIT(index, rx)									\
+	IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2),					\
+		(.transfer_timeout = K_USEC(DT_INST_PROP(index, transfer_timeout)),))		\
 };												\
 												\
 static struct i2c_stm32_data i2c_stm32_dev_data_##index = {					\
