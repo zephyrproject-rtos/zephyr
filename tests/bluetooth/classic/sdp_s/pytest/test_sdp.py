@@ -263,7 +263,7 @@ async def br_connect(hci_port, shell, address) -> None:
                     if attribute.id == 0x100:
                         service_name_found = True
                 if service_record_handle == service_record_handles[-1]:
-                    assert service_name_found is False
+                    assert service_name_found is True
 
             # Install SDP large Record
             shell.exec_command("sdp_server register_sdp_large_valid")
