@@ -19,7 +19,7 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
     def __init__(self, cfg, family, softreset, pinreset, dev_id, erase=False,
                  erase_mode=None, ext_erase_mode=None, reset=True, tool_opt=None,
                  force=False, recover=False, suit_starter=False,
-                 ext_mem_config_file=None):
+                 ext_mem_config_file=None, jlink_dll_file=None):
 
         super().__init__(cfg, family, softreset, pinreset, dev_id, erase,
                          erase_mode, ext_erase_mode, reset, tool_opt, force,
@@ -27,6 +27,7 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
 
         self.suit_starter = suit_starter
         self.ext_mem_config_file = ext_mem_config_file
+        self.jlink_dll_file = jlink_dll_file
 
         self._ops = []
         self._op_id = 1
@@ -57,7 +58,8 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
                                    reset=args.reset, tool_opt=args.tool_opt,
                                    force=args.force, recover=args.recover,
                                    suit_starter=args.suit_manifest_starter,
-                                   ext_mem_config_file=args.ext_mem_config_file)
+                                   ext_mem_config_file=args.ext_mem_config_file,
+                                   jlink_dll_file=args.jlink_dll_file)
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -68,11 +70,18 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
         parser.add_argument('--ext-mem-config-file', required=False,
                             dest='ext_mem_config_file',
                             help='path to an JSON file with external memory configuration')
+        parser.add_argument('--jlink-dll-file', required=False,
+                            dest='jlink_dll_file',
+                            help='path to JLink DLL file')
 
     def _exec(self, args):
         jout_all = []
 
         cmd = ['nrfutil', '--json', 'device'] + args
+
+        if self.jlink_dll_file:
+            cmd += ['--jlink-dll', self.jlink_dll_file]
+
         self._log_cmd(cmd)
 
         if _DRY_RUN:
