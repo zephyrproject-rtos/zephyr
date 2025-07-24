@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config USBH_VIDEO_CLASS
+	bool "USB Video Class implementation [EXPERIMENTAL]"
+	depends on DT_HAS_ZEPHYR_UVC_HOST_ENABLED
+	select EXPERIMENTAL
+	help
+	  USB Host Video Class (UVC) implementation.
+
+if USBH_VIDEO_CLASS
+
+module = USBH_VIDEO
+module-str = usbh uvc
+default-count = 1
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # USBH_VIDEO_CLASS
