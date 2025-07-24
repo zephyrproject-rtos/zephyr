@@ -666,7 +666,7 @@ should comply with the rules listed below.
       -  All if else if constructs shall be terminated with an else statement
       -  `Rule 15.7 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_15_07.c>`_
       -  Required
-      -  N/A
+      -  CERT, MSC01-C <https://wiki.sei.cmu.edu/confluence/display/c/MSC01-C.+Strive+for+logical+completeness>
 
          .. _MisraC_Rule_16_1:
     * -  90
