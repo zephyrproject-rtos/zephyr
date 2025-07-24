@@ -15,6 +15,7 @@ supported:
   - watchdog
   - clock_control
   - comparator
+  - dac
 testing:
   ignore_tags:
     - pm
