@@ -28,3 +28,6 @@
 		gpios = <&gpio0 19 0>, <&gpio0 21 0>;
 	};
 };
+
+/* Include default memory partition configuration file */
+#include <nordic/nrf5340_cpuapp_partition.dtsi>

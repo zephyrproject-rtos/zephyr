@@ -157,6 +157,3 @@
 &ieee802154 {
 	status = "okay";
 };
-
-/* Include default memory partition configuration file */
-#include <nordic/nrf5340_cpuapp_partition.dtsi>
