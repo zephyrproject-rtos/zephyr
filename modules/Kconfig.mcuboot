@@ -331,6 +331,32 @@ config BOOT_IMAGE_ACCESS_HOOKS
 	  It is up to the application project to add source file which
 	  implements hooks to the build.
 
+config MCUBOOT_BOOT_REQUEST
+	bool "MCUboot bootloader requests"
+	help
+	  Handle bootloader requests.
+
+if MCUBOOT_BOOT_REQUEST
+
+choice MCUBOOT_BOOT_REQUEST_IMPL
+	prompt "Shared memory backend"
+	default MCUBOOT_BOOT_REQUEST_IMPL_RETENTION if RETENTION
+
+config MCUBOOT_BOOT_REQUEST_IMPL_RETENTION
+	bool "Retention"
+	depends on RETENTION
+	help
+	  Use zephyr,bootloader-request chosen node compatible with the
+	  zephyr,retention driver as the memory area to store and read from the
+	  bootloader requests.
+	  The built-in prefix property should be used to indicate the request
+	  structure version to ensure compatibility between the bootloader and
+	  the application.
+
+endchoice
+
+endif # MCUBOOT_BOOT_REQUEST
+
 if MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT
 
 config MCUBOOT_BOOTUTIL_LIB_FOR_DIRECT_XIP
