@@ -48,6 +48,7 @@ config MP_MAX_NUM_CPUS
 
 config SCHED_IPI_SUPPORTED
 	bool
+	select EVENTS
 	help
 	  True if the architecture supports a call to arch_sched_broadcast_ipi()
 	  to broadcast an interrupt that will call z_sched_ipi() on other CPUs

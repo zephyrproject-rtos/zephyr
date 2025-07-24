@@ -3416,6 +3416,97 @@ static inline unsigned int z_impl_k_sem_count_get(struct k_sem *sem)
 
 /** @} */
 
+#if defined(CONFIG_SCHED_IPI_SUPPORTED) || defined(__DOXYGEN__)
+struct k_ipi_work;
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+
+typedef void (*k_ipi_func_t)(struct k_ipi_work *work);
+
+struct k_ipi_work {
+	sys_dnode_t        node[CONFIG_MP_MAX_NUM_CPUS];   /* Node in IPI work queue */
+	k_ipi_func_t   func;     /* Function to execute on target CPU */
+	struct k_event event;    /* Event to signal when processed */
+	uint32_t       bitmask;  /* Bitmask of targeted CPUs */
+};
+
+/** @endcond */
+
+/**
+ * @brief Initialize the specified IPI work item
+ *
+ * @kconfig_dep{CONFIG_SCHED_IPI_SUPPORTED}
+ *
+ * @param work Pointer to the IPI work item to be initialized
+ */
+static inline void k_ipi_work_init(struct k_ipi_work *work)
+{
+	k_event_init(&work->event);
+	for (unsigned int i = 0; i < CONFIG_MP_MAX_NUM_CPUS; i++) {
+		sys_dnode_init(&work->node[i]);
+	}
+	work->bitmask = 0;
+}
+
+/**
+ * @brief Add an IPI work item to the IPI work queue
+ *
+ * Adds the specified IPI work item to the IPI work queues of each CPU
+ * identified by @a cpu_bitmask. The specified IPI work item will subsequently
+ * execute at ISR level as those CPUs process their received IPIs. Do not
+ * re-use the specified IPI work item until it has been processed by all of
+ * the identified CPUs.
+ *
+ * @kconfig_dep{CONFIG_SCHED_IPI_SUPPORTED}
+ *
+ * @param work Pointer to the IPI work item
+ * @param cpu_bitmask Set of CPUs to which the IPI work item will be sent
+ * @param func Function to execute on the targeted CPU(s)
+ *
+ * @retval 0 on success
+ * @retval -EBUSY if the specified IPI work item is still being processed
+ */
+int k_ipi_work_add(struct k_ipi_work *work, uint32_t cpu_bitmask,
+		   k_ipi_func_t func);
+
+/**
+ * @brief Wait until the IPI work item has been processed by all targeted CPUs
+ *
+ * This routine waits until the IPI work item has been processed by all CPUs
+ * to which it was sent. If called from an ISR, then @a timeout must be set to
+ * K_NO_WAIT. To prevent deadlocks the caller must not have IRQs locked when
+ * calling this function.
+ *
+ * @note It is not in general possible to poll safely for completion of this
+ * function in ISR or locked contexts where the calling CPU cannot service IPIs
+ * (because the targeted CPUs may themselves be waiting on the calling CPU).
+ * Application code must be prepared for failure or to poll from a thread
+ * context.
+ *
+ * @kconfig_dep{CONFIG_SCHED_IPI_SUPPORTED}
+ *
+ * @param work Pointer to the IPI work item
+ * @param timeout Maximum time to wait for IPI work to be processed
+ *
+ * @retval -EAGAIN Waiting period timed out.
+ * @retval 0 if processed by all targeted CPUs
+ */
+int k_ipi_work_wait(struct k_ipi_work *work, k_timeout_t timeout);
+
+/**
+ * @brief Signal that there is one or more IPI work items to process
+ *
+ * This routine sends an IPI to the set of CPUs identified by calls to
+ * k_ipi_work_add() since this CPU sent its last set of IPIs.
+ *
+ * @kconfig_dep{CONFIG_SCHED_IPI_SUPPORTED}
+ */
+void k_ipi_work_signal(void);
+
+#endif /* CONFIG_SCHED_IPI_SUPPORTED */
+
 /**
  * @cond INTERNAL_HIDDEN
  */
