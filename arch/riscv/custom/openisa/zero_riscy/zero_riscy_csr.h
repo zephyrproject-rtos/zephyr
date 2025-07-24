@@ -4,8 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef SOC_RISCV32_OPENISA_RV32M1_SOC_ZERO_RISCY_H_
-#define SOC_RISCV32_OPENISA_RV32M1_SOC_ZERO_RISCY_H_
+#ifndef ZEPHYR_ARCH_RISCV_CUSTOM_OPENISA_ZERO_RISCY_CSR_H_
+#define ZEPHYR_ARCH_RISCV_CUSTOM_OPENISA_ZERO_RISCY_CSR_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Control and Status Registers (CSRs) available for ZERO_RISCY. */
 #define ZERO_RISCY_MSTATUS 0x300U
@@ -28,4 +32,8 @@
 #define ZERO_RISCY_PCMR    0x7A1U
 #define ZERO_RISCY_MHARTID 0xF14U
 
-#endif /* SOC_RISCV32_OPENISA_RV32M1_SOC_ZERO_RISCY_H_ */
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* ZEPHYR_ARCH_RISCV_CUSTOM_OPENISA_ZERO_RISCY_CSR_H_ */
