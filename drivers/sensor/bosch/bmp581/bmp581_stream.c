@@ -289,14 +289,14 @@ void bmp581_stream_submit(const struct device *dev,
 	data->stream.iodev_sqe = iodev_sqe;
 
 	if (atomic_cas(&data->stream.state, BMP581_STREAM_OFF, BMP581_STREAM_ON) ||
-	    (data->stream.enabled_mask != enabled_mask)) {
+	    data->stream.enabled_mask != enabled_mask) {
 		struct rtio_sqe *int_src_sqe;
 		uint8_t val = 0;
 
 		(void)atomic_set(&data->stream.state, BMP581_STREAM_ON);
 		data->stream.enabled_mask = enabled_mask;
 
-		if (enabled_mask & BMP581_EVENT_FIFO_WM) {
+		if ((enabled_mask & BMP581_EVENT_FIFO_WM) != 0) {
 			err = bmp581_stream_prep_fifo_wm_async(dev);
 			if (err < 0) {
 				rtio_iodev_sqe_err(iodev_sqe, err);
