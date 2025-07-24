@@ -37,6 +37,10 @@ struct usbh_uvc_data {
 	int todo;
 };
 
+struct usbh_uvc_config {
+	struct usbh_context *uhs_ctx;
+};
+
 static int usbh_uvc_request(struct usbh_context *const uhs_ctx, struct uhc_transfer *const xfer,
 			    int err)
 {
