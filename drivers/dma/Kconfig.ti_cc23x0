@@ -9,3 +9,14 @@ config DMA_TI_CC23X0
 	depends on DT_HAS_TI_CC23X0_DMA_ENABLED
 	help
 	  DMA driver for TI CC23X0 MCUs.
+config DMA_TI_CONTROL_TABLE_PREALLOCATED_LOCATION
+	hex "Location of the preallocated control table"
+	default 0x20000400
+config DMA_TI_CONTROL_TABLE_PREALLOCATED
+	bool "The control table is preallocated"
+	default n
+	help
+		If the DMA control table is preallocated, use that table instead of
+		allocating one at a random location. The location of the preallocated
+		control table can be specified in using
+		DMA_TI_CONTROL_TABLE_PREALLOCATED_LOCATION

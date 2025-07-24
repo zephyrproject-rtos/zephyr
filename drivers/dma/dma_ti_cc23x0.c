@@ -54,7 +54,11 @@ struct dma_cc23x0_channel {
 };
 
 struct dma_cc23x0_data {
+#ifdef CONFIG_DMA_TI_CONTROL_TABLE_PREALLOCATED
+	uDMAControlTableEntry *desc;
+#else
 	__aligned(1024) uDMAControlTableEntry desc[UDMA_NUM_CHANNELS];
+#endif /* CONFIG_DMA_TI_CONTROL_TABLE_PREALLOCATED */
 	struct dma_cc23x0_channel channels[UDMA_NUM_CHANNELS];
 };
 
@@ -397,7 +401,66 @@ static int dma_cc23x0_init(const struct device *dev)
 	return pm_device_driver_init(dev, dma_cc23x0_pm_action);
 }
 
+#ifdef CONFIG_PM_DEVICE
+
+static int dma_cc23x0_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct dma_cc23x0_data *data = dev->data;
+	int i = 0;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		/*
+		 * We assume that DMA clients (peripheral drivers or applications)
+		 * should take care of PM lock/unlock (pm_policy_state_lock_get/put).
+		 * This assumption is made for that SoC because:
+		 * - If a peripheral channel is used, then the transfer completion is
+		 * signaled on the peripheral's interrupt (handled in the DMA client
+		 * driver). This operating mode is specific to this SoC.
+		 * - If a software channel is used (memory-to-memory transfer), then
+		 * the transfer completion can be signaled to the application through
+		 * a callback.
+		 * Thus, in both cases, the PM can be unlocked at the right time by the
+		 * DMA client. When this point is reached, there should not be ongoing
+		 * transfer.
+		 *
+		 * Despite this assumption, ensure that none transfer is ongoing in case
+		 * PM state lock was not properly handled by DMA clients.
+		 */
+		if (uDMAIsChannelEnabled(DMA_CC23_ALL_CH_MASK)) {
+			return -EBUSY;
+		}
+
+		uDMADisable();
+		CLKCTLDisable(CLKCTL_BASE, CLKCTL_DMA);
+
+		return 0;
+	case PM_DEVICE_ACTION_RESUME:
+		dma_cc23x0_enable(data);
+
+		/* Restore context for the channels that were configured before */
+		ARRAY_FOR_EACH_PTR(data->channels, ch_data) {
+			if (ch_data->configured) {
+				dma_cc23x0_config(dev, i, &ch_data->dma_cfg);
+			}
+			i++;
+		}
+
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
+}
+
+#endif /* CONFIG_PM_DEVICE */
+
+#ifdef CONFIG_DMA_TI_CONTROL_TABLE_PREALLOCATED
+static struct dma_cc23x0_data cc23x0_data = {
+	.desc = (uDMAControlTableEntry *)CONFIG_DMA_TI_CONTROL_TABLE_PREALLOCATED_LOCATION,
+};
+#else
 static struct dma_cc23x0_data cc23x0_data;
+#endif /* CONFIG_DMA_TI_CONTROL_TABLE_PREALLOCATED */
 
 static DEVICE_API(dma, dma_cc23x0_api) = {
 	.config = dma_cc23x0_config,
