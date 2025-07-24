@@ -1,0 +1,29 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# example:
+# &i2c0
+# {
+# 	status = "okay";
+# 	hm01b0: hm01b0@24{
+# 		compatible = "himax,hm01b0";
+# 		reg = <0x24>;
+# 		status = "okay";
+# 		port {
+# 					hm01b0_ep_out: endpoint {
+# 							remote-endpoint-label = "video_pio_dma_ep_in";
+# 					};
+# 			};
+# 	};
+# };
+
+
+description: Himax HM01B0 video sensor
+
+compatible: "himax,hm01b0"
+
+include: i2c-device.yaml
+
+child-binding:
+  child-binding:
+    include: video-interfaces.yaml
