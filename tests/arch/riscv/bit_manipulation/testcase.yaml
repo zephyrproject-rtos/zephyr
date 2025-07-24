@@ -1,0 +1,6 @@
+tests:
+  arch.riscv.bit_manipulation:
+    arch_allow: riscv
+    filter: >
+      CONFIG_RISCV_ISA_EXT_ZBA or CONFIG_RISCV_ISA_EXT_ZBB or
+      CONFIG_RISCV_ISA_EXT_ZBC or CONFIG_RISCV_ISA_EXT_ZBS
