@@ -324,6 +324,12 @@ void board_early_init_hook(void)
 #endif
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ewm0))
+	CLOCK_SetupOsc32KClocking(kCLOCK_Osc32kToWake);
+	CLOCK_AttachClk(kXTAL32K2_to_EWM0);
+	CLOCK_EnableClock(kCLOCK_Ewm0);
+#endif
+
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 }
