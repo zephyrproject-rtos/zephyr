@@ -47,7 +47,8 @@ properties:
     description: Dynamic power coefficient for thermal and power management
   operating-points-v2:
     type: phandle
-    description: Reference to the operating points table for DVFS (Dynamic Voltage and Frequency Scaling)
+    description: Reference to the operating points table for DVFS
+      (Dynamic Voltage and Frequency Scaling)
   cpu-supply:
     type: phandle
     description: Reference to the power supply (voltage regulator) for this CPU

@@ -1,7 +1,7 @@
-// SPDX-License-Identifier: Apache-2.0
-// Copyright The Zephyr Project Contributors
 /*
  * Copyright (c) 2021 Rockchip Electronics Co., Ltd.
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright The Zephyr Project Contributors
  */
 
 #include <arm64/armv8-a.dtsi>
@@ -25,28 +25,35 @@
 				core0 {
 					cpu = <&cpu_l0>;
 				};
+
 				core1 {
 					cpu = <&cpu_l1>;
 				};
+
 				core2 {
 					cpu = <&cpu_l2>;
 				};
+
 				core3 {
 					cpu = <&cpu_l3>;
 				};
 			};
+
 			cluster1 {
 				core0 {
 					cpu = <&cpu_b0>;
 				};
+
 				core1 {
 					cpu = <&cpu_b1>;
 				};
 			};
+
 			cluster2 {
 				core0 {
 					cpu = <&cpu_b2>;
 				};
+
 				core1 {
 					cpu = <&cpu_b3>;
 				};
@@ -76,7 +83,7 @@
 			enable-method = "psci";
 			capacity-dmips-mhz = <530>;
 			clocks = <&scmi_clk SCMI_CLK_CPUL>;
-			cpu-idle-states = <&CPU_SLEEP>;
+			cpu-idle-states = <&cpu_sleep>;
 			i-cache-size = <32768>;
 			i-cache-line-size = <64>;
 			i-cache-sets = <128>;
@@ -95,7 +102,7 @@
 			enable-method = "psci";
 			capacity-dmips-mhz = <530>;
 			clocks = <&scmi_clk SCMI_CLK_CPUL>;
-			cpu-idle-states = <&CPU_SLEEP>;
+			cpu-idle-states = <&cpu_sleep>;
 			i-cache-size = <32768>;
 			i-cache-line-size = <64>;
 			i-cache-sets = <128>;
@@ -114,7 +121,7 @@
 			enable-method = "psci";
 			capacity-dmips-mhz = <530>;
 			clocks = <&scmi_clk SCMI_CLK_CPUL>;
-			cpu-idle-states = <&CPU_SLEEP>;
+			cpu-idle-states = <&cpu_sleep>;
 			i-cache-size = <32768>;
 			i-cache-line-size = <64>;
 			i-cache-sets = <128>;
@@ -133,7 +140,7 @@
 			enable-method = "psci";
 			capacity-dmips-mhz = <1024>;
 			clocks = <&scmi_clk SCMI_CLK_CPUB01>;
-			cpu-idle-states = <&CPU_SLEEP>;
+			cpu-idle-states = <&cpu_sleep>;
 			i-cache-size = <65536>;
 			i-cache-line-size = <64>;
 			i-cache-sets = <256>;
@@ -152,7 +159,7 @@
 			enable-method = "psci";
 			capacity-dmips-mhz = <1024>;
 			clocks = <&scmi_clk SCMI_CLK_CPUB01>;
-			cpu-idle-states = <&CPU_SLEEP>;
+			cpu-idle-states = <&cpu_sleep>;
 			i-cache-size = <65536>;
 			i-cache-line-size = <64>;
 			i-cache-sets = <256>;
@@ -171,7 +178,7 @@
 			enable-method = "psci";
 			capacity-dmips-mhz = <1024>;
 			clocks = <&scmi_clk SCMI_CLK_CPUB23>;
-			cpu-idle-states = <&CPU_SLEEP>;
+			cpu-idle-states = <&cpu_sleep>;
 			i-cache-size = <65536>;
 			i-cache-line-size = <64>;
 			i-cache-sets = <256>;
@@ -190,7 +197,7 @@
 			enable-method = "psci";
 			capacity-dmips-mhz = <1024>;
 			clocks = <&scmi_clk SCMI_CLK_CPUB23>;
-			cpu-idle-states = <&CPU_SLEEP>;
+			cpu-idle-states = <&cpu_sleep>;
 			i-cache-size = <65536>;
 			i-cache-line-size = <64>;
 			i-cache-sets = <256>;
@@ -204,7 +211,8 @@
 
 		idle-states {
 			entry-method = "psci";
-			CPU_SLEEP: cpu-sleep {
+
+			cpu_sleep: cpu-sleep {
 				compatible = "arm,idle-state";
 				local-timer-stop;
 				arm,psci-suspend-param = <0x0010000>;
@@ -317,7 +325,7 @@
 			#size-cells = <0>;
 
 			scmi_clk: protocol@14 {
-                compatible = "arm,scmi-clock";
+				compatible = "arm,scmi-clock";
 				reg = <0x14>;
 				#clock-cells = <1>;
 			};
@@ -363,6 +371,8 @@
 	};
 
 	sram0: memory@10000000 {
+		#size-cells = <2>;
+		#address-cells = <2>;
 		reg = <0x0 0x10000000 0x4 0x00000000>;
 	};
 

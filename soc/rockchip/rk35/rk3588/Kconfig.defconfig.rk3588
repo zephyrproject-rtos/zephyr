@@ -16,4 +16,7 @@ config UART_NS16550_ACCESS_WORD_ONLY
 	default y
 	depends on UART_NS16550
 
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 24000000
+
 endif
