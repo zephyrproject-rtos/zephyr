@@ -578,6 +578,24 @@
 			clocks = <&cmu CLOCK_ACMP1 CLOCK_BRANCH_EM01GRPACLK>;
 			status = "disabled";
 		};
+
+		vdac0: vdac@59024000 {
+			compatible = "silabs,vdac";
+			reg = <0x59024000 0x4000>;
+			interrupts = <55 2>;
+			clocks = <&cmu CLOCK_VDAC0 CLOCK_BRANCH_VDAC0CLK>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			#io-channel-cells = <1>;
+
+			channel@0 {
+				reg = <0>;
+			};
+			channel@1 {
+				reg = <1>;
+			};
+		};
 	};
 
 	hwinfo: hwinfo {
