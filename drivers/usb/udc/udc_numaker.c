@@ -172,7 +172,7 @@ static inline void numaker_usbd_sw_connect(const struct device *dev)
 
 	/* Enable relevant interrupts */
 	base->INTEN = USBD_INT_BUS | USBD_INT_USB | USBD_INT_FLDET |
-		      IF_ENABLED(CONFIG_UDC_ENABLE_SOF, (USBD_INT_SOF |))
+		      IF_ENABLED(CONFIG_UDC_ENABLE_SOF, (USBD_INT_SOF |)) /* CPU load concern */
 		      USBD_INT_WAKEUP;
 
 	/* Clear SE0 for connect */
@@ -558,8 +558,8 @@ static void numaker_usbd_ep_config_major(struct numaker_usbd_ep *ep_cur,
 	}
 
 	/* Endpoint index */
-	ep_cur->ep_hw_cfg |=
-		(USB_EP_GET_IDX(ep_cfg->addr) << USBD_CFG_EPNUM_Pos) & USBD_CFG_EPNUM_Msk;
+	ep_cur->ep_hw_cfg |= (USB_EP_GET_IDX(ep_cfg->addr) << USBD_CFG_EPNUM_Pos) &
+			     USBD_CFG_EPNUM_Msk;
 
 	ep_base->CFG = ep_cur->ep_hw_cfg;
 }
@@ -1371,8 +1371,8 @@ static void numaker_udbd_isr(const struct device *dev)
 			 */
 			if (ep == USB_EP_GET_ADDR(0, USB_EP_DIR_OUT)) {
 				struct numaker_usbd_ep *ep_ctrlout = priv->ep_pool + 0;
-				USBD_EP_T *ep_ctrlout_base =
-					numaker_usbd_ep_base(dev, ep_ctrlout->ep_hw_idx);
+				USBD_EP_T *ep_ctrlout_base = numaker_usbd_ep_base(
+					dev, ep_ctrlout->ep_hw_idx);
 
 				ep_ctrlout->mxpld_ctrlout = ep_ctrlout_base->MXPLD;
 			}
