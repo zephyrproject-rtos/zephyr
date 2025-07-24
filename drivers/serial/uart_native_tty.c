@@ -492,8 +492,8 @@ static DEVICE_API(uart, native_tty_uart_driver_api) = {
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, native_tty_serial_init, NULL, &native_tty_##inst##_data,       \
-			      &native_tty_##inst##_cfg, NATIVE_TTY_INIT_LEVEL, 55,                 \
-			      &native_tty_uart_driver_api);
+			      &native_tty_##inst##_cfg, NATIVE_TTY_INIT_LEVEL,                     \
+			      CONFIG_SERIAL_INIT_PRIORITY, &native_tty_uart_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NATIVE_TTY_INSTANCE);
 
