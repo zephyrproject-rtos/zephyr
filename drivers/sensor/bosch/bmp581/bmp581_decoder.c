@@ -191,7 +191,7 @@ static int bmp581_decoder_decode(const uint8_t *buffer,
 	do {
 		err = bmp581_convert_raw_to_q31_value(&edata->header, &chan_spec,
 						      edata->frame, fit, out);
-	} while ((err == 0) && (*fit < max_count));
+	} while (err == 0 && *fit < max_count);
 
 	if (*fit == fit_0 || err != 0) {
 		return err;
@@ -205,10 +205,10 @@ static bool bmp581_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigge
 {
 	const struct bmp581_encoded_data *edata = (const struct bmp581_encoded_data *)buffer;
 
-	if (((trigger == SENSOR_TRIG_DATA_READY) &&
-	     (edata->header.events & BMP581_EVENT_DRDY)) ||
-	    ((trigger == SENSOR_TRIG_FIFO_WATERMARK) &&
-	     (edata->header.events & BMP581_EVENT_FIFO_WM))) {
+	if ((trigger == SENSOR_TRIG_DATA_READY &&
+	     edata->header.events & BMP581_EVENT_DRDY) ||
+	    (trigger == SENSOR_TRIG_FIFO_WATERMARK &&
+	     edata->header.events & BMP581_EVENT_FIFO_WM)) {
 		return true;
 	}
 
