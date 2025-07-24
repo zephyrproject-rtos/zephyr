@@ -41,6 +41,15 @@ static bool avrcp_ct_registered;
 static bool avrcp_tg_registered;
 static uint8_t local_tid;
 static uint8_t tg_tid;
+static uint8_t tg_cap_id;
+
+static const uint8_t supported_avrcp_events[] = {
+	BT_AVRCP_EVT_PLAYBACK_STATUS_CHANGED,
+	BT_AVRCP_EVT_TRACK_CHANGED,
+	BT_AVRCP_EVT_TRACK_REACHED_END,
+	BT_AVRCP_EVT_TRACK_REACHED_START,
+	BT_AVRCP_EVT_VOLUME_CHANGED,
+};
 
 static uint8_t get_next_tid(void)
 {
@@ -76,19 +85,36 @@ static void avrcp_ct_browsing_disconnected(struct bt_avrcp_ct *ct)
 	bt_shell_print("AVRCP CT browsing disconnected");
 }
 
-static void avrcp_get_cap_rsp(struct bt_avrcp_ct *ct, uint8_t tid,
-			      const struct bt_avrcp_get_cap_rsp *rsp)
+static void avrcp_get_caps_rsp(struct bt_avrcp_ct *ct, uint8_t tid, uint8_t status,
+			       struct net_buf *buf)
 {
 	uint8_t i;
+	struct bt_avrcp_get_caps_rsp *rsp;
 
+	bt_shell_print("GetCapabilities : status=0x%02x", status);
+	if (buf == NULL) {
+		return;
+	}
+
+	rsp = net_buf_pull_mem(buf, sizeof(*rsp));
 	switch (rsp->cap_id) {
 	case BT_AVRCP_CAP_COMPANY_ID:
 		for (i = 0; i < rsp->cap_cnt; i++) {
+			if (buf->len < BT_AVRCP_COMPANY_ID_SIZE) {
+				bt_shell_print("incompleted message for CAP COMPANY ID ");
+				break;
+			}
+			net_buf_pull_mem(buf, BT_AVRCP_COMPANY_ID_SIZE);
 			bt_shell_print("Remote CompanyID = 0x%06x",
 				       sys_get_be24(&rsp->cap[BT_AVRCP_COMPANY_ID_SIZE * i]));
 		}
 		break;
 	case BT_AVRCP_CAP_EVENTS_SUPPORTED:
+		if (buf->len < rsp->cap_cnt) {
+			bt_shell_print("incompleted message for supported EventID ");
+			break;
+		}
+		net_buf_pull_mem(buf, rsp->cap_cnt);
 		for (i = 0; i < rsp->cap_cnt; i++) {
 			bt_shell_print("Remote supported EventID = 0x%02x", rsp->cap[i]);
 		}
@@ -190,7 +216,7 @@ static struct bt_avrcp_ct_cb app_avrcp_ct_cb = {
 	.disconnected = avrcp_ct_disconnected,
 	.browsing_connected = avrcp_ct_browsing_connected,
 	.browsing_disconnected = avrcp_ct_browsing_disconnected,
-	.get_cap_rsp = avrcp_get_cap_rsp,
+	.get_caps = avrcp_get_caps_rsp,
 	.unit_info_rsp = avrcp_unit_info_rsp,
 	.subunit_info_rsp = avrcp_subunit_info_rsp,
 	.passthrough_rsp = avrcp_passthrough_rsp,
@@ -224,6 +250,31 @@ static void avrcp_subunit_info_req(struct bt_avrcp_tg *tg, uint8_t tid)
 {
 	bt_shell_print("AVRCP subunit info request received");
 	tg_tid = tid;
+}
+
+static void avrcp_get_caps_req(struct bt_avrcp_tg *tg, uint8_t tid, uint8_t cap_id)
+{
+	const char *cap_type_str;
+
+	/* Convert capability ID to string for display */
+	switch (cap_id) {
+	case BT_AVRCP_CAP_COMPANY_ID:
+		cap_type_str = "COMPANY_ID";
+		break;
+	case BT_AVRCP_CAP_EVENTS_SUPPORTED:
+		cap_type_str = "EVENTS_SUPPORTED";
+		break;
+	default:
+		cap_type_str = "UNKNOWN";
+		break;
+	}
+
+	bt_shell_print("AVRCP get capabilities command received: cap_id 0x%02x (%s), tid = 0x%02x",
+		       cap_id, cap_type_str, tid);
+
+	/* Store the transaction ID and capability ID for manual response testing */
+	tg_tid = tid;
+	tg_cap_id = cap_id;
 }
 
 static void avrcp_tg_browsing_disconnected(struct bt_avrcp_tg *tg)
@@ -285,6 +336,7 @@ static struct bt_avrcp_tg_cb app_avrcp_tg_cb = {
 	.browsing_disconnected = avrcp_tg_browsing_disconnected,
 	.unit_info_req = avrcp_unit_info_req,
 	.subunit_info_req = avrcp_subunit_info_req,
+	.get_caps = avrcp_get_caps_req,
 	.set_browsed_player_req = avrcp_set_browsed_player_req,
 	.passthrough_req = avrcp_passthrough_req,
 };
@@ -611,6 +663,84 @@ static int cmd_send_subunit_info_rsp(const struct shell *sh, int32_t argc, char 
 	return 0;
 }
 
+static int cmd_send_get_caps_rsp(const struct shell *sh, int32_t argc, char *argv[])
+{
+	struct bt_avrcp_get_caps_rsp *rsp;
+	struct net_buf *buf;
+	int err;
+	uint8_t status = BT_AVRCP_STATUS_OPERATION_COMPLETED;
+
+	if (!avrcp_tg_registered && register_tg_cb(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	if (default_tg == NULL) {
+		shell_error(sh, "AVRCP TG is not connected");
+		return -ENOEXEC;
+	}
+
+	if (argc > 1) {
+		status = (uint8_t)strtoul(argv[1], NULL, 0);
+	}
+
+	buf = bt_avrcp_create_vendor_pdu(NULL);
+	if (buf == NULL) {
+		shell_error(sh, "Failed to allocate buffer for AVRCP get caps rsp");
+		return -ENOMEM;
+	}
+
+	if (net_buf_tailroom(buf) < sizeof(*rsp)) {
+		shell_error(sh, "Not enough tailroom in buffer for get caps rsp");
+		goto failed;
+	}
+	rsp = net_buf_add(buf, sizeof(*rsp));
+
+	/* Initialize response structure */
+	rsp->cap_id = tg_cap_id;
+
+	switch (tg_cap_id) {
+	case BT_AVRCP_CAP_COMPANY_ID:
+		/* Send Bluetooth SIG company ID as example */
+		rsp->cap_cnt = 1;
+		if (net_buf_tailroom(buf) < BT_AVRCP_COMPANY_ID_SIZE) {
+			shell_error(sh, "Not enough tailroom for company ID capability rsp");
+			goto failed;
+		}
+		net_buf_add(buf, BT_AVRCP_COMPANY_ID_SIZE);
+		sys_put_be24(BT_AVRCP_COMPANY_ID_BLUETOOTH_SIG, rsp->cap);
+		shell_print(sh, "Sending company ID capability rsp: 0x%06x",
+			    BT_AVRCP_COMPANY_ID_BLUETOOTH_SIG);
+		break;
+
+	case BT_AVRCP_CAP_EVENTS_SUPPORTED:
+		rsp->cap_cnt = ARRAY_SIZE(supported_avrcp_events);
+		if (net_buf_tailroom(buf) < rsp->cap_cnt) {
+			shell_error(sh, "Not enough tailroom for events supported capability rsp");
+			goto failed;
+		}
+		net_buf_add_mem(buf, supported_avrcp_events, rsp->cap_cnt);
+		shell_print(sh, "Sending events supported capability rsp with %u events",
+			    rsp->cap_cnt);
+		break;
+
+	default:
+		shell_error(sh, "Unknown capability ID: 0x%02x", tg_cap_id);
+		return -EINVAL;
+	}
+
+	err = bt_avrcp_tg_get_caps(default_tg, tg_tid, status, buf);
+	if (err < 0) {
+		shell_error(sh, "Failed to send get capabilities response: %d", err);
+	} else {
+		shell_print(sh, "Get capabilities response sent successfully");
+	}
+
+	return err;
+failed:
+	net_buf_unref(buf);
+	return -ENOEXEC;
+}
+
 static int cmd_get_subunit_info(const struct shell *sh, int32_t argc, char *argv[])
 {
 	if (!avrcp_ct_registered && register_ct_cb(sh) != 0) {
@@ -655,7 +785,7 @@ static int cmd_pause(const struct shell *sh, int32_t argc, char *argv[])
 	return cmd_passthrough(sh, BT_AVRCP_OPID_PAUSE, NULL, 0);
 }
 
-static int cmd_get_cap(const struct shell *sh, int32_t argc, char *argv[])
+static int cmd_get_caps(const struct shell *sh, int32_t argc, char *argv[])
 {
 	const char *cap_id;
 
@@ -670,9 +800,9 @@ static int cmd_get_cap(const struct shell *sh, int32_t argc, char *argv[])
 
 	cap_id = argv[1];
 	if (!strcmp(cap_id, "company")) {
-		bt_avrcp_ct_get_cap(default_ct, get_next_tid(), BT_AVRCP_CAP_COMPANY_ID);
+		bt_avrcp_ct_get_caps(default_ct, get_next_tid(), BT_AVRCP_CAP_COMPANY_ID);
 	} else if (!strcmp(cap_id, "events")) {
-		bt_avrcp_ct_get_cap(default_ct, get_next_tid(), BT_AVRCP_CAP_EVENTS_SUPPORTED);
+		bt_avrcp_ct_get_caps(default_ct, get_next_tid(), BT_AVRCP_CAP_EVENTS_SUPPORTED);
 	}
 
 	return 0;
@@ -823,8 +953,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(register_cb, NULL, "register avrcp ct callbacks", cmd_register_ct_cb, 1, 0),
 	SHELL_CMD_ARG(get_unit, NULL, "get unit info", cmd_get_unit_info, 1, 0),
 	SHELL_CMD_ARG(get_subunit, NULL, "get subunit info", cmd_get_subunit_info, 1, 0),
-	SHELL_CMD_ARG(get_cap, NULL, "get capabilities <cap_id: company or events>", cmd_get_cap, 2,
-		      0),
+	SHELL_CMD_ARG(get_caps, NULL, "get capabilities <cap_id: company or events>", cmd_get_caps,
+		      2, 0),
 	SHELL_CMD_ARG(play, NULL, "request a play at the remote player", cmd_play, 1, 0),
 	SHELL_CMD_ARG(pause, NULL, "request a pause at the remote player", cmd_pause, 1, 0),
 	SHELL_CMD_ARG(set_browsed_player, NULL, "set browsed player <player_id>",
@@ -836,6 +966,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(register_cb, NULL, "register avrcp tg callbacks", cmd_register_tg_cb, 1, 0),
 	SHELL_CMD_ARG(send_unit_rsp, NULL, "send unit info response", cmd_send_unit_info_rsp, 1, 0),
 	SHELL_CMD_ARG(send_subunit_rsp, NULL, HELP_NONE, cmd_send_subunit_info_rsp, 1, 0),
+	SHELL_CMD_ARG(send_get_caps_rsp, NULL, "send get capabilities response [status]",
+		      cmd_send_get_caps_rsp, 1, 1),
 	SHELL_CMD_ARG(send_browsed_player_rsp, NULL, HELP_BROWSED_PLAYER_RSP,
 		      cmd_send_set_browsed_player_rsp, 1, 5),
 	SHELL_CMD_ARG(send_passthrough_rsp, NULL, HELP_PASSTHROUGH_RSP, cmd_send_passthrough_rsp,

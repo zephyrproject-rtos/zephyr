@@ -9,6 +9,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/bluetooth/classic/avrcp.h>
+
 #define AVCTP_VER_1_4 (0x0104u)
 #define AVRCP_VER_1_6 (0x0106u)
 
@@ -33,6 +35,11 @@
 #define BT_L2CAP_PSM_AVRCP 0x0017
 #define BT_L2CAP_PSM_AVRCP_BROWSING 0x001b
 
+#define BT_AVRCP_HEADROOM \
+	(sizeof(struct bt_l2cap_hdr) + \
+	 sizeof(struct bt_avctp_header_start) + \
+	 sizeof(struct bt_avrcp_header))
+
 #if defined(CONFIG_BT_AVRCP_BROWSING)
 #define AVRCP_BROWSING_ENABLE AVRCP_BROWSING_SUPPORT
 #else
@@ -52,10 +59,10 @@ typedef enum __packed {
 } bt_avrcp_opcode_t;
 
 typedef enum __packed {
-	BT_AVRVP_PKT_TYPE_SINGLE = 0b00,
-	BT_AVRVP_PKT_TYPE_START = 0b01,
-	BT_AVRVP_PKT_TYPE_CONTINUE = 0b10,
-	BT_AVRVP_PKT_TYPE_END = 0b11,
+	BT_AVRCP_PKT_TYPE_SINGLE = 0b00,
+	BT_AVRCP_PKT_TYPE_START = 0b01,
+	BT_AVRCP_PKT_TYPE_CONTINUE = 0b10,
+	BT_AVRCP_PKT_TYPE_END = 0b11,
 } bt_avrcp_pkt_type_t;
 
 typedef enum __packed {
@@ -119,6 +126,31 @@ typedef enum __packed {
 	BT_AVRCP_PDU_ID_GENERAL_REJECT = 0xa0,
 } bt_avrcp_pdu_id_t;
 
+/* bt_avrcp_tg flags: the flags defined */
+enum {
+	BT_AVRCP_TG_FLAG_TX_ONGOING,
+	BT_AVRCP_TG_FLAG_ABORT_CONTINUING,    /* AVRCP TG abort continuing is pending */
+
+	/* Total number of flags - must be at the end of the enum */
+	BT_AVRCP_TG_NUM_FLAGS,
+};
+
+struct bt_avrcp_ct_frag_reassembly_ctx {
+	uint8_t tid;
+	uint8_t rsp;
+	uint8_t pdu_id;
+};
+
+struct bt_avrcp_tg_vd_rsp_tx {
+	struct bt_avrcp_tg *tg;
+	uint16_t sent_len;
+	uint8_t tid;
+	uint8_t pdu_id;
+	uint8_t rsp;
+
+	ATOMIC_DEFINE(flags, BT_AVRCP_TG_NUM_FLAGS);
+};
+
 struct bt_avrcp_req {
 	uint8_t tid;
 	uint8_t subunit;
@@ -131,14 +163,15 @@ struct bt_avrcp_header {
 	uint8_t opcode; /**< Unit Info, Subunit Info, Vendor Dependent, or Pass Through */
 } __packed;
 
-struct bt_avrcp_avc_pdu {
+struct bt_avrcp_avc_vendor_pdu {
+	uint8_t company_id[BT_AVRCP_COMPANY_ID_SIZE];
 	uint8_t pdu_id;
 	uint8_t pkt_type; /**< [7:2]: Reserved, [1:0]: Packet Type */
 	uint16_t param_len;
 	uint8_t param[];
 } __packed;
 
-struct bt_avrcp_avc_brow_pdu {
+struct bt_avrcp_brow_pdu {
 	uint8_t pdu_id;
 	uint16_t param_len;
 	uint8_t param[];
