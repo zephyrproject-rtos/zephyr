@@ -1,0 +1,12 @@
+identifier: orangepi_5_ultra_rk3588
+name: Orange Pi 5 Ultra RK3588
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 16384
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
