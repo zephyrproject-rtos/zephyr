@@ -1,0 +1,10 @@
+#
+# Copyright (c) 2025 Cypress Semiconductor Corporation.
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# General configuration
+CONFIG_ARM_MPU=y
+CONFIG_HW_STACK_PROTECTION=y
+
+CONFIG_TRUSTED_EXECUTION_NONSECURE=y
