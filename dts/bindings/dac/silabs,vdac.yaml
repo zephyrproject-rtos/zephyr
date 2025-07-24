@@ -1,0 +1,174 @@
+# Copyright (c) 2025 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+title: |
+  Silicon Labs Series 2 VDAC (Voltage Digital-to-Analog Converter)
+
+description: |
+  The VDAC has two channels, a resolution of 12-bit and a configurable output
+  range from 0V to 2.5V.
+
+  The minimal default configuration for the Silabs VDAC node is as follows:
+
+    #include <zephyr/dt-bindings/dac/silabs-vdac.h>
+
+    &vdac0 {
+      status = "okay";
+      voltage-reference = "2.5V";
+      channel@0 {
+        reg = <0>;
+        main-output;
+      };
+    };
+
+  Using the main output is the preferred way for any DAC output. Defines like
+  `VDAC0_CH0_MAIN_OUT_PIN` exists in em_device.h to get the dedicated pin for
+  your device.
+
+  It is also possible to use the auxiliary output to route the output to other
+  peripherals like the IADC or the ACMP, or to the analog bus to output on any GPIO.
+  Note that the analog bus multiplexer adds significant impedance, and this option
+  may not be suitable for certain loads or dynamic conditions.
+
+  To connect the analog bus to a GPIO, the `pinctrl` driver must be configured to
+  allocate an analog bus corresponding to the port and pin of each GPIO input selected.
+  The following is an example of how that can be configured:
+
+    #include <zephyr/dt-bindings/pinctrl/silabs/xg24-pinctrl.h>
+    #include <zephyr/dt-bindings/dac/silabs-vdac.h>
+
+    &pinctrl {
+      vdac0_default: vdac0_default {
+        group0 {
+          silabs,analog-bus = <ABUS_CDODD0_VDAC0CH0>;
+        };
+        group1 {
+          silabs,analog-bus = <ABUS_CDEVEN1_VDAC0CH1>;
+        };
+    };
+
+    &vdac0 {
+      pinctrl-0 = <&vdac0_default>;
+      pinctrl-names = "default";
+      status = "okay";
+      voltage-reference = "1.25V";
+      channel@0 {
+        reg = <0>;
+        aux-output = <VDAC_OUTPUT_PC1>;
+      };
+      channel@1 {
+        reg = <1>;
+        aux-output = <VDAC_OUTPUT_PC2>;
+      };
+    };
+
+  In the above example, note that the device specific bindings for pinctrl
+  were included. This header defines the set of analog bus allocations possible
+  for xg24 parts, and similar headers exist for other parts.
+
+compatible: "silabs,vdac"
+
+include:
+  - dac-controller.yaml
+  - pinctrl-device.yaml
+
+properties:
+  voltage-reference:
+    description: |
+      Reference voltage to use.
+      The default corresponds to the reset value of the register field.
+    type: string
+    enum:
+      - "1.25V"
+      - "2.5V"
+      - "AVDD"
+      - "VREFP"
+    default: "1.25V"
+
+  warmup-cycles:
+    description: |
+      Number of prescaled CLK_VDAC + 1 for the DAC to warmup.
+      This determines how many clock cycles are needed for the DAC to stabilize
+      before it can be used for conversions.
+      The default corresponds to the reset value of the register field.
+    type: int
+    default: 0
+
+  refresh-period-cycles:
+    description: |
+      Channel refresh period configuration.
+      Determines how often the DAC channels are refreshed to maintain accuracy.
+      The default corresponds to the reset value of the register field.
+    type: int
+    enum: [2, 4, 8, 16, 32, 64, 128, 256]
+    default: 2
+
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 0
+
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - output
+
+child-binding:
+  description: |
+    Channel configuration.
+
+  properties:
+    reg:
+      description: |
+        Channel identifier.
+      type: int
+      enum: [0, 1]
+      required: true
+
+    main-output:
+      description: |
+        Connects the channel to the dedicated output pin.
+      type: boolean
+
+    aux-output:
+      description: |
+        Connects the low-power channel to the auxiliary outputs.
+        Connects the channel to the specified output pin on the analog bus.
+      type: int
+
+    short-output:
+      description: |
+        Short-circuits the main and auxiliary outputs.
+        Set to use high-power mode with auxiliary outputs.
+      type: boolean
+
+    low-power-mode:
+      description: |
+        Sets the power mode of the main output to low instead of high.
+      type: boolean
+
+    high-capacitance-load:
+      description: |
+        Enables high-capacitance load mode for the DAC channel.
+        Only usable without low-power-mode.
+      type: boolean
+
+    sample-off-mode:
+      description: |
+        Enables sample-off mode for the DAC channel.
+        If enabled, the output is only driven for a limited time per conversion.
+      type: boolean
+
+    output-hold-cycles:
+      description: |
+        Time in DAC clock cycles that the output is held for the DAC channel.
+        Only usable with sample-off-mode.
+        The default corresponds to the reset value of the register field.
+      type: int
+      default: 0
+
+    refresh-timer:
+      description: |
+        Enables the refresh timer.
+      type: boolean
