@@ -234,9 +234,9 @@ static int prepare_for_transfer(const struct device *dev,
 	return 0;
 
 buffers_set_failed:
-	dmm_buffer_in_release(dev_config->mem_reg, rx_buf, rx_buf_len, rx_buf);
+	dmm_buffer_in_release(dev_config->mem_reg, rx_buf, rx_buf_len, dmm_rx_buf);
 in_alloc_failed:
-	dmm_buffer_out_release(dev_config->mem_reg, (void *)tx_buf);
+	dmm_buffer_out_release(dev_config->mem_reg, (void *)dmm_tx_buf);
 out_alloc_failed:
 	return err;
 }
