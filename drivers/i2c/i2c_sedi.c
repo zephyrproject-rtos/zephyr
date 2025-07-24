@@ -25,6 +25,7 @@ struct i2c_sedi_context {
 	int err;
 	uint16_t addr_10bit;
 	uint32_t bitrate;
+	uint32_t cfg;
 };
 
 struct i2c_sedi_config {
@@ -33,12 +34,22 @@ struct i2c_sedi_config {
 	void (*irq_config)(const struct device *dev);
 };
 
+static int i2c_sedi_api_get_config(const struct device *dev, uint32_t *dev_config)
+{
+	struct i2c_sedi_context *const context = dev->data;
+
+	*dev_config = context->cfg;
+	return 0;
+}
+
 static int i2c_sedi_api_configure(const struct device *dev, uint32_t dev_config)
 {
 	int ret;
 	int speed = I2C_SPEED_GET(dev_config);
 	int sedi_speed;
 	struct i2c_sedi_context *const context = dev->data;
+
+	context->cfg = dev_config;
 
 	context->addr_10bit = (dev_config & I2C_ADDR_10_BITS) ? SEDI_I2C_ADDRESS_10BIT : 0;
 
@@ -119,6 +130,7 @@ static int i2c_sedi_api_full_io(const struct device *dev, struct i2c_msg *msgs, 
 static DEVICE_API(i2c, i2c_sedi_apis) = {
 	.configure = i2c_sedi_api_configure,
 	.transfer = i2c_sedi_api_full_io,
+	.get_config = i2c_sedi_api_get_config,
 #ifdef CONFIG_I2C_RTIO
 	.iodev_submit = i2c_iodev_submit_fallback,
 #endif
