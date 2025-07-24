@@ -249,7 +249,7 @@ static int adc_stm32_dma_start(const struct device *dev,
 	dma->dma_cfg.head_block = blk_cfg;
 	dma->dma_cfg.user_data = data;
 
-	ret = dma_config(data->dma.dma_dev, data->dma.channel,
+	ret = dma_config(data->dma.dma_dev, data->dma.channel + STM32_DMA_STREAM_OFFSET,
 			 &dma->dma_cfg);
 	if (ret != 0) {
 		LOG_ERR("Problem setting up DMA: %d", ret);
