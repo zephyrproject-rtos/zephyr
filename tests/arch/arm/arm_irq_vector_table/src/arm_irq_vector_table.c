@@ -257,11 +257,12 @@ const vth __irq_vector_table _irq_vector_table[IRQ_VECTOR_TABLE_SIZE] = {
 	[_ISR_OFFSET] = isr0,
 	[_ISR_OFFSET + 1] = isr1,
 	[_ISR_OFFSET + 2] = isr2,
-#ifndef CONFIG_CORTEX_M_SYSTICK
+#if defined(TIMER_IRQ_HANDLER) && !defined(CONFIG_CORTEX_M_SYSTICK)
 	[TIMER_IRQ_NUM] = TIMER_IRQ_HANDLER,
 #endif
 };
-#endif /* CONFIG_SOC_FAMILY_NORDIC_NRF */
+
+#endif
 
 /**
  * @}
