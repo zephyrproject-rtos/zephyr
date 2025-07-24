@@ -17,9 +17,3 @@ CONFIG_UART_CONSOLE=y
 
 # Enable GPIO
 CONFIG_GPIO=y
-
-# Input Driver
-CONFIG_INPUT=y
-
-# Enable ADC
-CONFIG_ADC=y
