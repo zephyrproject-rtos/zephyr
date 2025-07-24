@@ -10,4 +10,5 @@ source "drivers/sensor/adi/adxl345/Kconfig"
 source "drivers/sensor/adi/adxl362/Kconfig"
 source "drivers/sensor/adi/adxl367/Kconfig"
 source "drivers/sensor/adi/adxl372/Kconfig"
+source "drivers/sensor/adi/max32664c/Kconfig"
 # zephyr-keep-sorted-stop
