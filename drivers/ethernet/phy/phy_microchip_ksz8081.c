@@ -96,7 +96,7 @@ static int phy_mc_ksz8081_write(const struct device *dev,
 static int phy_mc_ksz8081_autonegotiate(const struct device *dev)
 {
 	const struct mc_ksz8081_config *config = dev->config;
-	int ret;
+	int ret = 0, attempts = 0;
 	uint32_t bmcr = 0;
 	uint32_t bmsr = 0;
 	uint16_t timeout = CONFIG_PHY_AUTONEG_TIMEOUT_MS / 100;
@@ -122,7 +122,7 @@ static int phy_mc_ksz8081_autonegotiate(const struct device *dev)
 	/* TODO change this to GPIO interrupt driven */
 	do {
 		if (timeout-- == 0) {
-			LOG_DBG("PHY (%d) autonegotiation timed out", config->addr);
+			LOG_ERR("PHY (%d) autonegotiation timed out", config->addr);
 			/* The value -ETIMEDOUT can be returned by PHY read/write functions, so
 			 * return -ENETDOWN instead to distinguish link timeout from PHY timeout.
 			 */
@@ -135,9 +135,11 @@ static int phy_mc_ksz8081_autonegotiate(const struct device *dev)
 			LOG_ERR("Error reading phy (%d) basic status register", config->addr);
 			return ret;
 		}
+
+		attempts++;
 	} while (!(bmsr & MII_BMSR_AUTONEG_COMPLETE));
 
-	LOG_DBG("PHY (%d) autonegotiation completed", config->addr);
+	LOG_DBG("PHY (%d) autonegotiation completed after %d checks", config->addr, attempts);
 
 	return 0;
 }
