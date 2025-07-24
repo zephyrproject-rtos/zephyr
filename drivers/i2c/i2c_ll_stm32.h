@@ -91,6 +91,7 @@ struct i2c_stm32_data {
 #else /* CONFIG_I2C_RTIO */
 #ifdef CONFIG_I2C_STM32_INTERRUPT
 	struct k_sem device_sync_sem;
+	bool cancelled;
 #endif /* CONFIG_I2C_STM32_INTERRUPT */
 	struct k_sem bus_mutex;
 	uint32_t dev_config;

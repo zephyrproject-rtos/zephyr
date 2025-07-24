@@ -288,6 +288,18 @@ static int smbus_stm32_block_read(const struct device *dev, uint16_t periph_addr
 	return res;
 }
 
+static int smbus_stm32_cancel(const struct device *dev)
+{
+	const struct smbus_stm32_config *config = dev->config;
+	return i2c_cancel(config->i2c_dev);
+}
+
+static int smbus_stm32_uncancel(const struct device *dev)
+{
+	const struct smbus_stm32_config *config = dev->config;
+	return i2c_uncancel(config->i2c_dev);
+}
+
 static DEVICE_API(smbus, smbus_stm32_api) = {
 	.configure = smbus_stm32_configure,
 	.get_config = smbus_stm32_get_config,
@@ -301,6 +313,8 @@ static DEVICE_API(smbus, smbus_stm32_api) = {
 	.smbus_pcall = smbus_stm32_pcall,
 	.smbus_block_write = smbus_stm32_block_write,
 	.smbus_block_read = smbus_stm32_block_read,
+	.smbus_cancel = smbus_stm32_cancel,
+	.smbus_uncancel = smbus_stm32_uncancel,
 #ifdef CONFIG_SMBUS_STM32_SMBALERT
 	.smbus_smbalert_set_cb = smbus_stm32_smbalert_set_cb,
 	.smbus_smbalert_remove_cb = smbus_stm32_smbalert_remove_cb,

@@ -309,6 +309,23 @@ restore:
 }
 #endif /* CONFIG_I2C_STM32_BUS_RECOVERY */
 
+#ifdef CONFIG_I2C_STM32_INTERRUPT
+static void i2c_stm32_cancel(const struct device *dev)
+{
+	struct i2c_stm32_data *data = dev->data;
+	if (!data->cancelled) {
+		data->cancelled = true;
+		k_sem_give(&data->device_sync_sem);
+	}
+}
+
+static void i2c_stm32_uncancel(const struct device *dev)
+{
+	struct i2c_stm32_data *data = dev->data;
+	data->cancelled = false;
+}
+#endif
+
 static DEVICE_API(i2c, api_funcs) = {
 	.configure = i2c_stm32_runtime_configure,
 	.transfer = i2c_stm32_transfer,
@@ -322,6 +339,10 @@ static DEVICE_API(i2c, api_funcs) = {
 #endif
 #ifdef CONFIG_I2C_RTIO
 	.iodev_submit = i2c_iodev_submit_fallback,
+#endif
+#ifdef CONFIG_I2C_STM32_INTERRUPT
+	.cancel = i2c_stm32_cancel,
+	.uncancel = i2c_stm32_uncancel,
 #endif
 };
 
