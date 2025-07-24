@@ -58,66 +58,28 @@ typedef enum __packed {
 	BT_AVRVP_PKT_TYPE_END = 0b11,
 } bt_avrcp_pkt_type_t;
 
-typedef enum __packed {
-	/** Capabilities */
-	BT_AVRCP_PDU_ID_GET_CAPS = 0x10,
+typedef enum {
+	AVRCP_STATE_IDLE,
+	AVRCP_STATE_SENDING_CONTINUING,
+	AVRCP_STATE_ABORT_CONTINUING,
+} avrcp_tg_rsp_state_t;
 
-	/** Player Application Settings */
-	BT_AVRCP_PDU_ID_LIST_PLAYER_APP_SETTING_ATTRS = 0x11,
-	BT_AVRCP_PDU_ID_LIST_PLAYER_APP_SETTING_VALS = 0x12,
-	BT_AVRCP_PDU_ID_GET_CURR_PLAYER_APP_SETTING_VAL = 0x13,
-	BT_AVRCP_PDU_ID_SET_PLAYER_APP_SETTING_VAL = 0x14,
-	BT_AVRCP_PDU_ID_GET_PLAYER_APP_SETTING_ATTR_TEXT = 0x15,
-	BT_AVRCP_PDU_ID_GET_PLAYER_APP_SETTING_VAL_TEXT = 0x16,
-	BT_AVRCP_PDU_ID_INFORM_DISPLAYABLE_CHAR_SET = 0x17,
-	BT_AVRCP_PDU_ID_INFORM_BATT_STATUS_OF_CT = 0x18,
+struct bt_avrcp_ct_frag_reassembly_ctx {
+	uint8_t tid;				/**< Transaction ID */
+	uint8_t rsp;
+	uint16_t total_len;			/**< Total length of complete response */
+	uint16_t received_len;			/**< Length already received */
+	bool fragmentation_active;		/**< Flag fragmentation is in progress */
+};
 
-	/** Metadata Attributes for Current Media Item */
-	BT_AVRCP_PDU_ID_GET_ELEMENT_ATTRS = 0x20,
-
-	/** Notifications */
-	BT_AVRCP_PDU_ID_GET_PLAY_STATUS = 0x30,
-	BT_AVRCP_PDU_ID_REGISTER_NOTIFICATION = 0x31,
-	BT_AVRCP_PDU_ID_EVT_PLAYBACK_STATUS_CHANGED = 0x31,
-	BT_AVRCP_PDU_ID_EVT_TRACK_CHANGED = 0x31,
-	BT_AVRCP_PDU_ID_EVT_TRACK_REACHED_END = 0x31,
-	BT_AVRCP_PDU_ID_EVT_TRACK_REACHED_START = 0x31,
-	BT_AVRCP_PDU_ID_EVT_PLAYBACK_POS_CHANGED = 0x31,
-	BT_AVRCP_PDU_ID_EVT_BATT_STATUS_CHANGED = 0x31,
-	BT_AVRCP_PDU_ID_EVT_SYSTEM_STATUS_CHANGED = 0x31,
-	BT_AVRCP_PDU_ID_EVT_PLAYER_APP_SETTING_CHANGED = 0x31,
-	BT_AVRCP_PDU_ID_EVT_VOLUME_CHANGED = 0x31,
-	BT_AVRCP_PDU_ID_EVT_ADDRESSED_PLAYER_CHANGED = 0x31,
-	BT_AVRCP_PDU_ID_EVT_AVAILABLE_PLAYERS_CHANGED = 0x31,
-	BT_AVRCP_PDU_ID_EVT_UIDS_CHANGED = 0x31,
-
-	/** Continuation */
-	BT_AVRCP_PDU_ID_REQ_CONTINUING_RSP = 0x40,
-	BT_AVRCP_PDU_ID_ABORT_CONTINUING_RSP = 0x41,
-
-	/** Absolute Volume */
-	BT_AVRCP_PDU_ID_SET_ABSOLUTE_VOLUME = 0x50,
-
-	/** Media Player Selection */
-	BT_AVRCP_PDU_ID_SET_ADDRESSED_PLAYER = 0x60,
-
-	/** Browsing */
-	BT_AVRCP_PDU_ID_SET_BROWSED_PLAYER = 0x70,
-	BT_AVRCP_PDU_ID_GET_FOLDER_ITEMS = 0x71,
-	BT_AVRCP_PDU_ID_CHANGE_PATH = 0x72,
-	BT_AVRCP_PDU_ID_GET_ITEM_ATTRS = 0x73,
-	BT_AVRCP_PDU_ID_PLAY_ITEM = 0x74,
-	BT_AVRCP_PDU_ID_GET_TOTAL_NUMBER_OF_ITEMS = 0x75,
-
-	/** Search */
-	BT_AVRCP_PDU_ID_SEARCH = 0x80,
-
-	/** Now Playing */
-	BT_AVRCP_PDU_ID_ADD_TO_NOW_PLAYING = 0x90,
-
-	/** Error Response */
-	BT_AVRCP_PDU_ID_GENERAL_REJECT = 0xa0,
-} bt_avrcp_pdu_id_t;
+struct bt_avrcp_tg_tx {
+	struct bt_avrcp_tg *tg;
+	uint16_t sent_len;
+	uint8_t tid;
+	uint8_t pdu_id;
+	uint8_t rsp;
+	avrcp_tg_rsp_state_t state;
+} __packed;
 
 struct bt_avrcp_req {
 	uint8_t tid;
@@ -132,6 +94,7 @@ struct bt_avrcp_header {
 } __packed;
 
 struct bt_avrcp_avc_pdu {
+	uint8_t company_id[BT_AVRCP_COMPANY_ID_SIZE];
 	uint8_t pdu_id;
 	uint8_t pkt_type; /**< [7:2]: Reserved, [1:0]: Packet Type */
 	uint16_t param_len;

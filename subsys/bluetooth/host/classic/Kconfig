@@ -493,6 +493,13 @@ config BT_AVRCP_CONTROLLER
 	help
 	  This option enables the AVRCP profile controller function
 
+config BT_AVRCP_DATA_BUF_SIZE
+	int "AVRCP RX Data Buffer Size"
+	default 1024
+	range 1024 $(INT16_MAX)
+	help
+	  Size of the AVRCP data buffer in bytes.
+
 config BT_AVRCP_BROWSING
 	bool "Bluetooth AVRCP Browsing channel support [EXPERIMENTAL]"
 	select EXPERIMENTAL
