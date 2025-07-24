@@ -1,6 +1,7 @@
 # Common architecture configuration options
 
 # Copyright (c) 2022, CSIRO.
+# Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 config SEMIHOST
@@ -74,3 +75,56 @@ config ARM_MPU
 	  Since this does not compromise User Mode, we make the skipping
 	  of full partitioning the default behavior for the ARMv8-M and ARMv8-R MPU
 	  driver.
+
+choice ARM_PACBTI
+	prompt "Pointer Authentication and Branch Target Identification"
+	default ARM_PACBTI_NONE
+	depends on ARMV8_1_M_MAINLINE
+
+config ARM_PACBTI_STANDARD
+	bool "Standard (PACRET + LEAF + BTI)"
+	help
+	  This option instructs the compiler to generate code with all branch protection features
+	  enabled at their standard level.
+
+config ARM_PACBTI_PACRET
+	bool "PACRET only"
+	help
+	  This option instructs the compiler to generate code with return address signing for
+	  all functions that save the return address to memory.
+
+config ARM_PACBTI_PACRET_LEAF
+	bool "PACRET + Leaf"
+	help
+	  This option instructs the compiler to generate code with return address signing for
+	  all functions that save the return address to memory and,
+	  also sign leaf functions even if they do not write the return address to memory.
+
+config ARM_PACBTI_BTI
+	bool "BTI only"
+	help
+	  This option enables Branch Target Identification (BTI), which inserts special landing
+	  pad instructions at valid indirect branch targets. This option does not enable Pointer
+	  Authentication (PAC).
+
+config ARM_PACBTI_PACRET_BTI
+	bool "PACRET + BTI"
+	help
+	  This option instructs the compiler to generate code with return address signing for
+	  all functions that save the return address to memory and,
+	  add landing-pad instructions at the permitted targets of indirect branch instructions
+
+config ARM_PACBTI_PACRET_LEAF_BTI
+	bool "PACRET + Leaf + BTI"
+	help
+	  This option instructs the compiler to generate code with return address signing for
+	  all functions that save the return address to memory and,
+	  also sign leaf functions even if they do not write the return address to memory and,
+	  add landing-pad instructions at the permitted targets of indirect branch instructions
+
+config ARM_PACBTI_NONE
+	bool "None"
+	help
+	This option instructs the compiler to generate code without branch protection or return
+	address signing
+endchoice
