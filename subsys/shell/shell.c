@@ -1393,6 +1393,7 @@ void shell_uninit(const struct shell *sh, shell_uninit_cb_t cb)
 	__ASSERT_NO_MSG(sh);
 
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
+		sh->ctx->uninit_cb = cb;
 		k_event_post(&sh->ctx->signal_event, SHELL_SIGNAL_KILL);
 		return;
 	}
