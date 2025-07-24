@@ -548,6 +548,42 @@
 			clocks = <&cmu CLOCK_ACMP0 CLOCK_BRANCH_EM01GRPACLK>;
 			status = "disabled";
 		};
+
+		vdac0: vdac@59024000 {
+			compatible = "silabs,vdac";
+			reg = <0x59024000 0x4000>;
+			interrupts = <72 2>;
+			clocks = <&cmu CLOCK_VDAC0 CLOCK_BRANCH_VDAC0CLK>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			#io-channel-cells = <1>;
+
+			channel@0 {
+				reg = <0>;
+			};
+			channel@1 {
+				reg = <1>;
+			};
+		};
+
+		vdac1: vdac@59028000 {
+			compatible = "silabs,vdac";
+			reg = <0x59028000 0x4000>;
+			interrupts = <73 2>;
+			clocks = <&cmu CLOCK_VDAC1 CLOCK_BRANCH_VDAC1CLK>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			#io-channel-cells = <1>;
+
+			channel@0 {
+				reg = <0>;
+			};
+			channel@1 {
+				reg = <1>;
+			};
+		};
 	};
 };
 
