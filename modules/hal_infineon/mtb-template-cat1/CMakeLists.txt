@@ -23,6 +23,7 @@ if(CONFIG_SOC_FAMILY_INFINEON_CAT1B)
   zephyr_include_directories(${cat1b_dir}/COMPONENT_MTB)
   zephyr_include_directories(${cat1b_dir}/COMPONENT_MTB/COMPONENT_CM33/HEADER_FILES)
   zephyr_library_sources(${cat1b_dir}/COMPONENT_MTB/COMPONENT_CM33/system_cyw20829.c)
+  zephyr_library_sources(${cat1b_dir}/COMPONENT_MTB/COMPONENT_CM33/system_psc3.c)
 endif()
 
 # Add support for XMC7x (CAT1C)
