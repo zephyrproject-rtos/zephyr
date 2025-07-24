@@ -49,10 +49,30 @@ static int rx_queue_init(void)
 
 SYS_INIT(rx_queue_init, POST_KERNEL, 0);
 
+static void eth_nxp_enet_qos_phy_cb(const struct device *phy,
+		struct phy_link_state *state, void *eth_dev)
+{
+	const struct device *dev = eth_dev;
+	struct nxp_enet_qos_mac_data *data = dev->data;
+
+	if (!data->iface) {
+		return;
+	}
+
+	if (state->is_up) {
+		net_eth_carrier_on(data->iface);
+	} else {
+		net_eth_carrier_off(data->iface);
+	}
+
+	LOG_INF("Link is %s", state->is_up ? "up" : "down");
+}
+
 static void eth_nxp_enet_qos_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct nxp_enet_qos_mac_data *data = dev->data;
+	const struct nxp_enet_qos_mac_config *config = dev->config;
 
 	net_if_set_link_addr(iface, data->mac_addr.addr,
 			     sizeof(((struct net_eth_addr *)NULL)->addr), NET_LINK_ETHERNET);
@@ -62,6 +82,15 @@ static void eth_nxp_enet_qos_iface_init(struct net_if *iface)
 	}
 
 	ethernet_init(iface);
+
+	if (device_is_ready(config->phy_dev)) {
+		/* Do not start the interface until PHY link is up */
+		net_if_carrier_off(iface);
+
+		phy_link_callback_set(config->phy_dev, eth_nxp_enet_qos_phy_cb, (void *)dev);
+	} else {
+		LOG_ERR("PHY device not ready");
+	}
 }
 
 static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
@@ -372,25 +401,6 @@ static void eth_nxp_enet_qos_mac_isr(const struct device *dev)
 	}
 }
 
-static void eth_nxp_enet_qos_phy_cb(const struct device *phy,
-		struct phy_link_state *state, void *eth_dev)
-{
-	const struct device *dev = eth_dev;
-	struct nxp_enet_qos_mac_data *data = dev->data;
-
-	if (!data->iface) {
-		return;
-	}
-
-	if (state->is_up) {
-		net_eth_carrier_on(data->iface);
-	} else {
-		net_eth_carrier_off(data->iface);
-	}
-
-	LOG_INF("Link is %s", state->is_up ? "up" : "down");
-}
-
 static inline int enet_qos_dma_reset(enet_qos_t *base)
 {
 	/* Save off ENET->MAC_MDIO_ADDRESS: CR Field Prior to Reset */
@@ -636,12 +646,6 @@ static int eth_nxp_enet_qos_mac_init(const struct device *dev)
 
 	/* Used to configure timings of the MAC */
 	ret = clock_control_get_rate(module_cfg->clock_dev, module_cfg->clock_subsys, &clk_rate);
-	if (ret) {
-		return ret;
-	}
-
-	/* For reporting the status of the link connection */
-	ret = phy_link_callback_set(config->phy_dev, eth_nxp_enet_qos_phy_cb, (void *)dev);
 	if (ret) {
 		return ret;
 	}
