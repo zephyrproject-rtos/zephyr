@@ -175,6 +175,12 @@ Stepper
 
 * :dtcompatible:`zephyr,gpio-stepper` has been replaced by :dtcompatible:`zephyr,h-bridge-stepper`.
 
+USB
+===
+
+* The USB Video Class was configuring the framerate and format of the source video device.
+  This is now to be done by the application after the host selected the format (:github:`93192`).
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth
