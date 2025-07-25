@@ -10,3 +10,12 @@ config SY24561
 	select I2C
 	help
 	  Enable driver for the silergy sy24561 fuel gauge device.
+
+config EMUL_SY24561
+	bool "Emulate a SY24561 fuel gauge"
+	default y
+	depends on EMUL
+	depends on SY24561
+	help
+	  It provides readings which follow a simple sequence, thus allowing
+	  test code to check that things are working as expected.
