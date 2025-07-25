@@ -24,6 +24,25 @@ static const struct pwm_dt_spec pwm_leds[] = {LISTIFY(MAX_LEDS, PWM_LED, ())};
 #define NUM_STEPS	50U
 #define SLEEP_MSEC	25U
 
+static void update_fade_state(size_t i, uint32_t *pulse_widths, uint32_t *steps, uint8_t *dirs)
+{
+	if (dirs[i] == 1) {
+		if (pulse_widths[i] + steps[i] >= pwm_leds[i].period) {
+			pulse_widths[i] = pwm_leds[i].period;
+			dirs[i] = 0U;
+		} else {
+			pulse_widths[i] += steps[i];
+		}
+	} else {
+		if (pulse_widths[i] <= steps[i]) {
+			pulse_widths[i] = 0;
+			dirs[i] = 1U;
+		} else {
+			pulse_widths[i] -= steps[i];
+		}
+	}
+}
+
 int main(void)
 {
 	uint32_t pulse_widths[ARRAY_SIZE(pwm_leds)];
@@ -52,21 +71,7 @@ int main(void)
 			printk("LED %d: Using pulse width %d%%\n", i,
 			       100 * pulse_widths[i] / pwm_leds[i].period);
 
-			if (dirs[i] == 1) {
-				if (pulse_widths[i] + steps[i] >= pwm_leds[i].period) {
-					pulse_widths[i] = pwm_leds[i].period;
-					dirs[i] = 0U;
-				} else {
-					pulse_widths[i] += steps[i];
-				}
-			} else {
-				if (pulse_widths[i] <= steps[i]) {
-					pulse_widths[i] = 0;
-					dirs[i] = 1U;
-				} else {
-					pulse_widths[i] -= steps[i];
-				}
-			}
+			update_fade_state(i, pulse_widths, steps, dirs);
 		}
 
 		k_sleep(K_MSEC(SLEEP_MSEC));
