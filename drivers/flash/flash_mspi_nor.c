@@ -27,7 +27,7 @@ void flash_mspi_command_set(const struct device *dev, const struct flash_mspi_no
 	dev_data->xfer.xfer_mode  = MSPI_PIO;
 	dev_data->xfer.packets    = &dev_data->packet;
 	dev_data->xfer.num_packet = 1;
-	dev_data->xfer.timeout    = 10;
+	dev_data->xfer.timeout    = dev_config->transfer_timeout;
 
 	dev_data->xfer.cmd_length = cmd->cmd_length;
 	dev_data->xfer.addr_length = cmd->addr_length;
@@ -887,6 +887,7 @@ BUILD_ASSERT((FLASH_SIZE_INST(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) ==
 				/ 1000,						\
 		.reset_recovery_us = DT_INST_PROP_OR(inst, t_reset_recovery, 0)	\
 				   / 1000,))					\
+		.transfer_timeout = DT_INST_PROP(inst, transfer_timeout),	\
 		FLASH_PAGE_LAYOUT_DEFINE(inst)					\
 		.jedec_id = DT_INST_PROP(inst, jedec_id),			\
 		.jedec_cmds = FLASH_CMDS(inst),					\
