@@ -49,6 +49,9 @@ COND_CODE_1(DT_NODE_EXISTS(DT_INST(1, ite_it8xxx2_usbpd)), (2), (1))
 #define SSPI_CLOCK_GATING      BIT(1)
 #define AUTO_SSPI_CLOCK_GATING BIT(4)
 
+#define CLK_DIV_HIGH_FIELDS(n) FIELD_PREP(GENMASK(7, 4), n)
+#define CLK_DIV_LOW_FIELDS(n)  FIELD_PREP(GENMASK(3, 0), n)
+
 uint32_t chip_get_pll_freq(void)
 {
 	uint32_t pllfreq;
@@ -127,7 +130,7 @@ static const struct pll_config_t pll_configuration[PLL_FREQ_CNT] = {
 	 * USB   div = 0 (PLL / 1 = 48 mhz)
 	 * UART  div = 1 (PLL / 2 = 24 mhz)
 	 * SMB   div = 1 (PLL / 2 = 24 mhz)
-	 * SSPI  div = 1 (PLL / 2 = 24 mhz)
+	 * SSPI  div = 0 (PLL / 1 = 48 mhz)
 	 * EC    div = 6 (FND / 6 =  8 mhz)
 	 * JTAG  div = 1 (PLL / 2 = 24 mhz)
 	 * PWM   div = 0 (PLL / 1 = 48 mhz)
@@ -139,7 +142,7 @@ static const struct pll_config_t pll_configuration[PLL_FREQ_CNT] = {
 			  .div_usb = 0,
 			  .div_uart = 1,
 			  .div_smb = 1,
-			  .div_sspi = 1,
+			  .div_sspi = 0,
 #ifdef CONFIG_SOC_IT8XXX2_EC_BUS_24MHZ
 			  .div_ec = 1,
 #else
@@ -155,7 +158,7 @@ static const struct pll_config_t pll_configuration[PLL_FREQ_CNT] = {
 	 * USB   div = 1 (PLL / 2 = 48 mhz)
 	 * UART  div = 3 (PLL / 4 = 24 mhz)
 	 * SMB   div = 3 (PLL / 4 = 24 mhz)
-	 * SSPI  div = 3 (PLL / 4 = 24 mhz)
+	 * SSPI  div = 1 (PLL / 2 = 48 mhz)
 	 * EC    div = 6 (FND / 6 =  8 mhz)
 	 * JTAG  div = 3 (PLL / 4 = 24 mhz)
 	 * PWM   div = 1 (PLL / 2 = 48 mhz)
@@ -167,7 +170,7 @@ static const struct pll_config_t pll_configuration[PLL_FREQ_CNT] = {
 			  .div_usb = 1,
 			  .div_uart = 3,
 			  .div_smb = 3,
-			  .div_sspi = 3,
+			  .div_sspi = 1,
 #ifdef CONFIG_SOC_IT8XXX2_EC_BUS_24MHZ
 			  .div_ec = 1,
 #else
@@ -206,8 +209,20 @@ void __soc_ram_code chip_run_pll_sequence(const struct pll_config_t *pll)
 	chip_pll_ctrl(CHIP_PLL_DOZE);
 	/* USB and UART */
 	IT8XXX2_ECPM_SCDCR1 = (pll->div_usb << 4) | pll->div_uart;
-	/* SSPI and SMB */
-	IT8XXX2_ECPM_SCDCR2 = (pll->div_sspi << 4) | pll->div_smb;
+
+#ifdef CONFIG_SOC_IT8XXX2_REG_SET_V1
+	/* SMB and SSPI */
+	IT8XXX2_ECPM_SCDCR2 = CLK_DIV_HIGH_FIELDS(pll->div_sspi) | CLK_DIV_LOW_FIELDS(pll->div_smb);
+#elif CONFIG_SOC_IT8XXX2_REG_SET_V2
+	/* SMB */
+	IT8XXX2_ECPM_SCDCR2 = CLK_DIV_LOW_FIELDS(pll->div_smb);
+	/* SSPI */
+	IT8XXX2_ECPM_SCDCR8 =
+		CLK_DIV_HIGH_FIELDS(pll->div_sspi) | CLK_DIV_LOW_FIELDS(pll->div_sspi);
+#else
+	BUILD_ASSERT(false, "unknown sspi and smb clock divisor setting for register set version");
+#endif /* CONFIG_SOC_IT8XXX2_REG_SET_V1 */
+
 	/* USBPD and PWM */
 	IT8XXX2_ECPM_SCDCR4 = (pll->div_usbpd << 4) | pll->div_pwm;
 }
