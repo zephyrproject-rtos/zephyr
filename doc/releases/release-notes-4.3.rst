@@ -74,6 +74,13 @@ New APIs and options
 
 .. zephyr-keep-sorted-stop
 
+* Utilities
+
+  * :c:struct:`set_node`
+  * :c:func:`sys_set_makeset`
+  * :c:func:`sys_set_find`
+  * :c:func:`sys_set_union`
+
 New Boards
 **********
 
