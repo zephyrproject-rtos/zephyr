@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&gpio1 {
+	sense-edge-mask = <0xC00>;
+};
