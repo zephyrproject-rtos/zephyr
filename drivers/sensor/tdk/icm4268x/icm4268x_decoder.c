@@ -730,7 +730,7 @@ static int icm4268x_decoder_get_size_info(struct sensor_chan_spec chan_spec, siz
 	}
 }
 
-static bool icm24688_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigger_type trigger)
+static bool icm4268x_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigger_type trigger)
 {
 	const struct icm4268x_fifo_data *edata = (const struct icm4268x_fifo_data *)buffer;
 
@@ -754,7 +754,7 @@ SENSOR_DECODER_API_DT_DEFINE() = {
 	.get_frame_count = icm4268x_decoder_get_frame_count,
 	.get_size_info = icm4268x_decoder_get_size_info,
 	.decode = icm4268x_decoder_decode,
-	.has_trigger = icm24688_decoder_has_trigger,
+	.has_trigger = icm4268x_decoder_has_trigger,
 };
 
 int icm4268x_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder)
