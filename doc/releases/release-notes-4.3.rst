@@ -90,6 +90,10 @@ New Drivers
   Same as above for boards, this will also be recomputed at the time of the release.
   Just link the driver, further details go in the binding description
 
+* Input
+
+   * :dtcompatible:`chipsemi,chsc5x`
+
 * Interrupt controller
 
    * STM32 EXTI interrupt/event controller (:dtcompatible:`st,stm32-exti`) has a dedicated driver and API now, separate from STM32 GPIO Interrupt Control driver.
