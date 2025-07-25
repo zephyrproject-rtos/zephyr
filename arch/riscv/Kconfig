@@ -492,6 +492,26 @@ config ARCH_HAS_STACKWALK
 	  Internal config to indicate that the arch_stack_walk() API is implemented
 	  and it can be enabled.
 
+config RISCV_NO_MTVAL_ON_FP_TRAP
+	bool
+	default y if QEMU_TARGET
+	help
+	  This implementation does not provide useful information in the mtval
+	  CSR (Machine Trap Value register) when floating-point illegal
+	  instruction exceptions occur.
+
+	  The RISC-V specification allows implementations to decide on a
+	  case-by-case basis when mtval contains meaningful values. The spec
+	  states that mtval is "either set to zero or written with
+	  exception-specific information" on traps. However, this
+	  "exception-specific information" may not necessarily be the faulting
+	  instruction value, and implementations have flexibility in what they
+	  provide.
+
+	  When this option is enabled, the mtval content cannot be relied upon
+	  to contain the faulting FP instruction, requiring alternative methods
+	  to handle FP exceptions.
+
 rsource "Kconfig.isa"
 
 endmenu
