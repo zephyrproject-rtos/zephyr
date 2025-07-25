@@ -177,6 +177,15 @@ endif #PM_DEVICE_RUNTIME_USE_DEDICATED_WQ
 endchoice
 
 endif # PM_DEVICE_RUNTIME_ASYNC
+
+config PM_DEVICE_RUNTIME_DEFAULT_ENABLE
+	bool "PM device runtime enable by default"
+	help
+	  Enable PM device runtime by default for all devices when they are
+	  initialized. This option is identical to adding the devicetree
+	  property zephyr,pm-device-runtime-auto to all nodes in the
+	  devicetree.
+
 endif # PM_DEVICE_RUNTIME
 
 config PM_DEVICE_SHELL
