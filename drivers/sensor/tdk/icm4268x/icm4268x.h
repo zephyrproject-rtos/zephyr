@@ -173,7 +173,7 @@ static inline void icm4268x_accel_reg_to_hz(uint8_t odr, struct sensor_value *ou
 		out->val2 = 0;
 		return;
 	case ICM4268X_DT_ACCEL_ODR_16000:
-		out->val1 = 1600;
+		out->val1 = 16000;
 		out->val2 = 0;
 		return;
 	case ICM4268X_DT_ACCEL_ODR_8000:
