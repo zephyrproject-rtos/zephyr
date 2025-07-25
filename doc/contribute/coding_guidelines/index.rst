@@ -39,7 +39,9 @@ should comply with the rules listed below.
     * -  1
       -  Any implementation-defined behaviour on which the output of the program depends shall be documented and understood
       -  `Dir 1.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/D_01_01.c>`_
-      -  `MSC09-C <https://wiki.sei.cmu.edu/confluence/display/c/MSC09-C.+Character+encoding%3A+Use+subset+of+ASCII+for+safety>`_
+      -  | `FLP30-C <https://wiki.sei.cmu.edu/confluence/display/c/FLP30-C.+Do+not+use+floating-point+variables+as+loop+counters>`_
+         | `MSC09-C <https://wiki.sei.cmu.edu/confluence/display/c/MSC09-C.+Character+encoding%3A+Use+subset+of+ASCII+for+safety>`_
+         | `EXP11-C <https://wiki.sei.cmu.edu/confluence/display/c/EXP11-C.+Do+not+make+assumptions+regarding+the+layout+of+structures+with+bit-fields>`_
 
          .. _MisraC_Dir_2_1:
     * -  2
@@ -118,7 +120,9 @@ should comply with the rules listed below.
     * - 14
       -  Dynamic memory allocation shall not be used
       -  `Dir 4.12 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/D_04_12.c>`_
-      -  `STR01-C <https://wiki.sei.cmu.edu/confluence/display/c/STR01-C.+Adopt+and+implement+a+consistent+plan+for+managing+strings>`_
+      -  | `API03-C <https://wiki.sei.cmu.edu/confluence/display/c/API03-C.+Create+consistent+interfaces+and+capabilities+across+related+functions>`_
+         | `API04-C <https://wiki.sei.cmu.edu/confluence/display/c/API04-C.+Provide+a+consistent+and+usable+error-checking+mechanism>`_
+         | `STR01-C <https://wiki.sei.cmu.edu/confluence/display/c/STR01-C.+Adopt+and+implement+a+consistent+plan+for+managing+strings>`_
 
          .. _MisraC_Dir_4_13:
     * -  15
@@ -149,13 +153,14 @@ should comply with the rules listed below.
       -  A project shall not contain unreachable code
       -  | `Rule 2.1 example 1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_02_01_1.c>`_
          | `Rule 2.1 example 2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_02_01_2.c>`_
-      -  `MSC07-C <https://wiki.sei.cmu.edu/confluence/display/c/MSC07-C.+Detect+and+remove+dead+code>`_
+      -  `MSC12-C <https://wiki.sei.cmu.edu/confluence/display/c/MSC12-C.+Detect+and+remove+code+that+has+no+effect+or+is+never+executed>`_
 
          .. _MisraC_Rule_2_2:
     * -  20
       -  There shall be no dead code
       -  `Rule 2.2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_02_02.c>`_
-      -  `MSC12-C <https://wiki.sei.cmu.edu/confluence/display/c/MSC12-C.+Detect+and+remove+code+that+has+no+effect+or+is+never+executed>`_
+      -  | `DCL22-C <https://wiki.sei.cmu.edu/confluence/display/c/DCL22-C.+Use+volatile+for+data+that+cannot+be+cached>`_
+         | `MSC12-C <https://wiki.sei.cmu.edu/confluence/display/c/MSC12-C.+Detect+and+remove+code+that+has+no+effect+or+is+never+executed>`_
 
          .. _MisraC_Rule_2_3:
     * -  21
@@ -216,7 +221,8 @@ should comply with the rules listed below.
     * -  30
       -  An identifier declared in an inner scope shall not hide an identifier declared in an outer scope
       -  `Rule 5.3 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_05_03.c>`_
-      -  `DCL23-C <https://wiki.sei.cmu.edu/confluence/display/c/DCL23-C.+Guarantee+that+mutually+visible+identifiers+are+unique>`_
+      -  | `DCL01-C <https://wiki.sei.cmu.edu/confluence/display/c/DCL01-C.+Do+not+reuse+variable+names+in+subscopes>`_
+         | `DCL23-C <https://wiki.sei.cmu.edu/confluence/display/c/DCL23-C.+Guarantee+that+mutually+visible+identifiers+are+unique>`_
 
          .. _MisraC_Rule_5_4:
     * -  31
@@ -296,13 +302,16 @@ should comply with the rules listed below.
     * -  43
       -  Types shall be explicitly specified
       -  `Rule 8.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_08_01.c>`_
-      -  N/A
+      -  `DCL31-C <https://wiki.sei.cmu.edu/confluence/display/c/DCL31-C.+Declare+identifiers+before+using+them>`_
 
          .. _MisraC_Rule_8_2:
     * -  44
       -  Function types shall be in prototype form with named parameters
       -  `Rule 8.2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_08_02.c>`_
-      -  `DCL20-C <https://wiki.sei.cmu.edu/confluence/display/c/DCL20-C.+Explicitly+specify+void+when+a+function+accepts+no+arguments>`_
+      -  | `DCL07-C <https://wiki.sei.cmu.edu/confluence/display/c/DCL07-C.+Include+the+appropriate+type+information+in+function+declarators>`_
+         | `DCL20-C <https://wiki.sei.cmu.edu/confluence/display/c/DCL20-C.+Explicitly+specify+void+when+a+function+accepts+no+arguments>`_
+         | `DCL36-C <https://wiki.sei.cmu.edu/confluence/display/c/DCL36-C.+Do+not+declare+an+identifier+with+conflicting+linkage+classifications>`_
+         | `EXP37-C <https://wiki.sei.cmu.edu/confluence/display/c/EXP37-C.+Call+functions+with+the+correct+number+and+type+of+arguments>`_
 
          .. _MisraC_Rule_8_3:
     * -  45
@@ -314,7 +323,8 @@ should comply with the rules listed below.
     * -  46
       -  A compatible declaration shall be visible when an object or function with external linkage is defined
       -  `Rule 8.4 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_08_04.c>`_
-      -  N/A
+      -  | `DCL36-C <https://wiki.sei.cmu.edu/confluence/display/c/DCL36-C.+Do+not+declare+an+identifier+with+conflicting+linkage+classifications>`_
+         | `DCL40-C <https://wiki.sei.cmu.edu/confluence/display/c/DCL40-C.+Do+not+create+incompatible+declarations+of+the+same+function+or+object>`_
 
          .. _MisraC_Rule_8_5:
     * -  47
@@ -334,7 +344,8 @@ should comply with the rules listed below.
     * -  49
       -  The static storage class specifier shall be used in all declarations of objects and functions that have internal linkage
       -  `Rule 8.8 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_08_08.c>`_
-      -  `DCL15-C <https://wiki.sei.cmu.edu/confluence/display/c/DCL15-C.+Declare+file-scope+objects+or+functions+that+do+not+need+external+linkage+as+static>`_
+      -  | `DCL15-C <https://wiki.sei.cmu.edu/confluence/display/c/DCL15-C.+Declare+file-scope+objects+or+functions+that+do+not+need+external+linkage+as+static>`_
+         | `DCL36-C <https://wiki.sei.cmu.edu/confluence/display/c/DCL36-C.+Do+not+declare+an+identifier+with+conflicting+linkage+classifications>`_
 
          .. _MisraC_Rule_8_9:
     * -  50
@@ -358,7 +369,7 @@ should comply with the rules listed below.
     * -  53
       -  The restrict type qualifier shall not be used
       -  `Rule 8.14 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_08_14.c>`_
-      -  N/A
+      -  `EXP43-C <https://wiki.sei.cmu.edu/confluence/display/c/EXP43-C.+Avoid+undefined+behavior+when+using+restrict-qualified+pointers>`_
 
          .. _MisraC_Rule_9_1:
     * -  54
@@ -388,49 +399,66 @@ should comply with the rules listed below.
     * -  58
       -  Where designated initializers are used to initialize an array object the size of the array shall be specified explicitly
       -  `Rule 9.5 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_09_05.c>`_
-      -  N/A
+      -  `ARR02-C <https://wiki.sei.cmu.edu/confluence/display/c/ARR02-C.+Explicitly+specify+array+bounds%2C+even+if+implicitly+defined+by+an+initializer>`_
 
          .. _MisraC_Rule_10_1:
     * -  59
       -  Operands shall not be of an inappropriate essential type
       -  `Rule 10.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_10_01.c>`_
-      -  `STR04-C <https://wiki.sei.cmu.edu/confluence/display/c/STR04-C.+Use+plain+char+for+characters+in+the+basic+character+set>`_
+      -  | `INT02-C <https://wiki.sei.cmu.edu/confluence/display/c/INT02-C.+Understand+integer+conversion+rules>`_
+         | `INT07-C <https://wiki.sei.cmu.edu/confluence/display/c/INT07-C.+Use+only+explicitly+signed+or+unsigned+char+type+for+numeric+values>`_
+         | `INT12-C <https://wiki.sei.cmu.edu/confluence/display/c/INT12-C.+Do+not+make+assumptions+about+the+type+of+a+plain+int+bit-field+when+used+in+an+expression>`_
+         | `INT31-C <https://wiki.sei.cmu.edu/confluence/display/c/INT31-C.+Ensure+that+integer+conversions+do+not+result+in+lost+or+misinterpreted+data>`_
+         | `STR04-C <https://wiki.sei.cmu.edu/confluence/display/c/STR04-C.+Use+plain+char+for+characters+in+the+basic+character+set>`_
+         | `STR34-C <https://wiki.sei.cmu.edu/confluence/display/c/STR34-C.+Cast+characters+to+unsigned+char+before+converting+to+larger+integer+sizes>`_
 
          .. _MisraC_Rule_10_2:
     * -  60
       -  Expressions of essentially character type shall not be used inappropriately in addition and subtraction operations
       -  `Rule 10.2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_10_02.c>`_
-      -  `STR04-C <https://wiki.sei.cmu.edu/confluence/display/c/STR04-C.+Use+plain+char+for+characters+in+the+basic+character+set>`_
+      -  | `STR04-C <https://wiki.sei.cmu.edu/confluence/display/c/STR04-C.+Use+plain+char+for+characters+in+the+basic+character+set>`_
+         | `STR34-C <https://wiki.sei.cmu.edu/confluence/display/c/STR34-C.+Cast+characters+to+unsigned+char+before+converting+to+larger+integer+sizes>`_
 
          .. _MisraC_Rule_10_3:
     * -  61
       -  The value of an expression shall not be assigned to an object with a narrower essential type or of a different essential type category
       -  `Rule 10.3 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_10_03.c>`_
-      -  `STR04-C <https://wiki.sei.cmu.edu/confluence/display/c/STR04-C.+Use+plain+char+for+characters+in+the+basic+character+set>`_
+      -  | `INT02-C <https://wiki.sei.cmu.edu/confluence/display/c/INT02-C.+Understand+integer+conversion+rules>`_
+         | `INT07-C <https://wiki.sei.cmu.edu/confluence/display/c/INT07-C.+Use+only+explicitly+signed+or+unsigned+char+type+for+numeric+values>`_
+         | `INT31-C <https://wiki.sei.cmu.edu/confluence/display/c/INT31-C.+Ensure+that+integer+conversions+do+not+result+in+lost+or+misinterpreted+data>`_
+         | `STR04-C <https://wiki.sei.cmu.edu/confluence/display/c/STR04-C.+Use+plain+char+for+characters+in+the+basic+character+set>`_
+         | `STR34-C <https://wiki.sei.cmu.edu/confluence/display/c/STR34-C.+Cast+characters+to+unsigned+char+before+converting+to+larger+integer+sizes>`_
 
          .. _MisraC_Rule_10_4:
     * -  62
       -  Both operands of an operator in which the usual arithmetic conversions are performed shall have the same essential type category
       -  `Rule 10.4 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_10_04.c>`_
-      -  `STR04-C <https://wiki.sei.cmu.edu/confluence/display/c/STR04-C.+Use+plain+char+for+characters+in+the+basic+character+set>`_
+      -  | `INT02-C <https://wiki.sei.cmu.edu/confluence/display/c/INT02-C.+Understand+integer+conversion+rules>`_
+         | `INT07-C <https://wiki.sei.cmu.edu/confluence/display/c/INT07-C.+Use+only+explicitly+signed+or+unsigned+char+type+for+numeric+values>`_
+         | `INT31-C <https://wiki.sei.cmu.edu/confluence/display/c/INT31-C.+Ensure+that+integer+conversions+do+not+result+in+lost+or+misinterpreted+data>`_
+         | `STR04-C <https://wiki.sei.cmu.edu/confluence/display/c/STR04-C.+Use+plain+char+for+characters+in+the+basic+character+set>`_
+         | `STR34-C <https://wiki.sei.cmu.edu/confluence/display/c/STR34-C.+Cast+characters+to+unsigned+char+before+converting+to+larger+integer+sizes>`_
 
          .. _MisraC_Rule_10_5:
     * -  63
       -  The value of an expression should not be cast to an inappropriate essential type
       -  `Rule 10.5 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_10_05.c>`_
-      -  N/A
+      -  | `EXP14-C <https://wiki.sei.cmu.edu/confluence/display/c/EXP14-C.+Beware+of+integer+promotion+when+performing+bitwise+operations+on+integer+types+smaller+than+int>`_
+         | `INT02-C <https://wiki.sei.cmu.edu/confluence/display/c/INT02-C.+Understand+integer+conversion+rules>`_
 
          .. _MisraC_Rule_10_6:
     * -  64
       -  The value of a composite expression shall not be assigned to an object with wider essential type
       -  `Rule 10.6 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_10_06.c>`_
-      -  `INT02-C <https://wiki.sei.cmu.edu/confluence/display/c/INT02-C.+Understand+integer+conversion+rules>`_
+      -  | `INT02-C <https://wiki.sei.cmu.edu/confluence/display/c/INT02-C.+Understand+integer+conversion+rules>`_
+         | `INT31-C <https://wiki.sei.cmu.edu/confluence/display/c/INT31-C.+Ensure+that+integer+conversions+do+not+result+in+lost+or+misinterpreted+data>`_
 
          .. _MisraC_Rule_10_7:
     * -  65
       -  If a composite expression is used as one operand of an operator in which the usual arithmetic conversions are performed then the other operand shall not have wider essential type
       -  `Rule 10.7 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_10_07.c>`_
-      -  `INT02-C <https://wiki.sei.cmu.edu/confluence/display/c/INT02-C.+Understand+integer+conversion+rules>`_
+      -  | `INT02-C <https://wiki.sei.cmu.edu/confluence/display/c/INT02-C.+Understand+integer+conversion+rules>`_
+         | `INT31-C <https://wiki.sei.cmu.edu/confluence/display/c/INT31-C.+Ensure+that+integer+conversions+do+not+result+in+lost+or+misinterpreted+data>`_
 
          .. _MisraC_Rule_10_8:
     * -  66
@@ -442,7 +470,7 @@ should comply with the rules listed below.
     * -  67
       -  Conversions shall not be performed between a pointer to an incomplete type and any other type
       -  `Rule 11.2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_11_02.c>`_
-      -  N/A
+      -  `EXP36-C <https://wiki.sei.cmu.edu/confluence/display/c/EXP36-C.+Do+not+cast+pointers+into+more+strictly+aligned+pointer+types>`_
 
          .. _MisraC_Rule_11_6:
     * -  68
@@ -454,13 +482,14 @@ should comply with the rules listed below.
     * -  69
       -  A cast shall not be performed between pointer to object and a noninteger arithmetic type
       -  `Rule 11.7 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_11_07.c>`_
-      -  N/A
+      -  `EXP36-C <https://wiki.sei.cmu.edu/confluence/display/c/EXP36-C.+Do+not+cast+pointers+into+more+strictly+aligned+pointer+types>`_
 
          .. _MisraC_Rule_11_8:
     * -  70
       -  A cast shall not remove any const or volatile qualification from the type pointed to by a pointer
       -  `Rule 11.8 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_11_08.c>`_
-      -  `EXP05-C <https://wiki.sei.cmu.edu/confluence/display/c/EXP05-C.+Do+not+cast+away+a+const+qualification>`_
+      -  | `EXP05-C <https://wiki.sei.cmu.edu/confluence/display/c/EXP05-C.+Do+not+cast+away+a+const+qualification>`_
+         | `EXP32-C <https://wiki.sei.cmu.edu/confluence/display/c/EXP32-C.+Do+not+access+a+volatile+object+through+a+nonvolatile+reference>`_
 
          .. _MisraC_Rule_11_9:
     * -  71
@@ -503,7 +532,7 @@ should comply with the rules listed below.
     * -  77
       -  The value of an expression and its persistent side effects shall be the same under all permitted evaluation orders
       -  `Rule 13.2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_13_02.c>`_
-      -  N/A
+      -  `EXP30-C <https://wiki.sei.cmu.edu/confluence/display/c/EXP30-C.+Do+not+depend+on+the+order+of+evaluation+for+side+effects>`_
 
          .. _MisraC_Rule_13_3:
     * -  78
@@ -534,7 +563,7 @@ should comply with the rules listed below.
     * -  82
       -  A loop counter shall not have essentially floating type
       -  `Rule 14.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_14_01.c>`_
-      -  N/A
+      -  `FLP30-C <https://wiki.sei.cmu.edu/confluence/display/c/FLP30-C.+Do+not+use+floating-point+variables+as+loop+counters>`_
 
          .. _MisraC_Rule_14_2:
     * -  83
@@ -576,13 +605,13 @@ should comply with the rules listed below.
     * -  89
       -  All if else if constructs shall be terminated with an else statement
       -  `Rule 15.7 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_15_07.c>`_
-      -  CERT, MSC01-C <https://wiki.sei.cmu.edu/confluence/display/c/MSC01-C.+Strive+for+logical+completeness>
+      -  `MSC01-C <https://wiki.sei.cmu.edu/confluence/display/c/MSC01-C.+Strive+for+logical+completeness>`_
 
          .. _MisraC_Rule_16_1:
     * -  90
       -  All switch statements shall be well-formed
       -  `Rule 16.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_16_01.c>`_
-      -  N/A
+      -  `DCL41-C <https://wiki.sei.cmu.edu/confluence/display/c/DCL41-C.+Do+not+declare+variables+inside+a+switch+statement+before+the+first+case+label>`_
 
          .. _MisraC_Rule_16_2:
     * -  91
@@ -624,7 +653,9 @@ should comply with the rules listed below.
     * -  97
       -  The features of <stdarg.h> shall not be used
       -  `Rule 17.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_17_01.c>`_
-      -  `ERR00-C <https://wiki.sei.cmu.edu/confluence/display/c/ERR00-C.+Adopt+and+implement+a+consistent+and+comprehensive+error-handling+policy>`_
+      -  | `DCL10-C <https://wiki.sei.cmu.edu/confluence/display/c/DCL10-C.+Maintain+the+contract+between+the+writer+and+caller+of+variadic+functions>`_
+         | `DCL11-C <https://wiki.sei.cmu.edu/confluence/display/c/DCL11-C.+Understand+the+type+issues+associated+with+variadic+functions>`_
+         | `ERR00-C <https://wiki.sei.cmu.edu/confluence/display/c/ERR00-C.+Adopt+and+implement+a+consistent+and+comprehensive+error-handling+policy>`_
 
          .. _MisraC_Rule_17_2:
     * -  98
@@ -636,7 +667,8 @@ should comply with the rules listed below.
     * -  99
       -  A function shall not be declared implicitly
       -  `Rule 17.3 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_17_03.c>`_
-      -  N/A
+      -  | `DCL36-C <https://wiki.sei.cmu.edu/confluence/display/c/DCL36-C.+Do+not+declare+an+identifier+with+conflicting+linkage+classifications>`_
+         | `EXP37-C <https://wiki.sei.cmu.edu/confluence/display/c/EXP37-C.+Call+functions+with+the+correct+number+and+type+of+arguments>`_
 
          .. _MisraC_Rule_17_4:
     * -  100
@@ -666,19 +698,23 @@ should comply with the rules listed below.
     * -  104
       -  A pointer resulting from arithmetic on a pointer operand shall address an element of the same array as that pointer operand
       -  `Rule 18.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_18_01.c>`_
-      -  `EXP08-C <https://wiki.sei.cmu.edu/confluence/display/c/EXP08-C.+Ensure+pointer+arithmetic+is+used+correctly>`_
+      -  | `ARR30-C <https://wiki.sei.cmu.edu/confluence/display/c/ARR30-C.+Do+not+form+or+use+out-of-bounds+pointers+or+array+subscripts>`_
+         | `ARR39-C <https://wiki.sei.cmu.edu/confluence/display/c/ARR39-C.+Do+not+add+or+subtract+a+scaled+integer+to+a+pointer>`_
+         | `EXP08-C <https://wiki.sei.cmu.edu/confluence/display/c/EXP08-C.+Ensure+pointer+arithmetic+is+used+correctly>`_
 
          .. _MisraC_Rule_18_2:
     * -  105
       -  Subtraction between pointers shall only be applied to pointers that address elements of the same array
       -  `Rule 18.2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_18_02.c>`_
-      -  `EXP08-C <https://wiki.sei.cmu.edu/confluence/display/c/EXP08-C.+Ensure+pointer+arithmetic+is+used+correctly>`_
+      -  | `ARR39-C <https://wiki.sei.cmu.edu/confluence/display/c/ARR39-C.+Do+not+add+or+subtract+a+scaled+integer+to+a+pointer>`_
+         | `EXP08-C <https://wiki.sei.cmu.edu/confluence/display/c/EXP08-C.+Ensure+pointer+arithmetic+is+used+correctly>`_
 
          .. _MisraC_Rule_18_3:
     * -  106
       -  The relational operators >, >=, < and <= shall not be applied to objects of pointer type except where they point into the same object
       -  `Rule 18.3 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_18_03.c>`_
-      -  `EXP08-C <https://wiki.sei.cmu.edu/confluence/display/c/EXP08-C.+Ensure+pointer+arithmetic+is+used+correctly>`_
+      -  | `ARR39-C <https://wiki.sei.cmu.edu/confluence/display/c/ARR39-C.+Do+not+add+or+subtract+a+scaled+integer+to+a+pointer>`_
+         | `EXP08-C <https://wiki.sei.cmu.edu/confluence/display/c/EXP08-C.+Ensure+pointer+arithmetic+is+used+correctly>`_
 
          .. _MisraC_Rule_18_5:
     * -  107
@@ -691,7 +727,8 @@ should comply with the rules listed below.
       -  The address of an object with automatic storage shall not be copied to another object that persists after the first object has ceased to exist
       -  | `Rule 18.6 example 1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_18_06_1.c>`_
          | `Rule 18.6 example 2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_18_06_2.c>`_
-      -  N/A
+      -  | `DCL30-C <https://wiki.sei.cmu.edu/confluence/display/c/DCL30-C.+Declare+objects+with+appropriate+storage+durations>`_
+         | `MEM30-C <https://wiki.sei.cmu.edu/confluence/display/c/MEM30-C.+Do+not+access+freed+memory>`_
 
          .. _MisraC_Rule_18_8:
     * -  109
@@ -769,19 +806,21 @@ should comply with the rules listed below.
     * -  121
       -  #define and #undef shall not be used on a reserved identifier or reserved macro name
       -  `Rule 21.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_21_01.c>`_
-      -  N/A
+      -  `DCL37-C <https://wiki.sei.cmu.edu/confluence/display/c/DCL37-C.+Do+not+declare+or+define+a+reserved+identifier>`_
 
          .. _MisraC_Rule_21_2:
     * -  122
       -  A reserved identifier or macro name shall not be declared
       -  `Rule 21.2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_21_02.c>`_
-      -  N/A
+      -  `DCL37-C <https://wiki.sei.cmu.edu/confluence/display/c/DCL37-C.+Do+not+declare+or+define+a+reserved+identifier>`_
 
          .. _MisraC_Rule_21_3:
     * -  123
       -  The memory allocation and deallocation functions of <stdlib.h> shall not be used
       -  `Rule 21.3 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_21_03.c>`_
-      -  `MSC24-C <https://wiki.sei.cmu.edu/confluence/display/c/MSC24-C.+Do+not+use+deprecated+or+obsolescent+functions>`_
+      -  | `API03-C <https://wiki.sei.cmu.edu/confluence/display/c/API03-C.+Create+consistent+interfaces+and+capabilities+across+related+functions>`_
+         | `API04-C <https://wiki.sei.cmu.edu/confluence/display/c/API04-C.+Provide+a+consistent+and+usable+error-checking+mechanism>`_
+         | `MSC24-C <https://wiki.sei.cmu.edu/confluence/display/c/MSC24-C.+Do+not+use+deprecated+or+obsolescent+functions>`_
 
          .. _MisraC_Rule_21_4:
     * -  124
