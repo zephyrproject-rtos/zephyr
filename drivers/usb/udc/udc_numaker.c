@@ -1214,8 +1214,8 @@ static void numaker_usbd_isr(const struct device *dev)
 
 	struct numaker_usbd_msg msg = {0};
 
-	uint32_t volatile usbd_intsts = base->INTSTS;
-	uint32_t volatile usbd_bus_state = base->ATTR;
+	uint32_t usbd_intsts = base->INTSTS;
+	uint32_t usbd_bus_state = base->ATTR;
 
 	/* Focus on enabled
 	 *
