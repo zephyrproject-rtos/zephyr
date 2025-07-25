@@ -1,0 +1,20 @@
+/**
+ * Copyright (c) 2023 Arducam Technology Co., Ltd. <www.arducam.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+&uart0{
+	current-speed = <115200>;
+};
+
+&spi3 {
+	clock-frequency = <4000000>;
+	pinctrl-names = "default";
+	arducam_mega0:arducam-mega0@0 {
+		compatible = "arducam,mega";
+		reg = <0>;
+		spi-max-frequency = <4000000>;
+		status = "okay";
+	};
+};
