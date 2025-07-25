@@ -59,7 +59,7 @@ static int sc18is606_spi_transceive(const struct device *dev,
 		const struct spi_buf_set *tx_buffer_set,
 		const struct spi_buf_set *rx_buffer_set)
 {
-	const struct nxp_sc18is606_config *cfg = dev->config;
+	//const struct nxp_sc18is606_config *cfg = dev->config;
 	const struct nxp_sc18is606_data *data = dev->data;
 	const struct device *i2c_dev = data->i2c_dev;
 	int ret;
