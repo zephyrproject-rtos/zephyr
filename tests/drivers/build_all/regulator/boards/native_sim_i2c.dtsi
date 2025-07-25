@@ -248,3 +248,17 @@ npm10xx@b {
 		LDSW {};
 	};
 };
+
+max20362@c {
+	compatible = "adi,max20362-regulator";
+	reg = <0xc>;
+	bat-bbin-vdrop = <0>;
+	dvs-src = <0>;
+	ldo-src = <1>;
+
+	bboost {};
+
+	cap {};
+
+	ldo {};
+};
