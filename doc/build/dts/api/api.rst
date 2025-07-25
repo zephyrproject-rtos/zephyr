@@ -472,3 +472,6 @@ device.
    * - zephyr,boot-mode
      - Used for :ref:`boot_mode_api` selection, part of :ref:`retention_api`, which specifies
        what image on a device should be booted.
+   * - zephyr,pm-s2ram-context
+     - Used for enabling pleacment of cpu_context drop entry into memory secton specified
+       by a zephyr memory region node with the property zephyr,memory-region value.
