@@ -526,52 +526,71 @@
 			};
 		};
 
-		netc: ethernet@4ca00000 {
-			reg = <0x4ca00000 0x1000000>;
-			interrupt-parent = <&irqsteer_master0>;
-			interrupts = <13 0 0>;
+		netc_blk_ctrl: netc-blk-ctrl@4cde0000 {
+			compatible = "nxp,imx-netc-blk-ctrl";
+			reg = <0x4cde0000 0x10000>,
+			      <0x4cdf0000 0x10000>,
+			      <0x4c810000 0x18>;
+			reg-names = "ierb", "prb", "netcmix";
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges;
 
-			emdio: mdio@4cce0000 {
-				compatible = "nxp,imx-netc-emdio";
-				reg = <0x4cce0000 0x1c44>;
-				clocks = <&scmi_clk IMX95_CLK_ENET>;
+			netc: ethernet {
+				compatible = "nxp,imx-netc";
+				interrupt-parent = <&irqsteer_master0>;
+				interrupts = <13 0 0>;
 				#address-cells = <1>;
-				#size-cells = <0>;
-				status = "disabled";
-			};
+				#size-cells = <1>;
+				ranges;
 
-			enetc_psi0: ethernet@4cc00000 {
-				compatible = "nxp,imx-netc-psi";
-				reg = <0x4cc00000 0x10000>;
-				mac-index = <0>;
-				si-index = <0>;
-				status = "disabled";
-			};
+				enetc_psi0: ethernet@4cc00000 {
+					compatible = "nxp,imx-netc-psi";
+					reg = <0x4cc00000 0x10000>,
+					      <0x4ca00000 0x1000>;
+					reg-names = "port", "pfconfig";
+					mac-index = <0>;
+					si-index = <0>;
+					status = "disabled";
+				};
 
-			enetc_psi1: ethernet@4cc40000 {
-				compatible = "nxp,imx-netc-psi";
-				reg = <0x4cc40000 0x10000>;
-				mac-index = <1>;
-				si-index = <1>;
-				status = "disabled";
-			};
+				enetc_psi1: ethernet@4cc40000 {
+					compatible = "nxp,imx-netc-psi";
+					reg = <0x4cc40000 0x10000>,
+					      <0x4ca40000 0x1000>;
+					reg-names = "port", "pfconfig";
+					mac-index = <1>;
+					si-index = <1>;
+					status = "disabled";
+				};
 
-			enetc_psi2: ethernet@4cc80000 {
-				compatible = "nxp,imx-netc-psi";
-				reg = <0x4cc80000 0x10000>;
-				mac-index = <2>;
-				si-index = <2>;
-				status = "disabled";
-			};
+				enetc_psi2: ethernet@4cc80000 {
+					compatible = "nxp,imx-netc-psi";
+					reg = <0x4cc80000 0x10000>,
+					      <0x4ca80000 0x1000>;
+					reg-names = "port", "pfconfig";
+					mac-index = <2>;
+					si-index = <2>;
+					status = "disabled";
+				};
 
-			enetc_ptp_clock: ptp_clock@4ccc0000 {
-				compatible = "nxp,netc-ptp-clock";
-				reg = <0x4ccc0000 0x10000>;
-				clocks = <&scmi_clk IMX95_CLK_ENET>;
-				status = "disabled";
+				emdio: mdio@4cb00000 {
+					compatible = "nxp,imx-netc-emdio";
+					reg = <0x4cce0000 0x2000>,
+					      <0x4cb00000 0x100000>;
+					reg-names = "basic", "pfconfig";
+					clocks = <&scmi_clk IMX95_CLK_ENET>;
+					#address-cells = <1>;
+					#size-cells = <0>;
+					status = "disabled";
+				};
+
+				enetc_ptp_clock: ptp_clock@4ccc0000 {
+					compatible = "nxp,netc-ptp-clock";
+					reg = <0x4ccc0000 0x10000>;
+					clocks = <&scmi_clk IMX95_CLK_ENET>;
+					status = "disabled";
+				};
 			};
 		};
 	};

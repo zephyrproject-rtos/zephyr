@@ -43,8 +43,33 @@
 	};
 
 	dram: memory@d0000000 {
-		reg = <0xd0000000 DT_SIZE_M(1)>;
+		reg = <0xd0000000 DT_SIZE_M(10)>;
 	};
+};
+
+&emdio {
+	pinctrl-0 = <&emdio_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	phy0: phy@1 {
+		compatible = "realtek,rtl8211f";
+		reg = <0x1>;
+		status = "okay";
+	};
+};
+
+&enetc_psi0 {
+	local-mac-address = [00 00 00 01 02 00];
+	pinctrl-0 = <&eth0_default>;
+	pinctrl-names = "default";
+	phy-handle = <&phy0>;
+	phy-connection-type = "rgmii";
+	status = "okay";
+};
+
+&enetc_ptp_clock {
+	status = "okay";
 };
 
 &lpi2c5 {
