@@ -15,7 +15,7 @@ elseif(CONFIG_ARM_PACBTI_PACRET_BTI)
 elseif(CONFIG_ARM_PACBTI_PACRET_LEAF_BTI)
   zephyr_compile_options(-mbranch-protection=pac-ret+leaf+bti)
 elseif(CONFIG_ARM_PACBTI_NONE)
-  #TODO: Enable this after Zephyr SDK updates to GCC version >=14.2
+  #TODO: Enable this after Zephyr SDK updates to the latest GCC version
   # zephyr_compile_options(-mbranch-protection=none)
 endif()
 
