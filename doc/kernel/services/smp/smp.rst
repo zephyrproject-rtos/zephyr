@@ -264,6 +264,57 @@ they must be processed. The third is the apparent sputtering of a thread as it
 "winks in" and then "winks out" due to cascades stemming from the
 aforementioned first cost.
 
+IPI Work Items
+==============
+
+The kernel allows developers to execute functions on other CPUs at ISR level
+using one or more IPI work items. After IPI work items have been added to the
+specified CPUs' work queues using :c:func:`k_ipi_work_add`, the targeted CPUs
+will process them after receiving an IPI. Signaling an IPI is done by calling
+:c:func:`k_ipi_work_signal`. Waiting for an IPI work item to be completed by
+the targeted CPUs is done by calling :c:func:`k_ipi_work_wait`. Only a single
+waiter is permitted at a time.
+
+.. note::
+    IPI work items will only be added to the IPI work queues of other CPUs. If
+    adding IPI work items at thread level, the developer must ensure that the
+    current thread does not change CPUs until after signaling the IPIs.
+
+Sample Use
+----------
+
+The following code outlines how to use IPI work items to update status
+information across a set of CPUs as a result of one CPU handling an ISR.
+
+.. code-block:: c
+
+    struct k_ipi_work my_work;
+
+    void remote_cpu_action(struct k_ipi_work *arg)
+    {
+        ...
+    }
+
+    void my_isr(void)
+    {
+        /*
+         * Wait for previous use of <my_work> to complete.
+         * It assumes that <my_work> was initialized elsewhere.
+         */
+
+        uint32_t cpu_mask = <bitmask identifying CPUs to update>;
+
+        while (k_ipi_work_wait(&my_work, K_NO_WAIT) == -EAGAIN) {
+        }
+
+        /* Add and signal the new work */
+
+        k_ipi_work_add(&my_work, cpu_mask, remote_cpu_action);
+
+        k_ipi_signal();
+    }
+
+
 SMP Kernel Internals
 ********************
 
