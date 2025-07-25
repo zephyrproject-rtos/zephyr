@@ -414,6 +414,17 @@ void lll_conn_isr_rx(void *param)
 		cte_len = 0U;
 	}
 
+#if defined(CONFIG_BT_PERIPHERAL)
+	/* Lets close early so that drift compensation is calculated before this event overlaps
+	 * with next interval.
+	 * TODO: Optimize, to improve throughput, by removing this early close and using the drift
+	 *       compensation value in the overlapping next interval, if under high throughput
+	 *       scenarios.
+	 */
+	is_done = is_done || ((lll->role == BT_HCI_ROLE_PERIPHERAL) &&
+			      (lll->periph.window_size_event_us != 0U));
+#endif /* CONFIG_BT_PERIPHERAL */
+
 	/* Decide on event continuation and hence Radio Shorts to use */
 	is_done = is_done || ((crc_ok) &&
 			      (pdu_data_rx->md == 0) &&
