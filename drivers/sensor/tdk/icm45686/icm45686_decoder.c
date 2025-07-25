@@ -125,7 +125,7 @@ int icm45686_convert_raw_to_q31(struct icm45686_encoded_data *edata,
 	if (shift < 0) {
 		intermediate =
 			intermediate * ((int64_t)INT32_MAX + 1) * (1 << -shift) / INT64_C(1000000);
-	} else if (shift > 0) {
+	} else {
 		intermediate =
 			intermediate * ((int64_t)INT32_MAX + 1) / ((1 << shift) * INT64_C(1000000));
 	}
@@ -404,7 +404,7 @@ static q31_t icm45686_fifo_read_temp_from_packet(const uint8_t *pkt)
 	if (shift < 0) {
 		intermediate =
 			intermediate * ((int64_t)INT32_MAX + 1) * (1 << -shift) / INT64_C(1000000);
-	} else if (shift > 0) {
+	} else {
 		intermediate =
 			intermediate * ((int64_t)INT32_MAX + 1) / ((1 << shift) * INT64_C(1000000));
 	}
@@ -450,7 +450,7 @@ static int icm45686_fifo_read_imu_from_packet(const uint8_t *pkt,
 	if (shift < 0) {
 		intermediate =
 			intermediate * ((int64_t)INT32_MAX + 1) * (1 << -shift) / INT64_C(1000000);
-	} else if (shift > 0) {
+	} else {
 		intermediate =
 			intermediate * ((int64_t)INT32_MAX + 1) / ((1 << shift) * INT64_C(1000000));
 	}
