@@ -517,10 +517,7 @@ static int adxl345_init(const struct device *dev)
 		    2 * DT_INST_PROP(inst, fifo_watermark) + 2);
 
 #define ADXL345_CONFIG(inst)									   \
-		.odr = DT_INST_PROP_OR(inst, odr, ADXL345_RATE_25HZ),				   \
-		.fifo_config.fifo_mode = ADXL345_FIFO_STREAMED,					   \
-		.fifo_config.fifo_trigger = ADXL345_INT2,					   \
-		.fifo_config.fifo_samples = DT_INST_PROP_OR(inst, fifo_watermark, 0),
+		.odr = DT_INST_PROP_OR(inst, odr, ADXL345_RATE_25HZ),
 
 #define ADXL345_CONFIG_SPI(inst)								   \
 	{											   \
