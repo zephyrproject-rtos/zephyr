@@ -4347,6 +4347,14 @@ Secure storage:
   tests:
     - psa.secure_storage
 
+Seeed Studio Platforms:
+  status: odd fixes
+  files:
+    - boards/seeed/
+    - boards/shields/seeed_*/
+  labels:
+    - "platform: Seeed Studio"
+
 Sensor Subsystem:
   status: maintained
   maintainers:
