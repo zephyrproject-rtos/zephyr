@@ -26,6 +26,7 @@
 		zephyr,bt-hci = &bt_hci_ipc0;
 		nordic,802154-spinel-ipc = &ipc0;
 		zephyr,canbus = &can120;
+		zephyr,pm-s2ram-context = &cpuapp_s2ram;
 	};
 
 	aliases {
@@ -325,4 +326,23 @@ zephyr_udc0: &usbhs {
 &adc {
 	memory-regions = <&cpuapp_dma_region>;
 	status = "okay";
+};
+
+/delete-node/ &cpuapp_ram0;
+/ {
+	soc {
+		cpuapp_ram0: sram@22000020 {
+			compatible = "mmio-sram";
+			reg = <0x22000020 (DT_SIZE_K(32)-32)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x22000020 (0x8000-0x20)>;
+		};
+
+		cpuapp_s2ram: cpuapp_s2ram@22000000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x22000000 32>;
+			zephyr,memory-region = "s2ram_context";
+		};
+	};
 };
