@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -90,6 +90,25 @@
 	};
 };
 
+&lpi2c2 {
+	pinctrl-0 = <&lpi2c2_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	mfd0:adp5585@34 {
+		compatible = "adi,adp5585";
+		reg = <0x34>;
+		status = "okay";
+		gpio_exp0: adp5585_gpio {
+			compatible = "adi,adp5585-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <13>;
+			gpio-reserved-ranges = <5 3>;
+			status = "okay";
+		};
+	};
+};
+
 &lpi2c5 {
 	pinctrl-0 = <&lpi2c5_default>;
 	pinctrl-names = "default";
@@ -139,4 +158,39 @@
 
 &edma2 {
 	status = "okay";
+};
+
+&dpu {
+	status = "okay";
+	width = <1080>;
+	height = <2340>;
+	hsw = <4>;
+	hfp = <12>;
+	hbp = <8>;
+	vsw = <4>;
+	vfp = <10>;
+	vbp = <10>;
+};
+
+&mipi_dsi {
+	status = "okay";
+	compatible = "nxp,mipi-dsi-dwc";
+	dpi-color-coding = "24-bit";
+	dpi-video-mode = "non-burst-sync-pulse";
+	dphy-ref-frequency = <24000000>;
+	data-rate-clock = <890666664>;
+	nxp,dc = <&dpu>;
+	width = <1080>;
+	height = <2340>;
+	rm692c9@0 {
+		status = "okay";
+		compatible = "raydium,rm692c9";
+		reg = <0x0>;
+		width = <1080>;
+		height = <2340>;
+		reset-gpios = <&gpio_exp0 8 GPIO_ACTIVE_HIGH>;
+		bl-gpios = <&gpio_exp0 4 GPIO_ACTIVE_HIGH>;
+		data-lanes = <4>;
+		pixel-format = <0>;
+	};
 };
