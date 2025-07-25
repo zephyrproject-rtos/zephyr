@@ -63,10 +63,12 @@ config SOC_MSPM0L1346
 config SOC_MSPM0L2227
 	bool
 	select SOC_SERIES_MSPM0L
+	select CPU_HAS_ARM_MPU
 
 config SOC_MSPM0L2228
 	bool
 	select SOC_SERIES_MSPM0L
+	select CPU_HAS_ARM_MPU
 
 config SOC_SERIES
 	default "mspm0l" if SOC_SERIES_MSPM0L
