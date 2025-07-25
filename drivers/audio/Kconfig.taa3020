@@ -1,0 +1,13 @@
+# Copyright 2025 sevenlab engineering GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_CODEC_TAA3020
+	bool "TI TAA3020 ADC support"
+	default y
+	depends on DT_HAS_TI_TAA3020_ENABLED
+	select I2C
+	depends on GPIO
+	depends on AUDIO
+	depends on AUDIO_CODEC
+	help
+	  Enable support for the TI TAA3020 audio ADC.
