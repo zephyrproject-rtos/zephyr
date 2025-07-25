@@ -153,13 +153,19 @@ static int pwm_led_esp32_timer_config(struct pwm_ledc_esp32_channel_config *chan
 	 */
 	for (int i = 0; i < clock_src_num; i++) {
 		if (clock_src[i] == LEDC_SLOW_CLK_RC_FAST) {
-			/* RC_FAST requires enabling and calibrating */
-			if (!rtc_dig_8m_enabled() && !periph_rtc_dig_clk8m_enable()) {
-				/* skip RC_FAST as clock source */
-				continue;
+			uint32_t rc_fast_freq = periph_rtc_dig_clk8m_get_freq();
+
+			if (!rtc_dig_8m_enabled() || rc_fast_freq == 0) {
+				/* RC_FAST requires enabling and calibrating */
+				if (!periph_rtc_dig_clk8m_enable()) {
+					/* skip RC_FAST as clock source */
+					continue;
+				}
+				rc_fast_freq = periph_rtc_dig_clk8m_get_freq();
 			}
+
 			channel->clock_src = clock_src[i];
-			channel->clock_src_hz = periph_rtc_dig_clk8m_get_freq();
+			channel->clock_src_hz = rc_fast_freq;
 		} else {
 			channel->clock_src = clock_src[i];
 			esp_clk_tree_src_get_freq_hz(channel->clock_src,
@@ -198,12 +204,27 @@ static int pwm_led_esp32_timer_set(const struct device *dev,
 	}
 
 	if (channel->speed_mode == LEDC_LOW_SPEED_MODE) {
-		ledc_hal_set_slow_clk_sel(&data->hal, channel->clock_src);
+#if SOC_LEDC_SUPPORT_REF_TICK
+		/* When the source clock of LOW_SPEED timer is timer-specific
+		 * (REF_TICK), global clock MUST be set to APB_CLK.
+		 */
+		ledc_clk_src_t global_clk = channel->clock_src == LEDC_REF_TICK
+						    ? LEDC_SLOW_CLK_APB
+						    : channel->clock_src;
+#else
+		ledc_clk_src_t global_clk = channel->clock_src;
+#endif
+		ledc_hal_set_slow_clk_sel(&data->hal, global_clk);
 	}
 
 	ledc_hal_set_clock_divider(&data->hal, channel->timer_num, prescaler);
 	ledc_hal_set_duty_resolution(&data->hal, channel->timer_num, channel->resolution);
-	ledc_hal_set_clock_source(&data->hal, channel->timer_num, channel->clock_src);
+
+#if SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
+	ledc_clk_src_t timer_clk =
+		channel->clock_src == LEDC_REF_TICK ? channel->clock_src : LEDC_SCLK;
+	ledc_hal_set_clock_source(&data->hal, channel->timer_num, timer_clk);
+#endif
 
 	if (channel->speed_mode == LEDC_LOW_SPEED_MODE) {
 		ledc_hal_ls_timer_update(&data->hal, channel->timer_num);
@@ -377,7 +398,9 @@ int pwm_led_esp32_init(const struct device *dev)
 			channel->clock_src = highspd_clks[0];
 		}
 #endif
+#if SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
 		ledc_hal_set_clock_source(&data->hal, channel->timer_num, channel->clock_src);
+#endif
 
 		esp_clk_tree_src_get_freq_hz(channel->clock_src,
 					     ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED,
