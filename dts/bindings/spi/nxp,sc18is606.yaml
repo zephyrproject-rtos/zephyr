@@ -19,13 +19,3 @@ properties:
       - 58000
     description: SPI CLock frequency in Hz
 
-  spi-mode:
-    type: int
-    required: false
-    default: 0
-    enum:
-      - 0
-      - 1
-      - 2
-      - 3
-    description: SPI mode CPOL and CPHA combination
