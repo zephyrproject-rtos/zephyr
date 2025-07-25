@@ -7,7 +7,6 @@
 &spi3 {
 	overrun-character = <0x00>;
 	cs-gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
-	zephyr,pm-device-runtime-auto;
 	slow@0 {
 		compatible = "test-spi-loopback-slow";
 		reg = <0>;

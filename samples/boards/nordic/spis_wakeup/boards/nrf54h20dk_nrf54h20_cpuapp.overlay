@@ -60,7 +60,3 @@
 	/delete-property/rx-delay-supported;
 	/delete-property/rx-delay;
 };
-
-&uart136 {
-	zephyr,pm-device-runtime-auto;
-};
