@@ -456,6 +456,12 @@ test_i2c_hdc2080: hdc2080@42 {
 	reg = <0x42>;
 };
 
+test_i2c_hdc3022: hdc3022@44 {
+	compatible = "ti,hdc3022";
+	reg = <0x44>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
 test_i2c_opt3001: opt3001@43 {
 	compatible = "ti,opt3001";
 	reg = <0x43>;
