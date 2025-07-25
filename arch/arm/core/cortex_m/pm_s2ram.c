@@ -14,7 +14,12 @@
 /**
  * CPU context for S2RAM
  */
-__noinit _cpu_context_t _cpu_context;
+#if DT_HAS_CHOSEN(zephyr_pm_s2ram_context)
+__attribute__((section("s2ram_context")))
+#else
+__noinit
+#endif
+ _cpu_context_t _cpu_context;
 
 #ifndef CONFIG_PM_S2RAM_CUSTOM_MARKING
 /**
