@@ -16,6 +16,9 @@ extern "C" {
 #include "jesd216.h"
 #include "spi_nor.h"
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(supply_gpios)
+#define WITH_SUPPLY_GPIO 1
+#endif
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 #define WITH_RESET_GPIO 1
 #endif
@@ -74,6 +77,9 @@ struct flash_mspi_nor_config {
 	struct mspi_dev_cfg mspi_nor_init_cfg;
 #if defined(CONFIG_MSPI_XIP)
 	struct mspi_xip_cfg xip_cfg;
+#endif
+#if defined(WITH_SUPPLY_GPIO)
+	struct gpio_dt_spec supply;
 #endif
 #if defined(WITH_RESET_GPIO)
 	struct gpio_dt_spec reset;
