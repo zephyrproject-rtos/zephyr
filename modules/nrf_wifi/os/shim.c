@@ -195,23 +195,18 @@ static void zep_shim_qspi_cpy_to(void *priv, unsigned long addr, const void *src
 }
 #endif /* !CONFIG_NRF71_ON_IPC */
 
-struct zep_shim_spinlock {
-	struct k_spinlock lock;
-	k_spinlock_key_t key;
-};
-
 static void *zep_shim_spinlock_alloc(void)
 {
-	struct zep_shim_spinlock *slock = NULL;
+	struct k_mutex *lock = NULL;
 
-	slock = k_heap_aligned_alloc(wifi_ctrl_pool, WORD_SIZE, sizeof(*slock), K_FOREVER);
-	if (!slock) {
+	lock = k_heap_aligned_alloc(wifi_ctrl_pool, WORD_SIZE, sizeof(*lock), K_FOREVER);
+	if (!lock) {
 		LOG_ERR("%s: Unable to allocate memory for spinlock", __func__);
 	} else {
-		memset(slock, 0, sizeof(*slock));
+		memset(lock, 0, sizeof(*lock));
 	}
 
-	return slock;
+	return lock;
 }
 
 static void zep_shim_spinlock_free(void *lock)
@@ -223,38 +218,29 @@ static void zep_shim_spinlock_free(void *lock)
 
 static void zep_shim_spinlock_init(void *lock)
 {
-	/* No explicit initialization needed for k_spinlock_t */
-	ARG_UNUSED(lock);
+	k_mutex_init(lock);
 }
 
 static void zep_shim_spinlock_take(void *lock)
 {
-	struct zep_shim_spinlock *slock = (struct zep_shim_spinlock *)lock;
-
-	slock->key = k_spin_lock(&slock->lock);
+	k_mutex_lock(lock, K_FOREVER);
 }
 
 static void zep_shim_spinlock_rel(void *lock)
 {
-	struct zep_shim_spinlock *slock = (struct zep_shim_spinlock *)lock;
-
-	k_spin_unlock(&slock->lock, slock->key);
+	k_mutex_unlock(lock);
 }
 
 static void zep_shim_spinlock_irq_take(void *lock, unsigned long *flags)
 {
-	struct zep_shim_spinlock *slock = (struct zep_shim_spinlock *)lock;
-
 	ARG_UNUSED(flags);
-	slock->key = k_spin_lock(&slock->lock);
+	k_mutex_lock(lock, K_FOREVER);
 }
 
 static void zep_shim_spinlock_irq_rel(void *lock, unsigned long *flags)
 {
-	struct zep_shim_spinlock *slock = (struct zep_shim_spinlock *)lock;
-
 	ARG_UNUSED(flags);
-	k_spin_unlock(&slock->lock, slock->key);
+	k_mutex_unlock(lock);
 }
 
 static int zep_shim_pr_dbg(const char *fmt, va_list args)

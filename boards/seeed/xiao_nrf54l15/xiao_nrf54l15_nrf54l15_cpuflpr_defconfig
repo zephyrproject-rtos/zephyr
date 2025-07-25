@@ -1,0 +1,13 @@
+# Copyright (c) 2025 Seeed Technology Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+# Enable GPIO
+CONFIG_GPIO=y
+
+CONFIG_USE_DT_CODE_PARTITION=y
+
+# Execute from SRAM
+CONFIG_XIP=n
+
+# Use internal LFCLK
+CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC=y

@@ -1628,21 +1628,26 @@ Documentation Infrastructure:
   collaborators:
     - tomi-font
     - fabiobaltieri
+    - ubieda
   files:
     - doc/hardware/peripherals/gnss.rst
     - drivers/gnss/
     - include/zephyr/data/navigation.h
     - include/zephyr/drivers/gnss.h
     - include/zephyr/drivers/gnss/
+    - include/zephyr/gnss/
     - dts/bindings/gnss/
     - include/zephyr/dt-bindings/gnss/
     - tests/drivers/build_all/gnss/
     - tests/drivers/gnss/
+    - tests/subsys/gnss/
     - samples/drivers/gnss/
+    - subsys/gnss/
   labels:
     - "area: GNSS"
   tests:
     - drivers.gnss
+    - gnss
 
 "Drivers: GPIO":
   status: odd fixes
@@ -2495,6 +2500,20 @@ Documentation Infrastructure:
     Inventek es-WiFi
   labels:
     - "area: Wi-Fi"
+
+"Drivers: Wurth Elektronik Sensors":
+  status: maintained
+  maintainers:
+    - mah-eiSmart
+    - wm-eisos
+  files:
+    - drivers/sensor/wsen/
+  labels:
+    - "area: Sensors"
+  tests:
+    - drivers.sensors
+  description: >-
+    Drivers of Wurth Elektronik sensors.
 
 "Drivers: bbram":
   status: maintained
@@ -4106,8 +4125,8 @@ Realtek EC Platforms:
 Release Notes:
   status: maintained
   maintainers:
-    - danieldegrasse
-    - dkalowsk
+    - cfriedt
+    - jhedberg
   collaborators:
     - kartben
   files:
@@ -5288,6 +5307,9 @@ West:
 "West project: hal_nuvoton":
   status: maintained
   maintainers:
+    - cyliangtw
+    - ccli8
+  collaborators:
     - ssekar15
   files:
     - modules/Kconfig.nuvoton
@@ -5439,6 +5461,7 @@ West:
   status: maintained
   maintainers:
     - mah-eiSmart
+    - wm-eisos
   files:
     - modules/Kconfig.wurthelektronik
 
@@ -5754,13 +5777,6 @@ West:
   tests:
     - thrift
 
-"West project: tinycrypt":
-  status: odd fixes
-  files:
-    - modules/Kconfig.tinycrypt
-  labels:
-    - "area: Crypto / RNG"
-
 "West project: trusted-firmware-a":
   status: maintained
   maintainers:
@@ -5829,6 +5845,19 @@ West:
   maintainers:
     - microbuilder
   files: []
+
+Wurth Elektronik Platforms:
+  status: maintained
+  maintainers:
+    - mah-eiSmart
+    - wm-eisos
+  files:
+    - boards/we/
+    - dts/arm/we/
+  labels:
+    - "platform: WE"
+  description: >-
+    Wurth Elektronik radio modules, development boards, and SoCs.
 
 Xen Platform:
   status: maintained

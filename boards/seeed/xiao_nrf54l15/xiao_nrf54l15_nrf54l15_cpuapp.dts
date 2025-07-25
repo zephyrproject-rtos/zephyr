@@ -1,0 +1,148 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf54l15_cpuapp.dtsi>
+#include "seeed_xiao_connector.dtsi"
+#include "xiao_nrf54l15_common.dtsi"
+
+/ {
+	model = "Seeed XIAO nRF54L15";
+	compatible = "seeed,xiao-nrf54l15-cpuapp";
+
+	pdm_imu_pwr: pdm-imu-pwr {
+		compatible = "regulator-fixed";
+		regulator-name = "pdm-imu-pwr";
+		enable-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+		startup-delay-us = <5000>;
+	};
+
+	rfsw_ctl: rfsw-ctl {
+		compatible = "regulator-fixed";
+		regulator-name = "rfsw-ctl";
+		enable-gpios = <&gpio2 5 GPIO_ACTIVE_HIGH>;
+	};
+
+	rfsw_pwr: rfsw-pwr {
+		compatible = "regulator-fixed";
+		regulator-name = "rfsw-pwr";
+		enable-gpios = <&gpio2 3 GPIO_ACTIVE_HIGH>;
+	};
+
+	vbat_pwr: vbat-pwr {
+		compatible = "regulator-fixed";
+		regulator-name = "vbat";
+		enable-gpios = <&gpio1 15 GPIO_ACTIVE_HIGH>;
+	};
+
+	chosen {
+		zephyr,code-partition = &slot0_partition;
+		zephyr,sram = &cpuapp_sram;
+		zephyr,flash = &cpuapp_rram;
+		zephyr,console = &uart20;
+		zephyr,shell-uart = &uart20;
+		nordic,rpc-uart = &uart20;
+	};
+
+	aliases {
+		imu0 = &lsm6dso;
+	};
+};
+
+&cpuapp_sram {
+	status = "okay";
+};
+
+&grtc {
+	owned-channels = <0 1 2 3 4 5 6 7 8 9 10 11>;
+	/* Channels 7-11 reserved for Zero Latency IRQs, 3-4 for FLPR */
+	child-owned-channels = <3 4 7 8 9 10 11>;
+	status = "okay";
+};
+
+&clock {
+	status = "okay";
+};
+
+&uart20 {
+	status = "okay";
+};
+
+&uart21 {
+	status = "okay";
+};
+
+&i2c22 {
+	status = "okay";
+};
+
+&i2c30 {
+	status = "okay";
+
+	lsm6dso: lsm6dso@6a {
+		compatible = "st,lsm6dso";
+		reg = <0x6a>;
+		irq-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+		accel-pm = <LSM6DSO_DT_XL_ULP_MODE>;
+		gyro-pm = <LSM6DSO_DT_GY_NORMAL_MODE>;
+		status = "okay";
+	};
+};
+
+&spi00 {
+	status = "okay";
+};
+
+&pdm20 {
+	status = "okay";
+};
+
+&adc {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+
+	imu_power_default_on: imu_power_default_on {
+		gpio-hog;
+		gpios = <1 GPIO_ACTIVE_HIGH>;
+		line-name = "imu-power-enable";
+	};
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpiote20 {
+	status = "okay";
+};
+
+&gpiote30 {
+	status = "okay";
+};
+
+&regulators {
+	status = "okay";
+};
+
+&vregmain {
+	status = "okay";
+	regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+};
+
+&lfxo {
+	load-capacitors = "internal";
+	load-capacitance-femtofarad = <16000>;
+	status = "okay";
+};
+
+/* Include default memory partition configuration file */
+#include <nordic/nrf54l15_partition.dtsi>

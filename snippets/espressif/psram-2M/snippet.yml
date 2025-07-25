@@ -1,0 +1,8 @@
+# Copyright 2025 Espressif Systems Shanghai
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: psram-2M
+append:
+  EXTRA_CONF_FILE: esp_psram.conf
+  EXTRA_DTC_OVERLAY_FILE: soc/esp_psram_2M.overlay

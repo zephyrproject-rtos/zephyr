@@ -290,7 +290,7 @@ Boards & SoC Support
    * :zephyr:board:`Gardena Smart Garden Radio Module <sgrm>` (``sgrm``)
    * :zephyr:board:`mikroe STM32 M4 Clicker <mikroe_stm32_m4_clicker>` (``mikroe_stm32_m4_clicker``)
    * :zephyr:board:`Nordic Semiconductor nRF54L15 DK <nrf54l15dk>` (``nrf54l15dk``)
-   * :zephyr:board:`Nordic Semiconductor nRF54L20 PDK <nrf54l20pdk>` (``nrf54l20pdk``)
+   * Nordic Semiconductor nRF54L20 PDK (``nrf54l20pdk``)
    * :zephyr:board:`Nordic Semiconductor nRF7002 DK <nrf7002dk>` (``nrf7002dk``)
    * :zephyr:board:`Nuvoton NPCM400_EVB <npcm400_evb>` (``npcm400_evb``)
    * :zephyr:board:`NXP FRDM-MCXA156 <frdm_mcxa156>` (``frdm_mcxa156``)

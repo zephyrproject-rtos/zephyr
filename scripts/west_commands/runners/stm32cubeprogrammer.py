@@ -270,6 +270,8 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
             self.check_call(cmd + ["--erase", "all"])
 
         # Define binary to be loaded
+        dl_file = None
+
         if self._use_elf:
             # Use elf file if instructed to do so.
             dl_file = self.cfg.elf_file

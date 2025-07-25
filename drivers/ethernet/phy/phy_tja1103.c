@@ -18,6 +18,7 @@
 #include <zephyr/net/mdio.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/mdio.h>
+#include <zephyr/random/random.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(phy_tja1103, CONFIG_PHY_LOG_LEVEL);
@@ -54,6 +55,13 @@ LOG_MODULE_REGISTER(phy_tja1103, CONFIG_PHY_LOG_LEVEL);
 #define TJA1103_ALWAYS_ACCESSIBLE               (0x801F)
 #define TJA1103_ALWAYS_ACCESSIBLE_FUSA_PASS_IRQ BIT(4)
 
+#define MASTER_SLAVE_DEFAULT 0
+#define MASTER_SLAVE_MASTER  1
+#define MASTER_SLAVE_SLAVE   2
+#define MASTER_SLAVE_AUTO    3
+
+#define SWITCH_WAIT_RANGE(min, max) ((min) + (sys_rand16_get() % ((max) - (min))))
+
 struct phy_tja1103_config {
 	const struct device *mdio;
 	struct gpio_dt_spec gpio_interrupt;
@@ -65,15 +73,11 @@ struct phy_tja1103_data {
 	const struct device *dev;
 	struct phy_link_state state;
 	struct k_sem sem;
-	struct k_sem offload_sem;
 	phy_callback_t cb;
 	struct gpio_callback phy_tja1103_int_callback;
 	void *cb_data;
-
-	K_KERNEL_STACK_MEMBER(irq_thread_stack, CONFIG_PHY_TJA1103_IRQ_THREAD_STACK_SIZE);
-	struct k_thread irq_thread;
-
-	struct k_work_delayable monitor_work;
+	struct k_work_delayable phy_work;
+	k_timepoint_t timeout;
 };
 
 static inline int phy_tja1103_c22_read(const struct device *dev, uint16_t reg, uint16_t *val)
@@ -153,119 +157,54 @@ static int phy_tja1103_id(const struct device *dev, uint32_t *phy_id)
 	return 0;
 }
 
-static int update_link_state(const struct device *dev)
+static int phy_tja1103_get_link_state(const struct device *dev, struct phy_link_state *state)
 {
 	struct phy_tja1103_data *const data = dev->data;
-	bool link_up;
+
+	state->speed = data->state.speed;
+	state->is_up = data->state.is_up;
+
+	return 0;
+}
+
+static int phy_tja1103_update_link_state(const struct device *dev, struct phy_link_state *state)
+{
+	struct phy_tja1103_data *const data = dev->data;
 	uint16_t val;
+	int rc = 0;
 
 	if (phy_tja1103_c45_read(dev, MDIO_MMD_VENDOR_SPECIFIC1, TJA1103_PHY_STATUS, &val) < 0) {
 		return -EIO;
 	}
 
-	link_up = (val & TJA1103_PHY_STATUS_LINK_STAT) != 0;
-
-	/* Let workqueue re-schedule and re-check if the
-	 * link status is unchanged this time
-	 */
-	if (data->state.is_up == link_up) {
-		return -EAGAIN;
-	}
-
-	data->state.is_up = link_up;
-
-	return 0;
-}
-
-static int phy_tja1103_get_link_state(const struct device *dev, struct phy_link_state *state)
-{
-	struct phy_tja1103_data *const data = dev->data;
-	const struct phy_tja1103_config *const cfg = dev->config;
-	int rc = 0;
-
 	k_sem_take(&data->sem, K_FOREVER);
 
-	/* If Interrupt is configured then the workqueue will not
-	 * update the link state periodically so do it explicitly
-	 */
-	if (cfg->gpio_interrupt.port != NULL) {
-		rc = update_link_state(dev);
-	}
-
-	memcpy(state, &data->state, sizeof(struct phy_link_state));
+	/* TJA1103 Only supports 100BASE Full-duplex */
+	state->speed = LINK_FULL_100BASE;
+	state->is_up = (val & TJA1103_PHY_STATUS_LINK_STAT) != 0;
 
 	k_sem_give(&data->sem);
+
+	LOG_DBG("TJA1103 Link state %i", state->is_up);
 
 	return rc;
 }
 
-static void invoke_link_cb(const struct device *dev)
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
+static void phy_tja1103_ack_irq(const struct device *dev)
 {
-	struct phy_tja1103_data *const data = dev->data;
-	struct phy_link_state state;
-
-	if (data->cb == NULL) {
-		return;
-	}
-
-	/* Send callback only on link state change */
-	if (phy_tja1103_get_link_state(dev, &state) != 0) {
-		return;
-	}
-
-	data->cb(dev, &state, data->cb_data);
-}
-
-static void monitor_work_handler(struct k_work *work)
-{
-	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
-	struct phy_tja1103_data *const data =
-		CONTAINER_OF(dwork, struct phy_tja1103_data, monitor_work);
-	const struct device *dev = data->dev;
-	int rc;
-
-	k_sem_take(&data->sem, K_FOREVER);
-
-	rc = update_link_state(dev);
-
-	k_sem_give(&data->sem);
-
-	/* If link state has changed and a callback is set, invoke callback */
-	if (rc == 0) {
-		invoke_link_cb(dev);
-	}
-
-	/* Submit delayed work */
-	k_work_reschedule(&data->monitor_work, K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
-}
-
-static void phy_tja1103_irq_offload_thread(void *p1, void *p2, void *p3)
-{
-	ARG_UNUSED(p2);
-	ARG_UNUSED(p3);
-
-	const struct device *dev = p1;
-	struct phy_tja1103_data *const data = dev->data;
 	uint16_t irq;
 
-	for (;;) {
-		/* await trigger from ISR */
-		k_sem_take(&data->offload_sem, K_FOREVER);
+	if (phy_tja1103_c45_read(dev, MDIO_MMD_VENDOR_SPECIFIC1, TJA1103_PHY_FUNC_IRQ_MSTATUS,
+				 &irq) < 0) {
+		return;
+	}
 
-		if (phy_tja1103_c45_read(dev, MDIO_MMD_VENDOR_SPECIFIC1,
-					 TJA1103_PHY_FUNC_IRQ_MSTATUS, &irq) < 0) {
-			return;
-		}
-
-		/* Handling Link related Functional IRQs */
-		if (irq & (TJA1103_PHY_FUNC_IRQ_LINK_EVENT | TJA1103_PHY_FUNC_IRQ_LINK_AVAIL)) {
-			/* Send callback to MAC on link status changed */
-			invoke_link_cb(dev);
-
-			/* Ack the assered link related interrupts */
-			phy_tja1103_c45_write(dev, MDIO_MMD_VENDOR_SPECIFIC1,
-					      TJA1103_PHY_FUNC_IRQ_ACK, irq);
-		}
+	/* Handling Link related Functional IRQs */
+	if (irq & (TJA1103_PHY_FUNC_IRQ_LINK_EVENT | TJA1103_PHY_FUNC_IRQ_LINK_AVAIL)) {
+		/* Ack the assered link related interrupts */
+		phy_tja1103_c45_write(dev, MDIO_MMD_VENDOR_SPECIFIC1, TJA1103_PHY_FUNC_IRQ_ACK,
+				      irq);
 	}
 }
 
@@ -278,15 +217,67 @@ static void phy_tja1103_handle_irq(const struct device *port, struct gpio_callba
 	struct phy_tja1103_data *const data =
 		CONTAINER_OF(cb, struct phy_tja1103_data, phy_tja1103_int_callback);
 
-	/* Trigger BH before leaving the ISR */
-	k_sem_give(&data->offload_sem);
+	/* Trigger workqueue before leaving the ISR */
+	k_work_reschedule(&data->phy_work, K_NO_WAIT);
+}
+#endif
+
+static void phy_work_handler(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct phy_tja1103_data *const data =
+		CONTAINER_OF(dwork, struct phy_tja1103_data, phy_work);
+	const struct device *dev = data->dev;
+	struct phy_link_state state = {};
+	int rc;
+	const struct phy_tja1103_config *const cfg = dev->config;
+
+	rc = phy_tja1103_update_link_state(dev, &state);
+
+	/* Update link state and trigger callback if changed */
+	if (rc == 0 && state.is_up != data->state.is_up) {
+		memcpy(&data->state, &state, sizeof(struct phy_link_state));
+		if (data->cb) {
+			data->cb(dev, &data->state, data->cb_data);
+		}
+	}
+
+	if (cfg->master_slave == MASTER_SLAVE_AUTO && !data->state.is_up &&
+	    sys_timepoint_expired(data->timeout)) {
+		uint16_t val;
+
+		data->timeout = sys_timepoint_calc(K_MSEC(SWITCH_WAIT_RANGE(1000, 3000)));
+
+		phy_tja1103_c45_read(dev, MDIO_MMD_PMAPMD, MDIO_PMA_PMD_BT1_CTRL, &val);
+
+		val ^= MDIO_PMA_PMD_BT1_CTRL_CFG_MST;
+
+		phy_tja1103_c45_write(dev, MDIO_MMD_PMAPMD, MDIO_PMA_PMD_BT1_CTRL, val);
+	}
+
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
+	if (cfg->gpio_interrupt.port) {
+		phy_tja1103_ack_irq(dev);
+
+		if (cfg->master_slave == MASTER_SLAVE_AUTO && !data->state.is_up) {
+			k_work_reschedule(&data->phy_work, sys_timepoint_timeout(data->timeout));
+		}
+
+		return;
+	}
+#endif
+
+	/* Submit delayed work */
+	k_work_reschedule(&data->phy_work, K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
 }
 
 static void phy_tja1103_cfg_irq_poll(const struct device *dev)
 {
 	struct phy_tja1103_data *const data = dev->data;
-	const struct phy_tja1103_config *const cfg = dev->config;
+
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
 	int ret;
+	const struct phy_tja1103_config *const cfg = dev->config;
 
 	if (cfg->gpio_interrupt.port != NULL) {
 		if (!gpio_is_ready_dt(&cfg->gpio_interrupt)) {
@@ -311,9 +302,8 @@ static void phy_tja1103_cfg_irq_poll(const struct device *dev)
 			return;
 		}
 
-		ret = phy_tja1103_c45_write(
-			dev, MDIO_MMD_VENDOR_SPECIFIC1, TJA1103_PHY_FUNC_IRQ_EN,
-			(TJA1103_PHY_FUNC_IRQ_LINK_EVENT_EN | TJA1103_PHY_FUNC_IRQ_LINK_AVAIL_EN));
+		ret = phy_tja1103_c45_write(dev, MDIO_MMD_VENDOR_SPECIFIC1, TJA1103_PHY_FUNC_IRQ_EN,
+					    (TJA1103_PHY_FUNC_IRQ_LINK_EVENT_EN));
 		if (ret < 0) {
 			return;
 		}
@@ -323,19 +313,14 @@ static void phy_tja1103_cfg_irq_poll(const struct device *dev)
 			LOG_ERR("Failed to enable INT, %d", ret);
 			return;
 		}
-
-		/* PHY initialized, IRQ configured, now initialize the BH handler */
-		k_thread_create(&data->irq_thread, data->irq_thread_stack,
-				CONFIG_PHY_TJA1103_IRQ_THREAD_STACK_SIZE,
-				phy_tja1103_irq_offload_thread, (void *)dev, NULL, NULL,
-				CONFIG_PHY_TJA1103_IRQ_THREAD_PRIO, K_ESSENTIAL, K_NO_WAIT);
-		k_thread_name_set(&data->irq_thread, "phy_tja1103_irq_offload");
-
-	} else {
-		k_work_init_delayable(&data->monitor_work, monitor_work_handler);
-
-		monitor_work_handler(&data->monitor_work.work);
 	}
+#endif
+
+	data->timeout = sys_timepoint_calc(K_MSEC(SWITCH_WAIT_RANGE(1000, 3000)));
+
+	k_work_init_delayable(&data->phy_work, phy_work_handler);
+
+	phy_work_handler(&data->phy_work.work);
 }
 
 static int phy_tja1103_init(const struct device *dev)
@@ -354,7 +339,7 @@ static int phy_tja1103_init(const struct device *dev)
 	ret = WAIT_FOR(!phy_tja1103_id(dev, &phy_id) && phy_id == TJA1103_ID,
 		       TJA1103_AWAIT_RETRY_COUNT * TJA1103_AWAIT_DELAY_POLL_US,
 		       k_sleep(K_USEC(TJA1103_AWAIT_DELAY_POLL_US)));
-	if (ret < 0) {
+	if (ret == 0) {
 		LOG_ERR("Unable to obtain PHY ID for device 0x%x", cfg->phy_addr);
 		return -ENODEV;
 	}
@@ -379,9 +364,9 @@ static int phy_tja1103_init(const struct device *dev)
 	}
 
 	/* Change master/slave mode if need */
-	if (cfg->master_slave == 1) {
+	if (cfg->master_slave == MASTER_SLAVE_MASTER) {
 		val |= MDIO_PMA_PMD_BT1_CTRL_CFG_MST;
-	} else if (cfg->master_slave == 2) {
+	} else if (cfg->master_slave == MASTER_SLAVE_SLAVE) {
 		val &= ~MDIO_PMA_PMD_BT1_CTRL_CFG_MST;
 	}
 
@@ -411,17 +396,15 @@ static int phy_tja1103_init(const struct device *dev)
 
 static int phy_tja1103_link_cb_set(const struct device *dev, phy_callback_t cb, void *user_data)
 {
+	int rc = 0;
 	struct phy_tja1103_data *const data = dev->data;
 
 	data->cb = cb;
 	data->cb_data = user_data;
 
-	/* Invoke the callback to notify the caller of the current
-	 * link status.
-	 */
-	invoke_link_cb(dev);
+	data->cb(dev, &data->state, data->cb_data);
 
-	return 0;
+	return rc;
 }
 
 static DEVICE_API(ethphy, phy_tja1103_api) = {
@@ -440,7 +423,6 @@ static DEVICE_API(ethphy, phy_tja1103_api) = {
 	};                                                                                         \
 	static struct phy_tja1103_data phy_tja1103_data_##n = {                                    \
 		.sem = Z_SEM_INITIALIZER(phy_tja1103_data_##n.sem, 1, 1),                          \
-		.offload_sem = Z_SEM_INITIALIZER(phy_tja1103_data_##n.offload_sem, 0, 1),          \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(n, &phy_tja1103_init, NULL, &phy_tja1103_data_##n,                   \
 			      &phy_tja1103_config_##n, POST_KERNEL, CONFIG_PHY_INIT_PRIORITY,      \

@@ -241,6 +241,22 @@
 			status = "disabled";
 		};
 	};
+
+	clocks {
+
+		clk_hse: clk-hse {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			status = "disabled";
+		};
+
+		clk_hsi: clk-hsi {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(64)>;
+			status = "disabled";
+		};
+	};
 };
 
 &nvic {

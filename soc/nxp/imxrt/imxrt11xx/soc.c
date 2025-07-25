@@ -202,7 +202,6 @@ __weak void clock_init(void)
 	 * changed in the following PLL/PFD configuration code.
 	 */
 
-
 	static const clock_arm_pll_config_t armPllConfig = {
 		.postDivider = CONCAT(kCLOCK_PllPostDiv, DT_PROP(DT_NODELABEL(arm_pll), clock_div)),
 		.loopDivider = DT_PROP(DT_NODELABEL(arm_pll), clock_mult) * 2,
@@ -228,31 +227,31 @@ __weak void clock_init(void)
 	CLOCK_InitSysPll2(&sysPll2Config);
 
 	/* Init System Pll2 pfd0. */
-	CLOCK_InitPfd(kCLOCK_PllSys2, kCLOCK_Pfd0, 27);
+	CLOCK_InitPfd(kCLOCK_PllSys2, kCLOCK_Pfd0, CONFIG_SYS_PLL2_PFD0_DIV);
 
 	/* Init System Pll2 pfd1. */
-	CLOCK_InitPfd(kCLOCK_PllSys2, kCLOCK_Pfd1, 16);
+	CLOCK_InitPfd(kCLOCK_PllSys2, kCLOCK_Pfd1, CONFIG_SYS_PLL2_PFD1_DIV);
 
 	/* Init System Pll2 pfd2. */
-	CLOCK_InitPfd(kCLOCK_PllSys2, kCLOCK_Pfd2, 24);
+	CLOCK_InitPfd(kCLOCK_PllSys2, kCLOCK_Pfd2, CONFIG_SYS_PLL2_PFD2_DIV);
 
 	/* Init System Pll2 pfd3. */
-	CLOCK_InitPfd(kCLOCK_PllSys2, kCLOCK_Pfd3, 32);
+	CLOCK_InitPfd(kCLOCK_PllSys2, kCLOCK_Pfd3, CONFIG_SYS_PLL2_PFD3_DIV);
 
 	/* Init Sys Pll3. */
 	CLOCK_InitSysPll3();
 
 	/* Init System Pll3 pfd0. */
-	CLOCK_InitPfd(kCLOCK_PllSys3, kCLOCK_Pfd0, 13);
+	CLOCK_InitPfd(kCLOCK_PllSys3, kCLOCK_Pfd0, CONFIG_SYS_PLL3_PFD0_DIV);
 
 	/* Init System Pll3 pfd1. */
-	CLOCK_InitPfd(kCLOCK_PllSys3, kCLOCK_Pfd1, 17);
+	CLOCK_InitPfd(kCLOCK_PllSys3, kCLOCK_Pfd1, CONFIG_SYS_PLL3_PFD1_DIV);
 
 	/* Init System Pll3 pfd2. */
-	CLOCK_InitPfd(kCLOCK_PllSys3, kCLOCK_Pfd2, 32);
+	CLOCK_InitPfd(kCLOCK_PllSys3, kCLOCK_Pfd2, CONFIG_SYS_PLL3_PFD2_DIV);
 
 	/* Init System Pll3 pfd3. */
-	CLOCK_InitPfd(kCLOCK_PllSys3, kCLOCK_Pfd3, 22);
+	CLOCK_InitPfd(kCLOCK_PllSys3, kCLOCK_Pfd3, CONFIG_SYS_PLL3_PFD3_DIV);
 
 	static const clock_video_pll_config_t videoPllConfig = {
 		/* PLL Loop divider, valid range for DIV_SELECT divider value: 27 ~ 54. */
@@ -525,7 +524,7 @@ __weak void clock_init(void)
 #endif
 #endif
 
-#if CONFIG_IMX_USDHC
+#if defined(CONFIG_IMX_USDHC)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc1))
 	/* Configure USDHC1 using  SysPll2Pfd2*/
 	rootCfg.mux = kCLOCK_USDHC1_ClockRoot_MuxSysPll2Pfd2;
@@ -741,6 +740,25 @@ static int imxrt_init(void)
 
 	/* Initialize system clock */
 	clock_init();
+
+#if defined(CONFIG_IMX_USDHC) && defined(CONFIG_CPU_CORTEX_M7) &&                                  \
+	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc1)) ||                                          \
+	 DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc2)))
+	/* USDHC ERR050396 workaround */
+
+	/* ERR050396
+	 * Errata description:
+	 *  AXI to AHB conversion for CM7 AHBS port (port to access CM7 to TCM) is by a NIC301
+	 *  block, instead of XHB400 block. NIC301 doesn't support sparse write conversion.
+	 *  Any AXI to AHB conversion need XHB400, not by NIC. This will result in data corruption
+	 *  in case of AXI sparse write reaches the NIC301 ahead of AHBS.
+	 * Errata workaround:
+	 *  For uSDHC, don't set the bit#1 of IOMUXC_GPR28 (AXI transaction is cacheable), if write
+	 *  data to TCM aligned in 4 bytes; No such write access limitation for OCRAM or external
+	 *  RAM
+	 */
+	IOMUXC_GPR->GPR28 &= (~IOMUXC_GPR_GPR28_AWCACHE_USDHC_MASK);
+#endif
 
 	return 0;
 }

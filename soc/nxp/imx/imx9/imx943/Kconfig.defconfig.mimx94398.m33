@@ -27,4 +27,7 @@ endchoice
 config ETH_NXP_IMX_MSGINTR
 	default 2
 
+config CACHE_MANAGEMENT
+	default y
+
 endif # SOC_MIMX94398_M33

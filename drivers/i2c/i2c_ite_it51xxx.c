@@ -545,29 +545,61 @@ done:
 #endif
 }
 
+static void clear_target_status(const struct device *dev, uint8_t status)
+{
+	const struct i2c_it51xxx_config *config = dev->config;
+
+	/* Write to clear a specific status */
+#ifdef CONFIG_SOC_IT51526AW
+	sys_write8(status, config->i2cbase_mapping + SMB_SLSTA(config->port));
+#else
+	sys_write8(status, config->target_base + SMB_SLSTn);
+#endif
+}
+
 static void target_i2c_isr_pio(const struct device *dev)
 {
 	const struct i2c_it51xxx_config *config = dev->config;
 	struct i2c_it51xxx_data *data = dev->data;
 	struct i2c_target_config *target_cfg;
 	const struct i2c_target_callbacks *target_cb;
-	int ret;
 	uint8_t target_status, target_idx;
 	uint8_t val;
 
 	target_status = sys_read8(config->target_base + SMB_SLSTn);
+	/* Write to clear a target status */
+	clear_target_status(dev, target_status);
 
 	/* Any error */
 	if (target_status & SMB_STS) {
 		data->w_index = 0;
 		data->r_index = 0;
-		goto done;
+
+		return;
 	}
 
 	/* Which target address to match. */
 	target_idx = (target_status & SMB_MSLA2) ? SMB_SADR2 : SMB_SADR;
 	target_cfg = data->target_cfg[target_idx];
 	target_cb = target_cfg->callbacks;
+
+	/* Stop condition, indicate stop condition detected. */
+	if (target_status & SMB_SPDS) {
+		/* Transfer done callback function */
+		if (target_cb->stop) {
+			target_cb->stop(target_cfg);
+		}
+		data->w_index = 0;
+		data->r_index = 0;
+
+		if (config->target_shared_fifo_mode) {
+			uint8_t sdfpctl;
+
+			/* Disable FIFO mode to clear left count */
+			sdfpctl = sys_read8(config->target_base + SMB_SnDFPCTL);
+			sys_write8(sdfpctl & ~SMB_SADFE, config->target_base + SMB_SnDFPCTL);
+		}
+	}
 
 	if (target_status & SMB_SDS) {
 		if (target_status & SMB_RCS) {
@@ -593,6 +625,8 @@ static void target_i2c_isr_pio(const struct device *dev)
 				sndfpctl = sys_read8(config->target_base + SMB_SnDFPCTL);
 				sys_write8(sndfpctl | SMB_SADFE,
 					   config->target_base + SMB_SnDFPCTL);
+				/* Write to clear data status of target */
+				clear_target_status(dev, SMB_SDS);
 			} else {
 				/* Host receiving, target transmitting */
 				if (!data->r_index) {
@@ -620,44 +654,14 @@ static void target_i2c_isr_pio(const struct device *dev)
 			/* Read data */
 			val = sys_read8(config->target_base + SMB_SLDn);
 			if (target_cb->write_received) {
-				ret = target_cb->write_received(target_cfg, val);
-				if (!ret) {
-					/* Release clock pin */
-					val = sys_read8(config->target_base + SMB_SLDn);
-				}
+				target_cb->write_received(target_cfg, val);
 			}
-
+			/* Release target clock stretch */
+			sys_write8(sys_read8(config->target_base + SMB_SLVCTLn) | SMB_RSCS,
+				   config->target_base + SMB_SLVCTLn);
 			data->w_index++;
 		}
 	}
-	/* Stop condition, indicate stop condition detected. */
-	if (target_status & SMB_SPDS) {
-		/* Transfer done callback function */
-		if (target_cb->stop) {
-			target_cb->stop(target_cfg);
-		}
-		data->w_index = 0;
-		data->r_index = 0;
-
-		if (config->target_shared_fifo_mode) {
-			uint8_t sdfpctl;
-
-			/* Disable FIFO mode to clear left count */
-			sdfpctl = sys_read8(config->target_base + SMB_SnDFPCTL);
-			sys_write8(sdfpctl & ~SMB_SADFE, config->target_base + SMB_SnDFPCTL);
-		}
-	}
-
-done:
-	sys_write8(sys_read8(config->target_base + SMB_SLVCTLn) | SMB_RSCS,
-		   config->target_base + SMB_SLVCTLn);
-
-	/* W/C */
-#ifdef CONFIG_SOC_IT51526AW
-	sys_write8(target_status, config->i2cbase_mapping + SMB_SLSTA(config->port));
-#else
-	sys_write8(target_status, config->target_base + SMB_SLSTn);
-#endif
 }
 
 static void target_i2c_isr(const struct device *dev)
@@ -1455,6 +1459,10 @@ static int i2c_it51xxx_transfer(const struct device *dev, struct i2c_msg *msgs, 
 #endif
 	/* Lock mutex of i2c controller */
 	k_mutex_lock(&data->mutex, K_FOREVER);
+#ifdef CONFIG_PM
+	/* Block to enter power policy. */
+	i2c_ite_pm_policy_state_lock_get(data, I2CM_ITE_PM_POLICY_FLAG);
+#endif
 	/*
 	 * If the transaction of write to read is divided into two transfers, the repeat start
 	 * transfer uses this flag to exclude checking bus busy.
@@ -1469,9 +1477,8 @@ static int i2c_it51xxx_transfer(const struct device *dev, struct i2c_msg *msgs, 
 			 * (No external pull-up), drop the transaction.
 			 */
 			if (i2c_bus_not_available(dev)) {
-				/* Unlock mutex of i2c controller */
-				k_mutex_unlock(&data->mutex);
-				return -EIO;
+				ret = -EIO;
+				goto done;
 			}
 		}
 
@@ -1486,13 +1493,6 @@ static int i2c_it51xxx_transfer(const struct device *dev, struct i2c_msg *msgs, 
 	data->msg_index = 0;
 
 	bool fifo_mode_enable = fifo_mode_allowed(dev, msgs);
-
-	if (fifo_mode_enable) {
-#ifdef CONFIG_PM
-		/* Block to enter power policy. */
-		i2c_ite_pm_policy_state_lock_get(data, I2CM_ITE_PM_POLICY_FLAG);
-#endif
-	}
 #endif
 	for (int i = 0; i < num_msgs; i++) {
 		data->widx = 0;
@@ -1568,10 +1568,6 @@ static int i2c_it51xxx_transfer(const struct device *dev, struct i2c_msg *msgs, 
 		if (data->num_msgs == 2) {
 			i2c_fifo_en_w2r(dev, false);
 		}
-#ifdef CONFIG_PM
-		/* Permit to enter power policy. */
-		i2c_ite_pm_policy_state_lock_put(data, I2CM_ITE_PM_POLICY_FLAG);
-#endif
 	}
 #endif
 	/* Reset i2c channel status */
@@ -1582,6 +1578,11 @@ static int i2c_it51xxx_transfer(const struct device *dev, struct i2c_msg *msgs, 
 	/* Save return value. */
 	ret = i2c_parsing_return_value(dev);
 
+done:
+#ifdef CONFIG_PM
+	/* Permit to enter power policy. */
+	i2c_ite_pm_policy_state_lock_put(data, I2CM_ITE_PM_POLICY_FLAG);
+#endif
 	/* Unlock mutex of i2c controller */
 	k_mutex_unlock(&data->mutex);
 

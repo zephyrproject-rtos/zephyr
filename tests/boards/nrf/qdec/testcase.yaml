@@ -5,9 +5,7 @@ common:
     - nrf54h20dk/nrf54h20/cpuapp
     - nrf54l15dk/nrf54l15/cpuapp
     - nrf54l15dk/nrf54l15/cpuflpr
-    - nrf54l20pdk/nrf54l20/cpuapp
     - nrf54lm20dk/nrf54lm20a/cpuapp
-    - nrf54l20pdk/nrf54l20/cpuflpr
     - nrf54lm20dk/nrf54lm20a/cpuflpr
   integration_platforms:
     - nrf52840dk/nrf52840
@@ -15,6 +13,8 @@ common:
     - nrf54h20dk/nrf54h20/cpuapp
     - nrf54l15dk/nrf54l15/cpuapp
     - nrf54l15dk/nrf54l15/cpuflpr
+    - nrf54lm20dk/nrf54lm20a/cpuapp
+    - nrf54lm20dk/nrf54lm20a/cpuflpr
   harness: ztest
   harness_config:
     fixture: gpio_loopback

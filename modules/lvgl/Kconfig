@@ -153,6 +153,31 @@ config LV_Z_INIT_PRIORITY
 	help
 	  Priority used for the automatic initialization of LVGL.
 
+config LV_Z_RUN_LVGL_ON_WORKQUEUE
+	bool "Use a dedicated workqueue to run LVGL core"
+	imply LV_Z_AUTO_INIT
+	help
+	  Runs the LVGL in a separate workqueue automatically
+	  without requiring user to add a timed loop for that. User can
+	  disable this option if periodic calls of LV timer
+	  is application responsibillity
+
+if LV_Z_RUN_LVGL_ON_WORKQUEUE
+
+config LV_Z_LVGL_WORKQUEUE_STACK_SIZE
+	int "Stack size of LVGL workqueue"
+	default 4096
+	help
+	  Stack size of the LVGL dedicated workqueue
+
+config LV_Z_LVGL_WORKQUEUE_PRIORITY
+	int "Priority of the LVGL workqueue"
+	default 0
+	help
+	  Priority of the LVGL dedicated workequeue.
+
+endif # LV_Z_RUN_LVGL_ON_WORKQUEUE
+
 config LV_USE_DRAW_DMA2D
 	bool
 
