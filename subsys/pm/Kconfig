@@ -38,6 +38,9 @@ config PM_S2RAM
 	depends on ARCH_HAS_SUSPEND_TO_RAM
 	help
 	  This option enables suspend-to-RAM (S2RAM).
+	  When enabled on Cortex-M, and a 'zephyr,memory-region' compatible node with nodelabel
+	  'pm_s2ram' is defined in DT, _cpu_context symbol (located in arch/arm/core/cortex_m/pm_s2ram.c)
+	  is placed in linker section given by 'zephyr,memory-region' property of aforementioned node.
 
 config PM_S2RAM_CUSTOM_MARKING
 	bool "Use custom marking functions"
