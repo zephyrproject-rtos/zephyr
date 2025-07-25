@@ -2,11 +2,11 @@
 #SPDX-License-Indentifier: Apache 2.0
 
 
-config SPI_NXP_SC18IS606
+config NXP_SC18IS606
 	bool  "NXP SC18IS606 I2C to SPI Bridge and GPIO Controller"
 	default y
-	depends on DT_HAS_NXP_SC18IS606_ENABLED
 	select I2C
+	  depends on DT_HAS_NXP_SC18IS606_ENABLED
 	help
 	  Enable driver for the Nxp SC18IS606 I2C to SPI Bridge with GPIOs
 
