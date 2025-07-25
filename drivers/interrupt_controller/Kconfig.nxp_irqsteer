@@ -11,3 +11,6 @@ config NXP_IRQSTEER
 		multiple interrupts from peripheral to one or
 		more CPU interrupt lines. This is used for CPUs
 		such as XTENSA DSPs.
+		NOTE: This driver will be deprecated.
+		Please use the new implementation(config NXP_IRQSTEER1)
+		in new products.
