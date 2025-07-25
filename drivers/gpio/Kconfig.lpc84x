@@ -1,0 +1,4 @@
+menuconfig GPIO_LPC84X
+	bool "LPC84X GPIO driver"
+	default y
+	depends on DT_HAS_NXP_LPC84X_GPIO_ENABLED

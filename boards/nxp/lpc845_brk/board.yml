@@ -1,0 +1,6 @@
+board:
+  name: lpc845_brk
+  full_name: LPC845_BRK
+  vendor: nxp
+  socs:
+    - name: lpc845

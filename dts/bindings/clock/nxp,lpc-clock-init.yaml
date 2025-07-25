@@ -1,0 +1,34 @@
+description: LPC clock initialization using SDK APIs
+
+compatible: "nxp,lpc-clock-init"
+
+properties:
+  enable-fro:
+    type: boolean
+    description: Power up the FRO oscillator.
+
+  enable-froout:
+    type: boolean
+    description: Power up the FRO output.
+
+  fro-freq:
+    type: string
+    enum: ["18M", "24M", "30M"]
+    default: "30M"
+    description: FRO oscillator output frequency.
+
+  enable-sysosc:
+    type: boolean
+    description: Power up the system crystal oscillator (SYSOSC).
+
+  extclk-src:
+    type: string
+    enum: ["sysosc", "clkin"]
+    default: "sysosc"
+    description: External clock source
+
+  mainclk-src:
+    type: string
+    enum: ["fro", "extclk", "wdosc", "frodiv", "syspll"]
+    default: "fro"
+    description: Main clock source.
