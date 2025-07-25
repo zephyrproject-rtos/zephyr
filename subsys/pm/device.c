@@ -388,7 +388,8 @@ int pm_device_driver_init(const struct device *dev,
 
 	/* If device will have PM device runtime enabled */
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) &&
-	    atomic_test_bit(&pm->flags, PM_DEVICE_FLAG_RUNTIME_AUTO)) {
+	    (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME_DEFAULT_ENABLE) ||
+	     atomic_test_bit(&pm->flags, PM_DEVICE_FLAG_RUNTIME_AUTO))) {
 		return 0;
 	}
 
