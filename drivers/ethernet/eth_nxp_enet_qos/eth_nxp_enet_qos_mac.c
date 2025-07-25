@@ -185,7 +185,12 @@ static void tx_dma_done(const struct device *dev)
 	struct net_pkt *pkt = tx_data->pkt;
 	struct net_buf *fragment = pkt->frags;
 
-	LOG_DBG("TX DMA completed on packet %p", pkt);
+	if (pkt == NULL) {
+		LOG_DBG("%s TX DMA done on nonexistent packet?", dev->name);
+		goto skip;
+	} else {
+		LOG_DBG("TX DMA completed on packet %p", pkt);
+	}
 
 	/* Returning the buffers and packet to the pool */
 	while (fragment != NULL) {
@@ -198,6 +203,7 @@ static void tx_dma_done(const struct device *dev)
 
 	eth_stats_update_pkts_tx(data->iface);
 
+skip:
 	/* Allows another send */
 	k_sem_give(&data->tx.tx_sem);
 	LOG_DBG("Gave driver TX sem %p by thread %s", &data->tx.tx_sem,
@@ -671,13 +677,6 @@ static int eth_nxp_enet_qos_mac_init(const struct device *dev)
 		break;
 	}
 
-	/* This driver cannot work without interrupts. */
-	if (config->irq_config_func) {
-		config->irq_config_func();
-	} else {
-		return -ENOSYS;
-	}
-
 	/* Effectively reset of the peripheral */
 	ret = enet_qos_dma_reset(base);
 	if (ret) {
@@ -725,6 +724,13 @@ static int eth_nxp_enet_qos_mac_init(const struct device *dev)
 
 	/* Work upon a reception of a packet to a buffer */
 	k_work_init(&data->rx.rx_work, eth_nxp_enet_qos_rx);
+
+	/* This driver cannot work without interrupts. */
+	if (config->irq_config_func) {
+		config->irq_config_func();
+	} else {
+		return -ENOSYS;
+	}
 
 	return ret;
 }
