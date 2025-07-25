@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, Carlo Caione <ccaione@baylibre.com>
+ * Copyright (c) 2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +15,18 @@
 /**
  * CPU context for S2RAM
  */
-__noinit _cpu_context_t _cpu_context;
+
+#if DT_NODE_EXISTS(DT_NODELABEL(pm_s2ram)) &&\
+	DT_NODE_HAS_COMPAT(DT_NODELABEL(pm_s2ram), zephyr_memory_region)
+
+/* Linker section name is given by `zephyr,memory-region` property of
+ * `zephyr,memory-region` compatible DT node with nodelabel `pm_s2ram`.
+ */
+__attribute__((section(DT_PROP(DT_NODELABEL(pm_s2ram), zephyr_memory_region))))
+#else
+__noinit
+#endif
+_cpu_context_t _cpu_context;
 
 #ifndef CONFIG_PM_S2RAM_CUSTOM_MARKING
 /**
