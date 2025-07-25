@@ -257,12 +257,18 @@
 			#nordic,ficr-cells = <1>;
 		};
 
-		cpuapp_ram0: sram@22000000 {
+		cpuapp_ram0: sram@22000020 {
 			compatible = "mmio-sram";
-			reg = <0x22000000 DT_SIZE_K(32)>;
+			reg = <0x22000000 (DT_SIZE_K(32)-32)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x22000000 0x8000>;
+			ranges = <0x0 0x22000020 (0x8000-0x20)>;
+		};
+
+		cpuapp_s2ram: cpuapp_s2ram@22000000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x22000000 32>;
+			zephyr,memory-region = "s2ram_context";
 		};
 
 		cpurad_ram0: sram@23000000 {

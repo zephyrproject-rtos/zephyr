@@ -26,6 +26,7 @@
 		zephyr,bt-hci = &bt_hci_ipc0;
 		nordic,802154-spinel-ipc = &ipc0;
 		zephyr,canbus = &can120;
+		zephyr,pm-s2ram-context = &cpuapp_s2ram;
 	};
 
 	aliases {
