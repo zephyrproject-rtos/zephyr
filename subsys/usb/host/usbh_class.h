@@ -56,6 +56,6 @@ struct usbh_class_filter {
  * @retval true if the USB Device descriptor matches at least one rule.
  */
 bool usbh_class_is_matching(struct usbh_class_filter *const filters, size_t n_filters,
-                            struct usb_device_descriptor *const desc);
+			    struct usb_device_descriptor *const desc);
 
 #endif /* ZEPHYR_INCLUDE_USBD_CLASS_H */
