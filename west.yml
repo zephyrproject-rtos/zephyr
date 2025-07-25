@@ -154,7 +154,7 @@ manifest:
       groups:
         - hal
     - name: hal_ambiq
-      revision: 84ccbfc0b6041ba9f5688337c78bad99da5448ce
+      revision: e9212585cd7c4e1cc189f7d530b8a028d5e8ecf5
       path: modules/hal/ambiq
       groups:
         - hal
@@ -195,7 +195,7 @@ manifest:
       groups:
         - hal
     - name: hal_microchip
-      revision: 32a79d481c056b2204a5701d5a5799f9e5130dd7
+      revision: 415c92d3c8bd3d62db35980729df42be1f178023
       path: modules/hal/microchip
       groups:
         - hal
