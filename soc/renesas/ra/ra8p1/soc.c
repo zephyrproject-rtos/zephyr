@@ -33,6 +33,8 @@ extern bsp_grp_irq_cb_t g_bsp_group_irq_sources[];
 extern void NMI_Handler(void);
 #endif /* CONFIG_RUNTIME_NMI */
 
+extern void cold_start_handler(void);
+
 /**
  * @brief Perform basic hardware initialization at boot.
  *
@@ -103,6 +105,8 @@ void soc_early_init_hook(void)
 
 	z_arm_nmi_set_handler(NMI_Handler);
 #endif /* CONFIG_RUNTIME_NMI */
+
+	cold_start_handler();
 }
 
 #ifdef CONFIG_SOC_LATE_INIT_HOOK
