@@ -36,14 +36,11 @@ extern "C" {
  * update to CMSIS_6.
  */
 #if !defined DWT_LSR_Present_Msk
-#define DWT_LSR_Present_Msk \
-	IF_ENABLED(CONFIG_ZEPHYR_CMSIS_MODULE, (ITM_LSR_Present_Msk)) \
-	IF_DISABLED(CONFIG_ZEPHYR_CMSIS_MODULE, (ITM_LSR_PRESENT_Msk))
+#define DWT_LSR_Present_Msk ITM_LSR_PRESENT_Msk
 #endif
+
 #if !defined DWT_LSR_Access_Msk
-#define DWT_LSR_Access_Msk \
-	IF_ENABLED(CONFIG_ZEPHYR_CMSIS_MODULE, (ITM_LSR_Access_Msk)) \
-	IF_DISABLED(CONFIG_ZEPHYR_CMSIS_MODULE, (ITM_LSR_ACCESS_Msk))
+#define DWT_LSR_Access_Msk ITM_LSR_ACCESS_Msk
 #endif
 
 static inline void dwt_access(bool ena)
