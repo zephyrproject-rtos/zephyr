@@ -143,6 +143,7 @@ set_variable_ifdef(CONFIG_MIPI_DBI_NXP_FLEXIO_LCDIF CONFIG_MCUX_COMPONENT_driver
 set_variable_ifdef(CONFIG_VIDEO_MCUX_MIPI_CSI2RX    CONFIG_MCUX_COMPONENT_driver.mipi_csi2rx)
 set_variable_ifdef(CONFIG_ETH_NXP_IMX_NETC          CONFIG_MCUX_COMPONENT_driver.netc)
 set_variable_ifdef(CONFIG_ETH_NXP_IMX_NETC          CONFIG_MCUX_COMPONENT_driver.netc_switch)
+set_variable_ifdef(CONFIG_NXP_IRQSTEER1             CONFIG_MCUX_COMPONENT_driver.irqsteer_1)
 
 set_variable_ifdef(CONFIG_SOC_SERIES_IMXRT10XX    CONFIG_MCUX_COMPONENT_driver.ocotp)
 set_variable_ifdef(CONFIG_SOC_SERIES_IMXRT11XX    CONFIG_MCUX_COMPONENT_driver.ocotp)
@@ -186,6 +187,10 @@ if((${MCUX_DEVICE} MATCHES "MIMX9596") OR (${MCUX_DEVICE} MATCHES "MIMX8UD7") OR
 else()
   set_variable_ifdef(CONFIG_IPM_IMX	CONFIG_MCUX_COMPONENT_driver.mu)
   set_variable_ifdef(CONFIG_MBOX_NXP_IMX_MU	CONFIG_MCUX_COMPONENT_driver.mu)
+endif()
+
+if (CONFIG_SOC_MIMX94398_M33)
+  set(CONFIG_MCUX_COMPONENT_driver.irqsteer_1_soc.cm33_core1 ON)
 endif()
 
 if(CONFIG_SOC_FAMILY_KINETIS OR CONFIG_SOC_FAMILY_MCXC)
