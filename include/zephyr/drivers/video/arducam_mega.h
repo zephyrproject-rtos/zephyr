@@ -3,20 +3,44 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#ifndef ZEPHYR_INCLUDE_DRIVERS_CAMERA_ARDUCAM_MEGA_H_
-#define ZEPHYR_INCLUDE_DRIVERS_CAMERA_ARDUCAM_MEGA_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_VIDEO_ARDUCAM_MEGA_H_
+#define ZEPHYR_INCLUDE_DRIVERS_VIDEO_ARDUCAM_MEGA_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define VIDEO_CID_ARDUCAM_EV        (VIDEO_CTRL_CLASS_VENDOR + 1)
-#define VIDEO_CID_ARDUCAM_INFO      (VIDEO_CTRL_CLASS_VENDOR + 2)
-#define VIDEO_CID_ARDUCAM_SHARPNESS (VIDEO_CTRL_CLASS_VENDOR + 3)
-#define VIDEO_CID_ARDUCAM_COLOR_FX  (VIDEO_CTRL_CLASS_VENDOR + 4)
-#define VIDEO_CID_ARDUCAM_RESET     (VIDEO_CTRL_CLASS_VENDOR + 5)
-#define VIDEO_CID_ARDUCAM_LOWPOWER  (VIDEO_CTRL_CLASS_VENDOR + 6)
+/* Arducam specific camera controls */
+#define VIDEO_CID_ARDUCAM_EV        (VIDEO_CID_PRIVATE_BASE + 1)
+#define VIDEO_CID_ARDUCAM_INFO      (VIDEO_CID_PRIVATE_BASE + 2)
+#define VIDEO_CID_ARDUCAM_COLOR_FX  (VIDEO_CID_PRIVATE_BASE + 4)
+#define VIDEO_CID_ARDUCAM_RESET     (VIDEO_CID_PRIVATE_BASE + 5)
+#define VIDEO_CID_ARDUCAM_LOWPOWER  (VIDEO_CID_PRIVATE_BASE + 6)
+
+/* Read only registers */
+#define VIDEO_CID_ARDUCAM_SUPP_RES  (VIDEO_CID_PRIVATE_BASE + 7)
+#define VIDEO_CID_ARDUCAM_SUPP_SP_EFF  (VIDEO_CID_PRIVATE_BASE + 8)
+#define VIDEO_CID_ARDUCAM_EN_FOCUS  (VIDEO_CID_PRIVATE_BASE + 9)
+#define VIDEO_CID_ARDUCAM_EN_SHARPNESS  (VIDEO_CID_PRIVATE_BASE + 10)
+#define VIDEO_CID_ARDUCAM_DEV_ADDR  (VIDEO_CID_PRIVATE_BASE + 11)
+#define VIDEO_CID_ARDUCAM_CAM_ID  (VIDEO_CID_PRIVATE_BASE + 12)
+
+/* Info default settings */
+#define SUPPORT_RESOLUTION_5M 	7894
+#define SUPPORT_SP_EFF_5M 		63
+#define ENABLE_FOCUS_5M			1
+#define ENABLE_SHARPNESS_5M		0
+
+#define SUPPORT_RESOLUTION_3M	7638
+#define SUPPORT_SP_EFF_3M		319
+#define ENABLE_FOCUS_3M			0
+#define ENABLE_SHARPNESS_3M		1
+
+#define EXPOSURE_MAX 			30000
+#define EXPOSURE_MIN			0
+#define GAIN_MAX				1023
+#define GAIN_MIN				0
+#define DEVICE_ADDRESS			0x78
 
 /**
  * @enum MEGA_CONTRAST_LEVEL
@@ -170,23 +194,6 @@ enum MEGA_RESOLUTION {
 	MEGA_RESOLUTION_14 = 0x0f,      /**<Reserve*/
 	MEGA_RESOLUTION_15 = 0x10,      /**<Reserve*/
 	MEGA_RESOLUTION_NONE,
-};
-
-/**
- * @struct arducam_mega_info
- * @brief Some information about mega camera
- */
-struct arducam_mega_info {
-	int support_resolution;
-	int support_special_effects;
-	unsigned long exposure_value_max;
-	unsigned int exposure_value_min;
-	unsigned int gain_value_max;
-	unsigned int gain_value_min;
-	unsigned char enable_focus;
-	unsigned char enable_sharpness;
-	unsigned char device_address;
-	unsigned char camera_id;
 };
 
 #ifdef __cplusplus
