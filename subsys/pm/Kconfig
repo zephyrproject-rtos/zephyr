@@ -118,7 +118,6 @@ config PM_DEVICE_POWER_DOMAIN_DYNAMIC_NUM
 
 config PM_DEVICE_RUNTIME
 	bool "Runtime Device Power Management"
-	select EVENTS
 	help
 	  Enable Runtime Power Management to save power. With device runtime PM
 	  enabled, devices can be suspended or resumed based on the device
@@ -131,6 +130,7 @@ config PM_DEVICE_DRIVER_NEEDS_DEDICATED_WQ
 
 config PM_DEVICE_RUNTIME_ASYNC
 	bool "Asynchronous device runtime power management"
+	select EVENTS
 	default y
 	help
 	  Use this option to enable support for asynchronous operation
