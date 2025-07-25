@@ -848,39 +848,54 @@ static int switch_to_target_io_mode(const struct device *dev)
 			       &dev_config->mspi_nor_cfg);
 }
 
+#if defined(WITH_SUPPLY_GPIO)
+static int power_supply(const struct device *dev)
+{
+	const struct flash_mspi_nor_config *dev_config = dev->config;
+	int rc;
+
+	if (!gpio_is_ready_dt(&dev_config->supply)) {
+		LOG_ERR("Device %s is not ready",
+			dev_config->supply.port->name);
+		return -ENODEV;
+	}
+
+	rc = gpio_pin_configure_dt(&dev_config->supply, GPIO_OUTPUT_ACTIVE);
+	if (rc < 0) {
+		LOG_ERR("Failed to activate power supply GPIO: %d", rc);
+		return -EIO;
+	}
+
+	return 0;
+}
+#endif
+
 #if defined(WITH_RESET_GPIO)
 static int gpio_reset(const struct device *dev)
 {
 	const struct flash_mspi_nor_config *dev_config = dev->config;
 	int rc;
 
-	if (dev_config->reset.port) {
-		if (!gpio_is_ready_dt(&dev_config->reset)) {
-			LOG_ERR("Device %s is not ready",
-				dev_config->reset.port->name);
-			return -ENODEV;
-		}
+	if (!gpio_is_ready_dt(&dev_config->reset)) {
+		LOG_ERR("Device %s is not ready",
+			dev_config->reset.port->name);
+		return -ENODEV;
+	}
 
-		rc = gpio_pin_configure_dt(&dev_config->reset,
-					   GPIO_OUTPUT_ACTIVE);
-		if (rc < 0) {
-			LOG_ERR("Failed to activate RESET: %d", rc);
-			return -EIO;
-		}
+	rc = gpio_pin_configure_dt(&dev_config->reset, GPIO_OUTPUT_ACTIVE);
+	if (rc < 0) {
+		LOG_ERR("Failed to activate RESET: %d", rc);
+		return -EIO;
+	}
 
-		if (dev_config->reset_pulse_us != 0) {
-			k_busy_wait(dev_config->reset_pulse_us);
-		}
+	if (dev_config->reset_pulse_us != 0) {
+		k_busy_wait(dev_config->reset_pulse_us);
+	}
 
-		rc = gpio_pin_set_dt(&dev_config->reset, 0);
-		if (rc < 0) {
-			LOG_ERR("Failed to deactivate RESET: %d", rc);
-			return -EIO;
-		}
-
-		if (dev_config->reset_recovery_us != 0) {
-			k_busy_wait(dev_config->reset_recovery_us);
-		}
+	rc = gpio_pin_set_dt(&dev_config->reset, 0);
+	if (rc < 0) {
+		LOG_ERR("Failed to deactivate RESET: %d", rc);
+		return -EIO;
 	}
 
 	return 0;
@@ -950,10 +965,6 @@ static int soft_reset(const struct device *dev)
 		return rc;
 	}
 
-	if (dev_config->reset_recovery_us != 0) {
-		k_busy_wait(dev_config->reset_recovery_us);
-	}
-
 	return 0;
 }
 #endif /* WITH_SOFT_RESET */
@@ -965,6 +976,7 @@ static int flash_chip_init(const struct device *dev)
 	uint8_t id[JESD216_READ_ID_LEN] = {0};
 	uint16_t dts_cmd = 0;
 	uint32_t sfdp_signature;
+	bool flash_reset = false;
 	int rc;
 
 	rc = mspi_dev_config(dev_config->bus, &dev_config->mspi_id,
@@ -977,12 +989,25 @@ static int flash_chip_init(const struct device *dev)
 
 	dev_data->in_target_io_mode = false;
 
-#if defined(WITH_RESET_GPIO)
-	rc = gpio_reset(dev);
+#if defined(WITH_SUPPLY_GPIO)
+	if (dev_config->supply.port) {
+		rc = power_supply(dev);
+		if (rc < 0) {
+			return rc;
+		}
 
-	if (rc < 0) {
-		LOG_ERR("Failed to reset with GPIO: %d", rc);
-		return rc;
+		flash_reset = true;
+	}
+#endif
+
+#if defined(WITH_RESET_GPIO)
+	if (dev_config->reset.port) {
+		rc = gpio_reset(dev);
+		if (rc < 0) {
+			return rc;
+		}
+
+		flash_reset = true;
 	}
 #endif
 
@@ -992,8 +1017,14 @@ static int flash_chip_init(const struct device *dev)
 		if (rc < 0) {
 			return rc;
 		}
+
+		flash_reset = true;
 	}
 #endif
+
+	if (flash_reset && dev_config->reset_recovery_us != 0) {
+		k_busy_wait(dev_config->reset_recovery_us);
+	}
 
 	if (dev_config->quirks != NULL &&
 	    dev_config->quirks->pre_init != NULL) {
@@ -1267,6 +1298,8 @@ BUILD_ASSERT((FLASH_SIZE(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) == 0, \
 		.mspi_nor_init_cfg = FLASH_INITIAL_CONFIG(inst),		\
 	IF_ENABLED(CONFIG_MSPI_XIP,						\
 		(.xip_cfg = MSPI_XIP_CONFIG_DT_INST(inst),))			\
+	IF_ENABLED(WITH_SUPPLY_GPIO,						\
+		(.supply = GPIO_DT_SPEC_INST_GET_OR(inst, supply_gpios, {0}),))	\
 	IF_ENABLED(WITH_RESET_GPIO,						\
 		(.reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),	\
 		 .reset_pulse_us = DT_INST_PROP_OR(inst, t_reset_pulse, 0)	\
