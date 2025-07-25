@@ -24,4 +24,12 @@ config CPU_HAS_RENESAS_RA_IDAU
 
 rsource "*/Kconfig"
 
+config RENESAS_RA_BATTERY_BACKUP_MANUAL_CONFIGURE
+	bool "VBAT switching manual"
+	default y
+	depends on DT_HAS_RENESAS_RA_BATTERY_BACKUP_ENABLED && $(dt_compat_any_has_prop,$(DT_COMPAT_RENESAS_RA_BATTERY_BACKUP),manual-configure)
+	help
+	  Enable if this SoC's battery backup domain allows switching to VBAT manually.
+	  Leave disabled if switching is automatic.
+
 endif # SOC_FAMILY_RENESAS_RA
