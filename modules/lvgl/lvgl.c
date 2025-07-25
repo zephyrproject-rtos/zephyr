@@ -352,10 +352,14 @@ int lvgl_init(void)
 	}
 
 #ifdef CONFIG_LV_Z_RUN_LVGL_ON_WORKQUEUE
+	const struct k_work_queue_config lvgl_workqueue_cfg = {
+		.name = "lvgl",
+	};
+
 	k_work_queue_init(&lvgl_workqueue);
 	k_work_queue_start(&lvgl_workqueue, lvgl_workqueue_stack,
 			   K_THREAD_STACK_SIZEOF(lvgl_workqueue_stack),
-			   CONFIG_LV_Z_LVGL_WORKQUEUE_PRIORITY, NULL);
+			   CONFIG_LV_Z_LVGL_WORKQUEUE_PRIORITY, &lvgl_workqueue_cfg);
 
 	k_work_submit_to_queue(&lvgl_workqueue, &lvgl_work.work);
 #endif
