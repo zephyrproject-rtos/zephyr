@@ -26,8 +26,27 @@ extern "C" {
  * @{
  */
 
+/**
+ * @name Helpers
+ * @{
+ */
+
 /** Maximum number of waveforms that can be stored in the sequencer */
 #define DRV2605_WAVEFORM_SEQUENCER_MAX 8
+
+/**
+ * @brief Creates a wait/delay value for the waveform sequencer.
+ *
+ * @details This macro generates a byte value that, when placed in the drv2605_rom_data::seq_regs
+ * array, instructs the DRV2605 playback engine to idle for a specified duration.
+ *
+ * @param ms The desired delay in milliseconds (rounded down to the nearest 10ms). Valid range is
+ * 10 to 1270.
+ * @return A byte literal representing the wait time for the sequencer.
+ */
+#define DRV2605_WAVEFORM_SEQUENCER_WAIT_MS(ms) (0x80 | ((ms) / 10))
+
+/** @} */
 
 /**
  * @brief Effect libraries
