@@ -1,0 +1,102 @@
+# Copyright (c) 2025 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Analog Devices MAX20362 PMIC
+
+  The PMIC has a bidirectional buck-boost converter, a CAP output and an LDO.
+  Each rail that is used must be defined as a child node, strictly following the
+  bboost, cap and ldo node names.
+
+compatible: "adi,max20362-regulator"
+
+include: [i2c-device.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  bat-bbin-vdrop:
+    type: int
+    required: true
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+    description: |
+      Voltage drop from BAT to BBIN in millivolts. Refer to the macros from
+      <zephyr/dt-bindings/regulator/max20362.h>:
+      - 0: 55 mV  (MAX20362_BAT_BBIN_VDROP_55MV)
+      - 1: 100 mV (MAX20362_BAT_BBIN_VDROP_100MV)
+      - 2: 150 mV (MAX20362_BAT_BBIN_VDROP_150MV)
+      - 3: 200 mV (MAX20362_BAT_BBIN_VDROP_200MV)
+
+  dvs-src:
+    type: int
+    required: true
+    enum:
+      - 0
+      - 1
+      - 2
+    description: |
+      Interface for DVS. Refer to the macros from
+      <zephyr/dt-bindings/regulator/max20362.h>:
+      - 0: I2C         (MAX20362_DVS_SRC_I2C)
+      - 1: Pseudo-SPI  (MAX20362_DVS_SRC_PSEUDO_SPI)
+      - 2: Round-Robin (MAX20362_DVS_SRC_ROUND_ROBIN)
+
+  ldo-src:
+    type: int
+    required: true
+    enum:
+      - 0
+      - 1
+      - 2
+    description: |
+      LDO input source. If the source is buck-boost, the LDO control
+      can wait for the buck to be on before turning on the LDO.
+      Refer to the macros from <zephyr/dt-bindings/regulator/max20362.h>:
+      - 0: BBOUT (MAX20362_LDO_SRC_BBOUT)
+      - 1: CAP   (MAX20362_LDO_SRC_CAP)
+      - 2: BATT  (MAX20362_LDO_SRC_BATT)
+
+child-binding:
+  description: |
+    Each rail that is used must be defined as a child node, strictly following
+    these node names, otherwise it will not be recognized:
+    - bboost
+    - cap
+    - ldo
+  include:
+    - name: regulator.yaml
+      property-allowlist:
+        - regulator-init-microvolt
+        - regulator-min-microvolt
+        - regulator-max-microvolt
+        - regulator-init-microamp
+        - regulator-max-microamp
+        - regulator-always-on
+        - regulator-boot-on
+        - regulator-initial-mode
+        - regulator-allowed-modes
+
+examples:
+  - |
+    max20362_regulators: max20362@68 {
+      compatible = "adi,max20362-regulator";
+      reg = <0x68>;
+      bat-bbin-vdrop = <0>;
+      dvs-src = <0>;
+      ldo-src = <1>;
+
+      bboost {
+        /* all properties for BBOOST */
+      };
+      cap {
+        /* all properties for CAP */
+      };
+      ldo {
+        /* all properties for LDO */
+      };
+    };
