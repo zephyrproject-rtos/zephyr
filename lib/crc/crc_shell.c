@@ -32,6 +32,7 @@ static const char *const crc_types[] = {
 	[CRC24_PGP] = "24_pgp",
 	[CRC32_C] = "32_c",
 	[CRC32_IEEE] = "32_ieee",
+	[CRC32_POSIX] = "32_posix",
 	[CRC32_K_4_2] = "32_k_4_2",
 };
 
