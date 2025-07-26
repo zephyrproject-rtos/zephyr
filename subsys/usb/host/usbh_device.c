@@ -285,7 +285,7 @@ static int parse_configuration_descriptor(struct usb_device *const udev)
 	dhp = (void *)((uint8_t *)udev->cfg_desc + cfg_desc->bLength);
 	desc_end = (void *)((uint8_t *)udev->cfg_desc + cfg_desc->wTotalLength);
 
-	while ((dhp->bDescriptorType != 0 || dhp->bLength != 0) && (void *)dhp < desc_end) {
+	while ((void *)dhp < desc_end && (dhp->bDescriptorType != 0 || dhp->bLength != 0)) {
 		if (dhp->bDescriptorType == USB_DESC_INTERFACE_ASSOC) {
 			iad = (struct usb_association_descriptor *)dhp;
 			LOG_DBG("bFirstInterface %u", iad->bFirstInterface);
