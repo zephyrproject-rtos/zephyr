@@ -1,0 +1,137 @@
+{
+  "programming": {
+    "header_version": 1,
+    "udid": "",
+    "pub_key": "",
+    "payload_param": {
+      "type_version": 0,
+      "payload": {
+        "prog_req_content": {
+          "fuse_programming_instruction_update": false,
+          "flash_factory_reset": false,
+          "boot_sector": false,
+          "primary_tbl": false,
+          "secondary_tbl": false,
+          "primary_vendor_image": true,
+          "primary_vendor_sbl": false,
+          "secondary_vendor_image": false,
+          "secondary_vendor_sbl": false,
+          "primary_ti_wsoc": false,
+          "secondary_ti_wsoc": false,
+          "primary_ti_wsoc_bl2": false,
+          "secondary_ti_wsoc_bl2": false,
+          "protected_storage": false
+        },
+        "prog_validation": {
+          "fuse_programming_instruction_update": false,
+          "flash_factory_reset": false,
+          "boot_sector": false,
+          "primary_tbl": false,
+          "secondary_tbl": false,
+          "primary_vendor_image": false,
+          "primary_vendor_sbl": false,
+          "secondary_vendor_image": false,
+          "secondary_vendor_sbl": false,
+          "primary_ti_wsoc": false,
+          "secondary_ti_wsoc": false,
+          "primary_ti_wsoc_bl2": false,
+          "secondary_ti_wsoc_bl2": false,
+          "protected_storage": false
+        }
+      }
+    }
+  },
+  "query": {
+    "header_version": 1,
+    "udid": "",
+    "pub_key": "",
+    "payload_param": {
+      "type_version": 0,
+      "payload": {
+        "query_req_content": {
+          "boot_sector_query": true,
+          "primary_ti_bootloader_query": true,
+          "secondary_ti_bootloader_query": false,
+          "primary_vendor_image_query": false,
+          "primary_vendor_sbl_query": false,
+          "secondary_vendor_image_query": false,
+          "secondary_vendor_sbl_query": false,
+          "primary_ti_wsoc_query": false,
+          "secondary_ti_wsoc_query": false,
+          "primary_ti_wsoc_bl2_query": false,
+          "secondary_ti_wsoc_bl2_query": false,
+          "protected_storage_query": false
+        }
+      }
+    }
+  },
+  "debug": {
+    "header_version": 1,
+    "udid": "",
+    "pub_key": "",
+    "payload_param": {
+      "type_version": 0,
+      "payload": {
+        "vendor_debug_bypass": {
+          "efuse_crc_validation_bypass": false,
+          "otfde_protection_bypass": true,
+          "second_container_validation_bypass": true,
+          "rollback_validation_bypass": false,
+          "security_policy_bypass": false,
+          "security_Failure_Behavioral_bypass": false,
+          "primary_rot_switching_to_secondary_bypass": false,
+          "crc_efuse_validation_bypass": false,
+          "non_crc_efuse_validation_otp_bypass": false,
+          "non_crc_efuse_mismatch_bypass": false,
+          "soc_boot_configurations_bypass": false,
+          "host_boot_configurations_bypass": false,
+          "soc_security_configuration_bypass": false,
+          "host_security_configuration_bypass": false,
+          "host_services_irq_configurations_bypass": false,
+          "full_open_all_vendors_debug": false,
+          "full_open_vendors_all_ns_debug": false,
+          "full_open_vendors_all_s_debug": false,
+          "partial_open_all_vendors_debug": false,
+          "partial_open_vendors_all_ns_debug": false,
+          "partial_open_vendors_all_s_debug": false
+        },
+        "vendor_efuse_crc_validation_bypass": {
+          "m33_halt_or_run": "halt",
+          "clear_errors_scratchpad": false
+        },
+        "vendors_hide_and_lock_policy_instructions": {
+          "host_boot_done_set_bypass": false,
+          "host_peripherals_lock_set_bypass": false,
+          "icache_configurations_lock_set_bypass": false,
+          "m33_memory_partitioning_lock_set_bypass": false,
+          "memss_mode_and_firewall_lock_set_bypass": false,
+          "dma_channel_owner_lock_set_bypass": false,
+          "core_events_lock_set_bypass": false,
+          "otfde_region_lock_bypass": false
+        }
+      }
+    }
+  },
+  "enter_rma": {
+    "header_version": 1,
+    "udid": "",
+    "pub_key": "",
+    "payload_param": {
+      "type_version": 0,
+      "payload": {
+        "enter_rma_option": {
+          "invalidate_vendor_rot_fuses": false,
+          "invalidate_other_vendor_fuses": false,
+          "invalidate_all_vendor_components": false,
+          "invalidate_internal_memory": false
+        },
+        "enter_rma_validation": {
+          "invalidate_vendor_rot_fuses_validate": false,
+          "invalidate_other_vendor_fuses_validate": false,
+          "invalidate_all_vendor_components_validate": false,
+          "invalidate_internal_memory_validate": false
+        }
+      }
+    }
+  }
+}
