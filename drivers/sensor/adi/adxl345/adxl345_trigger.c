@@ -154,14 +154,14 @@ int adxl345_trigger_set(const struct device *dev,
 		 * are served by reading data-register: two clients can't be
 		 * served simultaneously.
 		 */
-		int_mask = ADXL345_INT_MAP_DATA_RDY_MSK |
-			   ADXL345_INT_MAP_OVERRUN_MSK |
-			   ADXL345_INT_MAP_WATERMARK_MSK;
+		int_mask = ADXL345_INT_DATA_RDY |
+			   ADXL345_INT_OVERRUN |
+			   ADXL345_INT_WATERMARK;
 		break;
 	case SENSOR_TRIG_MOTION:
 		drv_data->act_handler = handler;
 		drv_data->act_trigger = trig;
-		int_mask = ADXL345_INT_MAP_ACT_MSK;
+		int_mask = ADXL345_INT_ACT;
 		ret = adxl345_reg_write_byte(dev, ADXL345_ACT_INACT_CTL_REG,
 					ADXL345_ACT_AC_DC | ADXL345_ACT_X_EN |
 					ADXL345_ACT_Y_EN | ADXL345_ACT_Z_EN);
@@ -175,7 +175,7 @@ int adxl345_trigger_set(const struct device *dev,
 	}
 
 	if (handler) {
-		int_en = ADXL345_INT_MAP_DATA_RDY_MSK;
+		int_en = ADXL345_INT_DATA_RDY;
 	} else {
 		int_en = 0U;
 	}

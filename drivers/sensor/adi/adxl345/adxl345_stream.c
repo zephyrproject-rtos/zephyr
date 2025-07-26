@@ -16,7 +16,7 @@ void adxl345_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iode
 	const struct sensor_read_config *cfg =
 			(const struct sensor_read_config *) iodev_sqe->sqe.iodev->data;
 	struct adxl345_dev_data *data = (struct adxl345_dev_data *)dev->data;
-	uint8_t int_value = (uint8_t)~ADXL345_INT_MAP_WATERMARK_MSK;
+	uint8_t int_value = (uint8_t)~ADXL345_INT_WATERMARK;
 	uint8_t fifo_watermark_irq = 0;
 	int rc;
 
@@ -26,13 +26,18 @@ void adxl345_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iode
 
 	for (size_t i = 0; i < cfg->count; i++) {
 		if (cfg->triggers[i].trigger == SENSOR_TRIG_FIFO_WATERMARK) {
-			int_value = ADXL345_INT_MAP_WATERMARK_MSK;
+			int_value = ADXL345_INT_WATERMARK;
 			fifo_watermark_irq = 1;
 		}
 	}
 		uint8_t status;
 	if (fifo_watermark_irq != data->fifo_watermark_irq) {
 		data->fifo_watermark_irq = fifo_watermark_irq;
+		rc = adxl345_reg_write_mask(dev, ADXL345_INT_MAP_REG,
+					    ADXL345_INT_WATERMARK, int_value);
+		if (rc < 0) {
+			return;
+		}
 
 		/* Flush the FIFO by disabling it. Save current mode for after the reset. */
 		enum adxl345_fifo_mode current_fifo_mode = data->fifo_config.fifo_mode;
@@ -268,8 +273,7 @@ static void adxl345_process_status1_cb(struct rtio *r, const struct rtio_sqe *sq
 
 	bool fifo_full_irq = false;
 
-	if ((fifo_wmark_cfg != NULL)
-			&& FIELD_GET(ADXL345_INT_MAP_WATERMARK_MSK, status1)) {
+	if (fifo_wmark_cfg && FIELD_GET(ADXL345_INT_WATERMARK, status1)) {
 		fifo_full_irq = true;
 	}
 

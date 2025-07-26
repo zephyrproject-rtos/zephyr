@@ -277,7 +277,7 @@ static bool adxl345_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigg
 
 	switch (trigger) {
 	case SENSOR_TRIG_FIFO_WATERMARK:
-		return FIELD_GET(ADXL345_INT_MAP_WATERMARK_MSK, data->int_status);
+		return FIELD_GET(ADXL345_INT_WATERMARK, data->int_status);
 	default:
 		return false;
 	}
