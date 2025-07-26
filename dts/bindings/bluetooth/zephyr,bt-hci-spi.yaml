@@ -24,6 +24,13 @@ properties:
       Minimum duration to hold the reset-gpios pin low for.
       If not specified no delay beyond the code path execution time is guaranteed.
 
+  controller-cs-delay-us:
+    type: int
+    default: 0
+    description:
+      Delay in microseconds to wait after asserting the CS line before starting the
+      transmission and before releasing the CS line after the transmission.
+
   controller-data-delay-us:
     type: int
     default: 20
