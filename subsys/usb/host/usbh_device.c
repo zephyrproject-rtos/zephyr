@@ -397,7 +397,7 @@ int usbh_device_set_configuration(struct usb_device *const udev, const uint8_t n
 	}
 
 	udev->cfg_desc = k_heap_alloc(&usb_device_heap,
-				      cfg_desc.wTotalLength,
+				      cfg_desc.wTotalLength + sizeof(struct usb_desc_header),
 				      K_NO_WAIT);
 	if (udev->cfg_desc == NULL) {
 		LOG_ERR("Failed to allocate memory for configuration descriptor");
