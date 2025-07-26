@@ -33,14 +33,252 @@
 
 LOG_MODULE_REGISTER(usbh_uvc, CONFIG_USBH_VIDEO_LOG_LEVEL);
 
-struct usbh_uvc_config {
-	struct usbh_contex *uhs_ctx;
+struct usbh_uvc_data {
+	int todo;
 };
 
 static int usbh_uvc_request(struct usbh_contex *const uhs_ctx, struct uhc_transfer *const xfer,
 			    int err)
 {
-	LOG_INF("%p %p %d", uhs_ctx, xfer, err);
+	LOG_DBG("%p %p %d", uhs_ctx, xfer, err);
+
+	return 0;
+}
+
+static int usbh_uvc_parse_control_header(struct usbh_contex *const uhs_ctx,
+					 struct usbh_uvc_data *const uvc,
+					 struct uvc_control_header_descriptor *desc)
+{
+	return 0;
+}
+
+static int usbh_uvc_parse_output_terminal(struct usbh_contex *const uhs_ctx,
+					 struct usbh_uvc_data *const uvc,
+					 struct uvc_output_terminal_descriptor *desc)
+{
+	return 0;
+}
+
+static int usbh_uvc_parse_input_terminal(struct usbh_contex *const uhs_ctx,
+					struct usbh_uvc_data *const uvc,
+					struct uvc_camera_terminal_descriptor *desc)
+{
+	return 0;
+}
+
+static int usbh_uvc_parse_selector_unit(struct usbh_contex *const uhs_ctx,
+					struct usbh_uvc_data *const uvc,
+					struct uvc_selector_unit_descriptor *desc)
+{
+	return 0;
+}
+
+static int usbh_uvc_parse_processing_unit(struct usbh_contex *const uhs_ctx,
+					  struct usbh_uvc_data *const uvc,
+					  struct uvc_processing_unit_descriptor *desc)
+{
+	return 0;
+}
+
+static int usbh_uvc_parse_extension_unit(struct usbh_contex *const uhs_ctx,
+					 struct usbh_uvc_data *const uvc,
+					 struct uvc_extension_unit_descriptor *desc)
+{
+	return 0;
+}
+
+static int usbh_uvc_parse_encoding_unit(struct usbh_contex *const uhs_ctx,
+					struct usbh_uvc_data *const uvc,
+					struct uvc_encoding_unit_descriptor *desc)
+{
+	return 0;
+}
+
+static int usbh_uvc_parse_control_desc(struct usbh_contex *const uhs_ctx,
+				       struct usbh_uvc_data *const uvc,
+				       struct usb_if_descriptor *const if_control)
+{
+	struct uvc_if_descriptor *desc = (void *)if_control;
+	int ret = 0;
+
+	while (desc->bLength != 0) {
+		/* Skip the interface descriptor or switch to the next descriptor */
+		desc = (void *)((uint8_t *)desc + desc->bLength);
+
+		if (desc->bDescriptorType == USB_DESC_INTERFACE ||
+		    desc->bDescriptorType == USB_DESC_INTERFACE_ASSOC ||
+		    desc->bDescriptorType == 0) {
+			break;
+		} else if (desc->bDescriptorType == USB_DESC_CS_INTERFACE) {
+			if (desc->bDescriptorSubtype == UVC_VC_HEADER) {
+				struct uvc_control_header_descriptor copy;
+
+				memcpy(&copy, desc, MIN(sizeof(copy), desc->bLength));
+				LOG_DBG("VideoControl interface: Header");
+				ret = usbh_uvc_parse_control_header(uhs_ctx, uvc, &copy);
+			} else if (desc->bDescriptorSubtype == UVC_VC_OUTPUT_TERMINAL) {
+				struct uvc_output_terminal_descriptor copy;
+
+				memcpy(&copy, desc, MIN(sizeof(copy), desc->bLength));
+				LOG_DBG("VideoControl interface: Output Terminal");
+				ret = usbh_uvc_parse_output_terminal(uhs_ctx, uvc, &copy);
+			} else if (desc->bDescriptorSubtype == UVC_VC_INPUT_TERMINAL) {
+				struct uvc_camera_terminal_descriptor copy;
+
+				memcpy(&copy, desc, MIN(sizeof(copy), desc->bLength));
+				LOG_DBG("VideoControl interface: Input/Camera Terminal");
+				ret = usbh_uvc_parse_input_terminal(uhs_ctx, uvc, &copy);
+			} else if (desc->bDescriptorSubtype == UVC_VC_SELECTOR_UNIT) {
+				struct uvc_selector_unit_descriptor copy;
+
+				memcpy(&copy, desc, MIN(sizeof(copy), desc->bLength));
+				LOG_DBG("VideoControl interface: Selector Unit");
+				ret = usbh_uvc_parse_selector_unit(uhs_ctx, uvc, &copy);
+			} else if (desc->bDescriptorSubtype == UVC_VC_PROCESSING_UNIT) {
+				struct uvc_processing_unit_descriptor copy;
+
+				memcpy(&copy, desc, MIN(sizeof(copy), desc->bLength));
+				LOG_DBG("VideoControl interface: Processing Unit");
+				ret = usbh_uvc_parse_processing_unit(uhs_ctx, uvc, &copy);
+			} else if (desc->bDescriptorSubtype == UVC_VC_EXTENSION_UNIT) {
+				struct uvc_extension_unit_descriptor copy;
+
+				memcpy(&copy, desc, MIN(sizeof(copy), desc->bLength));
+				LOG_DBG("VideoControl interface: Extension Unit");
+				ret = usbh_uvc_parse_extension_unit(uhs_ctx, uvc, &copy);
+			} else if (desc->bDescriptorSubtype == UVC_VC_ENCODING_UNIT) {
+				struct uvc_encoding_unit_descriptor copy;
+
+				memcpy(&copy, desc, MIN(sizeof(copy), desc->bLength));
+				LOG_DBG("VideoControl interface: Encoding Unit");
+				ret = usbh_uvc_parse_encoding_unit(uhs_ctx, uvc, &copy);
+			} else {
+				LOG_WRN("VideoControl interface: unknown subtype %u, skipping",
+					desc->bDescriptorSubtype);
+			}
+		} else {
+			LOG_DBG("VideoControl descriptor: unknown type %u, skipping",
+				desc->bDescriptorType);
+		}
+
+		if (ret != 0) {
+			LOG_ERR("Error while parsing descriptor type %u");
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+static int usbh_uvc_parse_input_header(struct usbh_contex *const uhs_ctx,
+				       struct usbh_uvc_data *const uvc,
+				       struct uvc_stream_header_descriptor *const desc)
+{
+	return 0;
+}
+
+static int usbh_uvc_parse_output_header(struct usbh_contex *const uhs_ctx,
+					struct usbh_uvc_data *const uvc,
+					struct uvc_stream_header_descriptor *const desc)
+{
+	return 0;
+}
+
+static int usbh_uvc_parse_format_uncomp(struct usbh_contex *const uhs_ctx,
+					struct usbh_uvc_data *const uvc,
+					struct uvc_format_uncomp_descriptor *const desc)
+{
+	return 0;
+}
+
+static int usbh_uvc_parse_format_mjpeg(struct usbh_contex *const uhs_ctx,
+				       struct usbh_uvc_data *const uvc,
+				       struct uvc_format_mjpeg_descriptor *const desc)
+{
+	return 0;
+}
+
+static int usbh_uvc_parse_frame(struct usbh_contex *const uhs_ctx,
+				struct usbh_uvc_data *const uvc,
+				struct uvc_frame_descriptor *const desc)
+{
+	return 0;
+}
+
+static int usbh_uvc_parse_color(struct usbh_contex *const uhs_ctx,
+				struct usbh_uvc_data *const uvc,
+				struct uvc_color_descriptor *const desc)
+{
+	return 0;
+}
+
+static int usbh_uvc_parse_streaming_desc(struct usbh_contex *const uhs_ctx,
+					 struct usbh_uvc_data *const uvc,
+					 struct usb_if_descriptor *const if_streaming)
+{
+	struct uvc_if_descriptor *desc = (void *)if_streaming;
+	int ret;
+
+	while (desc->bLength != 0) {
+		/* Skip the interface descriptor or switch to the next descriptor */
+		desc = (void *)((uint8_t *)desc + desc->bLength);
+
+		if (desc->bDescriptorType == USB_DESC_INTERFACE ||
+		    desc->bDescriptorType == USB_DESC_INTERFACE_ASSOC ||
+		    desc->bDescriptorType == 0) {
+			break;
+		} else if (desc->bDescriptorType == USB_DESC_CS_INTERFACE) {
+			if (desc->bDescriptorSubtype == UVC_VS_INPUT_HEADER) {
+				struct uvc_stream_header_descriptor copy;
+
+				memcpy(&copy, desc, MIN(sizeof(copy), desc->bLength));
+				LOG_DBG("VideoStreaming interface: Input header");
+				ret = usbh_uvc_parse_input_header(uhs_ctx, uvc, &copy);
+			} else if (desc->bDescriptorSubtype == UVC_VS_OUTPUT_HEADER) {
+				struct uvc_stream_header_descriptor copy;
+
+				memcpy(&copy, desc, MIN(sizeof(copy), desc->bLength));
+				LOG_DBG("VideoStreaming interface: Output header");
+				ret = usbh_uvc_parse_output_header(uhs_ctx, uvc, &copy);
+			} else if (desc->bDescriptorSubtype == UVC_VS_FORMAT_UNCOMPRESSED) {
+				struct uvc_format_uncomp_descriptor copy;
+
+				memcpy(&copy, desc, MIN(sizeof(copy), desc->bLength));
+				LOG_DBG("VideoStreaming interface: Uncompressed format");
+				ret = usbh_uvc_parse_format_uncomp(uhs_ctx, uvc, &copy);
+			} else if (desc->bDescriptorSubtype == UVC_VS_FORMAT_MJPEG) {
+				struct uvc_format_mjpeg_descriptor copy;
+
+				memcpy(&copy, desc, MIN(sizeof(copy), desc->bLength));
+				LOG_DBG("VideoStreaming interface: Uncompressed format");
+				ret = usbh_uvc_parse_format_mjpeg(uhs_ctx, uvc, &copy);
+			} else if (desc->bDescriptorSubtype == UVC_VS_FRAME_UNCOMPRESSED ||
+				   desc->bDescriptorSubtype == UVC_VS_FRAME_MJPEG) {
+				struct uvc_frame_descriptor copy;
+
+				memcpy(&copy, desc, MIN(sizeof(copy), desc->bLength));
+				LOG_DBG("VideoStreaming interface: Frame");
+				ret = usbh_uvc_parse_frame(uhs_ctx, uvc, &copy);
+			} else if (desc->bDescriptorSubtype == UVC_VS_COLORFORMAT) {
+				struct uvc_color_descriptor copy;
+
+				memcpy(&copy, desc, MIN(sizeof(copy), desc->bLength));
+				LOG_DBG("VideoStreaming interface: Color");
+				ret = usbh_uvc_parse_color(uhs_ctx, uvc, &copy);
+			} else {
+				LOG_DBG("VideoStreaming descriptor: unknown subtype %u, skipping",
+					desc->bDescriptorSubtype);
+			}
+		} else if (desc->bDescriptorType == USB_DESC_ENDPOINT) {
+			struct usb_ep_descriptor copy;
+
+			memcpy(&copy, desc, MIN(sizeof(copy), desc->bLength));
+			LOG_DBG("VideoStreaming Endpoint", copy.bEndpointAddress);
+		} else {
+			LOG_DBG("VideoStreaming descriptor: unknown type %u, skipping",
+				desc->bDescriptorType);
+		}
+	}
 
 	return 0;
 }
@@ -48,60 +286,78 @@ static int usbh_uvc_request(struct usbh_contex *const uhs_ctx, struct uhc_transf
 static int usbh_uvc_connected(struct usbh_contex *const uhs_ctx)
 {
 	struct usb_device *const udev = uhs_ctx->root;
-	const size_t len = 512;
-	struct net_buf *buf;
+	struct usbh_uvc_data *const uvc = NULL;
+	struct usb_if_descriptor *if_control = NULL;
+	struct usb_if_descriptor *if_streaming = NULL;
 	int ret;
 
-	LOG_INF("%p", uhs_ctx);
+	LOG_DBG("%p", uhs_ctx);
 
-	buf = usbh_xfer_buf_alloc(udev, len);
-	if (buf == NULL) {
-		LOG_ERR("Failed to allocate a host transfer buffer");
-		return -ENOMEM;
+	/* TODO only scan through the interfaces assigned to this class by usbh_class.c */
+	for (unsigned int i = 0; udev->ifaces[i].dhp != NULL; i++) {
+		struct usb_if_descriptor *if_desc = (void *)udev->ifaces[i].dhp;
+
+		if (if_desc->bInterfaceClass == USB_BCC_VIDEO &&
+		    if_desc->bInterfaceSubClass == UVC_SC_VIDEOCONTROL) {
+			if_control = if_desc;
+		}
+
+		if (if_desc->bInterfaceClass == USB_BCC_VIDEO &&
+		    if_desc->bInterfaceSubClass == UVC_SC_VIDEOSTREAMING) {
+			if_streaming = if_desc;
+		}
 	}
 
-	ret = usbh_req_desc(udev, USB_DESC_DEVICE, 0, 0, len, buf);
+	if (if_streaming == NULL || if_control == NULL) {
+		LOG_ERR("Video Streaming %p or Control %p interface missing",
+			if_streaming, if_control);
+		return -EINVAL;
+	}
+
+	ret = usbh_uvc_parse_control_desc(uhs_ctx, uvc, if_control);
 	if (ret != 0) {
-		LOG_ERR("Failed to request descriptor");
 		return ret;
 	}
 
-	LOG_HEXDUMP_INF(buf->data, buf->len, "buf");
+	ret = usbh_uvc_parse_streaming_desc(uhs_ctx, uvc, if_streaming);
+	if (ret != 0) {
+		return ret;
+	}
 
 	return 0;
 }
 
 static int usbh_uvc_removed(struct usbh_contex *const uhs_ctx)
 {
-	LOG_INF("%p", uhs_ctx);
+	LOG_DBG("%p", uhs_ctx);
 
 	return 0;
 }
 
 static int usbh_uvc_rwup(struct usbh_contex *const uhs_ctx)
 {
-	LOG_INF("%p", uhs_ctx);
+	LOG_DBG("%p", uhs_ctx);
 
 	return 0;
 }
 
 static int usbh_uvc_suspended(struct usbh_contex *const uhs_ctx)
 {
-	LOG_INF("%p", uhs_ctx);
+	LOG_DBG("%p", uhs_ctx);
 
 	return 0;
 }
 
 static int usbh_uvc_resumed(struct usbh_contex *const uhs_ctx)
 {
-	LOG_INF("%p", uhs_ctx);
+	LOG_DBG("%p", uhs_ctx);
 
 	return 0;
 }
 
 static int usbh_uvc_preinit(const struct device *dev)
 {
-	LOG_INF("%s", dev->name);
+	LOG_DBG("%s", dev->name);
 
 	return 0;
 }
