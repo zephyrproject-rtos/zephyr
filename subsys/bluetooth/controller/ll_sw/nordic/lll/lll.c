@@ -71,7 +71,9 @@ static inline void done_inc(void);
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
 static inline bool is_done_sync(void);
 static inline struct lll_event *prepare_dequeue_iter_ready_get(uint8_t *idx);
-static inline struct lll_event *resume_enqueue(lll_prepare_cb_t resume_cb);
+static inline struct lll_event *resume_enqueue(lll_is_abort_cb_t is_abort_cb,
+					       lll_abort_cb_t abort_cb, lll_prepare_cb_t resume_cb,
+					       void *param);
 static void isr_race(void *param);
 
 #if !defined(CONFIG_BT_CTLR_LOW_LAT)
@@ -942,7 +944,16 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 			LL_ASSERT(err);
 
 			if (err == -EAGAIN) {
-				next = resume_enqueue(resume_cb);
+				void *curr_param;
+
+				/* Remove parameter assignment from currently active radio event so
+				 * that done event is not generated.
+				 */
+				curr_param = event.curr.param;
+				event.curr.param = NULL;
+
+				next = resume_enqueue(event.curr.is_abort_cb, event.curr.abort_cb,
+						      resume_cb, curr_param);
 				LL_ASSERT(next);
 			} else {
 				LL_ASSERT(err == -ECANCELED);
@@ -1026,19 +1037,15 @@ static inline struct lll_event *prepare_dequeue_iter_ready_get(uint8_t *idx)
 	return ready;
 }
 
-static inline struct lll_event *resume_enqueue(lll_prepare_cb_t resume_cb)
+static inline struct lll_event *resume_enqueue(lll_is_abort_cb_t is_abort_cb,
+					       lll_abort_cb_t abort_cb, lll_prepare_cb_t resume_cb,
+					       void *param)
 {
 	struct lll_prepare_param prepare_param = {0};
 
-	/* Enqueue into prepare pipeline as resume radio event, and remove
-	 * parameter assignment from currently active radio event so that
-	 * done event is not generated.
-	 */
-	prepare_param.param = event.curr.param;
-	event.curr.param = NULL;
+	prepare_param.param = param;
 
-	return ull_prepare_enqueue(event.curr.is_abort_cb, event.curr.abort_cb,
-				   &prepare_param, resume_cb, 1);
+	return ull_prepare_enqueue(is_abort_cb, abort_cb, &prepare_param, resume_cb, 1U);
 }
 
 static void isr_race(void *param)
@@ -1355,9 +1362,27 @@ preempt_find_preemptor:
 
 	/* Check if resume requested */
 	if (err == -EAGAIN) {
-		uint8_t is_resume_abort = 0U;
+		lll_is_abort_cb_t is_abort_cb;
+		lll_abort_cb_t abort_cb;
+		uint8_t is_resume_abort;
 		struct lll_event *iter;
 		uint8_t iter_idx;
+		void *curr_param;
+
+		/* Remove parameter assignment from currently active radio event so that done event
+		 * is not generated.
+		 */
+		curr_param = event.curr.param;
+		event.curr.param = NULL;
+
+		/* backup is_abort_cb and abort_cb */
+		is_abort_cb = event.curr.is_abort_cb;
+		abort_cb = event.curr.abort_cb;
+
+		/* Iterate twice to ensure preempt timeout is setup after all duplicate resume
+		 * events are aborted.
+		 */
+		is_resume_abort = 0U;
 
 preempt_abort_resume:
 		/* Abort any duplicate non-resume, that they get dequeued */
@@ -1366,7 +1391,7 @@ preempt_abort_resume:
 		while (iter) {
 			if (!iter->is_aborted &&
 			    (is_resume_abort || !iter->is_resume) &&
-			    event.curr.param == iter->prepare_param.param) {
+			    (curr_param == iter->prepare_param.param)) {
 				iter->is_aborted = 1;
 				iter->abort_cb(&iter->prepare_param,
 					       iter->prepare_param.param);
@@ -1390,7 +1415,7 @@ preempt_abort_resume:
 		}
 
 		/* Enqueue as resume event */
-		iter = resume_enqueue(resume_cb);
+		iter = resume_enqueue(is_abort_cb, abort_cb, resume_cb, curr_param);
 		LL_ASSERT(iter);
 	} else {
 		LL_ASSERT(err == -ECANCELED);
