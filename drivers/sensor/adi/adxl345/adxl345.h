@@ -171,12 +171,22 @@ struct adxl345_fifo_config {
 	uint8_t fifo_samples;
 };
 
+struct adxl345_sample {
+#ifdef CONFIG_ADXL345_STREAM
+	uint8_t is_fifo: 1;
+	uint8_t res: 7;
+#endif /* CONFIG_ADXL345_STREAM */
+	enum adxl345_range selected_range;
+	bool is_full_res;
+	int16_t x;
+	int16_t y;
+	int16_t z;
+} __attribute__((__packed__));
+
 struct adxl345_dev_data {
-	struct {
-		int16_t x;
-		int16_t y;
-		int16_t z;
-	} samples;
+	struct adxl345_sample sample[ADXL345_MAX_FIFO_SIZE];
+	uint8_t sample_number; /* number of samples to read from sensor */
+	uint8_t sample_idx; /* index counting up sample_number entries */
 	struct adxl345_fifo_config fifo_config;
 	bool is_full_res;
 	enum adxl345_range selected_range;
@@ -227,18 +237,6 @@ struct adxl345_fifo_data {
 	uint16_t fifo_byte_count: 12;
 	uint64_t timestamp;
 } __attribute__((__packed__));
-
-struct adxl345_sample {
-#ifdef CONFIG_ADXL345_STREAM
-	uint8_t is_fifo: 1;
-	uint8_t res: 7;
-#endif /* CONFIG_ADXL345_STREAM */
-	uint8_t selected_range;
-	bool is_full_res;
-	int16_t x;
-	int16_t y;
-	int16_t z;
-};
 
 union adxl345_bus {
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
