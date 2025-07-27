@@ -10,21 +10,17 @@
 #include <zephyr/dt-bindings/pwm/pwm.h>
 
 #include "rpi_pico2-pinctrl.dtsi"
-#include "../common/rpi_pico-led.dtsi"
+
+/*
+ * We need to be careful about shared definitions in this
+ * device tree. Zephyr will run start up code on peripherals
+ * that are present here - meaning it will get run twice.
+ * Best case, this is a bit wasteful as the bus accesses are
+ * arbitrated. Worst case, the peripherals are left in an
+ * unknown state based on the order of access.
+ */
 
 / {
-	chosen {
-		zephyr,sram = &sram0;
-		zephyr,flash = &flash0;
-		zephyr,console = &uart0;
-		zephyr,shell-uart = &uart0;
-		zephyr,code-partition = &code_partition;
-	};
-
-	aliases {
-		watchdog0 = &wdt0;
-	};
-
 	pico_header: connector {
 		compatible = "raspberrypi,pico-header";
 		#gpio-cells = <2>;
@@ -79,70 +75,45 @@
 
 		/*
 		 * Usable flash. Starts at 0x100, after the image definition block.
-		 * The partition size is 4MB minus the 0x100 bytes taken by the
+		 * The partition size is 2 MB minus the 0x100 bytes taken by the
 		 * image definition.
 		 */
-		code_partition: partition@100 {
-			label = "code-partition";
-			reg = <0x100 (DT_SIZE_M(4) - 0x100)>;
+		code_partition_cpu0: partition@100 {
+			label = "code-partition-cpu0";
+			reg = <0x100 (DT_SIZE_M(2) - 0x100)>;
+			read-only;
+		};
+
+		/*
+		 * Code for the second CPU uses the upper 2 MB of flash.
+		 */
+		code_partition_cpu1: partition@200000 {
+			label = "code-partition-cpu1";
+			reg = <0x200000 DT_SIZE_M(2)>;
 			read-only;
 		};
 	};
 };
 
-&uart0 {
-	current-speed = <115200>;
-	status = "okay";
-	pinctrl-0 = <&uart0_default>;
-	pinctrl-names = "default";
-};
+/ {
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
 
-gpio0_lo: &gpio0 {
-	status = "okay";
-};
+		/* SRAM0-3 */
+		sram0_cpu0: cpu0@20000000 {
+			reg = <0x20000000 DT_SIZE_K(256)>;
+		};
 
-&spi0 {
-	clock-frequency = <DT_FREQ_M(8)>;
-	pinctrl-0 = <&spi0_default>;
-	pinctrl-names = "default";
-};
+		/* SRAM4-7 */
+		sram0_cpu1: cpu1@20040000 {
+			reg = <0x20040000 DT_SIZE_K(256)>;
+		};
 
-&i2c0 {
-	clock-frequency = <I2C_BITRATE_STANDARD>;
-	pinctrl-0 = <&i2c0_default>;
-	pinctrl-names = "default";
-	status = "okay";
+		/* SRAM8-9 */
+		sram0_shared: shared@20080000 {
+			reg = <0x20080000 DT_SIZE_K(8)>;
+		};
+	};
 };
-
-&i2c1 {
-	clock-frequency = <I2C_BITRATE_STANDARD>;
-	pinctrl-0 = <&i2c1_default>;
-	pinctrl-names = "default";
-	status = "okay";
-};
-
-&adc {
-	pinctrl-0 = <&adc_default>;
-	pinctrl-names = "default";
-	status = "okay";
-};
-
-&pwm {
-	pinctrl-0 = <&pwm_ch4b_default>;
-	pinctrl-names = "default";
-	divider-int-0 = <255>;
-};
-
-&timer0 {
-	status = "okay";
-};
-
-&wdt0 {
-	status = "okay";
-};
-
-zephyr_udc0: &usbd {
-	status = "okay";
-};
-
-pico_serial: &uart0 {};
