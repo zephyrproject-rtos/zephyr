@@ -10,3 +10,39 @@ family:
     - name: cyw20829b0kml
     - name: cyw89829b0kml
     - name: cyw89829b01mksbg
+  - name: psc3
+    socs:
+    - name: psc3m5fds2afq1
+    - name: psc3m5fds2lgq1
+    - name: psc3m5fds2acq1
+    - name: psc3m5fds2lhq1
+    - name: psc3m5fds2abq1
+    - name: psc3m5edafq1
+    - name: psc3m5edlgq1
+    - name: psc3m5edacq1
+    - name: psc3m5edlhq1
+    - name: psc3m5edabq1
+    - name: psc3p5edlgq1
+    - name: psc3p5fds2lgq1
+    - name: psc3p5edacq1
+    - name: psc3p5fds2acq1
+    - name: psc3p5edlhq1
+    - name: psc3p5fds2lhq1
+    - name: psc3p5edabq1
+    - name: psc3p5fds2abq1
+    - name: psc3p2edlgq1
+    - name: psc3p2fds2lgq1
+    - name: psc3m3edlgq1
+    - name: psc3m3fds2lgq1
+    - name: psc3p2edacq1
+    - name: psc3p2fds2acq1
+    - name: psc3m3edacq1
+    - name: psc3m3fds2acq1
+    - name: psc3p2edlhq1
+    - name: psc3p2fds2lhq1
+    - name: psc3m3edlhq1
+    - name: psc3m3fds2lhq1
+    - name: psc3p2edabq1
+    - name: psc3p2fds2abq1
+    - name: psc3m3edabq1
+    - name: psc3m3fds2abq1
