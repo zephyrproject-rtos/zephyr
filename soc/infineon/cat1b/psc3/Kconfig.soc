@@ -1,0 +1,296 @@
+# copyright (c) (2016-2025), Cypress Semiconductor Corporation
+# (an Infineon company) or an affiliate of Cypress Semiconductor Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Infineon PSC3 series MCUs
+config SOC_SERIES_PSC3
+	bool
+
+config SOC_SERIES
+	default "psc3" if SOC_SERIES_PSC3
+
+config SOC_DIE_PSC3M5
+	bool
+	select SOC_FAMILY_INFINEON_CAT1B
+
+config SOC_DIE_PSC3P5
+	bool
+	select SOC_FAMILY_INFINEON_CAT1B
+
+config SOC_DIE_PSC3P2
+	bool
+	select SOC_FAMILY_INFINEON_CAT1B
+
+config SOC_DIE_PSC3M3
+	bool
+	select SOC_FAMILY_INFINEON_CAT1B
+
+# SOC Packages for Infineon PSC3 series MCUs
+config SOC_PACKAGE_PSC3_E_LQFP_80
+	bool
+
+config SOC_PACKAGE_PSC3_E_LQFP_64
+	bool
+
+config SOC_PACKAGE_PSC3_VQFN_64
+	bool
+
+config SOC_PACKAGE_PSC3_VQFN_48
+	bool
+
+config SOC_PACKAGE_PSC3_E_LQFP_48
+	bool
+
+# Infineon PSC3 series MPNs
+config SOC_PSC3M5FDS2AFQ1
+	bool
+	select SOC_PACKAGE_PSC3_E_LQFP_80
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3M5
+
+config SOC_PSC3M5FDS2LGQ1
+	bool
+	select SOC_PACKAGE_PSC3_VQFN_48
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3M5
+
+config SOC_PSC3M5FDS2ACQ1
+	bool
+	select SOC_PACKAGE_PSC3_E_LQFP_64
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3M5
+
+config SOC_PSC3M5FDS2LHQ1
+	bool
+	select SOC_PACKAGE_PSC3_VQFN_64
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3M5
+
+config SOC_PSC3M5FDS2ABQ1
+	bool
+	select SOC_PACKAGE_PSC3_E_LQFP_48
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3M5
+
+config SOC_PSC3M5EDAFQ1
+	bool
+	select SOC_PACKAGE_PSC3_E_LQFP_80
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3M5
+
+config SOC_PSC3M5EDLGQ1
+	bool
+	select SOC_PACKAGE_PSC3_VQFN_48
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3M5
+
+config SOC_PSC3M5EDACQ1
+	bool
+	select SOC_PACKAGE_PSC3_E_LQFP_64
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3M5
+
+config SOC_PSC3M5EDLHQ1
+	bool
+	select SOC_PACKAGE_PSC3_VQFN_64
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3M5
+
+config SOC_PSC3M5EDABQ1
+	bool
+	select SOC_PACKAGE_PSC3_E_LQFP_48
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3M5
+
+config SOC_PSC3P5EDLGQ1
+	bool
+	select SOC_PACKAGE_PSC3_VQFN_48
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3P5
+
+config SOC_PSC3P5FDS2LGQ1
+	bool
+	select SOC_PACKAGE_PSC3_VQFN_48
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3P5
+
+config SOC_PSC3P5EDACQ1
+	bool
+	select SOC_PACKAGE_PSC3_E_LQFP_64
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3P5
+
+config SOC_PSC3P5FDS2ACQ1
+	bool
+	select SOC_PACKAGE_PSC3_E_LQFP_64
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3P5
+
+config SOC_PSC3P5EDLHQ1
+	bool
+	select SOC_PACKAGE_PSC3_VQFN_64
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3P5
+
+config SOC_PSC3P5FDS2LHQ1
+	bool
+	select SOC_PACKAGE_PSC3_VQFN_64
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3P5
+
+config SOC_PSC3P5EDABQ1
+	bool
+	select SOC_PACKAGE_PSC3_E_LQFP_48
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3P5
+
+config SOC_PSC3P5FDS2ABQ1
+	bool
+	select SOC_PACKAGE_PSC3_E_LQFP_48
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3P5
+
+config SOC_PSC3P2EDLGQ1
+	bool
+	select SOC_PACKAGE_PSC3_VQFN_48
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3P2
+
+config SOC_PSC3P2FDS2LGQ1
+	bool
+	select SOC_PACKAGE_PSC3_VQFN_48
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3P2
+
+config SOC_PSC3M3EDLGQ1
+	bool
+	select SOC_PACKAGE_PSC3_VQFN_48
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3M3
+
+config SOC_PSC3M3FDS2LGQ1
+	bool
+	select SOC_PACKAGE_PSC3_VQFN_48
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3M3
+
+config SOC_PSC3P2EDACQ1
+	bool
+	select SOC_PACKAGE_PSC3_E_LQFP_64
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3P2
+
+config SOC_PSC3P2FDS2ACQ1
+	bool
+	select SOC_PACKAGE_PSC3_E_LQFP_64
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3P2
+
+config SOC_PSC3M3EDACQ1
+	bool
+	select SOC_PACKAGE_PSC3_E_LQFP_64
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3M3
+
+config SOC_PSC3M3FDS2ACQ1
+	bool
+	select SOC_PACKAGE_PSC3_E_LQFP_64
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3M3
+
+config SOC_PSC3P2EDLHQ1
+	bool
+	select SOC_PACKAGE_PSC3_VQFN_64
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3P2
+
+config SOC_PSC3P2FDS2LHQ1
+	bool
+	select SOC_PACKAGE_PSC3_VQFN_64
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3P2
+
+config SOC_PSC3M3EDLHQ1
+	bool
+	select SOC_PACKAGE_PSC3_VQFN_64
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3M3
+
+config SOC_PSC3M3FDS2LHQ1
+	bool
+	select SOC_PACKAGE_PSC3_VQFN_64
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3M3
+
+config SOC_PSC3P2EDABQ1
+	bool
+	select SOC_PACKAGE_PSC3_E_LQFP_48
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3P2
+
+config SOC_PSC3P2FDS2ABQ1
+	bool
+	select SOC_PACKAGE_PSC3_E_LQFP_48
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3P2
+
+config SOC_PSC3M3EDABQ1
+	bool
+	select SOC_PACKAGE_PSC3_E_LQFP_48
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3M3
+
+config SOC_PSC3M3FDS2ABQ1
+	bool
+	select SOC_PACKAGE_PSC3_E_LQFP_48
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3M3
+
+config SOC
+	default "psc3m5fds2afq1" if SOC_PSC3M5FDS2AFQ1
+	default "psc3m5fds2lgq1" if SOC_PSC3M5FDS2LGQ1
+	default "psc3m5fds2acq1" if SOC_PSC3M5FDS2ACQ1
+	default "psc3m5fds2lhq1" if SOC_PSC3M5FDS2LHQ1
+	default "psc3m5fds2abq1" if SOC_PSC3M5FDS2ABQ1
+	default "psc3m5edafq1" if SOC_PSC3M5EDAFQ1
+	default "psc3m5edlgq1" if SOC_PSC3M5EDLGQ1
+	default "psc3m5edacq1" if SOC_PSC3M5EDACQ1
+	default "psc3m5edlhq1" if SOC_PSC3M5EDLHQ1
+	default "psc3m5edabq1" if SOC_PSC3M5EDABQ1
+	default "psc3p5edlgq1" if SOC_PSC3P5EDLGQ1
+	default "psc3p5fds2lgq1" if SOC_PSC3P5FDS2LGQ1
+	default "psc3p5edacq1" if SOC_PSC3P5EDACQ1
+	default "psc3p5fds2acq1" if SOC_PSC3P5FDS2ACQ1
+	default "psc3p5edlhq1" if SOC_PSC3P5EDLHQ1
+	default "psc3p5fds2lhq1" if SOC_PSC3P5FDS2LHQ1
+	default "psc3p5edabq1" if SOC_PSC3P5EDABQ1
+	default "psc3p5fds2abq1" if SOC_PSC3P5FDS2ABQ1
+	default "psc3p2edlgq1" if SOC_PSC3P2EDLGQ1
+	default "psc3p2fds2lgq1" if SOC_PSC3P2FDS2LGQ1
+	default "psc3m3edlgq1" if SOC_PSC3M3EDLGQ1
+	default "psc3m3fds2lgq1" if SOC_PSC3M3FDS2LGQ1
+	default "psc3p2edacq1" if SOC_PSC3P2EDACQ1
+	default "psc3p2fds2acq1" if SOC_PSC3P2FDS2ACQ1
+	default "psc3m3edacq1" if SOC_PSC3M3EDACQ1
+	default "psc3m3fds2acq1" if SOC_PSC3M3FDS2ACQ1
+	default "psc3p2edlhq1" if SOC_PSC3P2EDLHQ1
+	default "psc3p2fds2lhq1" if SOC_PSC3P2FDS2LHQ1
+	default "psc3m3edlhq1" if SOC_PSC3M3EDLHQ1
+	default "psc3m3fds2lhq1" if SOC_PSC3M3FDS2LHQ1
+	default "psc3p2edabq1" if SOC_PSC3P2EDABQ1
+	default "psc3p2fds2abq1" if SOC_PSC3P2FDS2ABQ1
+	default "psc3m3edabq1" if SOC_PSC3M3EDABQ1
+	default "psc3m3fds2abq1" if SOC_PSC3M3FDS2ABQ1
