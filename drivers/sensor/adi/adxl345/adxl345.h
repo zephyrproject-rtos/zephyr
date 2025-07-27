@@ -47,7 +47,7 @@
 #define ADXL345_POWER_CTL_REG           0x2d
 #define ADXL345_DATA_FORMAT_REG         0x31
 #define ADXL345_DATA_FORMAT_FULL_RES    0x08
-#define ADXL345_X_AXIS_DATA_0_REG       0x32
+#define ADXL345_REG_DATA_XYZ_REGS       0x32
 #define ADXL345_FIFO_CTL_REG            0x38
 #define ADXL345_FIFO_STATUS_REG         0x39
 

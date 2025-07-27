@@ -266,8 +266,8 @@ int adxl345_read_sample(const struct device *dev,
 		} while (!(ADXL345_STATUS_DATA_RDY(status1)));
 	}
 
-	int rc = adxl345_reg_read(dev, ADXL345_X_AXIS_DATA_0_REG, axis_data, 6);
-
+	int rc = adxl345_reg_read(dev, ADXL345_REG_DATA_XYZ_REGS,
+				  axis_data, ADXL345_FIFO_SAMPLE_SIZE);
 	if (rc < 0) {
 		LOG_ERR("Samples read failed with rc=%d\n", rc);
 		return rc;

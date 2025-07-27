@@ -204,7 +204,7 @@ static void adxl345_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 		struct rtio_sqe *read_fifo_data = rtio_sqe_acquire(data->rtio_ctx);
 
 		data->fifo_samples--;
-		const uint8_t reg_addr = ADXL345_REG_READ(ADXL345_X_AXIS_DATA_0_REG)
+		const uint8_t reg_addr = ADXL345_REG_READ(ADXL345_REG_DATA_XYZ_REGS)
 				| ADXL345_MULTIBYTE_FLAG;
 
 		rtio_sqe_prep_tiny_write(write_fifo_addr, data->iodev, RTIO_PRIO_NORM, &reg_addr,
