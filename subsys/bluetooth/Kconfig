@@ -109,6 +109,16 @@ config BT_MAX_CONN
 	  Maximum number of simultaneous Bluetooth connections
 	  supported.
 
+config BT_CONN_DYNAMIC_CALLBACKS
+	bool "Dynamic connection callbacks"
+	depends on BT_CONN
+	default y
+	help
+	  Enable support for dynamic connection callbacks. This allows
+	  applications to register and unregister callbacks at runtime.
+	  If disabled, the application must register all callbacks at
+	  compile time using the BT_CONN_CB_DEFINE() macro.
+
 config BT_CONN_TX
 	bool
 	default BT_CONN || BT_ISO_TX
