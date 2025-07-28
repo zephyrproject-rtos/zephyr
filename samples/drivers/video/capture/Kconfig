@@ -58,6 +58,11 @@ config VIDEO_CTRL_VFLIP
 	help
 	  If set, mirror the video frame vertically
 
+config VIDEO_TRANSFORM
+	bool "Perform some m2m transforms on the video frame"
+	help
+	  If set, the video frame will go through some m2m transforms before being displayed
+
 endmenu
 
 source "Kconfig.zephyr"
