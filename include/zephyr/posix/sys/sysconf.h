@@ -141,6 +141,13 @@ enum {
 	_SC_TZNAME_MAX,
 };
 
+/*
+ * clang-format and checkpatch disagree on formatting here, so use rely and checkpatch and disable
+ * clang-format since the checkpatch cannot be selectively disabled.
+ */
+
+/* clang-format off */
+
 #define __z_posix_sysconf_SC_ADVISORY_INFO (-1L)
 #define __z_posix_sysconf_SC_ASYNCHRONOUS_IO                                                       \
 	COND_CODE_1(CONFIG_POSIX_ASYNCHRONOUS_IO, (_POSIX_ASYNCHRONOUS_IO), (-1L))
@@ -298,6 +305,8 @@ enum {
 #ifdef CONFIG_POSIX_SYSCONF_IMPL_MACRO
 #define sysconf(x) (long)CONCAT(__z_posix_sysconf, x)
 #endif
+
+/* clang-format on */
 
 #ifdef __cplusplus
 }
