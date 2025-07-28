@@ -1,9 +1,10 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Short J10-pin8 and J10-pin10. */
 &lpspi1 {
 	dmas = <&edma0 0 36>, <&edma0 1 37>;
 	dma-names = "rx", "tx";

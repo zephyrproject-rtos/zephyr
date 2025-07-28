@@ -38,6 +38,7 @@
 		sw0 = &button0;
 		led0 = &led0;
 		led-strip = &led_strip;
+		fuel-gauge0 = &max17048;
 	};
 
 	buttons {

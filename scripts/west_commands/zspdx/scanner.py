@@ -241,7 +241,7 @@ def scanDocument(cfg, doc):
                 f.licenseInfoInFile = splitExpression(expression)
 
             if copyrights := getCopyrightInfo(f.abspath):
-                f.copyrightText = f"<text>\n{'\n'.join(copyrights)}\n</text>"
+                f.copyrightText = "<text>\n" + "\n".join(copyrights) + "\n</text>"
 
             # check if any custom license IDs should be flagged for document
             for lic in f.licenseInfoInFile:

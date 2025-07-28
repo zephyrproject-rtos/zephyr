@@ -427,7 +427,7 @@ static bool is_server_name_found(struct dns_resolve_context *ctx,
 
 			if (net_addr_ntop(ctx->servers[i].dns_server.sa_family,
 					  &net_sin(&ctx->servers[i].dns_server)->sin_addr,
-					  addr_str, sizeof(addr_str)) < 0) {
+					  addr_str, sizeof(addr_str)) == NULL) {
 				continue;
 			}
 
@@ -664,7 +664,8 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 		char iface_str[IFNAMSIZ] = { 0 };
 		bool found;
 
-		found = is_server_addr_found(ctx, servers_sa[i], interfaces[i]);
+		found = is_server_addr_found(ctx, servers_sa[i],
+					     interfaces == NULL ? 0 : interfaces[i]);
 		if (found) {
 			NET_DBG("Server %s already exists",
 				net_sprint_addr(ctx->servers[i].dns_server.sa_family,

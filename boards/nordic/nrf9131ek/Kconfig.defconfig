@@ -3,5 +3,8 @@
 # Copyright (c) 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+config HW_STACK_PROTECTION
+	default ARCH_HAS_STACK_PROTECTION
+
 config BOARD_NRF9131EK
 	select USE_DT_CODE_PARTITION if BOARD_NRF9131EK_NRF9131_NS

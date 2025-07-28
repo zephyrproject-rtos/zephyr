@@ -1,0 +1,100 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <renesas/ra/ra2/ra2l1.dtsi>
+#include <renesas/ra/ra2/r7fa2l1xb.dtsi>
+#include <renesas/ra/ra2/r7fa2l1xxxxfp.dtsi>
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "rssk_ra2l1-pinctrl.dtsi"
+
+/ {
+	model = "Renesas RSSK-RA2L1";
+	compatible = "renesas,r7fa2l1abxxfp", "renesas,ra2l1";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart9;
+		zephyr,shell-uart = &uart9;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led2: led2 {
+			gpios = <&ioport3 5 GPIO_ACTIVE_HIGH>;
+			label = "LED2";
+		};
+
+		led3: led3 {
+			gpios = <&ioport3 4 GPIO_ACTIVE_HIGH>;
+			label = "LED3";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: s2 {
+			gpios = <&ioport2 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 2";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button1: s3 {
+			gpios = <&ioport2 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 3";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	aliases {
+		led0 = &led2;
+		led1 = &led3;
+		sw0 = &button0;
+		sw1 = &button1;
+		watchdog0 = &wdt;
+	};
+};
+
+&ioport2 {
+	status = "okay";
+};
+
+&ioport3 {
+	status = "okay";
+};
+
+&port_irq0 {
+	interrupts = <8 3>;
+	status = "okay";
+};
+
+&port_irq1 {
+	interrupts = <9 3>;
+	status = "okay";
+};
+
+&sci9 {
+	pinctrl-0 = <&sci9_default>;
+	pinctrl-names = "default";
+	interrupts = <0 3>, <1 3>, <2 3>, <3 3>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+
+	uart9: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
+&wdt {
+	status = "okay";
+};

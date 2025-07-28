@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Ambiq
+ * Copyright (c) 2025 Ambiq
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -87,6 +87,9 @@ static uint32_t get_clock_cycles(uint32_t clock_sel)
 	case 18:
 		ret = 1024;
 		break;
+	default:
+		ret = 12000000;
+		break;
 	}
 
 	return ret;
@@ -124,8 +127,8 @@ static void start_clock(uint32_t clock_sel)
 }
 
 static int ambiq_ctimer_pwm_set_cycles(const struct device *dev, uint32_t channel,
-				       uint32_t period_cycles, uint32_t pulse_cycles,
-				       pwm_flags_t flags)
+				      uint32_t period_cycles, uint32_t pulse_cycles,
+				      pwm_flags_t flags)
 {
 	const struct pwm_ambiq_ctimer_config *config = dev->config;
 
@@ -155,9 +158,9 @@ static int ambiq_ctimer_pwm_set_cycles(const struct device *dev, uint32_t channe
 	if (config->timer_seg == 0) {
 		seg = 0x0000FFFF;
 	} else if (config->timer_seg == 1) {
-		seg = 0xFFFF0000;
+		seg = 0xFFFF0000U;
 	} else {
-		seg = 0xFFFFFFFF;
+		seg = 0xFFFFFFFFU;
 	}
 
 	/* todo: need to check if all of this is required */
@@ -169,18 +172,14 @@ static int ambiq_ctimer_pwm_set_cycles(const struct device *dev, uint32_t channe
 }
 
 static int ambiq_ctimer_pwm_get_cycles_per_sec(const struct device *dev, uint32_t channel,
-					       uint64_t *cycles)
+					      uint64_t *cycles)
 {
 	struct pwm_ambiq_ctimer_data *data = dev->data;
-	int err = 0;
-
-	/* clean up upper word of return parameter */
-	*cycles &= 0xFFFFFFFF;
 
 	/* cycles of the timer clock */
-	*cycles = data->cycles;
+	*cycles = (uint64_t)data->cycles;
 
-	return err;
+	return 0;
 }
 
 static int ambiq_ctimer_pwm_init(const struct device *dev)
@@ -199,9 +198,9 @@ static int ambiq_ctimer_pwm_init(const struct device *dev)
 	if (config->timer_seg == 0) {
 		seg = 0x0000FFFF;
 	} else if (config->timer_seg == 1) {
-		seg = 0xFFFF0000;
+		seg = 0xFFFF0000U;
 	} else {
-		seg = 0xFFFFFFFF;
+		seg = 0xFFFFFFFFU;
 	}
 
 	data->cycles = get_clock_cycles(config->clock_sel);
@@ -220,12 +219,10 @@ static int ambiq_ctimer_pwm_init(const struct device *dev)
 	return 0;
 }
 
-static const struct pwm_driver_api pwm_ambiq_ctimer_driver_api = {
+static DEVICE_API(pwm, pwm_ambiq_ctimer_driver_api) = {
 	.set_cycles = ambiq_ctimer_pwm_set_cycles,
 	.get_cycles_per_sec = ambiq_ctimer_pwm_get_cycles_per_sec,
 };
-
-#define TEST_CHILDREN	DT_PATH(test, test_children)
 
 #define PWM_AMBIQ_CTIMER_DEVICE_INIT(n)                                                            \
 	BUILD_ASSERT(DT_CHILD_NUM_STATUS_OKAY(DT_INST_PARENT(n)) == 1,                             \

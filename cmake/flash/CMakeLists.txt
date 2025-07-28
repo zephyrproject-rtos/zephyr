@@ -196,7 +196,7 @@ foreach(target flash debug debugserver attach rtt)
         -DDEPENDENCIES="$<TARGET_PROPERTY:${target},MANUALLY_ADDED_DEPENDENCIES>"
         -P ${CMAKE_CURRENT_LIST_DIR}/check_runner_dependencies.cmake
       COMMAND
-        ${CMAKE_COMMAND} -E env
+        ${CMAKE_COMMAND} -E env ZEPHYR_BASE=${ZEPHYR_BASE}
         ${WEST}
         ${RUNNER_VERBOSE}
         ${target}

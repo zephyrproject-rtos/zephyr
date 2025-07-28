@@ -20,6 +20,13 @@ LOG_MODULE_REGISTER(i2c_mchp, CONFIG_I2C_LOG_LEVEL);
 
 #define DT_DRV_COMPAT microchip_mpfs_i2c
 
+/* Is MSS I2C module 'resets' line property defined */
+#define MSS_I2C_RESET_ENABLED DT_ANY_INST_HAS_PROP_STATUS_OKAY(resets)
+
+#if MSS_I2C_RESET_ENABLED
+#include <zephyr/drivers/reset.h>
+#endif
+
 #define CORE_I2C_CTRL      (0x00)
 #define CORE_I2C_STATUS    (0x04)
 #define CORE_I2C_DATA      (0x08)
@@ -94,6 +101,9 @@ struct mss_i2c_config {
 	uint32_t clock_freq;
 	uintptr_t i2c_base_addr;
 	uint32_t i2c_irq_base;
+#if MSS_I2C_RESET_ENABLED
+	struct reset_dt_spec reset_spec;
+#endif
 };
 
 struct mss_i2c_data {
@@ -243,6 +253,13 @@ static DEVICE_API(i2c, mss_i2c_driver_api) = {
 static void mss_i2c_reset(const struct device *dev)
 {
 	const struct mss_i2c_config *cfg = dev->config;
+
+#if MSS_I2C_RESET_ENABLED
+	if (cfg->reset_spec.dev != NULL) {
+		(void)reset_line_deassert_dt(&cfg->reset_spec);
+	}
+#endif
+
 	uint8_t ctrl = sys_read8(cfg->i2c_base_addr + CORE_I2C_CTRL);
 
 	sys_write8((ctrl & ~CTRL_ENS1), cfg->i2c_base_addr + CORE_I2C_CTRL);
@@ -380,6 +397,8 @@ static void mss_i2c_irq_handler(const struct device *dev)
 		.i2c_base_addr = DT_INST_REG_ADDR(n),                                              \
 		.i2c_irq_base = DT_INST_IRQN(n),                                                   \
 		.clock_freq = DT_INST_PROP(n, clock_frequency),                                    \
+		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, resets),                                       \
+			(.reset_spec = RESET_DT_SPEC_INST_GET(n),))                                \
 	};                                                                                         \
                                                                                                    \
 	I2C_DEVICE_DT_INST_DEFINE(n, mss_i2c_init_##n, NULL, &mss_i2c_data_##n,                    \

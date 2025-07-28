@@ -97,14 +97,43 @@ To facilitate installation of the certificates, a helper script is provided, see
 The script will install the certificates in the ``rsa2k`` directory to the TLS credentials store in the device over UART and using TLS credentials shell commands.
 
 
-To initiate Wi-Fi connection, the following command can be used:
+To initiate a Wi-Fi connection using enterprise security, use one of the following commands depending on the EAP method:
 
-.. code-block:: console
+* EAP-TLS
 
-    uart:~$ wifi connect -s <SSID> -c 149 -k 7 -w 2 -a client1 --key1-pwd whatever --key2-pwd whatever
+  .. code-block:: console
+
+     uart:~$ wifi connect -s <SSID> -c <channel> -k 7 -w 2 -a <Anonymous identity> --key1-pwd <Password EAP phase1> --key2-pwd <Password EAP phase2>
+
+* EAP-TTLS-MSCHAPV2
+
+  .. code-block:: console
+
+     uart:~$ wifi connect -s <SSID> -c <channel> -k 14 -K <Private key Password> --eap-id1 <Client Identity> --eap-pwd1 <Client Password> -a <Anonymous identity>
+
+* EAP-PEAP-MSCHAPV2
+
+  .. code-block:: console
+
+     uart:~$ wifi connect -s <SSID> -c <channel> -k 12 -K <Private key Password> --eap-id1 <Client Identity> --eap-pwd1 <Client Password> -a <Anonymous identity>
 
 Server certificate is also provided in the same directory for testing purposes.
 Any AAA server can be used for testing purposes, for example, ``FreeRADIUS`` or ``hostapd``.
+
+Certificate requirements for EAP methods
+----------------------------------------
+
+Different EAP methods have varying client-side certificate requirements, as outlined below:
+
+* EAP-TLS - Requires both a client certificate (and its private key) and a CA certificate on the client.
+            The client authenticates itself to the server using its certificate.
+
+* EAP-TTLS-MSCHAPV2 - Requires only the CA certificate on the client.
+                      The client authenticates to the server using a username and password <MSCHAPV2> inside the TLS tunnel.
+                      No client certificate is needed.
+
+* EAP-PEAP-MSCHAPV2 - Requires only the CA certificate on the client.
+                      Like TTLS, the client uses a username and password <MSCHAPV2> inside the TLS tunnel and does not require a client certificate.
 
 .. note::
 

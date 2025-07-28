@@ -4,7 +4,11 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-description: Himax HX8394 Panel
+title: Himax HX8394 display controller
+
+description: |
+    The Himax HX8394 is a 16.7M colors TFT-LCD controller
+    with a maximum 800RGBx1280 resolution.
 
 compatible: "himax,hx8394"
 

@@ -1,0 +1,60 @@
+/*
+ * Copyright 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Two loopbacks are required:
+ * P1.13 - P1.14
+ * P1.23 - P1.24
+ */
+
+/ {
+	aliases {
+		qdec0 = &qdec20;
+		qenca = &phase_a;
+		qencb = &phase_b;
+	};
+
+	encoder-emulate {
+		compatible = "gpio-leds";
+		phase_a: phase_a {
+			gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
+		};
+		phase_b: phase_b {
+			gpios = <&gpio1 23 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&pinctrl {
+	qdec_pinctrl: qdec_pinctrl {
+		group1 {
+			psels = <NRF_PSEL(QDEC_A, 1, 14)>,
+				<NRF_PSEL(QDEC_B, 1, 24)>;
+		};
+	};
+
+	qdec_sleep_pinctrl: qdec_sleep_pinctrl {
+		group1 {
+			psels = <NRF_PSEL(QDEC_A, 1, 14)>,
+				<NRF_PSEL(QDEC_B, 1, 24)>;
+			low-power-enable;
+		};
+	};
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&qdec20 {
+	status = "okay";
+	pinctrl-0 = <&qdec_pinctrl>;
+	pinctrl-1 = <&qdec_sleep_pinctrl>;
+	pinctrl-names = "default", "sleep";
+	steps = <127>;
+	led-pre = <500>;
+	zephyr,pm-device-runtime-auto;
+};

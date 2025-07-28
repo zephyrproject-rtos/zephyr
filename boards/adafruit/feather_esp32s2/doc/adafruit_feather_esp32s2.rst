@@ -16,7 +16,7 @@ Hardware
 - 320KB SRAM, 4MB flash + 2MB PSRAM
 - USB-C directly connected to the ESP32-S2 for USB
 - LiPo connector and built-in battery charging when powered via USB-C
-- LC709203 or MAX17048 fuel gauge for battery voltage and state-of-charge reporting
+- LC709203F or MAX17048 fuel gauge for battery voltage and state-of-charge reporting
 - Built-in NeoPixel indicator RGB LED
 - STEMMA QT connector for I2C devices, with switchable power for low-power mode
 
@@ -28,12 +28,10 @@ Hardware
      overlay. All boards, except the `Adafruit ESP32-S2 Feather with BME280 Sensor`_ have a
      space for it, but will not be shipped with.
    - As of May 31, 2023 - Adafruit has changed the battery monitor chip from the
-     now-discontinued LC709203 to the MAX17048. Check the back silkscreen of your Feather to
+     now-discontinued LC709203F to the MAX17048. Check the back silkscreen of your Feather to
      see which chip you have.
-   - For the MAX17048 a driver in zephyr exists and is supported, but needs to be added via
-     a devicetree overlay.
-   - For the LC709203 a driver does'nt exists yet and the fuel gauge for boards with this IC
-     is not available.
+   - For the MAX17048 and LC709203F a driver in zephyr exists and is supported, but needs to be
+     added via a devicetree overlay.
    - For the `Adafruit ESP32-S2 Feather`_ there are two different Revisions ``rev B`` and
      ``rev C``. The ``rev C`` board has revised the power circuitry for the NeoPixel and I2C
      QT port. Instead of a transistor the ``rev C`` has a LDO regulator. To enable the
@@ -304,19 +302,64 @@ functioning correctly with Zephyr:
       :board: adafruit_feather_esp32s2@C
       :goals: build flash
 
-Testing the Fuel Gauge (MAX17048)
-*********************************
+Testing the Fuel Gauge
+**********************
 
-There is a sample available to verify that the MAX17048 fuel gauge on the board are
-functioning correctly with Zephyr:
+There is a sample available to verify that the MAX17048 or LC709203F fuel gauge on the board are
+functioning correctly with Zephyr
 
 .. note::
-   As of May 31, 2023 Adafruit changed the battery monitor chip from the now-discontinued LC709203
+   As of May 31, 2023 Adafruit changed the battery monitor chip from the now-discontinued LC709203F
    to the MAX17048.
 
+**Rev B**
+
+For the Rev B a devicetree overlay for the LC709203F fuel gauge already exists in the
+``samples/drivers/fuel_gauge/boards`` folder.
+
 .. zephyr-app-commands::
-   :zephyr-app: samples/fuel_gauge/max17048/
+   :zephyr-app: samples/drivers/fuel_gauge
+   :board: adafruit_feather_esp32s2@B
+   :goals: build flash
+
+**Rev C**
+
+For the Rev C a devicetree overlay for the MAX17048 fuel gauge already exists in the
+``samples/drivers/fuel_gauge/boards`` folder.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/fuel_gauge
    :board: adafruit_feather_esp32s2@C
+   :goals: build flash
+
+For the LC709203F a devicetree overlay needs to be added to the build.
+The overlay can be added via the ``--extra-dtc-overlay`` argument  and should most likely includes
+the following:
+
+.. code-block:: devicetree
+
+   / {
+      aliases {
+         fuel-gauge0 = &lc709203f;
+      };
+   };
+
+   &i2c0 {
+      lc709203f: lc709203f@0b {
+         compatible = "onnn,lc709203f";
+         status = "okay";
+         reg = <0x0b>;
+         power-domains = <&i2c_reg>;
+         apa = "500mAh";
+         battery-profile = <0x01>;
+      };
+   };
+
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/fuel_gauge
+   :board: adafruit_feather_esp32s2@C
+   :west-args: --extra-dtc-overlay="boards/name_of_your.overlay"
    :goals: build flash
 
 Testing Wi-Fi

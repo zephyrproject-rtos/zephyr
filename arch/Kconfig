@@ -107,6 +107,8 @@ config X86
 config RISCV
 	bool
 	select ARCH_IS_SET
+	select ATOMIC_OPERATIONS_C if !RISCV_ISA_EXT_A
+	select ATOMIC_OPERATIONS_BUILTIN if RISCV_ISA_EXT_A
 	select ARCH_SUPPORTS_COREDUMP
 	select ARCH_SUPPORTS_COREDUMP_PRIV_STACKS
 	select ARCH_SUPPORTS_ROM_START if !SOC_FAMILY_ESPRESSIF_ESP32
@@ -1179,3 +1181,9 @@ config ARCH_HAS_CUSTOM_CURRENT_IMPL
 	help
 	  Select when architecture implements arch_current_thread() &
 	  arch_current_thread_set().
+
+config ARCH_IPI_LAZY_COPROCESSORS_SAVE
+	bool
+	help
+	  Select when the architecture has multi-CPU lazy context switching
+	  of coprocessor registers.

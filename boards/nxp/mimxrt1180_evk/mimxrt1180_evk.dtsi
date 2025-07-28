@@ -9,7 +9,7 @@
 
 / {
 	aliases {
-		led0 = &green_led;
+		led0 = &red_led;
 		sw0 = &user_button;
 		pwm-led0 = &green_pwm_led;
 		sdhc0 = &usdhc1;
@@ -17,9 +17,9 @@
 
 	leds {
 		compatible = "gpio-leds";
-		green_led: led-1 {
-			gpios = <&gpio4 27 GPIO_ACTIVE_HIGH>;
-			label = "User LED D6";
+		red_led: led-2 {
+			gpios = <&gpio4 26 GPIO_ACTIVE_HIGH>;
+			label = "User LED D7";
 		};
 	};
 
@@ -159,10 +159,6 @@
 };
 
 &user_button {
-	status = "okay";
-};
-
-&green_led {
 	status = "okay";
 };
 

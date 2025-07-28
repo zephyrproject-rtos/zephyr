@@ -50,6 +50,22 @@ static void timespec_from_ticks(uint64_t ticks, struct timespec *ts)
 	};
 }
 
+int sys_clock_from_clockid(int clock_id)
+{
+	switch (clock_id) {
+#if defined(CLOCK_REALTIME) || defined(_POSIX_C_SOURCE)
+	case (int)CLOCK_REALTIME:
+		return SYS_CLOCK_REALTIME;
+#endif
+#if defined(CLOCK_MONOTONIC) || defined(_POSIX_MONOTONIC_CLOCK)
+	case (int)CLOCK_MONOTONIC:
+		return SYS_CLOCK_MONOTONIC;
+#endif
+	default:
+		return -EINVAL;
+	}
+}
+
 int sys_clock_gettime(int clock_id, struct timespec *ts)
 {
 	if (!is_valid_clock_id(clock_id)) {
@@ -164,7 +180,8 @@ int z_impl_sys_clock_nanosleep(int clock_id, int flags, const struct timespec *r
 	}
 
 	/* sleep for relative time duration */
-	if (unlikely(rqtp->tv_sec >= UINT64_MAX / NSEC_PER_SEC)) {
+	if ((sizeof(rqtp->tv_sec) == sizeof(int64_t)) &&
+	    unlikely(rqtp->tv_sec >= (time_t)(UINT64_MAX / NSEC_PER_SEC))) {
 		uint64_t ns = (uint64_t)k_sleep(K_SECONDS(duration.tv_sec - 1)) * NSEC_PER_MSEC;
 		struct timespec rem = {
 			.tv_sec = (time_t)(ns / NSEC_PER_SEC),

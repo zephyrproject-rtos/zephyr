@@ -931,8 +931,15 @@ int nrf_wifi_wpa_supp_associate(void *if_priv, struct wpa_driver_associate_param
 		assoc_info.use_mfp = NRF_WIFI_MFP_REQUIRED;
 	}
 
-	if (params->bss_max_idle_period) {
-		assoc_info.bss_max_idle_time = params->bss_max_idle_period;
+	if (vif_ctx_zep->bss_max_idle_period == USHRT_MAX) {
+		assoc_info.bss_max_idle_time = CONFIG_WIFI_MGMT_BSS_MAX_IDLE_TIME;
+	} else {
+		assoc_info.bss_max_idle_time = vif_ctx_zep->bss_max_idle_period;
+	}
+
+	assoc_info.conn_type = NRF_WIFI_CONN_TYPE_OPEN;
+	if (!(params->key_mgmt_suite & WPA_KEY_MGMT_NONE)) {
+		assoc_info.conn_type = NRF_WIFI_CONN_TYPE_SECURE;
 	}
 
 	status = nrf_wifi_sys_fmac_assoc(rpu_ctx_zep->rpu_ctx, vif_ctx_zep->vif_idx, &assoc_info);

@@ -53,6 +53,9 @@
 #include "controller/ll_sw/shell/ll.h"
 #endif /* CONFIG_BT_LL_SW_SPLIT */
 #include "host/shell/bt.h"
+#if defined(CONFIG_BT_CLASSIC)
+#include "host/classic/shell/bredr.h"
+#endif
 
 static bool no_settings_load;
 
@@ -1191,6 +1194,9 @@ static struct bt_conn_cb conn_callbacks = {
 	.le_cs_read_remote_fae_table_complete = print_remote_cs_fae_table,
 	.le_cs_config_complete = le_cs_config_created,
 	.le_cs_config_removed = le_cs_config_removed,
+#endif
+#if defined(CONFIG_BT_CLASSIC)
+	.role_changed = role_changed,
 #endif
 };
 #endif /* CONFIG_BT_CONN */

@@ -134,6 +134,12 @@
 	};
 };
 
+stm32_lp_tick_source: &lptim2 {
+	clocks = <&rcc STM32_CLOCK(APB1, 30)>,
+		<&rcc STM32_SRC_LSI LPTIM2_SEL(1)>;
+	status = "okay";
+};
+
 &tsc {
 	status = "okay";
 	pinctrl-0 = <&tsc_g1_io1_pb12 &tsc_g1_io2_pb13 &tsc_g6_io1_pd10 &tsc_g6_io2_pd11>;

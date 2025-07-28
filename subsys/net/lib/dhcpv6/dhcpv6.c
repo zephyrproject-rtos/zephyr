@@ -2250,8 +2250,10 @@ static void dhcpv6_generate_client_duid(struct net_if *iface)
 
 	memset(clientid, 0, sizeof(*clientid));
 
-	UNALIGNED_PUT(htons(DHCPV6_DUID_TYPE_LL), &clientid->duid.type);
-	UNALIGNED_PUT(htons(DHCPV6_HARDWARE_ETHERNET_TYPE), &duid_ll->hw_type);
+	UNALIGNED_PUT(htons(DHCPV6_DUID_TYPE_LL),
+		      UNALIGNED_MEMBER_ADDR(clientid, duid.type));
+	UNALIGNED_PUT(htons(DHCPV6_HARDWARE_ETHERNET_TYPE),
+		      UNALIGNED_MEMBER_ADDR(duid_ll, hw_type));
 	memcpy(duid_ll->ll_addr, lladdr->addr, lladdr->len);
 
 	clientid->length = DHCPV6_DUID_LL_HEADER_SIZE + lladdr->len;

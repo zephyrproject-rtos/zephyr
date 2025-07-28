@@ -8,14 +8,14 @@ config HAS_MCUX
 	bool
 	depends on SOC_FAMILY_KINETIS || SOC_FAMILY_NXP_IMX || SOC_FAMILY_LPC || \
 		SOC_FAMILY_NXP_S32 || SOC_FAMILY_NXP_IMXRT || SOC_FAMILY_NXP_RW || \
-		SOC_FAMILY_NXP_MCX
+		SOC_FAMILY_MCXN || SOC_FAMILY_MCXA || SOC_FAMILY_MCXW || SOC_FAMILY_MCXC
 
 if	HAS_MCUX
 
 config MCUX_CORE_SUFFIX
 	string
 	help
-	  String describing the core identifer used by MCUX SDK when using
+	  String describing the core identifier used by MCUX SDK when using
 	  dual core parts
 
 config HAS_MCUX_ADC12
@@ -373,7 +373,7 @@ config HAS_NXP_MONOLITHIC_NBU
 config NXP_FW_LOADER
 	bool "Include firmware loader component"
 	help
-	   The firmware loader is used to load firmwares to embedded tranceivers.
+	   The firmware loader is used to load firmwares to embedded transceivers.
 	   It is needed to enable connectivity features.
 
 config NXP_MONOLITHIC_WIFI

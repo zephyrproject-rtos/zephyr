@@ -1,0 +1,13 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* SOC DTS for RT1170 cm4 core */
+
+/* Includes the series level for cm4 core, as opposed to cm7, shared with RT1160 */
+#include <nxp/nxp_rt11xx_cm4.dtsi>
+
+/* Includes the specifics for RT1170 SOC, as opposed to RT1160 */
+#include <nxp/nxp_rt1170.dtsi>

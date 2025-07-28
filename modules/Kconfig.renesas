@@ -25,6 +25,11 @@ config USE_RA_FSP_SPI
 	help
 	  Enable RA FSP SPI driver
 
+config USE_RA_FSP_I3C
+	bool
+	help
+	  Enable RA FSP I3C driver
+
 config USE_RA_FSP_DTC
 	bool
 	help

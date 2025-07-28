@@ -78,12 +78,29 @@
 				<18 0 &ioporta 1 0>;	/* DISP_RST */
 	};
 
+	ek_ra8d1_parallel_graphics_expansion: parallel-graphics-expansion {
+		compatible = "renesas,ra-parallel-graphics-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <1 0 &ioport4 4 0>,	/* DISP_BLEN */
+			   <2 0 &ioport5 11 0>, /* IIC_SDA */
+			   <3 0 &ioport5 10 0>, /* DISP_INT */
+			   <4 0 &ioport5 12 0>, /* IIC_SCL */
+			   <6 0 &ioporta 1 0>;  /* DISP_RST */
+	};
+
 	aliases {
 		led0 = &led1;
 		sw0 = &button0;
 		sw1 = &button1;
 		mipi-dsi = &mipi_dsi;
 		watchdog0 = &wdt;
+	};
+
+	zephyr,user {
+		i3c-pullup-gpios = <&ioportb 2 GPIO_ACTIVE_LOW>,
+				   <&ioport7 11 GPIO_ACTIVE_LOW>;
 	};
 };
 
@@ -158,6 +175,12 @@
 	status = "okay";
 };
 
+&i3cclk {
+	clocks = <&pllp>;
+	div = <3>;
+	status = "okay";
+};
+
 &ioport0 {
 	status = "okay";
 };
@@ -178,7 +201,15 @@
 	status = "okay";
 };
 
+&ioport7 {
+	status = "okay";
+};
+
 &ioporta {
+	status = "okay";
+};
+
+&ioportb {
 	status = "okay";
 };
 
@@ -210,6 +241,16 @@
 &spi1 {
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i3c0 {
+	i2c-scl-hz = <DT_FREQ_K(400)>;
+	i3c-scl-hz = <DT_FREQ_M(4)>;
+	pinctrl-0 = <&i3c0_default>;
+	pinctrl-names = "default";
+	interrupts = <60 1>, <61 1>, <62 1>, <63 1>, <64 1>, <65 1>;
+	interrupt-names = "resp", "rx", "tx", "rcv", "ibi", "eei";
 	status = "okay";
 };
 

@@ -61,12 +61,12 @@
 			interrupt-names = "int0";
 			clocks = <&gclk 26>, <&mclk 0x10 8>;
 			clock-names = "GCLK", "MCLK";
-			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clocks = <&gclk 7>;
 			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 
 			bosch,mram-cfg = <0x0 28 8 3 3 0 1 1>;
-			divider = <12>;
+			divider = <1>;
 		};
 
 		can1: can@42002000 {
@@ -76,12 +76,12 @@
 			interrupt-names = "int0";
 			clocks = <&gclk 27>, <&mclk 0x10 9>;
 			clock-names = "GCLK", "MCLK";
-			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clocks = <&gclk 7>;
 			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 
 			bosch,mram-cfg = <0x0 28 8 3 3 0 1 1>;
-			divider = <12>;
+			divider = <1>;
 		};
 	};
 };

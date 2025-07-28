@@ -11,4 +11,5 @@ supported:
   - gpio
   - spi
   - i2c
+  - usbd
 vendor: arduino

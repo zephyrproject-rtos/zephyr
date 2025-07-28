@@ -2,7 +2,11 @@
 # Copyright (c) 2019, PHYTEC Messtechnik GmbH
 # SPDX-License-Identifier: Apache-2.0
 
-description: ST7789V 320x240 display controller
+title: Sitronix ST7789V display controller
+
+description: |
+    The Sitronix ST7789V is a 262K colors TFT-LCD controller
+    with a maximum 240RGBx320 resolution.
 
 compatible: "sitronix,st7789v"
 

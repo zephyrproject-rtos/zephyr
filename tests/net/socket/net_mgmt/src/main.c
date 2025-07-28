@@ -87,6 +87,7 @@ static int eth_fake_send(const struct device *dev,
 
 static int eth_fake_get_total_bandwidth(struct eth_fake_context *ctx)
 {
+	ARG_UNUSED(ctx);
 	return 100 * 1000 * 1000 / 8;
 }
 
@@ -221,6 +222,7 @@ static int eth_fake_get_config(const struct device *dev,
 
 static enum ethernet_hw_caps eth_fake_get_capabilities(const struct device *dev)
 {
+	ARG_UNUSED(dev);
 	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE | ETHERNET_QAV |
 	       ETHERNET_PROMISC_MODE | ETHERNET_PRIORITY_QUEUES;
 }
@@ -263,8 +265,12 @@ ETH_NET_DEVICE_INIT(eth_fake, "eth_fake", eth_fake_init, NULL,
 		    &eth_fake_api_funcs, NET_ETH_MTU);
 
 /* A test thread that spits out events that we can catch and show to user */
-static void trigger_events(void)
+static void trigger_events(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	int operation = 0;
 	struct net_if_addr *ifaddr_v6, *ifaddr_v4;
 	struct net_if *iface;

@@ -8,8 +8,8 @@
 #define ZEPHYR_INCLUDE_MEM_ATTR_H_
 
 /**
- * @brief Memory-Attr Interface
- * @defgroup memory_attr_interface Memory-Attr Interface
+ * @brief Memory Attribute Interface
+ * @defgroup memory_attr_interface Memory Attribute Interface
  * @ingroup mem_mgmt
  * @{
  */

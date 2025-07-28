@@ -80,3 +80,7 @@
 &ieee802154 {
 	status = "okay";
 };
+
+&esp32_bt_hci {
+	status = "okay";
+};

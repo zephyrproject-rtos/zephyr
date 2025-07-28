@@ -57,7 +57,7 @@
  * @}
  */
 
-#include <zephyr/arch/xtensa/exception.h>
+#include <zephyr/arch/exception.h>
 
 #ifdef __cplusplus
 extern "C" {

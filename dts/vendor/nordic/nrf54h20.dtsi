@@ -14,7 +14,6 @@
 #include <zephyr/dt-bindings/misc/nordic-domain-id-nrf54h20.h>
 #include <zephyr/dt-bindings/misc/nordic-owner-id-nrf54h20.h>
 #include <zephyr/dt-bindings/misc/nordic-tddconf.h>
-#include <zephyr/dt-bindings/reserved-memory/nordic-owned-memory.h>
 #include <zephyr/dt-bindings/power/nordic-nrf-gpd.h>
 
 /delete-node/ &sw_pwm;
@@ -152,10 +151,6 @@
 	reserved-memory {
 		#address-cells = <1>;
 		#size-cells = <1>;
-
-		suit_storage_partition: memory@e1ed000 {
-			reg = <0xe1ed000 DT_SIZE_K(20)>;
-		};
 	};
 
 	clocks {
@@ -231,24 +226,17 @@
 			write-block-size = <16>;
 		};
 
-		cpuapp_uicr: uicr@fff8000 {
-			compatible = "nordic,nrf-uicr-v2";
+		uicr: uicr@fff8000 {
+			compatible = "nordic,nrf-uicr";
 			reg = <0xfff8000 DT_SIZE_K(2)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0xfff8000 DT_SIZE_K(2)>;
-			domain = <2>;
 
 			bicr: bicr@7b0 {
 				compatible = "nordic,nrf-bicr";
 				reg = <0x7b0 48>;
 			};
-		};
-
-		cpurad_uicr: uicr@fffa000 {
-			compatible = "nordic,nrf-uicr-v2";
-			reg = <0xfffa000 DT_SIZE_K(2)>;
-			domain = <3>;
 		};
 
 		ficr: ficr@fffe000 {

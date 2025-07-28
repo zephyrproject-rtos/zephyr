@@ -1385,5 +1385,16 @@
 			reg = <0x00f03b00 0x6>;
 			status = "disabled";
 		};
+
+		spi0: spi@f02600  {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "ite,it51xxx-spi";
+			reg = <0x00f02600 0x24>;
+			interrupt-parent = <&intc>;
+			interrupts = <IT51XXX_IRQ_SPI IRQ_TYPE_EDGE_RISING>;
+			clocks = <&ecpm IT51XXX_ECPM_CGCTRL3R_OFF BIT(1)>;
+			status = "disabled";
+		};
 	};
 };

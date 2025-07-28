@@ -1,7 +1,7 @@
 name: Maintainer file check
 
 on:
-  pull_request:
+  pull_request_target:
     branches:
       - main
     paths:
@@ -37,7 +37,7 @@ jobs:
 
       - name: Check maintainer file changes
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.ZB_PR_ASSIGNER_GITHUB_TOKEN }}
         run: |
           python  ./scripts/ci/check_maintainer_changes.py  \
             --repo zephyrproject-rtos/zephyr mainline_MAINTAINERS.yml MAINTAINERS.yml

@@ -36,6 +36,8 @@ source "drivers/pwm/Kconfig.b91"
 
 source "drivers/pwm/Kconfig.cc13xx_cc26xx_timer"
 
+source "drivers/pwm/Kconfig.cc23x0_timer"
+
 source "drivers/pwm/Kconfig.stm32"
 
 source "drivers/pwm/Kconfig.sifive"
@@ -109,6 +111,8 @@ source "drivers/pwm/Kconfig.xmc4xxx_ccu4"
 source "drivers/pwm/Kconfig.xmc4xxx_ccu8"
 
 source "drivers/pwm/Kconfig.mcux_ctimer"
+
+source "drivers/pwm/Kconfig.mspm0"
 
 source "drivers/pwm/Kconfig.numaker"
 

@@ -18,11 +18,11 @@
 #include "dns_pack.h"
 
 /* TODO: Move these into Kconfig */
-#define DNS_SD_PTR_TTL 4500
-#define DNS_SD_TXT_TTL 4500
-#define DNS_SD_SRV_TTL 120
-#define DNS_SD_A_TTL 120
-#define DNS_SD_AAAA_TTL 120
+#define DNS_SD_PTR_TTL 4500u
+#define DNS_SD_TXT_TTL 4500u
+#define DNS_SD_SRV_TTL 120u
+#define DNS_SD_A_TTL 120u
+#define DNS_SD_AAAA_TTL 120u
 
 #define DNS_SD_PTR_MASK (NS_CMPRSFLGS << 8)
 

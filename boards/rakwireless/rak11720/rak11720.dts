@@ -32,7 +32,6 @@
 		led0 = &blue_led;
 		led1 = &green_led;
 		lora0 = &lora;
-		bootloader-led0 = &blue_led;
 		mcuboot-led0 = &blue_led;
 	};
 
@@ -150,32 +149,46 @@
 	};
 };
 
-&counter0 {
-	status = "okay";
+&timer0 {
+	counter0: counter {
+		status = "okay";
+	};
 };
 
-&counter1 {
-	status = "okay";
+&timer1 {
+	counter1: counter {
+		status = "okay";
+	};
 };
 
-&counter2 {
-	status = "okay";
+&timer2 {
+	counter2: counter {
+		status = "okay";
+	};
 };
 
-&counter4 {
-	status = "okay";
+&timer4 {
+	counter4: counter {
+		status = "okay";
+	};
 };
 
-&counter5 {
-	status = "okay";
+&timer5 {
+	counter5: counter {
+		status = "okay";
+	};
 };
 
-&counter6 {
-	status = "okay";
+&timer6 {
+	counter6: counter {
+		status = "okay";
+	};
 };
 
-&counter7 {
-	status = "okay";
+&timer7 {
+	counter7: counter {
+		status = "okay";
+	};
 };
 
 &gpio0_31 {

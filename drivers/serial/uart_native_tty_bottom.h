@@ -86,6 +86,16 @@ int native_tty_open_tty_bottom(const char *pathname);
  */
 int native_tty_configure_bottom(int fd, struct native_tty_bottom_cfg *cfg);
 
+/**
+ * @brief Read bottom tty configuration
+ *
+ * @param fd
+ * @param cfg
+ *
+ * @return 0 on success, negative value on error
+ */
+int native_tty_read_bottom_cfg(int fd, struct native_tty_bottom_cfg *cfg);
+
 #ifdef __cplusplus
 }
 #endif

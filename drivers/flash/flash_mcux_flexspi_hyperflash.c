@@ -33,13 +33,23 @@ LOG_MODULE_REGISTER(flexspi_hyperflash, CONFIG_FLASH_LOG_LEVEL);
 #endif
 
 #include <zephyr/sys/util.h>
-
 #include "memc_mcux_flexspi.h"
 
 #define SPI_HYPERFLASH_SECTOR_SIZE              (0x40000U)
 #define SPI_HYPERFLASH_PAGE_SIZE                (512U)
 
 #define HYPERFLASH_ERASE_VALUE                  (0xFF)
+
+/* Hyper flash support SDR and DDR, from the FlexSPI controller point of view,
+ * if DDR enabled, commands in LUT need to be DDR command and root clock is
+ * double of Serial clock (clock output to flash).
+ * if DDR mode enabled, set it to 2
+ * if SDR mode enabled, set it to 1
+ */
+#define MCUX_FLEXSPI_HYPERFLASH_DDR_SDR_MODE     2
+
+/* Some hyper flashs require a lower frequency when doing writing operation. */
+#define FREQ_FOR_HYPERFLASH_WRITE               (MHZ(42) * MCUX_FLEXSPI_HYPERFLASH_DDR_SDR_MODE)
 
 #ifdef CONFIG_FLASH_MCUX_FLEXSPI_HYPERFLASH_WRITE_BUFFER
 static uint8_t hyperflash_write_buf[SPI_HYPERFLASH_PAGE_SIZE];
@@ -65,7 +75,10 @@ static const uint32_t flash_flexspi_hyperflash_lut[CUSTOM_LUT_LENGTH] = {
 				kFLEXSPI_Command_RADDR_DDR, kFLEXSPI_8PAD, 0x18),
 	[4 * READ_DATA + 1] =
 		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_CADDR_DDR, kFLEXSPI_8PAD, 0x10,
-				kFLEXSPI_Command_READ_DDR,  kFLEXSPI_8PAD, 0x04),
+				kFLEXSPI_Command_DUMMY_RWDS_DDR, kFLEXSPI_8PAD, 0xC),
+	[4 * READ_DATA + 2] =
+		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_READ_DDR,  kFLEXSPI_8PAD, 0x04,
+				kFLEXSPI_Command_STOP,     kFLEXSPI_1PAD, 0x0),
 	/* Write Data */
 	[4 * WRITE_DATA] =
 		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR,       kFLEXSPI_8PAD, 0x20,
@@ -256,9 +269,9 @@ struct flash_flexspi_hyperflash_data {
 	struct flash_parameters flash_parameters;
 };
 
-static int flash_flexspi_hyperflash_wait_bus_busy(const struct device *dev)
+/* Make sure all parameters accessed by this function are in RAM when XIP is enabled. */
+static int flash_flexspi_hyperflash_wait_bus_busy(const struct flash_flexspi_hyperflash_data *data)
 {
-	struct flash_flexspi_hyperflash_data *data = dev->data;
 	flexspi_transfer_t transfer;
 	int ret;
 	bool is_busy;
@@ -289,9 +302,10 @@ static int flash_flexspi_hyperflash_wait_bus_busy(const struct device *dev)
 	return ret;
 }
 
-static int flash_flexspi_hyperflash_write_enable(const struct device *dev, uint32_t address)
+/* Make sure all parameters accessed by this function are in RAM when XIP is enabled. */
+static int flash_flexspi_hyperflash_write_enable(const struct flash_flexspi_hyperflash_data *data,
+				uint32_t address)
 {
-	struct flash_flexspi_hyperflash_data *data = dev->data;
 	flexspi_transfer_t transfer;
 	int ret;
 
@@ -370,11 +384,10 @@ static int flash_flexspi_hyperflash_check_vendor_id(const struct device *dev)
 	return ret;
 }
 
-static int flash_flexspi_hyperflash_page_program(const struct device *dev, off_t
-		offset, const void *buffer, size_t len)
+/* Make sure all parameters accessed by this function are in RAM when XIP is enabled. */
+static int flash_flexspi_hyperflash_page_program(const struct flash_flexspi_hyperflash_data *data,
+				off_t offset, const void *buffer, size_t len)
 {
-	struct flash_flexspi_hyperflash_data *data = dev->data;
-
 	flexspi_transfer_t transfer = {
 		.deviceAddress = offset,
 		.port = data->port,
@@ -442,9 +455,12 @@ static int flash_flexspi_hyperflash_write(const struct device *dev, off_t offset
 		memc_flexspi_wait_bus_idle(&data->controller);
 	}
 
-	/* Clock FlexSPI at 84 MHZ (42MHz SCLK in DDR mode) */
-	(void)memc_flexspi_update_clock(&data->controller, &data->config,
-					data->port, MHZ(84));
+	/* Update clock to a freq which usually lower than normal working freq. */
+	if (memc_flexspi_update_clock(&data->controller, &data->config,
+					data->port, FREQ_FOR_HYPERFLASH_WRITE)) {
+		ret = -ENOTSUP;
+		goto __exit;
+	}
 
 	while (len) {
 		/* Writing between two page sizes crashes the platform so we
@@ -457,30 +473,24 @@ static int flash_flexspi_hyperflash_write(const struct device *dev, off_t offset
 		for (j = 0; j < i; j++) {
 			hyperflash_write_buf[j] = src[j];
 		}
-		/* As memcpy could cause an XIP access,
-		 * we need to wait for XIP prefetch to be finished again
-		 */
-		if (memc_flexspi_is_running_xip(&data->controller)) {
-			memc_flexspi_wait_bus_idle(&data->controller);
-		}
 #endif
-		ret = flash_flexspi_hyperflash_write_enable(dev, offset);
+		ret = flash_flexspi_hyperflash_write_enable(data, offset);
 		if (ret != 0) {
 			LOG_ERR("failed to enable write");
 			break;
 		}
 #ifdef CONFIG_FLASH_MCUX_FLEXSPI_HYPERFLASH_WRITE_BUFFER
-		ret = flash_flexspi_hyperflash_page_program(dev, offset,
+		ret = flash_flexspi_hyperflash_page_program(data, offset,
 				hyperflash_write_buf, i);
 #else
-		ret = flash_flexspi_hyperflash_page_program(dev, offset, src, i);
+		ret = flash_flexspi_hyperflash_page_program(data, offset, src, i);
 #endif
 		if (ret != 0) {
 			LOG_ERR("failed to write");
 			break;
 		}
 
-		ret = flash_flexspi_hyperflash_wait_bus_busy(dev);
+		ret = flash_flexspi_hyperflash_wait_bus_busy(data);
 		if (ret != 0) {
 			LOG_ERR("failed to wait bus busy");
 			break;
@@ -493,14 +503,18 @@ static int flash_flexspi_hyperflash_write(const struct device *dev, off_t offset
 		len -= i;
 	}
 
-	/* Clock FlexSPI at 332 MHZ (166 MHz SCLK in DDR mode) */
-	(void)memc_flexspi_update_clock(&data->controller, &data->config,
-					data->port, MHZ(332));
+	/* Clock FlexSPI at max freq flash support. */
+	if (memc_flexspi_update_clock(&data->controller, &data->config,
+					data->port, data->config.flexspiRootClk)) {
+		ret = -ENOTSUP;
+		goto __exit;
+	}
 
 #ifdef CONFIG_HAS_MCUX_CACHE
 	DCACHE_InvalidateByRange((uint32_t) dst, size);
 #endif
 
+__exit:
 	if (memc_flexspi_is_running_xip(&data->controller)) {
 		/* ==== EXIT CRITICAL SECTION ==== */
 		irq_unlock(key);
@@ -546,7 +560,7 @@ static int flash_flexspi_hyperflash_erase(const struct device *dev, off_t offset
 	}
 
 	for (i = 0; i < num_sectors; i++) {
-		ret = flash_flexspi_hyperflash_write_enable(dev, offset);
+		ret = flash_flexspi_hyperflash_write_enable(data, offset);
 		if (ret != 0) {
 			LOG_ERR("failed to write_enable");
 			break;
@@ -567,7 +581,7 @@ static int flash_flexspi_hyperflash_erase(const struct device *dev, off_t offset
 		}
 
 		/* wait bus busy */
-		ret = flash_flexspi_hyperflash_wait_bus_busy(dev);
+		ret = flash_flexspi_hyperflash_wait_bus_busy(data);
 		if (ret != 0) {
 			LOG_ERR("failed to wait bus busy");
 			break;
@@ -627,10 +641,6 @@ static int flash_flexspi_hyperflash_init(const struct device *dev)
 
 	memc_flexspi_wait_bus_idle(&data->controller);
 
-	if (memc_flexspi_is_running_xip(&data->controller)) {
-		/* Wait for bus idle before configuring */
-		memc_flexspi_wait_bus_idle(&data->controller);
-	}
 	if (memc_flexspi_set_device_config(&data->controller, &data->config,
 	    (const uint32_t *)flash_flexspi_hyperflash_lut,
 	    sizeof(flash_flexspi_hyperflash_lut) / MEMC_FLEXSPI_CMD_SIZE,
@@ -669,7 +679,8 @@ static DEVICE_API(flash, flash_flexspi_hyperflash_api) = {
 
 #define FLASH_FLEXSPI_DEVICE_CONFIG(n)					\
 	{								\
-		.flexspiRootClk = MHZ(42),				\
+		.flexspiRootClk = DT_INST_PROP(n, spi_max_frequency) * \
+		MCUX_FLEXSPI_HYPERFLASH_DDR_SDR_MODE, \
 		.flashSize = DT_INST_PROP(n, size) / 8 / KB(1),		\
 		.CSIntervalUnit =					\
 			CS_INTERVAL_UNIT(				\

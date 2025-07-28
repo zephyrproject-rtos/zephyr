@@ -3,8 +3,6 @@
 
 config RTIO_WORKQ
 	bool "RTIO Work-queues service to process Sync operations"
-	select SCHED_DEADLINE
-	select P4WQ_INIT_STAGE_EARLY
 	select RTIO_CONSUME_SEM
 	help
 	  Enable RTIO Work-queues to allow processing synchronous operations
@@ -12,9 +10,13 @@ config RTIO_WORKQ
 
 if RTIO_WORKQ
 
-config RTIO_WORKQ_PRIO_MED
-	int "Medium Thread priority of RTIO Work-queues"
+config RTIO_WORKQ_THREADS_POOL_PRIO
+	int "Priority of RTIO Workqueue Threads Pool"
 	default MAIN_THREAD_PRIORITY
+
+config RTIO_WORKQ_THREADS_POOL_STACK_SIZE
+	int "Priority of RTIO Workqueue Threads Pool"
+	default 1024
 
 config RTIO_WORKQ_STACK_SIZE
 	int "Thread stack-size of RTIO Workqueues"

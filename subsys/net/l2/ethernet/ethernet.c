@@ -194,9 +194,9 @@ enum net_verdict ethernet_check_ipv4_bcast_addr(struct net_pkt *pkt,
 	}
 
 	if (net_eth_is_addr_broadcast(&hdr->dst) &&
-	    !(net_ipv4_is_addr_mcast((struct in_addr *)NET_IPV4_HDR(pkt)->dst) ||
-	      net_ipv4_is_addr_bcast(net_pkt_iface(pkt),
-				     (struct in_addr *)NET_IPV4_HDR(pkt)->dst))) {
+	    !(net_ipv4_is_addr_mcast_raw(NET_IPV4_HDR(pkt)->dst) ||
+	      net_ipv4_is_addr_bcast_raw(net_pkt_iface(pkt),
+					 NET_IPV4_HDR(pkt)->dst))) {
 		return NET_DROP;
 	}
 
@@ -465,9 +465,9 @@ ETH_NET_L3_REGISTER(IPv6, NET_ETH_PTYPE_IPV6, ethernet_ip_recv);
 #if defined(CONFIG_NET_IPV4)
 static inline bool ethernet_ipv4_dst_is_broadcast_or_mcast(struct net_pkt *pkt)
 {
-	if (net_ipv4_is_addr_bcast(net_pkt_iface(pkt),
-				   (struct in_addr *)NET_IPV4_HDR(pkt)->dst) ||
-	    net_ipv4_is_addr_mcast((struct in_addr *)NET_IPV4_HDR(pkt)->dst)) {
+	if (net_ipv4_is_addr_bcast_raw(net_pkt_iface(pkt),
+				       NET_IPV4_HDR(pkt)->dst) ||
+	    net_ipv4_is_addr_mcast_raw(NET_IPV4_HDR(pkt)->dst)) {
 		return true;
 	}
 
@@ -478,7 +478,7 @@ static bool ethernet_fill_in_dst_on_ipv4_mcast(struct net_pkt *pkt,
 					       struct net_eth_addr *dst)
 {
 	if (net_pkt_family(pkt) == AF_INET &&
-	    net_ipv4_is_addr_mcast((struct in_addr *)NET_IPV4_HDR(pkt)->dst)) {
+	    net_ipv4_is_addr_mcast_raw(NET_IPV4_HDR(pkt)->dst)) {
 		/* Multicast address */
 		net_eth_ipv4_mcast_to_mac_addr(
 			(struct in_addr *)NET_IPV4_HDR(pkt)->dst, dst);
@@ -524,7 +524,7 @@ static bool ethernet_fill_in_dst_on_ipv6_mcast(struct net_pkt *pkt,
 					       struct net_eth_addr *dst)
 {
 	if (net_pkt_family(pkt) == AF_INET6 &&
-	    net_ipv6_is_addr_mcast((struct in6_addr *)NET_IPV6_HDR(pkt)->dst)) {
+	    net_ipv6_is_addr_mcast_raw(NET_IPV6_HDR(pkt)->dst)) {
 		memcpy(dst, (uint8_t *)multicast_eth_addr.addr,
 		       sizeof(struct net_eth_addr) - 4);
 		memcpy((uint8_t *)dst + 2,

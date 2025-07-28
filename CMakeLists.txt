@@ -245,6 +245,7 @@ SOC_* symbol.")
 endif()
 
 # Apply the final optimization flag(s)
+zephyr_compile_options($<$<COMPILE_LANGUAGE:ASM>:${OPTIMIZATION_FLAG}>)
 zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:${OPTIMIZATION_FLAG}>)
 zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:${OPTIMIZATION_FLAG}>)
 
@@ -1909,10 +1910,13 @@ if(CONFIG_BUILD_OUTPUT_S19)
 endif()
 
 if(CONFIG_OUTPUT_DISASSEMBLY)
-if(CONFIG_OUTPUT_DISASSEMBLE_ALL)
+  if(CONFIG_OUTPUT_DISASSEMBLE_ALL)
     set(disassembly_type "$<TARGET_PROPERTY:bintools,disassembly_flag_all>")
-  elseif (CONFIG_OUTPUT_DISASSEMBLY_WITH_SOURCE)
+  elseif(CONFIG_OUTPUT_DISASSEMBLY_WITH_SOURCE)
     set(disassembly_type "$<TARGET_PROPERTY:bintools,disassembly_flag_inline_source>")
+  endif()
+  if(CONFIG_OUTPUT_DISASSEMBLY_NO_ALIASES)
+    list(APPEND disassembly_type "$<TARGET_PROPERTY:bintools,disassembly_flag_no_aliases>")
   endif()
   list(APPEND
     post_build_commands
@@ -1988,32 +1992,20 @@ if(CONFIG_BUILD_OUTPUT_COMPRESS_DEBUG_SECTIONS)
 endif()
 
 if(CONFIG_BUILD_OUTPUT_EXE)
-  if (NOT CONFIG_NATIVE_LIBRARY)
-    list(APPEND
-      post_build_commands
-      COMMAND
-      ${CMAKE_COMMAND} -E copy ${KERNEL_ELF_NAME} ${KERNEL_EXE_NAME}
-      )
-    list(APPEND
-      post_build_byproducts
-      ${KERNEL_EXE_NAME}
-      )
-  else()
-    if(CMAKE_GENERATOR STREQUAL "Unix Makefiles")
-      set(MAKE "${CMAKE_MAKE_PROGRAM}" CACHE FILEPATH "cmake defined make")
-    endif()
-    find_program(MAKE make REQUIRED)
-    add_custom_target(native_runner_executable
-      ALL
-      COMMENT "Building native simulator runner, and linking final executable"
-      COMMAND
-      ${MAKE} -f ${ZEPHYR_BASE}/scripts/native_simulator/Makefile all --warn-undefined-variables
-        -r NSI_CONFIG_FILE=${APPLICATION_BINARY_DIR}/zephyr/NSI/nsi_config
-      # nsi_config is created by the board cmake file
-      DEPENDS ${logical_target_for_zephyr_elf}
-      BYPRODUCTS ${KERNEL_EXE_NAME}
-    )
+  if(CMAKE_GENERATOR STREQUAL "Unix Makefiles")
+    set(MAKE "${CMAKE_MAKE_PROGRAM}" CACHE FILEPATH "cmake defined make")
   endif()
+  find_program(MAKE make REQUIRED)
+  add_custom_target(native_runner_executable
+    ALL
+    COMMENT "Building native simulator runner, and linking final executable"
+    COMMAND
+    ${MAKE} -f ${ZEPHYR_BASE}/scripts/native_simulator/Makefile all --warn-undefined-variables
+      -r NSI_CONFIG_FILE=${APPLICATION_BINARY_DIR}/zephyr/NSI/nsi_config
+    # nsi_config is created by the board cmake file
+    DEPENDS ${logical_target_for_zephyr_elf}
+    BYPRODUCTS ${KERNEL_EXE_NAME}
+  )
   set(BYPRODUCT_KERNEL_EXE_NAME "${PROJECT_BINARY_DIR}/${KERNEL_EXE_NAME}" CACHE FILEPATH "Kernel exe file" FORCE)
 endif()
 

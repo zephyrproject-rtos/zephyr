@@ -45,4 +45,11 @@ ZTEST(test_kconfig_functions, test_min_max)
 	zassert_equal(CONFIG_KCONFIG_MAX_10_3_2, MAX(MAX(10, 3), 2));
 }
 
+ZTEST(test_kconfig_functions, test_dt_num_compat_enabled)
+{
+	zassert_equal(CONFIG_KCONFIG_VND_GPIO_ENABLED_NUM_4, 4);
+	zassert_equal(CONFIG_KCONFIG_VND_CAN_CONTROLLER_ENABLED_NUM_2, 2);
+	zassert_equal(CONFIG_KCONFIG_VND_PWM_ENABLED_NUM_0, 0);
+}
+
 ZTEST_SUITE(test_kconfig_functions, NULL, NULL, NULL, NULL, NULL);

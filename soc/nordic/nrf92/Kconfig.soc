@@ -65,7 +65,7 @@ config SOC_NRF9280_CPUPPR
 config SOC_NRF9280_IRON
 	bool
 	help
-	  Indicates that local domain firmware is compatible with Nordic IRONside SE.
+	  Indicates that local domain firmware is compatible with Nordic IronSide SE.
 
 config SOC
 	default "nrf9280" if SOC_NRF9280

@@ -69,7 +69,8 @@
 #endif
 #define IS_SRAM(o) (IS_IRAM(o) || IS_DRAM(o))
 #define IS_MMAP(o) (IS_IROM(o) || IS_DROM(o))
-#define IS_LAST(o) (o.load_addr == 0xffffffff)
+#define IS_LAST(o) \
+	(!IS_IROM(o) && !IS_DROM(o) && !IS_IRAM(o) && !IS_DRAM(o) && !IS_PADD(o) && !IS_RTC(o))
 
 #define HDR_ATTR __attribute__((section(".entry_addr"))) __attribute__((used))
 

@@ -201,12 +201,16 @@ void sys_trace_isr_exit_to_scheduler(void)
 
 void sys_trace_idle(void)
 {
+#ifdef CONFIG_TRACING_IDLE
 	TRACING_STRING("%s\n", __func__);
+#endif
 }
 
 void sys_trace_idle_exit(void)
 {
+#ifdef CONFIG_TRACING_IDLE
 	TRACING_STRING("%s\n", __func__);
+#endif
 }
 
 void sys_trace_k_condvar_broadcast_enter(struct k_condvar *condvar)

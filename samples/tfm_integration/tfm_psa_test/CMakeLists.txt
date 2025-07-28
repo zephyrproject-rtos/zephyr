@@ -63,6 +63,17 @@ set_property(TARGET zephyr_property_target
              -DTEST_PSA_API=${TEST_PSA_API}
 )
 
+# Workaround: The TF-M tests require the large TF-M profile because it supports
+# the full list of crypto algorithms needed, not because of the isolation level.
+# For the TF-M tests the isolation level is irrelevant so we set it to 2 here so
+# that we don't exclude the platforms which don't support the isolation level 3.
+# This is a short lived workaround because the TF-M cmake logic will do this workaround
+# automatically in the future.
+set_property(TARGET zephyr_property_target
+             APPEND PROPERTY TFM_CMAKE_OPTIONS
+             -DTFM_ISOLATION_LEVEL=2
+)
+
 include(ExternalProject)
 
 ExternalProject_Add(tfm_psa_arch_test_app

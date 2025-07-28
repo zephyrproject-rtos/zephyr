@@ -143,7 +143,7 @@ static int adc_ch32v00x_init(const struct device *dev)
 #define ADC_CH32V00X_DEVICE(n)                                                                     \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
                                                                                                    \
-	static const struct adc_driver_api adc_ch32v00x_api_##n = {                                \
+	static DEVICE_API(adc, adc_ch32v00x_api_##n) = {                                           \
 		.channel_setup = adc_ch32v00x_channel_setup,                                       \
 		.read = adc_ch32v00x_read,                                                         \
 		.ref_internal = DT_INST_PROP(n, vref_mv),                                          \

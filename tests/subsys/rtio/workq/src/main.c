@@ -128,6 +128,39 @@ ZTEST(rtio_work, test_work_supports_batching_submissions)
 	rtio_cqe_release(&r_test, cqe);
 }
 
+ZTEST(rtio_work, test_work_supports_working_same_prio_items_on_separate_threads)
+{
+	struct rtio_sqe *sqe_a;
+	struct rtio_sqe *sqe_b;
+	struct rtio_cqe *cqe;
+
+	sqe_a = rtio_sqe_acquire(&r_test);
+	rtio_sqe_prep_nop(sqe_a, &dummy_iodev, &work_handler_sem_1);
+	sqe_a->prio = RTIO_PRIO_NORM;
+
+	sqe_b = rtio_sqe_acquire(&r_test_2);
+	rtio_sqe_prep_nop(sqe_b, &dummy_iodev_2, &work_handler_sem_2);
+	sqe_b->prio = RTIO_PRIO_NORM;
+
+	zassert_ok(rtio_submit(&r_test, 0));
+	zassert_ok(rtio_submit(&r_test_2, 0));
+
+	zassert_equal(2, work_handler_called);
+	zassert_equal(2, rtio_work_req_used_count_get());
+
+	k_sem_give(&work_handler_sem_1);
+	k_sem_give(&work_handler_sem_2);
+
+	zassert_equal(2, work_handler_called);
+	zassert_equal(0, rtio_work_req_used_count_get());
+
+	/** Clean-up */
+	cqe = rtio_cqe_consume_block(&r_test);
+	rtio_cqe_release(&r_test, cqe);
+	cqe = rtio_cqe_consume_block(&r_test_2);
+	rtio_cqe_release(&r_test_2, cqe);
+}
+
 ZTEST(rtio_work, test_work_supports_preempting_on_higher_prio_submissions)
 {
 	struct rtio_sqe *sqe_a;

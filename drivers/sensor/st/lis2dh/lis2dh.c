@@ -439,9 +439,8 @@ int lis2dh_init_chip(const struct device *dev)
 		(uint8_t)LIS2DH_LP_EN_BIT, lis2dh->scale);
 
 	/* enable accel measurements and set power mode and data rate */
-	return lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1,
-					LIS2DH_ACCEL_EN_BITS | LIS2DH_LP_EN_BIT |
-					LIS2DH_ODR_BITS);
+	lis2dh->reg_ctrl1_active_val = LIS2DH_ACCEL_EN_BITS | LIS2DH_LP_EN_BIT | LIS2DH_ODR_BITS;
+	return lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1, lis2dh->reg_ctrl1_active_val);
 }
 
 static int lis2dh_pm_action(const struct device *dev,
@@ -467,7 +466,7 @@ static int lis2dh_pm_action(const struct device *dev,
 		status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1,
 						  lis2dh->reg_ctrl1_active_val);
 		if (status < 0) {
-			LOG_ERR("failed to write reg_crtl1");
+			LOG_ERR("failed to write reg_ctrl1");
 			return status;
 		}
 		break;
@@ -476,13 +475,13 @@ static int lis2dh_pm_action(const struct device *dev,
 		status = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_CTRL1,
 						 &lis2dh->reg_ctrl1_active_val);
 		if (status < 0) {
-			LOG_ERR("failed to read reg_crtl1");
+			LOG_ERR("failed to read reg_ctrl1");
 			return status;
 		}
 		status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1,
 						  LIS2DH_SUSPEND);
 		if (status < 0) {
-			LOG_ERR("failed to write reg_crtl1");
+			LOG_ERR("failed to write reg_ctrl1");
 			return status;
 		}
 		break;

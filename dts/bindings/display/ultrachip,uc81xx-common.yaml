@@ -3,7 +3,11 @@
 # Copyright 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-description: UltraChip UC81xx EPD display controller common properties
+title: Ultrachip UC81xx EPD display controller common properties
+
+description: |
+    The Ultrachip UC81XX is a monochrome / 3-colors E-Ink controller
+    with a maximum 800x600 resolution.
 
 include: [mipi-dbi-spi-device.yaml, display-controller.yaml]
 

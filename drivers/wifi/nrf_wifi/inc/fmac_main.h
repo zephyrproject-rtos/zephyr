@@ -52,6 +52,7 @@ struct nrf_wifi_vif_ctx_zep {
 	uint16_t max_bss_cnt;
 	unsigned int scan_res_cnt;
 	struct k_work_delayable scan_timeout_work;
+	struct k_work disp_scan_res_work;
 
 	struct net_eth_addr mac_addr;
 	int if_type;
@@ -62,6 +63,9 @@ struct nrf_wifi_vif_ctx_zep {
 #ifdef CONFIG_NET_STATISTICS_ETHERNET
 	struct net_stats_eth eth_stats;
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
+#if defined(CONFIG_NRF70_STA_MODE) || defined(CONFIG_NRF70_RAW_DATA_RX)
+	bool authorized;
+#endif
 #ifdef CONFIG_NRF70_STA_MODE
 	unsigned int assoc_freq;
 	enum nrf_wifi_fmac_if_carr_state if_carr_state;
@@ -72,7 +76,6 @@ struct nrf_wifi_vif_ctx_zep {
 	unsigned char twt_flow_in_progress_map;
 	struct wifi_ps_config *ps_info;
 	bool ps_config_info_evnt;
-	bool authorized;
 	bool cookie_resp_received;
 #ifdef CONFIG_NRF70_DATA_TX
 	struct k_work nrf_wifi_net_iface_work;
@@ -88,6 +91,7 @@ struct nrf_wifi_vif_ctx_zep {
 	struct k_work_delayable nrf_wifi_rpu_recovery_bringup_work;
 #endif /* CONFIG_NRF_WIFI_RPU_RECOVERY */
 	int rts_threshold_value;
+	unsigned short bss_max_idle_period;
 };
 
 struct nrf_wifi_vif_ctx_map {
@@ -118,6 +122,8 @@ struct nrf_wifi_ctx_zep {
 	unsigned int rpu_recovery_retries;
 	int rpu_recovery_success;
 	int rpu_recovery_failure;
+	int wdt_irq_received;
+	int wdt_irq_ignored;
 #endif /* CONFIG_NRF_WIFI_RPU_RECOVERY */
 };
 

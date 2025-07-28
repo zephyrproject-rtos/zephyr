@@ -144,10 +144,11 @@ struct video_caps {
  * Represent a video frame.
  */
 struct video_buffer {
+	/** Pointer to driver specific data. */
+	/* It must be kept as first field of the struct if used for @ref k_fifo APIs. */
+	void *driver_data;
 	/** type of the buffer */
 	enum video_buf_type type;
-	/** pointer to driver specific data. */
-	void *driver_data;
 	/** pointer to the start of the buffer. */
 	uint8_t *buffer;
 	/** index of the buffer, optionally set by the application */

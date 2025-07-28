@@ -22,6 +22,10 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 #endif
 
+#if !DT_HAS_CHOSEN(zephyr_camera)
+#error No camera chosen in devicetree. Missing "--shield" or "--snippet video-sw-generator" flag?
+#endif
+
 #if DT_HAS_CHOSEN(zephyr_display)
 static inline int display_setup(const struct device *const display_dev, const uint32_t pixfmt)
 {
@@ -242,6 +246,7 @@ int main(void)
 
 	/* Set controls */
 	struct video_control ctrl = {.id = VIDEO_CID_HFLIP, .val = 1};
+	int tp_set_ret = -ENOTSUP;
 
 	if (IS_ENABLED(CONFIG_VIDEO_CTRL_HFLIP)) {
 		video_set_ctrl(video_dev, &ctrl);
@@ -254,7 +259,7 @@ int main(void)
 
 	if (IS_ENABLED(CONFIG_TEST)) {
 		ctrl.id = VIDEO_CID_TEST_PATTERN;
-		video_set_ctrl(video_dev, &ctrl);
+		tp_set_ret = video_set_ctrl(video_dev, &ctrl);
 	}
 
 #if DT_HAS_CHOSEN(zephyr_display)
@@ -316,7 +321,9 @@ int main(void)
 			frame++, vbuf->bytesused, vbuf->timestamp);
 
 #ifdef CONFIG_TEST
-		if (is_colorbar_ok(vbuf->buffer, fmt)) {
+		if (tp_set_ret < 0) {
+			LOG_DBG("Test pattern control was not successful. Skip test");
+		} else if (is_colorbar_ok(vbuf->buffer, fmt)) {
 			LOG_DBG("Pattern OK!\n");
 		}
 #endif

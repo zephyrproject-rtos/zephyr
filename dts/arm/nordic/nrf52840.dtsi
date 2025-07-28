@@ -568,7 +568,7 @@
 		};
 
 		cryptocell: crypto@5002a000 {
-			compatible = "nordic,cryptocell", "arm,cryptocell-310";
+			compatible = "arm,cryptocell-310";
 			reg = <0x5002a000 0x1000>, <0x5002b000 0x1000>;
 			reg-names = "wrapper", "core";
 			interrupts = <42 NRF_DEFAULT_IRQ_PRIORITY>;

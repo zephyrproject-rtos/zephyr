@@ -4785,7 +4785,7 @@ __syscall int k_msgq_alloc_init(struct k_msgq *msgq, size_t msg_size,
 int k_msgq_cleanup(struct k_msgq *msgq);
 
 /**
- * @brief Send a message to a message queue.
+ * @brief Send a message to the end of a message queue.
  *
  * This routine sends a message to message queue @a q.
  *
@@ -4805,6 +4805,33 @@ int k_msgq_cleanup(struct k_msgq *msgq);
  * @retval -EAGAIN Waiting period timed out.
  */
 __syscall int k_msgq_put(struct k_msgq *msgq, const void *data, k_timeout_t timeout);
+
+/**
+ * @brief Send a message to the front of a message queue.
+ *
+ * This routine sends a message to the beginning (head) of message queue @a q.
+ * Messages sent with this method will be retrieved before any pre-existing
+ * messages in the queue.
+ *
+ * @note if there is no space in the message queue, this function will
+ * behave the same as k_msgq_put.
+ *
+ * @note The message content is copied from @a data into @a msgq and the @a data
+ * pointer is not retained, so the message content will not be modified
+ * by this function.
+ *
+ * @funcprops \isr_ok
+ *
+ * @param msgq Address of the message queue.
+ * @param data Pointer to the message.
+ * @param timeout Waiting period to add the message, or one of the special
+ *                values K_NO_WAIT and K_FOREVER.
+ *
+ * @retval 0 Message sent.
+ * @retval -ENOMSG Returned without waiting or queue purged.
+ * @retval -EAGAIN Waiting period timed out.
+ */
+__syscall int k_msgq_put_front(struct k_msgq *msgq, const void *data, k_timeout_t timeout);
 
 /**
  * @brief Receive a message from a message queue.
@@ -5457,6 +5484,41 @@ struct k_mem_slab {
  */
 
 /**
+ * @brief Statically define and initialize a memory slab in a user-provided memory section with
+ * public (non-static) scope.
+ *
+ * The memory slab's buffer contains @a slab_num_blocks memory blocks
+ * that are @a slab_block_size bytes long. The buffer is aligned to a
+ * @a slab_align -byte boundary. To ensure that each memory block is similarly
+ * aligned to this boundary, @a slab_block_size must also be a multiple of
+ * @a slab_align.
+ *
+ * The memory slab can be accessed outside the module where it is defined
+ * using:
+ *
+ * @code extern struct k_mem_slab <name>; @endcode
+ *
+ * @note This macro cannot be used together with a static keyword.
+ *       If such a use-case is desired, use @ref K_MEM_SLAB_DEFINE_IN_SECT_STATIC
+ *       instead.
+ *
+ * @param name Name of the memory slab.
+ * @param in_section Section attribute specifier such as Z_GENERIC_SECTION.
+ * @param slab_block_size Size of each memory block (in bytes).
+ * @param slab_num_blocks Number memory blocks.
+ * @param slab_align Alignment of the memory slab's buffer (power of 2).
+ */
+#define K_MEM_SLAB_DEFINE_IN_SECT(name, in_section, slab_block_size, slab_num_blocks, slab_align)  \
+	BUILD_ASSERT(((slab_block_size) % (slab_align)) == 0,                                      \
+		     "slab_block_size must be a multiple of slab_align");                          \
+	BUILD_ASSERT((((slab_align) & ((slab_align) - 1)) == 0),                                   \
+		     "slab_align must be a power of 2");                                           \
+	char in_section __aligned(WB_UP(                                                           \
+		slab_align)) _k_mem_slab_buf_##name[(slab_num_blocks) * WB_UP(slab_block_size)];   \
+	STRUCT_SECTION_ITERABLE(k_mem_slab, name) = Z_MEM_SLAB_INITIALIZER(                        \
+		name, _k_mem_slab_buf_##name, WB_UP(slab_block_size), slab_num_blocks)
+
+/**
  * @brief Statically define and initialize a memory slab in a public (non-static) scope.
  *
  * The memory slab's buffer contains @a slab_num_blocks memory blocks
@@ -5479,13 +5541,36 @@ struct k_mem_slab {
  * @param slab_num_blocks Number memory blocks.
  * @param slab_align Alignment of the memory slab's buffer (power of 2).
  */
-#define K_MEM_SLAB_DEFINE(name, slab_block_size, slab_num_blocks, slab_align) \
-	char __noinit_named(k_mem_slab_buf_##name) \
-	   __aligned(WB_UP(slab_align)) \
-	   _k_mem_slab_buf_##name[(slab_num_blocks) * WB_UP(slab_block_size)]; \
-	STRUCT_SECTION_ITERABLE(k_mem_slab, name) = \
-		Z_MEM_SLAB_INITIALIZER(name, _k_mem_slab_buf_##name, \
-					WB_UP(slab_block_size), slab_num_blocks)
+#define K_MEM_SLAB_DEFINE(name, slab_block_size, slab_num_blocks, slab_align)                      \
+	K_MEM_SLAB_DEFINE_IN_SECT(name, __noinit_named(k_mem_slab_buf_##name), slab_block_size,    \
+				  slab_num_blocks, slab_align)
+
+/**
+ * @brief Statically define and initialize a memory slab in a user-provided memory section with
+ * private (static) scope.
+ *
+ * The memory slab's buffer contains @a slab_num_blocks memory blocks
+ * that are @a slab_block_size bytes long. The buffer is aligned to a
+ * @a slab_align -byte boundary. To ensure that each memory block is similarly
+ * aligned to this boundary, @a slab_block_size must also be a multiple of
+ * @a slab_align.
+ *
+ * @param name Name of the memory slab.
+ * @param in_section Section attribute specifier such as Z_GENERIC_SECTION.
+ * @param slab_block_size Size of each memory block (in bytes).
+ * @param slab_num_blocks Number memory blocks.
+ * @param slab_align Alignment of the memory slab's buffer (power of 2).
+ */
+#define K_MEM_SLAB_DEFINE_IN_SECT_STATIC(name, in_section, slab_block_size, slab_num_blocks,       \
+					 slab_align)                                               \
+	BUILD_ASSERT(((slab_block_size) % (slab_align)) == 0,                                      \
+		     "slab_block_size must be a multiple of slab_align");                          \
+	BUILD_ASSERT((((slab_align) & ((slab_align) - 1)) == 0),                                   \
+		     "slab_align must be a power of 2");                                           \
+	static char in_section __aligned(WB_UP(                                                    \
+		slab_align)) _k_mem_slab_buf_##name[(slab_num_blocks) * WB_UP(slab_block_size)];   \
+	static STRUCT_SECTION_ITERABLE(k_mem_slab, name) = Z_MEM_SLAB_INITIALIZER(                 \
+		name, _k_mem_slab_buf_##name, WB_UP(slab_block_size), slab_num_blocks)
 
 /**
  * @brief Statically define and initialize a memory slab in a private (static) scope.
@@ -5501,13 +5586,9 @@ struct k_mem_slab {
  * @param slab_num_blocks Number memory blocks.
  * @param slab_align Alignment of the memory slab's buffer (power of 2).
  */
-#define K_MEM_SLAB_DEFINE_STATIC(name, slab_block_size, slab_num_blocks, slab_align) \
-	static char __noinit_named(k_mem_slab_buf_##name) \
-	   __aligned(WB_UP(slab_align)) \
-	   _k_mem_slab_buf_##name[(slab_num_blocks) * WB_UP(slab_block_size)]; \
-	static STRUCT_SECTION_ITERABLE(k_mem_slab, name) = \
-		Z_MEM_SLAB_INITIALIZER(name, _k_mem_slab_buf_##name, \
-					WB_UP(slab_block_size), slab_num_blocks)
+#define K_MEM_SLAB_DEFINE_STATIC(name, slab_block_size, slab_num_blocks, slab_align)               \
+	K_MEM_SLAB_DEFINE_IN_SECT_STATIC(name, __noinit_named(k_mem_slab_buf_##name),              \
+					 slab_block_size, slab_num_blocks, slab_align)
 
 /**
  * @brief Initialize a memory slab.
@@ -5806,7 +5887,7 @@ void k_heap_free(struct k_heap *h, void *mem) __attribute_nonnull(1);
  *
  * @param name Symbol name for the struct k_heap object
  * @param bytes Size of memory region, in bytes
- * @param in_section __attribute__((section(name))
+ * @param in_section Section attribute specifier such as Z_GENERIC_SECTION.
  */
 #define Z_HEAP_DEFINE_IN_SECT(name, bytes, in_section)		\
 	char in_section						\

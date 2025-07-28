@@ -144,13 +144,13 @@ config PM_DEVICE_RUNTIME_USE_SYSTEM_WQ
 	bool "Use the system workqueue"
 	help
 	  When this option is enabled the power management subsystem will
-	  use the system worqueue instead of defining its own queue.
+	  use the system workqueue instead of defining its own queue.
 
 config PM_DEVICE_RUNTIME_USE_DEDICATED_WQ
 	bool "Use a dedicated workqueue"
 	help
 	  When this option is enabled the power management subsystem will
-	  use a dedicated worqueue instead of the system work queue.
+	  use a dedicated workqueue instead of the system work queue.
 
 if PM_DEVICE_RUNTIME_USE_DEDICATED_WQ
 config PM_DEVICE_RUNTIME_DEDICATED_WQ_STACK_SIZE

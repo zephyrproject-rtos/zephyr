@@ -98,6 +98,11 @@ config LV_Z_COLOR_MONO_HW_INVERSION
 	bool "Hardware pixel inversion (disables software pixel inversion)."
 	depends on LV_COLOR_DEPTH_1
 
+config LV_Z_COLOR_24_BGR_TO_RGB
+	bool "Convert BGR888 to RGB888 color before flushing"
+	default y
+	depends on LV_COLOR_DEPTH_24
+
 config LV_Z_FLUSH_THREAD
 	bool "Flush LVGL frames in a separate thread"
 	help
@@ -152,6 +157,31 @@ config LV_Z_INIT_PRIORITY
 	depends on LV_Z_AUTO_INIT
 	help
 	  Priority used for the automatic initialization of LVGL.
+
+config LV_Z_RUN_LVGL_ON_WORKQUEUE
+	bool "Use a dedicated workqueue to run LVGL core"
+	imply LV_Z_AUTO_INIT
+	help
+	  Runs the LVGL in a separate workqueue automatically
+	  without requiring user to add a timed loop for that. User can
+	  disable this option if periodic calls of LV timer
+	  is application responsibillity
+
+if LV_Z_RUN_LVGL_ON_WORKQUEUE
+
+config LV_Z_LVGL_WORKQUEUE_STACK_SIZE
+	int "Stack size of LVGL workqueue"
+	default 4096
+	help
+	  Stack size of the LVGL dedicated workqueue
+
+config LV_Z_LVGL_WORKQUEUE_PRIORITY
+	int "Priority of the LVGL workqueue"
+	default 0
+	help
+	  Priority of the LVGL dedicated workequeue.
+
+endif # LV_Z_RUN_LVGL_ON_WORKQUEUE
 
 config LV_USE_DRAW_DMA2D
 	bool

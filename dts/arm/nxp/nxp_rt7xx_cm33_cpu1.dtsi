@@ -451,6 +451,13 @@
 		interrupts = <30 0>;
 		status = "disabled";
 	};
+
+	acmp: acmp@20b000 {
+		compatible = "nxp,kinetis-acmp";
+		reg = <0x20b000 0x1000>;
+		interrupts = <18 0>;
+		status = "disabled";
+	};
 };
 
 &nvic {

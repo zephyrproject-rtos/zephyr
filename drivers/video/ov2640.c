@@ -1000,8 +1000,13 @@ static int ov2640_init_controls(const struct device *dev)
 
 static int ov2640_init(const struct device *dev)
 {
-	struct video_format fmt;
 	int ret = 0;
+	/* set default/init format SVGA RGB565 */
+	struct video_format fmt = {
+		.pixelformat = VIDEO_PIX_FMT_RGB565,
+		.width = SVGA_HSIZE,
+		.height = SVGA_VSIZE,
+	};
 
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	const struct ov2640_config *cfg = dev->config;
@@ -1028,10 +1033,6 @@ static int ov2640_init(const struct device *dev)
 
 	ov2640_write_all(dev, default_regs, ARRAY_SIZE(default_regs));
 
-	/* set default/init format SVGA RGB565 */
-	fmt.pixelformat = VIDEO_PIX_FMT_RGB565;
-	fmt.width = SVGA_HSIZE;
-	fmt.height = SVGA_VSIZE;
 	ret = ov2640_set_fmt(dev, &fmt);
 	if (ret) {
 		LOG_ERR("Unable to configure default format");

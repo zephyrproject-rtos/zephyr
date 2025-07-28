@@ -17,18 +17,16 @@
 #define AVRCP_CAT_3 BIT(2) /* Tuner */
 #define AVRCP_CAT_4 BIT(3) /* Menu */
 
-#define AVRCP_SUBUNIT_PAGE           (0) /* Fixed value according to AVRCP */
-#define AVRCP_SUBUNIT_EXTENSION_CODE (7) /* Fixed value according to TA Document 2001012 */
+#define AVRCP_SUBUNIT_PAGE              (0) /* Fixed value according to AVRCP */
+#define AVRCP_SUBUNIT_EXTENSION_CODE    (7) /* Fixed value according to TA Document 2001012 */
+#define BT_AVRCP_UNIT_INFO_CMD_SIZE     (5)
+#define BT_AVRCP_UNIT_INFO_RSP_SIZE     (5)
+#define BT_AVRCP_SUBUNIT_INFO_RSP_SIZE  (5)
 
 typedef enum __packed {
 	BT_AVRCP_SUBUNIT_ID_ZERO = 0x0,
 	BT_AVRCP_SUBUNIT_ID_IGNORE = 0x7,
 } bt_avrcp_subunit_id_t;
-
-typedef enum __packed {
-	BT_AVRCP_SUBUNIT_TYPE_PANEL = 0x9,
-	BT_AVRCP_SUBUNIT_TYPE_UNIT = 0x1F,
-} bt_avrcp_subunit_type_t;
 
 typedef enum __packed {
 	BT_AVRCP_OPC_VENDOR_DEPENDENT = 0x0,

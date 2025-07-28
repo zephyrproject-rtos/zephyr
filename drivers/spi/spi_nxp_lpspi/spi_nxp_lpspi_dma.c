@@ -1,5 +1,5 @@
 /*
- * Copyright 2018, 2024 NXP
+ * Copyright 2018, 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,19 @@ LOG_MODULE_DECLARE(spi_lpspi, CONFIG_SPI_LOG_LEVEL);
 #include <zephyr/drivers/dma.h>
 #include "spi_nxp_lpspi_priv.h"
 
+/* These states indicate what's the status of RX and TX, also synchronization
+ * status of DMA size of the next DMA transfer.
+ */
+typedef enum {
+	LPSPI_TRANSFER_STATE_NULL,
+	LPSPI_TRANSFER_STATE_ONGOING,
+	LPSPI_TRANSFER_STATE_NEXT_DMA_SIZE_UPDATED,
+	LPSPI_TRANSFER_STATE_TX_DONE,
+	LPSPI_TRANSFER_STATE_RX_DONE,
+	LPSPI_TRANSFER_STATE_RX_TX_DONE,
+	LPSPI_TRANSFER_STATE_INVALID = 0xFFFFFFFFUL,
+} lpspi_transfer_state_t;
+
 /* dummy memory used for transferring NOP when tx buf is null */
 static uint32_t tx_nop_val; /* check compliance says no init to 0, but should be 0 in bss */
 /* dummy memory for transferring to when RX buf is null */
@@ -22,17 +35,58 @@ struct spi_dma_stream {
 	uint32_t channel;
 	struct dma_config dma_cfg;
 	struct dma_block_config dma_blk_cfg;
-	bool chunk_done;
 };
 
 struct spi_nxp_dma_data {
 	struct spi_dma_stream dma_rx;
 	struct spi_dma_stream dma_tx;
+
+	lpspi_transfer_state_t state;
+	/* This DMA size is used in callback function for RX and TX context update.
+	 * because of old LPSPI IP limitation, RX complete depend on next TX DMA transfer start,
+	 * so TX and RX not always start at the same time while we can only calculate DMA transfer
+	 * size once and update the buffer pointers at the same time.
+	 */
+	size_t synchronize_dma_size;
 };
 
+/*
+ * Issue a TCR (Transmit Command Register) command to properly end RX DMA transfers
+ * on certain LPSPI versions. The behavior depends on:
+ *
+ * 1. LPSPI Hardware Version:
+ *    - Version 1 (RT1170, RT10xx, Kinetis K series): TCR issue always required
+ *    - Version 2 (RT1180, MCXN, RT700, K32W, S32K3xx, MCXL10): TCR issue not needed
+ *
+ * 2. SPI_HOLD_ON_CS Configuration:
+ *    - If enabled: Keeps chip select (PCS) asserted between transfers
+ *    - If disabled: Deasserts PCS after each transfer
+ *
+ * This function checks the LPSPI version and SPI_HOLD_ON_CS setting to determine
+ * if a TCR command is needed. For version 1, TCR is always issued. For version 2,
+ * TCR is only issued if SPI_HOLD_ON_CS is not set. Therefore, SPI_HOLD_ON_CS is not
+ * supported for version 1.
+ *
+ * The LPSPI version can be read from the VERID register, which is typically the
+ * first register in the memory map.
+ */
+static void spi_mcux_issue_TCR(const struct device *dev)
+{
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+	const struct spi_config *spi_cfg = DEV_DATA(dev)->ctx.config;
+	uint8_t major_ver = (base->VERID & LPSPI_VERID_MAJOR_MASK) >> LPSPI_VERID_MAJOR_SHIFT;
+
+	/* On old LPSPI versions, we always have to issue TCR, or transaction will never end.
+	 * On a newer LPSPI version, only issue TCR when hold on CS feature is disabled.
+	 */
+	if (major_ver < 2 || !(spi_cfg->operation & SPI_HOLD_ON_CS)) {
+		base->TCR &= ~LPSPI_TCR_CONTC_MASK;
+	}
+}
+
 static struct dma_block_config *lpspi_dma_common_load(struct spi_dma_stream *stream,
-							 const struct device *dev,
-							 const uint8_t *buf, size_t len)
+						      const struct device *dev, const uint8_t *buf,
+						      size_t len)
 {
 	struct dma_block_config *blk_cfg = &stream->dma_blk_cfg;
 
@@ -91,30 +145,35 @@ static int lpspi_dma_rx_load(const struct device *dev, uint8_t *buf, size_t len)
 	return dma_config(stream->dma_dev, stream->channel, &stream->dma_cfg);
 }
 
-static inline int lpspi_dma_rxtx_load(const struct device *dev)
+/* Return values:
+ * positive value if a data chunk is loaded successfully and return the data chunk size loaded;
+ * negative value if error happens and return the error code;
+ * 0 if no data is loaded;
+ */
+static int lpspi_dma_rxtx_load(const struct device *dev)
 {
 	struct lpspi_data *data = dev->data;
 	struct spi_nxp_dma_data *dma_data = (struct spi_nxp_dma_data *)data->driver_data;
 	struct spi_dma_stream *rx = &dma_data->dma_rx;
 	struct spi_dma_stream *tx = &dma_data->dma_tx;
 	struct spi_context *ctx = &data->ctx;
-	size_t next_chunk_size = spi_context_max_continuous_chunk(ctx);
+	size_t dma_size = spi_context_max_continuous_chunk(ctx);
 	int ret = 0;
 
-	if (next_chunk_size == 0) {
+	if (dma_size == 0) {
 		/* In case both buffers are 0 length, we should not even be here
 		 * and attempting to set up a DMA transfer like this will cause
 		 * errors that lock up the system in some cases with eDMA.
 		 */
-		return -ENODATA;
+		return 0;
 	}
 
-	ret = lpspi_dma_tx_load(dev, ctx->tx_buf, next_chunk_size);
+	ret = lpspi_dma_tx_load(dev, ctx->tx_buf, dma_size);
 	if (ret != 0) {
 		return ret;
 	}
 
-	ret = lpspi_dma_rx_load(dev, ctx->rx_buf, next_chunk_size);
+	ret = lpspi_dma_rx_load(dev, ctx->rx_buf, dma_size);
 	if (ret != 0) {
 		return ret;
 	}
@@ -124,24 +183,17 @@ static inline int lpspi_dma_rxtx_load(const struct device *dev)
 		return ret;
 	}
 
-	return dma_start(tx->dma_dev, tx->channel);
-}
+	ret = dma_start(tx->dma_dev, tx->channel);
+	if (ret != 0) {
+		return ret;
+	}
 
-static int lpspi_dma_next_fill(const struct device *dev)
-{
-	struct lpspi_data *data = (struct lpspi_data *)dev->data;
-	struct spi_nxp_dma_data *dma_data = (struct spi_nxp_dma_data *)data->driver_data;
-	struct spi_dma_stream *rx = &dma_data->dma_rx;
-	struct spi_dma_stream *tx = &dma_data->dma_tx;
-
-	rx->chunk_done = false;
-	tx->chunk_done = false;
-
-	return lpspi_dma_rxtx_load(dev);
+	return dma_size;
 }
 
 static void lpspi_dma_callback(const struct device *dev, void *arg, uint32_t channel, int status)
 {
+	/* arg directly holds the spi device */
 	const struct device *spi_dev = arg;
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(spi_dev, reg_base);
 	struct lpspi_data *data = (struct lpspi_data *)spi_dev->data;
@@ -149,63 +201,98 @@ static void lpspi_dma_callback(const struct device *dev, void *arg, uint32_t cha
 	struct spi_dma_stream *rx = &dma_data->dma_rx;
 	struct spi_dma_stream *tx = &dma_data->dma_tx;
 	struct spi_context *ctx = &data->ctx;
-	char debug_char;
+	char debug_char = (channel == dma_data->dma_tx.channel) ? 'T' : 'R';
+	int ret = 0;
 
 	if (status < 0) {
+		ret = status;
 		goto error;
-	} else {
-		/* don't care about positive values, normalize to "okay" = 0 */
-		status = 0;
 	}
 
-	if (channel == rx->channel) {
-		spi_context_update_rx(ctx, 1, rx->dma_blk_cfg.block_size);
-		debug_char = 'R';
-		rx->chunk_done = true;
-	} else if (channel == tx->channel) {
+	if (channel != dma_data->dma_tx.channel && channel != dma_data->dma_rx.channel) {
+		ret = -EIO;
+		goto error;
+	}
+
+	switch (dma_data->state) {
+	case LPSPI_TRANSFER_STATE_ONGOING:
 		spi_context_update_tx(ctx, 1, tx->dma_blk_cfg.block_size);
-		debug_char = 'T';
-		tx->chunk_done = true;
-	} else {
-		/* invalid channel */
-		status = -EIO;
+		spi_context_update_rx(ctx, 1, rx->dma_blk_cfg.block_size);
+		/* Calculate next DMA transfer size */
+		dma_data->synchronize_dma_size = spi_context_max_continuous_chunk(ctx);
+		LOG_DBG("tx len:%d rx len:%d next dma size:%d",	ctx->tx_len, ctx->rx_len,
+			dma_data->synchronize_dma_size);
+		if (dma_data->synchronize_dma_size > 0)	{
+			ret = (channel == dma_data->dma_tx.channel)
+				      ? lpspi_dma_tx_load(spi_dev, ctx->tx_buf,
+							  dma_data->synchronize_dma_size)
+				      : lpspi_dma_rx_load(spi_dev, ctx->rx_buf,
+							  dma_data->synchronize_dma_size);
+
+			if (ret != 0) {
+				goto error;
+			}
+
+			ret = dma_start(dev, channel);
+			if (ret != 0) {
+				goto error;
+			}
+			dma_data->state = LPSPI_TRANSFER_STATE_NEXT_DMA_SIZE_UPDATED;
+		} else {
+			ret = dma_stop(dev, channel);
+			if (ret != 0) {
+				goto error;
+			}
+			/* This is the end of the transfer. */
+			if (channel == dma_data->dma_tx.channel) {
+				spi_mcux_issue_TCR(spi_dev);
+				dma_data->state = LPSPI_TRANSFER_STATE_TX_DONE;
+				base->DER &= ~LPSPI_DER_TDDE_MASK;
+			} else {
+				dma_data->state = LPSPI_TRANSFER_STATE_RX_DONE;
+				base->DER &= ~LPSPI_DER_RDDE_MASK;
+			}
+		}
+		break;
+	case LPSPI_TRANSFER_STATE_NEXT_DMA_SIZE_UPDATED:
+		ret = (channel == dma_data->dma_tx.channel)
+			      ? lpspi_dma_tx_load(spi_dev, ctx->tx_buf,
+						  dma_data->synchronize_dma_size)
+			      : lpspi_dma_rx_load(spi_dev, ctx->rx_buf,
+						  dma_data->synchronize_dma_size);
+		dma_data->synchronize_dma_size = 0;
+
+		if (ret != 0) {
+			goto error;
+		}
+
+		ret = dma_start(dev, channel);
+		if (ret != 0) {
+			goto error;
+		}
+		dma_data->state = LPSPI_TRANSFER_STATE_ONGOING;
+		break;
+
+	case LPSPI_TRANSFER_STATE_TX_DONE:
+	case LPSPI_TRANSFER_STATE_RX_DONE:
+		dma_data->state = LPSPI_TRANSFER_STATE_RX_TX_DONE;
+		/* TX and RX both done here. */
+		spi_context_complete(ctx, spi_dev, 0);
+		spi_context_cs_control(ctx, false);
+		break;
+
+	default:
+		LOG_ERR("unknown spi stransfer state:%d", dma_data->state);
+		ret = -EIO;
 		goto error;
 	}
 
 	LOG_DBG("DMA %cX Block Complete", debug_char);
-
-	/* wait for the other channel to finish if needed */
-	if (!rx->chunk_done || !tx->chunk_done) {
-		return;
-	}
-
-
-	while ((IS_ENABLED(CONFIG_SOC_FAMILY_NXP_IMXRT) ||
-		IS_ENABLED(CONFIG_SOC_FAMILY_KINETIS)) &&
-		(base->SR & LPSPI_SR_MBF_MASK)) {
-		/* wait until module is idle */
-	}
-
-	if (spi_context_max_continuous_chunk(ctx) == 0) {
-		goto done;
-	}
-
-	status = lpspi_dma_next_fill(spi_dev);
-	if (status) {
-		goto error;
-	}
-
 	return;
 error:
-	LOG_ERR("DMA callback error with channel %d err %d.", channel, status);
-done:
-	base->DER &= ~(LPSPI_DER_TDDE_MASK | LPSPI_DER_RDDE_MASK);
-	base->TCR &= ~LPSPI_TCR_CONT_MASK;
-	lpspi_wait_tx_fifo_empty(spi_dev);
+	LOG_ERR("DMA callback error with channel %d.", channel);
+	spi_context_complete(ctx, spi_dev, ret);
 	spi_context_cs_control(ctx, false);
-	base->CR |= LPSPI_CR_RTF_MASK | LPSPI_CR_RRF_MASK;
-	spi_context_complete(ctx, spi_dev, status);
-	spi_context_release(ctx, status);
 }
 
 static int transceive_dma(const struct device *dev, const struct spi_config *spi_cfg,
@@ -214,7 +301,9 @@ static int transceive_dma(const struct device *dev, const struct spi_config *spi
 {
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 	struct lpspi_data *data = dev->data;
+	struct spi_nxp_dma_data *dma_data = (struct spi_nxp_dma_data *)data->driver_data;
 	struct spi_context *ctx = &data->ctx;
+	uint8_t major_ver = (base->VERID & LPSPI_VERID_MAJOR_MASK) >> LPSPI_VERID_MAJOR_SHIFT;
 	int ret;
 
 	spi_context_lock(ctx, asynchronous, cb, userdata, spi_cfg);
@@ -224,30 +313,41 @@ static int transceive_dma(const struct device *dev, const struct spi_config *spi
 		goto out;
 	}
 
-	spi_context_buffers_setup(ctx, tx_bufs, rx_bufs, 1);
+	/* Check CS hold on feature for DMA mode, it is not supported on some platform. */
+	if ((spi_cfg->operation & SPI_HOLD_ON_CS) && major_ver < 2) {
+		LOG_ERR("SPI CS hold on feature is not supported on this platform.");
+		return -ENOTSUP;
+	}
 
-	ret = lpspi_dma_next_fill(dev);
-	if (ret == -ENODATA) {
-		/* No transfer to do? So just exit */
-		ret = 0;
-		goto out;
-	} else if (ret) {
+	/* Always use continuous mode to satisfy SPI API requirements. */
+	base->TCR |= LPSPI_TCR_CONT_MASK | LPSPI_TCR_CONTC_MASK;
+
+	/* Please set both watermarks as 0 because there are some synchronize requirements
+	 * between RX and TX on RT platform. TX and RX DMA callback must be called in interleaved
+	 * mode, a none-zero TX watermark may break this.
+	 */
+	base->FCR = LPSPI_FCR_TXWATER(0) | LPSPI_FCR_RXWATER(0);
+	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
+
+	/* Set next dma size is invalid. */
+	dma_data->synchronize_dma_size = 0;
+	dma_data->state = LPSPI_TRANSFER_STATE_NULL;
+
+	/* Load dma block */
+	ret = lpspi_dma_rxtx_load(dev);
+	if (ret <= 0) {
 		goto out;
 	}
 
-	if (!(IS_ENABLED(CONFIG_SOC_FAMILY_NXP_IMXRT) || IS_ENABLED(CONFIG_SOC_FAMILY_KINETIS))) {
-		base->TCR |= LPSPI_TCR_CONT_MASK;
-	}
-
+	dma_data->state = LPSPI_TRANSFER_STATE_ONGOING;
+	/* Set CS line just before DMA transfer. */
 	spi_context_cs_control(ctx, true);
-
-	base->CR |= LPSPI_CR_RTF_MASK | LPSPI_CR_RRF_MASK;
-
+	/* Enable DMA Requests */
 	base->DER |= LPSPI_DER_TDDE_MASK | LPSPI_DER_RDDE_MASK;
 
 	ret = spi_context_wait_for_completion(ctx);
-	if (ret >= 0) {
-		return ret;
+	if (ret) {
+		spi_context_cs_control(ctx, false);
 	}
 out:
 	spi_context_release(ctx, ret);

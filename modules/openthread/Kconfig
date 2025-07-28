@@ -1,4 +1,5 @@
 # Copyright (c) 2022 Nordic Semiconductor ASA
+# Copyright 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config OPENTHREAD
@@ -354,6 +355,13 @@ config OPENTHREAD_PLATFORM_CARRIER_FUNCTIONS
 	default y if OPENTHREAD_DIAG && IEEE802154_CARRIER_FUNCTIONS
 	help
 	  Enable support for functions such as modulated carrier and continuous carrier.
+
+config OPENTHREAD_ZEPHYR_BORDER_ROUTER
+	bool "Adds support for Border Router functionality [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	imply NET_ROUTING
+	help
+	  Enable support for Border Router using Openthread's implementation.
 
 menu "OpenThread stack features"
 rsource "Kconfig.features"

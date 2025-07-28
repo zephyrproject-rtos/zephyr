@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Ambiq
+ * Copyright (c) 2025 Ambiq
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -89,6 +89,9 @@ static uint32_t get_clock_cycles(uint32_t clock_sel)
 	case 17:
 		ret = 100;
 		break;
+	default:
+		ret = 24000000;
+		break;
 	}
 
 	return ret;
@@ -131,15 +134,11 @@ static int ambiq_timer_pwm_get_cycles_per_sec(const struct device *dev, uint32_t
 					      uint64_t *cycles)
 {
 	struct pwm_ambiq_timer_data *data = dev->data;
-	int err = 0;
-
-	/* clean up upper word of return parameter */
-	*cycles &= 0xFFFFFFFF;
 
 	/* cycles of the timer clock */
-	*cycles = data->cycles;
+	*cycles = (uint64_t)data->cycles;
 
-	return err;
+	return 0;
 }
 
 static int ambiq_timer_pwm_init(const struct device *dev)
@@ -173,7 +172,7 @@ static int ambiq_timer_pwm_init(const struct device *dev)
 	return 0;
 }
 
-static const struct pwm_driver_api pwm_ambiq_timer_driver_api = {
+static DEVICE_API(pwm, pwm_ambiq_timer_driver_api) = {
 	.set_cycles = ambiq_timer_pwm_set_cycles,
 	.get_cycles_per_sec = ambiq_timer_pwm_get_cycles_per_sec,
 };

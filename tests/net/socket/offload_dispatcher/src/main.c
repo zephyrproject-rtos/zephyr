@@ -61,9 +61,11 @@ static ssize_t offload_write(void *obj, const void *buffer, size_t count)
 	return 0;
 }
 
-static int offload_close(void *obj)
+static int offload_close(void *obj, int fd)
 {
 	struct test_socket_calls *ctx = obj;
+
+	ARG_UNUSED(fd);
 
 	ctx->close_called = true;
 
@@ -252,7 +254,7 @@ static const struct socket_op_vtable offload_1_socket_fd_op_vtable = {
 	.fd_vtable = {
 		.read = offload_read,
 		.write = offload_write,
-		.close = offload_close,
+		.close2 = offload_close,
 		.ioctl = offload_ioctl,
 	},
 	.shutdown = offload_shutdown,
@@ -314,7 +316,7 @@ static const struct socket_op_vtable offload_2_socket_fd_op_vtable = {
 	.fd_vtable = {
 		.read = offload_read,
 		.write = offload_write,
-		.close = offload_close,
+		.close2 = offload_close,
 		.ioctl = offload_ioctl,
 	},
 	.shutdown = offload_shutdown,

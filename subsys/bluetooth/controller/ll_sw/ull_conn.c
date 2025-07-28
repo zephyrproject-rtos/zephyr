@@ -2177,6 +2177,11 @@ void ull_conn_resume_rx_data(struct ll_conn *conn)
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
+uint16_t ull_conn_event_counter_at_prepare(const struct ll_conn *conn)
+{
+	return conn->lll.event_counter + conn->lll.latency_prepare + conn->llcp.prep.lazy;
+}
+
 uint16_t ull_conn_event_counter(struct ll_conn *conn)
 {
 	struct lll_conn *lll;
@@ -2204,6 +2209,7 @@ uint16_t ull_conn_event_counter(struct ll_conn *conn)
 
 	return event_counter;
 }
+
 static void ull_conn_update_ticker(struct ll_conn *conn,
 				   uint32_t ticks_win_offset,
 				   uint32_t ticks_slot_overhead,
@@ -2281,7 +2287,7 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 	lll = &conn->lll;
 
 	/* Calculate current event counter */
-	event_counter = ull_conn_event_counter(conn);
+	event_counter = ull_conn_event_counter_at_prepare(conn);
 
 	instant_latency = (event_counter - instant) & 0xFFFF;
 
@@ -2363,7 +2369,7 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 	periodic_us = conn_interval_us;
 
 	conn_interval_old_us = conn_interval_old * conn_interval_unit_old;
-	latency_upd = conn_interval_old_us / conn_interval_us;
+	latency_upd = DIV_ROUND_UP(conn_interval_old_us, conn_interval_us);
 	conn_interval_new_us = latency_upd * conn_interval_us;
 	if (conn_interval_new_us > conn_interval_old_us) {
 		ticks_at_expire += HAL_TICKER_US_TO_TICKS(

@@ -39,6 +39,7 @@
 
 #include "conn_internal.h"
 #include "common/bt_str.h"
+#include "common/rpa.h"
 #include "crypto/bt_crypto.h"
 #include "ecc.h"
 #include "hci_core.h"
@@ -1515,12 +1516,33 @@ static uint8_t smp_br_ident_info(struct bt_smp_br *smp, struct net_buf *buf)
 	return 0;
 }
 
+static void convert_to_id_on_irk_match(struct bt_conn *conn, void *data)
+{
+	struct bt_keys *keys = data;
+
+	if (!bt_addr_le_is_rpa(&conn->le.dst)) {
+		return;
+	}
+
+	if (bt_rpa_irk_matches(keys->irk.val, &conn->le.dst.a)) {
+		if (conn->le.keys != NULL && conn->le.keys != keys) {
+			bt_keys_clear(conn->le.keys);
+		}
+
+		conn->le.keys = keys;
+		/* always update last use RPA */
+		bt_addr_copy(&keys->irk.rpa, &conn->le.dst.a);
+		bt_addr_le_copy(&conn->le.dst, &keys->addr);
+	}
+}
+
 static uint8_t smp_br_ident_addr_info(struct bt_smp_br *smp,
 				      struct net_buf *buf)
 {
 	struct bt_conn *conn = smp->chan.chan.conn;
 	struct bt_smp_ident_addr_info *req = (void *)buf->data;
 	bt_addr_le_t addr;
+	struct bt_keys *keys;
 
 	LOG_DBG("identity %s", bt_addr_le_str(&req->addr));
 
@@ -1543,12 +1565,25 @@ static uint8_t smp_br_ident_addr_info(struct bt_smp_br *smp,
 		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
 	}
 
+	/* Check the BLE connections that has RPA matched with this IRK */
+	keys = bt_keys_get_type(BT_KEYS_IRK, conn->id, &addr);
+	if (keys) {
+		bt_conn_foreach(BT_CONN_TYPE_LE, convert_to_id_on_irk_match, keys);
+	} else {
+		LOG_ERR("Unable to get keys for %s", bt_addr_le_str(&addr));
+	}
+
 	if (conn->role == BT_CONN_ROLE_CENTRAL && !smp->remote_dist) {
 		smp_br_distribute_keys(smp);
 	}
 
 	/* if all keys were distributed, pairing is done */
 	if (!smp->local_dist && !smp->remote_dist) {
+		/* TODO: consider the follow cases (BLE to BR derivation need to consider them too):
+		 * (1) the ble connection is already encrypted, then the new LTK is derived.
+		 * (2) the ble connection is not encrypted, the LTK is derived,
+		 *     how to trigger the BLE encryption.
+		 */
 		smp_pairing_br_complete(smp, 0);
 	}
 

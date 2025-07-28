@@ -1328,8 +1328,8 @@ Boards
       produce a complete table. If disabled, a warning message will be shown instead of the runners
       tables.
 
-Accessibilty Guidelines
-***********************
+Accessibility Guidelines
+************************
 
 Accessibility is an important aspect of documentation, ensuring that all users, including those with
 disabilities, can access and understand the content.

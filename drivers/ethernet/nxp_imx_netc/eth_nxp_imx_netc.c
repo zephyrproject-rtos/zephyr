@@ -12,6 +12,9 @@ LOG_MODULE_REGISTER(nxp_imx_eth);
 #include <zephyr/device.h>
 #include <zephyr/drivers/mbox.h>
 #include <zephyr/drivers/pinctrl.h>
+#ifdef CONFIG_PTP_CLOCK_NXP_NETC
+#include <zephyr/drivers/ptp_clock.h>
+#endif
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
@@ -27,6 +30,44 @@ LOG_MODULE_REGISTER(nxp_imx_eth);
 #endif
 
 const struct device *netc_dev_list[NETC_DRV_MAX_INST_SUPPORT];
+
+#ifdef CONFIG_PTP_CLOCK_NXP_NETC
+static void netc_eth_pkt_get_timestamp(struct net_pkt *pkt, const struct device *ptp_clock,
+				       uint32_t timestamp)
+{
+	struct net_ptp_time ptp_time = {0};
+	uint64_t time_ns;
+	uint32_t time_h;
+	uint32_t time_l;
+
+	/*
+	 * Packet timestamp is lower 32-bit ns value.
+	 * Need to reconstruct 64-bit ns value with ptp clock time.
+	 */
+	ptp_clock_get(ptp_clock, &ptp_time);
+
+	time_ns = ptp_time.second * NSEC_PER_SEC + ptp_time.nanosecond;
+	time_h = time_ns >> 32;
+	time_l = time_ns & 0xffffffff;
+
+	/* Check if wrap happened. */
+	if (time_l <= timestamp) {
+		time_h--;
+	}
+
+	time_ns = (uint64_t)time_h << 32 | timestamp;
+
+	pkt->timestamp.nanosecond = time_ns % NSEC_PER_SEC;
+	pkt->timestamp.second = time_ns / NSEC_PER_SEC;
+}
+
+const struct device *netc_eth_get_ptp_clock(const struct device *dev)
+{
+	const struct netc_eth_config *cfg = dev->config;
+
+	return cfg->ptp_clock;
+}
+#endif
 
 static int netc_eth_rx(const struct device *dev)
 {
@@ -85,6 +126,13 @@ static int netc_eth_rx(const struct device *dev)
 		goto out;
 	}
 
+#ifdef CONFIG_PTP_CLOCK_NXP_NETC
+	if (attr.isTsAvail) {
+		const struct netc_eth_config *cfg = dev->config;
+
+		netc_eth_pkt_get_timestamp(pkt, cfg->ptp_clock, attr.timestamp);
+	}
+#endif
 	/* Send to upper layer */
 	ret = net_recv_data(iface_dst, pkt);
 	if (ret < 0) {
@@ -168,6 +216,10 @@ int netc_eth_init_common(const struct device *dev)
 	status_t result;
 
 	config->bdr_init(&bdr_config, &rx_bdr_config, &tx_bdr_config);
+
+#ifdef CONFIG_PTP_CLOCK_NXP_NETC
+	bdr_config.rxBdrConfig[0].extendDescEn = true;
+#endif
 
 	/* MSIX entry configuration */
 	msg_addr = MSGINTR_GetIntrSelectAddr(NETC_MSGINTR, NETC_MSGINTR_CHANNEL);
@@ -254,7 +306,10 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 #endif
 	status_t result;
 	int ret;
-
+	ep_tx_opt opt = {0};
+#ifdef CONFIG_PTP_CLOCK_NXP_NETC
+	bool pkt_is_gptp;
+#endif
 	__ASSERT(pkt, "Packet pointer is NULL");
 
 	iface_dst = data->iface;
@@ -274,6 +329,12 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 
 	k_mutex_lock(&data->tx_mutex, K_FOREVER);
 
+#ifdef CONFIG_PTP_CLOCK_NXP_NETC
+	pkt_is_gptp = ntohs(NET_ETH_HDR(pkt)->type) == NET_ETH_PTYPE_PTP;
+	if (pkt_is_gptp || net_pkt_is_tx_timestamping(pkt)) {
+		opt.flags |= kEP_TX_OPT_REQ_TS;
+	}
+#endif
 	/* Copy packet to tx buffer */
 	buff.length = (uint16_t)pkt_len;
 	ret = net_pkt_read(pkt, buff.buffer, pkt_len);
@@ -298,10 +359,10 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 		result = EP_SendFrameCommon(&data->handle, &data->handle.txBdRing[0], 0, &frame,
 					    NULL, &txDesc[0], data->handle.cfg.txCacheMaintain);
 	} else {
-		result = EP_SendFrame(&data->handle, 0, &frame, NULL, NULL);
+		result = EP_SendFrame(&data->handle, 0, &frame, NULL, &opt);
 	}
 #else
-	result = EP_SendFrame(&data->handle, 0, &frame, NULL, NULL);
+	result = EP_SendFrame(&data->handle, 0, &frame, NULL, &opt);
 #endif
 	if (result != kStatus_Success) {
 		LOG_ERR("Failed to tx frame");
@@ -314,7 +375,7 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 
 	do {
 		frame_info = EP_ReclaimTxDescCommon(&data->handle, &data->handle.txBdRing[0],
-						    0, false);
+						    0, true);
 		if (frame_info != NULL) {
 			if (frame_info->status != kNETC_EPTxSuccess) {
 				memset(frame_info, 0, sizeof(netc_tx_frame_info_t));
@@ -322,6 +383,14 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 				ret = -EIO;
 				goto error;
 			}
+
+#ifdef CONFIG_PTP_CLOCK_NXP_NETC
+			if (frame_info->isTsAvail) {
+				netc_eth_pkt_get_timestamp(pkt, cfg->ptp_clock,
+							   frame_info->timestamp);
+				net_if_add_tx_timestamp(pkt);
+			}
+#endif
 			memset(frame_info, 0, sizeof(netc_tx_frame_info_t));
 		}
 	} while (frame_info != NULL);
@@ -344,6 +413,9 @@ enum ethernet_hw_caps netc_eth_get_capabilities(const struct device *dev)
 		ETHERNET_HW_RX_CHKSUM_OFFLOAD | ETHERNET_HW_FILTERING
 #if defined(CONFIG_NET_VLAN)
 		| ETHERNET_HW_VLAN
+#endif
+#if defined(CONFIG_PTP_CLOCK_NXP_NETC)
+		| ETHERNET_PTP
 #endif
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 		| ETHERNET_PROMISC_MODE

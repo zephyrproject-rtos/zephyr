@@ -20,16 +20,18 @@ void lvgl_flush_cb_24bit(lv_display_t *display, const lv_area_t *area, uint8_t *
 	flush.y = area->y1;
 	flush.desc.buf_size = w * 3U * h;
 	flush.desc.width = w;
-	flush.desc.pitch = w;
+	flush.desc.pitch = ROUND_UP(w * 3U, LV_DRAW_BUF_STRIDE_ALIGN) / 3U;
 	flush.desc.height = h;
 	flush.buf = (void *)px_map;
 
-	/* LVGL assumes BGR byte ordering, convert to RGB */
-	for (size_t i = 0; i < flush.desc.buf_size; i += 3) {
-		uint8_t tmp = px_map[i];
+	if (IS_ENABLED(CONFIG_LV_Z_COLOR_24_BGR_TO_RGB)) {
+		/* LVGL assumes BGR byte ordering, convert to RGB */
+		for (size_t i = 0; i < flush.desc.buf_size; i += 3) {
+			uint8_t tmp = px_map[i];
 
-		px_map[i] = px_map[i + 2];
-		px_map[i + 2] = tmp;
+			px_map[i] = px_map[i + 2];
+			px_map[i + 2] = tmp;
+		}
 	}
 
 	lvgl_flush_display(&flush);

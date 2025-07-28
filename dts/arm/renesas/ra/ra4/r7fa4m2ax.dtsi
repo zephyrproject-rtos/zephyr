@@ -10,7 +10,7 @@
 #include <zephyr/dt-bindings/misc/renesas/ra-elc/ra4m2-elc.h>
 
 /delete-node/ &spi1;
-
+/delete-node/ &i3c0;
 /delete-node/ &adc1;
 
 / {

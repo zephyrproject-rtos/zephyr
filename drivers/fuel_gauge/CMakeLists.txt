@@ -7,6 +7,7 @@ add_subdirectory_ifdef(CONFIG_FUEL_GAUGE_COMPOSITE	composite)
 add_subdirectory_ifdef(CONFIG_MAX17048		max17048)
 add_subdirectory_ifdef(CONFIG_BQ27Z746		bq27z746)
 add_subdirectory_ifdef(CONFIG_FUEL_GAUGE_AXP2101	axp2101)
+add_subdirectory_ifdef(CONFIG_LC709203F		lc709203f)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE fuel_gauge_syscall_handlers.c)
 

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022-2025 Nordic Semiconductor ASA
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -2389,13 +2390,11 @@ void bt_cap_initiator_disabled(struct bt_cap_stream *cap_stream)
 		proc_param->in_progress = true;
 
 		err = bt_bap_stream_stop(next_bap_stream);
-		if (err != 0 && err != -EALREADY) {
+		if (err != 0) {
 			LOG_DBG("Failed to stop stream %p: %d", next_cap_stream, err);
 
 			bt_cap_common_abort_proc(next_bap_stream->conn, err);
 			cap_initiator_unicast_audio_proc_complete();
-		} else if (err == -EALREADY) {
-			proc_param->in_progress = false;
 		} /* else wait for server notification*/
 	}
 }
@@ -2449,13 +2448,11 @@ void bt_cap_initiator_stopped(struct bt_cap_stream *cap_stream)
 			proc_param->in_progress = true;
 
 			err = bt_bap_stream_stop(next_bap_stream);
-			if (err != 0 && err != -EALREADY) {
+			if (err != 0) {
 				LOG_DBG("Failed to stop stream %p: %d", next_cap_stream, err);
 
 				bt_cap_common_abort_proc(next_bap_stream->conn, err);
 				cap_initiator_unicast_audio_proc_complete();
-			} else if (err == -EALREADY) {
-				proc_param->in_progress = false;
 			}
 		} /* else await notification from server */
 	} else {

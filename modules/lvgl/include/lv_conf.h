@@ -9,6 +9,8 @@
 #define ZEPHYR_MODULES_LVGL_LV_CONF_H_
 
 #include <zephyr/toolchain.h>
+#include <string.h>
+#include <stdint.h>
 
 /* Memory manager settings */
 
@@ -26,9 +28,32 @@
 #define lv_free_core      lvgl_free
 #endif
 
-/* Misc settings */
+/* Stdlib wrappers */
+
+/* Needed because parameter types are not compatible */
+static __always_inline void zmemset(void *dst, uint8_t v, size_t len)
+{
+	memset(dst, v, len);
+}
+
 #define lv_snprintf               snprintf
 #define lv_vsnprintf              vsnprintf
+#define lv_memcpy                 memcpy
+#define lv_memmove                memmove
+#define lv_memset                 zmemset
+#define lv_memcmp                 memcmp
+#define lv_strdup                 strdup
+#define lv_strndup                strndup
+#define lv_strlen                 strlen
+#define lv_strnlen                strnlen
+#define lv_strcmp                 strcmp
+#define lv_strncmp                strncmp
+#define lv_strcpy                 strcpy
+#define lv_strncpy                strncpy
+#define lv_strlcpy                strlcpy
+#define lv_strcat                 strcat
+#define lv_strncat                strncat
+#define lv_strchr                 strchr
 #define LV_ASSERT_HANDLER         __ASSERT_NO_MSG(false);
 #define LV_ASSERT_HANDLER_INCLUDE "zephyr/sys/__assert.h"
 

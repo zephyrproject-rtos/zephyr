@@ -111,7 +111,7 @@
 	w25q512jvfiq: w25q512jvfiq@0 {
 		compatible = "nxp,imx-flexspi-nor";
 		reg = <0>;
-		size = <DT_SIZE_M(64 * 8)>;
+		size = <DT_SIZE_M(8 * 8)>;
 		status = "okay";
 		erase-block-size = <4096>;
 		write-block-size = <1>;
@@ -143,7 +143,7 @@
 
 			storage_partition: partition@620000 {
 				label = "storage";
-				reg = <0x00620000 (DT_SIZE_M(58) - DT_SIZE_K(128))>;
+				reg = <0x00620000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
 			};
 		};
 	};

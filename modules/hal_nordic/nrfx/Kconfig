@@ -265,6 +265,10 @@ config NRFX_LPCOMP
 	bool "LPCOMP driver"
 	depends on $(dt_nodelabel_exists,comp) && !SOC_NRF52810 && !SOC_NRF52811 && !SOC_NRF52820
 
+config NRFX_MRAMC
+	bool "MRAMC driver"
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_MRAMC))
+
 config NRFX_NFCT
 	bool "NFCT driver"
 	depends on $(dt_nodelabel_exists,nfct)
@@ -547,6 +551,11 @@ config NRFX_SPIM00
 	depends on $(dt_nodelabel_exists,spi00)
 	select NRFX_SPIM
 
+config NRFX_SPIM01
+	bool "SPIM01 driver instance"
+	depends on $(dt_nodelabel_exists,spi01)
+	select NRFX_SPIM
+
 config NRFX_SPIM20
 	bool "SPIM20 driver instance"
 	depends on $(dt_nodelabel_exists,spi20)
@@ -653,6 +662,11 @@ config NRFX_SPIS3
 config NRFX_SPIS00
 	bool "SPIS00 driver instance"
 	depends on $(dt_nodelabel_exists,spi00)
+	select NRFX_SPIS
+
+config NRFX_SPIS01
+	bool "SPIS01 driver instance"
+	depends on $(dt_nodelabel_exists,spi01)
 	select NRFX_SPIS
 
 config NRFX_SPIS20

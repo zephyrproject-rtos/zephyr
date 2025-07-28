@@ -111,7 +111,6 @@ config MINIMAL_LIBCPP
 
 config GLIBCXX_LIBCPP
 	bool "GNU C++ Standard Library"
-	depends on !NATIVE_APPLICATION
 	depends on NEWLIB_LIBC || PICOLIBC
 	select FULL_LIBCPP_SUPPORTED
 	help
@@ -120,7 +119,6 @@ config GLIBCXX_LIBCPP
 
 config LIBCXX_LIBCPP
 	bool "LLVM C++ Standard Library"
-	depends on !NATIVE_APPLICATION
 	depends on NEWLIB_LIBC
 	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "llvm"
 	select FULL_LIBCPP_SUPPORTED
@@ -131,7 +129,6 @@ config LIBCXX_LIBCPP
 
 config ARCMWDT_LIBCPP
 	bool "ARC MWDT C++ Library"
-	depends on !NATIVE_APPLICATION
 	depends on ARCMWDT_LIBC
 	help
 	  Build with ARC MetaWare C++ Standard Library provided by the ARC

@@ -193,9 +193,9 @@ menuconfig NET_LOOPBACK
 if NET_LOOPBACK
 
 config NET_LOOPBACK_SIMULATE_PACKET_DROP
-	bool "Controlable packet drop"
+	bool "Controllable packet drop"
 	help
-	  Enable interface to have a controlable packet drop rate, only for
+	  Enable interface to have a controllable packet drop rate, only for
 	  testing, should not be enabled for normal applications
 
 config NET_LOOPBACK_MTU
@@ -247,7 +247,6 @@ endif # NET_CAN
 menuconfig NET_NATIVE_OFFLOADED_SOCKETS
 	bool "Native Simulator offloaded sockets"
 	depends on ARCH_POSIX
-	depends on NATIVE_LIBRARY
 	depends on NET_SOCKETS_OFFLOAD
 	select NATIVE_USE_NSI_ERRNO
 	help

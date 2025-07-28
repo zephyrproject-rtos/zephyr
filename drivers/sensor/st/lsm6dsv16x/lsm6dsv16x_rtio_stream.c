@@ -573,8 +573,9 @@ static void lsm6dsv16x_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe
 		return;
 	}
 
-	if (data_ready->opt == SENSOR_STREAM_DATA_NOP ||
-	    data_ready->opt == SENSOR_STREAM_DATA_DROP) {
+	if (data_ready != NULL &&
+	    (data_ready->opt == SENSOR_STREAM_DATA_NOP ||
+	     data_ready->opt == SENSOR_STREAM_DATA_DROP)) {
 		uint8_t *buf;
 		uint32_t buf_len;
 
@@ -604,6 +605,8 @@ static void lsm6dsv16x_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe
 		if (!ON_I3C_BUS(config) || (I3C_INT_PIN(config))) {
 			gpio_pin_interrupt_configure_dt(irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 		}
+
+		return;
 	}
 
 	/*

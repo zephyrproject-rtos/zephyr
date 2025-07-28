@@ -129,7 +129,7 @@ static int spi_numaker_configure(const struct device *dev, const struct spi_conf
 	/* Enable the automatic hardware slave select function. Select the SS pin and configure as
 	 * low-active.
 	 */
-	if (data->ctx.num_cs_gpios != 0) {
+	if (data->ctx.num_cs_gpios == 0) {
 		SPI_EnableAutoSS(dev_cfg->spi, SPI_SS, SPI_SS_ACTIVE_LOW);
 	} else {
 		SPI_DisableAutoSS(dev_cfg->spi);

@@ -179,17 +179,13 @@ config DCDC_VALUE
 	hex "DCDC value for VDD_SOC"
 
 config INIT_ARM_PLL
+	default y
+	depends on !SOC_MIMXRT1011 && !SOC_MIMXRT1015 && \
+		   !SOC_MIMXRT1021 && !SOC_MIMXRT1024
 	bool "Initialize ARM PLL"
 
 config INIT_VIDEO_PLL
 	bool "Initialize Video PLL"
-
-config INIT_ENET_PLL
-	bool
-	help
-	  If y, the Ethernet PLL is initialized. Always enabled on e.g.
-	  MIMXRT1021 - see commit 17f4d6bec7 ("soc: nxp_imx: fix ENET_PLL selection
-	  for MIMXRT1021").
 
 config INIT_SYS_PLL
 	bool "Initialize System PLL"

@@ -6,13 +6,9 @@ MikroElektronika Stepper 19 Click
 Overview
 ********
 
-Stepper 19 Click shield has a TI DRV8424 stepper driver accessed via GPIO and
-a TI TCA9538 GPIO expander accessed via I2C. Some DRV8424 pins are accessed
+The MikroElektronika `Stepper 19 Click`_ shield has a `TI DRV8424`_ stepper driver accessed via
+GPIO and a `NXP PCA9538A`_ GPIO expander accessed via I2C. Some DRV8424 pins are accessed
 via the GPIO expander.
-The DRV8424 uses by default the work-queue timing source, but that can be changed.
-
-More information about the shield can be found at
-`Mikroe Stepper 19 click`_.
 
 .. figure:: stepper_19_click.webp
    :align: center
@@ -41,5 +37,11 @@ References
 
 .. target-notes::
 
-.. _Mikroe Stepper 19 click:
+.. _Stepper 19 Click:
    https://www.mikroe.com/stepper-19-click
+
+.. _TI DRV8424:
+   https://www.ti.com/product/DRV8424
+
+.. _NXP PCA9538A:
+   https://www.nxp.com/products/interfaces/ic-spi-i3c-interface-devices/general-purpose-i-o-gpio/low-voltage-8-bit-ic-bus-i-o-port-with-interrupt-and-reset:PCA9538A

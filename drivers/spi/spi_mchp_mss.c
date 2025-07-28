@@ -16,6 +16,13 @@
 
 LOG_MODULE_REGISTER(mss_spi, CONFIG_SPI_LOG_LEVEL);
 
+/* Is MSS SPI module 'resets' line property defined */
+#define MSS_SPI_RESET_ENABLED DT_ANY_INST_HAS_PROP_STATUS_OKAY(resets)
+
+#if MSS_SPI_RESET_ENABLED
+#include <zephyr/drivers/reset.h>
+#endif
+
 #include "spi_context.h"
 
 /* MSS SPI Register offsets */
@@ -102,6 +109,9 @@ struct mss_spi_config {
 	mm_reg_t base;
 	uint8_t clk_gen;
 	int clock_freq;
+#if MSS_SPI_RESET_ENABLED
+	struct reset_dt_spec reset_spec;
+#endif
 };
 
 struct mss_spi_transfer {
@@ -426,6 +436,12 @@ static int mss_spi_init(const struct device *dev)
 	int ret = 0;
 	uint32_t control = 0;
 
+#if MSS_SPI_RESET_ENABLED
+	if (cfg->reset_spec.dev != NULL) {
+		(void)reset_line_deassert_dt(&cfg->reset_spec);
+	}
+#endif
+
 	/* Remove SPI from Reset  */
 	control = mss_spi_read(cfg, MSS_SPI_REG_CONTROL);
 	control &= ~MSS_SPI_CONTROL_RESET;
@@ -470,6 +486,8 @@ static DEVICE_API(spi, mss_spi_driver_api) = {
 	static const struct mss_spi_config mss_spi_config_##n = {                                  \
 		.base = DT_INST_REG_ADDR(n),                                                       \
 		.clock_freq = DT_INST_PROP(n, clock_frequency),                                    \
+		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, resets),                                       \
+			(.reset_spec = RESET_DT_SPEC_INST_GET(n),))                                \
 	};                                                                                         \
                                                                                                    \
 	static struct mss_spi_data mss_spi_data_##n = {                                            \

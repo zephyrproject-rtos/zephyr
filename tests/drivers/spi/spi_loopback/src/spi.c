@@ -16,6 +16,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -56,7 +57,8 @@ static int spec_idx;
  */
 struct spi_dt_spec spec_copies[5];
 
-
+const struct gpio_dt_spec miso_pin = GPIO_DT_SPEC_GET_OR(DT_PATH(zephyr_user), miso_gpios, {});
+const struct gpio_dt_spec mosi_pin = GPIO_DT_SPEC_GET_OR(DT_PATH(zephyr_user), mosi_gpios, {});
 
 /*
  ********************
@@ -597,18 +599,17 @@ ZTEST(spi_loopback, test_nop_nil_bufs)
 	/* nothing really to check here, check is done in spi_loopback_transceive */
 }
 
-/* test using the same buffer for RX and TX will write same data back */
+/* test using the same buffer set for RX and TX will write same data back */
 ZTEST(spi_loopback, test_spi_write_back)
 {
 	struct spi_dt_spec *spec = loopback_specs[spec_idx];
-	const struct spi_buf_set tx = spi_loopback_setup_xfer(rx_bufs_pool, 1,
-							      buffer_rx, BUF_SIZE);
-	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 1,
-							      buffer_rx, BUF_SIZE);
+
+	struct spi_buf buf = {.buf = buffer_rx, .len = BUF_SIZE};
+	struct spi_buf_set set = {.buffers = &buf, .count = 1};
 
 	memcpy(buffer_rx, tx_data, sizeof(tx_data));
 
-	spi_loopback_transceive(spec, &tx, &rx);
+	spi_loopback_transceive(spec, &set, &set);
 
 	spi_loopback_compare_bufs(tx_data, buffer_rx, BUF_SIZE,
 				  buffer_print_tx, buffer_print_rx);
@@ -618,19 +619,25 @@ ZTEST(spi_loopback, test_spi_write_back)
 ZTEST(spi_loopback, test_spi_same_buf_cmd)
 {
 	struct spi_dt_spec *spec = loopback_specs[spec_idx];
-	const struct spi_buf_set tx = spi_loopback_setup_xfer(rx_bufs_pool, 2,
-							      buffer_rx, 1,
-							      NULL, BUF_SIZE - 1);
-	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 1,
-							      NULL, BUF_SIZE - 1,
-							      buffer_rx+(BUF_SIZE - 1), 1);
 
-	memcpy(buffer_rx, tx_data, sizeof(tx_data));
+	struct spi_buf buf[2] = {
+		{.buf = buffer_rx, .len = 1},
+		{.buf = buffer_rx+1, .len = BUF_SIZE - 1}
+	};
+
+	const struct spi_buf_set tx = {.buffers = buf, .count = 1};
+	const struct spi_buf_set rx = {.buffers = buf, .count = 2};
+
+	memcpy(buffer_rx, tx_data, BUF_SIZE);
 
 	spi_loopback_transceive(spec, &tx, &rx);
 
-	spi_loopback_compare_bufs(tx_data, buffer_rx, BUF_SIZE,
+	spi_loopback_compare_bufs(tx_data, buffer_rx, 1,
 				  buffer_print_tx, buffer_print_rx);
+
+	char zeros[BUF_SIZE - 1] = {0};
+
+	zassert_ok(memcmp(buffer_rx+1, zeros, BUF_SIZE - 1));
 }
 
 
@@ -831,6 +838,35 @@ ZTEST(spi_loopback, test_spi_concurrent_transfer_different_spec)
 	test_spi_concurrent_transfer_helper(specs);
 }
 
+ZTEST(spi_loopback, test_spi_deinit)
+{
+	struct spi_dt_spec *spec = loopback_specs[0];
+	const struct device *dev = spec->bus;
+	int ret;
+
+	if (miso_pin.port == NULL || mosi_pin.port == NULL) {
+		TC_PRINT("  zephyr,user miso-gpios or mosi-gpios are not defined\n");
+		ztest_test_skip();
+	}
+
+	ret = device_deinit(dev);
+	if (ret == -ENOTSUP) {
+		TC_PRINT("  device deinit not supported\n");
+		ztest_test_skip();
+	}
+
+	zassert_ok(ret);
+	zassert_ok(gpio_pin_configure_dt(&miso_pin, GPIO_INPUT));
+	zassert_ok(gpio_pin_configure_dt(&mosi_pin, GPIO_OUTPUT_INACTIVE));
+	zassert_equal(gpio_pin_get_dt(&miso_pin), 0);
+	zassert_ok(gpio_pin_set_dt(&mosi_pin, 1));
+	zassert_equal(gpio_pin_get_dt(&miso_pin), 1);
+	zassert_ok(gpio_pin_set_dt(&mosi_pin, 0));
+	zassert_equal(gpio_pin_get_dt(&miso_pin), 0);
+	zassert_ok(gpio_pin_configure_dt(&mosi_pin, GPIO_INPUT));
+	zassert_ok(device_init(dev));
+}
+
 #if (CONFIG_SPI_ASYNC)
 static struct k_poll_signal async_sig = K_POLL_SIGNAL_INITIALIZER(async_sig);
 static struct k_poll_event async_evt =
@@ -986,6 +1022,8 @@ ZTEST(spi_extra_api_features, test_spi_hold_on_cs)
 early_exit:
 	hold_spec->config.operation &= ~SPI_HOLD_ON_CS;
 	zassert_false(ret, "SPI transceive failed, code %d", ret);
+	/* if there was no error then it was meant to be a skip at this point */
+	ztest_test_skip();
 }
 
 /*

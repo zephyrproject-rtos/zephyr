@@ -183,7 +183,6 @@ a :c:enum:`pm_device_state`.
 
             OFF -> SUSPENDED ["label"="PM_DEVICE_ACTION_TURN_ON"];
             SUSPENDED -> OFF ["label"="PM_DEVICE_ACTION_TURN_OFF"];
-            ACTIVE -> OFF ["label"="PM_DEVICE_ACTION_TURN_OFF"];
         }
     }
 

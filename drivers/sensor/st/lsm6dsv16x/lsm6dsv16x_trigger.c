@@ -129,7 +129,7 @@ static int lsm6dsv16x_enable_wake_int(const struct device *dev, int enable)
 	}
 
 	if ((cfg->drdy_pin == 1) || ON_I3C_BUS(cfg)) {
-		lsm6dsv16x_pin_int_route_t val;
+		lsm6dsv16x_pin_int_route_t val = {0};
 
 		ret = lsm6dsv16x_pin_int1_route_get(ctx, &val);
 		if (ret < 0) {
@@ -141,7 +141,7 @@ static int lsm6dsv16x_enable_wake_int(const struct device *dev, int enable)
 
 		ret = lsm6dsv16x_pin_int1_route_set(ctx, &val);
 	} else {
-		lsm6dsv16x_pin_int_route_t val;
+		lsm6dsv16x_pin_int_route_t val = {0};
 
 		ret = lsm6dsv16x_pin_int2_route_get(ctx, &val);
 		if (ret < 0) {

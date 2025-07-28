@@ -237,6 +237,7 @@ struct adxl345_dev_config {
 	uint8_t bus_type;
 #ifdef CONFIG_ADXL345_TRIGGER
 	struct gpio_dt_spec interrupt;
+	bool route_to_int2;
 #endif
 };
 

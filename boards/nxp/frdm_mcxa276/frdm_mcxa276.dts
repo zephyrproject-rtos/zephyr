@@ -23,6 +23,7 @@
 		sw1 = &user_button_3;
 		watchdog0 = &wwdt0;
 		ambient-temp0 = &p3t1755;
+		die-temp0 = &temp0;
 	};
 
 	chosen {
@@ -141,6 +142,11 @@
 &lpadc0 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_lpadc0>;
+	pinctrl-names = "default";
+};
+
+&lpcmp0 {
+	pinctrl-0 = <&pinmux_lpcmp0>;
 	pinctrl-names = "default";
 };
 

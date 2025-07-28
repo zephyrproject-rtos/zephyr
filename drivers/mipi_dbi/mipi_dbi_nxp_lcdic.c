@@ -773,10 +773,12 @@ static int mipi_dbi_lcdic_init_common(const struct device *dev)
 	/* Attach the LCDIC DMA request signal to the DMA channel we will
 	 * use with hardware triggering.
 	 */
+	INPUTMUX_Init(INPUTMUX);
 	INPUTMUX_AttachSignal(INPUTMUX, data->dma_stream.channel,
 			kINPUTMUX_LcdTxRegToDmaSingleToDma0);
 	INPUTMUX_EnableSignal(INPUTMUX,
 			kINPUTMUX_Dmac0InputTriggerLcdTxRegToDmaSingleEna, true);
+	INPUTMUX_Deinit(INPUTMUX);
 #endif
 
 	return 0;

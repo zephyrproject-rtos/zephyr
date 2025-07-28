@@ -424,6 +424,17 @@
 			status = "disabled";
 		};
 
+		i3c0: i3c@4035f000 {
+			compatible = "renesas,ra-i3c";
+			#address-cells = <3>;
+			#size-cells = <0>;
+			reg = <0x4035f000 0x3e8>;
+			channel = <0>;
+			clocks = <&pclka MSTPB 4>, <&i3cclk 0 0>;
+			clock-names = "pclk", "tclk";
+			status = "disabled";
+		};
+
 		pwm0: pwm0@40322000 {
 			compatible = "renesas,ra-pwm";
 			divider = <RA_PWM_SOURCE_DIV_1>;

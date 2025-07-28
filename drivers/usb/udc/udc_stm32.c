@@ -51,7 +51,7 @@ LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
  * The following defines are used to map the value of the "maxiumum-speed"
  * DT property to the corresponding definition used by the STM32 HAL.
  */
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(USB_OTG_HS_EMB_PHY)
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || USB_OTG_HS_EMB_PHY
 #define UDC_STM32_HIGH_SPEED             USB_OTG_SPEED_HIGH_IN_FULL
 #else
 #define UDC_STM32_HIGH_SPEED             USB_OTG_SPEED_HIGH
@@ -1143,9 +1143,6 @@ static int priv_clock_enable(void)
 	LL_AHB1_GRP1_DisableClockSleep(LL_AHB1_GRP1_PERIPH_USB1OTGHSULPI);
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
 	LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_USBPHY);
-	/* Both OTG HS and USBPHY sleep clock MUST be disabled here at the same time */
-	LL_AHB2_GRP1_DisableClockStopSleep(LL_AHB2_GRP1_PERIPH_OTG_HS |
-						LL_AHB2_GRP1_PERIPH_USBPHY);
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
 	/* Reset specific configuration bits before setting new values */
 	USB1_HS_PHYC->USBPHYC_CR &= ~USB_USBPHYC_CR_FSEL_Msk;

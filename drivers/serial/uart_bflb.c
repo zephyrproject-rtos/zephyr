@@ -275,7 +275,7 @@ static int uart_bflb_pm_control(const struct device *dev,
 }
 #endif /* CONFIG_PM_DEVICE */
 
-static const struct uart_driver_api uart_bflb_driver_api = {
+static DEVICE_API(uart, uart_bflb_driver_api) = {
 	.poll_in = uart_bflb_poll_in,
 	.poll_out = uart_bflb_poll_out,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN

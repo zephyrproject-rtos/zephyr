@@ -107,7 +107,6 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 	struct in_addr dhcps_addr4;
 	struct in_addr base_addr;
 	struct in_addr netmask_addr;
-	struct wifi_iface_status status = { 0 };
 	struct wifi_ap_sta_info ap_sta_info = { 0 };
 #endif
 
@@ -286,31 +285,49 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 		s_nxp_wifi_UapActivated = true;
 		break;
 	case WLAN_REASON_UAP_CLIENT_ASSOC:
-		wlan_get_current_uap_network(&nxp_wlan_uap_network);
-#ifdef CONFIG_NXP_WIFI_11AX
-		if (nxp_wlan_uap_network.dot11ax) {
-			ap_sta_info.link_mode = WIFI_6;
-		} else
-#endif
-#ifdef CONFIG_NXP_WIFI_11AC
-			if (nxp_wlan_uap_network.dot11ac) {
-				ap_sta_info.link_mode = WIFI_5;
-		} else
-#endif
-			if (nxp_wlan_uap_network.dot11n) {
-				ap_sta_info.link_mode = WIFI_4;
-		} else {
-			ap_sta_info.link_mode = WIFI_3;
-		}
+		sta_node *con_sta_info = (sta_node *)data;
 
-		memcpy(ap_sta_info.mac, data, WIFI_MAC_ADDR_LEN);
+		if (con_sta_info->is_11n_enabled) {
+			ap_sta_info.link_mode = WIFI_4;
+		} else {
+			if (con_sta_info->bandmode == BAND_B) {
+				ap_sta_info.link_mode = WIFI_1;
+			} else {
+				uint32_t ap_channel = 0;
+
+				(void)wlan_get_uap_channel(&ap_channel);
+				if (ap_channel > 14) {
+					ap_sta_info.link_mode = WIFI_2;
+				} else {
+					ap_sta_info.link_mode = WIFI_3;
+				}
+			}
+		}
+#ifdef CONFIG_NXP_WIFI_11AC
+		if (con_sta_info->is_11ac_enabled) {
+			ap_sta_info.link_mode = WIFI_5;
+		}
+#endif
+#ifdef CONFIG_NXP_WIFI_11AX
+		if (con_sta_info->is_11ax_enabled) {
+			ap_sta_info.link_mode = WIFI_6;
+		}
+#endif
+
+#ifdef CONFIG_NXP_WIFI_11AX_TWT
+		IEEEtypes_HECap_t sta_he_cap = con_sta_info->he_cap;
+		uint8_t sta_twt_cap = sta_he_cap.he_mac_cap[0];
+
+		ap_sta_info.twt_capable = sta_twt_cap & HE_MAC_CAP_TWT_REQ_SUPPORT ? true : false;
+#endif
+
+		memcpy(ap_sta_info.mac, con_sta_info->mac_addr, WIFI_MAC_ADDR_LEN);
 		ap_sta_info.mac_length  = WIFI_MAC_ADDR_LEN;
-		ap_sta_info.twt_capable = status.twt_capable;
 
 		wifi_mgmt_raise_ap_sta_connected_event(g_uap.netif, &ap_sta_info);
 		LOG_DBG("WLAN: UAP a Client Associated");
 		LOG_DBG("Client => ");
-		print_mac((const char *)data);
+		print_mac((const char *)con_sta_info->mac_addr);
 		LOG_DBG("Associated with Soft AP");
 		break;
 	case WLAN_REASON_UAP_CLIENT_CONN:

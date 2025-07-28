@@ -46,6 +46,7 @@
 #define TFMAT_SLVMODE_MSK		BIT(2)
 #define TFMAT_DATA_MERGE_MSK		BIT(7)
 #define TFMAT_DATA_LEN_MSK		GENMASK(12, 8)
+#define TFMAT_ADDR_LEN_MSK		GENMASK(17, 16)
 
 /* Field mask of SPI transfer control register */
 #define TCTRL_RD_TCNT_OFFSET		(0)

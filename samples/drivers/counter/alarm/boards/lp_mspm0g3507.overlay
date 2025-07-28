@@ -10,7 +10,7 @@
 	};
 };
 
-&gpt0 {
+&timg0 {
 	status = "okay";
 	counter0: counter {
 		status = "okay";

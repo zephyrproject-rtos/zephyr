@@ -69,13 +69,13 @@ static int cmd_uart_read(const struct shell *sh, size_t argc, char **argv)
 		}
 		if (ret != 0 && ret != -1) {
 			shell_error(sh, "Failed to read from UART (%d)", ret);
-			break;
+			return ret;
 		}
 	}
 
 	shell_fprintf_normal(sh, "\n");
 
-	return ret;
+	return 0;
 }
 
 

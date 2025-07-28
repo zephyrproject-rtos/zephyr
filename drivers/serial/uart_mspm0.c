@@ -95,7 +95,7 @@ static void uart_mspm0_poll_out(const struct device *dev, unsigned char c)
 	DL_UART_Main_transmitDataBlocking(config->regs, c);
 }
 
-static const struct uart_driver_api uart_mspm0_driver_api = {
+static DEVICE_API(uart, uart_mspm0_driver_api) = {
 	.poll_in = uart_mspm0_poll_in,
 	.poll_out = uart_mspm0_poll_out,
 };

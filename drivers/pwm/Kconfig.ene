@@ -8,3 +8,11 @@ config PWM_ENE_KB1200
 	select PINCTRL
 	help
 	  This option enables the PWM driver for KB1200 processors.
+
+config PWM_ENE_KB106X
+	bool "ENE KB106X PWM driver"
+	default y
+	depends on DT_HAS_ENE_KB106X_PWM_ENABLED
+	select PINCTRL
+	help
+	  This option enables the PWM driver for KB106X processors.

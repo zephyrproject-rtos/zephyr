@@ -430,7 +430,7 @@ static void rfcomm_connected(struct bt_l2cap_chan *chan)
 	/* Need to include UIH header and FCS*/
 	session->mtu = MIN(session->br_chan.rx.mtu,
 			   session->br_chan.tx.mtu) -
-			   BT_RFCOMM_HDR_SIZE + BT_RFCOMM_FCS_SIZE;
+			   BT_RFCOMM_HDR_SIZE - BT_RFCOMM_FCS_SIZE;
 
 	if (session->state == BT_RFCOMM_STATE_CONNECTING) {
 		rfcomm_send_sabm(session, 0);

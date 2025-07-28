@@ -178,9 +178,6 @@ static int ieee802154_scan(uint64_t mgmt_request, struct net_if *iface,
 
 			/* Active scan sends a beacon request */
 			if (mgmt_request == NET_REQUEST_IEEE802154_ACTIVE_SCAN) {
-				net_pkt_ref(pkt);
-				net_pkt_frag_ref(pkt->buffer);
-
 				ret = ieee802154_radio_send(iface, pkt, pkt->buffer);
 				if (ret) {
 					NET_ERR("Scan request failed: could not send Beacon "
@@ -565,7 +562,6 @@ static int ieee802154_associate(uint64_t mgmt_request, struct net_if *iface,
 	 * existing PAN.
 	 */
 	if (ieee802154_radio_send(iface, pkt, pkt->buffer)) {
-		net_pkt_unref(pkt);
 		ret = -EIO;
 		k_sem_give(&ctx->scan_ctx_lock);
 		NET_ERR("Could not associate: cannot send association request");
@@ -625,6 +621,10 @@ out:
 		k_sem_give(&ctx->ctx_lock);
 	}
 
+	if (pkt) {
+		net_pkt_unref(pkt);
+	}
+
 	return ret;
 }
 
@@ -634,6 +634,7 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_ASSOCIATE,
 static int ieee802154_disassociate(uint64_t mgmt_request, struct net_if *iface,
 				   void *data, size_t len)
 {
+	int ret;
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	struct ieee802154_frame_params params = {0};
 	struct ieee802154_command *cmd;
@@ -690,8 +691,9 @@ static int ieee802154_disassociate(uint64_t mgmt_request, struct net_if *iface,
 	ieee802154_mac_cmd_finalize(
 		pkt, IEEE802154_CFI_DISASSOCIATION_NOTIFICATION);
 
-	if (ieee802154_radio_send(iface, pkt, pkt->buffer)) {
-		net_pkt_unref(pkt);
+	ret = ieee802154_radio_send(iface, pkt, pkt->buffer);
+	net_pkt_unref(pkt);
+	if (ret) {
 		NET_ERR("Could not disassociate: cannot send disassociation notification");
 		return -EIO;
 	}

@@ -176,6 +176,9 @@ static uint32_t get_clock_cycles(uint32_t clock_sel)
 		ret = 100;
 		break;
 #endif
+	default:
+		ret = 32768;
+		break;
 	}
 
 	return ret;

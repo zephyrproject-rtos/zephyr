@@ -98,7 +98,7 @@ static int uart_aesc_init(const struct device *dev)
 	return 0;
 }
 
-static const struct uart_driver_api uart_aesc_driver_api = {
+static DEVICE_API(uart, uart_aesc_driver_api) = {
 	.poll_in          = uart_aesc_poll_in,
 	.poll_out         = uart_aesc_poll_out,
 	.err_check        = NULL,

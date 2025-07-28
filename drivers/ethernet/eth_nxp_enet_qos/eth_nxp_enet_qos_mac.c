@@ -393,6 +393,10 @@ static void eth_nxp_enet_qos_phy_cb(const struct device *phy,
 
 static inline int enet_qos_dma_reset(enet_qos_t *base)
 {
+	/* Save off ENET->MAC_MDIO_ADDRESS: CR Field Prior to Reset */
+	int cr = 0;
+
+	cr = ENET_QOS_REG_GET(MAC_MDIO_ADDRESS, CR, base->MAC_MDIO_ADDRESS);
 	/* Set the software reset of the DMA */
 	base->DMA_MODE |= ENET_QOS_REG_PREP(DMA_MODE, SWR, 0b1);
 
@@ -426,6 +430,7 @@ static inline int enet_qos_dma_reset(enet_qos_t *base)
 	return -EIO;
 
 done:
+	base->MAC_MDIO_ADDRESS = ENET_QOS_REG_PREP(MAC_MDIO_ADDRESS, CR, cr);
 	return 0;
 }
 
@@ -641,13 +646,17 @@ static int eth_nxp_enet_qos_mac_init(const struct device *dev)
 		return ret;
 	}
 
-	if (config->mac_addr_source == NXP_ENET_QOS_MAC_ADDR_SOURCE_LOCAL) {
-		/* Use the mac address provided in the devicetree */
-	} else if (config->mac_addr_source == NXP_ENET_QOS_MAC_ADDR_SOURCE_UNIQUE) {
+	switch (config->mac_addr_source) {
+	case NXP_ENET_QOS_MAC_ADDR_SOURCE_RANDOM:
+		gen_random_mac(data->mac_addr.addr, NXP_OUI_BYTE_0, NXP_OUI_BYTE_1, NXP_OUI_BYTE_2);
+		break;
+
+	case NXP_ENET_QOS_MAC_ADDR_SOURCE_UNIQUE:
 		nxp_enet_unique_mac(data->mac_addr.addr);
-	} else {
-		gen_random_mac(data->mac_addr.addr,
-			       NXP_OUI_BYTE_0, NXP_OUI_BYTE_1, NXP_OUI_BYTE_2);
+		break;
+
+	default:
+		break;
 	}
 
 	/* This driver cannot work without interrupts. */
@@ -776,12 +785,12 @@ static const struct ethernet_api api_funcs = {
 		     "MAC address not specified on ENET QOS DT node");
 
 #define NXP_ENET_QOS_MAC_ADDR_SOURCE(n)                                                            \
-	COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(n), local_mac_address),		\
-			(NXP_ENET_QOS_MAC_ADDR_SOURCE_LOCAL),					\
-	(COND_CODE_1(DT_INST_PROP(n, zephyr_random_mac_address),			\
-			(NXP_ENET_QOS_MAC_ADDR_SOURCE_RANDOM),					\
-	(COND_CODE_1(DT_INST_PROP(n, nxp_unique_mac),	\
-			(NXP_ENET_QOS_MAC_ADDR_SOURCE_UNIQUE),	\
+	COND_CODE_1(DT_INST_PROP(n, zephyr_random_mac_address),					   \
+			(NXP_ENET_QOS_MAC_ADDR_SOURCE_RANDOM),					   \
+	(COND_CODE_1(DT_INST_PROP(n, nxp_unique_mac),						   \
+			(NXP_ENET_QOS_MAC_ADDR_SOURCE_UNIQUE),					   \
+	(COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(n), local_mac_address),			   \
+			(NXP_ENET_QOS_MAC_ADDR_SOURCE_LOCAL),					   \
 	(NXP_ENET_QOS_MAC_ADDR_SOURCE_INVALID))))))
 
 #define NXP_ENET_QOS_CONNECT_IRQS(node_id, prop, idx)                                              \

@@ -28,7 +28,7 @@ int main(void)
 {
 	uint32_t pulse_widths[ARRAY_SIZE(pwm_leds)];
 	uint32_t steps[ARRAY_SIZE(pwm_leds)];
-	uint8_t dir = 1U;
+	uint8_t dirs[ARRAY_SIZE(pwm_leds)];
 	int ret;
 
 	printk("PWM-based LED fade. Found %d LEDs\n", ARRAY_SIZE(pwm_leds));
@@ -36,6 +36,7 @@ int main(void)
 	for (size_t i = 0; i < ARRAY_SIZE(pwm_leds); i++) {
 		pulse_widths[i] = 0;
 		steps[i] = pwm_leds[i].period / NUM_STEPS;
+		dirs[i] = 1U;
 		if (!pwm_is_ready_dt(&pwm_leds[i])) {
 			printk("Error: PWM device %s is not ready\n", pwm_leds[i].dev->name);
 			return 0;
@@ -51,17 +52,17 @@ int main(void)
 			printk("LED %d: Using pulse width %d%%\n", i,
 			       100 * pulse_widths[i] / pwm_leds[i].period);
 
-			if (dir) {
+			if (dirs[i] == 1) {
 				if (pulse_widths[i] + steps[i] >= pwm_leds[i].period) {
 					pulse_widths[i] = pwm_leds[i].period;
-					dir = 0U;
+					dirs[i] = 0U;
 				} else {
 					pulse_widths[i] += steps[i];
 				}
 			} else {
 				if (pulse_widths[i] <= steps[i]) {
 					pulse_widths[i] = 0;
-					dir = 1U;
+					dirs[i] = 1U;
 				} else {
 					pulse_widths[i] -= steps[i];
 				}

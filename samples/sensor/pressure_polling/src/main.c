@@ -9,9 +9,6 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/sensor.h>
 #include <stdio.h>
-#include <zephyr/logging/log.h>
-
-LOG_MODULE_REGISTER(PRESSURE_POLLING, CONFIG_SENSOR_LOG_LEVEL);
 
 /*
  * Get a device structure from a devicetree node from alias
@@ -35,6 +32,7 @@ static const struct device *get_pressure_sensor_device(void)
 int main(void)
 {
 	const struct device *dev = get_pressure_sensor_device();
+	int ret;
 
 	if (dev == NULL) {
 		return 0;
@@ -43,19 +41,24 @@ int main(void)
 	struct sensor_value temperature;
 	struct sensor_value altitude;
 
-	LOG_INF("Starting pressure and altitude polling sample.\n");
+	printk("Starting pressure, temperature and altitude polling sample.\n");
 
 	while (1) {
 		if (sensor_sample_fetch_chan(dev, SENSOR_CHAN_ALL) == 0) {
 			sensor_channel_get(dev, SENSOR_CHAN_PRESS, &pressure);
 			sensor_channel_get(dev, SENSOR_CHAN_AMBIENT_TEMP, &temperature);
-			sensor_channel_get(dev, SENSOR_CHAN_ALTITUDE, &altitude);
+			ret = sensor_channel_get(dev, SENSOR_CHAN_ALTITUDE, &altitude);
 
-			LOG_INF("temp %.2f Cel, pressure %f kPa, altitude %f m",
-				sensor_value_to_double(&temperature),
-				sensor_value_to_double(&pressure),
-				sensor_value_to_double(&altitude));
+			printk("temp %.2f Cel, pressure %f kPa",
+			       sensor_value_to_double(&temperature),
+			       sensor_value_to_double(&pressure));
+			if (ret == 0) {
+				printk(", altitude %f m", sensor_value_to_double(&altitude));
+			}
+			printk("\n");
 		}
+
+		k_msleep(1000);
 	}
 	return 0;
 }

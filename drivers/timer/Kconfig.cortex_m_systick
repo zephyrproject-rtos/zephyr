@@ -45,6 +45,7 @@ config CORTEX_M_SYSTICK_64BIT_CYCLE_COUNTER
 
 choice CORTEX_M_SYSTICK_LPM_TIMER
 	prompt "SysTick companion low-power mode timer"
+	depends on CORTEX_M_SYSTICK
 	# If all dependencies are enabled, and /chosen/cortex-m-idle-timer
 	# is enabled, default to using the Counter API-based LPM timer.
 	# Otherwise, the first choice (LPM_TIMER_NONE) will be selected

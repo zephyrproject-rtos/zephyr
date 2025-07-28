@@ -65,6 +65,92 @@ LOG_MODULE_REGISTER(flash_stm32_qspi, CONFIG_FLASH_LOG_LEVEL);
 /* In dual-flash mode, total size is twice the size of one flash component */
 #define STM32_QSPI_DOUBLE_FLASH	DT_PROP(DT_NODELABEL(quadspi), dual_flash)
 
+#if STM32_QSPI_DOUBLE_FLASH
+#define FLASH_REG_FMT "%04x"
+#else
+#define FLASH_REG_FMT "%02x"
+#endif /* STM32_QSPI_DOUBLE_FLASH */
+
+/*
+ * A register of the flash device, such as a status register.
+ *
+ * When dual-flash mode is enabled, this structure contains the value of the actual register of both
+ * flash memories. For example, if an instance of this structure is used to hold the value of the
+ * status register, 'flash0_val' and 'flash1_val' will be equal respectively to the value of the
+ * status register of the first and second flash memory.
+ *
+ * This structure is packed as it is directly sent/received over the QSPI bus.
+ */
+struct flash_reg {
+	uint8_t flash0_val;
+#if STM32_QSPI_DOUBLE_FLASH
+	uint8_t flash1_val;
+#endif /* STM32_QSPI_DOUBLE_FLASH */
+} __packed;
+
+/*
+ * Sets a bit in a flash register.
+ *
+ * In dual-flash mode, the value is updated for both flash memories.
+ */
+static inline void flash_reg_set_for_all(struct flash_reg *reg, uint8_t bitmask)
+{
+	reg->flash0_val |= bitmask;
+#if STM32_QSPI_DOUBLE_FLASH
+	reg->flash1_val |= bitmask;
+#endif /* STM32_QSPI_DOUBLE_FLASH */
+}
+
+/*
+ * Checks if a bit is set in a flash register.
+ *
+ * In dual-flash mode, this routine returns true if and only if the bit is set for both flash
+ * memories.
+ */
+static inline bool flash_reg_is_set_for_all(struct flash_reg *reg, uint8_t bitmask)
+{
+	bool is_set = (reg->flash0_val & bitmask) != 0U;
+
+#if STM32_QSPI_DOUBLE_FLASH
+	is_set = is_set && ((reg->flash1_val & bitmask) != 0U);
+#endif /* STM32_QSPI_DOUBLE_FLASH */
+
+	return is_set;
+}
+
+/*
+ * Checks if a bit is clear in a flash register.
+ *
+ * In dual-flash mode, this routine returns true if and only if the bit is clear for both flash
+ * memories.
+ */
+static inline bool flash_reg_is_clear_for_all(struct flash_reg *reg, uint8_t bitmask)
+{
+	bool is_clear = (reg->flash0_val & bitmask) == 0U;
+
+#if STM32_QSPI_DOUBLE_FLASH
+	is_clear = is_clear && ((reg->flash1_val & bitmask) == 0U);
+#endif /* STM32_QSPI_DOUBLE_FLASH */
+
+	return is_clear;
+}
+
+/*
+ * Gets the raw representation of a flash register, as a uint16_t value where the lower byte is the
+ * value for the first flash memory and the upper byte is the value for the second flash memory, if
+ * any.
+ */
+static inline uint16_t flash_reg_to_raw(const struct flash_reg *reg)
+{
+	uint16_t raw = reg->flash0_val;
+
+#if STM32_QSPI_DOUBLE_FLASH
+	raw |= reg->flash1_val << 8;
+#endif /* STM32_QSPI_DOUBLE_FLASH */
+
+	return raw;
+}
+
 #if STM32_QSPI_USE_DMA
 static const uint32_t table_m_size[] = {
 	LL_DMA_MDATAALIGN_BYTE,
@@ -387,12 +473,26 @@ static int qspi_write_unprotect(const struct device *dev)
 static int qspi_read_sfdp(const struct device *dev, off_t addr, void *data,
 			  size_t size)
 {
+	int ret = 0;
 	struct flash_stm32_qspi_data *dev_data = dev->data;
 	HAL_StatusTypeDef hal_ret;
 
 	__ASSERT(data != NULL, "null destination");
 
 	LOG_INF("Reading SFDP");
+
+#if STM32_QSPI_DOUBLE_FLASH
+	/*
+	 * In dual flash mode, reading the SFDP table would cause the parameters from both flash
+	 * memories to be read (first byte read would be the first SFDP byte from the first flash,
+	 * second byte read would be the first SFDP byte from the second flash, ...). Both flash
+	 * memories are expected to be identical so to have identical SFDP. Therefore, the dual
+	 * flash mode is disabled during the reading to obtain the SFDP from a single flash memory
+	 * only.
+	 */
+	MODIFY_REG(dev_data->hqspi.Instance->CR, QUADSPI_CR_DFM, QSPI_DUALFLASH_DISABLE);
+	LOG_DBG("Dual flash mode disabled while reading SFDP");
+#endif /* STM32_QSPI_DOUBLE_FLASH */
 
 	QSPI_CommandTypeDef cmd = {
 		.Instruction = JESD216_CMD_READ_SFDP,
@@ -409,19 +509,27 @@ static int qspi_read_sfdp(const struct device *dev, off_t addr, void *data,
 				   HAL_QSPI_TIMEOUT_DEFAULT_VALUE);
 	if (hal_ret != HAL_OK) {
 		LOG_ERR("%d: Failed to send SFDP instruction", hal_ret);
-		return -EIO;
+		ret = -EIO;
+		goto end;
 	}
 
 	hal_ret = HAL_QSPI_Receive(&dev_data->hqspi, (uint8_t *)data,
 				   HAL_QSPI_TIMEOUT_DEFAULT_VALUE);
 	if (hal_ret != HAL_OK) {
 		LOG_ERR("%d: Failed to read SFDP", hal_ret);
-		return -EIO;
+		ret = -EIO;
+		goto end;
 	}
 
 	dev_data->cmd_status = 0;
 
-	return 0;
+end:
+#if STM32_QSPI_DOUBLE_FLASH
+	/* Re-enable the dual flash mode */
+	MODIFY_REG(dev_data->hqspi.Instance->CR, QUADSPI_CR_DFM, QSPI_DUALFLASH_ENABLE);
+#endif /* dual_flash */
+
+	return ret;
 }
 
 static bool qspi_address_is_valid(const struct device *dev, off_t addr,
@@ -558,20 +666,95 @@ end:
 	return ret;
 }
 
-static int qspi_wait_until_ready(const struct device *dev)
+static int qspi_read_status_register(const struct device *dev, uint8_t reg_num,
+				     struct flash_reg *reg)
 {
-	uint8_t reg;
-	int ret;
-
 	QSPI_CommandTypeDef cmd = {
-		.Instruction = SPI_NOR_CMD_RDSR,
 		.InstructionMode = QSPI_INSTRUCTION_1_LINE,
 		.DataMode = QSPI_DATA_1_LINE,
 	};
 
+	switch (reg_num) {
+	case 1U:
+		cmd.Instruction = SPI_NOR_CMD_RDSR;
+		break;
+	case 2U:
+		cmd.Instruction = SPI_NOR_CMD_RDSR2;
+		break;
+	case 3U:
+		cmd.Instruction = SPI_NOR_CMD_RDSR3;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return qspi_read_access(dev, &cmd, (uint8_t *)reg, sizeof(*reg));
+}
+
+static int qspi_write_status_register(const struct device *dev, uint8_t reg_num,
+				      struct flash_reg *reg)
+{
+	struct flash_stm32_qspi_data *dev_data = dev->data;
+	size_t size;
+	struct flash_reg regs[4] = {0};
+	struct flash_reg *regs_p;
+	int ret;
+
+	QSPI_CommandTypeDef cmd = {
+		.Instruction = SPI_NOR_CMD_WRSR,
+		.InstructionMode = QSPI_INSTRUCTION_1_LINE,
+		.DataMode = QSPI_DATA_1_LINE,
+	};
+
+	if (reg_num == 1U) {
+		size = sizeof(struct flash_reg);
+		memcpy(&regs[0], reg, sizeof(struct flash_reg));
+		regs_p = &regs[0];
+		/* 1 byte write clears SR2, write SR2 as well */
+		if (dev_data->qer_type == JESD216_DW15_QER_S2B1v1) {
+			ret = qspi_read_status_register(dev, 2, &regs[1]);
+			if (ret < 0) {
+				return ret;
+			}
+			size += sizeof(struct flash_reg);
+		}
+	} else if (reg_num == 2U) {
+		cmd.Instruction = SPI_NOR_CMD_WRSR2;
+		size = sizeof(struct flash_reg);
+		memcpy(&regs[1], reg, sizeof(struct flash_reg));
+		regs_p = &regs[1];
+		/* if SR2 write needs SR1 */
+		if ((dev_data->qer_type == JESD216_DW15_QER_VAL_S2B1v1) ||
+		    (dev_data->qer_type == JESD216_DW15_QER_VAL_S2B1v4) ||
+		    (dev_data->qer_type == JESD216_DW15_QER_VAL_S2B1v5)) {
+			ret = qspi_read_status_register(dev, 1, &regs[0]);
+			if (ret < 0) {
+				return ret;
+			}
+			cmd.Instruction = SPI_NOR_CMD_WRSR;
+			size += sizeof(struct flash_reg);
+			regs_p = &regs[0];
+		}
+	} else if (reg_num == 3U) {
+		cmd.Instruction = SPI_NOR_CMD_WRSR3;
+		size = sizeof(struct flash_reg);
+		memcpy(&regs[2], reg, sizeof(struct flash_reg));
+		regs_p = &regs[2];
+	} else {
+		return -EINVAL;
+	}
+
+	return qspi_write_access(dev, &cmd, (uint8_t *)regs_p, size);
+}
+
+static int qspi_wait_until_ready(const struct device *dev)
+{
+	struct flash_reg reg;
+	int ret;
+
 	do {
-		ret = qspi_read_access(dev, &cmd, &reg, sizeof(reg));
-	} while (!ret && (reg & SPI_NOR_WIP_BIT));
+		ret = qspi_read_status_register(dev, 1, &reg);
+	} while (!ret && !flash_reg_is_clear_for_all(&reg, SPI_NOR_WIP_BIT));
 
 	return ret;
 }
@@ -580,6 +763,7 @@ static int flash_stm32_qspi_write(const struct device *dev, off_t addr,
 				  const void *data, size_t size)
 {
 	int ret = 0;
+	size_t page_size = SPI_NOR_PAGE_SIZE << STM32_QSPI_DOUBLE_FLASH;
 
 	if (!qspi_address_is_valid(dev, addr, size)) {
 		LOG_DBG("Error: address or size exceeds expected values: "
@@ -624,15 +808,13 @@ static int flash_stm32_qspi_write(const struct device *dev, off_t addr,
 		size_t to_write = size;
 
 		/* Don't write more than a page. */
-		if (to_write >= SPI_NOR_PAGE_SIZE) {
-			to_write = SPI_NOR_PAGE_SIZE;
+		if (to_write >= page_size) {
+			to_write = page_size;
 		}
 
 		/* Don't write across a page boundary */
-		if (((addr + to_write - 1U) / SPI_NOR_PAGE_SIZE)
-		    != (addr / SPI_NOR_PAGE_SIZE)) {
-			to_write = SPI_NOR_PAGE_SIZE -
-						(addr % SPI_NOR_PAGE_SIZE);
+		if (((addr + to_write - 1U) / page_size) != (addr / page_size)) {
+			to_write = page_size - (addr % page_size);
 		}
 
 		ret = qspi_send_cmd(dev, &cmd_write_en);
@@ -1010,7 +1192,7 @@ static int setup_pages_layout(const struct device *dev)
 		return -ENOTSUP;
 	}
 
-	uint32_t erase_size = BIT(exp) << STM32_QSPI_DOUBLE_FLASH;
+	uint32_t erase_size = BIT(exp);
 
 	/* We need layout page size to be compatible with erase size */
 	if ((layout_page_size % erase_size) != 0) {
@@ -1066,88 +1248,9 @@ static int qspi_program_addr_4b(const struct device *dev, bool write_enable)
 	return qspi_send_cmd(dev, &cmd);
 }
 
-static int qspi_read_status_register(const struct device *dev, uint8_t reg_num, uint8_t *reg)
-{
-	QSPI_CommandTypeDef cmd = {
-		.InstructionMode = QSPI_INSTRUCTION_1_LINE,
-		.DataMode = QSPI_DATA_1_LINE,
-	};
-
-	switch (reg_num) {
-	case 1U:
-		cmd.Instruction = SPI_NOR_CMD_RDSR;
-		break;
-	case 2U:
-		cmd.Instruction = SPI_NOR_CMD_RDSR2;
-		break;
-	case 3U:
-		cmd.Instruction = SPI_NOR_CMD_RDSR3;
-		break;
-	default:
-		return -EINVAL;
-	}
-
-	return qspi_read_access(dev, &cmd, reg, sizeof(*reg));
-}
-
-static int qspi_write_status_register(const struct device *dev, uint8_t reg_num, uint8_t reg)
-{
-	struct flash_stm32_qspi_data *dev_data = dev->data;
-	size_t size;
-	uint8_t regs[4] = { 0 };
-	uint8_t *regs_p;
-	int ret;
-
-	QSPI_CommandTypeDef cmd = {
-		.Instruction = SPI_NOR_CMD_WRSR,
-		.InstructionMode = QSPI_INSTRUCTION_1_LINE,
-		.DataMode = QSPI_DATA_1_LINE,
-	};
-
-	if (reg_num == 1) {
-		size = 1U;
-		regs[0] = reg;
-		regs_p = &regs[0];
-		/* 1 byte write clears SR2, write SR2 as well */
-		if (dev_data->qer_type == JESD216_DW15_QER_S2B1v1) {
-			ret = qspi_read_status_register(dev, 2, &regs[1]);
-			if (ret < 0) {
-				return ret;
-			}
-			size = 2U;
-		}
-	} else if (reg_num == 2) {
-		cmd.Instruction = SPI_NOR_CMD_WRSR2;
-		size = 1U;
-		regs[1] = reg;
-		regs_p = &regs[1];
-		/* if SR2 write needs SR1 */
-		if ((dev_data->qer_type == JESD216_DW15_QER_VAL_S2B1v1) ||
-		    (dev_data->qer_type == JESD216_DW15_QER_VAL_S2B1v4) ||
-		    (dev_data->qer_type == JESD216_DW15_QER_VAL_S2B1v5)) {
-			ret = qspi_read_status_register(dev, 1, &regs[0]);
-			if (ret < 0) {
-				return ret;
-			}
-			cmd.Instruction = SPI_NOR_CMD_WRSR;
-			size = 2U;
-			regs_p = &regs[0];
-		}
-	} else if (reg_num == 3) {
-		cmd.Instruction = SPI_NOR_CMD_WRSR3;
-		size = 1U;
-		regs[2] = reg;
-		regs_p = &regs[2];
-	} else {
-		return -EINVAL;
-	}
-
-	return qspi_write_access(dev, &cmd, regs_p, size);
-}
-
 static int qspi_write_enable(const struct device *dev)
 {
-	uint8_t reg;
+	struct flash_reg reg;
 	int ret;
 
 	ret = qspi_send_cmd(dev, &cmd_write_en);
@@ -1157,7 +1260,7 @@ static int qspi_write_enable(const struct device *dev)
 
 	do {
 		ret = qspi_read_status_register(dev, 1U, &reg);
-	} while (!ret && !(reg & SPI_NOR_WEL_BIT));
+	} while (!ret && !flash_reg_is_set_for_all(&reg, SPI_NOR_WEL_BIT));
 
 	return ret;
 }
@@ -1167,7 +1270,7 @@ static int qspi_program_quad_io(const struct device *dev)
 	struct flash_stm32_qspi_data *data = dev->data;
 	uint8_t qe_reg_num;
 	uint8_t qe_bit;
-	uint8_t reg;
+	struct flash_reg reg;
 	int ret;
 
 	switch (data->qer_type) {
@@ -1202,18 +1305,18 @@ static int qspi_program_quad_io(const struct device *dev)
 	}
 
 	/* exit early if QE bit is already set */
-	if ((reg & qe_bit) != 0U) {
+	if (flash_reg_is_set_for_all(&reg, qe_bit)) {
 		return 0;
 	}
 
-	reg |= qe_bit;
+	flash_reg_set_for_all(&reg, qe_bit);
 
 	ret = qspi_write_enable(dev);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = qspi_write_status_register(dev, qe_reg_num, reg);
+	ret = qspi_write_status_register(dev, qe_reg_num, &reg);
 	if (ret < 0) {
 		return ret;
 	}
@@ -1229,8 +1332,9 @@ static int qspi_program_quad_io(const struct device *dev)
 		return ret;
 	}
 
-	if ((reg & qe_bit) == 0U) {
-		LOG_ERR("Status Register %u [0x%02x] not set", qe_reg_num, reg);
+	if (!flash_reg_is_set_for_all(&reg, qe_bit)) {
+		LOG_ERR("Status Register %u [0x" FLASH_REG_FMT "] not set", qe_reg_num,
+			flash_reg_to_raw(&reg));
 		return -EIO;
 	}
 
@@ -1260,13 +1364,20 @@ static int spi_nor_process_bfp(const struct device *dev,
 	memset(data->erase_types, 0, sizeof(data->erase_types));
 	for (uint8_t ti = 1; ti <= ARRAY_SIZE(data->erase_types); ++ti) {
 		if (jesd216_bfp_erase(bfp, ti, etp) == 0) {
+			/* In dual-flash mode, the erase size is doubled since each erase operation
+			 * is executed on both flash memories.
+			 */
+			if (IS_ENABLED(STM32_QSPI_DOUBLE_FLASH)) {
+				etp->exp++;
+			}
+
 			LOG_DBG("Erase %u with %02x",
 					(uint32_t)BIT(etp->exp), etp->cmd);
 		}
 		++etp;
 	}
 
-	data->page_size = jesd216_bfp_page_size(php, bfp);
+	data->page_size = jesd216_bfp_page_size(php, bfp) << STM32_QSPI_DOUBLE_FLASH;
 
 	LOG_DBG("Page size %u bytes", data->page_size);
 	LOG_DBG("Flash size %u bytes", flash_size);
@@ -1380,10 +1491,29 @@ static int flash_stm32_qspi_send_reset(const struct device *dev)
 {
 	QSPI_CommandTypeDef cmd = {
 		.Instruction = SPI_NOR_CMD_RESET_EN,
-		.InstructionMode = QSPI_INSTRUCTION_1_LINE,
+		.InstructionMode = QSPI_INSTRUCTION_4_LINES
 	};
 	int ret;
 
+	/*
+	 * The device might be in SPI or QPI mode, so to ensure the device is properly reset send
+	 * the reset commands in both QPI and SPI modes.
+	 */
+	ret = qspi_send_cmd(dev, &cmd);
+	if (ret != 0) {
+		LOG_ERR("%d: Failed to send RESET_EN", ret);
+		return ret;
+	}
+
+	cmd.Instruction = SPI_NOR_CMD_RESET_MEM;
+	ret = qspi_send_cmd(dev, &cmd);
+	if (ret != 0) {
+		LOG_ERR("%d: Failed to send RESET_MEM", ret);
+		return ret;
+	}
+
+	cmd.Instruction = SPI_NOR_CMD_RESET_EN;
+	cmd.InstructionMode = QSPI_INSTRUCTION_1_LINE;
 	ret = qspi_send_cmd(dev, &cmd);
 	if (ret != 0) {
 		LOG_ERR("%d: Failed to send RESET_EN", ret);
@@ -1510,19 +1640,22 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	dev_data->hqspi.Init.ClockPrescaler = prescaler;
 	/* Give a bit position from 0 to 31 to the HAL init minus 1 for the DCR1 reg */
 	dev_data->hqspi.Init.FlashSize = find_lsb_set(dev_cfg->flash_size) - 2;
-#if DT_PROP(DT_NODELABEL(quadspi), dual_flash) && defined(QUADSPI_CR_DFM)
+#if STM32_QSPI_DOUBLE_FLASH
+	dev_data->hqspi.Init.SampleShifting = QSPI_SAMPLE_SHIFTING_HALFCYCLE;
+	dev_data->hqspi.Init.ChipSelectHighTime = QSPI_CS_HIGH_TIME_3_CYCLE;
+	dev_data->hqspi.Init.DualFlash = QSPI_DUALFLASH_ENABLE;
+
 	/*
 	 * When the DTS has <dual-flash>, it means Dual Flash Mode
 	 * Even in DUAL flash config, the SDFP is read from one single quad-NOR
 	 * else the magic nb is wrong (0x46465353)
-	 * That means that the Dual Flash config is set after the SFDP sequence
+	 * So configure the driver to read from the first flash when dual flash
+	 * mode is temporarily disabled. Note that if BK2_NCS is not connected,
+	 * it is not possible to read from the second flash when dual flash mode
+	 * is disabled.
 	 */
-	dev_data->hqspi.Init.SampleShifting = QSPI_SAMPLE_SHIFTING_HALFCYCLE;
-	dev_data->hqspi.Init.ChipSelectHighTime = QSPI_CS_HIGH_TIME_3_CYCLE;
-	dev_data->hqspi.Init.DualFlash = QSPI_DUALFLASH_DISABLE;
-	/* Set Dual Flash Mode only on MemoryMapped */
 	dev_data->hqspi.Init.FlashID = QSPI_FLASH_ID_1;
-#endif /* dual_flash */
+#endif /* STM32_QSPI_DOUBLE_FLASH */
 
 	HAL_QSPI_Init(&dev_data->hqspi);
 
@@ -1623,16 +1756,6 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	LOG_DBG("Write Un-protected");
 
 #ifdef CONFIG_STM32_MEMMAP
-#if DT_PROP(DT_NODELABEL(quadspi), dual_flash) && defined(QUADSPI_CR_DFM)
-	/*
-	 * When the DTS has dual_flash, it means Dual Flash Mode for Memory MAPPED
-	 * Force Dual Flash mode now, after the SFDP sequence which is reading
-	 * one quad-NOR only
-	 */
-	MODIFY_REG(dev_data->hqspi.Instance->CR, (QUADSPI_CR_DFM), QSPI_DUALFLASH_ENABLE);
-	LOG_DBG("Dual Flash Mode");
-#endif /* dual_flash */
-
 	ret = stm32_qspi_set_memory_mapped(dev);
 	if (ret != 0) {
 		LOG_ERR("Failed to enable memory-mapped mode: %d", ret);

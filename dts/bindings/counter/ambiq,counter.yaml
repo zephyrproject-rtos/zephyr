@@ -5,4 +5,4 @@ description: Ambiq Timer/Counter
 
 compatible: "ambiq,counter"
 
-include: [base.yaml]
+include: base.yaml

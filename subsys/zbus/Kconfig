@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig ZBUS
-	bool "Zbus support"
+	bool "ZBus support"
 	depends on MULTITHREADING
 	help
 	  Enables support for Zephyr message bus.
@@ -101,7 +101,7 @@ config ZBUS_PRIORITY_BOOST
 	  to determine a temporary publisher priority.
 
 config ZBUS_ASSERT_MOCK
-	bool "Zbus assert mock for test purposes."
+	bool "ZBus assert mock for test purposes."
 	help
 	  This configuration enables the developer to change the _ZBUS_ASSERT behavior. When this configuration is
 	  enabled, _ZBUS_ASSERT returns -EFAULT instead of assert. It makes it more straightforward to test invalid
@@ -109,11 +109,17 @@ config ZBUS_ASSERT_MOCK
 
 
 config HEAP_MEM_POOL_ADD_SIZE_ZBUS
-	int
+	int "ZBus requested heap pool size."
 	default 2048 if ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC && !ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_DYNAMIC
 	default 1024 if !ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC && ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_DYNAMIC
 	default 3072 if ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC && ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_DYNAMIC
-
+	default 0
+	help
+	  Configures the available heap memory pool for ZBus.
+	  The heap is used for various ZBus operations (especially required for dynamic buffer allocation for
+	  message subscribers and runtime observers).
+	  In case of dynamic net buffer allocation the heap must fit all data distributed via message subscribers.
+	  Can be set manual, if more heap is required, or default heap size is too big for the soc.
 
 module = ZBUS
 module-str = zbus

@@ -283,6 +283,11 @@ static void bt_a2dp_media_data_callback(struct bt_avdtp_sep *sep, struct net_buf
 	stream = ep->stream;
 	media_hdr = net_buf_pull_mem(buf, sizeof(*media_hdr));
 
+	if (stream->ops == NULL || stream->ops->recv == NULL) {
+		LOG_WRN("No recv callback registered for stream");
+		return;
+	}
+
 	stream->ops->recv(stream, buf, sys_be16_to_cpu(media_hdr->sequence_number),
 			  sys_be32_to_cpu(media_hdr->time_stamp));
 }
@@ -401,9 +406,6 @@ static int bt_a2dp_set_config_cb(struct bt_avdtp_req *req, struct net_buf *buf)
 	struct bt_a2dp_stream_ops *ops;
 
 	ep = CONTAINER_OF(a2dp->set_config_param.sep, struct bt_a2dp_ep, sep);
-	if (ep->stream == NULL) {
-		return -EINVAL;
-	}
 
 	if ((ep->stream == NULL) || (SET_CONF_REQ(req) != &a2dp->set_config_param)) {
 		return -EINVAL;

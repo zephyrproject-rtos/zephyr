@@ -1537,7 +1537,7 @@ static int ascs_ep_set_codec(struct bt_bap_ep *ep, uint8_t id, uint16_t cid, uin
 
 static int ase_config(struct bt_ascs_ase *ase, const struct bt_ascs_config *cfg)
 {
-	struct bt_bap_stream *stream;
+	struct bt_bap_stream *stream = NULL;
 	struct bt_audio_codec_cfg codec_cfg;
 	struct bt_bap_ascs_rsp rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_SUCCESS,
 						     BT_BAP_ASCS_REASON_NONE);
@@ -1603,6 +1603,7 @@ static int ase_config(struct bt_ascs_ase *ase, const struct bt_ascs_config *cfg)
 		err = -ENOTSUP;
 		rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED, BT_BAP_ASCS_REASON_NONE);
 	} else if (ase->ep.stream != NULL) {
+		stream = ase->ep.stream;
 		if (unicast_server_cb->reconfig != NULL) {
 			err = unicast_server_cb->reconfig(ase->ep.stream, ase->ep.dir,
 							  &ase->ep.codec_cfg, &ase->ep.qos_pref,
@@ -1624,7 +1625,6 @@ static int ase_config(struct bt_ascs_ase *ase, const struct bt_ascs_config *cfg)
 				err = -EINVAL;
 			}
 
-			stream = ase->ep.stream;
 			ascs_app_rsp_warn_valid(&rsp);
 		}
 	} else {

@@ -542,6 +542,14 @@ static void spi_stm32_complete(const struct device *dev, int status)
 
 	if (!(data->ctx.config->operation & SPI_HOLD_ON_CS)) {
 		ll_func_disable_spi(spi);
+#if defined(CONFIG_SPI_STM32_INTERRUPT) && defined(CONFIG_SOC_SERIES_STM32H7X)
+	} else {
+		/* On H7, with SPI still enabled, the ISR is always called, even if the interrupt
+		 * enable register is cleared.
+		 * As a workaround, disable the IRQ at NVIC level.
+		 */
+		irq_disable(cfg->irq_line);
+#endif /* CONFIG_SPI_STM32_INTERRUPT && CONFIG_SOC_SERIES_STM32H7X */
 	}
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
@@ -961,6 +969,10 @@ static int transceive(const struct device *dev,
 
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 
+#if defined(CONFIG_SPI_STM32_INTERRUPT) && defined(CONFIG_SOC_SERIES_STM32H7X)
+	/* Make sure IRQ is disabled to avoid any spurious IRQ to happen */
+	irq_disable(cfg->irq_line);
+#endif  /* CONFIG_SPI_STM32_INTERRUPT && CONFIG_SOC_SERIES_STM32H7X */
 	LL_SPI_Enable(spi);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
@@ -1003,6 +1015,10 @@ static int transceive(const struct device *dev,
 	}
 
 	ll_func_enable_int_tx_empty(spi);
+
+#if defined(CONFIG_SPI_STM32_INTERRUPT) && defined(CONFIG_SOC_SERIES_STM32H7X)
+	irq_enable(cfg->irq_line);
+#endif  /* CONFIG_SPI_STM32_INTERRUPT && CONFIG_SOC_SERIES_STM32H7X */
 
 	do {
 		ret = spi_context_wait_for_completion(&data->ctx);
@@ -1387,6 +1403,66 @@ static inline bool spi_stm32_is_subghzspi(const struct device *dev)
 #endif /* st_stm32_spi_subghz */
 }
 
+static int spi_stm32_pinctrl_apply(const struct device *dev, uint8_t id)
+{
+	const struct spi_stm32_config *config = dev->config;
+	int err;
+
+	if (spi_stm32_is_subghzspi(dev)) {
+		return 0;
+	}
+
+	/* Move pins to requested state */
+	err = pinctrl_apply_state(config->pcfg, id);
+	if ((id == PINCTRL_STATE_SLEEP) && (err == -ENOENT)) {
+		/* Sleep state is optional */
+		err = 0;
+	}
+	return err;
+}
+
+static int spi_stm32_pm_action(const struct device *dev,
+			       enum pm_device_action action)
+{
+	const struct spi_stm32_config *config = dev->config;
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	int err;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		/* Configure pins for active mode */
+		err = spi_stm32_pinctrl_apply(dev, PINCTRL_STATE_DEFAULT);
+		if (err < 0) {
+			return err;
+		}
+		/* enable clock */
+		err = clock_control_on(clk, (clock_control_subsys_t)&config->pclken[0]);
+		if (err != 0) {
+			LOG_ERR("Could not enable SPI clock");
+			return err;
+		}
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Stop device clock. */
+		err = clock_control_off(clk, (clock_control_subsys_t)&config->pclken[0]);
+		if (err != 0) {
+			LOG_ERR("Could not disable SPI clock");
+			return err;
+		}
+		/* Configure pins for sleep mode */
+		return spi_stm32_pinctrl_apply(dev, PINCTRL_STATE_SLEEP);
+	case PM_DEVICE_ACTION_TURN_ON:
+		/* Configure pins for sleep mode */
+		return spi_stm32_pinctrl_apply(dev, PINCTRL_STATE_SLEEP);
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 static int spi_stm32_init(const struct device *dev)
 {
 	struct spi_stm32_data *data __attribute__((unused)) = dev->data;
@@ -1398,28 +1474,12 @@ static int spi_stm32_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	err = clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-			       (clock_control_subsys_t) &cfg->pclken[0]);
-	if (err < 0) {
-		LOG_ERR("Could not enable SPI clock");
-		return err;
-	}
-
 	if (IS_ENABLED(STM32_SPI_DOMAIN_CLOCK_SUPPORT) && (cfg->pclk_len > 1)) {
 		err = clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 					      (clock_control_subsys_t) &cfg->pclken[1],
 					      NULL);
 		if (err < 0) {
 			LOG_ERR("Could not select SPI domain clock");
-			return err;
-		}
-	}
-
-	if (!spi_stm32_is_subghzspi(dev)) {
-		/* Configure dt provided device signals when available */
-		err = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
-		if (err < 0) {
-			LOG_ERR("SPI pinctrl setup failed (%d)", err);
 			return err;
 		}
 	}
@@ -1452,72 +1512,16 @@ static int spi_stm32_init(const struct device *dev)
 
 	spi_context_unlock_unconditionally(&data->ctx);
 
-	return pm_device_runtime_enable(dev);
+	return pm_device_driver_init(dev, spi_stm32_pm_action);
 }
-
-#ifdef CONFIG_PM_DEVICE
-static int spi_stm32_pm_action(const struct device *dev,
-			       enum pm_device_action action)
-{
-	const struct spi_stm32_config *config = dev->config;
-	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-	int err;
-
-
-	switch (action) {
-	case PM_DEVICE_ACTION_RESUME:
-		if (!spi_stm32_is_subghzspi(dev)) {
-			/* Set pins to active state */
-			err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
-			if (err < 0) {
-				return err;
-			}
-		}
-
-		/* enable clock */
-		err = clock_control_on(clk, (clock_control_subsys_t)&config->pclken[0]);
-		if (err != 0) {
-			LOG_ERR("Could not enable SPI clock");
-			return err;
-		}
-		break;
-	case PM_DEVICE_ACTION_SUSPEND:
-		/* Stop device clock. */
-		err = clock_control_off(clk, (clock_control_subsys_t)&config->pclken[0]);
-		if (err != 0) {
-			LOG_ERR("Could not disable SPI clock");
-			return err;
-		}
-
-		if (!spi_stm32_is_subghzspi(dev)) {
-			/* Move pins to sleep state */
-			err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
-			if ((err < 0) && (err != -ENOENT)) {
-				/*
-				 * If returning -ENOENT, no pins where defined for sleep mode :
-				 * Do not output on console (might sleep already) when going to
-				 * sleep,
-				 * "SPI pinctrl sleep state not available"
-				 * and don't block PM suspend.
-				 * Else return the error.
-				 */
-				return err;
-			}
-		}
-		break;
-	default:
-		return -ENOTSUP;
-	}
-
-	return 0;
-}
-#endif /* CONFIG_PM_DEVICE */
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 #define STM32_SPI_IRQ_HANDLER_DECL(id)					\
 	static void spi_stm32_irq_config_func_##id(const struct device *dev)
 #define STM32_SPI_IRQ_HANDLER_FUNC(id)					\
-	.irq_config = spi_stm32_irq_config_func_##id,
+	.irq_config = spi_stm32_irq_config_func_##id,			\
+	IF_ENABLED(CONFIG_SOC_SERIES_STM32H7X,				\
+	(.irq_line = DT_INST_IRQN(id),))
 #define STM32_SPI_IRQ_HANDLER(id)					\
 static void spi_stm32_irq_config_func_##id(const struct device *dev)		\
 {									\

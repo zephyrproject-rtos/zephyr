@@ -10,4 +10,4 @@ board:
       - name: 512kb
       - name: 128kb
   socs:
-    - name: r5f513083xfb
+    - name: r5f51308axfp

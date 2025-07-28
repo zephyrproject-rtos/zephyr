@@ -206,6 +206,12 @@ config MDNS_RESPONDER
 
 if MDNS_RESPONDER
 
+config MDNS_RESOLVER_BUF_SIZE
+	int "Size of the net_buf pool buffers"
+	default 512
+	help
+	  For larger DNS SD TXT records and long service instance names, bigger buffers are necessary
+
 config MDNS_RESPONDER_TTL
 	int "Time-to-Live of returned DNS name"
 	default 600

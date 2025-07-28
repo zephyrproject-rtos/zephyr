@@ -37,7 +37,7 @@ config MINIMAL_LIBC_RAND
 
 config MINIMAL_LIBC_TIME
 	bool "Time functions"
-	select COMMON_LIBC_TIME if POSIX_TIMERS
+	select COMMON_LIBC_TIME
 	select POSIX_C_LANG_SUPPORT_R
 	select COMMON_LIBC_GMTIME_R
 	select COMMON_LIBC_ASCTIME
@@ -47,16 +47,13 @@ config MINIMAL_LIBC_TIME
 	help
 	  Enable time() and gmtime_r() for the minimal libc.
 
-	  time() requires CONFIG_POSIX_TIMERS=y because it relies on the POSIX
-	  clock_gettime() function.
-
 	  In order to make use of the non-reentrant gmtime(), it is necessary
 	  to set CONFIG_MINIMAL_LIBC_NON_REENTRANT_FUNCTIONS=y.
 
 config MINIMAL_LIBC_STRING_ERROR_TABLE
 	bool "String error table for strerror() and strerror_r()"
 	help
-	  Select this option to ensure that streror(), strerror_r()
+	  Select this option to ensure that strerror(), strerror_r()
 	  produce strings corresponding to the descriptions in errno.h.
 
 	  The string error table can add ~2kiB to ROM. As such, it is

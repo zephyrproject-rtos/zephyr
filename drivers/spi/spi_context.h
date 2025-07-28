@@ -144,7 +144,7 @@ static inline void spi_context_release(struct spi_context *ctx, int status)
 {
 #ifdef CONFIG_MULTITHREADING
 #ifdef CONFIG_SPI_SLAVE
-	if (status >= 0 && (ctx->config->operation & SPI_LOCK_ON)) {
+	if (status >= 0 && ((ctx->config == NULL) || (ctx->config->operation & SPI_LOCK_ON))) {
 		return;
 	}
 #endif /* CONFIG_SPI_SLAVE */
@@ -155,7 +155,7 @@ static inline void spi_context_release(struct spi_context *ctx, int status)
 		k_sem_give(&ctx->lock);
 	}
 #else
-	if (!(ctx->config->operation & SPI_LOCK_ON)) {
+	if ((ctx->config == NULL) || !(ctx->config->operation & SPI_LOCK_ON)) {
 		ctx->owner = NULL;
 		k_sem_give(&ctx->lock);
 	}

@@ -7,8 +7,9 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/arch/arm/cortex_m/arm_mpu_mem_cfg.h>
 
-#define BOOTSTRAP_RAM_BASE_ADDRESS DT_REG_ADDR(DT_NODELABEL(sram_bootstrap))
-#define BOOTSTRAP_RAM_SIZE         DT_REG_SIZE(DT_NODELABEL(sram_bootstrap))
+#define BOOTSTRAP_SAHB_RAM_BASE_ADDRESS DT_REG_ADDR(DT_NODELABEL(sram_bootstrap_sahb))
+#define BOOTSTRAP_CBUS_RAM_BASE_ADDRESS DT_REG_ADDR(DT_NODELABEL(sram_bootstrap_cbus))
+#define BOOTSTRAP_RAM_SIZE              DT_REG_SIZE(DT_NODELABEL(sram_bootstrap))
 
 #define REGION_BOOTSTRAP_RAM_ATTR(base, size)                                                 \
 	{                                                                                       \
@@ -24,8 +25,13 @@ static const struct arm_mpu_region mpu_regions[] = {
 	MPU_REGION_ENTRY("SRAM", CONFIG_SRAM_BASE_ADDRESS,
 			 REGION_RAM_ATTR(CONFIG_SRAM_BASE_ADDRESS, CONFIG_SRAM_SIZE * 1024)),
 
-	MPU_REGION_ENTRY("BOOTSTRAP_RAM", BOOTSTRAP_RAM_BASE_ADDRESS,
-			 REGION_BOOTSTRAP_RAM_ATTR(BOOTSTRAP_RAM_BASE_ADDRESS, BOOTSTRAP_RAM_SIZE)),
+	MPU_REGION_ENTRY(
+		"BOOTSTRAP_SAHB_RAM", BOOTSTRAP_SAHB_RAM_BASE_ADDRESS,
+		REGION_BOOTSTRAP_RAM_ATTR(BOOTSTRAP_SAHB_RAM_BASE_ADDRESS, BOOTSTRAP_RAM_SIZE)),
+
+	MPU_REGION_ENTRY(
+		"BOOTSTRAP_CBUS_RAM", BOOTSTRAP_CBUS_RAM_BASE_ADDRESS,
+		REGION_BOOTSTRAP_RAM_ATTR(BOOTSTRAP_CBUS_RAM_BASE_ADDRESS, BOOTSTRAP_RAM_SIZE)),
 };
 
 const struct arm_mpu_config mpu_config = {

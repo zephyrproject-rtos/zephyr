@@ -97,6 +97,34 @@ def test_interrupts():
         edtlib.ControllerAndData(node=node, controller=controller_2, data={'one': 0, 'two': 0, 'three': 5}, name=None, basename=None)
     ]
 
+    node = edt.get_node("/interrupt-map-test/node@2")
+    assert node.interrupts == [
+        edtlib.ControllerAndData(node=node, controller=controller_0, data={'one': 0}, name=None, basename=None),
+        edtlib.ControllerAndData(node=node, controller=controller_1, data={'one': 0, 'two': 1}, name=None, basename=None),
+        edtlib.ControllerAndData(node=node, controller=controller_2, data={'one': 0, 'two': 0, 'three': 2}, name=None, basename=None)
+    ]
+
+    node = edt.get_node("/interrupt-map-test/node@3")
+    assert node.interrupts == [
+        edtlib.ControllerAndData(node=node, controller=controller_0, data={'one': 0}, name=None, basename=None),
+        edtlib.ControllerAndData(node=node, controller=controller_1, data={'one': 0, 'two': 1}, name=None, basename=None),
+        edtlib.ControllerAndData(node=node, controller=controller_2, data={'one': 0, 'two': 0, 'three': 2}, name=None, basename=None)
+    ]
+
+    node = edt.get_node("/interrupt-map-test/node@4")
+    assert node.interrupts == [
+        edtlib.ControllerAndData(node=node, controller=controller_0, data={'one': 3}, name=None, basename=None),
+        edtlib.ControllerAndData(node=node, controller=controller_1, data={'one': 0, 'two': 4}, name=None, basename=None),
+        edtlib.ControllerAndData(node=node, controller=controller_2, data={'one': 0, 'two': 0, 'three': 5}, name=None, basename=None)
+    ]
+
+    node = edt.get_node("/interrupt-map-test/node@100000004")
+    assert node.interrupts == [
+        edtlib.ControllerAndData(node=node, controller=controller_0, data={'one': 3}, name=None, basename=None),
+        edtlib.ControllerAndData(node=node, controller=controller_1, data={'one': 0, 'two': 4}, name=None, basename=None),
+        edtlib.ControllerAndData(node=node, controller=controller_2, data={'one': 0, 'two': 0, 'three': 5}, name=None, basename=None)
+    ]
+
     node = edt.get_node("/interrupt-map-bitops-test/node@70000000E")
     assert node.interrupts == [
         edtlib.ControllerAndData(node=node, controller=edt.get_node('/interrupt-map-bitops-test/controller'), data={'one': 3, 'two': 2}, name=None, basename=None)
@@ -798,7 +826,7 @@ def test_slice_errs(tmp_path):
 };
 """,
                  dts_file,
-                 f"'reg' property in <Node /sub in '{dts_file}'> has length 4, which is not evenly divisible by 12 (= 4*(<#address-cells> (= 1) + <#size-cells> (= 2))). Note that #*-cells properties come either from the parent node or from the controller (in the case of 'interrupts').")
+                 f"'reg' property in <Node /sub in {dts_file}:8> has length 4, which is not evenly divisible by 12 (= 4*(<#address-cells> (= 1) + <#size-cells> (= 2))). Note that #*-cells properties come either from the parent node or from the controller (in the case of 'interrupts').")
 
     verify_error("""
 /dts-v1/;
@@ -815,7 +843,7 @@ def test_slice_errs(tmp_path):
 };
 """,
                  dts_file,
-                 f"'interrupts' property in <Node /sub in '{dts_file}'> has length 4, which is not evenly divisible by 8 (= 4*<#interrupt-cells>). Note that #*-cells properties come either from the parent node or from the controller (in the case of 'interrupts').")
+                 f"'interrupts' property in <Node /sub in {dts_file}:5> has length 4, which is not evenly divisible by 8 (= 4*<#interrupt-cells>). Note that #*-cells properties come either from the parent node or from the controller (in the case of 'interrupts').")
 
     verify_error("""
 /dts-v1/;
@@ -835,7 +863,7 @@ def test_slice_errs(tmp_path):
 };
 """,
                  dts_file,
-                 f"'ranges' property in <Node /sub-1 in '{dts_file}'> has length 8, which is not evenly divisible by 24 (= 4*(<#address-cells> (= 2) + <#address-cells for parent> (= 1) + <#size-cells> (= 3))). Note that #*-cells properties come either from the parent node or from the controller (in the case of 'interrupts').")
+                 f"'ranges' property in <Node /sub-1 in {dts_file}:7> has length 8, which is not evenly divisible by 24 (= 4*(<#address-cells> (= 2) + <#address-cells for parent> (= 1) + <#size-cells> (= 3))). Note that #*-cells properties come either from the parent node or from the controller (in the case of 'interrupts').")
 
 def test_bad_compatible(tmp_path):
     # An invalid compatible should cause an error, even on a node with

@@ -109,9 +109,17 @@ add_dependencies(codechecker-cleanup codechecker)
 # If 'codechecker parse' returns an exit status of '2', it means more than 0
 # issues were detected. Suppress the exit status by default, but permit opting
 # in to the failure.
-if(NOT CODECHECKER_PARSE_EXIT_STATUS)
-  set(CODECHECKER_PARSE_OPTS ${CODECHECKER_PARSE_OPTS} || ${CMAKE_COMMAND} -E true)
+set(CODECHECKER_PARSE_OPTS ${CODECHECKER_PARSE_OPTS} || ${CMAKE_COMMAND} -E touch ${output_dir}/codechecker.failed)
+if(CODECHECKER_PARSE_EXIT_STATUS)
+  add_custom_target(codechecker-parse-check ALL
+    COMMAND ! ${CMAKE_COMMAND} -E rm ${output_dir}/codechecker.failed 2>/dev/null
+  )
+else()
+  add_custom_target(codechecker-parse-check ALL
+    COMMAND ${CMAKE_COMMAND} -E rm -f ${output_dir}/codechecker.failed 2>/dev/null
+  )
 endif()
+add_dependencies(codechecker-cleanup codechecker-parse-check)
 
 if(DEFINED CODECHECKER_EXPORT)
   string(REPLACE "," ";" export_list ${CODECHECKER_EXPORT})
@@ -133,9 +141,11 @@ if(DEFINED CODECHECKER_EXPORT)
       COMMAND_EXPAND_LISTS
     )
     add_dependencies(codechecker-report-${export_item} codechecker)
-    add_dependencies(codechecker-cleanup codechecker-report-${export_item})
+    add_dependencies(codechecker-parse-check codechecker-report-${export_item})
   endforeach()
-elseif(NOT CODECHECKER_PARSE_SKIP)
+endif()
+
+if(NOT CODECHECKER_PARSE_SKIP)
   # Output parse results
     add_custom_target(codechecker-parse ALL
     COMMAND ${CODECHECKER_EXE} parse
@@ -148,7 +158,7 @@ elseif(NOT CODECHECKER_PARSE_SKIP)
     COMMAND_EXPAND_LISTS
   )
   add_dependencies(codechecker-parse codechecker)
-  add_dependencies(codechecker-cleanup codechecker-parse)
+  add_dependencies(codechecker-parse-check codechecker-parse)
 endif()
 
 if(DEFINED CODECHECKER_STORE OR DEFINED CODECHECKER_STORE_OPTS)

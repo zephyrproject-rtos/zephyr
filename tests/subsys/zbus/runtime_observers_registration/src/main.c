@@ -210,4 +210,69 @@ ZTEST(basic, test_specification_based__zbus_obs_priority)
 	zassert_equal(execution_sequence[5], 1);
 }
 
+/**
+ * @brief Test removing the first observer in a runtime observer list.
+ */
+ZTEST(basic, test_remove_first_runtime_observer)
+{
+	struct sensor_data_msg sd = {.a = 42, .b = 84};
+
+	/* Reset callback counters */
+	count_callback1 = 0;
+	count_callback2 = 0;
+
+	/* Start with an empty channel (chan3) */
+	zassert_equal(0, zbus_chan_pub(&chan3, &sd, K_MSEC(500)));
+	zassert_equal(count_callback1, 0, "No observers should be called initially");
+	zassert_equal(count_callback2, 0, "No observers should be called initially");
+
+	/* Add multiple observers to create a list */
+	zassert_equal(0, zbus_chan_add_obs(&chan3, &lis1, K_MSEC(200)),
+		      "First observer should be added successfully");
+	zassert_equal(0, zbus_chan_add_obs(&chan3, &lis3, K_MSEC(200)),
+		      "Second observer should be added successfully");
+	zassert_equal(0, zbus_chan_add_obs(&chan3, &lis4, K_MSEC(200)),
+		      "Third observer should be added successfully");
+
+	/* Verify all observers are called */
+	zassert_equal(0, zbus_chan_pub(&chan3, &sd, K_MSEC(500)));
+	zassert_equal(count_callback1, 1, "lis1 callback should be called once");
+	zassert_equal(count_callback2, 2, "lis3 and lis4 callbacks should be called");
+
+	/* Reset counters for the main test */
+	count_callback1 = 0;
+	count_callback2 = 0;
+
+	/* Remove the first observer in the list (lis1) */
+	zassert_equal(0, zbus_chan_rm_obs(&chan3, &lis1, K_MSEC(200)),
+		      "First observer should be removed successfully");
+
+	/* Verify only the remaining observers are called */
+	zassert_equal(0, zbus_chan_pub(&chan3, &sd, K_MSEC(500)));
+	zassert_equal(count_callback1, 0, "lis1 callback should not be called after removal");
+	zassert_equal(count_callback2, 2, "lis3 and lis4 callbacks should still be called");
+
+	/* Remove the new first observer (lis3) to test the same scenario again */
+	count_callback2 = 0;
+	zassert_equal(0, zbus_chan_rm_obs(&chan3, &lis3, K_MSEC(200)),
+		      "New first observer should be removed successfully");
+
+	/* Verify only lis4 is called */
+	zassert_equal(0, zbus_chan_pub(&chan3, &sd, K_MSEC(500)));
+	zassert_equal(count_callback2, 1, "Only lis4 callback should be called");
+
+	/* Remove the last observer */
+	count_callback2 = 0;
+	zassert_equal(0, zbus_chan_rm_obs(&chan3, &lis4, K_MSEC(200)),
+		      "Last observer should be removed successfully");
+
+	/* Verify no observers are called */
+	zassert_equal(0, zbus_chan_pub(&chan3, &sd, K_MSEC(500)));
+	zassert_equal(count_callback2, 0, "No callbacks should be called after all removed");
+
+	/* Test error case: try to remove non-existent observer */
+	zassert_equal(-ENODATA, zbus_chan_rm_obs(&chan3, &lis1, K_MSEC(200)),
+		      "Removing non-existent observer should return -ENODATA");
+}
+
 ZTEST_SUITE(basic, NULL, NULL, NULL, NULL, NULL);

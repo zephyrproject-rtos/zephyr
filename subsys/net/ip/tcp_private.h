@@ -6,6 +6,7 @@
  */
 
 #include "tp.h"
+#include <zephyr/toolchain/gcc.h>
 
 #define is(_a, _b) (strcmp((_a), (_b)) == 0)
 
@@ -13,13 +14,14 @@
 #define MIN3(_a, _b, _c) MIN((_a), MIN((_b), (_c)))
 #endif
 
-#define th_sport(_x) UNALIGNED_GET(&(_x)->th_sport)
-#define th_dport(_x) UNALIGNED_GET(&(_x)->th_dport)
-#define th_seq(_x) ntohl(UNALIGNED_GET(&(_x)->th_seq))
-#define th_ack(_x) ntohl(UNALIGNED_GET(&(_x)->th_ack))
+#define th_sport(_x) UNALIGNED_GET(UNALIGNED_MEMBER_ADDR((_x), th_sport))
+#define th_dport(_x) UNALIGNED_GET(UNALIGNED_MEMBER_ADDR((_x), th_dport))
+#define th_seq(_x) ntohl(UNALIGNED_GET(UNALIGNED_MEMBER_ADDR((_x), th_seq)))
+#define th_ack(_x) ntohl(UNALIGNED_GET(UNALIGNED_MEMBER_ADDR((_x), th_ack)))
+
 #define th_off(_x) ((_x)->th_off)
-#define th_flags(_x) UNALIGNED_GET(&(_x)->th_flags)
-#define th_win(_x) UNALIGNED_GET(&(_x)->th_win)
+#define th_flags(_x) UNALIGNED_GET(UNALIGNED_MEMBER_ADDR((_x), th_flags))
+#define th_win(_x) UNALIGNED_GET(UNALIGNED_MEMBER_ADDR((_x), th_win))
 
 #define tcp_slist(_conn, _slist, _op, _type, _link)			\
 ({									\

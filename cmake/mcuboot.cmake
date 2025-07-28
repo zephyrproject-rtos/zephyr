@@ -86,12 +86,6 @@ function(zephyr_mcuboot_tasks)
   dt_chosen(flash_node PROPERTY "zephyr,flash")
   dt_nodelabel(slot0_flash NODELABEL "slot0_partition" REQUIRED)
   dt_prop(slot_size PATH "${slot0_flash}" PROPERTY "reg" INDEX 1 REQUIRED)
-  dt_prop(write_block_size PATH "${flash_node}" PROPERTY "write-block-size")
-
-  if(NOT write_block_size)
-    set(write_block_size 4)
-    message(WARNING "slot0_partition write block size devicetree parameter is missing, assuming write block size is 4")
-  endif()
 
   # If single slot mode, or if in firmware updater mode and this is the firmware updater image,
   # use slot 0 information
@@ -149,6 +143,13 @@ function(zephyr_mcuboot_tasks)
     endif()
     set(imgtool_args --align 1 --load-addr ${load_address} ${imgtool_args})
   else()
+    dt_prop(write_block_size PATH "${flash_node}" PROPERTY "write-block-size")
+
+    if(NOT write_block_size)
+      set(write_block_size 4)
+      message(WARNING "slot0_partition write block size devicetree parameter is missing, assuming write block size is 4")
+    endif()
+
     set(imgtool_args --align ${write_block_size} ${imgtool_args})
   endif()
 

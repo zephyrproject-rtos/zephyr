@@ -10,8 +10,8 @@
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/barrier.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/virtio/virtio.h>
-#include <zephyr/virtio/virtqueue.h>
+#include <zephyr/drivers/virtio.h>
+#include <zephyr/drivers/virtio/virtqueue.h>
 #include "virtio_common.h"
 
 #define DT_DRV_COMPAT virtio_mmio
@@ -260,7 +260,7 @@ static void virtio_mmio_finalize_init(const struct device *dev)
 	virtio_mmio_write_status_bit(dev, DEVICE_STATUS_DRIVER_OK);
 }
 
-static const struct virtio_driver_api virtio_mmio_driver_api = {
+static DEVICE_API(virtio, virtio_mmio_driver_api) = {
 	.get_virtqueue = virtio_mmio_get_virtqueue,
 	.notify_virtqueue = virtio_mmio_notify_queue,
 	.get_device_specific_config = virtio_mmio_get_device_specific_config,

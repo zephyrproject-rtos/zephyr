@@ -249,6 +249,10 @@ struct bt_hfp_ag {
 
 	/* SCO Connection Object */
 	struct bt_sco_chan sco_chan;
+
+	/* SCO connect */
+	struct bt_conn *sco_conn;
+
 	/* HFP TX pending */
 	sys_slist_t tx_pending;
 

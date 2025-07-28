@@ -135,6 +135,24 @@
 	};
 };
 
+&mspi0 {
+	pinctrl-0 = <&mspi0_default>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
+&mspi1 {
+	pinctrl-0 = <&mspi1_default>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
+&mspi2 {
+	pinctrl-0 = <&mspi2_default>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
 &flash0 {
 	erase-block-size = <2048>;
 	write-block-size = <16>;

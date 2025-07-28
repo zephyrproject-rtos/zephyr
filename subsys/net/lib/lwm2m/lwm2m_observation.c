@@ -550,10 +550,9 @@ static int resource_value_as_double(const struct lwm2m_obj_path *path,
 }
 
 static bool value_conditions_satisfied(const struct lwm2m_obj_path *path,
-				       uint16_t srv_obj_inst)
+				       struct notification_attrs *attrs)
 {
 	struct lwm2m_notify_value_register *last_notified;
-	struct notification_attrs attrs = { 0 };
 	double res_value, old_value;
 	void *ref;
 	int ret;
@@ -563,15 +562,10 @@ static bool value_conditions_satisfied(const struct lwm2m_obj_path *path,
 		return true;
 	}
 
-	ret = engine_observe_get_attributes(path, &attrs, srv_obj_inst);
-	if (ret < 0) {
-		return true;
-	}
-
 	/* Check if any of the value attributes is actually set. */
-	if ((attrs.flags & (BIT(LWM2M_ATTR_GT) |
-			    BIT(LWM2M_ATTR_LT) |
-			    BIT(LWM2M_ATTR_STEP))) == 0) {
+	if ((attrs->flags & (BIT(LWM2M_ATTR_GT) |
+			     BIT(LWM2M_ATTR_LT) |
+			     BIT(LWM2M_ATTR_STEP))) == 0) {
 		return true;
 	}
 
@@ -603,25 +597,25 @@ static bool value_conditions_satisfied(const struct lwm2m_obj_path *path,
 		return true;
 	}
 
-	if ((attrs.flags & BIT(LWM2M_ATTR_STEP)) != 0) {
+	if ((attrs->flags & BIT(LWM2M_ATTR_STEP)) != 0) {
 		double res_diff = old_value > res_value ?
 				  old_value - res_value : res_value - old_value;
 
-		if (res_diff >= attrs.st) {
+		if (res_diff >= attrs->st) {
 			return true;
 		}
 	}
 
-	if ((attrs.flags & BIT(LWM2M_ATTR_GT)) != 0) {
-		if ((old_value <= attrs.gt && res_value > attrs.gt) ||
-		    (old_value >= attrs.gt && res_value < attrs.gt)) {
+	if ((attrs->flags & BIT(LWM2M_ATTR_GT)) != 0) {
+		if ((old_value <= attrs->gt && res_value > attrs->gt) ||
+		    (old_value >= attrs->gt && res_value < attrs->gt)) {
 			return true;
 		}
 	}
 
-	if ((attrs.flags & BIT(LWM2M_ATTR_LT)) != 0) {
-		if ((old_value <= attrs.lt && res_value > attrs.lt) ||
-		    (old_value >= attrs.lt && res_value < attrs.lt)) {
+	if ((attrs->flags & BIT(LWM2M_ATTR_LT)) != 0) {
+		if ((old_value <= attrs->lt && res_value > attrs->lt) ||
+		    (old_value >= attrs->lt && res_value < attrs->lt)) {
 			return true;
 		}
 	}
@@ -632,7 +626,8 @@ static bool value_conditions_satisfied(const struct lwm2m_obj_path *path,
 int lwm2m_notify_observer_path(const struct lwm2m_obj_path *path)
 {
 	struct observe_node *obs;
-	struct notification_attrs nattrs = {0};
+	struct notification_attrs obs_attrs = {0};
+	struct notification_attrs res_attrs = {0};
 	int64_t timestamp;
 	int ret = 0;
 	int i;
@@ -647,19 +642,35 @@ int lwm2m_notify_observer_path(const struct lwm2m_obj_path *path)
 		SYS_SLIST_FOR_EACH_CONTAINER(&sock_ctx[i]->observer, obs, node) {
 			if (lwm2m_notify_observer_list(&obs->path_list, path)) {
 				/* update the event time for this observer */
-				ret = engine_observe_attribute_list_get(&obs->path_list, &nattrs,
+				ret = engine_observe_attribute_list_get(&obs->path_list, &obs_attrs,
 									sock_ctx[i]->srv_obj_inst);
 				if (ret < 0) {
 					return ret;
 				}
 
-				if (!value_conditions_satisfied(path, sock_ctx[i]->srv_obj_inst)) {
+				/* Read attributes for the updated resource path */
+				ret = engine_observe_get_attributes(path, &res_attrs,
+								    sock_ctx[i]->srv_obj_inst);
+				if (ret < 0) {
+					return ret;
+				}
+
+				if (!value_conditions_satisfied(path, &res_attrs)) {
 					continue;
 				}
 
-				if (nattrs.pmin) {
+				/* In case the lowest pmin value for the observation is smaller
+				 * than the pmin configured for the updated resource, use the
+				 * resource value to prevent notification from being generated
+				 * too early.
+				 */
+				if (obs_attrs.pmin < res_attrs.pmin) {
+					obs_attrs.pmin = res_attrs.pmin;
+				}
+
+				if (obs_attrs.pmin) {
 					timestamp =
-						obs->last_timestamp + MSEC_PER_SEC * nattrs.pmin;
+						obs->last_timestamp + MSEC_PER_SEC * obs_attrs.pmin;
 				} else {
 					/* Trig immediately */
 					timestamp = k_uptime_get();

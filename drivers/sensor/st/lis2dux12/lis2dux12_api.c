@@ -17,7 +17,19 @@ static int32_t st_lis2dux12_set_odr_raw(const struct device *dev, uint8_t odr)
 	struct lis2dux12_data *data = dev->data;
 	const struct lis2dux12_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
-	lis2dux12_md_t mode = {.odr = odr, .fs = data->range};
+	lis2dux12_md_t mode;
+
+	/* handle high performance mode */
+	if (cfg->pm == LIS2DUX12_OPER_MODE_HIGH_PERFORMANCE) {
+		if (odr < LIS2DUX12_DT_ODR_6Hz) {
+			odr = LIS2DUX12_DT_ODR_6Hz;
+		}
+
+		odr |= 0x10;
+	}
+
+	mode.odr = odr;
+	mode.fs = data->range;
 
 	data->odr = odr;
 	return lis2dux12_mode_set(ctx, &mode);
@@ -151,7 +163,7 @@ static void st_lis2dux12_stream_config_fifo(const struct device *dev,
 	const struct lis2dux12_config *config = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&config->ctx;
 	lis2dux12_pin_int_route_t pin_int = { 0 };
-	lis2dux12_fifo_mode_t fifo_mode;
+	lis2dux12_fifo_mode_t fifo_mode = { 0 };
 
 	/* disable FIFO as first thing */
 	fifo_mode.store = LIS2DUX12_FIFO_1X;
@@ -167,6 +179,12 @@ static void st_lis2dux12_stream_config_fifo(const struct device *dev,
 	if (trig_cfg.int_fifo_th || trig_cfg.int_fifo_full) {
 		pin_int.fifo_th = (trig_cfg.int_fifo_th) ? PROPERTY_ENABLE : PROPERTY_DISABLE;
 		pin_int.fifo_full = (trig_cfg.int_fifo_full) ? PROPERTY_ENABLE : PROPERTY_DISABLE;
+
+		if (pin_int.fifo_th) {
+			fifo_mode.fifo_event = LIS2DUX12_FIFO_EV_WTM;
+		} else if (pin_int.fifo_full) {
+			fifo_mode.fifo_event = LIS2DUX12_FIFO_EV_FULL;
+		}
 
 		switch (config->fifo_mode_sel) {
 		case 0:

@@ -28,6 +28,7 @@
 		led2 = &led2;
 		sw0 = &button0;
 		sw1 = &button1;
+		pwm-led0 = &pwm_led0;
 	};
 
 	sram0: memory@SSRAM_BASE_NAME {
@@ -121,7 +122,6 @@
 		pinctrl-names = "default";
 		status = "disabled";
 	};
-	status = "disabled";
 };
 
 &rtc0 {

@@ -7,13 +7,13 @@
 #define ZEPHYR_INCLUDE_DT_BINDINGS_ADI_ADX367_H_
 
 /**
- * @defgroup ADXL367 ADI DT Options
+ * @defgroup adxl367 ADXL367 DT Options
  * @ingroup sensor_interface
  * @{
  */
 
 /**
- * @defgroup ADXL367_FIFO_MODE FIFO mode options
+ * @defgroup adxl367_fifo_mode FIFO mode options
  * @{
  */
 #define ADXL367_FIFO_MODE_DISABLED        0x0

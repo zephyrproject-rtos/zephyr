@@ -12,6 +12,12 @@
 
 #include "usbh_device.h"
 
+/*
+ * Mainly used for testing, and driver support is optional. Use it to
+ * enable or disable omitting the status stage for all requests.
+ */
+void usbh_req_omit_status(const bool omit);
+
 int usbh_req_setup(struct usb_device *const udev,
 		   const uint8_t bmRequestType,
 		   const uint8_t bRequest,

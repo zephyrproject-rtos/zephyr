@@ -1,0 +1,43 @@
+board:
+  name: nrf54lm20dk
+  full_name: nRF54LM20 DK
+  vendor: nordic
+  socs:
+  - name: nrf54lm20a
+    variants:
+    - name: xip
+      cpucluster: cpuflpr
+runners:
+  run_once:
+    '--recover':
+    - runners:
+      - nrfjprog
+      - nrfutil
+      run: first
+      groups:
+      - boards:
+        - nrf54lm20dk/nrf54lm20a/cpuapp
+        - nrf54lm20dk/nrf54lm20a/cpuflpr
+        - nrf54lm20dk/nrf54lm20a/cpuflpr/xip
+    '--erase':
+    - runners:
+      - nrfjprog
+      - jlink
+      - nrfutil
+      run: first
+      groups:
+      - boards:
+        - nrf54lm20dk/nrf54lm20a/cpuapp
+        - nrf54lm20dk/nrf54lm20a/cpuflpr
+        - nrf54lm20dk/nrf54lm20a/cpuflpr/xip
+    '--reset':
+    - runners:
+      - nrfjprog
+      - jlink
+      - nrfutil
+      run: last
+      groups:
+      - boards:
+        - nrf54lm20dk/nrf54lm20a/cpuapp
+        - nrf54lm20dk/nrf54lm20a/cpuflpr
+        - nrf54lm20dk/nrf54lm20a/cpuflpr/xip

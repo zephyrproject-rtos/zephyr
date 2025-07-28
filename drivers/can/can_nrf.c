@@ -147,7 +147,7 @@ static int configure_hsfll(const struct device *dev, bool on)
 	if (on) {
 		int ret;
 
-		ret = clock_control_get_rate(dev, NULL, &spec.frequency);
+		ret = clock_control_get_rate(config->auxpll, NULL, &spec.frequency);
 		if (ret < 0) {
 			return ret;
 		}

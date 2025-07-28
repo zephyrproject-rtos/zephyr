@@ -12,9 +12,9 @@
 &mikrobus_i2c {
 	status = "okay";
 
-	tca9538a_mikroe_stepper_19_click: tca9538a@70 {
+	pca9538a_mikroe_stepper_19_click: pca9538a@70 {
 		status = "okay";
-		compatible = "ti,tca9538";
+		compatible = "nxp,pca9538";
 
 		reg = <0x70>;
 
@@ -45,7 +45,7 @@
 		sleep-gpios = <&mikrobus_header 1 GPIO_ACTIVE_LOW>;
 		en-gpios  = <&mikrobus_header 2 0>;
 		fault-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
-		m0-gpios = <&tca9538a_mikroe_stepper_19_click 0 0>;
-		m1-gpios = <&tca9538a_mikroe_stepper_19_click 1 0>;
+		m0-gpios = <&pca9538a_mikroe_stepper_19_click 0 0>;
+		m1-gpios = <&pca9538a_mikroe_stepper_19_click 1 0>;
 	};
 };
