@@ -46,16 +46,13 @@ The STM32H7S7xx devices are a high-performance microcontrollers family (STM32H7
 Series) based on the high-performance Arm |reg| Cortex |reg|-M7 32-bit RISC core.
 They operate at a frequency of up to 500 MHz.
 
-- Core: ARM |reg| 32-bit Cortex |reg| -M7 CPU with TrustZone |reg| and FPU.
+- Core: ARM |reg| 32-bit Cortex |reg| -M7 CPU with FPU.
 - Performance benchmark:
 
   - 1284 DMPIS/MHz (Dhrystone 2.1)
 
 - Security
 
-  - Arm |reg| TrustZone |reg| with ARMv8-M mainline security extension
-  - Up to 8 configurable SAU regions
-  - TrustZone |reg| aware and securable peripherals
   - Flexible lifecycle scheme with secure debug authentication
   - Preconfigured immutable root of trust (ST-iROT)
   - SFI (secure firmware installation)
@@ -65,7 +62,6 @@ They operate at a frequency of up to 500 MHz.
   - Public key accelerator, DPA resistant
   - On-the-fly decryption of Octo-SPI external memories
   - HASH hardware accelerator
-  - True random number generator, NIST SP800-90B compliant
   - 96-bit unique ID
   - Active tampers
   - True Random Number Generator (RNG) NIST SP800-90B compliant
