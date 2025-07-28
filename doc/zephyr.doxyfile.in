@@ -1295,7 +1295,7 @@ VERBATIM_HEADERS       = YES
 
 # If the CLANG_ASSISTED_PARSING tag is set to YES then Doxygen will use the
 # clang parser (see:
-# http://clang.llvm.org/) for more accurate parsing at the cost of reduced
+# https://clang.llvm.org/) for more accurate parsing at the cost of reduced
 # performance. This can be particularly helpful with template rich C++ code for
 # which Doxygen's built-in parser lacks the necessary type information.
 # Note: The availability of this option depends on whether or not Doxygen was
@@ -1323,7 +1323,7 @@ CLANG_OPTIONS          =
 # If clang assisted parsing is enabled you can provide the clang parser with the
 # path to the directory containing a file called compile_commands.json. This
 # file is the compilation database (see:
-# http://clang.llvm.org/docs/HowToSetupToolingForLLVM.html) containing the
+# https://clang.llvm.org/docs/HowToSetupToolingForLLVM.html) containing the
 # options used when the source files were built. This is equivalent to
 # specifying the -p option to a clang tool, such as clang-check. These options
 # will then be passed to the parser. Any options specified with CLANG_OPTIONS
@@ -1612,7 +1612,7 @@ DOCSET_PUBLISHER_NAME  = Publisher
 # a.o. the download links, offline (the HTML help workshop was already many
 # years in maintenance mode). You can download the HTML help workshop from the
 # web archives at Installation executable (see:
-# http://web.archive.org/web/20160201063255/http://download.microsoft.com/downlo
+# https://web.archive.org/web/20160201063255/http://download.microsoft.com/downlo
 # ad/0/A/9/0A939EF6-E31C-430F-A3DF-DFAE7960D564/htmlhelp.exe).
 #
 # The HTML Help Workshop contains a compiler that can convert all HTML output
@@ -1901,9 +1901,9 @@ MATHJAX_VERSION        = MathJax_2
 # When MathJax is enabled you can set the default output format to be used for
 # the MathJax output. For more details about the output format see MathJax
 # version 2 (see:
-# http://docs.mathjax.org/en/v2.7-latest/output.html) and MathJax version 3
+# https://docs.mathjax.org/en/v2.7-latest/output.html) and MathJax version 3
 # (see:
-# http://docs.mathjax.org/en/latest/web/components/output.html).
+# https://docs.mathjax.org/en/latest/web/components/output.html).
 # Possible values are: HTML-CSS (which is slower, but has the best
 # compatibility. This is the name for Mathjax version 2, for MathJax version 3
 # this will be translated into chtml), NativeMML (i.e. MathML. Only supported
@@ -1935,7 +1935,7 @@ MATHJAX_RELPATH        = https://cdn.jsdelivr.net/npm/mathjax@3
 # https://docs.mathjax.org/en/v2.7-latest/tex.html#tex-and-latex-extensions):
 # MATHJAX_EXTENSIONS = TeX/AMSmath TeX/AMSsymbols
 # For example for MathJax version 3 (see
-# http://docs.mathjax.org/en/latest/input/tex/extensions/index.html):
+# https://docs.mathjax.org/en/latest/input/tex/extensions/index.html):
 # MATHJAX_EXTENSIONS = ams
 # This tag requires that the tag USE_MATHJAX is set to YES.
 
@@ -1944,7 +1944,7 @@ MATHJAX_EXTENSIONS     =
 # The MATHJAX_CODEFILE tag can be used to specify a file with JavaScript pieces
 # of code that will be used on startup of the MathJax code. See the MathJax site
 # (see:
-# http://docs.mathjax.org/en/v2.7-latest/output.html) for more details. For an
+# https://docs.mathjax.org/en/v2.7-latest/output.html) for more details. For an
 # example see the documentation.
 # This tag requires that the tag USE_MATHJAX is set to YES.
 
