@@ -16,6 +16,7 @@ supported:
   - serial
   - spi
   - trng
+  - usbd
   - counter
   - w1
   - memc

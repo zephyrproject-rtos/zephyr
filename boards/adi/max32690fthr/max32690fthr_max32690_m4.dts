@@ -140,3 +140,7 @@ feather_spi: &spi0 {
 	pinctrl-0 = <&spi0b_mosi_p2_28 &spi0b_miso_p2_27 &spi0b_sck_p2_29>;
 	pinctrl-names = "default";
 };
+
+zephyr_udc0: &usbhs {
+	status = "okay";
+};
