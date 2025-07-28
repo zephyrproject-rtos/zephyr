@@ -74,7 +74,7 @@ get_property(COMPILER_TOPT TARGET compiler PROPERTY linker_script)
 set_ifndef(  TOPT "${COMPILER_TOPT}")
 set_ifndef(  TOPT -Wl,-T) # Use this if the compiler driver doesn't set a value
 
-if (CONFIG_LLEXT_TYPE_ELF_RELOCATABLE AND NOT CONFIG_ARM AND NOT CONFIG_RISCV)
+if (CONFIG_LLEXT_TYPE_ELF_RELOCATABLE AND CONFIG_XTENSA)
   # Manually fix the pre_located extension's text address at a multiple of 4
   get_target_property(pre_located_target pre_located_ext lib_target)
   get_target_property(pre_located_file pre_located_ext pkg_input)
