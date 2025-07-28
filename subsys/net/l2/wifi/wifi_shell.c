@@ -3555,6 +3555,65 @@ static int cmd_wifi_set_bss_max_idle_period(const struct shell *sh, size_t argc,
 	return 0;
 }
 
+static int wifi_config_args_to_params(const struct shell *sh, size_t argc, char *argv[],
+					 struct wifi_config_params *params)
+{
+	int opt;
+	int opt_index = 0;
+	struct getopt_state *state;
+	static const struct option long_options[] = {
+		{"okc", required_argument, 0, 'o'},
+		{"iface", required_argument, 0, 'i'},
+		{0, 0, 0, 0}};
+	long val;
+
+	while ((opt = getopt_long(argc, argv, "o:i:",
+				  long_options, &opt_index)) != -1) {
+		state = getopt_state_get();
+		switch (opt) {
+		case 'o':
+			if (!parse_number(sh, &val, state->optarg, "okc", 0, 1)) {
+				return -EINVAL;
+			}
+			params->okc = val;
+			params->type |= WIFI_CONFIG_PARAM_OKC;
+			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
+			break;
+		default:
+			PR_ERROR("Invalid option %c\n", state->optopt);
+			shell_help(sh);
+			return SHELL_CMD_HELP_PRINTED;
+		}
+	}
+
+	return 0;
+}
+
+static int cmd_wifi_config_params(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct wifi_config_params config_params = { 0 };
+	int ret = -1;
+
+	context.sh = sh;
+
+	if (wifi_config_args_to_params(sh, argc, argv, &config_params)) {
+		return -ENOEXEC;
+	}
+
+	ret = net_mgmt(NET_REQUEST_WIFI_CONFIG_PARAM, iface,
+		       &config_params, sizeof(struct wifi_config_params));
+	if (ret) {
+		PR_WARNING("Setting STA parameter failed: %s\n",
+			   strerror(-ret));
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	wifi_cmd_ap,
 	SHELL_CMD_ARG(disable, NULL, "Disable Access Point mode.\n"
@@ -4038,6 +4097,13 @@ SHELL_SUBCMD_ADD((wifi), bss_max_idle_period, NULL,
 		 "[-i, --iface=<interface index>] : Interface index.\n",
 		 cmd_wifi_set_bss_max_idle_period,
 		 2, 2);
+
+SHELL_SUBCMD_ADD((wifi), config, NULL,
+		 "Configure STA parameters.\n"
+		 "-o, --okc=<0/1>: Opportunistic Key Caching. 0: disable, 1: enable\n"
+		 "[-i, --iface=<interface index>] : Interface index.\n",
+		 cmd_wifi_config_params,
+		 3, 12);
 
 SHELL_CMD_REGISTER(wifi, &wifi_commands, "Wi-Fi commands", NULL);
 
