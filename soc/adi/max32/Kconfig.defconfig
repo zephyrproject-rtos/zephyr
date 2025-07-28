@@ -7,4 +7,9 @@ if SOC_FAMILY_MAX32
 
 rsource "Kconfig.defconfig.max*"
 
+choice PM_PREWAKEUP_CONV_MODE
+	default PM_PREWAKEUP_CONV_MODE_CEIL
+
+endchoice # PM_PREWAKEUP_CONV_MODE
+
 endif # SOC_FAMILY_MAX32
