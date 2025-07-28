@@ -1000,7 +1000,7 @@ static uint8_t sdp_pnp_user(struct bt_conn *conn, struct bt_sdp_client_result *r
 			    const struct bt_sdp_discover_params *params)
 {
 	char addr[BT_ADDR_STR_LEN];
-	uint16_t vendor_id;
+	uint16_t vendor_id, product_id;
 	int err;
 
 	conn_addr_str(conn, addr, sizeof(addr));
@@ -1016,6 +1016,14 @@ static uint8_t sdp_pnp_user(struct bt_conn *conn, struct bt_sdp_client_result *r
 		}
 
 		bt_shell_print("PNP vendor id param 0x%04x", vendor_id);
+
+		err = bt_sdp_get_product_id(result->resp_buf, &product_id);
+		if (err < 0) {
+			bt_shell_error("PNP product id not found, err %d", err);
+			goto done;
+		}
+
+		bt_shell_print("PNP product id param 0x%04x", product_id);
 	} else {
 		bt_shell_print("No SDP PNP data from remote %s", addr);
 	}
