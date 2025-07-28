@@ -84,9 +84,12 @@ void rtio_executor_submit(struct rtio *r)
 #ifdef CONFIG_ASSERT
 			bool transaction = iodev_sqe->sqe.flags & RTIO_SQE_TRANSACTION;
 			bool chained = iodev_sqe->sqe.flags & RTIO_SQE_CHAINED;
+			bool multishot = iodev_sqe->sqe.flags & RTIO_SQE_MULTISHOT;
 
-			__ASSERT(transaction != chained,
-				    "Expected chained or transaction flag, not both");
+			__ASSERT((transaction ^ chained ^ multishot) &&
+				 !(transaction && chained && multishot),
+				 "Cannot have more than one of these flags"
+				 " enabled: transaction, chained or multishot");
 #endif
 			node = mpsc_pop(&iodev_sqe->r->sq);
 
