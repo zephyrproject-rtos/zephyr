@@ -89,6 +89,22 @@ config MCUBOOT_ENCRYPTION_KEY_FILE
 
 	  If left empty, you must encrypt the Zephyr binaries manually.
 
+if MCUBOOT_ENCRYPTION_KEY_FILE != ""
+
+choice MCUBOOT_ENCRYPTION_ALG
+	prompt "Algorithm used for image encryption"
+	default MCUBOOT_ENCRYPTION_ALG_AES_128
+
+config MCUBOOT_ENCRYPTION_ALG_AES_128
+	bool "Use AES-128 for image encryption"
+
+config MCUBOOT_ENCRYPTION_ALG_AES_256
+	bool "Use AES-256 for image encryption"
+
+endchoice # MCUBOOT_ENCRYPTION_ALG
+
+endif # MCUBOOT_ENCRYPTION_KEY_FILE != ""
+
 config MCUBOOT_IMGTOOL_SIGN_VERSION
 	string "Version to pass to imgtool when signing"
 	default "$(APP_VERSION_TWEAK_STRING)" if "$(VERSION_MAJOR)" != ""

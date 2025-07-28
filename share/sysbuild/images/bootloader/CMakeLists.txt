@@ -15,8 +15,4 @@ if(SB_CONFIG_BOOTLOADER_MCUBOOT)
   sysbuild_add_dependencies(FLASH ${DEFAULT_IMAGE} ${image})
 
   set_config_string(${image} CONFIG_BOOT_SIGNATURE_KEY_FILE "${SB_CONFIG_BOOT_SIGNATURE_KEY_FILE}")
-  set_config_bool(${image} CONFIG_BOOT_ENCRYPT_IMAGE "${SB_CONFIG_BOOT_ENCRYPTION}")
-  if(SB_CONFIG_BOOT_ENCRYPTION)
-    set_config_string(${image} CONFIG_BOOT_ENCRYPTION_KEY_FILE "${SB_CONFIG_BOOT_ENCRYPTION_KEY_FILE}")
-  endif()
 endif()
