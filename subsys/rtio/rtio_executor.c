@@ -145,7 +145,12 @@ static inline void rtio_executor_handle_multishot(struct rtio_iodev_sqe *iodev_s
 		iodev_sqe->sqe.rx.buf_len = 0;
 	}
 
-	if (is_canceled) {
+	/** We're releasing reasources when erroring as an error handling scheme of multi-shot
+	 * submissions by requiring to stop re-submitting if something goes wrong. Let the
+	 * application decide what's best for handling the corresponding error: whether
+	 * re-submitting, rebooting or anything else.
+	 */
+	if (is_canceled || !is_ok) {
 		LOG_DBG("Releasing memory @%p size=%u", (void *)iodev_sqe->sqe.rx.buf,
 			iodev_sqe->sqe.rx.buf_len);
 		rtio_release_buffer(r, iodev_sqe->sqe.rx.buf, iodev_sqe->sqe.rx.buf_len);
