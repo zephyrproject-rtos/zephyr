@@ -49,7 +49,7 @@
 
 /* Vector and literal sizes */
 #define MEM_VECT_LIT_SIZE			0x8
-#define MEM_VECT_TEXT_SIZE			0x38
+#define MEM_VECT_TEXT_SIZE			0x3D
 
 #define MEM_ERROR_TEXT_SIZE			0x180
 #define MEM_ERROR_LIT_SIZE			0x8
