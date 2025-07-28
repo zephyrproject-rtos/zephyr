@@ -105,6 +105,7 @@ static void uart_ambiq_pm_policy_state_lock_get(const struct device *dev)
 	}
 }
 
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
 static void uart_ambiq_pm_policy_state_lock_put_unconditional(void)
 {
 	if (IS_ENABLED(CONFIG_PM)) {
@@ -123,6 +124,7 @@ static void uart_ambiq_pm_policy_state_lock_put(const struct device *dev)
 		}
 	}
 }
+#endif
 
 static int uart_ambiq_configure(const struct device *dev, const struct uart_config *cfg)
 {
