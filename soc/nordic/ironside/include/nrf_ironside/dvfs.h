@@ -31,19 +31,19 @@ enum ironside_dvfs_oppoint {
  */
 
 /** The requested DVFS oppoint is not allowed. */
-#define IRONSIDE_DVFS_ERROR_WRONG_OPPOINT (1)
+#define IRONSIDE_DVFS_ERROR_WRONG_OPPOINT    (1)
 /** Waiting for mutex lock timed out, or hardware is busy. */
-#define IRONSIDE_DVFS_ERROR_BUSY (2)
+#define IRONSIDE_DVFS_ERROR_BUSY             (2)
 /** There is configuration error in the DVFS service. */
-#define IRONSIDE_DVFS_ERROR_OPPOINT_DATA (3)
+#define IRONSIDE_DVFS_ERROR_OPPOINT_DATA     (3)
 /** The caller does not have permission to change the DVFS oppoint. */
-#define IRONSIDE_DVFS_ERROR_PERMISSION (4)
+#define IRONSIDE_DVFS_ERROR_PERMISSION       (4)
 /** The requested DVFS oppoint is already set, no change needed. */
 #define IRONSIDE_DVFS_ERROR_NO_CHANGE_NEEDED (5)
 /** The operation timed out, possibly due to a hardware issue. */
-#define IRONSIDE_DVFS_ERROR_TIMEOUT (6)
+#define IRONSIDE_DVFS_ERROR_TIMEOUT          (6)
 /** The DVFS oppoint change operation is not allowed in the ISR context. */
-#define IRONSIDE_DVFS_ERROR_ISR_NOT_ALLOWED (7)
+#define IRONSIDE_DVFS_ERROR_ISR_NOT_ALLOWED  (7)
 
 /**
  * @}
@@ -80,8 +80,7 @@ int ironside_dvfs_change_oppoint(enum ironside_dvfs_oppoint dvfs_oppoint);
  */
 static inline bool ironside_dvfs_is_oppoint_valid(enum ironside_dvfs_oppoint dvfs_oppoint)
 {
-	if (dvfs_oppoint != IRONSIDE_DVFS_OPP_HIGH &&
-	    dvfs_oppoint != IRONSIDE_DVFS_OPP_MEDLOW &&
+	if (dvfs_oppoint != IRONSIDE_DVFS_OPP_HIGH && dvfs_oppoint != IRONSIDE_DVFS_OPP_MEDLOW &&
 	    dvfs_oppoint != IRONSIDE_DVFS_OPP_LOW) {
 		return false;
 	}

@@ -40,7 +40,7 @@
 /* Index of the update blob pointer within the service buffer. */
 #define IRONSIDE_UPDATE_SERVICE_UPDATE_PTR_IDX (0)
 /* Index of the return code within the service buffer. */
-#define IRONSIDE_UPDATE_SERVICE_RETCODE_IDX (0)
+#define IRONSIDE_UPDATE_SERVICE_RETCODE_IDX    (0)
 
 /**
  * @brief IronSide update blob.
