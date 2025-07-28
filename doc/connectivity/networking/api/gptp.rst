@@ -66,7 +66,7 @@ Testing
 
 The stack has been informally tested using the
 `OpenAVnu gPTP <https://github.com/AVnu/gptp>`_ and
-`Linux ptp4l <http://linuxptp.sourceforge.net/>`_ daemons.
+`Linux ptp4l <https://linuxptp.sourceforge.net/>`_ daemons.
 The :zephyr:code-sample:`gPTP sample application <gptp>` from the Zephyr
 source distribution can be used for testing.
 
