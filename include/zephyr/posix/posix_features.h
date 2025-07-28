@@ -252,6 +252,13 @@ __PICOLIBC_MINOR__ == 8 && __PICOLIBC_PATCHLEVEL__ >= 9)))
 #include <limits.h>
 #else
 
+/*
+ * clang-format and checkpatch disagree on formatting here, so rely on checkpatch and disable
+ * clang-format since checkpatch cannot be selectively disabled.
+ */
+
+/* clang-format off */
+
 /* Maximum values */
 #define _POSIX_CLOCKRES_MIN (20000000L)
 
@@ -363,5 +370,7 @@ __PICOLIBC_MINOR__ == 8 && __PICOLIBC_PATCHLEVEL__ >= 9)))
 #define POSIX_REC_MIN_XFER_SIZE  (1)
 #define POSIX_REC_XFER_ALIGN     (4)
 #define SYMLINK_MAX              _POSIX_SYMLINK_MAX
+
+/* clang-format on */
 
 #endif /* INCLUDE_ZEPHYR_POSIX_POSIX_FEATURES_H_ */
