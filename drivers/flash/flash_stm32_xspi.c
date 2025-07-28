@@ -1035,7 +1035,7 @@ static int flash_stm32_xspi_erase(const struct device *dev, off_t addr,
 			goto erase_end;
 		}
 	}
-#endif
+#endif /* CONFIG_STM32_MEMMAP */
 
 	XSPI_RegularCmdTypeDef cmd_erase = {
 		.OperationType = HAL_XSPI_OPTYPE_COMMON_CFG,
@@ -1173,7 +1173,7 @@ static int flash_stm32_xspi_read(const struct device *dev, off_t addr,
 {
 	const struct flash_stm32_xspi_config *dev_cfg = dev->config;
 	struct flash_stm32_xspi_data *dev_data = dev->data;
-	int ret;
+	int ret = 0;
 
 	if (!xspi_address_is_valid(dev, addr, size)) {
 		LOG_ERR("Error: address or size exceeds expected values: "
@@ -1186,29 +1186,31 @@ static int flash_stm32_xspi_read(const struct device *dev, off_t addr,
 		return 0;
 	}
 
-#ifdef CONFIG_STM32_MEMMAP
+#if defined(CONFIG_STM32_MEMMAP) || defined(CONFIG_STM32_APP_IN_EXT_FLASH)
 	ARG_UNUSED(dev_cfg);
 	ARG_UNUSED(dev_data);
-
-	xspi_lock_thread(dev);
+	/*
+	 * When the call is made by an app executing in external flash,
+	 * skip the memory-mapped mode check
+	 */
+#ifdef CONFIG_STM32_MEMMAP
 
 	/* Do reads through memory-mapping instead of indirect */
 	if (!stm32_xspi_is_memorymap(dev)) {
 		ret = stm32_xspi_set_memorymap(dev);
 		if (ret != 0) {
 			LOG_ERR("READ: failed to set memory mapped");
-			goto read_end;
+			return ret;
 		}
 	}
 
 	__ASSERT_NO_MSG(stm32_xspi_is_memorymap(dev));
-
+#endif /* CONFIG_STM32_MEMMAP */
 	uintptr_t mmap_addr = STM32_XSPI_BASE_ADDRESS + addr;
 
 	LOG_DBG("Memory-mapped read from 0x%08lx, len %zu", mmap_addr, size);
 	memcpy(data, (void *)mmap_addr, size);
-	ret = 0;
-	goto read_end;
+	return ret;
 #else
 	XSPI_RegularCmdTypeDef cmd = xspi_prepare_cmd(dev_cfg->data_mode, dev_cfg->data_rate);
 
@@ -1274,13 +1276,10 @@ static int flash_stm32_xspi_read(const struct device *dev, off_t addr,
 	xspi_lock_thread(dev);
 
 	ret = xspi_read_access(dev, &cmd, data, size);
-	goto read_end;
-#endif
-
-read_end:
 	xspi_unlock_thread(dev);
 
 	return ret;
+#endif /* CONFIG_STM32_MEMMAP || CONFIG_STM32_APP_IN_EXT_FLASH */
 }
 
 /* Function to write the flash (page program) : with possible OCTO/SPI and STR/DTR */
