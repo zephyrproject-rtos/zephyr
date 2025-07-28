@@ -64,6 +64,7 @@ static void rtio_iodev_test_complete(struct rtio_iodev_test_data *data, int stat
 	if (status < 0) {
 		rtio_iodev_sqe_err(data->txn_head, status);
 		rtio_iodev_test_next(data, true);
+		return;
 	}
 
 	data->txn_curr = rtio_txn_next(data->txn_curr);
