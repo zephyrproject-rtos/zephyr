@@ -15,7 +15,7 @@
 #include <zephyr/posix/sys/mman.h>
 #include <zephyr/posix/unistd.h>
 
-#define _page_size COND_CODE_1(CONFIG_MMU, (CONFIG_MMU_PAGE_SIZE), (PAGE_SIZE))
+#define _page_size COND_CODE_1(CONFIG_MMU, (CONFIG_MMU_PAGE_SIZE), (CONFIG_POSIX_PAGE_SIZE))
 
 int zvfs_ioctl(int fd, int cmd, va_list args);
 
