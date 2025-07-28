@@ -566,7 +566,7 @@ class DeviceHandler(Handler):
                 board_id = hardware.probe_id or hardware.id
                 product = hardware.product
                 if board_id is not None:
-                    if runner in ("pyocd", "nrfjprog", "nrfutil"):
+                    if runner in ("pyocd", "nrfjprog", "nrfutil", "nrfutil_next"):
                         command_extra_args.append("--dev-id")
                         command_extra_args.append(board_id)
                     elif runner == "esp32":
