@@ -37,8 +37,8 @@ K_HEAP_DEFINE(llext_heap, CONFIG_LLEXT_HEAP_SIZE * 1024);
 /*
  * Initialize the memory partition associated with the specified memory region
  */
-static void llext_init_mem_part(struct llext *ext, enum llext_mem mem_idx,
-			uintptr_t start, size_t len)
+static void llext_init_mem_part(struct llext *ext, enum llext_mem mem_idx, uintptr_t start,
+				size_t len)
 {
 #ifdef CONFIG_USERSPACE
 	if (mem_idx < LLEXT_MEM_PARTITIONS) {
@@ -65,8 +65,8 @@ static void llext_init_mem_part(struct llext *ext, enum llext_mem mem_idx,
 	LOG_DBG("region %d: start %#zx, size %zd", mem_idx, (size_t)start, len);
 }
 
-static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
-			      enum llext_mem mem_idx, const struct llext_load_param *ldr_parm)
+static int llext_copy_region(struct llext_loader *ldr, struct llext *ext, enum llext_mem mem_idx,
+			     const struct llext_load_param *ldr_parm)
 {
 	int ret;
 	elf_shdr_t *region = ldr->sects + mem_idx;
@@ -102,10 +102,10 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 		}
 	}
 
-	if (ldr->storage == LLEXT_STORAGE_WRITABLE ||           /* writable storage         */
-	    (ldr->storage == LLEXT_STORAGE_PERSISTENT &&        /* || persistent storage    */
-	     !(region->sh_flags & SHF_WRITE) &&                 /*    && read-only region   */
-	     !(region->sh_flags & SHF_LLEXT_HAS_RELOCS))) {     /*    && no relocs to apply */
+	if (ldr->storage == LLEXT_STORAGE_WRITABLE ||       /* writable storage         */
+	    (ldr->storage == LLEXT_STORAGE_PERSISTENT &&    /* || persistent storage    */
+	     !(region->sh_flags & SHF_WRITE) &&             /*    && read-only region   */
+	     !(region->sh_flags & SHF_LLEXT_HAS_RELOCS))) { /*    && no relocs to apply */
 		/*
 		 * Try to reuse data areas from the ELF buffer, if possible.
 		 * If any of the following tests fail, a normal allocation
@@ -125,8 +125,8 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 					return 0;
 				}
 
-				LOG_WRN("Cannot peek region %d: %p not aligned to %#zx",
-					mem_idx, ext->mem[mem_idx], (size_t)region_align);
+				LOG_WRN("Cannot peek region %d: %p not aligned to %#zx", mem_idx,
+					ext->mem[mem_idx], (size_t)region_align);
 			}
 		} else if (ldr_parm->pre_located) {
 			/*
@@ -158,8 +158,7 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 
 	ext->alloc_size += region_alloc;
 
-	llext_init_mem_part(ext, mem_idx, (uintptr_t)ext->mem[mem_idx],
-		region_alloc);
+	llext_init_mem_part(ext, mem_idx, (uintptr_t)ext->mem[mem_idx], region_alloc);
 
 	if (region->sh_type == SHT_NOBITS) {
 		memset(ext->mem[mem_idx], 0, region->sh_size);
@@ -289,8 +288,7 @@ void llext_free_regions(struct llext *ext)
 		if (ext->mmu_permissions_set && ext->mem_size[i] != 0 &&
 		    (i == LLEXT_MEM_TEXT || i == LLEXT_MEM_RODATA)) {
 			/* restore default RAM permissions of changed regions */
-			k_mem_update_flags(ext->mem[i],
-					   ROUND_UP(ext->mem_size[i], LLEXT_PAGE_SIZE),
+			k_mem_update_flags(ext->mem[i], ROUND_UP(ext->mem_size[i], LLEXT_PAGE_SIZE),
 					   K_MEM_PERM_RW);
 		}
 #endif
@@ -313,8 +311,7 @@ int llext_add_domain(struct llext *ext, struct k_mem_domain *domain)
 		}
 		ret = k_mem_domain_add_partition(domain, &ext->mem_parts[i]);
 		if (ret != 0) {
-			LOG_ERR("Failed adding memory partition %d to domain %p",
-				i, domain);
+			LOG_ERR("Failed adding memory partition %d to domain %p", i, domain);
 			return ret;
 		}
 	}

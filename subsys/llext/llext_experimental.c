@@ -32,10 +32,10 @@ int llext_relink_dependency(struct llext *ext, unsigned int n_ext)
 		for (j = 0; ext[i].dependency[j] && j < ARRAY_SIZE(ext[i].dependency); j++) {
 			for (k = 0; k < n_ext; k++) {
 				if (!strncmp(ext[k].name, ext[i].dependency[j]->name,
-				    sizeof(ext[k].name))) {
+					     sizeof(ext[k].name))) {
 					ext[i].dependency[j] = ext + k;
-					LOG_DBG("backup %s depends on %s",
-						ext[i].name, ext[k].name);
+					LOG_DBG("backup %s depends on %s", ext[i].name,
+						ext[k].name);
 					break;
 				}
 			}
@@ -163,8 +163,7 @@ int llext_restore(struct llext **ext, struct llext_loader **ldr, unsigned int n_
 				goto free_locked;
 			}
 
-			LOG_DBG("restore %s depends on %s",
-				next->name, next->dependency[j]->name);
+			LOG_DBG("restore %s depends on %s", next->name, next->dependency[j]->name);
 		}
 	}
 

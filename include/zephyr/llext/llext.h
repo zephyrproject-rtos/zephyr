@@ -42,25 +42,25 @@ extern "C" {
  * together into a single memory region.
  */
 enum llext_mem {
-	LLEXT_MEM_TEXT,         /**< Executable code */
-	LLEXT_MEM_DATA,         /**< Initialized data */
-	LLEXT_MEM_RODATA,       /**< Read-only data */
-	LLEXT_MEM_BSS,          /**< Uninitialized data */
-	LLEXT_MEM_EXPORT,       /**< Exported symbol table */
-	LLEXT_MEM_SYMTAB,       /**< Symbol table */
-	LLEXT_MEM_STRTAB,       /**< Symbol name strings */
-	LLEXT_MEM_SHSTRTAB,     /**< Section name strings */
-	LLEXT_MEM_PREINIT,      /**< Array of early setup functions */
-	LLEXT_MEM_INIT,         /**< Array of setup functions */
-	LLEXT_MEM_FINI,         /**< Array of cleanup functions */
+	LLEXT_MEM_TEXT,     /**< Executable code */
+	LLEXT_MEM_DATA,     /**< Initialized data */
+	LLEXT_MEM_RODATA,   /**< Read-only data */
+	LLEXT_MEM_BSS,      /**< Uninitialized data */
+	LLEXT_MEM_EXPORT,   /**< Exported symbol table */
+	LLEXT_MEM_SYMTAB,   /**< Symbol table */
+	LLEXT_MEM_STRTAB,   /**< Symbol name strings */
+	LLEXT_MEM_SHSTRTAB, /**< Section name strings */
+	LLEXT_MEM_PREINIT,  /**< Array of early setup functions */
+	LLEXT_MEM_INIT,     /**< Array of setup functions */
+	LLEXT_MEM_FINI,     /**< Array of cleanup functions */
 
-	LLEXT_MEM_COUNT,        /**< Number of regions managed by LLEXT */
+	LLEXT_MEM_COUNT, /**< Number of regions managed by LLEXT */
 };
 
 /** @cond ignore */
 
 /* Number of memory partitions used by LLEXT */
-#define LLEXT_MEM_PARTITIONS (LLEXT_MEM_BSS+1)
+#define LLEXT_MEM_PARTITIONS (LLEXT_MEM_BSS + 1)
 
 struct llext_loader;
 /** @endcond */
@@ -178,7 +178,10 @@ struct llext_load_param {
 };
 
 /** Default initializer for @ref llext_load_param */
-#define LLEXT_LOAD_PARAM_DEFAULT { .relocate_local = true, }
+#define LLEXT_LOAD_PARAM_DEFAULT                                                                   \
+	{                                                                                          \
+		.relocate_local = true,                                                            \
+	}
 
 /**
  * @brief Find an llext by name

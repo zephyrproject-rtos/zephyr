@@ -20,7 +20,6 @@ extern "C" {
 
 /** @cond ignore */
 
-
 struct llext_elf_sect_map {
 	enum llext_mem mem_idx;
 	size_t offset;
@@ -28,30 +27,26 @@ struct llext_elf_sect_map {
 
 const void *llext_loaded_sect_ptr(struct llext_loader *ldr, struct llext *ext, unsigned int sh_ndx);
 
-
 static inline const char *llext_string(const struct llext_loader *ldr, const struct llext *ext,
-	enum llext_mem mem_idx, unsigned int idx)
+				       enum llext_mem mem_idx, unsigned int idx)
 {
 	return (const char *)ext->mem[mem_idx] + idx;
 }
 
 static inline uintptr_t llext_get_reloc_instruction_location(struct llext_loader *ldr,
-							     struct llext *ext,
-							     int shndx,
+							     struct llext *ext, int shndx,
 							     const elf_rela_t *rela)
 {
-	return (uintptr_t) llext_loaded_sect_ptr(ldr, ext, shndx) + rela->r_offset;
+	return (uintptr_t)llext_loaded_sect_ptr(ldr, ext, shndx) + rela->r_offset;
 }
 
 static inline const char *llext_section_name(const struct llext_loader *ldr,
-					     const struct llext *ext,
-					     const elf_shdr_t *shdr)
+					     const struct llext *ext, const elf_shdr_t *shdr)
 {
 	return llext_string(ldr, ext, LLEXT_MEM_SHSTRTAB, shdr->sh_name);
 }
 
-static inline const char *llext_symbol_name(const struct llext_loader *ldr,
-					    const struct llext *ext,
+static inline const char *llext_symbol_name(const struct llext_loader *ldr, const struct llext *ext,
 					    const elf_sym_t *sym)
 {
 	if (ELF_ST_TYPE(sym->st_info) == STT_SECTION) {
