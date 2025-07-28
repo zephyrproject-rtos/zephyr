@@ -62,6 +62,7 @@ _names = [
     'rtsflash',
     'sftool',
     'silabs_commander',
+    'simplelink_toolbox',
     'spi_burn',
     'spsdk',
     'stlink_gdbserver',
