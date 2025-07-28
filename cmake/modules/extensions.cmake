@@ -5933,7 +5933,7 @@ function(add_llext_target target_name)
   # dynamic library.
   set(llext_proc_target ${target_name}_llext_proc)
   set(llext_pkg_input ${PROJECT_BINARY_DIR}/llext/${target_name}_debug.elf)
-  add_custom_target(${llext_proc_target} DEPENDS ${llext_pkg_input})
+  add_custom_target(${llext_proc_target} DEPENDS ${llext_lib_target} ${llext_lib_output})
   set_property(TARGET ${llext_proc_target} PROPERTY has_post_build_cmds 0)
 
   # By default this target must copy the `lib_output` binary file to the
@@ -5945,7 +5945,7 @@ function(add_llext_target target_name)
   add_custom_command(
     OUTPUT ${llext_pkg_input}
     COMMAND "$<IF:${has_post_build_cmds},${noop_cmd},${copy_cmd}>"
-    DEPENDS ${llext_lib_target} ${llext_lib_output}
+    DEPENDS ${llext_proc_target}
     COMMAND_EXPAND_LISTS
   )
 
@@ -5977,7 +5977,7 @@ function(add_llext_target target_name)
             $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${llext_pkg_output}
             $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
     COMMAND ${slid_inject_cmd}
-    DEPENDS ${llext_proc_target} ${llext_pkg_input}
+    DEPENDS ${llext_pkg_input}
     COMMAND_EXPAND_LISTS
   )
 
