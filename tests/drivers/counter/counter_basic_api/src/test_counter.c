@@ -62,6 +62,7 @@ static const struct device *const devices[] = {
 	 */
 	DEVS_FOR_DT_COMPAT(arm_cmsdk_timer)
 	DEVS_FOR_DT_COMPAT(arm_cmsdk_dtimer)
+	DEVS_FOR_DT_COMPAT(microchip_tc_g2_counter)
 	DEVS_FOR_DT_COMPAT(microchip_xec_timer)
 	DEVS_FOR_DT_COMPAT(nxp_imx_epit)
 	DEVS_FOR_DT_COMPAT(nxp_imx_gpt)
