@@ -131,6 +131,16 @@ config BT_LE_EXTENDED_FEAT_SET
 	  Enable support for the LL Extended Feature Set feature.
 
 if BT_CONN
+config BT_CONN_DYNAMIC_CALLBACKS
+	bool "Dynamic connection callbacks"
+	default y
+	help
+	  Enable support for dynamic connection callbacks. This links in
+	  bt_conn_cb_register(). Disabling this config is safe. It will make
+	  uses of this and associated APIs fail to link. Note: Static registration
+	  through BT_CONN_CB_DEFINE() is always available and does not depend on
+	  this config.
+
 config BT_HCI_ACL_FLOW_CONTROL
 	bool "Controller to Host ACL flow control support"
 	# Enable if building a Host-only build

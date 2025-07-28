@@ -92,6 +92,12 @@ tests:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     tags: bluetooth
+  bluetooth.shell.audio.no_bt_conn_dynamic_callbacks:
+    extra_args:
+      - CONF_FILE="audio.conf"
+      - CONFIG_BT_CONN_DYNAMIC_CALLBACKS=n
+    build_only: true
+    tags: bluetooth
   bluetooth.shell.audio.no_testing:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
