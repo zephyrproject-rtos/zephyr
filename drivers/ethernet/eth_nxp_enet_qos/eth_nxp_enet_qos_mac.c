@@ -186,7 +186,7 @@ static void tx_dma_done(const struct device *dev)
 	struct net_buf *fragment = pkt->frags;
 
 	if (pkt == NULL) {
-		LOG_DBG("%s TX DMA done on nonexistent packet?", dev->name);
+		LOG_WRN("%s TX DMA done on nonexistent packet?", dev->name);
 		goto skip;
 	} else {
 		LOG_DBG("TX DMA completed on packet %p", pkt);
@@ -273,9 +273,9 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 				FIRST_DESCRIPTOR_FLAG) {
 				LOG_DBG("receive packet mask %X ",
 					(desc->write.control3 >> 28) & 0x0f);
-				LOG_ERR("Rx descriptor does not have first descriptor flag, drop");
-				desc->read.control = rx_desc_refresh_flags;
 				/* Error statistics for this packet already updated earlier */
+				LOG_DBG("dropping frame from errored packet");
+				desc->read.control = rx_desc_refresh_flags;
 				goto next;
 			}
 
@@ -283,7 +283,7 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 			pkt = net_pkt_rx_alloc(K_NO_WAIT);
 
 			if (!pkt) {
-				LOG_ERR("Could not alloc new RX pkt");
+				LOG_WRN("Could not alloc new RX pkt");
 				/* error: no new buffer, reuse previous immediately */
 				desc->read.control = rx_desc_refresh_flags;
 				eth_stats_update_errors_rx(data->iface);
@@ -304,7 +304,7 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 		pkt_len = desc->write.control3 & DESC_RX_PKT_LEN;
 		if ((pkt_len < processed_len) ||
 			((pkt_len - processed_len) > ENET_QOS_RX_BUFFER_SIZE)) {
-			LOG_ERR("Invalid packet length in descriptor: pkt_len=%u, processed_len=%u",
+			LOG_WRN("Invalid packet length in descriptor: pkt_len=%u, processed_len=%u",
 				pkt_len, processed_len);
 			net_pkt_unref(pkt);
 			pkt = NULL;
@@ -325,7 +325,7 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 			 * we don't know what the upper layer will do to our poor buffer.
 			 * drop this buffer, reuse allocated DMA buffer
 			 */
-			LOG_ERR("No new RX buf available");
+			LOG_WRN("No new RX buf available");
 			net_pkt_unref(pkt);
 			pkt = NULL;
 			desc->read.control = rx_desc_refresh_flags;
@@ -343,7 +343,7 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 			/* Propagate completed packet to network stack */
 			LOG_DBG("Receiving RX packet");
 			if (net_recv_data(data->iface, pkt)) {
-				LOG_ERR("RECV failed");
+				LOG_WRN("RECV failed on pkt %p", pkt);
 				/* Error during processing, we continue with new buffer */
 				net_pkt_unref(pkt);
 				eth_stats_update_errors_rx(data->iface);
@@ -354,7 +354,7 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 			pkt = NULL;
 		}
 
-		LOG_DBG("Swap RX buf");
+		LOG_DBG("Swap RX buf %p for %p", data->rx.reserved_bufs[desc_idx], new_buf);
 		/* Allow receive into a new buffer */
 		data->rx.reserved_bufs[desc_idx] = new_buf;
 		desc->read.buf1_addr = (uint32_t)new_buf->data;
@@ -788,7 +788,7 @@ static int eth_nxp_enet_qos_set_config(const struct device *dev,
 		net_if_set_link_addr(data->iface, data->mac_addr.addr,
 				     sizeof(data->mac_addr.addr),
 				     NET_LINK_ETHERNET);
-		LOG_DBG("%s MAC set to %02x:%02x:%02x:%02x:%02x:%02x",
+		LOG_INF("%s MAC set to %02x:%02x:%02x:%02x:%02x:%02x",
 			dev->name,
 			data->mac_addr.addr[0], data->mac_addr.addr[1],
 			data->mac_addr.addr[2], data->mac_addr.addr[3],
