@@ -283,6 +283,9 @@ int pm_device_runtime_get(const struct device *dev)
 	ret = pm->base.action_cb(pm->dev, PM_DEVICE_ACTION_RESUME);
 	if (ret < 0) {
 		pm->base.usage--;
+		if (domain != NULL) {
+			(void)pm_device_runtime_put(domain);
+		}
 		goto unlock;
 	}
 
