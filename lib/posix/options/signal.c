@@ -18,7 +18,7 @@ BUILD_ASSERT(CONFIG_POSIX_RTSIG_MAX >= 0);
 
 static inline bool signo_valid(int signo)
 {
-	return ((signo > 0) && (signo < _NSIG));
+	return ((signo > 0) && (signo <= SIGRTMAX));
 }
 
 static inline bool signo_is_rt(int signo)
