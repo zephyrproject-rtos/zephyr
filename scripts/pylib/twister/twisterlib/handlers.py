@@ -545,7 +545,10 @@ class DeviceHandler(Handler):
                 logger.error(f"{script} timed out")
 
     def _create_command(self, runner, hardware):
-        command = ["west", "flash", "--skip-rebuild", "-d", self.build_dir]
+        command = ["west"]
+        if self.options.verbose > 2:
+            command.append(f"-{'v' * (self.options.verbose - 2)}")
+        command += ["flash", "--skip-rebuild", "-d", self.build_dir]
         command_extra_args = []
 
         # There are three ways this option is used.
