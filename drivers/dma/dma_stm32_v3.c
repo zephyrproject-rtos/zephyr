@@ -16,9 +16,8 @@ LOG_MODULE_REGISTER(dma_stm32_v3, CONFIG_DMA_LOG_LEVEL);
 #define DT_DRV_COMPAT            st_stm32_dma_v3
 #define DMA_STM32_MAX_DATA_ITEMS 0xffff
 
-/* Since at this point we only support cyclic mode , we only need 3 descriptors
- * at most to update the source and destination addresses and the update
- * registers. TODO: Raise this number for larger linked lists.
+/* Since the descriptors pool is allocated statically, we define the number of
+ * descriptors per channel to be used for linked list trasnfers.
  */
 #define DMA_STM32_NUM_DESCRIPTORS_PER_CHANNEL 24
 #define POLLING_TIMEOUT_US                    (10 * USEC_PER_MSEC)
@@ -40,6 +39,7 @@ struct dma_stm32_channel {
 	uint32_t src_size;
 	uint32_t dst_size;
 	void *user_data;
+	uint32_t complete_callback_en;
 	dma_callback_t dma_callback;
 	bool cyclic;
 	int block_count;
@@ -240,8 +240,8 @@ static int dma_stm32_disable_channel(DMA_TypeDef *dma, uint32_t channel)
 static int dma_stm32_validate_transfer_sizes(struct dma_config *config)
 {
 	if (config->head_block->block_size > DMA_STM32_MAX_DATA_ITEMS) {
-		LOG_ERR("Data size exceeds the maximum limit: %d>%d", config->head_block->block_size,
-			DMA_STM32_MAX_DATA_ITEMS);
+		LOG_ERR("Data size exceeds the maximum limit: %d>%d",
+			config->head_block->block_size, DMA_STM32_MAX_DATA_ITEMS);
 		return -EINVAL;
 	}
 
@@ -272,11 +272,65 @@ static int dma_stm32_validate_transfer_sizes(struct dma_config *config)
 	return 0;
 }
 
+static void dma_stm32_configure_linked_list(uint32_t channel, struct dma_config *config,
+					    uint32_t *linked_list_node, DMA_TypeDef *dma)
+{
+	uint32_t next_desc = 1;
+	struct dma_block_config *block_config;
+	uint32_t registers_update = 0;
+	uint32_t addr_offset = 0;
+	uint32_t descriptor_index = 0;
+	uint32_t base_addr = 0;
+	uint32_t next_desc_addr = 0;
+
+	block_config = config->head_block;
+	base_addr = (uint32_t)&linked_list_node[descriptor_index];
+
+	LL_DMA_SetLinkedListBaseAddr(dma, channel, base_addr);
+
+	for (uint32_t i = 0; i < config->block_count; i++) {
+		registers_update = 0;
+		LOG_DBG("Configuring block descriptor %d for channel %d", i, channel);
+
+		linked_list_node[descriptor_index] = block_config->source_address;
+		descriptor_index++;
+		linked_list_node[descriptor_index] = block_config->dest_address;
+		descriptor_index++;
+
+		if (i < config->block_count - 1) {
+			registers_update |=
+				LL_DMA_UPDATE_CSAR | LL_DMA_UPDATE_CDAR | LL_DMA_UPDATE_CLLR;
+			block_config = block_config->next_block;
+			next_desc_addr = (uint32_t)&linked_list_node[descriptor_index + 1];
+		} else if (config->cyclic) {
+			LOG_DBG("Last descriptor %d for channel %d, linking to first", i, channel);
+			registers_update |=
+				LL_DMA_UPDATE_CSAR | LL_DMA_UPDATE_CDAR | LL_DMA_UPDATE_CLLR;
+			next_desc_addr = base_addr;
+		} else {
+			LOG_DBG("Last descriptor %d for channel %d, no link", i, channel);
+			registers_update = 0;
+			next_desc = 0;
+		}
+
+		if (next_desc != 0) {
+			addr_offset = next_desc_addr & GENMASK(15, 2);
+			registers_update |= addr_offset;
+		}
+
+		linked_list_node[descriptor_index] = registers_update;
+		descriptor_index++;
+
+		if (i == 0) {
+			LL_DMA_ConfigLinkUpdate(dma, channel, registers_update, addr_offset);
+		}
+	}
+}
+
 int dma_stm32_configure(const struct device *dev, uint32_t id, struct dma_config *config)
 {
 	const struct dma_stm32_config *dev_config;
 	struct dma_stm32_channel *channel_config;
-	struct dma_block_config *block_config;
 	struct dma_stm32_descriptor hwdesc;
 	uint32_t channel;
 	DMA_TypeDef *dma;
@@ -326,15 +380,13 @@ int dma_stm32_configure(const struct device *dev, uint32_t id, struct dma_config
 		return ret;
 	}
 
-	block_config = config->head_block;
-
-	ret = dma_stm32_get_src_inc_mode(block_config->source_addr_adj, &src_inc_mode);
+	ret = dma_stm32_get_src_inc_mode(config->head_block->source_addr_adj, &src_inc_mode);
 	if (ret < 0) {
 		return ret;
 	}
 	LOG_DBG("Source address increment: %d", src_inc_mode);
 
-	ret = dma_stm32_get_dest_inc_mode(block_config->dest_addr_adj, &dest_inc_mode);
+	ret = dma_stm32_get_dest_inc_mode(config->head_block->dest_addr_adj, &dest_inc_mode);
 	if (ret < 0) {
 		return ret;
 	}
@@ -360,6 +412,7 @@ int dma_stm32_configure(const struct device *dev, uint32_t id, struct dma_config
 	channel_config->src_size = config->source_data_size;
 	channel_config->dst_size = config->dest_data_size;
 	channel_config->cyclic = config->cyclic;
+	channel_config->complete_callback_en = config->complete_callback_en;
 
 	dma_stm32_disable_it(dma, channel);
 
@@ -371,8 +424,12 @@ int dma_stm32_configure(const struct device *dev, uint32_t id, struct dma_config
 	if (!linked_list_needed) {
 		ccr |= LL_DMA_LSM_1LINK_EXECUTION;
 	} else {
-		LOG_ERR("Only single block transfers are supported for now");
-		return -ENOTSUP;
+		ccr |= LL_DMA_LSM_FULL_EXECUTION;
+
+		dma_stm32_configure_linked_list(channel, config,
+						dev_config->linked_list_buffer +
+							id * DMA_STM32_NUM_DESCRIPTORS_PER_CHANNEL,
+						dma);
 	}
 
 	/* TODO: support port specifier from configuration */
@@ -390,7 +447,19 @@ int dma_stm32_configure(const struct device *dev, uint32_t id, struct dma_config
 				 config->dest_burst_length);
 
 	hwdesc.channel_tr2 = ll_direction;
-	hwdesc.channel_tr2 |= LL_DMA_TCEM_BLK_TRANSFER;
+
+	if (linked_list_needed) {
+		if (channel_config->complete_callback_en == 1) {
+			hwdesc.channel_tr2 |= LL_DMA_TCEM_EACH_LLITEM_TRANSFER;
+			LOG_DBG("Enabling TC callback at the end of each linked list item");
+		} else {
+			hwdesc.channel_tr2 |= LL_DMA_TCEM_LAST_LLITEM_TRANSFER;
+			LOG_DBG("Enabling TC callback at the end of last linked list item");
+		}
+	} else {
+		hwdesc.channel_tr2 |= LL_DMA_TCEM_BLK_TRANSFER;
+		LOG_DBG("Enabling TC callback at the end of the block");
+	}
 
 	LL_DMA_ConfigChannelTransfer(dma, channel, hwdesc.channel_tr2);
 
@@ -691,16 +760,20 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 		channel_config->dma_callback(dev, channel_config->user_data, callback_arg,
 					     DMA_STATUS_BLOCK);
 	} else if (dma_stm32_is_tc_irq_active(dma, channel)) {
-		if (!channel_config->cyclic) {
-			channel_config->busy = false;
-		}
-
 		if (!channel_config->hal_override) {
 			LL_DMA_ClearFlag_TC(dma, channel);
 		}
 
-		channel_config->dma_callback(dev, channel_config->user_data, callback_arg,
-					     DMA_STATUS_COMPLETE);
+		if (channel_config->complete_callback_en == 1) {
+			channel_config->dma_callback(dev, channel_config->user_data, callback_arg,
+						     DMA_STATUS_BLOCK);
+		} else {
+			if (!channel_config->cyclic) {
+				channel_config->busy = false;
+			}
+			channel_config->dma_callback(dev, channel_config->user_data, callback_arg,
+						     DMA_STATUS_COMPLETE);
+		}
 	} else {
 		LOG_ERR("Transfer Error.");
 		channel_config->busy = false;
