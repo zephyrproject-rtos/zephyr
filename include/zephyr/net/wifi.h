@@ -735,6 +735,12 @@ enum wifi_ap_config_param {
 	WIFI_AP_CONFIG_PARAM_VHT_CAPAB = BIT(4),
 };
 
+/** @brief Wi-Fi STA mode configuration parameter */
+enum wifi_config_param {
+	/** Used for STA mode configuration parameter OKC */
+	WIFI_CONFIG_PARAM_OKC = BIT(0),
+};
+
 /** Helper function to get user-friendly status name for the status code. */
 const char *wifi_conn_status_txt(enum wifi_conn_status status);
 
