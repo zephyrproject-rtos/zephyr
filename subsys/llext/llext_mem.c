@@ -127,8 +127,10 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 			/* Region has data in the file, check if peek() is supported */
 			ext->mem[mem_idx] = llext_peek(ldr, region->sh_offset);
 			if (ext->mem[mem_idx]) {
-				if (IS_ALIGNED(ext->mem[mem_idx], region_align) ||
-				    ldr_parm->pre_located) {
+				if ((IS_ALIGNED(ext->mem[mem_idx], region_align) ||
+				     ldr_parm->pre_located) &&
+				    ((mem_idx != LLEXT_MEM_TEXT) ||
+				     INSTR_FETCHABLE(ext->mem[mem_idx], region_alloc))) {
 					/* Map this region directly to the ELF buffer */
 					llext_init_mem_part(ext, mem_idx,
 							    (uintptr_t)ext->mem[mem_idx],
@@ -137,8 +139,18 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 					return 0;
 				}
 
-				LOG_WRN("Cannot peek region %d: %p not aligned to %#zx",
-					mem_idx, ext->mem[mem_idx], (size_t)region_align);
+				if ((mem_idx == LLEXT_MEM_TEXT) &&
+				    !INSTR_FETCHABLE(ext->mem[mem_idx], region_alloc)) {
+					LOG_WRN("Cannot reuse ELF buffer for region %d, not "
+						"instruction memory: %p-%p",
+						mem_idx, ext->mem[mem_idx],
+						(void *)((uintptr_t)(ext->mem[mem_idx]) +
+							 region->sh_size));
+				}
+				if (!IS_ALIGNED(ext->mem[mem_idx], region_align)) {
+					LOG_WRN("Cannot peek region %d: %p not aligned to %#zx",
+						mem_idx, ext->mem[mem_idx], (size_t)region_align);
+				}
 			}
 		} else if (ldr_parm->pre_located) {
 			/*
