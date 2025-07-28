@@ -8,11 +8,11 @@
 
 / {
 	zephyr,user {
-		io-channels = <&lpadc0 0>, <&lpadc0 1>;
+		io-channels = <&lpadc1 0>, <&lpadc1 1>;
 	};
 };
 
-&lpadc0 {
+&lpadc1 {
 	#address-cells = <1>;
 	#size-cells = <0>;
 

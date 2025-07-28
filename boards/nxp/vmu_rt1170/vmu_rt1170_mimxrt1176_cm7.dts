@@ -478,7 +478,7 @@
 	status = "okay";
 };
 
-&lpadc1 {
+&lpadc2 {
 	status = "okay";
 };
 
