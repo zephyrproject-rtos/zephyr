@@ -118,7 +118,7 @@ nxp_mipi_i2c: &lpi2c5 {
 	#size-cells = <0>;
 };
 
-&lpadc0 {
+&lpadc1 {
 	status = "okay";
 };
 
