@@ -11,6 +11,9 @@
 
 enum ra_ex_ops {
 	FLASH_RA_EX_OP_WRITE_PROTECT = FLASH_EX_OP_VENDOR_BASE,
+
+	/* Reset Flash device (at QPI(4-4-4) mode) */
+	QSPI_FLASH_EX_OP_EXIT_QPI,
 };
 
 typedef struct {
