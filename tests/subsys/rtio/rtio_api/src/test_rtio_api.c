@@ -532,6 +532,46 @@ ZTEST_USER(rtio_api, test_rtio_multishot)
 	}
 }
 
+ZTEST(rtio_api, test_rtio_multishot_are_not_resubmitted_when_failed)
+{
+	int res;
+	struct rtio_sqe sqe;
+	struct rtio_cqe cqe;
+	struct rtio_sqe *handle;
+	struct rtio *r = &r_simple;
+	uint8_t *buffer = NULL;
+	uint32_t buffer_len = 0;
+
+	for (int i = 0 ; i < MEM_BLK_SIZE; i++) {
+		mempool_data[i] = i;
+	}
+
+	rtio_sqe_prep_read_multishot(&sqe, (struct rtio_iodev *)&iodev_test_simple, 0,
+				     mempool_data);
+	res = rtio_sqe_copy_in_get_handles(r, &sqe, &handle, 1);
+	zassert_ok(res);
+
+	rtio_iodev_test_set_result(&iodev_test_simple, -EIO);
+
+	rtio_submit(r, 1);
+
+	/** The multi-shot SQE should fail, transmit the result and stop resubmitting. */
+	zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(100)));
+	zassert_equal(cqe.result, -EIO, "Result should be %d but got %d", -EIO, cqe.result);
+
+	/* No more CQE's coming as it should be aborted */
+	zassert_equal(0, rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(100)),
+		      "Should not get more CQEs after the error CQE");
+
+	rtio_sqe_drop_all(r);
+
+	/* Flush any pending CQEs */
+	while (rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(1000)) != 0) {
+		rtio_cqe_get_mempool_buffer(r, &cqe, &buffer, &buffer_len);
+		rtio_release_buffer(r, buffer, buffer_len);
+	}
+}
+
 RTIO_DEFINE(r_transaction, SQE_POOL_SIZE, CQE_POOL_SIZE);
 
 RTIO_IODEV_TEST_DEFINE(iodev_test_transaction0);
