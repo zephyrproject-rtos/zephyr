@@ -250,10 +250,16 @@ const vth __irq_vector_table _irq_vector_table[] = {
 extern void stimer_isr(void);
 #define TIMER_IRQ_NUM DT_IRQN(DT_INST(0, ambiq_stimer))
 #define TIMER_IRQ_HANDLER stimer_isr
-#define IRQ_VECTOR_TABLE_SIZE _ISR_OFFSET > TIMER_IRQ_NUM ? (_ISR_OFFSET + 3) : (TIMER_IRQ_NUM + 2)
 #else
-#define IRQ_VECTOR_TABLE_SIZE (_ISR_OFFSET + 3)
+#define TIMER_IRQ_NUM 0
 #endif /* CONFIG_AMBIQ_STIMER_TIMER */
+
+#if defined(CONFIG_SOC_SERIES_APOLLO5X)
+#define IRQ_VECTOR_TABLE_SIZE (MAX(TIMER0_IRQn + AM_HAL_INTERNAL_TIMER_NUM_A + 1, \
+				MAX(_ISR_OFFSET + 3, TIMER_IRQ_NUM + 2)))
+#else
+#define IRQ_VECTOR_TABLE_SIZE (MAX(_ISR_OFFSET + 3, TIMER_IRQ_NUM + 2))
+#endif /* CONFIG_SOC_SERIES_APOLLO5X */
 
 const vth __irq_vector_table _irq_vector_table[IRQ_VECTOR_TABLE_SIZE] = {
 	[_ISR_OFFSET] = isr0,
