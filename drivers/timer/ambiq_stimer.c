@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Antmicro <www.antmicro.com>
+ * Copyright (c) 2025, Ambiq Micro Inc. <www.ambiq.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -94,7 +95,7 @@ static void ambiq_stimer_delta_set(uint32_t ui32Delta)
 #endif
 }
 
-static void stimer_isr(const void *arg)
+void stimer_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
