@@ -12,6 +12,7 @@
 static char stdout_buff[_STDOUT_BUF_SIZE];
 static int n_pend; /* Number of pending characters in buffer */
 
+#if defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE)
 static int print_char(int c)
 {
 	int printnow = 0;
@@ -34,6 +35,7 @@ static int print_char(int c)
 	}
 	return c;
 }
+#endif /* defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE) */
 
 /**
  * Ensure that whatever was written thru printk is displayed now
