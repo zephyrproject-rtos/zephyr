@@ -22,6 +22,11 @@
  */
 #define OPTION_NO_TLB_IPI BIT(0)
 
+/* Restore the PTE attributes if they have been
+ * stored in the SW bits part in the PTE.
+ */
+#define OPTION_RESTORE_ATTRS BIT(1)
+
 /* Level 1 contains page table entries
  * necessary to map the page table itself.
  */
@@ -185,7 +190,10 @@ static void init_page_table(uint32_t *ptable, size_t num_entries)
 	int i;
 
 	for (i = 0; i < num_entries; i++) {
-		ptable[i] = XTENSA_MMU_PTE_ILLEGAL;
+		ptable[i] = XTENSA_MMU_PTE(0, XTENSA_MMU_KERNEL_RING,
+					   XTENSA_MMU_PTE_SW(XTENSA_MMU_KERNEL_RING,
+							     XTENSA_MMU_PTE_ATTR_ILLEGAL),
+					   XTENSA_MMU_PTE_ATTR_ILLEGAL);
 	}
 }
 
@@ -207,14 +215,18 @@ static void map_memory_range(const uint32_t start, const uint32_t end,
 {
 	uint32_t page, *table;
 	bool shared = !!(attrs & XTENSA_MMU_MAP_SHARED);
-	uint32_t sw_attrs = (attrs & XTENSA_MMU_PTE_ATTR_ORIGINAL) == XTENSA_MMU_PTE_ATTR_ORIGINAL ?
-		attrs : 0;
+	uint32_t ring, sw_attrs, sw_ring, pte_sw;
+
+	ring = shared ? XTENSA_MMU_SHARED_RING : XTENSA_MMU_KERNEL_RING;
+	sw_attrs = (attrs & XTENSA_MMU_PTE_ATTR_ORIGINAL) == XTENSA_MMU_PTE_ATTR_ORIGINAL ?
+							     attrs : XTENSA_MMU_PTE_ATTR_ILLEGAL;
+	sw_ring = (attrs & XTENSA_MMU_PTE_ATTR_ORIGINAL) == XTENSA_MMU_PTE_ATTR_ORIGINAL ?
+							    ring : XTENSA_MMU_KERNEL_RING;
+	pte_sw = XTENSA_MMU_PTE_SW(sw_ring, sw_attrs);
 
 	for (page = start; page < end; page += CONFIG_MMU_PAGE_SIZE) {
-		uint32_t pte = XTENSA_MMU_PTE(page,
-					      shared ? XTENSA_MMU_SHARED_RING :
-						       XTENSA_MMU_KERNEL_RING,
-					      sw_attrs, attrs);
+		uint32_t pte = XTENSA_MMU_PTE(page, ring,
+					      pte_sw, attrs);
 		uint32_t l2_pos = XTENSA_MMU_L2_POS(page);
 		uint32_t l1_pos = XTENSA_MMU_L1_POS(page);
 
@@ -228,7 +240,7 @@ static void map_memory_range(const uint32_t start, const uint32_t end,
 
 			xtensa_kernel_ptables[l1_pos] =
 				XTENSA_MMU_PTE((uint32_t)table, XTENSA_MMU_KERNEL_RING,
-					       sw_attrs, XTENSA_MMU_PAGE_TABLE_ATTR);
+					       pte_sw, XTENSA_MMU_PAGE_TABLE_ATTR);
 		}
 
 		table = (uint32_t *)(xtensa_kernel_ptables[l1_pos] & XTENSA_MMU_PTE_PPN_MASK);
@@ -369,6 +381,7 @@ static bool l2_page_table_map(uint32_t *l1_table, void *vaddr, uintptr_t phys,
 	sys_cache_data_invd_range((void *)&l1_table[l1_pos], sizeof(l1_table[0]));
 
 	if (is_pte_illegal(l1_table[l1_pos])) {
+
 		table  = alloc_l2_table();
 
 		if (table == NULL) {
@@ -378,7 +391,9 @@ static bool l2_page_table_map(uint32_t *l1_table, void *vaddr, uintptr_t phys,
 		init_page_table(table, XTENSA_L2_PAGE_TABLE_ENTRIES);
 
 		l1_table[l1_pos] = XTENSA_MMU_PTE((uint32_t)table, XTENSA_MMU_KERNEL_RING,
-						  0, XTENSA_MMU_PAGE_TABLE_ATTR);
+						   XTENSA_MMU_PTE_SW(XTENSA_MMU_KERNEL_RING,
+								     XTENSA_MMU_PTE_ATTR_ILLEGAL),
+						   XTENSA_MMU_PAGE_TABLE_ATTR);
 
 		sys_cache_data_flush_range((void *)&l1_table[l1_pos], sizeof(l1_table[0]));
 	}
@@ -386,7 +401,9 @@ static bool l2_page_table_map(uint32_t *l1_table, void *vaddr, uintptr_t phys,
 	table = (uint32_t *)(l1_table[l1_pos] & XTENSA_MMU_PTE_PPN_MASK);
 	table[l2_pos] = XTENSA_MMU_PTE(phys, is_user ? XTENSA_MMU_USER_RING :
 						       XTENSA_MMU_KERNEL_RING,
-				       0, flags);
+				       XTENSA_MMU_PTE_SW(XTENSA_MMU_KERNEL_RING,
+							 XTENSA_MMU_PTE_ATTR_ILLEGAL),
+				       flags);
 
 	sys_cache_data_flush_range((void *)&table[l2_pos], sizeof(table[0]));
 	xtensa_tlb_autorefill_invalidate();
@@ -768,13 +785,13 @@ static uint32_t *dup_table(void)
 		}
 
 		for (j = 0; j < XTENSA_L2_PAGE_TABLE_ENTRIES; j++) {
-			uint32_t original_attr =  XTENSA_MMU_PTE_SW_GET(src_l2_table[j]);
+			uint32_t original_sw = XTENSA_MMU_PTE_SW_GET(src_l2_table[j]);
+			uint32_t original_attr = XTENSA_MMU_PTE_SW_ATTR_GET(original_sw);
 
 			l2_table[j] =  src_l2_table[j];
-			if (original_attr != 0x0) {
-				uint8_t ring;
+			if (original_attr != XTENSA_MMU_PTE_ATTR_ILLEGAL) {
+				uint8_t ring = XTENSA_MMU_PTE_SW_RING_GET(original_sw);
 
-				ring = XTENSA_MMU_PTE_RING_GET(l2_table[j]);
 				l2_table[j] =  XTENSA_MMU_PTE_ATTR_SET(l2_table[j], original_attr);
 				l2_table[j] =  XTENSA_MMU_PTE_RING_SET(l2_table[j],
 						ring == XTENSA_MMU_SHARED_RING ?
@@ -786,7 +803,9 @@ static uint32_t *dup_table(void)
 		 * user thread manipulate it.
 		 */
 		dst_table[i] = XTENSA_MMU_PTE((uint32_t)l2_table, XTENSA_MMU_KERNEL_RING,
-					      0, XTENSA_MMU_PAGE_TABLE_ATTR);
+					      XTENSA_MMU_PTE_SW(XTENSA_MMU_KERNEL_RING,
+								XTENSA_MMU_PTE_ATTR_ILLEGAL),
+					      XTENSA_MMU_PAGE_TABLE_ATTR);
 
 		sys_cache_data_flush_range((void *)l2_table, XTENSA_L2_PAGE_TABLE_SIZE);
 	}
@@ -848,12 +867,13 @@ err:
 }
 
 static int region_map_update(uint32_t *ptables, uintptr_t start,
-			      size_t size, uint32_t ring, uint32_t flags)
+			      size_t size, uint32_t ring, uint32_t flags, uint32_t option)
 {
 	int ret = 0;
 
 	for (size_t offset = 0; offset < size; offset += CONFIG_MMU_PAGE_SIZE) {
 		uint32_t *l2_table, pte;
+		uint32_t new_ring, new_attrs;
 		uint32_t page = start + offset;
 		uint32_t l1_pos = XTENSA_MMU_L1_POS(page);
 		uint32_t l2_pos = XTENSA_MMU_L2_POS(page);
@@ -864,8 +884,20 @@ static int region_map_update(uint32_t *ptables, uintptr_t start,
 
 		sys_cache_data_invd_range((void *)&l2_table[l2_pos], sizeof(l2_table[0]));
 
-		pte = XTENSA_MMU_PTE_RING_SET(l2_table[l2_pos], ring);
-		pte = XTENSA_MMU_PTE_ATTR_SET(pte, flags);
+		pte = l2_table[l2_pos];
+
+		if ((option & OPTION_RESTORE_ATTRS) == OPTION_RESTORE_ATTRS) {
+			uint32_t original_sw = XTENSA_MMU_PTE_SW_GET(pte);
+
+			new_attrs = XTENSA_MMU_PTE_SW_ATTR_GET(original_sw);
+			new_ring = XTENSA_MMU_PTE_SW_RING_GET(original_sw);
+		} else {
+			new_attrs = flags;
+			new_ring = ring;
+		}
+
+		pte = XTENSA_MMU_PTE_RING_SET(pte, new_ring);
+		pte = XTENSA_MMU_PTE_ATTR_SET(pte, new_attrs);
 
 		l2_table[l2_pos] = pte;
 
@@ -901,13 +933,13 @@ static inline int update_region(uint32_t *ptables, uintptr_t start,
 	new_flags_uc = (flags & ~XTENSA_MMU_PTE_ATTR_CACHED_MASK);
 	new_flags = new_flags_uc | XTENSA_MMU_CACHED_WB;
 
-	ret = region_map_update(ptables, va, size, ring, new_flags);
+	ret = region_map_update(ptables, va, size, ring, new_flags, option);
 
 	if (ret == 0) {
-		ret = region_map_update(ptables, va_uc, size, ring, new_flags_uc);
+		ret = region_map_update(ptables, va_uc, size, ring, new_flags_uc, option);
 	}
 #else
-	ret = region_map_update(ptables, start, size, ring, flags);
+	ret = region_map_update(ptables, start, size, ring, flags, option);
 #endif /* CONFIG_XTENSA_MMU_DOUBLE_MAP */
 
 #if CONFIG_MP_MAX_NUM_CPUS > 1
@@ -925,7 +957,8 @@ static inline int update_region(uint32_t *ptables, uintptr_t start,
 static inline int reset_region(uint32_t *ptables, uintptr_t start, size_t size, uint32_t option)
 {
 	return update_region(ptables, start, size,
-			     XTENSA_MMU_KERNEL_RING, XTENSA_MMU_PERM_W, option);
+			     XTENSA_MMU_KERNEL_RING, XTENSA_MMU_PERM_W,
+			     option | OPTION_RESTORE_ATTRS);
 }
 
 void xtensa_user_stack_perms(struct k_thread *thread)
