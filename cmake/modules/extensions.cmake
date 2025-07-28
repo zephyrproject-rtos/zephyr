@@ -5966,22 +5966,23 @@ function(add_llext_target target_name)
   endif()
 
   # When using the arcmwdt toolchain, the compiler may emit hundreds of
-  # .arcextmap.* sections that bloat the shstrtab. Even when the strip command
-  # is used to remove the sections, their names remain in the shstrtab.
-  # We must remove them ourselves.
+  # .arcextmap.* sections that bloat the shstrtab. stripac removes
+  # these sections, but it does not remove their names from the shstrtab.
+  # Use GNU strip to remove these sections beforehand.
   if (${ZEPHYR_TOOLCHAIN_VARIANT} STREQUAL "arcmwdt")
-    set(mwdt_strip_arcextmap_shstrtab_cmd
-      ${PYTHON_EXECUTABLE}
-      ${ZEPHYR_BASE}/scripts/build/llext_mwdt_strip_arcextmap.py
-      ${llext_pkg_output}
+    set(gnu_strip_for_mwdt_cmd
+      ${CMAKE_GNU_STRIP}
+      --remove-section=.arcextmap* --strip-unneeded
+      ${llext_pkg_input}
     )
   else()
-    set(mwdt_strip_arcextmap_shstrtab_cmd ${CMAKE_COMMAND} -E true)
+    set(gnu_strip_for_mwdt_cmd ${CMAKE_COMMAND} -E true)
   endif()
 
   # Remove sections that are unused by the llext loader
   add_custom_command(
     OUTPUT ${llext_pkg_output}
+    COMMAND ${gnu_strip_for_mwdt_cmd}
     COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
             $<TARGET_PROPERTY:bintools,elfconvert_flag>
             $<TARGET_PROPERTY:bintools,elfconvert_flag_strip_unneeded>
@@ -5990,7 +5991,6 @@ function(add_llext_target target_name)
             $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${llext_pkg_input}
             $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${llext_pkg_output}
             $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
-    COMMAND ${mwdt_strip_arcextmap_shstrtab_cmd}
     COMMAND ${slid_inject_cmd}
     DEPENDS ${llext_pkg_input}
     COMMAND_EXPAND_LISTS
