@@ -829,6 +829,14 @@ static int udc_stm32_ep_set_halt(const struct device *dev,
 		return -EIO;
 	}
 
+	/*
+	 * Mark non-control endpoint as halted
+	 * to indicate stall condition
+	 */
+	if (USB_EP_GET_IDX(cfg->addr) != 0) {
+		cfg->stat.halted = true;
+	}
+
 	return 0;
 }
 
@@ -845,6 +853,22 @@ static int udc_stm32_ep_clear_halt(const struct device *dev,
 		LOG_ERR("HAL_PCD_EP_ClrStall failed(0x%02x), %d",
 			cfg->addr, (int)status);
 		return -EIO;
+	}
+
+	/* Clear halted state to resume normal operation */
+	cfg->stat.halted = false;
+
+	if (USB_EP_GET_IDX(cfg->addr) != 0U) {
+		struct net_buf *buf = udc_buf_peek(cfg);
+
+		/* Start IN (device-to-host) transfer if not busy */
+		if (buf != NULL && USB_EP_DIR_IS_IN(cfg->addr) && !udc_ep_is_busy(cfg)) {
+			udc_stm32_tx(dev, cfg, buf);
+		}
+		/* Prepare OUT (host-to-device) transfer if busy */
+		else if (buf != NULL && USB_EP_DIR_IS_OUT(cfg->addr) && udc_ep_is_busy(cfg)) {
+			udc_stm32_rx(dev, cfg, buf);
+		}
 	}
 
 	return 0;
@@ -879,8 +903,19 @@ static int udc_stm32_ep_enqueue(const struct device *dev,
 
 	lock_key = irq_lock();
 
-	if (USB_EP_DIR_IS_IN(epcfg->addr)) {
-		ret = udc_stm32_tx(dev, epcfg, buf);
+	if (USB_EP_DIR_IS_IN(epcfg->addr) != 0U) {
+		if (!epcfg->stat.halted) {
+			/* Endpoint is not halted, safe to transmit data */
+			ret = udc_stm32_tx(dev, epcfg, buf);
+		} else {
+			/*
+			 * Endpoint is halted (stalled) by the host.
+			 * Skip transmission to avoid protocol violations
+			 * and potential data corruption.
+			 */
+			LOG_DBG("ep 0x%02x halted", epcfg->addr);
+			ret = 0;
+		}
 	} else {
 		ret = udc_stm32_rx(dev, epcfg, buf);
 	}
