@@ -1,0 +1,8 @@
+
+config CRYPTO_MSPM0_AES
+	bool "TI MSPM0 AES driver support"
+	depends on DT_HAS_TI_MSPM0_AES_ENABLED
+	depends on CRYPTO
+	select USE_MSPM0_DL_AES
+	help
+	  Enable TI MSPM0 AES driver support

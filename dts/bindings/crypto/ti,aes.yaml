@@ -1,0 +1,24 @@
+# Copyright (c) Copyright (c) 2025 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Texas Instruments MSPM0 G series Advanced Encryption Standard (AES) Engine
+  This peripheral provides AES-128 encryption and decryption.
+
+compatible: "ti,mspm0-aes"
+
+include: base.yaml
+
+properties:
+  reg:
+    type: array
+    required: true
+    description: MMIO register space
+
+  interrupts:
+    type: array
+    required: true
+    description: |
+      Interrupt specification. For MSPM0,
+      Format: <28 INTERRUPT_FLAG>
+        - 28 NVIC number for AES module.
