@@ -1,0 +1,52 @@
+#include <common/mem.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-sw.h>
+
+/ {
+	mem_cache: memory@20180000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <20180000 0x1000>;
+		zephyr,memory-region = "MEM_CACHEABLE";
+		zephyr,memory-attr = <( DT_MEM_CACHEABLE )>;
+	};
+
+	mem_cache_sw: memory@20181000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x20181000 0x1000>;
+		zephyr,memory-region = "MEM_CACHEABLE_SW";
+		zephyr,memory-attr = <( DT_MEM_CACHEABLE | DT_MEM_SW_ALLOC_CACHE )>;
+	};
+
+	mem_noncache_sw: memory@20182000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x20182000 0x1000>;
+		zephyr,memory-region = "MEM_NON_CACHEABLE_SW";
+		zephyr,memory-attr = <( DT_MEM_SW_ALLOC_NON_CACHE )>;
+	};
+
+	mem_dma_sw: memory@20183000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x20183000 0x1000>;
+		zephyr,memory-region = "MEM_DMA_SW";
+		zephyr,memory-attr = <( DT_MEM_DMA | DT_MEM_SW_ALLOC_DMA )>;
+	};
+
+	mem_cache_sw_big: memory@20184000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x20184000 0x2000>;
+		zephyr,memory-region = "MEM_CACHEABLE_SW_BIG";
+		zephyr,memory-attr = <( DT_MEM_CACHEABLE | DT_MEM_SW_ALLOC_CACHE )>;
+	};
+
+	mem_cache_cache_dma_multi: memory@20186000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x20186000 0x1000>;
+		zephyr,memory-region = "MEM_CACHEABLE_SW_MULTI_ATTR";
+		zephyr,memory-attr = <( DT_MEM_CACHEABLE | DT_MEM_DMA |
+					DT_MEM_SW_ALLOC_CACHE | DT_MEM_SW_ALLOC_DMA)>;
+	};
+};
+
+&sram0 {
+	reg = <0x20080000 DT_SIZE_M(1)>;
+};

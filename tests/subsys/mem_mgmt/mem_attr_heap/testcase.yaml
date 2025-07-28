@@ -5,5 +5,7 @@ tests:
   mem_mgmt.mem_attr_heap:
     platform_allow:
       - qemu_cortex_m3
+      - apollo510_evb
     integration_platforms:
       - qemu_cortex_m3
+      - apollo510_evb
