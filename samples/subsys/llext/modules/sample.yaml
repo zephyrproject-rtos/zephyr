@@ -7,7 +7,9 @@ common:
     - mps2/an385              # ARM Cortex-M3 (ARMv7-M ISA)
     - mps2/an521/cpu0         # ARM Cortex-M33 (ARMv8-M ISA)
     - qemu_xtensa/dc233c
+    - qemu_arc/qemu_arc_em
   integration_platforms:
+    - qemu_arc/qemu_arc_em
     - qemu_xtensa/dc233c
     - mps2/an385
     - qemu_cortex_a53
@@ -26,6 +28,7 @@ tests:
       # security benefits.
       - arch:arm:CONFIG_ARM_MPU=n
       - arch:arm:CONFIG_ARM_AARCH32_MMU=n
+      - arch:arc:CONFIG_ARC_MPU_ENABLE=n
     harness_config:
       type: one_line
       regex:
