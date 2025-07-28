@@ -13,7 +13,7 @@ Overview
 Lightweight Machine to Machine (LwM2M) is an application layer protocol
 designed with device management, data reporting and device actuation in mind.
 Based on CoAP/UDP, `LwM2M`_ is a
-`standard <http://openmobilealliance.org/release/LightweightM2M/>`_ defined by
+`standard <https://openmobilealliance.org/release/LightweightM2M/>`_ defined by
 the Open Mobile Alliance and suitable for constrained devices by its use of
 CoAP packet-size optimization and a simple, stateless flow that supports a
 REST API.
@@ -807,13 +807,13 @@ API Reference
    https://www.omaspecworks.org/what-is-oma-specworks/iot/lightweight-m2m-lwm2m/
 
 .. _LwM2M registry:
-   http://www.openmobilealliance.org/wp/OMNA/LwM2M/LwM2MRegistry.html
+   https://www.openmobilealliance.org/wp/OMNA/LwM2M/LwM2MRegistry.html
 
 .. _OMA Specworks LwM2M:
    https://www.omaspecworks.org/what-is-oma-specworks/iot/lightweight-m2m-lwm2m/
 
 .. _LwM2M specification 1.0.2:
-   http://openmobilealliance.org/release/LightweightM2M/V1_0_2-20180209-A/OMA-TS-LightweightM2M-V1_0_2-20180209-A.pdf
+   https://www.openmobilealliance.org/release/LightweightM2M/V1_0_2-20180209-A/OMA-TS-LightweightM2M-V1_0_2-20180209-A.pdf
 
 .. _LwM2M specification 1.1.1:
-   http://openmobilealliance.org/release/LightweightM2M/V1_1_1-20190617-A/
+   https://www.openmobilealliance.org/release/LightweightM2M/V1_1_1-20190617-A/

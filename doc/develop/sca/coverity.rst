@@ -30,4 +30,4 @@ and incremental scan results.
 Result Analysis
 ****************
 
-Follow the instructions on http://scan.coverity.com for uploading results.
+Follow the instructions on https://scan.coverity.com for uploading results.
