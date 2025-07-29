@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&gpt0 {
+	status = "okay";
+
+	pwm0: pwm {
+		status = "okay";
+		pinctrl-0 = <&gpt0_pins>;
+		pinctrl-names = "default";
+	};
+};
