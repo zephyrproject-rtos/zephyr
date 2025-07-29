@@ -429,6 +429,37 @@ int rpu_rdsr1(void)
 #endif
 }
 
+/**
+ * @brief Read a register via RPU hardware interface
+ *
+ * @param reg_addr Register address (opcode)
+ * @param reg_value Pointer to store the read value
+ * @return int 0 on success, negative error code on failure
+ */
+int rpu_read_reg(uint8_t reg_addr, uint8_t *reg_value)
+{
+#if CONFIG_NRF70_ON_QSPI
+	return qspi_read_reg(&qspi_perip, reg_addr, reg_value);
+#else
+	return spim_read_reg_wrapper(NULL, reg_addr, reg_value);
+#endif
+}
+
+/**
+ * @brief Write a register via RPU hardware interface
+ *
+ * @param reg_addr Register address (opcode)
+ * @param reg_value Value to write
+ * @return int 0 on success, negative error code on failure
+ */
+int rpu_write_reg(uint8_t reg_addr, uint8_t reg_value)
+{
+#if CONFIG_NRF70_ON_QSPI
+	return qspi_write_reg(&qspi_perip, reg_addr, reg_value);
+#else
+	return spim_write_reg_wrapper(NULL, reg_addr, reg_value);
+#endif
+}
 
 int rpu_clks_on(void)
 {

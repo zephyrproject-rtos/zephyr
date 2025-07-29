@@ -156,6 +156,34 @@ int spim_WRSR2(const struct device *dev, const uint8_t wrsr2)
 	return spim_write_reg(&spi_spec, 0x3F, wrsr2);
 }
 
+/**
+ * @brief Read a register via SPI (wrapper for compatibility)
+ *
+ * @param dev SPI device (unused, kept for compatibility)
+ * @param reg_addr Register address (opcode)
+ * @param reg_value Pointer to store the read value
+ * @return int 0 on success, negative error code on failure
+ */
+int spim_read_reg_wrapper(const struct device *dev, uint8_t reg_addr, uint8_t *reg_value)
+{
+	ARG_UNUSED(dev);
+	return spim_read_reg(reg_addr, reg_value);
+}
+
+/**
+ * @brief Write a register via SPI (wrapper for compatibility)
+ *
+ * @param dev SPI device (unused, kept for compatibility)
+ * @param reg_addr Register address (opcode)
+ * @param reg_value Value to write
+ * @return int 0 on success, negative error code on failure
+ */
+int spim_write_reg_wrapper(const struct device *dev, uint8_t reg_addr, uint8_t reg_value)
+{
+	ARG_UNUSED(dev);
+	return spim_write_reg(&spi_spec, reg_addr, reg_value);
+}
+
 int _spim_wait_while_rpu_awake(void)
 {
 	int ret;
