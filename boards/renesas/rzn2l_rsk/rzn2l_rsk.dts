@@ -109,3 +109,11 @@
 &gpio5 {
 	status = "okay";
 };
+
+&adc0 {
+	status = "okay";
+};
+
+&adc1 {
+	status = "okay";
+};
