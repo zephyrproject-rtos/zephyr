@@ -22,6 +22,7 @@
 #include <zephyr/sys/barrier.h>
 #include <zephyr/platform/hooks.h>
 #include <zephyr/arch/cache.h>
+#include <cortex_m/debug.h>
 
 /*
  * GCC can detect if memcpy is passed a NULL argument, however one of
