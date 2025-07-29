@@ -14,10 +14,27 @@ tests:
       - esp32s3_devkitm/esp32s3/procpu
       - esp32c3_devkitm
       - esp32c6_devkitc/esp32c6/hpcore
+      - disco_l475_iot1
+      - nucleo_c071rb
+      - nucleo_f091rc
+      - nucleo_f103rb
+      - nucleo_f207zg
+      - nucleo_f429zi
+      - nucleo_f746zg
+      - nucleo_g071rb
+      - nucleo_g474re
+      - nucleo_h743zi
       - nucleo_h7s3l8
+      - nucleo_l073rz
+      - nucleo_l152re
+      - nucleo_u083rc
       - nucleo_u385rg_q
-      - stm32h7s78_dk
+      - nucleo_wb55rg
+      - nucleo_wba55cg
+      - nucleo_wl55jc
+      - stm32f3_disco@B
       - stm32h573i_dk
+      - stm32h7s78_dk
     integration_platforms:
       - nrf52840dk/nrf52840
       - esp32_devkitc/esp32/procpu
