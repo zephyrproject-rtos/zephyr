@@ -8,6 +8,23 @@
 #include <zephyr/kernel_structs.h>
 #include <zephyr/kernel/thread.h>
 
+/* GCC/gas has a code generation bugglet on thumb.  The R7 register is
+ * the ABI-defined frame pointer, though it's usually unused in zephyr
+ * due to -fomit-frame-pointer (and the fact the DWARF on ARM doesn't
+ * really need it).  But when it IS enabled, which sometimes seems to
+ * happen due to toolchain internals, GCC is unable to allow its use
+ * in the clobber list of an asm() block (I guess it can't generate
+ * spill/fill code without using the frame?).
+ *
+ * When absolutely needed, this kconfig unmasks a workaround where we
+ * spill/fill R7 around the switch manually.
+ */
+#ifdef CONFIG_ARM_GCC_FP_WORKAROUND
+#define _R7_CLOBBER_OPT(expr) expr
+#else
+#define _R7_CLOBBER_OPT(expr) /**/
+#endif
+
 void *arm_m_new_stack(char *base, uint32_t sz, void *entry, void *arg0, void *arg1, void *arg2,
 		      void *arg3);
 
@@ -113,6 +130,7 @@ static ALWAYS_INLINE void arm_m_switch(void *switch_to, void **switched_from)
 	register uint32_t r4 __asm__("r4") = (uint32_t)switch_to;
 	register uint32_t r5 __asm__("r5") = (uint32_t)switched_from;
 	__asm__ volatile(
+		 _R7_CLOBBER_OPT("push {r7};")
 		/* Construct and push a {r12, lr, pc} group at the top
 		 * of the frame, where PC points to the final restore location
 		 * at the end of this sequence.
@@ -186,9 +204,13 @@ static ALWAYS_INLINE void arm_m_switch(void *switch_to, void **switched_from)
 		"pop {pc};"
 
 		"3:" /* Label for restore address */
-		::"r"(r4),
-		"r"(r5)
-		: "r6", "r7", "r8", "r9", "r10", "r11");
+		 _R7_CLOBBER_OPT("pop {r7};")
+		::"r"(r4),"r"(r5)
+		 : "r6", "r8", "r9", "r10",
+#ifndef CONFIG_ARM_GCC_FP_WORKAROUND
+		    "r7",
+#endif
+		    "r11");
 }
 
 #ifdef CONFIG_USE_SWITCH
