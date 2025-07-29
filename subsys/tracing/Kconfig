@@ -159,6 +159,13 @@ config TRACING_BACKEND_RAM
 	  be dumped to a file at runtime with a debugger.
 	  See gdb dump binary memory documentation for example.
 
+config TRACING_BACKEND_SEMIHOST
+	bool "Semihost backend"
+	depends on SEMIHOST
+	help
+	  Use semihosting to output tracing data. This is useful
+	  for debugging on a host machine, such as when using QEMU.
+
 config TRACING_BACKEND_ADSP_MEMORY_WINDOW
 	bool "Memory window in RAM"
 	depends on SOC_FAMILY_INTEL_ADSP
@@ -174,6 +181,7 @@ config TRACING_BACKEND_NAME
 	default "tracing_backend_usb" if TRACING_BACKEND_USB
 	default "tracing_backend_posix" if TRACING_BACKEND_POSIX
 	default "tracing_backend_ram" if TRACING_BACKEND_RAM
+	default "tracing_backend_semihost" if TRACING_BACKEND_SEMIHOST
 	default "tracing_backend_adsp_memory_window" if TRACING_BACKEND_ADSP_MEMORY_WINDOW
 
 config RAM_TRACING_BUFFER_SIZE
