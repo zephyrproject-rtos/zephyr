@@ -1094,6 +1094,15 @@
 		status = "disabled";
 	};
 
+	ewm0: ewm@27b0000 {
+		compatible = "nxp,ewm";
+		reg = <0x27b0000 0x6>;
+		status = "disabled";
+		interrupts = <147 0>;
+		clk-sel = "lpo_clk[2]";
+		clk-divider = <0x2>;
+	};
+
 	lpspi1: spi@4360000 {
 		compatible = "nxp,lpspi";
 		reg = <0x4360000 0x4000>;
