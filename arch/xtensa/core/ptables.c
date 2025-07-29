@@ -11,6 +11,7 @@
 #include <zephyr/kernel/mm.h>
 #include <zephyr/toolchain.h>
 #include <xtensa/corebits.h>
+#include <xtensa_asm2_context.h>
 #include <xtensa_mmu_priv.h>
 
 #include <kernel_arch_func.h>
@@ -1170,6 +1171,53 @@ bool xtensa_mem_kernel_has_access(const void *addr, size_t size, int write)
 int arch_buffer_validate(const void *addr, size_t size, int write)
 {
 	return mem_buffer_validate(addr, size, write, XTENSA_MMU_USER_RING);
+}
+
+bool xtensa_exc_load_store_ring_error_check(void *bsa_p)
+{
+	uintptr_t ring, vaddr;
+	_xtensa_irq_bsa_t *bsa = (_xtensa_irq_bsa_t *)bsa_p;
+
+	ring = (bsa->ps & XCHAL_PS_RING_MASK) >> XCHAL_PS_RING_SHIFT;
+
+	if (ring != XTENSA_MMU_USER_RING) {
+		return true;
+	}
+
+	vaddr = bsa->excvaddr;
+
+	if (arch_buffer_validate((void *)vaddr, sizeof(uint32_t), false) != 0) {
+		/* User thread DO NOT have access to this memory according to
+		 * page table. so this is a true access violation.
+		 */
+		return true;
+	}
+
+	/* User thread has access to this memory according to
+	 * page table. so this is not a true access violation.
+	 *
+	 * Now we need to find all associated auto-refilled DTLBs
+	 * and invalidate them. So that hardware can reload
+	 * from page table with correct permission for user
+	 * thread.
+	 */
+	while (true) {
+		uint32_t dtlb_entry = xtensa_dtlb_probe((void *)vaddr);
+
+		if ((dtlb_entry & XTENSA_MMU_PDTLB_HIT) != XTENSA_MMU_PDTLB_HIT) {
+			/* No more DTLB entry found. */
+			return false;
+		}
+
+		if ((dtlb_entry & XTENSA_MMU_PDTLB_WAY_MASK) >=
+				XTENSA_MMU_NUM_TLB_AUTOREFILL_WAYS) {
+			return false;
+		}
+
+		xtensa_dtlb_entry_invalidate_sync(dtlb_entry);
+	}
+
+	return false;
 }
 
 #ifdef CONFIG_XTENSA_MMU_FLUSH_AUTOREFILL_DTLBS_ON_SWAP

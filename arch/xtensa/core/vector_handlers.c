@@ -630,6 +630,13 @@ void *xtensa_excint1_c(void *esf)
 		xtensa_lazy_hifi_load(thread->arch.hifi_regs);
 		break;
 #endif /* CONFIG_XTENSA_LAZY_HIFI_SHARING */
+#if defined(CONFIG_XTENSA_MMU) && defined(CONFIG_USERSPACE)
+	case EXCCAUSE_LOAD_STORE_RING:
+		if (!xtensa_exc_load_store_ring_error_check(bsa)) {
+			break;
+		}
+		__fallthrough;
+#endif /* CONFIG_XTENSA_MMU && CONFIG_USERSPACE */
 	default:
 		reason = K_ERR_CPU_EXCEPTION;
 
