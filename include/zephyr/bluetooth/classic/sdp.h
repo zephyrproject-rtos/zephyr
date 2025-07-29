@@ -340,7 +340,7 @@ struct bt_sdp_record {
  *  Helper macro to initialize a 128-bit UUID array value from the readable form
  *  of UUIDs.
  *
- *  Example of how to declare the UUID `00001101-0000-1000-8000-00805F9B34FB`
+ *  Example of how to declare the UUID `6E400001-B5A3-F393-E0A9-E50E24DCCA9E`
  *
  *  @code
  *  BT_SDP_ARRAY_UUID_128(0x6E400001, 0xB5A3, 0xF393, 0xE0A9, 0xE50E24DCCA9E)
