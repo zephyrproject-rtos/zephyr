@@ -44,6 +44,8 @@ family:
       cpuclusters:
       - name: a55
       - name: m33
+      - name: m70
+      - name: m71
     - name: mimx9596
       cpuclusters:
       - name: a55
