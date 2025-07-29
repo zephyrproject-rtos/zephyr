@@ -48,4 +48,4 @@ int32_t cpu_freq_pstate_set(struct pstate state)
 	};                                                                                         \
 	PSTATE_DT_DEFINE(node_id, &_CONCAT(max32_config_, node_id))
 
-DT_FOREACH_CHILD(DT_PATH(performance_states), DEFINE_MAX32_CONFIG)
+DT_FOREACH_CHILD_STATUS_OKAY(DT_PATH(performance_states), DEFINE_MAX32_CONFIG)

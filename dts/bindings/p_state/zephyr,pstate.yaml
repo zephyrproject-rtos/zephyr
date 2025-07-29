@@ -13,7 +13,3 @@ properties:
         CPU load threshold, in percent, for entering this performance state. Once
         the CPU load exceeds this threshold, it becomes a valid performance state
         for the P-state driver to switch to.
-  disabled:
-    type: boolean
-    description: |
-        Disable property to disable this performance state.

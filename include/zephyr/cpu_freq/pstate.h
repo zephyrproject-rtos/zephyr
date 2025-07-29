@@ -12,7 +12,11 @@ extern "C" {
 #endif
 
 #include <zephyr/types.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/cpu_freq/pstate.h>
+
+/** Synthesize symbol of pstate from devicetree dependency ordinal */
+#define PSTATE_DT_SYM(_node) _CONCAT(__pstate_, DT_DEP_ORD(_node))
 
 /**
  * @brief Define all P-state information for the given node identifier.
@@ -20,8 +24,8 @@ extern "C" {
  * @param _node Node identifier.
  * @param _config Pointer to the SoC specific configuration for the P-state.
  */
-#define PSTATE_DT_DEFINE(_node, _config)                                                          \
-	const struct pstate _CONCAT(pstate_, DEVICE_DT_NAME_GET(_node)) = {                      \
+#define PSTATE_DT_DEFINE(_node, _config)                                                           \
+	const struct pstate PSTATE_DT_SYM(_node) = {                                               \
 		.load_threshold = DT_PROP(_node, load_threshold),                                  \
 		.disabled = DT_PROP(_node, disabled),                                              \
 		.config = _config,                                                                 \
@@ -34,13 +38,19 @@ extern "C" {
  *
  * @param _node Node identifier.
  */
-#define PSTATE_DT_GET(_node) &(_CONCAT(pstate_, DEVICE_DT_NAME_GET(_node))),
+#define PSTATE_DT_GET(_node) &PSTATE_DT_SYM(_node)
 
 struct pstate {
 	uint32_t load_threshold; /**< CPU load threshold at which P-state should be triggered */
 	uint8_t disabled;        /**< Flag to indicate if P-state is disabled */
 	const void *config;      /**< Vendor specific devicetree properties */
 };
+
+/* Define performance-states as extern to be picked up by CPU Freq policy */
+#define Z_DECLARE_PSTATE_EXTERN(_node) \
+	extern const struct pstate PSTATE_DT_SYM(_node);
+
+DT_FOREACH_CHILD_STATUS_OKAY(DT_PATH(performance_states), Z_DECLARE_PSTATE_EXTERN)
 
 #ifdef __cplusplus
 }

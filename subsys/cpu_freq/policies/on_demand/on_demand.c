@@ -9,12 +9,12 @@
 #include <zephyr/cpu_freq/policy.h>
 #include <zephyr/cpu_freq/cpu_freq.h>
 #include <metrics/cpu_load.h>
-#include "cpu_freq_soc.h"
 
 LOG_MODULE_REGISTER(cpu_freq_policy_on_demand, CONFIG_CPU_FREQ_LOG_LEVEL);
 
 const struct pstate *soc_pstates[] = {
-	DT_FOREACH_CHILD(DT_PATH(performance_states), PSTATE_DT_GET)};
+	DT_FOREACH_CHILD_STATUS_OKAY_SEP(DT_PATH(performance_states), PSTATE_DT_GET, (,))
+};
 
 /*
  * On-demand policy scans the list of P-states from the devicetree and selects the
