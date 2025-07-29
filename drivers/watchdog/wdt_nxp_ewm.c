@@ -20,6 +20,7 @@ struct nxp_ewm_config {
 	void (*irq_config_func)(const struct device *dev);
 	bool is_input_enabled;
 	bool is_input_active_high;
+	uint8_t clk_sel;
 	uint8_t clk_divider;
 };
 
@@ -141,6 +142,27 @@ static int nxp_ewm_init(const struct device *dev)
 	const struct nxp_ewm_config *config = dev->config;
 	EWM_Type *base = config->base;
 
+#if DT_INST_NODE_HAS_PROP(0, clk_sel)
+	/* Set clock select value for CLKCTRL register */
+	switch (config->clk_sel) {
+	case 0:
+		base->CLKCTRL = EWM_CLKCTRL_CLKSEL(0);
+		break;
+	case 1:
+		base->CLKCTRL = EWM_CLKCTRL_CLKSEL(1);
+		break;
+	case 2:
+		base->CLKCTRL = EWM_CLKCTRL_CLKSEL(2);
+		break;
+	case 3:
+		base->CLKCTRL = EWM_CLKCTRL_CLKSEL(3);
+		break;
+	default:
+		LOG_ERR("Invalid clock select value: %d", config->clk_sel);
+		return -EINVAL;
+	}
+#endif /* DT_INST_NODE_HAS_PROP(0, clk_sel) */
+
 	if (config->clk_divider >= 0 && config->clk_divider <= 0xFF) {
 		base->CLKPRESCALER = EWM_CLKPRESCALER_CLK_DIV(config->clk_divider);
 	}
@@ -156,6 +178,11 @@ static DEVICE_API(wdt, nxp_ewm_api) = {
 	.feed = nxp_ewm_feed,
 };
 
+#define CLK_SEL_DEFAULT 0
+#define EWM_CONFIG_CLK_SEL_INIT(n)\
+	.clk_sel = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clk_sel),	\
+					(DT_INST_ENUM_IDX(n, clk_sel)),	\
+					(CLK_SEL_DEFAULT)),
 #define WDT_EWM_INIT(n)							\
 	static void nxp_ewm_config_func_##n(const struct device *dev);	\
 									\
@@ -165,6 +192,7 @@ static DEVICE_API(wdt, nxp_ewm_api) = {
 		.is_input_enabled = DT_INST_PROP(n, input_trigger_en),	\
 		.is_input_active_high =					\
 			DT_INST_PROP(n, input_trigger_active_high),	\
+		EWM_CONFIG_CLK_SEL_INIT(n)	\
 		.clk_divider = DT_INST_PROP(n, clk_divider),		\
 	};								\
 									\
