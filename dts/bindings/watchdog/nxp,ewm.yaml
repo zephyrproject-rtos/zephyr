@@ -14,6 +14,21 @@ properties:
   interrupts:
     required: true
 
+  clk-sel:
+    type: int
+    description: |
+      Watchdog clock select:
+      - 0: lpo_clk[0].
+      - 1: lpo_clk[1]
+      - 2: lpo_clk[1]
+      - 3: lpo_clk[3]
+      (See the chip-specific information for clock sources used.)
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+
   clk-divider:
     type: int
     description: Watchdog clock divider
