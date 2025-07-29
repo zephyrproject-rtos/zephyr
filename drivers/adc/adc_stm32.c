@@ -498,7 +498,7 @@ static void adc_stm32_calibration_start(const struct device *dev, bool single_en
 	const struct adc_stm32_cfg *config =
 		(const struct adc_stm32_cfg *)dev->config;
 	ADC_TypeDef *adc = config->base;
-#ifdef LL_ADC_SINGLE_ENDED
+#if defined(LL_ADC_SINGLE_ENDED) && defined(LL_ADC_DIFFERENTIAL_ENDED)
 	uint32_t calib_type = single_ended ? LL_ADC_SINGLE_ENDED : LL_ADC_DIFFERENTIAL_ENDED;
 #else
 	ARG_UNUSED(single_ended);
