@@ -44,8 +44,28 @@ enum display_pixel_format {
 	PIXEL_FORMAT_MONO01		= BIT(1), /**< Monochrome (0=Black 1=White) */
 	PIXEL_FORMAT_MONO10		= BIT(2), /**< Monochrome (1=Black 0=White) */
 	PIXEL_FORMAT_ARGB_8888		= BIT(3), /**< 32-bit ARGB */
-	PIXEL_FORMAT_RGB_565		= BIT(4), /**< 16-bit RGB */
-	PIXEL_FORMAT_BGR_565		= BIT(5), /**< 16-bit BGR */
+	/**
+	 * 16-bit RGB format packed into two bytes: 5 red bits [15:11], 6
+	 * green bits [10:5], 5 blue bits [4:0]. For example, in little-endian machine:
+	 *
+	 * @code{.unparsed}
+	 *   7......0 15.....8
+	 * | gggBbbbb RrrrrGgg | ...
+	 * @endcode
+	 *
+	 */
+	PIXEL_FORMAT_RGB_565		= BIT(4),
+	/**
+	 * 16-bit RGB format packed into two bytes: 5 blue bits [15:11], 6
+	 * green bits [10:5], 5 red bits [4:0]. For example, in little-endian machine:
+	 *
+	 * @code{.unparsed}
+	 *   7......0 15.....8
+	 * | gggRrrrr BbbbbGgg | ...
+	 * @endcode
+	 *
+	 */
+	PIXEL_FORMAT_BGR_565		= BIT(5),
 	PIXEL_FORMAT_L_8		= BIT(6), /**< 8-bit Grayscale/Luminance, equivalent to */
 						  /**< GRAY, GREY, GRAY8, Y8, R8, etc...        */
 };
