@@ -55,7 +55,7 @@ LOG_MODULE_REGISTER(display_stm32_ltdc, CONFIG_DISPLAY_LOG_LEVEL);
 #elif CONFIG_STM32_LTDC_RGB565
 #define STM32_LTDC_INIT_PIXEL_SIZE	2u
 #define STM32_LTDC_INIT_PIXEL_FORMAT	LTDC_PIXEL_FORMAT_RGB565
-#define DISPLAY_INIT_PIXEL_FORMAT	PIXEL_FORMAT_BGR_565
+#define DISPLAY_INIT_PIXEL_FORMAT	PIXEL_FORMAT_RGB_565
 #else
 #error "Invalid LTDC pixel format chosen"
 #endif
@@ -110,9 +110,9 @@ static int stm32_ltdc_set_pixel_format(const struct device *dev,
 	struct display_stm32_ltdc_data *data = dev->data;
 
 	switch (format) {
-	case PIXEL_FORMAT_BGR_565:
+	case PIXEL_FORMAT_RGB_565:
 		err = HAL_LTDC_SetPixelFormat(&data->hltdc, LTDC_PIXEL_FORMAT_RGB565, 0);
-		data->current_pixel_format = PIXEL_FORMAT_BGR_565;
+		data->current_pixel_format = PIXEL_FORMAT_RGB_565;
 		data->current_pixel_size = 2u;
 		break;
 	case PIXEL_FORMAT_RGB_888:
@@ -158,7 +158,7 @@ static void stm32_ltdc_get_capabilities(const struct device *dev,
 				     data->hltdc.LayerCfg[0].WindowY0;
 	capabilities->supported_pixel_formats = PIXEL_FORMAT_ARGB_8888 |
 					PIXEL_FORMAT_RGB_888 |
-					PIXEL_FORMAT_BGR_565;
+					PIXEL_FORMAT_RGB_565;
 	capabilities->screen_info = 0;
 
 	capabilities->current_pixel_format = data->current_pixel_format;
