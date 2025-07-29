@@ -19,6 +19,8 @@
 		zephyr,itcm = &itcm_ns;
 		zephyr,dtcm = &dtcm_ns;
 		zephyr,code-partition = &dmem_ns;
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
 	};
 
 };
@@ -45,4 +47,24 @@
 
 &dtcm {
 	status = "okay";
+};
+
+&dma {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+	dmas = <&dma 2>, <&dma 3>;
+	dma-names = "tx", "rx";
+};
+
+&uart1 {
+	status = "okay";
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+	dmas = <&dma 0>, <&dma 1>;
+	dma-names = "tx", "rx";
 };

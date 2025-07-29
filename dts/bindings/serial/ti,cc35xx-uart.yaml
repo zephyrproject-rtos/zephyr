@@ -1,0 +1,34 @@
+description: TI CC35XX UART
+
+compatible: "ti,cc35xx-uart"
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  dmas:
+    description: |
+      Optional TX & RX dma specifiers used by async UART.
+      The dmas are referenced in the UART node using the following syntax:
+
+      dmas = <&dma 0 CC35XX_DMA_SET_CONFIG(CC35xx_DMA_PERIPH_UARTLIN_0)>,
+             <&dma 1 CC35XX_DMA_SET_CONFIG(CC35xx_DMA_PERIPH_UARTLIN_0)>;
+      where the first entry is for the TX, and the second for RX.
+
+      The parameters in the dma entry are: dma device phandle, dma channel, dma_peripheral
+
+  dma-names:
+    description: |
+      Required if the dmas property exists. Should be set to "tx" and "rx"
+      to match the dmas property.
+
+      For example
+         dma-names = "tx", "rx";
