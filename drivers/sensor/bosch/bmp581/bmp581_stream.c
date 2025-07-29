@@ -22,6 +22,19 @@ enum bmp581_stream_state {
 	BMP581_STREAM_BUSY = 2,
 };
 
+static inline void bmp581_stream_result(const struct device *dev, int err)
+{
+	struct bmp581_data *data = dev->data;
+	struct rtio_iodev_sqe *iodev_sqe = data->stream.iodev_sqe;
+
+	data->stream.iodev_sqe = NULL;
+	if (err < 0) {
+		rtio_iodev_sqe_err(iodev_sqe, err);
+	} else {
+		rtio_iodev_sqe_ok(iodev_sqe, 0);
+	}
+}
+
 static void bmp581_stream_event_complete(struct rtio *ctx, const struct rtio_sqe *sqe, void *arg0)
 {
 	struct rtio_iodev_sqe *iodev_sqe = (struct rtio_iodev_sqe *)arg0;
@@ -65,12 +78,7 @@ static void bmp581_stream_event_complete(struct rtio *ctx, const struct rtio_sqe
 
 bmp581_stream_evt_finish:
 	atomic_set(&data->stream.state, BMP581_STREAM_ON);
-
-	if (err < 0) {
-		rtio_iodev_sqe_err(iodev_sqe, err);
-	} else {
-		rtio_iodev_sqe_ok(iodev_sqe, 0);
-	}
+	bmp581_stream_result(dev, err);
 }
 
 static void bmp581_event_handler(const struct device *dev)
@@ -115,7 +123,7 @@ static void bmp581_event_handler(const struct device *dev)
 				      &buf, &buf_len);
 		CHECKIF(err != 0 || buf_len < sizeof(struct bmp581_encoded_data)) {
 			LOG_ERR("Failed to allocate BMP581 encoded buffer: %d", err);
-			rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
+			bmp581_stream_result(dev, -ENOMEM);
 			return;
 		}
 
@@ -126,7 +134,7 @@ static void bmp581_event_handler(const struct device *dev)
 						      edata->payload, sizeof(edata->payload),
 						      &read_sqe);
 		CHECKIF(err < 0 || !read_sqe) {
-			rtio_iodev_sqe_err(iodev_sqe, err);
+			bmp581_stream_result(dev, err);
 			return;
 		}
 		read_sqe->flags |= RTIO_SQE_CHAINED;
@@ -141,7 +149,7 @@ static void bmp581_event_handler(const struct device *dev)
 
 		CHECKIF(err != 0 || (buf_len < len_required)) {
 			LOG_ERR("Failed to allocate BMP581 encoded buffer: %d", err);
-			rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
+			bmp581_stream_result(dev, -ENOMEM);
 			return;
 		}
 
@@ -152,7 +160,7 @@ static void bmp581_event_handler(const struct device *dev)
 						      (uint8_t *)edata->frame, len_data,
 						      &read_sqe);
 		CHECKIF(err < 0 || !read_sqe) {
-			rtio_iodev_sqe_err(iodev_sqe, err);
+			bmp581_stream_result(dev, err);
 			return;
 		}
 		read_sqe->flags |= RTIO_SQE_CHAINED;
@@ -179,7 +187,7 @@ static void bmp581_event_handler(const struct device *dev)
 	cb_sqe = rtio_sqe_acquire(cfg->bus.rtio.ctx);
 	if (cb_sqe == NULL) {
 		LOG_ERR("Failed to acquire callback SQE");
-		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
+		bmp581_stream_result(dev, -ENOMEM);
 		return;
 	}
 
@@ -299,7 +307,7 @@ void bmp581_stream_submit(const struct device *dev,
 		if ((enabled_mask & BMP581_EVENT_FIFO_WM) != 0) {
 			err = bmp581_stream_prep_fifo_wm_async(dev);
 			if (err < 0) {
-				rtio_iodev_sqe_err(iodev_sqe, err);
+				bmp581_stream_result(dev, err);
 				return;
 			}
 		}
@@ -312,7 +320,7 @@ void bmp581_stream_submit(const struct device *dev,
 		err = bmp581_prep_reg_write_rtio_async(&cfg->bus, BMP5_REG_INT_SOURCE, &val, 1,
 						       &int_src_sqe);
 		if (err < 0) {
-			rtio_iodev_sqe_err(iodev_sqe, err);
+			bmp581_stream_result(dev, err);
 			return;
 		}
 		int_src_sqe->flags |= RTIO_SQE_CHAINED;
@@ -325,7 +333,7 @@ void bmp581_stream_submit(const struct device *dev,
 		err = bmp581_prep_reg_write_rtio_async(&cfg->bus, BMP5_REG_INT_CONFIG, &val, 1,
 						       NULL);
 		if (err < 0) {
-			rtio_iodev_sqe_err(iodev_sqe, err);
+			bmp581_stream_result(dev, err);
 			return;
 		}
 
@@ -333,7 +341,7 @@ void bmp581_stream_submit(const struct device *dev,
 
 		err = gpio_pin_interrupt_configure_dt(&cfg->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 		if (err < 0) {
-			rtio_iodev_sqe_err(iodev_sqe, err);
+			bmp581_stream_result(dev, err);
 		}
 	}
 }
