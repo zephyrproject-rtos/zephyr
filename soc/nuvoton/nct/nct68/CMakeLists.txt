@@ -3,6 +3,10 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+if(CONFIG_USBH_OHCI)
+  add_subdirectory(usbh)
+endif()
+
 zephyr_include_directories(
   .
   ${ZEPHYR_BASE}/drivers

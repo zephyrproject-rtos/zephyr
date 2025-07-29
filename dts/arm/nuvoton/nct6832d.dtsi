@@ -7,16 +7,16 @@
 
 /* Device tree declarations of nct soc family */
 #include <mem.h>
-#include "nct/nct66.dtsi"
+#include "nct/nct68.dtsi"
 
 / {
 	flash0: flash@80000 {
-		reg = <0x00080000 DT_SIZE_M(2)>;
+		reg = <0x00080000 DT_SIZE_M(1)>;
 	};
 
-	sram0: memory@10008000 {
+	sram0: memory@100A8000 {
 		compatible = "mmio-sram";
-		reg = <0x10068000 DT_SIZE_K(384)>;
+		reg = <0x100A8000 DT_SIZE_K(128)>;
 	};
 
 	soc {
@@ -28,14 +28,14 @@
 	
 	int_flash: w25q16@0 {
 		compatible ="nuvoton,nct-nor";
-		size = <DT_SIZE_M(2 * 8)>;
+		size = <DT_SIZE_M(1 * 8)>;
 		reg = <0>;
 		status = "okay";
 		quad-enable-requirements = "S2B1v1";
 
 		/* quad spi bus configuration of nor flash device */
 		qspi-flags = <NCT_QSPI_SW_CS0>;
-		quad-enable-requirements = "S2B1v1";
+    quad-enable-requirements = "S2B1v1";
 		rd-mode = "NCT_RD_MODE_QUAD";
 		mapped-addr = <0x80000>;
         };

@@ -11,21 +11,3 @@ config SOC_SERIES_NCT66
 	select CPU_HAS_ARM_MPU
 	help
 	  Enable support for Nuvoton NCT66 series
-
-config USBH_OHCI
-    bool "Enable Nuvoton NCT USB OHCI Host Driver"
-    default y
-    help
-      Enable support for USB OHCI host controller.
-      
-config USBH_HID
-    bool "Enable USB Host HID"
-    default y
-    depends on USBH_OHCI
-    help
-      Enable support for HID on USBH.
-
-config USBH_INIT_PRIORITY
-    int "USBH initialization priority"
-    default 50
-

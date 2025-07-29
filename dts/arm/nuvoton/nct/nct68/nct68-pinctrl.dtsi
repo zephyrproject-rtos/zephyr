@@ -1,0 +1,225 @@
+/*
+ * Copyright (c) 2025 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+
+	/* Prebuild nodes for peripheral device's pin-muxing and pad properties */
+	/* Flash Interface Unit (FIU) */
+	/omit-if-no-ref/ fiu0_shd_cs_io0_io1_clk_gp44_45_46_47: periph-fiu0-shd {
+		dev-ctl = <0x0 6 1 0x00>;
+		pinmux = <&altc_shd_spi>;
+	};
+
+	/omit-if-no-ref/ fiu0_shd_quad_io2_io3_clk_gp55_56: periph-fiu0-shd-quad {
+		pinmux = <&altc_shd_spi_quad>;
+	};
+
+	/* PSPI Intefaces */
+	/omit-if-no-ref/ pspi1_clk_io0_io1_io2_io3_cs_gp66_67_70_73_76_77: periph-pspi1 {
+		pinmux = <&altc_spip1_sl>;
+	};
+
+	/* I2C peripheral interfaces */
+	/omit-if-no-ref/ i2c1a_scl_sda_gp60_61: periph-i2c1a {
+		pinmux = <&alta_smb1a_sl>;
+	};
+
+	/omit-if-no-ref/ i2c2a_scl_sda_gp11_13: periph-i2c2a {
+		pinmux = <&alte_smb2a_sl>;
+	};
+	
+	/omit-if-no-ref/ i2c2b_scl_sda_gpa0_a1: periph-i2c2b {
+		pinmux = <&alta_smb2b_sl>;
+	};
+
+	/omit-if-no-ref/ i2c3a_scl_sda_gpa7_a2: periph-i2c3a {
+		pinmux = <&alta_smb3a_sl>;
+	};
+
+	/omit-if-no-ref/ i2c4a_scl_sda_gp36_37: periph-i2c4a {
+		pinmux = <&alta_smb4a_sl>;
+	};
+
+	/omit-if-no-ref/ i2c5a_scl_sda_gp34_35: periph-i2c5a {
+		pinmux = <&alta_smb5a_sl>;
+	};
+	
+	/omit-if-no-ref/ i2c5b_scl_sda_gpa3_a4: periph-i2c5b {
+		pinmux = <&alt6d_smb5b_sl>;
+	};
+
+	/omit-if-no-ref/ i2c6a_scl_gp96: periph-i2c6a-scl {
+		pinmux = <&alt7_no_gp96>;
+	};
+
+	/omit-if-no-ref/ i2c6a_sda_gp97: periph-i2c6a-sda {
+		pinmux = <&alt7_no_gp97>;
+	};
+
+	/omit-if-no-ref/ i2c6b_scl_sda_gp16_17: periph-i2c6b {
+		pinmux = <&alt6d_smb6b_sl>;
+	};
+
+	/omit-if-no-ref/ tri_state_gp96: periph-tri-state-gp96 {
+		pinmux = <&alt7_no_gp96>;
+	};
+
+	/omit-if-no-ref/ tri_state_gp97: periph-tri-state-gp97 {
+		pinmux = <&alt7_no_gp97>;
+	};
+
+	/* UART peripheral interfaces */
+	/omit-if-no-ref/ cr_uart1_sin_gp14: periph-cr-uart1-in {
+		pinmux = <&altc_urti1_sl>;
+	};
+
+	/omit-if-no-ref/ cr_uart1_sout_gp15: periph-cr-uart1-out {
+		pinmux = <&alta_urto2_sl>;
+	};
+
+	/omit-if-no-ref/ cr_uart2_sin_gp30: periph-cr-uart2-in {
+		pinmux = <&alt31_urti2_sl>;
+	};
+
+	/omit-if-no-ref/ cr_uart2_sout_gp31: periph-cr-uart2-out {
+		pinmux = <&alt31_urto3_sl>;
+	};
+
+	/* ADC peripheral interfaces */
+	/omit-if-no-ref/ adc_vin1_gp93: periph-adc-vin1 {
+		pinmux = <&alt1_vin1_sl>;
+	};
+
+	/omit-if-no-ref/ adc_vin2_gp94: periph-adc-vin2 {
+		pinmux = <&alt1_vin2_sl>;
+	};
+
+	/omit-if-no-ref/ adc_vin3_gp95: periph-adc-vin3 {
+		pinmux = <&alt1_vin3_sl>;
+	};
+
+	/omit-if-no-ref/ adc_vin5_gp87: periph-adc-vin5 {
+		pinmux = <&alt1_vin5_sl>;
+	};
+
+	/omit-if-no-ref/ adc_vin7_gp86: periph-adc-vin7 {
+		pinmux = <&alt1_vin7_sl>;
+	};
+
+	/omit-if-no-ref/ adc_vin14_gp92: periph-adc-vin14 {
+		pinmux = <&alt2_vin14_sl>;
+	};
+
+	/omit-if-no-ref/ adc_vin15_gp91: periph-adc-vin15 {
+		pinmux = <&alt2_vin15_sl>;
+	};
+
+	/omit-if-no-ref/ adc_vin16_gp90: periph-adc-vin16 {
+		pinmux = <&alt2_vin16_sl>;
+	};
+
+	/* PECI peripheral interfaces */
+	/omit-if-no-ref/ peci0_gp97: periph-peci0 {
+		pinmux = <&alt5_peci_en>;
+	};
+
+	/omit-if-no-ref/ pwm0_sl_gp82: pwm0-sel {
+		pinmux = <&alt4_pwm0_sl>;
+	};
+
+	/omit-if-no-ref/ pwm1_sl_gp04: pwm1-sel {
+		pinmux = <&alt4_pwm1_sl>;
+	};
+
+	/omit-if-no-ref/ pwm2_sl_gp36: pwm2-sel {
+		pinmux = <&alt4_pwm2_sl>;
+	};
+
+	/omit-if-no-ref/ pwm3_sl_gp64: pwm3-sel {
+		pinmux = <&alt4_pwm3_sl>;
+	};
+
+	/omit-if-no-ref/ pwm4_sl_gpa0: pwm4-sel {
+		pinmux = <&alt4_pwm4_sl>;
+	};
+
+	/omit-if-no-ref/ pwm5_sl_gpa3: pwm5-sel {
+		pinmux = <&alt4_pwm5_sl>;
+	};
+
+	/omit-if-no-ref/ pwm6_sl_gpa5: pwm6-sel {
+		pinmux = <&alt5_pwm6_sl>;
+	};
+
+	/omit-if-no-ref/ pwm7_sl_gp00: pwm7-sel {
+		pinmux = <&alt5_pwm7_sl>;
+	};
+
+	/omit-if-no-ref/ pwm8_sl_gp02: pwm8-sel {
+		pinmux = <&alt5_pwm8_sl>;
+	};
+
+	/omit-if-no-ref/ pwm9_sl_gp06: pwm9-sel {
+		pinmux = <&alt5_pwm9_sl>;
+	};
+	
+	/omit-if-no-ref/ pwm10_sl_gp33: pwm10-sel {
+		pinmux = <&alt6d_pwm10_sl>;
+	};
+	
+	/omit-if-no-ref/ pwm11_sl_gpc0: pwm11-sel {
+		pinmux = <&alt6d_pwm11_sl>;
+	};
+
+	/omit-if-no-ref/ ta0_sl_gp83: ta0_sel {
+		pinmux = <&alt3_ta0_sl>;
+	};
+
+	/omit-if-no-ref/ ta1_sl_gp05: ta1_sel {
+		pinmux = <&alt3_ta1_sl>;
+	};
+
+	/omit-if-no-ref/ ta2_sl_gp37: ta2_sel {
+		pinmux = <&alt3_ta2_sl>;
+	};
+
+	/omit-if-no-ref/ ta3_sl_gp81: ta3_sel {
+		pinmux = <&alt3_ta3_sl>;
+	};
+
+	/omit-if-no-ref/ ta4_sl_gpa1: ta4_sel {
+		pinmux = <&alt3_ta4_sl>;
+	};
+
+	/omit-if-no-ref/ ta5_sl_gpa4: ta5_sel {
+		pinmux = <&alt3_ta5_sl>;
+	};
+
+	/omit-if-no-ref/ ta6_sl_gpa6: ta6_sel {
+		pinmux = <&alt3_ta6_sl>;
+	};
+
+	/omit-if-no-ref/ ta7_sl_gp01: ta7_sel {
+		pinmux = <&alt3_ta7_sl>;
+	};
+
+	/omit-if-no-ref/ ta8_sl_gp03: ta8_sel {
+		pinmux = <&alt4_ta8_sl>;
+	};
+
+	/omit-if-no-ref/ ta9_sl_gp07: ta9_sel {
+		pinmux = <&alt4_ta9_sl>;
+	};
+	
+	/omit-if-no-ref/ ta10_sl_gp32: ta10_sel {
+		pinmux = <&alt6d_ta10_sl>;
+	};
+	
+	/omit-if-no-ref/ ta11_sl_gpc1: ta11_sel {
+		pinmux = <&alt6d_ta11_sl>;
+	};
+
+};

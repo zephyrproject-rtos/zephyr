@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Common Wake-Up Unit Input (WUI) mapping configurations in nct family */
 / {
 	/* Mapping between MIWU wui bits and source device */
 	nct_miwus_wui {
@@ -312,9 +313,6 @@
 		};
 
 		/* MIWU group E */
-		wui_emac: wui1-5-0 {
-			miwus = <&miwu1 4 0>; /* EMAC */
-		};
 		wui_mswc: wui1-5-2 {
 			miwus = <&miwu1 4 2>; /* MSWC */
 		};
@@ -346,11 +344,6 @@
 		};
 		wui_iob7: wui1-6-7 {
 			miwus = <&miwu1 5 7>; /* GPIOB7 */
-		};
-
-		/* MIWU group G */
-		wui_i3c: wui1-7-7 {
-			miwus = <&miwu1 6 7>; /* I3C1/2 */
 		};
 
 		/* MIWU group H */
@@ -454,50 +447,6 @@
 		wui_ioc1: wui2-5-1 {
 			miwus = <&miwu2 4 1>; /* GPIOC1 */
 		};
-		wui_ioc2: wui2-5-2 {
-			miwus = <&miwu2 4 2>; /* GPIOC2 */
-		};
-		wui_ioc3: wui2-5-3 {
-			miwus = <&miwu2 4 3>; /* GPIOC3 */
-		};
-		wui_ioc4: wui2-5-4 {
-			miwus = <&miwu2 4 4>; /* GPIOC4 */
-		};
-		wui_ioc5: wui2-5-5 {
-			miwus = <&miwu2 4 5>; /* GPIOC5 */
-		};
-		wui_ioc6: wui2-5-6 {
-			miwus = <&miwu2 4 6>; /* GPIOC6 */
-		};
-		wui_ioc7: wui2-5-7 {
-			miwus = <&miwu2 4 7>; /* GPIOC7 */
-		};
-
-		/* MIWU group F */
-		wui_iod0: wui2-6-0 {
-			miwus = <&miwu2 5 0>; /* GPIOD0 */
-		};
-		wui_iod1: wui2-6-1 {
-			miwus = <&miwu2 5 1>; /* GPIOD1 */
-		};
-		wui_iod2: wui2-6-2 {
-			miwus = <&miwu2 5 2>; /* GPIOD2 */
-		};
-		wui_iod3: wui2-6-3 {
-			miwus = <&miwu2 5 3>; /* GPIOD3 */
-		};
-		wui_iod4: wui2-6-4 {
-			miwus = <&miwu2 5 4>; /* GPIOD4 */
-		};
-		wui_iod5: wui2-6-5 {
-			miwus = <&miwu2 5 5>; /* GPIOD5 */
-		};
-		wui_iod6: wui2-6-6 {
-			miwus = <&miwu2 5 6>; /* GPIOD6 */
-		};
-		wui_iod7: wui2-6-7 {
-			miwus = <&miwu2 5 7>; /* GPIOD7 */
-		};
 
 		/* MIWU group G */
 		wui_ioe0: wui2-7-0 {
@@ -521,20 +470,11 @@
 		wui_ioe6: wui2-7-6 {
 			miwus = <&miwu2 6 6>; /* GPIOE6 */
 		};
+		wui_rsmrst_sys: wui2-7-7 {
+			miwus = <&miwu2 6 7>; /* RSMRST_SYS */
+		};
 
 		/* MIWU group H */
-		wui_iof0: wui2-8-0 {
-			miwus = <&miwu2 7 0>; /* GPIOF0 */
-		};
-		wui_iof1: wui2-8-1 {
-			miwus = <&miwu2 7 1>; /* GPIOF1 */
-		};
-		wui_iof2: wui2-8-2 {
-			miwus = <&miwu2 7 2>; /* GPIOF2 */
-		};
-		wui_iof3: wui2-8-3 {
-			miwus = <&miwu2 7 3>; /* GPIOF3 */
-		};
 		wui_vcc: wui2-8-7 {
 			miwus = <&miwu2 7 7>; /* VCC */
 		};
@@ -551,5 +491,13 @@
 		index = <3>;
 		#miwu-cells = <2>;
 		status = "disabled";
+	};
+};
+
+/* Specific Wake-Up Unit Input (WUI) mapping configurations in nct68 series */
+/ {
+	/* Mapping between MIWU wui bits and source device */
+	nct-miwus-wui-map {
+		compatible = "nuvoton,nct-miwu-wui-map";
 	};
 };

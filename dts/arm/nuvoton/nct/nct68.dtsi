@@ -7,14 +7,14 @@
 /* Device tree declarations of nct soc family */
 #include "nct.dtsi"
 
-/* nct66 series pinmux mapping table */
-#include "nct66/nct66-alts-map.dtsi"
-/* nct66 series mapping table between MIWU wui bits and source device */
-#include "nct66/nct66-miwus-wui-map.dtsi"
-/* nct66 series mapping table between MIWU groups and interrupts */
-#include "nct66/nct66-miwus-int-map.dtsi"
-/* nct66 series eSPI VW mapping table */
-#include "nct66/nct66-espi-vws-map.dtsi"
+/* nct68 series pinmux mapping table */
+#include "nct68/nct68-alts-map.dtsi"
+/* nct68 series mapping table between MIWU wui bits and source device */
+#include "nct68/nct68-miwus-wui-map.dtsi"
+/* nct68 series mapping table between MIWU groups and interrupts */
+#include "nct68/nct68-miwus-int-map.dtsi"
+/* nct68 series eSPI VW mapping table */
+#include "nct68/nct68-espi-vws-map.dtsi"
 
 / {
 	def-io-conf-list {
@@ -197,19 +197,19 @@
 			gpio-controller;
 			index = <0xC>;
 			#gpio-cells=<2>;
-			wui-maps = <&wui_ioc0 &wui_ioc1 &wui_ioc2 &wui_ioc3
-				    &wui_ioc4 &wui_ioc5 &wui_ioc6 &wui_ioc7>;
+			wui-maps = <&wui_ioc0 &wui_ioc1 &wui_none &wui_none
+					&wui_none &wui_none &wui_none &wui_none>;
 		};
-
-		gpiod: gpio@4009b000 {
-			compatible = "nuvoton,nct-gpio";
-			reg = <0x4009b000 0x2000>;
-			gpio-controller;
-			index = <0xD>;
-			#gpio-cells=<2>;
-			wui-maps = <&wui_iod0 &wui_iod1 &wui_iod2 &wui_iod3
-				    &wui_iod4 &wui_iod5 &wui_iod6 &wui_iod7>;
-		};
+		
+//		gpiod: gpio@4009b000 {
+//			compatible = "nuvoton,nct-gpio";
+//			reg = <0x4009b000 0x2000>;
+//			gpio-controller;
+//			index = <0xD>;
+//			#gpio-cells=<2>;
+//			wui-maps = <&wui_none &wui_none &wui_none &wui_none
+//					&wui_none &wui_none &wui_none &wui_none>;
+//		};
 
 		gpioe: gpio@4009d000 {
 			compatible = "nuvoton,nct-gpio";
@@ -220,16 +220,16 @@
 			wui-maps = <&wui_ioe0 &wui_ioe1 &wui_ioe2 &wui_ioe3
 				    &wui_ioe4 &wui_ioe5 &wui_ioe6 &wui_none>;
 		};
-
-		gpiof: gpio@4009f000 {
-			compatible = "nuvoton,nct-gpio";
-			reg = <0x4009f000 0x2000>;
-			gpio-controller;
-			index = <0xF>;
-			#gpio-cells=<2>;
-			wui-maps = <&wui_iof0 &wui_iof1 &wui_iof2 &wui_iof3
-				    &wui_none &wui_none &wui_none &wui_none>;
-		};
+		
+//		gpiof: gpio@4009f000 {
+//			compatible = "nuvoton,nct-gpio";
+//			reg = <0x4009f000 0x2000>;
+//			gpio-controller;
+//			index = <0xF>;
+//			#gpio-cells=<2>;
+//			wui-maps = <&wui_none &wui_none &wui_none &wui_none
+//					&wui_none &wui_none &wui_none &wui_none>;
+//		};
 
 		dasdc: dsadc@400d1100 {
 			channel-count = <24>;
@@ -261,13 +261,23 @@
 			status = "disabled";
 		};
 		
-		i2c1b: i2c_b@40006000 {
+		i2c2a: i2c_a@40006200 {
 			compatible = "nuvoton,nct-i2c";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40006000 0x200>;
-			interrupts = <35 3>;
-			clocks = <&pcc NCT_CLOCK_SMB1>;
+			reg = <0x40006200 0x200>;
+			interrupts = <0 3>;
+			clocks = <&pcc NCT_CLOCK_SMB2>;
+			status = "disabled";
+		};
+		
+		i2c2b: i2c_b@40006200 {
+			compatible = "nuvoton,nct-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40006200 0x200>;
+			interrupts = <0 3>;
+			clocks = <&pcc NCT_CLOCK_SMB2>;
 			status = "disabled";
 		};
 		
@@ -280,7 +290,7 @@
 			clocks = <&pcc NCT_CLOCK_SMB3>;
 			status = "disabled";
 		};
-
+		
 		i2c4a: i2c_a@40006600 {
 			compatible = "nuvoton,nct-i2c";
 			#address-cells = <1>;
@@ -300,7 +310,17 @@
 			clocks = <&pcc NCT_CLOCK_SMB5>;
 			status = "disabled";
 		};
-
+		
+		i2c5b: i2c_b@40006800 {
+			compatible = "nuvoton,nct-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40006800 0x200>;
+			interrupts = <39 3>;
+			clocks = <&pcc NCT_CLOCK_SMB5>;
+			status = "disabled";
+		};
+		
 		i2c6a: i2c_a@40006a00 {
 			compatible = "nuvoton,nct-i2c";
 			#address-cells = <1>;
@@ -310,93 +330,23 @@
 			clocks = <&pcc NCT_CLOCK_SMB6>;
 			status = "disabled";
 		};
-		
-		i3c1: i3c@40004000 {
-			compatible = "nuvoton,nct-i3c";
-			reg-names = "i3c1", "pdma0", "pdma1";
-			reg = <0x40004000 0x2000
-			       0x40015000 0x10
-			       0x40015010 0x10>;
-			clocks = <&pcc NCT_CLOCK_I3CI>;
-			interrupts = <64 3>;
-			status = "disabled";
-			#address-cells = <3>;
-			#size-cells = <0>;
-		};
 
-		i3c2: i3c@40004200 {
-			compatible = "nuvoton,nct-i3c";
-			reg-names = "i3c2", "pdma2", "pdma3";
-			reg = <0x40004200 0x2000
-			       0x40015020 0x10
-			       0x40015030 0x10>;
-			clocks = <&pcc NCT_CLOCK_I3CI2>;
-			interrupts = <65 3>;
-			status = "disabled";
-			#address-cells = <3>;
+		i2c6b: i2c_b@40006a00 {
+			compatible = "nuvoton,nct-i2c";
+			#address-cells = <1>;
 			#size-cells = <0>;
-		};
-
-		i3c3: i3c@40004400 {
-			compatible = "nuvoton,nct-i3c";
-			reg-names = "i3c3", "pdma4", "pdma5";
-			reg = <0x40004400 0x2000
-			       0x40015040 0x10
-			       0x40015050 0x10>;
-			clocks = <&pcc NCT_CLOCK_I3CI3>;
-			interrupts = <66 3>;
-			status = "disabled";
-			#address-cells = <3>;
-			#size-cells = <0>;
-		};
-
-		i3c4: i3c@40004600 {
-			compatible = "nuvoton,nct-i3c";
-			reg-names = "i3c4", "pdma6", "pdma7";
-			reg = <0x40004600 0x2000
-			       0x40015060 0x10
-			       0x40015070 0x10>;
-			clocks = <&pcc NCT_CLOCK_I3CI4>;
-			interrupts = <67 3>;
-			status = "disabled";
-			#address-cells = <3>;
-			#size-cells = <0>;
-		};
-
-		i3c5: i3c@40004800 {
-			compatible = "nuvoton,nct-i3c";
-			reg-names = "i3c5", "pdma8", "pdma9";
-			reg = <0x40004800 0x2000
-			       0x40015080 0x10
-			       0x40015090 0x10>;
-			clocks = <&pcc NCT_CLOCK_I3CI5>;
-			interrupts = <68 3>;
-			status = "disabled";
-			#address-cells = <3>;
-			#size-cells = <0>;
-		};
-
-		i3c6: i3c@40004a00 {
-			compatible = "nuvoton,nct-i3c";
-			reg-names = "i3c6", "pdma10", "pdma11";
-			reg = <0x40004a00 0x2000
-			       0x400150a0 0x10
-			       0x400150b0 0x10>;
-			clocks = <&pcc NCT_CLOCK_I3CI6>;
-			interrupts = <69 3>;
-			status = "disabled";
-			#address-cells = <3>;
-			#size-cells = <0>;
-		};
-		
-		emac: ethernet@40018000 {
-			compatible = "nuvoton,nct-ethernet";
-			reg = <0x40018000 0x2000>;
-			clocks = <&pcc NCT_CLOCK_EMAC>;
-			interrupts = <36 3>;
+			reg = <0x40006a00 0x200>;
+			interrupts = <20 3>;
+			clocks = <&pcc NCT_CLOCK_SMB6>;
 			status = "disabled";
 		};
 		
+		usbh: usbh@40013000 {
+			compatible = "nuvoton,nct-usbh";
+			reg = <0x40013000 0x210>;
+			interrupts = <79 3>;
+			status = "disabled";
+		};
 	};
 
 	soc-if {

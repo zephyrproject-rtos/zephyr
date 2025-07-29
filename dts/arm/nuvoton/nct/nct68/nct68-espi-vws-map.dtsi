@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Common eSPI virtual wires mapping configurations in nct family */
 /*
  *                Nuvoton NCT eSPI Virtual Wires Mapping Table
  * |--------------------------------------------------------------------------|

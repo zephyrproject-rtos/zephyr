@@ -1,0 +1,6 @@
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NCT6832D_MDB
+	bool "Nuvoton NCT6832D MDB Development board"
+	select SOC_NCT6832D

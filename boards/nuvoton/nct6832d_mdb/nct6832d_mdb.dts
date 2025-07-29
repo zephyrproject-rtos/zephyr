@@ -6,11 +6,11 @@
 
 /dts-v1/;
 
-#include <nuvoton/nct6694b.dtsi>
-#include <nuvoton/nct/nct66/nct66-pinctrl.dtsi>
+#include <nuvoton/nct6832d.dtsi>
+#include <nuvoton/nct/nct68/nct68-pinctrl.dtsi>
 
 / {
-	model = "Nuvoton NCT6694B evaluation board";
+	model = "Nuvoton NCT6832D module board";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -69,7 +69,7 @@
 	 */
 	pinctrl-0 = <&adc_vin7_gp86   /* VIN7 - C8 */
 		     &adc_vin5_gp87   /* VIN5 - F7 */
-		     &adc_vin16_gp91  /* VIN16/THR16/TD2P - D7 */
+		     &adc_vin16_gp90  /* VIN16/THR16/TD2P - D7 */
 		     &adc_vin15_gp91  /* VIN15/THR15/TD1P - C7 */
 		     &adc_vin14_gp92  /* VIN14/THR14/TD0P - A6 */
 		     &adc_vin1_gp93   /* VIN1/THR1/TD3P - B6 */
@@ -81,6 +81,13 @@
 &i2c1a {
 	status = "okay";
 	pinctrl-0 = <&i2c1a_scl_sda_gp60_61>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&i2c2a {
+	status = "okay";
+	pinctrl-0 = <&i2c2a_scl_sda_gp11_13>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 };
@@ -113,23 +120,29 @@
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 };
 
-&i2c1b {
+&i2c2b {
 	status = "disabled";
-	pinctrl-0 = <&i2c1b_scl_sda_gp26_25>;
+	pinctrl-0 = <&i2c2b_scl_sda_gpa0_a1>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 };
 
-&usbd20 {
-	status = "okay";
-	pinctrl-0 = <&usbdphy_en &usbdphy_clk_external>;
+&i2c5b {
+	status = "disabled";
+	pinctrl-0 = <&i2c5b_scl_sda_gpa3_a4>;
 	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
 };
 
-&emac {
-	status = "okay";
-	pinctrl-0 = <&emac_rmii_en &emac_mdio_en &emac_phy>;
+&i2c6b {
+	status = "disabled";
+	pinctrl-0 = <&i2c6b_scl_sda_gp16_17>;
 	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&usbh {
+    status = "okay";
 };
 
 // &spip1 {
@@ -175,7 +188,7 @@
 &qspi_spim {
 	int_flash: w25q16@0 {
 		compatible ="nuvoton,nct-nor";
-		size = <DT_SIZE_M(2 * 8)>;
+		size = <DT_SIZE_M(1 * 8)>;
 		status = "okay";
 		quad-enable-requirements = "S2B1v1";
 		rd-mode = "NCT_RD_MODE_QUAD";
@@ -200,62 +213,6 @@
 	sample-clk = <NCT_TACH_FREQ_LFCLK>; /* Use LFCLK as sampling clock */
 	pulses-per-round = <2>; /* number of pulses per round of encoder */
 	pinctrl-0 = <&ta4_sl_gpa1>;
-	pinctrl-names = "default";
-	status = "okay";
-};
-
-&i3c1 {
-	i3c-scl-hz = <12500000>;
-	i3c-od-scl-hz = <4170000>;
-	i2c-scl-hz = <1000000>;
-	pinctrl-0 = <&i3c1_scl_sda_gp21_22>;
-	pinctrl-names = "default";
-	status = "disabled";
-};
-
-&i3c2 {
-	i3c-scl-hz = <12500000>;
-	i3c-od-scl-hz = <4170000>;
-	i2c-scl-hz = <1000000>;
-	pinctrl-0 = <&i3c2_scl_sda_gp23_24>;
-	pinctrl-names = "default";
-	status = "disabled";
-};
-
-&i3c3 {
-	i3c-scl-hz = <12500000>;
-	i3c-od-scl-hz = <4170000>;
-	i2c-scl-hz = <1000000>;
-	pinctrl-0 = <&i3c3_scl_lv_gp26 &i3c3_sda_lv_gp25
-			&i3c3_scl_sda_gp26_25>;
-	pinctrl-names = "default";
-	status = "disabled";
-};
-
-&i3c4 {
-	i3c-scl-hz = <12500000>;
-	i3c-od-scl-hz = <4170000>;
-	i2c-scl-hz = <1000000>;
-	pinctrl-0 = <&i3c4_scl_sda_gpd0_d1>;
-	pinctrl-names = "default";
-	status = "disabled";
-};
-
-&i3c5 {
-	i3c-scl-hz = <12500000>;
-	i3c-od-scl-hz = <4170000>;
-	i2c-scl-hz = <1000000>;
-	pinctrl-0 = <&i3c5_scl_sda_gp82_83>;
-	pinctrl-names = "default";
-	status = "okay";
-};
-
-&i3c6 {
-	i3c-scl-hz = <12500000>;
-	i3c-od-scl-hz = <4170000>;
-	i2c-scl-hz = <1000000>;
-	pinctrl-0 = <&tri_state_gp96 &tri_state_gp97
-			&i3c6_scl_sda_gp96_97>;
 	pinctrl-names = "default";
 	status = "okay";
 };

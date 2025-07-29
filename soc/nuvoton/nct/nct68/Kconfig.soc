@@ -1,0 +1,22 @@
+# Nuvoton Cortex-M4 Embedded Controller NCT68 series
+
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_NCT68
+	bool
+	select SOC_FAMILY_NCT
+	help
+	  Enable support for Nuvoton NCT6 series
+
+config SOC_NCT6832D
+	bool
+	select SOC_SERIES_NCT68
+	help
+	  NCT6832D
+
+config SOC_SERIES
+	default "nct68" if SOC_SERIES_NCT68
+
+config SOC
+	default "nct6832d" if SOC_NCT6832D
