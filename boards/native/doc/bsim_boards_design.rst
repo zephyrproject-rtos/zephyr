@@ -8,6 +8,7 @@ Bsim boards
 * :ref:`Simulated nRF52833 (nrf52_bsim)<nrf52_bsim>`
 * :ref:`Simulated nRF5340 (nrf5340bsim)<nrf5340bsim>`
 * :ref:`Simulated nRF54L15 (nrf54l15bsim)<nrf54l15bsim>`
+* :ref:`Simulated nRF54LM20 (nrf54lm20bsim)<nrf54lm20bsim>`
 
 .. contents:: Table of contents
    :depth: 2
