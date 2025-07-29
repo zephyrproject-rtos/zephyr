@@ -481,6 +481,24 @@ __weak void clock_init(void)
 
 #endif /* CONFIG_CAN_MCUX_FLEXCAN */
 
+#ifdef CONFIG_MCUX_FLEXIO
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexio1), okay)
+	/* Configure FLEXIO1 using SYS_PLL3_DIV2_CLK */
+	rootCfg.mux = kCLOCK_FLEXIO1_ClockRoot_MuxSysPll3Div2;
+	rootCfg.div = 2;
+	CLOCK_SetRootClock(kCLOCK_Root_Flexio1, &rootCfg);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexio2), okay)
+	/* Configure FLEXIO2 using SYS_PLL3_DIV2_CLK */
+	rootCfg.mux = kCLOCK_FLEXIO2_ClockRoot_MuxSysPll3Div2;
+	rootCfg.div = 1;
+	CLOCK_SetRootClock(kCLOCK_Root_Flexio2, &rootCfg);
+#endif
+
+#endif /* CONFIG_MCUX_FLEXIO */
+
 #if defined(CONFIG_MCUX_LPTMR_TIMER) || defined(CONFIG_COUNTER_MCUX_LPTMR)
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(lptmr1), okay)
