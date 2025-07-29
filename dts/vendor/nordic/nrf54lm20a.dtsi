@@ -795,19 +795,19 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 
-				gpregret1: gpregret1@51c {
+				gpregret1: gpregret1@500 {
 					#address-cells = <1>;
 					#size-cells = <1>;
 					compatible = "nordic,nrf-gpregret";
-					reg = <0x51c 0x1>;
+					reg = <0x500 0x1>;
 					status = "disabled";
 				};
 
-				gpregret2: gpregret2@520 {
+				gpregret2: gpregret2@504 {
 					#address-cells = <1>;
 					#size-cells = <1>;
 					compatible = "nordic,nrf-gpregret";
-					reg = <0x520 0x1>;
+					reg = <0x504 0x1>;
 					status = "disabled";
 				};
 			};
