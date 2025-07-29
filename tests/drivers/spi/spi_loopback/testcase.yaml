@@ -205,6 +205,13 @@ tests:
             CONFIG_DT_HAS_NXP_FLEXIO_SPI_ENABLED
     platform_allow:
       - mimxrt1170_evk/mimxrt1176/cm7
+  drivers.spi.mimxrt1180_evk_flexio_spi.loopback:
+    extra_args: DTC_OVERLAY_FILE="boards/mimxrt1180_evk_flexio_spi.overlay"
+    filter: CONFIG_DT_HAS_NXP_FLEXIO_ENABLED and
+            CONFIG_DT_HAS_NXP_FLEXIO_SPI_ENABLED
+    platform_allow:
+      - mimxrt1180_evk/mimxrt1189/cm33
+      - mimxrt1180_evk/mimxrt1189/cm7
   drivers.spi.mimxrt1040evk_flexio_spi.loopback:
     extra_args: DTC_OVERLAY_FILE="boards/mimxrt1040_evk_flexio_spi.overlay"
     filter: CONFIG_DT_HAS_NXP_FLEXIO_ENABLED and

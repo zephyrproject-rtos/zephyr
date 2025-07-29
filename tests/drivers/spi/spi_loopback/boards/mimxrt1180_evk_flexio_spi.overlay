@@ -1,0 +1,51 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* To test this sample, connect J41.4 <-> J41.6 */
+&lpspi3 {
+	status = "disabled";
+};
+
+&pinctrl {
+	pinmux_flexio2spi1: pinmux_flexio2spi1 {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_02_gpio4_io02>, /* cs */
+				 <&iomuxc_gpio_ad_03_flexio2_d03>, /* sdo */
+				 <&iomuxc_gpio_ad_04_flexio2_d04>, /* sdi */
+				 <&iomuxc_gpio_ad_05_flexio2_d05>; /* sck */
+			drive-strength = "high";
+			slew-rate = "slow";
+		};
+	};
+};
+
+&flexio2 {
+	status = "okay";
+
+	flexio2spi1: flexio2spi1 {
+		compatible = "nxp,flexio-spi";
+		cs-gpios = <&gpio4 2 GPIO_ACTIVE_LOW>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		sdo-pin = <3>;
+		sdi-pin = <4>;
+		sck-pin = <5>;
+		pinctrl-0 = <&pinmux_flexio2spi1>;
+		pinctrl-names = "default";
+		status = "okay";
+
+		slow@0 {
+			compatible = "test-spi-loopback-slow";
+			reg = <0>;
+			spi-max-frequency = <500000>;
+		};
+		fast@0 {
+			compatible = "test-spi-loopback-fast";
+			reg = <0>;
+			spi-max-frequency = <16000000>;
+		};
+	};
+};
