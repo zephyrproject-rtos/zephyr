@@ -10,7 +10,7 @@ cores for functional safety. With PLCs, I/O controllers, V2X accelerators,
 ML acceleration, energy management, and advanced security, the i.MX 943
 processor provides optimized performance and power efficiency for industrial,
 IoT, and automotive devices. The i.MX943 device on the board comes in a
-compact 19 x 19 mm package.
+compact 19 x 19 mm/15 x 15 mm package.
 
 Hardware
 ********
@@ -204,8 +204,8 @@ Then the following log could be found on UART1 console:
 .. include:: ../../common/board-footer.rst
    :start-after: nxp-board-footer
 
-Programming and Debugging (M33)
-*******************************
+Programming and Debugging (M33 in NETC MIX, M7_0 in M7MIX0, M7_1 in M7MIX1)
+***************************************************************************
 
 Step 1. Build Zephyr application
 ================================
@@ -217,6 +217,16 @@ For TCM target
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: imx943_evk/mimx94398/m33
+   :goals: build
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: imx943_evk/mimx94398/m7_0
+   :goals: build
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: imx943_evk/mimx94398/m7_1
    :goals: build
 
 For DDR target
@@ -269,11 +279,14 @@ Below is an operations example on Linux host. (For more detail, refer to
    cp firmware-ele-imx-2.0.1-0a66c34/mx943a0-ahab-container.img          imx-mkimage/iMX94/
    cp imx-sm/build/mx94alt/m33_image.bin                                 imx-mkimage/iMX94/
    cp imx-oei/build/mx943lp5-19/ddr/oei-m33-ddr.bin                      imx-mkimage/iMX94/
-   cp zephyr/build/zephyr/zephyr.bin                                     imx-mkimage/iMX94/m33s_image.bin
+   cp zephyr/build/zephyr/zephyr.bin                                     imx-mkimage/iMX94/m33s_image.bin (m70_image.bin or m71_image.bin)
 
    cd imx-mkimage
    make SOC=iMX94 OEI=YES flash_m33s     # for TCM target
    make SOC=iMX94 OEI=YES flash_m33s_ddr # for DDR target
+   or
+   make SOC=iMX94 OEI=YES flash_m33s_m70_m71  # for TCM target
+
 
    # Program to SD card
 
@@ -343,6 +356,17 @@ For TCM target
    *** Booting Zephyr OS build v4.1.0-5264-g8654b4029d16 ***
    Hello World! imx943_evk/mimx94398/m33
 
+
+.. code-block:: console
+
+   *** Booting Zephyr OS build v4.2.0-803-g5537e8d9b3f1 ***
+   Hello World! imx943_evk/mimx94398/m7_0
+
+.. code-block:: console
+
+   *** Booting Zephyr OS build v4.2.0-803-g2f145e66dce2 ***
+   Hello World! imx943_evk/mimx94398/m7_1
+
 For DDR target
 
 .. code-block:: console
@@ -350,7 +374,27 @@ For DDR target
    *** Booting Zephyr OS build v4.1.0-5264-g8654b4029d16 ***
    Hello World! imx943_evk/mimx94398/m33/ddr
 
-Note: there will be 4 serial ports identified when connect USB cable to debug port.
+Note:
+
+a. Please connect two additional usb2serial converter between Host PC and board's
+auduino interface with dupont cable for M70 in M70 MIX and M71 in M71 MIX.
+Connection as below,
+
+.. code-block:: text
+
+  +---------+  USB  +-----------------+                                 +---------+
+  | Host PC |<----->| USB-to-Serial a |--TX-->RX(J48-2, M2_UART11_RXD)--|  board  |
+  |         |       |                 |--RX<--TX(J48-4, M2_UART11_TXD)--|         |
+  |         |       |                 |--GND----------------GND(J47-14)-|         |
+  |         |       +-----------------+                                 |         |
+  |         |                                                           |         |
+  |         |  USB  +-----------------+                                 |         |
+  |         |<----->| USB to Serial b |--TX-->RX(J44-2, M1_UART12_RXD)--|         |
+  |         |       |                 |--RX<--TX(j44-4, M1_UART12_TXD)--|         |
+  |         |       |                 |--GND----------------GND(J43-14)-|         |
+  +---------+       +-----------------+                                 +---------+
+
+b. There will be 4 serial ports identified when connect USB cable to debug port.
 The first serial port will be UART8 for M33. As there is multiplexing between JTAG
 and UART8, below bcu (`bcu 1.1.113 download`_) configuration is needed to use UART8.
 
