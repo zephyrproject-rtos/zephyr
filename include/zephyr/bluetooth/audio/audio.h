@@ -550,6 +550,10 @@ enum bt_audio_metadata_type {
 		/* Use HCI data path as default, can be overwritten by application */              \
 		.path_id = BT_ISO_DATA_PATH_HCI,                                                   \
 		.ctlr_transcode = false,                                                           \
+		COND_CODE_1(IS_ENABLED(CONFIG_BT_BAP_UNICAST),                                     \
+			    (.target_latency = BT_AUDIO_CODEC_CFG_TARGET_LATENCY_BALANCED,         \
+			     .target_phy = BT_AUDIO_CODEC_CFG_TARGET_PHY_2M,),                     \
+			    ())                                                                    \
 		.id = _id,                                                                         \
 		.cid = _cid,                                                                       \
 		.vid = _vid,                                                                       \
@@ -714,6 +718,39 @@ struct bt_audio_codec_cap {
 #endif /* CONFIG_BT_AUDIO_CODEC_CAP_MAX_METADATA_SIZE */
 };
 
+/**
+ * @brief Codec configuration target latency
+ *
+ * Set by the BAP Unicast Client to provide context for the BAP Unicast Server for the server to
+ * set its QoS preferences.
+ */
+enum bt_audio_codec_cfg_target_latency {
+	/** Target low latency */
+	BT_AUDIO_CODEC_CFG_TARGET_LATENCY_LOW = 0x01,
+
+	/** Target balanced latency */
+	BT_AUDIO_CODEC_CFG_TARGET_LATENCY_BALANCED = 0x02,
+
+	/** Target high latency */
+	BT_AUDIO_CODEC_CFG_TARGET_LATENCY_HIGH = 0x03,
+};
+
+/**
+ * @brief Codec configuration target PHY
+ *
+ * The target PHY to achieve the target latency (@ref bt_audio_codec_cfg_target_latency).
+ */
+enum bt_audio_codec_cfg_target_phy {
+	/** LE 1M PHY */
+	BT_AUDIO_CODEC_CFG_TARGET_PHY_1M = 0x01,
+
+	/** LE 2M PHY */
+	BT_AUDIO_CODEC_CFG_TARGET_PHY_2M = 0x02,
+
+	/** LE Coded PHY */
+	BT_AUDIO_CODEC_CFG_TARGET_PHY_CODED = 0x03,
+};
+
 /** @brief Codec specific configuration structure. */
 struct bt_audio_codec_cfg {
 	/** Data path ID
@@ -728,6 +765,18 @@ struct bt_audio_codec_cfg {
 	 * BT_HCI_CODING_FORMAT_TRANSPARENT if false, else uses the @ref bt_audio_codec_cfg.id.
 	 */
 	bool ctlr_transcode;
+#if defined(CONFIG_BT_BAP_UNICAST)
+	/** Target latency
+	 *
+	 * Unused for broadcast streams.
+	 */
+	enum bt_audio_codec_cfg_target_latency target_latency;
+	/** Target PHY
+	 *
+	 * Unused for broadcast streams.
+	 */
+	enum bt_audio_codec_cfg_target_phy target_phy;
+#endif /* CONFIG_BT_BAP_UNICAST */
 	/** Codec ID */
 	uint8_t  id;
 	/** Codec Company ID */
