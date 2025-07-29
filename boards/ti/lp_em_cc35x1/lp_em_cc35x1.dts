@@ -1,0 +1,46 @@
+/*
+ * Copyright (c) 2025 Conclusive Engineering Sp. z o.o.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <ti/cc35xxe.dtsi>
+
+/ {
+	model = "TI CC35X1E LaunchPad";
+	compatible = "ti,launchpad-cc35x1e";
+
+	chosen {
+		zephyr,sram = &dmem_ns;
+		zephyr,flash = &extflash;
+		zephyr,itcm = &itcm_ns;
+		zephyr,dtcm = &dtcm_ns;
+		zephyr,code-partition = &dmem_ns;
+	};
+};
+
+&imem_ns {
+	status = "okay";
+};
+
+&dmem_ns {
+	status = "okay";
+};
+
+&itcm_ns {
+	status = "okay";
+};
+
+&dtcm_ns {
+	status = "okay";
+};
+
+&itcm {
+	status = "okay";
+};
+
+&dtcm {
+	status = "okay";
+};

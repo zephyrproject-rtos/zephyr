@@ -1,0 +1,9 @@
+board:
+  name: lp_em_cc35x1
+  full_name: CC35x1 LaunchPad
+  vendor: ti
+  socs:
+    - name: cc3500e
+    - name: cc3501e
+    - name: cc3550e
+    - name: cc3551e
