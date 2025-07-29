@@ -109,3 +109,9 @@
 &gpio5 {
 	status = "okay";
 };
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
