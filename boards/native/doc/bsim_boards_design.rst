@@ -363,7 +363,7 @@ Other considerations
   typically x86. x86 is little endian, which is typically also the case for the
   target architecture. If this is not the case, embedded code which works in one
   may not work in the other due to endianness bugs.
-  Note that Zephyr code is be written to support both big and little endian.
+  Note that Zephyr's code should be written to support both big and little endian.
 - WordSize: The bsim targets, as well as normal embedded targets are 32 bit
   targets. In the case of the bsim targets this is done by explicitly targeting
   x86 (ILP32 ABI) instead of x86_64. This is done purposefully to provide more
