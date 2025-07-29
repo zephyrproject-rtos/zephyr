@@ -11,7 +11,7 @@
 #ifndef ZEPHYR_DT_BINDINGS_PINCTRL_SILABS_XG27_PINCTRL_H_
 #define ZEPHYR_DT_BINDINGS_PINCTRL_SILABS_XG27_PINCTRL_H_
 
-#include <dt-bindings/pinctrl/silabs-pinctrl-dbus.h>
+#include <zephyr/dt-bindings/pinctrl/silabs-pinctrl-dbus.h>
 
 #define SILABS_DBUS_ACMP0_ACMPOUT(port, pin) SILABS_DBUS(port, pin, 4, 1, 0, 1)
 

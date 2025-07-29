@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <dt-bindings/pinctrl/gecko-pinctrl-s1.h>
+#include <zephyr/dt-bindings/pinctrl/gecko-pinctrl-s1.h>
 
 &pinctrl {
 	/* configuration for usart0 device, default state - operating as UART */
