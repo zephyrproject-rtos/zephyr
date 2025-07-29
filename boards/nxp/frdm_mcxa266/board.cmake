@@ -4,9 +4,9 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-board_runner_args(jlink "--device=MCXA276")
-board_runner_args(linkserver "--device=MCXA276:FRDM-MCXA276")
-board_runner_args(pyocd "--target=mcxA276")
+board_runner_args(jlink "--device=MCXA266")
+board_runner_args(linkserver "--device=MCXA266:FRDM-MCXA266")
+board_runner_args(pyocd "--target=mcxa266")
 
 include(${ZEPHYR_BASE}/boards/common/linkserver.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
