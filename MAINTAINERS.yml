@@ -1251,6 +1251,7 @@ Documentation Infrastructure:
     - samples/net/sockets/can/
     - samples/subsys/canbus/
     - scripts/west_commands/runners/canopen_program.py
+    - snippets/socketcan-native-sim/
     - subsys/canbus/
     - subsys/net/l2/canbus/
     - tests/drivers/build_all/can/
