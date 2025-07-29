@@ -21,6 +21,7 @@ supported:
   - pinctrl
   - pwm
   - reset
+  - rtc
   - shell
   - uart
 vendor: microchip
