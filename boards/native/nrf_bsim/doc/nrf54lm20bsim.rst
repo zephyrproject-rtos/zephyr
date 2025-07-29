@@ -1,7 +1,7 @@
-.. _nrf54l15bsim:
+.. _nrf54lm20bsim:
 
-NRF54L15 simulated board (BabbleSim)
-####################################
+NRF54LM20 simulated board (BabbleSim)
+#####################################
 
 .. contents::
    :depth: 1
@@ -12,8 +12,8 @@ NRF54L15 simulated board (BabbleSim)
 Overview
 ********
 
-To allow simulating nRF54L15 SOCs, a Zephyr target board is provided: the
-``nrf54l15bsim/nrf54l15/cpuapp``.
+To allow simulating nRF54LM20 SOCs, a Zephyr target board is provided: the
+``nrf54lm20bsim/nrf54lm20/cpuapp``.
 
 This uses `BabbleSim`_ to simulate the radio activity, and the
 :ref:`POSIX architecture<Posix arch>` and the `native simulator`_ to
@@ -21,21 +21,23 @@ run applications natively on the development system. This has the benefit of
 providing native code execution performance and easy debugging using
 native tools, but inherits :ref:`its limitations <posix_arch_limitations>`.
 
-Just like for the nrf54l15dk target,
-the nrf54l15bsim/nrf54l15/cpuapp build target provides support for the application core,
-on the simulated nRF54L15 SOC.
+Just like for the nrf54lm20dk target, the nrf54lm20bsim/nrf54lm20/cpuapp build target provides
+support for the application core, on the simulated nRF54LM20 SOC.
 
 .. note::
 
-   Unlike real nRF54L15 devices, the nrf54l15bsim target has unlimited RAM, and code does not
-   occupy its RRAM. Therefore, as the nRF54L15, nRF54L10 and nRF54L05 SOCs only differ in the amount
-   of available RAM and RRAM either can be simulated using the nrf54l15bsim.
+   Unlike real nRF54LM20 devices, the nrf54lm20bsim target has unlimited RAM, and code does not
+   occupy its RRAM.
 
 .. note::
 
    This simulated target does **not** yet support targeting the cpuflpr core.
 
-This board includes models of some of the nRF54L15 SOC peripherals:
+.. warning::
+
+   This target is experimental.
+
+This board includes models of some of the nRF54LM20 SOC peripherals:
 
 * AAR (Accelerated Address Resolver)
 * CCM (AES CCM mode encryption)
@@ -55,7 +57,7 @@ This board includes models of some of the nRF54L15 SOC peripherals:
 * UARTE (UART with Easy DMA)
 * UICR (User Information Configuration Registers)
 
-and will use the same drivers as the nrf54l15dk targets for these.
+and will use the same drivers as the nrf54lm20dk targets for these.
 For more information on what is modeled to which level of detail,
 check the `HW models implementation status`_.
 
@@ -76,20 +78,7 @@ You can follow the instructions from the :ref:`nrf52_bsim board <nrf52bsim_build
 Simply change the board/target appropriately when building.
 
 
-.. _nrf54l15bsim_tz:
-
 TrustZone, TF-M and other security considerations
 *************************************************
 
-ARM's TrustZone is not modeled in this board. This means that:
-
-* There is no differentiation between secure and non secure execution states or bus accesses.
-* All RAM, flash and peripherals are in principle accessible from all SW. Peripherals with their
-  own interconnect master ports can, in principle, access any other peripheral or RAM area.
-* There is no nrf54l15bsim/nrf54l15/cpuapp/ns board/build target, or possibility of mixing secure
-  and non-secure images.
-* Currently there is no model of the SPU, and therefore neither RRAM, RAM areas or peripherals
-  can be labeled as restricted for secure or non secure access.
-* TF-M cannot be used.
-
-As crypto library, Mbed TLS can be used with its SW crypto backend.
+The same considerations as for the :ref:`nrf54l15bsim<nrf54l15bsim_tz>` target apply to this.
