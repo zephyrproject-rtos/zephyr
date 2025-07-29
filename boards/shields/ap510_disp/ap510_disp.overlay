@@ -6,10 +6,34 @@
 #include <apollo510/ambiq-apollo510-pinmux.h>
 #include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
 #include <zephyr/dt-bindings/display/panel.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	chosen {
 		zephyr,display = &co5300;
+		zephyr,touch = &chsc5x;
+	};
+};
+
+&iom2 {
+	cmdq-buffer-location = "SRAM_NO_CACHE";
+	cmdq-buffer-size = <256>;
+
+	i2c2: i2c {
+		pinctrl-0 = <&i2c2_default>;
+		pinctrl-1 = <&i2c2_sleep>;
+		pinctrl-names = "default", "sleep";
+		clock-frequency = <I2C_BITRATE_FAST>;
+		scl-gpios = <&gpio0_31 25 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
+		sda-gpios = <&gpio0_31 26 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
+		status = "okay";
+
+		chsc5x: chsc5x@2e {
+			compatible = "chipsemi,chsc5x";
+			reg = <0x2e>;
+			int-gpios = <&gpio64_95 13 GPIO_ACTIVE_LOW>;
+			reset-gpios = <&gpio64_95 14 GPIO_ACTIVE_LOW>;
+		};
 	};
 };
 
@@ -41,5 +65,9 @@
 };
 
 &gpio32_63 {
+	status = "okay";
+};
+
+&gpio64_95 {
 	status = "okay";
 };

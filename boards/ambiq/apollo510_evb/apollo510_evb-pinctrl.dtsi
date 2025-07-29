@@ -73,6 +73,7 @@
 			drive-open-drain;
 			drive-strength = "0.5";
 			bias-pull-up;
+			ambiq,pull-up-ohms = <1500>;
 		};
 	};
 

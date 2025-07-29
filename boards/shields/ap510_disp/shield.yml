@@ -4,3 +4,4 @@ shield:
   vendor: ambiq
   supported_features:
     - display
+    - input

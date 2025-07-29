@@ -43,7 +43,7 @@ enum {
 #define CHSC5X_BASE_ADDR3         0x00
 #define CHSC5X_ADDRESS_IC_TYPE    0x81
 #define CHSC5X_ADDRESS_TOUCH_DATA 0x2C
-#define CHSC5X_SIZE_TOUCH_DATA    7
+#define CHSC5X_SIZE_TOUCH_DATA    12
 
 #define CHSC5X_OFFSET_EVENT_TYPE    0x00
 #define CHSC5X_OFFSET_FINGER_NUMBER 0x01
@@ -62,10 +62,10 @@ static void chsc5x_work_handler(struct k_work *work)
 	bool is_pressed;
 	int ret;
 	const uint8_t write_buffer[] = {
-		CHSC5X_BASE_ADDR1,
-		CHSC5X_BASE_ADDR2,
-		CHSC5X_BASE_ADDR3,
 		CHSC5X_ADDRESS_TOUCH_DATA,
+		CHSC5X_BASE_ADDR3,
+		CHSC5X_BASE_ADDR2,
+		CHSC5X_BASE_ADDR1,
 	};
 	uint8_t read_buffer[CHSC5X_SIZE_TOUCH_DATA];
 
@@ -102,10 +102,10 @@ static int chsc5x_chip_init(const struct device *dev)
 	uint8_t ic_type;
 	int ret;
 	const uint8_t write_buffer[] = {
-		CHSC5X_BASE_ADDR1,
-		CHSC5X_BASE_ADDR2,
-		CHSC5X_BASE_ADDR3,
 		CHSC5X_ADDRESS_IC_TYPE,
+		CHSC5X_BASE_ADDR3,
+		CHSC5X_BASE_ADDR2,
+		CHSC5X_BASE_ADDR1,
 	};
 
 	if (!i2c_is_ready_dt(&cfg->i2c)) {
