@@ -9,10 +9,6 @@
 #include <silabs/xg24/efr32mg24.dtsi>
 
 / {
-	sram0: memory@20000000 {
-		reg = <0x20000000 DT_SIZE_K(256)>;
-	};
-
 	soc {
 		compatible = "silabs,mgm240pb32vna", "silabs,efr32mg24", "silabs,xg24",
 			     "silabs,efr32", "simple-bus";
@@ -25,4 +21,8 @@
 
 &radio {
 	pa-voltage-mv = <3300>;
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(256)>;
 };
