@@ -1,9 +1,9 @@
-.. zephyr:board:: frdm_mcxa276
+.. zephyr:board:: frdm_mcxa266
 
 Overview
 ********
 
-FRDM-MCXA276 are compact and scalable development boards for rapid prototyping of
+FRDM-MCXA266 are compact and scalable development boards for rapid prototyping of
 MCX A27X MCUs. They offer industry standard headers for easy access to the MCUs I/Os,
 integrated open-standard serial interfaces and an on-board MCU-Link debugger.
 MCX A Series are high-performance, low-power microcontrollers with MAU,SmartDMA and performance efficiency.
@@ -18,15 +18,15 @@ Hardware
 - On-board MCU-Link debugger with CMSIS-DAP
 - Arduino Header, SmartDMA/Camera Header, mikroBUS
 
-For more information about the MCX-A276 SoC and FRDM-MCXA276 board, see:
+For more information about the MCX-A276 SoC and FRDM-MCXA266 board, see:
 
 - `MCX-A276 SoC Website`_
 - `MCX-A276 Datasheet`_
 - `MCX-A276 Reference Manual`_
-- `FRDM-MCXA276 Website`_
-- `FRDM-MCXA276 User Guide`_
-- `FRDM-MCXA276 Board User Manual`_
-- `FRDM-MCXA276 Schematics`_
+- `FRDM-MCXA266 Website`_
+- `FRDM-MCXA266 User Guide`_
+- `FRDM-MCXA266 Board User Manual`_
+- `FRDM-MCXA266 Schematics`_
 
 Supported Features
 ==================
@@ -56,7 +56,7 @@ the system clock.
 Serial Port
 ===========
 
-The FRDM-MCXA276 SoC has 6 LPUART  interfaces for serial communication.
+The FRDM-MCXA266 SoC has 6 LPUART  interfaces for serial communication.
 LPUART 2 is configured as UART for the console.
 
 Programming and Debugging
@@ -121,7 +121,7 @@ Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: frdm_mcxa276
+   :board: frdm_mcxa266
    :goals: flash
 
 Open a serial terminal, reset the board (press the RESET button), and you should
@@ -130,7 +130,7 @@ see the following message in the terminal:
 .. code-block:: console
 
    *** Booting Zephyr OS build v3.6.0-4478-ge6c3a42f5f52 ***
-   Hello World! frdm_mcxa276/mcxa276
+   Hello World! frdm_mcxa266/mcxa266
 
 Debugging
 =========
@@ -139,7 +139,7 @@ Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: frdm_mcxa276/mcxa276
+   :board: frdm_mcxa266/mcxa266
    :goals: debug
 
 Open a serial terminal, step through the application in your debugger, and you
@@ -148,7 +148,7 @@ should see the following message in the terminal:
 .. code-block:: console
 
    *** Booting Zephyr OS build v3.6.0-4478-ge6c3a42f5f52 ***
-   Hello World! frdm_mcxa276/mcxa276
+   Hello World! frdm_mcxa266/mcxa266
 
 Troubleshooting
 ===============
@@ -168,14 +168,14 @@ Troubleshooting
 .. _MCX-A276 Reference Manual:
    https://www.nxp.com/webapp/Download?colCode=MCXAP100M96FS6RM
 
-.. _FRDM-MCXA276 Website:
-   https://www.nxp.com/design/design-center/development-boards-and-designs/general-purpose-mcus/frdm-development-board-for-mcx-a144-5-6-a154-5-6-mcus:FRDM-MCXA276
+.. _FRDM-MCXA266 Website:
+   https://www.nxp.com/design/design-center/development-boards-and-designs/general-purpose-mcus/frdm-development-board-for-mcx-a144-5-6-a154-5-6-mcus:FRDM-MCXA266
 
-.. _FRDM-MCXA276 User Guide:
-   https://www.nxp.com/document/guide/getting-started-with-frdm-mcxa276:GS-FRDM-MCXA276
+.. _FRDM-MCXA266 User Guide:
+   https://www.nxp.com/document/guide/getting-started-with-frdm-mcxa266:GS-FRDM-MCXA266
 
-.. _FRDM-MCXA276 Board User Manual:
+.. _FRDM-MCXA266 Board User Manual:
    https://www.nxp.com/docs/en/user-manual/UM12121.pdf
 
-.. _FRDM-MCXA276 Schematics:
+.. _FRDM-MCXA266 Schematics:
    https://www.nxp.com/webapp/Download?colCode=SPF-90841
