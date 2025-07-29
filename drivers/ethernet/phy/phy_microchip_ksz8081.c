@@ -443,6 +443,37 @@ static void phy_mc_ksz8081_monitor_work_handler(struct k_work *work)
 	k_work_reschedule(&data->phy_monitor_work, K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
 }
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
+static int ksz8081_init_int_gpios(const struct device *dev)
+{
+	const struct mc_ksz8081_config *config = dev->config;
+
+	if (config->interrupt_gpio.port == NULL) {
+		return 0;
+	}
+
+	/* Prevent NAND TREE mode */
+	return gpio_pin_configure_dt(&config->interrupt_gpio, GPIO_OUTPUT_ACTIVE);
+}
+#else
+#define ksz8081_init_int_gpios(dev) 0
+#endif
+
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+static int ksz8081_init_reset_gpios(const struct device *dev)
+{
+	const struct mc_ksz8081_config *config = dev->config;
+
+	if (config->reset_gpio.port == NULL) {
+		return 0;
+	}
+
+	return gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_ACTIVE);
+}
+#else
+#define ksz8081_init_reset_gpios(dev) 0
+#endif
+
 static int phy_mc_ksz8081_init(const struct device *dev)
 {
 	const struct mc_ksz8081_config *config = dev->config;
@@ -458,28 +489,15 @@ static int phy_mc_ksz8081_init(const struct device *dev)
 
 	mdio_bus_enable(config->mdio_dev);
 
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
-	if (!config->interrupt_gpio.port) {
-		goto skip_int_gpio;
-	}
-
-	/* Prevent NAND TREE mode */
-	ret = gpio_pin_configure_dt(&config->interrupt_gpio, GPIO_OUTPUT_ACTIVE);
+	ret = ksz8081_init_int_gpios(dev);
 	if (ret) {
 		return ret;
 	}
 
-skip_int_gpio:
-#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) */
-
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
-	if (config->reset_gpio.port) {
-		ret = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_ACTIVE);
-		if (ret) {
-			return ret;
-		}
+	ret = ksz8081_init_reset_gpios(dev);
+	if (ret) {
+		return ret;
 	}
-#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios) */
 
 	/* Reset PHY */
 	ret = phy_mc_ksz8081_reset(dev);
