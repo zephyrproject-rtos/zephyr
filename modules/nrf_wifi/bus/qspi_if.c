@@ -1190,6 +1190,85 @@ int qspi_cmd_wakeup_rpu(const struct device *dev, uint8_t data)
 	return ret;
 }
 
+/**
+ * @brief Read a register via QSPI
+ *
+ * @param dev QSPI device
+ * @param reg_addr Register address (opcode)
+ * @param reg_value Pointer to store the read value
+ * @return int 0 on success, negative error code on failure
+ */
+int qspi_read_reg(const struct device *dev, uint8_t reg_addr, uint8_t *reg_value)
+{
+	int ret = 0;
+	uint8_t sr = 0;
+
+	const struct qspi_buf sr_buf = {
+		.buf = &sr,
+		.len = sizeof(sr),
+	};
+	struct qspi_cmd cmd = {
+		.op_code = reg_addr,
+		.rx_buf = &sr_buf,
+	};
+
+	ret = qspi_device_init(dev);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = qspi_send_cmd(dev, &cmd, false);
+
+	qspi_device_uninit(dev);
+
+	LOG_DBG("QSPI read reg 0x%02x = 0x%02x", reg_addr, sr);
+
+	if (ret == 0) {
+		*reg_value = sr;
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Write a register via QSPI
+ *
+ * @param dev QSPI device
+ * @param reg_addr Register address (opcode)
+ * @param reg_value Value to write
+ * @return int 0 on success, negative error code on failure
+ */
+int qspi_write_reg(const struct device *dev, uint8_t reg_addr, uint8_t reg_value)
+{
+	int ret = 0;
+
+	const struct qspi_buf tx_buf = {
+		.buf = &reg_value,
+		.len = sizeof(reg_value),
+	};
+	const struct qspi_cmd cmd = {
+		.op_code = reg_addr,
+		.tx_buf = &tx_buf,
+	};
+
+	ret = qspi_device_init(dev);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = qspi_send_cmd(dev, &cmd, false);
+
+	qspi_device_uninit(dev);
+
+	LOG_DBG("QSPI write reg 0x%02x = 0x%02x", reg_addr, reg_value);
+
+	if (ret < 0) {
+		LOG_ERR("QSPI write reg 0x%02x failed: %d", reg_addr, ret);
+	}
+
+	return ret;
+}
+
 struct device qspi_perip = {
 	.data = &qspi_nor_memory_data,
 };

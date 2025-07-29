@@ -54,6 +54,24 @@ int rpu_rdsr2(void);
 int rpu_rdsr1(void);
 int rpu_clks_on(void);
 
+/**
+ * @brief Read a register via RPU hardware interface
+ *
+ * @param reg_addr Register address (opcode)
+ * @param reg_value Pointer to store the read value
+ * @return int 0 on success, negative error code on failure
+ */
+int rpu_read_reg(uint8_t reg_addr, uint8_t *reg_value);
+
+/**
+ * @brief Write a register via RPU hardware interface
+ *
+ * @param reg_addr Register address (opcode)
+ * @param reg_value Value to write
+ * @return int 0 on success, negative error code on failure
+ */
+int rpu_write_reg(uint8_t reg_addr, uint8_t reg_value);
+
 int rpu_init(void);
 int rpu_enable(void);
 int rpu_disable(void);
