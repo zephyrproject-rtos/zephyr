@@ -2,9 +2,13 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+config HAS_CPU_FREQ
+	bool
+
 menuconfig CPU_FREQ
 	bool "CPU Frequency Scaling Subsystem"
 	depends on !SMP
+	depends on HAS_CPU_FREQ
 	help
 	  CPU Frequency scaling subsystem
 
