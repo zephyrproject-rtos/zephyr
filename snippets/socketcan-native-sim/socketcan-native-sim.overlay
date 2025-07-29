@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2025 Henrik Brix Andersen <henrik@brixandersen.dk>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,canbus = &can0;
+	};
+};
+
+&can0 {
+	status = "okay";
+};
