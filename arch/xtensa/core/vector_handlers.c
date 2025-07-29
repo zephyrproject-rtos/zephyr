@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "xtensa/corebits.h"
 #include <string.h>
 #include <xtensa_asm2_context.h>
 #include <zephyr/kernel.h>
@@ -631,6 +632,9 @@ void *xtensa_excint1_c(void *esf)
 		break;
 #endif /* CONFIG_XTENSA_LAZY_HIFI_SHARING */
 #if defined(CONFIG_XTENSA_MMU) && defined(CONFIG_USERSPACE)
+	case EXCCAUSE_DTLB_MULTIHIT:
+		xtensa_exc_dtlb_multihit_handle();
+		break;
 	case EXCCAUSE_LOAD_STORE_RING:
 		if (!xtensa_exc_load_store_ring_error_check(bsa)) {
 			break;

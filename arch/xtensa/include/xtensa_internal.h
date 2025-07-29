@@ -75,6 +75,14 @@ void xtensa_userspace_enter(k_thread_entry_t user_entry,
 bool xtensa_mem_kernel_has_access(const void *addr, size_t size, int write);
 
 /**
+ * @brief Handle DTLB multihit exception.
+ *
+ * Handle DTLB multihit exception by invalidating all auto-refilled DTLBs of
+ * a particular memory page.
+ */
+void xtensa_exc_dtlb_multihit_handle(void);
+
+/**
  * @brief Check if it is a true load/store ring exception.
  *
  * When a page can be accessed by both kernel and user threads, the autofill DTLB
