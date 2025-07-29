@@ -26,14 +26,12 @@ LOG_MODULE_REGISTER(sdhc_litex, CONFIG_SDHC_LOG_LEVEL);
 #define SDCARD_CTRL_RESP_SHORT_BUSY 3
 
 #define SDCARD_EV_CARD_DETECT_BIT   0
-#define SDCARD_EV_BLOCK2MEM_DMA_BIT 1
+#define SDCARD_EV_CMD_DONE_BIT      1
 #define SDCARD_EV_MEM2BLOCK_DMA_BIT 2
-#define SDCARD_EV_CMD_DONE_BIT      3
 
 #define SDCARD_EV_CARD_DETECT   BIT(SDCARD_EV_CARD_DETECT_BIT)
-#define SDCARD_EV_BLOCK2MEM_DMA BIT(SDCARD_EV_BLOCK2MEM_DMA_BIT)
-#define SDCARD_EV_MEM2BLOCK_DMA BIT(SDCARD_EV_MEM2BLOCK_DMA_BIT)
 #define SDCARD_EV_CMD_DONE      BIT(SDCARD_EV_CMD_DONE_BIT)
+#define SDCARD_EV_MEM2BLOCK_DMA BIT(SDCARD_EV_MEM2BLOCK_DMA_BIT)
 
 #define SDCARD_CORE_EVENT_DONE_BIT      0
 #define SDCARD_CORE_EVENT_ERROR_BIT     1
@@ -62,9 +60,7 @@ struct sdhc_litex_config {
 	mem_addr_t phy_card_detect_addr;
 	mem_addr_t phy_clocker_divider_addr;
 	mem_addr_t phy_init_initialize_addr;
-	mem_addr_t phy_cmdr_timeout_addr;
 	mem_addr_t phy_dataw_status_addr;
-	mem_addr_t phy_datar_timeout_addr;
 	mem_addr_t phy_settings_addr;
 	mem_addr_t core_cmd_argument_addr;
 	mem_addr_t core_cmd_command_addr;
@@ -74,14 +70,11 @@ struct sdhc_litex_config {
 	mem_addr_t core_data_event_addr;
 	mem_addr_t core_block_length_addr;
 	mem_addr_t core_block_count_addr;
-	mem_addr_t block2mem_dma_base_addr;
-	mem_addr_t block2mem_dma_length_addr;
-	mem_addr_t block2mem_dma_enable_addr;
-	mem_addr_t block2mem_dma_done_addr;
 	mem_addr_t mem2block_dma_base_addr;
 	mem_addr_t mem2block_dma_length_addr;
 	mem_addr_t mem2block_dma_enable_addr;
 	mem_addr_t mem2block_dma_done_addr;
+	mem_addr_t mem2block_dma_we_addr;
 	mem_addr_t ev_status_addr;
 	mem_addr_t ev_pending_addr;
 	mem_addr_t ev_enable_addr;
@@ -180,16 +173,7 @@ static int litex_mmc_send_cmd(const struct device *dev, uint8_t cmd, uint8_t tra
 
 	litex_write8(1, dev_config->core_cmd_send_addr);
 
-	if (transfer != SDCARD_CTRL_DATA_TRANSFER_NONE ||
-	    response_len == SDCARD_CTRL_RESP_SHORT_BUSY) {
-		k_sem_take(&dev_data->cmd_done_sem, K_FOREVER);
-
-		LOG_DBG("Command done event received");
-	} else {
-		while (!IS_BIT_SET(litex_read8(dev_config->core_cmd_event_addr),
-				   SDCARD_CORE_EVENT_DONE_BIT)) {
-		}
-	}
+	k_sem_take(&dev_data->cmd_done_sem, K_FOREVER);
 
 	if ((response_len != SDCARD_CTRL_RESP_NONE) && (response != NULL)) {
 		litex_read32_array(dev_config->core_cmd_response_addr, response, 4);
@@ -226,6 +210,8 @@ static int sdhc_litex_wait_for_dma(const struct device *dev, struct sdhc_command
 	default:
 		return 0; /* No DMA for other commands */
 	}
+
+	litex_write8(0, dev_config->mem2block_dma_enable_addr);
 
 	if ((data->blocks > 1) && dev_data->no_cmd23_set_block_count) {
 		litex_mmc_send_cmd(dev, SD_STOP_TRANSMISSION, SDCARD_CTRL_DATA_TRANSFER_NONE,
@@ -276,25 +262,20 @@ static void sdhc_litex_do_dma(const struct device *dev, struct sdhc_command *cmd
 	case SD_WRITE_SINGLE_BLOCK:
 	case SD_WRITE_MULTIPLE_BLOCK:
 		*transfer = SDCARD_CTRL_DATA_TRANSFER_WRITE;
-		litex_write8(0, dev_config->mem2block_dma_enable_addr);
-		litex_write64((uint64_t)(uintptr_t)(data->data),
-			      dev_config->mem2block_dma_base_addr);
-		litex_write32(data->block_size * data->blocks,
-			      dev_config->mem2block_dma_length_addr);
-		litex_write8(1, dev_config->mem2block_dma_enable_addr);
+		litex_write8(0, dev_config->mem2block_dma_we_addr);
 		break;
 	default:
 		*transfer = SDCARD_CTRL_DATA_TRANSFER_READ;
-		litex_write32((sys_clock_hw_cycles_per_sec() / MSEC_PER_SEC) * data->timeout_ms,
-			      dev_config->phy_datar_timeout_addr);
-		litex_write8(0, dev_config->block2mem_dma_enable_addr);
-		litex_write64((uint64_t)(uintptr_t)(data->data),
-			      dev_config->block2mem_dma_base_addr);
-		litex_write32(data->block_size * data->blocks,
-			      dev_config->block2mem_dma_length_addr);
-		litex_write8(1, dev_config->block2mem_dma_enable_addr);
+		litex_write8(BIT(0), dev_config->mem2block_dma_we_addr);
 		break;
 	}
+
+	litex_write8(0, dev_config->mem2block_dma_enable_addr);
+	litex_write64((uint64_t)(uintptr_t)(data->data),
+			dev_config->mem2block_dma_base_addr);
+	litex_write32(data->block_size * data->blocks,
+			dev_config->mem2block_dma_length_addr);
+	litex_write8(1, dev_config->mem2block_dma_enable_addr);
 
 	litex_write16(data->block_size, dev_config->core_block_length_addr);
 	litex_write32(data->blocks, dev_config->core_block_count_addr);
@@ -316,9 +297,6 @@ static int sdhc_litex_request(const struct device *dev, struct sdhc_command *cmd
 		litex_write8(BIT(0), dev_config->phy_init_initialize_addr);
 		k_sleep(K_MSEC(1));
 	}
-
-	litex_write32((sys_clock_hw_cycles_per_sec() / MSEC_PER_SEC) * cmd->timeout_ms,
-		      dev_config->phy_cmdr_timeout_addr);
 
 	switch (cmd->response_type & SDHC_NATIVE_RESPONSE_MASK) {
 	case SD_RSP_TYPE_NONE:
@@ -452,8 +430,7 @@ static int sdhc_litex_init(const struct device *dev)
 
 	dev_config->irq_config_func();
 
-	litex_write8(SDCARD_EV_BLOCK2MEM_DMA | SDCARD_EV_MEM2BLOCK_DMA | SDCARD_EV_CMD_DONE,
-		     dev_config->ev_enable_addr);
+	litex_write8(SDCARD_EV_MEM2BLOCK_DMA | SDCARD_EV_CMD_DONE, dev_config->ev_enable_addr);
 
 	litex_write8(SDCARD_PHY_SETTINGS_PHY_SPEED_1X, dev_config->phy_settings_addr);
 
@@ -482,11 +459,6 @@ static void sdhc_litex_irq_handler(const struct device *dev)
 		litex_write8(SDCARD_EV_CARD_DETECT, dev_config->ev_pending_addr);
 	}
 
-	if (IS_BIT_SET(ev_pending & ev_enable, SDCARD_EV_BLOCK2MEM_DMA_BIT)) {
-		k_sem_give(&dev_data->dma_done_sem);
-		litex_write8(SDCARD_EV_BLOCK2MEM_DMA, dev_config->ev_pending_addr);
-	}
-
 	if (IS_BIT_SET(ev_pending & ev_enable, SDCARD_EV_MEM2BLOCK_DMA_BIT)) {
 		k_sem_give(&dev_data->dma_done_sem);
 		litex_write8(SDCARD_EV_MEM2BLOCK_DMA, dev_config->ev_pending_addr);
@@ -512,9 +484,7 @@ static void sdhc_litex_irq_handler(const struct device *dev)
 		.phy_card_detect_addr = DT_INST_REG_ADDR_BY_NAME(n, phy_card_detect),              \
 		.phy_clocker_divider_addr = DT_INST_REG_ADDR_BY_NAME(n, phy_clocker_divider),      \
 		.phy_init_initialize_addr = DT_INST_REG_ADDR_BY_NAME(n, phy_init_initialize),      \
-		.phy_cmdr_timeout_addr = DT_INST_REG_ADDR_BY_NAME(n, phy_cmdr_timeout),            \
 		.phy_dataw_status_addr = DT_INST_REG_ADDR_BY_NAME(n, phy_dataw_status),            \
-		.phy_datar_timeout_addr = DT_INST_REG_ADDR_BY_NAME(n, phy_datar_timeout),          \
 		.phy_settings_addr = DT_INST_REG_ADDR_BY_NAME(n, phy_settings),                    \
 		.core_cmd_argument_addr = DT_INST_REG_ADDR_BY_NAME(n, core_cmd_argument),          \
 		.core_cmd_command_addr = DT_INST_REG_ADDR_BY_NAME(n, core_cmd_command),            \
@@ -524,14 +494,11 @@ static void sdhc_litex_irq_handler(const struct device *dev)
 		.core_data_event_addr = DT_INST_REG_ADDR_BY_NAME(n, core_data_event),              \
 		.core_block_length_addr = DT_INST_REG_ADDR_BY_NAME(n, core_block_length),          \
 		.core_block_count_addr = DT_INST_REG_ADDR_BY_NAME(n, core_block_count),            \
-		.block2mem_dma_base_addr = DT_INST_REG_ADDR_BY_NAME(n, block2mem_dma_base),        \
-		.block2mem_dma_length_addr = DT_INST_REG_ADDR_BY_NAME(n, block2mem_dma_length),    \
-		.block2mem_dma_enable_addr = DT_INST_REG_ADDR_BY_NAME(n, block2mem_dma_enable),    \
-		.block2mem_dma_done_addr = DT_INST_REG_ADDR_BY_NAME(n, block2mem_dma_done),        \
 		.mem2block_dma_base_addr = DT_INST_REG_ADDR_BY_NAME(n, mem2block_dma_base),        \
 		.mem2block_dma_length_addr = DT_INST_REG_ADDR_BY_NAME(n, mem2block_dma_length),    \
 		.mem2block_dma_enable_addr = DT_INST_REG_ADDR_BY_NAME(n, mem2block_dma_enable),    \
 		.mem2block_dma_done_addr = DT_INST_REG_ADDR_BY_NAME(n, mem2block_dma_done),        \
+		.mem2block_dma_we_addr = DT_INST_REG_ADDR_BY_NAME(n, mem2block_dma_we),            \
 		.ev_status_addr = DT_INST_REG_ADDR_BY_NAME(n, ev_status),                          \
 		.ev_pending_addr = DT_INST_REG_ADDR_BY_NAME(n, ev_pending),                        \
 		.ev_enable_addr = DT_INST_REG_ADDR_BY_NAME(n, ev_enable),                          \
