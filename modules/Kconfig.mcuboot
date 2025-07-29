@@ -120,6 +120,40 @@ config MCUBOOT_IMGTOOL_OVERWRITE_ONLY
 	  If enabled, --overwrite-only option passed to imgtool to avoid
 	  adding the swap status area size when calculating overflow.
 
+config MCUBOOT_IMGTOOL_UUID_VID
+	bool "Append vendor unique identifier TLV"
+	help
+	  If enabled, --vid option passed to imgtool with the value set by
+	  the MCUBOOT_IMGTOOL_UUID_VID_NAME option.
+
+config MCUBOOT_IMGTOOL_UUID_VID_NAME
+	string "Vendor UUID"
+	depends on MCUBOOT_IMGTOOL_UUID_VID
+	help
+	  The vendor unique identifier.
+	  The following formats are supported:
+	   - Domain name (i.e. amce.corp)
+	   - Raw UUID (i.e. 12345678-1234-5678-1234-567812345678)
+	   - Raw HEX UUID (i.e. 12345678123456781234567812345678)
+
+config MCUBOOT_IMGTOOL_UUID_CID
+	bool "Append image class unique identifier TLV"
+	help
+	  If enabled, --cid option passed to imgtool with the value set by
+	  the MCUBOOT_IMGTOOL_UUID_CID_NAME option.
+
+config MCUBOOT_IMGTOOL_UUID_CID_NAME
+	string "Image class UUID"
+	depends on MCUBOOT_IMGTOOL_UUID_CID
+	help
+	  The image class unique identifier.
+	  The following formats are supported:
+	   - Image class name (i.e. nRF5340_door_lock_btperipheral).
+	     This format requires MCUBOOT_IMGTOOL_UUID_VID_NAME to be defined
+	     as the VID UUID is used as the namespace for image class UUID.
+	   - Raw UUID (i.e. 12345678-1234-5678-1234-567812345678)
+	   - Raw HEX UUID (i.e. 12345678123456781234567812345678)
+
 config MCUBOOT_EXTRA_IMGTOOL_ARGS
 	string "Extra arguments to pass to imgtool when signing"
 	default ""
