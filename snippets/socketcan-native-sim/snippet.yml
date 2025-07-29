@@ -1,0 +1,4 @@
+name: socketcan-native-sim
+append:
+  EXTRA_CONF_FILE: socketcan-native-sim.conf
+  EXTRA_DTC_OVERLAY_FILE: socketcan-native-sim.overlay
