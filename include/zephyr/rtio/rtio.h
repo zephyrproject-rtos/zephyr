@@ -1176,6 +1176,32 @@ static inline void rtio_cqe_release(struct rtio *r, struct rtio_cqe *cqe)
 }
 
 /**
+ * @brief Flush completion queue
+ *
+ * @param r RTIO context
+ * @return The operation completion result
+ * @retval 0 if the queued operations completed with no error
+ * @retval <0 on error
+ */
+static inline int rtio_flush_completion_queue(struct rtio *r)
+{
+	struct rtio_cqe *cqe;
+	int res = 0;
+
+	do {
+		cqe = rtio_cqe_consume(r);
+		if (cqe != NULL) {
+			if ((cqe->result < 0) && (res == 0)) {
+				res = cqe->result;
+			}
+			rtio_cqe_release(r, cqe);
+		}
+	} while (cqe != NULL);
+
+	return res;
+}
+
+/**
  * @brief Compute the CQE flags from the rtio_iodev_sqe entry
  *
  * @param iodev_sqe The SQE entry in question.
