@@ -48,6 +48,12 @@ tests:
       - vmu_rt1170/mimxrt1176/cm7
       - nrf52840dk/nrf52840
       - rd_rw612_bga
+      - nucleo_c071rb
+      - nucleo_g474re
+      - nucleo_u385rg_q
+      - nucleo_wba55cg
+      - nucleo_wl55jc
+      - stm32u083c_dk
       - esp32_devkitc/esp32/procpu
       - esp32s2_saola
       - esp32s3_devkitm/esp32s3/procpu
