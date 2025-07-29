@@ -15,12 +15,8 @@ config RTIO_WORKQ_THREADS_POOL_PRIO
 	default MAIN_THREAD_PRIORITY
 
 config RTIO_WORKQ_THREADS_POOL_STACK_SIZE
-	int "Priority of RTIO Workqueue Threads Pool"
+	int "Stack size of RTIO Workqueue Threads"
 	default 1024
-
-config RTIO_WORKQ_STACK_SIZE
-	int "Thread stack-size of RTIO Workqueues"
-	default 2048
 
 config RTIO_WORKQ_THREADS_POOL
 	int "Number of threads to use for processing work-items"
