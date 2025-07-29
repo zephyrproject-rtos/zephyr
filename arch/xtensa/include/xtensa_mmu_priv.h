@@ -214,6 +214,15 @@
 #define XTENSA_MMU_PDTLB_HIT			BIT(4)
 
 /**
+ * PDTLB WAY mask.
+ *
+ * For more information see
+ * Xtensa Instruction Set Architecture (ISA) Reference Manual
+ * 4.6.5.7 Formats for Probing MMU Option TLB Entries
+ */
+#define XTENSA_MMU_PDTLB_WAY_MASK		0xFU
+
+/**
  * Virtual address where the page table is mapped
  */
 #define XTENSA_MMU_PTEVADDR			CONFIG_XTENSA_MMU_PTEVADDR
