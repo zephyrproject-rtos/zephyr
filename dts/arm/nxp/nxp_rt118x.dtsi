@@ -755,6 +755,22 @@
 		status = "disabled";
 	};
 
+	flexio1: flexio@25c0000{
+		compatible = "nxp,flexio";
+		reg = <0x25c0000 0x4000>;
+		interrupts = <53 0>;
+		clocks = <&ccm IMX_CCM_FLEXIO1_CLK 0 0>;
+		status = "disabled";
+	};
+
+	flexio2: flexio@25d0000 {
+		compatible = "nxp,flexio";
+		reg = <0x25d0000 0x4000>;
+		interrupts = <54 0>;
+		clocks = <&ccm IMX_CCM_FLEXIO2_CLK 0 0>;
+		status = "disabled";
+	};
+
 	flexpwm1: flexpwm@2650000 {
 		compatible = "nxp,flexpwm";
 		reg = <0x2650000 0x4000>;
