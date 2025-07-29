@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <dt-bindings/pinctrl/silabs/xg24-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/silabs/xg24-pinctrl.h>
 
 &pinctrl {
 	eusart0_default: eusart0_default {

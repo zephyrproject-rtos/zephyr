@@ -11,7 +11,7 @@
 #ifndef ZEPHYR_DT_BINDINGS_PINCTRL_SILABS_XG22_PINCTRL_H_
 #define ZEPHYR_DT_BINDINGS_PINCTRL_SILABS_XG22_PINCTRL_H_
 
-#include <dt-bindings/pinctrl/silabs-pinctrl-dbus.h>
+#include <zephyr/dt-bindings/pinctrl/silabs-pinctrl-dbus.h>
 
 #define SILABS_DBUS_CMU_CLKOUT0(port, pin) SILABS_DBUS(port, pin, 4, 1, 0, 2)
 #define SILABS_DBUS_CMU_CLKOUT1(port, pin) SILABS_DBUS(port, pin, 4, 1, 1, 3)
