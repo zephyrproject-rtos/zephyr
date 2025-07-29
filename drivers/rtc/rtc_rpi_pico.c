@@ -136,21 +136,21 @@ static int rtc_rpi_pico_get_time(const struct device *dev, struct rtc_time *time
 	int err = 0;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
-	if (!rtc_get_datetime(&dt)) {
+	if (rtc_get_datetime(&dt)) {
+		timeptr->tm_sec = dt.sec;
+		timeptr->tm_min = dt.min;
+		timeptr->tm_hour = dt.hour;
+		timeptr->tm_mday = dt.day;
+		timeptr->tm_mon = dt.month - 1;
+		timeptr->tm_year = dt.year - TM_YEAR_REF;
+		timeptr->tm_wday = dt.dotw;
+		/* unknown values */
+		timeptr->tm_yday = -1;
+		timeptr->tm_isdst = -1;
+		timeptr->tm_nsec = 0;
+	} else {
 		err = -ENODATA;
 	}
-
-	timeptr->tm_sec = dt.sec;
-	timeptr->tm_min = dt.min;
-	timeptr->tm_hour = dt.hour;
-	timeptr->tm_mday = dt.day;
-	timeptr->tm_mon = dt.month - 1;
-	timeptr->tm_year = dt.year - TM_YEAR_REF;
-	timeptr->tm_wday = dt.dotw;
-	/* unknown values */
-	timeptr->tm_yday = -1;
-	timeptr->tm_isdst = -1;
-	timeptr->tm_nsec = 0;
 	k_spin_unlock(&data->lock, key);
 
 	return err;
