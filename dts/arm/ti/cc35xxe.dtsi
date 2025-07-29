@@ -1,0 +1,489 @@
+/*
+ * Copyright (c) 2025 Conclusive Engineering Sp. z o.o.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <freq.h>
+#include <arm/armv8-m.dtsi>
+
+#define INT_SP_UART_0_INT_REQ       16
+#define INT_SP_UART_1_INT_REQ       17
+#define INT_SP_I2C_0_INTREQ         18
+#define INT_SP_I2C_1_INTREQ         19
+#define INT_SP_SPI_0_EVT_REQ        20
+#define INT_SP_SPI_1_EVT_REQ        21
+#define INT_GPTIMER_0_EVT_CPU_IRQ   22
+#define INT_GPTIMER_1_EVT_CPU_IRQ   23
+#define INT_I2S_IRQ_REQ             25
+#define INT_EVT_SWINT0_REQ          27
+#define INT_EVT_SWINT1_REQ          28
+#define INT_ULL_USC_ULPADCHP_PUB_EVT0_REQ 31
+#define INT_SECURED_GPIO_IRQ_EVT_IND_OUT 33
+#define INT_OSPR_HSM_HOST_0_SEC_IRQ 34
+#define INT_NON_SECURED_DMA_IRQ_EVT_IND_OUT          41
+#define INT_HOST_ELP_TMR_WAKEUP_REQ 62
+#define INT_NAB_HOST_IRQ            63
+#define INT_RTC_EVENT_IRQ           65
+
+#define INT_CAN_LINE0_IRQ_REQ INT_EVT_SWINT0_REQ
+#define INT_CAN_LINE1_IRQ_REQ INT_EVT_SWINT1_REQ
+
+/*
+ * Note: Zephyr uses exception numbers, vs the IRQ used by the TI SimpleLink WFF3 SDK
+ * which are offset by 16:
+ */
+#define EXP_UARTA0   (INT_SP_UART_0_INT_REQ - 16)
+#define EXP_UARTA1   (INT_SP_UART_1_INT_REQ - 16)
+#define EXP_I2C0     (INT_SP_I2C_0_INTREQ - 16)
+#define EXP_I2C1     (INT_SP_I2C_1_INTREQ - 16)
+#define EXP_SPI0     (INT_SP_SPI_0_EVT_REQ - 16)
+#define EXP_SPI1     (INT_SP_SPI_1_EVT_REQ - 16)
+#define EXP_GPT0     (INT_GPTIMER_0_EVT_CPU_IRQ - 16)
+#define EXP_GPT1     (INT_GPTIMER_1_EVT_CPU_IRQ - 16)
+#define EXP_I2S      (INT_I2S_IRQ_REQ - 16)
+#define EXP_CAN_IRQ0 (INT_CAN_LINE0_IRQ_REQ - 16)
+#define EXP_CAN_IRQ1 (INT_CAN_LINE1_IRQ_REQ - 16)
+#define EXP_ADC      (INT_ULL_USC_ULPADCHP_PUB_EVT0_REQ - 16)
+#define EXP_GPIO     (INT_SECURED_GPIO_IRQ_EVT_IND_OUT - 16)
+#define EXP_HSM      (INT_OSPR_HSM_HOST_0_SEC_IRQ - 16)
+#define EXP_DMA_NS (INT_NON_SECURED_DMA_IRQ_EVT_IND_OUT - 16)
+#define EXP_NAB_HOST (INT_NAB_HOST_IRQ - 16)
+#define EXP_WDT      (INT_HOST_ELP_TMR_WAKEUP_REQ - 16)
+#define EXP_RTC      (INT_RTC_EVENT_IRQ - 16)
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m33";
+			reg = <0>;
+		};
+	};
+
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <DT_FREQ_M(160)>;
+		#clock-cells = <0>;
+	};
+
+	rtc_xtal: clock-rtc-xtal {
+		compatible = "fixed-clock";
+		clock-frequency = <32768>;
+		#clock-cells = <0>;
+	};
+
+	lfclk: low-frequency-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <32768>;
+		#clock-cells = <0>;
+	};
+
+	uartclk: uart-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <DT_FREQ_M(80)>;
+		#clock-cells = <0>;
+	};
+
+	spiclk: spi-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <DT_FREQ_M(80)>;
+		#clock-cells = <0>;
+	};
+
+	gptimerclk: gptimer-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <DT_FREQ_M(80)>;
+		#clock-cells = <0>;
+	};
+
+	i2cclk: i2c-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <DT_FREQ_M(80)>;
+		#clock-cells = <0>;
+	};
+
+	canclk: can-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <DT_FREQ_M(80)>;
+		#clock-cells = <0>;
+	};
+
+	soc {
+		/* I-Cache and ITCM size options can be configured independently The user can
+		 * decide how to split ITCM and I-Cache in the following configurations:
+		 * 1. 32kB I-Cache + 32kB ITCM
+		 * 2. 64kB I-Cache + 0kB ITCM
+		 */
+		icache_ns: icache_ns@0 {
+			status = "disabled";
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x0 DT_SIZE_K(32)>;
+			zephyr,memory-region = "ICACHE_NS";
+		};
+
+		icache: icache@4000000 {
+			status = "disabled";
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x4000000 DT_SIZE_K(32)>;
+			zephyr,memory-region = "ICACHE";
+		};
+
+		itcm_ns: itcm_ns@0 {
+			status = "disabled";
+			compatible = "zephyr,memory-region", "arm,itcm";
+			reg = <0x0 DT_SIZE_K(32)>;
+			zephyr,memory-region = "ITCM_NS";
+		};
+
+		itcm: itcm@4000000 {
+			status = "disabled";
+			compatible = "zephyr,memory-region", "arm,itcm";
+			reg = <0x4000000 DT_SIZE_K(32)>;
+			zephyr,memory-region = "ITCM";
+		};
+
+		imem_ns: imem_ns@8000000 {
+			status = "disabled";
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x8000000 DT_SIZE_K(160)>;
+			zephyr,memory-region = "IMEM_NS";
+		};
+
+		imem: imem@c000000 {
+			status = "disabled";
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0xc000000 DT_SIZE_K(160)>;
+			zephyr,memory-region = "IMEM";
+		};
+
+		dtcm_ns: dtcm_ns@20000000 {
+			status = "disabled";
+			compatible = "zephyr,memory-region", "arm,dtcm";
+			reg = <0x20000000 DT_SIZE_K(128)>;
+			zephyr,memory-region = "DTCM_NS";
+		};
+
+		dtcm: dtcm@24000000 {
+			status = "disabled";
+			compatible = "zephyr,memory-region", "arm,dtcm";
+			reg = <0x24000000 DT_SIZE_K(128)>;
+			zephyr,memory-region = "DTCM";
+		};
+
+		dmem_shared: dmem@28000000 {
+			status = "disabled";
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x28000000 0xdb0>;
+			zephyr,memory-region = "DMEM_SHARED";
+		};
+
+		dmem_ns: dmem_ns@28000db0 {
+			status = "disabled";
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x28000db0 0x7f250>;
+			zephyr,memory-region = "DMEM_NS";
+		};
+
+		dmem: dmem@2c000000 {
+			status = "disabled";
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x2c000000 DT_SIZE_K(192)>;
+			zephyr,memory-region = "DMEM";
+		};
+
+		extflash_ns: extflash@10000000 {
+			status = "disabled";
+			compatible = "zephyr,memory-region";
+			reg = <0x10000000 DT_SIZE_M(4)>;
+			zephyr,memory-region = "EXTFLASH_NS";
+		};
+
+		extflash: extflash@14000000 {
+			status = "disabled";
+			compatible = "zephyr,memory-region";
+			reg = <0x14000000 DT_SIZE_M(4)>;
+			zephyr,memory-region = "EXTFLASH";
+		};
+
+		wlan0: hif@408a0000 {
+			compatible = "ti,cc35xx-wlan";
+			reg = <0x408a0000 DT_SIZE_K(64)>;
+			interrupts = <EXP_NAB_HOST 3>;
+			status = "disabled";
+
+			hci0: hci0 {
+				compatible = "ti,cc35xx-bt-hci";
+				status = "disabled";
+			};
+		};
+
+		uart0: uart@41240000 {
+			compatible = "ti,cc35xx-uart";
+			current-speed = <115200>;
+			reg = <0x41240000 0x1000>;
+			interrupts = <EXP_UARTA0 3>;
+			clocks = <&uartclk>;
+			status = "disabled";
+		};
+
+		uart1: uart@41250000 {
+			compatible = "ti,cc35xx-uart";
+			current-speed = <115200>;
+			reg = <0x41250000 0x1000>;
+			interrupts = <EXP_UARTA1 3>;
+			clocks = <&uartclk>;
+			status = "disabled";
+		};
+
+		timer0: gpt@41260000 {
+			compatible = "ti,cc35xx-lgpt";
+			reg = <0x41260000 0x8000>;
+			interrupts = <EXP_GPT0 0>;
+			clocks = <&gptimerclk>;
+			max-top-value = <0xffffffff>;
+			clk-prescale = <0xff>;
+			status = "okay";
+
+			pwm0: pwm0 {
+				compatible = "ti,cc35xx-lgpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+
+			pwm1: pwm1 {
+				compatible = "ti,cc35xx-lgpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+
+			pwm2: pwm2 {
+				compatible = "ti,cc35xx-lgpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		timer1: gpt@41268000 {
+			compatible = "ti,cc35xx-lgpt";
+			reg = <0x41268000 0x8000>;
+			interrupts = <EXP_GPT1 0>;
+			clocks = <&gptimerclk>;
+			max-top-value = <0xffffffff>;
+			clk-prescale = <0xff>;
+			status = "okay";
+
+			pwm3: pwm0 {
+				compatible = "ti,cc35xx-lgpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+
+			pwm4: pwm1 {
+				compatible = "ti,cc35xx-lgpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+
+			pwm5: pwm2 {
+				compatible = "ti,cc35xx-lgpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		rtc: rtc@41108000 {
+			compatible = "ti,cc35xx-rtc-timer";
+			reg = <0x41108000 0x4000>;
+			interrupts = <EXP_RTC 0>;
+			status = "okay";
+		};
+
+		adc0: adc@412b0000 {
+			compatible = "ti,cc35xx-adc";
+			reg = <0x412b0000 0x2000>;
+			interrupts = <EXP_ADC 3>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			#io-channel-cells = <1>;
+			clkdiv = <8>;
+			sample-period = <20>;
+		};
+
+		wdt0: wdt@411d0000 {
+			compatible = "ti,cc35xx-watchdog";
+			reg = <0x411d0000 0x1000>;
+			interrupts = <EXP_WDT 0>;
+			status = "disabled";
+			clocks = <&lfclk>;
+		};
+
+		dma: dma@41a00000 {
+			compatible = "ti,cc35xx-dma";
+			reg = <0x41a00000 0x10000>;
+			interrupts = <EXP_DMA_NS 0>;
+			dma-channels = <14>;
+			#dma-cells = <2>;
+			status = "disabled";
+		};
+
+		hsm: hsm@41b00000 {
+			compatible = "ti,cc35xx-hsm";
+			interrupts = <EXP_HSM 2>;
+			reg = <0x41b00000 0x100000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			entropy: entropy@0 {
+				compatible = "ti,cc35xx-hsm-trng";
+				reg = <0>;
+				status = "disabled";
+			};
+
+			crypto: crypto@1 {
+				compatible = "ti,cc35xx-hsm-crypto";
+				reg = <1>;
+				status = "disabled";
+			};
+		};
+
+		pinctrl: pin-controller@41140000 {
+			compatible = "ti,cc35xx-pinctrl";
+			reg = <0x41140000 0x80000>;
+
+			gpios: gpio {
+				compatible = "ti,cc35xx-gpio";
+				status = "okay";
+				#gpio-cells = <2>;
+				gpio-map-mask = <0xffffffe0 0xffffffc0>;
+				gpio-map-pass-thru = <0x1f 0x3f>;
+				gpio-map = <0x00 0x0 &gpio0_31 0x0 0x0
+					    0x20 0x0 &gpio32_63 0x0 0x0>;
+
+				gpio0_31: gpio0_31 {
+					compatible = "ti,cc35xx-gpio-port";
+					status = "okay";
+					gpio-controller;
+					#gpio-cells = <2>;
+					gpio-index-offset = <(0 * 32)>;
+					interrupts = <EXP_GPIO 1>;
+					ngpios = <32>;
+				};
+
+				gpio32_63: gpio32_63 {
+					compatible = "ti,cc35xx-gpio-port";
+					status = "okay";
+					gpio-controller;
+					#gpio-cells = <2>;
+					gpio-index-offset = <(1 * 32)>;
+					interrupts = <EXP_GPIO 1>;
+					ngpios = <12>;
+				};
+			};
+		};
+
+		flash0: flash@14000000 {
+			compatible = "ti,cc35xx-nv-flash";
+			reg = <0x14000000 0x2fb000>, <0x105000 0x2fb000>;
+			erase-block-size = <DT_SIZE_K(4)>;
+			write-block-size = <4>;
+			status = "disabled";
+		};
+
+		flash1: flash@a0000000 {
+			compatible = "ti,cc35xx-nv-flash";
+			reg = <0xa0000000 0xda000>, <0x0 0xda000>;
+			erase-block-size = <DT_SIZE_K(4)>;
+			write-block-size = <4>;
+			status = "disabled";
+		};
+
+		flash2: flash@a00da000 {
+			compatible = "ti,cc35xx-nv-flash";
+			reg = <0xa00da000 0x2b000>, <0xda000 0x2b000>;
+			erase-block-size = <DT_SIZE_K(4)>;
+			write-block-size = <4>;
+			status = "disabled";
+		};
+
+		spi0: spi@41220000 {
+			compatible = "ti,cc35xx-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x41220000 0x10000>;
+			interrupts = <EXP_SPI0 3>;
+			clocks = <&spiclk>;
+			status = "disabled";
+		};
+
+		spi1: spi@41230000 {
+			compatible = "ti,cc35xx-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x41230000 0x10000>;
+			interrupts = <EXP_SPI1 3>;
+			clocks = <&spiclk>;
+		};
+
+		i2c0: i2c@41200000 {
+			compatible = "ti,cc35xx-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x41200000 0x10000>;
+			interrupts = <EXP_I2C0 3>;
+			clocks = <&i2cclk>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@41210000 {
+			compatible = "ti,cc35xx-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x41210000 0x10000>;
+			interrupts = <EXP_I2C1 3>;
+			clocks = <&i2cclk>;
+			status = "disabled";
+		};
+
+		i2s0: i2s@41270000 {
+			compatible = "ti,cc35xx-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x41270000 DT_SIZE_K(64)>;
+			interrupts = <EXP_I2S 0>;
+			status = "disabled";
+		};
+
+		can0: can@412a0000 {
+			compatible = "ti,cc35xx-can";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x412a0000 DT_SIZE_K(64)>, <0x412a1000 DT_SIZE_K(4)>;
+			reg-names = "m_can", "message_ram";
+			interrupts = <EXP_CAN_IRQ0 0>, <EXP_CAN_IRQ1 0>;
+			interrupt-names = "int0", "int1";
+			clocks = <&canclk>;
+			bitrate = <500000>;
+			bosch,mram-cfg = <0x0 128 64 8 8 8 8 8>;
+			status = "disabled";
+		};
+
+		sdhc: sdhc@412c0000 {
+			compatible = "ti,cc35xx-sdhc";
+			reg = <0x412c0000 DT_SIZE_K(64)>;
+			base-bus-freq = <DT_FREQ_M(40)>;
+			interrupts = <13 0>;
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};

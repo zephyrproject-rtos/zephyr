@@ -1,0 +1,40 @@
+# Copyright (c) 2025-2026 Conclusive Engineering Sp. z o.o.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+  TI Simplelink DMA controller for the cc35xx chip family.
+
+
+  The TI CC35xx SoC has a general-purpose direct memory access controller
+  capable of supporting 12independent DMA channels. DMA clients connected
+  to the DMA controller must use three-cell specifier  for each channel:
+    a phandle to the DMA controller plus the following two integer cells:
+      1. channel: the DMA stream from 0 to 11 (max 12 channels).
+         Note that channel 11 is reserved for the BT/WIFI subsystem, and cannot
+         be used directly in the DTS
+      2. channel-config: A 32bit mask specifying the DMA channel configuration
+         which is device and peripheral dependent:
+           -bit 0-3 Peripheral index
+
+  Example of devicetree configuration
+
+   Client side:
+     uart0 {
+         dmas = <&dma1 3 CC35XX_DMA_SET_CONFIG(CC35xx_DMA_PERIPH_UARTLIN_0)>,
+                <&dma1 2 CC35XX_DMA_SET_CONFIG(CC35xx_DMA_PERIPH_UARTLIN_0)>
+         dma-names = "tx", "rx";
+     }
+
+compatible: "ti,cc35xx-dma"
+
+include: dma-controller.yaml
+
+properties:
+  "#dma-cells":
+    const: 2
+
+dma-cells:
+  - channel
+  - channel-config

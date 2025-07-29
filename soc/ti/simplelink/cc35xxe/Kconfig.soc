@@ -1,0 +1,195 @@
+# Copyright (c) 2025 Conclusive Engineering Sp. z o.o.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_CC35XXE
+	bool
+	select SOC_FAMILY_TI_SIMPLELINK
+	help
+	  Enable support for TI SimpleLink CC35xxE SoCs
+
+config SOC_CC3500E
+	bool
+	select SOC_SERIES_CC35XXE
+	select SOC_CC35XXE_HAS_WIFI
+
+config SOC_CC3501E
+	bool
+	select SOC_SERIES_CC35XXE
+	select SOC_CC35XXE_HAS_WIFI
+	select SOC_CC35XXE_HAS_BT
+
+config SOC_CC3550E
+	bool
+	select SOC_SERIES_CC35XXE
+	select SOC_CC35XXE_HAS_WIFI
+	select SOC_CC35XXE_HAS_WIFI_5GHZ
+
+config SOC_CC3551E
+	bool
+	select SOC_SERIES_CC35XXE
+	select SOC_CC35XXE_HAS_WIFI
+	select SOC_CC35XXE_HAS_WIFI_5GHZ
+	select SOC_CC35XXE_HAS_BT
+
+config SOC_CC35XXE_HAS_WIFI
+	bool
+
+config SOC_CC35XXE_HAS_WIFI_5GHZ
+	bool
+
+config SOC_CC35XXE_HAS_BT
+	bool
+
+config SOC_SERIES
+	string
+	default "cc35xxe" if SOC_SERIES_CC35XXE
+
+config SOC
+	string
+	default "cc3500e" if SOC_CC3500E
+	default "cc3501e" if SOC_CC3501E
+	default "cc3550e" if SOC_CC3550E
+	default "cc3551e" if SOC_CC3551E
+
+config CC35XXE_SIGN_PRIVATE_KEY_FILE
+	string "Path to the private key used to sign the image"
+
+config CC35XXE_SIGN_PUBLIC_KEY_FILE
+	string "Path to the public key used to sign the image"
+
+config CC35XXE_FLASH_DISCOVERY_CONFIG_OTFDE
+	string "Path to the OTFDE configuration file"
+
+config CC35XXE_FLASH_DISCOVERY_CONFIG_EXT_MEM
+	string "Path to the external memory configuration file"
+
+config CC35XXE_FLASH_DISCOVERY_CONFIG_XSPI
+	string "Path to the xSPI configuration file"
+
+choice CC35XXE_FLASH_PROFILE_SELECT
+	prompt "External flash configuration profile"
+	default CC35XXE_FLASH_PROFILE_IS25WJ032F
+	help
+	  Select the board flash profile used by the SimpleLink toolbox image
+	  builder. The profile name maps to a directory under the board
+	  config/flash directory. Explicit CC35XXE_FLASH_DISCOVERY_CONFIG_*
+	  paths override this profile.
+
+config CC35XXE_FLASH_PROFILE_GD25LF32E
+	bool "gd25lf32e"
+
+config CC35XXE_FLASH_PROFILE_GD25LF64E
+	bool "gd25lf64e"
+
+config CC35XXE_FLASH_PROFILE_IS25WJ032F
+	bool "is25wj032f"
+
+config CC35XXE_FLASH_PROFILE_IS25WJ064F
+	bool "is25wj064f"
+
+config CC35XXE_FLASH_PROFILE_IS25WJ128F
+	bool "is25wj128f"
+
+config CC35XXE_FLASH_PROFILE_MX25U12843G
+	bool "mx25u12843g"
+
+config CC35XXE_FLASH_PROFILE_MX25U3235F
+	bool "mx25u3235f"
+
+config CC35XXE_FLASH_PROFILE_MX25U6435F
+	bool "mx25u6435f"
+
+config CC35XXE_FLASH_PROFILE_PY25Q128LA
+	bool "py25q128la"
+
+config CC35XXE_FLASH_PROFILE_PY25Q256LC
+	bool "py25q256lc"
+
+config CC35XXE_FLASH_PROFILE_PY25Q32LB
+	bool "py25q32lb"
+
+config CC35XXE_FLASH_PROFILE_PY25Q64LB
+	bool "py25q64lb"
+
+config CC35XXE_FLASH_PROFILE_W25Q12PW
+	bool "w25q12pw"
+
+config CC35XXE_FLASH_PROFILE_W25Q32JW
+	bool "w25q32jw"
+
+config CC35XXE_FLASH_PROFILE_W25Q33PW
+	bool "w25q33pw"
+
+config CC35XXE_FLASH_PROFILE_W25Q64JW
+	bool "w25q64jw"
+
+config CC35XXE_FLASH_PROFILE_W25Q64PW
+	bool "w25q64pw"
+
+endchoice
+
+config CC35XXE_FLASH_PROFILE
+	string
+	default "gd25lf32e" if CC35XXE_FLASH_PROFILE_GD25LF32E
+	default "gd25lf64e" if CC35XXE_FLASH_PROFILE_GD25LF64E
+	default "is25wj032f" if CC35XXE_FLASH_PROFILE_IS25WJ032F
+	default "is25wj064f" if CC35XXE_FLASH_PROFILE_IS25WJ064F
+	default "is25wj128f" if CC35XXE_FLASH_PROFILE_IS25WJ128F
+	default "mx25u12843g" if CC35XXE_FLASH_PROFILE_MX25U12843G
+	default "mx25u3235f" if CC35XXE_FLASH_PROFILE_MX25U3235F
+	default "mx25u6435f" if CC35XXE_FLASH_PROFILE_MX25U6435F
+	default "py25q128la" if CC35XXE_FLASH_PROFILE_PY25Q128LA
+	default "py25q256lc" if CC35XXE_FLASH_PROFILE_PY25Q256LC
+	default "py25q32lb" if CC35XXE_FLASH_PROFILE_PY25Q32LB
+	default "py25q64lb" if CC35XXE_FLASH_PROFILE_PY25Q64LB
+	default "w25q12pw" if CC35XXE_FLASH_PROFILE_W25Q12PW
+	default "w25q32jw" if CC35XXE_FLASH_PROFILE_W25Q32JW
+	default "w25q33pw" if CC35XXE_FLASH_PROFILE_W25Q33PW
+	default "w25q64jw" if CC35XXE_FLASH_PROFILE_W25Q64JW
+	default "w25q64pw" if CC35XXE_FLASH_PROFILE_W25Q64PW
+
+config CC35XXE_FUSE_CONFIG
+	string "Path to the fuse configuration file"
+
+config CC35XXE_ACTION_PARAMS_FILE
+	string "Path to the action parameters file"
+
+config CC35XXE_TOOL_SETTINGS_FILE
+	string "Path to the SimpleLink toolbox settings file"
+
+config CC35XXE_CONF_INI_FILE
+	string "Path to the cc35xx-conf.ini file"
+	help
+	  Override the default cc35xx-conf.ini file used to generate
+	  cc35xx-conf.bin during the build. If left empty, the in-tree
+	  default at soc/ti/simplelink/cc35xxe/conf/cc35xx-conf.ini is
+	  used.
+
+config CC35XXE_VENDOR_IMAGE_VERSION
+	string "TI CC35xx vendor image version"
+	default "0.0.1.0"
+	help
+	  Version passed to the SimpleLink Wi-Fi Toolbox when generating
+	  vendor_image.sign.bin. The format is major.minor.patch.other.
+
+config CC35XXE_GENERATE_FLASH_MAP_CONFIG
+	bool "Generate TI flash map config from MemoryConfigurator JSON"
+	help
+	  Generate ti_flash_map_config.c during the build from a SimpleLink
+	  Wi-Fi Toolbox MemoryConfigurator JSON file.
+
+config CC35XXE_MEMORY_CONFIG_JSON
+	string "Path to the MemoryConfigurator JSON file"
+	depends on CC35XXE_GENERATE_FLASH_MAP_CONFIG
+	help
+	  Override the default MemoryConfigurator JSON file used to generate
+	  ti_flash_map_config.c. If left empty, the board flash profile's
+	  external_memory_configurator.json is used.
+
+config CC35XXE_FWU
+	bool "TI CC35xx PSA firmware update support"
+	help
+	  Build the TI CC35xx PSA Firmware Update implementation from the
+	  SimpleLink SDK. This provides psa_fwu_* APIs for inspecting and
+	  managing TI bootloader OTA slots.
