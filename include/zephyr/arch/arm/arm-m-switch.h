@@ -138,6 +138,7 @@ static ALWAYS_INLINE void arm_m_switch(void *switch_to, void **switched_from)
 	register uint32_t r4 __asm__("r4") = (uint32_t)switch_to;
 	register uint32_t r5 __asm__("r5") = (uint32_t)switched_from;
 	__asm__ volatile(
+		 _R7_CLOBBER_OPT("push {r7};")
 		/* Construct and push a {r12, lr, pc} group at the top
 		 * of the frame, where PC points to the final restore location
 		 * at the end of this sequence.
@@ -215,9 +216,13 @@ static ALWAYS_INLINE void arm_m_switch(void *switch_to, void **switched_from)
 		"pop {pc};"
 
 		"3:" /* Label for restore address */
-		::"r"(r4),
-		"r"(r5)
-		: "r6", "r7", "r8", "r9", "r10", "r11");
+		 _R7_CLOBBER_OPT("pop {r7};")
+		::"r"(r4), "r"(r5)
+		 : "r6", "r8", "r9", "r10",
+#ifndef CONFIG_ARM_GCC_FP_WORKAROUND
+		    "r7",
+#endif
+		    "r11");
 }
 
 #ifdef CONFIG_USE_SWITCH

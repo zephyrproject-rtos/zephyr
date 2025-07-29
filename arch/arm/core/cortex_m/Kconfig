@@ -559,6 +559,15 @@ config CORTEX_M_NULL_POINTER_EXCEPTION_PAGE_SIZE
 
 endif # CORTEX_M_NULL_POINTER_EXCEPTION
 
+config ARM_GCC_FP_WORKAROUND
+	bool "GCC/gas frame pointer workaround"
+	help
+	  Enables a two-instruction workaround for a GNU toolchain
+	  buglet in arch_switch() when the kernel must unavoidably be
+	  compiled with -fno-omit-frame-pointer.  Most code doesn't
+	  want this, but in at least one case it's necessary.  See
+	  comment in arm-m-switch.h
+
 rsource "tz/Kconfig"
 
 endif # CPU_CORTEX_M
