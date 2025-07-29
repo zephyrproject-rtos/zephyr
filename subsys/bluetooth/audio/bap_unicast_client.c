@@ -1937,8 +1937,8 @@ static int unicast_client_ep_config(struct bt_bap_ep *ep, struct net_buf_simple 
 
 	req = net_buf_simple_add(buf, sizeof(*req));
 	req->ase = ep->status.id;
-	req->latency = 0x02; /* TODO: Select target latency based on additional input? */
-	req->phy = 0x02;     /* TODO: Select target PHY based on additional input? */
+	req->latency = codec_cfg->target_latency;
+	req->phy = codec_cfg->target_phy;
 	req->codec.id = codec_cfg->id;
 	req->codec.cid = codec_cfg->cid;
 	req->codec.vid = codec_cfg->vid;
