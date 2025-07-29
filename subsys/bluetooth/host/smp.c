@@ -71,7 +71,7 @@ LOG_MODULE_REGISTER(bt_smp);
 #define LINK_DIST 0
 #endif
 
-#define RECV_KEYS (BT_SMP_DIST_ENC_KEY | BT_SMP_DIST_ID_KEY | SIGN_DIST |\
+#define RECV_KEYS (BT_SMP_DIST_ENC_KEY | ID_DIST | SIGN_DIST |\
 		   LINK_DIST)
 #define SEND_KEYS (BT_SMP_DIST_ENC_KEY | ID_DIST | SIGN_DIST | LINK_DIST)
 
@@ -4064,6 +4064,7 @@ static uint8_t smp_pairing_failed(struct bt_smp *smp, struct net_buf *buf)
 	return 0;
 }
 
+#if defined(CONFIG_BT_PRIVACY)
 static uint8_t smp_ident_info(struct bt_smp *smp, struct net_buf *buf)
 {
 	LOG_DBG("");
@@ -4086,6 +4087,12 @@ static uint8_t smp_ident_info(struct bt_smp *smp, struct net_buf *buf)
 
 	return 0;
 }
+#else
+static uint8_t smp_ident_info(struct bt_smp *smp, struct net_buf *buf)
+{
+	return BT_SMP_ERR_CMD_NOTSUPP;
+}
+#endif /* CONFIG_BT_PRIVACY */
 
 static uint8_t smp_id_add_replace(struct bt_smp *smp, struct bt_keys *new_bond)
 {
@@ -4127,6 +4134,7 @@ static uint8_t smp_id_add_replace(struct bt_smp *smp, struct bt_keys *new_bond)
 	return 0;
 }
 
+#if defined(CONFIG_BT_PRIVACY)
 struct addr_match {
 	const bt_addr_le_t *rpa;
 	const bt_addr_le_t *id_addr;
@@ -4241,6 +4249,12 @@ static uint8_t smp_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 
 	return 0;
 }
+#else
+static uint8_t smp_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
+{
+	return BT_SMP_ERR_CMD_NOTSUPP;
+}
+#endif /* CONFIG_BT_PRIVACY */
 
 #if defined(CONFIG_BT_SIGNING)
 static uint8_t smp_signing_info(struct bt_smp *smp, struct net_buf *buf)
