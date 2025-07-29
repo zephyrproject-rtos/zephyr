@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <ti/cc35xxe.dtsi>
+#include "lp_em_cc35x1-pinctrl.dtsi"
 
 / {
 	model = "TI CC35X1E LaunchPad";
@@ -19,6 +20,7 @@
 		zephyr,dtcm = &dtcm_ns;
 		zephyr,code-partition = &dmem_ns;
 	};
+
 };
 
 &imem_ns {
