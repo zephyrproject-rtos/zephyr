@@ -1173,6 +1173,16 @@ int arch_buffer_validate(const void *addr, size_t size, int write)
 	return mem_buffer_validate(addr, size, write, XTENSA_MMU_USER_RING);
 }
 
+void xtensa_exc_dtlb_multihit_handle(void)
+{
+	/* For some unknown reasons, using xtensa_dtlb_probe() would result in
+	 * QEMU raising privileged instruction exception. So for now, just
+	 * invalidate all auto-refilled DTLBs.
+	 */
+
+	xtensa_dtlb_autorefill_invalidate();
+}
+
 bool xtensa_exc_load_store_ring_error_check(void *bsa_p)
 {
 	uintptr_t ring, vaddr;
