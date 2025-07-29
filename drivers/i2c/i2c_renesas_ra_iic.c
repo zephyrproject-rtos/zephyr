@@ -540,7 +540,7 @@ static DEVICE_API(i2c, i2c_ra_iic_driver_api) = {
 				.tei_irq = DT_INST_IRQ_BY_NAME(index, tei, irq),                   \
 				.eri_irq = DT_INST_IRQ_BY_NAME(index, eri, irq),                   \
 				.p_callback = i2c_ra_iic_callback,                                 \
-				.p_context = DEVICE_DT_GET(DT_DRV_INST(index)),                    \
+				.p_context = (void *)DEVICE_DT_GET(DT_DRV_INST(index)),            \
 			},                                                                         \
 	};                                                                                         \
                                                                                                    \
