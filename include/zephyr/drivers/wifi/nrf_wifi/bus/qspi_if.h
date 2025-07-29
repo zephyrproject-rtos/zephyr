@@ -98,6 +98,26 @@ int qspi_RDSR1(const struct device *dev, uint8_t *rdsr1);
 int qspi_RDSR2(const struct device *dev, uint8_t *rdsr2);
 int qspi_WRSR2(const struct device *dev, const uint8_t wrsr2);
 
+/**
+ * @brief Read a register via QSPI
+ *
+ * @param dev QSPI device
+ * @param reg_addr Register address (opcode)
+ * @param reg_value Pointer to store the read value
+ * @return int 0 on success, negative error code on failure
+ */
+int qspi_read_reg(const struct device *dev, uint8_t reg_addr, uint8_t *reg_value);
+
+/**
+ * @brief Write a register via QSPI
+ *
+ * @param dev QSPI device
+ * @param reg_addr Register address (opcode)
+ * @param reg_value Value to write
+ * @return int 0 on success, negative error code on failure
+ */
+int qspi_write_reg(const struct device *dev, uint8_t reg_addr, uint8_t reg_value);
+
 #ifdef CONFIG_NRF_WIFI_LOW_POWER
 int func_rpu_sleep(void);
 int func_rpu_wake(void);
