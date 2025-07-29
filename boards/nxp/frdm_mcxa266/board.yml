@@ -1,0 +1,6 @@
+board:
+  name: frdm_mcxa266
+  full_name: FRDM-MCXA266
+  vendor: nxp
+  socs:
+  - name: mcxa266
