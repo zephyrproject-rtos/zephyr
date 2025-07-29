@@ -1,0 +1,5 @@
+board:
+  name: mcb_rx26t
+  vendor: renesas
+  socs:
+  - name: r5f526tfddfp
