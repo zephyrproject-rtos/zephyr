@@ -48,6 +48,13 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
+TPM
+---
+
+TPM2 is enabled for PWM for M33 core. Signals can be observerd with
+oscilloscope or logic analyzer.
+Connect J1005-3 and J1005-7(GND) to Oscilloscope or logic analyzer
+
 Devices
 ========
 System Clock
