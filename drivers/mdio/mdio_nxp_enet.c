@@ -216,6 +216,7 @@ static int nxp_enet_mdio_init(const struct device *dev)
 
 	data->base = (ENET_Type *)DEVICE_MMIO_GET(config->module_dev);
 
+	k_busy_wait(100000);
 	ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (ret) {
 		return ret;
