@@ -12,7 +12,7 @@ NRF52 simulated board (BabbleSim)
 Overview
 ********
 
-To allow simulating a nRF52833 SOC a Zephyr target boards is provided: the
+To allow simulating a nRF52833 SOC, a Zephyr target board is provided: the
 nrf52_bsim.
 
 This uses `BabbleSim`_ to simulate the radio activity, and the
