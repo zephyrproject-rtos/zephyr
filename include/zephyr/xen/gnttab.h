@@ -50,13 +50,17 @@ int32_t gnttab_alloc_and_grant(void **map, bool readonly);
  */
 void *gnttab_get_page(void);
 
+void *gnttab_get_pages(unsigned int npages);
+
 /*
  * Releases provided page, that was used for mapping foreign grant frame,
  * should be called after unmapping.
  *
  * @param page_addr - pointer to start address of used page.
  */
-void gnttab_put_page(void *page_addr);
+int gnttab_put_page(void *page_addr);
+
+int gnttab_put_pages(void *page_addr, unsigned int npages);
 
 /*
  * Maps foreign grant ref to Zephyr address space.
