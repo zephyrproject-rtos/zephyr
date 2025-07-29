@@ -19,12 +19,13 @@ LOG_MODULE_REGISTER(usbd_ep, CONFIG_USBD_LOG_LEVEL);
 
 int usbd_ep_enable(const struct device *dev,
 		   const struct usb_ep_descriptor *const ed,
+		   const uint16_t m_mps,
 		   uint32_t *const ep_bm)
 {
 	int ret;
 
 	ret = udc_ep_enable(dev, ed->bEndpointAddress, ed->bmAttributes,
-			    sys_le16_to_cpu(ed->wMaxPacketSize), ed->bInterval);
+			    sys_le16_to_cpu(ed->wMaxPacketSize), m_mps, ed->bInterval);
 	if (ret == 0) {
 		usbd_ep_bm_set(ep_bm, ed->bEndpointAddress);
 	}
