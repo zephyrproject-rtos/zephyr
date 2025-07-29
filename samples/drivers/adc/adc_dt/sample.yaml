@@ -41,7 +41,7 @@ tests:
       - xg29_rb4412a
       - raytac_an54l15q_db/nrf54l15/cpuapp
       - frdm_mcxa346
-      - frdm_mcxa276
+      - frdm_mcxa266
       - s32k148_evb
     integration_platforms:
       - nucleo_l073rz

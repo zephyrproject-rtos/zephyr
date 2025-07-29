@@ -4,7 +4,7 @@
  */
 
 
-#include <nxp/mcx/MCXA276VLQ-pinctrl.h>
+#include <nxp/mcx/MCXA266VLQ-pinctrl.h>
 
 &pinctrl {
 	pinmux_lpuart2: pinmux_lpuart2 {
