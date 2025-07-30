@@ -170,6 +170,7 @@ static int cmd_ssa_discovery(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 	size_t len;
+	uint8_t uuid128[BT_UUID_SIZE_128];
 
 	len = strlen(argv[1]);
 
@@ -189,8 +190,8 @@ static int cmd_ssa_discovery(const struct shell *sh, size_t argc, char *argv[])
 		sdp_discover.uuid = &sdp_discover_uuid.u32.uuid;
 	} else if (len == (BT_UUID_SIZE_128 * 2)) {
 		sdp_discover_uuid.u128.uuid.type = BT_UUID_TYPE_128;
-		hex2bin(argv[1], len, &sdp_discover_uuid.u128.val[0],
-			sizeof(sdp_discover_uuid.u128.val));
+		hex2bin(argv[1], len, &uuid128[0], sizeof(uuid128));
+		sys_memcpy_swap(sdp_discover_uuid.u128.val, uuid128, sizeof(uuid128));
 		sdp_discover.uuid = &sdp_discover_uuid.u128.uuid;
 	} else {
 		shell_error(sh, "Invalid UUID");
@@ -213,6 +214,7 @@ static int cmd_ss_discovery(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 	size_t len;
+	uint8_t uuid128[BT_UUID_SIZE_128];
 
 	len = strlen(argv[1]);
 
@@ -232,8 +234,8 @@ static int cmd_ss_discovery(const struct shell *sh, size_t argc, char *argv[])
 		sdp_discover.uuid = &sdp_discover_uuid.u32.uuid;
 	} else if (len == (BT_UUID_SIZE_128 * 2)) {
 		sdp_discover_uuid.u128.uuid.type = BT_UUID_TYPE_128;
-		hex2bin(argv[1], len, &sdp_discover_uuid.u128.val[0],
-			sizeof(sdp_discover_uuid.u128.val));
+		hex2bin(argv[1], len, &uuid128[0], sizeof(uuid128));
+		sys_memcpy_swap(sdp_discover_uuid.u128.val, uuid128, sizeof(uuid128));
 		sdp_discover.uuid = &sdp_discover_uuid.u128.uuid;
 	} else {
 		shell_error(sh, "Invalid UUID");
@@ -310,9 +312,9 @@ static int cmd_ssa_discovery_fail(const struct shell *sh, size_t argc, char *arg
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sdp_client_cmds,
-	SHELL_CMD_ARG(ss_discovery, NULL, "<UUID>", cmd_ss_discovery, 2, 0),
+	SHELL_CMD_ARG(ss_discovery, NULL, "<Big endian UUID>", cmd_ss_discovery, 2, 0),
 	SHELL_CMD_ARG(sa_discovery, NULL, "<Service Record Handle>", cmd_sa_discovery, 2, 0),
-	SHELL_CMD_ARG(ssa_discovery, NULL, "<UUID>", cmd_ssa_discovery, 2, 0),
+	SHELL_CMD_ARG(ssa_discovery, NULL, "<Big endian UUID>", cmd_ssa_discovery, 2, 0),
 	SHELL_CMD_ARG(ssa_discovery_fail, NULL, "", cmd_ssa_discovery_fail, 1, 0),
 	SHELL_SUBCMD_SET_END
 );

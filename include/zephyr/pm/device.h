@@ -66,22 +66,76 @@ enum pm_device_flag {
 
 /** @brief Device power states. */
 enum pm_device_state {
-	/** Device is in active or regular state. */
+	/**
+	 * @brief Device hardware is powered, and the device is needed by the system.
+	 *
+	 * @details The device should be enabled in this state. Any device driver API
+	 * may be called in this state.
+	 */
 	PM_DEVICE_STATE_ACTIVE,
 	/**
-	 * Device is suspended.
+	 * @brief Device hardware is powered, but the device is not needed by the
+	 * system.
 	 *
-	 * @note
-	 *     Device context may be lost.
+	 * @details The device should be put into its lowest internal power state,
+	 * commonly named "disabled" or "stopped".
+	 *
+	 * If a device has been specified as this device's power domain, and said
+	 * device is no longer needed by the system, this device will be
+	 * transitioned into the @ref PM_DEVICE_STATE_OFF state, followed by the
+	 * power domain device being transitioned to the
+	 * @ref PM_DEVICE_STATE_SUSPENDED state.
+	 *
+	 * A device driver may be deinitialized in this state. Once the device
+	 * driver has been deinitialized, we implicitly move to the
+	 * @ref PM_DEVICE_STATE_OFF state as the device hardware may lose power,
+	 * with no device driver to respond to the corresponding
+	 * @ref PM_DEVICE_ACTION_TURN_OFF action.
+	 *
+	 * @note This state is NOT a "low-power"/"partially operable" state,
+	 * those are configured using device driver specific APIs, and apply only
+	 * while the device is in the @ref PM_DEVICE_STATE_ACTIVE state.
 	 */
 	PM_DEVICE_STATE_SUSPENDED,
-	/** Device is being suspended. */
+	/**
+	 * @brief Device hardware is powered, but the device has been scheduled to
+	 * be suspended, as it is no longer needed by the system.
+	 *
+	 * @details This state is used when delegating suspension of a device to
+	 * the PM subsystem, optionally with residency to avoid unnecessary
+	 * suspend/resume cycles, resulting from a call to
+	 * @ref pm_device_runtime_put_async. The device will be unscheduled in case
+	 * the device becomes needed by the system.
+	 *
+	 * No device driver API calls must occur in this state.
+	 *
+	 * @note that this state is opaque to the device driver (no
+	 * @ref pm_device_action is called as this state is entered) and is used
+	 * solely by PM_DEVICE_RUNTIME.
+	 */
 	PM_DEVICE_STATE_SUSPENDING,
 	/**
-	 * Device is turned off (power removed).
+	 * @brief Device hardware is not powered. This is the initial state from
+	 * which a device driver is initialized.
 	 *
-	 * @note
-	 *     Device context is lost.
+	 * @details When a device driver is initialized, we do not know the state
+	 * of the device. As a result, the @ref PM_DEVICE_ACTION_TURN_ON action
+	 * should be able to transition the device from any internal state into
+	 * @ref PM_DEVICE_STATE_SUSPENDED, since no guarantees can be made across
+	 * resets. This is typically achieved through toggling a reset pin or
+	 * triggering a software reset through a register write before performing
+	 * any additional configuration needed to meet the requirements of
+	 * @ref PM_DEVICE_STATE_SUSPENDED. For devices where this is not possible,
+	 * the device driver must presume the device is in either the
+	 * @ref PM_DEVICE_STATE_OFF or @ref PM_DEVICE_STATE_SUSPENDED state at
+	 * time of initialization, as these are the states within which device
+	 * drivers may be deinitialized.
+	 *
+	 * If a device has been specified as this device's power domain, and said
+	 * device becomes needed by the system, the power domain device will be
+	 * transitioned into the @ref PM_DEVICE_STATE_ACTIVE state, followed by this
+	 * device being transitioned to the
+	 * @ref PM_DEVICE_STATE_SUSPENDED state.
 	 */
 	PM_DEVICE_STATE_OFF
 };
@@ -622,13 +676,22 @@ int pm_device_power_domain_remove(const struct device *dev,
 bool pm_device_is_powered(const struct device *dev);
 
 /**
- * @brief Setup a device driver into the lowest valid power mode
+ * @brief Move a device driver into its initial device power state.
  *
- * This helper function is intended to be called at the end of a driver
- * init function to automatically setup the device into the lowest power
- * mode. It assumes that the device has been configured as if it is in
- * @ref PM_DEVICE_STATE_OFF, or @ref PM_DEVICE_STATE_SUSPENDED if device can
- * never be powered off.
+ * @details This function uses the device driver's internal PM hook to
+ * move the device from the OFF state to the initial power state expected
+ * by the system.
+ *
+ * The initial power state expected by the system is:
+ *
+ * - ACTIVE if CONFIG_PM_DEVICE=n or (CONFIG_PM_DEVICE=y and
+ *   CONFIG_PM_DEVICE_RUNTIME=n) or (CONFIG_PM_DEVICE_RUNTIME=y and
+ *   !pm_device_runtime_is_enabled(dev)).
+ * - SUSPENDED if CONFIG_PM_DEVICE_RUNTIME=y and device's parent power domain is ACTIVE.
+ * - OFF if CONFIG_PM_DEVICE_RUNTIME=y and device's parent power domain is SUSPENDED.
+ *
+ * @note This function must be called at the end of a driver's init
+ * function.
  *
  * @param dev Device instance.
  * @param action_cb Device PM control callback function.
@@ -637,6 +700,25 @@ bool pm_device_is_powered(const struct device *dev);
  */
 int pm_device_driver_init(const struct device *dev, pm_device_action_cb_t action_cb);
 
+/**
+ * @brief Prepare PM device for device driver deinit
+ *
+ * @details Ensures device is either SUSPENDED or OFF. If CONFIG_PM_DEVICE=y,
+ * the function checks whether power management has moved the device to
+ * either the SUSPENDED or OFF states. If CONFIG_PM_DEVICE=n, the function
+ * uses the device driver's internal PM hook to move the device to the
+ * SUSPENDED state.
+ *
+ * @note This function must be called at the beginning of a driver's deinit
+ * function.
+ *
+ * @param dev Device instance.
+ * @param action_cb Device PM control callback function.
+ * @retval 0 if success.
+ * @retval -EBUSY Device is not SUSPENDED nor OFF
+ * @retval -errno code if failure.
+ */
+int pm_device_driver_deinit(const struct device *dev, pm_device_action_cb_t action_cb);
 #else
 static inline int pm_device_state_get(const struct device *dev,
 				      enum pm_device_state *state)
@@ -731,6 +813,11 @@ static inline int pm_device_driver_init(const struct device *dev, pm_device_acti
 	}
 
 	return 0;
+}
+
+static inline int pm_device_driver_deinit(const struct device *dev, pm_device_action_cb_t action_cb)
+{
+	return action_cb(dev, PM_DEVICE_ACTION_SUSPEND);
 }
 
 #endif /* CONFIG_PM_DEVICE */

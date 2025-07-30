@@ -226,7 +226,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 0769fe1520f6c14e6301188588da758a609f181d
+      revision: 1ac809b55389ba3ce09dd1fbf2477a034134d112
       groups:
         - hal
     - name: hal_rpi_pico
@@ -281,7 +281,7 @@ manifest:
         - hal
     - name: hostap
       path: modules/lib/hostap
-      revision: 7fda615fcccd577af7339b4198400c39ac14f8f8
+      revision: c55683ce514953277be5566fceb38c4c2485f1e1
     - name: liblc3
       revision: 48bbd3eacd36e99a57317a0a4867002e0b09e183
       path: modules/lib/liblc3

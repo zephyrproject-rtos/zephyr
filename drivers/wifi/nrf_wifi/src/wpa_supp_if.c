@@ -1807,6 +1807,11 @@ int nrf_wifi_supp_get_capa(void *if_priv, struct wpa_driver_capa *capa)
 		capa->extended_capa_mask = rpu_ctx_zep->extended_capa_mask;
 		capa->extended_capa_len = rpu_ctx_zep->extended_capa_len;
 	}
+	/* Based on testing, this works to fix the disconnection due to delayed
+	 * keepalive to the AP
+	 */
+	capa->driver_tx_processing_delay_ms = 1000;
+
 out:
 	k_mutex_unlock(&vif_ctx_zep->vif_lock);
 	return status;

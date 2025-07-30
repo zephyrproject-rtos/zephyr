@@ -31,6 +31,11 @@ enum {
 	NUM_MEM_BLOCKS
 };
 
+/* Keeping it high to avoid changing it often, but modify this value
+ * if rpu_7002_memmap is changed.
+ */
+#define NRF_WIFI_QSPI_SLAVE_MAX_LATENCY 4
+
 extern char blk_name[][15];
 extern uint32_t rpu_7002_memmap[][3];
 

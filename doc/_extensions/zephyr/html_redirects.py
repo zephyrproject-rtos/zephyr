@@ -52,7 +52,7 @@ REDIRECT_TEMPLATE = r"""
 
 
 def setup(app):
-    app.add_config_value('html_redirect_pages', [], 'html')
+    app.add_config_value('html_redirect_pages', (), 'html')
     app.connect('build-finished', create_redirect_pages)
 
     # Since we're just setting up a build-finished hook, which runs

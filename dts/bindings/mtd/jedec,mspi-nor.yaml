@@ -22,3 +22,11 @@ properties:
     type: int
     description: |
       Minimum time, in nanoseconds, the flash chip needs to recover after reset.
+
+  transfer-timeout:
+    type: int
+    default: 10
+    description: |
+      Maximum time, in milliseconds, allowed for a single transfer on the MSPI
+      bus in communication with the flash chip. The default value is the one
+      that was previously hard-coded in the flash_mspi_nor driver.
