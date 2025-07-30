@@ -323,12 +323,18 @@ extern "C" {
 #define sys_port_trace_k_heap_sys_k_realloc_enter(heap, ptr)
 #define sys_port_trace_k_heap_sys_k_realloc_exit(heap, ptr, ret)
 
-#define sys_port_trace_k_mem_slab_init(slab, rc)
-#define sys_port_trace_k_mem_slab_alloc_enter(slab, timeout)
-#define sys_port_trace_k_mem_slab_alloc_blocking(slab, timeout)
-#define sys_port_trace_k_mem_slab_alloc_exit(slab, timeout, ret)
-#define sys_port_trace_k_mem_slab_free_enter(slab)
-#define sys_port_trace_k_mem_slab_free_exit(slab)
+#define sys_port_trace_k_mem_slab_init(slab, rc) \
+	sys_trace_k_mem_slab_init(slab, rc)
+#define sys_port_trace_k_mem_slab_alloc_enter(slab, timeout) \
+	sys_trace_k_mem_slab_alloc_enter(slab, timeout)
+#define sys_port_trace_k_mem_slab_alloc_blocking(slab, timeout) \
+	sys_trace_k_mem_slab_alloc_blocking(slab, timeout)
+#define sys_port_trace_k_mem_slab_alloc_exit(slab, timeout, ret) \
+	sys_trace_k_mem_slab_alloc_exit(slab, timeout, ret)
+#define sys_port_trace_k_mem_slab_free_enter(slab) \
+	sys_trace_k_mem_slab_free_enter(slab)
+#define sys_port_trace_k_mem_slab_free_exit(slab) \
+	sys_trace_k_mem_slab_free_exit(slab)
 
 #define sys_port_trace_k_event_init(event)
 #define sys_port_trace_k_event_post_enter(event, events, events_mask)
@@ -413,6 +419,15 @@ void sys_trace_k_thread_switched_in(void);
 void sys_trace_k_thread_ready(struct k_thread *thread);
 void sys_trace_k_thread_pend(struct k_thread *thread);
 void sys_trace_k_thread_info(struct k_thread *thread);
+
+/* Memory Slabs */
+
+void sys_trace_k_mem_slab_init(struct k_mem_slab *slab, int ret);
+void sys_trace_k_mem_slab_alloc_enter(struct k_mem_slab *slab, k_timeout_t timeout);
+void sys_trace_k_mem_slab_alloc_blocking(struct k_mem_slab *slab, k_timeout_t timeout);
+void sys_trace_k_mem_slab_alloc_exit(struct k_mem_slab *slab, k_timeout_t timeout, int ret);
+void sys_trace_k_mem_slab_free_enter(struct k_mem_slab *slab);
+void sys_trace_k_mem_slab_free_exit(struct k_mem_slab *slab);
 
 /* Semaphore */
 

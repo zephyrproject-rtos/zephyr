@@ -190,6 +190,13 @@ typedef enum {
 	CTF_EVENT_GPIO_FIRE_CALLBACK = 0x7E,
 	CTF_EVENT_THREAD_SLEEP_ENTER = 0x7F,
 	CTF_EVENT_THREAD_SLEEP_EXIT = 0x80,
+	/* memory slabs */
+	CTF_EVENT_MEM_SLAB_INIT = 0x81,
+	CTF_EVENT_MEM_SLAB_ALLOC_ENTER = 0x82,
+	CTF_EVENT_MEM_SLAB_ALLOC_BLOCKING = 0x83,
+	CTF_EVENT_MEM_SLAB_ALLOC_EXIT = 0x84,
+	CTF_EVENT_MEM_SLAB_FREE_ENTER = 0x85,
+	CTF_EVENT_MEM_SLAB_FREE_EXIT = 0x86,
 } ctf_event_t;
 
 typedef struct {
@@ -325,6 +332,36 @@ static inline void ctf_top_void(uint32_t id)
 static inline void ctf_top_end_call(uint32_t id)
 {
 	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_ID_END_CALL), id);
+}
+/* Memory Slabs */
+static inline void ctf_top_mem_slab_init(uint32_t slab_id, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MEM_SLAB_INIT), slab_id, ret);
+}
+
+static inline void ctf_top_mem_slab_alloc_enter(uint32_t slab_id, uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MEM_SLAB_ALLOC_ENTER), slab_id, timeout);
+}
+
+static inline void ctf_top_mem_slab_alloc_blocking(uint32_t slab_id, uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MEM_SLAB_ALLOC_BLOCKING), slab_id, timeout);
+}
+
+static inline void ctf_top_mem_slab_alloc_exit(uint32_t slab_id, uint32_t timeout, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MEM_SLAB_ALLOC_EXIT), slab_id, timeout, ret);
+}
+
+static inline void ctf_top_mem_slab_free_enter(uint32_t slab_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MEM_SLAB_FREE_ENTER), slab_id);
+}
+
+static inline void ctf_top_mem_slab_free_exit(uint32_t slab_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MEM_SLAB_FREE_EXIT), slab_id);
 }
 
 /* Semaphore */
