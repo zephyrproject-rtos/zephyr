@@ -103,11 +103,20 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
 
     if(CONFIG_SILABS_DEVICE_IS_MODULE)
       # RAIL lib and config for modules
-      add_prebuilt_library(librail platform/radio/rail_lib/autogen/librail_release/librail_module_efr32xg${SILABS_DEVICE_FAMILY_NUMBER}_gcc_release.a)
+      if(CONFIG_SILABS_SISDK_RAIL_MULTIPROTOCOL)
+        add_prebuilt_library(librail platform/radio/rail_lib/autogen/librail_release/librail_multiprotocol_module_efr32xg${SILABS_DEVICE_FAMILY_NUMBER}_gcc_release.a)
+      else()
+        add_prebuilt_library(librail platform/radio/rail_lib/autogen/librail_release/librail_module_efr32xg${SILABS_DEVICE_FAMILY_NUMBER}_gcc_release.a)
+      endif()
+
       add_prebuilt_library(librail_config platform/radio/rail_lib/autogen/librail_release/librail_config_${CONFIG_SOC}_gcc.a)
     else()
       # generic RAIL lib for SoCs
-      add_prebuilt_library(librail platform/radio/rail_lib/autogen/librail_release/librail_efr32xg${SILABS_DEVICE_FAMILY_NUMBER}_gcc_release.a)
+      if(CONFIG_SILABS_SISDK_RAIL_MULTIPROTOCOL)
+        add_prebuilt_library(librail platform/radio/rail_lib/autogen/librail_release/librail_multiprotocol_efr32xg${SILABS_DEVICE_FAMILY_NUMBER}_gcc_release.a)
+      else()
+        add_prebuilt_library(librail platform/radio/rail_lib/autogen/librail_release/librail_efr32xg${SILABS_DEVICE_FAMILY_NUMBER}_gcc_release.a)
+      endif()
     endif()
 
     zephyr_include_directories_ifdef(CONFIG_SOC_GECKO_CUSTOM_RADIO_PHY
