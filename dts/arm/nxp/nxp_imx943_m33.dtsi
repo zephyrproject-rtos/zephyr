@@ -14,7 +14,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu0:cpu@0 {
+		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "arm,cortex-m33";
 			cpu-power-states = <&wait &stop &suspend>;
@@ -86,7 +86,7 @@
 				compatible = "nxp,irqsteer-master";
 				reg = <0>;
 				interrupt-controller;
-				#interrupt-cells = <1>;
+				#interrupt-cells = <2>;
 				interrupts-extended = <&nvic 224 0>;
 			};
 
@@ -94,7 +94,7 @@
 				compatible = "nxp,irqsteer-master";
 				reg = <1>;
 				interrupt-controller;
-				#interrupt-cells = <1>;
+				#interrupt-cells = <2>;
 				interrupts-extended = <&nvic 225 0>;
 			};
 
@@ -102,7 +102,7 @@
 				compatible = "nxp,irqsteer-master";
 				reg = <2>;
 				interrupt-controller;
-				#interrupt-cells = <1>;
+				#interrupt-cells = <2>;
 				interrupts-extended = <&nvic 226 0>;
 			};
 
@@ -110,7 +110,7 @@
 				compatible = "nxp,irqsteer-master";
 				reg = <3>;
 				interrupt-controller;
-				#interrupt-cells = <1>;
+				#interrupt-cells = <2>;
 				interrupts-extended = <&nvic 227 0>;
 			};
 
@@ -118,7 +118,7 @@
 				compatible = "nxp,irqsteer-master";
 				reg = <4>;
 				interrupt-controller;
-				#interrupt-cells = <1>;
+				#interrupt-cells = <2>;
 				interrupts-extended = <&nvic 228 0>;
 			};
 
@@ -126,11 +126,10 @@
 				compatible = "nxp,irqsteer-master";
 				reg = <5>;
 				interrupt-controller;
-				#interrupt-cells = <1>;
+				#interrupt-cells = <2>;
 				interrupts-extended = <&nvic 229 0>;
 			};
 		};
-
 	};
 
 	mailbox_m33s_m70_for_m33s_as_master: ipm-mbox0 {
