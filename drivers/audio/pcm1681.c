@@ -378,7 +378,7 @@ static int pcm1681_init(const struct device *dev)
 #define PCM1681_CONFIG_SPI(inst)                                                                   \
 	.bus_spec =                                                                                \
 		{                                                                                  \
-			.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_SLAVE | SPI_WORD_SET(8), 0), \
+			.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_SLAVE | SPI_WORD_SET(8)),    \
 	},                                                                                         \
 	.bus_io = {                                                                                \
 		.is_ready = pcm1681_spi_is_ready,                                                  \

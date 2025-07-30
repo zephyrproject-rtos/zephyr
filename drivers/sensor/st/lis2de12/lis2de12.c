@@ -437,7 +437,7 @@ static int lis2de12_init(const struct device *dev)
 	{									\
 		STMEMSC_CTX_SPI_INCR(&lis2de12_config_##inst.stmemsc_cfg),		\
 		.stmemsc_cfg = {						\
-			.spi = SPI_DT_SPEC_INST_GET(inst, LIS2DE12_SPI_OP, 0),	\
+			.spi = SPI_DT_SPEC_INST_GET(inst, LIS2DE12_SPI_OP),	\
 		},								\
 		LIS2DE12_CONFIG_COMMON(inst)					\
 	}
