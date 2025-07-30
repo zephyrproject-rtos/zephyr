@@ -274,6 +274,7 @@ event {
 	id = 0x2D;
 	fields := struct {
 		uint32_t id;
+		int32_t ret;
 	};
 };
 
