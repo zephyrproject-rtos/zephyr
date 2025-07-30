@@ -1,9 +1,11 @@
-# Infineon CAT1 PWM configuration options
-
-# Copyright (c) 2024 Cypress Semiconductor Corporation (an Infineon company) or
+# ==================================================================================================
+# Copyright (c) 2025 Cypress Semiconductor Corporation (an Infineon company) or
 # an affiliate of Cypress Semiconductor Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
+# ==================================================================================================
+
+# Infineon CAT1 PWM configuration options
 
 config PWM_INFINEON_CAT1
 	bool "Infineon CAT1 PWM driver"

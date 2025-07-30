@@ -1,7 +1,11 @@
-# CY8CPROTO-062-4343W PSOC™ 6 Wi-Fi BT Prototyping Kit
-
-# Copyright (c) 2021 Cypress Semiconductor Corporation.
+# ==================================================================================================
+# Copyright (c) 2025 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+#
 # SPDX-License-Identifier: Apache-2.0
+# ==================================================================================================
+
+# CY8CPROTO-062-4343W PSOC™ 6 Wi-Fi BT Prototyping Kit
 
 config BOARD_CY8CPROTO_062_4343W
 	select SOC_CY8C624ABZI_S2D44

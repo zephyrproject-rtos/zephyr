@@ -1,9 +1,11 @@
-# Infineon CAT1 I2C configuration options
-
-# Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
+# ==================================================================================================
+# Copyright (c) 2025 Cypress Semiconductor Corporation (an Infineon company) or
 # an affiliate of Cypress Semiconductor Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
+# ==================================================================================================
+
+# Infineon CAT1 I2C configuration options
 
 config I2C_INFINEON_CAT1
 	bool "Infineon CAT1 I2C driver"

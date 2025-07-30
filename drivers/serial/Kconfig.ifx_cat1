@@ -1,8 +1,11 @@
-# Infineon CAT1 UART configuration options
-
-# Copyright (c) 2022 Cypress Semiconductor Corporation (an Infineon company) or
+# ==================================================================================================
+# Copyright (c) 2025 Cypress Semiconductor Corporation (an Infineon company) or
 # an affiliate of Cypress Semiconductor Corporation
+#
 # SPDX-License-Identifier: Apache-2.0
+# ==================================================================================================
+
+# Infineon CAT1 UART configuration options
 
 config UART_INFINEON_CAT1
 	bool "Infineon CAT1 UART driver"
