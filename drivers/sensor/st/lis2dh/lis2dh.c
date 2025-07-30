@@ -610,8 +610,7 @@ static int lis2dh_init(const struct device *dev)
 					SPI_WORD_SET(8) |		\
 					SPI_OP_MODE_MASTER |		\
 					SPI_MODE_CPOL |			\
-					SPI_MODE_CPHA,			\
-					0) },				\
+					SPI_MODE_CPHA)},		\
 		.hw = { .is_lsm303agr_dev = IS_LSM303AGR_DEV(inst),	\
 			.disc_pull_up = DISC_PULL_UP(inst),		\
 			.anym_on_int1 = ANYM_ON_INT1(inst),		\

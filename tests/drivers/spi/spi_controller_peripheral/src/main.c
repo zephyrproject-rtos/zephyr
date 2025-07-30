@@ -25,7 +25,7 @@
 #define SPIM_OP	 (SPI_OP_MODE_MASTER | SPI_MODE)
 #define SPIS_OP	 (SPI_OP_MODE_SLAVE | SPI_MODE)
 
-static struct spi_dt_spec spim = SPI_DT_SPEC_GET(DT_NODELABEL(dut_spi_dt), SPIM_OP, 0);
+static struct spi_dt_spec spim = SPI_DT_SPEC_GET(DT_NODELABEL(dut_spi_dt), SPIM_OP);
 static const struct device *spis_dev = DEVICE_DT_GET(DT_NODELABEL(dut_spis));
 static const struct spi_config spis_config = {
 	.operation = SPIS_OP,

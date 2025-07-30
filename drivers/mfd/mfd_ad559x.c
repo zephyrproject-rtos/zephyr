@@ -89,7 +89,7 @@ static int mfd_ad559x_init(const struct device *dev)
 	(SPI_WORD_SET(8) | SPI_TRANSFER_MSB | SPI_OP_MODE_MASTER | SPI_MODE_CPOL)
 
 #define MDF_AD559X_DEFINE_SPI_BUS(inst)                                                            \
-	.spi = SPI_DT_SPEC_INST_GET(inst, MDF_AD559X_DEFINE_SPI_BUS_FLAGS, 0),                     \
+	.spi = SPI_DT_SPEC_INST_GET(inst, MDF_AD559X_DEFINE_SPI_BUS_FLAGS),                        \
 	.bus_init = mfd_ad559x_spi_init, .has_pointer_byte_map = false
 
 #define MFD_AD559X_DEFINE_BUS(inst)                                                                \
