@@ -11,6 +11,7 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE lin_handlers.c)
 
 # LIN subsystem driver files
 # zephyr-keep-sorted-start
+add_subdirectory(renesas/ra)
 # zephyr-keep-sorted-stop
 
 add_subdirectory(transceiver)

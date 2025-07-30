@@ -1,0 +1,46 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA LIN SCI controller
+
+compatible: "renesas,ra-lin-sci-b"
+
+include: [lin-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  noise-filter:
+    type: boolean
+    description: Enable digital filter on RXD pin
+
+  noise-filter-clk:
+    type: string
+    default: "base-clock"
+    enum: ["base-clock", "baudrate-generator-clock"]
+    description: |
+      Select the clock source for the digital noise filter.
+      - base-clock: calculated by: base-clock = 1 / [ (1 / baud_rate) / cycles_per_bit_period ]
+      - baudrate-generator-clock: clock source of the baud rate generator
+      Notes:
+      - When noise-filter is false, this property is ignored.
+      - When noise-filter-clk is "baudrate-generator-clock", the property
+        noise-filter-clock-select must be specified.
+      - When noise-filter-clk is "base-clock", the property noise-filter-clk-div must be specified.
+
+  noise-filter-clk-div:
+    type: int
+    default: 1
+    enum: [1, 2, 4, 8]
+    description: |
+      Select the division ratio of the clock source for the digital noise filter.
+      Notes:
+      - When noise-filter-clk is "base-clock", this property is ignored (always divide by 1).
+      - When noise-filter is false, this property is ignored.
+
+  bus-conflict-detection-clk-div:
+    type: int
+    default: 1
+    enum: [1, 2, 4]
+    description: |
+      Select the base clock divider for sampling clock of the bus conflict detection circuit.
+      Notes:
+      - When bus-conflict-detection is false, this property is ignored.
