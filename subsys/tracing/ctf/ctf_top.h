@@ -197,6 +197,24 @@ typedef enum {
 	CTF_EVENT_MEM_SLAB_ALLOC_EXIT = 0x84,
 	CTF_EVENT_MEM_SLAB_FREE_ENTER = 0x85,
 	CTF_EVENT_MEM_SLAB_FREE_EXIT = 0x86,
+
+	/* Message Queues */
+	CTF_EVENT_MSGQ_INIT = 0x87,
+	CTF_EVENT_MSGQ_ALLOC_INIT_ENTER = 0x88,
+	CTF_EVENT_MSGQ_ALLOC_INIT_EXIT = 0x89,
+	CTF_EVENT_MSGQ_PUT_ENTER = 0x8A,
+	CTF_EVENT_MSGQ_PUT_BLOCKING = 0x8B,
+	CTF_EVENT_MSGQ_PUT_EXIT = 0x8C,
+	CTF_EVENT_MSGQ_GET_ENTER = 0x8D,
+	CTF_EVENT_MSGQ_GET_BLOCKING = 0x8E,
+	CTF_EVENT_MSGQ_GET_EXIT = 0x8F,
+	CTF_EVENT_MSGQ_PEEK  = 0x90,
+	CTF_EVENT_MSGQ_PURGE = 0x91,
+	CTF_EVENT_MSGQ_PUT_FRONT_ENTER = 0x92,
+	CTF_EVENT_MSGQ_PUT_FRONT_EXIT = 0x93,
+	CTF_EVENT_MSGQ_PUT_FRONT_BLOCKING = 0x94,
+	CTF_EVENT_MSGQ_CLEANUP_ENTER = 0x95,
+	CTF_EVENT_MSGQ_CLEANUP_EXIT = 0x96,
 } ctf_event_t;
 
 typedef struct {
@@ -363,6 +381,87 @@ static inline void ctf_top_mem_slab_free_exit(uint32_t slab_id)
 {
 	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MEM_SLAB_FREE_EXIT), slab_id);
 }
+
+/* Message Queues*/
+static inline void ctf_top_msgq_init(uint32_t msgq_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MSGQ_INIT), msgq_id);
+}
+
+static inline void ctf_top_msgq_alloc_init_enter(uint32_t msgq_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MSGQ_ALLOC_INIT_ENTER), msgq_id);
+}
+static inline void ctf_top_msgq_alloc_init_exit(uint32_t msgq_id, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MSGQ_ALLOC_INIT_EXIT), msgq_id, ret);
+}
+
+static inline void ctf_top_msgq_put_enter(uint32_t msgq_id, uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MSGQ_PUT_ENTER), msgq_id, timeout);
+}
+
+static inline void ctf_top_msgq_put_blocking(uint32_t msgq_id, uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MSGQ_PUT_BLOCKING), msgq_id, timeout);
+}
+
+static inline void ctf_top_msgq_put_exit(uint32_t msgq_id, uint32_t timeout, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MSGQ_PUT_EXIT), msgq_id, timeout, ret);
+}
+
+static inline void ctf_top_msgq_get_enter(uint32_t msgq_id, uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MSGQ_GET_ENTER), msgq_id, timeout);
+}
+
+static inline void ctf_top_msgq_get_blocking(uint32_t msgq_id, uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MSGQ_GET_BLOCKING), msgq_id, timeout);
+}
+
+static inline void ctf_top_msgq_get_exit(uint32_t msgq_id, uint32_t timeout, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MSGQ_GET_EXIT), msgq_id, timeout, ret);
+}
+
+static inline void ctf_top_msgq_peek(uint32_t msgq_id, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MSGQ_PEEK), msgq_id, ret);
+}
+
+static inline void ctf_top_msgq_purge(uint32_t msgq_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MSGQ_PURGE), msgq_id);
+}
+
+static inline void ctf_top_msgq_put_front_enter(uint32_t msgq_id, uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MSGQ_PUT_FRONT_ENTER), msgq_id, timeout);
+}
+
+static inline void ctf_top_msgq_put_front_exit(uint32_t msgq_id,  uint32_t timeout, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MSGQ_PUT_FRONT_EXIT), msgq_id, timeout, ret);
+}
+
+static inline void ctf_top_msgq_put_front_blocking(uint32_t msgq_id, uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MSGQ_PUT_FRONT_BLOCKING), msgq_id, timeout);
+}
+
+static inline void ctf_top_msgq_cleanup_enter(uint32_t msgq_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MSGQ_CLEANUP_ENTER), msgq_id);
+}
+
+static inline void ctf_top_msgq_cleanup_exit(uint32_t msgq_id, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MSGQ_CLEANUP_EXIT), msgq_id, ret);
+}
+
 
 /* Semaphore */
 static inline void ctf_top_semaphore_init(uint32_t sem_id,
