@@ -778,7 +778,7 @@ static const struct can_mcan_ops tcan4x5x_ops = {
 	CAN_MCAN_DT_INST_CALLBACKS_DEFINE(inst, tcan4x5x_cbs_##inst);                              \
                                                                                                    \
 	static const struct tcan4x5x_config tcan4x5x_config_##inst = {                             \
-		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8), 0),                             \
+		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8)),                                \
 		.int_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                                \
 		.clk_freq = DT_INST_PROP(inst, clock_frequency),                                   \
 		TCAN4X5X_RST_GPIO_INIT(inst)                                                       \

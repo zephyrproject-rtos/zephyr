@@ -338,7 +338,7 @@ void icm4268x_unlock(const struct device *dev)
 	SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_TRANSFER_MSB
 
 #define ICM4268X_RTIO_DEFINE(inst)                                                                 \
-	SPI_DT_IODEV_DEFINE(icm4268x_spi_iodev_##inst, DT_DRV_INST(inst), ICM4268X_SPI_CFG, 0U);   \
+	SPI_DT_IODEV_DEFINE(icm4268x_spi_iodev_##inst, DT_DRV_INST(inst), ICM4268X_SPI_CFG);       \
 	RTIO_DEFINE(icm4268x_rtio_##inst, 8, 4);
 
 #define ICM42688_DT_CONFIG_INIT(inst)						\
@@ -401,7 +401,7 @@ void icm4268x_unlock(const struct device *dev)
 	ICM4268X_DEFINE_DATA(inst);                                                                \
                                                                                                    \
 	static const struct icm4268x_dev_cfg icm4268x_cfg_##inst = {                               \
-		.spi = SPI_DT_SPEC_INST_GET(inst, ICM4268X_SPI_CFG, 0U),                           \
+		.spi = SPI_DT_SPEC_INST_GET(inst, ICM4268X_SPI_CFG),                               \
 		.gpio_int1 = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),                       \
 	};                                                                                         \
                                                                                                    \

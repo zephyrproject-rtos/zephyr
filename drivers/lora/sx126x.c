@@ -40,7 +40,7 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(semtech_sx1261) +
 #define SX126X_CALIBRATION_ALL 0x7f
 
 static const struct sx126x_config dev_config = {
-	.bus = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0),
+	.bus = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8) | SPI_TRANSFER_MSB),
 #if HAVE_GPIO_ANTENNA_ENABLE
 	.antenna_enable = GPIO_DT_SPEC_INST_GET(0, antenna_enable_gpios),
 #endif

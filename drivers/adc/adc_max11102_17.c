@@ -405,7 +405,7 @@ BUILD_ASSERT(CONFIG_ADC_INIT_PRIORITY > CONFIG_SPI_INIT_PRIORITY,
 	static const struct max11102_17_config config_##name##_##index = {                         \
 		.bus = SPI_DT_SPEC_INST_GET(                                                       \
 			index,                                                                     \
-			SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8), 0),  \
+			SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8)),     \
 		.gpio_chsel = GPIO_DT_SPEC_INST_GET_OR(index, chsel_gpios, {0}),                   \
 		.resolution = res,                                                                 \
 		.channel_count = channels,                                                         \
