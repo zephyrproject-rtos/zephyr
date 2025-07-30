@@ -1,7 +1,10 @@
-/* Copyright 2024 Cypress Semiconductor Corporation (an Infineon company) or
+/*
+ *==================================================================================================
+ * Copyright (c) 2025 Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
+ *==================================================================================================
  */
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PWM_PWM_IFX_CAT1_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_PWM_PWM_IFX_CAT1_H_
