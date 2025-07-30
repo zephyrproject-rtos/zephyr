@@ -493,6 +493,13 @@
 			status = "disabled";
 		};
 
+		ostimer0: timers@400ad000 {
+			compatible = "nxp,os-timer";
+			reg = <0x400ad000 0x1000>;
+			interrupts = <57 0>;
+			status = "disabled";
+		};
+
 		temp0: temp0 {
 			compatible = "nxp,lpadc-temp40";
 			status = "disabled";
