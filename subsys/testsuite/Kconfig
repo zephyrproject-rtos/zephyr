@@ -88,6 +88,12 @@ config COVERAGE_DUMP
 	help
 	  Dump collected coverage information to console on exit.
 
+config COVERAGE_SEMIHOST
+	bool "Use semihosting to write coverage data"
+	depends on SEMIHOST
+	help
+	  Use semihosting to write coverage data to a file on the host.
+
 config FORCE_COVERAGE
 	bool "Force coverage"
 	select HAS_COVERAGE_SUPPORT
