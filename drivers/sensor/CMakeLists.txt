@@ -2,6 +2,7 @@
 
 # zephyr-keep-sorted-start
 add_subdirectory(adi)
+add_subdirectory(als31300)
 add_subdirectory(ams)
 add_subdirectory(aosong)
 add_subdirectory(asahi_kasei)

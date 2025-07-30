@@ -1,0 +1,20 @@
+# ALS31300 Device Tree Binding
+# Save as: dts/bindings/sensor/allegro,als31300.yaml
+
+description: Allegro ALS31300 3D Linear Hall Effect Sensor
+
+compatible: "allegro,als31300"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  full_scale_range:
+    type: int
+    default: 500
+    enum:
+      - 500
+      - 1000  
+      - 2000
+    description: |
+      Full scale measurement range in Gauss.
+      Determines the sensitivity and maximum field strength.
