@@ -338,8 +338,11 @@ struct pmc_regs {
 #define PMC_PM2CTL_IBFIE BIT(0)
 /* General Purpose Flag */
 #define PMC_PM2STS_GPF   BIT(2)
+
 /* PMC3 Input Buffer Full Interrupt Enable */
-#define PMC_PM3CTL_IBFIE BIT(0)
+#define PMC_PM3CTL_IBFIE   BIT(0)
+/* A2 Address (A2) */
+#define PMC_PM3STS_A2_ADDR BIT(3)
 
 /*
  * Dedicated Interrupt
@@ -1235,8 +1238,16 @@ static void pmc3_it8xxx2_ibf_isr(const struct device *dev)
 	struct espi_event evt = {.evt_type = ESPI_BUS_PERIPHERAL_NOTIFICATION,
 				 .evt_details = ESPI_PERIPHERAL_HOST_IO_PVT,
 				 .evt_data = ESPI_PERIPHERAL_NODATA};
+	struct espi_evt_data_pvt *pvt_evt = (struct espi_evt_data_pvt *)&evt.evt_data;
 
-	evt.evt_data = pmc_reg->PM3DI;
+	/*
+	 * Indicates if the host sent a command or data.
+	 * 0 = data
+	 * 1 = Command.
+	 */
+	pvt_evt->type = !!(pmc_reg->PM3STS & PMC_PM3STS_A2_ADDR);
+	pvt_evt->data = pmc_reg->PM3DI;
+
 	espi_send_callbacks(&data->callbacks, dev, evt);
 }
 
