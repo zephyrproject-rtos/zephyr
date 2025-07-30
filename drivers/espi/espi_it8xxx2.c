@@ -1330,8 +1330,16 @@ static void pmc3_it8xxx2_ibf_isr(const struct device *dev)
 	struct espi_event evt = {.evt_type = ESPI_BUS_PERIPHERAL_NOTIFICATION,
 				 .evt_details = ESPI_PERIPHERAL_HOST_IO_PVT,
 				 .evt_data = ESPI_PERIPHERAL_NODATA};
+	struct espi_evt_data_pvt *pvt_evt = (struct espi_evt_data_pvt *)&evt.evt_data;
 
-	evt.evt_data = pmc_reg->PM3DI;
+	/*
+	 * Indicates if the host sent a command or data.
+	 * 0 = data
+	 * 1 = Command.
+	 */
+	pvt_evt->type = !!(pmc_reg->PM3STS & PMC_PM3STS_A2_ADDR);
+	pvt_evt->data = pmc_reg->PM3DI;
+
 	espi_send_callbacks(&data->callbacks, dev, evt);
 }
 
@@ -1357,8 +1365,16 @@ static void pmc4_it8xxx2_ibf_isr(const struct device *dev)
 	struct espi_event evt = {.evt_type = ESPI_BUS_PERIPHERAL_NOTIFICATION,
 				 .evt_details = ESPI_PERIPHERAL_HOST_IO_PVT2,
 				 .evt_data = ESPI_PERIPHERAL_NODATA};
+	struct espi_evt_data_pvt *pvt_evt = (struct espi_evt_data_pvt *)&evt.evt_data;
 
-	evt.evt_data = pmc_reg->PM4DI;
+	/*
+	 * Indicates if the host sent a command or data.
+	 * 0 = data
+	 * 1 = Command.
+	 */
+	pvt_evt->type = !!(pmc_reg->PM4STS & PMC_PM4STS_A2_ADDR);
+	pvt_evt->data = pmc_reg->PM4DI;
+
 	espi_send_callbacks(&data->callbacks, dev, evt);
 }
 
@@ -1384,8 +1400,16 @@ static void pmc5_it8xxx2_ibf_isr(const struct device *dev)
 	struct espi_event evt = {.evt_type = ESPI_BUS_PERIPHERAL_NOTIFICATION,
 				 .evt_details = ESPI_PERIPHERAL_HOST_IO_PVT3,
 				 .evt_data = ESPI_PERIPHERAL_NODATA};
+	struct espi_evt_data_pvt *pvt_evt = (struct espi_evt_data_pvt *)&evt.evt_data;
 
-	evt.evt_data = pmc_reg->PM5DI;
+	/*
+	 * Indicates if the host sent a command or data.
+	 * 0 = data
+	 * 1 = Command.
+	 */
+	pvt_evt->type = !!(pmc_reg->PM5STS & PMC_PM5STS_A2_ADDR);
+	pvt_evt->data = pmc_reg->PM5DI;
+
 	espi_send_callbacks(&data->callbacks, dev, evt);
 }
 
