@@ -1,0 +1,6 @@
+board:
+  name: blackpill_u585ci
+  full_name: WeAct Studio Black Pill STM32U585 Core Board
+  vendor: weact
+  socs:
+    - name: stm32u585xx

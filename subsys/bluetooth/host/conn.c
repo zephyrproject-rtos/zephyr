@@ -1811,6 +1811,25 @@ void bt_conn_connected(struct bt_conn *conn)
 	notify_connected(conn);
 }
 
+#if defined(CONFIG_BT_CLASSIC)
+void bt_conn_role_changed(struct bt_conn *conn, uint8_t status)
+{
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+		if (callback->role_changed) {
+			callback->role_changed(conn, status);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+		if (cb->role_changed) {
+			cb->role_changed(conn, status);
+		}
+	}
+}
+#endif
+
 static int conn_disconnect(struct bt_conn *conn, uint8_t reason)
 {
 	int err;
@@ -3289,6 +3308,53 @@ int bt_conn_le_subrate_request(struct bt_conn *conn,
 }
 #endif /* CONFIG_BT_SUBRATING */
 
+#if defined(CONFIG_BT_LE_EXTENDED_FEAT_SET)
+void notify_read_all_remote_feat_complete(struct bt_conn *conn,
+					  struct bt_conn_le_read_all_remote_feat_complete *params)
+{
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+		if (callback->read_all_remote_feat_complete != NULL) {
+			callback->read_all_remote_feat_complete(conn, params);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb)
+	{
+		if (cb->read_all_remote_feat_complete != NULL) {
+			cb->read_all_remote_feat_complete(conn, params);
+		}
+	}
+}
+
+int bt_conn_le_read_all_remote_features(struct bt_conn *conn, uint8_t pages_requested)
+{
+	struct bt_hci_cp_le_read_all_remote_features *cp;
+	struct net_buf *buf;
+
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
+		return -EINVAL;
+	}
+
+	if (pages_requested > BT_HCI_LE_FEATURE_PAGE_MAX) {
+		return -EINVAL;
+	}
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(conn->handle);
+	cp->pages_requested = pages_requested;
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_ALL_REMOTE_FEATURES, buf, NULL);
+}
+#endif /* CONFIG_BT_LE_EXTENDED_FEAT_SET */
+
 #if defined(CONFIG_BT_CHANNEL_SOUNDING)
 void notify_remote_cs_capabilities(struct bt_conn *conn, uint8_t status,
 				   struct bt_conn_le_cs_capabilities *params)
@@ -3498,6 +3564,21 @@ int bt_conn_le_phy_update(struct bt_conn *conn,
 
 	return bt_le_set_phy(conn, all_phys, param->pref_tx_phy,
 			     param->pref_rx_phy, phy_opts);
+}
+
+int bt_conn_le_set_default_phy(uint8_t pref_tx_phy, uint8_t pref_rx_phy)
+{
+	uint8_t all_phys = 0U;
+
+	if (pref_tx_phy == BT_GAP_LE_PHY_NONE) {
+		all_phys |= BT_HCI_LE_PHY_TX_ANY;
+	}
+
+	if (pref_rx_phy == BT_GAP_LE_PHY_NONE) {
+		all_phys |= BT_HCI_LE_PHY_RX_ANY;
+	}
+
+	return bt_le_set_default_phy(all_phys, pref_tx_phy, pref_rx_phy);
 }
 #endif
 

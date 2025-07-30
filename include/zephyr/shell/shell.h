@@ -900,11 +900,10 @@ union shell_backend_ctx {
 };
 
 enum shell_signal {
-	SHELL_SIGNAL_RXRDY,
-	SHELL_SIGNAL_LOG_MSG,
-	SHELL_SIGNAL_KILL,
-	SHELL_SIGNAL_TXDONE, /* TXDONE must be last one before SHELL_SIGNALS */
-	SHELL_SIGNALS
+	SHELL_SIGNAL_RXRDY = BIT(0),
+	SHELL_SIGNAL_LOG_MSG = BIT(1),
+	SHELL_SIGNAL_KILL = BIT(2),
+	SHELL_SIGNAL_TXDONE = BIT(3),
 };
 
 /**
@@ -962,14 +961,9 @@ struct shell_ctx {
 	volatile union shell_backend_cfg cfg;
 	volatile union shell_backend_ctx ctx;
 
-	struct k_poll_signal signals[SHELL_SIGNALS];
+	struct k_event signal_event;
 
-	/** Events that should be used only internally by shell thread.
-	 * Event for SHELL_SIGNAL_TXDONE is initialized but unused.
-	 */
-	struct k_poll_event events[SHELL_SIGNALS];
-
-	struct k_mutex wr_mtx;
+	struct k_sem lock_sem;
 	k_tid_t tid;
 	int ret_val;
 };

@@ -146,13 +146,13 @@ __pinned_func static void walk_stackframe(stack_trace_callback_fn cb, void *cook
 	}
 
 	if (base_ptr == 0U) {
-		LOG_ERR("NULL base ptr");
+		EXCEPTION_DUMP("NULL base ptr");
 		return;
 	}
 
 	for (i = 0; i < max_frames; i++) {
 		if (base_ptr % sizeof(base_ptr) != 0U) {
-			LOG_ERR("unaligned frame ptr");
+			EXCEPTION_DUMP("unaligned frame ptr");
 			return;
 		}
 
@@ -167,7 +167,7 @@ __pinned_func static void walk_stackframe(stack_trace_callback_fn cb, void *cook
 		 */
 		if (z_x86_check_stack_bounds((uintptr_t)frame,
 					     sizeof(*frame), cs)) {
-			LOG_ERR("     corrupted? (bp=%p)", frame);
+			EXCEPTION_DUMP("     corrupted? (bp=%p)", frame);
 			break;
 		}
 #endif
@@ -200,9 +200,9 @@ static bool print_trace_address(void *arg, unsigned long addr)
 	int *i = arg;
 
 #ifdef CONFIG_X86_64
-	LOG_ERR("     %d: 0x%016lx", (*i)++, addr);
+	EXCEPTION_DUMP("     %d: 0x%016lx", (*i)++, addr);
 #else
-	LOG_ERR("     %d: 0x%08lx", (*i)++, addr);
+	EXCEPTION_DUMP("     %d: 0x%08lx", (*i)++, addr);
 #endif
 
 	return true;
@@ -253,31 +253,31 @@ static inline pentry_t *get_ptables(const struct arch_esf *esf)
 __pinned_func
 static void dump_regs(const struct arch_esf *esf)
 {
-	LOG_ERR("RAX: 0x%016lx RBX: 0x%016lx RCX: 0x%016lx RDX: 0x%016lx",
+	EXCEPTION_DUMP("RAX: 0x%016lx RBX: 0x%016lx RCX: 0x%016lx RDX: 0x%016lx",
 		esf->rax, esf->rbx, esf->rcx, esf->rdx);
-	LOG_ERR("RSI: 0x%016lx RDI: 0x%016lx RBP: 0x%016lx RSP: 0x%016lx",
+	EXCEPTION_DUMP("RSI: 0x%016lx RDI: 0x%016lx RBP: 0x%016lx RSP: 0x%016lx",
 		esf->rsi, esf->rdi, esf->rbp, esf->rsp);
-	LOG_ERR(" R8: 0x%016lx  R9: 0x%016lx R10: 0x%016lx R11: 0x%016lx",
+	EXCEPTION_DUMP(" R8: 0x%016lx  R9: 0x%016lx R10: 0x%016lx R11: 0x%016lx",
 		esf->r8, esf->r9, esf->r10, esf->r11);
-	LOG_ERR("R12: 0x%016lx R13: 0x%016lx R14: 0x%016lx R15: 0x%016lx",
+	EXCEPTION_DUMP("R12: 0x%016lx R13: 0x%016lx R14: 0x%016lx R15: 0x%016lx",
 		esf->r12, esf->r13, esf->r14, esf->r15);
-	LOG_ERR("RSP: 0x%016lx RFLAGS: 0x%016lx CS: 0x%04lx CR3: 0x%016lx",
+	EXCEPTION_DUMP("RSP: 0x%016lx RFLAGS: 0x%016lx CS: 0x%04lx CR3: 0x%016lx",
 		esf->rsp, esf->rflags, esf->cs & 0xFFFFU, get_cr3(esf));
 
-	LOG_ERR("RIP: 0x%016lx", esf->rip);
+	EXCEPTION_DUMP("RIP: 0x%016lx", esf->rip);
 }
 #else /* 32-bit */
 __pinned_func
 static void dump_regs(const struct arch_esf *esf)
 {
-	LOG_ERR("EAX: 0x%08x, EBX: 0x%08x, ECX: 0x%08x, EDX: 0x%08x",
+	EXCEPTION_DUMP("EAX: 0x%08x, EBX: 0x%08x, ECX: 0x%08x, EDX: 0x%08x",
 		esf->eax, esf->ebx, esf->ecx, esf->edx);
-	LOG_ERR("ESI: 0x%08x, EDI: 0x%08x, EBP: 0x%08x, ESP: 0x%08x",
+	EXCEPTION_DUMP("ESI: 0x%08x, EDI: 0x%08x, EBP: 0x%08x, ESP: 0x%08x",
 		esf->esi, esf->edi, esf->ebp, esf->esp);
-	LOG_ERR("EFLAGS: 0x%08x CS: 0x%04x CR3: 0x%08lx", esf->eflags,
+	EXCEPTION_DUMP("EFLAGS: 0x%08x CS: 0x%04x CR3: 0x%08lx", esf->eflags,
 		esf->cs & 0xFFFFU, get_cr3(esf));
 
-	LOG_ERR("EIP: 0x%08x", esf->eip);
+	EXCEPTION_DUMP("EIP: 0x%08x", esf->eip);
 }
 #endif /* CONFIG_X86_64 */
 
@@ -286,68 +286,68 @@ static void log_exception(uintptr_t vector, uintptr_t code)
 {
 	switch (vector) {
 	case IV_DIVIDE_ERROR:
-		LOG_ERR("Divide by zero");
+		EXCEPTION_DUMP("Divide by zero");
 		break;
 	case IV_DEBUG:
-		LOG_ERR("Debug");
+		EXCEPTION_DUMP("Debug");
 		break;
 	case IV_NON_MASKABLE_INTERRUPT:
-		LOG_ERR("Non-maskable interrupt");
+		EXCEPTION_DUMP("Non-maskable interrupt");
 		break;
 	case IV_BREAKPOINT:
-		LOG_ERR("Breakpoint");
+		EXCEPTION_DUMP("Breakpoint");
 		break;
 	case IV_OVERFLOW:
-		LOG_ERR("Overflow");
+		EXCEPTION_DUMP("Overflow");
 		break;
 	case IV_BOUND_RANGE:
-		LOG_ERR("Bound range exceeded");
+		EXCEPTION_DUMP("Bound range exceeded");
 		break;
 	case IV_INVALID_OPCODE:
-		LOG_ERR("Invalid opcode");
+		EXCEPTION_DUMP("Invalid opcode");
 		break;
 	case IV_DEVICE_NOT_AVAILABLE:
-		LOG_ERR("Floating point unit device not available");
+		EXCEPTION_DUMP("Floating point unit device not available");
 		break;
 	case IV_DOUBLE_FAULT:
-		LOG_ERR("Double fault (code 0x%lx)", code);
+		EXCEPTION_DUMP("Double fault (code 0x%lx)", code);
 		break;
 	case IV_COPROC_SEGMENT_OVERRUN:
-		LOG_ERR("Co-processor segment overrun");
+		EXCEPTION_DUMP("Co-processor segment overrun");
 		break;
 	case IV_INVALID_TSS:
-		LOG_ERR("Invalid TSS (code 0x%lx)", code);
+		EXCEPTION_DUMP("Invalid TSS (code 0x%lx)", code);
 		break;
 	case IV_SEGMENT_NOT_PRESENT:
-		LOG_ERR("Segment not present (code 0x%lx)", code);
+		EXCEPTION_DUMP("Segment not present (code 0x%lx)", code);
 		break;
 	case IV_STACK_FAULT:
-		LOG_ERR("Stack segment fault");
+		EXCEPTION_DUMP("Stack segment fault");
 		break;
 	case IV_GENERAL_PROTECTION:
-		LOG_ERR("General protection fault (code 0x%lx)", code);
+		EXCEPTION_DUMP("General protection fault (code 0x%lx)", code);
 		break;
 	/* IV_PAGE_FAULT skipped, we have a dedicated handler */
 	case IV_X87_FPU_FP_ERROR:
-		LOG_ERR("x87 floating point exception");
+		EXCEPTION_DUMP("x87 floating point exception");
 		break;
 	case IV_ALIGNMENT_CHECK:
-		LOG_ERR("Alignment check (code 0x%lx)", code);
+		EXCEPTION_DUMP("Alignment check (code 0x%lx)", code);
 		break;
 	case IV_MACHINE_CHECK:
-		LOG_ERR("Machine check");
+		EXCEPTION_DUMP("Machine check");
 		break;
 	case IV_SIMD_FP:
-		LOG_ERR("SIMD floating point exception");
+		EXCEPTION_DUMP("SIMD floating point exception");
 		break;
 	case IV_VIRT_EXCEPTION:
-		LOG_ERR("Virtualization exception");
+		EXCEPTION_DUMP("Virtualization exception");
 		break;
 	case IV_SECURITY_EXCEPTION:
-		LOG_ERR("Security exception");
+		EXCEPTION_DUMP("Security exception");
 		break;
 	default:
-		LOG_ERR("Exception not handled (code 0x%lx)", code);
+		EXCEPTION_DUMP("Exception not handled (code 0x%lx)", code);
 		break;
 	}
 }
@@ -360,23 +360,23 @@ static void dump_page_fault(struct arch_esf *esf)
 
 	cr2 = z_x86_cr2_get();
 	err = esf_get_code(esf);
-	LOG_ERR("Page fault at address %p (error code 0x%lx)", cr2, err);
+	EXCEPTION_DUMP("Page fault at address %p (error code 0x%lx)", cr2, err);
 
 	if ((err & PF_RSVD) != 0) {
-		LOG_ERR("Reserved bits set in page tables");
+		EXCEPTION_DUMP("Reserved bits set in page tables");
 	} else {
 		if ((err & PF_P) == 0) {
-			LOG_ERR("Linear address not present in page tables");
+			EXCEPTION_DUMP("Linear address not present in page tables");
 		}
-		LOG_ERR("Access violation: %s thread not allowed to %s",
+		EXCEPTION_DUMP("Access violation: %s thread not allowed to %s",
 			(err & PF_US) != 0U ? "user" : "supervisor",
 			(err & PF_ID) != 0U ? "execute" : ((err & PF_WR) != 0U ?
 							   "write" :
 							   "read"));
 		if ((err & PF_PK) != 0) {
-			LOG_ERR("Protection key disallowed");
+			EXCEPTION_DUMP("Protection key disallowed");
 		} else if ((err & PF_SGX) != 0) {
-			LOG_ERR("SGX access control violation");
+			EXCEPTION_DUMP("SGX access control violation");
 		}
 	}
 
@@ -395,7 +395,7 @@ FUNC_NORETURN void z_x86_fatal_error(unsigned int reason,
 		dump_regs(esf);
 #endif
 #ifdef CONFIG_EXCEPTION_STACK_TRACE
-		LOG_ERR("call trace:");
+		EXCEPTION_DUMP("call trace:");
 		unwind_stack(esf);
 #endif /* CONFIG_EXCEPTION_STACK_TRACE */
 #if defined(CONFIG_ASSERT) && defined(CONFIG_X86_64)
@@ -404,7 +404,7 @@ FUNC_NORETURN void z_x86_fatal_error(unsigned int reason,
 			 * never a valid RIP value. Treat this as a kernel
 			 * panic.
 			 */
-			LOG_ERR("Attempt to resume un-suspended thread object");
+			EXCEPTION_DUMP("Attempt to resume un-suspended thread object");
 			reason = K_ERR_KERNEL_PANIC;
 		}
 #endif

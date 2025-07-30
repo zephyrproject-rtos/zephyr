@@ -24,12 +24,14 @@ void lvgl_flush_cb_24bit(lv_display_t *display, const lv_area_t *area, uint8_t *
 	flush.desc.height = h;
 	flush.buf = (void *)px_map;
 
-	/* LVGL assumes BGR byte ordering, convert to RGB */
-	for (size_t i = 0; i < flush.desc.buf_size; i += 3) {
-		uint8_t tmp = px_map[i];
+	if (IS_ENABLED(CONFIG_LV_Z_COLOR_24_BGR_TO_RGB)) {
+		/* LVGL assumes BGR byte ordering, convert to RGB */
+		for (size_t i = 0; i < flush.desc.buf_size; i += 3) {
+			uint8_t tmp = px_map[i];
 
-		px_map[i] = px_map[i + 2];
-		px_map[i + 2] = tmp;
+			px_map[i] = px_map[i + 2];
+			px_map[i + 2] = tmp;
+		}
 	}
 
 	lvgl_flush_display(&flush);

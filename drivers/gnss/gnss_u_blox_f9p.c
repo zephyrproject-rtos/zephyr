@@ -18,6 +18,7 @@
 #include <zephyr/modem/backend/uart.h>
 
 #include "gnss_ubx_common.h"
+#include <zephyr/gnss/rtk/rtk.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ubx_f9p, CONFIG_GNSS_LOG_LEVEL);
@@ -81,6 +82,19 @@ UBX_FRAME_DEFINE(enable_nav,
 	UBX_FRAME_CFG_VAL_SET_U8_INITIALIZER(UBX_KEY_MSG_OUT_UBX_NAV_PVT_UART1, 1));
 UBX_FRAME_DEFINE(nav_fix_mode_auto,
 	UBX_FRAME_CFG_VAL_SET_U8_INITIALIZER(UBX_KEY_NAV_CFG_FIX_MODE, UBX_FIX_MODE_AUTO));
+UBX_FRAME_DEFINE(enable_prot_in_ubx,
+	UBX_FRAME_CFG_VAL_SET_U8_INITIALIZER(UBX_KEY_UART1_PROTO_IN_UBX, 1));
+UBX_FRAME_DEFINE(enable_prot_in_rtcm3,
+	UBX_FRAME_CFG_VAL_SET_U8_INITIALIZER(UBX_KEY_UART1_PROTO_IN_RTCM3X, 1));
+UBX_FRAME_DEFINE(enable_prot_out_ubx,
+	UBX_FRAME_CFG_VAL_SET_U8_INITIALIZER(UBX_KEY_UART1_PROTO_OUT_UBX, 1));
+UBX_FRAME_DEFINE(disable_prot_out_rtcm3,
+	UBX_FRAME_CFG_VAL_SET_U8_INITIALIZER(UBX_KEY_UART1_PROTO_OUT_RTCM3X, 0));
+UBX_FRAME_DEFINE(enable_ubx_rtcm_rsp,
+	UBX_FRAME_CFG_VAL_SET_U8_INITIALIZER(UBX_KEY_MSG_OUT_UBX_RXM_RTCM_UART1, 1));
+UBX_FRAME_DEFINE(set_rtk_fix_mode,
+	UBX_FRAME_CFG_VAL_SET_U8_INITIALIZER(UBX_KEY_NAV_HP_CFG_GNSS_MODE,
+					     UBX_NAV_HP_DGNSS_MODE_RTK_FIXED));
 #if CONFIG_GNSS_SATELLITES
 UBX_FRAME_DEFINE(enable_sat,
 	UBX_FRAME_CFG_VAL_SET_U8_INITIALIZER(UBX_KEY_MSG_OUT_UBX_NAV_SAT_UART1, 1));
@@ -91,6 +105,8 @@ UBX_FRAME_ARRAY_DEFINE(u_blox_f9p_init_seq,
 	&disable_nmea_gbs, &disable_nmea_gll, &disable_nmea_gns, &disable_nmea_grs,
 	&disable_nmea_gsa, &disable_nmea_gst, &disable_nmea_vlw, &disable_nmea_vtg,
 	&disable_nmea_zda, &enable_nav, &nav_fix_mode_auto,
+	&enable_prot_in_ubx, &enable_prot_in_rtcm3, &enable_prot_out_ubx,
+	&disable_prot_out_rtcm3, &enable_ubx_rtcm_rsp, &set_rtk_fix_mode,
 #if CONFIG_GNSS_SATELLITES
 	&enable_sat,
 #endif
@@ -153,7 +169,7 @@ static int ubx_f9p_msg_send(const struct device *dev, const struct ubx_frame *re
 	data->script.inst.retry_count = wait_for_ack ? 2 : 0;
 	data->script.inst.match.filter.class = wait_for_ack ? UBX_CLASS_ID_ACK : 0;
 	data->script.inst.match.filter.id = UBX_MSG_ID_ACK;
-	data->script.inst.request.buf = req;
+	data->script.inst.request.buf = (const void *)req;
 	data->script.inst.request.len = len;
 
 	err = modem_ubx_run_script(&data->ubx.inst, &data->script.inst);
@@ -186,6 +202,19 @@ static int ubx_f9p_msg_payload_send(const struct device *dev, uint8_t class, uin
 
 	return err;
 }
+
+#if CONFIG_GNSS_U_BLOX_F9P_RTK
+
+static void f9p_rtk_data_cb(const struct device *dev, const struct gnss_rtk_data *data)
+{
+	/** In this case, we forward the frame directly to the modem. It can either use
+	 * it or not depending on the RTCM3 message type and its alignment with what the
+	 * GNSS modem has observed.
+	 */
+	(void)ubx_f9p_msg_send(dev, (const void *)data->data, data->len, false);
+}
+
+#endif /* CONFIG_GNSS_U_BLOX_F9P_RTK */
 
 static inline int init_modem(const struct device *dev)
 {
@@ -515,6 +544,9 @@ static DEVICE_API(gnss, ublox_f9p_driver_api) = {
 	};											   \
 												   \
 	static struct ubx_f9p_data ubx_f9p_data_##inst;						   \
+												   \
+	IF_ENABLED(CONFIG_GNSS_U_BLOX_F9P_RTK,							   \
+		   (GNSS_RTK_DATA_CALLBACK_DEFINE(DEVICE_DT_INST_GET(inst), f9p_rtk_data_cb)));	   \
 												   \
 	DEVICE_DT_INST_DEFINE(inst,								   \
 			      ublox_f9p_init,							   \

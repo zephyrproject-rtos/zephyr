@@ -29,11 +29,7 @@ zephyr_sources_ifdef(
 
 if (CONFIG_TRACING_BACKEND_POSIX)
   zephyr_sources(tracing_backend_posix.c)
-  if (CONFIG_NATIVE_APPLICATION)
-    zephyr_library_sources(tracing_backend_posix_bottom.c)
-  else()
-    target_sources(native_simulator INTERFACE tracing_backend_posix_bottom.c)
-  endif()
+  target_sources(native_simulator INTERFACE tracing_backend_posix_bottom.c)
 endif()
 
 zephyr_sources_ifdef(

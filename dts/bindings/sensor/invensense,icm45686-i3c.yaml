@@ -13,7 +13,7 @@ description: |
     &i3c1 {
       ...
 
-      icm42688: icm45686@680000046a00000011 {
+      icm45686: icm45686@680000046a00000011 {
         ...
 
         accel-pwr-mode = <ICM45686_DT_ACCEL_LN>;

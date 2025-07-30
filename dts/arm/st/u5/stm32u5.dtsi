@@ -192,7 +192,8 @@
 			#interrupt-cells = <1>;
 			#address-cells = <1>;
 			reg = <0x46022000 0x400>;
-			num-lines = <16>;
+			clocks = <&rcc STM32_CLOCK(APB3, 1)>;
+			num-lines = <32>;
 			interrupts = <11 0>, <12 0>, <13 0>, <14 0>,
 				     <15 0>, <16 0>, <17 0>, <18 0>,
 				     <19 0>, <20 0>, <21 0>, <22 0>,
@@ -881,8 +882,7 @@
 
 			wkup-pin@8 {
 				reg = <0x8>;
-				wkup-gpios = <&gpiof 2 STM32_PWR_WKUP_EVT_SRC_0>,
-					     <&gpioa 7 STM32_PWR_WKUP_EVT_SRC_1>,
+				wkup-gpios = <&gpioa 7 STM32_PWR_WKUP_EVT_SRC_1>,
 					     <&gpiob 10 STM32_PWR_WKUP_EVT_SRC_2>;
 			};
 		};

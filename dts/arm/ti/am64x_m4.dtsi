@@ -8,9 +8,8 @@
 #include <mem.h>
 #include <freq.h>
 #include <arm/armv7-m.dtsi>
-
-#include "am64x_main.dtsi"
-#include "am64x_mcu.dtsi"
+#include <ti/am64x_main.dtsi>
+#include <ti/am64x_mcu.dtsi>
 
 / {
 
@@ -70,12 +69,12 @@
 	interrupt-parent = <&nvic>;
 };
 
-&mbox6 {
+&main_mbox6 {
 	interrupts = <56 4>;
 	interrupt-parent = <&nvic>;
 };
 
-&mbox7 {
+&main_mbox7 {
 	interrupts = <57 4>;
 	interrupt-parent = <&nvic>;
 };

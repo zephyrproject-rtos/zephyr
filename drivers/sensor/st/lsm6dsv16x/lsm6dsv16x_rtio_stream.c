@@ -16,48 +16,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(LSM6DSV16X_RTIO);
 
-/*
- * Create a chain of SQEs representing a bus transaction to read a reg.
- * The RTIO-enabled bus driver will:
- *
- *     - write "reg" address
- *     - read "len" data bytes into "buf".
- *     - call complete_op callback
- *
- * If drdy_xl is active it reads XL data (6 bytes) from LSM6DSV16X_OUTX_L_A reg.
- */
-static void lsm6dsv16x_rtio_rw_transaction(const struct device *dev, uint8_t reg,
-					   uint8_t *buf, uint32_t len,
-					   rtio_callback_t complete_op_cb)
-{
-	struct lsm6dsv16x_data *lsm6dsv16x = dev->data;
-	struct rtio *rtio = lsm6dsv16x->rtio_ctx;
-	struct rtio_iodev *iodev = lsm6dsv16x->iodev;
-	struct rtio_sqe *write_addr = rtio_sqe_acquire(rtio);
-	struct rtio_sqe *read_reg = rtio_sqe_acquire(rtio);
-	struct rtio_sqe *complete_op = rtio_sqe_acquire(rtio);
-	struct rtio_iodev_sqe *sqe = lsm6dsv16x->streaming_sqe;
-	uint8_t reg_bus = lsm6dsv16x_bus_reg(lsm6dsv16x, reg);
-
-	/* check we have been able to acquire sqe */
-	if (write_addr == NULL || read_reg == NULL || complete_op == NULL) {
-		return;
-	}
-
-	rtio_sqe_prep_tiny_write(write_addr, iodev, RTIO_PRIO_NORM, &reg_bus, 1, NULL);
-	write_addr->flags = RTIO_SQE_TRANSACTION;
-	rtio_sqe_prep_read(read_reg, iodev, RTIO_PRIO_NORM, buf, len, NULL);
-	read_reg->flags = RTIO_SQE_CHAINED;
-	if (lsm6dsv16x->bus_type == BUS_I2C) {
-		read_reg->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
-	} else if (lsm6dsv16x->bus_type == BUS_I3C) {
-		read_reg->iodev_flags |= RTIO_IODEV_I3C_STOP | RTIO_IODEV_I3C_RESTART;
-	}
-
-	rtio_sqe_prep_callback_no_cqe(complete_op, complete_op_cb, (void *)dev, sqe);
-	rtio_submit(rtio, 0);
-}
-
 static void lsm6dsv16x_config_drdy(const struct device *dev, struct trigger_config trig_cfg)
 {
 	const struct lsm6dsv16x_config *config = dev->config;
@@ -500,6 +458,19 @@ static void lsm6dsv16x_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe, 
 	read_buf = buf + sizeof(hdr);
 	buf_avail = buf_len - sizeof(hdr);
 
+	uint8_t reg_addr = lsm6dsv16x_bus_reg(lsm6dsv16x->bus_type, LSM6DSV16X_FIFO_DATA_OUT_TAG);
+	struct rtio_regs fifo_regs;
+	struct rtio_regs_list regs_list[] = {
+		{
+			reg_addr,
+			read_buf,
+			buf_avail,
+		},
+	};
+
+	fifo_regs.rtio_regs_list = regs_list;
+	fifo_regs.rtio_regs_num = ARRAY_SIZE(regs_list);
+
 	/*
 	 * Prepare rtio enabled bus to read all fifo_count entries from
 	 * LSM6DSV16X_FIFO_DATA_OUT_TAG.  Then lsm6dsv16x_complete_op_cb
@@ -515,8 +486,8 @@ static void lsm6dsv16x_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe, 
 	 *     lsm6dsv16x_fifo_out_raw_get(&dev_ctx, &f_data);
 	 *   }
 	 */
-	lsm6dsv16x_rtio_rw_transaction(dev, LSM6DSV16X_FIFO_DATA_OUT_TAG,
-				       read_buf, buf_avail, lsm6dsv16x_complete_op_cb);
+	rtio_read_regs_async(lsm6dsv16x->rtio_ctx, lsm6dsv16x->iodev, lsm6dsv16x->bus_type,
+			     &fifo_regs, lsm6dsv16x->streaming_sqe, dev, lsm6dsv16x_complete_op_cb);
 }
 
 /*
@@ -646,6 +617,19 @@ static void lsm6dsv16x_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe
 		memcpy(buf, &hdr, sizeof(hdr));
 		read_buf = (uint8_t *)&((struct lsm6dsv16x_rtio_data *)buf)->acc[0];
 
+		uint8_t reg_addr = lsm6dsv16x_bus_reg(lsm6dsv16x->bus_type, LSM6DSV16X_OUTX_L_A);
+		struct rtio_regs fifo_regs;
+		struct rtio_regs_list regs_list[] = {
+			{
+				reg_addr,
+				read_buf,
+				6,
+			},
+		};
+
+		fifo_regs.rtio_regs_list = regs_list;
+		fifo_regs.rtio_regs_num = ARRAY_SIZE(regs_list);
+
 		/*
 		 * Prepare rtio enabled bus to read LSM6DSV16X_OUTX_L_A register
 		 * where accelerometer data is available.
@@ -657,8 +641,9 @@ static void lsm6dsv16x_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe
 		 *
 		 *   lsm6dsv16x_acceleration_raw_get(&dev_ctx, accel_raw);
 		 */
-		lsm6dsv16x_rtio_rw_transaction(dev, LSM6DSV16X_OUTX_L_A,
-					       read_buf, 6, lsm6dsv16x_complete_op_cb);
+		rtio_read_regs_async(lsm6dsv16x->rtio_ctx, lsm6dsv16x->iodev, lsm6dsv16x->bus_type,
+				     &fifo_regs, lsm6dsv16x->streaming_sqe, dev,
+				     lsm6dsv16x_complete_op_cb);
 	}
 }
 
@@ -708,11 +693,25 @@ void lsm6dsv16x_stream_irq_handler(const struct device *dev)
 			struct rtio_sqe *check_fifo_status_reg = rtio_sqe_acquire(rtio);
 
 			rtio_sqe_prep_callback_no_cqe(check_fifo_status_reg,
-					      lsm6dsv16x_read_fifo_cb, (void *)dev, NULL);
+						      lsm6dsv16x_read_fifo_cb, (void *)dev, NULL);
 			rtio_submit(rtio, 0);
 		} else {
 #endif
 			lsm6dsv16x->fifo_status[0] = lsm6dsv16x->fifo_status[1] = 0;
+
+			uint8_t reg_addr =
+				lsm6dsv16x_bus_reg(lsm6dsv16x->bus_type, LSM6DSV16X_FIFO_STATUS1);
+			struct rtio_regs fifo_regs;
+			struct rtio_regs_list regs_list[] = {
+				{
+					reg_addr,
+					lsm6dsv16x->fifo_status,
+					2,
+				},
+			};
+
+			fifo_regs.rtio_regs_list = regs_list;
+			fifo_regs.rtio_regs_num = ARRAY_SIZE(regs_list);
 
 			/*
 			 * Prepare rtio enabled bus to read LSM6DSV16X_FIFO_STATUS1 and
@@ -726,8 +725,11 @@ void lsm6dsv16x_stream_irq_handler(const struct device *dev)
 			 *
 			 *   lsm6dsv16x_fifo_status_get(&dev_ctx, &fifo_status);
 			 */
-			lsm6dsv16x_rtio_rw_transaction(dev, LSM6DSV16X_FIFO_STATUS1,
-					lsm6dsv16x->fifo_status, 2, lsm6dsv16x_read_fifo_cb);
+			rtio_read_regs_async(lsm6dsv16x->rtio_ctx, lsm6dsv16x->iodev,
+					     lsm6dsv16x->bus_type, &fifo_regs,
+					     lsm6dsv16x->streaming_sqe, dev,
+					     lsm6dsv16x_read_fifo_cb);
+
 #if LSM6DSVXXX_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
 		}
 #endif
@@ -736,6 +738,19 @@ void lsm6dsv16x_stream_irq_handler(const struct device *dev)
 	/* handle drdy trigger */
 	if (lsm6dsv16x->trig_cfg.int_drdy) {
 		lsm6dsv16x->status = 0;
+
+		uint8_t reg_addr = lsm6dsv16x_bus_reg(lsm6dsv16x->bus_type, LSM6DSV16X_STATUS_REG);
+		struct rtio_regs fifo_regs;
+		struct rtio_regs_list regs_list[] = {
+			{
+				reg_addr,
+				&lsm6dsv16x->status,
+				1,
+			},
+		};
+
+		fifo_regs.rtio_regs_list = regs_list;
+		fifo_regs.rtio_regs_num = ARRAY_SIZE(regs_list);
 
 		/*
 		 * Prepare rtio enabled bus to read LSM6DSV16X_STATUS_REG register
@@ -748,7 +763,8 @@ void lsm6dsv16x_stream_irq_handler(const struct device *dev)
 		 *
 		 *   lsm6dsv16x_flag_data_ready_get(&dev_ctx, &drdy);
 		 */
-		lsm6dsv16x_rtio_rw_transaction(dev, LSM6DSV16X_STATUS_REG,
-					       &lsm6dsv16x->status, 1, lsm6dsv16x_read_status_cb);
+		rtio_read_regs_async(lsm6dsv16x->rtio_ctx, lsm6dsv16x->iodev, lsm6dsv16x->bus_type,
+				     &fifo_regs, lsm6dsv16x->streaming_sqe, dev,
+				     lsm6dsv16x_read_status_cb);
 	}
 }

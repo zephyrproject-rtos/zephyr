@@ -20,7 +20,7 @@
 #include <zephyr/kernel_structs.h>
 #include <zephyr/arch/common/ffs.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/arch/x86/ia32/exception.h>
+#include <zephyr/arch/exception.h>
 #include <zephyr/arch/x86/ia32/gdbstub.h>
 #include <zephyr/arch/x86/ia32/thread.h>
 #include <zephyr/arch/x86/ia32/syscall.h>

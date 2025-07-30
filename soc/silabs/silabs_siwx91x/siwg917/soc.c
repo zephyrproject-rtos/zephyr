@@ -10,9 +10,7 @@
 #include <zephyr/sw_isr_table.h>
 
 #include "em_device.h"
-#ifdef CONFIG_WISECONNECT_NETWORK_STACK
 #include "sli_siwx917_soc.h"
-#endif
 #include "sl_si91x_power_manager.h"
 
 void soc_early_init_hook(void)
@@ -23,15 +21,16 @@ void soc_early_init_hook(void)
 		.m4ss_ram_size_kb = (DT_REG_SIZE(DT_NODELABEL(sram0)) / 1024),
 		.ulpss_ram_size_kb = 4,
 	};
+
 	SystemInit();
-#if IS_ENABLED(CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)
-	sli_si91x_platform_init();
-	sl_si91x_power_manager_init();
-	sl_si91x_power_manager_remove_peripheral_requirement(&peripheral_config);
-	sl_si91x_power_manager_configure_ram_retention(&ram_configuration);
-	sl_si91x_power_manager_add_ps_requirement(SL_SI91X_POWER_MANAGER_PS4);
-	sl_si91x_power_manager_set_clock_scaling(SL_SI91X_POWER_MANAGER_PERFORMANCE);
-#endif
+	if (IS_ENABLED(CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)) {
+		sli_si91x_platform_init();
+		sl_si91x_power_manager_init();
+		sl_si91x_power_manager_remove_peripheral_requirement(&peripheral_config);
+		sl_si91x_power_manager_configure_ram_retention(&ram_configuration);
+		sl_si91x_power_manager_add_ps_requirement(SL_SI91X_POWER_MANAGER_PS4);
+		sl_si91x_power_manager_set_clock_scaling(SL_SI91X_POWER_MANAGER_PERFORMANCE);
+	}
 }
 
 /* SiWx917's bootloader requires IRQn 32 to hold payload's entry point address. */

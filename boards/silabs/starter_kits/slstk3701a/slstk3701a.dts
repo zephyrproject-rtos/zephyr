@@ -6,7 +6,7 @@
  */
 
 /dts-v1/;
-#include <silabs/efm32gg11b820f2048gl192.dtsi>
+#include <silabs/gg11/efm32gg11b820f2048gl192.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include "slstk3701a-pinctrl.dtsi"
 

@@ -77,3 +77,11 @@
 		};
 	};
 };
+
+&pwr {
+	wkup-pin@8 {
+		wkup-gpios = <&gpiof 2 STM32_PWR_WKUP_EVT_SRC_0>,
+			     <&gpioa 7 STM32_PWR_WKUP_EVT_SRC_1>,
+			     <&gpiob 10 STM32_PWR_WKUP_EVT_SRC_2>;
+	};
+};

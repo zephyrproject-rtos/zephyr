@@ -10,9 +10,13 @@
 #include <zephyr/drivers/clock_control/adi_max32_clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
+#include <zephyr/logging/log.h>
 
 #include <rtc.h>
 #include <wrap_max32_lp.h>
+#include <wrap_max32_rtc.h>
+
+LOG_MODULE_REGISTER(max32_counter_rtc, CONFIG_COUNTER_LOG_LEVEL);
 
 /* Resoultion is 1sec for time of day alarm*/
 #define MAX32_RTC_COUNTER_FREQ 1
@@ -34,6 +38,7 @@ struct max32_rtc_config {
 	struct counter_config_info info;
 	mxc_rtc_regs_t *regs;
 	void (*irq_func)(void);
+	struct max32_perclk perclk;
 };
 
 static int api_start(const struct device *dev)
@@ -207,10 +212,14 @@ static void rtc_max32_isr(const struct device *dev)
 
 static int rtc_max32_init(const struct device *dev)
 {
+	int ret;
 	const struct max32_rtc_config *cfg = dev->config;
 
-	while (MXC_RTC_Init(0, 0) == E_BUSY) {
-		;
+	while ((ret = Wrap_MXC_RTC_Init(0, 0, cfg->perclk.clk_src)) != E_SUCCESS) {
+		if (ret < 0) {
+			LOG_ERR("RTC does not support this clock source.");
+			return -ENOTSUP;
+		}
 	}
 
 	api_stop(dev);
@@ -252,6 +261,8 @@ static DEVICE_API(counter, counter_rtc_max32_driver_api) = {
 			},                                                                         \
 		.regs = (mxc_rtc_regs_t *)DT_INST_REG_ADDR(_num),                                  \
 		.irq_func = max32_rtc_irq_init_##_num,                                             \
+		.perclk.clk_src =                                                                  \
+			DT_INST_PROP_OR(_num, clock_source, ADI_MAX32_PRPH_CLK_SRC_ERTCO),         \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(_num, &rtc_max32_init, NULL, &rtc_max32_data_##_num,                 \

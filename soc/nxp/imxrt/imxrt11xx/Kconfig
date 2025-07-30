@@ -69,4 +69,44 @@ config ADJUST_LDO
 config INIT_VIDEO_PLL
 	default y
 
+config SYS_PLL2_PFD0_DIV
+	int "System PLL2 PFD0 divider"
+	default 27
+	range 13 35
+
+config SYS_PLL2_PFD1_DIV
+	int "System PLL2 PFD1 divider"
+	default 16
+	range 13 35
+
+config SYS_PLL2_PFD2_DIV
+	int "System PLL2 PFD2 divider"
+	default 24
+	range 13 35
+
+config SYS_PLL2_PFD3_DIV
+	int "System PLL2 PFD3 divider"
+	default 32
+	range 13 35
+
+config SYS_PLL3_PFD0_DIV
+	int "System PLL3 PFD0 divider"
+	default 13
+	range 13 35
+
+config SYS_PLL3_PFD1_DIV
+	int "System PLL3 PFD1 divider"
+	default 17
+	range 13 35
+
+config SYS_PLL3_PFD2_DIV
+	int "System PLL3 PFD2 divider"
+	default 32
+	range 13 35
+
+config SYS_PLL3_PFD3_DIV
+	int "System PLL3 PFD3 divider"
+	default 22
+	range 13 35
+
 endif # SOC_SERIES_IMXRT11XX

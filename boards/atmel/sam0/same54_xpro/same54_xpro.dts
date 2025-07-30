@@ -122,6 +122,25 @@
 	status = "okay";
 };
 
+&dac0 {
+	status = "okay";
+	reference = "intref";
+
+	channel_0 {
+		oversampling = "OSR_1";
+		refresh-period = <1>;
+		current-control = "CC1M";
+	};
+	channel_1 {
+		oversampling = "OSR_1";
+		refresh-period = <1>;
+		current-control = "CC1M";
+	};
+
+	pinctrl-0 = <&dac0_default>;
+	pinctrl-names = "default";
+};
+
 zephyr_udc0: &usb0 {
 	status = "okay";
 

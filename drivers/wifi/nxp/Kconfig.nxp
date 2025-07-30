@@ -598,9 +598,8 @@ config NXP_WIFI_11V
 
 config NXP_WIFI_11R
 	bool "802.11R Support"
-	default n if (NXP_RW610 && !WIFI_NM_WPA_SUPPLICANT)
 	default y
-	depends on NXP_88W8987 || NXP_IW416 || NXP_RW610 || NXP_WIFI_CUSTOM
+	depends on WIFI_NM_WPA_SUPPLICANT
 	help
 	  This option enables the use of 802.11r support.
 
@@ -804,7 +803,7 @@ config NXP_WIFI_TX_PER_TRACK
 config NXP_WIFI_CSI
 	bool "CSI support"
 	default y
-	depends on NXP_RW610 || NXP_88W8987 || NXP_WIFI_CUSTOM
+	depends on NXP_RW610 || NXP_88W8987 || NXP_IW610 || NXP_WIFI_CUSTOM
 	help
 	  This option enable/disable channel state information collection.
 
@@ -858,70 +857,84 @@ config NXP_WIFI_MMSF
 
 endif # NXP_RW610 || NXP_IW610
 
-if NXP_RW610
+config NXP_OVERRIDE_CALIBRATION_DATA
+	bool "override default calibriation data"
+	help
+	  This option is used to override default calibration data.
+
+if NXP_IW61X
+
+config WLAN_CALDATA_2ANT_HI_ISO
+	bool "Select 2ANT HIGH ISOLATION"
+	help
+	  This option is used to select 2ANT High Isolation Caldata.
+
+config WLAN_CALDATA_2ANT_LO_ISO
+	bool "Select 2ANT LOW ISOLATION"
+	help
+	  This option is used to select 2ANT Low Isolation Caldata.
+
+endif # NXP_IW61X
 
 config NXP_WIFI_FW_VDLLV2
 	bool "Firmware virtual dynamic link library version 2"
 	default y
+	depends on NXP_RW610
 	help
 	  This option is to load some firmware features in run-time.
 
 config NXP_WIFI_AUTO_NULL_TX
 	bool "Auto send null frame"
-	default y
+	default y if NXP_RW610 || NXP_IW610
 	help
 	  This option is to support sending null frame in period for CSI.
 
-config NXP_WIFI_CAU_TEMPERATURE
-	bool "Cau temperature"
-	default y
-	help
-	  This option is used to enable/disable Cau temperature.
-
 config NXP_WIFI_TSP
 	bool "Thermal Safeguard Protection"
-	default y
+	default y if NXP_RW610 || NXP_IW610
 	help
 	  This option is used to set and get Thermal Safeguard Protection configuration.
 
 config NXP_WIFI_IPS
 	bool "IPS"
-	default y
+	default y if NXP_RW610 || NXP_IW610
 	help
 	  This option enable/disable config for IPS in the Wi-Fi driver.
 
 config NXP_WIFI_RX_ABORT_CFG
 	bool "RX abort support"
-	default y
+	default y if NXP_RW610 || NXP_IW610
 	help
 	  This option enables rx abort config with static RSSI threshold
 	  in the Wi-Fi driver.
 
 config NXP_WIFI_RX_ABORT_CFG_EXT
 	bool "RX abort extension support"
-	default y
+	default y if NXP_RW610 || NXP_IW610
 	help
 	  This option enables rx abort extension config with dynamic
 	  RSSI threshold in the Wi-Fi driver.
 
 config NXP_WIFI_CCK_DESENSE_CFG
 	bool "CCK desense mode support"
-	default y
+	default y if NXP_RW610 || NXP_IW610
 	help
 	  This option enables cck desense mode in the Wi-Fi driver.
 
 config NXP_WIFI_COEX_DUTY_CYCLE
 	bool "Set duty cycle"
-	default y
+	default y if NXP_RW610 || NXP_IW610
 	help
 	  This option sets duty cycle in the Wi-Fi driver.
 
 config NXP_WIFI_IMD3_CFG
 	bool "Set imd validation parameters"
-	default y
+	default y if NXP_RW610 || NXP_IW610
 	help
 	  This option is used to set IM3 configuration for Wi-Fi,
 	  BLE coex mode and antenna isolation debug.
+
+if NXP_RW610
 
 config NXP_WIFI_ANT_DETECT
 	bool "Antenna automatic detection"
@@ -945,11 +958,6 @@ config NXP_WIFI_WLAN_CALDATA_3ANT_DIVERSITY
 	help
 	  This option is used to enable three antenna diversity.
 
-config NXP_OVERRIDE_CALIBRATION_DATA
-	bool "override default calibriation data"
-	help
-	  This option is used to override default calibration data.
-
 endif # NXP_RW610
 
 config NXP_WIFI_11AX_TWT
@@ -961,7 +969,7 @@ config NXP_WIFI_11AX_TWT
 
 config NXP_WIFI_PKT_FWD
 	bool "Wi-Fi packet forward"
-	default y if NXP_RW610
+	default y if NXP_RW610 || NXP_IW610
 	depends on NXP_WIFI_SOFTAP_SUPPORT
 	help
 	  This option enables Wi-Fi packet forward on SoftAP.
@@ -974,31 +982,29 @@ config NXP_WIFI_DTIM_PERIOD
 
 config NXP_WIFI_MEM_ACCESS
 	bool
-	default y if NXP_RW610
 	help
 	  This option enables memory access cmd in the Wi-Fi driver.
 
 config NXP_WIFI_REG_ACCESS
 	bool
-	default y if NXP_RW610
 	help
 	  This option enables register access cmd in the Wi-Fi driver.
 
 config NXP_WIFI_SUBSCRIBE_EVENT_SUPPORT
 	bool "Subscribe event from firmware"
-	default y if NXP_RW610
+	default y if NXP_RW610 || NXP_IW610
 	help
 	  This option prints the get subscribe event from firmware for user test.
 
 config NXP_WIFI_TX_RX_HISTOGRAM
 	bool "TX/RX statistics"
-	default y if NXP_RW610
+	default y if NXP_RW610 || NXP_IW610
 	help
 	  This option enables TX/RX statistics in the Wi-Fi driver.
 
 config NXP_WIFI_RF_TEST_MODE
 	bool "WLAN RF Test Mode"
-	default y if NXP_RW610
+	default y if NXP_RW610 || NXP_IW610
 	help
 	  This option enables WLAN test mode commands.
 
@@ -1058,7 +1064,6 @@ config NXP_WIFI_FIPS
 
 config NXP_WIFI_OWE
 	bool "Opportunistic Wireless Encryption"
-	default y if NXP_RW610
 	help
 	  This option enables Wi-Fi Opportunistic Wireless Encryption support
 	  in the Wi-Fi driver.

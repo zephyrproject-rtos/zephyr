@@ -157,6 +157,14 @@
 
 	};
 
+	flexio1_io5_default: flexio1_io5_default {
+		group0 {
+			pinmux =
+				<&iomuxc_gpio_io31_flexio_1_3_mux1_flexio5_flexio_1_3_mux1_flexio5>;
+			slew-rate = "slightly_fast";
+			drive-strength = "x4";
+		};
+	};
 
 	lpuart1_default: lpuart1_default {
 		group0 {

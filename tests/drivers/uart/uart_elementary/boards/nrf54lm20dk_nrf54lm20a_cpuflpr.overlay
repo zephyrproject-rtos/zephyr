@@ -1,1 +1,3 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
 #include "nrf54lm20dk_nrf54lm20_common.dtsi"

@@ -27,7 +27,6 @@ config FULL_LIBC_SUPPORTED
 
 config MINIMAL_LIBC_SUPPORTED
 	bool
-	depends on !NATIVE_APPLICATION
 	default y
 	help
 	  Selected when the target has support for the minimal C library
@@ -36,7 +35,6 @@ config NEWLIB_LIBC_SUPPORTED
 	bool
 	default y
 	depends on "$(TOOLCHAIN_HAS_NEWLIB)" = "y"
-	depends on !NATIVE_APPLICATION
 	select FULL_LIBC_SUPPORTED
 	help
 	  Selected when the target has support for the newlib C library
@@ -44,7 +42,6 @@ config NEWLIB_LIBC_SUPPORTED
 # Picolibc with C++ support in Zephyr SDK is handled by Zephyr SDK's own Kconfig.
 config PICOLIBC_SUPPORTED
 	bool
-	depends on !NATIVE_APPLICATION
 	depends on ("$(TOOLCHAIN_HAS_PICOLIBC)" = "y") || (ZEPHYR_PICOLIBC_MODULE && !REQUIRES_FULL_LIBCPP)
 	default y
 	select FULL_LIBC_SUPPORTED
@@ -68,7 +65,7 @@ menu "C Library"
 
 choice LIBC_IMPLEMENTATION
 	prompt "C Library Implementation"
-	default EXTERNAL_LIBC if NATIVE_BUILD && !(NATIVE_LIBRARY && NATIVE_LIBC_INCOMPATIBLE)
+	default EXTERNAL_LIBC if NATIVE_BUILD && !NATIVE_LIBC_INCOMPATIBLE
 	default PICOLIBC
 	default NEWLIB_LIBC if REQUIRES_FULL_LIBC
 	default MINIMAL_LIBC
@@ -125,7 +122,6 @@ config NEWLIB_LIBC
 
 config ARCMWDT_LIBC
 	bool "ARC MWDT C library"
-	depends on !NATIVE_APPLICATION
 	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "arcmwdt"
 	select STATIC_INIT_GNU
 	help
@@ -160,7 +156,7 @@ rsource "picolibc/Kconfig"
 config STDOUT_CONSOLE
 	bool "Send stdout to console"
 	depends on CONSOLE_HAS_DRIVER
-	depends on !(NATIVE_APPLICATION || (NATIVE_LIBRARY && EXTERNAL_LIBC))
+	depends on !(NATIVE_LIBRARY && EXTERNAL_LIBC)
 	default y
 	help
 	  This option directs standard output (e.g. printf) to the console

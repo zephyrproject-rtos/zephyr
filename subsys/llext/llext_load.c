@@ -747,14 +747,6 @@ int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 		goto out;
 	}
 
-#ifdef CONFIG_USERSPACE
-	ret = k_mem_domain_init(&ext->mem_domain, 0, NULL);
-	if (ret != 0) {
-		LOG_ERR("Failed to initialize extenion memory domain %d", ret);
-		goto out;
-	}
-#endif
-
 	LOG_DBG("Finding ELF tables...");
 	ret = llext_find_tables(ldr, ext);
 	if (ret != 0) {

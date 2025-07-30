@@ -53,7 +53,7 @@ class Json_report:
                 for testsuite in element:
                     for testcase in testsuite['testcases']:
                         if testcase['status'] == 'None':
-                            testcase_name = testcase['identifier']
+                            testcase_name = testsuite['name']
                             component_name = testcase_name[:testcase_name.find('.')]
                             component = {
                                 "name": component_name,

@@ -16,6 +16,12 @@
 #define TEST_DUMMY_ISR_VAL 0xdeadbeef
 #define TEST_INVALID_IRQ 0xcafebabe
 
+#if defined(CONFIG_RISCV_HAS_CLIC)
+#define IRQ_FLAGS 1 /* rising edge */
+#else
+#define IRQ_FLAGS 0
+#endif
+
 #define ISR_DEFINE(name)				\
 static inline void name(const void *data)		\
 {							\

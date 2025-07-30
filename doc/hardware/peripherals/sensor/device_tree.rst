@@ -15,7 +15,7 @@ then be used in a boards devicetree to configure a sensor to its initial state.
        /* SPI bus options here, not shown */
 
        accel_gyro0: icm42688p@0 {
-           compatible = "invensense,icm42688";
+           compatible = "invensense,icm42688", "invensense,icm4268x";
            reg = <0>;
            int-gpios = <&pioc 6 GPIO_ACTIVE_HIGH>; /* SoC specific pin to select for interrupt line */
            spi-max-frequency = <DT_FREQ_M(24)>; /* Maximum SPI bus frequency */

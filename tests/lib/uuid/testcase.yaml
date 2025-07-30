@@ -12,6 +12,8 @@ tests:
       - CONFIG_MBEDTLS_SHA1=y
       - CONFIG_UUID_BASE64=y
       - CONFIG_BASE64=y
+      # UUID utilities need some heap, but MINIMAL_LIBC has none by default.
+      - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=256
   libraries.uuid.v4:
     extra_configs:
       - CONFIG_UUID_V4=y

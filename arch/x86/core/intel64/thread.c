@@ -83,3 +83,11 @@ int arch_float_enable(struct k_thread *thread, unsigned int options)
 
 	return 0;
 }
+
+int arch_coprocessors_disable(struct k_thread *thread)
+{
+	/* x86-64 always has FP/SSE enabled so cannot be disabled */
+	ARG_UNUSED(thread);
+
+	return -ENOTSUP;
+}

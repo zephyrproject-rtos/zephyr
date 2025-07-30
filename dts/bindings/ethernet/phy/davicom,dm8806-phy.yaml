@@ -5,7 +5,7 @@ description: Davicom DM8806 Ethernet MAC and PHY with RMII interface
 
 compatible: "davicom,dm8806-phy"
 
-include: [ethernet-phy.yaml]
+include: [ethernet-phy-common.yaml]
 
 on-bus: mdio
 

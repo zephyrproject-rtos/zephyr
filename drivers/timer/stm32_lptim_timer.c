@@ -453,25 +453,21 @@ static int sys_clock_driver_init(void)
 	}
 #endif
 
-#if DT_INST_NODE_HAS_PROP(0, st_timeout)
-	/*
-	 * Check if prescaler corresponding to the DT_INST_PROP(0, st_timeout)
-	 * is matching the lptim_clock_presc calculated one from the lptim_clock_freq
-	 * max lptim period is 0xFFFF/(lptim_clock_freq/lptim_clock_presc)
-	 */
-	if (DT_INST_PROP(0, st_timeout) >
-		(lptim_clock_presc / lptim_clock_freq) * 0xFFFF) {
+#if DT_PROP(DT_NODELABEL(stm32_lp_tick_source), st_timeout)
+	uint32_t timeout = DT_PROP(DT_NODELABEL(stm32_lp_tick_source), st_timeout);
+
+	if (timeout > (lptim_clock_presc * 0xFFFF) / lptim_clock_freq) {
+		__ASSERT(0,
+			"st,timeout can't be higher than range defined by LPTIM presc and freq");
 		return -EIO;
 	}
 
+
 	/*
-	 * LPTIM is counting DT_INST_PROP(0, st_timeout),
-	 * seconds at lptim_clock_freq divided lptim_clock_presc) Hz",
-	 * lptim_time_base is the autoreload counter
+	 * Define the lptim_time_base that should be set to expire at "timeout" seconds
+	 * running counter at (lptim_clock_freq divided by lptim_clock_presc) Hz
 	 */
-	lptim_time_base = 2 * (lptim_clock_freq *
-		(uint32_t)DT_INST_PROP(0, st_timeout))
-		/ lptim_clock_presc;
+	lptim_time_base = (lptim_clock_freq * timeout) / lptim_clock_presc;
 #else
 	/* Set LPTIM time base based on clock source freq */
 	if (lptim_clock_freq == KHZ(32)) {

@@ -198,7 +198,7 @@ test_spi_bme680: bme680@19 {
 };
 
 test_spi_icm426888: icm42688@1a {
-	compatible = "invensense,icm42688";
+	compatible = "invensense,icm42688", "invensense,icm4268x";
 	reg = <0x1a>;
 	spi-max-frequency = <24000000>;
 	int-gpios = <&test_gpio 0 0>;
@@ -458,4 +458,11 @@ test_spi_adxl366: adxl366@37 {
 	int1-gpios = <&test_gpio 0 0>;
 	odr = <4>;
 	fifo-mode = <0>;
+};
+
+test_spi_icm42686: icm42686@38 {
+	compatible = "invensense,icm42686", "invensense,icm4268x";
+	reg = <0x1a>;
+	spi-max-frequency = <24000000>;
+	int-gpios = <&test_gpio 0 0>;
 };

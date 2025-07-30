@@ -61,7 +61,7 @@ def twister(options: argparse.Namespace, default_options: argparse.Namespace):
             for i in range(1, 100):
                 new_out = options.outdir + f".{i}"
                 if not os.path.exists(new_out):
-                    print(f"Renaming output directory to {new_out}")
+                    print(f"Renaming previous output directory to {new_out}")
                     shutil.move(options.outdir, new_out)
                     break
             else:

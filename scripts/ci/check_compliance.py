@@ -291,37 +291,37 @@ class CheckPatch(ComplianceTest):
             cmd = [checkpatch]
 
         cmd.extend(['--mailback', '--no-tree', '-'])
-        diff = subprocess.Popen(('git', 'diff', '--no-ext-diff', COMMIT_RANGE),
+        with subprocess.Popen(('git', 'diff', '--no-ext-diff', COMMIT_RANGE),
                                 stdout=subprocess.PIPE,
-                                cwd=GIT_TOP)
-        try:
-            subprocess.run(cmd,
-                           check=True,
-                           stdin=diff.stdout,
-                           stdout=subprocess.PIPE,
-                           stderr=subprocess.STDOUT,
-                           shell=False, cwd=GIT_TOP)
+                                cwd=GIT_TOP) as diff:
+            try:
+                subprocess.run(cmd,
+                               check=True,
+                               stdin=diff.stdout,
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.STDOUT,
+                               shell=False, cwd=GIT_TOP)
 
-        except subprocess.CalledProcessError as ex:
-            output = ex.output.decode("utf-8")
-            regex = r'^\s*\S+:(\d+):\s*(ERROR|WARNING):(.+?):(.+)(?:\n|\r\n?)+' \
-                    r'^\s*#(\d+):\s*FILE:\s*(.+):(\d+):'
+            except subprocess.CalledProcessError as ex:
+                output = ex.output.decode("utf-8")
+                regex = r'^\s*\S+:(\d+):\s*(ERROR|WARNING):(.+?):(.+)(?:\n|\r\n?)+' \
+                        r'^\s*#(\d+):\s*FILE:\s*(.+):(\d+):'
 
-            matches = re.findall(regex, output, re.MULTILINE)
+                matches = re.findall(regex, output, re.MULTILINE)
 
-            # add a guard here for excessive number of errors, do not try and
-            # process each one of them and instead push this as one failure.
-            if len(matches) > 500:
-                self.failure(output)
-                return
+                # add a guard here for excessive number of errors, do not try and
+                # process each one of them and instead push this as one failure.
+                if len(matches) > 500:
+                    self.failure(output)
+                    return
 
-            for m in matches:
-                self.fmtd_failure(m[1].lower(), m[2], m[5], m[6], col=None,
-                        desc=m[3])
+                for m in matches:
+                    self.fmtd_failure(m[1].lower(), m[2], m[5], m[6], col=None,
+                            desc=m[3])
 
-            # If the regex has not matched add the whole output as a failure
-            if len(matches) == 0:
-                self.failure(output)
+                # If the regex has not matched add the whole output as a failure
+                if len(matches) == 0:
+                    self.failure(output)
 
 
 class BoardYmlCheck(ComplianceTest):
@@ -723,6 +723,61 @@ class KconfigCheck(ComplianceTest):
             # Clean up the temporary directory
             shutil.rmtree(kconfiglib_dir)
 
+    def module_kconfigs(self, regex):
+        manifest = Manifest.from_file()
+        kconfigs = ""
+
+        # Use hard coded paths for Zephyr for tests, samples and ext. module root
+        tmp_output = git("grep", "-I", "-h", "--perl-regexp", regex, "--", ":tests", ":samples",
+                         ":modules", cwd=ZEPHYR_BASE, ignore_non_zero=True)
+
+        if len(tmp_output) > 0:
+            kconfigs += tmp_output + "\n"
+
+        for project in manifest.get_projects([]):
+            if not manifest.is_active(project):
+                continue
+
+            if not project.is_cloned():
+                continue
+
+            module_path = PurePath(project.abspath)
+            module_yml = module_path.joinpath('zephyr/module.yml')
+
+            if not Path(module_yml).is_file():
+                module_yml = module_path.joinpath('zephyr/module.yaml')
+
+            if Path(module_yml).is_file():
+                dirs = []
+
+                with Path(module_yml).open('r', encoding='utf-8') as f:
+                    meta = yaml.load(f.read(), Loader=SafeLoader)
+
+                for folder_type in ['samples', 'tests']:
+                    if folder_type in meta:
+                        for path_ext in meta[folder_type]:
+                            path_full = module_path.joinpath(path_ext)
+
+                            if Path(path_full).is_dir():
+                                dirs.append(":" + path_ext)
+
+                # Add ext. module root, if one is defined
+                if 'build' in meta and 'settings' in meta['build'] and \
+                     'module_ext_root' in meta['build']['settings']:
+                    path_full = module_path.joinpath(meta['build']['settings']['module_ext_root'])
+
+                    if Path(path_full).is_dir():
+                        dirs.append(":" + meta['build']['settings']['module_ext_root'])
+
+                if len(dirs) > 0:
+                    tmp_output = git("grep", "-I", "-h", "--perl-regexp", regex, "--",
+                                     *dirs, cwd=module_path, ignore_non_zero=True)
+
+                    if len(tmp_output) > 0:
+                        kconfigs += tmp_output + "\n"
+
+        return kconfigs
+
     def get_logging_syms(self, kconf):
         # Returns a set() with the names of the Kconfig symbols generated with
         # logging template in samples/tests folders. The Kconfig symbols doesn't
@@ -743,9 +798,8 @@ class KconfigCheck(ComplianceTest):
         # Warning: Needs to work with both --perl-regexp and the 're' module.
         regex = r"^\s*(?:module\s*=\s*)([A-Z0-9_]+)\s*(?:#|$)"
 
-        # Grep samples/ and tests/ for symbol definitions
-        grep_stdout = git("grep", "-I", "-h", "--perl-regexp", regex, "--",
-                          ":samples", ":tests", cwd=ZEPHYR_BASE)
+        # Grep samples/ and tests/ for symbol definitions in all modules
+        grep_stdout = self.module_kconfigs(regex)
 
         names = re.findall(regex, grep_stdout, re.MULTILINE)
 
@@ -898,9 +952,8 @@ Found disallowed Kconfig symbol in SoC Kconfig files: {sym_name:35}
         # (?:...) is a non-capturing group.
         regex = r"^\s*(?:menu)?config\s*([A-Z0-9_]+)\s*(?:#|$)"
 
-        # Grep samples/ and tests/ for symbol definitions
-        grep_stdout = git("grep", "-I", "-h", "--perl-regexp", regex, "--",
-                          ":samples", ":tests", cwd=ZEPHYR_BASE)
+        # Grep samples/ and tests/ for symbol definitions in all modules
+        grep_stdout = self.module_kconfigs(regex)
 
         # Generate combined list of configs and choices from the main Kconfig tree.
         kconf_syms = kconf.unique_defined_syms + kconf.unique_choices
@@ -1732,6 +1785,23 @@ class ModulesMaintainers(ComplianceTest):
                 self.failure(f"Missing {maintainers_file} entry for: \"{area}\"")
 
 
+class ZephyrModuleFile(ComplianceTest):
+    """
+    Check that no zephyr/module.yml file has been added to the Zephyr repository
+    """
+    name = "ZephyrModuleFile"
+    doc = "Check that no zephyr/module.yml file has been added to the Zephyr repository."
+
+    def run(self):
+        module_files = [ZEPHYR_BASE / 'zephyr' / 'module.yml',
+                        ZEPHYR_BASE / 'zephyr' / 'module.yaml']
+
+        for file in module_files:
+            if os.path.exists(file):
+                self.failure("A zephyr module file has been added to the Zephyr repository")
+                break
+
+
 class YAMLLint(ComplianceTest):
     """
     YAMLLint
@@ -1816,7 +1886,7 @@ class KeepSorted(ComplianceTest):
 
     MARKER = "zephyr-keep-sorted"
 
-    def block_check_sorted(self, block_data, regex):
+    def block_check_sorted(self, block_data, *, regex, strip, fold):
         def _test_indent(txt: str):
             return txt.startswith((" ", "\t"))
 
@@ -1831,6 +1901,9 @@ class KeepSorted(ComplianceTest):
                 # Ignore blank lines
                 continue
 
+            if strip is not None:
+                line = line.strip(strip)
+
             if regex:
                 # check for regex
                 if not re.match(regex, line):
@@ -1839,9 +1912,10 @@ class KeepSorted(ComplianceTest):
                 if _test_indent(line):
                     continue
 
-                # Fold back indented lines after the current one
-                for cont in takewhile(_test_indent, lines[idx + 1:]):
-                    line += cont.strip()
+                if fold:
+                    # Fold back indented lines after the current one
+                    for cont in takewhile(_test_indent, lines[idx + 1:]):
+                        line += cont.strip()
 
             if line < last:
                 return idx
@@ -1861,9 +1935,13 @@ class KeepSorted(ComplianceTest):
 
         start_marker = f"{self.MARKER}-start"
         stop_marker = f"{self.MARKER}-stop"
-        regex_marker = r"re\((.+)\)"
+        regex_marker = r"re\(([^)]+)\)"
+        strip_marker = r"strip\(([^)]+)\)"
+        nofold_marker = "nofold"
         start_line = 0
         regex = None
+        strip = None
+        fold = True
 
         for line_num, line in enumerate(fp.readlines(), start=1):
             if start_marker in line:
@@ -1878,6 +1956,11 @@ class KeepSorted(ComplianceTest):
                 # Test for a regex block
                 match = re.search(regex_marker, line)
                 regex = match.group(1) if match else None
+
+                match = re.search(strip_marker, line)
+                strip = match.group(1) if match else None
+
+                fold = nofold_marker not in line
             elif stop_marker in line:
                 if not in_block:
                     desc = f"{stop_marker} without {start_marker}"
@@ -1885,7 +1968,7 @@ class KeepSorted(ComplianceTest):
                                      desc=desc)
                 in_block = False
 
-                idx = self.block_check_sorted(block_data, regex)
+                idx = self.block_check_sorted(block_data, regex=regex, strip=strip, fold=fold)
                 if idx >= 0:
                     desc = f"sorted block has out-of-order line at {start_line + idx}"
                     self.fmtd_failure("error", "KeepSorted", file, line_num,
@@ -2182,6 +2265,8 @@ def _main(args):
             test.run()
         except EndTest:
             pass
+        except BaseException:
+            test.failure(f"An exception occurred in {test.name}:\n{traceback.format_exc()}")
 
         # Annotate if required
         if args.annotate:
@@ -2234,14 +2319,6 @@ def _main(args):
 
 def main(argv=None):
     args = parse_args(argv)
-
-    try:
-        # pylint: disable=unused-import
-        from lxml import etree
-    except ImportError:
-        print("\nERROR: Python module lxml not installed, unable to proceed")
-        print("See https://github.com/weiwei/junitparser/issues/99")
-        return 1
 
     try:
         n_fails = _main(args)

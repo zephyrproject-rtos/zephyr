@@ -9,7 +9,7 @@ This test file contains foundational testcases for Twister tool
 
 import os
 import sys
-import mock
+from unittest import mock
 import pytest
 
 from pathlib import Path

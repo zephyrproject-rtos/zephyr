@@ -253,6 +253,12 @@ Artificially long but functional example:
         timeout would be multiplication of test timeout value, board-level timeout multiplier
         and global timeout multiplier (this parameter)""")
 
+    parser.add_argument(
+        "--test-pattern", action="append",
+        help="""Run only the tests matching the specified pattern. The pattern
+        can include regular expressions.
+        """)
+
     test_xor_subtest.add_argument(
         "-s", "--test", "--scenario", action="append", type = norm_path,
         help="""Run only the specified test suite scenario. These are named by
@@ -618,8 +624,8 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
              "and 'sleep.usleep' test Case (where 'sleep' is its Ztest suite name "
              "and 'usleep' is Ztest test name.")
 
-    # Include paths in names by default.
-    parser.set_defaults(detailed_test_id=True)
+    # Do not include paths in names by default.
+    parser.set_defaults(detailed_test_id=False)
 
     parser.add_argument(
         "--detailed-skipped-report", action="store_true",
@@ -672,6 +678,14 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
              "specified. If this option is not used, then platforms marked "
              "as default in the platform metadata file will be chosen "
              "to build and test. ")
+    parser.add_argument(
+        "--platform-pattern", action="append", default=[],
+        help="""Platform regular expression filter for testing. This option may be used multiple
+        times. Test suites will only be built/run on the platforms
+        matching the specified patterns. If this option is not used, then platforms marked
+        as default in the platform metadata file will be chosen
+        to build and test.
+        """)
 
     parser.add_argument(
         "--platform-reports", action="store_true",

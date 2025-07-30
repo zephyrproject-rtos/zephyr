@@ -292,6 +292,7 @@ rtimer: timer@40007400 {
 	interrupts = <111 0>;
 	clock-frequency = <32768>;
 	girqs = <23 10>;
+	busy-wait-timer = <&timer5>;
 };
 timer0: timer@40000c00 {
 	compatible = "microchip,xec-timer";

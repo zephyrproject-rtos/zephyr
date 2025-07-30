@@ -131,10 +131,6 @@
 	pinctrl-names = "default";
 };
 
-&timer5 {
-	status = "okay";
-};
-
 &ps2_0 {
 	status = "okay";
 	pinctrl-0 = <&ps2_clk0b_gpio007 &ps2_dat0b_gpio010>;

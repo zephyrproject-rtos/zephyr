@@ -27,6 +27,7 @@
 		led2 = &led2;
 		sw0 = &button0;
 		sw1 = &button1;
+		pwm-led0 = &pwm_led0;
 	};
 
 	sram0: memory@SSRAM_BASE_NAME {
@@ -78,6 +79,15 @@
 			status = "okay";
 		};
 	};
+
+	pwmleds: pwmleds {
+		compatible = "pwm-leds";
+		status = "disabled";
+		pwm_led0: pwm_led_0 {
+			pwms = <&pwm2 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "PWM_LED";
+		};
+	};
 };
 
 &xo32m_xtal {
@@ -95,8 +105,18 @@
 	status = "disabled";
 };
 
-&counter0 {
-	status = "disabled";
+&timer0 {
+	counter0: counter {
+		status = "disabled";
+	};
+};
+
+&timer2 {
+	pwm2: pwm {
+		pinctrl-0 = <&pwm2_default>;
+		pinctrl-names = "default";
+		status = "disabled";
+	};
 };
 
 &rtc0 {

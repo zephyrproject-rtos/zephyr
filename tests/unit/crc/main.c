@@ -90,6 +90,15 @@ ZTEST(crc, test_crc24_pgp)
 	zassert_equal(crc24_pgp_update(0x00BA353A, test2 + 5, 4), 0x0021CF02);
 }
 
+ZTEST(crc, test_crc24q_rtcm3)
+{
+	uint8_t test1[] = {0xD3, 0x00, 0x04, 0x4C, 0xE0, 0x00, 0x80};
+	uint8_t test2[] = {0xD3, 0x00, 0x04, 0x4C, 0xE0, 0x00, 0x80, 0xED, 0xED, 0xD6};
+
+	zassert_equal(crc24q_rtcm3(test1, sizeof(test1)), 0xEDEDD6);
+	zassert_equal(crc24q_rtcm3(test2, sizeof(test2)), 0x000000);
+}
+
 ZTEST(crc, test_crc16)
 {
 	uint8_t test[] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };

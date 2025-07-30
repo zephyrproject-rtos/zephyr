@@ -18,6 +18,7 @@ supported:
   - gpio
   - i2c
   - uart
+  - sdhc
   - spi
   - adc
   - usb_device

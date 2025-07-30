@@ -459,51 +459,12 @@ static void eth_nxp_enet_rx_thread(struct k_work *work)
 	ENET_EnableInterrupts(data->base, kENET_RxFrameInterrupt);
 }
 
-static int nxp_enet_phy_configure(const struct device *phy, uint8_t phy_mode)
-{
-	enum phy_link_speed speeds = LINK_HALF_10BASE | LINK_FULL_10BASE |
-				     LINK_HALF_100BASE | LINK_FULL_100BASE;
-	int ret;
-	struct phy_link_state state;
-
-	if (COND_CODE_1(IS_ENABLED(CONFIG_ETH_NXP_ENET_1G),
-	   (phy_mode == NXP_ENET_RGMII_MODE), (0))) {
-		speeds |= (LINK_HALF_1000BASE | LINK_FULL_1000BASE);
-	}
-
-	/* Configure the PHY */
-	ret = phy_configure_link(phy, speeds, 0);
-	if (ret == -EALREADY) {
-		return 0;
-	} else if (ret == -ENOTSUP || ret == -ENOSYS) {
-		phy_get_link_state(phy, &state);
-
-		if (state.is_up) {
-			LOG_WRN("phy_configure_link returned %d, but link is up. "
-				"Speed: %s, %s-duplex",
-				ret,
-				PHY_LINK_IS_SPEED_1000M(state.speed) ? "1 Gbits" :
-				PHY_LINK_IS_SPEED_100M(state.speed) ? "100 Mbits" : "10 Mbits",
-				PHY_LINK_IS_FULL_DUPLEX(state.speed) ? "full" : "half");
-		} else {
-			LOG_ERR("phy_configure_link returned %d and link is down.", ret);
-			return -ENETDOWN;
-		}
-	} else if (ret) {
-		LOG_ERR("phy_configure_link failed with error: %d", ret);
-		return ret;
-	}
-
-	return 0;
-}
-
 static void nxp_enet_phy_cb(const struct device *phy,
 				struct phy_link_state *state,
 				void *eth_dev)
 {
 	const struct device *dev = eth_dev;
 	struct nxp_enet_mac_data *data = dev->data;
-	const struct nxp_enet_mac_config *config = dev->config;
 	enet_mii_speed_t speed;
 	enet_mii_duplex_t duplex;
 
@@ -527,16 +488,13 @@ static void nxp_enet_phy_cb(const struct device *phy,
 		}
 
 		ENET_SetMII(data->base, speed, duplex);
+
+		net_eth_carrier_on(data->iface);
+	} else {
+		net_eth_carrier_off(data->iface);
 	}
 
 	LOG_INF("Link is %s", state->is_up ? "up" : "down");
-
-	if (!state->is_up) {
-		net_eth_carrier_off(data->iface);
-		nxp_enet_phy_configure(phy, config->phy_mode);
-	} else {
-		net_eth_carrier_on(data->iface);
-	}
 }
 
 static void eth_nxp_enet_iface_init(struct net_if *iface)
@@ -812,11 +770,6 @@ static int eth_nxp_enet_init(const struct device *dev)
 #endif
 
 	ENET_ActiveRead(data->base);
-
-	err = nxp_enet_phy_configure(config->phy_dev, config->phy_mode);
-	if (err) {
-		return err;
-	}
 
 	LOG_DBG("%s MAC %02x:%02x:%02x:%02x:%02x:%02x",
 		dev->name,

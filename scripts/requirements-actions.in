@@ -11,13 +11,10 @@ gitpython>=3.1.41
 ijson
 intelhex
 junit2html
-junitparser>=2
-lxml>=5.3.0
-mock
+junitparser>=4.0.1
 mypy
 natsort
 ply>=3.10
-progress
 psutil>=5.6.6
 pyelftools>=0.29
 pygithub
@@ -34,8 +31,8 @@ setuptools>=70.2.0
 spdx-tools
 sphinx-lint
 tabulate
-tomli>=1.1.0
 tox
+tqdm>=4.67.1
 unidiff
 vermin
 west>=0.14.0

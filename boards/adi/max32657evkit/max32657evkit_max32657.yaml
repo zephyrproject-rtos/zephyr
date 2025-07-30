@@ -14,6 +14,8 @@ supported:
   - dma
   - counter
   - pwm
+  - rtc_counter
   - spi
+  - i3c
 ram: 256
 flash: 960

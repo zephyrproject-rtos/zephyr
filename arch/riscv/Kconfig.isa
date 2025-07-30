@@ -89,12 +89,25 @@ config RISCV_ISA_EXT_Q
 
 config RISCV_ISA_EXT_C
 	bool
+	select RISCV_ISA_EXT_ZCA
+	select RISCV_ISA_EXT_ZCD if RISCV_ISA_EXT_D
+	select RISCV_ISA_EXT_ZCF if RISCV_ISA_EXT_F && (RISCV_ISA_RV32I || RISCV_ISA_RV32E)
 	help
 	  (C) - Standard Extension for Compressed Instructions
 
 	  RISC-V standard compressed instruction set extension, named "C",
 	  which reduces static and dynamic code size by adding short 16-bit
 	  instruction encodings for common operations.
+
+config RISCV_ISA_EXT_ZICNTR
+	bool
+	depends on RISCV_ISA_EXT_ZICSR
+	help
+	  (Zicntr) - Standard Extension for Base Counters and Timers
+
+	  The Zicntr standard extension comprises the three counters (CYCLE, TIME, and INSTRET),
+	  which have dedicated functions (cycle count, real-time clock and instructions retired,
+	  respectively).
 
 config RISCV_ISA_EXT_ZICSR
 	bool
@@ -126,6 +139,65 @@ config RISCV_ISA_EXT_ZALRSC
 	  (Zalrsc) - Load-Reserved/Store-Conditional subset of the A extension
 
 	  The Zalrsc extension enables support for LR.W/D and SC.W/D-style instructions.
+
+config RISCV_ISA_EXT_ZCA
+	bool
+	help
+	  (Zca) - Zba Extension for Compressed Instructions
+
+	  The Zca extension is a subset of the C extension that does not include
+	  the floating-point load and store instructions.
+
+config RISCV_ISA_EXT_ZCB
+	bool
+	depends on RISCV_ISA_EXT_ZCA
+	help
+	  (Zcb) - Zcb Extension for Simple Compressed Instructions
+
+	  The Zcb extension is a set of simple code-size saving instructions
+	  which are easy to implement on all CPUs.
+
+config RISCV_ISA_EXT_ZCD
+	bool
+	depends on RISCV_ISA_EXT_D
+	depends on RISCV_ISA_EXT_ZCA
+	help
+	  (Zcd) - Zcd Extension for Double-Precision FP Compressed Instructions
+
+	  The Zcd extension consists of compressed double-precision
+	  floating-point load and store instructions.
+
+config RISCV_ISA_EXT_ZCF
+	bool
+	depends on RISCV_ISA_RV32I || RISCV_ISA_RV32E
+	depends on RISCV_ISA_EXT_F
+	depends on RISCV_ISA_EXT_ZCA
+	help
+	  (Zcf) - Zcf Extension for Single-Precision FP Compressed Instructions
+
+	  The Zcf extension consists of compressed single-precision
+	  floating-point load and store instructions.
+
+config RISCV_ISA_EXT_ZCMP
+	bool
+	depends on RISCV_ISA_EXT_ZCA
+	depends on !RISCV_ISA_EXT_ZCD
+	help
+	  (Zcmp) - Zcmp Extension for Complex Compressed Instructions
+
+	  The Zcmp extension consists of complex operations intended for
+	  embedded CPUs.
+
+config RISCV_ISA_EXT_ZCMT
+	bool
+	depends on RISCV_ISA_EXT_ZICSR
+	depends on RISCV_ISA_EXT_ZCA
+	depends on !RISCV_ISA_EXT_ZCD
+	help
+	  (Zcmt) - Zcmt Extension for Compressed Table Jump Instructions
+
+	  The Zcmt extension consists of compressed table jump instructions for
+	  embedded CPUs.
 
 config RISCV_ISA_EXT_ZBA
 	bool

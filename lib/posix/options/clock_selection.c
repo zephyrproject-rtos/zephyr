@@ -26,7 +26,7 @@ int clock_nanosleep(clockid_t clock_id, int flags, const struct timespec *rqtp,
 		return -1;
 	}
 
-	ret = sys_clock_nanosleep((int)clock_id, flags, rqtp, rmtp);
+	ret = sys_clock_nanosleep(sys_clock_from_clockid((int)clock_id), flags, rqtp, rmtp);
 	if (ret < 0) {
 		errno = -ret;
 		return -1;

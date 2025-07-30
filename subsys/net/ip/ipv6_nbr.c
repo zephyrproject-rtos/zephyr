@@ -279,11 +279,17 @@ static struct net_nbr *nbr_lookup(struct net_nbr_table *table,
 
 static inline void nbr_clear_ns_pending(struct net_ipv6_nbr_data *data)
 {
+	struct net_pkt *pkt;
+
 	data->send_ns = 0;
 
-	if (data->pending) {
-		net_pkt_unref(data->pending);
-		data->pending = NULL;
+	while (!k_fifo_is_empty(&data->pending_queue)) {
+		pkt = k_fifo_get(&data->pending_queue, K_FOREVER);
+
+		NET_DBG("Releasing pending pkt %p (ref %ld)",
+			pkt, atomic_get(&pkt->atomic_ref) - 1);
+
+		net_pkt_unref(pkt);
 	}
 }
 
@@ -334,13 +340,18 @@ bool net_ipv6_nbr_rm(struct net_if *iface, struct in6_addr *addr)
 	return true;
 }
 
+#if defined(CONFIG_NET_IPV6_NBR_CACHE)
+#define NS_REPLY_TIMEOUT CONFIG_NET_IPV6_NS_TIMEOUT
+#else
 #define NS_REPLY_TIMEOUT (1 * MSEC_PER_SEC)
+#endif /* CONFIG_NET_IPV6_NBR_CACHE */
 
 static void ipv6_ns_reply_timeout(struct k_work *work)
 {
 	int64_t current = k_uptime_get();
 	struct net_nbr *nbr = NULL;
 	struct net_ipv6_nbr_data *data;
+	struct net_pkt *pending;
 	int i;
 
 	ARG_UNUSED(work);
@@ -379,26 +390,68 @@ static void ipv6_ns_reply_timeout(struct k_work *work)
 		data->send_ns = 0;
 
 		/* We did not receive reply to a sent NS */
-		if (!data->pending) {
+		if (k_fifo_is_empty(&net_ipv6_nbr_data(nbr)->pending_queue)) {
 			/* Silently return, this is not an error as the work
 			 * cannot be cancelled in certain cases.
 			 */
 			continue;
 		}
 
-		NET_DBG("NS nbr %p pending %p timeout to %s", nbr,
-			data->pending,
-			net_sprint_ipv6_addr(&NET_IPV6_HDR(data->pending)->dst));
+		while (!k_fifo_is_empty(&net_ipv6_nbr_data(nbr)->pending_queue)) {
+			enum net_verdict verdict;
 
-		/* To unref when pending variable was set */
-		net_pkt_unref(data->pending);
+			/* Remove the first pending packet from the queue
+			 * and unref it. If there are more pending packets,
+			 * they will be processed in the next round.
+			 */
+			pending = k_fifo_get(&net_ipv6_nbr_data(nbr)->pending_queue,
+					     K_FOREVER);
 
-		/* To unref the original pkt allocation */
-		net_pkt_unref(data->pending);
+			NET_DBG("NS nbr %p pending %p timeout to %s", nbr, pending,
+				net_sprint_ipv6_addr(&NET_IPV6_HDR(pending)->dst));
 
-		data->pending = NULL;
+			NET_DBG("Dropping pending pkt %p", pending);
 
-		net_nbr_unref(nbr);
+			/* This gets rid of the reference that was
+			 * added when the packet was put into the pending queue.
+			 */
+			net_pkt_unref(pending);
+
+			/* To unref the original pkt allocation */
+			net_pkt_unref(pending);
+
+			/* If there are no more pending packets, we can
+			 * unref the neighbor.
+			 */
+			if (k_fifo_is_empty(&net_ipv6_nbr_data(nbr)->pending_queue)) {
+				net_nbr_unref(nbr);
+
+				NET_DBG("Dropping neighbor %p", nbr);
+				break;
+			}
+
+			/* If there are more pending packets, we need to
+			 * reschedule the work so that we can process them and
+			 * send a new NS.
+			 */
+			pending = k_fifo_get(&net_ipv6_nbr_data(nbr)->pending_queue,
+					     K_FOREVER);
+
+			verdict = net_ipv6_prepare_for_send(pending);
+			if (verdict == NET_DROP) {
+				/* The ref when added to the pending queue */
+				net_pkt_unref(pending);
+
+				/* To unref the original pkt allocation */
+				net_pkt_unref(pending);
+
+				/* Get next packet from the list */
+				continue;
+			}
+
+			/* Now wait timeout again */
+			break;
+		}
 	}
 
 	net_ipv6_nbr_unlock();
@@ -414,8 +467,13 @@ static void nbr_init(struct net_nbr *nbr, struct net_if *iface,
 	net_ipaddr_copy(&net_ipv6_nbr_data(nbr)->addr, addr);
 	ipv6_nbr_set_state(nbr, state);
 	net_ipv6_nbr_data(nbr)->is_router = is_router;
-	net_ipv6_nbr_data(nbr)->pending = NULL;
 	net_ipv6_nbr_data(nbr)->send_ns = 0;
+
+	if (!net_ipv6_nbr_data(nbr)->pending_queue_initialized) {
+		/* Initialize the pending queue for this neighbor */
+		k_fifo_init(&net_ipv6_nbr_data(nbr)->pending_queue);
+		net_ipv6_nbr_data(nbr)->pending_queue_initialized = true;
+	}
 
 #if defined(CONFIG_NET_IPV6_ND)
 	net_ipv6_nbr_data(nbr)->reachable = 0;
@@ -1793,15 +1851,18 @@ static inline bool handle_na_neighbor(struct net_pkt *pkt,
 
 send_pending:
 	/* Next send any pending messages to the peer. */
-	pending = net_ipv6_nbr_data(nbr)->pending;
-	if (pending) {
+	while (!k_fifo_is_empty(&net_ipv6_nbr_data(nbr)->pending_queue)) {
+		pending = k_fifo_get(&net_ipv6_nbr_data(nbr)->pending_queue,
+				     K_FOREVER);
+
 		NET_DBG("Sending pending %p to lladdr %s", pending,
 			net_sprint_ll_addr(cached_lladdr->addr, cached_lladdr->len));
 
 		if (net_send_data(pending) < 0) {
 			nbr_clear_ns_pending(net_ipv6_nbr_data(nbr));
-		} else {
-			net_ipv6_nbr_data(nbr)->pending = NULL;
+
+			NET_DBG("Cannot send pkt %p, clearing pending queue", pending);
+			break;
 		}
 
 		net_pkt_unref(pending);
@@ -2030,35 +2091,49 @@ int net_ipv6_send_ns(struct net_if *iface,
 		goto drop;
 	}
 
-	if (pending) {
-		if (!net_ipv6_nbr_data(nbr)->pending) {
-			net_ipv6_nbr_data(nbr)->pending = net_pkt_ref(pending);
+	if (pending != NULL) {
+		if (k_fifo_is_empty(&net_ipv6_nbr_data(nbr)->pending_queue)) {
+			k_fifo_put(&net_ipv6_nbr_data(nbr)->pending_queue, pending);
+			pending = net_pkt_ref(pending);
+
+			NET_DBG("Setting timeout %d for NS", NS_REPLY_TIMEOUT);
+
+			net_ipv6_nbr_data(nbr)->send_ns = k_uptime_get();
+
+			/* Let's start the timer if necessary */
+			if (!k_work_delayable_remaining_get(&ipv6_ns_reply_timer)) {
+				k_work_reschedule(&ipv6_ns_reply_timer,
+						  K_MSEC(NS_REPLY_TIMEOUT));
+			}
 		} else {
-			NET_DBG("Packet %p already pending for "
-				"operation. Discarding pending %p and pkt %p",
-				net_ipv6_nbr_data(nbr)->pending, pending, pkt);
+			/* If there is already a pending packet
+			 * for this neighbor, we do not send the NS but just
+			 * add the packet to the pending queue.
+			 */
+			if (k_queue_unique_append(&net_ipv6_nbr_data(nbr)->pending_queue._queue,
+						  pending)) {
+				NET_DBG("Adding pending packet %p for NS to nbr %p",
+					pending, nbr);
+
+				pending = net_pkt_ref(pending);
+			} else {
+				NET_DBG("Packet %p already pending for "
+					"operation for nbr %p.",
+					pending, nbr);
+			}
+
+			/* Let the system timeout and then send the NS again */
 			net_ipv6_nbr_unlock();
-			goto drop;
-		}
-
-		NET_DBG("Setting timeout %d for NS", NS_REPLY_TIMEOUT);
-
-		net_ipv6_nbr_data(nbr)->send_ns = k_uptime_get();
-
-		/* Let's start the timer if necessary */
-		if (!k_work_delayable_remaining_get(&ipv6_ns_reply_timer)) {
-			k_work_reschedule(&ipv6_ns_reply_timer,
-					  K_MSEC(NS_REPLY_TIMEOUT));
+			return 0;
 		}
 	}
 
-	dbg_addr_sent_tgt("Neighbor Solicitation", src, dst, &ns_hdr->tgt,
-			  pkt);
+	dbg_addr_sent_tgt("Neighbor Solicitation", src, dst, &ns_hdr->tgt, pkt);
 
 	if (net_send_data(pkt) < 0) {
 		NET_DBG("Cannot send NS %p (pending %p)", pkt, pending);
 
-		if (pending) {
+		if (pending != NULL) {
 			nbr_clear_ns_pending(net_ipv6_nbr_data(nbr));
 			pending = NULL;
 		}
@@ -2075,7 +2150,7 @@ int net_ipv6_send_ns(struct net_if *iface,
 	return 0;
 
 drop:
-	if (pending) {
+	if (pending != NULL) {
 		net_pkt_unref(pending);
 	}
 
@@ -2734,17 +2809,26 @@ static int handle_ra_input(struct net_icmp_ctx *ctx,
 	}
 
 	net_ipv6_nbr_lock();
-	if (nbr && net_ipv6_nbr_data(nbr)->pending) {
-		NET_DBG("Sending pending pkt %p to %s",
-			net_ipv6_nbr_data(nbr)->pending,
-			net_sprint_ipv6_addr(&NET_IPV6_HDR(net_ipv6_nbr_data(nbr)->pending)->dst));
 
-		if (net_send_data(net_ipv6_nbr_data(nbr)->pending) < 0) {
-			net_pkt_unref(net_ipv6_nbr_data(nbr)->pending);
+	if (nbr != NULL) {
+		while (!k_fifo_is_empty(&net_ipv6_nbr_data(nbr)->pending_queue)) {
+			struct net_pkt *pending;
+
+			pending = k_fifo_get(&net_ipv6_nbr_data(nbr)->pending_queue,
+					     K_FOREVER);
+
+			NET_DBG("Sending pending pkt %p to %s",
+				pending,
+				net_sprint_ipv6_addr(&NET_IPV6_HDR(pending)->dst));
+
+			if (net_send_data(pending) < 0) {
+				net_pkt_unref(pending);
+			}
 		}
 
 		nbr_clear_ns_pending(net_ipv6_nbr_data(nbr));
 	}
+
 	net_ipv6_nbr_unlock();
 
 	/* Cancel the RS timer on iface */
@@ -2863,6 +2947,26 @@ static struct net_icmp_ctx ra_ctx;
 #if defined(CONFIG_NET_IPV6_PMTU)
 static struct net_icmp_ctx ptb_ctx;
 #endif /* CONFIG_NET_IPV6_PMTU */
+
+#if defined(CONFIG_NET_TEST) && defined(CONFIG_NET_IPV6_NBR_CACHE)
+/* Check if the NS reply timer is pending and cancel it if so.
+ * Returns 1 if the timer was cancelled, 0 if it was not pending.
+ * This is only used by the tests to verify that we are not leaking
+ * any net_pkt/buf.
+ */
+int net_ipv6_nbr_test_cancel(void)
+{
+	if (k_work_delayable_is_pending(&ipv6_ns_reply_timer)) {
+		NET_DBG("Cancelling NS reply timer");
+
+		(void)k_work_cancel_delayable(&ipv6_ns_reply_timer);
+
+		return 1;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_NET_TEST */
 
 void net_ipv6_nbr_init(void)
 {

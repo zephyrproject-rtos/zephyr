@@ -150,7 +150,8 @@
 			#interrupt-cells = <1>;
 			#address-cells = <1>;
 			reg = <0x40021800 0x400>;
-			num-lines = <16>;
+			clocks = <&rcc STM32_CLOCK(APB1_2, 0)>;
+			num-lines = <32>;
 			interrupts = <5 0>, <6 0>, <7 0>;
 			interrupt-names = "line0-1", "line2-3", "line4-15";
 			line-ranges = <0 2>, <2 2>, <4 12>;
@@ -252,7 +253,7 @@
 			reg = <0x40008000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 20U)>;
 			resets = <&rctl STM32_RESET(APB1L, 20U)>;
-			interrupts = <28 0>;
+			interrupts = <29 0>;
 			status = "disabled";
 		};
 
@@ -261,7 +262,7 @@
 			reg = <0x40008400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 7U)>;
 			resets = <&rctl STM32_RESET(APB1L, 7U)>;
-			interrupts = <29 0>;
+			interrupts = <28 0>;
 			status = "disabled";
 		};
 

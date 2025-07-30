@@ -1,0 +1,39 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig HWINFO_CC13XX_CC26XX
+	bool "TI SimpleLink CC13xx/CC26xx hwinfo driver"
+	default y
+	depends on SOC_SERIES_CC13X2_CC26X2 || SOC_SERIES_CC13X2X7_CC26X2X7
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable TI SimpleLink CC13xx/CC26xx hwinfo driver.
+
+if HWINFO_CC13XX_CC26XX
+
+config HWINFO_CC13XX_CC26XX_ALWAYS_USE_FACTORY_DEFAULT
+	bool "Ignore CCFG and always use factory value"
+	default y
+	help
+	  Always return factory pre-programmed values, stored in FCFG and ignore
+	  values provided in CCFG (Customer Configuration).
+
+choice
+	prompt "Select MAC address type for device ID"
+	default HWINFO_CC13XX_CC26XX_USE_IEEE_MAC
+	help
+	  Specify the MAC address type to be used as device ID by the driver.
+
+config HWINFO_CC13XX_CC26XX_USE_IEEE_MAC
+	bool "Use IEEE 802.15.4 extended address"
+	help
+	  Use 8-bytes length IEEE 802.15.4 extended address as device ID value.
+
+config HWINFO_CC13XX_CC26XX_USE_BLE_MAC
+	bool "Use BLE MAC address"
+	help
+	  Use 6-bytes length BLE MAC address as device ID value.
+
+endchoice
+
+endif # HWINFO_CC13XX_CC26XX

@@ -96,6 +96,7 @@ struct mc_t1s_config {
 };
 
 struct mc_t1s_data {
+	uint32_t phy_id;
 	const struct device *dev;
 	struct phy_link_state state;
 	phy_callback_t cb;
@@ -106,18 +107,32 @@ struct mc_t1s_data {
 static int phy_mc_t1s_read(const struct device *dev, uint16_t reg, uint32_t *data)
 {
 	const struct mc_t1s_config *cfg = dev->config;
+	int ret;
 
 	/* Make sure excessive bits 16-31 are reset */
 	*data = 0U;
 
-	return mdio_read(cfg->mdio, cfg->phy_addr, reg, (uint16_t *)data);
+	mdio_bus_enable(cfg->mdio);
+
+	ret = mdio_read(cfg->mdio, cfg->phy_addr, reg, (uint16_t *)data);
+
+	mdio_bus_disable(cfg->mdio);
+
+	return ret;
 }
 
 static int phy_mc_t1s_write(const struct device *dev, uint16_t reg, uint32_t data)
 {
 	const struct mc_t1s_config *cfg = dev->config;
+	int ret;
 
-	return mdio_write(cfg->mdio, cfg->phy_addr, reg, (uint16_t)data);
+	mdio_bus_enable(cfg->mdio);
+
+	ret = mdio_write(cfg->mdio, cfg->phy_addr, reg, (uint16_t)data);
+
+	mdio_bus_disable(cfg->mdio);
+
+	return ret;
 }
 
 static int mdio_setup_c45_indirect_access(const struct device *dev, uint16_t devad, uint16_t reg)
@@ -141,19 +156,26 @@ static int mdio_setup_c45_indirect_access(const struct device *dev, uint16_t dev
 static int phy_mc_t1s_c45_read(const struct device *dev, uint8_t devad, uint16_t reg, uint16_t *val)
 {
 	const struct mc_t1s_config *cfg = dev->config;
+	struct mc_t1s_data *data = dev->data;
 	int ret;
 
-	ret = mdio_read_c45(cfg->mdio, cfg->phy_addr, devad, reg, val);
-	/* @retval -ENOSYS if read using Clause 45 direct access is not supported */
-	if (ret == -ENOSYS) {
-		/* Read C45 registers using C22 indirect access registers */
-		ret = mdio_setup_c45_indirect_access(dev, devad, reg);
-		if (ret) {
-			return ret;
-		}
-
-		return mdio_read(cfg->mdio, cfg->phy_addr, MII_MMD_AADR, val);
+	/* C45 direct read access is only supported by LAN865x internal PHY */
+	if (data->phy_id == PHY_ID_LAN865X_REVB) {
+		return mdio_read_c45(cfg->mdio, cfg->phy_addr, devad, reg, val);
 	}
+
+	mdio_bus_enable(cfg->mdio);
+
+	/* Read C45 registers using C22 indirect access registers */
+	ret = mdio_setup_c45_indirect_access(dev, devad, reg);
+	if (ret) {
+		mdio_bus_disable(cfg->mdio);
+		return ret;
+	}
+
+	ret = mdio_read(cfg->mdio, cfg->phy_addr, MII_MMD_AADR, val);
+
+	mdio_bus_disable(cfg->mdio);
 
 	return ret;
 }
@@ -161,19 +183,26 @@ static int phy_mc_t1s_c45_read(const struct device *dev, uint8_t devad, uint16_t
 static int phy_mc_t1s_c45_write(const struct device *dev, uint8_t devad, uint16_t reg, uint16_t val)
 {
 	const struct mc_t1s_config *cfg = dev->config;
+	struct mc_t1s_data *data = dev->data;
 	int ret;
 
-	ret = mdio_write_c45(cfg->mdio, cfg->phy_addr, devad, reg, val);
-	/* @retval -ENOSYS if write using Clause 45 direct access is not supported */
-	if (ret == -ENOSYS) {
-		/* Write C45 registers using C22 indirect access registers */
-		ret = mdio_setup_c45_indirect_access(dev, devad, reg);
-		if (ret) {
-			return ret;
-		}
-
-		return mdio_write(cfg->mdio, cfg->phy_addr, MII_MMD_AADR, val);
+	/* C45 direct write access is only supported by LAN865x internal PHY */
+	if (data->phy_id == PHY_ID_LAN865X_REVB) {
+		return mdio_write_c45(cfg->mdio, cfg->phy_addr, devad, reg, val);
 	}
+
+	mdio_bus_enable(cfg->mdio);
+
+	/* Write C45 registers using C22 indirect access registers */
+	ret = mdio_setup_c45_indirect_access(dev, devad, reg);
+	if (ret) {
+		mdio_bus_disable(cfg->mdio);
+		return ret;
+	}
+
+	ret = mdio_write(cfg->mdio, cfg->phy_addr, MII_MMD_AADR, val);
+
+	mdio_bus_disable(cfg->mdio);
 
 	return ret;
 }
@@ -225,6 +254,7 @@ static void phy_monitor_work_handler(struct k_work *work)
 	const struct device *dev = data->dev;
 
 	if (!data->cb) {
+		k_work_reschedule(&data->phy_monitor_work, K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
 		return;
 	}
 
@@ -478,17 +508,16 @@ static int phy_mc_t1s_set_dt_plca(const struct device *dev)
 static int phy_mc_t1s_init(const struct device *dev)
 {
 	struct mc_t1s_data *data = dev->data;
-	uint32_t phy_id;
 	int ret;
 
 	data->dev = dev;
 
-	ret = phy_mc_t1s_id(dev, &phy_id);
+	ret = phy_mc_t1s_id(dev, &data->phy_id);
 	if (ret) {
 		return ret;
 	}
 
-	switch (phy_id) {
+	switch (data->phy_id) {
 	case PHY_ID_LAN867X_REVC1:
 	case PHY_ID_LAN867X_REVC2:
 		ret = phy_mc_lan867x_revc_config_init(dev);
@@ -505,7 +534,7 @@ static int phy_mc_t1s_init(const struct device *dev)
 		}
 		break;
 	default:
-		LOG_ERR("Unsupported PHY ID: %x\n", phy_id);
+		LOG_ERR("Unsupported PHY ID: %x\n", data->phy_id);
 		return -ENODEV;
 	}
 
@@ -551,6 +580,6 @@ static DEVICE_API(ethphy, mc_t1s_phy_api) = {
 	static struct mc_t1s_data mc_t1s_##n##_data;                                               \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, &phy_mc_t1s_init, NULL, &mc_t1s_##n##_data, &mc_t1s_##n##_config, \
-			      POST_KERNEL, CONFIG_PHY_MICROCHIP_T1S_INIT_PRIORITY, &mc_t1s_phy_api);
+			      POST_KERNEL, CONFIG_PHY_INIT_PRIORITY, &mc_t1s_phy_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MICROCHIP_T1S_PHY_INIT);

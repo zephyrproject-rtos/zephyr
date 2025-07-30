@@ -57,9 +57,8 @@ LOG_MODULE_REGISTER(phy_qc_ar8031, CONFIG_PHY_LOG_LEVEL);
 
 struct qc_ar8031_config {
 	uint8_t addr;
-	bool fixed_link;
 	bool enable_eee;
-	int fixed_speed;
+	enum phy_link_speed default_speeds;
 	const struct device *mdio_dev;
 };
 
@@ -414,36 +413,12 @@ static int qc_ar8031_init(const struct device *dev)
 		}
 	}
 
-	/* Fixed Link */
-	if (cfg->fixed_link) {
-		/* Disable isolate */
-		ret = qc_ar8031_read(dev, MII_BMCR, &reg_value);
-		if (ret) {
-			return -EIO;
-		}
-		reg_value &= ~MII_BMCR_ISOLATE;
-		ret = qc_ar8031_write(dev, MII_BMCR, reg_value);
-		if (ret) {
-			return -EIO;
-		}
+	/* Advertise default speeds */
+	qc_ar8031_cfg_link(dev, cfg->default_speeds, 0);
 
-		const static int speed_to_phy_link_speed[] = {
-			LINK_HALF_10BASE,  LINK_FULL_10BASE,   LINK_HALF_100BASE,
-			LINK_FULL_100BASE, LINK_HALF_1000BASE, LINK_FULL_1000BASE,
-		};
+	k_work_init_delayable(&data->monitor_work, monitor_work_handler);
 
-		data->state.speed = speed_to_phy_link_speed[cfg->fixed_speed];
-		data->state.is_up = true;
-	} else { /* Auto negotiation */
-		/* Advertise all speeds */
-		qc_ar8031_cfg_link(dev, LINK_HALF_10BASE | LINK_FULL_10BASE |
-						LINK_HALF_100BASE | LINK_FULL_100BASE |
-						LINK_HALF_1000BASE | LINK_FULL_1000BASE, 0);
-
-		k_work_init_delayable(&data->monitor_work, monitor_work_handler);
-
-		monitor_work_handler(&data->monitor_work.work);
-	}
+	monitor_work_handler(&data->monitor_work.work);
 
 	return 0;
 }
@@ -459,9 +434,8 @@ static DEVICE_API(ethphy, ar8031_driver_api) = {
 #define AR8031_CONFIG(n)                                                                           \
 	static const struct qc_ar8031_config qc_ar8031_config_##n = {                              \
 		.addr = DT_INST_REG_ADDR(n),                                                       \
-		.fixed_link = DT_INST_NODE_HAS_PROP(n, fixed_link),                                \
-		.fixed_speed = DT_INST_ENUM_IDX_OR(n, fixed_link, 0),                              \
 		.mdio_dev = DEVICE_DT_GET(DT_INST_BUS(n)),                                         \
+		.default_speeds = PHY_INST_GENERATE_DEFAULT_SPEEDS(n),				   \
 		.enable_eee = DT_INST_NODE_HAS_PROP(n, eee_en),                                    \
 	};
 

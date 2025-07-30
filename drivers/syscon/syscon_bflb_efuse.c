@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(efuse_bflb, CONFIG_SYSCON_LOG_LEVEL);
 #include <bouffalolab/bl60x/hbn_reg.h>
 #include <bouffalolab/bl60x/ef_ctrl_reg.h>
 #include <bouffalolab/bl60x/extra_defines.h>
+#include <zephyr/drivers/clock_control/clock_control_bflb_common.h>
 
 struct efuse_bflb_data {
 	uint8_t cache[DT_INST_PROP(0, size)];
@@ -26,31 +27,6 @@ struct efuse_bflb_config {
 	uintptr_t addr;
 	size_t size;
 };
-
-static inline void efuse_bflb_clock_settle(void)
-{
-	__asm__ volatile (".rept 15 ; nop ; .endr");
-}
-
-/* 32 Mhz Oscillator: 0
- * crystal: 1
- * PLL and 32M: 2
- * PLL and crystal: 3
- */
-static void efuse_bflb_set_root_clock(uint32_t clock)
-{
-	uint32_t tmp;
-
-	/* invalid value, fallback to internal 32M */
-	if (clock > 3) {
-		clock = 0;
-	}
-	tmp = sys_read32(HBN_BASE + HBN_GLB_OFFSET);
-	tmp = (tmp & HBN_ROOT_CLK_SEL_UMSK) | (clock << HBN_ROOT_CLK_SEL_POS);
-	sys_write32(tmp, HBN_BASE + HBN_GLB_OFFSET);
-
-	efuse_bflb_clock_settle();
-}
 
 static void efuse_bflb_clock_delay_32M_ms(uint32_t ms)
 {
@@ -107,7 +83,7 @@ static void efuse_bflb_efuse_read(const struct device *dev)
 		| (0 << EF_CTRL_EF_IF_0_TRIG_POS);
 
 	sys_write32(tmp, config->addr + EF_CTRL_EF_IF_CTRL_0_OFFSET);
-	efuse_bflb_clock_settle();
+	clock_bflb_settle();
 
 	/* clear PDS cache registry */
 	for (uint32_t i = 0; i < config->size / 4; i++) {
@@ -172,13 +148,12 @@ static void efuse_bflb_cache(const struct device *dev)
 	struct efuse_bflb_data *data = dev->data;
 	const struct efuse_bflb_config *config = dev->config;
 	uint32_t tmp;
-	uint8_t old_clock_root;
+	uint32_t old_clock_root;
 
-	tmp = sys_read32(HBN_BASE + HBN_GLB_OFFSET);
-	old_clock_root = (tmp & HBN_ROOT_CLK_SEL_MSK) >> HBN_ROOT_CLK_SEL_POS;
+	old_clock_root = clock_bflb_get_root_clock();
 
-	efuse_bflb_set_root_clock(0);
-	efuse_bflb_clock_settle();
+	clock_bflb_set_root_clock(BFLB_MAIN_CLOCK_RC32M);
+	clock_bflb_settle();
 
 	efuse_bflb_efuse_read(dev);
 	/* reads *must* be 32-bits aligned AND does not work with the method memcpy uses */
@@ -190,8 +165,8 @@ static void efuse_bflb_cache(const struct device *dev)
 		data->cache[i * sizeof(uint32_t) + 0] = (tmp & 0x000000FFU);
 	}
 
-	efuse_bflb_set_root_clock(old_clock_root);
-	efuse_bflb_clock_settle();
+	clock_bflb_set_root_clock(old_clock_root);
+	clock_bflb_settle();
 	data->cached = true;
 }
 

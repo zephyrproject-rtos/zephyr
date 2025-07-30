@@ -515,6 +515,14 @@
 			#port-irq-cells = <0>;
 			status = "disabled";
 		};
+
+		ctsu: ctsu2@40082000 {
+			compatible = "renesas,ra-ctsu";
+			reg = <0x40082000 0x70>;
+			clocks = <&pclkb MSTPC 3>;
+			variant = "ctsu2";
+			status = "disabled";
+		};
 	};
 
 	clocks: clocks {

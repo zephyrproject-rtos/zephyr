@@ -1,5 +1,7 @@
 /*
  * Copyright (c) 2024 Bosch Sensortec GmbH
+ * Copyright (c) 2025 Croxel, Inc.
+ * Copyright (c) 2025 CogniPilot Foundation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +12,12 @@
  */
 
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/check.h>
+
 #include "bmm350.h"
+#include "bmm350_decoder.h"
+#include "bmm350_stream.h"
 
 LOG_MODULE_REGISTER(BMM350, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -70,40 +77,6 @@ static int bmm350_read_otp_word(const struct device *dev, uint8_t addr, uint16_t
 	return ret;
 }
 
-static int32_t fix_sign(uint32_t inval, int8_t number_of_bits)
-{
-	int32_t signed_value = 0;
-	int32_t power = 0;
-
-	switch ((enum bmm350_signed_bit)number_of_bits) {
-	case BMM350_SIGNED_8_BIT:
-		power = 128; /* 2^7 */
-		break;
-	case BMM350_SIGNED_12_BIT:
-		power = 2048; /* 2^11 */
-		break;
-	case BMM350_SIGNED_16_BIT:
-		power = 32768; /* 2^15 */
-		break;
-	case BMM350_SIGNED_21_BIT:
-		power = 1048576; /* 2^20 */
-		break;
-	case BMM350_SIGNED_24_BIT:
-		power = 8388608; /* 2^23 */
-		break;
-	default:
-		power = 0;
-		break;
-	}
-
-	signed_value = (int32_t)inval;
-	if (signed_value >= power) {
-		signed_value = signed_value - (power * 2);
-	}
-
-	return signed_value;
-}
-
 static void bmm350_update_mag_off_sens(struct bmm350_data *data)
 {
 	uint16_t off_x_lsb_msb, off_y_lsb_msb, off_z_lsb_msb, t_off = 0;
@@ -119,11 +92,11 @@ static void bmm350_update_mag_off_sens(struct bmm350_data *data)
 			(data->otp_data[BMM350_MAG_OFFSET_Z] & BMM350_LSB_MASK);
 	t_off = data->otp_data[BMM350_TEMP_OFF_SENS] & BMM350_LSB_MASK;
 
-	data->mag_comp.dut_offset_coef.offset_x = fix_sign(off_x_lsb_msb, BMM350_SIGNED_12_BIT);
-	data->mag_comp.dut_offset_coef.offset_y = fix_sign(off_y_lsb_msb, BMM350_SIGNED_12_BIT);
-	data->mag_comp.dut_offset_coef.offset_z = fix_sign(off_z_lsb_msb, BMM350_SIGNED_12_BIT);
+	data->mag_comp.dut_offset_coef.offset_x = sign_extend(off_x_lsb_msb, BMM350_SIGNED_12_BIT);
+	data->mag_comp.dut_offset_coef.offset_y = sign_extend(off_y_lsb_msb, BMM350_SIGNED_12_BIT);
+	data->mag_comp.dut_offset_coef.offset_z = sign_extend(off_z_lsb_msb, BMM350_SIGNED_12_BIT);
 	data->mag_comp.dut_offset_coef.t_offs =
-		fix_sign(t_off, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
+		sign_extend(t_off, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
 	data->mag_comp.dut_offset_coef.t_offs = data->mag_comp.dut_offset_coef.t_offs / 5;
 
 	sens_x = (data->otp_data[BMM350_MAG_SENS_X] & BMM350_MSB_MASK) >> 8;
@@ -132,13 +105,13 @@ static void bmm350_update_mag_off_sens(struct bmm350_data *data)
 	t_sens = (data->otp_data[BMM350_TEMP_OFF_SENS] & BMM350_MSB_MASK) >> 8;
 
 	data->mag_comp.dut_sensit_coef.sens_x =
-		fix_sign(sens_x, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
+		sign_extend(sens_x, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
 	data->mag_comp.dut_sensit_coef.sens_y =
-		fix_sign(sens_y, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
+		sign_extend(sens_y, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
 	data->mag_comp.dut_sensit_coef.sens_z =
-		fix_sign(sens_z, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
+		sign_extend(sens_z, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
 	data->mag_comp.dut_sensit_coef.t_sens =
-		fix_sign(t_sens, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
+		sign_extend(t_sens, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
 
 	data->mag_comp.dut_sensit_coef.sens_x = (data->mag_comp.dut_sensit_coef.sens_x / 256);
 	data->mag_comp.dut_sensit_coef.sens_y = (data->mag_comp.dut_sensit_coef.sens_y / 256);
@@ -150,11 +123,11 @@ static void bmm350_update_mag_off_sens(struct bmm350_data *data)
 	tco_z = (data->otp_data[BMM350_MAG_TCO_Z] & BMM350_LSB_MASK);
 
 	data->mag_comp.dut_tco.tco_x =
-		fix_sign(tco_x, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
+		sign_extend(tco_x, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
 	data->mag_comp.dut_tco.tco_y =
-		fix_sign(tco_y, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
+		sign_extend(tco_y, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
 	data->mag_comp.dut_tco.tco_z =
-		fix_sign(tco_z, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
+		sign_extend(tco_z, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
 
 	data->mag_comp.dut_tco.tco_x = (data->mag_comp.dut_tco.tco_x / 32);
 	data->mag_comp.dut_tco.tco_y = (data->mag_comp.dut_tco.tco_y / 32);
@@ -165,18 +138,18 @@ static void bmm350_update_mag_off_sens(struct bmm350_data *data)
 	tcs_z = (data->otp_data[BMM350_MAG_TCS_Z] & BMM350_MSB_MASK) >> 8;
 
 	data->mag_comp.dut_tcs.tcs_x =
-		fix_sign(tcs_x, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
+		sign_extend(tcs_x, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
 	data->mag_comp.dut_tcs.tcs_y =
-		fix_sign(tcs_y, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
+		sign_extend(tcs_y, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
 	data->mag_comp.dut_tcs.tcs_z =
-		fix_sign(tcs_z, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
+		sign_extend(tcs_z, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
 
 	data->mag_comp.dut_tcs.tcs_x = (data->mag_comp.dut_tcs.tcs_x / 16384);
 	data->mag_comp.dut_tcs.tcs_y = (data->mag_comp.dut_tcs.tcs_y / 16384);
 	data->mag_comp.dut_tcs.tcs_z = (data->mag_comp.dut_tcs.tcs_z / 16384);
 
 	data->mag_comp.dut_t0 =
-		(fix_sign(data->otp_data[BMM350_MAG_DUT_T_0], BMM350_SIGNED_16_BIT) / 512) + 23;
+		(sign_extend(data->otp_data[BMM350_MAG_DUT_T_0], BMM350_SIGNED_16_BIT) / 512) + 23;
 
 	cross_x_y = (data->otp_data[BMM350_CROSS_X_Y] & BMM350_LSB_MASK);
 	cross_y_x = (data->otp_data[BMM350_CROSS_Y_X] & BMM350_MSB_MASK) >> 8;
@@ -184,13 +157,13 @@ static void bmm350_update_mag_off_sens(struct bmm350_data *data)
 	cross_z_y = (data->otp_data[BMM350_CROSS_Z_Y] & BMM350_MSB_MASK) >> 8;
 
 	data->mag_comp.cross_axis.cross_x_y =
-		fix_sign(cross_x_y, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
+		sign_extend(cross_x_y, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
 	data->mag_comp.cross_axis.cross_y_x =
-		fix_sign(cross_y_x, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
+		sign_extend(cross_y_x, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
 	data->mag_comp.cross_axis.cross_z_x =
-		fix_sign(cross_z_x, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
+		sign_extend(cross_z_x, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
 	data->mag_comp.cross_axis.cross_z_y =
-		fix_sign(cross_z_y, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
+		sign_extend(cross_z_y, BMM350_SIGNED_8_BIT) * BMM350_MAG_COMP_COEFF_SCALING;
 
 	data->mag_comp.cross_axis.cross_x_y = (data->mag_comp.cross_axis.cross_x_y / 800);
 	data->mag_comp.cross_axis.cross_y_x = (data->mag_comp.cross_axis.cross_y_x / 800);
@@ -420,214 +393,21 @@ int bmm350_magnetic_reset(const struct device *dev)
 	}
 	return ret;
 }
-/*!
- * @brief This API is used to read uncompensated mag and temperature data.
- */
-static int bmm350_read_uncomp_mag_temp_data(const struct device *dev,
-					    struct bmm350_raw_mag_data *raw_data)
-{
-	struct bmm350_data *data = dev->data;
-	int rslt;
-	uint8_t mag_data[14] = {0};
-	uint32_t raw_mag_x, raw_mag_y, raw_mag_z, raw_temp;
-
-	__ASSERT_NO_MSG(raw_data != NULL);
-
-	/* Get uncompensated mag data */
-	rslt = bmm350_reg_read(dev, BMM350_REG_MAG_X_XLSB, mag_data, sizeof(mag_data));
-
-	if (rslt == 0) {
-		raw_mag_x = (uint32_t)mag_data[2] + ((uint32_t)mag_data[3] << 8) +
-			    ((uint32_t)mag_data[4] << 16);
-		raw_mag_y = (uint32_t)mag_data[5] + ((uint32_t)mag_data[6] << 8) +
-			    ((uint32_t)mag_data[7] << 16);
-		raw_mag_z = (uint32_t)mag_data[8] + ((uint32_t)mag_data[9] << 8) +
-			    ((uint32_t)mag_data[10] << 16);
-		raw_temp = (uint32_t)mag_data[11] + ((uint32_t)mag_data[12] << 8) +
-			   ((uint32_t)mag_data[13] << 16);
-
-		if ((data->axis_en & BMM350_EN_X_MSK) == BMM350_DISABLE) {
-			raw_data->raw_xdata = BMM350_DISABLE;
-		} else {
-			raw_data->raw_xdata = fix_sign(raw_mag_x, BMM350_SIGNED_24_BIT);
-		}
-
-		if ((data->axis_en & BMM350_EN_Y_MSK) == BMM350_DISABLE) {
-			raw_data->raw_ydata = BMM350_DISABLE;
-		} else {
-			raw_data->raw_ydata = fix_sign(raw_mag_y, BMM350_SIGNED_24_BIT);
-		}
-
-		if ((data->axis_en & BMM350_EN_Z_MSK) == BMM350_DISABLE) {
-			raw_data->raw_zdata = BMM350_DISABLE;
-		} else {
-			raw_data->raw_zdata = fix_sign(raw_mag_z, BMM350_SIGNED_24_BIT);
-		}
-
-		raw_data->raw_data_temp = fix_sign(raw_temp, BMM350_SIGNED_24_BIT);
-	}
-
-	return rslt;
-}
-static int read_out_raw_data(const struct device *dev, int32_t *out_data)
-{
-	int rslt;
-	int32_t temp = 0;
-	struct bmm350_raw_mag_data raw_data = {0};
-
-	__ASSERT_NO_MSG(out_data != NULL);
-
-	rslt = bmm350_read_uncomp_mag_temp_data(dev, &raw_data);
-
-	if (rslt == 0) {
-		/* Convert mag lsb to uT and temp lsb to degC */
-		out_data[0] = ((raw_data.raw_xdata * BMM350_LSB_TO_UT_XY_COEFF) /
-			       BMM350_LSB_TO_UT_COEFF_DIV);
-		out_data[1] = ((raw_data.raw_ydata * BMM350_LSB_TO_UT_XY_COEFF) /
-			       BMM350_LSB_TO_UT_COEFF_DIV);
-		out_data[2] = ((raw_data.raw_zdata * BMM350_LSB_TO_UT_Z_COEFF) /
-			       BMM350_LSB_TO_UT_COEFF_DIV);
-		out_data[3] = ((raw_data.raw_data_temp * BMM350_LSB_TO_UT_TEMP_COEFF) /
-			       BMM350_LSB_TO_UT_COEFF_DIV);
-
-		if (out_data[3] > 0) {
-			temp = (out_data[3] - (2549 / 100));
-		} else if (out_data[3] < 0) {
-			temp = (out_data[3] + (2549 / 100));
-		} else {
-			temp = out_data[3];
-		}
-
-		out_data[3] = temp;
-	}
-
-	return rslt;
-}
-
-static int
-bmm350_get_compensated_mag_xyz_temp_data_fixed(const struct device *dev,
-					       struct bmm350_mag_temp_data *mag_temp_data)
-{
-	struct bmm350_data *data = dev->data;
-	int rslt;
-	uint8_t indx;
-	int32_t out_data[4] = {0};
-	int32_t dut_offset_coef[3], dut_sensit_coef[3], dut_tco[3], dut_tcs[3];
-	int32_t cr_ax_comp_x, cr_ax_comp_y, cr_ax_comp_z;
-
-	__ASSERT_NO_MSG(mag_temp_data != NULL);
-
-	/* Reads raw magnetic x,y and z axis along with temperature */
-	rslt = read_out_raw_data(dev, out_data);
-
-	if (rslt == 0) {
-		/* Apply compensation to temperature reading */
-		out_data[3] =
-			(((BMM350_MAG_COMP_COEFF_SCALING + data->mag_comp.dut_sensit_coef.t_sens) *
-			  out_data[3]) +
-			 data->mag_comp.dut_offset_coef.t_offs) /
-			BMM350_MAG_COMP_COEFF_SCALING;
-
-		/* Store magnetic compensation structure to an array */
-		dut_offset_coef[0] = data->mag_comp.dut_offset_coef.offset_x;
-		dut_offset_coef[1] = data->mag_comp.dut_offset_coef.offset_y;
-		dut_offset_coef[2] = data->mag_comp.dut_offset_coef.offset_z;
-
-		dut_sensit_coef[0] = data->mag_comp.dut_sensit_coef.sens_x;
-		dut_sensit_coef[1] = data->mag_comp.dut_sensit_coef.sens_y;
-		dut_sensit_coef[2] = data->mag_comp.dut_sensit_coef.sens_z;
-
-		dut_tco[0] = data->mag_comp.dut_tco.tco_x;
-		dut_tco[1] = data->mag_comp.dut_tco.tco_y;
-		dut_tco[2] = data->mag_comp.dut_tco.tco_z;
-
-		dut_tcs[0] = data->mag_comp.dut_tcs.tcs_x;
-		dut_tcs[1] = data->mag_comp.dut_tcs.tcs_y;
-		dut_tcs[2] = data->mag_comp.dut_tcs.tcs_z;
-
-		/* Compensate raw magnetic data */
-		for (indx = 0; indx < 3; indx++) {
-			out_data[indx] = (out_data[indx] *
-					  (BMM350_MAG_COMP_COEFF_SCALING + dut_sensit_coef[indx])) /
-					 BMM350_MAG_COMP_COEFF_SCALING;
-			out_data[indx] = (out_data[indx] + dut_offset_coef[indx]);
-			out_data[indx] = ((out_data[indx] * BMM350_MAG_COMP_COEFF_SCALING) +
-					  (dut_tco[indx] * (out_data[3] - data->mag_comp.dut_t0))) /
-					 BMM350_MAG_COMP_COEFF_SCALING;
-			out_data[indx] = (out_data[indx] * BMM350_MAG_COMP_COEFF_SCALING) /
-					 (BMM350_MAG_COMP_COEFF_SCALING +
-					  (dut_tcs[indx] * (out_data[3] - data->mag_comp.dut_t0)));
-		}
-
-		cr_ax_comp_x = ((((out_data[0] * BMM350_MAG_COMP_COEFF_SCALING) -
-				  (data->mag_comp.cross_axis.cross_x_y * out_data[1])) *
-				 BMM350_MAG_COMP_COEFF_SCALING) /
-				((BMM350_MAG_COMP_COEFF_SCALING * BMM350_MAG_COMP_COEFF_SCALING) -
-				 (data->mag_comp.cross_axis.cross_y_x *
-				  data->mag_comp.cross_axis.cross_x_y)));
-
-		cr_ax_comp_y = ((((out_data[1] * BMM350_MAG_COMP_COEFF_SCALING) -
-				  (data->mag_comp.cross_axis.cross_y_x * out_data[0])) *
-				 BMM350_MAG_COMP_COEFF_SCALING) /
-				((BMM350_MAG_COMP_COEFF_SCALING * BMM350_MAG_COMP_COEFF_SCALING) -
-				 (data->mag_comp.cross_axis.cross_y_x *
-				  data->mag_comp.cross_axis.cross_x_y)));
-
-		cr_ax_comp_z =
-			(out_data[2] +
-			 (((out_data[0] * ((data->mag_comp.cross_axis.cross_y_x *
-					    data->mag_comp.cross_axis.cross_z_y) -
-					   (data->mag_comp.cross_axis.cross_z_x *
-					    BMM350_MAG_COMP_COEFF_SCALING))) -
-			   (out_data[1] *
-			    ((data->mag_comp.cross_axis.cross_z_y * BMM350_MAG_COMP_COEFF_SCALING) -
-			     (data->mag_comp.cross_axis.cross_x_y *
-			      data->mag_comp.cross_axis.cross_z_x))))) /
-				 (((BMM350_MAG_COMP_COEFF_SCALING * BMM350_MAG_COMP_COEFF_SCALING) -
-				   data->mag_comp.cross_axis.cross_y_x *
-					   data->mag_comp.cross_axis.cross_x_y)));
-
-		out_data[0] = (int32_t)cr_ax_comp_x;
-		out_data[1] = (int32_t)cr_ax_comp_y;
-		out_data[2] = (int32_t)cr_ax_comp_z;
-
-		LOG_DBG("mag data %d %d %d", out_data[0], out_data[1], out_data[2]);
-
-		if ((data->axis_en & BMM350_EN_X_MSK) == BMM350_DISABLE) {
-			mag_temp_data->x = BMM350_DISABLE;
-		} else {
-			mag_temp_data->x = out_data[0];
-		}
-
-		if ((data->axis_en & BMM350_EN_Y_MSK) == BMM350_DISABLE) {
-			mag_temp_data->y = BMM350_DISABLE;
-		} else {
-			mag_temp_data->y = out_data[1];
-		}
-
-		if ((data->axis_en & BMM350_EN_Z_MSK) == BMM350_DISABLE) {
-			mag_temp_data->z = BMM350_DISABLE;
-		} else {
-			mag_temp_data->z = out_data[2];
-		}
-		mag_temp_data->temperature = out_data[3];
-	}
-
-	return rslt;
-}
 
 static int bmm350_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct bmm350_data *drv_data = dev->data;
-	struct bmm350_mag_temp_data mag_temp_data = {0};
+	struct bmm350_raw_mag_data raw_data;
 
-	if (bmm350_get_compensated_mag_xyz_temp_data_fixed(dev, &mag_temp_data) < 0) {
+	if (bmm350_reg_read(dev, BMM350_REG_MAG_X_XLSB, raw_data.buf, sizeof(raw_data.buf)) < 0) {
 		LOG_ERR("failed to read sample");
 		return -EIO;
 	}
-	drv_data->mag_temp_data.x = mag_temp_data.x;
-	drv_data->mag_temp_data.y = mag_temp_data.y;
-	drv_data->mag_temp_data.z = mag_temp_data.z;
+
+	bmm350_decoder_compensate_raw_data(&raw_data,
+					   &drv_data->mag_comp,
+					   &drv_data->mag_temp_data);
+
 	return 0;
 }
 
@@ -647,18 +427,18 @@ static int bmm350_channel_get(const struct device *dev, enum sensor_channel chan
 
 	switch (chan) {
 	case SENSOR_CHAN_MAGN_X:
-		bmm350_convert(val, drv_data->mag_temp_data.x);
+		bmm350_convert(val, drv_data->mag_temp_data.mag[0]);
 		break;
 	case SENSOR_CHAN_MAGN_Y:
-		bmm350_convert(val, drv_data->mag_temp_data.y);
+		bmm350_convert(val, drv_data->mag_temp_data.mag[1]);
 		break;
 	case SENSOR_CHAN_MAGN_Z:
-		bmm350_convert(val, drv_data->mag_temp_data.z);
+		bmm350_convert(val, drv_data->mag_temp_data.mag[2]);
 		break;
 	case SENSOR_CHAN_MAGN_XYZ:
-		bmm350_convert(val, drv_data->mag_temp_data.x);
-		bmm350_convert(val + 1, drv_data->mag_temp_data.y);
-		bmm350_convert(val + 2, drv_data->mag_temp_data.z);
+		bmm350_convert(val, drv_data->mag_temp_data.mag[0]);
+		bmm350_convert(val + 1, drv_data->mag_temp_data.mag[1]);
+		bmm350_convert(val + 2, drv_data->mag_temp_data.mag[2]);
 		break;
 	default:
 		return -ENOTSUP;
@@ -946,11 +726,123 @@ static int bmm350_attr_get(const struct device *dev, enum sensor_channel chan,
 	return ret;
 }
 
+#ifdef CONFIG_SENSOR_ASYNC_API
+
+static void bmm350_one_shot_complete(struct rtio *ctx, const struct rtio_sqe *sqe, void *arg0)
+{
+	struct rtio_iodev_sqe *iodev_sqe = (struct rtio_iodev_sqe *)arg0;
+	struct sensor_read_config *cfg = (struct sensor_read_config *)iodev_sqe->sqe.iodev->data;
+	const struct device *dev = (const struct device *)sqe->userdata;
+	uint8_t *buf;
+	uint32_t buf_len;
+	struct rtio_cqe *cqe;
+	int err = 0;
+
+	do {
+		cqe = rtio_cqe_consume(ctx);
+		if (cqe == NULL) {
+			continue;
+		}
+
+		/** Keep looping through results until we get the first error.
+		 * Usually this causes the remaining CQEs to result in -ECANCELED.
+		 */
+		if (err == 0) {
+			err = cqe->result;
+		}
+		rtio_cqe_release(ctx, cqe);
+	} while (cqe != NULL);
+
+	if (err != 0) {
+		rtio_iodev_sqe_err(iodev_sqe, err);
+		return;
+	}
+
+	/* We've allocated the data already, just grab the pointer to fill comp-data
+	 * now that the bus transfer is complete.
+	 */
+	err = rtio_sqe_rx_buf(iodev_sqe, 0, 0, &buf, &buf_len);
+
+	CHECKIF(err != 0 || !buf || buf_len < sizeof(struct bmm350_encoded_data)) {
+		rtio_iodev_sqe_err(iodev_sqe, -EIO);
+		return;
+	}
+
+	err = bmm350_encode(dev, cfg, false, buf);
+	if (err != 0) {
+		LOG_ERR("Failed to encode frame: %d", err);
+		rtio_iodev_sqe_err(iodev_sqe, err);
+		return;
+	}
+
+	rtio_iodev_sqe_ok(iodev_sqe, 0);
+}
+
+static void bmm350_submit_one_shot(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+{
+	const struct bmm350_config *cfg = dev->config;
+	const struct bmm350_bus *bus = &cfg->bus;
+	uint8_t *buf = NULL;
+	uint32_t buf_len = 0;
+	int err;
+
+	err = rtio_sqe_rx_buf(iodev_sqe,
+			      sizeof(struct bmm350_encoded_data),
+			      sizeof(struct bmm350_encoded_data),
+			      &buf, &buf_len);
+
+	CHECKIF(err != 0 || buf_len < sizeof(struct bmm350_encoded_data)) {
+		LOG_ERR("Failed to allocate BMM350 encoded buffer: %d", err);
+		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
+		return;
+	}
+
+	struct bmm350_encoded_data *edata = (struct bmm350_encoded_data *)buf;
+	struct rtio_sqe *read_sqe = NULL;
+	struct rtio_sqe *cb_sqe;
+
+	err = bmm350_prep_reg_read_async(dev, BMM350_REG_MAG_X_XLSB,
+					 edata->payload.buf, sizeof(edata->payload.buf),
+					 &read_sqe);
+	if (err < 0 || !read_sqe) {
+		rtio_iodev_sqe_err(iodev_sqe, err);
+		return;
+	}
+	read_sqe->flags |= RTIO_SQE_CHAINED;
+
+	cb_sqe = rtio_sqe_acquire(bus->rtio.ctx);
+
+	rtio_sqe_prep_callback_no_cqe(cb_sqe, bmm350_one_shot_complete,
+				      iodev_sqe, (void *)dev);
+
+	rtio_submit(bus->rtio.ctx, 0);
+}
+
+static void bmm350_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+{
+	struct sensor_read_config *cfg = (struct sensor_read_config *)iodev_sqe->sqe.iodev->data;
+
+	if (!cfg->is_streaming) {
+		bmm350_submit_one_shot(dev, iodev_sqe);
+	} else if (IS_ENABLED(CONFIG_BMM350_STREAM)) {
+		bmm350_stream_submit(dev, iodev_sqe);
+	} else {
+		LOG_ERR("Streaming mode not supported");
+		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
+	}
+}
+
+#endif /* CONFIG_SENSOR_ASYNC_API */
+
 static DEVICE_API(sensor, bmm350_api_funcs) = {
 	.attr_set = bmm350_attr_set,
 	.attr_get = bmm350_attr_get,
 	.sample_fetch = bmm350_sample_fetch,
 	.channel_get = bmm350_channel_get,
+#ifdef CONFIG_SENSOR_ASYNC_API
+	.get_decoder = bmm350_get_decoder,
+	.submit = bmm350_submit,
+#endif
 #ifdef CONFIG_BMM350_TRIGGER
 	.trigger_set = bmm350_trigger_set,
 #endif
@@ -1065,7 +957,6 @@ static int bmm350_init(const struct device *dev)
 {
 	int err = 0;
 	const struct bmm350_config *config = dev->config;
-	struct bmm350_data *data = dev->data;
 	const struct sensor_value osr = {config->default_osr, 0};
 	struct sensor_value odr;
 
@@ -1088,10 +979,12 @@ static int bmm350_init(const struct device *dev)
 		return -EINVAL;
 	}
 #endif
-
-	/* Assign axis_en with all axis enabled (BMM350_EN_XYZ_MSK) */
-	data->axis_en = BMM350_EN_XYZ_MSK;
-
+#ifdef CONFIG_BMM350_STREAM
+	if (bmm350_stream_init(dev) < 0) {
+		LOG_ERR("Cannot set up streaming mode.");
+		return -EINVAL;
+	}
+#endif
 	/* Initialize to odr and osr */
 	if (set_mag_odr_osr(dev, &odr, &osr) < 0) {
 		LOG_ERR("failed to set default odr and osr");
@@ -1101,8 +994,6 @@ static int bmm350_init(const struct device *dev)
 	return 0;
 }
 
-/* Initializes a struct bmm350_config for an instance on an I2C bus. */
-#define BMM350_CONFIG_I2C(inst) .bus.i2c = I2C_DT_SPEC_INST_GET(inst), .bus_io = &bmm350_bus_io_i2c,
 #define BMM350_INT_CFG(inst)                                                                       \
 	.drdy_int = GPIO_DT_SPEC_INST_GET_OR(inst, drdy_gpios, {0}),                               \
 	.int_flags =                                                                               \
@@ -1111,14 +1002,24 @@ static int bmm350_init(const struct device *dev)
 		BMM350_INT_CTRL_DRDY_DATA_REG_EN_MSK | BMM350_INT_CTRL_INT_OUTPUT_EN_MSK,
 
 #define BMM350_DEFINE(inst)                                                                        \
+                                                                                                   \
+	RTIO_DEFINE(bmm350_rtio_ctx_##inst, 8, 8);                                                 \
+	I2C_DT_IODEV_DEFINE(bmm350_bus_##inst, DT_DRV_INST(inst));                                 \
+                                                                                                   \
 	static struct bmm350_data bmm350_data_##inst;                                              \
 	static const struct bmm350_config bmm350_config_##inst = {                                 \
-		.bus.i2c = I2C_DT_SPEC_INST_GET(inst),                                             \
-		.bus_io = &bmm350_bus_io_i2c,                                                      \
+		.bus.rtio = {                                                                      \
+			.ctx = &bmm350_rtio_ctx_##inst,                                            \
+			.iodev = &bmm350_bus_##inst,                                               \
+			.type = BMM350_BUS_TYPE_I2C,                                               \
+		},										   \
+		.bus_io = &bmm350_bus_rtio,                                                        \
 		.default_odr = DT_INST_ENUM_IDX(inst, odr) + BMM350_DATA_RATE_400HZ,               \
 		.default_osr = DT_INST_PROP(inst, osr),                                            \
 		.drive_strength = DT_INST_PROP(inst, drive_strength),                              \
-		IF_ENABLED(CONFIG_BMM350_TRIGGER, (BMM350_INT_CFG(inst)))};                        \
+		IF_ENABLED(CONFIG_BMM350_TRIGGER, (BMM350_INT_CFG(inst)))                          \
+		IF_ENABLED(CONFIG_BMM350_STREAM, (BMM350_INT_CFG(inst)))                           \
+	};                                                                                         \
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(inst, pm_action);                                                 \
                                                                                                    \

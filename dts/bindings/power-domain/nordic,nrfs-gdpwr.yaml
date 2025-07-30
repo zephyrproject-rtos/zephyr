@@ -1,0 +1,65 @@
+# Copyright 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nordic NRFS Global Domain Power Request
+
+  The NRFS Global Domain Power Request service manages
+  global power domains using NRFS.
+
+  Each child node represents a global power domain, mapped
+  by name. The fast-active-0 child node is mapped to the
+  FAST_ACTIVE_0 global power domain. The nodelabel of each
+  child node is the node name prepended with "gdpwr",
+  using underscores.
+
+  Example layout:
+
+    gdpwr {
+          compatible = "nordic,nrfs-gdpwr";
+          status = "disabled";
+
+          gdpwr_fast_active_0: fast-active-0 {
+                  #power-domain-cells = <0>;
+          };
+
+          gdpwr_fast_active_1: fast-active-1 {
+                  #power-domain-cells = <0>;
+          };
+
+          gdpwr_fast_main: fast-main {
+                  #power-domain-cells = <0>;
+          };
+
+          gdpwr_slow_active: slow-active {
+                  #power-domain-cells = <0>;
+          };
+
+          gdpwr_slow_main: slow-main {
+                  #power-domain-cells = <0>;
+          };
+  };
+
+  Example usage:
+
+    uart120: uart@8e6000 {
+            compatible = "nordic,nrf-uarte";
+            reg = <0x8e6000 0x1000>;
+            status = "disabled";
+            power-domains = <&gdpwr_fast_active_1>;
+    };
+
+compatible: "nordic,nrfs-gdpwr"
+
+include: base.yaml
+
+child-binding:
+  description: Nordic NRFS Global Power Domain
+
+  properties:
+    "#power-domain-cells":
+      type: int
+      const: 0
+
+    zephyr,pm-device-runtime-auto:
+      type: boolean

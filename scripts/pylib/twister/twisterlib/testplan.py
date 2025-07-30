@@ -49,7 +49,6 @@ sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts", "dts",
 from devicetree import edtlib  # pylint: disable=unused-import
 
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/"))
-
 class Filters:
     # platform keys
     PLATFORM_KEY = 'platform key filter'
@@ -203,13 +202,12 @@ class TestPlan:
 
     def discover(self):
         self.handle_modules()
-        if self.options.test:
-            self.run_individual_testsuite = self.options.test
-
         self.test_config = TestConfiguration(self.env.test_config)
 
         self.add_configurations()
-        num = self.add_testsuites(testsuite_filter=self.run_individual_testsuite)
+        num = self.add_testsuites(testsuite_filter=self.options.test,
+                                testsuite_pattern=self.options.test_pattern)
+
         if num == 0:
             raise TwisterRuntimeError("No testsuites found at the specified location...")
         if self.load_errors:
@@ -508,9 +506,35 @@ class TestPlan:
                             testcases.remove(case.detailed_name)
         return testcases
 
-    def add_testsuites(self, testsuite_filter=None):
+    def _is_testsuite_selected(self, suite: TestSuite, testsuite_filter, testsuite_patterns_r):
+        """Check if the testsuite is selected by the user."""
+        if not testsuite_filter and not testsuite_patterns_r:
+            # no matching requested, include all testsuites
+            return True
+        if testsuite_filter:
+            scenario = os.path.basename(suite.name)
+            if (
+                suite.name
+                and (suite.name in testsuite_filter or scenario in testsuite_filter)
+            ):
+                return True
+        if testsuite_patterns_r:
+            for r in testsuite_patterns_r:
+                if r.search(suite.id):
+                    return True
+        return False
+
+    def add_testsuites(self, testsuite_filter=None, testsuite_pattern=None):
         if testsuite_filter is None:
             testsuite_filter = []
+
+        testsuite_patterns_r = []
+        if testsuite_pattern is None:
+            testsuite_pattern = []
+        else:
+            for pattern in testsuite_pattern:
+                testsuite_patterns_r.append(re.compile(pattern))
+
         for root in self.env.test_roots:
             root = os.path.abspath(root)
 
@@ -575,14 +599,11 @@ class TestPlan:
                         else:
                             suite.add_subcases(suite_dict)
 
-                        if testsuite_filter:
-                            scenario = os.path.basename(suite.name)
-                            if (
-                                suite.name
-                                and (suite.name in testsuite_filter or scenario in testsuite_filter)
-                            ):
-                                self.testsuites[suite.name] = suite
-                        elif suite.name in self.testsuites:
+                        if not self._is_testsuite_selected(suite, testsuite_filter,
+                                                       testsuite_patterns_r):
+                            # skip testsuite if they were not selected directly by the user
+                            continue
+                        if suite.name in self.testsuites:
                             msg = (
                                 f"test suite '{suite.name}' in '{suite.yamlfile}' is already added"
                             )
@@ -723,6 +744,7 @@ class TestPlan:
     def apply_filters(self, **kwargs):
 
         platform_filter = self.options.platform
+        platform_pattern = self.options.platform_pattern
         vendor_filter = self.options.vendor
         exclude_platform = self.options.exclude_platform
         testsuite_filter = self.run_individual_testsuite
@@ -737,11 +759,12 @@ class TestPlan:
         ignore_platform_key = self.options.ignore_platform_key
         emu_filter = self.options.emulation_only
 
-        logger.debug("platform filter: " + str(platform_filter))
-        logger.debug("  vendor filter: " + str(vendor_filter))
-        logger.debug("    arch_filter: " + str(arch_filter))
-        logger.debug("     tag_filter: " + str(tag_filter))
-        logger.debug("    exclude_tag: " + str(exclude_tag))
+        logger.debug(" platform filter: " + str(platform_filter))
+        logger.debug("platform_pattern: " + str(platform_pattern))
+        logger.debug("   vendor filter: " + str(vendor_filter))
+        logger.debug("     arch_filter: " + str(arch_filter))
+        logger.debug("      tag_filter: " + str(tag_filter))
+        logger.debug("     exclude_tag: " + str(exclude_tag))
 
         default_platforms = False
         vendor_platforms = False
@@ -751,7 +774,7 @@ class TestPlan:
             logger.info("Selecting all possible platforms per testsuite scenario")
             # When --all used, any --platform arguments ignored
             platform_filter = []
-        elif not platform_filter and not emu_filter and not vendor_filter:
+        elif not platform_filter and not emu_filter and not vendor_filter and not platform_pattern:
             logger.info("Selecting default platforms per testsuite scenario")
             default_platforms = True
         elif emu_filter:
@@ -766,6 +789,11 @@ class TestPlan:
             # find in aliases and rename
             platform_filter = self.verify_platforms_existence(platform_filter, "platform_filter")
             platforms = list(filter(lambda p: p.name in platform_filter, self.platforms))
+        elif platform_pattern:
+            platforms = list(
+                filter(lambda p: any(re.match(pat, alias) for pat in platform_pattern \
+                                    for alias in p.aliases), self.platforms)
+            )
         elif emu_filter:
             platforms = list(
                 filter(lambda p: bool(p.simulator_by_name(self.options.sim_name)), self.platforms)
@@ -803,14 +831,14 @@ class TestPlan:
             else:
                 _integration_platforms = []
 
-            if (ts.build_on_all and not platform_filter and
+            if (ts.build_on_all and not platform_filter and not platform_pattern and
                 self.test_config.increased_platform_scope):
                 # if build_on_all is set, we build on all platforms
                 platform_scope = self.platforms
             elif ts.integration_platforms and self.options.integration:
                 # if integration is set, we build on integration platforms
                 platform_scope = _integration_platforms
-            elif ts.integration_platforms and not platform_filter:
+            elif ts.integration_platforms and not platform_filter and not platform_pattern:
                 # if integration platforms are set, we build on those and integration mode is set
                 # for this test suite, we build on integration platforms
                 if any(ts.id.startswith(i) for i in integration_mode_list):

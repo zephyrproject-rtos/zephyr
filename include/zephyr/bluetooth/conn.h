@@ -252,6 +252,27 @@ struct bt_conn_le_subrate_changed {
 	uint16_t supervision_timeout;
 };
 
+/** Read all remote features complete callback params */
+struct bt_conn_le_read_all_remote_feat_complete {
+	/** @brief  HCI Status from LE Read All Remote Features Complete event.
+	 *
+	 *  The remaining parameters will be unchanged if status is not @ref BT_HCI_ERR_SUCCESS.
+	 */
+	uint8_t status;
+	/** Number of pages supported by remote device. */
+	uint8_t max_remote_page;
+	/** Number of pages fetched from remote device. */
+	uint8_t max_valid_page;
+	/** @brief Pointer to array of size 248, with feature bits of remote supported features.
+	 *
+	 *  Page 0 being 8 bytes, with the following 10 pages of 24 bytes.
+	 *  Refer to BT_LE_FEAT_BIT_* for values.
+	 *  Refer to the BT_FEAT_LE_* macros for value comparison.
+	 *  See Bluetooth Core Specification, Vol 6, Part B, Section 4.6.
+	 */
+	const uint8_t *features;
+};
+
 /** Connection Type */
 enum __packed bt_conn_type {
 	/** LE Connection Type */
@@ -1186,6 +1207,24 @@ int bt_conn_le_subrate_set_defaults(const struct bt_conn_le_subrate_param *param
 int bt_conn_le_subrate_request(struct bt_conn *conn,
 			       const struct bt_conn_le_subrate_param *params);
 
+/** @brief Read remote feature pages.
+ *
+ *  Request remote feature pages, from 0 up to pages_requested or the number
+ *  of pages supported by the peer. There is a maximum of 10 pages.
+ *  This function will trigger the read_all_remote_feat_complete callback
+ *  when the procedure is completed.
+ *
+ *  @kconfig_dep{CONFIG_BT_LE_EXTENDED_FEAT_SET}
+ *
+ *  @param conn @ref BT_CONN_TYPE_LE connection object.
+ *  @param pages_requested Number of feature pages to be requested from peer.
+ *                         There is a maximum of 10 pages.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection.
+ */
+int bt_conn_le_read_all_remote_features(struct bt_conn *conn, uint8_t pages_requested);
+
 /** @brief Update the connection parameters.
  *
  *  If the local device is in the peripheral role then updating the connection
@@ -1225,6 +1264,20 @@ int bt_conn_le_data_len_update(struct bt_conn *conn,
  */
 int bt_conn_le_phy_update(struct bt_conn *conn,
 			  const struct bt_conn_le_phy_param *param);
+
+/** @brief Update the default PHY parameters to be used for all subsequent
+ * connections over the LE transport.
+ *
+ *  Update the preferred transmit and receive PHYs of LE transport.
+ *  Use @ref BT_GAP_LE_PHY_NONE to indicate no preference.
+ *  For possible PHY values see @ref bt_gap_le_phy.
+ *
+ *  @param pref_tx_phy  Preferred transmitter phy prarameters.
+ *  @param pref_rx_phy  Preferred receiver phy prameters.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ */
+int bt_conn_le_set_default_phy(uint8_t pref_tx_phy, uint8_t pref_rx_phy);
 
 /** @brief Disconnect from a remote device or cancel pending connection.
  *
@@ -1877,6 +1930,25 @@ struct bt_conn_cb {
 				const struct bt_conn_le_subrate_changed *params);
 #endif /* CONFIG_BT_SUBRATING */
 
+#if defined(CONFIG_BT_LE_EXTENDED_FEAT_SET)
+	/** @brief Read all remote features complete event.
+	 *
+	 *  This callback notifies the application that a 'read all remote
+	 *  features' procedure of the connection is completed. The other params
+	 *  will not be populated if status is not @ref BT_HCI_ERR_SUCCESS.
+	 *
+	 *  This callback can be triggered by calling @ref
+	 *  bt_conn_le_read_all_remote_features or by the procedure running
+	 *  autonomously in the controller.
+	 *
+	 *  @param conn   Connection object.
+	 *  @param params Remote features.
+	 */
+	void (*read_all_remote_feat_complete)(
+		struct bt_conn *conn,
+		const struct bt_conn_le_read_all_remote_feat_complete *params);
+#endif /* CONFIG_BT_LE_EXTENDED_FEAT_SET */
+
 #if defined(CONFIG_BT_CHANNEL_SOUNDING)
 	/** @brief LE CS Read Remote Supported Capabilities Complete event.
 	 *
@@ -1973,6 +2045,17 @@ struct bt_conn_cb {
 		struct bt_conn *conn, uint8_t status,
 		struct bt_conn_le_cs_procedure_enable_complete *params);
 
+#endif
+
+#if defined(CONFIG_BT_CLASSIC)
+	/** @brief The role of the connection has changed.
+	 *
+	 *  This callback notifies the application that the role switch procedure has completed.
+	 *
+	 *  @param conn Connection object.
+	 *  @param status HCI status of role change event.
+	 */
+	void (*role_changed)(struct bt_conn *conn, uint8_t status);
 #endif
 
 	/** @internal Internally used field for list handling */
@@ -2676,6 +2759,29 @@ struct bt_conn *bt_conn_lookup_addr_br(const bt_addr_t *peer);
  *  @return Destination address if @p conn is a valid @ref BT_CONN_TYPE_BR connection
  */
 const bt_addr_t *bt_conn_get_dst_br(const struct bt_conn *conn);
+
+/** @brief Change the role of the conn.
+ *
+ *  @param conn Connection object.
+ *  @param role The role that want to switch as, the value is @ref BT_HCI_ROLE_CENTRAL and
+ *              @ref BT_HCI_ROLE_PERIPHERAL from hci_types.h.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ *  @return -ENOBUFS HCI command buffer is not available.
+ *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_BR connection
+ */
+int bt_conn_br_switch_role(const struct bt_conn *conn, uint8_t role);
+
+/** @brief Enable/disable role switch of the connection by setting the connection's link policy.
+ *
+ *  @param conn Connection object.
+ *  @param enable Value enable/disable role switch of controller.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ *  @return -ENOBUFS HCI command buffer is not available.
+ *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_BR connection.
+ */
+int bt_conn_br_set_role_switch_enable(const struct bt_conn *conn, bool enable);
 
 #ifdef __cplusplus
 }

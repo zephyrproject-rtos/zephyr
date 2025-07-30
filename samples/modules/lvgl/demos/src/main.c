@@ -53,7 +53,10 @@ int main(void)
 #error Enable one of the demos CONFIG_LV_Z_DEMO_*
 #endif
 
+#ifndef CONFIG_LV_Z_RUN_LVGL_ON_WORKQUEUE
 	lv_timer_handler();
+#endif
+
 	display_blanking_off(display_dev);
 #ifdef CONFIG_LV_Z_MEM_POOL_SYS_HEAP
 	lvgl_print_heap_info(false);
@@ -61,9 +64,13 @@ int main(void)
 	printf("lvgl in malloc mode\n");
 #endif
 	while (1) {
+#ifndef CONFIG_LV_Z_RUN_LVGL_ON_WORKQUEUE
 		uint32_t sleep_ms = lv_timer_handler();
-
 		k_msleep(MIN(sleep_ms, INT32_MAX));
+#else
+		/* LVGL managed by dedicated workqueue, just put an application side delay */
+		k_msleep(10);
+#endif
 #ifdef CONFIG_LV_Z_DEMO_RENDER_SCENE_DYNAMIC
 		if (sys_timepoint_expired(next_scene_switch)) {
 			cur_scene = (cur_scene + 1) % LV_DEMO_RENDER_SCENE_NUM;

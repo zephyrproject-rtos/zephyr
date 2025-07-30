@@ -48,8 +48,18 @@ https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 API Changes
 ***********
 
+* RTIO
+
+  * :c:func:`rtio_is_spi`
+  * :c:func:`rtio_is_cspi`
+  * :c:func:`rtio_is_i3c`
+  * :c:func:`rtio_read_regs_async`
+
 Removed APIs and options
 ========================
+
+* The TinyCrypt library was removed as the upstream version is no longer maintained.
+  PSA Crypto API is now the recommended cryptographic library for Zephyr.
 
 Deprecated APIs and options
 ===========================
@@ -64,6 +74,14 @@ New APIs and options
   instead.
 
 .. zephyr-keep-sorted-start re(^\* \w)
+
+* Power management
+
+   * :c:func:`pm_device_driver_deinit`
+
+* Settings
+
+   * :kconfig:option:`CONFIG_SETTINGS_TFM_ITS`
 
 .. zephyr-keep-sorted-stop
 
@@ -83,6 +101,19 @@ New Drivers
   Same as above for boards, this will also be recomputed at the time of the release.
   Just link the driver, further details go in the binding description
 
+* Input
+
+   * :dtcompatible:`chipsemi,chsc5x`
+
+* Interrupt controller
+
+   * STM32 EXTI interrupt/event controller (:dtcompatible:`st,stm32-exti`) has a dedicated driver and API now, separate from STM32 GPIO Interrupt Control driver.
+
+* RTC
+
+   * STM32 RTC driver has been updated to use the new STM32 EXTI interrupt controller API
+
+
 New Samples
 ***********
 
@@ -96,3 +127,6 @@ Other notable changes
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
   a paragraph or is it enough to link to the api/driver/Kconfig/board page above?
+
+* Removed support for Nordic Semiconductor nRF54L20 PDK (``nrf54l20pdk``) since it is
+  replaced with :zephyr:board:`nrf54lm20dk` (``nrf54lm20dk``).

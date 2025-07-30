@@ -181,7 +181,8 @@ static int plain_text_read_int(struct lwm2m_input_context *in, int64_t *value,
 {
 	int i = 0;
 	bool neg = false;
-	uint8_t tmp;
+	uint64_t temp;
+	uint8_t c;
 
 	if (in->offset >= in->in_cpkt->offset) {
 		/* No remaining data in the payload. */
@@ -189,18 +190,21 @@ static int plain_text_read_int(struct lwm2m_input_context *in, int64_t *value,
 	}
 
 	/* initialize values to 0 */
-	*value = 0;
+	temp = 0;
 
 	while (in->offset < in->in_cpkt->offset) {
-		if (buf_read_u8(&tmp, CPKT_BUF_READ(in->in_cpkt),
+		if (buf_read_u8(&c, CPKT_BUF_READ(in->in_cpkt),
 				&in->offset) < 0) {
 			break;
 		}
 
-		if (tmp == '-' && accept_sign && i == 0) {
+		if (c == '-' && accept_sign && i == 0) {
 			neg = true;
-		} else if (isdigit(tmp) != 0) {
-			*value = *value * 10 + (tmp - '0');
+		} else if (isdigit(c) != 0) {
+			temp = temp * 10ULL + (c - '0');
+			if (temp > ((uint64_t)INT64_MAX + (neg ? 1ULL : 0ULL))) {
+				return -EINVAL;
+			}
 		} else {
 			/* anything else stop reading */
 			in->offset--;
@@ -210,9 +214,7 @@ static int plain_text_read_int(struct lwm2m_input_context *in, int64_t *value,
 		i++;
 	}
 
-	if (neg) {
-		*value = -*value;
-	}
+	*value = neg ? -temp : temp;
 
 	return i;
 }

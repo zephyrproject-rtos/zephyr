@@ -391,6 +391,7 @@ static void socket_fault_cb(int error)
 		sm_handle_timeout_state(ENGINE_NETWORK_ERROR);
 	} else if (client.engine_state != ENGINE_SUSPENDED &&
 		   !client.server_disabled) {
+		lwm2m_engine_stop(client.ctx);
 		sm_handle_timeout_state(ENGINE_IDLE);
 	}
 }
@@ -1413,6 +1414,7 @@ static void sm_do_network_error(void)
 stop_engine:
 
 	/* We are out of options, stop engine */
+	lwm2m_engine_stop(client.ctx);
 	if (client.ctx->event_cb) {
 		if (client.ctx->bootstrap_mode) {
 			client.ctx->event_cb(client.ctx,

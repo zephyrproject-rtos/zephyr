@@ -66,7 +66,7 @@ static const uint32_t saadc_psels[NRF_SAADC_DVDD + 1] = {
 	[NRF_SAADC_DVDD] = NRF_SAADC_INPUT_DVDD,
 };
 #elif defined(NRF54LV10A_ENGA_XXAA)
-static const uint32_t saadc_psels[NRF_SAADC_DVDD + 1] = {
+static const uint32_t saadc_psels[NRF_SAADC_AIN7 + 1] = {
 	[NRF_SAADC_AIN0] = NRF_PIN_PORT_TO_PIN_NUMBER(0U, 1),
 	[NRF_SAADC_AIN1] = NRF_PIN_PORT_TO_PIN_NUMBER(1U, 1),
 	[NRF_SAADC_AIN2] = NRF_PIN_PORT_TO_PIN_NUMBER(2U, 1),
@@ -75,8 +75,6 @@ static const uint32_t saadc_psels[NRF_SAADC_DVDD + 1] = {
 	[NRF_SAADC_AIN5] = NRF_PIN_PORT_TO_PIN_NUMBER(10U, 1),
 	[NRF_SAADC_AIN6] = NRF_PIN_PORT_TO_PIN_NUMBER(11U, 1),
 	[NRF_SAADC_AIN7] = NRF_PIN_PORT_TO_PIN_NUMBER(12U, 1),
-	[NRF_SAADC_VDD]  = NRF_SAADC_INPUT_VDD,
-	[NRF_SAADC_DVDD] = NRF_SAADC_INPUT_DVDD,
 };
 #endif
 
@@ -283,7 +281,7 @@ static int gain_set(nrf_saadc_channel_config_t *ch_cfg, enum adc_gain gain)
 #endif
 	default:
 #else
-	if (ch_cfg->gain != ADC_GAIN_1) {
+	if (gain != ADC_GAIN_1) {
 #endif /* defined(NRF_SAADC_HAS_CH_GAIN) */
 		LOG_ERR("Selected ADC gain is not valid");
 		return -EINVAL;
@@ -710,6 +708,8 @@ static DEVICE_API(adc, adc_nrfx_driver_api) = {
 
 /* Validate configuration of all channels. */
 DT_FOREACH_CHILD(DT_DRV_INST(0), VALIDATE_CHANNEL_CONFIG)
+
+NRF_DT_CHECK_NODE_HAS_REQUIRED_MEMORY_REGIONS(DT_DRV_INST(0));
 
 DEVICE_DT_INST_DEFINE(0, init_saadc, NULL, NULL, NULL, POST_KERNEL,
 		      CONFIG_ADC_INIT_PRIORITY, &adc_nrfx_driver_api);

@@ -44,7 +44,6 @@
 		led1 = &led1;
 		led2 = &led2;
 		pwm-led0 = &pwm_led0;
-		bootloader-led0 = &led0;
 		mcuboot-led0 = &led0;
 		watchdog0 = &wdt0;
 	};

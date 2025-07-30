@@ -94,7 +94,7 @@ with the changes in the project.
    :reversed:
 
    release-notes-3.7
-   release-notes-4.[1-2]
+   release-notes-4.[1-3]
 
 Migration Guides
 ****************
@@ -125,8 +125,8 @@ to be able to understand the context of the change.
    :glob:
    :reversed:
 
-   migration-guide-3.[6-7]
-   migration-guide-4.[0-2]
+   migration-guide-3.7
+   migration-guide-4.[1-3]
 
 End-of-life Releases
 ********************

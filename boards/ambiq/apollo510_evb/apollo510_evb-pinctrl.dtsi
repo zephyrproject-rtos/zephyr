@@ -405,4 +405,12 @@
 			drive-strength = "0.5";
 		};
 	};
+
+	pwm2_default: pwm2_default{
+		group1 {
+			pinmux = <CT165_P165>;
+			drive-open-drain;
+			drive-strength = "0.5";
+		};
+	};
 };

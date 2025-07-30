@@ -109,8 +109,16 @@ LOG_MODULE_REGISTER(adc_stm32);
 					   st_adc_oversampler,\
 					   value) 0)
 
+#define ANY_CHILD_NODE_IS_DIFFERENTIAL(inst) \
+	(DT_INST_FOREACH_CHILD_VARGS(inst, IS_EQ_NODE_PROP_OR, \
+				     zephyr_differential, \
+				     0, 1) 0)
+
 #define IS_EQ_PROP_OR(inst, prop, default_value, compare_value) \
 	IS_EQ(DT_INST_PROP_OR(inst, prop, default_value), compare_value) ||
+
+#define IS_EQ_NODE_PROP_OR(node, prop, default_value, compare_value) \
+	IS_EQ(DT_PROP_OR(node, prop, default_value), compare_value) ||
 
 #define IS_EQ_STRING_PROP(inst, prop, compare_value) \
 	IS_EQ(DT_INST_STRING_UPPER_TOKEN(inst, prop), compare_value) ||
@@ -187,6 +195,7 @@ struct adc_stm32_cfg {
 	size_t pclk_len;
 	uint32_t clk_prescaler;
 	const struct pinctrl_dev_config *pcfg;
+	bool differential_channels_used;
 	const uint16_t sampling_time_table[STM32_NB_SAMPLING_TIME];
 	int8_t num_sampling_time_common_channels;
 	int8_t sequencer_type;
@@ -484,11 +493,16 @@ static void adc_stm32_calibration_measure(ADC_TypeDef *adc, uint32_t *calibratio
 }
 #endif
 
-static void adc_stm32_calibration_start(const struct device *dev)
+static void adc_stm32_calibration_start(const struct device *dev, bool single_ended)
 {
 	const struct adc_stm32_cfg *config =
 		(const struct adc_stm32_cfg *)dev->config;
 	ADC_TypeDef *adc = config->base;
+#ifdef LL_ADC_SINGLE_ENDED
+	uint32_t calib_type = single_ended ? LL_ADC_SINGLE_ENDED : LL_ADC_DIFFERENTIAL_ENDED;
+#else
+	ARG_UNUSED(single_ended);
+#endif
 
 #if defined(STM32F3XX_ADC) || \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
@@ -497,7 +511,7 @@ static void adc_stm32_calibration_start(const struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32H7RSX) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X)
-	LL_ADC_StartCalibration(adc, LL_ADC_SINGLE_ENDED);
+	LL_ADC_StartCalibration(adc, calib_type);
 #elif defined(CONFIG_SOC_SERIES_STM32C0X) || \
 	defined(CONFIG_SOC_SERIES_STM32F0X) || \
 	DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) || \
@@ -509,6 +523,7 @@ static void adc_stm32_calibration_start(const struct device *dev)
 
 	LL_ADC_StartCalibration(adc);
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
+	ARG_UNUSED(calib_type);
 	if (adc != ADC4) {
 		uint32_t dev_id = LL_DBGMCU_GetDeviceID();
 		uint32_t rev_id = LL_DBGMCU_GetRevisionID();
@@ -531,9 +546,11 @@ static void adc_stm32_calibration_start(const struct device *dev)
 	}
 	LL_ADC_StartCalibration(adc, LL_ADC_CALIB_OFFSET);
 #elif defined(CONFIG_SOC_SERIES_STM32H7X)
-	LL_ADC_StartCalibration(adc, LL_ADC_CALIB_OFFSET, LL_ADC_SINGLE_ENDED);
+	LL_ADC_StartCalibration(adc, LL_ADC_CALIB_OFFSET, calib_type);
 #elif defined(CONFIG_SOC_SERIES_STM32N6X)
 	uint32_t calibration_factor;
+
+	ARG_UNUSED(calib_type);
 	/* Start ADC calibration */
 	LL_ADC_StartCalibration(adc, LL_ADC_SINGLE_ENDED);
 	/* Disable additional offset before calibration start */
@@ -580,7 +597,10 @@ static int adc_stm32_calibrate(const struct device *dev)
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) && \
 	!defined(CONFIG_SOC_SERIES_STM32N6X)
 	adc_stm32_disable(adc);
-	adc_stm32_calibration_start(dev);
+	adc_stm32_calibration_start(dev, true);
+	if (config->differential_channels_used) {
+		adc_stm32_calibration_start(dev, false);
+	}
 	adc_stm32_calibration_delay(dev);
 #endif /* !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) */
 
@@ -592,7 +612,7 @@ static int adc_stm32_calibrate(const struct device *dev)
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) || \
 	defined(CONFIG_SOC_SERIES_STM32N6X)
 	adc_stm32_calibration_delay(dev);
-	adc_stm32_calibration_start(dev);
+	adc_stm32_calibration_start(dev, true);
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) */
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X) && \
@@ -1287,18 +1307,64 @@ static int adc_stm32_sampling_time_setup(const struct device *dev, uint8_t id,
 	return 0;
 }
 
+#if defined(STM32F3XX_ADC) || \
+	defined(CONFIG_SOC_SERIES_STM32G4X) || \
+	defined(CONFIG_SOC_SERIES_STM32H5X) || \
+	defined(CONFIG_SOC_SERIES_STM32H7X) || \
+	defined(CONFIG_SOC_SERIES_STM32H7RSX) || \
+	defined(CONFIG_SOC_SERIES_STM32L4X) || \
+	defined(CONFIG_SOC_SERIES_STM32L5X) || \
+	defined(CONFIG_SOC_SERIES_STM32U5X) || \
+	defined(CONFIG_SOC_SERIES_STM32WBX)
+#define DIFFERENTIAL_MODE_SUPPORTED 1
+#else
+#define DIFFERENTIAL_MODE_SUPPORTED 0
+#endif
+
+#if DIFFERENTIAL_MODE_SUPPORTED
+static void set_channel_differential_mode(ADC_TypeDef *adc, uint8_t channel_id, bool differential)
+{
+	const uint32_t mode = differential ? LL_ADC_DIFFERENTIAL_ENDED : LL_ADC_SINGLE_ENDED;
+	const uint32_t channel = __LL_ADC_DECIMAL_NB_TO_CHANNEL(channel_id);
+
+	/* The ADC must be disabled to change the single ended / differential mode setting. The
+	 * disable / re-enable cycle can take some time, so avoid doing this if the channel is
+	 * already set to the correct mode.
+	 */
+	if (LL_ADC_GetChannelSingleDiff(adc, channel) == mode) {
+		return;
+	}
+
+	adc_stm32_disable(adc);
+	LL_ADC_SetChannelSingleDiff(adc, channel, mode);
+	adc_stm32_enable(adc);
+}
+#endif
+
 static int adc_stm32_channel_setup(const struct device *dev,
 				   const struct adc_channel_cfg *channel_cfg)
 {
-#ifdef CONFIG_SOC_SERIES_STM32H5X
+#if defined(CONFIG_SOC_SERIES_STM32H5X) || DIFFERENTIAL_MODE_SUPPORTED
 	const struct adc_stm32_cfg *config = (const struct adc_stm32_cfg *)dev->config;
 	ADC_TypeDef *adc = config->base;
 #endif
 
+#if !DIFFERENTIAL_MODE_SUPPORTED
 	if (channel_cfg->differential) {
-		LOG_ERR("Differential channels are not supported");
+		LOG_ERR("Differential channels not supported on this SOC series");
 		return -EINVAL;
 	}
+#else
+	if (channel_cfg->differential && !config->differential_channels_used) {
+		/* At least one channel must be set to differential mode in the devicetree
+		 * to cause a differential calibration to be performed during init.
+		 */
+		LOG_ERR("Differential calibration not done, cannot use differential mode");
+		return -EINVAL;
+	}
+
+	set_channel_differential_mode(adc, channel_cfg->channel_id, channel_cfg->differential);
+#endif
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
 		LOG_ERR("Invalid channel gain");
@@ -1918,6 +1984,7 @@ static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
 	.pclk_len = DT_INST_NUM_CLOCKS(index),				\
 	.clk_prescaler = ADC_STM32_DT_PRESC(index),			\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
+	.differential_channels_used = (ANY_CHILD_NODE_IS_DIFFERENTIAL(index) > 0), \
 	.sequencer_type = DT_INST_STRING_UPPER_TOKEN(index, st_adc_sequencer),	\
 	.oversampler_type = DT_INST_STRING_UPPER_TOKEN(index, st_adc_oversampler),	\
 	.sampling_time_table = DT_INST_PROP(index, sampling_times),	\

@@ -1,0 +1,10 @@
+# Copyright(c) 2025 Daikin Comfort Technologies North America, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config DAC_SAMD5X
+	bool "Atmel SAMD5x series DAC Driver"
+	default y
+	depends on DT_HAS_ATMEL_SAMD5X_DAC_ENABLED
+	select PINCTRL
+	help
+	  Enables the Atmel SAMD5x MCU Family Digital-to-Analog Converter(DAC) driver.

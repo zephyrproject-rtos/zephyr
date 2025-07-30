@@ -8,7 +8,7 @@ Blackbox tests for twister's command line functions related to memory footprints
 
 import importlib
 import json
-import mock
+from unittest import mock
 import os
 import pytest
 import sys

@@ -10,6 +10,8 @@ common:
     - mimxrt1170_evk/mimxrt1176/cm4
     - mimxrt1180_evk/mimxrt1189/cm33
     - mimxrt1180_evk/mimxrt1189/cm7
+    - mimxrt700_evk/mimxrt798s/cm33_cpu0
+    - mimxrt700_evk/mimxrt798s/cm33_cpu1
   integration_platforms:
     - twr_ke18f
   tags:

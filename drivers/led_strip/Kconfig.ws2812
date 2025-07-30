@@ -17,6 +17,17 @@ config WS2812_STRIP_SPI
 	  The SPI driver is portable, but requires significantly more
 	  memory (1 byte of overhead per bit of pixel data).
 
+if WS2812_STRIP_SPI
+
+config WS2812_STRIP_SPI_FORCE_NOCACHE
+	bool "Place led buffer in __nocache section"
+	default y if DCACHE && DMA
+	help
+	  For SPI communication using DMA, place the WS2812 SPI buffer in the __nocache section to
+	  ensure it is stored in uncached memory, as DMA usually requires access to uncached regions.
+
+endif
+
 config WS2812_STRIP_I2S
 	bool "WS2812 LED strip I2S driver"
 	default y

@@ -1087,10 +1087,10 @@ class Kconfig(object):
             self.top_node.next = None
         except UnicodeDecodeError as e:
             _decoding_error(e, self.filename)
-
-        # Close the top-level Kconfig file. __self__ fetches the 'file' object
-        # for the method.
-        self._readline.__self__.close()
+        finally:
+            # Close the top-level Kconfig file. __self__ fetches the 'file' object
+            # for the method.
+            self._readline.__self__.close()
 
         self._parsing_kconfigs = False
 
@@ -2998,8 +2998,10 @@ class Kconfig(object):
 
                 for filename in filenames:
                     self._enter_file(filename)
-                    prev = self._parse_block(None, parent, prev)
-                    self._leave_file()
+                    try:
+                        prev = self._parse_block(None, parent, prev)
+                    finally:
+                        self._leave_file()
 
             elif t0 is end_token:
                 # Reached the end of the block. Terminate the final node and

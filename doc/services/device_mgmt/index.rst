@@ -9,7 +9,6 @@ Device Management
     mcumgr.rst
     mcumgr_handlers.rst
     mcumgr_callbacks.rst
-    mcumgr_backporting.rst
     smp_protocol.rst
     smp_transport.rst
     dfu.rst

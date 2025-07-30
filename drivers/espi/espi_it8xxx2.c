@@ -32,6 +32,7 @@ LOG_MODULE_REGISTER(espi, CONFIG_ESPI_LOG_LEVEL);
 #define IT8XXX2_PORT_80_IRQ  DT_INST_IRQ_BY_IDX(0, 5, irq)
 #define IT8XXX2_PMC2_IBF_IRQ DT_INST_IRQ_BY_IDX(0, 6, irq)
 #define IT8XXX2_TRANS_IRQ    DT_INST_IRQ_BY_IDX(0, 7, irq)
+#define IT8XXX2_PMC3_IBF_IRQ DT_INST_IRQ_BY_IDX(0, 8, irq)
 
 /* General Capabilities and Configuration 1 */
 #define IT8XXX2_ESPI_MAX_FREQ_MASK GENMASK(2, 0)
@@ -306,8 +307,20 @@ struct pmc_regs {
 	volatile uint8_t MBXCTRL;
 	/* 0x1a-0x1f: Reserved2 */
 	volatile uint8_t reserved2[6];
-	/* 0x20-0xff: Reserved3 */
-	volatile uint8_t reserved3[0xe0];
+	/* 0x20: Host Interface PM Channel 3 Status */
+	volatile uint8_t PM3STS;
+	/* 0x21: Host Interface PM Channel 3 Data Out Port */
+	volatile uint8_t PM3DO;
+	/* 0x22: Host Interface PM Channel 3 Data In Port */
+	volatile uint8_t PM3DI;
+	/* 0x23: Host Interface PM Channel 3 Control */
+	volatile uint8_t PM3CTL;
+	/* 0x24: Host Interface PM Channel 3 Interrupt Control */
+	volatile uint8_t PM3IC;
+	/* 0x25: Host Interface PM Channel 3 Interrupt Enable */
+	volatile uint8_t PM3IE;
+	/* 0x26-0xff: Reserved3 */
+	volatile uint8_t reserved3[0xda];
 };
 
 /* Input Buffer Full Interrupt Enable */
@@ -325,6 +338,8 @@ struct pmc_regs {
 #define PMC_PM2CTL_IBFIE BIT(0)
 /* General Purpose Flag */
 #define PMC_PM2STS_GPF   BIT(2)
+/* PMC3 Input Buffer Full Interrupt Enable */
+#define PMC_PM3CTL_IBFIE BIT(0)
 
 /*
  * Dedicated Interrupt
@@ -614,6 +629,12 @@ IT8XXX2_ESPI_REG_OFFSET_CHECK(pmc_regs, PM2DO, 0x11);
 IT8XXX2_ESPI_REG_OFFSET_CHECK(pmc_regs, PM2DI, 0x14);
 IT8XXX2_ESPI_REG_OFFSET_CHECK(pmc_regs, PM2CTL, 0x16);
 IT8XXX2_ESPI_REG_OFFSET_CHECK(pmc_regs, MBXCTRL, 0x19);
+IT8XXX2_ESPI_REG_OFFSET_CHECK(pmc_regs, PM3STS, 0x20);
+IT8XXX2_ESPI_REG_OFFSET_CHECK(pmc_regs, PM3DO, 0x21);
+IT8XXX2_ESPI_REG_OFFSET_CHECK(pmc_regs, PM3DI, 0x22);
+IT8XXX2_ESPI_REG_OFFSET_CHECK(pmc_regs, PM3CTL, 0x23);
+IT8XXX2_ESPI_REG_OFFSET_CHECK(pmc_regs, PM3IC, 0x24);
+IT8XXX2_ESPI_REG_OFFSET_CHECK(pmc_regs, PM3IE, 0x25);
 
 /* eSPI slave register structure check */
 IT8XXX2_ESPI_REG_SIZE_CHECK(espi_slave_regs, 0xd8);
@@ -647,6 +668,12 @@ IT8XXX2_ESPI_REG_OFFSET_CHECK(espi_queue0_regs, PUT_OOB_DATA, 0x80);
 IT8XXX2_ESPI_REG_SIZE_CHECK(espi_queue1_regs, 0xc0);
 IT8XXX2_ESPI_REG_OFFSET_CHECK(espi_queue1_regs, UPSTREAM_DATA, 0x00);
 IT8XXX2_ESPI_REG_OFFSET_CHECK(espi_queue1_regs, PUT_FLASH_NP_DATA, 0x80);
+
+/* Register used to record VWx data transmitted to the eSPI host. */
+#define IT8XXX2_ESPI_VW_REC_VW4 0xe1
+#define IT8XXX2_ESPI_VW_REC_VW5 0xe2
+#define IT8XXX2_ESPI_VW_REC_VW6 0xe3
+#define IT8XXX2_ESPI_VW_REC_VW40 0xe4
 
 struct espi_it8xxx2_wuc {
 	/* WUC control device structure */
@@ -682,9 +709,10 @@ struct espi_it8xxx2_data {
 };
 
 struct vw_channel_t {
-	uint8_t  vw_index;      /* VW index of signal */
-	uint8_t  level_mask;    /* level bit of signal */
-	uint8_t  valid_mask;    /* valid bit of signal */
+	uint8_t vw_index;    /* VW index of signal */
+	uint8_t level_mask;  /* level bit of signal */
+	uint8_t valid_mask;  /* valid bit of signal */
+	uint8_t vw_sent_reg; /* vw signal sent to host */
 };
 
 struct vwidx_isr_t {
@@ -745,6 +773,29 @@ static const struct ec2i_t pmc1_settings[] = {
 	/* Enable logical device */
 	{HOST_INDEX_LDA, 0x01},
 };
+
+#ifdef CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT
+#define IT8XXX2_ESPI_HOST_IO_PVT_DATA_PORT_MSB                                                     \
+	((CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT_PORT_NUM >> 8) & 0xff)
+#define IT8XXX2_ESPI_HOST_IO_PVT_DATA_PORT_LSB (CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT_PORT_NUM & 0xff)
+#define IT8XXX2_ESPI_HOST_IO_PVT_CMD_PORT_MSB                                                      \
+	(((CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT_PORT_NUM + 4) >> 8) & 0xff)
+#define IT8XXX2_ESPI_HOST_IO_PVT_CMD_PORT_LSB                                                      \
+	((CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT_PORT_NUM + 4) & 0xff)
+static const struct ec2i_t pmc3_settings[] = {
+	/* Select logical device 17h(PMC3) */
+	{HOST_INDEX_LDN, LDN_PMC3},
+	/* I/O Port Base Address (data/command ports) */
+	{HOST_INDEX_IOBAD0_MSB, IT8XXX2_ESPI_HOST_IO_PVT_DATA_PORT_MSB},
+	{HOST_INDEX_IOBAD0_LSB, IT8XXX2_ESPI_HOST_IO_PVT_DATA_PORT_LSB},
+	{HOST_INDEX_IOBAD1_MSB, IT8XXX2_ESPI_HOST_IO_PVT_CMD_PORT_MSB},
+	{HOST_INDEX_IOBAD1_LSB, IT8XXX2_ESPI_HOST_IO_PVT_CMD_PORT_LSB},
+	/* Set IRQ=00h for logical device */
+	{HOST_INDEX_IRQNUMX, 0x00},
+	/* Enable logical device */
+	{HOST_INDEX_LDA, 0x01},
+};
+#endif
 
 #ifdef CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD
 #define IT8XXX2_ESPI_HC_DATA_PORT_MSB \
@@ -952,6 +1003,9 @@ static void pnpcfg_it8xxx2_init(const struct device *dev)
 	}
 #ifdef CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD
 	PNPCFG(pmc2);
+#endif
+#ifdef CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT
+	PNPCFG(pmc3);
 #endif
 #if defined(CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD) || \
 	defined(CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION)
@@ -1171,41 +1225,71 @@ static void pmc2_it8xxx2_init(const struct device *dev)
 }
 #endif
 
+#ifdef CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT
+/* PMC3 (Host private port) */
+static void pmc3_it8xxx2_ibf_isr(const struct device *dev)
+{
+	const struct espi_it8xxx2_config *const config = dev->config;
+	struct espi_it8xxx2_data *const data = dev->data;
+	struct pmc_regs *const pmc_reg = (struct pmc_regs *)config->base_pmc;
+	struct espi_event evt = {.evt_type = ESPI_BUS_PERIPHERAL_NOTIFICATION,
+				 .evt_details = ESPI_PERIPHERAL_HOST_IO_PVT,
+				 .evt_data = ESPI_PERIPHERAL_NODATA};
+
+	evt.evt_data = pmc_reg->PM3DI;
+	espi_send_callbacks(&data->callbacks, dev, evt);
+}
+
+static void pmc3_it8xxx2_init(const struct device *dev)
+{
+	const struct espi_it8xxx2_config *const config = dev->config;
+	struct pmc_regs *const pmc_reg = (struct pmc_regs *)config->base_pmc;
+
+	/* Enable pmc3 input buffer full interrupt */
+	pmc_reg->PM3CTL |= PMC_PM3CTL_IBFIE;
+	IRQ_CONNECT(IT8XXX2_PMC3_IBF_IRQ, 0, pmc3_it8xxx2_ibf_isr, DEVICE_DT_INST_GET(0), 0);
+	irq_enable(IT8XXX2_PMC3_IBF_IRQ);
+}
+#endif
+
+#define IT8XXX2_ESPI_VW_SEND_TIMEOUT_US (USEC_PER_MSEC * 10)
+
 /* eSPI api functions */
-#define VW_CHAN(signal, index, level, valid) \
-	[signal] = {.vw_index = index, .level_mask = level, .valid_mask = valid}
+#define VW_CHAN(signal, index, level, valid, reg) \
+	[signal] = {.vw_index = index, .level_mask = level, \
+			.valid_mask = valid, .vw_sent_reg = reg}
 
 /* VW signals used in eSPI */
 static const struct vw_channel_t vw_channel_list[] = {
-	VW_CHAN(ESPI_VWIRE_SIGNAL_SLP_S3,        0x02, BIT(0), BIT(4)),
-	VW_CHAN(ESPI_VWIRE_SIGNAL_SLP_S4,        0x02, BIT(1), BIT(5)),
-	VW_CHAN(ESPI_VWIRE_SIGNAL_SLP_S5,        0x02, BIT(2), BIT(6)),
-	VW_CHAN(ESPI_VWIRE_SIGNAL_OOB_RST_WARN,  0x03, BIT(2), BIT(6)),
-	VW_CHAN(ESPI_VWIRE_SIGNAL_PLTRST,        0x03, BIT(1), BIT(5)),
-	VW_CHAN(ESPI_VWIRE_SIGNAL_SUS_STAT,      0x03, BIT(0), BIT(4)),
-	VW_CHAN(ESPI_VWIRE_SIGNAL_NMIOUT,        0x07, BIT(2), BIT(6)),
-	VW_CHAN(ESPI_VWIRE_SIGNAL_SMIOUT,        0x07, BIT(1), BIT(5)),
-	VW_CHAN(ESPI_VWIRE_SIGNAL_HOST_RST_WARN, 0x07, BIT(0), BIT(4)),
-	VW_CHAN(ESPI_VWIRE_SIGNAL_SLP_A,         0x41, BIT(3), BIT(7)),
-	VW_CHAN(ESPI_VWIRE_SIGNAL_SUS_PWRDN_ACK, 0x41, BIT(1), BIT(5)),
-	VW_CHAN(ESPI_VWIRE_SIGNAL_SUS_WARN,      0x41, BIT(0), BIT(4)),
-	VW_CHAN(ESPI_VWIRE_SIGNAL_SLP_WLAN,      0x42, BIT(1), BIT(5)),
-	VW_CHAN(ESPI_VWIRE_SIGNAL_SLP_LAN,       0x42, BIT(0), BIT(4)),
-	VW_CHAN(ESPI_VWIRE_SIGNAL_HOST_C10,      0x47, BIT(0), BIT(4)),
-	VW_CHAN(ESPI_VWIRE_SIGNAL_DNX_WARN,      0x4a, BIT(1), BIT(5)),
-	VW_CHAN(ESPI_VWIRE_SIGNAL_PME,           0x04, BIT(3), BIT(7)),
-	VW_CHAN(ESPI_VWIRE_SIGNAL_WAKE,          0x04, BIT(2), BIT(6)),
-	VW_CHAN(ESPI_VWIRE_SIGNAL_OOB_RST_ACK,   0x04, BIT(0), BIT(4)),
-	VW_CHAN(ESPI_VWIRE_SIGNAL_TARGET_BOOT_STS,  0x05, BIT(3), BIT(7)),
-	VW_CHAN(ESPI_VWIRE_SIGNAL_ERR_NON_FATAL, 0x05, BIT(2), BIT(6)),
-	VW_CHAN(ESPI_VWIRE_SIGNAL_ERR_FATAL,     0x05, BIT(1), BIT(5)),
-	VW_CHAN(ESPI_VWIRE_SIGNAL_TARGET_BOOT_DONE, 0x05, BIT(0), BIT(4)),
-	VW_CHAN(ESPI_VWIRE_SIGNAL_HOST_RST_ACK,  0x06, BIT(3), BIT(7)),
-	VW_CHAN(ESPI_VWIRE_SIGNAL_RST_CPU_INIT,  0x06, BIT(2), BIT(6)),
-	VW_CHAN(ESPI_VWIRE_SIGNAL_SMI,           0x06, BIT(1), BIT(5)),
-	VW_CHAN(ESPI_VWIRE_SIGNAL_SCI,           0x06, BIT(0), BIT(4)),
-	VW_CHAN(ESPI_VWIRE_SIGNAL_DNX_ACK,       0x40, BIT(1), BIT(5)),
-	VW_CHAN(ESPI_VWIRE_SIGNAL_SUS_ACK,       0x40, BIT(0), BIT(4)),
+	VW_CHAN(ESPI_VWIRE_SIGNAL_SLP_S3,        0x02, BIT(0), BIT(4), 0),
+	VW_CHAN(ESPI_VWIRE_SIGNAL_SLP_S4,        0x02, BIT(1), BIT(5), 0),
+	VW_CHAN(ESPI_VWIRE_SIGNAL_SLP_S5,        0x02, BIT(2), BIT(6), 0),
+	VW_CHAN(ESPI_VWIRE_SIGNAL_OOB_RST_WARN,  0x03, BIT(2), BIT(6), 0),
+	VW_CHAN(ESPI_VWIRE_SIGNAL_PLTRST,        0x03, BIT(1), BIT(5), 0),
+	VW_CHAN(ESPI_VWIRE_SIGNAL_SUS_STAT,      0x03, BIT(0), BIT(4), 0),
+	VW_CHAN(ESPI_VWIRE_SIGNAL_NMIOUT,        0x07, BIT(2), BIT(6), 0),
+	VW_CHAN(ESPI_VWIRE_SIGNAL_SMIOUT,        0x07, BIT(1), BIT(5), 0),
+	VW_CHAN(ESPI_VWIRE_SIGNAL_HOST_RST_WARN, 0x07, BIT(0), BIT(4), 0),
+	VW_CHAN(ESPI_VWIRE_SIGNAL_SLP_A,         0x41, BIT(3), BIT(7), 0),
+	VW_CHAN(ESPI_VWIRE_SIGNAL_SUS_PWRDN_ACK, 0x41, BIT(1), BIT(5), 0),
+	VW_CHAN(ESPI_VWIRE_SIGNAL_SUS_WARN,      0x41, BIT(0), BIT(4), 0),
+	VW_CHAN(ESPI_VWIRE_SIGNAL_SLP_WLAN,      0x42, BIT(1), BIT(5), 0),
+	VW_CHAN(ESPI_VWIRE_SIGNAL_SLP_LAN,       0x42, BIT(0), BIT(4), 0),
+	VW_CHAN(ESPI_VWIRE_SIGNAL_HOST_C10,      0x47, BIT(0), BIT(4), 0),
+	VW_CHAN(ESPI_VWIRE_SIGNAL_DNX_WARN,      0x4a, BIT(1), BIT(5), 0),
+	VW_CHAN(ESPI_VWIRE_SIGNAL_PME,           0x04, BIT(3), BIT(7), IT8XXX2_ESPI_VW_REC_VW4),
+	VW_CHAN(ESPI_VWIRE_SIGNAL_WAKE,          0x04, BIT(2), BIT(6), IT8XXX2_ESPI_VW_REC_VW4),
+	VW_CHAN(ESPI_VWIRE_SIGNAL_OOB_RST_ACK,   0x04, BIT(0), BIT(4), IT8XXX2_ESPI_VW_REC_VW4),
+	VW_CHAN(ESPI_VWIRE_SIGNAL_TARGET_BOOT_STS,  0x05, BIT(3), BIT(7), IT8XXX2_ESPI_VW_REC_VW5),
+	VW_CHAN(ESPI_VWIRE_SIGNAL_ERR_NON_FATAL, 0x05, BIT(2), BIT(6), IT8XXX2_ESPI_VW_REC_VW5),
+	VW_CHAN(ESPI_VWIRE_SIGNAL_ERR_FATAL,     0x05, BIT(1), BIT(5), IT8XXX2_ESPI_VW_REC_VW5),
+	VW_CHAN(ESPI_VWIRE_SIGNAL_TARGET_BOOT_DONE, 0x05, BIT(0), BIT(4), IT8XXX2_ESPI_VW_REC_VW5),
+	VW_CHAN(ESPI_VWIRE_SIGNAL_HOST_RST_ACK,  0x06, BIT(3), BIT(7), IT8XXX2_ESPI_VW_REC_VW6),
+	VW_CHAN(ESPI_VWIRE_SIGNAL_RST_CPU_INIT,  0x06, BIT(2), BIT(6), IT8XXX2_ESPI_VW_REC_VW6),
+	VW_CHAN(ESPI_VWIRE_SIGNAL_SMI,           0x06, BIT(1), BIT(5), IT8XXX2_ESPI_VW_REC_VW6),
+	VW_CHAN(ESPI_VWIRE_SIGNAL_SCI,           0x06, BIT(0), BIT(4), IT8XXX2_ESPI_VW_REC_VW6),
+	VW_CHAN(ESPI_VWIRE_SIGNAL_DNX_ACK,       0x40, BIT(1), BIT(5), IT8XXX2_ESPI_VW_REC_VW40),
+	VW_CHAN(ESPI_VWIRE_SIGNAL_SUS_ACK,       0x40, BIT(0), BIT(4), IT8XXX2_ESPI_VW_REC_VW40),
 };
 
 static int espi_it8xxx2_configure(const struct device *dev,
@@ -1288,6 +1372,7 @@ static int espi_it8xxx2_send_vwire(const struct device *dev,
 	uint8_t vw_index = vw_channel_list[signal].vw_index;
 	uint8_t level_mask = vw_channel_list[signal].level_mask;
 	uint8_t valid_mask = vw_channel_list[signal].valid_mask;
+	uint8_t vw_sent = vw_channel_list[signal].vw_sent_reg;
 
 	if (signal > ARRAY_SIZE(vw_channel_list)) {
 		return -EIO;
@@ -1300,6 +1385,16 @@ static int espi_it8xxx2_send_vwire(const struct device *dev,
 	}
 
 	vw_reg->VW_INDEX[vw_index] |= valid_mask;
+
+	if (espi_it8xxx2_channel_ready(dev, ESPI_CHANNEL_VWIRE) && vw_sent) {
+		if (!WAIT_FOR(vw_reg->VW_INDEX[vw_index] ==
+			sys_read8(config->base_espi_vw + vw_sent),
+			IT8XXX2_ESPI_VW_SEND_TIMEOUT_US, k_busy_wait(10))) {
+			LOG_WRN("VW send to host has timed out vw[0x%x] = 0x%x",
+			vw_index, vw_reg->VW_INDEX[vw_index]);
+			return -ETIMEDOUT;
+		}
+	}
 
 	return 0;
 }
@@ -2517,6 +2612,10 @@ static int espi_it8xxx2_init(const struct device *dev)
 #ifdef CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD
 	/* enable pmc2 for host command port */
 	pmc2_it8xxx2_init(dev);
+#endif
+#ifdef CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT
+	/* enable pmc3 for host private port */
+	pmc3_it8xxx2_init(dev);
 #endif
 
 	/* Reset vwidx_cached_flag[] at initialization */

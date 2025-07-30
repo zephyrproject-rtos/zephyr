@@ -18,6 +18,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(wifi_nrf, CONFIG_WIFI_NRF70_LOG_LEVEL);
 
+#include <zephyr/net/conn_mgr_monitor.h>
 #include <zephyr/sys/reboot.h>
 
 #include "net_private.h"
@@ -72,6 +73,8 @@ static void nrf_wifi_rpu_recovery_work_handler(struct k_work *work)
 								struct nrf_wifi_vif_ctx_zep,
 								nrf_wifi_rpu_recovery_work);
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
+	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx = NULL;
+	struct nrf_wifi_hal_dev_ctx *hal_dev_ctx = NULL;
 	int ret;
 
 	if (!vif_ctx_zep) {
@@ -87,6 +90,18 @@ static void nrf_wifi_rpu_recovery_work_handler(struct k_work *work)
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (!rpu_ctx_zep || !rpu_ctx_zep->rpu_ctx) {
 		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		return;
+	}
+
+	fmac_dev_ctx = rpu_ctx_zep->rpu_ctx;
+	if (!fmac_dev_ctx) {
+		LOG_ERR("%s: fmac_dev_ctx is NULL", __func__);
+		return;
+	}
+
+	hal_dev_ctx = fmac_dev_ctx->hal_dev_ctx;
+	if (!hal_dev_ctx) {
+		LOG_ERR("%s: hal_dev_ctx is NULL", __func__);
 		return;
 	}
 
@@ -134,6 +149,8 @@ static void nrf_wifi_rpu_recovery_work_handler(struct k_work *work)
 	}
 #endif
 	rpu_ctx_zep->rpu_recovery_in_progress = true;
+	rpu_ctx_zep->wdt_irq_received += hal_dev_ctx->wdt_irq_received;
+	rpu_ctx_zep->wdt_irq_ignored += hal_dev_ctx->wdt_irq_ignored;
 #ifdef CONFIG_NRF_WIFI_RPU_RECOVERY_DEBUG
 	LOG_ERR("%s: Bringing the interface down", __func__);
 #else
@@ -239,39 +256,6 @@ static void nrf_wifi_net_iface_work_handler(struct k_work *work)
 	}
 }
 
-#if defined(CONFIG_NRF70_RAW_DATA_RX) || defined(CONFIG_NRF70_PROMISC_DATA_RX)
-void nrf_wifi_if_sniffer_rx_frm(void *os_vif_ctx, void *frm,
-				struct raw_rx_pkt_header *raw_rx_hdr,
-				bool pkt_free)
-{
-	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = os_vif_ctx;
-	struct net_if *iface = vif_ctx_zep->zep_net_if_ctx;
-	struct net_pkt *pkt;
-	struct nrf_wifi_ctx_zep *rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
-	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx = rpu_ctx_zep->rpu_ctx;
-	struct nrf_wifi_sys_fmac_dev_ctx *sys_dev_ctx = NULL;
-	int ret;
-
-	sys_dev_ctx = wifi_dev_priv(fmac_dev_ctx);
-
-	pkt = net_raw_pkt_from_nbuf(iface, frm, sizeof(struct raw_rx_pkt_header),
-				    raw_rx_hdr,
-				    pkt_free);
-	if (!pkt) {
-		LOG_DBG("Failed to allocate net_pkt");
-		return;
-	}
-
-	net_capture_pkt(iface, pkt);
-
-	ret = net_recv_data(iface, pkt);
-	if (ret < 0) {
-		LOG_DBG("RCV Packet dropped by NET stack: %d", ret);
-		net_pkt_unref(pkt);
-	}
-}
-#endif /* CONFIG_NRF70_RAW_DATA_RX || CONFIG_NRF70_PROMISC_DATA_RX */
-
 void nrf_wifi_if_rx_frm(void *os_vif_ctx, void *frm)
 {
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = os_vif_ctx;
@@ -341,6 +325,39 @@ static bool is_eapol(struct net_pkt *pkt)
 }
 #endif /* CONFIG_NRF70_DATA_TX */
 
+#if defined(CONFIG_NRF70_RAW_DATA_RX) || defined(CONFIG_NRF70_PROMISC_DATA_RX)
+void nrf_wifi_if_sniffer_rx_frm(void *os_vif_ctx, void *frm,
+				struct raw_rx_pkt_header *raw_rx_hdr,
+				bool pkt_free)
+{
+	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = os_vif_ctx;
+	struct net_if *iface = vif_ctx_zep->zep_net_if_ctx;
+	struct net_pkt *pkt;
+	struct nrf_wifi_ctx_zep *rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
+	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx = rpu_ctx_zep->rpu_ctx;
+	struct nrf_wifi_sys_fmac_dev_ctx *sys_dev_ctx = NULL;
+	int ret;
+
+	sys_dev_ctx = wifi_dev_priv(fmac_dev_ctx);
+
+	pkt = net_raw_pkt_from_nbuf(iface, frm, sizeof(struct raw_rx_pkt_header),
+				    raw_rx_hdr,
+				    pkt_free);
+	if (!pkt) {
+		LOG_DBG("Failed to allocate net_pkt");
+		return;
+	}
+
+	net_capture_pkt(iface, pkt);
+
+	ret = net_recv_data(iface, pkt);
+	if (ret < 0) {
+		LOG_DBG("RCV Packet dropped by NET stack: %d", ret);
+		net_pkt_unref(pkt);
+	}
+}
+#endif /* CONFIG_NRF70_RAW_DATA_RX || CONFIG_NRF70_PROMISC_DATA_RX */
+
 enum ethernet_hw_caps nrf_wifi_if_caps_get(const struct device *dev)
 {
 	enum ethernet_hw_caps caps = (ETHERNET_LINK_10BASE |
@@ -363,7 +380,7 @@ enum ethernet_hw_caps nrf_wifi_if_caps_get(const struct device *dev)
 int nrf_wifi_if_send(const struct device *dev,
 		     struct net_pkt *pkt)
 {
-	int ret = -1;
+	int ret = -EINVAL;
 #ifdef CONFIG_NRF70_DATA_TX
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
@@ -404,6 +421,7 @@ int nrf_wifi_if_send(const struct device *dev,
 
 	if (nbuf == NULL) {
 		LOG_ERR("%s: allocation failed", __func__);
+		ret = -ENOMEM;
 		goto drop;
 	}
 
@@ -420,6 +438,7 @@ int nrf_wifi_if_send(const struct device *dev,
 #endif /* CONFIG_NRF70_RAW_DATA_TX */
 		if ((vif_ctx_zep->if_carr_state != NRF_WIFI_FMAC_IF_CARR_STATE_ON) ||
 		    (!vif_ctx_zep->authorized && !is_eapol(pkt))) {
+			ret = -EPERM;
 			goto drop;
 		}
 
@@ -432,6 +451,8 @@ int nrf_wifi_if_send(const struct device *dev,
 	if (ret == NRF_WIFI_STATUS_FAIL) {
 		/* FMAC API takes care of freeing the nbuf */
 		host_stats->total_tx_drop_pkts++;
+		/* Could be many reasons, but likely no space in the queue */
+		ret = -ENOBUFS;
 	}
 	goto unlock;
 drop:
@@ -681,6 +702,11 @@ void nrf_wifi_if_init_zep(struct net_if *iface)
 	k_work_init(&vif_ctx_zep->nrf_wifi_net_iface_work,
 		    nrf_wifi_net_iface_work_handler);
 #endif /* CONFIG_NRF70_DATA_TX */
+
+#ifdef CONFIG_NRF70_SCAN_ONLY
+	/* In scan only mode this interface should be ignored by the connectivity manager */
+	conn_mgr_ignore_iface(iface);
+#endif /* CONFIG_NRF70_SCAN_ONLY */
 
 #ifdef CONFIG_NRF_WIFI_RPU_RECOVERY
 	k_work_init(&vif_ctx_zep->nrf_wifi_rpu_recovery_work,

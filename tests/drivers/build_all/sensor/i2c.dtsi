@@ -1151,7 +1151,7 @@ apds_9306: apds9306@9a {
 	status = "okay";
 	gain = <1>;
 	resolution = <13>;
-	frequency = <2000>;
+	measurement-period = <2000>;
 };
 
 test_i2c_wsen_hids_2525020210002: wsen_hids_2525020210002@9b {
@@ -1381,4 +1381,10 @@ test_i2c_adxl366: adxl366@b8 {
 test_i2c_lsm9ds1_mag: lsm9ds1_mag@b9 {
 	compatible = "st,lsm9ds1_mag";
 	reg = <0xb9>;
+};
+
+test_i2c_mb7040: mb7040@ba {
+	compatible = "maxbotix,mb7040";
+	reg = <0xba>;
+	status-gpios = <&test_gpio 0 0>;
 };

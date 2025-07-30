@@ -562,10 +562,8 @@ config NET_ROUTE
 	depends on NET_IPV6_NBR_CACHE
 	default y if NET_IPV6_NBR_CACHE
 
-# Temporarily hide the routing option as we do not have RPL in the system
-# that used to populate the routing table.
 config NET_ROUTING
-	bool
+	bool "IP routing between interfaces"
 	depends on NET_ROUTE
 	help
 	  Allow IPv6 routing between different network interfaces and
@@ -906,6 +904,18 @@ config NET_PKT_BUF_USER_DATA_SIZE
 	range 4 16
 	help
 	  User data size used in rx and tx network buffers.
+
+config NET_PKT_BUF_TX_DATA_ALLOC_ALIGN_LEN
+	int "Amount of alignment for TX net_buf allocations"
+	default 0
+	range 0 8
+	depends on NET_BUF_VARIABLE_DATA_SIZE
+	help
+	  This value tell amount of alignment of buffer length when allocating
+	  net_buf data for sending. By default there is no special alignment.
+	  This is needed for example with Nordic Wi-Fi chip that uses SPI driver
+	  that expects 4 byte alignment for the length of the data and the start
+	  of the data that is being sent.
 
 config NET_HEADERS_ALWAYS_CONTIGUOUS
 	bool

@@ -637,7 +637,7 @@ static void lp_cu_st_wait_rx_conn_update_ind(struct ll_conn *conn, struct proc_c
 static void lp_cu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				void *param)
 {
-	uint16_t event_counter = ull_conn_event_counter(conn);
+	uint16_t event_counter = ull_conn_event_counter_at_prepare(conn);
 
 	if (is_instant_reached_or_passed(ctx->data.cu.instant, event_counter)) {
 		bool notify;
@@ -1222,7 +1222,7 @@ static void rp_cu_st_wait_tx_conn_update_ind(struct ll_conn *conn, struct proc_c
 static void rp_cu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				void *param)
 {
-	uint16_t event_counter = ull_conn_event_counter(conn);
+	uint16_t event_counter = ull_conn_event_counter_at_prepare(conn);
 
 	if (is_instant_reached_or_passed(ctx->data.cu.instant, event_counter)) {
 		bool notify;

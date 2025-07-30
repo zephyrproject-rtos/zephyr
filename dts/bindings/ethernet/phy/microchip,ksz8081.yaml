@@ -5,7 +5,7 @@ description: Microchip KSZ8081 Ethernet PHY device
 
 compatible: "microchip,ksz8081"
 
-include: ethernet-phy.yaml
+include: ethernet-phy-common.yaml
 
 properties:
   reset-gpios:
@@ -22,3 +22,6 @@ properties:
       - "mii"
       - "rmii"
       - "rmii-25MHz"
+  default-speeds:
+    default: ["10BASE Half-Duplex", "10BASE Full-Duplex", "100BASE Half-Duplex",
+              "100BASE Full-Duplex"]

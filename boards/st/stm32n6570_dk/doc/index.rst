@@ -66,6 +66,13 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
+Video
+=====
+
+STM32N6570-DK features a CSI camera module with a high-resolution 5‑Mpx CMOS RGB image sensor.
+This camera outputs images in RAW Bayer format which require signal processing to be displayed with
+real life colors. This Image Signal Processing could be done with a dedicated `STM32 ISP module`_.
+
 USB
 ===
 
@@ -354,3 +361,6 @@ To do so, it is advised to use Twister's hardware map feature with the following
 
 .. _STM32CubeProgrammer:
    https://www.st.com/en/development-tools/stm32cubeprog.html
+
+.. _STM32 ISP module:
+   https://github.com/stm32-hotspot/zephyr-stm32-mw-isp

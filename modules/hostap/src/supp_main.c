@@ -83,6 +83,7 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 #endif
 	.get_conn_params = supplicant_get_wifi_conn_params,
 	.wps_config = supplicant_wps_config,
+	.set_bss_max_idle_period = supplicant_set_bss_max_idle_period,
 #ifdef CONFIG_AP
 	.ap_enable = supplicant_ap_enable,
 	.ap_disable = supplicant_ap_disable,
@@ -95,6 +96,7 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	.enterprise_creds = supplicant_add_enterprise_creds,
 #endif
+	.config_params = supplicant_config_params,
 };
 
 DEFINE_WIFI_NM_INSTANCE(wifi_supplicant, &mgmt_ops);

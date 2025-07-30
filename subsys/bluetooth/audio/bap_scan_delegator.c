@@ -778,7 +778,12 @@ static int scan_delegator_add_src(struct bt_conn *conn,
 
 		err = pa_sync_request(conn, state, pa_sync, pa_interval);
 		if (err != 0) {
-			k_mutex_lock(&internal_state->mutex, K_FOREVER);
+			err = k_mutex_lock(&internal_state->mutex, SCAN_DELEGATOR_BUF_SEM_TIMEOUT);
+			if (err != 0) {
+				LOG_DBG("Failed to lock mutex: %d", err);
+
+				return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
+			}
 
 			(void)memset(state, 0, sizeof(*state));
 			internal_state->active = false;
@@ -792,7 +797,12 @@ static int scan_delegator_add_src(struct bt_conn *conn,
 			return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 		}
 
-		k_mutex_lock(&internal_state->mutex, K_FOREVER);
+		err = k_mutex_lock(&internal_state->mutex, SCAN_DELEGATOR_BUF_SEM_TIMEOUT);
+		if (err != 0) {
+			LOG_DBG("Failed to lock mutex: %d", err);
+
+			return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
+		}
 	}
 
 	LOG_DBG("Index %u: New source added: ID 0x%02x",
@@ -1013,7 +1023,12 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 
 		err = pa_sync_request(conn, state, pa_sync, pa_interval);
 		if (err != 0) {
-			k_mutex_lock(&internal_state->mutex, K_FOREVER);
+			err = k_mutex_lock(&internal_state->mutex, SCAN_DELEGATOR_BUF_SEM_TIMEOUT);
+			if (err != 0) {
+				LOG_DBG("Failed to lock mutex: %d", err);
+
+				return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
+			}
 
 			/* Restore backup */
 			(void)memcpy(state, &backup_state, sizeof(backup_state));
@@ -1032,7 +1047,13 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 			 */
 			state_changed = true;
 		}
-		k_mutex_lock(&internal_state->mutex, K_FOREVER);
+
+		err = k_mutex_lock(&internal_state->mutex, SCAN_DELEGATOR_BUF_SEM_TIMEOUT);
+		if (err != 0) {
+			LOG_DBG("Failed to lock mutex: %d", err);
+
+			return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
+		}
 	} else if (pa_sync == BT_BAP_BASS_PA_REQ_NO_SYNC &&
 		   (state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ ||
 		    state->pa_sync_state == BT_BAP_PA_STATE_SYNCED)) {

@@ -640,13 +640,14 @@ static int read_int(struct lwm2m_input_context *in, int64_t *value,
 		    bool accept_sign)
 {
 	struct json_in_formatter_data *fd;
+	uint64_t temp;
 	uint8_t *buf;
 	int i = 0;
 	bool neg = false;
 	char c;
 
 	/* initialize values to 0 */
-	*value = 0;
+	temp = 0;
 
 	fd = engine_get_in_user_data(in);
 	if (!fd || (fd->object_bit_field & JSON_V_TYPE) == 0) {
@@ -663,7 +664,10 @@ static int read_int(struct lwm2m_input_context *in, int64_t *value,
 		if (c == '-' && accept_sign && i == 0) {
 			neg = true;
 		} else if (isdigit(c) != 0) {
-			*value = *value * 10 + (c - '0');
+			temp = temp * 10ULL + (c - '0');
+			if (temp > ((uint64_t)INT64_MAX + (neg ? 1ULL : 0ULL))) {
+				return -EINVAL;
+			}
 		} else {
 			/* anything else stop reading */
 			break;
@@ -671,9 +675,7 @@ static int read_int(struct lwm2m_input_context *in, int64_t *value,
 		i++;
 	}
 
-	if (neg) {
-		*value = -*value;
-	}
+	*value = neg ? -temp : temp;
 
 	return i;
 }

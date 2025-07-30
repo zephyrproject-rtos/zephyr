@@ -130,11 +130,13 @@ static inline void dai_dmic_write(const struct dai_intel_dmic *dmic,
 	sys_write32(val, dmic->reg_base + reg);
 }
 
+#ifndef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
 static inline uint32_t dai_dmic_read(const struct dai_intel_dmic *dmic,
 				     uint32_t reg)
 {
 	return sys_read32(dmic->reg_base + reg);
 }
+#endif
 
 #if CONFIG_DAI_DMIC_HAS_OWNERSHIP
 static inline void dai_dmic_claim_ownership(const struct dai_intel_dmic *dmic)

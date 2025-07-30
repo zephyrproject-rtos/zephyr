@@ -6,6 +6,7 @@
 
 /**
  * @file
+ * @ingroup lora_api
  * @brief Public LoRa driver APIs
  */
 #ifndef ZEPHYR_INCLUDE_DRIVERS_LORA_H_
@@ -31,34 +32,50 @@ extern "C" {
 
 /**
  * @brief LoRa signal bandwidth
+ *
+ * This enumeration defines the bandwidth of a LoRa signal.
+ *
+ * The bandwidth determines how much spectrum is used to transmit data. Wider bandwidths enable
+ * higher data rates but typically reduce sensitivity and range.
  */
 enum lora_signal_bandwidth {
-	BW_125_KHZ = 0,
-	BW_250_KHZ,
-	BW_500_KHZ,
+	BW_125_KHZ = 0,	/**< 125 kHz */
+	BW_250_KHZ,	/**< 250 kHz */
+	BW_500_KHZ,	/**< 500 kHz */
 };
 
 /**
  * @brief LoRa data-rate
+ *
+ * This enumeration represents the data rate of a LoRa signal, expressed as a Spreading Factor (SF).
+ *
+ * The Spreading Factor determines how many chirps are used to encode each symbol (2^SF chips per
+ * symbol). Higher values result in lower data rates but increased range and robustness.
  */
 enum lora_datarate {
-	SF_6 = 6,
-	SF_7,
-	SF_8,
-	SF_9,
-	SF_10,
-	SF_11,
-	SF_12,
+	SF_6 = 6, /**< Spreading factor 6 (fastest, shortest range) */
+	SF_7,     /**< Spreading factor 7 */
+	SF_8,     /**< Spreading factor 8 */
+	SF_9,     /**< Spreading factor 9 */
+	SF_10,    /**< Spreading factor 10 */
+	SF_11,    /**< Spreading factor 11 */
+	SF_12,    /**< Spreading factor 12 (slowest, longest range) */
 };
 
 /**
  * @brief LoRa coding rate
+ *
+ * This enumeration defines the LoRa coding rate, used for forward error correction (FEC).
+ *
+ * The coding rate is expressed as 4/x, where a lower denominator (e.g., 4/5) means less redundancy,
+ * resulting in a higher data rate but reduced robustness. Higher redundancy (e.g., 4/8) improves
+ * error tolerance at the cost of data rate.
  */
 enum lora_coding_rate {
-	CR_4_5 = 1,
-	CR_4_6 = 2,
-	CR_4_7 = 3,
-	CR_4_8 = 4,
+	CR_4_5 = 1,  /**< Coding rate 4/5 (4 information bits, 1 error correction bit) */
+	CR_4_6 = 2,  /**< Coding rate 4/6 (4 information bits, 2 error correction bits) */
+	CR_4_7 = 3,  /**< Coding rate 4/7 (4 information bits, 3 error correction bits) */
+	CR_4_8 = 4,  /**< Coding rate 4/8 (4 information bits, 4 error correction bits) */
 };
 
 /**

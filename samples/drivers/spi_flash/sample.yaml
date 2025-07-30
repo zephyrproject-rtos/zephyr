@@ -1,16 +1,19 @@
 sample:
   name: SPI Flash Sample
+common:
+  tags:
+    - spi
+    - flash
+  depends_on: spi
 tests:
   sample.drivers.spi.flash:
-    tags:
-      - spi
-      - flash
     filter: dt_compat_enabled("jedec,spi-nor") or dt_compat_enabled("st,stm32-qspi-nor")
       or dt_compat_enabled("st,stm32-ospi-nor") or dt_compat_enabled("st,stm32-xspi-nor")
       or dt_compat_enabled("nordic,qspi-nor") or dt_compat_enabled("jedec,mspi-nor")
     platform_exclude:
       - hifive_unmatched/fu740/s7
       - hifive_unmatched/fu740/u74
+      - nrf54lm20dk/nrf54lm20a/cpuapp
     harness: console
     harness_config:
       type: multi_line
@@ -21,4 +24,19 @@ tests:
         - "Test 2: Flash write"
         - "Attempting to write 4 bytes"
         - "Data read matches data written. Good!!"
-    depends_on: spi
+  sample.drivers.spi.flash.nrf54lm20:
+    platform_allow:
+      - nrf54lm20dk/nrf54lm20a/cpuapp
+    integration_platforms:
+      - nrf54lm20dk/nrf54lm20a/cpuapp
+    harness: console
+    harness_config:
+      fixture: external_flash
+      type: multi_line
+      ordered: true
+      regex:
+        - "Test 1: Flash erase"
+        - "Flash erase succeeded!"
+        - "Test 2: Flash write"
+        - "Attempting to write 4 bytes"
+        - "Data read matches data written. Good!!"

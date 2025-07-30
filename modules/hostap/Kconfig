@@ -24,6 +24,24 @@ config WIFI_NM_WPA_SUPPLICANT
 
 if WIFI_NM_WPA_SUPPLICANT
 
+config WIFI_NM_WPA_SUPPLICANT_GLOBAL_HEAP
+	bool "Use Zephyr kernel heap for Wi-Fi driver"
+	default y
+	help
+	  Enable this option to use K_HEAP for memory allocations in supplicant.
+
+if !WIFI_NM_WPA_SUPPLICANT_GLOBAL_HEAP
+config WIFI_NM_WPA_SUPPLICANT_HEAP
+	int "Dedicated memory pool for wpa_supplicant"
+	def_int 66560 if WIFI_NM_HOSTAPD_AP
+	def_int 55000 if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE && WIFI_CREDENTIALS
+	def_int 48000 if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+	def_int 41808 if WIFI_NM_WPA_SUPPLICANT_AP
+	# 30K is mandatory, but might need more for long duration use cases
+	def_int 30000
+endif # !WIFI_NM_WPA_SUPPLICANT_GLOBAL_HEAP
+
+if WIFI_NM_WPA_SUPPLICANT_GLOBAL_HEAP
 config HEAP_MEM_POOL_ADD_SIZE_HOSTAP
 	def_int 66560 if WIFI_NM_HOSTAPD_AP
 	def_int 55000 if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE && WIFI_CREDENTIALS
@@ -31,12 +49,16 @@ config HEAP_MEM_POOL_ADD_SIZE_HOSTAP
 	def_int 41808 if WIFI_NM_WPA_SUPPLICANT_AP
 	# 30K is mandatory, but might need more for long duration use cases
 	def_int 30000
+endif # WIFI_NM_WPA_SUPPLICANT_GLOBAL_HEAP
+
 
 config WIFI_NM_WPA_SUPPLICANT_THREAD_STACK_SIZE
 	int "Stack size for wpa_supplicant thread"
 	# TODO: Providing higher stack size for Enterprise mode to fix stack
 	# overflow issues. Need to identify the cause for higher stack usage.
 	default 8192 if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+	# This is needed to handle stack overflow issues on nRF Wi-Fi drivers.
+	default 5900 if WIFI_NM_WPA_SUPPLICANT_AP
 	default 5800
 
 config WIFI_NM_WPA_SUPPLICANT_WQ_STACK_SIZE
@@ -78,6 +100,17 @@ config WIFI_NM_WPA_SUPPLICANT_DEBUG_LEVEL
 	  available levels and functions for emitting the messages. Note that
 	  runtime filtering can also be configured in addition to the compile-time
 	  filtering.
+
+config WIFI_NM_WPA_SUPPLICANT_DEBUG_SHOW_KEYS
+	bool "Include key material in debug output"
+	help
+	  This option enables inclusion of key material (passwords, encryption keys,
+	  etc.) in debug output. This is equivalent to the -K command line flag
+	  in wpa_supplicant.
+
+	  WARNING: This is a security risk and should only be enabled during
+	  development or debugging. Key material should never be logged in production
+	  systems as it can compromise network security.
 
 if WIFI_NM_WPA_SUPPLICANT_LOG_LEVEL_DBG
 # hostap debug is very verbose and despite large log buffer sizes
@@ -199,6 +232,7 @@ config WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	select MBEDTLS_X509_CRL_PARSE_C
 	select MBEDTLS_TLS_VERSION_1_2
 	select NOT_SECURE
+	select WIFI_CERTIFICATE_LIB
 	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
 	help
 	  Enable Enterprise Crypto support for WiFi. This feature
@@ -307,6 +341,7 @@ config WIFI_NM_HOSTAPD_AP
 
 config WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
 	bool "Hostapd crypto enterprise support"
+	select WIFI_CERTIFICATE_LIB
 	depends on WIFI_NM_HOSTAPD_AP
 
 if WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
@@ -565,6 +600,9 @@ config ACS
 	bool
 
 config IEEE80211AC
+	bool
+
+config HS20
 	bool
 
 config IEEE80211R

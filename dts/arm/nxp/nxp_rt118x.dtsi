@@ -618,15 +618,17 @@
 		};
 	};
 
-	netc: ethernet@60000000 {
-		reg = <0x60000000 0x1000000>;
+	netc: ethernet {
+		compatible = "nxp,imx-netc";
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges;
 
 		enetc_psi0: ethernet@60b00000 {
 			compatible = "nxp,imx-netc-psi";
-			reg = <0x60b00000 0x10000>;
+			reg = <0x60b00000 0x10000>,
+			      <0x60003000 0x1000>;
+			reg-names = "port", "pfconfig";
 			mac-index = <0>;
 			si-index = <0>;
 			status = "disabled";
@@ -634,7 +636,9 @@
 
 		enetc_psi1: ethernet@60b40000 {
 			compatible = "nxp,imx-netc-psi";
-			reg = <0x60b40000 0x10000>;
+			reg = <0x60b40000 0x10000>,
+			      <0x60004000 0x1000>;
+			reg-names = "port", "pfconfig";
 			mac-index = <1>;
 			si-index = <1>;
 			phy-connection-type = "internal";
@@ -643,7 +647,9 @@
 
 		emdio: mdio@60ba0000 {
 			compatible = "nxp,imx-netc-emdio";
-			reg = <0x60ba0000 0x1c44>;
+			reg = <0x60ba0000 0x1c44>,
+				<0x60001000 0x1000>;
+			reg-names = "basic", "pfconfig";
 			clocks = <&ccm IMX_CCM_NETC_CLK 0x0 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;

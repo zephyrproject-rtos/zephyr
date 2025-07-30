@@ -6,6 +6,7 @@ zephyr_library_sources_ifdef(CONFIG_ARCV2_INTERRUPT_UNIT    intc_arcv2_irq_unit.
 zephyr_library_sources_ifdef(CONFIG_CAVS_ICTL               intc_cavs.c)
 zephyr_library_sources_ifdef(CONFIG_DW_ICTL                 intc_dw.c)
 zephyr_library_sources_ifdef(CONFIG_DW_ICTL_ACE             intc_dw_ace.c)
+zephyr_library_sources_ifdef(CONFIG_GPIO_INTC_STM32         intc_gpio_stm32.c)
 zephyr_library_sources_ifdef(CONFIG_EXTI_STM32              intc_exti_stm32.c)
 zephyr_library_sources_ifdef(CONFIG_GD32_EXTI               intc_gd32_exti.c)
 zephyr_library_sources_ifdef(CONFIG_GIC_V1                  intc_gic.c)

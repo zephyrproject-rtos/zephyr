@@ -120,7 +120,7 @@
 
 #ifdef CONFIG_NATIVE_BUILD
   #error "ARC MWDT doesn't support building Zephyr as an native application"
-#endif /* CONFIG_NATIVE_APPLICATION */
+#endif /* CONFIG_NATIVE_BUILD */
 
 
 #define __no_optimization __attribute__((optnone))

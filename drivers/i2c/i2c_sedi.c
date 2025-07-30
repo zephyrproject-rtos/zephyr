@@ -11,7 +11,10 @@
 #include <zephyr/kernel.h>
 #include <sedi_driver_i2c.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(i2c_sedi);
 
+#include "i2c-priv.h"
 #define I2C_SEDI_TIMEOUT_MS (1000)
 
 struct i2c_sedi_context {
@@ -21,6 +24,7 @@ struct i2c_sedi_context {
 	struct k_mutex *mutex;
 	int err;
 	uint16_t addr_10bit;
+	uint32_t bitrate;
 };
 
 struct i2c_sedi_config {
@@ -192,6 +196,12 @@ static int i2c_sedi_init(const struct device *dev)
 		return -EIO;
 	}
 
+	ret = i2c_sedi_api_configure(dev,
+			I2C_MODE_CONTROLLER |
+			i2c_map_dt_bitrate(context->bitrate));
+	if (ret != 0) {
+		return -EIO;
+	}
 	config->irq_config(dev);
 
 	return 0;
@@ -213,6 +223,7 @@ static void i2c_sedi_isr(const struct device *dev)
 	static K_MUTEX_DEFINE(i2c_sedi_mutex_##n);                                                 \
 	static struct i2c_sedi_context i2c_sedi_data_##n = {                                       \
 		.sedi_device = DT_INST_PROP(n, peripheral_id),                                     \
+		.bitrate = DT_INST_PROP(n, clock_frequency),					   \
 		.sem = &i2c_sedi_sem_##n,                                                          \
 		.mutex = &i2c_sedi_mutex_##n,                                                      \
 	};                                                                                         \

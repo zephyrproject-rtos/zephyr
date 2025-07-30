@@ -32,4 +32,5 @@ Migration Guides
    :glob:
    :reversed:
 
-   migration-guide-3.[5]
+   migration-guide-3.[5-6]
+   migration-guide-4.[0-0]

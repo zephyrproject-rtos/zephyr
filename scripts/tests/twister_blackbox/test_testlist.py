@@ -7,7 +7,7 @@ Blackbox tests for twister's command line functions related to saving and loadin
 """
 
 import importlib
-import mock
+from unittest import mock
 import os
 import pytest
 import sys

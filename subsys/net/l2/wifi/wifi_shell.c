@@ -30,67 +30,10 @@ LOG_MODULE_REGISTER(net_wifi_shell, LOG_LEVEL_INF);
 
 #include "net_shell_private.h"
 #include <math.h>
-#if defined CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE || \
-	defined CONFIG_WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
-#ifdef CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES
-#include <zephyr/net/tls_credentials.h>
-enum wifi_enterprise_cert_sec_tags {
-	WIFI_CERT_CA_SEC_TAG = 0x1020001,
-	WIFI_CERT_CLIENT_KEY_SEC_TAG,
-	WIFI_CERT_SERVER_KEY_SEC_TAG,
-	WIFI_CERT_CLIENT_SEC_TAG,
-	WIFI_CERT_SERVER_SEC_TAG,
-	/* Phase 2 */
-	WIFI_CERT_CA_P2_SEC_TAG,
-	WIFI_CERT_CLIENT_KEY_P2_SEC_TAG,
-	WIFI_CERT_CLIENT_P2_SEC_TAG,
-};
 
-struct wifi_cert_data {
-	enum tls_credential_type type;
-	uint32_t sec_tag;
-	uint8_t **data;
-	size_t *len;
-};
-#else
-static const char ca_cert_test[] = {
-	#include <wifi_enterprise_test_certs/ca.pem.inc>
-	'\0'
-};
-
-static const char client_cert_test[] = {
-	#include <wifi_enterprise_test_certs/client.pem.inc>
-	'\0'
-};
-
-static const char client_key_test[] = {
-	#include <wifi_enterprise_test_certs/client-key.pem.inc>
-	'\0'
-};
-
-static const char ca_cert2_test[] = {
-	#include <wifi_enterprise_test_certs/ca2.pem.inc>
-	'\0'};
-
-static const char client_cert2_test[] = {
-	#include <wifi_enterprise_test_certs/client2.pem.inc>
-	'\0'};
-
-static const char client_key2_test[] = {
-	#include <wifi_enterprise_test_certs/client-key2.pem.inc>
-	'\0'};
-
-static const char server_cert_test[] = {
-	#include <wifi_enterprise_test_certs/server.pem.inc>
-	'\0'
-};
-
-static const char server_key_test[] = {
-	#include <wifi_enterprise_test_certs/server-key.pem.inc>
-	'\0'
-};
-#endif /* CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES */
-#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE */
+#ifdef CONFIG_WIFI_CERTIFICATE_LIB
+#include <zephyr/net/wifi_certs.h>
+#endif
 
 #define WIFI_SHELL_MODULE "wifi"
 
@@ -130,12 +73,6 @@ static struct {
 		};
 		uint8_t all;
 	};
-#if defined CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE || \
-	defined CONFIG_WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
-#ifdef CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES
-	struct wifi_enterprise_creds_params enterprise_creds_params;
-#endif /* CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES */
-#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE */
 } context;
 
 static struct net_mgmt_event_callback wifi_shell_mgmt_cb;
@@ -202,223 +139,6 @@ static struct net_if *get_iface(enum iface_type type, int argc, char *argv[])
 
 	return iface;
 }
-
-#if defined CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE || \
-	defined CONFIG_WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
-#ifdef CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES
-static int process_certificates(struct wifi_cert_data *certs, size_t cert_count)
-{
-	for (size_t i = 0; i < cert_count; i++) {
-		int err;
-		size_t len = 0;
-		uint8_t *cert_tmp;
-
-		err = tls_credential_get(certs[i].sec_tag, certs[i].type, NULL, &len);
-		if (err != -EFBIG) {
-			LOG_ERR("Failed to get credential tag: %d length, err: %d",
-				certs[i].sec_tag, err);
-			return err;
-		}
-
-		cert_tmp = k_malloc(len);
-		if (!cert_tmp) {
-			LOG_ERR("Failed to allocate memory for credential tag: %d",
-				certs[i].sec_tag);
-			return -ENOMEM;
-		}
-
-		err = tls_credential_get(certs[i].sec_tag, certs[i].type, cert_tmp, &len);
-		if (err) {
-			LOG_ERR("Failed to get credential tag: %d", certs[i].sec_tag);
-			k_free(cert_tmp);
-			return err;
-		}
-
-		*certs[i].data = cert_tmp;
-		*certs[i].len = len;
-	}
-
-	return 0;
-}
-
-static void set_enterprise_creds_params(struct wifi_enterprise_creds_params *params,
-					bool is_ap)
-{
-	struct wifi_cert_data certs_common[] = {
-		{
-			.type = TLS_CREDENTIAL_CA_CERTIFICATE,
-			.sec_tag = WIFI_CERT_CA_SEC_TAG,
-			.data = &params->ca_cert,
-			.len = &params->ca_cert_len,
-		},
-	};
-
-	struct wifi_cert_data certs_sta[] = {
-		{
-			.type = TLS_CREDENTIAL_PRIVATE_KEY,
-			.sec_tag = WIFI_CERT_CLIENT_KEY_SEC_TAG,
-			.data = &params->client_key,
-			.len = &params->client_key_len,
-		},
-		{
-			.type = TLS_CREDENTIAL_PUBLIC_CERTIFICATE,
-			.sec_tag = WIFI_CERT_CLIENT_SEC_TAG,
-			.data = &params->client_cert,
-			.len = &params->client_cert_len,
-		},
-		{
-			.type = TLS_CREDENTIAL_CA_CERTIFICATE,
-			.sec_tag = WIFI_CERT_CA_P2_SEC_TAG,
-			.data = &params->ca_cert2,
-			.len = &params->ca_cert2_len,
-		},
-		{
-			.type = TLS_CREDENTIAL_PRIVATE_KEY,
-			.sec_tag = WIFI_CERT_CLIENT_KEY_P2_SEC_TAG,
-			.data = &params->client_key2,
-			.len = &params->client_key2_len,
-		},
-		{
-			.type = TLS_CREDENTIAL_PUBLIC_CERTIFICATE,
-			.sec_tag = WIFI_CERT_CLIENT_P2_SEC_TAG,
-			.data = &params->client_cert2,
-			.len = &params->client_cert2_len,
-		},
-	};
-
-	struct wifi_cert_data certs_ap[] = {
-		{
-			.type = TLS_CREDENTIAL_PUBLIC_CERTIFICATE,
-			.sec_tag = WIFI_CERT_SERVER_SEC_TAG,
-			.data = &params->server_cert,
-			.len = &params->server_cert_len,
-		},
-		{
-			.type = TLS_CREDENTIAL_PRIVATE_KEY,
-			.sec_tag = WIFI_CERT_SERVER_KEY_SEC_TAG,
-			.data = &params->server_key,
-			.len = &params->server_key_len,
-		},
-	};
-
-	memset(params, 0, sizeof(*params));
-
-	/* Process common certificates */
-	if (process_certificates(certs_common, ARRAY_SIZE(certs_common)) != 0) {
-		goto cleanup;
-	}
-
-	/* Process STA-specific certificates */
-	if (!is_ap) {
-		if (process_certificates(certs_sta, ARRAY_SIZE(certs_sta)) != 0) {
-			goto cleanup;
-		}
-	}
-
-	/* Process AP-specific certificates if is_ap is true */
-	if (is_ap) {
-		if (process_certificates(certs_ap, ARRAY_SIZE(certs_ap)) != 0) {
-			goto cleanup;
-		}
-	}
-
-	memcpy(&context.enterprise_creds_params, params, sizeof(*params));
-	return;
-
-cleanup:
-	for (size_t i = 0; i < ARRAY_SIZE(certs_common); i++) {
-		if (certs_common[i].data) {
-			k_free(*certs_common[i].data);
-		}
-	}
-
-	if (!is_ap) {
-		for (size_t i = 0; i < ARRAY_SIZE(certs_sta); i++) {
-			if (certs_sta[i].data) {
-				k_free(*certs_sta[i].data);
-			}
-		}
-	}
-
-	if (is_ap) {
-		for (size_t i = 0; i < ARRAY_SIZE(certs_ap); i++) {
-			if (certs_ap[i].data) {
-				k_free(*certs_ap[i].data);
-			}
-		}
-	}
-}
-
-static void clear_enterprise_creds_params(struct wifi_enterprise_creds_params *params)
-{
-	size_t i;
-
-	if (!params) {
-		return;
-	}
-
-	const uint8_t *certs[] = {
-		params->ca_cert,
-		params->client_cert,
-		params->client_key,
-		params->server_cert,
-		params->server_key,
-		params->ca_cert2,
-		params->client_cert2,
-		params->client_key2,
-	};
-
-	for (i = 0; i < ARRAY_SIZE(certs); i++) {
-		k_free((void *)certs[i]);
-	}
-	memset(params, 0, sizeof(*params));
-}
-#else
-static void set_enterprise_creds_params(struct wifi_enterprise_creds_params *params,
-										bool is_ap)
-{
-		params->ca_cert = (uint8_t *)ca_cert_test;
-		params->ca_cert_len = ARRAY_SIZE(ca_cert_test);
-
-		if (!is_ap) {
-			params->client_cert = (uint8_t *)client_cert_test;
-			params->client_cert_len = ARRAY_SIZE(client_cert_test);
-			params->client_key = (uint8_t *)client_key_test;
-			params->client_key_len = ARRAY_SIZE(client_key_test);
-			params->ca_cert2 = (uint8_t *)ca_cert2_test;
-			params->ca_cert2_len = ARRAY_SIZE(ca_cert2_test);
-			params->client_cert2 = (uint8_t *)client_cert2_test;
-			params->client_cert2_len = ARRAY_SIZE(client_cert2_test);
-			params->client_key2 = (uint8_t *)client_key2_test;
-			params->client_key2_len = ARRAY_SIZE(client_key2_test);
-
-			return;
-		}
-
-		params->server_cert = (uint8_t *)server_cert_test;
-		params->server_cert_len = ARRAY_SIZE(server_cert_test);
-		params->server_key = (uint8_t *)server_key_test;
-		params->server_key_len = ARRAY_SIZE(server_key_test);
-}
-#endif /* CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES */
-
-static int wifi_set_enterprise_creds(const struct shell *sh, struct net_if *iface,
-				    bool is_ap)
-{
-	struct wifi_enterprise_creds_params params = {0};
-
-#ifdef CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES
-	clear_enterprise_creds_params(&context.enterprise_creds_params);
-#endif /* CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES */
-	set_enterprise_creds_params(&params, is_ap);
-	if (net_mgmt(NET_REQUEST_WIFI_ENTERPRISE_CREDS, iface, &params, sizeof(params))) {
-		PR_WARNING("Set enterprise credentials failed\n");
-		return -1;
-	}
-
-	return 0;
-}
-#endif
 
 static bool parse_number(const struct shell *sh, long *param, char *str,
 			 char *pname, long min, long max)
@@ -1239,7 +959,7 @@ static int cmd_wifi_connect(const struct shell *sh, size_t argc,
 	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_PEAP_GTC ||
 	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2 ||
 	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_PEAP_TLS) {
-		wifi_set_enterprise_creds(sh, iface, 0);
+		wifi_set_enterprise_credentials(iface, 0);
 	}
 #endif
 
@@ -1283,7 +1003,7 @@ static int cmd_wifi_disconnect(const struct shell *sh, size_t argc,
 
 #ifdef CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES
 	/* Clear the certificates */
-	clear_enterprise_creds_params(&context.enterprise_creds_params);
+	wifi_clear_enterprise_credentials();
 #endif /* CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES */
 
 	return 0;
@@ -1489,7 +1209,7 @@ static int cmd_wifi_status(const struct shell *sh, size_t argc, char *argv[])
 		PR("DTIM: %d\n", status.dtim_period);
 		PR("TWT: %s\n",
 		   status.twt_capable ? "Supported" : "Not supported");
-		PR("Current PHY TX rate (Mbps) : %d\n", status.current_phy_tx_rate);
+		PR("Current PHY TX rate (Mbps) : %.1f\n", (double)status.current_phy_tx_rate);
 	}
 
 	return 0;
@@ -2341,7 +2061,7 @@ static int cmd_wifi_ap_disable(const struct shell *sh, size_t argc,
 
 #ifdef CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES
 	/* Clear the certificates */
-	clear_enterprise_creds_params(&context.enterprise_creds_params);
+	wifi_clear_enterprise_credentials();
 #endif /* CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES */
 
 	return 0;
@@ -3809,6 +3529,91 @@ static int cmd_wifi_pmksa_flush(const struct shell *sh, size_t argc, char *argv[
 
 	return 0;
 }
+
+static int cmd_wifi_set_bss_max_idle_period(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	unsigned short bss_max_idle_period = 0;
+	int idx = 1;
+	unsigned long val = 0;
+
+	if (!parse_number(sh, &val, argv[idx++], "bss_max_idle_period", 0, USHRT_MAX)) {
+		return -EINVAL;
+	}
+
+	bss_max_idle_period = (unsigned short)val;
+
+	if (net_mgmt(NET_REQUEST_WIFI_BSS_MAX_IDLE_PERIOD, iface,
+		     &bss_max_idle_period, sizeof(bss_max_idle_period))) {
+		shell_fprintf(sh, SHELL_WARNING,
+			      "Setting BSS maximum idle period failed.\n");
+		return -ENOEXEC;
+	}
+
+	shell_fprintf(sh, SHELL_NORMAL, "BSS max idle period: %hu\n", bss_max_idle_period);
+
+	return 0;
+}
+
+static int wifi_config_args_to_params(const struct shell *sh, size_t argc, char *argv[],
+					 struct wifi_config_params *params)
+{
+	int opt;
+	int opt_index = 0;
+	struct getopt_state *state;
+	static const struct option long_options[] = {
+		{"okc", required_argument, 0, 'o'},
+		{"iface", required_argument, 0, 'i'},
+		{0, 0, 0, 0}};
+	long val;
+
+	while ((opt = getopt_long(argc, argv, "o:i:",
+				  long_options, &opt_index)) != -1) {
+		state = getopt_state_get();
+		switch (opt) {
+		case 'o':
+			if (!parse_number(sh, &val, state->optarg, "okc", 0, 1)) {
+				return -EINVAL;
+			}
+			params->okc = val;
+			params->type |= WIFI_CONFIG_PARAM_OKC;
+			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
+			break;
+		default:
+			PR_ERROR("Invalid option %c\n", state->optopt);
+			shell_help(sh);
+			return SHELL_CMD_HELP_PRINTED;
+		}
+	}
+
+	return 0;
+}
+
+static int cmd_wifi_config_params(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct wifi_config_params config_params = { 0 };
+	int ret = -1;
+
+	context.sh = sh;
+
+	if (wifi_config_args_to_params(sh, argc, argv, &config_params)) {
+		return -ENOEXEC;
+	}
+
+	ret = net_mgmt(NET_REQUEST_WIFI_CONFIG_PARAM, iface,
+		       &config_params, sizeof(struct wifi_config_params));
+	if (ret) {
+		PR_WARNING("Setting STA parameter failed: %s\n",
+			   strerror(-ret));
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	wifi_cmd_ap,
 	SHELL_CMD_ARG(disable, NULL, "Disable Access Point mode.\n"
@@ -4286,6 +4091,19 @@ SHELL_SUBCMD_ADD((wifi), ps_exit_strategy, NULL,
 		 "[-i, --iface=<interface index>] : Interface index.\n",
 		 cmd_wifi_ps_exit_strategy,
 		 2, 2);
+
+SHELL_SUBCMD_ADD((wifi), bss_max_idle_period, NULL,
+		 "<BSS max idle period preference: timeout(in seconds)>.\n"
+		 "[-i, --iface=<interface index>] : Interface index.\n",
+		 cmd_wifi_set_bss_max_idle_period,
+		 2, 2);
+
+SHELL_SUBCMD_ADD((wifi), config, NULL,
+		 "Configure STA parameters.\n"
+		 "-o, --okc=<0/1>: Opportunistic Key Caching. 0: disable, 1: enable\n"
+		 "[-i, --iface=<interface index>] : Interface index.\n",
+		 cmd_wifi_config_params,
+		 3, 12);
 
 SHELL_CMD_REGISTER(wifi, &wifi_commands, "Wi-Fi commands", NULL);
 

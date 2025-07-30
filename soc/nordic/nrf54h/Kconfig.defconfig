@@ -35,11 +35,18 @@ config SPI_DW_HSSI
 config SPI_DW_ACCESS_WORD_ONLY
 	default y if SPI_DW
 
-config PM_DEVICE_POWER_DOMAIN
-	default n if PM_DEVICE
+if PM_DEVICE
 
 config PM_DEVICE_RUNTIME
-	default y if PM_DEVICE
+	default y
+
+config DEVICE_DEPS
+	default y
+
+config PM_DEVICE_POWER_DOMAIN
+	default y
+
+endif # PM_DEVICE
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_nodelabel_int_prop,grtc,clock-frequency) if NRF_GRTC_TIMER

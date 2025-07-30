@@ -44,6 +44,7 @@ def tesenv_obj(test_data, testsuites_dir, tmpdir_factory):
     """ Pytest fixture to initialize and return the class TestPlan object"""
     parser = add_parse_arguments()
     options = parse_arguments(parser, [])
+    options.detailed_test_id = True
     env = TwisterEnv(options)
     env.board_roots = [os.path.join(test_data, "board_config", "1_level", "2_level")]
     env.test_roots = [os.path.join(testsuites_dir, 'tests', testsuites_dir, 'samples')]

@@ -5,7 +5,7 @@ description: Realtek RTL8211F Ethernet PHY device
 
 compatible: "realtek,rtl8211f"
 
-include: ethernet-phy.yaml
+include: ethernet-phy-common.yaml
 
 properties:
   reset-gpios:
@@ -14,3 +14,6 @@ properties:
   int-gpios:
     type: phandle-array
     description: GPIO for interrupt signal indicating PHY state change.
+  default-speeds:
+    default: ["10BASE Half-Duplex", "10BASE Full-Duplex", "100BASE Half-Duplex",
+              "100BASE Full-Duplex", "1000BASE Half-Duplex", "1000BASE Full-Duplex"]

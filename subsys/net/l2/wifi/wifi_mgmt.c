@@ -442,7 +442,6 @@ static int wifi_connect(uint64_t mgmt_request, struct net_if *iface,
 	}
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
-	memset(&roaming_params, 0x0, sizeof(roaming_params));
 	roaming_params.is_11r_used = params->ft_used;
 #endif
 
@@ -1357,6 +1356,35 @@ static int wifi_pmksa_flush(uint64_t mgmt_request, struct net_if *iface,
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_PMKSA_FLUSH, wifi_pmksa_flush);
 
+static int wifi_config_params(uint64_t mgmt_request, struct net_if *iface,
+				 void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+	struct wifi_config_params *params = data;
+
+	if (dev == NULL) {
+		return -ENODEV;
+	}
+
+	if (wifi_mgmt_api == NULL ||
+	    wifi_mgmt_api->config_params == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
+	if (!data || len != sizeof(*params)) {
+		return -EINVAL;
+	}
+
+	return wifi_mgmt_api->config_params(dev, params);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_CONFIG_PARAM, wifi_config_params);
+
 static int wifi_get_rts_threshold(uint64_t mgmt_request, struct net_if *iface,
 				  void *data, size_t len)
 {
@@ -1402,6 +1430,31 @@ static int wifi_set_enterprise_creds(uint64_t mgmt_request, struct net_if *iface
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_ENTERPRISE_CREDS, wifi_set_enterprise_creds);
 #endif
+
+static int wifi_set_bss_max_idle_period(uint64_t mgmt_request, struct net_if *iface,
+				  void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+	unsigned short *bss_max_idle_period = data;
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->set_bss_max_idle_period == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
+	if (!data || len != sizeof(*bss_max_idle_period)) {
+		return -EINVAL;
+	}
+
+	return wifi_mgmt_api->set_bss_max_idle_period(dev, *bss_max_idle_period);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_BSS_MAX_IDLE_PERIOD,
+				  wifi_set_bss_max_idle_period);
 
 #ifdef CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS
 void wifi_mgmt_raise_raw_scan_result_event(struct net_if *iface,

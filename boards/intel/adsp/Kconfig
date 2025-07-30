@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config RIMAGE_TARGET
+	string
+	default "tgl" if BOARD_INTEL_ADSP_CAVS25
+	default "tgl-h" if BOARD_INTEL_ADSP_CAVS25_TGPH
+	default "mtl" if BOARD_INTEL_ADSP_ACE15_MTPM || BOARD_INTEL_ADSP_ACE15_MTPM_SIM
+	default "lnl"  if BOARD_INTEL_ADSP_ACE20_LNL || BOARD_INTEL_ADSP_ACE20_LNL_SIM
+	default "ptl"  if BOARD_INTEL_ADSP_ACE30_PTL || BOARD_INTEL_ADSP_ACE30_PTL_SIM
+	default "wcl"  if BOARD_INTEL_ADSP_ACE30_WCL || BOARD_INTEL_ADSP_ACE30_WCL_SIM

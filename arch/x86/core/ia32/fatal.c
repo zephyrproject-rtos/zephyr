@@ -35,7 +35,7 @@ void z_x86_spurious_irq(const struct arch_esf *esf)
 	int vector = z_irq_controller_isr_vector_get();
 
 	if (vector >= 0) {
-		LOG_ERR("IRQ vector: %d", vector);
+		EXCEPTION_DUMP("IRQ vector: %d", vector);
 	}
 
 	z_x86_fatal_error(K_ERR_SPURIOUS_IRQ, esf);
@@ -169,7 +169,7 @@ static __used void df_handler_bottom(void)
 	_df_tss.esp = (uint32_t)(_df_stack + sizeof(_df_stack));
 	_df_tss.eip = (uint32_t)df_handler_top;
 
-	LOG_ERR("Double Fault");
+	EXCEPTION_DUMP("Double Fault");
 #ifdef CONFIG_THREAD_STACK_INFO
 	/* To comply with MISRA 13.2 rule necessary to exclude code that depends
 	 * on the order of evaluation of function arguments.

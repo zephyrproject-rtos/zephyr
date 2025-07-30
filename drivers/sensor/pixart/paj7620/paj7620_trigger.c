@@ -10,7 +10,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/gpio.h>
 
-LOG_MODULE_REGISTER(paj7620, CONFIG_SENSOR_LOG_LEVEL);
+LOG_MODULE_DECLARE(paj7620, CONFIG_SENSOR_LOG_LEVEL);
 
 static void paj7620_gpio_callback(const struct device *dev,
 				struct gpio_callback *cb,

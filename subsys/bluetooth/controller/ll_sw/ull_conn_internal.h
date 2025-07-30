@@ -84,6 +84,7 @@ static inline void cpr_active_reset(void)
 void ull_conn_past_sender_offset_request(struct ll_conn *conn);
 #endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER */
 
+uint16_t ull_conn_event_counter_at_prepare(const struct ll_conn *conn);
 uint16_t ull_conn_event_counter(struct ll_conn *conn);
 
 void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc,

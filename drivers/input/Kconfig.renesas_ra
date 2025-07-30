@@ -1,0 +1,96 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config INPUT_RENESAS_RA_CTSU
+	bool "Renesas RA Capacitive Touch driver"
+	default y
+	depends on DT_HAS_RENESAS_RA_CTSU_ENABLED
+	select USE_RA_FSP_CTSU
+	select USE_RA_FSP_TOUCH
+	select SYS_MEM_BLOCKS
+	select GPIO
+	select PINCTRL
+	help
+	  Enable Renesas RA Touch Sensing driver.
+
+if INPUT_RENESAS_RA_CTSU
+
+config INPUT_RENESAS_RA_DEVICE_VCC
+	int "SoC VCC input in minivolt"
+	default 3300
+	help
+	  SoC VCC input in milivolt.
+
+config INPUT_RENESAS_RA_QE_TOUCH_CFG
+	bool "Using QE Touch Workflow to config this driver"
+	help
+	  If this config was enabled, setting for CTSU and Cap
+	  Touch driver will be reflected the setting that generated
+	  from QE Touch Workflow.
+	  Please add the generated C source files into the app CMakeLists
+	  to make the driver can using it.
+
+if !INPUT_RENESAS_RA_QE_TOUCH_CFG
+
+config INPUT_RENESAS_RA_CTSU_NUM_SELF_ELEMENTS
+	int "Number of self-capacitance elements"
+	default 0
+	help
+	  Number of self-capacitance elements in the CTSU.
+
+config INPUT_RENESAS_RA_CTSU_NUM_MUTUAL_ELEMENTS
+	int "Number of mutual-capacitance elements"
+	default 0
+	help
+	  Number of mutual-capacitance elements in the CTSU.
+
+choice INPUT_RENESAS_RA_CTSU_CHATTERING_SUPPRESSION_TYPE
+	prompt "Type of chattering suppression"
+	default INPUT_RENESAS_RA_CTSU_CHATTERING_SUPPRESSION_TYPE_A
+
+config INPUT_RENESAS_RA_CTSU_CHATTERING_SUPPRESSION_TYPE_A
+	bool "Counter of exceed threshold is hold within hysteresis range"
+	help
+	  Counter of exceed threshold is hold within hysteresis range.
+
+config INPUT_RENESAS_RA_CTSU_CHATTERING_SUPPRESSION_TYPE_B
+	bool "Counter of exceed threshold is reset within hysteresis range"
+	help
+	  Counter of exceed threshold is reset within hysteresis range.
+
+endchoice # INPUT_RENESAS_RA_CTSU_CHATTERING_SUPPRESSION_TYPE
+
+endif # !INPUT_RENESAS_RA_QE_TOUCH_CFG
+
+config INPUT_RENESAS_RA_CTSU_POLLING_INTERVAL_MS
+	int "CTSU debounce interval time"
+	range 20 500
+	default 100
+	help
+	  Debouncing interval time in milliseconds.
+
+config INPUT_RENESAS_RA_CTSU_STABILIZATION_TIME_US
+	int "CTSU stabilization time"
+	default 20
+	help
+	  Stabilization time required to wait between 2 scans in microseconds.
+
+config INPUT_RENESAS_RA_CTSU_DRV_STACK_SIZE
+	int "CTSU internal thread stack size"
+	default 512
+	help
+	  CTSU driver internal thread stack size.
+
+config INPUT_RENESAS_RA_CTSU_DRV_PRIORITY
+	int "CTSU internal thread priority"
+	default 8
+	help
+	  CTSU driver internal thread priority.
+
+config INPUT_RENESAS_RA_CTSU_MSG_MEM_BLOCK_SIZE
+	int "CTSU internal sys_mem_blocks allocator size"
+	default 10
+	help
+	  CTSU driver internal sys_mem_blocks allocator maximum num blocks.
+
+endif # INPUT_RENESAS_RA_CTSU

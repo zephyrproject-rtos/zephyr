@@ -308,7 +308,7 @@ zephyr_udc0: &usbotg_fs {
 
 	sram {
 		bank@0 {
-			reg = <0x0>;
+			reg = <STM32_FMC_NORSRAM_BANK1>;
 			st,control = <STM32_FMC_DATA_ADDRESS_MUX_DISABLE
 				      STM32_FMC_MEMORY_TYPE_SRAM
 				      STM32_FMC_NORSRAM_MEM_BUS_WIDTH_16

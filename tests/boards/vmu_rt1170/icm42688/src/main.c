@@ -27,7 +27,7 @@ static struct sensor_stream_trigger stream_trigger = {
 };
 
 static struct sensor_read_config stream_config = {
-	.sensor = DEVICE_DT_GET(DT_NODELABEL(icm42688_1)),
+	.sensor = DEVICE_DT_GET(DT_NODELABEL(icm42688_0)),
 	.is_streaming = true,
 	.triggers = &stream_trigger,
 	.count = 0,

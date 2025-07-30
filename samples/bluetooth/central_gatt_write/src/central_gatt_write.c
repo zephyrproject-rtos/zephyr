@@ -95,6 +95,14 @@ uint32_t central_gatt_write(uint32_t count)
 	conn_connected = NULL;
 	last_write_rate = 0U;
 
+#if defined(CONFIG_BT_USER_PHY_UPDATE)
+	err = bt_conn_le_set_default_phy(BT_GAP_LE_PHY_1M, BT_GAP_LE_PHY_1M);
+	if (err) {
+		printk("Failed to set default PHY (err %d)\n", err);
+		return 0U;
+	}
+#endif /* CONFIG_BT_USER_PHY_UPDATE */
+
 	start_scan_func = start_scan;
 	start_scan_func();
 

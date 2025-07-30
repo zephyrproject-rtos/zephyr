@@ -1,0 +1,33 @@
+/* Two loopbacks are used
+ * Each loopback is between analog input and GPIO.
+ * first-gpios (P1.03) -> AIN6 (P1.04)
+ * second-gpios (P1.30, AIN2) -> AIN1 (P1.31)
+ * AIN4 (P1.06) tied to VDD
+ */
+
+/ {
+	aliases {
+		test-comp = &comp;
+	};
+
+	zephyr,user {
+		first-gpios = <&gpio1 3 GPIO_ACTIVE_HIGH>;
+		second-gpios = <&gpio1 30 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&comp {
+	status = "okay";
+	psel = "AIN4";
+	refsel = "AREF";
+	extrefsel= "AIN3";
+	sp-mode = "NORMAL";
+	th-up = <36>;
+	th-down = <30>;
+	isource = "DISABLED";
+	enable-hyst;
+};

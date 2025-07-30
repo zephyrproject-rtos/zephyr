@@ -239,16 +239,13 @@ irq_disconnect_dynamic(unsigned int irq, unsigned int priority,
  * (for example, ARM) will fail silently if invoked from user mode instead
  * of generating an exception.
  *
- * @note
- * This routine can be called by ISRs or by threads. If it is called by a
- * thread, the interrupt lock is thread-specific; this means that interrupts
- * remain disabled only while the thread is running. If the thread performs an
- * operation that allows another thread to run (for example, giving a semaphore
- * or sleeping for N milliseconds), the interrupt lock no longer applies and
- * interrupts may be re-enabled while other processing occurs. When the thread
- * once again becomes the current thread, the kernel re-establishes its
- * interrupt lock; this ensures the thread won't be interrupted until it has
- * explicitly released the interrupt lock it established.
+ * This routine can be called by ISRs and threads.
+ *
+ * @warning
+ * As long as all recursive calls to irq_lock() have not been balanced with
+ * corresponding irq_unlock() calls, the caller "holds the interrupt lock".
+ *
+ * "Holding the interrupt lock" when a context switch occurs is illegal.
  *
  * @warning
  * The lock-out key should never be used to manually re-enable interrupts

@@ -81,6 +81,7 @@ enum modem_cellular_event {
 	MODEM_CELLULAR_EVENT_BUS_OPENED,
 	MODEM_CELLULAR_EVENT_BUS_CLOSED,
 	MODEM_CELLULAR_EVENT_PPP_DEAD,
+	MODEM_CELLULAR_EVENT_MODEM_READY,
 };
 
 struct modem_cellular_data {
@@ -243,6 +244,8 @@ static const char *modem_cellular_event_str(enum modem_cellular_event event)
 		return "bus closed";
 	case MODEM_CELLULAR_EVENT_PPP_DEAD:
 		return "ppp dead";
+	case MODEM_CELLULAR_EVENT_MODEM_READY:
+		return "modem ready";
 	}
 
 	return "";
@@ -354,6 +357,15 @@ static void modem_cellular_chat_callback_handler(struct modem_chat *chat,
 		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_SCRIPT_FAILED);
 	}
 }
+
+static void modem_cellular_chat_on_modem_ready(struct modem_chat *chat, char **argv, uint16_t argc,
+					void *user_data)
+{
+	struct modem_cellular_data *data = user_data;
+
+	modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_MODEM_READY);
+}
+
 
 static void modem_cellular_chat_on_imei(struct modem_chat *chat, char **argv, uint16_t argc,
 					void *user_data)
@@ -514,7 +526,8 @@ MODEM_CHAT_MATCH_DEFINE(cgmr_match __maybe_unused, "", "", modem_cellular_chat_o
 MODEM_CHAT_MATCHES_DEFINE(unsol_matches,
 			  MODEM_CHAT_MATCH("+CREG: ", ",", modem_cellular_chat_on_cxreg),
 			  MODEM_CHAT_MATCH("+CEREG: ", ",", modem_cellular_chat_on_cxreg),
-			  MODEM_CHAT_MATCH("+CGREG: ", ",", modem_cellular_chat_on_cxreg));
+			  MODEM_CHAT_MATCH("+CGREG: ", ",", modem_cellular_chat_on_cxreg),
+			  MODEM_CHAT_MATCH("APP RDY", "", modem_cellular_chat_on_modem_ready));
 
 MODEM_CHAT_MATCHES_DEFINE(abort_matches, MODEM_CHAT_MATCH("ERROR", "", NULL));
 
@@ -772,7 +785,9 @@ static int modem_cellular_on_await_power_on_state_enter(struct modem_cellular_da
 		(const struct modem_cellular_config *)data->dev->config;
 
 	modem_cellular_start_timer(data, K_MSEC(config->startup_time_ms));
-	return 0;
+	modem_pipe_attach(data->uart_pipe, modem_cellular_bus_pipe_handler, data);
+	modem_chat_attach(&data->chat, data->uart_pipe);
+	return modem_pipe_open_async(data->uart_pipe);
 }
 
 static void modem_cellular_await_power_on_event_handler(struct modem_cellular_data *data,
@@ -782,6 +797,9 @@ static void modem_cellular_await_power_on_event_handler(struct modem_cellular_da
 		(const struct modem_cellular_config *)data->dev->config;
 
 	switch (evt) {
+	case MODEM_CELLULAR_EVENT_MODEM_READY:
+		/* disable the timer and fall through, as we are ready to proceed */
+		modem_cellular_stop_timer(data);
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
 		if (config->set_baudrate_chat_script != NULL) {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_SET_BAUDRATE);
@@ -1956,7 +1974,7 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_bg95_init_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMI", cgmi_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMR", cgmr_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+QGMR", cgmr_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CIMI", cimi_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
@@ -1986,6 +2004,13 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_bg95_periodic_chat_script_cmds,
 MODEM_CHAT_SCRIPT_DEFINE(quectel_bg95_periodic_chat_script,
 			 quectel_bg95_periodic_chat_script_cmds, abort_matches,
 			 modem_cellular_chat_callback_handler, 4);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_bg95_shutdown_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+QPOWD=1", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(quectel_bg95_shutdown_chat_script,
+			 quectel_bg95_shutdown_chat_script_cmds, abort_matches,
+			 modem_cellular_chat_callback_handler, 10);
 #endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(quectel_eg25_g)
@@ -2635,7 +2660,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 		.reset_pulse_duration_ms = (reset_ms),                                             \
 		.startup_time_ms  = (startup_ms),                                                  \
 		.shutdown_time_ms = (shutdown_ms),                                                 \
-		.autostarts       = (start),                                                       \
+		.autostarts = DT_INST_PROP_OR(inst, autostarts, (start)),                          \
 		.set_baudrate_chat_script    = (set_baudrate_script),                              \
 		.init_chat_script            = (init_script),                                      \
 		.dial_chat_script            = (dial_script),                                      \
@@ -2669,7 +2694,8 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 				       NULL,                                                       \
 				       &quectel_bg95_init_chat_script,                             \
 				       &quectel_bg95_dial_chat_script,                             \
-				       &quectel_bg95_periodic_chat_script, NULL)
+				       &quectel_bg95_periodic_chat_script,                         \
+				       &quectel_bg95_shutdown_chat_script)
 
 #define MODEM_CELLULAR_DEVICE_QUECTEL_EG25_G(inst)                                                 \
 	MODEM_PPP_DEFINE(MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);                 \

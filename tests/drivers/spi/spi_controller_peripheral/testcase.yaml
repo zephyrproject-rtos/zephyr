@@ -8,12 +8,11 @@ common:
     fixture: gpio_spi_loopback
   platform_allow:
     - nrf52840dk/nrf52840
-    - nrf54l15dk/nrf54l15/cpuapp
-    - nrf54l20pdk/nrf54l20/cpuapp
-    - nrf54lm20dk/nrf54lm20a/cpuapp
     - nrf54h20dk/nrf54h20/cpuapp
     - nrf54h20dk/nrf54h20/cpurad
     - nrf54h20dk/nrf54h20/cpuppr
+    - nrf54l15dk/nrf54l15/cpuapp
+    - nrf54lm20dk/nrf54lm20a/cpuapp
     - ophelia4ev/nrf54l15/cpuapp
 
 tests:
@@ -45,6 +44,22 @@ tests:
     integration_platforms:
       - nrf52840dk/nrf52840
 
+  drivers.spi.spi_1M333333Hz:
+    extra_configs:
+      - CONFIG_TESTED_SPI_MODE=0
+    extra_args: EXTRA_DTC_OVERLAY_FILE="boards/1m333333hz.overlay"
+    integration_platforms:
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
+
+  drivers.spi.spi_2M666666Hz:
+    extra_configs:
+      - CONFIG_TESTED_SPI_MODE=0
+    extra_args: EXTRA_DTC_OVERLAY_FILE="boards/2m666666hz.overlay"
+    integration_platforms:
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
+
   drivers.spi.spi_4MHz:
     extra_configs:
       - CONFIG_TESTED_SPI_MODE=2
@@ -63,10 +78,9 @@ tests:
     extra_args: DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_fast.overlay"
     platform_exclude:
       - nrf52840dk/nrf52840
-      - nrf54l15dk/nrf54l15/cpuapp
       - nrf54h20dk/nrf54h20/cpurad
       - nrf54h20dk/nrf54h20/cpuppr
-      - nrf54l20pdk/nrf54l20/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
 
@@ -77,10 +91,9 @@ tests:
     extra_args: DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_fast_spis.overlay"
     platform_exclude:
       - nrf52840dk/nrf52840
-      - nrf54l15dk/nrf54l15/cpuapp
       - nrf54h20dk/nrf54h20/cpurad
       - nrf54h20dk/nrf54h20/cpuppr
-      - nrf54l20pdk/nrf54l20/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
 
@@ -89,3 +102,17 @@ tests:
       - CONFIG_PM_DEVICE=y
       - CONFIG_PM_DEVICE_RUNTIME=y
     filter: CONFIG_SOC_FAMILY_NORDIC_NRF
+
+  drivers.spi.spi_cross_domain:
+    harness_config:
+      fixture: spi_p1_p2_loopback
+    extra_configs:
+      - CONFIG_TESTED_SPI_MODE=0
+      - CONFIG_NRF_SYS_EVENT=y
+    extra_args: DTC_OVERLAY_FILE="boards/nrf54l15dk_nrf54l15_cpuapp_cross_domain.overlay"
+    platform_exclude:
+      - nrf52840dk/nrf52840
+      - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54h20dk/nrf54h20/cpurad
+      - nrf54h20dk/nrf54h20/cpuppr
+      - ophelia4ev/nrf54l15/cpuapp

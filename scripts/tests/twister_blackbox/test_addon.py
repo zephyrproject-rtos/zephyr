@@ -7,7 +7,7 @@ Blackbox tests for twister's command line functions concerning addons to normal 
 """
 
 import importlib
-import mock
+from unittest import mock
 import os
 import pkg_resources
 import pytest
@@ -16,6 +16,7 @@ import shutil
 import subprocess
 import sys
 
+# pylint: disable=no-name-in-module
 from conftest import ZEPHYR_BASE, TEST_DATA, sample_filename_mock, testsuite_filename_mock
 from twisterlib.testplan import TestPlan
 

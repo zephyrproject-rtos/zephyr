@@ -349,10 +349,36 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 	return 0;
 }
 
+static enum clock_control_status stm32_clock_control_get_status(const struct device *dev,
+								clock_control_subsys_t sub_system)
+{
+	struct stm32_pclken *pclken = (struct stm32_pclken *)sub_system;
+
+	ARG_UNUSED(dev);
+
+	if (IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX) == true) {
+		/* Gated clocks */
+		if ((sys_read32(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus) & pclken->enr)
+		    == pclken->enr) {
+			return CLOCK_CONTROL_STATUS_ON;
+		} else {
+			return CLOCK_CONTROL_STATUS_OFF;
+		}
+	} else {
+		/* Domain clock sources */
+		if (enabled_clock(pclken->bus) == 0) {
+			return CLOCK_CONTROL_STATUS_ON;
+		} else {
+			return CLOCK_CONTROL_STATUS_OFF;
+		}
+	}
+}
+
 static DEVICE_API(clock_control, stm32_clock_control_api) = {
 	.on = stm32_clock_control_on,
 	.off = stm32_clock_control_off,
 	.get_rate = stm32_clock_control_get_subsys_rate,
+	.get_status = stm32_clock_control_get_status,
 	.configure = stm32_clock_control_configure,
 };
 
@@ -435,7 +461,19 @@ static int set_up_plls(void)
 #endif
 
 #if defined(STM32_PLL_ENABLED)
+
+#if defined(CONFIG_STM32_APP_IN_EXT_FLASH)
 	/*
+	 * Don't disable PLL1 during application initialization
+	 * that runs on the external octospi flash (in memmap mode)
+	 * when (Q/O)SPI uses PLL1 as its clock source.
+	 */
+	if (LL_RCC_GetOCTOSPIClockSource(LL_RCC_OCTOSPI_CLKSOURCE) == LL_RCC_OSPI_CLKSOURCE_PLL1Q) {
+		goto setup_pll2;
+	}
+#endif /* CONFIG_STM32_APP_IN_EXT_FLASH */
+	/*
+	 * Case of chain-loaded applications:
 	 * Switch to HSI and disable the PLL before configuration.
 	 * (Switching to HSI makes sure we have a SYSCLK source in
 	 * case we're currently running from the PLL we're about to
@@ -501,12 +539,30 @@ static int set_up_plls(void)
 	LL_RCC_PLL1_Enable();
 	while (LL_RCC_PLL1_IsReady() != 1U) {
 	}
+
+	goto setup_pll2;
 #else
 	/* Init PLL source to None */
 	LL_RCC_PLL1_SetSource(LL_RCC_PLL1SOURCE_NONE);
+
+	goto setup_pll2;
 #endif /* STM32_PLL_ENABLED */
 
+setup_pll2:
 #if defined(STM32_PLL2_ENABLED)
+
+#if defined(CONFIG_STM32_APP_IN_EXT_FLASH)
+	/*
+	 * Don't disable PLL2 during application initialization
+	 * that runs on the external octospi flash (in memmap mode)
+	 * when (Q/O)SPI uses PLL2 as its clock source.
+	 */
+	if (LL_RCC_GetOCTOSPIClockSource(LL_RCC_OCTOSPI_CLKSOURCE) == LL_RCC_OSPI_CLKSOURCE_PLL2R) {
+		goto setup_pll3;
+	}
+#endif /* CONFIG_STM32_APP_IN_EXT_FLASH */
+	LL_RCC_PLL2_Disable();
+
 	/* Configure PLL2 source */
 	if (IS_ENABLED(STM32_PLL2_SRC_HSE)) {
 		LL_RCC_PLL2_SetSource(LL_RCC_PLL2SOURCE_HSE);
@@ -554,11 +610,16 @@ static int set_up_plls(void)
 	LL_RCC_PLL2_Enable();
 	while (LL_RCC_PLL2_IsReady() != 1U) {
 	}
+
+	goto setup_pll3;
 #else
 	/* Init PLL2 source to None */
 	LL_RCC_PLL2_SetSource(LL_RCC_PLL2SOURCE_NONE);
+
+	goto setup_pll3;
 #endif /* STM32_PLL2_ENABLED */
 
+setup_pll3:
 #if defined(RCC_CR_PLL3ON)
 #if defined(STM32_PLL3_ENABLED)
 	/* Configure PLL3 source */

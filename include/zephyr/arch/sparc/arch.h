@@ -16,7 +16,7 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_SPARC_ARCH_H_
 #define ZEPHYR_INCLUDE_ARCH_SPARC_ARCH_H_
 
-#include <zephyr/arch/sparc/exception.h>
+#include <zephyr/arch/exception.h>
 #include <zephyr/arch/sparc/thread.h>
 #include <zephyr/arch/sparc/sparc.h>
 #include <zephyr/arch/common/sys_bitops.h>

@@ -10,7 +10,8 @@ Overview
 This sample application periodically reads the sensor
 temperature and pressure, displaying the
 values on the console along with a timestamp since startup.
-It also displays the estimated altitude if floating point is supported.
+It also displays the estimated altitude if floating point is supported
+and the sensor provides altitude data.
 
 Wiring
 *******
@@ -47,14 +48,14 @@ Sample Output
 ## Default configuration
 
    Found device "icp101xx@63", getting sensor data
-   [00:00:00.266,479] <inf> PRESSURE_POLLING: Starting pressure and altitude polling sample.
-   [00:00:00.273,803] <inf> PRESSURE_POLLING: temp 25.49 Cel, pressure 96.271438 kPa, altitude 447.208465 m
-   [00:00:00.280,914] <inf> PRESSURE_POLLING: temp 25.50 Cel, pressure 96.271331 kPa, altitude 447.234161 m
-   [00:00:00.288,024] <inf> PRESSURE_POLLING: temp 25.49 Cel, pressure 96.266685 kPa, altitude 447.636077 m
-   [00:00:00.295,135] <inf> PRESSURE_POLLING: temp 25.50 Cel, pressure 96.267951 kPa, altitude 447.537078 m
-   [00:00:00.302,246] <inf> PRESSURE_POLLING: temp 25.51 Cel, pressure 96.268577 kPa, altitude 447.488281 m
-   [00:00:00.309,356] <inf> PRESSURE_POLLING: temp 25.50 Cel, pressure 96.269340 kPa, altitude 447.414978 m
-   [00:00:00.316,467] <inf> PRESSURE_POLLING: temp 25.50 Cel, pressure 96.268562 kPa, altitude 447.473663 m
-   [00:00:00.323,547] <inf> PRESSURE_POLLING: temp 25.50 Cel, pressure 96.267341 kPa, altitude 447.596496 m
+   Starting pressure and altitude polling sample.
+   temp 25.49 Cel, pressure 96.271438 kPa, altitude 447.208465 m
+   temp 25.50 Cel, pressure 96.271331 kPa, altitude 447.234161 m
+   temp 25.49 Cel, pressure 96.266685 kPa, altitude 447.636077 m
+   temp 25.50 Cel, pressure 96.267951 kPa, altitude 447.537078 m
+   temp 25.51 Cel, pressure 96.268577 kPa, altitude 447.488281 m
+   temp 25.50 Cel, pressure 96.269340 kPa, altitude 447.414978 m
+   temp 25.50 Cel, pressure 96.268562 kPa, altitude 447.473663 m
+   temp 25.50 Cel, pressure 96.267341 kPa, altitude 447.596496 m
 
    <repeats endlessly>

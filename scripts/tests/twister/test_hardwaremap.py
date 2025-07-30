@@ -6,7 +6,7 @@
 Tests for hardwaremap.py classes' methods
 """
 
-import mock
+from unittest import mock
 import pytest
 import sys
 

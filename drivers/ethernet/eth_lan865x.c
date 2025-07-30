@@ -478,7 +478,7 @@ static const struct ethernet_api lan865x_api_func = {
 		.tc6 = &oa_tc6_##inst};                                                            \
                                                                                                    \
 	ETH_NET_DEVICE_DT_INST_DEFINE(inst, lan865x_init, NULL, &lan865x_data_##inst,              \
-				      &lan865x_config_##inst, CONFIG_ETH_INIT_PRIORITY,            \
+				      &lan865x_config_##inst, CONFIG_ETH_LAN865X_INIT_PRIORITY,    \
 				      &lan865x_api_func, NET_ETH_MTU);
 
 DT_INST_FOREACH_STATUS_OKAY(LAN865X_DEFINE);

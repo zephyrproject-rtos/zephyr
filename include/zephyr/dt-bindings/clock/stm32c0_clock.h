@@ -23,9 +23,13 @@
 /** System clock */
 /* defined in stm32_common_clocks.h */
 /** Fixed clocks  */
-/* Low speed clocks defined in stm32_common_clocks.h */
+/* Low speed clocks defined in stm32_common_clocks.h
+ * STM32_SRC_HSI relates to HSI48 clock mentioned in RM0490 Reference Manual
+ * STM32_SRC_HSI48 relates to HSIUSB48 mentioned in RM0490 Reference Manual
+ */
 #define STM32_SRC_HSI		(STM32_SRC_LSI + 1)
-#define STM32_SRC_HSE		(STM32_SRC_HSI + 1)
+#define STM32_SRC_HSI48		(STM32_SRC_HSI + 1)
+#define STM32_SRC_HSE		(STM32_SRC_HSI48 + 1)
 /** Peripheral bus clock */
 #define STM32_SRC_PCLK		(STM32_SRC_HSE + 1)
 
@@ -42,19 +46,20 @@
 /** @brief Device domain clocks selection helpers */
 /** CCIPR devices */
 #define USART1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 0, CCIPR_REG)
+#define FDCAN_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 8, CCIPR_REG)
 #define I2C1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 12, CCIPR_REG)
 #define I2C2_I2S1_SEL(val)	STM32_DT_CLOCK_SELECT((val), 3, 14, CCIPR_REG)
 #define ADC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 30, CCIPR_REG)
 /** CCIPR2 devices */
-#define USB_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 12, CCIPR2_REG)
+#define USB_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 12, CCIPR2_REG)
 /** CSR1 devices */
 #define RTC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 8, CSR1_REG)
 
 /** CFGR1 devices */
-#define MCO1_SEL(val)           STM32_DT_CLOCK_SELECT((val), 0x7, 24, CFGR1_REG)
-#define MCO1_PRE(val)           STM32_DT_CLOCK_SELECT((val), 0x7, 28, CFGR1_REG)
-#define MCO2_SEL(val)           STM32_DT_CLOCK_SELECT((val), 0x7, 16, CFGR1_REG)
-#define MCO2_PRE(val)           STM32_DT_CLOCK_SELECT((val), 0x7, 20, CFGR1_REG)
+#define MCO1_SEL(val)           STM32_DT_CLOCK_SELECT((val), 0xf, 24, CFGR1_REG)
+#define MCO1_PRE(val)           STM32_DT_CLOCK_SELECT((val), 0xf, 28, CFGR1_REG)
+#define MCO2_SEL(val)           STM32_DT_CLOCK_SELECT((val), 0xf, 16, CFGR1_REG)
+#define MCO2_PRE(val)           STM32_DT_CLOCK_SELECT((val), 0xf, 20, CFGR1_REG)
 
 /* MCO prescaler : division factor */
 #define MCO_PRE_DIV_1   0

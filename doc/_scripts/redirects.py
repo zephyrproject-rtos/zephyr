@@ -12,10 +12,11 @@ Notes:
       without the html extension).
 """
 
-REDIRECTS = [
+REDIRECTS = (
     # zephyr-keep-sorted-start
     ('application/index', 'develop/application/index'),
     ('boards/arduino/uno_r4_minima/doc/index', 'boards/arduino/uno_r4/doc/index'),
+    ('boards/nordic/nrf54l20pdk/doc/index', 'boards/nordic/nrf54lm20dk/doc/index'),
     ('boards/phytec/mimx8mm_phyboard_polis/doc/index', 'boards/phytec/phyboard_polis/doc/index'),
     ('boards/phytec/mimx8mp_phyboard_pollux/doc/index', 'boards/phytec/phyboard_pollux/doc/index'),
     ('boards/rak/index', 'boards/rakwireless/index'),
@@ -96,7 +97,6 @@ REDIRECTS = [
     ('guides/coccinelle', 'develop/tools/coccinelle'),
     ('guides/code-relocation', 'kernel/code-relocation'),
     ('guides/crypto/index', 'services/crypto/index'),
-    ('guides/crypto/tinycrypt', 'services/crypto/tinycrypt'),
     ('guides/device_mgmt/dfu', 'services/device_mgmt/dfu'),
     ('guides/device_mgmt/index', 'services/device_mgmt/index'),
     ('guides/device_mgmt/mcumgr', 'services/device_mgmt/mcumgr'),
@@ -304,12 +304,12 @@ REDIRECTS = [
     ('samples/sensor/max44009/README', 'samples/sensor/light_polling/README'),
     ('samples/sensor/wsen_hids/README', 'samples/sensor/sensor'),
     ('samples/sensor/wsen_itds/README', 'samples/sensor/sensor'),
+    ('samples/shields/npm1300_ek/doc/index', 'samples/shields/npm13xx_ek/doc/index'),
     ('samples/subsys/video/capture/README', 'samples/drivers/video/capture/README'),
     ('samples/subsys/video/tcpserversink/README', 'samples/drivers/video/tcpserversink/README'),
     ('samples/subsys/video/video', 'samples/drivers/video/video'),
-    ('services/crypto/tinycrypt', 'services/crypto/psa_crypto'),
     ('services/portability/posix', 'services/portability/posix/index'),
     ('services/secure_storage', 'services/storage/secure_storage/index'),
     ('services/settings/index', 'services/storage/settings/index'),
     # zephyr-keep-sorted-stop
-]
+)

@@ -21,7 +21,7 @@ if ETH_LAN865X
 
 config ETH_LAN865X_INIT_PRIORITY
 	int "LAN865X driver init priority"
-	default 72
+	default 50
 	help
 	  LAN865X device driver initialization priority.
 	  Must be initialized after SPI.
