@@ -1059,7 +1059,10 @@ static int priv_clock_enable(void)
 
 	/* Set the OTG PHY reference clock selection (through SYSCFG) block */
 	LL_APB3_GRP1_EnableClock(LL_APB3_GRP1_PERIPH_SYSCFG);
-	HAL_SYSCFG_SetOTGPHYReferenceClockSelection(SYSCFG_OTG_HS_PHY_CLK_SELECT_1);
+	HAL_SYSCFG_SetOTGPHYReferenceClockSelection(
+		DT_PROP(DT_NODELABEL(otghs_phy), clock_reference) <<
+		SYSCFG_OTGHSPHYCR_CLKSEL_Pos
+	);
 	/* Configuring the SYSCFG registers OTG_HS PHY : OTG_HS PHY enable*/
 	HAL_SYSCFG_EnableOTGPHY(SYSCFG_OTG_HS_PHY_ENABLE);
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
