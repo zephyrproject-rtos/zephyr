@@ -277,9 +277,20 @@ struct rtio_iodev_sqe;
  * @brief Callback signature for RTIO_OP_CALLBACK
  * @param r RTIO context being used with the callback
  * @param sqe Submission for the callback op
- * @param arg0 Argument option as part of the sqe
+ * @param res Result of the previously linked submission.
+ * @param arg0 Pointer to immutable argument option as part of the sqe
  */
-typedef void (*rtio_callback_t)(struct rtio *r, const struct rtio_sqe *sqe, void *arg0);
+typedef void (*rtio_callback_t)(struct rtio *r, const struct rtio_sqe *sqe, int res, const void *arg0);
+
+/**
+ * @typedef rtio_callback_mut_t
+ * @brief Callback signature for RTIO_OP_CALLBACK
+ * @param r RTIO context being used with the callback
+ * @param sqe Submission for the callback op
+ * @param res Result of the previously linked submission.
+ * @param arg0 Pointer to mutable argument option as part of the sqe
+ */
+typedef void (*rtio_callback_mut_t)(struct rtio *r, const struct rtio_sqe *sqe, int res, void *arg0);
 
 /**
  * @typedef rtio_signaled_t
@@ -287,7 +298,7 @@ typedef void (*rtio_callback_t)(struct rtio *r, const struct rtio_sqe *sqe, void
  * @param iodev_sqe IODEV submission for the await op
  * @param userdata Userdata
  */
-typedef void (*rtio_signaled_t)(struct rtio_iodev_sqe *iodev_sqe, void *userdata);
+typedef void (*rtio_signaled_t)(struct rtio_iodev_sqe *iodev_sqe, const void *userdata);
 
 /**
  * @brief A submission queue event
@@ -310,7 +321,7 @@ struct rtio_sqe {
 	 * If unique identification of completions is desired this should be
 	 * unique as well.
 	 */
-	void *userdata;
+	const void *userdata;
 
 	union {
 
@@ -556,11 +567,14 @@ struct rtio_iodev {
 /** An operation that transmits tiny writes by copying the data to write */
 #define RTIO_OP_TINY_TX (RTIO_OP_TX+1)
 
-/** An operation that calls a given function (callback) */
+/** An operation that calls a given function (callback) with immutable data */
 #define RTIO_OP_CALLBACK (RTIO_OP_TINY_TX+1)
 
+/** An operation that calls a given function (callback) with mutable data */
+#define RTIO_OP_CALLBACK_MUT (RTIO_OP_CALLBACK+1)
+
 /** An operation that transceives (reads and writes simultaneously) */
-#define RTIO_OP_TXRX (RTIO_OP_CALLBACK+1)
+#define RTIO_OP_TXRX (RTIO_OP_CALLBACK_MUT+1)
 
 /** An operation that takes a specified amount of time (asynchronously) before completing */
 #define RTIO_OP_DELAY (RTIO_OP_TXRX+1)
@@ -588,7 +602,7 @@ struct rtio_iodev {
  */
 static inline void rtio_sqe_prep_nop(struct rtio_sqe *sqe,
 				const struct rtio_iodev *iodev,
-				void *userdata)
+				const void *userdata)
 {
 	memset(sqe, 0, sizeof(struct rtio_sqe));
 	sqe->op = RTIO_OP_NOP;
@@ -604,7 +618,7 @@ static inline void rtio_sqe_prep_read(struct rtio_sqe *sqe,
 				      int8_t prio,
 				      uint8_t *buf,
 				      uint32_t len,
-				      void *userdata)
+				      const void *userdata)
 {
 	memset(sqe, 0, sizeof(struct rtio_sqe));
 	sqe->op = RTIO_OP_RX;
@@ -622,7 +636,7 @@ static inline void rtio_sqe_prep_read(struct rtio_sqe *sqe,
  */
 static inline void rtio_sqe_prep_read_with_pool(struct rtio_sqe *sqe,
 						const struct rtio_iodev *iodev, int8_t prio,
-						void *userdata)
+						const void *userdata)
 {
 	rtio_sqe_prep_read(sqe, iodev, prio, NULL, 0, userdata);
 	sqe->flags = RTIO_SQE_MEMPOOL_BUFFER;
@@ -630,7 +644,7 @@ static inline void rtio_sqe_prep_read_with_pool(struct rtio_sqe *sqe,
 
 static inline void rtio_sqe_prep_read_multishot(struct rtio_sqe *sqe,
 						const struct rtio_iodev *iodev, int8_t prio,
-						void *userdata)
+						const void *userdata)
 {
 	rtio_sqe_prep_read_with_pool(sqe, iodev, prio, userdata);
 	sqe->flags |= RTIO_SQE_MULTISHOT;
@@ -644,7 +658,7 @@ static inline void rtio_sqe_prep_write(struct rtio_sqe *sqe,
 				       int8_t prio,
 				       const uint8_t *buf,
 				       uint32_t len,
-				       void *userdata)
+				       const void *userdata)
 {
 	memset(sqe, 0, sizeof(struct rtio_sqe));
 	sqe->op = RTIO_OP_TX;
@@ -670,7 +684,7 @@ static inline void rtio_sqe_prep_tiny_write(struct rtio_sqe *sqe,
 					    int8_t prio,
 					    const uint8_t *tiny_write_data,
 					    uint8_t tiny_write_len,
-					    void *userdata)
+					    const void *userdata)
 {
 	__ASSERT_NO_MSG(tiny_write_len <= sizeof(sqe->tiny_tx.buf));
 
@@ -694,7 +708,7 @@ static inline void rtio_sqe_prep_tiny_write(struct rtio_sqe *sqe,
 static inline void rtio_sqe_prep_callback(struct rtio_sqe *sqe,
 					  rtio_callback_t callback,
 					  void *arg0,
-					  void *userdata)
+					  const void *userdata)
 {
 	memset(sqe, 0, sizeof(struct rtio_sqe));
 	sqe->op = RTIO_OP_CALLBACK;
@@ -718,7 +732,7 @@ static inline void rtio_sqe_prep_callback(struct rtio_sqe *sqe,
 static inline void rtio_sqe_prep_callback_no_cqe(struct rtio_sqe *sqe,
 						 rtio_callback_t callback,
 						 void *arg0,
-						 void *userdata)
+						 const void *userdata)
 {
 	rtio_sqe_prep_callback(sqe, callback, arg0, userdata);
 	sqe->flags |= RTIO_SQE_NO_RESPONSE;
@@ -733,7 +747,7 @@ static inline void rtio_sqe_prep_transceive(struct rtio_sqe *sqe,
 					    const uint8_t *tx_buf,
 					    uint8_t *rx_buf,
 					    uint32_t buf_len,
-					    void *userdata)
+					    const void *userdata)
 {
 	memset(sqe, 0, sizeof(struct rtio_sqe));
 	sqe->op = RTIO_OP_TXRX;
@@ -748,7 +762,7 @@ static inline void rtio_sqe_prep_transceive(struct rtio_sqe *sqe,
 static inline void rtio_sqe_prep_await(struct rtio_sqe *sqe,
 				       const struct rtio_iodev *iodev,
 				       int8_t prio,
-				       void *userdata)
+				       const void *userdata)
 {
 	memset(sqe, 0, sizeof(struct rtio_sqe));
 	sqe->op = RTIO_OP_AWAIT;
@@ -759,7 +773,7 @@ static inline void rtio_sqe_prep_await(struct rtio_sqe *sqe,
 
 static inline void rtio_sqe_prep_delay(struct rtio_sqe *sqe,
 				       k_timeout_t timeout,
-				       void *userdata)
+				       const void *userdata)
 {
 	memset(sqe, 0, sizeof(struct rtio_sqe));
 	sqe->op = RTIO_OP_DELAY;
