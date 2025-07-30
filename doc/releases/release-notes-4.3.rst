@@ -75,6 +75,10 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w)
 
+* Architectures
+
+  * :kconfig:option:`CONFIG_SRAM_SW_ISR_TABLE`
+
 * Power management
 
    * :c:func:`pm_device_driver_deinit`
