@@ -21,6 +21,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/kernel.h>
 #include <zephyr/sys/barrier.h>
 #include <zephyr/net/phy.h>
+#include <zephyr/drivers/mdio.h>
+#include <zephyr/net/mii.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -41,9 +43,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define GMAC_MTU NET_ETH_MTU
 
 #define GMAC_FRAME_SIZE_MAX (GMAC_MTU + 18)
-
-/** Cache alignment */
-#define GMAC_DCACHE_ALIGNMENT 32
 
 /** Memory alignment of the RX/TX Buffer Descriptor List */
 #define GMAC_DESC_ALIGNMENT 4
@@ -174,12 +173,7 @@ enum queue_idx {
 #define ETH_MCHP_SHIFT_2_BYTE 16
 #define ETH_MCHP_SHIFT_3_BYTE 24
 
-#define ETH_MCHP_CLOCK_RATE_20MHZ  (20000000U)
-#define ETH_MCHP_CLOCK_RATE_40MHZ  (40000000U)
-#define ETH_MCHP_CLOCK_RATE_80MHZ  (80000000U)
-#define ETH_MCHP_CLOCK_RATE_120MHZ (120000000U)
-#define ETH_MCHP_CLOCK_RATE_160MHZ (160000000U)
-#define ETH_MCHP_CLOCK_RATE_240MHZ (240000000U)
+#define ETH_MCHP_RX_PKT_WAIT_TIMEOUT_MS 500
 
 /** Receive/transmit buffer descriptor */
 struct eth_mchp_gmac_desc {
@@ -251,8 +245,17 @@ typedef struct eth_mchp_dev_data {
 	/* Link Status */
 	bool link_up;
 
+	/* semaphore for rx packet event */
+	struct k_sem rx_int_sem;
+
+	/* processing rx packets in thread */
+	K_KERNEL_STACK_MEMBER(rx_thread_stack, CONFIG_ETH_MCHP_RX_THREAD_STACK_SIZE);
+
 	/* processing rx packets in worker thread */
-	eth_mchp_work_data_t rx_work_data;
+	struct k_thread rx_thread;
+
+	/* Pointer to Rx Queue */
+	struct eth_mchp_gmac_queue *rx_queue;
 
 	/* queue list */
 	struct eth_mchp_gmac_queue queue_list[GMAC_QUEUE_NUM];
@@ -351,89 +354,6 @@ static struct net_buf *rx_frag_list_que0[MAIN_QUEUE_RX_DESC_COUNT];
 		val = (++val < max) ? val : 0;                                                     \
 	}
 
-static K_THREAD_STACK_DEFINE(eth_mchp_rx_workq_stack, CONFIG_ETH_MCHP_RX_THREAD_STACK_SIZE);
-static struct k_work_q rx_work_queue;
-
-static int rx_work_queue_init(void)
-{
-	struct k_work_queue_config cfg = {.name = "MCHP_RX_PKT"};
-
-	k_work_queue_init(&rx_work_queue);
-
-	k_work_queue_start(&rx_work_queue, eth_mchp_rx_workq_stack,
-			   K_THREAD_STACK_SIZEOF(eth_mchp_rx_workq_stack),
-			   K_PRIO_COOP(CONFIG_ETH_MCHP_RX_THREAD_PRIORITY), &cfg);
-
-	return 0;
-}
-
-SYS_INIT(rx_work_queue_init, POST_KERNEL, 0);
-
-#ifdef __DCACHE_PRESENT
-static bool dcache_enabled;
-
-/**
- * @brief Get Data Cache Status.
- *
- * This function is used to find if the Data cache is enabled or not.
- *
- * @return true if enabled, else false.
- */
-static inline void eth_mchp_dcache_is_enabled(void)
-{
-	dcache_enabled = (SCB->CCR & SCB_CCR_DC_Msk);
-}
-
-/**
- * @brief Invalidate the cache by address.
- *
- * This function is used to invalidate the data cache for a certain size
- * starting from addr. The function ensures cache coherency after
- * DMA write operation.
- *
- * @param addr memory address.
- * @param size size of the memory pointed to by the 'addr'.
- */
-static inline void eth_mchp_dcache_invalidate(uint32_t addr, uint32_t size)
-{
-	if (dcache_enabled == true) {
-
-		/* Make sure it is aligned to 32B */
-		uint32_t start_addr = addr & (uint32_t)~(GMAC_DCACHE_ALIGNMENT - 1);
-		uint32_t size_full = size + addr - start_addr;
-
-		SCB_InvalidateDCache_by_Addr((uint32_t *)start_addr, size_full);
-	}
-}
-
-/**
- * @brief Clean the cache by address.
- *
- * This function is used to clean the data cache for a certain size
- * starting from addr.
- *
- * @param addr memory address.
- * @param size size of the memory pointed to by the 'addr'.
- */
-static inline void eth_mchp_dcache_clean(uint32_t addr, uint32_t size)
-{
-	if (dcache_enabled == true) {
-
-		/* Make sure it is aligned to 32B */
-		uint32_t start_addr = addr & (uint32_t)~(GMAC_DCACHE_ALIGNMENT - 1);
-		uint32_t size_full = size + addr - start_addr;
-
-		SCB_CleanDCache_by_Addr((uint32_t *)start_addr, size_full);
-	}
-}
-#else
-#define eth_mchp_dcache_is_enabled()
-#define eth_mchp_dcache_invalidate(addr, size)
-#define eth_mchp_dcache_clean(addr, size)
-#endif
-
-static void eth_mchp_rx(struct eth_mchp_gmac_queue *queue);
-
 /**
  * @brief Free pre-reserved RX buffers.
  *
@@ -506,6 +426,9 @@ static inline int eth_rx_descriptors_init(gmac_registers_t *gmac_regs,
 		rx_desc_list->buf[rx_desc_list->len - 1U].w0 |= GMAC_RXW0_WRAP;
 	} while (0);
 
+	/* Set Receive Buffer Queue Pointer Register */
+	gmac_regs->GMAC_RBQB = (uint32_t)queue->rx_desc_list.buf;
+
 	return result;
 }
 
@@ -532,20 +455,38 @@ static inline void eth_tx_descriptors_init(gmac_registers_t *gmac_regs,
 
 	/* Set the wrap bit on the last descriptor */
 	tx_desc_list->buf[tx_desc_list->len - 1U].w1 |= GMAC_TXW1_WRAP;
+
+	/* Set Transmit Buffer Queue Pointer Register */
+	gmac_regs->GMAC_TBQB = (uint32_t)queue->tx_desc_list.buf;
 }
 
 /**
- * @brief Initialize Non-Priority queue.
+ * @brief Sets the receive buffer queue pointer in the appropriate register.
  *
- * This function is used to Initialize Non-Priority queue.
+ * This function is used to set the receive buffer queue pointer in
+ * the appropriate register.
+ *
+ * @param gmac Pointer to gmac registers.
+ * @param queue Pointer to gmac queue structure.
+ */
+static inline void eth_set_receive_buf_queue_pointer(gmac_registers_t *gmac,
+						     struct eth_mchp_gmac_queue *queue)
+{
+	gmac->GMAC_RBQB = (uint32_t)queue->rx_desc_list.buf;
+}
+
+/**
+ * @brief Sets the receive buffer queue pointer in the appropriate register.
+ *
+ * This function is used to set the receive buffer queue pointer in
+ * the appropriate register.
  *
  * @param gmac_regs Pointer to gmac registers.
  * @param queue Pointer to gmac queue structure.
  *
  * @return 0 if successful, -ENOBUFS if no buffers available.
  */
-static inline int eth_nonpriority_queue_init(gmac_registers_t *gmac_regs,
-					     struct eth_mchp_gmac_queue *queue)
+static inline int eth_queue_init(gmac_registers_t *gmac_regs, struct eth_mchp_gmac_queue *queue)
 {
 	int result;
 
@@ -569,12 +510,6 @@ static inline int eth_nonpriority_queue_init(gmac_registers_t *gmac_regs,
 		 * data has been sent.
 		 */
 		k_sem_init(&queue->tx_sem, 0, 1);
-
-		/* Set Receive Buffer Queue Pointer Register */
-		gmac_regs->GMAC_RBQB = (uint32_t)queue->rx_desc_list.buf;
-
-		/* Set Transmit Buffer Queue Pointer Register */
-		gmac_regs->GMAC_TBQB = (uint32_t)queue->tx_desc_list.buf;
 
 		/* Configure GMAC DMA transfer */
 		gmac_regs->GMAC_DCFGR =
@@ -603,37 +538,6 @@ static inline int eth_nonpriority_queue_init(gmac_registers_t *gmac_regs,
 	} while (0);
 
 	return result;
-}
-
-/**
- * @brief Sets the receive buffer queue pointer in the appropriate register.
- *
- * This function is used to set the receive buffer queue pointer in
- * the appropriate register.
- *
- * @param gmac Pointer to gmac registers.
- * @param queue Pointer to gmac queue structure.
- */
-static inline void eth_set_receive_buf_queue_pointer(gmac_registers_t *gmac,
-						     struct eth_mchp_gmac_queue *queue)
-{
-	gmac->GMAC_RBQB = (uint32_t)queue->rx_desc_list.buf;
-}
-
-/**
- * @brief Sets the receive buffer queue pointer in the appropriate register.
- *
- * This function is used to set the receive buffer queue pointer in
- * the appropriate register.
- *
- * @param gmac Pointer to gmac registers.
- * @param queue Pointer to gmac queue structure.
- *
- * @return 0 if successful, -ENOBUFS if no buffers available.
- */
-static inline int eth_queue_init(gmac_registers_t *gmac, struct eth_mchp_gmac_queue *queue)
-{
-	return eth_nonpriority_queue_init(gmac, queue);
 }
 
 /**
@@ -729,68 +633,35 @@ static inline void eth_rx_error_handler(gmac_registers_t *gmac, struct eth_mchp_
 }
 
 /**
- * @brief Set MCK to MDC clock divisor.
- *
- * This function is used to set MCK to MDC clock divisor. Also, according to
- * 802.3 MDC should be less then 2.5 MHz
- *
- * @param mck valid frequency.
- *
- * @return divisor if successful, -ENOTSUP if not supprted.
- */
-static inline int eth_get_mck_clock_divisor(uint32_t mck)
-{
-	uint32_t mck_divisor;
-
-	if (mck <= ETH_MCHP_CLOCK_RATE_20MHZ) {
-		mck_divisor = GMAC_NCFGR_CLK_MCK8;
-	} else if (mck <= ETH_MCHP_CLOCK_RATE_40MHZ) {
-		mck_divisor = GMAC_NCFGR_CLK_MCK16;
-	} else if (mck <= ETH_MCHP_CLOCK_RATE_80MHZ) {
-		mck_divisor = GMAC_NCFGR_CLK_MCK32;
-	} else if (mck <= ETH_MCHP_CLOCK_RATE_120MHZ) {
-		mck_divisor = GMAC_NCFGR_CLK_MCK48;
-	} else if (mck <= ETH_MCHP_CLOCK_RATE_160MHZ) {
-		mck_divisor = GMAC_NCFGR_CLK_MCK64;
-	} else if (mck <= ETH_MCHP_CLOCK_RATE_240MHZ) {
-		mck_divisor = GMAC_NCFGR_CLK_MCK96;
-	} else {
-		LOG_ERR("No valid MDC clock");
-		mck_divisor = -ENOTSUP;
-	}
-
-	LOG_INF("mck %d mck_divisor = 0x%x", mck, mck_divisor);
-
-	return mck_divisor;
-}
-
-/**
  * @brief Initialize the registers, interrupts.
  *
  * This function is used to Initialize and configure the registers,
  * and interrupts.
  *
  * @param gmac Pointer to gmac registers.
- * @param gmac_ncfgr_val value to be set in the register.
- * @param clk_freq_hz clock frequency.
  *
  * @return divisor if successful, -ENOTSUP if not supprted, -EINVAL if invalid phy connection type.
  */
-static inline int eth_gmac_init(gmac_registers_t *gmac, uint32_t gmac_ncfgr_val,
-				uint32_t clk_freq_hz)
+static inline int eth_gmac_init(gmac_registers_t *gmac)
 {
-	int mck_divisor;
 	int result = ETH_MCHP_ESUCCESS;
+	uint32_t gmac_ncfgr_val;
+	uint32_t val;
 
 	do {
-		mck_divisor = eth_get_mck_clock_divisor(clk_freq_hz);
-		if (mck_divisor < 0) {
-			result = mck_divisor;
-			break;
-		}
+		/* Initialize GMAC driver */
+		gmac_ncfgr_val = GMAC_NCFGR_MTIHEN_Msk   /* Multicast Hash Enable */
+				 | GMAC_NCFGR_LFERD_Msk  /* Length Field Error Frame Discard */
+				 | GMAC_NCFGR_RFCS_Msk   /* Remove Frame Check Sequence */
+				 | GMAC_NCFGR_RXCOEN_Msk /* Receive Checksum Offload Enable */
+				 | GMAC_MAX_FRAME_SIZE;
 
 		/* Set Network Control Register to its default value, clear stats. */
 		gmac->GMAC_NCR = GMAC_NCR_CLRSTAT_Msk | GMAC_NCR_MPE_Msk;
+
+		/* Dsiable tx and rx */
+		gmac->GMAC_NCR &= ~GMAC_NCR_TXEN_Msk;
+		gmac->GMAC_NCR &= ~GMAC_NCR_RXEN_Msk;
 
 		/* Disable all interrupts */
 		gmac->GMAC_IDR = UINT32_MAX;
@@ -803,8 +674,14 @@ static inline int eth_gmac_init(gmac_registers_t *gmac, uint32_t gmac_ncfgr_val,
 		gmac->GMAC_HRB = UINT32_MAX;
 		gmac->GMAC_HRT = UINT32_MAX;
 
+		/* Clear Status resgiters for Rx & Tx */
+		gmac->GMAC_TSR = GMAC_TSR_RESETVALUE;
+		gmac->GMAC_RSR = GMAC_RSR_RESETVALUE;
+
 		/* Setup Network Configuration Register */
-		gmac->GMAC_NCFGR = gmac_ncfgr_val | mck_divisor;
+		val = gmac->GMAC_NCFGR;
+		val |= gmac_ncfgr_val;
+		gmac->GMAC_NCFGR = val;
 
 		/* Default (RMII) is defined at microchip,gmac-u2005-eth.yaml file */
 		switch (DT_INST_ENUM_IDX(0, phy_connection_type)) {
@@ -897,9 +774,8 @@ static inline void eth_queue0_isr(gmac_registers_t *gmac, struct eth_mchp_gmac_q
 		tail_desc = &rx_desc_list->buf[rx_desc_list->tail];
 
 		LOG_DBG("rx.w1=0x%08x, tail=%d", tail_desc->w1, rx_desc_list->tail);
-
-		dev_data->rx_work_data.queue = queue;
-		k_work_submit_to_queue(&rx_work_queue, &dev_data->rx_work_data.rx_work);
+		dev_data->rx_queue = queue;
+		k_sem_give(&dev_data->rx_int_sem);
 	}
 
 	/* Check if TX packet completion */
@@ -947,6 +823,24 @@ static void eth_get_mac_addr_from_i2c_eeprom(uint8_t mac_addr[6])
 #endif
 
 /**
+ * @brief Generate MAC Address for frame filtering logic.
+ *
+ * This function is used to get MAC Address for frame filtering logic.
+ *
+ * @param gmac Pointer to gmac registers.
+ * @param index Index.
+ * @param mac_addr MAC Address.
+ */
+static void eth_mac_addr_generate(gmac_registers_t *gmac, uint8_t index, uint8_t mac_addr[6])
+{
+#if DT_INST_NODE_HAS_PROP(0, mac_eeprom)
+	eth_get_mac_addr_from_i2c_eeprom(mac_addr);
+#elif DT_INST_PROP(0, zephyr_random_mac_address)
+	gen_random_mac(mac_addr, MCHP_OUI_B0, MCHP_OUI_B1, MCHP_OUI_B2);
+#endif
+}
+
+/**
  * @brief Set MAC address
  *
  * This function is used to set the MAC address either by reading it from EEPROM,
@@ -957,12 +851,8 @@ static void eth_get_mac_addr_from_i2c_eeprom(uint8_t mac_addr[6])
  */
 static inline void eth_generate_set_mac(gmac_registers_t *gmac, uint8_t mac_addr[6])
 {
-
-#if DT_INST_NODE_HAS_PROP(0, mac_eeprom)
-	eth_get_mac_addr_from_i2c_eeprom(mac_addr);
-#elif DT_INST_PROP(0, zephyr_random_mac_address)
-	gen_random_mac(mac_addr, MCHP_OUI_B0, MCHP_OUI_B1, MCHP_OUI_B2);
-#endif
+	/* Generate/ Get MAC Address for frame filtering logic */
+	eth_mac_addr_generate(gmac, 0, mac_addr);
 
 	/* Set MAC Address for frame filtering logic */
 	eth_mac_addr_set(gmac, 0, mac_addr);
@@ -1121,9 +1011,6 @@ static struct net_pkt *eth_mchp_frame_get(struct eth_mchp_gmac_queue *queue)
 
 		/* Link frame fragments only if RX net buffer is valid */
 		if (rx_frame != NULL) {
-			/* Assure cache coherency after DMA write operation */
-			eth_mchp_dcache_invalidate((uint32_t)frag_data, frag->size);
-
 			/* Get a new data net buffer from the buffer pool */
 			new_frag = net_pkt_get_frag(rx_frame, CONFIG_NET_BUF_DATA_SIZE, K_NO_WAIT);
 			if (new_frag == NULL) {
@@ -1204,13 +1091,23 @@ static void eth_mchp_rx(struct eth_mchp_gmac_queue *queue)
 	}
 }
 
-static void eth_mchp_rx_thread(struct k_work *work)
+static void eth_mchp_rx_thread(void *arg1, void *unused1, void *unused2)
 {
-	eth_mchp_work_data_t *const work_data = CONTAINER_OF(work, eth_mchp_work_data_t, rx_work);
+	int res;
+	struct device *dev = (struct device *)arg1;
 
-	struct eth_mchp_gmac_queue *queue = work_data->queue;
+	eth_mchp_dev_data_t *dev_data = dev->data;
 
-	eth_mchp_rx(queue);
+	while (1) {
+		res = k_sem_take(&dev_data->rx_int_sem, K_MSEC(ETH_MCHP_RX_PKT_WAIT_TIMEOUT_MS));
+		if (res == 0) {
+			/* semaphore taken, update link status and receive packets */
+
+			struct eth_mchp_gmac_queue *queue = dev_data->rx_queue;
+
+			eth_mchp_rx(queue);
+		}
+	}
 }
 
 /**
@@ -1354,9 +1251,6 @@ static int eth_mchp_send(const struct device *dev, struct net_pkt *pkt)
 		frag_data = frag->data;
 		frag_len = frag->len;
 
-		/* Assure cache coherency before DMA read operation */
-		eth_mchp_dcache_clean((uint32_t)frag_data, frag->size);
-
 		tx_desc = &tx_desc_list->buf[tx_desc_list->head];
 
 		/* Update buffer descriptor address word */
@@ -1473,7 +1367,7 @@ static int eth_mchp_initialize(const struct device *dev)
 			break;
 		}
 
-		k_work_init(&dev_data->rx_work_data.rx_work, eth_mchp_rx_thread);
+		k_sem_init(&dev_data->rx_int_sem, 0, K_SEM_MAX_LIMIT);
 
 	} while (0);
 
@@ -1555,9 +1449,7 @@ static void eth_mchp_iface_init(struct net_if *iface)
 	const eth_mchp_dev_config_t *const cfg = dev->config;
 	gmac_registers_t *const gmac_regs = cfg->regs;
 	static bool init_done;
-	uint32_t gmac_ncfgr_val;
 	int i;
-	uint32_t clk_freq_hz = 0;
 	int result;
 
 	if (dev_data->iface == NULL) {
@@ -1566,63 +1458,64 @@ static void eth_mchp_iface_init(struct net_if *iface)
 
 	ethernet_init(iface);
 
-	/* The rest of initialization should only be done once */
-	if (init_done == true) {
-		return;
-	}
+	do {
 
-	/* Check the status of data caches */
-	eth_mchp_dcache_is_enabled();
-
-	/* Initialize GMAC driver */
-	gmac_ncfgr_val = GMAC_NCFGR_MTIHEN_Msk   /* Multicast Hash Enable */
-			 | GMAC_NCFGR_LFERD_Msk  /* Length Field Error Frame Discard */
-			 | GMAC_NCFGR_RFCS_Msk   /* Remove Frame Check Sequence */
-			 | GMAC_NCFGR_RXCOEN_Msk /* Receive Checksum Offload Enable */
-			 | GMAC_MAX_FRAME_SIZE;
-
-	/* Get Clock frequency */
-	result = clock_control_get_rate(
-		cfg->eth_clock.clock_dev,
-		(((eth_mchp_dev_config_t *)(dev->config))->eth_clock.mclk_apb_sys), &clk_freq_hz);
-	if (result < 0) {
-		LOG_ERR("ETH_MCHP_GET_CLOCK_FREQ Failed");
-	}
-
-	result = eth_gmac_init(gmac_regs, gmac_ncfgr_val, clk_freq_hz);
-	if (result < 0) {
-		LOG_ERR("Unable to initialize ETH driver");
-		return;
-	}
-
-	/* Set the MAC address */
-	eth_generate_set_mac(gmac_regs, dev_data->mac_addr);
-
-	LOG_INF("MAC: %02x:%02x:%02x:%02x:%02x:%02x", dev_data->mac_addr[0], dev_data->mac_addr[1],
-		dev_data->mac_addr[2], dev_data->mac_addr[3], dev_data->mac_addr[4],
-		dev_data->mac_addr[5]);
-
-	/* Register Ethernet MAC Address with the upper layer */
-	net_if_set_link_addr(iface, dev_data->mac_addr, sizeof(dev_data->mac_addr),
-			     NET_LINK_ETHERNET);
-
-	/* Initialize GMAC queues */
-	for (i = GMAC_QUE_0; i < GMAC_QUEUE_NUM; i++) {
-		result = eth_queue_init(gmac_regs, &dev_data->queue_list[i]);
-		if (result < 0) {
-			LOG_ERR("Unable to initialize ETH queue%d", i);
-			return;
+		/* The rest of initialization should only be done once */
+		if (init_done == true) {
+			break;
 		}
-	}
 
-	if (device_is_ready(cfg->phy_dev) == true) {
-		phy_link_callback_set(cfg->phy_dev, &eth_mchp_phy_link_state_changed, (void *)dev);
+		result = eth_gmac_init(gmac_regs);
+		if (result < 0) {
+			LOG_ERR("Unable to initialize ETH driver");
+			break;
+		}
 
-	} else {
-		LOG_ERR("PHY device not ready");
-	}
+		/* Set the MAC address */
+		eth_generate_set_mac(gmac_regs, dev_data->mac_addr);
 
-	init_done = true;
+		LOG_INF("MAC: %02x:%02x:%02x:%02x:%02x:%02x", dev_data->mac_addr[0],
+			dev_data->mac_addr[1], dev_data->mac_addr[2], dev_data->mac_addr[3],
+			dev_data->mac_addr[4], dev_data->mac_addr[5]);
+
+		/* Register Ethernet MAC Address with the upper layer */
+		net_if_set_link_addr(iface, dev_data->mac_addr, sizeof(dev_data->mac_addr),
+				     NET_LINK_ETHERNET);
+
+		/* Initialize GMAC queues */
+		for (i = GMAC_QUE_0; i < GMAC_QUEUE_NUM; i++) {
+			result = eth_queue_init(gmac_regs, &dev_data->queue_list[i]);
+			if (result < 0) {
+				LOG_ERR("Unable to initialize ETH queue%d", i);
+				break;
+			}
+		}
+
+		if (result < 0) {
+			break;
+		}
+
+		if (device_is_ready(cfg->phy_dev) == true) {
+			phy_link_callback_set(cfg->phy_dev, &eth_mchp_phy_link_state_changed,
+					      (void *)dev);
+
+		} else {
+			LOG_ERR("PHY device not ready");
+		}
+
+		/* Start interruption-poll thread */
+		k_thread_create(&dev_data->rx_thread, dev_data->rx_thread_stack,
+				K_KERNEL_STACK_SIZEOF(dev_data->rx_thread_stack),
+				eth_mchp_rx_thread, (void *)dev, NULL, NULL,
+				IS_ENABLED(CONFIG_NET_TC_THREAD_PREEMPTIVE)
+					? K_PRIO_PREEMPT(CONFIG_ETH_MCHP_RX_THREAD_PRIORITY)
+					: K_PRIO_COOP(CONFIG_ETH_MCHP_RX_THREAD_PRIORITY),
+				0, K_NO_WAIT);
+
+		k_thread_name_set(&dev_data->rx_thread, "mchp_eth_rx");
+
+		init_done = true;
+	} while (0);
 }
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
@@ -1664,9 +1557,8 @@ static enum ethernet_hw_caps eth_mchp_get_capabilities(const struct device *dev)
 #if defined(CONFIG_NET_VLAN)
 	       ETHERNET_HW_VLAN |
 #endif
-	       ETHERNET_PRIORITY_QUEUES |
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
-	       ETHERNET_QAV |
+	       ETHERNET_PRIORITY_QUEUES | ETHERNET_QAV |
 #endif
 	       ETHERNET_LINK_100BASE_T;
 }
@@ -1733,15 +1625,56 @@ static int eth_mchp_set_config(const struct device *dev, enum ethernet_config_ty
 static int eth_mchp_get_config(const struct device *dev, enum ethernet_config_type type,
 			       struct ethernet_config *config)
 {
+	const eth_mchp_dev_config_t *const cfg = dev->config;
+	static const struct device *const mdio_dev = DEVICE_DT_GET(DT_NODELABEL(mdio));
+	gmac_registers_t *const gmac_regs = cfg->regs;
+	uint32_t val;
+	uint32_t retval = 0;
+
 	switch (type) {
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
 	case ETHERNET_CONFIG_TYPE_PRIORITY_QUEUES_NUM:
 		config->priority_queues_num = GMAC_ACTIVE_PRIORITY_QUEUE_NUM;
-		return 0;
-	default:
+		break;
+#endif
+	case ETHERNET_CONFIG_TYPE_DUPLEX:
+		val = gmac_regs->GMAC_NCFGR;
+		config->full_duplex = (val & GMAC_NCFGR_FD_Msk) ? 1 : 0;
+		break;
+
+	case ETHERNET_CONFIG_TYPE_AUTO_NEG: {
+		uint16_t reg_val = 0;
+
+		retval = mdio_read(mdio_dev, 0, MII_BMCR, &reg_val);
+		if (retval != 0) {
+			break;
+		}
+
+		config->auto_negotiation = (reg_val & MII_BMCR_AUTONEG_ENABLE) ? 1 : 0;
 		break;
 	}
 
-	return -ENOTSUP;
+	case ETHERNET_CONFIG_TYPE_LINK: {
+		uint16_t reg_val = 0;
+
+		retval = mdio_read(mdio_dev, 0, MII_BMCR, &reg_val);
+		if (retval != 0) {
+			break;
+		}
+
+		config->l.link_10bt = (reg_val & MII_BMCR_SPEED_10) ? 1 : 0;
+		config->l.link_100bt = (reg_val & MII_BMCR_SPEED_100) ? 1 : 0;
+		config->l.link_1000bt = (reg_val & MII_BMCR_SPEED_1000) ? 1 : 0;
+
+		break;
+	}
+
+	default:
+		retval = -ENOTSUP;
+		break;
+	}
+
+	return retval;
 }
 
 /**

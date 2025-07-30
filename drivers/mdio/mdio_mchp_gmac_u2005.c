@@ -24,6 +24,13 @@ LOG_MODULE_REGISTER(mdio_mchp_gmac_u2005, CONFIG_MDIO_LOG_LEVEL);
 /* Define compatible string */
 #define DT_DRV_COMPAT microchip_gmac_u2005_mdio
 
+#define MDIO_MCHP_CLOCK_RATE_20MHZ  (20000000U)
+#define MDIO_MCHP_CLOCK_RATE_40MHZ  (40000000U)
+#define MDIO_MCHP_CLOCK_RATE_80MHZ  (80000000U)
+#define MDIO_MCHP_CLOCK_RATE_120MHZ (120000000U)
+#define MDIO_MCHP_CLOCK_RATE_160MHZ (160000000U)
+#define MDIO_MCHP_CLOCK_RATE_240MHZ (240000000U)
+
 /**
  * @brief Define the HAL configuration for MDIO.
  *
@@ -364,6 +371,42 @@ static void mdio_mchp_bus_disable(const struct device *dev)
 }
 
 /**
+ * @brief Set MCK to MDC clock divisor.
+ *
+ * This function is used to set MCK to MDC clock divisor. Also, according to
+ * 802.3 MDC should be less then 2.5 MHz
+ *
+ * @param mck valid frequency.
+ *
+ * @return divisor if successful, -ENOTSUP if not supprted.
+ */
+static inline int mdio_get_mck_clock_divisor(uint32_t mck)
+{
+	uint32_t mck_divisor;
+
+	if (mck <= MDIO_MCHP_CLOCK_RATE_20MHZ) {
+		mck_divisor = GMAC_NCFGR_CLK_MCK8;
+	} else if (mck <= MDIO_MCHP_CLOCK_RATE_40MHZ) {
+		mck_divisor = GMAC_NCFGR_CLK_MCK16;
+	} else if (mck <= MDIO_MCHP_CLOCK_RATE_80MHZ) {
+		mck_divisor = GMAC_NCFGR_CLK_MCK32;
+	} else if (mck <= MDIO_MCHP_CLOCK_RATE_120MHZ) {
+		mck_divisor = GMAC_NCFGR_CLK_MCK48;
+	} else if (mck <= MDIO_MCHP_CLOCK_RATE_160MHZ) {
+		mck_divisor = GMAC_NCFGR_CLK_MCK64;
+	} else if (mck <= MDIO_MCHP_CLOCK_RATE_240MHZ) {
+		mck_divisor = GMAC_NCFGR_CLK_MCK96;
+	} else {
+		LOG_ERR("No valid MDC clock");
+		mck_divisor = -ENOTSUP;
+	}
+
+	LOG_INF("mck %d mck_divisor = 0x%x", mck, mck_divisor);
+
+	return mck_divisor;
+}
+
+/**
  * @brief MDIO Device Initialization
  *
  * This function is used to initialize the MDIO device, setting the
@@ -378,6 +421,8 @@ static int mdio_mchp_initialize(const struct device *dev)
 	const struct mdio_mchp_dev_config *const cfg = dev->config;
 	struct mdio_mchp_dev_data *const data = dev->data;
 	int retval = MDIO_MCHP_ESUCCESS;
+	uint32_t clk_freq_hz = 0;
+	int mck_divisor;
 
 	do {
 		/* Initialize the Semaphore */
@@ -400,6 +445,23 @@ static int mdio_mchp_initialize(const struct device *dev)
 			break;
 		}
 
+		/* Get Clock frequency */
+		retval = clock_control_get_rate(
+			((const mdio_mchp_dev_config_t *)(dev->config))->mdio_clock.clock_dev,
+			(((mdio_mchp_dev_config_t *)(dev->config))->mdio_clock.mclk_apb_sys),
+			&clk_freq_hz);
+		if (retval < 0) {
+			LOG_ERR("ETH_MCHP_GET_CLOCK_FREQ Failed");
+		}
+
+		mck_divisor = mdio_get_mck_clock_divisor(clk_freq_hz);
+		if (mck_divisor < 0) {
+			retval = mck_divisor;
+			break;
+		}
+
+		/* Setup Network Configuration Register */
+		cfg->regs->GMAC_NCFGR = mck_divisor;
 		/* Connect pins to the peripheral */
 		retval = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 		if (retval != 0) {

@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2025 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	soc {
+		gmac: ethernet@42000800 {
+			compatible = "microchip,gmac-u2005-eth";
+			reg = <0x42000800 0x400>;
+			interrupts = <84 0>;
+			interrupt-names = "gmac";
+			num-queues = <1>;
+			local-mac-address = [00 00 00 00 00 00];
+			status = "disabled";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_AHB_GMAC>,
+					<&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_GMAC>;
+			clock-names = "mclk-ahb", "mclk-apb";
+		};
+		mdio: mdio@42000800 {
+			compatible = "microchip,gmac-u2005-mdio";
+			reg = <0x42000800 0x400>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_AHB_GMAC>,
+					<&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_GMAC>;
+			clock-names = "mclk-ahb", "mclk-apb";
+		};
+	};
+};
