@@ -7,6 +7,7 @@
 
 config ZMS
 	bool "Zephyr Memory Storage"
+	depends on FLASH_MAP
 	select CRC
 	help
 	  Enable Zephyr Memory Storage, which is a key-value storage system designed to work with
