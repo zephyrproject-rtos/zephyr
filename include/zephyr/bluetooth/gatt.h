@@ -419,6 +419,73 @@ struct bt_gatt_authorization_cb {
 				const struct bt_gatt_attr *attr);
 };
 
+#if defined(CONFIG_BT_GATT_GAP_CB)
+/** @brief GATT GAP callback structure. */
+struct bt_gatt_gap_cb {
+#if defined(CONFIG_BT_DEVICE_NAME_GATT_WRITABLE)
+	/** @brief Verify the name write request.
+	 *
+	 *  This callback allows the application to verify the name write
+	 *  request before it is processed.
+	 *
+	 *  @param conn Connection object from which the request originated.
+	 *  @param name The new device name.
+	 *
+	 *  @retval 0 Success, proceed with the name change.
+	 *  @retval <0 Error, reject the request.
+	 *             Use ATT error codes like:
+	 *             `BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED)`.
+	 *
+	 *  @note
+	 *  If any of the registered callback rejects the name change
+	 *  the execution is stopped.
+	 */
+	int (*name_verify)(struct bt_conn *conn, const char *name);
+	/** @brief Notify that the device name has changed.
+	 *
+	 *  This callback notifies the application that the device name
+	 *  has changed.
+	 *
+	 *  @param conn Connection object from which the request originated.
+	 *  @param name The new device name.
+	 */
+	void (*name_changed)(struct bt_conn *conn, const char *name);
+#endif /* CONFIG_BT_DEVICE_NAME_GATT_WRITABLE */
+#if defined(CONFIG_BT_DEVICE_APPEARANCE_GATT_WRITABLE)
+	/** @brief Handle appearance write request.
+	 *
+	 *  This callback allows the application to handle the appearance
+	 *  write request.
+	 *
+	 *  @param conn Connection object from which the request originated.
+	 *  @param appearance The new device appearance.
+	 *
+	 *  @retval 0 Success, proceed with the appearance change.
+	 *  @retval <0 Error, reject the request.
+	 *             Use ATT error codes like:
+	 *             `BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED)`.
+	 *
+	 *  @note
+	 *  If any of the registered callback rejects the appearance change
+	 *  the execution is stopped.
+	 */
+	int (*appearance_verify)(struct bt_conn *conn, uint16_t appearance);
+	/** @brief Notify that the device appearance has changed.
+	 *
+	 *  This callback notifies the application that the device appearance
+	 *  has changed.
+	 *
+	 *  @param conn Connection object from which the request originated.
+	 *  @param appearance The new device appearance.
+	 */
+	void (*appearance_changed)(struct bt_conn *conn, uint16_t appearance);
+#endif /* CONFIG_BT_DEVICE_APPEARANCE_GATT_WRITABLE */
+
+	/** @internal Internally used field for list handling */
+	sys_snode_t _node;
+};
+#endif /* CONFIG_BT_GATT_GAP_CB */
+
 /** Characteristic Properties Bit field values */
 
 /**
@@ -641,6 +708,42 @@ void bt_gatt_cb_register(struct bt_gatt_cb *cb);
  *  @return Zero on success or negative error code otherwise.
  */
 int bt_gatt_authorization_cb_register(const struct bt_gatt_authorization_cb *cb);
+
+#if defined(CONFIG_BT_GATT_GAP_CB)
+/** @brief Register GAP callbacks.
+ *
+ *  Register callbacks to monitor the writes to GAP characteristics.
+ *
+ *  @param cb Callback struct. Must point to memory that remains valid.
+ *
+ * @retval 0 Success.
+ * @retval -EEXIST if @p cb was already registered.
+ */
+int bt_gatt_gap_cb_register(struct bt_gatt_gap_cb *cb);
+
+/**
+ * @brief Unregister GAP callbacks.
+ *
+ * Unregister the callbacks to monitor the writes to GAP characteristics.
+ *
+ * @param cb Callback struct point to memory that remains valid.
+ *
+ * @retval 0 Success
+ * @retval -EINVAL If @p cb is NULL
+ * @retval -ENOENT if @p cb was not registered
+ */
+int bt_gatt_gap_cb_unregister(struct bt_gatt_gap_cb *cb);
+
+/**
+ *  @brief Register a callback structure for GAP characteristics write.
+ *
+ *  @param _name Name of callback structure.
+ */
+#define BT_GATT_GAP_CB_DEFINE(_name)					\
+	static const STRUCT_SECTION_ITERABLE(bt_gatt_gap_cb,		\
+					     _CONCAT(bt_gatt_gap_cb_,	\
+					    _name))
+#endif /* CONFIG_BT_GATT_GAP_CB */
 
 /** @brief Register GATT service.
  *

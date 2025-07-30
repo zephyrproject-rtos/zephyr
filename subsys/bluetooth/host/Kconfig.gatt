@@ -315,6 +315,13 @@ config DEVICE_APPEARANCE_GATT_WRITABLE_AUTHEN
 endchoice  #BT_DEVICE_APPEARANCE_GATT_WRITABLE
 endif #BT_DEVICE_APPEARANCE_GATT_WRITABLE
 
+config BT_GATT_GAP_CB
+	bool "Support for GAP callbacks"
+	depends on BT_DEVICE_NAME_GATT_WRITABLE || BT_DEVICE_APPEARANCE_GATT_WRITABLE
+	help
+	  Enable callbacks to handle GAP write to Name and Appearance
+	  characteristics.
+
 config BT_GATT_AUTHORIZATION_CUSTOM
 	bool "Custom authorization of GATT operations"
 	help

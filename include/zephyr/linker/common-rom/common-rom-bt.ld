@@ -16,6 +16,10 @@
 	ITERABLE_SECTION_ROM(bt_sco_conn_cb, Z_LINK_ITERABLE_SUBALIGN)
 #endif
 
+#if defined(CONFIG_BT_GATT_GAP_CB)
+	ITERABLE_SECTION_ROM(bt_gatt_gap_cb, Z_LINK_ITERABLE_SUBALIGN)
+#endif
+
 	ITERABLE_SECTION_ROM(bt_gatt_service_static, Z_LINK_ITERABLE_SUBALIGN)
 
 #if defined(CONFIG_BT_MESH)
