@@ -1,0 +1,27 @@
+&dma0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	compatible = "infineon,cat1-dma";
+
+	status = "okay";
+};
+
+dut: &scb1 {
+	compatible = "infineon,cat1-uart";
+	status = "okay";
+	current-speed = <115200>;
+
+	dmas = <&dma0 6>, <&dma0 7>;
+	dma-names = "tx", "rx";
+
+	pinctrl-0 = <&p1_3_scb1_uart_tx &p1_2_scb1_uart_rx>;
+	pinctrl-names = "default";
+};
+
+&p1_3_scb1_uart_tx {
+	drive-push-pull;
+};
+
+&p1_2_scb1_uart_rx {
+	input-enable;
+};
