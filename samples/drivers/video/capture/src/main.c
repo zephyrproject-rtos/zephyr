@@ -284,6 +284,12 @@ int main(void)
 	}
 
 	/* Alloc video buffers and enqueue for capture */
+	if (caps.min_vbuf_count > CONFIG_VIDEO_BUFFER_POOL_NUM_MAX ||
+	    bsize > CONFIG_VIDEO_BUFFER_POOL_SZ_MAX) {
+		LOG_ERR("Not enough buffers or memory to start streaming");
+		return 0;
+	}
+
 	for (i = 0; i < CONFIG_VIDEO_BUFFER_POOL_NUM_MAX; i++) {
 		/*
 		 * For some hardwares, such as the PxP used on i.MX RT1170 to do image rotation,
