@@ -466,7 +466,35 @@ struct spi_config {
 	 * if not used).
 	 */
 	struct spi_cs_control cs;
+	/**
+	 * @brief Delay between SPI words on SCK line in nanoseconds, if supported.
+	 * Value of zero will attempt to use half of the SCK period.
+	 */
+	uint16_t word_delay;
 };
+
+/** @cond INTERNAL_HIDDEN */
+/* converts from the special DT zero value to half of the frequency, for drivers usage mostly */
+static inline uint16_t spi_get_word_delay(const struct spi_config *cfg)
+{
+	uint32_t freq = cfg->frequency;
+
+	if (cfg->word_delay != 0) {
+		return cfg->word_delay;
+	}
+
+	if (freq == 0) {
+		return 0;
+	}
+
+	uint64_t period_ns = NSEC_PER_SEC / freq;
+
+	period_ns = MIN(period_ns, UINT16_MAX);
+	period_ns /= 2;
+
+	return (uint16_t)period_ns;
+}
+/** @endcond */
 
 /**
  * @brief Structure initializer for spi_config from devicetree
@@ -487,9 +515,12 @@ struct spi_config {
 			DT_PROP(node_id, frame_format) |			\
 			COND_CODE_1(DT_PROP(node_id, spi_cpol), SPI_MODE_CPOL, (0)) |	\
 			COND_CODE_1(DT_PROP(node_id, spi_cpha), SPI_MODE_CPHA, (0)) |	\
-			COND_CODE_1(DT_PROP(node_id, spi_hold_cs), SPI_HOLD_ON_CS, (0)),	\
+			COND_CODE_1(DT_PROP(node_id, spi_hold_cs), SPI_HOLD_ON_CS, (0))	| \
+			COND_CODE_1(DT_PROP(node_id, spi_lsb_first), SPI_TRANSFER_LSB, (0)) |	\
+			COND_CODE_1(DT_PROP(node_id, spi_cs_high), SPI_CS_ACTIVE_HIGH, (0)),	\
 		.slave = DT_REG_ADDR(node_id),				\
 		.cs = SPI_CS_CONTROL_INIT(node_id, __VA_ARGS__),	\
+		.word_delay = DT_PROP(node_id, spi_interframe_delay_ns),\
 	}
 
 /**
