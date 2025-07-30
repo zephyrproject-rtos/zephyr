@@ -49,7 +49,11 @@ if(${CONFIG_SOC_GECKO_HAS_RADIO})
     zephyr_library_sources(${RADIO_DIR}/rail_lib/plugin/pa-conversions/pa_curves_efr32.c)
 
     # prebuilt libs
-    add_prebuilt_library(librail platform/radio/rail_lib/autogen/librail_release/librail_efr32xg${GECKO_SERIES_NUMBER}_gcc_release.a)
+    if(CONFIG_SILABS_GECKO_RAIL_MULTIPROTOCOL)
+      add_prebuilt_library(librail platform/radio/rail_lib/autogen/librail_release/librail_multiprotocol_efr32xg${GECKO_SERIES_NUMBER}_gcc_release.a)
+    else()
+      add_prebuilt_library(librail platform/radio/rail_lib/autogen/librail_release/librail_efr32xg${GECKO_SERIES_NUMBER}_gcc_release.a)
+    endif()
 
     if(CONFIG_SOC_GECKO_CUSTOM_RADIO_PHY)
       zephyr_include_directories(
