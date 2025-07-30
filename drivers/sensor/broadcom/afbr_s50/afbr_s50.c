@@ -153,7 +153,7 @@ static status_t data_ready_callback(status_t status, argus_hnd_t *hnd)
 	 */
 	err = afbr_s50_platform_get_by_hnd(hnd, &platform);
 	CHECKIF(err) {
-		__ASSERT(false, "Failed to get platform data SQE response can't be sent");
+		LOG_ERR("Failed to get platform data SQE response can't be sent");
 		return ERROR_FAIL;
 	}
 
