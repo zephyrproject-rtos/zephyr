@@ -45,7 +45,7 @@ BUILD_ASSERT(CONFIG_SPI_INIT_PRIORITY < CONFIG_MFD_MAXQ10XX_INIT_PRIORITY,
 
 #define DEFINE_MAXQ10XX_MFD(_num)                                                                  \
 	static const struct mfd_maxq10xx_config mfd_maxq10xx_config##_num = {                      \
-		.spi = SPI_DT_SPEC_INST_GET(_num, SPI_WORD_SET(8), 0),                             \
+		.spi = SPI_DT_SPEC_INST_GET(_num, SPI_WORD_SET(8)),                                \
 	};                                                                                         \
 	static struct mfd_maxq10xx_data mfd_maxq10xx_data##_num = {                                \
 		.sem_lock = Z_SEM_INITIALIZER(mfd_maxq10xx_data##_num.sem_lock, 1, 1),             \

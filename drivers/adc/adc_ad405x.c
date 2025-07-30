@@ -1328,7 +1328,7 @@ static DEVICE_API(adc, ad405x_api_funcs) = {
 #define AD405X_SPI_CFG SPI_WORD_SET(8) | SPI_TRANSFER_MSB
 
 #define AD405X_RTIO_DEFINE(inst)                                                                  \
-	SPI_DT_IODEV_DEFINE(ad405x_iodev_##inst, DT_DRV_INST(inst), AD405X_SPI_CFG, 0U);         \
+	SPI_DT_IODEV_DEFINE(ad405x_iodev_##inst, DT_DRV_INST(inst), AD405X_SPI_CFG);              \
 	RTIO_DEFINE(ad405x_rtio_ctx_##inst, 16, 16);
 
 #define DT_INST_AD405X(inst, t) DT_INST(inst, adi_ad##t##_adc)
@@ -1357,7 +1357,7 @@ static DEVICE_API(adc, ad405x_api_funcs) = {
 				())))								\
 	};											\
 	static const struct adc_ad405x_config ad##t##_config_##n =  {				\
-		.bus = {.spi = SPI_DT_SPEC_GET(DT_INST_AD405X(n, t), AD405X_SPI_CFG, 0)},	\
+		.bus = {.spi = SPI_DT_SPEC_GET(DT_INST_AD405X(n, t), AD405X_SPI_CFG)},		\
 		.conversion = GPIO_DT_SPEC_GET_BY_IDX(DT_INST_AD405X(n, t),			\
 							conversion_gpios, 0),			\
 		IF_ENABLED(CONFIG_AD405X_TRIGGER, (AD405X_GPIO(t, n)))				\

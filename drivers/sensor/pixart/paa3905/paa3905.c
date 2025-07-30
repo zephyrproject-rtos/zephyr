@@ -310,8 +310,7 @@ static int paa3905_init(const struct device *dev)
 	RTIO_DEFINE(paa3905_rtio_ctx_##inst, 8, 8);						   \
 	SPI_DT_IODEV_DEFINE(paa3905_bus_##inst,							   \
 			    DT_DRV_INST(inst),							   \
-			    SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_TRANSFER_MSB,		   \
-			    0U);								   \
+			    SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_TRANSFER_MSB);		   \
 												   \
 	static const struct paa3905_config paa3905_cfg_##inst = {				   \
 		.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),			   \

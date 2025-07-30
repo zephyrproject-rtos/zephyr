@@ -968,7 +968,7 @@ static DEVICE_API(flash, spi_flash_at25xv021a_api) = {
 	ASSERT_TIMEOUTS(DT_INST_PROP(inst, timeout), DT_INST_PROP(inst, timeout_erase));           \
                                                                                                    \
 	static const struct flash_at25xv021a_config flash_at25xv021a_config_##inst = {             \
-		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP, 0),                                      \
+		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP),                                         \
 		.jedec_id = DT_INST_PROP(inst, jedec_id),                                          \
 		.size = DT_INST_PROP(inst, size),                                                  \
 		.timeout = K_MSEC(DT_INST_PROP(inst, timeout)),                                    \
