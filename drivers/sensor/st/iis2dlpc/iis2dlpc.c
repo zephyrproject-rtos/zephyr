@@ -463,8 +463,7 @@ static int iis2dlpc_init(const struct device *dev)
 		STMEMSC_CTX_SPI(&iis2dlpc_config_##inst.stmemsc_cfg),	\
 		.stmemsc_cfg = {					\
 			.spi = SPI_DT_SPEC_INST_GET(inst,		\
-					   IIS2DLPC_SPI_OPERATION,	\
-					   0),				\
+					   IIS2DLPC_SPI_OPERATION),	\
 		},							\
 		IIS2DLPC_CONFIG_COMMON(inst)				\
 	}

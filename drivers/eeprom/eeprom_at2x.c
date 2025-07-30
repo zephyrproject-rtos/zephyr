@@ -621,7 +621,7 @@ static DEVICE_API(eeprom, eeprom_at2x_api) = {
 #define EEPROM_AT25_BUS(n, t)						 \
 	{ .spi = SPI_DT_SPEC_GET(INST_DT_AT2X(n, t),			 \
 				 SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | \
-				 SPI_WORD_SET(8), 0) }
+				 SPI_WORD_SET(8)) }
 
 #define EEPROM_AT2X_WP_GPIOS(id)					\
 	IF_ENABLED(DT_NODE_HAS_PROP(id, wp_gpios),			\
