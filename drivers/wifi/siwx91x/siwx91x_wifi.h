@@ -9,6 +9,11 @@
 
 #include "sl_si91x_types.h"
 
+struct siwx91x_config {
+	uint8_t scan_tx_power;
+	uint8_t join_tx_power;
+};
+
 struct siwx91x_dev {
 	struct net_if *iface;
 	sl_mac_address_t macaddr;
