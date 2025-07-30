@@ -1555,7 +1555,7 @@ static const struct ethernet_api adin2111_port_api = {
 	), ())											\
 	static const struct adin2111_config name##_config_##inst = {				\
 		.id = dev_id,									\
-		.spi = SPI_DT_SPEC_INST_GET(inst, ADIN2111_SPI_OPERATION, 0),			\
+		.spi = SPI_DT_SPEC_INST_GET(inst, ADIN2111_SPI_OPERATION),			\
 		.interrupt = GPIO_DT_SPEC_INST_GET(inst, int_gpios),				\
 		.reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, { 0 }),			\
 	};											\

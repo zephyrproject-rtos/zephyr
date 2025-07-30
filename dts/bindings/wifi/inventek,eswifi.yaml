@@ -21,3 +21,8 @@ properties:
 
   boot0-gpios:
     type: phandle-array
+
+  spi-cs-setup-delay-ns:
+    default: 1000000
+  spi-cs-hold-delay-ns:
+    default: 1000000

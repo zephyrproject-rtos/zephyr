@@ -470,7 +470,7 @@ static const struct ethernet_api lan865x_api_func = {
 
 #define LAN865X_DEFINE(inst)                                                                       \
 	static const struct lan865x_config lan865x_config_##inst = {                               \
-		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8), 0),                             \
+		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8)),                                \
 		.interrupt = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                               \
 		.reset = GPIO_DT_SPEC_INST_GET(inst, rst_gpios),                                   \
 		.timeout = CONFIG_ETH_LAN865X_TIMEOUT,                                             \
