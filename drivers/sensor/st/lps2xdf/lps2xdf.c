@@ -176,7 +176,7 @@ static DEVICE_API(sensor, lps2xdf_driver_api) = {
 {                                                                              \
 	STMEMSC_CTX_SPI(&lps2xdf_config_##name##_##inst.stmemsc_cfg),          \
 	.stmemsc_cfg = {                                                       \
-		.spi = SPI_DT_SPEC_INST_GET(inst, LPS2XDF_SPI_OPERATION, 0),   \
+		.spi = SPI_DT_SPEC_INST_GET(inst, LPS2XDF_SPI_OPERATION),      \
 	},                                                                     \
 	LPS2XDF_CONFIG_COMMON(inst, name)                                      \
 }

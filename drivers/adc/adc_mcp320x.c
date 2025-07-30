@@ -316,7 +316,7 @@ static DEVICE_API(adc, mcp320x_adc_api) = {
 	static const struct mcp320x_config mcp##t##_config_##n = { \
 		.bus = SPI_DT_SPEC_GET(INST_DT_MCP320X(n, t), \
 					 SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | \
-					 SPI_WORD_SET(8), 0), \
+					 SPI_WORD_SET(8)), \
 		.channels = ch, \
 	}; \
 	DEVICE_DT_DEFINE(INST_DT_MCP320X(n, t), \
