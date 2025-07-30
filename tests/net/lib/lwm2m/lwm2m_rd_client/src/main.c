@@ -339,8 +339,37 @@ ZTEST(lwm2m_rd_client, test_rx_off)
 	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE),
 		     NULL);
 
+	/* Should not go to RX_OFF while ongoing traffic */
+	lwm2m_rd_client_hint_socket_state(&ctx, LWM2M_SOCKET_STATE_ONGOING);
 	engine_update_tx_time();
 	k_sleep(K_SECONDS(15));
+	zassert_false(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_QUEUE_MODE_RX_OFF),
+		     NULL);
+
+	/* Should not go to RX_OFF while waiting for response */
+	lwm2m_rd_client_hint_socket_state(&ctx, LWM2M_SOCKET_STATE_ONE_RESPONSE);
+	engine_update_tx_time();
+	k_sleep(K_SECONDS(15));
+	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE),
+		     NULL);
+	zassert_false(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_QUEUE_MODE_RX_OFF),
+		     NULL);
+
+	/* Should go to RX_OFF after response to a registration request */
+	lwm2m_rd_client_hint_socket_state(&ctx, LWM2M_SOCKET_STATE_LAST);
+	engine_update_tx_time();
+	k_sleep(K_SECONDS(15));
+	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE),
+		     NULL);
+	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_QUEUE_MODE_RX_OFF),
+		     NULL);
+
+	/* Should go to RX_OFF normally */
+	lwm2m_rd_client_hint_socket_state(&ctx, LWM2M_SOCKET_STATE_NO_DATA);
+	engine_update_tx_time();
+	k_sleep(K_SECONDS(15));
+	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE),
+		     NULL);
 	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_QUEUE_MODE_RX_OFF),
 		     NULL);
 }
