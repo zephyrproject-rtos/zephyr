@@ -1,0 +1,26 @@
+# Copyright 2025 Nordic Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic NRFS SWEXT power domain
+
+compatible: "nordic,nrfs-swext"
+
+include: power-domain.yaml
+
+properties:
+  "#power-domain-cells":
+    const: 0
+
+  max-current-ua:
+    type: int
+    description: Maxmimum supported current in microamps.
+    required: true
+
+  current-limit-ua:
+    type: int
+    description: Maxmimum allowed current in microamps.
+    required: true
+
+  power-down-clamp:
+    type: boolean
+    description: Enable ground clamp on output when powered down.
