@@ -663,7 +663,7 @@ _Level\LVL\()Vector:
 	 * For double exception, DEPC in saved in earlier vector
 	 * code.
 	 */
-	wsr a0, ZSR_EXCCAUSE_SAVE
+	wsr a0, ZSR_A0SAVE
 
 	esync
 
@@ -690,15 +690,11 @@ _Level\LVL\()Vector:
 	 * jump to an infinite loop, or quit the simulator, or invoke
 	 * debugger.
 	 */
-	rsr a0, ZSR_EXCCAUSE_SAVE
+	rsr a0, ZSR_A0SAVE
 	j _TripleFault
 
 _not_triple_fault:
-	rsr.exccause a0
-
-	xsr a0, ZSR_EXCCAUSE_SAVE
-
-	esync
+	rsr a0, ZSR_A0SAVE
 .endif
 #endif
 
@@ -706,6 +702,16 @@ _not_triple_fault:
 	s32i a0, a1, ___xtensa_irq_bsa_t_a0_OFFSET
 	s32i a2, a1, ___xtensa_irq_bsa_t_a2_OFFSET
 	s32i a3, a1, ___xtensa_irq_bsa_t_a3_OFFSET
+
+	/* Save registers needed for handling the exception as
+	 * these registers can be overwritten during nested
+	 * exceptions.
+	 */
+	rsr.exccause a0
+	s32i a0, a1, ___xtensa_irq_bsa_t_exccause_OFFSET
+
+	rsr.excvaddr a0
+	s32i a0, a1, ___xtensa_irq_bsa_t_excvaddr_OFFSET
 
 	/* Level "1" is the exception handler, which uses a different
 	 * calling convention.  No special register holds the
