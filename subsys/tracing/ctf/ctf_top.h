@@ -403,7 +403,7 @@ static inline void ctf_top_mutex_unlock_enter(uint32_t mutex_id)
 
 static inline void ctf_top_mutex_unlock_exit(uint32_t mutex_id, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MUTEX_UNLOCK_EXIT), mutex_id);
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MUTEX_UNLOCK_EXIT), mutex_id, ret);
 }
 
 /* Timer */
