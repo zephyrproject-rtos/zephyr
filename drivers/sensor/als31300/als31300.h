@@ -140,8 +140,8 @@
 #define ALS31300_12BIT_RESOLUTION               4096.0f /* 2^12 for 12-bit resolution */
 
 /* Sensitivity values (LSB/G) based on full scale range */
-#define ALS31300_SENS_500G          500.0f
-#define ALS31300_SENS_1000G         1000.0f  
-#define ALS31300_SENS_2000G         2000.0f
+#define ALS31300_SENS_500G 500.0f
+#define ALS31300_SENS_1000G 1000.0f
+#define ALS31300_SENS_2000G 2000.0f
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_ALS31300_H_ */

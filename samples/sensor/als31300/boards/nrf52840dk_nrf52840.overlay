@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2025 Croxel
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	als31300: als31300@60 {
+		compatible = "allegro,als31300";
+		reg = <0x60>;
+		status = "okay";
+
+		full-scale-range = <500>;	/* 500G, 1000G, or 2000G */
+
+		label = "ALS31300_HALL_SENSOR";
+	};
+};
+
+&pinctrl {
+	i2c0_default: i2c0_default {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 0, 30)>,	/* P0.30 */
+				<NRF_PSEL(TWIM_SCL, 0, 31)>;	/* P0.31 */
+		};
+	};
+
+	i2c0_sleep: i2c0_sleep {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 0, 30)>,
+				<NRF_PSEL(TWIM_SCL, 0, 31)>;
+			low-power-enable;
+		};
+	};
+};

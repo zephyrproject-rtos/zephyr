@@ -8,13 +8,9 @@ compatible: "allegro,als31300"
 include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
-  full_scale_range:
+  full-scale-range:
     type: int
     default: 500
-    enum:
-      - 500
-      - 1000  
-      - 2000
     description: |
       Full scale measurement range in Gauss.
       Determines the sensitivity and maximum field strength.

@@ -32,10 +32,8 @@ struct als31300_config {
 
 /**
  * @brief Get sensitivity value based on full-scale range
- * 
  * This function returns the sensitivity in LSB/gauss for the configured
  * full-scale range according to the ALS31300 datasheet specifications.
- * 
  * @param full_scale_range Full-scale range in gauss (500, 1000, or 2000)
  * @return Sensitivity value in LSB/gauss (4 for 500G, 2 for 1000G, 1 for 2000G)
  */
@@ -55,12 +53,10 @@ static float als31300_get_sensitivity(uint16_t full_scale_range)
 
 /**
  * @brief Convert 12-bit two's complement value to signed 16-bit
- * 
  * This function properly handles 12-bit two's complement conversion where:
  * - Bit 11 is the sign bit
  * - If bit 11 = 1, the number is negative
  * - If bit 11 = 0, the number is positive
- * 
  * @param value 12-bit value to convert (bits 11:0)
  * @return Signed 16-bit value
  */
@@ -68,25 +64,23 @@ static int16_t als31300_convert_12bit_to_signed(uint16_t value)
 {
 	/* Mask to ensure we only have 12 bits */
 	value &= 0x0FFF;
-	
 	/* Check if bit 11 (sign bit) is set - negative number */
 	if (value & 0x800) {
 		/* For negative numbers in 12-bit two's complement:
-		 * Sign extend by setting bits 15:12 to 1 */
+		 * Sign extend by setting bits 15:12 to 1
+		 */
 		return (int16_t)(value | 0xF000);
-	} else {
-		/* Positive number, just cast */
-		return (int16_t)value;
 	}
+
+	/* Positive number, just cast */
+	return (int16_t)value;
 }
 
 /**
  * @brief Convert raw magnetic field value to gauss
- * 
  * This function converts the 12-bit signed raw magnetic field value to
  * gauss units using the device's configured sensitivity range.
  * Formula: gauss = raw_value / 4096 * sensitivity_range
- * 
  * @param dev Pointer to the device structure (for configuration access)
  * @param raw_value Signed 12-bit magnetic field value
  * @return Magnetic field in gauss
@@ -95,16 +89,14 @@ static float als31300_convert_to_gauss(const struct device *dev, int16_t raw_val
 {
 	const struct als31300_config *cfg = dev->config;
 
-	const float ALS31300_FULL_SCALE_RANGE_SENSITIVITY = als31300_get_sensitivity(cfg->full_scale_range);
+	const float ALS31300_SENSITIVITY = als31300_get_sensitivity(cfg->full_scale_range);
 
-	return ((float)raw_value / ALS31300_12BIT_RESOLUTION) * ALS31300_FULL_SCALE_RANGE_SENSITIVITY;
+	return ((float)raw_value / ALS31300_12BIT_RESOLUTION) * ALS31300_SENSITIVITY;
 }
 
 /**
  * @brief Convert raw temperature value to celsius
- * 
  * Based on datasheet formula: T(°C) = 302 * (raw_temp - 1708) / 4096
- * 
  * @param raw_temp 12-bit raw temperature value
  * @return Temperature in degrees Celsius
  */
@@ -115,11 +107,9 @@ static float als31300_convert_temperature(uint16_t raw_temp)
 
 /**
  * @brief Read and parse sensor data from ALS31300
- * 
  * This function performs an 8-byte I2C burst read from registers 0x28 and 0x29
  * to get magnetic field and temperature data. The data is parsed according to
  * the datasheet bit field layout and stored in the device data structure.
- * 
  * @param dev Pointer to the device structure
  * @return 0 on success, negative error code on failure
  */
@@ -143,15 +133,13 @@ static int als31300_read_sensor_data(const struct device *dev)
 
 	/* Convert 8 bytes to two 32-bit values (MSB first) */
 	reg28_data = ((uint32_t)buf[0] << 24) |
-		     ((uint32_t)buf[1] << 16) |
-		     ((uint32_t)buf[2] << 8) |
-		     ((uint32_t)buf[3]);
-	
+		((uint32_t)buf[1] << 16) |
+		((uint32_t)buf[2] << 8) |
+		((uint32_t)buf[3]);
 	reg29_data = ((uint32_t)buf[4] << 24) |
-		     ((uint32_t)buf[5] << 16) |
-		     ((uint32_t)buf[6] << 8) |
-		     ((uint32_t)buf[7]);
-
+		((uint32_t)buf[5] << 16) |
+		((uint32_t)buf[6] << 8) |
+		((uint32_t)buf[7]);
 	/* Extract fields from register 0x28 */
 	temp_msb = (reg28_data & ALS31300_REG28_TEMP_MSB_MASK) >> ALS31300_REG28_TEMP_MSB_SHIFT;
 	data->new_data = !!(reg28_data & ALS31300_REG28_NEW_DATA_MASK);
@@ -210,7 +198,6 @@ static int als31300_channel_get(const struct device *dev, enum sensor_channel ch
 	case SENSOR_CHAN_AMBIENT_TEMP:
 		/* Temperature conversion: temp(°C) = 302(value - 1708)/4096 */
 		temp_val = als31300_convert_temperature(data->temp_raw);
-	
 		val->val1 = (int32_t)temp_val;
 		val->val2 = (int32_t)((temp_val - val->val1) * 1000000);
 		return 0;
@@ -235,10 +222,8 @@ static const struct sensor_driver_api als31300_api = {
 
 /**
  * @brief Configure ALS31300 to Active Mode
- * 
  * This function sets the device to Active Mode by writing to the volatile
  * register 0x27. This register can be written without customer access mode.
- * 
  * @param dev Pointer to the device structure
  * @return 0 on success, negative error code on failure
  */
@@ -286,6 +271,7 @@ static int als31300_init(const struct device *dev)
 
 	/* Test communication by reading a register (can be done without customer access) */
 	uint8_t test_val[4];
+
 	ret = i2c_reg_read_byte_dt(&cfg->i2c, ALS31300_REG_VOLATILE_27, test_val);
 	if (ret < 0) {
 		LOG_ERR("Failed to communicate with sensor: %d", ret);
