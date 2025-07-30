@@ -19,3 +19,6 @@ mypy
 
 # used for JUnit XML parsing in CTest harness
 junitparser>=3.0.0
+
+protobuf
+grpcio-tools

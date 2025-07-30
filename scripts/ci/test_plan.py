@@ -102,15 +102,16 @@ class Tag:
 
 class Filters:
     def __init__(self, modified_files, ignore_path, alt_tags, testsuite_root,
-                 pull_request=False, platforms=[], detailed_test_id=True, quarantine_list=None, tc_roots_th=20):
+                 pull_request=False, vendors=[], platforms=[], detailed_test_id=True, quarantine_list=None, tc_roots_th=20):
         self.modified_files = modified_files
         self.testsuite_root = testsuite_root
         self.resolved_files = []
         self.twister_options = []
-        self.full_twister = False
+        self.full_twister = (not modified_files) and (not pull_request)
         self.all_tests = []
         self.tag_options = []
         self.pull_request = pull_request
+        self.vendors = vendors
         self.platforms = platforms
         self.detailed_test_id = detailed_test_id
         self.ignore_path = ignore_path
@@ -147,6 +148,12 @@ class Filters:
         if self.quarantine_list:
             for q in self.quarantine_list:
                 cmd += ["--quarantine-list", q]
+
+        if self.vendors:
+            vendor_args = []
+            for vendor in self.vendors:
+                vendor_args.extend(["--vendor", vendor])
+            cmd += vendor_args
 
         logging.info(" ".join(cmd))
         _ = subprocess.call(cmd)
@@ -250,6 +257,7 @@ class Filters:
                                         'board_dir': None})
         known_boards = list_boards.find_v2_boards(lb_args).values()
 
+        vendor_dict = {}
         for changed in changed_boards:
             for board in known_boards:
                 c = (zephyr_base / changed).resolve()
@@ -258,9 +266,22 @@ class Filters:
                         with open(file, 'r', encoding='utf-8') as f:
                             b = yaml.load(f.read(), Loader=SafeLoader)
                             matched_boards[b['identifier']] = board
+                            vendor_dict[board.name] = board.vendor
 
 
         logging.info(f"found boards: {','.join(matched_boards.keys())}")
+
+        if self.vendors:
+            filtered_boards = {}
+            for board_id, board_info in matched_boards.items():
+                vendor = vendor_dict.get(board_info.name, 'unknown')
+                if vendor in self.vendors:
+                    filtered_boards[board_id] = board_info
+                else:
+                    logging.info(f"Filtering out board {board_id}")
+            matched_boards = filtered_boards
+            logging.info(f"Boards after vendor filtering: {','.join(matched_boards.keys())}")
+
         # If modified file is caught by "find_boards" workflow (change in "boards" dir AND board recognized)
         # it means a proper testing scope for this file was found and this file can be removed
         # from further consideration
@@ -386,6 +407,13 @@ class Filters:
         if self.full_twister:
             _options = []
             logging.info(f'Need to run full or partial twister...')
+
+            if self.vendors:
+                vendor_args = []
+                for vendor in self.vendors:
+                    vendor_args.extend(["--vendor", vendor])
+                _options.extend(vendor_args)
+
             if self.platforms:
                 for platform in self.platforms:
                     _options.extend(["-p", platform])
@@ -410,6 +438,8 @@ def parse_args():
             help="JSON file with the test plan to be passed to twister")
     parser.add_argument('-P', '--pull-request', action="store_true",
             help="This is a pull request")
+    parser.add_argument('--vendor', action="append",
+            help="Limit this for a specific vendor")
     parser.add_argument('-p', '--platform', action="append",
             help="Limit this for a platform or a list of platforms.")
     parser.add_argument('-t', '--tests_per_builder', default=700, type=int,
@@ -471,7 +501,7 @@ if __name__ == "__main__":
         print("=========")
 
     f = Filters(files, args.ignore_path, args.alt_tags, args.testsuite_root,
-                args.pull_request, args.platform, args.detailed_test_id, args.quarantine_list,
+                args.pull_request, args.vendor, args.platform, args.detailed_test_id, args.quarantine_list,
                 args.testcase_roots_threshold)
     f.process()
 

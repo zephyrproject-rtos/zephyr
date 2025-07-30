@@ -63,9 +63,9 @@ def main(argv):
     token = os.environ.get('GITHUB_TOKEN', None)
     gh = github.Github(token)
 
-    print_rate_limit(gh, "zephyrproject-rtos")
+    print_rate_limit(gh, "AmbiqMicro")
 
-    repo = gh.get_repo("zephyrproject-rtos/zephyr")
+    repo = gh.get_repo("AmbiqMicro/ambiqzephyr")
     pr = repo.get_pull(args.pull_request)
 
     workflow_delay(repo, pr)

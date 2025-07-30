@@ -153,7 +153,7 @@ def twister(options: argparse.Namespace, default_options: argparse.Namespace):
 
     if options.device_testing and not options.build_only:
         print("\nDevice testing on:")
-        hwm.dump(filtered=tplan.selected_platforms)
+        hwm.dump(filtered=tplan.selected_platforms, connected_only=True)
         print("")
 
     if options.dry_run:

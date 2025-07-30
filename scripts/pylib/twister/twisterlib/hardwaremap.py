@@ -191,7 +191,7 @@ class HardwareMap:
                 if not self.options.platform:
                     self.options.platform = []
                     for d in self.duts:
-                        if d.connected and d.platform != 'unknown':
+                        if d.platform != 'unknown':
                             self.options.platform.append(d.platform)
 
             elif self.options.device_serial:
@@ -291,8 +291,7 @@ class HardwareMap:
             product = dut.get('product')
             fixtures = dut.get('fixtures', [])
             connected = dut.get('connected') and ((serial or serial_pty) is not None)
-            if not connected:
-                continue
+
             for plat in platforms:
                 new_dut = DUT(platform=plat,
                               product=product,

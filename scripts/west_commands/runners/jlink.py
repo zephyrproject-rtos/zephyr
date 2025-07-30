@@ -559,7 +559,20 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         kwargs = {}
         if not self.logger.isEnabledFor(logging.DEBUG):
             kwargs['stdout'] = subprocess.DEVNULL
-        self.check_call(cmd, **kwargs)
+
+        max_attempts = 3
+        for attempt in range(1, max_attempts + 1):
+            try:
+                self.check_call(cmd, **kwargs)
+                self.logger.info(f'Flash succeeded on attempt {attempt}')
+                return
+            except subprocess.CalledProcessError as e:
+                self.logger.warning(f'Flash attempt {attempt} failed with exit code {e.returncode}')
+                if attempt < max_attempts:
+                    self.logger.info('Retrying in 1 second...')
+                    time.sleep(1)
+                else:
+                    self.logger.error('All flash attempts failed')
 
     def flash(self, **kwargs):
         fname = self.flash_script

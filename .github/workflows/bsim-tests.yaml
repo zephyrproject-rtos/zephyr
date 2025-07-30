@@ -2,6 +2,8 @@ name: BabbleSim Tests
 
 on:
   pull_request:
+    branches-ignore:
+      - apollo510-dev
     paths:
       - ".github/workflows/bsim-tests.yaml"
       - ".github/workflows/bsim-tests-publish.yaml"
@@ -38,9 +40,7 @@ concurrency:
 
 jobs:
   bsim-test:
-    if: github.repository_owner == 'zephyrproject-rtos'
-    runs-on:
-      group: zephyr-runner-v2-linux-x64-4xlarge
+    runs-on: ubuntu-latest
     container:
       image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.28.1.20250624
       options: '--entrypoint /bin/bash'
