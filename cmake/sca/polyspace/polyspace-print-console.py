@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 """
 Print Polyspace results on terminal, for easy review.
-Copyright (C) 2020-2024 The MathWorks, Inc.
+Copyright (C) 2020-2025 The MathWorks, Inc.
 """
 
 # SPDX-License-Identifier: Apache-2.0
@@ -10,6 +10,18 @@ import argparse
 import os
 import sys
 from collections import Counter
+
+
+def hide_finding(finding, ignore_metrics):
+    """Hide findings that are informative and not indicating issues"""
+    hide = True
+    if finding.get('Color', '') == 'Green':
+        return hide
+    if finding.get('Family', '') == 'Global Variable' and finding.get('Group', '') == 'Not shared':
+        return hide
+    if ignore_metrics and finding.get('Family', '') == 'Code Metric':
+        return hide
+    return not hide
 
 
 def _parse_findings(filename: str, ignore_metrics=True):
@@ -22,7 +34,8 @@ def _parse_findings(filename: str, ignore_metrics=True):
 
     def consume_data(oneline):
         columns = oneline.split(csv_sep)
-        return dict(zip(header, columns, strict=True))
+        # line/col columns are missing for project-wide metrics
+        return dict(zip(header, columns, strict=False))
 
     findings = []
     header = []
@@ -32,7 +45,7 @@ def _parse_findings(filename: str, ignore_metrics=True):
                 consume_header(line.rstrip())
             else:
                 onefind = consume_data(line.rstrip())
-                if onefind and (not ignore_metrics or onefind.get('Family', '') != 'Code Metric'):
+                if onefind and not hide_finding(onefind, ignore_metrics):
                     findings.append(onefind)
     # --
     return findings
@@ -57,7 +70,12 @@ def main(argv):
     args = parser.parse_args()
 
     # 2. parsing the Polyspace files -> report
-    findings = _parse_findings(args.file)
+    try:
+        findings = _parse_findings(args.file)
+    except FileNotFoundError:
+        print("ERROR: no SCA results have been produced")
+        return
+
     print("-= Polyspace Static Code Analysis results =-")
 
     # 3. print details
@@ -78,7 +96,6 @@ def main(argv):
     files = Counter([os.path.basename(f.get('File', 'Unknown')) for f in findings])
     print_sorted(files, 10)
     print(f"SCA found {len(findings)} issues in total")
-    return 0
 
 
 if __name__ == "__main__":
