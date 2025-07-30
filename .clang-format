@@ -101,6 +101,11 @@ IndentGotoLabels: false
 IndentWidth: 8
 InsertBraces: true
 InsertNewlineAtEOF: true
+# Control when we break long lines by adjusting the penalty values for breaking on particular code elements
+PenaltyBreakAssignment: 120
+PenaltyBreakBeforeFirstCallParameter: 100
+PenaltyBreakOpenParenthesis: 80
+PenaltyBreakString: 100
 SpaceBeforeInheritanceColon: False
 SpaceBeforeParens: ControlStatementsExceptControlMacros
 SortIncludes: Never
