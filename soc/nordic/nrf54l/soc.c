@@ -29,7 +29,9 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 	!defined(__ZEPHYR__)
 
 #include <nrf_erratas.h>
+#if defined(GLITHCDET_PRESENT)
 #include <hal/nrf_glitchdet.h>
+#endif
 #include <hal/nrf_oscillators.h>
 #include <hal/nrf_power.h>
 #include <hal/nrf_regulators.h>
