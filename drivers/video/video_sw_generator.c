@@ -363,7 +363,7 @@ static int video_sw_generator_flush(const struct device *dev, bool cancel)
 static int video_sw_generator_get_caps(const struct device *dev, struct video_caps *caps)
 {
 	caps->format_caps = fmts;
-	caps->min_vbuf_count = 0;
+	caps->min_vbuf_count = 1;
 
 	/* SW generator produces full frames */
 	caps->min_line_count = caps->max_line_count = LINE_COUNT_HEIGHT;
