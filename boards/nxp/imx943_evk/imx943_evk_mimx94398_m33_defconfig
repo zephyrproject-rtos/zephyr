@@ -21,3 +21,7 @@ CONFIG_ARM_SCMI_NXP_VENDOR_EXTENSIONS=y
 
 # kernel-related configurations
 CONFIG_XIP=y
+
+# i2c shell-related configurations
+CONFIG_I2C=y
+CONFIG_I2C_SHELL=y
