@@ -105,3 +105,7 @@
 	pinctrl-0 = <&lpuart8_default>;
 	pinctrl-names = "default";
 };
+
+&edma4 {
+	status = "okay";
+};
