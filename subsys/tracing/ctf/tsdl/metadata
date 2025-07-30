@@ -1066,3 +1066,59 @@ event {
 		uint32_t cb;
 	};
 };
+
+
+
+/* Memory Slabs */
+event {
+	name = mem_slab_init;
+	id = 0x81;
+	fields := struct {
+		uint32_t id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = mem_slab_alloc_enter;
+	id = 0x82;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = mem_slab_alloc_blocking;
+	id = 0x83;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = mem_slab_alloc_exit;
+	id = 0x84;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+		int32_t ret;
+	};
+};
+
+event {
+	name = mem_slab_free_enter;
+	id = 0x85;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = mem_slab_free_exit;
+	id = 0x86;
+	fields := struct {
+		uint32_t id;
+	};
+};
