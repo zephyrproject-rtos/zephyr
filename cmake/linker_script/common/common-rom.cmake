@@ -13,7 +13,7 @@ zephyr_linker_section_obj_level(SECTION init LEVEL SMP)
 
 zephyr_iterable_section(NAME device NUMERIC KVMA RAM_REGION GROUP RODATA_REGION)
 
-if(CONFIG_GEN_SW_ISR_TABLE AND NOT CONFIG_DYNAMIC_INTERRUPTS)
+if(CONFIG_GEN_SW_ISR_TABLE AND NOT CONFIG_SRAM_SW_ISR_TABLE)
   # ld align has been changed to subalign to provide identical behavior scatter vs. ld.
   zephyr_linker_section(NAME sw_isr_table KVMA FLASH GROUP RODATA_REGION SUBALIGN ${CONFIG_ARCH_SW_ISR_TABLE_ALIGN} NOINPUT)
   zephyr_linker_section_configure(
