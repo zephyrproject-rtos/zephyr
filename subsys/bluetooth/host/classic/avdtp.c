@@ -421,6 +421,134 @@ static void avdtp_get_capabilities_rsp(struct bt_avdtp *session, struct net_buf 
 	}
 }
 
+uint8_t bt_avdtp_check_service_category(struct net_buf *buf, uint8_t *service_category,
+					bool reconfig)
+
+{
+	uint8_t data;
+	uint8_t losc;
+
+	if (buf->len == 0U) {
+		LOG_DBG("Error: buf not valid");
+		return BT_AVDTP_BAD_ACP_SEID;
+	}
+
+	while (buf->len > 0U) {
+
+		data = net_buf_pull_u8(buf);
+		*service_category = data;
+
+		switch (data) {
+		case BT_AVDTP_SERVICE_MEDIA_TRANSPORT:
+			if (buf->len < sizeof(struct bt_avdtp_media_transport_capabilities)) {
+				return BT_AVDTP_BAD_MEDIA_TRANSPORT_FORMAT;
+			}
+
+			losc = net_buf_pull_u8(buf);
+			if (losc != MEDIA_TRANSPORT_CAPABILITIES_LOSC) {
+				return BT_AVDTP_BAD_MEDIA_TRANSPORT_FORMAT;
+			}
+
+			if (reconfig) {
+				return BT_AVDTP_INVALID_CAPABILITIES;
+			}
+			break;
+
+		case BT_AVDTP_SERVICE_MEDIA_RECOVERY:
+			if (buf->len < sizeof(struct bt_avdtp_recovery_capabilities)) {
+				return BT_AVDTP_BAD_RECOVERY_FORMAT;
+			}
+
+			losc = net_buf_pull_u8(buf);
+			if (losc != RECOVERY_CAPABILITIES_LOSC || losc > buf->len) {
+				return BT_AVDTP_BAD_RECOVERY_FORMAT;
+			}
+
+			uint8_t recovery_type = net_buf_pull_u8(buf);
+
+			if (recovery_type != BT_AVDTP_RECOVERY_TYPE_FORBIDDEN &&
+			    recovery_type != BT_ADVTP_RECOVERY_TYPE_RFC2733) {
+				return BT_AVDTP_BAD_RECOVERY_TYPE;
+			}
+
+			if (reconfig) {
+				return BT_AVDTP_INVALID_CAPABILITIES;
+			}
+
+			net_buf_pull_mem(buf, losc - 1U);
+			break;
+
+		case BT_AVDTP_SERVICE_CONTENT_PROTECTION:
+			if (buf->len < sizeof(struct bt_avdtp_content_protection_capabilities)) {
+				return BT_AVDTP_BAD_CP_FORMAT;
+			}
+
+			losc = net_buf_pull_u8(buf);
+			if (losc < CONTENT_PROTECTION_CAPABILITIES_MIN_LOSC || losc > buf->len) {
+				return BT_AVDTP_BAD_CP_FORMAT;
+			}
+
+			net_buf_pull_mem(buf, losc);
+			break;
+
+		case BT_AVDTP_SERVICE_MULTIPLEXING:
+			if (buf->len < sizeof(struct bt_avdtp_multiplexing_capabilities)) {
+				return BT_AVDTP_BAD_MULTIPLEXING_FORMAT;
+			}
+
+			losc = net_buf_pull_u8(buf);
+			if (losc != MULTIPLEXING_CAPABILITIES_LOSC || losc > buf->len) {
+				return BT_AVDTP_BAD_MULTIPLEXING_FORMAT;
+			}
+
+			if (reconfig) {
+				return BT_AVDTP_INVALID_CAPABILITIES;
+			}
+
+			net_buf_pull_mem(buf, losc);
+			break;
+
+		case BT_AVDTP_SERVICE_HEADER_COMPRESSION:
+		case BT_AVDTP_SERVICE_REPORTING:
+		case BT_AVDTP_SERVICE_DELAY_REPORTING:
+			if (buf->len < sizeof(losc)) {
+				return BT_AVDTP_BAD_LENGTH;
+			}
+
+			losc = net_buf_pull_u8(buf);
+			if (losc != 0U) {
+				if (buf->len < losc) {
+					return BT_AVDTP_BAD_LENGTH;
+				}
+				net_buf_pull_mem(buf, losc);
+			}
+
+			if (reconfig) {
+				return BT_AVDTP_INVALID_CAPABILITIES;
+			}
+			break;
+
+		case BT_AVDTP_SERVICE_MEDIA_CODEC:
+			if (buf->len < sizeof(struct bt_avdtp_media_codec_capabilities)) {
+				return BT_AVDTP_BAD_LENGTH;
+			}
+
+			losc = net_buf_pull_u8(buf);
+			if (losc < MEDIA_CODEC_CAPABILITIES_MIN_LOSC || losc > buf->len) {
+				return BT_AVDTP_BAD_LENGTH;
+			}
+
+			net_buf_pull_mem(buf, losc);
+			break;
+
+		default:
+			return BT_AVDTP_BAD_SERV_CATEGORY;
+		}
+	}
+
+	return BT_AVDTP_SUCCESS;
+}
+
 static void avdtp_process_configuration_cmd(struct bt_avdtp *session, struct net_buf *buf,
 					    uint8_t tid, bool reconfig)
 {
@@ -428,6 +556,8 @@ static void avdtp_process_configuration_cmd(struct bt_avdtp *session, struct net
 	struct bt_avdtp_sep *sep;
 	struct net_buf *rsp_buf;
 	uint8_t avdtp_err_code = 0;
+	struct net_buf_simple_state state;
+	uint8_t service_category = 0;
 
 	sep = avdtp_get_cmd_sep(buf, &avdtp_err_code);
 	avdtp_sep_lock(sep);
@@ -437,6 +567,9 @@ static void avdtp_process_configuration_cmd(struct bt_avdtp *session, struct net
 	} else if (!reconfig && session->ops->set_configuration_ind == NULL) {
 		err = -ENOTSUP;
 	} else if (reconfig && session->ops->re_configuration_ind == NULL) {
+		err = -ENOTSUP;
+	} else if (!reconfig && sep->sep_info.inuse == 1) {
+		avdtp_err_code = BT_AVDTP_SEP_IN_USE;
 		err = -ENOTSUP;
 	} else {
 		uint8_t expected_state;
@@ -451,17 +584,29 @@ static void avdtp_process_configuration_cmd(struct bt_avdtp *session, struct net
 			err = -ENOTSUP;
 			avdtp_err_code = BT_AVDTP_BAD_STATE;
 		} else if (buf->len >= 1U) {
-			uint8_t int_seid;
+			uint8_t int_seid = 0;
+			uint8_t err_code = 0;
 
 			/* INT Stream Endpoint ID */
-			int_seid = net_buf_pull_u8(buf) >> 2;
-
 			if (!reconfig) {
-				err = session->ops->set_configuration_ind(session, sep, int_seid,
-									  buf, &avdtp_err_code);
+				/* int seid not in reconfig cmd*/
+				int_seid = net_buf_pull_u8(buf) >> 2;
+			}
+			net_buf_simple_save(&buf->b, &state);
+			err_code = bt_avdtp_check_service_category(buf, &service_category,
+								   reconfig);
+			net_buf_simple_restore(&buf->b, &state);
+			if (err_code) {
+				avdtp_err_code = err_code;
+				err = -ENOTSUP;
 			} else {
-				err = session->ops->re_configuration_ind(session, sep, int_seid,
-									 buf, &avdtp_err_code);
+				if (!reconfig) {
+					err = session->ops->set_configuration_ind(
+						session, sep, int_seid, buf, &avdtp_err_code);
+				} else {
+					err = session->ops->re_configuration_ind(session, sep, buf,
+										 &avdtp_err_code);
+				}
 			}
 		} else {
 			LOG_WRN("Invalid INT SEID");
@@ -484,8 +629,8 @@ static void avdtp_process_configuration_cmd(struct bt_avdtp *session, struct net
 		}
 
 		LOG_DBG("set configuration err code:%d", avdtp_err_code);
-		/* Service Category: Media Codec */
-		net_buf_add_u8(rsp_buf, BT_AVDTP_SERVICE_MEDIA_CODEC);
+		/* error Service Category*/
+		net_buf_add_u8(rsp_buf, service_category);
 		/* ERROR CODE */
 		net_buf_add_u8(rsp_buf, avdtp_err_code);
 	}
@@ -690,6 +835,7 @@ static void avdtp_start_cmd(struct bt_avdtp *session, struct net_buf *buf, uint8
 		}
 
 		LOG_DBG("start err code:%d", avdtp_err_code);
+		net_buf_add_u8(rsp_buf, sep->sep_info.id << 2);
 		net_buf_add_u8(rsp_buf, avdtp_err_code);
 	}
 
@@ -845,6 +991,7 @@ static void avdtp_suspend_cmd(struct bt_avdtp *session, struct net_buf *buf, uin
 		}
 
 		LOG_DBG("suspend err code:%d", avdtp_err_code);
+		net_buf_add_u8(rsp_buf, sep->sep_info.id << 2);
 		net_buf_add_u8(rsp_buf, avdtp_err_code);
 	}
 
@@ -1519,7 +1666,8 @@ int bt_avdtp_parse_capability_codec(struct net_buf *buf, uint8_t *codec_type,
 }
 
 static int avdtp_process_configure_command(struct bt_avdtp *session, uint8_t cmd,
-					   struct bt_avdtp_set_configuration_params *param)
+					   struct bt_avdtp_set_configuration_params *param,
+					   bool reconfig)
 {
 	struct net_buf *buf;
 	int err;
@@ -1539,12 +1687,14 @@ static int avdtp_process_configure_command(struct bt_avdtp *session, uint8_t cmd
 	/* Body of the message */
 	/* ACP Stream Endpoint ID */
 	net_buf_add_u8(buf, (param->acp_stream_ep_id << 2U));
-	/* INT Stream Endpoint ID */
-	net_buf_add_u8(buf, (param->int_stream_endpoint_id << 2U));
-	/* Service Category: Media Transport */
-	net_buf_add_u8(buf, BT_AVDTP_SERVICE_MEDIA_TRANSPORT);
-	/* LOSC */
-	net_buf_add_u8(buf, 0);
+	if (!reconfig) {
+		/* INT Stream Endpoint ID */
+		net_buf_add_u8(buf, (param->int_stream_endpoint_id << 2U));
+		/* Service Category: Media Transport */
+		net_buf_add_u8(buf, BT_AVDTP_SERVICE_MEDIA_TRANSPORT);
+		/* LOSC */
+		net_buf_add_u8(buf, 0);
+	}
 	/* Service Category: Media Codec */
 	net_buf_add_u8(buf, BT_AVDTP_SERVICE_MEDIA_CODEC);
 	/* LOSC */
@@ -1576,7 +1726,7 @@ int bt_avdtp_set_configuration(struct bt_avdtp *session,
 		return -EINVAL;
 	}
 
-	return avdtp_process_configure_command(session, BT_AVDTP_SET_CONFIGURATION, param);
+	return avdtp_process_configure_command(session, BT_AVDTP_SET_CONFIGURATION, param, false);
 }
 
 int bt_avdtp_reconfigure(struct bt_avdtp *session, struct bt_avdtp_set_configuration_params *param)
@@ -1590,7 +1740,7 @@ int bt_avdtp_reconfigure(struct bt_avdtp *session, struct bt_avdtp_set_configura
 		return -EINVAL;
 	}
 
-	return avdtp_process_configure_command(session, BT_AVDTP_RECONFIGURE, param);
+	return avdtp_process_configure_command(session, BT_AVDTP_RECONFIGURE, param, true);
 }
 
 static int bt_avdtp_ctrl(struct bt_avdtp *session, struct bt_avdtp_ctrl_params *param, uint8_t ctrl,
