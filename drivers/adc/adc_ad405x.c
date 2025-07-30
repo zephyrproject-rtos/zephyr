@@ -929,7 +929,7 @@ static DEVICE_API(adc, ad405x_api_funcs) = {
 #define AD405X_INIT(t, n) \
 	static struct adc_ad405x_data ad##t##_data_##n = {};                                     \
 	static const struct adc_ad405x_config ad##t##_config_##n =  {                            \
-		.bus = {.spi = SPI_DT_SPEC_GET(DT_INST_AD405X(n, t), AD405X_SPI_CFG, 0)},        \
+		.bus = {.spi = SPI_DT_SPEC_GET(DT_INST_AD405X(n, t), AD405X_SPI_CFG)},           \
 		.conversion = GPIO_DT_SPEC_GET_BY_IDX(DT_INST_AD405X(n, t), conversion_gpios, 0),\
 		IF_ENABLED(CONFIG_AD405X_TRIGGER, (AD405X_GPIO(t, n)))                           \
 		.chip_id = t,                                                                    \
