@@ -296,6 +296,10 @@ zephyr_udc0: &usbotg_hs {
 	status = "okay";
 };
 
+&otghs_phy {
+	clock-reference = "SYSCFG_OTG_HS_PHY_CLK_16MHz";
+};
+
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";
