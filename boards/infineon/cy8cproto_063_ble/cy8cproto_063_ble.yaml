@@ -1,7 +1,9 @@
+# ==================================================================================================
+# Copyright (c) 2025 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
 #
-# Copyright (c) 2022 Cypress Semiconductor Corporation.
 # SPDX-License-Identifier: Apache-2.0
-#
+# ==================================================================================================
 
 identifier: cy8cproto_063_ble
 name: CY8CPROTO-063-BLE PSOC™ 6 BLE Prototyping Kit
