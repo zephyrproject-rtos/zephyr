@@ -1122,3 +1122,148 @@ event {
 		uint32_t id;
 	};
 };
+
+/* Message Queues */
+
+event {
+	name = msgq_init;
+	id = 0x87;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = msgq_alloc_init_enter;
+	id = 0x88;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = msgq_alloc_init_exit;
+	id = 0x89;
+	fields := struct {
+		uint32_t id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = msgq_put_enter;
+	id = 0x8A;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = msgq_put_blocking;
+	id = 0x8B;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = msgq_put_exit;
+	id = 0x8C;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+		int32_t ret;
+	};
+};
+
+event {
+	name = msgq_get_enter;
+	id = 0x8D;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = msgq_get_blocking;
+	id = 0x8E;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = msgq_get_exit;
+	id = 0x8F;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+		int32_t ret;
+	};
+};
+
+event {
+	name = msgq_peek;
+	id = 0x90;
+	fields := struct {
+		uint32_t id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = msgq_purge;
+	id = 0x91;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = msgq_put_front_enter;
+	id = 0x92;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = msgq_put_front_blocking;
+	id = 0x94;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = msgq_put_front_exit;
+	id = 0x93;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+		int32_t ret;
+	};
+};
+
+event {
+	name = msgq_cleanup_enter;
+	id = 0x95;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = msgq_cleanup_exit;
+	id = 0x96;
+	fields := struct {
+		uint32_t id;
+		int32_t ret;
+	};
+};
