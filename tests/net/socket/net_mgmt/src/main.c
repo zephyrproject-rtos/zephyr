@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/net/ethernet_mgmt.h>
 
 #define MAX_BUF_LEN 64
-#define STACK_SIZE 1024
+#define STACK_SIZE 1024 + CONFIG_TEST_EXTRA_STACK_SIZE
 #define THREAD_PRIORITY K_PRIO_COOP(8)
 
 /* Use a base value for socket options that are not implemented.

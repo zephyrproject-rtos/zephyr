@@ -12,7 +12,7 @@
 #error "SMP test requires at least two CPUs!"
 #endif
 
-#define STACK_SIZE 1024
+#define STACK_SIZE 1024 + CONFIG_TEST_EXTRA_STACK_SIZE
 
 #define NUM_THREADS 6
 
