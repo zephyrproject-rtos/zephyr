@@ -268,6 +268,134 @@ void sys_trace_k_mem_slab_free_exit(struct k_mem_slab *slab)
 		);
 }
 
+
+/* Message Queues */
+void sys_trace_k_msgq_init(struct k_msgq *msgq)
+{
+	ctf_top_msgq_init(
+		(uint32_t)(uintptr_t)msgq
+		);
+}
+
+void sys_trace_k_msgq_alloc_init_enter(struct k_msgq *msgq)
+{
+	ctf_top_msgq_alloc_init_enter(
+		(uint32_t)(uintptr_t)msgq
+		);
+}
+
+void sys_trace_k_msgq_alloc_init_exit(struct k_msgq *msgq, int ret)
+{
+	ctf_top_msgq_alloc_init_exit(
+		(uint32_t)(uintptr_t)msgq,
+		(int32_t)ret
+		);
+}
+
+void sys_trace_k_msgq_put_enter(struct k_msgq *msgq, k_timeout_t timeout)
+{
+	ctf_top_msgq_put_enter(
+		(uint32_t)(uintptr_t)msgq,
+		k_ticks_to_us_floor32((uint32_t)timeout.ticks)
+		);
+}
+
+void sys_trace_k_msgq_get_enter(struct k_msgq *msgq, k_timeout_t timeout)
+{
+	ctf_top_msgq_get_enter(
+		(uint32_t)(uintptr_t)msgq,
+		k_ticks_to_us_floor32((uint32_t)timeout.ticks)
+		);
+}
+
+void sys_trace_k_msgq_get_blocking(struct k_msgq *msgq, k_timeout_t timeout)
+{
+	ctf_top_msgq_get_blocking(
+		(uint32_t)(uintptr_t)msgq,
+		k_ticks_to_us_floor32((uint32_t)timeout.ticks)
+		);
+}
+
+void sys_trace_k_msgq_get_exit(struct k_msgq *msgq, k_timeout_t timeout, int ret)
+{
+	ctf_top_msgq_get_exit(
+		(uint32_t)(uintptr_t)msgq,
+		k_ticks_to_us_floor32((uint32_t)timeout.ticks),
+		(int32_t)ret
+		);
+}
+
+void sys_trace_k_msgq_put_blocking(struct k_msgq *msgq, k_timeout_t timeout)
+{
+	ctf_top_msgq_put_blocking(
+		(uint32_t)(uintptr_t)msgq,
+		k_ticks_to_us_floor32((uint32_t)timeout.ticks)
+		);
+}
+
+void sys_trace_k_msgq_put_exit(struct k_msgq *msgq, k_timeout_t timeout, int ret)
+{
+	ctf_top_msgq_put_exit(
+		(uint32_t)(uintptr_t)msgq,
+		k_ticks_to_us_floor32((uint32_t)timeout.ticks),
+		(int32_t)ret
+		);
+}
+
+void sys_trace_k_msgq_peek(struct k_msgq *msgq, int ret)
+{
+	ctf_top_msgq_peek(
+		(uint32_t)(uintptr_t)msgq,
+		(int32_t)ret
+		);
+}
+
+void sys_trace_k_msgq_purge(struct k_msgq *msgq)
+{
+	ctf_top_msgq_purge(
+		(uint32_t)(uintptr_t)msgq
+		);
+}
+
+void sys_trace_k_msgq_put_front_enter(struct k_msgq *msgq, k_timeout_t timeout)
+{
+	ctf_top_msgq_put_front_enter(
+		(uint32_t)(uintptr_t)msgq,
+		k_ticks_to_us_floor32((uint32_t)timeout.ticks)
+		);
+}
+
+void sys_trace_k_msgq_put_front_blocking(struct k_msgq *msgq, k_timeout_t timeout)
+{
+	ctf_top_msgq_put_front_blocking(
+		(uint32_t)(uintptr_t)msgq,
+		k_ticks_to_us_floor32((uint32_t)timeout.ticks)
+		);
+}
+
+void sys_trace_k_msgq_put_front_exit(struct k_msgq *msgq, k_timeout_t timeout, int ret)
+{
+	ctf_top_msgq_put_front_exit(
+		(uint32_t)(uintptr_t)msgq,
+		k_ticks_to_us_floor32((uint32_t)timeout.ticks),
+		(int32_t)ret
+		);
+}
+
+void sys_trace_k_msgq_cleanup_enter(struct k_msgq *msgq)
+{
+	ctf_top_msgq_cleanup_enter(
+		(uint32_t)(uintptr_t)msgq
+		);
+}
+void sys_trace_k_msgq_cleanup_exit(struct k_msgq *msgq, int ret)
+{
+	ctf_top_msgq_cleanup_exit(
+		(uint32_t)(uintptr_t)msgq,
+		(int32_t)ret
+		);
+}
+
 /* Semaphore */
 void sys_trace_k_sem_init(struct k_sem *sem, int ret)
 {
@@ -276,6 +404,7 @@ void sys_trace_k_sem_init(struct k_sem *sem, int ret)
 		(int32_t)ret
 		);
 }
+
 
 void sys_trace_k_sem_take_enter(struct k_sem *sem, k_timeout_t timeout)
 {
