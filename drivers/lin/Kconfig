@@ -34,7 +34,10 @@ config LIN_AUTO_SYNCHRONIZATION
 	  Enable automatic synchronization of LIN frames. If disabled, the driver will not handle
 	  frame synchronization.
 
+# zephyr-keep-sorted-start
 source "drivers/lin/Kconfig.skeleton"
+source "drivers/lin/renesas/ra/Kconfig.renesas_ra"
+# zephyr-keep-sorted-stop
 
 source "drivers/lin/transceiver/Kconfig"
 
