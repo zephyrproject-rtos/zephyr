@@ -265,7 +265,7 @@ static DEVICE_API(led_strip, ws2812_spi_api) = {
 	WS2812_COLOR_MAPPING(idx);						\
 										\
 	static const struct ws2812_spi_cfg ws2812_spi_##idx##_cfg = {		\
-		.bus = SPI_DT_SPEC_INST_GET(idx, SPI_OPER(idx), 0),		\
+		.bus = SPI_DT_SPEC_INST_GET(idx, SPI_OPER(idx)),		\
 		.px_buf = ws2812_spi_##idx##_px_buf,				\
 		.one_frame = WS2812_SPI_ONE_FRAME(idx),				\
 		.zero_frame = WS2812_SPI_ZERO_FRAME(idx),			\

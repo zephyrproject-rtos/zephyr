@@ -818,8 +818,7 @@ static DEVICE_API(stepper, tmc51xx_api) = {
 	.comm_type = TMC_COMM_SPI,                                                                 \
 	.bus.spi = SPI_DT_SPEC_INST_GET(inst,                                                      \
 					(SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_MODE_CPOL |   \
-					 SPI_MODE_CPHA | SPI_WORD_SET(8)),                         \
-					0),                                                        \
+					 SPI_MODE_CPHA | SPI_WORD_SET(8))),                        \
 	.bus_io = &tmc51xx_spi_bus_io,                                                             \
 	.diag0_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, diag0_gpios, {0})
 

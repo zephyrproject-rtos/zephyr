@@ -696,7 +696,7 @@ static DEVICE_API(flash, spi_flash_at45_api) = {
 	static const struct spi_flash_at45_config inst_##idx##_config = {    \
 		.bus = SPI_DT_SPEC_INST_GET(				     \
 			idx, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB |	     \
-			SPI_WORD_SET(8), 0),				     \
+			SPI_WORD_SET(8)),				     \
 		IF_ENABLED(INST_HAS_RESET_GPIO(idx),			\
 			(.reset = &reset_##idx,))			\
 		IF_ENABLED(INST_HAS_WP_GPIO(idx),			\

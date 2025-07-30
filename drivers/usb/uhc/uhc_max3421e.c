@@ -1132,7 +1132,7 @@ static struct uhc_data max3421e_uhc_data = {
 };
 
 static const struct max3421e_config max3421e_cfg = {
-	.dt_spi = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0),
+	.dt_spi = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8) | SPI_TRANSFER_MSB),
 	.dt_int = GPIO_DT_SPEC_INST_GET(0, int_gpios),
 	.dt_rst = GPIO_DT_SPEC_INST_GET_OR(0, reset_gpios, {0}),
 };

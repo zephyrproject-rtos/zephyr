@@ -458,8 +458,7 @@ static const struct hdlc_api spi_hdlc_api = {
 #define MTU 1280
 
 static const struct hdlc_rcp_if_spi_config ot_hdlc_rcp_cfg = {
-	.bus = SPI_DT_SPEC_INST_GET(0, SPI_OP_MODE_MASTER | SPI_WORD_SET(8),
-				    DT_INST_PROP(0, cs_delay)),
+	.bus = SPI_DT_SPEC_INST_GET(0, SPI_OP_MODE_MASTER | SPI_WORD_SET(8)),
 	.int_gpio = GPIO_DT_SPEC_INST_GET(0, int_gpios),
 	.rst_gpio = GPIO_DT_SPEC_INST_GET_OR(0, reset_gpios, {}),
 	.reset_time = DT_INST_PROP(0, reset_assert_time),

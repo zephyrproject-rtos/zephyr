@@ -228,7 +228,7 @@ static struct ft8xx_data ft8xx_##idx##_data = {                                 
 	.irq_callback = NULL,                                                                      \
 	.irq_callback_ud = NULL,                                                                   \
 												   \
-	.spi = SPI_DT_SPEC_INST_GET(idx, SPI_WORD_SET(8) | SPI_OP_MODE_MASTER, 0),                 \
+	.spi = SPI_DT_SPEC_INST_GET(idx, SPI_WORD_SET(8) | SPI_OP_MODE_MASTER),                    \
 	.irq_gpio = GPIO_DT_SPEC_INST_GET(idx, irq_gpios),                                         \
 };                                                                                                 \
 DEVICE_DT_INST_DEFINE(idx, ft8xx_init, NULL, &ft8xx_##idx##_data, &ft8xx_##idx##_config,           \

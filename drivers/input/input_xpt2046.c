@@ -237,7 +237,7 @@ static int xpt2046_init(const struct device *dev)
 #define XPT2046_INIT(index)                                                                        \
 	static const struct xpt2046_config xpt2046_config_##index = {                              \
 		.bus = SPI_DT_SPEC_INST_GET(                                                       \
-			index, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8), 0),        \
+			index, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8)),           \
 		.int_gpio = GPIO_DT_SPEC_INST_GET(index, int_gpios),                               \
 		.min_x = DT_INST_PROP(index, min_x),                                               \
 		.min_y = DT_INST_PROP(index, min_y),                                               \
