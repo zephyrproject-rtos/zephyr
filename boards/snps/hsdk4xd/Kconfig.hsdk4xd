@@ -5,8 +5,3 @@
 
 config BOARD_HSDK4XD
 	select SOC_ARC_HSDK4XD
-	help
-	  The ARC HS4x/4xD Development Kit is a ready-to-use software development
-	  platform for the ARC HS4x/4xD family of processor IP. It includes
-	  a multicore ARC HS4x/HS4xD-based chip and integrates a wide range
-	  of interfaces.
