@@ -14,4 +14,5 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE lin_handlers.c)
 zephyr_library_sources_ifdef(CONFIG_LIN_SKELETON lin_skeleton.c)
 # zephyr-keep-sorted-stop
 
+add_subdirectory(renesas/ra)
 add_subdirectory(transceiver)
