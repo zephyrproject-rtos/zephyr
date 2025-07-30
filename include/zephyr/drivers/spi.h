@@ -480,6 +480,7 @@ struct spi_config {
 			COND_CODE_1(DT_PROP(node_id, spi_cpol), SPI_MODE_CPOL, (0)) |	\
 			COND_CODE_1(DT_PROP(node_id, spi_cpha), SPI_MODE_CPHA, (0)) |	\
 			COND_CODE_1(DT_PROP(node_id, spi_hold_cs), SPI_HOLD_ON_CS, (0)),	\
+			COND_CODE_1(DT_PROP(node_id, spi_lsb_first), SPI_TRANSFER_LSB, (0)),	\
 		.slave = DT_REG_ADDR(node_id),				\
 		.cs = SPI_CS_CONTROL_INIT(node_id),			\
 	}
