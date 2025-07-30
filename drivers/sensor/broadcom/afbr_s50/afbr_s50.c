@@ -190,7 +190,8 @@ static void afbr_s50_submit_single_shot(const struct device *dev,
 	struct afbr_s50_data *data = dev->data;
 
 	/** If there's an op in process, reject ignore requests */
-	if (data->rtio.iodev_sqe != NULL) {
+	if (data->rtio.iodev_sqe != NULL &&
+	    FIELD_GET(RTIO_SQE_CANCELED, data->rtio.iodev_sqe->sqe.flags) == 0) {
 		LOG_WRN("Operation in progress. Rejecting request");
 
 		rtio_iodev_sqe_err(iodev_sqe, -EBUSY);
@@ -215,7 +216,8 @@ static void afbr_s50_submit_streaming(const struct device *dev,
 	const struct sensor_read_config *read_cfg = iodev_sqe->sqe.iodev->data;
 
 	/** If there's an op in process, reject ignore requests */
-	if (data->rtio.iodev_sqe != NULL) {
+	if (data->rtio.iodev_sqe != NULL &&
+	    FIELD_GET(RTIO_SQE_CANCELED, data->rtio.iodev_sqe->sqe.flags) == 0) {
 		LOG_WRN("Operation in progress");
 
 		rtio_iodev_sqe_err(iodev_sqe, -EBUSY);
