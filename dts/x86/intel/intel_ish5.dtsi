@@ -108,6 +108,30 @@
 			status = "okay";
 		};
 
+		uart1: uart@8102000 {
+			compatible = "intel,sedi-uart";
+			reg = <0x08102000 0x1000>;
+			interrupt-parent = <&intc>;
+			peripheral-id = <1>;
+			interrupts = <24 IRQ_TYPE_LOWEST_EDGE_RISING 6>;
+			interrupt-names = "uart1";
+			current-speed = <115200>;
+
+			status = "disabled";
+		};
+
+		uart2: uart@8104000 {
+			compatible = "intel,sedi-uart";
+			reg = <0x08104000 0x1000>;
+			interrupt-parent = <&intc>;
+			peripheral-id = <2>;
+			interrupts = <25 IRQ_TYPE_LOWEST_EDGE_RISING 6>;
+			interrupt-names = "uart2";
+			current-speed = <115200>;
+
+			status = "disabled";
+		};
+
 		i2c0: i2c@0 {
 			compatible = "intel,sedi-i2c";
 			#address-cells = <1>;
