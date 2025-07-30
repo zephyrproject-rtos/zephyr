@@ -1,6 +1,9 @@
-# Copyright (c) 2022 Cypress Semiconductor Corporation.
+# ==================================================================================================
+# Copyright (c) 2025 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
+# ==================================================================================================
 
 set(bless_dir            ${ZEPHYR_HAL_INFINEON_MODULE_DIR}/bless)
 set(bless_blobs_dir      ${ZEPHYR_HAL_INFINEON_MODULE_DIR}/zephyr/blobs/img/bluetooth/firmware)

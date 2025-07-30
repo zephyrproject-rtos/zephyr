@@ -1,5 +1,9 @@
-# Copyright (c) 2021 Cypress Semiconductor Corporation.
+# ==================================================================================================
+# Copyright (c) 2025 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+#
 # SPDX-License-Identifier: Apache-2.0
+# ==================================================================================================
 
 # During gdb session, by default connect to CM4 core.
 board_runner_args(openocd "--gdb-init=disconnect")

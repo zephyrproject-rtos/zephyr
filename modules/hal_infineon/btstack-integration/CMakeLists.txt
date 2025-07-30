@@ -1,6 +1,9 @@
-# Copyright (c) 2022 Cypress Semiconductor Corporation.
+# ==================================================================================================
+# Copyright (c) 2025 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
+# ==================================================================================================
 
 set(hal_dir             ${ZEPHYR_HAL_INFINEON_MODULE_DIR})
 set(btstack_integration ${hal_dir}/btstack-integration)

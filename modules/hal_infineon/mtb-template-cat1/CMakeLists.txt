@@ -1,7 +1,9 @@
-# Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
+# ==================================================================================================
+# Copyright (c) 2025 Cypress Semiconductor Corporation (an Infineon company) or
 # an affiliate of Cypress Semiconductor Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
+# ==================================================================================================
 
 set(template_dir ${ZEPHYR_HAL_INFINEON_MODULE_DIR}/mtb-template-cat1)
 set(cat1a_dir ${template_dir}/files/templates/cat1a)
