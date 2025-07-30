@@ -4,7 +4,18 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-description: Noritake Itron VFD
+title: Noritake Itron VFD module
+
+description: |
+    Noritake Itron VFD character display module
+    from series CU-TE, CU-Y, GU-3000, GU-7000
+    and GU-D.
+
+    Example references:
+    GU280X16G-7000
+    CU20029-TE200K
+    CU24043-Y100
+    GU128X32D-D903S
 
 compatible: "noritake,itron"
 
