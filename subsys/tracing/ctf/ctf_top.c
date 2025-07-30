@@ -219,6 +219,55 @@ void sys_trace_idle_exit(void)
 	}
 }
 
+/* Memory Slabs */
+
+void sys_trace_k_mem_slab_init(struct k_mem_slab *slab, int ret)
+{
+	ctf_top_mem_slab_init(
+		(uint32_t)(uintptr_t)slab,
+		(int32_t)ret
+		);
+}
+
+void sys_trace_k_mem_slab_alloc_enter(struct k_mem_slab *slab, k_timeout_t timeout)
+{
+	ctf_top_mem_slab_alloc_enter(
+		(uint32_t)(uintptr_t)slab,
+		k_ticks_to_us_floor32((uint32_t)timeout.ticks)
+		);
+}
+
+void sys_trace_k_mem_slab_alloc_blocking(struct k_mem_slab *slab, k_timeout_t timeout)
+{
+	ctf_top_mem_slab_alloc_blocking(
+		(uint32_t)(uintptr_t)slab,
+		k_ticks_to_us_floor32((uint32_t)timeout.ticks)
+		);
+}
+
+void sys_trace_k_mem_slab_alloc_exit(struct k_mem_slab *slab, k_timeout_t timeout, int ret)
+{
+	ctf_top_mem_slab_alloc_exit(
+		(uint32_t)(uintptr_t)slab,
+		k_ticks_to_us_floor32((uint32_t)timeout.ticks),
+		(int32_t)ret
+		);
+}
+
+void sys_trace_k_mem_slab_free_enter(struct k_mem_slab *slab)
+{
+	ctf_top_mem_slab_free_enter(
+		(uint32_t)(uintptr_t)slab
+		);
+}
+
+void sys_trace_k_mem_slab_free_exit(struct k_mem_slab *slab)
+{
+	ctf_top_mem_slab_free_exit(
+		(uint32_t)(uintptr_t)slab
+		);
+}
+
 /* Semaphore */
 void sys_trace_k_sem_init(struct k_sem *sem, int ret)
 {
