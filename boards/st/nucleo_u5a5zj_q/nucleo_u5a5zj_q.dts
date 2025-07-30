@@ -83,3 +83,7 @@ zephyr_udc0: &usbotg_hs {
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&otghs_phy {
+	clock-reference = <3>;
+};

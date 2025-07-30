@@ -36,3 +36,16 @@ properties:
         /* PLL1_P_CK/2 */
         clocks = <&rcc STM32_CLOCK(AHB2, 15U)>,
                  <&rcc (STM32_SRC_PLL1_P | STM32_CLOCK_DIV(2)) OTGHS_SEL(3)>;
+
+  clock-reference:
+    type: int
+    required: true
+    enum:
+      - 3   # 16 MHz
+      - 8   # 19.2 MHz
+      - 9   # 20 MHz
+      - 10  # 24 MHz
+      - 14  # 26 MHz
+      - 11  # 32 MHz
+    description: |
+      OTG_HS PHY reference clock frequency selection

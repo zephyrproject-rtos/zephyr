@@ -257,6 +257,10 @@ zephyr_udc0: &usbotg_hs {
 	status = "okay";
 };
 
+&otghs_phy {
+	clock-reference = <3>;
+};
+
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";
