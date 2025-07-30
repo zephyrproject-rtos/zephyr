@@ -5,10 +5,3 @@
 
 config BOARD_IOTDK
 	select SOC_ARC_IOT
-	help
-	  The DesignWare ARC IoT Development Kit board is a versatile platform that includes the
-	  necessary hardware and software to accelerate software development and debugging of
-	  sensor fusion, voice recognition and face detection designs. It includes a silicon
-	  implementation of the ARC Data Fusion IP Subsystem running at 144 MHz on SMIC's 55-nm
-	  ultra-low power process, and a rich set of peripherals commonly used in IoT designs
-	  such as USB, UART, SPI, I2C, PWM, SDIO and ADCs.

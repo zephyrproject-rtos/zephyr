@@ -5,8 +5,3 @@
 
 config BOARD_HSDK
 	select SOC_ARC_HSDK
-	help
-	  The DesignWare ARC HS Development Kit is a ready-to-use platform for
-	  rapid software development on the ARC HS3x family of processors. It
-	  supports single- and multi-core ARC HS34, HS36 and HS38 processors
-	  and offers a wide range of interfaces
