@@ -89,7 +89,6 @@ int z_impl_k_msgq_alloc_init(struct k_msgq *msgq, size_t msg_size,
 	}
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, alloc_init, msgq, ret);
-
 	return ret;
 }
 
@@ -106,12 +105,12 @@ int z_vrfy_k_msgq_alloc_init(struct k_msgq *msgq, size_t msg_size,
 
 int k_msgq_cleanup(struct k_msgq *msgq)
 {
+	int ret = 0;
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_msgq, cleanup, msgq);
 
 	CHECKIF(z_waitq_head(&msgq->wait_q) != NULL) {
-		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, cleanup, msgq, -EBUSY);
-
-		return -EBUSY;
+		ret = -EBUSY;
+		goto exit;
 	}
 
 	if ((msgq->flags & K_MSGQ_FLAG_ALLOC) != 0U) {
@@ -119,9 +118,9 @@ int k_msgq_cleanup(struct k_msgq *msgq)
 		msgq->flags &= ~K_MSGQ_FLAG_ALLOC;
 	}
 
-	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, cleanup, msgq, 0);
-
-	return 0;
+exit:
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, cleanup, msgq, ret);
+	return ret;
 }
 
 static inline int put_msg_in_queue(struct k_msgq *msgq, const void *data,
