@@ -2,6 +2,8 @@
 
 zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/fuel_gauge.h)
 
+zephyr_library()
+
 add_subdirectory_ifdef(CONFIG_SBS_GAUGE_NEW_API		sbs_gauge)
 add_subdirectory_ifdef(CONFIG_FUEL_GAUGE_COMPOSITE	composite)
 add_subdirectory_ifdef(CONFIG_MAX17048		max17048)
