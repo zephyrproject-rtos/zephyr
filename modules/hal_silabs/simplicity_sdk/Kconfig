@@ -34,4 +34,12 @@ config RAIL_PA_ENABLE_CALIBRATION
 	  calibration. This option is enabled by default, and is recommended for all
 	  Series 2 devices.
 
+config SILABS_SISDK_RAIL_MULTIPROTOCOL
+	bool "Use RAIL Multiprotocol library"
+	depends on SOC_GECKO_USE_RAIL
+	help
+	  Enable the Silicon Labs RAIL multiprotocol library, which provides
+	  coexistence and arbitration between multiple wireless protocols (for
+	  example, Bluetooth LE and a proprietary 2.4 GHz stack) on Gecko SoCs.
+
 endmenu
