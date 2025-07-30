@@ -59,6 +59,10 @@ config GEN_IRQ_VECTOR_TABLE
 config NXP_IMXRT_BOOT_HEADER
 	default n
 
+# Same reasoning as above.
+config I2S_HAS_PLL_SETTING
+	default n
+
 endif # SOC_MIMXRT798S_HIFI4
 
 if SOC_MIMXRT798S_HIFI1
