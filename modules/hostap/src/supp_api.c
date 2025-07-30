@@ -756,14 +756,6 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 					goto out;
 				}
 			}
-
-			if (!wpa_cli_cmd_v("set_network %d group CCMP", resp.network_id)) {
-				goto out;
-			}
-
-			if (!wpa_cli_cmd_v("set_network %d pairwise CCMP", resp.network_id)) {
-				goto out;
-			}
 		} else if (params->security == WIFI_SECURITY_TYPE_PSK_SHA256) {
 			if (!wpa_cli_cmd_v("set_network %d psk \"%s\"",
 					   resp.network_id, psk_null_terminated)) {
@@ -772,14 +764,6 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 
 			if (!wpa_cli_cmd_v("set_network %d key_mgmt WPA-PSK-SHA256",
 					   resp.network_id)) {
-				goto out;
-			}
-
-			if (!wpa_cli_cmd_v("set_network %d group CCMP", resp.network_id)) {
-				goto out;
-			}
-
-			if (!wpa_cli_cmd_v("set_network %d pairwise CCMP", resp.network_id)) {
 				goto out;
 			}
 		} else if (params->security == WIFI_SECURITY_TYPE_PSK ||
@@ -798,14 +782,6 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				if (!wpa_cli_cmd_v("set_network %d proto WPA",
 						   resp.network_id)) {
 					goto out;
-				}
-			} else {
-				if (!wpa_cli_cmd_v("set_network %d group CCMP", resp.network_id)) {
-					goto out;
-				}
-
-				if (!wpa_cli_cmd_v("set_network %d pairwise CCMP",
-						   resp.network_id)) {
 				}
 			}
 		} else if (params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL) {
@@ -832,14 +808,6 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 
 			if (!wpa_cli_cmd_v("set_network %d key_mgmt WPA-PSK SAE",
 					   resp.network_id)) {
-				goto out;
-			}
-
-			if (!wpa_cli_cmd_v("set_network %d group CCMP", resp.network_id)) {
-				goto out;
-			}
-
-			if (!wpa_cli_cmd_v("set_network %d pairwise CCMP", resp.network_id)) {
 				goto out;
 			}
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
