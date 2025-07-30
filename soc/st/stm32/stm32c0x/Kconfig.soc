@@ -18,6 +18,10 @@ config SOC_STM32C031XX
 	bool
 	select SOC_SERIES_STM32C0X
 
+config SOC_STM32C051XX
+	bool
+	select SOC_SERIES_STM32C0X
+
 config SOC_STM32C071XX
 	bool
 	select SOC_SERIES_STM32C0X
@@ -33,6 +37,7 @@ config SOC_STM32C092XX
 config SOC
 	default "stm32c011xx" if SOC_STM32C011XX
 	default "stm32c031xx" if SOC_STM32C031XX
+	default "stm32c051xx" if SOC_STM32C051XX
 	default "stm32c071xx" if SOC_STM32C071XX
 	default "stm32c091xx" if SOC_STM32C091XX
 	default "stm32c092xx" if SOC_STM32C092XX
