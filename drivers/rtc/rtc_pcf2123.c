@@ -655,7 +655,7 @@ int pcf2123_init(const struct device *dev)
 
 #define PCF2123_INIT(inst)                                                                         \
 	static const struct pcf2123_config pcf2123_config_##inst = {                               \
-		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0U),         \
+		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8) | SPI_TRANSFER_MSB),             \
 		IF_ENABLED(PCF2123_INT1_GPIOS_IN_USE,\
 			(.int1 = GPIO_DT_SPEC_INST_GET_OR(inst, int1_gpios, {0})) \
 		)};                \

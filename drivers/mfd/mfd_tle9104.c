@@ -598,7 +598,7 @@ static int tle9104_init(const struct device *dev)
 #define TLE9104_INIT(inst)                                                                         \
 	static const struct tle9104_config tle9104_##inst##_config = {                             \
 		.bus = SPI_DT_SPEC_INST_GET(                                                       \
-			inst, SPI_OP_MODE_MASTER | SPI_MODE_CPHA | SPI_WORD_SET(8), 0),            \
+			inst, SPI_OP_MODE_MASTER | SPI_MODE_CPHA | SPI_WORD_SET(8)),               \
 		.gpio_enable = TLE9104_INIT_GPIO_FIELDS(inst, en_gpios),                           \
 		.gpio_reset = TLE9104_INIT_GPIO_FIELDS(inst, resn_gpios),                          \
 		.gpio_control = {                                                                  \
