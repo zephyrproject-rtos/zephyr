@@ -653,8 +653,9 @@ static void hint_socket_state(struct lwm2m_ctx *ctx, struct lwm2m_message *ongoi
 {
 	bool empty;
 	size_t pendings;
+	int next_state = -1;
 
-	if (!ctx || !ctx->set_socket_state) {
+	if (!ctx) {
 		return;
 	}
 
@@ -677,14 +678,23 @@ static void hint_socket_state(struct lwm2m_ctx *ctx, struct lwm2m_message *ongoi
 		bool ongoing_block_tx = coap_block_has_more(&ongoing_tx->cpkt);
 
 		if (!empty || ongoing_block_tx) {
-			ctx->set_socket_state(ctx->sock_fd, LWM2M_SOCKET_STATE_ONGOING);
+			next_state = LWM2M_SOCKET_STATE_ONGOING;
 		} else if (ongoing_tx->type == COAP_TYPE_CON) {
-			ctx->set_socket_state(ctx->sock_fd, LWM2M_SOCKET_STATE_ONE_RESPONSE);
+			next_state = LWM2M_SOCKET_STATE_ONE_RESPONSE;
 		} else {
-			ctx->set_socket_state(ctx->sock_fd, LWM2M_SOCKET_STATE_LAST);
+			next_state = LWM2M_SOCKET_STATE_LAST;
 		}
 	} else if (empty && pendings == 0) {
-		ctx->set_socket_state(ctx->sock_fd, LWM2M_SOCKET_STATE_NO_DATA);
+		next_state = LWM2M_SOCKET_STATE_NO_DATA;
+	}
+
+	if (next_state < 0) {
+		return;
+	}
+
+	lwm2m_rd_client_hint_socket_state(ctx, next_state);
+	if (ctx->set_socket_state) {
+		ctx->set_socket_state(ctx->sock_fd, next_state);
 	}
 }
 
