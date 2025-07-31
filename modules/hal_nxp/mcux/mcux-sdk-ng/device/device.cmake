@@ -70,6 +70,7 @@ endif()
 if(NOT CONFIG_CPU_CORTEX_A)
   set(CONFIG_MCUX_COMPONENT_driver.reset ON)
   set(CONFIG_MCUX_COMPONENT_driver.memory ON)
+  set(CONFIG_MCUX_COMPONENT_driver.sentinel ON)
 endif()
 
 # Include fsl_dsp.c for ARM domains (applicable to i.MX RTxxx devices)
