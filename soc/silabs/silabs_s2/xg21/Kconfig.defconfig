@@ -11,8 +11,4 @@ config PM
 	select COUNTER
 	select UART_INTERRUPT_DRIVEN
 
-config GPIO_GECKO
-	default y
-	depends on GPIO || LOG_BACKEND_SWO
-
 endif
