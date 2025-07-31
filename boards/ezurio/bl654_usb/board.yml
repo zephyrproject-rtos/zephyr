@@ -4,3 +4,5 @@ board:
   vendor: ezurio
   socs:
   - name: nrf52840
+    variants:
+    - name: bare
