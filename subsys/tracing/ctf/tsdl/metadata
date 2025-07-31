@@ -316,6 +316,7 @@ event {
 	id = 0x32;
 	fields := struct {
 		uint32_t id;
+		uint32_t timeout;
 	};
 };
 
