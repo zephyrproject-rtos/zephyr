@@ -16,10 +16,14 @@ extern "C" {
 #endif
 
 
-#define sys_port_trace_k_thread_foreach_enter()
-#define sys_port_trace_k_thread_foreach_exit()
-#define sys_port_trace_k_thread_foreach_unlocked_enter()
-#define sys_port_trace_k_thread_foreach_unlocked_exit()
+#define sys_port_trace_k_thread_foreach_enter() \
+	sys_trace_k_thread_foreach_enter()
+#define sys_port_trace_k_thread_foreach_exit() \
+	sys_trace_k_thread_foreach_exit()
+#define sys_port_trace_k_thread_foreach_unlocked_enter() \
+	sys_trace_k_thread_foreach_unlocked_enter()
+#define sys_port_trace_k_thread_foreach_unlocked_exit() \
+	sys_trace_k_thread_foreach_unlocked_exit()
 
 #define sys_port_trace_k_thread_create(new_thread)                             \
 	sys_trace_k_thread_create(new_thread, stack_size, prio)
@@ -27,35 +31,49 @@ extern "C" {
 #define sys_port_trace_k_thread_user_mode_enter()                              \
 	sys_trace_k_thread_user_mode_enter()
 
-#define sys_port_trace_k_thread_heap_assign(thread, heap)
-#define sys_port_trace_k_thread_join_enter(thread, timeout)
-#define sys_port_trace_k_thread_join_blocking(thread, timeout)
-#define sys_port_trace_k_thread_join_exit(thread, timeout, ret)
+#define sys_port_trace_k_thread_heap_assign(thread, heap) \
+	sys_trace_k_thread_heap_assign(thread, heap)
+#define sys_port_trace_k_thread_join_enter(thread, timeout) \
+	sys_trace_k_thread_join_enter(thread, timeout)
+#define sys_port_trace_k_thread_join_blocking(thread, timeout) \
+	sys_trace_k_thread_join_blocking(thread, timeout)
+#define sys_port_trace_k_thread_join_exit(thread, timeout, ret) \
+	sys_trace_k_thread_join_exit(thread, timeout, ret)
 
 #define sys_port_trace_k_thread_sleep_enter(timeout)                           \
 	sys_trace_k_thread_sleep_enter(timeout)
 #define sys_port_trace_k_thread_sleep_exit(timeout, ret)                       \
 	sys_trace_k_thread_sleep_exit(timeout, ret)
 
-#define sys_port_trace_k_thread_msleep_enter(ms)
-#define sys_port_trace_k_thread_msleep_exit(ms, ret)
-#define sys_port_trace_k_thread_usleep_enter(us)
-#define sys_port_trace_k_thread_usleep_exit(us, ret)
-#define sys_port_trace_k_thread_busy_wait_enter(usec_to_wait)
-#define sys_port_trace_k_thread_busy_wait_exit(usec_to_wait)
-#define sys_port_trace_k_thread_yield()
+#define sys_port_trace_k_thread_msleep_enter(ms) \
+	sys_trace_k_thread_msleep_enter(ms)
+#define sys_port_trace_k_thread_msleep_exit(ms, ret) \
+	sys_trace_k_thread_msleep_exit(ms, ret)
+#define sys_port_trace_k_thread_usleep_enter(us) \
+	sys_trace_k_thread_usleep_enter(us)
+#define sys_port_trace_k_thread_usleep_exit(us, ret) \
+	sys_trace_k_thread_usleep_exit(us, ret)
+#define sys_port_trace_k_thread_busy_wait_enter(usec_to_wait) \
+	sys_trace_k_thread_busy_wait_enter(usec_to_wait)
+#define sys_port_trace_k_thread_busy_wait_exit(usec_to_wait) \
+	sys_trace_k_thread_busy_wait_exit(usec_to_wait)
+#define sys_port_trace_k_thread_yield() \
+	sys_trace_k_thread_yield()
 #define sys_port_trace_k_thread_wakeup(thread) sys_trace_k_thread_wakeup(thread)
 #define sys_port_trace_k_thread_start(thread) sys_trace_k_thread_start(thread)
 #define sys_port_trace_k_thread_abort(thread) sys_trace_k_thread_abort(thread)
 #define sys_port_trace_k_thread_suspend_enter(thread)                          \
 	sys_trace_k_thread_suspend(thread)
-#define sys_port_trace_k_thread_suspend_exit(thread)
+#define sys_port_trace_k_thread_suspend_exit(thread) \
+	sys_trace_k_thread_suspend_exit(thread)
 #define sys_port_trace_k_thread_resume_enter(thread)                           \
 	sys_trace_k_thread_resume(thread)
 
-#define sys_port_trace_k_thread_sched_lock()
+#define sys_port_trace_k_thread_sched_lock() \
+	sys_trace_k_thread_sched_lock()
 
-#define sys_port_trace_k_thread_sched_unlock()
+#define sys_port_trace_k_thread_sched_unlock() \
+	sys_trace_k_thread_sched_unlock()
 
 #define sys_port_trace_k_thread_name_set(thread, ret)                          \
 	sys_trace_k_thread_name_set(thread, ret)
@@ -66,16 +84,23 @@ extern "C" {
 
 #define sys_port_trace_k_thread_info(thread) sys_trace_k_thread_info(thread)
 
-#define sys_port_trace_k_thread_sched_wakeup(thread)
-#define sys_port_trace_k_thread_sched_abort(thread)
-#define sys_port_trace_k_thread_sched_priority_set(thread, prio)
-#define sys_port_trace_k_thread_sched_ready(thread)
+#define sys_port_trace_k_thread_sched_wakeup(thread) \
+	sys_trace_k_thread_sched_wakeup(thread)
+#define sys_port_trace_k_thread_sched_abort(thread) \
+	sys_trace_k_thread_sched_abort(thread)
+#define sys_port_trace_k_thread_sched_priority_set(thread, prio) \
+	sys_trace_k_thread_sched_priority_set(thread, prio)
+#define sys_port_trace_k_thread_sched_ready(thread) \
+	sys_trace_k_thread_sched_ready(thread)
 
-#define sys_port_trace_k_thread_sched_pend(thread)
+#define sys_port_trace_k_thread_sched_pend(thread) \
+	sys_trace_k_thread_sched_pend(thread)
 
-#define sys_port_trace_k_thread_sched_resume(thread)
+#define sys_port_trace_k_thread_sched_resume(thread) \
+	sys_trace_k_thread_sched_resume(thread)
 
-#define sys_port_trace_k_thread_sched_suspend(thread)
+#define sys_port_trace_k_thread_sched_suspend(thread) \
+	sys_trace_k_thread_sched_suspend(thread)
 
 #define sys_port_trace_k_work_init(work) \
 	sys_trace_k_work_init(work)
@@ -457,14 +482,10 @@ void sys_trace_k_thread_sched_ready(struct k_thread *thread);
 void sys_trace_k_thread_sched_resume(struct k_thread *thread);
 void sys_trace_k_thread_sched_suspend(struct k_thread *thread);
 
-void sys_trace_k_thread_foreach_enter(k_thread_user_cb_t user_cb,
-				      void *user_data);
-void sys_trace_k_thread_foreach_exit(k_thread_user_cb_t user_cb,
-				     void *user_data);
-void sys_trace_k_thread_foreach_unlocked_enter(k_thread_user_cb_t user_cb,
-					       void *user_data);
-void sys_trace_k_thread_foreach_unlocked_exit(k_thread_user_cb_t user_cb,
-					      void *user_data);
+void sys_trace_k_thread_foreach_enter(void);
+void sys_trace_k_thread_foreach_exit(void);
+void sys_trace_k_thread_foreach_unlocked_enter(void);
+void sys_trace_k_thread_foreach_unlocked_exit(void);
 void sys_trace_k_thread_create(struct k_thread *new_thread, size_t stack_size,
 			       int prio);
 void sys_trace_k_thread_user_mode_enter(void);
@@ -472,6 +493,7 @@ void sys_trace_k_thread_heap_assign(struct k_thread *thread,
 				    struct k_heap *heap);
 void sys_trace_k_thread_join_blocking(struct k_thread *thread,
 				      k_timeout_t timeout);
+void sys_trace_k_thread_join_enter(struct k_thread *thread, k_timeout_t timeout);
 void sys_trace_k_thread_join_exit(struct k_thread *thread, k_timeout_t timeout,
 				  int ret);
 void sys_trace_k_thread_sleep_enter(k_timeout_t timeout);
@@ -497,6 +519,16 @@ void sys_trace_k_thread_switched_in(void);
 void sys_trace_k_thread_ready(struct k_thread *thread);
 void sys_trace_k_thread_pend(struct k_thread *thread);
 void sys_trace_k_thread_info(struct k_thread *thread);
+
+/* Thread Extended Functions */
+void sys_trace_k_thread_suspend_exit(struct k_thread *thread);
+void sys_trace_k_thread_sched_wakeup(struct k_thread *thread);
+void sys_trace_k_thread_sched_abort(struct k_thread *thread);
+void sys_trace_k_thread_sched_priority_set(struct k_thread *thread, int prio);
+void sys_trace_k_thread_sched_ready(struct k_thread *thread);
+void sys_trace_k_thread_sched_pend(struct k_thread *thread);
+void sys_trace_k_thread_sched_resume(struct k_thread *thread);
+void sys_trace_k_thread_sched_suspend(struct k_thread *thread);
 
 /* Memory Slabs */
 

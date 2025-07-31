@@ -1829,3 +1829,202 @@ event {
 		int32_t ret;
 	};
 };
+
+event {
+	name = thread_foreach_enter;
+	id = 0xD5;
+	fields := struct {};
+};
+
+event {
+	name = thread_foreach_exit;
+	id = 0xD6;
+	fields := struct {};
+};
+
+event {
+	name = thread_foreach_unlocked_enter;
+	id = 0xD7;
+	fields := struct {};
+};
+
+event {
+	name = thread_foreach_unlocked_exit;
+	id = 0xD8;
+	fields := struct {};
+};
+
+event {
+	name = thread_heap_assign;
+	id = 0xD9;
+	fields := struct {
+		uint32_t thread_id;
+		uint32_t heap_id;
+	};
+};
+
+event {
+	name = thread_join_enter;
+	id = 0xDA;
+	fields := struct {
+		uint32_t thread_id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = thread_join_blocking;
+	id = 0xDB;
+	fields := struct {
+		uint32_t thread_id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = thread_join_exit;
+	id = 0xDC;
+	fields := struct {
+		uint32_t thread_id;
+		uint32_t timeout;
+		int32_t ret;
+	};
+};
+
+event {
+	name = thread_msleep_enter;
+	id = 0xDD;
+	fields := struct {
+		int32_t ms;
+	};
+};
+
+event {
+	name = thread_msleep_exit;
+	id = 0xDE;
+	fields := struct {
+		int32_t ms;
+		int32_t ret;
+	};
+};
+
+event {
+	name = thread_usleep_enter;
+	id = 0xDF;
+	fields := struct {
+		int32_t us;
+	};
+};
+
+event {
+	name = thread_usleep_exit;
+	id = 0xE0;
+	fields := struct {
+		int32_t us;
+		int32_t ret;
+	};
+};
+
+event {
+	name = thread_busy_wait_enter;
+	id = 0xE1;
+	fields := struct {
+		uint32_t usec_to_wait;
+	};
+};
+
+event {
+	name = thread_busy_wait_exit;
+	id = 0xE2;
+	fields := struct {
+		uint32_t usec_to_wait;
+	};
+};
+
+event {
+	name = thread_yield;
+	id = 0xE3;
+};
+
+event {
+	name = thread_suspend_exit;
+	id = 0xE4;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+	};
+};
+
+event {
+	name = thread_sched_lock;
+	id = 0xE5;
+};
+
+event {
+	name = thread_sched_unlock;
+	id = 0xE6;
+};
+
+event {
+	name = thread_sched_wakeup;
+	id = 0xE7;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+	};
+};
+
+event {
+	name = thread_sched_abort;
+	id = 0xE8;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+	};
+};
+
+event {
+	name = thread_sched_priority_set;
+	id = 0xE9;
+	fields := struct {
+		uint32_t thread_id;
+		int8_t prio;
+		ctf_bounded_string_t name[20];
+	};
+};
+
+event {
+	name = thread_sched_ready;
+	id = 0xEA;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+	};
+};
+
+event {
+	name = thread_sched_pend;
+	id = 0xEB;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+	};
+};
+
+event {
+	name = thread_sched_resume;
+	id = 0xEC;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+	};
+};
+
+event {
+	name = thread_sched_suspend;
+	id = 0xED;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+	};
+};
