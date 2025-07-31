@@ -1,7 +1,0 @@
-# XIAO RP2040 board configuration
-
-# Copyright (c) 2023 Seeed Studio inc.
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_XIAO_RP2040
-	select SOC_RP2040

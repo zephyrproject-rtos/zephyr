@@ -1,5 +1,0 @@
-boards:
-  - name: mt8196
-    vendor: mediatek
-    socs:
-      - name: mt8196

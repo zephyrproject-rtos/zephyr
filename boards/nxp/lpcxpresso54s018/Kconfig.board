@@ -1,0 +1,12 @@
+config BOARD_LPCXPRESSO54S018
+	bool "NXP LPCXpresso54S018M Development Board"
+	depends on SOC_SERIES_LPC54XXX
+	select SOC_LPC54S018
+	select SOC_PART_NUMBER_LPC54S018J4MET180E
+	help
+	  LPCXpresso54S018M development board with LPC54S018J4MET180E SoC.
+	  Single-core ARM Cortex-M4F with 4MB SPIFI flash and 360KB SRAM.
+
+# Include secure boot configuration
+# Note: For out-of-tree boards, secure options are included via board-specific prj.conf
+# source "boards/arm/lpcxpresso54s018/Kconfig.secure"

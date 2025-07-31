@@ -1,6 +1,0 @@
-board:
-  name: particle_boron
-  full_name: Boron
-  vendor: particle
-  socs:
-  - name: nrf52840

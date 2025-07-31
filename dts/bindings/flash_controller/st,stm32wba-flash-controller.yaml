@@ -1,5 +1,0 @@
-description: STM32WBA flash controller
-
-compatible: "st,stm32wba-flash-controller"
-
-include: flash-controller.yaml

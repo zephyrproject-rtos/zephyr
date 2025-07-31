@@ -1,5 +1,0 @@
-tests:
-  rtio.workq:
-    tags: rtio
-    integration_platforms:
-      - native_sim

@@ -1,0 +1,180 @@
+/*
+ * Private Porting
+ * by David Hor - Xtooltech 2025
+ * david.hor@xtooltech.com
+ */
+
+#include "lpcxpresso54s018-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "NXP LPCXpresso54S018 board";
+	compatible = "nxp,lpc54s018", "nxp,lpc540xx";
+
+	aliases {
+		led0 = &red_led;
+		led1 = &green_led;
+		led2 = &blue_led;
+		sw0 = &user_button_1;
+		usart-0 = &flexcomm0;
+		/* Arduino shield compatibility */
+		arduino-i2c = &flexcomm4;
+		arduino-spi = &flexcomm5;
+		arduino-serial = &flexcomm0;
+		/* CAN0 alias will be added when CAN controller is implemented */
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		/* zephyr,flash is set in the board dts file */
+		zephyr,console = &flexcomm0;
+		zephyr,shell-uart = &flexcomm0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		/* LPC54S018M LED pins from baremetal project board.h */
+		red_led: led_0 {
+			gpios = <&gpio3 14 GPIO_ACTIVE_LOW>; /* PIO3_14 - LED1 - Red LED - ACTIVE LOW */
+			label = "User LD1";
+			status = "disabled";
+		};
+		green_led: led_1 {
+			gpios = <&gpio3 3 GPIO_ACTIVE_LOW>; /* PIO3_3 - LED2 - Green LED - ACTIVE LOW */
+			label = "User LD2";
+			status = "disabled";
+		};
+		blue_led: led_2 {
+			gpios = <&gpio2 2 GPIO_ACTIVE_LOW>; /* PIO2_2 - LED3 - Blue LED (USER) - ACTIVE LOW */
+			label = "User LD3";
+			status = "okay";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button_1: button_0 {
+			label = "User SW1";
+			gpios = <&gpio0 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>; /* GPIO0_4 - Actual LPC54S018M SW1 */
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	arduino_header: connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 0 0>,	/* A0 */
+			   <1 0 &gpio0 1 0>,	/* A1 */
+			   <2 0 &gpio0 6 0>,	/* A2 */
+			   <3 0 &gpio0 14 0>,	/* A3 */
+			   <4 0 &gpio0 23 0>,	/* A4 */
+			   <5 0 &gpio0 16 0>,	/* A5 */
+			   <6 0 &gpio1 3 0>,	/* D0 */
+			   <7 0 &gpio0 2 0>,	/* D1 */
+			   <8 0 &gpio1 15 0>,	/* D2 */
+			   <9 0 &gpio1 6 0>,	/* D3 */
+			   <10 0 &gpio1 7 0>,	/* D4 */
+			   <11 0 &gpio1 4 0>,	/* D5 */
+			   <12 0 &gpio1 10 0>,	/* D6 */
+			   <13 0 &gpio1 9 0>,	/* D7 */
+			   <14 0 &gpio1 8 0>,	/* D8 */
+			   <15 0 &gpio1 5 0>,	/* D9 */
+			   <16 0 &gpio1 1 0>,	/* D10 */
+			   <17 0 &gpio0 7 0>,	/* D11 */
+			   <18 0 &gpio1 2 0>,	/* D12 */
+			   <19 0 &gpio1 0 0>,	/* D13 */
+			   <20 0 &gpio0 25 0>,	/* D14 */
+			   <21 0 &gpio0 26 0>;	/* D15 */
+	};
+};
+
+&flexcomm0 {
+	compatible = "nxp,lpc-usart";
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_flexcomm0_uart>;
+	pinctrl-names = "default";
+};
+
+&flexcomm4 {
+	compatible = "nxp,lpc-i2c";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&pinmux_flexcomm4_i2c>;
+	pinctrl-names = "default";
+};
+
+&flexcomm5 {
+	compatible = "nxp,lpc-spi";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&pinmux_flexcomm5_spi>;
+	pinctrl-names = "default";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+/* USB0 configuration */
+&usb0 {
+	status = "okay";
+};
+
+/* CDC ECM Ethernet over USB */
+/ {
+	cdc_ecm_eth0: cdc_ecm_eth0 {
+		compatible = "zephyr,cdc-ecm-ethernet";
+		status = "okay";
+		remote-mac-address = "00005E005300";
+	};
+};
+
+/* Ethernet controller */
+&enet {
+	status = "okay";
+	pinctrl-0 = <&pinmux_enet_rmii>;
+	pinctrl-names = "default";
+	phy-connection-type = "rmii";
+	fixed-link {
+		speed = <100>;
+		full-duplex;
+	};
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&pinmux_enet_mdio>;
+	pinctrl-names = "default";
+};
+
+/* LAN8720A PHY at address 0 */
+&phy {
+	status = "okay";
+};
+
+/* Enable PWM on SCTimer */
+&sctimer0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_sctimer_pwm>;
+	pinctrl-names = "default";
+};
+
+/* SPIFI flash configuration is now in SoC dtsi file */

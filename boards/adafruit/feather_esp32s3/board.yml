@@ -1,6 +1,0 @@
-board:
-  name: adafruit_feather_esp32s3
-  full_name: Adafruit Feather ESP32S3
-  vendor: adafruit
-  socs:
-  - name: esp32s3

@@ -1,6 +1,0 @@
-tests:
-  kernel.stack.usage:
-    tags:
-      - kernel
-      - userspace
-    ignore_faults: true

@@ -1,8 +1,0 @@
-&cpu0 {
-	clock-frequency = <47972352>;
-};
-
-&gpio {
-	status = "okay";
-	pin-secondary-config = <0x1d>;
-};

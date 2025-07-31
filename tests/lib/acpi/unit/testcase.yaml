@@ -1,4 +1,0 @@
-tests:
-  lib.acpi:
-    tags: acpi
-    type: unit

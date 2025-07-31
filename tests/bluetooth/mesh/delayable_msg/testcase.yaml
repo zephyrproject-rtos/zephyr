@@ -1,9 +1,0 @@
-tests:
-  bluetooth.mesh.delayable_msg:
-    platform_allow:
-      - native_sim
-    tags:
-      - bluetooth
-      - mesh
-    integration_platforms:
-      - native_sim

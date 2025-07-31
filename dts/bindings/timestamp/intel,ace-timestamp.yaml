@@ -1,9 +1,0 @@
-description: ACE timestamp controller
-
-compatible: "intel,ace-timestamp"
-
-include: base.yaml
-
-properties:
-  reg:
-    required: true

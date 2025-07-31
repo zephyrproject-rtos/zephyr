@@ -1,0 +1,40 @@
+# Copyright (c) 2024 VCI Development - LPC54S018J4MET180E
+# Private Porting , by David Hor - Xtooltech 2025, david.hor@xtooltech.com
+# SPDX-License-Identifier: Apache-2.0
+
+config LPC54S018_SECURE_BOOT
+	bool "LPC54S018 secure boot support"
+	depends on SOC_LPC54S018
+	help
+	  Enable secure boot support for LPC54S018.
+	  This includes boot image verification using CMAC or ECDSA signatures.
+
+if LPC54S018_SECURE_BOOT
+
+config LPC54S018_DEV_KEYS
+	bool "Use development keys for secure boot"
+	default y
+	help
+	  Use hardcoded development keys for testing secure boot.
+	  MUST be disabled for production!
+
+config LPC54S018_SECURE_BOOT_ECDSA
+	bool "Enable ECDSA signature verification"
+	default y
+	help
+	  Enable ECDSA P-256 signature verification for secure boot.
+
+config LPC54S018_SECURE_BOOT_ENCRYPTED
+	bool "Enable encrypted image support"
+	default n
+	help
+	  Enable support for encrypted boot images using PUF-derived keys.
+
+config SECURE_BOOT_LOG_LEVEL
+	int "Secure boot log level"
+	default 3
+	range 0 4
+	help
+	  Set the log level for secure boot modules.
+
+endif # LPC54S018_SECURE_BOOT

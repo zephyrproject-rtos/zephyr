@@ -1,3 +1,0 @@
-[[IgnoredVulns]]
-id = "PYSEC-2019-166"
-reason = "CoAPthon3 is only used for testing purposes."

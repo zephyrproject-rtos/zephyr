@@ -1,5 +1,0 @@
-/ {
-	aliases {
-		test-soc-suffix = &uart0;
-	};
-};

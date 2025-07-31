@@ -1,5 +1,0 @@
-description: Texas Instruments LMP90079 AFE binding
-
-compatible: "ti,lmp90079"
-
-include: ti,lmp90xxx-base.yaml

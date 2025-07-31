@@ -1,7 +1,0 @@
-sample:
-  name: Web USB
-tests:
-  sample.usb.webusb:
-    depends_on: usb_device
-    tags: usb
-    harness: TBD

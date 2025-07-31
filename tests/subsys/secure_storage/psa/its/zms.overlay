@@ -1,5 +1,0 @@
-/ {
-	chosen {
-		secure_storage_its_partition = &storage_partition;
-	};
-};

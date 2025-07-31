@@ -1,6 +1,0 @@
-shield:
-  name: nxp_adtja1101
-  full_name: NXP ADTJA1101-RMII Automotive Ethernet Adapter
-  vendor: nxp
-  supported_features:
-    - ethernet

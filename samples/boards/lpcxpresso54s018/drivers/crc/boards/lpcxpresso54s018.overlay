@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2025 Xtooltech
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Enable CRC engine */
+&crc {
+	status = "okay";
+};

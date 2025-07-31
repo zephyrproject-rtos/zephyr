@@ -1,6 +1,0 @@
-board:
-  name: khadas_edgev
-  full_name: Edge-V
-  vendor: khadas
-  socs:
-  - name: rk3399

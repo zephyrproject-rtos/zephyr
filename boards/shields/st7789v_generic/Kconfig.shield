@@ -1,8 +1,0 @@
-# Copyright (c) 2019 Jan Van Winkel <jan.van_winkel@dxplore.eu>
-# SPDX-License-Identifier: Apache-2.0
-
-config SHIELD_ST7789V_TL019FQV01
-	def_bool $(shields_list_contains,st7789v_tl019fqv01)
-
-config SHIELD_ST7789V_WAVESHARE_240X240
-	def_bool $(shields_list_contains,st7789v_waveshare_240x240)

@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2025 Xtooltech
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Enable SCTimer PWM */
+&sctimer0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_sctimer_pwm>;
+	pinctrl-names = "default";
+};
+
+/* Aliases for PWM channels */
+/ {
+	aliases {
+		pwm-0 = &sctimer0;
+		pwm-led0 = &sctimer0;
+	};
+	
+	pwmleds {
+		compatible = "pwm-leds";
+		
+		/* PWM controlled LED on channel 0 */
+		pwm_led0: pwm_led_0 {
+			pwms = <&sctimer0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "PWM LED 0";
+		};
+		
+		/* Additional PWM channels for motor control */
+		pwm_motor1: pwm_motor_1 {
+			pwms = <&sctimer0 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "Motor 1";
+		};
+		
+		pwm_motor2: pwm_motor_2 {
+			pwms = <&sctimer0 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "Motor 2";
+		};
+	};
+};

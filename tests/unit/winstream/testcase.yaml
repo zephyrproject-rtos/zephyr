@@ -1,4 +1,0 @@
-tests:
-  utilities.winstream:
-    tags: winstream
-    type: unit

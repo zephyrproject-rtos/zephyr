@@ -1,9 +1,0 @@
-tests:
-  drivers.led.build:
-    build_only: true
-    min_ram: 32
-    tags:
-      - drivers
-      - led
-    integration_platforms:
-      - native_sim

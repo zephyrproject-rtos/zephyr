@@ -1,9 +1,0 @@
-# Copyright (c) 2023 Enphase Energy
-# SPDX-License-Identifier: Apache-2.0
-
-config PINCTRL_TI_K3
-	bool "TI K3 pinctrl driver"
-	default y
-	depends on DT_HAS_TI_K3_PINCTRL_ENABLED
-	help
-	  Enable the TI K3 pinctrl driver

@@ -1,5 +1,0 @@
-/ {
-	aliases {
-		i2c-0 = &arduino_i2c;
-	};
-};

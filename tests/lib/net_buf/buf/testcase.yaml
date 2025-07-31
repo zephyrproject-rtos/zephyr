@@ -1,5 +1,0 @@
-tests:
-  libraries.net_buf.buf:
-    min_ram: 16
-    tags:
-      - net_buf

@@ -1,5 +1,0 @@
-tests:
-  filesystem.lib_link:
-    tags: filesystem
-    integration_platforms:
-      - native_sim

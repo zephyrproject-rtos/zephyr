@@ -1,6 +1,0 @@
-family:
-  - name: intel_socfpga_std
-    series:
-      - name: cyclonev
-        socs:
-          - name: cyclonev

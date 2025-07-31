@@ -1,6 +1,0 @@
-# Copyright (c) 2021 IP-Logix Inc.
-# SPDX-License-Identifier: Apache-2.0
-
-# Common fields for PHY devices
-
-include: base.yaml

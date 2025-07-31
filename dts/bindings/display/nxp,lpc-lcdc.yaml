@@ -1,0 +1,103 @@
+# Private Porting
+# by David Hor - Xtooltech 2025
+# david.hor@xtooltech.com
+
+# Copyright (c) 2024 VCI Development
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP LPC LCD Controller (LCDC)
+
+compatible: "nxp,lpc-lcdc"
+
+include: [display-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  width:
+    type: int
+    required: true
+    description: Display width in pixels
+
+  height:
+    type: int
+    required: true
+    description: Display height in pixels
+
+  bits-per-pixel:
+    type: int
+    default: 16
+    enum: [1, 2, 4, 8, 16, 24]
+    description: |
+      Number of bits per pixel.
+      16 = RGB565 format
+      24 = RGB888 format
+
+  display-type:
+    type: string
+    default: "TFT"
+    enum: ["TFT", "STN"]
+    description: Display panel type
+
+  framebuffer:
+    type: phandle
+    description: |
+      phandle to framebuffer memory region. If not specified,
+      driver will allocate framebuffer from heap.
+
+  panel-timings:
+    type: phandle
+    required: true
+    description: |
+      phandle to panel timing configuration node containing:
+      - hsync-len: Horizontal sync pulse width
+      - hfront-porch: Horizontal front porch
+      - hback-porch: Horizontal back porch
+      - vsync-len: Vertical sync pulse width
+      - vfront-porch: Vertical front porch
+      - vback-porch: Vertical back porch
+      - hsync-active: Horizontal sync polarity (0=active low, 1=active high)
+      - vsync-active: Vertical sync polarity (0=active low, 1=active high)
+      - de-active: Data enable polarity (0=active low, 1=active high)
+      - pixelclk-active: Pixel clock polarity (0=falling edge, 1=rising edge)
+
+  backlight-gpios:
+    type: phandle-array
+    description: GPIO for backlight control
+
+  power-gpios:
+    type: phandle-array
+    description: GPIO for LCD power control
+
+  reset-gpios:
+    type: phandle-array
+    description: GPIO for LCD reset control
+
+  swap-red-blue:
+    type: boolean
+    description: Swap red and blue color channels
+
+  st7701s-spi-init:
+    type: boolean
+    description: |
+      Enable ST7701S controller initialization via bit-bang SPI.
+      Requires cs-gpios, sck-gpios, and mosi-gpios to be defined.
+
+  cs-gpios:
+    type: phandle-array
+    description: GPIO for ST7701S SPI chip select
+
+  sck-gpios:
+    type: phandle-array
+    description: GPIO for ST7701S SPI clock
+
+  mosi-gpios:
+    type: phandle-array
+    description: GPIO for ST7701S SPI MOSI data

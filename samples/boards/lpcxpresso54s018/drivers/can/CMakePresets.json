@@ -1,0 +1,57 @@
+{
+  "version": 7,
+  "cmakeMinimumRequired": {
+    "major": 3
+  },
+  "configurePresets": [
+    {
+      "name": "debug",
+      "displayName": "debug",
+      "generator": "Ninja",
+      "binaryDir": "${fileDir}/build",
+      "cmakeExecutable": "C:/Program Files/CMake/bin/cmake.exe",
+      "inherits": "debug-env",
+      "cacheVariables": {
+        "APP_DIR": "${fileDir}",
+        "BOARD": "lpcxpresso54s018",
+        "CMAKE_BUILD_TYPE": "debug",
+        "ZEPHYR_BASE": "$env{ZEPHYR_BASE}",
+        "CMAKE_C_COMPILER": "C:/Users/david/zephyr-sdk-0.17.2/arm-zephyr-eabi/bin/arm-zephyr-eabi-gcc.exe",
+        "CMAKE_CXX_COMPILER": "C:/Users/david/zephyr-sdk-0.17.2/arm-zephyr-eabi/bin/arm-zephyr-eabi-g++.exe"
+      },
+      "toolchainFile": ""
+    },
+    {
+      "name": "release",
+      "displayName": "release",
+      "generator": "Ninja",
+      "binaryDir": "${fileDir}/build",
+      "cmakeExecutable": "C:/Program Files/CMake/bin/cmake.exe",
+      "inherits": "release-env",
+      "cacheVariables": {
+        "APP_DIR": "${fileDir}",
+        "BOARD": "lpcxpresso54s018",
+        "CMAKE_BUILD_TYPE": "release",
+        "ZEPHYR_BASE": "$env{ZEPHYR_BASE}",
+        "CMAKE_C_COMPILER": "C:/Users/david/zephyr-sdk-0.17.2/arm-zephyr-eabi/bin/arm-zephyr-eabi-gcc.exe",
+        "CMAKE_CXX_COMPILER": "C:/Users/david/zephyr-sdk-0.17.2/arm-zephyr-eabi/bin/arm-zephyr-eabi-g++.exe"
+      },
+      "toolchainFile": ""
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "debug",
+      "displayName": "debug",
+      "configurePreset": "debug"
+    },
+    {
+      "name": "release",
+      "displayName": "release",
+      "configurePreset": "release"
+    }
+  ],
+  "include": [
+    "mcux_include.json"
+  ]
+}

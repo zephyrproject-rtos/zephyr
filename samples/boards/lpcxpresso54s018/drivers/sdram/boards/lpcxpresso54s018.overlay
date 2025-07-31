@@ -1,0 +1,60 @@
+/*
+ * Copyright (c) 2025 Xtooltech
+ * SPDX-License-Identifier: Apache-2.0
+ * 
+ * External SDRAM configuration for LPC54S018
+ * Example: W9812G6JB-6I (16MB SDRAM, 16-bit bus)
+ */
+
+/* Enable EMC */
+&emc {
+	status = "okay";
+	pinctrl-0 = <&pinmux_emc>;
+	pinctrl-names = "default";
+	nxp,emc-clock-div = <1>; /* EMC clock = CPU clock / 2 */
+	nxp,command-delay = <0>;
+	
+	/* SDRAM chip at 0xA0000000 */
+	sdram0: sdram@a0000000 {
+		compatible = "nxp,lpc-emc-sdram";
+		reg = <0xa0000000 0x1000000>; /* 16MB */
+		
+		/* SDRAM configuration
+		 * [0] - Device type: 0 = SDR SDRAM
+		 * [1] - Data bus width: 0 = 16-bit
+		 * [2] - Number of banks: 1 = 4 banks
+		 * [3] - Row address bits: 12
+		 * [4] - Column address bits: 9
+		 */
+		nxp,sdram-config = <0 0 1 12 9>;
+		
+		/* SDRAM timing in nanoseconds (for -6I speed grade) */
+		nxp,sdram-timing = <
+			18   /* tRP - RAS precharge time */
+			42   /* tRAS - RAS active time */
+			67   /* tSREX - Self-refresh exit time */
+			18   /* tAPR - Last data out to active */
+			45   /* tDAL - Data-in to active */
+			12   /* tWR - Write recovery */
+			60   /* tRC - RAS cycle time */
+			60   /* tRFC - Auto-refresh period */
+			67   /* tXSR - Exit self-refresh */
+			12   /* tRRD - RAS to RAS delay */
+			2    /* tMRD - Mode register delay (cycles) */
+		>;
+		
+		/* 64ms refresh for 4096 rows */
+		nxp,refresh-period = <64000>;
+		
+		/* CAS latency */
+		nxp,cas-latency = <3>;
+		
+		/* Mode register: burst length 8, sequential, CAS 3 */
+		nxp,mode-register = <0x33>;
+	};
+};
+
+/* Enable the SDRAM memory region */
+&sdram0 {
+	status = "okay";
+};

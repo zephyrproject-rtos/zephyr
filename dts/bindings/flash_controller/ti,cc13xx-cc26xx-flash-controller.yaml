@@ -1,5 +1,0 @@
-description: Texas Instruments CC13xx/CC26xx flash controller
-
-compatible: "ti,cc13xx-cc26xx-flash-controller"
-
-include: flash-controller.yaml

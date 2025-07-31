@@ -1,4 +1,0 @@
-tests:
-  bluetooth.hci_codecs_info:
-    platform_allow: nrf52_bsim
-    tags: bluetooth

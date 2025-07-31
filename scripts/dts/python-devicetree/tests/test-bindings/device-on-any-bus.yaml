@@ -1,5 +1,0 @@
-# SPDX-License-Identifier: BSD-3-Clause
-
-description: Device on any bus
-
-compatible: "on-any-bus"

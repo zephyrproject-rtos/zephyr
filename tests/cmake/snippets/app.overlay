@@ -1,7 +1,0 @@
-/ {
-	/* This node will be deleted by the `foo` snippet. */
-	deleted-by-foo {};
-
-	/* This node will be deleted by the `bar` snippet. */
-	deleted-by-bar {};
-};

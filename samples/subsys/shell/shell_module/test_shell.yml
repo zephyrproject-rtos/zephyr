@@ -1,4 +1,0 @@
-- command: "kernel cycles"
-  expected: "cycles: .* hw cycles"
-- command: "kernel version"
-  expected: "Zephyr version .*"

@@ -1,4 +1,0 @@
-# A file that mentions a 'compatible' string without actually implementing it.
-# Used to check for issues with how we optimize binding loading.
-
-# props

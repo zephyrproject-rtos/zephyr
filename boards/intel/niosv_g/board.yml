@@ -1,6 +1,0 @@
-board:
-  name: niosv_g
-  full_name: INTEL FPGA niosv_g
-  vendor: intel
-  socs:
-    - name: niosv_g

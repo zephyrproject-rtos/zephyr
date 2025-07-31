@@ -1,7 +1,0 @@
-# SPDX-License-Identifier: BSD-3-Clause
-
-description: Include ordering test
-
-compatible: "order-2"
-
-include: ["foo-optional.yaml", "foo-required.yaml"]

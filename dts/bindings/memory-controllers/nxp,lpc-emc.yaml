@@ -1,0 +1,107 @@
+# Private Porting
+# by David Hor - Xtooltech 2025
+# david.hor@xtooltech.com
+
+# Copyright (c) 2025 Xtooltech
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP LPC External Memory Controller (EMC)
+
+compatible: "nxp,lpc-emc"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 1
+
+  nxp,emc-clock-div:
+    type: int
+    default: 1
+    description: |
+      EMC clock divider. The EMC clock is derived from the CPU clock divided by this value.
+      Valid values are 0 (same as CPU clock) or 1 (half of CPU clock).
+    enum:
+      - 0
+      - 1
+
+  nxp,command-delay:
+    type: int
+    default: 0
+    description: |
+      Programmable delay value for EMC outputs in command delayed mode.
+      Range 0-15.
+
+child-binding:
+  description: SDRAM chip configuration
+
+  properties:
+    compatible:
+      type: string
+      required: true
+      enum:
+        - "nxp,lpc-emc-sdram"
+
+    reg:
+      type: array
+      required: true
+      description: |
+        Memory mapped address and size of the SDRAM chip.
+
+    nxp,sdram-config:
+      type: array
+      required: true
+      description: |
+        SDRAM configuration array:
+        [0] - Device type (0=SDR SDRAM)
+        [1] - Data bus width (0=16-bit, 1=32-bit)
+        [2] - Number of banks (0=2 banks, 1=4 banks)
+        [3] - Row address bits (11-13)
+        [4] - Column address bits (8-12)
+
+    nxp,sdram-timing:
+      type: array
+      required: true
+      description: |
+        SDRAM timing parameters in nanoseconds:
+        [0] - tRP (RAS precharge time)
+        [1] - tRAS (RAS active time)
+        [2] - tSREX (Self-refresh exit time)
+        [3] - tAPR (Last data out to active time)
+        [4] - tDAL (Data-in to active time)
+        [5] - tWR (Write recovery time)
+        [6] - tRC (RAS cycle time)
+        [7] - tRFC (Auto-refresh period)
+        [8] - tXSR (Exit self-refresh time)
+        [9] - tRRD (RAS to RAS delay)
+        [10] - tMRD (Mode register delay cycles)
+
+    nxp,refresh-period:
+      type: int
+      required: true
+      description: |
+        Refresh period in microseconds. Typically 64000 for 64ms refresh.
+
+    nxp,cas-latency:
+      type: int
+      required: true
+      description: |
+        CAS latency in clock cycles (2 or 3).
+      enum:
+        - 2
+        - 3
+
+    nxp,mode-register:
+      type: int
+      default: 0x33
+      description: |
+        SDRAM mode register value.

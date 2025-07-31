@@ -1,9 +1,0 @@
-sample:
-  name: Bluetooth ST Bluetooth LE Sensor Demo
-  description: Demonstrates Bluetooth LE peripheral by exposing vendor-specific GATT
-    services
-tests:
-  sample.bluetooth.st_ble_sensor:
-    harness: bluetooth
-    platform_allow: nucleo_wb55rg
-    tags: bluetooth

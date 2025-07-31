@@ -1,0 +1,46 @@
+# Private Porting
+# by David Hor - Xtooltech 2025
+# david.hor@xtooltech.com
+
+# Copyright (c) 2024, VCI Development - LPC54S018J4MET180E single-core M4
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP LPC SPIFI NOR flash driver for W25Q32JV 4MB QSPI flash
+
+compatible: "nxp,lpc-spifi-nor"
+
+include: [flash-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    type: array
+    required: true
+    description: SPIFI controller register base address
+
+  interrupts:
+    required: true
+
+  jedec-id:
+    type: uint8-array
+    required: true
+    description: JEDEC ID of the flash device
+
+  size:
+    type: int
+    required: true
+    description: Flash size in bits
+
+  spi-max-frequency:
+    type: int
+    required: true
+    description: Maximum SPI frequency
+
+  has-dpd:
+    type: boolean
+    description: Flash supports deep power down mode
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true

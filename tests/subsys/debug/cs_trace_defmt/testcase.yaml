@@ -1,5 +1,0 @@
-tests:
-  debug.cs_trace_defmt:
-    tags: debug
-    integration_platforms:
-      - native_sim

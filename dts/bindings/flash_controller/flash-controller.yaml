@@ -1,7 +1,0 @@
-# Common fields for flash controllers
-
-include: base.yaml
-
-properties:
-  reg:
-    required: true

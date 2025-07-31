@@ -1,4 +1,0 @@
-socs:
-  - extend: an521
-    cpuclusters:
-      - name: cputest

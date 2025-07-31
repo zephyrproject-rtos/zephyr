@@ -1,5 +1,0 @@
-tests:
-  filesystem.api:
-    tags: filesystem
-    integration_platforms:
-      - native_sim

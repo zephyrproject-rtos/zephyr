@@ -1,6 +1,0 @@
-board:
-  name: cygnet
-  full_name: Cygnet
-  vendor: blues
-  socs:
-    - name: stm32l433xx

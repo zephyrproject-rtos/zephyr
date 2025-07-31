@@ -1,6 +1,0 @@
-board:
-  name: bl652_dvk
-  full_name: BL652 DVK
-  vendor: ezurio
-  socs:
-  - name: nrf52832

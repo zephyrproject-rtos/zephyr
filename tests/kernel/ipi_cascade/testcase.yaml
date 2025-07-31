@@ -1,6 +1,0 @@
-tests:
-  kernel.ipi_cascade.smp:
-    tags:
-      - kernel
-      - smp
-    filter: (CONFIG_MP_MAX_NUM_CPUS == 2)

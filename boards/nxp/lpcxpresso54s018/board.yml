@@ -1,0 +1,6 @@
+board:
+  name: lpcxpresso54s018
+  full_name: LPCXpresso54S018
+  vendor: nxp
+  socs:
+    - name: lpc54s018

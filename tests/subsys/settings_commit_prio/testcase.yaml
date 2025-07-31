@@ -1,4 +1,0 @@
-tests:
-  settings.settings_commit_prio:
-    platform_allow: native_sim
-    tags: settings

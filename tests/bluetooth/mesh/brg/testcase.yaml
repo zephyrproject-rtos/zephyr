@@ -1,9 +1,0 @@
-tests:
-  bluetooth.mesh.brg:
-    platform_allow:
-      - native_sim
-    tags:
-      - bluetooth
-      - mesh
-    integration_platforms:
-      - native_sim

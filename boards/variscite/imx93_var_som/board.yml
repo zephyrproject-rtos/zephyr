@@ -1,6 +1,0 @@
-boards:
-  - name: imx93_var_som
-    full_name: VAR-SOM-MX93
-    vendor: variscite
-    socs:
-      - name: mimx9352

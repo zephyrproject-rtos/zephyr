@@ -1,5 +1,0 @@
-description: NXP Kinetis Flash Memory Module L (FTFL)
-
-compatible: "nxp,kinetis-ftfl"
-
-include: flash-controller.yaml

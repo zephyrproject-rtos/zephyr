@@ -1,6 +1,0 @@
-board:
-  name: mimxrt1040_evk
-  full_name: MIMXRT1040-EVK
-  vendor: nxp
-  socs:
-    - name: mimxrt1042

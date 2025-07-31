@@ -1,8 +1,0 @@
-# Copyright (c) 2019 Intel Corporation
-# SPDX-License-Identifier: Apache-2.0
-
-config XTENSA_HAL
-	bool
-	help
-	  Build the Xtensa HAL module during build process.
-	  This is selected by the Xtensa ARCH kconfig automatically.

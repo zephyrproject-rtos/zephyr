@@ -1,5 +1,0 @@
-description: |
-  Invalid include: wrong top level type.
-compatible: include-invalid-type
-include:
-  a-map-is-not-allowed-here: 3

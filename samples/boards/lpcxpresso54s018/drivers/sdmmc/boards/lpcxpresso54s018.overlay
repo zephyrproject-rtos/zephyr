@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2024 VCI Development
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * SD/MMC overlay for LPCXpresso54S018
+ */
+
+&sdif {
+	status = "okay";
+	pinctrl-0 = <&pinmux_sdif>;
+	pinctrl-names = "default";
+	
+	/* SD card properties */
+	bus-width = <4>;
+	cd-gpios = <&gpio2 23 GPIO_ACTIVE_LOW>;
+	wp-gpios = <&gpio2 24 GPIO_ACTIVE_HIGH>;
+	
+	/* Power control (if available on your board) */
+	/* pwr-gpios = <&gpio3 19 GPIO_ACTIVE_HIGH>; */
+	
+	/* Disk name for file system mount */
+	disk-name = "SD";
+};

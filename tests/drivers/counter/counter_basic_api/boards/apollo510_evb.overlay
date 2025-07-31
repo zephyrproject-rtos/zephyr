@@ -1,5 +1,0 @@
-&timer0 {
-	counter0: counter {
-		status = "okay";
-	};
-};

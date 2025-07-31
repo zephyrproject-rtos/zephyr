@@ -1,8 +1,0 @@
-/*
- * Copyright (c) 2021 Nordic Semiconductor ASA
- *
- * SPDX-License-Identifier: Apache-2.0
- */
-
-/* Use the reset line that is available starting from v0.14.0 of the DK. */
-#include <nrf52840/nrf9160dk_nrf52840_reset_on_if9.dtsi>

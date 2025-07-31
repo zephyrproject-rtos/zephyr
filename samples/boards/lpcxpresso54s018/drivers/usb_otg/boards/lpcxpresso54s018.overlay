@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2024 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	usb_otg: usb-otg {
+		compatible = "nxp,lpc-otg";
+		id-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;     /* P1.11 as ID pin */
+		vbus-gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;   /* P1.6 as VBUS control */
+		device-controller = <&usb1>;
+		status = "okay";
+	};
+};
+
+&gpio1 {
+	status = "okay";
+};

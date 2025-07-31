@@ -1,61 +1,13 @@
-# HW Info driver configuration options
+# LPC hwinfo driver configuration
 
-# Copyright (c) 2019 Alexander Wachter
+# Copyright (c) 2024 VCI Development
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig HWINFO
-	bool "Hardware Information drivers"
+config HWINFO_LPC
+	bool "LPC hardware info driver"
+	default y
+	depends on SOC_LPC54S018
+	select HWINFO
 	help
-	  Enable hwinfo driver.
-
-if HWINFO
-
-module = HWINFO
-module-str = HWINFO
-source "subsys/logging/Kconfig.template.log_config"
-
-config HWINFO_HAS_DRIVER
-	bool
-	help
-	  This is an option enabled by individual drivers to signal that there is a hwinfo driver.
-
-config HWINFO_SHELL
-	bool "HWINFO Shell"
-	depends on SHELL
-	help
-	  Enable hwinfo Shell for testing.
-
-# zephyr-keep-sorted-start
-rsource "Kconfig.ambiq"
-rsource "Kconfig.andes"
-rsource "Kconfig.cc13xx_cc26xx"
-rsource "Kconfig.cc23x0"
-rsource "Kconfig.esp32"
-rsource "Kconfig.gecko"
-rsource "Kconfig.imxrt"
-rsource "Kconfig.litex"
-rsource "Kconfig.max32"
-rsource "Kconfig.mcux_mcx_cmc"
-rsource "Kconfig.mcux_rcm"
-rsource "Kconfig.mcux_sim"
-rsource "Kconfig.mcux_src"
-rsource "Kconfig.mcux_src_rev2"
-rsource "Kconfig.mcux_syscon"
-rsource "Kconfig.mspm0"
-rsource "Kconfig.nrf"
-rsource "Kconfig.numaker"
-rsource "Kconfig.numaker_rmc"
-rsource "Kconfig.psoc6"
-rsource "Kconfig.renesas_ra"
-rsource "Kconfig.rpi_pico"
-rsource "Kconfig.rw61x"
-rsource "Kconfig.sam"
-rsource "Kconfig.sam0"
-rsource "Kconfig.sam4l"
-rsource "Kconfig.sam_rstc"
-rsource "Kconfig.silabs_series2"
-rsource "Kconfig.smartbond"
-rsource "Kconfig.stm32"
-# zephyr-keep-sorted-stop
-
-endif
+	  Enable driver for reading hardware information on LPC54S018,
+	  including the 128-bit unique device ID.

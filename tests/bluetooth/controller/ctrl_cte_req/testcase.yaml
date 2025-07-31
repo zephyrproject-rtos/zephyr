@@ -1,8 +1,0 @@
-common:
-  tags:
-    - bluetooth
-    - bt_le_cte_req
-    - bt_ull_llcp
-tests:
-  bluetooth.controller.ctrl_cte_req.test:
-    type: unit

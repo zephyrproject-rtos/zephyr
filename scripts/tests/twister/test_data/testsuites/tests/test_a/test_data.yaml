@@ -1,6 +1,0 @@
-tests:
-  test_a.check_1:
-    tags: test_a
-    build_only: true
-  test_a.check_2:
-    tags: test_a

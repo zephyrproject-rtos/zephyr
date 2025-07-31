@@ -1,6 +1,0 @@
-board:
-  name: pico_plus2
-  full_name: Pimoroni Pico Plus2
-  vendor: pimoroni
-  socs:
-  - name: rp2350b

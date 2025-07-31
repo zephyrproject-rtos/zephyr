@@ -1,8 +1,0 @@
-&rtc0 {
-	status = "okay";
-	fixed-top;
-};
-&rtc2 {
-	status = "okay";
-	fixed-top;
-};

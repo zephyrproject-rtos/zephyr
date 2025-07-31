@@ -1,5 +1,0 @@
-description: ESP32 flash controller
-
-compatible: "espressif,esp32-flash-controller"
-
-include: flash-controller.yaml

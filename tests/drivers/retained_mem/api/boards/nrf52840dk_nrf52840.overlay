@@ -1,5 +1,0 @@
-/ {
-	aliases {
-		retainedmemtestdevice = &gpregret1;
-	};
-};

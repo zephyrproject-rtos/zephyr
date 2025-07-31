@@ -1,6 +1,0 @@
-board:
-  name: ubx_evkninab4
-  full_name: EVK NINA-B40x
-  vendor: u-blox
-  socs:
-  - name: nrf52833

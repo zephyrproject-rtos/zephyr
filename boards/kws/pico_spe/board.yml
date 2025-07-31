@@ -1,6 +1,0 @@
-board:
-  name: pico_spe
-  full_name: Pico-SPE
-  vendor: kws
-  socs:
-  - name: rp2040

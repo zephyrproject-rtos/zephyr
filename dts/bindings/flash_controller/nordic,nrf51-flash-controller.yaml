@@ -1,5 +1,0 @@
-description: Nordic NVMC (Non-Volatile Memory Controller)
-
-compatible: "nordic,nrf51-flash-controller"
-
-include: flash-controller.yaml

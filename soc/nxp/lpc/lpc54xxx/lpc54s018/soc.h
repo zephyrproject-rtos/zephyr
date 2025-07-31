@@ -1,0 +1,100 @@
+/*
+ * Private Porting
+ * by David Hor - Xtooltech 2025
+ * david.hor@xtooltech.com
+ */
+
+/*
+ * Copyright (c) 2017, 2024 NXP
+ * Copyright (c) 2024 VCI Development - LPC54S018J4MET180E single-core M4
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ * @file
+ * @brief SoC configuration macros for the LPC54S018J4M platform
+ *
+ * This header file is used to specify and describe SoC-level aspects for the
+ * 'LPC54S018J4M' platform.
+ */
+
+#ifndef _SOC__H_
+#define _SOC__H_
+
+#ifndef _ASMLANGUAGE
+#include <zephyr/sys/util.h>
+#include <fsl_common.h>
+
+/* LPC54S018J4M Memory Map */
+/* Internal SRAM */
+#define LPC54S018_SRAMX_BASE    0x00000000
+#define LPC54S018_SRAMX_SIZE    0x30000    /* 192KB */
+#define LPC54S018_SRAM0_BASE    0x20000000
+#define LPC54S018_SRAM0_SIZE    0x10000    /* 64KB */
+
+/* External SPIFI Flash */
+#define LPC54S018_SPIFI_BASE    0x10000000
+#define LPC54S018_SPIFI_SIZE    0x400000   /* 4MB */
+
+/* Peripheral Base Addresses */
+#define LPC54S018_SYSCON_BASE   0x40000000
+#define LPC54S018_IOCON_BASE    0x40001000
+#define LPC54S018_GPIO_BASE     0x4008C000
+#define LPC54S018_DMA0_BASE     0x40082000
+#define LPC54S018_SPIFI0_BASE   0x40080000
+#define LPC54S018_ADC0_BASE     0x400A0000
+#define LPC54S018_USB0_BASE     0x40084000
+#define LPC54S018_USB1_BASE     0x40095000
+#define LPC54S018_CAN0_BASE     0x4009D000
+#define LPC54S018_CAN1_BASE     0x4009E000
+#define LPC54S018_ENET_BASE     0x40092000
+
+/* FLEXCOMM Base Addresses */
+#define LPC54S018_FLEXCOMM0_BASE 0x40086000
+#define LPC54S018_FLEXCOMM1_BASE 0x40087000
+#define LPC54S018_FLEXCOMM2_BASE 0x40088000
+#define LPC54S018_FLEXCOMM3_BASE 0x40089000
+#define LPC54S018_FLEXCOMM4_BASE 0x4008A000
+#define LPC54S018_FLEXCOMM5_BASE 0x40096000
+#define LPC54S018_FLEXCOMM6_BASE 0x40097000
+#define LPC54S018_FLEXCOMM7_BASE 0x40098000
+#define LPC54S018_FLEXCOMM8_BASE 0x40099000
+#define LPC54S018_FLEXCOMM9_BASE 0x4009A000
+#define LPC54S018_FLEXCOMM10_BASE 0x4009F000
+
+/* Timer Base Addresses */
+#define LPC54S018_CTIMER0_BASE  0x40008000
+#define LPC54S018_CTIMER1_BASE  0x40009000
+#define LPC54S018_CTIMER2_BASE  0x40028000
+#define LPC54S018_CTIMER3_BASE  0x40048000
+#define LPC54S018_CTIMER4_BASE  0x40049000
+
+/* System Configuration */
+#define LPC54S018_NUM_INTERRUPTS 75
+#define LPC54S018_CORE_FREQ_MAX  180000000  /* 180MHz max */
+#define LPC54S018_FRO_12MHZ      12000000
+#define LPC54S018_FRO_48MHZ      48000000
+#define LPC54S018_FRO_96MHZ      96000000
+#define LPC54S018_XTAL_FREQ      12000000   /* 12MHz crystal */
+
+#endif /* !_ASMLANGUAGE */
+
+#define IOCON_PIO_DIGITAL_EN	0x80u
+#define IOCON_PIO_FUNC0		0x00u
+#define IOCON_PIO_FUNC1		0x01u
+#define IOCON_PIO_FUNC2		0x02u
+#define IOCON_PIO_FUNC3		0x03u
+#define IOCON_PIO_FUNC4		0x04u
+#define IOCON_PIO_I2CDRIVE_LOW	0x00u
+#define IOCON_PIO_I2CFILTER_EN	0x00u
+#define IOCON_PIO_I2CSLEW_I2C	0x00u
+#define IOCON_PIO_INPFILT_OFF	0x0100u
+#define IOCON_PIO_INV_DI	0x00u
+#define IOCON_PIO_MODE_INACT	0x00u
+#define IOCON_PIO_OPENDRAIN_DI	0x00u
+#define IOCON_PIO_SLEW_STANDARD	0x00u
+#define IOCON_PIO_MODE_PULLUP	0x10u
+#define IOCON_PIO_MODE_PULLDOWN	0x08u
+
+#endif /* _SOC__H_ */

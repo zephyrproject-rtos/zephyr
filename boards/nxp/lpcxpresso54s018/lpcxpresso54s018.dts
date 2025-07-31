@@ -1,0 +1,239 @@
+/*
+ * Private Porting
+ * by David Hor - Xtooltech 2025
+ * david.hor@xtooltech.com
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_lpc54s018.dtsi>
+#include "lpcxpresso54s018.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+/ {
+	model = "NXP LPCXpresso54S018 board";
+	compatible = "nxp,lpc54s018", "nxp,lpc";
+
+	aliases{
+		sw0 = &user_button_1;
+		led0 = &red_led;
+		watchdog0 = &wwdt;
+	};
+
+	/* Memory-mapped SPIFI flash region for execute-in-place (XIP) */
+	memory@10000000 {
+		device_type = "memory";
+		reg = <0x10000000 0x400000>;  /* 4MB QSPI flash memory-mapped for XIP */
+	};
+
+	/* External SDRAM memory region (optional, requires EMC initialization) */
+	sdram0: memory@a0000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		device_type = "memory";
+		reg = <0xa0000000 DT_SIZE_M(16)>;
+		zephyr,memory-region = "SDRAM";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+		status = "disabled"; /* Enable in overlay when SDRAM is connected */
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &w25q32jv; /* Use external SPIFI flash */
+		zephyr,flash-controller = &spifi;
+		zephyr,console = &flexcomm0;
+		zephyr,shell-uart = &flexcomm0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &flexcomm0;
+		zephyr,canbus = &can0;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button_1: button_0 {
+			label = "User SW1";
+			gpios = <&gpio0 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>; /* Actual LPC54S018M SW1 pin */
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	/* Panel timing for 480x800 ST7701S LCD */
+	st7701s_timing: panel-timing {
+		compatible = "panel-timing";
+		clock-frequency = <27000000>;  /* 27MHz pixel clock */
+		hactive = <480>;
+		vactive = <800>;
+		hsync-len = <4>;
+		hfront-porch = <1>;
+		hback-porch = <1>;
+		vsync-len = <1>;
+		vfront-porch = <1>;
+		vback-porch = <1>;
+		hsync-active = <0>;  /* Active low */
+		vsync-active = <0>;  /* Active low */
+		de-active = <1>;     /* Active high */
+		pixelclk-active = <0>; /* Data on falling edge */
+	};
+};
+
+/*
+ * LPC54S018 is single-core M4, so we can allocate all SRAM to M4
+ * Total 360KB SRAM: 192KB SRAMX + 64KB SRAM0 + 64KB SRAM1 + 32KB SRAM2 + 8KB USB
+ * Unlike LPC54114 dual-core, no need to share memory between cores
+ */
+&sram0 {
+	compatible = "mmio-sram";
+	reg = <0x20000000 DT_SIZE_K(64)>; /* SRAM0: 64KB main SRAM */
+};
+
+&cpu0 {
+	clock-frequency = <180000000>; /* LPC54S018 runs at 180MHz max */
+};
+
+/* LPC54S018 single-core - mailbox not needed for inter-core communication */
+&mailbox0 {
+	status = "disabled";
+};
+
+&red_led {
+	status = "okay";
+};
+
+&green_led {
+	status = "okay";
+};
+
+&blue_led {
+	status = "okay";
+};
+
+&flexcomm0 {
+	compatible = "nxp,lpc-usart";
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_flexcomm0_uart>;
+	pinctrl-names = "default";
+};
+
+&flexcomm4 {
+	compatible = "nxp,lpc-i2c";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&pinmux_flexcomm4_i2c>;
+	pinctrl-names = "default";
+};
+
+&flexcomm5 {
+	compatible = "nxp,lpc-spi";
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexcomm5_spi>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+};
+
+/* Enable SPIFI controller for external flash */
+&spifi {
+	status = "okay";
+	pinctrl-0 = <&pinmux_spifi>;
+	pinctrl-names = "default";
+};
+
+/* Disable internal flash controller - using external SPIFI flash */
+&iap {
+	status = "disabled";
+};
+
+/* Enable CAN0 */
+&can0 {
+	status = "okay";
+	pinctrl-0 = <&can0_default>;
+	pinctrl-names = "default";
+};
+
+/* Enable CAN1 */
+&can1 {
+	status = "okay";
+	pinctrl-0 = <&can1_default>;
+	pinctrl-names = "default";
+};
+
+/* Enable Watchdog */
+&wwdt {
+	status = "okay";
+};
+
+/* Enable ADC0 */
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+};
+
+/* Enable CTIMER0 for general purpose timing */
+&ctimer0 {
+	status = "okay";
+};
+
+/* Enable RTC */
+&rtc {
+	status = "okay";
+};
+
+/* USB configuration - device mode by default */
+zephyr_udc0: &usb1 {
+	status = "okay";
+};
+
+/* Enable Watchdog */
+&wwdt {
+	status = "okay";
+};
+
+/* Enable ADC0 */
+&adc0 {
+	status = "okay";
+};
+
+/* Enable MRT0 (Multi-Rate Timer) */
+&mrt0 {
+	status = "okay";
+	ch0: channel@0 {
+		compatible = "nxp,mrt-channel";
+		reg = <0>;
+		status = "okay";
+	};
+	ch1: channel@1 {
+		compatible = "nxp,mrt-channel";
+		reg = <1>;
+		status = "okay";
+	};
+};
+
+/* Enable RIT (Repetitive Interrupt Timer) */
+&rit {
+	status = "okay";
+};
+
+/* Enable LCD Controller */
+&lcdc {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lcdc &pinmux_st7701s_spi>;
+	pinctrl-names = "default";
+	
+	width = <480>;
+	height = <800>;
+	bits-per-pixel = <16>;  /* RGB565 */
+	display-type = "TFT";
+	panel-timings = <&st7701s_timing>;
+	
+	/* Backlight control on P0.22 */
+	backlight-gpios = <&gpio0 22 GPIO_ACTIVE_HIGH>;
+	
+	/* ST7701S initialization via bit-bang SPI */
+	st7701s-spi-init;
+	reset-gpios = <&gpio2 15 GPIO_ACTIVE_HIGH>;  /* P2.15 */
+	cs-gpios = <&gpio3 15 GPIO_ACTIVE_LOW>;      /* P3.15 */
+	sck-gpios = <&gpio3 16 GPIO_ACTIVE_HIGH>;    /* P3.16 */
+	mosi-gpios = <&gpio3 17 GPIO_ACTIVE_HIGH>;   /* P3.17 */
+};

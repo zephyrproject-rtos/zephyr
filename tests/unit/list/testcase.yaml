@@ -1,6 +1,0 @@
-tests:
-  utilities.lists:
-    tags:
-      - utils
-      - lists
-    type: unit

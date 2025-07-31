@@ -1,7 +1,0 @@
-sample:
-  name: debug monitor sample
-tests:
-  sample.debug.debugmon:
-    build_only: true
-    platform_allow: reel_board
-    tags: debug

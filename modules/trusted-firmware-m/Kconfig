@@ -1,9 +1,0 @@
-# Configuration for the TF-M Module
-
-# Copyright (c) 2019, 2020 Linaro Limited
-# Copyright (c) 2020, 2021 Nordic Semiconductor ASA
-# SPDX-License-Identifier: Apache-2.0
-
-rsource "Kconfig.tfm"
-rsource "Kconfig.tfm.partitions"
-rsource "Kconfig.tfm.crypto_modules"

@@ -1,9 +1,0 @@
-common:
-  tags:
-    - mqtt
-    - net
-    - userspace
-  min_ram: 16
-  depends_on: netif
-tests:
-  net.mqtt_5.packet: {}

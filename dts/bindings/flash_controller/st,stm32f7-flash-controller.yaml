@@ -1,5 +1,0 @@
-description: STM32F7 flash controller
-
-compatible: "st,stm32f7-flash-controller"
-
-include: flash-controller.yaml

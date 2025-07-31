@@ -1,6 +1,0 @@
-board:
-  name: bl654_usb
-  full_name: BL654 USB (451-00004)
-  vendor: ezurio
-  socs:
-  - name: nrf52840

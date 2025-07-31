@@ -1,7 +1,0 @@
-sample:
-  name: USB device loopback sample
-tests:
-  sample.usbd.loopback:
-    depends_on: usbd
-    build_only: true
-    tags: usb

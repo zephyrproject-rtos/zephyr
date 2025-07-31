@@ -1,3 +1,0 @@
-&bt_hci_uart {
-	bt-hci-vs-ext;
-};

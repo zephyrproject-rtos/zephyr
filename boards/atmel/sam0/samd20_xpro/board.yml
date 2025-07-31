@@ -1,6 +1,0 @@
-board:
-  name: samd20_xpro
-  full_name: SAM D20 Xplained Pro Evaluation Kit
-  vendor: atmel
-  socs:
-    - name: samd20j18

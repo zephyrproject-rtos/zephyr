@@ -1,6 +1,0 @@
-board:
-  name: sk_am64
-  full_name: SK-AM64
-  vendor: ti
-  socs:
-  - name: am6442

@@ -1,6 +1,0 @@
-# SPDX-License-Identifier: BSD-3-Clause
-
-properties:
-  baz:
-    required: true
-    type: int

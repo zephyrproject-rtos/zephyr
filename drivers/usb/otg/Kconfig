@@ -1,0 +1,31 @@
+# USB OTG drivers configuration
+
+# Copyright (c) 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig USB_OTG_DRIVER
+	bool "USB OTG drivers"
+	depends on USB
+	help
+	  Enable USB On-The-Go (OTG) driver support.
+
+if USB_OTG_DRIVER
+
+module = USB_OTG_DRIVER
+module-str = usb otg driver
+source "subsys/logging/Kconfig.template.log_config"
+
+config USB_OTG_LPC
+	bool "LPC USB OTG driver"
+	default y
+	depends on DT_HAS_NXP_LPC_OTG_ENABLED
+	help
+	  Enable USB OTG driver for LPC series.
+
+config USB_OTG_INIT_PRIORITY
+	int "USB OTG driver init priority"
+	default 90
+	help
+	  USB OTG driver initialization priority.
+
+endif # USB_OTG_DRIVER

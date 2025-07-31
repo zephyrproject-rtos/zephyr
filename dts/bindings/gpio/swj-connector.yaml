@@ -1,5 +1,0 @@
-description: Serial Wire - JTAG Connector
-
-compatible: "swj-connector"
-
-include: pinctrl-device.yaml

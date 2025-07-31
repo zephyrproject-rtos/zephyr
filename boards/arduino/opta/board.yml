@@ -1,6 +1,0 @@
-board:
-  name: arduino_opta
-  full_name: Arduino OPTA
-  vendor: arduino
-  socs:
-    - name: stm32h747xx

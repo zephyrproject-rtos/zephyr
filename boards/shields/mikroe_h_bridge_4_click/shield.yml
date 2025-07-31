@@ -1,6 +1,0 @@
-shield:
-  name: mikroe_h_bridge_4_click
-  full_name: H Bridge 4 Click
-  vendor: mikroe
-  supported_features:
-    - stepper

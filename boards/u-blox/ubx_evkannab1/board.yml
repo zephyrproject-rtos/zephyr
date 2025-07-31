@@ -1,6 +1,0 @@
-board:
-  name: ubx_evkannab1
-  full_name: EVK-ANNA-B11x
-  vendor: u-blox
-  socs:
-  - name: nrf52832

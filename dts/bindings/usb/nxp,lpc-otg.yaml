@@ -1,0 +1,35 @@
+# Private Porting
+# by David Hor - Xtooltech 2025
+# david.hor@xtooltech.com
+
+# Copyright (c) 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP LPC USB OTG Controller
+
+compatible: "nxp,lpc-otg"
+
+include: base.yaml
+
+properties:
+  id-gpios:
+    type: phandle-array
+    description: |
+      GPIO pin for USB ID detection.
+      ID pin low indicates host mode, high indicates device mode.
+
+  vbus-gpios:
+    type: phandle-array
+    description: |
+      GPIO pin for VBUS control.
+      Used to enable/disable VBUS power in host mode.
+
+  host-controller:
+    type: phandle
+    description: |
+      Reference to the USB host controller device.
+
+  device-controller:
+    type: phandle
+    description: |
+      Reference to the USB device controller device.

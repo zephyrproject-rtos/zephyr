@@ -1,4 +1,0 @@
-test:
-  ignore_tags:
-    - incorrect_schema_1
-    - incorrect_schema_2

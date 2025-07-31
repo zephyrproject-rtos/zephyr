@@ -1,3 +1,0 @@
-&mac {
-	local-mac-address = [00 00 00 77 77 77];
-};

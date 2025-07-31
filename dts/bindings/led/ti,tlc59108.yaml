@@ -1,5 +1,0 @@
-description: TI TLC59108 LED
-
-compatible: "ti,tlc59108"
-
-include: i2c-device.yaml

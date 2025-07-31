@@ -1,9 +1,0 @@
-common:
-  integration_platforms:
-    - native_sim
-
-tests:
-  shell.shell_custom_header:
-    tags:
-      - shell_custom_header
-      - shell

@@ -1,4 +1,0 @@
-name: silabs-pti
-append:
-  EXTRA_CONF_FILE: pti.conf
-  EXTRA_DTC_OVERLAY_FILE: pti.overlay

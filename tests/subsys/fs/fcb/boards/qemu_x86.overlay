@@ -1,9 +1,0 @@
-/*
- * Copyright (c) Nordic Semiconductor ASA
- *
- *SPDX-License-Identifier: Apache-2.0
- */
-
-&flash_sim0 {
-	write-block-size = <1>;
-};

@@ -1,5 +1,0 @@
-board:
-  name: dummy
-  vendor: others
-  socs:
-  - name: unit_testing

@@ -1,7 +1,0 @@
-tests:
-  pm.power_domain:
-    platform_allow:
-      - native_sim
-    integration_platforms:
-      - native_sim
-    tags: pm

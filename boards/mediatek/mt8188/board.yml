@@ -1,5 +1,0 @@
-boards:
-  - name: mt8188
-    vendor: mediatek
-    socs:
-      - name: mt8188

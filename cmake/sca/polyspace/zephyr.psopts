@@ -1,3 +1,0 @@
-# tweaks specifically for Zephyr
--D__thread=
--enable-concurrency-detection

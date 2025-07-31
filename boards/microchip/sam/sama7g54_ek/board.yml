@@ -1,6 +1,0 @@
-board:
-  name: sama7g54_ek
-  full_name: SAMA7G54 Evaluation Kit
-  vendor: microchip
-  socs:
-    - name: sama7g54

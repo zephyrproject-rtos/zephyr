@@ -1,5 +1,0 @@
-description: STM32L5 flash controller
-
-compatible: "st,stm32l5-flash-controller"
-
-include: flash-controller.yaml

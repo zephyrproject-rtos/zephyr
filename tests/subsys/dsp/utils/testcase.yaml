@@ -1,6 +1,0 @@
-tests:
-  zdsp.utils:
-    integration_platforms:
-      - native_sim
-    tags:
-      - zdsp

@@ -1,6 +1,0 @@
-board:
-  name: ek_ra2a1
-  full_name: RA2A1 Evaluation Kit
-  vendor: renesas
-  socs:
-  - name: r7fa2a1ab3cfm

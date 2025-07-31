@@ -1,6 +1,0 @@
-board:
-  name: iotdk
-  full_name: ARC IoT Development Kit
-  vendor: snps
-  socs:
-  - name: arc_iot

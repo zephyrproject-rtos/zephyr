@@ -1,0 +1,30 @@
+# CRC driver configuration
+
+# Copyright (c) 2025 Xtooltech
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig CRC
+	bool "CRC drivers"
+	help
+	  Enable CRC driver configuration.
+
+if CRC
+
+module = CRC
+module-str = crc
+source "subsys/logging/Kconfig.template.log_config"
+
+config CRC_INIT_PRIORITY
+	int "Init priority"
+	default 50
+	help
+	  CRC driver initialization priority.
+
+config CRC_LPC
+	bool "LPC CRC driver"
+	default y
+	depends on DT_HAS_NXP_LPC_CRC_ENABLED
+	help
+	  Enable support for LPC CRC engine.
+
+endif # CRC

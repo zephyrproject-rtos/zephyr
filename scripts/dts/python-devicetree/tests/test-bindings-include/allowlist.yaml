@@ -1,7 +1,0 @@
-# SPDX-License-Identifier: BSD-3-Clause
-
-description: Valid property-allowlist.
-compatible: allowlist
-include:
-  - name: include.yaml
-    property-allowlist: [x]

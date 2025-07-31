@@ -1,7 +1,0 @@
-&rtc {
-	status = "disabled";
-};
-
-&rtc_highres {
-	status = "okay";
-};

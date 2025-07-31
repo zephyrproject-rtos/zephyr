@@ -1,9 +1,0 @@
-common:
-  tags:
-    - dac
-    - drivers
-    - userspace
-tests:
-  drivers.dac.api:
-    depends_on: dac
-    min_ram: 16

@@ -1,7 +1,0 @@
-# SPDX-License-Identifier: BSD-3-Clause
-
-description: An empty property-allowlist is valid.
-compatible: empty-allowlist
-include:
-  - name: include.yaml
-    property-allowlist: []

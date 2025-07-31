@@ -1,5 +1,0 @@
-description: Texas Instruments LMP90078 AFE binding
-
-compatible: "ti,lmp90078"
-
-include: ti,lmp90xxx-current.yaml

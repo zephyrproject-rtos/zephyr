@@ -1,4 +1,0 @@
-tests:
-  kernel.scheduler.metairq:
-    tags: kernel
-    platform_exclude: nrf52dk/nrf52810

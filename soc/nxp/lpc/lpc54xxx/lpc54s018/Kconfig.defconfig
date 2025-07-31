@@ -1,0 +1,33 @@
+# Copyright (c) 2024, VCI Development - LPC54S018J4MET180E single-core M4
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_LPC54S018
+
+config SOC
+	default "lpc54s018"
+
+config SOC_PART_NUMBER
+	default "LPC54S018J4MET180E"
+
+# External SPIFI flash base address
+config FLASH_BASE_ADDRESS
+	default 0x10000000
+
+# LPC54S018 uses external flash only
+config FLASH_SIZE
+	default 4096
+
+# SRAM configuration
+config SRAM_SIZE
+	default 360
+
+config SRAM_BASE_ADDRESS
+	default 0x20000000
+
+config NUM_IRQS
+	default 64
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 180000000
+
+endif # SOC_LPC54S018

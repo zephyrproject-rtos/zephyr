@@ -1,6 +1,0 @@
-board:
-  name: numaker_pfm_m487
-  full_name: NUMAKER PFM M487
-  vendor: nuvoton
-  socs:
-  - name: m487

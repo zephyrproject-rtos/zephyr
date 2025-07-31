@@ -1,7 +1,0 @@
-/ {
-	/delete-node/ deleted-by-bar;
-	/delete-node/ added-by-foo;
-
-	/* This node will be deleted by the `foo` snippet if applied. */
-	added-by-bar {};
-};

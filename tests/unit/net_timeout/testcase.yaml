@@ -1,4 +1,0 @@
-tests:
-  utilities.net_timeout:
-    tags: net
-    type: unit

@@ -1,6 +1,0 @@
-board:
-  name: nrf52_sparkfun
-  full_name: nRF52832 breakout
-  vendor: sparkfun
-  socs:
-  - name: nrf52832

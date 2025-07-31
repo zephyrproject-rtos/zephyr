@@ -1,0 +1,588 @@
+/*
+ * Private Porting
+ * by David Hor - Xtooltech 2025
+ * david.hor@xtooltech.com
+ */
+
+/*
+ * Copyright (c) 2024 VCI Development - LPC54S018J4MET180E single-core M4
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Pin configuration for LPCXpresso54S018 board
+ * -David Hor Xtooltech 2025, david.hor@xtooltech.com
+ */
+
+#include <nxp/lpc/LPC54S018J4MET180E-pinctrl.h>
+
+&pinctrl {
+	/* FLEXCOMM0 UART - Debug Console */
+	pinmux_flexcomm0_uart: pinmux_flexcomm0_uart {
+		group0 {
+			pinmux = <0x008000E9>,  /* P0.29 FC0_RXD */
+				 <0x008000F1>;  /* P0.30 FC0_TXD */
+			slew-rate = "standard";
+		};
+	};
+
+	/* CAN0 interface */
+	pinmux_can0: pinmux_can0 {
+		group0 {
+			pinmux = <0x00800115>,  /* P1.2 CAN0_TD */
+				 <0x0080011D>;  /* P1.3 CAN0_RD */
+			slew-rate = "standard";
+		};
+	};
+
+	/* CAN1 interface */
+	pinmux_can1: pinmux_can1 {
+		group0 {
+			pinmux = <0x0080018D>,  /* P1.17 CAN1_TD */
+				 <0x00800195>;  /* P1.18 CAN1_RD */
+			slew-rate = "standard";
+		};
+	};
+
+	/* FLEXCOMM1 SPI */
+	pinmux_flexcomm1_spi: pinmux_flexcomm1_spi {
+		group0 {
+			pinmux = <0x0080035A>,  /* P3.11 FC1_SCK */
+				 <0x00800219>,  /* P2.3 FC1_MOSI */
+				 <0x00800221>,  /* P2.4 FC1_MISO */
+				 <0x00800229>;  /* P2.5 FC1_SSEL0 */
+			slew-rate = "standard";
+		};
+	};
+
+	/* FLEXCOMM4 UART - J1587 interface */
+	pinmux_flexcomm4_uart: pinmux_flexcomm4_uart {
+		group0 {
+			pinmux = <0x008003D1>,  /* P3.26 FC4_RXD */
+				 <0x008003D9>;  /* P3.27 FC4_TXD */
+			slew-rate = "standard";
+		};
+	};
+
+	/* FLEXCOMM4 I2C */
+	pinmux_flexcomm4_i2c: pinmux_flexcomm4_i2c {
+		group0 {
+			pinmux = <0x008001C9>,  /* P0.25 FC4_SCL */
+				 <0x008001D1>;  /* P0.26 FC4_SDA */
+			slew-rate = "standard";
+			bias-pull-up;
+		};
+	};
+
+	/* FLEXCOMM5 SPI */
+	pinmux_flexcomm5_spi: pinmux_flexcomm5_spi {
+		group0 {
+			pinmux = <0x00800099>,  /* P0.19 FC5_SCK */
+				 <0x00800091>,  /* P0.18 FC5_MISO */
+				 <0x008000A1>,  /* P0.20 FC5_MOSI */
+				 <0x00800109>;  /* P1.1 FC5_SSEL0 */
+			slew-rate = "standard";
+		};
+	};
+
+	/* FLEXCOMM6 UART */
+	pinmux_flexcomm6_uart: pinmux_flexcomm6_uart {
+		group0 {
+			pinmux = <0x00800412>,  /* P4.2 FC6_RXD */
+				 <0x0080041A>;  /* P4.3 FC6_TXD */
+			slew-rate = "standard";
+		};
+	};
+
+	/* FLEXCOMM9 SPI */
+	pinmux_flexcomm9_spi: pinmux_flexcomm9_spi {
+		group0 {
+			pinmux = <0x008003A3>,  /* P3.20 FC9_SCK */
+				 <0x008003AB>,  /* P3.21 FC9_MOSI */
+				 <0x008003B3>,  /* P3.22 FC9_MISO */
+				 <0x00800369>;  /* P3.13 FC9_SSEL0 */
+			slew-rate = "standard";
+		};
+	};
+
+	/* I2C for OLED display */
+	pinmux_i2c_oled: pinmux_i2c_oled {
+		group0 {
+			pinmux = <0x00800070>,  /* P0.14 OLED_SCL */
+				 <0x00800068>;  /* P0.13 OLED_SDA */
+			slew-rate = "standard";
+			bias-pull-up;
+		};
+	};
+
+	/* SPIFI pins for external QSPI flash */
+	pinmux_spifi: pinmux_spifi {
+		group0 {
+			pinmux = <0x008000BE>,  /* P0.23 SPIFI_CS */
+				 <0x008000C6>,  /* P0.24 SPIFI_DATA0 */
+				 <0x008000CE>,  /* P0.25 SPIFI_DATA1 */
+				 <0x008000D6>,  /* P0.26 SPIFI_CLK */
+				 <0x008000DE>,  /* P0.27 SPIFI_DATA3 */
+				 <0x008000E6>;  /* P0.28 SPIFI_DATA2 */
+			slew-rate = "fast";
+			drive-push-pull;
+		};
+	};
+
+	/* GPIO LED pins */
+	pinmux_leds: pinmux_leds {
+		group0 {
+			pinmux = <0x00800000>,  /* P0.0 Power LED */
+				 <0x00800370>,  /* P3.14 Red LED */
+				 <0x008002D8>,  /* P2.27 Green LED */
+				 <0x008002D0>;  /* P2.26 Blue LED */
+			slew-rate = "standard";
+			drive-push-pull;
+		};
+	};
+
+	/* Debug SWD interface */
+	pinmux_swd: pinmux_swd {
+		group0 {
+			pinmux = <0x0080005E>,  /* P0.11 SWCLK */
+				 <0x00800066>;  /* P0.12 SWDIO */
+			slew-rate = "standard";
+		};
+	};
+
+	/* GPIO pins from VCI project - All 30 pins */
+	/* DC Input Power Control */
+	pinmux_dc_in_pwr_ctr: pinmux_dc_in_pwr_ctr {
+		group0 {
+			pinmux = <0x00800009>;  /* P0.1 GPIO - Function 0 */
+			/* No bias - default state */
+		};
+	};
+
+	/* Backlight Control */
+	pinmux_bl_ctr: pinmux_bl_ctr {
+		group0 {
+			pinmux = <0x00800159>;  /* P0.22 GPIO - Function 0 */
+			/* No bias - default state */
+		};
+	};
+
+	/* ESP32 Link Status */
+	pinmux_esp32_link: pinmux_esp32_link {
+		group0 {
+			pinmux = <0x00800109>;  /* P1.1 GPIO - Function 0 */
+			bias-pull-up;
+		};
+	};
+
+	/* Switch 15/87 */
+	pinmux_sw_15_87: pinmux_sw_15_87 {
+		group0 {
+			pinmux = <0x00800211>;  /* P2.2 GPIO - Function 0 */
+			/* No bias - default state */
+		};
+	};
+
+	/* Switch CYPWM */
+	pinmux_sw_cypwm: pinmux_sw_cypwm {
+		group0 {
+			pinmux = <0x00800231>;  /* P2.6 GPIO - Function 0 */
+			/* No bias - default state */
+		};
+	};
+
+	/* PHY Switch */
+	pinmux_phy_switch: pinmux_phy_switch {
+		group0 {
+			pinmux = <0x00800241>;  /* P2.8 GPIO - Function 0 */
+			/* No bias - default state */
+		};
+	};
+
+	/* DOIP OBD3_11 */
+	pinmux_doip_obd3_11: pinmux_doip_obd3_11 {
+		group0 {
+			pinmux = <0x00800249>;  /* P2.9 GPIO - Function 0 */
+			/* No bias - default state */
+		};
+	};
+
+	/* DOIP OBD1_9 */
+	pinmux_doip_obd1_9: pinmux_doip_obd1_9 {
+		group0 {
+			pinmux = <0x00800251>;  /* P2.10 GPIO - Function 0 */
+			/* No bias - default state */
+		};
+	};
+
+	/* MOSFET Switch */
+	pinmux_mos02_sw: pinmux_mos02_sw {
+		group0 {
+			pinmux = <0x00800261>;  /* P2.12 GPIO - Function 0 */
+			/* No bias - default state */
+		};
+	};
+
+	/* LCD Reset */
+	pinmux_lcd_rst: pinmux_lcd_rst {
+		group0 {
+			pinmux = <0x00800279>;  /* P2.15 GPIO - Function 0 */
+			/* No bias - default state */
+		};
+	};
+
+	/* OBD1000 Reset */
+	pinmux_obd1000_rst: pinmux_obd1000_rst {
+		group0 {
+			pinmux = <0x00800289>;  /* P2.17 GPIO - Function 0 */
+			/* No bias - default state */
+		};
+	};
+
+	/* Buzzer Control */
+	pinmux_buz_ctr: pinmux_buz_ctr {
+		group0 {
+			pinmux = <0x00800311>;  /* P3.2 GPIO - Function 0 */
+			/* No bias - default state */
+		};
+	};
+
+	/* PHY Power Enable */
+	pinmux_phy_power_en: pinmux_phy_power_en {
+		group0 {
+			pinmux = <0x00800319>;  /* P3.3 GPIO - Function 0 */
+			/* No bias - default state */
+		};
+	};
+
+	/* ESP32 Handshake */
+	pinmux_esp32_transhake: pinmux_esp32_transhake {
+		group0 {
+			pinmux = <0x00800321>;  /* P3.4 GPIO - Function 0 */
+			bias-pull-up;
+		};
+	};
+
+	/* ESP32 Mode */
+	pinmux_esp32_mode: pinmux_esp32_mode {
+		group0 {
+			pinmux = <0x00800351>;  /* P3.10 GPIO - Function 0 */
+			/* No bias - default state */
+		};
+	};
+
+	/* ESP32 SPI Clock */
+	pinmux_esp32_spi_clk: pinmux_esp32_spi_clk {
+		group0 {
+			pinmux = <0x008003A1>;  /* P3.20 GPIO - Function 0 */
+			/* No bias - default state */
+		};
+	};
+
+	/* SMODE0 Setting */
+	pinmux_smode0_set: pinmux_smode0_set {
+		group0 {
+			pinmux = <0x008003B9>;  /* P3.23 GPIO - Function 0 */
+			bias-pull-up;
+		};
+	};
+
+	/* SMODE1 Setting */
+	pinmux_smode1_set: pinmux_smode1_set {
+		group0 {
+			pinmux = <0x008003C1>;  /* P3.24 GPIO - Function 0 */
+			bias-pull-up;
+		};
+	};
+
+	/* ESP32 Power Control */
+	pinmux_esp32_power_ctr: pinmux_esp32_power_ctr {
+		group0 {
+			pinmux = <0x008003E1>;  /* P3.28 GPIO - Function 0 */
+			/* No bias - default state */
+		};
+	};
+
+	/* CYPWM1 Control */
+	pinmux_cypwm1_ctr: pinmux_cypwm1_ctr {
+		group0 {
+			pinmux = <0x008003E9>;  /* P3.29 GPIO - Function 0 */
+			/* No bias - default state */
+		};
+	};
+
+	/* CYPWM2 Control */
+	pinmux_cypwm2_ctr: pinmux_cypwm2_ctr {
+		group0 {
+			pinmux = <0x008003F1>;  /* P3.30 GPIO - Function 0 */
+			/* No bias - default state */
+		};
+	};
+
+	/* DOIP Enable 02 */
+	pinmux_doip_en02: pinmux_doip_en02 {
+		group0 {
+			pinmux = <0x00800401>;  /* P4.0 GPIO - Function 0 */
+			/* No bias - default state */
+		};
+	};
+
+	/* DOIP Enable 01 */
+	pinmux_doip_en01: pinmux_doip_en01 {
+		group0 {
+			pinmux = <0x00800409>;  /* P4.1 GPIO - Function 0 */
+			/* No bias - default state */
+		};
+	};
+
+	/* Button - OK */
+	pinmux_key_ok: pinmux_key_ok {
+		group0 {
+			pinmux = <0x00800421>;  /* P4.4 GPIO - Function 0 */
+			bias-pull-up;
+		};
+	};
+
+	/* Button - BACK */
+	pinmux_key_back: pinmux_key_back {
+		group0 {
+			pinmux = <0x00800429>;  /* P4.5 GPIO - Function 0 */
+			bias-pull-up;
+		};
+	};
+
+	/* Button - UP */
+	pinmux_key_up: pinmux_key_up {
+		group0 {
+			pinmux = <0x00800431>;  /* P4.6 GPIO - Function 0 */
+			bias-pull-up;
+		};
+	};
+
+	/* Button - DOWN */
+	pinmux_key_down: pinmux_key_down {
+		group0 {
+			pinmux = <0x00800439>;  /* P4.7 GPIO - Function 0 */
+			bias-pull-up;
+		};
+	};
+
+	/* CAN0 pins - PIO1_2 (TX), PIO1_3 (RX) */
+	can0_default: can0_default {
+		group0 {
+			pinmux = <0x0083010A>,  /* P1.2 CAN0_TD - Function 5 */
+				 <0x0083010B>;  /* P1.3 CAN0_RD - Function 5 */
+			slew-rate = "fast";
+		};
+	};
+
+	/* CAN1 pins - PIO1_17 (TX), PIO1_18 (RX) */
+	can1_default: can1_default {
+		group0 {
+			pinmux = <0x00830191>,  /* P1.17 CAN1_TD - Function 4 */
+				 <0x00830192>;  /* P1.18 CAN1_RD - Function 4 */
+			slew-rate = "fast";
+		};
+	};
+
+	/* ADC0 pins */
+	adc0_default: adc0_default {
+		group0 {
+			pinmux = <0x0080004A>,  /* P0.10 ADC0_0 - Function 0 */
+				 <0x00800050>,  /* P0.16 ADC0_4 - Function 0 */
+				 <0x008000F8>,  /* P0.31 ADC0_5 - Function 0 */
+				 <0x00810000>,  /* P1.0  ADC0_6 - Function 0 */
+				 <0x00820000>,  /* P2.0  ADC0_7 - Function 0 */
+				 <0x00820008>;  /* P2.1  ADC0_8 - Function 0 */
+			nxp,analog-mode;
+		};
+	};
+
+	/* Ethernet RMII interface pins */
+	pinmux_enet_rmii: pinmux_enet_rmii {
+		group0 {
+			pinmux = <0x00800187>,  /* P1.16 ENET_MDC - Function 7 */
+				 <0x008001B7>,  /* P1.23 ENET_MDIO - Function 7 */
+				 <0x00820207>,  /* P4.8  ENET_TXD0 - Function 7 */
+				 <0x0082020F>,  /* P4.9  ENET_TXD1 - Function 7 */
+				 <0x00820217>,  /* P4.10 ENET_RX_DV - Function 7 */
+				 <0x0082021F>,  /* P4.11 ENET_RXD0 - Function 7 */
+				 <0x00820227>,  /* P4.12 ENET_RXD1 - Function 7 */
+				 <0x0082022F>,  /* P4.13 ENET_TX_EN - Function 7 */
+				 <0x00820237>;  /* P4.14 ENET_RX_CLK - Function 7 */
+			slew-rate = "fast";
+		};
+	};
+
+	/* Ethernet MDIO interface pins */
+	pinmux_enet_mdio: pinmux_enet_mdio {
+		group0 {
+			pinmux = <0x00800187>,  /* P1.16 ENET_MDC - Function 7 */
+				 <0x008001B7>;  /* P1.23 ENET_MDIO - Function 7 */
+			slew-rate = "standard";
+		};
+	};
+
+	/* Ethernet PHY power control */
+	pinmux_enet_phy_power: pinmux_enet_phy_power {
+		group0 {
+			pinmux = <0x00800338>;  /* P3.3 GPIO PHY_POWER - Function 0 */
+			bias-pull-up;
+		};
+	};
+
+	/* I2S0 pins (FLEXCOMM6) */
+	pinmux_flexcomm6_i2s: pinmux_flexcomm6_i2s {
+		group0 {
+			pinmux = <0x008001B1>,  /* P1.22 FC6_SCK - I2S SCLK */
+				 <0x008002F9>,  /* P2.30 FC6_WS - I2S WS */
+				 <0x008002E9>,  /* P2.28 FC6_TXD - I2S TX_DATA */
+				 <0x008002F1>;  /* P2.29 FC6_RXD - I2S RX_DATA */
+			slew-rate = "fast";
+		};
+	};
+
+	/* I2S1 pins (FLEXCOMM7) */
+	pinmux_flexcomm7_i2s: pinmux_flexcomm7_i2s {
+		group0 {
+			pinmux = <0x008001C0>,  /* P1.28 FC7_SCK - I2S SCLK */
+				 <0x008001C8>,  /* P1.29 FC7_RXD_SDA_MOSI_DATA */
+				 <0x008001D0>;  /* P1.30 FC7_TXD_SCL_MISO_WS */
+			slew-rate = "fast";
+		};
+	};
+
+	/* Master clock for audio codec */
+	pinmux_mclk: pinmux_mclk {
+		group0 {
+			pinmux = <0x008001F9>;  /* P1.31 MCLK - Function 1 */
+			slew-rate = "fast";
+		};
+	};
+
+	/* SCTimer/PWM pins */
+	pinmux_sctimer_pwm: pinmux_sctimer_pwm {
+		group0 {
+			pinmux = <0x00800305>,  /* P3.0 SCT0_OUT0 - Function 5 - PWM Channel 0 */
+				 <0x0080030D>,  /* P3.1 SCT0_OUT1 - Function 5 - PWM Channel 1 */
+				 <0x00800315>,  /* P3.2 SCT0_OUT2 - Function 5 - PWM Channel 2 */
+				 <0x00800325>,  /* P3.4 SCT0_OUT3 - Function 5 - PWM Channel 3 */
+				 <0x0080032D>,  /* P3.5 SCT0_OUT4 - Function 5 - PWM Channel 4 */
+				 <0x00800335>;  /* P3.6 SCT0_OUT5 - Function 5 - PWM Channel 5 */
+			slew-rate = "fast";
+		};
+	};
+
+	/* External Memory Controller (EMC) pins for SDRAM */
+	pinmux_emc: pinmux_emc {
+		group0 {
+			/* Address lines */
+			pinmux = <0x00800007>,  /* P0.0 EMC_A0 - Function 7 */
+				 <0x0080000F>,  /* P0.1 EMC_A1 - Function 7 */
+				 <0x00800017>,  /* P0.2 EMC_A2 - Function 7 */
+				 <0x0080001F>,  /* P0.3 EMC_A3 - Function 7 */
+				 <0x00800087>,  /* P0.8 EMC_A4 - Function 7 */
+				 <0x0080008F>,  /* P0.9 EMC_A5 - Function 7 */
+				 <0x00800097>,  /* P0.10 EMC_A6 - Function 7 */
+				 <0x0080009F>,  /* P0.11 EMC_A7 - Function 7 */
+				 <0x008000A7>,  /* P0.12 EMC_A8 - Function 7 */
+				 <0x008000AF>,  /* P0.13 EMC_A9 - Function 7 */
+				 <0x008000B7>,  /* P0.14 EMC_A10 - Function 7 */
+				 <0x008001A7>,  /* P1.10 EMC_A11 - Function 7 */
+				 <0x008001AF>,  /* P1.11 EMC_A12 - Function 7 */
+				 <0x008001B7>,  /* P1.12 EMC_A13 - Function 7 */
+				 <0x008001BF>,  /* P1.13 EMC_A14 - Function 7 */
+				 /* Data lines */
+				 <0x00800027>,  /* P0.4 EMC_D0 - Function 7 */
+				 <0x0080002F>,  /* P0.5 EMC_D1 - Function 7 */
+				 <0x00800037>,  /* P0.6 EMC_D2 - Function 7 */
+				 <0x0080003F>,  /* P0.7 EMC_D3 - Function 7 */
+				 <0x00800107>,  /* P1.0 EMC_D4 - Function 7 */
+				 <0x0080010F>,  /* P1.1 EMC_D5 - Function 7 */
+				 <0x00800117>,  /* P1.2 EMC_D6 - Function 7 */
+				 <0x0080011F>,  /* P1.3 EMC_D7 - Function 7 */
+				 <0x00800127>,  /* P1.4 EMC_D8 - Function 7 */
+				 <0x0080012F>,  /* P1.5 EMC_D9 - Function 7 */
+				 <0x00800137>,  /* P1.6 EMC_D10 - Function 7 */
+				 <0x0080013F>,  /* P1.7 EMC_D11 - Function 7 */
+				 <0x00800147>,  /* P1.8 EMC_D12 - Function 7 */
+				 <0x0080014F>,  /* P1.9 EMC_D13 - Function 7 */
+				 <0x008001C7>,  /* P1.14 EMC_D14 - Function 7 */
+				 <0x008001CF>,  /* P1.15 EMC_D15 - Function 7 */
+				 /* Control signals */
+				 <0x008000C7>,  /* P0.15 EMC_WEN - Function 7 */
+				 <0x00800197>,  /* P1.11 EMC_CASN - Function 7 */
+				 <0x008001A7>,  /* P1.12 EMC_RASN - Function 7 */
+				 <0x008000D7>,  /* P0.16 EMC_CLK0 - Function 7 */
+				 <0x008001B7>,  /* P1.13 EMC_DYCSN0 - Function 7 */
+				 <0x008000DF>,  /* P0.17 EMC_CKE0 - Function 7 */
+				 <0x008000E7>,  /* P0.18 EMC_DQM0 - Function 7 */
+				 <0x008000EF>;  /* P0.19 EMC_DQM1 - Function 7 */
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_usb_vbus: pinmux_usb_vbus {
+		group0 {
+			/* USB1 VBUS enable - P1.6 as GPIO output */
+			pinmux = <0x00800130>;  /* P1.6 GPIO - Function 0 */
+			slew-rate = "standard";
+		};
+	};
+
+	/* LCD Controller (LCDC) pins for RGB interface */
+	pinmux_lcdc: pinmux_lcdc {
+		group0 {
+			/* LCD clock and control signals */
+			pinmux = <0x00800207>,  /* P2.0 LCD_DCLK - Function 7 */
+				 <0x00800277>,  /* P2.14 LCD_LP - Function 7 */
+				 <0x00800287>,  /* P2.16 LCD_FP - Function 7 */
+				 <0x0080028F>,  /* P2.17 LCD_ENAB - Function 7 */
+				 <0x00800297>,  /* P2.18 LCD_LE - Function 7 */
+				 /* LCD data lines - RGB565 (16-bit) */
+				 <0x0080020F>,  /* P2.1 LCD_VD3 (B0) - Function 7 */
+				 <0x00800217>,  /* P2.2 LCD_VD4 (B1) - Function 7 */
+				 <0x0080021F>,  /* P2.3 LCD_VD5 (B2) - Function 7 */
+				 <0x00800227>,  /* P2.4 LCD_VD6 (B3) - Function 7 */
+				 <0x0080022F>,  /* P2.5 LCD_VD7 (B4) - Function 7 */
+				 <0x00800237>,  /* P2.6 LCD_VD10 (G0) - Function 7 */
+				 <0x00800247>,  /* P2.8 LCD_VD11 (G1) - Function 7 */
+				 <0x0080024F>,  /* P2.9 LCD_VD12 (G2) - Function 7 */
+				 <0x00800257>,  /* P2.10 LCD_VD13 (G3) - Function 7 */
+				 <0x0080025F>,  /* P2.11 LCD_VD14 (G4) - Function 7 */
+				 <0x00800267>,  /* P2.12 LCD_VD15 (G5) - Function 7 */
+				 <0x0080026F>,  /* P2.13 LCD_VD19 (R0) - Function 7 */
+				 <0x0080029F>,  /* P2.19 LCD_VD20 (R1) - Function 7 */
+				 <0x008002A7>,  /* P2.20 LCD_VD21 (R2) - Function 7 */
+				 <0x008002AF>,  /* P2.21 LCD_VD22 (R3) - Function 7 */
+				 <0x008002B7>;  /* P2.22 LCD_VD23 (R4) - Function 7 */
+			slew-rate = "fast";
+			drive-push-pull;
+		};
+	};
+
+	/* ST7701S bit-bang SPI pins */
+	pinmux_st7701s_spi: pinmux_st7701s_spi {
+		group0 {
+			pinmux = <0x00800379>,  /* P3.15 ST7701S_CS - Function 0 (GPIO) */
+				 <0x00800381>,  /* P3.16 ST7701S_SCK - Function 0 (GPIO) */
+				 <0x00800389>;  /* P3.17 ST7701S_MOSI - Function 0 (GPIO) */
+			slew-rate = "standard";
+			drive-push-pull;
+		};
+	};
+
+	/* SD/MMC Interface pins */
+	pinmux_sdif: pinmux_sdif {
+		group0 {
+			/* SDIF pins on P2 */
+			pinmux = <0x00800283>,  /* P2.16 SD_CMD - Function 3 */
+				 <0x0080028B>,  /* P2.17 SD_DAT0 - Function 3 */
+				 <0x00800293>,  /* P2.18 SD_DAT1 - Function 3 */
+				 <0x0080029B>,  /* P2.19 SD_DAT2 - Function 3 */
+				 <0x008002A3>,  /* P2.20 SD_DAT3 - Function 3 */
+				 <0x008002AB>,  /* P2.21 SD_CLK - Function 3 */
+				 <0x008002BB>,  /* P2.23 SD_CARD_DETECT - Function 3 */
+				 <0x008002C3>;  /* P2.24 SD_WRITE_PROTECT - Function 3 */
+			slew-rate = "fast";
+		};
+	};
+};

@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2024 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	gpio_keys {
+		compatible = "gpio-keys";
+		usb_vbus: usb_vbus {
+			gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;
+			label = "USB VBUS Enable";
+		};
+	};
+};
+
+/* For USB host mode, the application needs to:
+ * 1. Configure USB controller for host mode
+ * 2. Enable VBUS through GPIO1.6
+ * This sample demonstrates basic host enumeration
+ */
+
+&gpio1 {
+	status = "okay";
+};

@@ -1,6 +1,0 @@
-board:
-  name: particle_xenon
-  full_name: Xenon
-  vendor: particle
-  socs:
-  - name: nrf52840

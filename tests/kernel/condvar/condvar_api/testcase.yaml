@@ -1,7 +1,0 @@
-tests:
-  kernel.condvar:
-    ignore_faults: true
-    tags:
-      - kernel
-      - userspace
-      - condition_variables

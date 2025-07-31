@@ -1,5 +1,0 @@
-description: Texas Instrument ADS1113 I2C ADC
-
-compatible: "ti,ads1113"
-
-include: ti,ads1x1x-base.yaml

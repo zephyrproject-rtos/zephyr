@@ -1,0 +1,37 @@
+# Private Porting
+# by David Hor - Xtooltech 2025
+# david.hor@xtooltech.com
+
+# Copyright (c) 2025 Xtooltech
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP LPC CRC Engine
+
+compatible: "nxp,lpc-crc"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: false
+    description: |
+      Optional interrupt for DMA completion.
+      Most LPC CRC engines don't have interrupts.
+
+  clocks:
+    required: true
+    description: |
+      Clock gate for CRC peripheral
+
+  dmas:
+    required: false
+    description: |
+      Optional DMA channel for CRC data input
+
+  dma-names:
+    required: false
+    description: |
+      Should be "rx" if DMA is used

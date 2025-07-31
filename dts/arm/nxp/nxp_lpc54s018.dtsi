@@ -1,0 +1,685 @@
+/*
+ * Private Porting
+ * by David Hor - Xtooltech 2025
+ * david.hor@xtooltech.com
+ */
+
+/*
+ * Copyright (c) 2017, NXP
+ * Copyright (c) 2024, VCI Development - LPC54S018J4MET180E single-core M4
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Device tree for NXP LPC54S018J4MET180E SoC
+ * - Single ARM Cortex-M4F @ 180MHz (configured at 96MHz)
+ * - 360KB internal SRAM (192KB SRAMX + 160KB SRAM + 8KB USB)  
+ * - 4MB external QSPI flash via SPIFI (W25Q32JV-DTR)
+ * - 11 FLEXCOMM interfaces (vs 8 in LPC54114)
+ * - Based on verified baremetal implementation
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <mem.h>
+#include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
+
+/ {
+	aliases{
+		gpio-0 = &gpio0;
+		gpio-1 = &gpio1;
+		gpio-2 = &gpio2;
+		gpio-3 = &gpio3;
+		mailbox-0 = &mailbox0;
+	};
+
+	chosen {
+		zephyr,flash-controller = &spifi;
+		zephyr,flash = &w25q32jv;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-m4f";
+			reg = <0>;
+		};
+
+		/* LPC54S018 is single-core M4 only - no M0+ core */
+	};
+
+	soc {
+		syscon: syscon@40000000 {
+			compatible = "nxp,lpc-syscon";
+			reg = <0x40000000 0x4000>;
+			#clock-cells = <1>;
+			label = "SYSCON";
+			reset: reset {
+				compatible = "nxp,lpc-syscon-reset";
+				#reset-cells = <1>;
+			};
+		};
+
+		/*
+		 * LPC54S018J4MET180E Memory configuration (single-core M4):
+		 * SRAMX: 192K @ 0x04000000 - Execute-in-place memory
+		 * SRAM0: 64K @ 0x20000000 - Main system memory
+		 * SRAM1: 64K @ 0x20010000 - Additional system memory
+		 * SRAM2: 32K @ 0x20020000 - Additional system memory
+		 * USB SRAM: 8K @ 0x40100000 - USB dedicated memory
+		 * Total SRAM: 360K (verified from hardware documentation)
+		 */
+		sram0:memory@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 DT_SIZE_K(64)>;
+		};
+
+		sram1:memory@20010000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x20010000 DT_SIZE_K(64)>; /* LPC54S018 has 64K SRAM1 */
+			zephyr,memory-region = "SRAM1";
+		};
+
+		sram2:memory@20020000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x20020000 DT_SIZE_K(32)>;
+			zephyr,memory-region = "SRAM2";
+		};
+
+		/*
+		 * LPC54S018J4MET180E: 192K @ 0x00000000 (execute-in-place RAM)
+		 * Note: SDK shows SRAMX at 0x00000000, not 0x04000000
+		 */
+		sramx: memory@0 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x00000000 DT_SIZE_K(192)>; /* 192KB SRAMX for code execution */
+			zephyr,memory-region = "SRAMX";
+		};
+
+		/*
+		 * LPC54S018J4MET180E: 8K @ 0x40100000 (USB dedicated SRAM)
+		 */
+		usb_sram: memory@40100000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x40100000 DT_SIZE_K(8)>; /* 8KB USB dedicated SRAM */
+			zephyr,memory-region = "USB_SRAM";
+		};
+
+		iap: flash-controller@4009c000 {
+			compatible = "nxp,iap-fmc54";
+			reg = <0x4009c000 0x18>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				reg = <0 DT_SIZE_K(256)>;
+				erase-block-size = <256>;
+				write-block-size = <256>;
+			};
+		};
+
+		iocon: iocon@40001000 {
+			compatible = "nxp,lpc-iocon";
+			reg = <0x40001000 0x100>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x40001000 0x100>;
+			pinctrl: pinctrl {
+				compatible = "nxp,lpc-iocon-pinctrl";
+			};
+		};
+
+		gpio: gpio@4008c000 {
+			compatible = "nxp,lpc-gpio";
+			reg = <0x4008c000 0x2488>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			gpio0: gpio@0 {
+				compatible = "nxp,lpc-gpio-port";
+				reg = <0>;
+				int-source = "pint";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+
+			gpio1: gpio@1 {
+				compatible = "nxp,lpc-gpio-port";
+				reg = <1>;
+				int-source = "pint";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+			gpio2: gpio@2 {
+				compatible = "nxp,lpc-gpio-port";
+				reg = <2>;
+				int-source = "pint";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+			gpio3: gpio@3 {
+				compatible = "nxp,lpc-gpio-port";
+				reg = <3>;
+				int-source = "pint";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+			
+			gpio4: gpio@4 {
+				compatible = "nxp,lpc-gpio-port";
+				reg = <4>;
+				int-source = "pint";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+		};
+
+		pint: pint@40004000 {
+			compatible = "nxp,pint";
+			reg = <0x40004000 0x1000>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			#address-cells = <0>;
+			interrupts = <4 2>, <5 2>, <6 2>, <7 2>,
+				<32 2>, <33 2>, <34 2>, <35 2>;
+			num-lines = <8>;
+			num-inputs = <64>;
+		};
+
+		/* Security peripherals */
+		otpc: otp-controller@40015000 {
+			compatible = "nxp,lpc-otpc";
+			reg = <0x40015000 0x1000>;
+			status = "disabled"; /* Enable only for OTP programming */
+		};
+
+		puf: puf@4003b000 {
+			compatible = "nxp,lpc-puf";
+			reg = <0x4003b000 0x1000>;
+			interrupts = <58 0>;
+			status = "okay";
+		};
+
+		aes: crypto@400a5000 {
+			compatible = "nxp,lpc-aes";
+			reg = <0x400a5000 0x1000>;
+			interrupts = <49 0>;
+			dmas = <&dma0 36>, <&dma0 37>;
+			dma-names = "rx", "tx";
+			status = "okay";
+		};
+
+		sha: sha@400a4000 {
+			compatible = "nxp,lpc-sha";
+			reg = <0x400a4000 0x1000>;
+			interrupts = <54 0>;
+			dmas = <&dma0 19>;
+			dma-names = "sha";
+			status = "okay";
+		};
+
+		/* Single-core M4: mailbox disabled as no inter-core communication needed */
+		mailbox0:mailbox@4008b000 {
+			compatible = "nxp,lpc-mailbox";
+			reg = <0x4008b000 0xEC>;
+			interrupts = <31 0>;
+			status = "disabled";
+		};
+
+		flexcomm0: flexcomm@40086000 {
+			compatible = "nxp,lpc-flexcomm";
+			reg = <0x40086000 0x1000>;
+			interrupts = <14 0>;
+			clocks = <&syscon MCUX_FLEXCOMM0_CLK>;
+			resets = <&reset NXP_SYSCON_RESET(1, 11)>;
+			status = "disabled";
+		};
+
+		flexcomm1: flexcomm@40087000 {
+			compatible = "nxp,lpc-flexcomm";
+			reg = <0x40087000 0x1000>;
+			interrupts = <15 0>;
+			clocks = <&syscon MCUX_FLEXCOMM1_CLK>;
+			resets = <&reset NXP_SYSCON_RESET(1, 12)>;
+			status = "disabled";
+		};
+
+		flexcomm2: flexcomm@40088000 {
+			compatible = "nxp,lpc-flexcomm";
+			reg = <0x40088000 0x1000>;
+			interrupts = <16 0>;
+			clocks = <&syscon MCUX_FLEXCOMM2_CLK>;
+			resets = <&reset NXP_SYSCON_RESET(1, 13)>;
+			status = "disabled";
+		};
+
+		flexcomm3: flexcomm@40089000 {
+			compatible = "nxp,lpc-flexcomm";
+			reg = <0x40089000 0x1000>;
+			interrupts = <17 0>;
+			clocks = <&syscon MCUX_FLEXCOMM3_CLK>;
+			resets = <&reset NXP_SYSCON_RESET(1, 14)>;
+			status = "disabled";
+		};
+
+		flexcomm4: flexcomm@4008a000 {
+			compatible = "nxp,lpc-flexcomm";
+			reg = <0x4008a000 0x1000>;
+			interrupts = <18 0>;
+			clocks = <&syscon MCUX_FLEXCOMM4_CLK>;
+			resets = <&reset NXP_SYSCON_RESET(1, 15)>;
+			status = "disabled";
+		};
+
+		flexcomm5: flexcomm@40096000 {
+			compatible = "nxp,lpc-flexcomm";
+			reg = <0x40096000 0x1000>;
+			interrupts = <19 0>;
+			clocks = <&syscon MCUX_FLEXCOMM5_CLK>;
+			resets = <&reset NXP_SYSCON_RESET(1, 16)>;
+			status = "disabled";
+		};
+
+		flexcomm6: flexcomm@40097000 {
+			compatible = "nxp,lpc-flexcomm";
+			reg = <0x40097000 0x1000>;
+			interrupts = <20 0>;
+			clocks = <&syscon MCUX_FLEXCOMM6_CLK>;
+			resets = <&reset NXP_SYSCON_RESET(1, 17)>;
+			status = "disabled";
+		};
+		
+		/* 
+		 * I2S0 shares the same address space as FLEXCOMM6.
+		 * Only one function can be active at a time.
+		 * Enable either flexcomm6 (for UART/SPI/I2C) OR i2s0 (for audio).
+		 */
+		i2s0: i2s@40097000 {
+			compatible = "nxp,lpc-i2s";
+			reg = <0x40097000 0x1000>;
+			interrupts = <20 0>;
+			clocks = <&syscon MCUX_FLEXCOMM6_CLK>;
+			resets = <&reset NXP_SYSCON_RESET(1, 17)>;
+			dmas = <&dma0 16>, <&dma0 17>;
+			dma-names = "rx", "tx";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		flexcomm7: flexcomm@40098000 {
+			compatible = "nxp,lpc-flexcomm";
+			reg = <0x40098000 0x1000>;
+			interrupts = <21 0>;
+			clocks = <&syscon MCUX_FLEXCOMM7_CLK>;
+			resets = <&reset NXP_SYSCON_RESET(1, 18)>;
+			status = "disabled";
+		};
+		
+		/* 
+		 * I2S1 shares the same address space as FLEXCOMM7.
+		 * Only one function can be active at a time.
+		 * Enable either flexcomm7 (for UART/SPI/I2C) OR i2s1 (for audio).
+		 */
+		i2s1: i2s@40098000 {
+			compatible = "nxp,lpc-i2s";
+			reg = <0x40098000 0x1000>;
+			interrupts = <21 0>;
+			clocks = <&syscon MCUX_FLEXCOMM7_CLK>;
+			resets = <&reset NXP_SYSCON_RESET(1, 18)>;
+			dmas = <&dma0 18>, <&dma0 19>;
+			dma-names = "rx", "tx";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		/* LPC54S018 additional FLEXCOMM interfaces (vs LPC54114) */
+		flexcomm8: flexcomm@40099000 {
+			compatible = "nxp,lpc-flexcomm";
+			reg = <0x40099000 0x1000>;
+			interrupts = <40 0>;
+			clocks = <&syscon MCUX_FLEXCOMM8_CLK>;
+			resets = <&reset NXP_SYSCON_RESET(1, 19)>;
+			status = "disabled";
+		};
+
+		flexcomm9: flexcomm@4009a000 {
+			compatible = "nxp,lpc-flexcomm";
+			reg = <0x4009a000 0x1000>;
+			interrupts = <41 0>;
+			clocks = <&syscon MCUX_FLEXCOMM9_CLK>;
+			resets = <&reset NXP_SYSCON_RESET(1, 20)>;
+			status = "disabled";
+		};
+
+		flexcomm10: flexcomm@4009f000 {
+			compatible = "nxp,lpc-flexcomm";
+			reg = <0x4009f000 0x1000>;
+			interrupts = <30 0>;
+			clocks = <&syscon MCUX_FLEXCOMM10_CLK>;
+			resets = <&reset NXP_SYSCON_RESET(1, 21)>;
+			status = "disabled";
+		};
+
+		/* SPIFI flash controller for 4MB external QSPI flash */
+		spifi: spifi@40080000 {
+			compatible = "nxp,lpc-spifi";
+			reg = <0x40080000 0x1000>, <0x10000000 0x400000>;
+			interrupts = <39 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&syscon 0x0A00>;
+			status = "okay";
+			
+			w25q32jv: flash@10000000 {
+				compatible = "soc-nv-flash";
+				reg = <0x10000000 DT_SIZE_M(4)>;
+				erase-block-size = <4096>;
+				write-block-size = <256>;
+				
+				partitions {
+					compatible = "fixed-partitions";
+					#address-cells = <1>;
+					#size-cells = <1>;
+					
+					/* MCUBoot bootloader partition */
+					boot_partition: partition@0 {
+						label = "mcuboot";
+						reg = <0x00000000 0x00010000>;
+						read-only;
+					};
+					
+					/* Primary application slot */
+					slot0_partition: partition@10000 {
+						label = "image-0";
+						reg = <0x00010000 0x001e0000>;
+					};
+					
+					/* Secondary application slot for OTA updates */
+					slot1_partition: partition@1f0000 {
+						label = "image-1";
+						reg = <0x001f0000 0x001e0000>;
+					};
+					
+					/* Storage partition */
+					storage_partition: partition@3d0000 {
+						label = "storage";
+						reg = <0x003d0000 0x00030000>;
+					};
+				};
+			};
+		};
+
+		/* DMA controller with 30 channels */
+		dma0: dma@40082000 {
+			compatible = "nxp,lpc-dma";
+			reg = <0x40082000 0x1000>;
+			interrupts = <1 0>;
+			dma-channels = <30>;
+			#dma-cells = <1>;
+			nxp,dma-num-of-otrigs = <4>;
+			nxp,dma-otrig-base-address = <0x40006160>;
+			nxp,dma-itrig-base-address = <0x400060E0>;
+			status = "okay";
+		};
+
+		/* ADC0 - 12-bit, 12 channels */
+		adc0: adc@400a0000 {
+			compatible = "nxp,lpc-lpadc";
+			reg = <0x400a0000 0x1000>;
+			interrupts = <22 0>, <23 0>, <24 0>;
+			interrupt-names = "SEQA", "SEQB", "THCMP";
+			clocks = <&syscon 0x0F00>;
+			voltage-ref = <0>;
+			offset-value-a = <0>;
+			offset-value-b = <0>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		/* CAN0 controller */
+		can0: can@4009d000 {
+			compatible = "nxp,lpc-mcan";
+			reg = <0x4009d000 0x1000>;
+			interrupts = <43 0>, <44 0>;
+			interrupt-names = "int0", "int1";
+			clocks = <&syscon 0x0300>;
+			bosch,mram-cfg = <0x0 28 8 16 8 8 32 3>;
+			status = "disabled";
+		};
+
+		/* CAN1 controller */
+		can1: can@4009e000 {
+			compatible = "nxp,lpc-mcan";
+			reg = <0x4009e000 0x1000>;
+			interrupts = <45 0>, <46 0>;
+			interrupt-names = "int0", "int1";
+			clocks = <&syscon 0x0301>;
+			bosch,mram-cfg = <0x0 28 8 16 8 8 32 3>;
+			status = "disabled";
+		};
+
+		wwdt: watchdog@4000c000 {
+			compatible = "nxp,lpc-wwdt";
+			reg = <0x4000c000 0x1000>;
+			interrupts = <0 0>;
+			status = "disabled";
+			clk-divider = <1>;
+		};
+
+		ctimer0: ctimer@40008000 {
+			compatible = "nxp,lpc-ctimer";
+			reg = <0x40008000 0x1000>;
+			interrupts = <10 0>;
+			clocks = <&syscon MCUX_CTIMER0_CLK>;
+			clk-source = <1>;
+			mode = <0>;
+			input = <0>;
+			prescale = <0>;
+			status = "disabled";
+		};
+
+		ctimer1: ctimer@40009000 {
+			compatible = "nxp,lpc-ctimer";
+			reg = <0x40009000 0x1000>;
+			interrupts = <11 0>;
+			clocks = <&syscon MCUX_CTIMER1_CLK>;
+			clk-source = <1>;
+			mode = <0>;
+			input = <0>;
+			prescale = <0>;
+			status = "disabled";
+		};
+
+		ctimer2: ctimer@40028000 {
+			compatible = "nxp,lpc-ctimer";
+			reg = <0x40028000 0x1000>;
+			interrupts = <36 0>;
+			clocks = <&syscon 2>;
+			clk-source = <1>;
+			mode = <0>;
+			input = <0>;
+			prescale = <0>;
+			status = "disabled";
+		};
+
+		ctimer3: ctimer@40029000 {
+			compatible = "nxp,lpc-ctimer";
+			reg = <0x40029000 0x1000>;
+			interrupts = <13 0>;
+			clocks = <&syscon 3>;
+			clk-source = <1>;
+			mode = <0>;
+			input = <0>;
+			prescale = <0>;
+			status = "disabled";
+		};
+
+		ctimer4: ctimer@4002a000 {
+			compatible = "nxp,lpc-ctimer";
+			reg = <0x4002a000 0x1000>;
+			interrupts = <37 0>;
+			clocks = <&syscon 4>;
+			clk-source = <1>;
+			mode = <0>;
+			input = <0>;
+			prescale = <0>;
+			status = "disabled";
+		};
+
+		rtc: rtc@4003c000 {
+			compatible = "nxp,lpc-rtc";
+			reg = <0x4003c000 0x1000>;
+			interrupts = <29 0>;
+			status = "disabled";
+		};
+
+		/* SCTimer/PWM - State Configurable Timer */
+		sctimer0: pwm@40085000 {
+			compatible = "nxp,sctimer-pwm";
+			reg = <0x40085000 0x1000>;
+			interrupts = <9 0>;
+			clocks = <&syscon 0x0900>;
+			prescaler = <2>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		/* External Memory Controller for SDRAM */
+		emc: memory-controller@40083000 {
+			compatible = "nxp,lpc-emc";
+			reg = <0x40083000 0x1000>;
+			clocks = <&syscon 0x0400>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+			
+			/* SDRAM chip configuration will be in board dts */
+		};
+
+		/* Hardware CRC Engine */
+		crc: crc@40095000 {
+			compatible = "nxp,lpc-crc";
+			reg = <0x40095000 0x1000>;
+			clocks = <&syscon 0x0500>;
+			status = "disabled";
+		};
+
+		mrt0: counter@4000d000 {
+			compatible = "nxp,mrt";
+			reg = <0x4000d000 0x1000>;
+			interrupts = <9 0>;
+			num-channels = <4>;
+			num-bits = <24>;
+			clocks = <&syscon 0x0B00>;
+			resets = <&reset NXP_SYSCON_RESET(0, 0)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		/* Repetitive Interrupt Timer */
+		rit: timer@4002d000 {
+			compatible = "nxp,lpc-rit";
+			reg = <0x4002d000 0x1000>;
+			interrupts = <38 0>;
+			status = "disabled";
+		};
+
+		/* LCD Controller */
+		lcdc: display@40083000 {
+			compatible = "nxp,lpc-lcdc";
+			reg = <0x40083000 0x1000>;
+			interrupts = <37 0>;
+			clocks = <&syscon 0x0E00>;
+			status = "disabled";
+		};
+
+		/* USB0 controller - LPCIP3511HS High-Speed USB */
+		usb0: usb@40084000 {
+			compatible = "nxp,lpc-usbd";
+			reg = <0x40084000 0x1000>;
+			interrupts = <28 0>;
+			interrupt-names = "usb0";
+			num-bidir-endpoints = <5>;
+			maximum-speed = "high-speed";
+			clocks = <&syscon 0x0600>;
+			phy_type = "utmi";
+			dmas = <&dma0 24>, <&dma0 25>;
+			dma-names = "rx", "tx";
+			usb-ram = <&usb_sram>;
+			status = "disabled";
+		};
+
+		/* USB1 controller - LPCIP3511HS High-Speed USB */
+		usb1: usb@400a2000 {
+			compatible = "nxp,lpc-usbd";
+			reg = <0x400a2000 0x1000>;
+			interrupts = <47 0>;
+			interrupt-names = "usb1";
+			num-bidir-endpoints = <5>;
+			maximum-speed = "high-speed";
+			clocks = <&syscon 0x0601>;
+			phy_type = "utmi";
+			dmas = <&dma0 26>, <&dma0 27>;
+			dma-names = "rx", "tx";
+			usb-ram = <&usb_sram>;
+			status = "disabled";
+		};
+
+		/* Ethernet controller */
+		enet: ethernet@40092000 {
+			compatible = "nxp,enet-mac";
+			reg = <0x40092000 0x1000>;
+			interrupts = <49 0>;
+			interrupt-names = "common";
+			clocks = <&syscon 0x0D80>;
+			phy-connection-type = "rmii";
+			zephyr,random-mac-address;
+			phy-handle = <&phy>;
+			nxp,mdio = <&mdio>;
+			status = "disabled";
+		};
+		
+		/* Ethernet MDIO interface - shares same address space as ENET */
+		mdio: mdio@40092000 {
+			compatible = "nxp,enet-mdio";
+			reg = <0x40092000 0x1000>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			pinctrl-0 = <&pinmux_enet_mdio>;
+			pinctrl-names = "default";
+			
+			phy: phy@0 {
+				compatible = "ethernet-phy";
+				reg = <0>;
+				status = "disabled";
+			};
+		};
+
+		/* SD/MMC Interface (SDIF) */
+		sdif: sdhc@4009b000 {
+			compatible = "nxp,lpc-sdif";
+			reg = <0x4009b000 0x1000>;
+			interrupts = <42 0>;
+			clocks = <&syscon 0x0C00>;
+			max-bus-freq = <50000000>;
+			data-timeout = <0xFFFFFF>;
+			response-timeout = <0xFF>;
+			cd-debounce-clocks = <0xFFFFFF>;
+			status = "disabled";
+		};
+
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

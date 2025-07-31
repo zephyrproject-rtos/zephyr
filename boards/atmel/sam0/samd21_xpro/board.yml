@@ -1,6 +1,0 @@
-board:
-  name: samd21_xpro
-  full_name: SAM D21 Xplained Pro Evaluation Kit
-  vendor: atmel
-  socs:
-    - name: samd21j18a

@@ -1,6 +1,0 @@
-board:
-  name: rm1xx_dvk
-  full_name: RM1xx DVK
-  vendor: ezurio
-  socs:
-  - name: nrf51822

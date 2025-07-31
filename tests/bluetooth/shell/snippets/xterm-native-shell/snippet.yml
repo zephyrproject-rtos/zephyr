@@ -1,4 +1,0 @@
-name: xterm-native-shell
-append:
-  EXTRA_CONF_FILE: xterm-native-shell.conf
-  EXTRA_DTC_OVERLAY_FILE: xterm-native-shell.overlay

@@ -1,6 +1,0 @@
-board:
-  name: w5500_evb_pico
-  full_name: W5500-EVB-Pico
-  vendor: wiznet
-  socs:
-  - name: rp2040

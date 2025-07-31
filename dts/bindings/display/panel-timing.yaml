@@ -1,0 +1,88 @@
+# Private Porting
+# by David Hor - Xtooltech 2025
+# david.hor@xtooltech.com
+
+# Copyright (c) 2024 VCI Development
+# SPDX-License-Identifier: Apache-2.0
+
+description: Display panel timing parameters
+
+compatible: "panel-timing"
+
+properties:
+  clock-frequency:
+    type: int
+    required: true
+    description: Pixel clock frequency in Hz
+
+  hactive:
+    type: int
+    required: true
+    description: Horizontal active pixels (width)
+
+  vactive:
+    type: int
+    required: true
+    description: Vertical active lines (height)
+
+  hsync-len:
+    type: int
+    required: true
+    description: Horizontal sync pulse width in pixels
+
+  hfront-porch:
+    type: int
+    required: true
+    description: Horizontal front porch in pixels
+
+  hback-porch:
+    type: int
+    required: true
+    description: Horizontal back porch in pixels
+
+  vsync-len:
+    type: int
+    required: true
+    description: Vertical sync pulse width in lines
+
+  vfront-porch:
+    type: int
+    required: true
+    description: Vertical front porch in lines
+
+  vback-porch:
+    type: int
+    required: true
+    description: Vertical back porch in lines
+
+  hsync-active:
+    type: int
+    default: 0
+    enum: [0, 1]
+    description: |
+      0 = active low (inverted)
+      1 = active high
+
+  vsync-active:
+    type: int
+    default: 0
+    enum: [0, 1]
+    description: |
+      0 = active low (inverted)
+      1 = active high
+
+  de-active:
+    type: int
+    default: 1
+    enum: [0, 1]
+    description: |
+      0 = active low
+      1 = active high
+
+  pixelclk-active:
+    type: int
+    default: 0
+    enum: [0, 1]
+    description: |
+      0 = data driven on falling edge
+      1 = data driven on rising edge

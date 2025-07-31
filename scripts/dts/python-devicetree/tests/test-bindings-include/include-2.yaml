@@ -1,7 +1,0 @@
-# SPDX-License-Identifier: BSD-3-Clause
-
-description: Second file for testing "intermixed" includes.
-compatible: include-2
-properties:
-  a:
-    type: int

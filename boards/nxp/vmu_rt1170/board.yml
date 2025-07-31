@@ -1,6 +1,0 @@
-board:
-  name: vmu_rt1170
-  full_name: VMU RT1170
-  vendor: nxp
-  socs:
-    - name: mimxrt1176

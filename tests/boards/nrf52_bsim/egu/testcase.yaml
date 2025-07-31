@@ -1,5 +1,0 @@
-tests:
-  boards.nrf52_bsim.egu:
-    platform_allow:
-      - nrf52840dk/nrf52840
-      - nrf52_bsim

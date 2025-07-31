@@ -1,4 +1,0 @@
-vendor: intel
-comment: "Intel Raptor Lake SoC"
-socs:
-- name: raptor_lake

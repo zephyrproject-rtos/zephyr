@@ -1,5 +1,0 @@
-description: NXP Kinetis Flash Memory Module E (FTFE)
-
-compatible: "nxp,kinetis-ftfe"
-
-include: flash-controller.yaml

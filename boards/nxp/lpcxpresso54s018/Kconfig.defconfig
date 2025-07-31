@@ -1,0 +1,10 @@
+if BOARD_LPCXPRESSO54S018
+
+config BOARD
+	default "lpcxpresso54s018"
+
+# Select the LPC54S018 SOC  
+config SOC_LPC54S018
+	default y
+
+endif # BOARD_LPCXPRESSO54S018

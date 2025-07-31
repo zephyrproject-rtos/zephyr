@@ -1,4 +1,0 @@
-test:
-  testing.incorrect_schema:
-    tag: demo incorrect_tag
-    platform_exclude: demo_board_1
