@@ -11,7 +11,6 @@ config SOC_FAMILY_MCXC
 	select HAS_MCUX
 	select HAS_MCUX_SIM
 	select HAS_MCUX_RCM
-	select HAS_MCUX_TPM
 	select SOC_EARLY_INIT_HOOK
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
 
