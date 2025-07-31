@@ -15,5 +15,6 @@ tests:
       - nucleo_f103rb
       - stm32l1_disco
       - nucleo_l152re
+      - nucleo_wba55cg
     integration_platforms:
       - nucleo_l4r5zi
