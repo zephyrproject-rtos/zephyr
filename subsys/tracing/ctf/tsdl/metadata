@@ -2028,3 +2028,112 @@ event {
 		ctf_bounded_string_t name[20];
 	};
 };
+
+event {
+	name = mbox_init;
+	id = 0xEE;
+	fields := struct {
+		uint32_t mbox_id;
+	};
+};
+
+event {
+	name = mbox_message_put_enter;
+	id = 0xEF;
+	fields := struct {
+		uint32_t mbox_id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = mbox_message_put_blocking;
+	id = 0xF0;
+	fields := struct {
+		uint32_t mbox_id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = mbox_message_put_exit;
+	id = 0xF1;
+	fields := struct {
+		uint32_t mbox_id;
+		uint32_t timeout;
+		int32_t ret;
+	};
+};
+
+event {
+	name = mbox_put_enter;
+	id = 0xF2;
+	fields := struct {
+		uint32_t mbox_id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = mbox_put_exit;
+	id = 0xF3;
+	fields := struct {
+		uint32_t mbox_id;
+		uint32_t timeout;
+		int32_t ret;
+	};
+};
+
+event {
+	name = mbox_async_put_enter;
+	id = 0xF4;
+	fields := struct {
+		uint32_t mbox_id;
+		uint32_t sem_id;
+	};
+};
+
+event {
+	name = mbox_async_put_exit;
+	id = 0xF5;
+	fields := struct {
+		uint32_t mbox_id;
+		uint32_t sem_id;
+	};
+};
+
+event {
+	name = mbox_get_enter;
+	id = 0xF6;
+	fields := struct {
+		uint32_t mbox_id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = mbox_get_blocking;
+	id = 0xF7;
+	fields := struct {
+		uint32_t mbox_id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = mbox_get_exit;
+	id = 0xF8;
+	fields := struct {
+		uint32_t mbox_id;
+		uint32_t timeout;
+		int32_t ret;
+	};
+};
+
+event {
+	name = mbox_data_get;
+	id = 0xF9;
+	fields := struct {
+		uint32_t msg_id;
+	};
+};

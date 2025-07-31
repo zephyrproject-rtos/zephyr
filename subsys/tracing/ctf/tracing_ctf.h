@@ -379,18 +379,30 @@ extern "C" {
 #define sys_port_trace_k_msgq_purge(msgq) \
 	sys_trace_k_msgq_purge(msgq)
 
-#define sys_port_trace_k_mbox_init(mbox)
-#define sys_port_trace_k_mbox_message_put_enter(mbox, timeout)
-#define sys_port_trace_k_mbox_message_put_blocking(mbox, timeout)
-#define sys_port_trace_k_mbox_message_put_exit(mbox, timeout, ret)
-#define sys_port_trace_k_mbox_put_enter(mbox, timeout)
-#define sys_port_trace_k_mbox_put_exit(mbox, timeout, ret)
-#define sys_port_trace_k_mbox_async_put_enter(mbox, sem)
-#define sys_port_trace_k_mbox_async_put_exit(mbox, sem)
-#define sys_port_trace_k_mbox_get_enter(mbox, timeout)
-#define sys_port_trace_k_mbox_get_blocking(mbox, timeout)
-#define sys_port_trace_k_mbox_get_exit(mbox, timeout, ret)
-#define sys_port_trace_k_mbox_data_get(rx_msg)
+#define sys_port_trace_k_mbox_init(mbox) \
+	sys_trace_k_mbox_init(mbox)
+#define sys_port_trace_k_mbox_message_put_enter(mbox, timeout) \
+	sys_trace_k_mbox_message_put_enter(mbox, timeout)
+#define sys_port_trace_k_mbox_message_put_blocking(mbox, timeout) \
+	sys_trace_k_mbox_message_put_blocking(mbox, timeout)
+#define sys_port_trace_k_mbox_message_put_exit(mbox, timeout, ret) \
+	sys_trace_k_mbox_message_put_exit(mbox, timeout, ret)
+#define sys_port_trace_k_mbox_put_enter(mbox, timeout) \
+	sys_trace_k_mbox_put_enter(mbox, timeout)
+#define sys_port_trace_k_mbox_put_exit(mbox, timeout, ret) \
+	sys_trace_k_mbox_put_exit(mbox, timeout, ret)
+#define sys_port_trace_k_mbox_async_put_enter(mbox, sem) \
+	sys_trace_k_mbox_async_put_enter(mbox, sem)
+#define sys_port_trace_k_mbox_async_put_exit(mbox, sem) \
+	sys_trace_k_mbox_async_put_exit(mbox, sem)
+#define sys_port_trace_k_mbox_get_enter(mbox, timeout) \
+	sys_trace_k_mbox_get_enter(mbox, timeout)
+#define sys_port_trace_k_mbox_get_blocking(mbox, timeout) \
+	sys_trace_k_mbox_get_blocking(mbox, timeout)
+#define sys_port_trace_k_mbox_get_exit(mbox, timeout, ret) \
+	sys_trace_k_mbox_get_exit(mbox, timeout, ret)
+#define sys_port_trace_k_mbox_data_get(rx_msg) \
+	sys_trace_k_mbox_data_get(rx_msg)
 
 #define sys_port_trace_k_pipe_init(pipe, buffer, size)
 #define sys_port_trace_k_pipe_reset_enter(pipe)
@@ -664,6 +676,20 @@ void sys_trace_k_timer_status_sync_enter(struct k_timer *timer);
 void sys_trace_k_timer_status_sync_exit(struct k_timer *timer, uint32_t result);
 
 void sys_trace_k_event_init(struct k_event *event);
+
+/* Mailbox */
+void sys_trace_k_mbox_init(struct k_mbox *mbox);
+void sys_trace_k_mbox_message_put_enter(struct k_mbox *mbox, k_timeout_t timeout);
+void sys_trace_k_mbox_message_put_blocking(struct k_mbox *mbox, k_timeout_t timeout);
+void sys_trace_k_mbox_message_put_exit(struct k_mbox *mbox, k_timeout_t timeout, int ret);
+void sys_trace_k_mbox_put_enter(struct k_mbox *mbox, k_timeout_t timeout);
+void sys_trace_k_mbox_put_exit(struct k_mbox *mbox, k_timeout_t timeout, int ret);
+void sys_trace_k_mbox_async_put_enter(struct k_mbox *mbox, struct k_sem *sem);
+void sys_trace_k_mbox_async_put_exit(struct k_mbox *mbox, struct k_sem *sem);
+void sys_trace_k_mbox_get_enter(struct k_mbox *mbox, k_timeout_t timeout);
+void sys_trace_k_mbox_get_blocking(struct k_mbox *mbox, k_timeout_t timeout);
+void sys_trace_k_mbox_get_exit(struct k_mbox *mbox, k_timeout_t timeout, int ret);
+void sys_trace_k_mbox_data_get(struct k_mbox_msg *rx_msg);
 
 
 #define sys_port_trace_socket_init(sock, family, type, proto)	\
