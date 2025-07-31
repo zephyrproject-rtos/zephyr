@@ -12,9 +12,6 @@ config SOC_SERIES_IMXRT10XX
 	select HAS_MCUX
 	select HAS_MCUX_CACHE
 	select HAS_MCUX_FLEXSPI
-	select HAS_MCUX_GPC
-	select HAS_MCUX_PMU
-	select HAS_MCUX_DCDC
 	select HAS_SWO
 	select HAS_PM
 	select SOC_RESET_HOOK
