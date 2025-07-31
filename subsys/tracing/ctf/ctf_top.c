@@ -187,6 +187,169 @@ void sys_trace_k_thread_name_set(struct k_thread *thread, int ret)
 
 }
 
+/* Thread Extended Functions */
+void sys_trace_k_thread_foreach_enter(void)
+{
+	ctf_top_thread_foreach_enter();
+}
+
+void sys_trace_k_thread_foreach_exit(void)
+{
+	ctf_top_thread_foreach_exit();
+}
+
+void sys_trace_k_thread_foreach_unlocked_enter(void)
+{
+	ctf_top_thread_foreach_unlocked_enter();
+}
+
+void sys_trace_k_thread_foreach_unlocked_exit()
+{
+	ctf_top_thread_foreach_unlocked_exit();
+}
+
+void sys_trace_k_thread_heap_assign(struct k_thread *thread, struct k_heap *heap)
+{
+	ctf_top_thread_heap_assign(
+		(uint32_t)(uintptr_t)thread,
+		(uint32_t)(uintptr_t)heap
+		);
+}
+
+void sys_trace_k_thread_join_enter(struct k_thread *thread, k_timeout_t timeout)
+{
+	ctf_top_thread_join_enter(
+		(uint32_t)(uintptr_t)thread,
+		(uint32_t)timeout.ticks
+		);
+}
+
+void sys_trace_k_thread_join_blocking(struct k_thread *thread, k_timeout_t timeout)
+{
+	ctf_top_thread_join_blocking(
+		(uint32_t)(uintptr_t)thread,
+		(uint32_t)timeout.ticks
+		);
+}
+
+void sys_trace_k_thread_join_exit(struct k_thread *thread, k_timeout_t timeout, int ret)
+{
+	ctf_top_thread_join_exit(
+		(uint32_t)(uintptr_t)thread,
+		(uint32_t)timeout.ticks,
+		(int32_t)ret
+		);
+}
+
+void sys_trace_k_thread_msleep_enter(int32_t ms)
+{
+	ctf_top_thread_msleep_enter(ms);
+}
+
+void sys_trace_k_thread_msleep_exit(int32_t ms, int ret)
+{
+	ctf_top_thread_msleep_exit(ms, (int32_t)ret);
+}
+
+void sys_trace_k_thread_usleep_enter(int32_t us)
+{
+	ctf_top_thread_usleep_enter(us);
+}
+
+void sys_trace_k_thread_usleep_exit(int32_t us, int ret)
+{
+	ctf_top_thread_usleep_exit(us, (int32_t)ret);
+}
+
+void sys_trace_k_thread_busy_wait_enter(uint32_t usec_to_wait)
+{
+	ctf_top_thread_busy_wait_enter(usec_to_wait);
+}
+
+void sys_trace_k_thread_busy_wait_exit(uint32_t usec_to_wait)
+{
+	ctf_top_thread_busy_wait_exit(usec_to_wait);
+}
+
+void sys_trace_k_thread_yield(void)
+{
+	ctf_top_thread_yield();
+}
+
+void sys_trace_k_thread_suspend_exit(struct k_thread *thread)
+{
+	ctf_bounded_string_t name = { "unknown" };
+
+	_get_thread_name(thread, &name);
+	ctf_top_thread_suspend_exit((uint32_t)(uintptr_t)thread, name);
+}
+
+void sys_trace_k_thread_sched_lock(void)
+{
+	ctf_top_thread_sched_lock();
+}
+
+void sys_trace_k_thread_sched_unlock(void)
+{
+	ctf_top_thread_sched_unlock();
+}
+
+void sys_trace_k_thread_sched_wakeup(struct k_thread *thread)
+{
+	ctf_bounded_string_t name = { "unknown" };
+
+	_get_thread_name(thread, &name);
+	ctf_top_thread_sched_wakeup((uint32_t)(uintptr_t)thread, name);
+}
+
+void sys_trace_k_thread_sched_abort(struct k_thread *thread)
+{
+	ctf_bounded_string_t name = { "unknown" };
+
+	_get_thread_name(thread, &name);
+	ctf_top_thread_sched_abort((uint32_t)(uintptr_t)thread, name);
+}
+
+void sys_trace_k_thread_sched_priority_set(struct k_thread *thread, int prio)
+{
+	ctf_bounded_string_t name = { "unknown" };
+
+	_get_thread_name(thread, &name);
+	ctf_top_thread_sched_priority_set((uint32_t)(uintptr_t)thread, (int8_t)prio, name);
+}
+
+void sys_trace_k_thread_sched_ready(struct k_thread *thread)
+{
+	ctf_bounded_string_t name = { "unknown" };
+
+	_get_thread_name(thread, &name);
+	ctf_top_thread_sched_ready((uint32_t)(uintptr_t)thread, name);
+}
+
+void sys_trace_k_thread_sched_pend(struct k_thread *thread)
+{
+	ctf_bounded_string_t name = { "unknown" };
+
+	_get_thread_name(thread, &name);
+	ctf_top_thread_sched_pend((uint32_t)(uintptr_t)thread, name);
+}
+
+void sys_trace_k_thread_sched_resume(struct k_thread *thread)
+{
+	ctf_bounded_string_t name = { "unknown" };
+
+	_get_thread_name(thread, &name);
+	ctf_top_thread_sched_resume((uint32_t)(uintptr_t)thread, name);
+}
+
+void sys_trace_k_thread_sched_suspend(struct k_thread *thread)
+{
+	ctf_bounded_string_t name = { "unknown" };
+
+	_get_thread_name(thread, &name);
+	ctf_top_thread_sched_suspend((uint32_t)(uintptr_t)thread, name);
+}
+
 void sys_trace_isr_enter(void)
 {
 	ctf_top_isr_enter();
