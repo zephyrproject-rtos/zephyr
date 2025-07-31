@@ -1788,3 +1788,77 @@ void sys_port_trace_gpio_fire_callback(const struct device *port, struct gpio_ca
 {
 	ctf_top_gpio_fire_callback((uint32_t)(uintptr_t)port, (uint32_t)(uintptr_t)cb);
 }
+
+/* Mailbox */
+void sys_trace_k_mbox_init(struct k_mbox *mbox)
+{
+	ctf_top_mbox_init((uint32_t)(uintptr_t)mbox);
+}
+
+void sys_trace_k_mbox_message_put_enter(struct k_mbox *mbox, k_timeout_t timeout)
+{
+	ctf_top_mbox_message_put_enter((uint32_t)(uintptr_t)mbox,
+				       (uint32_t)timeout.ticks);
+}
+
+void sys_trace_k_mbox_message_put_blocking(struct k_mbox *mbox, k_timeout_t timeout)
+{
+	ctf_top_mbox_message_put_blocking((uint32_t)(uintptr_t)mbox,
+					  (uint32_t)timeout.ticks);
+}
+
+void sys_trace_k_mbox_message_put_exit(struct k_mbox *mbox, k_timeout_t timeout, int ret)
+{
+	ctf_top_mbox_message_put_exit((uint32_t)(uintptr_t)mbox,
+				      (uint32_t)timeout.ticks,
+				      (int32_t)ret);
+}
+
+void sys_trace_k_mbox_put_enter(struct k_mbox *mbox, k_timeout_t timeout)
+{
+	ctf_top_mbox_put_enter((uint32_t)(uintptr_t)mbox,
+			       (uint32_t)timeout.ticks);
+}
+
+void sys_trace_k_mbox_put_exit(struct k_mbox *mbox, k_timeout_t timeout, int ret)
+{
+	ctf_top_mbox_put_exit((uint32_t)(uintptr_t)mbox,
+			      (uint32_t)timeout.ticks,
+			      (int32_t)ret);
+}
+
+void sys_trace_k_mbox_async_put_enter(struct k_mbox *mbox, struct k_sem *sem)
+{
+	ctf_top_mbox_async_put_enter((uint32_t)(uintptr_t)mbox,
+				     (uint32_t)(uintptr_t)sem);
+}
+
+void sys_trace_k_mbox_async_put_exit(struct k_mbox *mbox, struct k_sem *sem)
+{
+	ctf_top_mbox_async_put_exit((uint32_t)(uintptr_t)mbox,
+				    (uint32_t)(uintptr_t)sem);
+}
+
+void sys_trace_k_mbox_get_enter(struct k_mbox *mbox, k_timeout_t timeout)
+{
+	ctf_top_mbox_get_enter((uint32_t)(uintptr_t)mbox,
+			       (uint32_t)timeout.ticks);
+}
+
+void sys_trace_k_mbox_get_blocking(struct k_mbox *mbox, k_timeout_t timeout)
+{
+	ctf_top_mbox_get_blocking((uint32_t)(uintptr_t)mbox,
+				  (uint32_t)timeout.ticks);
+}
+
+void sys_trace_k_mbox_get_exit(struct k_mbox *mbox, k_timeout_t timeout, int ret)
+{
+	ctf_top_mbox_get_exit((uint32_t)(uintptr_t)mbox,
+			      (uint32_t)timeout.ticks,
+			      (int32_t)ret);
+}
+
+void sys_trace_k_mbox_data_get(struct k_mbox_msg *rx_msg)
+{
+	ctf_top_mbox_data_get((uint32_t)(uintptr_t)rx_msg);
+}
