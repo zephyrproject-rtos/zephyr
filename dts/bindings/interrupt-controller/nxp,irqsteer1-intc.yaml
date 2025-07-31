@@ -1,0 +1,9 @@
+description: i.MX interrupt extended controller
+
+compatible: "nxp,irqsteer1-intc"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
