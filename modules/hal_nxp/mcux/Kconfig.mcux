@@ -81,11 +81,6 @@ config HAS_MCUX_FLEXCAN
 	help
 	  Set if the FlexCAN module is presents in the SoC.
 
-config HAS_MCUX_FLEXCOMM
-	bool
-	help
-	  Set if the flexcomm (FLEXCOMM) module is present in the SoC.
-
 config HAS_MCUX_FLEXSPI
 	bool
 	help
