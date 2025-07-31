@@ -331,6 +331,14 @@ typedef enum {
 	CTF_EVENT_MBOX_GET_EXIT = 0xF8,
 	CTF_EVENT_MBOX_DATA_GET = 0xF9,
 
+	/* Event */
+	CTF_EVENT_EVENT_INIT = 0xFA,
+	CTF_EVENT_EVENT_POST_ENTER = 0xFB,
+	CTF_EVENT_EVENT_POST_EXIT = 0xFC,
+	CTF_EVENT_EVENT_WAIT_ENTER = 0xFD,
+	CTF_EVENT_EVENT_WAIT_BLOCKING = 0xFE,
+	CTF_EVENT_EVENT_WAIT_EXIT = 0xFF,
+
 } ctf_event_t;
 
 typedef struct {
@@ -1602,6 +1610,37 @@ static inline void ctf_top_mbox_get_exit(uint32_t mbox_id, uint32_t timeout, int
 static inline void ctf_top_mbox_data_get(uint32_t msg_id)
 {
 	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MBOX_DATA_GET), msg_id);
+}
+
+/* Event */
+static inline void ctf_top_event_init(uint32_t event_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_EVENT_INIT), event_id);
+}
+
+static inline void ctf_top_event_post_enter(uint32_t event_id, uint32_t events, uint32_t events_mask)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_EVENT_POST_ENTER), event_id, events, events_mask);
+}
+
+static inline void ctf_top_event_post_exit(uint32_t event_id, uint32_t events, uint32_t events_mask)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_EVENT_POST_EXIT), event_id, events, events_mask);
+}
+
+static inline void ctf_top_event_wait_enter(uint32_t event_id, uint32_t events, uint32_t options, uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_EVENT_WAIT_ENTER), event_id, events, options, timeout);
+}
+
+static inline void ctf_top_event_wait_blocking(uint32_t event_id, uint32_t events, uint32_t options, uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_EVENT_WAIT_BLOCKING), event_id, events, options, timeout);
+}
+
+static inline void ctf_top_event_wait_exit(uint32_t event_id, uint32_t events, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_EVENT_WAIT_EXIT), event_id, events, ret);
 }
 
 #endif /* SUBSYS_DEBUG_TRACING_CTF_TOP_H */
