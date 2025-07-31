@@ -109,6 +109,9 @@ typedef int (*cellular_api_get_registration_status)(const struct device *dev,
 						    enum cellular_access_technology tech,
 						    enum cellular_registration_status *status);
 
+/** API for programming APN */
+typedef int (*cellular_api_set_apn)(const struct device *dev, const char *apn);
+
 /** Cellular driver API */
 __subsystem struct cellular_driver_api {
 	cellular_api_configure_networks configure_networks;
@@ -116,6 +119,7 @@ __subsystem struct cellular_driver_api {
 	cellular_api_get_signal get_signal;
 	cellular_api_get_modem_info get_modem_info;
 	cellular_api_get_registration_status get_registration_status;
+	cellular_api_set_apn set_apn;
 };
 
 /**
@@ -248,6 +252,33 @@ static inline int cellular_get_registration_status(const struct device *dev,
 	}
 
 	return api->get_registration_status(dev, tech, status);
+}
+
+/**
+ * @brief Set the APN used for PDP context
+ *
+ * @details Drivers are expected to copy the string immediately and return
+ * once the request has been queued internally.
+ *
+ * @param dev Cellular device
+ * @param apn Zero-terminated APN string (max length is driver-specific)
+ *
+ * @retval 0 if successful.
+ * @retval -ENOSYS if API is not supported by cellular network device.
+ * @retval -EINVAL if APN string invalid or too long.
+ * @retval -EALREADY if APN identical to current one, nothing to do
+ * @retval -EBUSY if modem is already dialled, APN cannot be changed
+ * @retval Negative errno-code otherwise.
+ */
+static inline int cellular_set_apn(const struct device *dev, const char *apn)
+{
+	const struct cellular_driver_api *api = (const struct cellular_driver_api *)dev->api;
+
+	if (api->set_apn == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->set_apn(dev, apn);
 }
 
 #ifdef __cplusplus
