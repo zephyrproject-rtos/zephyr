@@ -72,7 +72,7 @@ ZTEST(ram_context_for_isr, test_fake_driver_in_ram)
 	api->register_irq_callback(dev, test_irq_callback, NULL);
 	test_flag = false;
 
-	NVIC_SetPendingIRQ(27);
+	NVIC_SetPendingIRQ(TEST_IRQ_NUM);
 
 	k_busy_wait(1000);
 

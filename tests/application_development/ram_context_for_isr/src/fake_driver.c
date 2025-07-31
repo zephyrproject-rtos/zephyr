@@ -10,9 +10,6 @@
 
 #define DT_DRV_COMPAT fakedriver
 
-#define TEST_IRQ_NUM  27
-#define TEST_IRQ_PRIO 4
-
 static void fake_driver_isr(const void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
