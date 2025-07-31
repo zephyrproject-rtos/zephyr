@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2025, Eduard Iten
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Devicetree overlay for VND7050AJ on nrf52dk_nrf52832
+ */
+
+/ {
+	aliases {
+		vnd7050aj = &vnd7050aj;
+	};
+
+	vnd7050aj: vnd7050aj {
+		compatible = "st,vnd7050aj";
+		status = "okay";
+
+		/* Required properties */
+		input0-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+		input1-gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
+		select0-gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>;
+		select1-gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>;
+		sense-enable-gpios = <&gpio0 30 GPIO_ACTIVE_HIGH>;
+		fault-reset-gpios = <&gpio0 31 GPIO_ACTIVE_LOW>;
+		io-channels = <&adc 1>; /* P0.3 */
+		r-sense-ohms = <1500>;
+
+		/* Optional properties */
+		// k-factor = <1500>;
+		// k-vcc = <8000>;
+		// t-sense-0 = <25>;
+		// v-sense-0 = <2070>;
+		// k-tchip = <-5500>;
+	};
+};
+
+&adc {
+	status = "okay";
+};

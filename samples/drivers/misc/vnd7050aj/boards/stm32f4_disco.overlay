@@ -1,0 +1,42 @@
+/*
+ * Copyright (c) 2025, Eduard Iten
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Devicetree overlay for VND7050AJ on stm32f4_disco
+ */
+
+/ {
+	aliases {
+		vnd7050aj = &vnd7050aj;
+	};
+
+	vnd7050aj: vnd7050aj {
+		compatible = "st,vnd7050aj";
+		status = "okay";
+
+		/* Required properties */
+		input0-gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
+		input1-gpios = <&gpioa 4 GPIO_ACTIVE_HIGH>;
+		select0-gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
+		select1-gpios = <&gpioa 6 GPIO_ACTIVE_HIGH>;
+		sense-enable-gpios = <&gpioa 7 GPIO_ACTIVE_HIGH>;
+		fault-reset-gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
+		io-channels = <&adc1 1>; /* PA1 */
+		r-sense-ohms = <1500>;
+
+		/* Optional properties */
+		// k-factor = <1500>;
+		// k-vcc = <8000>;
+		// t-sense-0 = <25>;
+		// v-sense-0 = <2070>;
+		// k-tchip = <-5500>;
+	};
+};
+
+&adc1 {
+	status = "okay";
+	pinctrl-0 = <&adc1_in1_pa1>;
+	pinctrl-names = "default";
+};
