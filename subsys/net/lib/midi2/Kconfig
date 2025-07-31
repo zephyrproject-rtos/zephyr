@@ -3,6 +3,7 @@
 
 config NETMIDI2_HOST
 	bool "Network MIDI2 (UDP) host [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	select NET_UDP
 	select NET_SOCKETS
 	select NET_SOCKETS_SERVICE
