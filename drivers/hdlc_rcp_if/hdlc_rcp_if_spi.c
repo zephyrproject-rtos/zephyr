@@ -113,7 +113,7 @@ static int hdlc_rcp_if_spi_reset(const struct device *dev)
 	return 0;
 }
 
-static void hdlc_rcp_if_rx_cb(struct hdlc_rcp_if_spi_data *data, uint8_t *buf, uint16_t len)
+static void hdlc_rcp_if_rx_cb(struct hdlc_rcp_if_spi_data *data, const uint8_t *buf, uint16_t len)
 {
 	uint8_t esc_buf[] = {HDLC_BYTE_ESC, 0x00};
 	uint16_t idx = 0;

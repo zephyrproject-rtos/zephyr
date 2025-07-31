@@ -184,7 +184,7 @@ otError HdlcInterface::WaitForFrame(uint64_t aTimeoutUs)
 	return error;
 }
 
-void HdlcInterface::ProcessRxData(uint8_t *data, uint16_t len)
+void HdlcInterface::ProcessRxData(const uint8_t *data, uint16_t len)
 {
 	uint8_t event;
 	uint32_t remainingRxBufferSize = 0;
@@ -339,7 +339,7 @@ void HdlcInterface::HandleHdlcFrame(otError aError)
 	}
 }
 
-void HdlcInterface::HdlcRxCallback(uint8_t *data, uint16_t len, void *param)
+void HdlcInterface::HdlcRxCallback(const uint8_t *data, uint16_t len, void *param)
 {
 	static_cast<HdlcInterface *>(param)->ProcessRxData(data, len);
 }
