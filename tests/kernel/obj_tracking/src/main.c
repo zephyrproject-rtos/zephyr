@@ -150,7 +150,7 @@ ZTEST(obj_tracking, test_obj_tracking_coherence)
 		}
 		list = SYS_PORT_TRACK_NEXT((struct k_event *)list);
 	}
-	zassert_equal(count, 2, "Wrong number of queue objects");
+	zassert_equal(count, 2, "Wrong number of event objects");
 
 
 }
