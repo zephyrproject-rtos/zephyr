@@ -459,6 +459,390 @@ void sys_trace_k_condvar_broadcast_exit(struct k_condvar *condvar, int ret)
 		);
 }
 
+/* Work Queue */
+void sys_trace_k_work_init(struct k_work *work)
+{
+	ctf_top_work_init(
+		(uint32_t)(uintptr_t)work
+		);
+}
+
+void sys_trace_k_work_submit_to_queue_enter(struct k_work_q *queue, struct k_work *work)
+{
+	ctf_top_work_submit_to_queue_enter(
+		(uint32_t)(uintptr_t)queue,
+		(uint32_t)(uintptr_t)work
+		);
+}
+
+void sys_trace_k_work_submit_to_queue_exit(struct k_work_q *queue, struct k_work *work, int ret)
+{
+	ctf_top_work_submit_to_queue_exit(
+		(uint32_t)(uintptr_t)queue,
+		(uint32_t)(uintptr_t)work,
+		(int32_t)ret
+		);
+}
+
+void sys_trace_k_work_submit_enter(struct k_work *work)
+{
+	ctf_top_work_submit_enter(
+		(uint32_t)(uintptr_t)work
+		);
+}
+
+void sys_trace_k_work_submit_exit(struct k_work *work, int ret)
+{
+	ctf_top_work_submit_exit(
+		(uint32_t)(uintptr_t)work,
+		(int32_t)ret
+		);
+}
+
+void sys_trace_k_work_flush_enter(struct k_work *work)
+{
+	ctf_top_work_flush_enter(
+		(uint32_t)(uintptr_t)work
+		);
+}
+
+void sys_trace_k_work_flush_blocking(struct k_work *work, k_timeout_t timeout)
+{
+	ctf_top_work_flush_blocking(
+		(uint32_t)(uintptr_t)work,
+		k_ticks_to_us_floor32((uint32_t)timeout.ticks)
+		);
+}
+
+void sys_trace_k_work_flush_exit(struct k_work *work, int ret)
+{
+	ctf_top_work_flush_exit(
+		(uint32_t)(uintptr_t)work,
+		(int32_t)ret
+		);
+}
+
+void sys_trace_k_work_cancel_enter(struct k_work *work)
+{
+	ctf_top_work_cancel_enter(
+		(uint32_t)(uintptr_t)work
+		);
+}
+
+void sys_trace_k_work_cancel_exit(struct k_work *work, int ret)
+{
+	ctf_top_work_cancel_exit(
+		(uint32_t)(uintptr_t)work,
+		(int32_t)ret
+		);
+}
+
+void sys_trace_k_work_cancel_sync_enter(struct k_work *work, struct k_work_sync *sync)
+{
+	ctf_top_work_cancel_sync_enter(
+		(uint32_t)(uintptr_t)work,
+		(uint32_t)(uintptr_t)sync
+		);
+}
+
+void sys_trace_k_work_cancel_sync_blocking(struct k_work *work, struct k_work_sync *sync)
+{
+	ctf_top_work_cancel_sync_blocking(
+		(uint32_t)(uintptr_t)work,
+		(uint32_t)(uintptr_t)sync
+		);
+}
+
+void sys_trace_k_work_cancel_sync_exit(struct k_work *work, struct k_work_sync *sync, int ret)
+{
+	ctf_top_work_cancel_sync_exit(
+		(uint32_t)(uintptr_t)work,
+		(uint32_t)(uintptr_t)sync,
+		(int32_t)ret
+		);
+}
+
+/* Work Queue Management */
+void sys_trace_k_work_queue_init(struct k_work_q *queue)
+{
+	ctf_top_work_queue_init(
+		(uint32_t)(uintptr_t)queue
+		);
+}
+
+void sys_trace_k_work_queue_start_enter(struct k_work_q *queue)
+{
+	ctf_top_work_queue_start_enter(
+		(uint32_t)(uintptr_t)queue
+		);
+}
+
+void sys_trace_k_work_queue_start_exit(struct k_work_q *queue)
+{
+	ctf_top_work_queue_start_exit(
+		(uint32_t)(uintptr_t)queue
+		);
+}
+
+void sys_trace_k_work_queue_stop_enter(struct k_work_q *queue, k_timeout_t timeout)
+{
+	ctf_top_work_queue_stop_enter(
+		(uint32_t)(uintptr_t)queue,
+		k_ticks_to_us_floor32((uint32_t)timeout.ticks)
+		);
+}
+
+void sys_trace_k_work_queue_stop_blocking(struct k_work_q *queue, k_timeout_t timeout)
+{
+	ctf_top_work_queue_stop_blocking(
+		(uint32_t)(uintptr_t)queue,
+		k_ticks_to_us_floor32((uint32_t)timeout.ticks)
+		);
+}
+
+void sys_trace_k_work_queue_stop_exit(struct k_work_q *queue, k_timeout_t timeout, int ret)
+{
+	ctf_top_work_queue_stop_exit(
+		(uint32_t)(uintptr_t)queue,
+		k_ticks_to_us_floor32((uint32_t)timeout.ticks),
+		(int32_t)ret
+		);
+}
+
+void sys_trace_k_work_queue_drain_enter(struct k_work_q *queue)
+{
+	ctf_top_work_queue_drain_enter(
+		(uint32_t)(uintptr_t)queue
+		);
+}
+
+void sys_trace_k_work_queue_drain_exit(struct k_work_q *queue, int ret)
+{
+	ctf_top_work_queue_drain_exit(
+		(uint32_t)(uintptr_t)queue,
+		(int32_t)ret
+		);
+}
+
+void sys_trace_k_work_queue_unplug_enter(struct k_work_q *queue)
+{
+	ctf_top_work_queue_unplug_enter(
+		(uint32_t)(uintptr_t)queue
+		);
+}
+
+void sys_trace_k_work_queue_unplug_exit(struct k_work_q *queue, int ret)
+{
+	ctf_top_work_queue_unplug_exit(
+		(uint32_t)(uintptr_t)queue,
+		(int32_t)ret
+		);
+}
+
+/* Delayable Work */
+void sys_trace_k_work_delayable_init(struct k_work_delayable *dwork)
+{
+	ctf_top_work_delayable_init(
+		(uint32_t)(uintptr_t)dwork
+		);
+}
+
+void sys_trace_k_work_schedule_for_queue_enter(struct k_work_q *queue, struct k_work_delayable *dwork, k_timeout_t delay)
+{
+	ctf_top_work_schedule_for_queue_enter(
+		(uint32_t)(uintptr_t)queue,
+		(uint32_t)(uintptr_t)dwork,
+		k_ticks_to_us_floor32((uint32_t)delay.ticks)
+		);
+}
+
+void sys_trace_k_work_schedule_for_queue_exit(struct k_work_q *queue, struct k_work_delayable *dwork, k_timeout_t delay, int ret)
+{
+	ctf_top_work_schedule_for_queue_exit(
+		(uint32_t)(uintptr_t)queue,
+		(uint32_t)(uintptr_t)dwork,
+		k_ticks_to_us_floor32((uint32_t)delay.ticks),
+		(int32_t)ret
+		);
+}
+
+void sys_trace_k_work_schedule_enter(struct k_work_delayable *dwork, k_timeout_t delay)
+{
+	ctf_top_work_schedule_enter(
+		(uint32_t)(uintptr_t)dwork,
+		k_ticks_to_us_floor32((uint32_t)delay.ticks)
+		);
+}
+
+void sys_trace_k_work_schedule_exit(struct k_work_delayable *dwork, k_timeout_t delay, int ret)
+{
+	ctf_top_work_schedule_exit(
+		(uint32_t)(uintptr_t)dwork,
+		k_ticks_to_us_floor32((uint32_t)delay.ticks),
+		(int32_t)ret
+		);
+}
+
+void sys_trace_k_work_reschedule_for_queue_enter(struct k_work_q *queue, struct k_work_delayable *dwork, k_timeout_t delay)
+{
+	ctf_top_work_reschedule_for_queue_enter(
+		(uint32_t)(uintptr_t)queue,
+		(uint32_t)(uintptr_t)dwork,
+		k_ticks_to_us_floor32((uint32_t)delay.ticks)
+		);
+}
+
+void sys_trace_k_work_reschedule_for_queue_exit(struct k_work_q *queue, struct k_work_delayable *dwork, k_timeout_t delay, int ret)
+{
+	ctf_top_work_reschedule_for_queue_exit(
+		(uint32_t)(uintptr_t)queue,
+		(uint32_t)(uintptr_t)dwork,
+		k_ticks_to_us_floor32((uint32_t)delay.ticks),
+		(int32_t)ret
+		);
+}
+
+void sys_trace_k_work_reschedule_enter(struct k_work_delayable *dwork, k_timeout_t delay)
+{
+	ctf_top_work_reschedule_enter(
+		(uint32_t)(uintptr_t)dwork,
+		k_ticks_to_us_floor32((uint32_t)delay.ticks)
+		);
+}
+
+void sys_trace_k_work_reschedule_exit(struct k_work_delayable *dwork, k_timeout_t delay, int ret)
+{
+	ctf_top_work_reschedule_exit(
+		(uint32_t)(uintptr_t)dwork,
+		k_ticks_to_us_floor32((uint32_t)delay.ticks),
+		(int32_t)ret
+		);
+}
+
+void sys_trace_k_work_flush_delayable_enter(struct k_work_delayable *dwork, struct k_work_sync *sync)
+{
+	ctf_top_work_flush_delayable_enter(
+		(uint32_t)(uintptr_t)dwork,
+		(uint32_t)(uintptr_t)sync
+		);
+}
+
+void sys_trace_k_work_flush_delayable_exit(struct k_work_delayable *dwork, struct k_work_sync *sync, int ret)
+{
+	ctf_top_work_flush_delayable_exit(
+		(uint32_t)(uintptr_t)dwork,
+		(uint32_t)(uintptr_t)sync,
+		(int32_t)ret
+		);
+}
+
+void sys_trace_k_work_cancel_delayable_enter(struct k_work_delayable *dwork)
+{
+	ctf_top_work_cancel_delayable_enter(
+		(uint32_t)(uintptr_t)dwork
+		);
+}
+
+void sys_trace_k_work_cancel_delayable_exit(struct k_work_delayable *dwork, int ret)
+{
+	ctf_top_work_cancel_delayable_exit(
+		(uint32_t)(uintptr_t)dwork,
+		(int32_t)ret
+		);
+}
+
+void sys_trace_k_work_cancel_delayable_sync_enter(struct k_work_delayable *dwork, struct k_work_sync *sync)
+{
+	ctf_top_work_cancel_delayable_sync_enter(
+		(uint32_t)(uintptr_t)dwork,
+		(uint32_t)(uintptr_t)sync
+		);
+}
+
+void sys_trace_k_work_cancel_delayable_sync_exit(struct k_work_delayable *dwork, struct k_work_sync *sync, int ret)
+{
+	ctf_top_work_cancel_delayable_sync_exit(
+		(uint32_t)(uintptr_t)dwork,
+		(uint32_t)(uintptr_t)sync,
+		(int32_t)ret
+		);
+}
+
+/* Poll Work */
+void sys_trace_k_work_poll_init_enter(struct k_work_poll *work)
+{
+	ctf_top_work_poll_init_enter(
+		(uint32_t)(uintptr_t)work
+		);
+}
+
+void sys_trace_k_work_poll_init_exit(struct k_work_poll *work)
+{
+	ctf_top_work_poll_init_exit(
+		(uint32_t)(uintptr_t)work
+		);
+}
+
+void sys_trace_k_work_poll_submit_to_queue_enter(struct k_work_q *work_q, struct k_work_poll *work, k_timeout_t timeout)
+{
+	ctf_top_work_poll_submit_to_queue_enter(
+		(uint32_t)(uintptr_t)work_q,
+		(uint32_t)(uintptr_t)work,
+		k_ticks_to_us_floor32((uint32_t)timeout.ticks)
+		);
+}
+
+void sys_trace_k_work_poll_submit_to_queue_blocking(struct k_work_q *work_q, struct k_work_poll *work, k_timeout_t timeout)
+{
+	ctf_top_work_poll_submit_to_queue_blocking(
+		(uint32_t)(uintptr_t)work_q,
+		(uint32_t)(uintptr_t)work,
+		k_ticks_to_us_floor32((uint32_t)timeout.ticks)
+		);
+}
+
+void sys_trace_k_work_poll_submit_to_queue_exit(struct k_work_q *work_q, struct k_work_poll *work, k_timeout_t timeout, int ret)
+{
+	ctf_top_work_poll_submit_to_queue_exit(
+		(uint32_t)(uintptr_t)work_q,
+		(uint32_t)(uintptr_t)work,
+		k_ticks_to_us_floor32((uint32_t)timeout.ticks),
+		(int32_t)ret
+		);
+}
+
+void sys_trace_k_work_poll_submit_enter(struct k_work_poll *work, k_timeout_t timeout)
+{
+	ctf_top_work_poll_submit_enter(
+		(uint32_t)(uintptr_t)work,
+		k_ticks_to_us_floor32((uint32_t)timeout.ticks)
+		);
+}
+
+void sys_trace_k_work_poll_submit_exit(struct k_work_poll *work, k_timeout_t timeout, int ret)
+{
+	ctf_top_work_poll_submit_exit(
+		(uint32_t)(uintptr_t)work,
+		k_ticks_to_us_floor32((uint32_t)timeout.ticks),
+		(int32_t)ret
+		);
+}
+
+void sys_trace_k_work_poll_cancel_enter(struct k_work_poll *work)
+{
+	ctf_top_work_poll_cancel_enter(
+		(uint32_t)(uintptr_t)work
+		);
+}
+
+void sys_trace_k_work_poll_cancel_exit(struct k_work_poll *work, int ret)
+{
+	ctf_top_work_poll_cancel_exit(
+		(uint32_t)(uintptr_t)work,
+		(int32_t)ret
+		);
+}
+
 
 /* Semaphore */
 void sys_trace_k_sem_init(struct k_sem *sem, int ret)
