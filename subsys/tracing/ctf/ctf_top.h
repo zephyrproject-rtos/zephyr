@@ -281,6 +281,15 @@ typedef enum {
 	CTF_EVENT_WORK_POLL_CANCEL_ENTER = 0xCC,
 	CTF_EVENT_WORK_POLL_CANCEL_EXIT = 0xCD,
 
+	/* Poll API */
+	CTF_EVENT_POLL_EVENT_INIT = 0xCE,
+	CTF_EVENT_POLL_ENTER = 0xCF,
+	CTF_EVENT_POLL_EXIT = 0xD0,
+	CTF_EVENT_POLL_SIGNAL_INIT = 0xD1,
+	CTF_EVENT_POLL_SIGNAL_RESET = 0xD2,
+	CTF_EVENT_POLL_SIGNAL_CHECK = 0xD3,
+	CTF_EVENT_POLL_SIGNAL_RAISE = 0xD4,
+
 } ctf_event_t;
 
 typedef struct {
@@ -799,6 +808,42 @@ static inline void ctf_top_work_poll_cancel_enter(uint32_t work_id)
 static inline void ctf_top_work_poll_cancel_exit(uint32_t work_id, int32_t ret)
 {
 	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_POLL_CANCEL_EXIT), work_id, ret);
+}
+
+/* Poll API */
+static inline void ctf_top_poll_event_init(uint32_t event_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_POLL_EVENT_INIT), event_id);
+}
+
+static inline void ctf_top_poll_enter(uint32_t events_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_POLL_ENTER), events_id);
+}
+
+static inline void ctf_top_poll_exit(uint32_t events_id, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_POLL_EXIT), events_id, ret);
+}
+
+static inline void ctf_top_poll_signal_init(uint32_t signal_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_POLL_SIGNAL_INIT), signal_id);
+}
+
+static inline void ctf_top_poll_signal_reset(uint32_t signal_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_POLL_SIGNAL_RESET), signal_id);
+}
+
+static inline void ctf_top_poll_signal_check(uint32_t signal_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_POLL_SIGNAL_CHECK), signal_id);
+}
+
+static inline void ctf_top_poll_signal_raise(uint32_t signal_id, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_POLL_SIGNAL_RAISE), signal_id, ret);
 }
 
 /* Semaphore */
