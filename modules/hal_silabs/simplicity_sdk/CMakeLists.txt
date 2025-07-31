@@ -101,6 +101,12 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
     endif()
     zephyr_library_sources(${RADIO_DIR}/rail_lib/plugin/pa-conversions/pa_conversions_efr32.c)
 
+    if(CONFIG_SILABS_SISDK_RAIL_MULTIPROTOCOL)
+      zephyr_compile_definitions(SL_RAIL_LIB_MULTIPROTOCOL_SUPPORT=1)
+    else()
+      zephyr_compile_definitions(SL_RAIL_LIB_MULTIPROTOCOL_SUPPORT=0)
+    endif()
+
     if(CONFIG_SILABS_DEVICE_IS_MODULE)
       # RAIL lib and config for modules
       if(CONFIG_SILABS_SISDK_RAIL_MULTIPROTOCOL)
