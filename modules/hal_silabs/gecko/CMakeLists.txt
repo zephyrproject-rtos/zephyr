@@ -11,7 +11,7 @@ set(EMLIB_DIR ${ZEPHYR_HAL_SILABS_MODULE_DIR}/gecko/emlib)
 set(COMMON_DIR ${ZEPHYR_HAL_SILABS_MODULE_DIR}/gecko/common)
 set(DEVICE_DIR ${ZEPHYR_HAL_SILABS_MODULE_DIR}/gecko/Device)
 set(RADIO_DIR ${ZEPHYR_HAL_SILABS_MODULE_DIR}/gecko/platform/radio)
-set(BLOBS_DIR ${ZEPHYR_HAL_SILABS_MODULE_DIR/zephyr/blobs})
+set(BLOBS_DIR ${ZEPHYR_HAL_SILABS_MODULE_DIR}/zephyr/blobs/gecko)
 
 # Translate the SoC name and part number into the gecko device and cpu name
 # respectively.
