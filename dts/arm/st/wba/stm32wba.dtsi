@@ -15,7 +15,7 @@
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/dma/stm32_dma.h>
-
+#include <zephyr/dt-bindings/power/stm32_pwr.h>
 #include <freq.h>
 
 / {
@@ -153,6 +153,64 @@
 			rctl: reset-controller {
 				compatible = "st,stm32-rcc-rctl";
 				#reset-cells = <1>;
+			};
+		};
+
+		pwr: power@46020800 {
+			compatible = "st,stm32-pwr";
+			reg = <0x46020800 0x400>;
+			wkup-pins-nb = <8>;
+			wkup-pin-srcs = <2>;
+			wkup-pins-pol;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			wkup-pin@1 {
+				reg = <0x1>;
+				wkup-gpios = <&gpioa 0 STM32_PWR_WKUP_EVT_SRC_0>,
+					     <&gpiob 2 STM32_PWR_WKUP_EVT_SRC_1>;
+			};
+
+			wkup-pin@2 {
+				reg = <0x2>;
+				wkup-gpios = <&gpioc 13 STM32_PWR_WKUP_EVT_SRC_1>;
+			};
+
+			wkup-pin@3 {
+				reg = <0x3>;
+				wkup-gpios = <&gpioa 1 STM32_PWR_WKUP_EVT_SRC_1>,
+					     <&gpiob 6 STM32_PWR_WKUP_EVT_SRC_2>;
+			};
+
+			wkup-pin@4 {
+				reg = <0x4>;
+				wkup-gpios = <&gpioa 2 STM32_PWR_WKUP_EVT_SRC_0>,
+					     <&gpiob 1 STM32_PWR_WKUP_EVT_SRC_1>;
+			};
+
+			wkup-pin@5 {
+				reg = <0x5>;
+				wkup-gpios = <&gpioa 3 STM32_PWR_WKUP_EVT_SRC_1>,
+					     <&gpiob 7 STM32_PWR_WKUP_EVT_SRC_2>;
+			};
+
+			wkup-pin@6 {
+				reg = <0x6>;
+				wkup-gpios = <&gpioa 12 STM32_PWR_WKUP_EVT_SRC_0>,
+					     <&gpioa 5 STM32_PWR_WKUP_EVT_SRC_1>;
+			};
+
+			wkup-pin@7 {
+				reg = <0x7>;
+				wkup-gpios = <&gpiob 14 STM32_PWR_WKUP_EVT_SRC_0>,
+					     <&gpioa 6 STM32_PWR_WKUP_EVT_SRC_1>;
+			};
+
+			wkup-pin@8 {
+				reg = <0x8>;
+				wkup-gpios = <&gpioa 7 STM32_PWR_WKUP_EVT_SRC_1>,
+					     <&gpiob 9 STM32_PWR_WKUP_EVT_SRC_2>;
 			};
 		};
 
