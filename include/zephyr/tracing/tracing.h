@@ -885,15 +885,17 @@
 /**
  * @brief Trace Conditional Variable wait enter
  * @param condvar Conditional Variable object
+ * @param timeout Timeout period
  */
-#define sys_port_trace_k_condvar_wait_enter(condvar)
+#define sys_port_trace_k_condvar_wait_enter(condvar, timeout)
 
 /**
  * @brief Trace Conditional Variable wait exit
  * @param condvar Conditional Variable object
+ * @param timeout Timeout period
  * @param ret Return value
  */
-#define sys_port_trace_k_condvar_wait_exit(condvar, ret)
+#define sys_port_trace_k_condvar_wait_exit(condvar, timeout, ret)
 
 /** @} */ /* end of subsys_tracing_apis_condvar */
 

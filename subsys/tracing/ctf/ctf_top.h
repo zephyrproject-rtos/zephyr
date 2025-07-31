@@ -215,6 +215,17 @@ typedef enum {
 	CTF_EVENT_MSGQ_PUT_FRONT_BLOCKING = 0x94,
 	CTF_EVENT_MSGQ_CLEANUP_ENTER = 0x95,
 	CTF_EVENT_MSGQ_CLEANUP_EXIT = 0x96,
+
+	/* Condition Variables */
+	CTF_EVENT_CONDVAR_INIT = 0x97,
+	CTF_EVENT_CONDVAR_SIGNAL_ENTER = 0x98,
+	CTF_EVENT_CONDVAR_SIGNAL_BLOCKING = 0x99,
+	CTF_EVENT_CONDVAR_SIGNAL_EXIT = 0x9A,
+	CTF_EVENT_CONDVAR_BROADCAST_ENTER = 0x9B,
+	CTF_EVENT_CONDVAR_BROADCAST_EXIT = 0x9C,
+	CTF_EVENT_CONDVAR_WAIT_ENTER = 0x9D,
+	CTF_EVENT_CONDVAR_WAIT_EXIT = 0x9E,
+
 } ctf_event_t;
 
 typedef struct {
@@ -462,6 +473,39 @@ static inline void ctf_top_msgq_cleanup_exit(uint32_t msgq_id, int32_t ret)
 	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MSGQ_CLEANUP_EXIT), msgq_id, ret);
 }
 
+/* Condition Variables */
+static inline void ctf_top_condvar_init(uint32_t condvar_id, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_CONDVAR_INIT), condvar_id, ret);
+}
+static inline void ctf_top_condvar_signal_enter(uint32_t condvar_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_CONDVAR_SIGNAL_ENTER), condvar_id);
+}
+static inline void ctf_top_condvar_signal_blocking(uint32_t condvar_id, uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_CONDVAR_SIGNAL_BLOCKING), condvar_id, timeout);
+}
+static inline void ctf_top_condvar_signal_exit(uint32_t condvar_id, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_CONDVAR_SIGNAL_EXIT), condvar_id, ret);
+}
+static inline void ctf_top_condvar_broadcast_enter(uint32_t condvar_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_CONDVAR_BROADCAST_ENTER), condvar_id);
+}
+static inline void ctf_top_condvar_broadcast_exit(uint32_t condvar_id, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_CONDVAR_BROADCAST_EXIT), condvar_id, ret);
+}
+static inline void ctf_top_condvar_wait_enter(uint32_t condvar_id, uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_CONDVAR_WAIT_ENTER), condvar_id, timeout);
+}
+static inline void ctf_top_condvar_wait_exit(uint32_t condvar_id, uint32_t timeout, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_CONDVAR_WAIT_EXIT), condvar_id, timeout, ret);
+}
 
 /* Semaphore */
 static inline void ctf_top_semaphore_init(uint32_t sem_id,

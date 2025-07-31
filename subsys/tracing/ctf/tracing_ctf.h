@@ -181,14 +181,22 @@ extern "C" {
 #define sys_port_trace_k_timer_status_sync_exit(timer, result)			\
 	sys_trace_k_timer_status_sync_exit(timer, result)
 
-#define sys_port_trace_k_condvar_init(condvar, ret)
-#define sys_port_trace_k_condvar_signal_enter(condvar)
-#define sys_port_trace_k_condvar_signal_blocking(condvar, timeout)
-#define sys_port_trace_k_condvar_signal_exit(condvar, ret)
-#define sys_port_trace_k_condvar_broadcast_enter(condvar)
-#define sys_port_trace_k_condvar_broadcast_exit(condvar, ret)
-#define sys_port_trace_k_condvar_wait_enter(condvar)
-#define sys_port_trace_k_condvar_wait_exit(condvar, ret)
+#define sys_port_trace_k_condvar_init(condvar, ret) \
+	sys_trace_k_condvar_init(condvar, ret)
+#define sys_port_trace_k_condvar_signal_enter(condvar) \
+	sys_trace_k_condvar_signal_enter(condvar)
+#define sys_port_trace_k_condvar_signal_blocking(condvar, timeout) \
+	sys_trace_k_condvar_signal_blocking(condvar, timeout)
+#define sys_port_trace_k_condvar_signal_exit(condvar, ret) \
+	sys_trace_k_condvar_signal_exit(condvar, ret)
+#define sys_port_trace_k_condvar_broadcast_enter(condvar) \
+	sys_trace_k_condvar_broadcast_enter(condvar)
+#define sys_port_trace_k_condvar_broadcast_exit(condvar, ret) \
+	sys_trace_k_condvar_broadcast_exit(condvar, ret)
+#define sys_port_trace_k_condvar_wait_enter(condvar, timeout) \
+	sys_trace_k_condvar_wait_enter(condvar, timeout)
+#define sys_port_trace_k_condvar_wait_exit(condvar, timeout, ret) \
+	sys_trace_k_condvar_wait_exit(condvar, timeout, ret)
 
 #define sys_port_trace_k_queue_init(queue)
 #define sys_port_trace_k_queue_cancel_wait(queue)
@@ -464,8 +472,17 @@ void sys_trace_k_msgq_get_exit(struct k_msgq *msgq, k_timeout_t timeout, int ret
 void sys_trace_k_msgq_peek(struct k_msgq *msgq, int ret);
 void sys_trace_k_msgq_purge(struct k_msgq *msgq);
 
-/* Semaphore */
+/* Condition Variables */
+void sys_trace_k_condvar_init(struct k_condvar *condvar, int ret);
+void sys_trace_k_condvar_signal_enter(struct k_condvar *condvar);
+void sys_trace_k_condvar_signal_blocking(struct k_condvar *condvar, k_timeout_t timeout);
+void sys_trace_k_condvar_signal_exit(struct k_condvar *condvar, int ret);
+void sys_trace_k_condvar_broadcast_enter(struct k_condvar *condvar);
+void sys_trace_k_condvar_broadcast_exit(struct k_condvar *condvar, int ret);
+void sys_trace_k_condvar_wait_enter(struct k_condvar *condvar, k_timeout_t timeout);
+void sys_trace_k_condvar_wait_exit(struct k_condvar *condvar, k_timeout_t timeout, int ret);
 
+/* Semaphore */
 void sys_trace_k_sem_init(struct k_sem *sem, int ret);
 void sys_trace_k_sem_give_enter(struct k_sem *sem);
 
