@@ -775,6 +775,8 @@ struct gc2145_data {
 	struct gc2145_ctrls ctrls;
 	struct video_format fmt;
 	struct video_rect crop;
+	uint16_t format_width;
+	uint16_t format_height;
 	uint8_t c_ratio;
 	uint8_t r_ratio;
 };
@@ -870,8 +872,7 @@ static int gc2145_set_output_format(const struct device *dev, int output_format)
 }
 
 
-static int gc2145_set_resolution(const struct device *dev, uint32_t w, uint32_t h,
-								 bool compute_ratio)
+static int gc2145_gc2145_set_resolution(const struct device *dev, uint32_t w, uint32_t h)
 {
 	const struct gc2145_config *cfg = dev->config;
 	struct gc2145_data *drv_data = dev->data;
@@ -887,6 +888,8 @@ static int gc2145_set_resolution(const struct device *dev, uint32_t w, uint32_t 
 	if ((w == 0) || (h == 0)) {
 		return -EIO;
 	}
+
+	/* If we are called from set_format, then we compute ratio and initialize crop */
 	drv_data->c_ratio = RESOLUTION_UXGA_W / w;
 	drv_data->r_ratio = RESOLUTION_UXGA_H / h;
 	if (drv_data->c_ratio < drv_data->r_ratio) {
@@ -895,10 +898,27 @@ static int gc2145_set_resolution(const struct device *dev, uint32_t w, uint32_t 
 		drv_data->c_ratio = drv_data->r_ratio;
 	}
 
+	/* Restrict ratio to 3 for faster refresh ? */
+	if (drv_data->c_ratio > 3) {
+		drv_data->c_ratio = 3;
+		drv_data->r_ratio = 3;
+	}
+
 	/* make sure we don't end up with ratio of 0 */
 	if (drv_data->c_ratio == 0) {
 		return -EIO;
 	}
+
+	/* remember the width and height passed in */
+	drv_data->format_width = w;
+	drv_data->format_height = h;
+
+	/* Default to crop rectangle being same size as passed in resolution */
+	drv_data->crop.left = 0;
+	drv_data->crop.top = 0;
+	drv_data->crop.width = w;
+	drv_data->crop.height = h;
+
 
 	/* Calculates the window boundaries to obtain the desired resolution */
 
@@ -907,10 +927,6 @@ static int gc2145_set_resolution(const struct device *dev, uint32_t w, uint32_t 
 	win_x = ((UXGA_HSIZE - win_w) / 2);
 	win_y = ((UXGA_VSIZE - win_h) / 2);
 
-	drv_data->crop.left = 0;
-	drv_data->crop.top = 0;
-	drv_data->crop.width = w;
-	drv_data->crop.height = h;
 
 	x = (((win_w / drv_data->c_ratio) - w) / 2);
 	y = (((win_h / drv_data->r_ratio) - h) / 2);
@@ -986,29 +1002,63 @@ static int gc2145_set_resolution(const struct device *dev, uint32_t w, uint32_t 
 	return 0;
 }
 
-static int gc2145_set_crop(const struct device *dev)
+static int gc2145_set_crop(const struct device *dev, struct video_selection *sel)
 {
 	/* set the crop, start off with most of a duplicate of set resolution */
 	int ret;
+	const struct gc2145_config *cfg = dev->config;
 	struct gc2145_data *drv_data = dev->data;
 
-	/* Calculates the window boundaries to obtain the desired resolution */
-	if ((drv_data->fmt.width == drv_data->crop.width) &&
-			(drv_data->fmt.height == drv_data->crop.height)) {
+
+	/* Verify the passed in rectangle is valid */
+	if (((sel->rect.left + sel->rect.width) > drv_data->format_width) ||
+			((sel->rect.top + sel->rect.height) > drv_data->format_height)) {
+		LOG_INF("(%u %u) %ux%u > %ux%u", sel->rect.left, sel->rect.top,
+			sel->rect.width, sel->rect.height,
+			drv_data->format_width, drv_data->format_height);
+		return -EINVAL;
+	}
+
+	/* if rectangle passed in is same as current, simply return */
+	if (memcmp((void *)&drv_data->crop, (void *)&sel->rect, sizeof(struct video_rect)) == 0) {
 		return 0;
 	}
 
-	LOG_DBG("set_res: %u %u ratios: %u %u", drv_data->crop.width, drv_data->crop.height,
-			drv_data->c_ratio, drv_data->r_ratio);
-	ret = gc2145_set_resolution(dev, drv_data->crop.width, drv_data->crop.height, false);
-	if (ret == 0) {
-		/* enqueue/dequeue depend on this being set as well as the crop */
-		drv_data->fmt.width = drv_data->crop.width;
-		drv_data->fmt.height = drv_data->crop.height;
-		drv_data->fmt.pitch = drv_data->fmt.width
-			* video_bits_per_pixel(drv_data->fmt.pixelformat) / BITS_PER_BYTE;
+	/* save out the updated crop window registers */
+	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG8(GC2145_REG_RESET),
+			GC2145_REG_RESET_P0_REGS);
+	if (ret < 0) {
+		return ret;
 	}
-	return ret;
+
+	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG_OUT_WIN_ROW_START, sel->rect.top);
+	if (ret < 0) {
+		return ret;
+	}
+	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG_OUT_WIN_COL_START, sel->rect.left);
+	if (ret < 0) {
+		return ret;
+	}
+	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG_OUT_WIN_HEIGHT, sel->rect.height);
+	if (ret < 0) {
+		return ret;
+	}
+	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG_OUT_WIN_WIDTH, sel->rect.width);
+	if (ret < 0) {
+		return ret;
+	}
+
+
+	/* Only if valid do we update our crop rectangle */
+	drv_data->crop = sel->rect;
+
+	/* enqueue/dequeue depend on this being set as well as the crop */
+	drv_data->fmt.width = drv_data->crop.width;
+	drv_data->fmt.height = drv_data->crop.height;
+	drv_data->fmt.pitch = drv_data->fmt.width *
+		video_bits_per_pixel(drv_data->fmt.pixelformat) / BITS_PER_BYTE;
+
+	return 0;
 }
 
 
@@ -1137,7 +1187,7 @@ static int gc2145_set_fmt(const struct device *dev, struct video_format *fmt)
 	}
 
 	/* Set window size */
-	ret = gc2145_set_resolution(dev, fmt->width, fmt->height, true);
+	ret = gc2145_gc2145_set_resolution(dev, fmt->width, fmt->height);
 
 	if (ret < 0) {
 		LOG_ERR("Failed to set the resolution");
@@ -1239,11 +1289,8 @@ static int gc2145_set_selection(const struct device *dev, struct video_selection
 		return -EINVAL;
 	}
 
-	struct gc2145_data *drv_data = dev->data;
-
 	if (sel->target == VIDEO_SEL_TGT_CROP) {
-		drv_data->crop = sel->rect;
-		return gc2145_set_crop(dev);
+		return gc2145_set_crop(dev, sel);
 	}
 
 	return -EINVAL;
@@ -1267,8 +1314,8 @@ static int gc2145_get_selection(const struct device *dev, struct video_selection
 	case VIDEO_SEL_TGT_NATIVE_SIZE:
 		sel->rect.top = 0;
 		sel->rect.left = 0;
-		sel->rect.width = UXGA_HSIZE / drv_data->c_ratio;
-		sel->rect.height = UXGA_VSIZE / drv_data->r_ratio;
+		sel->rect.width = drv_data->format_width;
+		sel->rect.height = drv_data->format_height;
 		break;
 	default:
 		return -EINVAL;
