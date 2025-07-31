@@ -180,13 +180,20 @@ extern "C" {
 #define sys_port_trace_k_work_poll_cancel_exit(work, ret) \
 	sys_trace_k_work_poll_cancel_exit(work, ret)
 
-#define sys_port_trace_k_poll_api_event_init(event)
-#define sys_port_trace_k_poll_api_poll_enter(events)
-#define sys_port_trace_k_poll_api_poll_exit(events, ret)
-#define sys_port_trace_k_poll_api_signal_init(signal)
-#define sys_port_trace_k_poll_api_signal_reset(signal)
-#define sys_port_trace_k_poll_api_signal_check(signal)
-#define sys_port_trace_k_poll_api_signal_raise(signal, ret)
+#define sys_port_trace_k_poll_api_event_init(event) \
+	sys_trace_k_poll_api_event_init(event)
+#define sys_port_trace_k_poll_api_poll_enter(events) \
+	sys_trace_k_poll_api_poll_enter(events)
+#define sys_port_trace_k_poll_api_poll_exit(events, ret) \
+	sys_trace_k_poll_api_poll_exit(events, ret)
+#define sys_port_trace_k_poll_api_signal_init(signal) \
+	sys_trace_k_poll_api_signal_init(signal)
+#define sys_port_trace_k_poll_api_signal_reset(signal) \
+	sys_trace_k_poll_api_signal_reset(signal)
+#define sys_port_trace_k_poll_api_signal_check(signal) \
+	sys_trace_k_poll_api_signal_check(signal)
+#define sys_port_trace_k_poll_api_signal_raise(signal, ret) \
+	sys_trace_k_poll_api_signal_raise(signal, ret)
 
 #define sys_port_trace_k_sem_init(sem, ret)                                    \
 	sys_trace_k_sem_init(sem, ret)
@@ -583,6 +590,15 @@ void sys_trace_k_work_poll_submit_enter(struct k_work_poll *work, k_timeout_t ti
 void sys_trace_k_work_poll_submit_exit(struct k_work_poll *work, k_timeout_t timeout, int ret);
 void sys_trace_k_work_poll_cancel_enter(struct k_work_poll *work);
 void sys_trace_k_work_poll_cancel_exit(struct k_work_poll *work, int ret);
+
+/* Poll API */
+void sys_trace_k_poll_api_event_init(struct k_poll_event *event);
+void sys_trace_k_poll_api_poll_enter(struct k_poll_event *events);
+void sys_trace_k_poll_api_poll_exit(struct k_poll_event *events, int ret);
+void sys_trace_k_poll_api_signal_init(struct k_poll_signal *signal);
+void sys_trace_k_poll_api_signal_reset(struct k_poll_signal *signal);
+void sys_trace_k_poll_api_signal_check(struct k_poll_signal *signal);
+void sys_trace_k_poll_api_signal_raise(struct k_poll_signal *signal, int ret);
 
 /* Semaphore */
 void sys_trace_k_sem_init(struct k_sem *sem, int ret);

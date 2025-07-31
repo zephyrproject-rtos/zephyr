@@ -1770,3 +1770,62 @@ event {
 		int32_t ret;
 	};
 };
+
+/* Poll API */
+event {
+	name = poll_event_init;
+	id = 0xCE;
+	fields := struct {
+		uint32_t event_id;
+	};
+};
+
+event {
+	name = poll_enter;
+	id = 0xCF;
+	fields := struct {
+		uint32_t events_id;
+	};
+};
+
+event {
+	name = poll_exit;
+	id = 0xD0;
+	fields := struct {
+		uint32_t events_id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = poll_signal_init;
+	id = 0xD1;
+	fields := struct {
+		uint32_t signal_id;
+	};
+};
+
+event {
+	name = poll_signal_reset;
+	id = 0xD2;
+	fields := struct {
+		uint32_t signal_id;
+	};
+};
+
+event {
+	name = poll_signal_check;
+	id = 0xD3;
+	fields := struct {
+		uint32_t signal_id;
+	};
+};
+
+event {
+	name = poll_signal_raise;
+	id = 0xD4;
+	fields := struct {
+		uint32_t signal_id;
+		int32_t ret;
+	};
+};

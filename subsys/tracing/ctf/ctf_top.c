@@ -843,6 +843,58 @@ void sys_trace_k_work_poll_cancel_exit(struct k_work_poll *work, int ret)
 		);
 }
 
+/* Poll API */
+void sys_trace_k_poll_api_event_init(struct k_poll_event *event)
+{
+	ctf_top_poll_event_init(
+		(uint32_t)(uintptr_t)event
+		);
+}
+
+void sys_trace_k_poll_api_poll_enter(struct k_poll_event *events)
+{
+	ctf_top_poll_enter(
+		(uint32_t)(uintptr_t)events
+		);
+}
+
+void sys_trace_k_poll_api_poll_exit(struct k_poll_event *events, int ret)
+{
+	ctf_top_poll_exit(
+		(uint32_t)(uintptr_t)events,
+		(int32_t)ret
+		);
+}
+
+void sys_trace_k_poll_api_signal_init(struct k_poll_signal *signal)
+{
+	ctf_top_poll_signal_init(
+		(uint32_t)(uintptr_t)signal
+		);
+}
+
+void sys_trace_k_poll_api_signal_reset(struct k_poll_signal *signal)
+{
+	ctf_top_poll_signal_reset(
+		(uint32_t)(uintptr_t)signal
+		);
+}
+
+void sys_trace_k_poll_api_signal_check(struct k_poll_signal *signal)
+{
+	ctf_top_poll_signal_check(
+		(uint32_t)(uintptr_t)signal
+		);
+}
+
+void sys_trace_k_poll_api_signal_raise(struct k_poll_signal *signal, int ret)
+{
+	ctf_top_poll_signal_raise(
+		(uint32_t)(uintptr_t)signal,
+		(int32_t)ret
+		);
+}
+
 
 /* Semaphore */
 void sys_trace_k_sem_init(struct k_sem *sem, int ret)
