@@ -409,6 +409,16 @@
 #endif
 
 /**
+ * @def OPENTHREAD_CONFIG_PLATFORM_RADIO_COEX_ENABLE
+ *
+ * Enable radio coexistence support.
+ *
+ */
+#ifdef CONFIG_OPENTHREAD_PLATFORM_RADIO_COEX_ENABLE
+#define OPENTHREAD_CONFIG_PLATFORM_RADIO_COEX_ENABLE 1
+#endif
+
+/**
  * @def OPENTHREAD_CONFIG_PLATFORM_MAC_KEYS_EXPORTABLE_ENABLE
  *
  * Set to 1 if you want to make MAC keys exportable.
