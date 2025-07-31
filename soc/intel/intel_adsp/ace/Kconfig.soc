@@ -26,6 +26,12 @@ config SOC_INTEL_ACE30
 	help
 	  ACE 3.0 Panther Lake PCH
 
+config SOC_INTEL_ACE40
+	bool
+	select SOC_SERIES_INTEL_ADSP_ACE
+	help
+	  ACE 4.0 Nova Lake PCH
+
 config SOC_SERIES
 	default "intel_adsp_ace" if SOC_SERIES_INTEL_ADSP_ACE
 
@@ -33,8 +39,10 @@ config SOC_TOOLCHAIN_NAME
 	default "intel_ace15_mtpm" if SOC_INTEL_ACE15_MTPM
 	default "intel_ace15_mtpm" if SOC_INTEL_ACE20_LNL
 	default "intel_ace30_ptl" if SOC_INTEL_ACE30
+	default "intel_ace40" if SOC_INTEL_ACE40
 
 config SOC
 	default "ace15_mtpm" if SOC_INTEL_ACE15_MTPM
 	default "ace20_lnl" if SOC_INTEL_ACE20_LNL
 	default "ace30" if SOC_INTEL_ACE30
+	default "ace40" if SOC_INTEL_ACE40
