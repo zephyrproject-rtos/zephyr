@@ -815,6 +815,13 @@ struct bt_conn_br_info {
 	const bt_addr_t *dst; /**< Destination (Remote) BR/EDR address */
 };
 
+/** SCO Connection Info Structure */
+struct bt_conn_sco_info {
+	uint16_t handle;   /**< SCO connection handle */
+	uint8_t link_type; /**< SCO link type */
+	uint8_t air_mode;  /**< SCO air mode (codec type) */
+};
+
 enum {
 	BT_CONN_ROLE_CENTRAL = 0,
 	BT_CONN_ROLE_PERIPHERAL = 1,
@@ -881,6 +888,8 @@ struct bt_conn_info {
 		struct bt_conn_le_info le;
 		/** BR/EDR Connection specific Info. */
 		struct bt_conn_br_info br;
+		/** SCO Connection specific Info. */
+		struct bt_conn_sco_info sco;
 	};
 	/** Connection state. */
 	enum bt_conn_state state;
