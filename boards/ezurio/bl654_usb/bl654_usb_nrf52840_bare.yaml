@@ -1,5 +1,5 @@
-identifier: bl654_usb
-name: BL654-USB
+identifier: bl654_usb/nrf52840/bare
+name: BL654-USB-NRF52840-bare
 type: mcu
 arch: arm
 ram: 256
