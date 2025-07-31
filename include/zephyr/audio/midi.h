@@ -19,9 +19,20 @@ extern "C" {
  * @ingroup audio_interface
  * @since 4.1
  * @version 0.1.0
- * @see ump112: "Universal MIDI Packet (UMP) Format and MIDI 2.0 Protocol"
- *              Document version 1.1.2
  * @{
+ */
+
+/**
+ * @defgroup ump112 Universal MIDI Packet (UMP) Format and MIDI 2.0 Protocol
+ * @ingroup midi_ump
+ * @{
+ * @details Definitions based on the following document
+ * <a href="https://midi.org/universal-midi-packet-ump-and-midi-2-0-protocol-specification">
+ * Universal MIDI Packet (UMP) Format and MIDI 2.0 Protocol
+ * With MIDI 1.0 Protocol in UMP Format - Document version 1.1.2
+ * (MIDI Association Document: M2-104-UM)
+ * </a>
+ * @}
  */
 
 /**
@@ -59,6 +70,7 @@ struct midi_ump {
 /**
  * @brief      Message Type field of a Universal MIDI Packet
  * @param[in]  ump    Universal MIDI Packet
+ * @see midi_ump_mt
  */
 #define UMP_MT(ump) \
 	((ump).data[0] >> 28)
@@ -86,14 +98,15 @@ struct midi_ump {
  * @param[in]  ump    Universal MIDI Packet
  */
 #define UMP_GROUP(ump) \
-	(((ump).data[0] >> 24) & 0x0f)
+	(((ump).data[0] >> 24) & BIT_MASK(4))
 
 /**
  * @brief      Status byte of a MIDI channel voice or system message
  * @param[in]  ump    Universal MIDI Packet (containing a MIDI1 event)
+ * @see midi_ump_sys
  */
 #define UMP_MIDI_STATUS(ump) \
-	(((ump).data[0] >> 16) & 0xff)
+	(((ump).data[0] >> 16) & BIT_MASK(8))
 /**
  * @brief      Command of a MIDI channel voice message
  * @param[in]  ump    Universal MIDI Packet (containing a MIDI event)
@@ -106,19 +119,19 @@ struct midi_ump {
  * @param[in]  ump    Universal MIDI Packet (containing a MIDI event)
  */
 #define UMP_MIDI_CHANNEL(ump) \
-	(UMP_MIDI_STATUS(ump) & 0x0f)
+	(UMP_MIDI_STATUS(ump) & BIT_MASK(4))
 /**
  * @brief      First parameter of a MIDI1 channel voice or system message
  * @param[in]  ump     Universal MIDI Packet (containing a MIDI1 message)
  */
 #define UMP_MIDI1_P1(ump) \
-	(((ump).data[0] >> 8) & 0x7f)
+	(((ump).data[0] >> 8) & BIT_MASK(7))
 /**
  * @brief      Second parameter of a MIDI1 channel voice or system message
  * @param[in]  ump     Universal MIDI Packet (containing a MIDI1 message)
  */
 #define UMP_MIDI1_P2(ump) \
-	((ump).data[0] & 0x7f)
+	((ump).data[0] & BIT_MASK(7))
 
 /**
  * @brief      Initialize a UMP with a MIDI1 channel voice message
@@ -143,9 +156,8 @@ struct midi_ump {
  * @defgroup midi_ump_cmd MIDI commands
  * @ingroup midi_ump
  * @see ump112: 7.3 MIDI 1.0 Channel Voice Messages
- *
- * When UMP_MT(x)=UMP_MT_MIDI1_CHANNEL_VOICE or UMP_MT_MIDI2_CHANNEL_VOICE, then
- * UMP_MIDI_COMMAND(x) may be one of:
+ * @remark When UMP_MT(x)=UMP_MT_MIDI1_CHANNEL_VOICE or UMP_MT_MIDI2_CHANNEL_VOICE,
+ *         then UMP_MIDI_COMMAND(x) may be one of:
  * @{
  */
 #define UMP_MIDI_NOTE_OFF        0x8 /**< Note Off (p1=note number, p2=velocity) */
@@ -180,7 +192,8 @@ struct midi_ump {
  * @ingroup midi_ump
  * @see ump112: 7.6 System Common and System Real Time Messages
  *
- * When UMP_MT(x)=UMP_MT_SYS_RT_COMMON, UMP_MIDI_STATUS(x) may be one of:
+ * @remark When UMP_MT(x)=UMP_MT_SYS_RT_COMMON,
+ *         then UMP_MIDI_STATUS(x) may be one of:
  * @{
  */
 #define UMP_SYS_MIDI_TIME_CODE 0xf1 /**< MIDI Time Code (no param) */
