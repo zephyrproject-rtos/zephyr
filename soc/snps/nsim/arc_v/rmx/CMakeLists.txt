@@ -2,7 +2,7 @@
 
 if(COMPILER STREQUAL arcmwdt)
 # CCAC:
-  zephyr_compile_options_ifdef(CONFIG_SOC_SERIES_RMX
+  zephyr_compile_options_ifdef(CONFIG_SOC_SERIES_NSIM_ARC_V_RMX
 					-av5rmx -Zicsr -Zifencei -Zihintpause -Zba -Zbb
 					-Zbs -Zca -Zcb -Zcmp -Zcmt -Za -Zm -Zicbom)
 
