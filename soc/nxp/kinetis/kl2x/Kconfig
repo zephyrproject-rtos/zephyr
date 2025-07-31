@@ -15,9 +15,6 @@ config SOC_SERIES_KINETIS_KL2X
 config SOC_MKL25Z4
 	select CPU_CORTEX_M0PLUS
 	select HAS_MCUX
-	select HAS_MCUX_ADC16
-	select HAS_MCUX_FTFX
-	select HAS_MCUX_LPSCI
 	select HAS_MCUX_SIM
 	select HAS_OSC
 	select HAS_MCG
