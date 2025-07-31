@@ -9,11 +9,16 @@
 		compatible = "test-spi-loopback-slow";
 		reg = <0>;
 		spi-max-frequency = <500000>;
+		spi-cs-setup-delay-ns = <1000>;
+		spi-cs-hold-delay-ns = <1000>;
+		spi-interframe-delay-ns = <1000>;
 	};
 	fast@0 {
 		compatible = "test-spi-loopback-fast";
 		reg = <0>;
 		spi-max-frequency = <16000000>;
+		spi-cs-setup-delay-ns = <100>;
+		spi-cs-hold-delay-ns = <100>;
 	};
 
 	transfer-delay = <100>;
