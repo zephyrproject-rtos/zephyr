@@ -87,7 +87,7 @@ endchoice
 
 config ADC_MCUX_ADC16_ENABLE_EDMA
 	bool "EDMA for adc driver"
-	depends on HAS_MCUX_ADC16 && HAS_MCUX_EDMA
+	depends on DMA_MCUX_EDMA
 	help
 	  Enable the MCUX ADC16 driver.
 
