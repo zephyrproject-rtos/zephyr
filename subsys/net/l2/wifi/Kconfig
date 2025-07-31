@@ -158,7 +158,7 @@ endif # WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 config WIFI_MGMT_BSS_MAX_IDLE_TIME
 	int "BSS max idle timeout in seconds"
 	range 0 64000
-	default 30
+	default 300
 	help
 	  As per 802.11-2020: 11.21.13 BSS max idle period management
 	  If dot11WirelessManagementImplemented is true, dot11BSSMaxIdlePeriod is
