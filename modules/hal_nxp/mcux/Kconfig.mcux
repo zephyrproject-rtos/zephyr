@@ -52,11 +52,6 @@ config HAS_MCUX_SRC_V2
 	  Set if version 2 of the system reset controller (SRC) module is
 	  present in the SoC.
 
-config HAS_MCUX_SMC
-	bool
-	help
-	  Set if the SMC  module is present in the SoC.
-
 config HAS_MCUX_RDC
 	bool
 	help
