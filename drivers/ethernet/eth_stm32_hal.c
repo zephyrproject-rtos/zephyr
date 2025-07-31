@@ -254,11 +254,10 @@ static inline struct eth_stm32_tx_context *allocate_tx_context(struct net_pkt *p
 static ETH_TxPacketConfig tx_config;
 #endif
 
-static inline void setup_mac_filter(ETH_HandleTypeDef *heth)
+#if defined(CONFIG_ETH_STM32_HAL_API_V2)
+static void setup_mac_filter(ETH_HandleTypeDef *heth)
 {
 	__ASSERT_NO_MSG(heth != NULL);
-
-#if defined(CONFIG_ETH_STM32_HAL_API_V2)
 	ETH_MACFilterConfigTypeDef MACFilterConf;
 
 	HAL_ETH_GetMACFilterConfig(heth, &MACFilterConf);
@@ -272,7 +271,11 @@ static inline void setup_mac_filter(ETH_HandleTypeDef *heth)
 	HAL_ETH_SetMACFilterConfig(heth, &MACFilterConf);
 
 	k_sleep(K_MSEC(1));
-#else /* CONFIG_ETH_STM32_HAL_API_V2 */
+}
+#else
+static void setup_mac_filter(ETH_HandleTypeDef *heth)
+{
+	__ASSERT_NO_MSG(heth != NULL);
 	uint32_t tmp = heth->Instance->MACFFR;
 
 	/* clear all multicast filter bits, resulting in perfect filtering */
@@ -297,8 +300,8 @@ static inline void setup_mac_filter(ETH_HandleTypeDef *heth)
 	tmp = heth->Instance->MACFFR;
 	k_sleep(K_MSEC(1));
 	heth->Instance->MACFFR = tmp;
-#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 }
+#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 static bool eth_is_ptp_pkt(struct net_if *iface, struct net_pkt *pkt)
@@ -323,20 +326,16 @@ void HAL_ETH_TxPtpCallback(uint32_t *buff, ETH_TimeStampTypeDef *timestamp)
 }
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
+#if defined(CONFIG_ETH_STM32_HAL_API_V2)
 static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 {
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
 	int res;
 	size_t total_len;
-#if defined(CONFIG_ETH_STM32_HAL_API_V2)
 	size_t remaining_read;
 	struct eth_stm32_tx_context *ctx = NULL;
 	struct eth_stm32_tx_buffer_header *buf_header = NULL;
-#else
-	uint8_t *dma_buffer;
-	__IO ETH_DMADescTypeDef *dma_tx_desc;
-#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 	HAL_StatusTypeDef hal_ret = HAL_OK;
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 	bool timestamped_frame;
@@ -353,15 +352,8 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 
 	k_mutex_lock(&dev_data->tx_mutex, K_FOREVER);
 
-#if defined(CONFIG_ETH_STM32_HAL_API_V2)
 	ctx = allocate_tx_context(pkt);
 	buf_header = &dma_tx_buffer_header[ctx->first_tx_buffer_index];
-#else
-	dma_tx_desc = heth->TxDesc;
-	while (IS_ETH_DMATXDESC_OWN(dma_tx_desc) != (uint32_t)RESET) {
-		k_yield();
-	}
-#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 	timestamped_frame = eth_is_ptp_pkt(net_pkt_iface(pkt), pkt) ||
@@ -372,7 +364,6 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	}
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
-#if defined(CONFIG_ETH_STM32_HAL_API_V2)
 	remaining_read = total_len;
 	/* fill and allocate buffer until remaining data fits in one buffer */
 	while (remaining_read > ETH_STM32_TX_BUF_SIZE) {
@@ -396,16 +387,6 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	buf_header->tx_buff.len = remaining_read;
 	buf_header->tx_buff.next = NULL;
 
-#else
-	dma_buffer = (uint8_t *)(dma_tx_desc->Buffer1Addr);
-
-	if (net_pkt_read(pkt, dma_buffer, total_len)) {
-		res = -ENOBUFS;
-		goto error;
-	}
-#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
-
-#if defined(CONFIG_ETH_STM32_HAL_API_V2)
 	tx_config.Length = total_len;
 	tx_config.pData = ctx;
 	tx_config.TxBuffer = &dma_tx_buffer_header[ctx->first_tx_buffer_index].tx_buff;
@@ -467,7 +448,56 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 		goto error;
 	}
 
+	res = 0;
+error:
+
+	if (!ctx) {
+		/* The HAL owns the tx context */
+		HAL_ETH_ReleaseTxPacket(heth);
+	} else {
+		/* We need to release the tx context and its buffers */
+		HAL_ETH_TxFreeCallback((uint32_t *)ctx);
+	}
+
+	k_mutex_unlock(&dev_data->tx_mutex);
+
+	return res;
+}
+
 #else
+static int eth_tx(const struct device *dev, struct net_pkt *pkt)
+{
+	struct eth_stm32_hal_dev_data *dev_data = dev->data;
+	ETH_HandleTypeDef *heth = &dev_data->heth;
+	int res;
+	size_t total_len;
+	uint8_t *dma_buffer;
+	__IO ETH_DMADescTypeDef *dma_tx_desc;
+	HAL_StatusTypeDef hal_ret = HAL_OK;
+
+	__ASSERT_NO_MSG(pkt != NULL);
+	__ASSERT_NO_MSG(pkt->frags != NULL);
+
+	total_len = net_pkt_get_len(pkt);
+	if (total_len > (ETH_STM32_TX_BUF_SIZE * ETH_TXBUFNB)) {
+		LOG_ERR("PKT too big");
+		return -EIO;
+	}
+
+	k_mutex_lock(&dev_data->tx_mutex, K_FOREVER);
+
+	dma_tx_desc = heth->TxDesc;
+	while (IS_ETH_DMATXDESC_OWN(dma_tx_desc) != (uint32_t)RESET) {
+		k_yield();
+	}
+
+	dma_buffer = (uint8_t *)(dma_tx_desc->Buffer1Addr);
+
+	if (net_pkt_read(pkt, dma_buffer, total_len)) {
+		res = -ENOBUFS;
+		goto error;
+	}
+
 	hal_ret = HAL_ETH_TransmitFrame(heth, total_len);
 
 	if (hal_ret != HAL_OK) {
@@ -487,45 +517,31 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 		res = -EIO;
 		goto error;
 	}
-#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
 	res = 0;
 error:
-
-#if defined(CONFIG_ETH_STM32_HAL_API_V2)
-	if (!ctx) {
-		/* The HAL owns the tx context */
-		HAL_ETH_ReleaseTxPacket(heth);
-	} else {
-		/* We need to release the tx context and its buffers */
-		HAL_ETH_TxFreeCallback((uint32_t *)ctx);
-	}
-#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
 	k_mutex_unlock(&dev_data->tx_mutex);
 
 	return res;
 }
+#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
 static struct net_if *get_iface(struct eth_stm32_hal_dev_data *ctx)
 {
 	return ctx->iface;
 }
 
+#if defined(CONFIG_ETH_STM32_HAL_API_V2)
 static struct net_pkt *eth_rx(const struct device *dev)
 {
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
 	struct net_pkt *pkt;
 	size_t total_len = 0;
-#if defined(CONFIG_ETH_STM32_HAL_API_V2)
 	void *appbuf = NULL;
 	struct eth_stm32_rx_buffer_header *rx_header;
-#else
-	__IO ETH_DMADescTypeDef *dma_rx_desc;
-	uint8_t *dma_buffer;
-	HAL_StatusTypeDef hal_ret = HAL_OK;
-#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
+
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 	struct net_ptp_time timestamp;
 	ETH_TimeStampTypeDef ts_registers;
@@ -534,7 +550,6 @@ static struct net_pkt *eth_rx(const struct device *dev)
 	timestamp.nanosecond = UINT32_MAX;
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
-#if defined(CONFIG_ETH_STM32_HAL_API_V2)
 	if (HAL_ETH_ReadData(heth, &appbuf) != HAL_OK) {
 		/* no frame available */
 		return NULL;
@@ -545,16 +560,6 @@ static struct net_pkt *eth_rx(const struct device *dev)
 			rx_header; rx_header = rx_header->next) {
 		total_len += rx_header->size;
 	}
-#else
-	hal_ret = HAL_ETH_GetReceivedFrame_IT(heth);
-	if (hal_ret != HAL_OK) {
-		/* no frame available */
-		return NULL;
-	}
-
-	total_len = heth->RxFrameInfos.length;
-	dma_buffer = (uint8_t *)heth->RxFrameInfos.buffer;
-#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 	if (HAL_ETH_PTP_GetRxTimestamp(heth, &ts_registers) == HAL_OK) {
@@ -570,7 +575,6 @@ static struct net_pkt *eth_rx(const struct device *dev)
 		goto release_desc;
 	}
 
-#if defined(CONFIG_ETH_STM32_HAL_API_V2)
 	for (rx_header = (struct eth_stm32_rx_buffer_header *)appbuf;
 			rx_header; rx_header = rx_header->next) {
 		const size_t index = rx_header - &dma_rx_buffer_header[0];
@@ -583,22 +587,67 @@ static struct net_pkt *eth_rx(const struct device *dev)
 			goto release_desc;
 		}
 	}
+
+release_desc:
+	for (rx_header = (struct eth_stm32_rx_buffer_header *)appbuf;
+			rx_header; rx_header = rx_header->next) {
+		rx_header->used = false;
+	}
+
+	if (!pkt) {
+		goto out;
+	}
+
+#if defined(CONFIG_PTP_CLOCK_STM32_HAL)
+	pkt->timestamp.second = timestamp.second;
+	pkt->timestamp.nanosecond = timestamp.nanosecond;
+	if (timestamp.second != UINT64_MAX) {
+		net_pkt_set_rx_timestamping(pkt, true);
+	}
+#endif /* CONFIG_PTP_CLOCK_STM32_HAL */
+
+out:
+	if (!pkt) {
+		eth_stats_update_errors_rx(get_iface(dev_data));
+	}
+
+	return pkt;
+}
 #else
+static struct net_pkt *eth_rx(const struct device *dev)
+{
+	struct eth_stm32_hal_dev_data *dev_data = dev->data;
+	ETH_HandleTypeDef *heth = &dev_data->heth;
+	struct net_pkt *pkt;
+	size_t total_len = 0;
+	__IO ETH_DMADescTypeDef *dma_rx_desc;
+	uint8_t *dma_buffer;
+	HAL_StatusTypeDef hal_ret = HAL_OK;
+
+	hal_ret = HAL_ETH_GetReceivedFrame_IT(heth);
+	if (hal_ret != HAL_OK) {
+		/* no frame available */
+		return NULL;
+	}
+
+	total_len = heth->RxFrameInfos.length;
+	dma_buffer = (uint8_t *)heth->RxFrameInfos.buffer;
+
+	pkt = net_pkt_rx_alloc_with_buffer(get_iface(dev_data),
+					   total_len, AF_UNSPEC, 0, K_MSEC(100));
+	if (!pkt) {
+		LOG_ERR("Failed to obtain RX buffer");
+		goto release_desc;
+	}
+
 	if (net_pkt_write(pkt, dma_buffer, total_len)) {
 		LOG_ERR("Failed to append RX buffer to context buffer");
 		net_pkt_unref(pkt);
 		pkt = NULL;
 		goto release_desc;
 	}
-#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
 release_desc:
-#if defined(CONFIG_ETH_STM32_HAL_API_V2)
-	for (rx_header = (struct eth_stm32_rx_buffer_header *)appbuf;
-			rx_header; rx_header = rx_header->next) {
-		rx_header->used = false;
-	}
-#else
 	/* Release descriptors to DMA */
 	/* Point to first descriptor */
 	dma_rx_desc = heth->RxFrameInfos.FSRxDesc;
@@ -621,19 +670,10 @@ release_desc:
 		/* Resume DMA reception */
 		heth->Instance->DMARPDR = 0;
 	}
-#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
 	if (!pkt) {
 		goto out;
 	}
-
-#if defined(CONFIG_PTP_CLOCK_STM32_HAL)
-	pkt->timestamp.second = timestamp.second;
-	pkt->timestamp.nanosecond = timestamp.nanosecond;
-	if (timestamp.second != UINT64_MAX) {
-		net_pkt_set_rx_timestamping(pkt, true);
-	}
-#endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
 out:
 	if (!pkt) {
@@ -642,6 +682,7 @@ out:
 
 	return pkt;
 }
+#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
 static void rx_thread(void *arg1, void *unused1, void *unused2)
 {
@@ -1050,12 +1091,12 @@ static int eth_init_api_v2(const struct device *dev)
 }
 #endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
+#if defined(CONFIG_ETH_STM32_HAL_API_V2)
 static void set_mac_config(const struct device *dev, struct phy_link_state *state)
 {
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
 	HAL_StatusTypeDef hal_ret = HAL_OK;
-#if defined(CONFIG_ETH_STM32_HAL_API_V2)
 	ETH_MACConfigTypeDef mac_config = {0};
 
 	HAL_ETH_GetMACConfig(heth, &mac_config);
@@ -1072,7 +1113,13 @@ static void set_mac_config(const struct device *dev, struct phy_link_state *stat
 	if (hal_ret != HAL_OK) {
 		LOG_ERR("HAL_ETH_SetMACConfig: failed: %d", hal_ret);
 	}
-#else  /* CONFIG_ETH_STM32_HAL_API_V2 */
+}
+#else
+static void set_mac_config(const struct device *dev, struct phy_link_state *state)
+{
+	struct eth_stm32_hal_dev_data *dev_data = dev->data;
+	ETH_HandleTypeDef *heth = &dev_data->heth;
+	HAL_StatusTypeDef hal_ret = HAL_OK;
 	heth->Init.DuplexMode =
 		PHY_LINK_IS_FULL_DUPLEX(state->speed) ? ETH_MODE_FULLDUPLEX : ETH_MODE_HALFDUPLEX;
 
@@ -1082,8 +1129,8 @@ static void set_mac_config(const struct device *dev, struct phy_link_state *stat
 	if (hal_ret != HAL_OK) {
 		LOG_ERR("HAL_ETH_ConfigMAC: failed: %d", hal_ret);
 	}
-#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 }
+#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
 static int eth_stm32_hal_start(const struct device *dev)
 {
