@@ -96,6 +96,7 @@
 			reg = <0x40026000 0x524>;
 			interrupts = <8 0>;
 			#dma-cells = <2>;
+			zephyr,pm-device-runtime-auto;
 			status = "disabled";
 		};
 
