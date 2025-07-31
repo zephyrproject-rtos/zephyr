@@ -226,6 +226,61 @@ typedef enum {
 	CTF_EVENT_CONDVAR_WAIT_ENTER = 0x9D,
 	CTF_EVENT_CONDVAR_WAIT_EXIT = 0x9E,
 
+	/* Work Queue */
+	CTF_EVENT_WORK_INIT = 0x9F,
+	CTF_EVENT_WORK_SUBMIT_TO_QUEUE_ENTER = 0xA0,
+	CTF_EVENT_WORK_SUBMIT_TO_QUEUE_EXIT = 0xA1,
+	CTF_EVENT_WORK_SUBMIT_ENTER = 0xA2,
+	CTF_EVENT_WORK_SUBMIT_EXIT = 0xA3,
+	CTF_EVENT_WORK_FLUSH_ENTER = 0xA4,
+	CTF_EVENT_WORK_FLUSH_BLOCKING = 0xA5,
+	CTF_EVENT_WORK_FLUSH_EXIT = 0xA6,
+	CTF_EVENT_WORK_CANCEL_ENTER = 0xA7,
+	CTF_EVENT_WORK_CANCEL_EXIT = 0xA8,
+	CTF_EVENT_WORK_CANCEL_SYNC_ENTER = 0xA9,
+	CTF_EVENT_WORK_CANCEL_SYNC_BLOCKING = 0xAA,
+	CTF_EVENT_WORK_CANCEL_SYNC_EXIT = 0xAB,
+
+	/* Work Queue Management */
+	CTF_EVENT_WORK_QUEUE_INIT = 0xAC,
+	CTF_EVENT_WORK_QUEUE_START_ENTER = 0xAD,
+	CTF_EVENT_WORK_QUEUE_START_EXIT = 0xAE,
+	CTF_EVENT_WORK_QUEUE_STOP_ENTER = 0xAF,
+	CTF_EVENT_WORK_QUEUE_STOP_BLOCKING = 0xB0,
+	CTF_EVENT_WORK_QUEUE_STOP_EXIT = 0xB1,
+	CTF_EVENT_WORK_QUEUE_DRAIN_ENTER = 0xB2,
+	CTF_EVENT_WORK_QUEUE_DRAIN_EXIT = 0xB3,
+	CTF_EVENT_WORK_QUEUE_UNPLUG_ENTER = 0xB4,
+	CTF_EVENT_WORK_QUEUE_UNPLUG_EXIT = 0xB5,
+
+	/* Delayable Work */
+	CTF_EVENT_WORK_DELAYABLE_INIT = 0xB6,
+	CTF_EVENT_WORK_SCHEDULE_FOR_QUEUE_ENTER = 0xB7,
+	CTF_EVENT_WORK_SCHEDULE_FOR_QUEUE_EXIT = 0xB8,
+	CTF_EVENT_WORK_SCHEDULE_ENTER = 0xB9,
+	CTF_EVENT_WORK_SCHEDULE_EXIT = 0xBA,
+	CTF_EVENT_WORK_RESCHEDULE_FOR_QUEUE_ENTER = 0xBB,
+	CTF_EVENT_WORK_RESCHEDULE_FOR_QUEUE_EXIT = 0xBC,
+	CTF_EVENT_WORK_RESCHEDULE_ENTER = 0xBD,
+	CTF_EVENT_WORK_RESCHEDULE_EXIT = 0xBE,
+	CTF_EVENT_WORK_FLUSH_DELAYABLE_ENTER = 0xBF,
+	CTF_EVENT_WORK_FLUSH_DELAYABLE_EXIT = 0xC0,
+	CTF_EVENT_WORK_CANCEL_DELAYABLE_ENTER = 0xC1,
+	CTF_EVENT_WORK_CANCEL_DELAYABLE_EXIT = 0xC2,
+	CTF_EVENT_WORK_CANCEL_DELAYABLE_SYNC_ENTER = 0xC3,
+	CTF_EVENT_WORK_CANCEL_DELAYABLE_SYNC_EXIT = 0xC4,
+
+	/* Poll Work */
+	CTF_EVENT_WORK_POLL_INIT_ENTER = 0xC5,
+	CTF_EVENT_WORK_POLL_INIT_EXIT = 0xC6,
+	CTF_EVENT_WORK_POLL_SUBMIT_TO_QUEUE_ENTER = 0xC7,
+	CTF_EVENT_WORK_POLL_SUBMIT_TO_QUEUE_BLOCKING = 0xC8,
+	CTF_EVENT_WORK_POLL_SUBMIT_TO_QUEUE_EXIT = 0xC9,
+	CTF_EVENT_WORK_POLL_SUBMIT_ENTER = 0xCA,
+	CTF_EVENT_WORK_POLL_SUBMIT_EXIT = 0xCB,
+	CTF_EVENT_WORK_POLL_CANCEL_ENTER = 0xCC,
+	CTF_EVENT_WORK_POLL_CANCEL_EXIT = 0xCD,
+
 } ctf_event_t;
 
 typedef struct {
@@ -505,6 +560,245 @@ static inline void ctf_top_condvar_wait_enter(uint32_t condvar_id, uint32_t time
 static inline void ctf_top_condvar_wait_exit(uint32_t condvar_id, uint32_t timeout, int32_t ret)
 {
 	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_CONDVAR_WAIT_EXIT), condvar_id, timeout, ret);
+}
+
+/* Work Queue */
+static inline void ctf_top_work_init(uint32_t work_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_INIT), work_id);
+}
+
+static inline void ctf_top_work_submit_to_queue_enter(uint32_t queue_id, uint32_t work_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_SUBMIT_TO_QUEUE_ENTER), queue_id, work_id);
+}
+
+static inline void ctf_top_work_submit_to_queue_exit(uint32_t queue_id, uint32_t work_id, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_SUBMIT_TO_QUEUE_EXIT), queue_id, work_id, ret);
+}
+
+static inline void ctf_top_work_submit_enter(uint32_t work_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_SUBMIT_ENTER), work_id);
+}
+
+static inline void ctf_top_work_submit_exit(uint32_t work_id, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_SUBMIT_EXIT), work_id, ret);
+}
+
+static inline void ctf_top_work_flush_enter(uint32_t work_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_FLUSH_ENTER), work_id);
+}
+
+static inline void ctf_top_work_flush_blocking(uint32_t work_id, uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_FLUSH_BLOCKING), work_id, timeout);
+}
+
+static inline void ctf_top_work_flush_exit(uint32_t work_id, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_FLUSH_EXIT), work_id, ret);
+}
+
+static inline void ctf_top_work_cancel_enter(uint32_t work_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_CANCEL_ENTER), work_id);
+}
+
+static inline void ctf_top_work_cancel_exit(uint32_t work_id, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_CANCEL_EXIT), work_id, ret);
+}
+
+static inline void ctf_top_work_cancel_sync_enter(uint32_t work_id, uint32_t sync_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_CANCEL_SYNC_ENTER), work_id, sync_id);
+}
+
+static inline void ctf_top_work_cancel_sync_blocking(uint32_t work_id, uint32_t sync_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_CANCEL_SYNC_BLOCKING), work_id, sync_id);
+}
+
+static inline void ctf_top_work_cancel_sync_exit(uint32_t work_id, uint32_t sync_id, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_CANCEL_SYNC_EXIT), work_id, sync_id, ret);
+}
+
+/* Work Queue Management */
+static inline void ctf_top_work_queue_init(uint32_t queue_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_QUEUE_INIT), queue_id);
+}
+
+static inline void ctf_top_work_queue_start_enter(uint32_t queue_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_QUEUE_START_ENTER), queue_id);
+}
+
+static inline void ctf_top_work_queue_start_exit(uint32_t queue_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_QUEUE_START_EXIT), queue_id);
+}
+
+static inline void ctf_top_work_queue_stop_enter(uint32_t queue_id, uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_QUEUE_STOP_ENTER), queue_id, timeout);
+}
+
+static inline void ctf_top_work_queue_stop_blocking(uint32_t queue_id, uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_QUEUE_STOP_BLOCKING), queue_id, timeout);
+}
+
+static inline void ctf_top_work_queue_stop_exit(uint32_t queue_id, uint32_t timeout, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_QUEUE_STOP_EXIT), queue_id, timeout, ret);
+}
+
+static inline void ctf_top_work_queue_drain_enter(uint32_t queue_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_QUEUE_DRAIN_ENTER), queue_id);
+}
+
+static inline void ctf_top_work_queue_drain_exit(uint32_t queue_id, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_QUEUE_DRAIN_EXIT), queue_id, ret);
+}
+
+static inline void ctf_top_work_queue_unplug_enter(uint32_t queue_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_QUEUE_UNPLUG_ENTER), queue_id);
+}
+
+static inline void ctf_top_work_queue_unplug_exit(uint32_t queue_id, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_QUEUE_UNPLUG_EXIT), queue_id, ret);
+}
+
+/* Delayable Work */
+static inline void ctf_top_work_delayable_init(uint32_t dwork_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_DELAYABLE_INIT), dwork_id);
+}
+
+static inline void ctf_top_work_schedule_for_queue_enter(uint32_t queue_id, uint32_t dwork_id, uint32_t delay)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_SCHEDULE_FOR_QUEUE_ENTER), queue_id, dwork_id, delay);
+}
+
+static inline void ctf_top_work_schedule_for_queue_exit(uint32_t queue_id, uint32_t dwork_id, uint32_t delay, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_SCHEDULE_FOR_QUEUE_EXIT), queue_id, dwork_id, delay, ret);
+}
+
+static inline void ctf_top_work_schedule_enter(uint32_t dwork_id, uint32_t delay)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_SCHEDULE_ENTER), dwork_id, delay);
+}
+
+static inline void ctf_top_work_schedule_exit(uint32_t dwork_id, uint32_t delay, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_SCHEDULE_EXIT), dwork_id, delay, ret);
+}
+
+static inline void ctf_top_work_reschedule_for_queue_enter(uint32_t queue_id, uint32_t dwork_id, uint32_t delay)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_RESCHEDULE_FOR_QUEUE_ENTER), queue_id, dwork_id, delay);
+}
+
+static inline void ctf_top_work_reschedule_for_queue_exit(uint32_t queue_id, uint32_t dwork_id, uint32_t delay, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_RESCHEDULE_FOR_QUEUE_EXIT), queue_id, dwork_id, delay, ret);
+}
+
+static inline void ctf_top_work_reschedule_enter(uint32_t dwork_id, uint32_t delay)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_RESCHEDULE_ENTER), dwork_id, delay);
+}
+
+static inline void ctf_top_work_reschedule_exit(uint32_t dwork_id, uint32_t delay, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_RESCHEDULE_EXIT), dwork_id, delay, ret);
+}
+
+static inline void ctf_top_work_flush_delayable_enter(uint32_t dwork_id, uint32_t sync_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_FLUSH_DELAYABLE_ENTER), dwork_id, sync_id);
+}
+
+static inline void ctf_top_work_flush_delayable_exit(uint32_t dwork_id, uint32_t sync_id, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_FLUSH_DELAYABLE_EXIT), dwork_id, sync_id, ret);
+}
+
+static inline void ctf_top_work_cancel_delayable_enter(uint32_t dwork_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_CANCEL_DELAYABLE_ENTER), dwork_id);
+}
+
+static inline void ctf_top_work_cancel_delayable_exit(uint32_t dwork_id, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_CANCEL_DELAYABLE_EXIT), dwork_id, ret);
+}
+
+static inline void ctf_top_work_cancel_delayable_sync_enter(uint32_t dwork_id, uint32_t sync_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_CANCEL_DELAYABLE_SYNC_ENTER), dwork_id, sync_id);
+}
+
+static inline void ctf_top_work_cancel_delayable_sync_exit(uint32_t dwork_id, uint32_t sync_id, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_CANCEL_DELAYABLE_SYNC_EXIT), dwork_id, sync_id, ret);
+}
+
+/* Poll Work */
+static inline void ctf_top_work_poll_init_enter(uint32_t work_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_POLL_INIT_ENTER), work_id);
+}
+
+static inline void ctf_top_work_poll_init_exit(uint32_t work_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_POLL_INIT_EXIT), work_id);
+}
+
+static inline void ctf_top_work_poll_submit_to_queue_enter(uint32_t work_q_id, uint32_t work_id, uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_POLL_SUBMIT_TO_QUEUE_ENTER), work_q_id, work_id, timeout);
+}
+
+static inline void ctf_top_work_poll_submit_to_queue_blocking(uint32_t work_q_id, uint32_t work_id, uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_POLL_SUBMIT_TO_QUEUE_BLOCKING), work_q_id, work_id, timeout);
+}
+
+static inline void ctf_top_work_poll_submit_to_queue_exit(uint32_t work_q_id, uint32_t work_id, uint32_t timeout, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_POLL_SUBMIT_TO_QUEUE_EXIT), work_q_id, work_id, timeout, ret);
+}
+
+static inline void ctf_top_work_poll_submit_enter(uint32_t work_id, uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_POLL_SUBMIT_ENTER), work_id, timeout);
+}
+
+static inline void ctf_top_work_poll_submit_exit(uint32_t work_id, uint32_t timeout, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_POLL_SUBMIT_EXIT), work_id, timeout, ret);
+}
+
+static inline void ctf_top_work_poll_cancel_enter(uint32_t work_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_POLL_CANCEL_ENTER), work_id);
+}
+
+static inline void ctf_top_work_poll_cancel_exit(uint32_t work_id, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_WORK_POLL_CANCEL_EXIT), work_id, ret);
 }
 
 /* Semaphore */

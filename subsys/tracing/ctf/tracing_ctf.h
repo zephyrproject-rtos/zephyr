@@ -77,61 +77,108 @@ extern "C" {
 
 #define sys_port_trace_k_thread_sched_suspend(thread)
 
-#define sys_port_trace_k_work_init(work)
-#define sys_port_trace_k_work_submit_to_queue_enter(queue, work)
-#define sys_port_trace_k_work_submit_to_queue_exit(queue, work, ret)
-#define sys_port_trace_k_work_submit_enter(work)
-#define sys_port_trace_k_work_submit_exit(work, ret)
-#define sys_port_trace_k_work_flush_enter(work)
-#define sys_port_trace_k_work_flush_blocking(work, timeout)
-#define sys_port_trace_k_work_flush_exit(work, ret)
-#define sys_port_trace_k_work_cancel_enter(work)
-#define sys_port_trace_k_work_cancel_exit(work, ret)
-#define sys_port_trace_k_work_cancel_sync_enter(work, sync)
-#define sys_port_trace_k_work_cancel_sync_blocking(work, sync)
-#define sys_port_trace_k_work_cancel_sync_exit(work, sync, ret)
+#define sys_port_trace_k_work_init(work) \
+	sys_trace_k_work_init(work)
+#define sys_port_trace_k_work_submit_to_queue_enter(queue, work) \
+	sys_trace_k_work_submit_to_queue_enter(queue, work)
+#define sys_port_trace_k_work_submit_to_queue_exit(queue, work, ret) \
+	sys_trace_k_work_submit_to_queue_exit(queue, work, ret)
+#define sys_port_trace_k_work_submit_enter(work) \
+	sys_trace_k_work_submit_enter(work)
+#define sys_port_trace_k_work_submit_exit(work, ret) \
+	sys_trace_k_work_submit_exit(work, ret)
+#define sys_port_trace_k_work_flush_enter(work) \
+	sys_trace_k_work_flush_enter(work)
+#define sys_port_trace_k_work_flush_blocking(work, timeout) \
+	sys_trace_k_work_flush_blocking(work, timeout)
+#define sys_port_trace_k_work_flush_exit(work, ret) \
+	sys_trace_k_work_flush_exit(work, ret)
+#define sys_port_trace_k_work_cancel_enter(work) \
+	sys_trace_k_work_cancel_enter(work)
+#define sys_port_trace_k_work_cancel_exit(work, ret) \
+	sys_trace_k_work_cancel_exit(work, ret)
+#define sys_port_trace_k_work_cancel_sync_enter(work, sync) \
+	sys_trace_k_work_cancel_sync_enter(work, sync)
+#define sys_port_trace_k_work_cancel_sync_blocking(work, sync) \
+	sys_trace_k_work_cancel_sync_blocking(work, sync)
+#define sys_port_trace_k_work_cancel_sync_exit(work, sync, ret) \
+	sys_trace_k_work_cancel_sync_exit(work, sync, ret)
 
-#define sys_port_trace_k_work_queue_init(queue)
-#define sys_port_trace_k_work_queue_start_enter(queue)
-#define sys_port_trace_k_work_queue_start_exit(queue)
-#define sys_port_trace_k_work_queue_stop_enter(queue, timeout)
-#define sys_port_trace_k_work_queue_stop_blocking(queue, timeout)
-#define sys_port_trace_k_work_queue_stop_exit(queue, timeout, ret)
-#define sys_port_trace_k_work_queue_drain_enter(queue)
-#define sys_port_trace_k_work_queue_drain_exit(queue, ret)
-#define sys_port_trace_k_work_queue_unplug_enter(queue)
-#define sys_port_trace_k_work_queue_unplug_exit(queue, ret)
+#define sys_port_trace_k_work_queue_init(queue) \
+	sys_trace_k_work_queue_init(queue)
+#define sys_port_trace_k_work_queue_start_enter(queue) \
+	sys_trace_k_work_queue_start_enter(queue)
+#define sys_port_trace_k_work_queue_start_exit(queue) \
+	sys_trace_k_work_queue_start_exit(queue)
+#define sys_port_trace_k_work_queue_stop_enter(queue, timeout) \
+	sys_trace_k_work_queue_stop_enter(queue, timeout)
+#define sys_port_trace_k_work_queue_stop_blocking(queue, timeout) \
+	sys_trace_k_work_queue_stop_blocking(queue, timeout)
+#define sys_port_trace_k_work_queue_stop_exit(queue, timeout, ret) \
+	sys_trace_k_work_queue_stop_exit(queue, timeout, ret)
+#define sys_port_trace_k_work_queue_drain_enter(queue) \
+	sys_trace_k_work_queue_drain_enter(queue)
+#define sys_port_trace_k_work_queue_drain_exit(queue, ret) \
+	sys_trace_k_work_queue_drain_exit(queue, ret)
+#define sys_port_trace_k_work_queue_unplug_enter(queue) \
+	sys_trace_k_work_queue_unplug_enter(queue)
+#define sys_port_trace_k_work_queue_unplug_exit(queue, ret) \
+	sys_trace_k_work_queue_unplug_exit(queue, ret)
 
-#define sys_port_trace_k_work_delayable_init(dwork)
-#define sys_port_trace_k_work_schedule_for_queue_enter(queue, dwork, delay)
+#define sys_port_trace_k_work_delayable_init(dwork) \
+	sys_trace_k_work_delayable_init(dwork)
+#define sys_port_trace_k_work_schedule_for_queue_enter(queue, dwork, delay) \
+	sys_trace_k_work_schedule_for_queue_enter(queue, dwork, delay)
 #define sys_port_trace_k_work_schedule_for_queue_exit(queue, dwork, delay,     \
-						      ret)
-#define sys_port_trace_k_work_schedule_enter(dwork, delay)
-#define sys_port_trace_k_work_schedule_exit(dwork, delay, ret)
-#define sys_port_trace_k_work_reschedule_for_queue_enter(queue, dwork, delay)
+						      ret) \
+	sys_trace_k_work_schedule_for_queue_exit(queue, dwork, delay, ret)
+#define sys_port_trace_k_work_schedule_enter(dwork, delay) \
+	sys_trace_k_work_schedule_enter(dwork, delay)
+#define sys_port_trace_k_work_schedule_exit(dwork, delay, ret) \
+	sys_trace_k_work_schedule_exit(dwork, delay, ret)
+#define sys_port_trace_k_work_reschedule_for_queue_enter(queue, dwork, delay) \
+	sys_trace_k_work_reschedule_for_queue_enter(queue, dwork, delay)
 #define sys_port_trace_k_work_reschedule_for_queue_exit(queue, dwork, delay,   \
-							ret)
-#define sys_port_trace_k_work_reschedule_enter(dwork, delay)
-#define sys_port_trace_k_work_reschedule_exit(dwork, delay, ret)
-#define sys_port_trace_k_work_flush_delayable_enter(dwork, sync)
-#define sys_port_trace_k_work_flush_delayable_exit(dwork, sync, ret)
-#define sys_port_trace_k_work_cancel_delayable_enter(dwork)
-#define sys_port_trace_k_work_cancel_delayable_exit(dwork, ret)
-#define sys_port_trace_k_work_cancel_delayable_sync_enter(dwork, sync)
-#define sys_port_trace_k_work_cancel_delayable_sync_exit(dwork, sync, ret)
+							ret) \
+	sys_trace_k_work_reschedule_for_queue_exit(queue, dwork, delay, ret)
+#define sys_port_trace_k_work_reschedule_enter(dwork, delay) \
+	sys_trace_k_work_reschedule_enter(dwork, delay)
+#define sys_port_trace_k_work_reschedule_exit(dwork, delay, ret) \
+	sys_trace_k_work_reschedule_exit(dwork, delay, ret)
+#define sys_port_trace_k_work_flush_delayable_enter(dwork, sync) \
+	sys_trace_k_work_flush_delayable_enter(dwork, sync)
+#define sys_port_trace_k_work_flush_delayable_exit(dwork, sync, ret) \
+	sys_trace_k_work_flush_delayable_exit(dwork, sync, ret)
+#define sys_port_trace_k_work_cancel_delayable_enter(dwork) \
+	sys_trace_k_work_cancel_delayable_enter(dwork)
+#define sys_port_trace_k_work_cancel_delayable_exit(dwork, ret) \
+	sys_trace_k_work_cancel_delayable_exit(dwork, ret)
+#define sys_port_trace_k_work_cancel_delayable_sync_enter(dwork, sync) \
+	sys_trace_k_work_cancel_delayable_sync_enter(dwork, sync)
+#define sys_port_trace_k_work_cancel_delayable_sync_exit(dwork, sync, ret) \
+	sys_trace_k_work_cancel_delayable_sync_exit(dwork, sync, ret)
 
-#define sys_port_trace_k_work_poll_init_enter(work)
-#define sys_port_trace_k_work_poll_init_exit(work)
+#define sys_port_trace_k_work_poll_init_enter(work) \
+	sys_trace_k_work_poll_init_enter(work)
+#define sys_port_trace_k_work_poll_init_exit(work) \
+	sys_trace_k_work_poll_init_exit(work)
 #define sys_port_trace_k_work_poll_submit_to_queue_enter(work_q, work,         \
-							 timeout)
+							 timeout) \
+	sys_trace_k_work_poll_submit_to_queue_enter(work_q, work, timeout)
 #define sys_port_trace_k_work_poll_submit_to_queue_blocking(work_q, work,      \
-							    timeout)
+							    timeout) \
+	sys_trace_k_work_poll_submit_to_queue_blocking(work_q, work, timeout)
 #define sys_port_trace_k_work_poll_submit_to_queue_exit(work_q, work, timeout, \
-							ret)
-#define sys_port_trace_k_work_poll_submit_enter(work, timeout)
-#define sys_port_trace_k_work_poll_submit_exit(work, timeout, ret)
-#define sys_port_trace_k_work_poll_cancel_enter(work)
-#define sys_port_trace_k_work_poll_cancel_exit(work, ret)
+							ret) \
+	sys_trace_k_work_poll_submit_to_queue_exit(work_q, work, timeout, ret)
+#define sys_port_trace_k_work_poll_submit_enter(work, timeout) \
+	sys_trace_k_work_poll_submit_enter(work, timeout)
+#define sys_port_trace_k_work_poll_submit_exit(work, timeout, ret) \
+	sys_trace_k_work_poll_submit_exit(work, timeout, ret)
+#define sys_port_trace_k_work_poll_cancel_enter(work) \
+	sys_trace_k_work_poll_cancel_enter(work)
+#define sys_port_trace_k_work_poll_cancel_exit(work, ret) \
+	sys_trace_k_work_poll_cancel_exit(work, ret)
 
 #define sys_port_trace_k_poll_api_event_init(event)
 #define sys_port_trace_k_poll_api_poll_enter(events)
@@ -481,6 +528,61 @@ void sys_trace_k_condvar_broadcast_enter(struct k_condvar *condvar);
 void sys_trace_k_condvar_broadcast_exit(struct k_condvar *condvar, int ret);
 void sys_trace_k_condvar_wait_enter(struct k_condvar *condvar, k_timeout_t timeout);
 void sys_trace_k_condvar_wait_exit(struct k_condvar *condvar, k_timeout_t timeout, int ret);
+
+/* Work Queue */
+void sys_trace_k_work_init(struct k_work *work);
+void sys_trace_k_work_submit_to_queue_enter(struct k_work_q *queue, struct k_work *work);
+void sys_trace_k_work_submit_to_queue_exit(struct k_work_q *queue, struct k_work *work, int ret);
+void sys_trace_k_work_submit_enter(struct k_work *work);
+void sys_trace_k_work_submit_exit(struct k_work *work, int ret);
+void sys_trace_k_work_flush_enter(struct k_work *work);
+void sys_trace_k_work_flush_blocking(struct k_work *work, k_timeout_t timeout);
+void sys_trace_k_work_flush_exit(struct k_work *work, int ret);
+void sys_trace_k_work_cancel_enter(struct k_work *work);
+void sys_trace_k_work_cancel_exit(struct k_work *work, int ret);
+void sys_trace_k_work_cancel_sync_enter(struct k_work *work, struct k_work_sync *sync);
+void sys_trace_k_work_cancel_sync_blocking(struct k_work *work, struct k_work_sync *sync);
+void sys_trace_k_work_cancel_sync_exit(struct k_work *work, struct k_work_sync *sync, int ret);
+
+/* Work Queue Management */
+void sys_trace_k_work_queue_init(struct k_work_q *queue);
+void sys_trace_k_work_queue_start_enter(struct k_work_q *queue);
+void sys_trace_k_work_queue_start_exit(struct k_work_q *queue);
+void sys_trace_k_work_queue_stop_enter(struct k_work_q *queue, k_timeout_t timeout);
+void sys_trace_k_work_queue_stop_blocking(struct k_work_q *queue, k_timeout_t timeout);
+void sys_trace_k_work_queue_stop_exit(struct k_work_q *queue, k_timeout_t timeout, int ret);
+void sys_trace_k_work_queue_drain_enter(struct k_work_q *queue);
+void sys_trace_k_work_queue_drain_exit(struct k_work_q *queue, int ret);
+void sys_trace_k_work_queue_unplug_enter(struct k_work_q *queue);
+void sys_trace_k_work_queue_unplug_exit(struct k_work_q *queue, int ret);
+
+/* Delayable Work */
+void sys_trace_k_work_delayable_init(struct k_work_delayable *dwork);
+void sys_trace_k_work_schedule_for_queue_enter(struct k_work_q *queue, struct k_work_delayable *dwork, k_timeout_t delay);
+void sys_trace_k_work_schedule_for_queue_exit(struct k_work_q *queue, struct k_work_delayable *dwork, k_timeout_t delay, int ret);
+void sys_trace_k_work_schedule_enter(struct k_work_delayable *dwork, k_timeout_t delay);
+void sys_trace_k_work_schedule_exit(struct k_work_delayable *dwork, k_timeout_t delay, int ret);
+void sys_trace_k_work_reschedule_for_queue_enter(struct k_work_q *queue, struct k_work_delayable *dwork, k_timeout_t delay);
+void sys_trace_k_work_reschedule_for_queue_exit(struct k_work_q *queue, struct k_work_delayable *dwork, k_timeout_t delay, int ret);
+void sys_trace_k_work_reschedule_enter(struct k_work_delayable *dwork, k_timeout_t delay);
+void sys_trace_k_work_reschedule_exit(struct k_work_delayable *dwork, k_timeout_t delay, int ret);
+void sys_trace_k_work_flush_delayable_enter(struct k_work_delayable *dwork, struct k_work_sync *sync);
+void sys_trace_k_work_flush_delayable_exit(struct k_work_delayable *dwork, struct k_work_sync *sync, int ret);
+void sys_trace_k_work_cancel_delayable_enter(struct k_work_delayable *dwork);
+void sys_trace_k_work_cancel_delayable_exit(struct k_work_delayable *dwork, int ret);
+void sys_trace_k_work_cancel_delayable_sync_enter(struct k_work_delayable *dwork, struct k_work_sync *sync);
+void sys_trace_k_work_cancel_delayable_sync_exit(struct k_work_delayable *dwork, struct k_work_sync *sync, int ret);
+
+/* Poll Work */
+void sys_trace_k_work_poll_init_enter(struct k_work_poll *work);
+void sys_trace_k_work_poll_init_exit(struct k_work_poll *work);
+void sys_trace_k_work_poll_submit_to_queue_enter(struct k_work_q *work_q, struct k_work_poll *work, k_timeout_t timeout);
+void sys_trace_k_work_poll_submit_to_queue_blocking(struct k_work_q *work_q, struct k_work_poll *work, k_timeout_t timeout);
+void sys_trace_k_work_poll_submit_to_queue_exit(struct k_work_q *work_q, struct k_work_poll *work, k_timeout_t timeout, int ret);
+void sys_trace_k_work_poll_submit_enter(struct k_work_poll *work, k_timeout_t timeout);
+void sys_trace_k_work_poll_submit_exit(struct k_work_poll *work, k_timeout_t timeout, int ret);
+void sys_trace_k_work_poll_cancel_enter(struct k_work_poll *work);
+void sys_trace_k_work_poll_cancel_exit(struct k_work_poll *work, int ret);
 
 /* Semaphore */
 void sys_trace_k_sem_init(struct k_sem *sem, int ret);
