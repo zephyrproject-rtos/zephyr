@@ -72,11 +72,6 @@ config HAS_MCUX_SMC
 	help
 	  Set if the SMC  module is present in the SoC.
 
-config HAS_MCUX_TPM
-	bool
-	help
-	  Set if the Timer/PWM Module is present in the SoC
-
 config HAS_MCUX_RDC
 	bool
 	help

@@ -546,8 +546,6 @@ __weak void clock_init(void)
 	CLOCK_SetRootClock(kCLOCK_Root_Flexspi1, &rootCfg);
 #endif
 
-#ifdef CONFIG_HAS_MCUX_TPM
-
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(tpm2), okay)
 	/* Configure TPM2 using SYS_PLL3_DIV2_CLK */
 	rootCfg.mux = kCLOCK_TPM2_ClockRoot_MuxSysPll3Div2;
@@ -575,8 +573,6 @@ __weak void clock_init(void)
 	rootCfg.div = 3;
 	CLOCK_SetRootClock(kCLOCK_Root_Tpm6, &rootCfg);
 #endif
-
-#endif /* CONFIG_HAS_MCUX_TPM */
 
 #ifdef CONFIG_DT_HAS_NXP_MCUX_I3C_ENABLED
 
