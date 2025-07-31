@@ -346,8 +346,14 @@ exit:
 #endif
 
 #if OPENTHREAD_CONFIG_DIAG_ENABLE
-otError otPlatDiagProcess(otInstance *aInstance, int argc, char *argv[], char *aOutput,
-			  size_t aOutputMaxLen)
+void otPlatDiagSetOutputCallback(otInstance *aInstance, otPlatDiagOutputCallback aCallback, void *aContext)
+{
+    OT_UNUSED_VARIABLE(aInstance);
+
+    psRadioSpinel->SetDiagOutputCallback(aCallback, aContext);
+}
+
+otError otPlatDiagProcess(otInstance *aInstance, int argc, char *argv[])
 {
 	/* Deliver the platform specific diags commands to radio only ncp */
 	OT_UNUSED_VARIABLE(aInstance);
@@ -359,12 +365,12 @@ otError otPlatDiagProcess(otInstance *aInstance, int argc, char *argv[], char *a
 		cur += snprintf(cur, static_cast<size_t>(end - cur), "%s ", argv[index]);
 	}
 
-	return psRadioSpinel->PlatDiagProcess(cmd, aOutput, aOutputMaxLen);
+	return psRadioSpinel->PlatDiagProcess(cmd);
 }
 
 void otPlatDiagModeSet(bool aMode)
 {
-	SuccessOrExit(psRadioSpinel->PlatDiagProcess(aMode ? "start" : "stop", NULL, 0));
+	SuccessOrExit(psRadioSpinel->PlatDiagProcess(aMode ? "start" : "stop"));
 	psRadioSpinel->SetDiagEnabled(aMode);
 
 exit:
@@ -381,7 +387,7 @@ void otPlatDiagTxPowerSet(int8_t aTxPower)
 	char cmd[OPENTHREAD_CONFIG_DIAG_CMD_LINE_BUFFER_SIZE];
 
 	snprintf(cmd, sizeof(cmd), "power %d", aTxPower);
-	SuccessOrExit(psRadioSpinel->PlatDiagProcess(cmd, NULL, 0));
+	SuccessOrExit(psRadioSpinel->PlatDiagProcess(cmd));
 
 exit:
 	return;
@@ -392,7 +398,7 @@ void otPlatDiagChannelSet(uint8_t aChannel)
 	char cmd[OPENTHREAD_CONFIG_DIAG_CMD_LINE_BUFFER_SIZE];
 
 	snprintf(cmd, sizeof(cmd), "channel %d", aChannel);
-	SuccessOrExit(psRadioSpinel->PlatDiagProcess(cmd, NULL, 0));
+	SuccessOrExit(psRadioSpinel->PlatDiagProcess(cmd));
 
 exit:
 	return;
