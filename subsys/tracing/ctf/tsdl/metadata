@@ -1267,3 +1267,75 @@ event {
 		int32_t ret;
 	};
 };
+
+/* Condition Variables */
+event {
+	name = condvar_init;
+	id = 0x97;
+	fields := struct {
+		uint32_t id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = condvar_signal_enter;
+	id = 0x98;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = condvar_signal_blocking;
+	id = 0x99;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = condvar_signal_exit;
+	id = 0x9A;
+	fields := struct {
+		uint32_t id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = condvar_broadcast_enter;
+	id = 0x9B;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = condvar_broadcast_exit;
+	id = 0x9C;
+	fields := struct {
+		uint32_t id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = condvar_wait_enter;
+	id = 0x9D;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = condvar_wait_exit;
+	id = 0x9E;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+		int32_t ret;
+	};
+};

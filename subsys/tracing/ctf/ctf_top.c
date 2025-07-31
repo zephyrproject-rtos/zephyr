@@ -388,6 +388,7 @@ void sys_trace_k_msgq_cleanup_enter(struct k_msgq *msgq)
 		(uint32_t)(uintptr_t)msgq
 		);
 }
+
 void sys_trace_k_msgq_cleanup_exit(struct k_msgq *msgq, int ret)
 {
 	ctf_top_msgq_cleanup_exit(
@@ -395,6 +396,69 @@ void sys_trace_k_msgq_cleanup_exit(struct k_msgq *msgq, int ret)
 		(int32_t)ret
 		);
 }
+
+/* Condition Variables */
+void sys_trace_k_condvar_init(struct k_condvar *condvar, int ret)
+{
+	ctf_top_condvar_init(
+		(uint32_t)(uintptr_t)condvar,
+		(int32_t)ret
+		);
+}
+
+void sys_trace_k_condvar_wait_enter(struct k_condvar *condvar, k_timeout_t timeout)
+{
+	ctf_top_condvar_wait_enter(
+		(uint32_t)(uintptr_t)condvar,
+		k_ticks_to_us_floor32((uint32_t)timeout.ticks)
+		);
+}
+
+void sys_trace_k_condvar_wait_exit(struct k_condvar *condvar, k_timeout_t timeout, int ret)
+{
+	ctf_top_condvar_wait_exit(
+		(uint32_t)(uintptr_t)condvar,
+		k_ticks_to_us_floor32((uint32_t)timeout.ticks),
+		(int32_t)ret
+		);
+}
+
+void sys_trace_k_condvar_signal_enter(struct k_condvar *condvar)
+{
+	ctf_top_condvar_signal_enter(
+		(uint32_t)(uintptr_t)condvar
+		);
+}
+
+void sys_trace_k_condvar_signal_blocking(struct k_condvar *condvar, k_timeout_t timeout)
+{
+	ctf_top_condvar_signal_blocking(
+		(uint32_t)(uintptr_t)condvar,
+		k_ticks_to_us_floor32((uint32_t)timeout.ticks)
+		);
+}
+
+void sys_trace_k_condvar_signal_exit(struct k_condvar *condvar, int ret)
+{
+	ctf_top_condvar_signal_exit(
+		(uint32_t)(uintptr_t)condvar,
+		(int32_t)ret
+		);
+}
+void sys_trace_k_condvar_broadcast_enter(struct k_condvar *condvar)
+{
+	ctf_top_condvar_broadcast_enter(
+		(uint32_t)(uintptr_t)condvar
+		);
+}
+void sys_trace_k_condvar_broadcast_exit(struct k_condvar *condvar, int ret)
+{
+	ctf_top_condvar_broadcast_exit(
+		(uint32_t)(uintptr_t)condvar,
+		(int32_t)ret
+		);
+}
+
 
 /* Semaphore */
 void sys_trace_k_sem_init(struct k_sem *sem, int ret)

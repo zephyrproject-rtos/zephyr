@@ -152,10 +152,10 @@
 	sys_trace_k_condvar_broadcast_enter(condvar)
 #define sys_port_trace_k_condvar_broadcast_exit(condvar, ret)                                      \
 	sys_trace_k_condvar_broadcast_exit(condvar, ret)
-#define sys_port_trace_k_condvar_wait_enter(condvar)                                               \
-	sys_trace_k_condvar_wait_enter(condvar, mutex, timeout)
-#define sys_port_trace_k_condvar_wait_exit(condvar, ret)                                           \
-	sys_trace_k_condvar_wait_exit(condvar, mutex, timeout, ret)
+#define sys_port_trace_k_condvar_wait_enter(condvar, timeout)                                      \
+	sys_trace_k_condvar_wait_enter(condvar, timeout)
+#define sys_port_trace_k_condvar_wait_exit(condvar, timeout, ret)                                  \
+	sys_trace_k_condvar_wait_exit(condvar, timeout, ret)
 
 #define sys_port_trace_k_queue_init(queue) sys_trace_k_queue_init(queue)
 #define sys_port_trace_k_queue_cancel_wait(queue) sys_trace_k_queue_cancel_wait(queue)
@@ -530,10 +530,8 @@ void sys_trace_k_condvar_signal_blocking(struct k_condvar *condvar);
 void sys_trace_k_condvar_signal_exit(struct k_condvar *condvar, int ret);
 void sys_trace_k_condvar_broadcast_enter(struct k_condvar *condvar);
 void sys_trace_k_condvar_broadcast_exit(struct k_condvar *condvar, int ret);
-void sys_trace_k_condvar_wait_enter(struct k_condvar *condvar, struct k_mutex *mutex,
-				    k_timeout_t timeout);
-void sys_trace_k_condvar_wait_exit(struct k_condvar *condvar, struct k_mutex *mutex,
-				   k_timeout_t timeout, int ret);
+void sys_trace_k_condvar_wait_enter(struct k_condvar *condvar, k_timeout_t timeout);
+void sys_trace_k_condvar_wait_exit(struct k_condvar *condvar, k_timeout_t timeout, int ret);
 
 void sys_trace_k_queue_init(struct k_queue *queue);
 void sys_trace_k_queue_cancel_wait(struct k_queue *queue);
