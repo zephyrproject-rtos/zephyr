@@ -161,7 +161,15 @@ static int flash_stm32_read(const struct device *dev, off_t offset,
 
 	LOG_DBG("Read offset: %ld, len: %zu", (long int) offset, len);
 
+#if defined(CONFIG_FLASH_STM32_ASYNC)
+	flash_stm32_sem_take(dev);
+#endif /* CONFIG_FLASH_STM32_ASYNC */
+
 	memcpy(data, (uint8_t *) FLASH_STM32_BASE_ADDRESS + offset, len);
+
+#if defined(CONFIG_FLASH_STM32_ASYNC)
+	flash_stm32_sem_give(dev);
+#endif /* CONFIG_FLASH_STM32_ASYNC */
 
 	return 0;
 }
@@ -416,6 +424,32 @@ static DEVICE_API(flash, flash_stm32_api) = {
 #endif
 };
 
+#if defined(CONFIG_FLASH_STM32_ASYNC)
+static struct flash_stm32_priv *flash_dev;
+
+/* IRQ handler function for async flash mode */
+void flash_stm32_irq_handler(void)
+{
+	HAL_FLASH_IRQHandler();
+	if (flash_dev->async_complete || flash_dev->async_error) {
+		k_sem_give(&flash_dev->async_sem);
+	}
+}
+
+/* cube hal functions for end of a async flash operation */
+void HAL_FLASH_EndOfOperationCallback(uint32_t op_ret_val)
+{
+	flash_dev->async_complete = true;
+	flash_dev->async_ret = op_ret_val;
+}
+
+void HAL_FLASH_OperationErrorCallback(uint32_t op_ret_val)
+{
+	flash_dev->async_error = true;
+	flash_dev->async_ret = op_ret_val;
+}
+#endif /* CONFIG_FLASH_STM32_ASYNC */
+
 static int stm32_flash_init(const struct device *dev)
 {
 	int rc;
@@ -457,6 +491,13 @@ static int stm32_flash_init(const struct device *dev)
 #endif /* CONFIG_SOC_SERIES_STM32WBX */
 
 	flash_stm32_sem_init(dev);
+
+#if defined(CONFIG_FLASH_STM32_ASYNC)
+	flash_dev = FLASH_STM32_PRIV(dev);
+	flash_stm32_async_sem_init(dev);
+	IRQ_CONNECT(FLASH_IRQn, 0, flash_stm32_irq_handler, NULL, 0);
+	irq_enable(FLASH_IRQn);
+#endif /* CONFIG_FLASH_STM32_ASYNC */
 
 	LOG_DBG("Flash @0x%x initialized. BS: %zu",
 		FLASH_STM32_BASE_ADDRESS,

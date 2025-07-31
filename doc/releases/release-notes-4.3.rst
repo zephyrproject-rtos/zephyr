@@ -79,6 +79,10 @@ New APIs and options
 
   * :kconfig:option:`CONFIG_SRAM_SW_ISR_TABLE`
 
+* Flash
+
+   * :kconfig:option:`CONFIG_FLASH_STM32_ASYNC`
+
 * Power management
 
    * :c:func:`pm_device_driver_deinit`
