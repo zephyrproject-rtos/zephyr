@@ -317,6 +317,20 @@ typedef enum {
 	CTF_EVENT_THREAD_SCHED_RESUME = 0xEC,
 	CTF_EVENT_THREAD_SCHED_SUSPEND = 0xED,
 
+	/* Mailbox */
+	CTF_EVENT_MBOX_INIT = 0xEE,
+	CTF_EVENT_MBOX_MESSAGE_PUT_ENTER = 0xEF,
+	CTF_EVENT_MBOX_MESSAGE_PUT_BLOCKING = 0xF0,
+	CTF_EVENT_MBOX_MESSAGE_PUT_EXIT = 0xF1,
+	CTF_EVENT_MBOX_PUT_ENTER = 0xF2,
+	CTF_EVENT_MBOX_PUT_EXIT = 0xF3,
+	CTF_EVENT_MBOX_ASYNC_PUT_ENTER = 0xF4,
+	CTF_EVENT_MBOX_ASYNC_PUT_EXIT = 0xF5,
+	CTF_EVENT_MBOX_GET_ENTER = 0xF6,
+	CTF_EVENT_MBOX_GET_BLOCKING = 0xF7,
+	CTF_EVENT_MBOX_GET_EXIT = 0xF8,
+	CTF_EVENT_MBOX_DATA_GET = 0xF9,
+
 } ctf_event_t;
 
 typedef struct {
@@ -1527,6 +1541,67 @@ static inline void ctf_top_gpio_fire_callbacks_enter(uint32_t list, uint32_t por
 static inline void ctf_top_gpio_fire_callback(uint32_t port, uint32_t cb)
 {
 	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_GPIO_FIRE_CALLBACK), port, cb);
+}
+
+/* Mailbox */
+static inline void ctf_top_mbox_init(uint32_t mbox_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MBOX_INIT), mbox_id);
+}
+
+static inline void ctf_top_mbox_message_put_enter(uint32_t mbox_id, uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MBOX_MESSAGE_PUT_ENTER), mbox_id, timeout);
+}
+
+static inline void ctf_top_mbox_message_put_blocking(uint32_t mbox_id, uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MBOX_MESSAGE_PUT_BLOCKING), mbox_id, timeout);
+}
+
+static inline void ctf_top_mbox_message_put_exit(uint32_t mbox_id, uint32_t timeout, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MBOX_MESSAGE_PUT_EXIT), mbox_id, timeout, ret);
+}
+
+static inline void ctf_top_mbox_put_enter(uint32_t mbox_id, uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MBOX_PUT_ENTER), mbox_id, timeout);
+}
+
+static inline void ctf_top_mbox_put_exit(uint32_t mbox_id, uint32_t timeout, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MBOX_PUT_EXIT), mbox_id, timeout, ret);
+}
+
+static inline void ctf_top_mbox_async_put_enter(uint32_t mbox_id, uint32_t sem_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MBOX_ASYNC_PUT_ENTER), mbox_id, sem_id);
+}
+
+static inline void ctf_top_mbox_async_put_exit(uint32_t mbox_id, uint32_t sem_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MBOX_ASYNC_PUT_EXIT), mbox_id, sem_id);
+}
+
+static inline void ctf_top_mbox_get_enter(uint32_t mbox_id, uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MBOX_GET_ENTER), mbox_id, timeout);
+}
+
+static inline void ctf_top_mbox_get_blocking(uint32_t mbox_id, uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MBOX_GET_BLOCKING), mbox_id, timeout);
+}
+
+static inline void ctf_top_mbox_get_exit(uint32_t mbox_id, uint32_t timeout, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MBOX_GET_EXIT), mbox_id, timeout, ret);
+}
+
+static inline void ctf_top_mbox_data_get(uint32_t msg_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MBOX_DATA_GET), msg_id);
 }
 
 #endif /* SUBSYS_DEBUG_TRACING_CTF_TOP_H */
