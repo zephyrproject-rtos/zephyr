@@ -1,25 +1,33 @@
 # BL654 USB adapter board configuration
 
-# Copyright (c) 2021-2022 Laird Connectivity
+# Copyright (c) 2018-2023 Nordic Semiconductor ASA
+# Copyright (c) 2021-2025 Ezurio LLC
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_BL654_USB
 
+config HW_STACK_PROTECTION
+	default ARCH_HAS_STACK_PROTECTION
+
 # To let the nRF5 bootloader load an application, the application
 # must be linked after Nordic MBR, that is factory-programmed on the board.
 
+# If the application wants to use the full partition size, a "bare" board
+# variant should be used instead.
+
 # Nordic nRF5 bootloader exists outside of the partitions specified in the
 # DTS file, so we manually override FLASH_LOAD_OFFSET to link the application
-# correctly, after Nordic MBR, and limit the maximum size to not protude into
+# correctly, after Nordic MBR, and limit the maximum size to not protrude into
 # the bootloader at the end of flash.
 
 # When building MCUBoot, MCUBoot itself will select USE_DT_CODE_PARTITION
 # which will make it link into the correct partition specified in DTS file,
-# so no override or limit is necessary.
+# the offset is applied here so that the full partition size can be used when
+# the bootloader Kconfig option has been disabled.
 
 config FLASH_LOAD_OFFSET
 	default 0x1000
-	depends on !USE_DT_CODE_PARTITION
+	depends on BOARD_HAS_NRF5_BOOTLOADER && !USE_DT_CODE_PARTITION
 
 config FLASH_LOAD_SIZE
 	default 0xdf000
