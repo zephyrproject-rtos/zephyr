@@ -21,6 +21,14 @@
 			gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
 		};
 	};
+
+	qdec_loopbacks: loopbacks {
+		compatible = "test-qdec-loopbacks";
+		loopback0 {
+			qdec = <&qdec0>;
+			qenc-emul-gpios = <&phase_a &phase_b>;
+		};
+	};
 };
 
 &pinctrl {

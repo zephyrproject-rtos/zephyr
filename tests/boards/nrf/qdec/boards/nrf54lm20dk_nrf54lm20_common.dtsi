@@ -11,12 +11,6 @@
  */
 
 / {
-	aliases {
-		qdec0 = &qdec20;
-		qenca = &phase_a;
-		qencb = &phase_b;
-	};
-
 	encoder-emulate {
 		compatible = "gpio-leds";
 		phase_a: phase_a {
@@ -24,6 +18,14 @@
 		};
 		phase_b: phase_b {
 			gpios = <&gpio1 23 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	qdec_loopbacks: loopbacks {
+		compatible = "test-qdec-loopbacks";
+		loopback0 {
+			qdec = <&qdec20>;
+			qenc-emul-gpios = <&phase_a &phase_b>;
 		};
 	};
 };
