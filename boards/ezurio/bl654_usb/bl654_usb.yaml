@@ -2,13 +2,17 @@ identifier: bl654_usb
 name: BL654_USB
 type: mcu
 arch: arm
+ram: 256
+flash: 1024
 toolchain:
   - zephyr
   - gnuarmemb
+  - xtools
 supported:
   - usb_device
   - ble
   - pwm
   - watchdog
   - counter
+  - netif:openthread
 vendor: ezurio
