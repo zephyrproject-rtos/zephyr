@@ -152,14 +152,13 @@ exit:
 otError HdlcInterface::WaitForFrame(uint64_t aTimeoutUs)
 {
 	otError error = OT_ERROR_RESPONSE_TIMEOUT;
-	uint32_t timeout_ms = (uint32_t)(aTimeoutUs / 1000U);
 	uint32_t event_bits;
 
 	do {
 		/* Wait for k_spinel_hdlc_frame_ready_event indicating a frame has been received */
 		event_bits = k_event_wait(&spinel_hdlc_event,
 					  HdlcInterface::k_spinel_hdlc_frame_ready_event, false,
-					  K_MSEC(timeout_ms));
+					  K_USEC(aTimeoutUs));
 		k_event_clear(&spinel_hdlc_event, HdlcInterface::k_spinel_hdlc_frame_ready_event);
 		if ((event_bits & HdlcInterface::k_spinel_hdlc_frame_ready_event) != 0) {
 			/* Event is set, it means a frame has been received and can be decoded
