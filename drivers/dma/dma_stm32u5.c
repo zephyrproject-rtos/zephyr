@@ -630,7 +630,7 @@ static int dma_stm32_suspend(const struct device *dev, uint32_t id)
 	LL_DMA_SuspendChannel(dma, dma_stm32_id_to_stream(id));
 	/* It's not enough to wait for the SUSPF bit with LL_DMA_IsActiveFlag_SUSP */
 	do {
-		k_msleep(1); /* A delay is needed (1ms is valid) */
+		k_busy_wait(800); /* A delay is needed (800us is valid) */
 	} while (LL_DMA_IsActiveFlag_SUSP(dma, dma_stm32_id_to_stream(id)) != 1);
 
 	/* Do not Reset the channel to allow resuming later */
