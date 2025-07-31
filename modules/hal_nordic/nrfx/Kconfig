@@ -19,6 +19,9 @@ config NRFX_CLOCK
 
 if NRFX_CLOCK
 
+config NRFX_CLOCK_USE_LFRC_CALIBRATION
+	bool "Extend NRFX_CLOCK to use LFRC peripheral"
+
 config NRFX_CLOCK_LFXO_TWO_STAGE_ENABLED
 	bool "Two stage start sequence of the low frequency clock"
 
