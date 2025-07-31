@@ -955,12 +955,12 @@ add_custom_target(${DEVICE_API_LD_TARGET}
 
 zephyr_linker_include_generated(CMAKE ${DEVICE_API_LINKER_SECTIONS_CMAKE})
 
-# Add a pseudo-target that is up-to-date when all generated headers
-# are up-to-date. Libraries containing files that include these headers can use
-# add_dependencies or target_link_libraries against this target to ensure that
-# generated headers are up-to-date before the libraries are built. This ordering
-# dependency can be propagated to these libraries' dependenents via the PUBLIC
-# or INTERFACE option of target_link_libraries.
+# Create an interface library which collects the dependencies to Zephyr
+# generated headers. Libraries containing files that include these headers can
+# use add_dependencies or target_link_libraries against this target to ensure
+# that generated headers are up-to-date before the libraries are built. This
+# ordering dependency can be propagated to these libraries' dependenents via
+# the PUBLIC or INTERFACE option of target_link_libraries.
 
 add_library(zephyr_generated_headers INTERFACE)
 add_dependencies(zephyr_generated_headers
