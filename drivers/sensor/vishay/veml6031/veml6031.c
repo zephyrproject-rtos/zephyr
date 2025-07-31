@@ -142,29 +142,60 @@ struct veml6031_data {
 	uint32_t int_flags;
 };
 
+static bool veml6031_gain_in_range(int32_t gain)
+{
+	return (gain >= VEML6031_GAIN_1) && (gain <= VEML6031_GAIN_0_5);
+}
+
+static bool veml6031_itim_in_range(int32_t itim)
+{
+	return (itim >= VEML6031_IT_3_125) && (itim <= VEML6031_IT_400);
+}
+
+static bool veml6031_div4_in_range(int32_t div4)
+{
+	return (div4 >= VEML6031_SIZE_4_4) && (div4 <= VEML6031_SIZE_1_4);
+}
+
+static bool veml6031_pers_in_range(int32_t pers)
+{
+	return (pers >= VEML6031_PERS_1) && (pers <= VEML6031_PERS_8);
+}
+
 static void veml6031_sleep_by_integration_time(const struct veml6031_data *data)
 {
-	k_sleep(K_USEC(veml6031_it_values[data->itim].us));
+	if (veml6031_itim_in_range(data->itim)) {
+		k_sleep(K_USEC(veml6031_it_values[data->itim].us));
+	} else {
+		LOG_WRN_ONCE("Wrong settings: itim:%d. Most likely an application bug!",
+			     data->itim);
+	}
+}
+
+static int veml6031_check_settings(const struct veml6031_data *data)
+{
+	return veml6031_div4_in_range(data->div4) && veml6031_gain_in_range(data->gain) &&
+	       veml6031_itim_in_range(data->itim);
 }
 
 static int veml6031_check_gain(const struct sensor_value *val)
 {
-	return val->val1 >= VEML6031_GAIN_1 && val->val1 <= VEML6031_GAIN_0_5;
+	return veml6031_gain_in_range(val->val1);
 }
 
 static int veml6031_check_it(const struct sensor_value *val)
 {
-	return val->val1 >= VEML6031_IT_3_125 && val->val1 <= VEML6031_IT_400;
+	return veml6031_itim_in_range(val->val1);
 }
 
 static int veml6031_check_div4(const struct sensor_value *val)
 {
-	return val->val1 >= VEML6031_SIZE_4_4 && val->val1 <= VEML6031_SIZE_1_4;
+	return veml6031_div4_in_range(val->val1);
 }
 
 static int veml6031_check_pers(const struct sensor_value *val)
 {
-	return val->val1 >= VEML6031_PERS_1 && val->val1 <= VEML6031_PERS_8;
+	return veml6031_pers_in_range(val->val1);
 }
 
 static int veml6031_read(const struct device *dev, uint8_t cmd, uint8_t *data)
@@ -305,7 +336,15 @@ static int veml6031_fetch(const struct device *dev)
 	}
 	data->ir_data = sys_le16_to_cpu(data->ir_data);
 
-	data->als_lux = data->als_data * veml6031_resolution[data->div4][data->gain][data->itim];
+	if (veml6031_check_settings(data)) {
+		data->als_lux =
+			data->als_data * veml6031_resolution[data->div4][data->gain][data->itim];
+	} else {
+		LOG_WRN_ONCE("Wrong settings: div4:%d, gain:%d, itim:%d. "
+			     "Most likely an application bug!",
+			     data->div4, data->gain, data->itim);
+		return -EINVAL;
+	}
 
 	LOG_DBG("Read ALS measurement: counts=%d, lux=%d ir=%d", data->als_data, data->als_lux,
 		data->ir_data);
@@ -357,10 +396,22 @@ static int veml6031_attr_set(const struct device *dev, enum sensor_channel chan,
 		}
 		break;
 	case SENSOR_ATTR_LOWER_THRESH:
+		if (!veml6031_check_settings(data)) {
+			LOG_ERR("Wrong settings: div4:%d, gain:%d, itim:%d. "
+				"Most likely an application bug!",
+				data->div4, data->gain, data->itim);
+			return -EINVAL;
+		}
 		data->thresh_low =
 			val->val1 / veml6031_resolution[data->div4][data->gain][data->itim];
 		return veml6031_write_thresh_low(dev);
 	case SENSOR_ATTR_UPPER_THRESH:
+		if (!veml6031_check_settings(data)) {
+			LOG_ERR("Wrong settings: div4:%d, gain:%d, itim:%d. "
+				"Most likely an application bug!",
+				data->div4, data->gain, data->itim);
+			return -EINVAL;
+		}
 		data->thresh_high =
 			val->val1 / veml6031_resolution[data->div4][data->gain][data->itim];
 		return veml6031_write_thresh_high(dev);
