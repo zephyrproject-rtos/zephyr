@@ -1339,3 +1339,434 @@ event {
 		int32_t ret;
 	};
 };
+
+/* Work Queue Events */
+event {
+	name = work_init;
+	id = 0x9F;
+	fields := struct {
+		uint32_t work_id;
+	};
+};
+
+event {
+	name = work_submit_to_queue_enter;
+	id = 0xA0;
+	fields := struct {
+		uint32_t queue_id;
+		uint32_t work_id;
+	};
+};
+
+event {
+	name = work_submit_to_queue_exit;
+	id = 0xA1;
+	fields := struct {
+		uint32_t queue_id;
+		uint32_t work_id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = work_submit_enter;
+	id = 0xA2;
+	fields := struct {
+		uint32_t work_id;
+	};
+};
+
+event {
+	name = work_submit_exit;
+	id = 0xA3;
+	fields := struct {
+		uint32_t work_id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = work_flush_enter;
+	id = 0xA4;
+	fields := struct {
+		uint32_t work_id;
+	};
+};
+
+event {
+	name = work_flush_blocking;
+	id = 0xA5;
+	fields := struct {
+		uint32_t work_id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = work_flush_exit;
+	id = 0xA6;
+	fields := struct {
+		uint32_t work_id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = work_cancel_enter;
+	id = 0xA7;
+	fields := struct {
+		uint32_t work_id;
+	};
+};
+
+event {
+	name = work_cancel_exit;
+	id = 0xA8;
+	fields := struct {
+		uint32_t work_id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = work_cancel_sync_enter;
+	id = 0xA9;
+	fields := struct {
+		uint32_t work_id;
+		uint32_t sync_id;
+	};
+};
+
+event {
+	name = work_cancel_sync_blocking;
+	id = 0xAA;
+	fields := struct {
+		uint32_t work_id;
+		uint32_t sync_id;
+	};
+};
+
+event {
+	name = work_cancel_sync_exit;
+	id = 0xAB;
+	fields := struct {
+		uint32_t work_id;
+		uint32_t sync_id;
+		int32_t ret;
+	};
+};
+
+/* Work Queue Management */
+event {
+	name = work_queue_init;
+	id = 0xAC;
+	fields := struct {
+		uint32_t queue_id;
+	};
+};
+
+event {
+	name = work_queue_start_enter;
+	id = 0xAD;
+	fields := struct {
+		uint32_t queue_id;
+	};
+};
+
+event {
+	name = work_queue_start_exit;
+	id = 0xAE;
+	fields := struct {
+		uint32_t queue_id;
+	};
+};
+
+event {
+	name = work_queue_stop_enter;
+	id = 0xAF;
+	fields := struct {
+		uint32_t queue_id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = work_queue_stop_blocking;
+	id = 0xB0;
+	fields := struct {
+		uint32_t queue_id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = work_queue_stop_exit;
+	id = 0xB1;
+	fields := struct {
+		uint32_t queue_id;
+		uint32_t timeout;
+		int32_t ret;
+	};
+};
+
+event {
+	name = work_queue_drain_enter;
+	id = 0xB2;
+	fields := struct {
+		uint32_t queue_id;
+	};
+};
+
+event {
+	name = work_queue_drain_exit;
+	id = 0xB3;
+	fields := struct {
+		uint32_t queue_id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = work_queue_unplug_enter;
+	id = 0xB4;
+	fields := struct {
+		uint32_t queue_id;
+	};
+};
+
+event {
+	name = work_queue_unplug_exit;
+	id = 0xB5;
+	fields := struct {
+		uint32_t queue_id;
+		int32_t ret;
+	};
+};
+
+/* Delayable Work */
+event {
+	name = work_delayable_init;
+	id = 0xB6;
+	fields := struct {
+		uint32_t dwork_id;
+	};
+};
+
+event {
+	name = work_schedule_for_queue_enter;
+	id = 0xB7;
+	fields := struct {
+		uint32_t queue_id;
+		uint32_t dwork_id;
+		uint32_t delay;
+	};
+};
+
+event {
+	name = work_schedule_for_queue_exit;
+	id = 0xB8;
+	fields := struct {
+		uint32_t queue_id;
+		uint32_t dwork_id;
+		uint32_t delay;
+		int32_t ret;
+	};
+};
+
+event {
+	name = work_schedule_enter;
+	id = 0xB9;
+	fields := struct {
+		uint32_t dwork_id;
+		uint32_t delay;
+	};
+};
+
+event {
+	name = work_schedule_exit;
+	id = 0xBA;
+	fields := struct {
+		uint32_t dwork_id;
+		uint32_t delay;
+		int32_t ret;
+	};
+};
+
+event {
+	name = work_reschedule_for_queue_enter;
+	id = 0xBB;
+	fields := struct {
+		uint32_t queue_id;
+		uint32_t dwork_id;
+		uint32_t delay;
+	};
+};
+
+event {
+	name = work_reschedule_for_queue_exit;
+	id = 0xBC;
+	fields := struct {
+		uint32_t queue_id;
+		uint32_t dwork_id;
+		uint32_t delay;
+		int32_t ret;
+	};
+};
+
+event {
+	name = work_reschedule_enter;
+	id = 0xBD;
+	fields := struct {
+		uint32_t dwork_id;
+		uint32_t delay;
+	};
+};
+
+event {
+	name = work_reschedule_exit;
+	id = 0xBE;
+	fields := struct {
+		uint32_t dwork_id;
+		uint32_t delay;
+		int32_t ret;
+	};
+};
+
+event {
+	name = work_flush_delayable_enter;
+	id = 0xBF;
+	fields := struct {
+		uint32_t dwork_id;
+		uint32_t sync_id;
+	};
+};
+
+event {
+	name = work_flush_delayable_exit;
+	id = 0xC0;
+	fields := struct {
+		uint32_t dwork_id;
+		uint32_t sync_id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = work_cancel_delayable_enter;
+	id = 0xC1;
+	fields := struct {
+		uint32_t dwork_id;
+	};
+};
+
+event {
+	name = work_cancel_delayable_exit;
+	id = 0xC2;
+	fields := struct {
+		uint32_t dwork_id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = work_cancel_delayable_sync_enter;
+	id = 0xC3;
+	fields := struct {
+		uint32_t dwork_id;
+		uint32_t sync_id;
+	};
+};
+
+event {
+	name = work_cancel_delayable_sync_exit;
+	id = 0xC4;
+	fields := struct {
+		uint32_t dwork_id;
+		uint32_t sync_id;
+		int32_t ret;
+	};
+};
+
+/* Poll Work */
+event {
+	name = work_poll_init_enter;
+	id = 0xC5;
+	fields := struct {
+		uint32_t work_id;
+	};
+};
+
+event {
+	name = work_poll_init_exit;
+	id = 0xC6;
+	fields := struct {
+		uint32_t work_id;
+	};
+};
+
+event {
+	name = work_poll_submit_to_queue_enter;
+	id = 0xC7;
+	fields := struct {
+		uint32_t work_q_id;
+		uint32_t work_id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = work_poll_submit_to_queue_blocking;
+	id = 0xC8;
+	fields := struct {
+		uint32_t work_q_id;
+		uint32_t work_id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = work_poll_submit_to_queue_exit;
+	id = 0xC9;
+	fields := struct {
+		uint32_t work_q_id;
+		uint32_t work_id;
+		uint32_t timeout;
+		int32_t ret;
+	};
+};
+
+event {
+	name = work_poll_submit_enter;
+	id = 0xCA;
+	fields := struct {
+		uint32_t work_id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = work_poll_submit_exit;
+	id = 0xCB;
+	fields := struct {
+		uint32_t work_id;
+		uint32_t timeout;
+		int32_t ret;
+	};
+};
+
+event {
+	name = work_poll_cancel_enter;
+	id = 0xCC;
+	fields := struct {
+		uint32_t work_id;
+	};
+};
+
+event {
+	name = work_poll_cancel_exit;
+	id = 0xCD;
+	fields := struct {
+		uint32_t work_id;
+		int32_t ret;
+	};
+};
