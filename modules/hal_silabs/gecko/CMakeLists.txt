@@ -50,8 +50,11 @@ if(${CONFIG_SOC_GECKO_HAS_RADIO})
 
     # prebuilt libs
     if(CONFIG_SILABS_GECKO_RAIL_MULTIPROTOCOL)
+      zephyr_compile_definitions(SL_RAIL_LIB_MULTIPROTOCOL_SUPPORT=1)
       add_prebuilt_library(librail platform/radio/rail_lib/autogen/librail_release/librail_multiprotocol_efr32xg${GECKO_SERIES_NUMBER}_gcc_release.a)
+
     else()
+      zephyr_compile_definitions(SL_RAIL_LIB_MULTIPROTOCOL_SUPPORT=0)
       add_prebuilt_library(librail platform/radio/rail_lib/autogen/librail_release/librail_efr32xg${GECKO_SERIES_NUMBER}_gcc_release.a)
     endif()
 
