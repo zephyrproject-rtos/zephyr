@@ -9,6 +9,8 @@ source "subsys/net/lib/dns/Kconfig"
 
 source "subsys/net/lib/latmon/Kconfig"
 
+source "subsys/net/lib/midi2/Kconfig"
+
 source "subsys/net/lib/mqtt/Kconfig"
 
 source "subsys/net/lib/mqtt_sn/Kconfig"
