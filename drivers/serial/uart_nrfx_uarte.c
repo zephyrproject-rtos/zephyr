@@ -319,6 +319,7 @@ struct uarte_nrfx_data {
 	(baudrate) == 600    ? 0x00027000 :			\
 	(baudrate) == 1200   ? NRF_UARTE_BAUDRATE_1200 :	\
 	(baudrate) == 2400   ? NRF_UARTE_BAUDRATE_2400 :	\
+	(baudrate) == 4096   ? 0x00111000 :			\
 	(baudrate) == 4800   ? NRF_UARTE_BAUDRATE_4800 :	\
 	(baudrate) == 9600   ? NRF_UARTE_BAUDRATE_9600 :	\
 	(baudrate) == 14400  ? NRF_UARTE_BAUDRATE_14400 :	\
