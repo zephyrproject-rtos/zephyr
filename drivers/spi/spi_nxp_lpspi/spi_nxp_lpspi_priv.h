@@ -97,9 +97,6 @@ int lpspi_wait_tx_fifo_empty(const struct device *dev);
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
 		.irq_config_func = lpspi_config_func_##n,                                          \
-		.pcs_sck_delay = DT_INST_PROP_OR(n, pcs_sck_delay, 0),                             \
-		.sck_pcs_delay = DT_INST_PROP_OR(n, sck_pcs_delay, 0),                             \
-		.transfer_delay = DT_INST_PROP_OR(n, transfer_delay, 0),                           \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
 		.data_pin_config = (uint8_t)DT_INST_ENUM_IDX(n, data_pin_config),                  \
 		.tristate_output = DT_INST_PROP(n, tristate_output),                               \
