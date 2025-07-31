@@ -23,4 +23,11 @@ config EXAMPLE_GPIO_WAKEUP
 	  as wake-up source. Be aware that when low level is used to trigger
 	  wake-up, an external pull-up resistance is necessary.
 
+config EXAMPLE_WAKEUP_TIME_SEC
+	int "Wakeup time in seconds"
+	default 5
+	help
+	  This option sets the time in seconds after which the device
+	  will wake up from deep sleep. The value must be greater than 0.
+
 source "Kconfig.zephyr"
