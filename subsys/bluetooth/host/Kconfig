@@ -661,7 +661,7 @@ config BT_ID_UNPAIR_MATCHING_BONDS
 config BT_ID_AUTO_SWAP_MATCHING_BONDS
 	bool "Automatically swap conflicting entries in the Resolving List"
 	depends on !BT_ID_UNPAIR_MATCHING_BONDS
-	depends on BT_PRIVACY && BT_PERIPHERAL && !BT_CENTRAL
+	depends on BT_SMP && BT_PERIPHERAL && !BT_CENTRAL
 	help
 	  If this option is enabled, the Host will not add a new bond with
 	  the same peer address (or IRK) to the Resolving List if there is
