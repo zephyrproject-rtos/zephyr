@@ -2137,3 +2137,63 @@ event {
 		uint32_t msg_id;
 	};
 };
+
+event {
+	name = event_init;
+	id = 0xFA;
+	fields := struct {
+		uint32_t event_id;
+	};
+};
+
+event {
+	name = event_post_enter;
+	id = 0xFB;
+	fields := struct {
+		uint32_t event_id;
+		uint32_t events;
+		uint32_t events_mask;
+	};
+};
+
+event {
+	name = event_post_exit;
+	id = 0xFC;
+	fields := struct {
+		uint32_t event_id;
+		uint32_t events;
+		uint32_t events_mask;
+	};
+};
+
+event {
+	name = event_wait_enter;
+	id = 0xFD;
+	fields := struct {
+		uint32_t event_id;
+		uint32_t events;
+		uint32_t options;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = event_wait_blocking;
+	id = 0xFE;
+	fields := struct {
+		uint32_t event_id;
+		uint32_t events;
+		uint32_t options;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = event_wait_exit;
+	id = 0xFF;
+	fields := struct {
+		uint32_t event_id;
+		uint32_t events;
+		int32_t ret;
+	};
+};

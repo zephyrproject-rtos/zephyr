@@ -451,12 +451,18 @@ extern "C" {
 #define sys_port_trace_k_mem_slab_free_exit(slab) \
 	sys_trace_k_mem_slab_free_exit(slab)
 
-#define sys_port_trace_k_event_init(event)
-#define sys_port_trace_k_event_post_enter(event, events, events_mask)
-#define sys_port_trace_k_event_post_exit(event, events, events_mask)
-#define sys_port_trace_k_event_wait_enter(event, events, options, timeout)
-#define sys_port_trace_k_event_wait_blocking(event, events, options, timeout)
-#define sys_port_trace_k_event_wait_exit(event, events, ret)
+#define sys_port_trace_k_event_init(event) \
+	sys_trace_k_event_init(event)
+#define sys_port_trace_k_event_post_enter(event, events, events_mask) \
+	sys_trace_k_event_post_enter(event, events, events_mask)
+#define sys_port_trace_k_event_post_exit(event, events, events_mask) \
+	sys_trace_k_event_post_exit(event, events, events_mask)
+#define sys_port_trace_k_event_wait_enter(event, events, options, timeout) \
+	sys_trace_k_event_wait_enter(event, events, options, timeout)
+#define sys_port_trace_k_event_wait_blocking(event, events, options, timeout) \
+	sys_trace_k_event_wait_blocking(event, events, options, timeout)
+#define sys_port_trace_k_event_wait_exit(event, events, ret) \
+	sys_trace_k_event_wait_exit(event, events, ret)
 
 #define sys_port_trace_k_thread_abort_exit(thread)
 #define sys_port_trace_k_thread_abort_enter(thread)
@@ -675,8 +681,6 @@ void sys_trace_k_timer_status_sync_blocking(struct k_timer *timer, k_timeout_t t
 void sys_trace_k_timer_status_sync_enter(struct k_timer *timer);
 void sys_trace_k_timer_status_sync_exit(struct k_timer *timer, uint32_t result);
 
-void sys_trace_k_event_init(struct k_event *event);
-
 /* Mailbox */
 void sys_trace_k_mbox_init(struct k_mbox *mbox);
 void sys_trace_k_mbox_message_put_enter(struct k_mbox *mbox, k_timeout_t timeout);
@@ -690,6 +694,14 @@ void sys_trace_k_mbox_get_enter(struct k_mbox *mbox, k_timeout_t timeout);
 void sys_trace_k_mbox_get_blocking(struct k_mbox *mbox, k_timeout_t timeout);
 void sys_trace_k_mbox_get_exit(struct k_mbox *mbox, k_timeout_t timeout, int ret);
 void sys_trace_k_mbox_data_get(struct k_mbox_msg *rx_msg);
+
+/* Event */
+void sys_trace_k_event_init(struct k_event *event);
+void sys_trace_k_event_post_enter(struct k_event *event, uint32_t events, uint32_t events_mask);
+void sys_trace_k_event_post_exit(struct k_event *event, uint32_t events, uint32_t events_mask);
+void sys_trace_k_event_wait_enter(struct k_event *event, uint32_t events, uint32_t options, k_timeout_t timeout);
+void sys_trace_k_event_wait_blocking(struct k_event *event, uint32_t events, uint32_t options, k_timeout_t timeout);
+void sys_trace_k_event_wait_exit(struct k_event *event, uint32_t events, int ret);
 
 
 #define sys_port_trace_socket_init(sock, family, type, proto)	\
