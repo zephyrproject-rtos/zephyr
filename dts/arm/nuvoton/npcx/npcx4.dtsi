@@ -523,6 +523,22 @@
 			reg-io-width = <1>;
 			status = "disabled";
 		};
+
+		gdma1: dma@40011a00 {
+			compatible = "nuvoton,npcx-gdma";
+			reg = <0x40011a00 0x40>;
+			chan-offset = <0x20>;
+
+			interrupts = <65 3>;
+			clocks = <&pcc NPCX_CLOCK_BUS_AHB6 NPCX_PWDWN_CTL3 5>;
+
+			dma-channels = <2>;
+
+			#dma-cells = <2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
 	};
 
 	soc-if {
