@@ -63,7 +63,10 @@ struct midi_ump {
 #define UMP_MT_DATA_128            0x05
 /** Flex Data Messages */
 #define UMP_MT_FLEX_DATA           0x0d
-/** UMP Stream Message */
+/**
+ * UMP Stream Message
+ * @see midi_ump_stream
+ */
 #define UMP_MT_UMP_STREAM          0x0f
 /** @} */
 
@@ -206,6 +209,149 @@ struct midi_ump {
 #define UMP_SYS_STOP           0xfc /**< Stop (no param) */
 #define UMP_SYS_ACTIVE_SENSING 0xfe /**< Active sensing (no param) */
 #define UMP_SYS_RESET          0xff /**< Reset (no param) */
+/** @} */
+
+
+/**
+ * @defgroup midi_ump_stream UMP Stream specific fields
+ * @ingroup midi_ump
+ * @see ump112: 7.1 UMP Stream Messages
+ *
+ * @{
+ */
+
+/**
+ * @brief      Format of a UMP Stream message
+ * @param[in]  ump     Universal MIDI Packet (containing a UMP Stream message)
+ * @see midi_ump_stream_format
+ */
+#define UMP_STREAM_FORMAT(ump) \
+	(((ump).data[0] >> 26) & BIT_MASK(2))
+
+/**
+ * @defgroup midi_ump_stream_format UMP Stream format
+ * @ingroup midi_ump_stream
+ * @see ump112: 7.1 UMP Stream Messages: Format
+ * @remark When UMP_MT(x)=UMP_MT_UMP_STREAM,
+ *         then UMP_STREAM_FORMAT(x) may be one of:
+ * @{
+ */
+
+/** Complete message in one UMP */
+#define UMP_STREAM_FORMAT_COMPLETE 0x00
+/** Start of a message which spans two or more UMPs */
+#define UMP_STREAM_FORMAT_START    0x01
+/** Continuing a message which spans three or more UMPs.
+ *  There might be multiple Continue UMPs in a single message
+ */
+#define UMP_STREAM_FORMAT_CONTINUE 0x02
+/** End of message which spans two or more UMPs */
+#define UMP_STREAM_FORMAT_END      0x03
+
+/** @} */
+
+/**
+ * @brief      Status field of a UMP Stream message
+ * @param[in]  ump     Universal MIDI Packet (containing a UMP Stream message)
+ * @see midi_ump_stream_status
+ */
+#define UMP_STREAM_STATUS(ump) \
+	(((ump).data[0] >> 16) & BIT_MASK(10))
+
+/**
+ * @defgroup midi_ump_stream_status UMP Stream status
+ * @ingroup midi_ump_stream
+ * @see ump112: 7.1 UMP Stream Messages
+ * @remark When UMP_MT(x)=UMP_MT_UMP_STREAM,
+ *         then UMP_STREAM_STATUS(x) may be one of:
+ * @{
+ */
+
+/** Endpoint Discovery Message */
+#define UMP_STREAM_STATUS_EP_DISCOVERY 0x00
+/** Endpoint Info Notification Message */
+#define UMP_STREAM_STATUS_EP_INFO      0x01
+/** Device Identity Notification Message */
+#define UMP_STREAM_STATUS_DEVICE_IDENT 0x02
+/** Endpoint Name Notification */
+#define UMP_STREAM_STATUS_EP_NAME      0x03
+/** Product Instance Id Notification Message */
+#define UMP_STREAM_STATUS_PROD_ID      0x04
+/** Stream Configuration Request Message */
+#define UMP_STREAM_STATUS_CONF_REQ     0x05
+/** Stream Configuration Notification Message */
+#define UMP_STREAM_STATUS_CONF_NOTIF   0x06
+/** Function Block Discovery Message */
+#define UMP_STREAM_STATUS_FB_DISCOVERY 0x10
+/** Function Block Info Notification */
+#define UMP_STREAM_STATUS_FB_INFO      0x11
+/** Function Block Name Notification */
+#define UMP_STREAM_STATUS_FB_NAME      0x12
+/** @} */
+
+/**
+ * @brief      Filter bitmap of an Endpoint Discovery message
+ * @param[in]  ump     Universal MIDI Packet (containing an Endpoint Discovery message)
+ * @see ump112: 7.1.1 Endpoint Discovery Message
+ * @see midi_ump_ep_disc
+ */
+#define UMP_STREAM_EP_DISCOVERY_FILTER(ump) \
+	((ump).data[1] & BIT_MASK(8))
+
+/**
+ * @defgroup midi_ump_ep_disc UMP Stream endpoint discovery message filter bits
+ * @ingroup midi_ump_stream
+ * @see ump112: 7.1.1 Fig. 12: Endpoint Discovery Message Filter Bitmap Field
+ * @remark When UMP_MT(x)=UMP_MT_UMP_STREAM and
+ *         UMP_STREAM_STATUS(x)=UMP_STREAM_STATUS_EP_DISCOVERY,
+ *         then UMP_STREAM_EP_DISCOVERY_FILTER(x) may be an ORed combination of:
+ * @{
+ */
+
+/** Requesting an Endpoint Info Notification */
+#define UMP_EP_DISC_FILTER_EP_INFO    BIT(0)
+/** Requesting a Device Identity Notification */
+#define UMP_EP_DISC_FILTER_DEVICE_ID  BIT(1)
+/** Requesting an Endpoint Name Notification */
+#define UMP_EP_DISC_FILTER_EP_NAME    BIT(2)
+/** Requesting a Product Instance Id Notification */
+#define UMP_EP_DISC_FILTER_PRODUCT_ID BIT(3)
+/** Requesting a Stream Configuration Notification */
+#define UMP_EP_DISC_FILTER_STREAM_CFG BIT(4)
+/** @} */
+
+/**
+ * @brief      Filter bitmap of a Function Block Discovery message
+ * @param[in]  ump     Universal MIDI Packet (containing a Function Block Discovery message)
+ * @see ump112: 7.1.7 Function Block Discovery Message
+ * @see midi_ump_fb_disc
+ */
+#define UMP_STREAM_FB_DISCOVERY_FILTER(ump) \
+	((ump).data[0] & BIT_MASK(8))
+
+/**
+ * @brief      Block number requested in a Function Block Discovery message
+ * @param[in]  ump     Universal MIDI Packet (containing a Function Block Discovery message)
+ * @see ump112: 7.1.7 Function Block Discovery Message
+ */
+#define UMP_STREAM_FB_DISCOVERY_NUM(ump) \
+	(((ump).data[0] >> 8) & BIT_MASK(8))
+
+/**
+ * @defgroup midi_ump_fb_disc UMP Stream Function Block discovery message filter bits
+ * @ingroup midi_ump_stream
+ * @see ump112: 7.1.7 Fig. 21: Function Block Discovery Filter Bitmap Field Format
+ * @remark When UMP_MT(x)=UMP_MT_UMP_STREAM and
+ *         UMP_STREAM_STATUS(x)=UMP_STREAM_STATUS_FB_DISCOVERY,
+ *         then UMP_STREAM_FB_DISCOVERY_FILTER(x) may be an ORed combination of:
+ * @{
+ */
+/** Requesting a Function Block Info Notification */
+#define UMP_FB_DISC_FILTER_INFO BIT(0)
+/** Requesting a Function Block Name Notification */
+#define UMP_FB_DISC_FILTER_NAME BIT(1)
+/** @} */
+
 /** @} */
 
 /** @} */
