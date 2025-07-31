@@ -4,12 +4,6 @@
  */
 
 / {
-	aliases {
-		qdec0 = &qdec1;
-		qenca = &phase_a;
-		qencb = &phase_b;
-	};
-
 	encoder-emulate {
 		compatible = "gpio-leds";
 		phase_a: phase_a {
@@ -19,6 +13,14 @@
 		phase_b: phase_b {
 			/* Arduino A3 */
 			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	qdec_loopbacks: loopbacks {
+		compatible = "test-qdec-loopbacks";
+		loopback0 {
+			qdec = <&qdec1>;
+			qenc-emul-gpios = <&phase_a &phase_b>;
 		};
 	};
 };
