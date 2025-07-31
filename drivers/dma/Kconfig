@@ -97,4 +97,6 @@ source "drivers/dma/Kconfig.wch"
 
 source "drivers/dma/Kconfig.ti_cc23x0"
 
+source "drivers/dma/Kconfig.npcx"
+
 endif # DMA
