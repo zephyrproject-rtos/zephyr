@@ -18,7 +18,6 @@ config SOC_SERIES_KINETIS_K2X
 
 config SOC_MK22F51212
 	select HAS_MCUX
-	select HAS_MCUX_SMC
 	select HAS_MCUX_SIM
 	select HAS_OSC
 	select HAS_MCG
@@ -29,7 +28,6 @@ config SOC_MK22F51212
 # NXP's MCUX SDK, and not recommended for new designs.
 config SOC_MK22F12
 	select HAS_MCUX
-	select HAS_MCUX_SMC
 	select HAS_MCUX_SIM
 	select HAS_OSC
 	select HAS_MCG
