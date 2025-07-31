@@ -131,6 +131,7 @@ set_variable_ifdef(CONFIG_DAI_NXP_ESAI          CONFIG_MCUX_COMPONENT_driver.esa
 set_variable_ifdef(CONFIG_MCUX_LPCMP            CONFIG_MCUX_COMPONENT_driver.lpcmp)
 set_variable_ifdef(CONFIG_NXP_RF_IMU            CONFIG_MCUX_COMPONENT_driver.imu)
 set_variable_ifdef(CONFIG_TRDC_MCUX_TRDC        CONFIG_MCUX_COMPONENT_driver.trdc)
+set_variable_ifdef(CONFIG_TRDC_MCUX_TRDC_1      CONFIG_MCUX_COMPONENT_driver.trdc_1)
 set_variable_ifdef(CONFIG_S3MU_MCUX_S3MU        CONFIG_MCUX_COMPONENT_driver.s3mu)
 set_variable_ifdef(CONFIG_DAI_NXP_MICFIL        CONFIG_MCUX_COMPONENT_driver.pdm)
 set_variable_ifdef(CONFIG_PINCTRL_NXP_PORT      CONFIG_MCUX_COMPONENT_driver.port)
