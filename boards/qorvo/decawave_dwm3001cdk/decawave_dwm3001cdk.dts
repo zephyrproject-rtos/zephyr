@@ -14,11 +14,11 @@
 	compatible = "decawave,dwm3001";
 
 	chosen {
-		zephyr,console        = &uart0;
-		zephyr,shell-uart     = &uart0;
-		zephyr,uart-mcumgr    = &uart0;
-		zephyr,bt-mon-uart    = &uart0;
-		zephyr,bt-c2h-uart    = &uart0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,bt-c2h-uart = &uart0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
@@ -61,15 +61,14 @@
 
 	/* These aliases are provided for compatibility with samples */
 	aliases {
-		sw0        = &button2;
-		led0       = &led0;
-		led1       = &led1;
-		led2       = &led2;
-		led3       = &led3;
-		watchdog0  = &wdt0;
-		accel0     = &lis2dh12;
+		sw0 = &button2;
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		led3 = &led3;
+		watchdog0 = &wdt0;
+		accel0 = &lis2dh12;
 	};
-
 };
 
 &uicr {
