@@ -276,6 +276,120 @@ static inline uint16_t allocate_tx_buffer(void)
 	}
 }
 
+#if defined(CONFIG_ETH_STM32_HAL_TX_ASYNC)
+/* allocate a tx context and mark it as used, the first tx buffer is also allocated */
+static inline struct eth_stm32_tx_context *allocate_tx_context_async(struct net_pkt *pkt)
+{
+	int tx_index;
+
+	for (uint16_t index = 0; index < ETH_TX_DESC_CNT; index++) {
+		if (!dma_tx_context[index].used) {
+			dma_tx_context[index].used = true;
+			dma_tx_context[index].pkt = pkt;
+			tx_index = allocate_tx_buffer();
+			if (tx_index < 0) {
+				return NULL;
+			}
+			dma_tx_context[index].first_tx_buffer_index = tx_index;
+			return &dma_tx_context[index];
+		}
+	}
+	return NULL;
+}
+
+int eth_tx_v2(const struct device *dev, struct net_pkt *pkt)
+{
+	struct eth_stm32_hal_dev_data *dev_data = dev->data;
+	ETH_HandleTypeDef *heth = &dev_data->heth;
+	int res = 0;
+	size_t total_len;
+	size_t remaining_read;
+	struct eth_stm32_tx_context *ctx = NULL;
+	struct eth_stm32_tx_buffer_header *buf_header = NULL;
+	HAL_StatusTypeDef hal_ret = HAL_OK;
+
+#if defined(CONFIG_PTP_CLOCK_STM32_HAL)
+	bool timestamped_frame;
+#endif /* CONFIG_PTP_CLOCK_STM32_HAL */
+
+	__ASSERT_NO_MSG(pkt != NULL);
+	__ASSERT_NO_MSG(pkt->frags != NULL);
+
+	total_len = net_pkt_get_len(pkt);
+	if (total_len > (ETH_STM32_TX_BUF_SIZE * ETH_TXBUFNB)) {
+		LOG_ERR("PKT too big");
+		return -EIO;
+	}
+
+	k_mutex_lock(&dev_data->tx_mutex, K_FOREVER);
+
+	while (ctx == NULL) {
+		ctx = allocate_tx_context_async(pkt);
+		if (ctx == NULL) {
+			k_sem_take(&dev_data->tx_int_sem, K_MSEC(ETH_DMA_TX_TIMEOUT_MS));
+			HAL_ETH_ReleaseTxPacket(heth);
+		}
+	}
+	buf_header = &dma_tx_buffer_header[ctx->first_tx_buffer_index];
+
+#if defined(CONFIG_PTP_CLOCK_STM32_HAL)
+	timestamped_frame =
+		eth_is_ptp_pkt(net_pkt_iface(pkt), pkt) || net_pkt_is_tx_timestamping(pkt);
+	if (timestamped_frame) {
+		/* Enable transmit timestamp */
+		HAL_ETH_PTP_InsertTxTimestamp(heth);
+	}
+#endif /* CONFIG_PTP_CLOCK_STM32_HAL */
+
+	remaining_read = total_len;
+	/* fill and allocate buffer until remaining data fits in one buffer */
+	while (remaining_read > ETH_STM32_TX_BUF_SIZE) {
+		if (net_pkt_read(pkt, buf_header->tx_buff.buffer, ETH_STM32_TX_BUF_SIZE)) {
+			res = -ENOBUFS;
+			goto error;
+		}
+		const uint16_t next_buffer_id = allocate_tx_buffer();
+
+		buf_header->tx_buff.len = ETH_STM32_TX_BUF_SIZE;
+		/* append new buffer to the linked list */
+		buf_header->tx_buff.next = &dma_tx_buffer_header[next_buffer_id].tx_buff;
+		/* and adjust tail pointer */
+		buf_header = &dma_tx_buffer_header[next_buffer_id];
+		remaining_read -= ETH_STM32_TX_BUF_SIZE;
+	}
+	if (net_pkt_read(pkt, buf_header->tx_buff.buffer, remaining_read)) {
+		res = -ENOBUFS;
+		goto error;
+	}
+	buf_header->tx_buff.len = remaining_read;
+	buf_header->tx_buff.next = NULL;
+
+	tx_config.Length = total_len;
+	tx_config.pData = ctx;
+	tx_config.TxBuffer = &dma_tx_buffer_header[ctx->first_tx_buffer_index].tx_buff;
+
+	hal_ret = HAL_ETH_Transmit_IT(heth, &tx_config);
+	if (hal_ret != HAL_OK) {
+		LOG_ERR("HAL_ETH_Transmit: failed!");
+		res = -EIO;
+		goto error;
+	} else {
+		goto end;
+	}
+
+error:
+	if (ctx) {
+		/* We need to release the tx context and its buffers */
+		HAL_ETH_TxFreeCallback((uint32_t *)ctx);
+	}
+
+end:
+	k_mutex_unlock(&dev_data->tx_mutex);
+
+	return res;
+}
+#else
+
 /* allocate a tx context and mark it as used, the first tx buffer is also allocated */
 static inline struct eth_stm32_tx_context *allocate_tx_context(struct net_pkt *pkt)
 {
@@ -321,8 +435,8 @@ int eth_tx_v2(const struct device *dev, struct net_pkt *pkt)
 	buf_header = &dma_tx_buffer_header[ctx->first_tx_buffer_index];
 
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
-	timestamped_frame = eth_is_ptp_pkt(net_pkt_iface(pkt), pkt) ||
-			    net_pkt_is_tx_timestamping(pkt);
+	timestamped_frame =
+		eth_is_ptp_pkt(net_pkt_iface(pkt), pkt) || net_pkt_is_tx_timestamping(pkt);
 	if (timestamped_frame) {
 		/* Enable transmit timestamp */
 		HAL_ETH_PTP_InsertTxTimestamp(heth);
@@ -428,6 +542,7 @@ error:
 
 	return res;
 }
+#endif /* ETH_STM32_HAL_TX_ASYNC */
 
 struct net_pkt *eth_rx_v2(const struct device *dev)
 {
@@ -593,7 +708,7 @@ int eth_init_api_v2(const struct device *dev)
 	/* Initialize semaphores */
 	k_mutex_init(&dev_data->tx_mutex);
 	k_sem_init(&dev_data->rx_int_sem, 0, K_SEM_MAX_LIMIT);
-	k_sem_init(&dev_data->tx_int_sem, 0, K_SEM_MAX_LIMIT);
+	k_sem_init(&dev_data->tx_int_sem, 0, 1);
 
 	/* Tx config init: */
 	memset(&tx_config, 0, sizeof(ETH_TxPacketConfig));
