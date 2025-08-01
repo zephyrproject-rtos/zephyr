@@ -161,4 +161,12 @@ config LIS2DH_MEASURE_TEMPERATURE
 	  the reported temperature to a reference.
 	  This option does not apply to the LSM330DLHC.
 
+config LIS2DH_SELF_TEST
+	bool "Self test attribute"
+	default n
+	help
+	  Enable support for configuring the sensor self test bits.
+	  Refer to the datasheet of the sensor for a description of
+	  the appropriate self test procedure.
+
 endif # LIS2DH
