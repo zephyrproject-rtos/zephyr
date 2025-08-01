@@ -23,5 +23,4 @@
 			compatible = "arduino,modulino-buttons-leds";
 		};
 	};
-
 };

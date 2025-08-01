@@ -16,7 +16,7 @@
 		compatible = "ovti,ov7670";
 		reg = <0x21>;
 		reset-gpios = <&dvp_20pin_connector DVP_20PIN_PEN GPIO_ACTIVE_HIGH>;
-		pwdn-gpios  = <&dvp_20pin_connector DVP_20PIN_PDN GPIO_ACTIVE_HIGH>;
+		pwdn-gpios = <&dvp_20pin_connector DVP_20PIN_PDN GPIO_ACTIVE_HIGH>;
 
 		port {
 			ov7670_ep_out: endpoint {
