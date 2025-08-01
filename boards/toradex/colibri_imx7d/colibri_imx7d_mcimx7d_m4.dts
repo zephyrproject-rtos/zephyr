@@ -15,8 +15,8 @@
 	compatible = "nxp,mcimx7d_m4";
 
 	aliases {
-		led0   = &green_led;
-		sw0    = &user_switch_1;
+		led0 = &green_led;
+		sw0 = &user_switch_1;
 	};
 
 	chosen {
