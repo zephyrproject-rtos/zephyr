@@ -472,6 +472,16 @@ bool arm_m_must_switch(uint32_t lr)
 #ifdef CONFIG_USERSPACE
 	uint32_t control;
 
+	/* FIXME: there is a race here.  The "mode" field in the
+	 * thread struct and the CONTROL register it reflects is
+	 * managed by the thread code itself (see z_arm_do_syscall),
+	 * and it doesn't lock that process.  So if we make the
+	 * decision based on mode here we can get out of sync with
+	 * CONTROL, leading to the syscall running without privilege
+	 * and blowing up.  We either need to properly synchronize the
+	 * thread code or save/restore the control register directly
+	 * here.
+	 */
 	__asm__ volatile("mrs %0, control" : "=r"(control));
 	last_thread->arch.mode &= (~1) | (control & 1);
 	control = (control & ~1) | (_current->arch.mode & 1);

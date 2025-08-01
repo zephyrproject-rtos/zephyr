@@ -98,6 +98,12 @@ if CPU_CORTEX_M
 config USE_SWITCH
 	default y if USE_SWITCH_SUPPORTED && !ARM_NONSECURE_FIRMWARE
 
+# There are known races in the userspace code (that I think are
+# generic, not switch-related) that the switch layer trips over in one
+# test.  Not to be used together except with great care.
+config EXPERIMENTAL
+	default y if USE_SWITCH && USERSPACE
+
 config CPU_CORTEX_M_HAS_SYSTICK
 	bool
 	help

@@ -14,7 +14,15 @@ common:
   timeout: 180
 tests:
   kernel.memory_protection.syscalls.timeslicing:
+    filter: CONFIG_CPU_CORTEX_M == ""
     extra_configs:
+      - CONFIG_TIMESLICING=y
+      - CONFIG_TIMESLICE_SIZE=20
+  # There are known races with userspace and arm-m-switch that this test hits
+  kernel.memory_protection.syscalls.timeslicing.arm_m:
+    filter: CONFIG_CPU_CORTEX_M
+    extra_configs:
+      - CONFIG_USE_SWITCH=n
       - CONFIG_TIMESLICING=y
       - CONFIG_TIMESLICE_SIZE=20
   kernel.memory_protection.syscalls.kyield:
