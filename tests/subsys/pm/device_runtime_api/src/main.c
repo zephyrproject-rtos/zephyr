@@ -64,6 +64,8 @@ void test_api_setup(void *data)
 	/* enabling again should succeed (no-op) */
 	ret = pm_device_runtime_enable(test_dev);
 	zassert_equal(ret, 0);
+
+	test_driver_pm_retval(test_dev, 0);
 }
 
 static void test_api_teardown(void *data)
