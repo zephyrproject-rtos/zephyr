@@ -545,68 +545,65 @@ class DeviceHandler(Handler):
                 logger.error(f"{script} timed out")
 
     def _create_command(self, runner, hardware):
-        if (self.options.west_flash is not None) or runner:
-            command = ["west", "flash", "--skip-rebuild", "-d", self.build_dir]
-            command_extra_args = []
+        command = ["west", "flash", "--skip-rebuild", "-d", self.build_dir]
+        command_extra_args = []
 
-            # There are three ways this option is used.
-            # 1) bare: --west-flash
-            #    This results in options.west_flash == []
-            # 2) with a value: --west-flash="--board-id=42"
-            #    This results in options.west_flash == "--board-id=42"
-            # 3) Multiple values: --west-flash="--board-id=42,--erase"
-            #    This results in options.west_flash == "--board-id=42 --erase"
-            if self.options.west_flash and self.options.west_flash != []:
-                command_extra_args.extend(self.options.west_flash.split(','))
+        # There are three ways this option is used.
+        # 1) bare: default flags
+        #    This results in options.west_flash == []
+        # 2) with a value: --west-flash="--board-id=42"
+        #    This results in options.west_flash == "--board-id=42"
+        # 3) Multiple values: --west-flash="--board-id=42,--erase"
+        #    This results in options.west_flash == "--board-id=42 --erase"
+        if self.options.west_flash and self.options.west_flash != []:
+            command_extra_args.extend(self.options.west_flash.split(','))
 
-            if runner:
-                command.append("--runner")
-                command.append(runner)
+        if runner:
+            command.append("--runner")
+            command.append(runner)
 
-                board_id = hardware.probe_id or hardware.id
-                product = hardware.product
-                if board_id is not None:
-                    if runner in ("pyocd", "nrfjprog", "nrfutil", "nrfutil_next"):
-                        command_extra_args.append("--dev-id")
-                        command_extra_args.append(board_id)
-                    elif runner == "esp32":
-                        command_extra_args.append("--esp-device")
-                        command_extra_args.append(board_id)
-                    elif (
-                        runner == "openocd"
-                        and product == "STM32 STLink"
-                        or runner == "openocd"
-                        and product == "STLINK-V3"
-                    ):
-                        command_extra_args.append("--cmd-pre-init")
-                        command_extra_args.append(f"hla_serial {board_id}")
-                    elif runner == "openocd" and product == "EDBG CMSIS-DAP":
-                        command_extra_args.append("--cmd-pre-init")
-                        command_extra_args.append(f"cmsis_dap_serial {board_id}")
-                    elif runner == "openocd" and product == "LPC-LINK2 CMSIS-DAP":
-                        command_extra_args.append("--cmd-pre-init")
-                        command_extra_args.append(f"adapter serial {board_id}")
-                    elif runner == "jlink":
-                        command.append("--dev-id")
-                        command.append(board_id)
-                    elif runner == "linkserver":
-                        # for linkserver
-                        # --probe=#<number> select by probe index
-                        # --probe=<serial number> select by probe serial number
-                        command.append(f"--probe={board_id}")
-                    elif runner == "stm32cubeprogrammer" and product != "BOOT-SERIAL":
-                        command.append(f"--tool-opt=sn={board_id}")
+            board_id = hardware.probe_id or hardware.id
+            product = hardware.product
+            if board_id is not None:
+                if runner in ("pyocd", "nrfjprog", "nrfutil", "nrfutil_next"):
+                    command_extra_args.append("--dev-id")
+                    command_extra_args.append(board_id)
+                elif runner == "esp32":
+                    command_extra_args.append("--esp-device")
+                    command_extra_args.append(board_id)
+                elif (
+                    runner == "openocd"
+                    and product == "STM32 STLink"
+                    or runner == "openocd"
+                    and product == "STLINK-V3"
+                ):
+                    command_extra_args.append("--cmd-pre-init")
+                    command_extra_args.append(f"hla_serial {board_id}")
+                elif runner == "openocd" and product == "EDBG CMSIS-DAP":
+                    command_extra_args.append("--cmd-pre-init")
+                    command_extra_args.append(f"cmsis_dap_serial {board_id}")
+                elif runner == "openocd" and product == "LPC-LINK2 CMSIS-DAP":
+                    command_extra_args.append("--cmd-pre-init")
+                    command_extra_args.append(f"adapter serial {board_id}")
+                elif runner == "jlink":
+                    command.append("--dev-id")
+                    command.append(board_id)
+                elif runner == "linkserver":
+                    # for linkserver
+                    # --probe=#<number> select by probe index
+                    # --probe=<serial number> select by probe serial number
+                    command.append(f"--probe={board_id}")
+                elif runner == "stm32cubeprogrammer" and product != "BOOT-SERIAL":
+                    command.append(f"--tool-opt=sn={board_id}")
 
-                    # Receive parameters from runner_params field.
-                    if hardware.runner_params:
-                        for param in hardware.runner_params:
-                            command.append(param)
+                # Receive parameters from runner_params field.
+                if hardware.runner_params:
+                    for param in hardware.runner_params:
+                        command.append(param)
 
-            if command_extra_args:
-                command.append('--')
-                command.extend(command_extra_args)
-        else:
-            command = [self.generator_cmd, "-C", self.build_dir, "flash"]
+        if command_extra_args:
+            command.append('--')
+            command.extend(command_extra_args)
 
         return command
 
