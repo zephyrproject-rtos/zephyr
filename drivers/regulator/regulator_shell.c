@@ -527,7 +527,12 @@ static bool device_is_regulator(const struct device *dev)
 	return DEVICE_API_IS(regulator, dev);
 }
 
-static void device_name_get(size_t idx, struct shell_static_entry *entry)
+static bool device_is_regulator_parent(const struct device *dev)
+{
+	return DEVICE_API_IS(regulator_parent, dev);
+}
+
+static void device_name_get_regulator(size_t idx, struct shell_static_entry *entry)
 {
 	const struct device *dev = shell_device_filter(idx, device_is_regulator);
 
@@ -537,7 +542,18 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 	entry->subcmd = NULL;
 }
 
-SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
+static void device_name_get_regulator_parent(size_t idx, struct shell_static_entry *entry)
+{
+	const struct device *dev = shell_device_filter(idx, device_is_regulator_parent);
+
+	entry->syntax = (dev != NULL) ? dev->name : NULL;
+	entry->handler = NULL;
+	entry->help = NULL;
+	entry->subcmd = NULL;
+}
+
+SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get_regulator);
+SHELL_DYNAMIC_CMD_CREATE(dsub_device_name_parent, device_name_get_regulator_parent);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_regulator_cmds,
@@ -579,12 +595,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      2, 0),
 	SHELL_CMD_ARG(errors, &dsub_device_name, SHELL_HELP("Get active errors", "<device>"),
 		      cmd_errors, 2, 0),
-	SHELL_CMD_ARG(dvsset, &dsub_device_name,
+	SHELL_CMD_ARG(dvsset, &dsub_device_name_parent,
 		      SHELL_HELP("Set dynamic voltage scaling state",
 				 "<device> <state identifier>"),
 		      cmd_dvsset, 3, 0),
-	SHELL_CMD_ARG(shipmode, &dsub_device_name, SHELL_HELP("Enable ship mode", "<device>"),
-		      cmd_shipmode, 2, 0),
+	SHELL_CMD_ARG(shipmode, &dsub_device_name_parent,
+		      SHELL_HELP("Enable ship mode", "<device>"), cmd_shipmode, 2, 0),
 	SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(regulator, &sub_regulator_cmds, "Regulator playground",
