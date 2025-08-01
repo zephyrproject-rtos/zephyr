@@ -33,7 +33,6 @@
 			label = "BUILTIN LED";
 		};
 	};
-
 };
 
 &usb_serial {
