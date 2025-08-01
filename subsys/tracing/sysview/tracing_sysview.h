@@ -494,16 +494,38 @@ void sys_trace_thread_info(struct k_thread *thread);
 #define sys_port_trace_k_lifo_get_exit(lifo, timeout, ret)                                         \
 	SEGGER_SYSVIEW_RecordEndCall(TID_LIFO_GET)
 
-#define sys_port_trace_k_stack_init(stack)
-#define sys_port_trace_k_stack_alloc_init_enter(stack)
-#define sys_port_trace_k_stack_alloc_init_exit(stack, ret)
-#define sys_port_trace_k_stack_cleanup_enter(stack)
-#define sys_port_trace_k_stack_cleanup_exit(stack, ret)
-#define sys_port_trace_k_stack_push_enter(stack)
-#define sys_port_trace_k_stack_push_exit(stack, ret)
-#define sys_port_trace_k_stack_pop_enter(stack, timeout)
-#define sys_port_trace_k_stack_pop_blocking(stack, timeout)
-#define sys_port_trace_k_stack_pop_exit(stack, timeout, ret)
+
+/* Stack Operations */
+
+#define sys_port_trace_k_stack_init(stack) \
+	SEGGER_SYSVIEW_RecordU32(TID_STACK_INIT, (uint32_t)(uintptr_t)stack)
+
+#define sys_port_trace_k_stack_alloc_init_enter(stack) \
+	SEGGER_SYSVIEW_RecordU32(TID_STACK_INIT, (uint32_t)(uintptr_t)stack)
+
+#define sys_port_trace_k_stack_alloc_init_exit(stack, ret) \
+	SEGGER_SYSVIEW_RecordEndCall(TID_STACK_INIT)
+
+#define sys_port_trace_k_stack_cleanup_enter(stack) \
+	SEGGER_SYSVIEW_RecordU32(TID_QUEUE_STACK_CLEANUP, (uint32_t)(uintptr_t)stack)
+
+#define sys_port_trace_k_stack_cleanup_exit(stack, ret) \
+	SEGGER_SYSVIEW_RecordEndCall(TID_QUEUE_STACK_CLEANUP)
+
+#define sys_port_trace_k_stack_push_enter(stack) \
+	SEGGER_SYSVIEW_RecordU32(TID_STACK_PUSH, (uint32_t)(uintptr_t)stack)
+
+#define sys_port_trace_k_stack_push_exit(stack, ret) \
+	SEGGER_SYSVIEW_RecordEndCall(TID_STACK_PUSH)
+
+#define sys_port_trace_k_stack_pop_enter(stack, timeout) \
+	SEGGER_SYSVIEW_RecordU32x2(TID_STACK_POP, (uint32_t)(uintptr_t)stack, (uint32_t)timeout.ticks)
+
+#define sys_port_trace_k_stack_pop_blocking(stack, timeout) \
+	SEGGER_SYSVIEW_OnTaskStartExec((uint32_t)(uintptr_t)stack)
+
+#define sys_port_trace_k_stack_pop_exit(stack, timeout, ret) \
+	SEGGER_SYSVIEW_RecordEndCall(TID_STACK_POP)
 
 #define sys_port_trace_k_msgq_init(msgq) \
 	SEGGER_SYSVIEW_RecordU32(TID_MSGQ_INIT, (uint32_t)(uintptr_t)msgq)
