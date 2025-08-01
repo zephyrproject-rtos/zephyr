@@ -6,6 +6,7 @@
 
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/clock/imx943_clock.h>
+#include <zephyr/dt-bindings/ethernet/dsa_tag_proto.h>
 #include <mem.h>
 #include <freq.h>
 
@@ -332,6 +333,18 @@
 				status = "disabled";
 			};
 
+			/* Internal port */
+			enetc_psi3: ethernet@4cd40000 {
+				compatible = "nxp,imx-netc-psi";
+				reg = <0x4cd40000 0x10000>,
+				      <0x4ca00000 0x1000>;
+				reg-names = "port", "pfconfig";
+				mac-index = <3>;
+				si-index = <3>;
+				phy-connection-type = "internal";
+				status = "disabled";
+			};
+
 			netc_ptp_clock0: ptp_clock@4cd80000 {
 				compatible = "nxp,netc-ptp-clock";
 				reg = <0x4cd80000 0x10000>;
@@ -363,6 +376,43 @@
 				#size-cells = <0>;
 				status = "disabled";
 			};
+
+			netc_switch: switch {
+				compatible = "nxp,netc-switch";
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				switch_port0: switch_port@0 {
+					compatible = "zephyr,dsa-port";
+					reg = <0>;
+					status = "disabled";
+				};
+
+				switch_port1: switch_port@1 {
+					compatible = "zephyr,dsa-port";
+					reg = <1>;
+					status = "disabled";
+				};
+
+				/* Parallel interface is muxed with enetc_psi0. */
+				switch_port2: switch_port@2 {
+					compatible = "zephyr,dsa-port";
+					reg = <2>;
+					status = "disabled";
+				};
+
+				/* Internal port */
+				switch_port3: switch_port@3 {
+					compatible = "zephyr,dsa-port";
+					reg = <3>;
+					ethernet = <&enetc_psi3>;
+					phy-connection-type = "internal";
+					dsa-tag-protocol = <DSA_TAG_PROTO_NETC>;
+					status = "disabled";
+				};
+			};
+
 		};
 	};
 };
