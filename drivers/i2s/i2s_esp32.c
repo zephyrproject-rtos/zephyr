@@ -96,6 +96,10 @@ struct i2s_esp32_cfg {
 
 struct i2s_esp32_data {
 	i2s_hal_clock_info_t clk_info;
+#if I2S_ESP32_IS_DIR_EN(tx)
+	struct k_timer tx_deferred_transfer_timer;
+	const struct device *dev;
+#endif
 };
 
 uint32_t i2s_esp32_get_source_clk_freq(i2s_clock_src_t clk_src)
@@ -348,6 +352,47 @@ static void i2s_esp32_rx_stop_transfer(const struct device *dev)
 
 #if I2S_ESP32_IS_DIR_EN(tx)
 
+void i2s_esp32_tx_compl_transfer(struct k_timer *timer)
+{
+	struct i2s_esp32_data *dev_data =
+		CONTAINER_OF(timer, struct i2s_esp32_data, tx_deferred_transfer_timer);
+	const struct device *dev = dev_data->dev;
+	const struct i2s_esp32_cfg *const dev_cfg = dev->config;
+	const struct i2s_esp32_stream *stream = &dev_cfg->tx;
+	struct queue_item item;
+	int err;
+
+	if (stream->data->state == I2S_STATE_STOPPING) {
+		if (k_msgq_num_used_get(&stream->data->queue) == 0 ||
+		    stream->data->stop_without_draining == true) {
+			stream->data->state = I2S_STATE_READY;
+			goto tx_disable;
+		}
+	}
+
+	err = k_msgq_get(&stream->data->queue, &item, K_NO_WAIT);
+	if (err < 0) {
+		stream->data->state = I2S_STATE_ERROR;
+		LOG_ERR("TX queue empty: %d", err);
+		goto tx_disable;
+	}
+
+	stream->data->mem_block = item.buffer;
+	stream->data->mem_block_len = item.size;
+
+	err = i2s_esp32_restart_dma(dev, I2S_DIR_TX);
+	if (err < 0) {
+		stream->data->state = I2S_STATE_ERROR;
+		LOG_ERR("Failed to restart TX transfer: %d", err);
+		goto tx_disable;
+	}
+
+	return;
+
+tx_disable:
+	stream->conf->stop_transfer(dev);
+}
+
 #if SOC_GDMA_SUPPORTED
 static void i2s_esp32_tx_callback(const struct device *dma_dev, void *arg, uint32_t channel,
 				  int status)
@@ -356,10 +401,9 @@ static void i2s_esp32_tx_callback(void *arg, int status)
 #endif /* SOC_GDMA_SUPPORTED */
 {
 	const struct device *dev = (const struct device *)arg;
+	struct i2s_esp32_data *dev_data = dev->data;
 	const struct i2s_esp32_cfg *const dev_cfg = dev->config;
 	const struct i2s_esp32_stream *stream = &dev_cfg->tx;
-	struct queue_item item;
-	int err;
 
 	if (!stream->data->dma_pending) {
 		return;
@@ -385,29 +429,16 @@ static void i2s_esp32_tx_callback(void *arg, int status)
 		goto tx_disable;
 	}
 
-	if (stream->data->state == I2S_STATE_STOPPING) {
-		if (k_msgq_num_used_get(&stream->data->queue) == 0 ||
-		    stream->data->stop_without_draining == true) {
-			stream->data->state = I2S_STATE_READY;
-			goto tx_disable;
-		}
-	}
-
-	err = k_msgq_get(&stream->data->queue, &item, K_NO_WAIT);
-	if (err < 0) {
-		stream->data->state = I2S_STATE_ERROR;
-		LOG_ERR("TX queue empty: %d", err);
-		goto tx_disable;
-	}
-
-	stream->data->mem_block = item.buffer;
-	stream->data->mem_block_len = item.size;
-
-	err = i2s_esp32_restart_dma(dev, I2S_DIR_TX);
-	if (err < 0) {
-		stream->data->state = I2S_STATE_ERROR;
-		LOG_ERR("Failed to restart TX transfer: %d", err);
-		goto tx_disable;
+#if CONFIG_I2S_ESP32_ALLOWED_EMPTY_TX_QUEUE_DEFERRAL_TIME_MS
+	if (k_msgq_num_used_get(&stream->data->queue) == 0) {
+		k_timer_start(&dev_data->tx_deferred_transfer_timer,
+			      K_MSEC(CONFIG_I2S_ESP32_ALLOWED_EMPTY_TX_QUEUE_DEFERRAL_TIME_MS),
+			      K_NO_WAIT);
+	} else {
+#else
+	{
+#endif
+		i2s_esp32_tx_compl_transfer(&dev_data->tx_deferred_transfer_timer);
 	}
 
 	return;
@@ -769,6 +800,14 @@ static int i2s_esp32_initialize(const struct device *dev)
 #if !SOC_GDMA_SUPPORTED
 	const i2s_hal_context_t *hal = &(dev_cfg->hal);
 #endif /* !SOC_GDMA_SUPPORTED */
+
+#if I2S_ESP32_IS_DIR_EN(tx)
+	struct i2s_esp32_data *dev_data = dev->data;
+
+	dev_data->dev = dev;
+	k_timer_init(&dev_data->tx_deferred_transfer_timer, i2s_esp32_tx_compl_transfer, NULL);
+#endif /* I2S_ESP32_IS_DIR_EN(tx) */
+
 	if (!device_is_ready(clk_dev)) {
 		LOG_ERR("clock control device not ready");
 		return -ENODEV;
