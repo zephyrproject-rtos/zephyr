@@ -9,6 +9,7 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/storage/flash_map.h>
+#include <zephyr/drivers/gpio.h>
 
 #if defined(CONFIG_NORDIC_QSPI_NOR)
 #define TEST_AREA_DEV_NODE	DT_INST(0, nordic_qspi_nor)
@@ -325,6 +326,22 @@ ZTEST(flash_driver, test_flash_erase)
 	 * doesn't contain erase_value
 	 */
 	zassert_not_equal(expected[0], erase_value, "These values shall be different");
+}
+
+ZTEST(flash_driver, test_supply_gpios_control)
+{
+	if (!DT_NODE_HAS_PROP(TEST_AREA_DEV_NODE, supply_gpios)) {
+		ztest_test_skip();
+	}
+
+#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), test_gpios)
+	const struct gpio_dt_spec test_gpio =
+		GPIO_DT_SPEC_GET(DT_PATH(zephyr_user), test_gpios);
+	zassert_true(gpio_is_ready_dt(&test_gpio), "Test GPIO is not ready\n");
+	zassert_ok(gpio_pin_configure_dt(&test_gpio, GPIO_INPUT | GPIO_PULL_DOWN),
+		   "Failed to configure test pin\n");
+	zassert_equal(gpio_pin_get(test_gpio.port, test_gpio.pin), 1, "Supply GPIO is not set\n");
+#endif
 }
 
 struct test_cb_data_type {
