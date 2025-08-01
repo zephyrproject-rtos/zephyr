@@ -62,6 +62,13 @@
 			status = "okay";
 		};
 
+        hfclk: hfclk@41005000 {
+			compatible = "nordic,nrf-clock-hfclk";
+			reg = <0x41005000 0x1000>;
+			interrupts = <5 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+		};
+
 		power: power@41005000 {
 			compatible = "nordic,nrf-power";
 			reg = <0x41005000 0x1000>;
