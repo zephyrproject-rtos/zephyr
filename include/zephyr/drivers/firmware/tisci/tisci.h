@@ -891,44 +891,6 @@ int tisci_cmd_set_fwl_region(const struct device *dev, const struct tisci_msg_fw
  */
 int tisci_cmd_get_fwl_region(const struct device *dev, struct tisci_msg_fwl_region *region);
 
-/* INCLUDE_ZEPHYR_DRIVERS_TISCI_H_ */
-
-/* Firewall Management Functions */
-/* ... previous firewall functions ... */
-
-/**
- * @brief Get firewall region configuration
- *
- * Retrieves the configuration of a firewall region including permissions,
- * addresses, and control settings.
- *
- * @param dev Pointer to the TI SCI device
- * @param region Pointer to store the firewall region configuration.
- *              The fwl_id, region, and n_permission_regs fields must be
- *              set before calling this function.
- *
- * @return 0 if successful, or an error code
- */
-int tisci_cmd_get_fwl_region(const struct device *dev, struct tisci_msg_fwl_region *region);
-
-/* Firewall Management Functions */
-/* ... previous firewall functions ... */
-
-/**
- * @brief Get firewall region configuration
- *
- * Retrieves the configuration of a firewall region including permissions,
- * addresses, and control settings.
- *
- * @param dev Pointer to the TI SCI device
- * @param region Pointer to store the firewall region configuration.
- *              The fwl_id, region, and n_permission_regs fields must be
- *              set before calling this function.
- *
- * @return 0 if successful, or an error code
- */
-int tisci_cmd_get_fwl_region(const struct device *dev, struct tisci_msg_fwl_region *region);
-
 /* Firewall Management Functions */
 /* ... previous firewall functions ... */
 
