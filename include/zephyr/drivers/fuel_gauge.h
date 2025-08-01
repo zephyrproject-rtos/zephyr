@@ -39,8 +39,6 @@ enum fuel_gauge_prop_type {
 	 */
 	FUEL_GAUGE_AVG_CURRENT = 0,
 
-	/** Used to cutoff the battery from the system - useful for storage/shipping of devices */
-	FUEL_GAUGE_BATTERY_CUTOFF,
 	/** Battery current (uA); negative=discharging */
 	FUEL_GAUGE_CURRENT,
 	/** Whether the battery underlying the fuel-gauge is cut off from charge */
