@@ -11,6 +11,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/gpio.h>
 #include "spi_context.h"
 
 #define DT_DRV_COMPAT nxp_sc18is606
@@ -99,23 +100,42 @@ static int sc18is606_spi_transceive(const struct device *dev, const struct spi_c
 		return -EINVAL;
 	}
 
+	/* CS line to be Used */
+	uint8_t ss_idx = 0;
+	if(spi_cfg->cs.gpio.port) {
+		ss_idx  = spi_cfg->cs.gpio.pin;
+		if(ss_idx > 2) {
+			LOG_ERR("SC18IS606: Invalid SS Index (%u)", ss_idx);
+			return -EINVAL;
+		}
+	}
+	uint8_t function_id = (1 << ss_idx) & 0x07;
 
-	const struct spi_buf *tx_buf = &tx_buffer_set->buffers[0];
-	const size_t len = tx_buf->len;
+	if(tx_buffer_set && tx_buffer_set->buffers && tx_buffer_set->count > 0) {
+		const struct spi_buf *tx_buf = &tx_buffer_set->buffers[0];
+		const size_t len = tx_buf->len;
 
-	uint8_t sc18_buf[1 + len];
-	sc18_buf[0] = 0x00;
-	memcpy(&sc18_buf[1], tx_buf->buf, len);
+		uint8_t sc18_buf[1 + len];
+		sc18_buf[0] = function_id;
+		memcpy(&sc18_buf[1], tx_buf->buf, len);
 
-	ret = i2c_write(i2c_dev, sc18_buf, sizeof(sc18_buf), data->i2c_addr);
-	if (ret) {
-		LOG_ERR("SPI write failed: %d", ret);
-		return ret;
+		ret = i2c_write(i2c_dev, sc18_buf, sizeof(sc18_buf), data->i2c_addr);
+		if (ret) {
+			LOG_ERR("SPI write failed: %d", ret);
+			return ret;
+		}
 	}
 
 	if (rx_buffer_set && rx_buffer_set->buffers && rx_buffer_set->count > 0) {
-		const struct spi_buf *buf = &rx_buffer_set->buffers[0];
-		ret = i2c_read(i2c_dev, buf->buf, buf->len, data->i2c_addr);
+		/* Function ID first to select the device */
+		uint8_t cmd_buf[1] = {function_id};
+		ret = i2c_write(i2c_dev, cmd_buf, sizeof(cmd_buf), data->i2c_addr);
+		if(ret) {
+			LOG_ERR("SPI read preamnble write failed %d", ret);
+			return ret;
+		}
+		const struct spi_buf *rx_buf = &rx_buffer_set->buffers[0];
+		ret = i2c_read(i2c_dev, rx_buf->buf, rx_buf->len, data->i2c_addr);
 		if (ret) {
 			LOG_ERR("SPI read failed: %d", ret);
 			return ret;
