@@ -1,0 +1,13 @@
+# Microchip MEC165XB MCU core series
+
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_MEC165XB
+	select ARM
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_ARM_MPU
+	select HAS_SWO
+	select HAS_MEC5_HAL
+	select SOC_PREP_HOOK
