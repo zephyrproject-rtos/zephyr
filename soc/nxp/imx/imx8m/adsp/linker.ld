@@ -412,6 +412,13 @@ SECTIONS
     . = ALIGN(4096);
   } >sdram0 :sdram0_phdr
 
+  NonCacheable : ALIGN(4)
+  {
+    *(NonCacheable)
+    *(NonCacheable.*)
+    . = ALIGN(4096);
+  } >sdram0 :sdram0_phdr
+
   .lit4 : ALIGN(4)
   {
     _lit4_start = ABSOLUTE(.);
