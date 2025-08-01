@@ -146,15 +146,30 @@ static inline int nct_clock_control_off(const struct device *dev,
 {
 	uint32_t clk_cfg = (uint32_t)sub_system;
 	const uint32_t pmc_base = DRV_CONFIG(dev)->base_pmc;
+	struct pmc_reg *const PmcReg = (struct pmc_reg *)(DRV_CONFIG(dev)->base_pmc);
 
 	if ((clk_cfg & BIT(NCT_CLOCK_PWDWN_VALID_OFFSET)) == 0) {
 		LOG_ERR("Unsupported clock cfg %d", clk_cfg);
 		return -EINVAL;
 	}
 
+	/* Sleep */
+	if(((clk_cfg >> NCT_CLOCK_BUS_OFFSET) & NCT_CLOCK_BUS_MASK) ==
+			NCT_CLOCK_BUS_SLEEP) {
+		PmcReg->PMCSR |= (0x01 << NCT_PMCSR_IDLE);
+	}
+	/* Deep Sleep */
+	else if(((clk_cfg >> NCT_CLOCK_BUS_OFFSET) & NCT_CLOCK_BUS_MASK) ==
+			NCT_CLOCK_BUS_DEEP_SLEEP) {
+		PmcReg->PMCSR |= ((0x01 << NCT_PMCSR_DI_INSTW) |
+				(0x01 << NCT_PMCSR_DHF) | (0x01 << NCT_PMCSR_IDLE));
+	}
+	else {
 	/* Set related PD (Power-Down) bit of module to turn off clock */
 	NCT_PWDWN_CTL(pmc_base, NCT_CLOCK_REG_OFFSET(clk_cfg)) |=
 		BIT(NCT_CLOCK_REG_BIT_OFFSET(clk_cfg));
+	}
+
 	return 0;
 }
 

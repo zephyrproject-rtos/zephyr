@@ -47,6 +47,11 @@
 			reg-names = "memory", "status";
 		};
 	    
+		otp: otp@400db000 {
+			compatible = "nuvoton,nct-otp";
+			reg = <0x400db000 0x1000>;
+		};
+	    
 		pcc: clock-controller@4000d000 {
 			compatible = "nuvoton,nct-pcc";
 			/* Cells for bus type, clock control reg and bit */

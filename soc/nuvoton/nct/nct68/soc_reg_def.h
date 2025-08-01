@@ -2378,6 +2378,66 @@ struct usbh_reg {
 #define NCT_HcConfig4_DMPULLDOWN           (3)
 #define NCT_HcConfig4_DPPULLDOWN           (4)
 
+/*---------------------- OTP -------------------------*/
+struct otp_reg {
+    __IO    uint8_t CTRL;                           /*!< [0x00]    OTP Control                                */
+    __IO    uint8_t ADDR_H;                         /*!< [0x01]    OTP address H Configuration                */
+    __IO    uint8_t ADDR_L;                         /*!< [0x02]    OTP address L Configuration                */
+    __IO    uint8_t ECODE;                          /*!< [0x03]    OTP entry code Configuration               */
+    __I     uint8_t STS;                            /*!< [0x04]    OTP status                                 */
+    __IO    uint8_t CLKDIV;                         /*!< [0x05]    OTP clock divider                          */
+            uint8_t Reserved1;
+    __I     uint8_t DOUT;                           /*!< [0x07]    OTP data out                               */
+    __IO    uint8_t LOCK;                           /*!< [0x08]    OTP region lock                            */
+    __IO    uint8_t LOCK1;                          /*!< [0x09]    OTP region lock1                           */
+            uint8_t Reserved2[20];
+    __I     uint8_t KEYSTS;                         /*!< [0x1E]    OTP initial key status                     */
+    __I     uint8_t VER;                            /*!< [0x1F]    OTP version                                */
 
+};
+
+/* OTP_CTRL fields          */
+#define NCT_OTP_CTRL_RDEN                           (0)
+#define NCT_OTP_CTRL_PGEN                           (1)
+#define NCT_OTP_CTRL_ENOTP                          (7)
+
+/* OTP_ADDR_H fields        */
+#define NCT_OTP_ADDRH_ADDR5to8                      (0)
+
+/* OTP_ADDR_L fields        */
+#define NCT_OTP_ADDRL_PGBIT                         (0)
+#define NCT_OTP_ADDRL_ADDR0to4                      (3)
+
+/* OTP_STS fields          */
+#define NCT_OTP_STS_PERROR                          (0)
+#define NCT_OTP_STS_PGDSTS                          (1)
+#define NCT_OTP_STS_RDDSTS                          (2)
+#define NCT_OTP_STS_PWE                             (3)
+#define NCT_OTP_STS_PRD                             (6)
+#define NCT_OTP_STS_ENTRYOTP                        (7)
+
+/* OTP_CLKDIV fields        */
+#define NCT_OTP_CLKDIV                              (0)
+
+/* OTP_DOUT fields          */
+#define NCT_OTP_DOUT                                (0)
+
+/* OTP_LOCK fields          */
+#define NCT_OTP_LOCK_RGN0WRLOCK                     (0)
+#define NCT_OTP_LOCK_RGN1WRLOCK                     (1)
+#define NCT_OTP_LOCK_RGN2WRLOCK                     (2)
+#define NCT_OTP_LOCK_RGN0RDWRLOCK                   (3)
+#define NCT_OTP_LOCK_RGN1RDWRLOCK                   (4)
+#define NCT_OTP_LOCK_RGN2RDWRLOCK                   (5)
+#define NCT_OTP_LOCK_SESSKEYRDWRLOCK                (6)
+#define NCT_OTP_LOCK_UNMAPROM                       (7)
+#define NCT_OTP_LOCK1_RGN3WRLOCK                    (0)
+#define NCT_OTP_LOCK1_RGN4WRLOCK                    (1)
+#define NCT_OTP_LOCK1_RGN5WRLOCK                    (2)
+#define NCT_OTP_LOCK1_RGN6WRLOCK                    (3)
+#define NCT_OTP_LOCK1_RGN3RDWRLOCK                  (4)
+#define NCT_OTP_LOCK1_RGN4RDWRLOCK                  (5)
+#define NCT_OTP_LOCK1_RGN5RDWRLOCK                  (6)
+#define NCT_OTP_LOCK1_RGN6RDWRLOCK                  (7)
 
 #endif /* _NUVOTON_NCT_SOC_REG_DEF_H */

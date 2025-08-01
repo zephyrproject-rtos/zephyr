@@ -43,4 +43,16 @@ void nct_sram_vector_table_copy(void);
 uintptr_t nct_vector_table_save(void);
 void nct_vector_table_restore(uintptr_t vtor);
 
+/* ERPMC write bit to OTP */
+int32_t nct_erpmc_WriteBit(uint16_t adr, uint8_t bit);
+
+/* OTP read */
+uint8_t nct_otp_Read(uint16_t adr);
+
+/* OTP block read */
+uint8_t nct_otp_BlockRead(uint16_t start_adr, uint16_t len, uint8_t* Data);
+
+/* ERPMC write byte to OTP */
+int32_t nct_erpmc_WriteByte(uint16_t adr, uint8_t dat);
+
 #endif /* _NUVOTON_NCT_SOC_COMMON_H_ */
