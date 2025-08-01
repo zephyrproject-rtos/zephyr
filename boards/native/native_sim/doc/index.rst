@@ -551,8 +551,8 @@ option ``-attach_uart_cmd=<"cmd">``, or for each individual UART with
 :kconfig:option:`CONFIG_UART_NATIVE_PTY_AUTOATTACH_DEFAULT_CMD`.
 Note that the default command assumes both ``xterm`` and ``screen`` are installed in the system.
 
-This driver supports poll mode or async mode with :kconfig:option:`CONFIG_UART_ASYNC_API`.
-Interrupt mode is not supported.
+This driver supports poll mode, interrupt mode and async mode with
+:kconfig:option:`CONFIG_UART_ASYNC_API`.
 Neither runtime configuration or line control are supported.
 
 .. _native_tty_uart:
