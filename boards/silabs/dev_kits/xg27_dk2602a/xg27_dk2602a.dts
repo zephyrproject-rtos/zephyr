@@ -13,7 +13,7 @@
 / {
 	model = "Silicon Labs xG27-DK2602A Dev Kit";
 	compatible = "silabs,efr32bg27c140f768im40", "silabs,xg27_dk2602a",
-		"silabs,efr32bg27";
+		     "silabs,efr32bg27";
 
 	/* These aliases are provided for compatibility with samples */
 	aliases {
@@ -114,11 +114,9 @@
 	enable-gpios = <&gpioc 6 GPIO_ACTIVE_HIGH>;
 };
 
-
 &sw_mic_enable {
 	enable-gpios = <&gpioc 7 GPIO_ACTIVE_HIGH>;
 };
-
 
 &sw_imu_enable {
 	enable-gpios = <&gpiob 4 GPIO_ACTIVE_HIGH>;
