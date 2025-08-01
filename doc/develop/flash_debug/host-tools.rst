@@ -656,13 +656,13 @@ For more about the UF2 format and its tooling, see `USB Flashing Format (UF2)`_.
    https://github.com/pyocd/pyOCD/tree/main/pyocd/target/builtin
 
 .. _OpenOCD Windows:
-    http://gnutoolchains.com/arm-eabi/openocd/
+    https://gnutoolchains.com/arm-eabi/openocd/
 
 .. _Lauterbach TRACE32:
     https://www.lauterbach.com/
 
 .. _Lauterbach TRACE32 download website:
-   http://www.lauterbach.com/download_trace32.html
+   https://www.lauterbach.com/download_trace32.html
 
 .. _Lauterbach TRACE32 Installation Guide:
    https://www2.lauterbach.com/pdf/installation.pdf

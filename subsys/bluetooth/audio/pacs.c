@@ -1324,7 +1324,7 @@ static void add_bonded_addr_to_client_list(const struct bt_bond_info *info, void
 int bt_pacs_cap_register(enum bt_audio_dir dir, struct bt_pacs_cap *cap)
 {
 	const struct bt_audio_codec_cap *codec_cap;
-	static bool callbacks_registered;
+	static bool first_register;
 	sys_slist_t *pac;
 
 	if (!cap || !cap->codec_cap) {
@@ -1338,18 +1338,18 @@ int bt_pacs_cap_register(enum bt_audio_dir dir, struct bt_pacs_cap *cap)
 		return -EINVAL;
 	}
 
-	/* Restore bonding list */
-	bt_foreach_bond(BT_ID_DEFAULT, add_bonded_addr_to_client_list, NULL);
-
 	LOG_DBG("cap %p dir %s codec_cap id 0x%02x codec_cap cid 0x%04x codec_cap vid 0x%04x", cap,
 		bt_audio_dir_str(dir), codec_cap->id, codec_cap->cid, codec_cap->vid);
 
 	sys_slist_append(pac, &cap->_node);
 
-	if (!callbacks_registered) {
+	if (!first_register) {
 		bt_conn_auth_info_cb_register(&auth_callbacks);
 
-		callbacks_registered = true;
+		/* Restore bonding list */
+		bt_foreach_bond(BT_ID_DEFAULT, add_bonded_addr_to_client_list, NULL);
+
+		first_register = true;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PAC_SNK_NOTIFIABLE) && dir == BT_AUDIO_DIR_SINK) {

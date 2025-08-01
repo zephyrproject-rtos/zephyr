@@ -41,6 +41,23 @@ event {
 };
 
 event {
+	name = k_sleep_enter;
+	id = 0x7F;
+	fields := struct {
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = k_sleep_exit;
+	id = 0x80;
+	fields := struct {
+		uint32_t timeout;
+		int32_t ret;
+	};
+};
+
+event {
 	name = thread_priority_set;
 	id = 0x12;
 	fields := struct {
@@ -299,6 +316,7 @@ event {
 	id = 0x32;
 	fields := struct {
 		uint32_t id;
+		uint32_t timeout;
 	};
 };
 

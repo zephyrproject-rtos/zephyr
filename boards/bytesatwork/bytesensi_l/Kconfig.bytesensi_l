@@ -2,5 +2,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_BYTESENSI_L
-	bool "bytesatwork bytesSENSI-L nRF52832"
 	select SOC_NRF52832_QFAA

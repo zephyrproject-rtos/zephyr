@@ -48,6 +48,13 @@ https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 API Changes
 ***********
 
+* RTIO
+
+  * :c:func:`rtio_is_spi`
+  * :c:func:`rtio_is_cspi`
+  * :c:func:`rtio_is_i3c`
+  * :c:func:`rtio_read_regs_async`
+
 Removed APIs and options
 ========================
 
@@ -67,6 +74,20 @@ New APIs and options
   instead.
 
 .. zephyr-keep-sorted-start re(^\* \w)
+
+* Architectures
+
+  * :kconfig:option:`CONFIG_SRAM_SW_ISR_TABLE`
+
+* Bluetooth
+
+  * Audio
+
+    * :c:struct:`bt_audio_codec_cfg` now contains a target_latency and a target_phy option
+
+* Power management
+
+   * :c:func:`pm_device_driver_deinit`
 
 * Settings
 

@@ -19,6 +19,7 @@
 		led0 = &red_led;
 		sw0 = &user_button_1;
 		ambient-temp0 = &p3t1755;
+		rtc = &rtc1;
 	};
 
 	chosen {
@@ -102,4 +103,8 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_acmp>;
 	pinctrl-names = "default";
+};
+
+&rtc1 {
+	status = "okay";
 };

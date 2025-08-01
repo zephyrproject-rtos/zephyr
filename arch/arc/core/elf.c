@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(elf, CONFIG_LLEXT_LOG_LEVEL);
 
 #define R_ARC_32            4
 #define R_ARC_B26           5 /* AKA R_ARC_64 */
+#define R_ARC_S25H_PCREL    16
 #define R_ARC_S25W_PCREL    17
 #define R_ARC_32_ME         27
 
@@ -68,12 +69,28 @@ int arch_elf_relocate(struct llext_loader *ldr, struct llext *ext, elf_rela_t *r
 	case R_ARC_B26:
 		UNALIGNED_PUT(sym_base_addr, (uint32_t *)loc);
 		break;
-	case R_ARC_S25W_PCREL:
-		/* ((S + A) - P) >> 2
+	case R_ARC_S25H_PCREL:
+		/* ((S + A) - P) >> 1
 		 * S = symbol address
 		 * A = addend
 		 * P = relative offset to PCL
 		 */
+		value = (sym_base_addr + rel->r_addend - (loc & ~0x3)) >> 1;
+
+		insn = ME(insn);
+
+		/* disp25h */
+		insn = insn & ~0x7feffcf;
+		insn |= ((value >> 0) & 0x03ff) << 17;
+		insn |= ((value >> 10) & 0x03ff) << 6;
+		insn |= ((value >> 20) & 0x000f) << 0;
+
+		insn = ME(insn);
+
+		UNALIGNED_PUT(insn, (uint32_t *)loc);
+		break;
+	case R_ARC_S25W_PCREL:
+		/* ((S + A) - P) >> 2 */
 		value = (sym_base_addr + rel->r_addend - (loc & ~0x3)) >> 2;
 
 		insn = ME(insn);

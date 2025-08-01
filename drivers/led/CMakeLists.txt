@@ -22,6 +22,7 @@ zephyr_library_sources_ifdef(CONFIG_LP5562 lp5562.c)
 zephyr_library_sources_ifdef(CONFIG_LP5569 lp5569.c)
 zephyr_library_sources_ifdef(CONFIG_MODULINO_BUTTONS_LEDS modulino_buttons_leds.c)
 zephyr_library_sources_ifdef(CONFIG_NCP5623 ncp5623.c)
+zephyr_library_sources_ifdef(CONFIG_PCA9533 pca9533.c)
 zephyr_library_sources_ifdef(CONFIG_PCA9633 pca9633.c)
 zephyr_library_sources_ifdef(CONFIG_TLC59108 tlc59108.c)
 # zephyr-keep-sorted-stop

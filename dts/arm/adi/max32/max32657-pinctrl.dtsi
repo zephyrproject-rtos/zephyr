@@ -99,3 +99,125 @@
 		pinmux = <MAX32_PINMUX(0, 11, AF2)>;
 	};
 };
+
+/* Low power modes pin state,
+ * user shall set related configurations like:
+ * pullup/pulldown, out/in...
+ * incase of their needs on the their target board
+ */
+&pinctrl {
+	/omit-if-no-ref/ i3c_scl_p0_0_sleep: i3c_scl_p0_0_sleep {
+		pinmux = <MAX32_PINMUX(0, 0, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ i3c_sda_p0_1_sleep: i3c_sda_p0_1_sleep {
+		pinmux = <MAX32_PINMUX(0, 1, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spi0_mosi_p0_2_sleep: spi0_mosi_p0_2_sleep {
+		pinmux = <MAX32_PINMUX(0, 2, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spi0_ss0_p0_3_sleep: spi0_ss0_p0_3_sleep {
+		pinmux = <MAX32_PINMUX(0, 3, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spi0_miso_p0_4_sleep: spi0_miso_p0_4_sleep {
+		pinmux = <MAX32_PINMUX(0, 4, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ uart0_rx_p0_5_sleep: uart0_rx_p0_5_sleep {
+		pinmux = <MAX32_PINMUX(0, 5, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spi0_sck_p0_6_sleep: spi0_sck_p0_6_sleep {
+		pinmux = <MAX32_PINMUX(0, 6, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spi0_ss1_p0_7_sleep: spi0_ss1_p0_7_sleep {
+		pinmux = <MAX32_PINMUX(0, 7, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spi0_ss2_p0_8_sleep: spi0_ss2_p0_8_sleep {
+		pinmux = <MAX32_PINMUX(0, 8, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ uart0_tx_p0_9_sleep: uart0_tx_p0_9_sleep {
+		pinmux = <MAX32_PINMUX(0, 9, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ sqwout_p0_13_sleep: sqwout_p0_13_sleep {
+		pinmux = <MAX32_PINMUX(0, 13, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr0a_p0_0_sleep: tmr0a_p0_0_sleep {
+		pinmux = <MAX32_PINMUX(0, 0, AF2)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr1a_p0_1_sleep: tmr1a_p0_1_sleep {
+		pinmux = <MAX32_PINMUX(0, 1, AF2)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr3a_p0_2_sleep: tmr3a_p0_2_sleep {
+		pinmux = <MAX32_PINMUX(0, 2, AF2)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr4a_p0_3_sleep: tmr4a_p0_3_sleep {
+		pinmux = <MAX32_PINMUX(0, 3, AF2)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr5a_p0_4_sleep: tmr5a_p0_4_sleep {
+		pinmux = <MAX32_PINMUX(0, 4, AF2)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr0b_p0_5_sleep: tmr0b_p0_5_sleep {
+		pinmux = <MAX32_PINMUX(0, 5, AF2)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr4b_p0_6_sleep: tmr4b_p0_6_sleep {
+		pinmux = <MAX32_PINMUX(0, 6, AF2)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr3b_p0_7_sleep: tmr3b_p0_7_sleep {
+		pinmux = <MAX32_PINMUX(0, 7, AF2)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ i3c_pur_p0_8_sleep: i3c_pur_p0_8_sleep {
+		pinmux = <MAX32_PINMUX(0, 8, AF2)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr1b_p0_9_sleep: tmr1b_p0_9_sleep {
+		pinmux = <MAX32_PINMUX(0, 9, AF2)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr2a_p0_10_sleep: tmr2a_p0_10_sleep {
+		pinmux = <MAX32_PINMUX(0, 10, AF2)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr5b_p0_11_sleep: tmr5b_p0_11_sleep {
+		pinmux = <MAX32_PINMUX(0, 11, AF2)>;
+		low-power-enable;
+	};
+};

@@ -8,6 +8,7 @@ config SOC_FAMILY_SILABS_S2
 	select BUILD_OUTPUT_HEX
 	select SOC_PREP_HOOK
 	select SOC_EARLY_INIT_HOOK
+	select HAS_SILABS_SISDK
 
 rsource "*/Kconfig"
 

@@ -153,6 +153,13 @@ function(zephyr_mcuboot_tasks)
     set(imgtool_args --align ${write_block_size} ${imgtool_args})
   endif()
 
+  # Set proper hash calculation algorithm for signing
+  if(CONFIG_MCUBOOT_BOOTLOADER_SIGNATURE_TYPE_PURE)
+    set(imgtool_args --pure ${imgtool_args})
+  elseif(CONFIG_MCUBOOT_BOOTLOADER_USES_SHA512)
+    set(imgtool_args --sha 512 ${imgtool_args})
+  endif()
+
   # Extensionless prefix of any output file.
   set(output ${ZEPHYR_BINARY_DIR}/${KERNEL_NAME})
 

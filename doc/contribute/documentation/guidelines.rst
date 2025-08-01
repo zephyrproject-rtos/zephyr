@@ -21,9 +21,9 @@ then be viewed using a web browser. This same .rst content is served by the
 You can read details about `reStructuredText`_
 and about `Sphinx extensions`_ from their respective websites.
 
-.. _Sphinx extensions: http://www.sphinx-doc.org/en/stable/contents.html
-.. _reStructuredText: http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html
-.. _Sphinx Inline Markup:  http://sphinx-doc.org/markup/inline.html#inline-markup
+.. _Sphinx extensions: https://www.sphinx-doc.org/en/stable/contents.html
+.. _reStructuredText: https://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html
+.. _Sphinx Inline Markup:  https://sphinx-doc.org/markup/inline.html#inline-markup
 .. _Zephyr documentation:  https://docs.zephyrproject.org
 
 This document provides a quick reference for commonly used reST and
@@ -187,7 +187,7 @@ Tables
 
 There are a few ways to create tables, each with their limitations or
 quirks.  `Grid tables
-<http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#grid-tables>`_
+<https://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#grid-tables>`_
 offer the most capability for defining merged rows and columns, but are
 hard to maintain::
 
@@ -220,7 +220,7 @@ This example would render as:
 +------------------------+------------+----------+----------+
 
 `List tables
-<http://docutils.sourceforge.net/docs/ref/rst/directives.html#list-table>`_
+<https://docutils.sourceforge.net/docs/ref/rst/directives.html#list-table>`_
 are much easier to maintain, but don't support row or column spans::
 
    .. list-table:: Table title
@@ -345,7 +345,7 @@ reference for some of the most commonly used text formatting options in Zephyr d
 exhaustive list, refer to the `reStructuredText Quick Reference`_,
 `reStructuredText Interpreted Text Roles`_ as well as the `additional roles provided by Sphinx`_.
 
-.. _reStructuredText Quick Reference: http://docutils.sourceforge.io/docs/user/rst/quickref.html
+.. _reStructuredText Quick Reference: https://docutils.sourceforge.io/docs/user/rst/quickref.html
 .. _reStructuredText Interpreted Text Roles: https://docutils.sourceforge.io/docs/ref/rst/roles.html
 .. _additional roles provided by Sphinx: https://www.sphinx-doc.org/en/master/usage/restructuredtext/roles.html
 
@@ -472,7 +472,7 @@ This would be rendered as:
 Other languages are of course supported (see `languages supported by Pygments`_), and in particular,
 you are encouraged to make use of the following when appropriate:
 
-.. _`languages supported by Pygments`: http://pygments.org/languages/
+.. _`languages supported by Pygments`: https://pygments.org/languages/
 
 * ``c`` for C code
 * ``cpp`` for C++ code

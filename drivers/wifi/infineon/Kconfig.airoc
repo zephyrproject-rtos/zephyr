@@ -59,6 +59,12 @@ config WHD_WIFI_COUNTRY
 	  Sets the country, this will operate in for wifi initialization
 	  parameters. See the wifi-host-driver's whd_country_code_t for legal options.
 
+config WHD_DISABLE_SDIO_PULLUP_DURING_SPI_SLEEP
+	bool "Disable SDIO pullups during SPI sleep"
+	help
+	  Clears SDIO pullups when the SPI bus is configured for sleep.
+	  By default, this option is set to n, so SDIO pullups will be enabled.
+
 config AIROC_WIFI_CUSTOM
 	bool "Custom CYW43xx device/module"
 	help

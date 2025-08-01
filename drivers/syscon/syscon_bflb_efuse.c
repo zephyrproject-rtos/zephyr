@@ -148,7 +148,10 @@ static void efuse_bflb_cache(const struct device *dev)
 	struct efuse_bflb_data *data = dev->data;
 	const struct efuse_bflb_config *config = dev->config;
 	uint32_t tmp;
-	uint32_t old_clock_root;
+	uint8_t old_clock_root;
+	uint32_t key;
+
+	key = irq_lock();
 
 	old_clock_root = clock_bflb_get_root_clock();
 
@@ -168,6 +171,8 @@ static void efuse_bflb_cache(const struct device *dev)
 	clock_bflb_set_root_clock(old_clock_root);
 	clock_bflb_settle();
 	data->cached = true;
+
+	irq_unlock(key);
 }
 
 static int efuse_bflb_read(const struct device *dev, uint16_t reg, uint32_t *val)

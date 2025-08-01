@@ -3,5 +3,3 @@
 
 config BOARD_QEMU_CORTEX_M3
 	select SOC_TI_LM3S6965
-	help
-	  Cortex-M3 Emulation (QEMU)

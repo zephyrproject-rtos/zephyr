@@ -2154,6 +2154,17 @@ static void le_credits(struct bt_l2cap *l2cap, uint8_t ident,
 	cid = sys_le16_to_cpu(ev->cid);
 	credits = sys_le16_to_cpu(ev->credits);
 
+	if (!L2CAP_LE_CID_IS_DYN(cid)) {
+		LOG_WRN("Can't add credits to non-dynamic channel %p (cid 0x%04x)", &l2cap->chan,
+			cid);
+		return;
+	}
+
+	if (credits == 0U) {
+		LOG_WRN("Ignoring zero credit packet");
+		return;
+	}
+
 	LOG_DBG("cid 0x%04x credits %u", cid, credits);
 
 	chan = bt_l2cap_le_lookup_tx_cid(conn, cid);

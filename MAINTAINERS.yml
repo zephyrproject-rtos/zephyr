@@ -1251,6 +1251,7 @@ Documentation Infrastructure:
     - samples/net/sockets/can/
     - samples/subsys/canbus/
     - scripts/west_commands/runners/canopen_program.py
+    - snippets/socketcan-native-sim/
     - subsys/canbus/
     - subsys/net/l2/canbus/
     - tests/drivers/build_all/can/
@@ -4347,6 +4348,14 @@ Secure storage:
   tests:
     - psa.secure_storage
 
+Seeed Studio Platforms:
+  status: odd fixes
+  files:
+    - boards/seeed/
+    - boards/shields/seeed_*/
+  labels:
+    - "platform: Seeed Studio"
+
 Sensor Subsystem:
   status: maintained
   maintainers:
@@ -5236,6 +5245,7 @@ West:
     - wearyzen
   collaborators:
     - ithinuel
+    - ccli8
   files:
     - drivers/misc/ethos_u/
     - modules/hal_ethos_u/
@@ -5284,6 +5294,8 @@ West:
   status: maintained
   maintainers:
     - jvasanth1
+    - AzharMCHP
+    - scottwcpg
   collaborators:
     - VenkatKotakonda
     - albertofloyd

@@ -127,10 +127,11 @@ set_property(TARGET compiler-cpp PROPERTY dialect_cpp11 "-std=c++11")
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp14 "-std=c++14")
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp17 "-std=c++17")
 
-#no support of C++2a, C++20, C++2b
+# no support of C++2a, C++20, C++2b, C++23
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp2a "")
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp20 "")
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp2b "")
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp23 "")
 
 # Flag for disabling strict aliasing rule in C and C++
 set_compiler_property(PROPERTY no_strict_aliasing -fno-strict-aliasing)

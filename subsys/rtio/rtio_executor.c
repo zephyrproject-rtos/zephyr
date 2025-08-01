@@ -84,9 +84,12 @@ void rtio_executor_submit(struct rtio *r)
 #ifdef CONFIG_ASSERT
 			bool transaction = iodev_sqe->sqe.flags & RTIO_SQE_TRANSACTION;
 			bool chained = iodev_sqe->sqe.flags & RTIO_SQE_CHAINED;
+			bool multishot = iodev_sqe->sqe.flags & RTIO_SQE_MULTISHOT;
 
-			__ASSERT(transaction != chained,
-				    "Expected chained or transaction flag, not both");
+			__ASSERT((transaction ^ chained ^ multishot) &&
+				 !(transaction && chained && multishot),
+				 "Cannot have more than one of these flags"
+				 " enabled: transaction, chained or multishot");
 #endif
 			node = mpsc_pop(&iodev_sqe->r->sq);
 
@@ -122,68 +125,100 @@ void rtio_executor_submit(struct rtio *r)
 /**
  * @brief Handle common logic when :c:macro:`RTIO_SQE_MULTISHOT` is set
  *
- * @param[in] r RTIO context
- * @param[in] curr Current IODev SQE that's being marked for finished.
- * @param[in] is_canceled Whether or not the SQE is canceled
+ * @param[in] iodev_sqe IODEV SQE that's being marked as finished.
+ * @param[in] result The result of the latest request iteration
+ * @param[in] is_ok Whether or not the SQE's result was successful
  */
-static inline void rtio_executor_handle_multishot(struct rtio *r, struct rtio_iodev_sqe *curr,
-						  bool is_canceled)
+static inline void rtio_executor_handle_multishot(struct rtio_iodev_sqe *iodev_sqe,
+						  int result, bool is_ok)
 {
-	/* Reset the mempool if needed */
-	if (curr->sqe.op == RTIO_OP_RX && FIELD_GET(RTIO_SQE_MEMPOOL_BUFFER, curr->sqe.flags)) {
-		if (is_canceled) {
-			/* Free the memory first since no CQE will be generated */
-			LOG_DBG("Releasing memory @%p size=%u", (void *)curr->sqe.rx.buf,
-				curr->sqe.rx.buf_len);
-			rtio_release_buffer(r, curr->sqe.rx.buf, curr->sqe.rx.buf_len);
-		}
+	struct rtio *r = iodev_sqe->r;
+	const bool is_canceled = FIELD_GET(RTIO_SQE_CANCELED, iodev_sqe->sqe.flags) == 1;
+	const bool uses_mempool = FIELD_GET(RTIO_SQE_MEMPOOL_BUFFER, iodev_sqe->sqe.flags) == 1;
+	const bool requires_response = FIELD_GET(RTIO_SQE_NO_RESPONSE, iodev_sqe->sqe.flags) == 0;
+	uint32_t cqe_flags = rtio_cqe_compute_flags(iodev_sqe);
+	void *userdata = iodev_sqe->sqe.userdata;
+
+	if (iodev_sqe->sqe.op == RTIO_OP_RX && uses_mempool) {
 		/* Reset the buffer info so the next request can get a new one */
-		curr->sqe.rx.buf = NULL;
-		curr->sqe.rx.buf_len = 0;
+		iodev_sqe->sqe.rx.buf = NULL;
+		iodev_sqe->sqe.rx.buf_len = 0;
 	}
-	if (!is_canceled) {
+
+	/** We're releasing reasources when erroring as an error handling scheme of multi-shot
+	 * submissions by requiring to stop re-submitting if something goes wrong. Let the
+	 * application decide what's best for handling the corresponding error: whether
+	 * re-submitting, rebooting or anything else.
+	 */
+	if (is_canceled || !is_ok) {
+		LOG_DBG("Releasing memory @%p size=%u", (void *)iodev_sqe->sqe.rx.buf,
+			iodev_sqe->sqe.rx.buf_len);
+		rtio_release_buffer(r, iodev_sqe->sqe.rx.buf, iodev_sqe->sqe.rx.buf_len);
+		rtio_sqe_pool_free(r->sqe_pool, iodev_sqe);
+	} else {
 		/* Request was not canceled, put the SQE back in the queue */
-		mpsc_push(&r->sq, &curr->q);
+		mpsc_push(&r->sq, &iodev_sqe->q);
 		rtio_executor_submit(r);
+	}
+
+	if (requires_response) {
+		rtio_cqe_submit(r, result, userdata, cqe_flags);
+	}
+}
+
+/**
+ * @brief Handle common logic one-shot items
+ *
+ * @param[in] iodev_sqe IODEV SQE that's being marked as finished.
+ * @param[in] result The result of the latest request iteration
+ * @param[in] is_ok Whether or not the SQE's result was successful
+ */
+static inline void rtio_executor_handle_oneshot(struct rtio_iodev_sqe *iodev_sqe,
+						int result, bool is_ok)
+{
+	const bool is_canceled = FIELD_GET(RTIO_SQE_CANCELED, iodev_sqe->sqe.flags) == 1;
+	struct rtio_iodev_sqe *curr = iodev_sqe;
+	struct rtio *r = iodev_sqe->r;
+	uint32_t sqe_flags;
+
+	/** Single-shot items may be linked as transactions or be chained together.
+	 * Untangle the set of SQEs and act accordingly on each one.
+	 */
+	do {
+		void *userdata = curr->sqe.userdata;
+		uint32_t cqe_flags = rtio_cqe_compute_flags(iodev_sqe);
+		struct rtio_iodev_sqe *next = rtio_iodev_sqe_next(curr);
+
+		sqe_flags = curr->sqe.flags;
+
+		if (!is_canceled && FIELD_GET(RTIO_SQE_NO_RESPONSE, sqe_flags) == 0) {
+			/* Generate a result back to the client if need be.*/
+			rtio_cqe_submit(r, result, userdata, cqe_flags);
+		}
+
+		rtio_sqe_pool_free(r->sqe_pool, curr);
+		curr = next;
+
+		if (!is_ok) {
+			/* This is an error path, so cancel any chained SQEs */
+			result = -ECANCELED;
+		}
+	} while (FIELD_GET(RTIO_SQE_TRANSACTION, sqe_flags) == 1);
+
+	/* curr should now be the last sqe in the transaction if that is what completed */
+	if (FIELD_GET(RTIO_SQE_CHAINED, sqe_flags) == 1) {
+		rtio_iodev_submit(curr);
 	}
 }
 
 static inline void rtio_executor_done(struct rtio_iodev_sqe *iodev_sqe, int result, bool is_ok)
 {
 	const bool is_multishot = FIELD_GET(RTIO_SQE_MULTISHOT, iodev_sqe->sqe.flags) == 1;
-	const bool is_canceled = FIELD_GET(RTIO_SQE_CANCELED, iodev_sqe->sqe.flags) == 1;
-	struct rtio *r = iodev_sqe->r;
-	struct rtio_iodev_sqe *curr = iodev_sqe, *next;
-	void *userdata;
-	uint32_t sqe_flags, cqe_flags;
 
-	do {
-		userdata = curr->sqe.userdata;
-		sqe_flags = curr->sqe.flags;
-		cqe_flags = rtio_cqe_compute_flags(iodev_sqe);
-
-		next = rtio_iodev_sqe_next(curr);
-		if (is_multishot) {
-			rtio_executor_handle_multishot(r, curr, is_canceled);
-		}
-		if (!is_multishot || is_canceled) {
-			/* SQE is no longer needed, release it */
-			rtio_sqe_pool_free(r->sqe_pool, curr);
-		}
-		if (!is_canceled && FIELD_GET(RTIO_SQE_NO_RESPONSE, sqe_flags) == 0) {
-			/* Request was not canceled, generate a CQE */
-			rtio_cqe_submit(r, result, userdata, cqe_flags);
-		}
-		curr = next;
-		if (!is_ok) {
-			/* This is an error path, so cancel any chained SQEs */
-			result = -ECANCELED;
-		}
-	} while (sqe_flags & RTIO_SQE_TRANSACTION);
-
-	/* curr should now be the last sqe in the transaction if that is what completed */
-	if (sqe_flags & RTIO_SQE_CHAINED) {
-		rtio_iodev_submit(curr);
+	if (is_multishot) {
+		rtio_executor_handle_multishot(iodev_sqe, result, is_ok);
+	} else {
+		rtio_executor_handle_oneshot(iodev_sqe, result, is_ok);
 	}
 }
 

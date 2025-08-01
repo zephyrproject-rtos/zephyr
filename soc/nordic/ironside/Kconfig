@@ -37,6 +37,12 @@ config NRF_IRONSIDE_CPUCONF_SERVICE
 	help
 	  Service used to boot local domain cores.
 
+config NRF_IRONSIDE_TDD_SERVICE
+	bool "IronSide TDD service"
+	select NRF_IRONSIDE_CALL
+	help
+	  Service used to control the trace and debug domain.
+
 config NRF_IRONSIDE_UPDATE_SERVICE
 	bool "IronSide update service"
 	select NRF_IRONSIDE_CALL

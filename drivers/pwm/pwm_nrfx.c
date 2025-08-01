@@ -14,9 +14,6 @@
 #include <zephyr/cache.h>
 #include <zephyr/mem_mgmt/mem_attr.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
-#ifdef CONFIG_SOC_NRF54H20_GPD
-#include <nrf/gpd.h>
-#endif
 
 #include <zephyr/logging/log.h>
 
@@ -39,14 +36,9 @@ LOG_MODULE_REGISTER(pwm_nrfx, CONFIG_PWM_LOG_LEVEL);
 #define PWM(dev_idx) DT_NODELABEL(pwm##dev_idx)
 #define PWM_PROP(dev_idx, prop) DT_PROP(PWM(dev_idx), prop)
 #define PWM_HAS_PROP(idx, prop) DT_NODE_HAS_PROP(PWM(idx), prop)
+#define PWM_NRFX_IS_FAST(idx) NRF_DT_IS_FAST(PWM(idx))
 
-#define PWM_NRFX_IS_FAST(unused, prefix, idx, _)					\
-	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(PWM(idx)),					\
-		(COND_CODE_1(PWM_HAS_PROP(idx, power_domains),				\
-		    (IS_EQ(DT_PHA(PWM(idx), power_domains, id), NRF_GPD_FAST_ACTIVE1)),	\
-		    (0))), (0))
-
-#if NRFX_FOREACH_PRESENT(PWM, PWM_NRFX_IS_FAST, (||), (0))
+#if NRF_DT_INST_ANY_IS_FAST
 #define PWM_NRFX_FAST_PRESENT 1
 /* If fast instances are used then system managed device PM cannot be used because
  * it may call PM actions from locked context and fast PWM PM actions can only be
@@ -383,10 +375,6 @@ static int pwm_resume(const struct device *dev)
 
 	(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 
-#ifdef CONFIG_SOC_NRF54H20_GPD
-	nrf_gpd_retain_pins_set(config->pcfg, false);
-#endif
-
 	for (size_t i = 0; i < NRF_PWM_CHANNEL_COUNT; i++) {
 		uint32_t psel;
 
@@ -422,10 +410,6 @@ static int pwm_suspend(const struct device *dev)
 
 	while (!nrfx_pwm_stopped_check(&config->pwm)) {
 	}
-
-#ifdef CONFIG_SOC_NRF54H20_GPD
-	nrf_gpd_retain_pins_set(config->pcfg, true);
-#endif
 
 	memset(dev->data, 0, sizeof(struct pwm_nrfx_data));
 	(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
@@ -487,7 +471,7 @@ static int pwm_nrfx_init(const struct device *dev)
 #if defined(CONFIG_CLOCK_CONTROL_NRF_HSFLL_GLOBAL_INIT_PRIORITY) && \
 	CONFIG_PWM_INIT_PRIORITY < CONFIG_CLOCK_CONTROL_NRF_HSFLL_GLOBAL_INIT_PRIORITY
 #define PWM_INIT_PRIORITY(idx)								\
-	COND_CODE_1(PWM_NRFX_IS_FAST(_, /*empty*/, idx, _),				\
+	COND_CODE_1(PWM_NRFX_IS_FAST(idx),						\
 		    (UTIL_INC(CONFIG_CLOCK_CONTROL_NRF_HSFLL_GLOBAL_INIT_PRIORITY)),	\
 		    (CONFIG_PWM_INIT_PRIORITY))
 #else
@@ -523,7 +507,7 @@ static int pwm_nrfx_init(const struct device *dev)
 		IF_ENABLED(CONFIG_DCACHE,				      \
 			(.mem_attr = PWM_GET_MEM_ATTR(idx),))		      \
 		IF_ENABLED(PWM_NRFX_USE_CLOCK_CONTROL,			      \
-			(.clk_dev = PWM_NRFX_IS_FAST(_, /*empty*/, idx, _)    \
+			(.clk_dev = PWM_NRFX_IS_FAST(idx)		      \
 				    ? DEVICE_DT_GET(DT_CLOCKS_CTLR(PWM(idx))) \
 				    : NULL,				      \
 			 .clk_spec = {					      \

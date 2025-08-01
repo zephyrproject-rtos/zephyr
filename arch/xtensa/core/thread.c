@@ -134,12 +134,15 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 int arch_float_disable(struct k_thread *thread)
 {
+	ARG_UNUSED(thread);
 	/* xtensa always has FPU enabled so cannot be disabled */
 	return -ENOTSUP;
 }
 
 int arch_float_enable(struct k_thread *thread, unsigned int options)
 {
+	ARG_UNUSED(thread);
+	ARG_UNUSED(options);
 	/* xtensa always has FPU enabled so nothing to do here */
 	return 0;
 }

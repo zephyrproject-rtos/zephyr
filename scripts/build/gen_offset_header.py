@@ -77,8 +77,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    input_file = open(args.input, 'rb')
-    output_file = open(args.output, 'w')
+    with open(args.input, 'rb') as input_file, open(args.output, 'w') as output_file:
+        ret = gen_offset_header(args.input, input_file, output_file)
 
-    ret = gen_offset_header(args.input, input_file, output_file)
     sys.exit(ret)

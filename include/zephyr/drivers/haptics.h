@@ -12,6 +12,11 @@
  * @defgroup haptics_interface Haptics Interface
  * @ingroup io_interfaces
  * @{
+ *
+ * @defgroup haptics_interface_ext Device-specific Haptics API extensions
+ *
+ * @{
+ * @}
  */
 
 #include <zephyr/device.h>

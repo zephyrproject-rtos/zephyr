@@ -146,6 +146,8 @@ set_property(TARGET compiler-cpp PROPERTY dialect_cpp20 "-std=c++20"
   "-Wno-register" "-Wno-volatile")
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp2b "-std=c++2b"
   "-Wno-register" "-Wno-volatile")
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp23 "-std=c++23"
+  "-Wno-register" "-Wno-volatile")
 
 # Flag for disabling strict aliasing rule in C and C++
 set_compiler_property(PROPERTY no_strict_aliasing -fno-strict-aliasing)

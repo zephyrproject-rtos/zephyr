@@ -3475,7 +3475,7 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
 	};								\
 	static Z_DECL_ALIGN(struct net_if)				\
 		NET_IF_GET_NAME(dev_id, sfx)[NET_IF_MAX_CONFIGS]	\
-		       __used __in_section(_net_if, static,		\
+		       __used __noasan __in_section(_net_if, static,	\
 					   dev_id) = {			\
 		[0 ... (NET_IF_MAX_CONFIGS - 1)] = {			\
 			.if_dev = &(NET_IF_DEV_GET_NAME(dev_id, sfx)),	\

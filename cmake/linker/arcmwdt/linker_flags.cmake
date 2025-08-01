@@ -36,6 +36,8 @@ check_set_linker_property(TARGET linker PROPERTY orphan_error
                           ${LINKERFLAGPREFIX},--orphan-handling=error
 )
 
+set_property(TARGET linker PROPERTY partial_linking "-r")
+
 # Extra warnings options for twister run
 set_property(TARGET linker PROPERTY warnings_as_errors -Wl,--fatal-warnings)
 
