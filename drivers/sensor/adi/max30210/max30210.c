@@ -446,6 +446,7 @@ static int max30210_sample_fetch(const struct device *dev, enum sensor_channel c
 		return -ENOTSUP;
 	}
 
+#ifndef CONFIG_MAX30210_FIFO_MODE
 	ret = max30210_reg_read(dev, TEMP_DATA_MSB, temp_data, 2);
 
 	if (ret < 0) {
@@ -454,7 +455,52 @@ static int max30210_sample_fetch(const struct device *dev, enum sensor_channel c
 	}
 
 	data->temp_data = (temp_data[0] << 8) | temp_data[1];
+#else
+	
+	/** FIFO MODE */
+	uint8_t fifo_data [MAX30210_FIFO_DEPTH * MAX30210_BYTES_PER_SAMPLE];
+	uint8_t fifo_count;
+	uint8_t fifo_ovf;
+	uint8_t num_bytes;
+	ret = max30210_reg_read(dev, FIFO_COUNTER_1, &fifo_ovf, 1);
+	if (ret < 0) {
+		// LOG_ERR("Failed to read FIFO_COUNTER_1: %d", ret);
+		return ret; // Failed to read register
+	}
+	if (fifo_ovf & FIFO_OVF_MASK) {
+		LOG_ERR("FIFO overflow detected");
+		// return -EIO; // FIFO overflow error
+	}
+	ret = max30210_reg_read(dev, FIFO_COUNTER_2, &fifo_count, 1);
+	if (ret < 0) {
+		// LOG_ERR("Failed to read FIFO_COUNTER_2: %d", ret);
+		return ret; // Failed to read register
+	}
+	data->fifo_data_count = fifo_count;
+	if (fifo_count == 0) {
+		// LOG_ERR("FIFO is empty");
+		return -ENODATA; // No data in FIFO
+	}
+	num_bytes = fifo_count * MAX30210_BYTES_PER_SAMPLE;
+	if (num_bytes > sizeof(fifo_data)) {
+		// LOG_ERR("FIFO data size exceeds buffer size");
+		return -ENOMEM; // Buffer overflow error
+	}
+	ret = max30210_reg_read(dev, FIFO_DATA, fifo_data, num_bytes);
+	if (ret < 0) {
+		// LOG_ERR("Failed to read FIFO_DATA: %d", ret);
+		return ret; // Failed to read register
+	}
+	// Process FIFO data
 
+	for (int i = 0; i < fifo_count; i++) {
+		data->fifo_status_data[i] = fifo_data[i * MAX30210_BYTES_PER_SAMPLE];
+		data->fifo_temp_data[i] =
+			((fifo_data[i * MAX30210_BYTES_PER_SAMPLE + 1] << 8) |
+			 fifo_data[i * MAX30210_BYTES_PER_SAMPLE + 2]);
+	}
+
+#endif
 	return 0;
 }
 
@@ -463,6 +509,7 @@ static int max30210_channel_get(const struct device *dev, enum sensor_channel ch
 {
 	struct max30210_data *data = dev->data;
 
+#ifndef CONFIG_MAX30210_FIFO_MODE
 	int32_t value;
 	if (chan != SENSOR_CHAN_AMBIENT_TEMP) {
 		// LOG_ERR("Unsupported channel: %d", chan);
@@ -471,7 +518,13 @@ static int max30210_channel_get(const struct device *dev, enum sensor_channel ch
 	value = (int32_t)(data->temp_data * 5000); // Convert to microdegrees Celsius
 	val->val1 = value / 1000000U;              // Integer part
 	val->val2 = value % 1000000U;              // Fractional part in microdegrees
+#else
+	if (chan != SENSOR_CHAN_AMBIENT_TEMP) {
+		// LOG_ERR("Unsupported channel: %d", chan);
+		return -ENOTSUP;
+	}
 
+#endif
 	return 0;
 }
 
@@ -480,7 +533,9 @@ static DEVICE_API(sensor, max30210_driver_api) = {
 	.attr_get = max30210_attr_get,
 	.sample_fetch = max30210_sample_fetch,
 	.channel_get = max30210_channel_get,
+#ifdef CONFIG_MAX30210_TRIGGER
 	.trigger_set = max30210_trigger_set,
+#endif
 };
 
 #define MAX30210_DEFINE(inst)                                                                      \

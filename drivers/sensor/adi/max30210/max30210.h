@@ -184,6 +184,10 @@
 
 #define MAX30210_PART_ID 0x45 /* Part ID for MAX30210 */
 
+#define MAX30210_BYTES_PER_SAMPLE 3 /* 2 bytes for temperature data, 1 byte for status */
+
+#define MAX30210_FIFO_DEPTH 64 
+
 struct max30210_config {
 	struct i2c_dt_spec i2c;
 
@@ -220,7 +224,7 @@ struct max30210_data {
 	sensor_trigger_handler_t temp_dec_fast_handler;
 	sensor_trigger_handler_t temp_rdy_handler;
 
-	const struct sensor_trigger *fifo_full_trigger;
+	const struct sensor_trigger *a_fifo_full_trigger;
 	const struct sensor_trigger *temp_hi_trigger;
 	const struct sensor_trigger *temp_lo_trigger;
 	const struct sensor_trigger *temp_inc_fast_trigger;
@@ -245,6 +249,14 @@ struct max30210_data {
 	struct rtio_iodev_sqe *sqe;
 	struct rtio *rtio_ctx;
 	struct rtio_iodev *iodev;
+#endif
+
+#ifdef CONFIG_MAX30210_FIFO
+	uint8_t fifo_data_count;
+	uint8_t fifo_watermark_irq;
+	uint8_t fifo_data[MAX30210_FIFO_DEPTH * MAX30210_BYTES_PER_SAMPLE];
+	uint16_t fifo_temp_data [MAX30210_FIFO_DEPTH];
+	uint8_t fifo_status_data[MAX30210_FIFO_DEPTH];
 #endif
 };
 

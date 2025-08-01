@@ -8,6 +8,14 @@ menuconfig MAX30210
 
 if MAX30210
 
+config MAX30210_FIFO_MODE
+	bool "Enable FIFO mode"
+	default n
+	help
+	  Enable FIFO mode for the MAX30210 sensor. This allows the sensor to
+	  buffer multiple temperature readings, which can be useful for applications
+	  that require continuous monitoring or high data throughput.
+
 config MAX30210_TRIGGER
 	bool
 

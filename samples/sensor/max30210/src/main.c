@@ -35,7 +35,25 @@ void handler(const struct device *dev, const struct sensor_trigger *trig)
 	uint8_t interrupt_status = 0;
 	// ret = max30210_reg_read(dev, 0x00, &interrupt_status, 1); // Read interrupt status
 	// register
-	printf("Temperature is: %f C \n", sensor_value_to_float(&temp_value));
+	printf("Temperature is too High: %f C \n", sensor_value_to_float(&temp_value));
+}
+
+void new_temp_handler(const struct device *dev, const struct sensor_trigger *trig)
+{
+	struct sensor_value temp_value;
+	printf("New temperature handler triggered: %s\n", dev->name);
+	int ret = sensor_sample_fetch(dev);
+	if (ret < 0) {
+		printf("Failed to fetch sample: %d\n", ret);
+		return;
+	}
+	ret = sensor_channel_get(dev, SENSOR_CHAN_AMBIENT_TEMP, &temp_value);
+	if (ret < 0) {
+		printf("Failed to get temperature channel: %d\n", ret);
+		return;
+	}
+	printf("New Temperature is: %f C \n", sensor_value_to_float(&temp_value));
+	// Read interrupt status register
 }
 
 int main(void)
@@ -48,7 +66,7 @@ int main(void)
 	printf("MAX30210 device is ready: %s\n", max30210_dev->name);
 
 	struct sensor_value temp_sampling_freq = {
-		.val1 = 2, // Set your desired sampling frequency in Hz
+		.val1 = 4, // Set your desired sampling frequency in Hz
 		.val2 = 0};
 
 	int ret = sensor_attr_set(max30210_dev, SENSOR_CHAN_AMBIENT_TEMP,
@@ -79,7 +97,7 @@ int main(void)
 				      .chan = SENSOR_CHAN_AMBIENT_TEMP};
 
 	ret = sensor_attr_set(max30210_dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_UPPER_THRESH,
-			      &(struct sensor_value){.val1 = 28, .val2 = 0});
+			      &(struct sensor_value){.val1 = 34, .val2 = 0});
 	if (ret < 0) {
 		printf("Failed to set upper threshold: %d\n", ret);
 		return ret;
@@ -96,11 +114,6 @@ int main(void)
 		printf("Failed to set trigger: %d\n", ret);
 		return ret;
 	}
-
-	uint8_t interrupt_enable_setup = 0x00; // Initialize to 0x00
-	ret = max30210_reg_read(max30210_dev, 0x02, &interrupt_enable_setup, 1);
-
-	printf("Interrupt Enable Setup: 0x%02X\n", interrupt_enable_setup);
 
 	// uint8_t alarm_high_setup[2]={0x17, 0x70};
 	// // ret = max30210_reg_write(max30210_dev, 0x22, alarm_high_setup[0], 1);
@@ -127,7 +140,7 @@ int main(void)
 	// // }
 	// ret = max30210_reg_read(max30210_dev, 0x22, alarm_high_setup, 2);
 	// printf("Alarm High Setup: 0x%02X 0x%02X\n", alarm_high_setup[0], alarm_high_setup[1]);
-
+#if 0
 	while (1) {
 		struct sensor_value temp_value;
 		ret = sensor_sample_fetch(max30210_dev);
@@ -141,5 +154,21 @@ int main(void)
 			return ret;
 		}
 		printf("Temperature is: %f C \n", sensor_value_to_float(&temp_value));
+	}
+#endif
+
+	struct sensor_trigger new_temp_trig = {.type = SENSOR_TRIG_DATA_READY,
+					       .chan = SENSOR_CHAN_AMBIENT_TEMP};
+
+	ret = sensor_trigger_set(max30210_dev, &new_temp_trig, new_temp_handler);
+	if (ret < 0) {
+		printf("Failed to set trigger: %d\n", ret);
+		return ret;
+	}
+	uint8_t interrupt_enable_setup = 0x00; // Initialize to 0x00
+	ret = max30210_reg_read(max30210_dev, 0x02, &interrupt_enable_setup, 1);
+
+	printf("Interrupt Enable Setup: 0x%02X\n", interrupt_enable_setup);
+	while (1) {
 	}
 }

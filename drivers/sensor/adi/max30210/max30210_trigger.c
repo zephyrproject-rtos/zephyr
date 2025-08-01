@@ -34,6 +34,12 @@ static void max30210_thread_cb(const struct device *dev)
         data->temp_dec_fast_handler(dev, data->temp_dec_fast_trigger);
 
     }
+    if (data->temp_rdy_handler && (status & TEMP_RDY_MASK)) {
+        data->temp_rdy_handler(dev, data->temp_rdy_trigger);
+    }
+    if (data->a_fifo_full_handler && (status & FIFO_FULL_MASK)) {
+        data->a_fifo_full_handler(dev, data->a_fifo_full_trigger);
+    }
 
     ret = gpio_pin_interrupt_configure_dt(&config->interrupt_gpio, GPIO_INT_EDGE_FALLING);
     if (ret < 0) {
@@ -52,9 +58,9 @@ static void max30210_gpio_callback(const struct device *dev, struct gpio_callbac
 
     gpio_pin_interrupt_configure_dt(&config->interrupt_gpio, GPIO_INT_DISABLE);
 
-    if (IS_ENABLED(CONFIG_MAX30210_STREAM)){
-        max30210_stream_irq_handler (data->dev);
-    }
+    // if (IS_ENABLED(CONFIG_MAX30210_STREAM)){
+    //     max30210_stream_irq_handler (data->dev);
+    // }
 
 #if defined(CONFIG_MAX30210_TRIGGER_OWN_THREAD)
     k_sem_give(&data->gpio_sem);
@@ -173,6 +179,17 @@ int max30210_trigger_set(const struct device *dev, const struct sensor_trigger *
             }
             break;
 
+        case SENSOR_TRIG_DATA_READY:
+            data->temp_rdy_handler = handler;
+            data->temp_rdy_trigger = trig;
+            int_mask |= TEMP_RDY_MASK;
+            break;
+
+        case SENSOR_TRIG_FIFO_FULL:
+            data->a_fifo_full_handler = handler;
+            data->a_fifo_full_trigger = trig;
+            int_mask |= FIFO_FULL_MASK;
+            break;
         default:
             printf("Unsupported trigger type: %d\n", trig->type);
             return -ENOTSUP; // Unsupported trigger type
