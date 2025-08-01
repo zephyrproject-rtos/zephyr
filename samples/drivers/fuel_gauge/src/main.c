@@ -20,8 +20,6 @@ const char *fuel_gauge_prop_to_str(enum fuel_gauge_prop_type prop)
 	switch (prop) {
 	case FUEL_GAUGE_AVG_CURRENT:
 		return "FUEL_GAUGE_AVG_CURRENT";
-	case FUEL_GAUGE_BATTERY_CUTOFF:
-		return "FUEL_GAUGE_BATTERY_CUTOFF";
 	case FUEL_GAUGE_CURRENT:
 		return "FUEL_GAUGE_CURRENT";
 	case FUEL_GAUGE_CHARGE_CUTOFF:
@@ -115,12 +113,6 @@ int main(void)
 	{
 		LOG_INF("Test-Read generic fuel gauge properties to verify which are supported");
 		LOG_INF("Info: not all properties are supported by all fuel gauges!");
-
-		/*
-		 * FUEL_GAUGE_BATTERY_CUTOFF will not be tested because this is a special property
-		 * and is intended to be used to cutoff the battery from the system - useful for
-		 * storage/shipping of devices
-		 */
 
 		fuel_gauge_prop_t test_props[] = {
 			FUEL_GAUGE_AVG_CURRENT,
