@@ -10,7 +10,7 @@
 #include <zephyr/dt-bindings/gpio/dvp-20pin-connector.h>
 
 / {
-	aliases{
+	aliases {
 		led0 = &red_led;
 		led1 = &green_led;
 		led2 = &blue_led;
@@ -57,9 +57,9 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<9  0 &gpio0 23 0>,	/* Pin 9, LCD touch INT */
-				<10  0 &gpio4 6 0>,	/* Pin 10, LCD backlight control */
-				<11  0 &gpio4 7 0>;	/* Pin 11, LCD and touch reset */
+		gpio-map = <9 0 &gpio0 23 0>, /* Pin 9, LCD touch INT */
+			   <10 0 &gpio4 6 0>, /* Pin 10, LCD backlight control */
+			   <11 0 &gpio4 7 0>; /* Pin 11, LCD and touch reset */
 	};
 };
 
@@ -220,8 +220,8 @@ p3t1755dp_ard_i2c_interface: &flexcomm5_lpi2c5 {};
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
-		gpio-map =	<DVP_20PIN_PEN 0 &gpio1 19 0>,
-				<DVP_20PIN_PDN 0 &gpio1 18 0>;
+		gpio-map = <DVP_20PIN_PEN 0 &gpio1 19 0>,
+			   <DVP_20PIN_PDN 0 &gpio1 18 0>;
 	};
 };
 
