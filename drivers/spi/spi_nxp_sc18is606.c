@@ -41,6 +41,39 @@ static int sc18is606_write_reg(const struct i2c_dt_spec *i2c, uint8_t reg, uint8
 	return i2c_write_dt(i2c, buffer, sizeof(buffer));
 }
 
+static int sc18is606_spi_configure(const struct nxp_sc18is606_config *info,
+		struct nxp_sc18is606_data *data,
+		const struct spi_config *config)
+{
+	if(config->operation & SPI_OP_MODE_SLAVE) {
+		LOG_ERR("SC18IS606 does not support Slave mode");
+		return -ENOTSUP;
+	}
+
+	if(config->operation & (SPI_LINES_DUAL | SPI_LINES_QUAD | SPI_LINES_OCTAL)) {
+		LOG_ERR("Unsupported line configuration");
+		return -ENOTSUP;
+	}
+
+	const int bits = SPI_WORD_SIZE_GET(config->operation);
+
+	if(bits > 8){
+		LOG_ERR("Word sizes > 8 bits not supported");
+		return -ENOTSUP;
+	}
+
+
+	/* Since I am using a hardware device and configuration is by writing a register
+	 * Via i2c do I need to set config as below or is the register write sufficient
+	 */
+	data->ctx.config = config;
+
+	int ret;
+	ret = sc18is606_write_reg(&info->i2c_controller, SC18IS606_CONFIG_SPI, data->spi_mode);
+
+	return ret;
+}
+
 
 
 
@@ -49,9 +82,17 @@ static int sc18is606_spi_transceive(const struct device *dev, const struct spi_c
 				    const struct spi_buf_set *tx_buffer_set,
 				    const struct spi_buf_set *rx_buffer_set)
 {
-	const struct nxp_sc18is606_data *data = dev->data;
+	struct nxp_sc18is606_data *data = dev->data;
 	const struct device *i2c_dev = data->i2c_dev;
-	int ret;
+	const struct nxp_sc18is606_config *info = dev->config;
+	int ret, reconfig;
+
+
+	reconfig = sc18is606_spi_configure(info, data, spi_cfg);
+	if(reconfig < 0)
+	{
+		return reconfig;
+	}
 
 	if (!tx_buffer_set || !rx_buffer_set) {
 		LOG_ERR("SC18IS606 Invalid Buffers");
