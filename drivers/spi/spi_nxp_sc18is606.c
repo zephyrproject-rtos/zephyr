@@ -4,27 +4,27 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/kernel.h>
+#include <stdint.h>
 #include <string.h>
 #include <zephyr/types.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/spi.h>
+#include "spi_context.h"
 
 #define DT_DRV_COMPAT nxp_sc18is606
 
 LOG_MODULE_REGISTER(nxp_sc18is606, CONFIG_SPI_LOG_LEVEL);
 
+
 #define SC18IS606_CONFIG_SPI 0xF0
 #define CLEAR_INTERRUPT      0xF1
 #define IDLE_MODE            0xF2
-#define GPIO_CONFIGURATION   0xF7
-#define GPIO_ENABLE          0xF6
-#define GPIO_WRITE           0xF4
-#define GPIO_READ            0xF5
 #define READ_VERSION         0xFE
 
 struct nxp_sc18is606_data {
+	struct spi_context ctx;
 	const struct device *i2c_dev;
 	uint8_t i2c_addr;
 	uint32_t spi_clock_freq;
@@ -32,7 +32,7 @@ struct nxp_sc18is606_data {
 };
 
 struct nxp_sc18is606_config {
-	struct i2c_dt_spec i2c_controller;
+	 const struct i2c_dt_spec i2c_controller;
 };
 
 static int sc18is606_write_reg(const struct i2c_dt_spec *i2c, uint8_t reg, uint8_t value)
@@ -40,6 +40,10 @@ static int sc18is606_write_reg(const struct i2c_dt_spec *i2c, uint8_t reg, uint8
 	uint8_t buffer[2] = {reg, value};
 	return i2c_write_dt(i2c, buffer, sizeof(buffer));
 }
+
+
+
+
 
 static int sc18is606_spi_transceive(const struct device *dev, const struct spi_config *spi_cfg,
 				    const struct spi_buf_set *tx_buffer_set,
@@ -53,6 +57,7 @@ static int sc18is606_spi_transceive(const struct device *dev, const struct spi_c
 		LOG_ERR("SC18IS606 Invalid Buffers");
 		return -EINVAL;
 	}
+
 
 	const struct spi_buf *tx_buf = &tx_buffer_set->buffers[0];
 	const size_t len = tx_buf->len;
@@ -79,18 +84,23 @@ static int sc18is606_spi_transceive(const struct device *dev, const struct spi_c
 	return 0;
 }
 
-int sc18is606_spi_release(const struct device *dev, const struct spi_config *config)
+int sc18is606_release(const struct device *dev, const struct spi_config *config)
 {
-	struct spi_bitbang_data *data = dev->data;
+	struct nxp_sc18is606_data *data = dev -> data;
+
 	struct spi_context *ctx = &data->ctx;
 
 	spi_context_unlock_unconditionally(ctx);
+
 	return 0;
 }
 
-static const struct spi_driver_api sc18is606_api = {
+
+
+
+static DEVICE_API(spi, sc18is606_api) = {
 	.transceive = sc18is606_spi_transceive,
-	.release = sc18is606_spi_release,
+	.release = sc18is606_release,
 };
 
 static int sc18is606_init(const struct device *dev)
