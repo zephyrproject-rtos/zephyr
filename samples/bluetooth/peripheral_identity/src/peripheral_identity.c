@@ -234,12 +234,14 @@ static void disconnect(struct bt_conn *conn, void *data)
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	printk("Disconnecting %s...\n", addr);
+
 	err = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	if (err) {
 		printk("Failed disconnection %s.\n", addr);
 		return;
 	}
-	printk("success.\n");
+
+	printk("Disconnect initiated\n");
 }
 
 int init_peripheral(uint8_t max_conn, uint8_t iterations)
@@ -271,7 +273,8 @@ int init_peripheral(uint8_t max_conn, uint8_t iterations)
 		printk("Scan start failed (%d).\n", err);
 		return err;
 	}
-	printk("success.\n");
+
+	printk("Scanning start success.\n");
 #endif /* CONFIG_BT_OBSERVER */
 
 	k_work_init(&work_adv_start, adv_start);
@@ -298,6 +301,7 @@ int init_peripheral(uint8_t max_conn, uint8_t iterations)
 			/* Lets wait sufficiently to ensure a stable connection
 			 * before starting to disconnect for next iteration.
 			 */
+			printk("Waiting for stable connections...\n");
 			k_sleep(K_SECONDS(60));
 
 			if (!iterations) {
