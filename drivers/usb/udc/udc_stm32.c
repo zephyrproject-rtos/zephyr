@@ -322,15 +322,15 @@ static void handle_msg_data_out(struct udc_stm32_data *priv, uint8_t epnum, uint
 	LOG_DBG("DataOut ep 0x%02x",  ep);
 
 	epcfg = udc_get_ep_cfg(dev, ep);
-	udc_ep_set_busy(epcfg, false);
-
 	buf = udc_buf_get(epcfg);
 	if (unlikely(buf == NULL)) {
+		udc_ep_set_busy(epcfg, false);
 		LOG_ERR("ep 0x%02x queue is empty", ep);
 		return;
 	}
 
 	net_buf_add(buf, rx_count);
+	udc_ep_set_busy(epcfg, false);
 
 	if (ep == USB_CONTROL_EP_OUT) {
 		if (udc_ctrl_stage_is_status_out(dev)) {
@@ -353,6 +353,40 @@ static void handle_msg_data_out(struct udc_stm32_data *priv, uint8_t epnum, uint
 	}
 }
 
+static void handle_msg_data_ep0_out(struct udc_stm32_data *priv, uint8_t epnum, uint16_t rx_count)
+{
+	const struct device *dev = priv->dev;
+	struct udc_ep_config *epcfg;
+	uint8_t ep = epnum | USB_EP_DIR_OUT;
+	struct net_buf *buf;
+	uint8_t *data;
+	uint32_t len;
+
+	epcfg = udc_get_ep_cfg(dev, ep);
+	buf = udc_buf_peek(epcfg);
+	if (unlikely(buf == NULL)) {
+		udc_ep_set_busy(epcfg, false);
+		return;
+	}
+
+	len = net_buf_tailroom(buf);
+
+	/* Check if all data was transferred and then go back to normal flow
+	 * otherwise continue receiving data
+	 */
+	LOG_DBG("xfer size: %d, free: %d, size: %d", rx_count, len, buf->size);
+	if (len == rx_count || rx_count < epcfg->mps) {
+		/* busy will be release in handle_msg_data_out() */
+		handle_msg_data_out(priv, epnum, rx_count);
+		return;
+	}
+
+	net_buf_add(buf, rx_count);
+	data = net_buf_tail(buf);
+
+	HAL_PCD_EP_Receive(&priv->pcd, epcfg->addr, data, buf->size);
+}
+
 static void handle_msg_data_in(struct udc_stm32_data *priv, uint8_t epnum)
 {
 	const struct device *dev = priv->dev;
@@ -363,12 +397,13 @@ static void handle_msg_data_in(struct udc_stm32_data *priv, uint8_t epnum)
 	LOG_DBG("DataIn ep 0x%02x",  ep);
 
 	epcfg = udc_get_ep_cfg(dev, ep);
-	udc_ep_set_busy(epcfg, false);
-
 	buf = udc_buf_peek(epcfg);
 	if (unlikely(buf == NULL)) {
+		udc_ep_set_busy(epcfg, false);
 		return;
 	}
+
+	udc_ep_set_busy(epcfg, false);
 
 	if (ep == USB_CONTROL_EP_IN && buf->len) {
 		const struct udc_stm32_config *cfg = dev->config;
@@ -420,6 +455,21 @@ static void handle_msg_data_in(struct udc_stm32_data *priv, uint8_t epnum)
 	}
 }
 
+static void drop_control_transfers(const struct device *dev)
+{
+	struct net_buf *buf;
+
+	buf = udc_buf_get_all(udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT));
+	if (buf != NULL) {
+		net_buf_unref(buf);
+	}
+
+	buf = udc_buf_get_all(udc_get_ep_cfg(dev, USB_CONTROL_EP_IN));
+	if (buf != NULL) {
+		net_buf_unref(buf);
+	}
+}
+
 static void handle_msg_setup(struct udc_stm32_data *priv)
 {
 	struct usb_setup_packet *setup = (void *)priv->pcd.Setup;
@@ -427,15 +477,16 @@ static void handle_msg_setup(struct udc_stm32_data *priv)
 	struct net_buf *buf;
 	int err;
 
+	drop_control_transfers(dev);
+
 	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, sizeof(struct usb_setup_packet));
 	if (buf == NULL) {
 		LOG_ERR("Failed to allocate for setup");
 		return;
 	}
 
+	net_buf_add_mem(buf, setup, sizeof(struct usb_setup_packet));
 	udc_ep_buf_set_setup(buf);
-	memcpy(buf->data, setup, 8);
-	net_buf_add(buf, 8);
 
 	udc_ctrl_update_stage(dev, buf);
 
@@ -450,13 +501,16 @@ static void handle_msg_setup(struct udc_stm32_data *priv)
 
 	if (udc_ctrl_stage_is_data_out(dev)) {
 		/*  Allocate and feed buffer for data OUT stage */
+		LOG_DBG("s:%p|feed for -out-", (void *)buf);
 		err = usbd_ctrl_feed_dout(dev, udc_data_stage_length(buf));
 		if (err == -ENOMEM) {
 			udc_submit_ep_event(dev, buf, err);
 		}
 	} else if (udc_ctrl_stage_is_data_in(dev)) {
+		LOG_DBG("s:%p|feed for -in-status", (void *)buf);
 		udc_ctrl_submit_s_in_status(dev);
 	} else {
+		LOG_DBG("s:%p|no data", (void *)buf);
 		udc_ctrl_submit_s_status(dev);
 	}
 }
@@ -477,7 +531,12 @@ static void udc_stm32_thread_handler(void *arg1, void *arg2, void *arg3)
 			handle_msg_data_in(priv, msg.ep);
 			break;
 		case UDC_STM32_MSG_DATA_OUT:
-			handle_msg_data_out(priv, msg.ep, msg.rx_count);
+			/* workaround to xfer data stage on ep0 */
+			if (msg.ep == USB_CONTROL_EP_OUT) {
+				handle_msg_data_ep0_out(priv, msg.ep, msg.rx_count);
+			} else {
+				handle_msg_data_out(priv, msg.ep, msg.rx_count);
+			}
 			break;
 		}
 	}
