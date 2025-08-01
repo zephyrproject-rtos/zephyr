@@ -316,7 +316,7 @@ ZTEST(lwm2m_registry, test_resource_instance_creation_and_deletion)
 ZTEST(lwm2m_registry, test_resource_instance_strings)
 {
 	int ret;
-	char buf[256] = {0};
+	char buf[40] = {0};
 	static const char string_a[] = "Hello";
 	static const char string_b[] = "World";
 	struct lwm2m_obj_path path_a = LWM2M_OBJ(16, 0, 0, 0);
@@ -395,8 +395,8 @@ ZTEST(lwm2m_registry, test_callbacks)
 ZTEST(lwm2m_registry, test_strings)
 {
 	int ret;
-	char buf[256] = {0};
-	struct lwm2m_obj_path path = LWM2M_OBJ(0, 0, 0);
+	char buf[40] = {0};
+	struct lwm2m_obj_path path = LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_STRING);
 	static const char uri[] = "coap://127.0.0.1";
 	uint16_t len;
 	uint8_t *p;
@@ -423,7 +423,7 @@ ZTEST(lwm2m_registry, test_strings)
 	zassert_equal(ret, -ENOMEM);
 
 	/* Handle strings in opaque resources (no terminator) */
-	path = LWM2M_OBJ(0, 0, 3);
+	path = LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_OPAQUE);
 	ret = lwm2m_get_res_buf(&path, (void **)&p, &len, NULL, NULL);
 	zassert_equal(ret, 0);
 	memset(p, 0xff, len); /* Pre-fill buffer to check */
@@ -447,6 +447,80 @@ ZTEST(lwm2m_registry, test_strings)
 	/* but because we request as a string, it must have room for terminator. */
 	ret = lwm2m_get_string(&path, buf, len);
 	zassert_equal(ret, -ENOMEM);
+}
+
+static bool is_string(const struct lwm2m_obj_path *path)
+{
+	struct lwm2m_engine_obj_field *obj_field;
+	int ret;
+
+	ret = path_to_objs(path, NULL, &obj_field, NULL, NULL);
+	if (ret < 0 || !obj_field) {
+		return false;
+	}
+	if (obj_field->data_type == LWM2M_RES_TYPE_STRING) {
+		return true;
+	}
+	return false;
+}
+
+void test_string_fit(struct lwm2m_obj_path *path, const char *str)
+{
+	char buf[40] = {0};
+	uint8_t *p;
+	uint16_t len;
+
+	zassert_ok(lwm2m_get_res_buf(path, (void **)&p, &len, NULL, NULL));
+	zassert_equal(len, 32); /* Just check that our test object have 32 byte buffers */
+	memset(p, 0xff, len);
+	memset(buf, 0xff, sizeof(buf));
+
+	len = strlen(str);
+	zassert_true((len + 1) >= 31); /* Ensure our test strings fill entire buffer */
+
+	/* Test setting and getting a string that fits exactly */
+	zassert_ok(lwm2m_set_string(path, str));
+	zassert_ok(lwm2m_get_string(path, buf, sizeof(buf)));
+	zassert_equal(strlen(buf), len);
+	zassert_equal(memcmp(buf, str, len + 1), 0); /* check whole buffer, including terminator */
+	if (is_string(path)) {
+		zassert_equal(p[len], 0);
+	} else if (len < 32) {
+		zassert_equal(p[len], 0xff); /* did not fill entire opaque buffer */
+	} else {
+		/* Last byte on resource buffer is last byte from string, no terminator */
+		zassert_equal((uint8_t) p[31], (uint8_t) str[31]);
+	}
+	zassert_equal(buf[len], 0); /* must have terminator */
+}
+
+ZTEST(lwm2m_registry, test_strings_sizes)
+{
+	static const char string32[] = "0123456789012345678901234567890";
+	static const char string33[] = "01234567890123456789012345678901";
+	static const char string34[] = "012345678901234567890123456789012";
+	static const char utf8_32[] = "©⏰⏳💡💖💔💞💟✅";
+	static const char utf8_33[] = "🤰🤱🤲🤳🤴🤵🤶🤡";
+	static const char utf8_34[] = "Ω👨👩👨👩👨👩🧔✊";
+
+	struct lwm2m_obj_path path_string = LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_STRING);
+	struct lwm2m_obj_path path_opaque = LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_OPAQUE);
+
+	/* All OK without truncation, opaque resource does not store null terminator
+	 * so it can store one byte more than string resource.
+	 */
+	test_string_fit(&path_string, string32);
+	test_string_fit(&path_opaque, string32);
+	test_string_fit(&path_opaque, string33);
+	test_string_fit(&path_string, utf8_32);
+	test_string_fit(&path_opaque, utf8_32);
+	test_string_fit(&path_opaque, utf8_33);
+
+	/* These would truncate */
+	zassert_equal(lwm2m_set_string(&path_string, string33), -ENOMEM);
+	zassert_equal(lwm2m_set_string(&path_opaque, string34), -ENOMEM);
+	zassert_equal(lwm2m_set_string(&path_string, utf8_33), -ENOMEM);
+	zassert_equal(lwm2m_set_string(&path_opaque, utf8_34), -ENOMEM);
 }
 
 ZTEST(lwm2m_registry, test_lock_unlock)
@@ -500,7 +574,7 @@ ZTEST(lwm2m_registry, test_next_engine_obj_inst)
 ZTEST(lwm2m_registry, test_null_strings)
 {
 	int ret;
-	char buf[256] = {0};
+	char buf[40] = {0};
 	struct lwm2m_obj_path path = LWM2M_OBJ(0, 0, 0);
 
 	ret = lwm2m_register_post_write_callback(&path, post_write_cb);
