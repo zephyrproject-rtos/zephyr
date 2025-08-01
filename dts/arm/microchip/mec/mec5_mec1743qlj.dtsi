@@ -23,6 +23,8 @@
 		#include "mec5/mec5_gpspi_v2.dtsi"
 		#include "mec5/mec5_eeprom_8kb.dtsi"
 		#include "mec5/mec5_pkg176_pwms.dtsi"
+		#include "mec5/mec5_rcid.dtsi"
+		#include "mec5/mec5_bclink.dtsi"
 
 		ps2_1: ps2@40009040 {
 			reg = <0x40009040 0x40>;
@@ -37,6 +39,12 @@
 			reg = <0x40009c00 0x18>;
 			interrupts = <135 0>;
 			girqs = <21 25>;
+			status = "disabled";
+		};
+
+		bbled3: bbled@4000bb00 {
+			reg = <0x4000bb00 0x100>;
+			interrupts = <86 3>;
 			status = "disabled";
 		};
 
