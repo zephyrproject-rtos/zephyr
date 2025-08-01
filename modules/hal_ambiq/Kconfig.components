@@ -8,3 +8,36 @@ config AMBIQ_COMPONENT_USE_BT
 	depends on SOC_AMBIQ_BT_SUPPORTED
 	help
 	  Use Bluetooth component from Ambiq
+
+config AMBIQ_COMPONENT_USE_NEMASDK
+	bool
+
+if AMBIQ_COMPONENT_USE_NEMASDK
+
+config MAX_PENDING_COMMAND_LIST
+	int "max value for pending command list"
+	default 100
+	range 10 200
+
+config GRAPHICS_HEAP_SIZE
+	int "graphics heap size, unit:KB"
+	default 1024
+	depends on !MEM_ATTR_HEAP
+
+config GPU_WAIT_IRQ_TIMEOUT_MS
+	int "timeout value to wait for GPU complete IRQ, unit: ms"
+	default 500
+
+config DC_WAIT_VSYNC_TIMEOUT_MS
+	int "timeout value to wait for DC VSYNC IRQ, unit: ms"
+	default 500
+
+module = NEMAGFX
+module-str = nemagfx
+source "subsys/logging/Kconfig.template.log_config"
+
+module = NEMADC
+module-str = nemadc
+source "subsys/logging/Kconfig.template.log_config"
+
+endif #AMBIQ_COMPONENT_USE_NEMASDK
