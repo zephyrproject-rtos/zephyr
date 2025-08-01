@@ -829,7 +829,27 @@ class DeviceHandler(Handler):
                     ser_pty_process = self._start_serial_pty(serial_pty, ser_pty_master)
                 logger.debug(f"Attach serial device {serial_device} @ {hardware.baud} baud")
                 ser.port = serial_device
-                ser.open()
+
+                # Apply ESP32-specific RTS/DTR reset logic
+                if runner == "esp32":
+                    logger.debug("Applying ESP32 RTS/DTR reset sequence")
+
+                    # Prepare: IO0=HIGH (DTR=True), EN=HIGH (RTS=False)
+                    ser.dtr = True
+                    ser.rts = False
+
+                    ser.open()
+
+                    # Reset pulse: IO0=LOW (DTR=False), EN=LOW (RTS=True)
+                    ser.dtr = False
+                    ser.rts = True
+                    time.sleep(0.01)
+
+                    # Return to normal boot
+                    ser.rts = False
+                else:
+                    ser.open()
+
             except serial.SerialException as e:
                 self._handle_serial_exception(e, hardware, serial_pty, ser_pty_process)
                 return
