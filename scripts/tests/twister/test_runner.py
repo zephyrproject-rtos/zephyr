@@ -558,19 +558,6 @@ TESTDATA_3 = [
         {os.path.join('other', 'zephyr', 'dummy.testsuite.name'): False}
     ),
     (
-        'other', ['other'], True,
-        False, None, True,
-        'Dummy parse results', True,
-        None,
-        None,
-        {},
-        {},
-        {},
-        None,
-        ['Sysbuild test will be skipped. West must be used for flashing.'],
-        {os.path.join('other', 'zephyr', 'dummy.testsuite.name'): True}
-    ),
-    (
         'other', ['other'], False,
         True, None, False,
         'Dummy parse results', True,
@@ -652,8 +639,7 @@ TESTDATA_3 = [
     ' expected_edt,' \
     ' expected_logs, expected_return',
     TESTDATA_3,
-    ids=['unit testing', 'domain', 'kconfig', 'no cache',
-         'no west options', 'no edt',
+    ids=['unit testing', 'domain', 'kconfig', 'no cache', 'no edt',
          'parse result', 'no parse result', 'no testsuite filter', 'parse err']
 )
 def test_filterbuilder_parse_generated(

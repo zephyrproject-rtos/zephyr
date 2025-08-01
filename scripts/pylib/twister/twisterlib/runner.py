@@ -828,23 +828,6 @@ class FilterBuilder(CMake):
             filter_data.update(self.defconfig)
         filter_data.update(self.cmake_cache)
 
-        # Verify that twister's arguments support sysbuild.
-        # Twister sysbuild flashing currently only works with west,
-        # so --west-flash must be passed.
-        if (
-            self.instance.sysbuild
-            and self.env.options.device_testing
-            and self.env.options.west_flash is None
-        ):
-            logger.warning("Sysbuild test will be skipped. West must be used for flashing.")
-            return {
-                os.path.join(
-                    self.platform.name,
-                    self.instance.toolchain,
-                    self.testsuite.name
-                ): True
-            }
-
         if self.testsuite and self.testsuite.filter:
             try:
                 if os.path.exists(edt_pickle):
