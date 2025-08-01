@@ -361,7 +361,9 @@ static int mcux_elcdif_init(const struct device *dev)
 	/* Set default pixel format obtained from device tree */
 	mcux_elcdif_set_pixel_format(dev, dev_data->pixel_format);
 
+#if CONFIG_MCUX_ELCDIF_FB_NUM != 0
 	dev_data->active_fb = dev_data->fb[0];
+#endif
 
 	ELCDIF_RgbModeInit(config->base, &dev_data->rgb_mode);
 	ELCDIF_RgbModeStart(config->base);
