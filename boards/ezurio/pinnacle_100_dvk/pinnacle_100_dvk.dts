@@ -90,7 +90,7 @@
 };
 
 &adc {
-	status ="okay";
+	status = "okay";
 };
 
 &uicr {
@@ -98,15 +98,15 @@
 };
 
 &gpiote {
-	status ="okay";
+	status = "okay";
 };
 
 &gpio0 {
-	status ="okay";
+	status = "okay";
 };
 
 &gpio1 {
-	status ="okay";
+	status = "okay";
 };
 
 &uart0 {
