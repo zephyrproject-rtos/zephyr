@@ -18,6 +18,7 @@
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/socketcan.h>
 #include <zephyr/net/socketcan_utils.h>
+#include <zephyr/sys/util.h>
 
 #include "can_native_linux_adapt.h"
 #include "nsi_host_trampolines.h"
@@ -386,8 +387,10 @@ static void can_native_linux_set_state_change_callback(const struct device *dev,
 
 static int can_native_linux_get_core_clock(const struct device *dev, uint32_t *rate)
 {
-	/* Return 16MHz as an realistic value for the testcases */
-	*rate = 16000000;
+	ARG_UNUSED(dev);
+
+	/* Recommended CAN clock from CiA 601-3 */
+	*rate = MHZ(80);
 
 	return 0;
 }
@@ -412,35 +415,37 @@ static DEVICE_API(can, can_native_linux_driver_api) = {
 	.set_state_change_callback = can_native_linux_set_state_change_callback,
 	.get_core_clock = can_native_linux_get_core_clock,
 	.get_max_filters = can_native_linux_get_max_filters,
+	/* Recommended configuration ranges from CiA 601-2 */
 	.timing_min = {
-		.sjw = 0x1,
-		.prop_seg = 0x01,
-		.phase_seg1 = 0x01,
-		.phase_seg2 = 0x01,
-		.prescaler = 0x01
+		.sjw = 1,
+		.prop_seg = 0,
+		.phase_seg1 = 2,
+		.phase_seg2 = 2,
+		.prescaler = 1
 	},
 	.timing_max = {
-		.sjw = 0x0F,
-		.prop_seg = 0x0F,
-		.phase_seg1 = 0x0F,
-		.phase_seg2 = 0x0F,
-		.prescaler = 0xFFFF
+		.sjw = 128,
+		.prop_seg = 0,
+		.phase_seg1 = 256,
+		.phase_seg2 = 128,
+		.prescaler = 32
 	},
 #ifdef CONFIG_CAN_FD_MODE
 	.set_timing_data = can_native_linux_set_timing_data,
+	/* Recommended configuration ranges from CiA 601-2 */
 	.timing_data_min = {
-		.sjw = 0x1,
-		.prop_seg = 0x01,
-		.phase_seg1 = 0x01,
-		.phase_seg2 = 0x01,
-		.prescaler = 0x01
+		.sjw = 1,
+		.prop_seg = 0,
+		.phase_seg1 = 1,
+		.phase_seg2 = 1,
+		.prescaler = 1
 	},
 	.timing_data_max = {
-		.sjw = 0x0F,
-		.prop_seg = 0x0F,
-		.phase_seg1 = 0x0F,
-		.phase_seg2 = 0x0F,
-		.prescaler = 0xFFFF
+		.sjw = 16,
+		.prop_seg = 0,
+		.phase_seg1 = 32,
+		.phase_seg2 = 16,
+		.prescaler = 32
 	},
 #endif /* CONFIG_CAN_FD_MODE */
 };
