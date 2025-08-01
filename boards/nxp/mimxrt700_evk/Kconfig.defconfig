@@ -1,0 +1,26 @@
+# MIMXRT700-EVK board
+
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MIMXRT700_EVK
+
+if SECOND_CORE_MCUX && SOC_MIMXRT798S_CM33_CPU1
+
+config BUILD_OUTPUT_INFO_HEADER
+	default y
+
+# RT700 CPU1 LMA offset calculation:
+# CPU1 doesn't have access to flash partitions, so we use known values:
+# - CPU0 will store CPU1 image at flash offset 0x720000 (slot1_partition)
+# - Flash is memory-mapped at 0x28000000 (RT700 XSPI0 base)
+# - CPU1 executes from 0x600000 (CPU1 alias space)
+#
+# LMA = flash_base + partition_offset = 0x28000000 + 0x720000 = 0x28720000
+# Adjustment = LMA - VMA = 0x28720000 - 0x600000 = 0x28120000
+config BUILD_OUTPUT_ADJUST_LMA
+	default "0x28720000 - 0x00600000"
+
+endif
+
+endif
