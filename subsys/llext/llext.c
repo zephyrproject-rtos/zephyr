@@ -59,8 +59,7 @@ ssize_t llext_find_section(struct llext_loader *ldr, const char *search_name)
 	unsigned int i;
 	size_t pos;
 
-	for (i = 0, pos = ldr->hdr.e_shoff;
-	     i < ldr->hdr.e_shnum;
+	for (i = 0, pos = ldr->hdr.e_shoff; i < ldr->hdr.e_shnum;
 	     i++, pos += ldr->hdr.e_shentsize) {
 		shdr = llext_peek(ldr, pos);
 		if (!shdr) {
@@ -68,9 +67,8 @@ ssize_t llext_find_section(struct llext_loader *ldr, const char *search_name)
 			return -ENOTSUP;
 		}
 
-		const char *name = llext_peek(ldr,
-					      ldr->sects[LLEXT_MEM_SHSTRTAB].sh_offset +
-					      shdr->sh_name);
+		const char *name = llext_peek(ldr, ldr->sects[LLEXT_MEM_SHSTRTAB].sh_offset +
+							   shdr->sh_name);
 
 		if (!strcmp(name, search_name)) {
 			return shdr->sh_offset;
@@ -90,8 +88,7 @@ struct llext *llext_by_name(const char *name)
 {
 	k_mutex_lock(&llext_lock, K_FOREVER);
 
-	for (sys_snode_t *node = sys_slist_peek_head(&llext_list);
-	     node != NULL;
+	for (sys_snode_t *node = sys_slist_peek_head(&llext_list); node != NULL;
 	     node = sys_slist_peek_next(node)) {
 		struct llext *ext = CONTAINER_OF(node, struct llext, llext_list);
 
@@ -112,9 +109,7 @@ int llext_iterate(int (*fn)(struct llext *ext, void *arg), void *arg)
 
 	k_mutex_lock(&llext_lock, K_FOREVER);
 
-	for (node = sys_slist_peek_head(&llext_list);
-	     node;
-	     node = sys_slist_peek_next(node)) {
+	for (node = sys_slist_peek_head(&llext_list); node; node = sys_slist_peek_next(node)) {
 		struct llext *ext = CONTAINER_OF(node, struct llext, llext_list);
 
 		ret = fn(ext, arg);
@@ -284,8 +279,8 @@ static int call_fn_table(struct llext *ext, bool is_init)
 	}
 
 	for (int i = 0; i < fn_count; i++) {
-		LOG_DBG("calling %s function %p()",
-			is_init ? "bringup" : "teardown", (void *)fn_table[i]);
+		LOG_DBG("calling %s function %p()", is_init ? "bringup" : "teardown",
+			(void *)fn_table[i]);
 		fn_table[i]();
 	}
 

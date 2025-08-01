@@ -73,10 +73,10 @@ void *llext_buf_peek(struct llext_loader *ldr, size_t pos);
  * @param _buf Buffer containing the ELF binary
  * @param _buf_len Buffer length in bytes
  */
-#define LLEXT_BUF_LOADER(_buf, _buf_len) \
+#define LLEXT_BUF_LOADER(_buf, _buf_len)                                                           \
 	Z_LLEXT_BUF_LOADER(_buf, _buf_len,                                                         \
-			   IS_ENABLED(CONFIG_LLEXT_STORAGE_WRITABLE) ?                             \
-				LLEXT_STORAGE_WRITABLE : LLEXT_STORAGE_PERSISTENT)
+			   IS_ENABLED(CONFIG_LLEXT_STORAGE_WRITABLE) ? LLEXT_STORAGE_WRITABLE      \
+								     : LLEXT_STORAGE_PERSISTENT)
 
 /* @brief Initialize an llext_buf_loader structure for a temporary buffer
  *
@@ -87,7 +87,7 @@ void *llext_buf_peek(struct llext_loader *ldr, size_t pos);
  * @param _buf Buffer containing the ELF binary
  * @param _buf_len Buffer length in bytes
  */
-#define LLEXT_TEMPORARY_BUF_LOADER(_buf, _buf_len) \
+#define LLEXT_TEMPORARY_BUF_LOADER(_buf, _buf_len)                                                 \
 	Z_LLEXT_BUF_LOADER(_buf, _buf_len, LLEXT_STORAGE_TEMPORARY)
 
 /**
@@ -100,7 +100,7 @@ void *llext_buf_peek(struct llext_loader *ldr, size_t pos);
  * @param _buf Buffer containing the ELF binary
  * @param _buf_len Buffer length in bytes
  */
-#define LLEXT_PERSISTENT_BUF_LOADER(_buf, _buf_len) \
+#define LLEXT_PERSISTENT_BUF_LOADER(_buf, _buf_len)                                                \
 	Z_LLEXT_BUF_LOADER(_buf, _buf_len, LLEXT_STORAGE_PERSISTENT)
 
 /**
@@ -113,7 +113,7 @@ void *llext_buf_peek(struct llext_loader *ldr, size_t pos);
  * @param _buf Buffer containing the ELF binary
  * @param _buf_len Buffer length in bytes
  */
-#define LLEXT_WRITABLE_BUF_LOADER(_buf, _buf_len) \
+#define LLEXT_WRITABLE_BUF_LOADER(_buf, _buf_len)                                                  \
 	Z_LLEXT_BUF_LOADER(_buf, _buf_len, LLEXT_STORAGE_WRITABLE)
 
 /**

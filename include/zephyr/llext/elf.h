@@ -51,7 +51,6 @@ typedef int64_t elf64_sxword;
 /** Unsigned long integer */
 typedef uint64_t elf64_xword;
 
-
 /**
  * @brief ELF identifier block
  *
@@ -134,13 +133,13 @@ struct elf64_ehdr {
 };
 
 /** Relocatable (unlinked) ELF */
-#define ET_REL  1
+#define ET_REL 1
 
 /** Executable (without PIC/PIE) ELF */
 #define ET_EXEC 2
 
 /** Dynamic (executable with PIC/PIE or shared lib) ELF */
-#define ET_DYN  3
+#define ET_DYN 3
 
 /** Core Dump */
 #define ET_CORE 4
@@ -198,26 +197,26 @@ struct elf64_shdr {
 };
 
 /** ELF section types */
-#define SHT_NULL 0x0            /**< Unused section */
-#define SHT_PROGBITS 0x1        /**< Program data */
-#define SHT_SYMTAB 0x2          /**< Symbol table */
-#define SHT_STRTAB 0x3          /**< String table */
-#define SHT_RELA 0x4            /**< Relocation entries with addends */
-#define SHT_NOBITS 0x8          /**< Program data with no file image */
-#define SHT_REL 0x9             /**< Relocation entries without addends */
-#define SHT_DYNSYM 0xB          /**< Dynamic linking symbol table */
-#define SHT_INIT_ARRAY 0xe      /**< Array of pointers to init functions */
-#define SHT_FINI_ARRAY 0xf      /**< Array of pointers to termination functions */
-#define SHT_PREINIT_ARRAY 0x10  /**< Array of pointers to early init functions */
+#define SHT_NULL          0x0  /**< Unused section */
+#define SHT_PROGBITS      0x1  /**< Program data */
+#define SHT_SYMTAB        0x2  /**< Symbol table */
+#define SHT_STRTAB        0x3  /**< String table */
+#define SHT_RELA          0x4  /**< Relocation entries with addends */
+#define SHT_NOBITS        0x8  /**< Program data with no file image */
+#define SHT_REL           0x9  /**< Relocation entries without addends */
+#define SHT_DYNSYM        0xB  /**< Dynamic linking symbol table */
+#define SHT_INIT_ARRAY    0xe  /**< Array of pointers to init functions */
+#define SHT_FINI_ARRAY    0xf  /**< Array of pointers to termination functions */
+#define SHT_PREINIT_ARRAY 0x10 /**< Array of pointers to early init functions */
 
 /** ELF section flags */
-#define SHF_WRITE 0x1                   /**< Section is writable */
-#define SHF_ALLOC 0x2                   /**< Section is present in memory */
-#define SHF_EXECINSTR 0x4               /**< Section contains executable instructions */
-#define SHF_MASKOS 0x0ff00000           /**< OS specific flags */
+#define SHF_WRITE            0x1        /**< Section is writable */
+#define SHF_ALLOC            0x2        /**< Section is present in memory */
+#define SHF_EXECINSTR        0x4        /**< Section contains executable instructions */
+#define SHF_MASKOS           0x0ff00000 /**< OS specific flags */
 #define SHF_LLEXT_HAS_RELOCS 0x00100000 /**< Section is a target for relocations */
 
-#define SHF_BASIC_TYPE_MASK	(SHF_WRITE | SHF_ALLOC | SHF_EXECINSTR)
+#define SHF_BASIC_TYPE_MASK (SHF_WRITE | SHF_ALLOC | SHF_EXECINSTR)
 
 /**
  * @brief Symbol table entry(32-bit)
@@ -256,32 +255,32 @@ struct elf64_sym {
 };
 
 /** ELF section numbers */
-#define SHN_UNDEF 0             /**< Undefined section */
-#define SHN_LORESERVE 0xff00    /**< Start of reserved section numbers */
-#define SHN_ABS 0xfff1          /**< Special value for absolute symbols */
-#define SHN_COMMON 0xfff2       /**< Common block */
-#define SHN_HIRESERVE 0xffff    /**< End of reserved section numbers */
+#define SHN_UNDEF     0      /**< Undefined section */
+#define SHN_LORESERVE 0xff00 /**< Start of reserved section numbers */
+#define SHN_ABS       0xfff1 /**< Special value for absolute symbols */
+#define SHN_COMMON    0xfff2 /**< Common block */
+#define SHN_HIRESERVE 0xffff /**< End of reserved section numbers */
 
 /** Symbol table entry types */
-#define STT_NOTYPE 0            /**< No type */
-#define STT_OBJECT 1            /**< Data or object */
-#define STT_FUNC 2              /**< Function */
-#define STT_SECTION 3           /**< Section */
-#define STT_FILE 4              /**< File name */
-#define STT_COMMON 5            /**< Common block */
-#define STT_LOOS 10             /**< Start of OS specific */
-#define STT_HIOS 12             /**< End of OS specific */
-#define STT_LOPROC 13           /**< Start of processor specific */
-#define STT_HIPROC 15           /**< End of processor specific */
+#define STT_NOTYPE  0  /**< No type */
+#define STT_OBJECT  1  /**< Data or object */
+#define STT_FUNC    2  /**< Function */
+#define STT_SECTION 3  /**< Section */
+#define STT_FILE    4  /**< File name */
+#define STT_COMMON  5  /**< Common block */
+#define STT_LOOS    10 /**< Start of OS specific */
+#define STT_HIOS    12 /**< End of OS specific */
+#define STT_LOPROC  13 /**< Start of processor specific */
+#define STT_HIPROC  15 /**< End of processor specific */
 
 /** Symbol table entry bindings */
-#define STB_LOCAL 0             /**< Local symbol */
-#define STB_GLOBAL 1            /**< Global symbol */
-#define STB_WEAK 2              /**< Weak symbol */
-#define STB_LOOS 10             /**< Start of OS specific */
-#define STB_HIOS 12             /**< End of OS specific */
-#define STB_LOPROC 13           /**< Start of processor specific */
-#define STB_HIPROC 15           /**< End of processor specific */
+#define STB_LOCAL  0  /**< Local symbol */
+#define STB_GLOBAL 1  /**< Global symbol */
+#define STB_WEAK   2  /**< Weak symbol */
+#define STB_LOOS   10 /**< Start of OS specific */
+#define STB_HIOS   12 /**< End of OS specific */
+#define STB_LOPROC 13 /**< Start of processor specific */
+#define STB_HIPROC 15 /**< End of processor specific */
 
 /**
  * @brief Symbol binding from 32bit st_info
@@ -303,7 +302,6 @@ struct elf64_sym {
  * @param i Value of st_info
  */
 #define ELF64_ST_BIND(i) ((i) >> 4)
-
 
 /**
  * @brief Symbol type from 32bit st_info
@@ -404,28 +402,28 @@ struct elf64_rela {
  * @brief Program header(32-bit)
  */
 struct elf32_phdr {
-	elf32_word p_type;      /**< Type of segment */
-	elf32_off p_offset;     /**< Offset in file */
-	elf32_addr p_vaddr;     /**< Virtual address in memory */
-	elf32_addr p_paddr;     /**< Physical address (usually reserved) */
-	elf32_word p_filesz;    /**< Size of segment in file */
-	elf32_word p_memsz;     /**< Size of segment in memory */
-	elf32_word p_flags;     /**< Segment flags */
-	elf32_word p_align;     /**< Alignment of segment */
+	elf32_word p_type;   /**< Type of segment */
+	elf32_off p_offset;  /**< Offset in file */
+	elf32_addr p_vaddr;  /**< Virtual address in memory */
+	elf32_addr p_paddr;  /**< Physical address (usually reserved) */
+	elf32_word p_filesz; /**< Size of segment in file */
+	elf32_word p_memsz;  /**< Size of segment in memory */
+	elf32_word p_flags;  /**< Segment flags */
+	elf32_word p_align;  /**< Alignment of segment */
 };
 
 /**
  * @brief Program header(64-bit)
  */
 struct elf64_phdr {
-	elf64_word p_type;      /**< Type of segment */
-	elf64_off p_offset;     /**< Offset in file */
-	elf64_addr p_vaddr;     /**< Virtual address in memory */
-	elf64_addr p_paddr;     /**< Physical address (usually reserved) */
-	elf64_xword p_filesz;   /**< Size of segment in file */
-	elf64_xword p_memsz;    /**< Size of segment in memory */
-	elf64_word p_flags;     /**< Segment flags */
-	elf64_xword p_align;    /**< Alignment of segment */
+	elf64_word p_type;    /**< Type of segment */
+	elf64_off p_offset;   /**< Offset in file */
+	elf64_addr p_vaddr;   /**< Virtual address in memory */
+	elf64_addr p_paddr;   /**< Physical address (usually reserved) */
+	elf64_xword p_filesz; /**< Size of segment in file */
+	elf64_xword p_memsz;  /**< Size of segment in memory */
+	elf64_word p_flags;   /**< Segment flags */
+	elf64_xword p_align;  /**< Alignment of segment */
 };
 
 /**
@@ -437,10 +435,10 @@ struct elf64_phdr {
  * @brief Dynamic section entry(32-bit)
  */
 struct elf32_dyn {
-	elf32_sword d_tag;              /**< Entry tag */
+	elf32_sword d_tag; /**< Entry tag */
 	union {
-		elf32_word d_val;       /**< Integer value */
-		elf32_addr d_ptr;       /**< Address value */
+		elf32_word d_val; /**< Integer value */
+		elf32_addr d_ptr; /**< Address value */
 	} d_un;
 };
 
@@ -448,10 +446,10 @@ struct elf32_dyn {
  * @brief Dynamic section entry(64-bit)
  */
 struct elf64_dyn {
-	elf64_sxword d_tag;             /**< Entry tag */
+	elf64_sxword d_tag; /**< Entry tag */
 	union {
-		elf64_xword d_val;      /**< Integer value */
-		elf64_addr d_ptr;       /**< Address value */
+		elf64_xword d_val; /**< Integer value */
+		elf64_addr d_ptr;  /**< Address value */
 	} d_un;
 };
 /** @endcond */
@@ -476,9 +474,9 @@ typedef struct elf64_rela elf_rela_t;
 /** Machine sized symbol struct */
 typedef struct elf64_sym elf_sym_t;
 /** Machine sized macro alias for obtaining a relocation symbol */
-#define ELF_R_SYM ELF64_R_SYM
+#define ELF_R_SYM   ELF64_R_SYM
 /** Machine sized macro alias for obtaining a relocation type */
-#define ELF_R_TYPE ELF64_R_TYPE
+#define ELF_R_TYPE  ELF64_R_TYPE
 /** Machine sized macro alias for obtaining a symbol bind */
 #define ELF_ST_BIND ELF64_ST_BIND
 /** Machine sized macro alias for obtaining a symbol type */
@@ -503,9 +501,9 @@ typedef struct elf32_rela elf_rela_t;
 /** Machine sized symbol struct */
 typedef struct elf32_sym elf_sym_t;
 /** Machine sized macro alias for obtaining a relocation symbol */
-#define ELF_R_SYM ELF32_R_SYM
+#define ELF_R_SYM   ELF32_R_SYM
 /** Machine sized macro alias for obtaining a relocation type */
-#define ELF_R_TYPE ELF32_R_TYPE
+#define ELF_R_TYPE  ELF32_R_TYPE
 /** Machine sized macro alias for obtaining a symbol bind */
 #define ELF_ST_BIND ELF32_ST_BIND
 /** Machine sized macro alias for obtaining a symbol type */

@@ -45,10 +45,8 @@ extern "C" {
  *
  * @return 0 on success, -EINVAL if the region is invalid
  */
-static inline int llext_get_region_info(const struct llext_loader *ldr,
-					const struct llext *ext,
-					enum llext_mem region,
-					const elf_shdr_t **hdr,
+static inline int llext_get_region_info(const struct llext_loader *ldr, const struct llext *ext,
+					enum llext_mem region, const elf_shdr_t **hdr,
 					const void **addr, size_t *size)
 {
 	if ((unsigned int)region >= LLEXT_MEM_COUNT) {
@@ -84,7 +82,7 @@ static inline int llext_get_region_info(const struct llext_loader *ldr,
  *         -ENOTSUP if section data is not available.
  */
 int llext_section_shndx(const struct llext_loader *ldr, const struct llext *ext,
-			    const char *section_name);
+			const char *section_name);
 
 /**
  * @brief Get information about a section for the specified extension.
@@ -105,12 +103,9 @@ int llext_section_shndx(const struct llext_loader *ldr, const struct llext *ext,
  * @return 0 on success, -EINVAL if the section index is invalid,
  *         -ENOTSUP if section data is not available.
  */
-static inline int llext_get_section_info(const struct llext_loader *ldr,
-					 const struct llext *ext,
-					 unsigned int shndx,
-					 const elf_shdr_t **hdr,
-					 enum llext_mem *region,
-					 size_t *offset)
+static inline int llext_get_section_info(const struct llext_loader *ldr, const struct llext *ext,
+					 unsigned int shndx, const elf_shdr_t **hdr,
+					 enum llext_mem *region, size_t *offset)
 {
 	if (shndx < 0 || shndx >= ext->sect_cnt) {
 		return -EINVAL;

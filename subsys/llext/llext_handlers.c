@@ -24,8 +24,7 @@ ssize_t z_impl_llext_get_fn_table(struct llext *ext, bool is_init, void *buf, si
 	}
 
 	if (is_init) {
-		table_size = ext->mem_size[LLEXT_MEM_PREINIT] +
-			     ext->mem_size[LLEXT_MEM_INIT];
+		table_size = ext->mem_size[LLEXT_MEM_PREINIT] + ext->mem_size[LLEXT_MEM_INIT];
 	} else {
 		table_size = ext->mem_size[LLEXT_MEM_FINI];
 	}
@@ -39,14 +38,13 @@ ssize_t z_impl_llext_get_fn_table(struct llext *ext, bool is_init, void *buf, si
 
 		if (is_init) {
 			/* setup functions from preinit_array and init_array */
-			memcpy(byte_ptr,
-			       ext->mem[LLEXT_MEM_PREINIT], ext->mem_size[LLEXT_MEM_PREINIT]);
+			memcpy(byte_ptr, ext->mem[LLEXT_MEM_PREINIT],
+			       ext->mem_size[LLEXT_MEM_PREINIT]);
 			memcpy(byte_ptr + ext->mem_size[LLEXT_MEM_PREINIT],
 			       ext->mem[LLEXT_MEM_INIT], ext->mem_size[LLEXT_MEM_INIT]);
 		} else {
 			/* cleanup functions from fini_array */
-			memcpy(byte_ptr,
-			       ext->mem[LLEXT_MEM_FINI], ext->mem_size[LLEXT_MEM_FINI]);
+			memcpy(byte_ptr, ext->mem[LLEXT_MEM_FINI], ext->mem_size[LLEXT_MEM_FINI]);
 		}
 
 		/* Sanity check: pointers in this table must map inside the
@@ -61,8 +59,7 @@ ssize_t z_impl_llext_get_fn_table(struct llext *ext, bool is_init, void *buf, si
 		for (int i = 0; i < table_size / sizeof(void *); i++) {
 			if (fn_ptrs[i] < text_start || fn_ptrs[i] >= text_end) {
 				LOG_ERR("%s function %i (%p) outside text region",
-					is_init ? "bringup" : "teardown",
-					i, fn_ptrs[i]);
+					is_init ? "bringup" : "teardown", i, fn_ptrs[i]);
 				return -EFAULT;
 			}
 		}
@@ -78,8 +75,8 @@ static int ext_is_valid(struct llext *ext, void *arg)
 	return ext == arg;
 }
 
-static inline ssize_t z_vrfy_llext_get_fn_table(struct llext *ext, bool is_init,
-						void *buf, size_t size)
+static inline ssize_t z_vrfy_llext_get_fn_table(struct llext *ext, bool is_init, void *buf,
+						size_t size)
 {
 	/* Test that ext matches a loaded extension */
 	K_OOPS(llext_iterate(ext_is_valid, ext) == 0);

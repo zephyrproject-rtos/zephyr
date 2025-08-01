@@ -22,13 +22,9 @@ LOG_MODULE_REGISTER(llext_shell, CONFIG_LLEXT_LOG_LEVEL);
 	SHELL_HELP("Load an elf file encoded in hex directly from the shell input.",               \
 		   "<ext_name> <ext_hex_string>")
 
-#define LLEXT_UNLOAD_HELP                                                                          \
-	SHELL_HELP("Unload an extension by name.",                                                 \
-		   "<ext_name>")
+#define LLEXT_UNLOAD_HELP SHELL_HELP("Unload an extension by name.", "<ext_name>")
 
-#define LLEXT_LIST_SYMBOLS_HELP                                                                    \
-	SHELL_HELP("List extension symbols.",                                                      \
-		   "<ext_name>")
+#define LLEXT_LIST_SYMBOLS_HELP SHELL_HELP("List extension symbols.", "<ext_name>")
 
 #define LLEXT_CALL_FN_HELP                                                                         \
 	SHELL_HELP("Call extension function with prototype void fn(void).",                        \
@@ -36,8 +32,8 @@ LOG_MODULE_REGISTER(llext_shell, CONFIG_LLEXT_LOG_LEVEL);
 
 #ifdef CONFIG_FILE_SYSTEM
 #define LLEXT_LOAD_FS_HELP                                                                         \
-	SHELL_HELP("Load an elf file directly from filesystem.",                                   \
-		   "<ext_name> <ext_llext_file_name>")
+	SHELL_HELP("Load an elf file directly from filesystem.", "<ext_name> "                     \
+								 "<ext_llext_file_name>")
 
 #endif /* CONFIG_FILE_SYSTEM */
 
@@ -53,8 +49,7 @@ static int cmd_llext_list_symbols(const struct shell *sh, size_t argc, char *arg
 	shell_print(sh, "Extension: %s symbols", m->name);
 	shell_print(sh, "| Symbol           | Address    |");
 	for (elf_word i = 0; i < m->exp_tab.sym_cnt; i++) {
-		shell_print(sh, "| %16s | %p |", m->exp_tab.syms[i].name,
-			    m->exp_tab.syms[i].addr);
+		shell_print(sh, "| %16s | %p |", m->exp_tab.syms[i].name, m->exp_tab.syms[i].addr);
 	}
 
 	return 0;
@@ -136,8 +131,8 @@ static int cmd_llext_load_hex(const struct shell *sh, size_t argc, char *argv[])
 		return -EINVAL;
 	}
 
-	if (hex_len > CONFIG_LLEXT_SHELL_MAX_SIZE*2) {
-		shell_print(sh, "Extension %d bytes too large to load, max %d bytes\n", hex_len/2,
+	if (hex_len > CONFIG_LLEXT_SHELL_MAX_SIZE * 2) {
+		shell_print(sh, "Extension %d bytes too large to load, max %d bytes\n", hex_len / 2,
 			    CONFIG_LLEXT_SHELL_MAX_SIZE);
 		return -ENOMEM;
 	}
@@ -146,8 +141,8 @@ static int cmd_llext_load_hex(const struct shell *sh, size_t argc, char *argv[])
 	struct llext_buf_loader buf_loader = LLEXT_BUF_LOADER(llext_buf, llext_buf_len);
 	struct llext_loader *ldr = &buf_loader.loader;
 
-	LOG_DBG("hex2bin hex len %d, llext buf sz %d, read %d",
-		hex_len, CONFIG_LLEXT_SHELL_MAX_SIZE, llext_buf_len);
+	LOG_DBG("hex2bin hex len %d, llext buf sz %d, read %d", hex_len,
+		CONFIG_LLEXT_SHELL_MAX_SIZE, llext_buf_len);
 	LOG_HEXDUMP_DBG(llext_buf, 4, "4 byte MAGIC");
 
 	struct llext_load_param ldr_parm = LLEXT_LOAD_PARAM_DEFAULT;

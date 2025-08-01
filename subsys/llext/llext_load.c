@@ -164,16 +164,9 @@ static int llext_find_tables(struct llext_loader *ldr, struct llext *ext)
 
 		LOG_DBG("section %d at %#zx: name %d, type %d, flags %#zx, "
 			"addr %#zx, align %#zx, size %zd, link %d, info %d",
-			i,
-			(size_t)shdr->sh_offset,
-			shdr->sh_name,
-			shdr->sh_type,
-			(size_t)shdr->sh_flags,
-			(size_t)shdr->sh_addr,
-			(size_t)shdr->sh_addralign,
-			(size_t)shdr->sh_size,
-			shdr->sh_link,
-			shdr->sh_info);
+			i, (size_t)shdr->sh_offset, shdr->sh_name, shdr->sh_type,
+			(size_t)shdr->sh_flags, (size_t)shdr->sh_addr, (size_t)shdr->sh_addralign,
+			(size_t)shdr->sh_size, shdr->sh_link, shdr->sh_info);
 
 		if (shdr->sh_type == SHT_SYMTAB && ldr->hdr.e_type == ET_REL) {
 			LOG_DBG("symtab at %d", i);
@@ -200,8 +193,7 @@ static int llext_find_tables(struct llext_loader *ldr, struct llext *ext)
 		}
 	}
 
-	if (!ldr->sects[LLEXT_MEM_SHSTRTAB].sh_type ||
-	    !ldr->sects[LLEXT_MEM_STRTAB].sh_type ||
+	if (!ldr->sects[LLEXT_MEM_SHSTRTAB].sh_type || !ldr->sects[LLEXT_MEM_STRTAB].sh_type ||
 	    !ldr->sects[LLEXT_MEM_SYMTAB].sh_type) {
 		LOG_ERR("Some sections are missing or present multiple times!");
 		return -ENOEXEC;
@@ -215,8 +207,8 @@ static int llext_find_tables(struct llext_loader *ldr, struct llext *ext)
 #define REGION_TOP(reg, field) (size_t)(reg->field + reg->sh_size - 1)
 
 /* Check if two regions x and y have any overlap on a given field. Any shared value counts. */
-#define REGIONS_OVERLAP_ON(x, y, f) \
-	((REGION_BOT(x, f) <= REGION_BOT(y, f) && REGION_TOP(x, f) >= REGION_BOT(y, f)) || \
+#define REGIONS_OVERLAP_ON(x, y, f)                                                                \
+	((REGION_BOT(x, f) <= REGION_BOT(y, f) && REGION_TOP(x, f) >= REGION_BOT(y, f)) ||         \
 	 (REGION_BOT(y, f) <= REGION_BOT(x, f) && REGION_TOP(y, f) >= REGION_BOT(x, f)))
 
 /*
@@ -239,8 +231,8 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 		name = llext_section_name(ldr, ext, shdr);
 
 		if (ldr->sect_map[i].mem_idx != LLEXT_MEM_COUNT) {
-			LOG_DBG("section %d name %s already mapped to region %d",
-				i, name, ldr->sect_map[i].mem_idx);
+			LOG_DBG("section %d name %s already mapped to region %d", i, name,
+				ldr->sect_map[i].mem_idx);
 			continue;
 		}
 
@@ -279,8 +271,7 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 			mem_idx = LLEXT_MEM_EXPORT;
 		}
 
-		if (mem_idx == LLEXT_MEM_COUNT ||
-		    !(shdr->sh_flags & SHF_ALLOC) ||
+		if (mem_idx == LLEXT_MEM_COUNT || !(shdr->sh_flags & SHF_ALLOC) ||
 		    shdr->sh_size == 0) {
 			LOG_DBG("section %d name %s skipped", i, name);
 			continue;
@@ -327,8 +318,8 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 		if ((shdr->sh_flags & SHF_BASIC_TYPE_MASK) !=
 		    (region->sh_flags & SHF_BASIC_TYPE_MASK)) {
 			LOG_ERR("Unsupported section flags %#x / %#x for %s (region %d)",
-				(uint32_t)shdr->sh_flags, (uint32_t)region->sh_flags,
-				name, mem_idx);
+				(uint32_t)shdr->sh_flags, (uint32_t)region->sh_flags, name,
+				mem_idx);
 			return -ENOEXEC;
 		}
 
@@ -362,8 +353,8 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 			 */
 			if (shdr->sh_addr - region->sh_addr !=
 			    shdr->sh_offset - region->sh_offset) {
-				LOG_ERR("Incompatible section addresses for %s (region %d)",
-					name, mem_idx);
+				LOG_ERR("Incompatible section addresses for %s (region %d)", name,
+					mem_idx);
 				return -ENOEXEC;
 			}
 		}
@@ -430,12 +421,12 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 	 * different llext_mem type are interleaved in the ELF file or in VMAs.
 	 */
 	for (i = 0; i < LLEXT_MEM_COUNT; i++) {
-		for (j = i+1; j < LLEXT_MEM_COUNT; j++) {
+		for (j = i + 1; j < LLEXT_MEM_COUNT; j++) {
 			elf_shdr_t *x = ldr->sects + i;
 			elf_shdr_t *y = ldr->sects + j;
 
-			if (x->sh_type == SHT_NULL || x->sh_size == 0 ||
-			    y->sh_type == SHT_NULL || y->sh_size == 0) {
+			if (x->sh_type == SHT_NULL || x->sh_size == 0 || y->sh_type == SHT_NULL ||
+			    y->sh_size == 0) {
 				/* Skip empty regions */
 				continue;
 			}
@@ -458,8 +449,8 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 				continue;
 			}
 
-			if ((ldr->hdr.e_type == ET_DYN) &&
-			    (x->sh_flags & SHF_ALLOC) && (y->sh_flags & SHF_ALLOC)) {
+			if ((ldr->hdr.e_type == ET_DYN) && (x->sh_flags & SHF_ALLOC) &&
+			    (y->sh_flags & SHF_ALLOC)) {
 				/*
 				 * Test regions that have VMA ranges for overlaps
 				 */
@@ -484,8 +475,8 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 			if (REGIONS_OVERLAP_ON(x, y, sh_offset)) {
 				LOG_ERR("Region %d ELF file range (%#zx-%#zx) "
 					"overlaps with %d (%#zx-%#zx)",
-					i, REGION_BOT(x, sh_offset), REGION_TOP(x, sh_offset),
-					j, REGION_BOT(y, sh_offset), REGION_TOP(y, sh_offset));
+					i, REGION_BOT(x, sh_offset), REGION_TOP(x, sh_offset), j,
+					REGION_BOT(y, sh_offset), REGION_TOP(y, sh_offset));
 				return -ENOEXEC;
 			}
 		}
@@ -529,8 +520,7 @@ static int llext_count_export_syms(struct llext_loader *ldr, struct llext *ext)
 	LOG_DBG("symbol count %u", sym_cnt);
 
 	ext->sym_tab.sym_cnt = 0;
-	for (i = 0, pos = ldr->sects[LLEXT_MEM_SYMTAB].sh_offset;
-	     i < sym_cnt;
+	for (i = 0, pos = ldr->sects[LLEXT_MEM_SYMTAB].sh_offset; i < sym_cnt;
 	     i++, pos += ent_size) {
 		if (!i) {
 			/* A dummy entry */
@@ -554,12 +544,12 @@ static int llext_count_export_syms(struct llext_loader *ldr, struct llext *ext)
 		name = llext_symbol_name(ldr, ext, &sym);
 
 		if ((stt == STT_FUNC || stt == STT_OBJECT) && stb == STB_GLOBAL) {
-			LOG_DBG("function symbol %d, name %s, type tag %d, bind %d, sect %d",
-				i, name, stt, stb, sect);
+			LOG_DBG("function symbol %d, name %s, type tag %d, bind %d, sect %d", i,
+				name, stt, stb, sect);
 			ext->sym_tab.sym_cnt++;
 		} else {
-			LOG_DBG("unhandled symbol %d, name %s, type tag %d, bind %d, sect %d",
-				i, name, stt, stb, sect);
+			LOG_DBG("unhandled symbol %d, name %s, type tag %d, bind %d, sect %d", i,
+				name, stt, stb, sect);
 		}
 	}
 
@@ -594,8 +584,8 @@ static int llext_export_symbols(struct llext_loader *ldr, struct llext *ext,
 		sym = ext->sym_tab.syms;
 	} else {
 		/* Only use symbols in the .exported_sym section */
-		exp_tab->sym_cnt = ldr->sects[LLEXT_MEM_EXPORT].sh_size
-				   / sizeof(struct llext_symbol);
+		exp_tab->sym_cnt = ldr->sects[LLEXT_MEM_EXPORT].sh_size /
+				   sizeof(struct llext_symbol);
 		sym = ext->mem[LLEXT_MEM_EXPORT];
 	}
 
@@ -647,8 +637,7 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext,
 	int i, j, ret;
 	size_t pos;
 
-	for (i = 0, pos = ldr->sects[LLEXT_MEM_SYMTAB].sh_offset, j = 0;
-	     i < sym_cnt;
+	for (i = 0, pos = ldr->sects[LLEXT_MEM_SYMTAB].sh_offset, j = 0; i < sym_cnt;
 	     i++, pos += ent_size) {
 		if (!i) {
 			/* A dummy entry */
@@ -669,8 +658,8 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext,
 		uint32_t stb = ELF_ST_BIND(sym.st_info);
 		unsigned int shndx = sym.st_shndx;
 
-		if ((stt == STT_FUNC || stt == STT_OBJECT) &&
-		    stb == STB_GLOBAL && shndx != SHN_UNDEF) {
+		if ((stt == STT_FUNC || stt == STT_OBJECT) && stb == STB_GLOBAL &&
+		    shndx != SHN_UNDEF) {
 			const char *name = llext_symbol_name(ldr, ext, &sym);
 
 			__ASSERT(j <= sym_tab->sym_cnt, "Miscalculated symbol number %u\n", j);
@@ -683,7 +672,8 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext,
 			if (ldr_parm->pre_located &&
 			    (!ldr_parm->section_detached || !ldr_parm->section_detached(shdr))) {
 				sym_tab->syms[j].addr = (uint8_t *)sym.st_value +
-					(ldr->hdr.e_type == ET_REL ? section_addr : 0);
+							(ldr->hdr.e_type == ET_REL ? section_addr
+										   : 0);
 			} else {
 				const void *base;
 
@@ -703,11 +693,12 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext,
 				}
 
 				sym_tab->syms[j].addr = (uint8_t *)base + sym.st_value -
-					(ldr->hdr.e_type == ET_REL ? 0 : section_addr);
+							(ldr->hdr.e_type == ET_REL ? 0
+										   : section_addr);
 			}
 
-			LOG_DBG("function symbol %d name %s addr %p",
-				j, name, sym_tab->syms[j].addr);
+			LOG_DBG("function symbol %d name %s addr %p", j, name,
+				sym_tab->syms[j].addr);
 			j++;
 		}
 	}
