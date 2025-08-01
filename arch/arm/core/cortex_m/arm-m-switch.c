@@ -157,6 +157,18 @@ uint32_t arm_m_switch_control;
 } while (false)
 /* clang-format on */
 
+/* The arch/cpu/toolchain are horrifyingly inconsistent with how the
+ * thumb bit is treated in runtime addresses.  The PC target for a B
+ * instruction must have it set.  The PC pushed from an exception has
+ * is unset.  The linker puts functions at even addresses, obviously,
+ * but the symbol address exposed at runtime has it set.  Exception
+ * return ignores it.  Use this to avoid insanity.
+ */
+static bool pc_match(uint32_t pc, void *addr)
+{
+	return ((pc ^ (uint32_t) addr) & ~1) == 0;
+}
+
 /* Reports if the passed return address is a valid EXC_RETURN (high
  * four bits set) that will restore to the PSP running in thread mode
  * (low four bits == 0xd).  That is an interrupted Zephyr thread
@@ -175,6 +187,72 @@ static bool is_thread_return(uint32_t lr)
 static bool fpu_state_pushed(uint32_t lr)
 {
 	return IS_ENABLED(CONFIG_CPU_HAS_FPU) ? !(lr & 0x10) : false;
+}
+
+/* ICI/IT instruction fault workarounds
+ *
+ * ARM Cortex M has what amounts to a design bug.  The architecture
+ * inherits several unpipelined/microcoded "ICI/IT" instruction forms
+ * that take many cycles to complete (LDM/STM and the Thumb "IT"
+ * conditional frame are the big ones).  But out of a desire to
+ * minimize interrupt latency, the CPU is allowed to halt and resume
+ * these instructions mid-flight while they are partially completed.
+ * The relevant bits of state are stored in the EPSR fields of the
+ * xPSR register (see ARMv7-M manual B1.4.2).  But (and this is the
+ * design bug) those bits CANNOT BE WRITTEN BY SOFTWARE.  They can
+ * only be modified by exception return.
+ *
+ * This means that if a Zephyr thread takes an interrupt
+ * mid-ICI/IT-instruction, then switches to another thread on exit,
+ * and then that thread is resumed by a cooperative switch and not an
+ * interrupt, the instruction will lose the state and restart from
+ * scratch.  For LDM/STM that's generally idempotent for memory (but
+ * not MMIO!), but for IT that means that the restart will re-execute
+ * arbitrary instructions that may not be idempotent (e.g. "addeq r0,
+ * r0, #1" can't be done twice, because you would add two to r0!)
+ *
+ * The fix is to check for this condition (which is very rare) on
+ * interrupt exit when we are switching, and if we discover we've
+ * interrupted such an instruction we swap the return address with a
+ * trampoline that uses a UDF instruction to immediately trap to the
+ * undefined instruction handler, which then recognizes the fixup
+ * address as special and immediately returns back into the thread
+ * with the correct EPSR value and resume PC (which have been stashed
+ * in the thread struct).  The overhead for the normal case is just a
+ * few cycles for the test.
+ */
+__asm__(".globl arm_m_iciit_stub;"
+	"arm_m_iciit_stub:;"
+	"  udf 0;");
+
+/* Called out of interrupt entry to test for an interrupted instruction */
+static void iciit_fixup(struct k_thread *th, struct hw_frame_base *hw, uint32_t xpsr)
+{
+#ifdef CONFIG_MULTITHREADING
+	if ((xpsr & 0x0600fc00) != 0) {
+		/* Stash original return address, replace with hook */
+		th->arch.iciit_pc = hw->pc;
+		th->arch.iciit_apsr = hw->apsr;
+		hw->pc = (uint32_t) arm_m_iciit_stub;
+	}
+#endif
+}
+
+/* Called out of fault handler from the UDF after an arch_switch() */
+bool arm_m_iciit_check(uint32_t msp, uint32_t psp, uint32_t lr)
+{
+	struct hw_frame_base *f = (void *)psp;
+
+	/* Look for undefined instruction faults from our stub */
+	if (pc_match(f->pc, arm_m_iciit_stub)) {
+		if (is_thread_return(lr)) {
+			f->pc = _current->arch.iciit_pc;
+			f->apsr = _current->arch.iciit_apsr;
+			_current->arch.iciit_pc = 0;
+			return true;
+		}
+	}
+	return false;
 }
 
 #ifdef CONFIG_BUILTIN_STACK_GUARD
@@ -258,6 +336,11 @@ static void *arm_m_cpu_to_switch(struct k_thread *th, void *sp, bool fpu)
 				 "bic %0, %0, #4;"
 				 "msr control, %0;" ::"r"(dummy));
 	}
+
+	/* Detects interrupted ICI/IT instructions and rigs up thread
+	 * to trap the next time it runs
+	 */
+	iciit_fixup(th, base, base->apsr);
 
 	if (IS_ENABLED(CONFIG_FPU) && fpu) {
 		fpscr = CONTAINER_OF(sp, struct hw_frame_fpu, base)->fpscr;
@@ -394,6 +477,17 @@ bool arm_m_must_switch(uint32_t lr)
 	last = arm_m_cpu_to_switch(last_thread, last, fpu);
 	next = arm_m_switch_to_cpu(next);
 	__asm__ volatile("msr psp, %0" ::"r"(next));
+
+	/* Undo a UDF fixup applied at interrupt time, no need: we're
+	 * restoring EPSR via interrupt.
+	 */
+	if (_current->arch.iciit_pc) {
+		struct hw_frame_base *n = next;
+
+		n->pc = _current->arch.iciit_pc;
+		n->apsr = _current->arch.iciit_apsr;
+		_current->arch.iciit_pc = 0;
+	}
 
 #if !defined(CONFIG_MULTITHREADING)
 	arm_m_last_switch_handle = last;
