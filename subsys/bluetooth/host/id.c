@@ -981,10 +981,12 @@ void find_rl_conflict(struct bt_keys *resident, void *user_data)
 			bt_irk_eq(&conflict->candidate->irk, &resident->irk));
 
 	if (addr_conflict || irk_conflict) {
-		LOG_DBG("Resident : addr %s and IRK %s", bt_addr_le_str(&resident->addr),
-			bt_hex(resident->irk.val, sizeof(resident->irk.val)));
-		LOG_DBG("Candidate: addr %s and IRK %s", bt_addr_le_str(&conflict->candidate->addr),
-			bt_hex(conflict->candidate->irk.val, sizeof(conflict->candidate->irk.val)));
+		LOG_DBG("Resident : addr %s and IRK %s, id: %d", bt_addr_le_str(&resident->addr),
+			bt_hex(resident->irk.val, sizeof(resident->irk.val)), resident->id);
+		LOG_DBG("Candidate: addr %s and IRK %s, id: %d",
+			bt_addr_le_str(&conflict->candidate->addr),
+			bt_hex(conflict->candidate->irk.val, sizeof(conflict->candidate->irk.val)),
+			conflict->candidate->id);
 
 		conflict->found = resident;
 	}
