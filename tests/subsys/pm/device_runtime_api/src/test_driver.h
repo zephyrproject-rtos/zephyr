@@ -45,4 +45,13 @@ bool test_driver_pm_ongoing(const struct device *dev);
  */
 size_t test_driver_pm_count(const struct device *dev);
 
+/**
+ * @brief Configure the return value of pm actions.
+ *
+ * @param dev Device instance.
+ *
+ * @return The number of state changes the device made.
+ */
+void test_driver_pm_retval(const struct device *dev, int ret);
+
 #endif /* TESTS_SUBSYS_PM_DEVICE_RUNTIME_TEST_DRIVER_H_ */
