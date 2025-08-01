@@ -9,6 +9,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/cache.h>
 
 #include <ethosu_driver.h>
 
@@ -100,3 +101,19 @@ int ethosu_semaphore_give(void *sem)
 	k_sem_give((struct k_sem *)sem);
 	return 0;
 }
+
+#if defined(CONFIG_ETHOS_U_DCACHE)
+void ethosu_flush_dcache(uint32_t *p, size_t bytes)
+{
+	if (p && bytes) {
+		sys_cache_data_flush_range((void *)p, bytes);
+	}
+}
+
+void ethosu_invalidate_dcache(uint32_t *p, size_t bytes)
+{
+	if (p && bytes) {
+		sys_cache_data_invd_range((void *)p, bytes);
+	}
+}
+#endif
