@@ -612,12 +612,22 @@ void sys_trace_thread_info(struct k_thread *thread);
 #define sys_port_trace_k_pipe_get_blocking(pipe, timeout)
 #define sys_port_trace_k_pipe_get_exit(pipe, timeout, ret)
 
-#define sys_port_trace_k_event_init(event)
-#define sys_port_trace_k_event_post_enter(event, events, events_mask)
-#define sys_port_trace_k_event_post_exit(event, events, events_mask)
-#define sys_port_trace_k_event_wait_enter(event, events, options, timeout)
+#define sys_port_trace_k_event_init(event) \
+	SEGGER_SYSVIEW_RecordU32(TID_EVENT_INIT, (uint32_t)(uintptr_t)event)
+
+#define sys_port_trace_k_event_post_enter(event, events, events_mask) \
+	SEGGER_SYSVIEW_RecordU32x3(TID_EVENT_POST, (uint32_t)(uintptr_t)event, (uint32_t)events, (uint32_t)events_mask)
+
+#define sys_port_trace_k_event_post_exit(event, events, events_mask) \
+	SEGGER_SYSVIEW_RecordEndCall(TID_EVENT_POST)
+
+#define sys_port_trace_k_event_wait_enter(event, events, options, timeout) \
+	SEGGER_SYSVIEW_RecordU32x4(TID_EVENT_WAIT, (uint32_t)(uintptr_t)event, (uint32_t)events, (uint32_t)options, (uint32_t)timeout.ticks)
+
 #define sys_port_trace_k_event_wait_blocking(event, events, options, timeout)
-#define sys_port_trace_k_event_wait_exit(event, events, ret)
+
+#define sys_port_trace_k_event_wait_exit(event, events, ret) \
+	SEGGER_SYSVIEW_RecordEndCall(TID_EVENT_WAIT)
 
 #define sys_port_trace_k_heap_init(heap)                                                           \
 	SEGGER_SYSVIEW_RecordU32(TID_HEAP_INIT, (uint32_t)(uintptr_t)heap)
