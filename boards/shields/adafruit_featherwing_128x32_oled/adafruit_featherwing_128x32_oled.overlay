@@ -30,7 +30,7 @@
 		};
 
 		buttonC: button_C {
-			gpios = <&feather_header 14 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;	/* D5 */
+			gpios = <&feather_header 14 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; /* D5 */
 			label = "Button C";
 			zephyr,code = <INPUT_KEY_C>;
 		};

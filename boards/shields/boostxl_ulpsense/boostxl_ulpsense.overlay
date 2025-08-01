@@ -18,5 +18,4 @@
 		spi-max-frequency = <8000000>;
 		int1-gpios = <&boosterpack_header 36 0>;
 	};
-
 };
