@@ -343,10 +343,10 @@ void sys_trace_thread_info(struct k_thread *thread);
 #define sys_port_trace_k_condvar_broadcast_exit(condvar, ret)                                      \
 	SEGGER_SYSVIEW_RecordEndCallU32(TID_CONDVAR_BROADCAST, (uint32_t)ret)
 
-#define sys_port_trace_k_condvar_wait_enter(condvar)                                               \
-	SEGGER_SYSVIEW_RecordU32(TID_CONDVAR_WAIT, (uint32_t)(uintptr_t)condvar)
+#define sys_port_trace_k_condvar_wait_enter(condvar, timeout)                                               \
+	SEGGER_SYSVIEW_RecordU32x2(TID_CONDVAR_WAIT, (uint32_t)(uintptr_t)condvar, (uint32_t)timeout.ticks)
 
-#define sys_port_trace_k_condvar_wait_exit(condvar, ret)                                           \
+#define sys_port_trace_k_condvar_wait_exit(condvar, timeout, ret)                                           \
 	SEGGER_SYSVIEW_RecordEndCallU32(TID_CONDVAR_WAIT, (uint32_t)ret)
 
 #define sys_port_trace_k_queue_init(queue)                                                         \
@@ -505,22 +505,50 @@ void sys_trace_thread_info(struct k_thread *thread);
 #define sys_port_trace_k_stack_pop_blocking(stack, timeout)
 #define sys_port_trace_k_stack_pop_exit(stack, timeout, ret)
 
-#define sys_port_trace_k_msgq_init(msgq)
-#define sys_port_trace_k_msgq_alloc_init_enter(msgq)
-#define sys_port_trace_k_msgq_alloc_init_exit(msgq, ret)
-#define sys_port_trace_k_msgq_cleanup_enter(msgq)
-#define sys_port_trace_k_msgq_cleanup_exit(msgq, ret)
-#define sys_port_trace_k_msgq_put_enter(msgq, timeout)
+#define sys_port_trace_k_msgq_init(msgq) \
+	SEGGER_SYSVIEW_RecordU32(TID_MSGQ_INIT, (uint32_t)(uintptr_t)msgq)
+
+#define sys_port_trace_k_msgq_alloc_init_enter(msgq) \
+	SEGGER_SYSVIEW_RecordU32(TID_MSGQ_INIT, (uint32_t)(uintptr_t)msgq)
+
+#define sys_port_trace_k_msgq_alloc_init_exit(msgq, ret) \
+	SEGGER_SYSVIEW_RecordEndCall(TID_MSGQ_INIT)
+
+#define sys_port_trace_k_msgq_cleanup_enter(msgq) \
+	SEGGER_SYSVIEW_RecordU32(TID_MSGQ_CLEANUP, (uint32_t)(uintptr_t)msgq)
+
+#define sys_port_trace_k_msgq_cleanup_exit(msgq, ret) \
+	SEGGER_SYSVIEW_RecordEndCall(TID_MSGQ_CLEANUP)
+
+#define sys_port_trace_k_msgq_put_enter(msgq, timeout) \
+	SEGGER_SYSVIEW_RecordU32x2(TID_MSGQ_PUT, (uint32_t)(uintptr_t)msgq, (uint32_t)timeout.ticks)
+
 #define sys_port_trace_k_msgq_put_blocking(msgq, timeout)
-#define sys_port_trace_k_msgq_put_exit(msgq, timeout, ret)
-#define sys_port_trace_k_msgq_put_front_enter(msgq, timeout)
+
+#define sys_port_trace_k_msgq_put_exit(msgq, timeout, ret) \
+	SEGGER_SYSVIEW_RecordEndCall(TID_MSGQ_PUT)
+
+#define sys_port_trace_k_msgq_put_front_enter(msgq, timeout) \
+	SEGGER_SYSVIEW_RecordU32x2(TID_MSGQ_PUT_FRONT, (uint32_t)(uintptr_t)msgq, (uint32_t)timeout.ticks)
+
 #define sys_port_trace_k_msgq_put_front_blocking(msgq, timeout)
-#define sys_port_trace_k_msgq_put_front_exit(msgq, timeout, ret)
-#define sys_port_trace_k_msgq_get_enter(msgq, timeout)
+
+#define sys_port_trace_k_msgq_put_front_exit(msgq, timeout, ret) \
+	SEGGER_SYSVIEW_RecordEndCall(TID_MSGQ_PUT_FRONT)
+
+#define sys_port_trace_k_msgq_get_enter(msgq, timeout) \
+	SEGGER_SYSVIEW_RecordU32x2(TID_MSGQ_GET, (uint32_t)(uintptr_t)msgq, (uint32_t)timeout.ticks)
+
 #define sys_port_trace_k_msgq_get_blocking(msgq, timeout)
-#define sys_port_trace_k_msgq_get_exit(msgq, timeout, ret)
-#define sys_port_trace_k_msgq_peek(msgq, ret)
-#define sys_port_trace_k_msgq_purge(msgq)
+
+#define sys_port_trace_k_msgq_get_exit(msgq, timeout, ret) \
+	SEGGER_SYSVIEW_RecordEndCall(TID_MSGQ_GET)
+
+#define sys_port_trace_k_msgq_peek(msgq, ret) \
+	SEGGER_SYSVIEW_RecordU32(TID_MSGQ_PEEK, (uint32_t)(uintptr_t)msgq)
+
+#define sys_port_trace_k_msgq_purge(msgq) \
+	SEGGER_SYSVIEW_RecordU32(TID_MSGQ_PURGE, (uint32_t)(uintptr_t)msgq)
 
 #define sys_port_trace_k_mbox_init(mbox)
 #define sys_port_trace_k_mbox_message_put_enter(mbox, timeout)
