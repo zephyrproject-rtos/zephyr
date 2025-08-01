@@ -23,6 +23,15 @@ endchoice
 config I2S_HAS_PLL_SETTING
 	default n
 
+if SECOND_CORE_MCUX
+
+# RT Boot header is only needed on primary core
+config NXP_IMXRT_BOOT_HEADER
+	default y
+	depends on !BOOTLOADER_MCUBOOT
+
+endif
+
 endif # SOC_MIMXRT798S_CM33_CPU0
 
 
