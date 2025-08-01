@@ -19,7 +19,6 @@
 		zephyr,sram = &dtim;
 		zephyr,flash = &flash0;
 	};
-
 };
 
 &gpio0 {
