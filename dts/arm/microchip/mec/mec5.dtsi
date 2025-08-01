@@ -610,27 +610,6 @@
 			status = "disabled";
 		};
 
-		rcid0: rcid@40001400 {
-			reg = <0x40001400 0x80>;
-			interrupts = <80 3>;
-			girqs = <17 10>;
-			status = "disabled";
-		};
-
-		rcid1: rcid@40001480 {
-			reg = <0x40001480 0x80>;
-			interrupts = <81 3>;
-			girqs = <17 11>;
-			status = "disabled";
-		};
-
-		rcid2: rcid@40001500 {
-			reg = <0x40001500 0x80>;
-			interrupts = <82 3>;
-			girqs = <17 12>;
-			status = "disabled";
-		};
-
 		bbled0: bbled@4000b800 {
 			reg = <0x4000b800 0x100>;
 			interrupts = <83 3>;
@@ -649,21 +628,6 @@
 			reg = <0x4000ba00 0x100>;
 			interrupts = <85 3>;
 			girqs = <17 15>;
-			status = "disabled";
-		};
-
-		bbled3: bbled@4000bb00 {
-			reg = <0x4000bb00 0x100>;
-			interrupts = <86 3>;
-			girqs = <17 16>;
-			status = "disabled";
-		};
-
-		bclink0: bclink@4000cd00 {
-			reg = <0x4000cd00 0x20>;
-			interrupts = <96 3>, <97 3>;
-			interrupt-names = "bcm_err", "bcm_done";
-			girqs = <18 7>, <18 6>;
 			status = "disabled";
 		};
 
