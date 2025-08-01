@@ -257,6 +257,19 @@ typedef void (*charger_status_notifier_t)(enum charger_status status);
 typedef void (*charger_online_notifier_t)(enum charger_online online);
 
 /**
+ * @brief Generic charger property value for driver specific properties
+ *
+ * The value is represented as having an integer and a fractional part,
+ * and can be obtained using the formula val1 + val2 * 10^(-6)
+ */
+struct charger_value {
+	/** Integer part of the value. */
+	int32_t val1;
+	/** Fractional part of the value (in one-millionth parts). */
+	int32_t val2;
+};
+
+/**
  * @brief container for a charger_property value
  *
  */
@@ -297,6 +310,8 @@ union charger_propval {
 	charger_status_notifier_t status_notification;
 	/** CHARGER_PROP_ONLINE_NOTIFICATION */
 	charger_online_notifier_t online_notification;
+	/** Generic value for driver specific custom properties */
+	struct charger_value custom_prop;
 };
 
 /**
