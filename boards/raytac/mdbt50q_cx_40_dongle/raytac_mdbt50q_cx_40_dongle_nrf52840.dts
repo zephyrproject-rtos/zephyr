@@ -62,7 +62,7 @@
 		led0 = &led0_d1;
 		led1 = &led1_d2;
 		led0-green = &led0_d1;
-		led1-red   = &led1_d2;
+		led1-red = &led1_d2;
 		pwm-led0 = &d1_pwm_led;
 		pwm-led1 = &d2_pwm_led;
 		red-pwm-led = &d2_pwm_led;
