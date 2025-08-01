@@ -255,9 +255,9 @@ static int get_string(struct lwm2m_input_context *in, uint8_t *value,
 
 	coap_packet_get_payload(in->in_cpkt, &in_len);
 
-	if (in_len > buflen) {
-		LOG_ERR("Buffer too small to accommodate string, truncating");
-		in_len = buflen - 1;
+	if (in_len + 1 > buflen) {
+		LOG_ERR("Buffer too small to accommodate string");
+		return -ENOMEM;
 	}
 
 	if (buf_read(value, in_len, CPKT_BUF_READ(in->in_cpkt),
