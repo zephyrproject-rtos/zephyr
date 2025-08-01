@@ -897,14 +897,6 @@ def parse_arguments(
         logger.error("--device-serial-pty is not supported on Windows OS")
         sys.exit(1)
 
-    if options.west_runner and options.west_flash is None:
-        logger.error("west-runner requires west-flash to be enabled")
-        sys.exit(1)
-
-    if options.west_flash and not options.device_testing:
-        logger.error("west-flash requires device-testing to be enabled")
-        sys.exit(1)
-
     if not options.testsuite_root:
         # if we specify a test scenario which is part of a suite directly, do
         # not set testsuite root to default, just point to the test directory
