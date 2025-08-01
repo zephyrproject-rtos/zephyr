@@ -572,18 +572,39 @@ void sys_trace_thread_info(struct k_thread *thread);
 #define sys_port_trace_k_msgq_purge(msgq) \
 	SEGGER_SYSVIEW_RecordU32(TID_MSGQ_PURGE, (uint32_t)(uintptr_t)msgq)
 
-#define sys_port_trace_k_mbox_init(mbox)
-#define sys_port_trace_k_mbox_message_put_enter(mbox, timeout)
+#define sys_port_trace_k_mbox_init(mbox) \
+	SEGGER_SYSVIEW_RecordU32(TID_MBOX_INIT, (uint32_t)(uintptr_t)mbox)
+
+#define sys_port_trace_k_mbox_message_put_enter(mbox, timeout) \
+	SEGGER_SYSVIEW_RecordU32x2(TID_MBOX_PUT, (uint32_t)(uintptr_t)mbox, (uint32_t)timeout.ticks)
+
 #define sys_port_trace_k_mbox_message_put_blocking(mbox, timeout)
-#define sys_port_trace_k_mbox_message_put_exit(mbox, timeout, ret)
-#define sys_port_trace_k_mbox_put_enter(mbox, timeout)
-#define sys_port_trace_k_mbox_put_exit(mbox, timeout, ret)
-#define sys_port_trace_k_mbox_async_put_enter(mbox, sem)
-#define sys_port_trace_k_mbox_async_put_exit(mbox, sem)
-#define sys_port_trace_k_mbox_get_enter(mbox, timeout)
+
+#define sys_port_trace_k_mbox_message_put_exit(mbox, timeout, ret) \
+	SEGGER_SYSVIEW_RecordEndCall(TID_MBOX_PUT)
+
+#define sys_port_trace_k_mbox_put_enter(mbox, timeout) \
+	SEGGER_SYSVIEW_RecordU32x2(TID_MBOX_PUT, (uint32_t)(uintptr_t)mbox, (uint32_t)timeout.ticks)
+
+#define sys_port_trace_k_mbox_put_exit(mbox, timeout, ret) \
+	SEGGER_SYSVIEW_RecordEndCall(TID_MBOX_PUT)
+
+#define sys_port_trace_k_mbox_async_put_enter(mbox, sem) \
+	SEGGER_SYSVIEW_RecordU32x2(TID_MBOX_ASYNC_PUT, (uint32_t)(uintptr_t)mbox, (uint32_t)(uintptr_t)sem)
+
+#define sys_port_trace_k_mbox_async_put_exit(mbox, sem) \
+	SEGGER_SYSVIEW_RecordEndCall(TID_MBOX_ASYNC_PUT)
+
+#define sys_port_trace_k_mbox_get_enter(mbox, timeout) \
+	SEGGER_SYSVIEW_RecordU32x2(TID_MBOX_GET, (uint32_t)(uintptr_t)mbox, (uint32_t)timeout.ticks)
+
 #define sys_port_trace_k_mbox_get_blocking(mbox, timeout)
-#define sys_port_trace_k_mbox_get_exit(mbox, timeout, ret)
-#define sys_port_trace_k_mbox_data_get(rx_msg)
+
+#define sys_port_trace_k_mbox_get_exit(mbox, timeout, ret) \
+	SEGGER_SYSVIEW_RecordEndCall(TID_MBOX_GET)
+
+#define sys_port_trace_k_mbox_data_get(rx_msg) \
+	SEGGER_SYSVIEW_RecordU32(TID_MBOX_DATA_GET, (uint32_t)(uintptr_t)rx_msg)
 
 #define sys_port_trace_k_pipe_init(pipe, buffer, size)
 #define sys_port_trace_k_pipe_reset_enter(pipe)
