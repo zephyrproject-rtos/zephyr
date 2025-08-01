@@ -646,7 +646,6 @@ solderparty	Solder Party AB
 solidrun	SolidRun
 solomon	Solomon Systech Limited
 sony	Sony Corporation
-spacecubics	Space Cubics, LLC
 spansion	Spansion Inc.
 sparkfun	SparkFun Electronics
 sprd	Spreadtrum Communications Inc.
