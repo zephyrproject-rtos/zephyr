@@ -23,17 +23,6 @@ config HAS_MCUX_CACHE
 	help
 	  Set if the L1 or L2 cache is present in the SoC.
 
-config HAS_MCUX_FLEXSPI
-	bool
-	help
-	  Set if the flexible SPI (FlexSPI) module is present in the SoC.
-
-config HAS_MCUX_SEMC
-	bool
-	help
-	  Set if the smart external memory controller (SEMC) module is present
-	  in the SoC.
-
 config HAS_MCUX_SIM
 	bool
 	help
