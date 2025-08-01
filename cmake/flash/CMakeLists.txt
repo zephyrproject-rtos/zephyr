@@ -188,6 +188,7 @@ foreach(target flash debug debugserver attach rtt)
 
   if(WEST)
     add_custom_target(${target}
+      cmake -E echo "WARNING: CMake ${target} target is deprecated, call west directly instead"
       # This script will print an error message and fail if <target> has added
       # dependencies. This is done using dedicated CMake script, as
       # `cmake -E {true|false}` is not available until CMake 3.16.
