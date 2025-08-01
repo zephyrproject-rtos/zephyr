@@ -643,10 +643,11 @@ static int get_string(struct lwm2m_input_context *in, uint8_t *buf, size_t bufle
 		return -EINVAL;
 	}
 
-	len = MIN(buflen-1, fd->current->record_union.union_vs.len);
-	if (len > 0) {
-		memcpy(buf, fd->current->record_union.union_vs.value, len);
+	len = fd->current->record_union.union_vs.len;
+	if (len >= buflen) {
+		return -ENOMEM;
 	}
+	memcpy(buf, fd->current->record_union.union_vs.value, len);
 	buf[len] = '\0';
 
 	fd->current = NULL;

@@ -1144,6 +1144,69 @@ ZTEST(net_content_senml_cbor, test_get_string)
 		      "Invalid packet offset");
 }
 
+ZTEST(net_content_senml_cbor, test_get_string_utf8)
+{
+	int ret;
+	struct test_payload_buffer payload = {
+		.data = {
+			(0x04 << 5) | 1,
+			(0x05 << 5) | 3,
+			(0x01 << 5) | 1,
+			(0x03 << 5) | 9,
+			'/', '6', '5', '5', '3', '5', '/', '0', '/',
+			(0x00 << 5) | 0,
+			(0x03 << 5) | 1,
+			'4',
+			(0x00 << 5) | 3,
+			(0x03 << 5) | 15,
+			0xf0, 0x9f, 0x91, 0xa8, 0xf0, 0x9f, 0x91, 0xa9, 0xf0, 0x9f, 0xa4, 0xa1,
+			0xe2, 0x9c, 0x8b,
+		},
+		.len = 33
+	};
+	static const char expected_value[] = "👨👩🤡✋";
+
+	test_msg.path.res_id = TEST_RES_STRING;
+
+	test_payload_set(payload);
+
+	ret = do_write_op_senml_cbor(&test_msg);
+	zassert_true(ret >= 0, "Error reported");
+	zassert_mem_equal(test_string, expected_value, strlen(expected_value),
+			  "Invalid value parsed %s", test_string);
+	zassert_equal(test_msg.in.offset, payload.len + 1,
+		      "Invalid packet offset");
+}
+
+ZTEST(net_content_senml_cbor, test_get_string_utf8_truncate)
+{
+	int ret;
+	struct test_payload_buffer payload = {
+		.data = {
+			(0x04 << 5) | 1,
+			(0x05 << 5) | 3,
+			(0x01 << 5) | 1,
+			(0x03 << 5) | 9,
+			'/', '6', '5', '5', '3', '5', '/', '0', '/',
+			(0x00 << 5) | 0,
+			(0x03 << 5) | 1,
+			'4',
+			(0x00 << 5) | 3,
+			(0x03 << 5) | 18,
+			0xf0, 0x9f, 0x91, 0xa8, 0xf0, 0x9f, 0x91, 0xa9, 0xf0, 0x9f, 0xa4, 0xa1,
+			0xe2, 0x9c, 0x8b, 0xe2, 0x9c, 0x8b,
+		},
+		.len = 36
+	};
+	test_msg.path.res_id = TEST_RES_STRING;
+
+	memset(test_string, 0, sizeof(test_string));
+	test_payload_set(payload);
+
+	ret = do_write_op_senml_cbor(&test_msg);
+	zassert_equal(ret, -ENOMEM, "Invalid error code returned %d", ret);
+}
+
 ZTEST(net_content_senml_cbor_nodata, test_get_string_nodata)
 {
 	int ret;
@@ -1364,10 +1427,10 @@ ZTEST(net_content_senml_cbor, test_get_objlnk)
 				(0x03 << 5) | 1,
 				'7',
 				(0x00 << 5) | 2,
-				(0x03 << 5) | (sizeof("0:0")),
-				'0', ':', '0', '\0'
+				(0x03 << 5) | (sizeof("0:0") - 1),
+				'0', ':', '0'
 			},
-			.len = 22
+			.len = 21
 		},
 		{
 			.data = {
@@ -1380,10 +1443,10 @@ ZTEST(net_content_senml_cbor, test_get_objlnk)
 				(0x03 << 5) | 1,
 				'7',
 				(0x00 << 5) | 3,
-				(0x03 << 5) | (sizeof("1:2")),
-				'1', ':', '2', '\0'
+				(0x03 << 5) | (sizeof("1:2") - 1),
+				'1', ':', '2'
 			},
-			.len = 22
+			.len = 21
 		},
 		{
 			.data = {
@@ -1396,11 +1459,11 @@ ZTEST(net_content_senml_cbor, test_get_objlnk)
 				(0x03 << 5) | 1,
 				'7',
 				(0x00 << 5) | 3,
-				(0x03 << 5) | (sizeof("65535:65535")),
+				(0x03 << 5) | (sizeof("65535:65535") - 1),
 				'6', '5', '5', '3', '5', ':',
-				'6', '5', '5', '3', '5', '\0'
+				'6', '5', '5', '3', '5'
 			},
-			.len = 30
+			.len = 29
 		},
 	};
 	struct lwm2m_objlnk expected_value[] = {
@@ -1413,7 +1476,7 @@ ZTEST(net_content_senml_cbor, test_get_objlnk)
 		test_payload_set(payload[i]);
 
 		ret = do_write_op_senml_cbor(&test_msg);
-		zassert_true(ret >= 0, "Error reported");
+		zassert_true(ret >= 0, "Error reported %d", ret);
 		zassert_mem_equal(&test_objlnk, &expected_value[i],
 				  sizeof(test_objlnk), "Invalid value parsed");
 		zassert_equal(test_msg.in.offset, payload[i].len + 1,
