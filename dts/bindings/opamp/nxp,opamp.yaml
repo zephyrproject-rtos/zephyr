@@ -1,0 +1,44 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+include:
+  - opamp-controller.yaml
+  - pinctrl-device.yaml
+
+compatible: "nxp,opamp"
+
+description: |
+  NXP Operational Amplifier (opamp)
+
+properties:
+  non-inverting-reference-source:
+    type: string
+    enum:
+      - "Input0"
+      - "Input1"
+      - "Input2"
+      - "Input3"
+    default: "Input1"
+    description: |
+      Selects non-inverting path reference voltage source.
+
+  mode:
+    type: string
+    enum:
+      - "low_noise"
+      - "high_speed"
+    default: "low_noise"
+    description: |
+      Selects opamp mode.
+
+  enable-measure-reference:
+    type: boolean
+    description: |
+      Specifies whether the measure positive gain resistor ladder
+      reference voltage switch is on or off for ADC channel.
+
+  enable-measure-output:
+    type: boolean
+    description: |
+      Specifies whether the measure negative gain resistor ladder
+      voltage switch is on or off for ADC channel.

@@ -1,0 +1,19 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Operational Amplifier (opamp)
+
+include:
+  - base.yaml
+
+properties:
+  functional-mode:
+    type: string
+    enum:
+      - "pga"
+      - "inverting"
+      - "non_inverting"
+      - "follower"
+    description: |
+      Selects opamp functional mode.
