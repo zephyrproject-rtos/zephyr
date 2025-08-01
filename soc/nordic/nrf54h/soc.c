@@ -22,9 +22,13 @@
 #include <soc/nrfx_coredep.h>
 #include <soc_lrcconf.h>
 #include <dmm.h>
+#include <uicr/uicr.h>
 
 #if defined(CONFIG_SOC_NRF54H20_CPURAD_ENABLE)
 #include <nrf_ironside/cpuconf.h>
+#endif
+#if defined(CONFIG_SOC_NRF54H20_TDD_ENABLE)
+#include <nrf_ironside/tdd.h>
 #endif
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
@@ -171,10 +175,26 @@ void soc_early_init_hook(void)
 	}
 }
 
-#if defined(CONFIG_SOC_NRF54H20_CPURAD_ENABLE)
+#if defined(CONFIG_SOC_LATE_INIT_HOOK)
+
 void soc_late_init_hook(void)
 {
-	int err;
+#if defined(CONFIG_SOC_NRF54H20_TDD_ENABLE)
+	int err_tdd;
+
+	err_tdd = ironside_se_tdd_configure(IRONSIDE_SE_TDD_CONFIG_ON_DEFAULT);
+	__ASSERT(err_tdd == 0, "err_tdd was %d", err_tdd);
+
+	UICR_GPIO_PIN_CNF_CTRLSEL_SET(NRF_P7, 3, GPIO_PIN_CNF_CTRLSEL_TND);
+	UICR_GPIO_PIN_CNF_CTRLSEL_SET(NRF_P7, 4, GPIO_PIN_CNF_CTRLSEL_TND);
+	UICR_GPIO_PIN_CNF_CTRLSEL_SET(NRF_P7, 5, GPIO_PIN_CNF_CTRLSEL_TND);
+	UICR_GPIO_PIN_CNF_CTRLSEL_SET(NRF_P7, 6, GPIO_PIN_CNF_CTRLSEL_TND);
+	UICR_GPIO_PIN_CNF_CTRLSEL_SET(NRF_P7, 7, GPIO_PIN_CNF_CTRLSEL_TND);
+
+#endif
+
+#if defined(CONFIG_SOC_NRF54H20_CPURAD_ENABLE)
+	int err_cpuconf;
 
 	/* The msg will be used for communication prior to IPC
 	 * communication being set up. But at this moment no such
@@ -213,8 +233,10 @@ void soc_late_init_hook(void)
 	/* Don't wait as this is not yet supported. */
 	bool cpu_wait = false;
 
-	err = ironside_cpuconf(NRF_PROCESSOR_RADIOCORE, radiocore_address, cpu_wait, msg, msg_size);
-	__ASSERT(err == 0, "err was %d", err);
+	err_cpuconf = ironside_cpuconf(NRF_PROCESSOR_RADIOCORE, radiocore_address, cpu_wait, msg,
+				       msg_size);
+	__ASSERT(err_cpuconf == 0, "err_cpuconf was %d", err_cpuconf);
+#endif
 }
 #endif
 

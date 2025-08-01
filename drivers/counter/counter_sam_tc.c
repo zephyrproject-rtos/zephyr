@@ -356,6 +356,7 @@ static DEVICE_API(counter, counter_sam_driver_api) = {
 
 #define COUNTER_SAM_TC_CMR(n)	\
 		 (TC_CMR_TCCLKS(DT_INST_PROP_OR(n, clk, 0)) \
+		| TC_CMR_WAVEFORM_EEVT_XC0 \
 		| TC_CMR_WAVEFORM_WAVSEL_UP_RC \
 		| TC_CMR_WAVE)
 

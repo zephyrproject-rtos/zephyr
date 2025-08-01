@@ -1501,8 +1501,11 @@ void bt_conn_unref(struct bt_conn *conn)
 
 	old = atomic_dec(&conn->ref);
 	/* Prevent from accessing connection object */
-	conn = NULL;
 	deallocated = (atomic_get(&old) == 1);
+	IF_ENABLED(CONFIG_BT_CONN_TX,
+		   (__ASSERT(!(deallocated && k_work_is_pending(&conn->tx_complete_work)),
+			     "tx_complete_work is pending when conn is deallocated")));
+	conn = NULL;
 
 	LOG_DBG("handle %u ref %ld -> %ld", conn_handle, old, (old - 1));
 
@@ -3307,6 +3310,53 @@ int bt_conn_le_subrate_request(struct bt_conn *conn,
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SUBRATE_REQUEST, buf, NULL);
 }
 #endif /* CONFIG_BT_SUBRATING */
+
+#if defined(CONFIG_BT_LE_EXTENDED_FEAT_SET)
+void notify_read_all_remote_feat_complete(struct bt_conn *conn,
+					  struct bt_conn_le_read_all_remote_feat_complete *params)
+{
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+		if (callback->read_all_remote_feat_complete != NULL) {
+			callback->read_all_remote_feat_complete(conn, params);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb)
+	{
+		if (cb->read_all_remote_feat_complete != NULL) {
+			cb->read_all_remote_feat_complete(conn, params);
+		}
+	}
+}
+
+int bt_conn_le_read_all_remote_features(struct bt_conn *conn, uint8_t pages_requested)
+{
+	struct bt_hci_cp_le_read_all_remote_features *cp;
+	struct net_buf *buf;
+
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
+		return -EINVAL;
+	}
+
+	if (pages_requested > BT_HCI_LE_FEATURE_PAGE_MAX) {
+		return -EINVAL;
+	}
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(conn->handle);
+	cp->pages_requested = pages_requested;
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_ALL_REMOTE_FEATURES, buf, NULL);
+}
+#endif /* CONFIG_BT_LE_EXTENDED_FEAT_SET */
 
 #if defined(CONFIG_BT_CHANNEL_SOUNDING)
 void notify_remote_cs_capabilities(struct bt_conn *conn, uint8_t status,

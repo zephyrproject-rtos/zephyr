@@ -9,11 +9,19 @@
 #include <common/freq.h>
 #include <dt-bindings/mfd/mfd_mchp_sam_flexcom.h>
 #include <dt-bindings/pinctrl/sama7g5-pinctrl.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/gpio/microchip-sam-gpio.h>
+#include <dt-bindings/input/input-event-codes.h>
 #include <microchip/sam/sama7g5.dtsi>
 
 / {
 	model = "SAMA7G54-EK board";
 	compatible = "microchip,sama7g5ek", "microchip,sama7g5", "microchip,sama7";
+
+	aliases {
+		led0 = &led_green;
+		sw0 = &button_user;
+	};
 
 	chosen {
 		zephyr,sram = &ddram;
@@ -34,6 +42,37 @@
 	ddram: ddram@60000000 {
 		compatible = "ddram";
 		reg = <0x60000000 DT_SIZE_M(512)>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		status = "okay";
+
+		led_red: red {
+			label = "red";
+			gpios = <&piob 8 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_green: green {
+			label = "green";
+			gpios = <&pioa 13 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_blue: blue {
+			label = "blue";
+			gpios = <&piod 20 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		status = "okay";
+
+		button_user: button_0 {
+			label = "PB_USER";
+			gpios = <&pioa 12 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
 	};
 };
 

@@ -6,7 +6,7 @@
 
 #include <freq.h>
 
-&mcspi0 {
+&main_mcspi0 {
 	slow@0 {
 		compatible = "test-spi-loopback-slow";
 		reg = <0>;

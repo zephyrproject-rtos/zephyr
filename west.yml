@@ -188,7 +188,7 @@ manifest:
       groups:
         - hal
     - name: hal_infineon
-      revision: 1030915af885cffc8cedc49a62291dd279a9e81e
+      revision: f78b8f8202db0115dc41aedda6f77dee8985254f
       path: modules/hal/infineon
       groups:
         - hal
@@ -213,7 +213,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 1255d8b0da1e836d71531187e8b6c1100172672a
+      revision: 19c05e1835027a8576cd5ec6fc34381ca239153d
       path: modules/hal/nxp
       groups:
         - hal
@@ -229,7 +229,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 0769fe1520f6c14e6301188588da758a609f181d
+      revision: 1ac809b55389ba3ce09dd1fbf2477a034134d112
       groups:
         - hal
     - name: hal_rpi_pico
@@ -284,7 +284,7 @@ manifest:
         - hal
     - name: hostap
       path: modules/lib/hostap
-      revision: 7fda615fcccd577af7339b4198400c39ac14f8f8
+      revision: c55683ce514953277be5566fceb38c4c2485f1e1
     - name: liblc3
       revision: 48bbd3eacd36e99a57317a0a4867002e0b09e183
       path: modules/lib/liblc3
@@ -331,7 +331,7 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: 6e5961223f81aa2707c555db138819a5c1b7942c
+      revision: 8b6001d6bdd9e2c8bb858fdb26f696f6d5f73db5
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
       revision: 787eea1a3c8dd13c86214e204a919e6f9bcebf91

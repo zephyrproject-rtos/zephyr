@@ -5,11 +5,10 @@
  */
 
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/pm/device_runtime.h>
+#include <zephyr/sys/atomic.h>
 
 #include <hal/nrf_gpio.h>
-#ifdef CONFIG_SOC_NRF54H20_GPD
-#include <nrf/gpd.h>
-#endif
 
 BUILD_ASSERT(((NRF_PULL_NONE == NRF_GPIO_PIN_NOPULL) &&
 	      (NRF_PULL_DOWN == NRF_GPIO_PIN_PULLDOWN) &&
@@ -112,13 +111,99 @@ static const nrf_gpio_pin_drive_t drive_modes[NRF_DRIVE_COUNT] = {
 #define NRF_PSEL_TDM(reg, line) ((NRF_TDM_Type *)reg)->PSEL.line
 #endif
 
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_gpio_pad_group)
+#define GPIO_HAS_PAD_GROUP 1
+#else
+#define GPIO_HAS_PAD_GROUP 0
+#endif
+
+#if GPIO_HAS_PAD_GROUP
+
+#define GPIO_PAD_GROUP_GET_OR_NULL(idx, _) \
+	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(_CONCAT(gpio_pad_group, idx)))
+
+static const struct device *const pad_groups[] = {
+	LISTIFY(10, GPIO_PAD_GROUP_GET_OR_NULL, (,))
+};
+
+static atomic_t pad_group_masks[ARRAY_SIZE(pad_groups)];
+
+static int pad_group_request_pin(uint16_t pin_number)
+{
+	uint8_t port_number = NRF_GET_PORT(pin_number);
+	uint8_t port_pin_number = NRF_GET_PORT_PIN(pin_number);
+	const struct device *pad_group = pad_groups[port_number];
+	atomic_t *pad_group_mask = &pad_group_masks[port_number];
+
+	if (atomic_test_and_set_bit(pad_group_mask, port_pin_number)) {
+		/* already requested */
+		return 0;
+	}
+
+	if (pm_device_runtime_get(pad_group)) {
+		atomic_clear_bit(pad_group_mask, port_pin_number);
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static int pad_group_release_pin(uint16_t pin_number)
+{
+	uint8_t port_number = NRF_GET_PORT(pin_number);
+	uint8_t port_pin_number = NRF_GET_PORT_PIN(pin_number);
+	const struct device *pad_group = pad_groups[port_number];
+	atomic_t *pad_group_mask = &pad_group_masks[port_number];
+
+	if (!atomic_test_and_clear_bit(pad_group_mask, port_pin_number)) {
+		/* already released */
+		return 0;
+	}
+
+	if (pm_device_runtime_put(pad_group)) {
+		atomic_set_bit(pad_group_mask, port_pin_number);
+		return -EIO;
+	}
+
+	return 0;
+}
+
+#else
+
+static int pad_group_request_pin(uint16_t pin_number)
+{
+	ARG_UNUSED(pin_number);
+	return 0;
+}
+
+static int pad_group_release_pin(uint16_t pin_number)
+{
+	ARG_UNUSED(pin_number);
+	return 0;
+}
+
+#endif
+
+#if NRF_GPIO_HAS_CLOCKPIN
+
+static void port_pin_clock_set(uint16_t pin_number, bool enable)
+{
+	nrf_gpio_pin_clock_set(pin_number, enable);
+}
+
+#else
+
+static void port_pin_clock_set(uint16_t pin_number, bool enable)
+{
+	ARG_UNUSED(pin_number);
+	ARG_UNUSED(enable);
+}
+
+#endif
+
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			   uintptr_t reg)
 {
-#ifdef CONFIG_SOC_NRF54H20_GPD
-	bool gpd_requested = false;
-#endif
-
 	for (uint8_t i = 0U; i < pin_cnt; i++) {
 		nrf_gpio_pin_drive_t drive;
 		uint8_t drive_idx = NRF_GET_DRIVE(pins[i]);
@@ -472,25 +557,8 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 		if (psel != PSEL_DISCONNECTED) {
 			uint32_t pin = psel;
 
-#ifdef CONFIG_SOC_NRF54H20_GPD
-			if (NRF_GET_GPD_FAST_ACTIVE1(pins[i]) == 1U) {
-				if (!gpd_requested) {
-					int ret;
-
-					ret = nrf_gpd_request(NRF_GPD_SLOW_ACTIVE);
-					if (ret < 0) {
-						return ret;
-					}
-					gpd_requested = true;
-				}
-			}
-
-			/*
-			 * Pad power domain now on, retain no longer needed
-			 * as pad config will be persists as pad is powered.
-			 */
-			nrf_gpio_pin_retain_disable(pin);
-#endif /* CONFIG_SOC_NRF54H20_GPD */
+			/* enable pin */
+			pad_group_request_pin(pin);
 
 			if (write != NO_WRITE) {
 				nrf_gpio_pin_write(pin, write);
@@ -502,35 +570,20 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 				input = NRF_GPIO_PIN_INPUT_DISCONNECT;
 			}
 
+			/* configure pin */
 			nrf_gpio_cfg(pin, dir, input, NRF_GET_PULL(pins[i]),
 				     drive, NRF_GPIO_PIN_NOSENSE);
-#if NRF_GPIO_HAS_CLOCKPIN
-			nrf_gpio_pin_clock_set(pin, NRF_GET_CLOCKPIN_ENABLE(pins[i]));
-#endif
-#ifdef CONFIG_SOC_NRF54H20_GPD
+
 			if (NRF_GET_LP(pins[i]) == NRF_LP_ENABLE) {
-				/*
-				 * Pad power domain may be turned off, and pad is not
-				 * actively used as pincnf is low-power. Enable retain
-				 * to ensure pad output and config persists if pad
-				 * power domain is suspended.
-				 */
-				nrf_gpio_pin_retain_enable(pin);
+				/* disable pin and pin clock */
+				pad_group_release_pin(pin);
+				port_pin_clock_set(pin, false);
+			} else {
+				/* configure pin clock */
+				port_pin_clock_set(pin, NRF_GET_CLOCKPIN_ENABLE(pins[i]));
 			}
-#endif /* CONFIG_SOC_NRF54H20_GPD */
 		}
 	}
-
-#ifdef CONFIG_SOC_NRF54H20_GPD
-	if (gpd_requested) {
-		int ret;
-
-		ret = nrf_gpd_release(NRF_GPD_SLOW_ACTIVE);
-		if (ret < 0) {
-			return ret;
-		}
-	}
-#endif
 
 	return 0;
 }

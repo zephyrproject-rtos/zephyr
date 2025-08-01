@@ -41,7 +41,6 @@ struct wifi_rrm_neighbor_report_t {
 
 struct wifi_roaming_params {
 	bool is_11r_used;
-	bool is_11k_enabled;
 	struct wifi_rrm_neighbor_report_t neighbor_rep;
 };
 
@@ -442,7 +441,6 @@ static int wifi_connect(uint64_t mgmt_request, struct net_if *iface,
 	}
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
-	memset(&roaming_params, 0x0, sizeof(roaming_params));
 	roaming_params.is_11r_used = params->ft_used;
 #endif
 
@@ -566,7 +564,7 @@ static int wifi_start_roaming(uint64_t mgmt_request, struct net_if *iface,
 		}
 
 		return wifi_mgmt_api->start_11r_roaming(dev);
-	} else if (roaming_params.is_11k_enabled) {
+	} else if (wifi_mgmt_api->bss_support_neighbor_rep(dev)) {
 		memset(&roaming_params.neighbor_rep, 0x0, sizeof(roaming_params.neighbor_rep));
 		if (wifi_mgmt_api->send_11k_neighbor_request == NULL) {
 			return -ENOTSUP;
@@ -890,12 +888,6 @@ static int wifi_11k_cfg(uint64_t mgmt_request, struct net_if *iface,
 	if (!net_if_is_admin_up(iface)) {
 		return -ENETDOWN;
 	}
-
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
-	if (params->oper == WIFI_MGMT_SET) {
-		roaming_params.is_11k_enabled = params->enable_11k;
-	}
-#endif
 
 	return wifi_mgmt_api->cfg_11k(dev, params);
 }
@@ -1356,6 +1348,35 @@ static int wifi_pmksa_flush(uint64_t mgmt_request, struct net_if *iface,
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_PMKSA_FLUSH, wifi_pmksa_flush);
+
+static int wifi_config_params(uint64_t mgmt_request, struct net_if *iface,
+				 void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+	struct wifi_config_params *params = data;
+
+	if (dev == NULL) {
+		return -ENODEV;
+	}
+
+	if (wifi_mgmt_api == NULL ||
+	    wifi_mgmt_api->config_params == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
+	if (!data || len != sizeof(*params)) {
+		return -EINVAL;
+	}
+
+	return wifi_mgmt_api->config_params(dev, params);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_CONFIG_PARAM, wifi_config_params);
 
 static int wifi_get_rts_threshold(uint64_t mgmt_request, struct net_if *iface,
 				  void *data, size_t len)

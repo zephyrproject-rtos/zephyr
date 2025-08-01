@@ -72,6 +72,11 @@ zephyr_library_sources_ifdef(
 )
 
 zephyr_library_sources_ifdef(
+  CONFIG_I3C_MAX32
+  i3c_max32.c
+)
+
+zephyr_library_sources_ifdef(
   CONFIG_I3C_TEST
   i3c_test.c
 )

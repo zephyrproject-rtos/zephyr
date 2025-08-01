@@ -12,7 +12,7 @@ Notes:
       without the html extension).
 """
 
-REDIRECTS = [
+REDIRECTS = (
     # zephyr-keep-sorted-start
     ('application/index', 'develop/application/index'),
     ('boards/arduino/uno_r4_minima/doc/index', 'boards/arduino/uno_r4/doc/index'),
@@ -304,6 +304,7 @@ REDIRECTS = [
     ('samples/sensor/max44009/README', 'samples/sensor/light_polling/README'),
     ('samples/sensor/wsen_hids/README', 'samples/sensor/sensor'),
     ('samples/sensor/wsen_itds/README', 'samples/sensor/sensor'),
+    ('samples/shields/npm1300_ek/doc/index', 'samples/shields/npm13xx_ek/doc/index'),
     ('samples/subsys/video/capture/README', 'samples/drivers/video/capture/README'),
     ('samples/subsys/video/tcpserversink/README', 'samples/drivers/video/tcpserversink/README'),
     ('samples/subsys/video/video', 'samples/drivers/video/video'),
@@ -311,4 +312,4 @@ REDIRECTS = [
     ('services/secure_storage', 'services/storage/secure_storage/index'),
     ('services/settings/index', 'services/storage/settings/index'),
     # zephyr-keep-sorted-stop
-]
+)

@@ -320,7 +320,7 @@ Once downloaded, the tag file can be used in a custom ``doxyfile.in`` as follows
 For additional information refer to `Doxygen External Documentation`_.
 
 
-.. _reStructuredText: http://sphinx-doc.org/rest.html
-.. _Sphinx: http://sphinx-doc.org/
+.. _reStructuredText: https://sphinx-doc.org/rest.html
+.. _Sphinx: https://sphinx-doc.org/
 .. _Windows Python Path: https://docs.python.org/3/using/windows.html#finding-the-python-executable
 .. _Doxygen External Documentation: https://www.doxygen.nl/manual/external.html

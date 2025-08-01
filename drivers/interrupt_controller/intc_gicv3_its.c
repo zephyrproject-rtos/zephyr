@@ -1,5 +1,6 @@
 /*
  * Copyright 2021 BayLibre, SAS
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +8,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(intc_gicv3_its, LOG_LEVEL_ERR);
 
+#include <zephyr/cache.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/interrupt_controller/gicv3_its.h>
@@ -38,6 +40,9 @@ struct its_cmd_block {
 
 #define ITS_CMD_QUEUE_SIZE              SIZE_64K
 #define ITS_CMD_QUEUE_NR_ENTRIES        (ITS_CMD_QUEUE_SIZE / sizeof(struct its_cmd_block))
+
+/* The level 1 entry size is a 64bit pointer */
+#define GITS_LVL1_ENTRY_SIZE (8UL)
 
 struct gicv3_its_data {
 	mm_reg_t base;
@@ -190,8 +195,7 @@ static int its_alloc_tables(struct gicv3_its_data *data)
 				lvl2_width = fls_z(page_size / entry_size) - 1;
 				device_ids -= lvl2_width + 1;
 
-				/* The level 1 entry size is a 64bit pointer */
-				entry_size = sizeof(uint64_t);
+				entry_size = GITS_LVL1_ENTRY_SIZE;
 
 				indirect = true;
 			}
@@ -229,12 +233,21 @@ static int its_alloc_tables(struct gicv3_its_data *data)
 		}
 
 		reg |= MASK_SET(page_cnt - 1, GITS_BASER_SIZE);
-		reg |= MASK_SET(GIC_BASER_SHARE_INNER, GITS_BASER_SHAREABILITY);
 		reg |= MASK_SET((uintptr_t)alloc_addr >> GITS_BASER_ADDR_SHIFT, GITS_BASER_ADDR);
 		reg |= MASK_SET(GIC_BASER_CACHE_INNERLIKE, GITS_BASER_OUTER_CACHE);
+#ifdef CONFIG_GIC_V3_ITS_DMA_NONCOHERENT
+		reg |= MASK_SET(GIC_BASER_SHARE_NO, GITS_BASER_SHAREABILITY);
+		reg |= MASK_SET(GIC_BASER_CACHE_NCACHEABLE, GITS_BASER_INNER_CACHE);
+#else
+		reg |= MASK_SET(GIC_BASER_SHARE_INNER, GITS_BASER_SHAREABILITY);
 		reg |= MASK_SET(GIC_BASER_CACHE_RAWAWB, GITS_BASER_INNER_CACHE);
+#endif
 		reg |= MASK_SET(indirect ? 1 : 0, GITS_BASER_INDIRECT);
 		reg |= MASK_SET(1, GITS_BASER_VALID);
+
+#ifdef CONFIG_GIC_V3_ITS_DMA_NONCOHERENT
+		arch_dcache_flush_and_invd_range(alloc_addr, page_size * page_cnt);
+#endif
 
 		sys_write64(reg, data->base + GITS_BASER(i));
 
@@ -300,6 +313,10 @@ static int its_post_command(struct gicv3_its_data *data, struct its_cmd_block *c
 	uint64_t wr_idx, rd_idx, idx;
 	unsigned int count = 1000000;   /* 1s! */
 
+#ifdef CONFIG_GIC_V3_ITS_DMA_NONCOHERENT
+	arch_dcache_flush_and_invd_range(cmd, sizeof(*cmd));
+#endif
+
 	wr_idx = (data->cmd_write - data->cmd_base) * sizeof(*cmd);
 	rd_idx = sys_read32(data->base + GITS_CREADR);
 
@@ -320,7 +337,11 @@ static int its_post_command(struct gicv3_its_data *data, struct its_cmd_block *c
 				rd_idx, idx, wr_idx);
 			return -ETIMEDOUT;
 		}
-		k_usleep(1);
+		if (k_is_pre_kernel()) {
+			k_busy_wait(1);
+		} else {
+			k_usleep(1);
+		}
 	}
 
 	return 0;
@@ -335,7 +356,7 @@ static int its_send_sync_cmd(struct gicv3_its_data *data, uintptr_t rd_addr)
 	}
 
 	cmd->raw_cmd[0] = MASK_SET(GITS_CMD_ID_SYNC, GITS_CMD_ID);
-	cmd->raw_cmd[2] = MASK_SET(rd_addr >> GITS_CMD_RDBASE_ALIGN, GITS_CMD_RDBASE);
+	cmd->raw_cmd[2] = MASK_SET(rd_addr, GITS_CMD_RDBASE);
 
 	return its_post_command(data, cmd);
 }
@@ -350,8 +371,7 @@ static int its_send_mapc_cmd(struct gicv3_its_data *data, uint32_t icid,
 	}
 
 	cmd->raw_cmd[0] = MASK_SET(GITS_CMD_ID_MAPC, GITS_CMD_ID);
-	cmd->raw_cmd[2] = MASK_SET(icid, GITS_CMD_ICID) |
-			  MASK_SET(rd_addr >> GITS_CMD_RDBASE_ALIGN, GITS_CMD_RDBASE) |
+	cmd->raw_cmd[2] = MASK_SET(icid, GITS_CMD_ICID) | MASK_SET(rd_addr, GITS_CMD_RDBASE) |
 			  MASK_SET(valid ? 1 : 0, GITS_CMD_VALID);
 
 	return its_post_command(data, cmd);
@@ -426,7 +446,6 @@ static int its_send_invall_cmd(struct gicv3_its_data *data, uint32_t icid)
 static int gicv3_its_send_int(const struct device *dev, uint32_t device_id, uint32_t event_id)
 {
 	struct gicv3_its_data *data = dev->data;
-
 	/* TOFIX check device_id & event_id bounds */
 
 	return its_send_int_cmd(data, device_id, event_id);
@@ -436,7 +455,7 @@ static void its_setup_cmd_queue(const struct device *dev)
 {
 	const struct gicv3_its_config *cfg = dev->config;
 	struct gicv3_its_data *data = dev->data;
-	uint64_t reg = 0;
+	uint64_t reg = 0, tmp;
 
 	/* Zero out cmd table */
 	memset(cfg->cmd_queue, 0, cfg->cmd_queue_size);
@@ -450,6 +469,17 @@ static void its_setup_cmd_queue(const struct device *dev)
 
 	sys_write64(reg, data->base + GITS_CBASER);
 
+#ifdef CONFIG_GIC_V3_ITS_DMA_NONCOHERENT
+	reg &= ~(MASK(GITS_BASER_SHAREABILITY));
+#endif
+	/* Check whether hardware supports sharable */
+	tmp = sys_read64(data->base + GITS_CBASER);
+	if (!(tmp & MASK(GITS_BASER_SHAREABILITY))) {
+		reg &= ~(MASK(GITS_BASER_SHAREABILITY) | MASK(GITS_BASER_INNER_CACHE));
+		reg |= MASK_SET(GIC_BASER_CACHE_NCACHEABLE, GITS_CBASER_INNER_CACHE);
+		sys_write64(reg, data->base + GITS_CBASER);
+	}
+
 	data->cmd_base = (struct its_cmd_block *)cfg->cmd_queue;
 	data->cmd_write = data->cmd_base;
 
@@ -462,12 +492,18 @@ static uintptr_t gicv3_rdist_get_rdbase(const struct device *dev, unsigned int c
 {
 	struct gicv3_its_data *data = dev->data;
 	uint64_t typer = sys_read64(data->base + GITS_TYPER);
+	uintptr_t rdbase;
 
 	if (GITS_TYPER_PTA_GET(typer)) {
-		return gic_rdists[cpuid];
+		rdbase = gic_rdists[cpuid];
+		/* RDbase must be 64KB aligned, only return bits[51:16] of the address */
+		rdbase = rdbase >> GITS_CMD_RDBASE_ALIGN;
 	} else {
-		return GICR_TYPER_PROCESSOR_NUMBER_GET(sys_read64(gic_rdists[cpuid] + GICR_TYPER));
+		rdbase =
+			GICR_TYPER_PROCESSOR_NUMBER_GET(sys_read64(gic_rdists[cpuid] + GICR_TYPER));
 	}
+
+	return rdbase;
 }
 
 static int gicv3_its_map_intid(const struct device *dev, uint32_t device_id, uint32_t event_id,
@@ -529,8 +565,17 @@ static int gicv3_its_init_device_id(const struct device *dev, uint32_t device_id
 
 			memset(alloc_addr, 0, data->indirect_dev_page_size);
 
+#ifdef CONFIG_GIC_V3_ITS_DMA_NONCOHERENT
+			arch_dcache_flush_and_invd_range(alloc_addr, data->indirect_dev_page_size);
+#endif
+
 			data->indirect_dev_lvl1_table[offset] = (uintptr_t)alloc_addr |
 								MASK_SET(1, GITS_BASER_VALID);
+
+#ifdef CONFIG_GIC_V3_ITS_DMA_NONCOHERENT
+			arch_dcache_flush_and_invd_range(data->indirect_dev_lvl1_table + offset,
+							 GITS_LVL1_ENTRY_SIZE);
+#endif
 
 			barrier_dsync_fence_full();
 		}
@@ -547,6 +592,10 @@ static int gicv3_its_init_device_id(const struct device *dev, uint32_t device_id
 	if (!itt) {
 		return -ENOMEM;
 	}
+	memset(itt, 0, alloc_size);
+#ifdef CONFIG_GIC_V3_ITS_DMA_NONCOHERENT
+	arch_dcache_flush_and_invd_range(itt, alloc_size);
+#endif
 
 	/* size is log2(ites) - 1, equivalent to (fls(ites) - 1) - 1 */
 	ret = its_send_mapd_cmd(data, device_id, fls_z(nr_ites) - 2, (uintptr_t)itt, true);

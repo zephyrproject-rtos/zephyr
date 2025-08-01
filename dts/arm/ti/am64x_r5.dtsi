@@ -8,8 +8,8 @@
 #include <arm/armv7-r.dtsi>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/interrupt-controller/ti-vim.h>
-#include "am64x_main.dtsi"
-#include "am64x_mcu.dtsi"
+#include <ti/am64x_main.dtsi>
+#include <ti/am64x_mcu.dtsi>
 
 / {
 	#address-cells = <1>;
@@ -58,123 +58,173 @@
 	};
 };
 
+&dmsc {
+	ti,host-id = <36>;
+	mboxes = <&secure_proxy_main 2>, <&secure_proxy_main 3>;
+};
+
 &secure_proxy_main {
 	interrupts = <0 65 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&vim>;
 };
 
-&timer0 {
+&main_timer0 {
 	interrupts = <0 152 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&vim>;
 };
 
-&timer1 {
+&main_timer1 {
 	interrupts = <0 153 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&vim>;
 };
 
-&timer2 {
+&main_timer2 {
 	interrupts = <0 154 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&vim>;
 };
 
-&timer3 {
+&main_timer3 {
 	interrupts = <0 155 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&vim>;
 };
 
-&timer4 {
+&main_timer4 {
 	interrupts = <0 156 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&vim>;
 };
 
-&timer5 {
+&main_timer5 {
 	interrupts = <0 157 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&vim>;
 };
 
-&timer6 {
+&main_timer6 {
 	interrupts = <0 158 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&vim>;
 };
 
-&timer7 {
+&main_timer7 {
 	interrupts = <0 159 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&vim>;
 };
 
-&timer8 {
+&main_timer8 {
 	interrupts = <0 160 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&vim>;
 };
 
-&timer9 {
+&main_timer9 {
 	interrupts = <0 161 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&vim>;
 };
 
-&timer10 {
+&main_timer10 {
 	interrupts = <0 162 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&vim>;
 };
 
-&timer11 {
+&main_timer11 {
 	interrupts = <0 163 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&vim>;
 };
 
-&uart0 {
+&main_uart0 {
 	interrupts = <0 210 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&vim>;
 };
 
-&uart1 {
+&main_uart1 {
 	interrupts = <0 211 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&vim>;
 };
 
-&uart2 {
+&main_uart2 {
 	interrupts = <0 212 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&vim>;
 };
 
-&uart3 {
+&main_uart3 {
 	interrupts = <0 213 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&vim>;
 };
 
-&uart4 {
+&main_uart4 {
 	interrupts = <0 214 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&vim>;
 };
 
-&uart5 {
+&main_uart5 {
 	interrupts = <0 215 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&vim>;
 };
 
-&uart6 {
+&main_uart6 {
 	interrupts = <0 216 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&vim>;
 };
 
-&i2c0 {
+&main_i2c0 {
 	interrupts = <0 193 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&vim>;
 };
 
-&i2c1 {
+&main_i2c1 {
 	interrupts = <0 194 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&vim>;
 };
 
-&i2c2 {
+&main_i2c2 {
 	interrupts = <0 195 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&vim>;
 };
 
-&i2c3 {
+&main_i2c3 {
 	interrupts = <0 196 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&main_adc0 {
+	interrupts = <0 128 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&main_mbox0 {
+	interrupts = <0 96 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&main_mbox1 {
+	interrupts = <0 97 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&main_mbox2 {
+	interrupts = <0 98 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&main_mbox3 {
+	interrupts = <0 99 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&main_mbox4 {
+	interrupts = <0 98 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&main_mbox5 {
+	interrupts = <0 99 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&main_mbox6 {
+	interrupts = <0 100 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&main_mbox7 {
+	interrupts = <0 100 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&vim>;
 };
 
@@ -195,50 +245,5 @@
 
 &mcu_i2c1 {
 	interrupts = <0 62 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-	interrupt-parent = <&vim>;
-};
-
-&adc0 {
-	interrupts = <0 128 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-	interrupt-parent = <&vim>;
-};
-
-&mbox0 {
-	interrupts = <0 96 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-	interrupt-parent = <&vim>;
-};
-
-&mbox1 {
-	interrupts = <0 97 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-	interrupt-parent = <&vim>;
-};
-
-&mbox2 {
-	interrupts = <0 98 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-	interrupt-parent = <&vim>;
-};
-
-&mbox3 {
-	interrupts = <0 99 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-	interrupt-parent = <&vim>;
-};
-
-&mbox4 {
-	interrupts = <0 98 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-	interrupt-parent = <&vim>;
-};
-
-&mbox5 {
-	interrupts = <0 99 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-	interrupt-parent = <&vim>;
-};
-
-&mbox6 {
-	interrupts = <0 100 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-	interrupt-parent = <&vim>;
-};
-
-&mbox7 {
-	interrupts = <0 100 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&vim>;
 };

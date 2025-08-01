@@ -148,6 +148,108 @@ static int a2dp_get_capabilities_ind(struct bt_avdtp *session, struct bt_avdtp_s
 	return 0;
 }
 
+#define IS_BIT_DUPLICATED(val) (((val) & ((val)-1)) != 0)
+#define BT_A2DP_SBC_SAMP_FREQ_INVALID(val)                                                         \
+	((BT_A2DP_SBC_SAMP_FREQ(val) == 0) || (IS_BIT_DUPLICATED(BT_A2DP_SBC_SAMP_FREQ(val))))
+#define BT_A2DP_SBC_CHAN_MODE_INVALID(val)                                                         \
+	((BT_A2DP_SBC_CHAN_MODE(val) == 0) || (IS_BIT_DUPLICATED(BT_A2DP_SBC_CHAN_MODE(val))))
+#define BT_A2DP_SBC_BLK_LEN_INVALID(val)                                                           \
+	((BT_A2DP_SBC_BLK_LEN(val) == 0) || (IS_BIT_DUPLICATED(BT_A2DP_SBC_BLK_LEN(val))))
+#define BT_A2DP_SBC_SUB_BAND_INVALID(val)                                                          \
+	((BT_A2DP_SBC_SUB_BAND(val) == 0) || (IS_BIT_DUPLICATED(BT_A2DP_SBC_SUB_BAND(val))))
+#define BT_A2DP_SBC_ALLOC_MTHD_INVALID(val)                                                        \
+	((BT_A2DP_SBC_ALLOC_MTHD(val) == 0) || (IS_BIT_DUPLICATED(BT_A2DP_SBC_ALLOC_MTHD(val))))
+#define BT_A2DP_SBC_MIN_BITPOOL_VALUE_INVALID(val)                                                 \
+	(val->min_bitpool < BT_A2DP_SBC_MIN_BITPOOL_VALUE ||                                       \
+	 val->min_bitpool > BT_A2DP_SBC_MAX_BITPOOL_VALUE)
+#define BT_A2DP_SBC_MAX_BITPOOL_VALUE_INVALID(val)                                                 \
+	(val->max_bitpool < BT_A2DP_SBC_MIN_BITPOOL_VALUE ||                                       \
+	 val->max_bitpool > BT_A2DP_SBC_MAX_BITPOOL_VALUE)
+
+#define BT_A2DP_SBC_SAMP_FREQ_NOT_SUPPORT(set, cap)                                                \
+	((BT_A2DP_SBC_SAMP_FREQ(set) & BT_A2DP_SBC_SAMP_FREQ(cap)) == 0)
+#define BT_A2DP_SBC_CHAN_MODE_NOT_SUPPORT(set, cap)                                                \
+	((BT_A2DP_SBC_CHAN_MODE(set) & BT_A2DP_SBC_CHAN_MODE(cap)) == 0)
+#define BT_A2DP_SBC_SUB_BAND_NOT_SUPPORT(set, cap)                                                 \
+	((BT_A2DP_SBC_SUB_BAND(set) & BT_A2DP_SBC_SUB_BAND(cap)) == 0)
+#define BT_A2DP_SBC_ALLOC_MTHD_NOT_SUPPORT(set, cap)                                               \
+	((BT_A2DP_SBC_ALLOC_MTHD(set) & BT_A2DP_SBC_ALLOC_MTHD(cap)) == 0)
+#define BT_A2DP_SBC_MIN_BITPOOL_VALUE_NOT_SUPPORT(set, cap) (set->min_bitpool < cap->min_bitpool)
+#define BT_A2DP_SBC_MAX_BITPOOL_VALUE_NOT_SUPPORT(set, cap) (set->max_bitpool > cap->max_bitpool)
+
+static uint8_t a2dp_sbc_check_config_param(struct bt_a2dp_codec_sbc_params *set,
+				       struct bt_a2dp_codec_sbc_params *cap)
+{
+	if (BT_A2DP_SBC_SAMP_FREQ_INVALID(set)) {
+		return BT_A2DP_INVALID_SAMPLING_FREQUENCY;
+	}
+
+	if (BT_A2DP_SBC_SAMP_FREQ_NOT_SUPPORT(set, cap)) {
+		return BT_A2DP_NOT_SUPPORTED_SAMPLING_FREQUENCY;
+	}
+
+	if (BT_A2DP_SBC_CHAN_MODE_INVALID(set)) {
+		return BT_A2DP_INVALID_CHANNEL_MODE;
+	}
+
+	if (BT_A2DP_SBC_CHAN_MODE_NOT_SUPPORT(set, cap)) {
+		return BT_A2DP_NOT_SUPPORTED_CHANNEL_MODE;
+	}
+
+	if (BT_A2DP_SBC_BLK_LEN_INVALID(set)) {
+		return BT_A2DP_INVALID_BLOCK_LENGTH;
+	}
+
+	if (BT_A2DP_SBC_SUB_BAND_INVALID(set)) {
+		return BT_A2DP_INVALID_SUBBANDS;
+	}
+
+	if (BT_A2DP_SBC_SUB_BAND_NOT_SUPPORT(set, cap)) {
+		return BT_A2DP_NOT_SUPPORTED_SUBBANDS;
+	}
+
+	if (BT_A2DP_SBC_ALLOC_MTHD_INVALID(set)) {
+		return BT_A2DP_INVALID_ALLOCATION_METHOD;
+	}
+
+	if (BT_A2DP_SBC_ALLOC_MTHD_NOT_SUPPORT(set, cap)) {
+		return BT_A2DP_NOT_SUPPORTED_ALLOCATION_METHOD;
+	}
+
+	if (BT_A2DP_SBC_MIN_BITPOOL_VALUE_INVALID(set)) {
+		return BT_A2DP_INVALID_MINIMUM_BITPOOL_VALUE;
+	}
+
+	if (BT_A2DP_SBC_MIN_BITPOOL_VALUE_NOT_SUPPORT(set, cap)) {
+		return BT_A2DP_NOT_SUPPORTED_MINIMUM_BITPOOL_VALUE;
+	}
+
+	if (BT_A2DP_SBC_MAX_BITPOOL_VALUE_INVALID(set)) {
+		return BT_A2DP_INVALID_MAXIMUM_BITPOOL_VALUE;
+	}
+
+	if (BT_A2DP_SBC_MAX_BITPOOL_VALUE_NOT_SUPPORT(set, cap)) {
+		return BT_A2DP_NOT_SUPPORTED_MAXIMUM_BITPOOL_VALUE;
+	}
+
+	return 0;
+}
+
+static uint8_t a2dp_check_codec_type(struct bt_a2dp_ep *local_ep, uint8_t codec_type)
+{
+	if (codec_type != BT_A2DP_SBC && codec_type != BT_A2DP_MPEG1 &&
+	    codec_type != BT_A2DP_MPEG2 && codec_type != BT_A2DP_MPEGD &&
+	    codec_type != BT_A2DP_ATRAC && codec_type != BT_A2DP_VENDOR) {
+		return BT_A2DP_INVALID_CODEC_TYPE;
+	}
+
+	if (codec_type != local_ep->codec_type) {
+		return BT_A2DP_NOT_SUPPORTED_CODEC_TYPE;
+	}
+
+	return 0;
+}
+
 static int a2dp_process_config_ind(struct bt_avdtp *session, struct bt_avdtp_sep *sep,
 				   uint8_t int_seid, struct net_buf *buf, uint8_t *errcode,
 				   bool reconfig)
@@ -179,6 +281,11 @@ static int a2dp_process_config_ind(struct bt_avdtp *session, struct bt_avdtp_sep
 		return -EINVAL;
 	}
 
+	*errcode = a2dp_check_codec_type(ep, codec_type);
+	if (*errcode != 0) {
+		return -EINVAL;
+	}
+
 	if (codec_type == BT_A2DP_SBC) {
 		struct bt_a2dp_codec_sbc_params *sbc_set;
 		struct bt_a2dp_codec_sbc_params *sbc;
@@ -190,16 +297,12 @@ static int a2dp_process_config_ind(struct bt_avdtp *session, struct bt_avdtp_sep
 
 		sbc_set = (struct bt_a2dp_codec_sbc_params *)codec_info_element;
 		sbc = (struct bt_a2dp_codec_sbc_params *)&ep->codec_cap->codec_ie[0];
-		if (((BT_A2DP_SBC_SAMP_FREQ(sbc_set) & BT_A2DP_SBC_SAMP_FREQ(sbc)) == 0) ||
-		    ((BT_A2DP_SBC_CHAN_MODE(sbc_set) & BT_A2DP_SBC_CHAN_MODE(sbc)) == 0) ||
-		    ((BT_A2DP_SBC_BLK_LEN(sbc_set) & BT_A2DP_SBC_BLK_LEN(sbc)) == 0) ||
-		    ((BT_A2DP_SBC_SUB_BAND(sbc_set) & BT_A2DP_SBC_SUB_BAND(sbc)) == 0) ||
-		    ((BT_A2DP_SBC_ALLOC_MTHD(sbc_set) & BT_A2DP_SBC_ALLOC_MTHD(sbc)) == 0)) {
-			*errcode = BT_AVDTP_BAD_ACP_SEID;
+
+		*errcode = a2dp_sbc_check_config_param(sbc_set, sbc);
+		if (*errcode != 0) {
 			return -EINVAL;
 		}
 	}
-
 	/* For reconfig, ep->stream must already be valid, callback can be NULL as default accept.
 	 * For !reconfig, config_req must be set to get stream from upper layer
 	 */
@@ -419,7 +522,7 @@ static int bt_a2dp_set_config_cb(struct bt_avdtp_req *req, struct net_buf *buf)
 	}
 
 	ops = stream->ops;
-	if ((!req->status) && (ops->configured != NULL)) {
+	if ((!req->status) && (ops != NULL) && (ops->configured != NULL)) {
 		ops->configured(stream);
 	}
 	return 0;
@@ -447,8 +550,8 @@ static int bt_a2dp_get_capabilities_cb(struct bt_avdtp_req *req, struct net_buf 
 		return 0;
 	}
 
-	err = bt_avdtp_parse_capability_codec(buf, &codec_type,
-					      &codec_info_element, &codec_info_element_len);
+	err = bt_avdtp_parse_capability_codec(buf, &codec_type, &codec_info_element,
+					      &codec_info_element_len);
 	if (err) {
 		LOG_DBG("codec capability parsing fail");
 		return 0;

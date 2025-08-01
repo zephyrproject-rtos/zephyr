@@ -32,6 +32,7 @@
 		rtc = &bm8563_rtc;
 		sdhc0 = &sd0;
 		led0 = &axp2101_led;
+		fuel-gauge0 = &fuel_gauge;
 	};
 
 	lvgl_pointer {
@@ -164,6 +165,10 @@
 			compatible = "x-powers,axp2101-led";
 			status = "okay";
 			x-powers,mode = "by-reg";
+		};
+
+		fuel_gauge: fuel_gauge {
+			compatible = "x-powers,axp2101-fuel-gauge";
 		};
 	};
 

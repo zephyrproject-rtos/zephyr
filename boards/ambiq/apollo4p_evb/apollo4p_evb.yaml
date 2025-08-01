@@ -1,5 +1,5 @@
 identifier: apollo4p_evb
-name: Apollo4 Plus EVB
+name: Apollo4P EVB
 type: mcu
 arch: arm
 ram: 2816
@@ -8,19 +8,18 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
-  - adc
-  - ble
-  - clock_control
+  - uart
+  - watchdog
   - counter
   - gpio
-  - hwinfo
+  - spi
   - i2c
   - pwm
   - rtc
-  - spi
-  - uart
+  - adc
+  - hwinfo
   - usbd
-  - watchdog
+  - sdhc
 testing:
   ignore_tags:
     - net

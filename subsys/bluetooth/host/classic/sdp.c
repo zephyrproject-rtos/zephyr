@@ -778,9 +778,15 @@ static uint32_t copy_attribute(struct bt_sdp_data_elem *elem,
 			net_buf_add_be16(buf, *((uint16_t *)elem->data));
 		} else if (seq_size == 4U) {
 			net_buf_add_be32(buf, *((uint32_t *)elem->data));
+		} else if (seq_size == 8U) {
+			net_buf_add_be64(buf, *((uint64_t *)elem->data));
 		} else {
-			/* TODO: Convert 32bit and 128bit values to big-endian*/
-			net_buf_add_mem(buf, elem->data, seq_size);
+			__ASSERT(seq_size == 0x10, "Invalid sequence size");
+
+			uint8_t val[seq_size];
+
+			sys_memcpy_swap(val, elem->data, sizeof(val));
+			net_buf_add_mem(buf, val, seq_size);
 		}
 	} else {
 		net_buf_add_mem(buf, elem->data, seq_size);
@@ -1504,6 +1510,7 @@ static int sdp_client_ss_search(struct bt_sdp_client *session,
 				const struct bt_sdp_discover_params *param)
 {
 	struct net_buf *buf;
+	uint8_t uuid128[BT_UUID_SIZE_128];
 
 	/* Update context param directly. */
 	session->param = param;
@@ -1516,22 +1523,22 @@ static int sdp_client_ss_search(struct bt_sdp_client *session,
 	switch (param->uuid->type) {
 	case BT_UUID_TYPE_16:
 		/* Seq length */
-		net_buf_add_u8(buf, 0x03);
+		net_buf_add_u8(buf, sizeof(uint8_t) + BT_UUID_SIZE_16);
 		/* Seq type */
 		net_buf_add_u8(buf, BT_SDP_UUID16);
 		/* Seq value */
 		net_buf_add_be16(buf, BT_UUID_16(param->uuid)->val);
 		break;
 	case BT_UUID_TYPE_32:
-		net_buf_add_u8(buf, 0x05);
+		net_buf_add_u8(buf, sizeof(uint8_t) + BT_UUID_SIZE_32);
 		net_buf_add_u8(buf, BT_SDP_UUID32);
 		net_buf_add_be32(buf, BT_UUID_32(param->uuid)->val);
 		break;
 	case BT_UUID_TYPE_128:
-		net_buf_add_u8(buf, 0x11);
+		net_buf_add_u8(buf, sizeof(uint8_t) + BT_UUID_SIZE_128);
 		net_buf_add_u8(buf, BT_SDP_UUID128);
-		net_buf_add_mem(buf, BT_UUID_128(param->uuid)->val,
-				ARRAY_SIZE(BT_UUID_128(param->uuid)->val));
+		sys_memcpy_swap(uuid128, BT_UUID_128(param->uuid)->val, sizeof(uuid128));
+		net_buf_add_mem(buf, uuid128, sizeof(uuid128));
 		break;
 	default:
 		LOG_ERR("Unknown UUID type %u", param->uuid->type);
@@ -1610,6 +1617,7 @@ static int sdp_client_ssa_search(struct bt_sdp_client *session,
 				 const struct bt_sdp_discover_params *param)
 {
 	struct net_buf *buf;
+	uint8_t uuid128[BT_UUID_SIZE_128];
 
 	/* Update context param directly. */
 	session->param = param;
@@ -1622,22 +1630,22 @@ static int sdp_client_ssa_search(struct bt_sdp_client *session,
 	switch (param->uuid->type) {
 	case BT_UUID_TYPE_16:
 		/* Seq length */
-		net_buf_add_u8(buf, 0x03);
+		net_buf_add_u8(buf, sizeof(uint8_t) + BT_UUID_SIZE_16);
 		/* Seq type */
 		net_buf_add_u8(buf, BT_SDP_UUID16);
 		/* Seq value */
 		net_buf_add_be16(buf, BT_UUID_16(param->uuid)->val);
 		break;
 	case BT_UUID_TYPE_32:
-		net_buf_add_u8(buf, 0x05);
+		net_buf_add_u8(buf, sizeof(uint8_t) + BT_UUID_SIZE_32);
 		net_buf_add_u8(buf, BT_SDP_UUID32);
 		net_buf_add_be32(buf, BT_UUID_32(param->uuid)->val);
 		break;
 	case BT_UUID_TYPE_128:
-		net_buf_add_u8(buf, 0x11);
+		net_buf_add_u8(buf, sizeof(uint8_t) + BT_UUID_SIZE_128);
 		net_buf_add_u8(buf, BT_SDP_UUID128);
-		net_buf_add_mem(buf, BT_UUID_128(param->uuid)->val,
-				ARRAY_SIZE(BT_UUID_128(param->uuid)->val));
+		sys_memcpy_swap(uuid128, BT_UUID_128(param->uuid)->val, sizeof(uuid128));
+		net_buf_add_mem(buf, uuid128, sizeof(uuid128));
 		break;
 	default:
 		LOG_ERR("Unknown UUID type %u", param->uuid->type);
@@ -2486,18 +2494,23 @@ static inline ssize_t sdp_get_uuid_len(const uint8_t *data, size_t len)
 
 	switch (data[0]) {
 	case BT_SDP_UUID16:
-		if (len < 3) {
+		if (len < (sizeof(uint8_t) + BT_UUID_SIZE_16)) {
 			break;
 		}
 
-		return 3;
+		return sizeof(uint8_t) + BT_UUID_SIZE_16;
 	case BT_SDP_UUID32:
-		if (len < 5) {
+		if (len < (sizeof(uint8_t) + BT_UUID_SIZE_32)) {
 			break;
 		}
 
-		return 5;
+		return sizeof(uint8_t) + BT_UUID_SIZE_32;
 	case BT_SDP_UUID128:
+		if (len < (sizeof(uint8_t) + BT_UUID_SIZE_128)) {
+			break;
+		}
+
+		return sizeof(uint8_t) + BT_UUID_SIZE_128;
 	default:
 		LOG_ERR("Invalid/unhandled DTD 0x%02x", data[0]);
 		return -EINVAL;

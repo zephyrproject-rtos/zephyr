@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,13 +15,20 @@
 #include "fsl_netc_mdio.h"
 LOG_MODULE_REGISTER(nxp_imx_netc_emdio, CONFIG_MDIO_LOG_LEVEL);
 
+#define DEV_CFG(_dev)  ((const struct nxp_imx_netc_mdio_config *)(_dev)->config)
+#define DEV_DATA(_dev) ((struct nxp_imx_netc_mdio_data *)(_dev)->data)
+
 struct nxp_imx_netc_mdio_config {
+	DEVICE_MMIO_NAMED_ROM(basic);
+	DEVICE_MMIO_NAMED_ROM(pfconfig);
 	const struct pinctrl_dev_config *pincfg;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 };
 
 struct nxp_imx_netc_mdio_data {
+	DEVICE_MMIO_NAMED_RAM(basic);
+	DEVICE_MMIO_NAMED_RAM(pfconfig);
 	struct k_mutex rw_mutex;
 	netc_mdio_handle_t handle;
 };
@@ -60,6 +67,9 @@ static int nxp_imx_netc_mdio_initialize(const struct device *dev)
 	status_t result;
 	int err;
 
+	DEVICE_MMIO_NAMED_MAP(dev, basic, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
+	DEVICE_MMIO_NAMED_MAP(dev, pfconfig, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
+
 	err = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_DEFAULT);
 	if (err) {
 		return err;
@@ -89,6 +99,8 @@ static DEVICE_API(mdio, nxp_imx_netc_mdio_api) = {
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
 	static struct nxp_imx_netc_mdio_data nxp_imx_netc_mdio##n##_data;                          \
 	static const struct nxp_imx_netc_mdio_config nxp_imx_netc_mdio##n##_cfg = {                \
+		DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(basic, DT_DRV_INST(n)),                         \
+		DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(pfconfig, DT_DRV_INST(n)),                      \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \

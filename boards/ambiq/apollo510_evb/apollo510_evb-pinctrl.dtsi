@@ -406,6 +406,14 @@
 		};
 	};
 
+	pwm2_default: pwm2_default{
+		group1 {
+			pinmux = <CT165_P165>;
+			drive-open-drain;
+			drive-strength = "0.5";
+		};
+	};
+
 	sdio0_default: sdio0_default {
 		group0 {
 			pinmux = <SDIF0_DAT1_P85>,
@@ -477,14 +485,6 @@
 		group5 {
 			pinmux = <GPIO_P175>;
 				 ambiq,sdif-cdwp = <4>;
-		};
-	};
-
-	pwm2_default: pwm2_default{
-		group1 {
-			pinmux = <CT165_P165>;
-			drive-open-drain;
-			drive-strength = "0.5";
 		};
 	};
 };
