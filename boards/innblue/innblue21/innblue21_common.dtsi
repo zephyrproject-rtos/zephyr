@@ -69,8 +69,8 @@
 		led1 = &green_led;
 		led2 = &blue_led;
 		led3 = &mode_led;
-		sw0  = &button0;
-		rgb-pwm  = &pwm0;
+		sw0 = &button0;
+		rgb-pwm = &pwm0;
 		mode-pwm = &pwm1;
 		watchdog0 = &wdt0;
 		accel0 = &lis2dh12_accel;
