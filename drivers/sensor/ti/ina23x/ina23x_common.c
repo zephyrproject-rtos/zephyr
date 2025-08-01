@@ -8,6 +8,21 @@
 
 #include <zephyr/sys/byteorder.h>
 
+int ina23x_reg_read_40(const struct i2c_dt_spec *bus, uint8_t reg, uint64_t *val)
+{
+	uint8_t data[5];
+	int ret;
+
+	ret = i2c_burst_read_dt(bus, reg, data, sizeof(data));
+	if (ret < 0) {
+		return ret;
+	}
+
+	*val = sys_get_be40(data);
+
+	return ret;
+}
+
 int ina23x_reg_read_24(const struct i2c_dt_spec *bus, uint8_t reg, uint32_t *val)
 {
 	uint8_t data[3];
