@@ -26,9 +26,7 @@
 	};
 
 	main_uart0_pins_default: main-uart0-default-pins {
-		pinmux = <
-			K3_PINMUX(0x1c8, PIN_INPUT, MUX_MODE_0) /* (D14/A13) UART0_RXD */
-			K3_PINMUX(0x1cc, PIN_OUTPUT, MUX_MODE_0) /* (E14/E11) UART0_TXD */
-		>;
+		pinmux = <K3_PINMUX(0x1c8, PIN_INPUT, MUX_MODE_0) /* (D14/A13) UART0_RXD */
+			  K3_PINMUX(0x1cc, PIN_OUTPUT, MUX_MODE_0) /* (E14/E11) UART0_TXD */ >;
 	};
 };
