@@ -42,6 +42,8 @@ void test_api_setup(void *data)
 	int ret;
 	enum pm_device_state state;
 
+	test_driver_pm_retval(test_dev, 0);
+
 	/* check API always returns 0 when runtime PM is disabled */
 	ret = pm_device_runtime_get(test_dev);
 	zassert_equal(ret, 0);
@@ -64,8 +66,6 @@ void test_api_setup(void *data)
 	/* enabling again should succeed (no-op) */
 	ret = pm_device_runtime_enable(test_dev);
 	zassert_equal(ret, 0);
-
-	test_driver_pm_retval(test_dev, 0);
 }
 
 static void test_api_teardown(void *data)
@@ -314,6 +314,102 @@ ZTEST(device_runtime_api, test_pm_device_runtime_auto)
 	zassert_true(pm_device_runtime_is_enabled(dev), "");
 	zassert_equal(pm_device_runtime_get(dev), 0, "");
 	zassert_equal(pm_device_runtime_put(dev), 0, "");
+}
+
+ZTEST(device_runtime_api, test_request_api)
+{
+	int ret;
+	struct pm_device_runtime_reference ref0;
+	struct pm_device_runtime_reference ref1;
+	size_t count;
+
+	zassert_equal(pm_device_runtime_usage(test_dev), 0);
+
+	pm_device_runtime_reference_init(&ref0);
+	pm_device_runtime_reference_init(&ref1);
+
+	test_driver_pm_retval(test_dev, -EIO);
+	count = test_driver_pm_count(test_dev);
+	ret = pm_device_runtime_request(test_dev, &ref0);
+	zassert_equal(ret, -EIO);
+	zassert_equal(test_driver_pm_count(test_dev), count + 1);
+	zassert_equal(pm_device_runtime_usage(test_dev), 0);
+
+	test_driver_pm_retval(test_dev, -EAGAIN);
+	count = test_driver_pm_count(test_dev);
+	ret = pm_device_runtime_request(test_dev, &ref0);
+	zassert_equal(ret, -EAGAIN);
+	zassert_equal(test_driver_pm_count(test_dev), count + 1);
+	zassert_equal(pm_device_runtime_usage(test_dev), 0);
+
+	test_driver_pm_retval(test_dev, 0);
+
+	ret = pm_device_runtime_request(test_dev, &ref0);
+	zassert_ok(ret);
+	zassert_equal(pm_device_runtime_usage(test_dev), 1);
+
+	ret = pm_device_runtime_request(test_dev, &ref0);
+	zassert_ok(ret);
+	zassert_equal(pm_device_runtime_usage(test_dev), 1);
+
+	ret = pm_device_runtime_request(test_dev, &ref1);
+	zassert_ok(ret);
+	zassert_equal(pm_device_runtime_usage(test_dev), 2);
+
+	ret = pm_device_runtime_release(test_dev, &ref0);
+	zassert_ok(ret);
+	zassert_equal(pm_device_runtime_usage(test_dev), 1);
+
+	ret = pm_device_runtime_release(test_dev, &ref0);
+	zassert_ok(ret);
+	zassert_equal(pm_device_runtime_usage(test_dev), 1);
+
+	test_driver_pm_retval(test_dev, -EIO);
+	count = test_driver_pm_count(test_dev);
+	ret = pm_device_runtime_release(test_dev, &ref1);
+	zassert_equal(ret, -EIO);
+	zassert_equal(test_driver_pm_count(test_dev), count + 1);
+	zassert_equal(pm_device_runtime_usage(test_dev), 1);
+
+	test_driver_pm_retval(test_dev, -EAGAIN);
+	count = test_driver_pm_count(test_dev);
+	ret = pm_device_runtime_release(test_dev, &ref1);
+	zassert_equal(ret, -EAGAIN);
+	zassert_equal(test_driver_pm_count(test_dev), count + 1);
+	zassert_equal(pm_device_runtime_usage(test_dev), 1);
+
+	test_driver_pm_retval(test_dev, 0);
+
+	ret = pm_device_runtime_release(test_dev, &ref1);
+	zassert_ok(ret);
+	zassert_equal(pm_device_runtime_usage(test_dev), 0);
+
+#ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
+	enum pm_device_state state;
+
+	ret = pm_device_runtime_request(test_dev, &ref0);
+	zassert_ok(ret);
+	zassert_equal(pm_device_runtime_usage(test_dev), 1);
+
+	ret = pm_device_state_get(test_dev, &state);
+	zassert_ok(ret);
+	zassert_equal(state, PM_DEVICE_STATE_ACTIVE);
+
+	ret = pm_device_runtime_release_async(test_dev, &ref0, K_MSEC(100));
+	zassert_equal(ret, 0);
+
+#ifndef CONFIG_TEST_PM_DEVICE_ISR_SAFE
+	ret = pm_device_state_get(test_dev, &state);
+	zassert_ok(ret);
+	zassert_equal(state, PM_DEVICE_STATE_SUSPENDING);
+
+	k_sleep(K_MSEC(200));
+#endif
+
+	ret = pm_device_state_get(test_dev, &state);
+	zassert_ok(ret);
+	zassert_equal(state, PM_DEVICE_STATE_SUSPENDED);
+#endif /* CONFIG_PM_DEVICE_RUNTIME_ASYNC */
 }
 
 void *device_runtime_api_setup(void)
