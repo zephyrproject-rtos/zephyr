@@ -40,6 +40,10 @@ bool arm_m_must_switch(void);
 
 void arm_m_exc_exit(void);
 
+bool arm_m_iciit_check(uint32_t msp, uint32_t psp, uint32_t lr);
+
+void arm_m_iciit_stub(void);
+
 extern uint32_t *arm_m_exc_lr_ptr;
 
 void z_arm_configure_dynamic_mpu_regions(struct k_thread *thread);

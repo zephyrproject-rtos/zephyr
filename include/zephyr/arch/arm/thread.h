@@ -68,6 +68,11 @@ struct _thread_arch {
 	/* r0 in stack frame cannot be written to reliably */
 	uint32_t swap_return_value;
 
+#if defined(CONFIG_USE_SWITCH) && defined(CONFIG_CPU_CORTEX_M)
+	uint32_t iciit_pc;
+	uint32_t iciit_apsr;
+#endif
+
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	/*
 	 * No cooperative floating point register set structure exists for
