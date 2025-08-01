@@ -392,6 +392,11 @@ config MBEDTLS_CIPHER_C
 config MBEDTLS_MD_C
 	bool "generic message digest layer."
 
+# Temporary hack until McuBoot is updated to use the new symbol
+config MBEDTLS_MD
+	bool
+	select MBEDTLS_MD_C
+
 config MBEDTLS_ASN1_PARSE_C
 	bool "Support for ASN1 parser functions"
 
