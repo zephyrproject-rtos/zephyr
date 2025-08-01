@@ -51,9 +51,6 @@ LOG_MODULE_REGISTER(bt_rfcomm);
 
 static struct bt_rfcomm_server *servers;
 
-/* Pool for dummy buffers to wake up the tx threads */
-NET_BUF_POOL_DEFINE(dummy_pool, CONFIG_BT_MAX_CONN, 0, 0, NULL);
-
 #define RFCOMM_SESSION(_ch) CONTAINER_OF(_ch, \
 					 struct bt_rfcomm_session, br_chan.chan)
 
@@ -235,6 +232,29 @@ int bt_rfcomm_server_register(struct bt_rfcomm_server *server)
 	return 0;
 }
 
+static void rfcomm_dlc_tx_trigger(struct bt_rfcomm_dlc *dlc)
+{
+	int err;
+
+	if ((dlc == NULL) || (dlc->tx_work.handler == NULL)) {
+		return;
+	}
+
+	LOG_DBG("DLC %p TX trigger", dlc);
+
+	err = k_work_submit(&dlc->tx_work);
+	if (err < 0) {
+		LOG_ERR("Failed to submit tx work: %d", err);
+	}
+}
+
+static void rfcomm_dlcs_tx_trigger(struct bt_rfcomm_dlc *dlcs)
+{
+	for (struct bt_rfcomm_dlc *dlc = dlcs; dlc != NULL; dlc = dlc->_next) {
+		rfcomm_dlc_tx_trigger(dlc);
+	}
+}
+
 static void rfcomm_dlc_tx_give_credits(struct bt_rfcomm_dlc *dlc,
 				       uint8_t credits)
 {
@@ -242,6 +262,7 @@ static void rfcomm_dlc_tx_give_credits(struct bt_rfcomm_dlc *dlc,
 
 	while (credits--) {
 		k_sem_give(&dlc->tx_credits);
+		rfcomm_dlc_tx_trigger(dlc);
 	}
 
 	LOG_DBG("dlc %p updated credits %u", dlc, k_sem_count_get(&dlc->tx_credits));
@@ -252,6 +273,8 @@ static void rfcomm_dlc_destroy(struct bt_rfcomm_dlc *dlc)
 	LOG_DBG("dlc %p", dlc);
 
 	k_work_cancel_delayable(&dlc->rtx_work);
+	k_work_cancel(&dlc->tx_work);
+
 	dlc->state = BT_RFCOMM_STATE_IDLE;
 	dlc->session = NULL;
 
@@ -274,16 +297,7 @@ static void rfcomm_dlc_disconnect(struct bt_rfcomm_dlc *dlc)
 
 	switch (old_state) {
 	case BT_RFCOMM_STATE_CONNECTED:
-		/* Queue a dummy buffer to wake up and stop the
-		 * tx thread for states where it was running.
-		 */
-		k_fifo_put(&dlc->tx_queue, net_buf_alloc(&dummy_pool, K_NO_WAIT));
-
-		/* There could be a writer waiting for credits so return a
-		 * dummy credit to wake it up.
-		 */
-		rfcomm_dlc_tx_give_credits(dlc, 1);
-		k_sem_give(&dlc->session->fc);
+		rfcomm_dlc_tx_trigger(dlc);
 		break;
 	default:
 		rfcomm_dlc_destroy(dlc);
@@ -465,7 +479,16 @@ static void rfcomm_dlc_init(struct bt_rfcomm_dlc *dlc,
 			    uint8_t dlci,
 			    bt_rfcomm_role_t role)
 {
+	struct k_work_sync sync;
+
 	LOG_DBG("dlc %p", dlc);
+
+	if (dlc->tx_work.handler != NULL) {
+		/* Make sure the tx_work is cancelled before reinitializing */
+		k_work_cancel_sync(&dlc->tx_work, &sync);
+		/* Reset the work handler to NULL before the DLC connected */
+		dlc->tx_work.handler = NULL;
+	}
 
 	dlc->dlci = dlci;
 	dlc->session = session;
@@ -533,19 +556,30 @@ static int rfcomm_send_dm(struct bt_rfcomm_session *session, uint8_t dlci)
 	return rfcomm_send(session, buf);
 }
 
-static void rfcomm_check_fc(struct bt_rfcomm_dlc *dlc)
+static bool rfcomm_check_fc(struct bt_rfcomm_dlc *dlc)
 {
-	LOG_DBG("%p", dlc);
+	int err;
 
 	LOG_DBG("Wait for credits or MSC FC %p", dlc);
 	/* Wait for credits or MSC FC */
-	k_sem_take(&dlc->tx_credits, K_FOREVER);
-
-	if (dlc->session->cfc == BT_RFCOMM_CFC_SUPPORTED) {
-		return;
+	err = k_sem_take(&dlc->tx_credits, K_NO_WAIT);
+	if (err != 0) {
+		LOG_DBG("Credits not available");
+		return false;
 	}
 
-	k_sem_take(&dlc->session->fc, K_FOREVER);
+	LOG_DBG("Credits available");
+	if (dlc->session->cfc == BT_RFCOMM_CFC_SUPPORTED) {
+		LOG_DBG("Credits available");
+		return true;
+	}
+
+	err = k_sem_take(&dlc->session->fc, K_NO_WAIT);
+	if (err != 0) {
+		k_sem_give(&dlc->tx_credits);
+		LOG_DBG("Flow control not available");
+		return false;
+	}
 
 	/* Give the sems immediately so that sem will be available for all
 	 * the bufs in the queue. It will be blocked only once all the bufs
@@ -554,6 +588,9 @@ static void rfcomm_check_fc(struct bt_rfcomm_dlc *dlc)
 	 */
 	k_sem_give(&dlc->session->fc);
 	k_sem_give(&dlc->tx_credits);
+
+	LOG_DBG("Flow control available");
+	return true;
 }
 
 static void bt_rfcomm_tx_destroy(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
@@ -581,55 +618,60 @@ static void rfcomm_sent(struct bt_conn *conn, void *user_data, int err)
 
 	dlc = (struct bt_rfcomm_dlc *)user_data;
 
+	rfcomm_dlc_tx_trigger(dlc);
+
 	if (dlc && dlc->ops && dlc->ops->sent) {
 		dlc->ops->sent(dlc, err);
 	}
 }
 
-static void rfcomm_dlc_tx_thread(void *p1, void *p2, void *p3)
+static void rfcomm_dlc_tx_worker(struct k_work *work)
 {
-	struct bt_rfcomm_dlc *dlc = p1;
-	k_timeout_t timeout = K_FOREVER;
+	struct bt_rfcomm_dlc *dlc = CONTAINER_OF(work, struct bt_rfcomm_dlc, tx_work);
 	struct net_buf *buf;
 
-	LOG_DBG("Started for dlc %p", dlc);
+	LOG_DBG("Work for dlc %p state %u", dlc, dlc->state);
 
-	while (dlc->state == BT_RFCOMM_STATE_CONNECTED ||
-	       dlc->state == BT_RFCOMM_STATE_USER_DISCONNECT) {
-		/* Get next packet for dlc */
-		LOG_DBG("Wait for buf %p", dlc);
-		buf = k_fifo_get(&dlc->tx_queue, timeout);
-		/* If its dummy buffer or non user disconnect then break */
-		if ((dlc->state != BT_RFCOMM_STATE_CONNECTED &&
-		     dlc->state != BT_RFCOMM_STATE_USER_DISCONNECT) ||
-		    !buf || !buf->len) {
-			if (buf) {
-				bt_rfcomm_tx_destroy(dlc, buf);
-				net_buf_unref(buf);
-			}
-			break;
+	if (dlc->state < BT_RFCOMM_STATE_CONNECTED) {
+		return;
+	}
+
+	if (dlc->state == BT_RFCOMM_STATE_CONNECTED ||
+	    dlc->state == BT_RFCOMM_STATE_USER_DISCONNECT) {
+		if (k_fifo_is_empty(&dlc->tx_queue) == true) {
+			goto user_disconnect;
 		}
 
-		rfcomm_check_fc(dlc);
-		if (dlc->state != BT_RFCOMM_STATE_CONNECTED &&
-		    dlc->state != BT_RFCOMM_STATE_USER_DISCONNECT) {
-			bt_rfcomm_tx_destroy(dlc, buf);
-			net_buf_unref(buf);
-			break;
+		if (rfcomm_check_fc(dlc) == false) {
+			LOG_DBG("FC or credit not available");
+			goto user_disconnect;
 		}
 
+		buf = k_fifo_get(&dlc->tx_queue, K_NO_WAIT);
+		LOG_DBG("Tx buf %p", buf);
 		if (rfcomm_send_cb(dlc->session, buf, rfcomm_sent, dlc) < 0) {
 			/* This fails only if channel is disconnected */
 			dlc->state = BT_RFCOMM_STATE_DISCONNECTED;
 			bt_rfcomm_tx_destroy(dlc, buf);
-			break;
+			LOG_ERR("Failed to send buffer, disconnected");
+			goto disconnect;
 		}
 
-		if (dlc->state == BT_RFCOMM_STATE_USER_DISCONNECT) {
-			timeout = K_NO_WAIT;
+		if (k_fifo_is_empty(&dlc->tx_queue) == false) {
+			rfcomm_dlc_tx_trigger(dlc);
+			return;
 		}
+
+user_disconnect:
+		if (dlc->state == BT_RFCOMM_STATE_USER_DISCONNECT) {
+			LOG_DBG("Process user disconnect");
+			goto disconnect;
+		}
+
+		return;
 	}
 
+disconnect:
 	LOG_DBG("dlc %p disconnected - cleaning up", dlc);
 
 	/* Give back any allocated buffers */
@@ -844,11 +886,7 @@ static void rfcomm_dlc_connected(struct bt_rfcomm_dlc *dlc)
 	k_work_cancel_delayable(&dlc->rtx_work);
 
 	k_fifo_init(&dlc->tx_queue);
-	k_thread_create(&dlc->tx_thread, dlc->stack,
-			K_KERNEL_STACK_SIZEOF(dlc->stack),
-			rfcomm_dlc_tx_thread, dlc, NULL, NULL, K_PRIO_COOP(7),
-			0, K_NO_WAIT);
-	k_thread_name_set(&dlc->tx_thread, "BT DLC");
+	k_work_init(&dlc->tx_work, rfcomm_dlc_tx_worker);
 
 	if (dlc->ops && dlc->ops->connected) {
 		dlc->ops->connected(dlc);
@@ -921,17 +959,7 @@ static int rfcomm_dlc_close(struct bt_rfcomm_dlc *dlc)
 		break;
 	case BT_RFCOMM_STATE_CONNECTED:
 		dlc->state = BT_RFCOMM_STATE_DISCONNECTING;
-
-		/* Queue a dummy buffer to wake up and stop the
-		 * tx thread.
-		 */
-		k_fifo_put(&dlc->tx_queue,
-			    net_buf_alloc(&dummy_pool, K_NO_WAIT));
-
-		/* There could be a writer waiting for credits so return a
-		 * dummy credit to wake it up.
-		 */
-		rfcomm_dlc_tx_give_credits(dlc, 1);
+		rfcomm_dlc_tx_trigger(dlc);
 		break;
 	case BT_RFCOMM_STATE_DISCONNECTING:
 	case BT_RFCOMM_STATE_DISCONNECTED:
@@ -1178,6 +1206,7 @@ static void rfcomm_handle_msc(struct bt_rfcomm_session *session,
 			 * thread in sem_take().
 			 */
 			k_sem_give(&dlc->tx_credits);
+			rfcomm_dlc_tx_trigger(dlc);
 		}
 	}
 
@@ -1410,6 +1439,7 @@ static void rfcomm_handle_msg(struct bt_rfcomm_session *session,
 		 */
 		k_sem_give(&session->fc);
 		rfcomm_send_fcon(session, BT_RFCOMM_MSG_RESP_CR);
+		rfcomm_dlcs_tx_trigger(session->dlcs);
 		break;
 	case BT_RFCOMM_FCOFF:
 		if (session->cfc == BT_RFCOMM_CFC_SUPPORTED) {
@@ -1544,6 +1574,7 @@ int bt_rfcomm_dlc_send(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 	net_buf_add_u8(buf, fcs);
 
 	k_fifo_put(&dlc->tx_queue, buf);
+	rfcomm_dlc_tx_trigger(dlc);
 
 	return buf->len;
 }
@@ -1802,9 +1833,7 @@ int bt_rfcomm_dlc_disconnect(struct bt_rfcomm_dlc *dlc)
 		 * and stop the tx thread.
 		 */
 		dlc->state = BT_RFCOMM_STATE_USER_DISCONNECT;
-		k_fifo_put(&dlc->tx_queue,
-			    net_buf_alloc(&dummy_pool, K_NO_WAIT));
-
+		rfcomm_dlc_tx_trigger(dlc);
 		k_work_reschedule(&dlc->rtx_work, RFCOMM_DISC_TIMEOUT);
 
 		return 0;
