@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2025 Christoph Jans
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <silabs/xg23/xg23.dtsi>
+
+/ {
+	soc {
+		compatible = "silabs,efm32pg23b310f512im48",
+					"silabs,efm32pg23",
+					"silabs,xg23",
+					"silabs,efm32",
+					"simple-bus";
+	};
+};
+
+&flash0 {
+	reg = <0x08000000 DT_SIZE_K(512)>;
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(64)>;
+};
