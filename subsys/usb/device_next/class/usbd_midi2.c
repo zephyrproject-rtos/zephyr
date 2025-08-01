@@ -555,19 +555,19 @@ void usbd_midi_set_ops(const struct device *dev, const struct usbd_midi_ops *ops
 #define USBD_MIDI_VALIDATE_INSTANCE(n) \
 	DT_INST_FOREACH_CHILD(n, USBD_MIDI_VALIDATE_GRPTRM_BLOCK)
 
-#define USBD_MIDI2_INIT_GRPTRM_BLOCK_DESCRIPTOR(node)                       \
-	{                                                                   \
-		.bLength = sizeof(struct usb_midi_grptrm_block_descriptor), \
-		.bDescriptorType = CS_GR_TRM_BLOCK,                         \
-		.bDescriptorSubtype = GR_TRM_BLOCK,                         \
-		.bGrpTrmBlkID = GRPTRM_BLOCK_ID(node),                      \
-		.bGrpTrmBlkType = GRPTRM_BLOCK_TYPE(node),                  \
-		.nGroupTrm = DT_REG_ADDR(node),                             \
-		.nNumGroupTrm = DT_REG_SIZE(node),                          \
-		.iBlockItem = 0,                                            \
-		.bMIDIProtocol = GRPTRM_PROTOCOL(node),                     \
-		.wMaxInputBandwidth = 0x0000,                               \
-		.wMaxOutputBandwidth = 0x0000,                              \
+#define USBD_MIDI2_INIT_GRPTRM_BLOCK_DESCRIPTOR(node)                                   \
+	{                                                                               \
+		.bLength = sizeof(struct usb_midi_grptrm_block_descriptor),             \
+		.bDescriptorType = CS_GR_TRM_BLOCK,                                     \
+		.bDescriptorSubtype = GR_TRM_BLOCK,                                     \
+		.bGrpTrmBlkID = GRPTRM_BLOCK_ID(node),                                  \
+		.bGrpTrmBlkType = GRPTRM_BLOCK_TYPE(node),                              \
+		.nGroupTrm = DT_REG_ADDR(node),                                         \
+		.nNumGroupTrm = DT_REG_SIZE(node),                                      \
+		.iBlockItem = 0,                                                        \
+		.bMIDIProtocol = GRPTRM_PROTOCOL(node),                                 \
+		.wMaxInputBandwidth = sys_cpu_to_le16(DT_PROP(node, serial_31250bps)),  \
+		.wMaxOutputBandwidth = sys_cpu_to_le16(DT_PROP(node, serial_31250bps)), \
 	}
 
 #define USBD_MIDI2_GRPTRM_TOTAL_LEN(n)                    \
