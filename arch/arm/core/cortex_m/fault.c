@@ -1027,6 +1027,13 @@ void z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return, _callee_saved_
 	bool recoverable, nested_exc;
 	struct arch_esf *esf;
 
+#ifdef CONFIG_USE_SWITCH
+	/* Handle the stub fault to restore interrupted ICI/IT instructions */
+	if (arm_m_iciit_check(psp)) {
+		return;
+	}
+#endif
+
 	/* Create a stack-ed copy of the ESF to be used during
 	 * the fault handling process.
 	 */
