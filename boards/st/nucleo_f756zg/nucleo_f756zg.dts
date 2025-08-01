@@ -168,7 +168,6 @@ zephyr_udc0: &usbotg_fs {
 	};
 };
 
-
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";
