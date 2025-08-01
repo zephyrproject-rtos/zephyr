@@ -4,14 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <mem.h>
-#include <freq.h>
-#include <arm/armv8-m.dtsi>
-#include <zephyr/dt-bindings/adc/adc.h>
-#include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
-#include <zephyr/dt-bindings/gpio/gpio.h>
-#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
-#include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
+#include "nxp_rt7xx_common.dtsi"
 
 / {
 	cpus {
@@ -30,56 +23,6 @@
 			};
 		};
 	};
-
-	soc {
-		sram: memory@10000000 {
-			ranges = <0x0 0x10000000 0x780000
-				  0x20000000 0x30000000 0x780000>;
-		};
-
-		peripheral: peripheral@50000000 {
-			ranges = <0x0 0x50000000 0x10000000>;
-		};
-
-		xspi2: memory@50411000 {
-			reg = <0x50411000 0x1000>, <0x70000000 DT_SIZE_M(128)>;
-		};
-	};
-
-	pinctrl: pinctrl {
-		compatible = "nxp,rt-iocon-pinctrl";
-	};
-};
-
-&sram {
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	/* RT7XX SRAM partitions are shared between code and data. Boards can
-	 *  override the reg properties of either sram0 or sram_code nodes to
-	 *  change the balance of SRAM allocation.
-	 *
-	 * The SRAM region [0x580000-0x5BFFFF] is reserved for shared memory or application data.
-	 * The SRAM region [0x5C0000-0x67FFFF] is reserved for CPU1 application.
-	 * The SRAM region [0x680000-0x77FFFF] is reserved for HiFi1 application.
-	 */
-
-	sram_code: memory@600000 {
-		compatible = "mmio-sram";
-		reg = <0x600000 DT_SIZE_K(512)>;
-	};
-
-	/* This partition is shared with code in RAM */
-	sram_shared_code: memory@20058000 {
-		compatible = "mmio-sram";
-		reg = <0x20058000 DT_SIZE_K(256)>;
-	};
-
-	sram0: memory@205C0000 {
-		compatible = "mmio-sram";
-		/* Only use 256K, align with SDK */
-		reg = <0x205C0000 DT_SIZE_K(256)>;
-	};
 };
 
 &peripheral {
@@ -92,43 +35,9 @@
 	 * and secure modes (0x50000000).
 	 */
 
-	lpadc0: adc@20c000 {
-		compatible = "nxp,lpc-lpadc";
-		reg = <0x20c000 0x304>;
-		interrupts = <15 0>;
-		status = "disabled";
-		clk-divider = <1>;
-		clk-source = <0>;
-		voltage-ref = <1>;
-		calibration-average = <128>;
-		power-level = <0>;
-		offset-value-a = <10>;
-		offset-value-b = <10>;
-		#io-channel-cells = <1>;
-		clocks = <&clkctl3 MCUX_LPADC1_CLK>;
-	};
-
 	rstctl1: reset-controller@40000 {
 		compatible = "nxp,rstctl";
 		reg = <0x40000 0x1000>;
-		#reset-cells = <1>;
-	};
-
-	rstctl2: reset-controller@67000 {
-		compatible = "nxp,rstctl";
-		reg = <0x67000 0x1000>;
-		#reset-cells = <1>;
-	};
-
-	rstctl3: reset-controller@60000 {
-		compatible = "nxp,rstctl";
-		reg = <0x60000 0x1000>;
-		#reset-cells = <1>;
-	};
-
-	rstctl4: reset-controller@a0000 {
-		compatible = "nxp,rstctl";
-		reg = <0xa0000 0x1000>;
 		#reset-cells = <1>;
 	};
 
@@ -146,24 +55,6 @@
 	clkctl1: clock-controller@41000 {
 		compatible = "nxp,lpc-syscon";
 		reg = <0x41000 0x1000>;
-		#clock-cells = <1>;
-	};
-
-	clkctl2: clock-controller@65000 {
-		compatible = "nxp,lpc-syscon";
-		reg = <0x65000 0x1000>;
-		#clock-cells = <1>;
-	};
-
-	clkctl3: clock-controller@61000 {
-		compatible = "nxp,lpc-syscon";
-		reg = <0x61000 0x1000>;
-		#clock-cells = <1>;
-	};
-
-	clkctl4: clock-controller@a1000 {
-		compatible = "nxp,lpc-syscon";
-		reg = <0xa1000 0x1000>;
 		#clock-cells = <1>;
 	};
 
@@ -207,36 +98,6 @@
 		compatible = "nxp,lpc-syscon";
 		reg = <0x42000 0x1000>;
 		#clock-cells = <1>;
-	};
-
-	syscon2: syscon@66000 {
-		compatible = "nxp,lpc-syscon";
-		reg = <0x66000 0x1000>;
-		#clock-cells = <1>;
-	};
-
-	syscon3: syscon@62000 {
-		compatible = "nxp,lpc-syscon";
-		reg = <0x62000 0x1000>;
-		#clock-cells = <1>;
-	};
-
-	syscon4: syscon@a2000 {
-		compatible = "nxp,lpc-syscon";
-		reg = <0xa2000 0x1000>;
-		#clock-cells = <1>;
-	};
-
-	iocon1: pinctrl@64000 {
-		compatible = "nxp,lpc-iocon";
-		reg = <0x64000 0x1000>;
-		status = "okay";
-	};
-
-	iocon2: pinctrl@a5000 {
-		compatible = "nxp,lpc-iocon";
-		reg = <0xa5000 0x1000>;
-		status = "okay";
 	};
 
 	i3c2: i3c@56000 {
@@ -454,6 +315,36 @@
 		};
 	};
 
+	/* MU1: MUB, CPU1 to CPU0 */
+	mbox1_b: mbox@203000 {
+		compatible = "nxp,mbox-imx-mu";
+		reg = <0x203000 0x1000>;
+		interrupts = <26 0>;
+		rx-channels = <4>;
+		#mbox-cells = <1>;
+		status = "disabled";
+	};
+
+	/* MU2: MUB, CPU1 to HiFi4 */
+	mbox2_b: mbox@205000 {
+		compatible = "nxp,mbox-imx-mu";
+		reg = <0x205000 0x1000>;
+		interrupts = <27 0>;
+		rx-channels = <4>;
+		#mbox-cells = <1>;
+		status = "disabled";
+	};
+
+	/* MU3: MUA, CPU1 to HiFi1 */
+	mbox3_a: mbox@319000 {
+		compatible = "nxp,mbox-imx-mu";
+		reg = <0x319000 0x1000>;
+		interrupts = <28 0>;
+		rx-channels = <4>;
+		#mbox-cells = <1>;
+		status = "disabled";
+	};
+
 	/* LPFlexcomm15 only support LPI2C function. */
 	lpi2c15: i2c@213000 {
 		compatible = "nxp,lpi2c";
@@ -478,16 +369,4 @@
 		interrupts = <18 0>;
 		status = "disabled";
 	};
-};
-
-&nvic {
-	arm,num-irq-priority-bits = <3>;
-};
-
-&systick {
-	/*
-	 * RT700 cm33_cpu1 relies by default on the OS Timer for system
-	 * clock implementation, so the SysTick node is not to be enabled.
-	 */
-	status = "disabled";
 };
