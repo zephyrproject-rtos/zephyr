@@ -42,7 +42,6 @@
 			zephyr,code = <INPUT_KEY_2>;
 		};
 	};
-
 };
 
 &usart1 {
