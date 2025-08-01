@@ -37,7 +37,6 @@
 		led0 = &yellow_led;
 		watchdog0 = &wdt0;
 	};
-
 };
 
 &trng0 {

@@ -58,16 +58,16 @@
 		};
 		group2 {
 			pinmux = <LCD_CAM_V_SYNC_CAM_GPIO38>,
-				<LCD_CAM_H_ENABLE_CAM_GPIO47>,
-				<LCD_CAM_CAM_PCLK_GPIO13>,
-				<LCD_CAM_DATA_IN0_GPIO15>,
-				<LCD_CAM_DATA_IN1_GPIO17>,
-				<LCD_CAM_DATA_IN2_GPIO18>,
-				<LCD_CAM_DATA_IN3_GPIO16>,
-				<LCD_CAM_DATA_IN4_GPIO14>,
-				<LCD_CAM_DATA_IN5_GPIO12>,
-				<LCD_CAM_DATA_IN6_GPIO11>,
-				<LCD_CAM_DATA_IN7_GPIO48>;
+				 <LCD_CAM_H_ENABLE_CAM_GPIO47>,
+				 <LCD_CAM_CAM_PCLK_GPIO13>,
+				 <LCD_CAM_DATA_IN0_GPIO15>,
+				 <LCD_CAM_DATA_IN1_GPIO17>,
+				 <LCD_CAM_DATA_IN2_GPIO18>,
+				 <LCD_CAM_DATA_IN3_GPIO16>,
+				 <LCD_CAM_DATA_IN4_GPIO14>,
+				 <LCD_CAM_DATA_IN5_GPIO12>,
+				 <LCD_CAM_DATA_IN6_GPIO11>,
+				 <LCD_CAM_DATA_IN7_GPIO48>;
 			input-enable;
 			bias-disable;
 		};
@@ -76,7 +76,7 @@
 	twai_default: twai_default {
 		group1 {
 			pinmux = <TWAI_TX_GPIO3>,
-				<TWAI_RX_GPIO4>;
+				 <TWAI_RX_GPIO4>;
 		};
 	};
 };
