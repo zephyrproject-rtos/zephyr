@@ -352,10 +352,74 @@ static int cmd_hid_register(const struct shell *sh, int32_t argc, char *argv[])
 	return err;
 }
 
+static int cmd_hid_connect(const struct shell *sh, size_t argc, char *argv[])
+{
+	if (!hid_registered) {
+		bt_shell_print("hid connection callbacks not registered");
+		return -ENOEXEC;
+	}
+
+	if (!default_conn) {
+		bt_shell_print("bt not connected");
+		return -ENOEXEC;
+	}
+
+	default_hid = bt_hid_device_connect(default_conn);
+	if (!default_hid) {
+		bt_shell_print("fail to connect hid device");
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
+static int cmd_hid_disconnect(const struct shell *sh, size_t argc, char *argv[])
+{
+	if (!hid_registered) {
+		bt_shell_print("hid connection callbacks not registered");
+		return -ENOEXEC;
+	}
+
+	if (!default_hid) {
+		bt_shell_print("hid device is not connected");
+		return -ENOEXEC;
+	}
+
+	bt_hid_device_disconnect(default_hid);
+	default_hid = NULL;
+
+	return 0;
+}
+
+static int cmd_hid_send_report(const struct shell *sh, size_t argc, char *argv[])
+{
+	uint8_t buf[5] = {0};
+
+	if (!hid_registered) {
+		bt_shell_print("hid connection callbacks not registered");
+		return -ENOEXEC;
+	}
+
+	if (!default_hid) {
+		bt_shell_print("hid device is not connected");
+		return -ENOEXEC;
+	}
+
+	buf[0] = 0x02; /* Mouse */
+	buf[1] = 0x00;
+	buf[2] = atoi(argv[1]); /* X Displacement */
+	buf[3] = atoi(argv[2]); /* Y Displacement */
+	bt_hid_device_send_intr_data(default_hid, BT_HID_REPORT_TYPE_INPUT, buf, sizeof(buf));
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(hid_device_cmds,
 	SHELL_CMD_ARG(register, NULL, "register hid device", cmd_hid_register, 1, 0),
-	SHELL_SUBCMD_SET_END
-);
+	SHELL_CMD_ARG(connect, NULL, "hid connect", cmd_hid_connect, 1, 0),
+	SHELL_CMD_ARG(disconnect, NULL, "hid disconnect", cmd_hid_disconnect, 1, 0),
+	SHELL_CMD_ARG(send, NULL, "send report mouse: [X] [Y]", cmd_hid_send_report, 3, 0),
+	SHELL_SUBCMD_SET_END);
 
 static int cmd_hid_device(const struct shell *sh, size_t argc, char **argv)
 {
