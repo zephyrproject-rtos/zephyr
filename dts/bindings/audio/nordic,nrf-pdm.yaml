@@ -31,8 +31,7 @@ properties:
         (HFXO) for better clock accuracy and jitter performance
       - "ACLK": Audio PLL clock with configurable frequency (frequency for
         this clock must be set via the "hfclkaudio-frequency" property
-        in the "nordic,nrf-clock" node); this clock source is only available
-        in the nRF53 Series SoCs and it requires the use of HFXO
+        in the "nordic,nrf-clock" node); this clock source requires the use of HFXO
     enum:
       - "PCLK32M"
       - "PCLK32M_HFXO"
