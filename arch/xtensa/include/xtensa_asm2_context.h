@@ -116,7 +116,7 @@
 #endif
 
 /* Must have fields regardless of features. */
-#define _BSA_PADDING_COMMON		(sizeof(uintptr_t) * 12U)
+#define _BSA_PADDING_COMMON		(sizeof(uintptr_t) * 13U)
 
 /* Raw size by adding up all the above. */
 #define _BSA_PADDING_BASE_SIZE		\
@@ -194,6 +194,7 @@ struct xtensa_irq_base_save_area {
 #endif
 
 	uintptr_t exccause;
+	uintptr_t excvaddr;
 
 #if XCHAL_HAVE_LOOPS
 	uintptr_t lcount;
