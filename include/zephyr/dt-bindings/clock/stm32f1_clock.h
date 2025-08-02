@@ -27,6 +27,8 @@
 #define STM32_SRC_HSE           (STM32_SRC_HSI + 1)
 #define STM32_SRC_EXT_HSE       (STM32_SRC_HSE + 1)
 #define STM32_SRC_PLLCLK        (STM32_SRC_EXT_HSE + 1)
+#define STM32_SRC_TIMPCLK1	(STM32_SRC_PLLCLK + 1)
+#define STM32_SRC_TIMPCLK2	(STM32_SRC_TIMPCLK1 + 1)
 
 /** @brief RCC_CFGRx register offset */
 #define CFGR1_REG               0x04
