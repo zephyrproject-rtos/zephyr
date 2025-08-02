@@ -1,0 +1,19 @@
+# Copyright (c) 2024-2025 MASSDRIVER EI (massdriver.space)
+#
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: ai_m62_12f
+name: Ai-Thinker M62-12F development board
+type: mcu
+arch: riscv
+ram: 480
+toolchain:
+  - zephyr
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+supported:
+  - pinctrl
+  - uart
+vendor: bflb
