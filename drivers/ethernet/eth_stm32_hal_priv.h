@@ -29,6 +29,37 @@
 #define ETH_STM32_RX_BUF_SIZE	ETH_MAX_PACKET_SIZE /* buffer size for receive */
 #define ETH_STM32_TX_BUF_SIZE	ETH_MAX_PACKET_SIZE /* buffer size for transmit */
 
+#if defined(CONFIG_ETH_STM32_HAL_USE_DTCM_FOR_DMA_BUFFER) && \
+	    DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm))
+#define __eth_stm32_desc __dtcm_noinit_section
+#define __eth_stm32_buf  __dtcm_noinit_section
+#elif defined(CONFIG_SOC_SERIES_STM32H7X)
+#define __eth_stm32_desc __attribute__((section(".eth_stm32_desc")))
+#define __eth_stm32_buf  __attribute__((section(".eth_stm32_buf")))
+#elif defined(CONFIG_NOCACHE_MEMORY)
+#define __eth_stm32_desc __nocache __aligned(4)
+#define __eth_stm32_buf  __nocache __aligned(4)
+#else
+#define __eth_stm32_desc __aligned(4)
+#define __eth_stm32_buf  __aligned(4)
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet)
+#define IS_ETH_DMATXDESC_OWN(dma_tx_desc)	(dma_tx_desc->DESC3 & \
+							ETH_DMATXNDESCRF_OWN)
+
+#define ETH_RXBUFNB	ETH_RX_DESC_CNT
+#define ETH_TXBUFNB	ETH_TX_DESC_CNT
+
+/* Only one tx_buffer is sufficient to pass only 1 dma_buffer */
+#define ETH_TXBUF_DEF_NB	1U
+#else
+
+#define IS_ETH_DMATXDESC_OWN(dma_tx_desc)	(dma_tx_desc->Status & \
+							ETH_DMATXDESC_OWN)
+
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) */
+
 /* Device constant configuration parameters */
 struct eth_stm32_hal_dev_cfg {
 	void (*config_func)(void);
@@ -66,5 +97,23 @@ struct eth_stm32_hal_dev_data {
 	struct net_stats_eth stats;
 #endif
 };
+
+const struct device *eth_stm32_hal_get_phy(const struct device *dev);
+struct net_if *get_iface(struct eth_stm32_hal_dev_data *ctx);
+
+#if defined(CONFIG_ETH_STM32_HAL_API_V2)
+int eth_tx_v2(const struct device *dev, struct net_pkt *pkt);
+struct net_pkt *eth_rx_v2(const struct device *dev);
+void setup_mac_filter_v2(ETH_HandleTypeDef *heth);
+void set_mac_config_v2(const struct device *dev, struct phy_link_state *state);
+int eth_init_api_v2(const struct device *dev);
+#else
+int eth_tx_v1(const struct device *dev, struct net_pkt *pkt);
+struct net_pkt *eth_rx_v1(const struct device *dev);
+void setup_mac_filter_v1(ETH_HandleTypeDef *heth);
+void set_mac_config_v1(const struct device *dev, struct phy_link_state *state);
+int eth_init_api_v1(const struct device *dev);
+#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
+
 
 #endif /* ZEPHYR_DRIVERS_ETHERNET_ETH_STM32_HAL_PRIV_H_ */
