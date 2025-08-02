@@ -222,3 +222,7 @@
 &rtc {
 	status = "okay";
 };
+
+&edma {
+	status = "okay";
+};
