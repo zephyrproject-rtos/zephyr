@@ -1,0 +1,21 @@
+# Copyright (c) 2025 ispace, inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI TMS570 pinmux driver
+
+compatible: "ti,tms570-pinmux"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  properties:
+    pinmux:
+      required: true
+      type: array
+      description: |
+        TMS570 pin's configuration (select bit pair) based on the "Output Multiplexing"
+        table in the reference manual.
