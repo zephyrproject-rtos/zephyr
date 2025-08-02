@@ -128,8 +128,7 @@
 		     &kso09_gp10 /* KSO09 PIN10 */
 		     &kso10_gp07 /* KSO10 PIN07 */
 		     &kso11_gp06 /* KSO11 PIN06 */
-		     &kso12_gp05 /* KSO12 PIN05 */
-		     >;
+		     &kso12_gp05 /* KSO12 PIN05 */ >;
 	pinctrl-names = "default";
 	row-size = <8>;
 	col-size = <13>;

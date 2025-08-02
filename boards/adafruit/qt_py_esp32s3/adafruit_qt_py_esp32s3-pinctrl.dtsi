@@ -61,7 +61,7 @@
 	twai_default: twai_default {
 		group1 {
 			pinmux = <TWAI_TX_GPIO9>,
-				<TWAI_RX_GPIO8>;
+				 <TWAI_RX_GPIO8>;
 		};
 	};
 };

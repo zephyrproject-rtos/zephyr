@@ -21,7 +21,6 @@
 		zephyr,flash = &w25q64jvssiq;
 		zephyr,flash-controller = &w25q64jvssiq;
 	};
-
 };
 
 &w25q64jvssiq {

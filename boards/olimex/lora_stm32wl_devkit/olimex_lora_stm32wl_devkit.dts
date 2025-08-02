@@ -102,7 +102,7 @@ uext_i2c: &i2c1 {
 	iis2mdc@1e {
 		compatible = "st,iis2mdc";
 		reg = <0x1e>;
-		drdy-gpios =  <&gpioa 8 GPIO_ACTIVE_HIGH>;
+		drdy-gpios = <&gpioa 8 GPIO_ACTIVE_HIGH>;
 	};
 };
 

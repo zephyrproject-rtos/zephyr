@@ -49,22 +49,22 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<0 0 &gpioa 0 0>,	/* AN  */
-				<1 0 &gpiob 5 0>,	/* RST */
-				<2 0 &gpiob 12 0>,	/* CS   */
-				<3 0 &gpiob 13 0>,	/* SCK  */
-				<4 0 &gpiob 14 0>,	/* MISO */
-				<5 0 &gpiob 15 0>,	/* MOSI */
-							/* +3.3V */
-							/* GND */
-				<6 0 &gpiob 0 0>,	/* PWM  */
-				<7 0 &gpiob 1 0>,	/* INT  */
-				<8 0 &gpioc 11 0>,	/* RX   */
-				<9 0 &gpioc 10 0>,	/* TX   */
-				<10 0 &gpiob 10 0>,	/* SCL  */
-				<11 0 &gpiob 11 0>;	/* SDA  */
-							/* +5V */
-							/* GND */
+		gpio-map = <0 0 &gpioa 0 0>, /* AN  */
+			   <1 0 &gpiob 5 0>, /* RST */
+			   <2 0 &gpiob 12 0>, /* CS   */
+			   <3 0 &gpiob 13 0>, /* SCK  */
+			   <4 0 &gpiob 14 0>, /* MISO */
+			   <5 0 &gpiob 15 0>, /* MOSI */
+			   /* +3.3V */
+			   /* GND */
+			   <6 0 &gpiob 0 0>, /* PWM  */
+			   <7 0 &gpiob 1 0>, /* INT  */
+			   <8 0 &gpioc 11 0>, /* RX   */
+			   <9 0 &gpioc 10 0>, /* TX   */
+			   <10 0 &gpiob 10 0>, /* SCL  */
+			   <11 0 &gpiob 11 0>; /* SDA  */
+		/* +5V */
+		/* GND */
 	};
 
 	aliases {
@@ -115,9 +115,9 @@
 
 &spi2 {
 	pinctrl-0 = <&spi2_nss_pb12 &spi2_sck_pb13
-				&spi2_miso_pb14 &spi2_mosi_pb15>;
-		pinctrl-names = "default";
-		status = "okay";
+		     &spi2_miso_pb14 &spi2_mosi_pb15>;
+	pinctrl-names = "default";
+	status = "okay";
 };
 
 zephyr_udc0: &usbotg_fs {
