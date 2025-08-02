@@ -19,6 +19,7 @@ static uint8_t conn_count_max;
 static uint8_t volatile conn_count;
 static uint8_t id_current;
 static bool volatile is_disconnecting;
+static bool scanning;
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
@@ -60,6 +61,21 @@ static void adv_start(struct k_work *work)
 
 	printk("Using current id: %u\n", id_current);
 	adv_param.id = id_current;
+
+#if defined(CONFIG_BT_PRIVACY)
+	/* When privacy is enabled, we cannot start an advertiser with an RPA generated for a
+	 * different identity than scanner role. Therefore, we need to stop scanning.
+	 */
+	if (adv_param.id != BT_ID_DEFAULT && scanning) {
+		err = bt_le_scan_stop();
+		if (err) {
+			printk("Failed to stop scanning (err %d)\n", err);
+			return;
+		}
+
+		scanning = false;
+	}
+#endif
 
 	err = bt_le_adv_start(&adv_param, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
 	if (err) {
@@ -234,12 +250,14 @@ static void disconnect(struct bt_conn *conn, void *data)
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	printk("Disconnecting %s...\n", addr);
+
 	err = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	if (err) {
 		printk("Failed disconnection %s.\n", addr);
 		return;
 	}
-	printk("success.\n");
+
+	printk("Disconnect initiated\n");
 }
 
 int init_peripheral(uint8_t max_conn, uint8_t iterations)
@@ -271,7 +289,10 @@ int init_peripheral(uint8_t max_conn, uint8_t iterations)
 		printk("Scan start failed (%d).\n", err);
 		return err;
 	}
-	printk("success.\n");
+
+	scanning = true;
+
+	printk("Scanning start success.\n");
 #endif /* CONFIG_BT_OBSERVER */
 
 	k_work_init(&work_adv_start, adv_start);
@@ -298,6 +319,7 @@ int init_peripheral(uint8_t max_conn, uint8_t iterations)
 			/* Lets wait sufficiently to ensure a stable connection
 			 * before starting to disconnect for next iteration.
 			 */
+			printk("Waiting for stable connections...\n");
 			k_sleep(K_SECONDS(60));
 
 			if (!iterations) {
