@@ -348,7 +348,7 @@ def find_v2_boards(args):
         board_extensions.extend(e)
 
     extend_v2_boards(boards, board_extensions)
-    return boards
+    return sorted(boards.values(), key=lambda board: board.name)
 
 
 def parse_args():
@@ -421,7 +421,7 @@ def dump_v2_boards(args):
         close_boards = difflib.get_close_matches(args.fuzzy_match, boards.keys())
         boards = {b: boards[b] for b in close_boards}
 
-    for b in boards.values():
+    for b in boards:
         qualifiers_list = board_v2_qualifiers(b)
         if args.cmakeformat is not None:
             def notfound(x):
