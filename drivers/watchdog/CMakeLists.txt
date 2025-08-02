@@ -64,4 +64,6 @@ zephyr_library_sources_ifdef(CONFIG_WDT_SHELL wdt_shell.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_RENESAS_RA wdt_renesas_ra.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_NXP_EWM wdt_nxp_ewm.c)
 
+zephyr_library_sources_ifdef(CONFIG_WDT_TI_RTI wdt_ti_rti.c)
+
 zephyr_library_sources_ifdef(CONFIG_USERSPACE wdt_handlers.c)
