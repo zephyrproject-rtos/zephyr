@@ -840,6 +840,15 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
         NOTE: west-flash must be enabled to use this option.
         """
     )
+    parser.add_argument(
+        "--flash-command",
+        help="""Uses a custom flash command to flash when running with
+            --device-testing. Supports comma-separated argument list, the
+            script is also passed a --build-dir flag with the build directory
+            as an argument, and a --board-id flag with the board or probe id if
+            available.
+        """
+    )
 
     parser.add_argument(
         "-X", "--fixture", action="append", default=[],
@@ -903,6 +912,14 @@ def parse_arguments(
 
     if options.west_flash and not options.device_testing:
         logger.error("west-flash requires device-testing to be enabled")
+        sys.exit(1)
+
+    if options.flash_command and not options.device_testing:
+        logger.error("flash-command requires device-testing to be enabled")
+        sys.exit(1)
+
+    if options.flash_command and options.west_flash is not None:
+        logger.error("cannot use flash-command and west-flash at the same time")
         sys.exit(1)
 
     if not options.testsuite_root:
