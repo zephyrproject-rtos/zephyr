@@ -20,9 +20,9 @@
 #include <zephyr/arch/arm64/hypercall.h>
 #include <zephyr/xen/generic.h>
 #include <zephyr/xen/gnttab.h>
-#include <zephyr/xen/public/grant_table.h>
-#include <zephyr/xen/public/memory.h>
-#include <zephyr/xen/public/xen.h>
+#include <xen/public/grant_table.h>
+#include <xen/public/memory.h>
+#include <xen/public/xen.h>
 #include <zephyr/sys/barrier.h>
 
 #include <zephyr/init.h>
@@ -193,61 +193,80 @@ static void gop_eagain_retry(int cmd, struct gnttab_map_grant_ref *gref)
 	}
 }
 
-void *gnttab_get_page(void)
+void *gnttab_get_pages(unsigned int npages)
 {
 	int ret;
 	void *page_addr;
 	struct xen_remove_from_physmap rfpm;
 
-	page_addr = k_aligned_alloc(XEN_PAGE_SIZE, XEN_PAGE_SIZE);
+	page_addr = k_aligned_alloc(XEN_PAGE_SIZE, XEN_PAGE_SIZE * npages);
 	if (!page_addr) {
 		LOG_WRN("Failed to allocate memory for gnttab page!\n");
 		return NULL;
 	}
 
-	rfpm.domid = DOMID_SELF;
-	rfpm.gpfn = xen_virt_to_gfn(page_addr);
+	for (int i = 0; i < npages; i++) {
+		rfpm.domid = DOMID_SELF;
+		rfpm.gpfn = xen_virt_to_gfn((char *)page_addr + (i * XEN_PAGE_SIZE));
 
-	/*
-	 * GNTTABOP_map_grant_ref will simply replace the entry in the P2M
-	 * and not release any RAM that may have been associated with
-	 * page_addr, so we release this memory before mapping.
-	 */
-	ret = HYPERVISOR_memory_op(XENMEM_remove_from_physmap, &rfpm);
-	if (ret) {
-		LOG_WRN("Failed to remove gnttab page from physmap, ret = %d\n", ret);
-		return NULL;
+		/*
+		 * GNTTABOP_map_grant_ref will simply replace the entry in the P2M
+		 * and not release any RAM that may have been associated with
+		 * page_addr, so we release this memory before mapping.
+		 */
+		ret = HYPERVISOR_memory_op(XENMEM_remove_from_physmap, &rfpm);
+		if (ret) {
+			LOG_WRN("Failed to remove gnttab page from physmap, ret = %d\n", ret);
+			gnttab_put_pages(page_addr, i);
+
+			return NULL;
+		}
 	}
 
 	return page_addr;
 }
 
-void gnttab_put_page(void *page_addr)
+void *gnttab_get_page(void)
+{
+	return gnttab_get_pages(1);
+}
+
+int gnttab_put_pages(void *page_addr, unsigned int npages)
 {
 	int ret, nr_extents = 1;
 	struct xen_memory_reservation reservation;
-	xen_pfn_t page = xen_virt_to_gfn(page_addr);
 
-	/*
-	 * After unmapping there will be a 4Kb holes in address space
-	 * at 'page_addr' positions. To keep it contiguous and be able
-	 * to return such addresses to memory allocator we need to
-	 * populate memory on unmapped positions here.
-	 */
-	memset(&reservation, 0, sizeof(reservation));
-	reservation.domid = DOMID_SELF;
-	reservation.extent_order = 0;
-	reservation.nr_extents = nr_extents;
-	set_xen_guest_handle(reservation.extent_start, &page);
+	for (size_t i = 0; i < npages; i++) {
+		xen_pfn_t page = xen_virt_to_gfn((char *)page_addr + (i * XEN_PAGE_SIZE));
 
-	ret = HYPERVISOR_memory_op(XENMEM_populate_physmap, &reservation);
-	if (ret != nr_extents) {
-		LOG_WRN("failed to populate physmap on gfn = 0x%llx, ret = %d\n",
-			page, ret);
-		return;
+		/*
+		 * After unmapping there will be a 4Kb holes in address space
+		 * at 'page_addr' positions. To keep it contiguous and be able
+		 * to return such addresses to memory allocator we need to
+		 * populate memory on unmapped positions here.
+		 */
+		memset(&reservation, 0, sizeof(reservation));
+		reservation.domid = DOMID_SELF;
+		reservation.extent_order = 0;
+		reservation.nr_extents = nr_extents;
+		set_xen_guest_handle(reservation.extent_start, &page);
+
+		ret = HYPERVISOR_memory_op(XENMEM_populate_physmap, &reservation);
+		if (ret != nr_extents) {
+			LOG_WRN("failed to populate physmap on gfn = 0x%llx, ret = %d\n", page,
+				ret);
+			return -EIO;
+		}
 	}
 
 	k_free(page_addr);
+
+	return 0;
+}
+
+int gnttab_put_page(void *page_addr)
+{
+	return gnttab_put_pages(page_addr, 1);
 }
 
 int gnttab_map_refs(struct gnttab_map_grant_ref *map_ops, unsigned int count)
@@ -286,8 +305,7 @@ int gnttab_unmap_refs(struct gnttab_unmap_grant_ref *unmap_ops, unsigned int cou
 	return HYPERVISOR_grant_table_op(GNTTABOP_unmap_grant_ref, unmap_ops, count);
 }
 
-
-static const char * const gnttab_error_msgs[] = GNTTABOP_error_msgs;
+static const char *const gnttab_error_msgs[] = GNTTABOP_error_msgs;
 
 const char *gnttabop_error(int16_t status)
 {
