@@ -782,6 +782,10 @@ static int ov5640_set_frmival(const struct device *dev, struct video_frmival *fr
 		return -ENOTSUP;
 	}
 
+	if (frmival->numerator == 0) {
+		LOG_ERR("Numerator is zero, invalid frame rate values.");
+		return -EINVAL;
+	}
 	desired_frmrate = DIV_ROUND_CLOSEST(frmival->denominator, frmival->numerator);
 
 	/* Find the supported frame rate closest to the desired one */
