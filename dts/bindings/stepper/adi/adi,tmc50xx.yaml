@@ -85,7 +85,7 @@ properties:
 
 child-binding:
   include:
-    - name: stepper-controller.yaml
+    - name: stepper.yaml
     - name: base.yaml
       property-allowlist:
         - reg
