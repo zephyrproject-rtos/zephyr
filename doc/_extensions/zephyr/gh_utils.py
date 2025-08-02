@@ -40,9 +40,8 @@ import sys
 from datetime import datetime
 from functools import partial
 from pathlib import Path
-from textwrap import dedent
 from typing import Final
-from urllib.parse import quote
+from urllib.parse import urlencode
 
 from sphinx.application import Sphinx
 from sphinx.util.i18n import format_date
@@ -117,12 +116,12 @@ def gh_link_get_url(app: Sphinx, pagename: str, mode: str = "blob") -> str | Non
 
 
 def gh_link_get_open_issue_url(app: Sphinx, pagename: str, sha1: str) -> str | None:
-    """Link to open a new Github issue regarding "pagename" with title, body, and
-    labels already pre-filled with useful information.
+    """Link to open a new Github issue regarding "pagename" using the bug report template.
 
     Args:
         app: Sphinx instance.
         pagename: Page name (path).
+        sha1: SHA1 of the last commit to the page.
 
     Returns:
         URL to open a new issue if applicable, None otherwise.
@@ -138,29 +137,32 @@ def gh_link_get_open_issue_url(app: Sphinx, pagename: str, sha1: str) -> str | N
         app.env.doc2path(pagename, False),
     )
 
-    title = quote(f"doc: Documentation issue in '{pagename}'")
-    labels = quote("area: Documentation")
+    form_data = {
+        "template": "001_bug_report.yml",
+        "title": f"doc: Documentation issue in '{pagename}'",
+        "labels": [
+            "bug",
+            "area: Documentation"
+        ],
+        "env": (
+            f"- Page: {pagename}\n"
+            f"- Version: {app.config.gh_link_version}\n"
+            f"- SHA-1: {sha1}"
+        ),
+        "context": (
+            "This issue was reported from the online documentation page using the "
+            "'Report an issue' button."
+        ),
+    }
+
     areas = MAINTAINERS.path2areas(rel_path)
     if areas:
-        labels += "," + ",".join([label for area in areas for label in area.labels])
-    body = quote(
-        dedent(
-            f"""\
-    **Describe the bug**
+        for area in areas:
+            form_data["labels"].extend(area.labels)
+    form_data["labels"] = ",".join(form_data.get("labels", []))
 
-    << Please describe the issue here >>
-    << You may also want to update the automatically generated issue title above. >>
-
-    **Environment**
-
-    * Page: `{pagename}`
-    * Version: {app.config.gh_link_version}
-    * SHA-1: {sha1}
-    """
-        )
-    )
-
-    return f"{app.config.gh_link_base_url}/issues/new?title={title}&labels={labels}&body={body}"
+    base_url = f"{app.config.gh_link_base_url}/issues/new"
+    return f"{base_url}?{urlencode(form_data)}"
 
 
 def git_info_filter(app: Sphinx, pagename) -> tuple[str, str] | None:
