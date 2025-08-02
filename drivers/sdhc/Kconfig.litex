@@ -1,0 +1,10 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config SDHC_LITEX_LITESDCARD
+	bool "LiteX LiteSDCard SDHC driver"
+	default y
+	depends on DT_HAS_LITEX_LITESDCARD_SDHC_ENABLED
+	select SDHC_SUPPORTS_NATIVE_MODE
+	help
+	  sdhc driver for LiteX LiteSDCard.
