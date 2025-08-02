@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2025 Lukas Woodtli
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <silabs/efm32tg.dtsi>
+
+/ {
+	sram0: memory@20000000 {
+		reg = <0x20000000 DT_SIZE_K(32)>;
+	};
+
+	soc {
+		compatible = "silabs,efm32tg840f32", "silabs,efm32tg", "silabs,efm32", "simple-bus";
+
+		flash-controller@400c0000 {
+			flash0: flash@0 {
+				reg = <0 DT_SIZE_K(256)>;
+			};
+		};
+	};
+};
