@@ -37,3 +37,13 @@ tests:
       - CONFIG_TFM_SFN=y
       - CONFIG_TFM_ISOLATION_LEVEL=1
     timeout: 200
+
+  sample.tfm.regression_ipc_lvl1.max32657.ns:
+    platform_allow:
+      - max32657evkit/max32657/ns
+    filter: CONFIG_BOARD_MAX32657EVKIT_MAX32657_NS
+    extra_args:
+      - CONFIG_TFM_REGRESSION_S=n
+      - CONFIG_TFM_IPC=n
+      - CONFIG_TFM_ISOLATION_LEVEL=1
+    timeout: 200
