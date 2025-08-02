@@ -145,3 +145,6 @@ uint8_t tester_unregister_ots(void);
 
 uint8_t tester_init_pbp(void);
 uint8_t tester_unregister_pbp(void);
+
+uint8_t tester_init_a2dp(void);
+uint8_t tester_unregister_a2dp(void);
