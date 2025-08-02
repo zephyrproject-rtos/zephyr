@@ -275,11 +275,18 @@ static int call_fn_table(struct llext *ext, bool is_init)
 	typedef void (*elf_void_fn_t)(void);
 
 	int fn_count = ret / sizeof(elf_void_fn_t);
-	elf_void_fn_t fn_table[fn_count];
 
-	ret = llext_get_fn_table(ext, is_init, &fn_table, sizeof(fn_table));
+	elf_void_fn_t *fn_table = llext_alloc_data(sizeof(elf_void_fn_t) * fn_count);
+
+	if (!fn_table) {
+		LOG_ERR("Failed to allocate memory for fn_table");
+		return -ENOMEM;
+	}
+
+	ret = llext_get_fn_table(ext, is_init, fn_table, sizeof(elf_void_fn_t) * fn_count);
 	if (ret < 0) {
 		LOG_ERR("Failed to get function table: %d", (int)ret);
+		llext_free(fn_table);
 		return ret;
 	}
 
@@ -289,6 +296,7 @@ static int call_fn_table(struct llext *ext, bool is_init)
 		fn_table[i]();
 	}
 
+	llext_free(fn_table);
 	return 0;
 }
 
