@@ -1322,6 +1322,97 @@ class Node:
         return res
 
     @property
+    def maps(self) -> list[ControllerAndData]:
+        res: list[ControllerAndData] = []
+
+        def count_cells_num(node: dtlib_Node, specifier: str) -> int:
+            """
+            Calculate the number of cells in the node.
+            When calculating the number of interrupt cells,
+            add up the values of the address cells.
+            """
+
+            if node is None:
+                _err("node is None.")
+
+            num = node.props[f"#{specifier}-cells"].to_num()
+
+            if specifier == "interrupt":
+                parent_props = None
+                if node.parent:
+                    parent_props = node.parent.props
+
+                if "#address-cells" in node.props:
+                    num = num + node.props["#address-cells"].to_num()
+                elif parent_props and "#address-cells" in parent_props:
+                    num = num + parent_props["#address-cells"].to_num()
+                else:
+                    _err("Neither the node nor its parent has `#address-cells` property")
+
+            return num
+
+        for prop in [v for k, v in self._node.props.items() if k.endswith("-map")]:
+            specifier_space = prop.name[:-4]  # Strip '-map'
+            raw = prop.value
+            while raw:
+                if len(raw) < 4:
+                    # Not enough room for phandle
+                    _err("bad value for " + repr(prop))
+
+                child_specifier_num = count_cells_num(prop.node, specifier_space)
+
+                child_specifiers = to_nums(raw[: 4 * child_specifier_num])
+                raw = raw[4 * child_specifier_num :]
+                phandle = to_num(raw[:4])
+                raw = raw[4:]
+
+                controller_node = prop.node.dt.phandle2node.get(phandle)
+                if controller_node is None:
+                    _err(f"controller node cannot be found from phandle:{phandle}")
+
+                controller: Node = self.edt._node2enode[controller_node]
+                if controller is None:
+                    _err("controller cannot be found from: " + repr(controller_node))
+
+                parent_specifier_num = count_cells_num(controller_node, specifier_space)
+                parent_specifiers = to_nums(raw[: 4 * parent_specifier_num])
+                raw = raw[4 * parent_specifier_num :]
+
+                # Although this is rare, if a cell-name is specified for the map node,
+                # it will be reflected.
+                # If not specified, the name of child_specifier_[i] will be set.
+                values: dict[str, int] = {}
+                for i, v in enumerate(child_specifiers):
+                    cell_name = f"child_specifier_{i}"
+                    if (self._binding and
+                        self._binding.specifier2cells and
+                        specifier_space in self._binding.specifier2cells and
+                        i < len(self._binding.specifier2cells[specifier_space])):
+                        cell_name = self._binding.specifier2cells[specifier_space][i]
+
+                    values[cell_name] = v
+
+                # The cell name for parent_specifier cannot be determined.
+                # For convenience, we assign it the name parent_specifier_[i].
+                for i, v in enumerate(parent_specifiers):
+                    values[f"parent_specifier_{i}"] = v
+
+                res.append(
+                    ControllerAndData(
+                        node=self,
+                        controller=controller,
+                        data=values,
+                        name=None,
+                        basename=specifier_space,
+                    )
+                )
+
+            if len(raw) != 0:
+                _err(f"unexpected prop.value remainings: {raw}")
+
+        return res
+
+    @property
     def has_child_binding(self) -> bool:
         """
         True if the node's binding contains a child-binding definition, False
