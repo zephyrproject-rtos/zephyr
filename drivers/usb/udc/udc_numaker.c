@@ -172,10 +172,11 @@ static inline void numaker_usbd_sw_connect(const struct device *dev)
 
 	/* Enable relevant interrupts */
 	base->INTEN = USBD_INT_BUS | USBD_INT_USB | USBD_INT_FLDET |
-		      IF_ENABLED(CONFIG_UDC_ENABLE_SOF, (USBD_INT_SOF |))
+		      IF_ENABLED(CONFIG_UDC_ENABLE_SOF, (USBD_INT_SOF |)) /* High CPU load */
 		      USBD_INT_WAKEUP;
 
 	/* Clear SE0 for connect */
+	base->ATTR |= USBD_ATTR_DPPUEN_Msk;
 	base->SE0 &= ~USBD_DRVSE0;
 }
 
@@ -345,8 +346,8 @@ static int numaker_usbd_hw_setup(const struct device *dev)
 
 	/* Initialize USBD engine */
 	/* NOTE: BSP USBD driver: ATTR = 0x7D0 */
-	base->ATTR = USBD_ATTR_BYTEM_Msk | BIT(9) | USBD_ATTR_DPPUEN_Msk | USBD_ATTR_USBEN_Msk |
-		     BIT(6) | USBD_ATTR_PHYEN_Msk;
+	base->ATTR = USBD_ATTR_BYTEM_Msk | BIT(9) | USBD_ATTR_USBEN_Msk | BIT(6) |
+		     USBD_ATTR_PHYEN_Msk;
 
 	/* Set SE0 for S/W disconnect */
 	numaker_usbd_sw_disconnect(dev);
@@ -558,8 +559,8 @@ static void numaker_usbd_ep_config_major(struct numaker_usbd_ep *ep_cur,
 	}
 
 	/* Endpoint index */
-	ep_cur->ep_hw_cfg |=
-		(USB_EP_GET_IDX(ep_cfg->addr) << USBD_CFG_EPNUM_Pos) & USBD_CFG_EPNUM_Msk;
+	ep_cur->ep_hw_cfg |= (USB_EP_GET_IDX(ep_cfg->addr) << USBD_CFG_EPNUM_Pos) &
+			     USBD_CFG_EPNUM_Msk;
 
 	ep_base->CFG = ep_cur->ep_hw_cfg;
 }
@@ -1205,7 +1206,7 @@ static void numaker_usbd_msg_handler(const struct device *dev)
 	}
 }
 
-static void numaker_udbd_isr(const struct device *dev)
+static void numaker_usbd_isr(const struct device *dev)
 {
 	const struct udc_numaker_config *config = dev->config;
 	struct udc_numaker_data *priv = udc_get_private(dev);
@@ -1213,14 +1214,22 @@ static void numaker_udbd_isr(const struct device *dev)
 
 	struct numaker_usbd_msg msg = {0};
 
-	uint32_t volatile usbd_intsts = base->INTSTS;
-	uint32_t volatile usbd_bus_state = base->ATTR;
+	uint32_t usbd_intsts = base->INTSTS;
+	uint32_t usbd_bus_state = base->ATTR;
+
+	/* Focus on enabled
+	 *
+	 * NOTE: INTSTS has more interrupt bits than INTEN: SETUP and EPEVTx.
+	 * For SETUP, it is added back for not missing.
+	 * For EPEVTx, they are caught by EPINTSTS.
+	 */
+	usbd_intsts &= base->INTEN | USBD_INTSTS_SETUP;
+
+	/* Clear event flag */
+	base->INTSTS = usbd_intsts;
 
 	/* USB plug-in/unplug */
 	if (usbd_intsts & USBD_INTSTS_FLDET) {
-		/* Floating detect */
-		base->INTSTS = USBD_INTSTS_FLDET;
-
 		if (base->VBUSDET & USBD_VBUSDET_VBUSDET_Msk) {
 			/* USB plug-in */
 
@@ -1246,17 +1255,11 @@ static void numaker_udbd_isr(const struct device *dev)
 
 	/* USB wake-up */
 	if (usbd_intsts & USBD_INTSTS_WAKEUP) {
-		/* Clear event flag */
-		base->INTSTS = USBD_INTSTS_WAKEUP;
-
 		LOG_DBG("USB wake-up");
 	}
 
 	/* USB reset/suspend/resume */
 	if (usbd_intsts & USBD_INTSTS_BUS) {
-		/* Clear event flag */
-		base->INTSTS = USBD_INTSTS_BUS;
-
 		if (usbd_bus_state & USBD_STATE_USBRST) {
 			/* Bus reset */
 
@@ -1296,9 +1299,6 @@ static void numaker_udbd_isr(const struct device *dev)
 
 	/* USB SOF */
 	if (usbd_intsts & USBD_INTSTS_SOFIF_Msk) {
-		/* Clear event flag */
-		base->INTSTS = USBD_INTSTS_SOFIF_Msk;
-
 		/* UDC stack would handle bottom-half processing */
 		udc_submit_sof_event(dev);
 	}
@@ -1311,9 +1311,6 @@ static void numaker_udbd_isr(const struct device *dev)
 		if (usbd_intsts & USBD_INTSTS_SETUP) {
 			USBD_EP_T *ep0_base = numaker_usbd_ep_base(dev, EP0);
 			USBD_EP_T *ep1_base = numaker_usbd_ep_base(dev, EP1);
-
-			/* Clear event flag */
-			base->INTSTS = USBD_INTSTS_SETUP;
 
 			/* Clear the data IN/OUT ready flag of control endpoints */
 			ep0_base->CFGP |= USBD_CFGP_CLRRDY_Msk;
@@ -1337,6 +1334,7 @@ static void numaker_udbd_isr(const struct device *dev)
 		/* EP events */
 		epintsts = base->EPINTSTS;
 
+		/* Clear event flag */
 		base->EPINTSTS = epintsts;
 
 		while (epintsts) {
@@ -1371,8 +1369,8 @@ static void numaker_udbd_isr(const struct device *dev)
 			 */
 			if (ep == USB_EP_GET_ADDR(0, USB_EP_DIR_OUT)) {
 				struct numaker_usbd_ep *ep_ctrlout = priv->ep_pool + 0;
-				USBD_EP_T *ep_ctrlout_base =
-					numaker_usbd_ep_base(dev, ep_ctrlout->ep_hw_idx);
+				USBD_EP_T *ep_ctrlout_base = numaker_usbd_ep_base(
+					dev, ep_ctrlout->ep_hw_idx);
 
 				ep_ctrlout->mxpld_ctrlout = ep_ctrlout_base->MXPLD;
 			}
@@ -1593,6 +1591,9 @@ static int udc_numaker_disable(const struct device *dev)
 
 static int udc_numaker_init(const struct device *dev)
 {
+	const struct udc_numaker_config *config = dev->config;
+	struct udc_data *data = dev->data;
+	USBD_T *base = config->base;
 	int err;
 
 	/* Initialize USBD H/W */
@@ -1616,6 +1617,11 @@ static int udc_numaker_init(const struct device *dev)
 	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_IN, USB_EP_TYPE_CONTROL, 64, 0)) {
 		LOG_ERR("Failed to enable control endpoint");
 		return -EIO;
+	}
+
+	/* Enable VBUS detect early */
+	if (data->caps.can_detect_vbus) {
+		base->INTEN = USBD_INT_FLDET;
 	}
 
 	return 0;
@@ -1662,6 +1668,7 @@ static int udc_numaker_driver_preinit(const struct device *dev)
 
 	data->caps.rwup = true;
 	data->caps.addr_before_status = true;
+	data->caps.can_detect_vbus = true;
 	data->caps.mps0 = UDC_MPS0_64;
 
 	/* Some soc series don't allow ISO IN/OUT to be assigned the same EP number.
@@ -1747,7 +1754,7 @@ static const struct udc_api udc_numaker_api = {
                                                                                                    \
 	static void udc_numaker_irq_config_func_##inst(const struct device *dev)                   \
 	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), numaker_udbd_isr,     \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), numaker_usbd_isr,     \
 			    DEVICE_DT_INST_GET(inst), 0);                                          \
                                                                                                    \
 		irq_enable(DT_INST_IRQN(inst));                                                    \
