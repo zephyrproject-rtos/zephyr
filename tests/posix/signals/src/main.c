@@ -48,7 +48,7 @@ ZTEST(posix_signals, test_sigaddset_oor)
 	zassert_equal(sigaddset(&set, 0), -1, "rc should be -1");
 	zassert_equal(errno, EINVAL, "errno should be %s", "EINVAL");
 
-	zassert_equal(sigaddset(&set, _NSIG), -1, "rc should be -1");
+	zassert_equal(sigaddset(&set, SIGRTMAX + 1), -1, "rc should be -1");
 	zassert_equal(errno, EINVAL, "errno should be %s", "EINVAL");
 }
 
@@ -109,7 +109,7 @@ ZTEST(posix_signals, test_sigdelset_oor)
 	zassert_equal(sigdelset(&set, 0), -1, "rc should be -1");
 	zassert_equal(errno, EINVAL, "errno should be %s", "EINVAL");
 
-	zassert_equal(sigdelset(&set, _NSIG), -1, "rc should be -1");
+	zassert_equal(sigdelset(&set, SIGRTMAX + 1), -1, "rc should be -1");
 	zassert_equal(errno, EINVAL, "errno should be %s", "EINVAL");
 }
 
@@ -170,7 +170,7 @@ ZTEST(posix_signals, test_sigismember_oor)
 	zassert_equal(sigismember(&set, 0), -1, "rc should be -1");
 	zassert_equal(errno, EINVAL, "errno should be %s", "EINVAL");
 
-	zassert_equal(sigismember(&set, _NSIG), -1, "rc should be -1");
+	zassert_equal(sigismember(&set, SIGRTMAX + 1), -1, "rc should be -1");
 	zassert_equal(errno, EINVAL, "errno should be %s", "EINVAL");
 }
 
@@ -202,7 +202,7 @@ ZTEST(posix_signals, test_signal_strsignal)
 
 	zassert_mem_equal(strsignal(-1), "Invalid signal", sizeof("Invalid signal"));
 	zassert_mem_equal(strsignal(0), "Invalid signal", sizeof("Invalid signal"));
-	zassert_mem_equal(strsignal(_NSIG), "Invalid signal", sizeof("Invalid signal"));
+	zassert_mem_equal(strsignal(SIGRTMAX + 1), "Invalid signal", sizeof("Invalid signal"));
 
 	zassert_mem_equal(strsignal(30), "Signal 30", sizeof("Signal 30"));
 	snprintf(buf, sizeof(buf), "RT signal %d", SIGRTMIN - SIGRTMIN);
