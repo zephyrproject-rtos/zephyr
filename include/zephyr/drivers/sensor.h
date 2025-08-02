@@ -360,6 +360,12 @@ enum sensor_attribute {
 	SENSOR_ATTR_GAIN,
 	/* Configure the resolution of a sensor. */
 	SENSOR_ATTR_RESOLUTION,
+	/** Factory-programmed unique identifier.
+	 * Any sensor that exposes a fixed 32-/48-/64-bit chip/lot/serial number
+	 * can report it through this attribute.  The value is returned in a
+	 * single sensor_value using the helper `sensor_value_from_uid`.
+	 */
+	SENSOR_ATTR_UNIQUE_ID,
 	/**
 	 * Number of all common sensor attributes.
 	 */
@@ -1551,6 +1557,32 @@ static inline int sensor_value_from_micro(struct sensor_value *val, int64_t micr
 	val->val1 = (int32_t)(micro / 1000000LL);
 	val->val2 = (int32_t)(micro % 1000000LL);
 
+	return 0;
+}
+
+/**
+ * @brief Helper function for converting struct sensor_value to uint64_t UID.
+ *
+ * @param val A pointer to a sensor_value struct.
+ * @return The converted value.
+ */
+static inline uint64_t sensor_value_to_uid(const struct sensor_value *val)
+{
+	/* Cast through uint32_t to avoid sign-extension on the shift. */
+	return ((uint64_t)(uint32_t)val->val1 << 32) | (uint32_t)val->val2;
+}
+
+/**
+ * @brief Helper function for converting uint64_t UID to struct sensor_value.
+ *
+ * @param val A pointer to a sensor_value struct.
+ * @param inp The converted value.
+ * @return 0 (always succeeds).
+ */
+static inline int sensor_value_from_uid(struct sensor_value *val, uint64_t inp)
+{
+	val->val1 = (int32_t)(inp >> 32);
+	val->val2 = (int32_t)inp;
 	return 0;
 }
 
