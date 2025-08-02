@@ -1,0 +1,15 @@
+# Copyright (c) 2024 Navimatix GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.counter.rpi_pico_pit:
+    tags:
+      - drivers
+      - counter
+      - api
+      - pwm
+    depends_on: counter
+    min_ram: 16
+    platform_allow:
+      - rpi_pico
+    timeout: 600
