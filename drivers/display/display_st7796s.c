@@ -102,18 +102,18 @@ static int st7796s_get_pixelfmt(const struct device *dev)
 	/*
 	 * Invert the pixel format for 8-bit 8080 Parallel Interface.
 	 *
-	 * Zephyr uses big endian byte order when the pixel format has
+	 * Zephyr uses little endian byte order when the pixel format has
 	 * multiple bytes.
 	 *
-	 * For RGB565, Red is placed in byte 1 and Blue in byte 0.
-	 * For BGR565, Red is placed in byte 0 and Blue in byte 1.
+	 * For BGR565, Red is placed in byte 1 and Blue in byte 0.
+	 * For RGB565, Red is placed in byte 0 and Blue in byte 1.
 	 *
 	 * This is not an issue when using a 16-bit interface.
 	 * For RGB565, this would map to Red being in D[11:15] and
 	 * Blue in D[0:4] and vice versa for BGR565.
 	 *
 	 * However this is an issue when using a 8-bit interface.
-	 * For RGB565, Blue is placed in byte 0 as mentioned earlier.
+	 * For BGR565, Blue is placed in byte 0 as mentioned earlier.
 	 * However the controller expects Red to be in D[3:7] of byte 0.
 	 *
 	 * Hence we report pixel format as RGB when MADCTL setting is BGR
@@ -143,9 +143,9 @@ static int st7796s_get_pixelfmt(const struct device *dev)
 	 */
 	if (((bool)(config->madctl & ST7796S_MADCTL_BGR)) !=
 	    config->rgb_is_inverted) {
-		return PIXEL_FORMAT_BGR_565;
-	} else {
 		return PIXEL_FORMAT_RGB_565;
+	} else {
+		return PIXEL_FORMAT_BGR_565;
 	}
 }
 
