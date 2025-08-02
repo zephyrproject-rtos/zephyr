@@ -65,11 +65,12 @@ config NRF_IRONSIDE_DVFS_SERVICE
 
 if NRF_IRONSIDE_DVFS_SERVICE
 
-config NRF_IRONSIDE_DVFS_OPPOINT_CHANGE_MUTEX_TIMEOUT_MS
-	int "IRONSside DVFS change oppoint mutex timeout"
-	default 100
+config NRF_IRONSIDE_ABB_STATUSANA_CHECK_MAX_ATTEMPTS
+	int "IRONSside DVFS ABB analog status check maximum attempts"
+	range 0 255
+	default 50
 	help
-	  Maximum timeout when waiting for DVFS oppoint change mutex lock.
+	  Maximum attempts with 10us intervals before busy status will be reported.
 
 endif # NRF_IRONSIDE_DVFS_SERVICE
 
