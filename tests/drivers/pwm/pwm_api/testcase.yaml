@@ -33,6 +33,19 @@ tests:
       or dt_alias_exists("pwm-3")) and CONFIG_DT_HAS_NXP_FLEXIO_ENABLED and
       CONFIG_DT_HAS_NXP_FLEXIO_PWM_ENABLED
     depends_on: pwm
+  drivers.pwm.mimxrt1180_evk_flexio_pwm:
+    tags:
+      - drivers
+      - pwm
+      - userspace
+    extra_args: DTC_OVERLAY_FILE="boards/mimxrt1180_evk_flexio_pwm.overlay"
+    platform_allow:
+      - mimxrt1180_evk/mimxrt1189/cm33
+      - mimxrt1180_evk/mimxrt1189/cm7
+    filter: (dt_alias_exists("pwm-0") or dt_alias_exists("pwm-1") or dt_alias_exists("pwm-2")
+      or dt_alias_exists("pwm-3")) and CONFIG_DT_HAS_NXP_FLEXIO_ENABLED and
+      CONFIG_DT_HAS_NXP_FLEXIO_PWM_ENABLED
+    depends_on: pwm
   drivers.pwm.pwm_fast:
     tags:
       - drivers
