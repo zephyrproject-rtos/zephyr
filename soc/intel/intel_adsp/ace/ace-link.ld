@@ -194,6 +194,11 @@ SECTIONS {
     KEEP (*(.Level4InterruptVector.text))
     _Level4InterruptVector_text_end = .;
   } >vector_int4_text
+  .DebugExceptionVector.text : {
+    _DebugExceptionVector_text_start = .;
+    KEEP (*(.DebugExceptionVector.text))
+    _DebugExceptionVector_text_end = .;
+  } >vector_int4_text
   .NMIExceptionVector.text : {
     _NMIExceptionVector_text_start = .;
     KEEP (*(.NMIExceptionVector.text))
