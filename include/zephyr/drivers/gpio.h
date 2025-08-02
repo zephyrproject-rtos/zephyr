@@ -503,14 +503,14 @@ struct gpio_dt_spec {
  * Example devicetree fragment:
  *
  * @code{.dts}
- *	a {
+ *	a: gpio-controller-1 {
  *		compatible = "some,gpio-controller";
  *		ngpios = <32>;
  *		gpio-reserved-ranges = <0  4>, <5  3>, <9  5>, <11 2>, <15 2>,
  *					<18 2>, <21 1>, <23 1>, <25 4>, <30 2>;
  *	};
  *
- *	b {
+ *	b: gpio-controller-2 {
  *		compatible = "some,gpio-controller";
  *		ngpios = <18>;
  *		gpio-reserved-ranges = <3 2>, <10 1>;
@@ -527,15 +527,15 @@ struct gpio_dt_spec {
  *	};
  *
  *	static const struct some_config dev_cfg_a = {
- *		.ngpios = DT_PROP_OR(DT_LABEL(a), ngpios, 0),
- *		.gpios_reserved = GPIO_DT_RESERVED_RANGES_NGPIOS(DT_LABEL(a),
- *					DT_PROP(DT_LABEL(a), ngpios)),
+ *		.ngpios = DT_PROP(DT_NODELABEL(a), ngpios),
+ *		.gpios_reserved = GPIO_DT_RESERVED_RANGES_NGPIOS(DT_NODELABEL(a),
+ *					DT_PROP(DT_NODELABEL(a), ngpios)),
  *	};
  *
  *	static const struct some_config dev_cfg_b = {
- *		.ngpios = DT_PROP_OR(DT_LABEL(b), ngpios, 0),
- *		.gpios_reserved = GPIO_DT_RESERVED_RANGES_NGPIOS(DT_LABEL(b),
- *					DT_PROP(DT_LABEL(b), ngpios)),
+ *		.ngpios = DT_PROP(DT_NODELABEL(b), ngpios),
+ *		.gpios_reserved = GPIO_DT_RESERVED_RANGES_NGPIOS(DT_NODELABEL(b),
+ *					DT_PROP(DT_NODELABEL(b), ngpios)),
  *	};
  *@endcode
  *
@@ -617,7 +617,7 @@ struct gpio_dt_spec {
  * Example devicetree fragment:
  *
  * @code{.dts}
- *	a {
+ *	a: gpio-controller-1 {
  *		compatible = "some,gpio-controller";
  *		ngpios = <32>;
  *		gpio-reserved-ranges = <0 8>, <9 5>, <15 16>;
@@ -634,7 +634,7 @@ struct gpio_dt_spec {
  *
  *	static const struct some_config dev_cfg = {
  *		.port_pin_mask = GPIO_DT_PORT_PIN_MASK_NGPIOS_EXC(
- *					DT_LABEL(a), 32),
+ *					DT_NODELABEL(a), 32),
  *	};
  * @endcode
  *
