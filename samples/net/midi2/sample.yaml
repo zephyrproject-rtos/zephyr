@@ -1,0 +1,7 @@
+common:
+  harness: net
+  tags:
+    - net
+sample:
+  description: Demonstrates usage of the Network MIDI2.0 host endpoint
+  name: MIDI2.0 over the network (udp)
