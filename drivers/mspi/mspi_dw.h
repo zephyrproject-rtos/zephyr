@@ -1,8 +1,17 @@
 /*
  * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2025 Tenstorrent AI ULC
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#if DT_HAS_COMPAT_STATUS_OKAY(snps_designware_ssi_v2)
+/*
+ * Later versions of the SSI have different register offsets. Define a macro
+ * to use these.
+ */
+#define SSI_VERSION_2 1
+#endif
 
 /*
  * This header is part of mspi_dw.c extracted only for clarity.
@@ -10,23 +19,24 @@
  */
 
 /* CTRLR0 - Control Register 0 */
-#define CTRLR0_SPI_FRF_MASK	GENMASK(23, 22)
+#define CTRLR0_SPI_FRF_MASK	COND_CODE_1(SSI_VERSION_2, GENMASK(22, 21), GENMASK(23, 22))
 #define CTRLR0_SPI_FRF_STANDARD	0UL
 #define CTRLR0_SPI_FRF_DUAL	1UL
 #define CTRLR0_SPI_FRF_QUAD	2UL
 #define CTRLR0_SPI_FRF_OCTAL	3UL
-#define CTRLR0_TMOD_MASK	GENMASK(11, 10)
+#define CTRLR0_TMOD_MASK	COND_CODE_1(SSI_VERSION_2, GENMASK(9, 8), GENMASK(11, 10))
 #define CTRLR0_TMOD_TX_RX	0UL
 #define CTRLR0_TMOD_TX		1UL
 #define CTRLR0_TMOD_RX		2UL
 #define CTRLR0_TMOD_EEPROM	3UL
-#define CTRLR0_SCPOL_BIT	BIT(9)
-#define CTRLR0_SCPH_BIT		BIT(8)
-#define CTRLR0_FRF_MASK		GENMASK(7, 6)
+#define CTRLR0_SCPOL_BIT	COND_CODE_1(SSI_VERSION_2, BIT(7), BIT(9))
+#define CTRLR0_SCPH_BIT		COND_CODE_1(SSI_VERSION_2, BIT(6), BIT(8))
+#define CTRLR0_FRF_MASK		COND_CODE_1(SSI_VERSION_2, GENMASK(5, 4), GENMASK(7, 6))
 #define CTRLR0_FRF_SPI		0UL
 #define CTRLR0_FRF_SSP		1UL
 #define CTRLR0_FRF_MICROWIRE	2UL
-#define CTRLR0_DFS_MASK		GENMASK(4, 0)
+#define CTRLR0_DFS_MASK		COND_CODE_1(SSI_VERSION_2, GENMASK(3, 0), GENMASK(4, 0))
+#define CTRLR0_DFS32_MASK	COND_CODE_1(SSI_VERSION_2, GENMASK(20, 16), (0))
 
 /* CTRLR1- Control Register 1 */
 #define CTRLR1_NDF_MASK		GENMASK(15, 0)
