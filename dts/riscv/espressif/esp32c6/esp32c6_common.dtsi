@@ -106,9 +106,22 @@
 			reg = <0x50000000 DT_SIZE_K(16)>;
 			zephyr,memory-region = "SRAMLP ";
 
-			shmlp: memory@0 {
-				reg = <0x0 0x10>;
+			shmlp: memory@50003fe0 {
+				reg = <0x50003fe0 0x10>;
 			};
+		};
+
+		mbox0: mbox@50003ff0 {
+			compatible = "espressif,mbox-esp32";
+			reg = <0x50003ff0 0x8>;
+			status = "disabled";
+			shared-memory = <&shmlp>;
+			shared-memory-size = <0x10>;
+			interrupts =
+				<PMU_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+				<LP_CORE_PMU_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			#mbox-cells = <1>;
 		};
 
 		intc: interrupt-controller@60010000 {
