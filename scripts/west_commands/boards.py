@@ -1,4 +1,5 @@
 # Copyright (c) 2019 Nordic Semiconductor ASA
+# Copyright (c) 2025 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -10,11 +11,21 @@ import textwrap
 from pathlib import Path
 
 from west.commands import WestCommand
-from zephyr_ext_common import ZEPHYR_BASE
+from zephyr_ext_common import ZEPHYR_BASE, ZEPHYR_SCRIPTS
 
 sys.path.append(os.fspath(Path(__file__).parent.parent))
+
 import list_boards
 import zephyr_module
+
+# Resolve path to twister libs and add imports
+twister_path = ZEPHYR_SCRIPTS
+os.environ["ZEPHYR_BASE"] = str(twister_path.parent)
+
+sys.path.insert(0, str(twister_path))
+sys.path.insert(0, str(twister_path / "pylib" / "twister"))
+
+from twisterlib.platform import generate_platforms  # noqa: E402
 
 
 class Boards(WestCommand):
@@ -52,10 +63,10 @@ class Boards(WestCommand):
             - revision_default: board default revision
             - revisions: list of board revisions
             - qualifiers: board qualifiers (will be empty for legacy boards)
-            - arch: board architecture (deprecated)
-                    (arch is ambiguous for boards described in new hw model)
+            - arch: board architecture
             - dir: directory that contains the board definition
             - vendor: board vendor
+            - aliases: board aliases
             '''))
 
         # Remember to update west-completion.bash if you add or remove
@@ -92,38 +103,56 @@ class Boards(WestCommand):
         args.board_roots += module_settings['board_root']
         args.soc_roots += module_settings['soc_root']
 
-        for board in list_boards.find_boards(args):
-            if name_re is not None and not name_re.search(board.name):
+        board = {}
+        for platform in generate_platforms(args.board_roots, args.soc_roots, args.arch_roots):
+            if not platform.twister:
+                continue
+            if name_re is not None and not name_re.search(" ".join(platform.aliases)):
                 continue
 
-            if board.revisions:
-                revisions_list = ' '.join([rev.name for rev in board.revisions])
+            if platform.board.revisions:
+                revisions_list = ' '.join([rev.name for rev in platform.board.revisions])
             else:
                 revisions_list = 'None'
 
-            self.inf(args.format.format(name=board.name, arch=board.arch,
-                                        revision_default=board.revision_default,
-                                        revisions=revisions_list,
-                                        dir=board.dir, hwm=board.hwm, qualifiers=''))
-
-        for board in list_boards.find_v2_boards(args).values():
-            if name_re is not None and not name_re.search(board.name):
-                continue
-
-            if board.revisions:
-                revisions_list = ' '.join([rev.name for rev in board.revisions])
+            board_name = platform.board.name
+            if board_name not in board:
+                board_desc = {}
+                board_desc["full_name"] = platform.board.full_name
+                board_desc["revision_default"] =  platform.board.revision_default
+                board_desc["revisions_list"] = revisions_list
+                board_desc["dir"] = platform.board.dir
+                board_desc["hwm"] = platform.board.hwm
+                board_desc["vendor"] = platform.vendor
+                board_desc["qual"] = ["/".join(platform.name.split('/')[1:])]
+                board_desc["arch"] = [platform.arch]
+                board_desc["aliases"] = platform.aliases
+                board[board_name] = board_desc
             else:
-                revisions_list = 'None'
+                board_desc =  board[board_name]
+                board_desc["qual"] += ["/".join(platform.name.split('/')[1:])]
+                board_desc["arch"] += [platform.arch]
+                board_desc["aliases"] += platform.aliases
 
-            self.inf(
-                args.format.format(
-                    name=board.name,
-                    full_name=board.full_name,
-                    revision_default=board.revision_default,
-                    revisions=revisions_list,
-                    dir=board.dir,
-                    hwm=board.hwm,
-                    vendor=board.vendor,
-                    qualifiers=list_boards.board_v2_qualifiers_csv(board),
+        if not board.keys():
+            print("no board found")
+
+        try:
+            for _name, _b in board.items():
+                self.inf(
+                    args.format.format(
+                        name=_name,
+                        full_name=_b["full_name"],
+                        revision_default=_b["revision_default"],
+                        revisions=_b["revisions_list"],
+                        dir=_b["dir"],
+                        hwm=_b["hwm"],
+                        vendor=_b["vendor"],
+                        qualifiers=",".join(set(_b["qual"])),
+                        arch=",".join(set(_b["arch"])),
+                        aliases=",".join(set(_b["aliases"])),
+                    )
                 )
-            )
+        except KeyError:
+            print(f"KeyError - reason -f {args.format} is wrong")
+            print("use 'west boards -h' for supporting format")
