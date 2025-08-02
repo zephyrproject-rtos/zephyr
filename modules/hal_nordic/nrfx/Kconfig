@@ -226,6 +226,10 @@ config NRFX_GPIOTE131
 	depends on $(dt_nodelabel_exists,gpiote131)
 	select NRFX_GPIOTE
 
+config NRFX_GPIOTE_NONUNIFORM_INSTANCES
+	def_bool $(dt_nodelabel_enabled,gpiote0)
+	depends on $(dt_nodelabel_bool_prop,gpiote0,fixed-channels-supported)
+
 config NRFX_GPIOTE_NUM_OF_EVT_HANDLERS
 	int "Number of event handlers"
 	depends on NRFX_GPIOTE
