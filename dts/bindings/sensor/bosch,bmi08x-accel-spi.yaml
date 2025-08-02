@@ -6,3 +6,9 @@ description: BMI08X Accel inertial measurement unit
 compatible: "bosch,bmi08x-accel"
 
 include: [spi-device.yaml, "bosch,bmi08x-accel.yaml"]
+
+properties:
+  spi-cs-setup-delay-ns:
+    default: 2000
+  spi-cs-hold-delay-ns:
+    default: 2000
