@@ -34,7 +34,7 @@ typedef void (*fake_driver_irq_callback_t)(const struct device *dev, void *user_
 
 struct fake_driver_config {
 	void (*irq_config_func)(void);
-	uint8_t irq_num;
+	uint16_t irq_num;
 	uint8_t irq_priority;
 };
 
