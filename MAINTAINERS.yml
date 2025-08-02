@@ -5233,6 +5233,8 @@ West:
   collaborators:
     - LucasTambor
     - marekmatej
+    - raffarost
+    - wmrsouza
   files:
     - modules/Kconfig.esp32
   labels:
