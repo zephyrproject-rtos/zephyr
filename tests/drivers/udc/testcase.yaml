@@ -13,6 +13,7 @@ tests:
       - rpi_pico
     platform_exclude:
       - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuapp
   drivers.usb.udc.build_only:
     build_only: true
     # Platform excluded above, only to build, with justification.
