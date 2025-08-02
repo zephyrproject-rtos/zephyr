@@ -956,7 +956,7 @@
 			reg = <0x202c0000 DT_SIZE_K(512)>;
 		};
 
-		lpadc0: adc@40050000 {
+		lpadc1: adc@40050000 {
 			compatible = "nxp,lpc-lpadc";
 			reg = <0x40050000 0x304>;
 			interrupts = <88 0>;
@@ -970,7 +970,7 @@
 			clocks = <&ccm IMX_CCM_LPADC1_CLK 0 0>;
 		};
 
-		lpadc1: adc@40054000 {
+		lpadc2: adc@40054000 {
 			compatible = "nxp,lpc-lpadc";
 			reg = <0x40054000 0x304>;
 			interrupts = <89 0>;

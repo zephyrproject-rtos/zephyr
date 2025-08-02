@@ -29,6 +29,8 @@ Kernel
 Boards
 ******
 
+* mimxrt11x0: renamed lpadc1 to lpadc2 and renamed lpadc0 to lpadc1.
+
 Device Drivers and Devicetree
 *****************************
 
