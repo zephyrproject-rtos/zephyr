@@ -16,5 +16,10 @@
 		zephyr,sram = &sram0_ns_app;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_ns_partition;
+		zephyr,sram-secure-partition = &sram0_s;
+		zephyr,sram-non-secure-partition = &sram0_ns;
 	};
 };
+
+/* Include default memory partition configuration file */
+#include <nordic/nrf5340_cpuapp_ns_partition.dtsi>
