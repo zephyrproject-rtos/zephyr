@@ -1029,6 +1029,13 @@ void z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return, _callee_saved_
 	bool recoverable, nested_exc;
 	struct arch_esf *esf;
 
+#ifdef CONFIG_USE_SWITCH
+	/* Handle the stub fault to restore interrupted ICI/IT instructions */
+	if (arm_m_iciit_check(psp)) {
+		return;
+	}
+#endif
+
 	/* Create a stack-ed copy of the ESF to be used during
 	 * the fault handling process.
 	 */
@@ -1081,6 +1088,20 @@ void z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return, _callee_saved_
 	}
 
 	z_arm_fatal_error(reason, &esf_copy);
+
+#if defined(CONFIG_BUILTIN_STACK_GUARD) && defined(CONFIG_USE_SWITCH) && defined(CONFIG_CPU_CORTEX_M)
+	/* The arch_switch implementation can expand the size of the
+	 * frame when it saves the outgoing context (to the faulting
+	 * thread), so make sure it has room.  The resulting stack
+	 * will obviously be corrupt, but it won't overflow the
+	 * guarded region.
+	 */
+	uint32_t psplim, psp2;
+
+	__asm__ volatile("mrs %0, psplim" : "=r"(psplim));
+	psp2 = MAX(psplim + arm_m_switch_stack_buffer, psp);
+	__asm__ volatile("msr psp, %0" ::"r"(psp2));
+#endif
 }
 
 /**
