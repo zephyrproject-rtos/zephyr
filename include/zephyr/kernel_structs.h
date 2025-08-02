@@ -196,6 +196,10 @@ struct _cpu {
 	struct k_obj_core  obj_core;
 #endif
 
+#ifdef CONFIG_SCHED_IPI_SUPPORTED
+	sys_dlist_t ipi_workq;
+#endif
+
 	/* Per CPU architecture specifics */
 	struct _cpu_arch arch;
 };
