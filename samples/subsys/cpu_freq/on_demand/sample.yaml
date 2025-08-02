@@ -1,0 +1,8 @@
+sample:
+  description: CPU frequency scaling sample
+  name: CPU Freq Sample
+tests:
+  sample.cpu_freq:
+    tags: cpu_freq
+    platform_allow:
+      - max32655fthr/max32655/m4

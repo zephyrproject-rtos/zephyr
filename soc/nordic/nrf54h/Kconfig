@@ -36,7 +36,7 @@ config SOC_NRF54H20_CPUAPP_COMMON
 	select NRFS_HAS_TEMP_SERVICE
 	select NRFS_HAS_VBUS_DETECTOR_SERVICE
 	select HAS_PM
-	select HAS_POWEROFF
+	select HAS_CPU_FREQ if CLOCK_CONTROL
 
 config SOC_NRF54H20_CPUAPP
 	select SOC_NRF54H20_CPUAPP_COMMON
@@ -66,6 +66,7 @@ config SOC_NRF54H20_CPURAD_COMMON
 	select HAS_NORDIC_RAM_CTRL
 	select HAS_PM
 	select HAS_POWEROFF
+	select HAS_CPU_FREQ if CLOCK_CONTROL
 
 config SOC_NRF54H20_TDD_ENABLE
 	bool "Power and configure the trace and debug domain (TDD)"
