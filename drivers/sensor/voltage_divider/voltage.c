@@ -127,7 +127,11 @@ static int pm_action(const struct device *dev, enum pm_device_action action)
 		data->earliest_sample = K_TIMEOUT_ABS_TICKS(
 			k_uptime_ticks() + k_us_to_ticks_ceil32(config->sample_delay_us));
 		/* Power up ADC */
-		pm_device_runtime_get(config->voltage.port.dev);
+		ret = pm_device_runtime_get(config->voltage.port.dev);
+		if (ret != 0) {
+			LOG_ERR("failed to power up ADC (%d)", ret);
+			return ret;
+		}
 		break;
 #ifdef CONFIG_PM_DEVICE
 	case PM_DEVICE_ACTION_SUSPEND:
