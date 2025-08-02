@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/dac/silabs-vdac.h>
+
+&vdac0 {
+	status = "okay";
+	voltage-reference = "1.25V";
+
+	channel@0 {
+		reg = <0>;
+		aux-output = <VDAC_OUTPUT_AUX>;
+	};
+};
