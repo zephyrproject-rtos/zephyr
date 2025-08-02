@@ -17,6 +17,8 @@
 #include <zephyr/sys/util.h>
 #include <stmemsc.h>
 #include "lsm6dso16is_reg.h"
+#include <zephyr/drivers/sensor/st_mems_conf_shared_types.h>
+#include <zephyr/drivers/sensor/st_embedded_cores.h>
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 #include <zephyr/drivers/spi.h>
@@ -77,6 +79,9 @@ struct lsm6dso16is_data {
 #if defined(CONFIG_LSM6DSO16IS_ENABLE_TEMP)
 	int16_t temp_sample;
 #endif
+#if defined(CONFIG_USE_ST_MEMS_ISPU)
+	uint8_t ispu[64];
+#endif
 #if defined(CONFIG_LSM6DSO16IS_SENSORHUB)
 	uint8_t ext_data[LSM6DSO16IS_SHUB_MAX_NUM_TARGETS][6];
 	uint16_t magn_gain;
@@ -105,6 +110,10 @@ struct lsm6dso16is_data {
 	const struct sensor_trigger *trig_drdy_gyr;
 	sensor_trigger_handler_t handler_drdy_temp;
 	const struct sensor_trigger *trig_drdy_temp;
+#if defined(CONFIG_USE_ST_MEMS_ISPU)
+	sensor_trigger_handler_t handler_ispu;
+	const struct sensor_trigger *trig_ispu;
+#endif
 
 #if defined(CONFIG_LSM6DSO16IS_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_LSM6DSO16IS_THREAD_STACK_SIZE);
