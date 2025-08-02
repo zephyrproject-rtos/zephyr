@@ -70,6 +70,7 @@ enum crc_type {
 	CRC24_PGP,   /**< Use @ref crc24_pgp */
 	CRC32_C,     /**< Use @ref crc32_c */
 	CRC32_IEEE,  /**< Use @ref crc32_ieee */
+	CRC32_POSIX, /**< Use @ref crc32_posix */
 	CRC32_K_4_2, /**< Use @ref crc32_k_4_2_update */
 };
 
@@ -249,6 +250,29 @@ uint32_t crc32_ieee(const uint8_t *data, size_t len);
  *
  */
 uint32_t crc32_ieee_update(uint32_t crc, const uint8_t *data, size_t len);
+
+/**
+ * @brief Generate POSIX conform CRC32 checksum.
+ *
+ * @param  data         Pointer to data on which the CRC should be calculated.
+ * @param  len          Data length.
+ *
+ * @return CRC32 value.
+ *
+ */
+uint32_t crc32_posix(const uint8_t *data, size_t len);
+
+/**
+ * @brief Update an POSIX conforming CRC32 checksum.
+ *
+ * @param crc   CRC32 checksum that needs to be updated.
+ * @param data  Pointer to data on which the CRC should be calculated.
+ * @param len   Data length.
+ *
+ * @return CRC32 value.
+ *
+ */
+uint32_t crc32_posix_update(uint32_t crc, const uint8_t *data, size_t len);
 
 /**
  * @brief Calculate CRC32C (Castagnoli) checksum.
@@ -465,6 +489,8 @@ static inline uint32_t crc_by_type(enum crc_type type, const uint8_t *src, size_
 		return crc32_c(seed, src, len, first, last);
 	case CRC32_IEEE:
 		return crc32_ieee_update(seed, src, len);
+	case CRC32_POSIX:
+		return crc32_posix_update(seed, src, len);
 	case CRC32_K_4_2:
 		return crc32_k_4_2_update(seed, src, len);
 	default:
