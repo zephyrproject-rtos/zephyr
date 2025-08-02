@@ -21,6 +21,8 @@ include:
       - d1
       - vstop
       - tzerowait
+  - name: adi,trinamic-velocity-control.yaml
+    property-allowlist:
       - thigh
       - tcoolthrs
       - tpwmthrs
