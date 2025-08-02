@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, NXP
+ * Copyright 2021, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,9 @@
 #include <zephyr/drivers/clock_control.h>
 
 #include <zephyr/logging/log.h>
+
+#include <zephyr/pm/policy.h>
+#include <zephyr/pm/device.h>
 
 LOG_MODULE_REGISTER(pwm_mcux_sctimer, CONFIG_PWM_LOG_LEVEL);
 
@@ -36,6 +39,11 @@ struct pwm_mcux_sctimer_data {
 	sctimer_pwm_signal_param_t channel[CHANNEL_COUNT];
 	uint32_t match_period;
 	uint32_t configured_chan;
+	/* This flag keeps track of active/idle channels
+	 * to determine whether to allow low power mode
+	 * or not (see PWM_MCUX_SCTIMER_RETAIN_INACTIVE_STATE).
+	 */
+	uint32_t active_chan;
 };
 
 /* Helper to setup channel that has not previously been configured for PWM */
@@ -75,7 +83,48 @@ static int mcux_sctimer_new_channel(const struct device *dev,
 
 	SCTIMER_StartTimer(config->base, kSCTIMER_Counter_U);
 	data->configured_chan++;
+	data->active_chan++;
+
 	return 0;
+}
+
+static void mcux_sctimer_pwm_update_channel(const struct device *dev, uint32_t channel,
+					    uint8_t duty_cycle)
+{
+	const struct pwm_mcux_sctimer_config *config = dev->config;
+	struct pwm_mcux_sctimer_data *data = dev->data;
+	SCT_Type *base = config->base;
+
+	SCTIMER_UpdatePwmDutycycle(base, channel, duty_cycle,
+				   data->event_number[channel]);
+
+	if (duty_cycle > 0 && data->channel[channel].dutyCyclePercent == 0) {
+		data->active_chan++;
+	}
+
+	if (duty_cycle == 0 && data->channel[channel].dutyCyclePercent > 0) {
+		data->active_chan--;
+	}
+
+	data->channel[channel].dutyCyclePercent = duty_cycle;
+
+	if (data->active_chan == 0) {
+		/* No channels active. Stop the sctimer to manually set the output.
+		 * Set the output to inactive state. Output for other channels
+		 * already at the correct level. Just need to update the current one.
+		 */
+		SCTIMER_StopTimer(base, kSCTIMER_Counter_U);
+
+		if (data->channel[channel].level == kSCTIMER_HighTrue) {
+			base->OUTPUT &= ~(1UL << channel);
+		} else {
+			base->OUTPUT |= (1UL << channel);
+		}
+
+#ifndef CONFIG_PWM_MCUX_SCT_KEEP_STATE
+		pm_policy_device_power_lock_put(dev);
+#endif
+	}
 }
 
 static int mcux_sctimer_pwm_set_cycles(const struct device *dev,
@@ -106,21 +155,10 @@ static int mcux_sctimer_pwm_set_cycles(const struct device *dev,
 	duty_cycle = 100 * pulse_cycles / period_cycles;
 
 	if (duty_cycle == 0 && data->configured_chan == 1) {
-		/* Only one channel is active. We can turn off the SCTimer
+		/* Only one channel is configured. We can turn off the SCTimer
 		 * global counter.
 		 */
-		SCT_Type *base = config->base;
-
-		/* Stop timer so we can set output directly */
-		SCTIMER_StopTimer(base, kSCTIMER_Counter_U);
-
-		/* Set the output to inactive State */
-		if (data->channel[channel].level == kSCTIMER_HighTrue) {
-			base->OUTPUT &= ~(1UL << channel);
-		} else {
-			base->OUTPUT |= (1UL << channel);
-		}
-
+		mcux_sctimer_pwm_update_channel(dev, channel, duty_cycle);
 		return 0;
 	}
 
@@ -147,6 +185,10 @@ static int mcux_sctimer_pwm_set_cycles(const struct device *dev,
 		if (ret < 0) {
 			return ret;
 		}
+
+		/* Block from losing power while PWM output is enabled. */
+		pm_policy_device_power_lock_get(dev);
+
 	} else if (data->event_number[channel] == EVENT_NOT_SET) {
 		/* We have already configured a PWM signal, but this channel
 		 * has not been setup. We can only support this channel
@@ -168,7 +210,7 @@ static int mcux_sctimer_pwm_set_cycles(const struct device *dev,
 		 */
 		if (data->configured_chan != 1) {
 			LOG_ERR("Cannot change PWM period when multiple "
-				"channels active");
+				"channels configured");
 			return -ENOTSUP;
 		}
 
@@ -183,8 +225,7 @@ static int mcux_sctimer_pwm_set_cycles(const struct device *dev,
 		data->match_period = period_cycles;
 	} else {
 		/* Only duty cycle needs to be updated */
-		SCTIMER_UpdatePwmDutycycle(config->base, channel, duty_cycle,
-					   data->event_number[channel]);
+		mcux_sctimer_pwm_update_channel(dev, channel, duty_cycle);
 	}
 
 	return 0;
@@ -207,7 +248,7 @@ static int mcux_sctimer_pwm_get_cycles_per_sec(const struct device *dev,
 	return 0;
 }
 
-static int mcux_sctimer_pwm_init(const struct device *dev)
+static int mcux_sctimer_pwm_init_common(const struct device *dev)
 {
 	const struct pwm_mcux_sctimer_config *config = dev->config;
 	struct pwm_mcux_sctimer_data *data = dev->data;
@@ -239,8 +280,49 @@ static int mcux_sctimer_pwm_init(const struct device *dev)
 	}
 	data->match_period = 0;
 	data->configured_chan = 0;
+	data->active_chan = 0;
 
 	return 0;
+}
+
+/* Note: This driver does not save and restore state when entering or exiting
+ * low power mode due to limitations in the SDK drivers. Users should ensure
+ * that the required configuration is reapplied after waking up from low power
+ * states.
+ */
+static int mcux_sctimer_pwm_driver_pm_action(const struct device *dev,
+					     enum pm_device_action action)
+{
+	const struct pwm_mcux_sctimer_config *config = dev->config;
+	int err = 0;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		break;
+	case PM_DEVICE_ACTION_TURN_ON:
+		err = mcux_sctimer_pwm_init_common(dev);
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+		/* Reaching this point implies that all the PWM channels
+		 * are in idle state and the SCTimer counter is disabled.
+		 */
+		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_SLEEP);
+		break;
+	default:
+		err = -ENOTSUP;
+	}
+
+	return err;
+}
+
+static int mcux_sctimer_pwm_init(const struct device *dev)
+{
+	/* The device init is done from the PM_DEVICE_ACTION_TURN_ON in
+	 * the pm callback which is invoked by pm_device_driver_init.
+	 */
+	return pm_device_driver_init(dev, mcux_sctimer_pwm_driver_pm_action);
 }
 
 static DEVICE_API(pwm, pwm_mcux_sctimer_driver_api) = {
@@ -259,10 +341,10 @@ static DEVICE_API(pwm, pwm_mcux_sctimer_driver_api) = {
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
 	};										\
-											\
+	PM_DEVICE_DT_INST_DEFINE(n, mcux_sctimer_pwm_driver_pm_action);			\
 	DEVICE_DT_INST_DEFINE(n,							\
 			      mcux_sctimer_pwm_init,					\
-			      NULL,							\
+			      PM_DEVICE_DT_INST_GET(n),					\
 			      &pwm_mcux_sctimer_data_##n,				\
 			      &pwm_mcux_sctimer_config_##n,				\
 			      POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,			\
