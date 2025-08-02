@@ -1,0 +1,61 @@
+#
+# Copyright 2025 Nova Dynamics LLC
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+    TI INA228 Bidirectional Power/Energy/Charge Monitor.
+
+compatible: "ti,ina228"
+
+include: ti,ina23x-common.yaml
+
+properties:
+  adc-mode:
+    type: string
+    description: |
+      ADC channel conversion configuration.
+      Default is the power-on reset value.
+    default: "Temperature, bus, and shunt voltage"
+    enum:
+      - "Shutdown"
+      - "Bus voltage"
+      - "Shunt voltage"
+      - "Bus and shunt voltage"
+      - "Temperature"
+      - "Temperature and bus voltage"
+      - "Temperature and shunt voltage"
+      - "Temperature, bus, and shunt voltage"
+
+  vbus-conversion-time-us:
+    type: int
+    description: |
+      Vbus conversion time in microseconds.
+      Default is the power-on reset value.
+    default: 1052
+    enum: [50, 84, 150, 280, 540, 1052, 2074, 4120]
+
+  vshunt-conversion-time-us:
+    type: int
+    description: |
+      Vshunt conversion time in microseconds.
+      Default is the power-on reset value.
+    default: 1052
+    enum: [50, 84, 150, 280, 540, 1052, 2074, 4120]
+
+  temp-conversion-time-us:
+    type: int
+    description: |
+      Temperature conversion time in microseconds.
+      Default is the power-on reset value.
+    default: 1052
+    enum: [50, 84, 150, 280, 540, 1052, 2074, 4120]
+
+  avg-count:
+    type: int
+    description: |
+      Number of samples to average (applies to all inputs).
+      Default is the power-on reset value.
+    default: 1
+    enum: [1, 4, 16, 64, 128, 256, 512, 1024]
