@@ -8,7 +8,6 @@ tests:
       - nrf51dk/nrf51822
       - nrf52dk/nrf52832
       - nrf52840dk/nrf52840
-      - nrf54l09pdk/nrf54l09/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
