@@ -79,6 +79,10 @@
 			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
+
+	lfxosc: lf_xosc {
+		compatible = "ti,cc23x0-lf-xosc";
+	};
 };
 
 &gpio0 {
