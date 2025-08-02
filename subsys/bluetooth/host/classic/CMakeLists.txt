@@ -32,3 +32,9 @@ zephyr_library_sources_ifdef(
   CONFIG_BT_HFP_AG
   hfp_ag.c
   )
+
+zephyr_library_sources_ifdef(
+  CONFIG_BT_GOEP
+  obex.c
+  goep.c
+  )
