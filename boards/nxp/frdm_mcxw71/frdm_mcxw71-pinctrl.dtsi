@@ -80,4 +80,13 @@
 			slew-rate = "fast";
 		};
 	};
+
+	pinmux_flexio_pwm: pinmux_flexio_pwm {
+		group0 {
+			pinmux = <FLEXIO0_D20_PTC4>;
+			drive-strength = "low";
+			slew-rate = "fast";
+		};
+	};
+
 };
