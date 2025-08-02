@@ -86,19 +86,50 @@ Module Repositories
 
 * Module repositories names should be explicitly set in the :file:`zephyr/module.yml` file.
 
-* Modules should use "zephyr" as the default name for the repository main
-  branch. Branches for specific purposes, for example, a module branch for
-  an LTS Zephyr version, shall have names starting with the 'zephyr\_' prefix.
+* If the module has an external (upstream) project repository:
 
-* If the module has an external (upstream) project repository, the module
-  repository should preserve the upstream repository folder structure.
+  * The module repository should preserve the upstream repository folder structure.
+
+  * Follow one of these strategies to track the upstream repository:
+
+    * The preferred strategy is that the module tracks directly the upstream main development
+      branch or maintenance branches which are pointed by the Zephyr manifest without any changes,
+      where all Zephyr specific code is hosted by the upstream project.
+      Pull requests are sent directly to the upstream repository.
+      Only in exceptional circumstances, when a bug fix is necessary faster than the upstream is
+      able to merge it, should the downstream, Zephyr module repository branch, be forked in a
+      separate Zephyr specific branch. This should only be done for the shortest period of time
+      possible and with the intention of returning to the upstream tracked branch as soon as
+      possible.
+
+    * For modules tracking too unresponsive upstream projects, we may need to have longer
+      lived Zephyr branches. Still, all changes in Zephyr specific branches should be submitted
+      for review to the upstream project. With the aim of abandoning these Zephyr downstream
+      branches as soon as possible.
+
+    * In some cases the upstream may not be willing to accept some Zephyr specific files or changes.
+      This is an undesirable situation as it forces us to maintain a permanent fork of the upstream
+      repository. In this case, two options are possible:
+
+      1. Relatively short lived, Zephyr specific branches are kept downstream with the Zephyr
+         specific patches. Every now and then, the module is resynchronized with the upstream
+         by creating a new branch downstream forking from the updated upstream tracked branch and
+         rebasing the old downstream forked branch.
+
+      2. A permanently forked 'zephyr' branch, in which, periodically, patches which made it both to
+         this branch and the tracked upstream are reverted and the upstream main is merged.
+
+      Still in either of these cases, we should always aim at minimizing the fork, patches
+      should be submitted upstream, and after they are merged, possible downstream equivalent
+      changes be replaced in favor of the upstream accepted ones.
 
   .. note::
 
-     It is not required in module repositories to maintain a 'master'
-     branch mirroring the master branch of the external repository. It
-     is not recommended as this may generate confusion around the module's
-     main branch, which should be 'zephyr'.
+     Under no circumstances may the Zephyr downstream fork have forked branches with the same name
+     as the upstream tracked branches. That is, for example, the downstream may not have a 'main'
+     with different commits than the upstream 'main'.
+
+* Modules should name Zephyr specific branches starting with the 'zephyr\_' prefix.
 
 * Modules should expose all provided header files with an include pathname
   beginning with the module-name.  (E.g., mcuboot should expose its
@@ -109,18 +140,22 @@ Module Repositories
 Synchronizing with upstream
 ===========================
 
-It is preferred to synchronize a module repository with the latest stable
-release of the corresponding external project. It is permitted, however, to
-update a Zephyr module repository with the latest development branch tip,
-if this is required to get important updates in the module codebase. When
-synchronizing a module with upstream it is mandatory to document the
-rationale for performing the particular update.
+It is preferred to have the Zephyr manifest point to the version of the module matching the latest
+stable released version of the corresponding external project. It is permitted, however, to
+update the pointer to a Zephyr module repository with the latest development or maintenance branch
+tip, if this is required to get necessary updates in the module codebase.
+When synchronizing a module with upstream it is mandatory to document the
+rationale for performing the particular update in the Zephyr manifest update commit.
 
 Requirements for allowed practices
 ----------------------------------
 
-Changes to the main branch of a module repository, including synchronization
-with upstream code base, may only be applied via pull requests. These pull
+Changes to downstream branches which are directly tracking the upstream may be automated
+or otherwise performed by the maintainers, always ensuring that the downstream replica branch is
+not forked from the upstream.
+
+Changes to Zephyr specific branches of a module repository, including synchronization merges
+with the upstream main branch, may only be applied via pull requests. These pull
 requests shall be *verifiable* by Zephyr CI and *mergeable* (e.g. with the
 *Rebase and merge*, or *Create a merge commit* option using Github UI). This
 ensures that the incoming changes are always **reviewable**, and the
@@ -131,16 +166,23 @@ changes that are to be brought into the module repository.
 
 .. note::
 
-     Force-pushing to a module's main branch is not allowed.
+     Force-pushing to a module's main branch is not allowed unless it is necessary to
+     revert an incorrect previous push which forked the branch from the upstream.
 
 Allowed practices
 -----------------
 
 The following practices conform to the above requirements and should be
-followed in all modules repositories. It is up to the module code owner
-to select the preferred synchronization practice, however, it is required
-that the selected practice is consistently followed in the respective
+followed in modules repositories which keep downstream Zephyr specific changes.
+It is up to the module code owner to select the preferred synchronization practice,
+however, it is required that the selected practice is consistently followed in the respective
 module repository.
+
+**Updating by rebasing:**
+When a resynchronization is desired, a new zephyr specific branch is created from the upstream main
+or maintenance branch being tracked.
+A pull request against this branch is created which contains all necessary changes from the previous
+zephyr specific branch, discarding all commits which were merged upstream.
 
 **Updating modules with a diff from upstream:**
 Upstream changes brought as a single *snapshot* commit (manual diff) in a
@@ -194,8 +236,7 @@ owners will have the overall responsibility of the contents of a
 Zephyr module repository. In particular, a module owner will:
 
 * coordinate code reviewing in the module repository
-* be the default assignee in pull-requests against the repository's
-  main branch
+* be the default assignee in pull-requests against the repository
 * request additional collaborators to be added to the repository, as
   they see fit
 * regularly synchronize the module repository with its upstream
@@ -214,14 +255,14 @@ Zephyr module repository. In particular, a module owner will:
      :ref:`Maintainers <project_roles>`.
 
 **Merger:** The Zephyr Release Engineering team has the right and the
-responsibility to merge approved pull requests in the main branch of a
+responsibility to merge approved pull requests in the Zephyr specific branches of a
 module repository.
 
 
 Maintaining the module codebase
 ===============================
 
-Updates in the zephyr main tree, for example, in public Zephyr APIs,
+Updates in the Zephyr main tree, for example, in public Zephyr APIs,
 may require patching a module's codebase. The responsibility for keeping
 the module codebase up to date is shared between the **contributor** of
 such updates in Zephyr and the module **owner**. In particular:
@@ -272,7 +313,7 @@ repositories may only be merged if the introduced changes are verified
 with Zephyr CI tools, as described in more detail in other sections on
 this page.
 
-The merging of pull requests in the main branch of a module
+The merging of pull requests in a module
 repository must be coupled with the corresponding manifest
 file update in the zephyr main tree.
 
