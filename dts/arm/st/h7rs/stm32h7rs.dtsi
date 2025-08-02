@@ -17,6 +17,7 @@
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/flash_controller/xspi.h>
 #include <zephyr/dt-bindings/dma/stm32_dma.h>
+#include <zephyr/dt-bindings/video/video-interfaces.h>
 #include <freq.h>
 #include <mem.h>
 
@@ -1005,6 +1006,26 @@
 				 <&rcc STM32_SRC_PLL3_R NO_SEL>;
 			resets = <&rctl STM32_RESET(APB5, 1)>;
 			status = "disabled";
+		};
+
+		dcmipp: dcmipp@50002000 {
+			compatible = "st,stm32-dcmipp";
+			reg = <0x50002000 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB5, 2)>,
+				 <&rcc STM32_SRC_PCLK5 NO_SEL>;
+			clock-names = "dcmipp", "dcmipp-ker";
+			interrupts = <95 0>;
+			resets = <&rctl STM32_RESET(APB5, 2)>;
+			status = "disabled";
+
+			pipe_dump: pipe {};
+
+			port {
+				endpoint {
+					remote-endpoint-label = "";
+					bus-type = <VIDEO_BUS_TYPE_PARALLEL>;
+				};
+			};
 		};
 	};
 
