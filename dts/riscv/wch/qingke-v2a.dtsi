@@ -42,5 +42,10 @@
 			interrupt-parent = <&pfic>;
 			interrupts = <12>;
 		};
+
+		debug: debug@e00000f0 {
+			compatible = "wch,qingke-debug";
+			reg = <0xe00000f0 0x40>;
+		};
 	};
 };
