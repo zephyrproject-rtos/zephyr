@@ -5848,6 +5848,19 @@ West:
     - "area: Networking"
     - "area: Crypto / RNG"
 
+"West project: xen":
+  status: maintained
+  maintainers:
+    - firscity
+  collaborators:
+    - lorc
+    - luca-fancellu
+    - soburi
+  files:
+    - modules/xen/
+  labels:
+    - "area: Xen Platform"
+
 "West project: zcbor":
   status: maintained
   maintainers:
