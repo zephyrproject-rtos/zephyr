@@ -1,0 +1,6 @@
+/*
+ * Remove the WB5M Bluetooth HCI UART node from the board overlay.
+ */
+&uart4 {
+	/delete-node/ bt_hci_uart;
+};
