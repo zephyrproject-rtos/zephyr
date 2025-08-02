@@ -38,7 +38,7 @@ ZTEST(arm64_smc_call, test_smc_call_func)
 		"Wrong smc call version");
 
 	smc_call(ARM_STD_SMC_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, &res);
-	zassert_true(res.a0 == SMC_UNK, "Wrong return code from smc call");
+	zassert_true((int)res.a0 == SMC_UNK, "Wrong return code from smc call");
 }
 
 ZTEST_SUITE(arm64_smc_call, NULL, NULL, NULL, NULL, NULL);
