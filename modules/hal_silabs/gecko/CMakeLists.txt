@@ -11,7 +11,7 @@ set(EMLIB_DIR ${ZEPHYR_HAL_SILABS_MODULE_DIR}/gecko/emlib)
 set(COMMON_DIR ${ZEPHYR_HAL_SILABS_MODULE_DIR}/gecko/common)
 set(DEVICE_DIR ${ZEPHYR_HAL_SILABS_MODULE_DIR}/gecko/Device)
 set(RADIO_DIR ${ZEPHYR_HAL_SILABS_MODULE_DIR}/gecko/platform/radio)
-set(BLOBS_DIR ${ZEPHYR_HAL_SILABS_MODULE_DIR/zephyr/blobs})
+set(BLOBS_DIR ${ZEPHYR_HAL_SILABS_MODULE_DIR}/zephyr/blobs/gecko)
 
 # Translate the SoC name and part number into the gecko device and cpu name
 # respectively.
@@ -49,7 +49,14 @@ if(${CONFIG_SOC_GECKO_HAS_RADIO})
     zephyr_library_sources(${RADIO_DIR}/rail_lib/plugin/pa-conversions/pa_curves_efr32.c)
 
     # prebuilt libs
-    add_prebuilt_library(librail platform/radio/rail_lib/autogen/librail_release/librail_efr32xg${GECKO_SERIES_NUMBER}_gcc_release.a)
+    if(CONFIG_SILABS_GECKO_RAIL_MULTIPROTOCOL)
+      zephyr_compile_definitions(SL_RAIL_LIB_MULTIPROTOCOL_SUPPORT=1)
+      add_prebuilt_library(librail platform/radio/rail_lib/autogen/librail_release/librail_multiprotocol_efr32xg${GECKO_SERIES_NUMBER}_gcc_release.a)
+
+    else()
+      zephyr_compile_definitions(SL_RAIL_LIB_MULTIPROTOCOL_SUPPORT=0)
+      add_prebuilt_library(librail platform/radio/rail_lib/autogen/librail_release/librail_efr32xg${GECKO_SERIES_NUMBER}_gcc_release.a)
+    endif()
 
     if(CONFIG_SOC_GECKO_CUSTOM_RADIO_PHY)
       zephyr_include_directories(
