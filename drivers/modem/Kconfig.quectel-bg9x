@@ -4,12 +4,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config MODEM_QUECTEL_BG9X
-	bool "Quectel modem driver"
+	bool "Quectel modem driver [ DEPRECATED ]"
 	select MODEM_CONTEXT
 	select MODEM_CMD_HANDLER
 	select MODEM_IFACE_UART
 	select MODEM_SOCKET
 	select NET_SOCKETS_OFFLOAD
+	select DEPRECATED
 	help
 	  Choose this setting to enable quectel BG9x LTE-CatM1/NB-IoT modem
 	  driver.
