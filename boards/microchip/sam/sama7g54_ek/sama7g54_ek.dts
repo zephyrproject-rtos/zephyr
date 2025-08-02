@@ -140,3 +140,7 @@
 &pit64b0 {
 	clock-frequency = <DT_FREQ_M(10)>;
 };
+
+&tc0_ch0 {
+	status = "okay";
+};
