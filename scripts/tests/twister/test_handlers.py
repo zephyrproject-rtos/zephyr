@@ -1061,7 +1061,7 @@ TESTDATA_13 = [
         None,
         None,
         None,
-        ['generator_cmd', '-C', '$build_dir', 'flash']
+        ['west', 'flash', '--skip-rebuild', '-d', '$build_dir']
     ),
     (
         [],
@@ -1155,7 +1155,7 @@ TESTDATA_13_2 = [(True), (False)]
     'self_west_flash, runner,' \
     ' hardware_product_name, expected',
     TESTDATA_13,
-    ids=['generator', '--west-flash', 'one west flash value',
+    ids=['default', '--west-flash', 'one west flash value',
          'multiple west flash values', 'generic runner', 'pyocd',
          'nrfjprog', 'openocd, STM32 STLink', 'openocd, STLINK-v3',
          'openocd, EDBG CMSIS-DAP', 'jlink', 'stm32cubeprogrammer']
