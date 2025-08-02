@@ -4,3 +4,5 @@ board:
   vendor: waveshare
   socs:
   - name: rp2040
+  revision:
+    format: custom
