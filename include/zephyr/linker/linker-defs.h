@@ -31,7 +31,13 @@
  * DT_NODE_HAS_STATUS. These are undefined at the end of the file.
  */
 #ifdef ZTEST_UNITTEST
+#ifdef DT_NODE_HAS_STATUS
+#undef DT_NODE_HAS_STATUS
+#endif
 #define DT_NODE_HAS_STATUS(node, status) 0
+#ifdef DT_NODE_HAS_STATUS_OKAY
+#undef DT_NODE_HAS_STATUS_OKAY
+#endif
 #define DT_NODE_HAS_STATUS_OKAY(node) 0
 #else
 #include <zephyr/devicetree.h>
