@@ -28,4 +28,6 @@ target_sources(app PRIVATE
   src/audio/vcp_peripheral.c
   src/host/gap_central.c
   src/host/gap_peripheral.c
+  src/host/iso_broadcaster.c
+  src/host/iso_sync_receiver.c
 )
