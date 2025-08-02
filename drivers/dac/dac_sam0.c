@@ -27,6 +27,14 @@ LOG_MODULE_REGISTER(dac_sam0, CONFIG_DAC_LOG_LEVEL);
 #define SAM0_DAC_REFSEL_1 DAC_CTRLB_REFSEL_AVCC_Val
 #define SAM0_DAC_REFSEL_2 DAC_CTRLB_REFSEL_VREFP_Val
 
+/*
+ * SYNCBUSY is different between rev 0x1xx and 0x2xx
+ * The SAMC21 part has a SYNCBUSY register with individual bits
+ */
+#if defined(DAC_U2214) && (REV_DAC == 0x201)
+#define DAC_REV201
+#endif
+
 struct dac_sam0_cfg {
 	Dac *regs;
 	const struct pinctrl_dev_config *pcfg;
@@ -100,16 +108,26 @@ static int dac_sam0_init(const struct device *dev)
 
 	/* Reset then configure the DAC */
 	regs->CTRLA.bit.SWRST = 1;
+#if defined(DAC_REV201)
+	while (regs->SYNCBUSY.bit.SWRST) {
+	}
+#else
 	while (regs->STATUS.bit.SYNCBUSY) {
 	}
+#endif
 
 	regs->CTRLB.bit.REFSEL = cfg->refsel;
 	regs->CTRLB.bit.EOEN = 1;
 
 	/* Enable */
 	regs->CTRLA.bit.ENABLE = 1;
+#if defined(DAC_REV201)
+	while (regs->SYNCBUSY.bit.ENABLE) {
+	}
+#else
 	while (regs->STATUS.bit.SYNCBUSY) {
 	}
+#endif
 
 	return 0;
 }
