@@ -21,6 +21,8 @@ supported:
   - backup_sram
   - dma
   - rtc
+  - rng
+  - hash
 ram: 786
 flash: 2048
 vendor: st
