@@ -91,6 +91,10 @@ struct gatt_sub {
 static struct gatt_sub subscriptions[SUB_MAX];
 static sys_slist_t callback_list = SYS_SLIST_STATIC_INIT(&callback_list);
 
+#if defined(CONFIG_BT_GATT_GAP_CB)
+static sys_slist_t gatt_gap_cb = SYS_SLIST_STATIC_INIT(&gatt_gap_cb);
+#endif
+
 #if defined(CONFIG_BT_GATT_DYNAMIC_DB)
 static sys_slist_t db;
 #endif /* CONFIG_BT_GATT_DYNAMIC_DB */
@@ -114,12 +118,58 @@ static ssize_t read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 }
 
 #if defined(CONFIG_BT_DEVICE_NAME_GATT_WRITABLE)
+static inline int write_name_verify(struct bt_conn *conn, const char *name)
+{
+#if defined(CONFIG_BT_GATT_GAP_CB)
+	struct bt_gatt_gap_cb *callback;
+	int ret;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&gatt_gap_cb, callback, _node) {
+		if (callback->name_verify) {
+			ret = callback->name_verify(conn, name);
+			if (ret) {
+				return ret;
+			}
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_gatt_gap_cb, cb) {
+		if (cb->name_verify) {
+			ret = cb->name_verify(conn, name);
+			if (ret) {
+				return ret;
+			}
+		}
+	}
+#endif /* CONFIG_BT_GATT_GAP_CB */
+	return 0;
+}
+
+static inline void write_name_notify_cb(struct bt_conn *conn, const char *name)
+{
+#if defined(CONFIG_BT_GATT_GAP_CB)
+	struct bt_gatt_gap_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&gatt_gap_cb, callback, _node) {
+		if (callback->name_changed) {
+			callback->name_changed(conn, name);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_gatt_gap_cb, cb) {
+		if (cb->name_changed) {
+			cb->name_changed(conn, name);
+		}
+	}
+#endif /* CONFIG_BT_GATT_GAP_CB */
+}
 
 static ssize_t write_name(struct bt_conn *conn, const struct bt_gatt_attr *attr, const void *buf,
 			  uint16_t len, uint16_t offset, uint8_t flags)
 {
 	/* adding one to fit the terminating null character */
 	char value[CONFIG_BT_DEVICE_NAME_MAX + 1] = {};
+	int err;
 
 	if (offset >= CONFIG_BT_DEVICE_NAME_MAX) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -133,7 +183,14 @@ static ssize_t write_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 	value[len] = '\0';
 
+	err = write_name_verify(conn, value);
+	if (err) {
+		return err;
+	}
+
 	bt_set_name(value);
+
+	write_name_notify_cb(conn, value);
 
 	return len;
 }
@@ -151,6 +208,53 @@ static ssize_t read_appearance(struct bt_conn *conn,
 }
 
 #if defined(CONFIG_BT_DEVICE_APPEARANCE_GATT_WRITABLE)
+static inline int write_appearance_verify(struct bt_conn *conn,
+					  uint16_t appearance)
+{
+#if defined(CONFIG_BT_GATT_GAP_CB)
+	struct bt_gatt_gap_cb *callback;
+	int ret;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&gatt_gap_cb, callback, _node) {
+		if (callback->appearance_verify) {
+			ret = callback->appearance_verify(conn, appearance);
+			if (ret) {
+				return ret;
+			}
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_gatt_gap_cb, cb) {
+		if (cb->appearance_verify) {
+			ret = cb->appearance_verify(conn, appearance);
+			if (ret) {
+				return ret;
+			}
+		}
+	}
+#endif /* CONFIG_BT_GATT_GAP_CB */
+	return 0;
+}
+
+static inline void write_appearance_notify_cb(struct bt_conn *conn,
+					      uint16_t appearance)
+{
+#if defined(CONFIG_BT_GATT_GAP_CB)
+	struct bt_gatt_gap_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&gatt_gap_cb, callback, _node) {
+		if (callback->appearance_changed) {
+			callback->appearance_changed(conn, appearance);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_gatt_gap_cb, cb) {
+		if (cb->appearance_changed) {
+			cb->appearance_changed(conn, appearance);
+		}
+	}
+#endif /* CONFIG_BT_GATT_GAP_CB */
+}
 static ssize_t write_appearance(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 const void *buf, uint16_t len, uint16_t offset,
 			 uint8_t flags)
@@ -171,11 +275,18 @@ static ssize_t write_appearance(struct bt_conn *conn, const struct bt_gatt_attr 
 	memcpy(&appearance_le_bytes[offset], buf, len);
 	appearance = sys_le16_to_cpu(appearance_le);
 
+	err = write_appearance_verify(conn, appearance);
+	if (err) {
+		return err;
+	}
+
 	err = bt_set_appearance(appearance);
 
 	if (err) {
 		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 	}
+
+	write_appearance_notify_cb(conn, appearance);
 
 	return len;
 }
@@ -6572,3 +6683,33 @@ void bt_gatt_req_set_mtu(struct bt_att_req *req, uint16_t mtu)
 	 * request types if needed.
 	 */
 }
+
+#if defined(CONFIG_BT_GATT_GAP_CB)
+int bt_gatt_gap_cb_register(struct bt_gatt_gap_cb *cb)
+{
+	CHECKIF(cb == NULL) {
+		return -EINVAL;
+	}
+
+	if (sys_slist_find(&gatt_gap_cb, &cb->_node, NULL)) {
+		return -EEXIST;
+	}
+
+	sys_slist_append(&gatt_gap_cb, &cb->_node);
+
+	return 0;
+}
+
+int bt_gatt_gap_cb_unregister(struct bt_gatt_gap_cb *cb)
+{
+	CHECKIF(cb == NULL) {
+		return -EINVAL;
+	}
+
+	if (!sys_slist_find_and_remove(&gatt_gap_cb, &cb->_node)) {
+		return -ENOENT;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_GATT_GAP_CB */

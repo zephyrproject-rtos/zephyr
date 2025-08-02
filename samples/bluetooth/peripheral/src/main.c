@@ -227,9 +227,13 @@ static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_UUID128_ALL, BT_UUID_CUSTOM_SERVICE_VAL),
 };
 
-static const struct bt_data sd[] = {
-	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+
+static struct bt_data sd[] = {
+	/* Placeholder to be filled before advertising start */
+	BT_DATA(BT_DATA_NAME_COMPLETE, NULL, 0),
 };
+/* Name placement in the sd data */
+#define SD_DATA_NAME_POS 0
 
 void mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 {
@@ -269,6 +273,43 @@ static void alert_high_start(void)
 	printk("High alert started\n");
 }
 
+static int name_verify(struct bt_conn *conn, const char *name)
+{
+	/* Require the name to start with capital letter */
+	if ((name[0] >= 'A') && (name[0] <= 'Z')) {
+		printk("Name change allowed: \"%s\"\n", name);
+		return 0;
+	}
+
+	printk("Name change rejected: \"%s\"\n", name);
+	return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+}
+
+void name_changed(struct bt_conn *conn, const char *name)
+{
+	printk("Device name changed to: \"%s\"\n", name);
+}
+
+int appearance_verify(struct bt_conn *conn, uint16_t appearance)
+{
+	/* Limit the accepted appearances */
+	switch (appearance) {
+	case BT_APPEARANCE_UNKNOWN:
+	case BT_APPEARANCE_GENERIC_HEART_RATE:
+	case BT_APPEARANCE_HEART_RATE_BELT:
+		printk("Appearance change allowed: 0x%04x\n", appearance);
+		return 0;
+	default:
+		printk("Appearance change rejected: 0x%04x\n", appearance);
+		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+	}
+}
+
+void appearance_changed(struct bt_conn *conn, uint16_t appearance)
+{
+	printk("Device appearance changed to: 0x%04x\n", appearance);
+}
+
 BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
@@ -280,15 +321,28 @@ BT_IAS_CB_DEFINE(ias_callbacks) = {
 	.high_alert = alert_high_start,
 };
 
+BT_GATT_GAP_CB_DEFINE(gap_callbacks) = {
+	.name_verify = name_verify,
+	.name_changed = name_changed,
+	.appearance_verify = appearance_verify,
+	.appearance_changed = appearance_changed,
+};
+
 static void bt_ready(void)
 {
 	int err;
+	const char *device_name;
 
 	printk("Bluetooth initialized\n");
 
 	if (IS_ENABLED(CONFIG_SETTINGS)) {
 		settings_load();
 	}
+
+	/* Get the device name from bluetooth to advertise */
+	device_name = bt_get_name();
+	sd[SD_DATA_NAME_POS].data = (const uint8_t *)device_name;
+	sd[SD_DATA_NAME_POS].data_len = strlen(device_name);
 
 	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
 	if (err) {
