@@ -23,23 +23,20 @@ config SHELL_BACKEND_SERIAL_CHECK_DTR
 config UART_LINE_CTRL
 	default SHELL
 
-config USB_DEVICE_STACK
-	default y
-
-config USB_DEVICE_INITIALIZE_AT_BOOT
+config USB_DEVICE_STACK_NEXT
 	default y if !MCUBOOT
 
-config USB_DEVICE_REMOTE_WAKEUP
-	default n
+config CDC_ACM_SERIAL_INITIALIZE_AT_BOOT
+	default y if !MCUBOOT
 
 if LOG
 
-choice USB_CDC_ACM_LOG_LEVEL_CHOICE
-	default USB_CDC_ACM_LOG_LEVEL_OFF
+choice USBD_CDC_ACM_LOG_LEVEL_CHOICE
+	default USBD_CDC_ACM_LOG_LEVEL_OFF
 endchoice
 
-choice USB_DEVICE_LOG_LEVEL_CHOICE
-	default USB_DEVICE_LOG_LEVEL_OFF
+choice USBD_LOG_LEVEL_CHOICE
+	default USBD_LOG_LEVEL_OFF
 endchoice
 
 # Wait 4000ms at startup for logging

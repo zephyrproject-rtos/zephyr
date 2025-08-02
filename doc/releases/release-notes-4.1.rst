@@ -942,7 +942,7 @@ New Samples
 * :zephyr:code-sample:`bluetooth_ccp_call_control_client`
 * :zephyr:code-sample:`bluetooth_ccp_call_control_server`
 * :zephyr:code-sample:`coresight_stm_sample`
-* :zephyr:code-sample:`dfu-next`
+* :zephyr:code-sample:`usb-dfu`
 * :zephyr:code-sample:`i2c-rtio-loopback`
 * :zephyr:code-sample:`lvgl-screen-transparency`
 * :zephyr:code-sample:`mctp_endpoint_sample`
@@ -957,8 +957,8 @@ New Samples
 * :zephyr:code-sample:`tmc50xx`
 * :zephyr:code-sample:`uart`
 * :zephyr:code-sample:`usb-midi2-device`
-* :zephyr:code-sample:`usbd-cdc-acm-console`
-* :zephyr:code-sample:`webusb-next`
+* :zephyr:code-sample:`usb-cdc-acm-console`
+* :zephyr:code-sample:`webusb`
 
 Other notable changes
 *********************

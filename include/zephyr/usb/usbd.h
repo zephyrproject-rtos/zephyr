@@ -6,7 +6,7 @@
 
 /**
  * @file
- * @brief New experimental USB device stack APIs and structures
+ * @brief New USB device stack APIs and structures
  *
  * This file contains the USB device stack APIs and structures.
  */
@@ -33,7 +33,7 @@ extern "C" {
  * @defgroup usbd_api USB device core API
  * @ingroup usb
  * @since 3.3
- * @version 0.1.0
+ * @version 0.2.0
  * @{
  */
 
