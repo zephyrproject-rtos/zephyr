@@ -32,6 +32,12 @@ config PWM_CAPTURE
 	  This option extends the Zephyr PWM API with the ability to capture PWM
 	  period/pulse widths.
 
+config PWM_EVENT
+	bool "Provide API for PWM event"
+	help
+	  This option extends the Zephyr PWM API with the abilitiy to configure a
+	  PWM event.
+
 source "drivers/pwm/Kconfig.b91"
 
 source "drivers/pwm/Kconfig.cc13xx_cc26xx_timer"
