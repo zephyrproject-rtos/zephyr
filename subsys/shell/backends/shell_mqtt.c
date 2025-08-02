@@ -657,8 +657,8 @@ static int init(const struct shell_transport *transport, const void *config,
 
 	LOG_DBG("Client ID is %s", sh->device_id);
 
-	(void)snprintf(sh->pub_topic, SH_MQTT_TOPIC_MAX_SIZE, "%s_tx", sh->device_id);
-	(void)snprintf(sh->sub_topic, SH_MQTT_TOPIC_MAX_SIZE, "%s_rx", sh->device_id);
+	(void)snprintf(sh->pub_topic, SH_MQTT_TOPIC_MAX_SIZE, "%s/sh/tx", sh->device_id);
+	(void)snprintf(sh->sub_topic, SH_MQTT_TOPIC_MAX_SIZE, "%s/sh/rx", sh->device_id);
 
 	ring_buf_init(&sh->rx_rb, RX_RB_SIZE, sh->rx_rb_buf);
 
