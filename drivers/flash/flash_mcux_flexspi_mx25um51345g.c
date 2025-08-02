@@ -68,7 +68,9 @@ struct flash_flexspi_nor_data {
 	flexspi_device_config_t config;
 	flexspi_port_t port;
 	uint64_t size;
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	struct flash_pages_layout layout;
+#endif
 	struct flash_parameters flash_parameters;
 };
 
@@ -624,11 +626,12 @@ static DEVICE_API(flash, flash_flexspi_nor_api) = {
 		.config = FLASH_FLEXSPI_DEVICE_CONFIG(n),		\
 		.port = DT_INST_REG_ADDR(n),				\
 		.size = DT_INST_PROP(n, size) / 8,			\
-		.layout = {						\
+		IF_ENABLED(CONFIG_FLASH_PAGE_LAYOUT,	\
+		(.layout = {						\
 			.pages_count = DT_INST_PROP(n, size) / 8	\
 				/ SPI_NOR_SECTOR_SIZE,			\
 			.pages_size = SPI_NOR_SECTOR_SIZE,		\
-		},							\
+		},))							\
 		.flash_parameters = {					\
 			.write_block_size = NOR_WRITE_SIZE,		\
 			.erase_value = NOR_ERASE_VALUE,			\
