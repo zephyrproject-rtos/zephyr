@@ -661,6 +661,35 @@ int fs_statvfs(const char *abs_path, struct fs_statvfs *stat)
 	return rc;
 }
 
+int fs_gc(const char *abs_path)
+{
+	struct fs_mount_t *mp;
+	int rc;
+
+	if ((abs_path == NULL) ||
+			(strlen(abs_path) <= 1) || (abs_path[0] != '/')) {
+		LOG_ERR("invalid file or dir name!!");
+		return -EINVAL;
+	}
+
+	rc = fs_get_mnt_point(&mp, abs_path, NULL);
+	if (rc < 0) {
+		LOG_ERR("mount point not found!!");
+		return rc;
+	}
+
+	CHECKIF(mp->fs->gc == NULL) {
+		return -ENOTSUP;
+	}
+
+	rc = mp->fs->gc(mp, abs_path);
+	if (rc < 0) {
+		LOG_ERR("failed to run garbage collection (%d)", rc);
+	}
+
+	return rc;
+}
+
 int fs_mount(struct fs_mount_t *mp)
 {
 	struct fs_mount_t *itr;
