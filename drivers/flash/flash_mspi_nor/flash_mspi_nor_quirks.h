@@ -53,8 +53,8 @@ static inline int mxicy_mx25r_post_switch_mode(const struct device *dev)
 {
 	const struct flash_mspi_nor_config *dev_config = dev->config;
 	struct flash_mspi_nor_data *dev_data = dev->data;
-	enum mspi_io_mode io_mode = dev_config->mspi_nor_cfg.io_mode;
-	uint32_t freq = dev_config->mspi_nor_cfg.freq;
+	enum mspi_io_mode io_mode = FLASH_MODE_DATA(dev)->dev_cfg.io_mode;
+	uint32_t freq = FLASH_MODE_DATA(dev)->dev_cfg.freq;
 	int rc;
 	uint8_t status;
 	uint8_t config[MXICY_MX25R_REGS_LEN - 1];
@@ -65,7 +65,7 @@ static inline int mxicy_mx25r_post_switch_mode(const struct device *dev)
 
 	/* Wait for previous write to finish */
 	do {
-		flash_mspi_command_set(dev, &dev_config->jedec_cmds->status);
+		flash_mspi_command_set(dev, FLASH_MODE_DATA(dev)->jedec_cmds->status);
 		dev_data->packet.data_buf  = &status;
 		dev_data->packet.num_bytes = sizeof(status);
 		rc = mspi_transceive(dev_config->bus, &dev_config->mspi_id, &dev_data->xfer);
@@ -99,7 +99,7 @@ static inline int mxicy_mx25r_post_switch_mode(const struct device *dev)
 
 	/* Wait for write to end and verify status register */
 	do {
-		flash_mspi_command_set(dev, &dev_config->jedec_cmds->status);
+		flash_mspi_command_set(dev, FLASH_MODE_DATA(dev)->jedec_cmds->status);
 		dev_data->packet.data_buf  = &status;
 		dev_data->packet.num_bytes = sizeof(status);
 		rc = mspi_transceive(dev_config->bus, &dev_config->mspi_id, &dev_data->xfer);
@@ -113,7 +113,7 @@ static inline int mxicy_mx25r_post_switch_mode(const struct device *dev)
 	}
 
 	/* Verify configuration registers */
-	flash_mspi_command_set(dev, &dev_config->jedec_cmds->config);
+	flash_mspi_command_set(dev, FLASH_MODE_DATA(dev)->jedec_cmds->config);
 	dev_data->packet.data_buf  = config;
 	dev_data->packet.num_bytes = sizeof(config);
 	rc = mspi_transceive(dev_config->bus, &dev_config->mspi_id, &dev_data->xfer);
@@ -146,7 +146,7 @@ static inline int mxicy_mx25u_post_switch_mode(const struct device *dev)
 {
 	const struct flash_mspi_nor_config *dev_config = dev->config;
 	struct flash_mspi_nor_data *dev_data = dev->data;
-	enum mspi_io_mode io_mode = dev_config->mspi_nor_cfg.io_mode;
+	enum mspi_io_mode io_mode = FLASH_MODE_DATA(dev)->dev_cfg.io_mode;
 	int rc;
 
 	if (io_mode != MSPI_IO_MODE_OCTAL) {
