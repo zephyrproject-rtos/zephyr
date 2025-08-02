@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Nick Ward
+# SPDX-License-Identifier: Apache-2.0
+
+description: Quectel L96 GNSS modem accessed through I2C bus
+
+compatible: "quectel,l96"
+
+include:
+  - i2c-device.yaml
+  - quectel,l96-common.yaml
