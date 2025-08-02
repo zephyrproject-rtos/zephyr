@@ -8,8 +8,8 @@
 
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/mipi_dbi.h>
-#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/memc/memc_stm32.h>
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/sys/barrier.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/byteorder.h>
@@ -60,16 +60,17 @@ int mipi_dbi_stm32_fmc_check_config(const struct device *dev,
 		return -EINVAL;
 	}
 
-	/* According to the FMC documentation*/
-	fmc_write_cycles =
-		((config->fmc_address_setup_time + 1) + (config->fmc_data_setup_time + 1)) * 1;
+	/* According to the FMC documentation (AN4570) */
+	fmc_write_cycles = (config->fmc_address_setup_time + 1) +
+			   (config->fmc_data_setup_time + 1);
 
-	if (fmc_freq / fmc_write_cycles > dbi_config->config.frequency) {
+	if ((fmc_freq / fmc_write_cycles) > dbi_config->config.frequency) {
 		LOG_ERR("Frequency is too high for the display controller");
 		return -EINVAL;
 	}
 
 	data->dbi_config = dbi_config;
+
 	return 0;
 }
 
@@ -116,7 +117,7 @@ static int mipi_dbi_stm32_fmc_write_display(const struct device *dev,
 		return ret;
 	}
 
-	for (i = 0U; i < desc->buf_size; i += 2) {
+	for (i = 0U; i < desc->buf_size; i += 2U) {
 		sys_write16(sys_get_le16(&framebuf[i]), config->data_addr);
 		if (IS_ENABLED(CONFIG_MIPI_DBI_STM32_FMC_MEM_BARRIER)) {
 			barrier_dsync_fence_full();
@@ -187,7 +188,7 @@ static DEVICE_API(mipi_dbi, mipi_dbi_stm32_fmc_driver_api) = {
 			_CONCAT(FMC_BANK1_, UTIL_INC(DT_REG_ADDR_RAW(DT_INST_PARENT(n)))))
 
 #define MIPI_DBI_FMC_GET_DATA_ADDRESS(n)                                                           \
-	MIPI_DBI_FMC_GET_ADDRESS(n) + (1 << (DT_INST_PROP(n, register_select_pin) + 1))
+	MIPI_DBI_FMC_GET_ADDRESS(n) + BIT(DT_INST_PROP(n, register_select_pin) + 1)
 
 #define MIPI_DBI_STM32_FMC_INIT(n)                                                                 \
 	static const struct mipi_dbi_stm32_fmc_config mipi_dbi_stm32_fmc_config_##n = {            \
