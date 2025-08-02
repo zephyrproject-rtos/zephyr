@@ -40,8 +40,19 @@ config MODEM_CELLULAR
 if MODEM_CELLULAR
 
 config MODEM_CELLULAR_APN
-	string "APN"
-	default "internet"
+	string "Static APN"
+	default ""
+	help
+	  If left empty the driver will wait for the application to call
+	  cellular_set_apn() before it proceeds to the dial phase.
+
+config MODEM_CELLULAR_MAX_EVENT_SUBSCRIBERS
+	int "Maximum number of event subscribers per modem instance"
+	default 2
+	range 1 16
+	help
+	  Each cellular driver keeps a fixed-size table of callback
+	  subscriptions for asynchronous events (e.g. “modem-info changed”).
 
 config MODEM_CELLULAR_PERIODIC_SCRIPT_MS
 	int "Periodic script interval in milliseconds"

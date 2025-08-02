@@ -9,4 +9,20 @@ config SAMPLE_CELLULAR_MODEM_ENDPOINT_HOSTNAME
 	string "Endpoint hostname"
 	default "test-endpoint.com"
 
+config SAMPLE_CELLULAR_MODEM_AUTO_APN
+	bool "Autodetect APN from SIM IMSI"
+	help
+	  If enabled, the sample derives the APN from the SIM’s MCC + MNC.
+
+config SAMPLE_CELLULAR_MODEM_AUTO_APN_PROFILES
+	string "APN profile list"
+	depends on SAMPLE_CELLULAR_MODEM_AUTO_APN
+	help
+	  Comma-separated list:
+	    <apn>=<mccmnc1> <mccmnc2> …
+	  where each <mccmnc> is a 5- or 6-digit Mobile Country Code + Mobile
+	  Network Code.
+	  Example:
+	    "shared.m2m.ch=22801, em=29505 90143 29509"
+
 source "Kconfig.zephyr"
