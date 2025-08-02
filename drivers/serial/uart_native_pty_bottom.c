@@ -34,7 +34,7 @@
  * @param p_char Pointer to character.
  * @param len    Maximum number of characters to read.
  *
- * @retval >0 Number of characters actually read
+ * @retval >=0 Number of characters actually read
  * @retval -1 If no character was available to read
  * @retval -2 if the stdin is disconnected
  */
@@ -63,6 +63,10 @@ int np_uart_stdin_poll_in_bottom(int in_f, unsigned char *p_char, int len)
 		return -1;
 	} else if (ready == -1) {
 		ERROR("%s: Error on select ()\n", __func__);
+	}
+
+	if (len <= 0) {
+		return 0;
 	}
 
 	n = read(in_f, p_char, len);
