@@ -1,0 +1,68 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+mainmenu "Bluetooth: ISO Receive"
+
+config BT_ISO_BIS_RECV_SEND
+	bool "Enable Send/Recv in a BIS for group talk"
+	default n
+	help
+	  This option enables code in the underlying stack to send and receive
+	  audio in a BIS for group talk. This is only needed if the application
+	  is using the group talk feature. The default is to not include this
+	  code in the stack, which saves some code space.
+	  If enabled, then the following MUST also be enabled in either file
+	  prj.conf or overlay-bt_ll_sw_split.conf:
+          CONFIG_BT_CTLR_SYNC_ISO=y
+          CONFIG_BT_CTLR_ADV_ISO=y
+
+
+config BT_ISO_BIS_RECV_SEND_DBG
+	bool "Enable Send/Recv related debug code and attributes"
+	default n
+	help
+	  Use this attribute to enable disable debug code and attributes
+	  related to the Send/Recv feature. This is only needed if the
+	  application is using the group talk feature. The default is to
+	  not include this code in the stack, which saves some code space.
+
+config BT_ISO_FUNC_NO_OPTIMIZE_MASK
+	hex "Bitmask for enable/disable -O0 optimisation for functions"
+	default 0x00000000
+	help
+	  Default will leave all functions optimised as per default.
+	   Do a search to finf which bitmask controls which function.
+
+config ISO_PRINT_INTERVAL
+	int "Interval between each packet report"
+	range 1 360000
+	default 1
+	help
+	  Only print the packet report once in a given interval of ISO packets.
+
+config ISO_ALIGN_PRINT_INTERVALS
+	bool "Align report interval with incoming packets"
+	help
+	  Align interval-counter with packet number from incoming ISO packets.
+	  This may be needed if report printouts are to be synchronized between
+	  the iso_broadcast sample and the iso_receive sample.
+
+config ISO_BLINK_LED0
+	bool "Blink led0"
+	depends on $(dt_alias_enabled,led0)
+	select GPIO
+	default y
+
+config APP_FEATURES_BITMASK
+	hex "Bitmask for application features"
+	default 0x00000000
+	help
+	  Default will generate normal expected behavior.
+	   0x00000001 - Only print ext & pa adv packets when PA not synced
+	   0x00000002 - Print BIS data in new enhanced report format
+
+
+
+	  
