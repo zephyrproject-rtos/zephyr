@@ -674,7 +674,10 @@ class Power(Pytest):
 class Gtest(Harness):
     ANSI_ESCAPE = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
     _NAME_PATTERN = "[a-zA-Z_][a-zA-Z0-9_]*"
-    _SUITE_TEST_NAME_PATTERN = f"(?P<suite_name>{_NAME_PATTERN})\\.(?P<test_name>{_NAME_PATTERN})"
+    _SUITE_TEST_NAME_PATTERN = (
+            f"(?P<suite_name>{_NAME_PATTERN})(\\.|/)(?P<test_name>"
+            f"{_NAME_PATTERN})(/)?(?P<parametrized_test>[0-9]*\\.[a-zA-Z_]*)?"
+            )
     TEST_START_PATTERN = f".*\\[ RUN      \\] {_SUITE_TEST_NAME_PATTERN}"
     TEST_PASS_PATTERN = f".*\\[       OK \\] {_SUITE_TEST_NAME_PATTERN}"
     TEST_SKIP_PATTERN = f".*\\[ DISABLED \\] {_SUITE_TEST_NAME_PATTERN}"
@@ -706,6 +709,8 @@ class Gtest(Harness):
 
             # Generate the internal name of the test
             name = "{}.{}.{}".format(self.id, suite_name, test_start_match.group("test_name"))
+            if test_start_match.group("parametrized_test"):
+                name += f".{test_start_match.group('parametrized_test')}"
 
             # Assert that we don't already have a running test
             assert (
@@ -761,25 +766,31 @@ class Gtest(Harness):
     def _check_result(self, line):
         test_pass_match = re.search(self.TEST_PASS_PATTERN, line)
         if test_pass_match:
-            return TwisterStatus.PASS, \
-                   "{}.{}.{}".format(
+            test_name = "{}.{}.{}".format(
                         self.id, test_pass_match.group("suite_name"),
                         test_pass_match.group("test_name")
                     )
+            if test_pass_match.group("parametrized_test"):
+                test_name += f".{test_pass_match.group('parametrized_test')}"
+            return TwisterStatus.PASS, test_name
         test_skip_match = re.search(self.TEST_SKIP_PATTERN, line)
         if test_skip_match:
-            return TwisterStatus.SKIP, \
-                   "{}.{}.{}".format(
-                       self.id, test_skip_match.group("suite_name"),
-                       test_skip_match.group("test_name")
+            test_name = "{}.{}.{}".format(
+                        self.id, test_skip_match.group("suite_name"),
+                        test_skip_match.group("test_name")
                     )
+            if test_skip_match.group("parametrized_test"):
+                test_name += f".{test_skip_match.group('parametrized_test')}"
+            return TwisterStatus.SKIP, test_name
         test_fail_match = re.search(self.TEST_FAIL_PATTERN, line)
         if test_fail_match:
-            return TwisterStatus.FAIL, \
-                   "{}.{}.{}".format(
-                       self.id, test_fail_match.group("suite_name"),
-                       test_fail_match.group("test_name")
+            test_name = "{}.{}.{}".format(
+                        self.id, test_fail_match.group("suite_name"),
+                        test_fail_match.group("test_name")
                     )
+            if test_fail_match.group("parametrized_test"):
+                test_name += f".{test_fail_match.group('parametrized_test')}"
+            return TwisterStatus.FAIL, test_name
         return None, None
 
 
