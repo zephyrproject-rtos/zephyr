@@ -12,6 +12,3 @@ config SOC_SERIES_IMX7D
 
 config SOC_MCIMX7D_M4
 	select HAS_IMX_HAL
-	select HAS_IMX_GPIO
-	select HAS_IMX_I2C
-	select HAS_IMX_IOMUXC

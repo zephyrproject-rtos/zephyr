@@ -9,13 +9,8 @@ config SOC_FAMILY_MCXC
 	select CLOCK_CONTROL
 	select SOC_RESET_HOOK
 	select HAS_MCUX
-	select HAS_MCUX_ADC16
 	select HAS_MCUX_SIM
 	select HAS_MCUX_RCM
-	select HAS_MCUX_FTFX
-	select HAS_MCUX_LPUART
-	select HAS_MCUX_LPI2C
-	select HAS_MCUX_TPM
 	select SOC_EARLY_INIT_HOOK
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
 
