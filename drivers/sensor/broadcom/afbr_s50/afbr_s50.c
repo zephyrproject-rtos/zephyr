@@ -40,6 +40,11 @@ struct afbr_s50_data {
 	 * for platform abstractions present under modules sub-directory.
 	 */
 	struct afbr_s50_platform_data platform;
+	/** Required in order to flush the data if resources are run out.
+	 * In any case we must call `Argus_EvaluateData` to free up the internal
+	 * buffers.
+	 */
+	struct argus_results_t buf;
 };
 
 struct afbr_s50_config {
@@ -57,6 +62,23 @@ struct afbr_s50_config {
 		uint8_t measurement_mode;
 	} settings;
 };
+
+static inline void handle_error_on_result(struct afbr_s50_data *data, int result)
+{
+	struct rtio_iodev_sqe *iodev_sqe = data->rtio.iodev_sqe;
+	status_t status;
+
+	(void)Argus_StopMeasurementTimer(data->platform.argus.handle);
+	do {
+		/** Flush the existing data moving forward so the
+		 * internal buffers can be re-used afterwards.
+		 */
+		status = Argus_EvaluateData(data->platform.argus.handle, &data->buf);
+	} while (status == STATUS_OK);
+
+	data->rtio.iodev_sqe = NULL;
+	rtio_iodev_sqe_err(iodev_sqe, result);
+}
 
 static void data_ready_work_handler(struct rtio_iodev_sqe *iodev_sqe)
 {
@@ -77,9 +99,7 @@ static void data_ready_work_handler(struct rtio_iodev_sqe *iodev_sqe)
 
 	CHECKIF(err || !edata || edata_len < sizeof(struct afbr_s50_edata)) {
 		LOG_ERR("Failed to get buffer for edata");
-
-		data->rtio.iodev_sqe = NULL;
-		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
+		handle_error_on_result(data, -ENOMEM);
 		return;
 	}
 
@@ -88,6 +108,7 @@ static void data_ready_work_handler(struct rtio_iodev_sqe *iodev_sqe)
 	err = sensor_clock_get_cycles(&cycles);
 	CHECKIF(err != 0) {
 		LOG_ERR("Failed to get sensor clock cycles");
+		handle_error_on_result(data, -EIO);
 		return;
 	}
 
@@ -100,12 +121,10 @@ static void data_ready_work_handler(struct rtio_iodev_sqe *iodev_sqe)
 	status = Argus_EvaluateData(data->platform.argus.handle, &edata->payload);
 	if (status != STATUS_OK || edata->payload.Status != STATUS_OK) {
 		LOG_ERR("Data not valid: %d, %d", status, edata->payload.Status);
-
-		data->rtio.iodev_sqe = NULL;
-		rtio_iodev_sqe_err(iodev_sqe, -EIO);
-	} else {
-		data->rtio.iodev_sqe = NULL;
-		rtio_iodev_sqe_ok(iodev_sqe, 0);
+		handle_error_on_result(data, -EIO);
+	}
+	CHECKIF(Argus_IsDataEvaluationPending(data->platform.argus.handle)) {
+		LOG_WRN("Overrun. More pending data than what we've served.");
 	}
 
 	/** After freeing the buffer with EvaluateData, decide whether to
@@ -117,6 +136,9 @@ static void data_ready_work_handler(struct rtio_iodev_sqe *iodev_sqe)
 
 		(void)Argus_StopMeasurementTimer(data->platform.argus.handle);
 	}
+
+	data->rtio.iodev_sqe = NULL;
+	rtio_iodev_sqe_ok(iodev_sqe, 0);
 }
 
 static status_t data_ready_callback(status_t status, argus_hnd_t *hnd)
@@ -131,7 +153,7 @@ static status_t data_ready_callback(status_t status, argus_hnd_t *hnd)
 	 */
 	err = afbr_s50_platform_get_by_hnd(hnd, &platform);
 	CHECKIF(err) {
-		__ASSERT(false, "Failed to get platform data SQE response can't be sent");
+		LOG_ERR("Failed to get platform data SQE response can't be sent");
 		return ERROR_FAIL;
 	}
 
@@ -140,10 +162,7 @@ static status_t data_ready_callback(status_t status, argus_hnd_t *hnd)
 
 	if (status != STATUS_OK) {
 		LOG_ERR("Measurement failed: %d", status);
-
-		data->rtio.iodev_sqe = NULL;
-		rtio_iodev_sqe_err(iodev_sqe, -EIO);
-
+		handle_error_on_result(data, -EIO);
 		return status;
 	}
 
@@ -156,9 +175,7 @@ static status_t data_ready_callback(status_t status, argus_hnd_t *hnd)
 	CHECKIF(!req) {
 		LOG_ERR("RTIO work item allocation failed. Consider to increase "
 			"CONFIG_RTIO_WORKQ_POOL_ITEMS");
-
-		data->rtio.iodev_sqe = NULL;
-		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
+		handle_error_on_result(data, -ENOMEM);
 		return ERROR_FAIL;
 	}
 
@@ -173,7 +190,8 @@ static void afbr_s50_submit_single_shot(const struct device *dev,
 	struct afbr_s50_data *data = dev->data;
 
 	/** If there's an op in process, reject ignore requests */
-	if (data->rtio.iodev_sqe != NULL) {
+	if (data->rtio.iodev_sqe != NULL &&
+	    FIELD_GET(RTIO_SQE_CANCELED, data->rtio.iodev_sqe->sqe.flags) == 0) {
 		LOG_WRN("Operation in progress. Rejecting request");
 
 		rtio_iodev_sqe_err(iodev_sqe, -EBUSY);
@@ -198,7 +216,8 @@ static void afbr_s50_submit_streaming(const struct device *dev,
 	const struct sensor_read_config *read_cfg = iodev_sqe->sqe.iodev->data;
 
 	/** If there's an op in process, reject ignore requests */
-	if (data->rtio.iodev_sqe != NULL) {
+	if (data->rtio.iodev_sqe != NULL &&
+	    FIELD_GET(RTIO_SQE_CANCELED, data->rtio.iodev_sqe->sqe.flags) == 0) {
 		LOG_WRN("Operation in progress");
 
 		rtio_iodev_sqe_err(iodev_sqe, -EBUSY);
@@ -362,12 +381,13 @@ BUILD_ASSERT(CONFIG_MAIN_STACK_SIZE >= 4096,
 #define AFBR_S50_INIT(inst)									   \
 												   \
 	BUILD_ASSERT(DT_INST_PROP(inst, odr) > 0, "Please set valid ODR");			   \
-	BUILD_ASSERT((DT_INST_PROP(inst, dual_freq_mode) != 0) ^				   \
-		     ((DT_INST_PROP(inst, measurement_mode) & ARGUS_MODE_FLAG_HIGH_SPEED) != 0),   \
+	BUILD_ASSERT(DT_INST_PROP(inst, dual_freq_mode == 0) ||					   \
+		     ((DT_INST_PROP(inst, dual_freq_mode) != 0) ^				   \
+		      ((DT_INST_PROP(inst, measurement_mode) & ARGUS_MODE_FLAG_HIGH_SPEED) != 0)), \
 		     "High Speed mode is not compatible with Dual-Frequency mode enabled. "	   \
 		     "Please disable it on device-tree or change measurement modes");		   \
-	BUILD_ASSERT((DT_INST_PROP(inst, dual_freq_mode) != 0) ^				   \
-		     (DT_INST_PROP(inst, odr) > 100),						   \
+	BUILD_ASSERT(DT_INST_PROP(inst, dual_freq_mode) == 0 ||					   \
+		     ((DT_INST_PROP(inst, dual_freq_mode) != 0) ^ (DT_INST_PROP(inst, odr) > 100)),\
 		     "ODR is too high for Dual-Frequency mode. Please reduce it to "		   \
 		     "100Hz or less");								   \
 												   \
