@@ -9,6 +9,7 @@ tests:
       - drivers
       - pwm
     depends_on: pwm
+    min_ram: 8
     harness: console
     harness_config:
       type: multi_line
