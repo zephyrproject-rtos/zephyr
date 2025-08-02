@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <silabs/xg22/efr32xg22.dtsi>
+
+&radio {
+	bt_hci_silabs: bt_hci_silabs {
+		compatible = "silabs,bt-hci-efr32";
+		status = "disabled";
+	};
+};
