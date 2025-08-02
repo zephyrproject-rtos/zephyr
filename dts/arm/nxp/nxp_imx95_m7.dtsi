@@ -37,15 +37,22 @@
 		scmi_shmem0: memory@44611000 {
 			compatible = "arm,scmi-shmem";
 			reg = <0x44611000 0x80>;
+			#shmem-cells = <0>;
+		};
+
+		scmi_shmem1: memory@44611080 {
+			compatible = "arm,scmi-shmem";
+			reg = <0x44611080 0x80>;
+			#shmem-cells = <0>;
 		};
 	};
 
 	firmware {
 		scmi {
 			compatible = "arm,scmi";
-			shmem = <&scmi_shmem0>;
-			mboxes = <&mu5 0>;
-			mbox-names = "tx";
+			shmems = <&scmi_shmem0>, <&scmi_shmem1>;
+			mboxes = <&mu5 0>, <&mu5 1>;
+			mbox-names = "tx", "rx";
 
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -74,6 +81,11 @@
 			scmi_cpu: protocol@82 {
 				compatible = "nxp,scmi-cpu";
 				reg = <0x82>;
+			};
+
+			scmi_bbm: protocol@81 {
+				compatible = "nxp,scmi-bbm";
+				reg = <0x81>;
 			};
 		};
 	};

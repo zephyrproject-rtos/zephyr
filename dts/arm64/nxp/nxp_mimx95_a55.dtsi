@@ -96,15 +96,22 @@
 		scmi_shmem0: memory@445b1000 {
 			compatible = "arm,scmi-shmem";
 			reg = <0x445b1000 0x80>;
+			#shmem-cells = <0>;
+		};
+
+		scmi_shmem1: memory@445b1080 {
+			compatible = "arm,scmi-shmem";
+			reg = <0x445b1080 0x80>;
+			#shmem-cells = <0>;
 		};
 	};
 
 	firmware {
 		scmi {
 			compatible = "arm,scmi";
-			shmem = <&scmi_shmem0>;
-			mboxes = <&mu2 0>;
-			mbox-names = "tx";
+			shmems = <&scmi_shmem0>, <&scmi_shmem1>;
+			mboxes = <&mu2 0>, <&mu2 1>;
+			mbox-names = "tx", "rx";
 
 			#address-cells = <1>;
 			#size-cells = <0>;
