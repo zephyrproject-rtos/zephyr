@@ -1511,6 +1511,17 @@ static void gatt_store_ccc_cf(uint8_t id, const bt_addr_le_t *peer_addr)
 	}
 }
 
+#if defined(CONFIG_BT_SETTINGS) && defined(CONFIG_BT_SMP)
+BT_CONN_CB_DEFINE(gatt_conn_cb) = {
+	/* Also update the address of CCC or CF writes that happened before the
+	 * identity resolution. Note that to increase security in the future, we
+	 * might want to explicitly not do this and treat a bonded device as a
+	 * brand-new peer.
+	 */
+	.identity_resolved = bt_gatt_identity_resolved,
+};
+#endif /* CONFIG_BT_SETTINGS && CONFIG_BT_SMP */
+
 static void bt_gatt_service_init(void)
 {
 	if (atomic_test_and_set_bit(gatt_flags, GATT_SERVICE_INITIALIZED)) {
@@ -1567,17 +1578,6 @@ void bt_gatt_init(void)
 	 * and CF storage on pairing complete.
 	 */
 	bt_conn_auth_info_cb_register(&gatt_conn_auth_info_cb);
-
-	static struct bt_conn_cb gatt_conn_cb = {
-		.identity_resolved = bt_gatt_identity_resolved,
-	};
-
-	/* Also update the address of CCC or CF writes that happened before the
-	 * identity resolution. Note that to increase security in the future, we
-	 * might want to explicitly not do this and treat a bonded device as a
-	 * brand-new peer.
-	 */
-	bt_conn_cb_register(&gatt_conn_cb);
 #endif /* CONFIG_BT_SETTINGS && CONFIG_BT_SMP */
 }
 

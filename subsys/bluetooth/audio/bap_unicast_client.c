@@ -4467,14 +4467,13 @@ static void unicast_client_disconnected(struct bt_conn *conn, uint8_t reason)
 	unicast_client_ep_reset(conn, reason);
 }
 
-static struct bt_conn_cb conn_cbs = {
+BT_CONN_CB_DEFINE(conn_cbs) = {
 	.disconnected = unicast_client_disconnected,
 };
 
 int bt_bap_unicast_client_discover(struct bt_conn *conn, enum bt_audio_dir dir)
 {
 	struct unicast_client *client;
-	static bool conn_cb_registered;
 	uint8_t role;
 	int err;
 
@@ -4506,11 +4505,6 @@ int bt_bap_unicast_client_discover(struct bt_conn *conn, enum bt_audio_dir dir)
 	client->disc_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
 	client->disc_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
 	client->disc_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
-
-	if (!conn_cb_registered) {
-		bt_conn_cb_register(&conn_cbs);
-		conn_cb_registered = true;
-	}
 
 	err = bt_gatt_discover(conn, &client->disc_params);
 	if (err != 0) {
