@@ -840,7 +840,7 @@ if NRF_WIFI_FEAT_KEEPALIVE
 config NRF_WIFI_KEEPALIVE_PERIOD_S
 	int "Keepalive period in seconds"
 	range 30 3600
-	default 60
+	default 30
 	help
 	  Keepalive period in seconds to send keepalive packets to the AP.
 endif
