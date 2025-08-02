@@ -281,6 +281,21 @@ static void bt_hid_l2cap_ctrl_connected(struct bt_l2cap_chan *chan)
 	}
 
 	hid->state = BT_HID_STATE_CTRL_CONNECTED;
+
+	if (hid->role == BT_HID_ROLE_ACCEPTOR) {
+		/* Wait for INTR channel connection from remote */
+		LOG_DBG("HID wait for INTR channel connection from remote");
+		return;
+	}
+
+	err = bt_l2cap_chan_connect(chan->conn, &hid->intr_session.br_chan.chan,
+				    BT_L2CAP_PSM_HID_INT);
+	if (err) {
+		LOG_ERR("HID connect INTR failed");
+		hid->state = BT_HID_STATE_DISCONNECTING;
+		bt_l2cap_chan_disconnect(&hid->ctrl_session.br_chan.chan);
+		return;
+	}
 }
 
 static void bt_hid_l2cap_intr_connected(struct bt_l2cap_chan *chan)
@@ -340,6 +355,18 @@ static void bt_hid_l2cap_ctrl_disconnected(struct bt_l2cap_chan *chan)
 		return;
 	}
 
+	/* if INTR session connected, it need to to disconnected */
+	if (hid->intr_session.br_chan.chan.conn) {
+		LOG_DBG("HID disconnect INTR channel");
+		bt_l2cap_chan_disconnect(&hid->intr_session.br_chan.chan);
+		return;
+	}
+
+	if (hid->pending_vc_unplug && hid_cb && hid_cb->vc_unplug) {
+		hid_cb->vc_unplug(hid);
+		hid->pending_vc_unplug = 0;
+	}
+
 	if (hid_cb && hid_cb->disconnected) {
 		hid_cb->disconnected(hid);
 	}
@@ -370,6 +397,24 @@ static void bt_hid_l2cap_intr_disconnected(struct bt_l2cap_chan *chan)
 	if (session->role != BT_HID_SESSION_ROLE_INTR) {
 		LOG_ERR("HID invalid role:%d", session->role);
 		return;
+	}
+
+	/* Local request disconnect(INTR channel), and it need to disconnect CTRL channel as well */
+	if (hid->state == BT_HID_STATE_DISCONNECTING) {
+		LOG_DBG("HID disconnect CTRL channel");
+		bt_l2cap_chan_disconnect(&hid->ctrl_session.br_chan.chan);
+		return;
+	}
+
+	/* Wait for remote disconnect CTRL channel */
+	if (hid->ctrl_session.br_chan.chan.conn) {
+		LOG_DBG("Wait for remote disconnect CTRL channel");
+		return;
+	}
+
+	if (hid->pending_vc_unplug && hid_cb && hid_cb->vc_unplug) {
+		hid_cb->vc_unplug(hid);
+		hid->pending_vc_unplug = 0;
 	}
 
 	if (hid_cb && hid_cb->disconnected) {
@@ -562,12 +607,51 @@ int bt_hid_device_report_error(struct bt_hid_device *hid, uint8_t error)
 
 struct bt_hid_device *bt_hid_device_connect(struct bt_conn *conn)
 {
-	return NULL;
+	struct bt_hid_device *hid;
+	int err;
+
+	hid = hid_get_connection(conn);
+	if (!hid) {
+		LOG_ERR("Cannot allocate memory");
+		return NULL;
+	}
+
+	if (hid->state != BT_HID_STATE_DISTCONNECTED) {
+		LOG_ERR("HID device is busy, state:%d", hid->state);
+		return NULL;
+	}
+
+	bt_hid_init(hid, conn, BT_HID_ROLE_INITIATOR);
+
+	err = bt_l2cap_chan_connect(conn, &hid->ctrl_session.br_chan.chan, BT_L2CAP_PSM_HID_CTL);
+	if (err != 0) {
+		LOG_WRN("HID connect failed, err:%d", err);
+		return NULL;
+	}
+
+	hid->state = BT_HID_STATE_CTRL_CONNECTING;
+	return hid;
 }
 
 int bt_hid_device_disconnect(struct bt_hid_device *hid)
 {
-	return -ENOTSUP;
+	int err;
+
+	__ASSERT_NO_MSG(hid);
+
+	if (hid->state != BT_HID_STATE_CONNECTED) {
+		LOG_DBG("HID device not connected, state:%d", hid->state);
+		return -ENOTCONN;
+	}
+
+	err = bt_l2cap_chan_disconnect(&hid->intr_session.br_chan.chan);
+	if (err != 0) {
+		LOG_WRN("HID disconnect session, err:%d", err);
+		return err;
+	}
+
+	hid->state = BT_HID_STATE_DISCONNECTING;
+	return 0;
 }
 
 int bt_hid_device_register(struct bt_hid_device_cb *cb)
