@@ -17,3 +17,7 @@ config I2C_VIRTUAL_NAME
 
 config APP_DUAL_ROLE_I2C
 	bool "Test with combined controller/target behavior"
+
+config I2C_TEST_DATA_MAX_SIZE
+	int "Max tested data size for the I2C transfers"
+	default 20
