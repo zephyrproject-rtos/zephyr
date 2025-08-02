@@ -485,6 +485,7 @@
 #define STM32_HSI_ENABLED	1
 #define STM32_HSI_FREQ		DT_PROP(DT_NODELABEL(clk_hsi), clock_frequency)
 #elif DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_hsi), st_stm32h7_hsi_clock, okay) \
+	|| DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_hsi), st_stm32l0_hsi_clock, okay) \
 	|| DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_hsi), st_stm32g0_hsi_clock, okay) \
 	|| DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_hsi), st_stm32c0_hsi_clock, okay) \
 	|| DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_hsi), st_stm32n6_hsi_clock, okay)
