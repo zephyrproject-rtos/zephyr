@@ -573,6 +573,9 @@ void radio_disable(void)
 	hal_radio_sw_switch_cleanup();
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
+	/* Reset/disable PPI/DPPI */
+	radio_tmr_status_reset();
+
 	NRF_RADIO->SHORTS = 0;
 	nrf_radio_task_trigger(NRF_RADIO, NRF_RADIO_TASK_DISABLE);
 }
