@@ -23,6 +23,7 @@
 #include <zephyr/bluetooth/classic/avdtp.h>
 #include <zephyr/bluetooth/classic/a2dp_codec_sbc.h>
 #include <zephyr/bluetooth/classic/a2dp.h>
+#include <zephyr/bluetooth/classic/sdp.h>
 
 #include "common/assert.h"
 
@@ -65,6 +66,7 @@ struct bt_a2dp {
 	struct bt_avdtp_get_capabilities_params get_capabilities_param;
 	struct bt_avdtp_set_configuration_params set_config_param;
 	struct bt_avdtp_ctrl_params ctrl_param;
+	uint16_t avdtp_version;
 	uint8_t get_cap_index;
 	enum bt_a2dp_internal_state a2dp_state;
 	uint8_t peer_seps_count;
@@ -125,8 +127,13 @@ static int a2dp_discovery_ind(struct bt_avdtp *session, uint8_t *errcode)
 }
 
 static int a2dp_get_capabilities_ind(struct bt_avdtp *session, struct bt_avdtp_sep *sep,
-				     struct net_buf *rsp_buf, uint8_t *errcode)
+				     struct net_buf *rsp_buf, bool get_all_caps, uint8_t *errcode)
 {
+	/* The Reporting, Recovery, Content Protection, Header Compression, Multiplexing and
+	 * Delay Reporting services are not supported, so the same response is replied as
+	 * get_capabilities.
+	 */
+	ARG_UNUSED(get_all_caps);
 	struct bt_a2dp_ep *ep;
 
 	__ASSERT(sep, "Invalid sep");
@@ -613,6 +620,19 @@ static int bt_a2dp_get_sep_caps(struct bt_a2dp *a2dp)
 			a2dp->get_capabilities_param.req.func = bt_a2dp_get_capabilities_cb;
 			a2dp->get_capabilities_param.stream_endpoint_id =
 				a2dp->discover_cb_param->seps_info[a2dp->get_cap_index].id;
+
+			/* The legacy Get Capabilities procedure is deprecated in cases
+			 * where backwards compatibility with AVDTP 1.2 and earlier is irrelevant.
+			 */
+#if (AVDTP_VERSION >= AVDTP_VERSION_1_3)
+			if (a2dp->avdtp_version >= AVDTP_VERSION_1_3) {
+				a2dp->get_capabilities_param.get_all_caps = true;
+			} else {
+#endif /* AVDTP_VERSION >= AVDTP_VERSION_1_3 */
+				a2dp->get_capabilities_param.get_all_caps = false;
+#if (AVDTP_VERSION >= AVDTP_VERSION_1_3)
+			}
+#endif /* AVDTP_VERSION >= AVDTP_VERSION_1_3 */
 			err = bt_avdtp_get_capabilities(&a2dp->session,
 							&a2dp->get_capabilities_param);
 
@@ -683,6 +703,145 @@ static int bt_a2dp_discover_cb(struct bt_avdtp_req *req, struct net_buf *buf)
 	return 0;
 }
 
+static void bt_a2dp_end_discover(struct bt_a2dp *a2dp)
+{
+	if (a2dp->discover_cb_param != NULL) {
+		if (a2dp->discover_cb_param->cb != NULL) {
+			a2dp->discover_cb_param->cb(a2dp, NULL, NULL);
+		}
+		a2dp->discover_cb_param = NULL;
+	}
+}
+
+static int bt_a2dp_trigger_discover(struct bt_a2dp *a2dp)
+{
+	int err;
+
+	if (a2dp->discover_cb_param == NULL) {
+		return -EINVAL;
+	}
+
+	a2dp->discover_param.req.func = bt_a2dp_discover_cb;
+
+	err = bt_avdtp_discover(&a2dp->session, &a2dp->discover_param);
+	if (err != 0) {
+		bt_a2dp_end_discover(a2dp);
+	}
+
+	return err;
+}
+
+#if defined(CONFIG_BT_A2DP_SOURCE) || defined(CONFIG_BT_A2DP_SINK)
+#define A2DP_SERVICE_LEN 512
+NET_BUF_POOL_FIXED_DEFINE(find_avdtp_version_pool, 1, A2DP_SERVICE_LEN,
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
+
+static const struct bt_uuid *a2dp_snk_uuid = BT_UUID_DECLARE_16(BT_SDP_AUDIO_SINK_SVCLASS);
+static const struct bt_uuid *a2dp_src_uuid = BT_UUID_DECLARE_16(BT_SDP_AUDIO_SOURCE_SVCLASS);
+static struct bt_sdp_discover_params discov_a2dp = {
+	.type = BT_SDP_DISCOVER_SERVICE_SEARCH_ATTR,
+	.pool = &find_avdtp_version_pool,
+};
+#endif
+
+#if defined(CONFIG_BT_A2DP_SINK)
+static uint8_t sdp_discover_audio_src_func(struct bt_conn *conn,
+					   struct bt_sdp_client_result *result,
+					   const struct bt_sdp_discover_params *params)
+{
+	int err;
+	uint16_t version;
+	struct bt_a2dp *a2dp = &connection[bt_conn_index(conn)];
+
+	if ((result == NULL) || (result->resp_buf == NULL) || (result->resp_buf->len == 0)) {
+		bt_a2dp_end_discover(a2dp);
+
+		return BT_SDP_DISCOVER_UUID_STOP;
+	}
+
+	err = bt_sdp_get_proto_param(result->resp_buf, BT_SDP_PROTO_AVDTP, &version);
+	if (err != 0) {
+		bt_a2dp_end_discover(a2dp);
+	} else {
+		a2dp->avdtp_version = version;
+
+		(void)bt_a2dp_trigger_discover(a2dp);
+	}
+
+	return BT_SDP_DISCOVER_UUID_STOP;
+}
+
+static int bt_a2dp_find_audio_src_sdp_service(struct bt_a2dp *a2dp)
+{
+	int err;
+	struct bt_conn *conn;
+
+	conn = bt_a2dp_get_conn(a2dp);
+	if (conn == NULL) {
+		return -ENOTCONN;
+	}
+
+	discov_a2dp.uuid = a2dp_src_uuid;
+	discov_a2dp.func = sdp_discover_audio_src_func;
+	err = bt_sdp_discover(conn, &discov_a2dp);
+	bt_conn_unref(conn);
+
+	return err;
+}
+#endif
+
+#if defined(CONFIG_BT_A2DP_SOURCE)
+static uint8_t sdp_discover_audio_snk_func(struct bt_conn *conn,
+					   struct bt_sdp_client_result *result,
+					   const struct bt_sdp_discover_params *params)
+{
+	int err;
+	uint16_t version;
+	struct bt_a2dp *a2dp = &connection[bt_conn_index(conn)];
+
+	if ((result == NULL) || (result->resp_buf == NULL) || (result->resp_buf->len == 0)) {
+#if defined(CONFIG_BT_A2DP_SINK)
+		err = bt_a2dp_find_audio_src_sdp_service(a2dp);
+		if (err != 0) {
+			bt_a2dp_end_discover(a2dp);
+		}
+#else
+		bt_a2dp_end_discover(a2dp);
+#endif
+		return BT_SDP_DISCOVER_UUID_STOP;
+	}
+
+	err = bt_sdp_get_proto_param(result->resp_buf, BT_SDP_PROTO_AVDTP, &version);
+	if (err != 0) {
+		bt_a2dp_end_discover(a2dp);
+	} else {
+		a2dp->avdtp_version = version;
+
+		(void)bt_a2dp_trigger_discover(a2dp);
+	}
+
+	return BT_SDP_DISCOVER_UUID_STOP;
+}
+
+static int bt_a2dp_find_audio_snk_sdp_service(struct bt_a2dp *a2dp)
+{
+	int err;
+	struct bt_conn *conn;
+
+	conn = bt_a2dp_get_conn(a2dp);
+	if (conn == NULL) {
+		return -ENOTCONN;
+	}
+
+	discov_a2dp.uuid = a2dp_snk_uuid;
+	discov_a2dp.func = sdp_discover_audio_snk_func;
+	err = bt_sdp_discover(conn, &discov_a2dp);
+	bt_conn_unref(conn);
+
+	return err;
+}
+#endif
+
 int bt_a2dp_discover(struct bt_a2dp *a2dp, struct bt_a2dp_discover_param *param)
 {
 	int err;
@@ -699,17 +858,22 @@ int bt_a2dp_discover(struct bt_a2dp *a2dp, struct bt_a2dp_discover_param *param)
 		return -EBUSY;
 	}
 
-	memset(&a2dp->discover_cb_param, 0U, sizeof(a2dp->discover_cb_param));
 	a2dp->discover_cb_param = param;
-	a2dp->discover_param.req.func = bt_a2dp_discover_cb;
-
-	err = bt_avdtp_discover(&a2dp->session, &a2dp->discover_param);
-	if (err) {
-		if (a2dp->discover_cb_param->cb != NULL) {
-			a2dp->discover_cb_param->cb(a2dp, NULL, NULL);
+	if (param->avdtp_version == 0 && a2dp->avdtp_version == 0) {
+		/* try to get the peer's sdp a2dp service's avdtp version */
+#if defined(CONFIG_BT_A2DP_SOURCE)
+		err = bt_a2dp_find_audio_snk_sdp_service(a2dp);
+#elif defined(CONFIG_BT_A2DP_SINK)
+		err = bt_a2dp_find_audio_src_sdp_service(a2dp);
+#else
+		err = -EINVAL;
+#endif
+	} else {
+		if (param->avdtp_version != 0) {
+			a2dp->avdtp_version = param->avdtp_version;
 		}
 
-		a2dp->discover_cb_param = NULL;
+		err = bt_a2dp_trigger_discover(a2dp);
 	}
 
 	return err;
