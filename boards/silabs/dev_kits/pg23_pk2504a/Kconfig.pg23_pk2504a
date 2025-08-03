@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Christoph Jans
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_PG23_PK2504A
+	select SOC_EFM32PG23B310F512IM48
