@@ -5,7 +5,6 @@
 set_property(TARGET linker PROPERTY cpp_base -Hcplus)
 
 check_set_linker_property(TARGET linker PROPERTY baremetal
-                          -Hlld
                           -Hnosdata
                           -Xtimer0 # to suppress the warning message
                           -Hnoxcheck_obj
@@ -15,6 +14,12 @@ check_set_linker_property(TARGET linker PROPERTY baremetal
                           -Hnoivt
                           -Hnocrt
 )
+
+if(CONFIG_ARC)
+  check_set_linker_property(TARGET linker APPEND PROPERTY baremetal
+                            -Hlld
+  )
+endif()
 
 # There are two options:
 # - We have full MWDT libc support and we link MWDT libc - this is default
