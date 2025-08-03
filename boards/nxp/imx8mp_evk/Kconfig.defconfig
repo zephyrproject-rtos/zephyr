@@ -39,14 +39,14 @@ endif # NET_SOCKETS_SERVICE
 
 endif # NETWORKING
 
-if CAN && GPIO_PCA6416
+if CAN && GPIO_PCA_SERIES
 
-# For FlexCAN2, SAI5 PDM/CAN2 IOMUX select is controlled by IO expandor PCA6416
-# IO port, so CAN transceiver must be initialized after PCA6416 initialization
+# For FlexCAN2, SAI5 PDM/CAN2 IOMUX select is controlled by IO expander PCA6416A
+# IO port, so CAN transceiver must be initialized after PCA6416A initialization
 config CAN_TRANSCEIVER_INIT_PRIORITY
 	default 75
 
-endif # CAN && GPIO_PCA6416
+endif # CAN && GPIO_PCA_SERIES
 
 endif # BOARD_IMX8MP_EVK_MIMX8ML8_A53 || BOARD_IMX8MP_EVK_MIMX8ML8_A53_SMP
 
