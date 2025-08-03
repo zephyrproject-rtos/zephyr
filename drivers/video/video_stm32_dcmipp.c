@@ -34,6 +34,7 @@
 #define STM32_DCMIPP_HAS_PIXEL_PIPES
 #endif
 
+#if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
 /* Weak function declaration in order to interface with external ISP handler */
 void __weak stm32_dcmipp_isp_vsync_update(DCMIPP_HandleTypeDef *hdcmipp, uint32_t Pipe)
 {
@@ -53,6 +54,7 @@ int __weak stm32_dcmipp_isp_stop(void)
 {
 	return 0;
 }
+#endif
 
 LOG_MODULE_REGISTER(stm32_dcmipp, CONFIG_VIDEO_LOG_LEVEL);
 
@@ -171,11 +173,13 @@ void HAL_DCMIPP_PIPE_VsyncEventCallback(DCMIPP_HandleTypeDef *hdcmipp, uint32_t 
 	struct stm32_dcmipp_pipe_data *pipe = dcmipp->pipe[Pipe];
 	int ret;
 
+#if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
 	/*
 	 * Let the external ISP handler know that a VSYNC happened a new statistics are
 	 * thus available
 	 */
 	stm32_dcmipp_isp_vsync_update(hdcmipp, Pipe);
+#endif
 
 	if (pipe->state != STM32_DCMIPP_RUNNING) {
 		return;
@@ -1029,13 +1033,13 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 			goto out;
 		}
 	}
-#endif
 
 	/* Initialize the external ISP handling stack */
 	ret = stm32_dcmipp_isp_init(&dcmipp->hdcmipp, config->source_dev);
 	if (ret < 0) {
 		goto out;
 	}
+#endif
 
 	/* Enable the DCMIPP Pipeline */
 	if (config->bus_type == VIDEO_BUS_TYPE_PARALLEL) {
@@ -1082,11 +1086,13 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 		}
 	}
 
+#if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
 	/* Start the external ISP handling */
 	ret = stm32_dcmipp_isp_start();
 	if (ret < 0) {
 		goto out;
 	}
+#endif
 
 	pipe->state = STM32_DCMIPP_RUNNING;
 	pipe->is_streaming = true;
@@ -1112,11 +1118,13 @@ static int stm32_dcmipp_stream_disable(const struct device *dev)
 		goto out;
 	}
 
+#if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
 	/* Stop the external ISP handling */
 	ret = stm32_dcmipp_isp_stop();
 	if (ret < 0) {
 		goto out;
 	}
+#endif
 
 	/* Disable the DCMIPP Pipeline */
 	if (config->bus_type == VIDEO_BUS_TYPE_PARALLEL) {
