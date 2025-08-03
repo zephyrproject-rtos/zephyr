@@ -11,6 +11,7 @@ menuconfig STM32_LTDC
 	select USE_STM32_HAL_RIF if SOC_SERIES_STM32N6X
 	select CACHE_MANAGEMENT if CPU_HAS_DCACHE
 	select PINCTRL
+	select RESET
 	help
 	  Enable driver for STM32 LCT-TFT display controller periheral.
 
