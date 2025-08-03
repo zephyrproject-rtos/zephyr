@@ -1308,21 +1308,19 @@ def test_devicehandler_create_serial_connection(
 
 
 TESTDATA_16 = [
-    ('dummy1 dummy2', None, 'slave name'),
-    ('dummy1,dummy2', CalledProcessError, None),
-    (None, None, 'dummy hardware serial'),
+    ('dummy1 dummy2', None),
+    ('dummy1,dummy2', CalledProcessError),
 ]
 
 @pytest.mark.parametrize(
-    'serial_pty, popen_exception, expected_device',
+    'serial_pty, popen_exception',
     TESTDATA_16,
-    ids=['pty', 'pty process error', 'no pty']
+    ids=['pty', 'pty process error']
 )
-def test_devicehandler_get_serial_device(
+def test_devicehandler_start_serial_pty(
     mocked_instance,
     serial_pty,
-    popen_exception,
-    expected_device
+    popen_exception
 ):
     def mock_popen(command, *args, **kwargs):
         assert command == ['dummy1', 'dummy2']
@@ -1331,21 +1329,16 @@ def test_devicehandler_get_serial_device(
         return mock.Mock()
 
     handler = DeviceHandler(mocked_instance, 'build', mock.Mock())
-    hardware_serial = 'dummy hardware serial'
 
     popen_mock = mock.Mock(side_effect=mock_popen)
-    openpty_mock = mock.Mock(return_value=('master', 'slave'))
-    ttyname_mock = mock.Mock(side_effect=lambda x: x + ' name')
 
-    with mock.patch('subprocess.Popen', popen_mock), \
-         mock.patch('pty.openpty', openpty_mock), \
-         mock.patch('os.ttyname', ttyname_mock):
-        result = handler._get_serial_device(serial_pty, hardware_serial)
+    with mock.patch('subprocess.Popen', popen_mock):
+        result = handler._start_serial_pty(serial_pty, 'master')
 
     if popen_exception:
         assert result is None
     else:
-        assert result[0] == expected_device
+        assert result is not None
 
 TESTDATA_17 = [
     (False, False, False, False, None, False, False,
@@ -1387,16 +1380,13 @@ def test_devicehandler_handle(
     expected_reason,
     expected_logs
 ):
-    def mock_get_serial(serial_pty, hardware_serial):
-        if serial_pty:
-            serial_pty_process = mock.Mock(
-                name='dummy serial PTY process',
-                communicate=mock.Mock(
-                    return_value=('', '')
-                )
+    def mock_start_serial_pty(serial_pty, serial_pty_master):
+        return mock.Mock(
+            name='dummy serial PTY process',
+            communicate=mock.Mock(
+                return_value=('', '')
             )
-            return 'dummy serial PTY device', serial_pty_process
-        return 'dummy serial device', None
+        )
 
     def mock_create_serial(*args, **kwargs):
         if raise_create_serial:
@@ -1450,7 +1440,7 @@ def test_devicehandler_handle(
         west_flash=None,
         west_runner=None
     )
-    handler._get_serial_device = mock.Mock(side_effect=mock_get_serial)
+    handler._start_serial_pty = mock.Mock(side_effect=mock_start_serial_pty)
     handler._create_command = mock.Mock(return_value=['dummy', 'command'])
     handler.run_custom_script = mock.Mock()
     handler._create_serial_connection = mock.Mock(
@@ -1466,10 +1456,15 @@ def test_devicehandler_handle(
 
     harness = mock.Mock()
 
+    openpty_mock = mock.Mock(return_value=('master', 'slave'))
+    ttyname_mock = mock.Mock(side_effect=lambda x: x + ' name')
+
     with mock.patch('builtins.open', mock.mock_open(read_data='')), \
          mock.patch('subprocess.Popen', side_effect=mock_popen), \
          mock.patch('threading.Event', mock.Mock()), \
-         mock.patch('threading.Thread', side_effect=mock_thread):
+         mock.patch('threading.Thread', side_effect=mock_thread), \
+         mock.patch('pty.openpty', openpty_mock), \
+         mock.patch('os.ttyname', ttyname_mock):
         handler.handle(harness)
 
     handler.get_hardware.assert_called_once()
