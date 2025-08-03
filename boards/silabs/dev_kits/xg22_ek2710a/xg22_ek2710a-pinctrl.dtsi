@@ -31,6 +31,14 @@
 		};
 	};
 
+	timer0_default: timer0_default {
+		group0 {
+			pins = <TIMER0_CC0_PA4>;
+			drive-push-pull;
+			output-high;
+		};
+	};
+
 	usart1_default: usart1_default {
 		group0 {
 			pins = <USART1_TX_PA5>;

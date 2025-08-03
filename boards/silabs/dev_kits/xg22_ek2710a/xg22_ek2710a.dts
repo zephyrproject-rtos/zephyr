@@ -8,6 +8,7 @@
 #include <silabs/xg22/efr32mg22e224f512im40.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 #include "xg22_ek2710a-pinctrl.dtsi"
 
 / {
@@ -26,6 +27,7 @@
 
 	aliases {
 		led0 = &led0;
+		pwm-led0 = &pwm_led0;
 		sw0 = &button0;
 		watchdog0 = &wdog0;
 
@@ -42,6 +44,13 @@
 		};
 	};
 
+	pwmleds {
+		compatible = "pwm-leds";
+		pwm_led0: pwm_led_0 {
+			pwms = <&timer0_pwm 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+	};
+
 	buttons {
 		compatible = "gpio-keys";
 
@@ -49,6 +58,16 @@
 			gpios = <&gpioc 7 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+	};
+};
+
+&timer0 {
+	status = "okay";
+
+	timer0_pwm: pwm {
+		pinctrl-0 = <&timer0_default>;
+		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
