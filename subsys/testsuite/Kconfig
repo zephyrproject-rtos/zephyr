@@ -72,9 +72,10 @@ config COVERAGE_GCOV
 
 endchoice
 
+if COVERAGE_GCOV
+
 config COVERAGE_GCOV_HEAP_SIZE
 	int "Size of heap allocated for gcov coverage data dump"
-	depends on COVERAGE_GCOV
 	default 32768 if X86 || SOC_SERIES_MPS2
 	default 16384
 	help
@@ -84,9 +85,19 @@ config COVERAGE_GCOV_HEAP_SIZE
 
 config COVERAGE_DUMP
 	bool "Dump coverage data on exit"
-	depends on COVERAGE_GCOV
 	help
 	  Dump collected coverage information to console on exit.
+
+config COVERAGE_DUMP_PATH_EXCLUDE
+	string "Exclude files matching this pattern from the coverage data"
+	default ""
+	help
+	  Filenames are matched against the pattern using the POSIX fnmatch
+	  function. Filenames are based on their path in the build folder, not the
+	  original source tree. The empty string "" disables the pattern
+	  matching.
+
+endif # COVERAGE_GCOV
 
 config FORCE_COVERAGE
 	bool "Force coverage"
