@@ -484,5 +484,7 @@ redirect:
 	printf("Finished downloading.\n");
 
 	mbedtls_md_free(&hash_ctx);
+	freeaddrinfo(res);
+
 	return 0;
 }

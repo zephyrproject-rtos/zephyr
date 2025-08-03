@@ -134,5 +134,7 @@ int main(void)
 	printf("\nClose socket\n");
 
 	(void)close(sock);
+	freeaddrinfo(res);
+
 	return 0;
 }
