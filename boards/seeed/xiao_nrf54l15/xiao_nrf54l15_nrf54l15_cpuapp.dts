@@ -22,19 +22,22 @@
 	rfsw_ctl: rfsw-ctl {
 		compatible = "regulator-fixed";
 		regulator-name = "rfsw-ctl";
-		enable-gpios = <&gpio2 5 GPIO_ACTIVE_HIGH>;
+		enable-gpios = <&gpio2 5 GPIO_ACTIVE_LOW>;
+		regulator-boot-on;
 	};
 
 	rfsw_pwr: rfsw-pwr {
 		compatible = "regulator-fixed";
 		regulator-name = "rfsw-pwr";
 		enable-gpios = <&gpio2 3 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
 	};
 
 	vbat_pwr: vbat-pwr {
 		compatible = "regulator-fixed";
 		regulator-name = "vbat";
 		enable-gpios = <&gpio1 15 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
 	};
 
 	chosen {
