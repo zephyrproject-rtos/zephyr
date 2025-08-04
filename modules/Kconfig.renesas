@@ -529,4 +529,9 @@ endif # HAS_RENESAS_RX_RDP
 
 if HAS_RENESAS_RX_FSP
 
+config USE_RX_FSP_SCI_B_UART
+	bool
+	help
+	  Enable RX FSP SCI-B UART driver
+
 endif # HAS_RENESAS_RX_FSP
