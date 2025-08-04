@@ -22,7 +22,7 @@
 				compatible = "nxp,irqsteer-master";
 				reg = <0>;
 				interrupt-controller;
-				#interrupt-cells = <1>;
+				#interrupt-cells = <2>;
 				interrupts-extended = <&clic 19 0 0>;
 			};
 
@@ -30,7 +30,7 @@
 				compatible = "nxp,irqsteer-master";
 				reg = <1>;
 				interrupt-controller;
-				#interrupt-cells = <1>;
+				#interrupt-cells = <2>;
 				interrupts-extended = <&clic 20 0 0>;
 			};
 
@@ -38,7 +38,7 @@
 				compatible = "nxp,irqsteer-master";
 				reg = <2>;
 				interrupt-controller;
-				#interrupt-cells = <1>;
+				#interrupt-cells = <2>;
 				interrupts-extended = <&clic 21 0 0>;
 			};
 		};
