@@ -12,8 +12,6 @@
 #include <zephyr/sys/timeutil.h>
 #include <zephyr/sys/util.h>
 
-BUILD_ASSERT(sizeof(time_t) == sizeof(int64_t), "time_t must be 64-bit");
-
 #undef CORRECTABLE
 #define CORRECTABLE true
 
@@ -80,37 +78,39 @@ static const struct ts_test_spec ts_tests[] = {
 	DECL_VALID_TS_TEST(-1, 0),
 	DECL_VALID_TS_TEST(-1, 1),
 	DECL_VALID_TS_TEST(-1, NSEC_PER_SEC - 1),
-	DECL_VALID_TS_TEST(INT64_MIN, 0),
-	DECL_VALID_TS_TEST(INT64_MIN, NSEC_PER_SEC - 1),
-	DECL_VALID_TS_TEST(INT64_MAX, 0),
-	DECL_VALID_TS_TEST(INT64_MAX, NSEC_PER_SEC - 1),
+	DECL_VALID_TS_TEST(SYS_TIME_T_MIN, 0),
+	DECL_VALID_TS_TEST(SYS_TIME_T_MIN, NSEC_PER_SEC - 1),
+	DECL_VALID_TS_TEST(SYS_TIME_T_MAX, 0),
+	DECL_VALID_TS_TEST(SYS_TIME_T_MAX, NSEC_PER_SEC - 1),
 
 	/* Correctable, invalid cases */
-	DECL_INVALID_TS_TEST(0, -2 * NSEC_PER_SEC + 1, -2, 1, CORRECTABLE),
-	DECL_INVALID_TS_TEST(0, -2 * NSEC_PER_SEC - 1, -3, NSEC_PER_SEC - 1, CORRECTABLE),
-	DECL_INVALID_TS_TEST(0, -NSEC_PER_SEC - 1, -2, NSEC_PER_SEC - 1, CORRECTABLE),
+	DECL_INVALID_TS_TEST(0, -2LL * NSEC_PER_SEC + 1, -2, 1, CORRECTABLE),
+	DECL_INVALID_TS_TEST(0, -2LL * NSEC_PER_SEC - 1, -3, NSEC_PER_SEC - 1, CORRECTABLE),
+	DECL_INVALID_TS_TEST(0, -1LL * NSEC_PER_SEC - 1, -2, NSEC_PER_SEC - 1, CORRECTABLE),
 	DECL_INVALID_TS_TEST(0, -1, -1, NSEC_PER_SEC - 1, CORRECTABLE),
 	DECL_INVALID_TS_TEST(0, NSEC_PER_SEC, 1, 0, CORRECTABLE),
-	DECL_INVALID_TS_TEST(0, NSEC_PER_SEC + 1, 1, 0, CORRECTABLE),
+	DECL_INVALID_TS_TEST(0, NSEC_PER_SEC + 1, 1, 1, CORRECTABLE),
 	DECL_INVALID_TS_TEST(1, -1, 0, NSEC_PER_SEC - 1, CORRECTABLE),
 	DECL_INVALID_TS_TEST(1, NSEC_PER_SEC, 2, 0, CORRECTABLE),
 	DECL_INVALID_TS_TEST(-1, -1, -2, NSEC_PER_SEC - 1, CORRECTABLE),
 	DECL_INVALID_TS_TEST(0, NSEC_PER_SEC, 1, 0, CORRECTABLE),
 	DECL_INVALID_TS_TEST(1, -1, 0, NSEC_PER_SEC - 1, CORRECTABLE),
 	DECL_INVALID_TS_TEST(1, NSEC_PER_SEC, 2, 0, CORRECTABLE),
-	DECL_INVALID_TS_TEST(INT64_MIN, NSEC_PER_SEC, INT64_MIN + 1, 0, CORRECTABLE),
-	DECL_INVALID_TS_TEST(INT64_MAX, -1, INT64_MAX - 1, NSEC_PER_SEC - 1, CORRECTABLE),
-	DECL_INVALID_TS_TEST(0, LONG_MIN, LONG_MAX / NSEC_PER_SEC, 145224192, CORRECTABLE),
+	DECL_INVALID_TS_TEST(SYS_TIME_T_MIN, NSEC_PER_SEC, SYS_TIME_T_MIN + 1, 0, CORRECTABLE),
+	DECL_INVALID_TS_TEST(SYS_TIME_T_MAX, -1, SYS_TIME_T_MAX - 1, NSEC_PER_SEC - 1, CORRECTABLE),
+	DECL_INVALID_TS_TEST(0, LONG_MIN, (int64_t)LONG_MIN / NSEC_PER_SEC - 1,
+			     NSEC_PER_SEC + LONG_MIN % (long long)NSEC_PER_SEC, CORRECTABLE),
 	DECL_INVALID_TS_TEST(0, LONG_MAX, LONG_MAX / NSEC_PER_SEC, LONG_MAX % NSEC_PER_SEC,
 			     CORRECTABLE),
 
 	/* Uncorrectable, invalid cases */
-	DECL_INVALID_TS_TEST(INT64_MIN + 2, -2 * (int64_t)NSEC_PER_SEC - 1, 0, 0, UNCORRECTABLE),
-	DECL_INVALID_TS_TEST(INT64_MIN + 1, -(int64_t)NSEC_PER_SEC - 1, 0, 0, UNCORRECTABLE),
-	DECL_INVALID_TS_TEST(INT64_MIN + 1, -(int64_t)NSEC_PER_SEC - 1, 0, 0, UNCORRECTABLE),
-	DECL_INVALID_TS_TEST(INT64_MIN, -1, 0, 0, UNCORRECTABLE),
-	DECL_INVALID_TS_TEST(INT64_MAX, (int64_t)NSEC_PER_SEC, 0, 0, UNCORRECTABLE),
-	DECL_INVALID_TS_TEST(INT64_MAX - 1, 2 * (int64_t)NSEC_PER_SEC, 0, 0, UNCORRECTABLE),
+	DECL_INVALID_TS_TEST(SYS_TIME_T_MIN + 2, -2 * (int64_t)NSEC_PER_SEC - 1, 0, 0,
+			     UNCORRECTABLE),
+	DECL_INVALID_TS_TEST(SYS_TIME_T_MIN + 1, -(int64_t)NSEC_PER_SEC - 1, 0, 0, UNCORRECTABLE),
+	DECL_INVALID_TS_TEST(SYS_TIME_T_MIN + 1, -(int64_t)NSEC_PER_SEC - 1, 0, 0, UNCORRECTABLE),
+	DECL_INVALID_TS_TEST(SYS_TIME_T_MIN, -1, 0, 0, UNCORRECTABLE),
+	DECL_INVALID_TS_TEST(SYS_TIME_T_MAX, (int64_t)NSEC_PER_SEC, 0, 0, UNCORRECTABLE),
+	DECL_INVALID_TS_TEST(SYS_TIME_T_MAX - 1, 2 * (int64_t)NSEC_PER_SEC, 0, 0, UNCORRECTABLE),
 };
 
 ZTEST(timeutil_api, test_timespec_is_valid)
@@ -129,7 +129,7 @@ ZTEST(timeutil_api, test_timespec_is_valid)
 ZTEST(timeutil_api, test_timespec_normalize)
 {
 	ARRAY_FOR_EACH(ts_tests, i) {
-		bool different;
+		bool different, corrected;
 		bool overflow;
 		const struct ts_test_spec *const tspec = &ts_tests[i];
 		struct timespec norm = tspec->invalid_ts;
@@ -146,13 +146,16 @@ ZTEST(timeutil_api, test_timespec_normalize)
 
 		if (!tspec->expect_valid && tspec->correctable) {
 			different = !timespec_equal(&tspec->invalid_ts, &norm);
-			zexpect_true(different,
-				     "%d: {%lld, %lld} and {%lld, %lld} are unexpectedly %s", i,
+			corrected = timespec_equal(&tspec->valid_ts, &norm);
+			zexpect_true(different && corrected,
+				     "%d: {%lld, %lld} is not properly corrected:"
+				     "{%lld, %lld} != {%lld, %lld}", i,
 				     (long long)tspec->invalid_ts.tv_sec,
-				     (long long)tspec->invalid_ts.tv_nsec, (long long)norm.tv_sec,
+				     (long long)tspec->invalid_ts.tv_nsec,
 				     (long long)tspec->valid_ts.tv_sec,
-				     (tspec->expect_valid || tspec->correctable) ? "different"
-										 : "equal");
+				     (long long)tspec->valid_ts.tv_nsec,
+				     (long long)norm.tv_sec,
+				     (long long)norm.tv_nsec);
 		}
 	}
 }
@@ -173,10 +176,10 @@ ZTEST(timeutil_api, test_timespec_add)
 		{.a = {-1, 1}, .b = {-1, 1}, .result = {-2, 2}, .expect = false},
 		{.a = {-1, NSEC_PER_SEC - 1}, .b = {0, 1}, .result = {0, 0}, .expect = false},
 		/* overflow cases */
-		{.a = {INT64_MAX, 0}, .b = {1, 0}, .result = {0}, .expect = true},
-		{.a = {INT64_MIN, 0}, .b = {-1, 0}, .result = {0}, .expect = true},
-		{.a = {INT64_MAX, NSEC_PER_SEC - 1}, .b = {1, 1}, .result = {0}, .expect = true},
-		{.a = {INT64_MIN, NSEC_PER_SEC - 1}, .b = {-1, 0}, .result = {0}, .expect = true},
+		{.a = {SYS_TIME_T_MAX, 0}, .b = {1, 0}, .result = {0}, .expect = true},
+		{.a = {SYS_TIME_T_MIN, 0}, .b = {-1, 0}, .result = {0}, .expect = true},
+		{.a = {SYS_TIME_T_MAX, NSEC_PER_SEC - 1}, .b = {1, 1}, .result = {0}, .expect = true},
+		{.a = {SYS_TIME_T_MIN, NSEC_PER_SEC - 1}, .b = {-1, 0}, .result = {0}, .expect = true},
 	};
 
 	ARRAY_FOR_EACH(tspecs, i) {
@@ -210,9 +213,9 @@ ZTEST(timeutil_api, test_timespec_negate)
 		{.ts = {0, 0}, .result = {0, 0}, .expect_failure = false},
 		{.ts = {1, 1}, .result = {-2, NSEC_PER_SEC - 1}, .expect_failure = false},
 		{.ts = {-1, 1}, .result = {0, NSEC_PER_SEC - 1}, .expect_failure = false},
-		{.ts = {INT64_MAX, 0}, .result = {INT64_MIN + 1, 0}, .expect_failure = false},
+		{.ts = {SYS_TIME_T_MAX, 0}, .result = {SYS_TIME_T_MIN + 1, 0}, .expect_failure = false},
 		/* overflow cases */
-		{.ts = {INT64_MIN, 0}, .result = {0}, .expect_failure = true},
+		{.ts = {SYS_TIME_T_MIN, 0}, .result = {0}, .expect_failure = true},
 	};
 
 	ARRAY_FOR_EACH(tspecs, i) {
@@ -280,16 +283,21 @@ ZTEST(timeutil_api, test_K_TICKS_TO_SECS)
 	zexpect_equal(K_TICKS_TO_SECS(0), 0);
 	zexpect_equal(K_TICKS_TO_SECS(CONFIG_SYS_CLOCK_TICKS_PER_SEC), 1);
 	zexpect_equal(K_TICKS_TO_SECS(2 * CONFIG_SYS_CLOCK_TICKS_PER_SEC), 2);
-	zexpect_equal(K_TICKS_TO_SECS(K_TICK_MAX), K_TIMESPEC_MAX.tv_sec);
-	zexpect_equal(K_TICKS_TO_SECS(K_TICKS_FOREVER), INT64_MAX);
+	zexpect_equal(K_TICKS_TO_SECS(K_TICKS_FOREVER), SYS_TIME_T_MAX);
 
+	if (SYS_TIME_T_MAX >= 92233720368547758LL) {
+		/* These checks should only be done if time_t has enough bits to hold K_TS_MAX without overflowing */
+		zexpect_equal(K_TICKS_TO_SECS(K_TICK_MAX), K_TIMESPEC_MAX.tv_sec);
 #if defined(CONFIG_TIMEOUT_64BIT) && (CONFIG_SYS_CLOCK_TICKS_PER_SEC == 100)
-	zexpect_equal(K_TIMESPEC_MAX.tv_sec, 92233720368547758LL);
+		zexpect_equal(K_TIMESPEC_MAX.tv_sec, 92233720368547758LL);
 #endif
+	}
 
 #if (CONFIG_SYS_CLOCK_TICKS_PER_SEC == 32768)
 #if defined(CONFIG_TIMEOUT_64BIT)
-	zexpect_equal(K_TIMESPEC_MAX.tv_sec, 281474976710655LL);
+	if (SYS_TIME_T_MAX >= 281474976710655LL) {
+		zexpect_equal(K_TIMESPEC_MAX.tv_sec, 281474976710655LL);
+	}
 #else
 	zexpect_equal(K_TIMESPEC_MAX.tv_sec, 131071);
 #endif
@@ -347,7 +355,7 @@ static const struct tospec {
 	bool roundup;
 } tospecs[] = {
 	/* negative timespecs should round-up to K_NO_WAIT */
-	DECL_TOSPEC_NEGATIVE_TEST(K_TIMESPEC(INT64_MIN, 0)),
+	DECL_TOSPEC_NEGATIVE_TEST(K_TIMESPEC(SYS_TIME_T_MIN, 0)),
 	DECL_TOSPEC_NEGATIVE_TEST(K_TIMESPEC(-1, 0)),
 	DECL_TOSPEC_NEGATIVE_TEST(K_TIMESPEC(-1, NSEC_PER_SEC - 1)),
 
@@ -410,12 +418,9 @@ static const struct tospec {
 
 	/* round down toward K_TICK_MAX */
 	DECL_PSAT_TOSPEC_TEST(K_TICKS_TO_TIMESPEC(K_TICK_MAX)),
-#if defined(CONFIG_TIMEOUT_64BIT) && (CONFIG_SYS_CLOCK_TICKS_PER_SEC > 1)
-	DECL_PSAT_TOSPEC_TEST(K_TICKS_TO_TIMESPEC((uint64_t)K_TICK_MAX + 1)),
-#endif
 
 	/* K_FOREVER <=> K_TIMESPEC_FOREVER */
-	DECL_TOSPEC_TEST(K_FOREVER, K_TIMESPEC(INT64_MAX, NSEC_PER_SEC - 1), 0, false, false),
+	DECL_TOSPEC_TEST(K_FOREVER, K_TIMESPEC(SYS_TIME_T_MAX, NSEC_PER_SEC - 1), 0, false, false),
 };
 
 ZTEST(timeutil_api, test_timespec_from_timeout)

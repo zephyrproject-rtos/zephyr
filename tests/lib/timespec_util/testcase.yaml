@@ -1,6 +1,5 @@
 # FIXME: this should be under tests/unit/timeutil but will not work due to #90029
 common:
-  filter: not CONFIG_NATIVE_LIBC
   tags:
     - timeutils
   # 1 tier0 platform per supported architecture
