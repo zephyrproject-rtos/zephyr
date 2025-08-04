@@ -41,9 +41,6 @@
 #define BT_AICS_INPUT_MODE_IMMUTABLE(gain_mode) \
 	((gain_mode) == BT_AICS_MODE_MANUAL_ONLY || (gain_mode) == BT_AICS_MODE_AUTO_ONLY)
 
-#define BT_AICS_INPUT_MODE_SETTABLE(gain_mode) \
-	((gain_mode) == BT_AICS_MODE_AUTO || (gain_mode) == BT_AICS_MODE_MANUAL)
-
 struct bt_aics_control {
 	uint8_t opcode;
 	uint8_t counter;
