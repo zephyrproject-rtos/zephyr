@@ -6,6 +6,8 @@
 
 #include <freq.h>
 #include <mem.h>
+#include <dt-bindings/pinctrl/bflb-common-pinctrl.h>
+#include <dt-bindings/pinctrl/bl61x-pinctrl.h>
 
 / {
 	#address-cells = <1>;
@@ -48,6 +50,27 @@
 			reg-names = "mtime", "mtimecmp";
 
 			interrupts-extended = <&clic 7 1>;
+		};
+
+		pinctrl: pin-controller@20000000 {
+			compatible = "bflb,pinctrl";
+			reg = <0x20000000 0x1000>;
+			ranges = <0x20000000 0x20000000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			gpio0: gpio@20000000 {
+				compatible = "bflb,gpio";
+				reg = <0x20000000 0x1000>;
+				#gpio-cells = <2>;
+				#bflb,pin-cells = <2>;
+				status = "disabled";
+
+				gpio-controller;
+				interrupts = <60 1>;
+				interrupt-parent = <&clic>;
+			};
 		};
 
 		flashctrl: flash-controller@2000b000 {
