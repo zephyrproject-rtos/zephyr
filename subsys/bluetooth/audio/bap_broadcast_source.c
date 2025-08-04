@@ -329,6 +329,7 @@ static int broadcast_source_setup_stream(uint8_t index, struct bt_bap_stream *st
 
 	bt_bap_stream_attach(NULL, stream, ep, codec_cfg);
 	stream->qos = qos;
+	stream->group = source;
 	ep->broadcast_source = source;
 
 	return 0;
@@ -464,6 +465,7 @@ static void broadcast_source_cleanup(struct bt_bap_broadcast_source *source)
 		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&subgroup->streams, stream, next_stream, _node) {
 			bt_bap_iso_unbind_ep(stream->ep->iso, stream->ep);
 			stream->ep->stream = NULL;
+			stream->ep->broadcast_source = NULL;
 			stream->ep = NULL;
 			stream->codec_cfg = NULL;
 			stream->qos = NULL;
