@@ -25,6 +25,13 @@ LOG_MODULE_REGISTER(MAX17048);
 #warning "MAX17048 driver enabled without any devices"
 #endif
 
+#define RESET_COMMAND   0x5400
+#define QUICKSTART_MODE 0x4000
+
+struct max17048_config {
+	struct i2c_dt_spec i2c;
+};
+
 /**
  * Storage for the fuel gauge basic information
  */
