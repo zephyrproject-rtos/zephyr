@@ -1,0 +1,20 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+description: The BL61x WIFI PLL
+
+compatible: "bflb,bl61x-wifipll"
+
+include: [base.yaml, clock-controller.yaml]
+
+properties:
+  clocks:
+    type: phandle-array
+    required: true
+    description: source
+
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - select
