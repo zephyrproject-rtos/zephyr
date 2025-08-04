@@ -227,7 +227,7 @@ NPCX_REG_SIZE_CHECK(lct_reg, 0x00d);
 #endif
 
 /* GDMA register structure check */
-NPCX_REG_SIZE_CHECK(gdma_reg, 0x020);
+NPCX_REG_SIZE_CHECK(gdma_reg, 0x01C);
 NPCX_REG_OFFSET_CHECK(gdma_reg, CONTROL, 0x000);
 NPCX_REG_OFFSET_CHECK(gdma_reg, SRCB, 0x004);
 NPCX_REG_OFFSET_CHECK(gdma_reg, DSTB, 0x008);
