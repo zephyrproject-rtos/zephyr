@@ -40,6 +40,44 @@
 extern "C" {
 #endif
 
+/* Maximum and minimum value TIME_T can hold */
+#define SYS_TIME_T_MAX ((((time_t)1 << (8 * sizeof(time_t) - 2)) - 1) * 2 + 1)
+#define SYS_TIME_T_MIN (-SYS_TIME_T_MAX - 1)
+
+/* Converts ticks to seconds, discarding any fractional seconds */
+#define SYS_TICKS_TO_SECS(ticks)                                                                   \
+	(((uint64_t)(ticks) >= (uint64_t)K_TICKS_FOREVER) ? SYS_TIME_T_MAX                         \
+							  : k_ticks_to_sec_floor64(ticks))
+
+/* Converts ticks to nanoseconds, modulo NSEC_PER_SEC */
+#define SYS_TICKS_TO_NSECS(ticks)                                                                  \
+	(((uint64_t)(ticks) >= (uint64_t)K_TICKS_FOREVER)                                          \
+		 ? (NSEC_PER_SEC - 1)                                                              \
+		 : k_ticks_to_ns_floor32((uint64_t)(ticks) % CONFIG_SYS_CLOCK_TICKS_PER_SEC))
+
+/* Define a timespec */
+#define SYS_TIMESPEC(sec, nsec)                                                                    \
+	((struct timespec){                                                                        \
+		.tv_sec = (time_t)CLAMP((int64_t)(sec), SYS_TIME_T_MIN, SYS_TIME_T_MAX),           \
+		.tv_nsec = (long)(nsec),                                                           \
+	})
+
+/* Initialize a struct timespec object from a tick count */
+#define SYS_TICKS_TO_TIMESPEC(ticks) SYS_TIMESPEC(SYS_TICKS_TO_SECS(ticks), \
+						  SYS_TICKS_TO_NSECS(ticks))
+
+/* The semantic equivalent of K_NO_WAIT but expressed as a timespec object*/
+#define SYS_TIMESPEC_NO_WAIT SYS_TICKS_TO_TIMESPEC(0)
+
+/* The semantic equivalent of K_TICK_MIN but expressed as a timespec object */
+#define SYS_TIMESPEC_MIN SYS_TICKS_TO_TIMESPEC(K_TICK_MIN)
+
+/* The semantic equivalent of K_TICK_MAX but expressed as a timespec object */
+#define SYS_TIMESPEC_MAX SYS_TICKS_TO_TIMESPEC(K_TICK_MAX)
+
+/* The semantic equivalent of K_FOREVER but expressed as a timespec object*/
+#define SYS_TIMESPEC_FOREVER SYS_TIMESPEC(SYS_TIME_T_MAX, NSEC_PER_SEC - 1)
+
 /**
  * @defgroup timeutil_apis Time Utility APIs
  * @ingroup utilities
@@ -634,13 +672,13 @@ static inline void timespec_from_timeout(k_timeout_t timeout, struct timespec *t
 	/* equivalent of K_FOREVER without including kernel.h */
 	if (K_TIMEOUT_EQ(timeout, (k_timeout_t){K_TICKS_FOREVER})) {
 		/* duration == K_TICKS_FOREVER ticks */
-		*ts = K_TIMESPEC_FOREVER;
+		*ts = SYS_TIMESPEC_FOREVER;
 		/* equivalent of K_NO_WAIT without including kernel.h */
 	} else if (K_TIMEOUT_EQ(timeout, (k_timeout_t){0})) {
 		/* duration <= 0 ticks */
-		*ts = K_TIMESPEC_NO_WAIT;
+		*ts = SYS_TIMESPEC_NO_WAIT;
 	} else {
-		*ts = K_TICKS_TO_TIMESPEC(timeout.ticks);
+		*ts = SYS_TICKS_TO_TIMESPEC(timeout.ticks);
 	}
 
 	__ASSERT_NO_MSG(timespec_is_valid(ts));
@@ -681,7 +719,7 @@ static inline k_timeout_t timespec_to_timeout(const struct timespec *req, struct
 
 	__ASSERT_NO_MSG((req != NULL) && timespec_is_valid(req));
 
-	if (timespec_compare(req, &K_TIMESPEC_NO_WAIT) <= 0) {
+	if (timespec_compare(req, &SYS_TIMESPEC_NO_WAIT) <= 0) {
 		if (rem != NULL) {
 			*rem = *req;
 		}
@@ -690,16 +728,16 @@ static inline k_timeout_t timespec_to_timeout(const struct timespec *req, struct
 		return timeout;
 	}
 
-	if (timespec_compare(req, &K_TIMESPEC_FOREVER) == 0) {
+	if (timespec_compare(req, &SYS_TIMESPEC_FOREVER) == 0) {
 		if (rem != NULL) {
-			*rem = K_TIMESPEC_NO_WAIT;
+			*rem = SYS_TIMESPEC_NO_WAIT;
 		}
 		/* equivalent of K_FOREVER without including kernel.h */
 		timeout.ticks = K_TICKS_FOREVER;
 		return timeout;
 	}
 
-	if (timespec_compare(req, &K_TIMESPEC_MAX) >= 0) {
+	if (timespec_compare(req, &SYS_TIMESPEC_MAX) >= 0) {
 		/* round down to align to max ticks */
 		timeout.ticks = K_TICK_MAX;
 	} else {
