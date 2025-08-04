@@ -1,0 +1,30 @@
+#
+# Copyright (c) 2025 Ambiq Micro Inc.
+#
+
+description: Ambiq MIPI DSI host
+
+compatible: "ambiq,mipi-dsi"
+
+include: [mipi-dsi-host.yaml, pinctrl-device.yaml]
+
+properties:
+  dbi-width:
+    type: int
+    enum: [8, 16]
+    description: |
+      Specifies the data bus interface (DBI) width for communication between the
+      host and the display over the DSI interface. The DBI width determines the
+      number of bits used for data transfer. A width of 16 bits typically has a
+      higher performace than 8 bits.
+
+  disp-te:
+    type: boolean
+    description: |
+      Enable or Disable the TE feature.
+
+  vdd18-gpios:
+    type: phandle-array
+    description: |
+      Optional. User can define a GPIO to control the power of VDD1.8V, if it
+      is necessary.

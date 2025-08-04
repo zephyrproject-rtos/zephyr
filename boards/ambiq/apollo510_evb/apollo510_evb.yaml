@@ -23,6 +23,7 @@ supported:
   - i2s
   - mspi
   - sdhc
+  - mipi_dsi
 testing:
   ignore_tags:
     - net

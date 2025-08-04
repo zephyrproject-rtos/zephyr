@@ -721,6 +721,17 @@
 			zephyr,pm-device-runtime-auto;
 		};
 
+		mipi_dsi: mipi_dsi@DSI_BASE_NAME {
+			compatible = "ambiq,mipi-dsi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <DSI_REG_BASE DSI_REG_SIZE>;
+			dbi-width = <16>;
+			phy-clock = <384000000>;
+			interrupts = <29 0>;/* DC interrupt */
+			status = "disabled";
+		};
+
 		pinctrl: pin-controller@GPIO_BASE_NAME {
 			compatible = "ambiq,apollo5-pinctrl";
 			reg = <GPIO_REG_BASE GPIO_REG_SIZE>;
