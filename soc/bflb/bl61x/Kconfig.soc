@@ -1,0 +1,39 @@
+# Copyright (c) 2024-2025 MASSDRIVER EI (massdriver.space)
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_BL61X
+	bool
+	select SOC_FAMILY_BFLB
+	help
+	  Enable support for BouffaloLab BL6xx MCU series
+
+config SOC_SERIES
+	default "bl61x" if SOC_SERIES_BL61X
+
+config SOC_BL616C50Q2I
+	bool
+	select SOC_SERIES_BL61X
+
+config SOC_BL616S50Q2I
+	bool
+	select SOC_SERIES_BL61X
+
+config SOC_BL618M05Q2I
+	bool
+	select SOC_SERIES_BL61X
+
+config SOC_BL618M50Q2I
+	bool
+	select SOC_SERIES_BL61X
+
+config SOC_BL618M65Q2I
+	bool
+	select SOC_SERIES_BL61X
+
+config SOC
+	default "bl616c50q2i" if SOC_BL616C50Q2I
+	default "bl616s50q2i" if SOC_BL616S50Q2I
+	default "bl618m05q2i" if SOC_BL618M05Q2I
+	default "bl618m50q2i" if SOC_BL618M50Q2I
+	default "bl618m65q2i" if SOC_BL618M65Q2I
