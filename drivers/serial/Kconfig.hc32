@@ -17,7 +17,6 @@ config UART_HC32
 	select SERIAL_SUPPORT_ASYNC if DT_HAS_XHSC_HC32_DMA_ENABLED
 	select UART_ASYNC_API if SERIAL_SUPPORT_ASYNC
 	select DMA if UART_ASYNC_API
-
 	help
 	  This option enables the UART driver for HC32 family of
 	  processors.
