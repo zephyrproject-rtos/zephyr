@@ -67,6 +67,13 @@
 			zephyr,memory-region = "ITCM";
 		};
 
+		efuse: efuse@40007000 {
+			compatible = "bflb,efuse";
+			reg = <0x40007000 0x1000>;
+			status = "okay";
+			size = <128>;
+		};
+
 		flashctrl: flash-controller@4000b000 {
 			compatible = "bflb,flash-controller";
 			reg = <0x4000b000 0x1000>;
