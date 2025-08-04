@@ -18,5 +18,5 @@ supported:
   - counter
   - w1
   - flash
-ram: 128
+ram: 48
 flash: 512
