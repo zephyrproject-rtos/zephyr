@@ -8,10 +8,64 @@
 #include <mem.h>
 #include <dt-bindings/pinctrl/bflb-common-pinctrl.h>
 #include <dt-bindings/pinctrl/bl61x-pinctrl.h>
+#include <dt-bindings/clock/bflb_bl61x_clock.h>
 
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
+
+	clocks {
+		clk_rc32m: clk-rc32m {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(32)>;
+			status = "okay";
+		};
+
+		clk_crystal: clk-crystal {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(40)>;
+			status = "okay";
+		};
+
+		clk_wifipll: clk-wifipll {
+			#clock-cells = <1>;
+			compatible = "bflb,bl61x-wifipll";
+			clocks = <&clk_crystal>;
+			status = "okay";
+		};
+
+		clk_aupll: clk-aupll {
+			#clock-cells = <1>;
+			compatible = "bflb,bl61x-aupll";
+			clocks = <&clk_rc32m>;
+			status = "disabled";
+		};
+
+		clk_root: clk-root {
+			#clock-cells = <0>;
+			compatible = "bflb,bl61x-root-clk";
+			clocks = <&clk_wifipll BL61X_WIFIPLL_320MHz>;
+			divider = <1>;
+			status = "okay";
+		};
+
+		clk_bclk: clk-bclk {
+			#clock-cells = <0>;
+			compatible = "bflb,bclk";
+			divider = <4>;
+			status = "okay";
+		};
+
+		clk_flash: clk-flash {
+			#clock-cells = <0>;
+			compatible = "bflb,bl61x-flash-clk";
+			clocks = <&clk_bclk>;
+			divider = <2>;
+			status = "okay";
+		};
+	};
 
 	cpus {
 		#address-cells = <1>;
@@ -71,6 +125,27 @@
 				interrupts = <60 1>;
 				interrupt-parent = <&clic>;
 			};
+		};
+
+		clocks: clock-controller@20000000 {
+			compatible = "bflb,bl61x-clock-controller", "bflb,clock-controller";
+			reg = <0x20000000 DT_SIZE_K(4)>;
+			#clock-cells = <1>;
+			status = "okay";
+			clocks = <&clk_rc32m>, <&clk_crystal>,
+				<&clk_wifipll BL61X_WIFIPLL_320MHz>,
+				<&clk_wifipll BL61X_WIFIPLL_240MHz>,
+				<&clk_wifipll BL61X_WIFIPLL_OC_480MHz>,
+				<&clk_wifipll BL61X_WIFIPLL_OC_360MHz>,
+				<&clk_aupll BL61X_AUPLL_DIV1>, <&clk_aupll BL61X_AUPLL_DIV2>,
+				<&clk_root>, <&clk_bclk>, <&clk_flash>;
+			clock-names = "rc32m", "crystal",
+				"wifipll_320",
+				"wifipll_240",
+				"wifipll_480",
+				"wifipll_360",
+				"aupll_div1", "aupll_div2",
+				"root", "bclk", "flash";
 		};
 
 		flashctrl: flash-controller@2000b000 {
