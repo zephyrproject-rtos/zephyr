@@ -17,4 +17,12 @@ family:
     - name: bl618m05q2i
     - name: bl618m50q2i
     - name: bl618m65q2i
+  - name: bl70x
+    socs:
+    - name: bl702sa0q2i
+    - name: bl702s10q2i
+    - name: bl702c10q2h
+    - name: bl706c10q2i
+    - name: bl706s10q2i
+    - name: bl706c22q2i
 vendor: bflb
