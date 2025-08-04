@@ -572,7 +572,8 @@ static void numaker_usbd_ep_th(const struct device *dev, uint32_t ep_hw_idx)
 	if (ep == USB_EP_GET_ADDR(0, USB_EP_DIR_OUT)) {
 		struct numaker_usbd_ep *ep_ctrlout = priv->ep_pool + 0;
 
-		ep_ctrlout->mxpld_ctrlout = ep_base->MXPLD;
+		ep_ctrlout->mxpld_ctrlout = (ep_base->MXPLD & USBD_MXPLD_MXPLD_Msk) >>
+					    USBD_MXPLD_MXPLD_Pos;
 	}
 
 	/* Message for bottom-half processing */
@@ -628,7 +629,7 @@ static void numaker_usbd_ep_copy_to_user(struct numaker_usbd_ep *ep_cur, uint8_t
 	if (ep_cur->addr == USB_CONTROL_EP_OUT) {
 		data_rmn = ep_cur->mxpld_ctrlout;
 	} else {
-		data_rmn = ep_base->MXPLD;
+		data_rmn = (ep_base->MXPLD & USBD_MXPLD_MXPLD_Msk) >> USBD_MXPLD_MXPLD_Pos;
 	}
 
 	*size_p = MIN(*size_p, data_rmn);
