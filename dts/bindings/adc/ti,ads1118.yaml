@@ -1,0 +1,24 @@
+# Copyright (c) 2025 Testo SE & Co. KGaA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Texas Instrument 4 single-ended channels/2 differential channels SPI ADC
+
+compatible: "ti,ads1118"
+
+include: [adc-controller.yaml, spi-device.yaml]
+
+properties:
+  "#io-channel-cells":
+    const: 1
+
+  clocks:
+    type: phandle-array
+
+  ti,temperature-mode-enable:
+    type: boolean
+    description: |
+      Enable temperature sensor mode.
+      ADC mode is active by default if this property is false or not specified.
+
+io-channel-cells:
+  - input
