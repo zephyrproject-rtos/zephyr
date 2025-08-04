@@ -9,5 +9,6 @@
 #define SOC_REALTEK_RTS5912_H_
 
 #include <cmsis_core_m_defaults.h>
+extern struct k_work_delayable rx_refresh_timeout_work;
 
 #endif /* SOC_REALTEK_RTS5912_H_ */
