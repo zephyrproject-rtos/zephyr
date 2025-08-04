@@ -13,6 +13,7 @@
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/gpio.h>
 #include "spi_context.h"
+#include "spi_nxp_sc18is606.h"
 
 #define DT_DRV_COMPAT nxp_sc18is606
 
@@ -25,6 +26,7 @@ LOG_MODULE_REGISTER(nxp_sc18is606, CONFIG_SPI_LOG_LEVEL);
 #define READ_VERSION         0xFE
 
 struct nxp_sc18is606_data {
+	struct k_mutex bridge_lock;
 	struct spi_context ctx;
 	const struct device *i2c_dev;
 	uint8_t i2c_addr;
@@ -36,10 +38,31 @@ struct nxp_sc18is606_config {
 	 const struct i2c_dt_spec i2c_controller;
 };
 
+int nxp_sc18is606_claim(const struct device *dev)
+{
+	struct nxp_sc18is606_data *data = dev->data;
+
+	return k_mutex_lock(&data->bridge_lock, K_FOREVER);
+}
+
+int nxp_sc18is606_release(const struct  device *dev)
+{
+	struct nxp_sc18is606_data *data = dev->data;
+
+	return k_mutex_unlock(&data->bridge_lock);
+}
+
+
+
 static int sc18is606_write_reg(const struct i2c_dt_spec *i2c, uint8_t reg, uint8_t value)
 {
 	uint8_t buffer[2] = {reg, value};
 	return i2c_write_dt(i2c, buffer, sizeof(buffer));
+}
+
+static int sc18is606_read_reg(const struct dev, uint8_t reg, uint8_t value)
+{
+	//TODO
 }
 
 static int sc18is606_spi_configure(const struct nxp_sc18is606_config *info,
@@ -145,7 +168,7 @@ static int sc18is606_spi_transceive(const struct device *dev, const struct spi_c
 	return 0;
 }
 
-int sc18is606_release(const struct device *dev, const struct spi_config *config)
+int sc18is606_spi_release(const struct device *dev, const struct spi_config *config)
 {
 	struct nxp_sc18is606_data *data = dev -> data;
 
@@ -161,7 +184,7 @@ int sc18is606_release(const struct device *dev, const struct spi_config *config)
 
 static DEVICE_API(spi, sc18is606_api) = {
 	.transceive = sc18is606_spi_transceive,
-	.release = sc18is606_release,
+	.release = sc18is606_spi_release,
 };
 
 static int sc18is606_init(const struct device *dev)
