@@ -1,0 +1,80 @@
+/*
+ * Copyright (c) 2024-2025 MASSDRIVER EI (massdriver.space)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+#include <mem.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		timebase-frequency = <DT_FREQ_M(1)>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "xuantie,e907", "riscv";
+			reg = <0>;
+			riscv,isa = "rv32imafcp";
+			hardware-exec-breakpoint-count = <4>;
+			status = "okay";
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+			clic: clic@e0800000 {
+				compatible = "nuclei,eclic";
+				reg = <0xe0800000 0x10000>;
+				#address-cells = <0>;
+				#interrupt-cells = <2>;
+				interrupt-controller;
+			};
+		};
+	};
+
+	soc {
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		mtimer: timer@e000bff8 {
+			compatible = "riscv,machine-timer";
+			reg = <0xE000BFF8 0x8 0xE0004000 0x8>;
+			reg-names = "mtime", "mtimecmp";
+
+			interrupts-extended = <&clic 7 1>;
+		};
+
+		flashctrl: flash-controller@2000b000 {
+			compatible = "bflb,flash-controller";
+			reg = <0x2000b000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+
+			interrupts = <29 1>;
+			interrupt-parent = <&clic>;
+		};
+
+		retram: memory@20010000 {
+			compatible = "mmio-sram";
+			reg = <0x20010000 DT_SIZE_K(4)>;
+		};
+
+		sram0: memory@62fc0000 {
+			compatible = "mmio-sram";
+			reg = <0x62FC0000 DT_SIZE_K(320)>;
+		};
+
+		sram1: memory@63010000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x63010000 DT_SIZE_K(160)>;
+			zephyr,memory-region = "ITCM";
+		};
+	};
+};
