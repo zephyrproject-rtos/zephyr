@@ -16,6 +16,7 @@ zephyr_include_directories(${LVGL_DIR}/src/)
 zephyr_include_directories(include)
 
 zephyr_compile_definitions(LV_CONF_INCLUDE_SIMPLE=1)
+zephyr_library_compile_definitions(_POSIX_C_SOURCE=200809L)
 zephyr_compile_definitions(LV_CONF_PATH="${CMAKE_CURRENT_SOURCE_DIR}/include/lv_conf.h")
 
 zephyr_library_sources(
@@ -250,6 +251,8 @@ zephyr_library_sources(
     ${LVGL_DIR}/src/stdlib/builtin/lv_sprintf_builtin.c
     ${LVGL_DIR}/src/stdlib/builtin/lv_string_builtin.c
     ${LVGL_DIR}/src/stdlib/builtin/lv_tlsf.c
+    ${LVGL_DIR}/src/stdlib/clib/lv_string_clib.c
+    ${LVGL_DIR}/src/stdlib/clib/lv_sprintf_clib.c
 
     ${LVGL_DIR}/src/stdlib/clib/lv_mem_core_clib.c
     ${LVGL_DIR}/src/stdlib/clib/lv_sprintf_clib.c
