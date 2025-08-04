@@ -14,7 +14,9 @@
 
 /* Memory manager settings */
 
-#define LV_USE_STDLIB_MALLOC LV_STDLIB_CUSTOM
+#define LV_USE_STDLIB_MALLOC  LV_STDLIB_CUSTOM
+#define LV_USE_STDLIB_STRING  LV_STDLIB_CLIB
+#define LV_USE_STDLIB_SPRINTF LV_STDLIB_CLIB
 
 #if defined(CONFIG_LV_Z_MEM_POOL_HEAP_LIB_C)
 #define LV_STDLIB_INCLUDE "stdlib.h"
@@ -28,32 +30,6 @@
 #define lv_free_core      lvgl_free
 #endif
 
-/* Stdlib wrappers */
-
-/* Needed because parameter types are not compatible */
-static __always_inline void zmemset(void *dst, uint8_t v, size_t len)
-{
-	memset(dst, v, len);
-}
-
-#define lv_snprintf               snprintf
-#define lv_vsnprintf              vsnprintf
-#define lv_memcpy                 memcpy
-#define lv_memmove                memmove
-#define lv_memset                 zmemset
-#define lv_memcmp                 memcmp
-#define lv_strdup                 strdup
-#define lv_strndup                strndup
-#define lv_strlen                 strlen
-#define lv_strnlen                strnlen
-#define lv_strcmp                 strcmp
-#define lv_strncmp                strncmp
-#define lv_strcpy                 strcpy
-#define lv_strncpy                strncpy
-#define lv_strlcpy                strlcpy
-#define lv_strcat                 strcat
-#define lv_strncat                strncat
-#define lv_strchr                 strchr
 #define LV_ASSERT_HANDLER         __ASSERT_NO_MSG(false);
 #define LV_ASSERT_HANDLER_INCLUDE "zephyr/sys/__assert.h"
 
