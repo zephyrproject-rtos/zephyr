@@ -91,6 +91,8 @@ source "drivers/ieee802154/Kconfig.dw1000"
 
 source "drivers/ieee802154/Kconfig.esp32"
 
+source "drivers/ieee802154/Kconfig.stm32wba"
+
 source "drivers/ieee802154/Kconfig.uart_pipe"
 
 config IEEE802154_CSL_ENDPOINT
