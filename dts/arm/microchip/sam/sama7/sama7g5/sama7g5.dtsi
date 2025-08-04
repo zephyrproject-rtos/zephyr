@@ -264,6 +264,26 @@
 			interrupts = <GIC_SPI 70 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		};
 
+		pit64b1: timer@e1804000 {
+			compatible = "microchip,sam-pit64b-counter";
+			reg = <0xe1804000 0x4000>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 71>, <&pmc PMC_TYPE_GCK 71>;
+			clock-names = "pclk", "gclk";
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 71 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		pit64b2: timer@e1808000 {
+			compatible = "microchip,sam-pit64b-counter";
+			reg = <0xe1808000 0x4000>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 72>, <&pmc PMC_TYPE_GCK 72>;
+			clock-names = "pclk", "gclk";
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 72 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
 		sha: sha@e1814000 {
 			compatible = "microchip,sha-g1-crypto";
 			reg = <0xe1814000 0x100>;
@@ -389,6 +409,26 @@
 				interrupts = <GIC_SPI 41 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 				status = "disabled";
 			};
+		};
+
+		pit64b3: timer@e2004000 {
+			compatible = "microchip,sam-pit64b-counter";
+			reg = <0xe2004000 0x4000>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 73>, <&pmc PMC_TYPE_GCK 73>;
+			clock-names = "pclk", "gclk";
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 73 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		pit64b4: timer@e2008000 {
+			compatible = "microchip,sam-pit64b-counter";
+			reg = <0xe2008000 0x4000>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 74>, <&pmc PMC_TYPE_GCK 74>;
+			clock-names = "pclk", "gclk";
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 74 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
 		};
 
 		trng: rng@e2010000 {
@@ -589,6 +629,16 @@
 			#dma-cells = <2>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 23>;
 			clock-names = "dma_clk";
+			status = "disabled";
+		};
+
+		pit64b5: timer@e2810000 {
+			compatible = "microchip,sam-pit64b-counter";
+			reg = <0xe2810000 0x4000>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 75>, <&pmc PMC_TYPE_GCK 75>;
+			clock-names = "pclk", "gclk";
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 75 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			status = "disabled";
 		};
 

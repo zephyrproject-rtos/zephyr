@@ -1,0 +1,44 @@
+# Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Microchip SAM PIT64B Counter
+
+compatible: "microchip,sam-pit64b-counter"
+
+include:
+  - name: base.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-selection:
+    type: string
+    default: "SGCLK_PERIPHERAL_CLOCK"
+    description: |
+      Refer to PIT64B_MR.SGCLK in datasheet.
+      Peripheral clock (MCK1) is used by default.
+    enum:
+      - "SGCLK_PERIPHERAL_CLOCK"
+      - "SGCLK_GENERIC_CLOCK"
+
+  prescaler-period:
+    type: int
+    default: 0
+    description: |
+      Refer to PIT64B_MR.PRESCALER[3:0] in datasheet.
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+
+  top-alarm:
+    type: boolean
+    description: |
+      Reuse the top value channel as an alarm channel.
