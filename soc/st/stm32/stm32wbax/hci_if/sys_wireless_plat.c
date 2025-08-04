@@ -11,13 +11,14 @@
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 
 #include <stm32_ll_rng.h>
-
+#if defined(CONFIG_BT_STM32WBA)
 #include "bleplat.h"
 #include "bpka.h"
+#endif /* CONFIG_BT_STM32WBA */
 #include "linklayer_plat.h"
 
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
-LOG_MODULE_REGISTER(ble_plat);
+LOG_MODULE_REGISTER(sys_wireless_plat);
 
 RAMCFG_HandleTypeDef hramcfg_SRAM1;
 const struct device *rng_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));
@@ -30,6 +31,7 @@ struct entropy_stm32_rng_dev_cfg {
 	struct stm32_pclken *pclken;
 };
 
+#if defined(CONFIG_BT_STM32WBA)
 void BLEPLAT_Init(void)
 {
 	BPKA_Reset();
@@ -70,6 +72,7 @@ void BPKACB_Complete(void)
 {
 	BLEPLATCB_PkaComplete();
 }
+#endif /* CONFIG_BT_STM32WBA */
 
 void MX_RAMCFG_Init(void)
 {
