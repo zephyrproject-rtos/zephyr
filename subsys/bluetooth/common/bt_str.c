@@ -148,3 +148,278 @@ const char *bt_hci_err_to_str(uint8_t hci_err)
 	#undef HCI_ERR
 }
 #endif /* CONFIG_BT_HCI_ERR_TO_STR */
+
+#if defined(CONFIG_BT_HCI_OPCODE_TO_STR)
+#define BT_OPCODE_STR(opcode)                                                         \
+    (opcode == BT_HCI_OP_INQUIRY                       ? "INQUIRY"                    \
+            : opcode == BT_HCI_OP_INQUIRY_CANCEL       ? "INQUIRY_CANCEL"             \
+            : opcode == BT_HCI_OP_CONNECT              ? "CONNECT"                    \
+            : opcode == BT_HCI_OP_DISCONNECT           ? "DISCONNECT"                 \
+            : opcode == BT_HCI_OP_CONNECT_CANCEL       ? "CONNECT_CANCEL"             \
+            : opcode == BT_HCI_OP_ACCEPT_CONN_REQ      ? "ACCEPT_CONN_REQ"            \
+            : opcode == BT_HCI_OP_SETUP_SYNC_CONN      ? "SETUP_SYNC_CONN"            \
+            : opcode == BT_HCI_OP_ACCEPT_SYNC_CONN_REQ ? "ACCEPT_SYNC_CONN_REQ"       \
+            : opcode == BT_HCI_OP_REJECT_CONN_REQ      ? "REJECT_CONN_REQ"            \
+            : opcode == BT_HCI_OP_LINK_KEY_REPLY       ? "LINK_KEY_REPLY"             \
+            : opcode == BT_HCI_OP_LINK_KEY_NEG_REPLY   ? "LINK_KEY_NEG_REPLY"         \
+            : opcode == BT_HCI_OP_PIN_CODE_REPLY       ? "PIN_CODE_REPLY"             \
+            : opcode == BT_HCI_OP_PIN_CODE_NEG_REPLY   ? "PIN_CODE_NEG_REPLY"         \
+            : opcode == BT_HCI_OP_AUTH_REQUESTED       ? "AUTH_REQUESTED"             \
+            : opcode == BT_HCI_OP_SET_CONN_ENCRYPT     ? "SET_CONN_ENCRYPT"           \
+            : opcode == BT_HCI_OP_REMOTE_NAME_REQUEST  ? "REMOTE_NAME_REQUEST"        \
+            : opcode == BT_HCI_OP_REMOTE_NAME_CANCEL   ? "REMOTE_NAME_CANCEL"         \
+            : opcode == BT_HCI_OP_READ_REMOTE_FEATURES ? "READ_REMOTE_FEATURES"       \
+            : opcode == BT_HCI_OP_READ_REMOTE_EXT_FEATURES                            \
+            ? "READ_REMOTE_EXT_FEATURES"                                              \
+            : opcode == BT_HCI_OP_READ_REMOTE_VERSION_INFO                            \
+            ? "READ_REMOTE_VERSION_INFO"                                              \
+            : opcode == BT_HCI_OP_IO_CAPABILITY_REPLY     ? "IO_CAPABILITY_REPLY"     \
+            : opcode == BT_HCI_OP_USER_CONFIRM_REPLY      ? "USER_CONFIRM_REPLY"      \
+            : opcode == BT_HCI_OP_USER_CONFIRM_NEG_REPLY  ? "USER_CONFIRM_NEG_REPLY"  \
+            : opcode == BT_HCI_OP_USER_PASSKEY_REPLY      ? "USER_PASSKEY_REPLY"      \
+            : opcode == BT_HCI_OP_USER_PASSKEY_NEG_REPLY  ? "USER_PASSKEY_NEG_REPLY"  \
+            : opcode == BT_HCI_OP_IO_CAPABILITY_NEG_REPLY ? "IO_CAPABILITY_NEG_REPLY" \
+            : opcode == BT_HCI_OP_SNIFF_MODE              ? "SNIFF_MODE"              \
+            : opcode == BT_HCI_OP_EXIT_SNIFF_MODE         ? "EXIT_SNIFF_MODE"         \
+            : opcode == BT_HCI_OP_ROLE_DISCOVERY          ? "ROLE_DISCOVERY"          \
+            : opcode == BT_HCI_OP_SWITCH_ROLE             ? "SWITCH_ROLE"             \
+            : opcode == BT_HCI_OP_READ_LINK_POLICY_SETTINGS                           \
+            ? "READ_LINK_POLICY_SETTINGS"                                             \
+            : opcode == BT_HCI_OP_WRITE_LINK_POLICY_SETTINGS                          \
+            ? "WRITE_LINK_POLICY_SETTINGS"                                            \
+            : opcode == BT_HCI_OP_SET_EVENT_MASK         ? "SET_EVENT_MASK"           \
+            : opcode == BT_HCI_OP_RESET                  ? "RESET"                    \
+            : opcode == BT_HCI_OP_DELETE_STORED_LINK_KEY ? "DELETE_STORED_LINK_KEY"   \
+            : opcode == BT_HCI_OP_WRITE_LOCAL_NAME       ? "WRITE_LOCAL_NAME"         \
+            : opcode == BT_HCI_OP_READ_CONN_ACCEPT_TIMEOUT                            \
+            ? "READ_CONN_ACCEPT_TIMEOUT"                                              \
+            : opcode == BT_HCI_OP_WRITE_CONN_ACCEPT_TIMEOUT                           \
+            ? "WRITE_CONN_ACCEPT_TIMEOUT"                                             \
+            : opcode == BT_HCI_OP_WRITE_PAGE_TIMEOUT ? "WRITE_PAGE_TIMEOUT"           \
+            : opcode == BT_HCI_OP_WRITE_SCAN_ENABLE  ? "WRITE_SCAN_ENABLE"            \
+            : opcode == BT_HCI_OP_WRITE_PAGE_SCAN_ACTIVITY                            \
+            ? "WRITE_PAGE_SCAN_ACTIVITY"                                              \
+            : opcode == BT_HCI_OP_WRITE_INQUIRY_SCAN_ACTIVITY                         \
+            ? "WRITE_INQUIRY_SCAN_ACTIVITY"                                           \
+            : opcode == BT_HCI_OP_WRITE_CLASS_OF_DEVICE ? "WRITE_CLASS_OF_DEVICE"     \
+            : opcode == BT_HCI_OP_READ_TX_POWER_LEVEL   ? "READ_TX_POWER_LEVEL"       \
+            : opcode == BT_HCI_OP_READ_EXTENDED_INQUIRY_RESPONSE                      \
+            ? "READ_EXTENDED_INQUIRY_RESPONSE"                                        \
+            : opcode == BT_HCI_OP_WRITE_EXTENDED_INQUIRY_RESPONSE                     \
+            ? "WRITE_EXTENDED_INQUIRY_RESPONSE"                                       \
+            : opcode == BT_HCI_OP_LE_ENH_READ_TX_POWER_LEVEL                          \
+            ? "LE_ENH_READ_TX_POWER_LEVEL"                                            \
+            : opcode == BT_HCI_OP_LE_READ_REMOTE_TX_POWER_LEVEL                       \
+            ? "LE_READ_REMOTE_TX_POWER_LEVEL"                                         \
+            : opcode == BT_HCI_OP_LE_SET_TX_POWER_REPORT_ENABLE                       \
+            ? "LE_SET_TX_POWER_REPORT_ENABLE"                                         \
+            : opcode == BT_HCI_OP_LE_SET_PATH_LOSS_REPORTING_PARAMETERS               \
+            ? "LE_SET_PATH_LOSS_REPORTING_PARAMETERS"                                 \
+            : opcode == BT_HCI_OP_LE_SET_PATH_LOSS_REPORTING_ENABLE                   \
+            ? "LE_SET_PATH_LOSS_REPORTING_ENABLE"                                     \
+            : opcode == BT_HCI_OP_LE_SET_DEFAULT_SUBRATE ? "LE_SET_DEFAULT_SUBRATE"   \
+            : opcode == BT_HCI_OP_LE_SUBRATE_REQUEST     ? "LE_SUBRATE_REQUEST"       \
+            : opcode == BT_HCI_OP_SET_CTL_TO_HOST_FLOW   ? "SET_CTL_TO_HOST_FLOW"     \
+            : opcode == BT_HCI_OP_HOST_BUFFER_SIZE       ? "HOST_BUFFER_SIZE"         \
+            : opcode == BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS                          \
+            ? "HOST_NUM_COMPLETED_PACKETS"                                            \
+            : opcode == BT_HCI_OP_WRITE_LINK_SUPERVISION_TIMEOUT                      \
+            ? "WRITE_LINK_SUPERVISION_TIMEOUT"                                        \
+            : opcode == BT_HCI_OP_WRITE_INQUIRY_SCAN_TYPE ? "WRITE_INQUIRY_SCAN_TYPE" \
+            : opcode == BT_HCI_OP_WRITE_INQUIRY_MODE      ? "WRITE_INQUIRY_MODE"      \
+            : opcode == BT_HCI_OP_WRITE_PAGE_SCAN_TYPE    ? "WRITE_PAGE_SCAN_TYPE"    \
+            : opcode == BT_HCI_OP_WRITE_SSP_MODE          ? "WRITE_SSP_MODE"          \
+            : opcode == BT_HCI_OP_SET_EVENT_MASK_PAGE_2   ? "SET_EVENT_MASK_PAGE_2"   \
+            : opcode == BT_HCI_OP_LE_WRITE_LE_HOST_SUPP   ? "LE_WRITE_LE_HOST_SUPP "  \
+            : opcode == BT_HCI_OP_WRITE_SC_HOST_SUPP      ? "WRITE_SC_HOST_SUPP"      \
+            : opcode == BT_HCI_OP_READ_AUTH_PAYLOAD_TIMEOUT                           \
+            ? "READ_AUTH_PAYLOAD_TIMEOUT"                                             \
+            : opcode == BT_HCI_OP_WRITE_AUTH_PAYLOAD_TIMEOUT                          \
+            ? "WRITE_AUTH_PAYLOAD_TIMEOUT"                                            \
+            : opcode == BT_HCI_OP_CONFIGURE_DATA_PATH     ? "CONFIGURE_DATA_PATH"     \
+            : opcode == BT_HCI_OP_READ_LOCAL_VERSION_INFO ? "READ_LOCAL_VERSION_INFO" \
+            : opcode == BT_HCI_OP_READ_SUPPORTED_COMMANDS ? "READ_SUPPORTED_COMMANDS" \
+            : opcode == BT_HCI_OP_READ_LOCAL_EXT_FEATURES ? "READ_LOCAL_EXT_FEATURES" \
+            : opcode == BT_HCI_OP_READ_LOCAL_FEATURES     ? "READ_LOCAL_FEATURES"     \
+            : opcode == BT_HCI_OP_READ_BUFFER_SIZE        ? "READ_BUFFER_SIZE"        \
+            : opcode == BT_HCI_OP_READ_BD_ADDR            ? "READ_BD_ADDR"            \
+            : opcode == BT_HCI_OP_READ_CODECS             ? "READ_CODECS"             \
+            : opcode == BT_HCI_OP_READ_CODECS_V2          ? "READ_CODECS_V2"          \
+            : opcode == BT_HCI_OP_READ_CODEC_CAPABILITIES ? "READ_CODEC_CAPABILITIES" \
+            : opcode == BT_HCI_OP_READ_CTLR_DELAY         ? "READ_CTLR_DELAY"         \
+            : opcode == BT_HCI_OP_READ_RSSI               ? "READ_RSSI"               \
+            : opcode == BT_HCI_OP_READ_ENCRYPTION_KEY_SIZE                            \
+            ? "READ_ENCRYPTION_KEY_SIZE"                                              \
+            : opcode == BT_HCI_OP_LE_SET_EVENT_MASK      ? "LE_SET_EVENT_MASK"        \
+            : opcode == BT_HCI_OP_LE_READ_BUFFER_SIZE    ? "LE_READ_BUFFER_SIZE"      \
+            : opcode == BT_HCI_OP_LE_READ_LOCAL_FEATURES ? "LE_READ_LOCAL_FEATURES"   \
+            : opcode == BT_HCI_OP_LE_SET_RANDOM_ADDRESS  ? "LE_SET_RANDOM_ADDRESS"    \
+            : opcode == BT_HCI_OP_LE_SET_ADV_PARAM       ? "LE_SET_ADV_PARAM "        \
+            : opcode == BT_HCI_OP_LE_READ_ADV_CHAN_TX_POWER                           \
+            ? "LE_READ_ADV_CHAN_TX_POWER"                                             \
+            : opcode == BT_HCI_OP_LE_SET_ADV_DATA       ? "LE_SET_ADV_DATA"           \
+            : opcode == BT_HCI_OP_LE_SET_SCAN_RSP_DATA  ? "LE_SET_SCAN_RSP_DATA"      \
+            : opcode == BT_HCI_OP_LE_SET_ADV_ENABLE     ? "LE_SET_ADV_ENABLE"         \
+            : opcode == BT_HCI_OP_LE_SET_SCAN_PARAM     ? "LE_SET_SCAN_PARAM"         \
+            : opcode == BT_HCI_OP_LE_SET_SCAN_ENABLE    ? "LE_SET_SCAN_ENABLE"        \
+            : opcode == BT_HCI_OP_LE_CREATE_CONN        ? "LE_CREATE_CONN"            \
+            : opcode == BT_HCI_OP_LE_CREATE_CONN_CANCEL ? "LE_CREATE_CONN_CANCEL"     \
+            : opcode == BT_HCI_OP_LE_READ_FAL_SIZE      ? "LE_READ_FAL_SIZE"          \
+            : opcode == BT_HCI_OP_LE_CLEAR_FAL          ? "LE_CLEAR_FAL"              \
+            : opcode == BT_HCI_OP_LE_ADD_DEV_TO_FAL     ? "LE_ADD_DEV_TO_FAL"         \
+            : opcode == BT_HCI_OP_LE_REM_DEV_FROM_FAL   ? "LE_REM_DEV_FROM_FAL"       \
+            : opcode == BT_HCI_OP_LE_CONN_UPDATE        ? "LE_CONN_UPDATE"            \
+            : opcode == BT_HCI_OP_LE_SET_HOST_CHAN_CLASSIF                            \
+            ? "LE_SET_HOST_CHAN_CLASSIF"                                              \
+            : opcode == BT_HCI_OP_LE_READ_CHAN_MAP        ? "LE_READ_CHAN_MAP"        \
+            : opcode == BT_HCI_OP_LE_READ_REMOTE_FEATURES ? "LE_READ_REMOTE_FEATURES" \
+            : opcode == BT_HCI_OP_LE_ENCRYPT              ? "LE_ENCRYPTESET"          \
+            : opcode == BT_HCI_OP_LE_RAND                 ? "LE_RAND"                 \
+            : opcode == BT_HCI_OP_LE_START_ENCRYPTION     ? "LE_START_ENCRYPTION"     \
+            : opcode == BT_HCI_OP_LE_LTK_REQ_REPLY        ? "LE_LTK_REQ_REPLY"        \
+            : opcode == BT_HCI_OP_LE_LTK_REQ_NEG_REPLY    ? "LE_LTK_REQ_NEG_REPLY"    \
+            : opcode == BT_HCI_OP_LE_READ_SUPP_STATES     ? "LE_READ_SUPP_STATES"     \
+            : opcode == BT_HCI_OP_LE_RX_TEST              ? "LE_RX_TEST"              \
+            : opcode == BT_HCI_OP_LE_TX_TEST              ? "LE_TX_TEST"              \
+            : opcode == BT_HCI_OP_LE_TEST_END             ? "LE_TEST_END"             \
+            : opcode == BT_HCI_OP_LE_CONN_PARAM_REQ_REPLY ? "LE_CONN_PARAM_REQ_REPLY" \
+            : opcode == BT_HCI_OP_LE_CONN_PARAM_REQ_NEG_REPLY                         \
+            ? "LE_CONN_PARAM_REQ_NEG_REPLY"                                           \
+            : opcode == BT_HCI_OP_LE_SET_DATA_LEN ? "LE_SET_DATA_LEN"                 \
+            : opcode == BT_HCI_OP_LE_READ_DEFAULT_DATA_LEN                            \
+            ? "LE_READ_DEFAULT_DATA_LEN"                                              \
+            : opcode == BT_HCI_OP_LE_WRITE_DEFAULT_DATA_LEN                           \
+            ? "LE_WRITE_DEFAULT_DATA_LEN"                                             \
+            : opcode == BT_HCI_OP_LE_P256_PUBLIC_KEY     ? "LE_P256_PUBLIC_KEY"       \
+            : opcode == BT_HCI_OP_LE_GENERATE_DHKEY      ? "LE_GENERATE_DHKEY"        \
+            : opcode == BT_HCI_OP_LE_GENERATE_DHKEY_V2   ? "LE_GENERATE_DHKEY_V2"     \
+            : opcode == BT_HCI_OP_LE_ADD_DEV_TO_RL       ? "LE_ADD_DEV_TO_RL"         \
+            : opcode == BT_HCI_OP_LE_REM_DEV_FROM_RL     ? "LE_REM_DEV_FROM_RL"       \
+            : opcode == BT_HCI_OP_LE_CLEAR_RL            ? "LE_CLEAR_RL"              \
+            : opcode == BT_HCI_OP_LE_READ_RL_SIZE        ? "LE_READ_RL_SIZE"          \
+            : opcode == BT_HCI_OP_LE_READ_PEER_RPA       ? "LE_READ_PEER_RPA"         \
+            : opcode == BT_HCI_OP_LE_READ_LOCAL_RPA      ? "LE_READ_LOCAL_RPA"        \
+            : opcode == BT_HCI_OP_LE_SET_ADDR_RES_ENABLE ? "LE_SET_ADDR_RES_ENABLE"   \
+            : opcode == BT_HCI_OP_LE_SET_RPA_TIMEOUT     ? "LE_SET_RPA_TIMEOUT"       \
+            : opcode == BT_HCI_OP_LE_READ_MAX_DATA_LEN   ? "LE_READ_MAX_DATA_LEN"     \
+            : opcode == BT_HCI_OP_LE_READ_PHY            ? "LE_READ_PHY"              \
+            : opcode == BT_HCI_OP_LE_SET_DEFAULT_PHY     ? "LE_SET_DEFAULT_PHY"       \
+            : opcode == BT_HCI_OP_LE_SET_PHY             ? "LE_SET_PHY"               \
+            : opcode == BT_HCI_OP_LE_ENH_RX_TEST         ? "LE_ENH_RX_TEST"           \
+            : opcode == BT_HCI_OP_LE_ENH_TX_TEST         ? "LE_ENH_TX_TEST"           \
+            : opcode == BT_HCI_OP_LE_SET_ADV_SET_RANDOM_ADDR                          \
+            ? "LE_SET_ADV_SET_RANDOM_ADDR"                                            \
+            : opcode == BT_HCI_OP_LE_SET_EXT_ADV_PARAM ? "LE_SET_EXT_ADV_PARAM"       \
+            : opcode == BT_HCI_OP_LE_SET_EXT_ADV_DATA  ? "LE_SET_EXT_ADV_DATA"        \
+            : opcode == BT_HCI_OP_LE_SET_EXT_SCAN_RSP_DATA                            \
+            ? "LE_SET_EXT_SCAN_RSP_DATA"                                              \
+            : opcode == BT_HCI_OP_LE_SET_EXT_ADV_ENABLE ? "LE_SET_EXT_ADV_ENABLE"     \
+            : opcode == BT_HCI_OP_LE_READ_MAX_ADV_DATA_LEN                            \
+            ? "LE_READ_MAX_ADV_DATA_LEN"                                              \
+            : opcode == BT_HCI_OP_LE_READ_NUM_ADV_SETS   ? "LE_READ_NUM_ADV_SETS"     \
+            : opcode == BT_HCI_OP_LE_REMOVE_ADV_SET      ? "LE_REMOVE_ADV_SET"        \
+            : opcode == BT_HCI_OP_CLEAR_ADV_SETS         ? "CLEAR_ADV_SETS"           \
+            : opcode == BT_HCI_OP_LE_SET_PER_ADV_PARAM   ? "LE_SET_PER_ADV_PARAM"     \
+            : opcode == BT_HCI_OP_LE_SET_PER_ADV_DATA    ? "LE_SET_PER_ADV_DATA"      \
+            : opcode == BT_HCI_OP_LE_SET_PER_ADV_ENABLE  ? "LE_SET_PER_ADV_ENABLE"    \
+            : opcode == BT_HCI_OP_LE_SET_EXT_SCAN_PARAM  ? "LE_SET_EXT_SCAN_PARAM"    \
+            : opcode == BT_HCI_OP_LE_SET_EXT_SCAN_ENABLE ? "LE_SET_EXT_SCAN_ENABLE "  \
+            : opcode == BT_HCI_OP_LE_EXT_CREATE_CONN     ? "LE_EXT_CREATE_CONN"       \
+            : opcode == BT_HCI_OP_LE_EXT_CREATE_CONN_V2  ? "LE_EXT_CREATE_CONN_V2"    \
+            : opcode == BT_HCI_OP_LE_SET_PER_ADV_SUBEVENT_DATA                        \
+            ? "LE_SET_PER_ADV_SUBEVENT_DATA"                                          \
+            : opcode == BT_HCI_OP_LE_SET_PER_ADV_RESPONSE_DATA                        \
+            ? "LE_SET_PER_ADV_RESPONSE_DATA"                                          \
+            : opcode == BT_HCI_OP_LE_SET_PER_ADV_SYNC_SUBEVENT                        \
+            ? "LE_SET_PER_ADV_SYNC_SUBEVENT"                                          \
+            : opcode == BT_HCI_OP_LE_SET_PER_ADV_PARAM_V2 ? "LE_SET_PER_ADV_PARAM_V2" \
+            : opcode == BT_HCI_OP_LE_PER_ADV_CREATE_SYNC  ? "LE_PER_ADV_CREATE_SYNC"  \
+            : opcode == BT_HCI_OP_LE_PER_ADV_CREATE_SYNC_CANCEL                       \
+            ? "LE_PER_ADV_CREATE_SYNC_CANCEL"                                         \
+            : opcode == BT_HCI_OP_LE_PER_ADV_TERMINATE_SYNC                           \
+            ? "LE_PER_ADV_TERMINATE_SYNC"                                             \
+            : opcode == BT_HCI_OP_LE_ADD_DEV_TO_PER_ADV_LIST                          \
+            ? "LE_ADD_DEV_TO_PER_ADV_LIST"                                            \
+            : opcode == BT_HCI_OP_LE_REM_DEV_FROM_PER_ADV_LIST                        \
+            ? "LE_REM_DEV_FROM_PER_ADV_LIST"                                          \
+            : opcode == BT_HCI_OP_LE_CLEAR_PER_ADV_LIST ? "LE_CLEAR_PER_ADV_LIST"     \
+            : opcode == BT_HCI_OP_LE_READ_PER_ADV_LIST_SIZE                           \
+            ? "LE_READ_PER_ADV_LIST_SIZE"                                             \
+            : opcode == BT_HCI_OP_LE_READ_TX_POWER        ? "LE_READ_TX_POWER"        \
+            : opcode == BT_HCI_OP_LE_READ_RF_PATH_COMP    ? "LE_READ_RF_PATH_COMP"    \
+            : opcode == BT_HCI_OP_LE_WRITE_RF_PATH_COMP   ? "LE_WRITE_RF_PATH_COMP"   \
+            : opcode == BT_HCI_OP_LE_SET_PRIVACY_MODE     ? "LE_SET_PRIVACY_MODE"     \
+            : opcode == BT_HCI_OP_LE_RX_TEST_V3           ? "LE_RX_TEST_V3"           \
+            : opcode == BT_HCI_OP_LE_SET_CL_CTE_TX_PARAMS ? "LE_SET_CL_CTE_TX_PARAMS" \
+            : opcode == BT_HCI_OP_LE_SET_CL_CTE_TX_ENABLE ? "LE_SET_CL_CTE_TX_ENABLE" \
+            : opcode == BT_HCI_OP_LE_SET_CL_CTE_SAMPLING_ENABLE                       \
+            ? "LE_SET_CL_CTE_SAMPLING_ENABLE"                                         \
+            : opcode == BT_HCI_OP_LE_SET_CONN_CTE_RX_PARAMS                           \
+            ? "LE_SET_CONN_CTE_RX_PARAMS"                                             \
+            : opcode == BT_HCI_OP_LE_SET_CONN_CTE_TX_PARAMS                           \
+            ? "LE_SET_CONN_CTE_TX_PARAMS"                                             \
+            : opcode == BT_HCI_OP_LE_CONN_CTE_REQ_ENABLE ? "LE_CONN_CTE_REQ_ENABLE"   \
+            : opcode == BT_HCI_OP_LE_CONN_CTE_RSP_ENABLE ? "LE_CONN_CTE_RSP_ENABLE"   \
+            : opcode == BT_HCI_OP_LE_READ_ANT_INFO       ? "LE_READ_ANT_INFO"         \
+            : opcode == BT_HCI_OP_LE_SET_PER_ADV_RECV_ENABLE                          \
+            ? "LE_SET_PER_ADV_RECV_ENABLE"                                            \
+            : opcode == BT_HCI_OP_LE_PER_ADV_SYNC_TRANSFER                            \
+            ? "LE_PER_ADV_SYNC_TRANSFER"                                              \
+            : opcode == BT_HCI_OP_LE_PER_ADV_SET_INFO_TRANSFER                        \
+            ? "LE_PER_ADV_SET_INFO_TRANSFER"                                          \
+            : opcode == BT_HCI_OP_LE_PAST_PARAM          ? "LE_PAST_PARAM"            \
+            : opcode == BT_HCI_OP_LE_DEFAULT_PAST_PARAM  ? "LE_DEFAULT_PAST_PARAM"    \
+            : opcode == BT_HCI_OP_LE_READ_BUFFER_SIZE_V2 ? "LE_READ_BUFFER_SIZE_V2"   \
+            : opcode == BT_HCI_OP_LE_READ_ISO_TX_SYNC    ? "LE_READ_ISO_TX_SYNC"      \
+            : opcode == BT_HCI_OP_LE_SET_CIG_PARAMS      ? "LE_SET_CIG_PARAMS"        \
+            : opcode == BT_HCI_OP_LE_SET_CIG_PARAMS_TEST ? "LE_SET_CIG_PARAMS_TEST"   \
+            : opcode == BT_HCI_OP_LE_CREATE_CIS          ? "LE_CREATE_CIS"            \
+            : opcode == BT_HCI_OP_LE_REMOVE_CIG          ? "LE_REMOVE_CIG"            \
+            : opcode == BT_HCI_OP_LE_ACCEPT_CIS          ? "LE_ACCEPT_CIS"            \
+            : opcode == BT_HCI_OP_LE_REJECT_CIS          ? "LE_REJECT_CIS"            \
+            : opcode == BT_HCI_OP_LE_CREATE_BIG          ? "LE_CREATE_BIG"            \
+            : opcode == BT_HCI_OP_LE_CREATE_BIG_TEST     ? "LE_CREATE_BIG_TEST"       \
+            : opcode == BT_HCI_OP_LE_TERMINATE_BIG       ? "LE_TERMINATE_BIG"         \
+            : opcode == BT_HCI_OP_LE_BIG_CREATE_SYNC     ? "LE_BIG_CREATE_SYNC"       \
+            : opcode == BT_HCI_OP_LE_BIG_TERMINATE_SYNC  ? "LE_BIG_TERMINATE_SYNC"    \
+            : opcode == BT_HCI_OP_LE_REQ_PEER_SC         ? "LE_REQ_PEER_SC"           \
+            : opcode == BT_HCI_OP_LE_SETUP_ISO_PATH      ? "LE_SETUP_ISO_PATH"        \
+            : opcode == BT_HCI_OP_LE_REMOVE_ISO_PATH     ? "LE_REMOVE_ISO_PATH"       \
+            : opcode == BT_HCI_OP_LE_ISO_TRANSMIT_TEST   ? "LE_ISO_TRANSMIT_TEST"     \
+            : opcode == BT_HCI_OP_LE_ISO_RECEIVE_TEST    ? "LE_ISO_RECEIVE_TEST"      \
+            : opcode == BT_HCI_OP_LE_ISO_READ_TEST_COUNTERS                           \
+            ? "LE_ISO_READ_TEST_COUNTERS"                                             \
+            : opcode == BT_HCI_OP_LE_ISO_TEST_END     ? "LE_ISO_TEST_END"             \
+            : opcode == BT_HCI_OP_LE_SET_HOST_FEATURE ? "LE_SET_HOST_FEATURE"         \
+            : opcode == BT_HCI_OP_LE_READ_ISO_LINK_QUALITY                            \
+            ? "LE_READ_ISO_LINK_QUALITY"                                              \
+            : opcode == BT_HCI_OP_LE_TX_TEST_V4 ? "LE_TX_TEST_V4"                     \
+            : opcode == BT_HCI_OP_LE_CS_READ_LOCAL_SUPPORTED_CAPABILITIES             \
+            ? "LE_CS_READ_LOCAL_SUPPORTED_CAPABILITIES"                               \
+            : opcode == BT_HCI_OP_LE_CS_READ_REMOTE_SUPPORTED_CAPABILITIES            \
+            ? "LE_CS_READ_REMOTE_SUPPORTED_CAPABILITIES"                              \
+            : opcode == BT_HCI_OP_LE_CS_WRITE_CACHED_REMOTE_SUPPORTED_CAPABILITIES    \
+            ? "LE_CS_WRITE_CACHED_REMOTE_SUPPORTED_CAPABILITIES"                      \
+            : opcode == BT_HCI_OP_LE_CS_SECURITY_ENABLE ? "LE_CS_SECURITY_ENABLE"     \
+            : opcode == BT_HCI_OP_LE_CS_SET_DEFAULT_SETTINGS                          \
+            ? "LE_CS_SET_DEFAULT_SETTINGS"                                            \
+            : opcode == BT_HCI_OP_LE_CS_READ_REMOTE_FAE_TABLE                         \
+            ? "LE_CS_READ_REMOTE_FAE_TABLE"                                           \
+            : opcode == BT_HCI_OP_LE_CS_WRITE_CACHED_REMOTE_FAE_TABLE                 \
+            ? "LE_CS_WRITE_CACHED_REMOTE_FAE_TABLE"                                   \
+            : opcode == BT_HCI_OP_LE_CS_SET_CHANNEL_CLASSIFICATION                    \
+            ? "LE_CS_SET_CHANNEL_CLASSIFICATION"                                      \
+            : opcode == BT_HCI_OP_LE_CS_SET_PROCEDURE_PARAMETERS                      \
+            ? "LE_CS_SET_PROCEDURE_PARAMETERS"                                        \
+            : opcode == BT_HCI_OP_LE_CS_PROCEDURE_ENABLE ? "LE_CS_PROCEDURE_ENABLE"   \
+            : opcode == BT_HCI_OP_LE_CS_TEST             ? "LE_CS_TEST"               \
+            : opcode == BT_HCI_OP_LE_CS_CREATE_CONFIG    ? "LE_CS_CREATE_CONFIG"      \
+            : opcode == BT_HCI_OP_LE_CS_REMOVE_CONFIG    ? "LE_CS_REMOVE_CONFIG"      \
+            : opcode == BT_HCI_OP_LE_CS_TEST_END         ? "LE_CS_TEST_END"           \
+                                                         : "(Unknown Command)")
+
+const char *bt_hci_opcode_to_str(uint16_t opcode)
+{
+    return BT_OPCODE_STR(opcode);
+}
+#endif //CONFIG_BT_HCI_OPCODE_TO_STR

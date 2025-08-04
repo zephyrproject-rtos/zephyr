@@ -49,6 +49,31 @@ static inline const char *bt_hci_err_to_str(uint8_t hci_err)
 }
 #endif
 
+/** Converts a HCI opcode to string.
+ *
+ * The opcode values are described in the Bluetooth Core specification,
+ * Vol 1, Part F, Section 2.
+ *
+ * The HCI documentation found in Vol 4, Part E,
+ * describes when the different opcodes are used.
+ *
+ * See also the defined BT_HCI_OP_* macros.
+ *
+ * @return The string representation of the HCI opcode.
+ *         If @kconfig{CONFIG_BT_HCI_OPCODE_TO_STR} is not enabled,
+ *         this just returns the empty string.
+ */
+#if defined(CONFIG_BT_HCI_OPCODE_TO_STR)
+const char *bt_hci_opcode_to_str(uint16_t opcode);
+#else
+static inline const char *bt_hci_opcode_to_str(uint16_t opcode)
+{
+	ARG_UNUSED(opcode);
+
+	return "";
+}
+#endif
+
 /** Allocate a HCI command buffer.
   *
   * This function allocates a new buffer for a HCI command. It is given
