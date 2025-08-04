@@ -1552,6 +1552,128 @@ int64_t video_get_csi_link_freq(const struct device *dev, uint8_t bpp, uint8_t l
 #define VIDEO_PIX_FMT_XYUV32 VIDEO_FOURCC('X', 'Y', 'U', 'V')
 
 /**
+ * Planar formats
+ */
+/**
+ * CbCr(UV) plane has same width as Y plane however half height
+ *
+ * @code{.unparsed}
+ * | Yyyyyyyy Yyyyyyyy | Yyyyyyyy Yyyyyyyy |
+ * | Yyyyyyyy Yyyyyyyy | Yyyyyyyy Yyyyyyyy |
+ * | ... |
+ * | Uuuuuuuu Vvvvvvvv | Uuuuuuuu Vvvvvvvv |
+ * | Uuuuuuuu Vvvvvvvv | Uuuuuuuu Vvvvvvvv |
+ * | ... |
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_NV12 VIDEO_FOURCC('N', 'V', '1', '2')
+
+/**
+ * CrCb(VU) plane has same width as Y plane however half height
+ *
+ * @code{.unparsed}
+ * | Yyyyyyyy Yyyyyyyy | Yyyyyyyy Yyyyyyyy |
+ * | Yyyyyyyy Yyyyyyyy | Yyyyyyyy Yyyyyyyy |
+ * | ... |
+ * | Vvvvvvvv Uuuuuuuu | Vvvvvvvv Uuuuuuuu |
+ * | Vvvvvvvv Uuuuuuuu | Vvvvvvvv Uuuuuuuu |
+ * | ... |
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_NV21 VIDEO_FOURCC('N', 'V', '2', '1')
+
+/**
+ * CbCr(UV) plane has same width and height as Y plane
+ *
+ * @code{.unparsed}
+ * | Yyyyyyyy Yyyyyyyy | Yyyyyyyy Yyyyyyyy |
+ * | Yyyyyyyy Yyyyyyyy | Yyyyyyyy Yyyyyyyy |
+ * | ... |
+ * | Uuuuuuuu Vvvvvvvv | Uuuuuuuu Vvvvvvvv |
+ * | Uuuuuuuu Vvvvvvvv | Uuuuuuuu Vvvvvvvv |
+ * | ... |
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_NV16 VIDEO_FOURCC('N', 'V', '1', '6')
+
+/**
+ * CrCb(VU) plane has same width and height as Y plane
+ *
+ * @code{.unparsed}
+ * | Yyyyyyyy Yyyyyyyy | Yyyyyyyy Yyyyyyyy |
+ * | Yyyyyyyy Yyyyyyyy | Yyyyyyyy Yyyyyyyy |
+ * | ... |
+ * | Vvvvvvvv Uuuuuuuu | Vvvvvvvv Uuuuuuuu |
+ * | Vvvvvvvv Uuuuuuuu | Vvvvvvvv Uuuuuuuu |
+ * | ... |
+ * @endcode
+ */
+
+#define VIDEO_PIX_FMT_NV61 VIDEO_FOURCC('N', 'V', '6', '1')
+
+/**
+ * CbCr(UV) plane has same width and height as Y plane
+ *
+ * @code{.unparsed}
+ * | Yyyyyyyy Yyyyyyyy | Yyyyyyyy Yyyyyyyy |
+ * | Yyyyyyyy Yyyyyyyy | Yyyyyyyy Yyyyyyyy |
+ * | ... |
+ * | Uuuuuuuu Vvvvvvvv | Uuuuuuuu Vvvvvvvv |
+ * | Uuuuuuuu Vvvvvvvv | Uuuuuuuu Vvvvvvvv |
+ * | ... |
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_NV24 VIDEO_FOURCC('N', 'V', '2', '4')
+
+/**
+ * CrCb(VU) plane has same width and height as Y plane
+ *
+ * @code{.unparsed}
+ * | Yyyyyyyy Yyyyyyyy | Yyyyyyyy Yyyyyyyy |
+ * | Yyyyyyyy Yyyyyyyy | Yyyyyyyy Yyyyyyyy |
+ * | ... |
+ * | Vvvvvvvv Uuuuuuuu | Vvvvvvvv Uuuuuuuu |
+ * | Vvvvvvvv Uuuuuuuu | Vvvvvvvv Uuuuuuuu |
+ * | ... |
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_NV42 VIDEO_FOURCC('N', 'V', '4', '2')
+
+/**
+ * Cb(U) and Cr(V) planes have half width and half height as Y plane
+ *
+ * @code{.unparsed}
+ * | Yyyyyyyy Yyyyyyyy | Yyyyyyyy Yyyyyyyy |
+ * | Yyyyyyyy Yyyyyyyy | Yyyyyyyy Yyyyyyyy |
+ * | ... |
+ * | Uuuuuuuu Uuuuuuuu | Uuuuuuuu Uuuuuuuu |
+ * | Uuuuuuuu Uuuuuuuu | Uuuuuuuu Uuuuuuuu |
+ * | ... |
+ * | Vvvvvvvv Vvvvvvvv | Vvvvvvvv Vvvvvvvv |
+ * | Vvvvvvvv Vvvvvvvv | Vvvvvvvv Vvvvvvvv |
+ * | ... |
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_YUV420 VIDEO_FOURCC('Y', 'U', '1', '2')
+
+/**
+ * Cb(U) and Cr(V) planes have half width and half height as Y plane
+ *
+ * @code{.unparsed}
+ * | Yyyyyyyy Yyyyyyyy | Yyyyyyyy Yyyyyyyy |
+ * | Yyyyyyyy Yyyyyyyy | Yyyyyyyy Yyyyyyyy |
+ * | ... |
+ * | Vvvvvvvv Vvvvvvvv | Vvvvvvvv Vvvvvvvv |
+ * | Vvvvvvvv Vvvvvvvv | Vvvvvvvv Vvvvvvvv |
+ * | ... |
+ * | Uuuuuuuu Uuuuuuuu | Uuuuuuuu Uuuuuuuu |
+ * | Uuuuuuuu Uuuuuuuu | Uuuuuuuu Uuuuuuuu |
+ * | ... |
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_YVU420 VIDEO_FOURCC('Y', 'V', '1', '2')
+
+/**
  * @}
  */
 
@@ -1597,6 +1719,10 @@ static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
 	case VIDEO_PIX_FMT_SGRBG12P:
 	case VIDEO_PIX_FMT_SRGGB12P:
 	case VIDEO_PIX_FMT_Y12P:
+	case VIDEO_PIX_FMT_NV12:
+	case VIDEO_PIX_FMT_NV21:
+	case VIDEO_PIX_FMT_YUV420:
+	case VIDEO_PIX_FMT_YVU420:
 		return 12;
 	case VIDEO_PIX_FMT_SBGGR14P:
 	case VIDEO_PIX_FMT_SGBRG14P:
@@ -1629,9 +1755,13 @@ static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
 	case VIDEO_PIX_FMT_Y12:
 	case VIDEO_PIX_FMT_Y14:
 	case VIDEO_PIX_FMT_Y16:
+	case VIDEO_PIX_FMT_NV16:
+	case VIDEO_PIX_FMT_NV61:
 		return 16;
 	case VIDEO_PIX_FMT_BGR24:
 	case VIDEO_PIX_FMT_RGB24:
+	case VIDEO_PIX_FMT_NV24:
+	case VIDEO_PIX_FMT_NV42:
 		return 24;
 	case VIDEO_PIX_FMT_XRGB32:
 	case VIDEO_PIX_FMT_XYUV32:
