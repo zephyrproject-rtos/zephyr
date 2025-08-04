@@ -515,6 +515,9 @@ void notify_subrate_change(struct bt_conn *conn,
 void notify_read_all_remote_feat_complete(struct bt_conn *conn,
 					  struct bt_conn_le_read_all_remote_feat_complete *params);
 
+void notify_frame_space_update_complete(struct bt_conn *conn,
+					struct bt_conn_le_frame_space_updated *params);
+
 void notify_remote_cs_capabilities(struct bt_conn *conn,
 				   uint8_t status,
 				   struct bt_conn_le_cs_capabilities *params);
