@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2025 Ambiq Micro Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <apollo510/ambiq-apollo510-pinmux.h>
+
+&pinctrl {
+	/* Node with pin configuration for default state */
+	/omit-if-no-ref/dc_te_default: dc_te_default {
+		group1 {
+			/* Mappings: DISP_TE -> GPIO33*/
+			pinmux = <DISP_TE_P33>;
+		};
+	};
+};
+
+&mipi_dsi {
+	pinctrl-0 = <&dc_te_default>;
+	pinctrl-names = "default";
+};

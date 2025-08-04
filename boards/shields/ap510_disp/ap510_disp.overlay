@@ -1,0 +1,45 @@
+/*
+ * Copyright (c) 2025 Ambiq Micro Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <apollo510/ambiq-apollo510-pinmux.h>
+#include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
+#include <zephyr/dt-bindings/display/panel.h>
+
+/ {
+	chosen {
+		zephyr,display = &co5300;
+	};
+};
+
+&mipi_dsi {
+	status = "okay";
+	phy-clock = <240000000>;	/*The frequency should be a multiple of 12MHz.*/
+	/*apollo510_evb designed with a loadswitch to control power Vdd18.*/
+	vdd18-gpios = <&gpio32_63 26 (GPIO_PULL_DOWN)>;
+	/*disp-te;*/
+
+	co5300: co5300@0 {
+		status = "okay";
+		compatible = "chipone,co5300";
+		reset-gpios = <&gpio32_63 31 (GPIO_PULL_UP)>;
+		reg = <0x0>;
+		data-lanes = <1>;
+		pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+		rotation = <0>;
+		mode-flags = <0>;
+		width = <468>;	/*Its value should be an integer multiple of 4.*/
+		hfp = <1>;	/*Please use this recommended value.*/
+		hbp = <1>;	/*Please use this recommended value.*/
+		hsync = <1>;	/*Please use this recommended value.*/
+		height = <468>;	/**/
+		vfp = <1>;	/*Please use this recommended value.*/
+		vbp = <1>;	/*Please use this recommended value.*/
+		vsync = <1>;	/*Please use this recommended value.*/
+	};
+};
+
+&gpio32_63 {
+	status = "okay";
+};

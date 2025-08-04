@@ -15,7 +15,7 @@
 Ambiq® is an Austin-based SoC vendor who at the forefront of enabling ambient intelligence on billions of
 devices with the unique SPOT platform and extreme-low power semiconductor solutions.
 
-Whether it’s the Real Time Clock (RTC) IC, or a System-on-a-Chip (SoC), Ambiq® is committed to enabling the
+Whether it's the Real Time Clock (RTC) IC, or a System-on-a-Chip (SoC), Ambiq® is committed to enabling the
 lowest power consumption with the highest computing performance possible for our customers to make the most
 innovative battery-power endpoint devices for their end-users. `Ambiq Products`_
 
@@ -35,7 +35,7 @@ As of now, Ambiq provides zephyr support for a set of peripherals/drivers:
 +--------+--------------------+--------------------+------------------------------------------+
 | CRYPTO |    comming soon    |                    |                                          |
 +--------+--------------------+--------------------+------------------------------------------+
-| DISPLAY|    comming soon    |                    |                                          |
+| DISPLAY|         -          |    apollo510-dev   |  samples\\drivers\\display               |
 +--------+--------------------+--------------------+------------------------------------------+
 | FLASH  |         -          |        main        |  tests\\drivers\\flash\_api              |
 +--------+--------------------+--------------------+------------------------------------------+
@@ -45,7 +45,7 @@ As of now, Ambiq provides zephyr support for a set of peripherals/drivers:
 +--------+--------------------+--------------------+------------------------------------------+
 |   I2S  |         -          |        main        |  samples\\drivers\\i2s\\dmic\_i2s        |
 +--------+--------------------+--------------------+------------------------------------------+
-|MIPI_DSI|    comming soon    |                    |                                          |
+|MIPI_DSI|         -          |    apollo510-dev   |  samples\\drivers\\display               |
 +--------+--------------------+--------------------+------------------------------------------+
 |  MSPI  |         -          |        main        |   samples\\drivers\\mspi\\mspi\_flash    |
 +--------+--------------------+--------------------+------------------------------------------+
@@ -129,8 +129,10 @@ Get to Know Ambiq Components
   zephyr/
   │
   ├── boards/
-  │   └── ambiq/
-  │       └── apollo510_evb
+  │   ├── ambiq/
+  │   │   └── apollo510_evb
+  │   └── shields/
+  │       └── ap510_disp
   ├── drivers/
   │   ├── adc/
   │   │   └── adc_ambiq.c
@@ -144,6 +146,8 @@ Get to Know Ambiq Components
   │   │   └── clock_control_ambiq.c
   │   ├── counter/
   │   │   └── counter_ambiq_timer.c
+  │   ├── display/
+  │   │   └── display_co5300.c
   │   ├── flash/
   │   │   └── flash_ambiq.c
   │   ├── gpio/
@@ -154,6 +158,8 @@ Get to Know Ambiq Components
   │   │   └── i2c_ambiq.c
   │   ├── i2s/
   │   │   └── i2s_ambiq.c
+  │   ├── mipi_dsi/
+  │   │   └── dsi_ambiq.c
   │   ├── mspi/
   │   │   └── mspi_ambiq_ap5.c
   │   ├── pinctrl/
@@ -174,8 +180,8 @@ Get to Know Ambiq Components
   │   ├── usb/
   │   │   └── udc/
   │   │       └── udc_ambiq.c
-  │   ├── watchdog/
-  │   │   └── wdt_ambiq.c
+  │   └── watchdog/
+  │       └── wdt_ambiq.c
   ├── dts/
   │   └── arm/
   │       └── ambiq/
