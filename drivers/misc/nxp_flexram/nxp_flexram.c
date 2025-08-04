@@ -23,7 +23,7 @@ BUILD_ASSERT(DT_PROP(FLEXRAM_DT_NODE, flexram_has_magic_addr),
 #define BANK_SIZE (DT_PROP(FLEXRAM_DT_NODE, flexram_bank_size) * 1024)
 #define NUM_BANKS DT_PROP(FLEXRAM_DT_NODE, flexram_num_ram_banks)
 
-#define IS_CHILD_RAM_TYPE(node_id, compat) DT_NODE_HAS_COMPAT(node_id, compat)
+#define IS_CHILD_RAM_TYPE(node_id, compat) DT_NODE_HAS_COMPAT_STATUS(node_id, compat, okay)
 #define DOES_RAM_TYPE_EXIST(compat) \
 	DT_FOREACH_CHILD_SEP_VARGS(FLEXRAM_DT_NODE, IS_CHILD_RAM_TYPE, (+), compat)
 
