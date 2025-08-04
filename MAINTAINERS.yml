@@ -2784,9 +2784,8 @@ ITE Platforms:
 Infineon Platforms:
   status: maintained
   maintainers:
-    - ifyall
-  collaborators:
     - sreeramIfx
+  collaborators:
     - mcatee-infineon
     - talih0
   files:
@@ -5216,10 +5215,9 @@ West:
 "West project: hal_cypress":
   status: maintained
   maintainers:
-    - ifyall
+    - sreeramIfx
   collaborators:
     - nashif
-    - sreeramIfx
     - mcatee-infineon
   files:
     - modules/Kconfig.cypress
@@ -5268,11 +5266,10 @@ West:
 "West project: hal_infineon":
   status: maintained
   maintainers:
-    - ifyall
+    - sreeramIfx
   collaborators:
     - parthitce
     - talih0
-    - sreeramIfx
     - mcatee-infineon
   files:
     - modules/Kconfig.infineon
