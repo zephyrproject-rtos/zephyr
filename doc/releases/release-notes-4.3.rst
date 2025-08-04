@@ -85,6 +85,12 @@ New APIs and options
 
     * :c:struct:`bt_audio_codec_cfg` now contains a target_latency and a target_phy option
 
+* Opamp
+
+  * Introduced opamp device driver subsystem selected with :kconfig:option:`CONFIG_OPAMP`
+  * Added support for NXP OPAMP (:dtcompatible:`nordic,opamp`)
+  * Added support for NXP OPAMP_FAST (:dtcompatible:`nxp,opamp_fast`)
+
 * Power management
 
    * :c:func:`pm_device_driver_deinit`
