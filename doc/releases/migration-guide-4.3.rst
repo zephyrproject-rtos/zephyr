@@ -54,6 +54,17 @@ Bluetooth
 
 .. zephyr-keep-sorted-start re(^\w)
 
+Bluetooth Audio
+===============
+
+* :c:struct:`bt_audio_codec_cfg` now requires setting the target latency and target PHY explicitly,
+  rather than always setting the target latency to "Balanced" and the target PHY to LE 2M.
+  To keep current functionality, set the ``target_latency`` to
+  :c:enumerator:`BT_AUDIO_CODEC_CFG_TARGET_LATENCY_BALANCED` and ``target_phy`` to
+  :c:enumerator:`BT_AUDIO_CODEC_CFG_TARGET_PHY_2M`.
+  The :c:macro:`BT_AUDIO_CODEC_CFG` macro defaults to these values.
+  (:github:`93825``)
+
 .. zephyr-keep-sorted-stop
 
 Ethernet
