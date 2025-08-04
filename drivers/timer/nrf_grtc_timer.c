@@ -49,16 +49,12 @@
 #define COUNTER_SPAN (GRTC_SYSCOUNTERL_VALUE_Msk | ((uint64_t)GRTC_SYSCOUNTERH_VALUE_Msk << 32))
 #define MAX_ABS_TICKS (COUNTER_SPAN / CYC_PER_TICK)
 
-/* To allow use of CCADD we need to limit max cycles to 31 bits. */
-#define MAX_REL_CYCLES BIT_MASK(31)
-#define MAX_REL_TICKS (MAX_REL_CYCLES / CYC_PER_TICK)
+#define MAX_TICKS                                                                                  \
+	(((COUNTER_SPAN / CYC_PER_TICK) > INT_MAX) ? INT_MAX : (COUNTER_SPAN / CYC_PER_TICK))
+
+#define MAX_CYCLES (MAX_TICKS * CYC_PER_TICK)
 
 #define LFCLK_FREQUENCY_HZ DT_PROP(LFCLK_NODE, clock_frequency)
-
-/* Threshold used to determine if there is a risk of unexpected GRTC COMPARE event coming
- * from previous CC value.
- */
-#define LATENCY_THR_TICKS 200
 
 #if defined(CONFIG_TEST)
 const int32_t z_sys_timer_irq_for_test = DT_IRQN(GRTC_NODE);
@@ -66,10 +62,8 @@ const int32_t z_sys_timer_irq_for_test = DT_IRQN(GRTC_NODE);
 
 static void sys_clock_timeout_handler(int32_t id, uint64_t cc_val, void *p_context);
 
+static struct k_spinlock lock;
 static uint64_t last_count; /* Time (SYSCOUNTER value) @last sys_clock_announce() */
-static uint32_t last_elapsed;
-static uint64_t cc_value; /* Value that is expected to be in CC register. */
-static uint64_t expired_cc; /* Value that is expected to be in CC register. */
 static atomic_t int_mask;
 static uint8_t ext_channels_allocated;
 static uint64_t grtc_start_value;
@@ -152,13 +146,17 @@ static void compare_int_unlock(int32_t chan, bool key)
 static void sys_clock_timeout_handler(int32_t id, uint64_t cc_val, void *p_context)
 {
 	ARG_UNUSED(id);
-	ARG_UNUSED(cc_val);
 	ARG_UNUSED(p_context);
-	uint32_t dticks;
+	uint64_t dticks;
+	uint64_t now = counter();
+
+	if (unlikely(now < cc_val)) {
+		return;
+	}
 
 	dticks = counter_sub(cc_val, last_count) / CYC_PER_TICK;
-	last_count += (dticks * CYC_PER_TICK);
-	expired_cc = cc_val;
+
+	last_count += dticks * CYC_PER_TICK;
 
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		/* protection is not needed because we are in the GRTC interrupt
@@ -167,7 +165,6 @@ static void sys_clock_timeout_handler(int32_t id, uint64_t cc_val, void *p_conte
 		system_timeout_set_abs(last_count + CYC_PER_TICK);
 	}
 
-	last_elapsed = 0;
 	sys_clock_announce((int32_t)dticks);
 }
 
@@ -371,7 +368,6 @@ uint64_t z_nrf_grtc_timer_startup_value_get(void)
 int z_nrf_grtc_wakeup_prepare(uint64_t wake_time_us)
 {
 	nrfx_err_t err_code;
-	static struct k_spinlock lock;
 	static uint8_t systemoff_channel;
 	uint64_t now = counter();
 	nrfx_grtc_sleep_config_t sleep_cfg;
@@ -434,12 +430,20 @@ int z_nrf_grtc_wakeup_prepare(uint64_t wake_time_us)
 
 uint32_t sys_clock_cycle_get_32(void)
 {
-	return nrf_grtc_sys_counter_low_get(NRF_GRTC);
+	k_spinlock_key_t key = k_spin_lock(&lock);
+	uint32_t ret = (uint32_t)counter();
+
+	k_spin_unlock(&lock, key);
+	return ret;
 }
 
 uint64_t sys_clock_cycle_get_64(void)
 {
-	return counter();
+	k_spinlock_key_t key = k_spin_lock(&lock);
+	uint64_t ret = counter();
+
+	k_spin_unlock(&lock, key);
+	return ret;
 }
 
 uint32_t sys_clock_elapsed(void)
@@ -448,9 +452,7 @@ uint32_t sys_clock_elapsed(void)
 		return 0;
 	}
 
-	last_elapsed = (uint32_t)counter_sub(counter(), last_count);
-
-	return last_elapsed / CYC_PER_TICK;
+	return (uint32_t)(counter_sub(counter(), last_count) / CYC_PER_TICK);
 }
 
 static int sys_clock_driver_init(void)
@@ -491,10 +493,6 @@ static int sys_clock_driver_init(void)
 
 	last_count = (counter() / CYC_PER_TICK) * CYC_PER_TICK;
 	grtc_start_value = last_count;
-	expired_cc = UINT64_MAX;
-	nrfx_grtc_channel_callback_set(system_clock_channel_data.channel,
-				       sys_clock_timeout_handler, NULL);
-
 	int_mask = NRFX_GRTC_CONFIG_ALLOWED_CC_CHANNELS_MASK;
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		system_timeout_set_relative(CYC_PER_TICK);
@@ -553,48 +551,18 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		return;
 	}
 
-	uint32_t ch = system_clock_channel_data.channel;
+	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : MIN(MAX_TICKS, MAX(ticks, 0));
 
-	if ((cc_value == expired_cc) && (ticks < MAX_REL_TICKS)) {
-		uint32_t cyc = ticks * CYC_PER_TICK;
+	uint64_t delta_time = ticks * CYC_PER_TICK;
 
-		if (cyc == 0) {
-			/* GRTC will expire anyway since HW ensures that past value triggers an
-			 * event but we need to ensure to always progress the cc_value as this
-			 * if condition expects that cc_value will change after each call to
-			 * set_timeout function.
-			 */
-			cyc = 1;
-		}
+	uint64_t target_time = counter() + delta_time;
 
-		/* If it's the first timeout setting after previous expiration and timeout
-		 * is short so fast method can be used which utilizes relative CC configuration.
-		 */
-		cc_value += cyc;
-		nrfx_grtc_syscounter_cc_rel_set(ch, cyc, NRFX_GRTC_CC_RELATIVE_COMPARE);
-		return;
-	}
-
-	uint64_t cyc = (uint64_t)ticks * CYC_PER_TICK;
-	bool safe_setting = false;
-	int64_t prev_cc_val = cc_value;
-
-	cc_value = last_count + last_elapsed + cyc;
-
-	/* In case of timeout abort it may happen that CC is being set to a value
-	 * that later than previous CC. If previous CC value is not far in the
-	 * future, there is a risk that COMPARE event will be triggered for that
-	 * previous CC value. If there is such risk safe procedure must be applied
-	 * which is more time consuming but ensures that there will be no spurious
-	 * event.
+	/* Rounded down target_time to the tick boundary
+	 * (but not less than one tick after the last)
 	 */
-	if (prev_cc_val < cc_value) {
-		int64_t now = last_count + last_elapsed;
+	target_time = MAX((target_time - last_count)/CYC_PER_TICK, 1)*CYC_PER_TICK + last_count;
 
-		safe_setting = (prev_cc_val - now) < LATENCY_THR_TICKS;
-	}
-
-	nrfx_grtc_syscounter_cc_abs_set(ch, cc_value, safe_setting);
+	system_timeout_set_abs(target_time);
 }
 
 #if defined(CONFIG_NRF_GRTC_TIMER_APP_DEFINED_INIT)
