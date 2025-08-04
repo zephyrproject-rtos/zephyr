@@ -1158,8 +1158,7 @@ static int numaker_usbd_msg_handle_out(const struct device *dev, struct numaker_
 	}
 
 	if (ep == USB_CONTROL_EP_OUT) {
-		__ASSERT_NO_MSG(net_buf_tailroom(buf) >= priv->ctrlout_tailroom);
-		data_len = priv->ctrlout_tailroom;
+		data_len = MIN(net_buf_tailroom(buf), priv->ctrlout_tailroom);
 	} else {
 		data_len = net_buf_tailroom(buf);
 	}
@@ -1172,7 +1171,9 @@ static int numaker_usbd_msg_handle_out(const struct device *dev, struct numaker_
 	}
 
 	if (data_rmn) {
-		LOG_ERR("Buffer queued for ep=0x%02x cannot accommodate packet", ep);
+		LOG_ERR("Buffer (%p) queued for ep=0x%02x cannot accommodate packet", buf, ep);
+		LOG_ERR("net_buf_tailroom(buf)=%d, data_len=%d, data_rmn=%d", net_buf_tailroom(buf),
+			data_len, data_rmn);
 		return -ENOBUFS;
 	}
 
