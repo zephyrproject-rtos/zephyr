@@ -431,6 +431,29 @@ _xstack_returned_\@:
 	 */
 	s32i a2, a1, ___xtensa_irq_bsa_t_scratch_OFFSET
 
+#ifdef CONFIG_USERSPACE
+	/* When restoring context via xtensa_switch and
+	 * returning from non-nested interrupts, we will be
+	 * using the stashed PS value in the thread struct
+	 * instead of the one in the thread stack. Both of
+	 * these scenarios will have nested value of 0.
+	 * So when nested value is zero, we store the PS
+	 * value into thread struct.
+	 */
+	rsr.ZSR_CPU a0
+	l32i a2, a0, ___cpu_t_nested_OFFSET
+	bnez a2, _excint_skip_ps_save_to_thread
+
+	l32i a2, a0, ___cpu_t_current_OFFSET
+	s32i a3, a2, _thread_offset_to_return_ps
+
+_excint_skip_ps_save_to_thread:
+	/* DEF_EXCINT saved PS into A3 so we need to restore
+	 * A3 here before proceeding.
+	 */
+	l32i a3, a1, ___xtensa_irq_bsa_t_a3_OFFSET
+#endif
+
 	ODD_REG_SAVE a0, a1
 
 #if XCHAL_HAVE_FP && defined(CONFIG_CPU_HAS_FPU) && defined(CONFIG_FPU_SHARING)
@@ -740,22 +763,10 @@ _not_triple_fault:
 .endif
 
 #ifdef CONFIG_USERSPACE
-	/* When restoring context via xtensa_switch and
-	 * returning from non-nested interrupts, we will be
-	 * using the stashed PS value in the thread struct
-	 * instead of the one in the thread stack. Both of
-	 * these scenarios will have nested value of 0.
-	 * So when nested value is zero, we store the PS
-	 * value into thread struct.
+	/* Stash the PS into A3 so EXCINT_HANDLER can read this
+	 * and save it into thread struct if needed.
 	 */
-	rsr.ZSR_CPU a3
-	l32i a2, a3, ___cpu_t_nested_OFFSET
-	bnez a2, _excint_skip_ps_save_to_thread_\LVL
-
-	l32i a2, a3, ___cpu_t_current_OFFSET
-	s32i a0, a2, _thread_offset_to_return_ps
-
-_excint_skip_ps_save_to_thread_\LVL:
+	mov a3, a0
 #endif
 
 	rsr.epc\LVL a0
