@@ -599,7 +599,7 @@
 				compatible = "nxp,irqsteer-master";
 				reg = <0>;
 				interrupt-controller;
-				#interrupt-cells = <1>;
+				#interrupt-cells = <2>;
 				interrupts-extended = <&nvic 224 0>;
 			};
 		};
@@ -617,7 +617,7 @@
 			netc: ethernet {
 				compatible = "nxp,imx-netc";
 				interrupt-parent = <&irqsteer_master0>;
-				interrupts = <13 0 0>;
+				interrupts = <13 0>;
 				#address-cells = <1>;
 				#size-cells = <1>;
 				ranges;
