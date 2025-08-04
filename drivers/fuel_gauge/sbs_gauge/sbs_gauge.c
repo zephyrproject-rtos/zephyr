@@ -22,6 +22,22 @@
 
 LOG_MODULE_REGISTER(sbs_gauge);
 
+#define SBS_GAUGE_DELAY 1000
+
+struct sbs_gauge_battery_cutoff_config {
+	/* Size of the payload array */
+	size_t payload_size;
+	/* Array SMBus word values to write to cut off the battery */
+	uint32_t payload[SBS_GAUGE_CUTOFF_PAYLOAD_MAX_SIZE];
+	/* Register to write cutoff payload */
+	uint8_t reg;
+};
+
+struct sbs_gauge_config {
+	struct i2c_dt_spec i2c;
+	const struct sbs_gauge_battery_cutoff_config *cutoff_cfg;
+};
+
 static int sbs_cmd_reg_read(const struct device *dev, uint8_t reg_addr, uint16_t *val)
 {
 	const struct sbs_gauge_config *cfg;
