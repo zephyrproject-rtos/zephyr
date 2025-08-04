@@ -686,6 +686,21 @@ int pm_device_runtime_release_async(const struct device *dev,
 	return ret;
 }
 
+static int init_pm_device_runtime_reference_list(void)
+{
+	STRUCT_SECTION_FOREACH(pm_device_runtime_reference, ref) {
+		k_sem_init(&ref->lock, 1, 1);
+	}
+
+	return 0;
+}
+
+SYS_INIT(
+	init_pm_device_runtime_reference_list,
+	PRE_KERNEL_1,
+	CONFIG_KERNEL_INIT_PRIORITY_OBJECTS
+);
+
 #ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
 #ifdef CONFIG_PM_DEVICE_RUNTIME_USE_DEDICATED_WQ
 

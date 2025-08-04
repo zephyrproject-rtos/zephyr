@@ -424,6 +424,21 @@ ZTEST(device_runtime_api, test_request_api)
 #endif /* CONFIG_PM_DEVICE_RUNTIME_ASYNC */
 }
 
+static PM_DEVICE_RUNTIME_REFERENCE_DEFINE(test_ref0);
+
+ZTEST(device_runtime_api, test_static_runtime_ref)
+{
+	int ret;
+
+	ret = pm_device_runtime_request(test_dev, &test_ref0);
+	zassert_ok(ret);
+	zassert_equal(pm_device_runtime_usage(test_dev), 1);
+
+	ret = pm_device_runtime_release(test_dev, &test_ref0);
+	zassert_ok(ret);
+	zassert_equal(pm_device_runtime_usage(test_dev), 0);
+}
+
 void *device_runtime_api_setup(void)
 {
 	test_dev = device_get_binding("test_driver");

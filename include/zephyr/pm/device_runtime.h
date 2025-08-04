@@ -179,6 +179,14 @@ struct pm_device_runtime_reference {
 /** @endcond */
 
 /**
+ * @brief Statically define and initialize a PM device runtime reference.
+ *
+ * @param name Name of the PM device runtime reference.
+ */
+#define PM_DEVICE_RUNTIME_REFERENCE_DEFINE(name) \
+	STRUCT_SECTION_ITERABLE(pm_device_runtime_reference, name);
+
+/**
  * @brief Initialize a PM device runtime reference.
  *
  * @note Must be called only once for each PM device runtime reference
@@ -296,6 +304,9 @@ static inline int pm_device_runtime_usage(const struct device *dev)
 
 struct pm_device_runtime_reference {
 };
+
+#define PM_DEVICE_RUNTIME_REFERENCE_DEFINE(name) \
+	struct pm_device_runtime_reference name;
 
 static inline void pm_device_runtime_reference_init(struct pm_device_runtime_reference *ref)
 {
