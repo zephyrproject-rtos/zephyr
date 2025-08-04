@@ -74,5 +74,13 @@
 				status = "disabled";
 			};
 		};
+
+		trng: trng@40444000 {
+			compatible = "ti,mspm0-trng";
+			reg = <0x40444000 0x2000>;
+			interrupts = <1 0>;
+			ti,clk-div = <1>;
+			status = "disabled";
+		};
 	};
 };
