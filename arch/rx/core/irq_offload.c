@@ -17,11 +17,11 @@
 #include <zephyr/irq_offload.h>
 #include <zephyr/sys/util.h>
 
-#define SWINT1_IRQ_LINE 27
-#define SWINT1_PRIO 14
+#define SWINT1_IRQ_LINE        27
+#define SWINT1_PRIO            14
 /* Address of the software interrupt trigger register for SWINT1 */
-#define SWINT_REGISTER_ADDRESS 0x872E0
-#define SWINTR_SWINT *(uint8_t *)(SWINT_REGISTER_ADDRESS)
+#define SWINT_REGISTER_ADDRESS DT_REG_ADDR_BY_NAME(DT_NODELABEL(icu), SWINT1)
+#define SWINTR_SWINT           *(uint8_t *)(SWINT_REGISTER_ADDRESS)
 
 static irq_offload_routine_t _offload_routine;
 static const void *offload_param;
