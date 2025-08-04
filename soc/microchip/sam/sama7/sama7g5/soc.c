@@ -25,6 +25,11 @@
 			   (MMU_REGION_FLAT_ENTRY("xdmac"#n, XDMAC##n##_BASE_ADDRESS, 0x4000,	\
 						  MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),))
 
+#define CONFIGURE_GCLK(idx, div, src)								\
+		PMC_REGS->PMC_PCR = PMC_PCR_CMD(1) | PMC_PCR_GCLKEN(1) | PMC_PCR_EN(1) |	\
+				    PMC_PCR_GCLKDIV((div) - 1) | (src) |			\
+				    PMC_PCR_PID(idx);
+
 static const struct arm_mmu_region mmu_regions[] = {
 	MMU_REGION_FLAT_ENTRY("vectors", CONFIG_KERNEL_VM_BASE, 0x1000,
 			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_X),
@@ -56,6 +61,21 @@ static const struct arm_mmu_region mmu_regions[] = {
 			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
 
 	MMU_REGION_FLAT_ENTRY("pit64b0", PIT64B0_BASE_ADDRESS, 0x4000,
+			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
+
+	MMU_REGION_FLAT_ENTRY("pit64b1", PIT64B1_BASE_ADDRESS, 0x4000,
+			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
+
+	MMU_REGION_FLAT_ENTRY("pit64b2", PIT64B2_BASE_ADDRESS, 0x4000,
+			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
+
+	MMU_REGION_FLAT_ENTRY("pit64b3", PIT64B3_BASE_ADDRESS, 0x4000,
+			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
+
+	MMU_REGION_FLAT_ENTRY("pit64b4", PIT64B4_BASE_ADDRESS, 0x4000,
+			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
+
+	MMU_REGION_FLAT_ENTRY("pit64b5", PIT64B5_BASE_ADDRESS, 0x4000,
 			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
 
 	MMU_REGION_FLAT_ENTRY("pmc", PMC_BASE_ADDRESS, 0x200,
@@ -108,9 +128,14 @@ void relocate_vector_table(void)
 void soc_early_init_hook(void)
 {
 	/* Enable Generic clock for PIT64B0 for system tick */
-	PMC_REGS->PMC_PCR = PMC_PCR_CMD(1) | PMC_PCR_GCLKEN(1) | PMC_PCR_EN(1) |
-			    PMC_PCR_GCLKDIV(40 - 1) | PMC_PCR_GCLKCSS_SYSPLL |
-			    PMC_PCR_PID(ID_PIT64B0);
+	CONFIGURE_GCLK(ID_PIT64B0, 40, PMC_PCR_GCLKCSS_SYSPLL);
+
+	/* Enable Generic clock for PIT64B 1~5, frequency is 66.667MHz */
+	CONFIGURE_GCLK(ID_PIT64B1, 6, PMC_PCR_GCLKCSS_SYSPLL);
+	CONFIGURE_GCLK(ID_PIT64B2, 6, PMC_PCR_GCLKCSS_SYSPLL);
+	CONFIGURE_GCLK(ID_PIT64B3, 6, PMC_PCR_GCLKCSS_SYSPLL);
+	CONFIGURE_GCLK(ID_PIT64B4, 6, PMC_PCR_GCLKCSS_SYSPLL);
+	CONFIGURE_GCLK(ID_PIT64B5, 6, PMC_PCR_GCLKCSS_SYSPLL);
 
 	/* Enable generic clock for MCANx, frequency SYSPLL / (4 + 1) = 80MHz */
 	FOR_EACH_IDX(MCAN_CLK_INIT_DEFN, (), 0, 1, 2, 3, 4, 5)
@@ -124,6 +149,12 @@ void soc_early_init_hook(void)
 	PMC_REGS->PMC_PCR = PMC_PCR_CMD(1) | PMC_PCR_GCLKEN(1) | PMC_PCR_EN(1) |
 			    PMC_PCR_GCLKDIV(2 - 1) | PMC_PCR_GCLKCSS_SYSPLL |
 			    PMC_PCR_PID(ID_SDMMC1);
+
+	/* Enable Generic clock for TC0 channels, frequency is 66.667MHz */
+	CONFIGURE_GCLK(ID_TC0_CHANNEL0, 6, PMC_PCR_GCLKCSS_SYSPLL);
+
+	/* Enable Generic clock for TC1 channels, frequency is 66.667MHz */
+	CONFIGURE_GCLK(ID_TC1_CHANNEL0, 6, PMC_PCR_GCLKCSS_SYSPLL);
 
 	/* config ETHPLL to 625 MHz, 24 * (0x19 + 1 + 0x2aaab / 2^22) = 625 */
 	if (DT_HAS_COMPAT_STATUS_OKAY(atmel_sam_gmac)) {
