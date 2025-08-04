@@ -14,6 +14,7 @@ target_include_directories(testbinary PRIVATE include)
 
 target_sources(testbinary
   PRIVATE
+    src/callbacks.c
     src/unicast_to_broadcast.c
     src/test_common.c
 )
