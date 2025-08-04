@@ -1,0 +1,67 @@
+#
+# Copyright (c) 2025 Ambiq Micro Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: CHIPONE CO5300 Panel
+
+compatible: "chipone,co5300"
+
+include: [mipi-dsi-device.yaml, display-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    type: array
+    required: true
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      The RESETn pin is asserted to disable the sensor causing a hard
+      reset.  The sensor receives this as an active-low signal.
+
+  rotation:
+    type: int
+    enum:
+      - 0
+      - 90
+      - 180
+      - 270
+    description: |
+      Display rotation (CW) in degrees.
+
+  mode-flags:
+    type: int
+    description: |
+      Bitmask of MIPI DSI mode flags.
+
+  hfp:
+    type: int
+    description: |
+      Horizontal front porch.
+
+  hbp:
+    type: int
+    description: |
+      Horizontal back porch.
+
+  hsync:
+    type: int
+    description: |
+      Horizontal sync length
+
+  vfp:
+    type: int
+    description: |
+      Vertical front porch.
+
+  vbp:
+    type: int
+    description: |
+      Vertical back porch.
+
+  vsync:
+    type: int
+    description: |
+      Vertical sync length
