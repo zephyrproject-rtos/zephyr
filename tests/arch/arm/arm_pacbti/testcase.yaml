@@ -12,3 +12,4 @@ tests:
     skip: true
     extra_configs:
       - CONFIG_ARM_PACBTI_STANDARD=y
+      - CONFIG_ARM_PAC_PER_THREAD=y
