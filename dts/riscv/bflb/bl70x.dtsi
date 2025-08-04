@@ -6,6 +6,8 @@
 
 #include <freq.h>
 #include <mem.h>
+#include <dt-bindings/pinctrl/bflb-common-pinctrl.h>
+#include <dt-bindings/pinctrl/bl70x-pinctrl.h>
 
 / {
 	#address-cells = <1>;
@@ -65,6 +67,27 @@
 			compatible = "zephyr,memory-region", "sifive,dtim0";
 			reg = <0x22014000 DT_SIZE_K(12)>;
 			zephyr,memory-region = "ITCM";
+		};
+
+		pinctrl: pin-controller@40000000 {
+			compatible = "bflb,pinctrl";
+			reg = <0x40000000 0x1000>;
+			ranges = <0x40000000 0x40000000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			gpio0: gpio@40000000 {
+				compatible = "bflb,gpio";
+				reg = <0x40000000 0x1000>;
+				#gpio-cells = <2>;
+				#bflb,pin-cells = <2>;
+				status = "disabled";
+
+				gpio-controller;
+				interrupts = <60 0>;
+				interrupt-parent = <&clic>;
+			};
 		};
 
 		efuse: efuse@40007000 {
