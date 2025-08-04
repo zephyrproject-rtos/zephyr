@@ -700,7 +700,7 @@ Bouffalolab Platforms:
     - dts/bindings/*/bflb,*
     - soc/bflb/
   labels:
-    - "platform: bouffalolab"
+    - "platform: Bouffalo Lab"
 
 Broadcom Platforms:
   status: odd fixes
