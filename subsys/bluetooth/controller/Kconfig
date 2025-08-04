@@ -125,6 +125,9 @@ config BT_CTLR_LE_PATH_LOSS_MONITORING_SUPPORT
 config BT_CTLR_SUBRATING_SUPPORT
 	bool
 
+config BT_CTLR_FRAME_SPACE_UPDATE_SUPPORT
+	bool
+
 config BT_CTLR_CHANNEL_SOUNDING_SUPPORT
 	bool
 
@@ -1166,6 +1169,14 @@ config BT_CTLR_SUBRATING
 	default y if BT_SUBRATING
 	help
 	  Enable support for Bluetooth v5.3 LE Connection Subrating
+	  in the Controller.
+
+config BT_CTLR_FRAME_SPACE_UPDATE
+	bool "Frame Space Update"
+	depends on BT_CTLR_FRAME_SPACE_UPDATE_SUPPORT
+	default y if BT_FRAME_SPACE_UPDATE
+	help
+	  Enable support for Bluetooth 6.0 Frame Space Update
 	  in the Controller.
 
 config BT_CTLR_CHANNEL_SOUNDING
