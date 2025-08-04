@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Joel Guittet
+# Copyright (c) 2025 marrowbuster <info@marrowbuster.com>
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_CLOCK_CONTROL=y
