@@ -56,5 +56,4 @@
 	pinctrl-names = "default", "sleep";
 	steps = <127>;
 	led-pre = <500>;
-	zephyr,pm-device-runtime-auto;
 };
