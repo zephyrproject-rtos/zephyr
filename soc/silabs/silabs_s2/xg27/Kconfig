@@ -11,6 +11,7 @@ config SOC_SILABS_XG27
 	select CPU_HAS_FPU
 	select HAS_SWO
 	select SOC_GECKO_CMU
+	select SOC_GECKO_GPIO
 	select SOC_GECKO_CORE
 	select SOC_GECKO_DEV_INIT
 	select SOC_GECKO_SE
