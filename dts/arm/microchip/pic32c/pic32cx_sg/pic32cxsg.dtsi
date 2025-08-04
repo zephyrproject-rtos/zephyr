@@ -118,7 +118,7 @@
 		};
 
 		sercom0: sercom@40003000 {
-			compatible = "atmel,sam0-sercom";
+			compatible = "microchip,pic32cxsg-sercom";
 			reg = <0x40003000 0x40>;
 			interrupts = <46 0>, <47 0>, <48 0>, <49 0>;
 			clocks = <&gclk 7>, <&mclk 0x14 12>;
@@ -129,7 +129,7 @@
 		};
 
 		sercom1: sercom@40003400 {
-			compatible = "atmel,sam0-sercom";
+			compatible = "microchip,pic32cxsg-sercom";
 			reg = <0x40003400 0x40>;
 			interrupts = <50 0>, <51 0>, <52 0>, <53 0>;
 			clocks = <&gclk 8>, <&mclk 0x14 13>;
@@ -251,7 +251,7 @@
 		};
 
 		sercom2: sercom@41012000 {
-			compatible = "atmel,sam0-sercom";
+			compatible = "microchip,pic32cxsg-sercom";
 			reg = <0x41012000 0x40>;
 			interrupts = <54 0>, <55 0>, <56 0>, <57 0>;
 			clocks = <&gclk 23>, <&mclk 0x18 9>;
@@ -262,7 +262,7 @@
 		};
 
 		sercom3: sercom@41014000 {
-			compatible = "atmel,sam0-sercom";
+			compatible = "microchip,pic32cxsg-sercom";
 			reg = <0x41014000 0x40>;
 			interrupts = <58 0>, <59 0>, <60 0>, <61 0>;
 			clocks = <&gclk 24>, <&mclk 0x18 10>;
@@ -401,7 +401,7 @@
 		};
 
 		sercom4: sercom@43000000 {
-			compatible = "atmel,sam0-sercom";
+			compatible = "microchip,pic32cxsg-sercom";
 			reg = <0x43000000 0x40>;
 			interrupts = <62 0>, <63 0>, <64 0>, <65 0>;
 			clocks = <&gclk 34>, <&mclk 0x20 0>;
@@ -412,7 +412,7 @@
 		};
 
 		sercom5: sercom@43000400 {
-			compatible = "atmel,sam0-sercom";
+			compatible = "microchip,pic32cxsg-sercom";
 			reg = <0x43000400 0x40>;
 			interrupts = <66 0>, <67 0>, <68 0>, <69 0>;
 			clocks = <&gclk 35>, <&mclk 0x20 1>;
@@ -423,7 +423,7 @@
 		};
 
 		sercom6: sercom@43000800 {
-			compatible = "atmel,sam0-sercom";
+			compatible = "microchip,pic32cxsg-sercom";
 			reg = <0x43000800 0x40>;
 			interrupts = <70 0>, <71 0>, <72 0>, <73 0>;
 			clocks = <&gclk 36>, <&mclk 0x20 2>;
@@ -434,7 +434,7 @@
 		};
 
 		sercom7: sercom@43000c00 {
-			compatible = "atmel,sam0-sercom";
+			compatible = "microchip,pic32cxsg-sercom";
 			reg = <0x43000C00 0x40>;
 			interrupts = <74 0>, <75 0>, <76 0>, <77 0>;
 			clocks = <&gclk 37>, <&mclk 0x20 3>;
