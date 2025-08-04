@@ -181,6 +181,44 @@
 			reg = <0x41008180 0x80>;
 		};
 
+		pinctrl: pinctrl@41008000 {
+			ranges = <0x41008000 0x41008000 0x200>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			porta: gpio@41008000 {
+				compatible = "atmel,sam0-gpio";
+				reg = <0x41008000 0x80>;
+				#atmel,pin-cells = <2>;
+				#gpio-cells = <2>;
+				gpio-controller;
+			};
+
+			portb: gpio@41008080 {
+				compatible = "atmel,sam0-gpio";
+				reg = <0x41008080 0x80>;
+				#atmel,pin-cells = <2>;
+				#gpio-cells = <2>;
+				gpio-controller;
+			};
+
+			portc: gpio@41008100 {
+				compatible = "atmel,sam0-gpio";
+				reg = <0x41008100 0x80>;
+				#atmel,pin-cells = <2>;
+				#gpio-cells = <2>;
+				gpio-controller;
+			};
+
+			portd: gpio@41008180 {
+				compatible = "atmel,sam0-gpio";
+				reg = <0x41008180 0x80>;
+				#atmel,pin-cells = <2>;
+				#gpio-cells = <2>;
+				gpio-controller;
+			};
+		};
+
 		dmac: dmac@4100a000 {
 			compatible = "atmel,sam0-dmac";
 			reg = <0x4100A000 0x50>;
