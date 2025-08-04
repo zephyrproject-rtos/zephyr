@@ -1,0 +1,97 @@
+/*
+ * Copyright (c) 2024-2025 MASSDRIVER EI (massdriver.space)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+#include <mem.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		timebase-frequency = <DT_FREQ_M(1)>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "sifive,e24", "riscv";
+			reg = <0>;
+			riscv,isa = "rv32imafcb";
+			hardware-exec-breakpoint-count = <4>;
+			status = "okay";
+
+			ictrl: interrupt-controller {
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+			};
+		};
+	};
+
+	soc {
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		clic: clic@2000000 {
+			compatible = "sifive,clic-draft";
+			reg = <0x2000000 0x10000>;
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+
+			interrupt-controller;
+			interrupts-extended = <&ictrl 3 &ictrl 7 &ictrl 11 &ictrl 12>;
+			interrupt-names = "msip", /* Machine Software Interrupt */
+					  "mtip", /* Machine Timer interrupt    */
+					  "meip", /* Machine External Interrupt */
+					  "csip"; /* CLIC Software Interrupt    */
+		};
+
+		mtimer: timer@200bff8 {
+			compatible = "riscv,machine-timer";
+			reg = <0x200bff8 0x8 0x2004000 0x8>;
+			reg-names = "mtime", "mtimecmp";
+
+			interrupts-extended = <&ictrl 7>;
+		};
+
+		itcm: itcm@22014000 {
+			compatible = "zephyr,memory-region", "sifive,dtim0";
+			reg = <0x22014000 DT_SIZE_K(12)>;
+			zephyr,memory-region = "ITCM";
+		};
+
+		flashctrl: flash-controller@4000b000 {
+			compatible = "bflb,flash-controller";
+			reg = <0x4000b000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+
+			interrupts = <39 0>;
+			interrupt-parent = <&clic>;
+		};
+
+		retram: memory@40010000 {
+			compatible = "mmio-sram";
+			reg = <0x40010000 DT_SIZE_K(4)>;
+		};
+
+		dtcm: dtcm@42017000 {
+			compatible = "zephyr,memory-region", "sifive,dtim0";
+			reg = <0x42017000 DT_SIZE_K(4)>;
+			zephyr,memory-region = "DTCM";
+		};
+
+		sram0: memory@42018000 {
+			compatible = "mmio-sram";
+			reg = <0x42018000 DT_SIZE_K(96)>;
+		};
+	};
+};
