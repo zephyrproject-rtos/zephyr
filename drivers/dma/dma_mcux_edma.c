@@ -1041,11 +1041,11 @@ static int dma_mcux_edma_init(const struct device *dev)
 
 #define IRQ_CONFIG(n, idx, fn)							\
 	{									\
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, idx, irq),			\
+		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(n, idx),			\
 			    DT_INST_IRQ_BY_IDX(n, idx, priority),		\
 			    fn,							\
 			    DEVICE_DT_INST_GET(n), 0);				\
-			    irq_enable(DT_INST_IRQ_BY_IDX(n, idx, irq));	\
+			    irq_enable(DT_INST_IRQN_BY_IDX(n, idx));	\
 	}
 
 #define EDMA_CHANNELS_MASK(n) static uint32_t edma_channel_mask_##n[] =  \
