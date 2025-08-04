@@ -640,7 +640,8 @@ uint32_t lll_preempt_calc(struct ull_hdr *ull, uint8_t ticker_id,
 		return 0;
 	}
 
-	diff += HAL_TICKER_CNTR_CMP_OFFSET_MIN;
+	diff += HAL_TICKER_CNTR_CMP_OFFSET_MIN +
+		HAL_TICKER_US_TO_TICKS_CEIL(HAL_RADIO_ISR_LATENCY_MAX_US);
 	if (diff > HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US)) {
 		/* TODO: for Low Latency Feature with Advanced XTAL feature.
 		 * 1. Release retained HF clock.
