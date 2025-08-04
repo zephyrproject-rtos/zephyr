@@ -67,7 +67,7 @@ static int sbs_cmd_reg_write(const struct device *dev, uint8_t reg_addr, uint16_
 }
 
 static int sbs_cmd_buffer_read(const struct device *dev, uint8_t reg_addr, char *buffer,
-			      const uint8_t buffer_size)
+			       const uint8_t buffer_size)
 {
 	const struct sbs_gauge_config *cfg;
 	int status;
@@ -249,9 +249,8 @@ static int sbs_gauge_set_prop(const struct device *dev, fuel_gauge_prop_t prop,
 	return rc;
 }
 
-static int sbs_gauge_get_buffer_prop(const struct device *dev,
-				    fuel_gauge_prop_t prop_type, void *dst,
-				    size_t dst_len)
+static int sbs_gauge_get_buffer_prop(const struct device *dev, fuel_gauge_prop_t prop_type,
+				     void *dst, size_t dst_len)
 {
 	int rc = 0;
 
@@ -259,7 +258,7 @@ static int sbs_gauge_get_buffer_prop(const struct device *dev,
 	case FUEL_GAUGE_MANUFACTURER_NAME:
 		if (dst_len == sizeof(struct sbs_gauge_manufacturer_name)) {
 			rc = sbs_cmd_buffer_read(dev, SBS_GAUGE_CMD_MANUFACTURER_NAME, (char *)dst,
-						dst_len);
+						 dst_len);
 		} else {
 			rc = -EINVAL;
 		}
@@ -267,7 +266,7 @@ static int sbs_gauge_get_buffer_prop(const struct device *dev,
 	case FUEL_GAUGE_DEVICE_NAME:
 		if (dst_len == sizeof(struct sbs_gauge_device_name)) {
 			rc = sbs_cmd_buffer_read(dev, SBS_GAUGE_CMD_DEVICE_NAME, (char *)dst,
-						dst_len);
+						 dst_len);
 		} else {
 			rc = -EINVAL;
 		}
@@ -275,7 +274,7 @@ static int sbs_gauge_get_buffer_prop(const struct device *dev,
 	case FUEL_GAUGE_DEVICE_CHEMISTRY:
 		if (dst_len == sizeof(struct sbs_gauge_device_chemistry)) {
 			rc = sbs_cmd_buffer_read(dev, SBS_GAUGE_CMD_DEVICE_CHEMISTRY, (char *)dst,
-						dst_len);
+						 dst_len);
 		} else {
 			rc = -EINVAL;
 		}
