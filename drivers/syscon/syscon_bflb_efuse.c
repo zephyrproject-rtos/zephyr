@@ -12,10 +12,10 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(efuse_bflb, CONFIG_SYSCON_LOG_LEVEL);
 
-#include <bouffalolab/bl60x/bflb_soc.h>
-#include <bouffalolab/bl60x/hbn_reg.h>
-#include <bouffalolab/bl60x/ef_ctrl_reg.h>
-#include <bouffalolab/bl60x/extra_defines.h>
+#include <bflb_soc.h>
+#include <hbn_reg.h>
+#include <ef_ctrl_reg.h>
+#include <extra_defines.h>
 #include <zephyr/drivers/clock_control/clock_control_bflb_common.h>
 
 struct efuse_bflb_data {
