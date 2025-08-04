@@ -8,6 +8,7 @@
 #include <zephyr/drivers/display.h>
 #include <lvgl.h>
 #include <lvgl_mem.h>
+#include <lvgl_zephyr.h>
 #include <lv_demos.h>
 #include <stdio.h>
 
@@ -28,6 +29,8 @@ int main(void)
 		LOG_ERR("Device not ready, aborting test");
 		return 0;
 	}
+
+	lvgl_lock();
 
 #if defined(CONFIG_LV_Z_DEMO_MUSIC)
 	lv_demo_music();
@@ -56,6 +59,7 @@ int main(void)
 #ifndef CONFIG_LV_Z_RUN_LVGL_ON_WORKQUEUE
 	lv_timer_handler();
 #endif
+	lvgl_unlock();
 
 	display_blanking_off(display_dev);
 #ifdef CONFIG_LV_Z_MEM_POOL_SYS_HEAP
@@ -65,7 +69,12 @@ int main(void)
 #endif
 	while (1) {
 #ifndef CONFIG_LV_Z_RUN_LVGL_ON_WORKQUEUE
-		uint32_t sleep_ms = lv_timer_handler();
+		uint32_t sleep_ms;
+
+		lvgl_lock();
+		sleep_ms = lv_timer_handler();
+		lvgl_unlock();
+
 		k_msleep(MIN(sleep_ms, INT32_MAX));
 #else
 		/* LVGL managed by dedicated workqueue, just put an application side delay */
@@ -74,7 +83,9 @@ int main(void)
 #ifdef CONFIG_LV_Z_DEMO_RENDER_SCENE_DYNAMIC
 		if (sys_timepoint_expired(next_scene_switch)) {
 			cur_scene = (cur_scene + 1) % LV_DEMO_RENDER_SCENE_NUM;
+			lvgl_lock();
 			lv_demo_render(cur_scene, 255);
+			lvgl_unlock();
 			next_scene_switch = sys_timepoint_calc(
 				K_SECONDS(CONFIG_LV_Z_DEMO_RENDER_DYNAMIC_SCENE_TIMEOUT));
 		}
