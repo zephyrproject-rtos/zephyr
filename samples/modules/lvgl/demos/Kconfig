@@ -48,6 +48,8 @@ config LV_Z_DEMO_RENDER
 
 endchoice
 
+if LV_Z_DEMO_RENDER
+
 config LV_Z_DEMO_RENDER_SCENE_DYNAMIC
 	bool "Switch scenes dynamically"
 	help
@@ -67,5 +69,7 @@ config LV_Z_DEMO_RENDER_DYNAMIC_SCENE_TIMEOUT
 	default 3
 	help
 	  Seconds each rendered scenar is shown
+
+endif
 
 source "Kconfig.zephyr"
