@@ -956,7 +956,10 @@ static int start_next_packet(const struct device *dev, k_timeout_t timeout)
 	write_rx_sample_dly(dev, dev_data->rx_sample_dly);
 	if (dev_data->spi_ctrlr0 & (SPI_CTRLR0_SPI_DDR_EN_BIT |
 				    SPI_CTRLR0_INST_DDR_EN_BIT)) {
-		write_txd_drive_edge(dev, dev_data->baudr / 4);
+		int txd = (CONFIG_MSPI_DW_TXD_MUL * dev_data->baudr) /
+			CONFIG_MSPI_DW_TXD_DIV;
+
+		write_txd_drive_edge(dev, txd);
 	} else {
 		write_txd_drive_edge(dev, 0);
 	}
