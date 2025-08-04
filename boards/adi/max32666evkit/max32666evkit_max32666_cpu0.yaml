@@ -19,5 +19,5 @@ supported:
   - pwm
   - w1
   - flash
-ram: 560
+ram: 128
 flash: 1024

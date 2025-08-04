@@ -18,5 +18,5 @@ supported:
   - rtc_counter
   - pwm
   - flash
-ram: 160
+ram: 64
 flash: 384
