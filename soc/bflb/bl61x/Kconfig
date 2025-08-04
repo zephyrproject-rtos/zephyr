@@ -1,0 +1,27 @@
+# Copyright (c) 2024-2025 MASSDRIVER EI (massdriver.space)
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_BL61X
+	select CLOCK_CONTROL
+	select CODE_DATA_RELOCATION
+	select CPU_HAS_FPU
+	select FLOAT_HARD
+	select FPU
+	select GEN_IRQ_VECTOR_TABLE
+	select INCLUDE_RESET_VECTOR
+	select RISCV
+	select RISCV_HAS_CLIC
+	select RISCV_MACHINE_TIMER
+	select RISCV_PRIVILEGED
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_F
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+	select RISCV_VECTORED_MODE
+	select SOC_EARLY_INIT_HOOK
+	select SYSCON
+	select XIP
