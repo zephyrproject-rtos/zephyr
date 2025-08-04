@@ -32,7 +32,7 @@ extern "C" {
  */
 int lvgl_init(void);
 
-#ifdef CONFIG_LV_Z_RUN_LVGL_ON_WORKQUEUE
+#if defined(CONFIG_LV_Z_RUN_LVGL_ON_WORKQUEUE) || defined(__DOXYGEN__)
 /**
  * @brief Gets the instance of LVGL's workqueue
  *
