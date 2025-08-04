@@ -1411,6 +1411,7 @@ static void copy_priority_vector(struct gptp_priority_vector *vector,
 	memcpy(&vector->src_port_id, &hdr->port_id,
 	       sizeof(struct gptp_port_identity));
 
+	vector->steps_removed = announce->steps_removed;
 	vector->port_number = htons(port);
 }
 
