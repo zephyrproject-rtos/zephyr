@@ -1,0 +1,63 @@
+/*
+ * Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <bflb/bl70x.dtsi>
+#include "dt_xt_zb1_devkit-pinctrl.dtsi"
+
+/ {
+	model = "Zigbee 3.0 and BLE 5.0 Coexistence Module Development Kit";
+	compatible = "bflb,bl702";
+
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,itcm = &itcm;
+		zephyr,dtcm = &dtcm;
+		zephyr,sram = &sram0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+};
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(144)>;
+};
+
+&flashctrl {
+	flash0: flash@23000000 {
+		compatible = "soc-nv-flash", "mxicy,kh25v80";
+		reg = <0x23000000 (0x1000000 - 0x2000)>;
+		write-block-size = <256>;
+		erase-block-size = <DT_SIZE_K(4)>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			slot0_partition: partition@0 {
+				label = "image-0";
+				reg = <0x00000000 0x80000>;
+				read-only;
+			};
+
+			storage_partition: partition@80000 {
+				label = "storage";
+				reg = <0x00080000 (0x80000 - 0x2000)>;
+			};
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
