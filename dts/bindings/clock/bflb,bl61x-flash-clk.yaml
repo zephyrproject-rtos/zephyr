@@ -1,0 +1,48 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  The BL61x Flash Clock
+  Source -> divider -> CLK
+  Only has settings for Bank 1 (boot flash) at the moment.
+
+compatible: "bflb,bl61x-flash-clk"
+
+include: [base.yaml, clock-controller.yaml]
+
+properties:
+  clocks:
+    type: phandle-array
+    required: true
+    description: Source clocks.
+      Using WIFIPLL results in WIFIPLL x 0.375 (120M).
+      When using RC32M main clock, use BCLK.
+
+  divider:
+    type: int
+    default: 1
+    description: Divide source clock by this 3-bits value (1 to 8). Typically 1.
+
+  read-delay:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+    description: Flash Read delay. This is a flash controller setting.
+      This may be necessary to achieve flash clock higher than XCLK.
+
+  clock-invert:
+    type: boolean
+    description: Invert Clock Signal. This is a flash controller setting.
+      This may be necessary to achieve flash clock higher than XCLK.
+
+  rx-clock-invert:
+    type: boolean
+    description: Invert RX Clock Signal. This is a flash controller setting.
+      This may be necessary to achieve flash clock higher than XCLK.
+
+  "#clock-cells":
+    const: 0
