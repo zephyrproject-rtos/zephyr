@@ -146,8 +146,8 @@ static int api_set_alarm(const struct device *dev, uint8_t chan,
 		ticks = 1;
 	}
 
-	if (alarm_cfg->ticks > api_get_top_value(dev)) {
-		return -EINVAL;
+	if (alarm_cfg->ticks >= api_get_top_value(dev)) {
+		return -ETIME;
 	}
 
 	if (data->alarm_callback != NULL) {

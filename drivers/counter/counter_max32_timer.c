@@ -157,8 +157,8 @@ static int api_set_alarm(const struct device *dev, uint8_t chan,
 	const struct max32_tmr_config *cfg = dev->config;
 	struct max32_tmr_ch_data *chdata = &cfg->ch_data[chan];
 
-	if (alarm_cfg->ticks > api_get_top_value(dev)) {
-		return -EINVAL;
+	if (alarm_cfg->ticks >= api_get_top_value(dev)) {
+		return -ETIME;
 	}
 
 	if (chdata->callback) {
