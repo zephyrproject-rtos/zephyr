@@ -200,9 +200,8 @@ static int bq27z746_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 	return rc;
 }
 
-static int bq27z746_get_buffer_prop(const struct device *dev,
-				    fuel_gauge_prop_t property_type, void *dst,
-				    size_t dst_len)
+static int bq27z746_get_buffer_prop(const struct device *dev, fuel_gauge_prop_t property_type,
+				    void *dst, size_t dst_len)
 {
 	int rc = 0;
 
