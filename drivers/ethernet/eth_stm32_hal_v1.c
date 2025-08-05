@@ -128,6 +128,7 @@ struct net_pkt *eth_rx_v1(const struct device *dev)
 	size_t total_len = 0;
 	__IO ETH_DMADescTypeDef *dma_rx_desc;
 	uint8_t *dma_buffer;
+
 	HAL_StatusTypeDef hal_ret = HAL_OK;
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 	struct net_ptp_time timestamp;
@@ -245,6 +246,7 @@ void set_mac_config_v1(const struct device *dev, struct phy_link_state *state)
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
 	HAL_StatusTypeDef hal_ret = HAL_OK;
+
 	heth->Init.DuplexMode =
 		PHY_LINK_IS_FULL_DUPLEX(state->speed) ? ETH_MODE_FULLDUPLEX : ETH_MODE_HALFDUPLEX;
 

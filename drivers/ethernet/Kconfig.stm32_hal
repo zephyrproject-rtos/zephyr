@@ -85,6 +85,7 @@ config ETH_STM32_HW_CHECKSUM
 config ETH_STM32_HAL_TX_ASYNC
 	bool "Use TX async mode"
 	depends on ETH_STM32_HAL_API_V2
+	default y
 	help
 	  Enable TX transmission asynchronous mode to enhance throughput
 	  performances.
