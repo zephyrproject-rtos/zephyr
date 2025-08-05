@@ -6,9 +6,6 @@ if SOC_NRF9280_CPUPPR
 config NUM_IRQS
 	default 496
 
-config SYS_CLOCK_TICKS_PER_SEC
-	default 1000
-
 config RV_BOOT_HART
 	default 13 if SOC_NRF9230_ENGB
 
