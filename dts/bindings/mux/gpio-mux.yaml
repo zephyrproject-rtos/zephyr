@@ -1,0 +1,23 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+# External multiplexor over GPIO control
+
+compatible: "gpio-mux"
+
+include: mux-controller.yaml
+
+description: GPIO-based control of external mux select
+
+properties:
+  mux-gpios:
+    type: phandle-array
+    required: true
+    description: List of GPIOs used to control the multiplexer, least significant bit first
+  mux-supply:
+    type: phandle
+    description: Regulator to power on the multiplexor
+  "#mux-control-cells":
+    const: 0
+  "#mux-state-cells":
+    const: 1
