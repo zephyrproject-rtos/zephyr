@@ -28,6 +28,8 @@ LOG_MODULE_REGISTER(pca953x, CONFIG_GPIO_LOG_LEVEL);
 #define PCA953X_OUTPUT_PORT		0x01
 #define PCA953X_CONFIGURATION		0x03
 #define REG_INPUT_LATCH_PORT0		0x42
+#define REG_PUD_ENABLE_PORT0		0x43
+#define REG_PUD_SELECTION_PORT0		0x44
 #define REG_INT_MASK_PORT0		0x45
 
 /* Number of pins supported by the device */
@@ -41,6 +43,8 @@ struct pca953x_pin_state {
 	uint8_t dir;
 	uint8_t input;
 	uint8_t output;
+	uint8_t pud_enable;
+	uint8_t pud_selection;
 };
 
 struct pca953x_irq_state {
@@ -69,6 +73,7 @@ struct pca953x_config {
 	struct i2c_dt_spec i2c;
 	const struct gpio_dt_spec gpio_int;
 	bool interrupt_enabled;
+	bool has_pud;
 	int interrupt_mask;
 	int input_latch;
 };
@@ -187,6 +192,7 @@ static int gpio_pca953x_config(const struct device *dev, gpio_pin_t pin,
 	struct pca953x_drv_data *drv_data = dev->data;
 	struct pca953x_pin_state *pins = &drv_data->pin_state;
 	int rc = 0;
+	bool pud_first = false;
 	bool data_first = false;
 
 	/* Can't do I2C bus operations from an ISR */
@@ -199,9 +205,10 @@ static int gpio_pca953x_config(const struct device *dev, gpio_pin_t pin,
 		return -ENOTSUP;
 	}
 
-	/* The PCA953X has no internal pull up support */
 	if (((flags & GPIO_PULL_UP) != 0) || ((flags & GPIO_PULL_DOWN) != 0)) {
-		return -ENOTSUP;
+		if (!cfg->has_pud) {
+			return -ENOTSUP;
+		}
 	}
 
 	/* Simultaneous input & output mode not supported */
@@ -228,8 +235,32 @@ static int gpio_pca953x_config(const struct device *dev, gpio_pin_t pin,
 		goto out;
 	}
 
+	if ((flags & GPIO_PULL_UP) != 0) {
+		pins->pud_enable |= BIT(pin);
+		pins->pud_selection |= BIT(pin);
+		pud_first = true;
+	} else if ((flags & GPIO_PULL_DOWN) != 0) {
+		pins->pud_enable |= BIT(pin);
+		pins->pud_selection &= ~BIT(pin);
+		pud_first = true;
+	} else {
+		pins->pud_enable &= ~BIT(pin);
+	}
+
+	if (cfg->has_pud) {
+		if ((rc == 0) && pud_first) {
+			rc = i2c_reg_write_byte_dt(&cfg->i2c, REG_PUD_SELECTION_PORT0,
+						   pins->pud_selection);
+		}
+
+		if (rc == 0) {
+			rc = i2c_reg_write_byte_dt(&cfg->i2c, REG_PUD_ENABLE_PORT0,
+						   pins->pud_enable);
+		}
+	}
+
 	/* Set output values */
-	if (data_first) {
+	if ((rc == 0) && data_first) {
 		rc = i2c_reg_write_byte_dt(&cfg->i2c, PCA953X_OUTPUT_PORT, pins->output);
 	}
 
@@ -485,6 +516,7 @@ static DEVICE_API(gpio, api_table) = {
 			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),	\
 		},								\
 		.interrupt_enabled = DT_INST_NODE_HAS_PROP(n, nint_gpios),	\
+		.has_pud = DT_INST_PROP(n, has_pud),				\
 		.gpio_int = GPIO_DT_SPEC_INST_GET_OR(n, nint_gpios, {0}),	\
 		.interrupt_mask = DT_INST_PROP_OR(n, interrupt_mask, -1),	\
 		.input_latch = DT_INST_PROP_OR(n, input_latch, -1),		\
@@ -494,6 +526,8 @@ static DEVICE_API(gpio, api_table) = {
 		.lock = Z_SEM_INITIALIZER(pca953x_drvdata_##n.lock, 1, 1),	\
 		.pin_state.dir = ALL_PINS,					\
 		.pin_state.output = ALL_PINS,					\
+		.pin_state.pud_enable = 0,					\
+		.pin_state.pud_selection = ALL_PINS,				\
 	};									\
 	DEVICE_DT_INST_DEFINE(n,						\
 		gpio_pca953x_init,						\
