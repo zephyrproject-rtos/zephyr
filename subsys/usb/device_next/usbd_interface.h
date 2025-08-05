@@ -50,4 +50,19 @@ int usbd_interface_set(struct usbd_context *uds_ctx,
 		       const uint8_t iface,
 		       const uint8_t alternate);
 
+/**
+ * @brief Calculate the maximum memory usage among configurations
+ *
+ * @param[in] uds_ctx   Pointer to USB device support context
+ * @param[in] rx_size   Required RX FIFO size
+ * @param[in] tx_size   Required TX FIFO size
+ * @param[in] rx_m_tpl  Maximum possible RX TPL
+ *
+ * @return 0 on success, other values on fail.
+ */
+int usbd_interfaces_memory_usage(struct usbd_context *const uds_ctx,
+				 size_t *const rx_size,
+				 size_t *const tx_size,
+				 uint16_t *const rx_m_tpl);
+
 #endif /* ZEPHYR_INCLUDE_USBD_INTERFACE_H */

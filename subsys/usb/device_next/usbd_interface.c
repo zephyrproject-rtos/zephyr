@@ -9,6 +9,7 @@
 
 #include "usbd_device.h"
 #include "usbd_class.h"
+#include "usbd_config.h"
 #include "usbd_class_api.h"
 #include "usbd_endpoint.h"
 #include "usbd_ch9.h"
@@ -264,4 +265,139 @@ int usbd_interface_set(struct usbd_context *const uds_ctx,
 	usbd_set_alt_value(uds_ctx, iface, alt);
 
 	return 0;
+}
+
+static int memory_usage_per_class(struct usbd_context *const uds_ctx,
+				  struct usbd_class_node *const c_nd,
+				  const enum usbd_speed speed,
+				  size_t *const rx_size,
+				  size_t *const tx_size,
+				  uint16_t *const rx_m_tpl)
+{
+	struct usb_if_descriptor *ifd;
+	struct usb_ep_descriptor *ed;
+	struct usb_desc_header **dhp;
+	bool found_iface = false;
+	uint16_t m_mps;
+	uint16_t m_tpl;
+
+	dhp = usbd_class_get_desc(c_nd->c_data, speed);
+	if (dhp == NULL) {
+		return -EINVAL;
+	}
+
+	while (*dhp != NULL && (*dhp)->bLength != 0) {
+		if ((*dhp)->bDescriptorType == USB_DESC_INTERFACE) {
+			ifd = (struct usb_if_descriptor *)(*dhp);
+
+			if (ifd->bAlternateSetting == 0) {
+				found_iface = true;
+			} else {
+				found_iface = false;
+			}
+		}
+
+		if ((*dhp)->bDescriptorType == USB_DESC_ENDPOINT && found_iface) {
+			ed = (struct usb_ep_descriptor *)(*dhp);
+
+			m_mps = interface_find_mps(uds_ctx, dhp,
+						   ifd->bInterfaceNumber,
+						   ed->bEndpointAddress);
+			m_tpl = USB_MPS_TO_TPL(m_mps);
+			LOG_DBG("Interface %u ep 0x%02x MPS %u TPL %u",
+				ifd->bInterfaceNumber, ed->bEndpointAddress, m_mps, m_tpl);
+
+			if (USB_EP_DIR_IS_IN(ed->bEndpointAddress)) {
+				*tx_size += m_tpl;
+			} else {
+				*rx_size += m_tpl;
+			}
+
+			if (USB_EP_DIR_IS_OUT(ed->bEndpointAddress)) {
+				*rx_m_tpl = MAX(m_tpl, *rx_m_tpl);
+			}
+		}
+
+		dhp++;
+	}
+
+	return 0;
+}
+
+static int memory_usage_per_speed(struct usbd_context *const uds_ctx,
+				  const enum usbd_speed speed,
+				  size_t *const rx_size,
+				  size_t *const tx_size,
+				  uint16_t *const rx_m_tpl)
+{
+	struct usbd_config_node *cfg_nd;
+	struct usbd_class_node *c_nd;
+	sys_slist_t *cfg_list;
+	int ret;
+
+	switch (speed) {
+	case USBD_SPEED_FS:
+		cfg_list = &uds_ctx->fs_configs;
+		break;
+	case USBD_SPEED_HS:
+		cfg_list = &uds_ctx->hs_configs;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(cfg_list, cfg_nd, node) {
+		const uint8_t cfg_num = usbd_config_get_value(cfg_nd);
+		size_t tmp_rx_size = 0;
+		size_t tmp_tx_size = 0;
+		uint16_t tmp_rx_m_tpl = 0;
+
+		/*
+		 * Calculate the maximum memory usage of all interfaces within
+		 * a configuration.
+		 */
+		SYS_SLIST_FOR_EACH_CONTAINER(&cfg_nd->class_list, c_nd, node) {
+			ret = memory_usage_per_class(uds_ctx, c_nd, speed,
+						     &tmp_rx_size,
+						     &tmp_tx_size,
+						     &tmp_rx_m_tpl);
+			if (ret) {
+				return ret;
+			}
+		}
+
+		/*
+		 * Only update if the memory usage of the current configuration
+		 * is larger.
+		 */
+		*rx_size = MAX(*rx_size, tmp_rx_size);
+		*tx_size = MAX(*tx_size, tmp_tx_size);
+		*rx_m_tpl = MAX(*rx_m_tpl, tmp_rx_m_tpl);
+		LOG_DBG("Configuration %u FIFO size RX %u TX %u MAX RX TPL %u",
+			cfg_num, tmp_rx_size, tmp_tx_size, tmp_rx_m_tpl);
+
+	}
+
+	return 0;
+}
+
+int usbd_interfaces_memory_usage(struct usbd_context *const uds_ctx,
+				 size_t *const rx_size,
+				 size_t *const tx_size,
+				 uint16_t *const rx_m_tpl)
+{
+	int ret;
+
+	ret = memory_usage_per_speed(uds_ctx, USBD_SPEED_FS,
+				     rx_size, tx_size, rx_m_tpl);
+	if (ret) {
+		return ret;
+	}
+
+	if (USBD_SUPPORTS_HIGH_SPEED) {
+		ret = memory_usage_per_speed(uds_ctx, USBD_SPEED_HS,
+					     rx_size, tx_size, rx_m_tpl);
+	}
+
+	return ret;
 }

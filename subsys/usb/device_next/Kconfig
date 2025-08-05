@@ -105,6 +105,13 @@ config USBD_HWINFO_DEVID_LENGTH
 	  descriptor. This option can be used to limit the length requested
 	  from HWINFO to a meaningful number of digits.
 
+config USBD_UDC_MEMORY_USAGE
+	bool "Calculate the maximum possible UDC memory usage"
+	default y
+	help
+	  Calculate the maximum possible RX/TX FIFO memory usage for the device
+	  controllers with endpoint FIFOs.
+
 rsource "class/Kconfig"
 rsource "app/Kconfig.cdc_acm_serial"
 

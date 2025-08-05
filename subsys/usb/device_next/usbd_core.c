@@ -17,6 +17,7 @@
 #include "usbd_desc.h"
 #include "usbd_config.h"
 #include "usbd_init.h"
+#include "usbd_interface.h"
 #include "usbd_ch9.h"
 #include "usbd_class.h"
 #include "usbd_class_api.h"
@@ -218,6 +219,16 @@ int usbd_device_init_core(struct usbd_context *const uds_ctx)
 	if (ret != 0) {
 		udc_shutdown(uds_ctx->dev);
 		return ret;
+	}
+
+	if (IS_ENABLED(CONFIG_USBD_UDC_MEMORY_USAGE)) {
+		uint16_t rx_m_tpl = 0;
+		size_t rx_size = 0;
+		size_t tx_size = 0;
+
+		usbd_interfaces_memory_usage(uds_ctx, &rx_size, &tx_size, &rx_m_tpl);
+		LOG_INF("Required UDC FIFO size RX %u TX %u MAX RX TPL %u",
+			rx_size, tx_size, rx_m_tpl);
 	}
 
 	return ret;
