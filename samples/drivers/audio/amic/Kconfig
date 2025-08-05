@@ -1,0 +1,16 @@
+# Copyright (c) 2025 Ambiq Micro Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config SAMPLE_FREQ
+	int "Sample rate"
+	default 16000
+	help
+	  Sample frequency of the system.
+
+config AMIC_CHANNELS
+	int "Number of AMIC channels"
+	default 1
+	help
+	  Count of AMIC channels to capture and stream.

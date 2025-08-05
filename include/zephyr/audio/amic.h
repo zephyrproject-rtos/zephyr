@@ -14,7 +14,6 @@
 #ifndef ZEPHYR_INCLUDE_AUDIO_AMIC_H_
 #define ZEPHYR_INCLUDE_AUDIO_AMIC_H_
 
-
 /**
  * @defgroup audio_interface Audio
  * @{
@@ -40,23 +39,23 @@ extern "C" {
  * AMIC driver states
  */
 enum amic_state {
-	AMIC_STATE_UNINIT,	/**< Uninitialized */
-	AMIC_STATE_INITIALIZED,	/**< Initialized */
-	AMIC_STATE_CONFIGURED,	/**< Configured */
-	AMIC_STATE_ACTIVE,	/**< Active */
-	AMIC_STATE_PAUSED,	/**< Paused */
-	AMIC_STATE_ERROR,	/**< Error */
+	AMIC_STATE_UNINIT,      /**< Uninitialized */
+	AMIC_STATE_INITIALIZED, /**< Initialized */
+	AMIC_STATE_CONFIGURED,  /**< Configured */
+	AMIC_STATE_ACTIVE,      /**< Active */
+	AMIC_STATE_PAUSED,      /**< Paused */
+	AMIC_STATE_ERROR,       /**< Error */
 };
 
 /**
  * AMIC driver trigger commands
  */
 enum amic_trigger {
-	AMIC_TRIGGER_STOP,	/**< Stop stream */
-	AMIC_TRIGGER_START,	/**< Start stream */
-	AMIC_TRIGGER_PAUSE,	/**< Pause stream */
-	AMIC_TRIGGER_RELEASE,	/**< Release paused stream */
-	AMIC_TRIGGER_RESET,	/**< Reset stream */
+	AMIC_TRIGGER_STOP,    /**< Stop stream */
+	AMIC_TRIGGER_START,   /**< Start stream */
+	AMIC_TRIGGER_PAUSE,   /**< Pause stream */
+	AMIC_TRIGGER_RELEASE, /**< Release paused stream */
+	AMIC_TRIGGER_RESET,   /**< Reset stream */
 };
 
 /**
@@ -64,14 +63,15 @@ enum amic_trigger {
  */
 struct pcm_stream_cfg {
 	/** PCM sample rate of stream */
-	uint32_t		pcm_rate;
+	uint32_t pcm_rate;
 	/** PCM sample width of stream */
-	uint8_t			pcm_width;
-	uint8_t			channel_num;
+	uint8_t pcm_width;
+	/** Number of channels in the stream */
+	uint8_t channel_num;
 	/** PCM sample block size per transfer */
-	uint16_t		block_size;
+	uint16_t block_size;
 	/** SLAB for AMIC driver to allocate buffers for stream */
-	struct k_mem_slab	*mem_slab;
+	struct k_mem_slab *mem_slab;
 };
 
 /**
@@ -91,8 +91,8 @@ struct amic_cfg {
 struct _amic_ops {
 	int (*configure)(const struct device *dev, struct amic_cfg *config);
 	int (*trigger)(const struct device *dev, enum amic_trigger cmd);
-	int (*read)(const struct device *dev, uint8_t stream, void **buffer,
-			size_t *size, int32_t timeout);
+	int (*read)(const struct device *dev, uint8_t stream, void **buffer, size_t *size,
+		    int32_t timeout);
 };
 
 /**
@@ -106,11 +106,9 @@ struct _amic_ops {
  *
  * @return 0 on success, a negative error code on failure
  */
-static inline int amic_configure(const struct device *dev,
-				 struct amic_cfg *cfg)
+static inline int amic_configure(const struct device *dev, struct amic_cfg *cfg)
 {
-	const struct _amic_ops *api =
-		(const struct _amic_ops *)dev->api;
+	const struct _amic_ops *api = (const struct _amic_ops *)dev->api;
 
 	return api->configure(dev, cfg);
 }
@@ -125,11 +123,9 @@ static inline int amic_configure(const struct device *dev,
  *
  * @return 0 on success, a negative error code on failure
  */
-static inline int amic_trigger(const struct device *dev,
-			       enum amic_trigger cmd)
+static inline int amic_trigger(const struct device *dev, enum amic_trigger cmd)
 {
-	const struct _amic_ops *api =
-		(const struct _amic_ops *)dev->api;
+	const struct _amic_ops *api = (const struct _amic_ops *)dev->api;
 
 	return api->trigger(dev, cmd);
 }
@@ -149,12 +145,10 @@ static inline int amic_trigger(const struct device *dev,
  *
  * @return 0 on success, a negative error code on failure
  */
-static inline int amic_read(const struct device *dev, uint8_t stream,
-			    void **buffer,
-			    size_t *size, int32_t timeout)
+static inline int amic_read(const struct device *dev, uint8_t stream, void **buffer, size_t *size,
+			    int32_t timeout)
 {
-	const struct _amic_ops *api =
-		(const struct _amic_ops *)dev->api;
+	const struct _amic_ops *api = (const struct _amic_ops *)dev->api;
 
 	return api->read(dev, stream, buffer, size, timeout);
 }

@@ -10,3 +10,4 @@ Audio
    dmic.rst
    i2s.rst
    dai.rst
+   amic.rst
