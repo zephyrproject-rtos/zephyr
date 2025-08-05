@@ -3127,12 +3127,6 @@ static void hci_event(struct net_buf *buf)
 {
 	struct bt_hci_evt_hdr *hdr;
 
-	if (buf->len < sizeof(*hdr)) {
-		LOG_ERR("Invalid HCI event size (%u)", buf->len);
-		net_buf_unref(buf);
-		return;
-	}
-
 	hdr = net_buf_pull_mem(buf, sizeof(*hdr));
 	LOG_DBG("event 0x%02x", hdr->evt);
 
@@ -4283,7 +4277,7 @@ static const struct event_handler prio_events[] = {
 	      sizeof(struct bt_hci_evt_le_meta_event)),
 };
 
-void hci_event_prio(struct net_buf *buf)
+static void hci_event_prio(struct net_buf *buf)
 {
 	struct net_buf_simple_state state;
 	struct bt_hci_evt_hdr *hdr;
@@ -4293,12 +4287,6 @@ void hci_event_prio(struct net_buf *buf)
 
 	/* Remove buffer type byte */
 	net_buf_pull(buf, 1);
-
-	if (buf->len < sizeof(*hdr)) {
-		LOG_ERR("Invalid HCI event size (%u)", buf->len);
-		net_buf_unref(buf);
-		return;
-	}
 
 	hdr = net_buf_pull_mem(buf, sizeof(*hdr));
 
@@ -4354,8 +4342,16 @@ static int bt_recv_unsafe(struct net_buf *buf)
 #endif /* BT_CONN */
 	case BT_HCI_H4_EVT:
 	{
-		struct bt_hci_evt_hdr *hdr = (void *)(buf->data + 1);
+		struct bt_hci_evt_hdr *hdr;
 		uint8_t evt_flags;
+
+		if (buf->len < sizeof(*hdr) + 1) {
+			LOG_ERR("Invalid HCI event size (%u)", buf->len);
+			net_buf_unref(buf);
+			return 0;
+		}
+
+		hdr = (void *)(buf->data + 1);
 
 		if (hdr->evt == BT_HCI_EVT_LE_META_EVENT) {
 			struct bt_hci_evt_le_meta_event *le_evt;
@@ -4363,7 +4359,7 @@ static int bt_recv_unsafe(struct net_buf *buf)
 			if (buf->len < sizeof(*hdr) + 1 + sizeof(*le_evt)) {
 				LOG_ERR("Invalid LE meta event size (%u)", buf->len);
 				net_buf_unref(buf);
-				return -EINVAL;
+				return 0;
 			}
 
 			le_evt = (struct bt_hci_evt_le_meta_event *)&buf->data[sizeof(*hdr) + 1];
