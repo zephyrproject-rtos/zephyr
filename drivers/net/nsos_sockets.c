@@ -30,7 +30,7 @@ LOG_MODULE_REGISTER(nsos_sockets);
 #include "sockets_internal.h"
 #include "nsos.h"
 #include "nsi_errno.h"
-#include "nsos_fcntl.h"
+#include "nsi_fcntl.h"
 #include "nsos_netdb.h"
 #include "nsos_socket.h"
 
@@ -395,14 +395,14 @@ static int nsos_ioctl(void *obj, unsigned int request, va_list args)
 
 		flags = nsos_adapt_fcntl_getfl(sock->poll.mid.fd);
 
-		return fl_from_nsos_mid(flags);
+		return nsi_fcntl_from_mid(flags);
 	}
 
 	case ZVFS_F_SETFL: {
 		int flags = va_arg(args, int);
 		int ret;
 
-		ret = fl_to_nsos_mid_strict(flags);
+		ret = nsi_fcntl_to_mid_strict(flags);
 		if (ret < 0) {
 			return -nsi_errno_from_mid(-ret);
 		}
@@ -636,7 +636,7 @@ static int nsos_poll_if_blocking(struct nsos_socket *sock, int events,
 		non_blocking = true;
 	} else {
 		sock_flags = nsos_adapt_fcntl_getfl(sock->poll.mid.fd);
-		non_blocking = sock_flags & NSOS_MID_O_NONBLOCK;
+		non_blocking = sock_flags & NSI_FCNTL_MID_O_NONBLOCK;
 	}
 
 	if (!non_blocking) {
@@ -678,7 +678,7 @@ static int nsos_connect_blocking(struct nsos_socket *sock,
 	int clear_nonblock_ret;
 	int ret;
 
-	ret = nsos_adapt_fcntl_setfl(sock->poll.mid.fd, fcntl_flags | NSOS_MID_O_NONBLOCK);
+	ret = nsos_adapt_fcntl_setfl(sock->poll.mid.fd, fcntl_flags | NSI_FCNTL_MID_O_NONBLOCK);
 	if (ret < 0) {
 		return ret;
 	}
@@ -728,7 +728,7 @@ static int nsos_connect(void *obj, const struct net_sockaddr *addr, net_socklen_
 
 	flags = nsos_adapt_fcntl_getfl(sock->poll.mid.fd);
 
-	if (flags & NSOS_MID_O_NONBLOCK) {
+	if (flags & NSI_FCNTL_MID_O_NONBLOCK) {
 		ret = nsos_adapt_connect(sock->poll.mid.fd, addr_mid, addrlen_mid);
 	} else {
 		ret = nsos_connect_blocking(sock, addr_mid, addrlen_mid, flags);
