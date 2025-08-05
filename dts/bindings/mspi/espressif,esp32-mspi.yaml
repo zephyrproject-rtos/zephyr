@@ -1,0 +1,70 @@
+# Copyright (c) 2025, Pavel Maloletkov
+# SPDX-License-Identifier: Apache-2.0
+
+description: Espressif ESP32 MSPI controller
+
+compatible: "espressif,esp32-mspi"
+
+include: [mspi-controller.yaml, pinctrl-device.yaml, reset-device.yaml]
+
+properties:
+  reg:
+    required: true
+    description: Base address and size of the SPI peripheral registers
+
+  peripheral-id:
+    type: int
+    required: true
+    description: |
+      ESP32 SPI peripheral ID (0 or 1)
+      - 0: SPI1 (HSPI)
+      - 1: SPI2 (VSPI)
+      Note: SPI0 is reserved for flash cache and not available for general use
+
+  clocks:
+    required: true
+    description: Clock controller phandle and clock specifier
+
+  clock-frequency:
+    type: int
+    default: 80000000
+    description: |
+      Maximum supported frequency in Hz. Default is 80MHz.
+      This should not exceed the capabilities of the selected clock source.
+
+  interrupts:
+    required: false
+    description: Interrupt specifier for the SPI peripheral
+
+  dma-enabled:
+    type: boolean
+    description: Enable SPI DMA support
+
+  dma-clk:
+    type: int
+    description: DMA clock source
+
+  dma-host:
+    type: int
+    description: DMA Host - 0 -> SPI2, 1 -> SPI3
+
+  line-idle-low:
+    type: boolean
+    description: |
+      Default data lines GPIO level when idle. Defaults to high by default.
+
+  max-dma-buf-size:
+    type: int
+    default: 4092
+    description: |
+      Maximum size of the DMA buffer in bytes.
+
+  use-iomux:
+    type: boolean
+    description: |
+      Some pins are allowed to bypass the GPIO Matrix and use the IO_MUX
+      routing mechanism instead, this avoids extra routing latency and makes
+      possible the use of operating frequencies higher than 20 MHz.
+
+      Refer to SoC's Technical Reference Manual to check which pins are
+      allowed to use this routing path.
