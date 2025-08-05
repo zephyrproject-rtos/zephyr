@@ -9,6 +9,7 @@ zephyr_library_property(ALLOW_EMPTY TRUE)
 
 if(CONFIG_GEN_ISR_TABLES)
   zephyr_library_sources(
+    isr_tables.c
     sw_isr_common.c
   )
   zephyr_library_sources_ifdef(
@@ -93,19 +94,6 @@ if (DEFINED CONFIG_ARCH_SUPPORTS_ROM_OFFSET)
   zephyr_linker_sources(ROM_START SORT_KEY $ fill_with_zeros.ld)
   zephyr_linker_sources(ROM_START SORT_KEY 0x0 rom_start_offset.ld)
   # Handled in ld.cmake
-endif()
-
-
-# isr_tables is a normal CMake library and not a zephyr_library because it
-# should not be --whole-archive'd
-if (CONFIG_GEN_ISR_TABLES)
-  add_library(isr_tables
-    isr_tables.c
-  )
-
-  add_dependencies(isr_tables zephyr_generated_headers)
-  target_link_libraries(isr_tables zephyr_interface)
-  zephyr_library_link_libraries(isr_tables)
 endif()
 
 if(CONFIG_COVERAGE)
