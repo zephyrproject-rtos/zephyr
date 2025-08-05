@@ -156,6 +156,13 @@ int openthread_mutex_try_lock(void);
  */
 void openthread_mutex_unlock(void);
 
+#if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER)
+/**
+ * @brief Notify OpenThread task about Border Router pending work.
+ */
+void openthread_notify_border_router_work(void);
+#endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER */
+
 #ifdef __cplusplus
 }
 #endif
