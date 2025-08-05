@@ -291,6 +291,14 @@
 	status = "okay";
 };
 
+&vdac0 {
+	status = "okay";
+};
+
+&vdac1 {
+	status = "okay";
+};
+
 &sysrtc0 {
 	status = "okay";
 };
