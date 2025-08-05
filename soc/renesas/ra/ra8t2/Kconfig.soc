@@ -1,0 +1,28 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RA8T2
+	bool
+	select SOC_FAMILY_RENESAS_RA
+	help
+	  Renesas RA8T2 series
+
+config SOC_R7KA8T2LFECAC
+	bool
+	select SOC_SERIES_RA8T2
+	help
+	  R7KA8T2LFECAC
+
+config SOC_R7KA8T2LFECAC_CM85
+	bool
+	select SOC_R7KA8T2LFECAC
+
+config SOC_R7KA8T2LFECAC_CM33
+	bool
+	select SOC_R7KA8T2LFECAC
+
+config SOC_SERIES
+	default "ra8t2" if SOC_SERIES_RA8T2
+
+config SOC
+	default "r7ka8t2lfecac" if SOC_R7KA8T2LFECAC
