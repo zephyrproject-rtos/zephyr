@@ -1,0 +1,42 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_RA8T2
+
+config NUM_IRQS
+	default 96
+
+DT_CPUCLK0_PATH := $(dt_nodelabel_path,cpuclk0)
+DT_CPUCLK1_PATH := $(dt_nodelabel_path,cpuclk1)
+DT_LOCO_PATH := $(dt_nodelabel_path,loco)
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,$(DT_CPUCLK0_PATH),clock-frequency) if SOC_R7KA8T2LFECAC_CM85 && CORTEX_M_SYSTICK
+	default $(dt_node_int_prop_int,$(DT_CPUCLK1_PATH),clock-frequency) if SOC_R7KA8T2LFECAC_CM33 && CORTEX_M_SYSTICK
+	default $(dt_node_int_prop_int,$(DT_LOCO_PATH),clock-frequency) if RENESAS_RA_ULPT_TIMER
+
+config CORTEX_M_SYSTICK
+	default n if RENESAS_RA_ULPT_TIMER
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 4096 if RENESAS_RA_ULPT_TIMER
+
+config PM_DEVICE
+	default y if PM
+
+config PM_STATS
+	default n if PM
+
+config BUILD_OUTPUT_HEX
+	default y
+
+config CLOCK_CONTROL
+	default y
+
+config DCACHE
+	default n
+
+config CACHE_MANAGEMENT
+	default n
+
+endif # SOC_SERIES_RA8T2
