@@ -356,12 +356,55 @@ config OPENTHREAD_PLATFORM_CARRIER_FUNCTIONS
 	help
 	  Enable support for functions such as modulated carrier and continuous carrier.
 
+menu "OpenThread Border Router"
+
 config OPENTHREAD_ZEPHYR_BORDER_ROUTER
 	bool "Adds support for Border Router functionality [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	imply NET_ROUTING
 	help
 	  Enable support for Border Router using Openthread's implementation.
+
+if OPENTHREAD_ZEPHYR_BORDER_ROUTER
+
+config OPENTHREAD_ZEPHYR_BORDER_ROUTER_VENDOR_NAME
+	string "Base name from which mDNS host name will be derived."
+	default "Zephyr-OTBR"
+	help
+	  This value represents part of the mDNS host that will be register within OpenThread
+	  Border Router.
+
+config OPENTHREAD_ZEPHYR_BORDER_ROUTER_BASE_SERVICE_NAME
+	string "Base name from which a service instance name will be derived."
+	default "Zephyr-BorderRouter"
+	help
+	  This value represents part of a service instance name which will be registered
+	  within OpenThread Border Router.
+
+config OPENTHREAD_ZEPHYR_BORDER_ROUTER_MODEL_NAME
+	string "Name of the Border Agent product model"
+	default "BorderRouter"
+	help
+	  This value represents Border Agent's product model.
+
+config OPENTHREAD_ZEPHYR_BORDER_ROUTER_MAX_UDP_SERVICES
+	int "The maximum number of pollable UDP sockets to be registered in platform UDP."
+	depends on OPENTHREAD_ZEPHYR_BORDER_ROUTER
+	default 5
+	help
+	  This configuration defines the maximum number of pollable UDP sockets
+	  to be used within platform UDP module.
+
+config OPENTHREAD_ZEPHYR_BORDER_ROUTER_MSG_POOL_NUM
+	int "Maximum entries of backbone message pool."
+	default 10
+	help
+	  This value represents the maximum number of messages from backbone interface
+	  that could be stored without being processed.
+
+endif # OPENTHREAD_ZEPHYR_BORDER_ROUTER
+
+endmenu # "OpenThread Border Router"
 
 menu "OpenThread stack features"
 rsource "Kconfig.features"
