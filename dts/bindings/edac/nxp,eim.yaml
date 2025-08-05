@@ -1,0 +1,8 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP Error Injection Module
+
+compatible: "nxp,eim"
+
+include: [reset-device.yaml, base.yaml]

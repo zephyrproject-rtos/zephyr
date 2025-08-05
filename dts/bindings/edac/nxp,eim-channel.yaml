@@ -1,0 +1,24 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP Error Injection Channel Descriptor
+
+compatible: "nxp,eim-channel"
+
+include: base.yaml
+
+properties:
+  channel-id:
+    type: int
+
+  size:
+    type: int
+
+  start-address:
+    type: int
+
+  inject-enable:
+    type: int
+
+  ecc-enable:
+    type: int
