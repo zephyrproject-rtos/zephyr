@@ -258,12 +258,13 @@ static void gpio_cc23x0_isr(const struct device *dev)
 #ifdef CONFIG_PM_DEVICE
 static int gpio_cc23x0_pm_action(const struct device *dev, enum pm_device_action action)
 {
+	/* No action is done when suspending or resuming the GPIO module,
+	 * since both clock control and the GPIO peripheral have memory retention.
+	 */
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		CLKCTLEnable(CLKCTL_BASE, CLKCTL_GPIO);
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
-		CLKCTLDisable(CLKCTL_BASE, CLKCTL_GPIO);
 		break;
 	default:
 		return -ENOTSUP;
