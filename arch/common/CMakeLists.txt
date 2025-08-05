@@ -95,17 +95,19 @@ if (DEFINED CONFIG_ARCH_SUPPORTS_ROM_OFFSET)
   # Handled in ld.cmake
 endif()
 
-
-# isr_tables is a normal CMake library and not a zephyr_library because it
-# should not be --whole-archive'd
-if (CONFIG_GEN_ISR_TABLES)
-  add_library(isr_tables
-    isr_tables.c
-  )
-
-  add_dependencies(isr_tables zephyr_generated_headers)
-  target_link_libraries(isr_tables zephyr_interface)
-  zephyr_library_link_libraries(isr_tables)
+if(CONFIG_GEN_ISR_TABLES)
+  if(ZEPHYR_TOOLCHAIN_VARIANT STREQUAL "zephyr")
+    # isr_tables must be a zephyr_library as it has to be --whole-archive'd to
+    # keep the _iheader, in section .irq_info, included in the build.
+    zephyr_library_sources(isr_tables.c)
+  else()
+    # isr_tables must be a normal CMake library and not a zephyr_library because
+    # it should not be --whole-archive'd
+    add_library(isr_tables isr_tables.c)
+    add_dependencies(isr_tables zephyr_generated_headers)
+    target_link_libraries(isr_tables zephyr_interface)
+    zephyr_library_link_libraries(isr_tables)
+  endif()
 endif()
 
 if(CONFIG_COVERAGE)
