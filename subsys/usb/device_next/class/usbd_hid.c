@@ -473,6 +473,17 @@ static void usbd_hid_disable(struct usbd_class_data *const c_data)
 static void usbd_hid_suspended(struct usbd_class_data *const c_data)
 {
 	const struct device *dev = usbd_class_get_private(c_data);
+	struct hid_device_data *ddata = dev->data;
+	const struct hid_device_ops *const ops = ddata->ops;
+
+	/*
+	 * When the device is suspended, mark the interface as not ready
+	 * until the enable hook is called.
+	 */
+	atomic_clear_bit(&ddata->state, HID_DEV_CLASS_ENABLED);
+	if (ops->iface_ready) {
+		ops->iface_ready(dev, false);
+	}
 
 	LOG_DBG("Configuration suspended, device %s", dev->name);
 }
