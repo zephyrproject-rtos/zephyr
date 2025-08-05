@@ -513,6 +513,8 @@ Bluetooth HCI:
     - sjanc
     - HoZHel
     - cvinayak
+    - PavelVPV
+    - HaavardRei
   files:
     - include/zephyr/drivers/bluetooth/
     - include/zephyr/drivers/bluetooth.h
@@ -537,6 +539,8 @@ Bluetooth Host:
     - sjanc
     - Thalley
     - cvinayak
+    - PavelVPV
+    - HaavardRei
   files:
     - doc/connectivity/bluetooth/
     - include/zephyr/bluetooth/
