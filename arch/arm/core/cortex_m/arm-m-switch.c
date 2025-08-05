@@ -464,7 +464,7 @@ bool arm_m_must_switch(uint32_t lr)
 	 */
 	unsigned int key = arch_irq_lock();
 
-	void *last, *next = z_get_next_switch_handle(NULL);
+	void *last, *next = z_sched_next_handle(last_thread);
 
 	if (next == NULL) {
 		arch_irq_unlock(key);
