@@ -1,0 +1,60 @@
+/*
+ * Copyright (c) 2021, Yonatan Schachter
+ * Copyright (c) 2022, Peter Johanson
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/rpi-pico-rp2040-pinctrl.h>
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0_TX_P0>;
+		};
+
+		group2 {
+			pinmux = <UART0_RX_P1>;
+			input-enable;
+		};
+	};
+
+	i2c1_default: i2c1_default {
+		group1 {
+			pinmux = <I2C1_SDA_P2>;
+			input-enable;
+		};
+
+		group2 {
+			pinmux = <I2C1_SCL_P3>;
+			input-enable;
+		};
+	};
+
+	spi0_default: spi0_default {
+		group1 {
+			pinmux = <SPI0_TX_P19>;
+		};
+
+		group2 {
+			pinmux = <SPI0_RX_P20>;
+			input-enable;
+		};
+
+		group3 {
+			pinmux = <SPI0_SCK_P18>;
+		};
+	};
+
+	adc_default: adc_default {
+		group1 {
+			pinmux = <ADC_CH0_P26>, <ADC_CH1_P27>, <ADC_CH2_P28>, <ADC_CH3_P29>;
+			input-enable;
+		};
+	};
+
+	ws2812_pio1_default: ws2812_pio1_default {
+		ws2812 {
+			pinmux = <PIO1_P12>;
+		};
+	};
+};
