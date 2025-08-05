@@ -475,7 +475,7 @@ static int rtc_stm32_init(const struct device *dev)
 	 * as time base, but SysTick is initialized after the RTC...
 	 */
 	const uint32_t cycles_to_waste =
-		84 * (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / USEC_PER_SEC);
+		84 * (STM32_HCLK_FREQUENCY / USEC_PER_SEC);
 	volatile uint32_t i = cycles_to_waste;
 
 	while (--i > 0) {
