@@ -2601,9 +2601,11 @@ static int uarte_instance_init(const struct device *dev,
 	IF_ENABLED(CONFIG_UART_NRFX_UARTE_DIRECT_ISR, (			       \
 		ISR_DIRECT_DECLARE(uarte_##idx##_direct_isr)		       \
 		{							       \
-			ISR_DIRECT_PM();				       \
+			IF_ENABLED(CONFIG_MULTITHREADING, (ISR_DIRECT_PM();))  \
 			UARTE_GET_ISR(idx)(DEVICE_DT_GET(UARTE(idx)));	       \
-			return 1;					       \
+			COND_CODE_1(CONFIG_MULTITHREADING,		       \
+				    (return 1;),			       \
+				    (return 0;))			       \
 		}							       \
 		))
 
