@@ -50,10 +50,21 @@ board is also supported and can be built as follows;
    :goals: build
    :compact:
 
+Below is an example on how to build for a :zephyr:board:`apollo510_evb` board with a
+:ref:`ap510_disp`.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/display
+   :board: apollo510_evb
+   :goals: build
+   :shield: ap510_disp
+   :compact:
+
 List of Arduino-based display shields
 *************************************
 
 - :ref:`adafruit_2_8_tft_touch_v2`
+- :ref:`ap510_disp`
 - :ref:`ssd1306_128_shield`
 - :ref:`st7789v_generic`
 - :ref:`waveshare_epaper`
