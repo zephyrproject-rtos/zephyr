@@ -166,6 +166,9 @@ static int ambiq_sdio_get_host_props(const struct device *dev, struct sdhc_host_
 	props->host_caps.adma_2_support = true;
 	props->host_caps.sdio_async_interrupt_support = true;
 	props->host_caps.vol_180_support = true;
+#if defined(CONFIG_SOC_SERIES_APOLLO5X)
+	props->host_caps.vol_330_support = true;
+#endif
 	props->host_caps.bus_4_bit_support = true;
 	props->host_caps.bus_8_bit_support = true;
 	props->host_caps.high_spd_support = true;
@@ -511,7 +514,7 @@ static int ambiq_sdio_request(const struct device *dev, struct sdhc_command *cmd
 	LOG_DBG("Send SDIO CMD%d", sdio_cmd.ui8Idx);
 	LOG_DBG("CMD->Arg = 0x%x CMD->RespType = 0x%x", sdio_cmd.ui32Arg, sdio_cmd.ui32RespType);
 
-	if (sdio_cmd.ui8Idx == 1) {
+	if (sdio_cmd.ui8Idx == 1 || sdio_cmd.ui8Idx == 41) {
 		LOG_DBG("Config CMD1 RespType");
 		sdio_cmd.ui32RespType = MMC_RSP_R3;
 	} else if (sdio_cmd.ui8Idx == 3) {
@@ -525,7 +528,7 @@ static int ambiq_sdio_request(const struct device *dev, struct sdhc_command *cmd
 		sdio_cmd.bCheckBusyCmd = true;
 		sdio_cmd.ui32RespType = MMC_RSP_R1b;
 	} else if (sdio_cmd.ui8Idx == 17 || sdio_cmd.ui8Idx == 18 || sdio_cmd.ui8Idx == 24 ||
-		   sdio_cmd.ui8Idx == 25) {
+		   sdio_cmd.ui8Idx == 25 || sdio_cmd.ui8Idx == 55) {
 		sdio_cmd.ui32RespType = MMC_RSP_R1;
 	}
 
