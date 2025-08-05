@@ -1,0 +1,22 @@
+# Copyright (c) 2025 Bayrem Gharsellaoui
+# SPDX-License-Identifier: Apache-2.0
+
+title: STM32 HASH Processor
+
+description: |
+  STM32 hardware hash accelerator supporting SHA-224 and SHA-256
+  hashing algorithms.
+
+compatible: "st,stm32-hash"
+
+include: [base.yaml, reset-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  resets:
+    required: true
