@@ -1684,3 +1684,117 @@ void host_pmch_ibf_irp_disable(void)
 {
 	irq_disable(DT_INST_IRQ_BY_NAME(0, pmch_ibf, irq));
 }
+
+void host_pmch_set_burst_st(uint8_t pmch)
+{
+	switch(pmch) 
+	{
+		case hs_PMCH_ACPI:
+			host_sub_cfg.inst_pm_acpi-> HIPMST |= BIT(NCT_HIPMST_ST0);
+			break;
+		case hs_PMCH_HCMD:
+			host_sub_cfg.inst_pm_hcmd-> HIPMST |= BIT(NCT_HIPMST_ST0);
+			break;
+		case hs_PMCH3:
+			host_sub_cfg.inst_pmch3-> HIPMST |= BIT(NCT_HIPMST_ST0);
+			break;
+		case hs_PMCH4:
+			host_sub_cfg.inst_pmch4-> HIPMST |= BIT(NCT_HIPMST_ST0);
+			break;
+	}
+}
+
+void host_pmch_clr_burst_st(uint8_t pmch)
+{
+	switch(pmch) 
+	{
+		case hs_PMCH_ACPI:
+			host_sub_cfg.inst_pm_acpi-> HIPMST &= ~(BIT(NCT_HIPMST_ST0));
+			break;
+		case hs_PMCH_HCMD:
+			host_sub_cfg.inst_pm_hcmd-> HIPMST &= ~(BIT(NCT_HIPMST_ST0));
+			break;
+		case hs_PMCH3:
+			host_sub_cfg.inst_pmch3-> HIPMST &= ~(BIT(NCT_HIPMST_ST0));
+			break;
+		case hs_PMCH4:
+			host_sub_cfg.inst_pmch4-> HIPMST &= ~(BIT(NCT_HIPMST_ST0));
+			break;
+	}
+}
+
+void host_pmch_set_sci_st(uint8_t pmch)
+{
+	switch(pmch) 
+	{
+		case hs_PMCH_ACPI:
+			host_sub_cfg.inst_pm_acpi-> HIPMST |= BIT(NCT_HIPMST_ST1);
+			break;
+		case hs_PMCH_HCMD:
+			host_sub_cfg.inst_pm_hcmd-> HIPMST |= BIT(NCT_HIPMST_ST1);
+			break;
+		case hs_PMCH3:
+			host_sub_cfg.inst_pmch3-> HIPMST |= BIT(NCT_HIPMST_ST1);
+			break;
+		case hs_PMCH4:
+			host_sub_cfg.inst_pmch4-> HIPMST |= BIT(NCT_HIPMST_ST1);
+			break;
+	}
+}
+
+void host_pmch_clr_sci_st(uint8_t pmch)
+{
+	switch(pmch) 
+	{
+		case hs_PMCH_ACPI:
+			host_sub_cfg.inst_pm_acpi-> HIPMST &= ~(BIT(NCT_HIPMST_ST1));
+			break;
+		case hs_PMCH_HCMD:
+			host_sub_cfg.inst_pm_hcmd-> HIPMST &= ~(BIT(NCT_HIPMST_ST1));
+			break;
+		case hs_PMCH3:
+			host_sub_cfg.inst_pmch3-> HIPMST &= ~(BIT(NCT_HIPMST_ST1));
+			break;
+		case hs_PMCH4:
+			host_sub_cfg.inst_pmch4-> HIPMST &= ~(BIT(NCT_HIPMST_ST1));
+			break;
+	}
+}
+
+void host_pmch_set_smi_st(uint8_t pmch)
+{
+	switch(pmch) 
+	{
+		case hs_PMCH_ACPI:
+			host_sub_cfg.inst_pm_acpi-> HIPMST |= BIT(NCT_HIPMST_ST2);
+			break;
+		case hs_PMCH_HCMD:
+			host_sub_cfg.inst_pm_hcmd-> HIPMST |= BIT(NCT_HIPMST_ST2);
+			break;
+		case hs_PMCH3:
+			host_sub_cfg.inst_pmch3-> HIPMST |= BIT(NCT_HIPMST_ST2);
+			break;
+		case hs_PMCH4:
+			host_sub_cfg.inst_pmch4-> HIPMST |= BIT(NCT_HIPMST_ST2);
+			break;
+	}
+}
+
+void host_pmch_clr_smi_st(uint8_t pmch)
+{
+	switch(pmch) 
+	{
+		case hs_PMCH_ACPI:
+			host_sub_cfg.inst_pm_acpi-> HIPMST &= ~(BIT(NCT_HIPMST_ST2));
+			break;
+		case hs_PMCH_HCMD:
+			host_sub_cfg.inst_pm_hcmd-> HIPMST &= ~(BIT(NCT_HIPMST_ST2));
+			break;
+		case hs_PMCH3:
+			host_sub_cfg.inst_pmch3-> HIPMST &= ~(BIT(NCT_HIPMST_ST2));
+			break;
+		case hs_PMCH4:
+			host_sub_cfg.inst_pmch4-> HIPMST &= ~(BIT(NCT_HIPMST_ST2));
+			break;
+	}
+}
