@@ -173,8 +173,13 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 	 * more likely to contain actual clock speed
 	 */
 	uint32_t ahb_clock = SystemCoreClock;
+#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), cpu1_prescaler)
+	uint32_t apb1_clock = get_bus_clock(ahb_clock * STM32_CPU1_PRESCALER, STM32_APB1_PRESCALER);
+	uint32_t apb2_clock = get_bus_clock(ahb_clock * STM32_CPU1_PRESCALER, STM32_APB2_PRESCALER);
+#else
 	uint32_t apb1_clock = get_bus_clock(ahb_clock, STM32_APB1_PRESCALER);
 	uint32_t apb2_clock = get_bus_clock(ahb_clock, STM32_APB2_PRESCALER);
+#endif
 	uint32_t apb7_clock = get_bus_clock(ahb_clock, STM32_APB7_PRESCALER);
 	uint32_t ahb5_clock;
 
