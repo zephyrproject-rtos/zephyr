@@ -1358,10 +1358,8 @@ int net_context_connect(struct net_context *context,
 	}
 
 	if (addr->sa_family != net_context_get_family(context)) {
-		NET_ASSERT(addr->sa_family == net_context_get_family(context),
-			   "Family mismatch %d should be %d",
-			   addr->sa_family,
-			   net_context_get_family(context));
+		NET_ERR("Address family %d does not match network context family %d",
+			addr->sa_family, net_context_get_family(context));
 		ret = -EINVAL;
 		goto unlock;
 	}
