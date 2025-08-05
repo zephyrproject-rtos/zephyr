@@ -78,6 +78,10 @@ struct counter_alarm_cfg alarm_cfg;
 #define TIMER DT_NODELABEL(rtc0)
 #elif defined(CONFIG_COUNTER_RENESAS_RZ_CMTW)
 #define TIMER DT_INST(0, renesas_rz_cmtw_counter)
+#elif defined(CONFIG_COUNTER_MCHP_SAM_PIT64B)
+#define TIMER DT_NODELABEL(pit64b1)
+#undef ALARM_FLAGS
+#define ALARM_FLAGS COUNTER_ALARM_CFG_ABSOLUTE
 #elif defined(CONFIG_COUNTER_MCUX_RTC_JDP)
 #define TIMER DT_NODELABEL(rtc)
 #elif defined(CONFIG_COUNTER_MCUX_RTC)
