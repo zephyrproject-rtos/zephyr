@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,7 @@ extern "C" {
 
 int flexspi_clock_set_freq(uint32_t clock_name, uint32_t rate);
 void flexspi_clock_safe_config(void);
+void enable_ecc(uint32_t mask);
 
 #ifdef __cplusplus
 }
