@@ -1,0 +1,11 @@
+common:
+  tags:
+    - filesystem
+    - native_mount
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+tests:
+  filesystem.native_mount.default: {}
