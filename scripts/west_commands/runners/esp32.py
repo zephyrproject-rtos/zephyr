@@ -13,27 +13,21 @@ from runners.core import RunnerCaps, ZephyrBinaryRunner
 class Esp32BinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for espidf.'''
 
-    def __init__(self, cfg, device, boot_address, part_table_address,
-                 app_address, erase=False, reset=False, baud=921600,
-                 flash_size='detect', flash_freq='40m', flash_mode='dio',
-                 espidf=None, bootloader_bin=None, partition_table_bin=None,
-                 encrypt=False, no_stub=False):
+    def __init__(self, cfg, device, app_address, erase=False, reset=False,
+                 baud=921600, flash_size='detect', flash_freq='40m', flash_mode='dio',
+                 espidf=None, encrypt=False, no_stub=False):
         super().__init__(cfg)
         self.elf = cfg.elf_file
         self.app_bin = cfg.bin_file
         self.erase = bool(erase)
         self.reset = bool(reset)
         self.device = device
-        self.boot_address = boot_address
-        self.part_table_address = part_table_address
         self.app_address = app_address
         self.baud = baud
         self.flash_size = flash_size
         self.flash_freq = flash_freq
         self.flash_mode = flash_mode
         self.espidf = espidf
-        self.bootloader_bin = bootloader_bin
-        self.partition_table_bin = partition_table_bin
         self.encrypt = encrypt
         self.no_stub = no_stub
 
@@ -69,10 +63,6 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
                             help='flash frequency, default "40m"')
         parser.add_argument('--esp-flash-mode', default='dio',
                             help='flash mode, default "dio"')
-        parser.add_argument('--esp-flash-bootloader',
-                            help='Bootloader image to flash')
-        parser.add_argument('--esp-flash-partition_table',
-                            help='Partition table to flash')
         parser.add_argument('--esp-encrypt', default=False, action='store_true',
                             help='Encrypt firmware while flashing (correct efuses required)')
         parser.add_argument('--esp-no-stub', default=False, action='store_true',
@@ -84,14 +74,10 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
     def do_create(cls, cfg, args):
 
         return Esp32BinaryRunner(
-            cfg, args.esp_device, boot_address=args.esp_boot_address,
-            part_table_address=args.esp_partition_table_address,
-            app_address=args.esp_app_address, erase=args.erase, reset=args.reset,
-            baud=args.esp_baud_rate, flash_size=args.esp_flash_size,
+            cfg, args.esp_device, app_address=args.esp_app_address, erase=args.erase,
+            reset=args.reset, baud=args.esp_baud_rate, flash_size=args.esp_flash_size,
             flash_freq=args.esp_flash_freq, flash_mode=args.esp_flash_mode,
-            espidf=args.esp_idf_path, bootloader_bin=args.esp_flash_bootloader,
-            partition_table_bin=args.esp_flash_partition_table,
-            encrypt=args.esp_encrypt, no_stub=args.esp_no_stub)
+            espidf=args.esp_idf_path, encrypt=args.esp_encrypt, no_stub=args.esp_no_stub)
 
     def do_run(self, command, **kwargs):
 
@@ -117,13 +103,7 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
         if self.encrypt:
             cmd_flash.extend(['--encrypt'])
 
-        if self.bootloader_bin:
-            cmd_flash.extend([self.boot_address, self.bootloader_bin])
-            if self.partition_table_bin:
-                cmd_flash.extend([self.part_table_address, self.partition_table_bin])
-                cmd_flash.extend([self.app_address, self.app_bin])
-        else:
-            cmd_flash.extend([self.app_address, self.app_bin])
+        cmd_flash.extend([self.app_address, self.app_bin])
 
         self.logger.info(f"Flashing esp32 chip on {self.device} ({self.baud}bps)")
         self.check_call(cmd_flash)
