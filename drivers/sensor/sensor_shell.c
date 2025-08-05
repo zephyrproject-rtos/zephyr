@@ -75,6 +75,7 @@ static const char *const sensor_channel_name[SENSOR_CHAN_COMMON_COUNT] = {
 	[SENSOR_CHAN_ALTITUDE] = "altitude",
 	[SENSOR_CHAN_PM_1_0] = "pm_1_0",
 	[SENSOR_CHAN_PM_2_5] = "pm_2_5",
+	[SENSOR_CHAN_PM_4] = "pm_4",
 	[SENSOR_CHAN_PM_10] = "pm_10",
 	[SENSOR_CHAN_DISTANCE] = "distance",
 	[SENSOR_CHAN_CO2] = "co2",
