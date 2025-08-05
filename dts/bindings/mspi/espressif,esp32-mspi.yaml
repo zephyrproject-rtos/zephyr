@@ -33,7 +33,6 @@ properties:
       This should not exceed the capabilities of the selected clock source.
 
   interrupts:
-    required: false
     description: Interrupt specifier for the SPI peripheral
 
   dma-enabled:
