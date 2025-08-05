@@ -39,6 +39,14 @@ Device Drivers and Devicetree
 
 .. zephyr-keep-sorted-start re(^\w)
 
+Phy
+===
+
+* Nodes with compatible property :dtcompatible:`st,stm32u5-otghs-phy` now need to select the
+  CLKSEL (phy reference clock) in the SYSCFG_OTGHSPHYCR register using the new property
+  clock-reference. The selection directly depends on the value on OTGHSSEL (OTG_HS PHY kernel
+  clock source selection) located in the RCC_CCIPR2 register.
+
 Sensors
 =======
 
