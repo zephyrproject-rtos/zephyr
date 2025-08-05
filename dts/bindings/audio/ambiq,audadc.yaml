@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Ambiq Micro Inc.
+# Copyright (c) 2025 Ambiq Micro Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 description: Ambiq AUDADC
@@ -14,12 +14,12 @@ properties:
   interrupts:
     required: true
 
-  audadc-buffer-location:
+  audadc-buf-location:
     type: string
     description: |
       Define AUDADC DMA buffer location section
 
-  audadc-buffer-size:
+  audadc-buf-size-samples:
     type: int
     description: |
-      Define the AUDADC DMA buffer size in (4-byte) words
+      Define the AUDADC DMA buffer size in 4-byte words (samples)

@@ -13,6 +13,9 @@
 #include <zephyr/irq.h>
 #include <zephyr/audio/amic.h>
 #include <zephyr/cache.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
+#include <zephyr/pm/device_runtime.h>
 #include <am_mcu_apollo.h>
 
 #define DT_DRV_COMPAT ambiq_audadc
@@ -31,7 +34,8 @@ struct amic_ambiq_audadc_data {
 	int inst_idx;
 	uint32_t block_size;
 	uint32_t sample_num;
-	uint8_t frame_size_bytes;
+	uint8_t channel_num;
+	uint8_t sample_size_bytes;
 	am_hal_audadc_sample_t *lg_sample_buf;
 	am_hal_offset_cal_coeffs_array_t offset_cal_array;
 
@@ -39,12 +43,42 @@ struct amic_ambiq_audadc_data {
 	am_hal_audadc_irtt_config_t irtt_cfg;
 	am_hal_audadc_dma_config_t dma_cfg;
 
+#ifdef CONFIG_PM_DEVICE
+	bool pm_policy_state_on;
+#endif
+
 	enum amic_state amic_state;
 };
 
 struct amic_ambiq_audadc_cfg {
 	void (*irq_config_func)(void);
 };
+
+static void amic_ambiq_audadc_pm_policy_state_lock_get(const struct device *dev)
+{
+	if (IS_ENABLED(CONFIG_PM)) {
+		struct amic_ambiq_audadc_data *data = dev->data;
+
+		if (!data->pm_policy_state_on) {
+			data->pm_policy_state_on = true;
+			pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+			pm_device_runtime_get(dev);
+		}
+	}
+}
+
+static void amic_ambiq_audadc_pm_policy_state_lock_put(const struct device *dev)
+{
+	if (IS_ENABLED(CONFIG_PM)) {
+		struct amic_ambiq_audadc_data *data = dev->data;
+
+		if (data->pm_policy_state_on) {
+			data->pm_policy_state_on = false;
+			pm_device_runtime_put(dev);
+			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+		}
+	}
+}
 
 static void amic_ambiq_audadc_isr(const struct device *dev)
 {
@@ -62,9 +96,7 @@ static void amic_ambiq_audadc_isr(const struct device *dev)
 
 static void amic_audadc_pga_init(void)
 {
-	/*
-	 * Power up PrePGA
-	 */
+	/* Power up PrePGA */
 	am_hal_audadc_refgen_powerup();
 
 	am_hal_audadc_pga_powerup(0);
@@ -73,9 +105,7 @@ static void amic_audadc_pga_init(void)
 	am_hal_audadc_gain_set(0, 2 * PREAMP_FULL_GAIN);
 	am_hal_audadc_gain_set(1, 2 * PREAMP_FULL_GAIN);
 
-	/*
-	 *  Turn on mic bias
-	 */
+	/*  Turn on mic bias */
 	am_hal_audadc_micbias_powerup(24);
 	k_sleep(K_MSEC(400));
 }
@@ -84,9 +114,7 @@ static void amic_audadc_slot_config(void *audadc_handle)
 {
 	am_hal_audadc_slot_config_t slot_config;
 
-	/*
-	 * Set up an AUDADC slot
-	 */
+	/* Set up an AUDADC slot */
 	slot_config.eMeasToAvg = AM_HAL_AUDADC_SLOT_AVG_1;
 	slot_config.ePrecisionMode = AM_HAL_AUDADC_SLOT_12BIT;
 	slot_config.ui32TrkCyc = 34;
@@ -113,17 +141,13 @@ static int amic_ambiq_audadc_init(const struct device *dev)
 
 	amic_audadc_pga_init();
 
-	/*
-	 * Initialize the AUDADC and get the handle.
-	 */
+	/* Initialize the AUDADC and get the handle. */
 	if (AM_HAL_STATUS_SUCCESS !=
 	    am_hal_audadc_initialize(data->inst_idx, &data->audadc_handler)) {
 		LOG_ERR("Error - reservation of the AUDADC instance failed.\n");
 	}
 
-	/*
-	 * Power on the AUDADC.
-	 */
+	/* Power on the AUDADC. */
 	if (AM_HAL_STATUS_SUCCESS !=
 	    am_hal_audadc_power_control(data->audadc_handler, AM_HAL_SYSCTRL_WAKE, false)) {
 		LOG_ERR("Error - AUDADC power on failed.\n");
@@ -164,11 +188,11 @@ static int amic_ambiq_audadc_configure(const struct device *dev, struct amic_cfg
 	data->audadc_cfg.eRepeat = AM_HAL_AUDADC_REPEATING_SCAN;
 	data->audadc_cfg.eRepeatTrigger = AM_HAL_AUDADC_RPTTRIGSEL_INT;
 
-	/*
-	 * Set up internal repeat trigger timer
-	 */
+	/* Set up internal repeat trigger timer */
 	data->irtt_cfg.eClkDiv = AM_HAL_AUDADC_RPTT_CLK_DIV8;
-	data->irtt_cfg.ui32IrttCountMax = 375; /* sample rate = eClock/eClkDiv/(ui32IrttCountMax) */
+
+	/* sample rate = eClock/eClkDiv/(ui32IrttCountMax) */
+	data->irtt_cfg.ui32IrttCountMax = 375;
 	data->irtt_cfg.bIrttEnable = true;
 
 	if (AM_HAL_STATUS_SUCCESS !=
@@ -176,21 +200,15 @@ static int amic_ambiq_audadc_configure(const struct device *dev, struct amic_cfg
 		LOG_ERR("Error - configuring AUDADC failed.\n");
 	}
 
-	/*
-	 * Set up internal repeat trigger timer
-	 */
+	/* Set up internal repeat trigger timer */
 	am_hal_audadc_configure_irtt(data->audadc_handler, &data->irtt_cfg);
 
 	data->block_size = stream->block_size;
 
-	if (stream->pcm_width == 16) {
-		data->frame_size_bytes = 2;
-	} else if (stream->pcm_width == 32) {
-		data->frame_size_bytes = 4;
-	}
-
-	data->sample_num = stream->block_size / data->frame_size_bytes;
+	data->sample_size_bytes = 2;
+	data->sample_num = stream->block_size / data->sample_size_bytes;
 	data->mem_slab = stream->mem_slab;
+	data->channel_num = stream->channel_num;
 
 	/* Configure DMA and target address.*/
 	data->dma_cfg.ui32SampleCount = data->sample_num;
@@ -221,13 +239,11 @@ static int amic_ambiq_audadc_configure(const struct device *dev, struct amic_cfg
 	amic_audadc_slot_config(data->audadc_handler);
 
 #if CONFIG_AUDADC_AMBIQ_DC_OFFSET_CALIBRATION
-	/*
-	 * Calculate DC offset calibartion parameter.
-	 */
+	/* Calculate DC offset calibration parameter. */
 	int ret = am_hal_audadc_slot_dc_offset_calculate(data->audadc_handler, 2,
 							 &(data->offset_cal_array));
-	if (AM_HAL_STATUS_SUCCESS != ret) {
-		LOG_ERR("Error - failed to calculate offset calibartion parameter. %d\n", ret);
+	if (ret != AM_HAL_STATUS_SUCCESS) {
+		LOG_ERR("Error - failed to calculate offset calibration parameter. %d\n", ret);
 	}
 #endif
 
@@ -240,14 +256,10 @@ static void am_audadc_dma_trigger(const struct device *dev)
 {
 	struct amic_ambiq_audadc_data *data = dev->data;
 
-	/*
-	 * Enable internal repeat trigger timer
-	 */
+	/* Enable internal repeat trigger timer */
 	am_hal_audadc_irtt_enable(data->audadc_handler);
 
-	/*
-	 * Trigger the ADC sampling for the first time manually.
-	 */
+	/* Trigger the ADC sampling for the first time manually. */
 	if (AM_HAL_STATUS_SUCCESS != am_hal_audadc_dma_transfer_start(data->audadc_handler)) {
 		LOG_ERR("Error - triggering the AUDADC failed.\n");
 	}
@@ -261,6 +273,16 @@ static int amic_ambiq_audadc_trigger(const struct device *dev, enum amic_trigger
 	case AMIC_TRIGGER_PAUSE:
 	case AMIC_TRIGGER_STOP:
 		if (data->amic_state == AMIC_STATE_ACTIVE) {
+			/* Enable internal repeat trigger timer */
+			am_hal_audadc_irtt_disable(data->audadc_handler);
+
+			am_hal_audadc_interrupt_clear(
+				data->audadc_handler,
+				(AM_HAL_AUDADC_INT_DERR | AM_HAL_AUDADC_INT_DCMP));
+			am_hal_audadc_interrupt_disable(
+				data->audadc_handler,
+				(AM_HAL_AUDADC_INT_DERR | AM_HAL_AUDADC_INT_DCMP));
+
 			am_hal_audadc_disable(data->audadc_handler);
 			data->amic_state = AMIC_STATE_PAUSED;
 		}
@@ -298,9 +320,10 @@ static int amic_ambiq_audadc_read(const struct device *dev, uint8_t stream, void
 	}
 
 	ret = k_sem_take(&data->dma_done_sem, SYS_TIMEOUT_MS(timeout));
+	amic_ambiq_audadc_pm_policy_state_lock_get(dev);
 
 	if (ret != 0) {
-		LOG_DBG("No audio data to be read %d", ret);
+		LOG_ERR("No audio data to be read %d", ret);
 	} else {
 		ret = k_mem_slab_alloc(data->mem_slab, &data->mem_slab_buffer, K_NO_WAIT);
 
@@ -311,7 +334,7 @@ static int amic_ambiq_audadc_read(const struct device *dev, uint8_t stream, void
 		if (!buf_in_nocache((uintptr_t)audadc_data_buf, data->block_size)) {
 			sys_cache_data_invd_range(audadc_data_buf, data->block_size);
 		}
-#endif /* AUDADC_AMBIQ_HANDLE_CACHE */
+#endif
 		uint32_t pcm_sample_cnt = data->sample_num;
 
 #if CONFIG_AUDADC_AMBIQ_DC_OFFSET_CALIBRATION
@@ -327,14 +350,34 @@ static int amic_ambiq_audadc_read(const struct device *dev, uint8_t stream, void
 				pcm_sample_cnt);
 		}
 
-		int16_t *pi16PcmBuf = (int16_t *)data->mem_slab_buffer;
-		for (int indx = 0; indx < pcm_sample_cnt; indx++) {
-			pi16PcmBuf[indx] =
-				data->lg_sample_buf[indx].int16Sample; /* Low gain samples (MIC0) */
-								       /* data to left channel. */
+		if (data->channel_num == 1) {
+			int16_t *pi16PcmBuf = (int16_t *)data->mem_slab_buffer;
+
+			for (int indx = 0; indx < pcm_sample_cnt; indx++) {
+				pi16PcmBuf[indx] =
+					data->lg_sample_buf[indx]
+						.int16Sample; /* Low gain samples (MIC0) */
+							      /* data to left channel. */
+			}
+		} else if (data->channel_num == 2) {
+			uint32_t left_ch_cnt = 0;
+			uint32_t right_ch_cnt = 0;
+			uint32_t *pcm_buf_ptr = (uint32_t *)data->mem_slab_buffer;
+
+			for (int indx = 0; indx < pcm_sample_cnt; indx++) {
+				if (data->lg_sample_buf[indx].ui16AudChannel == 0) {
+					pcm_buf_ptr[left_ch_cnt++] =
+						(data->lg_sample_buf[indx].int16Sample &
+						 0x0000FFFF);
+				} else {
+					pcm_buf_ptr[right_ch_cnt++] |=
+						((data->lg_sample_buf[indx].int16Sample)
+						 << 16);
+				}
+			}
 		}
 
-		*size = pcm_sample_cnt * data->frame_size_bytes;
+		*size = pcm_sample_cnt * data->sample_size_bytes;
 		*buffer = data->mem_slab_buffer;
 	}
 
@@ -343,8 +386,38 @@ static int amic_ambiq_audadc_read(const struct device *dev, uint8_t stream, void
 		LOG_ERR("Error - clearing the AUDADC interrupts failed.\n");
 	}
 
+	amic_ambiq_audadc_pm_policy_state_lock_put(dev);
 	return ret;
 }
+
+#ifdef CONFIG_PM_DEVICE
+static int amic_ambiq_audadc_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct amic_ambiq_audadc_data *data = dev->data;
+	uint32_t ret;
+	am_hal_sysctrl_power_state_e status;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		status = AM_HAL_SYSCTRL_WAKE;
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		status = AM_HAL_SYSCTRL_DEEPSLEEP;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	ret = am_hal_audadc_power_control(data->audadc_handler, status, true);
+
+	if (ret != AM_HAL_STATUS_SUCCESS) {
+		LOG_ERR("am_hal_audadc_power_control failed: %d", ret);
+		return -EPERM;
+	} else {
+		return 0;
+	}
+}
+#endif
 
 static const struct _amic_ops amic_ambiq_ops = {
 	.configure = amic_ambiq_audadc_configure,
@@ -360,11 +433,11 @@ static const struct _amic_ops amic_ambiq_ops = {
 			    DEVICE_DT_INST_GET(n), 0);                                             \
 		irq_enable(DT_INST_IRQN(n));                                                       \
 	}                                                                                          \
-	static uint32_t audadc_dma_tcb_buf##n[DT_INST_PROP_OR(n, audadc_buffer_size, 1536)]        \
-		__attribute__((section(DT_INST_PROP_OR(n, audadc_buffer_location, ".data"))))      \
+	static uint32_t audadc_dma_tcb_buf##n[DT_INST_PROP_OR(n, audadc_buf_size_samples, 1536)]   \
+		__attribute__((section(DT_INST_PROP_OR(n, audadc_buf_location, ".data"))))         \
 		__aligned(CONFIG_AUDADC_AMBIQ_BUFFER_ALIGNMENT);                                   \
 	static am_hal_audadc_sample_t                                                              \
-		audadc_lg_sample_buf##n[DT_INST_PROP_OR(n, audadc_buffer_size, 1536)];             \
+		audadc_lg_sample_buf##n[DT_INST_PROP_OR(n, audadc_buf_size_samples, 1536)];        \
 	static struct amic_ambiq_audadc_data amic_ambiq_audadc_data##n = {                         \
 		.dma_done_sem = Z_SEM_INITIALIZER(amic_ambiq_audadc_data##n.dma_done_sem, 0, 1),   \
 		.inst_idx = n,                                                                     \
@@ -377,6 +450,7 @@ static const struct _amic_ops amic_ambiq_ops = {
 	static const struct amic_ambiq_audadc_cfg amic_ambiq_audadc_cfg##n = {                     \
 		.irq_config_func = audadc_irq_config_func_##n,                                     \
 	};                                                                                         \
+	PM_DEVICE_DT_INST_DEFINE(n, amic_ambiq_audadc_pm_action);                                  \
 	DEVICE_DT_INST_DEFINE(n, amic_ambiq_audadc_init, NULL, &amic_ambiq_audadc_data##n,         \
 			      &amic_ambiq_audadc_cfg##n, POST_KERNEL,                              \
 			      CONFIG_AUDIO_AMIC_INIT_PRIORITY, &amic_ambiq_ops);
