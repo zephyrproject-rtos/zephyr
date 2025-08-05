@@ -101,3 +101,9 @@
 &pit64b0 {
 	clock-frequency = <DT_FREQ_M(10)>;
 };
+
+&pit64b1 {
+	top-alarm;
+	prescaler-period = <15>;
+	status = "okay";
+};
