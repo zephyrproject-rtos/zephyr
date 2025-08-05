@@ -36,6 +36,8 @@
 #define STM32_CONDRST_SUPPORT
 #endif
 
+#define STM32_HCLK_FREQUENCY DT_PROP(DT_NODELABEL(rcc), clock_frequency)
+
 /*
  * This driver need to take into account all STM32 family:
  *  - simple rng without hardware fifo and no DMA.
@@ -84,7 +86,7 @@ BUILD_ASSERT((CONFIG_ENTROPY_STM32_THR_POOL_SIZE &
  *  at least 32 MHz. See also: §6.2.2 "Peripheral clock details".
  */
 BUILD_ASSERT(!IS_ENABLED(CONFIG_SOC_STM32WB09XX) ||
-		CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC >= (32 * 1000 * 1000),
+		STM32_HCLK_FREQUENCY >= (32 * 1000 * 1000),
 	"STM32WB09: TRNG requires system clock frequency >= 32MHz");
 
 struct entropy_stm32_rng_dev_cfg {

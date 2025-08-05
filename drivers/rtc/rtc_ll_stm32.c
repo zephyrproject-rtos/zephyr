@@ -42,6 +42,8 @@
 
 LOG_MODULE_REGISTER(rtc_stm32, CONFIG_RTC_LOG_LEVEL);
 
+#define STM32_HCLK_FREQUENCY DT_PROP(DT_NODELABEL(rcc), clock_frequency)
+
 #if (defined(CONFIG_SOC_SERIES_STM32L1X) && !defined(RTC_SUBSECOND_SUPPORT)) \
 	|| defined(CONFIG_SOC_SERIES_STM32F2X)
 /* subsecond counting is not supported by some STM32L1x MCUs (Cat.1) & by STM32F2x SoC series */
@@ -358,7 +360,7 @@ static int rtc_stm32_init(const struct device *dev)
 	 * as time base, but SysTick is initialized after the RTC...
 	 */
 	const uint32_t cycles_to_waste =
-		84 * (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / USEC_PER_SEC);
+		84 * (STM32_HCLK_FREQUENCY / USEC_PER_SEC);
 	volatile uint32_t i = cycles_to_waste;
 
 	while (--i > 0) {

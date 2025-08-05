@@ -97,8 +97,10 @@ LOG_MODULE_REGISTER(adc_stm32wb0, CONFIG_ADC_LOG_LEVEL);
 #define	ADC_CHANNEL_TYPE_DIFF		(0x02U)	/* Differential */
 #define ADC_CHANNEL_TYPE_INVALID	(0xFFU)	/* Invalid */
 
+#define STM32_HCLK_FREQUENCY DT_PROP(DT_NODELABEL(rcc), clock_frequency)
+
 /** See RM0505 §6.2.1 "System clock details" */
-BUILD_ASSERT(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC >= (8 * 1000 * 1000),
+BUILD_ASSERT(STM32_HCLK_FREQUENCY >= (8 * 1000 * 1000),
 	"STM32WB0: system clock frequency must be at least 8MHz to use ADC");
 
 /**
