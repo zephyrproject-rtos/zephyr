@@ -177,6 +177,13 @@
 		compatible = "nxp,rstctl";
 		reg = <0x60000 0x1000>;
 		#reset-cells = <1>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		sysrststat: hwinfo@60000 {
+			compatible = "nxp,rstctl-hwinfo";
+			reg = <0x60000 0x4>;
+		};
 	};
 
 	rstctl4: reset@a0000 {
