@@ -120,6 +120,12 @@ int notify_new_tx_frame(struct net_pkt *pkt);
 
 #if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER)
 otError infra_if_init(otInstance *instance, struct net_if *ail_iface);
+otError infra_if_start_ra_listener(void);
+otError udp_plat_init(otInstance *ot_instance, struct net_if *ail_iface, struct net_if *ot_iface);
+otError mdns_plat_socket_init(otInstance *ot_instance, uint32_t ail_iface_idx);
+void border_agent_init(otInstance *instance);
+void border_agent_deinit(void);
+otError trel_plat_init(otInstance *instance, uint32_t ail_iface_idx);
 #endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER */
 
 #endif /* PLATFORM_ZEPHYR_H_ */
