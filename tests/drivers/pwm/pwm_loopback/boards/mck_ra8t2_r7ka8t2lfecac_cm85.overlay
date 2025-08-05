@@ -1,0 +1,52 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/pwm/ra_pwm.h>
+
+/ {
+	pwm_loopback_0 {
+		compatible = "test-pwm-loopback";
+		/* first index must be a 32-Bit timer */
+		pwms = <&pwm6 0 0 PWM_POLARITY_NORMAL>,
+		       <&pwm9 0 0 PWM_POLARITY_NORMAL>;
+	};
+};
+
+&pinctrl {
+	pwm9_default: pwm9_default {
+		group1 {
+			/* GTIOC9A */
+			psels = <RA_PSEL(RA_PSEL_GPT1, 6, 12)>;
+		};
+	};
+
+	pwm6_default: pwm6_default {
+		group1 {
+			/* GTIOC6A */
+			psels = <RA_PSEL(RA_PSEL_GPT1, 6, 1)>;
+		};
+	};
+};
+
+&gptclk {
+	status = "okay";
+};
+
+&pwm9 {
+	pinctrl-0 = <&pwm9_default>;
+	pinctrl-names = "default";
+	interrupts = <95 1>, <94 1>;
+	interrupt-names = "gtioca", "overflow";
+	status = "okay";
+};
+
+&pwm6 {
+	pinctrl-0 = <&pwm6_default>;
+	pinctrl-names = "default";
+	interrupts = <93 1>, <92 1>;
+	interrupt-names = "gtioca", "overflow";
+	status = "okay";
+};
