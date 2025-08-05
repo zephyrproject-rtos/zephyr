@@ -27,45 +27,45 @@ As of now, Ambiq provides zephyr support for a set of peripherals/drivers:
 +--------+--------------------+--------------------+------------------------------------------+
 | Driver |     Apollo510      |   Stable codes at  |              Sample                      |
 +========+====================+====================+==========================================+
-|   ADC  |         -          |        main        | samples\\drivers\\adc\\adc\_dt           |
+|   ADC  |         -          |    apollo510-dev   | samples\\drivers\\adc\\adc\_dt           |
 +--------+--------------------+--------------------+------------------------------------------+
 | AUDADC |    comming soon    |                    |                                          |
 +--------+--------------------+--------------------+------------------------------------------+
-| COUNTER|         -          |        main        | samples\\drivers\\counter\\alarm         |
+| COUNTER|         -          |    apollo510-dev   | samples\\drivers\\counter\\alarm         |
 +--------+--------------------+--------------------+------------------------------------------+
 | CRYPTO |    comming soon    |                    |                                          |
 +--------+--------------------+--------------------+------------------------------------------+
 | DISPLAY|         -          |    apollo510-dev   |  samples\\drivers\\display               |
 +--------+--------------------+--------------------+------------------------------------------+
-| FLASH  |         -          |        main        |  tests\\drivers\\flash\_api              |
+| FLASH  |         -          |    apollo510-dev   |  tests\\drivers\\flash\_api              |
 +--------+--------------------+--------------------+------------------------------------------+
-| HWINFO |         -          |        main        |  tests\\drivers\\hwinfo\\api             |
+| HWINFO |         -          |    apollo510-dev   |  tests\\drivers\\hwinfo\\api             |
 +--------+--------------------+--------------------+------------------------------------------+
-|   I2C  |         -          |        main        |  samples\\drivers\\eeprom                |
+|   I2C  |         -          |    apollo510-dev   |  samples\\drivers\\eeprom                |
 +--------+--------------------+--------------------+------------------------------------------+
-|   I2S  |         -          |        main        |  samples\\drivers\\i2s\\dmic\_i2s        |
+|   I2S  |         -          |    apollo510-dev   |  samples\\drivers\\i2s\\dmic\_i2s        |
 +--------+--------------------+--------------------+------------------------------------------+
 |MIPI_DSI|         -          |    apollo510-dev   |  samples\\drivers\\display               |
 +--------+--------------------+--------------------+------------------------------------------+
-|  MSPI  |         -          |        main        |   samples\\drivers\\mspi\\mspi\_flash    |
+|  MSPI  |         -          |    apollo510-dev   |   samples\\drivers\\mspi\\mspi\_flash    |
 +--------+--------------------+--------------------+------------------------------------------+
-|   PDM  |         -          |        main        |    samples\\drivers\\audio\\dmic         |
+|   PDM  |         -          |    apollo510-dev   |    samples\\drivers\\audio\\dmic         |
 +--------+--------------------+--------------------+------------------------------------------+
-|   PM   |         -          |        main        |    samples\\subsys\\pm\\device\_pm       |
+|   PM   |         -          |    apollo510-dev   |    samples\\subsys\\pm\\device\_pm       |
 +--------+--------------------+--------------------+------------------------------------------+
 |   PWM  |         -          |    apollo510-dev   |    samples\\drivers\\led\\pwm            |
 +--------+--------------------+--------------------+------------------------------------------+
-|   RTC  |         -          |        main        |    samples\\drivers\\rtc                 |
+|   RTC  |         -          |    apollo510-dev   |    samples\\drivers\\rtc                 |
 +--------+--------------------+--------------------+------------------------------------------+
 |  SDHC  |         -          |    apollo510-dev   |samples\\drivers\\subsys\\fs\\fs\_sample  |
 +--------+--------------------+--------------------+------------------------------------------+
-|   SPI  |         -          |        main        |samples\\boards\\ambiq\\spi\_serial\_flash|
+|   SPI  |         -          |    apollo510-dev   |samples\\drivers\\eeprom                  |
 +--------+--------------------+--------------------+------------------------------------------+
-|  TIMER |         -          |        main        |    samples\\philosophers                 |
+|  TIMER |         -          |    apollo510-dev   |    samples\\philosophers                 |
 +--------+--------------------+--------------------+------------------------------------------+
-|  UART  |         -          |        main        |   samples\\drivers\\uart\\echo\_bot      |
+|  UART  |         -          |    apollo510-dev   |   samples\\drivers\\uart\\echo\_bot      |
 +--------+--------------------+--------------------+------------------------------------------+
-|   USB  |         -          |        main        |  samples\\drivers\\subsys\\usb\\mass     |
+|   USB  |         -          |    apollo510-dev   |  samples\\drivers\\subsys\\usb\\mass     |
 +--------+--------------------+--------------------+------------------------------------------+
 
 And also there are supports for some third-party libs:
@@ -75,13 +75,16 @@ And also there are supports for some third-party libs:
 +==========+==================+====================+==========================================+
 | coremark |         -        |    ambiq-coremark  | samples\\benchmarks\\coremark            |
 +----------+------------------+--------------------+------------------------------------------+
-|   fatfs  |         -        |        main        | samples\\drivers\\subsys\\fs\\fs\_sample |
+|   fatfs  |         -        |    apollo510-dev   | samples\\drivers\\subsys\\fs\\fs\_sample |
 +----------+------------------+--------------------+------------------------------------------+
 |  mbedtls |    comming soon  |                    |                                          |
 +----------+------------------+--------------------+------------------------------------------+
 |   lvgl   |    comming soon  |                    |                                          |
 +----------+------------------+--------------------+------------------------------------------+
 
+Note1 : display samples require the ap510_disp shield to work properly.
+
+Note2 : i2c and spi devices only available on apollo510_eb board.
 
 Together with generic support for ARM Cortex-M peripherals like cache, interrupt controller, etc.
 
@@ -210,6 +213,9 @@ You should be able to see the logs in the serial terminal.
 
 ``Hello World! apollo510_evb/apollo510``
 
+For those samples that require additional hardware, such as the ap510_disp shield, you need to set the shield option when building. For example:
+
+``west build -b apollo510_evb --shield ap510_disp ./samples/drivers/display -p always``
 
 .. start_include_here
 
