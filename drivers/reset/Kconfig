@@ -38,6 +38,7 @@ rsource "Kconfig.lpc_syscon"
 rsource "Kconfig.nxp_mrcc"
 rsource "Kconfig.nxp_rstctl"
 rsource "Kconfig.mmio"
+rsource "Kconfig.mchp"
 rsource "Kconfig.mchp_mss"
 rsource "Kconfig.sf32lb"
 
