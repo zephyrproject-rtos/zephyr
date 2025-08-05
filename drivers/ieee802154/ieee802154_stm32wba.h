@@ -22,52 +22,52 @@
  *  This type extends @ref ieee802154_config_type.
  */
 enum ieee802154_stm32wba_config_type {
-	/** 
+	/**
 	 * Allows to configure the CCA energy detection threshold value
 	 */
 	IEEE802154_STM32WBA_CONFIG_CCA_THRESHOLD = IEEE802154_CONFIG_PRIV_START,
 
-	/** 
+	/**
 	 * Configure (enable/disable) the continuous reception mode
 	 */
 	IEEE802154_STM32WBA_CONFIG_CONTINUOUS_RECEPTION,
 
-	/** 
+	/**
 	 * Set the maximum frame retries on a transmission failure
 	 */
 	IEEE802154_STM32WBA_CONFIG_MAX_FRAME_RETRIES,
 
-	/** 
+	/**
 	 * Set the maximum CSMA retries on a transmission failure
 	 */
 	IEEE802154_STM32WBA_CONFIG_MAX_CSMA_FRAME_RETRIES,
 
-	/** 
+	/**
 	 * Set the minimum CSMA backoff exponent value
 	 */
 	IEEE802154_STM32WBA_CONFIG_MIN_CSMA_BE,	
 
-	/** 
+	/**
 	 * Set the maximum CSMA backoff exponent value
 	 */
 	IEEE802154_STM32WBA_CONFIG_MAX_CSMA_BE,
 
-	/** 
+	/**
 	 * Set the maximum CSMA backoff attempts counter
 	 */
 	IEEE802154_STM32WBA_CONFIG_MAX_CSMA_BACKOFF,
 
-	/** 
+	/**
 	 * Configure (enable/disable) the MAC implicit broadcast PIB
 	 */
 	IEEE802154_STM32WBA_CONFIG_IMPLICIT_BROADCAST,
 
-	/** 
+	/**
 	 * Configure (enable/disable) the antenna diversity
 	 */
 	IEEE802154_STM32WBA_CONFIG_ANTENNA_DIV,
 
-	/** 
+	/**
 	 * Reset the radio
 	 */
 	IEEE802154_STM32WBA_CONFIG_RADIO_RESET,
@@ -81,28 +81,28 @@ struct ieee802154_stm32wba_config {
 
 		/** @brief Attribute value for @ref IEEE802154_STM32WBA_CONFIG_CCA_THRESHOLD */
 		int8_t cca_thr;
-		
+
 		/** @brief Attribute value for @ref IEEE802154_STM32WBA_CONFIG_CONTINUOUS_RECEPTION */
 		bool en_cont_rec;
-		
+
 		/** @brief Attribute value for @ref IEEE802154_STM32WBA_CONFIG_MAX_FRAME_RETRIES */
 		uint8_t max_frm_retries;
-		
+
 		/** @brief Attribute value for @ref IEEE802154_STM32WBA_CONFIG_MAX_CSMA_FRAME_RETRIES */
 		uint8_t max_csma_frm_retries;
-		
+
 		/** @brief Attribute value for @ref IEEE802154_STM32WBA_CONFIG_MIN_CSMA_BE */
 		uint8_t min_csma_be;
-		
+
 		/** @brief Attribute value for @ref IEEE802154_STM32WBA_CONFIG_MAX_CSMA_BE */
 		uint8_t max_csma_be;
-		
+
 		/** @brief Attribute value for @ref IEEE802154_STM32WBA_CONFIG_MAX_CSMA_BACKOFF */
 		uint8_t max_csma_backoff;
-		
+
 		/** @brief Attribute value for @ref IEEE802154_STM32WBA_CONFIG_IMPLICIT_BROADCAST */
 		bool impl_brdcast;
-		
+
 		/** @brief Attribute value for @ref IEEE802154_STM32WBA_CONFIG_ANTENNA_DIV */
 		uint8_t ant_div;
 
@@ -116,22 +116,22 @@ struct ieee802154_stm32wba_config {
  *  This type extends @ref ieee802154_attr.
  */
 enum ieee802154_stm32wba_attr {
-	/** 
+	/**
 	 * Get the CCA energy detection threshold value
 	 */
 	IEEE802154_STM32WBA_ATTR_CCA_THRESHOLD = IEEE802154_CONFIG_PRIV_START,
 
-	/** 
+	/**
 	 * Get the IEEE EUI64 of the device
 	 */
 	IEEE802154_STM32WBA_ATTR_IEEE_EUI64,
-	
-	/** 
+
+	/**
 	 * Get the transmit power value
 	 */
 	IEEE802154_STM32WBA_ATTR_TX_POWER,
 
-	/** 
+	/**
 	 * Get a random number
 	 */
 	IEEE802154_STM32WBA_ATTR_RAND_NUM,
@@ -159,7 +159,7 @@ struct ieee802154_stm32wba_attr_value {
 		uint8_t *rand_num;
 	};
 };
-#endif // CONFIG_NET_L2_CUSTOM_IEEE802154
+#endif /* CONFIG_NET_L2_CUSTOM_IEEE802154 */
 
 struct stm32wba_802154_rx_frame {
 	uint8_t *psdu; /* Pointer to a received frame. */

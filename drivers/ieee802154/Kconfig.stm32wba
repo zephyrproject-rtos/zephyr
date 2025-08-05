@@ -17,7 +17,7 @@ config IEEE802154_STM32WBA_RX_BUFFERS
 	  Number of buffers in 802.15.4 driver serialization host's receive queue.
 	  Increase this number if you are expected to be in a noisy environment, handling many
 	  end-devices and you have sufficient RAM to allocate memory to buffers.
-	  If this value is increased, IEEE802154_STM32WBA_RX_STACK_SIZE value might required 
+	  If this value is increased, IEEE802154_STM32WBA_RX_STACK_SIZE value might required
 	  to be updated as well.
 
 config IEEE802154_STM32WBA_CSMA_CA_ENABLED
