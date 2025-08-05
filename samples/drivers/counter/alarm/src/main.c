@@ -12,6 +12,7 @@
 
 #define DELAY 2000000
 #define ALARM_CHANNEL_ID 0
+#define ALARM_FLAGS 0
 
 struct counter_alarm_cfg alarm_cfg;
 
@@ -140,7 +141,7 @@ int main(void)
 
 	counter_start(counter_dev);
 
-	alarm_cfg.flags = 0;
+	alarm_cfg.flags = ALARM_FLAGS;
 	alarm_cfg.ticks = counter_us_to_ticks(counter_dev, DELAY);
 	alarm_cfg.callback = test_counter_interrupt_fn;
 	alarm_cfg.user_data = &alarm_cfg;
