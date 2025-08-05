@@ -1,0 +1,9 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&eim0_channel1 {
+	status = "disabled";
+};
