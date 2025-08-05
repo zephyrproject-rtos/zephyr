@@ -91,7 +91,7 @@ class HardwareAdapter(DeviceAdapter):
             elif runner == 'jlink':
                 base_args.append('--dev-id')
                 base_args.append(board_id)
-            elif runner == 'stm32cubeprogrammer':
+            elif runner == 'stm32cubeprogrammer' and self.device_config.product != "BOOT-SERIAL":
                 base_args.append(f'--tool-opt=sn={board_id}')
             elif runner == 'linkserver':
                 base_args.append(f'--probe={board_id}')
