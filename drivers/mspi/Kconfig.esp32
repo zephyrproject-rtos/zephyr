@@ -1,0 +1,26 @@
+# Copyright 2025 Pavel Maloletkov
+# SPDX-License-Identifier: Apache-2.0
+
+config MSPI_ESP32
+	bool "ESP32 MSPI driver"
+	depends on DT_HAS_ESPRESSIF_ESP32_MSPI_ENABLED
+	help
+	  Enable ESP32 MSPI driver. This driver provides support for the
+	  ESP32 SPI peripherals through the Zephyr MSPI interface.
+
+if MSPI_ESP32
+
+config MSPI_ESP32_LOG_LEVEL
+	int "ESP32 MSPI driver log level"
+	depends on LOG
+	default 3
+	range 0 4
+	help
+	  Log level for ESP32 MSPI driver:
+	  - 0: OFF
+	  - 1: ERROR
+	  - 2: WARNING
+	  - 3: INFO
+	  - 4: DEBUG
+
+endif # MSPI_ESP32
