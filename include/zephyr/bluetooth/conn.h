@@ -1877,9 +1877,8 @@ struct bt_conn_cb {
 	 *  start either a connectable advertiser or create a new connection
 	 *  this might fail because there are no free connection objects
 	 *  available.
-	 *  To avoid this issue it is recommended to either start connectable
-	 *  advertise or create a new connection using @ref k_work_submit or
-	 *  increase @kconfig{CONFIG_BT_MAX_CONN}.
+	 *  To avoid this issue, it's recommended to rely instead on @ref bt_conn_cb.recycled
+	 *  which notifies the application when a connection object has actually been freed.
 	 *
 	 *  @param conn Connection object.
 	 *  @param reason BT_HCI_ERR_* reason for the disconnection.
