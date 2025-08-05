@@ -305,6 +305,16 @@ struct udc_data {
  */
 
 /**
+ * UDC driver initialization arguments
+ */
+struct udc_init_args {
+	/** Event callback from the higher layer (USB device stack) */
+	udc_event_cb_t event_cb;
+	/** Opaque pointer to higher layer context */
+	void *const event_ctx;
+};
+
+/**
  * @brief Checks whether the controller is initialized.
  *
  * @param[in] dev      Pointer to device struct of the driver instance
@@ -354,15 +364,13 @@ static inline bool udc_is_suspended(const struct device *dev)
  * power state of the bus and signal power state changes.
  *
  * @param[in] dev       Pointer to device struct of the driver instance
- * @param[in] event_cb  Event callback from the higher layer (USB device stack)
- * @param[in] event_ctx Opaque pointer to higher layer context
+ * @param[in] args      Initialization arguments
  *
  * @return 0 on success, all other values should be treated as error.
  * @retval -EINVAL on parameter error (no callback is passed)
  * @retval -EALREADY already initialized
  */
-int udc_init(const struct device *dev,
-	     udc_event_cb_t event_cb, const void *const event_ctx);
+int udc_init(const struct device *dev, const struct udc_init_args *const args);
 
 /**
  * @brief Enable USB device controller

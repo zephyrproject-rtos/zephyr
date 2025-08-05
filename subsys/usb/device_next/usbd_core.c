@@ -205,13 +205,11 @@ static void usbd_thread(void *p1, void *p2, void *p3)
 
 int usbd_device_init_core(struct usbd_context *const uds_ctx)
 {
+	struct udc_init_args init_args = {
+		.event_cb = usbd_event_carrier,
+		.event_ctx = uds_ctx,
+	};
 	int ret;
-
-	ret = udc_init(uds_ctx->dev, usbd_event_carrier, uds_ctx);
-	if (ret != 0) {
-		LOG_ERR("Failed to init device driver");
-		return ret;
-	}
 
 	usbd_set_config_value(uds_ctx, 0);
 
@@ -229,6 +227,12 @@ int usbd_device_init_core(struct usbd_context *const uds_ctx)
 		usbd_interfaces_memory_usage(uds_ctx, &rx_size, &tx_size, &rx_m_tpl);
 		LOG_INF("Required UDC FIFO size RX %u TX %u MAX RX TPL %u",
 			rx_size, tx_size, rx_m_tpl);
+	}
+
+	ret = udc_init(uds_ctx->dev, &init_args);
+	if (ret != 0) {
+		LOG_ERR("Failed to init device driver");
+		return ret;
 	}
 
 	return ret;
