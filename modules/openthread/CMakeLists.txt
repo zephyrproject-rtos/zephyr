@@ -301,4 +301,8 @@ zephyr_include_directories(include)
 
 add_subdirectory(platform)
 
+if(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER)
+zephyr_include_directories(${ZEPHYR_BASE}/subsys/net/l2/openthread)
+endif()
+
 endif()
