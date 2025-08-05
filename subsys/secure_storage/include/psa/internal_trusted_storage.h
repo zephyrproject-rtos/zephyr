@@ -16,7 +16,6 @@
 #else
 #define ITS_CALLER_ID SECURE_STORAGE_ITS_CALLER_PSA_ITS
 #endif
-#define ITS_UID (secure_storage_its_uid_t){.uid = uid, .caller_id = ITS_CALLER_ID}
 /** @endcond */
 
 #include <psa/storage_common.h>
@@ -50,7 +49,7 @@ static ALWAYS_INLINE
 psa_status_t psa_its_set(psa_storage_uid_t uid, size_t data_length,
 			 const void *p_data, psa_storage_create_flags_t create_flags)
 {
-	return secure_storage_its_set(ITS_UID, data_length, p_data, create_flags);
+	return secure_storage_its_set(ITS_CALLER_ID, uid, data_length, p_data, create_flags);
 }
 
 /**
@@ -76,7 +75,8 @@ static ALWAYS_INLINE
 psa_status_t psa_its_get(psa_storage_uid_t uid, size_t data_offset,
 			 size_t data_size, void *p_data, size_t *p_data_length)
 {
-	return secure_storage_its_get(ITS_UID, data_offset, data_size, p_data, p_data_length);
+	return secure_storage_its_get(ITS_CALLER_ID, uid, data_offset,
+				      data_size, p_data, p_data_length);
 }
 
 /**
@@ -96,7 +96,7 @@ static ALWAYS_INLINE
 /** @endcond  */
 psa_status_t psa_its_get_info(psa_storage_uid_t uid, struct psa_storage_info_t *p_info)
 {
-	return secure_storage_its_get_info(ITS_UID, p_info);
+	return secure_storage_its_get_info(ITS_CALLER_ID, uid, p_info);
 }
 
 /**
@@ -117,7 +117,7 @@ static ALWAYS_INLINE
 /** @endcond  */
 psa_status_t psa_its_remove(psa_storage_uid_t uid)
 {
-	return secure_storage_its_remove(ITS_UID);
+	return secure_storage_its_remove(ITS_CALLER_ID, uid);
 }
 
 #undef ITS_UID
