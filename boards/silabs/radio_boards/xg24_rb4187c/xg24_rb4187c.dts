@@ -266,6 +266,14 @@
 	};
 };
 
+&vdac0 {
+	status = "okay";
+};
+
+&vdac1 {
+	status = "okay";
+};
+
 &bt_hci_silabs {
 	status = "okay";
 };
