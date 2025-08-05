@@ -377,6 +377,7 @@ static void cmd_handler_process_rx_buf(struct modem_cmd_handler_data *data)
 		}
 
 //#if defined(CONFIG_MODEM_CONTEXT_VERBOSE_DEBUG)
+        LOG_INF("Going to print hex value of data->match_buf Line : %d",__LINE__);
 		LOG_HEXDUMP_INF(data->match_buf, match_len, "RECV");
 //#endif
 
