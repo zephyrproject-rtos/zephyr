@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/renesas/ra/ra8/r7ka8t2xf.dtsi>
+
+/ {
+	soc {
+		sram0: memory@22000000 {
+			compatible = "mmio-sram";
+			reg = <0x22000000 DT_SIZE_K(1664)>;
+		};
+	};
+};
