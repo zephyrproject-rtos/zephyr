@@ -170,10 +170,11 @@ static int pca9685_set_cycles(const struct device *dev,
 	struct pca9685_data *data = dev->data;
 	uint8_t buf[5] = { 0 };
 	uint32_t led_off_count;
+	uint32_t pulse;
 	int32_t pre_scale;
 	int ret;
 
-	ARG_UNUSED(flags);
+	pulse = (flags & PWM_POLARITY_INVERTED) ? period_count - pulse_count : pulse_count;
 
 	if (channel >= CHANNEL_CNT) {
 		LOG_WRN("channel out of range: %u", channel);
@@ -202,7 +203,7 @@ static int pca9685_set_cycles(const struct device *dev,
 	}
 
 	/* Adjust PWM output for the resolution of the PCA9685 */
-	led_off_count = DIV_ROUND_UP(pulse_count * PWM_STEPS, period_count);
+	led_off_count = DIV_ROUND_UP(pulse * PWM_STEPS, period_count);
 
 	buf[0] = ADDR_LED_ON_L(channel);
 	if (led_off_count == 0) {
