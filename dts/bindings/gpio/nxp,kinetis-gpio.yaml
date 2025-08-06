@@ -24,6 +24,26 @@ properties:
     description: |
       Describes an offset between inst index and actual GPIO port number.
 
+  wakeup-line:
+    type: array
+    description: |
+      On some NXP platforms, GPIO can wake up the MCU, but the wakeup capability
+      is configured through a specific peripheral, such as the wakeup unit. We need
+      to use this property to specify which pin has the wakeup capability and which
+      register of the wakeup unit the pin is mapped to.
+      For example, configure wakeup-line = <20 4> indicates GPIOn_20 can wakeup
+      the SoC/MCU, and we need to configure wakeup unit register 4 to enable wakeup
+      function.
+
+  wakeup-signal-edge:
+    type: int
+    enum:
+      - 1 # External input Pin enabled with the rising edge detection
+      - 2 # External input Pin enabled with the falling edge detection.
+      - 3 # External input Pin enabled with any change detection.
+    description: |
+      Indicates which edge signal on the wakeup pin can wake up the MCU.
+
 gpio-cells:
   - pin
   - flags
