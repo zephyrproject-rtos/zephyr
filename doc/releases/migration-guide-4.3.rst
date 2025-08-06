@@ -107,5 +107,8 @@ Silabs
    * :kconfig:option:`CONFIG_RAIL_PA_ENABLE_CALIBRATION` to
      :kconfig:option:`CONFIG_SILABS_SISDK_RAIL_PA_ENABLE_CALIBRATION`
 
+* Fixed name of the :kconfig:option:`CONFIG_SOC_*`. These option contained PART_NUMBER in their
+  while they shouldn't.
+
 Architectures
 *************
