@@ -115,6 +115,10 @@ config KCONFIG_MAX_10_3_2
 
 DT_COMPAT_VND_GPIO := vnd,gpio
 
+config KCONFIG_VND_GPIO_ENABLED_Y
+	bool
+	default $(dt_compat_enabled,$(DT_COMPAT_VND_GPIO))
+
 config KCONFIG_VND_GPIO_ENABLED_NUM_4
 	int
 	default $(dt_compat_enabled_num,$(DT_COMPAT_VND_GPIO))
@@ -125,7 +129,15 @@ config KCONFIG_VND_CAN_CONTROLLER_ENABLED_NUM_2
 	int
 	default $(dt_compat_enabled_num,$(DT_COMPAT_VND_CAN_CONTROLLER))
 
+config KCONFIG_VND_CAN_CONTROLLER_ENABLED_Y
+	bool
+	default $(dt_compat_enabled,$(DT_COMPAT_VND_CAN_CONTROLLER))
+
 DT_COMPAT_VND_PWM := vnd,pwm
+
+config KCONFIG_VND_PWM_ENABLED_N
+	bool
+	default $(dt_compat_enabled,$(DT_COMPAT_VND_PWM))
 
 config KCONFIG_VND_PWM_ENABLED_NUM_0
 	int
