@@ -162,7 +162,9 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack, char *sta
 	thread->callee_saved.psp = (uint32_t)iframe;
 #endif
 
+#ifndef CONFIG_USE_SWITCH
 	thread->arch.basepri = 0;
+#endif
 
 #ifdef CONFIG_ARM_PAC_PER_THREAD
 	/* Generate PAC key and save it in thread context to be set later
