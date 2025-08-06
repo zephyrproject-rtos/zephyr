@@ -90,14 +90,14 @@ static inline void arm_m_exc_tail(void)
 	 * our bookeeping around EXC_RETURN, so do it early.
 	 */
 	void z_check_stack_sentinel(void);
-	void *isr_lr = (void *) *arm_m_exc_lr_ptr;
+	void *isr_lr = (void *)*arm_m_exc_lr_ptr;
 
 	if (IS_ENABLED(CONFIG_STACK_SENTINEL)) {
 		z_check_stack_sentinel();
 	}
 	if (isr_lr != arm_m_cs_ptrs.lr_fixup) {
 		arm_m_cs_ptrs.lr_save = isr_lr;
-		*arm_m_exc_lr_ptr = (uint32_t) arm_m_cs_ptrs.lr_fixup;
+		*arm_m_exc_lr_ptr = (uint32_t)arm_m_cs_ptrs.lr_fixup;
 	}
 #endif
 }
@@ -137,64 +137,63 @@ static ALWAYS_INLINE void arm_m_switch(void *switch_to, void **switched_from)
 	 */
 	register uint32_t r4 __asm__("r4") = (uint32_t)switch_to;
 	register uint32_t r5 __asm__("r5") = (uint32_t)switched_from;
-	__asm__ volatile(
-		 _R7_CLOBBER_OPT("push {r7};")
-		/* Construct and push a {r12, lr, pc} group at the top
-		 * of the frame, where PC points to the final restore location
-		 * at the end of this sequence.
-		 */
-		"mov r6, r12;"
-		"mov r7, lr;"
-		"ldr r8, =3f;"    /* address of restore PC */
-		"add r8, r8, #1;" /* set thumb bit */
-		"push {r6-r8};"
-		"sub sp, sp, #24;" /* skip over space for r6-r11 */
-		"push {r0-r5};"
-		"mov r2, #0x01000000;" /* APSR (only care about thumb bit) */
-		"mov r0, #0;"          /* Leave r0 zero for code blow */
+	__asm__ volatile(_R7_CLOBBER_OPT("push {r7};")
+			 /* Construct and push a {r12, lr, pc} group at the top
+			  * of the frame, where PC points to the final restore location
+			  * at the end of this sequence.
+			  */
+			 "mov r6, r12;"
+			 "mov r7, lr;"
+			 "ldr r8, =3f;"    /* address of restore PC */
+			 "add r8, r8, #1;" /* set thumb bit */
+			 "push {r6-r8};"
+			 "sub sp, sp, #24;" /* skip over space for r6-r11 */
+			 "push {r0-r5};"
+			 "mov r2, #0x01000000;" /* APSR (only care about thumb bit) */
+			 "mov r0, #0;"          /* Leave r0 zero for code blow */
 #ifdef CONFIG_BUILTIN_STACK_GUARD
-		"mrs r1, psplim;"
-		"push {r1-r2};"
-		"msr psplim, r0;" /* zero it so we can move the stack */
+			 "mrs r1, psplim;"
+			 "push {r1-r2};"
+			 "msr psplim, r0;" /* zero it so we can move the stack */
 #else
-		"push {r2};"
+			 "push {r2};"
 #endif
 
 #ifdef CONFIG_FPU
-		/* Push FPU state (if active) to our outgoing stack */
-		"   mrs r8, control;" /* read CONTROL.FPCA */
-		"   and r7, r8, #4;"  /* r7 == have_fpu */
-		"   cbz r7, 1f;"
-		"   bic r8, r8, #4;" /* clear CONTROL.FPCA */
-		"   msr control, r8;"
-		"   vmrs r6, fpscr;"
-		"   push {r6};"
-		"   vpush {s0-s31};"
-		"1: push {r7};" /* have_fpu word */
+			 /* Push FPU state (if active) to our outgoing stack */
+			 "   mrs r8, control;" /* read CONTROL.FPCA */
+			 "   and r7, r8, #4;"  /* r7 == have_fpu */
+			 "   cbz r7, 1f;"
+			 "   bic r8, r8, #4;" /* clear CONTROL.FPCA */
+			 "   msr control, r8;"
+			 "   vmrs r6, fpscr;"
+			 "   push {r6};"
+			 "   vpush {s0-s31};"
+			 "1: push {r7};" /* have_fpu word */
 
-		/* Pop FPU state (if present) from incoming frame in r4 */
-		"   ldm r4!, {r7};" /* have_fpu word */
-		"   cbz r7, 2f;"
-		"   vldm r4!, {s0-s31};" /* (note: sets FPCA bit for us) */
-		"   ldm r4!, {r6};"
-		"   vmsr fpscr, r6;"
-		"2:;"
+			 /* Pop FPU state (if present) from incoming frame in r4 */
+			 "   ldm r4!, {r7};" /* have_fpu word */
+			 "   cbz r7, 2f;"
+			 "   vldm r4!, {s0-s31};" /* (note: sets FPCA bit for us) */
+			 "   ldm r4!, {r6};"
+			 "   vmsr fpscr, r6;"
+			 "2:;"
 #endif
 
 #if defined(CONFIG_USERSPACE) && defined(CONFIG_USE_SWITCH)
-		"  ldr r8, =arm_m_switch_control;"
-		"  ldr r8, [r8];"
-		"  msr control, r8;"
+			 "  ldr r8, =arm_m_switch_control;"
+			 "  ldr r8, [r8];"
+			 "  msr control, r8;"
 #endif
 
-		/* Save the outgoing switch handle (which is SP), swap stacks,
-		 * and enable interrupts.  The restore process is
-		 * interruptible code (running in the incoming thread) once
-		 * the stack is valid.
-		 */
-		"str sp, [r5];"
-		"mov sp, r4;"
-		"msr basepri, r0;"
+			 /* Save the outgoing switch handle (which is SP), swap stacks,
+			  * and enable interrupts.  The restore process is
+			  * interruptible code (running in the incoming thread) once
+			  * the stack is valid.
+			  */
+			 "str sp, [r5];"
+			 "mov sp, r4;"
+			 "msr basepri, r0;"
 
 	/* Restore is super simple: pop the flags (and stack limit if
 	 * enabled) then slurp in the whole GPR set in two
@@ -202,27 +201,27 @@ static ALWAYS_INLINE void arm_m_switch(void *switch_to, void **switched_from)
 	 * both LR and PC in a single instruction)
 	 */
 #ifdef CONFIG_BUILTIN_STACK_GUARD
-		"pop {r1-r2};"
-		"msr psplim, r1;"
+			 "pop {r1-r2};"
+			 "msr psplim, r1;"
 #else
-		"pop {r2};"
+			 "pop {r2};"
 #endif
 #ifdef _ARM_M_SWITCH_HAVE_DSP
-		"msr apsr_nzcvqg, r2;" /* bonkers syntax */
+			 "msr apsr_nzcvqg, r2;" /* bonkers syntax */
 #else
-		"msr apsr_nzcvq, r2;" /* not even source-compatible! */
+			 "msr apsr_nzcvq, r2;" /* not even source-compatible! */
 #endif
-		"pop {r0-r12, lr};"
-		"pop {pc};"
+			 "pop {r0-r12, lr};"
+			 "pop {pc};"
 
-		"3:" /* Label for restore address */
-		 _R7_CLOBBER_OPT("pop {r7};")
-		::"r"(r4), "r"(r5)
-		 : "r6", "r8", "r9", "r10",
+			 "3:" /* Label for restore address */
+			 _R7_CLOBBER_OPT("pop {r7};")::"r"(r4),
+			 "r"(r5)
+			 : "r6", "r8", "r9", "r10",
 #ifndef CONFIG_ARM_GCC_FP_WORKAROUND
-		    "r7",
+			   "r7",
 #endif
-		    "r11");
+			   "r11");
 }
 
 #ifdef CONFIG_USE_SWITCH
