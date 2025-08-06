@@ -1793,6 +1793,35 @@ int supplicant_get_rts_threshold(const struct device *dev, unsigned int *rts_thr
 	return wifi_mgmt_api->get_rts_threshold(dev, rts_threshold);
 }
 
+bool supplicant_bss_support_neighbor_rep(const struct device *dev)
+{
+	struct wpa_supplicant *wpa_s;
+	bool is_support = false;
+	const u8 *rrm_ie = NULL;
+
+	wpa_s = get_wpa_s_handle(dev);
+	if (!wpa_s) {
+		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
+		return false;
+	}
+
+	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+	if (!wpa_s->rrm.rrm_used) {
+		goto out;
+	}
+
+	rrm_ie = wpa_bss_get_ie(wpa_s->current_bss,
+				WLAN_EID_RRM_ENABLED_CAPABILITIES);
+	if (!rrm_ie || !(wpa_s->current_bss->caps & IEEE80211_CAP_RRM) ||
+	    !(rrm_ie[2] & WLAN_RRM_CAPS_NEIGHBOR_REPORT)) {
+		goto out;
+	}
+	is_support = true;
+out:
+	k_mutex_unlock(&wpa_supplicant_mutex);
+	return is_support;
+}
+
 int supplicant_bss_ext_capab(const struct device *dev, int capab)
 {
 	struct wpa_supplicant *wpa_s;

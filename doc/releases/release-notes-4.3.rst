@@ -75,6 +75,16 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w)
 
+* Architectures
+
+  * :kconfig:option:`CONFIG_SRAM_SW_ISR_TABLE`
+
+* Bluetooth
+
+  * Audio
+
+    * :c:struct:`bt_audio_codec_cfg` now contains a target_latency and a target_phy option
+
 * Power management
 
    * :c:func:`pm_device_driver_deinit`
@@ -127,6 +137,9 @@ Other notable changes
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
   a paragraph or is it enough to link to the api/driver/Kconfig/board page above?
+
+* Nordic Semiconductor nRF54L09 PDK (``nrf54l09pdk``), which only targeted an emulator, has been removed
+  from the tree. It will be replaced with a proper board definition as soon as it's available.
 
 * Removed support for Nordic Semiconductor nRF54L20 PDK (``nrf54l20pdk``) since it is
   replaced with :zephyr:board:`nrf54lm20dk` (``nrf54lm20dk``).

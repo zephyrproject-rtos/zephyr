@@ -14,10 +14,17 @@
 #include <kernel_arch_data.h>
 #include <zephyr/mem_mgmt/mem_attr.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/arch/arm/mpu/arm_mpu.h>
 
 #define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(mpu);
+
+#if Z_ARM_CPU_HAS_PMSAV8_MPU
+#define ATTRIBUTE_AND_SIZE_REG_NAME RLAR
+#else
+#define ATTRIBUTE_AND_SIZE_REG_NAME RASR
+#endif
 
 #if defined(CONFIG_ARMV8_M_BASELINE) || defined(CONFIG_ARMV8_M_MAINLINE)
 /* The order here is on purpose since ARMv8-M SoCs may define
@@ -62,6 +69,7 @@ static uint8_t static_regions_num;
 #include "arm_mpu_v7_internal.h"
 #elif defined(CONFIG_CPU_CORTEX_M23) || \
 	defined(CONFIG_CPU_CORTEX_M33) || \
+	defined(CONFIG_CPU_CORTEX_M52) || \
 	defined(CONFIG_CPU_CORTEX_M55) || \
 	defined(CONFIG_CPU_CORTEX_M85) || \
 	defined(CONFIG_AARCH32_ARMV8_R)
@@ -406,6 +414,72 @@ void arm_core_mpu_configure_dynamic_mpu_regions(const struct z_arm_mpu_partition
 			regions_num);
 	}
 }
+
+#if defined(CONFIG_CPU_CORTEX_M)
+/**
+ * @brief Save the current MPU configuration into the provided context struct.
+ */
+void z_arm_save_mpu_context(struct z_mpu_context_retained *ctx)
+{
+	uint32_t regions = get_num_regions();
+
+	__ASSERT_NO_MSG(ctx != NULL);
+
+	if (regions == 0 || regions > Z_ARM_MPU_MAX_REGIONS) {
+		LOG_DBG("Invalid MPU region count: %u", regions);
+		ctx->num_valid_regions = 0;
+		return;
+	}
+
+	ctx->num_valid_regions = regions;
+
+	for (uint32_t i = 0; i < regions; i++) {
+		MPU->RNR = i;
+		__DSB(); /* Ensure MPU->RNR write completes before reading registers */
+		__ISB();
+		ctx->rbar[i] = MPU->RBAR;
+		ctx->rasr_rlar[i] = MPU->ATTRIBUTE_AND_SIZE_REG_NAME;
+	}
+#if Z_ARM_CPU_HAS_PMSAV8_MPU
+	ctx->mair[0] = MPU->MAIR0;
+	ctx->mair[1] = MPU->MAIR1;
+#endif
+	ctx->ctrl = MPU->CTRL;
+}
+
+/**
+ * @brief Restore the MPU configuration from the provided context struct.
+ */
+void z_arm_restore_mpu_context(const struct z_mpu_context_retained *ctx)
+{
+	__ASSERT_NO_MSG(ctx != NULL);
+
+	if (ctx->num_valid_regions == 0 || ctx->num_valid_regions > Z_ARM_MPU_MAX_REGIONS) {
+		LOG_DBG("Invalid MPU context num_valid_regions: %u", ctx->num_valid_regions);
+		return;
+	}
+
+	/* Disable MPU before reprogramming */
+	arm_core_mpu_disable();
+
+	for (uint32_t i = 0; i < ctx->num_valid_regions; i++) {
+		MPU->RNR = i;
+		MPU->RBAR = ctx->rbar[i];
+		MPU->ATTRIBUTE_AND_SIZE_REG_NAME = ctx->rasr_rlar[i];
+	}
+
+#if Z_ARM_CPU_HAS_PMSAV8_MPU
+	MPU->MAIR0 = ctx->mair[0];
+	MPU->MAIR1 = ctx->mair[1];
+#endif
+	/* Restore MPU control register (including enable bit if set) */
+	MPU->CTRL = ctx->ctrl;
+
+	/* Ensure MPU settings take effect before continuing */
+	__DSB();
+	__ISB();
+}
+#endif /* CONFIG_CPU_CORTEX_M */
 
 /* ARM MPU Driver Initial Setup */
 

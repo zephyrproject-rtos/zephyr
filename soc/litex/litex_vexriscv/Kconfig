@@ -16,4 +16,19 @@ config LITEX_CSR_DATA_WIDTH
 	int "Select Control/Status register width"
 	default 32
 
+choice LITEX_CSR_ORDERING
+	prompt "Select Control/Status register ordering"
+	default LITEX_CSR_ORDERING_BIG
+
+config LITEX_CSR_ORDERING_BIG
+	bool "Big-endian ordering"
+	help
+	  Use big-endian ordering for CSR accesses
+
+config LITEX_CSR_ORDERING_LITTLE
+	bool "Little-endian ordering"
+	help
+	  Use little-endian ordering for CSR accesses
+endchoice
+
 endif # SOC_LITEX_VEXRISCV

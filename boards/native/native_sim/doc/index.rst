@@ -504,9 +504,12 @@ The following peripherals are currently provided with this board:
   enabled with :kconfig:option:`CONFIG_CAN_NATIVE_LINUX` and configured with the device tree binding
   :dtcompatible:`zephyr,native-linux-can`.
 
-  It is possible to specify which CAN interface will be used by the app using the ``--can-if``
-  command-line option. This option overrides **every** Linux SocketCAN driver instance to use the specified
-  interface.
+  By default, the native simulator expects a SocketCAN network device called ``zcan0``. It is
+  possible to specify which SocketCAN network device will be used by the app by using the
+  ``--can-if`` command-line option. This option overrides **every** Linux SocketCAN driver instance
+  to use the specified interface.
+
+  SocketCAN support can be enabled by using the :ref:`snippet-socketcan-native-sim`.
 
 .. _native_ptty_uart:
 
@@ -551,7 +554,8 @@ option ``-attach_uart_cmd=<"cmd">``, or for each individual UART with
 :kconfig:option:`CONFIG_UART_NATIVE_PTY_AUTOATTACH_DEFAULT_CMD`.
 Note that the default command assumes both ``xterm`` and ``screen`` are installed in the system.
 
-This driver only supports poll mode. Interrupt and async mode are not supported.
+This driver supports poll mode or async mode with :kconfig:option:`CONFIG_UART_ASYNC_API`.
+Interrupt mode is not supported.
 Neither runtime configuration or line control are supported.
 
 .. _native_tty_uart:

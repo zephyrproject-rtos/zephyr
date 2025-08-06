@@ -24,6 +24,15 @@ string(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
 
 set(NOSTDINC ${TOOLCHAIN_HOME}/arc/inc)
 
+set(LLEXT_APPEND_FLAGS
+  -nog
+)
+
+set(LLEXT_REMOVE_FLAGS
+  -ffunction-sections
+  -fdata-sections
+)
+
 # For CMake to be able to test if a compiler flag is supported by the toolchain
 # (check_c_compiler_flag function which we wrap with target_cc_option in extensions.cmake)
 # we rely on default MWDT header locations and don't manually specify headers directories.

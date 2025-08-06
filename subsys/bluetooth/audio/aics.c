@@ -293,8 +293,7 @@ static uint8_t handle_set_gain_op(struct bt_aics *inst, const struct bt_aics_gai
 		return BT_AICS_ERR_OUT_OF_RANGE;
 	}
 
-	if (BT_AICS_INPUT_MODE_SETTABLE(inst->srv.state.gain_mode) &&
-	    inst->srv.state.gain != cp->gain_setting) {
+	if (inst->srv.state.gain != cp->gain_setting) {
 		inst->srv.state.gain = cp->gain_setting;
 		*state_change = true;
 	}

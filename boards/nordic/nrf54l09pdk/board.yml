@@ -1,6 +1,0 @@
-board:
-  name: nrf54l09pdk
-  full_name: nRF54L09 PDK
-  vendor: nordic
-  socs:
-  - name: nrf54l09

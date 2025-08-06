@@ -18,7 +18,21 @@ enum sensor_attribute_tmp_11x {
 	SENSOR_ATTR_TMP11X_SHUTDOWN_MODE,
 	/** Turn on continuous conversion */
 	SENSOR_ATTR_TMP11X_CONTINUOUS_CONVERSION_MODE,
+	/** Configure alert pin polarity */
+	SENSOR_ATTR_TMP11X_ALERT_PIN_POLARITY,
+	/** Configure alert mode */
+	SENSOR_ATTR_TMP11X_ALERT_MODE,
+	/** Configure alert pin mode for alert or DR*/
+	SENSOR_ATTR_TMP11X_ALERT_PIN_SELECT,
 };
+
+/* Alert pin support macros */
+#define TMP11X_ALERT_PIN_ACTIVE_LOW  0
+#define TMP11X_ALERT_PIN_ACTIVE_HIGH 1
+#define TMP11X_ALERT_ALERT_MODE      0
+#define TMP11X_ALERT_THERM_MODE      1
+#define TMP11X_ALERT_PIN_ALERT_SEL   0
+#define TMP11X_ALERT_PIN_DR_SEL      1
 
 #define EEPROM_TMP11X_SIZE (4 * sizeof(uint16_t))
 

@@ -511,6 +511,15 @@ static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 			}
 #endif /* CONFIG_BT_ISO_CENTRAL */
 		}
+	} else if (IS_ENABLED(CONFIG_BT_ISO_BROADCASTER) &&
+		   conn_type == BT_ISO_CHAN_TYPE_BROADCASTER) {
+		/* BIS do not get a HCI Disconnected event and will not handle cleanup of pending TX
+		 * complete in the same way as ACL and CIS do. Call bt_conn_tx_notify directly here
+		 * to flush the chan->iso->tx_complete for each disconnected BIS
+		 */
+		bt_conn_tx_notify(chan->iso, true);
+	} else {
+		/* No special handling for BT_ISO_CHAN_TYPE_SYNC_RECEIVER */
 	}
 }
 
@@ -991,15 +1000,6 @@ int bt_iso_chan_send_ts(struct bt_iso_chan *chan, struct net_buf *buf, uint16_t 
 static bool valid_chan_io_qos(const struct bt_iso_chan_io_qos *io_qos, bool is_tx,
 			      bool is_broadcast, bool advanced)
 {
-	const size_t max_mtu = (is_tx ? CONFIG_BT_ISO_TX_MTU : CONFIG_BT_ISO_RX_MTU);
-	const size_t max_sdu = MIN(max_mtu, BT_ISO_MAX_SDU);
-
-	if (io_qos->sdu > max_sdu) {
-		LOG_DBG("sdu (%u) shall be smaller or equal to %zu", io_qos->sdu, max_sdu);
-
-		return false;
-	}
-
 	if (!IN_RANGE(io_qos->phy, BT_GAP_LE_PHY_1M, BT_GAP_LE_PHY_CODED)) {
 		LOG_DBG("Invalid PHY %u", io_qos->phy);
 
@@ -1666,22 +1666,19 @@ static bool valid_chan_qos(const struct bt_iso_chan_qos *qos, bool advanced)
 		return false;
 	}
 #endif /* CONFIG_BT_ISO_TEST_PARAMS */
-
-	if (qos->rx != NULL) {
-		if (!valid_chan_io_qos(qos->rx, false, false, advanced)) {
-			LOG_DBG("Invalid rx qos");
-			return false;
-		}
-	} else if (qos->tx == NULL) {
+	if (qos->rx == NULL && qos->tx == NULL) {
 		LOG_DBG("Both rx and tx qos are NULL");
 		return false;
 	}
 
-	if (qos->tx != NULL) {
-		if (!valid_chan_io_qos(qos->tx, true, false, advanced)) {
-			LOG_DBG("Invalid tx qos");
-			return false;
-		}
+	if (qos->rx != NULL && !valid_chan_io_qos(qos->rx, false, false, advanced)) {
+		LOG_DBG("Invalid rx qos");
+		return false;
+	}
+
+	if (qos->tx != NULL && !valid_chan_io_qos(qos->tx, true, false, advanced)) {
+		LOG_DBG("Invalid tx qos");
+		return false;
 	}
 
 	return true;

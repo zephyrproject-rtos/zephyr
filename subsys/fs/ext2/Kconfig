@@ -53,5 +53,13 @@ config EXT2_SUPERBLOCK_ALIGNMENT
 	  this value if they require alignment. This represents the alignment
 	  of struct ext2_disk_superblock in bytes.
 
+DT_COMPAT_ZEPHYR_FSTAB_EXT2 := zephyr,fstab,ext2
+config EXT2_FSTAB_AUTOMOUNT
+	bool "Support for fstab auto-mounting"
+	depends on $(dt_compat_enabled,$(DT_COMPAT_ZEPHYR_FSTAB_EXT2))
+	default y
+	help
+	  Enable automatic mounting of Ext2 file system at boot time.
+
 endmenu
 endif

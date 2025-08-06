@@ -59,6 +59,8 @@ DECLARE_FAKE_VALUE_FUNC(int, lwm2m_security_mode, struct lwm2m_ctx *);
 DECLARE_FAKE_VALUE_FUNC(int, z_impl_zsock_setsockopt, int, int, int, const void *, socklen_t);
 DECLARE_FAKE_VOID_FUNC(engine_update_tx_time);
 DECLARE_FAKE_VALUE_FUNC(bool, coap_block_has_more, struct coap_packet *);
+DECLARE_FAKE_VOID_FUNC(lwm2m_rd_client_hint_socket_state, struct lwm2m_ctx *,
+		       enum lwm2m_socket_states);
 
 #define DO_FOREACH_FAKE(FUNC)                                                                      \
 	do {                                                                                       \
@@ -91,6 +93,7 @@ DECLARE_FAKE_VALUE_FUNC(bool, coap_block_has_more, struct coap_packet *);
 		FUNC(z_impl_zsock_setsockopt)                                                      \
 		FUNC(engine_update_tx_time)                                                        \
 		FUNC(coap_block_has_more)							   \
+		FUNC(lwm2m_rd_client_hint_socket_state)                                            \
 	} while (0)
 
 #endif /* STUBS_H */

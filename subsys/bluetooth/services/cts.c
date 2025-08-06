@@ -16,6 +16,7 @@
 #include <zephyr/sys/timeutil.h>
 #endif
 
+#include <errno.h>
 #include <stdbool.h>
 #include <zephyr/sys/byteorder.h>
 
@@ -152,8 +153,8 @@ static ssize_t write_ct(struct bt_conn *conn, const struct bt_gatt_attr *attr, c
 	}
 
 	err = bt_cts_send_notification(BT_CTS_UPDATE_REASON_MANUAL);
-	if (err) {
-		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+	if (err != 0 && err != -ENOTCONN) {
+		LOG_WRN("New value was not notified to clients: %d", err);
 	}
 
 	return len;

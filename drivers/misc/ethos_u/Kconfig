@@ -5,10 +5,21 @@ choice
 	prompt "Select vendor Ethos-U NPU driver"
 	depends on ETHOS_U
 	default ETHOS_U_ARM if DT_HAS_ARM_ETHOS_U_ENABLED
+	default ETHOS_U_NUMAKER if DT_HAS_NUVOTON_NUMAKER_NPU_ENABLED
 
 config ETHOS_U_ARM
 	bool "Arm Ethos-U NPU driver"
 	help
 	  Enables Arm Ethos-U NPU driver.
 
+config ETHOS_U_NUMAKER
+	bool "Nuvoton NuMaker Ethos-U NPU driver"
+	help
+	  Enables Nuvoton NuMaker frontend of Arm Ethos-U NPU driver
+
 endchoice
+
+config ETHOS_U_DCACHE
+	bool "Override Ethos-U driver DCache functions"
+	depends on ETHOS_U
+	default y if CACHE_MANAGEMENT

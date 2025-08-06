@@ -27,6 +27,8 @@ source "subsys/net/lib/socks/Kconfig"
 
 source "subsys/net/lib/sntp/Kconfig"
 
+source "subsys/net/lib/ocpp/Kconfig"
+
 endmenu
 
 menu "Network Libraries"
@@ -36,6 +38,8 @@ source "subsys/net/lib/config/Kconfig"
 source "subsys/net/lib/sockets/Kconfig"
 
 source "subsys/net/lib/tls_credentials/Kconfig"
+
+source "subsys/net/lib/shell/Kconfig"
 
 endmenu
 

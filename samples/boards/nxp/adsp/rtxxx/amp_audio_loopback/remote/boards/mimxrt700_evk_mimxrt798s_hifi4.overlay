@@ -1,0 +1,12 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		i2s-rx = &sai0;
+		i2s-tx = &sai0;
+	};
+};

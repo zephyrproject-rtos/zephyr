@@ -282,5 +282,29 @@
 			interrupts = <108 0>;
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 19>;
 		};
+
+		wut0: timer@40006400 {
+			compatible = "adi,max32-timer";
+			reg = <0x40006400 0x200>;
+			interrupts = <53 0>;
+			status = "disabled";
+			prescaler = <1>;
+			counter {
+				compatible = "adi,max32-wut";
+				status = "disabled";
+			};
+		};
+
+		wut1: timer@40006600 {
+			compatible = "adi,max32-timer";
+			reg = <0x40006600 0x200>;
+			interrupts = <109 0>;
+			status = "disabled";
+			prescaler = <1>;
+			counter {
+				compatible = "adi,max32-wut";
+				status = "disabled";
+			};
+		};
 	};
 };

@@ -293,6 +293,8 @@ static uint8_t btp_cap_unicast_setup_ase(const void *cmd, uint16_t cmd_len,
 	qos.pd = sys_get_le24(cp->presentation_delay);
 
 	memset(&codec_cfg, 0, sizeof(codec_cfg));
+	codec_cfg.target_latency = BT_AUDIO_CODEC_CFG_TARGET_LATENCY_BALANCED;
+	codec_cfg.target_phy = BT_AUDIO_CODEC_CFG_TARGET_PHY_2M;
 	codec_cfg.id = cp->coding_format;
 	codec_cfg.vid = cp->vid;
 	codec_cfg.cid = cp->cid;

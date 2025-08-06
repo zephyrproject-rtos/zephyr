@@ -1,0 +1,15 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Gecko SDK configuration"
+	depends on HAS_SILABS_GECKO
+
+config SILABS_GECKO_RAIL_MULTIPROTOCOL
+	bool "Use RAIL Multiprotocol library"
+	depends on SOC_GECKO_USE_RAIL
+	help
+	  Enable the Silicon Labs RAIL multiprotocol library, which provides
+	  coexistence and arbitration between multiple wireless protocols (for
+	  example, Bluetooth LE and a proprietary 2.4 GHz stack) on Gecko SoCs.
+
+endmenu

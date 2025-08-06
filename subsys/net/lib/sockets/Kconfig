@@ -42,7 +42,7 @@ config NET_SOCKETS_CONNECT_TIMEOUT
 config NET_SOCKETS_DNS_TIMEOUT
 	int "Timeout value in milliseconds for DNS queries"
 	default 2000
-	range 1000 300000
+	range 1000 300000 if !NET_TEST
 	depends on DNS_RESOLVER
 	help
 	  This variable specifies time in milliseconds after which DNS

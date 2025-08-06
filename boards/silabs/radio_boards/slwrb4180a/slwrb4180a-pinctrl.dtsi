@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <dt-bindings/pinctrl/silabs/xg21-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/silabs/xg21-pinctrl.h>
 
 &pinctrl {
 	usart0_default: usart0_default {

@@ -235,6 +235,10 @@ void board_early_init_hook(void)
 
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ostimer0))
+	CLOCK_AttachClk(kCLK_1M_to_OSTIMER);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb))
 	RESET_PeripheralReset(kUSB0_RST_SHIFT_RSTn);
 	CLOCK_EnableUsbfsClock();

@@ -234,16 +234,25 @@ ZTEST(pwm_gpio_loopback, test_pwm)
 
 ZTEST(pwm_gpio_loopback, test_pwm_cross)
 {
+	uint8_t duty[TEST_PWM_COUNT];
+	const int duty_step = 25;
+	const int duty_variations = 5;
+
+	/* Initial sweep with increasing duty cycles */
 	for (int i = 0; i < TEST_PWM_COUNT; i++) {
-		/* Test case: [Duty: 40%] */
-		test_run(&pwms_dt[i], &gpios_dt[i], 40, true);
+		duty[i] = (i % duty_variations) * duty_step;
+		test_run(&pwms_dt[i], &gpios_dt[i], duty[i], true);
 	}
 
-	/* Set all channels and check if they retain the original
-	 * configuration without calling pwm_set again
-	 */
-	for (int i = 0; i < TEST_PWM_COUNT; i++) {
-		test_run(&pwms_dt[i], &gpios_dt[i], 40, false);
+	/* Repeat test with persistent config checks and rotated duty cycles */
+	for (int j = 1; j < duty_variations; j++) {
+		for (int i = 0; i < TEST_PWM_COUNT; i++) {
+			test_run(&pwms_dt[i], &gpios_dt[i], duty[i], false);
+		}
+		for (int i = 0; i < TEST_PWM_COUNT; i++) {
+			duty[i] = ((j + i) % duty_variations) * duty_step;
+			test_run(&pwms_dt[i], &gpios_dt[i], duty[i], true);
+		}
 	}
 }
 

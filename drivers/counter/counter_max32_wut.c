@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT adi_max32_wut
 
 #include <zephyr/drivers/counter.h>
+#include <zephyr/dt-bindings/clock/adi_max32_clock.h>
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>

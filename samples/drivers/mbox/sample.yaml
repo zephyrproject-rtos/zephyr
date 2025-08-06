@@ -10,7 +10,6 @@ tests:
     platform_exclude:
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54h20dk/nrf54h20/cpurad
-      - nrf54l09pdk/nrf54l09/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
     integration_platforms:
@@ -78,7 +77,6 @@ tests:
 
   sample.drivers.mbox.nrf54l:
     platform_allow:
-      - nrf54l09pdk/nrf54l09/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
     integration_platforms:
@@ -95,7 +93,6 @@ tests:
 
   sample.drivers.mbox.nrf54l_no_multithreading:
     platform_allow:
-      - nrf54l09pdk/nrf54l09/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
     integration_platforms:
@@ -115,7 +112,6 @@ tests:
 
   sample.drivers.mbox.nrf54l_remote_no_multithreading:
     platform_allow:
-      - nrf54l09pdk/nrf54l09/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
     integration_platforms:

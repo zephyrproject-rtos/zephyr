@@ -602,7 +602,7 @@ when CMake is run in an empty build folder.
 For more details about the CMakeCache.txt file see the official CMake
 documentation `runningcmake`_ .
 
-.. _runningcmake: http://cmake.org/runningcmake/
+.. _runningcmake: https://cmake.org/runningcmake/
 
 Application Configuration
 *************************

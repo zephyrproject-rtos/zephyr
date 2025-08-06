@@ -59,7 +59,7 @@ graphical (TraceCompass) variants already exist.
 
 CTF should look familiar to C programmers but adds stronger typing.
 See `CTF - A Flexible, High-performance Binary Trace Format
-<http://diamon.org/ctf/>`_.
+<https://diamon.org/ctf/>`_.
 
 
 CTF allows us to formally describe application specific payload and the

@@ -5,10 +5,10 @@
 
 /dts-v1/;
 #include <silabs/siwg917m111mgtba.dtsi>
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/input/input-event-codes.h>
-#include <dt-bindings/pinctrl/silabs/siwx91x-pinctrl.h>
-#include <common/freq.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pinctrl/silabs/siwx91x-pinctrl.h>
+#include <freq.h>
 #include "siwx917_dk2605a-pinctrl.dtsi"
 
 / {

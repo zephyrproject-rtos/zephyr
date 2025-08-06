@@ -142,7 +142,6 @@ struct bt_conn_le {
 #endif
 };
 
-#if defined(CONFIG_BT_CLASSIC)
 /* For now reserve space for 2 pages of LMP remote features */
 #define LMP_MAX_PAGES 2
 
@@ -169,7 +168,6 @@ struct bt_conn_sco {
 	uint8_t                 dev_class[3];
 	uint8_t                 link_type;
 };
-#endif
 
 struct bt_conn_iso {
 	/* Reference to ACL Connection */
@@ -517,6 +515,9 @@ void notify_subrate_change(struct bt_conn *conn,
 void notify_read_all_remote_feat_complete(struct bt_conn *conn,
 					  struct bt_conn_le_read_all_remote_feat_complete *params);
 
+void notify_frame_space_update_complete(struct bt_conn *conn,
+					struct bt_conn_le_frame_space_updated *params);
+
 void notify_remote_cs_capabilities(struct bt_conn *conn,
 				   uint8_t status,
 				   struct bt_conn_le_cs_capabilities *params);
@@ -539,7 +540,6 @@ void notify_cs_procedure_enable_available(struct bt_conn *conn,
 					  uint8_t status,
 					  struct bt_conn_le_cs_procedure_enable_complete *params);
 
-#if defined(CONFIG_BT_SMP)
 /* If role specific LTK is present */
 bool bt_conn_ltk_present(const struct bt_conn *conn);
 
@@ -549,13 +549,10 @@ int bt_conn_le_start_encryption(struct bt_conn *conn, uint8_t rand[8],
 
 /* Notify higher layers that RPA was resolved */
 void bt_conn_identity_resolved(struct bt_conn *conn);
-#endif /* CONFIG_BT_SMP */
 
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
 /* Notify higher layers that connection security changed */
 void bt_conn_security_changed(struct bt_conn *conn, uint8_t hci_err,
 			      enum bt_security_err err);
-#endif /* CONFIG_BT_SMP || CONFIG_BT_CLASSIC */
 
 /* Prepare a PDU to be sent over a connection */
 #if defined(CONFIG_NET_BUF_LOG)

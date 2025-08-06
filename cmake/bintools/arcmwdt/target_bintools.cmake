@@ -26,6 +26,7 @@ set_property(TARGET bintools PROPERTY elfconvert_flag_final
 
 set_property(TARGET bintools PROPERTY elfconvert_flag_strip_all "-DSTRIP_ALL=True")
 set_property(TARGET bintools PROPERTY elfconvert_flag_strip_debug "-DSTRIP_DEBUG=True")
+set_property(TARGET bintools PROPERTY elfconvert_flag_strip_unneeded "-DSTRIP_UNNEEDED=True")
 
 set_property(TARGET bintools PROPERTY elfconvert_flag_intarget "-DINTARGET=")
 set_property(TARGET bintools PROPERTY elfconvert_flag_outtarget "-DOUTTARGET=")

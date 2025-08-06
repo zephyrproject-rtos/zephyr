@@ -16,3 +16,9 @@ tests:
   sample.net.sockets.http.server: {}
   sample.net.sockets.https.server:
     extra_args: EXTRA_CONF_FILE="overlay-tls.conf"
+  sample.net.sockets.http.server.usbd_cdc_ncm:
+    depends_on: usbd
+    extra_args: EXTRA_CONF_FILE="overlay-usbd.conf"
+                EXTRA_DTC_OVERLAY_FILE="usbd_cdc_ncm.overlay"
+    tags:
+      - usb

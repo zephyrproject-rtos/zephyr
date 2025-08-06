@@ -1,0 +1,27 @@
+identifier: pg23_pk2504a
+name: EFM32PG23 Pro Kit (PG23-PK2504A, BRD2504A)
+type: mcu
+arch: arm
+ram: 64
+flash: 512
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - clock_control
+  - comparator
+  - counter
+  - dma
+  - entropy
+  - flash
+  - gpio
+  - i2c
+  - led
+  - pinctrl
+  - spi
+  - uart
+  - watchdog
+testing:
+  ignore_tags:
+    - pm
+vendor: silabs

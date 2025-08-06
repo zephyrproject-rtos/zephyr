@@ -10,7 +10,7 @@
 #include <zephyr/logging/log.h>
 #include <nrfx_mramc.h>
 #if defined(CONFIG_SOC_FLASH_NRF_MRAMC_FLUSH_CACHE)
-#include <hal/nrf_cache.h>
+#include <zephyr/cache.h>
 #endif
 
 LOG_MODULE_REGISTER(flash_nrf_mramc, CONFIG_FLASH_LOG_LEVEL);
@@ -112,13 +112,7 @@ static int nrf_mramc_write(const struct device *dev, off_t offset,
 	 * and not number of bytes
 	 */
 	nrfx_mramc_words_write(addr, data, len / WRITE_BLOCK_SIZE);
-#if defined(CONFIG_SOC_FLASH_NRF_MRAMC_FLUSH_CACHE)
-	if (nrf_cache_enable_check(NRF_ICACHE)) {
-		while (nrf_cache_busy_check(NRF_ICACHE)) {
-		}
-		nrf_cache_invalidate(NRF_ICACHE);
-	}
-#endif
+
 	return 0;
 }
 
@@ -144,11 +138,7 @@ static int nrf_mramc_erase(const struct device *dev, off_t offset, size_t size)
 	 */
 	nrfx_mramc_area_erase(addr, size / WRITE_BLOCK_SIZE);
 #if defined(CONFIG_SOC_FLASH_NRF_MRAMC_FLUSH_CACHE)
-	if (nrf_cache_enable_check(NRF_ICACHE)) {
-		while (nrf_cache_busy_check(NRF_ICACHE)) {
-		}
-		nrf_cache_invalidate(NRF_ICACHE);
-	}
+	sys_cache_instr_invd_all();
 #endif
 	return 0;
 }

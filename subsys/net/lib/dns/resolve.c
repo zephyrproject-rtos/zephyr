@@ -1827,6 +1827,107 @@ try_resolve:
 	ARG_UNUSED(use_cache);
 #endif /* CONFIG_DNS_RESOLVER_CACHE */
 
+	/* If we get a query to localhost, then short circuit early */
+	if ((IS_ENABLED(CONFIG_NET_LOOPBACK) || IS_ENABLED(CONFIG_NET_TEST)) &&
+	    strcmp(query, "localhost") == 0) {
+		struct dns_addrinfo info = { 0 };
+
+		if (type == DNS_QUERY_TYPE_A) {
+			if (!IS_ENABLED(CONFIG_NET_IPV4)) {
+				return -EAFNOSUPPORT;
+			}
+
+			struct in_addr addr4 = INADDR_LOOPBACK_INIT;
+
+			memcpy(&net_sin(&info.ai_addr)->sin_addr, &addr4,
+			       sizeof(struct in_addr));
+
+			info.ai_family = AF_INET;
+			info.ai_addr.sa_family = AF_INET;
+			info.ai_addrlen = sizeof(struct sockaddr_in);
+
+		} else if (type == DNS_QUERY_TYPE_AAAA) {
+			if (!IS_ENABLED(CONFIG_NET_IPV6)) {
+				return -EAFNOSUPPORT;
+			}
+
+			struct in6_addr addr6 = IN6ADDR_LOOPBACK_INIT;
+
+			memcpy(&net_sin6(&info.ai_addr)->sin6_addr, &addr6,
+			       sizeof(struct in6_addr));
+
+			info.ai_family = AF_INET6;
+			info.ai_addr.sa_family = AF_INET6;
+			info.ai_addrlen = sizeof(struct sockaddr_in6);
+		} else {
+			return -EINVAL;
+		}
+
+		cb(DNS_EAI_INPROGRESS, &info, user_data);
+		cb(DNS_EAI_ALLDONE, NULL, user_data);
+
+		return 0;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_HOSTNAME_ENABLE)) {
+		const char *hostname = net_hostname_get();
+		struct dns_addrinfo info = { 0 };
+
+		/* If the hostname is the same as the query, then
+		 * return a local address.
+		 */
+		if (strcmp(hostname, query) == 0) {
+
+			if (type == DNS_QUERY_TYPE_A) {
+				if (!IS_ENABLED(CONFIG_NET_IPV4)) {
+					return -EAFNOSUPPORT;
+				}
+
+				struct in_addr addr4 = INADDR_LOOPBACK_INIT;
+				const struct in_addr *paddr;
+
+				paddr = net_if_ipv4_select_src_addr(NULL, &addr4);
+				if (paddr == NULL) {
+					return -ENOENT;
+				}
+
+				memcpy(&net_sin(&info.ai_addr)->sin_addr, paddr,
+				       sizeof(struct in_addr));
+
+				info.ai_family = AF_INET;
+				info.ai_addr.sa_family = AF_INET;
+				info.ai_addrlen = sizeof(struct sockaddr_in);
+
+			} else if (type == DNS_QUERY_TYPE_AAAA) {
+				if (!IS_ENABLED(CONFIG_NET_IPV6)) {
+					return -EAFNOSUPPORT;
+				}
+
+				struct in6_addr addr6 = IN6ADDR_LOOPBACK_INIT;
+				const struct in6_addr *paddr;
+
+				paddr = net_if_ipv6_select_src_addr(NULL, &addr6);
+				if (paddr == NULL) {
+					return -ENOENT;
+				}
+
+				memcpy(&net_sin6(&info.ai_addr)->sin6_addr, paddr,
+				       sizeof(struct in6_addr));
+
+				info.ai_family = AF_INET6;
+				info.ai_addr.sa_family = AF_INET6;
+				info.ai_addrlen = sizeof(struct sockaddr_in6);
+			} else {
+				return -EINVAL;
+			}
+
+			cb(DNS_EAI_INPROGRESS, &info, user_data);
+			cb(DNS_EAI_ALLDONE, NULL, user_data);
+
+			return 0;
+		}
+	}
+
 	k_mutex_lock(&ctx->lock, K_FOREVER);
 
 	if (ctx->state != DNS_RESOLVE_CONTEXT_ACTIVE) {

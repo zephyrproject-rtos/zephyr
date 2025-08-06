@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# based on http://protips.readthedocs.io/link-roles.html
+# based on https://protips.readthedocs.io/link-roles.html
 
 import re
 import subprocess

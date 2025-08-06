@@ -8,7 +8,6 @@
  * @file
  * @brief Zperf sample.
  */
-#include <zephyr/usb/usb_device.h>
 #include <zephyr/usb/usbd.h>
 #include <zephyr/net/net_config.h>
 
@@ -20,11 +19,12 @@ LOG_MODULE_REGISTER(zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
 
 #if defined(CONFIG_USB_DEVICE_STACK_NEXT)
 #include <sample_usbd.h>
+#endif
 
-static struct usbd_context *sample_usbd;
-
-static int enable_usb_device_next(void)
+int main(void)
 {
+#if defined(CONFIG_USB_DEVICE_STACK_NEXT)
+	struct usbd_context *sample_usbd;
 	int err;
 
 	sample_usbd = sample_usbd_init_device(NULL);
@@ -35,28 +35,6 @@ static int enable_usb_device_next(void)
 	err = usbd_enable(sample_usbd);
 	if (err) {
 		return err;
-	}
-
-	return 0;
-}
-#endif /* CONFIG_USB_DEVICE_STACK_NEXT */
-
-int main(void)
-{
-#if defined(CONFIG_USB_DEVICE_STACK)
-	int ret;
-
-	ret = usb_enable(NULL);
-	if (ret != 0) {
-		printk("usb enable error %d\n", ret);
-	}
-
-	(void)net_config_init_app(NULL, "Initializing network");
-#endif /* CONFIG_USB_DEVICE_STACK */
-
-#if defined(CONFIG_USB_DEVICE_STACK_NEXT)
-	if (enable_usb_device_next()) {
-		return 0;
 	}
 
 	(void)net_config_init_app(NULL, "Initializing network");

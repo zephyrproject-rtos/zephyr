@@ -10,3 +10,7 @@ include: base.yaml
 properties:
   reg:
     required: true
+  support-npckn-v1:
+    type: boolean
+    description: |
+        This option enables the bbram driver for NPCKn.

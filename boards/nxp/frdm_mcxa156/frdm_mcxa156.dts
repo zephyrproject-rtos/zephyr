@@ -247,6 +247,13 @@ zephyr_mipi_dbi_parallel: &flexio0_lcd {
 	status = "okay";
 };
 
+/*
+ * Uses OS timer as the kernel timer
+ */
+&ostimer0 {
+	status = "okay";
+};
+
 zephyr_udc0: &usb {
 	status = "okay";
 	num-bidir-endpoints = <8>;

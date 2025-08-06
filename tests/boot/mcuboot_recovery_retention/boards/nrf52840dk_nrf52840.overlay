@@ -2,16 +2,12 @@
 
 / {
 	chosen {
-		zephyr,uart-mcumgr = &cdc_acm_uart;
+		zephyr,uart-mcumgr = &uart1;
 	};
 };
 
-&zephyr_udc0 {
+&uart1 {
 	status = "okay";
-
-	cdc_acm_uart: cdc_acm_uart {
-		compatible = "zephyr,cdc-acm-uart";
-	};
 };
 
 /delete-node/ &boot_partition;

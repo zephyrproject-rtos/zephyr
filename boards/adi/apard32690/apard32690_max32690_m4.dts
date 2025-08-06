@@ -331,3 +331,7 @@ pmod_spi: &spi4 {
 		writeoc = "PP_1_1_4";
 	};
 };
+
+zephyr_udc0: &usbhs {
+	status = "okay";
+};

@@ -73,7 +73,10 @@ int siwx91x_status(const struct device *dev, struct wifi_iface_status *status)
 	if (FIELD_GET(SIWX91X_INTERFACE_MASK, interface) == SL_WIFI_CLIENT_INTERFACE) {
 		sl_wifi_operational_statistics_t operational_statistics = { };
 
-		status->link_mode = WIFI_LINK_MODE_UNKNOWN;
+		/* The Wiseconnect wireless_mode values match the values expected by
+		 * Zephyr's link_mode, even though the enum type differs.
+		 */
+		status->link_mode = wlan_info.wireless_mode;
 		status->iface_mode = WIFI_MODE_INFRA;
 		status->channel = wlan_info.channel_number;
 		status->twt_capable = true;
@@ -182,9 +185,21 @@ bool siwx91x_param_changed(struct wifi_iface_status *prev_params,
 	return false;
 }
 
+static int siwx91x_set_max_tx_power(const struct siwx91x_config *siwx91x_cfg)
+{
+	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
+	sl_wifi_max_tx_power_t max_tx_power = {
+		.scan_tx_power = siwx91x_cfg->scan_tx_power,
+		.join_tx_power = siwx91x_cfg->join_tx_power,
+	};
+
+	return sl_wifi_set_max_tx_power(interface, max_tx_power);
+}
+
 static int siwx91x_mode(const struct device *dev, struct wifi_mode_info *mode)
 {
 	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
+	const struct siwx91x_config *siwx91x_cfg = dev->config;
 	struct siwx91x_dev *sidev = dev->data;
 	int cur_mode;
 	int ret = 0;
@@ -203,6 +218,12 @@ static int siwx91x_mode(const struct device *dev, struct wifi_mode_info *mode)
 			ret = siwx91x_nwp_mode_switch(mode->mode, false, 0);
 			if (ret < 0) {
 				return ret;
+			}
+
+			ret = siwx91x_set_max_tx_power(siwx91x_cfg);
+			if (ret != SL_STATUS_OK) {
+				LOG_ERR("Failed to set max tx power:%x", ret);
+				return -EINVAL;
 			}
 		}
 		sidev->state = WIFI_STATE_INACTIVE;
@@ -350,6 +371,7 @@ static int siwx91x_get_version(const struct device *dev, struct wifi_version *pa
 
 static void siwx91x_iface_init(struct net_if *iface)
 {
+	const struct siwx91x_config *siwx91x_cfg = iface->if_dev->dev->config;
 	struct siwx91x_dev *sidev = iface->if_dev->dev->data;
 	int ret;
 
@@ -365,6 +387,12 @@ static void siwx91x_iface_init(struct net_if *iface)
 			     sidev);
 	sl_wifi_set_callback(SL_WIFI_STATS_RESPONSE_EVENTS, siwx91x_wifi_module_stats_event_handler,
 			     sidev);
+
+	ret = siwx91x_set_max_tx_power(siwx91x_cfg);
+	if (ret != SL_STATUS_OK) {
+		LOG_ERR("Failed to set max tx power:%x", ret);
+		return;
+	}
 
 	ret = sl_wifi_get_mac_address(SL_WIFI_CLIENT_INTERFACE, &sidev->macaddr);
 	if (ret) {
@@ -416,6 +444,11 @@ static const struct net_wifi_mgmt_offload siwx91x_api = {
 	.wifi_mgmt_api = &siwx91x_mgmt,
 };
 
+static const struct siwx91x_config siwx91x_cfg = {
+	.scan_tx_power = DT_INST_PROP(0, wifi_max_tx_pwr_scan),
+	.join_tx_power = DT_INST_PROP(0, wifi_max_tx_pwr_join),
+};
+
 static struct siwx91x_dev sidev = {
 	.ps_params.enabled = WIFI_PS_DISABLED,
 	.ps_params.exit_strategy = WIFI_PS_EXIT_EVERY_TIM,
@@ -424,9 +457,9 @@ static struct siwx91x_dev sidev = {
 };
 
 #ifdef CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_NATIVE
-ETH_NET_DEVICE_DT_INST_DEFINE(0, siwx91x_dev_init, NULL, &sidev, NULL,
+ETH_NET_DEVICE_DT_INST_DEFINE(0, siwx91x_dev_init, NULL, &sidev, &siwx91x_cfg,
 			      CONFIG_WIFI_INIT_PRIORITY, &siwx91x_api, NET_ETH_MTU);
 #else
-NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, siwx91x_dev_init, NULL, &sidev, NULL,
+NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, siwx91x_dev_init, NULL, &sidev, &siwx91x_cfg,
 				  CONFIG_WIFI_INIT_PRIORITY, &siwx91x_api, NET_ETH_MTU);
 #endif

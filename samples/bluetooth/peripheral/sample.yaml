@@ -25,6 +25,7 @@ tests:
     platform_allow:
       - esp32_devkitc/esp32/procpu
       - esp32s3_devkitm/esp32s3/procpu
+      - esp8684_devkitm
       - esp32c3_devkitm
       - esp32c6_devkitc/esp32c6/hpcore
       - sltb010a/efr32bg22c224f512im40

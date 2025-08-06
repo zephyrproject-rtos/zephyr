@@ -139,7 +139,7 @@ manifest:
       groups:
         - tools
     - name: fatfs
-      revision: 16245c7c41d2b79e74984f49b5202551786b8a9b
+      revision: 18ad3932f7f18b59abf99cb2f8a6cd5d6746cfe0
       path: modules/fs/fatfs
       groups:
         - fs
@@ -154,7 +154,7 @@ manifest:
       groups:
         - hal
     - name: hal_ambiq
-      revision: 84ccbfc0b6041ba9f5688337c78bad99da5448ce
+      revision: e9212585cd7c4e1cc189f7d530b8a028d5e8ecf5
       path: modules/hal/ambiq
       groups:
         - hal
@@ -169,7 +169,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: f3453bdeced28642424692aae32cce4eec3f2d7f
+      revision: 883b9e84c86bab3ffef8572330cdaad8c1b289bc
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -185,7 +185,7 @@ manifest:
       groups:
         - hal
     - name: hal_infineon
-      revision: 1030915af885cffc8cedc49a62291dd279a9e81e
+      revision: f78b8f8202db0115dc41aedda6f77dee8985254f
       path: modules/hal/infineon
       groups:
         - hal
@@ -195,7 +195,7 @@ manifest:
       groups:
         - hal
     - name: hal_microchip
-      revision: 32a79d481c056b2204a5701d5a5799f9e5130dd7
+      revision: 415c92d3c8bd3d62db35980729df42be1f178023
       path: modules/hal/microchip
       groups:
         - hal
@@ -210,7 +210,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 1255d8b0da1e836d71531187e8b6c1100172672a
+      revision: 2de68b601cc95417466707f1b99149820b0556ec
       path: modules/hal/nxp
       groups:
         - hal
@@ -235,7 +235,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: 190a144a16bed9a938a94543ed5bbc70c0552e0f
+      revision: 295caf37909d2ff01688b1c4bd34c9b3584e8333
       path: modules/hal/silabs
       groups:
         - hal
@@ -310,7 +310,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 461e060e8687c9a75074effcc61d7f68c5112cfd
+      revision: 4e108f702b5322fb59344ae4976e3d73c973ef12
       path: bootloader/mcuboot
       groups:
         - bootloader
@@ -328,7 +328,7 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: 8b6001d6bdd9e2c8bb858fdb26f696f6d5f73db5
+      revision: 40403f5f2805cca210d2a47c8717d89c4e816cda
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
       revision: 787eea1a3c8dd13c86214e204a919e6f9bcebf91

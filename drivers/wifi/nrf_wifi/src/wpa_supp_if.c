@@ -1516,7 +1516,7 @@ enum nrf_wifi_status nrf_wifi_parse_sband(
 {
 	int count;
 
-	if (event && (event->nrf_wifi_n_bitrates == 0 || event->nrf_wifi_n_channels == 0)) {
+	if (event == NULL || (event->nrf_wifi_n_bitrates == 0 || event->nrf_wifi_n_channels == 0)) {
 		return NRF_WIFI_STATUS_FAIL;
 	}
 	memset(band, 0, sizeof(*band));

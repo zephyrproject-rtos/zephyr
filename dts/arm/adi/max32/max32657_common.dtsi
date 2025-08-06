@@ -19,15 +19,42 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@0 {
+		cpu0: cpu@0 {
 			compatible = "arm,cortex-m33";
 			reg = <0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
+			cpu-power-states = <&idle &standby &powerdown>;
+
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv8m-mpu";
 				reg = <0xe000ed90 0x40>;
+			};
+		};
+
+		power-states {
+			/* Sleep Mode */
+			idle: idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+				min-residency-us = <50>;
+				exit-latency-us = <5>;
+			};
+			/* Standby Mode */
+			standby: standby {
+				compatible = "zephyr,power-state";
+				power-state-name = "standby";
+				min-residency-us = <1000>;
+				exit-latency-us = <20>;
+			};
+			/* Powerdown Mode */
+			powerdown: powerdown {
+				compatible = "zephyr,power-state";
+				power-state-name = "soft-off";
+				min-residency-us = <2147483647>;
+				exit-latency-us = <0>;
+				status = "disabled";
 			};
 		};
 	};
@@ -275,6 +302,30 @@
 		};
 		counter {
 			compatible = "adi,max32-counter";
+			status = "disabled";
+		};
+	};
+
+	wut0: timer@6400 {
+		compatible = "adi,max32-timer";
+		reg = <0x6400 0x200>;
+		interrupts = <24 0>;
+		status = "disabled";
+		prescaler = <1>;
+		counter {
+			compatible = "adi,max32-wut";
+			status = "disabled";
+		};
+	};
+
+	wut1: timer@6600 {
+		compatible = "adi,max32-timer";
+		reg = <0x6600 0x200>;
+		interrupts = <25 0>;
+		status = "disabled";
+		prescaler = <1>;
+		counter {
+			compatible = "adi,max32-wut";
 			status = "disabled";
 		};
 	};

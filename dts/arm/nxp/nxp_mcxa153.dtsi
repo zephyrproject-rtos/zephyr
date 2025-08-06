@@ -303,6 +303,13 @@
 			dma-names = "rx", "tx";
 		};
 
+		ostimer0: timers@400ad000 {
+			compatible = "nxp,os-timer";
+			reg = <0x400ad000 0x1000>;
+			interrupts = <57 0>;
+			status = "disabled";
+		};
+
 		porta: pinmux@400bc000 {
 			compatible = "nxp,port-pinmux";
 			reg = <0x400bc000 0x1000>;

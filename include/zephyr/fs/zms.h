@@ -191,7 +191,7 @@ ssize_t zms_read_hist(struct zms_fs *fs, uint32_t id, void *data, size_t len, ui
  * @retval Length of the entry with the given `id` (> 0) on success.
  * @retval -EACCES if ZMS is still not initialized.
  * @retval -EIO if there is a memory read/write error.
- * @retval -ENOENT if there is no entry with the given id and history counter.
+ * @retval -ENOENT if there is no entry with the given id.
  */
 ssize_t zms_get_data_length(struct zms_fs *fs, uint32_t id);
 

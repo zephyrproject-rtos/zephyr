@@ -284,6 +284,11 @@ config OPENTHREAD_OTNS
 config OPENTHREAD_PING_SENDER
 	bool "Ping sender support"
 
+config OPENTHREAD_PLATFORM_RADIO_COEX_ENABLE
+	bool "Platform radio coexistence support"
+	help
+	  Enable radio coexistence support in the platform.
+
 config OPENTHREAD_PLATFORM_KEY_REF
 	bool "Platform cryptographic key reference support"
 	help

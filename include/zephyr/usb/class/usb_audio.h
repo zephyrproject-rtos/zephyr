@@ -280,6 +280,8 @@ struct usb_audio_ops {
 
 /** @brief Get the frame size that is accepted by the Host.
  *
+ * @deprecated Use @ref uac2_device instead.
+ *
  * This function returns the frame size for Input Devices that is expected
  * by the Host. Returned value rely on Input Device configuration:
  * - number of channels
@@ -292,22 +294,26 @@ struct usb_audio_ops {
  * @warning Do not use with OUT only devices (Headphones).
  *	    For OUT only devices this function shall return 0.
  */
-size_t usb_audio_get_in_frame_size(const struct device *dev);
+__deprecated size_t usb_audio_get_in_frame_size(const struct device *dev);
 
 /**
  * @brief Register the USB Audio device and make it usable.
  *	  This must be called in order to make the device work
  *	  and respond to all relevant requests.
  *
+ * @deprecated Use @ref uac2_device instead.
+ *
  * @param dev USB Audio device
  * @param ops USB audio callback structure. Callback are used to
  *	      inform the user about what is happening
  */
-void usb_audio_register(const struct device *dev,
+__deprecated void usb_audio_register(const struct device *dev,
 			const struct usb_audio_ops *ops);
 
 /**
  * @brief Send data using USB Audio device
+ *
+ * @deprecated Use @ref uac2_device instead.
  *
  * @param dev    USB Audio device which will send the data
  *		 over its ISO IN endpoint
@@ -326,7 +332,7 @@ void usb_audio_register(const struct device *dev,
  *
  * @return 0 on success, negative error on fail
  */
-int usb_audio_send(const struct device *dev, struct net_buf *buffer,
+__deprecated int usb_audio_send(const struct device *dev, struct net_buf *buffer,
 		   size_t len);
 
 #endif /* ZEPHYR_INCLUDE_USB_CLASS_AUDIO_H_ */

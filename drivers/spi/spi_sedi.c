@@ -39,7 +39,8 @@ static int spi_sedi_configure(const struct device *dev,
 {
 	struct spi_sedi_data *data = dev->data;
 	const struct spi_sedi_config *info = dev->config;
-	uint32_t word_size, cpol, cpha, loopback;
+	uint32_t word_size, loopback;
+	bool cpol_mode, cpha_mode;
 
 	if (spi_context_configured(&data->ctx, config) == true) {
 		return 0;
@@ -50,23 +51,23 @@ static int spi_sedi_configure(const struct device *dev,
 			 word_size);
 
 	/* CPOL and CPHA */
-	cpol = SPI_MODE_GET(config->operation) & SPI_MODE_CPOL;
-	cpha = SPI_MODE_GET(config->operation) & SPI_MODE_CPHA;
 
-	if ((cpol == 0) && (cpha == 0)) {
+	cpol_mode = ((SPI_MODE_GET(config->operation) & SPI_MODE_CPOL) != 0);
+	cpha_mode = ((SPI_MODE_GET(config->operation) & SPI_MODE_CPHA) != 0);
+
+	if (!cpol_mode && !cpha_mode) {
 		sedi_spi_control(info->spi_device, SEDI_SPI_IOCTL_CPOL0_CPHA0,
 				 0);
-	} else if ((cpol == 0) && (cpha == 1U)) {
+	} else if (!cpol_mode && cpha_mode) {
 		sedi_spi_control(info->spi_device, SEDI_SPI_IOCTL_CPOL0_CPHA1,
 				 0);
-	} else if ((cpol == 1) && (cpha == 0U)) {
+	} else if (cpol_mode && !cpha_mode) {
 		sedi_spi_control(info->spi_device, SEDI_SPI_IOCTL_CPOL1_CPHA0,
 				 0);
 	} else {
 		sedi_spi_control(info->spi_device, SEDI_SPI_IOCTL_CPOL1_CPHA1,
 				 0);
 	}
-
 	/* MSB and LSB */
 	if (config->operation & SPI_TRANSFER_LSB) {
 		sedi_spi_control(info->spi_device, SEDI_SPI_IOCTL_LSB, 0);

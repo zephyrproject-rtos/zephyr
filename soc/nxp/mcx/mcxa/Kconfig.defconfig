@@ -4,7 +4,7 @@
 if SOC_FAMILY_MCXA
 
 config CORTEX_M_SYSTICK
-	default n if MCUX_LPTMR_TIMER
+	default n if (MCUX_LPTMR_TIMER || MCUX_OS_TIMER)
 
 config NUM_IRQS
 	default 88

@@ -1,0 +1,7 @@
+tests:
+  drivers.fuel_gauge.sy24561:
+    tags:
+      - fuel_gauge
+    filter: dt_compat_enabled("silergy,sy24561")
+    platform_allow:
+      - native_sim

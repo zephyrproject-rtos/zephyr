@@ -20,6 +20,8 @@
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/barrier.h>
+#include <cortex_m/debug.h>
+
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #if defined(CONFIG_PRINTK) || defined(CONFIG_LOG)

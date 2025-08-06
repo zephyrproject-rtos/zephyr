@@ -3,5 +3,3 @@
 
 config BOARD_CYCLONEV_SOCDK
 	select SOC_CYCLONEV
-	help
-	  Intel Cyclone V Development Kit

@@ -186,6 +186,13 @@
 	pinctrl-names = "default";
 };
 
+/*
+ * Uses OS timer as the kernel timer
+ */
+&ostimer0 {
+	status = "okay";
+};
+
 zephyr_udc0: &usb {
 	status = "okay";
 };

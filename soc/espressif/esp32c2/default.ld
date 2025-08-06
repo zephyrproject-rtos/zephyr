@@ -328,6 +328,8 @@ SECTIONS
     *libpp.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
 #endif /* CONFIG_ESP32_WIFI_RX_IRAM_OPT */
 
+    *libble_app.a:(.isr_iram1.* .conn_iram1.* .sleep_iram1.*)
+
     . = ALIGN(4) + 16;
 
   } GROUP_DATA_LINK_IN(IRAM_REGION, ROMABLE_REGION)
@@ -591,6 +593,18 @@ SECTIONS
     . = ALIGN (8);
     __bss_start = ABSOLUTE(.);
     _bss_start = ABSOLUTE(.);
+
+    . = ALIGN (4);
+    _bt_bss_start = ABSOLUTE(.);
+    *libbtbb.a:(.bss .bss.* COMMON)
+    . = ALIGN (4);
+    _bt_bss_end = ABSOLUTE(.);
+
+    . = ALIGN (4);
+    _bt_controller_bss_start = ABSOLUTE(.);
+    *libble_app.a:(.bss .bss.* COMMON)
+    . = ALIGN (4);
+    _bt_controller_bss_end = ABSOLUTE(.);
 
     *(.dynsbss)
     *(.sbss)

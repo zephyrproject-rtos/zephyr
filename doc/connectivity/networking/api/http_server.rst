@@ -106,7 +106,7 @@ macro:
 
     static uint16_t http_service_port = 80;
 
-    HTTP_SERVICE_DEFINE(my_service, "0.0.0.0", &http_service_port, 1, 10, NULL, NULL);
+    HTTP_SERVICE_DEFINE(my_service, "0.0.0.0", &http_service_port, 1, 10, NULL, NULL, NULL);
 
 Alternatively, an HTTPS service can be defined with
 :c:macro:`HTTPS_SERVICE_DEFINE`:
@@ -124,7 +124,62 @@ Alternatively, an HTTPS service can be defined with
     };
 
     HTTPS_SERVICE_DEFINE(my_service, "0.0.0.0", &https_service_port, 1, 10,
-                         NULL, NULL, sec_tag_list, sizeof(sec_tag_list));
+                         NULL, NULL, NULL, sec_tag_list, sizeof(sec_tag_list));
+
+Per-service configuration
+=========================
+
+HTTP services support individual service configuration,
+for now it includes only socket creation through
+the ``http_service_config`` structure. This allows applications to customize
+socket creation behavior, for example to set specific socket options or use
+custom socket types.
+
+To use custom socket creation:
+
+.. code-block:: c
+
+    static int my_socket_create(const struct http_service_desc *svc, int af, int proto)
+    {
+        int fd;
+
+        /* Create socket with custom parameters */
+        fd = zsock_socket(af, SOCK_STREAM, proto);
+        if (fd < 0) {
+            return fd;
+        }
+
+        /* Set custom socket options */
+        /* Add any other custom socket configuration */
+
+        return fd;
+    }
+
+    static const struct http_service_config my_service_config = {
+        .socket_create = my_socket_create,
+    };
+
+    static uint16_t http_service_port = 80;
+
+    HTTP_SERVICE_DEFINE(my_service, "0.0.0.0", &http_service_port, 1, 10,
+                        NULL, NULL, &my_service_config);
+
+The custom socket creation function receives:
+- ``svc``: Pointer to the service descriptor
+- ``af``: Address family (AF_INET or AF_INET6)
+- ``proto``: Protocol (IPPROTO_TCP or IPPROTO_TLS_1_2 for HTTPS)
+
+The function should return the socket file descriptor on success, or a negative error code on failure.
+
+If no custom configuration is needed, simply pass ``NULL`` for the config parameter:
+
+.. code-block:: c
+
+    HTTP_SERVICE_DEFINE(my_service, "0.0.0.0", &http_service_port, 1, 10,
+                        NULL, NULL, NULL);
+
+Fallback Resources
+==================
 
 The ``_res_fallback`` parameter can be used when defining an HTTP/HTTPS service to
 specify a fallback resource which will be used if no other resource matches the
@@ -160,7 +215,7 @@ customised 404 response.
     };
 
     /* Register a fallback resource to handle any unknown path */
-    HTTP_SERVICE_DEFINE(my_service, "0.0.0.0", &http_service_port, 1, 10, NULL, &default_detail);
+    HTTP_SERVICE_DEFINE(my_service, "0.0.0.0", &http_service_port, 1, 10, NULL, &default_detail, NULL);
 
 .. note::
 

@@ -17,5 +17,8 @@ void soc_early_init_hook(void)
 	GPIO2->PCNS = 0x0;
 	GPIO3->PCNS = 0x0;
 	GPIO4->PCNS = 0x0;
+
+	/* keep system tick work fine during idle task */
+	GPC_CTRL_CM33->CM_MISC &= ~GPC_CPU_CTRL_CM_MISC_SLEEP_HOLD_EN_MASK;
 }
 #endif

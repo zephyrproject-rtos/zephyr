@@ -5,6 +5,7 @@
 
 menuconfig USB_DEVICE_DRIVER
 	bool "USB device controller drivers"
+	select DEPRECATED
 	help
 	  Enable USB device controller drivers.
 

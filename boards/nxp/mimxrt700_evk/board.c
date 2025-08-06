@@ -308,9 +308,14 @@ void board_early_init_hook(void)
 	CLOCK_SetClkDiv(kCLOCK_DivFlexioClk, 1U);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio0), okay)
+#if CONFIG_BOARD_MIMXRT700_EVK_MIMXRT798S_CM33_CPU0
 	CLOCK_EnableClock(kCLOCK_Gpio0);
 	RESET_ClearPeripheralReset(kGPIO0_RST_SHIFT_RSTn);
+
+	GPIO0->PCNS = 0xFFFFFFFFU;
+	GPIO0->PCNP = 0xFFFFFFFFU;
+	GPIO0->ICNP = 0xFFFFFFFFU;
+	GPIO0->ICNS = 0xFFFFFFFFU;
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio1), okay)
@@ -454,7 +459,9 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kLPOSC_to_WWDT0);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(sai0), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(sai0), okay) \
+		|| DT_NODE_HAS_STATUS(DT_NODELABEL(sai1), okay) \
+		|| DT_NODE_HAS_STATUS(DT_NODELABEL(sai2), okay)
 	/* SAI clock 368.64 / 15 = 24.576MHz */
 	CLOCK_AttachClk(kAUDIO_PLL_PFD3_to_AUDIO_VDD2);
 	CLOCK_AttachClk(kAUDIO_VDD2_to_SAI012);
@@ -554,10 +561,12 @@ static void GlikeyClearConfig(GLIKEY_Type *base)
 static void BOARD_InitAHBSC(void)
 {
 #if defined(CONFIG_SOC_MIMXRT798S_CM33_CPU0)
+	GlikeyWriteEnable(GLIKEY0, 0U);
 	GlikeyWriteEnable(GLIKEY0, 1U);
-	AHBSC0->MISC_CTRL_DP_REG = 0x000086aa;
+	GlikeyWriteEnable(GLIKEY0, 2U);
 	/* AHBSC0 MISC_CTRL_REG, disable Privilege & Secure checking. */
 	AHBSC0->MISC_CTRL_REG = 0x000086aa;
+	AHBSC0->MISC_CTRL_DP_REG = 0x000086aa;
 
 	GlikeyWriteEnable(GLIKEY0, 7U);
 	/* Enable arbiter0 accessing SRAM */
@@ -566,6 +575,14 @@ static void BOARD_InitAHBSC(void)
 	AHBSC0->MEDIA_ARB0RAM_ACCESS_ENABLE = 0x3FFFFFFF;
 	AHBSC0->NPU_ARB0RAM_ACCESS_ENABLE = 0x3FFFFFFF;
 	AHBSC0->HIFI4_ARB0RAM_ACCESS_ENABLE = 0x3FFFFFFF;
+
+	GlikeyWriteEnable(GLIKEY0, 6U);
+	AHBSC0->MASTER_SEC_LEVEL        = 0x3;
+	AHBSC0->MASTER_SEC_ANTI_POL_REG = 0xFFC;
+
+	AHBSC0->APB_SLAVE_GROUP0_RULE0 = 0x00000000;
+	AHBSC0->AHB_PERIPHERAL0_SLAVE_RULE1 = 0x00000000;
+	AHBSC0->AIPS1_BRIDGE_GROUP0_MEM_RULE2 = 0x00000000;
 #endif
 
 	GlikeyWriteEnable(GLIKEY1, 1U);

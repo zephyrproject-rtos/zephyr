@@ -61,4 +61,4 @@ API Reference
 
 .. doxygengroup:: smbus_interface
 
-.. _SMBus Specification: http://smbus.org/specs/smbus20.pdf
+.. _SMBus Specification: https://smbus.org/specs/smbus20.pdf

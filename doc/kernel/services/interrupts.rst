@@ -197,6 +197,10 @@ generate exceptions that need to be handled synchronously (e.g. kernel panic).
     The feature is currently implemented in the ARM Cortex-M architecture
     variant.
 
+.. tip::
+    To mitigate flash access latency, consider relocating ISRs and all related
+    symbols to RAM.
+
 Offloading ISR Work
 ===================
 
@@ -373,6 +377,17 @@ architecture-specific basis. The feature is currently implemented in the Arm
 Cortex-M architecture variant via the macro
 :c:macro:`ARM_IRQ_DIRECT_DYNAMIC_CONNECT`, which can be used to declare a direct
 and dynamic interrupt.
+
+RAM-based ISR Execution
+=======================
+
+For ultra-low latency, ISRs and vector tables can be relocated to RAM to
+eliminate flash access delays. That can be achieved by enabling the
+:kconfig:option:`CONFIG_SRAM_VECTOR_TABLE` and
+:kconfig:option:`CONFIG_SRAM_SW_ISR_TABLE` options which will result in vector
+tables being placed in RAM.
+Then, Zephyr :ref:`Code and Data Relocation <code_data_relocation>` can be
+used to relocate the ISR code and all the related symbols to RAM as well.
 
 Sharing an interrupt line
 =========================

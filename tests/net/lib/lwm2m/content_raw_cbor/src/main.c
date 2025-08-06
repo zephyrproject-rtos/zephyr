@@ -890,6 +890,31 @@ ZTEST(net_content_raw_cbor, test_get_string)
 			  "Invalid packet offset");
 }
 
+ZTEST(net_content_raw_cbor, test_get_string_truncate)
+{
+	int ret;
+	static const char long_string[] = "test_string_that_is_a_bit_longer";
+	uint8_t buf[40];
+	struct test_payload_buffer long_payload = {
+		.data = {
+			(0x03 << 5) | 0x18,
+			(sizeof("test_string_that_is_a_bit_longer") - 1),
+			't', 'e', 's', 't', '_', 's',
+			't', 'r', 'i', 'n', 'g', '_',
+			't', 'h', 'a', 't', '_', 'i',
+			's', '_', 'a', '_', 'b', 'i',
+			't', '_', 'l', 'o', 'n', 'g',
+			'e', 'r'
+		},
+		.len = sizeof("test_string_that_is_a_bit_longer") - 1 + 2
+	};
+
+	test_payload_set(long_payload.data, long_payload.len);
+
+	ret = cbor_reader.get_string(&test_in, buf, sizeof(long_string) - 1);
+	zassert_equal(ret, -ENOMEM, "Invalid error returned %d", ret);
+}
+
 ZTEST(net_content_raw_cbor_nodata, test_get_string_nodata)
 {
 	int ret;
@@ -1007,25 +1032,25 @@ ZTEST(net_content_raw_cbor, test_get_objlnk)
 	struct test_payload_buffer payload[] = {
 		{
 			.data = {
-			(0x03 << 5) | (sizeof("0:0")),
-			'0', ':', '0', '\0'
+			(0x03 << 5) | (sizeof("0:0") - 1),
+			'0', ':', '0'
 			},
-			.len = sizeof("0:0") + 1
+			.len = sizeof("0:0")
 		},
 		{
 			.data = {
-			(0x03 << 5) | (sizeof("1:2")),
-			'1', ':', '2', '\0'
+			(0x03 << 5) | (sizeof("1:2") - 1),
+			'1', ':', '2'
 			},
-			.len = sizeof("1:2") + 1
+			.len = sizeof("1:2")
 		},
 		{
 			.data = {
-			(0x03 << 5) | (sizeof("65535:65535")),
+			(0x03 << 5) | (sizeof("65535:65535") - 1),
 			'6', '5', '5', '3', '5', ':',
-			'6', '5', '5', '3', '5', '\0'
+			'6', '5', '5', '3', '5'
 			},
-			.len = sizeof("65535:65535") + 1
+			.len = sizeof("65535:65535")
 		}
 	};
 	struct lwm2m_objlnk expected_value[] = {

@@ -1207,11 +1207,13 @@ flagged.
         "BOOT_IMAGE_EXECUTABLE_RAM_START", # MCUboot setting
         "BOOT_MAX_IMG_SECTORS_AUTO", # Used in sysbuild
         "BOOT_RAM_LOAD", # Used in sysbuild for MCUboot configuration
+        "BOOT_RAM_LOAD_REVERT", # Used in sysbuild for MCUboot configuration
         "BOOT_SERIAL_BOOT_MODE",     # Used in (sysbuild-based) test/
                                      # documentation
         "BOOT_SERIAL_CDC_ACM",       # Used in (sysbuild-based) test
         "BOOT_SERIAL_ENTRANCE_GPIO", # Used in (sysbuild-based) test
         "BOOT_SERIAL_IMG_GRP_HASH",  # Used in documentation
+        "BOOT_SERIAL_UART",          # Used in (sysbuild-based) test
         "BOOT_SHARE_BACKEND_RETENTION", # Used in Kconfig text
         "BOOT_SHARE_DATA",           # Used in Kconfig text
         "BOOT_SHARE_DATA_BOOTINFO", # Used in (sysbuild-based) test

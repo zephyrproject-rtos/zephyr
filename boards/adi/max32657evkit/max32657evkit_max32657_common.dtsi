@@ -15,6 +15,7 @@
 
 	chosen {
 		zephyr,console = &uart0;
+		zephyr,cortex-m-idle-timer = &counter_wut1;
 		zephyr,shell-uart = &uart0;
 	};
 
@@ -89,6 +90,19 @@
 	adxl367: adxl367@530000000000000000 {
 		compatible = "adi,adxl367";
 		reg = <0x53 0x00 0x00>;
+		status = "okay";
+	};
+};
+
+&wut0 {
+	clock-source = <ADI_MAX32_PRPH_CLK_SRC_INRO>;
+};
+
+&wut1 {
+	status = "okay";
+	clock-source = <ADI_MAX32_PRPH_CLK_SRC_INRO>;
+	wakeup-source;
+	counter_wut1: counter {
 		status = "okay";
 	};
 };

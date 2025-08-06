@@ -43,7 +43,7 @@ static const sec_tag_t server_tag_list_verify[] = {
 
 static uint16_t test_http_service_port = SERVER_PORT;
 HTTPS_SERVICE_DEFINE(test_http_service, MY_IPV4_ADDR, &test_http_service_port,
-		     1, 10, NULL, NULL, server_tag_list_verify,
+		     1, 10, NULL, NULL, NULL, server_tag_list_verify,
 		     sizeof(server_tag_list_verify));
 
 static const unsigned char ca[] = {

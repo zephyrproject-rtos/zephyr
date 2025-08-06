@@ -4,5 +4,3 @@
 
 config BOARD_NIOSV_G
 	select SOC_NIOSV_G
-	help
-	  Intel FPGA Nios V/g General Purpose Processor

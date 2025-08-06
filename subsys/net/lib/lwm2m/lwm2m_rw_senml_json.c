@@ -1096,9 +1096,9 @@ static int get_string(struct lwm2m_input_context *in, uint8_t *buf, size_t bufle
 
 	string_length = strlen(fd->senml_object.val_string);
 
-	if (string_length > buflen) {
-		LOG_WRN("Buffer too small to accommodate string, truncating");
-		string_length = buflen - 1;
+	if (string_length >= buflen) {
+		LOG_WRN("Buffer too small to accommodate string");
+		return -ENOMEM;
 	}
 	memcpy(buf, fd->senml_object.val_string, string_length);
 
