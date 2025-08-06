@@ -500,6 +500,7 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 		      const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs,
 		      bool asynchronous, spi_callback_t cb, void *userdata)
 {
+	const struct spi_it51xxx_config *cfg = dev->config;
 	struct spi_it51xxx_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 	int ret;
@@ -509,6 +510,12 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 	/* configure spi */
 	ret = spi_it51xxx_configure(dev, config);
 	if (ret) {
+		goto out;
+	}
+
+	ret = clock_control_on(cfg->clk_dev, (clock_control_subsys_t *)&cfg->clk_cfg);
+	if (ret) {
+		LOG_ERR("failed to turn on spi clock %d", ret);
 		goto out;
 	}
 
@@ -541,6 +548,10 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 #endif /* CONFIG_SPI_ITE_IT51XXX_FIFO_MODE */
 	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 
+	ret = clock_control_off(cfg->clk_dev, (clock_control_subsys_t *)&cfg->clk_cfg);
+	if (ret) {
+		LOG_ERR("failed to turn off spi clock %d", ret);
+	}
 out:
 	spi_context_release(ctx, ret);
 
@@ -711,12 +722,6 @@ static int spi_it51xxx_init(const struct device *dev)
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret) {
 		LOG_ERR("failed to set default pinctrl, ret %d", ret);
-		return ret;
-	}
-
-	ret = clock_control_on(cfg->clk_dev, (clock_control_subsys_t *)&cfg->clk_cfg);
-	if (ret) {
-		LOG_ERR("failed to turn on spi clock %d", ret);
 		return ret;
 	}
 
