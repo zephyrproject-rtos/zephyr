@@ -5663,8 +5663,7 @@ West:
   maintainers:
     - aescolar
   collaborators:
-    - wopu-ot
-    - thoh-ot
+    - rugeGerritsen
   files: []
   labels:
     - "area: native port"
