@@ -151,6 +151,17 @@ struct bt_avrcp_tg_vd_rsp_tx {
 	ATOMIC_DEFINE(flags, BT_AVRCP_TG_NUM_FLAGS);
 };
 
+struct bt_avrcp_ct_notify_registration {
+	uint8_t tid;
+	bool interim_received;
+	bt_avrcp_notify_changed_cb_t cb;
+};
+
+struct bt_avrcp_tg_notify_state {
+	bool registered;   /* CT has an active registration for this event */
+	bool interim_sent; /* we have already sent INTERIM */
+};
+
 struct bt_avrcp_req {
 	uint8_t tid;
 	uint8_t subunit;
