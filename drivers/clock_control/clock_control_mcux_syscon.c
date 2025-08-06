@@ -44,6 +44,12 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	}
 #endif
 
+#if defined(CONFIG_MUX_NXP_INPUTMUX)
+	if ((uint32_t)sub_system == MCUX_INPUTMUX_CLK) {
+		CLOCK_EnableClock(kCLOCK_InputMux);
+	}
+#endif
+
 #if defined(CONFIG_PINCTRL_NXP_PORT)
 	switch ((uint32_t)sub_system) {
 #if defined(CONFIG_SOC_FAMILY_MCXA)
@@ -142,6 +148,11 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 static int mcux_lpc_syscon_clock_control_off(const struct device *dev,
 					     clock_control_subsys_t sub_system)
 {
+#if defined(CONFIG_MUX_NXP_INPUTMUX)
+	if ((uint32_t)sub_system == MCUX_INPUTMUX_CLK) {
+		CLOCK_DisableClock(kCLOCK_InputMux);
+	}
+#endif
 	return 0;
 }
 

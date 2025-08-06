@@ -313,6 +313,7 @@ void board_early_init_hook(void)
 	/* Enable the DMA requests with only 1 mux option.  The other request
 	 * choices should be configured for the application
 	 */
+	/*
 	INPUTMUX_EnableSignal(INPUTMUX,
 			kINPUTMUX_Flexcomm11RxToDmac0Ch32RequestEna, true);
 	INPUTMUX_EnableSignal(INPUTMUX,
@@ -321,6 +322,7 @@ void board_early_init_hook(void)
 			kINPUTMUX_Flexcomm12RxToDmac0Ch34RequestEna, true);
 	INPUTMUX_EnableSignal(INPUTMUX,
 			kINPUTMUX_Flexcomm12TxToDmac0Ch35RequestEna, true);
+			*/
 	INPUTMUX_EnableSignal(INPUTMUX,
 			kINPUTMUX_Flexcomm16RxToDmac0Ch28RequestEna, true);
 	INPUTMUX_EnableSignal(INPUTMUX,
