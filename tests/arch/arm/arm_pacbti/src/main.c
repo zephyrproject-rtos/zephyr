@@ -8,6 +8,18 @@
 #include <zephyr/ztest_error_hook.h>
 #include <cmsis_core.h>
 
+/* size of stack area used by each thread */
+#define STACKSIZE 1024
+
+/* scheduling priority used by each thread */
+#define PRIORITY 7
+
+/* number of times to check if PAC keys were retained */
+#define NUM_TRIALS 5
+
+K_THREAD_STACK_DEFINE(pac_test_thread_stack_area, STACKSIZE);
+static struct k_thread pac_test_thread;
+
 void test_arm_pacbti(void)
 {
 	printf("%s This should never have been called if BTI was enforced\n", __func__);
@@ -19,18 +31,18 @@ void test_arm_pacbti(void)
 /* Without PAC this function would have returned to test_arm_pacbti() but with PAC enabled
  * the AUT instruction should result in a USAGE FAULT since the `lr` was corrupted on stack.
  */
-__asm__ (".thumb\n"
-	 ".thumb_func\n"
-	 ".global corrupt_lr_on_stack\n"
-	 "corrupt_lr_on_stack:\n"
-	 "    pacbti r12, lr, sp\n"
-	 "    stmdb sp!, {ip, lr}\n"
-	 "    ldr r0,=test_arm_pacbti\n"
-	 "    str r0, [sp, #4]\n"
-	 "    ldmia.w sp!, {ip, lr}\n"
-	 "    aut r12, lr, sp\n"
-	 "    bx lr\n");
-void corrupt_lr_on_stack();
+__asm__(".thumb\n"
+	".thumb_func\n"
+	".global corrupt_lr_on_stack\n"
+	"corrupt_lr_on_stack:\n"
+	"    pacbti r12, lr, sp\n"
+	"    stmdb sp!, {ip, lr}\n"
+	"    ldr r0,=test_arm_pacbti\n"
+	"    str r0, [sp, #4]\n"
+	"    ldmia.w sp!, {ip, lr}\n"
+	"    aut r12, lr, sp\n"
+	"    bx lr\n");
+void corrupt_lr_on_stack(void);
 
 static int set_invalid_pac_key(void)
 {
@@ -48,6 +60,23 @@ static int set_invalid_pac_key(void)
 
 	/* The AUT instruction before this test returns should now result in a USAGE FAULT */
 	return 1;
+}
+
+static void pac_test_thread_entry_point(void *dummy1, void *dummy2, void *dummy3)
+{
+	ztest_set_fault_valid(true);
+
+	corrupt_lr_on_stack();
+}
+
+ZTEST(arm_pacbti, test_arm_pac_corrupt_lr_in_userspace)
+{
+	k_thread_create(&pac_test_thread, pac_test_thread_stack_area,
+			K_THREAD_STACK_SIZEOF(pac_test_thread_stack_area),
+			pac_test_thread_entry_point, NULL, NULL, NULL, PRIORITY, K_USER, K_FOREVER);
+
+	k_thread_start(&pac_test_thread);
+	k_thread_join(&pac_test_thread, K_FOREVER);
 }
 
 ZTEST(arm_pacbti, test_arm_pac_corrupt_lr)
