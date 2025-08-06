@@ -1,7 +1,37 @@
 # Copyright 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-description: Generic register bitfield-based multiplexor controller
+description: |
+  Generic register bitfield-based multiplexer controller.
+
+  This binding describes a multiplexer whose channels are controlled by
+  writing bitfield values into memory-mapped registers.  Each logical mux
+  channel is described by an <offset, mask> pair inside the mux-reg-masks
+  property, where:
+    - offset  is the byte offset from the device base address to the
+              control register
+    - mask    is the bitmask that selects the relevant bitfield within
+              that register
+
+  Example:
+
+    mux0: mux-controller@40010000 {
+        compatible = "reg-mux";
+        reg = <0x40010000 0x100>;
+        #mux-control-cells = <1>;
+        #mux-state-cells = <2>;
+
+        /* Two channels: bit[1:0] and bit[3:2] of the same register */
+        mux-reg-masks = <0x00 0x00000003>,  /* mux[0]: reg+0x00, bits[1:0] */
+                        <0x00 0x0000000C>;  /* mux[1]: reg+0x00, bits[3:2] */
+    };
+
+  A consumer node references a channel with a mux-state specifier:
+
+    some_node {
+        /* Set mux channel 1 to state value 2 (writes 0b10 into bits[3:2]) */
+        mux-states = <&mux0 1 2>;
+    };
 
 compatible: "reg-mux"
 
@@ -10,15 +40,35 @@ include: [base.yaml, mux-controller.yaml]
 properties:
   mux-reg-masks:
     type: array
-    description: Pairs of entries describe a single mux control, <offset, bitfield mask>
+    description: |
+      Flat array of <offset, mask> pairs, one pair per logical mux channel.
+
+      offset - byte offset from the device base address to the target register.
+      mask   - bitmask that identifies the bitfield controlling this channel.
+               The state value written by the driver is shifted and masked
+               into this field using FIELD_PREP(mask, state).
+
+      The number of pairs determines the total number of available mux channels.
+      Channel indices used in mux-control / mux-state specifiers map directly
+      to the zero-based pair index in this array.
+
   '#mux-control-cells':
     const: 1
+    description: |
+      Number of cells in a mux-controls specifier for this controller.
+      Always 1 for reg-mux; the single cell is the mux channel index.
+
   '#mux-state-cells':
     const: 2
+    description: |
+      Number of cells in a mux-states specifier for this controller.
+      Always 2 for reg-mux:
+        cell 0 (mux)   - index of the mux channel to configure
+        cell 1 (state) - value to write into the channel's bitfield
 
 mux-control-cells:
-  - mux
+  - mux  # Zero-based index selecting one <offset, mask> pair from mux-reg-masks
 
 mux-state-cells:
-  - mux
-  - state
+  - mux    # Zero-based index selecting one <offset, mask> pair from mux-reg-masks
+  - state  # Value to be written into the selected bitfield via FIELD_PREP(mask, state)
