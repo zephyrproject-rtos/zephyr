@@ -5,6 +5,7 @@
  */
 
 /* Include esp-idf headers first to avoid redefining BIT() macro */
+#include <stddef.h>
 #include <hal/gpio_ll.h>
 #include <hal/rtc_io_hal.h>
 
@@ -23,8 +24,8 @@
 #define in in.data
 #define out_w1ts out_w1ts.val
 #define out_w1tc out_w1tc.val
-#elif CONFIG_SOC_SERIES_ESP32C6
-/* gpio structs in esp32c6 are also different */
+#elif defined(CONFIG_SOC_SERIES_ESP32C6) || defined(CONFIG_SOC_SERIES_ESP32H2)
+/* gpio structs in esp32c6/h2 are also different */
 #define out out.out_data_orig
 #define in in.in_data_next
 #define out_w1ts out_w1ts.val
