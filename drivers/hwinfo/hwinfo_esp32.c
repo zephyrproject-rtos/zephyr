@@ -18,6 +18,9 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 #if defined(CONFIG_SOC_SERIES_ESP32C2)
 	uint32_t rdata1 = sys_read32(EFUSE_RD_BLK2_DATA0_REG);
 	uint32_t rdata2 = sys_read32(EFUSE_RD_BLK2_DATA1_REG);
+#elif defined(CONFIG_SOC_SERIES_ESP32H2)
+	uint32_t rdata1 = sys_read32(EFUSE_RD_MAC_SYS_0_REG);
+	uint32_t rdata2 = sys_read32(EFUSE_RD_MAC_SYS_1_REG);
 #elif !defined(CONFIG_SOC_SERIES_ESP32)
 	uint32_t rdata1 = sys_read32(EFUSE_RD_MAC_SPI_SYS_0_REG);
 	uint32_t rdata2 = sys_read32(EFUSE_RD_MAC_SPI_SYS_1_REG);
