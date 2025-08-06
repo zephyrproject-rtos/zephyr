@@ -2175,8 +2175,10 @@ struct bt_conn_cb {
 	void (*role_changed)(struct bt_conn *conn, uint8_t status);
 #endif
 
+#if defined(CONFIG_BT_CONN_DYNAMIC_CALLBACKS)
 	/** @internal Internally used field for list handling */
 	sys_snode_t _node;
+#endif
 };
 
 /** @brief Register connection callbacks.
