@@ -787,20 +787,18 @@ void k_sched_lock(void)
 
 void k_sched_unlock(void)
 {
-	K_SPINLOCK(&_sched_spinlock) {
-		__ASSERT(_current->base.sched_locked != 0U, "");
-		__ASSERT(!arch_is_in_isr(), "");
-
-		++_current->base.sched_locked;
-		update_cache(0);
-	}
-
 	LOG_DBG("scheduler unlocked (%p:%d)",
 		_current, _current->base.sched_locked);
 
 	SYS_PORT_TRACING_FUNC(k_thread, sched_unlock);
 
-	z_reschedule_unlocked();
+	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
+
+	__ASSERT(_current->base.sched_locked != 0U, "");
+	__ASSERT(!arch_is_in_isr(), "");
+	++_current->base.sched_locked;
+	update_cache(0);
+	reschedule(&_sched_spinlock, key);
 }
 
 struct k_thread *z_swap_next_thread(void)
