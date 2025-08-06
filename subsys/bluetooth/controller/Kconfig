@@ -616,7 +616,7 @@ config BT_CTLR_DATA_LENGTH
 config BT_CTLR_DATA_LENGTH_MAX
 	int "Maximum data length supported"
 	depends on BT_CTLR_DATA_LENGTH
-	default BT_BUF_ACL_RX_SIZE if BT_BUF_ACL_RX_SIZE < 251
+	default BT_BUF_ACL_RX_SIZE if BT_BUF_ACL_RX_SIZE <= 251
 	default 27
 	range 27 BT_BUF_ACL_RX_SIZE if BT_BUF_ACL_RX_SIZE < 251
 	range 27 251
