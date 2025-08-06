@@ -91,6 +91,7 @@ struct xtensa_arch_block {
  * inside function. So do it here.
  */
 static struct xtensa_arch_block arch_blk;
+static uint32_t xtensa_coredump_fault_sp;
 
 void arch_coredump_info_dump(const struct arch_esf *esf)
 {
@@ -127,6 +128,7 @@ void arch_coredump_info_dump(const struct arch_esf *esf)
 
 	/* Set in top-level CMakeLists.txt for use with Xtensa coredump */
 	arch_blk.toolchain = XTENSA_TOOLCHAIN_VARIANT;
+	xtensa_coredump_fault_sp = (uint32_t)esf;
 
 	__asm__ volatile("rsr.exccause %0" : "=r"(arch_blk.r.exccause));
 
@@ -205,3 +207,8 @@ void arch_coredump_priv_stack_dump(struct k_thread *thread)
 	coredump_memory_dump(start_addr, end_addr);
 }
 #endif /* CONFIG_DEBUG_COREDUMP_DUMP_THREAD_PRIV_STACK */
+
+uintptr_t arch_coredump_stack_ptr_get(const struct k_thread *thread)
+{
+	return (thread == _current) ? xtensa_coredump_fault_sp : (uintptr_t)thread->switch_handle;
+}
