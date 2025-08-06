@@ -399,6 +399,8 @@ device.
        into
    * - zephyr,console
      - Sets UART device used by console driver
+   * - zephyr,crc
+     - Selects the CRC device used as an accelerator by the CRC subsystem
    * - zephyr,display
      - Sets the default display controller
    * - zephyr,keyboard-scan
