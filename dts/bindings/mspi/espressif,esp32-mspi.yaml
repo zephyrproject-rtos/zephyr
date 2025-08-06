@@ -45,18 +45,13 @@ properties:
 
   dma-host:
     type: int
+    required: true
     description: DMA Host - 0 -> SPI2, 1 -> SPI3
 
   line-idle-low:
     type: boolean
     description: |
       Default data lines GPIO level when idle. Defaults to high by default.
-
-  max-dma-buf-size:
-    type: int
-    default: 4092
-    description: |
-      Maximum size of the DMA buffer in bytes.
 
   use-iomux:
     type: boolean
@@ -67,3 +62,15 @@ properties:
 
       Refer to SoC's Technical Reference Manual to check which pins are
       allowed to use this routing path.
+
+  transfer-timeout:
+    type: int
+    default: 100
+    description: |
+      Transfer timeout in milliseconds.
+
+  duty-cycle:
+    type: int
+    default: 128
+    description: |
+      Duty cycle of the SPI clock in percentage. Range is 0-255.

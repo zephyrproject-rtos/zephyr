@@ -10,17 +10,10 @@ config MSPI_ESP32
 
 if MSPI_ESP32
 
-config MSPI_ESP32_LOG_LEVEL
-	int "ESP32 MSPI driver log level"
-	depends on LOG
-	default 3
-	range 0 4
+config MSPI_DMA_MAX_BUFFER_SIZE
+	int "MSPI DMA buffer size (Byte)"
+	default 4092
 	help
-	  Log level for ESP32 MSPI driver:
-	  - 0: OFF
-	  - 1: ERROR
-	  - 2: WARNING
-	  - 3: INFO
-	  - 4: DEBUG
+	  Set the size of each buffer used by MSPI DMA.
 
 endif # MSPI_ESP32

@@ -23,8 +23,8 @@
 #include <esp_memory_utils.h>
 
 #ifdef SOC_GDMA_SUPPORTED
-#include <hal/gdma_hal.h>
-#include <hal/gdma_ll.h>
+#include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/dma/dma_esp32.h>
 #endif
 
 #include "mspi_esp32.h"
@@ -43,61 +43,58 @@ static int mspi_mode_to_esp32(enum mspi_cpp_mode mode)
 	case MSPI_CPP_MODE_3:
 		return 3; /* CPOL=1, CPHA=1 */
 	default:
-		return 0;
+		LOG_ERR("Unsupported mode %d", mode);
+		return -ENOTSUP;
 	}
 }
 
-static spi_line_mode_t get_spi_line_mode(enum mspi_io_mode io_mode)
+static int update_spi_line_mode(spi_line_mode_t *line_mode, enum mspi_io_mode io_mode)
 {
-	spi_line_mode_t line_mode = {0};
-
 	switch (io_mode) {
 	case MSPI_IO_MODE_SINGLE:
-		line_mode.cmd_lines = 1;
-		line_mode.addr_lines = 1;
-		line_mode.data_lines = 1;
+		line_mode->cmd_lines = 1;
+		line_mode->addr_lines = 1;
+		line_mode->data_lines = 1;
 		break;
 	case MSPI_IO_MODE_DUAL:
 	case MSPI_IO_MODE_DUAL_1_1_2:
-		line_mode.cmd_lines = 1;
-		line_mode.addr_lines = 1;
-		line_mode.data_lines = 2;
+		line_mode->cmd_lines = 1;
+		line_mode->addr_lines = 1;
+		line_mode->data_lines = 2;
 		break;
 	case MSPI_IO_MODE_DUAL_1_2_2:
-		line_mode.cmd_lines = 1;
-		line_mode.addr_lines = 2;
-		line_mode.data_lines = 2;
+		line_mode->cmd_lines = 1;
+		line_mode->addr_lines = 2;
+		line_mode->data_lines = 2;
 		break;
 	case MSPI_IO_MODE_QUAD:
 	case MSPI_IO_MODE_QUAD_1_1_4:
-		line_mode.cmd_lines = 1;
-		line_mode.addr_lines = 1;
-		line_mode.data_lines = 4;
+		line_mode->cmd_lines = 1;
+		line_mode->addr_lines = 1;
+		line_mode->data_lines = 4;
 		break;
 	case MSPI_IO_MODE_QUAD_1_4_4:
-		line_mode.cmd_lines = 1;
-		line_mode.addr_lines = 4;
-		line_mode.data_lines = 4;
+		line_mode->cmd_lines = 1;
+		line_mode->addr_lines = 4;
+		line_mode->data_lines = 4;
 		break;
 	case MSPI_IO_MODE_OCTAL:
 	case MSPI_IO_MODE_OCTAL_1_1_8:
-		line_mode.cmd_lines = 1;
-		line_mode.addr_lines = 1;
-		line_mode.data_lines = 8;
+		line_mode->cmd_lines = 1;
+		line_mode->addr_lines = 1;
+		line_mode->data_lines = 8;
 		break;
 	case MSPI_IO_MODE_OCTAL_1_8_8:
-		line_mode.cmd_lines = 1;
-		line_mode.addr_lines = 8;
-		line_mode.data_lines = 8;
+		line_mode->cmd_lines = 1;
+		line_mode->addr_lines = 8;
+		line_mode->data_lines = 8;
 		break;
 	default:
-		line_mode.cmd_lines = 1;
-		line_mode.addr_lines = 1;
-		line_mode.data_lines = 1;
-		break;
+		LOG_ERR("Unsupported IO mode %d", io_mode);
+		return -ENOTSUP;
 	}
 
-	return line_mode;
+	return 0;
 }
 
 static int cs_gpio_set(const struct mspi_esp32_data *data, const struct mspi_esp32_config *config,
@@ -111,21 +108,23 @@ static int cs_gpio_set(const struct mspi_esp32_data *data, const struct mspi_esp
 			       active ? 1 : 0);
 }
 
-static esp_err_t calculate_timing_config(const struct mspi_esp32_config *config,
-					 struct mspi_esp32_data *data,
-					 spi_hal_timing_conf_t *timing_conf)
+static esp_err_t update_timing_config(const struct mspi_esp32_config *config,
+				      struct mspi_esp32_data *data,
+				      spi_hal_timing_conf_t *timing_conf, uint32_t clock_frequency)
 {
-	if (config->clock_frequency > MSPI_MAX_FREQ) {
-		LOG_ERR("Clock frequency %d exceeds maximum %d", config->clock_frequency,
-			MSPI_MAX_FREQ);
+	if (clock_frequency > config->mspi_config.max_freq) {
+		LOG_ERR("Clock frequency %d exceeds maximum %d", clock_frequency,
+			config->mspi_config.max_freq);
 		return -EINVAL;
 	}
+
+	data->clock_frequency = clock_frequency;
 
 	spi_hal_timing_param_t timing_param = {
 		.clk_src_hz = data->clock_source_hz,
 		.half_duplex = data->hal_dev_config.half_duplex,
 		.no_compensate = data->hal_dev_config.no_compensate,
-		.expected_freq = config->clock_frequency,
+		.expected_freq = clock_frequency,
 		.duty_cycle = config->duty_cycle,
 		.input_delay_ns = config->input_delay_ns,
 		.use_gpio = !config->use_iomux,
@@ -137,8 +136,69 @@ static esp_err_t calculate_timing_config(const struct mspi_esp32_config *config,
 	return ret;
 }
 
-static int IRAM_ATTR mspi_esp32_transfer(const struct device *dev, const struct mspi_xfer *xfer,
-					 size_t packet_index)
+#ifdef SOC_GDMA_SUPPORTED
+static int spi_esp32_gdma_start(const struct device *dev, uint8_t dir, const uint8_t *buf,
+				size_t len)
+{
+	const struct mspi_esp32_config *config = dev->config;
+
+	struct dma_config dma_cfg = {};
+	struct dma_status dma_status = {};
+	struct dma_block_config dma_blk = {};
+	int err = 0;
+
+	uint8_t dma_channel = (dir == MSPI_RX) ? config->dma_rx_ch : config->dma_tx_ch;
+
+	if (dma_channel == 0xFF) {
+		LOG_ERR("DMA channel is not configured in device tree");
+		return -EINVAL;
+	}
+
+	err = dma_get_status(config->dma_dev, dma_channel, &dma_status);
+	if (err) {
+		return -EINVAL;
+	}
+
+	if (dma_status.busy) {
+		LOG_ERR("DMA channel %d is busy", dma_channel);
+		return -EBUSY;
+	}
+
+	unsigned int key = irq_lock();
+
+	if (dir == MSPI_RX) {
+		dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
+		dma_blk.dest_address = (uint32_t)buf;
+	} else {
+		dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
+		dma_blk.source_address = (uint32_t)buf;
+	}
+	dma_cfg.dma_slot = config->dma_host;
+	dma_cfg.block_count = 1;
+	dma_cfg.head_block = &dma_blk;
+	dma_blk.block_size = len;
+
+	err = dma_config(config->dma_dev, dma_channel, &dma_cfg);
+	if (err) {
+		LOG_ERR("Error configuring DMA (%d)", err);
+		goto unlock;
+	}
+
+	err = dma_start(config->dma_dev, dma_channel);
+	if (err) {
+		LOG_ERR("Error starting DMA (%d)", err);
+		goto unlock;
+	}
+
+unlock:
+	irq_unlock(key);
+
+	return err;
+}
+#endif
+
+static int IRAM_ATTR transfer(const struct device *dev, const struct mspi_xfer *xfer,
+			      size_t packet_index)
 {
 	struct mspi_esp32_data *data = dev->data;
 	const struct mspi_esp32_config *config = dev->config;
@@ -146,9 +206,9 @@ static int IRAM_ATTR mspi_esp32_transfer(const struct device *dev, const struct 
 	spi_hal_dev_config_t *hal_dev = &data->hal_dev_config;
 	spi_hal_trans_config_t *trans_config = &data->trans_config;
 
-	uint8_t *tx_temp = NULL;
-	uint8_t *rx_temp = NULL;
+	uint8_t *data_buffer = NULL;
 	size_t dma_len = 0;
+	int res = 0;
 
 	if (xfer->num_packet == 0 || !xfer->packets || xfer->num_packet <= packet_index) {
 		LOG_ERR("Invalid transfer parameters");
@@ -168,33 +228,33 @@ static int IRAM_ATTR mspi_esp32_transfer(const struct device *dev, const struct 
 
 	/* Handle DMA buffer allocation if DMA is enabled and we have data to transfer */
 	if (config->dma_enabled && packet->num_bytes > 0) {
-		dma_len = MIN(packet->num_bytes, config->max_dma_buf_size);
+		dma_len = MIN(packet->num_bytes, CONFIG_MSPI_DMA_MAX_BUFFER_SIZE);
 
 		if (packet->dir == MSPI_TX && packet->data_buf) {
 			if (!esp_ptr_dma_capable((uint32_t *)packet->data_buf)) {
 				LOG_DBG("Tx buffer not DMA capable");
 
-				tx_temp = k_aligned_alloc(4, ROUND_UP(dma_len, 4));
-				if (!tx_temp) {
+				data_buffer = k_aligned_alloc(4, ROUND_UP(dma_len, 4));
+				if (!data_buffer) {
 					LOG_ERR("Error allocating temp buffer Tx");
 					return -ENOMEM;
 				}
 
-				memcpy(tx_temp, packet->data_buf, dma_len);
+				memcpy(data_buffer, packet->data_buf, dma_len);
 			}
 		} else if (packet->dir == MSPI_RX && packet->data_buf) {
 			if (!esp_ptr_dma_capable((uint32_t *)packet->data_buf) ||
 			    ((int)packet->data_buf % 4 != 0) || (dma_len % 4 != 0)) {
 				LOG_DBG("Rx buffer not DMA capable");
+
 				/* The rx buffer need to be length of
 				 * multiples of 32 bits to avoid heap
 				 * corruption.
 				 */
-
-				rx_temp = k_aligned_alloc(4, ROUND_UP(dma_len, 4));
-				if (!rx_temp) {
-					LOG_ERR("Error allocating temp buffer Rx");
-					return -ENOMEM;
+				data_buffer = k_calloc(((dma_len << 3) + 31) / 8, sizeof(uint8_t));
+				if (!data_buffer) {
+					res = -ENOMEM;
+					goto cleanup;
 				}
 			}
 		}
@@ -217,7 +277,7 @@ static int IRAM_ATTR mspi_esp32_transfer(const struct device *dev, const struct 
 
 	/* Handle data phase if present */
 	if (packet->num_bytes > 0) {
-		size_t bit_len = packet->num_bytes * 8;
+		int bit_len = packet->num_bytes * 8;
 
 		if (config->dma_enabled) {
 			/* bit_len needs to be at least one byte long when using DMA */
@@ -225,10 +285,11 @@ static int IRAM_ATTR mspi_esp32_transfer(const struct device *dev, const struct 
 		}
 
 		if (packet->dir == MSPI_TX) {
-			trans_config->send_buffer = tx_temp ? tx_temp : (uint8_t *)packet->data_buf;
+			trans_config->send_buffer =
+				data_buffer ? data_buffer : (uint8_t *)packet->data_buf;
 			trans_config->tx_bitlen = bit_len;
 		} else {
-			trans_config->rcv_buffer = rx_temp ? rx_temp : packet->data_buf;
+			trans_config->rcv_buffer = data_buffer ? data_buffer : packet->data_buf;
 			trans_config->rx_bitlen = bit_len;
 		}
 	} else if (config->dma_enabled) {
@@ -238,15 +299,41 @@ static int IRAM_ATTR mspi_esp32_transfer(const struct device *dev, const struct 
 
 	/* Configure SPI */
 	spi_hal_setup_trans(hal, hal_dev, trans_config);
+
+#if defined(SOC_GDMA_SUPPORTED)
+	if (config->dma_enabled) {
+		if (trans_config->send_buffer) {
+			/* setup DMA channels via DMA driver */
+			spi_ll_dma_tx_fifo_reset(hal->hw);
+			spi_ll_outfifo_empty_clr(hal->hw);
+			spi_ll_dma_tx_enable(hal->hw, 1);
+
+			res = spi_esp32_gdma_start(dev, MSPI_TX, trans_config->send_buffer,
+						   dma_len);
+			if (res) {
+				goto cleanup;
+			}
+		} else if (trans_config->rcv_buffer) {
+			/* setup DMA channels via DMA driver */
+			spi_ll_dma_rx_fifo_reset(hal->hw);
+			spi_ll_infifo_full_clr(hal->hw);
+			spi_ll_dma_rx_enable(hal->hw, 1);
+
+			res = spi_esp32_gdma_start(dev, MSPI_RX, trans_config->rcv_buffer, dma_len);
+			if (res) {
+				goto cleanup;
+			}
+		}
+	}
+#endif
+
 	spi_hal_prepare_data(hal, hal_dev, trans_config);
 
 	/* Send data */
 	spi_hal_user_start(hal);
 
-	k_timeout_t timeout = K_MSEC(xfer->timeout ?: MSPI_TIMEOUT_MS);
+	k_timeout_t timeout = K_MSEC(xfer->timeout ? xfer->timeout : config->transfer_timeout);
 	int64_t start_time = k_uptime_get();
-
-	int res = 0;
 
 	while (!spi_hal_usr_is_done(hal)) {
 		if (k_uptime_get() - start_time > timeout.ticks) {
@@ -254,40 +341,30 @@ static int IRAM_ATTR mspi_esp32_transfer(const struct device *dev, const struct 
 			res = -ETIMEDOUT;
 			goto cleanup;
 		}
-
-		k_yield();
 	}
 
-	/* Read data */
-	spi_hal_fetch_result(hal);
+	if (!config->dma_enabled) {
+		/* Read data */
+		spi_hal_fetch_result(hal);
+	}
 
-	if (rx_temp && packet->dir == MSPI_RX && packet->data_buf) {
-		memcpy(packet->data_buf, rx_temp, MIN(packet->num_bytes, dma_len));
+	if (data_buffer && packet->dir == MSPI_RX && packet->data_buf) {
+		memcpy(packet->data_buf, data_buffer, MIN(packet->num_bytes, dma_len));
 	}
 
 cleanup:
 
-	k_free(rx_temp);
-	k_free(tx_temp);
+	k_free(data_buffer);
 
 	return res;
 }
 
-/* MSPI API: Configure the controller */
-static int IRAM_ATTR mspi_esp32_configure(const struct mspi_dt_spec *spec)
+static int IRAM_ATTR update_transfer_config(const struct device *dev)
 {
-	const struct device *dev = spec->bus;
 	const struct mspi_esp32_config *config = dev->config;
 	struct mspi_esp32_data *data = dev->data;
 	spi_hal_context_t *hal = &data->hal_ctx;
 	spi_hal_dev_config_t *hal_dev = &data->hal_dev_config;
-
-	int ret = calculate_timing_config(config, data, &hal_dev->timing_conf);
-
-	if (ret != ESP_OK) {
-		LOG_ERR("Failed to calculate timing config: %d", ret);
-		return -EINVAL;
-	}
 
 	memset(&data->trans_config, 0, sizeof(data->trans_config));
 	data->trans_config.dummy_bits = hal_dev->timing_conf.timing_dummy;
@@ -295,7 +372,9 @@ static int IRAM_ATTR mspi_esp32_configure(const struct mspi_dt_spec *spec)
 	hal_dev->tx_lsbfirst = false;
 	hal_dev->rx_lsbfirst = false;
 
-	data->trans_config.line_mode = get_spi_line_mode(data->mspi_dev_config.io_mode);
+	if (update_spi_line_mode(&data->trans_config.line_mode, data->mspi_dev_config.io_mode)) {
+		return -ENOTSUP;
+	}
 
 	spi_hal_setup_device(hal, hal_dev);
 
@@ -342,19 +421,27 @@ static int IRAM_ATTR mspi_esp32_configure(const struct mspi_dt_spec *spec)
 			.addr_length = 0,
 		};
 
-		mspi_esp32_transfer(dev, &xfer, 0);
+		transfer(dev, &xfer, 0);
 	}
 #endif
 
 	return 0;
 }
 
-/* MSPI API: Configure device-specific settings */
 static int mspi_esp32_dev_config(const struct device *dev, const struct mspi_dev_id *dev_id,
 				 const enum mspi_dev_cfg_mask cfg_mask,
 				 const struct mspi_dev_cfg *mspi_dev_config)
 {
 	struct mspi_esp32_data *data = dev->data;
+	const struct mspi_esp32_config *config = dev->config;
+	int ret = 0;
+
+	if ((cfg_mask &
+	     (~(MSPI_DEVICE_CONFIG_IO_MODE | MSPI_DEVICE_CONFIG_CPP | MSPI_DEVICE_CONFIG_CE_NUM |
+		MSPI_DEVICE_CONFIG_CE_POL | MSPI_DEVICE_CONFIG_FREQUENCY)))) {
+		LOG_ERR("Configuration type not supported.");
+		return -ENOTSUP;
+	}
 
 	if (cfg_mask & MSPI_DEVICE_CONFIG_IO_MODE) {
 		data->mspi_dev_config.io_mode = mspi_dev_config->io_mode;
@@ -376,10 +463,18 @@ static int mspi_esp32_dev_config(const struct device *dev, const struct mspi_dev
 			mspi_dev_config->ce_polarity == MSPI_CE_ACTIVE_HIGH;
 	}
 
-	return 0;
+	if (cfg_mask & MSPI_DEVICE_CONFIG_FREQUENCY) {
+		ret = update_timing_config(config, data, &data->hal_dev_config.timing_conf,
+					   mspi_dev_config->freq);
+		if (ret != ESP_OK) {
+			LOG_ERR("Failed to calculate timing config: %d", ret);
+			return -EINVAL;
+		}
+	}
+
+	return ret;
 }
 
-/* MSPI API: Perform transceive operation */
 static int IRAM_ATTR mspi_esp32_transceive(const struct device *dev,
 					   const struct mspi_dev_id *dev_id,
 					   const struct mspi_xfer *xfer)
@@ -400,12 +495,7 @@ static int IRAM_ATTR mspi_esp32_transceive(const struct device *dev,
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
-	const struct mspi_dt_spec spec = {
-		.bus = dev,
-		.config = config->mspi_config,
-	};
-
-	ret = mspi_esp32_configure(&spec);
+	ret = update_transfer_config(dev);
 	if (ret != 0) {
 		LOG_ERR("Failed to configure SPI: %d", ret);
 		goto unlock;
@@ -419,7 +509,7 @@ static int IRAM_ATTR mspi_esp32_transceive(const struct device *dev,
 	}
 
 	for (int i = 0; i < xfer->num_packet; i++) {
-		ret = mspi_esp32_transfer(dev, xfer, i);
+		ret = transfer(dev, xfer, i);
 		if (ret != 0) {
 			LOG_ERR("Failed to transfer packet %d: %d", i, ret);
 			goto unlock;
@@ -448,35 +538,33 @@ unlock:
 	return ret;
 }
 
-static int mspi_esp32_init_dma(const struct device *dev)
+static int init_dma(const struct device *dev)
 {
 	const struct mspi_esp32_config *config = dev->config;
 	struct mspi_esp32_data *data = dev->data;
 	uint8_t channel_offset = 0;
 
+#ifdef SOC_GDMA_SUPPORTED
+	if (config->dma_dev) {
+		if (!device_is_ready(config->dma_dev)) {
+			LOG_ERR("DMA device is not ready");
+			return -ENODEV;
+		}
+	}
+#else
+	channel_offset = 1;
+
 	if (clock_control_on(config->clock_dev, (clock_control_subsys_t)config->dma_clk_src)) {
 		LOG_ERR("Could not enable DMA clock");
 		return -EIO;
 	}
-
-#ifdef SOC_GDMA_SUPPORTED
-	gdma_hal_init(&data->hal_gdma, 0);
-	gdma_ll_enable_clock(data->hal_gdma.dev, true);
-	gdma_ll_tx_reset_channel(data->hal_gdma.dev, config->dma_host);
-	gdma_ll_rx_reset_channel(data->hal_gdma.dev, config->dma_host);
-	gdma_ll_tx_connect_to_periph(data->hal_gdma.dev, config->dma_host, GDMA_TRIG_PERIPH_SPI,
-				     config->dma_host);
-	gdma_ll_rx_connect_to_periph(data->hal_gdma.dev, config->dma_host, GDMA_TRIG_PERIPH_SPI,
-				     config->dma_host);
-#else
-	channel_offset = 1;
-#endif /* SOC_GDMA_SUPPORTED */
+#endif
 
 #ifdef CONFIG_SOC_SERIES_ESP32
 	/*Connect SPI and DMA*/
 	DPORT_SET_PERI_REG_BITS(DPORT_SPI_DMA_CHAN_SEL_REG, 3, config->dma_host + 1,
 				((config->dma_host + 1) * 2));
-#endif /* CONFIG_SOC_SERIES_ESP32 */
+#endif
 
 	data->hal_config.dma_in = (spi_dma_dev_t *)config->spi;
 	data->hal_config.dma_out = (spi_dma_dev_t *)config->spi;
@@ -498,8 +586,10 @@ static int mspi_esp32_init_dma(const struct device *dev)
 	return 0;
 }
 
-static inline int mspi_esp32_cs_configure(const struct mspi_cfg *mspi_config)
+static inline int cs_configure(const struct mspi_cfg *mspi_config)
 {
+	int ret = 0;
+
 	for (int i = 0; i < mspi_config->num_ce_gpios; ++i) {
 		const struct gpio_dt_spec *cs_gpio = mspi_config->ce_group + i;
 
@@ -509,28 +599,23 @@ static inline int mspi_esp32_cs_configure(const struct mspi_cfg *mspi_config)
 			return -ENODEV;
 		}
 
-		int ret = gpio_pin_configure_dt(cs_gpio, GPIO_OUTPUT_INACTIVE);
-
+		ret = gpio_pin_configure_dt(cs_gpio, GPIO_OUTPUT_INACTIVE);
 		if (ret < 0) {
 			return ret;
 		}
 	}
 
-	return 0;
+	return ret;
 }
 
-/* Driver initialization */
-static int mspi_esp32_init(const struct device *dev)
+static int mspi_esp32_config(const struct mspi_dt_spec *spec)
 {
+	const struct device *dev = spec->bus;
 	struct mspi_esp32_data *data = dev->data;
 	const struct mspi_esp32_config *config = dev->config;
-	int ret;
-
-	/* Initialize mutex */
-	k_mutex_init(&data->lock);
+	int ret = 0;
 
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
-
 	if (ret) {
 		LOG_ERR("Failed to configure SPI pins");
 		return ret;
@@ -562,7 +647,43 @@ static int mspi_esp32_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	/* Configure device settings */
+	data->mspi_dev_config.freq = config->mspi_config.max_freq;
+	ret = update_timing_config(config, data, &data->hal_dev_config.timing_conf,
+				   data->mspi_dev_config.freq);
+	if (ret != ESP_OK) {
+		LOG_ERR("Failed to calculate timing config: %d", ret);
+		return -EINVAL;
+	}
+
+	spi_ll_master_init(config->spi);
+
+	if (config->dma_enabled) {
+		ret = init_dma(dev);
+		if (ret != 0) {
+			LOG_ERR("Failed to initialize SPI DMA: %d", ret);
+			return ret;
+		}
+	}
+
+	ret = cs_configure(&config->mspi_config);
+	if (ret < 0) {
+		LOG_ERR("Failed to configure CS GPIOs: %d", ret);
+		return ret;
+	}
+
+	LOG_INF("Configured successfully");
+
+	return ret;
+}
+
+static int mspi_esp32_init(const struct device *dev)
+{
+	struct mspi_esp32_data *data = dev->data;
+	const struct mspi_esp32_config *config = dev->config;
+	int ret = 0;
+
+	k_mutex_init(&data->lock);
+
 	memset(&data->hal_dev_config, 0, sizeof(data->hal_dev_config));
 
 	data->hal_dev_config.cs_setup = 0;
@@ -572,40 +693,46 @@ static int mspi_esp32_init(const struct device *dev)
 	data->hal_dev_config.rx_lsbfirst = false;
 	data->hal_dev_config.no_compensate = false;
 
-	spi_ll_master_init(config->spi);
+	data->clock_frequency = config->mspi_config.max_freq;
 
-	if (config->dma_enabled) {
-		ret = mspi_esp32_init_dma(dev);
-		if (ret != 0) {
-			LOG_ERR("Failed to initialize SPI DMA: %d", ret);
-			return ret;
-		}
-	}
+	const struct mspi_dt_spec spec = {
+		.bus = dev,
+		.config = config->mspi_config,
+	};
 
-	ret = mspi_esp32_cs_configure(&config->mspi_config);
-	if (ret < 0) {
-		LOG_ERR("Failed to configure CS GPIOs: %d", ret);
+	ret = mspi_esp32_config(&spec);
+	if (ret != 0) {
+		LOG_ERR("Failed to configure MSPI: %d", ret);
 		return ret;
 	}
 
 	LOG_INF("ESP32 MSPI driver initialized (peripheral %d)", config->peripheral_id);
 
-	return 0;
+	return ret;
 }
 
 /* Device driver API */
 static DEVICE_API(mspi, mspi_esp32_api) = {
-	.config = mspi_esp32_configure,
+	.config = mspi_esp32_config,
 	.dev_config = mspi_esp32_dev_config,
 	.transceive = mspi_esp32_transceive,
 };
+
+#if defined(SOC_GDMA_SUPPORTED)
+#define SPI_DMA_CFG(inst)                                                                          \
+	.dma_dev = ESP32_DT_INST_DMA_CTLR(inst, tx),                                               \
+	.dma_tx_ch = ESP32_DT_INST_DMA_CELL(inst, tx, channel),                                    \
+	.dma_rx_ch = ESP32_DT_INST_DMA_CELL(inst, rx, channel)
+#else
+#define SPI_DMA_CFG(inst) .dma_clk_src = DT_INST_PROP(inst, dma_clk)
+#endif /* defined(SOC_GDMA_SUPPORTED) */
 
 #define MSPI_CONFIG(inst)                                                                          \
 	{                                                                                          \
 		.channel_num = DT_INST_PROP(inst, peripheral_id),                                  \
 		.op_mode = MSPI_OP_MODE_CONTROLLER,                                                \
 		.duplex = DT_ENUM_IDX_OR(DT_DRV_INST(inst), duplex, MSPI_FULL_DUPLEX),             \
-		.max_freq = MSPI_MAX_FREQ,                                                         \
+		.max_freq = DT_INST_PROP(inst, clock_frequency),                                   \
 		.dqs_support = false,                                                              \
 		.num_periph = DT_INST_CHILD_NUM(inst),                                             \
 		.sw_multi_periph = DT_INST_PROP(inst, software_multiperipheral),                   \
@@ -633,15 +760,14 @@ static DEVICE_API(mspi, mspi_esp32_api) = {
 		.mspi_config = MSPI_CONFIG(inst),                                                  \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                             \
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(inst, offset),         \
-		.clock_frequency = DT_INST_PROP_OR(inst, clock_frequency, 80000000),               \
 		.clock_source = DT_ENUM_IDX_OR(DT_DRV_INST(inst), clk_src, SPI_CLK_SRC_DEFAULT),   \
-		.dma_enabled = DT_INST_PROP(inst, dma_enabled),                                    \
-		.dma_clk_src = DT_INST_PROP(inst, dma_clk),                                        \
+		.dma_enabled = DT_INST_PROP_OR(inst, dma_enabled, false),                          \
 		.dma_host = DT_INST_PROP(inst, dma_host),                                          \
-		.max_dma_buf_size = DT_INST_PROP(inst, max_dma_buf_size),                          \
-		.line_idle_low = DT_INST_PROP(inst, line_idle_low),                                \
-		.use_iomux = DT_INST_PROP(inst, use_iomux),                                        \
-		.duty_cycle = SPI_DUTY_CYCLE_50_PERCENT,                                           \
+		SPI_DMA_CFG(inst),                                                                 \
+		.line_idle_low = DT_INST_PROP_OR(inst, line_idle_low, false),                      \
+		.use_iomux = DT_INST_PROP_OR(inst, use_iomux, false),                              \
+		.duty_cycle = DT_INST_PROP(inst, duty_cycle),                                      \
+		.transfer_timeout = DT_INST_PROP(inst, transfer_timeout),                          \
 		.input_delay_ns = 0,                                                               \
 	};                                                                                         \
                                                                                                    \
