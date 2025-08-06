@@ -1805,6 +1805,10 @@ struct bt_conn_cb {
 	 *  In case the err parameter is non-zero it means that the
 	 *  connection establishment failed.
 	 *
+	 *  This callback runs in the same context in which incoming low priority
+	 *  HCI packets are processed.
+	 *  Refer to @kconfig{CONFIG_BT_RECV_CONTEXT} to check applicable limitations.
+	 *
 	 *  @note If the connection was established from an advertising set then
 	 *        the advertising set cannot be restarted directly from this
 	 *        callback. Instead use the connected callback of the
