@@ -629,6 +629,29 @@ struct bt_avrcp_event_data {
 	};
 };
 
+/** @brief Callback for AVRCP event notifications (CHANGED only).
+ *
+ * This callback is invoked by the AVRCP Target (TG) when a registered event
+ * occurs and a "changed" notification needs to be sent to the Controller (CT).
+ *
+ * For interim and rejected error cases, the callback will trigger the
+ * `notification` function registered by the Controller
+ *
+ *  @param ct AVRCP CT connection object.
+ *
+ *  @param event_id The AVRCP event identifier. @ref bt_avrcp_event_data
+ *        This corresponds to one of the AVRCP event types such as
+ *         EVENT_PLAYBACK_STATUS_CHANGED, EVENT_TRACK_CHANGED, etc.
+ *
+ *  @param data Pointer to @ref bt_avrcp_event_data structure containing the event-specific
+ *        data. The content of the union depends on the event_id.
+ *
+ *  @note The callback implementation should not block or perform heavy operations.
+ *       If needed, defer processing to another thread or task.
+ */
+typedef void(*bt_avrcp_notify_changed_cb_t)(struct bt_avrcp_ct *ct, uint8_t event_id,
+					    struct bt_avrcp_event_data *data);
+
 struct bt_avrcp_ct_cb {
 	/** @brief An AVRCP CT connection has been established.
 	 *
@@ -735,6 +758,34 @@ struct bt_avrcp_ct_cb {
 	 *             big-endian format.
 	 */
 	void (*browsed_player_rsp)(struct bt_avrcp_ct *ct, uint8_t tid, struct net_buf *buf);
+
+	/** @brief Callback function for Event Notification response (CT).
+	 *
+	 * Called when the AVRCP Target (TG) sends a response to a previously
+	 * registered event (Register Notification). This callback reports the
+	 * event type, the response phase (e.g., Interim), and the event-specific
+	 * payload.
+	 *
+	 * @param ct       AVRCP Controller (CT) connection context.
+	 * @param tid      Transaction label that correlates this notification
+	 *                 with the original Register Notification request.
+	 * @param status   TG status/phase code (BT_AVRCP_STATUS_*). Typically
+	 *                 BT_AVRCP_STATUS_SUCCESS for an interim notification.
+	 *                 Error codes may be returned for invalid parameters or
+	 *                 unsupported events.
+	 * @param event_id The AVRCP event identifier. @ref bt_avrcp_event_data
+	 *        This corresponds to one of the AVRCP event types such as
+	 *        EVENT_PLAYBACK_STATUS_CHANGED, EVENT_TRACK_CHANGED, etc.
+	 *
+	 * @param data Pointer to @ref bt_avrcp_event_data structure containing the
+	 *         event-specific data. The content of the union depends on the event_id.
+	 *
+	 * @note This callback is only invoked for interim notifications and error
+	 *       statuses from the TG. For CHANGED event notifications, the event must
+	 *       first be registered using @ref bt_avrcp_notify_changed_cb_t.
+	 */
+	void (*notification)(struct bt_avrcp_ct *ct, uint8_t tid, uint8_t status, uint8_t event_id,
+			     struct bt_avrcp_event_data *data);
 };
 
 /** @brief Connect AVRCP.
@@ -883,6 +934,23 @@ int bt_avrcp_ct_passthrough(struct bt_avrcp_ct *ct, uint8_t tid, uint8_t opid, u
  */
 int bt_avrcp_ct_set_browsed_player(struct bt_avrcp_ct *ct, uint8_t tid, uint16_t player_id);
 
+/** @brief Register for AVRCP changed notifications with callback.
+ *
+ *  This function registers for notifications from the target device.
+ *  The notification response will be received through the provided callback function.
+ *
+ *  @param ct The AVRCP CT instance.
+ *  @param tid The transaction label of the response, valid from 0 to 15.
+ *  @param event_id The event ID to register for, see @ref bt_avrcp_evt_t.
+ *  @param interval The playback interval for position changed events.
+ *         Other events will have this value set to 0 to ignore.
+ *  @param cb The callback function to handle the changed notification response.
+ *
+ *  @return 0 in case of success or error code in case of error.
+ */
+int bt_avrcp_ct_register_notification(struct bt_avrcp_ct *ct, uint8_t tid, uint8_t event_id,
+				      uint32_t interval, bt_avrcp_notify_changed_cb_t cb);
+
 struct bt_avrcp_tg_cb {
 	/** @brief An AVRCP TG connection has been established.
 	 *
@@ -911,6 +979,19 @@ struct bt_avrcp_tg_cb {
 	 *  @param tg AVRCP TG connection object.
 	 */
 	void (*unit_info_req)(struct bt_avrcp_tg *tg, uint8_t tid);
+
+	/** @brief Register notification request callback.
+	 *
+	 *  This callback is called whenever an AVRCP register notification is requested.
+	 *
+	 *  @param tg AVRCP TG connection object.
+	 *  @param tid The transaction label of the request.
+	 *  @param event_id The event ID that the CT wants to register for @ref bt_avrcp_evt_t.
+	 *  @param interval The playback interval for position changed event.
+	 *         other events will have this value set to 0 for ignoring.
+	 */
+	void (*register_notification)(struct bt_avrcp_tg *tg, uint8_t tid, uint8_t event_id,
+				      uint32_t interval);
 
 	/** @brief Subunit Info Request callback.
 	 *
@@ -1022,6 +1103,33 @@ int bt_avrcp_tg_send_subunit_info_rsp(struct bt_avrcp_tg *tg, uint8_t tid);
  *  @return 0 in case of success or error code in case of error.
  */
 int bt_avrcp_tg_get_caps(struct bt_avrcp_tg *tg, uint8_t tid, uint8_t status, struct net_buf *buf);
+
+/** @brief Send notification response.
+ *
+ * This function sends a notification response from the AVRCP Target (TG) to
+ * the Controller (CT) for a previously registered event. The response can be:
+ *
+ * - **INTERIM**: Sent on the first call for the given @p event_id to indicate
+ *   that the event is being monitored.
+ * - **CHANGED**: Sent on the next call for the same @p event_id when the event
+ *   state has changed.
+ *
+ *  @param tg The AVRCP TG instance.
+ *  @param tid The transaction label of the response, valid from 0 to 15.
+ *  @param status Status code of the operation @ref bt_avrcp_status_t.
+ *  @param event_id The AVRCP event ID for which the notification is sent, @ref bt_avrcp_evt_t.
+ *  @param data Pointer to an bt_avrcp_event_data structure containing the event-specific
+ *             data. The content of the union depends on the event_id.
+ *
+ *  @return 0 in case of success or error code in case of error.
+ *
+ * @note
+ * - The first successful call for a given @p event_id sends an INTERIM response.
+ * - The next successful call for the same @p event_id sends a CHANGED response.
+ * - If @p status is not SUCCESS, a REJECTED or NOT_IMPLEMENTED response is sent.
+ */
+int bt_avrcp_tg_notification(struct bt_avrcp_tg *tg, uint8_t tid, uint8_t status, uint8_t event_id,
+			     struct bt_avrcp_event_data *data);
 
 /** @brief Send the set browsed player response.
  *
