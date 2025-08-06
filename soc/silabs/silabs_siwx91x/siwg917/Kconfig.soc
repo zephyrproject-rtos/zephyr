@@ -7,7 +7,7 @@ config SOC_SERIES_SIWG917
 	help
 	  SiWG917 Series MCU
 
-config SOC_PART_NUMBER_SIWG917M111MGTBA
+config SOC_SIWG917M111MGTBA
 	bool
 	select SOC_SERIES_SIWG917
 
@@ -15,4 +15,4 @@ config SOC_SERIES
 	default "siwg917" if SOC_SERIES_SIWG917
 
 config SOC
-	default "siwg917m111mgtba" if SOC_PART_NUMBER_SIWG917M111MGTBA
+	default "siwg917m111mgtba" if SOC_SIWG917M111MGTBA
