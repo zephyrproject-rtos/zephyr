@@ -3,9 +3,22 @@
 # Copyright (c) 2020 Vestas Wind Systems A/S
 # SPDX-License-Identifier: Apache-2.0
 
-config COUNTER_MCUX_LPTMR
-	bool "MCUX LPTMR driver"
-	default y
-	depends on DT_HAS_NXP_LPTMR_ENABLED
-	help
-	  Enable support for the MCUX Low Power Timer (LPTMR).
+if MCUX_HW_HAS_LPTMR0
+mcux_hw_lptmr_index = 0
+rsource "Kconfig.mcux_lptmr_instance"
+endif
+
+if MCUX_HW_HAS_LPTMR1
+mcux_hw_lptmr_index = 1
+rsource "Kconfig.mcux_lptmr_instance"
+endif
+
+if MCUX_HW_HAS_LPTMR2
+mcux_hw_lptmr_index = 2
+rsource "Kconfig.mcux_lptmr_instance"
+endif
+
+if MCUX_HW_HAS_LPTMR3
+mcux_hw_lptmr_index = 3
+rsource "Kconfig.mcux_lptmr_instance"
+endif
