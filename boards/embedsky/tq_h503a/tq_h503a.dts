@@ -38,18 +38,6 @@
 	};
 };
 
-&clk_csi {
-	status = "okay";
-};
-
-&clk_hsi {
-	status = "okay";
-};
-
-&clk_hsi48 {
-	status = "okay";
-};
-
 &clk_hse {
 	clock-frequency = <DT_FREQ_M(8)>;
 	status = "okay";
@@ -95,14 +83,6 @@
 	status = "okay";
 };
 
-&rng {
-	status = "okay";
-};
-
-&iwdg {
-	status = "okay";
-};
-
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb5>;
 	pinctrl-names = "default";
@@ -113,5 +93,25 @@
 zephyr_udc0: &usb {
 	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&clk_csi {
+	status = "okay";
+};
+
+&clk_hsi {
+	status = "okay";
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&rng {
+	status = "okay";
+};
+
+&iwdg {
 	status = "okay";
 };
