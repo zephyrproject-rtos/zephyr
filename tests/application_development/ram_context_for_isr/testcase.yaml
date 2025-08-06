@@ -13,3 +13,9 @@ tests:
       - mps4/corstone320/fvp
       - imx943_evk/mimx94398/m33
       - imx943_evk/mimx94398/m33/ddr
+      - frdm_mcxc444/mcxc444
+      - frdm_mcxc242/mcxc242
+      - frdm_mcxn947/mcxn947/cpu0/qspi
+      - hexiwear/mkw40z4
+      - frdm_kw41z/mkw41z4
+      - frdm_kl25z/mkl25z4
