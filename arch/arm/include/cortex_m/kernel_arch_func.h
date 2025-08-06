@@ -83,6 +83,7 @@ extern FUNC_NORETURN void z_arm_userspace_enter(k_thread_entry_t user_entry, voi
 
 extern void z_arm_fatal_error(unsigned int reason, const struct arch_esf *esf);
 
+#ifndef CONFIG_USE_SWITCH
 static ALWAYS_INLINE int arch_swap(unsigned int key)
 {
 	/* store off key and return value */
@@ -100,6 +101,7 @@ static ALWAYS_INLINE int arch_swap(unsigned int key)
 	 */
 	return _current->arch.swap_return_value;
 }
+#endif
 
 #endif /* _ASMLANGUAGE */
 
