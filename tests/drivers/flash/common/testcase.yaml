@@ -153,6 +153,8 @@ tests:
       - nrf5340dk/nrf5340/cpuapp
   drivers.flash.common.disable_spi_nor:
     filter: dt_compat_enabled("soc-nv-flash") and dt_compat_enabled("jedec,spi-nor")
+    platform_exclude:
+      - beagleconnect_freedom/cc1352p7
     extra_args:
       - CONFIG_SPI_NOR=n
   drivers.flash.common.ra_ospi_b_nor:
