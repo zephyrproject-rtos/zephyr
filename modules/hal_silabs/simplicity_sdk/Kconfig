@@ -16,7 +16,7 @@ config SILABS_SISDK_TIMER
 config SILABS_SISDK_VDAC
 	bool "Peripheral HAL for VDAC"
 
-config RAIL_PA_CURVE_HEADER
+config SILABS_SISDK_RAIL_PA_CURVE_HEADER
 	string "RAIL PA custom curve header file"
 	default "pa_curves_efr32.h"
 	help
@@ -24,7 +24,7 @@ config RAIL_PA_CURVE_HEADER
 	  See AN1127 for information on how to create a custom PA curve.
 	  The header file must be available on the include path.
 
-config RAIL_PA_CURVE_TYPES_HEADER
+config SILABS_SISDK_RAIL_PA_CURVE_TYPES_HEADER
 	string "RAIL PA curve types header file"
 	default "pa_curve_types_efr32.h"
 	help
@@ -32,7 +32,7 @@ config RAIL_PA_CURVE_TYPES_HEADER
 	  See AN1127 for information on how to create a custom PA curve.
 	  The header file must be available on the include path.
 
-config RAIL_PA_ENABLE_CALIBRATION
+config SILABS_SISDK_RAIL_PA_ENABLE_CALIBRATION
 	bool "RAIL PA: apply factory calibration offset"
 	default y
 	help

@@ -104,5 +104,17 @@ Modules
 * The TinyCrypt library was removed as the upstream version is no longer maintained.
   PSA Crypto API is now the recommended cryptographic library for Zephyr.
 
+Silabs
+======
+
+* Aligned the name of the Rail options with the other SiSDK related options:
+
+   * :kconfig:option:`CONFIG_RAIL_PA_CURVE_HEADER` to
+     :kconfig:option:`CONFIG_SILABS_SISDK_RAIL_PA_CURVE_HEADER`
+   * :kconfig:option:`CONFIG_RAIL_PA_CURVE_TYPES_HEADER` to
+     :kconfig:option:`CONFIG_SILABS_SISDK_RAIL_PA_CURVE_TYPES_HEADER`
+   * :kconfig:option:`CONFIG_RAIL_PA_ENABLE_CALIBRATION` to
+     :kconfig:option:`CONFIG_SILABS_SISDK_RAIL_PA_ENABLE_CALIBRATION`
+
 Architectures
 *************
