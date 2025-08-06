@@ -112,7 +112,9 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack, char *sta
 	thread->callee_saved.psp = (uint32_t)iframe;
 #endif
 
+#ifndef CONFIG_USE_SWITCH
 	thread->arch.basepri = 0;
+#endif
 
 #if defined(CONFIG_ARM_STORE_EXC_RETURN) || defined(CONFIG_USERSPACE)
 	thread->arch.mode = 0;

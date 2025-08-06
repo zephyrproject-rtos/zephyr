@@ -57,6 +57,8 @@ const size_t _kernel_thread_info_offsets[] = {
 	/* We are assuming that the SP of interest is SP_EL1 */
 	[THREAD_INFO_OFFSET_T_STACK_PTR] = offsetof(struct k_thread,
 						callee_saved.sp_elx),
+#elif defined(CONFIG_CPU_CORTEX_M) && defined(CONFIG_USE_SWITCH)
+	[THREAD_INFO_OFFSET_T_STACK_PTR] = offsetof(struct k_thread, switch_handle),
 #elif defined(CONFIG_ARM)
 	[THREAD_INFO_OFFSET_T_STACK_PTR] = offsetof(struct k_thread,
 						callee_saved.psp),
