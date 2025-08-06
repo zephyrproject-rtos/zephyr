@@ -78,7 +78,6 @@ struct pca9685_config {
 	struct i2c_dt_spec i2c;
 	bool outdrv_open_drain;
 	bool och_on_ack;
-	bool invrt;
 };
 
 struct pca9685_data {
@@ -277,7 +276,6 @@ static int pca9685_init(const struct device *dev)
 		.i2c = I2C_DT_SPEC_INST_GET(inst),                      \
 		.outdrv_open_drain = DT_INST_PROP(inst, open_drain),    \
 		.och_on_ack = DT_INST_PROP(inst, och_on_ack),           \
-		.invrt = DT_INST_PROP(inst, invert),                    \
 	};                                                              \
                                                                         \
 	static struct pca9685_data pca9685_##inst##_data;               \
