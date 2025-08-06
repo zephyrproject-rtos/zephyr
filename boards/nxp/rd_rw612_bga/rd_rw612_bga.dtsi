@@ -237,6 +237,10 @@ zephyr_udc0: &usb_otg {
 	status = "okay";
 };
 
+zephyr_uhc0: &usbh {
+	status = "okay";
+};
+
 &dma0 {
 	status = "okay";
 };
@@ -315,4 +319,14 @@ nxp_8080_touch_panel_i2c: &arduino_i2c {
 &imu {
 	status = "okay";
 	wakeup-source;
+};
+
+zephyr_mipi_dbi_spi: &lcdic {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lcdic>;
+	pinctrl-names = "default";
+};
+
+nxp_pmod_touch_panel_i2c: &arduino_i2c {
+	status = "okay";
 };

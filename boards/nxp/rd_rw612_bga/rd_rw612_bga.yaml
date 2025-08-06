@@ -28,4 +28,6 @@ supported:
   - pwm
   - spi
   - usb_device
+  - usb_host
+  - usbh
   - watchdog
