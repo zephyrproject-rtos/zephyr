@@ -492,6 +492,43 @@ static inline void z_vrfy_k_thread_suspend(k_tid_t thread)
 #include <zephyr/syscalls/k_thread_suspend_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
+static inline bool resched(uint32_t key)
+{
+#ifdef CONFIG_SMP
+	_current_cpu->swap_ok = 0;
+#endif /* CONFIG_SMP */
+
+	return arch_irq_unlocked(key) && !arch_is_in_isr();
+}
+
+/*
+ * Check if the next ready thread is the same as the current thread
+ * and save the trip if true.
+ */
+static inline bool need_swap(void)
+{
+	/* the SMP case will be handled in C based z_swap() */
+#ifdef CONFIG_SMP
+	return true;
+#else
+	struct k_thread *new_thread;
+
+	/* Check if the next ready thread is the same as the current thread */
+	new_thread = _kernel.ready_q.cache;
+	return new_thread != _current;
+#endif /* CONFIG_SMP */
+}
+
+static void reschedule(struct k_spinlock *lock, k_spinlock_key_t key)
+{
+	if (resched(key.key) && need_swap()) {
+		z_swap(lock, key);
+	} else {
+		k_spin_unlock(lock, key);
+		signal_pending_ipi();
+	}
+}
+
 void z_impl_k_thread_resume(k_tid_t thread)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_thread, resume, thread);
@@ -507,7 +544,7 @@ void z_impl_k_thread_resume(k_tid_t thread)
 	z_mark_thread_as_not_suspended(thread);
 	ready_thread(thread);
 
-	z_reschedule(&_sched_spinlock, key);
+	reschedule(&_sched_spinlock, key);
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_thread, resume, thread);
 }
@@ -719,41 +756,9 @@ bool z_thread_prio_set(struct k_thread *thread, int prio)
 	return need_sched;
 }
 
-static inline bool resched(uint32_t key)
-{
-#ifdef CONFIG_SMP
-	_current_cpu->swap_ok = 0;
-#endif /* CONFIG_SMP */
-
-	return arch_irq_unlocked(key) && !arch_is_in_isr();
-}
-
-/*
- * Check if the next ready thread is the same as the current thread
- * and save the trip if true.
- */
-static inline bool need_swap(void)
-{
-	/* the SMP case will be handled in C based z_swap() */
-#ifdef CONFIG_SMP
-	return true;
-#else
-	struct k_thread *new_thread;
-
-	/* Check if the next ready thread is the same as the current thread */
-	new_thread = _kernel.ready_q.cache;
-	return new_thread != _current;
-#endif /* CONFIG_SMP */
-}
-
 void z_reschedule(struct k_spinlock *lock, k_spinlock_key_t key)
 {
-	if (resched(key.key) && need_swap()) {
-		z_swap(lock, key);
-	} else {
-		k_spin_unlock(lock, key);
-		signal_pending_ipi();
-	}
+	reschedule(lock, key);
 }
 
 void z_reschedule_irqlock(uint32_t key)
@@ -1044,7 +1049,7 @@ void z_impl_k_reschedule(void)
 
 	update_cache(0);
 
-	z_reschedule(&_sched_spinlock, key);
+	reschedule(&_sched_spinlock, key);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -1185,7 +1190,7 @@ void z_impl_k_wakeup(k_tid_t thread)
 		z_abort_thread_timeout(thread);
 		z_mark_thread_as_not_sleeping(thread);
 		ready_thread(thread);
-		z_reschedule(&_sched_spinlock, key);
+		reschedule(&_sched_spinlock, key);
 	} else {
 		k_spin_unlock(&_sched_spinlock, key);
 	}
