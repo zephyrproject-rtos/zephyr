@@ -91,57 +91,65 @@ void mock_unicast_client_discover(
 	err = bt_bap_unicast_client_register_cb(&unicast_client_cb);
 	zassert_equal(0, err, "Unexpected return value %d", err);
 
-	RESET_FAKE(mock_bap_discover_endpoint);
+	if (snk_eps != NULL) {
+		RESET_FAKE(mock_bap_discover_endpoint);
 
-	err = bt_bap_unicast_client_discover(conn, BT_AUDIO_DIR_SINK);
-	zassert_equal(0, err, "Unexpected return value %d", err);
+		err = bt_bap_unicast_client_discover(conn, BT_AUDIO_DIR_SINK);
+		zassert_equal(0, err, "Unexpected return value %d", err);
 
-	zexpect_call_count("unicast_client_cb.bap_discover_endpoint",
-			   CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT,
-			   mock_bap_discover_endpoint_fake.call_count);
-	for (size_t i = 0U; i < mock_bap_discover_endpoint_fake.call_count; i++) {
-		/* Verify conn */
-		zassert_equal(mock_bap_discover_endpoint_fake.arg0_history[i], conn, "%p",
-			      mock_bap_discover_endpoint_fake.arg0_history[i]);
+		zexpect_call_count("unicast_client_cb.bap_discover_endpoint",
+				   CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT,
+				   mock_bap_discover_endpoint_fake.call_count);
+		for (size_t i = 0U; i < mock_bap_discover_endpoint_fake.call_count; i++) {
+			/* Verify conn */
+			zassert_equal(mock_bap_discover_endpoint_fake.arg0_history[i], conn, "%p",
+				      mock_bap_discover_endpoint_fake.arg0_history[i]);
 
-		/* Verify dir */
-		zassert_equal(mock_bap_discover_endpoint_fake.arg1_history[i], BT_AUDIO_DIR_SINK,
-			      "%d", mock_bap_discover_endpoint_fake.arg1_history[i]);
+			/* Verify dir */
+			zassert_equal(mock_bap_discover_endpoint_fake.arg1_history[i],
+				      BT_AUDIO_DIR_SINK, "%d",
+				      mock_bap_discover_endpoint_fake.arg1_history[i]);
 
-		/* Verify and store ep */
-		zassert_not_equal(mock_bap_discover_endpoint_fake.arg2_history[i], NULL, "%p",
-				  mock_bap_discover_endpoint_fake.arg2_history[i]);
+			/* Verify and store ep */
+			zassert_not_equal(mock_bap_discover_endpoint_fake.arg2_history[i], NULL,
+					  "%p", mock_bap_discover_endpoint_fake.arg2_history[i]);
 
-		snk_eps[i] = mock_bap_discover_endpoint_fake.arg2_history[i];
+			snk_eps[i] = mock_bap_discover_endpoint_fake.arg2_history[i];
 
-		zassert_equal(bt_bap_ep_get_conn(snk_eps[i]), conn, "Unexpected conn %p != %p",
-			      bt_bap_ep_get_conn(snk_eps[i]), conn);
+			zassert_equal(bt_bap_ep_get_conn(snk_eps[i]), conn,
+				      "Unexpected conn %p != %p", bt_bap_ep_get_conn(snk_eps[i]),
+				      conn);
+		}
 	}
 
-	RESET_FAKE(mock_bap_discover_endpoint);
-	err = bt_bap_unicast_client_discover(conn, BT_AUDIO_DIR_SOURCE);
-	zassert_equal(0, err, "Unexpected return value %d", err);
+	if (src_eps != NULL) {
+		RESET_FAKE(mock_bap_discover_endpoint);
+		err = bt_bap_unicast_client_discover(conn, BT_AUDIO_DIR_SOURCE);
+		zassert_equal(0, err, "Unexpected return value %d", err);
 
-	zexpect_call_count("unicast_client_cb.bap_discover_endpoint",
-			   CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT,
-			   mock_bap_discover_endpoint_fake.call_count);
-	for (size_t i = 0U; i < mock_bap_discover_endpoint_fake.call_count; i++) {
-		/* Verify conn */
-		zassert_equal(mock_bap_discover_endpoint_fake.arg0_history[i], conn, "%p",
-			      mock_bap_discover_endpoint_fake.arg0_history[i]);
+		zexpect_call_count("unicast_client_cb.bap_discover_endpoint",
+				   CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT,
+				   mock_bap_discover_endpoint_fake.call_count);
+		for (size_t i = 0U; i < mock_bap_discover_endpoint_fake.call_count; i++) {
+			/* Verify conn */
+			zassert_equal(mock_bap_discover_endpoint_fake.arg0_history[i], conn, "%p",
+				      mock_bap_discover_endpoint_fake.arg0_history[i]);
 
-		/* Verify dir */
-		zassert_equal(mock_bap_discover_endpoint_fake.arg1_history[i], BT_AUDIO_DIR_SOURCE,
-			      "%d", mock_bap_discover_endpoint_fake.arg1_history[i]);
+			/* Verify dir */
+			zassert_equal(mock_bap_discover_endpoint_fake.arg1_history[i],
+				      BT_AUDIO_DIR_SOURCE, "%d",
+				      mock_bap_discover_endpoint_fake.arg1_history[i]);
 
-		/* Verify and store ep */
-		zassert_not_equal(mock_bap_discover_endpoint_fake.arg2_history[i], NULL, "%p",
-				  mock_bap_discover_endpoint_fake.arg2_history[i]);
+			/* Verify and store ep */
+			zassert_not_equal(mock_bap_discover_endpoint_fake.arg2_history[i], NULL,
+					  "%p", mock_bap_discover_endpoint_fake.arg2_history[i]);
 
-		src_eps[i] = mock_bap_discover_endpoint_fake.arg2_history[i];
+			src_eps[i] = mock_bap_discover_endpoint_fake.arg2_history[i];
 
-		zassert_equal(bt_bap_ep_get_conn(src_eps[i]), conn, "Unexpected conn %p != %p",
-			      bt_bap_ep_get_conn(src_eps[i]), conn);
+			zassert_equal(bt_bap_ep_get_conn(src_eps[i]), conn,
+				      "Unexpected conn %p != %p", bt_bap_ep_get_conn(src_eps[i]),
+				      conn);
+		}
 	}
 
 	/* We don't need the callbacks anymore */
