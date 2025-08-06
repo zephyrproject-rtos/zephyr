@@ -855,7 +855,7 @@ class ControllerAndData:
       *-names property
 
     basename:
-      Basename for the controller when supporting named cells
+      Basename for the controller when supporting named cells. AKA, the specifier space.
     """
     node: 'Node'
     controller: 'Node'
