@@ -1,0 +1,16 @@
+# NXP Semiconductors MCU peripherals list.
+
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config MCUX_HW_HAS_LPTMR0
+	def_bool $(dt_nodelabel_enabled_with_compat,lptmr0,$(DT_COMPAT_NXP_LPTMR))
+
+config MCUX_HW_HAS_LPTMR1
+	def_bool $(dt_nodelabel_enabled_with_compat,lptmr1,$(DT_COMPAT_NXP_LPTMR))
+
+config MCUX_HW_HAS_LPTMR2
+	def_bool $(dt_nodelabel_enabled_with_compat,lptmr2,$(DT_COMPAT_NXP_LPTMR))
+
+config MCUX_HW_HAS_LPTMR3
+	def_bool $(dt_nodelabel_enabled_with_compat,lptmr3,$(DT_COMPAT_NXP_LPTMR))
