@@ -138,7 +138,7 @@ including the common openocd.board.cmake file:
 Flashing
 ========
 
-The board is configured for flashing using west `openocd`_ runner via ST-LINK:
+The board is configured for flashing using west openocd runner via ST-LINK:
 
 .. code-block:: console
 
