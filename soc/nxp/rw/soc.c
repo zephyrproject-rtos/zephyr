@@ -277,7 +277,8 @@ __weak __ramfunc void clock_init(void)
 #endif /* CONFIG_COUNTER_MCUX_CTIMER || CONFIG_PWM_MCUX_CTIMER */
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb_otg)) && \
-	(CONFIG_USB_DC_NXP_EHCI || CONFIG_UDC_NXP_EHCI)
+	(CONFIG_USB_DC_NXP_EHCI || CONFIG_UDC_NXP_EHCI) || \
+	(CONFIG_UHC_NXP_EHCI)
 	/* Enable system xtal from Analog */
 	SYSCTL2->ANA_GRP_CTRL |= SYSCTL2_ANA_GRP_CTRL_PU_AG_MASK;
 	/* reset USB */
