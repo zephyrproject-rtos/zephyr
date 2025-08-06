@@ -108,7 +108,7 @@ static void cap_handover_unicast_to_broadcast_test_suite_before(void *f)
 	}
 
 	for (size_t i = 0U; i < ARRAY_SIZE(fixture->conns); i++) {
-		test_conn_init(&fixture->conns[i]);
+		test_conn_init(&fixture->conns[i], i);
 	}
 
 	for (size_t i = 0U; i < ARRAY_SIZE(fixture->eps); i++) {
@@ -179,9 +179,9 @@ static void cap_handover_unicast_to_broadcast_test_suite_before(void *f)
 	fixture->unicast_to_broadcast_param.type = BT_CAP_SET_TYPE_AD_HOC;
 	fixture->unicast_to_broadcast_param.ext_adv = &fixture->ext_adv;
 	fixture->unicast_to_broadcast_param.unicast_group = fixture->unicast_group;
-	fixture->unicast_to_broadcast_param.sid = 0U;
+	fixture->unicast_to_broadcast_param.sid = TEST_COMMON_ADV_SID;
 	fixture->unicast_to_broadcast_param.pa_interval = 0x1234U;
-	fixture->unicast_to_broadcast_param.broadcast_id = 0x123456U;
+	fixture->unicast_to_broadcast_param.broadcast_id = TEST_COMMON_BROADCAST_ID;
 	fixture->unicast_to_broadcast_param.broadcast_create_param =
 		&fixture->broadcast_create_param;
 

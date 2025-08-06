@@ -100,8 +100,11 @@ int bt_bap_unicast_client_qos(struct bt_conn *conn, struct bt_bap_unicast_group 
 
 			stream->ep->status.state = BT_BAP_EP_STATE_QOS_CONFIGURED;
 			if (stream->ep->iso == NULL) {
+				struct bt_bap_iso *bap_iso =
+					CONTAINER_OF(stream->iso, struct bt_bap_iso, chan);
+
 				/* Not yet bound with the bap_iso */
-				bt_bap_iso_bind_ep(stream->bap_iso, stream->ep);
+				bt_bap_iso_bind_ep(bap_iso, stream->ep);
 			}
 
 			if (stream->ops != NULL && stream->ops->qos_set != NULL) {
@@ -536,17 +539,15 @@ static void unicast_group_free(struct bt_bap_unicast_group *group)
 	__ASSERT_NO_MSG(group != NULL);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&group->streams, stream, next, _node) {
-		struct bt_bap_iso *bap_iso = stream->bap_iso;
+		struct bt_bap_iso *bap_iso = CONTAINER_OF(stream->iso, struct bt_bap_iso, chan);
 		struct bt_bap_ep *ep = stream->ep;
 
 		stream->group = NULL;
 		if (bap_iso != NULL) {
 			if (bap_iso->rx.stream == stream) {
-				bt_bap_iso_unbind_stream(stream->bap_iso, stream,
-							 BT_AUDIO_DIR_SOURCE);
+				bt_bap_iso_unbind_stream(stream, BT_AUDIO_DIR_SOURCE);
 			} else if (bap_iso->tx.stream == stream) {
-				bt_bap_iso_unbind_stream(stream->bap_iso, stream,
-							 BT_AUDIO_DIR_SINK);
+				bt_bap_iso_unbind_stream(stream, BT_AUDIO_DIR_SINK);
 			} else {
 				__ASSERT_PRINT("stream %p has invalid bap_iso %p", stream, bap_iso);
 			}
