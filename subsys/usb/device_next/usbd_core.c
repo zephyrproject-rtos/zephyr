@@ -220,13 +220,14 @@ int usbd_device_init_core(struct usbd_context *const uds_ctx)
 	}
 
 	if (IS_ENABLED(CONFIG_USBD_UDC_MEMORY_USAGE)) {
-		uint16_t rx_m_tpl = 0;
-		size_t rx_size = 0;
-		size_t tx_size = 0;
+		init_args.rx_m_tpl = 0;
+		init_args.rx_size = 0;
+		init_args.tx_size = 0;
 
-		usbd_interfaces_memory_usage(uds_ctx, &rx_size, &tx_size, &rx_m_tpl);
+		usbd_interfaces_memory_usage(uds_ctx, &init_args.rx_size,
+					     &init_args.tx_size, &init_args.rx_m_tpl);
 		LOG_INF("Required UDC FIFO size RX %u TX %u MAX RX TPL %u",
-			rx_size, tx_size, rx_m_tpl);
+			init_args.rx_size, init_args.tx_size, init_args.rx_m_tpl);
 	}
 
 	ret = udc_init(uds_ctx->dev, &init_args);

@@ -107,7 +107,7 @@ config USBD_HWINFO_DEVID_LENGTH
 
 config USBD_UDC_MEMORY_USAGE
 	bool "Calculate the maximum possible UDC memory usage"
-	default y
+	default y if UDC_DRIVER_REQUIRES_MEMORY_STATS
 	help
 	  Calculate the maximum possible RX/TX FIFO memory usage for the device
 	  controllers with endpoint FIFOs.

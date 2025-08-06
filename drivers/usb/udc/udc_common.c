@@ -771,6 +771,11 @@ int udc_init(const struct device *dev, const struct udc_init_args *args)
 
 	data->event_cb = args->event_cb;
 	data->event_ctx = args->event_ctx;
+#if CONFIG_UDC_DRIVER_REQUIRES_MEMORY_STATS
+	data->rx_size = args->rx_size;
+	data->tx_size = args->tx_size;
+	data->rx_m_tpl = args->rx_m_tpl;
+#endif
 
 	ret = api->init(dev);
 	if (ret == 0) {

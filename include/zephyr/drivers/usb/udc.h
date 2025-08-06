@@ -293,6 +293,14 @@ struct udc_data {
 	struct net_buf *setup;
 	/** Driver private data */
 	void *priv;
+#if CONFIG_UDC_DRIVER_REQUIRES_MEMORY_STATS
+	/** RX FIFO size reported by the higher layer */
+	size_t rx_size;
+	/** TX FIFO size reported by the higher layer */
+	size_t tx_size;
+	/** Maximum RX TPL reported by the higher layer */
+	uint16_t rx_m_tpl;
+#endif
 };
 
 /**
@@ -312,6 +320,12 @@ struct udc_init_args {
 	udc_event_cb_t event_cb;
 	/** Opaque pointer to higher layer context */
 	void *const event_ctx;
+	/* Required RX FIFO size */
+	size_t rx_size;
+	/* Required TX FIFO size */
+	size_t tx_size;
+	/** Maximum possible RX TPL */
+	uint16_t rx_m_tpl;
 };
 
 /**
