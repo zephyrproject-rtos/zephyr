@@ -3,7 +3,7 @@ on:
   pull_request_target:
     types: [opened, synchronize, closed]
     branches:
-      - main
+      - ncs-v3.1-branch
 
 
 jobs:
@@ -15,3 +15,4 @@ jobs:
         with:
           token: ${{ secrets.NCS_GITHUB_TOKEN }}
           manifest-pr-title-details: ${{ github.event.pull_request.title }}
+          base-branch: v3.1-branch
