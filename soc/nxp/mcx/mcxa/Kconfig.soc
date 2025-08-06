@@ -90,3 +90,11 @@ config SOC_PART_NUMBER
 	default "MCXA276VLL" if SOC_PART_NUMBER_MCXA276VLL
 	default "MCXA276VLH" if SOC_PART_NUMBER_MCXA276VLH
 	default "MCXA276VPN" if SOC_PART_NUMBER_MCXA276VPN
+
+config SOC_WAKEUP_DELAY
+	int "Wakeup delay"
+	default 91
+	help
+	  When a different VDD_CORE level is configured in low
+	  power modes compared to active modes, the wakeup delay
+	  must be configured to a minimum value.
