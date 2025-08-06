@@ -23,12 +23,6 @@ properties:
       Outputs change on ACK.  Otherwise the outputs change on STOP
       command.
 
-  invert:
-    type: boolean
-    description:
-      Output logic state inverted. Value to use when no external driver
-      used.
-
   "#pwm-cells":
     const: 3
 
