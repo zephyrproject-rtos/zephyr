@@ -383,8 +383,6 @@ static void broadcast_sink_iso_connected(struct bt_iso_chan *chan)
 
 	if (ops != NULL && ops->started != NULL) {
 		ops->started(stream);
-	} else {
-		LOG_WRN("No callback for started set");
 	}
 
 	if (broadcast_sink_is_in_state(sink, BT_BAP_EP_STATE_STREAMING)) {
@@ -432,8 +430,6 @@ static void broadcast_sink_iso_disconnected(struct bt_iso_chan *chan,
 
 	if (ops != NULL && ops->stopped != NULL) {
 		ops->stopped(stream, reason);
-	} else {
-		LOG_WRN("No callback for stopped set");
 	}
 }
 
