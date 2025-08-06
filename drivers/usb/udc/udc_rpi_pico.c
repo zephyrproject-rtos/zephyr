@@ -1101,7 +1101,19 @@ static int udc_rpi_pico_init(const struct device *dev)
 {
 	const struct rpi_pico_config *config = dev->config;
 	const struct pinctrl_dev_config *const pcfg = config->pcfg;
+	struct udc_data *data = dev->data;
 	int err;
+
+	/*
+	 * There are 3840 bytes available for endpoint buffers, including
+	 * control endpoints, in DPSRAM. This means that 3712 bytes
+	 * (58 x 64 byte blocks) are available for interface endpoints.
+	 */
+	if ((data->rx_size + data->tx_size) > 3712U) {
+		LOG_ERR("Required memory size %u + %u exceeds available DPRAM space %u",
+			data->rx_size, data->tx_size, 3712U);
+		return -ENOMEM;
+	}
 
 	if (pcfg != NULL) {
 		err = pinctrl_apply_state(pcfg, PINCTRL_STATE_DEFAULT);
