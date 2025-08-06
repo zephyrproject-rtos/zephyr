@@ -61,10 +61,10 @@ child-binding:
     soft-start-microamp:
       type: int
       enum:
-        - 10000
-        - 20000
-        - 35000
+        - 25000
         - 50000
+        - 75000
+        - 100000
       description: |
         Soft start current limit in microamps.
 
