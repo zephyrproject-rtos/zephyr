@@ -1069,10 +1069,28 @@ static int numaker_usbd_msg_handle_setup(const struct device *dev, struct numake
 	int err;
 	uint8_t ep;
 	struct numaker_usbd_ep *ep_cur;
+	struct udc_ep_config *ep_cfg;
 	struct net_buf *buf;
 	uint8_t *data_ptr;
 
 	__ASSERT_NO_MSG(msg->type == NUMAKER_USBD_MSG_TYPE_SETUP);
+
+	/* Recover from incomplete Control transfer
+	 *
+	 * Previous Control transfer can be incomplete, and causes not
+	 * only net_buf leak but also logic error. This recycles dangling
+	 * net_buf for new clean Control transfer.
+	 */
+	ep_cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
+	buf = udc_buf_get_all(ep_cfg);
+	if (buf != NULL) {
+		net_buf_unref(buf);
+	}
+	ep_cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_IN);
+	buf = udc_buf_get_all(ep_cfg);
+	if (buf != NULL) {
+		net_buf_unref(buf);
+	}
 
 	ep = USB_CONTROL_EP_OUT;
 
