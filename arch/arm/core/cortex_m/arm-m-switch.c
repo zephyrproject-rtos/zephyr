@@ -449,25 +449,29 @@ void *arm_m_new_stack(char *base, uint32_t sz, void *entry, void *arg0, void *ar
 
 bool arm_m_must_switch(uint32_t lr)
 {
-	struct k_thread *last_thread = NULL;
-
-	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
-		last_thread = _current;
-	}
-
-	if (!is_thread_return(lr)) {
+	/* Secure mode transistions can push a non-thread frame to the
+	 * stack.  If not enabled, we already know by construction
+	 * that we're handling the bottom level of the interrupt stack
+	 * and returning to thread mode.
+	 */
+	if ((IS_ENABLED(CONFIG_ARM_SECURE_FIRMWARE) ||
+	    IS_ENABLED(CONFIG_ARM_NONSECURE_FIRMWARE))
+	    && !is_thread_return(lr)) {
 		return false;
 	}
 
-	/* This lock is held until the end of the context switch (see
-	 * arch_switch and arm_m_exc_exit)
+	/* This lock is held until the end of the context switch, at
+	 * which point it will be dropped unconditionally. Save a few
+	 * cycles by skipping the needless bits of arch_irq_lock().
 	 */
-	unsigned int key = arch_irq_lock();
+	uint32_t pri = _EXC_IRQ_DEFAULT_PRIO;
 
+	__asm__ volatile("msr basepri, %0" :: "r"(pri));
+
+	struct k_thread *last_thread = last_thread = _current;
 	void *last, *next = z_sched_next_handle(last_thread);
 
 	if (next == NULL) {
-		arch_irq_unlock(key);
 		return false;
 	}
 
@@ -546,8 +550,8 @@ __asm__(".globl arm_m_exc_exit;"
 	"  stm r0, {r4-r11};"    /* out is a switch_frame */
 	"  ldm r1!, {r7-r11};"   /* in is a synth_frame */
 	"  ldm r1, {r4-r6};"
+	"1:\n"
 	"  mov r1, #0;"
 	"  msr basepri, r1;"     /* release lock taken in must_switch */
-	"1:\n"
 	"  bx lr;");
 #endif
