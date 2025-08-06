@@ -7,13 +7,21 @@
  */
 #include <stdint.h>
 
+#include <stdint.h>
+
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/conn.h>
 
 #include "conn.h"
+
+#define TEST_COMMON_ADV_TYPE     BT_ADDR_LE_PUBLIC
+#define TEST_COMMON_ADV_SID      0x01U
+#define TEST_COMMON_BROADCAST_ID 0x123456U
+#define TEST_COMMON_SRC_ID       0x00U
 
 void test_mocks_init(void);
 void test_mocks_cleanup(void);

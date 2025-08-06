@@ -204,7 +204,7 @@ static void cap_handover_unicast_to_broadcast_test_suite_before(void *f)
 	fixture->unicast_to_broadcast_param.ext_adv = &fixture->ext_adv;
 	fixture->unicast_to_broadcast_param.unicast_group = fixture->unicast_group;
 	fixture->unicast_to_broadcast_param.pa_interval = 0x1234U;
-	fixture->unicast_to_broadcast_param.broadcast_id = 0x123456U;
+	fixture->unicast_to_broadcast_param.broadcast_id = TEST_COMMON_BROADCAST_ID;
 	fixture->unicast_to_broadcast_param.broadcast_create_param =
 		&fixture->broadcast_create_param;
 
