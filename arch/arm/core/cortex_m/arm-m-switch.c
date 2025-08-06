@@ -447,19 +447,10 @@ void *arm_m_new_stack(char *base, uint32_t sz, void *entry, void *arg0, void *ar
 #endif
 }
 
-bool arm_m_must_switch(uint32_t lr)
-{
-	/* Secure mode transistions can push a non-thread frame to the
-	 * stack.  If not enabled, we already know by construction
-	 * that we're handling the bottom level of the interrupt stack
-	 * and returning to thread mode.
-	 */
-	if ((IS_ENABLED(CONFIG_ARM_SECURE_FIRMWARE) ||
-	    IS_ENABLED(CONFIG_ARM_NONSECURE_FIRMWARE))
-	    && !is_thread_return(lr)) {
-		return false;
-	}
+bool arm_m_do_switch(struct k_thread *last_thread, void *next);
 
+bool arm_m_must_switch(void)
+{
 	/* This lock is held until the end of the context switch, at
 	 * which point it will be dropped unconditionally. Save a few
 	 * cycles by skipping the needless bits of arch_irq_lock().
@@ -468,14 +459,32 @@ bool arm_m_must_switch(uint32_t lr)
 
 	__asm__ volatile("msr basepri, %0" :: "r"(pri));
 
-	struct k_thread *last_thread = last_thread = _current;
-	void *last, *next = z_sched_next_handle(last_thread);
+	/* Secure mode transistions can push a non-thread frame to the
+	 * stack.  If not enabled, we already know by construction
+	 * that we're handling the bottom level of the interrupt stack
+	 * and returning to thread mode.
+	 */
+	if ((IS_ENABLED(CONFIG_ARM_SECURE_FIRMWARE) ||
+	    IS_ENABLED(CONFIG_ARM_NONSECURE_FIRMWARE))
+	    && !is_thread_return((uint32_t)arm_m_cs_ptrs.lr_save)) {
+		return false;
+	}
+
+	struct k_thread *last_thread = _current;
+	void *next = z_sched_next_handle(last_thread);
 
 	if (next == NULL) {
 		return false;
 	}
 
-	bool fpu = fpu_state_pushed(lr);
+	arm_m_do_switch(last_thread, next);
+	return true;
+}
+
+bool arm_m_do_switch(struct k_thread *last_thread, void *next)
+{
+	void *last;
+	bool fpu = fpu_state_pushed((uint32_t)arm_m_cs_ptrs.lr_save);
 
 	__asm__ volatile("mrs %0, psp" : "=r"(last));
 	last = arm_m_cpu_to_switch(last_thread, last, fpu);
@@ -539,19 +548,17 @@ void arm_m_legacy_exit(void)
 #ifdef CONFIG_MULTITHREADING
 __asm__(".globl arm_m_exc_exit;"
 	"arm_m_exc_exit:;"
-	"  ldr r2, =arm_m_cs_ptrs;"
-	"  ldr r0, [r2, #8];"    /* lr_save as argument */
 	"  bl arm_m_must_switch;"
 	"  ldr r2, =arm_m_cs_ptrs;"
-	"  ldr lr, [r2, #8];"    /* refetch lr_save as default lr */
+	"  mov r3, #0;"
+	"  ldr lr, [r2, #8];"    /* lr_save */
 	"  cbz r0, 1f;"
-	"  ldm r2, {r0, r1};"    /* fields: out, in */
 	"  mov lr, #0xfffffffd;" /* integer-only LR */
+	"  ldm r2, {r0, r1};"    /* fields: out, in */
 	"  stm r0, {r4-r11};"    /* out is a switch_frame */
 	"  ldm r1!, {r7-r11};"   /* in is a synth_frame */
 	"  ldm r1, {r4-r6};"
 	"1:\n"
-	"  mov r1, #0;"
-	"  msr basepri, r1;"     /* release lock taken in must_switch */
+	"  msr basepri, r3;"     /* release lock taken in must_switch */
 	"  bx lr;");
 #endif
