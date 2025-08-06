@@ -1,4 +1,4 @@
-.. ap510_disp:
+.. _ap510_disp:
 
 Ambiq Apollo510 Display Add-on Board
 ####################################
