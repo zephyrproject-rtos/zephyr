@@ -173,7 +173,9 @@ static int pca9685_set_cycles(const struct device *dev,
 	int32_t pre_scale;
 	int ret;
 
-	ARG_UNUSED(flags);
+	if (flags & PWM_POLARITY_INVERTED) {
+		pulse_count = period_count - pulse_count;
+	}
 
 	if (channel >= CHANNEL_CNT) {
 		LOG_WRN("channel out of range: %u", channel);
