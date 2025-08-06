@@ -100,5 +100,12 @@ uint16_t arch_coredump_tgt_code_get(void)
 
 uintptr_t arch_coredump_stack_ptr_get(const struct k_thread *thread)
 {
-	return (thread == _current) ? z_arm_coredump_fault_sp : thread->callee_saved.psp;
+	if (thread == _current) {
+		return z_arm_coredump_fault_sp;
+	}
+#ifdef CONFIG_USE_SWITCH
+	return (uintptr_t)thread->switch_handle;
+#else
+	return thread->callee_saved.psp;
+#endif
 }
