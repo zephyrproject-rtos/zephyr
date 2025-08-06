@@ -144,6 +144,7 @@ enum {
 struct ads1118_config {
 	const struct spi_dt_spec spi;
 	uint8_t resolution;
+	uint8_t sensor_mode;
 	bool multiplexer;
 #if CONFIG_ADC_ASYNC
 	k_thread_stack_t *stack;
@@ -376,8 +377,12 @@ static int ads1118_setup(const struct device *dev, const struct adc_channel_cfg 
 	if (dr < 0) {
 		return dr;
 	}
-
 	config |= ADS1118_CONFIG_DR(dr);
+
+	if (ads_config->sensor_mode == ADS1118_CONFIG_MODE_TS_TEMP) {
+		config |= ADS1118_CONFIG_TS_MODE(ADS1118_CONFIG_MODE_TS_TEMP);
+	}
+
 	config |= ADS1118_CONFIG_OS(ADS1118_CONFIG_OS_START);
 	config |= ADS1118_CONFIG_NOP(ADS1118_CONFIG_NOP_UPDATE);
 
@@ -644,6 +649,7 @@ static DEVICE_API(adc, api) = {
 			n, SPI_OP_MODE_MASTER | SPI_MODE_CPHA | SPI_WORD_SET(8), 0),               \
 		.resolution = ADS1118_RESOLUTION,                                                  \
 		.multiplexer = true,                                                               \
+		.sensor_mode = DT_INST_PROP(n, ti_temperature_sensor),                             \
 		IF_ENABLED(CONFIG_ADC_ASYNC, (.stack = thread_stack_##n)) };                          \
 	static struct ads1118_data data_##n;                                                       \
 	DEVICE_DT_INST_DEFINE(n, ads1118_init, NULL, &data_##n, &config_##n, POST_KERNEL,          \

@@ -1,7 +1,7 @@
 # Copyright (c) 2025 Testo SE & Co. KGaA
 # SPDX-License-Identifier: Apache-2.0
 
-description: Texas Instrument 2 channels SPI ADC
+description: Texas Instrument 4 single-ended channels/2 differential channels SPI ADC
 
 compatible: "ti,ads1118"
 
@@ -13,6 +13,17 @@ properties:
 
   clocks:
     type: phandle-array
+
+  ti,temperature-sensor:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 1
+    description: |
+      This configures the ADC to convert temperature or input signals
+      0: ADC mode
+      1: Temperature sensor mode 
 
 io-channel-cells:
   - input
