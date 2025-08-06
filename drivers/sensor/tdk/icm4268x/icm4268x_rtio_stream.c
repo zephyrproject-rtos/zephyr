@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/check.h>
 #include <zephyr/drivers/sensor_clock.h>
 #include "icm4268x.h"
 #include "icm4268x_decoder.h"
@@ -61,12 +62,19 @@ static void icm4268x_complete_cb(struct rtio *r, const struct rtio_sqe *sqe, int
 
 	const struct device *dev = arg;
 	struct icm4268x_dev_data *drv_data = dev->data;
-	const struct icm4268x_dev_cfg *drv_cfg = dev->config;
 	struct rtio_iodev_sqe *iodev_sqe = sqe->userdata;
 
-	rtio_iodev_sqe_ok(iodev_sqe, drv_data->fifo_count);
+	/* Flush out completions  */
+	struct rtio_cqe *cqe;
 
-	gpio_pin_interrupt_configure_dt(&drv_cfg->gpio_int1, GPIO_INT_EDGE_TO_ACTIVE);
+	do {
+		cqe = rtio_cqe_consume(r);
+		if (cqe != NULL) {
+			rtio_cqe_release(r, cqe);
+		}
+	} while (cqe != NULL);
+
+	rtio_iodev_sqe_ok(iodev_sqe, drv_data->fifo_count);
 }
 
 static void icm4268x_fifo_count_cb(struct rtio *r, const struct rtio_sqe *sqe,
@@ -76,7 +84,6 @@ static void icm4268x_fifo_count_cb(struct rtio *r, const struct rtio_sqe *sqe,
 
 	const struct device *dev = arg;
 	struct icm4268x_dev_data *drv_data = dev->data;
-	const struct icm4268x_dev_cfg *drv_cfg = dev->config;
 	struct rtio_iodev *spi_iodev = drv_data->spi_iodev;
 	uint8_t *fifo_count_buf = (uint8_t *)&drv_data->fifo_count;
 	uint16_t fifo_count = ((fifo_count_buf[0] << 8) | fifo_count_buf[1]);
@@ -90,8 +97,7 @@ static void icm4268x_fifo_count_cb(struct rtio *r, const struct rtio_sqe *sqe,
 
 	/* Not inherently an underrun/overrun as we may have a buffer to fill next time */
 	if (iodev_sqe == NULL) {
-		LOG_DBG("No pending SQE");
-		gpio_pin_interrupt_configure_dt(&drv_cfg->gpio_int1, GPIO_INT_EDGE_TO_ACTIVE);
+		LOG_ERR("No pending SQE");
 		return;
 	}
 
@@ -162,25 +168,21 @@ static void icm4268x_fifo_count_cb(struct rtio *r, const struct rtio_sqe *sqe,
 
 	uint8_t *read_buf = buf + sizeof(hdr);
 
-	/* Flush out completions  */
-	struct rtio_cqe *cqe;
-
-	do {
-		cqe = rtio_cqe_consume(r);
-		if (cqe != NULL) {
-			rtio_cqe_release(r, cqe);
-		}
-	} while (cqe != NULL);
-
 	/* Setup new rtio chain to read the fifo data and report then check the
 	 * result
 	 */
 	struct rtio_sqe *write_fifo_addr = rtio_sqe_acquire(r);
-	__ASSERT_NO_MSG(write_fifo_addr != NULL);
 	struct rtio_sqe *read_fifo_data = rtio_sqe_acquire(r);
-	__ASSERT_NO_MSG(read_fifo_data != NULL);
 	struct rtio_sqe *complete_op = rtio_sqe_acquire(r);
-	__ASSERT_NO_MSG(complete_op != NULL);
+
+	CHECKIF(!write_fifo_addr || !read_fifo_data || !complete_op) {
+		LOG_ERR("Could not allocate SQEs for SPI RTIO... Please resize SQs in icm4268x.c");
+		drv_data->streaming_sqe = NULL;
+		rtio_sqe_drop_all(r);
+		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
+		return;
+	}
+
 	const uint8_t reg_addr = REG_SPI_READ_BIT | FIELD_GET(REG_ADDRESS_MASK, REG_FIFO_DATA);
 
 	rtio_sqe_prep_tiny_write(write_fifo_addr, spi_iodev, RTIO_PRIO_NORM, &reg_addr, 1, NULL);
@@ -213,12 +215,12 @@ static void icm4268x_int_status_cb(struct rtio *r, const struct rtio_sqe *sqr,
 
 	const struct device *dev = arg;
 	struct icm4268x_dev_data *drv_data = dev->data;
-	const struct icm4268x_dev_cfg *drv_cfg = dev->config;
 	struct rtio_iodev *spi_iodev = drv_data->spi_iodev;
 	struct rtio_iodev_sqe *streaming_sqe = drv_data->streaming_sqe;
 	struct sensor_read_config *read_config;
 
 	if (streaming_sqe == NULL) {
+		LOG_WRN("int-status triggered with no streaming handle associated. Ignoring");
 		return;
 	}
 
@@ -241,20 +243,11 @@ static void icm4268x_int_status_cb(struct rtio *r, const struct rtio_sqe *sqr,
 				  FIELD_GET(BIT_FIFO_FULL_INT, drv_data->int_status) != 0;
 
 	if (!has_fifo_ths_trig && !has_fifo_full_trig) {
-		LOG_DBG("No FIFO trigger is configured");
-		gpio_pin_interrupt_configure_dt(&drv_cfg->gpio_int1, GPIO_INT_EDGE_TO_ACTIVE);
+		drv_data->streaming_sqe = NULL;
+		LOG_ERR("No FIFO trigger is configured");
+		rtio_iodev_sqe_err(streaming_sqe, -EIO);
 		return;
 	}
-
-	/* Flush completions */
-	struct rtio_cqe *cqe;
-
-	do {
-		cqe = rtio_cqe_consume(r);
-		if (cqe != NULL) {
-			rtio_cqe_release(r, cqe);
-		}
-	} while (cqe != NULL);
 
 	enum sensor_stream_data_opt data_opt;
 
@@ -287,11 +280,15 @@ static void icm4268x_int_status_cb(struct rtio *r, const struct rtio_sqe *sqr,
 		data->header.timestamp = drv_data->timestamp;
 		data->int_status = drv_data->int_status;
 		data->fifo_count = 0;
-		rtio_iodev_sqe_ok(streaming_sqe, 0);
-		gpio_pin_interrupt_configure_dt(&drv_cfg->gpio_int1, GPIO_INT_EDGE_TO_ACTIVE);
 		if (data_opt == SENSOR_STREAM_DATA_DROP) {
 			/* Flush the FIFO */
 			struct rtio_sqe *write_signal_path_reset = rtio_sqe_acquire(r);
+
+			CHECKIF(!write_signal_path_reset) {
+				rtio_sqe_drop_all(r);
+				rtio_iodev_sqe_err(streaming_sqe, -ENOMEM);
+				return;
+			}
 			uint8_t write_buffer[] = {
 				FIELD_GET(REG_ADDRESS_MASK, REG_SIGNAL_PATH_RESET),
 				BIT_FIFO_FLUSH,
@@ -303,6 +300,7 @@ static void icm4268x_int_status_cb(struct rtio *r, const struct rtio_sqe *sqr,
 			rtio_submit(r, 1);
 			ARG_UNUSED(rtio_cqe_consume(r));
 		}
+		rtio_iodev_sqe_ok(streaming_sqe, 0);
 		return;
 	}
 
@@ -310,6 +308,15 @@ static void icm4268x_int_status_cb(struct rtio *r, const struct rtio_sqe *sqr,
 	struct rtio_sqe *write_fifo_count_reg = rtio_sqe_acquire(r);
 	struct rtio_sqe *read_fifo_count = rtio_sqe_acquire(r);
 	struct rtio_sqe *check_fifo_count = rtio_sqe_acquire(r);
+
+	CHECKIF(!write_fifo_count_reg || !read_fifo_count || !check_fifo_count) {
+		LOG_ERR("Could not allocate SQEs for SPI RTIO... Please resize SQs in icm4268x.c");
+		drv_data->streaming_sqe = NULL;
+		rtio_sqe_drop_all(r);
+		rtio_iodev_sqe_err(streaming_sqe, -ENOMEM);
+		return;
+	}
+
 	uint8_t reg = REG_SPI_READ_BIT | FIELD_GET(REG_ADDRESS_MASK, REG_FIFO_COUNTH);
 	uint8_t *read_buf = (uint8_t *)&drv_data->fifo_count;
 
@@ -336,8 +343,10 @@ void icm4268x_fifo_event(const struct device *dev)
 
 	rc = sensor_clock_get_cycles(&cycles);
 	if (rc != 0) {
+		struct rtio_iodev_sqe *iodev_sqe = drv_data->streaming_sqe;
 		LOG_ERR("Failed to get sensor clock cycles");
-		rtio_iodev_sqe_err(drv_data->streaming_sqe, rc);
+		drv_data->streaming_sqe = NULL;
+		rtio_iodev_sqe_err(iodev_sqe, rc);
 		return;
 	}
 
@@ -355,6 +364,17 @@ void icm4268x_fifo_event(const struct device *dev)
 	struct rtio_sqe *write_int_reg = rtio_sqe_acquire(r);
 	struct rtio_sqe *read_int_reg = rtio_sqe_acquire(r);
 	struct rtio_sqe *check_int_status = rtio_sqe_acquire(r);
+
+	CHECKIF(!write_int_reg || !read_int_reg || !check_int_status) {
+		struct rtio_iodev_sqe *streaming_sqe = drv_data->streaming_sqe;
+
+		LOG_ERR("Could not allocate SQEs for SPI RTIO... Please resize SQs in icm4268x.c");
+		drv_data->streaming_sqe = NULL;
+		rtio_sqe_drop_all(r);
+		rtio_iodev_sqe_err(streaming_sqe, -ENOMEM);
+		return;
+	}
+
 	uint8_t reg = REG_SPI_READ_BIT | FIELD_GET(REG_ADDRESS_MASK, REG_INT_STATUS);
 
 	rtio_sqe_prep_tiny_write(write_int_reg, spi_iodev, RTIO_PRIO_NORM, &reg, 1, NULL);
