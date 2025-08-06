@@ -120,6 +120,10 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 	printk("Disconnected %s, reason %s(0x%02x)\n", addr, bt_hci_err_to_str(reason), reason);
 
+	if (reason == BT_HCI_ERR_CONN_TIMEOUT && conn_count < conn_count_max && !is_disconnecting) {
+		k_work_submit(&work_adv_start);
+	}
+
 	if ((conn_count == 1U) && is_disconnecting) {
 		is_disconnecting = false;
 		k_work_submit(&work_adv_start);
