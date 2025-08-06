@@ -9,6 +9,7 @@ config SOC_FAMILY_MCXN
 	select CPU_CORTEX_M_HAS_SYSTICK
 	select CPU_CORTEX_M_HAS_DWT
 	select HAS_MCUX_MCX_CMC
+	select HAS_POWEROFF
 
 config SOC_MCXN947_CPU0
 	select CPU_CORTEX_M33
@@ -100,3 +101,15 @@ endif # NXP_FLEXSPI_BOOT_HEADER
 rsource "../../common/Kconfig.flexspi_xip"
 
 endif # SOC_FAMILY_MCXN
+
+if SOC_FAMILY_MCXN && (PM || POWEROFF)
+
+config SOC_MCXN_WAKEUP_DELAY
+	int "Wakeup delay"
+	default 780
+	help
+	  When a different VDD_CORE level is configured in low
+	  power modes compared to active modes, the wakeup delay
+	  must be configured to a minimum value.
+
+endif
