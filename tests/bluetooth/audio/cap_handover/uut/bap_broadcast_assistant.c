@@ -15,34 +15,74 @@
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/slist.h>
+#include <zephyr/sys/util.h>
+
+#include "test_common.h"
 
 static struct bt_bap_broadcast_assistant_cb *broadcast_assistant_cb;
 
-struct bap_broadcast_assistant_recv_state_info {
-	uint8_t src_id;
-	/** Cached PAST available */
-	bool past_avail;
-	uint8_t adv_sid;
-	uint32_t broadcast_id;
-	bt_addr_le_t addr;
-};
-
 struct bap_broadcast_assistant_instance {
 	struct bt_conn *conn;
-	struct bap_broadcast_assistant_recv_state_info recv_state;
+	struct bt_bap_scan_delegator_recv_state recv_state;
 	/*
 	 * the following are not part of the broadcast_assistant instance, but adding them allow us
 	 * to easily check pa_sync and bis_sync states
 	 */
 	enum bt_bap_pa_state pa_sync_state;
+	bool past_avail;
 	uint8_t num_subgroups;
 	struct bt_bap_bass_subgroup subgroups[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS];
 };
 
 static struct bap_broadcast_assistant_instance broadcast_assistants[CONFIG_BT_MAX_CONN];
 
+static void bap_broadcast_source_started_cb(struct bt_bap_broadcast_source *source)
+{
+	ARRAY_FOR_EACH_PTR(broadcast_assistants, assistant) {
+		/* TODO: We need to set appropriate values for sid, addr_type and broadcast ID */
+		assistant->recv_state.adv_sid = TEST_COMMON_ADV_SID;
+		assistant->recv_state.addr.type = TEST_COMMON_ADV_TYPE;
+		assistant->recv_state.broadcast_id = TEST_COMMON_BROADCAST_ID;
+
+		if (broadcast_assistant_cb->recv_state != NULL) {
+			broadcast_assistant_cb->recv_state(assistant->conn, 0,
+							   &assistant->recv_state);
+		}
+	}
+}
+
+static void bap_broadcast_source_stopped_cb(struct bt_bap_broadcast_source *source, uint8_t reason)
+{
+	ARRAY_FOR_EACH_PTR(broadcast_assistants, assistant) {
+		assistant->recv_state.adv_sid = TEST_COMMON_ADV_SID;
+		assistant->recv_state.addr.type = TEST_COMMON_ADV_TYPE;
+		assistant->recv_state.broadcast_id = TEST_COMMON_BROADCAST_ID;
+
+		if (broadcast_assistant_cb->recv_state != NULL) {
+			broadcast_assistant_cb->recv_state(assistant->conn, 0,
+							   &assistant->recv_state);
+		}
+	}
+}
+
 int bt_bap_broadcast_assistant_register_cb(struct bt_bap_broadcast_assistant_cb *cb)
 {
+	static bool broadcast_source_cbs_registered;
+
+	if (!broadcast_source_cbs_registered) {
+		static struct bt_bap_broadcast_source_cb bap_broadcast_source_cb = {
+			.started = bap_broadcast_source_started_cb,
+			.stopped = bap_broadcast_source_stopped_cb,
+		};
+		const int err = bt_bap_broadcast_source_register_cb(&bap_broadcast_source_cb);
+
+		if (err != 0) {
+			return err;
+		}
+
+		broadcast_source_cbs_registered = true;
+	}
+
 	broadcast_assistant_cb = cb;
 
 	return 0;
@@ -73,7 +113,7 @@ int bt_bap_broadcast_assistant_add_src(struct bt_conn *conn,
 	__ASSERT(inst != NULL, "inst is NULL");
 
 	inst->recv_state.src_id = 1U;
-	inst->recv_state.past_avail = false;
+	inst->past_avail = false;
 	inst->recv_state.adv_sid = param->adv_sid;
 	inst->recv_state.broadcast_id = param->broadcast_id;
 	inst->pa_sync_state = param->pa_sync;
