@@ -339,7 +339,7 @@ void icm4268x_unlock(const struct device *dev)
 
 #define ICM4268X_RTIO_DEFINE(inst)                                                                 \
 	SPI_DT_IODEV_DEFINE(icm4268x_spi_iodev_##inst, DT_DRV_INST(inst), ICM4268X_SPI_CFG);       \
-	RTIO_DEFINE(icm4268x_rtio_##inst, 8, 4);
+	RTIO_DEFINE(icm4268x_rtio_##inst, 32, 32);
 
 #define ICM42688_DT_CONFIG_INIT(inst)						\
 	{									\
