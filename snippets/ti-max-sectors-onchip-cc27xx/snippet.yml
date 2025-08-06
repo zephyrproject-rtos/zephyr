@@ -1,0 +1,8 @@
+name: ti-max-sectors-onchip-cc27xx
+boards:
+  /lp_em_cc2745r10_q1/cc27(45|55)r10(_q1)?/:
+    append:
+      EXTRA_CONF_FILE: boards/lp_em_cc27xx_spi_nor_secondary.conf
+  /lp_em_cc2755p(10|20)/:
+    append:
+      EXTRA_CONF_FILE: boards/lp_em_cc27xx_spi_nor_secondary.conf
