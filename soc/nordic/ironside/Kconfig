@@ -76,7 +76,7 @@ config NRF_IRONSIDE_ABB_STATUSANA_CHECK_MAX_ATTEMPTS
 	range 0 255
 	default 50
 	help
-	  Maximum attempts with 10us intervals before busy status will be reported.
+	  Maximum timeout when waiting for DVFS oppoint change mutex lock.
 
 endif # NRF_IRONSIDE_DVFS_SERVICE
 
