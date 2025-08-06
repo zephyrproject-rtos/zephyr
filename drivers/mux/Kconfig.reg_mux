@@ -1,0 +1,10 @@
+# Copyright NXP 2025
+# SPDX-License-Identifier: Apache-2.0
+
+config MUX_REG_MUX
+        bool "Generic register bitfield mux driver"
+        default y
+        depends on DT_HAS_REG_MUX_ENABLED
+        help
+          This driver is used for muxes that are controlled by
+          writing to bitfields in a register.
