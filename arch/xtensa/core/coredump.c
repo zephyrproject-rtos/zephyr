@@ -92,6 +92,10 @@ struct xtensa_arch_block {
  */
 static struct xtensa_arch_block arch_blk;
 
+#if defined(CONFIG_DEBUG_COREDUMP_THREAD_STACK_TOP)
+static uint32_t xtensa_coredump_fault_sp;
+#endif
+
 void arch_coredump_info_dump(const struct arch_esf *esf)
 {
 	struct coredump_arch_hdr_t hdr = {
@@ -127,6 +131,9 @@ void arch_coredump_info_dump(const struct arch_esf *esf)
 
 	/* Set in top-level CMakeLists.txt for use with Xtensa coredump */
 	arch_blk.toolchain = XTENSA_TOOLCHAIN_VARIANT;
+#if defined(CONFIG_DEBUG_COREDUMP_THREAD_STACK_TOP)
+	xtensa_coredump_fault_sp = (uint32_t)esf;
+#endif
 
 	__asm__ volatile("rsr.exccause %0" : "=r"(arch_blk.r.exccause));
 
@@ -205,3 +212,10 @@ void arch_coredump_priv_stack_dump(struct k_thread *thread)
 	coredump_memory_dump(start_addr, end_addr);
 }
 #endif /* CONFIG_DEBUG_COREDUMP_DUMP_THREAD_PRIV_STACK */
+
+#if defined(CONFIG_DEBUG_COREDUMP_THREAD_STACK_TOP)
+uintptr_t arch_coredump_stack_ptr_get(const struct k_thread *thread)
+{
+	return (thread == _current) ? xtensa_coredump_fault_sp : (uintptr_t)thread->switch_handle;
+}
+#endif /* CONFIG_DEBUG_COREDUMP_THREAD_STACK_TOP */
