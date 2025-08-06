@@ -233,7 +233,7 @@ static void iciit_fixup(struct k_thread *th, struct hw_frame_base *hw, uint32_t 
 		/* Stash original return address, replace with hook */
 		th->arch.iciit_pc = hw->pc;
 		th->arch.iciit_apsr = hw->apsr;
-		hw->pc = (uint32_t) arm_m_iciit_stub;
+		hw->pc = (uint32_t)arm_m_iciit_stub;
 	}
 #endif
 }
@@ -413,7 +413,7 @@ void *arm_m_new_stack(char *base, uint32_t sz, void *entry, void *arg0, void *ar
 	uint32_t *s_top = (uint32_t *)(stack + K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[0]));
 
 	arm_m_exc_lr_ptr = &s_top[-1];
-	arm_m_cs_ptrs.lr_fixup = (void *) (1 | (uint32_t)arm_m_exc_exit); /* thumb bit! */
+	arm_m_cs_ptrs.lr_fixup = (void *)(1 | (uint32_t)arm_m_exc_exit); /* thumb bit! */
 #endif
 
 	baddr = ((uint32_t)base + 7) & ~7;
@@ -457,16 +457,15 @@ bool arm_m_must_switch(void)
 	 */
 	uint32_t pri = _EXC_IRQ_DEFAULT_PRIO;
 
-	__asm__ volatile("msr basepri, %0" :: "r"(pri));
+	__asm__ volatile("msr basepri, %0" ::"r"(pri));
 
 	/* Secure mode transistions can push a non-thread frame to the
 	 * stack.  If not enabled, we already know by construction
 	 * that we're handling the bottom level of the interrupt stack
 	 * and returning to thread mode.
 	 */
-	if ((IS_ENABLED(CONFIG_ARM_SECURE_FIRMWARE) ||
-	    IS_ENABLED(CONFIG_ARM_NONSECURE_FIRMWARE))
-	    && !is_thread_return((uint32_t)arm_m_cs_ptrs.lr_save)) {
+	if ((IS_ENABLED(CONFIG_ARM_SECURE_FIRMWARE) || IS_ENABLED(CONFIG_ARM_NONSECURE_FIRMWARE)) &&
+	    !is_thread_return((uint32_t)arm_m_cs_ptrs.lr_save)) {
 		return false;
 	}
 
@@ -551,7 +550,7 @@ __asm__(".globl arm_m_exc_exit;"
 	"  bl arm_m_must_switch;"
 	"  ldr r2, =arm_m_cs_ptrs;"
 	"  mov r3, #0;"
-	"  ldr lr, [r2, #8];"    /* lr_save */
+	"  ldr lr, [r2, #8];" /* lr_save */
 	"  cbz r0, 1f;"
 	"  mov lr, #0xfffffffd;" /* integer-only LR */
 	"  ldm r2, {r0, r1};"    /* fields: out, in */
@@ -559,6 +558,6 @@ __asm__(".globl arm_m_exc_exit;"
 	"  ldm r1!, {r7-r11};"   /* in is a synth_frame */
 	"  ldm r1, {r4-r6};"
 	"1:\n"
-	"  msr basepri, r3;"     /* release lock taken in must_switch */
+	"  msr basepri, r3;" /* release lock taken in must_switch */
 	"  bx lr;");
 #endif
