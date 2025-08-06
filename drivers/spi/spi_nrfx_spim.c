@@ -810,7 +810,7 @@ static void spim_suspend(const struct device *dev)
 #if SPIM_CROSS_DOMAIN_PINS_HANDLE
 		int err;
 
-		err = nrf_sys_event_request_global_constlat();
+		err = nrf_sys_event_release_global_constlat();
 		(void)err;
 		__ASSERT_NO_MSG(err >= 0);
 #else
