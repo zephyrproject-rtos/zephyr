@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 STMicroelectronics
+ * Copyright (c) 2025 Mario Paja
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1227,6 +1228,50 @@
 			reg = <0x54020000 0x400>;
 			interrupts = <40 0>;
 			clocks = <&rcc STM32_CLOCK(AHB3, 0)>;
+			status = "disabled";
+		};
+
+		sai1_a: sai1@452005804 {
+			compatible = "st,stm32-sai";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x52005804 0x20>;
+			clocks = <&rcc STM32_CLOCK(APB2, 21)>;
+			dmas = <&gpdma1 1 91 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
+				STM32_DMA_16BITS)>;
+			status = "disabled";
+		};
+
+		sai1_b: sai1@52005824 {
+			compatible = "st,stm32-sai";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x52005824 0x20>;
+			clocks = <&rcc STM32_CLOCK(APB2, 21)>;
+			dmas = <&gpdma1 0 92 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
+				STM32_DMA_16BITS)>;
+			status = "disabled";
+		};
+
+		sai2_a: sai2@52005c04 {
+			compatible = "st,stm32-sai";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x52005C04 0x20>;
+			clocks = <&rcc STM32_CLOCK(APB2, 22)>;
+			dmas = <&gpdma1 3 93 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
+				STM32_DMA_16BITS)>;
+			status = "disabled";
+		};
+
+		sai2_b: sai2@52005c24 {
+			compatible = "st,stm32-sai";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x52005C24 0x20>;
+			clocks = <&rcc STM32_CLOCK(APB2, 22)>;
+			dmas = <&gpdma1 2 94 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
+				STM32_DMA_16BITS)>;
 			status = "disabled";
 		};
 	};
