@@ -669,8 +669,8 @@ static int dma_mcux_edma_resume(const struct device *dev, uint32_t channel)
 static void dma_mcux_edma_update_hw_tcd(const struct device *dev, uint32_t channel, uint32_t src,
 					uint32_t dst, size_t size)
 {
-	EDMA_HW_TCD_SADDR(dev, channel) = src;
-	EDMA_HW_TCD_DADDR(dev, channel) = dst;
+	EDMA_HW_TCD_SADDR(dev, channel) = EDMA_MMAP_ADDR(src);
+	EDMA_HW_TCD_DADDR(dev, channel) = EDMA_MMAP_ADDR(dst);
 	EDMA_HW_TCD_BITER(dev, channel) = size;
 	EDMA_HW_TCD_CITER(dev, channel) = size;
 	EDMA_HW_TCD_CSR(dev, channel) |= DMA_CSR_DREQ(1U);
@@ -871,6 +871,8 @@ static int dma_mcux_edma_get_status(const struct device *dev, uint32_t channel,
 	LOG_DBG("DMA CHx_ES 0x%x",  DEV_BASE(dev)->TCD[hw_channel].CH_ES);
 	LOG_DBG("DMA CHx_INT 0x%x", DEV_BASE(dev)->TCD[hw_channel].CH_INT);
 	LOG_DBG("DMA TCD_CSR 0x%x", DEV_BASE(dev)->TCD[hw_channel].CSR);
+	LOG_DBG("DMA TCD_SADDR 0x%x", DEV_BASE(dev)->TCD[hw_channel].SADDR);
+	LOG_DBG("DMA TCD_DADDR 0x%x", DEV_BASE(dev)->TCD[hw_channel].DADDR);
 #else
 	LOG_DBG("DMA CR 0x%x", DEV_BASE(dev)->CR);
 	LOG_DBG("DMA INT 0x%x", DEV_BASE(dev)->INT);
