@@ -65,3 +65,11 @@ config SOC_PART_NUMBER
 	default "MCXN547VNL" if SOC_PART_NUMBER_MCXN547VNL
 	default "MCXN236VDF" if SOC_PART_NUMBER_MCXN236VDF
 	default "MCXN236VNL" if SOC_PART_NUMBER_MCXN236VNL
+
+config SOC_WAKEUP_DELAY
+	int "Wakeup delay"
+	default 780
+	help
+	  When a different VDD_CORE level is configured in low
+	  power modes compared to active modes, the wakeup delay
+	  must be configured to a minimum value.
