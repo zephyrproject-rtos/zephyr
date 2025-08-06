@@ -1,0 +1,23 @@
+# MCUXpresso SDK Low Power Timer (LPTMR)
+
+# Copyright (c) 2020 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_MCUX_LPTMR
+	bool "MCUX LPTMR driver"
+	default y
+	depends on DT_HAS_NXP_LPTMR_ENABLED
+	help
+	  Enable support for the MCUX Low Power Timer (LPTMR).
+
+if PM || POWEROFF
+
+# Only include following kconfig option when the lptmr
+# works as a wakeup source.
+config COUNTER_MCUX_LPTMR_WAKEUP_SOURCE_INDEX
+	int "Index in wakeup unit when LPTMR is used as a wakeup source"
+	default 6 if SOC_FAMILY_MCXN || SOC_FAMILY_MCXA
+	default 0 if SOC_FAMILY_MCXW
+	depends on ($(dt_nodelabel_bool_prop,lptmr$(mcux_hw_lptmr_index),wakeup-source))
+
+endif
