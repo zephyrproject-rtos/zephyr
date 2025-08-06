@@ -18,5 +18,7 @@ void mock_cap_handover_init(void);
 
 DECLARE_FAKE_VOID_FUNC(mock_unicast_to_broadcast_complete_cb, int, struct bt_conn *,
 		       struct bt_cap_unicast_group *, struct bt_cap_broadcast_source *);
+DECLARE_FAKE_VOID_FUNC(mock_broadcast_to_unicast_complete_cb, int, struct bt_conn *,
+		       struct bt_cap_broadcast_source *, struct bt_cap_unicast_group *);
 
 #endif /* MOCKS_CAP_HANDOVER_H_ */
