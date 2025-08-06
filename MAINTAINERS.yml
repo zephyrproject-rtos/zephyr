@@ -919,6 +919,17 @@ Continuous Integration:
   labels:
     - "area: Continuous Integration"
 
+CRC:
+  status: maintained
+  maintainers:
+    - thenguyenyf
+  files:
+    - include/zephyr/sys/crc.h
+    - subsys/crc/
+    - tests/subsys/crc/
+  labels:
+    - "area: CRC"
+
 DAP:
   status: maintained
   maintainers:
@@ -1380,6 +1391,19 @@ Documentation Infrastructure:
     - "area: Crypto / RNG"
   tests:
     - crypto
+
+"Drivers: CRC":
+  status: maintained
+  maintainers:
+    - thenguyenyf
+  files:
+    - drivers/crc/
+    - dts/bindings/crc/
+    - include/zephyr/drivers/crc.h
+    - samples/drivers/crc/
+    - tests/drivers/crc/
+  labels:
+    - "area: CRC"
 
 "Drivers: DAC":
   status: maintained
@@ -4895,7 +4919,6 @@ Utilities:
     - dcpleung
     - peter-mitsis
   files:
-    - lib/crc/
     - lib/utils/
     - tests/unit/timeutil/
     - tests/unit/time_units/

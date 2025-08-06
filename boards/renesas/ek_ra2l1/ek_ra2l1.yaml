@@ -11,6 +11,7 @@ supported:
   - flash
   - watchdog
   - counter
+  - crc
 vendor: renesas
 testing:
   ignore_tags:
