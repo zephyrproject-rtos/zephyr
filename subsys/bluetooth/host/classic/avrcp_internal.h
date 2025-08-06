@@ -81,6 +81,13 @@ struct bt_avrcp_tg_tx {
 	avrcp_tg_rsp_state_t state;
 } __packed;
 
+struct bt_avrcp_notify_registration {
+	uint8_t tid;
+	bt_avrcp_evt_t event_id;
+	bool registered;
+	bt_avrcp_notification_cb_t cb;
+};
+
 struct bt_avrcp_req {
 	uint8_t tid;
 	uint8_t subunit;

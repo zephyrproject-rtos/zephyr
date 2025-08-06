@@ -132,6 +132,55 @@ static void avrcp_passthrough_rsp(struct bt_avrcp_ct *ct, uint8_t tid, bt_avrcp_
 	}
 }
 
+static void avrcp_notification_rsp(uint8_t event_id, struct bt_avrcp_event_data *data)
+{
+	const char *type_str = "CHANGED";
+	bt_shell_print("AVRCP notification_rsp: type=%s, event_id=0x%02x", type_str, event_id);
+
+	switch (event_id) {
+	case BT_AVRCP_EVT_PLAYBACK_STATUS_CHANGED:
+		bt_shell_print("  PLAYBACK_STATUS_CHANGED: status=0x%02x", data->play_status);
+		break;
+	case BT_AVRCP_EVT_TRACK_CHANGED:
+		bt_shell_print("  TRACK_CHANGED: identifier=%016llx", (unsigned long long)data->identifier);
+		break;
+	case BT_AVRCP_EVT_PLAYBACK_POS_CHANGED:
+		bt_shell_print("  PLAYBACK_POS_CHANGED: pos=%u", data->playback_pos);
+		break;
+	case BT_AVRCP_EVT_BATT_STATUS_CHANGED:
+		bt_shell_print("  BATT_STATUS_CHANGED: battery_status=0x%02x", data->battery_status);
+		break;
+	case BT_AVRCP_EVT_SYSTEM_STATUS_CHANGED:
+		bt_shell_print("  SYSTEM_STATUS_CHANGED: system_status=0x%02x", data->system_status);
+		break;
+	case BT_AVRCP_EVT_PLAYER_APP_SETTING_CHANGED:
+		bt_shell_print("  PLAYER_APP_SETTING_CHANGED: num_of_attr=%u", data->setting_changed.num_of_attr);
+		break;
+	case BT_AVRCP_EVT_ADDRESSED_PLAYER_CHANGED:
+		bt_shell_print("  ADDRESSED_PLAYER_CHANGED: player_id=0x%04x, uid_counter=0x%04x",
+			data->addressed_player_changed.player_id, data->addressed_player_changed.uid_counter);
+		break;
+	case BT_AVRCP_EVT_UIDS_CHANGED:
+		bt_shell_print("  UIDS_CHANGED: uid_counter=0x%04x", data->uid_counter);
+		break;
+	case BT_AVRCP_EVT_VOLUME_CHANGED:
+		bt_shell_print("  VOLUME_CHANGED: absolute_volume=0x%02x", data->absolute_volume);
+		break;
+	default:
+		bt_shell_print("  Unknown event_id: 0x%02x", event_id);
+		break;
+	}
+}
+
+static void avrcp_register_notification_req(struct bt_avrcp_tg *tg, uint8_t tid,
+					    bt_avrcp_evt_t event_id,
+					    uint32_t playback_interval)
+{
+	bt_shell_print("AVRCP register_notification_req: tid=0x%02x, event_id=0x%02x, interval=%u",
+		tid, event_id, playback_interval);
+	tg_tid = tid;
+}
+
 static void avrcp_browsed_player_rsp(struct bt_avrcp_ct *ct, uint8_t tid,
 				     struct net_buf *buf)
 {
@@ -313,6 +362,7 @@ static struct bt_avrcp_tg_cb app_avrcp_tg_cb = {
 	.subunit_info_req = avrcp_subunit_info_req,
 	.get_cap_req = avrcp_get_caps_cmd_req,
 	.set_browsed_player_req = avrcp_set_browsed_player_req,
+	.register_notification_req = avrcp_register_notification_req,
 	.passthrough_req = avrcp_passthrough_req,
 };
 
@@ -762,6 +812,145 @@ static int cmd_get_cap(const struct shell *sh, int32_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_ct_register_notification(const struct shell *sh, int argc, char *argv[])
+{
+	uint8_t event_id;
+	uint32_t playback_interval = 0U;
+	int err;
+
+	if (!avrcp_ct_registered && register_ct_cb(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	if (default_ct == NULL) {
+		shell_error(sh, "AVRCP CT is not connected");
+		return -ENOEXEC;
+	}
+
+	event_id = (uint8_t)strtoul(argv[1], NULL, 0);
+	if (argc > 2) {
+		playback_interval = (uint32_t)strtoul(argv[2], NULL, 0);
+	}
+
+	err = bt_avrcp_ct_register_notification(default_ct, get_next_tid(), event_id,
+						playback_interval, avrcp_notification_rsp);
+	if (err < 0) {
+		shell_error(sh, "Failed to send register_notification: %d", err);
+	} else {
+		shell_print(sh, "Sent register_notification event_id=0x%02x", event_id);
+	}
+	return err;
+}
+
+static int cmd_tg_send_notification_rsp(const struct shell *sh, int argc, char *argv[])
+{
+	struct bt_avrcp_event_data data;
+	uint8_t event_id = (uint8_t)strtoul(argv[1], NULL, 0);
+	bt_avrcp_rsp_t type;
+	char *endptr;
+	int err;
+
+	if (!avrcp_tg_registered && register_tg_cb(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	if (default_tg == NULL) {
+		shell_error(sh, "AVRCP TG is not connected");
+		return -ENOEXEC;
+	}
+
+	memset(&data, 0, sizeof(data));
+	type = (bt_avrcp_rsp_t)strtoul(argv[2], NULL, 0);
+	if (type == BT_AVRCP_RSP_INTERIM) {
+		if (event_id == BT_AVRCP_EVT_TRACK_CHANGED) {
+			/* Interim response for track changed must have identifier set */
+			data.identifier = 111111;
+		}
+		goto done;
+	}
+	switch (event_id) {
+	case BT_AVRCP_EVT_PLAYBACK_STATUS_CHANGED:
+		if (argc < 4) {
+			data.play_status = BT_AVRCP_PLAYBACK_STATUS_PLAYING;
+		} else {
+			data.play_status = (uint8_t)strtoul(argv[3], NULL, 0);
+		}
+		break;
+	case BT_AVRCP_EVT_TRACK_CHANGED:
+		if (argc < 11) {
+			data.identifier = 1u;
+		} else {
+			data.identifier = strtoull(argv[3], &endptr, 16);
+			if (*endptr != '\0') {
+				shell_error(sh, "Invalid identifier: %s", argv[3]);
+			}
+		}
+		break;
+	case BT_AVRCP_EVT_PLAYBACK_POS_CHANGED:
+		if (argc < 4) {
+			data.playback_pos = 1000;
+		} else {
+			data.playback_pos = (uint32_t)strtoul(argv[3], NULL, 0);
+		}
+		break;
+	case BT_AVRCP_EVT_BATT_STATUS_CHANGED:
+		if (argc < 4) {
+			data.battery_status = BT_AVRCP_BATTERY_STATUS_NORMAL;
+		} else {
+			data.battery_status = (uint8_t)strtoul(argv[3], NULL, 0);
+		}
+		break;
+	case BT_AVRCP_EVT_SYSTEM_STATUS_CHANGED:
+		if (argc < 4) {
+			data.system_status = BT_AVRCP_SYSTEM_STATUS_POWER_ON;
+		} else {
+			data.system_status = (uint8_t)strtoul(argv[3], NULL, 0);
+		}
+		break;
+	case BT_AVRCP_EVT_PLAYER_APP_SETTING_CHANGED:
+		data.setting_changed.num_of_attr           = 1;
+		/* The attr_vals buffer size at least is 8*/
+		data.setting_changed.attr_vals[0].attr_id  = 1;
+		data.setting_changed.attr_vals[0].value_id = 1;
+		break;
+	case BT_AVRCP_EVT_ADDRESSED_PLAYER_CHANGED:
+		if (argc < 5) {
+			data.addressed_player_changed.player_id = 0x0001; /* Default player ID */
+			data.addressed_player_changed.uid_counter = 0x0001; /* Default UID counter */
+		} else {
+			data.addressed_player_changed.player_id = (uint16_t)strtoul(argv[3], NULL, 0);
+			data.addressed_player_changed.uid_counter = (uint16_t)strtoul(argv[4], NULL, 0);
+		}
+		break;
+	case BT_AVRCP_EVT_UIDS_CHANGED:
+		if (argc < 4) {
+			data.uid_counter = 1;
+		} else {
+			data.uid_counter = (uint16_t)strtoul(argv[3], NULL, 0);
+		}
+		break;
+	case BT_AVRCP_EVT_VOLUME_CHANGED:
+		if (argc < 4) {
+ 			data.absolute_volume = 10;
+		} else {
+			data.absolute_volume = (uint8_t)strtoul(argv[3], NULL, 0);
+		}
+		break;
+	default:
+		shell_error(sh, "Unknown event_id: 0x%02x", event_id);
+		return -EINVAL;
+	}
+
+done:
+	err = bt_avrcp_tg_send_notification_rsp(default_tg, tg_tid, type, event_id, &data);
+	if (err < 0) {
+		shell_error(sh, "Failed to send notification_rsp: %d", err);
+	} else {
+		shell_print(sh, "Sent notify_rsp event_id=0x%02x type=0x%02x", event_id, type);
+	}
+	return err;
+}
+
 static int cmd_set_browsed_player(const struct shell *sh, int32_t argc, char *argv[])
 {
 	uint16_t player_id;
@@ -911,6 +1100,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      0),
 	SHELL_CMD_ARG(play, NULL, "request a play at the remote player", cmd_play, 1, 0),
 	SHELL_CMD_ARG(pause, NULL, "request a pause at the remote player", cmd_pause, 1, 0),
+	SHELL_CMD_ARG(register_notification, NULL, "register notify <event_id> [playback_interval]",
+		      cmd_ct_register_notification, 2, 1),
 	SHELL_CMD_ARG(set_browsed_player, NULL, "set browsed player <player_id>",
 		      cmd_set_browsed_player, 2, 0),
 	SHELL_SUBCMD_SET_END);
@@ -922,6 +1113,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(send_subunit_rsp, NULL, HELP_NONE, cmd_send_subunit_info_rsp, 1, 0),
 	SHELL_CMD_ARG(send_get_caps_rsp, NULL, "send get capabilities response",
 		      cmd_send_get_caps_rsp, 1, 0),
+	SHELL_CMD_ARG(send_notification_rsp, NULL, "send notify rsp <event_id> <type> [value...]",
+		     cmd_tg_send_notification_rsp, 3, 10),
 	SHELL_CMD_ARG(send_browsed_player_rsp, NULL, HELP_BROWSED_PLAYER_RSP,
 		      cmd_send_set_browsed_player_rsp, 1, 5),
 	SHELL_CMD_ARG(send_passthrough_rsp, NULL, HELP_PASSTHROUGH_RSP, cmd_send_passthrough_rsp,
