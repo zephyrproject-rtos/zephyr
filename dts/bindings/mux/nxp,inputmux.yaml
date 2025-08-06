@@ -1,0 +1,27 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP INPUTMUX binding
+
+compatible: "nxp,inputmux"
+
+include: [mux-controller.yaml, base.yaml, reset-device.yaml]
+
+properties:
+  clocks:
+    required: true
+  resets:
+    required: true
+  '#mux-control-cells':
+    const: 2
+  '#mux-state-cells':
+    const: 3
+
+mux-control-cells:
+  - offset
+  - mask
+
+mux-state-cells:
+  - offset
+  - mask
+  - value
