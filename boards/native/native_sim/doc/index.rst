@@ -1,7 +1,7 @@
 .. _native_sim:
 
-Native simulator - native_sim
-#############################
+native_sim
+##########
 
 .. contents::
    :depth: 1
