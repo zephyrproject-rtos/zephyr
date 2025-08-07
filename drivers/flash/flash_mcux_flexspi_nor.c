@@ -1,5 +1,5 @@
 /*
- * Copyright 2020,2023 NXP
+ * Copyright 2020,2023-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -77,6 +77,8 @@ struct flash_flexspi_nor_data {
 	flexspi_port_t port;
 	bool legacy_poll;
 	uint64_t size;
+	/* Expected jedec-id property from devicetree */
+	uint8_t jedec_id[JESD216_READ_ID_LEN];
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	struct flash_pages_layout layout;
 #endif
@@ -168,7 +170,7 @@ static int flash_flexspi_nor_read_id_helper(struct flash_flexspi_nor_data *data,
 		.SeqNumber = 1,
 		.seqIndex = READ_ID,
 		.data = &buffer,
-		.dataSize = 3,
+		.dataSize = JESD216_READ_ID_LEN,
 	};
 
 	LOG_DBG("Reading id");
@@ -178,12 +180,12 @@ static int flash_flexspi_nor_read_id_helper(struct flash_flexspi_nor_data *data,
 		return ret;
 	}
 
-	memcpy(vendor_id, &buffer, 3);
+	memcpy(vendor_id, &buffer, JESD216_READ_ID_LEN);
 
 	return ret;
 }
 
-static int flash_flexspi_nor_read_id(const struct device *dev, uint8_t *vendor_id)
+static int flash_flexspi_nor_read_jedec_id(const struct device *dev, uint8_t *vendor_id)
 {
 	struct flash_flexspi_nor_data *data = dev->data;
 
@@ -1455,7 +1457,7 @@ static int flash_flexspi_nor_init(const struct device *dev)
 {
 	const struct flash_flexspi_nor_config *config = dev->config;
 	struct flash_flexspi_nor_data *data = dev->data;
-	uint32_t vendor_id;
+	uint8_t jedec_id[JESD216_READ_ID_LEN];
 
 	/* First step- use ROM pointer to controller device to create
 	 * a copy of the device structure in RAM we can use while in
@@ -1492,11 +1494,21 @@ static int flash_flexspi_nor_init(const struct device *dev)
 
 	memc_flexspi_reset(&data->controller);
 
-	if (flash_flexspi_nor_read_id(dev, (uint8_t *)&vendor_id)) {
-		LOG_ERR("Could not read vendor id");
+	if (flash_flexspi_nor_read_jedec_id(dev, jedec_id)) {
+		LOG_ERR("Could not read jedec id");
 		return -EIO;
 	}
-	LOG_DBG("Vendor id: 0x%0x", vendor_id);
+	LOG_DBG("Jedec id: %02x %02x %02x", jedec_id[0], jedec_id[1], jedec_id[2]);
+
+	if (data->jedec_id[0]) {
+		/* Check the JEDEC ID against the one from devicetree. */
+		if (memcmp(jedec_id, data->jedec_id, sizeof(jedec_id)) != 0) {
+			LOG_ERR("Jedec id %02x %02x %02x does not match devicetree %02x %02x %02x",
+				jedec_id[0], jedec_id[1], jedec_id[2],
+				data->jedec_id[0], data->jedec_id[1], data->jedec_id[2]);
+			return -EINVAL;
+		}
+	}
 
 	return 0;
 }
@@ -1512,7 +1524,7 @@ static DEVICE_API(flash, flash_flexspi_nor_api) = {
 #endif
 #if defined(CONFIG_FLASH_JESD216_API)
 	.sfdp_read = flash_flexspi_nor_sfdp_read,
-	.read_jedec_id = flash_flexspi_nor_read_id,
+	.read_jedec_id = flash_flexspi_nor_read_jedec_id,
 #endif
 };
 
@@ -1558,6 +1570,7 @@ static DEVICE_API(flash, flash_flexspi_nor_api) = {
 		.config = FLASH_FLEXSPI_DEVICE_CONFIG(n),		\
 		.port = DT_INST_REG_ADDR(n),				\
 		.size = DT_INST_PROP(n, size) / 8,			\
+		.jedec_id = DT_INST_PROP_OR(n, jedec_id, {0}),	\
 		IF_ENABLED(CONFIG_FLASH_PAGE_LAYOUT,	\
 		(.layout = {						\
 			.pages_count = DT_INST_PROP(n, size) / 8	\
