@@ -88,6 +88,7 @@ comment "Device Drivers"
 
 # zephyr-keep-sorted-start
 source "drivers/sensor/adi/Kconfig"
+source "drivers/sensor/als31300/Kconfig"
 source "drivers/sensor/ams/Kconfig"
 source "drivers/sensor/aosong/Kconfig"
 source "drivers/sensor/asahi_kasei/Kconfig"
