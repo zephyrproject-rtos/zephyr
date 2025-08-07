@@ -18,10 +18,6 @@
 
 LOG_MODULE_REGISTER(gpio_silabs, CONFIG_GPIO_LOG_LEVEL);
 
-#if GPIO_SILABS_COMMON_INIT_PRIORITY >= CONFIG_GPIO_INIT_PRIORITY
-#error GPIO_SILABS_COMMON_INIT_PRIORITY must be less than CONFIG_GPIO_INIT_PRIORITY
-#endif
-
 #define SILABS_GPIO_PORT_ADDR_SPACE_SIZE sizeof(GPIO_PORT_TypeDef)
 #define GET_SILABS_GPIO_INDEX(node_id)                                                             \
 	(DT_REG_ADDR(node_id) - DT_REG_ADDR(DT_NODELABEL(gpioa))) / SILABS_GPIO_PORT_ADDR_SPACE_SIZE
@@ -51,6 +47,8 @@ struct gpio_silabs_port_config {
 	struct gpio_driver_config common;
 	/* index of the GPIO port */
 	sl_gpio_port_t gpio_index;
+	/* pointer to common device */
+	const struct device *common_dev;
 };
 
 struct gpio_silabs_port_data {
@@ -58,10 +56,6 @@ struct gpio_silabs_port_data {
 	struct gpio_driver_data common;
 	/* port ISR callback routine list */
 	sys_slist_t callbacks;
-	/* bitmask of pins with interrupt enabled */
-	uint32_t int_enabled_mask;
-	/* pointer to common device */
-	const struct device *common_dev;
 };
 
 static inline void gpio_silabs_add_port(struct gpio_silabs_common_data *data,
@@ -75,10 +69,12 @@ static inline void gpio_silabs_add_port(struct gpio_silabs_common_data *data,
 static int gpio_silabs_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct gpio_silabs_port_config *config = dev->config;
-	sl_gpio_t gpio = {.port = config->gpio_index, .pin = pin};
+	sl_gpio_t gpio = {
+		.port = config->gpio_index,
+		.pin = pin
+	};
 	sl_gpio_mode_t mode;
-	uint16_t out = 0U;
-	bool pin_out;
+	bool out = false;
 
 	if (flags & GPIO_OUTPUT) {
 		if (flags & GPIO_SINGLE_ENDED) {
@@ -91,19 +87,19 @@ static int gpio_silabs_pin_configure(const struct device *dev, gpio_pin_t pin, g
 			mode = SL_GPIO_MODE_PUSH_PULL;
 		}
 		if (flags & GPIO_OUTPUT_INIT_HIGH) {
-			out = 1U;
+			out = true;
 		} else if (flags & GPIO_OUTPUT_INIT_LOW) {
-			out = 0U;
+			out = false;
 		} else {
-			pin_out = sl_hal_gpio_get_pin_output(&gpio);
-			out = pin_out;
+			out = sl_hal_gpio_get_pin_output(&gpio);
 		}
 	} else if (flags & GPIO_INPUT) {
 		if (flags & GPIO_PULL_UP) {
 			mode = SL_GPIO_MODE_INPUT_PULL;
-			out = 1U;
+			out = true; /* Pull-up */
 		} else if (flags & GPIO_PULL_DOWN) {
 			mode = SL_GPIO_MODE_INPUT_PULL;
+			out = false; /* Pull-down */
 		} else {
 			mode = SL_GPIO_MODE_INPUT;
 		}
@@ -120,7 +116,10 @@ static int gpio_silabs_pin_get_config(const struct device *dev, gpio_pin_t pin,
 				      gpio_flags_t *out_flags)
 {
 	const struct gpio_silabs_port_config *config = dev->config;
-	sl_gpio_t gpio = {.port = config->gpio_index, .pin = pin};
+	sl_gpio_t gpio = {
+		.port = config->gpio_index,
+		.pin = pin
+	};
 	sl_gpio_mode_t mode;
 	bool out;
 	gpio_flags_t flags = 0;
@@ -236,22 +235,26 @@ static int gpio_silabs_pin_interrupt_configure(const struct device *dev, gpio_pi
 					       enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
 	const struct gpio_silabs_port_config *config = dev->config;
-	struct gpio_silabs_port_data *data = dev->data;
-	struct gpio_silabs_common_data *common = data->common_dev->data;
-	sl_gpio_t gpio = {.port = config->gpio_index, .pin = pin};
+	struct gpio_silabs_common_data *common = config->common_dev->data;
+	sl_gpio_t gpio = {
+		.port = config->gpio_index,
+		.pin = pin
+	};
 	int32_t int_no = SL_GPIO_INTERRUPT_UNAVAILABLE;
 	sl_gpio_interrupt_flag_t flag = SL_GPIO_INTERRUPT_RISING_FALLING_EDGE;
+	uint32_t enabled_interrupts;
 
 	if (mode == GPIO_INT_MODE_LEVEL) {
 		LOG_ERR("Level interrupt not supported on pin %u", pin);
 		return -ENOTSUP;
 	}
 
+	enabled_interrupts = sl_hal_gpio_get_enabled_interrupts();
+
 	if (mode == GPIO_INT_MODE_DISABLED) {
 		ARRAY_FOR_EACH(common->irq_pin_map, i) {
-			if ((data->int_enabled_mask & BIT(i)) && (common->irq_pin_map[i] == pin)) {
+			if ((enabled_interrupts & BIT(i)) && (common->irq_pin_map[i] == pin)) {
 				sl_hal_gpio_disable_interrupts(BIT(i));
-				WRITE_BIT(data->int_enabled_mask, i, false);
 				common->irq_pin_map[i] = 0xFF;
 				break;
 			}
@@ -259,7 +262,7 @@ static int gpio_silabs_pin_interrupt_configure(const struct device *dev, gpio_pi
 	} else {
 		/* Check if pin already has an interrupt configured */
 		ARRAY_FOR_EACH(common->irq_pin_map, i) {
-			if ((data->int_enabled_mask & BIT(i)) && (common->irq_pin_map[i] == pin)) {
+			if ((enabled_interrupts & BIT(i)) && (common->irq_pin_map[i] == pin)) {
 				int_no = i;
 				break;
 			}
@@ -281,9 +284,7 @@ static int gpio_silabs_pin_interrupt_configure(const struct device *dev, gpio_pi
 		}
 
 		common->irq_pin_map[int_no] = pin;
-
 		sl_hal_gpio_enable_interrupts(BIT(int_no));
-		WRITE_BIT(data->int_enabled_mask, int_no, true);
 	}
 
 	return 0;
@@ -303,15 +304,19 @@ static void gpio_silabs_common_isr(const struct device *dev)
 	uint32_t int_status = GPIO->IF;
 
 	ARRAY_FOR_EACH(data->ports, i) {
-		if (!int_status) {
-			break;
-		}
-		const struct device *port_dev = data->ports[i];
-		struct gpio_silabs_port_data *port_data = port_dev->data;
-		uint32_t enabled_int = int_status & port_data->int_enabled_mask;
+		const struct device *port_dev;
+		const struct gpio_silabs_port_config *port_config;
+		struct gpio_silabs_port_data *port_data;
+		uint32_t enabled_int;
+		uint32_t pin_mask;
+
+		port_dev = data->ports[i];
+		port_config = port_dev->config;
+		port_data = port_dev->data;
+		enabled_int = int_status & sl_hal_gpio_get_enabled_interrupts();
 
 		if (enabled_int) {
-			uint32_t pin_mask = 0;
+			pin_mask = 0;
 
 			ARRAY_FOR_EACH(data->irq_pin_map, int_line) {
 				if ((enabled_int & BIT(int_line)) &&
@@ -329,40 +334,39 @@ static void gpio_silabs_common_isr(const struct device *dev)
 	}
 }
 
+static int gpio_silabs_port_init(const struct device *dev)
+{
+	const struct gpio_silabs_port_config *config = dev->config;
+	struct gpio_silabs_common_data *common_data = config->common_dev->data;
+
+	gpio_silabs_add_port(common_data, dev);
+
+	return 0;
+}
+
 static DEVICE_API(gpio, gpio_driver_api) = {
-	.pin_configure = gpio_silabs_pin_configure,
+	.pin_configure           = gpio_silabs_pin_configure,
 #ifdef CONFIG_GPIO_GET_CONFIG
-	.pin_get_config = gpio_silabs_pin_get_config,
+	.pin_get_config          = gpio_silabs_pin_get_config,
 #endif
-	.port_get_raw = gpio_silabs_port_get_raw,
-	.port_set_masked_raw = gpio_silabs_port_set_masked_raw,
-	.port_set_bits_raw = gpio_silabs_port_set_bits_raw,
-	.port_clear_bits_raw = gpio_silabs_port_clear_bits_raw,
-	.port_toggle_bits = gpio_silabs_port_toggle_bits,
+	.port_get_raw            = gpio_silabs_port_get_raw,
+	.port_set_masked_raw     = gpio_silabs_port_set_masked_raw,
+	.port_set_bits_raw       = gpio_silabs_port_set_bits_raw,
+	.port_clear_bits_raw     = gpio_silabs_port_clear_bits_raw,
+	.port_toggle_bits        = gpio_silabs_port_toggle_bits,
 	.pin_interrupt_configure = gpio_silabs_pin_interrupt_configure,
-	.manage_callback = gpio_silabs_port_manage_callback,
+	.manage_callback         = gpio_silabs_port_manage_callback,
 };
-
-static DEVICE_API(gpio, gpio_common_driver_api) = {
-	.manage_callback = gpio_silabs_port_manage_callback,
-};
-
-static struct gpio_silabs_common_data gpio_silabs_common_data_inst;
 
 static int gpio_silabs_common_init(const struct device *dev)
 {
 	const struct gpio_silabs_common_config *cfg = dev->config;
-	struct gpio_silabs_common_data *data = dev->data;
 	int ret;
 
 	/* Enable clock */
 	ret = clock_control_on(cfg->clock, (clock_control_subsys_t)&cfg->clock_cfg);
 	if (ret < 0) {
 		return ret;
-	}
-
-	ARRAY_FOR_EACH(data->irq_pin_map, i) {
-		data->irq_pin_map[i] = 0xFF;
 	}
 
 	if (cfg->irq_connect) {
@@ -374,23 +378,20 @@ static int gpio_silabs_common_init(const struct device *dev)
 }
 
 #define GPIO_PORT_INIT(n)                                                                          \
-	static int gpio_silabs_port_##n##_init(const struct device *dev)                           \
-	{                                                                                          \
-		struct gpio_silabs_port_data *data = dev->data;                                    \
-		data->common_dev = DEVICE_DT_GET(DT_PARENT(n));                                    \
-		gpio_silabs_add_port(&gpio_silabs_common_data_inst, dev);                          \
-		return 0;                                                                          \
-	}                                                                                          \
-	static const struct gpio_silabs_port_config gpio_silabs_port_##n##_config = {              \
-		.common = {.port_pin_mask = (gpio_port_pins_t)(-1)},                               \
+	static const struct gpio_silabs_port_config gpio_silabs_port_config_##n = {                \
+		.common.port_pin_mask = (gpio_port_pins_t)(-1),                                    \
 		.gpio_index = GET_SILABS_GPIO_INDEX(n),                                            \
+		.common_dev = DEVICE_DT_GET(DT_PARENT(n)),                                         \
 	};                                                                                         \
-	static struct gpio_silabs_port_data gpio_silabs_port_##n##_data;                           \
-	DEVICE_DT_DEFINE(n, gpio_silabs_port_##n##_init, NULL, &gpio_silabs_port_##n##_data,       \
-			 &gpio_silabs_port_##n##_config, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,  \
+	static struct gpio_silabs_port_data gpio_silabs_port_data_##n;                             \
+	DEVICE_DT_DEFINE(n, gpio_silabs_port_init, NULL, &gpio_silabs_port_data_##n,               \
+			 &gpio_silabs_port_config_##n, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,    \
 			 &gpio_driver_api);
 
 #define GPIO_CONTROLLER_INIT(idx)                                                                  \
+	static struct gpio_silabs_common_data gpio_silabs_common_data_##idx = {                    \
+		.irq_pin_map = {[0 ... 15] = 0xFF},                                                \
+	};                                                                                         \
 	static void gpio_silabs_irq_connect_##idx(const struct device *dev)                        \
 	{                                                                                          \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(idx, gpio_even, irq),                              \
@@ -407,9 +408,9 @@ static int gpio_silabs_common_init(const struct device *dev)
 		.clock = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),                                  \
 		.clock_cfg = SILABS_DT_INST_CLOCK_CFG(idx),                                        \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(idx, gpio_silabs_common_init, NULL, &gpio_silabs_common_data_inst,   \
+	DEVICE_DT_INST_DEFINE(idx, gpio_silabs_common_init, NULL, &gpio_silabs_common_data_##idx,  \
 			      &gpio_silabs_common_config_##idx, PRE_KERNEL_1,                      \
-			      CONFIG_GPIO_SILABS_COMMON_INIT_PRIORITY, &gpio_common_driver_api);   \
+			      CONFIG_GPIO_SILABS_COMMON_INIT_PRIORITY, NULL);                      \
 	DT_INST_FOREACH_CHILD_STATUS_OKAY(idx, GPIO_PORT_INIT)
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_CONTROLLER_INIT)
