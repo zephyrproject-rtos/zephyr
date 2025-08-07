@@ -305,14 +305,8 @@ static int ads1118_configure_multiplexer(const struct device *dev,
 				return -ENOTSUP;
 			}
 		} else {
-			if (channel_cfg->input_positive == 0) {
-				config = ADS1118_CONFIG_MUX_SINGLE_0;
-			} else if (channel_cfg->input_positive == 1) {
-				config = ADS1118_CONFIG_MUX_SINGLE_1;
-			} else if (channel_cfg->input_positive == 2) {
-				config = ADS1118_CONFIG_MUX_SINGLE_2;
-			} else if (channel_cfg->input_positive == 3) {
-				config = ADS1118_CONFIG_MUX_SINGLE_3;
+			if (channel_cfg->input_positive <= 3) {
+				config = ADS1118_CONFIG_MUX_SINGLE_0 + channel_cfg->input_positive;
 			} else {
 				LOG_ERR("unsupported input positive '%d'",
 					channel_cfg->input_positive);
