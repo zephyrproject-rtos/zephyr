@@ -44,101 +44,65 @@ LOG_MODULE_REGISTER(ads1118, CONFIG_ADC_LOG_LEVEL);
 #define ADS1118_MAX_CHANNEL_COUNT 4
 
 enum {
-	/* ADS1118, OS mode no effect*/
-	ADS1118_CONFIG_OS_NO_EFFECT,
-	/* ADS1118, OS mode start conversion */
-	ADS1118_CONFIG_OS_START,
+	ADS1118_CONFIG_OS_NO_EFFECT, /*!< ADS1118, OS mode no effect. */
+	ADS1118_CONFIG_OS_START,     /*!< ADS1118, OS mode start conversion. */
 };
 
 enum {
-	/*AINP is AIN0, and AINN is AIN1 (default)*/
-	ADS1118_CONFIG_MUX_DIFF_0_1 = 0,
-	/*AINP is AIN0, and AINN is AIN3*/
-	ADS1118_CONFIG_MUX_DIFF_0_3 = 1,
-	/*AINP is AIN1, and AINN is AIN3*/
-	ADS1118_CONFIG_MUX_DIFF_1_3 = 2,
-	/*AINP is AIN2, and AINN is AIN3*/
-	ADS1118_CONFIG_MUX_DIFF_2_3 = 3,
-	/*AINP is AIN0, and AINN is GND*/
-	ADS1118_CONFIG_MUX_SINGLE_0 = 4,
-	/*AINP is AIN1, and AINN is GND*/
-	ADS1118_CONFIG_MUX_SINGLE_1 = 5,
-	/*AINP is AIN2, and AINN is GND*/
-	ADS1118_CONFIG_MUX_SINGLE_2 = 6,
-	/*AINP is AIN3, and AINN is GND*/
-	ADS1118_CONFIG_MUX_SINGLE_3 = 7,
+	ADS1118_CONFIG_MUX_DIFF_0_1 = 0, /*!< AINP is AIN0, and AINN is AIN1 (default). */
+	ADS1118_CONFIG_MUX_DIFF_0_3 = 1, /*!< AINP is AIN0, and AINN is AIN3. */
+	ADS1118_CONFIG_MUX_DIFF_1_3 = 2, /*!< AINP is AIN1, and AINN is AIN3. */
+	ADS1118_CONFIG_MUX_DIFF_2_3 = 3, /*!< AINP is AIN2, and AINN is AIN3. */
+	ADS1118_CONFIG_MUX_SINGLE_0 = 4, /*!< AINP is AIN0, and AINN is GND. */
+	ADS1118_CONFIG_MUX_SINGLE_1 = 5, /*!< AINP is AIN1, and AINN is GND. */
+	ADS1118_CONFIG_MUX_SINGLE_2 = 6, /*!< AINP is AIN2, and AINN is GND. */
+	ADS1118_CONFIG_MUX_SINGLE_3 = 7, /*!< AINP is AIN3, and AINN is GND. */
 };
 
 enum {
-	/* ADS1118, samples per second */
-	/* 8, 128 samples per second */
-	ADS1118_CONFIG_DR_8_128 = 0,
-	/* 16, 250 samples per second */
-	ADS1118_CONFIG_DR_16_250 = 1,
-	/* 32, 490 samples per second */
-	ADS1118_CONFIG_DR_32_490 = 2,
-	/* 64, 920 samples per second */
-	ADS1118_CONFIG_DR_64_920 = 3,
-	/* 128, 1600 samples per second (default) */
-	ADS1118_CONFIG_DR_128_1600 = 4,
-	/* 250, 2400 samples per second */
-	ADS1118_CONFIG_DR_250_2400 = 5,
-	/* 475, 3300 samples per second */
-	ADS1118_CONFIG_DR_475_3300 = 6,
-	/* 860, 3300 samples per second */
-	ADS1118_CONFIG_DR_860_3300 = 7,
-	/* Default data rate */
-	ADS1118_CONFIG_DR_DEFAULT = ADS1118_CONFIG_DR_128_1600
+	ADS1118_CONFIG_DR_8_128 = 0,    /*!< 8, 128 samples per second. */
+	ADS1118_CONFIG_DR_16_250 = 1,   /*!< 16, 250 samples per second. */
+	ADS1118_CONFIG_DR_32_490 = 2,   /*!< 32, 490 samples per second. */
+	ADS1118_CONFIG_DR_64_920 = 3,   /*!< 64, 920 samples per second. */
+	ADS1118_CONFIG_DR_128_1600 = 4, /*!< 128, 1600 samples per second (default). */
+	ADS1118_CONFIG_DR_250_2400 = 5, /*!< 250, 2400 samples per second. */
+	ADS1118_CONFIG_DR_475_3300 = 6, /*!< 475, 3300 samples per second. */
+	ADS1118_CONFIG_DR_860_3300 = 7, /*!< 860, 3300 samples per second. */
+	ADS1118_CONFIG_DR_DEFAULT = ADS1118_CONFIG_DR_128_1600 /*!< Default data rate. */
 };
 
 enum {
-	/* +/-6.144V range = Gain 2/3 */
-	ADS1118_CONFIG_PGA_6144 = 0,
-	/* +/-4.096V range = Gain 1 */
-	ADS1118_CONFIG_PGA_4096 = 1,
-	/* +/-2.048V range = Gain 2 (default) */
-	ADS1118_CONFIG_PGA_2048 = 2,
-	/* +/-1.024V range = Gain 4 */
-	ADS1118_CONFIG_PGA_1024 = 3,
-	/* +/-0.512V range = Gain 8 */
-	ADS1118_CONFIG_PGA_512 = 4,
-	/* +/-0.256V range = Gain 16 */
-	ADS1118_CONFIG_PGA_256 = 5
+	ADS1118_CONFIG_PGA_6144 = 0, /*!< +/-6.144V range = Gain 2/3. */
+	ADS1118_CONFIG_PGA_4096 = 1, /*!< +/-4.096V range = Gain 1. */
+	ADS1118_CONFIG_PGA_2048 = 2, /*!< +/-2.048V range = Gain 2 (default). */
+	ADS1118_CONFIG_PGA_1024 = 3, /*!< +/-1.024V range = Gain 4. */
+	ADS1118_CONFIG_PGA_512 = 4,  /*!< +/-0.512V range = Gain 8. */
+	ADS1118_CONFIG_PGA_256 = 5   /*!< +/-0.256V range = Gain 16. */
 };
 
 enum {
-	/* Continuous conversion mode */
-	ADS1118_CONFIG_MODE_CONTINUOUS = 0,
-	/* Single-shot mode (default) */
-	ADS1118_CONFIG_MODE_SINGLE_SHOT = 1,
+	ADS1118_CONFIG_MODE_CONTINUOUS = 0,  /*!< Continuous conversion mode. */
+	ADS1118_CONFIG_MODE_SINGLE_SHOT = 1, /*!< Single-shot mode (default). */
 };
 
 enum {
-	/* ADC mode (default) */
-	ADS1118_CONFIG_MODE_TS_ADC = 0,
-	/* Temperature sensor mode */
-	ADS1118_CONFIG_MODE_TS_TEMP = 1,
+	ADS1118_CONFIG_MODE_TS_ADC = 0,  /*!< ADC mode (default). */
+	ADS1118_CONFIG_MODE_TS_TEMP = 1, /*!< Temperature sensor mode. */
 };
 
 enum {
-	/* No pull-up (default)*/
-	ADS1118_CONFIG_PULL_UP_DISABLE = 0,
-	/* Pull-up enabled */
-	ADS1118_CONFIG_PULL_UP_ENABLE = 1,
+	ADS1118_CONFIG_PULL_UP_DISABLE = 0, /*!< No pull-up (default). */
+	ADS1118_CONFIG_PULL_UP_ENABLE = 1,  /*!< Pull-up enabled. */
 };
 
 enum {
-	/* No operation */
-	ADS1118_CONFIG_NOP_NOP = 0,
-	/* Update the config register (default) */
-	ADS1118_CONFIG_NOP_UPDATE = 1,
+	ADS1118_CONFIG_NOP_NOP = 0,    /*!< No operation. */
+	ADS1118_CONFIG_NOP_UPDATE = 1, /*!< Update the config register (default). */
 };
 
 enum {
-	/* Conversion ready */
-	ADS1118_CONFIG_CNV_RDY = 0,
-	/* Conversion not ready */
-	ADS1118_CONFIG_CNV_NOT_READY = 1,
+	ADS1118_CONFIG_CNV_RDY = 0,       /*!< Conversion ready. */
+	ADS1118_CONFIG_CNV_NOT_READY = 1, /*!< Conversion not ready */
 };
 
 struct ads1118_config {
@@ -223,29 +187,29 @@ static int ads1118_config_reg_write(const struct device *dev, uint16_t write_dat
 	return 0;
 }
 
-static inline int ads1118_configure_gain(const struct device *dev,
-					 const struct adc_channel_cfg *channel_cfg)
+static int ads1118_configure_gain(const struct device *dev,
+				  const struct adc_channel_cfg *channel_cfg)
 {
 	int config = 0;
 
 	switch (channel_cfg->gain) {
 	case ADC_GAIN_2_3:
-		config |= ADS1118_CONFIG_PGA(ADS1118_CONFIG_PGA_6144);
+		config = ADS1118_CONFIG_PGA_6144;
 		break;
 	case ADC_GAIN_1:
-		config |= ADS1118_CONFIG_PGA(ADS1118_CONFIG_PGA_4096);
+		config = ADS1118_CONFIG_PGA_4096;
 		break;
 	case ADC_GAIN_2:
-		config |= ADS1118_CONFIG_PGA(ADS1118_CONFIG_PGA_2048);
+		config = ADS1118_CONFIG_PGA_2048;
 		break;
 	case ADC_GAIN_4:
-		config |= ADS1118_CONFIG_PGA(ADS1118_CONFIG_PGA_1024);
+		config = ADS1118_CONFIG_PGA_1024;
 		break;
 	case ADC_GAIN_8:
-		config |= ADS1118_CONFIG_PGA(ADS1118_CONFIG_PGA_512);
+		config = ADS1118_CONFIG_PGA_512;
 		break;
 	case ADC_GAIN_16:
-		config |= ADS1118_CONFIG_PGA(ADS1118_CONFIG_PGA_256);
+		config = ADS1118_CONFIG_PGA_256;
 		break;
 	default:
 		return -EINVAL;
@@ -254,7 +218,7 @@ static inline int ads1118_configure_gain(const struct device *dev,
 	return config;
 }
 
-static inline int ads1118_acq_time_to_dr(const struct device *dev, uint16_t acq_time)
+static int ads1118_acq_time_to_dr(const struct device *dev, uint16_t acq_time)
 {
 	struct ads1118_data *data = dev->data;
 	int odr = -EINVAL;
@@ -263,8 +227,10 @@ static inline int ads1118_acq_time_to_dr(const struct device *dev, uint16_t acq_
 
 	if (acq_time == ADC_ACQ_TIME_DEFAULT) {
 		acq_value = ADS1118_CONFIG_DR_DEFAULT;
-	} else if (ADC_ACQ_TIME_UNIT(acq_time) != ADC_ACQ_TIME_TICKS) {
-		return -EINVAL;
+	} else {
+		if (ADC_ACQ_TIME_UNIT(acq_time) != ADC_ACQ_TIME_TICKS) {
+			return -EINVAL;
+		}
 	}
 
 	switch (acq_value) {
@@ -312,28 +278,27 @@ static inline int ads1118_acq_time_to_dr(const struct device *dev, uint16_t acq_
 	return odr;
 }
 
-static int ads1118_setup(const struct device *dev, const struct adc_channel_cfg *channel_cfg)
+static int ads1118_configure_multiplexer(const struct device *dev,
+					 const struct adc_channel_cfg *channel_cfg)
 {
 	const struct ads1118_config *ads_config = dev->config;
 	struct ads1118_data *data = dev->data;
-	int dr;
-	uint16_t config = 0;
-	uint16_t gain = 0;
+	int config = 0;
 
 	if (ads_config->multiplexer) {
 		/* the device has an input multiplexer */
 		if (channel_cfg->differential) {
 			if (channel_cfg->input_positive == 0 && channel_cfg->input_negative == 1) {
-				config |= ADS1118_CONFIG_MUX(ADS1118_CONFIG_MUX_DIFF_0_1);
+				config = ADS1118_CONFIG_MUX_DIFF_0_1;
 			} else if (channel_cfg->input_positive == 0 &&
 				   channel_cfg->input_negative == 3) {
-				config |= ADS1118_CONFIG_MUX(ADS1118_CONFIG_MUX_DIFF_0_3);
+				config = ADS1118_CONFIG_MUX_DIFF_0_3;
 			} else if (channel_cfg->input_positive == 1 &&
 				   channel_cfg->input_negative == 3) {
-				config |= ADS1118_CONFIG_MUX(ADS1118_CONFIG_MUX_DIFF_1_3);
+				config = ADS1118_CONFIG_MUX_DIFF_1_3;
 			} else if (channel_cfg->input_positive == 2 &&
 				   channel_cfg->input_negative == 3) {
-				config |= ADS1118_CONFIG_MUX(ADS1118_CONFIG_MUX_DIFF_2_3);
+				config = ADS1118_CONFIG_MUX_DIFF_2_3;
 			} else {
 				LOG_ERR("unsupported input positive '%d' and input negative '%d'",
 					channel_cfg->input_positive, channel_cfg->input_negative);
@@ -341,13 +306,13 @@ static int ads1118_setup(const struct device *dev, const struct adc_channel_cfg 
 			}
 		} else {
 			if (channel_cfg->input_positive == 0) {
-				config |= ADS1118_CONFIG_MUX(ADS1118_CONFIG_MUX_SINGLE_0);
+				config = ADS1118_CONFIG_MUX_SINGLE_0;
 			} else if (channel_cfg->input_positive == 1) {
-				config |= ADS1118_CONFIG_MUX(ADS1118_CONFIG_MUX_SINGLE_1);
+				config = ADS1118_CONFIG_MUX_SINGLE_1;
 			} else if (channel_cfg->input_positive == 2) {
-				config |= ADS1118_CONFIG_MUX(ADS1118_CONFIG_MUX_SINGLE_2);
+				config = ADS1118_CONFIG_MUX_SINGLE_2;
 			} else if (channel_cfg->input_positive == 3) {
-				config |= ADS1118_CONFIG_MUX(ADS1118_CONFIG_MUX_SINGLE_3);
+				config = ADS1118_CONFIG_MUX_SINGLE_3;
 			} else {
 				LOG_ERR("unsupported input positive '%d'",
 					channel_cfg->input_positive);
@@ -365,19 +330,34 @@ static int ads1118_setup(const struct device *dev, const struct adc_channel_cfg 
 	}
 	data->differential = channel_cfg->differential;
 
+	return config;
+}
+
+static int ads1118_setup(const struct device *dev, const struct adc_channel_cfg *channel_cfg)
+{
+	const struct ads1118_config *ads_config = dev->config;
+	int ret;
+	uint16_t config = 0;
+
 	config |= ADS1118_CONFIG_MODE(ADS1118_CONFIG_MODE_SINGLE_SHOT);
 
-	gain = ads1118_configure_gain(dev, channel_cfg);
-	if (gain < 0) {
-		return gain;
+	ret = ads1118_configure_multiplexer(dev, channel_cfg);
+	if (ret < 0) {
+		return ret;
 	}
-	config |= gain;
+	config |= ADS1118_CONFIG_MUX(ret);
 
-	dr = ads1118_acq_time_to_dr(dev, channel_cfg->acquisition_time);
-	if (dr < 0) {
-		return dr;
+	ret = ads1118_configure_gain(dev, channel_cfg);
+	if (ret < 0) {
+		return ret;
 	}
-	config |= ADS1118_CONFIG_DR(dr);
+	config |= ADS1118_CONFIG_PGA(ret);
+
+	ret = ads1118_acq_time_to_dr(dev, channel_cfg->acquisition_time);
+	if (ret < 0) {
+		return ret;
+	}
+	config |= ADS1118_CONFIG_DR(ret);
 
 	if (ads_config->sensor_mode == ADS1118_CONFIG_MODE_TS_TEMP) {
 		config |= ADS1118_CONFIG_TS_MODE(ADS1118_CONFIG_MODE_TS_TEMP);
