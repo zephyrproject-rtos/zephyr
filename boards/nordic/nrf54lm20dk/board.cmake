@@ -7,5 +7,15 @@ elseif(CONFIG_SOC_NRF54LM20A_ENGA_CPUFLPR)
   board_runner_args(jlink "--speed=4000")
 endif()
 
+if(CONFIG_BOARD_NRF54LM20DK_NRF54LM20A_CPUAPP_NS)
+  set(TFM_PUBLIC_KEY_FORMAT "full")
+endif()
+
+if(CONFIG_TFM_FLASH_MERGED_BINARY)
+  set_property(TARGET runners_yaml_props_target PROPERTY hex_file tfm_merged.hex)
+endif()
+
+set(TFM_PLATFORM "nordic_nrf/nrf54lm20a_cpuapp")
+
 include(${ZEPHYR_BASE}/boards/common/nrfutil.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
