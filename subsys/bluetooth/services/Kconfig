@@ -10,6 +10,8 @@ rsource "Kconfig.ans"
 
 rsource "Kconfig.dis"
 
+rsource "Kconfig.gap_svc"
+
 rsource "Kconfig.cts"
 
 rsource "Kconfig.hrs"
