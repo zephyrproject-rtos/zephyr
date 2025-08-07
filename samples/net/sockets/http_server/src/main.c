@@ -19,8 +19,11 @@
 #include <zephyr/drivers/led.h>
 #include <zephyr/data/json.h>
 #include <zephyr/sys/util_macro.h>
-#include <sample_usbd.h>
 #include <zephyr/net/net_config.h>
+
+#if CONFIG_USB_DEVICE_STACK_NEXT
+#include <sample_usbd.h>
+#endif
 
 #include "ws.h"
 
