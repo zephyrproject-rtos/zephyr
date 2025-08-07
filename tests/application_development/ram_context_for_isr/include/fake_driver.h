@@ -26,7 +26,12 @@ extern "C" {
 
 #else
 /* For all the other platforms, use the last available IRQ line for testing. */
+#ifdef CONFIG_MULTI_LEVEL_INTERRUPTS
+#define TEST_IRQ_NUM (CONFIG_2ND_LVL_ISR_TBL_OFFSET - 1)
+#else
 #define TEST_IRQ_NUM  (CONFIG_NUM_IRQS - 1)
+#endif
+
 #define TEST_IRQ_PRIO 1
 #endif
 
