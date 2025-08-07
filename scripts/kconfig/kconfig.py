@@ -294,7 +294,7 @@ def write_kconfig_filenames(kconf, kconfig_list_path):
 
     with open(kconfig_list_path, 'w') as out:
         for path in sorted({os.path.realpath(os.path.join(kconf.srctree, path))
-                            for path in kconf.kconfig_filenames}):
+                            for path in set(kconf.kconfig_filenames)}):
             print(path, file=out)
 
 
