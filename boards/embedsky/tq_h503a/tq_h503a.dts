@@ -11,7 +11,7 @@
 
 / {
 	model = "TQ H503A board";
-	compatible = "st,tq-h503a";
+	compatible = "embedsky,tq-h503a";
 
 	#address-cells = <1>;
 	#size-cells = <1>;

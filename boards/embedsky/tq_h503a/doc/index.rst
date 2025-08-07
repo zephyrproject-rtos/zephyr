@@ -129,11 +129,11 @@ Once compiled, set the and OPENOCD_ROOT variables in
 :zephyr_file:`boards/embedsky/tq_h503a/board.cmake` to point to the OpenOCD binary and its scripts,  before
 including the common openocd.board.cmake file:
 
-   .. code-block:: none
+.. code-block:: none
 
-      set(OPENOCD_ROOT "<path_to_openocd_stm32_repo>")
-      set(OPENOCD "${OPENOCD_ROOT}/src/openocd" CACHE FILEPATH "" FORCE)
-      set(OPENOCD_DEFAULT_PATH ${OPENOCD_ROOT}/tcl)
+   set(OPENOCD_ROOT "<path_to_openocd_stm32_repo>")
+   set(OPENOCD "${OPENOCD_ROOT}/src/openocd" CACHE FILEPATH "" FORCE)
+   set(OPENOCD_DEFAULT_PATH ${OPENOCD_ROOT}/tcl)
 
 Flashing
 ========
