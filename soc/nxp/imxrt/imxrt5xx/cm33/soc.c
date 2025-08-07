@@ -99,6 +99,12 @@ extern void z_arm_pendsv(void);
 extern void sys_clock_isr(void);
 extern void z_arm_exc_spurious(void);
 
+#ifdef CONFIG_USE_SWITCH
+#define PENDSV_VEC z_arm_exc_spurious
+#else
+#define PENDSV_VEC z_arm_pendsv
+#endif
+
 __imx_boot_ivt_section void (*const image_vector_table[])(void) = {
 	(void (*)())(z_main_stack + CONFIG_MAIN_STACK_SIZE), /* 0x00 */
 	z_arm_reset,                                         /* 0x04 */
@@ -118,7 +124,7 @@ __imx_boot_ivt_section void (*const image_vector_table[])(void) = {
 	z_arm_svc,                      /* 0x2C */
 	z_arm_debug_monitor,            /* 0x30 */
 	(void (*)())image_vector_table, /* 0x34, imageLoadAddress. */
-	z_arm_pendsv,                   /* 0x38 */
+	PENDSV_VEC,                     /* 0x38 */
 #if defined(CONFIG_SYS_CLOCK_EXISTS) && defined(CONFIG_CORTEX_M_SYSTICK_INSTALL_ISR)
 	sys_clock_isr, /* 0x3C */
 #else
