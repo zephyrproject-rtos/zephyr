@@ -3112,6 +3112,104 @@ ZTEST(net_socket_udp, test_40_clamp_udp_tcp_port_range)
 #endif
 }
 
+static void test_dgram_peer_addr_reset(int sock_c, int sock_s1, int sock_s2,
+				       struct sockaddr *addr_c, socklen_t addrlen_c,
+				       struct sockaddr *addr_s1, socklen_t addrlen_s1,
+				       struct sockaddr *addr_s2, socklen_t addrlen_s2)
+{
+	uint8_t tx_buf = 0xab;
+	uint8_t rx_buf;
+	struct sockaddr_storage unspec = {
+		.ss_family = AF_UNSPEC,
+	};
+	int rv;
+
+	rv = zsock_bind(sock_c, addr_c, addrlen_c);
+	zassert_equal(rv, 0, "client bind failed");
+
+	rv = zsock_bind(sock_s1, addr_s1, addrlen_s1);
+	zassert_equal(rv, 0, "server bind failed");
+
+	rv = zsock_bind(sock_s2, addr_s2, addrlen_s2);
+	zassert_equal(rv, 0, "server bind failed");
+
+	/* Connect client socket to a specific peer address. */
+	rv = zsock_connect(sock_c, addr_s1, addrlen_s1);
+	zassert_equal(rv, 0, "connect failed");
+
+	/* Verify that a datagram is not received from other address */
+	rv = zsock_sendto(sock_s2, &tx_buf, sizeof(tx_buf), 0, addr_c, addrlen_c);
+	zassert_equal(rv, sizeof(tx_buf), "send failed");
+
+	/* Give the packet a chance to go through the net stack */
+	k_msleep(10);
+
+	rv = zsock_recv(sock_c, &rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT);
+	zassert_equal(rv, -1, "recv should've failed");
+	zassert_equal(errno, EAGAIN, "incorrect errno");
+
+	/* Reset peer address */
+	rv = zsock_connect(sock_c, (struct sockaddr *)&unspec, sizeof(unspec));
+	zassert_equal(rv, 0, "connect failed");
+
+	/* Verify that a datagram can be received from other address */
+	rv = zsock_sendto(sock_s2, &tx_buf, sizeof(tx_buf), 0, addr_c, addrlen_c);
+	zassert_equal(rv, sizeof(tx_buf), "send failed");
+
+	/* Give the packet a chance to go through the net stack */
+	k_msleep(10);
+
+	rx_buf = 0;
+	rv = zsock_recv(sock_c, &rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT);
+	zassert_equal(rv, sizeof(rx_buf), "recv failed %d", errno);
+	zassert_equal(rx_buf, tx_buf, "wrong data");
+
+	rv = zsock_close(sock_c);
+	zassert_equal(rv, 0, "close failed");
+	rv = zsock_close(sock_s1);
+	zassert_equal(rv, 0, "close failed");
+	rv = zsock_close(sock_s2);
+	zassert_equal(rv, 0, "close failed");
+}
+
+ZTEST(net_socket_udp, test_41_v4_dgram_peer_addr_reset)
+{
+	int client_sock;
+	int server_sock_1;
+	int server_sock_2;
+	struct sockaddr_in client_addr;
+	struct sockaddr_in server_addr_1;
+	struct sockaddr_in server_addr_2;
+
+	prepare_sock_udp_v4(MY_IPV4_ADDR, CLIENT_PORT, &client_sock, &client_addr);
+	prepare_sock_udp_v4(MY_IPV4_ADDR, SERVER_PORT, &server_sock_1, &server_addr_1);
+	prepare_sock_udp_v4(MY_IPV4_ADDR, SERVER_PORT + 1, &server_sock_2, &server_addr_2);
+
+	test_dgram_peer_addr_reset(client_sock, server_sock_1, server_sock_2,
+				   (struct sockaddr *)&client_addr, sizeof(client_addr),
+				   (struct sockaddr *)&server_addr_1, sizeof(server_addr_1),
+				   (struct sockaddr *)&server_addr_2, sizeof(server_addr_2));
+}
+
+ZTEST(net_socket_udp, test_42_v6_dgram_peer_addr_reset)
+{
+	int client_sock;
+	int server_sock_1;
+	int server_sock_2;
+	struct sockaddr_in6 client_addr;
+	struct sockaddr_in6 server_addr_1;
+	struct sockaddr_in6 server_addr_2;
+
+	prepare_sock_udp_v6(MY_IPV6_ADDR, CLIENT_PORT, &client_sock, &client_addr);
+	prepare_sock_udp_v6(MY_IPV6_ADDR, SERVER_PORT, &server_sock_1, &server_addr_1);
+	prepare_sock_udp_v6(MY_IPV6_ADDR, SERVER_PORT + 1, &server_sock_2, &server_addr_2);
+
+	test_dgram_peer_addr_reset(client_sock, server_sock_1, server_sock_2,
+				   (struct sockaddr *)&client_addr, sizeof(client_addr),
+				   (struct sockaddr *)&server_addr_1, sizeof(server_addr_1),
+				   (struct sockaddr *)&server_addr_2, sizeof(server_addr_2));
+}
+
 static void after(void *arg)
 {
 	ARG_UNUSED(arg);
