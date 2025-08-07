@@ -80,7 +80,6 @@ config ARM_PAC_PER_THREAD
 	bool "Set cryptographically secure PAC key per thread"
 	depends on ARM_PAC
 	depends on ENTROPY_DEVICE_RANDOM_GENERATOR || TIMER_RANDOM_GENERATOR
-	depends on !USERSPACE
 	help
 	  Select this option to generate and use unique keys per thread to generate Pointer
 	  Authentication Code.
@@ -115,22 +114,22 @@ choice ARM_PACBTI
 
 config ARM_PACBTI_STANDARD
 	bool "Standard (PACRET + LEAF + BTI)"
-	select ARM_PAC if !USERSPACE
-	select ARM_BTI if !USERSPACE
+	select ARM_PAC
+	select ARM_BTI
 	help
 	  This option instructs the compiler to generate code with all branch protection features
 	  enabled at their standard level.
 
 config ARM_PACBTI_PACRET
 	bool "PACRET only"
-	select ARM_PAC if !USERSPACE
+	select ARM_PAC
 	help
 	  This option instructs the compiler to generate code with return address signing for
 	  all functions that save the return address to memory.
 
 config ARM_PACBTI_PACRET_LEAF
 	bool "PACRET + Leaf"
-	select ARM_PAC if !USERSPACE
+	select ARM_PAC
 	help
 	  This option instructs the compiler to generate code with return address signing for
 	  all functions that save the return address to memory and,
@@ -138,7 +137,7 @@ config ARM_PACBTI_PACRET_LEAF
 
 config ARM_PACBTI_BTI
 	bool "BTI only"
-	select ARM_BTI if !USERSPACE
+	select ARM_BTI
 	help
 	  This option enables Branch Target Identification (BTI), which inserts special landing
 	  pad instructions at valid indirect branch targets. This option does not enable Pointer
@@ -146,8 +145,8 @@ config ARM_PACBTI_BTI
 
 config ARM_PACBTI_PACRET_BTI
 	bool "PACRET + BTI"
-	select ARM_PAC if !USERSPACE
-	select ARM_BTI if !USERSPACE
+	select ARM_PAC
+	select ARM_BTI
 	help
 	  This option instructs the compiler to generate code with return address signing for
 	  all functions that save the return address to memory and,
@@ -155,8 +154,8 @@ config ARM_PACBTI_PACRET_BTI
 
 config ARM_PACBTI_PACRET_LEAF_BTI
 	bool "PACRET + Leaf + BTI"
-	select ARM_PAC if !USERSPACE
-	select ARM_BTI if !USERSPACE
+	select ARM_PAC
+	select ARM_BTI
 	help
 	  This option instructs the compiler to generate code with return address signing for
 	  all functions that save the return address to memory and,

@@ -316,6 +316,12 @@ SECTION_FUNC(TEXT, z_arm_pendsv)
 
 #ifdef CONFIG_ARM_PAC_PER_THREAD
     /* Read thread's dedicated PAC key and write them in the privileged PAC key registers.
+     * Note: There is no way to know the _current thread mode after the thread creation since
+     * `_current->arch.mode` for the userspace thread is set in z_arm_userspace_enter() which
+     * runs after z_arm_pendsv is done. So for now, while switching to an unprivileged thread
+     * the same PAC keys are set in both privileged and unprivileged PAC key registers.
+     * TODO: find a way to not set privileged PAC keys if the thread being switched into is an
+     * unprivileged thread.
      */
     add r0, r2, #_thread_offset_to_pac_keys
     ldmia r0!, {r3-r6}

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015 Intel corporation
+ * Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,7 +35,8 @@ void arch_irq_offload(irq_offload_routine_t routine, const void *parameter)
 	offload_routine = routine;
 	offload_param = parameter;
 
-	__asm__ volatile ("svc %[id]"
+	__asm__ volatile ("svc %[id]\n"
+			  IF_ENABLED(CONFIG_ARM_BTI, ("bti"))
 			  :
 			  : [id] "i" (_SVC_CALL_IRQ_OFFLOAD)
 			  : "memory");
