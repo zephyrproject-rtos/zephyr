@@ -1,0 +1,14 @@
+# Copyright (c) 2025 Croxel
+# SPDX-License-Identifier: Apache-2.0
+
+# ALS31300 3D Linear Hall-Effect Sensor configuration options
+
+config ALS31300
+	bool "ALS31300 3D Linear Hall-Effect Sensor"
+	default y
+	depends on DT_HAS_ALLEGRO_ALS31300_ENABLED
+	select I2C
+	help
+	  Enable driver for ALS31300 3D Linear Hall-Effect Sensor.
+	  This sensor provides 12-bit magnetic field measurements
+	  on X, Y, and Z axes via I2C interface.
