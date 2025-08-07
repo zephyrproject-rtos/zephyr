@@ -26,7 +26,7 @@ static const struct device *const domains[] = {
 };
 
 struct domain_data {
-	bool off;
+	bool on;
 	bool synced;
 };
 
@@ -104,7 +104,7 @@ static int manager_set_domain(const struct device *dev, bool on)
 		 * is ready.
 		 */
 		ret = 0;
-		dev_data->off = !on;
+		dev_data->on = on;
 	}
 
 	if (ret == 0) {
@@ -134,9 +134,9 @@ static int manager_sync_domain_locked(const struct device *dev)
 
 	/*
 	 * Power domains initialize ON so we only need to send a request
-	 * if the expected state of the power domain is OFF.
+	 * if the expected state of the power domain is not ON.
 	 */
-	if (dev_data->off) {
+	if (!dev_data->on) {
 		return manager_set_domain_locked(dev_config->domain, false);
 	}
 
@@ -261,7 +261,7 @@ static int domain_init(const struct device *dev)
 	_CONCAT(GDPWR_GD_, DT_NODE_FULL_NAME_UPPER_TOKEN(node))
 
 #define DOMAIN_DEFINE(node)									\
-	static struct domain_config DOMAIN_NODE_SYMNAME(node, data);				\
+	static struct domain_data DOMAIN_NODE_SYMNAME(node, data);				\
 	static const struct domain_config DOMAIN_NODE_SYMNAME(node, config) = {			\
 		.domain = DOMAIN_NODE_TO_GDPWR_ENUM(node),					\
 	};											\
