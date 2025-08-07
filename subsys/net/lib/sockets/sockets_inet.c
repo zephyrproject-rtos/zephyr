@@ -1061,6 +1061,68 @@ out:
 	return ret;
 }
 
+static int add_hoplimit(struct net_context *ctx,
+			struct net_pkt *pkt,
+			struct msghdr *msg)
+{
+	int ret = -ENOTSUP;
+	struct net_pkt_cursor backup;
+
+	net_pkt_cursor_backup(pkt, &backup);
+	net_pkt_cursor_init(pkt);
+
+	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {
+		NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv4_access,
+						      struct net_ipv4_hdr);
+		int ttl;
+		struct net_ipv4_hdr *ipv4_hdr;
+
+		ipv4_hdr = (struct net_ipv4_hdr *)net_pkt_get_data(
+							pkt, &ipv4_access);
+		if (ipv4_hdr == NULL ||
+		    net_pkt_acknowledge_data(pkt, &ipv4_access) ||
+		    net_pkt_skip(pkt, net_pkt_ipv4_opts_len(pkt))) {
+			ret = -ENOBUFS;
+			goto out;
+		}
+
+		ttl = ipv4_hdr->ttl;
+
+		ret = insert_pktinfo(msg, IPPROTO_IP, IP_TTL,
+				     &ttl, sizeof(ttl));
+
+		goto out;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == AF_INET6) {
+		NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv6_access,
+						      struct net_ipv6_hdr);
+		int hop_limit;
+		struct net_ipv6_hdr *ipv6_hdr;
+
+		ipv6_hdr = (struct net_ipv6_hdr *)net_pkt_get_data(
+							pkt, &ipv6_access);
+		if (ipv6_hdr == NULL ||
+		    net_pkt_acknowledge_data(pkt, &ipv6_access) ||
+		    net_pkt_skip(pkt, net_pkt_ipv6_ext_len(pkt))) {
+			ret = -ENOBUFS;
+			goto out;
+		}
+
+		hop_limit = ipv6_hdr->hop_limit;
+
+		ret = insert_pktinfo(msg, IPPROTO_IPV6, IPV6_HOPLIMIT,
+				     &hop_limit, sizeof(hop_limit));
+
+		goto out;
+	}
+
+out:
+	net_pkt_cursor_restore(pkt, &backup);
+
+	return ret;
+}
+
 static int update_msg_controllen(struct msghdr *msg)
 {
 	struct cmsghdr *cmsg;
@@ -1227,6 +1289,13 @@ static ssize_t zsock_recv_dgram(struct net_context *ctx,
 				if (IS_ENABLED(CONFIG_NET_CONTEXT_RECV_PKTINFO) &&
 				    net_context_is_recv_pktinfo_set(ctx)) {
 					if (add_pktinfo(ctx, pkt, msg) < 0) {
+						msg->msg_flags |= ZSOCK_MSG_CTRUNC;
+					}
+				}
+
+				if (IS_ENABLED(CONFIG_NET_CONTEXT_RECV_HOPLIMIT) &&
+				    net_context_is_recv_hoplimit_set(ctx)) {
+					if (add_hoplimit(ctx, pkt, msg) < 0) {
 						msg->msg_flags |= ZSOCK_MSG_CTRUNC;
 					}
 				}
@@ -2584,6 +2653,23 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 			break;
 
+		case IP_RECVTTL:
+			if (IS_ENABLED(CONFIG_NET_IPV4) &&
+				IS_ENABLED(NET_CONTEXT_RECV_HOPLIMIT)) {
+				ret = net_context_set_option(ctx,
+								 NET_OPT_RECV_HOPLIMIT,
+								 optval,
+								 optlen);
+				if (ret < 0) {
+					errno = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+
+			break;
+
 		case IP_MULTICAST_IF:
 			if (IS_ENABLED(CONFIG_NET_IPV4)) {
 				return ipv4_multicast_if(ctx, optval, optlen, false);
@@ -2694,6 +2780,23 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 							     NET_OPT_RECV_PKTINFO,
 							     optval,
 							     optlen);
+				if (ret < 0) {
+					errno  = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+
+			break;
+
+		case IPV6_RECVHOPLIMIT:
+			if (IS_ENABLED(CONFIG_NET_IPV6) &&
+				IS_ENABLED(CONFIG_NET_CONTEXT_RECV_HOPLIMIT)) {
+				ret = net_context_set_option(ctx,
+								 NET_OPT_RECV_HOPLIMIT,
+								 optval,
+								 optlen);
 				if (ret < 0) {
 					errno  = -ret;
 					return -1;
