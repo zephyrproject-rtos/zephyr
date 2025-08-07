@@ -273,10 +273,24 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
     orrs ip, ip, #1
     /* Store (unprivileged) mode in thread's mode state variable */
     str r1, [r0, #_thread_offset_to_mode]
+
+#ifdef CONFIG_ARM_PAC_PER_THREAD
+    /* Read thread's dedicated PAC key and since we are in unprivileged mode write them in the
+     * unprivileged PAC key registers.
+     * This needs to be done before we switch to unprivileged mode.
+     */
+    add r1, r0, #_thread_offset_to_pac_keys
+    ldmia r1!, {r3-r6}
+    msr  PAC_KEY_U_0, r3
+    msr  PAC_KEY_U_1, r4
+    msr  PAC_KEY_U_2, r5
+    msr  PAC_KEY_U_3, r6
+    clrm {r3-r6}
+#endif
 #endif
     dsb
     msr CONTROL, ip
-#endif
+#endif /* CONFIG_CPU_AARCH32_CORTEX_R */
 
     /* ISB is not strictly necessary here (stack pointer is not being
      * touched), but it's recommended to avoid executing pre-fetched
