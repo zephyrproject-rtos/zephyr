@@ -42,16 +42,16 @@ LOG_MODULE_REGISTER(net_conn, CONFIG_NET_CONN_LOG_LEVEL);
 /** Local address set */
 #define NET_CONN_LOCAL_ADDR_SET		BIT(2)
 
-/** Local port set */
+/** Remote port set */
 #define NET_CONN_REMOTE_PORT_SPEC	BIT(3)
 
-/** Remote port set */
+/** Local port set */
 #define NET_CONN_LOCAL_PORT_SPEC	BIT(4)
 
-/** Local address specified */
+/** Remote address specified */
 #define NET_CONN_REMOTE_ADDR_SPEC	BIT(5)
 
-/** Remote address specified */
+/** Local address specified */
 #define NET_CONN_LOCAL_ADDR_SPEC	BIT(6)
 
 #define NET_CONN_RANK(_flags)		(_flags & 0x78)
