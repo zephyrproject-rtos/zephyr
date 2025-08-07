@@ -80,8 +80,11 @@ NET_BUF_POOL_FIXED_DEFINE(disc_pool, 1,
 				sizeof(struct bt_l2cap_disconn_req)),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
-#define l2cap_lookup_ident(conn, ident) __l2cap_lookup_ident(conn, ident, false)
-#define l2cap_remove_ident(conn, ident) __l2cap_lookup_ident(conn, ident, true)
+#define ANY_OPCODE 0x100
+#define l2cap_lookup_ident(conn, ident, req_opcode)                                                \
+	__l2cap_lookup_ident(conn, ident, req_opcode, false)
+#define l2cap_remove_ident(conn, ident, req_opcode)                                                \
+	__l2cap_lookup_ident(conn, ident, req_opcode, true)
 
 static sys_slist_t servers = SYS_SLIST_STATIC_INIT(&servers);
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
@@ -139,13 +142,15 @@ static struct bt_l2cap_le_chan *l2cap_chan_alloc_cid(struct bt_conn *conn,
 }
 
 static struct bt_l2cap_le_chan *
-__l2cap_lookup_ident(struct bt_conn *conn, uint16_t ident, bool remove)
+__l2cap_lookup_ident(struct bt_conn *conn, uint16_t ident, uint16_t req_opcode, bool remove)
 {
 	struct bt_l2cap_chan *chan;
 	sys_snode_t *prev = NULL;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
-		if (BT_L2CAP_LE_CHAN(chan)->ident == ident) {
+		if ((BT_L2CAP_LE_CHAN(chan)->ident == ident) &&
+		    ((BT_L2CAP_LE_CHAN(chan)->pending_req == req_opcode) ||
+		     (req_opcode == ANY_OPCODE))) {
 			if (remove) {
 				sys_slist_remove(&conn->channels, prev,
 						 &chan->node);
@@ -303,7 +308,7 @@ static void l2cap_rtx_timeout(struct k_work *work)
 	bt_l2cap_chan_del(&chan->chan);
 
 	/* Remove other channels if pending on the same ident */
-	while ((chan = l2cap_remove_ident(conn, chan->ident))) {
+	while ((chan = l2cap_remove_ident(conn, chan->ident, chan->pending_req))) {
 		bt_l2cap_chan_del(&chan->chan);
 	}
 }
@@ -523,14 +528,22 @@ static int l2cap_le_conn_req(struct bt_l2cap_le_chan *ch)
 {
 	struct net_buf *buf;
 	struct bt_l2cap_le_conn_req *req;
+	uint8_t ident;
 
-	ch->ident = get_ident();
+	ident = get_ident();
 
-	buf = l2cap_create_le_sig_pdu(BT_L2CAP_LE_CONN_REQ,
-				      ch->ident, sizeof(*req));
+	buf = l2cap_create_le_sig_pdu(BT_L2CAP_LE_CONN_REQ, ident, sizeof(*req));
 	if (!buf) {
 		return -ENOMEM;
 	}
+
+	/* TODO Ident handling/setting should ideally be done in l2cap_chan_send_req after the
+	 * request is successfully sent on the channel but will require special considerations for
+	 * functions such as l2cap_ecred_conn_req and bt_l2cap_ecred_chan_reconfigure where the
+	 * ident is set for multiple channels, but the request is only sent on one.
+	 */
+	ch->ident = ident;
+	ch->pending_req = BT_L2CAP_LE_CONN_REQ;
 
 	req = net_buf_add(buf, sizeof(*req));
 	req->psm = sys_cpu_to_le16(ch->psm);
@@ -590,6 +603,7 @@ static int l2cap_ecred_conn_req(struct bt_l2cap_chan **chan, int channels)
 			 "The MTU shall be the same for channels in the same request.");
 
 		ch->ident = ident;
+		ch->pending_req = BT_L2CAP_ECRED_CONN_REQ;
 
 		net_buf_add_le16(buf, ch->rx.cid);
 	}
@@ -1781,7 +1795,7 @@ static void le_ecred_reconf_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 	rsp = net_buf_pull_mem(buf, sizeof(*rsp));
 	result = sys_le16_to_cpu(rsp->result);
 
-	while ((ch = l2cap_lookup_ident(conn, ident))) {
+	while ((ch = l2cap_lookup_ident(conn, ident, BT_L2CAP_ECRED_RECONF_REQ))) {
 		/* Stop timer started on REQ send. The timer is only set on one
 		 * of the channels, but we don't want to make assumptions on
 		 * which one it is.
@@ -1794,6 +1808,7 @@ static void le_ecred_reconf_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 
 		ch->pending_rx_mtu = 0;
 		ch->ident = 0U;
+		ch->pending_req = 0U;
 
 		if (ch->chan.ops->reconfigured) {
 			ch->chan.ops->reconfigured(&ch->chan);
@@ -1939,7 +1954,7 @@ static void le_ecred_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 
 	LOG_DBG("mtu 0x%04x mps 0x%04x credits 0x%04x result %u", mtu, mps, credits, result);
 
-	chan = l2cap_lookup_ident(conn, ident);
+	chan = l2cap_lookup_ident(conn, ident, BT_L2CAP_ECRED_CONN_REQ);
 	if (chan) {
 		psm = chan->psm;
 	} else {
@@ -1949,7 +1964,7 @@ static void le_ecred_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 	switch (result) {
 	case BT_L2CAP_LE_ERR_AUTHENTICATION:
 	case BT_L2CAP_LE_ERR_ENCRYPTION:
-		while ((chan = l2cap_lookup_ident(conn, ident))) {
+		while ((chan = l2cap_lookup_ident(conn, ident, BT_L2CAP_ECRED_CONN_REQ))) {
 
 			/* Cancel RTX work */
 			k_work_cancel_delayable(&chan->rtx_work);
@@ -1969,7 +1984,7 @@ static void le_ecred_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 	case BT_L2CAP_LE_ERR_SCID_IN_USE:
 	/* Some connections refused – not enough resources available */
 	case BT_L2CAP_LE_ERR_NO_RESOURCES:
-		while ((chan = l2cap_lookup_ident(conn, ident))) {
+		while ((chan = l2cap_lookup_ident(conn, ident, BT_L2CAP_ECRED_CONN_REQ))) {
 			struct bt_l2cap_chan *c;
 
 			/* Cancel RTX work */
@@ -2025,6 +2040,7 @@ static void le_ecred_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 			chan->tx.cid = dcid;
 
 			chan->ident = 0U;
+			chan->pending_req = 0U;
 
 			chan->tx.mtu = mtu;
 			chan->tx.mps = mps;
@@ -2045,7 +2061,7 @@ static void le_ecred_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 		break;
 	case BT_L2CAP_LE_ERR_PSM_NOT_SUPP:
 	default:
-		while ((chan = l2cap_remove_ident(conn, ident))) {
+		while ((chan = l2cap_remove_ident(conn, ident, BT_L2CAP_ECRED_CONN_REQ))) {
 			bt_l2cap_chan_del(&chan->chan);
 		}
 		break;
@@ -2084,9 +2100,9 @@ static void le_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 	if (result == BT_L2CAP_LE_SUCCESS ||
 	    result == BT_L2CAP_LE_ERR_AUTHENTICATION ||
 	    result == BT_L2CAP_LE_ERR_ENCRYPTION) {
-		chan = l2cap_lookup_ident(conn, ident);
+		chan = l2cap_lookup_ident(conn, ident, BT_L2CAP_LE_CONN_REQ);
 	} else {
-		chan = l2cap_remove_ident(conn, ident);
+		chan = l2cap_remove_ident(conn, ident, BT_L2CAP_LE_CONN_REQ);
 	}
 
 	if (!chan) {
@@ -2099,6 +2115,7 @@ static void le_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 
 	/* Reset ident since it got a response */
 	chan->ident = 0U;
+	chan->pending_req = 0U;
 
 	switch (result) {
 	case BT_L2CAP_LE_SUCCESS:
@@ -2158,7 +2175,17 @@ static void le_disconn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 		return;
 	}
 
+	chan = l2cap_lookup_ident(conn, ident, BT_L2CAP_DISCONN_REQ);
+	if (!chan) {
+		LOG_ERR("Cannot find channel for ident %u", ident);
+		return;
+	}
+
 	scid = sys_le16_to_cpu(rsp->scid);
+	if (scid != chan->rx.cid) {
+		LOG_ERR("Invalid scid 0x%04x", scid);
+		return;
+	}
 
 	LOG_DBG("dcid 0x%04x scid 0x%04x", sys_le16_to_cpu(rsp->dcid), scid);
 
@@ -2226,7 +2253,7 @@ static void reject_cmd(struct bt_l2cap *l2cap, uint8_t ident,
 	struct bt_conn *conn = l2cap->chan.chan.conn;
 	struct bt_l2cap_le_chan *chan;
 
-	while ((chan = l2cap_remove_ident(conn, ident))) {
+	while ((chan = l2cap_remove_ident(conn, ident, ANY_OPCODE))) {
 		bt_l2cap_chan_del(&chan->chan);
 	}
 }
@@ -3093,6 +3120,7 @@ int bt_l2cap_ecred_chan_reconfigure(struct bt_l2cap_chan **chans, uint16_t mtu)
 		ch = BT_L2CAP_LE_CHAN(chans[j]);
 
 		ch->ident = ident;
+		ch->pending_req = BT_L2CAP_ECRED_RECONF_REQ;
 		ch->pending_rx_mtu = mtu;
 
 		net_buf_add_le16(buf, ch->rx.cid);
@@ -3180,6 +3208,7 @@ int bt_l2cap_ecred_chan_reconfigure_explicit(struct bt_l2cap_chan **chans, size_
 		ch = BT_L2CAP_LE_CHAN(chans[i]);
 
 		ch->ident = ident;
+		ch->pending_req = BT_L2CAP_ECRED_RECONF_REQ;
 		ch->pending_rx_mtu = mtu;
 
 		net_buf_add_le16(buf, ch->rx.cid);
@@ -3232,6 +3261,7 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
 	struct net_buf *buf;
 	struct bt_l2cap_disconn_req *req;
 	struct bt_l2cap_le_chan *le_chan;
+	uint8_t ident;
 
 	if (!conn) {
 		return -ENOTCONN;
@@ -3246,13 +3276,15 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
 
 	LOG_DBG("chan %p scid 0x%04x dcid 0x%04x", chan, le_chan->rx.cid, le_chan->tx.cid);
 
-	le_chan->ident = get_ident();
+	ident = get_ident();
 
-	buf = l2cap_create_le_sig_pdu(BT_L2CAP_DISCONN_REQ,
-				      le_chan->ident, sizeof(*req));
+	buf = l2cap_create_le_sig_pdu(BT_L2CAP_DISCONN_REQ, ident, sizeof(*req));
 	if (!buf) {
 		return -ENOMEM;
 	}
+
+	le_chan->ident = ident;
+	le_chan->pending_req = BT_L2CAP_DISCONN_REQ;
 
 	req = net_buf_add(buf, sizeof(*req));
 	req->dcid = sys_cpu_to_le16(le_chan->tx.cid);
