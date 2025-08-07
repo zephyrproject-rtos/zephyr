@@ -6,6 +6,7 @@ config OCPP
 	depends on JSON_LIBRARY
 	depends on WEBSOCKET_CLIENT
 	select EXPERIMENTAL
+	select POSIX_C_LANG_SUPPORT_R
 	help
 	  This option enables the open charge point protocol library
 
