@@ -81,9 +81,15 @@ static unsigned int get_irq_slot(unsigned int start)
 	return TEST_INVALID_IRQ;
 }
 
+#if defined(CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET)
+#define TABLE_OFFSET CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET
+#else
+#define TABLE_OFFSET 0
+#endif
+
 static void *dynamic_shared_irq_suite_setup(void)
 {
-	fixture.irq1 = get_irq_slot(CONFIG_GEN_IRQ_START_VECTOR);
+	fixture.irq1 = get_irq_slot(CONFIG_GEN_IRQ_START_VECTOR + TABLE_OFFSET);
 	zassert_true(fixture.irq1 != TEST_INVALID_IRQ,
 		     "no suitable value found for irq1");
 	fixture.irq2 = get_irq_slot(fixture.irq1 + 1);
@@ -96,12 +102,6 @@ static void *dynamic_shared_irq_suite_setup(void)
 
 	return NULL;
 }
-
-#if defined(CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET)
-#define TABLE_OFFSET CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET
-#else
-#define TABLE_OFFSET 0
-#endif
 
 static void dynamic_shared_irq_suite_before(void *data)
 {
