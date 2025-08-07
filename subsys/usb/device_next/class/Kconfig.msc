@@ -30,6 +30,12 @@ config USBD_MSC_SCSI_BUFFER_SIZE
 	  Buffer size must be able to hold at least one sector. All LUNs within
 	  single instance share the SCSI buffer.
 
+config USBD_MSC_DATA_BUF_SIZE
+	int "Data Buffer size for msc data transfer"
+	default 512
+	help
+	  Buffer size must be multiple of the bulk endpoint mps.
+
 module = USBD_MSC
 module-str = usbd msc
 default-count = 1
