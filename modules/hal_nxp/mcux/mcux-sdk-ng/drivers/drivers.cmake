@@ -195,6 +195,7 @@ endif()
 
 if (CONFIG_SOC_MIMX94398_M33)
   set(CONFIG_MCUX_COMPONENT_driver.irqsteer_1_soc.cm33_core1 ON)
+  set(CONFIG_MCUX_COMPONENT_driver.irqsteer_1 ON)
 endif()
 
 if(CONFIG_SOC_FAMILY_KINETIS OR CONFIG_SOC_FAMILY_MCXC)

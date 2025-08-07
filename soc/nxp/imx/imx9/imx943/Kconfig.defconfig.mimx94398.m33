@@ -17,6 +17,7 @@ config MCUX_CORE_SUFFIX
 # multi-level interrupts
 config MULTI_LEVEL_INTERRUPTS
 	default y
+	depends on GEN_ISR_TABLES
 
 config 1ST_LEVEL_INTERRUPT_BITS
 	default 9
