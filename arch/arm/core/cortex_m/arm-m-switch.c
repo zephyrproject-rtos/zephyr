@@ -221,9 +221,10 @@ static bool fpu_state_pushed(uint32_t lr)
  * in the thread struct).  The overhead for the normal case is just a
  * few cycles for the test.
  */
-__asm__(".globl arm_m_iciit_stub;"
-	"arm_m_iciit_stub:;"
-	"  udf 0;");
+__attribute__((naked)) void arm_m_iciit_stub(void)
+{
+	__asm__("udf 0;");
+}
 
 /* Called out of interrupt entry to test for an interrupted instruction */
 static void iciit_fixup(struct k_thread *th, struct hw_frame_base *hw, uint32_t xpsr)
@@ -545,19 +546,20 @@ void arm_m_legacy_exit(void)
  * handled in software already.
  */
 #ifdef CONFIG_MULTITHREADING
-__asm__(".globl arm_m_exc_exit;"
-	"arm_m_exc_exit:;"
-	"  bl arm_m_must_switch;"
-	"  ldr r2, =arm_m_cs_ptrs;"
-	"  mov r3, #0;"
-	"  ldr lr, [r2, #8];" /* lr_save */
-	"  cbz r0, 1f;"
-	"  mov lr, #0xfffffffd;" /* integer-only LR */
-	"  ldm r2, {r0, r1};"    /* fields: out, in */
-	"  stm r0, {r4-r11};"    /* out is a switch_frame */
-	"  ldm r1!, {r7-r11};"   /* in is a synth_frame */
-	"  ldm r1, {r4-r6};"
-	"1:\n"
-	"  msr basepri, r3;" /* release lock taken in must_switch */
-	"  bx lr;");
+__attribute__((naked)) void arm_m_exc_exit(void)
+{
+	__asm__("  bl arm_m_must_switch;"
+		"  ldr r2, =arm_m_cs_ptrs;"
+		"  mov r3, #0;"
+		"  ldr lr, [r2, #8];" /* lr_save */
+		"  cbz r0, 1f;"
+		"  mov lr, #0xfffffffd;" /* integer-only LR */
+		"  ldm r2, {r0, r1};"    /* fields: out, in */
+		"  stm r0, {r4-r11};"    /* out is a switch_frame */
+		"  ldm r1!, {r7-r11};"   /* in is a synth_frame */
+		"  ldm r1, {r4-r6};"
+		"1:\n"
+		"  msr basepri, r3;" /* release lock taken in must_switch */
+		"  bx lr;");
+}
 #endif
