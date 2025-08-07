@@ -5,6 +5,8 @@ board:
   socs:
   - name: nrf54lm20a
     variants:
+    - name: ns
+      cpucluster: cpuapp
     - name: xip
       cpucluster: cpuflpr
 runners:
@@ -17,6 +19,7 @@ runners:
       groups:
       - boards:
         - nrf54lm20dk/nrf54lm20a/cpuapp
+        - nrf54lm20dk/nrf54lm20a/cpuapp/ns
         - nrf54lm20dk/nrf54lm20a/cpuflpr
         - nrf54lm20dk/nrf54lm20a/cpuflpr/xip
     '--erase':
@@ -28,6 +31,7 @@ runners:
       groups:
       - boards:
         - nrf54lm20dk/nrf54lm20a/cpuapp
+        - nrf54lm20dk/nrf54lm20a/cpuapp/ns
         - nrf54lm20dk/nrf54lm20a/cpuflpr
         - nrf54lm20dk/nrf54lm20a/cpuflpr/xip
     '--reset':
@@ -39,5 +43,6 @@ runners:
       groups:
       - boards:
         - nrf54lm20dk/nrf54lm20a/cpuapp
+        - nrf54lm20dk/nrf54lm20a/cpuapp/ns
         - nrf54lm20dk/nrf54lm20a/cpuflpr
         - nrf54lm20dk/nrf54lm20a/cpuflpr/xip

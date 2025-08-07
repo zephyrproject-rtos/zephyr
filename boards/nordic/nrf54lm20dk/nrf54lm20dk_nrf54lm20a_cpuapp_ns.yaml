@@ -1,0 +1,22 @@
+identifier: nrf54lm20dk/nrf54lm20a/cpuapp/ns
+name: nRF54lm20-DK-nRF54lm20a-Application-Non-Secure
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - zephyr
+ram: 208
+flash: 1356
+supported:
+  - adc
+  - counter
+  - dmic
+  - gpio
+  - i2c
+  - i2s
+  - pwm
+  - spi
+  - usbd
+  - watchdog
+vendor: nordic
+sysbuild: true
