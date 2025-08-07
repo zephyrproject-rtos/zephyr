@@ -17,3 +17,12 @@ properties:
 
   pinctrl-names:
     required: true
+
+  cs-gpios:
+    description: |
+      select the cs pin to support the espi wakeup
+      and it is required when CONFIG_PM is enabled.
+      please check include/zephyr/dt-bindings/gpio/realtek-gpio.h
+      For example:
+      cs-gpios = <RTS5912_GPIO004 0>;
+    type: phandle-array
