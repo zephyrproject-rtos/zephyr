@@ -641,6 +641,9 @@ __weak void clock_init(void)
 	/* Let the core clock still running in WAIT mode */
 	BLK_CTRL_S_AONMIX->M7_CFG |= BLK_CTRL_S_AONMIX_M7_CFG_CORECLK_FORCE_ON_MASK;
 
+	/* Make AHB clock run (enabled) when CM7 is sleeping and TCM is accessible */
+	BLK_CTRL_S_AONMIX->M7_CFG |= BLK_CTRL_S_AONMIX_M7_CFG_HCLK_FORCE_ON_MASK;
+
 	/* Keep the system clock running so SYSTICK can wake up
 	 * the system from wfi.
 	 */
