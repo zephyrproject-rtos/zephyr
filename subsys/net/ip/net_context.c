@@ -8,6 +8,7 @@
  * Copyright (c) 2016 Intel Corporation
  * Copyright (c) 2021 Nordic Semiconductor
  * Copyright (c) 2025 Aerlync Labs Inc.
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -123,6 +124,17 @@ bool net_context_is_recv_pktinfo_set(struct net_context *context)
 {
 #if defined(CONFIG_NET_CONTEXT_RECV_PKTINFO)
 	return context->options.recv_pktinfo;
+#else
+	ARG_UNUSED(context);
+
+	return false;
+#endif
+}
+
+bool net_context_is_recv_hoplimit_set(struct net_context *context)
+{
+#if defined(CONFIG_NET_CONTEXT_RECV_HOPLIMIT)
+	return context->options.recv_hoplimit;
 #else
 	ARG_UNUSED(context);
 
@@ -1919,6 +1931,21 @@ static int get_context_recv_pktinfo(struct net_context *context,
 #endif
 }
 
+static int get_context_recv_hoplimit(struct net_context *context,
+				    void *value, size_t *len)
+{
+#if defined(CONFIG_NET_CONTEXT_RECV_HOPLIMIT)
+	return get_bool_option(context->options.recv_hoplimit,
+			       value, len);
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+#endif
+}
+
 static int get_context_addr_preferences(struct net_context *context,
 					void *value, size_t *len)
 {
@@ -3653,6 +3680,24 @@ static int set_context_recv_pktinfo(struct net_context *context,
 #endif
 }
 
+static int set_context_recv_hoplimit(struct net_context *context,
+				    const void *value, size_t len)
+{
+#if defined(CONFIG_NET_CONTEXT_RECV_HOPLIMIT)
+	if (net_context_get_type(context) == SOCK_DGRAM) {
+		return set_bool_option(&context->options.recv_hoplimit, value, len);
+	}
+
+	return -ENOTSUP;
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+#endif
+}
+
 static int set_context_addr_preferences(struct net_context *context,
 					const void *value, size_t len)
 {
@@ -3877,6 +3922,9 @@ int net_context_set_option(struct net_context *context,
 	case NET_OPT_IPV4_MCAST_LOOP:
 		ret = set_context_ipv4_mcast_loop(context, value, len);
 		break;
+	case NET_OPT_RECV_HOPLIMIT:
+		ret = set_context_recv_hoplimit(context, value, len);
+		break;
 	}
 
 	k_mutex_unlock(&context->lock);
@@ -3967,6 +4015,9 @@ int net_context_get_option(struct net_context *context,
 		break;
 	case NET_OPT_IPV4_MCAST_LOOP:
 		ret = get_context_ipv4_mcast_loop(context, value, len);
+		break;
+	case NET_OPT_RECV_HOPLIMIT:
+		ret = get_context_recv_hoplimit(context, value, len);
 		break;
 	}
 

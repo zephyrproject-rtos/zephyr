@@ -3,6 +3,7 @@
 # Copyright (c) 2016 Intel Corporation.
 # Copyright (c) 2021 Nordic Semiconductor
 # Copyright (c) 2023 Arm Limited (or its affiliates). All rights reserved.
+# Copyright 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 menu "IP stack"
@@ -606,6 +607,14 @@ config NET_CONTEXT_RECV_PKTINFO
 	help
 	  Allow to set the IP_PKTINFO or IPV6_RECVPKTINFO flags on a socket.
 	  This way user can get extra information about the received data in the
+	  socket.
+
+config NET_CONTEXT_RECV_HOPLIMIT
+	bool "Add receive hop limit (IPv6) or TTL (IPv4) support to net_context"
+	depends on NET_UDP
+	help
+	  Allow to set the IPV6_RECVHOPLIMIT or IP_RECVTTL flags on a socket.
+	  This way user can get extra information about hop limit (IPv6) or TTL (IPv4) in the
 	  socket.
 
 config NET_CONTEXT_TIMESTAMPING

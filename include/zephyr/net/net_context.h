@@ -8,6 +8,7 @@
  * Copyright (c) 2016 Intel Corporation
  * Copyright (c) 2021 Nordic Semiconductor
  * Copyright (c) 2025 Aerlync Labs Inc.
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -369,6 +370,10 @@ __net_socket struct net_context {
 #if defined(CONFIG_NET_CONTEXT_RECV_PKTINFO)
 		/** Receive network packet information in recvmsg() call */
 		bool recv_pktinfo;
+#endif
+#if defined(CONFIG_NET_CONTEXT_RECV_HOPLIMIT)
+		/** Receive IPv6 hop limit or IPv4 TTL as ancillary data in recvmsg() call */
+		bool recv_hoplimit;
 #endif
 #if defined(CONFIG_NET_IPV6)
 		/**
@@ -1399,6 +1404,7 @@ enum net_context_option {
 	NET_OPT_LOCAL_PORT_RANGE  = 21, /**< Clamp local port range */
 	NET_OPT_IPV6_MCAST_LOOP	  = 22, /**< IPV6 multicast loop */
 	NET_OPT_IPV4_MCAST_LOOP	  = 23, /**< IPV4 multicast loop */
+	NET_OPT_RECV_HOPLIMIT     = 24, /**< Receive hop limit information */
 };
 
 /**
