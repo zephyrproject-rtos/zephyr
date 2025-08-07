@@ -4,8 +4,12 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-description: NXP SNVS LP/HP RTC
+description: NXP SNVS LP/HP Realtime Counter
 
 compatible: "nxp,imx-snvs-rtc"
 
-include: rtc.yaml
+include: base.yaml
+
+properties:
+  interrupts:
+    required: true
