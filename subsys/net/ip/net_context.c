@@ -1357,6 +1357,18 @@ int net_context_connect(struct net_context *context,
 		goto unlock;
 	}
 
+	/* As per POSIX, for non-connection-mode sockets:
+	 * "If the sa_family member of address is AF_UNSPEC, the socket's peer
+	 *  address shall be reset.""
+	 */
+	if (IS_ENABLED(CONFIG_NET_UDP) && addr->sa_family == AF_UNSPEC &&
+	    net_context_get_type(context) == SOCK_DGRAM) {
+		context->flags &= ~NET_CONTEXT_REMOTE_ADDR_SET;
+		memset(&context->remote, 0, sizeof(context->remote));
+		ret = 0;
+		goto unlock;
+	}
+
 	if (addr->sa_family != net_context_get_family(context)) {
 		NET_ERR("Address family %d does not match network context family %d",
 			addr->sa_family, net_context_get_family(context));
