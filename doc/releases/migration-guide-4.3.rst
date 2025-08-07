@@ -191,6 +191,13 @@ Other subsystems
 
 .. zephyr-keep-sorted-start re(^\w)
 
+Crypto
+======
+
+* Hashing operations now require a constant input in the :c:struct:`hash_pkt`.
+  This shouldn't affect any existing code, unless an out-of-tree hashing backend actually
+  performs that operation in-place (see :github:`94218`)
+
 Logging
 =======
 
