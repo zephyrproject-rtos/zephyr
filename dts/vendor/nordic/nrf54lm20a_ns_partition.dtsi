@@ -1,0 +1,62 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&cpuapp_rram {
+	/*
+	 * Default NVM layout on NRF54LM20A Application MCU without BL2:
+	 * This layout matches (by necessity) that in the TF-M repository:
+	 *
+	 * 0x0000_0000 Secure image primary (512 KB)
+	 * 0x0008_0000 Protected Storage Area (16 KB)
+	 * 0x0008_4000 Internal Trusted Storage Area (16 KB)
+	 * 0x0008_8000 OTP / NV counters area (8 KB)
+	 * 0x0008_A000 Non-secure image primary (1356 KB)
+	 * 0x001D_DD00 Non-secure storage, used when built with NRF_NS_STORAGE=ON,
+	 *             otherwise unused (32 KB)
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* nRF54LM20A has 2036 kB of non-volatile memory (RRAM) but the last
+		 * 96 kB are reserved for the FLPR MCU.
+		 *
+		 * This static layout needs to be the same with the upstream TF-M layout in the
+		 * header flash_layout.h of the relevant platform. Any updates in the layout
+		 * needs to happen both in the flash_layout.h and in this file at the same time.
+		 */
+		slot0_partition: partition@0 {
+			label = "image-0";
+			reg = <0x0000000 DT_SIZE_K(512)>;
+		};
+
+		tfm_ps_partition: partition@80000 {
+			label = "tfm-ps";
+			reg = <0x00080000 DT_SIZE_K(16)>;
+		};
+
+		tfm_its_partition: partition@84000 {
+			label = "tfm-its";
+			reg = <0x00084000 DT_SIZE_K(16)>;
+		};
+
+		tfm_otp_partition: partition@88000 {
+			label = "tfm-otp";
+			reg = <0x00088000 DT_SIZE_K(8)>;
+		};
+
+		slot0_ns_partition: partition@8A000 {
+			label = "image-0-nonsecure";
+			reg = <0x0008A000 DT_SIZE_K(1356)>;
+		};
+
+		storage_partition: partition@1DD000 {
+			label = "storage";
+			reg = <0x001DD000 DT_SIZE_K(32)>;
+		};
+	};
+};
