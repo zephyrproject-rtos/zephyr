@@ -20,7 +20,7 @@ lowest power consumption with the highest computing performance possible for our
 innovative battery-power endpoint devices for their end-users. `Ambiq Products`_
 
 Status
-***************
+******
 
 As of now, Ambiq provides zephyr support for a set of peripherals/drivers:
 
@@ -29,7 +29,7 @@ As of now, Ambiq provides zephyr support for a set of peripherals/drivers:
 +========+====================+====================+==========================================+
 |   ADC  |         -          |    apollo510-dev   | samples\\drivers\\adc\\adc\_dt           |
 +--------+--------------------+--------------------+------------------------------------------+
-| AUDADC |    comming soon    |                    |                                          |
+| AUDADC |         -          |    apollo510-dev   | samples\\drivers\\audio\\amic            |
 +--------+--------------------+--------------------+------------------------------------------+
 | COUNTER|         -          |    apollo510-dev   | samples\\drivers\\counter\\alarm         |
 +--------+--------------------+--------------------+------------------------------------------+
@@ -57,9 +57,9 @@ As of now, Ambiq provides zephyr support for a set of peripherals/drivers:
 +--------+--------------------+--------------------+------------------------------------------+
 |   RTC  |         -          |    apollo510-dev   |    samples\\drivers\\rtc                 |
 +--------+--------------------+--------------------+------------------------------------------+
-|  SDHC  |         -          |    apollo510-dev   |samples\\drivers\\subsys\\fs\\fs\_sample  |
+|  SDHC  |         -          |    apollo510-dev   |samples\\subsys\\fs\\fs\_sample           |
 +--------+--------------------+--------------------+------------------------------------------+
-|   SPI  |         -          |    apollo510-dev   |samples\\drivers\\eeprom                  |
+|   SPI  |         -          |    apollo510-dev   |samples\\boards\\ambiq\\spi\_serial\_flash|
 +--------+--------------------+--------------------+------------------------------------------+
 |  TIMER |         -          |    apollo510-dev   |    samples\\philosophers                 |
 +--------+--------------------+--------------------+------------------------------------------+
@@ -75,7 +75,7 @@ And also there are supports for some third-party libs:
 +==========+==================+====================+==========================================+
 | coremark |         -        |    apollo510-dev   | samples\\benchmarks\\coremark            |
 +----------+------------------+--------------------+------------------------------------------+
-|   fatfs  |         -        |    apollo510-dev   | samples\\drivers\\subsys\\fs\\fs\_sample |
+|   fatfs  |         -        |    apollo510-dev   | samples\\subsys\\fs\\fs\_sample          |
 +----------+------------------+--------------------+------------------------------------------+
 |  mbedtls |    comming soon  |                    |                                          |
 +----------+------------------+--------------------+------------------------------------------+
@@ -88,8 +88,6 @@ Note2 : i2c and spi devices only available on apollo510_eb board.
 
 Together with generic support for ARM Cortex-M peripherals like cache, interrupt controller, etc.
 
-And please note that apollo510_eb board is only available at apollo510-dev branch, some samples
-rely on the devices on the EB board, for example I2C and SPI.
 
 .. below included in doc/introduction/introduction.rst
 
@@ -140,6 +138,7 @@ Get to Know Ambiq Components
   │   ├── adc/
   │   │   └── adc_ambiq.c
   │   ├── audio/
+  │   │   ├── amic_ambiq_audadc.c
   │   │   └── dmic_ambiq_pdm.c
   │   ├── bluetooth/
   │   │   └── hci/
@@ -151,6 +150,8 @@ Get to Know Ambiq Components
   │   │   └── counter_ambiq_timer.c
   │   ├── display/
   │   │   └── display_co5300.c
+  │   ├── entropy/
+  │   │   └── entropy_ambiq_puf_trng.c
   │   ├── flash/
   │   │   └── flash_ambiq.c
   │   ├── gpio/
@@ -164,7 +165,8 @@ Get to Know Ambiq Components
   │   ├── mipi_dsi/
   │   │   └── dsi_ambiq.c
   │   ├── mspi/
-  │   │   └── mspi_ambiq_ap5.c
+  │   │   ├── mspi_ambiq_ap5.c
+  │   │   └── mspi_ambiq_timing_scan.c
   │   ├── pinctrl/
   │   │   └── pinctrl_ambiq.c
   │   ├── pwm/
@@ -189,6 +191,8 @@ Get to Know Ambiq Components
   │   └── arm/
   │       └── ambiq/
   │           └── ambiq_apollo510.dtsi
+  ├── modules/
+  │   └── hal_ambiq
   └── soc/
       └── ambiq/
           └── apollo5x
