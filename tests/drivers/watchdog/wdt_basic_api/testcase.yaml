@@ -28,6 +28,7 @@ tests:
       - mimxrt700_evk/mimxrt798s/cm33_cpu1
       - nrf54l15dk/nrf54l15/cpuapp/ns
       - nrf54l15dk/nrf54l10/cpuapp/ns
+      - nrf54lm20dk/nrf54lm20a/cpuapp/ns
       - bl54l15_dvk/nrf54l10/cpuapp/ns
       - bl54l15_dvk/nrf54l15/cpuapp/ns
       - bl54l15u_dvk/nrf54l15/cpuapp/ns
