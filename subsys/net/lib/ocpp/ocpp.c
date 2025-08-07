@@ -5,7 +5,10 @@
  */
 
 #include "ocpp_i.h"
-#include <sys/time.h>
+
+#include <time.h>
+
+#include <zephyr/sys/clock.h>
 
 LOG_MODULE_REGISTER(ocpp, CONFIG_OCPP_LOG_LEVEL);
 
@@ -68,11 +71,11 @@ int ocpp_find_pdu_from_literal(const char *msg)
 
 void ocpp_get_utc_now(char utc[CISTR25])
 {
-	struct timeval tv;
+	struct timespec ts;
 	struct tm htime = {0};
 
-	gettimeofday(&tv, NULL);
-	gmtime_r(&tv.tv_sec, &htime);
+	sys_clock_gettime(SYS_CLOCK_REALTIME, &ts);
+	gmtime_r(&ts.tv_sec, &htime);
 
 	snprintk(utc, CISTR25, "%04hu-%02hu-%02huT%02hu:%02hu:%02huZ",
 		htime.tm_year + 1900,
