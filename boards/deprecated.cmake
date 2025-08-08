@@ -67,3 +67,6 @@ set(esp32_devkitc_wrover/esp32/appcpu_DEPRECATED
 set(scobc_module1_DEPRECATED
     scobc_a1
 )
+set(raytac_an54l15q_db/nrf54l15/cpuapp_DEPRECATED
+    raytac_an54lq_db_15/nrf54l15/cpuapp
+)
