@@ -16,8 +16,8 @@
 &pinctrl {
 	adc0_default: adc0_default {
 		group0 {
-			/* Allocate odd bus 0 on GPIO port B to IADC for access to pin PB1 */
-			silabs,analog-bus = <ABUS_BODD0_IADC0>;
+			/* Allocate odd bus 0 on GPIO port C/D to IADC for access to pin PD3 */
+			silabs,analog-bus = <ABUS_CDODD0_IADC0>;
 		};
 	};
 };
