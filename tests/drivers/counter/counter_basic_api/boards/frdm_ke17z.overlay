@@ -1,0 +1,13 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&ftm0 {
+	status = "okay";
+	compatible = "nxp,ftm";
+	prescaler = <128>;
+	clocks = <&scg KINETIS_SCG_FIRC_CLK>;
+	clock-source = "system";
+};
