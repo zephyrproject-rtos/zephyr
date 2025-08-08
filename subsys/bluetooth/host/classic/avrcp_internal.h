@@ -52,10 +52,10 @@ typedef enum __packed {
 } bt_avrcp_opcode_t;
 
 typedef enum __packed {
-	BT_AVRVP_PKT_TYPE_SINGLE = 0b00,
-	BT_AVRVP_PKT_TYPE_START = 0b01,
-	BT_AVRVP_PKT_TYPE_CONTINUE = 0b10,
-	BT_AVRVP_PKT_TYPE_END = 0b11,
+	BT_AVRCP_PKT_TYPE_SINGLE = 0b00,
+	BT_AVRCP_PKT_TYPE_START = 0b01,
+	BT_AVRCP_PKT_TYPE_CONTINUE = 0b10,
+	BT_AVRCP_PKT_TYPE_END = 0b11,
 } bt_avrcp_pkt_type_t;
 
 typedef enum {
@@ -71,7 +71,7 @@ struct bt_avrcp_ct_frag_reassembly_ctx {
 	uint16_t received_len;			/**< Length already received */
 };
 
-struct bt_avrcp_tg_tx {
+struct bt_avrcp_tg_vd_rsp_tx {
 	struct bt_avrcp_tg *tg;
 	uint16_t sent_len;
 	uint8_t tid;
@@ -99,7 +99,7 @@ struct bt_avrcp_header {
 	uint8_t opcode; /**< Unit Info, Subunit Info, Vendor Dependent, or Pass Through */
 } __packed;
 
-struct bt_avrcp_avc_pdu {
+struct bt_avrcp_avc_vendor_pdu {
 	uint8_t company_id[BT_AVRCP_COMPANY_ID_SIZE];
 	uint8_t pdu_id;
 	uint8_t pkt_type; /**< [7:2]: Reserved, [1:0]: Packet Type */
@@ -107,7 +107,7 @@ struct bt_avrcp_avc_pdu {
 	uint8_t param[];
 } __packed;
 
-struct bt_avrcp_avc_brow_pdu {
+struct bt_avrcp_brow_pdu {
 	uint8_t pdu_id;
 	uint16_t param_len;
 	uint8_t param[];
