@@ -1,9 +1,7 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
  *
- * Copyright (c) 2023 Antmicro <www.antmicro.com>
  * Copyright (c) 2025 Silicon Laboratories Inc.
- *
  */
 
 #include <dt-bindings/adc/silabs-adc.h>
@@ -11,6 +9,10 @@
 / {
 	zephyr,user {
 		io-channels = <&adc0 3>, <&adc0 4>;
+	};
+
+	aliases {
+		adc0 = &adc0;
 	};
 };
 

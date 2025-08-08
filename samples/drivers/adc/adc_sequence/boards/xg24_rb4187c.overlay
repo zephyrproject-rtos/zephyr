@@ -1,24 +1,30 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
  *
- * Copyright (c) 2023 Antmicro <www.antmicro.com>
  * Copyright (c) 2025 Silicon Laboratories Inc.
- *
  */
 
 #include <dt-bindings/adc/silabs-adc.h>
 
 / {
 	zephyr,user {
-		io-channels = <&adc0 3>, <&adc0 4>;
+		io-channels = <&adc0 3>, <&adc0 4>, <&adc0 12>;
+	};
+
+	aliases {
+		adc0 = &adc0;
 	};
 };
 
 &pinctrl {
 	adc0_default: adc0_default {
 		group0 {
-			/* Allocate odd bus 0 on GPIO port B to IADC for access to pin PB1 */
-			silabs,analog-bus = <ABUS_BODD0_IADC0>;
+			/* Allocate odd Analog bus 0 on GPIO port B to IADC
+			 * for access to pin PB2 and PB5.
+			 * Allocate even Analog bus 0 on GPIO port C/D to IADC
+			 * for access to pin PC0.
+			 */
+			silabs,analog-bus = <ABUS_BODD0_IADC0>, <ABUS_CDEVEN0_IADC0>;
 		};
 	};
 };
@@ -43,9 +49,20 @@
 		reg = <4>;
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_VDD_1";
-		zephyr,vref-mv = <3000>;
+		zephyr,vref-mv = <3300>;
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,resolution = <12>;
-		zephyr,input-positive = <IADC_INPUT_PB3>;
+		zephyr,input-positive = <IADC_INPUT_PB1>;
+	};
+
+	channel@c {
+		reg = <12>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,vref-mv = <3300>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <IADC_INPUT_PB5>; /* WPK EXP HEADER 3 */
+		zephyr,input-negative = <IADC_INPUT_PC0>; /* WPK EXP HEADER 10 */
 	};
 };
