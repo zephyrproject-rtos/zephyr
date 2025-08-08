@@ -1,9 +1,9 @@
-.. zephyr:board:: raytac_an54l15q_db
+.. zephyr:board:: raytac_an54lq_db_15
 
 Overview
 ********
 
-The Raytac AN54L15Q-DB demonstration board is a development board based on the Raytac AN54L15Q module.
+The Raytac AN54LQ-DB-15 demonstration board is a development board based on the Raytac AN54LQ-15 module.
 It uses the Nordic Semiconductor nRF54L15 SoC solution. The idea is to connect all the module's pins
 to a 2.54mm pin header. It can easily open the verification module functions and connect with other
 peripheral devices and sensor pins, making it a useful tool for early software development.
@@ -16,7 +16,7 @@ peripheral devices and sensor pins, making it a useful tool for early software d
 Hardware
 ********
 
-The Raytac AN54L15Q-DB has two crystal oscillators:
+The Raytac AN54LQ-DB-15 has two crystal oscillators:
 
 * High-frequency 32 MHz crystal oscillator (HFXO)
 * Low-frequency 32.768 kHz crystal oscillator (LFXO)
@@ -24,7 +24,7 @@ The Raytac AN54L15Q-DB has two crystal oscillators:
 The crystal oscillators can be configured to use either
 internal or external capacitors.
 
-- Module Demo Board built by AN54L15Q
+- Module Demo Board built by AN54LQ-15
 - Nordic nRF54L15 SoC Solution
 - A recommended 3rd-party module by Nordic Semiconductor.
 - Intended for Bluetooth specification BT6
@@ -75,13 +75,13 @@ Programming and Debugging
 
 .. zephyr:board-supported-runners::
 
-Applications for the ``raytac_an54l15q_db/nrf54l15/cpuapp`` board can be
+Applications for the ``raytac_an54lq_db_15/nrf54l15/cpuapp`` board can be
 built, flashed, and debugged in the usual way. See
 :ref:`build_an_application` and :ref:`application_run` for more details on
 building and running.
 
 .. note::
-    The ``raytac_an54l15q_db`` board does not have an on-board J-Link debug IC;
+    The ``raytac_an54lq_db_15`` board does not have an on-board J-Link debug IC;
     Use the Debug out connector of the nRF5340-DK or nRF54L15-DK to connect to the J1
     or J9 SWD connector, and use SEGGER J-Link OB IF to debug.
 
@@ -114,9 +114,9 @@ Follow the instructions in the :ref:`nordic_segger` page to install
 and configure all the necessary software. Further information can be
 found in :ref:`nordic_segger_flashing`.
 
-To build and program the sample to the Raytac AN54L15Q-DB, complete the following steps:
+To build and program the sample to the Raytac AN54LQ-DB-15, complete the following steps:
 
-First, connect the Raytac AN54L15Q-DB's J10 connector to you computer using a USB to TTL
+First, connect the Raytac AN54LQ-DB-15's J10 connector to you computer using a USB to TTL
 converter. Then run your favorite terminal program to listen for output.
 
 .. code-block:: console
@@ -130,7 +130,7 @@ Next, build the sample by running the following command:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: raytac_an54l15q_db/nrf54l15/cpuapp
+   :board: raytac_an54lq_db_15/nrf54l15/cpuapp
    :goals: build flash
 
 References
@@ -138,12 +138,6 @@ References
 
 .. target-notes::
 
-.. _Raytac AN54L15Q-DB website:
-    https://www.raytac.com/product/ins.php?index_id=139
-.. _Raytac AN54L15Q-DB Specification:
-    https://www.raytac.com/download/index.php?index_id=60
-.. _Raytac AN54L15Q-DB Schematic:
-    https://www.raytac.com/upload/catalog_b/8b5e364600a9cc8c53a869733e97f07e.jpg
 .. _nRF54L15 website: https://www.nordicsemi.com/Products/nRF54L15
 .. _nRF54L15 documentation: https://docs.nordicsemi.com/bundle/ncs-latest/page/nrf/app_dev/device_guides/nrf54l/index.html
 .. _J-Link Software and documentation pack:

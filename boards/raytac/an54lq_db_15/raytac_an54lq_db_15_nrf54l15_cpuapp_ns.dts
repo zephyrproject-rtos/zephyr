@@ -10,11 +10,11 @@
 #define USE_NON_SECURE_ADDRESS_MAP 1
 
 #include <nordic/nrf54l15_cpuapp.dtsi>
-#include "raytac_an54l15q_db_cpuapp_common.dtsi"
+#include "raytac_an54lq_db_15_cpuapp_common.dtsi"
 
 / {
-	compatible = "raytac,raytac_an54l15q_db_nrf54l15-cpuapp";
-	model = "Raytac AN54L15Q-DB nRF54L15 Application MCU";
+	compatible = "raytac,raytac_an54lq_db_15_nrf54l15-cpuapp";
+	model = "Raytac AN54LQ-DB-15 nRF54L15 Application MCU";
 
 	chosen {
 		zephyr,code-partition = &slot0_ns_partition;
@@ -61,6 +61,7 @@
 &uart30 {
 	/* Disable so that TF-M can use this UART */
 	status = "disabled";
+
 	current-speed = <115200>;
 	pinctrl-0 = <&uart30_default>;
 	pinctrl-1 = <&uart30_sleep>;
