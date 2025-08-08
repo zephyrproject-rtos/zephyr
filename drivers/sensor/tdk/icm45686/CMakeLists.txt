@@ -4,6 +4,8 @@
 
 zephyr_library()
 zephyr_library_include_directories(.)
+zephyr_library_include_directories(${ZEPHYR_HAL_TDK_MODULE_DIR}/icm456xx)
+
 zephyr_library_sources(
   icm45686.c
   icm45686_bus.c
@@ -13,6 +15,9 @@ zephyr_library_sources_ifdef(CONFIG_SENSOR_ASYNC_API
 )
 zephyr_library_sources_ifdef(CONFIG_ICM45686_TRIGGER
   icm45686_trigger.c
+)
+zephyr_library_sources_ifdef(CONFIG_TDK_APEX
+  icm45686_apex.c
 )
 zephyr_library_sources_ifdef(CONFIG_ICM45686_STREAM
   icm45686_stream.c

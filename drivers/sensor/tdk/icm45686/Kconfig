@@ -12,6 +12,7 @@ menuconfig ICM45686
 	select I2C_RTIO if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45686),i2c)
 	select I3C if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45686),i3c)
 	select I3C_RTIO if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45686),i3c)
+	select USE_EMD_ICM45686 if DT_HAS_INVENSENSE_ICM45686_ENABLED
 	help
 	  Enable driver for ICM45686 High-precision 6-axis motion
 	  tracking device.
@@ -33,6 +34,7 @@ config ICM45686_TRIGGER_GLOBAL_THREAD
 	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM45686),int-gpios)
 	depends on !ICM45686_STREAM
 	select ICM45686_TRIGGER
+	select TDK_APEX
 
 config ICM45686_TRIGGER_OWN_THREAD
 	bool "Use own thread"
@@ -40,8 +42,12 @@ config ICM45686_TRIGGER_OWN_THREAD
 	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM45686),int-gpios)
 	depends on !ICM45686_STREAM
 	select ICM45686_TRIGGER
+	select TDK_APEX
 
 endchoice
+
+config TDK_APEX
+	bool
 
 config ICM45686_TRIGGER
 	bool
