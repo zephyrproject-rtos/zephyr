@@ -1,0 +1,11 @@
+# Copyright (C) 2024-2025, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_XHSC_HC32
+	bool
+
+if SOC_FAMILY_XHSC_HC32
+
+rsource "*/Kconfig"
+
+endif # SOC_FAMILY_XHSC_HC32
