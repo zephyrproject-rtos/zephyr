@@ -580,7 +580,7 @@ void fusb307_alert_work_cb(struct k_work *work)
 			tcpci_init_alert_mask(dev);
 			data->cc_changed = true;
 		} else if (alert_type == TCPC_ALERT_FAULT_STATUS) {
-			uint8_t fault;
+			uint16_t fault;
 
 			tcpci_tcpm_get_status_register(&cfg->bus, TCPC_FAULT_STATUS,
 						       (uint16_t *)&fault);
@@ -589,7 +589,7 @@ void fusb307_alert_work_cb(struct k_work *work)
 
 			LOG_DBG("fault: %02x", fault);
 		} else if (alert_type == TCPC_ALERT_POWER_STATUS) {
-			uint8_t pwr_status;
+			uint16_t pwr_status;
 
 			tcpci_tcpm_get_status_register(&cfg->bus, TCPC_POWER_STATUS,
 						       (uint16_t *)&pwr_status);
@@ -628,7 +628,7 @@ void fusb307_init_work_cb(struct k_work *work)
 	struct fusb307_data *data = CONTAINER_OF(dwork, struct fusb307_data, init_dwork);
 
 	const struct fusb307_cfg *cfg = data->dev->config;
-	uint8_t power_reg = 0;
+	uint16_t power_reg = 0;
 	struct tcpc_chip_info chip_info;
 	uint16_t tcpci_rev;
 	int ret;
