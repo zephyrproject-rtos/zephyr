@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA Clock Generation Circuit PLLRTC Clock
+
+compatible: "renesas,ra-cgc-pllrtc"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  clocks:
+    required: true
+  mul:
+    required: true
+    type: array
+
+  "#clock-cells":
+    const: 0
