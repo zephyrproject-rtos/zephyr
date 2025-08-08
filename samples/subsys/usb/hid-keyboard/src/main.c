@@ -279,7 +279,8 @@ int main(void)
 			continue;
 		}
 
-		if (usbd_is_suspended(sample_usbd)) {
+		if (IS_ENABLED(CONFIG_SAMPLE_USBD_REMOTE_WAKEUP) &&
+		    usbd_is_suspended(sample_usbd)) {
 			/* on a press of any button, send wakeup request */
 			if (kb_evt.value) {
 				ret = usbd_wakeup_request(sample_usbd);
