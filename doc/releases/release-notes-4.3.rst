@@ -85,6 +85,10 @@ New APIs and options
 
     * :c:struct:`bt_audio_codec_cfg` now contains a target_latency and a target_phy option
 
+* Flash
+
+   * :kconfig:option:`CONFIG_FLASH_STM32_ASYNC`
+
 * Logging:
 
   * Added rate-limited logging macros to prevent log flooding when messages are generated frequently.
