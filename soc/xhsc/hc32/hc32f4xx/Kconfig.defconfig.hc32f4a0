@@ -1,0 +1,30 @@
+# Copyright (C) 2024-2025, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_HC32F4A0
+
+config NUM_IRQS
+	default 143
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 1000
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_nodelabel_int_prop,clk_pll,clock-frequency)
+
+config HC32_DDL_DEBUG
+	bool "Enable assert function in hc32_ddl drivers"
+	default n
+
+config HC32_FLASH_CONFIG_OFFSET
+	hex "HC32 flash configuration field offset"
+	default 0x400
+
+if GPIO
+
+config GPIO_HC32
+	default y
+
+endif # GPIO
+
+endif # SOC_HC32F4A0
