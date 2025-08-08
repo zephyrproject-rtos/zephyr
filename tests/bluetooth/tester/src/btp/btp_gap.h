@@ -346,9 +346,18 @@ struct btp_gap_pair_v2_cmd {
 	uint8_t flags;
 } __packed;
 
-#define BTP_GAP_SET_RPA_TIMEOUT                 0x30
+#define BTP_GAP_SET_RPA_TIMEOUT			0x30
 struct btp_gap_set_rpa_timeout_cmd {
 	uint16_t rpa_timeout;
+} __packed;
+
+#define BTP_GAP_SYNC_BIG				0x31
+
+#define BTP_GAP_CREATE_BIG				0x32
+
+#define BTP_GAP_SEND_ISO				0x33
+struct btp_gap_iso_send_cmd {
+	uint8_t pkt_cnt;
 } __packed;
 
 /* events */
@@ -479,6 +488,11 @@ struct btp_gap_encryption_change_ev {
 	uint8_t key_size;
 } __packed;
 
+#define BTP_GAP_EV_ISO_CHANNEL_CHANGED		0x92
+struct btp_gap_iso_channel_changed_ev {
+	uint8_t status;
+} __packed;
+
 #if defined(CONFIG_BT_EXT_ADV)
 struct bt_le_per_adv_param;
 struct bt_le_per_adv_sync_param;
@@ -499,4 +513,6 @@ int tester_gap_padv_start(struct bt_le_ext_adv *ext_adv);
 int tester_gap_padv_stop(struct bt_le_ext_adv *ext_adv);
 int tester_gap_padv_create_sync(struct bt_le_per_adv_sync_param *create_params);
 int tester_gap_padv_stop_sync(void);
+int tester_gap_iso_sync_big(void);
+int tester_gap_iso_create_big(void);
 #endif /* defined(CONFIG_BT_EXT_ADV) */
