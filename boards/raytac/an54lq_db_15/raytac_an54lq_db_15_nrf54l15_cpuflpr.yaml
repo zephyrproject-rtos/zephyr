@@ -2,8 +2,8 @@
 # Copyright (c) 2025 Raytac Corporation.
 # SPDX-License-Identifier: Apache-2.0
 
-identifier: raytac_an54l15q_db/nrf54l15/cpuflpr
-name: Raytac-AN54L15Q-DB-nRF54L15-Fast-Lightweight-Peripheral-Processor
+identifier: raytac_an54lq_db_15/nrf54l15/cpuflpr
+name: Raytac-AN54LQ-DB-15-nRF54L15-Fast-Lightweight-Peripheral-Processor
 type: mcu
 arch: riscv
 toolchain:
