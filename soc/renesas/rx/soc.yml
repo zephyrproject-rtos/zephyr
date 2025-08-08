@@ -17,3 +17,6 @@ family:
       - name: rx26t
         socs:
           - name: r5f526tfddfp
+      - name: rx14t
+        socs:
+          - name: r5f514t5amfm
