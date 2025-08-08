@@ -61,6 +61,12 @@ Device Drivers and Devicetree
 
 .. zephyr-keep-sorted-start re(^\w)
 
+ADC
+===
+
+* ``iadc_gecko.c`` driver is replaced by ``adc_silabs_iadc.c``.
+  :dtcompatible:`silabs,gecko-iadc` is replaced by :dtcompatible:`silabs,iadc`.
+
 Comparator
 ==========
 
