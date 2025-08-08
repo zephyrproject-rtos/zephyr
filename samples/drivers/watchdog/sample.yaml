@@ -32,7 +32,7 @@ tests:
       - bl54l15_dvk/nrf54l10/cpuapp/ns
       - bl54l15_dvk/nrf54l15/cpuapp/ns
       - bl54l15u_dvk/nrf54l15/cpuapp/ns
-      - raytac_an54l15q_db/nrf54l15/cpuapp/ns
+      - raytac_an54lq_db_15/nrf54l15/cpuapp/ns
   sample.drivers.watchdog.stm32_wwdg:
     extra_args: DTC_OVERLAY_FILE=boards/stm32_wwdg.overlay
     filter: dt_compat_enabled("st,stm32-window-watchdog")

@@ -19,11 +19,12 @@ tests:
       - bl54l15_dvk/nrf54l10/cpuapp/ns
       - bl54l15_dvk/nrf54l15/cpuapp/ns
       - bl54l15u_dvk/nrf54l15/cpuapp/ns
-      - raytac_an54l15q_db/nrf54l15/cpuapp/ns
       - rpi_pico/rp2040/mcuboot
       - rpi_pico/rp2040/w/mcuboot
       - rpi_pico2/rp2350a/m33/mcuboot
       - rpi_pico2/rp2350a/m33/w/mcuboot
+      - raytac_an54lq_db_15/nrf54l15/cpuapp/ns
+  drivers.adc.b_u585i_iot02a_adc4:
     extra_args:
       - platform:b_u585i_iot02a/stm32u585xx:DTC_OVERLAY_FILE="boards/b_u585i_iot02a_adc4.overlay"
     integration_platforms:

@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "raytac_an54l15q_db_pinctrl.dtsi"
+#include "raytac_an54lq_db_15-pinctrl.dtsi"
 
 / {
 	leds {
@@ -108,6 +108,10 @@
 	pinctrl-0 = <&pwm20_default>;
 	pinctrl-1 = <&pwm20_sleep>;
 	pinctrl-names = "default", "sleep";
+};
+
+&hfxo {
+	startup-time-us = <854>;
 };
 
 /* Get a node label for wi-fi spi to use in shield files */
