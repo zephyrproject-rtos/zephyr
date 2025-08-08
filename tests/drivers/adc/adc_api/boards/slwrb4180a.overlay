@@ -24,6 +24,7 @@
 &adc0 {
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
+	dmas = <&dma0 DMA_REQSEL_IADC0IADC_SCAN>;
 	#address-cells = <1>;
 	#size-cells = <0>;
 	status = "okay";
@@ -46,4 +47,8 @@
 		zephyr,resolution = <12>;
 		zephyr,input-positive = <IADC_INPUT_PD3>;
 	};
+};
+
+&dma0 {
+	status = "okay";
 };
