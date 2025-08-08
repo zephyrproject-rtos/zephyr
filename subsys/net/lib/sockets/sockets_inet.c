@@ -1050,7 +1050,7 @@ static int add_pktinfo(struct net_context *ctx,
 		net_ipv6_addr_copy_raw((uint8_t *)&info.ipi6_addr, ipv6_hdr->dst);
 		info.ipi6_ifindex = ctx->iface;
 
-		ret = insert_pktinfo(msg, IPPROTO_IPV6, IPV6_RECVPKTINFO,
+		ret = insert_pktinfo(msg, IPPROTO_IPV6, IPV6_PKTINFO,
 				     &info, sizeof(info));
 
 		goto out;
