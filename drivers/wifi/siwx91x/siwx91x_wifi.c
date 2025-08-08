@@ -19,6 +19,7 @@
 #include "sl_wifi_callback_framework.h"
 
 #define SIWX91X_DRIVER_VERSION KERNEL_VERSION_STRING
+#define SIWX91X_MAX_RTS_THRESHOLD 2347
 #define MAX_24GHZ_CHANNELS 14
 
 LOG_MODULE_REGISTER(siwx91x_wifi);
@@ -488,6 +489,57 @@ static void siwx91x_iface_init(struct net_if *iface)
 	sidev->state = WIFI_STATE_INACTIVE;
 }
 
+int siwx91x_get_rts_threshold(const struct device *dev, unsigned int *rts_threshold)
+{
+	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
+	struct siwx91x_dev *sidev = dev->data;
+	unsigned short rts_val;
+	int ret;
+
+	__ASSERT(rts_threshold, "rts_threshold cannot be NULL");
+
+	if (sidev->state == WIFI_STATE_INTERFACE_DISABLED) {
+		LOG_ERR("Command given in invalid state");
+		return -EINVAL;
+	}
+
+	ret = sl_wifi_get_rts_threshold(interface, &rts_val);
+	if (ret) {
+		LOG_ERR("Failed to get RTS threshold: 0x%x", ret);
+		return -EIO;
+	}
+	*rts_threshold = rts_val;
+
+	return 0;
+}
+
+int siwx91x_set_rts_threshold(const struct device *dev, unsigned int rts_threshold)
+{
+	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
+	struct siwx91x_dev *sidev = dev->data;
+	int ret;
+
+	__ASSERT(sidev, "sidev cannot be NULL");
+
+	if (sidev->state == WIFI_STATE_INTERFACE_DISABLED) {
+		LOG_ERR("Command given in invalid state");
+		return -EINVAL;
+	}
+
+	if (rts_threshold > SIWX91X_MAX_RTS_THRESHOLD) {
+		LOG_ERR("RTS threshold out of range: %u", rts_threshold);
+		return -EINVAL;
+	}
+
+	ret = sl_wifi_set_rts_threshold(interface, rts_threshold);
+	if (ret) {
+		LOG_ERR("Failed to set RTS threshold: 0x%x", ret);
+		return -EIO;
+	}
+
+	return 0;
+}
+
 static int siwx91x_dev_init(const struct device *dev)
 {
 	return 0;
@@ -506,6 +558,8 @@ static const struct wifi_mgmt_ops siwx91x_mgmt = {
 	.set_twt		= siwx91x_set_twt,
 	.set_power_save		= siwx91x_set_power_save,
 	.get_power_save_config	= siwx91x_get_power_save_config,
+	.get_rts_threshold	= siwx91x_get_rts_threshold,
+	.set_rts_threshold	= siwx91x_set_rts_threshold,
 #if defined(CONFIG_NET_STATISTICS_WIFI)
 	.get_stats		= siwx91x_stats,
 #endif
