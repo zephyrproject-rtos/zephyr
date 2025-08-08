@@ -27,6 +27,7 @@ tests:
       - s32k148_evb
       - frdm_mcxc242
       - stm32f3_disco
+      - raytac_an54lq_db_15/nrf54l15/cpuapp
     integration_platforms:
       - nrf52840dk/nrf52840
   sample.drivers.adc.adc_sequence.8bit:
