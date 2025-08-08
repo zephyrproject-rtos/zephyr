@@ -9,3 +9,12 @@ config ADC_SILABS_IADC
 	select ADC_CONFIGURABLE_INPUTS
 	help
 	  Enable the driver implementation for Silabs Incremental ADC
+
+config ADC_SILABS_IADC_DMA
+	bool "Silabs IADC async DMA support"
+	depends on ADC_SILABS_IADC
+	depends on DMA
+	help
+	  Enable DMA support with the Silabs IADC driver.
+	  This allows ADC conversions to be performed (asynchronously or not)
+	  using DMA for improved performance.
