@@ -681,6 +681,14 @@
 		clk-divider = <1>;
 	};
 
+	ewm0: ewm@c0000 {
+		compatible = "nxp,ewm";
+		reg = <0xc0000 0x6>;
+		interrupts = <100 0>;
+		status = "disabled";
+		clk-divider = <0x0>;
+	};
+
 	flexpwm0: flexpwm@ce000 {
 		compatible = "nxp,flexpwm";
 		reg = <0xce000 0x1000>;
