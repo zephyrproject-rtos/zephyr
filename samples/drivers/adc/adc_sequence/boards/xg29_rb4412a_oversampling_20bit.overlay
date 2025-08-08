@@ -4,12 +4,15 @@
  * Copyright (c) 2025 Silicon Laboratories Inc.
  */
 
-#include <dt-bindings/pinctrl/silabs/xg29-pinctrl.h>
 #include <dt-bindings/adc/silabs-adc.h>
 
 / {
 	zephyr,user {
-		io-channels = <&adc0 3>, <&adc0 4>;
+		io-channels = <&adc0 3>, <&adc0 4>, <&adc0 12>;
+	};
+
+	aliases {
+		adc0 = &adc0;
 	};
 };
 
@@ -34,8 +37,13 @@
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
-		zephyr,oversampling = <5>;
-		zephyr,resolution = <16>;
+		/* IADC will normally take values from DTS for resolution and oversampling.
+		 * CONFIG_SEQUENCE_RESOLUTION and CONFIG_SEQUENCE_OVERSAMPLING are only defined
+		 * because of how the sample works. These properties are not actually used
+		 * by the sample but demonstrate how they should normally be declared.
+		 */
+		zephyr,resolution = <20>;
+		zephyr,oversampling = <10>;
 		zephyr,input-positive = <IADC_INPUT_AVDD>;
 	};
 
@@ -45,8 +53,19 @@
 		zephyr,reference = "ADC_REF_VDD_1";
 		zephyr,vref-mv = <3300>;
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
-		zephyr,oversampling = <5>;
-		zephyr,resolution = <12>;
+		zephyr,resolution = <20>;
+		zephyr,oversampling = <10>;
 		zephyr,input-positive = <IADC_INPUT_PD3>;
+	};
+
+	channel@12 {
+		reg = <12>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,vref-mv = <3300>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <20>;
+		zephyr,oversampling = <10>;
+		zephyr,input-positive = <IADC_INPUT_PC3>;
 	};
 };
