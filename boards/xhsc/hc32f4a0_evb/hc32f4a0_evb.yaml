@@ -1,0 +1,16 @@
+identifier: hc32f4a0
+name: hc32f4a0_evb
+type: mcu
+arch: arm
+ram: 512
+flash: 2048
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
+  - clock control
+  - interrupt control
+  - serial
+vendor: xhsc

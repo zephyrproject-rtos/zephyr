@@ -1,0 +1,37 @@
+/*
+ * Copyright (C) 2024-2025, Xiaohua Semiconductor Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/hc32-pinctrl.h>
+
+&pinctrl {
+	usart1_default: usart1_default {
+		group0 {
+			pinmux = <HC32_PINMUX('H', 15, FUNC, 32, 0)>,
+				<HC32_PINMUX('H', 13, FUNC, 33, 0)>;
+		};
+	};
+
+	usart2_default: usart2_default {
+		group1 {
+			pinmux = <HC32_PINMUX('D', 5, FUNC, 20, 0)>,
+				<HC32_PINMUX('D', 6, FUNC, 20, 0)>;
+		};
+	};
+
+	usart3_default: usart3_default {
+		group1 {
+			pinmux = <HC32_PINMUX('I', 1, FUNC, 36, 0)>,
+				<HC32_PINMUX('I', 2, FUNC, 37, 0)>;
+		};
+	};
+
+	usart4_default: usart4_default {
+		group1 {
+			pinmux = <HC32_PINMUX('I', 6, FUNC, 38, 0)>,
+				<HC32_PINMUX('I', 7, FUNC, 39, 0)>;
+		};
+	};
+};
