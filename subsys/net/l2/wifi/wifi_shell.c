@@ -4022,7 +4022,7 @@ SHELL_SUBCMD_ADD((wifi), rts_threshold, NULL,
 	"<rts_threshold: rts threshold/off>.\n"
 		 "[-i, --iface=<interface index>] : Interface index.\n",
 		 cmd_wifi_set_rts_threshold,
-		 2, 2);
+		 1, 2);
 
 SHELL_SUBCMD_ADD((wifi), scan, NULL,
 		 "Scan for Wi-Fi APs\n"
