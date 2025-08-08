@@ -21,10 +21,12 @@
 
 #if (CONFIG_NRF_RTC_COUNTER_BIT_WIDTH < RTC_BIT_WIDTH)
 #define CUSTOM_COUNTER_BIT_WIDTH 1
-#define WRAP_CH 1
+#define WRAP_CH 0
+#define SYS_CLOCK_CH 1
 #include "nrfx_ppi.h"
 #else
 #define CUSTOM_COUNTER_BIT_WIDTH 0
+#define SYS_CLOCK_CH 0
 #endif
 
 #define RTC_PRETICK (IS_ENABLED(CONFIG_SOC_NRF53_RTC_PRETICK) && \
@@ -37,7 +39,6 @@
 #define RTC_IRQn NRFX_IRQ_NUMBER_GET(RTC)
 #define RTC_LABEL rtc1
 #define CHAN_COUNT_MAX (RTC1_CC_NUM - (RTC_PRETICK ? 1 : 0))
-#define SYS_CLOCK_CH 0
 
 BUILD_ASSERT(CHAN_COUNT <= CHAN_COUNT_MAX, "Not enough compare channels");
 /* Ensure that counter driver for RTC1 is not enabled. */
@@ -270,15 +271,6 @@ static int set_alarm(int32_t chan, uint32_t req_cc, bool exact)
 	 */
 	enum { MIN_CYCLES_FROM_NOW = 3 };
 	uint32_t cc_val = req_cc;
-
-#if CUSTOM_COUNTER_BIT_WIDTH
-	/* If a CC value is 0 when a CLEAR task is set, this will not
-	 * trigger a COMAPRE event. Need to use 1 instead.
-	 */
-	if (cc_val % COUNTER_MAX == 0) {
-		cc_val = 1;
-	}
-#endif
 	uint32_t cc_inc = MIN_CYCLES_FROM_NOW;
 
 	/* Disable event routing for the channel to avoid getting a COMPARE
@@ -294,6 +286,14 @@ static int set_alarm(int32_t chan, uint32_t req_cc, bool exact)
 	for (;;) {
 		uint32_t now;
 
+#if CUSTOM_COUNTER_BIT_WIDTH
+		/* If a CC value is 0 when a CLEAR task is set, this will not
+		 * trigger a COMAPRE event. Need to use 1 instead.
+		 */
+		if ((cc_val & COUNTER_MAX) == 0) {
+			cc_val = 1;
+		}
+#endif
 		set_comparator(chan, cc_val);
 		/* Enable event routing after the required CC value was set.
 		 * Even though the above operation may get repeated (see below),
@@ -592,8 +592,8 @@ void rtc_nrf_isr(const void *arg)
 	}
 
 #if CUSTOM_COUNTER_BIT_WIDTH
-	if (nrfy_rtc_int_enable_check(RTC, NRF_RTC_INT_COMPARE1_MASK) &&
-	    nrfy_rtc_events_process(RTC, NRF_RTC_INT_COMPARE1_MASK)) {
+	if (nrfy_rtc_int_enable_check(RTC, NRF_RTC_CHANNEL_INT_MASK(WRAP_CH)) &&
+	    nrfy_rtc_events_process(RTC, NRF_RTC_CHANNEL_INT_MASK(WRAP_CH))) {
 #else
 	if (nrfy_rtc_int_enable_check(RTC, NRF_RTC_INT_OVERFLOW_MASK) &&
 	    nrfy_rtc_events_process(RTC, NRF_RTC_INT_OVERFLOW_MASK)) {
@@ -601,7 +601,7 @@ void rtc_nrf_isr(const void *arg)
 		overflow_cnt++;
 	}
 
-	for (int32_t chan = 0; chan < CHAN_COUNT; chan++) {
+	for (int32_t chan = SYS_CLOCK_CH; chan < CHAN_COUNT; chan++) {
 		process_channel(chan);
 	}
 }
