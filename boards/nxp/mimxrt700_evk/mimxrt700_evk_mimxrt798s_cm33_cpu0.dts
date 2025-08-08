@@ -131,6 +131,106 @@
 	pinctrl-names = "default";
 };
 
+&lpi2c15 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&pinmux_lpi2c15>;
+	pinctrl-names = "default";
+
+	pca9422: pca9422@61 {
+		compatible = "nxp,pca9422";
+		reg = <0x61>;
+		interrupts = <138 0>;
+
+		charger: pca9422_charger {
+			compatible = "nxp,pca9422-charger";
+			constant-charge-current-max-microamp = <100000>;
+			constant-charge-voltage-max-microvolt = <4200000>;
+			precharge-current-percent = <16>;
+			charge-termination-current-percent = <25>;
+			re-charge-threshold-microvolt = <100000>;
+			input-current-limit-microamp = <470000>;
+			system-voltage-min-threshold-microvolt = <4550000>;
+		};
+
+		regulators: pca9422_regulators {
+			compatible = "nxp,pca9422-regulator";
+			nxp,vsys-uvlo-sel-millivolt = <2700>;
+
+			pca9422_sw1: BUCK1 {
+				regulator-boot-on;
+				low-power-mode = "Normal";
+				enable-mode = "All";
+				nxp,active-microvolt = <1000000>;
+				nxp,sleep-microvolt = <600000>;
+				nxp,standby-microvolt = <1000000>;
+			};
+
+			pca9422_sw2: BUCK2 {
+				regulator-boot-on;
+				low-power-mode = "Normal";
+				enable-mode = "All";
+				nxp,active-microvolt = <1100000>;
+				nxp,sleep-microvolt = <1100000>;
+				nxp,standby-microvolt = <1100000>;
+			};
+
+			pca9422_sw3: BUCK3 {
+				regulator-boot-on;
+				low-power-mode = "Normal";
+				enable-mode = "All";
+				nxp,active-microvolt = <1800000>;
+				nxp,sleep-microvolt = <1800000>;
+				nxp,standby-microvolt = <1800000>;
+			};
+
+			pca9422_sw4: BUCKBOOST {
+				regulator-boot-on;
+				low-power-mode = "Normal";
+				enable-mode = "All";
+				nxp,active-microvolt = <1800000>;
+				nxp,sleep-microvolt = <1800000>;
+				nxp,standby-microvolt = <1800000>;
+			};
+
+			pca9422_ldo1: LDO1 {
+				regulator-boot-on;
+				enable-mode = "All";
+				nxp,active-microvolt = <1800000>;
+				nxp,sleep-microvolt = <1800000>;
+				nxp,standby-microvolt = <1800000>;
+			};
+
+			pca9422_ldo2: LDO2 {
+				regulator-boot-on;
+				low-power-mode = "Normal";
+				enable-mode = "All";
+				nxp,active-microvolt = <1800000>;
+				nxp,sleep-microvolt = <1800000>;
+				nxp,standby-microvolt = <1800000>;
+			};
+
+			pca9422_ldo3: LDO3 {
+				regulator-boot-on;
+				low-power-mode = "Normal";
+				enable-mode = "All";
+				nxp,active-microvolt = <1200000>;
+				nxp,sleep-microvolt = <1200000>;
+				nxp,standby-microvolt = <1200000>;
+			};
+			pca9422_ldo4: LDO4 {
+				regulator-boot-on;
+				enable-mode = "All";
+				nxp,active-microvolt = <3300000>;
+				nxp,sleep-microvolt = <3300000>;
+				nxp,standby-microvolt = <3300000>;
+			};
+		};
+	};
+};
+
 &flexcomm2{
 	status = "okay";
 };
@@ -281,5 +381,9 @@ p3t1755dp_ard_i2c_interface: &flexcomm8_lpi2c8 {};
 };
 
 &mbox4 {
+	status = "okay";
+};
+
+&pca9422 {
 	status = "okay";
 };
