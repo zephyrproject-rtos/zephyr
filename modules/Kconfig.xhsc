@@ -1,0 +1,174 @@
+# Copyright (C) 2024-2025, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config HAS_HC32_DDL
+	bool
+	select HAS_CMSIS
+	depends on SOC_FAMILY_XHSC_HC32
+
+if HAS_HC32_DDL
+
+config HC32_LL_ICG
+	bool
+	default y
+
+config HC32_LL_ADC
+	bool
+
+config HC32_LL_AES
+	bool
+
+config HC32_LL_AOS
+	bool
+
+config HC32_LL_CAN
+	bool
+
+config HC32_LL_CLK
+	bool
+	default y
+
+config HC32_LL_CMP
+	bool
+
+config HC32_LL_CRC
+	bool
+
+config HC32_LL_CTC
+	bool
+
+config HC32_LL_DAC
+	bool
+
+config HC32_LL_DBGC
+	bool
+
+config HC32_LL_DCU
+	bool
+
+config HC32_LL_DMA
+	bool
+
+config HC32_LL_DMC
+	bool
+
+config HC32_LL_DVP
+	bool
+
+config HC32_LL_EFM
+	bool
+	default y
+
+config HC32_LL_EMB
+	bool
+
+config HC32_LL_ETH
+	bool
+
+config HC32_LL_EVENT_PORT
+	bool
+
+config HC32_LL_FCG
+	bool
+	default y
+
+config HC32_LL_FCM
+	bool
+
+config HC32_LL_FMAC
+	bool
+
+config HC32_LL_GPIO
+	bool
+	default y
+
+config HC32_LL_HASH
+	bool
+
+config HC32_LL_HRPWM
+	bool
+
+config HC32_LL_I2C
+	bool
+
+config HC32_LL_I2S
+	bool
+
+config HC32_LL_INTERRUPTS
+	bool
+
+config HC32_LL_INTERRUPTS_SHARE
+	bool
+
+config HC32_LL_KEYSCAN
+	bool
+
+config HC32_LL_MAU
+	bool
+
+config HC32_LL_MPU
+	bool
+
+config HC32_LL_NFC
+	bool
+
+config HC32_LL_OTS
+	bool
+
+config HC32_LL_PWC
+	bool
+	default y
+
+config HC32_LL_QSPI
+	bool
+
+config HC32_LL_RMU
+	bool
+
+config HC32_LL_RTC
+	bool
+
+config HC32_LL_SDIOC
+	bool
+
+config HC32_LL_SMC
+	bool
+
+config HC32_LL_SPI
+	bool
+
+config HC32_LL_SRAM
+	bool
+	default y
+
+config HC32_LL_SWDT
+	bool
+
+config HC32_LL_TMR0
+	bool
+
+config HC32_LL_TMR2
+	bool
+
+config HC32_LL_TMR4
+	bool
+
+config HC32_LL_TMR6
+	bool
+
+config HC32_LL_TMRA
+	bool
+
+config HC32_LL_TRNG
+	bool
+
+config HC32_LL_USART
+	bool
+
+config HC32_LL_USB
+	bool
+
+config HC32_LL_WDT
+	bool
+
+endif

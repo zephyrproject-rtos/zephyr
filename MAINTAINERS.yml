@@ -5508,6 +5508,21 @@ West:
   files:
     - modules/Kconfig.wurthelektronik
 
+"West project: hal_xhsc":
+  status: maintained
+  maintainers:
+    - levizh
+  collaborators:
+    - Pengbiao12345
+    - ETRD
+    - greya5
+    - YangJP
+    - TrackingRobot
+  files:
+    - modules/Kconfig.xhsc
+  labels:
+    - "platform: XHSC"
+
 "West project: hal_xtensa":
   status: maintained
   maintainers:
@@ -5919,6 +5934,27 @@ Xen Platform:
     - snippets/xen_dom0/
   labels:
     - "area: Xen Platform"
+
+XHSC Platform:
+  status: maintained
+  maintainers:
+    - levizh
+  collaborators:
+    - Pengbiao12345
+    - ETRD
+    - greya5
+    - YangJP
+    - TrackingRobot
+  files:
+    - boards/xhsc/
+    - drivers/*/*hc32
+    - dts/arm/xhsc/
+    - dts/bindings/*/xhsc*
+    - include/zephyr/drivers/*/*hc32*
+    - include/zephyr/dt-bindings/*/hc32*
+    - soc/xhsc/
+  labels:
+    - "area: XHSC Platform"
 
 Xilinx Platforms:
   status: odd fixes

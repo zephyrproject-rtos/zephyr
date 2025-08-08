@@ -1,0 +1,19 @@
+# Copyright (C) 2024-2025, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: HC32 Bus FCG
+        enable peripherals clock.get cells value ref macro HC32_MODULES_CLOCKS
+
+compatible: "xhsc,hc32-bus-fcg"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  "#clock-cells":
+    const: 3
+
+clock-cells:
+  - bus
+  - fcg
+  - bits
+

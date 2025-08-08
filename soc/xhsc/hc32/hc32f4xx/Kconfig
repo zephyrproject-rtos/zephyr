@@ -1,0 +1,14 @@
+# Copyright (C) 2024-2025, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_HC32F4XX
+	select ARM
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_CORTEX_M_HAS_VTOR
+	select CPU_CORTEX_M4
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select HAS_HC32_DDL
+	select CLOCK_CONTROL_HC32 if CLOCK_CONTROL
+	help
+	  Enable support for xhsc hc32f4xx MCU series

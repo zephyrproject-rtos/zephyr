@@ -1,0 +1,108 @@
+# Copyright (C) 2024-2025, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: HC32 System Clock
+
+compatible: "xhsc,hc32-clock-sys"
+
+include: [base.yaml]
+
+properties:
+  div-hclk:
+    type: int
+    required: true
+    description: |
+        Division factor for HCLK
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+
+  div-exclk:
+    type: int
+    required: true
+    description: |
+          Division factor for ExMC CLK
+    enum:
+    - 1
+    - 2
+    - 4
+    - 8
+    - 16
+    - 32
+    - 64
+
+  div-pclk0:
+    type: int
+    required: true
+    description: |
+        Division factor for PCLK0
+    enum:
+    - 1
+    - 2
+    - 4
+    - 8
+    - 16
+    - 32
+    - 64
+
+  div-pclk1:
+    type: int
+    required: true
+    description: |
+        Division factor for PCLK1
+    enum:
+    - 1
+    - 2
+    - 4
+    - 8
+    - 16
+    - 32
+    - 64
+
+  div-pclk2:
+    type: int
+    required: true
+    description: |
+        Division factor for PCLK2
+    enum:
+    - 1
+    - 2
+    - 4
+    - 8
+    - 16
+    - 32
+    - 64
+
+  div-pclk3:
+    type: int
+    required: true
+    description: |
+        Division factor for PCLK3
+    enum:
+    - 1
+    - 2
+    - 4
+    - 8
+    - 16
+    - 32
+    - 64
+
+  div-pclk4:
+    type: int
+    required: true
+    description: |
+        Division factor for PCLK4
+    enum:
+    - 1
+    - 2
+    - 4
+    - 8
+    - 16
+    - 32
+    - 64
+

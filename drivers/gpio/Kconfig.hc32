@@ -1,0 +1,12 @@
+# Kconfig - HC32 GPIO configuration
+
+# Copyright (C) 2024-2025, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GPIO_HC32
+	bool "GPIO Driver for HC32 MCUs"
+	depends on DT_HAS_XHSC_HC32_GPIO_ENABLED
+	depends on SOC_FAMILY_HC32
+	select HC32_LL_GPIO
+	help
+	  Enable GPIO driver for HC32 line of MCUs
