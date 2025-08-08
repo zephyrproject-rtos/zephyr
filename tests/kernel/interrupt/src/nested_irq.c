@@ -102,19 +102,19 @@ void isr1(const void *param)
 {
 	ARG_UNUSED(param);
 
-	printk("isr1: Enter\n");
+	k_str_out_count("ISR1: Enter\n");
 
 	/* Set verification token */
 	isr1_result = ISR1_TOKEN;
 
-	printk("isr1: Leave\n");
+	k_str_out_count("ISR1: Leave\n");
 }
 
 void isr0(const void *param)
 {
 	ARG_UNUSED(param);
 
-	printk("isr0: Enter\n");
+	k_str_out_count("ISR0: Enter\n");
 
 	/* Set verification token */
 	isr0_result = ISR0_TOKEN;
@@ -128,7 +128,7 @@ void isr0(const void *param)
 	/* Validate nested ISR result token */
 	zassert_equal(isr1_result, ISR1_TOKEN, "isr1 did not execute");
 
-	printk("isr0: Leave\n");
+	k_str_out_count("ISR0: Leave\n");
 }
 
 /**
