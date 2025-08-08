@@ -1,0 +1,27 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    This binding provides resources required to build and run the
+    samples/drivers/opamp/output_measure in Zephyr.
+
+compatible: "opamp-output-measure"
+
+properties:
+  opamp:
+    type: phandles
+    required: true
+    description: |
+      Indicates opamp to be tested.
+
+  io-channels:
+    type: phandle-array
+    required: true
+    description: |
+      Indicates ADC channels to be used.
+
+  adc-read-delay-ms:
+    type: int
+    default: 0
+    description: |
+      Indicates delay (in ms) between voltage set and ADC read.

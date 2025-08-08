@@ -353,6 +353,30 @@
 			#io-channel-cells = <2>;
 		};
 
+		opamp0: opamp@400b7000 {
+			compatible = "nxp,opamp_fast";
+			reg = <0x400b7000 0x1000>;
+			status = "disabled";
+		};
+
+		opamp1: opamp@400b8000 {
+			compatible = "nxp,opamp_fast";
+			reg = <0x400b8000 0x1000>;
+			status = "disabled";
+		};
+
+		opamp2: opamp@400b9000 {
+			compatible = "nxp,opamp_fast";
+			reg = <0x400b9000 0x1000>;
+			status = "disabled";
+		};
+
+		opamp3: opamp@400ba000 {
+			compatible = "nxp,opamp_fast";
+			reg = <0x400ba000 0x1000>;
+			status = "disabled";
+		};
+
 		lpi2c0: i2c@4009a000 {
 			compatible = "nxp,lpi2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;

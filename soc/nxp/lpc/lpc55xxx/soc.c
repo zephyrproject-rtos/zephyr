@@ -1,4 +1,4 @@
-/* Copyright 2017, 2019-2024 NXP
+/* Copyright 2017, 2019-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,8 +30,8 @@
 #include "usb_phy.h"
 #include "usb.h"
 #endif
-#if defined(CONFIG_SOC_LPC55S36) && (defined(CONFIG_ADC_MCUX_LPADC) \
-	|| defined(CONFIG_DAC_MCUX_LPDAC))
+#if defined(CONFIG_SOC_LPC55S36) &&                                                                \
+	(defined(CONFIG_ADC_MCUX_LPADC) || defined(CONFIG_DAC_MCUX_LPDAC))
 #include <fsl_vref.h>
 #endif
 
@@ -41,35 +41,31 @@ extern uint32_t SystemCoreClock;
 /*Should be in the range of 12MHz to 32MHz */
 static uint32_t ExternalClockFrequency;
 
-
-#define CTIMER_CLOCK_SOURCE(node_id) \
+#define CTIMER_CLOCK_SOURCE(node_id)                                                               \
 	TO_CTIMER_CLOCK_SOURCE(DT_CLOCKS_CELL(node_id, name), DT_PROP(node_id, clk_source))
 #define TO_CTIMER_CLOCK_SOURCE(inst, val) TO_CLOCK_ATTACH_ID(inst, val)
-#define TO_CLOCK_ATTACH_ID(inst, val) MUX_A(CM_CTIMERCLKSEL##inst, val)
-#define CTIMER_CLOCK_SETUP(node_id) CLOCK_AttachClk(CTIMER_CLOCK_SOURCE(node_id));
+#define TO_CLOCK_ATTACH_ID(inst, val)     MUX_A(CM_CTIMERCLKSEL##inst, val)
+#define CTIMER_CLOCK_SETUP(node_id)       CLOCK_AttachClk(CTIMER_CLOCK_SOURCE(node_id));
 
 #ifdef CONFIG_INIT_PLL0
 const pll_setup_t pll0Setup = {
-	.pllctrl = SYSCON_PLL0CTRL_CLKEN_MASK | SYSCON_PLL0CTRL_SELI(2U) |
-		SYSCON_PLL0CTRL_SELP(31U),
+	.pllctrl =
+		SYSCON_PLL0CTRL_CLKEN_MASK | SYSCON_PLL0CTRL_SELI(2U) | SYSCON_PLL0CTRL_SELP(31U),
 	.pllndec = SYSCON_PLL0NDEC_NDIV(125U),
 	.pllpdec = SYSCON_PLL0PDEC_PDIV(8U),
 	.pllsscg = {0x0U, (SYSCON_PLL0SSCG1_MDIV_EXT(3072U) | SYSCON_PLL0SSCG1_SEL_EXT_MASK)},
 	.pllRate = 24576000U,
-	.flags = PLL_SETUPFLAG_WAITLOCK
-};
+	.flags = PLL_SETUPFLAG_WAITLOCK};
 #endif
 
 #ifdef CONFIG_INIT_PLL1
-const pll_setup_t pll1Setup = {
-	.pllctrl = SYSCON_PLL1CTRL_CLKEN_MASK | SYSCON_PLL1CTRL_SELI(53U) |
-		SYSCON_PLL1CTRL_SELP(31U),
-	.pllndec = SYSCON_PLL1NDEC_NDIV(8U),
-	.pllpdec = SYSCON_PLL1PDEC_PDIV(1U),
-	.pllmdec = SYSCON_PLL1MDEC_MDIV(144U),
-	.pllRate = 144000000U,
-	.flags = PLL_SETUPFLAG_WAITLOCK
-};
+const pll_setup_t pll1Setup = {.pllctrl = SYSCON_PLL1CTRL_CLKEN_MASK | SYSCON_PLL1CTRL_SELI(53U) |
+					  SYSCON_PLL1CTRL_SELP(31U),
+			       .pllndec = SYSCON_PLL1NDEC_NDIV(8U),
+			       .pllpdec = SYSCON_PLL1PDEC_PDIV(1U),
+			       .pllmdec = SYSCON_PLL1MDEC_MDIV(144U),
+			       .pllRate = 144000000U,
+			       .flags = PLL_SETUPFLAG_WAITLOCK};
 #endif
 
 /**
@@ -87,8 +83,8 @@ __weak void clock_init(void)
 	POWER_PowerInit();
 #endif
 
-#if defined(CONFIG_SOC_LPC55S06) || defined(CONFIG_SOC_LPC55S16) || \
-	defined(CONFIG_SOC_LPC55S26) || defined(CONFIG_SOC_LPC55S28) || \
+#if defined(CONFIG_SOC_LPC55S06) || defined(CONFIG_SOC_LPC55S16) ||                                \
+	defined(CONFIG_SOC_LPC55S26) || defined(CONFIG_SOC_LPC55S28) ||                            \
 	defined(CONFIG_SOC_LPC55S36) || defined(CONFIG_SOC_LPC55S69_CPU0)
 	/* Set up the clock sources */
 	/* Configure FRO192M */
@@ -110,7 +106,6 @@ __weak void clock_init(void)
 	SystemCoreClock = 144000000U;
 #endif
 
-
 	/* These functions must be called before increasing to a higher frequency
 	 * Additionally, CONFIG_TRUSTED_EXECUTION_NONSECURE is being used
 	 * since the non-secure SOCs should not have access to the flash
@@ -122,7 +117,6 @@ __weak void clock_init(void)
 	/*!< Set FLASH wait states for core */
 	CLOCK_SetFLASHAccessCyclesForFreq(SystemCoreClock);
 #endif /* !CONFIG_TRUSTED_EXECUTION_NONSECURE */
-
 
 #if defined(CONFIG_INIT_PLL0) || defined(CONFIG_INIT_PLL1)
 	/* Configure XTAL32M */
@@ -152,7 +146,6 @@ __weak void clock_init(void)
 
 #endif /* CONFIG_SOC_LPC55S06 || !CONFIG_INIT_PLL1 */
 
-
 #ifdef CONFIG_INIT_PLL0
 	/* Switch PLL0 clock source selector to XTAL32M */
 	CLOCK_AttachClk(kEXT_CLK_to_PLL0);
@@ -169,27 +162,26 @@ __weak void clock_init(void)
 #endif /* CONFIG_SOC_LPC55S36 */
 #endif /* CONFIG_INIT_PLL0 */
 
-
 	/* Set up dividers */
 	CLOCK_SetClkDiv(kCLOCK_DivAhbClk, 1U, false);
 
 	/* Enables the clock for the I/O controller.: Enable Clock. */
 	CLOCK_EnableClock(kCLOCK_Iocon);
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm0), nxp_lpc_i2c, okay) || \
-	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm0), nxp_lpc_spi, okay) || \
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm0), nxp_lpc_i2c, okay) ||                       \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm0), nxp_lpc_spi, okay) ||                   \
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm0), nxp_lpc_usart, okay)
 	CLOCK_AttachClk(kFRO_HF_DIV_to_FLEXCOMM0);
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm1), nxp_lpc_i2c, okay) || \
-	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm1), nxp_lpc_spi, okay) || \
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm1), nxp_lpc_i2c, okay) ||                       \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm1), nxp_lpc_spi, okay) ||                   \
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm1), nxp_lpc_usart, okay)
 	CLOCK_AttachClk(kFRO_HF_DIV_to_FLEXCOMM1);
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm2), nxp_lpc_i2c, okay) || \
-	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm2), nxp_lpc_spi, okay) || \
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm2), nxp_lpc_i2c, okay) ||                       \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm2), nxp_lpc_spi, okay) ||                   \
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm2), nxp_lpc_usart, okay)
 #if defined(CONFIG_SOC_LPC55S36)
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom2Clk, 0U, true);
@@ -198,14 +190,14 @@ __weak void clock_init(void)
 	CLOCK_AttachClk(kFRO_HF_DIV_to_FLEXCOMM2);
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm3), nxp_lpc_i2c, okay) || \
-	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm3), nxp_lpc_spi, okay) || \
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm3), nxp_lpc_i2c, okay) ||                       \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm3), nxp_lpc_spi, okay) ||                   \
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm3), nxp_lpc_usart, okay)
 	CLOCK_AttachClk(kFRO_HF_DIV_to_FLEXCOMM3);
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm4), nxp_lpc_i2c, okay) || \
-	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm4), nxp_lpc_spi, okay) || \
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm4), nxp_lpc_i2c, okay) ||                       \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm4), nxp_lpc_spi, okay) ||                   \
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm4), nxp_lpc_usart, okay)
 #if defined(CONFIG_SOC_LPC55S36)
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom4Clk, 0U, true);
@@ -214,20 +206,20 @@ __weak void clock_init(void)
 	CLOCK_AttachClk(kFRO_HF_DIV_to_FLEXCOMM4);
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm5), nxp_lpc_i2c, okay) || \
-	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm5), nxp_lpc_spi, okay) || \
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm5), nxp_lpc_i2c, okay) ||                       \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm5), nxp_lpc_spi, okay) ||                   \
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm5), nxp_lpc_usart, okay)
 	CLOCK_AttachClk(kFRO_HF_DIV_to_FLEXCOMM5);
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm6), nxp_lpc_i2c, okay) || \
-	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm6), nxp_lpc_spi, okay) || \
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm6), nxp_lpc_i2c, okay) ||                       \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm6), nxp_lpc_spi, okay) ||                   \
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm6), nxp_lpc_usart, okay)
 	CLOCK_AttachClk(kFRO_HF_DIV_to_FLEXCOMM6);
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm7), nxp_lpc_i2c, okay) || \
-	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm7), nxp_lpc_spi, okay) || \
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm7), nxp_lpc_i2c, okay) ||                       \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm7), nxp_lpc_spi, okay) ||                   \
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm7), nxp_lpc_usart, okay)
 	CLOCK_AttachClk(kFRO_HF_DIV_to_FLEXCOMM7);
 #endif
@@ -347,9 +339,9 @@ __weak void clock_init(void)
 
 #endif
 
-DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_SETUP)
+	DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_SETUP)
 
-DT_FOREACH_STATUS_OKAY(nxp_ctimer_pwm, CTIMER_CLOCK_SETUP)
+	DT_FOREACH_STATUS_OKAY(nxp_ctimer_pwm, CTIMER_CLOCK_SETUP)
 
 #if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm6), nxp_lpc_i2s, okay))
 #if defined(CONFIG_SOC_LPC55S36)
@@ -374,8 +366,7 @@ DT_FOREACH_STATUS_OKAY(nxp_ctimer_pwm, CTIMER_CLOCK_SETUP)
 	CLOCK_AttachClk(kMCAN_DIV_to_MCAN);
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(sdif), nxp_lpc_sdif, okay) && \
-	CONFIG_MCUX_SDIF
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(sdif), nxp_lpc_sdif, okay) && CONFIG_MCUX_SDIF
 	/* attach main clock to SDIF */
 	CLOCK_AttachClk(kMAIN_CLK_to_SDIO_CLK);
 	CLOCK_SetClkDiv(kCLOCK_DivSdioClk, 3, true);
@@ -385,12 +376,10 @@ DT_FOREACH_STATUS_OKAY(nxp_ctimer_pwm, CTIMER_CLOCK_SETUP)
 
 #if defined(CONFIG_SOC_LPC55S36) && defined(CONFIG_PWM)
 	/* Set the Submodule Clocks for FlexPWM */
-	SYSCON->PWM0SUBCTL |=
-		(SYSCON_PWM0SUBCTL_CLK0_EN_MASK | SYSCON_PWM0SUBCTL_CLK1_EN_MASK |
-		SYSCON_PWM0SUBCTL_CLK2_EN_MASK);
-	SYSCON->PWM1SUBCTL |=
-		(SYSCON_PWM1SUBCTL_CLK0_EN_MASK | SYSCON_PWM1SUBCTL_CLK1_EN_MASK |
-		SYSCON_PWM1SUBCTL_CLK2_EN_MASK);
+	SYSCON->PWM0SUBCTL |= (SYSCON_PWM0SUBCTL_CLK0_EN_MASK | SYSCON_PWM0SUBCTL_CLK1_EN_MASK |
+			       SYSCON_PWM0SUBCTL_CLK2_EN_MASK);
+	SYSCON->PWM1SUBCTL |= (SYSCON_PWM1SUBCTL_CLK0_EN_MASK | SYSCON_PWM1SUBCTL_CLK1_EN_MASK |
+			       SYSCON_PWM1SUBCTL_CLK2_EN_MASK);
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(adc0), nxp_lpc_lpadc, okay)
@@ -398,8 +387,7 @@ DT_FOREACH_STATUS_OKAY(nxp_ctimer_pwm, CTIMER_CLOCK_SETUP)
 	CLOCK_SetClkDiv(kCLOCK_DivAdc0Clk, 2U, true);
 	CLOCK_AttachClk(kFRO_HF_to_ADC0);
 #else /* not LPC55s36 */
-	CLOCK_SetClkDiv(kCLOCK_DivAdcAsyncClk,
-			DT_PROP(DT_NODELABEL(adc0), clk_divider), true);
+	CLOCK_SetClkDiv(kCLOCK_DivAdcAsyncClk, DT_PROP(DT_NODELABEL(adc0), clk_divider), true);
 	CLOCK_AttachClk(MUX_A(CM_ADCASYNCCLKSEL, DT_PROP(DT_NODELABEL(adc0), clk_source)));
 
 	/* Power up the ADC */
@@ -422,6 +410,23 @@ DT_FOREACH_STATUS_OKAY(nxp_ctimer_pwm, CTIMER_CLOCK_SETUP)
 #endif /* SOC platform */
 #endif /* DAC */
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(opamp0))
+	RESET_PeripheralReset(kOPAMP0_RST_SHIFT_RSTn);
+	CLOCK_EnableClock(kCLOCK_Opamp0);
+	POWER_DisablePD(kPDRUNCFG_PD_OPAMP0);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(opamp1))
+	RESET_PeripheralReset(kOPAMP1_RST_SHIFT_RSTn);
+	CLOCK_EnableClock(kCLOCK_Opamp1);
+	POWER_DisablePD(kPDRUNCFG_PD_OPAMP1);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(opamp2))
+	RESET_PeripheralReset(kOPAMP2_RST_SHIFT_RSTn);
+	CLOCK_EnableClock(kCLOCK_Opamp2);
+	POWER_DisablePD(kPDRUNCFG_PD_OPAMP2);
+#endif
 }
 
 /**
@@ -455,7 +460,6 @@ void soc_reset_hook(void)
 {
 	SystemInit();
 
-
 #ifndef CONFIG_LOG_BACKEND_SWO
 	/*
 	 * SystemInit unconditionally enables the trace clock.
@@ -484,7 +488,6 @@ int _second_core_init(void)
 {
 	int32_t temp;
 
-
 	/* Setup the reset handler pointer (PC) and stack pointer value.
 	 * This is used once the second core runs its startup code.
 	 * The second core first boots from flash (address 0x00000000)
@@ -496,15 +499,12 @@ int _second_core_init(void)
 	SYSCON->CPUCFG |= SYSCON_CPUCFG_CPU1ENABLE_MASK;
 
 	/* Boot source for Core 1 from flash */
-	SYSCON->CPBOOT = SYSCON_CPBOOT_CPBOOT(DT_REG_ADDR(
-						DT_CHOSEN(zephyr_code_cpu1_partition)));
+	SYSCON->CPBOOT = SYSCON_CPBOOT_CPBOOT(DT_REG_ADDR(DT_CHOSEN(zephyr_code_cpu1_partition)));
 
 	temp = SYSCON->CPUCTRL;
 	temp |= 0xc0c48000;
-	SYSCON->CPUCTRL = temp | SYSCON_CPUCTRL_CPU1RSTEN_MASK |
-						SYSCON_CPUCTRL_CPU1CLKEN_MASK;
-	SYSCON->CPUCTRL = (temp | SYSCON_CPUCTRL_CPU1CLKEN_MASK) &
-						(~SYSCON_CPUCTRL_CPU1RSTEN_MASK);
+	SYSCON->CPUCTRL = temp | SYSCON_CPUCTRL_CPU1RSTEN_MASK | SYSCON_CPUCTRL_CPU1CLKEN_MASK;
+	SYSCON->CPUCTRL = (temp | SYSCON_CPUCTRL_CPU1CLKEN_MASK) & (~SYSCON_CPUCTRL_CPU1RSTEN_MASK);
 
 	return 0;
 }
