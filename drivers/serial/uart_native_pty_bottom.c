@@ -27,27 +27,8 @@
 #define ERROR nsi_print_error_and_exit
 #define WARN nsi_print_warning
 
-/**
- * @brief Poll the device for input.
- *
- * @param in_f   Input file descriptor
- * @param p_char Pointer to character.
- * @param len    Maximum number of characters to read.
- *
- * @retval >0 Number of characters actually read
- * @retval -1 If no character was available to read
- * @retval -2 if the stdin is disconnected
- */
-int np_uart_stdin_poll_in_bottom(int in_f, unsigned char *p_char, int len)
+static int np_uart_poll_in_bottom(int in_f, unsigned char *p_char, int len)
 {
-	if (feof(stdin)) {
-		/*
-		 * The stdinput is fed from a file which finished or the user
-		 * pressed Ctrl+D
-		 */
-		return -2;
-	}
-
 	int n = -1;
 
 	int ready;
@@ -65,12 +46,63 @@ int np_uart_stdin_poll_in_bottom(int in_f, unsigned char *p_char, int len)
 		ERROR("%s: Error on select ()\n", __func__);
 	}
 
+	if (len <= 0) {
+		return 0;
+	}
+
 	n = read(in_f, p_char, len);
 	if ((n == -1) || (n == 0)) {
 		return -1;
 	}
 
 	return n;
+}
+
+/**
+ * @brief Poll the device for input.
+ *
+ * Note: The function can be called with len == 0, to check if
+ *       any data is available or the input is disconnected.
+ *
+ * @param in_f   Input file descriptor
+ * @param p_char Pointer to character.
+ * @param len    Maximum number of characters to read.
+ *
+ * @retval >0 Number of characters actually read
+ * @retval == 0 If a character is available to read but len was 0
+ * @retval -1 If no character was available to read
+ * @retval -2 if the stdin is disconnected
+ */
+int np_uart_stdin_poll_in_bottom(int in_f, unsigned char *p_char, int len)
+{
+	if (feof(stdin)) {
+		/*
+		 * The stdinput is fed from a file which finished or the user
+		 * pressed Ctrl+D
+		 */
+		return -2;
+	}
+
+	return np_uart_poll_in_bottom(in_f, p_char, len);
+}
+
+/**
+ * @brief Poll the device for input.
+ *
+ * Note: The function can be called with len == 0, to check if
+ *       any data is available.
+ *
+ * @param in_f   Input file descriptor
+ * @param p_char Pointer to character.
+ * @param len    Maximum number of characters to read.
+ *
+ * @retval >0 Number of characters actually read
+ * @retval == 0 If a character is available to read but len was 0
+ * @retval -1 If no character was available to read
+ */
+int np_uart_pty_poll_in_bottom(int in_f, unsigned char *p_char, int len)
+{
+	return np_uart_poll_in_bottom(in_f, p_char, len);
 }
 
 /**
