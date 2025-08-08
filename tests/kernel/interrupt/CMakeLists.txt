@@ -16,6 +16,10 @@ target_sources(app PRIVATE
     src/nested_irq.c
     )
 
+if(CONFIG_ARM64)
+  add_compile_options(-mgeneral-regs-only)
+endif()
+
 target_sources_ifdef(CONFIG_DYNAMIC_INTERRUPTS app PRIVATE src/dynamic_isr.c)
 target_sources_ifdef(CONFIG_X86 app PRIVATE src/regular_isr.c)
 target_sources_ifdef(CONFIG_SHARED_INTERRUPTS app PRIVATE src/static_shared_irq.c)
