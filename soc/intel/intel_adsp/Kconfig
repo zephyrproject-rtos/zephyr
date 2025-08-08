@@ -63,11 +63,11 @@ config MEMORY_WIN_1_SIZE
 
 config MEMORY_WIN_2_SIZE
 	int "Size of memory window 2"
-	default 8192
+	default 12288
 	help
 	  Size of memory window 2.
 
-	  This window is used for debug.
+	  This window is used for debug, default size is 12288 bytes
 
 config MEMORY_WIN_3_SIZE
 	int "Size of memory window 3"
