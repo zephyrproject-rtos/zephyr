@@ -299,6 +299,255 @@ static void avrcp_browsed_player_rsp(struct bt_avrcp_ct *ct, uint8_t tid,
 	}
 }
 
+static const char *player_app_attr_name(uint8_t id)
+{
+	switch (id) {
+	case 0x01: return "EQUALIZER";
+	case 0x02: return "REPEAT_MODE";
+	case 0x03: return "SHUFFLE";
+	case 0x04: return "SCAN";
+	default:   return "UNKNOWN";
+	}
+}
+
+static void avrcp_list_player_app_setting_attrs_rsp(struct bt_avrcp_ct *ct, uint8_t tid,
+						    uint8_t status, struct net_buf *buf)
+{
+	struct bt_avrcp_list_app_setting_attr_rsp *rsp;
+
+	bt_shell_print("list player app setting attrs : status=0x%02x", status);
+	if (buf == NULL) {
+		return;
+	}
+
+	if (buf->len < sizeof(*rsp)) {
+		bt_shell_print("Invalid response data length");
+		return;
+	}
+	rsp = net_buf_pull_mem(buf, sizeof(*rsp));
+
+	while (buf->len > 0) {
+		uint8_t attr = net_buf_pull_u8(buf);
+
+		bt_shell_print(" attr =0x%02x (%s)",  attr, player_app_attr_name(attr));
+		if (rsp->num_attrs > 0) {
+			rsp->num_attrs--;
+		} else {
+			bt_shell_warn("num_attrs is mismatched with received data");
+			break;
+		}
+	}
+
+	if (rsp->num_attrs > 0) {
+		bt_shell_print("num_attrs mismatch: expected 0, got %u", rsp->num_attrs);
+	}
+}
+
+static void avrcp_list_player_app_setting_vals_rsp(struct bt_avrcp_ct *ct, uint8_t tid,
+						   uint8_t status, struct net_buf *buf)
+{
+	struct bt_avrcp_list_player_app_setting_vals_rsp *rsp;
+
+	bt_shell_print("list player app setting vals : status=0x%02x", status);
+	if (buf == NULL) {
+		return;
+	}
+
+	if (buf->len < sizeof(*rsp)) {
+		bt_shell_print("Invalid response data length");
+		return;
+	}
+	rsp = net_buf_pull_mem(buf, sizeof(*rsp));
+	while (buf->len > 0) {
+		uint8_t val = net_buf_pull_u8(buf);
+
+		bt_shell_print(" val : %u", val);
+		if (rsp->num_values > 0) {
+			rsp->num_values--;
+		} else {
+			bt_shell_warn("num_values is mismatched with received data");
+			break;
+		}
+	}
+
+	if (rsp->num_values > 0) {
+		bt_shell_print("num_values mismatch: expected 0, got %u", rsp->num_values);
+	}
+}
+
+static void avrcp_get_curr_player_app_setting_val_rsp(struct bt_avrcp_ct *ct, uint8_t tid,
+						      uint8_t status, struct net_buf *buf)
+{
+	struct bt_avrcp_get_curr_player_app_setting_val_rsp *rsp;
+	struct bt_avrcp_app_setting_attr_val attr_vals = {0};
+
+	bt_shell_print("get curr player app setting val : status=0x%02x", status);
+	if (buf == NULL) {
+		return;
+	}
+
+	if (buf->len < sizeof(*rsp)) {
+		bt_shell_print("Invalid response data length");
+		return;
+	}
+	rsp = net_buf_pull_mem(buf, sizeof(*rsp));
+	while (buf->len > 0) {
+
+		if (buf->len < sizeof(struct bt_avrcp_app_setting_attr_val)) {
+			bt_shell_print("incompleted message");
+			break;
+		}
+		attr_vals.attr_id = net_buf_pull_u8(buf);
+		attr_vals.value_id = net_buf_pull_u8(buf);
+
+		bt_shell_print(" attr_id :%u val %u", attr_vals.attr_id, attr_vals.value_id);
+		if (rsp->num_attrs > 0) {
+			rsp->num_attrs--;
+		} else {
+			bt_shell_warn("num_attrs %d is mismatched with received", rsp->num_attrs);
+			break;
+		}
+	}
+
+	if (rsp->num_attrs > 0) {
+		bt_shell_print("num_attrs mismatch: expected 0, got %u", rsp->num_attrs);
+	}
+}
+
+static void avrcp_set_player_app_setting_val_rsp(struct bt_avrcp_ct *ct, uint8_t tid,
+						 uint8_t status)
+{
+	bt_shell_print("SetPlayerAppSettingValue rsp: tid=0x%02x, status=0x%02x", tid, status);
+}
+
+static void avrcp_get_player_app_setting_attr_text_rsp(struct bt_avrcp_ct *ct, uint8_t tid,
+						       uint8_t status, struct net_buf *buf)
+{
+	struct bt_avrcp_get_player_app_setting_attr_text_rsp *rsp;
+	struct bt_avrcp_app_setting_attr_text *attr_text;
+
+	bt_shell_print("get player app setting attr text : status=0x%02x", status);
+	if (buf == NULL) {
+		return;
+	}
+
+	if (buf->len < sizeof(*rsp)) {
+		bt_shell_print("Invalid response data length");
+		return;
+	}
+	rsp = net_buf_pull_mem(buf, sizeof(*rsp));
+	while (buf->len > 0) {
+
+		if (buf->len < sizeof(struct bt_avrcp_app_setting_attr_text)) {
+			bt_shell_print("incompleted message");
+			break;
+		}
+		attr_text = net_buf_pull_mem(buf, sizeof(struct bt_avrcp_app_setting_attr_text));
+		attr_text->charset_id = sys_be16_to_cpu(attr_text->charset_id);
+
+		bt_shell_print("attr=0x%02x, charset=0x%04x, text_len=%u", attr_text->attr_id,
+			       attr_text->charset_id, attr_text->text_len);
+
+		if (buf->len < attr_text->text_len) {
+			bt_shell_print("incompleted message for attr_text");
+			break;
+		}
+		net_buf_pull_mem(buf, attr_text->text_len);
+
+		if (attr_text->charset_id == BT_AVRCP_CHARSET_UTF8) {
+			bt_shell_print("Raw attr_text:");
+			for (int i = 0; i < attr_text->text_len; i++) {
+				bt_shell_print("%c", attr_text->text[i]);
+			}
+		} else {
+			bt_shell_print(" Get attr_text : ");
+			bt_shell_hexdump(attr_text->text, attr_text->text_len);
+		}
+
+		if (rsp->num_attrs > 0) {
+			rsp->num_attrs--;
+		} else {
+			bt_shell_warn("num_attrs %d is mismatched with received", rsp->num_attrs);
+			break;
+		}
+	}
+
+	if (rsp->num_attrs > 0) {
+		bt_shell_print("num_attrs mismatch: expected 0, got %u", rsp->num_attrs);
+	}
+}
+
+static void avrcp_get_player_app_setting_val_text_rsp(struct bt_avrcp_ct *ct, uint8_t tid,
+						      uint8_t status, struct net_buf *buf)
+{
+	struct bt_avrcp_get_player_app_setting_val_text_rsp *rsp;
+	struct bt_avrcp_app_setting_val_text *val_text;
+
+	bt_shell_print("get player app setting val text : status=0x%02x", status);
+	if (buf == NULL) {
+		return;
+	}
+
+	if (buf->len < sizeof(*rsp)) {
+		bt_shell_print("Invalid response data length");
+		return;
+	}
+
+	rsp = net_buf_pull_mem(buf, sizeof(*rsp));
+
+	while (buf->len > 0) {
+		if (buf->len < sizeof(struct bt_avrcp_app_setting_val_text)) {
+			bt_shell_print("incompleted message");
+			break;
+		}
+
+		val_text = net_buf_pull_mem(buf, sizeof(struct bt_avrcp_app_setting_val_text));
+		val_text->charset_id = sys_be16_to_cpu(val_text->charset_id);
+
+		bt_shell_print("val=0x%02x, charset=0x%04x, text_len=%u",
+			       val_text->value_id, val_text->charset_id, val_text->text_len);
+
+		if (buf->len < val_text->text_len) {
+			bt_shell_print("incompleted message for val_text");
+			break;
+		}
+
+		/* Take a pointer to the text bytes before advancing the buffer */
+		uint8_t *text = net_buf_pull_mem(buf, val_text->text_len);
+
+		if (val_text->charset_id == BT_AVRCP_CHARSET_UTF8) {
+			bt_shell_print("Raw val_text:");
+			for (uint16_t i = 0; i < val_text->text_len; i++) {
+				bt_shell_print("%c", text[i]);
+			}
+		} else {
+			bt_shell_print(" Get val_text : ");
+			bt_shell_hexdump(text, val_text->text_len);
+		}
+
+		if (rsp->num_values > 0) {
+			rsp->num_values--;
+		} else {
+			bt_shell_warn("num_values %d is mismatched with received", rsp->num_values);
+			break;
+		}
+	}
+
+	if (rsp->num_values > 0) {
+		bt_shell_print("num_values mismatch: expected 0, got %u", rsp->num_values);
+	}
+}
+
+static void avrcp_inform_displayable_char_rsp(struct bt_avrcp_ct *ct, uint8_t tid, uint8_t status)
+{
+	bt_shell_print("Inform displayable char rsp: tid=0x%02x, status=0x%02x", tid, status);
+}
+
+static void avrcp_inform_batt_status_of_ct_rsp(struct bt_avrcp_ct *ct, uint8_t tid, uint8_t status)
+{
+	bt_shell_print("Inform battstatus of ct rsp: tid=0x%02x, status=0x%02x", tid, status);
+}
+
 static struct bt_avrcp_ct_cb app_avrcp_ct_cb = {
 	.connected = avrcp_ct_connected,
 	.disconnected = avrcp_ct_disconnected,
@@ -310,6 +559,14 @@ static struct bt_avrcp_ct_cb app_avrcp_ct_cb = {
 	.passthrough_rsp = avrcp_passthrough_rsp,
 	.browsed_player_rsp = avrcp_browsed_player_rsp,
 	.notification = avrcp_notification_rsp,
+	.list_player_app_setting_attrs = avrcp_list_player_app_setting_attrs_rsp,
+	.list_player_app_setting_vals = avrcp_list_player_app_setting_vals_rsp,
+	.get_curr_player_app_setting_val = avrcp_get_curr_player_app_setting_val_rsp,
+	.set_player_app_setting_val = avrcp_set_player_app_setting_val_rsp,
+	.get_player_app_setting_attr_text = avrcp_get_player_app_setting_attr_text_rsp,
+	.get_player_app_setting_val_text = avrcp_get_player_app_setting_val_text_rsp,
+	.inform_displayable_char_set = avrcp_inform_displayable_char_rsp,
+	.inform_batt_status_of_ct = avrcp_inform_batt_status_of_ct_rsp,
 };
 
 static void avrcp_tg_connected(struct bt_conn *conn, struct bt_avrcp_tg *tg)
@@ -415,7 +672,137 @@ static void avrcp_passthrough_req(struct bt_avrcp_tg *tg, uint8_t tid, struct ne
 		bt_shell_print("company_id: 0x%06x", sys_get_be24(opvu->company_id));
 		bt_shell_print("opid_vu: 0x%04x", sys_be16_to_cpu(opvu->opid_vu));
 	}
+}
 
+static void avrcp_list_player_app_setting_attrs_req(struct bt_avrcp_tg *tg, uint8_t tid)
+{
+	tg_tid = tid;
+	bt_shell_print("AVRCP TG: ListPlayerAppSettingAttributes, tid=0x%02x", tid);
+}
+
+static void avrcp_list_player_app_setting_vals_req(struct bt_avrcp_tg *tg, uint8_t tid,
+						   uint8_t attr_id)
+{
+	tg_tid = tid;
+	bt_shell_print("AVRCP TG: List App Setting vals, tid=0x%02x, attr_id=0x%02x", tid, attr_id);
+}
+
+static void avrcp_get_curr_player_app_setting_val_req(struct bt_avrcp_tg *tg,
+						      uint8_t tid, struct net_buf *buf)
+{
+	struct bt_avrcp_get_curr_player_app_setting_val_cmd *cmd;
+
+	cmd = net_buf_pull_mem(buf, sizeof(*cmd));
+
+	tg_tid = tid;
+
+	while (buf->len > 0) {
+		uint8_t attr_ids = net_buf_pull_u8(buf);
+
+		bt_shell_print(" attr_ids: %u", attr_ids);
+		if (cmd->num_attrs > 0) {
+			cmd->num_attrs--;
+		} else {
+			bt_shell_warn("num_attrs is mismatched with received data");
+			break;
+		}
+	}
+
+	if (cmd->num_attrs > 0) {
+		bt_shell_print("num_values mismatch: expected 0, got %u", cmd->num_attrs);
+	}
+}
+
+static void avrcp_set_player_app_setting_val_req(struct bt_avrcp_tg *tg, uint8_t tid,
+						 struct net_buf *buf)
+{
+	struct bt_avrcp_set_player_app_setting_val_cmd *cmd;
+
+	cmd = net_buf_pull_mem(buf, sizeof(*cmd));
+
+	tg_tid = tid;
+	if (buf->len < (uint16_t)(cmd->num_attrs * 2U)) {
+		bt_shell_print("Invalid pairs: n=%u, remain=%u", cmd->num_attrs, buf->len);
+		return;
+	}
+
+	bt_shell_print("AVRCP TG: SetPlayerApplicationSettingValue, tid=0x%02x, num=%u", tid,
+		       cmd->num_attrs);
+	for (uint8_t i = 0; i < cmd->num_attrs; i++) {
+		cmd->attr_vals[i].attr_id = net_buf_pull_u8(buf);
+		cmd->attr_vals[i].value_id = net_buf_pull_u8(buf);
+		bt_shell_print(" pair[%u]: attr=0x%02x val=0x%02x", i, cmd->attr_vals[i].attr_id,
+			      cmd->attr_vals[i].value_id);
+	}
+}
+
+static void avrcp_get_player_app_setting_attr_text_req(struct bt_avrcp_tg *tg,
+						       uint8_t tid, struct net_buf *buf)
+{
+	struct bt_avrcp_get_player_app_setting_attr_text_cmd *cmd;
+
+	tg_tid = tid;
+	cmd = net_buf_pull_mem(buf, sizeof(*cmd));
+
+	if (buf->len < cmd->num_attrs) {
+		bt_shell_print("Invalid AttrText list: n=%u remain=%u", cmd->num_attrs, buf->len);
+		return;
+	}
+	bt_shell_print("GetPlayerAppSettingAttributeText, tid=0x%02x, num=%u", tid, cmd->num_attrs);
+	for (uint8_t i = 0; i < cmd->num_attrs; i++) {
+		bt_shell_print(" attr_id[%u]=0x%02x", i, net_buf_pull_u8(buf));
+	}
+
+}
+
+static void avrcp_get_player_app_setting_val_text_req(struct bt_avrcp_tg *tg,
+						      uint8_t tid, struct net_buf *buf)
+{
+	struct bt_avrcp_get_player_app_setting_val_text_cmd *cmd;
+
+	tg_tid = tid;
+	cmd = net_buf_pull_mem(buf, sizeof(*cmd));
+
+	if (buf->len < cmd->num_values) {
+		bt_shell_print("Invalid ValText list: n=%u remain=%u",
+				cmd->num_values, buf->len);
+		return;
+	}
+
+	bt_shell_print("GetPlayerAppSettingValueText, tid=0x%02x, attr=0x%02x, num=%u",
+		       tid, cmd->attr_id, cmd->num_values);
+
+	for (uint8_t i = 0; i < cmd->num_values; i++) {
+		bt_shell_print(" val_id[%u]=0x%02x", i, net_buf_pull_u8(buf));
+	}
+}
+
+static void avrcp_inform_displayable_char_set_req(struct bt_avrcp_tg *tg, uint8_t tid,
+						  struct net_buf *buf)
+{
+	struct bt_avrcp_inform_displayable_char_set_cmd *cmd;
+
+	tg_tid = tid;
+	cmd = net_buf_pull_mem(buf, sizeof(*cmd));
+
+	bt_shell_print("AVRCP inform displayable char request received, num_chars = %u",
+		       cmd->num_charsets);
+	if (buf->len < (cmd->num_charsets * sizeof(uint16_t))) {
+		bt_shell_print("Invalid charset_ids list: n=%u remain=%u",
+				cmd->num_charsets, buf->len);
+		return;
+	}
+	for (uint8_t i = 0; i < cmd->num_charsets; i++) {
+		bt_shell_print("  charset[%u]: 0x%04x", i, net_buf_pull_be16(buf));
+	}
+}
+
+static void avrcp_inform_batt_status_of_ct_req(struct bt_avrcp_tg *tg, uint8_t tid,
+					       uint8_t battery_status)
+{
+	bt_shell_print("AVRCP inform batt status of ct request received, battery_status = %u",
+		       battery_status);
+	tg_tid = tid;
 }
 
 static struct bt_avrcp_tg_cb app_avrcp_tg_cb = {
@@ -429,6 +816,14 @@ static struct bt_avrcp_tg_cb app_avrcp_tg_cb = {
 	.set_browsed_player_req = avrcp_set_browsed_player_req,
 	.register_notification = avrcp_register_notification_req,
 	.passthrough_req = avrcp_passthrough_req,
+	.list_player_app_setting_attrs = avrcp_list_player_app_setting_attrs_req,
+	.list_player_app_setting_vals = avrcp_list_player_app_setting_vals_req,
+	.get_curr_player_app_setting_val = avrcp_get_curr_player_app_setting_val_req,
+	.set_player_app_setting_val = avrcp_set_player_app_setting_val_req,
+	.get_player_app_setting_attr_text = avrcp_get_player_app_setting_attr_text_req,
+	.get_player_app_setting_val_text = avrcp_get_player_app_setting_val_text_req,
+	.inform_displayable_char_set = avrcp_inform_displayable_char_set_req,
+	.inform_batt_status_of_ct = avrcp_inform_batt_status_of_ct_req,
 };
 
 static int register_ct_cb(const struct shell *sh)
@@ -511,7 +906,7 @@ static int cmd_connect(const struct shell *sh, int32_t argc, char *argv[])
 	}
 
 	err = bt_avrcp_connect(default_conn);
-	if (err) {
+	if (err < 0) {
 		shell_error(sh, "fail to connect AVRCP");
 	}
 
@@ -897,7 +1292,6 @@ static int cmd_get_caps(const struct shell *sh, int32_t argc, char *argv[])
 
 	return 0;
 }
-
 static int cmd_ct_register_notification(const struct shell *sh, int argc, char *argv[])
 {
 	uint8_t event_id;
@@ -1003,7 +1397,7 @@ static int cmd_tg_send_notification_rsp(const struct shell *sh, int argc, char *
 		}
 		break;
 	case BT_AVRCP_EVT_PLAYER_APP_SETTING_CHANGED:
-		data.setting_changed.num_of_attr           = 1;
+		data.setting_changed.num_of_attr         = 1;
 		data.setting_changed.attr_vals = &attr_vals[0];
 		data.setting_changed.attr_vals[0].attr_id  = 1;
 		data.setting_changed.attr_vals[0].value_id = 1;
@@ -1053,6 +1447,679 @@ done:
 	return err;
 }
 
+static int cmd_ct_list_app_attrs(const struct shell *sh, int argc, char *argv[])
+{
+	int err;
+
+	if (!avrcp_ct_registered && register_ct_cb(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	if (default_ct == NULL) {
+		shell_error(sh, "AVRCP CT is not connected");
+		return -ENOEXEC;
+	}
+
+	err = bt_avrcp_ct_list_player_app_setting_attrs(default_ct, get_next_tid());
+	if (err < 0) {
+		shell_error(sh, "list player app setting attrs failed: %d", err);
+	} else {
+		shell_print(sh, "Sent list player app setting attrs");
+	}
+
+	return err;
+}
+
+static int cmd_ct_list_app_vals(const struct shell *sh, int argc, char *argv[])
+{
+	uint8_t attr;
+	int err;
+
+	if (!avrcp_ct_registered && register_ct_cb(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	if (default_ct == NULL) {
+		shell_error(sh, "AVRCP CT is not connected");
+		return -ENOEXEC;
+	}
+
+	attr = (uint8_t)strtoul(argv[1], NULL, 0);
+
+	err = bt_avrcp_ct_list_player_app_setting_vals(default_ct, get_next_tid(), attr);
+	if (err < 0) {
+		shell_error(sh, "Failed to send list player app setting vals: %d", err);
+		return -ENOEXEC;
+	}
+
+	shell_print(sh, "Sent list player app setting vals attr=0x%02x", attr);
+	return 0;
+}
+
+static int cmd_ct_get_app_curr(const struct shell *sh, int argc, char *argv[])
+{
+	struct bt_avrcp_get_curr_player_app_setting_val_cmd *cmd;
+	struct net_buf *buf;
+	size_t expected_len;
+	int err, i;
+
+	if (!avrcp_ct_registered && register_ct_cb(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	if (default_ct == NULL) {
+		shell_error(sh, "AVRCP CT is not connected");
+		return -ENOEXEC;
+	}
+
+	expected_len = 1 + (size_t)((argc > 1) ? (argc - 1) : 0);
+
+	buf = bt_avrcp_create_vendor_pdu(&avrcp_tx_pool);
+	if (buf == NULL) {
+		shell_error(sh, "Failed to allocate vendor dependent command buffer");
+		return -ENOMEM;
+	}
+
+	if (net_buf_tailroom(buf) < expected_len) {
+		shell_error(sh, "Not enough tailroom in buffer");
+		goto failed;
+	}
+	cmd = net_buf_add(buf, sizeof(*cmd));
+
+	cmd->num_attrs = (argc > 1) ? (uint8_t)(argc - 1) : 0U;
+	for (i = 1; i < argc; i++) {
+		net_buf_add_u8(buf, (uint8_t)strtoul(argv[i], NULL, 0));
+	}
+
+	err = bt_avrcp_ct_get_curr_player_app_setting_val(default_ct, get_next_tid(), buf);
+	if (err < 0) {
+		shell_error(sh, "Failed to send get_curr_player_app_setting_val: %d", err);
+		goto failed;
+	}
+
+	shell_print(sh, "Sent get_curr_player_app_setting_val num=%u", cmd->num_attrs);
+	return 0;
+
+failed:
+	net_buf_unref(buf);
+	return -ENOEXEC;
+}
+
+static int cmd_ct_set_app_val(const struct shell *sh, int argc, char *argv[])
+{
+	struct bt_avrcp_set_player_app_setting_val_cmd *cmd;
+	struct net_buf *buf;
+	size_t expected_len;
+	uint8_t pairs;
+	int err, i;
+
+	if ((argc < 3) || (((argc - 1) % 2) != 0)) {
+		shell_error(sh, "usage: set_app_val <attr1> <val1> [<attr2> <val2> ...]");
+		return -ENOEXEC;
+	}
+
+	if (!avrcp_ct_registered && register_ct_cb(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	if (default_ct == NULL) {
+		shell_error(sh, "AVRCP CT is not connected");
+		return -ENOEXEC;
+	}
+
+	pairs = (uint8_t)((argc - 1) / 2);
+	expected_len = 1 + (size_t)pairs * 2U;
+
+	buf = bt_avrcp_create_vendor_pdu(&avrcp_tx_pool);
+	if (buf == NULL) {
+		shell_error(sh, "Failed to allocate vendor dependent command buffer");
+		return -ENOMEM;
+	}
+
+	if (net_buf_tailroom(buf) < expected_len) {
+		shell_error(sh, "Not enough tailroom in buffer");
+		err = -ENOMEM;
+		goto failed;
+	}
+	cmd = net_buf_add(buf, expected_len);
+	cmd->num_attrs = pairs;
+
+	for (i = 1; i < argc; i += 2) {
+		cmd->attr_vals[(i-1)/2].attr_id = (uint8_t)strtoul(argv[i],  NULL, 0);
+		cmd->attr_vals[(i-1)/2].value_id = (uint8_t)strtoul(argv[i+1], NULL, 0);
+	}
+
+	err = bt_avrcp_ct_set_player_app_setting_val(default_ct, get_next_tid(), buf);
+	if (err < 0) {
+		shell_error(sh, "Failed to send set_player_app_setting_val: %d", err);
+		goto failed;
+	}
+
+	shell_print(sh, "Sent SetPlayerApplicationSettingValue num_attrs=%u", cmd->num_attrs);
+	return 0;
+
+failed:
+	net_buf_unref(buf);
+	return -ENOEXEC;
+}
+
+static int cmd_ct_get_app_attr_text(const struct shell *sh, int argc, char *argv[])
+{
+	struct bt_avrcp_get_player_app_setting_attr_text_cmd *cmd;
+	struct net_buf *buf;
+	int err;
+
+	if (!avrcp_ct_registered && register_ct_cb(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	if (!default_ct) {
+		shell_error(sh, "AVRCP CT is not connected");
+		return -ENOTCONN;
+	}
+
+	buf = bt_avrcp_create_vendor_pdu(&avrcp_tx_pool);
+	if (buf == NULL) {
+		shell_error(sh, "No buffer");
+		return -ENOMEM;
+	}
+	cmd = net_buf_add(buf, sizeof(*cmd));
+	cmd->num_attrs = (uint8_t)(argc - 1);
+
+	for (size_t i = 1; i < argc; i++) {
+		net_buf_add_u8(buf, (uint8_t)strtoul(argv[i], NULL, 0));
+	}
+
+	err = bt_avrcp_ct_get_player_app_setting_attr_text(default_ct, get_next_tid(), buf);
+	if (err < 0) {
+		shell_error(sh, "get_player_app_setting_attr_text failed: %d", err);
+		net_buf_unref(buf);
+		return err;
+	}
+
+	shell_print(sh, "Sent get_player_app_setting_attr_text num_attrs=%u", cmd->num_attrs);
+	return 0;
+}
+
+static int cmd_ct_get_app_val_text(const struct shell *sh, int argc, char *argv[])
+{
+	struct bt_avrcp_get_player_app_setting_val_text_cmd *cmd;
+	struct net_buf *buf;
+	int err;
+
+	if (!avrcp_ct_registered && register_ct_cb(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	if (!default_ct) {
+		shell_error(sh, "AVRCP CT is not connected");
+		return -ENOTCONN;
+	}
+
+	buf = bt_avrcp_create_vendor_pdu(&avrcp_tx_pool);
+	if (buf == NULL) {
+		shell_error(sh, "No buffer");
+		return -ENOMEM;
+	}
+	cmd = net_buf_add(buf, sizeof(*cmd));
+	cmd->attr_id = strtoul(argv[1], NULL, 0);
+	cmd->num_values = (uint8_t)(argc - 2U);
+
+	for (size_t i = 2U; i < argc; i++) {
+		net_buf_add_u8(buf, (uint8_t)strtoul(argv[i], NULL, 0));
+	}
+
+	err = bt_avrcp_ct_get_player_app_setting_val_text(default_ct, get_next_tid(), buf);
+	if (err < 0) {
+		shell_error(sh, "GetPlayerApplicationSettingValueText failed: %d", err);
+		net_buf_unref(buf);
+	}
+
+	shell_print(sh, "Sent GetPlayerApplicationSettingValueText attr=0x%02x num=%u",
+		    cmd->attr_id, cmd->num_values);
+
+	return err;
+}
+
+static int cmd_ct_inform_displayable_char(const struct shell *sh, size_t argc, char **argv)
+{
+	struct net_buf *buf;
+	uint8_t num_chars;
+	uint16_t charset_id;
+	int err;
+
+	if (!avrcp_ct_registered && register_ct_cb(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	if (default_ct == NULL) {
+		shell_error(sh, "AVRCP is not connected");
+		return -ENOEXEC;
+	}
+
+	num_chars = (uint8_t)(argc - 1);
+	if (num_chars == 0 || num_chars > 7) {
+		shell_error(sh, "Number of charsets must be between 1 and 7");
+		return -EINVAL;
+	}
+
+	buf = bt_avrcp_create_vendor_pdu(&avrcp_tx_pool);
+	if (buf == NULL) {
+		shell_error(sh, "Failed to allocate buffer");
+		return -ENOMEM;
+	}
+
+	/* Add number of character sets */
+	net_buf_add_u8(buf, num_chars);
+
+	/* Add character set IDs */
+	for (int i = 1; i < argc; i++) {
+		charset_id = (uint16_t)strtoul(argv[i], NULL, 0);
+		net_buf_add_be16(buf, charset_id);
+	}
+
+	err = bt_avrcp_ct_inform_displayable_char_set(default_ct, get_next_tid(), buf);
+	if (err < 0) {
+		shell_error(sh, "Failed to send InformDisplayableCharacterSet: %d", err);
+		net_buf_unref(buf);
+	} else {
+		shell_print(sh, "AVRCP InformDisplayableCharacterSet sent with %u charsets",
+			    num_chars);
+	}
+
+	return err;
+}
+
+static int cmd_ct_inform_batt(const struct shell *sh, size_t argc, char **argv)
+{
+	uint8_t battery_status;
+	int err;
+
+	if (!avrcp_ct_registered && register_ct_cb(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	if (default_ct == NULL) {
+		shell_error(sh, "AVRCP is not connected");
+		return -ENOEXEC;
+	}
+
+	battery_status = (uint16_t)strtoul(argv[1], NULL, 0);
+
+	err = bt_avrcp_ct_inform_batt_status_of_ct(default_ct, get_next_tid(), battery_status);
+	if (err < 0) {
+		shell_error(sh, "fail to InformBatteryStatusOfCT");
+	} else {
+		shell_print(sh, "AVRCP InformBatteryStatusOfCT");
+	}
+
+	return err;
+}
+
+static int cmd_tg_send_list_player_app_setting_attrs_rsp(const struct shell *sh, int argc,
+							 char *argv[])
+{
+	struct bt_avrcp_list_app_setting_attr_rsp *rsp;
+	struct net_buf *buf;
+	uint8_t num;
+	size_t expected_len;
+	int err;
+
+	if (!avrcp_tg_registered && register_tg_cb(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	if (default_tg == NULL) {
+		shell_error(sh, "AVRCP TG is not connected");
+		return -ENOEXEC;
+	}
+
+	num = (argc >= 2) ? (uint8_t)strtoul(argv[1], NULL, 0) : 2;
+	expected_len = 1 + (size_t)num; /* Num + AttrIDs */
+
+	buf = bt_avrcp_create_vendor_pdu(&avrcp_tx_pool);
+	if (buf == NULL) {
+		shell_error(sh, "Failed to allocate buffer for AVRCP response");
+		return -ENOMEM;
+	}
+
+	if (net_buf_tailroom(buf) < expected_len) {
+		shell_error(sh, "Not enough tailroom in buffer");
+		goto failed;
+	}
+
+	rsp = net_buf_add(buf, expected_len);
+
+	rsp->num_attrs = num;
+	for (uint8_t i = 0U; i < num; i++) {
+		rsp->attr_ids[i] = (argc >= (2 + i + 1)) ? (uint8_t)strtoul(argv[2 + i],
+				    NULL, 0) : (i + 1);
+	}
+
+	err = bt_avrcp_tg_list_player_app_setting_attrs(default_tg, tg_tid, BT_AVRCP_STATUS_SUCCESS,
+							buf);
+	if (err < 0) {
+		shell_error(sh, "Failed to send ListPlayerAppSettingAttributes rsp: %d", err);
+		goto failed;
+	}
+
+	shell_print(sh, "ListPlayerApplicationSettingAttributes rsp sent (num=%u)", num);
+	return 0;
+
+failed:
+	net_buf_unref(buf);
+	return -ENOEXEC;
+}
+
+static int cmd_tg_send_list_player_app_setting_vals_rsp(const struct shell *sh, int argc,
+							char *argv[])
+{
+	struct bt_avrcp_list_player_app_setting_vals_rsp *rsp;
+	struct net_buf *buf;
+	uint8_t num;
+	size_t expected_len;
+	int err;
+
+	if (!avrcp_tg_registered && register_tg_cb(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	if (default_tg == NULL) {
+		shell_error(sh, "AVRCP TG is not connected");
+		return -ENOEXEC;
+	}
+
+	num = (argc >= 2) ? (uint8_t)strtoul(argv[1], NULL, 0) : 2;
+	expected_len = 1 + (size_t)num; /* Num + ValueIDs */
+
+	buf = bt_avrcp_create_vendor_pdu(&avrcp_tx_pool);
+	if (buf == NULL) {
+		shell_error(sh, "Failed to allocate buffer for AVRCP response");
+		return -ENOMEM;
+	}
+
+	if (net_buf_tailroom(buf) < expected_len) {
+		shell_error(sh, "Not enough tailroom in buffer");
+		goto failed;
+	}
+	rsp = net_buf_add(buf, expected_len);
+
+	rsp->num_values = num;
+
+	for (uint8_t i = 0U; i < num; i++) {
+		rsp->values[i] = (argc >= (2 + i + 1)) ? (uint8_t)strtoul(argv[2 + i], NULL, 0) :
+				 (i + 1);
+	}
+
+	err = bt_avrcp_tg_list_player_app_setting_vals(default_tg, tg_tid, BT_AVRCP_STATUS_SUCCESS,
+						       buf);
+	if (err < 0) {
+		shell_error(sh, "Failed to send list player app setting vals rsp: %d", err);
+		goto failed;
+	}
+
+	shell_print(sh, "List player app setting vals rsp sent (num=%u)", num);
+	return 0;
+
+failed:
+	net_buf_unref(buf);
+	return -ENOEXEC;
+}
+
+static int cmd_tg_send_get_curr_player_app_setting_val_rsp(const struct shell *sh, int argc,
+							   char *argv[])
+{
+	struct net_buf *buf;
+	struct bt_avrcp_get_curr_player_app_setting_val_rsp *rsp;
+	size_t expected_len;
+	uint8_t num_pairs;
+	int err;
+
+	if (!avrcp_tg_registered && register_tg_cb(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	if (default_tg == NULL) {
+		shell_error(sh, "AVRCP TG is not connected");
+		return -ENOEXEC;
+	}
+
+	/* Response payload: Num + (AttrID,ValueID)[n] */
+	num_pairs = (argc >= 2) ? (uint8_t)strtoul(argv[1], NULL, 0) : 1;
+	expected_len = sizeof(uint8_t) + (size_t)num_pairs *
+		       sizeof(struct bt_avrcp_app_setting_attr_val);
+
+	buf = bt_avrcp_create_vendor_pdu(&avrcp_tx_pool);
+	if (buf == NULL) {
+		shell_error(sh, "Failed to allocate buffer for AVRCP response");
+		return -ENOMEM;
+	}
+
+	if (net_buf_tailroom(buf) < expected_len) {
+		shell_error(sh, "Not enough tailroom in buffer");
+		goto failed;
+	}
+	rsp = net_buf_add(buf, expected_len);
+	rsp->num_attrs = num_pairs;
+
+	/* args: <num> [attr1 val1] [attr2 val2] ... */
+	for (uint8_t i = 0U; i < rsp->num_attrs; i++) {
+		int ai = 2 + (i * 2);   /* argv index for attr */
+
+		rsp->attr_vals[i].attr_id = (ai < argc) ? (uint8_t)strtoul(argv[ai], NULL, 0) :
+					    (uint8_t)(i + 1);
+		rsp->attr_vals[i].value_id = (ai + 1 < argc) ?
+					     (uint8_t)strtoul(argv[ai + 1], NULL, 0) : 1;
+	}
+
+	err = bt_avrcp_tg_get_curr_player_app_setting_val(default_tg, tg_tid,
+							  BT_AVRCP_STATUS_SUCCESS, buf);
+	if (err < 0) {
+		shell_error(sh, "Failed to send get curr player app setting val rsp: %d", err);
+		goto failed;
+	}
+
+	shell_print(sh, "Send get curr player app setting val rsp sent (num=%u)", rsp->num_attrs);
+	return 0;
+
+failed:
+	net_buf_unref(buf);
+	return -ENOEXEC;
+}
+
+static int  cmd_tg_send_set_player_app_setting_val_rsp(const struct shell *sh, int argc,
+						       char *argv[])
+{
+	int err;
+	uint8_t status = BT_AVRCP_STATUS_OPERATION_COMPLETED;
+
+	if (!avrcp_tg_registered && register_tg_cb(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	if (default_tg == NULL) {
+		shell_error(sh, "AVRCP TG is not connected");
+		return -ENOEXEC;
+	}
+
+	if (argc > 1) {
+		status = (uint8_t)strtoul(argv[1], NULL, 0);
+	}
+
+	err = bt_avrcp_tg_set_player_app_setting_val(default_tg, tg_tid, status);
+	if (err < 0) {
+		shell_error(sh, "Failed to send set set_player_app_setting_val rsp: %d", err);
+		return -ENOEXEC;
+	}
+
+	shell_print(sh, "set_player_app_setting_val rsp sent ");
+	return 0;
+}
+
+static int cmd_tg_send_get_player_app_setting_attr_text_rsp(const struct shell *sh, int argc,
+							    char *argv[])
+{
+	struct bt_avrcp_get_player_app_setting_attr_text_rsp *rsp;
+	struct net_buf *buf;
+	char *text_str = "AttrText";
+	int err;
+	uint8_t status = BT_AVRCP_STATUS_OPERATION_COMPLETED;
+
+	if (!avrcp_tg_registered && register_tg_cb(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	if (default_tg == NULL) {
+		shell_error(sh, "AVRCP TG is not connected");
+		return -ENOEXEC;
+	}
+
+	if (argc > 1) {
+		status = (uint8_t)strtoul(argv[1], NULL, 0);
+	}
+
+	buf = bt_avrcp_create_vendor_pdu(&avrcp_tx_pool);
+	if (buf == NULL) {
+		shell_error(sh, "Failed to allocate buffer for AVRCP response");
+		return -ENOMEM;
+	}
+
+	if (net_buf_tailroom(buf) < sizeof(*rsp) + sizeof(struct bt_avrcp_app_setting_attr_text)) {
+		shell_error(sh, "Not enough tailroom in buffer");
+		goto failed;
+	}
+	rsp = net_buf_add(buf, sizeof(*rsp) + sizeof(struct bt_avrcp_app_setting_attr_text));
+
+	rsp->num_attrs = 1;
+	rsp->attr_text[0].attr_id = 1;
+	rsp->attr_text[0].charset_id = sys_cpu_to_be16(BT_AVRCP_CHARSET_UTF8);
+	rsp->attr_text[0].text_len = strlen(text_str);
+	net_buf_add_mem(buf, text_str, strlen(text_str));
+
+	err = bt_avrcp_tg_get_player_app_setting_attr_text(default_tg, tg_tid, status, buf);
+	if (err < 0) {
+		shell_error(sh, "Failed to send get player app setting attr text rsp: %d", err);
+		return -ENOEXEC;
+	}
+
+	shell_print(sh, "Get player app setting attr text rsp sent");
+	return 0;
+
+failed:
+	net_buf_unref(buf);
+	return -ENOEXEC;
+}
+
+static int cmd_tg_send_get_player_app_setting_val_text_rsp(const struct shell *sh, int argc,
+							   char *argv[])
+{
+	struct bt_avrcp_get_player_app_setting_val_text_rsp *rsp;
+	struct net_buf *buf;
+	char *value_str = "ValueText";
+	int err;
+	uint8_t status = BT_AVRCP_STATUS_OPERATION_COMPLETED;
+
+	if (!avrcp_tg_registered && register_tg_cb(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	if (default_tg == NULL) {
+		shell_error(sh, "AVRCP TG is not connected");
+		return -ENOEXEC;
+	}
+
+	if (argc > 1) {
+		status = (uint8_t)strtoul(argv[1], NULL, 0);
+	}
+
+	buf = bt_avrcp_create_vendor_pdu(&avrcp_tx_pool);
+	if (buf == NULL) {
+		shell_error(sh, "Failed to allocate buffer for AVRCP response");
+		return -ENOMEM;
+	}
+
+	if (net_buf_tailroom(buf) < sizeof(*rsp) + sizeof(struct bt_avrcp_app_setting_val_text)) {
+		shell_error(sh, "Not enough tailroom in buffer");
+		goto failed;
+	}
+	rsp = net_buf_add(buf, sizeof(*rsp) + sizeof(struct bt_avrcp_app_setting_val_text));
+
+	rsp->num_values = 1;
+	rsp->value_text[0].value_id = 1;
+	rsp->value_text[0].charset_id = sys_cpu_to_be16(BT_AVRCP_CHARSET_UTF8);
+	rsp->value_text[0].text_len = strlen(value_str);
+	net_buf_add_mem(buf, value_str, strlen(value_str));
+
+	err = bt_avrcp_tg_get_player_app_setting_val_text(default_tg, tg_tid, status, buf);
+	if (err < 0) {
+		shell_error(sh, "Failed to send get player app setting val text rsp: %d", err);
+		return -ENOEXEC;
+	}
+
+	shell_print(sh, "Get player app setting val text rsp sent");
+	return 0;
+
+failed:
+	net_buf_unref(buf);
+	return -ENOEXEC;
+}
+
+static int cmd_tg_send_inform_displayable_char_rsp(const struct shell *sh, int argc, char *argv[])
+{
+	int err;
+	uint8_t status = BT_AVRCP_STATUS_OPERATION_COMPLETED;
+
+	if (!avrcp_tg_registered && register_tg_cb(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	if (default_tg == NULL) {
+		shell_error(sh, "AVRCP TG is not connected");
+		return -ENOEXEC;
+	}
+
+	if (argc > 1) {
+		status = (uint8_t)strtoul(argv[1], NULL, 0);
+	}
+
+	err = bt_avrcp_tg_inform_displayable_char_set(default_tg, tg_tid, status);
+	if (err < 0) {
+		shell_error(sh, "Failed to send inform displayable char rsp: err=%d", err);
+		return err;
+	}
+
+	shell_print(sh, "Sent inform displayable char rsp (status=0x%02x)", status);
+	return 0;
+}
+
+static int cmd_tg_send_inform_batt_status_of_ct_rsp(const struct shell *sh, int argc, char *argv[])
+{
+	int err;
+	uint8_t status = BT_AVRCP_STATUS_OPERATION_COMPLETED;
+
+	if (!avrcp_tg_registered && register_tg_cb(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	if (default_tg == NULL) {
+		shell_error(sh, "AVRCP TG is not connected");
+		return -ENOEXEC;
+	}
+
+	if (argc > 1) {
+		status = (uint8_t)strtoul(argv[1], NULL, 0);
+	}
+
+	err = bt_avrcp_tg_inform_batt_status_of_ct(default_tg, tg_tid, status);
+	if (err < 0) {
+		shell_error(sh, "send inform batt status rsp send failed: err=%d", err);
+		return err;
+	}
+
+	shell_print(sh, "send inform batt status rsp sent (status=0x%02x)", status);
+	return 0;
+
+}
 static int cmd_set_browsed_player(const struct shell *sh, int32_t argc, char *argv[])
 {
 	uint16_t player_id;
@@ -1206,6 +2273,21 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      cmd_ct_register_notification, 2, 1),
 	SHELL_CMD_ARG(set_browsed_player, NULL, "set browsed player <player_id>",
 		      cmd_set_browsed_player, 2, 0),
+	SHELL_CMD_ARG(list_app_attrs, NULL, HELP_NONE, cmd_ct_list_app_attrs, 1, 0),
+	SHELL_CMD_ARG(list_app_vals,  NULL, "List App vals <attr_id>", cmd_ct_list_app_vals, 2, 0),
+	SHELL_CMD_ARG(get_app_curr,   NULL, "Get curr player app setting val [attr1] [attr2] ...",
+		      cmd_ct_get_app_curr, 1, 8),
+	SHELL_CMD_ARG(set_app_val, NULL, "Set app setting Val <attr1> <val1> [<attr2> <val2>]  ...",
+		      cmd_ct_set_app_val, 3, 14),
+	SHELL_CMD_ARG(get_app_attr_text, NULL, "Get app setting attrs text <attr1> [attr2] ...",
+		      cmd_ct_get_app_attr_text, 2, 7),
+	SHELL_CMD_ARG(get_app_val_text,  NULL, "Get setting vals Text <attr_id> <val1> [val2] ...",
+		      cmd_ct_get_app_val_text, 3, 6),
+	SHELL_CMD_ARG(inform_displayable_char, NULL,
+		      "Inform Displayable Character Set <charset_id1> [charset_id2] ...",
+		      cmd_ct_inform_displayable_char, 2, 7),
+	SHELL_CMD_ARG(inform_batt, NULL, "Inform Battery Status Of CT <Battery status>",
+		      cmd_ct_inform_batt, 2, 0),
 	SHELL_SUBCMD_SET_END);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
@@ -1221,6 +2303,27 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      cmd_send_set_browsed_player_rsp, 1, 5),
 	SHELL_CMD_ARG(send_passthrough_rsp, NULL, HELP_PASSTHROUGH_RSP, cmd_send_passthrough_rsp,
 		      4, 0),
+	SHELL_CMD_ARG(send_list_player_app_setting_attrs_rsp, NULL,
+		      "send attrs rsp <num> [attr_id...]",
+		       cmd_tg_send_list_player_app_setting_attrs_rsp, 2, 8),
+	SHELL_CMD_ARG(send_list_player_app_setting_vals_rsp, NULL,
+		      "send vals rsp <num> [val_id...]",
+		      cmd_tg_send_list_player_app_setting_vals_rsp, 2, 16),
+	SHELL_CMD_ARG(send_get_curr_player_app_setting_val_rsp, NULL,
+		      "send current vals rsp <num_pairs> [attr val]...",
+		      cmd_tg_send_get_curr_player_app_setting_val_rsp, 2, 16),
+	SHELL_CMD_ARG(send_set_player_app_setting_val_rsp, NULL, "set app setting val rsp [status]",
+		      cmd_tg_send_set_player_app_setting_val_rsp, 1, 1),
+	SHELL_CMD_ARG(send_get_player_app_setting_attr_text_rsp, NULL,
+		      "send get player app setting attr text rsp [status]",
+		      cmd_tg_send_get_player_app_setting_attr_text_rsp, 1, 1),
+	SHELL_CMD_ARG(send_get_player_app_setting_val_text_rsp, NULL,
+		      "send get player app setting val text rsp [status]",
+		      cmd_tg_send_get_player_app_setting_val_text_rsp, 1, 1),
+	SHELL_CMD_ARG(send_inform_displayable_char_rsp, NULL, "send displayable char rsp [status]",
+		      cmd_tg_send_inform_displayable_char_rsp, 1, 1),
+	SHELL_CMD_ARG(send_inform_batt_status_of_ct_rsp, NULL, "send inform batt rsp [status]",
+		      cmd_tg_send_inform_batt_status_of_ct_rsp, 1, 1),
 	SHELL_SUBCMD_SET_END);
 
 static int cmd_avrcp(const struct shell *sh, size_t argc, char **argv)
