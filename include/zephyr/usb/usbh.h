@@ -34,6 +34,16 @@ extern "C" {
  */
 
 /**
+ * USB host support status
+ */
+struct usbh_status {
+	/** USB host support is initialized */
+	unsigned int initialized : 1;
+	/** USB host support is enabled */
+	unsigned int enabled : 1;
+};
+
+/**
  * USB host support runtime context
  */
 struct usbh_context {
@@ -43,6 +53,8 @@ struct usbh_context {
 	struct k_mutex mutex;
 	/** Pointer to UHC device struct */
 	const struct device *dev;
+	/** Status of the USB host support */
+	struct usbh_status status;
 	/** USB device list */
 	sys_dlist_t udevs;
 	/** USB root device */
