@@ -25,11 +25,16 @@ PERIPHCONF_SECTION = "uicr_periphconf_entry"
 UICR_NODELABEL = "uicr"
 # Nodelabel of the PERIPHCONF devicetree node, used to extract its location from the devicetree.
 PERIPHCONF_NODELABEL = "periphconf_partition"
+# Nodelabel of the SECONDARY PERIPHCONF devicetree node, used to extract its location from the devicetree.
+SECONDARY_PERIPHCONF_NODELABEL = "secondary_periphconf_partition"
 
 # Common values for representing enabled/disabled in the UICR format.
 ENABLED_VALUE = 0xFFFF_FFFF
 DISABLED_VALUE = 0xBD23_28A8
 
+# Enum values for representing PROCESSOR in the UICR format.
+PROCESSOR_APPLICATION = 0xBD23_28A8
+PROCESSOR_RADIO = 0x1730_C77F
 
 class ScriptError(RuntimeError): ...
 
@@ -149,10 +154,20 @@ def main() -> None:
         help="Path to the .config file from the application build",
     )
     parser.add_argument(
+        "--in-secondary-config",
+        type=argparse.FileType("r"),
+        help="Path to the .config file from the secondary application build",
+    )
+    parser.add_argument(
         "--in-edt-pickle",
         required=True,
         type=argparse.FileType("rb"),
         help="Path to the edt.pickle file from the application build",
+    )
+    parser.add_argument(
+        "--in-secondary-edt-pickle",
+        type=argparse.FileType("rb"),
+        help="Path to the edt.pickle file from the secondary application build",
     )
     parser.add_argument(
         "--in-periphconf-elf",
@@ -167,6 +182,19 @@ def main() -> None:
         ),
     )
     parser.add_argument(
+        "--in-secondary-periphconf-elf",
+        dest="in_secondary_periphconf_elfs",
+        default=[],
+        action="append",
+        type=argparse.FileType("rb"),
+        help=(
+            "Path to an ELF file to extract PERIPHCONF data from. Can be provided multiple times. "
+            "The PERIPHCONF data from each ELF file is combined in a single list which is sorted "
+            "by ascending address and cleared of duplicate entries. This is used for the secondary "
+            "application."
+        ),
+    )
+    parser.add_argument(
         "--out-uicr-hex",
         required=True,
         type=argparse.FileType("w", encoding="utf-8"),
@@ -178,37 +206,50 @@ def main() -> None:
         type=argparse.FileType("w", encoding="utf-8"),
         help="Path to write the generated PERIPHCONF HEX file to",
     )
+    parser.add_argument(
+        "--out-secondary-periphconf-hex",
+        default=None,
+        type=argparse.FileType("w", encoding="utf-8"),
+        help="Path to write the generated secondary PERIPHCONF HEX file to",
+    )
     args = parser.parse_args()
 
     try:
         init_values = DISABLED_VALUE.to_bytes(4, "little") * (c.sizeof(Uicr) // 4)
         uicr = Uicr.from_buffer_copy(init_values)
 
-        kconfig_str = args.in_config.read()
-        kconfig = parse_kconfig(kconfig_str)
-
+        kconfig = parse_kconfig(args.in_config.read())
         edt = pickle.load(args.in_edt_pickle)
 
-        try:
-            periphconf_partition = edt.label2node[PERIPHCONF_NODELABEL]
-        except LookupError as e:
-            raise ScriptError(
-                "Failed to find a PERIPHCONF partition in the devicetree. "
-                f"Expected a DT node with label '{PERIPHCONF_NODELABEL}'."
-            ) from e
+        handle_periphconf(
+            uicr=uicr, edt=edt, kconfig=kconfig, is_primary=True, in_periphconf_elfs=args.in_periphconf_elfs, out_periphconf_hex=args.out_periphconf_hex
+        )
 
-        flash_base_address = periphconf_partition.flash_controller.regs[0].addr
-        periphconf_address = flash_base_address + periphconf_partition.regs[0].addr
-        periphconf_size = periphconf_partition.regs[0].size
+        if args.in_secondary_edt_pickle:
+            if not args.in_secondary_config:
+                raise ScriptError(
+                    "Secondary configuration file is required when secondary edt.pickle is provided."
+                )
 
-        periphconf_combined = extract_and_combine_periphconfs(args.in_periphconf_elfs)
-        padding_len = periphconf_size - len(periphconf_combined)
-        periphconf_final = periphconf_combined + bytes([0xFF for _ in range(padding_len)])
+            secondary_edt = pickle.load(args.in_secondary_edt_pickle)
+            secondary_kconfig = parse_kconfig(args.in_secondary_config.read())
+            handle_periphconf(
+                uicr=uicr,
+                edt=secondary_edt,
+                kconfig=secondary_kconfig,
+                is_primary=False,
+                in_periphconf_elfs=args.in_secondary_periphconf_elfs,
+                out_periphconf_hex=args.out_secondary_periphconf_hex,
+            )
 
-        if kconfig.get("CONFIG_NRF_HALTIUM_UICR_PERIPHCONF") == "y":
-            uicr.PERIPHCONF.ENABLE = ENABLED_VALUE
-            uicr.PERIPHCONF.ADDRESS = periphconf_address
-            uicr.PERIPHCONF.MAXCOUNT = math.floor(periphconf_size / 8)
+            uicr.SECONDARY.ENABLE = ENABLED_VALUE
+            uicr.SECONDARY.PROCESSOR = PROCESSOR_APPLICATION
+
+            # TODO - This should be zephyr chosen code partition
+            code_partition = edt.label2node["cpuapp_secondary_partition"]
+            flash_base_address = code_partition.flash_controller.regs[0].addr
+            uicr.SECONDARY.ADDRESS = flash_base_address + code_partition.regs[0].addr
+
 
         try:
             uicr_node = edt.label2node[UICR_NODELABEL]
@@ -222,15 +263,45 @@ def main() -> None:
         uicr_hex.frombytes(bytes(uicr), offset=uicr_node.regs[0].addr)
 
         uicr_hex.write_hex_file(args.out_uicr_hex)
-
-        if args.out_periphconf_hex is not None:
-            periphconf_hex = IntelHex()
-            periphconf_hex.frombytes(periphconf_final, offset=periphconf_address)
-            periphconf_hex.write_hex_file(args.out_periphconf_hex)
-
     except ScriptError as e:
         print(f"Error: {e!s}")
         sys.exit(1)
+
+
+def handle_periphconf(uicr, edt, kconfig, is_primary, in_periphconf_elfs, out_periphconf_hex):
+    try:
+        if is_primary:
+            periphconf_partition = edt.label2node[PERIPHCONF_NODELABEL]
+        else:
+            periphconf_partition = edt.label2node[SECONDARY_PERIPHCONF_NODELABEL]
+    except LookupError as e:
+        raise ScriptError(
+            "Failed to find a PERIPHCONF partition in the devicetree. "
+            f"Expected a DT node with label '{PERIPHCONF_NODELABEL}'."
+        ) from e
+
+    flash_base_address = periphconf_partition.flash_controller.regs[0].addr
+    periphconf_address = flash_base_address + periphconf_partition.regs[0].addr
+    periphconf_size = periphconf_partition.regs[0].size
+
+    periphconf_combined = extract_and_combine_periphconfs(in_periphconf_elfs)
+    padding_len = periphconf_size - len(periphconf_combined)
+    periphconf_final = periphconf_combined + bytes([0xFF for _ in range(padding_len)])
+
+    if kconfig.get("CONFIG_NRF_HALTIUM_UICR_PERIPHCONF") == "y":
+        if is_primary:
+            uicr.PERIPHCONF.ENABLE = ENABLED_VALUE
+            uicr.PERIPHCONF.ADDRESS = periphconf_address
+            uicr.PERIPHCONF.MAXCOUNT = math.floor(periphconf_size / 8)
+        else:
+            uicr.SECONDARY.PERIPHCONF.ENABLE = ENABLED_VALUE
+            uicr.SECONDARY.PERIPHCONF.ADDRESS = periphconf_address
+            uicr.SECONDARY.PERIPHCONF.MAXCOUNT = math.floor(periphconf_size / 8)
+
+    if out_periphconf_hex is not None:
+        periphconf_hex = IntelHex()
+        periphconf_hex.frombytes(periphconf_final, offset=periphconf_address)
+        periphconf_hex.write_hex_file(out_periphconf_hex)
 
 
 def extract_and_combine_periphconfs(elf_files: list[argparse.FileType]) -> bytes:
