@@ -496,7 +496,8 @@ void i2c_stm32_dma_rx_cb(const struct device *dma_dev, void *user_data,
 }
 
 #define I2C_DMA_DATA_INIT(index, dir, src, dest)						\
-	.dma_##dir##_cfg = {									\
+	IF_ENABLED(DT_INST_DMAS_HAS_NAME(index, dir),						\
+		(.dma_##dir##_cfg = {								\
 		.dma_slot = STM32_DMA_SLOT(index, dir, slot),					\
 		.channel_direction = STM32_DMA_CONFIG_DIRECTION(				\
 					STM32_DMA_CHANNEL_CONFIG(index, dir)),			\
@@ -511,7 +512,7 @@ void i2c_stm32_dma_rx_cb(const struct device *dma_dev, void *user_data,
 		.source_burst_length = 1,							\
 		.dest_burst_length = 1,								\
 		.dma_callback = i2c_stm32_dma_##dir##_cb,					\
-	},											\
+	},))
 
 #else
 
