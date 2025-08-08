@@ -357,7 +357,7 @@ static int gpio_silabs_common_init(const struct device *dev)
 
 	/* Enable clock */
 	ret = clock_control_on(cfg->clock, (clock_control_subsys_t)&cfg->clock_cfg);
-	if (ret < 0) {
+	if (ret < 0 && ret != -EALREADY) {
 		return ret;
 	}
 
