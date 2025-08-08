@@ -43,6 +43,9 @@ config ICM45686_TRIGGER_OWN_THREAD
 
 endchoice
 
+config TDK_APEX
+        bool
+
 config ICM45686_TRIGGER
 	bool
 
