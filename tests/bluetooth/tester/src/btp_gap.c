@@ -18,6 +18,7 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/logging/log.h>
@@ -2349,6 +2350,198 @@ static uint8_t set_rpa_timeout(const void *cmd, uint16_t cmd_len, void *rsp, uin
 }
 #endif /* defined(CONFIG_BT_RPA_TIMEOUT_DYNAMIC) */
 
+#if defined(CONFIG_BT_ISO)
+static void iso_connected(struct bt_iso_chan *chan);
+static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason);
+static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *info,
+				struct net_buf *buf);
+static void iso_sent(struct bt_iso_chan *chan);
+
+static struct bt_iso_chan_ops iso_ops = {
+	.connected = iso_connected,
+	.disconnected = iso_disconnected,
+	.recv = iso_recv,
+	.sent = iso_sent,
+};
+
+static struct bt_iso_chan_io_qos iso_tx_qos = {
+	.sdu = CONFIG_BT_ISO_TX_MTU,
+	.phy = BT_GAP_LE_PHY_2M,
+	.rtn = 1,
+};
+
+static struct bt_iso_chan_io_qos iso_rx_qos = {
+	.sdu = CONFIG_BT_ISO_RX_MTU,
+	.phy = BT_GAP_LE_PHY_2M,
+	.rtn = 1,
+};
+
+static struct bt_iso_chan_qos bis_iso_qos = {
+	.tx = &iso_tx_qos,
+	.rx = &iso_rx_qos,
+};
+
+static struct bt_iso_chan bis_iso_chan = {
+	.ops = &iso_ops,
+	.qos = &bis_iso_qos,
+};
+
+#define BIS_ISO_CHAN_COUNT 1
+static struct bt_iso_chan *bis_channels[BIS_ISO_CHAN_COUNT] = { &bis_iso_chan };
+
+#define ISO_CONNECTED		0x01
+#define ISO_TRANSMITTING	0x02
+#define ISO_RECEIVING		0x03
+#define ISO_DISCONNECTED	0x04
+
+static void send_iso_channel_event(uint8_t status)
+{
+	struct btp_gap_iso_channel_changed_ev ev;
+
+	ev.status = status;
+	tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_ISO_CHANNEL_CHANGED, &ev, sizeof(ev));
+}
+
+static void iso_connected(struct bt_iso_chan *chan)
+{
+	send_iso_channel_event(ISO_CONNECTED);
+}
+
+static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
+{
+	send_iso_channel_event(ISO_DISCONNECTED);
+}
+
+static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *info,
+						struct net_buf *buf)
+{
+	send_iso_channel_event(ISO_RECEIVING);
+}
+
+static void iso_sent(struct bt_iso_chan *chan)
+{
+	send_iso_channel_event(ISO_TRANSMITTING);
+}
+
+int tester_gap_iso_sync_big(void)
+{
+	struct bt_iso_big *big;
+	struct bt_iso_big_sync_param param = {
+		.sync_timeout = 100, /* 1000 ms */
+		.bis_bitfield = BT_ISO_BIS_INDEX_BIT(1),
+		.bis_channels = bis_channels,
+		.mse = BT_ISO_SYNC_MSE_ANY,
+		.encryption = false,
+		.num_bis = BIS_ISO_CHAN_COUNT,
+	};
+	memset(param.bcode, 0, sizeof(param.bcode));
+
+	int err = bt_iso_big_sync(pa_sync, &param, &big);
+
+	if (err) {
+		LOG_ERR("Failed to sync BIG: %d", err);
+	}
+
+	return err;
+}
+
+#define LATENCY_MS		10U					/* 10ms */
+#define SDU_INTERVAL_US	10U * USEC_PER_MSEC	/* 10 ms */
+
+int tester_gap_iso_create_big(void)
+{
+	struct bt_iso_big *big;
+	struct bt_iso_big_create_param param = {
+		.packing = BT_ISO_PACKING_SEQUENTIAL,
+		.framing = BT_ISO_FRAMING_UNFRAMED,
+		.interval = SDU_INTERVAL_US,
+		.bis_channels = bis_channels,
+		.latency = LATENCY_MS,
+		.encryption = false,
+		.num_bis = BIS_ISO_CHAN_COUNT,
+	};
+
+	struct bt_le_ext_adv *adv = tester_gap_ext_adv_get(0);
+
+	if (adv == NULL) {
+		LOG_ERR("Extended advertising instance not created");
+		return EINVAL;
+	}
+
+	int err = bt_iso_big_create(adv, &param, &big);
+
+	if (err) {
+		LOG_ERR("Failed to create BIG: %d", err);
+		return err;
+	}
+
+	return err;
+}
+
+NET_BUF_POOL_DEFINE(iso_tx_pool, 5, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+					CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
+
+uint8_t iso_data[] = {1, 2, 3, 4, 5, 6, 7, 8};
+
+int tester_send_iso_pckt(uint16_t seq_num)
+{
+	struct net_buf *buf = net_buf_alloc(&iso_tx_pool, K_NO_WAIT);
+
+	if (buf == NULL) {
+		LOG_ERR("Failed allocated net buf");
+		return -ENOMEM;
+	}
+
+	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
+	net_buf_add_mem(buf, iso_data, sizeof(iso_data));
+
+	return bt_iso_chan_send(&bis_iso_chan, buf, seq_num);
+}
+
+static uint8_t iso_sync_big(const void *cmd, uint16_t cmd_len,
+							void *rsp, uint16_t *rsp_len)
+{
+	int err = tester_gap_iso_sync_big();
+
+	return BTP_STATUS_VAL(err);
+}
+
+static uint8_t iso_create_big(const void *cmd, uint16_t cmd_len,
+								void *rsp, uint16_t *rsp_len)
+{
+	int err = tester_gap_iso_create_big();
+
+	return BTP_STATUS_VAL(err);
+}
+
+static uint8_t iso_send_packets(const void *cmd, uint16_t cmd_len,
+					void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_gap_iso_send_cmd *cp = cmd;
+
+	const struct bt_iso_chan_path ch_path = {
+		.pid = BT_ISO_DATA_PATH_HCI,
+		.format = BT_HCI_CODING_FORMAT_TRANSPARENT,
+	};
+
+	int err = bt_iso_setup_data_path(&bis_iso_chan, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR, &ch_path);
+
+	if (err) {
+		LOG_ERR("Failed to setup ISO data path %d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	for (uint8_t i = 0; i < cp->pkt_cnt; i++) {
+		err = tester_send_iso_pckt(i);
+		if (err) {
+			return BTP_STATUS_FAILED;
+		}
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+#endif /* defined(CONFIG_BT_ISO) */
+
 static const struct btp_handler handlers[] = {
 	{
 		.opcode = BTP_GAP_READ_SUPPORTED_COMMANDS,
@@ -2544,6 +2737,23 @@ static const struct btp_handler handlers[] = {
 		.func = set_rpa_timeout,
 	},
 #endif /* defined(CONFIG_BT_RPA_TIMEOUT_DYNAMIC) */
+#if defined(CONFIG_BT_ISO)
+	{
+		.opcode = BTP_GAP_SYNC_BIG,
+		.expect_len = 0,
+		.func = iso_sync_big,
+	},
+	{
+		.opcode = BTP_GAP_CREATE_BIG,
+		.expect_len = 0,
+		.func = iso_create_big,
+	},
+	{
+		.opcode = BTP_GAP_SEND_ISO,
+		.expect_len = sizeof(struct btp_gap_iso_send_cmd),
+		.func = iso_send_packets,
+	},
+#endif /* defined(CONFIG_BT_ISO) */
 };
 
 uint8_t tester_init_gap(void)
