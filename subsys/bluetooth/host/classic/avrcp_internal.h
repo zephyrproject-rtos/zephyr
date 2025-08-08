@@ -52,10 +52,10 @@ typedef enum __packed {
 } bt_avrcp_opcode_t;
 
 typedef enum __packed {
-	BT_AVRVP_PKT_TYPE_SINGLE = 0b00,
-	BT_AVRVP_PKT_TYPE_START = 0b01,
-	BT_AVRVP_PKT_TYPE_CONTINUE = 0b10,
-	BT_AVRVP_PKT_TYPE_END = 0b11,
+	BT_AVRCP_PKT_TYPE_SINGLE = 0b00,
+	BT_AVRCP_PKT_TYPE_START = 0b01,
+	BT_AVRCP_PKT_TYPE_CONTINUE = 0b10,
+	BT_AVRCP_PKT_TYPE_END = 0b11,
 } bt_avrcp_pkt_type_t;
 
 typedef enum {
