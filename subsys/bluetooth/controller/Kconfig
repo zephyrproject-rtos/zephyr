@@ -137,16 +137,6 @@ config BT_CTLR_EXTENDED_FEAT_SET_SUPPORT
 config HAS_BT_CTLR
 	bool
 
-config BT_CTLR
-	bool "Bluetooth Controller [DEPRECATED]"
-	select HAS_BT_CTLR
-	select DEPRECATED
-	help
-	  Enables support for SoC native controller implementations. This option
-	  has been deprecated and should not be used anymore. Instead, the
-	  Kconfig options for specific Link Layer implementations should select
-	  the HAS_BT_CTLR option.
-
 config BT_LL_SW_SPLIT
 	bool "Software-based Bluetooth LE Link Layer"
 	default y
