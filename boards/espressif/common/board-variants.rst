@@ -37,9 +37,9 @@ To apply a board variant, use the ``-S`` flag with west build:
 .. zephyr-app-commands::
    :tool: west
    :zephyr-app: samples/hello_world
-   :board: <esp_board_name_qualifier>
+   :board: <board>
    :goals: build
-   :west-args: -S flash-32M -S psram-4M
+   :snippets: flash-32M,psram-4M
    :compact:
 
 **Note:** These snippets are applicable to boards with compatible hardware support for the selected flash/PSRAM configuration.
