@@ -1092,6 +1092,9 @@ struct ipv6_mreq {
  */
 #define IPV6_RECVPKTINFO 49
 
+/** Option which returns an in6_pktinfo structure in ancillary data */
+#define IPV6_PKTINFO 50
+
 /** Pass an IPV6_RECVHOPLIMIT ancillary message that contains information
  *  about the hop limit of the incoming packet. See RFC 3542.
  */
