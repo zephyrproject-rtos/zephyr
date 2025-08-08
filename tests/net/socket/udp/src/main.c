@@ -1806,7 +1806,11 @@ static void run_ancillary_recvmsg_test(int client_sock,
 
 	opt = 1;
 	optlen = sizeof(opt);
-	rv = zsock_setsockopt(server_sock, IPPROTO_IP, IP_PKTINFO, &opt, optlen);
+	if (server_addr->sa_family == AF_INET) {
+		rv = zsock_setsockopt(server_sock, IPPROTO_IP, IP_PKTINFO, &opt, optlen);
+	} else {
+		rv = zsock_setsockopt(server_sock, IPPROTO_IPV6, IPV6_RECVPKTINFO, &opt, optlen);
+	}
 	zassert_equal(rv, 0, "setsockopt failed (%d)", -errno);
 
 	memset(&cmsgbuf, 0, sizeof(cmsgbuf));
@@ -1840,7 +1844,7 @@ static void run_ancillary_recvmsg_test(int client_sock,
 		}
 
 		if (cmsg->cmsg_level == IPPROTO_IPV6 &&
-		    cmsg->cmsg_type == IPV6_RECVPKTINFO) {
+		    cmsg->cmsg_type == IPV6_PKTINFO) {
 			net_ipaddr_copy(&net_sin6(&addr)->sin6_addr,
 					&((struct in6_pktinfo *)CMSG_DATA(cmsg))->ipi6_addr);
 			ifindex = ((struct in6_pktinfo *)CMSG_DATA(cmsg))->ipi6_ifindex;
