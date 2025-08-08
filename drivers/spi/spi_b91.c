@@ -398,17 +398,13 @@ static int spi_b91_transceive(const struct device *dev,
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
 
 	/* if cs is defined: software cs control, set active true */
-	if (spi_cs_is_gpio(config)) {
-		spi_context_cs_control(&data->ctx, true);
-	}
+	spi_context_cs_control(&data->ctx, true);
 
 	/* transceive data */
 	spi_b91_txrx(dev, txrx_len);
 
 	/* if cs is defined: software cs control, set active false */
-	if (spi_cs_is_gpio(config)) {
-		spi_context_cs_control(&data->ctx, false);
-	}
+	spi_context_cs_control(&data->ctx, false);
 
 	/* release context */
 	status = spi_context_wait_for_completion(&data->ctx);
