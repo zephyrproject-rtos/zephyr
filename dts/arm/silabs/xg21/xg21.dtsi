@@ -469,7 +469,7 @@
 		};
 
 		adc0: adc@5a004000 {
-			compatible = "silabs,gecko-iadc";
+			compatible = "silabs,iadc";
 			reg = <0x5a004000 0x4000>;
 			#io-channel-cells = <1>;
 			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_IADCCLK>;
