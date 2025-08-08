@@ -427,6 +427,11 @@ int spi_rtio_transceive(struct spi_rtio *ctx,
 
 	while (ret > 0) {
 		cqe = rtio_cqe_consume(ctx->r);
+		if (cqe == NULL) {
+			err = -EIO;
+			break;
+		}
+
 		if (cqe->result < 0) {
 			err = cqe->result;
 		}
