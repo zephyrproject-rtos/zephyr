@@ -554,6 +554,23 @@ option ``-attach_uart_cmd=<"cmd">``, or for each individual UART with
 :kconfig:option:`CONFIG_UART_NATIVE_PTY_AUTOATTACH_DEFAULT_CMD`.
 Note that the default command assumes both ``xterm`` and ``screen`` are installed in the system.
 
+**UART PTY Symlinks**
+
+You can create stable symbolic links to the UART PTY devices for easier access
+by external tools. Use the command line options:
+
+* ``--uart_symlink=/path/to/symlink`` - Creates a symlink for the first UART PTY (uart0)
+* ``--uart_1_symlink=/path/to/symlink`` - Creates a symlink for the second UART PTY (uart_1, if enabled)
+
+For example:
+
+.. code-block:: console
+
+   $ ./zephyr.exe --uart_symlink=/tmp/console
+   $ screen /tmp/console
+
+The symlinks are automatically removed when the simulation exits.
+
 This driver supports poll mode or async mode with :kconfig:option:`CONFIG_UART_ASYNC_API`.
 Interrupt mode is not supported.
 Neither runtime configuration or line control are supported.

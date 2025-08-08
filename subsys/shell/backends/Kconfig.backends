@@ -141,6 +141,14 @@ config SHELL_BACKEND_SERIAL_CHECK_DTR
 	help
 	  Check DTR signal before TX.
 
+config SHELL_BACKEND_SERIAL_OLF_CRLF
+	bool "Use CR+LF for output line endings"
+	default y
+	help
+	  When enabled, the shell backend will use CR+LF (\r\n) for line endings
+	  in output. When disabled, the system default line ending is used (typically
+	  just LF, \n). This affects how the shell formats output text.
+
 module = SHELL_BACKEND_SERIAL
 default-timeout = 100
 source "subsys/shell/Kconfig.template.shell_log_queue_timeout"

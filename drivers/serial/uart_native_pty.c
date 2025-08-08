@@ -14,8 +14,8 @@
 #endif
 
 #include <stdbool.h>
-#include <zephyr/drivers/uart.h>
 #include <zephyr/kernel.h>
+#include <zephyr/drivers/uart.h>
 #include <cmdline.h> /* native_sim command line options header */
 #include <posix_native_task.h>
 #include <nsi_host_trampolines.h>
@@ -48,6 +48,7 @@ struct native_pty_status {
 	char *auto_attach_cmd; /* If auto_attach, which command to launch the terminal emulator */
 	bool wait_pts;         /* Hold writes to the uart/pts until a client is connected/ready */
 	bool cmd_request_stdinout; /* User requested to connect this UART to the stdin/out */
+	char *pty_symlink_path;    /* Custom symlink path (NULL = no symlink) */
 #ifdef CONFIG_UART_ASYNC_API
 	struct  {
 		const struct device *dev;
@@ -148,8 +149,9 @@ static int np_uart_init(const struct device *dev)
 		} else { /* Running with --attach_uart_cmd, implies --attach_uart */
 			d->auto_attach = true;
 		}
-		int tty_fn = np_uart_open_pty(dev->name, d->auto_attach_cmd, d->auto_attach,
-					      d->wait_pts);
+		int tty_fn = np_uart_open_pty(d->pty_symlink_path, dev->name,
+					     d->auto_attach_cmd, d->auto_attach,
+					     d->wait_pts);
 		d->in_fd = tty_fn;
 		d->out_fd = tty_fn;
 	}
@@ -463,6 +465,14 @@ static void wait_pts_cb(char *argv, int offset)
 		.dest = &native_pty_status_##inst.wait_pts,                                        \
 		.descript = "Hold writes to "INST_NAME(inst)" until a client is connected/ready"   \
 			   " (only applicable when connected to PTYs)"                             \
+	},                                                                                         \
+	{                                                                                          \
+		.option = INST_NAME(inst) "_symlink",                                              \
+		.name = "\"path\"",                                                                \
+		.type = 's',                                                                       \
+		.dest = &native_pty_status_##inst.pty_symlink_path,                                \
+		.descript = "Create a symlink at the specified path pointing to "                  \
+		INST_NAME(inst) "'s PTY device",                                                   \
 	},
 
 static void np_add_uart_options(void)
@@ -507,6 +517,9 @@ static void np_add_uart_options(void)
 	if ((!native_pty_status_##inst.on_stdinout) && (native_pty_status_##inst.in_fd != 0)) { \
 		nsi_host_close(native_pty_status_##inst.in_fd);                                 \
 		native_pty_status_##inst.in_fd = 0;                                             \
+	}                                                                                       \
+	if (native_pty_status_##inst.pty_symlink_path) { \
+		np_uart_cleanup_symlink(native_pty_status_##inst.pty_symlink_path);            \
 	}
 
 static void np_cleanup_uart(void)

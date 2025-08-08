@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "uart_native_pty_bottom.h"
+
 #undef _XOPEN_SOURCE
 /* Note: This is used only for interaction with the host C library, and is therefore exempt of
  * coding guidelines rule A.4&5 which applies to the embedded code using embedded libraries
@@ -23,6 +25,8 @@
 #include <unistd.h>
 #include <poll.h>
 #include <nsi_tracing.h>
+#include <sys/stat.h>
+#include <libgen.h>
 
 #define ERROR nsi_print_error_and_exit
 #define WARN nsi_print_warning
@@ -133,8 +137,8 @@ static void attach_to_pty(const char *slave_pty, const char *auto_attach_cmd)
  * If auto_attach was set, it will also attempt to connect a new terminal
  * emulator to its slave side.
  */
-int np_uart_open_pty(const char *uart_name, const char *auto_attach_cmd,
-		     bool do_auto_attach, bool wait_pts)
+int np_uart_open_pty(const char *pty_symlink_path, const char *uart_name,
+		     const char *auto_attach_cmd, bool do_auto_attach, bool wait_pts)
 {
 	int master_pty;
 	char *slave_pty_name;
@@ -235,6 +239,28 @@ int np_uart_open_pty(const char *uart_name, const char *auto_attach_cmd,
 		attach_to_pty(slave_pty_name, auto_attach_cmd);
 	}
 
+	if (pty_symlink_path != NULL) {
+		int validation_result = validate_pty_symlink_path(pty_symlink_path);
+
+		if (validation_result != 0) {
+			/* Validation failed - cleanup PTY and report error */
+			close(master_pty);
+			report_pty_symlink_error(pty_symlink_path, validation_result);
+			return -1; /* Error reported by report_pty_symlink_error, will exit */
+		}
+
+		/* Create symlink from custom path to auto-allocated PTY device */
+		if (symlink(slave_pty_name, pty_symlink_path) != 0) {
+			int symlink_errno = errno;
+
+			close(master_pty);
+			report_pty_symlink_error(pty_symlink_path, -symlink_errno);
+			return -1; /* Error reported by report_pty_symlink_error, will exit */
+		}
+
+		nsi_print_trace("Created symlink: %s -> %s\n", pty_symlink_path, slave_pty_name);
+	}
+
 	return master_pty;
 }
 
@@ -246,4 +272,143 @@ int np_uart_pty_get_stdin_fileno(void)
 int np_uart_pty_get_stdout_fileno(void)
 {
 	return STDOUT_FILENO;
+}
+
+/**
+ * @brief Validate symlink path for PTY creation
+ *
+ * Performs comprehensive pre-flight validation for symlink creation including:
+ * - Path format validation (no trailing slash)
+ * - Parent directory existence and write permissions
+ * - Symlink collision detection
+ * - Platform-specific validation requirements
+ *
+ * @param path Symlink path to validate (NULL means no symlink creation)
+ * @return 0 on success, negative error code on failure:
+ *         -EINVAL: Invalid path format (trailing slash, invalid characters)
+ *         -EEXIST: Path already exists (collision detection)
+ *         -ENOENT: Parent directory does not exist
+ *         -EACCES: Permission denied for parent directory
+ */
+int validate_pty_symlink_path(const char *path)
+{
+	struct stat st;
+	char *parent_dir_copy = NULL;
+	char *parent_dir = NULL;
+	int result = 0;
+
+	if (!path || !path[0]) {
+		return 0;
+	}
+
+	size_t len = strlen(path);
+
+	if (len > 0 && path[len - 1] == '/') {
+		return -EINVAL;
+	}
+
+	if (stat(path, &st) == 0) {
+		return -EEXIST;
+	}
+
+	parent_dir_copy = strdup(path);
+	if (!parent_dir_copy) {
+		return -ENOMEM;
+	}
+
+	parent_dir = dirname(parent_dir_copy);
+	if (!parent_dir) {
+		free(parent_dir_copy);
+		return -EINVAL;
+	}
+
+	if (stat(parent_dir, &st) != 0) {
+		result = (errno == ENOENT) ? -ENOENT : -EACCES;
+		goto cleanup;
+	}
+
+	if (!S_ISDIR(st.st_mode)) {
+		result = -ENOTDIR;
+		goto cleanup;
+	}
+
+	if (access(parent_dir, W_OK) != 0) {
+		result = -EACCES;
+		goto cleanup;
+	}
+
+cleanup:
+	free(parent_dir_copy);
+	return result;
+}
+
+/**
+ * @brief Clean up a PTY symlink
+ *
+ * Removes a symlink created for a PTY device. This function is called
+ * from the embedded context but runs in the host context where it can
+ * access the host filesystem.
+ *
+ * @param symlink_path Path to the symlink to remove (NULL = no operation)
+ * @return 0 on success, negative error code on failure
+ */
+int np_uart_cleanup_symlink(const char *symlink_path)
+{
+	if (!symlink_path) {
+		return 0;
+	}
+
+	if (unlink(symlink_path) != 0) {
+		int error = errno;
+
+		WARN("Failed to remove symlink '%s': %s\n", symlink_path, strerror(error));
+		return -error;
+	}
+
+	return 0;
+}
+
+/**
+ * @brief Report symlink creation errors with actionable user guidance
+ *
+ * Provides comprehensive error reporting for symlink creation failures.
+ * Each error includes specific user guidance for resolution.
+ *
+ * @param path Symlink path that failed
+ * @param error Error code from validate_pty_symlink_path() or symlink()
+ */
+void report_pty_symlink_error(const char *path, int error)
+{
+	if (!path) {
+		path = "<null>";
+	}
+
+	switch (error) {
+	case -EEXIST:
+		ERROR("Symlink path '%s' already exists. "
+		      "Remove existing file or choose different path\n", path);
+	case -ENOENT:
+		ERROR("Parent directory for '%s' does not exist. "
+		      "Create directory: mkdir -p $(dirname '%s')\n", path, path);
+	case -ENOTDIR:
+		ERROR("Parent path for '%s' exists but is not a directory. "
+		      "Remove the file or choose different symlink path\n", path);
+	case -EACCES:
+		ERROR("Permission denied creating symlink '%s'. "
+		      "Check directory permissions or choose writable location\n", path);
+	case -EINVAL:
+		ERROR("Invalid symlink path '%s'. "
+		      "Path cannot end with '/' or contain invalid characters\n", path);
+	case -ENOMEM:
+		ERROR("Out of memory while validating symlink path '%s'\n", path);
+	case -EAGAIN:
+		ERROR("Failed to allocate PTY for symlink '%s'. "
+		      "System may be out of PTY devices\n", path);
+	case -EIO:
+		ERROR("Failed to create symlink '%s'. "
+		      "Filesystem may not support symlinks\n", path);
+	default:
+		ERROR("Symlink creation error for '%s': %s (errno=%d)\n",
+		      path, strerror(-error), -error);
+	}
 }
