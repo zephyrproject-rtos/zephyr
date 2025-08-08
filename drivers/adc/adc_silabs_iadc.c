@@ -9,6 +9,8 @@
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/clock_control_silabs.h>
+#include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/dma/dma_silabs_ldma.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
@@ -23,6 +25,15 @@ LOG_MODULE_REGISTER(iadc, CONFIG_ADC_LOG_LEVEL);
 #define IADC_DATA_RES12BIT(DATA) ((DATA) & 0x0FFF)
 #define IADC_PORT_MASK           0xF0
 #define IADC_PIN_MASK            0x0F
+
+struct iadc_dma_channel {
+	const struct device *dma_dev;
+	int dma_channel;
+	struct dma_block_config blk_cfg;
+	struct dma_config dma_cfg;
+	uint32_t offset;
+	bool enabled;
+};
 
 struct iadc_chan_conf {
 	sl_hal_iadc_analog_gain_t gain;
@@ -44,6 +55,7 @@ struct iadc_data {
 	uint32_t channels;
 	uint8_t adc_config_count; /* Number of ADC configs created (max 2) */
 	struct iadc_chan_conf chan_conf[SL_HAL_IADC_CHANNEL_ID_MAX - 1];
+	struct iadc_dma_channel dma;
 };
 
 struct iadc_config {
@@ -94,6 +106,102 @@ static void iadc_configure_scan_table_entry(sl_hal_iadc_scan_table_entry_t *entr
 	};
 }
 
+#ifdef CONFIG_ADC_SILABS_IADC_DMA
+static int iadc_dma_init(const struct device *dev)
+{
+	const struct iadc_config *config = dev->config;
+	struct iadc_data *data = dev->data;
+	struct iadc_dma_channel *dma = &data->dma;
+
+	if (dma->dma_dev) {
+		if (!device_is_ready(dma->dma_dev)) {
+			LOG_ERR("DMA device not ready");
+			return -ENODEV;
+		}
+
+		dma->dma_channel = dma_request_channel(dma->dma_dev, NULL);
+		if (dma->dma_channel < 0) {
+			LOG_ERR("Failed to request DMA channel");
+			return -ENODEV;
+		}
+	}
+
+	memset(&dma->blk_cfg, 0, sizeof(dma->blk_cfg));
+	dma->blk_cfg.source_address = (uintptr_t)&((IADC_TypeDef *)config->base)->SCANFIFODATA;
+	dma->blk_cfg.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+	dma->blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+	dma->dma_cfg.complete_callback_en = 1;
+	dma->dma_cfg.channel_priority = 3;
+	dma->dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
+	dma->dma_cfg.head_block = &dma->blk_cfg;
+	dma->dma_cfg.user_data = data;
+
+	return 0;
+}
+
+static int iadc_dma_start(const struct device *dev)
+{
+	struct iadc_data *data = dev->data;
+	struct iadc_dma_channel *dma = &data->dma;
+	int ret;
+
+	if (!dma->dma_dev) {
+		return -ENODEV;
+	}
+
+	if (dma->enabled) {
+		return -EBUSY;
+	}
+
+	ret = dma_config(dma->dma_dev, dma->dma_channel, &dma->dma_cfg);
+	if (ret) {
+		LOG_ERR("DMA config error: %d", ret);
+		return ret;
+	}
+
+	dma->enabled = true;
+
+	ret = dma_start(dma->dma_dev, dma->dma_channel);
+	if (ret) {
+		LOG_ERR("DMA start error: %d", ret);
+		dma->enabled = false;
+		return ret;
+	}
+
+	return 0;
+}
+
+static void iadc_dma_stop(const struct device *dev)
+{
+	struct iadc_data *data = dev->data;
+	struct iadc_dma_channel *dma = &data->dma;
+
+	if (!dma->enabled) {
+		return;
+	}
+
+	dma_stop(dma->dma_dev, dma->dma_channel);
+
+	dma->enabled = false;
+}
+
+static void iadc_dma_cb(const struct device *dma_dev, void *user_data, uint32_t channel, int status)
+{
+	struct iadc_data *data = user_data;
+	const struct device *dev = data->dev;
+
+	if (status < 0) {
+		LOG_ERR("DMA transfer error: %d", status);
+		adc_context_complete(&data->ctx, status);
+		return;
+	}
+
+	iadc_dma_stop(dev);
+
+	adc_context_on_sampling_done(&data->ctx, dev);
+}
+#endif
+
 static int iadc_set_config(const struct device *dev)
 {
 	sl_hal_iadc_scan_table_t scanTable = SL_HAL_IADC_SCANTABLE_DEFAULT;
@@ -104,6 +212,12 @@ static int iadc_set_config(const struct device *dev)
 	struct iadc_data *data = dev->data;
 	struct iadc_chan_conf *chan_conf;
 	int res;
+
+	if (data->dma.dma_dev) {
+		scanInit.data_valid_level = SL_HAL_IADC_DATA_VALID_1;
+		/* Only needed to wake up DMA if EM is 2/3 */
+		scanInit.fifo_dma_wakeup = true;
+	}
 
 	data->adc_config_count = 0;
 
@@ -225,6 +339,16 @@ static int start_read(const struct device *dev, const struct adc_sequence *seque
 	}
 
 	data->buffer = sequence->buffer;
+
+	if (data->dma.dma_dev) {
+		/* Need to take care that it will copy 16 bits of data and not only 12 bits
+		 * of the result (iadc can be configured to set the channel id in the 4 MSB)
+		 */
+		data->dma.blk_cfg.dest_address = (uintptr_t)data->buffer;
+		data->dma.blk_cfg.block_size = channel_count * sizeof(uint16_t);
+		data->dma.offset = 0;
+	}
+
 	data->channels = sequence->channels;
 
 	res = iadc_set_config(data->dev);
@@ -242,9 +366,19 @@ static int start_read(const struct device *dev, const struct adc_sequence *seque
 static void iadc_start_scan(const struct device *dev)
 {
 	const struct iadc_config *config = dev->config;
+	__maybe_unused struct iadc_data *data = dev->data;
 	IADC_TypeDef *iadc = (IADC_TypeDef *)config->base;
 
+#ifdef CONFIG_ADC_SILABS_IADC_DMA
+	if (data->dma.dma_dev) {
+		data->dma.blk_cfg.dest_address = (uintptr_t)data->buffer + data->dma.offset;
+		iadc_dma_start(dev);
+	} else {
+		sl_hal_iadc_enable_interrupts(iadc, IADC_IEN_SCANTABLEDONE);
+	}
+#else
 	sl_hal_iadc_enable_interrupts(iadc, IADC_IEN_SCANTABLEDONE);
+#endif
 
 	sl_hal_iadc_start_scan(iadc);
 }
@@ -264,6 +398,9 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repe
 
 	if (repeat_sampling) {
 		data->buffer = data->repeat_buffer;
+		data->dma.offset = 0;
+	} else {
+		data->dma.offset = data->dma.blk_cfg.block_size * (data->ctx.sampling_index);
 	}
 }
 
@@ -455,6 +592,13 @@ static int iadc_init(const struct device *dev)
 		return ret;
 	}
 
+#ifdef CONFIG_ADC_SILABS_IADC_DMA
+	ret = iadc_dma_init(dev);
+	if (ret < 0) {
+		data->dma.dma_dev = NULL;
+	}
+#endif
+
 	config->irq_cfg_func();
 
 	adc_context_unlock_unconditionally(&data->ctx);
@@ -470,6 +614,24 @@ static DEVICE_API(adc, iadc_api) = {
 #endif
 	.ref_internal = SL_HAL_IADC_DEFAULT_VREF,
 };
+
+#ifdef CONFIG_ADC_SILABS_IADC_DMA
+#define IADC_DMA_CHANNEL_INIT(n)                                                                   \
+	.dma = {.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR(n)),                                    \
+		.dma_cfg = {                                                                       \
+			.dma_slot =                                                                \
+				SILABS_LDMA_REQSEL_TO_SLOT(DT_INST_DMAS_CELL_BY_IDX(n, 0, slot)),  \
+			.source_data_size = 2,                                                     \
+			.dest_data_size = 2,                                                       \
+			.source_burst_length = 2,                                                  \
+			.dest_burst_length = 2,                                                    \
+			.dma_callback = iadc_dma_cb,                                               \
+		}},
+#define IADC_DMA_CHANNEL(n) COND_CODE_1(DT_INST_NODE_HAS_PROP(n, dmas),                            \
+		 (IADC_DMA_CHANNEL_INIT(n)), ())
+#else
+#define IADC_DMA_CHANNEL(n)
+#endif
 
 #define IADC_INIT(n)                                                                               \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
@@ -488,7 +650,7 @@ static DEVICE_API(adc, iadc_api) = {
 	static struct iadc_data iadc_data_##n = {ADC_CONTEXT_INIT_TIMER(iadc_data_##n, ctx),       \
 						 ADC_CONTEXT_INIT_LOCK(iadc_data_##n, ctx),        \
 						 ADC_CONTEXT_INIT_SYNC(iadc_data_##n, ctx),        \
-	};                                                                                         \
+						 IADC_DMA_CHANNEL(n)};                             \
                                                                                                    \
 	static void iadc_config_func_##n(void)                                                     \
 	{                                                                                          \
