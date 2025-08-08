@@ -8,7 +8,7 @@ elseif (CONFIG_SOC_NRF54L15_CPUFLPR)
   board_runner_args(jlink "--device=nRF54L15_RV32")
 endif()
 
-if(BOARD_RAYTAC_AN54L15Q_DB_NRF54L15_CPUAPP_NS)
+if(BOARD_RAYTAC_AN54LQ_DB_15_NRF54L15_CPUAPP_NS)
   set(TFM_PUBLIC_KEY_FORMAT "full")
 endif()
 
