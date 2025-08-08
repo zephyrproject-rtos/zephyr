@@ -2,13 +2,12 @@
 # Copyright (c) 2024 Raytac Corporation.
 # SPDX-License-Identifier: Apache-2.0
 
-identifier: raytac_an54l15q_db/nrf54l15/cpuapp
-name: Raytac-AN54L15Q-DB-nRF54l15-Application
+identifier: raytac_an54lq_db_15/nrf54l15/cpuapp
+name: Raytac-AN54LQ-DB-15-nRF54l15-Application
 type: mcu
 arch: arm
 toolchain:
   - gnuarmemb
-  - xtools
   - zephyr
 sysbuild: true
 ram: 188
@@ -16,6 +15,7 @@ flash: 1428
 supported:
   - adc
   - counter
+  - dmic
   - gpio
   - i2c
   - pwm
