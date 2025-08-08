@@ -3120,6 +3120,197 @@ ZTEST(net_socket_udp, test_40_clamp_udp_tcp_port_range)
 #endif
 }
 
+static void run_ancillary_recvmsg_hoplimit_test(int client_sock,
+				       struct sockaddr *client_addr,
+				       int client_addr_len,
+				       int server_sock,
+				       struct sockaddr *server_addr,
+				       int server_addr_len)
+{
+	int rv;
+	int opt;
+	socklen_t optlen;
+	struct sockaddr_storage family = {0};
+	socklen_t len = sizeof(family);
+	struct msghdr msg;
+	struct msghdr server_msg;
+	struct iovec io_vector[1];
+	struct cmsghdr *cmsg, *prevcmsg;
+	int send_hop_limit = 64, recv_hop_limit = 0;
+	union {
+		struct cmsghdr hdr;
+		unsigned char  buf[CMSG_SPACE(sizeof(int))];
+	} cmsgbuf;
+#define SMALL_BUF_LEN (sizeof(TEST_STR_SMALL) - 1 - 2)
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_CONTEXT_RECV_HOPLIMIT);
+
+	rv = zsock_bind(server_sock, server_addr, server_addr_len);
+	zassert_equal(rv, 0, "server bind failed");
+
+	rv = zsock_bind(client_sock, client_addr, client_addr_len);
+	zassert_equal(rv, 0, "client bind failed");
+
+	io_vector[0].iov_base = TEST_STR_SMALL;
+	io_vector[0].iov_len = strlen(TEST_STR_SMALL);
+
+	memset(&cmsgbuf, 0, sizeof(cmsgbuf));
+
+	memset(&msg, 0, sizeof(msg));
+	msg.msg_iov = io_vector;
+	msg.msg_iovlen = 1;
+	msg.msg_name = server_addr;
+	msg.msg_namelen = server_addr_len;
+
+	cmsg = CMSG_FIRSTHDR(&msg);
+	cmsg->cmsg_len = CMSG_LEN(sizeof(int));
+	if (client_addr->sa_family == AF_INET) {
+		cmsg->cmsg_level = IPPROTO_IPV6;
+	} else {
+		cmsg->cmsg_level = IPPROTO_IP;
+	}
+	if (client_addr->sa_family == AF_INET) {
+		cmsg->cmsg_type = IP_TTL;
+	} else {
+		cmsg->cmsg_type = IPV6_HOPLIMIT;
+	}
+
+	memcpy(CMSG_DATA(cmsg), &send_hop_limit, sizeof(send_hop_limit));
+
+	comm_sendmsg_recvmsg(client_sock,
+			     client_addr,
+			     client_addr_len,
+			     &msg,
+			     server_sock,
+			     server_addr,
+			     server_addr_len,
+			     &server_msg,
+			     &cmsgbuf.buf,
+			     sizeof(cmsgbuf.buf),
+			     true);
+
+	for (prevcmsg = NULL, cmsg = CMSG_FIRSTHDR(&server_msg);
+	     cmsg != NULL && prevcmsg != cmsg;
+	     prevcmsg = cmsg, cmsg = CMSG_NXTHDR(&server_msg, cmsg)) {
+		if (client_addr->sa_family == AF_INET) {
+			if (cmsg->cmsg_level == IPPROTO_IP &&
+				cmsg->cmsg_type == IP_TTL) {
+				recv_hop_limit = *(int *)CMSG_DATA(cmsg);
+				break;
+			}
+		} else {
+			if (cmsg->cmsg_level == IPPROTO_IPV6 &&
+				cmsg->cmsg_type == IPV6_HOPLIMIT) {
+				recv_hop_limit = *(int *)CMSG_DATA(cmsg);
+				break;
+			}
+		}
+	}
+
+	/* As we have not set the socket option, the hop_limit should not be set */
+	zassert_equal(recv_hop_limit, 0, "Hop limit set!");
+
+	opt = 1;
+	optlen = sizeof(opt);
+	rv = zsock_getsockname(server_sock, (struct sockaddr *)&family, &len);
+	zassert_equal(rv, 0, "getsockname failed (%d)", -errno);
+	if (family.ss_family == AF_INET) {
+		rv = zsock_setsockopt(server_sock, IPPROTO_IP, IP_RECVTTL, &opt, optlen);
+	} else {
+		rv = zsock_setsockopt(server_sock, IPPROTO_IPV6, IPV6_RECVHOPLIMIT, &opt, optlen);
+	}
+	zassert_equal(rv, 0, "setsockopt failed (%d)", -errno);
+
+	memset(&cmsgbuf, 0, sizeof(cmsgbuf));
+
+	memset(&msg, 0, sizeof(msg));
+	msg.msg_iov = io_vector;
+	msg.msg_iovlen = 1;
+	msg.msg_name = server_addr;
+	msg.msg_namelen = server_addr_len;
+
+	cmsg = CMSG_FIRSTHDR(&msg);
+	cmsg->cmsg_len = CMSG_LEN(sizeof(int));
+	if (client_addr->sa_family == AF_INET) {
+		cmsg->cmsg_level = IPPROTO_IPV6;
+	} else {
+		cmsg->cmsg_level = IPPROTO_IP;
+	}
+	if (client_addr->sa_family == AF_INET) {
+		cmsg->cmsg_type = IP_TTL;
+	} else {
+		cmsg->cmsg_type = IPV6_HOPLIMIT;
+	}
+
+	comm_sendmsg_recvmsg(client_sock,
+			     client_addr,
+			     client_addr_len,
+			     &msg,
+			     server_sock,
+			     server_addr,
+			     server_addr_len,
+			     &server_msg,
+			     &cmsgbuf.buf,
+			     sizeof(cmsgbuf.buf),
+			     true);
+
+	for (prevcmsg = NULL, cmsg = CMSG_FIRSTHDR(&server_msg);
+	     cmsg != NULL && prevcmsg != cmsg;
+	     prevcmsg = cmsg, cmsg = CMSG_NXTHDR(&server_msg, cmsg)) {
+		if (client_addr->sa_family == AF_INET) {
+			if (cmsg->cmsg_level == IPPROTO_IP &&
+				cmsg->cmsg_type == IP_TTL) {
+				recv_hop_limit = *(int *)CMSG_DATA(cmsg);
+				break;
+			}
+		} else {
+			if (cmsg->cmsg_level == IPPROTO_IPV6 &&
+				cmsg->cmsg_type == IPV6_HOPLIMIT) {
+				recv_hop_limit = *(int *)CMSG_DATA(cmsg);
+				break;
+			}
+		}
+	}
+
+	zassert_equal(send_hop_limit, recv_hop_limit, "Hop limit not parsed correctly");
+}
+
+ZTEST_USER(net_socket_udp, test_41_recvmsg_ancillary_ipv4_hoplimit_data_user)
+{
+	struct sockaddr_in client_addr;
+	struct sockaddr_in server_addr;
+	int client_sock;
+	int server_sock;
+
+	prepare_sock_udp_v4(MY_IPV4_ADDR, ANY_PORT, &client_sock, &client_addr);
+	prepare_sock_udp_v4(MY_IPV4_ADDR, SERVER_PORT, &server_sock, &server_addr);
+
+	run_ancillary_recvmsg_hoplimit_test(client_sock,
+				   (struct sockaddr *)&client_addr,
+				   sizeof(client_addr),
+				   server_sock,
+				   (struct sockaddr *)&server_addr,
+				   sizeof(server_addr));
+}
+
+ZTEST_USER(net_socket_udp, test_42_recvmsg_ancillary_ipv6_hoplimit_data_user)
+{
+	struct sockaddr_in6 client_addr;
+	struct sockaddr_in6 server_addr;
+	int client_sock;
+	int server_sock;
+
+	prepare_sock_udp_v6(MY_IPV6_ADDR, ANY_PORT, &client_sock, &client_addr);
+	prepare_sock_udp_v6(MY_IPV6_ADDR, SERVER_PORT, &server_sock, &server_addr);
+
+	run_ancillary_recvmsg_hoplimit_test(client_sock,
+				   (struct sockaddr *)&client_addr,
+				   sizeof(client_addr),
+				   server_sock,
+				   (struct sockaddr *)&server_addr,
+				   sizeof(server_addr));
+}
+
 static void after(void *arg)
 {
 	ARG_UNUSED(arg);
