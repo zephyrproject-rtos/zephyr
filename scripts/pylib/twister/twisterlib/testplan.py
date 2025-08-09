@@ -49,6 +49,8 @@ sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts", "dts",
 from devicetree import edtlib  # pylint: disable=unused-import
 
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/"))
+
+
 class Filters:
     # platform keys
     PLATFORM_KEY = 'platform key filter'
@@ -68,11 +70,16 @@ class Filters:
     MODULE = 'Module filter'
     # in case of missing env. variable required for a platform
     ENVIRONMENT = 'Environment filter'
+
+
 class TestLevel:
     name = None
     levels = []
     scenarios = []
+
+
 class TestConfiguration:
+    __test__ = False
     tc_schema_path = os.path.join(
         ZEPHYR_BASE,
         "scripts",
