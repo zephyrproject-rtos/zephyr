@@ -249,6 +249,7 @@ config DYNAMIC_THREAD_STACK_SIZE
 	default 4096 if X86
 	default 1024 if !X86 && !64BIT
 	default 2048 if !X86 && 64BIT
+	default 4096 if COVERAGE
 	help
 	  Default stack size (in bytes) for dynamic threads.
 
