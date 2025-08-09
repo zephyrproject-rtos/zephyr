@@ -44,7 +44,7 @@
 
 	otghs_ulpi_phy: otghs_ulpis_phy {
 		compatible = "usb-ulpi-phy";
-		reset-gpios = <&gpiod 7 (GPIO_ACTIVE_LOW)>;
+		reset-gpios = <&gpiod 7 GPIO_ACTIVE_LOW>;
 		#phy-cells = <0>;
 	};
 

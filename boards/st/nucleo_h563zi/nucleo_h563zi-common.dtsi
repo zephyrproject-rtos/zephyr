@@ -83,7 +83,7 @@
 };
 
 &i3c1 {
-	pinctrl-0 =  <&i3c1_scl_pd12 &i3c1_sda_pd13>;
+	pinctrl-0 = <&i3c1_scl_pd12 &i3c1_sda_pd13>;
 	pinctrl-names = "default";
 	i3c-scl-hz = <12500000>;
 	status = "okay";
@@ -150,7 +150,7 @@
 
 &dac1 {
 	/* outputs only on 2 pins and pa4 is reserved for VBUS_SENSE */
-	pinctrl-0 = <&dac1_out2_pa5>;  /* Zio D13 (on CN7) */
+	pinctrl-0 = <&dac1_out2_pa5>; /* Zio D13 (on CN7) */
 	pinctrl-names = "default";
 	status = "okay";
 };

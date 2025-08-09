@@ -163,7 +163,6 @@
 	};
 };
 
-
 &uart0 {
 	pinctrl-0 = <&uart0_tx &uart0_rx>;
 	pinctrl-names = "default";
@@ -201,8 +200,8 @@
 
 &eth0 {
 	pinctrl-0 = <&rgmii_rx_ctl &rgmii_rx_clk
-				 &rgmii_tx_ctl &rgmii_tx_clk
-				 &rgmii_txd0 &rgmii_txd1 &rgmii_txd2 &rgmii_txd3
-				 &rgmii_rxd0 &rgmii_rxd1 &rgmii_rxd2 &rgmii_rxd3>;
+		     &rgmii_tx_ctl &rgmii_tx_clk
+		     &rgmii_txd0 &rgmii_txd1 &rgmii_txd2 &rgmii_txd3
+		     &rgmii_rxd0 &rgmii_rxd1 &rgmii_rxd2 &rgmii_rxd3>;
 	pinctrl-names = "default";
 };

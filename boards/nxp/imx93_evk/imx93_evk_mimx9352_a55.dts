@@ -57,13 +57,13 @@
 	keys {
 		compatible = "gpio-keys";
 
-		btn_1: btn_1{
+		btn_1: btn_1 {
 			label = "BTN1";
 			gpios = <&gpio2 23 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
 
-		btn_2: btn_2{
+		btn_2: btn_2 {
 			label = "BTN2";
 			gpios = <&gpio2 24 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_1>;
@@ -129,7 +129,6 @@
 	pinctrl-names = "default";
 };
 
-
 &lpi2c1 {
 	status = "disabled";
 	clock-frequency = <I2C_BITRATE_FAST>;
@@ -143,7 +142,7 @@
 	pinctrl-0 = <&i2c2_default>;
 	pinctrl-names = "default";
 
-	mfd0:adp5585@34 {
+	mfd0: adp5585@34 {
 		compatible = "adi,adp5585";
 		reg = <0x34>;
 		status = "okay";
@@ -169,7 +168,7 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		ngpios = <24>;
-		int-gpios = <&gpio3 27 (GPIO_ACTIVE_LOW|GPIO_PULL_UP)>;
+		int-gpios = <&gpio3 27 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		status = "okay";
 	};
 };
@@ -181,19 +180,19 @@
 	pinctrl-names = "default";
 };
 
-&gpio1{
+&gpio1 {
 	status = "okay";
 };
 
-&gpio2{
+&gpio2 {
 	status = "okay";
 };
 
-&gpio3{
+&gpio3 {
 	status = "okay";
 };
 
-&gpio4{
+&gpio4 {
 	status = "okay";
 };
 

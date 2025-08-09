@@ -9,15 +9,15 @@
 	uart0_default: uart0_default {
 		group0 {
 			pinmux = <U0_RXD_PIO0_18>,
-				<U0_TXD_PIO0_19>;
-				nxp,disable-analog-filter;
+				 <U0_TXD_PIO0_19>;
+			nxp,disable-analog-filter;
 		};
 	};
 
 	i2c0_default: i2c0_default {
 		group0 {
 			pinmux = <I2C0_SCL_PIO0_4>,
-				<I2C0_SDA_PIO0_5>;
+				 <I2C0_SDA_PIO0_5>;
 			nxp,i2c-mode;
 			nxp,i2c-filter = "slow";
 			nxp,disable-analog-filter;
@@ -27,7 +27,7 @@
 	i2c0_fast: i2c0_fast {
 		group0 {
 			pinmux = <I2C0_SCL_PIO0_4>,
-				<I2C0_SDA_PIO0_5>;
+				 <I2C0_SDA_PIO0_5>;
 			nxp,i2c-mode;
 			nxp,i2c-filter = "fast";
 			nxp,disable-analog-filter;
@@ -37,7 +37,7 @@
 	i2c1_default: i2c1_default {
 		group0 {
 			pinmux = <I2C1_SCL_PIO0_7>,
-				<I2C1_SDA_PIO1_24>;
+				 <I2C1_SDA_PIO1_24>;
 			drive-open-drain;
 			nxp,i2c-mode;
 			nxp,i2c-filter = "slow";
@@ -48,7 +48,7 @@
 	i2c1_fast: i2c1_fast {
 		group0 {
 			pinmux = <I2C1_SCL_PIO0_7>,
-				<I2C1_SDA_PIO1_24>;
+				 <I2C1_SDA_PIO1_24>;
 			drive-open-drain;
 			nxp,i2c-mode;
 			nxp,i2c-filter = "fast";
@@ -59,7 +59,7 @@
 	syscon_default: syscon_default {
 		group0 {
 			pinmux = <XTALOUT_PIO2_1>,
-				<XTALIN_PIO2_0>;
+				 <XTALIN_PIO2_0>;
 			nxp,analog-mode;
 		};
 	};

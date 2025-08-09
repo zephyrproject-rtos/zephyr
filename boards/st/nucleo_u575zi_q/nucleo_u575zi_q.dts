@@ -35,7 +35,6 @@
 	};
 };
 
-
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";

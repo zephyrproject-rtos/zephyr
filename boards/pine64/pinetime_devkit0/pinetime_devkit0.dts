@@ -31,11 +31,11 @@
 	};
 
 	aliases {
-		led0 = &blled0;	/* backlight low */
-		led1 = &blled1;	/* backlight mid */
-		led2 = &blled2;	/* backlight high */
-		led3 = &statusled;	/* status led, may be not populated */
-		sw0 = &key_in;  /* key in */
+		led0 = &blled0; /* backlight low */
+		led1 = &blled1; /* backlight mid */
+		led2 = &blled2; /* backlight high */
+		led3 = &statusled; /* status led, may be not populated */
+		sw0 = &key_in; /* key in */
 		watchdog0 = &wdt0;
 	};
 
@@ -83,8 +83,8 @@
 	mipi_dbi {
 		compatible = "zephyr,mipi-dbi-spi";
 		spi-dev = <&spi1>;
-		dc-gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>;	/* DET */
-		reset-gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;	/* RESX reset */
+		dc-gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>; /* DET */
+		reset-gpios = <&gpio0 26 GPIO_ACTIVE_LOW>; /* RESX reset */
 		write-only;
 		#address-cells = <1>;
 		#size-cells = <0>;

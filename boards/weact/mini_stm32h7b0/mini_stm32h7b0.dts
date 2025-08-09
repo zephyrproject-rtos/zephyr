@@ -138,11 +138,11 @@ zephyr_udc0: &usbotg_hs {
 &octospi1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&octospim_p1_clk_pb2 &octospim_p1_ncs_pb6
-		&octospim_p1_io0_pd11 &octospim_p1_io1_pd12
-		&octospim_p1_io2_pe2 &octospim_p1_io3_pd13>;
+		     &octospim_p1_io0_pd11 &octospim_p1_io1_pd12
+		     &octospim_p1_io2_pe2 &octospim_p1_io3_pd13>;
 	status = "okay";
 
-	w25q64_qspi: ospi-nor-flash@0{
+	w25q64_qspi: ospi-nor-flash@0 {
 		compatible = "st,stm32-ospi-nor";
 		reg = <0>;
 		size = <DT_SIZE_M(64)>; /* 64 Mbits */

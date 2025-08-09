@@ -133,7 +133,9 @@
 	status = "okay";
 };
 
-&spi1_nss_pa4 { slew-rate = "very-high-speed"; };
+&spi1_nss_pa4 {
+	slew-rate = "very-high-speed";
+};
 
 &spi1 {
 	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pa5
@@ -142,7 +144,9 @@
 	status = "okay";
 };
 
-&spi2_nss_pb9 { slew-rate = "very-high-speed"; };
+&spi2_nss_pb9 {
+	slew-rate = "very-high-speed";
+};
 
 &spi2 {
 	pinctrl-0 = <&spi2_nss_pb9 &spi2_sck_pd3
@@ -152,7 +156,9 @@
 	/* status = "okay"; */
 };
 
-&spi4_nss_pe11 { slew-rate = "very-high-speed"; };
+&spi4_nss_pe11 {
+	slew-rate = "very-high-speed";
+};
 
 &spi4 {
 	pinctrl-0 = <&spi4_nss_pe11 &spi4_sck_pe12
