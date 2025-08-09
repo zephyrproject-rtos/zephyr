@@ -545,7 +545,15 @@ class DeviceHandler(Handler):
                 logger.error(f"{script} timed out")
 
     def _create_command(self, runner, hardware):
-        if (self.options.west_flash is not None) or runner:
+        if self.options.flash_command:
+            command = self.options.flash_command.split(',')
+            command.extend(['--build-dir', self.build_dir])
+
+            board_id = hardware.probe_id or hardware.id
+            if board_id:
+                command.extend(['--board-id', board_id])
+            return command
+        elif (self.options.west_flash is not None) or runner:
             command = ["west", "flash", "--skip-rebuild", "-d", self.build_dir]
             command_extra_args = []
 
