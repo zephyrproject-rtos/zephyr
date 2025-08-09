@@ -36,6 +36,20 @@ typedef uint8_t flash_prg_t;
 #error Write block size must be a power of 2, from 1 to 8
 #endif
 
+#if defined(CONFIG_FLASH_STM32_ASYNC)
+#if FLASH_STM32_WRITE_BLOCK_SIZE == 8
+#define FLASH_TYPEPROGRAM_SIZE FLASH_TYPEPROGRAM_DOUBLEWORD
+#elif FLASH_STM32_WRITE_BLOCK_SIZE == 4
+#define FLASH_TYPEPROGRAM_SIZE FLASH_TYPEPROGRAM_WORD
+#elif FLASH_STM32_WRITE_BLOCK_SIZE == 2
+#define FLASH_TYPEPROGRAM_SIZE FLASH_TYPEPROGRAM_HALFWORD
+#elif FLASH_STM32_WRITE_BLOCK_SIZE == 1
+#define FLASH_TYPEPROGRAM_SIZE FLASH_TYPEPROGRAM_BYTE
+#else
+#error Write block size must be a power of 2, from 1 to 8
+#endif
+#endif /* CONFIG_FLASH_STM32_ASYNC */
+
 bool flash_stm32_valid_range(const struct device *dev, off_t offset,
 			     uint32_t len,
 			     bool write)
@@ -82,12 +96,30 @@ static inline void flush_cache(FLASH_TypeDef *regs)
 
 static int write_value(const struct device *dev, off_t offset, flash_prg_t val)
 {
+	int rc;
+
+#if defined(CONFIG_FLASH_STM32_ASYNC)
+	FLASH_STM32_PRIV(dev)->async_complete = false;
+	FLASH_STM32_PRIV(dev)->async_error = false;
+	HAL_FLASH_Program_IT(FLASH_TYPEPROGRAM_SIZE, offset + FLASH_STM32_BASE_ADDRESS, val);
+	k_sem_take(&FLASH_STM32_PRIV(dev)->async_sem, K_FOREVER);
+	if (FLASH_STM32_PRIV(dev)->async_complete) {
+		LOG_DBG("Flash write successful. Wrote 0x%x at 0x%lx", val,
+			offset + FLASH_STM32_BASE_ADDRESS);
+		rc = 0;
+	} else {
+		if (FLASH_STM32_PRIV(dev)->async_error) {
+			LOG_ERR("Flash write failed %d", FLASH_STM32_PRIV(dev)->async_ret);
+		}
+		rc = -EIO;
+	}
+#else /* CONFIG_FLASH_STM32_ASYNC */
+
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 #if defined(FLASH_OPTCR_DB1M)
 	bool dcache_enabled = false;
 #endif /* FLASH_OPTCR_DB*/
 	uint32_t tmp;
-	int rc;
 
 	/* if the control register is locked, do not fail silently */
 	if (regs->CR & FLASH_CR_LOCK) {
@@ -130,15 +162,42 @@ static int write_value(const struct device *dev, off_t offset, flash_prg_t val)
 		regs->ACR |= FLASH_ACR_DCEN;
 	}
 #endif /* FLASH_OPTCR_DB1M */
+#endif /* CONFIG_FLASH_STM32_ASYNC */
 
 	return rc;
 }
 
 static int erase_sector(const struct device *dev, uint32_t sector)
 {
+	int rc;
+
+#if defined(CONFIG_FLASH_STM32_ASYNC)
+	FLASH_STM32_PRIV(dev)->async_complete = false;
+	FLASH_STM32_PRIV(dev)->async_error = false;
+	FLASH_EraseInitTypeDef erase_init = {
+		.TypeErase = FLASH_TYPEERASE_SECTORS,
+		.Banks = 1, /* dual bank flash not supported */
+		.Sector = sector,
+		.NbSectors = 1,
+		.VoltageRange = FLASH_VOLTAGE_RANGE_4,
+
+	};
+	HAL_FLASHEx_Erase_IT(&erase_init);
+	k_sem_take(&FLASH_STM32_PRIV(dev)->async_sem, K_FOREVER);
+	if (FLASH_STM32_PRIV(dev)->async_complete) {
+		LOG_DBG("Flash erase successful. Erased sector %d at 0x%x", sector,
+			FLASH_STM32_PRIV(dev)->async_ret);
+		rc = 0;
+	} else {
+		if (FLASH_STM32_PRIV(dev)->async_error) {
+			LOG_ERR("Flash erase failed %d", FLASH_STM32_PRIV(dev)->async_ret);
+		}
+		rc = -EIO;
+	}
+#else /* CONFIG_FLASH_STM32_ASYNC */
+
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 	uint32_t tmp;
-	int rc;
 
 	/* if the control register is locked, do not fail silently */
 	if (regs->CR & FLASH_CR_LOCK) {
@@ -180,6 +239,7 @@ static int erase_sector(const struct device *dev, uint32_t sector)
 
 	rc = flash_stm32_wait_flash_idle(dev);
 	regs->CR &= ~(FLASH_CR_SER | FLASH_CR_SNB);
+#endif /* CONFIG_FLASH_STM32_ASYNC */
 
 	return rc;
 }
