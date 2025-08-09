@@ -121,6 +121,25 @@ enum charger_property {
 typedef uint16_t charger_prop_t;
 
 /**
+ * @typedef charger_custom_value_int_t
+ * @brief Type for custom integer property values.
+ *
+ * Used only by downstream custom properties (>= CHARGER_PROP_CUSTOM_BEGIN).
+ * For fractional quantities, encode values in micro-units (e.g. uV, uA)
+ * unless the property specifies another scale.
+ */
+typedef int32_t charger_custom_value_int_t;
+
+/**
+ * @typedef charger_custom_value_bool_t
+ * @brief Type for custom boolean property values.
+ *
+ * Used only by downstream custom properties (>= CHARGER_PROP_CUSTOM_BEGIN),
+ * typically for feature/status flags (e.g. jeita_active).
+ */
+typedef bool charger_custom_value_bool_t;
+
+/**
  * @brief External supply states
  */
 enum charger_online {
@@ -297,6 +316,10 @@ union charger_propval {
 	charger_status_notifier_t status_notification;
 	/** CHARGER_PROP_ONLINE_NOTIFICATION */
 	charger_online_notifier_t online_notification;
+	/** Generic container (int) for driver specific custom properties */
+	charger_custom_value_int_t custom_int;
+	/** Generic container (bool) for driver specific custom properties */
+	charger_custom_value_bool_t custom_bool;
 };
 
 /**
