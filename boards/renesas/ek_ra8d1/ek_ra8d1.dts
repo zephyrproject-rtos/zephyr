@@ -44,6 +44,29 @@
 		};
 	};
 
+	mikrobus_header: mikrobus-connector {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<0 0 &ioport0 4 0>,	/* AN  */
+				<1 0 &ioport5 7 0>,	/* RST */
+				<2 0 &ioport4 13 0>,	/* CS   */
+				<3 0 &ioport4 12 0>,	/* SCK  */
+				<4 0 &ioport4 10 0>,	/* MISO */
+				<5 0 &ioport4 11 0>,	/* MOSI */
+							/* +3.3V */
+							/* GND */
+				<6 0 &ioport9 7 0>,	/* PWM  */
+				<7 0 &ioport0 10 0>,	/* INT  */
+				<8 0 &ioport4 8 0>,	/* RX   */
+				<9 0 &ioport4 9 0>,	/* TX   */
+				<10 0 &ioport4 0 0>,	/* SCL  */
+				<11 0 &ioport4 1 0>;	/* SDA  */
+							/* +5V */
+							/* GND */
+	};
+
 	buttons {
 		compatible = "gpio-keys";
 		button0: s1 {
@@ -205,6 +228,10 @@
 	status = "okay";
 };
 
+&ioport9 {
+	status = "okay";
+};
+
 &ioporta {
 	status = "okay";
 };
@@ -231,6 +258,17 @@
 		sda-output-delay = <300>;
 		noise-filter-clock-select = <1>;
 		bit-rate-modulation;
+	};
+};
+
+&sci3 {
+	pinctrl-0 = <&sci3_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	uart3: uart {
+		current-speed = <115200>;
+		status = "okay";
 	};
 };
 
@@ -448,3 +486,6 @@ pmod_sd_shield: &sdhc1 {};
 		};
 	};
 };
+
+mikrobus_serial: &uart3 {};
+mikrobus_spi: &spi1 {};
