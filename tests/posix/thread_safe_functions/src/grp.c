@@ -9,10 +9,8 @@
 
 #include <zephyr/ztest.h>
 
-ZTEST(grp, test_grp_stubs)
+ZTEST(posix_thread_safe_functions, test_grp_stubs)
 {
 	zassert_equal(getgrnam_r(NULL, NULL, NULL, 42, NULL), ENOSYS);
 	zassert_equal(getgrgid_r(42, NULL, NULL, 42, NULL), ENOSYS);
 }
-
-ZTEST_SUITE(grp, NULL, NULL, NULL, NULL, NULL);
