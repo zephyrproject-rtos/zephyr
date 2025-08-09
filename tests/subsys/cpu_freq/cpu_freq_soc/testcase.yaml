@@ -1,0 +1,7 @@
+tests:
+  cpu_freq.soc:
+    platform_allow:
+      - max32655fthr/max32655/m4
+    tags: cpu_freq
+    integration_platforms:
+      - max32655fthr/max32655/m4
