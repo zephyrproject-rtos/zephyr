@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(ws2812_i2s);
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 
-#define WS2812_I2S_PRE_DELAY_WORDS 1
+#define WS2812_I2S_PRE_DELAY_WORDS_DEFAULT 1
 
 struct ws2812_i2s_cfg {
 	struct device const *dev;
@@ -69,6 +69,8 @@ static int ws2812_strip_update_rgb(const struct device *dev, struct led_rgb *pix
 	const uint8_t sym_one = cfg->nibble_one;
 	const uint8_t sym_zero = cfg->nibble_zero;
 	const uint32_t reset_word = cfg->active_low ? ~0 : 0;
+	const uint16_t pre_delay_words =
+		cfg->active_low ? cfg->reset_words : WS2812_I2S_PRE_DELAY_WORDS_DEFAULT;
 	uint32_t *tx_buf;
 	uint32_t flush_time_us;
 	void *mem_block;
@@ -83,7 +85,7 @@ static int ws2812_strip_update_rgb(const struct device *dev, struct led_rgb *pix
 	tx_buf = (uint32_t *)mem_block;
 
 	/* Add a pre-data reset, so the first pixel isn't skipped by the strip. */
-	for (uint16_t i = 0; i < WS2812_I2S_PRE_DELAY_WORDS; i++) {
+	for (uint16_t i = 0; i < pre_delay_words; i++) {
 		*tx_buf = reset_word;
 		tx_buf++;
 	}
@@ -218,9 +220,13 @@ static DEVICE_API(led_strip, ws2812_i2s_api) = {
 
 #define WS2812_I2S_NUM_PIXELS(idx) (DT_INST_PROP(idx, chain_length))
 
+#define WS2812_I2S_PRE_DELAY_WORDS(idx)                                                            \
+	COND_CODE_1(DT_INST_PROP(idx, out_active_low), (WS2812_RESET_DELAY_WORDS(idx)),            \
+	     (WS2812_I2S_PRE_DELAY_WORDS_DEFAULT))
+
 #define WS2812_I2S_BUFSIZE(idx)                                                                    \
 	(((WS2812_NUM_COLORS(idx) * WS2812_I2S_NUM_PIXELS(idx)) +	                           \
-	  WS2812_I2S_PRE_DELAY_WORDS + WS2812_RESET_DELAY_WORDS(idx)) * 4)
+	  WS2812_I2S_PRE_DELAY_WORDS(idx) + WS2812_RESET_DELAY_WORDS(idx)) * 4)
 
 #define WS2812_I2S_DEVICE(idx)                                                                     \
                                                                                                    \
