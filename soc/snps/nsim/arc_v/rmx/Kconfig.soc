@@ -1,16 +1,16 @@
 # Copyright (c) 2024 Synopsys, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_RMX
+config SOC_SERIES_NSIM_ARC_V_RMX
 	bool
 	select SOC_FAMILY_NSIM_ARC_V
 
 config SOC_SERIES
-	default "rmx" if SOC_SERIES_RMX
+	default "rmx" if SOC_SERIES_NSIM_ARC_V_RMX
 
-config SOC_RMX100
+config SOC_NSIM_ARC_V_RMX100
 	bool
-	select SOC_SERIES_RMX
+	select SOC_SERIES_NSIM_ARC_V_RMX
 
 config SOC
-	default "rmx100" if SOC_RMX100
+	default "rmx100" if SOC_NSIM_ARC_V_RMX100
