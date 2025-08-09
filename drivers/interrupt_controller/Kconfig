@@ -108,6 +108,8 @@ source "drivers/interrupt_controller/Kconfig.renesas_rx"
 
 source "drivers/interrupt_controller/Kconfig.nxp_irqsteer"
 
+source "drivers/interrupt_controller/Kconfig.nxp_irqsteer1"
+
 source "drivers/interrupt_controller/Kconfig.mtk_adsp"
 
 source "drivers/interrupt_controller/Kconfig.wch_pfic"
