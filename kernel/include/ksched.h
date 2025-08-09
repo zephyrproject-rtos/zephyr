@@ -63,6 +63,26 @@ int z_unpend_all(_wait_q_t *wait_q);
 bool z_thread_prio_set(struct k_thread *thread, int prio);
 void *z_get_next_switch_handle(void *interrupted);
 
+/* Wrapper around z_get_next_switch_handle() for the benefit of
+ * non-SMP platforms that always pass a NULL interrupted handle.
+ * Exposes the (extremely) common early exit case in a context that
+ * can be (much) better optimized in surrounding C code.  Takes a
+ * _current pointer that the outer scope surely already has to avoid
+ * having to refetch it across a lock.
+ *
+ * Mystic arts for cycle nerds, basically.  Replace with
+ * z_get_next_switch_handle() if this becomes a maintenance hassle.
+ */
+static ALWAYS_INLINE void *z_sched_next_handle(struct k_thread *curr)
+{
+#ifndef CONFIG_SMP
+	if (curr == _kernel.ready_q.cache) {
+		return NULL;
+	}
+#endif
+	return z_get_next_switch_handle(NULL);
+}
+
 void z_time_slice(void);
 void z_reset_time_slice(struct k_thread *curr);
 void z_sched_ipi(void);
