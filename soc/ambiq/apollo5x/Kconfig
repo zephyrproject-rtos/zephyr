@@ -20,6 +20,13 @@ config SOC_SERIES_APOLLO5X
 	select SOC_EARLY_INIT_HOOK
 	select REQUIRES_FULL_LIBC
 
+config SOC_AMBIQ_HAS_PUF
+	bool "Ambiq PUF support"
+	default y
+	help
+	  This option enables the Ambiq PUF support.
+	  It is required for the true random number generator.
+
 config SOC_AMBIQ_DCACHE_SIZE
 	int
 	default 65536 if SOC_APOLLO510

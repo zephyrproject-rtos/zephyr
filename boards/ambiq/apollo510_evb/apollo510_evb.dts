@@ -15,6 +15,7 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,uart-pipe = &uart0;
+		zephyr,entropy = &trng;
 		ambiq,xo32m = &xo32m_xtal;
 		ambiq,xo32k = &xo32k_xtal;
 		ambiq,extrefclk = &extrefclk;
@@ -88,6 +89,10 @@
 			label = "PWM_LED";
 		};
 	};
+};
+
+&trng {
+	status = "okay";
 };
 
 &xo32m_xtal {
