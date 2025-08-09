@@ -32,7 +32,7 @@ config CORTEX_M_SYSTICK
 	default n if MCUX_GPT_TIMER
 
 config PM_MCUX_GPC
-	default y if HAS_MCUX_GPC
+	default y
 	depends on SOC_SERIES_IMXRT11XX && PM
 
 if SOC_SERIES_IMXRT10XX && PM
@@ -41,13 +41,13 @@ config CODE_DATA_RELOCATION
 	default y
 
 config PM_MCUX_GPC
-	default y if HAS_MCUX_GPC
+	default y if SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX
 
 config PM_MCUX_DCDC
-	default y if HAS_MCUX_DCDC
+	default y if SOC_SERIES_IMXRT10XX
 
 config PM_MCUX_PMU
-	default y if HAS_MCUX_PMU
+	default y if SOC_SERIES_IMXRT10XX
 
 endif # SOC_SERIES_IMXRT10XX && PM
 
