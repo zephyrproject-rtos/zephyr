@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 NXP
+ * Copyright 2022, 2025 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -35,4 +35,8 @@
 		zephyr,resolution = <16>;
 		zephyr,input-positive = <GAU_ADC_CH1>;
 	};
+};
+
+&standby {
+	status = "okay";
 };
