@@ -265,9 +265,9 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 		dma_stm32_clear_stream_irq(dev, id);
 		return;
 	}
-	callback_arg = id + STM32_DMA_STREAM_OFFSET;
+	callback_arg = id;
 
-	/* The dma stream id is in range from STM32_DMA_STREAM_OFFSET..<dma-requests> */
+	/* The dma stream id is in range from 0..<dma-requests> */
 	if (stm32_dma_is_ht_irq_active(dma, id)) {
 		/* Let HAL DMA handle flags on its own */
 		if (!stream->hal_override) {
@@ -349,15 +349,11 @@ static int dma_stm32_configure(const struct device *dev,
 					     struct dma_config *config)
 {
 	const struct dma_stm32_config *dev_config = dev->config;
-	struct dma_stm32_stream *stream =
-				&dev_config->streams[id - STM32_DMA_STREAM_OFFSET];
+	struct dma_stm32_stream *stream = &dev_config->streams[id];
 	DMA_TypeDef *dma = (DMA_TypeDef *)dev_config->base;
 	uint32_t ll_priority;
 	uint32_t ll_direction;
 	int ret;
-
-	/* Give channel from index 0 */
-	id = id - STM32_DMA_STREAM_OFFSET;
 
 	if (id >= dev_config->max_streams) {
 		LOG_ERR("cannot configure the dma stream %d.", id);
@@ -553,9 +549,6 @@ static int dma_stm32_reload(const struct device *dev, uint32_t id,
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
 	struct dma_stm32_stream *stream;
 
-	/* Give channel from index 0 */
-	id = id - STM32_DMA_STREAM_OFFSET;
-
 	if (id >= config->max_streams) {
 		return -EINVAL;
 	}
@@ -590,9 +583,6 @@ static int dma_stm32_start(const struct device *dev, uint32_t id)
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
 	struct dma_stm32_stream *stream;
 
-	/* Give channel from index 0 */
-	id = id - STM32_DMA_STREAM_OFFSET;
-
 	/* Only M2P or M2M mode can be started manually. */
 	if (id >= config->max_streams) {
 		return -EINVAL;
@@ -619,9 +609,6 @@ static int dma_stm32_suspend(const struct device *dev, uint32_t id)
 	const struct dma_stm32_config *config = dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
 
-	/* Give channel from index 0 */
-	id = id - STM32_DMA_STREAM_OFFSET;
-
 	if (id >= config->max_streams) {
 		return -EINVAL;
 	}
@@ -642,9 +629,6 @@ static int dma_stm32_resume(const struct device *dev, uint32_t id)
 	const struct dma_stm32_config *config = dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
 
-	/* Give channel from index 0 */
-	id = id - STM32_DMA_STREAM_OFFSET;
-
 	if (id >= config->max_streams) {
 		return -EINVAL;
 	}
@@ -658,11 +642,8 @@ static int dma_stm32_resume(const struct device *dev, uint32_t id)
 static int dma_stm32_stop(const struct device *dev, uint32_t id)
 {
 	const struct dma_stm32_config *config = dev->config;
-	struct dma_stm32_stream *stream = &config->streams[id - STM32_DMA_STREAM_OFFSET];
+	struct dma_stm32_stream *stream = &config->streams[id];
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
-
-	/* Give channel from index 0 */
-	id = id - STM32_DMA_STREAM_OFFSET;
 
 	if (id >= config->max_streams) {
 		return -EINVAL;
@@ -723,8 +704,6 @@ static int dma_stm32_get_status(const struct device *dev,
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
 	struct dma_stm32_stream *stream;
 
-	/* Give channel from index 0 */
-	id = id - STM32_DMA_STREAM_OFFSET;
 	if (id >= config->max_streams) {
 		return -EINVAL;
 	}
