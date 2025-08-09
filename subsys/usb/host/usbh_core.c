@@ -29,6 +29,8 @@ K_MSGQ_DEFINE(usbh_msgq, sizeof(struct uhc_event),
 K_MSGQ_DEFINE(usbh_bus_msgq, sizeof(struct uhc_event),
 	      CONFIG_USBH_MAX_UHC_MSG, sizeof(uint32_t));
 
+extern const struct usbh_class_data *usbh_class;
+
 static int usbh_event_carrier(const struct device *dev,
 			      const struct uhc_event *const event)
 {
@@ -70,6 +72,12 @@ static void dev_connected_handler(struct usbh_contex *const ctx,
 
 	if (usbh_device_init(ctx->root)) {
 		LOG_ERR("Failed to reset new USB device");
+		return;
+	}
+
+	if (usbh_class->connected(ctx)) {
+		LOG_ERR("The class failed to handle the connection");
+		return;
 	}
 }
 
