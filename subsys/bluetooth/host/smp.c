@@ -3228,6 +3228,18 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 		rsp->resp_key_dist = 0;
 	}
 
+	if ((rsp->auth_req & BT_SMP_AUTH_BONDING) &&
+	    (req->auth_req & BT_SMP_AUTH_BONDING)) {
+		atomic_set_bit(smp->flags, SMP_FLAG_BOND);
+	} else if (IS_ENABLED(CONFIG_BT_BONDING_REQUIRED)) {
+		/* Reject pairing req if not both intend to bond */
+		LOG_DBG("Bonding required");
+		return BT_SMP_ERR_UNSPECIFIED;
+	} else {
+		rsp->init_key_dist = 0;
+		rsp->resp_key_dist = 0;
+	}
+
 	smp->local_dist = rsp->resp_key_dist;
 	smp->remote_dist = rsp->init_key_dist;
 
