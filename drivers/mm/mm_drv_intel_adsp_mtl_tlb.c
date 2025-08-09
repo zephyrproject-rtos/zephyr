@@ -62,6 +62,11 @@ SYS_MEM_BLOCKS_DEFINE_WITH_EXT_BUF(
 		L2_SRAM_PAGES_NUM,
 		(uint8_t *) L2_SRAM_BASE);
 
+uintptr_t adsp_mm_get_unused_l2_start_aligned(void)
+{
+	return UNUSED_L2_START_ALIGNED;
+}
+
 /**
  * Calculate the index to the TLB table.
  *
@@ -738,10 +743,6 @@ static int sys_mm_drv_mm_init(const struct device *dev)
 
 	L2_PHYS_SRAM_REGION.info.num_blocks = avalible_memory_size / CONFIG_MM_DRV_PAGE_SIZE;
 
-	ret = calculate_memory_regions(UNUSED_L2_START_ALIGNED);
-	CHECKIF(ret != 0) {
-		return ret;
-	}
 	/*
 	 * Initialize memblocks that will store physical
 	 * page usage. Initially all physical pages are
