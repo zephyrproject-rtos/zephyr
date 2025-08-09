@@ -68,6 +68,7 @@ source "drivers/rtc/Kconfig.sam0"
 source "drivers/rtc/Kconfig.siwx91x"
 source "drivers/rtc/Kconfig.smartbond"
 source "drivers/rtc/Kconfig.stm32"
+source "drivers/rtc/Kconfig.ti_mspm0"
 source "drivers/rtc/Kconfig.xmc4xxx"
 # zephyr-keep-sorted-stop
 
