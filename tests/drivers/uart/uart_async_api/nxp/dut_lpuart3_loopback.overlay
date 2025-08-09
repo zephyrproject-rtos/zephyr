@@ -6,8 +6,8 @@
 /*
  * Except testing with "nxp,loopback"
  *
- * frdm_mcxa166: Short J5.3 and J5.4
- * frdm_mcxa276: Short J5.3 and J5.4
+ * frdm_mcxa346: Short J5.3 and J5.4
+ * frdm_mcxa266: Short J5.3 and J5.4
  */
 
 dut: &lpuart3 {
