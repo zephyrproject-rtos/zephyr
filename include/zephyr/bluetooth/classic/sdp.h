@@ -703,6 +703,33 @@ int bt_sdp_get_profile_version(const struct net_buf *buf, uint16_t profile,
  */
 int bt_sdp_get_features(const struct net_buf *buf, uint16_t *features);
 
+/** @brief Get Vendor ID
+ *
+ *  Helper API extracting remote Vendor ID. To get it proper
+ *  generic profile parameter needs to be selected usually listed in SDP
+ *  Interoperability Requirements section for given profile specification.
+ *
+ *  @param buf Buffer holding original raw record data from remote.
+ *  @param vendor_id On success populated by found Vendor ID.
+ *
+ *  @return 0 on success if vendor_id found and valid, negative in case any error
+ */
+int bt_sdp_get_vendor_id(const struct net_buf *buf, uint16_t *vendor_id);
+
+/** @brief Get Product ID
+ *
+ *  Helper API extracting remote Product ID. To get it proper
+ *  generic profile parameter needs to be selected usually listed in SDP
+ *  Interoperability Requirements section for given profile specification.
+ *
+ *  @param buf Buffer holding original raw record data from remote.
+ *  @param product_id On success populated by found Product ID.
+ *  mask.
+ *
+ *  @return 0 on success if product_id found and valid, negative in case any error
+ */
+int bt_sdp_get_product_id(const struct net_buf *buf, uint16_t *product_id);
+
 #ifdef __cplusplus
 }
 #endif
