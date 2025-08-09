@@ -41,8 +41,7 @@ int main(void)
 	}
 
 	/* Configure to generate PORT event (wakeup) on button press. */
-	/* No external pull-up on the user button, so configure one here */
-	int ret = gpio_pin_configure_dt(&button, GPIO_INPUT | GPIO_PULL_UP);
+	int ret = gpio_pin_configure_dt(&button, GPIO_INPUT);
 
 	if (ret != 0) {
 		printk("Error %d: failed to configure %s pin %d\n", ret, button.port->name,
@@ -50,7 +49,7 @@ int main(void)
 		return 0;
 	}
 
-	ret = gpio_pin_interrupt_configure_dt(&button, GPIO_INT_LEVEL_LOW);
+	ret = gpio_pin_interrupt_configure_dt(&button, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret != 0) {
 		printk("Error %d: failed to configure interrupt on %s pin %d\n", ret,
 		       button.port->name, button.pin);
