@@ -92,6 +92,14 @@ properties:
     description: |
       Optional GPIO pin used for RESET output.
 
+  keep-reset-deasserted:
+    type: boolean
+    description: |
+      When present, the driver will actively keep the target's RESET line
+      in its de-asserted (inactive) state even when no SWD communication
+      is occurring. This prevents the target from being unintentionally
+      reset. This property requires 'reset-gpios' to be defined.
+
   port-write-cycles:
     type: int
     required: true
