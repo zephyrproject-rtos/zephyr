@@ -19,10 +19,18 @@
 #include "sl_wifi_callback_framework.h"
 
 #define SIWX91X_DRIVER_VERSION KERNEL_VERSION_STRING
+#define MAX_24GHZ_CHANNELS 14
 
 LOG_MODULE_REGISTER(siwx91x_wifi);
 
 NET_BUF_POOL_FIXED_DEFINE(siwx91x_tx_pool, 1, _NET_ETH_MAX_FRAME_SIZE, 0, NULL);
+
+extern const sli_si91x_set_region_ap_request_t default_US_region_2_4GHZ_configurations;
+extern const sli_si91x_set_region_ap_request_t default_EU_region_2_4GHZ_configurations;
+extern const sli_si91x_set_region_ap_request_t default_JP_region_2_4GHZ_configurations;
+extern const sli_si91x_set_region_ap_request_t default_KR_region_2_4GHZ_configurations;
+extern const sli_si91x_set_region_ap_request_t default_SG_region_2_4GHZ_configurations;
+extern const sli_si91x_set_region_ap_request_t default_CN_region_2_4GHZ_configurations;
 
 static int siwx91x_sl_to_z_mode(sl_wifi_interface_t interface)
 {
@@ -369,6 +377,111 @@ static int siwx91x_get_version(const struct device *dev, struct wifi_version *pa
 	return 0;
 }
 
+static int map_sdk_region_to_zephyr_channel_info(const sli_si91x_set_region_ap_request_t *sdk_reg,
+						 struct wifi_reg_chan_info *z_chan_info,
+						 size_t *num_channels)
+{
+	uint8_t first_channel = sdk_reg->channel_info[0].first_channel;
+	uint8_t channel;
+	uint16_t freq;
+
+	*num_channels = sdk_reg->channel_info[0].no_of_channels;
+	if (*num_channels > MAX_24GHZ_CHANNELS) {
+		return -EOVERFLOW;
+	}
+
+	for (int idx = 0; idx < *num_channels; idx++) {
+		channel = first_channel + idx;
+		freq = 2407 + channel * 5;
+
+		if (freq > 2472) {
+			freq = 2484; /* channel 14 */
+		}
+
+		z_chan_info[idx].center_frequency = freq;
+		z_chan_info[idx].max_power = sdk_reg->channel_info[0].max_tx_power;
+		z_chan_info[idx].supported = 1;
+		z_chan_info[idx].passive_only = 0;
+		z_chan_info[idx].dfs = 0;
+	}
+
+	return 0;
+}
+
+static int siwx91x_wifi_reg_domain(const struct device *dev, struct wifi_reg_domain *reg_domain)
+{
+	const sli_si91x_set_region_ap_request_t *sdk_reg = NULL;
+	sl_wifi_operation_mode_t oper_mode = sli_get_opermode();
+	sl_wifi_region_code_t region_code;
+	const char *country_code;
+	int ret;
+
+	__ASSERT(reg_domain, "reg_domain cannot be NULL");
+
+	if (reg_domain->oper == WIFI_MGMT_SET) {
+		if (((reg_domain->country_code[0] < 'A' || reg_domain->country_code[0] > 'Z') ||
+		   (reg_domain->country_code[1] < 'A' || reg_domain->country_code[1] > 'Z')) &&
+		   (reg_domain->country_code[0] != '0' || reg_domain->country_code[1] != '0')) {
+			LOG_ERR("Invalid reg domain %c%c\n", reg_domain->country_code[0],
+				reg_domain->country_code[1]);
+			return -ENOEXEC;
+		}
+
+		region_code = siwx91x_map_country_code_to_region(reg_domain->country_code);
+		ret = sl_si91x_set_device_region(oper_mode, SL_WIFI_BAND_MODE_2_4GHZ, region_code);
+		if (ret) {
+			LOG_ERR("Failed to set device region: %x", ret);
+			return -EINVAL;
+		}
+
+		if (region_code == SL_WIFI_DEFAULT_REGION) {
+			siwx91x_store_country_code(DEFAULT_COUNTRY_CODE);
+			LOG_INF("Country code not supported, using default region");
+		} else {
+			siwx91x_store_country_code(reg_domain->country_code);
+		}
+	} else if (reg_domain->oper == WIFI_MGMT_GET) {
+		country_code = siwx91x_get_country_code();
+		memcpy(reg_domain->country_code, country_code, WIFI_COUNTRY_CODE_LEN);
+		region_code = siwx91x_map_country_code_to_region(country_code);
+
+		switch (region_code) {
+		case SL_WIFI_REGION_US:
+			sdk_reg = &default_US_region_2_4GHZ_configurations;
+			break;
+		case SL_WIFI_REGION_EU:
+			sdk_reg = &default_EU_region_2_4GHZ_configurations;
+			break;
+		case SL_WIFI_REGION_JP:
+			sdk_reg = &default_JP_region_2_4GHZ_configurations;
+			break;
+		case SL_WIFI_REGION_KR:
+			sdk_reg = &default_KR_region_2_4GHZ_configurations;
+			break;
+		case SL_WIFI_REGION_SG:
+			sdk_reg = &default_SG_region_2_4GHZ_configurations;
+			break;
+		case SL_WIFI_REGION_CN:
+			sdk_reg = &default_CN_region_2_4GHZ_configurations;
+			break;
+		default:
+			return -ENOENT;
+		}
+
+		if (sdk_reg) {
+			ret = map_sdk_region_to_zephyr_channel_info(sdk_reg, reg_domain->chan_info,
+								    &reg_domain->num_channels);
+			if (ret) {
+				return ret;
+			}
+		}
+	} else {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static void siwx91x_iface_init(struct net_if *iface)
 {
 	const struct siwx91x_config *siwx91x_cfg = iface->if_dev->dev->config;
@@ -432,6 +545,7 @@ static const struct wifi_mgmt_ops siwx91x_mgmt = {
 	.get_stats		= siwx91x_stats,
 #endif
 	.get_version		= siwx91x_get_version,
+	.reg_domain		= siwx91x_wifi_reg_domain,
 };
 
 static const struct net_wifi_mgmt_offload siwx91x_api = {
