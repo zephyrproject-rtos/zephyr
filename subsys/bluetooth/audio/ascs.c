@@ -1548,8 +1548,8 @@ static int ase_config(struct bt_ascs_ase *ase, const struct bt_ascs_config *cfg)
 
 	LOG_DBG("ase %p latency 0x%02x phy 0x%02x codec 0x%02x "
 		"cid 0x%04x vid 0x%04x codec config len 0x%02x",
-		ase, cfg->latency, cfg->phy, cfg->codec.id, cfg->codec.cid, cfg->codec.vid,
-		cfg->cc_len);
+		ase, cfg->latency, cfg->phy, cfg->codec.id, sys_le16_to_cpu(cfg->codec.cid),
+		sys_le16_to_cpu(cfg->codec.vid), cfg->cc_len);
 
 	if (!IN_RANGE(cfg->latency, BT_ASCS_CONFIG_LATENCY_LOW, BT_ASCS_CONFIG_LATENCY_HIGH)) {
 		LOG_WRN("Invalid latency: 0x%02x", cfg->latency);
