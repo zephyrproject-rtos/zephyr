@@ -11,7 +11,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uhs_api, CONFIG_USBH_LOG_LEVEL);
 
-int usbh_init(struct usbh_contex *uhs_ctx)
+int usbh_init(struct usbh_context *uhs_ctx)
 {
 	int ret;
 
@@ -36,7 +36,7 @@ init_exit:
 	return ret;
 }
 
-int usbh_enable(struct usbh_contex *uhs_ctx)
+int usbh_enable(struct usbh_context *uhs_ctx)
 {
 	int ret;
 
@@ -65,7 +65,7 @@ enable_exit:
 	return ret;
 }
 
-int usbh_disable(struct usbh_contex *uhs_ctx)
+int usbh_disable(struct usbh_context *uhs_ctx)
 {
 	int ret;
 
@@ -86,7 +86,7 @@ int usbh_disable(struct usbh_contex *uhs_ctx)
 	return 0;
 }
 
-int usbh_shutdown(struct usbh_contex *const uhs_ctx)
+int usbh_shutdown(struct usbh_context *const uhs_ctx)
 {
 	int ret;
 
