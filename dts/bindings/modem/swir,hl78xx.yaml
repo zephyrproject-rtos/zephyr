@@ -1,0 +1,38 @@
+# Copyright (c) 2025, Netfeasa Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Sierra Wireless HL78XX Modem
+
+compatible: "swir,hl78xx"
+
+include:
+  - uart-device.yaml
+
+properties:
+  mdm-wake-gpios:
+    type: phandle-array
+    required: true
+
+  mdm-reset-gpios:
+    type: phandle-array
+    required: true
+
+  mdm-pwr-on-gpios:
+    type: phandle-array
+
+  mdm-fast-shutd-gpios:
+    type: phandle-array
+
+  mdm-vgpio-gpios:
+    type: phandle-array
+    required: true
+
+  mdm-uart-dsr-gpios:
+    type: phandle-array
+
+  mdm-uart-cts-gpios:
+    type: phandle-array
+    required: true
+
+  mdm-gpio6-gpios:
+    type: phandle-array
