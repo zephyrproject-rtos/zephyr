@@ -69,6 +69,11 @@ NETC driver supports to manage the Physical Station Interface (PSI).
 The ENET0, ENETC1, ENETC2 ports could be enabled for M33 by west build option
 ``-DEXTRA_DTC_OVERLAY_FILE=enetc.overlay``.
 
+I2C
+---
+
+Enable lpi2c6 defaultly for M33(In NETC MIX).
+
 Programming and Debugging (A55)
 *******************************
 
