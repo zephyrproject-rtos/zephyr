@@ -319,6 +319,7 @@
 			snvs_rtc: rtc {
 				compatible = "nxp,imx-snvs-rtc";
 				interrupts = <46 0>;
+				wakeup-source;
 			};
 		};
 
