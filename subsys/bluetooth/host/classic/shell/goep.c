@@ -98,14 +98,14 @@ static bool goep_parse_headers_cb(struct bt_obex_hdr *hdr, void *user_data)
 	switch (hdr->id) {
 	case BT_OBEX_HEADER_ID_APP_PARAM:
 	case BT_OBEX_HEADER_ID_AUTH_CHALLENGE:
-	case BT_OBEX_HEADER_ID_AUTH_RSP:
+	case BT_OBEX_HEADER_ID_AUTH_RSP: {
 		int err;
 
 		err = bt_obex_tlv_parse(hdr->len, hdr->data, goep_parse_tlvs_cb, NULL);
 		if (err) {
 			bt_shell_error("Fail to parse OBEX TLV triplet");
 		}
-		break;
+	} break;
 	default:
 		bt_shell_hexdump(hdr->data, hdr->len);
 		break;
