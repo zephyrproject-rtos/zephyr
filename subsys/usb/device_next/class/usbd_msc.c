@@ -61,10 +61,14 @@ struct CSW {
 #define MSC_NUM_INSTANCES CONFIG_USBD_MSC_INSTANCES_COUNT
 
 /* Can be 64 if device is not High-Speed capable */
-#define MSC_BUF_SIZE USBD_MAX_BULK_MPS
+#define MSC_BUF_SIZE CONFIG_USBD_MSC_DATA_BUF_SIZE
 
 UDC_BUF_POOL_DEFINE(msc_ep_pool,
-		    MSC_NUM_INSTANCES * 2, MSC_BUF_SIZE,
+		    MSC_NUM_INSTANCES * 2, USBD_MAX_BULK_MPS,
+		    sizeof(struct udc_buf_info), NULL);
+
+UDC_BUF_POOL_DEFINE(msc_ep_pool_data,
+		    MSC_NUM_INSTANCES, MSC_BUF_SIZE,
 		    sizeof(struct udc_buf_info), NULL);
 
 struct msc_event {
@@ -125,14 +129,15 @@ struct msc_bot_ctx {
 	uint32_t transferred_data;
 	size_t scsi_offset;
 	size_t scsi_bytes;
+	bool pending_read;
 };
 
-static struct net_buf *msc_buf_alloc(const uint8_t ep)
+static struct net_buf *msc_buf_alloc_common(const uint8_t ep, struct net_buf_pool *pool)
 {
 	struct net_buf *buf = NULL;
 	struct udc_buf_info *bi;
 
-	buf = net_buf_alloc(&msc_ep_pool, K_NO_WAIT);
+	buf = net_buf_alloc(pool, K_NO_WAIT);
 	if (!buf) {
 		return NULL;
 	}
@@ -141,6 +146,16 @@ static struct net_buf *msc_buf_alloc(const uint8_t ep)
 	bi->ep = ep;
 
 	return buf;
+}
+
+static struct net_buf *msc_buf_alloc(const uint8_t ep)
+{
+	return msc_buf_alloc_common(ep, &msc_ep_pool);
+}
+
+static struct net_buf *msc_buf_alloc_data(const uint8_t ep)
+{
+	return msc_buf_alloc_common(ep, &msc_ep_pool_data);
 }
 
 static uint8_t msc_get_bulk_in(struct usbd_class_data *const c_data)
@@ -171,9 +186,10 @@ static uint8_t msc_get_bulk_out(struct usbd_class_data *const c_data)
 	return desc->if0_out_ep.bEndpointAddress;
 }
 
-static void msc_queue_bulk_out_ep(struct usbd_class_data *const c_data)
+static void msc_queue_bulk_out_ep(struct usbd_class_data *const c_data, bool cbw)
 {
 	struct msc_bot_ctx *ctx = usbd_class_get_private(c_data);
+	struct scsi_ctx *lun = &ctx->luns[ctx->cbw.bCBWLUN];
 	struct net_buf *buf;
 	uint8_t ep;
 	int ret;
@@ -185,11 +201,26 @@ static void msc_queue_bulk_out_ep(struct usbd_class_data *const c_data)
 
 	LOG_DBG("Queuing OUT");
 	ep = msc_get_bulk_out(c_data);
-	buf = msc_buf_alloc(ep);
-	/* The pool is large enough to support all allocations. Failing alloc
-	 * indicates either a memory leak or logic error.
-	 */
-	__ASSERT_NO_MSG(buf);
+
+	if (!cbw) {
+		uint32_t remaining = scsi_cmd_remaining_data_len(lun);
+
+		buf = msc_buf_alloc_data(ep);
+		/* The pool is large enough to support all allocations. Failing alloc
+		 * indicates either a memory leak or logic error.
+		 */
+		__ASSERT_NO_MSG(buf);
+
+		if (net_buf_tailroom(buf) > remaining) {
+			net_buf_reserve(buf, net_buf_tailroom(buf) - remaining);
+		}
+	} else {
+		buf = msc_buf_alloc(ep);
+		/* The pool is large enough to support all allocations. Failing alloc
+		 * indicates either a memory leak or logic error.
+		 */
+		__ASSERT_NO_MSG(buf);
+	}
 
 	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
@@ -259,12 +290,6 @@ static void msc_process_read(struct msc_bot_ctx *ctx)
 	size_t len;
 	int ret;
 
-	/* Fill SCSI Data IN buffer if there is no data available */
-	if (ctx->scsi_bytes == 0) {
-		ctx->scsi_bytes = scsi_read_data(lun, ctx->scsi_buf);
-		ctx->scsi_offset = 0;
-	}
-
 	if (atomic_test_and_set_bit(&ctx->bits, MSC_BULK_IN_QUEUED)) {
 		__ASSERT_NO_MSG(false);
 		LOG_ERR("IN already queued");
@@ -272,30 +297,72 @@ static void msc_process_read(struct msc_bot_ctx *ctx)
 	}
 
 	ep = msc_get_bulk_in(ctx->class_node);
-	buf = msc_buf_alloc(ep);
+	buf = msc_buf_alloc_data(ep);
 	/* The pool is large enough to support all allocations. Failing alloc
 	 * indicates either a memory leak or logic error.
 	 */
 	__ASSERT_NO_MSG(buf);
 
-	while (ctx->scsi_bytes - ctx->scsi_offset > 0) {
-		len = MIN(ctx->scsi_bytes - ctx->scsi_offset,
-			  MSC_BUF_SIZE - bytes_queued);
-		if (len == 0) {
-			/* Either queued as much as possible or there is no more
-			 * SCSI IN data available
-			 */
-			break;
+	if (ctx->scsi_bytes == 0 &&
+	    (net_buf_tailroom(buf) >= sizeof(ctx->scsi_buf) ||
+	     net_buf_tailroom(buf) >= scsi_cmd_remaining_data_len(lun))) {
+
+		bytes_queued = scsi_read_data(lun, net_buf_tail(buf), net_buf_tailroom(buf));
+		net_buf_add(buf, bytes_queued);
+
+		if (bytes_queued != 0) {
+			if (scsi_cmd_remaining_data_len(lun) > 0) {
+				ctx->pending_read = true;
+			} else {
+				ctx->pending_read = false;
+			}
+		} else {
+			ctx->pending_read = false;
+
+			if (ctx->csw.dCSWDataResidue > 0) {
+				net_buf_unref(buf);
+				/* Case (5) Hi > Di
+				 * While we may have sent short packet, device
+				 * shall STALL the Bulk-In pipe (if it does not
+				 * send padding data).
+				 */
+				msc_stall_bulk_in_ep(ctx->class_node);
+			}
+			if (scsi_cmd_get_status(lun) == GOOD) {
+				ctx->csw.bCSWStatus = CSW_STATUS_COMMAND_PASSED;
+			} else {
+				ctx->csw.bCSWStatus = CSW_STATUS_COMMAND_FAILED;
+			}
+			ctx->state = MSC_BBB_SEND_CSW;
+		}
+	} else {
+		/* Fill SCSI Data IN buffer if there is no data available */
+		if (ctx->scsi_bytes == 0) {
+			ctx->scsi_bytes = scsi_read_data(lun, ctx->scsi_buf,
+							 CONFIG_USBD_MSC_SCSI_BUFFER_SIZE);
+			ctx->scsi_offset = 0;
 		}
 
-		net_buf_add_mem(buf, &ctx->scsi_buf[ctx->scsi_offset], len);
-		bytes_queued += len;
-		ctx->scsi_offset += len;
+		while (ctx->scsi_bytes - ctx->scsi_offset > 0) {
+			len = MIN(ctx->scsi_bytes - ctx->scsi_offset,
+				MSC_BUF_SIZE - bytes_queued);
+			if (len == 0) {
+				/* Either queued as much as possible or there is no more
+				 * SCSI IN data available
+				 */
+				break;
+			}
 
-		if (ctx->scsi_bytes == ctx->scsi_offset) {
-			/* SCSI buffer can be reused now */
-			ctx->scsi_bytes = scsi_read_data(lun, ctx->scsi_buf);
-			ctx->scsi_offset = 0;
+			net_buf_add_mem(buf, &ctx->scsi_buf[ctx->scsi_offset], len);
+			bytes_queued += len;
+			ctx->scsi_offset += len;
+
+			if (ctx->scsi_bytes == ctx->scsi_offset) {
+				/* SCSI buffer can be reused now */
+				ctx->scsi_bytes = scsi_read_data(lun, ctx->scsi_buf,
+								 CONFIG_USBD_MSC_SCSI_BUFFER_SIZE);
+				ctx->scsi_offset = 0;
+			}
 		}
 	}
 
@@ -400,34 +467,46 @@ static void msc_process_write(struct msc_bot_ctx *ctx,
 	ctx->transferred_data += len;
 
 	while ((len > 0) && (scsi_cmd_remaining_data_len(lun) > 0)) {
-		/* Copy received data to the end of SCSI buffer */
-		tmp = MIN(len, sizeof(ctx->scsi_buf) - ctx->scsi_bytes);
-		memcpy(&ctx->scsi_buf[ctx->scsi_bytes], buf, tmp);
-		ctx->scsi_bytes += tmp;
-		buf += tmp;
-		len -= tmp;
+		uint8_t *write_buf;
+		uint32_t *write_len;
+
+		if (len >= sizeof(ctx->scsi_buf) && ctx->scsi_bytes == 0) {
+			write_buf = buf;
+			write_len = &len;
+		} else {
+			/* Copy received data to the end of SCSI buffer */
+			tmp = MIN(len, sizeof(ctx->scsi_buf) - ctx->scsi_bytes);
+			memcpy(&ctx->scsi_buf[ctx->scsi_bytes], buf, tmp);
+			ctx->scsi_bytes += tmp;
+			buf += tmp;
+			len -= tmp;
+
+			write_buf = &ctx->scsi_buf[0];
+			write_len = &ctx->scsi_bytes;
+		}
 
 		/* Pass data to SCSI layer when either all transfer data bytes
 		 * have been received or SCSI buffer is full.
 		 */
-		while ((ctx->scsi_bytes >= scsi_cmd_remaining_data_len(lun)) ||
-		       (ctx->scsi_bytes == sizeof(ctx->scsi_buf))) {
-			tmp = scsi_write_data(lun, ctx->scsi_buf, ctx->scsi_bytes);
-			__ASSERT(tmp <= ctx->scsi_bytes,
+		while ((write_buf == buf && *write_len > 0) ||
+		       (*write_len >= scsi_cmd_remaining_data_len(lun)) ||
+		       (*write_len >= sizeof(ctx->scsi_buf))) {
+			tmp = scsi_write_data(lun, write_buf, *write_len);
+			__ASSERT(tmp <= *write_len,
 				 "Processed more data than requested");
 			if (tmp == 0) {
 				LOG_WRN("SCSI handler didn't process %d bytes",
-					ctx->scsi_bytes);
-				ctx->scsi_bytes = 0;
+					*write_len);
+				*write_len = 0;
 			} else {
 				LOG_DBG("SCSI processed %d out of %d bytes",
-					tmp, ctx->scsi_bytes);
+					tmp, *write_len);
 			}
 
 			ctx->csw.dCSWDataResidue -= tmp;
 			if (scsi_cmd_remaining_data_len(lun) == 0) {
 				/* Abandon any leftover data */
-				ctx->scsi_bytes = 0;
+				*write_len = 0;
 				break;
 			}
 
@@ -436,8 +515,8 @@ static void msc_process_write(struct msc_bot_ctx *ctx,
 			 * happens) when underlying sector size is equal to SCSI
 			 * buffer size.
 			 */
-			memmove(ctx->scsi_buf, &ctx->scsi_buf[tmp], ctx->scsi_bytes - tmp);
-			ctx->scsi_bytes -= tmp;
+			memmove(write_buf, &write_buf[tmp], *write_len - tmp);
+			*write_len -= tmp;
 		}
 	}
 
@@ -514,7 +593,7 @@ static void msc_handle_bulk_in(struct msc_bot_ctx *ctx,
 		struct scsi_ctx *lun = &ctx->luns[ctx->cbw.bCBWLUN];
 
 		ctx->transferred_data += len;
-		if (ctx->scsi_bytes == 0) {
+		if (ctx->scsi_bytes == 0 && !ctx->pending_read) {
 			if (ctx->csw.dCSWDataResidue > 0) {
 				/* Case (5) Hi > Di
 				 * While we may have sent short packet, device
@@ -530,6 +609,8 @@ static void msc_handle_bulk_in(struct msc_bot_ctx *ctx,
 			}
 			ctx->state = MSC_BBB_SEND_CSW;
 		}
+
+		ctx->pending_read = false;
 	}
 }
 
@@ -623,9 +704,11 @@ static void usbd_msc_thread(void *arg1, void *arg2, void *arg3)
 
 		switch (ctx->state) {
 		case MSC_BBB_EXPECT_CBW:
+			msc_queue_bulk_out_ep(evt.c_data, true);
+			break;
 		case MSC_BBB_PROCESS_WRITE:
 			/* Ensure we can accept next OUT packet */
-			msc_queue_bulk_out_ep(evt.c_data);
+			msc_queue_bulk_out_ep(evt.c_data, false);
 			break;
 		default:
 			break;
@@ -645,7 +728,7 @@ static void usbd_msc_thread(void *arg1, void *arg2, void *arg3)
 		if (ctx->state == MSC_BBB_PROCESS_READ) {
 			msc_process_read(ctx);
 		} else if (ctx->state == MSC_BBB_PROCESS_WRITE) {
-			msc_queue_bulk_out_ep(evt.c_data);
+			msc_queue_bulk_out_ep(evt.c_data, false);
 		} else if (ctx->state == MSC_BBB_SEND_CSW) {
 			msc_send_csw(ctx);
 		}
