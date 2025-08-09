@@ -1,0 +1,5 @@
+config IMAGE_NAME
+	string "Image name"
+	default "Default"
+
+source "Kconfig.zephyr"
