@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "raytac_an54l15q_db_pinctrl.dtsi"
+#include "raytac_an54lq_db_15_pinctrl.dtsi"
 
 / {
 	leds {
