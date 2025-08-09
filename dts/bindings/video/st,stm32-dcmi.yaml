@@ -46,6 +46,10 @@ properties:
               STM32_DMA_MEM_INC | STM32_DMA_PERIPH_8BITS | STM32_DMA_MEM_32BITS |
               STM32_DMA_PRIORITY_HIGH) STM32_DMA_FIFO_1_4>;
 
+  snapshot-mode:
+    type: boolean
+    description: set the driver into snapshot mode, default is off.
+
 child-binding:
   child-binding:
     include: video-interfaces.yaml
