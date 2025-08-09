@@ -1,0 +1,5 @@
+#include "rp2040_plus.dts"
+
+&flash0 {
+	reg = <0x10000000 DT_SIZE_M(16)>;
+};
