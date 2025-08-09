@@ -3,6 +3,7 @@
 
 zephyr_library()
 
+zephyr_library_sources_ifdef(CONFIG_MODEM_BACKEND_QUECTEL_I2C modem_backend_quectel_i2c.c)
 zephyr_library_sources_ifdef(CONFIG_MODEM_BACKEND_TTY modem_backend_tty.c)
 zephyr_library_sources_ifdef(CONFIG_MODEM_BACKEND_UART modem_backend_uart.c)
 zephyr_library_sources_ifdef(CONFIG_MODEM_BACKEND_UART_ISR modem_backend_uart_isr.c)

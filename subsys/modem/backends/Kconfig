@@ -64,3 +64,8 @@ endif # MODEM_BACKEND_UART_ASYNC_HWFC
 endif # MODEM_BACKEND_UART_ASYNC
 
 endif # MODEM_BACKEND_UART
+
+config MODEM_BACKEND_QUECTEL_I2C
+	bool "Modem Quectel I2C backend module"
+	select MODEM_PIPE
+	select RING_BUFFER
