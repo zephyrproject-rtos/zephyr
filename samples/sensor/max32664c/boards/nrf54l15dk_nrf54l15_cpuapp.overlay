@@ -1,0 +1,79 @@
+/*
+ * Copyright (c) 2025 Daniel Kampert
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	i2c30_default: i2c30_default {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 0, 4)>,
+					<NRF_PSEL(TWIM_SCL, 0, 3)>;
+					bias-pull-up;
+		};
+	};
+
+	i2c30_sleep: i2c30_sleep {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 0, 4)>,
+					<NRF_PSEL(TWIM_SCL, 0, 3)>;
+					low-power-enable;
+		};
+	};
+};
+
+/ {
+	aliases {
+		sensor = &biometric_hub;
+	};
+};
+
+&i2c30 {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	// Flash buffer size is needed for the I2C bootloader to flash the firmware
+	zephyr,flash-buf-max-size = <8250>;
+
+	pinctrl-0 = <&i2c30_default>;
+	pinctrl-1 = <&i2c30_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	biometric_hub: max32664c@55 {
+		compatible = "maxim,max32664c";
+		reg = <0x55>;
+		status = "okay";
+		reset-gpios = <&gpio2 0 GPIO_ACTIVE_HIGH>;
+		mfio-gpios = <&gpio2 1 GPIO_ACTIVE_HIGH>;
+		use-max86141;
+	};
+};
+
+&dppic10 {
+	status = "okay";
+};
+
+&ppib11 {
+	status = "okay";
+};
+
+&ppib21 {
+	status = "okay";
+};
+
+&dppic20 {
+	status = "okay";
+};
+
+&ppib22 {
+	status = "okay";
+};
+
+&ppib30 {
+	status = "okay";
+};
+
+&dppic30 {
+	status = "okay";
+};
