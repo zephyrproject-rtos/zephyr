@@ -50,5 +50,11 @@ config CACHE_MANAGEMENT
 
 config ETH_NXP_IMX_MSGINTR
 	default 2
+if PM
+# PM code that runs from the idle loop has a large
+# footprint. Hence increase the size when PM is enabled.
+config IDLE_STACK_SIZE
+	default 640
+endif
 
 endif # SOC_MIMX9596_M7
