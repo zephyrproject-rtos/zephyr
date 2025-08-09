@@ -41,7 +41,7 @@
 			reg = <0x50001000 0x200>;
 			interrupts = <88 0>, <89 0>;
 			interrupt-names = "ltdc", "ltdc_er";
-			clocks = <&rcc STM32_CLOCK(APB3, 3U)>;
+			clocks = <&rcc STM32_CLOCK(APB3, 3)>;
 			resets = <&rctl STM32_RESET(APB3, 3U)>;
 			status = "disabled";
 		};
@@ -54,7 +54,7 @@
 			num-bidir-endpoints = <9>;
 			ram-size = <4096>;
 			maximum-speed = "full-speed";
-			clocks = <&rcc STM32_CLOCK(AHB1, 25U)>,
+			clocks = <&rcc STM32_CLOCK(AHB1, 25)>,
 				 <&rcc STM32_SRC_HSI48 USB_SEL(3)>;
 			phys = <&otghs_fs_phy>;
 			status = "disabled";
@@ -68,7 +68,7 @@
 			num-bidir-endpoints = <9>;
 			ram-size = <4096>;
 			maximum-speed = "full-speed";
-			clocks = <&rcc STM32_CLOCK(AHB1, 27U)>,
+			clocks = <&rcc STM32_CLOCK(AHB1, 27)>,
 				 <&rcc STM32_SRC_HSI48 USB_SEL(3)>;
 			phys = <&otghs_fs_phy>;
 			status = "disabled";
