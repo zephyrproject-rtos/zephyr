@@ -29,6 +29,13 @@ config RTS5912_DEBUG_SWJ
 	help
 	  Enables the serial wire JTAG connection on the RTS5912 EC.
 
+config RTS5912_UART_WAKE_UP
+	bool "RTS5912 Uart as Wake-up source"
+	default y
+	depends on DT_HAS_REALTEK_RTS5912_UART_ENABLED
+	help
+	  Support uart to wake up rts5912.
+
 config SOC_RTS5912_ULPM
 	bool "Realtek RTS5912 ULPM (Ultra Low Power Mode)"
 	default y
