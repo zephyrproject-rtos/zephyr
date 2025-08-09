@@ -219,4 +219,20 @@ config BOOT_ENCRYPTION_KEY_FILE
 	help
 	  Absolute path to encryption key file to use with MCUBoot.
 
+if BOOT_ENCRYPTION
+
+choice BOOT_ENCRYPTION_ALG
+	prompt "Algorithm used for image encryption"
+	default BOOT_ENCRYPTION_ALG_AES_128
+
+config BOOT_ENCRYPTION_ALG_AES_128
+	bool "Use AES-128 for image encryption"
+
+config BOOT_ENCRYPTION_ALG_AES_256
+	bool "Use AES-256 for image encryption"
+
+endchoice # BOOT_ENCRYPTION_ALG
+
+endif # BOOT_ENCRYPTION
+
 endif

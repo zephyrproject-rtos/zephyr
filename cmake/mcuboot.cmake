@@ -161,6 +161,13 @@ function(zephyr_mcuboot_tasks)
     set(imgtool_args --sha 512 ${imgtool_args})
   endif()
 
+  if(NOT "${keyfile_enc}" STREQUAL "")
+    if(CONFIG_MCUBOOT_ENCRYPTION_ALG_AES_256)
+      # Note: this overrides the default behavior of using AES-128
+      set(imgtool_args ${imgtool_args} --encrypt-keylen 256)
+    endif()
+  endif()
+
   # Extensionless prefix of any output file.
   set(output ${ZEPHYR_BINARY_DIR}/${KERNEL_NAME})
 
