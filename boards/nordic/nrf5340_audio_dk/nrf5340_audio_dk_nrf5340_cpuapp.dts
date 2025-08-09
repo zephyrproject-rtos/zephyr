@@ -16,11 +16,12 @@
 		zephyr,sram = &sram0_image;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
-		zephyr,sram-secure-partition = &sram0_s;
-		zephyr,sram-non-secure-partition = &sram0_ns;
 	};
 };
 
 &uicr {
 	nfct-pins-as-gpios;
 };
+
+/* Include default memory partition configuration file */
+#include <nordic/nrf5340_cpuapp_partition.dtsi>
