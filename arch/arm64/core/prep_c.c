@@ -14,10 +14,11 @@
  * initialization is performed.
  */
 
-#include <kernel_internal.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/platform/hooks.h>
 #include <zephyr/arch/cache.h>
+#include <zephyr/arch/common/xip.h>
+#include <zephyr/arch/common/init.h>
 
 extern void z_arm64_mm_init(bool is_primary_core);
 
@@ -39,8 +40,8 @@ void z_prep_c(void)
 	/* Initialize tpidrro_el0 with our struct _cpu instance address */
 	write_tpidrro_el0((uintptr_t)&_kernel.cpus[0]);
 
-	z_bss_zero();
-	z_data_copy();
+	arch_bss_zero();
+	arch_data_copy();
 #ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK
 	/* After bss clean, _kernel.cpus is in bss section */
 	z_arm64_safe_exception_stack_init();

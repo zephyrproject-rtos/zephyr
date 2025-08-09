@@ -13,6 +13,8 @@
 #include <zephyr/arch/x86/multiboot.h>
 #include <x86_mmu.h>
 #include <zephyr/drivers/interrupt_controller/loapic.h>
+#include <zephyr/arch/common/xip.h>
+#include <zephyr/arch/common/init.h>
 #ifdef CONFIG_ACPI
 #include <zephyr/arch/x86/cpuid.h>
 #include <zephyr/acpi/acpi.h>
@@ -105,8 +107,8 @@ FUNC_NORETURN void z_x86_cpu_init(struct x86_cpuboot *cpuboot)
 
 	if (cpuboot->cpu_id == 0U) {
 		/* Only need to do these once per boot */
-		z_bss_zero();
-		z_data_copy();
+		arch_bss_zero();
+		arch_data_copy();
 	}
 
 	z_loapic_enable(cpuboot->cpu_id);
