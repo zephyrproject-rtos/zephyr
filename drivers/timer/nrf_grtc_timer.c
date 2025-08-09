@@ -459,12 +459,35 @@ uint32_t sys_clock_elapsed(void)
 	return (uint32_t)(counter_sub(counter(), last_count) / CYC_PER_TICK);
 }
 
+#if CONFIG_NRF_GRTC_TIMER_ISR_DIRECT
+ISR_DIRECT_DECLARE(nrf_grtc_irq_handler)
+{
+	nrfx_grtc_irq_handler();
+#if CONFIG_MULTITHREADING
+	ISR_DIRECT_PM();
+	return 1;
+#else
+	return 0;
+#endif
+}
+#endif
+
 static int sys_clock_driver_init(void)
 {
 	nrfx_err_t err_code;
 
-	IRQ_CONNECT(DT_IRQN(GRTC_NODE), DT_IRQ(GRTC_NODE, priority), nrfx_isr,
-		    nrfx_grtc_irq_handler, 0);
+#ifdef CONFIG_NRF_GRTC_TIMER_ISR_DIRECT
+	IRQ_DIRECT_CONNECT(DT_IRQN(GRTC_NODE),
+			   DT_IRQ(GRTC_NODE, priority),
+			   nrf_grtc_irq_handler,
+			   0);
+#else
+	IRQ_CONNECT(DT_IRQN(GRTC_NODE),
+		    DT_IRQ(GRTC_NODE, priority),
+		    nrfx_isr,
+		    nrfx_grtc_irq_handler,
+		    0);
+#endif
 
 #if defined(CONFIG_NRF_GRTC_TIMER_CLOCK_MANAGEMENT) && NRF_GRTC_HAS_CLKSEL
 #if defined(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC)
