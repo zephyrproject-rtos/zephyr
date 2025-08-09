@@ -315,7 +315,8 @@ static int video_stm32_dcmi_enqueue(const struct device *dev, struct video_buffe
 	return 0;
 }
 
-static int video_stm32_restart_dma_after_error(struct video_stm32_dcmi_data *data) {
+static int video_stm32_restart_dma_after_error(struct video_stm32_dcmi_data *data)
+{
 	LOG_DBG("Restart DMA after Error!");
 	/* Lets try to recover by stopping and maybe restart */
 	if (HAL_DCMI_Stop(&data->hdcmi) != HAL_OK) {
