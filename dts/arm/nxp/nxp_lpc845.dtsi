@@ -1,0 +1,5 @@
+#include "nxp/nxp_lpc84x.dtsi"
+
+&sram0 {
+	reg = <0x10000000 DT_SIZE_K(16)>;
+};
