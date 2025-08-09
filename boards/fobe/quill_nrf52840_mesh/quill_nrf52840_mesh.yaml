@@ -1,0 +1,28 @@
+identifier: quill_nrf52840_mesh
+name: Quill nRF52840 Mesh
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - ble
+  - counter
+  - gpio
+  - lora
+  - i2c
+  - i2s
+  - pwm
+  - spi
+  - usb_device
+  - watchdog
+  - netif:openthread
+  - quill_adc
+  - quill_gpio
+  - quill_i2c
+  - quill_serial
+  - quill_spi
+vendor: fobe
