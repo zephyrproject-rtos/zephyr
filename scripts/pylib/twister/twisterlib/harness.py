@@ -434,6 +434,10 @@ class Pytest(Harness):
                 f'Support for handler {handler.type_str} not implemented yet'
             )
 
+        if self.instance.required_build_dirs:
+            for req_build in self.instance.required_build_dirs:
+                command.append(f'--required-build={req_build}')
+
         if handler.type_str != 'device':
             for fixture in handler.options.fixture:
                 command.append(f'--twister-fixture={fixture}')

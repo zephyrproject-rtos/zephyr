@@ -97,6 +97,8 @@ class TestInstance:
         self.init_cases()
         self.filters = []
         self.filter_type = None
+        self.required_applications = []
+        self.required_build_dirs = []
 
     def setup_run_id(self):
         self.run_id = self._get_run_id()
