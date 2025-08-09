@@ -90,10 +90,14 @@ source "drivers/video/Kconfig.emul_imager"
 
 source "drivers/video/Kconfig.emul_rx"
 
+source "drivers/video/Kconfig.hm01b0"
+
 source "drivers/video/Kconfig.imx335"
 
 source "drivers/video/Kconfig.st_mipid02"
 
 source "drivers/video/Kconfig.stm32_dcmipp"
+
+source "drivers/video/Kconfig.video_pio_dma"
 
 endif # VIDEO
