@@ -88,5 +88,4 @@
 			slew-rate = "fast";
 		};
 	};
-
 };
