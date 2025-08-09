@@ -17,6 +17,8 @@ supported:
   - spi
   - uart
   - usart
+  - usb_device
+  - usbd
   - watchdog
 ram: 256
 flash: 1024
