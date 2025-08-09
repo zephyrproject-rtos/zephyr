@@ -10,6 +10,7 @@
 
 #include <zephyr/init.h>
 #include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/drivers/timer/nxp_os_timer.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/spinlock.h>
@@ -45,6 +46,12 @@ static uint64_t cyc_sys_compensated;
 static const struct device *counter_dev;
 /* Indicates if the counter is running. */
 static bool counter_running;
+/* Indicates we received a call with ticks set to wait forever */
+static bool wait_forever;
+/* Indicates the counter used during this power mode to track System Time has overflowed */
+static bool counter_overflow;
+/* Incase of counter overflow, track the remaining ticks left */
+static uint32_t counter_remaining_ticks;
 #endif
 
 static uint64_t mcux_lpc_ostick_get_compensated_timer_value(void)
@@ -90,11 +97,28 @@ static uint32_t mcux_lpc_ostick_set_counter_timeout(int32_t curr_timeout)
 	uint32_t ret = 0;
 
 	if (counter_dev) {
-		uint32_t ticks;
+		uint32_t ticks, counter_max_val;
 		struct counter_top_cfg top_cfg = { 0 };
 
-		ticks = counter_us_to_ticks(counter_dev, curr_timeout);
-		ticks = CLAMP(ticks, 1, counter_get_max_top_value(counter_dev));
+		counter_max_val = counter_get_max_top_value(counter_dev);
+
+		/* Check if we should use the remaining ticks from a prior overflow */
+		if (counter_overflow) {
+			ticks = counter_remaining_ticks;
+		} else {
+			ticks = counter_us_to_ticks(counter_dev, curr_timeout);
+			counter_remaining_ticks = ticks;
+		}
+
+		/* Check if the counter overflows */
+		if (ticks > counter_max_val) {
+			counter_remaining_ticks -= counter_max_val;
+			counter_overflow = true;
+		} else {
+			counter_remaining_ticks = 0;
+			counter_overflow = false;
+		}
+		ticks = CLAMP(ticks, 1, counter_max_val);
 
 		top_cfg.ticks = ticks;
 		top_cfg.callback = NULL;
@@ -175,6 +199,10 @@ static uint32_t mcux_lpc_ostick_compensate_system_timer(void)
 	return 0;
 }
 
+bool z_nxp_os_timer_ignore_timer_wakeup(void) {
+	return (wait_forever || counter_overflow);
+}
+
 #endif
 
 void sys_clock_set_timeout(int32_t ticks, bool idle)
@@ -194,17 +222,23 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		if (pm_state_next_get(0)->state == PM_STATE_STANDBY) {
 			uint64_t timeout;
 
-			/* Check the amount of time left and switch to a counter
-			 * that is active in this power mode.
-			 */
-			timeout = base->MATCH_L;
-			timeout |= (uint64_t)(base->MATCH_H) << 32;
-			timeout = OSTIMER_GrayToDecimal(timeout);
-			timeout -= OSTIMER_GetCurrentTimerValue(base);
-			/* Round up to the next tick boundary */
-			timeout += (CYC_PER_TICK - 1);
-			/* Convert to microseconds and round up to the next value */
-			timeout = (((timeout / CYC_PER_TICK) * CYC_PER_TICK) * CYC_PER_US);
+			if (wait_forever) {
+				timeout = UINT32_MAX;
+			} else if (counter_overflow) {
+				timeout = counter_remaining_ticks;
+			} else {
+				/* Check the amount of time left and switch to a counter
+				 * that is active in this power mode.
+				 */
+				timeout = base->MATCH_L;
+				timeout |= (uint64_t)(base->MATCH_H) << 32;
+				timeout = OSTIMER_GrayToDecimal(timeout);
+				timeout -= OSTIMER_GetCurrentTimerValue(base);
+				/* Round up to the next tick boundary */
+				timeout += (CYC_PER_TICK - 1);
+				/* Convert to microseconds and round up to the next value */
+				timeout = (((timeout / CYC_PER_TICK) * CYC_PER_TICK) * CYC_PER_US);
+			}
 			if (mcux_lpc_ostick_set_counter_timeout(timeout) == 0) {
 				/* A low power counter has been started. No need to
 				 * go further, simply return
@@ -213,6 +247,15 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 			}
 		}
 	}
+	/* When using a counter for certain low power modes, set this flag when the requested
+	 * delay is forever. This is to keep track of wakeup sources in case of counter overflows.
+	 */
+	if (ticks == INT_MAX) {
+		wait_forever = true;
+	} else {
+		wait_forever = false;
+	}
+	counter_overflow = false;
 #else
 	ARG_UNUSED(idle);
 #endif
