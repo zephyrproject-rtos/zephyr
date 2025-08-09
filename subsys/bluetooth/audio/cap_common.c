@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Nordic Semiconductor ASA
+ * Copyright (c) 2023-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 
 #include "cap_internal.h"
 #include "csip_internal.h"
@@ -73,6 +74,34 @@ bool bt_cap_common_subproc_is_type(enum bt_cap_common_subproc_type subproc_type)
 	return active_proc.subproc_type == subproc_type;
 }
 #endif /* CONFIG_BT_CAP_INITIATOR_UNICAST */
+
+#if defined(CONFIG_BT_CAP_HANDOVER)
+void bt_cap_common_set_handover_active(void)
+{
+	atomic_set_bit(active_proc.proc_state_flags, BT_CAP_COMMON_PROC_STATE_HANDOVER);
+}
+
+bool bt_cap_common_handover_is_active(void)
+{
+	return atomic_test_bit(active_proc.proc_state_flags, BT_CAP_COMMON_PROC_STATE_HANDOVER);
+}
+
+bool bt_cap_common_handover_broadcast_to_unicast_all_stopped(void)
+{
+	bool all_stopped = true;
+
+	ARRAY_FOR_EACH(
+		active_proc.proc_param.handover.broadcast_to_unicast.pending_recv_state_conns, i) {
+		if (active_proc.proc_param.handover.broadcast_to_unicast
+			    .pending_recv_state_conns[i] != NULL) {
+			all_stopped = false;
+			break;
+		}
+	}
+
+	return all_stopped;
+}
+#endif /* CONFIG_BT_CAP_HANDOVER */
 
 struct bt_conn *bt_cap_common_get_member_conn(enum bt_cap_set_type type,
 					      const union bt_cap_set_member *member)
