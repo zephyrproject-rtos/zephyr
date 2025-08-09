@@ -1,6 +1,5 @@
 # FIXME: this should be under tests/unit/timeutil but will not work due to #90029
 common:
-  filter: not CONFIG_NATIVE_LIBC
   tags:
     - timeutils
   # 1 tier0 platform per supported architecture
@@ -8,29 +7,85 @@ common:
     - arch
     - simulation
   integration_platforms:
+    - native_sim
     - native_sim/native/64
 tests:
   libraries.timespec_utils: {}
-  libraries.timespec_utils.speed:
+  libraries.timespec_utils.timeout_32bit:
     extra_configs:
+      - CONFIG_TIMEOUT_64BIT=n
+
+  # Using platform_allow below because some platforms such as qemu_cortex_r5/zynqmp_rpu throw
+  # build errors when the timer tick frequency is not divisible by the system tick frequency.
+  #
+  # The test configurations below are mainly for numerical coverage and correctness.
+  libraries.timespec_utils.speed.timeout_32bit:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_configs:
+      - CONFIG_TIMEOUT_64BIT=n
       - CONFIG_SPEED_OPTIMIZATIONS=y
-  libraries.timespec_utils.armclang_std_libc:
-    toolchain_allow: armclang
+  libraries.timespec_utils.speed.timeout_64bit:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
     extra_configs:
-      - CONFIG_ARMCLANG_STD_LIBC=y
-  libraries.timespec_utils.arcmwdtlib:
-    toolchain_allow: arcmwdt
+      - CONFIG_TIMEOUT_64BIT=y
+      - CONFIG_SPEED_OPTIMIZATIONS=y
+  libraries.timespec_utils.low_tick_rate.timeout_32bit:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
     extra_configs:
-      - CONFIG_ARCMWDT_LIBC=y
-  libraries.timespec_utils.minimal:
+      - CONFIG_TIMEOUT_64BIT=n
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1
+  libraries.timespec_utils.low_tick_rate.timeout_64bit:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
     extra_configs:
-      - CONFIG_MINIMAL_LIBC=y
-  libraries.timespec_utils.newlib:
-    filter: TOOLCHAIN_HAS_NEWLIB == 1
+      - CONFIG_TIMEOUT_64BIT=y
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1
+  libraries.timespec_utils.high_tick_rate.timeout_32bit:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
     extra_configs:
-      - CONFIG_NEWLIB_LIBC=y
-  libraries.timespec_utils.picolibc:
-    tags: picolibc
-    filter: CONFIG_PICOLIBC_SUPPORTED
+      - CONFIG_TIMEOUT_64BIT=n
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000000
+  libraries.timespec_utils.high_tick_rate.timeout_64bit:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
     extra_configs:
-      - CONFIG_PICOLIBC=y
+      - CONFIG_TIMEOUT_64BIT=y
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000000
+  libraries.timespec_utils.32k_tick_rate.timeout_32bit:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_configs:
+      - CONFIG_TIMEOUT_64BIT=n
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=32768
+  libraries.timespec_utils.32k_tick_rate.timeout_64bit:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_configs:
+      - CONFIG_TIMEOUT_64BIT=y
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=32768
+  libraries.timespec_utils.prime_tick_rate.timeout_32bit:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_configs:
+      - CONFIG_TIMEOUT_64BIT=n
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=10007
+  libraries.timespec_utils.prime_tick_rate.timeout_64bit:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_configs:
+      - CONFIG_TIMEOUT_64BIT=y
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=10007
