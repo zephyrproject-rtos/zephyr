@@ -8,6 +8,7 @@ config I2C_ESP32
 	bool "ESP32 I2C driver"
 	default y
 	depends on DT_HAS_ESPRESSIF_ESP32_I2C_ENABLED
+	depends on MULTITHREADING
 	select GPIO_ESP32
 	help
 	  Enables the ESP32 I2C driver
