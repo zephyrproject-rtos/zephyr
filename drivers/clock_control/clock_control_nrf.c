@@ -442,6 +442,10 @@ void z_nrf_clock_bt_ctlr_hf_release(void)
 	hfclk_users &= ~HF_USER_BT;
 	/* Skip stopping if generic is still requesting the clock. */
 	if (!(hfclk_users & HF_USER_GENERIC)) {
+		struct nrf_clock_control_sub_data *sub_data =
+			get_sub_data(CLOCK_DEVICE, CLOCK_CONTROL_NRF_TYPE_HFCLK);
+
+		sub_data->flags = CLOCK_CONTROL_STATUS_OFF;
 		hfclk_stop();
 	}
 
