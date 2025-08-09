@@ -1,0 +1,19 @@
+/*
+* Copyright (c) 2025 tinyvision.ai
+*
+* SPDX-License-Identifier: Apache-2.0
+*
+*/
+
+
+	&i2c0: {
+		status = "okay";
+		sc18is606: sc18is606@28 {
+			compatible = "nxp,sc18is606";
+			reg = <0x28>;
+			status = "okay";
+			#size-cells = <0>;
+			#address-cells = <1>;
+			clock-frequency = <100000>;
+		};
+	};
