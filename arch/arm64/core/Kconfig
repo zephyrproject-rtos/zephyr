@@ -72,6 +72,13 @@ config CPU_CORTEX_A76_A55
 	help
 	  This option signifies the use of a Cortex-A76 and A55 big little CPU cluster
 
+config CPU_CORTEX_A78
+	bool
+	select CPU_CORTEX_A
+	select ARMV8_A
+	help
+	  This option signifies the use of a Cortex-A78 CPU
+
 config CPU_CORTEX_R82
 	bool
 	select CPU_AARCH64_CORTEX_R
