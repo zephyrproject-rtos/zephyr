@@ -14,6 +14,7 @@
 
 #include <zephyr/types.h>
 #include <zephyr/device.h>
+#include <zephyr/drivers/pcie/pcie.h>
 
 #ifdef CONFIG_PCIE_MSI
 #include <zephyr/drivers/pcie/msi.h>
