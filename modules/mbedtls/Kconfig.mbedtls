@@ -9,34 +9,34 @@ menu "Mbed TLS configuration"
 
 menu "TLS"
 
-config MBEDTLS_TLS_VERSION_1_2
+config MBEDTLS_SSL_PROTO_TLS1_2
 	bool "Support for TLS 1.2 (DTLS 1.2)"
-	select MBEDTLS_CIPHER
-	select MBEDTLS_MD
+	select MBEDTLS_CIPHER_C
+	select MBEDTLS_MD_C
 
-if MBEDTLS_TLS_VERSION_1_2
+if MBEDTLS_SSL_PROTO_TLS1_2
 
-config MBEDTLS_DTLS
+config MBEDTLS_SSL_PROTO_DTLS
 	bool "Support for DTLS"
 
-endif # MBEDTLS_TLS_VERSION_1_2
+endif # MBEDTLS_SSL_PROTO_TLS1_2
 
-config MBEDTLS_TLS_VERSION_1_3
+config MBEDTLS_SSL_PROTO_TLS1_3
 	bool "Support for TLS 1.3"
 
-if MBEDTLS_TLS_VERSION_1_3
+if MBEDTLS_SSL_PROTO_TLS1_3
 
-config MBEDTLS_TLS_SESSION_TICKETS
+config MBEDTLS_SSL_SESSION_TICKETS
 	bool "Support for RFC 5077 session tickets in TLS 1.3"
 
-endif # MBEDTLS_TLS_VERSION_1_3
+endif # MBEDTLS_SSL_PROTO_TLS1_3
 
-if MBEDTLS_TLS_VERSION_1_2 || MBEDTLS_TLS_VERSION_1_3
+if MBEDTLS_SSL_PROTO_TLS1_2 || MBEDTLS_SSL_PROTO_TLS1_3
 
 config MBEDTLS_SSL_ALPN
 	bool "Support for setting the supported Application Layer Protocols"
 
-endif # MBEDTLS_TLS_VERSION_1_2 || MBEDTLS_TLS_VERSION_1_3
+endif # MBEDTLS_SSL_PROTO_TLS1_2 || MBEDTLS_SSL_PROTO_TLS1_3
 
 endmenu # TLS
 
@@ -55,14 +55,14 @@ config MBEDTLS_PKCS1_V15
 config MBEDTLS_PKCS1_V21
 	bool "RSA PKCS1 v2.1"
 
-config MBEDTLS_GENPRIME_ENABLED
+config MBEDTLS_GENPRIME
 	bool "Prime number generation code"
 
 endif # MBEDTLS_RSA_C
 
 config MBEDTLS_KEY_EXCHANGE_ALL_ENABLED
 	bool "All available ciphersuite modes"
-	select MBEDTLS_MD
+	select MBEDTLS_MD_C
 	select MBEDTLS_RSA_C
 	select MBEDTLS_PKCS1_V15
 	select MBEDTLS_PKCS1_V21
@@ -101,7 +101,7 @@ config MBEDTLS_PSK_MAX_LEN
 
 config MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
 	bool "RSA-only based ciphersuite modes"
-	depends on MBEDTLS_MD
+	depends on MBEDTLS_MD_C
 	depends on PSA_CRYPTO_CLIENT || MBEDTLS_PKCS1_V15 || MBEDTLS_PKCS1_V21
 	select PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY if PSA_CRYPTO_CLIENT
 	select PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_IMPORT if PSA_CRYPTO_CLIENT
@@ -136,7 +136,7 @@ config MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED
 	bool "ECJPAKE based ciphersuite modes"
 	depends on MBEDTLS_ECJPAKE_C
 
-if MBEDTLS_TLS_VERSION_1_3
+if MBEDTLS_SSL_PROTO_TLS1_3
 
 config MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_ENABLED
 	bool "TLS 1.3 PSK key exchange mode"
@@ -147,7 +147,7 @@ config MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_EPHEMERAL_ENABLED
 config MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_EPHEMERAL_ENABLED
 	bool "TLS 1.3 PSK ephemeral key exchange mode"
 
-endif # MBEDTLS_TLS_VERSION_1_3
+endif # MBEDTLS_SSL_PROTO_TLS1_3
 
 config MBEDTLS_HKDF_C
 	bool "HMAC-based Extract-and-Expand Key Derivation Function"
@@ -240,37 +240,37 @@ comment "Supported ciphers and cipher modes"
 
 config MBEDTLS_CIPHER_ALL_ENABLED
 	bool "All available ciphers and modes"
-	select MBEDTLS_CIPHER_AES_ENABLED
-	select MBEDTLS_CIPHER_CAMELLIA_ENABLED
-	select MBEDTLS_CIPHER_DES_ENABLED
-	select MBEDTLS_CIPHER_CHACHA20_ENABLED
-	select MBEDTLS_CIPHER_CCM_ENABLED
-	select MBEDTLS_CIPHER_GCM_ENABLED
-	select MBEDTLS_CIPHER_MODE_XTS_ENABLED
-	select MBEDTLS_CIPHER_MODE_CBC_ENABLED
-	select MBEDTLS_CIPHER_MODE_CTR_ENABLED
-	select MBEDTLS_CHACHAPOLY_AEAD_ENABLED
+	select MBEDTLS_AES_C
+	select MBEDTLS_CAMELLIA_C
+	select MBEDTLS_DES_C
+	select MBEDTLS_CHACHA20_C
+	select MBEDTLS_CCM_C
+	select MBEDTLS_GCM_C
+	select MBEDTLS_CIPHER_MODE_XTS
+	select MBEDTLS_CIPHER_MODE_CBC
+	select MBEDTLS_CIPHER_MODE_CTR
+	select MBEDTLS_CHACHAPOLY_C
 
 config MBEDTLS_SOME_AEAD_CIPHER_ENABLED
 	bool
 	default y
 	depends on \
-		MBEDTLS_CIPHER_AES_ENABLED || \
-		MBEDTLS_CIPHER_CAMELLIA_ENABLED
+		MBEDTLS_AES_C || \
+		MBEDTLS_CAMELLIA_C
 
 config MBEDTLS_SOME_CIPHER_ENABLED
 	bool
 	default y
 	depends on \
 		MBEDTLS_SOME_AEAD_CIPHER_ENABLED || \
-		MBEDTLS_CIPHER_DES_ENABLED || \
-		MBEDTLS_CIPHER_CHACHA20_ENABLED
+		MBEDTLS_DES_C || \
+		MBEDTLS_CHACHA20_C
 
-config MBEDTLS_CIPHER_AES_ENABLED
+config MBEDTLS_AES_C
 	bool "AES block cipher"
 	default y if PSA_WANT_KEY_TYPE_AES && MBEDTLS_PSA_CRYPTO_C
 
-if MBEDTLS_CIPHER_AES_ENABLED
+if MBEDTLS_AES_C
 
 config MBEDTLS_AES_ROM_TABLES
 	bool "Use precomputed AES tables stored in ROM."
@@ -285,112 +285,117 @@ config MBEDTLS_AES_FEWER_TABLES
 	  lookups are converted to 1 table lookup, 3 additions
 	  and 6 bit shifts.
 
-config MBEDTLS_CIPHER_MODE_XTS_ENABLED
+config MBEDTLS_CIPHER_MODE_XTS
 	bool "Xor-encrypt-xor with ciphertext stealing mode (XTS) for AES"
 
-endif # MBEDTLS_CIPHER_AES_ENABLED
+endif # MBEDTLS_AES_C
 
-config MBEDTLS_CIPHER_CAMELLIA_ENABLED
+config MBEDTLS_CAMELLIA_C
 	bool "Camellia block cipher"
 
-config MBEDTLS_CIPHER_DES_ENABLED
+config MBEDTLS_DES_C
 	bool "DES block cipher"
 
-config MBEDTLS_CIPHER_CHACHA20_ENABLED
+config MBEDTLS_CHACHA20_C
 	bool "ChaCha20 stream cipher"
 
 if MBEDTLS_SOME_AEAD_CIPHER_ENABLED
 
-config MBEDTLS_CIPHER_CCM_ENABLED
+config MBEDTLS_CCM_C
 	bool "Counter with CBC-MAC (CCM) mode for 128-bit block cipher"
 
-config MBEDTLS_CIPHER_GCM_ENABLED
+config MBEDTLS_GCM_C
 	bool "Galois/Counter Mode (GCM) for symmetric ciphers"
 
 endif # MBEDTLS_SOME_AEAD_CIPHER_ENABLED
 
 if MBEDTLS_SOME_CIPHER_ENABLED
 
-config MBEDTLS_CIPHER_MODE_CBC_ENABLED
+config MBEDTLS_CIPHER_MODE_CBC
 	bool "Cipher Block Chaining mode (CBC) for symmetric ciphers"
 	default y if !NET_L2_OPENTHREAD
 
-config MBEDTLS_CIPHER_MODE_CTR_ENABLED
+config MBEDTLS_CIPHER_MODE_CTR
 	bool "Counter Block Cipher mode (CTR) for symmetric ciphers"
 
 endif # MBEDTLS_SOME_CIPHER_ENABLED
 
-config MBEDTLS_CHACHAPOLY_AEAD_ENABLED
+config MBEDTLS_CHACHAPOLY_C
 	bool "ChaCha20-Poly1305 AEAD algorithm"
-	depends on MBEDTLS_CIPHER_CHACHA20_ENABLED && MBEDTLS_POLY1305
+	depends on MBEDTLS_CHACHA20_C && MBEDTLS_POLY1305_C
 
-config MBEDTLS_CMAC
+config MBEDTLS_CMAC_C
 	bool "CMAC (Cipher-based Message Authentication Code) mode for block ciphers."
-	depends on MBEDTLS_CIPHER_AES_ENABLED || MBEDTLS_CIPHER_DES_ENABLED
+	depends on MBEDTLS_AES_C || MBEDTLS_DES_C
 
 comment "Supported hash algorithms"
 
 config MBEDTLS_HASH_ALL_ENABLED
 	bool "All available MAC methods"
-	select MBEDTLS_MD5
-	select MBEDTLS_SHA1
-	select MBEDTLS_SHA224
-	select MBEDTLS_SHA256
-	select MBEDTLS_SHA384
-	select MBEDTLS_SHA512
-	select MBEDTLS_POLY1305
+	select MBEDTLS_MD5_C
+	select MBEDTLS_SHA1_C
+	select MBEDTLS_SHA224_C
+	select MBEDTLS_SHA256_C
+	select MBEDTLS_SHA384_C
+	select MBEDTLS_SHA512_C
+	select MBEDTLS_POLY1305_C
 
-config MBEDTLS_MD5
+config MBEDTLS_MD5_C
 	bool "MD5 hash algorithm"
 
-config MBEDTLS_SHA1
+config MBEDTLS_SHA1_C
 	bool "SHA-1 hash algorithm"
 
-config MBEDTLS_SHA224
+config MBEDTLS_SHA224_C
 	bool "SHA-224 hash algorithm"
 
-config MBEDTLS_SHA256
+config MBEDTLS_SHA256_C
 	bool "SHA-256 hash algorithm"
 	default y
 
 config MBEDTLS_SHA256_SMALLER
 	bool "Smaller SHA-256 implementation"
-	depends on MBEDTLS_SHA256
+	depends on MBEDTLS_SHA256_C
 	default y
 	help
 	  Enable an implementation of SHA-256 that has a
 	  smaller ROM footprint but also lower performance.
 
-config MBEDTLS_SHA384
+config MBEDTLS_SHA384_C
 	bool "SHA-384 hash algorithm"
 
-config MBEDTLS_SHA512
+config MBEDTLS_SHA512_C
 	bool "SHA-512 hash algorithm"
 
-config MBEDTLS_POLY1305
+config MBEDTLS_POLY1305_C
 	bool "Poly1305 hash family"
 
 endmenu
 
 comment "Random number generators"
 
-config MBEDTLS_CTR_DRBG_ENABLED
+config MBEDTLS_CTR_DRBG_C
 	bool "CTR_DRBG AES-256-based random generator"
-	depends on MBEDTLS_CIPHER_AES_ENABLED
+	depends on MBEDTLS_AES_C
 	default y
 
-config MBEDTLS_HMAC_DRBG_ENABLED
+config MBEDTLS_HMAC_DRBG_C
 	bool "HMAC_DRBG random generator"
-	select MBEDTLS_MD
+	select MBEDTLS_MD_C
 
 comment "Other configurations"
 
-config MBEDTLS_CIPHER
+config MBEDTLS_CIPHER_C
 	bool "generic cipher layer."
 	default y if PSA_WANT_ALG_CMAC
 
-config MBEDTLS_MD
+config MBEDTLS_MD_C
 	bool "generic message digest layer."
+
+# Temporary hack until McuBoot is updated to use the new symbol
+config MBEDTLS_MD
+	bool
+	select MBEDTLS_MD_C
 
 config MBEDTLS_ASN1_PARSE_C
 	bool "Support for ASN1 parser functions"
@@ -433,7 +438,7 @@ config MBEDTLS_HAVE_ASM
 
 config MBEDTLS_ENTROPY_C
 	bool "Mbed TLS entropy accumulator"
-	depends on MBEDTLS_SHA256 || MBEDTLS_SHA384 || MBEDTLS_SHA512
+	depends on MBEDTLS_SHA256_C || MBEDTLS_SHA384_C || MBEDTLS_SHA512_C
 	help
 	  This module gathers entropy data from enabled entropy sources. It's
 	  mostly used in conjunction with CTR_DRBG or HMAC_DRBG to create
@@ -473,7 +478,7 @@ config MBEDTLS_USER_CONFIG_FILE
 	  User config file that can contain mbedTLS configs that were not
 	  covered by the generic config file.
 
-config MBEDTLS_SERVER_NAME_INDICATION
+config MBEDTLS_SSL_SERVER_NAME_INDICATION
 	bool "Support for RFC 6066 server name indication (SNI) in SSL"
 	help
 	  Enable this to support RFC 6066 server name indication (SNI) in SSL.
@@ -493,7 +498,7 @@ config MBEDTLS_HAVE_TIME_DATE
 
 config MBEDTLS_PKCS5_C
 	bool "Password-based encryption functions"
-	select MBEDTLS_MD
+	select MBEDTLS_MD_C
 	help
 	  Enable PKCS5 functions
 
@@ -516,7 +521,7 @@ endif # MBEDTLS_SSL_CACHE_C
 
 config MBEDTLS_SSL_EXTENDED_MASTER_SECRET
 	bool "(D)TLS Extended Master Secret extension"
-	depends on MBEDTLS_TLS_VERSION_1_2
+	depends on MBEDTLS_SSL_PROTO_TLS1_2
 	help
 	  Enable support for the (D)TLS Extended Master Secret extension
 	  which ensures that master secrets are different for every
@@ -549,7 +554,7 @@ config MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
 config MBEDTLS_PSA_CRYPTO_LEGACY_RNG
 	bool "Use legacy modules to generate random data"
 	select MBEDTLS_ENTROPY_C
-	select MBEDTLS_HMAC_DRBG_ENABLED if !MBEDTLS_CTR_DRBG_ENABLED
+	select MBEDTLS_HMAC_DRBG_C if !MBEDTLS_CTR_DRBG_C
 	# If there is any entropy driver in the system, then the choice would be
 	# CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG. If we fall here, then the only
 	# way to get some random data is to enable CONFIG_TEST_RANDOM_GENERATOR.
@@ -600,10 +605,10 @@ config MBEDTLS_PSA_CRYPTO_CLIENT
 	depends on BUILD_WITH_TFM || MBEDTLS_PSA_CRYPTO_C
 	select PSA_CRYPTO_CLIENT
 
-config MBEDTLS_LMS
+config MBEDTLS_LMS_C
 	bool "Support LMS signature schemes"
 	depends on MBEDTLS_PSA_CRYPTO_CLIENT
-	depends on MBEDTLS_SHA256
+	depends on MBEDTLS_SHA256_C
 	select PSA_WANT_ALG_SHA_256
 
 if MBEDTLS_PSA_CRYPTO_C
@@ -657,7 +662,7 @@ endif # MBEDTLS_PSA_CRYPTO_C
 
 config MBEDTLS_SSL_DTLS_CONNECTION_ID
 	bool "DTLS Connection ID extension"
-	depends on MBEDTLS_DTLS
+	depends on MBEDTLS_SSL_PROTO_DTLS
 	help
 	  Enable support for the DTLS Connection ID extension
 	  which allows to identify DTLS connections across changes
@@ -666,7 +671,7 @@ config MBEDTLS_SSL_DTLS_CONNECTION_ID
 
 config MBEDTLS_NIST_KW_C
 	bool "NIST key wrap"
-	depends on MBEDTLS_CIPHER_AES_ENABLED
+	depends on MBEDTLS_AES_C
 	help
 	  Key Wrapping mode for 128-bit block ciphers,
 	  as defined in NIST SP 800-38F.
