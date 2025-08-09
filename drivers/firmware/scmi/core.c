@@ -62,11 +62,6 @@ static int scmi_core_setup_chan(const struct device *transport,
 		return 0;
 	}
 
-	/* no support for RX channels ATM */
-	if (!tx) {
-		return -ENOTSUP;
-	}
-
 	k_mutex_init(&chan->lock);
 	k_sem_init(&chan->sem, 0, 1);
 
@@ -176,6 +171,62 @@ int scmi_send_message(struct scmi_protocol *proto, struct scmi_message *msg,
 	}
 }
 
+int scmi_read_message(struct scmi_protocol *proto, struct scmi_message *msg)
+{
+	int ret = 0;
+
+	if (!proto->rx) {
+		return -ENODEV;
+	}
+
+	if (!proto->rx->ready) {
+		return -EINVAL;
+	}
+
+	/* read message from platform
+	 * such as notification event and give response for it
+	 */
+	ret = scmi_transport_read_message(proto->transport, proto->rx, msg);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (k_is_pre_kernel()) {
+		/* send p2a response into platform */
+		ret = scmi_transport_send_message(proto->transport, proto->rx, msg);
+		if (ret < 0) {
+			LOG_ERR("failed to send message");
+			return ret;
+		}
+	} else {
+		/* wait for channel to be free */
+		ret = k_mutex_lock(&proto->rx->lock, K_USEC(SCMI_CHAN_LOCK_TIMEOUT_USEC));
+		if (ret < 0) {
+			LOG_ERR("failed to acquire chan lock");
+			return ret;
+		}
+
+		/* send p2a response into platform */
+		ret = scmi_transport_send_message(proto->transport, proto->rx, msg);
+		if (ret < 0) {
+			LOG_ERR("failed to send message");
+			goto out_release_mutex;
+		}
+
+		/* only one protocol instance can wait for a message reply at a time */
+		ret = k_sem_take(&proto->rx->sem, K_USEC(SCMI_CHAN_SEM_TIMEOUT_USEC));
+		if (ret < 0) {
+			LOG_ERR("failed to wait for msg reply");
+			goto out_release_mutex;
+		}
+
+out_release_mutex:
+		k_mutex_unlock(&proto->rx->lock);
+	}
+
+	return ret;
+}
+
 static int scmi_core_protocol_setup(const struct device *transport)
 {
 	int ret;
@@ -186,13 +237,23 @@ static int scmi_core_protocol_setup(const struct device *transport)
 #ifndef CONFIG_ARM_SCMI_TRANSPORT_HAS_STATIC_CHANNELS
 		/* no static channel allocation, attempt dynamic binding */
 		it->tx = scmi_transport_request_channel(transport, it->id, true);
+		it->rx = scmi_transport_request_channel(transport, it->id, true);
 #endif /* CONFIG_ARM_SCMI_TRANSPORT_HAS_STATIC_CHANNELS */
 
 		if (!it->tx) {
 			return -ENODEV;
 		}
 
+		if (!it->rx) {
+			return -ENODEV;
+		}
+
 		ret = scmi_core_setup_chan(transport, it->tx, true);
+		if (ret < 0) {
+			return ret;
+		}
+
+		ret = scmi_core_setup_chan(transport, it->rx, false);
 		if (ret < 0) {
 			return ret;
 		}
