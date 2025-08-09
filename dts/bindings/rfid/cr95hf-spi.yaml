@@ -1,0 +1,15 @@
+# Copyright 2025 Conny Marco Menebröcker
+# SPDX-License-Identifier: Apache-2.0
+description: ST CR95HF RFID driver
+compatible: "st,cr95hf"
+on-bus: spi
+include: spi-device.yaml
+properties:
+  cs-gpios:
+    type: phandle-array
+    required: true
+  irq-in-gpios:
+    type: phandle-array
+    required: true
+  irq-out-gpios:
+    type: phandle-array
