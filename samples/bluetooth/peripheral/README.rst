@@ -10,6 +10,8 @@ Overview
 Application demonstrating the Bluetooth LE Peripheral role. It has several well-known and
 vendor-specific GATT services that it exposes.
 
+It also implements user GATT GAP callbacks that allows controlling the name and appearance
+of the device in a moment when the client tries to change them.
 
 Requirements
 ************
