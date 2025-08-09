@@ -1,0 +1,18 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP Error Detection And Correction module container
+
+compatible: "nxp,edac"
+
+properties:
+  erm:
+    type: phandle
+    required: true
+    description: Reference to the ERM device
+
+  eim:
+    type: phandle
+    description: Reference to the EIM device
+
+include: base.yaml
