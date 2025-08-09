@@ -9,6 +9,7 @@ menuconfig CRYPTO_STM32
 	depends on DT_HAS_ST_STM32_AES_ENABLED || DT_HAS_ST_STM32_CRYP_ENABLED
 	select USE_STM32_HAL_CRYP
 	select USE_STM32_HAL_CRYP_EX
+	select RESET
 	help
 	  Enable STM32 HAL-based Cryptographic Accelerator driver.
 
