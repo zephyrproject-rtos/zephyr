@@ -9,9 +9,10 @@ LOG_MODULE_REGISTER(dsa_netc, CONFIG_ETHERNET_LOG_LEVEL);
 
 #include <zephyr/net/ethernet.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/ethernet/nxp_imx_netc.h>
+#include <zephyr/dt-bindings/ethernet/dsa_tag_proto.h>
 
 #include "../eth.h"
-#include "nxp_imx_netc.h"
 #include "fsl_netc_switch.h"
 
 #define DT_DRV_COMPAT nxp_netc_switch
@@ -128,6 +129,7 @@ static struct dsa_api dsa_netc_api = {
 		.port_idx = DT_REG_ADDR(port),                                              \
 		.phy_dev = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(port, phy_handle)),             \
 		.phy_mode = DT_PROP_OR(port, phy_connection_type, ""),                      \
+		.tag_proto = DT_PROP_OR(port, dsa_tag_protocol, DSA_TAG_PROTO_NOTAG),       \
 		.ethernet_connection = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(port, ethernet)),   \
 		.prv_config = &dsa_netc_##n##_##port##_config,                              \
 	};                                                                                  \
