@@ -173,6 +173,66 @@ struct bt_avdtp_ctrl_params {
 	uint8_t acp_stream_ep_id;
 };
 
+/* avdtp service capabilities*/
+#define MEDIA_TRANSPORT_CAPABILITIES_LOSC               0x0
+struct bt_avdtp_media_transport_capabilities {
+	uint8_t losc;
+};
+
+#define REPORTING_CAPABILITIES_LOSC                     0x0
+struct bt_avdtp_reporting_capabilities {
+	uint8_t losc;
+};
+
+#define RECOVERY_CAPABILITIES_LOSC                      0x03
+struct bt_avdtp_recovery_capabilities {
+	uint8_t losc;
+	uint8_t recovery_type;
+	uint8_t MRWS;
+	uint8_t MNMP;
+};
+
+#define MEDIA_CODEC_CAPABILITIES_MIN_LOSC               0x02
+struct bt_avdtp_media_codec_capabilities {
+	uint8_t losc;
+	uint8_t media_type;
+	uint8_t media_code_type;
+	uint8_t media_codec_spec_info[0];
+};
+
+#define CONTENT_PROTECTION_CAPABILITIES_MIN_LOSC        0x02
+struct bt_avdtp_content_protection_capabilities {
+	uint8_t losc;
+	uint8_t cp_type_lsb;
+	uint8_t cp_type_msb;
+	uint8_t cp_type_spec_value[0];
+};
+
+#define HEADER_COMPRESSION_CAPABILITIES                 0x01
+struct bt_avdtp_header_compression_capabilities {
+	uint8_t losc;
+	uint8_t backch : 1;
+	uint8_t media : 1;
+	uint8_t recovery : 1;
+} __packed;
+
+#define MULTIPLEXING_CAPABILITIES_LOSC                  0x07
+struct bt_avdtp_multiplexing_capabilities {
+	uint8_t losc;
+	uint8_t frag;
+	uint8_t tsid_media;
+	uint8_t tcid_media;
+	uint8_t tsid_reporting;
+	uint8_t tcid_reporting;
+	uint8_t tsid_recovery;
+	uint8_t tcid_recovery;
+};
+
+#define DELAY_REPORTING_CAPABILITIES_LOSC               0x0
+struct bt_avdtp_delay_reporting_capabilities {
+	uint8_t losc;
+};
+
 struct bt_avdtp_ops_cb {
 	void (*connected)(struct bt_avdtp *session);
 
@@ -189,7 +249,7 @@ struct bt_avdtp_ops_cb {
 				     uint8_t int_seid, struct net_buf *buf, uint8_t *errcode);
 
 	int (*re_configuration_ind)(struct bt_avdtp *session, struct bt_avdtp_sep *sep,
-				    uint8_t int_seid, struct net_buf *buf, uint8_t *errcode);
+				    struct net_buf *buf, uint8_t *errcode);
 
 	int (*open_ind)(struct bt_avdtp *session, struct bt_avdtp_sep *sep, uint8_t *errcode);
 
