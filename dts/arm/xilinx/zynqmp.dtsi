@@ -18,6 +18,7 @@
 		flash0: flash@c0000000 {
 			compatible = "soc-nv-flash";
 			reg = <0xc0000000 DT_SIZE_M(32)>;
+			status = "disabled";
 		};
 
 		sram0: memory@0 {
@@ -304,6 +305,15 @@
 					IRQ_DEFAULT_PRIORITY>;
 			reg = <0xfd070000 0x30000>;
 		};
-	};
 
+		qspi: spi@ff0f0000 {
+			compatible = "xlnx,zynqmp-qspi-1.0";
+			reg = <0xff0f0000 0x1000>;
+			status = "disabled";
+			interrupts = <GIC_SPI 15 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+	};
 };
