@@ -203,8 +203,6 @@ static void broadcast_source_iso_connected(struct bt_iso_chan *chan)
 
 	if (ops != NULL && ops->started != NULL) {
 		ops->started(stream);
-	} else {
-		LOG_WRN("No callback for started set");
 	}
 }
 
@@ -237,8 +235,6 @@ static void broadcast_source_iso_disconnected(struct bt_iso_chan *chan, uint8_t 
 
 	if (ops != NULL && ops->stopped != NULL) {
 		ops->stopped(stream, reason);
-	} else {
-		LOG_WRN("No callback for stopped set");
 	}
 }
 
