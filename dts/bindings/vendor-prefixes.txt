@@ -247,6 +247,7 @@ festo	Festo SE & Co. KG
 fii	Foxconn Industrial Internet
 fintek	Feature Integration Technology Inc.
 firefly	Firefly
+fobe	FoBE Studio
 focaltech	FocalTech Systems Co.,Ltd
 franzininho	Franzininho
 frida	Shenzhen Frida LCD Co., Ltd.
