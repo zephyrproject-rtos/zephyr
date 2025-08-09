@@ -1389,3 +1389,18 @@ test_i2c_mb7040: mb7040@ba {
 	reg = <0xba>;
 	status-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_wsen_isds_2536030320001: wsen_isds_2536030320001@bb {
+	compatible = "we,wsen-isds-2536030320001";
+	reg = <0xbb>;
+	accel-odr = "416";
+	gyro-odr = "416";
+	tap-threshold = < 9 >;
+	tap-latency = < 5 >;
+	tap-shock = < 2 >;
+	tap-quiet = < 1 >;
+	tap-mode = < 1 >;
+	tap-axis-enable = < 0 0 1 >;
+	events-interrupt-gpios = <&test_gpio 0 0>;
+	drdy-interrupt-gpios = <&test_gpio 0 0>;
+};
