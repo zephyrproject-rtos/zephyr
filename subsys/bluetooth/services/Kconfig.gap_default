@@ -1,0 +1,12 @@
+# GATT Generic Access Service - default implementation
+#
+# Copyright (c) 2025 Koppel Electronic
+# SPDX-License-Identifier: Apache-2.0
+
+config BT_GAP_DEFAULT
+	bool "GATT Generic Access Service - default implementation"
+	default y
+	help
+	  Enable the default GATT Generic Access Service.
+	  Enabled by default provides basic GAP functionality.
+	  If disabled user can provide its own implementation in the code.

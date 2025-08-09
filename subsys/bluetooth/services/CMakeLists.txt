@@ -3,6 +3,8 @@
 
 zephyr_sources_ifdef(CONFIG_BT_DIS dis.c)
 
+zephyr_sources_ifdef(CONFIG_BT_GAP_DEFAULT gap_default.c)
+
 zephyr_sources_ifdef(CONFIG_BT_CTS cts.c)
 
 zephyr_sources_ifdef(CONFIG_BT_HRS hrs.c)
