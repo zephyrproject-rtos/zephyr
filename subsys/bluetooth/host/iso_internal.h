@@ -20,14 +20,6 @@
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys_clock.h>
 
-struct iso_data {
-	/* Index into the bt_conn storage array */
-	uint8_t  index;
-
-	/** ISO connection handle */
-	uint16_t handle;
-};
-
 enum bt_iso_cig_state {
 	BT_ISO_CIG_STATE_IDLE,
 	BT_ISO_CIG_STATE_CONFIGURED,
@@ -76,7 +68,7 @@ struct bt_iso_big {
 	ATOMIC_DEFINE(flags, BT_BIG_NUM_FLAGS);
 };
 
-#define iso(buf) ((struct iso_data *)net_buf_user_data(buf))
+#define iso(buf) ((struct bt_conn_rx *)net_buf_user_data(buf))
 
 /* Process ISO buffer */
 void hci_iso(struct net_buf *buf);

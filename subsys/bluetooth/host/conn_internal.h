@@ -207,11 +207,11 @@ struct bt_conn_tx {
 	void *user_data;
 };
 
-struct acl_data {
+struct bt_conn_rx {
 	/* Index into the bt_conn storage array */
 	uint8_t  index;
 
-	/** ACL connection handle */
+	/** Connection handle */
 	uint16_t handle;
 };
 
