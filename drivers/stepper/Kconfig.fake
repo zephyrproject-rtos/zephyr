@@ -9,3 +9,10 @@ config FAKE_STEPPER
 	depends on DT_HAS_ZEPHYR_FAKE_STEPPER_ENABLED
 	help
 	  Enable support for the FFF-based fake stepper driver.
+
+config FAKE_STEPPER_CONTROLLER
+	bool "Fake stepper controller driver"
+	default y
+	depends on DT_HAS_ZEPHYR_FAKE_STEPPER_CONTROLLER_ENABLED
+	help
+	  Enable support for the FFF-based fake stepper controller driver.
