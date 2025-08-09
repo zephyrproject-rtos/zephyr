@@ -35,6 +35,7 @@ static bool avrcp_ct_registered;
 static bool avrcp_tg_registered;
 static uint8_t local_tid;
 static uint8_t tg_tid;
+static uint8_t tg_cap_id;
 
 static uint8_t get_next_tid(void)
 {
@@ -114,6 +115,178 @@ static void avrcp_passthrough_rsp(struct bt_avrcp_ct *ct, uint8_t tid, bt_avrcp_
 			       BT_AVRCP_PASSTHROUGH_GET_STATE(rsp), result);
 	}
 }
+static struct bt_avrcp_media_attr test_media_attrs[] = {
+	{
+		.attr_id = BT_AVRCP_MEDIA_ATTR_TITLE,
+		.charset_id = BT_AVRCP_CHARSET_UTF8,
+		.attr_len = 11U,
+		.attr_val = (const uint8_t *)"Test Title",
+	},
+	{
+		.attr_id = BT_AVRCP_MEDIA_ATTR_ARTIST,
+		.charset_id = BT_AVRCP_CHARSET_UTF8,
+		.attr_len = 11U,
+		.attr_val = (const uint8_t *)"Test Artist",
+	},
+	{
+		.attr_id = BT_AVRCP_MEDIA_ATTR_ALBUM,
+		.charset_id = BT_AVRCP_CHARSET_UTF8,
+		.attr_len = 10U,
+		.attr_val = (const uint8_t *)"Test Album",
+	},
+	{
+		.attr_id = BT_AVRCP_MEDIA_ATTR_TRACK_NUMBER,
+		.charset_id = BT_AVRCP_CHARSET_UTF8,
+		.attr_len = 1U,
+		.attr_val = (const uint8_t *)"1",
+	},
+	{
+		.attr_id = BT_AVRCP_MEDIA_ATTR_TOTAL_TRACKS,
+		.charset_id = BT_AVRCP_CHARSET_UTF8,
+		.attr_len = 2U,
+		.attr_val = (const uint8_t *)"10",
+	},
+	{
+		.attr_id = BT_AVRCP_MEDIA_ATTR_GENRE,
+		.charset_id = BT_AVRCP_CHARSET_UTF8,
+		.attr_len = 4U,
+		.attr_val = (const uint8_t *)"Rock",
+	},
+	{
+		.attr_id = BT_AVRCP_MEDIA_ATTR_PLAYING_TIME,
+		.charset_id = BT_AVRCP_CHARSET_UTF8,
+		.attr_len = 6U,
+		.attr_val = (const uint8_t *)"240000", /* 4 minutes in milliseconds */
+	},
+};
+static struct bt_avrcp_media_attr large_media_attrs[] = {
+	{
+		.attr_id = BT_AVRCP_MEDIA_ATTR_TITLE,
+		.charset_id = BT_AVRCP_CHARSET_UTF8,
+		.attr_len = 200U,
+		.attr_val = (const uint8_t *)
+		"This is a long title that is designed to test the fragmentation of the AVRCP.",
+	},
+	{
+		.attr_id = BT_AVRCP_MEDIA_ATTR_ARTIST,
+		.charset_id = BT_AVRCP_CHARSET_UTF8,
+		.attr_len = 150U,
+		.attr_val = (const uint8_t *)
+		"This is a very long artist name that is also designed to test fragmentation.",
+	},
+	{
+		.attr_id = BT_AVRCP_MEDIA_ATTR_ALBUM,
+		.charset_id = BT_AVRCP_CHARSET_UTF8,
+		.attr_len = 100U,
+		.attr_val = (const uint8_t *)
+		"This is a long album name for testing fragmentation of AVRCP responses.",
+	},
+};
+
+static void avrcp_get_element_attrs_rsp(struct bt_avrcp_ct *ct, uint8_t tid,
+					 const struct bt_avrcp_get_element_attrs_rsp *rsp)
+{
+	uint8_t i;
+	const char *attr_name;
+
+	bt_shell_print("AVRCP GetElementAttributes response received, tid=0x%02x, num_attrs=%u",
+		       tid, rsp->num_attrs);
+
+	for (i = 0U; i < rsp->num_attrs; i++) {
+		const struct bt_avrcp_media_attr *attr = &rsp->attrs[i];
+
+		/* Convert attribute ID to string for display */
+		switch (attr->attr_id) {
+		case BT_AVRCP_MEDIA_ATTR_TITLE:
+			attr_name = "TITLE";
+			break;
+		case BT_AVRCP_MEDIA_ATTR_ARTIST:
+			attr_name = "ARTIST";
+			break;
+		case BT_AVRCP_MEDIA_ATTR_ALBUM:
+			attr_name = "ALBUM";
+			break;
+		case BT_AVRCP_MEDIA_ATTR_TRACK_NUMBER:
+			attr_name = "TRACK_NUMBER";
+			break;
+		case BT_AVRCP_MEDIA_ATTR_TOTAL_TRACKS:
+			attr_name = "TOTAL_TRACKS";
+			break;
+		case BT_AVRCP_MEDIA_ATTR_GENRE:
+			attr_name = "GENRE";
+			break;
+		case BT_AVRCP_MEDIA_ATTR_PLAYING_TIME:
+			attr_name = "PLAYING_TIME";
+			break;
+		default:
+			attr_name = "UNKNOWN";
+			break;
+		}
+
+		bt_shell_print("  Attr[%u]: ID=0x%08x (%s), charset=0x%04x, len=%u",
+			       i, attr->attr_id, attr_name, attr->charset_id, attr->attr_len);
+
+		/* Print attribute value (truncate if too long for display) */
+		if (attr->attr_len > 0U && attr->attr_val != NULL) {
+			uint16_t print_len = (attr->attr_len > 64U) ? 64U : attr->attr_len;
+			char value_str[65];
+
+			memcpy(value_str, attr->attr_val, print_len);
+			value_str[print_len] = '\0';
+			bt_shell_print("    Value: \"%s\"%s", value_str,
+				       (attr->attr_len > 64U) ? "..." : "");
+		}
+	}
+}
+static void avrcp_get_element_attrs_cmd_req(struct bt_avrcp_tg *tg, uint8_t tid,
+					     const struct bt_avrcp_get_element_attrs_cmd *cmd)
+{
+	uint8_t i;
+
+	bt_shell_print("AVRCP GetElementAttributes command received, tid=0x%02x", tid);
+	bt_shell_print("  Identifier: 0x%016llx", cmd->identifier);
+	bt_shell_print("  Num attrs requested: %u %s", cmd->num_attrs,
+		       (cmd->num_attrs == 0U) ? "(all attributes)" : "");
+
+	if (cmd->num_attrs > 0U && cmd->attr_ids != NULL) {
+		bt_shell_print("  Requested attribute IDs:");
+		for (i = 0U; i < cmd->num_attrs; i++) {
+			const char *attr_name;
+
+			switch (cmd->attr_ids[i]) {
+			case BT_AVRCP_MEDIA_ATTR_TITLE:
+				attr_name = "TITLE";
+				break;
+			case BT_AVRCP_MEDIA_ATTR_ARTIST:
+				attr_name = "ARTIST";
+				break;
+			case BT_AVRCP_MEDIA_ATTR_ALBUM:
+				attr_name = "ALBUM";
+				break;
+			case BT_AVRCP_MEDIA_ATTR_TRACK_NUMBER:
+				attr_name = "TRACK_NUMBER";
+				break;
+			case BT_AVRCP_MEDIA_ATTR_TOTAL_TRACKS:
+				attr_name = "TOTAL_TRACKS";
+				break;
+			case BT_AVRCP_MEDIA_ATTR_GENRE:
+				attr_name = "GENRE";
+				break;
+			case BT_AVRCP_MEDIA_ATTR_PLAYING_TIME:
+				attr_name = "PLAYING_TIME";
+				break;
+			default:
+				attr_name = "UNKNOWN";
+				break;
+			}
+
+			bt_shell_print("    [%u]: 0x%08x (%s)", i, cmd->attr_ids[i], attr_name);
+		}
+	}
+
+	/* Store the transaction ID for manual response testing */
+	tg_tid = tid;
+}
 
 static struct bt_avrcp_ct_cb app_avrcp_ct_cb = {
 	.connected = avrcp_ct_connected,
@@ -122,6 +295,7 @@ static struct bt_avrcp_ct_cb app_avrcp_ct_cb = {
 	.unit_info_rsp = avrcp_unit_info_rsp,
 	.subunit_info_rsp = avrcp_subunit_info_rsp,
 	.passthrough_rsp = avrcp_passthrough_rsp,
+	.get_element_attrs_rsp = avrcp_get_element_attrs_rsp,
 };
 
 static void avrcp_tg_connected(struct bt_conn *conn, struct bt_avrcp_tg *tg)
@@ -142,10 +316,36 @@ static void avrcp_unit_info_req(struct bt_avrcp_tg *tg, uint8_t tid)
 	tg_tid = tid;
 }
 
+static void avrcp_get_cap_cmd_req(struct bt_avrcp_tg *tg, uint8_t tid, uint8_t cap_id)
+{
+	const char *cap_type_str;
+
+	/* Convert capability ID to string for display */
+	switch (cap_id) {
+	case BT_AVRCP_CAP_COMPANY_ID:
+		cap_type_str = "COMPANY_ID";
+		break;
+	case BT_AVRCP_CAP_EVENTS_SUPPORTED:
+		cap_type_str = "EVENTS_SUPPORTED";
+		break;
+	default:
+		cap_type_str = "UNKNOWN";
+		break;
+	}
+
+	bt_shell_print("AVRCP get capabilities command received: cap_id 0x%02x (%s), tid = 0x%02x",
+		       cap_id, cap_type_str, tid);
+
+	/* Store the transaction ID and capability ID for manual response testing */
+	tg_tid = tid;
+	tg_cap_id = cap_id;
+}
 static struct bt_avrcp_tg_cb app_avrcp_tg_cb = {
 	.connected = avrcp_tg_connected,
 	.disconnected = avrcp_tg_disconnected,
 	.unit_info_req = avrcp_unit_info_req,
+	.get_cap_cmd_req = avrcp_get_cap_cmd_req,
+	.get_element_attrs_cmd_req = avrcp_get_element_attrs_cmd_req,
 };
 
 static int register_ct_cb(const struct shell *sh)
@@ -297,6 +497,63 @@ static int cmd_send_unit_info_rsp(const struct shell *sh, int32_t argc, char *ar
 	return 0;
 }
 
+static int cmd_send_get_cap_rsp(const struct shell *sh, int32_t argc, char *argv[])
+{
+	struct bt_avrcp_get_cap_rsp *rsp;
+	uint8_t rsp_buffer[32U];
+	uint8_t *cap_data;
+	int err;
+
+	if (!avrcp_tg_registered && register_tg_cb(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	if (default_tg == NULL) {
+		shell_error(sh, "AVRCP TG is not connected");
+		return -ENOEXEC;
+	}
+
+	/* Initialize response structure */
+	rsp = (struct bt_avrcp_get_cap_rsp *)rsp_buffer;
+	rsp->cap_id = tg_cap_id;
+	cap_data = rsp->cap;
+
+	switch (tg_cap_id) {
+	case BT_AVRCP_CAP_COMPANY_ID:
+		/* Send Bluetooth SIG company ID as example */
+		rsp->cap_cnt = 1U;
+		sys_put_be24(BT_AVRCP_COMPANY_ID_BLUETOOTH_SIG, cap_data);
+		shell_print(sh, "Sending company ID capability response: 0x%06x",
+			    BT_AVRCP_COMPANY_ID_BLUETOOTH_SIG);
+		break;
+
+	case BT_AVRCP_CAP_EVENTS_SUPPORTED:
+		/* Send supported events as example */
+		rsp->cap_cnt = 5U;
+		cap_data[0] = BT_AVRCP_EVT_PLAYBACK_STATUS_CHANGED;
+		cap_data[1] = BT_AVRCP_EVT_TRACK_CHANGED;
+		cap_data[2] = BT_AVRCP_EVT_TRACK_REACHED_END;
+		cap_data[3] = BT_AVRCP_EVT_TRACK_REACHED_START;
+		cap_data[4] = BT_AVRCP_EVT_VOLUME_CHANGED;
+		shell_print(sh, "Sending events supported capability response with %u events",
+			    rsp->cap_cnt);
+		break;
+
+	default:
+		shell_error(sh, "Unknown capability ID: 0x%02x", tg_cap_id);
+		return -EINVAL;
+	}
+
+	err = bt_avrcp_tg_send_get_cap_rsp(default_tg, tg_tid, rsp);
+	if (err) {
+		shell_error(sh, "Failed to send get capabilities response: %d", err);
+	} else {
+		shell_print(sh, "Get capabilities response sent successfully");
+	}
+
+	return err;
+}
+
 static int cmd_get_subunit_info(const struct shell *sh, int32_t argc, char *argv[])
 {
 	if (!avrcp_ct_registered && register_ct_cb(sh) != 0) {
@@ -364,6 +621,101 @@ static int cmd_get_cap(const struct shell *sh, int32_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_get_element_attrs(const struct shell *sh, int32_t argc, char *argv[])
+{
+	uint64_t identifier = 0U;
+	uint32_t attr_ids[7];
+	uint8_t num_attrs = 0U;
+	uint32_t *attr_ids_ptr = NULL;
+	char *endptr;
+	unsigned long val;
+	int i;
+
+	if (!avrcp_ct_registered && register_ct_cb(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	if (default_ct == NULL) {
+		shell_error(sh, "AVRCP CT is not connected");
+		return -ENOEXEC;
+	}
+
+	/* Parse optional identifier */
+	if (argc > 1) {
+		identifier = strtoull(argv[1], &endptr, 16);
+		if (*endptr != '\0') {
+			shell_error(sh, "Invalid identifier: %s", argv[1]);
+			return -EINVAL;
+		}
+	}
+
+	/* Parse optional attribute IDs */
+	if (argc > 2 && identifier != 0) {
+		for (i = 2; i < argc && i < 9; i++) { /* Max 7 attributes + cmd + identifier */
+			val = strtoul(argv[i], &endptr, 16);
+			if (*endptr != '\0' || val > 0xFFFFFFFFUL) {
+				shell_error(sh, "Invalid attribute ID: %s", argv[i]);
+				return -EINVAL;
+			}
+			attr_ids[num_attrs++] = (uint32_t)val;
+		}
+		attr_ids_ptr = attr_ids;
+	}
+
+	shell_print(sh, "Requesting element attributes: identifier=0x%016llx, num_attrs=%u",
+		    identifier, num_attrs);
+
+	return bt_avrcp_ct_get_element_attrs(default_ct, get_next_tid(), identifier,
+					     attr_ids_ptr, num_attrs);
+}
+
+static int cmd_send_get_element_attrs_rsp(const struct shell *sh, int32_t argc, char *argv[])
+{
+	struct bt_avrcp_get_element_attrs_rsp rsp;
+	bool use_large_attrs = false;
+	char *endptr;
+	int err;
+
+	if (!avrcp_tg_registered && register_tg_cb(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	if (default_tg == NULL) {
+		shell_error(sh, "AVRCP TG is not connected");
+		return -ENOEXEC;
+	}
+
+	if (argc > 1) {
+		use_large_attrs = strtoull(argv[1], &endptr, 16);
+		if (*endptr != '\0') {
+			shell_error(sh, "Invalid identifier: %s", argv[1]);
+			return -EINVAL;
+		}
+	}
+
+	/* Determine which attribute set to use */
+	if (use_large_attrs) {
+		rsp.num_attrs = ARRAY_SIZE(large_media_attrs);
+		rsp.attrs = large_media_attrs;
+		shell_print(sh, "Sending large Attributes response (%u attrs) for fragment test",
+			    rsp.num_attrs);
+	} else {
+		rsp.num_attrs = ARRAY_SIZE(test_media_attrs);
+		rsp.attrs = test_media_attrs;
+		shell_print(sh, "Sending standard GetElementAttributes response (%u attrs)",
+			    rsp.num_attrs);
+	}
+
+	err = bt_avrcp_tg_send_get_element_attrs_rsp(default_tg, tg_tid, &rsp);
+	if (err) {
+		shell_error(sh, "Failed to send GetElementAttributes response: %d", err);
+	} else {
+		shell_print(sh, "GetElementAttributes response sent successfully");
+	}
+
+	return err;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	ct_cmds,
 	SHELL_CMD_ARG(register_cb, NULL, "register avrcp ct callbacks", cmd_register_ct_cb, 1, 0),
@@ -373,12 +725,18 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      0),
 	SHELL_CMD_ARG(play, NULL, "request a play at the remote player", cmd_play, 1, 0),
 	SHELL_CMD_ARG(pause, NULL, "request a pause at the remote player", cmd_pause, 1, 0),
+	SHELL_CMD_ARG(get_element_attrs, NULL, "get element attrs [identifier] [attr1] [attr2] ...",
+		      cmd_get_element_attrs, 1, 9),
 	SHELL_SUBCMD_SET_END);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	tg_cmds,
 	SHELL_CMD_ARG(register_cb, NULL, "register avrcp tg callbacks", cmd_register_tg_cb, 1, 0),
 	SHELL_CMD_ARG(send_unit_rsp, NULL, "send unit info response", cmd_send_unit_info_rsp, 1, 0),
+	SHELL_CMD_ARG(send_get_cap_rsp, NULL, "send get capabilities response",
+		      cmd_send_get_cap_rsp, 1, 0),
+	SHELL_CMD_ARG(send_get_element_attrs_rsp, NULL, "send get element attrs response<large: 1>",
+		      cmd_send_get_element_attrs_rsp, 2, 0),
 	SHELL_SUBCMD_SET_END);
 
 static int cmd_avrcp(const struct shell *sh, size_t argc, char **argv)
