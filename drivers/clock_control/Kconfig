@@ -110,6 +110,8 @@ source "drivers/clock_control/Kconfig.silabs"
 
 source "drivers/clock_control/Kconfig.siwx91x"
 
+source "drivers/clock_control/Kconfig.tcc"
+
 source "drivers/clock_control/Kconfig.wch_rcc"
 
 source "drivers/clock_control/Kconfig.it51xxx"
