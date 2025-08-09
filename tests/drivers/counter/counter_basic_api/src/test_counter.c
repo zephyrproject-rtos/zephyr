@@ -65,6 +65,9 @@ static const struct device *const devices[] = {
 	DEVS_FOR_DT_COMPAT(microchip_xec_timer)
 	DEVS_FOR_DT_COMPAT(nxp_imx_epit)
 	DEVS_FOR_DT_COMPAT(nxp_imx_gpt)
+#ifdef CONFIG_COUNTER_MCHP_SAM_TC
+	DEVS_FOR_DT_COMPAT(microchip_sam_tc)
+#endif
 #ifdef CONFIG_COUNTER_MCUX_TPM
 	DEVS_FOR_DT_COMPAT(nxp_tpm_timer)
 #endif
