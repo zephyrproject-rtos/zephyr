@@ -170,6 +170,7 @@ static inline void udc_submit_sof_event(const struct device *dev)
 	struct udc_data *data = dev->data;
 	struct udc_event drv_evt = {
 		.type = UDC_EVT_SOF,
+		.value = data->fnumber,
 		.dev = dev,
 	};
 
@@ -177,6 +178,35 @@ static inline void udc_submit_sof_event(const struct device *dev)
 }
 #else
 #define udc_submit_sof_event(dev) ARG_UNUSED(dev)
+#endif
+
+
+/**
+ * @brief Helper function to store UDC SOF stamp.
+ *
+ * When the controller operates at high speed, the frame value contains a
+ * microframe number and rolls over the maximum value of 16383. When the
+ * controller operates at full speed, this field contains a frame number and
+ * rolls over the maximum value of 2047.
+ *
+ * High speed controllers see an SOF packet with the same frame number eight
+ * times. If the controller cannot generate microframe numbers, the driver
+ * should take over.
+ *
+ * @param[in] dev     Pointer to device struct of the driver instance
+ * @param[in] fnumber Frame or microframe number
+ */
+#if defined(CONFIG_UDC_ENABLE_SOF)
+static inline void udc_update_sof_stamp(const struct device *dev,
+					const uint16_t fnumber)
+{
+	struct udc_data *data = dev->data;
+
+	data->sof_stamp = k_cycle_get_64();
+	data->fnumber = fnumber;
+}
+#else
+#define udc_update_sof_stamp(dev, fnumber)
 #endif
 
 /**

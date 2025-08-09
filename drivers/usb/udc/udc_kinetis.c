@@ -653,6 +653,7 @@ static void usbfsotg_isr_handler(const struct device *dev)
 	}
 
 	if (istatus == USB_ISTAT_SOFTOK_MASK) {
+		udc_update_sof_stamp(dev, 0);
 		udc_submit_sof_event(dev);
 	}
 
