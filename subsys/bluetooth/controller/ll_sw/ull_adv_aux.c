@@ -3047,9 +3047,17 @@ static uint32_t aux_time_get(const struct ll_adv_aux_set *aux,
 	} else {
 		/* Non-connectable Non-Scannable */
 
-		/* FIXME: Calculate additional time reservations for chain PDUs,
-		 *        if any.
-		 */
+#if defined(CONFIG_BT_CTLR_ADV_AUX_PDU_LINK)
+		const struct pdu_adv *pdu_chain;
+
+		/* Calculate additional time reservations for chain PDUs, if any. */
+		pdu_chain = lll_adv_pdu_linked_next_get(pdu);
+		while (pdu_chain != NULL) {
+			time_us += EVENT_B2B_MAFS_US;
+			time_us += PDU_AC_US(pdu_chain->len, lll->phy_s, lll->phy_flags);
+			pdu_chain = lll_adv_pdu_linked_next_get(pdu_chain);
+		}
+#endif /* CONFIG_BT_CTLR_ADV_AUX_PDU_LINK */
 	}
 
 	return time_us;
