@@ -5,6 +5,12 @@ include_guard(GLOBAL)
 include(extensions)
 include(python)
 include(boards)
+
+# Include board specific device-tree flags before parsing.
+foreach(dir IN LISTS BOARD_DIRECTORIES)
+  include("${dir}/pre_dt_board.cmake" OPTIONAL)
+endforeach()
+
 include(pre_dt)
 find_package(HostTools)
 find_package(Dtc 1.4.6)
