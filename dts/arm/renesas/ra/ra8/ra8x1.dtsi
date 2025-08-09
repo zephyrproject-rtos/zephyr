@@ -204,16 +204,12 @@
 		iic1: iic1@4025e100 {
 			compatible = "renesas,ra-iic";
 			channel = <1>;
-			interrupts = <91 1>, <92 1>, <93 1>, <94 1>;
-			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x4025E100 0x100>;
 			status = "disabled";
 		};
 
 		sci0: sci0@40358000 {
 			compatible = "renesas,ra-sci";
-			interrupts = <4 1>, <5 1>, <6 1>, <7 1>;
-			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40358000 0x100>;
 			clocks = <&sciclk MSTPB 31>;
 			status = "disabled";
@@ -234,8 +230,6 @@
 
 		sci1: sci1@40358100 {
 			compatible = "renesas,ra-sci";
-			interrupts = <8 1>, <9 1>, <10 1>, <11 1>;
-			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40358100 0x100>;
 			clocks = <&sciclk MSTPB 30>;
 			status = "disabled";
@@ -256,8 +250,6 @@
 
 		sci2: sci2@40358200 {
 			compatible = "renesas,ra-sci";
-			interrupts = <12 1>, <13 1>, <14 1>, <15 1>;
-			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40358200 0x100>;
 			clocks = <&sciclk MSTPB 29>;
 			status = "disabled";
@@ -278,8 +270,6 @@
 
 		sci3: sci3@40358300 {
 			compatible = "renesas,ra-sci";
-			interrupts = <16 1>, <17 1>, <18 1>, <19 1>;
-			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40358300 0x100>;
 			clocks = <&sciclk MSTPB 28>;
 			status = "disabled";
@@ -300,8 +290,6 @@
 
 		sci4: sci4@40358400 {
 			compatible = "renesas,ra-sci";
-			interrupts = <20 1>, <21 1>, <22 1>, <23 1>;
-			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40358400 0x100>;
 			clocks = <&sciclk MSTPB 27>;
 			status = "disabled";
@@ -322,8 +310,6 @@
 
 		sci9: sci9@40358900 {
 			compatible = "renesas,ra-sci";
-			interrupts = <24 1>, <25 1>, <26 1>, <27 1>;
-			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40358900 0x100>;
 			clocks = <&sciclk MSTPB 22>;
 			status = "disabled";
@@ -347,14 +333,11 @@
 			reg = <0x40100000 0x20000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			interrupts = <49 1>, <50 1>;
-			interrupt-names = "frdyi", "fiferr";
+			status = "disabled";
 		};
 
 		adc0: adc@40332000 {
 			compatible = "renesas,ra-adc";
-			interrupts = <38 1>;
-			interrupt-names = "scanend";
 			reg = <0x40332000 0x100>;
 			#io-channel-cells = <1>;
 			vref-mv = <3300>;
@@ -364,8 +347,6 @@
 
 		adc1: adc@40332200 {
 			compatible = "renesas,ra-adc";
-			interrupts = <39 1>;
-			interrupt-names = "scanend";
 			reg = <0x40332200 0x100>;
 			#io-channel-cells = <1>;
 			vref-mv = <3300>;
@@ -405,8 +386,6 @@
 			channel = <0>;
 			clocks = <&pclka MSTPB 19>;
 			clock-names = "spiclk";
-			interrupts = <28 1>, <29 1>, <30 1>, <31 1>;
-			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x4035c000 0x100>;
 			status = "disabled";
 		};
@@ -418,8 +397,6 @@
 			channel = <1>;
 			clocks = <&pclka MSTPB 18>;
 			clock-names = "spiclk";
-			interrupts = <32 1>, <33 1>, <34 1>, <35 1>;
-			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x4035c100 0x100>;
 			status = "disabled";
 		};
@@ -579,8 +556,6 @@
 			compatible = "renesas,ra-ulpt";
 			reg = <0x40220000 0x100>;
 			channel = <0>;
-			interrupt-names = "ulpti";
-			interrupts = <36 1>;
 			status = "disabled";
 
 			timer {
@@ -614,8 +589,6 @@
 			compatible = "renesas,ra-agt";
 			channel = <0>;
 			reg = <0x40221000 0x100>;
-			interrupts = <83 1>, <84 1>;
-			interrupt-names = "agti", "agtcmai";
 			renesas,count-source = "AGT_CLOCK_LOCO";
 			renesas,prescaler = <0>;
 			renesas,resolution = <16>;
@@ -631,8 +604,6 @@
 			compatible = "renesas,ra-agt";
 			channel = <1>;
 			reg = <0x40221100 0x100>;
-			interrupts = <85 1>, <86 1>;
-			interrupt-names = "agti", "agtcmai";
 			renesas,count-source = "AGT_CLOCK_LOCO";
 			renesas,prescaler = <0>;
 			renesas,resolution = <16>;
@@ -646,8 +617,6 @@
 
 		canfd_global: canfd_global@40380000 {
 			compatible = "renesas,ra-canfd-global";
-			interrupts = <40 1>, <41 1>;
-			interrupt-names = "rxf", "glerr";
 			clocks = <&pclka 0 0>, <&pclke 0 0>;
 			clock-names = "opclk", "ramclk";
 			dll-min-freq = <DT_FREQ_M(8)>;
@@ -658,8 +627,6 @@
 			canfd0: canfd0 {
 				compatible = "renesas,ra-canfd";
 				channel = <0>;
-				interrupts = <43 12>, <44 12>, <45 12>;
-				interrupt-names = "err", "tx", "rx";
 				clocks = <&canfdclk MSTPC 27>;
 				clock-names = "dllclk";
 				status = "disabled";
@@ -668,8 +635,6 @@
 			canfd1: canfd1 {
 				compatible = "renesas,ra-canfd";
 				channel = <1>;
-				interrupts = <46 1>, <47 1>, <48 1>;
-				interrupt-names = "err", "tx", "rx";
 				clocks = <&canfdclk MSTPC 26>;
 				clock-names = "dllclk";
 				status = "disabled";
@@ -679,7 +644,6 @@
 		eth: ethernet@40354100 {
 			compatible = "renesas,ra-ethernet";
 			reg = <0x40354100 0xfc>;
-			interrupts = <42 0>;
 			local-mac-address = [00 11 22 33 44 55];
 			phy-connection-type = "rmii";
 			status = "disabled";
@@ -846,8 +810,6 @@
 			max-bus-freq = <DT_FREQ_M(52)>;
 			clocks = <&pclkb MSTPC 12>;
 			reg = <0x40252000 0x0400>;
-			interrupt-names = "accs", "card", "dma-req";
-			interrupts = <57 12>, <58 12>, <59 12>;
 			status = "disabled";
 		};
 
@@ -874,8 +836,6 @@
 		usbfs: usbfs@40250000 {
 			compatible = "renesas,ra-usbfs";
 			reg = <0x40250000 0x2000>;
-			interrupts = <55 12>, <56 12>;
-			interrupt-names = "usbfs-i", "usbfs-r";
 			num-bidir-endpoints = <10>;
 			phys = <&usbfs_phy>;
 			phys-clock = <&uclk>;

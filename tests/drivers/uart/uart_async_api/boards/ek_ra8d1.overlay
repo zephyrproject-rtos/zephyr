@@ -20,6 +20,8 @@
 &sci2 {
 	pinctrl-0 = <&sci2_default>;
 	pinctrl-names = "default";
+	interrupts = <92 12>, <93 12>, <94 12>, <95 12>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
 	status = "okay";
 	dut: uart {
 		current-speed = <115200>;
