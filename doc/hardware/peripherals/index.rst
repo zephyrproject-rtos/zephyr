@@ -34,6 +34,7 @@ Peripherals
    gpio.rst
    haptics.rst
    hwinfo.rst
+   hwspinlock.rst
    i2c_eeprom_target.rst
    i3c.rst
    i2c.rst
