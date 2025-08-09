@@ -391,6 +391,12 @@ struct bt_a2dp_discover_param {
 	 *  it save endpoint info internally.
 	 */
 	struct bt_avdtp_sep_info *seps_info;
+	/** The AVDTP version of the peer's A2DP sdp service.
+	 *  It is the same value of the avdtp sepcificaiton's version value.
+	 *  For example: 0x0103 means version 1.3
+	 *  value 0 means that it is unknown.
+	 */
+	uint16_t avdtp_version;
 	/** The max count of seps (stream endpoint) that can be got in this call route */
 	uint8_t sep_count;
 };
