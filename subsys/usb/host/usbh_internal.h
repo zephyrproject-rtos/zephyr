@@ -10,6 +10,6 @@
 #include <stdint.h>
 #include <zephyr/usb/usbh.h>
 
-int usbh_init_device_intl(struct usbh_contex *const uhs_ctx);
+int usbh_init_device_intl(struct usbh_context *const uhs_ctx);
 
 #endif /* ZEPHYR_INCLUDE_USBH_INTERNAL_H */

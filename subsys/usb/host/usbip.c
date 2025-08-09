@@ -48,7 +48,7 @@ struct usbip_dev_ctx {
 
 /* Context of the exported bus (not really used yet) */
 struct usbip_bus_ctx {
-	struct usbh_contex *uhs_ctx;
+	struct usbh_context *uhs_ctx;
 	struct usbip_dev_ctx devs[CONFIG_USBIP_DEVICES_COUNT];
 	uint8_t busnum;
 };
