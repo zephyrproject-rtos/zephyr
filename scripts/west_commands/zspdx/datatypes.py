@@ -83,8 +83,14 @@ class PackageConfig:
         # package revision
         self.revision = ""
 
+        # package supplier or vendor
+        self.supplier = ""
+
         # package external references
         self.externalReferences = []
+
+        # package external reference Comments
+        self.externalReferencesComment = []
 
         # the Package's declared license
         self.declaredLicense = "NOASSERTION"
