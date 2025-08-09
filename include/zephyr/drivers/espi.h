@@ -344,6 +344,15 @@ struct espi_evt_data_acpi {
 };
 
 /**
+ * @brief Bit field definition of evt_data in struct espi_event for PVT.
+ */
+struct espi_evt_data_pvt {
+	uint32_t type: 8;
+	uint32_t data: 8;
+	uint32_t reserved: 16;
+};
+
+/**
  * @brief eSPI event
  */
 struct espi_event {
