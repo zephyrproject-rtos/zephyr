@@ -1,0 +1,48 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Navimatix GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Analog Devices TMC2130 stepper motor driver.
+  Implements only the Step Dir Interface with SPI driver configuration.
+
+  Example:
+  &spi0 {
+    stepper_motor: tmc2130@0 {
+      compatible = "adi,tmc2130";
+      reg = <0>;
+      spi-max-frequency = <DT_FREQ_M(1)>; /* Maximum SPI bus frequency */
+
+      dir-gpios = <&arduino_header 14 0>;
+      step-gpios = <&arduino_header 15 0>;
+      en-gpios  = <&mikroe_stepper_gpios 0 GPIO_ACTIVE_LOW>;
+      counter = <&counter2>;
+      irun = <20>;
+      ihold = <20>;
+      en-pwm-mode;
+    };
+  };
+
+compatible: "adi,tmc2130"
+
+include:
+  - name: stepper-controller.yaml
+  - name: spi-device.yaml
+  - name: adi,trinamic-gconf.yaml
+    property-allowlist:
+      - i-scale-analog
+      - en-pwm-mode
+  - name: adi,trinamic-velocity-control.yaml
+    property-allowlist:
+      - ihold
+      - irun
+      - iholddelay
+      - tpwmthrs
+      - tpowerdown
+
+
+properties:
+  dual-edge-step:
+    type: boolean
+    description: |
+      If present, the stepper motor controller supports dual edge step signals.
+      This means that the step signal can be toggled on both the rising and falling edge.
