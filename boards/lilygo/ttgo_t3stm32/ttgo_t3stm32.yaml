@@ -1,0 +1,18 @@
+identifier: ttgo_t3stm32
+name: TTGO T3-STM32
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 64
+flash: 256
+supported:
+  - gpio
+  - spi
+  - adc
+  - watchdog
+  - nvs
+  - lora
+  - rtc
+vendor: lilygo
