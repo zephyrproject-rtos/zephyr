@@ -569,9 +569,6 @@ class DeviceHandler(Handler):
                     if runner in ("pyocd", "nrfjprog", "nrfutil", "nrfutil_next"):
                         command_extra_args.append("--dev-id")
                         command_extra_args.append(board_id)
-                    elif runner == "esp32":
-                        command_extra_args.append("--esp-device")
-                        command_extra_args.append(board_id)
                     elif (
                         runner == "openocd"
                         and product == "STM32 STLink"
@@ -596,7 +593,16 @@ class DeviceHandler(Handler):
                         command.append(f"--probe={board_id}")
                     elif runner == "stm32cubeprogrammer" and product != "BOOT-SERIAL":
                         command.append(f"--tool-opt=sn={board_id}")
+                    # Receive parameters from runner_params field.
+                    if hardware.runner_params:
+                        for param in hardware.runner_params:
+                            command.append(param)
 
+                serial_port = hardware.serial
+                if serial_port is not None:
+                    if runner == "esp32":
+                        command_extra_args.append("--esp-device")
+                        command_extra_args.append(serial_port)
                     # Receive parameters from runner_params field.
                     if hardware.runner_params:
                         for param in hardware.runner_params:
