@@ -2874,6 +2874,11 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 	case BT_CONN_TYPE_BR:
 		info->br.dst = &conn->br.dst;
 		return 0;
+	case BT_CONN_TYPE_SCO:
+		info->sco.handle = conn->handle;
+		info->sco.air_mode = conn->sco.air_mode;
+		info->sco.link_type = conn->sco.link_type;
+		return 0;
 #endif
 #if defined(CONFIG_BT_ISO)
 	case BT_CONN_TYPE_ISO:
