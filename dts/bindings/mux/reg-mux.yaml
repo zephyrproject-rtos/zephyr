@@ -1,0 +1,24 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Generic register bitfield-based multiplexor controller
+
+compatible: "reg-mux"
+
+include: [base.yaml, mux-controller.yaml]
+
+properties:
+  mux-reg-masks:
+    type: array
+    description: Pairs of entries describe a single mux control, <offset, bitfield mask>
+  '#mux-control-cells':
+    const: 1
+  '#mux-state-cells':
+    const: 2
+
+mux-control-cells:
+  - mux
+
+mux-state-cells:
+  - mux
+  - state
