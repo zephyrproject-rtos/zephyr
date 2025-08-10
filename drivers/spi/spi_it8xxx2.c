@@ -210,9 +210,7 @@ static void spi_it8xxx2_complete(const struct device *dev, const int status)
 	struct spi_context *ctx = &data->ctx;
 
 	spi_context_complete(ctx, dev, status);
-	if (spi_cs_is_gpio(ctx->config)) {
-		spi_context_cs_control(ctx, false);
-	}
+	spi_context_cs_control(ctx, false);
 	/* Permit to enter power policy and idle mode. */
 	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 	chip_permit_idle();
@@ -328,9 +326,7 @@ static int spi_it8xxx2_next_xfer(const struct device *dev)
 		return 0;
 	}
 
-	if (spi_cs_is_gpio(ctx->config)) {
-		spi_context_cs_control(ctx, true);
-	}
+	spi_context_cs_control(ctx, true);
 
 	if (spi_context_longest_current_buf(ctx) > SPI_CMDQ_DATA_LEN_MAX) {
 		return -EINVAL;
