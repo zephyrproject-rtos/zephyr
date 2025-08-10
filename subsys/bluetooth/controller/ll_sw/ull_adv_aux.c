@@ -3179,6 +3179,14 @@ void ull_adv_aux_lll_auxptr_fill(struct pdu_adv *pdu, struct lll_adv *adv)
 }
 
 #else /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+
+/* Maximum retries when ticks_current can change, example, when 3 extended advertising sets
+ * configured, and 1 advertising set is calculating the aux_offset, 2 other advertising sets and 2
+ * scanning instances can expire changing the ticks_current value while we are querying for
+ * aux_offset value.
+ */
+#define MAX_RETRY_TICKS_CURRENT_CHANGE ((CONFIG_BT_CTLR_ADV_AUX_SET) - 1U +  2U)
+
 static void mfy_aux_offset_get(void *param)
 {
 	struct pdu_adv_aux_ptr *aux_ptr;
@@ -3206,7 +3214,7 @@ static void mfy_aux_offset_get(void *param)
 	id = TICKER_NULL;
 	ticks_to_expire = 0U;
 	ticks_current = adv->ticks_at_expire;
-	retry = 4U; /* Assert on 2 other adv set ticks_current change, and 2 scanners expiring */
+	retry = MAX_RETRY_TICKS_CURRENT_CHANGE;
 	do {
 		uint32_t volatile ret_cb;
 		uint32_t ticks_previous;
