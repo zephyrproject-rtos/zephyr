@@ -118,7 +118,7 @@ void xtensa_simulator_exit(int return_code)
 	    "simcall\n\t"
 	    :
 	    : [code] "r" (return_code), [call] "i" (SYS_exit)
-	    : "a3", "a2");
+	    : "a3", "a2", "memory");
 
 	CODE_UNREACHABLE;
 }
