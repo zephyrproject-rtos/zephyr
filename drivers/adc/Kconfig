@@ -142,6 +142,8 @@ source "drivers/adc/Kconfig.ambiq"
 
 source "drivers/adc/Kconfig.renesas_ra"
 
+source "drivers/adc/Kconfig.renesas_rx"
+
 source "drivers/adc/Kconfig.renesas_rz"
 
 source "drivers/adc/Kconfig.max32"
