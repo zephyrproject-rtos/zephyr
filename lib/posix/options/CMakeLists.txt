@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
+set(POSIX_VERSION 200809L)
+set(XOPEN_VERSION 700)
+
 set(GEN_DIR ${ZEPHYR_BINARY_DIR}/include/generated)
 
 zephyr_syscall_header_ifdef(CONFIG_POSIX_CLOCK_SELECTION posix_clock.h)
@@ -8,6 +11,9 @@ zephyr_syscall_header_ifdef(CONFIG_XSI_SINGLE_PROCESS posix_clock.h)
 
 if(CONFIG_POSIX_SYSTEM_HEADERS)
   zephyr_include_directories(${ZEPHYR_BASE}/include/zephyr/posix)
+  zephyr_compile_options(
+    -U_POSIX_C_SOURCE -D_POSIX_C_SOURCE=${POSIX_VERSION}
+  )
 endif()
 
 if (NOT CONFIG_TC_PROVIDES_POSIX_SIGNALS)
@@ -125,6 +131,12 @@ if (NOT CONFIG_TC_PROVIDES_POSIX_TIMERS)
     timespec_to_timeout.c
   )
 endif()
+zephyr_compile_options_ifdef(CONFIG_POSIX_TIMERS
+  -U_POSIX_TIMERS -D_POSIX_TIMERS=${POSIX_VERSION}
+  # Technically _POSIX_MONOTONIC_CLOCK should be selected by CONFIG_POSIX_ADVANCED_REALTIME
+  # See https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap02.html
+  -U_POSIX_MONOTONIC_CLOCK -D_POSIX_MONOTONIC_CLOCK=${POSIX_VERSION}
+)
 
 if (NOT CONFIG_TC_PROVIDES_POSIX_READER_WRITER_LOCKS)
   # Note: the Option is _POSIX_READER_WRITER_LOCKS, while the Option Group is POSIX_RW_LOCKS.

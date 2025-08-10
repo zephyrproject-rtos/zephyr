@@ -9,6 +9,7 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/posix/signal.h>
 
 #define SECS_TO_SLEEP  2
 #define DURATION_SECS  1
