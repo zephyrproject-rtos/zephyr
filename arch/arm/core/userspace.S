@@ -26,10 +26,20 @@ GTEXT(arch_user_string_nlen)
 GTEXT(z_arm_user_string_nlen_fault_start)
 GTEXT(z_arm_user_string_nlen_fault_end)
 GTEXT(z_arm_user_string_nlen_fixup)
+GTEXT(z_syscall_exit_race1)
+GTEXT(z_syscall_exit_race2)
 GDATA(_kernel)
 
 /* Imports */
 GDATA(_k_syscall_table)
+
+#if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+# define LOCK(reg)   mov reg, #_EXC_IRQ_DEFAULT_PRIO ; msr BASEPRI, reg
+# define UNLOCK(reg) mov reg, #0 ; msr BASEPRI, reg
+#else
+# define LOCK(unused)   cpsid i
+# define UNLOCK(unused) cpsie i
+#endif
 
 /**
  *
@@ -47,7 +57,9 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
     /* move user_entry to lr */
     mov lr, r0
 
-    /* prepare to set stack to privileged stack */
+    LOCK(r0)
+
+    /* prepare to set stack to privilege */
     ldr r0, =_kernel
     ldr r0, [r0, #_kernel_offset_to_current]
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
@@ -213,14 +225,7 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
      * large enough to accommodate a maximum exception stack frame.
      */
 
-    /* Temporarily store current IRQ locking status in ip */
-    mrs ip, BASEPRI
     push {r0, ip}
-
-    /* Lock PendSV while reprogramming PSP and PSPLIM */
-    mov r0, #_EXC_PENDSV_PRIO_MASK
-    msr BASEPRI_MAX, r0
-    isb
 
     /* Set PSPLIM to guard the thread's user stack. */
     ldr r0, =_kernel
@@ -235,11 +240,7 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
     msr PSP, r0
 #endif
 
-#if defined(CONFIG_BUILTIN_STACK_GUARD)
-    /* Restore interrupt lock status */
-    msr BASEPRI, ip
-    isb
-#endif
+    UNLOCK(r0)
 
     /* restore r0 */
     mov r0, lr
@@ -394,6 +395,8 @@ SECTION_FUNC(TEXT, z_arm_do_syscall)
     msr PSPLIM, ip
 #endif
 
+    UNLOCK(ip)
+
     /*
      * r0-r5 contain arguments
      * r6 contains call_id
@@ -478,6 +481,7 @@ dispatch_syscall:
     ldr lr, [sp,#16]
 #endif
 
+    LOCK(ip)
 
 #if defined(CONFIG_BUILTIN_STACK_GUARD)
     /*
@@ -496,14 +500,6 @@ dispatch_syscall:
      * left un-guarded; this is safe, as long as the privileged stack is
      * large enough to accommodate a maximum exception stack frame.
      */
-
-    /* Temporarily store current IRQ locking status in r2 */
-    mrs r2, BASEPRI
-
-    /* Lock PendSV while reprogramming PSP and PSPLIM */
-    mov r3, #_EXC_PENDSV_PRIO_MASK
-    msr BASEPRI_MAX, r3
-    isb
 
     /* Set PSPLIM to guard the thread's user stack. */
     ldr r3, =_kernel
@@ -527,12 +523,6 @@ dispatch_syscall:
     msr PSP, ip
 #endif
 
-#if defined(CONFIG_BUILTIN_STACK_GUARD)
-    /* Restore interrupt lock status */
-    msr BASEPRI, r2
-    isb
-#endif
-
     push {r0, r1}
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
     push {r2, r3}
@@ -548,6 +538,7 @@ dispatch_syscall:
     /* drop privileges by setting bit 0 in CONTROL */
     mrs r2, CONTROL
     orrs r2, r2, r3
+
     msr CONTROL, r2
     pop {r2, r3}
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE) \
@@ -559,11 +550,19 @@ dispatch_syscall:
     /* Store (unprivileged) mode in thread's mode state variable */
     str r1, [r0, #_thread_offset_to_mode]
     dsb
+
 #if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     /* drop privileges by setting bit 0 in CONTROL */
     mrs ip, CONTROL
     orrs ip, ip, #1
+
+    /* drop lock immediately before setting CONTROL, see comments in arm-m-switch.c */
+    UNLOCK(r0)
+z_syscall_exit_race1:
     msr CONTROL, ip
+z_syscall_exit_race2:
+#else
+    UNLOCK(r0)
 #endif
 #endif
 
