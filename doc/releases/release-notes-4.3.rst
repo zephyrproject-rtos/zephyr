@@ -85,6 +85,7 @@ New APIs and options
 
     * :c:struct:`bt_audio_codec_cfg` now contains a target_latency and a target_phy option
 
+<<<<<<< HEAD
 * Logging:
 
   * Added rate-limited logging macros to prevent log flooding when messages are generated frequently.
@@ -105,6 +106,13 @@ New APIs and options
     * :c:macro:`LOG_HEXDUMP_WRN_RATELIMIT_RATE` - Rate-limited warning hexdump macro (explicit rate)
     * :c:macro:`LOG_HEXDUMP_INF_RATELIMIT_RATE` - Rate-limited info hexdump macro (explicit rate)
     * :c:macro:`LOG_HEXDUMP_DBG_RATELIMIT_RATE` - Rate-limited debug hexdump macro (explicit rate)
+=======
+* Opamp
+
+  * Introduced opamp device driver subsystem selected with :kconfig:option:`CONFIG_OPAMP`
+  * Added support for NXP OPAMP (:dtcompatible:`nordic,opamp`)
+  * Added support for NXP OPAMP_FAST (:dtcompatible:`nxp,opamp_fast`)
+>>>>>>> 439e216b597 (doc: release notes: added opamp release notes)
 
 * Power management
 
@@ -147,6 +155,8 @@ New Drivers
 
 New Samples
 ***********
+
+* Added a new sample :zephyr:code-sample:`opamp_output_measure` showing how to use the opamp device driver.
 
 ..
   Same as above for boards and drivers, this will also be recomputed at the time of the release.
