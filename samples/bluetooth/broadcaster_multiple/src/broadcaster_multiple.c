@@ -54,11 +54,15 @@
  */
 static uint8_t mfg_data[BT_MFG_DATA_LEN] = { 0xFF, 0xFF, };
 
-static const struct bt_data ad[] = {
+static const struct bt_data ad_long[] = {
 	BT_DATA(BT_DATA_MANUFACTURER_DATA, mfg_data, sizeof(mfg_data)),
 #if CONFIG_BT_CTLR_ADV_DATA_LEN_MAX > 255
 	BT_DATA(BT_DATA_MANUFACTURER_DATA, mfg_data, sizeof(mfg_data)),
 #endif
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+};
+
+static const struct bt_data ad_short[] = {
 	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
 };
 
@@ -78,20 +82,67 @@ int broadcaster_multiple(void)
 	int err;
 
 	for (int index = 0; index < CONFIG_BT_EXT_ADV_MAX_ADV_SET; index++) {
+		const struct adv_param_config {
+			uint32_t options;
+			const struct bt_data *ad;
+			size_t ad_size;
+		} param_config[] = {
+			/* Use 1M legacy PDU */
+			{.options = BT_LE_ADV_OPT_NONE,
+			 .ad = ad_short,
+			 .ad_size = ARRAY_SIZE(ad_short),
+			},
+			/* Use 2M auxiliary PDU */
+			{.options = BT_LE_ADV_OPT_EXT_ADV,
+			 .ad = ad_long,
+			 .ad_size = ARRAY_SIZE(ad_long),
+			},
+			/* Use 1M auxiliary PDU */
+			{.options = BT_LE_ADV_OPT_EXT_ADV | BT_LE_ADV_OPT_NO_2M,
+			 .ad = ad_long,
+			 .ad_size = ARRAY_SIZE(ad_long),
+			},
+			/* Use Coded PHY */
+			{.options = BT_LE_ADV_OPT_EXT_ADV | BT_LE_ADV_OPT_CODED,
+			 .ad = ad_long,
+			 .ad_size = ARRAY_SIZE(ad_long),
+			},
+		};
+		const struct bt_data *ad;
+		size_t ad_size;
+
 		/* Use advertising set instance index as SID */
 		adv_param.sid = index;
 
+		/* Advertising set options, AD and AD array size */
+		const struct adv_param_config *config =
+			&param_config[index % ARRAY_SIZE(param_config)];
+
+		adv_param.options = config->options;
+		ad = config->ad;
+		ad_size = config->ad_size;
+
+ext_adv_create_retry:
 		/* Create a non-connectable advertising set */
 		err = bt_le_ext_adv_create(&adv_param, NULL, &adv[index]);
 		if (err) {
-			printk("Failed to create advertising set %d (err %d)\n",
-			       index, err);
+			/* Failed creating Coded PHY advertising set? */
+			if ((adv_param.options & BT_LE_ADV_OPT_CODED) != 0U) {
+				printk("Failed to create advertising set %d with Coded PHY "
+				       "(err %d), retry without...\n", index, err);
+
+				/* Retry with non-Coded PHY advertising set */
+				adv_param.options &= ~BT_LE_ADV_OPT_CODED;
+
+				goto ext_adv_create_retry;
+			}
+
+			printk("Failed to create advertising set %d (err %d)\n", index, err);
 			return err;
 		}
 
 		/* Set extended advertising data */
-		err = bt_le_ext_adv_set_data(adv[index], ad, ARRAY_SIZE(ad),
-					     NULL, 0);
+		err = bt_le_ext_adv_set_data(adv[index], ad, ad_size, NULL, 0);
 		if (err) {
 			printk("Failed to set advertising data for set %d "
 			       "(err %d)\n", index, err);
