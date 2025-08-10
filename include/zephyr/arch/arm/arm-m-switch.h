@@ -113,17 +113,14 @@ static ALWAYS_INLINE void arm_m_switch(void *switch_to, void **switched_from)
 #endif
 
 #if defined(CONFIG_USERSPACE) && defined(CONFIG_USE_SWITCH)
-	/* Need to manage CONTROL.nPRIV bit.  We know the outgoing
+	/* Set things up to write the CONTROL.nPRIV bit.  We know the outgoing
 	 * thread is in privileged mode (because you can't reach a
 	 * context switch unless you're in the kernel!).
 	 */
 	extern uint32_t arm_m_switch_control;
 	uint32_t control;
-	struct k_thread *old = CONTAINER_OF(switched_from, struct k_thread, switch_handle);
 
-	old->arch.mode &= ~1;
 	__asm__ volatile("mrs %0, control" : "=r"(control));
-	__ASSERT_NO_MSG((control & 1) == 0);
 	arm_m_switch_control = (control & ~1) | (_current->arch.mode & 1);
 #endif
 
@@ -183,7 +180,6 @@ static ALWAYS_INLINE void arm_m_switch(void *switch_to, void **switched_from)
 #if defined(CONFIG_USERSPACE) && defined(CONFIG_USE_SWITCH)
 			 "  ldr r8, =arm_m_switch_control;"
 			 "  ldr r8, [r8];"
-			 "  msr control, r8;"
 #endif
 
 			 /* Save the outgoing switch handle (which is SP), swap stacks,
@@ -194,6 +190,10 @@ static ALWAYS_INLINE void arm_m_switch(void *switch_to, void **switched_from)
 			 "str sp, [r5];"
 			 "mov sp, r4;"
 			 "msr basepri, r0;"
+
+#if defined(CONFIG_USERSPACE) && defined(CONFIG_USE_SWITCH)
+			 "  msr control, r8;" /* Now we can drop privilege */
+#endif
 
 	/* Restore is super simple: pop the flags (and stack limit if
 	 * enabled) then slurp in the whole GPR set in two
