@@ -447,6 +447,7 @@ void net_buf_unref(struct net_buf *buf)
 		struct net_buf *frags = buf->frags;
 		struct net_buf_pool *pool;
 
+		__ASSERT(buf->ref, "buf %p double free", buf);
 #if defined(CONFIG_NET_BUF_LOG)
 		if (!buf->ref) {
 			NET_BUF_ERR("%s():%d: buf %p double free", func, line,
