@@ -362,7 +362,8 @@ extern struct task_state_segment _main_tss;
 		"int %[vector]\n\t" \
 		: \
 		: [vector] "i" (Z_X86_OOPS_VECTOR), \
-		  [reason] "i" (reason_p)); \
+		  [reason] "i" (reason_p) \
+		: "memory"); \
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */ \
 } while (false)
 
