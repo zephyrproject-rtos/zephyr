@@ -371,8 +371,19 @@ void z_impl_test_arm_user_interrupt_syscall(void)
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	/* Confirm IRQs are not locked */
 	zassert_false(__get_PRIMASK(), "PRIMASK is set\n");
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE) && defined(CONFIG_USE_SWITCH)
+	/* Confirm IRQs are not locked */
+	zassert_false(__get_BASEPRI(), "BASEPRI is set\n");
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE) && !defined(CONFIG_USE_SWITCH)
+	/* The original ARMv7M userspace implementation had the
+	 * somewhat odd (and dangerous!) behavior that an interrupt
+	 * mask done in a system call would persist (!!) on return
+	 * into userspace, and be seen again once we were back in
+	 * kernel mode, and this is a test for it.  It's legacy
+	 * though, not something we ever documented, and not the way
+	 * userspace works (or even can work!) on other platforms, nor
+	 * with the newer arch_switch() code.  Consider removing.
+	 */
 	static bool first_call = 1;
 
 	if (first_call == 1) {
