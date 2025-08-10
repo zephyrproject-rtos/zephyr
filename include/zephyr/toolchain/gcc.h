@@ -118,7 +118,10 @@
 	__builtin_unreachable(); \
 }
 #else
-#define CODE_UNREACHABLE __builtin_unreachable()
+#define CODE_UNREACHABLE do {			\
+	compiler_barrier();			\
+	__builtin_unreachable();		\
+	} while(0)
 #endif
 #define FUNC_NORETURN    __attribute__((__noreturn__))
 
