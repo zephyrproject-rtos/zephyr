@@ -487,6 +487,35 @@ bool arm_m_do_switch(struct k_thread *last_thread, void *next)
 	bool fpu = fpu_state_pushed((uint32_t)arm_m_cs_ptrs.lr_save);
 
 	__asm__ volatile("mrs %0, psp" : "=r"(last));
+
+#ifdef CONFIG_USERSPACE
+	/* Update CONTROL register's nPRIV bit to reflect user/syscall
+	 * thread state of the incoming thread.
+	 */
+	extern char z_syscall_exit_race1, z_syscall_exit_race2;
+	struct hw_frame_base *f = last;
+	uint32_t control;
+
+	/* Note that the privilege state is stored in the CPU *AND* in
+	 * the "mode" field of the thread struct.  This creates an
+	 * unavoidable race because the syscall exit code can't
+	 * atomically release the lock and set CONTROL.  We detect the
+	 * case where a thread is interrupted at exactly that moment
+	 * and manually skip over the MSR instruction (which would
+	 * otherwise fault on resume because "mode" says that the
+	 * thread is unprivileged!).  A future rework should just
+	 * pickle the CPU state found in the exception to the frame
+	 * and not mess with thread state from within the syscall.
+	 */
+	if (pc_match(f->pc, &z_syscall_exit_race1)) {
+		f->pc = (uint32_t) &z_syscall_exit_race2;
+	}
+
+	__asm__ volatile("mrs %0, control" : "=r"(control));
+	control = (control & ~1) | (_current->arch.mode & 1);
+	__asm__ volatile("msr control, %0" ::"r"(control));
+#endif
+
 	last = arm_m_cpu_to_switch(last_thread, last, fpu);
 	next = arm_m_switch_to_cpu(next);
 	__asm__ volatile("msr psp, %0" ::"r"(next));
@@ -506,15 +535,6 @@ bool arm_m_do_switch(struct k_thread *last_thread, void *next)
 	arm_m_last_switch_handle = last;
 #elif defined(CONFIG_USE_SWITCH)
 	last_thread->switch_handle = last;
-#endif
-
-#ifdef CONFIG_USERSPACE
-	uint32_t control;
-
-	__asm__ volatile("mrs %0, control" : "=r"(control));
-	last_thread->arch.mode &= (~1) | (control & 1);
-	control = (control & ~1) | (_current->arch.mode & 1);
-	__asm__ volatile("msr control, %0" ::"r"(control));
 #endif
 
 #if defined(CONFIG_USERSPACE) || defined(CONFIG_MPU_STACK_GUARD)
