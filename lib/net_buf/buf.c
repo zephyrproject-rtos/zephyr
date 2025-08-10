@@ -34,8 +34,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define NET_BUF_INFO(fmt, ...)
 #endif /* CONFIG_NET_BUF_LOG */
 
-#define NET_BUF_ASSERT(cond, ...) __ASSERT(cond, "" __VA_ARGS__)
-
 #if CONFIG_NET_BUF_WARN_ALLOC_INTERVAL > 0
 #define WARN_ALLOC_INTERVAL K_SECONDS(CONFIG_NET_BUF_WARN_ALLOC_INTERVAL)
 #else
@@ -331,9 +329,8 @@ success:
 	NET_BUF_DBG("allocated buf %p", buf);
 
 	if (size) {
-#if __ASSERT_ON
-		size_t req_size = size;
-#endif
+		__maybe_unused size_t req_size = size;
+
 		timeout = sys_timepoint_timeout(end);
 		buf->__buf = data_alloc(buf, &size, timeout);
 		if (!buf->__buf) {
@@ -343,9 +340,7 @@ success:
 			return NULL;
 		}
 
-#if __ASSERT_ON
-		NET_BUF_ASSERT(req_size <= size);
-#endif
+		__ASSERT_NO_MSG(req_size <= size);
 	} else {
 		buf->__buf = NULL;
 	}
