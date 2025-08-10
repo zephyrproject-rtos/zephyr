@@ -219,7 +219,7 @@ static FUNC_NORETURN __used void df_handler_top(void)
 	/* NT bit is set in EFLAGS so we will task switch back to _main_tss
 	 * and run df_handler_bottom
 	 */
-	__asm__ volatile ("iret");
+	__asm__ volatile ("iret" ::: "memory");
 	CODE_UNREACHABLE;
 }
 
