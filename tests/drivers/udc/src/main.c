@@ -19,7 +19,11 @@ LOG_MODULE_REGISTER(udc_test, LOG_LEVEL_INF);
  */
 
 #define BULK_OUT_EP_ADDR	0x01U
+#ifdef CONFIG_UDC_MAX32
+#define BULK_IN_EP_ADDR		0x86U
+#else
 #define BULK_IN_EP_ADDR		0x81U
+#endif /* CONFIG_UDC_MAX32 */
 #define FALSE_EP_ADDR		0x0FU
 
 K_MSGQ_DEFINE(test_msgq, sizeof(struct udc_event), 8, sizeof(uint32_t));
