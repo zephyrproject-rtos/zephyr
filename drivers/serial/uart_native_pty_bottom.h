@@ -20,7 +20,7 @@ extern "C" {
 
 /* Note: None of these functions are public interfaces. But internal to the native ptty driver */
 
-int np_uart_stdin_poll_in_bottom(int in_f, unsigned char *p_char, int len);
+int np_uart_stdin_read_bottom(int in_f, unsigned char *p_char, int len);
 int np_uart_slave_connected(int fd);
 int np_uart_open_pty(const char *uart_name, const char *auto_attach_cmd,
 		     bool do_auto_attach, bool wait_pts);
