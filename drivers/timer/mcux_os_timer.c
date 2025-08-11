@@ -88,6 +88,10 @@ void mcux_lpc_ostick_isr(const void *arg)
 }
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(standby)) && CONFIG_PM
+
+struct counter_top_cfg top_cfg = {0};
+struct counter_alarm_cfg alarm_cfg = {0};
+
 /* The OS Timer is disabled in certain low power modes and cannot wakeup the system
  * on timeout. This function will be called by the low power code to allow the
  * OS Timer to save off the count if needed and also start a wakeup counter
@@ -96,7 +100,6 @@ void mcux_lpc_ostick_isr(const void *arg)
 static uint32_t mcux_lpc_ostick_set_counter_timeout(int32_t curr_timeout)
 {
 	uint32_t ticks;
-	struct counter_top_cfg top_cfg = {0};
 
 	if (counter_dev == NULL) {
 		return 1;
@@ -106,21 +109,11 @@ static uint32_t mcux_lpc_ostick_set_counter_timeout(int32_t curr_timeout)
 	ticks = CLAMP(ticks, 1, counter_get_max_top_value(counter_dev));
 
 	top_cfg.ticks = ticks;
-	top_cfg.callback = NULL;
-	top_cfg.user_data = NULL;
-	top_cfg.flags = 0;
-	if (counter_set_top_value(counter_dev, &top_cfg) != 0) {
-		/* Setting top value failed, try setting an alarm */
-		struct counter_alarm_cfg alarm_cfg;
-
-		alarm_cfg.ticks = ticks;
-		alarm_cfg.callback = NULL;
-		alarm_cfg.user_data = NULL;
-		alarm_cfg.flags = 0;
-
-		if (counter_set_channel_alarm(counter_dev, 0, &alarm_cfg) != 0) {
-			return 1;
-		}
+	alarm_cfg.ticks = ticks;
+	/* short circuit conditional logic, if top value doesn't work, we try alarm */
+	if (counter_set_top_value(counter_dev, &top_cfg) != 0 &&
+	    counter_set_channel_alarm(counter_dev, 0, &alarm_cfg) != 0) {
+		return 1;
 	}
 
 	/* Counter is set to wakeup the system after the requested time */
