@@ -10,11 +10,26 @@
 
 / {
 	soc {
-		 flash-controller@407e0000 {
-			  flash0: flash@0 {
-				compatible = "soc-nv-flash";
+		flash-controller@407e0000 {
+			flash-hardware-version = <3>;
+			#erase-block-cells = <2>;
+
+			flash0: flash@0 {
+				compatible = "renesas,ra-nv-code-flash";
 				reg = <0x0 DT_SIZE_K(256)>;
-			  };
-		 };
+				write-block-size = <8>;
+				erase-block-size = <2048>;
+				erase-blocks = <&flash 128 2048>;
+				programming-enable;
+			};
+
+			flash1: flash@40100000 {
+				compatible = "renesas,ra-nv-data-flash";
+				reg = <0x40100000 DT_SIZE_K(8)>;
+				write-block-size = <1>;
+				erase-block-size = <1024>;
+				programming-enable;
+			};
+		};
 	};
 };
