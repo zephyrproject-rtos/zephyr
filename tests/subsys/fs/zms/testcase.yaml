@@ -27,3 +27,9 @@ tests:
     platform_allow:
       - native_sim
       - qemu_x86
+  filesystem.zms.id_64bit:
+    extra_configs:
+      - CONFIG_ZMS_ID_64BIT=y
+      - CONFIG_ZMS_LOOKUP_CACHE=y
+      - CONFIG_ZMS_LOOKUP_CACHE_SIZE=64
+    platform_allow: qemu_x86
