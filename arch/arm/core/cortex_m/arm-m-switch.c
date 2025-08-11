@@ -544,6 +544,31 @@ bool arm_m_do_switch(struct k_thread *last_thread, void *next)
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
 	z_arm_tls_ptr = _current->tls;
 #endif
+
+#if defined(CONFIG_BOARD_MPS3_CORSTONE310_FVP) || \
+	defined(CONFIG_BOARD_MPS4_CORSTONE315_FVP) || \
+	defined(CONFIG_BOARD_MPS4_CORSTONE320_FVP)
+	/* The ARM Ltd. FVP emulator (at least the ones above that run
+	 * in Zephyr CI) appears to have a bug with the stack
+	 * alignment bit in xPSR.  It's common (it fails in the first
+	 * 4-6 timer interrupts in tests.syscalls.timeslicing) that
+	 * we'll take an interrupt from a seemingly aligned (!) stack
+	 * with the bit set.  If we then switch and resume the thread
+	 * from a different context later, popping the stack goes
+	 * wrong (more so than just a misalignment of four bytes: I
+	 * usually see it too low by 20 bytes) in a way that it
+	 * doesn't if we return synchronously.  Presumably legacy
+	 * PendSV didn't see this because it used the unmodified
+	 * exception frame.
+	 *
+	 * Work around this here, pending validation from ARM, by
+	 * simply assuming all interrupted stacks were aligned and
+	 * clearing the bit.  That is NOT correct in the general case,
+	 * but in practice it's enough to get tests to pass.
+	 */
+	((struct hw_frame_base *)next)->apsr &= ~BIT(9);
+#endif
+
 	return true;
 }
 
