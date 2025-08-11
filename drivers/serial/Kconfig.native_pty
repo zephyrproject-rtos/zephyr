@@ -7,6 +7,7 @@ config UART_NATIVE_PTY
 	depends on (DT_HAS_ZEPHYR_NATIVE_PTY_UART_ENABLED || DT_HAS_ZEPHYR_NATIVE_POSIX_UART_ENABLED)
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_ASYNC
+	select SERIAL_SUPPORT_INTERRUPT
 	help
 	  This enables a PTY based UART driver for the POSIX ARCH with up to 2 UARTs.
 	  For the first UART port, the driver can be configured
