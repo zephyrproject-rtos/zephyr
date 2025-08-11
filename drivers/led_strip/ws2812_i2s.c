@@ -131,13 +131,17 @@ static int ws2812_strip_update_rgb(const struct device *dev, struct led_rgb *pix
 		return ret;
 	}
 
+	/* Prevent context-switch between START and DRAIN */
+	k_sched_lock();
 	ret = i2s_trigger(cfg->dev, I2S_DIR_TX, I2S_TRIGGER_START);
 	if (ret < 0) {
+		k_sched_unlock();
 		LOG_ERR("Failed to trigger command %d on TX: %d", I2S_TRIGGER_START, ret);
 		return ret;
 	}
 
 	ret = i2s_trigger(cfg->dev, I2S_DIR_TX, I2S_TRIGGER_DRAIN);
+	k_sched_unlock();
 	if (ret < 0) {
 		LOG_ERR("Failed to trigger command %d on TX: %d", I2S_TRIGGER_DRAIN, ret);
 		return ret;
