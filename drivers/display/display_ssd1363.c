@@ -47,7 +47,8 @@ LOG_MODULE_REGISTER(ssd1363, CONFIG_DISPLAY_LOG_LEVEL);
 #define SSD1363_SET_REMAP_VALUE        0xA0
 #define SSD1363_SET_GRAY_ENHANCE       0xB4
 
-#define SSD1363_RESET_DELAY 100
+#define SSD1363_RESET_DELAY   100
+#define SSD1363_SET_LUT_COUNT 15
 
 typedef int (*ssd1363_write_bus_cmd_fn)(const struct device *dev, const uint8_t cmd,
 					const uint8_t *data, size_t len);
@@ -75,8 +76,7 @@ struct ssd1363_config {
 	uint8_t precharge_period;
 	uint8_t precharge_config;
 	uint16_t column_offset;
-	uint8_t grayscale_table[15];
-	bool grayscale_table_present;
+	const uint8_t *grayscale_table;
 	bool color_inversion;
 	bool grayscale_enhancement;
 	uint8_t *conversion_buf;
@@ -156,8 +156,9 @@ static inline int ssd1363_set_hardware_config(const struct device *dev)
 	if (err < 0) {
 		return err;
 	}
-	if (config->grayscale_table_present) {
-		err = config->write_cmd(dev, SSD1363_SET_LUT, config->grayscale_table, 15);
+	if (config->grayscale_table != NULL) {
+		err = config->write_cmd(dev, SSD1363_SET_LUT, config->grayscale_table,
+					SSD1363_SET_LUT_COUNT);
 		if (err < 0) {
 			return err;
 		}
@@ -462,17 +463,15 @@ static DEVICE_API(display, ssd1363_driver_api) = {
 #define SSD1363_CONV_BUFFER_SIZE(node_id)                                                          \
 	DIV_ROUND_UP(DT_PROP(node_id, width) * CONFIG_SSD1363_CONV_BUFFER_LINES, 1)
 
-#define SSD1363_GRAYSCALE_TABLE_YES(node_id)                                                       \
-	.grayscale_table = DT_PROP(node_id, grayscale_table), .grayscale_table_present = true
-
-#define SSD1363_GRAYSCALE_TABLE_NO(node_id) .grayscale_table_present = false
-
 #define SSD1363_GRAYSCALE_TABLE(node_id)                                                           \
-	COND_CODE_1(DT_NODE_HAS_PROP(node_id, grayscale_table), \
-	(SSD1363_GRAYSCALE_TABLE_YES(node_id)), (SSD1363_GRAYSCALE_TABLE_NO(node_id)))
+	.grayscale_table = COND_CODE_1(DT_NODE_HAS_PROP(node_id, grayscale_table),                 \
+	(ssd1363_grayscale_table_##node_id), (NULL))
 
 #define SSD1363_DEFINE_I2C(node_id)                                                                \
 	static uint8_t conversion_buf##node_id[SSD1363_CONV_BUFFER_SIZE(node_id)];                 \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, grayscale_table), (                                  \
+	static const uint8_t ssd1363_grayscale_table_##node_id[SSD1363_SET_LUT_COUNT] =            \
+	DT_PROP(node_id, grayscale_table);), ())                                                   \
 	static const struct ssd1363_config config##node_id = {                                     \
 		.i2c = I2C_DT_SPEC_GET(node_id),                                                   \
 		.height = DT_PROP(node_id, height),                                                \
@@ -503,6 +502,9 @@ static DEVICE_API(display, ssd1363_driver_api) = {
 
 #define SSD1363_DEFINE_MIPI(node_id)                                                               \
 	static uint8_t conversion_buf##node_id[SSD1363_CONV_BUFFER_SIZE(node_id)];                 \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, grayscale_table), (                                  \
+	static const uint8_t ssd1363_grayscale_table_##node_id[SSD1363_SET_LUT_COUNT] =            \
+	DT_PROP(node_id, grayscale_table);), ())                                                   \
 	static const struct ssd1363_config config##node_id = {                                     \
 		.mipi_dev = DEVICE_DT_GET(DT_PARENT(node_id)),                                     \
 		.dbi_config = MIPI_DBI_CONFIG_DT(                                                  \
