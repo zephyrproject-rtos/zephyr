@@ -5979,13 +5979,24 @@ function(add_llext_target target_name)
     set(gnu_strip_for_mwdt_cmd ${CMAKE_COMMAND} -E true)
   endif()
 
+  get_property(TOPT GLOBAL PROPERTY TOPT)
+  get_property(COMPILER_TOPT TARGET compiler PROPERTY linker_script)
+  set_ifndef(  TOPT "${COMPILER_TOPT}")
+  set_ifndef(  TOPT -Wl,-T)
+
   # The LLEXT loader cannot load ELF files where regions overlap, so
   # reorder the sections in these cases
+  if (CONFIG_LLEXT_TYPE_ELF_OBJECT)
   set(reorder_sects_cmd
-    ${PYTHON_EXECUTABLE}
-    ${ZEPHYR_BASE}/scripts/build/llext_reorder_sects.py
-    ${llext_pkg_output}
+    ${CMAKE_COMMAND} -E copy ${llext_pkg_output} ${llext_pkg_output}.bak &&
+    ${CMAKE_C_COMPILER}
+    -r ${LLEXT_APPEND_FLAGS}
+    ${TOPT} ${ZEPHYR_BASE}/subsys/llext/llext_reorder_sections.ld
+    ${llext_pkg_output}.bak -o ${llext_pkg_output}
   )
+  else()
+    set(reorder_sects_cmd ${CMAKE_COMMAND} -E true)
+  endif()
 
   # Remove sections that are unused by the llext loader
   add_custom_command(
