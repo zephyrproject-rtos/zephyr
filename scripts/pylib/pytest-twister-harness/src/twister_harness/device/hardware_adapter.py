@@ -73,9 +73,6 @@ class HardwareAdapter(DeviceAdapter):
             if runner == 'pyocd':
                 extra_args.append('--board-id')
                 extra_args.append(board_id)
-            elif runner == "esp32":
-                extra_args.append("--esp-device")
-                extra_args.append(board_id)
             elif runner in ('nrfjprog', 'nrfutil', 'nrfutil_next'):
                 extra_args.append('--dev-id')
                 extra_args.append(board_id)
@@ -95,6 +92,9 @@ class HardwareAdapter(DeviceAdapter):
                 base_args.append(f'--tool-opt=sn={board_id}')
             elif runner == 'linkserver':
                 base_args.append(f'--probe={board_id}')
+        if (serial_pty := self.device_config.serial_pty) and runner == 'esp32':
+            extra_args.append("--esp-device")
+            extra_args.append(serial_pty)
         return base_args, extra_args
 
     def _flash_and_run(self) -> None:
