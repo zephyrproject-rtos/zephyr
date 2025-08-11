@@ -352,10 +352,18 @@ static void test_udc_ep_api(const struct device *dev,
 static void test_udc_ep_mps(uint8_t type)
 {
 	uint16_t mps[] = {8, 16, 32, 64, 512, 1024};
-	struct usb_ep_descriptor ed = {
+	struct usb_ep_descriptor ed_out = {
 		.bLength = sizeof(struct usb_ep_descriptor),
 		.bDescriptorType = USB_DESC_ENDPOINT,
 		.bEndpointAddress = 0x01,
+		.bmAttributes = type,
+		.wMaxPacketSize = sys_cpu_to_le16(0),
+		.bInterval = 0,
+	};
+	struct usb_ep_descriptor ed_in = {
+		.bLength = sizeof(struct usb_ep_descriptor),
+		.bDescriptorType = USB_DESC_ENDPOINT,
+		.bEndpointAddress = 0x81,
 		.bmAttributes = type,
 		.wMaxPacketSize = sys_cpu_to_le16(0),
 		.bInterval = 0,
@@ -374,15 +382,26 @@ static void test_udc_ep_mps(uint8_t type)
 	zassert_ok(err, "Failed to enable UDC driver");
 
 	if (type == USB_EP_TYPE_INTERRUPT) {
-		ed.bInterval = 1;
+		ed_out.bInterval = 1;
+		ed_in.bInterval = 1;
 	}
 
 	for (uint8_t i = 1; i < 16U; i++) {
 		err = udc_ep_try_config(dev, i,
-					ed.bmAttributes, &supported,
-					ed.bInterval);
+					ed_out.bmAttributes, &supported,
+					ed_out.bInterval);
 		if (!err) {
-			ed.bEndpointAddress = i;
+			ed_out.bEndpointAddress = i;
+			break;
+		}
+	}
+
+	for (uint8_t i = 1; i < 16U; i++) {
+		err = udc_ep_try_config(dev, i | USB_EP_DIR_IN,
+					ed_in.bmAttributes, &supported,
+					ed_in.bInterval);
+		if (!err) {
+			ed_in.bEndpointAddress = i | USB_EP_DIR_IN;
 			break;
 		}
 	}
@@ -394,11 +413,11 @@ static void test_udc_ep_mps(uint8_t type)
 			continue;
 		}
 
-		ed.wMaxPacketSize = sys_cpu_to_le16(mps[i]);
-		test_udc_ep_api(dev, &ed);
+		ed_out.wMaxPacketSize = sys_cpu_to_le16(mps[i]);
+		ed_in.wMaxPacketSize = sys_cpu_to_le16(mps[i]);
 
-		ed.bEndpointAddress |= USB_EP_DIR_IN;
-		test_udc_ep_api(dev, &ed);
+		test_udc_ep_api(dev, &ed_out);
+		test_udc_ep_api(dev, &ed_in);
 	}
 
 	err = udc_disable(dev);
