@@ -101,9 +101,25 @@ static void test_udc_ep_try_config(const struct device *dev,
 	uint16_t mps = sys_le16_to_cpu(ed->wMaxPacketSize);
 	int err;
 
-	err = udc_ep_try_config(dev, ed->bEndpointAddress,
-				ed->bmAttributes, &mps,
-				ed->bInterval);
+	for (int idx = 0; idx < 16U; idx++) {
+		uint8_t ep;
+
+		if (USB_EP_DIR_IS_IN(ed->bEndpointAddress)) {
+			ep = USB_EP_DIR_IN | idx;
+		} else {
+			ep = USB_EP_DIR_OUT | idx;
+		}
+
+		err = udc_ep_try_config(dev, ep,
+					ed->bmAttributes, &mps,
+					ed->bInterval);
+
+		if (!err) {
+			ed->bEndpointAddress = ep;
+			break;
+		}
+	}
+
 	zassert_equal(err, 0, "Failed to test endpoint configuration");
 
 	if (ed->bmAttributes == USB_EP_TYPE_CONTROL ||
@@ -361,7 +377,10 @@ static void test_udc_ep_mps(uint8_t type)
 		.bInterval = 0,
 	};
 	const struct device *dev;
-	uint16_t supported = 0;
+	uint16_t out_supported = 0;
+	uint16_t in_supported = 0;
+	uint16_t out_ep = 0;
+	uint16_t in_ep = 0;
 	int err;
 
 	dev = DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0));
@@ -379,10 +398,20 @@ static void test_udc_ep_mps(uint8_t type)
 
 	for (uint8_t i = 1; i < 16U; i++) {
 		err = udc_ep_try_config(dev, i,
-					ed.bmAttributes, &supported,
+					ed.bmAttributes, &out_supported,
 					ed.bInterval);
 		if (!err) {
-			ed.bEndpointAddress = i;
+			out_ep = i;
+			break;
+		}
+	}
+
+	for (uint8_t i = 1; i < 16U; i++) {
+		err = udc_ep_try_config(dev, i | USB_EP_DIR_IN,
+					ed.bmAttributes, &in_supported,
+					ed.bInterval);
+		if (!err) {
+			in_ep = i | USB_EP_DIR_IN;
 			break;
 		}
 	}
@@ -390,14 +419,24 @@ static void test_udc_ep_mps(uint8_t type)
 	zassert_ok(err, "Failed to determine MPS");
 
 	for (int i = 0; i < ARRAY_SIZE(mps); i++) {
-		if (mps[i] > supported) {
+		if (mps[i] > out_supported) {
 			continue;
 		}
 
+		ed.bEndpointAddress = out_ep;
 		ed.wMaxPacketSize = sys_cpu_to_le16(mps[i]);
-		test_udc_ep_api(dev, &ed);
 
-		ed.bEndpointAddress |= USB_EP_DIR_IN;
+		test_udc_ep_api(dev, &ed);
+	}
+
+	for (int i = 0; i < ARRAY_SIZE(mps); i++) {
+		if (mps[i] > in_supported) {
+			continue;
+		}
+
+		ed.bEndpointAddress = in_ep;
+		ed.wMaxPacketSize = sys_cpu_to_le16(mps[i]);
+
 		test_udc_ep_api(dev, &ed);
 	}
 
