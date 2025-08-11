@@ -6417,7 +6417,7 @@ nRF IronSide SE Platforms:
     - karstenkoenig
     - SebastianBoe
   files:
-    - soc/nordic/ironside/
+    - modules/hal_nordic/ironside/
     - soc/nordic/common/uicr/
   labels:
     - "platform: nRF IronSide SE"

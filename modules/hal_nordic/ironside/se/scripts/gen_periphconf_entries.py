@@ -19,8 +19,9 @@ except KeyError:
     sys.exit("Set the environment variable 'ZEPHYR_BASE' to point to the zephyr root directory")
 
 # Add packages that are located in zephyr itself to the python path so we can import them below
+# The devicetree package is needed on the path for unpickling devicetree object, even if we aren't
+# importing anything from it directly.
 sys.path.insert(0, str(ZEPHYR_BASE / "scripts/dts/python-devicetree/src"))
-sys.path.insert(0, str(ZEPHYR_BASE / "soc/nordic/common/uicr"))
 
 from periphconf.builder import (
     Ctrlsel,

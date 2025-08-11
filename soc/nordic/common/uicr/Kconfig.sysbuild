@@ -2,8 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config NRF_HALTIUM_GENERATE_UICR
-	bool "Generate UICR file"
+	bool "Generate UICR artifacts"
 	depends on SOC_SERIES_NRF54HX || SOC_SERIES_NRF92X
 	default y
 	help
-	  Generate UICR HEX file.
+	  When enabled, a UICR generator image is included in the build.
+	  This generates binary configuration artifacts based on the Kconfig and device tree
+	  of the UICR generator image. See the UICR generator options for further details.
