@@ -264,11 +264,13 @@ endif()
 # Generate hex files (merged, uicr-only, periphconf-only, and secondary-periphconf-only)
 add_custom_command(
   OUTPUT ${merged_hex_file} ${uicr_hex_file} ${periphconf_hex_file} ${secondary_periphconf_hex_file}
-  COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=${ZEPHYR_BASE}/scripts/dts/python-devicetree/src
-          ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/soc/nordic/common/uicr/gen_uicr.py
+  COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_HAL_NORDIC_MODULE_DIR}/ironside/se/tool/ironside/__main__.py
+          gen-uicr
           --uicr-address ${UICR_ADDRESS}
           --out-merged-hex ${merged_hex_file}
           --out-uicr-hex ${uicr_hex_file}
+          --periphconf-section-name "periphconf_entry"
+          --periphconf-ipcmap-reallocate
           ${lock_args}
           ${eraseprotect_args}
           ${approtect_args}

@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nrf_ironside/call.h>
+#include <ironside/se/call.h>
+#include <ironside/se/glue.h>
 #include <zephyr/cache.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/mbox.h>
@@ -15,15 +16,15 @@
 #define DT_DRV_COMPAT nordic_ironside_call
 
 #define SHM_NODE     DT_INST_PHANDLE(0, memory_region)
-#define NUM_BUFS     (DT_REG_SIZE(SHM_NODE) / sizeof(struct ironside_call_buf))
+#define NUM_BUFS     (DT_REG_SIZE(SHM_NODE) / sizeof(struct ironside_se_call_buf))
 #define ALL_BUF_BITS BIT_MASK(NUM_BUFS)
 
 /* Note: this area is already zero-initialized at reset time. */
-static struct ironside_call_buf *const bufs = (void *)DT_REG_ADDR(SHM_NODE);
+static struct ironside_se_call_buf *const bufs = (void *)DT_REG_ADDR(SHM_NODE);
 
 #if defined(CONFIG_DCACHE_LINE_SIZE)
 BUILD_ASSERT((DT_REG_ADDR(SHM_NODE) % CONFIG_DCACHE_LINE_SIZE) == 0);
-BUILD_ASSERT((sizeof(struct ironside_call_buf) % CONFIG_DCACHE_LINE_SIZE) == 0);
+BUILD_ASSERT((sizeof(struct ironside_se_call_buf) % CONFIG_DCACHE_LINE_SIZE) == 0);
 #endif
 
 static const struct mbox_dt_spec mbox_rx = MBOX_DT_SPEC_INST_GET(0, rx);
@@ -40,7 +41,7 @@ static void ironside_call_rsp(const struct device *dev, mbox_channel_id_t channe
 	ARG_UNUSED(user_data);
 	ARG_UNUSED(data);
 
-	struct ironside_call_buf *buf;
+	struct ironside_se_call_buf *buf;
 	uint32_t rsp_buf_bits = 0;
 
 	/* Check which buffers are not being dispatched currently. Those must
@@ -62,8 +63,8 @@ static void ironside_call_rsp(const struct device *dev, mbox_channel_id_t channe
 		sys_cache_data_invd_range(buf, sizeof(*buf));
 		barrier_dmem_fence_full();
 
-		if (buf->status != IRONSIDE_CALL_STATUS_IDLE &&
-		    buf->status != IRONSIDE_CALL_STATUS_REQ) {
+		if (buf->status != IRONSIDE_SE_CALL_STATUS_IDLE &&
+		    buf->status != IRONSIDE_SE_CALL_STATUS_REQ) {
 			rsp_buf_bits |= BIT(i);
 		}
 	}
@@ -89,9 +90,9 @@ static int ironside_call_init(const struct device *dev)
 }
 
 DEVICE_DT_INST_DEFINE(0, ironside_call_init, NULL, NULL, NULL, POST_KERNEL,
-		      CONFIG_NRF_IRONSIDE_CALL_INIT_PRIORITY, NULL);
+		      CONFIG_IRONSIDE_SE_CALL_INIT_PRIORITY, NULL);
 
-struct ironside_call_buf *ironside_call_alloc(void)
+struct ironside_se_call_buf *ironside_se_call_alloc(void)
 {
 	uint32_t avail_buf_bits;
 	uint32_t alloc_buf_bit;
@@ -108,12 +109,12 @@ struct ironside_call_buf *ironside_call_alloc(void)
 	return &bufs[u32_count_trailing_zeros(alloc_buf_bit)];
 }
 
-void ironside_call_dispatch(struct ironside_call_buf *buf)
+void ironside_se_call_dispatch(struct ironside_se_call_buf *buf)
 {
 	const uint32_t buf_bit = BIT(buf - bufs);
 	int err;
 
-	buf->status = IRONSIDE_CALL_STATUS_REQ;
+	buf->status = IRONSIDE_SE_CALL_STATUS_REQ;
 	barrier_dmem_fence_full();
 
 	sys_cache_data_flush_range(buf, sizeof(*buf));
@@ -126,11 +127,11 @@ void ironside_call_dispatch(struct ironside_call_buf *buf)
 	k_event_wait(&rsp_evts, buf_bit, false, K_FOREVER);
 }
 
-void ironside_call_release(struct ironside_call_buf *buf)
+void ironside_se_call_release(struct ironside_se_call_buf *buf)
 {
 	const uint32_t buf_bit = BIT(buf - bufs);
 
-	buf->status = IRONSIDE_CALL_STATUS_IDLE;
+	buf->status = IRONSIDE_SE_CALL_STATUS_IDLE;
 	barrier_dmem_fence_full();
 
 	sys_cache_data_flush_range(buf, sizeof(*buf));
