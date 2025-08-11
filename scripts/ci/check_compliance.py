@@ -118,17 +118,15 @@ def get_module_setting_root(root, settings_file):
     # Invoke the script directly using the Python executable since this is
     # not a module nor a pip-installed Python utility
     root_paths = []
-
     if os.path.exists(settings_file):
         with open(settings_file, 'r') as fp_setting_file:
             content = fp_setting_file.read()
 
         lines = content.strip().split('\n')
         for line in lines:
-            root = root.upper()
-            if line.startswith(f'"{root}_ROOT":'):
+            if line.lstrip().startswith(f'{root}_root:'):
                 _, root_path = line.split(":", 1)
-                root_paths.append(Path(root_path.strip('"')))
+                root_paths.append(Path(root_path.strip()))
     return root_paths
 
 def get_vendor_prefixes(path, errfn = print) -> set[str]:
