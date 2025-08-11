@@ -59,6 +59,13 @@ config UART_NS16550_VARIANT_NS16950
 	bool "UART 16950 (128-bytes FIFO and auto flow control)"
 	help
 	  This enables support for 128-bytes FIFO and automatic hardware flow control.
+
+config UART_NS16550_ENABLE_DEVICE_PM
+	bool "UART 16550 device PM enable"
+	depends on PM_DEVICE
+	help
+	  This enables support device PM implementation for ns16550 driver.
+	  This should be enabled along with DEVICE PM configs.
 endchoice
 
 config UART_NS16550_ACCESS_WORD_ONLY
