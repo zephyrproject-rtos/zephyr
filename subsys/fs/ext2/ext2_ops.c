@@ -598,12 +598,11 @@ static int ext2_stat(struct fs_mount_t *mountp, const char *path, struct fs_dire
 	}
 
 	uint32_t offset = args.offset;
-	struct ext2_inode *parent = args.parent;
-	struct ext2_file dir = {.f_inode = parent, .f_off = offset};
+	struct ext2_file dir = {.f_inode = args.parent ? args.parent : args.inode, .f_off = offset};
 
 	rc = ext2_get_direntry(&dir, entry);
 
-	ext2_inode_drop(parent);
+	ext2_inode_drop(args.parent);
 	ext2_inode_drop(args.inode);
 	return rc;
 }
