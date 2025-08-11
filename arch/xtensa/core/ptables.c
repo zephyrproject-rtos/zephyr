@@ -379,7 +379,7 @@ __weak void arch_reserved_pages_update(void)
 #endif /* CONFIG_ARCH_HAS_RESERVED_PAGE_FRAMES */
 
 static bool l2_page_table_map(uint32_t *l1_table, void *vaddr, uintptr_t phys,
-			      uint32_t flags, bool is_user)
+			      uint32_t attrs, bool is_user)
 {
 	uint32_t l1_pos = XTENSA_MMU_L1_POS((uint32_t)vaddr);
 	uint32_t l2_pos = XTENSA_MMU_L2_POS((uint32_t)vaddr);
@@ -407,7 +407,7 @@ static bool l2_page_table_map(uint32_t *l1_table, void *vaddr, uintptr_t phys,
 							  XTENSA_MMU_KERNEL_RING,
 					  XTENSA_MMU_PTE_SW(XTENSA_MMU_KERNEL_RING,
 							  XTENSA_MMU_PTE_ATTR_ILLEGAL),
-					  flags);
+					  attrs);
 
 	sys_cache_data_flush_range((void *)&l2_table[l2_pos], sizeof(l2_table[0]));
 	xtensa_tlb_autorefill_invalidate();
@@ -415,12 +415,12 @@ static bool l2_page_table_map(uint32_t *l1_table, void *vaddr, uintptr_t phys,
 	return true;
 }
 
-static inline void __arch_mem_map(void *va, uintptr_t pa, uint32_t xtensa_flags, bool is_user)
+static inline void __arch_mem_map(void *va, uintptr_t pa, uint32_t new_attrs, bool is_user)
 {
 	bool ret;
 	void *vaddr, *vaddr_uc;
 	uintptr_t paddr, paddr_uc;
-	uint32_t flags, flags_uc;
+	uint32_t attrs, attrs_uc;
 
 	if (IS_ENABLED(CONFIG_XTENSA_MMU_DOUBLE_MAP)) {
 		if (sys_cache_is_ptr_cached(va)) {
@@ -439,21 +439,21 @@ static inline void __arch_mem_map(void *va, uintptr_t pa, uint32_t xtensa_flags,
 			paddr_uc = pa;
 		}
 
-		flags_uc = (xtensa_flags & ~XTENSA_MMU_PTE_ATTR_CACHED_MASK);
-		flags = flags_uc | XTENSA_MMU_CACHED_WB;
+		attrs_uc = (new_attrs & ~XTENSA_MMU_PTE_ATTR_CACHED_MASK);
+		attrs = attrs_uc | XTENSA_MMU_CACHED_WB;
 	} else {
 		vaddr = va;
 		paddr = pa;
-		flags = xtensa_flags;
+		attrs = new_attrs;
 	}
 
 	ret = l2_page_table_map(xtensa_kernel_ptables, (void *)vaddr, paddr,
-				flags, is_user);
+				attrs, is_user);
 	__ASSERT(ret, "Cannot map virtual address (%p)", va);
 
 	if (IS_ENABLED(CONFIG_XTENSA_MMU_DOUBLE_MAP) && ret) {
 		ret = l2_page_table_map(xtensa_kernel_ptables, (void *)vaddr_uc, paddr_uc,
-					flags_uc, is_user);
+					attrs_uc, is_user);
 		__ASSERT(ret, "Cannot map virtual address (%p)", vaddr_uc);
 	}
 
@@ -470,14 +470,14 @@ static inline void __arch_mem_map(void *va, uintptr_t pa, uint32_t xtensa_flags,
 			domain = CONTAINER_OF(node, struct arch_mem_domain, node);
 
 			ret = l2_page_table_map(domain->ptables, (void *)vaddr, paddr,
-						flags, is_user);
+						attrs, is_user);
 			__ASSERT(ret, "Cannot map virtual address (%p) for domain %p",
 				 vaddr, domain);
 
 			if (IS_ENABLED(CONFIG_XTENSA_MMU_DOUBLE_MAP) && ret) {
 				ret = l2_page_table_map(domain->ptables,
 							(void *)vaddr_uc, paddr_uc,
-							flags_uc, is_user);
+							attrs_uc, is_user);
 				__ASSERT(ret, "Cannot map virtual address (%p) for domain %p",
 					 vaddr_uc, domain);
 			}
@@ -492,7 +492,7 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 	uint32_t va = (uint32_t)virt;
 	uint32_t pa = (uint32_t)phys;
 	uint32_t rem_size = (uint32_t)size;
-	uint32_t xtensa_flags = 0;
+	uint32_t attrs = 0;
 	k_spinlock_key_t key;
 	bool is_user;
 
@@ -505,10 +505,10 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 	switch (flags & K_MEM_CACHE_MASK) {
 
 	case K_MEM_CACHE_WB:
-		xtensa_flags |= XTENSA_MMU_CACHED_WB;
+		attrs |= XTENSA_MMU_CACHED_WB;
 		break;
 	case K_MEM_CACHE_WT:
-		xtensa_flags |= XTENSA_MMU_CACHED_WT;
+		attrs |= XTENSA_MMU_CACHED_WT;
 		break;
 	case K_MEM_CACHE_NONE:
 		__fallthrough;
@@ -517,10 +517,10 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 	}
 
 	if ((flags & K_MEM_PERM_RW) == K_MEM_PERM_RW) {
-		xtensa_flags |= XTENSA_MMU_PERM_W;
+		attrs |= XTENSA_MMU_PERM_W;
 	}
 	if ((flags & K_MEM_PERM_EXEC) == K_MEM_PERM_EXEC) {
-		xtensa_flags |= XTENSA_MMU_PERM_X;
+		attrs |= XTENSA_MMU_PERM_X;
 	}
 
 	is_user = (flags & K_MEM_PERM_USER) == K_MEM_PERM_USER;
@@ -528,7 +528,7 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 	key = k_spin_lock(&xtensa_mmu_lock);
 
 	while (rem_size > 0) {
-		__arch_mem_map((void *)va, pa, xtensa_flags, is_user);
+		__arch_mem_map((void *)va, pa, attrs, is_user);
 
 		rem_size -= (rem_size >= KB(4)) ? KB(4) : rem_size;
 		va += KB(4);
