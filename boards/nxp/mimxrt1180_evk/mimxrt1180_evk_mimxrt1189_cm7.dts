@@ -41,6 +41,10 @@
 	status = "okay";
 };
 
+&dac {
+	status = "okay";
+};
+
 &systick {
 	status = "okay";
 };
