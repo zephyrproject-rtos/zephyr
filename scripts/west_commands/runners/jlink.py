@@ -55,7 +55,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                  commander=DEFAULT_JLINK_EXE,
                  dt_flash=True, erase=True, reset=False,
                  iface='swd', speed='auto', flash_script = None,
-                 loader=None, flash_sram=False,
+                 loader=None, flash_sram=False, dp_reset_off=False,
                  gdbserver='JLinkGDBServer',
                  gdb_host='',
                  gdb_port=DEFAULT_JLINK_GDB_PORT,
@@ -86,6 +86,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         self.loader = loader
         self.rtt_port = rtt_port
         self.dev_id_type = dev_id_type
+        self.dp_reset_off = dp_reset_off
 
         self.tool_opt = []
         if tool_opt is not None:
@@ -208,6 +209,8 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--dev-id-type', choices=['auto', 'serialno', 'tty', 'ip', 'tunnel'],
                             default='auto', help='Device type. "auto" (default) auto-detects '
                             'the type, or specify explicitly')
+        parser.add_argument('--dp-reset-off', default=False, action='store_true',
+                            help='if given, disables DP reset')
 
         parser.set_defaults(reset=False)
 
@@ -218,6 +221,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                                  commander=args.commander,
                                  dt_flash=args.dt_flash,
                                  flash_sram=args.flash_sram,
+                                 dp_reset_off=args.dp_reset_off,
                                  erase=args.erase,
                                  reset=args.reset,
                                  iface=args.iface, speed=args.speed,
@@ -503,8 +507,10 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         # The J-Link scripting layer chains commands, meaning that writes are
         # not actually performed until after the next operation. After writing
         # the register, read it back to perform this flushing.
-        lines.append('writeDP 1 0')
-        lines.append('readDP 1')
+        # This operation can be disabled using the --dp-reset-off option.
+        if not self.dp_reset_off:
+            lines.append('writeDP 1 0')
+            lines.append('readDP 1')
 
         lines.append('q') # Close the connection and quit
 
