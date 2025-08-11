@@ -868,16 +868,24 @@ static usb_phy_config_struct_t phy_config_##n = {					\
 	COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(n), phy_handle),			\
 		    (&phy_config_##n), (NULL))
 
+#define UDC_MCUX_EHCI_ISR_DECLARE_OR(n)							\
+	COND_CODE_1(CONFIG_UHC_NXP_EHCI,						\
+	(),										\
+	(ISR_DIRECT_DECLARE(udc_mcux_isr##n)						\
+	{udc_mcux_isr(DEVICE_DT_INST_GET(n)); return 1; }))
+
 #define UDC_MCUX_EHCI_IRQ_DEFINE_OR(n)							\
 	COND_CODE_1(CONFIG_UHC_NXP_EHCI,						\
 	(irq_connect_dynamic(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),			\
 			     (void (*)(const void *))udc_mcux_isr,			\
 			     DEVICE_DT_INST_GET(n), 0)),				\
-	(IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), udc_mcux_isr,		\
-		     DEVICE_DT_INST_GET(n), 0)))
+	(IRQ_DIRECT_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),			\
+			    udc_mcux_isr##n, 0)))
 
 #define USB_MCUX_EHCI_DEVICE_DEFINE(n)							\
 	UDC_MCUX_PHY_DEFINE_OR(n);							\
+											\
+	UDC_MCUX_EHCI_ISR_DECLARE_OR(n)							\
 											\
 	static void udc_irq_enable_func##n(const struct device *dev)			\
 	{										\
