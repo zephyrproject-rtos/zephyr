@@ -29,14 +29,31 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ICM45686, CONFIG_SENSOR_LOG_LEVEL);
 
-static inline int reg_write(const struct device *dev, uint8_t reg, uint8_t val)
+static inline int reg_write(const struct device *dev, uint8_t reg, uint8_t val, uint32_t size)
 {
-	return icm45686_bus_write(dev, reg, &val, 1);
+	return icm45686_bus_write(dev, reg, &val, size);
 }
 
-static inline int reg_read(const struct device *dev, uint8_t reg, uint8_t *val)
+static inline int reg_read(const struct device *dev, uint8_t reg, uint8_t *val, uint32_t size)
 {
-	return icm45686_bus_read(dev, reg, val, 1);
+	return icm45686_bus_read(dev, reg, val, size);
+}
+
+static inline int inv_io_hal_read_reg(void *context, uint8_t reg, uint8_t *rbuffer,
+                uint32_t rlen)
+{
+        return reg_read(context, reg, rbuffer, rlen);
+}
+
+static inline int inv_io_hal_write_reg(void *context, uint8_t reg, const uint8_t *wbuffer,
+                uint32_t wlen)
+{
+        return reg_write(context, reg, *wbuffer, wlen);
+}
+
+void inv_sleep_us(uint32_t us)
+{
+        k_sleep(K_USEC(us));
 }
 
 static int icm45686_sample_fetch(const struct device *dev,
@@ -252,6 +269,14 @@ static int icm45686_init(const struct device *dev)
 	uint8_t val;
 	int err;
 
+	/* Initialize serial interface and device */
+        data->driver.transport.context = (struct device *)dev;
+	data->driver.transport.read_reg = inv_io_hal_read_reg;
+	data->driver.transport.write_reg = inv_io_hal_write_reg;
+        data->driver.transport.serif_type = UI_SPI4;//TODO Change this HARDCODE!!!!
+        data->driver.transport.sleep_us = inv_sleep_us;
+
+
 #if CONFIG_SPI_RTIO
 	if ((data->rtio.type == ICM45686_BUS_SPI) && !spi_is_ready_iodev(data->rtio.iodev)) {
 		LOG_ERR("Bus is not ready");
@@ -269,7 +294,7 @@ static int icm45686_init(const struct device *dev)
 	 * unless it's already handled by I3C initialization.
 	 */
 	if (data->rtio.type != ICM45686_BUS_I3C) {
-		err = reg_write(dev, REG_MISC2, REG_MISC2_SOFT_RST(1));
+		err = reg_write(dev, REG_MISC2, REG_MISC2_SOFT_RST(1), 1);
 		if (err) {
 			LOG_ERR("Failed to write soft-reset: %d", err);
 			return err;
@@ -278,7 +303,7 @@ static int icm45686_init(const struct device *dev)
 		k_sleep(K_MSEC(1));
 
 		/* A complete soft-reset clears the bit */
-		err = reg_read(dev, REG_MISC2, &read_val);
+		err = reg_read(dev, REG_MISC2, &read_val, 1);
 		if (err) {
 			LOG_ERR("Failed to read soft-reset: %d", err);
 			return err;
@@ -289,38 +314,45 @@ static int icm45686_init(const struct device *dev)
 		}
 	}
 
-	/* Set Slew-rate to 10-ns typical, to allow proper SPI readouts */
-
-	err = reg_write(dev, REG_DRIVE_CONFIG0, REG_DRIVE_CONFIG0_SPI_SLEW(2));
-	if (err) {
-		LOG_ERR("Failed to write slew-rate: %d", err);
-		return err;
-	}
-	err = reg_write(dev, REG_DRIVE_CONFIG1, REG_DRIVE_CONFIG1_I3C_SLEW(3));
-	if (err) {
-		LOG_ERR("Failed to write slew-rate: %d", err);
-		return err;
-	}
-	/* Wait for register to take effect */
-	k_sleep(K_USEC(2));
+        if (data->driver.transport.serif_type == UI_SPI3 || data->driver.transport.serif_type == UI_SPI4) {
+                drive_config0_t drive_config0;
+                drive_config0.pads_spi_slew = DRIVE_CONFIG0_PADS_SPI_SLEW_TYP_10NS;
+                err = inv_imu_write_reg(&data->driver, DRIVE_CONFIG0, 1,(uint8_t *)&drive_config0);
+                inv_sleep_us(2); /* Takes effect 1.5 us after the register is programmed */
+        }
 
 	/* Confirm ID Value matches */
-	err = reg_read(dev, REG_WHO_AM_I, &read_val);
-	if (err) {
-		LOG_ERR("Failed to read WHO_AM_I: %d", err);
+	err = inv_imu_get_who_am_i(&data->driver, &read_val);
+	if (err < 0) {
+		LOG_ERR("ID read failed: %d", err);
 		return err;
 	}
+
 	if (read_val != WHO_AM_I_ICM45686) {
 		LOG_ERR("Unexpected WHO_AM_I value - expected: 0x%02x, actual: 0x%02x",
 			WHO_AM_I_ICM45686, read_val);
 		return -EIO;
 	}
 
-	/* Sensor Configuration */
+	err = inv_imu_soft_reset(&data->driver);
+	if (err < 0) {
+		LOG_ERR("Soft reset failed err %d", err);
+		return err;
+	}
 
+#ifdef CONFIG_TDK_APEX
+        /* Initialize APEX */
+        err = inv_imu_edmp_init_apex(&data->driver);
+	if (err < 0) {
+		LOG_ERR("APEX Initialization failed");
+		return err;
+	}
+#endif
+
+	/* Sensor Configuration */
 	val = REG_PWR_MGMT0_ACCEL_MODE(cfg->settings.accel.pwr_mode) |
 	      REG_PWR_MGMT0_GYRO_MODE(cfg->settings.gyro.pwr_mode);
-	err = reg_write(dev, REG_PWR_MGMT0, val);
+	err = reg_write(dev, REG_PWR_MGMT0, val, 1);
 	if (err) {
 		LOG_ERR("Failed to write Power settings: %d", err);
 		return err;
@@ -328,7 +360,7 @@ static int icm45686_init(const struct device *dev)
 
 	val = REG_ACCEL_CONFIG0_ODR(cfg->settings.accel.odr) |
 	      REG_ACCEL_CONFIG0_FS(cfg->settings.accel.fs);
-	err = reg_write(dev, REG_ACCEL_CONFIG0, val);
+	err = reg_write(dev, REG_ACCEL_CONFIG0, val, 1);
 	if (err) {
 		LOG_ERR("Failed to write Accel settings: %d", err);
 		return err;
@@ -336,7 +368,7 @@ static int icm45686_init(const struct device *dev)
 
 	val = REG_GYRO_CONFIG0_ODR(cfg->settings.gyro.odr) |
 	      REG_GYRO_CONFIG0_FS(cfg->settings.gyro.fs);
-	err = reg_write(dev, REG_GYRO_CONFIG0, val);
+	err = reg_write(dev, REG_GYRO_CONFIG0, val, 1);
 	if (err) {
 		LOG_ERR("Failed to write Gyro settings: %d", err);
 		return err;

@@ -18,6 +18,12 @@
 #include <zephyr/drivers/i3c.h>
 #endif
 
+#include "icm456xx_h/imu/inv_imu.h"
+#include "imu/inv_imu_driver.h"
+#ifdef CONFIG_TDK_APEX
+#include "imu/inv_imu_edmp.h"
+#endif
+
 struct icm45686_encoded_payload {
 	union {
 		uint8_t buf[14];
@@ -159,6 +165,7 @@ struct icm45686_data {
 #elif defined(CONFIG_ICM45686_STREAM)
 	struct icm45686_stream stream;
 #endif /* CONFIG_ICM45686_TRIGGER */
+        struct inv_imu_device driver;
 };
 
 struct icm45686_config {
