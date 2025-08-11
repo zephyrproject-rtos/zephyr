@@ -28,6 +28,7 @@ if(CONFIG_IEEE802154_STM32WBA)
   zephyr_sources(hci_if/802154/host_stack_if.c)
   zephyr_sources(hci_if/802154/linklayer_plat_adapt.c)
   zephyr_sources(hci_if/802154/ll_sys_if_adapt.c)
+  zephyr_sources(hci_if/802154/stm32_timer.c)
 endif()
 
 if(CONFIG_ZIGBEE_STM32WBA) 
