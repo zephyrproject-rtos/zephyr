@@ -1,0 +1,8 @@
+tests:
+  drivers.i2s.multichannel:
+    depends_on: i2s
+    tags:
+      - drivers
+    filter: CONFIG_I2S_TEST_MULTI_CHANNEL
+    integration_platforms:
+      - mimxrt1060_evk/mimxrt1062/qspi
