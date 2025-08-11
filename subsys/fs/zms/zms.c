@@ -29,10 +29,8 @@ static int zms_ate_valid_different_sector(struct zms_fs *fs, const struct zms_at
 
 #ifdef CONFIG_ZMS_LOOKUP_CACHE
 
-static inline size_t zms_lookup_cache_pos(uint32_t id)
+static inline size_t zms_lookup_cache_pos(zms_id_t id)
 {
-	uint32_t hash = id;
-
 #ifdef CONFIG_ZMS_LOOKUP_CACHE_FOR_SETTINGS
 	/*
 	 * 1. Settings subsystem is storing the name ID and the linked list node ID
@@ -52,14 +50,27 @@ static inline size_t zms_lookup_cache_pos(uint32_t id)
 	uint32_t key_value_bit;
 	uint32_t key_value_hash;
 	uint32_t key_value_ll;
+	uint32_t hash;
 
 	key_value_bit = (id >> LOG2(ZMS_DATA_ID_OFFSET)) & 1;
 	key_value_hash = (id & ZMS_HASH_MASK) >> (CONFIG_SETTINGS_ZMS_MAX_COLLISIONS_BITS + 1);
 	key_value_ll = id & BIT(0);
 
 	hash = (key_value_hash << 2) | (key_value_bit << 1) | key_value_ll;
+
+#elif defined(CONFIG_ZMS_ID_64BIT)
+	/* 64-bit integer hash function found by https://github.com/skeeto/hash-prospector. */
+	uint64_t hash = id;
+
+	hash ^= hash >> 32;
+	hash *= 0x42ab4abe4c475039ULL;
+	hash ^= hash >> 31;
+	hash *= 0xfa90c4424c537791ULL;
+	hash ^= hash >> 32;
 #else
 	/* 32-bit integer hash function found by https://github.com/skeeto/hash-prospector. */
+	uint32_t hash = id;
+
 	hash ^= hash >> 16;
 	hash *= 0x7feb352dU;
 	hash ^= hash >> 15;
@@ -239,7 +250,7 @@ static int zms_flash_ate_wrt(struct zms_fs *fs, const struct zms_ate *entry)
 		goto end;
 	}
 #ifdef CONFIG_ZMS_LOOKUP_CACHE
-	/* 0xFFFFFFFF is a special-purpose identifier. Exclude it from the cache */
+	/* ZMS_HEAD_ID is a special-purpose identifier. Exclude it from the cache */
 	if (entry->id != ZMS_HEAD_ID) {
 		fs->lookup_cache[zms_lookup_cache_pos(entry->id)] = fs->ate_wra;
 	}
@@ -487,7 +498,7 @@ static bool zms_close_ate_valid(struct zms_fs *fs, const struct zms_ate *entry)
 /* zms_empty_ate_valid validates an sector empty ate.
  * A valid sector empty ate should be:
  * - a valid ate
- * - with len = 0xffff and id = 0xffffffff
+ * - with len = 0xffff and id = ZMS_HEAD_ID
  * return true if valid, false otherwise
  */
 static bool zms_empty_ate_valid(struct zms_fs *fs, const struct zms_ate *entry)
@@ -500,13 +511,25 @@ static bool zms_empty_ate_valid(struct zms_fs *fs, const struct zms_ate *entry)
  * Valid gc_done_ate:
  * - valid ate
  * - len = 0
- * - id = 0xffffffff
+ * - id = ZMS_HEAD_ID
  * return true if valid, false otherwise
  */
 static bool zms_gc_done_ate_valid(struct zms_fs *fs, const struct zms_ate *entry)
 {
 	return (zms_ate_valid_different_sector(fs, entry, entry->cycle_cnt) && (!entry->len) &&
 		(entry->id == ZMS_HEAD_ID));
+}
+
+/* zms_sector_closed checks whether the current sector is closed, which would imply
+ * that the empty ATE and close ATE are both valid and have matching cycle counters
+ *
+ * return true if closed, false otherwise
+ */
+static bool zms_sector_closed(struct zms_fs *fs, struct zms_ate *empty_ate,
+			      struct zms_ate *close_ate)
+{
+	return (zms_empty_ate_valid(fs, empty_ate) && zms_close_ate_valid(fs, close_ate) &&
+		(empty_ate->cycle_cnt == close_ate->cycle_cnt));
 }
 
 /* Read empty and close ATE of the sector where belongs address "addr" and
@@ -526,8 +549,7 @@ static int zms_validate_closed_sector(struct zms_fs *fs, uint64_t addr, struct z
 		return rc;
 	}
 
-	if (zms_empty_ate_valid(fs, empty_ate) && zms_close_ate_valid(fs, close_ate) &&
-	    (empty_ate->cycle_cnt == close_ate->cycle_cnt)) {
+	if (zms_sector_closed(fs, empty_ate, close_ate)) {
 		/* Closed sector validated */
 		return 1;
 	}
@@ -536,7 +558,7 @@ static int zms_validate_closed_sector(struct zms_fs *fs, uint64_t addr, struct z
 }
 
 /* store an entry in flash */
-static int zms_flash_write_entry(struct zms_fs *fs, uint32_t id, const void *data, size_t len)
+static int zms_flash_write_entry(struct zms_fs *fs, zms_id_t id, const void *data, size_t len)
 {
 	int rc;
 	struct zms_ate entry;
@@ -549,13 +571,13 @@ static int zms_flash_write_entry(struct zms_fs *fs, uint32_t id, const void *dat
 	entry.cycle_cnt = fs->sector_cycle;
 
 	if (len > ZMS_DATA_IN_ATE_SIZE) {
-		/* only compute CRC if len is greater than 8 bytes */
-		if (IS_ENABLED(CONFIG_ZMS_DATA_CRC)) {
-			entry.data_crc = crc32_ieee(data, len);
-		}
+#ifdef CONFIG_ZMS_DATA_CRC
+		/* only compute CRC if data is to be stored outside of entry */
+		entry.data_crc = crc32_ieee(data, len);
+#endif
 		entry.offset = (uint32_t)SECTOR_OFFSET(fs->data_wra);
 	} else if ((len > 0) && (len <= ZMS_DATA_IN_ATE_SIZE)) {
-		/* Copy data into entry for small data ( < 8B) */
+		/* Copy data into entry for small data (at most ZMS_DATA_IN_ATE_SIZE bytes) */
 		memcpy(&entry.data, data, len);
 	}
 
@@ -688,10 +710,12 @@ static int zms_sector_close(struct zms_fs *fs)
 	struct zms_ate close_ate;
 	struct zms_ate garbage_ate;
 
+	/* Initialize all members to 0xff */
+	memset(&close_ate, 0xff, sizeof(struct zms_ate));
+
 	close_ate.id = ZMS_HEAD_ID;
 	close_ate.len = 0U;
 	close_ate.offset = (uint32_t)SECTOR_OFFSET(fs->ate_wra + fs->ate_size);
-	close_ate.metadata = 0xffffffff;
 	close_ate.cycle_cnt = fs->sector_cycle;
 
 	/* When we close the sector, we must write all non used ATE with
@@ -740,11 +764,13 @@ static int zms_add_gc_done_ate(struct zms_fs *fs)
 {
 	struct zms_ate gc_done_ate;
 
+	/* Initialize all members to 0xff */
+	memset(&gc_done_ate, 0xff, sizeof(struct zms_ate));
+
 	LOG_DBG("Adding gc done ate at %llx", fs->ate_wra);
 	gc_done_ate.id = ZMS_HEAD_ID;
 	gc_done_ate.len = 0U;
 	gc_done_ate.offset = (uint32_t)SECTOR_OFFSET(fs->data_wra);
-	gc_done_ate.metadata = 0xffffffff;
 	gc_done_ate.cycle_cnt = fs->sector_cycle;
 
 	zms_ate_crc8_update(&gc_done_ate);
@@ -793,14 +819,17 @@ static int zms_add_empty_ate(struct zms_fs *fs, uint64_t addr)
 	int rc = 0;
 	uint64_t previous_ate_wra;
 
+	/* Initialize all members to 0 */
+	memset(&empty_ate, 0, sizeof(struct zms_ate));
+
 	addr &= ADDR_SECT_MASK;
 
 	LOG_DBG("Adding empty ate at %llx", (uint64_t)(addr + fs->sector_size - fs->ate_size));
 	empty_ate.id = ZMS_HEAD_ID;
 	empty_ate.len = 0xffff;
-	empty_ate.offset = 0U;
-	empty_ate.metadata =
-		FIELD_PREP(ZMS_MAGIC_NUMBER_MASK, ZMS_MAGIC_NUMBER) | ZMS_DEFAULT_VERSION;
+	empty_ate.metadata = FIELD_PREP(ZMS_VERSION_MASK, ZMS_DEFAULT_VERSION) |
+			     FIELD_PREP(ZMS_MAGIC_NUMBER_MASK, ZMS_MAGIC_NUMBER) |
+			     FIELD_PREP(ZMS_ATE_FORMAT_MASK, ZMS_DEFAULT_ATE_FORMAT);
 
 	rc = zms_get_sector_cycle(fs, addr, &cycle_cnt);
 	if (rc == -ENOENT) {
@@ -893,7 +922,7 @@ static int zms_get_sector_header(struct zms_fs *fs, uint64_t addr, struct zms_at
  * @retval 1 valid ATE with same ID found
  * @retval < 0 An error happened
  */
-static int zms_find_ate_with_id(struct zms_fs *fs, uint32_t id, uint64_t start_addr,
+static int zms_find_ate_with_id(struct zms_fs *fs, zms_id_t id, uint64_t start_addr,
 				uint64_t end_addr, struct zms_ate *ate, uint64_t *ate_addr)
 {
 	int rc;
@@ -1044,10 +1073,10 @@ static int zms_gc(struct zms_fs *fs)
 		 */
 		if (wlk_prev_addr == gc_prev_addr) {
 			/* copy needed */
-			LOG_DBG("Moving %d, len %d", gc_ate.id, gc_ate.len);
+			LOG_DBG("Moving %lld, len %d", (long long)gc_ate.id, gc_ate.len);
 
 			if (gc_ate.len > ZMS_DATA_IN_ATE_SIZE) {
-				/* Copy Data only when len > 8
+				/* Copy Data only when len > ZMS_DATA_IN_ATE_SIZE
 				 * Otherwise, Data is already inside ATE
 				 */
 				data_addr = (gc_prev_addr & ADDR_SECT_MASK);
@@ -1156,16 +1185,28 @@ static int zms_init(struct zms_fs *fs)
 	for (i = 0; i < fs->sector_count; i++) {
 		addr = zms_close_ate_addr(fs, ((uint64_t)i << ADDR_SECT_SHIFT));
 
-		/* verify if the sector is closed */
-		sec_closed = zms_validate_closed_sector(fs, addr, &empty_ate, &close_ate);
-		if (sec_closed < 0) {
-			rc = sec_closed;
+		/* read the header ATEs */
+		rc = zms_get_sector_header(fs, addr, &empty_ate, &close_ate);
+		if (rc) {
 			goto end;
 		}
 		/* update cycle count */
 		fs->sector_cycle = empty_ate.cycle_cnt;
 
-		if (sec_closed == 1) {
+		/* Check the ATE format indicator so that we know how to validate ATEs.
+		 * The metadata field has the same offset and size in all ATE formats
+		 * (the same is guaranteed for crc8 and cycle_cnt).
+		 * Currently, ZMS can only recognize one of its supported ATE formats
+		 * (the one chosen at build time), so their indicators are defined for
+		 * the possibility of a future extension.
+		 * If this indicator is unknown, then consider the header ATEs invalid,
+		 * because we might not be dealing with ZMS contents at all.
+		 */
+		if (ZMS_GET_ATE_FORMAT(empty_ate.metadata) != ZMS_DEFAULT_ATE_FORMAT) {
+			continue;
+		}
+
+		if (zms_sector_closed(fs, &empty_ate, &close_ate)) {
 			/* closed sector */
 			closed_sectors++;
 			/* Let's verify that this is a ZMS storage system */
@@ -1223,7 +1264,8 @@ static int zms_init(struct zms_fs *fs)
 			goto end;
 		}
 
-		if (zms_empty_ate_valid(fs, &empty_ate)) {
+		if ((ZMS_GET_ATE_FORMAT(empty_ate.metadata) == ZMS_DEFAULT_ATE_FORMAT) &&
+		    zms_empty_ate_valid(fs, &empty_ate)) {
 			/* Empty ATE is valid, let's verify that this is a ZMS storage system */
 			if (ZMS_GET_MAGIC_NUMBER(empty_ate.metadata) == ZMS_MAGIC_NUMBER) {
 				zms_magic_exist = true;
@@ -1468,7 +1510,7 @@ int zms_mount(struct zms_fs *fs)
 	return 0;
 }
 
-ssize_t zms_write(struct zms_fs *fs, uint32_t id, const void *data, size_t len)
+ssize_t zms_write(struct zms_fs *fs, zms_id_t id, const void *data, size_t len)
 {
 	int rc;
 	size_t data_size;
@@ -1620,12 +1662,12 @@ end:
 	return rc;
 }
 
-int zms_delete(struct zms_fs *fs, uint32_t id)
+int zms_delete(struct zms_fs *fs, zms_id_t id)
 {
 	return zms_write(fs, id, NULL, 0);
 }
 
-ssize_t zms_read_hist(struct zms_fs *fs, uint32_t id, void *data, size_t len, uint32_t cnt)
+ssize_t zms_read_hist(struct zms_fs *fs, zms_id_t id, void *data, size_t len, uint32_t cnt)
 {
 	int rc;
 	int prev_found = 0;
@@ -1726,7 +1768,7 @@ err:
 	return rc;
 }
 
-ssize_t zms_read(struct zms_fs *fs, uint32_t id, void *data, size_t len)
+ssize_t zms_read(struct zms_fs *fs, zms_id_t id, void *data, size_t len)
 {
 	int rc;
 
@@ -1739,7 +1781,7 @@ ssize_t zms_read(struct zms_fs *fs, uint32_t id, void *data, size_t len)
 	return MIN(rc, len);
 }
 
-ssize_t zms_get_data_length(struct zms_fs *fs, uint32_t id)
+ssize_t zms_get_data_length(struct zms_fs *fs, zms_id_t id)
 {
 	int rc;
 
