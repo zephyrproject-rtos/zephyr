@@ -13,6 +13,7 @@ import re
 import sys
 from collections import defaultdict
 from itertools import groupby
+from pprint import pprint
 
 from elftools.elf.elffile import ELFFile
 from intelhex import IntelHex
@@ -212,6 +213,11 @@ def main() -> None:
         type=argparse.FileType("w", encoding="utf-8"),
         help="Path to write the generated secondary PERIPHCONF HEX file to",
     )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Enable verbose output including UICR structure contents",
+    )
     args = parser.parse_args()
 
     try:
@@ -262,6 +268,8 @@ def main() -> None:
         uicr_hex = IntelHex()
         uicr_hex.frombytes(bytes(uicr), offset=uicr_node.regs[0].addr)
 
+        if args.verbose:
+            pretty_print_uicr(uicr)
         uicr_hex.write_hex_file(args.out_uicr_hex)
     except ScriptError as e:
         print(f"Error: {e!s}")
@@ -348,6 +356,37 @@ def parse_kconfig(content: str) -> dict[str, str | None]:
         result[match["config"]] = match["value"]
 
     return result
+
+
+def pretty_print_uicr(uicr: Uicr) -> None:
+    """Pretty print the UICR structure contents."""
+    print("=" * 60)
+    print("UICR STRUCTURE CONTENTS")
+    print("=" * 60)
+    
+    def struct_to_dict(struct):
+        """Convert ctypes structure to dict recursively."""
+        result = {}
+        for field_name, _ in struct._fields_:
+            value = getattr(struct, field_name)
+            if hasattr(value, '_fields_'):  # Nested structure
+                result[field_name] = struct_to_dict(value)
+            elif hasattr(value, '__getitem__') and hasattr(value, '__len__'):  # Array
+                try:
+                    result[field_name] = [f"0x{v:08X}" if isinstance(v, int) and v > 255 else v for v in value]
+                except:
+                    result[field_name] = str(value)
+            else:
+                # Format large integers as hex
+                if isinstance(value, int) and value > 255:
+                    result[field_name] = f"0x{value:08X}"
+                else:
+                    result[field_name] = value
+        return result
+    
+    uicr_dict = struct_to_dict(uicr)
+    pprint(uicr_dict, width=100, depth=None)
+    print("=" * 60)
 
 
 if __name__ == "__main__":
