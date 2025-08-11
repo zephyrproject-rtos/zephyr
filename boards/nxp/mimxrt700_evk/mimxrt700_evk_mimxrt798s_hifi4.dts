@@ -19,8 +19,6 @@
 	compatible = "nxp,mimxrt798s";
 
 	aliases {
-		led1 = &blue_led;
-		sw0 = &user_button_1;
 		i2s-codec-tx = &sai0;
 		i2s-tx = &sai0;
 	};
@@ -30,27 +28,6 @@
 		zephyr,console = &flexcomm0_lpuart0;
 		zephyr,shell-uart = &flexcomm0_lpuart0;
 	};
-
-	leds {
-		compatible = "gpio-leds";
-		blue_led: led_1 {
-			gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
-			label = "User LED_BLUE";
-		};
-	};
-
-	gpio_keys {
-		compatible = "gpio-keys";
-		user_button_1: button_0 {
-			label = "User SW5";
-			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
-			zephyr,code = <INPUT_KEY_0>;
-		};
-	};
-};
-
-&gpio0 {
-	status = "okay";
 };
 
 &flexcomm0 {
