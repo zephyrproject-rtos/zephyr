@@ -222,6 +222,25 @@ follows:
 
 DAC output is available on connector J12 pin 4.
 
+Building and Running for MIMXRT1180-EVK
+=======================================
+The sample can be built and executed for the :zephyr:board:`mimxrt1180_evk` as
+follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/dac
+   :board: mimxrt1180_evk/mimxrt1189/cm33
+   :goals: flash
+   :compact:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/dac
+   :board: mimxrt1180_evk/mimxrt1189/cm7
+   :goals: flash
+   :compact:
+
+Connect J10 pin 1-2., the DAC output is available on TP9.
+
 Sample output
 =============
 
