@@ -299,6 +299,10 @@ config EAP_ALL
 	select EAP_TTLS
 	select EAP_MSCHAPV2
 	default y
+
+config EAP_TLSV1_3
+	bool "EAP TLSv1.3 support"
+	select MBEDTLS_TLS_VERSION_1_3
 endif # WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 
 config WIFI_NM_WPA_SUPPLICANT_WPA3
