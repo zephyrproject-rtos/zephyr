@@ -329,8 +329,10 @@ int icm4268x_configure(const struct device *dev, struct icm4268x_cfg *cfg)
 		}
 
 		/* Set watermark and interrupt handling first */
-		uint16_t fifo_wm = icm4268x_compute_fifo_wm(cfg);
-		uint8_t fifo_wml = fifo_wm & 0xFF;
+		cfg->fifo_wm = icm4268x_compute_fifo_wm(cfg);
+
+		uint8_t fifo_wml = cfg->fifo_wm & 0xFF;
+		uint8_t fifo_wmh = (cfg->fifo_wm >> 8) & 0x0F;
 
 		LOG_DBG("FIFO_CONFIG2( (0x%x)) (WM Low) 0x%x", REG_FIFO_CONFIG2, fifo_wml);
 		res = icm4268x_spi_single_write(&dev_cfg->spi, REG_FIFO_CONFIG2, fifo_wml);
@@ -338,8 +340,6 @@ int icm4268x_configure(const struct device *dev, struct icm4268x_cfg *cfg)
 			LOG_ERR("Error writing FIFO_CONFIG2");
 			return -EINVAL;
 		}
-
-		uint8_t fifo_wmh = (fifo_wm >> 8) & 0x0F;
 
 		LOG_DBG("FIFO_CONFIG3 (0x%x) (WM High) 0x%x", REG_FIFO_CONFIG3, fifo_wmh);
 		res = icm4268x_spi_single_write(&dev_cfg->spi, REG_FIFO_CONFIG3, fifo_wmh);
