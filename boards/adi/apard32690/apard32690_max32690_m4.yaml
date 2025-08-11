@@ -16,8 +16,9 @@ supported:
   - serial
   - spi
   - trng
+  - usbd
   - counter
   - w1
   - memc
-ram: 1024
+ram: 128
 flash: 3072

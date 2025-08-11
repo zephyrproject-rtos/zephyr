@@ -37,6 +37,260 @@ USBD_DEVICE_DEFINE(test_usbd,
 
 USBH_CONTROLLER_DEFINE(uhs_ctx, DEVICE_DT_GET(DT_NODELABEL(zephyr_uhc0)));
 
+static int test_cmp_string_desc(struct net_buf *const buf, const int idx)
+{
+	static struct usbd_desc_node *desc_nd;
+	size_t len;
+
+	if (idx == test_mfg.str.idx) {
+		desc_nd = &test_mfg;
+	} else if (idx == test_product.str.idx) {
+		desc_nd = &test_product;
+	} else if (idx == test_sn.str.idx) {
+		desc_nd = &test_sn;
+	} else {
+		return -ENOTSUP;
+	}
+
+	if (net_buf_pull_u8(buf) != desc_nd->bLength) {
+		return -EINVAL;
+	}
+
+	if (net_buf_pull_u8(buf) != USB_DESC_STRING) {
+		return -EINVAL;
+	}
+
+	LOG_HEXDUMP_DBG(buf->data, buf->len, "");
+	len = MIN(buf->len / 2, desc_nd->bLength / 2);
+	for (size_t i = 0; i < len; i++) {
+		uint16_t a = net_buf_pull_le16(buf);
+		uint16_t b = ((uint8_t *)(desc_nd->ptr))[i];
+
+		if (a != b) {
+			LOG_INF("%c != %c", a, b);
+			return -EINVAL;
+		}
+	}
+
+	return 0;
+}
+
+ZTEST(device_next, test_get_desc_string)
+{
+	const uint8_t type = USB_DESC_STRING;
+	const uint16_t id = 0x0409;
+	static struct usb_device *udev;
+	struct net_buf *buf;
+	int err;
+
+	udev = usbh_device_get_any(&uhs_ctx);
+	zassert_not_null(udev, "No USB device available");
+
+	buf = usbh_xfer_buf_alloc(udev, UINT8_MAX);
+	zassert_not_null(udev, "Failed to allocate buffer");
+
+	err = k_mutex_lock(&udev->mutex, K_MSEC(200));
+	zassert_equal(err, 0, "Failed to lock device");
+
+	err = usbh_req_desc(udev, type, 1, id, UINT8_MAX, buf);
+	zassert_equal(err, 0, "Transfer status is an error");
+	err = test_cmp_string_desc(buf, 1);
+	zassert_equal(err, 0, "Descriptor comparison failed");
+
+	net_buf_reset(buf);
+	err = usbh_req_desc(udev, type, 2, id, UINT8_MAX, buf);
+	zassert_equal(err, 0, "Transfer status is an error");
+	err = test_cmp_string_desc(buf, 2);
+	zassert_equal(err, 0, "Descriptor comparison failed");
+
+	net_buf_reset(buf);
+	err = usbh_req_desc(udev, type, 3, id, UINT8_MAX, buf);
+	zassert_equal(err, 0, "Transfer status is an error");
+	err = test_cmp_string_desc(buf, 3);
+	zassert_equal(err, 0, "Descriptor comparison failed");
+
+	k_mutex_unlock(&udev->mutex);
+	usbh_xfer_buf_free(udev, buf);
+}
+
+ZTEST(device_next, test_vendor_control_in)
+{
+	const uint8_t bmRequestType = (USB_REQTYPE_DIR_TO_HOST << 7) |
+				      (USB_REQTYPE_TYPE_VENDOR << 5);
+	static struct usb_device *udev;
+	const uint8_t bRequest = 0x5c;
+	const uint16_t wLength = 64;
+	struct net_buf *buf;
+	int err;
+
+	if (!IS_ENABLED(CONFIG_UHC_VIRTUAL)) {
+		LOG_WRN("The test was skipped, controller is not supported.");
+		return;
+	}
+
+	udev = usbh_device_get_any(&uhs_ctx);
+	zassert_not_null(udev, "No USB device available");
+
+	buf = usbh_xfer_buf_alloc(udev, wLength);
+	zassert_not_null(udev, "Failed to allocate buffer");
+
+	err = k_mutex_lock(&udev->mutex, K_MSEC(200));
+	zassert_equal(err, 0, "Failed to lock device");
+
+	/* Perform regular vendor IN transfer */
+	for (uint32_t i = 0; i < CONFIG_UDC_BUF_COUNT; i++) {
+		net_buf_reset(buf);
+		err = usbh_req_setup(udev, bmRequestType, bRequest, 0, 0, wLength, buf);
+		zassert_equal(err, 0, "Transfer status is an error");
+	}
+
+	/* Perform vendor IN transfer but omit status stage*/
+	usbh_req_omit_status(true);
+	for (uint32_t i = 0; i < CONFIG_UDC_BUF_COUNT * 2; i++) {
+		net_buf_reset(buf);
+		err = usbh_req_setup(udev, bmRequestType, bRequest, 0, 0, wLength, buf);
+		zassert_equal(err, 0, "Transfer status is an error");
+	}
+
+	/* Perform vendor IN requests but omit data and status stage*/
+	for (uint32_t i = 0; i < CONFIG_UDC_BUF_COUNT * 2; i++) {
+		err = usbh_req_setup(udev, bmRequestType, bRequest, 0, 0, wLength, NULL);
+		zassert_equal(err, 0, "Transfer status is an error");
+	}
+
+	usbh_req_omit_status(false);
+
+	/* Perform regular vendor IN transfer again */
+	for (uint32_t i = 0; i < CONFIG_UDC_BUF_COUNT; i++) {
+		net_buf_reset(buf);
+		err = usbh_req_setup(udev, bmRequestType, bRequest, 0, 0, wLength, buf);
+		zassert_equal(err, 0, "Transfer status is an error");
+	}
+
+	k_mutex_unlock(&udev->mutex);
+	usbh_xfer_buf_free(udev, buf);
+}
+
+ZTEST(device_next, test_vendor_control_out)
+{
+	const uint8_t bmRequestType = (USB_REQTYPE_DIR_TO_DEVICE << 7) |
+				      (USB_REQTYPE_TYPE_VENDOR << 5);
+	const uint8_t bRequest = 0x5b;
+	static struct usb_device *udev;
+	const uint16_t wLength = 64;
+	struct net_buf *buf;
+	int err;
+
+	if (!IS_ENABLED(CONFIG_UHC_VIRTUAL)) {
+		LOG_WRN("The test was skipped, controller is not supported.");
+		return;
+	}
+
+	udev = usbh_device_get_any(&uhs_ctx);
+	zassert_not_null(udev, "No USB device available");
+
+	buf = usbh_xfer_buf_alloc(udev, wLength);
+	zassert_not_null(udev, "Failed to allocate buffer");
+
+	err = k_mutex_lock(&udev->mutex, K_MSEC(200));
+	zassert_equal(err, 0, "Failed to lock device");
+
+	/* Perform regular vendor OUT transfer */
+	for (uint32_t i = 0; i < CONFIG_UDC_BUF_COUNT; i++) {
+		net_buf_reset(buf);
+		for (uint32_t n = 0; n < wLength; n++) {
+			net_buf_add_u8(buf, n);
+		}
+
+		err = usbh_req_setup(udev, bmRequestType, bRequest, 0, 0, wLength, buf);
+		zassert_equal(err, 0, "Transfer status is an error");
+	}
+
+	/* Perform vendor OUT transfer but omit status stage*/
+	usbh_req_omit_status(true);
+	for (uint32_t i = 0; i < CONFIG_UDC_BUF_COUNT * 2; i++) {
+		net_buf_reset(buf);
+		for (uint32_t n = 0; n < wLength; n++) {
+			net_buf_add_u8(buf, n);
+		}
+
+		err = usbh_req_setup(udev, bmRequestType, bRequest, 0, 0, wLength, buf);
+		zassert_equal(err, 0, "Transfer status is an error");
+	}
+
+	/* Perform vendor OUT requests but omit data and status stage*/
+	for (uint32_t i = 0; i < CONFIG_UDC_BUF_COUNT * 2; i++) {
+		err = usbh_req_setup(udev, bmRequestType, bRequest, 0, 0, wLength, NULL);
+		zassert_equal(err, 0, "Transfer status is an error");
+	}
+
+	usbh_req_omit_status(false);
+
+	/* Perform regular vendor OUT transfer again */
+	for (uint32_t i = 0; i < CONFIG_UDC_BUF_COUNT; i++) {
+		net_buf_reset(buf);
+		for (uint32_t n = 0; n < wLength; n++) {
+			net_buf_add_u8(buf, n);
+		}
+
+		err = usbh_req_setup(udev, bmRequestType, bRequest, 0, 0, wLength, buf);
+		zassert_equal(err, 0, "Transfer status is an error");
+	}
+
+	k_mutex_unlock(&udev->mutex);
+	usbh_xfer_buf_free(udev, buf);
+}
+
+ZTEST(device_next, test_control_nodata)
+{
+	const uint8_t bmRequestType = USB_REQTYPE_RECIPIENT_ENDPOINT;
+	const uint8_t bRequest = USB_SREQ_CLEAR_FEATURE;
+	const uint16_t wValue = USB_SFS_ENDPOINT_HALT;
+	const uint16_t wIndex = USB_CONTROL_EP_OUT;
+	static struct usb_device *udev;
+	int err;
+
+	if (!IS_ENABLED(CONFIG_UHC_VIRTUAL)) {
+		LOG_WRN("The test was skipped, controller is not supported.");
+		return;
+	}
+
+	udev = usbh_device_get_any(&uhs_ctx);
+	zassert_not_null(udev, "No USB device available");
+
+	err = k_mutex_lock(&udev->mutex, K_MSEC(200));
+	zassert_equal(err, 0, "Failed to lock device");
+
+	/* Perform regular control transfer */
+	for (uint32_t i = 0; i < CONFIG_UDC_BUF_COUNT; i++) {
+		err = usbh_req_setup(udev,
+				     bmRequestType, bRequest, wValue, wIndex, 0,
+				     NULL);
+		zassert_equal(err, 0, "Transfer status is an error");
+	}
+
+	/* Perform transfer but omit status stage*/
+	usbh_req_omit_status(true);
+	for (uint32_t i = 0; i < CONFIG_UDC_BUF_COUNT * 2; i++) {
+		err = usbh_req_setup(udev,
+				     bmRequestType, bRequest, wValue, wIndex, 0,
+				     NULL);
+		zassert_equal(err, 0, "Transfer status is an error");
+	}
+
+	usbh_req_omit_status(false);
+
+	/* Perform regular control transfer again */
+	for (uint32_t i = 0; i < CONFIG_UDC_BUF_COUNT; i++) {
+		err = usbh_req_setup(udev,
+				     bmRequestType, bRequest, wValue, wIndex, 0,
+				     NULL);
+		zassert_equal(err, 0, "Transfer status is an error");
+	}
+
+	k_mutex_unlock(&udev->mutex);
+}
+
 /* Get Configuration request test */
 ZTEST(device_next, test_get_configuration)
 {

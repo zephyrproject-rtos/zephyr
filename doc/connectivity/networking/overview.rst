@@ -180,10 +180,10 @@ The networking stack source code tree is organized as follows:
   source for sample code (see ``samples/net`` instead).
 
 .. _LwM2M specification 1.0.2:
-   http://openmobilealliance.org/release/LightweightM2M/V1_0_2-20180209-A/OMA-TS-LightweightM2M-V1_0_2-20180209-A.pdf
+   https://www.openmobilealliance.org/release/LightweightM2M/V1_0_2-20180209-A/OMA-TS-LightweightM2M-V1_0_2-20180209-A.pdf
 
 .. _LwM2M specification 1.1.1:
-   http://openmobilealliance.org/release/LightweightM2M/V1_1_1-20190617-A/
+   https://www.openmobilealliance.org/release/LightweightM2M/V1_1_1-20190617-A/
 
 .. _RFC 2616:
    https://tools.ietf.org/html/rfc2616

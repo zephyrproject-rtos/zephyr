@@ -121,18 +121,14 @@ static int esp32_ipm_send(const struct device *dev, int wait, uint32_t id,
 	while (!atomic_cas(&dev_data->control->lock,
 		ESP32_IPM_LOCK_FREE_VAL,
 		dev_data->this_core_id)) {
+		/* Do not wait for availability */
+		if (wait == 0) {
+			irq_unlock(key);
+
+			return -EBUSY;
+		}
 
 		k_busy_wait(1);
-
-		if ((wait != -1) && (wait > 0)) {
-			/* lock could not be held this time, return */
-			wait--;
-			if (wait == 0)  {
-				irq_unlock(key);
-
-				return -ETIMEDOUT;
-			}
-		}
 	}
 
 	/* Only the lower 16bits of id are used */

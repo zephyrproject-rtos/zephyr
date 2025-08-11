@@ -48,6 +48,13 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
+TPM
+---
+
+TPM2 is enabled for PWM for M33 core. Signals can be observerd with
+oscilloscope or logic analyzer.
+Connect J1005-3 and J1005-7(GND) to Oscilloscope or logic analyzer
+
 Devices
 ========
 System Clock
@@ -245,6 +252,10 @@ Or use "cpu" command to boot from secondary Core, for example Core1:
 .. code-block:: console
 
     dcache flush; icache flush; cpu 1 release 0xd0000000
+
+.. note::
+
+   Use U-Boot "go" command to boot Zephyr when build with target ``imx93_evk/mimx9352/a55/smp``, since i.MX 93 only has 2 Cortex-A55 cores.
 
 Option 3. Boot Zephyr by Using Remoteproc under Linux
 =====================================================

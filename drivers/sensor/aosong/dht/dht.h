@@ -19,6 +19,7 @@ struct dht_data {
 
 struct dht_config {
 	struct gpio_dt_spec dio_gpio;
+	bool is_dht22; /* true for DHT22, false for DHT11 */
 };
 
 #endif

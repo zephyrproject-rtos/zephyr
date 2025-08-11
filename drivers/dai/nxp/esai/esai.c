@@ -1,8 +1,11 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/device.h>
 
 #include "esai.h"
 
@@ -654,14 +657,12 @@ static const struct dai_properties
 
 static int esai_probe(const struct device *dev)
 {
-	/* nothing to be done here but mandatory to implement */
-	return 0;
+	return pm_device_runtime_get(dev);
 }
 
 static int esai_remove(const struct device *dev)
 {
-	/* nothing to be done here but mandatory to implement */
-	return 0;
+	return pm_device_runtime_put(dev);
 }
 
 static DEVICE_API(dai, esai_api) = {
@@ -672,6 +673,54 @@ static DEVICE_API(dai, esai_api) = {
 	.probe = esai_probe,
 	.remove = esai_remove,
 };
+
+static int esai_clks_enable_disable(const struct device *dev, bool enable)
+{
+	const struct esai_config *cfg;
+	void *clk_id;
+	int i, ret;
+
+	cfg = dev->config;
+
+	for (i = 0; i < cfg->clk_data.clock_num; i++) {
+		clk_id = UINT_TO_POINTER(cfg->clk_data.clocks[i]);
+
+		if (enable) {
+			ret = clock_control_on(cfg->clk_data.dev, clk_id);
+		} else {
+			ret = clock_control_off(cfg->clk_data.dev, clk_id);
+		}
+
+		if (ret < 0) {
+			LOG_ERR("failed to gate/ungate clock %u: %d",
+				cfg->clk_data.clocks[i], ret);
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+__maybe_unused static int esai_pm_action(const struct device *dev,
+					 enum pm_device_action action)
+{
+	bool enable = true;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		enable = false;
+		break;
+	case PM_DEVICE_ACTION_TURN_ON:
+	case PM_DEVICE_ACTION_TURN_OFF:
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
+
+	return esai_clks_enable_disable(dev, enable);
+}
 
 static int esai_init(const struct device *dev)
 {
@@ -684,15 +733,30 @@ static int esai_init(const struct device *dev)
 
 	device_map(&data->regmap, cfg->regmap_phys, cfg->regmap_size, K_MEM_CACHE_NONE);
 
+#ifndef CONFIG_PM_DEVICE_RUNTIME
+	ret = esai_clks_enable_disable(dev, true);
+	if (ret < 0) {
+		return ret;
+	}
+#endif /* CONFIG_PM_DEVICE_RUNTIME */
+
+	/* note: optional operation so -ENOENT is allowed */
+	ret = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0 && ret != -ENOENT) {
+		return ret;
+	}
+
 	ret = esai_parse_pinmodes(cfg, data);
 	if (ret < 0) {
 		return ret;
 	}
 
-	return 0;
+	return pm_device_runtime_enable(dev);
 }
 
 #define ESAI_INIT(inst)							\
+									\
+PINCTRL_DT_INST_DEFINE(inst);						\
 									\
 BUILD_ASSERT(ESAI_TX_FIFO_WATERMARK(inst) >= 1 &&			\
 	     ESAI_TX_FIFO_WATERMARK(inst) <= _ESAI_FIFO_DEPTH(inst),	\
@@ -749,6 +813,8 @@ static struct esai_config esai_config_##inst = {			\
 	.pinmodes_size = ARRAY_SIZE(pinmodes_##inst),			\
 	.clock_cfg = clock_cfg_##inst,					\
 	.clock_cfg_size = ARRAY_SIZE(clock_cfg_##inst),			\
+	.clk_data = ESAI_CLOCK_DATA_DECLARE(inst),			\
+	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),			\
 };									\
 									\
 static struct esai_data esai_data_##inst = {				\
@@ -756,7 +822,9 @@ static struct esai_data esai_data_##inst = {				\
 	.cfg.dai_index = DT_INST_PROP_OR(inst, dai_index, 0),		\
 };									\
 									\
-DEVICE_DT_INST_DEFINE(inst, &esai_init, NULL,				\
+PM_DEVICE_DT_INST_DEFINE(inst, esai_pm_action);				\
+									\
+DEVICE_DT_INST_DEFINE(inst, &esai_init, PM_DEVICE_DT_INST_GET(inst),	\
 		      &esai_data_##inst, &esai_config_##inst,		\
 		      POST_KERNEL, CONFIG_DAI_INIT_PRIORITY,		\
 		      &esai_api);					\

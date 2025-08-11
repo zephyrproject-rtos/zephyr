@@ -181,7 +181,7 @@ static void process_log_msg(const struct shell *sh,
 		if (k_is_in_isr()) {
 			key = irq_lock();
 		} else {
-			k_mutex_lock(&sh->ctx->wr_mtx, K_FOREVER);
+			z_shell_lock(sh);
 		}
 		if (!z_flag_cmd_ctx_get(sh)) {
 			z_shell_cmd_line_erase(sh);
@@ -197,7 +197,7 @@ static void process_log_msg(const struct shell *sh,
 		if (k_is_in_isr()) {
 			irq_unlock(key);
 		} else {
-			k_mutex_unlock(&sh->ctx->wr_mtx);
+			z_shell_unlock(sh);
 		}
 	}
 }
@@ -232,7 +232,6 @@ static void process(const struct log_backend *const backend,
 	const struct log_output *log_output = log_backend->log_output;
 	bool colors = IS_ENABLED(CONFIG_SHELL_VT100_COLORS) &&
 			z_flag_use_colors_get(sh);
-	struct k_poll_signal *signal;
 
 	switch (sh->log_backend->control_block->state) {
 	case SHELL_LOG_BACKEND_ENABLED:
@@ -241,8 +240,8 @@ static void process(const struct log_backend *const backend,
 		} else {
 			if (copy_to_pbuffer(mpsc_buffer, msg, log_backend->timeout)) {
 				if (IS_ENABLED(CONFIG_MULTITHREADING)) {
-					signal = &sh->ctx->signals[SHELL_SIGNAL_LOG_MSG];
-					k_poll_signal_raise(signal, 0);
+					k_event_post(&sh->ctx->signal_event,
+						     SHELL_SIGNAL_LOG_MSG);
 				}
 			} else {
 				dropped(backend, 1);

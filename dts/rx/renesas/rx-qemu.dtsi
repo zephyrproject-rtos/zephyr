@@ -36,8 +36,11 @@
 		reg = <0x0087000 0xff>,
 		      <0x0087200 0x1f>,
 		      <0x0087300 0xff>,
-		      <0x00872f0 0x02>;
-		reg-names = "IR", "IER", "IPR", "FIR";
+		      <0x00872f0 0x02>,
+		      <0x0087500 0x0f>,
+		      <0x0087510 0x01>,
+		      <0x0087514 0x01>;
+		reg-names = "IR", "IER", "IPR", "FIR","IRQCR","IRQFLTE","IRQFLTC0";
 	};
 
 	clocks: clocks {
@@ -139,7 +142,7 @@
 		sram0: memory@0 {
 			device_type = "memory";
 			compatible = "mmio-sram";
-			reg = <0x0 DT_SIZE_K(48)>;
+			reg = <0x0 DT_SIZE_K(96)>;
 		};
 
 		flash-controller@7e0000 {

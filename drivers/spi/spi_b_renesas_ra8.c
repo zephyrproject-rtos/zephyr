@@ -148,7 +148,7 @@ static int ra_spi_b_configure(const struct device *dev, const struct spi_config 
 	data->fsp_config.p_extend = &data->fsp_config_extend;
 
 	data->fsp_config.p_callback = spi_cb;
-	data->fsp_config.p_context = dev;
+	data->fsp_config.p_context = (void *)dev;
 	fsp_err = R_SPI_B_Open(&data->spi, &data->fsp_config);
 	if (fsp_err != FSP_SUCCESS) {
 		LOG_ERR("R_SPI_B_Open error: %d", fsp_err);
@@ -312,6 +312,11 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, data->dfs);
 
 	spi_context_cs_control(&data->ctx, true);
+
+	if ((!spi_context_tx_buf_on(&data->ctx)) && (!spi_context_rx_buf_on(&data->ctx))) {
+		/* If current buffer has no data, do nothing */
+		goto end;
+	}
 
 #ifdef CONFIG_SPI_B_INTERRUPT
 	spi_bit_width_t spi_width =

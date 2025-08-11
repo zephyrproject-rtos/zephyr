@@ -8,6 +8,8 @@
 #include <zephyr/drivers/entropy.h>
 #include <zephyr/logging/log.h>
 
+#include <stm32_backup_domain.h>
+
 #include "scm.h"
 
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
@@ -268,9 +270,6 @@ void LINKLAYER_PLAT_RCOStopClbr(void)
 /* Required only for RCO module usage in the context of LSI2 calibration */
 }
 
-/* TODO: To do when porting the temperature measurement function and thread */
-void LINKLAYER_PLAT_RequestTemperature(void) {}
-
 void LINKLAYER_PLAT_SCHLDR_TIMING_UPDATE_NOT(Evnt_timing_t *p_evnt_timing) {}
 
 void LINKLAYER_PLAT_EnableOSContextSwitch(void)
@@ -287,4 +286,14 @@ void LINKLAYER_PLAT_DisableOSContextSwitch(void)
 	 * that the link layer is running a critical radio job (radio channels' calibration);
 	 * A sequence of radio ISRs will appear in the next few milli seconds.
 	 **/
+}
+
+void LINKLAYER_PLAT_EnableBackupDomainAccess(void)
+{
+	stm32_backup_domain_enable_access();
+}
+
+void LINKLAYER_PLAT_DisableBackupDomainAccess(void)
+{
+	stm32_backup_domain_disable_access();
 }

@@ -1,0 +1,43 @@
+# Copyright 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nordic nRF GPIO pad group.
+
+  The GPIO pad group describes the pads (package
+  pins of the SoC) the GPIO controller manages.
+
+  The pads may be in a different power domain than
+  the GPIO controller, and may require enabling
+  retention to preserve the GPIO configuration if
+  the power domain is suspended.
+
+  The GPIO pad group is a child node of the GPIO
+  controller which manages the pad group, named
+  pad-group. The pad group's nodelabel is named
+  gpio_pad_group<GPIO number>.
+
+  Example layout:
+
+    gpio0: gpio@938000 {
+            compatible = "nordic,nrf-gpio";
+
+            ...
+
+            gpio_pad_group0: pad-group {
+                    compatible = "nordic,nrf-gpio-pad-group";
+                    power-domains = <&gdpwr_slow_main>;
+                    retain-mask = <0xFFF>;
+            };
+    };
+
+compatible: "nordic,nrf-gpio-pad-group"
+
+include: base.yaml
+
+properties:
+  retain-mask:
+    type: int
+    description: |
+      Mask of pins which shall be retained if pad
+      group's power domain is powered off.

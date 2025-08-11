@@ -17,11 +17,6 @@
  */
 
 /**
- * @brief Allowed sample point calculation margin in permille.
- */
-#define SAMPLE_POINT_MARGIN 50
-
-/**
  * @brief Defines a set of CAN timing test values
  */
 struct can_timing_test {
@@ -176,8 +171,8 @@ static bool test_timing_values(const struct device *dev, const struct can_timing
 		return false;
 	} else {
 		zassert_true(sp_err >= 0, "unknown error %d", sp_err);
-		zassert_true(sp_err <= SAMPLE_POINT_MARGIN, "sample point error %d too large",
-			     sp_err);
+		zassert_true(sp_err <= CONFIG_CAN_SAMPLE_POINT_MARGIN,
+			     "sample point error %d too large", sp_err);
 
 		printk("sjw = %u, prop_seg = %u, phase_seg1 = %u, phase_seg2 = %u, prescaler = %u ",
 			timing.sjw, timing.prop_seg, timing.phase_seg1, timing.phase_seg2,
@@ -185,7 +180,7 @@ static bool test_timing_values(const struct device *dev, const struct can_timing
 
 		assert_bitrate_correct(dev, &timing, test->bitrate);
 		assert_timing_within_bounds(&timing, min, max);
-		assert_sp_within_margin(&timing, test->sp, SAMPLE_POINT_MARGIN);
+		assert_sp_within_margin(&timing, test->sp, CONFIG_CAN_SAMPLE_POINT_MARGIN);
 
 		if (IS_ENABLED(CONFIG_CAN_FD_MODE) && data_phase) {
 			err = can_set_timing_data(dev, &timing);
@@ -257,7 +252,8 @@ void *can_timing_setup(void)
 	err = can_get_core_clock(dev, &core_clock);
 	zassert_equal(err, 0, "failed to get core CAN clock");
 
-	printk("testing on device %s @ %u Hz\n", dev->name, core_clock);
+	printk("testing on device %s @ %u Hz, sample point margin +/-%u permille\n", dev->name,
+		core_clock, CONFIG_CAN_SAMPLE_POINT_MARGIN);
 
 	if (IS_ENABLED(CONFIG_CAN_FD_MODE)) {
 		can_mode_t cap;

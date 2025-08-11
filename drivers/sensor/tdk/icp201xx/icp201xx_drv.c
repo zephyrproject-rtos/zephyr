@@ -232,7 +232,7 @@ static int icp201xx_channel_get(const struct device *dev, enum sensor_channel ch
 		float pressure, temperature, altitude;
 
 		icp201xx_convert_pressure(&pressure_val, data->raw_pressure);
-		icp201xx_convert_temperature(&temp_val, data->raw_pressure);
+		icp201xx_convert_temperature(&temp_val, data->raw_temperature);
 		pressure = pressure_val.val1 + ((float)pressure_val.val2 / 1000000);
 		temperature = temp_val.val1 + ((float)temp_val.val2 / 1000000);
 		altitude = convertToHeight(pressure, temperature);

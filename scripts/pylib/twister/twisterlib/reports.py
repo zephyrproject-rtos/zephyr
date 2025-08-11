@@ -398,7 +398,7 @@ class Reporting:
                 suite["reason"] = instance.reason
             else:
                 suite["status"] = TwisterStatus.NONE
-                suite["reason"] = 'Unknown Instance status.'
+                suite["reason"] = 'Unknown Instance status'
 
             if instance.status != TwisterStatus.NONE:
                 suite["execution_time"] =  f"{float(handler_time):.2f}"
@@ -617,7 +617,7 @@ class Reporting:
 
             logger.info("")
             logger.info("To rerun the tests, call twister using the following commandline:")
-            extra_parameters = '' if detailed_test_id else ' --no-detailed-test-id'
+            extra_parameters = '' if not detailed_test_id else ' --detailed-test-id'
             logger.info(f"west twister -p <PLATFORM> -s <TEST ID>{extra_parameters}, for example:")
             logger.info("")
             logger.info(

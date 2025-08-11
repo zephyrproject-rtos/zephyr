@@ -15,6 +15,9 @@
 #include <zephyr/mgmt/mcumgr/transport/serial.h>
 #include <zephyr/drivers/console/uart_mcumgr.h>
 
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(uart_mcumgr, CONFIG_MCUMGR_TRANSPORT_LOG_LEVEL);
+
 static const struct device *const uart_mcumgr_dev =
 	DEVICE_DT_GET(DT_CHOSEN(zephyr_uart_mcumgr));
 
@@ -89,7 +92,7 @@ static struct uart_mcumgr_rx_buf *uart_mcumgr_rx_byte(uint8_t byte)
 		if (uart_mcumgr_cur_buf == NULL) {
 			uart_mcumgr_cur_buf = uart_mcumgr_alloc_rx_buf();
 			if (uart_mcumgr_cur_buf == NULL) {
-				/* Insufficient buffers; drop this fragment. */
+				LOG_WRN("Insufficient buffers, fragment dropped");
 				uart_mcumgr_ignoring = true;
 			}
 		}
@@ -98,7 +101,7 @@ static struct uart_mcumgr_rx_buf *uart_mcumgr_rx_byte(uint8_t byte)
 	rx_buf = uart_mcumgr_cur_buf;
 	if (!uart_mcumgr_ignoring) {
 		if (rx_buf->length >= sizeof(rx_buf->data)) {
-			/* Line too long; drop this fragment. */
+			LOG_WRN("Line too long, fragment dropped");
 			uart_mcumgr_free_rx_buf(uart_mcumgr_cur_buf);
 			uart_mcumgr_cur_buf = NULL;
 			uart_mcumgr_ignoring = true;

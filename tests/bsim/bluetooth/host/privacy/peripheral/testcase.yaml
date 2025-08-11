@@ -1,9 +1,11 @@
 common:
   build_only: true
+  sysbuild: true
   tags:
     - bluetooth
   platform_allow:
     - nrf52_bsim/native
+    - nrf5340bsim/nrf5340/cpuapp
   harness: bsim
 
 tests:

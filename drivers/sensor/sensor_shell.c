@@ -21,29 +21,33 @@
 LOG_MODULE_REGISTER(sensor_shell, CONFIG_SENSOR_LOG_LEVEL);
 
 #define SENSOR_GET_HELP                                                                            \
-	"Get sensor data. Channel names are optional. All channels are read "                      \
-	"when no channels are provided. Syntax:\n"                                                 \
-	"<device_name> <channel name 0> .. <channel name N>"
+	SHELL_HELP("Get sensor data.\n"                                                            \
+		   "Channel names are optional. All channels are read when no channels are "       \
+		   "provided.",                                                                    \
+		   "<device_name> [<channel name 0> .. <channel name N>]")
 
 #define SENSOR_STREAM_HELP                                                                         \
-	"Start/stop streaming sensor data. Data ready trigger will be used if no triggers "        \
-	"are provided. Syntax:\n"                                                                  \
-	"<device_name> on|off <trigger name> incl|drop|nop"
+	SHELL_HELP("Start/stop streaming sensor data.\n"                                           \
+		   "Data ready trigger will be used if no triggers are provided.",                 \
+		   "<device_name> on|off <trigger name> incl|drop|nop")
 
 #define SENSOR_ATTR_GET_HELP                                                                       \
-	"Get the sensor's channel attribute. Syntax:\n"                                            \
-	"<device_name> [<channel_name 0> <attribute_name 0> .. "                                   \
-	"<channel_name N> <attribute_name N>]"
+	SHELL_HELP("Get the sensor's channel attribute.",                                          \
+		   "<device_name> [<channel_name 0> <attribute_name 0> .. "                        \
+		   "<channel_name N> <attribute_name N>]")
 
 #define SENSOR_ATTR_SET_HELP                                                                       \
-	"Set the sensor's channel attribute.\n"                                                    \
-	"<device_name> <channel_name> <attribute_name> <value>"
+	SHELL_HELP("Set the sensor's channel attribute.",                                          \
+		   "<device_name> <channel_name> <attribute_name> <value>")
 
-#define SENSOR_INFO_HELP "Get sensor info, such as vendor and model name, for all sensors."
+#define SENSOR_INFO_HELP                                                                           \
+	SHELL_HELP("Get sensor info, such as vendor and model name, for all sensors.",             \
+		   "<device_name>")
 
 #define SENSOR_TRIG_HELP                                                                           \
-	"Get or set the trigger type on a sensor. Currently only supports `data_ready`.\n"         \
-	"<device_name> <on/off> <trigger_name>"
+	SHELL_HELP("Get or set the trigger type on a sensor.\n"                                    \
+		   "Currently only supports `data_ready`.",                                        \
+		   "<device_name> <on/off> <trigger_name>")
 
 static const char *const sensor_channel_name[SENSOR_CHAN_COMMON_COUNT] = {
 	[SENSOR_CHAN_ACCEL_X] = "accel_x",

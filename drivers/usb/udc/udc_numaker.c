@@ -171,7 +171,9 @@ static inline void numaker_usbd_sw_connect(const struct device *dev)
 	base->INTSTS = base->INTSTS;
 
 	/* Enable relevant interrupts */
-	base->INTEN = USBD_INT_BUS | USBD_INT_USB | USBD_INT_FLDET | USBD_INT_WAKEUP | USBD_INT_SOF;
+	base->INTEN = USBD_INT_BUS | USBD_INT_USB | USBD_INT_FLDET |
+		      IF_ENABLED(CONFIG_UDC_ENABLE_SOF, (USBD_INT_SOF |))
+		      USBD_INT_WAKEUP;
 
 	/* Clear SE0 for connect */
 	base->SE0 &= ~USBD_DRVSE0;
@@ -1298,7 +1300,7 @@ static void numaker_udbd_isr(const struct device *dev)
 		base->INTSTS = USBD_INTSTS_SOFIF_Msk;
 
 		/* UDC stack would handle bottom-half processing */
-		udc_submit_event(dev, UDC_EVT_SOF, 0);
+		udc_submit_sof_event(dev);
 	}
 
 	/* USB Setup/EP */

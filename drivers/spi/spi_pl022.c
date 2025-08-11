@@ -406,6 +406,8 @@ static int spi_pl022_configure(const struct device *dev,
 	cr1 |= SSP_CR1_MASK_SSE; /* Always enable SPI */
 	cr1 |= (op & SPI_MODE_LOOP) ? SSP_CR1_MASK_LBM : 0;
 
+	/* Disable the SSP before it is reconfigured */
+	SSP_WRITE_REG(SSP_CR1(cfg->reg), 0);
 	SSP_WRITE_REG(SSP_CPSR(cfg->reg), prescale);
 	SSP_WRITE_REG(SSP_CR0(cfg->reg), cr0);
 	SSP_WRITE_REG(SSP_CR1(cfg->reg), cr1);

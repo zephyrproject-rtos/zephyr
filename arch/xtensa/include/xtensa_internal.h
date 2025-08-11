@@ -72,7 +72,7 @@ void xtensa_userspace_enter(k_thread_entry_t user_entry,
  *
  * @return False if the permissions don't match.
  */
-bool xtensa_mem_kernel_has_access(void *addr, size_t size, int write);
+bool xtensa_mem_kernel_has_access(const void *addr, size_t size, int write);
 
 /**
  * @}

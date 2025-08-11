@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - interrupt
+  min_ram: 8
+  harness: ztest
+
+tests:
+  drivers.interrupt_controller.intc_exti_stm32:
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/exti_default_resources.overlay"
+      - platform:nucleo_c071rb/stm32c071xx:EXTRA_DTC_OVERLAY_FILE="boards/nucleo_c071rb_stm32c071xx.overlay"
+      - platform:stm32h7s78_dk/stm32h7s7xx:EXTRA_DTC_OVERLAY_FILE="boards/stm32h7s78_dk_stm32h7s7xx.overlay"
+      - platform:stm32n6570_dk/stm32n657xx/sb:EXTRA_DTC_OVERLAY_FILE="boards/stm32n6570_dk_stm32n657xx_sb.overlay"
+    filter: dt_compat_enabled("st,stm32-exti") and dt_compat_enabled("test-st-stm32-exti")

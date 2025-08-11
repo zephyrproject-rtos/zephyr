@@ -29,5 +29,9 @@ tests:
       - nucleo_g071rb
       - nucleo_wl55jc
       - lpcxpresso55s36
+      - xg23_rb4210a
+      - xg24_dk2601b
+      - xg24_ek2703a
+      - xg24_rb4187c
     integration_platforms:
       - nucleo_f207zg

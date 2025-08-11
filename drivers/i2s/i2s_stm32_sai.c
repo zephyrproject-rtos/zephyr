@@ -25,6 +25,12 @@
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(i2s_stm32_sai, CONFIG_I2S_LOG_LEVEL);
 
+enum mclk_divider {
+	MCLK_NO_DIV,
+	MCLK_DIV_256,
+	MCLK_DIV_512
+};
+
 struct queue_item {
 	void *buffer;
 	size_t size;
@@ -66,8 +72,8 @@ struct i2s_stm32_sai_cfg {
 	size_t pclk_len;
 	const struct pinctrl_dev_config *pcfg;
 
-	bool mclk_div_enable;
 	bool mclk_enable;
+	enum mclk_divider mclk_div;
 	bool synchronous;
 };
 
@@ -427,10 +433,15 @@ static int i2s_stm32_sai_configure(const struct device *dev, enum i2s_dir dir,
 		hsai->Init.MckOutput = SAI_MCK_OUTPUT_DISABLE;
 	}
 
-	if (cfg->mclk_div_enable) {
-		hsai->Init.NoDivider = SAI_MASTERDIVIDER_ENABLE;
-	} else {
+	if (cfg->mclk_div == (enum mclk_divider)MCLK_NO_DIV) {
 		hsai->Init.NoDivider = SAI_MASTERDIVIDER_DISABLED;
+	} else {
+		hsai->Init.NoDivider = SAI_MASTERDIVIDER_ENABLE;
+		if (cfg->mclk_div == (enum mclk_divider)MCLK_DIV_256) {
+			hsai->Init.MckOverSampling = SAI_MCK_OVERSAMPLING_DISABLE;
+		} else {
+			hsai->Init.MckOverSampling = SAI_MCK_OVERSAMPLING_ENABLE;
+		}
 	}
 
 	/* AudioFrequency */
@@ -761,7 +772,6 @@ static DEVICE_API(i2s, i2s_stm32_driver_api) = {
 	.trigger = i2s_stm32_sai_trigger,
 	.write = i2s_stm32_sai_write,
 	.read = i2s_stm32_sai_read,
-
 };
 
 #define SAI_DMA_CHANNEL_INIT(index, dir, src_dev, dest_dev)                                        \
@@ -806,7 +816,7 @@ static DEVICE_API(i2s, i2s_stm32_driver_api) = {
 		.pclk_len = DT_INST_NUM_CLOCKS(index),                                             \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                     \
 		.mclk_enable = DT_INST_PROP(index, mclk_enable),                                   \
-		.mclk_div_enable = DT_INST_PROP(index, mclk_div_enable),                           \
+		.mclk_div = (enum mclk_divider)DT_ENUM_IDX(DT_DRV_INST(index), mclk_divider),      \
 		.synchronous = DT_INST_PROP(index, synchronous),                                   \
 	};                                                                                         \
                                                                                                    \

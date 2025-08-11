@@ -57,6 +57,10 @@ void soc_early_init_hook(void)
 
 	/* Enable Dcache */
 	sys_cache_data_enable();
+
+#ifdef CONFIG_CORTEX_M_DWT
+	am_hal_pwrctrl_periph_enable(AM_HAL_PWRCTRL_PERIPH_DEBUG);
+#endif
 }
 
 #if CONFIG_CACHE_MANAGEMENT

@@ -765,7 +765,7 @@ From that point on Renode can be used normally in both console and window modes.
 For details on using Renode see `Renode - documentation`_.
 
 .. _Renode - documentation:
-   http://docs.renode.io
+   https://docs.renode.io
 
 Runner-Specific Overrides
 =========================

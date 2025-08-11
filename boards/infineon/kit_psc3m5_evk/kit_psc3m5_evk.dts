@@ -1,0 +1,84 @@
+/*
+ * Copyright (c) 2025 Cypress Semiconductor Corporation.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <arm/infineon/cat1b/mpns/psc3m5fds2afq1_s.dtsi>
+#include <arm/infineon/cat1b/psc3/system_clocks.dtsi>
+#include <arm/infineon/cat1b/psc3/psc3_partition.dtsi>
+#include "kit_psc3m5_evk-common.dtsi"
+#include "kit_psc3m5_evk-pinctrl.dtsi"
+
+/ {
+	model = "The Infineon PSOC™ Control C3M5 Evaluation Kit";
+	compatible = "infineon,kit_psc3m5_evk", "infineon,PSC3M5";
+
+	aliases {
+		watchdog0 = &watchdog0;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &slot0_partition;
+		zephyr,console = &uart3;
+		zephyr,shell-uart = &uart3;
+	};
+};
+
+uart3: &scb3 {
+	compatible = "infineon,cat1-uart-pdl";
+	status = "okay";
+	current-speed = <115200>;
+
+	clocks = <&peri0_group4_8bit_0>;
+
+	pinctrl-0 = <&p6_3_scb3_uart_tx &p6_2_scb3_uart_rx &p6_1_scb3_uart_rts &p6_0_scb3_uart_cts>;
+	pinctrl-names = "default";
+};
+
+&peri0_group4_8bit_0 {
+	status = "okay";
+	scb-block = <3>;
+	div-value = <109>;
+};
+
+&path_mux0 {
+	status = "okay";
+};
+
+&path_mux1 {
+	status = "okay";
+};
+
+&path_mux2 {
+	status = "okay";
+};
+
+&path_mux3 {
+	status = "okay";
+};
+
+&clk_hf0 {
+	status = "okay";
+};
+
+&clk_hf1 {
+	status = "okay";
+};
+
+&clk_hf2 {
+	status = "okay";
+};
+
+&clk_hf3 {
+	status = "okay";
+};
+
+&watchdog0 {
+	status = "okay";
+};
+
+&mcwdt0 {
+	status = "okay";
+};

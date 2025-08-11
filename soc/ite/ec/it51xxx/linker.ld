@@ -377,6 +377,19 @@ SECTIONS
 
     __data_region_end = .;
 
+	SECTION_DATA_PROLOGUE(.h2ram_pool,(NOLOAD),)
+	{
+		/*
+		 * Append h2ram_pool section at the end of used memory, so gap
+		 * due to alignment is still available for newly added variables
+		 */
+		. = ALIGN(0x1000);
+		_h2ram_pool_start = .;
+		KEEP(*(.h2ram_pool))
+		_h2ram_pool_end = .;
+	}  GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
+	_h2ram_pool_size = ABSOLUTE(_h2ram_pool_end - _h2ram_pool_start);
+
 	__kernel_ram_end = .;
 	__kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
 

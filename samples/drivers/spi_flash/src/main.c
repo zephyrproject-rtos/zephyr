@@ -23,11 +23,15 @@
 #define SPI_FLASH_TEST_REGION_OFFSET 0x7F000
 #elif defined(CONFIG_BOARD_EK_RA8M1) || defined(CONFIG_BOARD_EK_RA8D1)
 #define SPI_FLASH_TEST_REGION_OFFSET 0x40000
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_qspi_nor) && DT_PROP(DT_NODELABEL(quadspi), dual_flash)
+#define SPI_FLASH_TEST_REGION_OFFSET 0xfe000
 #else
 #define SPI_FLASH_TEST_REGION_OFFSET 0xff000
 #endif
 #if defined(CONFIG_BOARD_EK_RA8M1) || defined(CONFIG_BOARD_EK_RA8D1)
 #define SPI_FLASH_SECTOR_SIZE 262144
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_qspi_nor) && DT_PROP(DT_NODELABEL(quadspi), dual_flash)
+#define SPI_FLASH_SECTOR_SIZE 8192
 #else
 #define SPI_FLASH_SECTOR_SIZE        4096
 #endif

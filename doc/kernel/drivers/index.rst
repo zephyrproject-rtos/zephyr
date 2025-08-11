@@ -343,7 +343,7 @@ Initialization Levels
 Drivers may depend on other drivers being initialized first, or require
 the use of kernel services. :c:func:`DEVICE_DEFINE()` and related APIs
 allow the user to specify at what time during the boot sequence the init
-function will be executed. Any driver will specify one of four
+function will be executed. Any driver will specify one of three
 initialization levels:
 
 ``PRE_KERNEL_1``

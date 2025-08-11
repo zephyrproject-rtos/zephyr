@@ -13,4 +13,5 @@ flash: 128
 supported:
   - gpio
   - uart
+  - pwm
 vendor: nxp

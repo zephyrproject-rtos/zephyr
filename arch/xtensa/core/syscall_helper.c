@@ -7,8 +7,8 @@
 #include <string.h>
 
 #include <zephyr/arch/xtensa/syscall.h>
-
 #include <zephyr/internal/syscall_handler.h>
+#include <zephyr/llext/symbol.h>
 #include <xtensa_internal.h>
 
 #ifdef CONFIG_XTENSA_SYSCALL_USE_HELPER
@@ -33,6 +33,7 @@ uintptr_t xtensa_syscall_helper_args_6(uintptr_t arg1, uintptr_t arg2,
 
 	return a2;
 }
+EXPORT_SYMBOL(xtensa_syscall_helper_args_6);
 
 uintptr_t xtensa_syscall_helper_args_5(uintptr_t arg1, uintptr_t arg2,
 				       uintptr_t arg3, uintptr_t arg4,
@@ -53,6 +54,7 @@ uintptr_t xtensa_syscall_helper_args_5(uintptr_t arg1, uintptr_t arg2,
 
 	return a2;
 }
+EXPORT_SYMBOL(xtensa_syscall_helper_args_5);
 
 uintptr_t xtensa_syscall_helper_args_4(uintptr_t arg1, uintptr_t arg2,
 				       uintptr_t arg3, uintptr_t arg4,
@@ -72,6 +74,7 @@ uintptr_t xtensa_syscall_helper_args_4(uintptr_t arg1, uintptr_t arg2,
 
 	return a2;
 }
+EXPORT_SYMBOL(xtensa_syscall_helper_args_4);
 
 #endif /* CONFIG_XTENSA_SYSCALL_USE_HELPER */
 
@@ -115,7 +118,7 @@ size_t arch_user_string_nlen(const char *s, size_t maxsize, int *err_arg)
 	 * For MPU systems, this would simply results in access errors
 	 * and the exception handler will terminate the thread.
 	 */
-	if (!xtensa_mem_kernel_has_access((void *)s, maxsize, 0)) {
+	if (arch_buffer_validate(s, maxsize, 0)) {
 		/*
 		 * API says we need to set err_arg to -1 if there are
 		 * any errors.

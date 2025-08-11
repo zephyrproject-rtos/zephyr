@@ -42,13 +42,13 @@ config INPUT_SBUS_CHANNEL_VALUE_ONE
 	default 1800
 	help
 	  SBUS sends analogue values for digital switches. This config value
-	  sets the threshold to interperted the analogue value as an logic 1
+	  sets the threshold to interpret the analogue value as a logic 1
 
 config INPUT_SBUS_CHANNEL_VALUE_ZERO
 	int "Threshold value < for INPUT_EV_KEY value 0"
 	default 1200
 	help
 	  SBUS sends analogue values for digital switches. This config value
-	  sets the threshold to interperted the analogue value as an logic 0
+	  sets the threshold to interpret the analogue value as a logic 0
 
 endif # INPUT_SBUS

@@ -26,3 +26,7 @@ if(CONFIG_NXP_IMXRT_BOOT_HEADER)
   zephyr_library_sources(${RT7XX_BOARD_DIR}/flash_config/flash_config.c)
   zephyr_library_include_directories(${RT7XX_BOARD_DIR}/flash_config)
 endif()
+
+if(CONFIG_IMX_USDHC)
+  zephyr_compile_definitions(FSL_SDK_ENABLE_DRIVER_CACHE_CONTROL=1)
+endif()

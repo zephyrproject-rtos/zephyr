@@ -40,7 +40,7 @@
  */
 
 struct mtk_mbox {
-#ifdef SOC_SERIES_MT8195
+#ifdef CONFIG_SOC_SERIES_MT8195
 	uint32_t in_cmd;
 	uint32_t in_cmd_clr;
 	uint32_t in_msg[5];

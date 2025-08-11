@@ -10,10 +10,12 @@
 menuconfig HDLC_RCP_IF
 	bool "HDLC interface for a Zephyr Openthread RCP host"
 	depends on NET_L2_OPENTHREAD && !OPENTHREAD_COPROCESSOR
+	select EVENTS
 
 if HDLC_RCP_IF
 
 source "drivers/hdlc_rcp_if/Kconfig.nxp"
+source "drivers/hdlc_rcp_if/Kconfig.spi"
 source "drivers/hdlc_rcp_if/Kconfig.uart"
 
 config HDLC_RCP_IF_DRV_NAME

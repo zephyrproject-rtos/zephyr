@@ -8,5 +8,5 @@ compatible: "nxp,uhc-ehci"
 include: [usb-controller.yaml]
 
 properties:
-  phy_handle:
+  phy-handle:
     type: phandle

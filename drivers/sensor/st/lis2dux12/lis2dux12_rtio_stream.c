@@ -123,6 +123,7 @@ static void lis2dux12_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe, v
 {
 	const struct device *dev = arg;
 	struct lis2dux12_data *lis2dux12 = dev->data;
+	const struct lis2dux12_config *cfg = dev->config;
 	struct rtio *rtio = lis2dux12->rtio_ctx;
 	struct gpio_dt_spec *irq_gpio = lis2dux12->drdy_gpio;
 	struct rtio_iodev *iodev = lis2dux12->iodev;
@@ -228,6 +229,7 @@ static void lis2dux12_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe, v
 		rx_data->header.timestamp = lis2dux12->timestamp;
 		rx_data->header.int_status = lis2dux12->fifo_status[0];
 		rx_data->fifo_count = 0;
+		rx_data->fifo_mode_sel = 0;
 
 		/* complete request with ok */
 		rtio_iodev_sqe_ok(lis2dux12->streaming_sqe, 0);
@@ -281,6 +283,7 @@ static void lis2dux12_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe, v
 			.int_status = lis2dux12->fifo_status[0],
 		},
 		.fifo_count = fifo_count,
+		.fifo_mode_sel = cfg->fifo_mode_sel,
 		.accel_batch_odr = lis2dux12->accel_batch_odr,
 		.accel_odr = lis2dux12->odr,
 	};
@@ -360,8 +363,9 @@ static void lis2dux12_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe,
 		return;
 	}
 
-	if (data_ready->opt == SENSOR_STREAM_DATA_NOP ||
-	    data_ready->opt == SENSOR_STREAM_DATA_DROP) {
+	if (data_ready != NULL &&
+	    (data_ready->opt == SENSOR_STREAM_DATA_NOP ||
+	     data_ready->opt == SENSOR_STREAM_DATA_DROP)) {
 		uint8_t *buf;
 		uint32_t buf_len;
 
@@ -386,6 +390,8 @@ static void lis2dux12_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe,
 		rtio_iodev_sqe_ok(lis2dux12->streaming_sqe, 0);
 		lis2dux12->streaming_sqe = NULL;
 		gpio_pin_interrupt_configure_dt(irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+
+		return;
 	}
 
 	/*

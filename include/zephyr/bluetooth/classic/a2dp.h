@@ -297,6 +297,8 @@ enum bt_a2dp_codec_type {
 	BT_A2DP_MPEG1 = 0x01,
 	/** Codec MPEG-2 */
 	BT_A2DP_MPEG2 = 0x02,
+	/** Codec MPEG-D */
+	BT_A2DP_MPEGD = 0x03,
 	/** Codec ATRAC */
 	BT_A2DP_ATRAC = 0x04,
 	/** Codec Non-A2DP */
@@ -830,7 +832,6 @@ int bt_a2dp_stream_abort(struct bt_a2dp_stream *stream);
  */
 uint32_t bt_a2dp_get_mtu(struct bt_a2dp_stream *stream);
 
-#if defined(CONFIG_BT_A2DP_SOURCE)
 /** @brief send a2dp media data
  *
  * Only A2DP source side can call this function.
@@ -844,7 +845,6 @@ uint32_t bt_a2dp_get_mtu(struct bt_a2dp_stream *stream);
  */
 int bt_a2dp_stream_send(struct bt_a2dp_stream *stream, struct net_buf *buf, uint16_t seq_num,
 			uint32_t ts);
-#endif
 
 #ifdef __cplusplus
 }

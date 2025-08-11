@@ -55,7 +55,7 @@ static char  transport_binding[MAX_INSTANCE_COUNT][TRANSPORT_BINDING_LEN];
 /* Server object version 1.1 */
 static uint8_t priority[MAX_INSTANCE_COUNT];
 static bool mute_send[MAX_INSTANCE_COUNT];
-static bool boostrap_on_fail[MAX_INSTANCE_COUNT];
+static bool bootstrap_on_fail[MAX_INSTANCE_COUNT];
 
 static struct lwm2m_engine_obj server;
 static struct lwm2m_engine_obj_field fields[] = {
@@ -355,7 +355,7 @@ static struct lwm2m_engine_obj_inst *server_create(uint16_t obj_inst_id)
 	default_min_period[index] = CONFIG_LWM2M_SERVER_DEFAULT_PMIN;
 	default_max_period[index] = CONFIG_LWM2M_SERVER_DEFAULT_PMAX;
 	disabled_timeout[index] = 86400U;
-	boostrap_on_fail[index] = true;
+	bootstrap_on_fail[index] = IS_ENABLED(CONFIG_LWM2M_SERVER_BOOTSTRAP_ON_FAIL);
 
 	lwm2m_engine_get_binding(transport_binding[index]);
 
@@ -410,7 +410,7 @@ static struct lwm2m_engine_obj_inst *server_create(uint16_t obj_inst_id)
 		INIT_OBJ_RES_OPTDATA(SERVER_REGISTRATION_FAILURE_BLOCK_ID, res[index], i,
 				     res_inst[index], j);
 		INIT_OBJ_RES_DATA(SERVER_BOOTSTRAP_ON_REGISTRATION_FAILURE_ID, res[index], i,
-				  res_inst[index], j, &boostrap_on_fail[index], sizeof(bool));
+				  res_inst[index], j, &bootstrap_on_fail[index], sizeof(bool));
 		INIT_OBJ_RES_OPTDATA(SERVER_COMMUNICATION_RETRY_COUNT_ID, res[index], i,
 				     res_inst[index], j);
 		INIT_OBJ_RES_OPTDATA(SERVER_COMMUNICATION_RETRY_TIMER_ID, res[index], i,

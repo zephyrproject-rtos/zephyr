@@ -351,7 +351,10 @@ struct hostapd_config *hostapd_config_read2(const char *fname)
 	bss->logger_stdout_level = HOSTAPD_LEVEL_INFO;
 	bss->logger_stdout       = 0xffff;
 	bss->nas_identifier      = os_strdup("ap.example.com");
-	os_memcpy(conf->country, "US ", 3);
+	/* Set regulatory domain */
+	os_memcpy(conf->country, CONFIG_WIFI_NM_HOSTAPD_REGULATORY_REGION, 2);
+	/* Set regulatory environment */
+	conf->country[2]     = CONFIG_WIFI_NM_HOSTAPD_REGULATORY_ENV;
 	conf->hw_mode        = HOSTAPD_MODE_IEEE80211G;
 	bss->wps_state       = WPS_STATE_CONFIGURED;
 	bss->eap_server      = 1;
@@ -372,9 +375,11 @@ struct hostapd_config *hostapd_config_read2(const char *fname)
 	bss->okc = 1;
 	conf->no_pri_sec_switch = 1;
 	conf->ht_op_mode_fixed  = 1;
+#if CONFIG_WIFI_NM_WPA_SUPPLICANT_11AC
 	conf->ieee80211ac       = 1;
 	conf->vht_oper_chwidth  = CHANWIDTH_USE_HT;
 	conf->vht_capab |= VHT_CAP_MAX_A_MPDU_LENGTH_EXPONENT_MAX;
+#endif
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_11AX
 	conf->ieee80211ax       = 1;
 	conf->he_oper_chwidth   = CHANWIDTH_USE_HT;

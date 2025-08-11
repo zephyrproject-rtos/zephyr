@@ -4,8 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/dt-bindings/input/input-event-codes.h>
-#include <dt-bindings/pinctrl/silabs/xg24-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/silabs/xg24-pinctrl.h>
 
 &pinctrl {
 	eusart1_default: eusart1_default {
@@ -26,6 +25,14 @@
 			pins = <I2C0_SDA_PB3>, <I2C0_SCL_PB4>;
 			drive-open-drain;
 			bias-pull-up;
+		};
+	};
+
+	timer0_default: timer0_default {
+		group0 {
+			pins = <TIMER0_CC0_PA8>;
+			drive-push-pull;
+			output-high;
 		};
 	};
 

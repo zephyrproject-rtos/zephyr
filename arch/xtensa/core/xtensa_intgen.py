@@ -117,7 +117,8 @@ for lvl in range(0, max+1):
 
 # Emit the handlers
 for lvl in ints_by_lvl:
-    cprint("static inline int _xtensa_handle_one_int" + str(lvl) + "(unsigned int mask)")
+    cprint("static inline int _xtensa_handle_one_int" +
+        str(lvl) + "(unsigned int set, unsigned int mask)")
     cprint("{")
 
     if not ints_by_lvl[lvl]:
@@ -128,11 +129,14 @@ for lvl in ints_by_lvl:
     cprint("int irq;")
     print("")
 
-    emit_int_handler(sorted(ints_by_lvl[lvl]))
+    if int(len(ints_by_lvl[lvl])) > 32:
+        emit_int_handler((sorted(ints_by_lvl[lvl]))[0:31])
+    else:
+        emit_int_handler(sorted(ints_by_lvl[lvl]))
 
     cprint("return 0;")
     cprint("handle_irq:")
-    cprint("_sw_isr_table[irq].isr(_sw_isr_table[irq].arg);")
+    cprint("_sw_isr_table[set * 32 + irq].isr(_sw_isr_table[set * 32 + irq].arg);")
     cprint("return mask;")
     cprint("}")
     cprint("")

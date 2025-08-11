@@ -1,0 +1,34 @@
+# Copyright (c) 2025 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+
+if SOC_INTEL_ACE40
+
+config MP_MAX_NUM_CPUS
+	default 4 if BOARD_INTEL_ADSP_ACE40_NVL
+	default 4 if BOARD_INTEL_ADSP_ACE40_NVL_SIM
+	default 2 if BOARD_INTEL_ADSP_ACE40_NVLS
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 614400000 if XTENSA_TIMER && !BOARD_INTEL_ADSP_ACE40_NVLS
+	default 438857000 if XTENSA_TIMER && BOARD_INTEL_ADSP_ACE40_NVLS
+	default 1000000 if INTEL_ADSP_SIM
+	default 38400000 if INTEL_ADSP_TIMER
+
+config XTENSA_CCOUNT_HZ
+	default 614400000 if BOARD_INTEL_ADSP_ACE40_NVL
+	default 614400000 if BOARD_INTEL_ADSP_ACE40_NVL_SIM
+	default 438857000 if BOARD_INTEL_ADSP_ACE40_NVLS
+
+config CPU_HAS_MMU
+	def_bool y
+
+config XTENSA_MMU
+	def_bool y
+
+config XTENSA_MMU_NUM_L2_TABLES
+	# Need to have enough to accommodate samples and tests.
+	# Also need to have some room for future expansions or
+	# else we will be chasing changes all the time.
+	default 64
+endif

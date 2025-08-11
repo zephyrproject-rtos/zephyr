@@ -6,7 +6,7 @@
 
 /**
  * @file
- * @brief New experimental USB device stack APIs and structures
+ * @brief New USB device stack APIs and structures
  *
  * This file contains the USB device stack APIs and structures.
  */
@@ -33,7 +33,7 @@ extern "C" {
  * @defgroup usbd_api USB device core API
  * @ingroup usb
  * @since 3.3
- * @version 0.1.0
+ * @version 0.2.0
  * @{
  */
 
@@ -629,8 +629,11 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
  *
  * This macro defines a descriptor node that, when added to the device context,
  * is automatically used as the serial number string descriptor. A valid serial
- * number is generated from HWID (HWINFO= whenever this string descriptor is
- * requested.
+ * number is obtained from @ref hwinfo_interface whenever this string
+ * descriptor is requested.
+ *
+ * @note The HWINFO driver must be available and the Kconfig option HWINFO
+ *       enabled.
  *
  * @param d_name   String descriptor node identifier.
  */

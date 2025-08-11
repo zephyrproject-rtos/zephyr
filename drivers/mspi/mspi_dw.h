@@ -1,8 +1,17 @@
 /*
  * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2025 Tenstorrent AI ULC
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#if DT_HAS_COMPAT_STATUS_OKAY(snps_designware_ssi_v2)
+/*
+ * Later versions of the SSI have different register offsets. Define a macro
+ * to use these.
+ */
+#define SSI_VERSION_2 1
+#endif
 
 /*
  * This header is part of mspi_dw.c extracted only for clarity.
@@ -10,23 +19,24 @@
  */
 
 /* CTRLR0 - Control Register 0 */
-#define CTRLR0_SPI_FRF_MASK	GENMASK(23, 22)
+#define CTRLR0_SPI_FRF_MASK	COND_CODE_1(SSI_VERSION_2, GENMASK(22, 21), GENMASK(23, 22))
 #define CTRLR0_SPI_FRF_STANDARD	0UL
 #define CTRLR0_SPI_FRF_DUAL	1UL
 #define CTRLR0_SPI_FRF_QUAD	2UL
 #define CTRLR0_SPI_FRF_OCTAL	3UL
-#define CTRLR0_TMOD_MASK	GENMASK(11, 10)
+#define CTRLR0_TMOD_MASK	COND_CODE_1(SSI_VERSION_2, GENMASK(9, 8), GENMASK(11, 10))
 #define CTRLR0_TMOD_TX_RX	0UL
 #define CTRLR0_TMOD_TX		1UL
 #define CTRLR0_TMOD_RX		2UL
 #define CTRLR0_TMOD_EEPROM	3UL
-#define CTRLR0_SCPOL_BIT	BIT(9)
-#define CTRLR0_SCPH_BIT		BIT(8)
-#define CTRLR0_FRF_MASK		GENMASK(7, 6)
+#define CTRLR0_SCPOL_BIT	COND_CODE_1(SSI_VERSION_2, BIT(7), BIT(9))
+#define CTRLR0_SCPH_BIT		COND_CODE_1(SSI_VERSION_2, BIT(6), BIT(8))
+#define CTRLR0_FRF_MASK		COND_CODE_1(SSI_VERSION_2, GENMASK(5, 4), GENMASK(7, 6))
 #define CTRLR0_FRF_SPI		0UL
 #define CTRLR0_FRF_SSP		1UL
 #define CTRLR0_FRF_MICROWIRE	2UL
-#define CTRLR0_DFS_MASK		GENMASK(4, 0)
+#define CTRLR0_DFS_MASK		COND_CODE_1(SSI_VERSION_2, GENMASK(3, 0), GENMASK(4, 0))
+#define CTRLR0_DFS32_MASK	COND_CODE_1(SSI_VERSION_2, GENMASK(20, 16), (0))
 
 /* CTRLR1- Control Register 1 */
 #define CTRLR1_NDF_MASK		GENMASK(15, 0)
@@ -65,6 +75,19 @@
 #define ISR_RXOIS_BIT		BIT(3)
 #define ISR_RXFIS_BIT		BIT(4)
 #define ISR_MSTIS_BIT		BIT(5)
+
+/* RISR - Raw Interrupt Status Register */
+#define RISR_TXEIR_BIT		BIT(0)
+#define RISR_TXOIR_BIT		BIT(1)
+#define RISR_RXUIR_BIT		BIT(2)
+#define RISR_RXOIR_BIT		BIT(3)
+#define RISR_RXFIR_BIT		BIT(4)
+#define RISR_MSTIR_BIT		BIT(5)
+#define RISR_XRXOIR_BIT		BIT(6)
+#define RISR_TXUIR_BIT		BIT(7)
+#define RISR_AXIER_BIT		BIT(8)
+#define RISR_SPITER_BIT		BIT(10)
+#define RISR_DONER_BIT		BIT(11)
 
 /* SPI_CTRLR0 - SPI Control Register */
 #define SPI_CTRLR0_CLK_STRETCH_EN_BIT		BIT(30)
@@ -126,21 +149,6 @@
 #define XIP_CTRL_FRF_DUAL		1UL
 #define XIP_CTRL_FRF_QUAD		2UL
 #define XIP_CTRL_FRF_OCTAL		3UL
-
-/* XIP_CTRL - XIP Control Register */
-#define XIP_CTRL_XIP_PREFETCH_EN_BIT	BIT(28)
-#define XIP_CTRL_XIP_MBL_MASK		GENMASK(27, 26)
-#define XIP_CTRL_XIP_MBL_2		0UL
-#define XIP_CTRL_XIP_MBL_4		1UL
-#define XIP_CTRL_XIP_MBL_8		2UL
-#define XIP_CTRL_XIP_MBL_16		3UL
-#define XIP_CTRL_XIP_HYBERBUS_EN_BIT	BIT(24)
-#define XIP_CTRL_CONT_XFER_EN_BIT	BIT(23)
-#define XIP_CTRL_INST_EN_BIT		BIT(22)
-#define XIP_CTRL_RXDS_EN_BIT		BIT(21)
-#define XIP_CTRL_INST_DDR_EN_BIT	BIT(20)
-#define XIP_CTRL_DDR_EN_BIT		BIT(19)
-#define XIP_CTRL_DFS_HC_BIT		BIT(18)
 
 /* XIP_WRITE_CTRL - XIP Write Control Register */
 #define XIP_WRITE_CTRL_WAIT_CYCLES_MASK	GENMASK(20, 16)

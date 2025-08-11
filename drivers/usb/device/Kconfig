@@ -5,6 +5,7 @@
 
 menuconfig USB_DEVICE_DRIVER
 	bool "USB device controller drivers"
+	select DEPRECATED
 	help
 	  Enable USB device controller drivers.
 
@@ -231,7 +232,7 @@ endif # USB_DC_NUMAKER
 config USB_NATIVE_POSIX
 	bool "Native Posix USB Device Controller Driver"
 	depends on ARCH_POSIX && EXTERNAL_LIBC
-	default y if BOARD_NATIVE_SIM || BOARD_NATIVE_POSIX
+	default y if BOARD_NATIVE_SIM
 	help
 	  Native Posix USB Device Controller Driver.
 

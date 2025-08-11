@@ -19,7 +19,7 @@
 #define FD_SET_CALC_OFFSETS(set, word_idx, bit_mask) { \
 	unsigned int b_idx = fd % (sizeof(set->bitset[0]) * 8); \
 	word_idx = fd / (sizeof(set->bitset[0]) * 8); \
-	bit_mask = 1 << b_idx; \
+	bit_mask = 1UL << b_idx; \
 	}
 
 int zvfs_poll_internal(struct zvfs_pollfd *fds, int nfds, k_timeout_t timeout);

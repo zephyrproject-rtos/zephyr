@@ -198,7 +198,7 @@ static void print_dhcpv4_addr(struct net_if *iface, struct net_if_addr *if_addr,
 }
 
 static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
-				  uint32_t mgmt_event,
+				  uint64_t mgmt_event,
 				  struct net_if *iface)
 {
 

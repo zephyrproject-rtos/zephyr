@@ -73,8 +73,6 @@ struct intel_adsp_ipc_data {
 	bool tx_ack_pending;
 };
 
-void z_intel_adsp_ipc_isr(const void *devarg);
-
 /**
  * @brief Register message callback handler.
  *

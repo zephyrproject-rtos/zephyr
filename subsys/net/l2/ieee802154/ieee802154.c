@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(net_ieee802154, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 
 #include <errno.h>
 
+#include <zephyr/toolchain/gcc.h>
 #include <zephyr/net/capture.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_core.h>
@@ -264,7 +265,8 @@ static inline void swap_and_set_pkt_ll_addr(struct net_linkaddr *addr, bool has_
 		(void)net_linkaddr_create(
 			addr,
 			(const uint8_t *)(has_pan_id ?
-					  &ll->plain.addr.short_addr : &ll->comp.addr.short_addr),
+					UNALIGNED_MEMBER_ADDR(ll, plain.addr.short_addr) :
+					UNALIGNED_MEMBER_ADDR(ll, comp.addr.short_addr)),
 			IEEE802154_SHORT_ADDR_LENGTH,
 			NET_LINK_IEEE802154);
 		break;
@@ -291,7 +293,7 @@ static inline void swap_and_set_pkt_ll_addr(struct net_linkaddr *addr, bool has_
  */
 static bool ieee802154_check_dst_addr(struct net_if *iface, struct ieee802154_mhr *mhr)
 {
-	struct ieee802154_address_field_plain *dst_plain = &mhr->dst_addr->plain;
+	struct ieee802154_address_field_plain *dst_plain;
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	bool ret = false;
 
@@ -310,6 +312,8 @@ static bool ieee802154_check_dst_addr(struct net_if *iface, struct ieee802154_mh
 		/* also, macImplicitBroadcast is not implemented */
 		return false;
 	}
+
+	dst_plain = &mhr->dst_addr->plain;
 
 	k_sem_take(&ctx->ctx_lock, K_FOREVER);
 

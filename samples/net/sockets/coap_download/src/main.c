@@ -21,7 +21,7 @@ static int64_t start_time;
 /* This struct contains (potentially large) TX and RX buffers, so allocate statically */
 static struct coap_client client = {0};
 
-static void net_event_handler(uint32_t mgmt_event, struct net_if *iface, void *info,
+static void net_event_handler(uint64_t mgmt_event, struct net_if *iface, void *info,
 			      size_t info_length, void *user_data)
 {
 	if (NET_EVENT_L4_CONNECTED == mgmt_event) {

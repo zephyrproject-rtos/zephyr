@@ -17,6 +17,16 @@
 		    (UTIL_CAT(RX_CLOCKS_SOURCE_, DT_NODE_FULL_NAME_UPPER_TOKEN(node_id))),        \
 		    (RX_CLOCKS_CLOCK_DISABLED))
 
+#define RX_IF_CLK_SRC(node_id)                                                                     \
+	COND_CODE_1(DT_NODE_HAS_STATUS(node_id, okay),\
+			(UTIL_CAT(RX_IF_CLOCKS_SOURCE_, DT_NODE_FULL_NAME_UPPER_TOKEN(node_id))),\
+			(RX_CLOCKS_CLOCK_DISABLED))
+
+#define RX_LPT_CLK_SRC(node_id)                                                                    \
+	COND_CODE_1(DT_NODE_HAS_STATUS(node_id, okay),\
+			(UTIL_CAT(RX_LPT_CLOCKS_SOURCE_, DT_NODE_FULL_NAME_UPPER_TOKEN(node_id))),\
+			(RX_LPT_CLOCKS_NON_USE))
+
 struct clock_control_rx_pclk_cfg {
 	const struct device *clock_src_dev;
 	uint32_t clk_div;

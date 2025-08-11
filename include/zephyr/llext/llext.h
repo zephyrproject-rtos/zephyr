@@ -83,7 +83,6 @@ struct llext {
 
 #ifdef CONFIG_USERSPACE
 	struct k_mem_partition mem_parts[LLEXT_MEM_PARTITIONS];
-	struct k_mem_domain mem_domain;
 #endif
 
 	/** @endcond */
@@ -401,33 +400,6 @@ int llext_get_section_header(struct llext_loader *loader, struct llext *ext,
 			     const char *search_name, elf_shdr_t *shdr);
 
 /**
- * @brief Architecture specific function for local binding relocations
- *
- * @param[in] loader Extension loader data and context
- * @param[in] ext Extension to call function in
- * @param[in] rel Relocation data provided by elf
- * @param[in] sym Corresponding symbol table entry
- * @param[in] rel_addr Address where relocation should be performed
- * @param[in] ldr_parm Loader parameters
- */
-void arch_elf_relocate_local(struct llext_loader *loader, struct llext *ext, const elf_rela_t *rel,
-			     const elf_sym_t *sym, uint8_t *rel_addr,
-			     const struct llext_load_param *ldr_parm);
-
-/**
- * @brief Architecture specific function for global binding relocations
- *
- * @param[in] loader Extension loader data and context
- * @param[in] ext Extension to call function in
- * @param[in] rel Relocation data provided by elf
- * @param[in] sym Corresponding symbol table entry
- * @param[in] rel_addr Address where relocation should be performed
- * @param[in] link_addr target address for table-based relocations
- */
-void arch_elf_relocate_global(struct llext_loader *loader, struct llext *ext, const elf_rela_t *rel,
-			      const elf_sym_t *sym, uint8_t *rel_addr, const void *link_addr);
-
-/**
  * @brief Initialize LLEXT heap dynamically
  *
  * Use the provided memory block as the LLEXT heap at runtime.
@@ -436,9 +408,26 @@ void arch_elf_relocate_global(struct llext_loader *loader, struct llext *ext, co
  * @param bytes Size of memory region, in bytes
  *
  * @returns 0 on success, or a negative error code.
- * @retval -ENOSYS Option @kconfig{CONFIG_LLEXT_HEAP_DYNAMIC} is not enabled or supported
+ * @retval -ENOSYS Option @kconfig{CONFIG_LLEXT_HEAP_DYNAMIC} is not enabled or supported,
+ *         or it is and option @kconfig{CONFIG_HARVARD} is enabled
  */
 int llext_heap_init(void *mem, size_t bytes);
+
+/**
+ * @brief Initialize LLEXT heap dynamically for Harvard architecture
+ *
+ * Use the provided memory blocks as the LLEXT heaps at runtime.
+ *
+ * @param instr_mem Pointer to instruction memory.
+ * @param instr_bytes Size of instruction memory region, in bytes
+ * @param data_mem Pointer to data memory.
+ * @param data_bytes Size of data memory region, in bytes
+ *
+ * @returns 0 on success, or a negative error code.
+ * @retval -ENOSYS Option @kconfig{CONFIG_LLEXT_HEAP_DYNAMIC} is not enabled or supported,
+ *         or it is and option @kconfig{CONFIG_HARVARD} is not enabled
+ */
+int llext_heap_init_harvard(void *instr_mem, size_t instr_bytes, void *data_mem, size_t data_bytes);
 
 /**
  * @brief Mark LLEXT heap as uninitialized.
@@ -475,7 +464,7 @@ int llext_relink_dependency(struct llext *ext, unsigned int n_ext);
  * During suspend the user has saved all the extension and loader descriptors
  * and related objects and called @ref llext_relink_dependency() to prepare
  * dependency pointers.
- * When resuming llext_alloc() has to be used to re-allocate all the objects,
+ * When resuming llext_alloc_data() has to be used to re-allocate all the objects,
  * therefore the user needs support from LLEXT core to accomplish that.
  * This function takes arrays of pointers to saved copies of extensions and
  * loaders as arguments and re-allocates all the objects, while also adding them

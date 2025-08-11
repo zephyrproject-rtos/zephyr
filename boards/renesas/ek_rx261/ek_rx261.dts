@@ -1,0 +1,98 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <renesas/r5f52618bgfp.dtsi>
+#include <dt-bindings/gpio/gpio.h>
+#include "ek_rx261-pinctrl.dtsi"
+
+/ {
+	model = "Renesas EK-RX261 KIT";
+	compatible = "renesas,ek_rx261";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &code_flash;
+		zephyr,console = &uart6;
+		zephyr,shell-uart = &uart6;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led1: led1 {
+			gpios = <&ioportj 1 GPIO_ACTIVE_LOW>;
+			label = "LED1";
+		};
+
+		led2: led2 {
+			gpios = <&ioportc 5 GPIO_ACTIVE_LOW>;
+			label = "LED2";
+		};
+
+		led3: led3 {
+			gpios = <&ioporta 3 GPIO_ACTIVE_LOW>;
+			label = "LED3";
+		};
+
+	};
+
+	aliases {
+		led0 = &led1;
+		led1 = &led2;
+		led2 = &led3;
+	};
+};
+
+&xtal {
+	clock-frequency = <DT_FREQ_M(8)>;
+	mosel = <0>;
+	#clock-cells = <0>;
+	status = "okay";
+};
+
+&pll {
+	div = <1>;
+	mul = <RX_PLL_MUL_8>;
+	status = "okay";
+};
+
+&cmt {
+	clock-frequency = <DT_FREQ_M(4)>;
+	status = "okay";
+};
+
+&ioport3 {
+	status = "okay";
+};
+
+&ioporta {
+	status = "okay";
+};
+
+&ioportc {
+	status = "okay";
+};
+
+&ioportd {
+	status = "okay";
+};
+
+&ioportj {
+	status = "okay";
+};
+
+&sci6 {
+	pinctrl-0 = <&sci6_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	uart6: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};

@@ -35,7 +35,8 @@ static struct bt_bap_ep *unicast_sink_eps[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_C
 static struct bt_bap_ep *unicast_source_eps[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT];
 
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT,
-			  CONFIG_BT_ISO_TX_MTU + BT_ISO_CHAN_SEND_RESERVE, 8, NULL);
+			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 static K_SEM_DEFINE(sem_cas_discovery, 0, 1);
 static K_SEM_DEFINE(sem_discover_sink, 0, 1);
@@ -313,15 +314,15 @@ static struct bt_bap_unicast_client_cb unicast_client_cbs = {
 	.endpoint = endpoint_cb,
 };
 
-static int unicast_group_create(struct bt_bap_unicast_group **out_unicast_group)
+static int unicast_group_create(struct bt_cap_unicast_group **out_unicast_group)
 {
 	int err = 0;
-	struct bt_bap_unicast_group_stream_param group_stream_params;
-	struct bt_bap_unicast_group_stream_pair_param pair_params;
-	struct bt_bap_unicast_group_param group_param;
+	struct bt_cap_unicast_group_stream_param group_stream_params;
+	struct bt_cap_unicast_group_stream_pair_param pair_params;
+	struct bt_cap_unicast_group_param group_param;
 
-	group_stream_params.qos = &unicast_preset_48_2_1.qos;
-	group_stream_params.stream = &unicast_streams[0].bap_stream;
+	group_stream_params.qos_cfg = &unicast_preset_48_2_1.qos;
+	group_stream_params.stream = &unicast_streams[0];
 	pair_params.tx_param = &group_stream_params;
 	pair_params.rx_param = NULL;
 
@@ -329,7 +330,7 @@ static int unicast_group_create(struct bt_bap_unicast_group **out_unicast_group)
 	group_param.params_count = 1;
 	group_param.params = &pair_params;
 
-	err = bt_bap_unicast_group_create(&group_param, out_unicast_group);
+	err = bt_cap_unicast_group_create(&group_param, out_unicast_group);
 	if (err != 0) {
 		printk("Failed to create group: %d\n", err);
 		return err;
@@ -411,7 +412,7 @@ static void audio_timer_timeout(struct k_work *work)
 		/* Retry later */
 	}
 
-	k_work_schedule(&audio_send_work, K_MSEC(1000));
+	k_work_schedule(&audio_send_work, K_USEC(unicast_preset_48_2_1.qos.interval));
 }
 
 int cap_initiator_init(void)
@@ -444,7 +445,7 @@ int cap_initiator_init(void)
 int cap_initiator_setup(struct bt_conn *conn)
 {
 	int err = 0;
-	struct bt_bap_unicast_group *unicast_group;
+	struct bt_cap_unicast_group *unicast_group;
 
 	k_sem_reset(&sem_cas_discovery);
 	k_sem_reset(&sem_discover_sink);

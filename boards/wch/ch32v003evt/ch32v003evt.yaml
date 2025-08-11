@@ -8,5 +8,9 @@ toolchain:
 ram: 2
 flash: 16
 supported:
+  - dma
   - gpio
   - i2c
+  - pwm
+  - uart
+  - watchdog

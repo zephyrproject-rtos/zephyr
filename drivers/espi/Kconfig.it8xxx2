@@ -5,7 +5,7 @@ config ESPI_IT8XXX2
 	bool "ITE IT8XXX2 embedded controller ESPI driver"
 	default y
 	depends on DT_HAS_ITE_IT8XXX2_ESPI_ENABLED
-	depends on SOC_IT8XXX2
+	depends on SOC_IT8XXX2 || SOC_IT51XXX
 	help
 	  Enable ITE IT8XXX2 ESPI driver.
 
@@ -18,6 +18,9 @@ config ESPI_PERIPHERAL_8042_KBC
 	default y
 
 config ESPI_PERIPHERAL_HOST_IO
+	default y
+
+config ESPI_PERIPHERAL_HOST_IO_PVT
 	default y
 
 config ESPI_PERIPHERAL_DEBUG_PORT_80
@@ -132,7 +135,7 @@ config ESPI_IT8XXX2_PNPCFG_DEVICE_KBC_MOUSE
 # status bit to indicate which cycle triggered the interrupt and data registers
 # of these two ports are read only. Hence EC have to read these two data
 # registers at the same time in the ISR.
-# It means that the Host must alwasy write 2 bytes of data to port 80 otherwise
+# It means that the Host must always write 2 bytes of data to port 80 otherwise
 # port 81 data will not be updated.
 config ESPI_IT8XXX2_PORT_81_CYCLE
 	bool "EC accepts 0x81 I/O cycle from eSPI transaction"

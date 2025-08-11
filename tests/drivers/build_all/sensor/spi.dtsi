@@ -6,6 +6,8 @@
  * Application overlay for spi devices
  */
 
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
 /****************************************
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
  ***************************************/
@@ -196,7 +198,7 @@ test_spi_bme680: bme680@19 {
 };
 
 test_spi_icm426888: icm42688@1a {
-	compatible = "invensense,icm42688";
+	compatible = "invensense,icm42688", "invensense,icm4268x";
 	reg = <0x1a>;
 	spi-max-frequency = <24000000>;
 	int-gpios = <&test_gpio 0 0>;
@@ -438,4 +440,29 @@ test_spi_ad2s1210: ad2s1210@35 {
 	mode-gpios = <&test_gpio 1 (GPIO_ACTIVE_HIGH)>, <&test_gpio 2 (GPIO_ACTIVE_HIGH)>;
 	reset-gpios = <&test_gpio 7 (GPIO_ACTIVE_LOW)>;
 	clock-frequency = <8192000>;
+};
+
+test_spi_fxls8974: fxls8974@36 {
+	compatible = "nxp,fxls8974";
+	reg = <0x36>;
+	spi-max-frequency = <0>;
+	reset-gpios = <&test_gpio 0 0>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+};
+
+test_spi_adxl366: adxl366@37 {
+	compatible = "adi,adxl366";
+	reg = <0x37>;
+	spi-max-frequency = <0>;
+	int1-gpios = <&test_gpio 0 0>;
+	odr = <4>;
+	fifo-mode = <0>;
+};
+
+test_spi_icm42686: icm42686@38 {
+	compatible = "invensense,icm42686", "invensense,icm4268x";
+	reg = <0x1a>;
+	spi-max-frequency = <24000000>;
+	int-gpios = <&test_gpio 0 0>;
 };

@@ -268,8 +268,7 @@ void bt_send_one_host_num_completed_packets(uint16_t handle)
 
 	LOG_DBG("Reporting completed packet for handle %u", handle);
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS,
-				sizeof(*cp) + sizeof(*hc));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	BT_ASSERT_MSG(buf, "Unable to alloc for Host NCP");
 
 	cp = net_buf_add(buf, sizeof(*cp));
@@ -326,8 +325,7 @@ void bt_hci_host_num_completed_packets(struct net_buf *buf)
 
 	LOG_DBG("Reporting completed packet for handle %u", handle);
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS,
-				sizeof(*cp) + sizeof(*hc));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		LOG_ERR("Unable to allocate new HCI command");
 		return;
@@ -351,8 +349,27 @@ struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
 
 	LOG_DBG("opcode 0x%04x param_len %u", opcode, param_len);
 
-	/* net_buf_alloc(K_FOREVER) can fail when run from the syswq */
-	buf = net_buf_alloc(&hci_cmd_pool, K_FOREVER);
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (!buf) {
+		return NULL;
+	}
+
+	LOG_DBG("buf %p", buf);
+
+	hdr = net_buf_push(buf, sizeof(*hdr));
+	hdr->opcode = sys_cpu_to_le16(opcode);
+	hdr->param_len = param_len;
+
+	net_buf_push_u8(buf, BT_HCI_H4_CMD);
+
+	return buf;
+}
+
+struct net_buf *bt_hci_cmd_alloc(k_timeout_t timeout)
+{
+	struct net_buf *buf;
+
+	buf = net_buf_alloc(&hci_cmd_pool, timeout);
 	if (!buf) {
 		LOG_DBG("Unable to allocate a command buffer");
 		return NULL;
@@ -360,29 +377,41 @@ struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
 
 	LOG_DBG("buf %p", buf);
 
-	net_buf_add_u8(buf, BT_HCI_H4_CMD);
+	/* Reserve H:4 header and HCI command header */
+	net_buf_reserve(buf, sizeof(uint8_t) + sizeof(struct bt_hci_cmd_hdr));
 
-	cmd(buf)->opcode = opcode;
+	cmd(buf)->opcode = 0;
 	cmd(buf)->sync = NULL;
 	cmd(buf)->state = NULL;
-
-	hdr = net_buf_add(buf, sizeof(*hdr));
-	hdr->opcode = sys_cpu_to_le16(opcode);
-	hdr->param_len = param_len;
 
 	return buf;
 }
 
 int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 {
+	struct bt_hci_cmd_hdr *hdr;
+
 	if (!buf) {
-		buf = bt_hci_cmd_create(opcode, 0);
+		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (!buf) {
 			return -ENOBUFS;
 		}
 	}
 
-	LOG_DBG("opcode 0x%04x len %u", opcode, buf->len);
+	LOG_DBG("opcode 0x%04x param_len %u", opcode, buf->len);
+
+	cmd(buf)->opcode = opcode;
+
+	/* TODO: Remove this condition when bt_hci_cmd_create() has been removed (after its
+	 * deprecation period)
+	 */
+	if (net_buf_headroom(buf) >= sizeof(uint8_t) + sizeof(*hdr)) {
+		hdr = net_buf_push(buf, sizeof(*hdr));
+		hdr->opcode = sys_cpu_to_le16(opcode);
+		hdr->param_len = buf->len - sizeof(*hdr);
+
+		net_buf_push_u8(buf, BT_HCI_H4_CMD);
+	}
 
 	/* Host Number of Completed Packets can ignore the ncmd value
 	 * and does not generate any cmd complete/status events.
@@ -414,7 +443,7 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 	int err;
 
 	if (!buf) {
-		buf = bt_hci_cmd_create(opcode, 0);
+		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (!buf) {
 			return -ENOBUFS;
 		}
@@ -435,8 +464,11 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 	k_sem_init(&sync_sem, 0, 1);
 	cmd(buf)->sync = &sync_sem;
 
-	k_fifo_put(&bt_dev.cmd_tx_queue, net_buf_ref(buf));
-	bt_tx_irq_raise();
+	err = bt_hci_cmd_send(opcode, net_buf_ref(buf));
+	if (err) {
+		net_buf_unref(buf);
+		return err;
+	}
 
 	/* TODO: disallow sending sync commands from syswq altogether */
 
@@ -744,8 +776,7 @@ int bt_le_create_conn_ext(const struct bt_conn *conn)
 		   ((bt_dev.create_param.options &
 		      BT_CONN_LE_OPT_CODED) ? 1 : 0);
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_EXT_CREATE_CONN, sizeof(*cp) +
-				num_phys * sizeof(*phy));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -815,7 +846,7 @@ int bt_le_create_conn_synced(const struct bt_conn *conn, const struct bt_le_ext_
 	}
 
 	/* There shall only be one Initiating_PHYs */
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_EXT_CREATE_CONN_V2, sizeof(*cp) + sizeof(*phy));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -865,7 +896,7 @@ static int bt_le_create_conn_legacy(const struct bt_conn *conn)
 		return err;
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CREATE_CONN, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -920,7 +951,7 @@ int bt_le_create_conn_cancel(void)
 	struct net_buf *buf;
 	struct bt_hci_cmd_state_set state;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CREATE_CONN_CANCEL, 0);
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -937,7 +968,7 @@ int bt_hci_disconnect(uint16_t handle, uint8_t reason)
 	struct net_buf *buf;
 	struct bt_hci_cp_disconnect *disconn;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_DISCONNECT, sizeof(*disconn));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -1075,8 +1106,7 @@ int bt_hci_le_read_remote_features(struct bt_conn *conn)
 	struct bt_hci_cp_le_read_remote_features *cp;
 	struct net_buf *buf;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_READ_REMOTE_FEATURES,
-				sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -1101,8 +1131,7 @@ int bt_hci_read_remote_version(struct bt_conn *conn)
 		return 0;
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_READ_REMOTE_VERSION_INFO,
-				sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -1122,7 +1151,7 @@ int bt_le_set_data_len(struct bt_conn *conn, uint16_t tx_octets, uint16_t tx_tim
 	struct bt_hci_cp_le_set_data_len *cp;
 	struct net_buf *buf;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_DATA_LEN, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -1143,7 +1172,7 @@ static int hci_le_read_phy(struct bt_conn *conn)
 	struct net_buf *buf, *rsp;
 	int err;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_READ_PHY, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -1165,13 +1194,31 @@ static int hci_le_read_phy(struct bt_conn *conn)
 }
 #endif /* defined(CONFIG_BT_USER_PHY_UPDATE) */
 
+int bt_le_set_default_phy(uint8_t all_phys, uint8_t pref_tx_phy, uint8_t pref_rx_phy)
+{
+	struct bt_hci_cp_le_set_default_phy *cp;
+	struct net_buf *buf;
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->all_phys = all_phys;
+	cp->tx_phys = pref_tx_phy;
+	cp->rx_phys = pref_rx_phy;
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_DEFAULT_PHY, buf, NULL);
+}
+
 int bt_le_set_phy(struct bt_conn *conn, uint8_t all_phys,
 		  uint8_t pref_tx_phy, uint8_t pref_rx_phy, uint8_t phy_opts)
 {
 	struct bt_hci_cp_le_set_phy *cp;
 	struct net_buf *buf;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_PHY, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -1763,12 +1810,71 @@ static void le_remote_feat_complete(struct net_buf *buf)
 	atomic_set_bit(conn->flags, BT_CONN_LE_FEATURES_EXCHANGED);
 
 	if (IS_ENABLED(CONFIG_BT_REMOTE_INFO) &&
-	    !IS_ENABLED(CONFIG_BT_REMOTE_VERSION)) {
+	    (!IS_ENABLED(CONFIG_BT_REMOTE_VERSION) ||
+	     atomic_test_bit(conn->flags, BT_CONN_AUTO_VERSION_INFO))) {
 		notify_remote_info(conn);
 	}
 
 	bt_conn_unref(conn);
 }
+
+#if defined(CONFIG_BT_LE_EXTENDED_FEAT_SET)
+static void le_read_all_remote_feat_complete(struct net_buf *buf)
+{
+	struct bt_hci_evt_le_read_all_remote_feat_complete *evt = (void *)buf->data;
+	struct bt_conn *conn;
+	struct bt_conn_le_read_all_remote_feat_complete params;
+	uint16_t handle = sys_le16_to_cpu(evt->handle);
+
+	LOG_DBG("Read all remote feature complete: 0x%02x %s handle %u", evt->status,
+		bt_hci_err_to_str(evt->status), handle);
+
+	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_LE);
+	if (conn == NULL) {
+		LOG_ERR("Unknown conn handle 0x%04X", handle);
+		return;
+	}
+
+	params.status = evt->status;
+
+	if (params.status == BT_HCI_ERR_SUCCESS) {
+		params.max_remote_page = evt->max_remote_page;
+		params.max_valid_page = evt->max_valid_page;
+		params.features = evt->features;
+	}
+
+	notify_read_all_remote_feat_complete(conn, &params);
+
+	bt_conn_unref(conn);
+}
+#endif /* CONFIG_BT_LE_EXTENDED_FEAT_SET */
+
+#if defined(CONFIG_BT_FRAME_SPACE_UPDATE)
+static void le_frame_space_update_complete(struct net_buf *buf)
+{
+	struct bt_hci_evt_le_frame_space_update_complete *evt = (void *)buf->data;
+	struct bt_conn *conn;
+	struct bt_conn_le_frame_space_updated params;
+	uint16_t handle = sys_le16_to_cpu(evt->handle);
+
+	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_LE);
+	if (conn == NULL) {
+		LOG_ERR("Unknown conn handle 0x%04X", handle);
+		return;
+	}
+
+	params.status = evt->status;
+
+	if (params.status == BT_HCI_ERR_SUCCESS) {
+		params.phys = evt->phys;
+		params.spacing_types = evt->spacing_types;
+		params.frame_space = evt->frame_space;
+		params.initiator = evt->initiator;
+	}
+
+	notify_frame_space_update_complete(conn, &params);
+}
+#endif /* CONFIG_BT_FRAME_SPACE_UPDATE */
 
 #if defined(CONFIG_BT_DATA_LEN_UPDATE)
 static void le_data_len_change(struct net_buf *buf)
@@ -1874,8 +1980,7 @@ static void le_conn_param_neg_reply(uint16_t handle, uint8_t reason)
 	struct bt_hci_cp_le_conn_param_req_neg_reply *cp;
 	struct net_buf *buf;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CONN_PARAM_REQ_NEG_REPLY,
-				sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		LOG_ERR("Unable to allocate buffer");
 		return;
@@ -1894,7 +1999,7 @@ static int le_conn_param_req_reply(uint16_t handle,
 	struct bt_hci_cp_le_conn_param_req_reply *cp;
 	struct net_buf *buf;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CONN_PARAM_REQ_REPLY, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -2029,8 +2134,7 @@ static int set_flow_control(void)
 		return 0;
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_HOST_BUFFER_SIZE,
-				sizeof(*hbs));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -2045,7 +2149,7 @@ static int set_flow_control(void)
 		return err;
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_SET_CTL_TO_HOST_FLOW, 1);
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -2345,7 +2449,8 @@ static void bt_hci_evt_read_remote_version_complete(struct net_buf *buf)
 
 	atomic_set_bit(conn->flags, BT_CONN_AUTO_VERSION_INFO);
 
-	if (IS_ENABLED(CONFIG_BT_REMOTE_INFO)) {
+	if (IS_ENABLED(CONFIG_BT_REMOTE_INFO) &&
+	    atomic_test_bit(conn->flags, BT_CONN_LE_FEATURES_EXCHANGED)) {
 		/* Remote features is already present */
 		notify_remote_info(conn);
 	}
@@ -2369,7 +2474,7 @@ static void le_ltk_neg_reply(uint16_t handle)
 	struct bt_hci_cp_le_ltk_req_neg_reply *cp;
 	struct net_buf *buf;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_LTK_REQ_NEG_REPLY, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		LOG_ERR("Out of command buffers");
 
@@ -2387,8 +2492,7 @@ static void le_ltk_reply(uint16_t handle, uint8_t *ltk)
 	struct bt_hci_cp_le_ltk_req_reply *cp;
 	struct net_buf *buf;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_LTK_REQ_REPLY,
-				sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		LOG_ERR("Out of command buffers");
 		return;
@@ -2894,6 +2998,16 @@ static const struct event_handler meta_events[] = {
 	EVENT_HANDLER(BT_HCI_EVT_LE_ENH_CONN_COMPLETE_V2, le_enh_conn_complete_v2,
 		      sizeof(struct bt_hci_evt_le_enh_conn_complete_v2)),
 #endif /* CONFIG_BT_PER_ADV_RSP || CONFIG_BT_PER_ADV_SYNC_RSP */
+#if defined(CONFIG_BT_LE_EXTENDED_FEAT_SET)
+	EVENT_HANDLER(BT_HCI_EVT_LE_READ_ALL_REMOTE_FEAT_COMPLETE,
+		      le_read_all_remote_feat_complete,
+		      sizeof(struct bt_hci_evt_le_read_all_remote_feat_complete)),
+#endif /* CONFIG_BT_LE_EXTENDED_FEAT_SET */
+#if defined(CONFIG_BT_FRAME_SPACE_UPDATE)
+	EVENT_HANDLER(BT_HCI_EVT_LE_FRAME_SPACE_UPDATE_COMPLETE,
+		      le_frame_space_update_complete,
+		      sizeof(struct bt_hci_evt_le_frame_space_update_complete)),
+#endif /* CONFIG_BT_FRAME_SPACE_UPDATE */
 #endif /* CONFIG_BT_CONN */
 #if defined(CONFIG_BT_CHANNEL_SOUNDING)
 	EVENT_HANDLER(BT_HCI_EVT_LE_CS_READ_REMOTE_SUPPORTED_CAPABILITIES_COMPLETE,
@@ -3130,7 +3244,45 @@ static void read_le_features_complete(struct net_buf *buf)
 
 	LOG_DBG("status 0x%02x %s", rp->status, bt_hci_err_to_str(rp->status));
 
+	memcpy(bt_dev.le.features, rp->features, sizeof(rp->features));
+}
+
+static void read_le_all_supported_features_complete(struct net_buf *buf)
+{
+	struct bt_hci_rp_le_read_all_local_supported_features *rp = (void *)buf->data;
+
+	LOG_DBG("status 0x%02x %s", rp->status, bt_hci_err_to_str(rp->status));
+
 	memcpy(bt_dev.le.features, rp->features, sizeof(bt_dev.le.features));
+}
+
+static int read_le_local_supported_features(void)
+{
+	struct net_buf *rsp;
+	int err;
+
+	/* Read Low Energy Supported Features */
+	if (IS_ENABLED(CONFIG_BT_LE_EXTENDED_FEAT_SET) &&
+	    BT_READ_ALL_LOCAL_FEATURES_SUPPORTED(bt_dev.supported_commands)) {
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_ALL_LOCAL_SUPPORTED_FEATURES, NULL,
+					   &rsp);
+		if (err != 0) {
+			return err;
+		}
+
+		read_le_all_supported_features_complete(rsp);
+	} else {
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_LOCAL_FEATURES, NULL,
+					   &rsp);
+		if (err != 0) {
+			return err;
+		}
+
+		read_le_features_complete(rsp);
+	}
+
+	net_buf_unref(rsp);
+	return 0;
 }
 
 #if defined(CONFIG_BT_CONN)
@@ -3223,7 +3375,7 @@ static int le_set_host_feature(uint8_t bit_number, uint8_t bit_value)
 	struct bt_hci_cp_le_set_host_feature *cp;
 	struct net_buf *buf;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_HOST_FEATURE, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -3350,7 +3502,7 @@ static int le_set_event_mask(void)
 	uint64_t mask = 0U;
 
 	/* Set LE event mask */
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_EVENT_MASK, sizeof(*cp_mask));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -3416,6 +3568,16 @@ static int le_set_event_mask(void)
 		if (IS_ENABLED(CONFIG_BT_SUBRATING) &&
 		    BT_FEAT_LE_CONN_SUBRATING(bt_dev.le.features)) {
 			mask |= BT_EVT_MASK_LE_SUBRATE_CHANGE;
+		}
+
+		if (IS_ENABLED(CONFIG_BT_LE_EXTENDED_FEAT_SET) &&
+		    BT_FEAT_LE_EXTENDED_FEAT_SET(bt_dev.le.features)) {
+			mask |= BT_EVT_MASK_LE_READ_ALL_REMOTE_FEAT_COMPLETE;
+		}
+
+		if (IS_ENABLED(CONFIG_BT_FRAME_SPACE_UPDATE) &&
+		    BT_FEAT_LE_FRAME_SPACE_UPDATE_SET(bt_dev.le.features)) {
+			mask |= BT_EVT_MASK_LE_FRAME_SPACE_UPDATE_COMPLETE;
 		}
 	}
 
@@ -3555,15 +3717,10 @@ static int le_init(void)
 		return -ENODEV;
 	}
 
-	/* Read Low Energy Supported Features */
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_LOCAL_FEATURES, NULL,
-				   &rsp);
+	err = read_le_local_supported_features();
 	if (err) {
 		return err;
 	}
-
-	read_le_features_complete(rsp);
-	net_buf_unref(rsp);
 
 	if (IS_ENABLED(CONFIG_BT_ISO) &&
 	    BT_FEAT_LE_ISO(bt_dev.le.features)) {
@@ -3604,8 +3761,7 @@ static int le_init(void)
 #endif /* CONFIG_BT_BROADCASTER */
 
 	if (BT_FEAT_BREDR(bt_dev.features)) {
-		buf = bt_hci_cmd_create(BT_HCI_OP_LE_WRITE_LE_HOST_SUPP,
-					sizeof(*cp_le));
+		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (!buf) {
 			return -ENOBUFS;
 		}
@@ -3646,8 +3802,7 @@ static int le_init(void)
 			return err;
 		}
 
-		buf = bt_hci_cmd_create(BT_HCI_OP_LE_WRITE_DEFAULT_DATA_LEN,
-					sizeof(*cp));
+		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (!buf) {
 			return -ENOBUFS;
 		}
@@ -3668,8 +3823,7 @@ static int le_init(void)
 #if defined(CONFIG_BT_PRIVACY)
 		struct bt_hci_cp_le_set_rpa_timeout *cp;
 
-		buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_RPA_TIMEOUT,
-					sizeof(*cp));
+		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (!buf) {
 			return -ENOBUFS;
 		}
@@ -3764,7 +3918,7 @@ static int set_event_mask(void)
 	struct net_buf *buf;
 	uint64_t mask = 0U;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_SET_EVENT_MASK, sizeof(*ev));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -3820,7 +3974,7 @@ const char *bt_hci_get_ver_str(uint8_t core_version)
 {
 	const char * const str[] = {
 		"1.0b", "1.1", "1.2", "2.0", "2.1", "3.0", "4.0", "4.1", "4.2",
-		"5.0", "5.1", "5.2", "5.3", "5.4", "6.0"
+		"5.0", "5.1", "5.2", "5.3", "5.4", "6.0", "6.1"
 	};
 
 	if (core_version < ARRAY_SIZE(str)) {
@@ -4618,7 +4772,7 @@ int bt_le_filter_accept_list_add(const bt_addr_le_t *addr)
 		return -EAGAIN;
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_ADD_DEV_TO_FAL, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -4646,7 +4800,7 @@ int bt_le_filter_accept_list_remove(const bt_addr_le_t *addr)
 		return -EAGAIN;
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_REM_DEV_FROM_FAL, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -4696,8 +4850,7 @@ int bt_le_set_chan_map(uint8_t chan_map[5])
 		return -ENOTSUP;
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_HOST_CHAN_CLASSIF,
-				sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -4738,8 +4891,7 @@ int bt_configure_data_path(uint8_t dir, uint8_t id, uint8_t vs_config_len,
 	struct net_buf *buf;
 	int err;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_CONFIGURE_DATA_PATH, sizeof(*cp) +
-				vs_config_len);
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}

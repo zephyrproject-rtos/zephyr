@@ -1,4 +1,4 @@
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -9,3 +9,8 @@ config INCLUDE_REMOTE_DIR
 	help
 	  Include remote build header files. Can be used if primary image
 	  needs to be aware of size or base address of secondary image
+
+config TEST_SINGLE_CPU
+	bool "Enable mailbox test on single CPU core"
+	help
+	  Perform a test in which a CPU uses a mailbox channel to exchange messages with itself

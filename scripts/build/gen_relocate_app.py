@@ -62,6 +62,7 @@ class SectionKind(Enum):
     RODATA = "rodata"
     DATA = "data"
     BSS = "bss"
+    NOINIT = "noinit"
     LITERAL = "literal"
 
     def __str__(self):
@@ -85,6 +86,8 @@ class SectionKind(Enum):
             return cls.DATA
         elif ".bss." in name:
             return cls.BSS
+        elif ".noinit." in name:
+            return cls.NOINIT
         elif ".literal." in name:
             return cls.LITERAL
         else:
@@ -123,6 +126,8 @@ GROUP_LINK_IN({0})
 
 LOAD_ADDRESS_LOCATION_BSS = "GROUP_LINK_IN({0})"
 
+LOAD_ADDRESS_LOCATION_NOLOAD = "GROUP_NOLOAD_LINK_IN({0}, {0})"
+
 MPU_RO_REGION_START = """
 
      _{mem}_mpu_ro_region_start = ORIGIN({mem_upper});
@@ -140,7 +145,7 @@ LINKER_SECTION_SEQ = """
 
 /* Linker section for memory region {mem_upper} for {kind_name} section  */
 
-	SECTION_PROLOGUE(.{mem}_{kind}_reloc,,)
+	SECTION_PROLOGUE(.{mem}_{kind}_reloc,{options},)
         {{
                 . = ALIGN(4);
                 {linker_sections}
@@ -155,7 +160,7 @@ LINKER_SECTION_SEQ_MPU = """
 
 /* Linker section for memory region {mem_upper} for {kind_name} section  */
 
-	SECTION_PROLOGUE(.{mem}_{kind}_reloc,,)
+	SECTION_PROLOGUE(.{mem}_{kind}_reloc,{options},)
         {{
                 __{mem}_{kind}_reloc_start = .;
                 {linker_sections}
@@ -346,19 +351,28 @@ def string_create_helper(
 ):
     linker_string = ''
 
-    if not load_address_in_flash:
-        phdr_template = LOAD_ADDRESS_LOCATION_BSS
-    elif is_copy:
-        phdr_template = LOAD_ADDRESS_LOCATION_FLASH
+    if load_address_in_flash:
+        if is_copy:
+            phdr_template = LOAD_ADDRESS_LOCATION_FLASH
+        else:
+            phdr_template = LOAD_ADDRESS_LOCATION_FLASH_NOCOPY
     else:
-        phdr_template = LOAD_ADDRESS_LOCATION_FLASH_NOCOPY
+        if kind is SectionKind.NOINIT:
+            phdr_template = LOAD_ADDRESS_LOCATION_NOLOAD
+        else:
+            phdr_template = LOAD_ADDRESS_LOCATION_BSS
+
     load_address_string = phdr_template.format(add_phdr(memory_type, phdrs))
 
     if full_list_of_sections[kind]:
         # Create a complete list of funcs/ variables that goes in for this
         # memory type
         tmp = print_linker_sections(full_list_of_sections[kind])
-        if region_is_default_ram(memory_type) and kind in (SectionKind.DATA, SectionKind.BSS):
+        if region_is_default_ram(memory_type) and kind in (
+            SectionKind.DATA,
+            SectionKind.BSS,
+            SectionKind.NOINIT,
+        ):
             linker_string += tmp
         else:
             fields = {
@@ -368,6 +382,7 @@ def string_create_helper(
                 "kind_name": kind,
                 "linker_sections": tmp,
                 "load_address": load_address_string,
+                "options": "(NOLOAD)" if kind is SectionKind.NOINIT else "",
             }
 
             if not region_is_default_ram(memory_type) and kind is SectionKind.RODATA:
@@ -422,10 +437,31 @@ def generate_linker_script(
         if region_is_default_ram(memory_type) and is_copy:
             gen_string += MPU_RO_REGION_END.format(mem=memory_type.lower())
 
-        data_sections = string_create_helper(
-            SectionKind.DATA, memory_type, full_list_of_sections, True, True, phdrs
-        ) + string_create_helper(
-            SectionKind.BSS, memory_type, full_list_of_sections, False, True, phdrs
+        data_sections = (
+            string_create_helper(
+                SectionKind.DATA,
+                memory_type,
+                full_list_of_sections,
+                True,
+                True,
+                phdrs,
+            )
+            + string_create_helper(
+                SectionKind.BSS,
+                memory_type,
+                full_list_of_sections,
+                False,
+                True,
+                phdrs,
+            )
+            + string_create_helper(
+                SectionKind.NOINIT,
+                memory_type,
+                full_list_of_sections,
+                False,
+                False,
+                phdrs,
+            )
         )
 
         if region_is_default_ram(memory_type):

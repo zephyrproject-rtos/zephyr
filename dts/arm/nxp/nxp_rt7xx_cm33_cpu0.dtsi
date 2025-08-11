@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
+#include <zephyr/dt-bindings/misc/nxp_rtxxx_dsp_ctrl.h>
 
 / {
 	cpus {
@@ -28,6 +29,34 @@
 				compatible = "arm,armv8m-mpu";
 				reg = <0xe000ed90 0x40>;
 			};
+		};
+	};
+
+	dsp: dsp {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		compatible = "nxp,rt700-dsp-ctrl-hifi4";
+		sysctl = <&syscon0>;
+
+		status = "disabled";
+
+		/* 1st 1 kiB of HiFi4's ITCM */
+		region@24020000 {
+			reg = <0x24020000 DT_SIZE_K(1)>;
+			type = <NXP_RTXXX_DSP_REGION_RESET>;
+		};
+
+		/* 1st half of reserved HiFi4 SRAM region (see below) */
+		region@200000 {
+			reg = <0x200000 DT_SIZE_M(1)>;
+			type = <NXP_RTXXX_DSP_REGION_TEXT>;
+		};
+
+		/* 2nd half of reserved HiFi4 SRAM region (see below) */
+		region@300000 {
+			reg = <0x300000 DT_SIZE_M(1)>;
+			type = <NXP_RTXXX_DSP_REGION_DATA>;
 		};
 	};
 
@@ -156,6 +185,16 @@
 		#reset-cells = <1>;
 	};
 
+	rtc0: rtc@68000 {
+		compatible = "nxp,irtc";
+		reg = <0x68000 0x1000>;
+		interrupts = <26 0>, <27 0>;
+		clock-frequency = <32768>;
+		prescaler = <1>;
+		alarms-count = <1>;
+		status = "disabled";
+	};
+
 	clkctl0: clkctl@1000 {
 		compatible = "nxp,lpc-syscon";
 		reg = <0x1000 0x1000>;
@@ -274,6 +313,7 @@
 		compatible = "nxp,lpc-syscon";
 		reg = <0x2000 0x1000>;
 		#clock-cells = <1>;
+		#pinmux-cells = <2>;
 	};
 
 	syscon2: syscon@66000 {
@@ -1002,6 +1042,30 @@
 		status = "disabled";
 	};
 
+	usdhc0: usdhc@412000 {
+		compatible = "nxp,imx-usdhc";
+		reg = <0x412000 0x1000>;
+		status = "disabled";
+		interrupts = <37 0>;
+		clocks = <&clkctl4 MCUX_USDHC1_CLK>;
+		max-current-330 = <1020>;
+		max-current-180 = <1020>;
+		max-bus-freq = <208000000>;
+		min-bus-freq = <400000>;
+	};
+
+	usdhc1: usdhc@413000 {
+		compatible = "nxp,imx-usdhc";
+		reg = <0x413000 0x1000>;
+		status = "disabled";
+		interrupts = <38 0>;
+		clocks = <&clkctl4 MCUX_USDHC2_CLK>;
+		max-current-330 = <1020>;
+		max-current-180 = <1020>;
+		max-bus-freq = <208000000>;
+		min-bus-freq = <400000>;
+	};
+
 	mrt0: mrt@2d000 {
 		compatible = "nxp,mrt";
 		reg = <0x2d000 0x100>;
@@ -1069,6 +1133,57 @@
 		clk-divider = <1>;
 	};
 
+	sai0: sai@152000 {
+		compatible = "nxp,mcux-i2s";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		#pinmux-cells = <2>;
+		reg = < 0x152000 0x1000>;
+		clocks = <&clkctl0 MCUX_SAI0_CLK>;
+		pinmuxes = <&syscon0 0x240 0x1>;
+		interrupts = <115 0>;
+		dmas = <&edma0 0 81>, <&edma0 1 82>;
+		dma-names = "rx", "tx";
+		nxp,tx-channel = <1>;
+		nxp,tx-dma-channel = <1>;
+		nxp,rx-dma-channel = <0>;
+		status = "disabled";
+	};
+
+	sai1: sai@153000 {
+		compatible = "nxp,mcux-i2s";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		#pinmux-cells = <2>;
+		reg = < 0x153000 0x1000>;
+		clocks = <&clkctl0 MCUX_SAI1_CLK>;
+		pinmuxes = <&syscon0 0x240 0x1>;
+		interrupts = <116 0>;
+		dmas = <&edma0 0 83>, <&edma0 0 84>;
+		dma-names = "rx", "tx";
+		nxp,tx-channel = <1>;
+		nxp,tx-dma-channel = <2>;
+		nxp,rx-dma-channel = <3>;
+		status = "disabled";
+	};
+
+	sai2: sai@154000 {
+		compatible = "nxp,mcux-i2s";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		#pinmux-cells = <2>;
+		reg = < 0x154000 0x1000>;
+		clocks = <&clkctl0 MCUX_SAI2_CLK>;
+		pinmuxes = <&syscon0 0x240 0x1>;
+		interrupts = <117 0>;
+		dmas = <&edma0 0 85>, <&edma0 0 86>;
+		dma-names = "rx", "tx";
+		nxp,tx-channel = <1>;
+		nxp,tx-dma-channel = <2>;
+		nxp,rx-dma-channel = <3>;
+		status = "disabled";
+	};
+
 	sc_timer: pwm@114000 {
 		compatible = "nxp,sctimer-pwm";
 		reg = <0x114000 0x1000>;
@@ -1097,6 +1212,25 @@
 				 <&clkctl4 MCUX_LCDIF_PIXEL_CLK>;
 		clock-names = "dphy", "esc", "pixel";
 		ulps-control;
+		status = "disabled";
+	};
+
+	acmp: acmp@20b000 {
+		compatible = "nxp,kinetis-acmp";
+		reg = <0x20b000 0x1000>;
+		interrupts = <17 0>;
+		status = "disabled";
+	};
+
+	mbox4: mbox@189000 {
+		#mbox-cells = <1>;
+
+		compatible = "nxp,mbox-imx-mu";
+		reg = <0x189000 0x1000>;
+
+		interrupts = <31 0>;
+		rx-channels = <4>;
+
 		status = "disabled";
 	};
 };

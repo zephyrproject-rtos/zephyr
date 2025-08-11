@@ -306,11 +306,11 @@ int lwm2m_delete_obj_inst(uint16_t obj_id, uint16_t obj_inst_id)
 
 	/* reset obj_inst and res_inst data structure */
 	for (i = 0; i < obj_inst->resource_count; i++) {
-		clear_attrs(&obj_inst->resources[i]);
+		clear_attrs(LWM2M_PATH_LEVEL_RESOURCE, &obj_inst->resources[i]);
 		(void)memset(obj_inst->resources + i, 0, sizeof(struct lwm2m_engine_res));
 	}
 
-	clear_attrs(obj_inst);
+	clear_attrs(LWM2M_PATH_LEVEL_OBJECT_INST, obj_inst);
 	(void)memset(obj_inst, 0, sizeof(struct lwm2m_engine_obj_inst));
 	k_mutex_unlock(&registry_lock);
 	return ret;
@@ -545,6 +545,10 @@ static int lwm2m_engine_set(const struct lwm2m_obj_path *path, const void *value
 	int ret = 0;
 	bool changed = false;
 
+	if (value == NULL && len > 0) {
+		return -EINVAL;
+	}
+
 	if (path->level < LWM2M_PATH_LEVEL_RESOURCE) {
 		LOG_ERR("path must have at least 3 parts");
 		return -EINVAL;
@@ -600,7 +604,7 @@ static int lwm2m_engine_set(const struct lwm2m_obj_path *path, const void *value
 		return ret;
 	}
 
-	if (memcmp(data_ptr, value, len) != 0 || res_inst->data_len != len) {
+	if ((value != NULL && memcmp(data_ptr, value, len) != 0) || res_inst->data_len != len) {
 		changed = true;
 	}
 

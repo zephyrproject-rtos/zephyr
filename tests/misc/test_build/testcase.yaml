@@ -36,3 +36,9 @@ tests:
       - CONFIG_ISR_TABLES_LOCAL_DECLARATION=y
       - CONFIG_LTO=y
       - CONFIG_PICOLIBC_USE_MODULE=y
+  buildsystem.arm.null_pointer_exception_detection_dwt:
+    build_only: true
+    platform_allow:
+      - qemu_cortex_m3
+    extra_configs:
+      - CONFIG_NULL_POINTER_EXCEPTION_DETECTION_DWT=y

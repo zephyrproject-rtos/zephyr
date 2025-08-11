@@ -1,0 +1,185 @@
+# Espressif ESP32 802.15.4 configuration options
+
+# Copyright (c) 2024 A Labs GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig IEEE802154_ESP32
+	bool "ESP32 series IEEE 802.15.4 Driver"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_IEEE802154_ENABLED
+
+if IEEE802154_ESP32
+
+config IEEE802154_ESP32_INIT_PRIO
+	int "ESP32 IEEE 802.15.4 initialization priority"
+	default 80
+	help
+	  Set the initialization priority number. Do not mess with it unless
+	  you know what you are doing.
+
+# Kconfigs copied from Espressif HAL module (ESP-IDF) below
+
+config IEEE802154_ESP32_RX_BUFFER_SIZE
+	int "Number of 802.15.4 receive buffers"
+	default 20
+	range 2 100
+	help
+	  The number of 802.15.4 receive buffers.
+
+	  This config is used in the Espressif HAL module.
+
+choice IEEE802154_ESP32_CCA_MODE
+	prompt "Clear Channel Assessment (CCA) mode"
+	default IEEE802154_ESP32_CCA_ED
+	help
+	  Configure the CCA mode
+
+	  This config is used in the Espressif HAL module.
+
+config IEEE802154_ESP32_CCA_CARRIER
+	bool "Carrier sense only"
+	help
+	  Configure the CCA mode to Carrier sense only
+
+config IEEE802154_ESP32_CCA_ED
+	bool "Energy above threshold"
+	help
+	  Configure the CCA mode to Energy above threshold
+
+config IEEE802154_ESP32_CCA_CARRIER_OR_ED
+	bool "Carrier sense OR energy above threshold"
+	help
+	  Configure the CCA mode to Carrier sense OR energy above threshold
+
+config IEEE802154_ESP32_CCA_CARRIER_AND_ED
+	bool "Carrier sense AND energy above threshold"
+	help
+	  Configure the CCA mode to Carrier sense AND energy above threshold
+
+endchoice # IEEE802154_CCA_MODE
+
+config IEEE802154_ESP32_CCA_MODE
+	int
+	default 0 if IEEE802154_ESP32_CCA_CARRIER
+	default 1 if IEEE802154_ESP32_CCA_ED
+	default 2 if IEEE802154_ESP32_CCA_CARRIER_OR_ED
+	default 3 if IEEE802154_ESP32_CCA_CARRIER_AND_ED
+
+config IEEE802154_ESP32_CCA_THRESHOLD
+	int "CCA detection threshold"
+	range -120 0
+	default -60
+	help
+	  Set the CCA threshold, in dB.
+
+	  This config is used in the Espressif HAL module.
+
+config IEEE802154_ESP32_PENDING_TABLE_SIZE
+	int "Pending table size"
+	range 1 100
+	default 20
+	help
+	  set the pending table size
+
+config IEEE802154_ESP32_MULTI_PAN_ENABLE
+	bool "Multi-pan feature for frame filter"
+	help
+	  Enable IEEE802154 multi-pan
+
+	  This config is used in the Espressif HAL module.
+
+menuconfig IEEE802154_ESP32_DEBUG
+	bool "IEEE802154 Debug"
+	help
+	  Enabling this option allows different kinds of IEEE802154 debug output.
+	  All IEEE802154 debug features increase the size of the final binary.
+
+config IEEE802154_ESP32_ASSERT
+	bool "Enrich the assert information with IEEE802154 state and event"
+	depends on IEEE802154_ESP32_DEBUG
+	default n
+	help
+	  Enabling this option to add some probe codes in the driver, and this information
+	  will be printed when assert.
+
+	  This config is used in the Espressif HAL module.
+
+config IEEE802154_ESP32_RECORD_EVENT
+	bool "Record event information for debugging"
+	depends on IEEE802154_ESP32_DEBUG
+	help
+	  Enabling this option to record event, when assert, the recorded event will be printed.
+
+config IEEE802154_ESP32_RECORD_EVENT_SIZE
+	int "Record event table size"
+	depends on IEEE802154_ESP32_RECORD_EVENT
+	range 1 50
+	default 30
+	help
+	  Set the record event table size
+
+	  This config is used in the Espressif HAL module.
+
+config IEEE802154_ESP32_RECORD_STATE
+	bool "Record state information for debugging"
+	depends on IEEE802154_ESP32_DEBUG
+	help
+	  Enabling this option to record state, when assert, the recorded state will be printed.
+
+	  This config is used in the Espressif HAL module.
+
+config IEEE802154_ESP32_RECORD_STATE_SIZE
+	int "Record state table size"
+	depends on IEEE802154_ESP32_RECORD_STATE
+	range 1 50
+	default 10
+	help
+	  Set the record state table size.
+
+	  This config is used in the Espressif HAL module.
+
+config IEEE802154_ESP32_RECORD_CMD
+	bool "Record command information for debugging"
+	depends on IEEE802154_ESP32_DEBUG
+	help
+	  Enable this option to record the command information.
+
+	  This config is used in the Espressif HAL module.
+
+config IEEE802154_ESP32_RECORD_CMD_SIZE
+	int "Record command table size"
+	depends on IEEE802154_ESP32_RECORD_CMD
+	range 1 50
+	default 10
+	help
+	  Set the record command table size.
+
+	  This config is used in the Espressif HAL module.
+
+config IEEE802154_ESP32_RECORD_ABORT
+	bool "Record abort information for debugging"
+	depends on IEEE802154_ESP32_DEBUG
+	help
+	  Enable this option to record abort information.
+
+	  This config is used in the Espressif HAL module.
+
+config IEEE802154_ESP32_RECORD_ABORT_SIZE
+	int "Record abort table size"
+	depends on IEEE802154_ESP32_RECORD_ABORT
+	range 1 50
+	default 10
+	help
+	  Set the record abort table size.
+
+	  This config is used in the Espressif HAL module.
+
+config IEEE802154_ESP32_TXRX_STATISTIC
+	bool "Record tx/rx packet information for debugging"
+	depends on IEEE802154_ESP32_DEBUG
+	help
+	  Enable this option to record tx and rx packet information.
+
+	  This config is used in the Espressif HAL module.
+
+endif # IEEE802154_ESP32

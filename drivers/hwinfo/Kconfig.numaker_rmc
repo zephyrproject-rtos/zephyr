@@ -1,0 +1,11 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config HWINFO_NUMAKER_RMC
+	bool "NuMaker hwinfo backed up by RMC"
+	default y
+	depends on SOC_SERIES_M2L31X
+	select HWINFO_HAS_DRIVER
+	select HAS_NUMAKER_RMC
+	help
+	  Enable Nuvoton NuMaker hwinfo driver backed up by RMC

@@ -1,9 +1,8 @@
 name: Footprint Tracking
 
-# Run every 12 hours and on tags
 on:
   schedule:
-    - cron: '50 1/12 * * *'
+    - cron: '50 00 * * *'
   push:
     paths:
       - 'VERSION'
@@ -29,7 +28,7 @@ jobs:
       group: zephyr-runner-v2-linux-x64-4xlarge
     if: github.repository_owner == 'zephyrproject-rtos'
     container:
-      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.28.0.20250523
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.28.1.20250624
       options: '--entrypoint /bin/bash'
     defaults:
       run:

@@ -86,11 +86,13 @@ static void it8xxx2_kbd_drive_column(const struct device *dev, int col)
 	key = irq_lock();
 	inst->KBS_KSOL = (inst->KBS_KSOL & ~ksol_mask) | (kso_val & ksol_mask);
 	inst->KBS_KSOH1 = (inst->KBS_KSOH1 & ~ksoh1_mask) | ((kso_val >> 8) & ksoh1_mask);
-	irq_unlock(key);
-
 	if (common->col_size > 16) {
-		inst->KBS_KSOH2 = (kso_val >> 16) & 0xff;
+		const uint8_t ksoh2_mask = (kso_mask >> 16) & 0xff;
+
+		inst->KBS_KSOH2 = (inst->KBS_KSOH2 & ~ksoh2_mask) |
+				  ((kso_val >> 16) & ksoh2_mask);
 	}
+	irq_unlock(key);
 }
 
 static kbd_row_t it8xxx2_kbd_read_row(const struct device *dev)
@@ -169,12 +171,16 @@ static int it8xxx2_kbd_init(const struct device *dev)
 		 *   Bit[7:6] = 00b: Select alternate KSO function
 		 *   Bit[2] = 1b: Enable the internal pull-up of KSO pin
 		 *
-		 * NOTE: Set input temporarily for gpio_pin_configure(), after
-		 * that pinctrl_apply_state() set to alternate function
-		 * immediately.
+		 * NOTE: Set (output | dt_flag) temporarily for kso16 and
+		 * kso17 pins, after that pinctrl_apply_state() set to
+		 * alternate function immediately.
 		 */
-		gpio_pin_configure_dt(&config->kso16_gpios, GPIO_INPUT);
-		gpio_pin_configure_dt(&config->kso17_gpios, GPIO_INPUT);
+		if (!(config->kso_ignore_mask & BIT(16))) {
+			gpio_pin_configure_dt(&config->kso16_gpios, GPIO_OUTPUT);
+		}
+		if (common->col_size > 17 && !(config->kso_ignore_mask & BIT(17))) {
+			gpio_pin_configure_dt(&config->kso17_gpios, GPIO_OUTPUT);
+		}
 	}
 	/*
 	 * Enable the internal pull-up and kbs mode of the KSI[7:0] pins.
@@ -191,7 +197,9 @@ static int it8xxx2_kbd_init(const struct device *dev)
 	inst->KBS_KSOL = inst->KBS_KSOL & ~ksol_mask;
 	inst->KBS_KSOH1 = inst->KBS_KSOH1 & ~ksoh1_mask;
 	if (common->col_size > 16) {
-		inst->KBS_KSOH2 = 0x00;
+		const uint8_t ksoh2_mask = (kso_mask >> 16) & 0xff;
+
+		inst->KBS_KSOH2 = inst->KBS_KSOH2 & ~ksoh2_mask;
 	}
 
 	for (int i = 0; i < KEYBOARD_KSI_PIN_COUNT; i++) {

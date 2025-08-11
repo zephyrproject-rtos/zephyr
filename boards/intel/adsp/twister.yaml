@@ -56,6 +56,23 @@ variants:
       - zephyr
     testing:
       timeout_multiplier: 8
+  intel_adsp/ace40/nvls:
+    toolchain:
+      - xt-clang
+  intel_adsp/ace40/nvl:
+    toolchain:
+      - xt-clang
+  intel_adsp/ace40/nvl/sim:
+    type: sim
+    toolchain:
+      - xt-clang
+    simulation:
+      - name: custom
+        exec: acesim
+    testing:
+      timeout_multiplier: 8
+  intel_adsp/ace40:
+    twister: false
   intel_adsp/cavs25:
     toolchain:
       - xcc

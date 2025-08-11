@@ -59,8 +59,7 @@ static int send_set_conn_cte_tx_params(uint16_t conn_handle,
 	uint8_t *dest_ant_ids;
 	struct net_buf *buf;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_CONN_CTE_TX_PARAMS,
-				sizeof(*cp) + params->switch_pattern_len);
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}

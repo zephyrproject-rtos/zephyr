@@ -131,7 +131,7 @@ ZTEST_USER_F(i2c_api_twis, test_i2c_read_write)
 ZTEST_USER_F(i2c_api_twis, test_i2c_read)
 {
 	/* Prepare slave data */
-	strncpy(fixture->slave_buffer, msg, TEST_DATA_SIZE);
+	memcpy(fixture->slave_buffer, msg, TEST_DATA_SIZE);
 	zassert_mem_equal(fixture->slave_buffer, msg, TEST_DATA_SIZE);
 
 	int ret = i2c_read(fixture->dev, fixture->master_buffer, TEST_DATA_SIZE, fixture->addr);

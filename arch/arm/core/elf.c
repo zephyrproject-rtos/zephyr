@@ -104,6 +104,8 @@ static inline int prel31_decode(elf_word reloc_type, uint32_t loc,
 {
 	int ret;
 
+	ARG_UNUSED(reloc_type);
+
 	*offset = sign_extend(*(int32_t *)loc, SHIFT_PREL31_SIGN);
 	*offset += sym_base_addr - loc;
 	if (*offset >= PREL31_UPPER_BOUNDARY || *offset < PREL31_LOWER_BOUNDARY) {
@@ -141,6 +143,8 @@ static inline int jumps_decode(elf_word reloc_type, uint32_t loc,
 				uint32_t sym_base_addr, const char *sym_name, int32_t *offset)
 {
 	int ret;
+
+	ARG_UNUSED(reloc_type);
 
 	*offset = MEM2ARMOPCODE(*(uint32_t *)loc);
 	*offset = (*offset & MASK_BRANCH_OFFSET) << SHIFT_BRANCH_OFFSET;
@@ -210,6 +214,8 @@ static inline int thm_jumps_decode(elf_word reloc_type, uint32_t loc,
 {
 	int ret;
 	uint32_t j_one, j_two, sign;
+
+	ARG_UNUSED(reloc_type);
 
 	*upper = MEM2THM16OPCODE(*(uint16_t *)loc);
 	*lower = MEM2THM16OPCODE(*(uint16_t *)(loc + 2));

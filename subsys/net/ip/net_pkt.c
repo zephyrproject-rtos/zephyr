@@ -142,8 +142,11 @@ NET_BUF_POOL_FIXED_DEFINE(tx_bufs, CONFIG_NET_BUF_TX_COUNT, CONFIG_NET_BUF_DATA_
 
 NET_BUF_POOL_VAR_DEFINE(rx_bufs, CONFIG_NET_BUF_RX_COUNT, CONFIG_NET_PKT_BUF_RX_DATA_POOL_SIZE,
 			CONFIG_NET_PKT_BUF_USER_DATA_SIZE, NULL);
-NET_BUF_POOL_VAR_DEFINE(tx_bufs, CONFIG_NET_BUF_TX_COUNT, CONFIG_NET_PKT_BUF_TX_DATA_POOL_SIZE,
-			CONFIG_NET_PKT_BUF_USER_DATA_SIZE, NULL);
+
+NET_BUF_POOL_VAR_ALIGN_DEFINE(tx_bufs, CONFIG_NET_BUF_TX_COUNT,
+			      CONFIG_NET_PKT_BUF_TX_DATA_POOL_SIZE,
+			      CONFIG_NET_PKT_BUF_USER_DATA_SIZE, NULL,
+			      CONFIG_NET_PKT_BUF_TX_DATA_ALLOC_ALIGN_LEN);
 
 #endif /* CONFIG_NET_BUF_FIXED_DATA_SIZE */
 
@@ -1943,7 +1946,8 @@ int net_pkt_read_be32(struct net_pkt *pkt, uint32_t *data)
 
 	ret = net_pkt_read(pkt, d32, sizeof(uint32_t));
 
-	*data = d32[0] << 24 | d32[1] << 16 | d32[2] << 8 | d32[3];
+	*data = (uint32_t)d32[0] << 24 | (uint32_t)d32[1] << 16 |
+		(uint32_t)d32[2] << 8 | (uint32_t)d32[3];
 
 	return ret;
 }

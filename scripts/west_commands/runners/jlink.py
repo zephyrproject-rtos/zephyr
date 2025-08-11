@@ -8,6 +8,7 @@ import argparse
 import ipaddress
 import logging
 import os
+import re
 import shlex
 import socket
 import subprocess
@@ -59,7 +60,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                  gdb_host='',
                  gdb_port=DEFAULT_JLINK_GDB_PORT,
                  rtt_port=DEFAULT_JLINK_RTT_PORT,
-                 tui=False, tool_opt=None):
+                 tui=False, tool_opt=None, dev_id_type=None):
         super().__init__(cfg)
         self.file = cfg.file
         self.file_type = cfg.file_type
@@ -84,11 +85,37 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         self.tui_arg = ['-tui'] if tui else []
         self.loader = loader
         self.rtt_port = rtt_port
+        self.dev_id_type = dev_id_type
 
         self.tool_opt = []
         if tool_opt is not None:
             for opts in [shlex.split(opt) for opt in tool_opt]:
                 self.tool_opt += opts
+
+    @staticmethod
+    def _detect_dev_id_type(dev_id):
+        """Detect device type based on dev_id pattern."""
+        if not dev_id:
+            return None
+
+        # Check if dev_id is numeric (serialno)
+        if re.match(r'^[0-9]+$', dev_id):
+            return 'serialno'
+
+        # Check if dev_id is an existing file (tty)
+        if os.path.exists(dev_id):
+            return 'tty'
+
+        # Check if dev_id is a valid IPv4
+        if is_ip(dev_id):
+            return 'ip'
+
+        # Check if dev_id is a tunnel
+        if is_tunnel(dev_id):
+            return 'tunnel'
+
+        # No match found
+        return None
 
     @classmethod
     def name(cls):
@@ -102,9 +129,10 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def dev_id_help(cls) -> str:
-        return '''Device identifier. Use it to select the J-Link Serial Number
-                  of the device connected over USB. If the J-Link is connected over ip,
-                  the Device identifier is the ip.'''
+        return '''Device identifier. Can be either a serial number (for a USB connection), a path
+                  to a tty device, an IP address or a tunnel address. User can enforce the type of
+                  the identifier with --dev-id-type.
+                  If not specified, the first USB device detected is used. '''
 
     @classmethod
     def tool_opt_help(cls) -> str:
@@ -177,6 +205,9 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--flash-sram', default=False, action='store_true',
                             help='if given, flashing the image to SRAM and '
                             'modify PC register to be SRAM base address')
+        parser.add_argument('--dev-id-type', choices=['auto', 'serialno', 'tty', 'ip', 'tunnel'],
+                            default='auto', help='Device type. "auto" (default) auto-detects '
+                            'the type, or specify explicitly')
 
         parser.set_defaults(reset=False)
 
@@ -196,7 +227,8 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                                  gdb_host=args.gdb_host,
                                  gdb_port=args.gdb_port,
                                  rtt_port=args.rtt_port,
-                                 tui=args.tui, tool_opt=args.tool_opt)
+                                 tui=args.tui, tool_opt=args.tool_opt,
+                                 dev_id_type=args.dev_id_type)
 
     def print_gdbserver_message(self):
         if not self.thread_info_enabled:
@@ -293,13 +325,34 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                                'RTOSPlugin_Zephyr')
         big_endian = self.build_conf.getboolean('CONFIG_BIG_ENDIAN')
 
+        # Determine device type for GDB server
+        if self.dev_id:
+            if self.dev_id_type == 'auto':
+                # Auto-detect device type
+                detected_type = self._detect_dev_id_type(self.dev_id)
+            else:
+                # Use manually specified device type
+                detected_type = self.dev_id_type
+
+            # Build device selection for GDB server
+            if detected_type == 'serialno':
+                device_select = f'usb={self.dev_id}'
+            elif detected_type == 'tty':
+                device_select = f'tty={self.dev_id}'
+            elif detected_type == 'ip':
+                device_select = f'ip={self.dev_id}'
+            elif detected_type == 'tunnel':
+                device_select = f'tunnel={self.dev_id}'
+            else:
+                # Fallback to legacy behavior (usb)
+                device_select = f'usb={self.dev_id}'
+                self.logger.warning(f'"{self.dev_id}" does not match any known pattern')
+        else:
+            device_select = 'usb'
+
         server_cmd = (
             [self.gdbserver]
-            + [
-                '-select',
-                ('ip' if (is_ip(self.dev_id) or is_tunnel(self.dev_id)) else 'usb')
-                + (f'={self.dev_id}' if self.dev_id else ''),
-            ]
+            + ['-select', device_select]
             + ['-port', str(self.gdb_port)]
             + ['-if', self.iface]
             + ['-speed', self.speed]
@@ -464,13 +517,34 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         if self.supports_loader and self.loader:
             loader_details = "?" + self.loader
 
+        # Determine device type for Commander
+        if self.dev_id:
+            if self.dev_id_type == 'auto':
+                # Auto-detect device type
+                detected_type = self._detect_dev_id_type(self.dev_id)
+            else:
+                # Use manually specified device type
+                detected_type = self.dev_id_type
+
+            # Build device selection for Commander
+            if detected_type == 'serialno':
+                device_args = ['-USB', f'{self.dev_id}']
+            elif detected_type == 'tty':
+                device_args = ['-USB', f'{self.dev_id}']  # J-Link Commander uses -USB for tty
+            elif detected_type == 'ip':
+                device_args = ['-IP', f'{self.dev_id}']
+            elif detected_type == 'tunnel':
+                device_args = ['-IP', f'{self.dev_id}']  # Treat tunnel as IP
+            else:
+                # Fallback to legacy behavior (USB)
+                device_args = ['-USB', f'{self.dev_id}']
+                self.logger.warning(f'"{self.dev_id}" does not match any known pattern')
+        else:
+            device_args = []
+
         cmd = (
             [self.commander]
-            + (
-                ['-IP', f'{self.dev_id}']
-                if (is_ip(self.dev_id) or is_tunnel(self.dev_id))
-                else (['-USB', f'{self.dev_id}'] if self.dev_id else [])
-            )
+            + device_args
             + (['-nogui', '1'] if self.supports_nogui else [])
             + ['-if', self.iface]
             + ['-speed', self.speed]

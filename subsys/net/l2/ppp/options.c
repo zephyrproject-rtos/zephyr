@@ -144,14 +144,38 @@ static int ppp_parse_option_conf_req_supported(struct net_pkt *pkt,
 {
 	struct ppp_parse_option_conf_req_data *parse_data = user_data;
 	struct ppp_fsm *fsm = parse_data->fsm;
+	struct net_pkt *ret_pkt = parse_data->ret_pkt;
+	struct net_pkt_cursor cursor;
 	const struct ppp_peer_option_info *option_info =
 		ppp_peer_option_info_get(parse_data->options_info,
 					 parse_data->num_options_info,
 					 code);
 	int ret;
 
+	net_pkt_cursor_backup(pkt, &cursor);
 	ret = option_info->parse(fsm, pkt, parse_data->user_data);
-	if (ret == -EINVAL) {
+	if (ret == -ENOTSUP) {
+		net_pkt_cursor_restore(pkt, &cursor);
+		parse_data->rej_count++;
+		if (parse_data->nack_count != 0) {
+			/* Remove any NACKed data, if we need to reject something first */
+			net_pkt_update_length(ret_pkt, 0);
+			net_pkt_cursor_init(ret_pkt);
+			parse_data->nack_count = 0;
+		}
+		net_pkt_write_u8(ret_pkt, code);
+		net_pkt_write_u8(ret_pkt, len + sizeof(code) + sizeof(len));
+		if (len > 0) {
+			net_pkt_copy(ret_pkt, pkt, len);
+		}
+		return 0;
+	} else if (ret == -EINVAL) {
+		if (parse_data->rej_count != 0) {
+			/* If we have already rejected some options, we
+			 * cannot NACK anything in the same packet.
+			 */
+			return 0;
+		}
 		parse_data->nack_count++;
 		ret = option_info->nack(fsm, parse_data->ret_pkt,
 					parse_data->user_data);
@@ -200,6 +224,10 @@ int ppp_config_info_req(struct ppp_fsm *fsm,
 				&parse_data);
 	if (ret < 0) {
 		return -EINVAL;
+	}
+
+	if (parse_data.rej_count) {
+		return PPP_CONFIGURE_REJ;
 	}
 
 	if (parse_data.nack_count) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -359,3 +359,5 @@ GPIO_DEVICE_INIT_RA_IF_OKAY(8);
 GPIO_DEVICE_INIT_RA_IF_OKAY(9);
 GPIO_DEVICE_INIT_RA_IF_OKAY(a);
 GPIO_DEVICE_INIT_RA_IF_OKAY(b);
+GPIO_DEVICE_INIT_RA_IF_OKAY(c);
+GPIO_DEVICE_INIT_RA_IF_OKAY(d);

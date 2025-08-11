@@ -87,6 +87,15 @@ endif()
 find_program(PUNCOVER puncover)
 
 if(NOT ${PUNCOVER} STREQUAL PUNCOVER-NOTFOUND)
+  set(PUNCOVER_ARGS "")
+  zephyr_get(PUNCOVER_PORT)
+  zephyr_get(PUNCOVER_HOST)
+  if(DEFINED PUNCOVER_PORT)
+    list(APPEND PUNCOVER_ARGS "--port=${PUNCOVER_PORT}")
+  endif()
+  if(DEFINED PUNCOVER_HOST)
+    list(APPEND PUNCOVER_ARGS "--host=${PUNCOVER_HOST}")
+  endif()
   add_custom_target(
     puncover
     ${PUNCOVER}
@@ -94,6 +103,7 @@ if(NOT ${PUNCOVER} STREQUAL PUNCOVER-NOTFOUND)
     --gcc_tools_base ${CROSS_COMPILE}
     --src_root       ${ZEPHYR_BASE}
     --build_dir      ${CMAKE_BINARY_DIR}
+    ${PUNCOVER_ARGS}
     DEPENDS ${logical_target_for_zephyr_elf}
             $<TARGET_PROPERTY:zephyr_property_target,${report}_DEPENDENCIES>
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}

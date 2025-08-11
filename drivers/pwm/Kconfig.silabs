@@ -1,0 +1,25 @@
+# Copyright (c) 2025 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_SILABS_LETIMER
+	bool "Silabs LETIMER PWM driver"
+	default y
+	depends on DT_HAS_SILABS_LETIMER_PWM_ENABLED
+	select SILABS_SISDK_LETIMER
+	help
+	  Enable the PWM driver for the LETIMER peripheral on Silabs Series 2 SoCs.
+
+	  The LETIMER peripheral has two channels which share PWM period configuration. The last
+	  configured period will apply to both channels. The output may glitch when updating the
+	  PWM pulse and period, as the new values will take effect immediately.
+
+config PWM_SILABS_TIMER
+	bool "Silabs TIMER PWM driver"
+	default y
+	depends on DT_HAS_SILABS_TIMER_PWM_ENABLED
+	select SILABS_SISDK_TIMER
+	help
+	  Enable the PWM driver for the TIMER peripheral on Silabs Series 2 SoCs.
+
+	  The TIMER peripheral has three or more channels which share PWM period configuration.
+	  The last configured period will apply to all channels.

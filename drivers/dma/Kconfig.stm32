@@ -17,7 +17,7 @@ config DMA_STM32
 	  Driver for STM32 DMA V1, V2, V2bis and BDMA types.
 
 config DMA_STM32U5
-	bool "STM32U5 serie DMA driver"
+	bool "STM32U5 series DMA driver"
 	select USE_STM32_LL_DMA
 	default y
 	depends on DT_HAS_ST_STM32U5_DMA_ENABLED

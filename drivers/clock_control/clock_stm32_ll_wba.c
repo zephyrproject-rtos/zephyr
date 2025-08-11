@@ -14,7 +14,8 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
-#include "stm32_hsem.h"
+#include <stm32_backup_domain.h>
+#include <stm32_hsem.h>
 
 /* Macros to fill up prescaler values */
 #define fn_ahb_prescaler(v) LL_RCC_SYSCLK_DIV_ ## v
@@ -467,29 +468,19 @@ static void set_up_fixed_clock_sources(void)
 	}
 
 	if (IS_ENABLED(STM32_LSI_ENABLED)) {
-		/* LSI belongs to the back-up domain, enable access.*/
-
-		/* Set the DBP bit in the Power control register 1 (PWR_CR1) */
-		LL_PWR_EnableBkUpAccess();
-		while (!LL_PWR_IsEnabledBkUpAccess()) {
-			/* Wait for Backup domain access */
-		}
+		/* LSI control belongs to the back-up domain */
+		stm32_backup_domain_enable_access();
 
 		LL_RCC_LSI1_Enable();
 		while (LL_RCC_LSI1_IsReady() != 1) {
 		}
 
-		LL_PWR_DisableBkUpAccess();
+		stm32_backup_domain_disable_access();
 	}
 
 	if (IS_ENABLED(STM32_LSE_ENABLED)) {
-		/* LSE belongs to the back-up domain, enable access.*/
-
-		/* Set the DBP bit in the Power control register 1 (PWR_CR1) */
-		LL_PWR_EnableBkUpAccess();
-		while (!LL_PWR_IsEnabledBkUpAccess()) {
-			/* Wait for Backup domain access */
-		}
+		/* LSE control belongs to the back-up domain */
+		stm32_backup_domain_enable_access();
 
 		/* Configure driving capability */
 		LL_RCC_LSE_SetDriveCapability(STM32_LSE_DRIVING << RCC_BDCR1_LSEDRV_Pos);
@@ -505,6 +496,8 @@ static void set_up_fixed_clock_sources(void)
 		/* Wait till LSESYS is ready */
 		while (!LL_RCC_LSE_IsPropagationReady()) {
 		}
+
+		stm32_backup_domain_disable_access();
 	}
 }
 

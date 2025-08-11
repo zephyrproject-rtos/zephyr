@@ -751,6 +751,7 @@ __comp_west_build()
 		--target -t
 		--test-item -T
 		--build-opt -o
+		--domain
 	"
 
 	all_opts="$bool_opts $special_opts $dir_opts $other_opts"

@@ -1,0 +1,48 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <renesas/ra/ra8/r7ka8p1kflcac_cm33.dtsi>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input-event-codes.h>
+#include "ek_ra8p1-pinctrl.dtsi"
+
+/ {
+	model = "Renesas EK-RA8P1";
+	compatible = "renesas,ra8p1", "renesas,ra8";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
+
+&xtal {
+	clock-frequency = <DT_FREQ_M(24)>;
+	mosel = <0>;
+	#clock-cells = <0>;
+	status = "okay";
+};
+
+&subclk {
+	status = "okay";
+};
+
+&pll {
+	status = "okay";
+
+	pllp: pllp {
+		status = "okay";
+	};
+
+	pllq: pllq {
+		status = "okay";
+	};
+
+	pllr: pllr {
+		status = "okay";
+	};
+};

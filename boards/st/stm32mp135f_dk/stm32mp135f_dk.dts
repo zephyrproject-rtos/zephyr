@@ -9,7 +9,9 @@
 #include <st/mp13/stm32mp135.dtsi>
 #include <st/mp13/stm32mp135faex-pinctrl.dtsi>
 #include "zephyr/dt-bindings/display/panel.h"
+#include <zephyr/dt-bindings/gpio/raspberrypi-csi-connector.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/video/video-interfaces.h>
 
 / {
 	model = "STMicroelectronics STM32MP135-DK board";
@@ -62,6 +64,15 @@
 		led1 = &red_led_2;
 		sw0 = &user_button;
 	};
+
+	csi_connector: connector_csi {
+		compatible = "raspberrypi,csi-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <CSI_IO0  0 &mcp23017 4  0>,
+			   <CSI_IO1  0 &mcp23017 3  0>;
+	};
 };
 
 &clk_hsi {
@@ -86,6 +97,17 @@
 	mul-n = <83>;
 	div-p = <1>;
 	fracn = <2730>;
+	status = "okay";
+};
+
+&pll2 {
+	clocks = <&clk_hse>;
+	div-m = <3>;
+	mul-n = <66>;
+	div-p = <2>;
+	div-q = <2>;
+	div-r = <1>;
+	fracn = <5120>;
 	status = "okay";
 };
 
@@ -124,10 +146,64 @@
 	status = "okay";
 };
 
-&i2c5 {
+csi_i2c: &i2c5 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&i2c5_scl_pd1 &i2c5_sda_ph6>;
 	status = "okay";
+
+	mipid02: bridge@14 {
+		compatible = "st,mipid02";
+		reg = <0x14>;
+		reset-gpios = <&mcp23017 2 GPIO_ACTIVE_LOW>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			port@0 {
+				reg = <0>;
+
+				csi_ep_in: endpoint {
+					remote-endpoint-label = "";
+				};
+			};
+
+			port@2 {
+				reg = <2>;
+
+				mipid02_2: endpoint {
+					bus-width = <8>;
+					hsync-active = <0>;
+					vsync-active = <0>;
+					pclk-sample = <0>;
+					remote-endpoint-label = "dcmipp_ep_in";
+				};
+			};
+		};
+	};
+};
+
+csi_interface: &dcmipp {
+	pinctrl-0 = <&dcmipp_d0_pa9 &dcmipp_d1_pd0 &dcmipp_d2_pg10 &dcmipp_d3_pe4
+		     &dcmipp_d4_pd11 &dcmipp_d5_pd3 &dcmipp_d6_pb8 &dcmipp_d7_pe14
+		     &dcmipp_pixclk_pb7 &dcmipp_vsync_pg9 &dcmipp_hsync_ph8>;
+	pinctrl-names = "default";
+
+	ports {
+		port@0 {
+			dcmipp_ep_in: endpoint {
+				bus-width = <8>;
+				hsync-active = <0>;
+				vsync-active = <0>;
+				pclk-sample = <0>;
+				bus-type = <VIDEO_BUS_TYPE_PARALLEL>;
+				remote-endpoint-label = "mipid02_2";
+			};
+		};
+
+		port@1 {
+			csi_capture_port: endpoint { };
+		};
+	};
 };
 
 &ltdc {
@@ -165,4 +241,17 @@
 	def-back-color-red = <0xFF>;
 	def-back-color-green = <0xFF>;
 	def-back-color-blue = <0xFF>;
+};
+
+/*
+ * MCO1 is used to clock ST-MIPID02, keep disabled here, will be
+ * enabled by a shield when camera pipeline is enabled
+ */
+&mco1 {
+	clocks = <&rcc STM32_SRC_HSE MCO1_SEL(MCO1_SEL_HSE)>;
+	prescaler = <MCO1_PRE(MCO_PRE_DIV_1)>;
+	pinctrl-0 = <&rcc_mco_1_pd7>;
+	pinctrl-names = "default";
+
+	status = "disabled";
 };

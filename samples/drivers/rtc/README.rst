@@ -22,6 +22,16 @@ Build and flash as follows, replacing ``stm32f3_disco`` with your board:
    :goals: build flash
    :compact:
 
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/rtc
+   :board: mimxrt700_evk/mimxrt798s/cm33_cpu0
+   :goals: build flash
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/rtc
+   :board: mimxrt700_evk/mimxrt798s/cm33_cpu1
+   :goals: build ram
+
 Sample Output
 =============
 

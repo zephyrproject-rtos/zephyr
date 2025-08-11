@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/adc/silabs-adc.h>
+#include <zephyr/dt-bindings/dac/silabs-vdac.h>
+
+&adc0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <IADC_INPUT_DAC0>;
+	};
+};
+
+&vdac0 {
+	status = "okay";
+	voltage-reference = "AVDD";
+
+	channel@0 {
+		reg = <0>;
+		aux-output = <VDAC_OUTPUT_AUX>;
+	};
+};

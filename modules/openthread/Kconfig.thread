@@ -250,3 +250,9 @@ config OPENTHREAD_MLE_CHILD_TIMEOUT
 	default 240
 	help
 	  The value of MLE child timeout in seconds.
+
+config OPENTHREAD_RCP_RESTORATION_MAX_COUNT
+	int "Openthread RCP restoration maximum count"
+	default 2
+	help
+	  The maximum number of attempts to restore the RCP connection.

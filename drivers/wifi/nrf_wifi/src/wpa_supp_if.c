@@ -931,8 +931,15 @@ int nrf_wifi_wpa_supp_associate(void *if_priv, struct wpa_driver_associate_param
 		assoc_info.use_mfp = NRF_WIFI_MFP_REQUIRED;
 	}
 
-	if (params->bss_max_idle_period) {
-		assoc_info.bss_max_idle_time = params->bss_max_idle_period;
+	if (vif_ctx_zep->bss_max_idle_period == USHRT_MAX) {
+		assoc_info.bss_max_idle_time = CONFIG_WIFI_MGMT_BSS_MAX_IDLE_TIME;
+	} else {
+		assoc_info.bss_max_idle_time = vif_ctx_zep->bss_max_idle_period;
+	}
+
+	assoc_info.conn_type = NRF_WIFI_CONN_TYPE_OPEN;
+	if (!(params->key_mgmt_suite & WPA_KEY_MGMT_NONE)) {
+		assoc_info.conn_type = NRF_WIFI_CONN_TYPE_SECURE;
 	}
 
 	status = nrf_wifi_sys_fmac_assoc(rpu_ctx_zep->rpu_ctx, vif_ctx_zep->vif_idx, &assoc_info);
@@ -1509,7 +1516,7 @@ enum nrf_wifi_status nrf_wifi_parse_sband(
 {
 	int count;
 
-	if (event && (event->nrf_wifi_n_bitrates == 0 || event->nrf_wifi_n_channels == 0)) {
+	if (event == NULL || (event->nrf_wifi_n_bitrates == 0 || event->nrf_wifi_n_channels == 0)) {
 		return NRF_WIFI_STATUS_FAIL;
 	}
 	memset(band, 0, sizeof(*band));
@@ -1800,6 +1807,11 @@ int nrf_wifi_supp_get_capa(void *if_priv, struct wpa_driver_capa *capa)
 		capa->extended_capa_mask = rpu_ctx_zep->extended_capa_mask;
 		capa->extended_capa_len = rpu_ctx_zep->extended_capa_len;
 	}
+	/* Based on testing, this works to fix the disconnection due to delayed
+	 * keepalive to the AP
+	 */
+	capa->driver_tx_processing_delay_ms = 1000;
+
 out:
 	k_mutex_unlock(&vif_ctx_zep->vif_lock);
 	return status;

@@ -103,7 +103,7 @@ static K_SEM_DEFINE(wait_pmtu_changed, 0, UINT_MAX);
 static bool is_pmtu_changed;
 
 static void ipv6_pmtu_changed(struct net_mgmt_event_callback *cb,
-			      uint32_t mgmt_event,
+			      uint64_t mgmt_event,
 			      struct net_if *iface)
 {
 	ARG_UNUSED(cb);
@@ -123,7 +123,7 @@ static void ipv6_pmtu_changed(struct net_mgmt_event_callback *cb,
 }
 
 static void ipv4_pmtu_changed(struct net_mgmt_event_callback *cb,
-			      uint32_t mgmt_event,
+			      uint64_t mgmt_event,
 			      struct net_if *iface)
 {
 	ARG_UNUSED(cb);
@@ -143,7 +143,7 @@ static void ipv4_pmtu_changed(struct net_mgmt_event_callback *cb,
 }
 
 static struct mgmt_events {
-	uint32_t event;
+	uint64_t event;
 	net_mgmt_event_handler_t handler;
 	struct net_mgmt_event_callback cb;
 } mgmt_events[] = {

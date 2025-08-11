@@ -20,22 +20,17 @@
  * Entries will be NULL if the GPIO port is not enabled.
  */
 static GPIO_PRT_Type *const gpio_ports[] = {
-	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt0)),
-	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt1)),
-	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt2)),
-	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt3)),
-	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt4)),
-	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt5)),
-	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt6)),
-	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt7)),
-	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt8)),
-	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt9)),
-	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt10)),
-	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt11)),
-	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt12)),
-	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt13)),
-	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt14))
-};
+	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt0)),  GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt1)),
+	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt2)),  GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt3)),
+	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt4)),  GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt5)),
+	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt6)),  GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt7)),
+	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt8)),  GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt9)),
+	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt10)), GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt11)),
+	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt12)), GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt13)),
+	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt14)), GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt15)),
+	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt16)), GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt17)),
+	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt18)), GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt19)),
+	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt20)), GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt21))};
 
 /* @brief This function returns gpio drive mode, according to.
  * bias and drive mode params defined in pinctrl node.
@@ -99,7 +94,11 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 		uint32_t pin_num = CAT1_PINMUX_GET_PIN_NUM(pins[i].pinmux);
 
 		/* Initialize pin */
+#if defined(COMPONENT_SECURE_DEVICE) || defined(CY_PDL_TZ_ENABLED)
+		Cy_GPIO_Pin_SecFastInit(gpio_ports[port_num], pin_num, drv_mode, 1, hsiom);
+#else
 		Cy_GPIO_Pin_FastInit(gpio_ports[port_num], pin_num, drv_mode, 1, hsiom);
+#endif /* defined(CY_PDL_TZ_ENABLED) */
 
 		/* Force output to enable pulls */
 		switch (drv_mode) {

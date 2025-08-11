@@ -42,7 +42,7 @@ config XTENSA_USE_CORE_CRT1
 config XTENSA_ENABLE_BACKTRACE
 	bool "Backtrace on panic exception"
 	default y
-	depends on SOC_SERIES_ESP32 || SOC_FAMILY_INTEL_ADSP || SOC_XTENSA_DC233C
+	depends on SOC_SERIES_ESP32 || SOC_FAMILY_INTEL_ADSP || SOC_XTENSA_DC233C || SOC_MIMXRT595S_F1
 	help
 	  Enable this config option to print backtrace on panic exception
 
@@ -153,6 +153,34 @@ config XTENSA_HIFI_SHARING
 	  across context switches to allow multiple threads to perform
 	  concurrent HiFi operations.
 
+if XTENSA_HIFI_SHARING
+
+choice XTENSA_HIFI_SHARING_MODEL
+	prompt "Xtensa HiFi Sharing Model"
+	depends on XTENSA_HIFI_SHARING
+	default XTENSA_EAGER_HIFI_SHARING
+
+config XTENSA_EAGER_HIFI_SHARING
+	bool "Eager HiFi Sharing"
+	help
+	  This option enables eager sharing of HiFi registers across context
+	  switches. This means that the HiFi registers are unconditionally
+	  saved and restored on every context switch, allowing multiple threads
+	  to use HiFi instructions concurrently.
+
+config XTENSA_LAZY_HIFI_SHARING
+	bool "Lazy HiFi Sharing"
+	depends on SCHED_IPI_SUPPORTED || (MP_MAX_NUM_CPUS = 1)
+	select ARCH_IPI_LAZY_COPROCESSORS_SAVE
+	help
+	  This option enables lazy sharing of HiFi registers across context
+	  switches. This means that the HiFi registers are saved and restored
+	  only when a thread actually uses HiFi instructions, allowing for
+	  more efficient use of resources when HiFi instructions are not used.
+endchoice
+
+endif    # XTENSA_HIFI_SHARING
+
 endif    # XTENSA_CPU_HAS_HIFI
 
 endmenu  # Xtensa HiFi Options
@@ -205,7 +233,7 @@ config XTENSA_MMU_NUM_L1_TABLES
 	default 1 if !USERSPACE
 	default 4
 	help
-	  This option specifies the maximum number of traslation tables.
+	  This option specifies the maximum number of translation tables.
 	  Translation tables are directly related to the number of
 	  memory domains in the target, considering the kernel itself requires one.
 

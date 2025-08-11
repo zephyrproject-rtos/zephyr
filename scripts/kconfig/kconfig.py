@@ -93,6 +93,8 @@ def main():
     if kconf.syms.get('WARN_EXPERIMENTAL', kconf.y).tri_value == 2:
         check_experimental(kconf)
 
+    check_not_secure(kconf)
+
     # Hack: Force all symbols to be evaluated, to catch warnings generated
     # during evaluation. Wait till the end to write the actual output files, so
     # that we don't generate any output if there are warnings-turned-errors.
@@ -265,6 +267,16 @@ def check_experimental(kconf):
         for selector in selectors:
             selector_name = split_expr(selector, AND)[0].name
             warn(f'Experimental symbol {selector_name} is enabled.')
+
+def check_not_secure(kconf):
+    not_secure = kconf.syms.get('NOT_SECURE')
+    dep_expr = kconf.n if not_secure is None else not_secure.rev_dep
+
+    if dep_expr is not kconf.n:
+        selectors = [s for s in split_expr(dep_expr, OR) if expr_value(s) == 2]
+        for selector in selectors:
+            selector_name = split_expr(selector, AND)[0].name
+            warn(f'Not secure symbol {selector_name} is enabled.')
 
 
 def promptless(sym):

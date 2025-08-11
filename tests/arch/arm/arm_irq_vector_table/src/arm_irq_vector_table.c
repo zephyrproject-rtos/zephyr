@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 #include <zephyr/arch/cpu.h>
 #include <cmsis_core.h>
@@ -13,7 +14,7 @@
  * Offset (starting from the beginning of the vector table)
  * of the location where the ISRs will be manually installed.
  */
-#define _ISR_OFFSET 0
+#define _ISR_OFFSET CONFIG_ISR_OFFSET
 
 #if defined(CONFIG_SOC_FAMILY_NORDIC_NRF)
 #undef _ISR_OFFSET
@@ -108,7 +109,8 @@ ZTEST(vector_table, test_arm_irq_vector_table)
 		      k_sem_take(&sem[2], K_NO_WAIT)));
 
 	for (int ii = 0; ii < 3; ii++) {
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) || defined(CONFIG_SOC_TI_LM3S6965_QEMU)
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) || defined(CONFIG_SOC_TI_LM3S6965_QEMU) || \
+	defined(CONFIG_ARMV8_M_MAINLINE) || defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 		/* the QEMU does not simulate the
 		 * STIR register: this is a workaround
 		 */
@@ -241,9 +243,53 @@ const vth __irq_vector_table _irq_vector_table[] = {
 #else
 #error "GPT timer enabled, but no known SOC selected. ISR table needs rework"
 #endif
+
+#elif defined(CONFIG_SOC_FAMILY_AMBIQ)
+
+#if defined(CONFIG_AMBIQ_STIMER_TIMER)
+extern void stimer_isr(void);
+#define TIMER_IRQ_NUM DT_IRQN(DT_INST(0, ambiq_stimer))
+#define TIMER_IRQ_HANDLER stimer_isr
+#define IRQ_VECTOR_TABLE_SIZE _ISR_OFFSET > TIMER_IRQ_NUM ? (_ISR_OFFSET + 3) : (TIMER_IRQ_NUM + 2)
 #else
-const vth __irq_vector_table _irq_vector_table[] = {isr0, isr1, isr2};
-#endif /* CONFIG_SOC_FAMILY_NORDIC_NRF */
+#define IRQ_VECTOR_TABLE_SIZE (_ISR_OFFSET + 3)
+#endif /* CONFIG_AMBIQ_STIMER_TIMER */
+
+const vth __irq_vector_table _irq_vector_table[IRQ_VECTOR_TABLE_SIZE] = {
+	[_ISR_OFFSET] = isr0,
+	[_ISR_OFFSET + 1] = isr1,
+	[_ISR_OFFSET + 2] = isr2,
+#ifdef CONFIG_AMBIQ_STIMER_TIMER
+	[TIMER_IRQ_NUM] = TIMER_IRQ_HANDLER,
+#if defined(CONFIG_SOC_SERIES_APOLLO3X) || defined(CONFIG_SOC_SERIES_APOLLO4X)
+	[TIMER_IRQ_NUM + 1] = TIMER_IRQ_HANDLER,
+#endif
+#endif
+#ifdef CONFIG_SOC_SERIES_APOLLO5X
+	[TIMER0_IRQn + AM_HAL_INTERNAL_TIMER_NUM_A] = hal_internal_timer_isr,
+#endif
+};
+
+#else
+
+#if defined(CONFIG_MCUX_OS_TIMER)
+extern void mcux_lpc_ostick_isr(void);
+#define TIMER_IRQ_NUM DT_IRQN(DT_INST(0, nxp_os_timer))
+#define TIMER_IRQ_HANDLER mcux_lpc_ostick_isr
+#define IRQ_VECTOR_TABLE_SIZE _ISR_OFFSET > TIMER_IRQ_NUM ? (_ISR_OFFSET + 3) : (TIMER_IRQ_NUM + 1)
+#else
+#define IRQ_VECTOR_TABLE_SIZE (_ISR_OFFSET + 3)
+#endif /* CONFIG_MCUX_OS_TIMER */
+const vth __irq_vector_table _irq_vector_table[IRQ_VECTOR_TABLE_SIZE] = {
+	[_ISR_OFFSET] = isr0,
+	[_ISR_OFFSET + 1] = isr1,
+	[_ISR_OFFSET + 2] = isr2,
+#if defined(TIMER_IRQ_HANDLER) && !defined(CONFIG_CORTEX_M_SYSTICK)
+	[TIMER_IRQ_NUM] = TIMER_IRQ_HANDLER,
+#endif
+};
+
+#endif
 
 /**
  * @}

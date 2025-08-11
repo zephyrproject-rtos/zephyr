@@ -27,7 +27,8 @@ LOG_MODULE_REGISTER(video_common, CONFIG_VIDEO_LOG_LEVEL);
 	shared_multi_heap_aligned_alloc(CONFIG_VIDEO_BUFFER_SMH_ATTRIBUTE, align, size)
 #define VIDEO_COMMON_FREE(block) shared_multi_heap_free(block)
 #else
-K_HEAP_DEFINE(video_buffer_pool, CONFIG_VIDEO_BUFFER_POOL_SZ_MAX*CONFIG_VIDEO_BUFFER_POOL_NUM_MAX);
+K_HEAP_DEFINE(video_buffer_pool,
+		CONFIG_VIDEO_BUFFER_POOL_SZ_MAX * CONFIG_VIDEO_BUFFER_POOL_NUM_MAX);
 #define VIDEO_COMMON_HEAP_ALLOC(align, size, timeout)                                              \
 	k_heap_aligned_alloc(&video_buffer_pool, align, size, timeout);
 #define VIDEO_COMMON_FREE(block) k_heap_free(&video_buffer_pool, block)
@@ -136,6 +137,11 @@ void video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwis
 	step *= stepwise->min.denominator * stepwise->max.denominator * desired->denominator;
 	goal *= stepwise->min.denominator * stepwise->max.denominator * stepwise->step.denominator;
 
+	__ASSERT_NO_MSG(step != 0U);
+	/* Prevent division by zero */
+	if (step == 0U) {
+		return;
+	}
 	/* Saturate the desired value to the min/max supported */
 	goal = CLAMP(goal, min, max);
 
@@ -400,6 +406,7 @@ int64_t video_get_csi_link_freq(const struct device *dev, uint8_t bpp, uint8_t l
 		.id = VIDEO_CID_LINK_FREQ,
 	};
 	struct video_ctrl_query ctrl_query = {
+		.dev = dev,
 		.id = VIDEO_CID_LINK_FREQ,
 	};
 	int ret;
@@ -410,7 +417,7 @@ int64_t video_get_csi_link_freq(const struct device *dev, uint8_t bpp, uint8_t l
 		goto fallback;
 	}
 
-	ret = video_query_ctrl(dev, &ctrl_query);
+	ret = video_query_ctrl(&ctrl_query);
 	if (ret < 0) {
 		return ret;
 	}

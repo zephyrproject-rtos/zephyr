@@ -189,6 +189,17 @@ int z_nrf_grtc_timer_capture_read(int32_t chan, uint64_t *captured_time);
  */
 int z_nrf_grtc_wakeup_prepare(uint64_t wake_time_us);
 
+/** @brief Get the GRTC counter value latched at startup.
+ *
+ * @note The GRTC timer is not cleared by software at startup,
+ *	 while the system tick starts counting from zero.
+ *	 In some cases, it may be necessary to compare the system tick
+ *	 with the GRTC value — in such situations, this offset can be useful.
+ *
+ * @return GRTC value latched during system clock initialization.
+ */
+uint64_t z_nrf_grtc_timer_startup_value_get(void);
+
 /**
  * @brief       Initialize the GRTC clock timer driver from an application-
  *              defined function.

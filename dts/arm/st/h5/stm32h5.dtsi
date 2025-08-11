@@ -134,7 +134,7 @@
 				write-block-size = <16>;
 				erase-block-size = <8192>;
 				/* maximum erase time(ms) for a 8K sector */
-				max-erase-time = <5>;
+				max-erase-time = <10>;
 			};
 		};
 
@@ -164,7 +164,8 @@
 			#interrupt-cells = <1>;
 			#address-cells = <1>;
 			reg = <0x44022000 0x400>;
-			num-lines = <16>;
+			clocks = <&rcc STM32_CLOCK(APB3, 1)>;
+			num-lines = <64>;
 			interrupts = <11 0>, <12 0>, <13 0>, <14 0>,
 				     <15 0>, <16 0>, <17 0>, <18 0>,
 				     <19 0>, <20 0>, <21 0>, <22 0>,
@@ -630,6 +631,28 @@
 					STM32_DMA_PRIORITY_HIGH)>;
 			dma-names = "tx", "rx";
 			interrupts = <57 3>;
+			status = "disabled";
+		};
+
+		sai1_a: sai1@40015404 {
+			compatible = "st,stm32-sai";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40015404 0x20>;
+			clocks = <&rcc STM32_CLOCK(APB2, 21)>,
+				 <&rcc STM32_SRC_PLL2_P SAI1_SEL(0)>;
+			dmas = <&gpdma1 1 53 0>;
+			status = "disabled";
+		};
+
+		sai1_b: sai1@40015424 {
+			compatible = "st,stm32-sai";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40015424 0x20>;
+			clocks = <&rcc STM32_CLOCK(APB2, 21)>,
+				 <&rcc STM32_SRC_PLL2_P SAI1_SEL(0)>;
+			dmas = <&gpdma1 0 54 0>;
 			status = "disabled";
 		};
 

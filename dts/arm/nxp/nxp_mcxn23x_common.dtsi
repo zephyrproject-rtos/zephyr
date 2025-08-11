@@ -729,6 +729,11 @@
 		nxp,references = <&vref 1800>;
 	};
 
+	temp0: temp0 {
+		compatible = "nxp,lpadc-temp40";
+		status = "disabled";
+	};
+
 	lpadc1: lpadc@10e000 {
 		compatible = "nxp,lpc-lpadc";
 		reg = <0x10e000 0x1000>;
@@ -896,6 +901,15 @@
 		clock-frequency = <16384>;
 		clock-src = <0>;
 		alarms-count = <1>;
+	};
+
+	smartdma: smartdma@33000 {
+		compatible = "nxp,smartdma";
+		reg = <0x33000 0x1000>;
+		status = "disabled";
+		interrupts = <53 0>;
+		program-mem = <0x4000000>;
+		#dma-cells = <0>;
 	};
 };
 

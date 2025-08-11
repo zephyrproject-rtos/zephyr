@@ -1,0 +1,22 @@
+# Config options for OCPP sample application
+
+# Copyright (c) 2025 Linumiz GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "OCPP sample application"
+config NET_SAMPLE_OCPP_SERVER
+	string "OCPP server ip"
+	help
+	  OCPP central system server ip address
+
+config NET_SAMPLE_OCPP_PORT
+	int "OCPP server port"
+	help
+	  OCPP central system server port
+
+config NET_SAMPLE_SNTP_SERVER
+	string "SNTP server ip"
+	help
+	  SNTP server ip to get the time from network
+
+source "Kconfig.zephyr"

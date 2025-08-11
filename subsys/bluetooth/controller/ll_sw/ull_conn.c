@@ -1910,7 +1910,8 @@ static void conn_cleanup_finalize(struct ll_conn *conn)
 				    TICKER_ID_CONN_BASE + lll->handle,
 				    ticker_stop_op_cb, conn);
 	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
-		  (ticker_status == TICKER_STATUS_BUSY));
+		  (ticker_status == TICKER_STATUS_BUSY) ||
+		  ((void *)conn == ull_disable_mark_get()));
 
 	/* Invalidate the connection context */
 	lll->handle = LLL_HANDLE_INVALID;
@@ -1982,7 +1983,14 @@ static void ticker_stop_op_cb(uint32_t status, void *param)
 	static struct mayfly mfy = {0, 0, &link, NULL, conn_disable};
 	uint32_t ret;
 
-	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+	/* Peripheral ticker_stop succeeds, or it fails in a race condition
+	 * when disconnecting (race with ticker_stop), say on HCI Reset.
+	 */
+	if (status != TICKER_STATUS_SUCCESS) {
+		LL_ASSERT(param == ull_disable_mark_get());
+
+		return;
+	}
 
 	/* Check if any pending LLL events that need to be aborted */
 	mfy.param = param;
@@ -2177,6 +2185,11 @@ void ull_conn_resume_rx_data(struct ll_conn *conn)
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
+uint16_t ull_conn_event_counter_at_prepare(const struct ll_conn *conn)
+{
+	return conn->lll.event_counter + conn->lll.latency_prepare + conn->llcp.prep.lazy;
+}
+
 uint16_t ull_conn_event_counter(struct ll_conn *conn)
 {
 	struct lll_conn *lll;
@@ -2204,6 +2217,7 @@ uint16_t ull_conn_event_counter(struct ll_conn *conn)
 
 	return event_counter;
 }
+
 static void ull_conn_update_ticker(struct ll_conn *conn,
 				   uint32_t ticks_win_offset,
 				   uint32_t ticks_slot_overhead,
@@ -2281,7 +2295,7 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 	lll = &conn->lll;
 
 	/* Calculate current event counter */
-	event_counter = ull_conn_event_counter(conn);
+	event_counter = ull_conn_event_counter_at_prepare(conn);
 
 	instant_latency = (event_counter - instant) & 0xFFFF;
 
@@ -2363,7 +2377,7 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 	periodic_us = conn_interval_us;
 
 	conn_interval_old_us = conn_interval_old * conn_interval_unit_old;
-	latency_upd = conn_interval_old_us / conn_interval_us;
+	latency_upd = DIV_ROUND_UP(conn_interval_old_us, conn_interval_us);
 	conn_interval_new_us = latency_upd * conn_interval_us;
 	if (conn_interval_new_us > conn_interval_old_us) {
 		ticks_at_expire += HAL_TICKER_US_TO_TICKS(
@@ -2909,6 +2923,56 @@ uint8_t ull_conn_lll_phy_active(struct ll_conn *conn, uint8_t phys)
 	}
 	return 1;
 }
+
+#if defined(CONFIG_BT_CTLR_LE_PATH_LOSS_MONITORING)
+uint8_t ll_conn_set_path_loss_parameters(uint16_t handle,
+					 uint8_t  high_threshold,
+					 uint8_t  high_hysteresis,
+					 uint8_t  low_threshold,
+					 uint8_t  low_hysteresis,
+					 uint16_t min_time_spent)
+{
+	struct ll_conn *conn;
+
+	conn = ll_connected_get(handle);
+
+	if (!conn) {
+		return BT_HCI_ERR_UNKNOWN_CONN_ID;
+	}
+
+	conn->lll.pl_params.high_threshold  = high_threshold;
+	conn->lll.pl_params.high_hysteresis = high_hysteresis;
+	conn->lll.pl_params.low_threshold   = low_threshold;
+	conn->lll.pl_params.low_hysteresis  = low_hysteresis;
+	conn->lll.pl_params.min_time_spent  = min_time_spent;
+
+	/* Reset the counter and zone after any update from the host */
+	conn->lll.pl_state.min_time_counter = 0;
+	conn->lll.pl_current_zone = BT_HCI_LE_ZONE_ENTERED_LOW;
+
+	return BT_HCI_ERR_SUCCESS;
+}
+
+uint8_t ll_conn_set_path_loss_reporting(uint16_t handle, uint8_t enable)
+{
+	struct ll_conn *conn;
+
+	conn = ll_connected_get(handle);
+
+	if (!conn) {
+		return BT_HCI_ERR_UNKNOWN_CONN_ID;
+	}
+
+	conn->lll.pl_params.enabled = enable;
+
+	/* Reset the counter and zone after any update from the host */
+	conn->lll.pl_state.min_time_counter = 0;
+	conn->lll.pl_current_zone = BT_HCI_LE_ZONE_ENTERED_LOW;
+
+	return BT_HCI_ERR_SUCCESS;
+
+}
+#endif /* CONFIG_BT_CTLR_LE_PATH_LOSS_MONITORING */
 
 uint8_t ull_is_lll_tx_queue_empty(struct ll_conn *conn)
 {

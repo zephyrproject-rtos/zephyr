@@ -1047,6 +1047,7 @@ static int i3c_stm32_do_daa(const struct device *dev)
 	const struct i3c_stm32_config *config = dev->config;
 	struct i3c_stm32_data *data = dev->data;
 	I3C_TypeDef *i3c = config->i3c;
+	int ret = 0;
 
 	k_mutex_lock(&data->bus_mutex, K_FOREVER);
 
@@ -1068,7 +1069,8 @@ static int i3c_stm32_do_daa(const struct device *dev)
 
 	/* Wait for DAA to finish */
 	if (k_sem_take(&data->device_sync_sem, STM32_I3C_TRANSFER_TIMEOUT) != 0) {
-		return -ETIMEDOUT;
+		ret = -ETIMEDOUT;
+		goto i3c_stm32_do_daa_ending;
 	}
 
 	if (data->msg_state == STM32_I3C_MSG_ERR) {
@@ -1076,12 +1078,14 @@ static int i3c_stm32_do_daa(const struct device *dev)
 		/* Enable TXFNF interrupt in case an error occurred before it was enabled by RXFNE
 		 */
 		LL_I3C_EnableIT_TXFNF(i3c);
-		return -EIO;
+		ret = -EIO;
+		goto i3c_stm32_do_daa_ending;
 	}
 
+i3c_stm32_do_daa_ending:
 	k_mutex_unlock(&data->bus_mutex);
 
-	return 0;
+	return ret;
 }
 
 #ifdef CONFIG_I3C_STM32_DMA

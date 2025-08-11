@@ -57,6 +57,15 @@
 		led2 = &red_led;
 		sw0 = &user_button;
 		watchdog0 = &iwdg;
+		spi-flash0 = &mx25uw25645;
+	};
+
+	ext_memory: memory@70000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x70000000 DT_SIZE_M(64)>;
+		zephyr,memory-region = "EXTMEM";
+		/* The ATTR_MPU_EXTMEM attribut causing a MPU FAULT */
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
 	};
 };
 
@@ -189,6 +198,7 @@
 		ospi-max-frequency = <DT_FREQ_M(50)>;
 		spi-bus-width = <XSPI_OCTO_MODE>;
 		data-rate = <XSPI_DTR_TRANSFER>;
+		four-byte-opcodes;
 		status = "okay";
 
 		partitions {

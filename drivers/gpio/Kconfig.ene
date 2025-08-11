@@ -7,3 +7,10 @@ config GPIO_ENE_KB1200
 	depends on DT_HAS_ENE_KB1200_GPIO_ENABLED
 	help
 	  Enable support for the kb1200 GPIO controllers.
+
+config GPIO_ENE_KB106X
+	bool "ENE KB106X GPIO Driver"
+	default y
+	depends on DT_HAS_ENE_KB106X_GPIO_ENABLED
+	help
+	  Enable support for the KB106X GPIO controllers.

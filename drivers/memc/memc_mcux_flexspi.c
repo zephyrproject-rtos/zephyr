@@ -90,9 +90,26 @@ int memc_flexspi_update_clock(const struct device *dev,
 		flexspi_port_t port, uint32_t freq_hz)
 {
 	struct memc_flexspi_data *data = dev->data;
-	uint32_t rate;
 	uint32_t key;
-	int ret;
+	uint32_t divider, actual_freq, flexspiRootClk_copy, ccm_clock;
+
+	int ret = clock_control_get_rate(data->clock_dev, data->clock_subsys, &ccm_clock);
+
+	if (ret < 0) {
+		LOG_ERR("memc flexspi get root clock error: %d", ret);
+		return ret;
+	}
+
+	/* Freq required shall not exceed the max freq flash can support. */
+	freq_hz = MIN(freq_hz, device_config->flexspiRootClk);
+
+	/* Get the real freq on going. */
+	divider = (data->base->MCR0 & FLEXSPI_MCR0_SERCLKDIV_MASK) >> FLEXSPI_MCR0_SERCLKDIV_SHIFT;
+	actual_freq = ccm_clock / (divider + 1);
+	if (freq_hz ==  actual_freq) {
+		return 0;
+	}
+
 
 	/* To reclock the FlexSPI, we should:
 	 * - disable the module
@@ -103,39 +120,34 @@ int memc_flexspi_update_clock(const struct device *dev,
 	 */
 	key = irq_lock();
 	memc_flexspi_wait_bus_idle(dev);
+	FLEXSPI_Enable(data->base, false);
 
-	ret = clock_control_set_rate(data->clock_dev, data->clock_subsys,
-				(clock_control_subsys_rate_t)freq_hz);
-	if (ret < 0) {
-		irq_unlock(key);
-		return ret;
-	}
+	 /* Select a divider based on root frequency.
+	  * if we can't get an exact divider, round down
+	  */
+	divider = ((ccm_clock + (freq_hz - 1)) / freq_hz) - 1;
+	/* Cap divider to max value */
+	divider = MIN(divider, FLEXSPI_MCR0_SERCLKDIV_MASK >> FLEXSPI_MCR0_SERCLKDIV_SHIFT);
+	/* Update the internal divider*/
+	data->base->MCR0 &= ~FLEXSPI_MCR0_SERCLKDIV_MASK;
+	data->base->MCR0 |= FLEXSPI_MCR0_SERCLKDIV(divider);
 
 	/*
-	 * We need to update the DLL value before we call clock_control_get_rate,
-	 * because this will cause XIP (flash reads) to occur. Although the
-	 * true flash clock is not known, assume the set_rate function programmed
-	 * a value close to what we requested.
+	 * We don't want to modify the root clock variable, but we have to use this
+	 * parameter for DLL updating purpose(FLEXSPI_CalculateDll use flexspiRootClk as
+	 * the real frequency of FlexSPI serial clock). Back up it and restore it after DLL
+	 * Updating.
 	 */
-	device_config->flexspiRootClk = freq_hz;
+	flexspiRootClk_copy = device_config->flexspiRootClk;
+	device_config->flexspiRootClk = ccm_clock/(divider + 1);
 	FLEXSPI_UpdateDllValue(data->base, device_config, port);
-	memc_flexspi_reset(dev);
+	/* Restore root clock */
+	device_config->flexspiRootClk = flexspiRootClk_copy;
 
-	memc_flexspi_wait_bus_idle(dev);
-	ret = clock_control_get_rate(data->clock_dev, data->clock_subsys, &rate);
-	if (ret < 0) {
-		irq_unlock(key);
-		return ret;
-	}
-
-
-	device_config->flexspiRootClk = rate;
-	FLEXSPI_UpdateDllValue(data->base, device_config, port);
-
+	FLEXSPI_Enable(data->base, true);
 	memc_flexspi_reset(dev);
 
 	irq_unlock(key);
-
 	return 0;
 }
 
@@ -151,6 +163,8 @@ int memc_flexspi_set_device_config(const struct device *dev,
 	const uint32_t *lut_ptr = lut_array;
 	uint8_t lut_used = 0U;
 	unsigned int key = 0;
+	int ret;
+	uint32_t divider;
 
 	if (port >= kFLEXSPI_PortCount) {
 		LOG_ERR("Invalid port number");
@@ -196,9 +210,28 @@ int memc_flexspi_set_device_config(const struct device *dev,
 	tmp_config.ARDSeqIndex += data->port_luts[port].lut_offset / MEMC_FLEXSPI_CMD_PER_SEQ;
 	tmp_config.AWRSeqIndex += data->port_luts[port].lut_offset / MEMC_FLEXSPI_CMD_PER_SEQ;
 
+	/* Set FlexSPI clock to the max frequency flash can support.
+	 * FLEXSPI_SetFlashConfig only update DLL but not the freq divider.
+	 */
+	ret = memc_flexspi_update_clock(dev, &tmp_config,
+					port, device_config->flexspiRootClk);
+	if (ret < 0) {
+		LOG_ERR("memc flexspi update clock error: %d", ret);
+		return ret;
+	}
+
+	/* Get the real clock for DLL updating. */
+	ret = clock_control_get_rate(data->clock_dev, data->clock_subsys,
+				&tmp_config.flexspiRootClk);
+	if (ret < 0) {
+		LOG_ERR("memc flexspi get root clock error: %d", ret);
+		return ret;
+	}
+	divider = (data->base->MCR0 & FLEXSPI_MCR0_SERCLKDIV_MASK) >> FLEXSPI_MCR0_SERCLKDIV_SHIFT;
+	tmp_config.flexspiRootClk /= (divider + 1);
+
 	/* Lock IRQs before reconfiguring FlexSPI, to prevent XIP */
 	key = irq_lock();
-
 	FLEXSPI_SetFlashConfig(data->base, &tmp_config, port);
 	FLEXSPI_UpdateLUT(data->base, data->port_luts[port].lut_offset,
 			  lut_ptr, lut_count);

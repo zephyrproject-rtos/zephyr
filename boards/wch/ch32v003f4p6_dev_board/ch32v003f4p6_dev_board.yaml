@@ -9,5 +9,7 @@ ram: 2
 flash: 16
 supported:
   - gpio
-  - uart
   - i2c
+  - pwm
+  - uart
+  - watchdog

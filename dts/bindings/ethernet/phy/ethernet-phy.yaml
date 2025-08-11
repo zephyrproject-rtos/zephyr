@@ -7,12 +7,9 @@ description: Generic MII PHY
 
 compatible: "ethernet-phy"
 
-include: phy.yaml
+include: ethernet-phy-common.yaml
 
 properties:
-  reg:
-    required: true
-    description: PHY address
   no-reset:
     type: boolean
     description: Do not reset the PHY during initialization
@@ -27,14 +24,5 @@ properties:
       - "1000BASE-T Half-Duplex"
       - "1000BASE-T Full-Duplex"
   default-speeds:
-    type: string-array
-    description: The selected speeds are used to configure the PHY during initialization
-    enum:
-      - "10BASE Half-Duplex"
-      - "10BASE Full-Duplex"
-      - "100BASE Half-Duplex"
-      - "100BASE Full-Duplex"
-      - "1000BASE Half-Duplex"
-      - "1000BASE Full-Duplex"
     default: ["10BASE Half-Duplex", "10BASE Full-Duplex", "100BASE Half-Duplex",
               "100BASE Full-Duplex", "1000BASE Half-Duplex", "1000BASE Full-Duplex"]

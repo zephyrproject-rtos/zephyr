@@ -14,7 +14,7 @@ if DMA_SILABS_LDMA
 
 config DMA_MAX_DESCRIPTOR
 	int "Max Number of block_config (LDMA_Descriptor)"
-	default 8
+	default 16
 	help
 	  Max Number of block_config (LDMA_Descriptor)
 

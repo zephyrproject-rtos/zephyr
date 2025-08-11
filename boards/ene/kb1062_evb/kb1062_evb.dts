@@ -1,0 +1,70 @@
+/*
+ * Copyright (c) 2025 ENE Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <ene/kb106x/kb1062.dtsi>
+#include <ene/kb106x/kb1062-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "KB1062 board";
+	compatible = "ene,kb1062";
+
+	aliases {
+		uart0 = &uart0;
+		led0 = &led0;
+		led1 = &led1;
+		sw0 = &user_button;
+	};
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button: button {
+			label = "User";
+			gpios = <&gpio6x7x 0x1b (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		/* green led */
+		led0: led_0 {
+			gpios = <&gpio0x1x 0x0f GPIO_ACTIVE_HIGH>;
+			label = "LED0";
+		};
+
+		/* blue led */
+		led1: led_1 {
+			gpios = <&gpio0x1x 0x11 GPIO_ACTIVE_HIGH>;
+			label = "LED1";
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&ser0_tx_gpio16 &ser0_rx_gpio17>;
+	pinctrl-names = "default";
+};
+
+&gpio0x1x {
+	status = "okay";
+};
+
+&gpio6x7x {
+	status = "okay";
+};

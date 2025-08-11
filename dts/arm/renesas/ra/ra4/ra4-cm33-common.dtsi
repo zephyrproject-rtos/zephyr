@@ -169,6 +169,17 @@
 			status = "disabled";
 		};
 
+		i3c0: i3c@4011f000 {
+			compatible = "renesas,ra-i3c";
+			#address-cells = <3>;
+			#size-cells = <0>;
+			reg = <0x4011f000 0x3e8>;
+			channel = <0>;
+			clocks = <&pclka MSTPB 4>, <&i3cclk 0 0>;
+			clock-names = "pclk", "tclk";
+			status = "disabled";
+		};
+
 		agt0: agt@400e8000 {
 			compatible = "renesas,ra-agt";
 			channel = <0>;
@@ -328,27 +339,6 @@
 				compatible = "renesas,ra-udc";
 				status = "disabled";
 			};
-		};
-
-		option_setting_ofs: option_setting_ofs@100a100 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0100a100 0x18>;
-			zephyr,memory-region = "OPTION_SETTING_OFS";
-			status = "okay";
-		};
-
-		option_setting_sas: option_setting_sas@100a134 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0100a134 0xcc>;
-			zephyr,memory-region = "OPTION_SETTING_SAS";
-			status = "okay";
-		};
-
-		option_setting_s: option_setting_s@100a200 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0100a200 0x100>;
-			zephyr,memory-region = "OPTION_SETTING_S";
-			status = "okay";
 		};
 
 		port_irq0: external-interrupt@40006000 {

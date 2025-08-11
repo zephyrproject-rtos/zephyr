@@ -428,6 +428,7 @@ redirect:
 	printf("Preparing HTTP GET request for http%s://%s:%s/%s\n",
 		       (is_tls ? "s" : ""), host, port, uri_path);
 
+	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
 
@@ -484,5 +485,7 @@ redirect:
 	printf("Finished downloading.\n");
 
 	mbedtls_md_free(&hash_ctx);
+	freeaddrinfo(res);
+
 	return 0;
 }

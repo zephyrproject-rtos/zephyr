@@ -172,7 +172,7 @@ static int sirk_encrypt(struct bt_conn *conn, const struct bt_csip_sirk *sirk,
 		/* test_k is from the sample data from A.2 in the CSIS spec */
 		static const uint8_t test_k[] = {
 			/* Sample data is in big-endian, we need it in little-endian. */
-+                       REVERSE_ARGS(0x67, 0x6e, 0x1b, 0x9b,
+			REVERSE_ARGS(0x67, 0x6e, 0x1b, 0x9b,
 				     0xd4, 0x48, 0x69, 0x6f,
 				     0x06, 0x1e, 0xc6, 0x22,
 				     0x3c, 0xe5, 0xce, 0xd9) };
@@ -647,7 +647,7 @@ static void csip_bond_deleted(uint8_t id, const bt_addr_le_t *peer)
 	}
 }
 
-static struct bt_conn_cb conn_callbacks = {
+BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.disconnected = csip_disconnected,
 	.security_changed = csip_security_changed,
 };
@@ -926,7 +926,6 @@ int bt_csip_set_member_register(const struct bt_csip_set_member_register_param *
 		for (size_t i = 0U; i < ARRAY_SIZE(svc_insts); i++) {
 			k_mutex_init(&svc_insts[i].mutex);
 		}
-		bt_conn_cb_register(&conn_callbacks);
 		bt_conn_auth_info_cb_register(&auth_callbacks);
 		first_register = true;
 	}

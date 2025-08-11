@@ -65,7 +65,7 @@ static void enable_legacy_adv_scan_request_event(bool enable)
 	struct net_buf *buf;
 	int err;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_VS_SET_SCAN_REQ_REPORTS, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		printk("%s: Unable to allocate HCI command buffer\n", __func__);
 		return;

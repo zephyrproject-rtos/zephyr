@@ -90,7 +90,8 @@ static int gspi_siwx91x_config(const struct device *dev, const struct spi_config
 		return -ENOTSUP;
 	}
 
-	if (SPI_WORD_SIZE_GET(spi_cfg->operation) > 16) {
+	if (SPI_WORD_SIZE_GET(spi_cfg->operation) != 8 &&
+	    SPI_WORD_SIZE_GET(spi_cfg->operation) != 16) {
 		LOG_ERR("Word size incorrect %d!", SPI_WORD_SIZE_GET(spi_cfg->operation));
 		return -ENOTSUP;
 	}

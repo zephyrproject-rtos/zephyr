@@ -261,16 +261,6 @@ static ALWAYS_INLINE void z_arm_set_fault_sp(const struct arch_esf *esf, uint32_
 #endif /* CONFIG_DEBUG_COREDUMP */
 }
 
-/**
- * @brief Assess whether a debug monitor event should be treated as an error
- *
- * This routine checks the status of a debug_monitor() exception, and
- * evaluates whether this needs to be considered as a processor error.
- *
- * @return true if the DM exception is a processor error, otherwise false
- */
-bool z_arm_debug_monitor_event_error_check(void);
-
 #ifdef __cplusplus
 }
 #endif

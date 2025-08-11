@@ -1,0 +1,10 @@
+sample:
+  name: Mass Storage
+tests:
+  sample.usb.legacy.mass_ram_none:
+    min_ram: 128
+    depends_on: usb_device
+    build_only: true
+    arch_exclude: posix
+    tags:
+      - usb

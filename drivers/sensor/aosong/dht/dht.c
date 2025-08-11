@@ -182,12 +182,13 @@ static int dht_channel_get(const struct device *dev,
 			   struct sensor_value *val)
 {
 	struct dht_data *drv_data = dev->data;
+	const struct dht_config *cfg = dev->config;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_AMBIENT_TEMP
 			|| chan == SENSOR_CHAN_HUMIDITY);
 
 	/* see data calculation example from datasheet */
-	if (IS_ENABLED(DT_INST_PROP(0, dht22))) {
+	if (cfg->is_dht22) {
 		/*
 		 * use both integral and decimal data bytes; resulted
 		 * 16bit data has a resolution of 0.1 units
@@ -258,6 +259,7 @@ static int dht_init(const struct device *dev)
 											\
 	static const struct dht_config dht_config_##inst = {				\
 		.dio_gpio = GPIO_DT_SPEC_INST_GET(inst, dio_gpios),			\
+		.is_dht22 = DT_INST_PROP(inst, dht22),					\
 	};										\
 											\
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, &dht_init, NULL,				\

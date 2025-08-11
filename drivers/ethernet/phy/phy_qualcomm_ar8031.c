@@ -22,6 +22,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(phy_qc_ar8031, CONFIG_PHY_LOG_LEVEL);
 
+#include "phy_mii.h"
+
 #define AR8031_PHY_ID1           0x004DU
 #define PHY_READID_TIMEOUT_COUNT 1000U
 
@@ -55,9 +57,8 @@ LOG_MODULE_REGISTER(phy_qc_ar8031, CONFIG_PHY_LOG_LEVEL);
 
 struct qc_ar8031_config {
 	uint8_t addr;
-	bool fixed_link;
 	bool enable_eee;
-	int fixed_speed;
+	enum phy_link_speed default_speeds;
 	const struct device *mdio_dev;
 };
 
@@ -253,69 +254,32 @@ static void monitor_work_handler(struct k_work *work)
 	k_work_reschedule(&data->monitor_work, K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
 }
 
-static int qc_ar8031_cfg_link(const struct device *dev, enum phy_link_speed adv_speeds)
+static int qc_ar8031_cfg_link(const struct device *dev, enum phy_link_speed speeds,
+			      enum phy_cfg_link_flag flags)
 {
-	uint32_t anar_reg;
 	uint32_t bmcr_reg;
-	uint32_t c1kt_reg;
+	int ret;
 
-	if (qc_ar8031_read(dev, MII_ANAR, &anar_reg) < 0) {
-		return -EIO;
+	if (flags & PHY_FLAG_AUTO_NEGOTIATION_DISABLED) {
+		LOG_ERR("Disabling auto-negotiation is not supported by this driver");
+		return -ENOTSUP;
 	}
 
 	if (qc_ar8031_read(dev, MII_BMCR, &bmcr_reg) < 0) {
 		return -EIO;
 	}
 
-	if (qc_ar8031_read(dev, MII_1KTCR, &c1kt_reg) < 0) {
+	ret = phy_mii_set_anar_reg(dev, speeds);
+	if ((ret < 0) && (ret != -EALREADY)) {
 		return -EIO;
 	}
 
-	if (adv_speeds & LINK_FULL_10BASE) {
-		anar_reg |= MII_ADVERTISE_10_FULL;
-	} else {
-		anar_reg &= ~MII_ADVERTISE_10_FULL;
-	}
-
-	if (adv_speeds & LINK_HALF_10BASE) {
-		anar_reg |= MII_ADVERTISE_10_HALF;
-	} else {
-		anar_reg &= ~MII_ADVERTISE_10_HALF;
-	}
-
-	if (adv_speeds & LINK_FULL_100BASE) {
-		anar_reg |= MII_ADVERTISE_100_FULL;
-	} else {
-		anar_reg &= ~MII_ADVERTISE_100_FULL;
-	}
-
-	if (adv_speeds & LINK_HALF_100BASE) {
-		anar_reg |= MII_ADVERTISE_100_HALF;
-	} else {
-		anar_reg &= ~MII_ADVERTISE_100_HALF;
-	}
-
-	if (adv_speeds & LINK_FULL_1000BASE) {
-		c1kt_reg |= MII_ADVERTISE_1000_FULL;
-	} else {
-		c1kt_reg &= ~MII_ADVERTISE_1000_FULL;
-	}
-
-	if (adv_speeds & LINK_HALF_1000BASE) {
-		c1kt_reg |= MII_ADVERTISE_1000_HALF;
-	} else {
-		c1kt_reg &= ~MII_ADVERTISE_1000_HALF;
-	}
-
-	if (qc_ar8031_write(dev, MII_1KTCR, c1kt_reg) < 0) {
+	ret = phy_mii_set_c1kt_reg(dev, speeds);
+	if ((ret < 0) && (ret != -EALREADY)) {
 		return -EIO;
 	}
 
 	bmcr_reg |= MII_BMCR_AUTONEG_ENABLE | MII_BMCR_AUTONEG_RESTART;
-
-	if (qc_ar8031_write(dev, MII_ANAR, anar_reg) < 0) {
-		return -EIO;
-	}
 
 	if (qc_ar8031_write(dev, MII_BMCR, bmcr_reg) < 0) {
 		return -EIO;
@@ -449,36 +413,12 @@ static int qc_ar8031_init(const struct device *dev)
 		}
 	}
 
-	/* Fixed Link */
-	if (cfg->fixed_link) {
-		/* Disable isolate */
-		ret = qc_ar8031_read(dev, MII_BMCR, &reg_value);
-		if (ret) {
-			return -EIO;
-		}
-		reg_value &= ~MII_BMCR_ISOLATE;
-		ret = qc_ar8031_write(dev, MII_BMCR, reg_value);
-		if (ret) {
-			return -EIO;
-		}
+	/* Advertise default speeds */
+	qc_ar8031_cfg_link(dev, cfg->default_speeds, 0);
 
-		const static int speed_to_phy_link_speed[] = {
-			LINK_HALF_10BASE,  LINK_FULL_10BASE,   LINK_HALF_100BASE,
-			LINK_FULL_100BASE, LINK_HALF_1000BASE, LINK_FULL_1000BASE,
-		};
+	k_work_init_delayable(&data->monitor_work, monitor_work_handler);
 
-		data->state.speed = speed_to_phy_link_speed[cfg->fixed_speed];
-		data->state.is_up = true;
-	} else { /* Auto negotiation */
-		/* Advertise all speeds */
-		qc_ar8031_cfg_link(dev, LINK_HALF_10BASE | LINK_FULL_10BASE |
-						LINK_HALF_100BASE | LINK_FULL_100BASE |
-						LINK_HALF_1000BASE | LINK_FULL_1000BASE);
-
-		k_work_init_delayable(&data->monitor_work, monitor_work_handler);
-
-		monitor_work_handler(&data->monitor_work.work);
-	}
+	monitor_work_handler(&data->monitor_work.work);
 
 	return 0;
 }
@@ -494,9 +434,8 @@ static DEVICE_API(ethphy, ar8031_driver_api) = {
 #define AR8031_CONFIG(n)                                                                           \
 	static const struct qc_ar8031_config qc_ar8031_config_##n = {                              \
 		.addr = DT_INST_REG_ADDR(n),                                                       \
-		.fixed_link = DT_INST_NODE_HAS_PROP(n, fixed_link),                                \
-		.fixed_speed = DT_INST_ENUM_IDX_OR(n, fixed_link, 0),                              \
 		.mdio_dev = DEVICE_DT_GET(DT_INST_BUS(n)),                                         \
+		.default_speeds = PHY_INST_GENERATE_DEFAULT_SPEEDS(n),				   \
 		.enable_eee = DT_INST_NODE_HAS_PROP(n, eee_en),                                    \
 	};
 

@@ -109,9 +109,9 @@
 &enet1g_mdio {
 	pinctrl-0 = <&pinmux_enet1g_mdio>;
 	pinctrl-names = "default";
-	enet1g_phy: phy@1 {
+	enet1g_phy: phy@f {
 		compatible = "nxp,tja1103";
-		reg = <1>;
+		reg = <0xf>;
 		master-slave = "master";
 	};
 };
@@ -176,8 +176,8 @@
 	pinctrl-names = "default";
 };
 
-&lpadc1 {
-	pinctrl-0 = <&pinmux_lpadc1>;
+&lpadc2 {
+	pinctrl-0 = <&pinmux_lpadc2>;
 	pinctrl-names = "default";
 };
 

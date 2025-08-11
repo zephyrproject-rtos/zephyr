@@ -529,7 +529,6 @@ static void bap_pa_sync_synced_cb(struct bt_le_per_adv_sync *sync,
 		atomic_clear_bit(flags, FLAG_PA_SYNCING);
 
 		if (IS_ENABLED(CONFIG_SAMPLE_SCAN_SELF)) {
-			int err;
 
 			err = bt_le_scan_stop();
 			if (err != 0) {

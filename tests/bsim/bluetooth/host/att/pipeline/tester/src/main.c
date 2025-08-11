@@ -66,7 +66,7 @@ static uint16_t conn_handle;
 static volatile uint16_t active_opcode = 0xFFFF;
 static struct net_buf *cmd_rsp;
 
-struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
+static struct net_buf *create_cmd(uint16_t opcode, uint8_t param_len)
 {
 	struct bt_hci_cmd_hdr *hdr;
 	struct net_buf *buf;
@@ -349,7 +349,7 @@ static void send_cmd(uint16_t opcode, struct net_buf *cmd, struct net_buf **rsp)
 	LOG_DBG("opcode %x", opcode);
 
 	if (!cmd) {
-		cmd = bt_hci_cmd_create(opcode, 0);
+		cmd = create_cmd(opcode, 0);
 	}
 
 	k_sem_take(&cmd_sem, K_FOREVER);
@@ -420,7 +420,7 @@ static void read_max_data_len(uint16_t *tx_octets, uint16_t *tx_time)
 static void write_default_data_len(uint16_t tx_octets, uint16_t tx_time)
 {
 	struct bt_hci_cp_le_write_default_data_len *cp;
-	struct net_buf *buf = bt_hci_cmd_create(BT_HCI_OP_LE_WRITE_DEFAULT_DATA_LEN, sizeof(*cp));
+	struct net_buf *buf = create_cmd(BT_HCI_OP_LE_WRITE_DEFAULT_DATA_LEN, sizeof(*cp));
 
 	TEST_ASSERT_NO_MSG(buf);
 
@@ -446,7 +446,7 @@ static void set_event_mask(uint16_t opcode)
 	uint64_t mask = 0U;
 
 	/* The two commands have the same length/params */
-	buf = bt_hci_cmd_create(opcode, sizeof(*cp_mask));
+	buf = create_cmd(opcode, sizeof(*cp_mask));
 	TEST_ASSERT_NO_MSG(buf);
 
 	/* Forward all events */
@@ -464,7 +464,7 @@ static void set_random_address(void)
 
 	LOG_DBG("%s", bt_addr_str(&addr.a));
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_RANDOM_ADDRESS, sizeof(addr.a));
+	buf = create_cmd(BT_HCI_OP_LE_SET_RANDOM_ADDRESS, sizeof(addr.a));
 	TEST_ASSERT_NO_MSG(buf);
 
 	net_buf_add_mem(buf, &addr.a, sizeof(addr.a));
@@ -487,12 +487,12 @@ void start_adv(void)
 	set_param.own_addr_type = BT_HCI_OWN_ADDR_RANDOM;
 
 	/* configure */
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_PARAM, sizeof(set_param));
+	buf = create_cmd(BT_HCI_OP_LE_SET_ADV_PARAM, sizeof(set_param));
 	net_buf_add_mem(buf, &set_param, sizeof(set_param));
 	send_cmd(BT_HCI_OP_LE_SET_ADV_PARAM, buf, NULL);
 
 	/* start */
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_ENABLE, 1);
+	buf = create_cmd(BT_HCI_OP_LE_SET_ADV_ENABLE, 1);
 	net_buf_add_u8(buf, BT_HCI_LE_ADV_ENABLE);
 	send_cmd(BT_HCI_OP_LE_SET_ADV_ENABLE, buf, NULL);
 }

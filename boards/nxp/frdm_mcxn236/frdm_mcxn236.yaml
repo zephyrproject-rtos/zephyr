@@ -26,5 +26,6 @@ supported:
   - regulator
   - spi
   - usbd
+  - video
   - watchdog
 vendor: nxp

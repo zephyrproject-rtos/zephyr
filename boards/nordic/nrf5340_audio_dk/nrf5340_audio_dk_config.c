@@ -11,7 +11,7 @@
 
 LOG_MODULE_REGISTER(nrf5340_audio_dk_nrf5340_cpuapp, CONFIG_LOG_DEFAULT_LEVEL);
 
-static int core_config(void)
+void board_late_init_hook(void)
 {
 	nrf_gpiote_latency_t latency;
 
@@ -21,8 +21,4 @@ static int core_config(void)
 		LOG_DBG("Setting gpiote latency to low power");
 		nrf_gpiote_latency_set(NRF_GPIOTE, NRF_GPIOTE_LATENCY_LOWPOWER);
 	}
-
-	return 0;
 }
-
-SYS_INIT(core_config, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);

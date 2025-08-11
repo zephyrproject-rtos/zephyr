@@ -12,7 +12,7 @@
 #include <zephyr/usb/usbd.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(cdc_acm_serial, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(cdc_acm_serial, CONFIG_USBD_LOG_LEVEL);
 
 /*
  * This is intended for use with cdc-acm-snippet or as a default serial backend
@@ -79,19 +79,19 @@ static int cdc_acm_serial_init_device(void)
 
 	err = usbd_add_descriptor(&cdc_acm_serial, &cdc_acm_serial_lang);
 	if (err) {
-		LOG_ERR("Failed to initialize language descriptor (%d)", err);
+		LOG_ERR("Failed to initialize %s (%d)", "language descriptor", err);
 		return err;
 	}
 
 	err = usbd_add_descriptor(&cdc_acm_serial, &cdc_acm_serial_mfr);
 	if (err) {
-		LOG_ERR("Failed to initialize manufacturer descriptor (%d)", err);
+		LOG_ERR("Failed to initialize %s (%d)", "manufacturer descriptor", err);
 		return err;
 	}
 
 	err = usbd_add_descriptor(&cdc_acm_serial, &cdc_acm_serial_product);
 	if (err) {
-		LOG_ERR("Failed to initialize product descriptor (%d)", err);
+		LOG_ERR("Failed to initialize %s (%d)", "product descriptor", err);
 		return err;
 	}
 
@@ -99,11 +99,12 @@ static int cdc_acm_serial_init_device(void)
 		err = usbd_add_descriptor(&cdc_acm_serial, &cdc_acm_serial_sn);
 	))
 	if (err) {
-		LOG_ERR("Failed to initialize SN descriptor (%d)", err);
+		LOG_ERR("Failed to initialize %s (%d)", "SN descriptor", err);
 		return err;
 	}
 
-	if (usbd_caps_speed(&cdc_acm_serial) == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED &&
+	    usbd_caps_speed(&cdc_acm_serial) == USBD_SPEED_HS) {
 		err = register_cdc_acm_0(&cdc_acm_serial, USBD_SPEED_HS);
 		if (err) {
 			return err;
@@ -117,14 +118,16 @@ static int cdc_acm_serial_init_device(void)
 
 	err = usbd_init(&cdc_acm_serial);
 	if (err) {
-		LOG_ERR("Failed to initialize device support");
+		LOG_ERR("Failed to initialize %s (%d)", "device support", err);
 		return err;
 	}
 
-	err = usbd_enable(&cdc_acm_serial);
-	if (err) {
-		LOG_ERR("Failed to enable device support");
-		return err;
+	if (IS_ENABLED(CONFIG_CDC_ACM_SERIAL_ENABLE_AT_BOOT)) {
+		err = usbd_enable(&cdc_acm_serial);
+		if (err) {
+			LOG_ERR("Failed to enable %s (%d)", "device support", err);
+			return err;
+		}
 	}
 
 	return 0;

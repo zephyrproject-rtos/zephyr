@@ -208,7 +208,7 @@ static int counter_cc23x0_init(const struct device *dev)
 	return 0;
 }
 
-static const struct counter_driver_api rtc_cc23x0_api = {
+static DEVICE_API(counter, rtc_cc23x0_api) = {
 	.start = counter_cc23x0_start,
 	.stop = counter_cc23x0_stop,
 	.get_value = counter_cc23x0_get_value,

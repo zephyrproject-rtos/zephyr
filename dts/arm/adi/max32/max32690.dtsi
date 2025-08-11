@@ -103,6 +103,19 @@
 			reg = <0x200d0000 DT_SIZE_K(64)>;
 		};
 
+		spixf: spixf@40027000 {
+			compatible = "adi,max32-spixf";
+			reg = <0x40027000 0x1000>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+			interrupts = <38 0>;
+
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 30>, <&gcr ADI_MAX32_CLOCK_BUS0 31>;
+
+			status = "disabled";
+		};
+
 		flc1: flash_controller@40029400 {
 			compatible = "adi,max32-flash-controller";
 			reg = <0x40029400 0x400>;
@@ -252,6 +265,46 @@
 			num-out-endpoints = <7>;
 			maximum-speed = "high-speed";
 			status = "disabled";
+		};
+
+		can0: can@40064000 {
+			compatible = "adi,max32-can";
+			reg = <0x40064000 0x1000>;
+			status = "disabled";
+			interrupts = <107 0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 11>;
+		};
+
+		can1: can@40065000 {
+			compatible = "adi,max32-can";
+			reg = <0x40065000 0x1000>;
+			status = "disabled";
+			interrupts = <108 0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 19>;
+		};
+
+		wut0: timer@40006400 {
+			compatible = "adi,max32-timer";
+			reg = <0x40006400 0x200>;
+			interrupts = <53 0>;
+			status = "disabled";
+			prescaler = <1>;
+			counter {
+				compatible = "adi,max32-wut";
+				status = "disabled";
+			};
+		};
+
+		wut1: timer@40006600 {
+			compatible = "adi,max32-timer";
+			reg = <0x40006600 0x200>;
+			interrupts = <109 0>;
+			status = "disabled";
+			prescaler = <1>;
+			counter {
+				compatible = "adi,max32-wut";
+				status = "disabled";
+			};
 		};
 	};
 };

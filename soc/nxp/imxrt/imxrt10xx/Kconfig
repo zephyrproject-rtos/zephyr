@@ -35,20 +35,17 @@ config SOC_MIMXRT1011
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_ICACHE
 	select CPU_HAS_DCACHE
-	select INIT_ENET_PLL
 
 config SOC_MIMXRT1015
 	select CPU_HAS_FPU
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 	select CPU_HAS_ARM_MPU
-	select INIT_ENET_PLL
 
 config SOC_MIMXRT1021
 	select HAS_MCUX_ENET
 	select HAS_MCUX_SEMC
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 	select CPU_HAS_ARM_MPU
-	select INIT_ENET_PLL
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
 	select HAS_MCUX_FLEXCAN
@@ -59,7 +56,6 @@ config SOC_MIMXRT1024
 	select HAS_MCUX_SEMC
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 	select CPU_HAS_ARM_MPU
-	select INIT_ENET_PLL
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
 	select HAS_MCUX_FLEXCAN
@@ -69,8 +65,6 @@ config SOC_MIMXRT1042
 	select HAS_MCUX_SEMC
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 	select CPU_HAS_ARM_MPU
-	select INIT_ARM_PLL
-	select INIT_SYS_PLL
 
 config SOC_MIMXRT1052
 	select HAS_MCUX_ELCDIF
@@ -78,9 +72,6 @@ config SOC_MIMXRT1052
 	select HAS_MCUX_SEMC
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 	select CPU_HAS_ARM_MPU
-	select INIT_ARM_PLL
-	select INIT_VIDEO_PLL if DISPLAY_MCUX_ELCDIF
-	select INIT_ENET_PLL if NET_L2_ETHERNET && ETH_DRIVER
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
 	select HAS_MCUX_FLEXCAN
@@ -96,9 +87,6 @@ config SOC_MIMXRT1062
 	select HAS_MCUX_SNVS
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 	select CPU_HAS_ARM_MPU
-	select INIT_ARM_PLL
-	select INIT_VIDEO_PLL if DISPLAY_MCUX_ELCDIF
-	select INIT_ENET_PLL if NET_L2_ETHERNET && ETH_DRIVER
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
 	select HAS_MCUX_FLEXCAN
@@ -116,10 +104,37 @@ config SOC_MIMXRT1064
 	select HAS_MCUX_SRC
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 	select CPU_HAS_ARM_MPU
-	select INIT_ARM_PLL
-	select INIT_VIDEO_PLL if DISPLAY_MCUX_ELCDIF
-	select INIT_ENET_PLL if NET_L2_ETHERNET && ETH_DRIVER
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
 	select HAS_MCUX_FLEXCAN
 	select HAS_SWO
+
+if SOC_SERIES_IMXRT10XX
+
+config INIT_ENET_PLL
+	bool "Initialize ENET PLL"
+	default y if ETH_NXP_ENET
+	help
+	  When enabled, will call the SDK function to initialize the enet pll.
+	  The exact meaning of what the "enet pll" is in the hardware according
+	  to the SDK changes per platform, and so does the API signature.
+	  This configuration also assumes a certain default clocking scheme for each SOC.
+	  See soc.c code and HAL fsl_clock.c for the platform for better understanding.
+
+config INIT_PLL6_500M
+	bool "PLL6 500M output enable"
+	default y
+	depends on SOC_MIMXRT1011 || SOC_MIMXRT1015 || \
+		   SOC_MIMXRT1021 || SOC_MIMXRT1024
+	select INIT_ENET_PLL
+
+config INIT_SYS_PLL
+	bool "Initialize System PLL"
+	default y if SOC_MIMXRT1042
+
+config INIT_VIDEO_PLL
+	default y if DISPLAY_MCUX_ELCDIF
+	depends on !SOC_MIMXRT1011 && !SOC_MIMXRT1015 && \
+		   !SOC_MIMXRT1021 && !SOC_MIMXRT1024
+
+endif # SOC_SERIES_IMXRT10XX

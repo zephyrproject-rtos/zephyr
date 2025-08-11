@@ -38,8 +38,9 @@ To use the shield, below requirements needs to be satisfied.
 Integration Platform
 ********************
 
-This shield is validated and tested for use with the host platform listed below. It can be used with
-other host platforms, but the functionality is not guaranteed.
+This shield is validated and tested for use with the host platform listed below.
+While the shield can be used with other host platforms, other combinations
+are not actively tested or validated.
 
 - :zephyr:board:`mimxrt1060_evk` Rev-C.
 
@@ -65,18 +66,15 @@ Below are the supported shields to be used with ``--shield <option>`` when you i
 
 For example:
 
+BT:
+
 .. zephyr-app-commands::
    :zephyr-app: samples/bluetooth/classic/handsfree
    :board: mimxrt1060_evk@C//qspi
    :shield: nxp_m2_1xk_wifi_bt
    :goals: build
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/net/wifi/shell
-   :board: mimxrt1060_evk@C//qspi
-   :shield: nxp_m2_2el_wifi_bt
-   :goals: build
-   :gen-args: -DEXTRA_CONF_FILE="nxp/overlay_hosted_mcu.conf"
+Wi-Fi Embedded supplicant:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/wifi/shell
@@ -85,9 +83,22 @@ For example:
    :goals: build
    :gen-args: -DEXTRA_CONF_FILE="nxp/overlay_hosted_mcu.conf"
 
+Wi-Fi HostAP/WPA supplicant:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/wifi/shell
+   :board: mimxrt1060_evk@C//qspi
+   :shield: nxp_m2_2el_wifi_bt
+   :goals: build
+   :gen-args: -DEXTRA_CONF_FILE="nxp/overlay_hosted_mcu.conf;nxp/overlay_hostap_hosted_mcu.conf"
+
 .. note::
-   To build Wi-Fi application, "nxp/overlay_hosted_mcu.conf" config file
+   To build Wi-Fi application, ``nxp/overlay_hosted_mcu.conf`` config file
    must be passed along with default conf file as mentioned in above build command.
+
+   To enable HostAP/WPA supplicant support, additional "nxp/overlay_hostap_hosted_mcu.conf" file
+   needs to be passed.
+   In above mentioned commands, shield parameter can be modified with respect to module selection.
 
 Hardware Rework to Enable M.2 Interfaces
 ****************************************

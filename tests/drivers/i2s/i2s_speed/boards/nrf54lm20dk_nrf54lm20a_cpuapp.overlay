@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* i2s-node0 is the transmitter/receiver */
+
+/ {
+	aliases {
+		i2s-node0 = &tdm;
+	};
+};
+
+&pinctrl {
+	tdm_default_alt: tdm_default_alt {
+		group1 {
+			psels = <NRF_PSEL(TDM_SCK_M, 1, 23)>,
+				<NRF_PSEL(TDM_FSYNC_M, 1, 14)>,
+				<NRF_PSEL(TDM_SDOUT, 1, 30)>,  /* TDM_SDOUT shorted to TDM_SDIN */
+				<NRF_PSEL(TDM_SDIN, 1, 31)>;
+		};
+	};
+};
+
+&tdm {
+	status = "okay";
+	pinctrl-0 = <&tdm_default_alt>;
+	pinctrl-names = "default";
+};

@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Common SoC nodes for i.MX 95 15x15 and i.MX 95 19x19 */
+
 #include <mem.h>
 #include <freq.h>
 #include <arm64/armv8-a.dtsi>
@@ -76,7 +78,15 @@
 		      <0x48060000 0xc0000>; /* GICR (RD_base + SGI_base) */
 		interrupt-controller;
 		#interrupt-cells = <4>;
+		#address-cells = <1>;
+		#size-cells = <1>;
 		status = "okay";
+
+		its: msi-controller@48040000 {
+			compatible = "arm,gic-v3-its";
+			reg = <0x48040000 0x20000>;
+			status = "okay";
+		};
 	};
 
 	reserved-memory {
@@ -266,6 +276,58 @@
 		status = "disabled";
 	};
 
+	gpio2: gpio@43810000 {
+		compatible = "nxp,imx-rgpio";
+		reg = <0x43810000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 49 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<GIC_SPI 50 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0", "irq_1";
+		interrupt-parent = <&gic>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
+		status = "disabled";
+	};
+
+	gpio3: gpio@43820000 {
+		compatible = "nxp,imx-rgpio";
+		reg = <0x43820000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 51 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<GIC_SPI 52 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0", "irq_1";
+		interrupt-parent = <&gic>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
+		status = "disabled";
+	};
+
+	gpio4: gpio@43840000 {
+		compatible = "nxp,imx-rgpio";
+		reg = <0x43840000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 53 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<GIC_SPI 54 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0", "irq_1";
+		interrupt-parent = <&gic>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <30>;
+		status = "disabled";
+	};
+
+	gpio5: gpio@43850000 {
+		compatible = "nxp,imx-rgpio";
+		reg = <0x43850000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 55 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<GIC_SPI 56 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0", "irq_1";
+		interrupt-parent = <&gic>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <18>;
+		status = "disabled";
+	};
+
 	mu1: mbox@44220000 {
 		compatible = "nxp,mbox-imx-mu";
 		reg = <0x44220000 DT_SIZE_K(64)>;
@@ -283,6 +345,7 @@
 		clocks = <&scmi_clk IMX95_CLK_LPUART1>;
 		status = "disabled";
 	};
+
 
 	lpuart2: serial@44390000 {
 		compatible = "nxp,imx-lpuart", "nxp,lpuart";
@@ -400,6 +463,19 @@
 		interrupt-parent = <&gic>;
 		clocks = <&scmi_clk IMX95_CLK_TPM6>;
 		prescaler = <1>;
+		status = "disabled";
+	};
+
+	gpio1: gpio@47400000 {
+		compatible = "nxp,imx-rgpio";
+		reg = <0x47400000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<GIC_SPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0", "irq_1";
+		interrupt-parent = <&gic>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <16>;
 		status = "disabled";
 	};
 };

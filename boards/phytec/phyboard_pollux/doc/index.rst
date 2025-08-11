@@ -6,11 +6,11 @@ phyBOARD-Pollux i.MX8M Plus
 Overview
 ********
 
-The phyBOARD-Pollux is based upon the phyCORE-i.MX8M Plus SOM which is based on
+The phyBOARD-Pollux is based upon the phyCORE-i.MX8M Plus SoM which is based on
 the NXP i.MX8M Plus SoC. The SoC includes four Coretex-A53 cores and one
 Coretex-M7 core for real time applications like Zephyr. The phyBOARD-Pollux
-can be used for various applications like SmartHomes, Industry 4.0, IoT etc.
-It features a lots of interfaces and computing capacity. It can be used as
+can be used for various applications like SmartHome, Industry 4.0, IoT etc.
+It features a lot of interfaces and computing capacity. It can be used as
 a reference, to develop or in the final product too.
 
 
@@ -52,7 +52,7 @@ More information about the board can be found at the `PHYTEC website`_.
 Supported Features
 ==================
 
-The Zephyr phyboard_polis board configuration supports the following hardware
+The ``phyboard_pollux/mimx8ml8/m7`` board configuration supports the following hardware
 features:
 
 +-----------+------------+------------------------------------+
@@ -72,6 +72,10 @@ features:
 | GPIO      | on-chip    | GPIO output                        |
 |           |            | GPIO input                         |
 +-----------+------------+------------------------------------+
+| I2C       | on-chip    | ii2c                               |
++-----------+------------+------------------------------------+
+| PCA95533  | I2C        | RGB LED via I2C2                   |
++-----------+------------+------------------------------------+
 
 The default configuration can be found in the defconfig file:
 :zephyr_file:`boards/phytec/phyboard_pollux/phyboard_pollux_mimx8ml8_m7_defconfig`.
@@ -83,7 +87,7 @@ Zephyr on the M7-Core.
 Connections and IOs
 ===================
 
-The following Compontens are tested and working correctly.
+The following components are tested and working correctly.
 
 UART
 ----
@@ -109,6 +113,38 @@ The pinmuxing for the GPIOs is the standard pinmuxing of the mimx8mp devicetree
 created by NXP and can be found at
 :zephyr_file:`dts/arm/nxp/nxp_imx8ml_m7.dtsi`. The Pinout of the phyBOARD-Polis
 can be found at the `PHYTEC website`_.
+
+I2C
+---
+
+There are multiple on-device I2C devices already connected to
+I2C busses.
+Some of these devices should not be used by the M7-Core if
+running the PHYTEC BSP on the A53-Core.
+
+Here is an overview of the on-device I2C devices:
+
++-----------------+-----------------+--------------------+--------------------+
+| I2C Device      | Address         | Usage              | Can be used by M7? |
++=================+=================+====================+====================+
+| PMIC            | 0x25@i2c1       | Power Management   | Should not be used |
++-----------------+-----------------+--------------------+--------------------+
+| EEPROM          | 0x51@i2c1       | EEPROM             | Should not be used |
+| (Atmel 24C32)   |                 | (U-Boot config)    |                    |
++-----------------+-----------------+--------------------+--------------------+
+| RTC (RV3028)    | 0x51@i2c1       | Real Time Clock    | Should not be used |
++-----------------+-----------------+--------------------+--------------------+
+| EEPROM          | 0x51@i2c2       | EEPROM             | yes                |
+| (Atmel 24C02)   |                 | (On carrier-board) |                    |
++-----------------+-----------------+--------------------+--------------------+
+| PCA9553         | 0x62@i2c2       | RGB LED            | yes                |
++-----------------+-----------------+--------------------+--------------------+
+
+.. note::
+  i2c1 is used by the A53-Core to communicate with the PMIC.
+  Because the PMIC is a crucial part of the system, i2c1 should be
+  used by the A53-Core only to avoid conflicts.
+
 
 Programming and Debugging
 *************************

@@ -2,7 +2,11 @@
 # Copyright (c) 2020, Teslabs Engineering S.L.
 # SPDX-License-Identifier: Apache-2.0
 
-description: ILI9340 320x240 display controller
+title: Ilitek ILI9340 320x240 display controller
+
+description: |
+    The Ilitek ILI9340 is a 262K colors TFT-LCD controller
+    with a maximum 240RGBx320 resolution.
 
 compatible: "ilitek,ili9340"
 

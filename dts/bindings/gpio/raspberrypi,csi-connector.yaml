@@ -1,0 +1,66 @@
+# Copyright 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+title: GPIO pins exposed on the Raspberry Pi CSI Camera connector
+
+description: |
+  There are 2 variants of the Raspberry Pi CSI camera connector. Either 15-pin
+  or 22-pin. Here only GPIO provided by those connectors are abstracted since
+  others pins are directly connected to CSI PHY.
+  For reference, pinout of 15-pin and 22-pin connectors are references below.
+  In this gpio nexus, only GPIOs are represented and should be described in
+  the following way, allowing to have a single compatible for both 15-pin
+  and 22-pin connectors and also allowing to deal with 15-pin to 22-pin
+  conversion cables.
+
+  Nexus mapping:
+    1   IO0      pin 11 (15-pin based) / pin 17 (22-pin based)
+    2   IO1      pin 12 (15-pin based) / pin 18 (22-pin based)
+    3   I2C_SCL  pin 13 (15-pin based) / pin 20 (22-pin based)
+    4   I2C_SDA  pin 14 (15-pin based) / pin 21 (22-pin based)
+
+  For reference only, Raspberry 15-pin Connector layout:
+    1   GND
+    2   CSI_D0_N
+    3   CSI_D0_P
+    4   GND
+    5   CSI_D1_N
+    6   CSI_D1_P
+    7   GND
+    8   CSI_CK_N
+    9   CSI_CK_P
+    10  GND
+    11  IO0
+    12  IO1
+    13  I2C_SCL
+    14  I2C_SDA
+    15  VCC (3v3)
+
+  For reference only, Raspberry 22-pin Connector layout:
+
+    1	GND
+    2	CSI_D0_N
+    3	CSI_D0_P
+    4	GND
+    5	CSI_D1_N
+    6	CSI_D1_P
+    7	GND
+    8	CSI_CK_N
+    9	CSI_CK_P
+    10	GND
+    11	CSI_D2_N
+    12	CSI_D2_P
+    13	GND
+    14	CSI_D3_N
+    15	CSI_D3_P
+    16	GND
+    17	IO0
+    18	IO1
+    19	GND
+    20	I2C_SCL
+    21	I2C_SDA
+    22	VCC (3v3)
+
+compatible: "raspberrypi,csi-connector"
+
+include: [gpio-nexus.yaml, base.yaml]

@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
+import difflib
 import itertools
 import sys
 from collections import Counter, defaultdict
@@ -372,7 +373,9 @@ def add_args(parser):
     parser.add_argument("--board", dest='board', default=None,
                         help='lookup the specific board, fail if not found')
     parser.add_argument("--board-dir", default=[], type=Path, action='append',
-                        help='Only look for boards at the specific location')
+                        help='only look for boards at the specific location')
+    parser.add_argument("--fuzzy-match", default=None,
+                        help='lookup boards similar to the given board name')
 
 
 def add_args_formatting(parser):
@@ -414,6 +417,9 @@ def board_v2_qualifiers_csv(board):
 
 def dump_v2_boards(args):
     boards = find_v2_boards(args)
+    if args.fuzzy_match is not None:
+        close_boards = difflib.get_close_matches(args.fuzzy_match, boards.keys())
+        boards = {b: boards[b] for b in close_boards}
 
     for b in boards.values():
         qualifiers_list = board_v2_qualifiers(b)
@@ -442,6 +448,11 @@ def dump_v2_boards(args):
 def dump_boards(args):
     arch2boards = find_arch2boards(args)
     for arch, boards in arch2boards.items():
+        if args.fuzzy_match is not None:
+            close_boards = difflib.get_close_matches(args.fuzzy_match, [b.name for b in boards])
+            if not close_boards:
+                continue
+            boards = [b for b in boards if b.name in close_boards]
         if args.cmakeformat is None:
             print(f'{arch}:')
         for board in boards:

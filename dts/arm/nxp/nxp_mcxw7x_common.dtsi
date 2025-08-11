@@ -351,6 +351,21 @@
 		interrupts = <18 0>;
 		clk-divider = <0x0>;
 	};
+
+	flexio: flexio@3a000 {
+		compatible = "nxp,flexio";
+		reg = <0x3a000 0x920>;
+		interrupts = <46 0>;
+		clocks = <&scg SCG_K4_FLEXIO_CLK 0xe8>;
+		status = "disabled";
+
+		flexio_pwm {
+			compatible = "nxp,flexio-pwm";
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+	};
+
 };
 
 &fast_peripheral0 {

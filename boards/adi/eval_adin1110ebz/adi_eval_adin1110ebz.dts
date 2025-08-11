@@ -269,9 +269,10 @@ zephyr_udc0: &usbotg_fs {
 
 	status = "okay";
 
-	mx25r6435f: ospi-nor-flash@90000000 {
+	mx25r6435f: ospi-nor-flash@0 {
 		compatible = "st,stm32-ospi-nor";
-		reg = <0x90000000 DT_SIZE_M(8)>; /* 64 Megabits */
+		reg = <0>;
+		size = <DT_SIZE_M(64)>; /* 64 Megabits */
 		ospi-max-frequency = <DT_FREQ_M(26)>; /* for Voltage Range 2 */
 		spi-bus-width = <OSPI_QUAD_MODE>;
 		data-rate = <OSPI_STR_TRANSFER>;
@@ -307,7 +308,7 @@ zephyr_udc0: &usbotg_fs {
 
 	sram {
 		bank@0 {
-			reg = <0x0>;
+			reg = <STM32_FMC_NORSRAM_BANK1>;
 			st,control = <STM32_FMC_DATA_ADDRESS_MUX_DISABLE
 				      STM32_FMC_MEMORY_TYPE_SRAM
 				      STM32_FMC_NORSRAM_MEM_BUS_WIDTH_16

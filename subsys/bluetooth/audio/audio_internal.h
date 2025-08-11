@@ -75,9 +75,9 @@ static inline const char *bt_audio_dir_str(enum bt_audio_dir dir)
 		return "sink";
 	case BT_AUDIO_DIR_SOURCE:
 		return "source";
+	default:
+		return "Unknown";
 	}
-
-	return "Unknown";
 }
 
 bool bt_audio_valid_ltv(const uint8_t *data, uint8_t data_len);

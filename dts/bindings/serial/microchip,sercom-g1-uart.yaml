@@ -1,0 +1,80 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip SERCOM UART controller
+
+description: |
+  Microchip SERCOM UART driver.
+
+  Group g1 SERCOM UART driver supports following hardware peripherals:
+    - module name="SERCOM" id="U2201" version="5.0.0"
+
+compatible: "microchip,sercom-g1-uart"
+
+include:
+  - name: uart-controller.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+
+  rxpo:
+    type: int
+    required: true
+    description: |
+      Define the receive data (RxD) pin configuration.
+      An enumeration with the following values:
+
+      +-------+---------------+
+      | Value | RX Pin        |
+      +-------+---------------+
+      |     0 | SERCOM_PAD[0] |
+      +-------+---------------+
+      |     1 | SERCOM_PAD[1] |
+      +-------+---------------+
+      |     2 | SERCOM_PAD[2] |
+      +-------+---------------+
+      |     3 | SERCOM_PAD[3] |
+      +-------+---------------+
+
+  txpo:
+    type: int
+    required: true
+    description: |
+      Transmit Data Pinout. An enumeration with values that depend on the
+      hardware being used. This controls both the transmit pins and if
+      hardware flow control is used.
+
+      SAMD5/E5:
+
+      +-------+---------------+---------------+---------------+
+      | Value | TX Pin        | RTS           | CTS           |
+      +-------+---------------+---------------+---------------+
+      |     0 | SERCOM_PAD[0] |           N/A |           N/A |
+      +-------+---------------+---------------+---------------+
+      |     1 | Reserved                                      |
+      +-------+---------------+---------------+---------------+
+      |     2 | SERCOM_PAD[0] | SERCOM_PAD[2] | SERCOM_PAD[3] |
+      +-------+---------------+---------------+---------------+
+      |     3 | SERCOM_PAD[0] | SERCOM_PAD[2] |           N/A |
+      +-------+---------------+---------------+---------------+
+
+  clock-external:
+    type: boolean
+    description: |
+      select external clock for uart (external clock if true).
+
+  collision-detection:
+    type: boolean
+    description: |
+      Enable collision detection for half-duplex mode.

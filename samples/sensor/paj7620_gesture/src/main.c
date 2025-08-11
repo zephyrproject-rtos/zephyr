@@ -10,6 +10,7 @@
 
 #define GESTURE_POLL_TIME_MS 100
 
+#ifdef CONFIG_PAJ7620_TRIGGER
 K_SEM_DEFINE(sem, 0, 1); /* starts off "not available" */
 
 static void trigger_handler(const struct device *dev, const struct sensor_trigger *trigger)
@@ -23,6 +24,7 @@ static void trigger_handler(const struct device *dev, const struct sensor_trigge
 
 	k_sem_give(&sem);
 }
+#endif
 
 static void print_hand_gesture(uint16_t gest_flags)
 {
@@ -52,6 +54,7 @@ static void print_hand_gesture(uint16_t gest_flags)
 	}
 }
 
+#ifdef CONFIG_PAJ7620_TRIGGER_OWN_THREAD
 static void trigger_main_loop(const struct device *dev)
 {
 	struct sensor_value data;
@@ -65,7 +68,9 @@ static void trigger_main_loop(const struct device *dev)
 		print_hand_gesture(data.val1);
 	}
 }
+#endif
 
+#ifdef CONFIG_PAJ7620_TRIGGER_NONE
 static void polling_main_loop(const struct device *dev)
 {
 	struct sensor_value data;
@@ -79,32 +84,35 @@ static void polling_main_loop(const struct device *dev)
 		k_msleep(GESTURE_POLL_TIME_MS);
 	}
 }
+#endif
 
 int main(void)
 {
-	int ret;
 	const struct device *dev = DEVICE_DT_GET_ONE(pixart_paj7620);
-
-	struct sensor_trigger trig = {
-		.type = SENSOR_TRIG_MOTION,
-		.chan = (enum sensor_channel)SENSOR_CHAN_PAJ7620_GESTURES,
-	};
 
 	if (!device_is_ready(dev)) {
 		printf("Device %s is not ready\n", dev->name);
 		return -ENODEV;
 	}
 
-	if (IS_ENABLED(CONFIG_APP_USE_POLLING)) {
-		polling_main_loop(dev);
-	} else {
-		/* App was configured to NOT use polling, so use triggers */
-		ret = sensor_trigger_set(dev, &trig, trigger_handler);
-		if (ret < 0) {
-			printf("Could not set trigger\n");
-			return ret;
-		}
+#ifdef CONFIG_PAJ7620_TRIGGER
+	struct sensor_trigger trig = {
+		.type = SENSOR_TRIG_MOTION,
+		.chan = (enum sensor_channel)SENSOR_CHAN_PAJ7620_GESTURES,
+	};
+	int ret;
 
-		trigger_main_loop(dev);
+	printf("PAJ7620 gesture sensor sample - trigger mode\n");
+
+	ret = sensor_trigger_set(dev, &trig, trigger_handler);
+	if (ret < 0) {
+		printf("Could not set trigger\n");
+		return ret;
 	}
+
+	trigger_main_loop(dev);
+#else
+	printf("PAJ7620 gesture sensor sample - polling mode\n");
+	polling_main_loop(dev);
+#endif
 }

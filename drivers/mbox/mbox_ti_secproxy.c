@@ -46,7 +46,6 @@ LOG_MODULE_REGISTER(ti_secure_proxy);
 #define SEC_PROXY_DATA_END_OFFS   0x3c
 
 #define SEC_PROXY_TIMEOUT_US 1000000
-#define MAILBOX_MBOX_SIZE 60
 
 #define GET_MSG_SEQ(buffer) ((uint32_t *)buffer)[1]
 struct secproxy_thread {
@@ -202,7 +201,7 @@ static void secproxy_mailbox_isr(const struct device *dev)
 		rx_data->size = msg_len;
 		rx_data->seq = GET_MSG_SEQ(buf);
 		if (data->cb[i_channel]) {
-			data->cb[i_channel](dev, i_channel, NULL, NULL);
+			data->cb[i_channel](dev, i_channel, data->user_data[i_channel], NULL);
 		}
 	}
 }

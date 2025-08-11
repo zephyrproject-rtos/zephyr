@@ -14,7 +14,6 @@
 
 #include <zephyr/devicetree.h>
 #include <zephyr/dt-bindings/pinctrl/nrf-pinctrl.h>
-#include <zephyr/dt-bindings/power/nordic-nrf-gpd.h>
 #include <zephyr/types.h>
 
 #ifdef __cplusplus
@@ -57,16 +56,6 @@ typedef uint32_t pinctrl_soc_pin_t;
 		      0)), (0))
 
 /**
- * @brief Utility macro to get the GPD_FAST_ACTIVE1 flag
- *
- * @param p_node_id Parent node identifier.
- */
-#define Z_GET_GPD_FAST_ACTIVE1(p_node_id)				       \
-	COND_CODE_1(DT_NODE_HAS_PROP(p_node_id, power_domains),		       \
-		    ((DT_PHA(p_node_id, power_domains, id) ==		       \
-		      NRF_GPD_FAST_ACTIVE1) << NRF_GPD_FAST_ACTIVE1_POS), (0))
-
-/**
  * @brief Utility macro to initialize each pin.
  *
  * @param node_id Node identifier.
@@ -81,9 +70,7 @@ typedef uint32_t pinctrl_soc_pin_t;
 	 (DT_PROP(node_id, nordic_drive_mode) << NRF_DRIVE_POS) |	       \
 	 ((NRF_LP_ENABLE * DT_PROP(node_id, low_power_enable)) << NRF_LP_POS) |\
 	 (DT_PROP(node_id, nordic_invert) << NRF_INVERT_POS) |		       \
-	 Z_GET_CLOCKPIN_ENABLE(node_id, prop, idx, p_node_id) |		       \
-	 Z_GET_GPD_FAST_ACTIVE1(p_node_id)				       \
-	),
+	 Z_GET_CLOCKPIN_ENABLE(node_id, prop, idx, p_node_id)),
 
 /**
  * @brief Utility macro to initialize state pins contained in a given property.
@@ -110,14 +97,6 @@ typedef uint32_t pinctrl_soc_pin_t;
  */
 #define NRF_GET_CLOCKPIN_ENABLE(pincfg) \
 	(((pincfg) >> NRF_CLOCKPIN_ENABLE_POS) & NRF_CLOCKPIN_ENABLE_MSK)
-
-/**
- * @brief Utility macro to obtain GPD_FAST_ACTIVE1 flag
- *
- * @param pincfg Pin configuration bit field.
- */
-#define NRF_GET_GPD_FAST_ACTIVE1(pincfg) \
-	(((pincfg) >> NRF_GPD_FAST_ACTIVE1_POS) & NRF_GPD_FAST_ACTIVE1_MSK)
 
 /**
  * @brief Utility macro to obtain pin inversion flag.
@@ -153,6 +132,20 @@ typedef uint32_t pinctrl_soc_pin_t;
  * @param pincfg Pin configuration bit field.
  */
 #define NRF_GET_PIN(pincfg) (((pincfg) >> NRF_PIN_POS) & NRF_PIN_MSK)
+
+/**
+ * @brief Utility macro to obtain port.
+ *
+ * @param pincfg Pin configuration bit field.
+ */
+#define NRF_GET_PORT(pincfg) (NRF_GET_PIN(pincfg) >> 5)
+
+/**
+ * @brief Utility macro to obtain pin relative to port.
+ *
+ * @param pincfg Pin configuration bit field.
+ */
+#define NRF_GET_PORT_PIN(pincfg) (NRF_GET_PIN(pincfg) & 0x1F)
 
 /** @endcond */
 

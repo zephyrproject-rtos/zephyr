@@ -11,6 +11,10 @@ properties:
   reg:
     required: true
 
+  port:
+    type: int
+    required: true
+
   "#gpio-cells":
     const: 2
 

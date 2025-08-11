@@ -54,7 +54,7 @@ static void thread_entry(void *p1, void *p2, void *p3)
 	}
 }
 
-ZTEST(hifi, test_register_sanity)
+ZTEST(hifi, test_register_coherence)
 {
 	int       priority;
 	uint32_t  i;
@@ -67,11 +67,13 @@ ZTEST(hifi, test_register_sanity)
 		k_thread_create(&thread[i], thread_stack[i], STACK_SIZE,
 				thread_entry, (void *)(uintptr_t)i, NULL, NULL,
 				priority - 1, 0, K_FOREVER);
-
-
 	}
 
 	k_thread_start(&thread[0]);
+
+	for (i = 0; i < NUM_THREADS; i++) {
+		k_thread_join(&thread[i], K_FOREVER);
+	}
 }
 
 ZTEST_SUITE(hifi, NULL, NULL, NULL, NULL, NULL);

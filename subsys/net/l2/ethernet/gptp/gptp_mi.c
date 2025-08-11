@@ -1411,6 +1411,7 @@ static void copy_priority_vector(struct gptp_priority_vector *vector,
 	memcpy(&vector->src_port_id, &hdr->port_id,
 	       sizeof(struct gptp_port_identity));
 
+	vector->steps_removed = announce->steps_removed;
 	vector->port_number = htons(port);
 }
 
@@ -1661,8 +1662,8 @@ static int compute_best_vector(void)
 				continue;
 			}
 
-			tmp = (int)challenger->steps_removed -
-				((int)ntohs(best_vector->steps_removed) + 1);
+			tmp = (int)(challenger->steps_removed + 1) -
+				(int)ntohs(best_vector->steps_removed);
 			if (tmp < 0) {
 				best_vector = challenger;
 				best_port = port;
@@ -1747,6 +1748,7 @@ static void update_bmca(int port,
 		bmca_data->master_priority.port_number = htons(port);
 		bmca_data->master_priority.src_port_id.port_number =
 			htons(port);
+		bmca_data->master_priority.steps_removed = gm_prio->steps_removed;
 	}
 
 	switch (bmca_data->info_is) {

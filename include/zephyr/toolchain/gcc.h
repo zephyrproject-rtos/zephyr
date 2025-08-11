@@ -174,6 +174,16 @@ do {                                                                    \
 
 #endif
 
+/*
+ * Get the address of a structure member even if the member may not be properly
+ * aligned. Note that accessing such an address must be done with care (for
+ * example with UNALIGNED_GET/PUT) and cannot be in general de-referenced to
+ * access the member directly, as that would cause a fault in architectures
+ * which have alignment requirements.
+ */
+#define UNALIGNED_MEMBER_ADDR(_p, _member) ((__typeof__(_p->_member) *) \
+		(((intptr_t)(_p)) + offsetof(__typeof__(*_p), _member)))
+
 /* Double indirection to ensure section names are expanded before
  * stringification
  */
@@ -334,11 +344,13 @@ do {                                                                    \
 #define __WARN1(s) _Pragma(#s)
 
 /* Generic message */
-#ifndef __DEPRECATED_MACRO
+#ifndef CONFIG_DEPRECATION_TEST
 #define __DEPRECATED_MACRO __WARN("Macro is deprecated")
 /* When adding this, remember to follow the instructions in
  * https://docs.zephyrproject.org/latest/develop/api/api_lifecycle.html#deprecated
  */
+#else
+#define __DEPRECATED_MACRO
 #endif
 
 /* These macros allow having ARM asm functions callable from thumb */

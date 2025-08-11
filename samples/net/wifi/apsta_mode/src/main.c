@@ -36,7 +36,7 @@ static struct wifi_connect_req_params sta_config;
 
 static struct net_mgmt_event_callback cb;
 
-static void wifi_event_handler(struct net_mgmt_event_callback *cb, uint32_t mgmt_event,
+static void wifi_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 			       struct net_if *iface)
 {
 	switch (mgmt_event) {

@@ -8,10 +8,15 @@ config SOC_FAMILY_SILABS_S2
 	select BUILD_OUTPUT_HEX
 	select SOC_PREP_HOOK
 	select SOC_EARLY_INIT_HOOK
+	select HAS_SILABS_SISDK
 
 rsource "*/Kconfig"
 
 config ARM_SECURE_FIRMWARE
 	default y
+
+config SILABS_DEVICE_IS_MODULE
+	bool
+	default n
 
 endif

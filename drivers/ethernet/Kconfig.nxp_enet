@@ -4,6 +4,8 @@
 # Copyright 2024-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
+DT_NXP_UNIQUE_MAC_PROP := nxp,unique-mac
+
 config ETH_NXP_ENET
 	bool "NXP ENET Ethernet driver"
 	default y
@@ -14,6 +16,7 @@ config ETH_NXP_ENET
 	select NET_POWER_MANAGEMENT if (PM_DEVICE && SOC_FAMILY_KINETIS)
 	select ETH_DSA_SUPPORT_DEPRECATED
 	select PINCTRL
+	select HWINFO if $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_ENET_MAC),$(DT_NXP_UNIQUE_MAC_PROP),True)
 	help
 	  Enable NXP ENET Ethernet driver.
 

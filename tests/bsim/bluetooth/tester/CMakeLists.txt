@@ -24,6 +24,8 @@ zephyr_include_directories(
 target_sources(app PRIVATE
   src/bsim_btp.c
   src/test_main.c
+  src/audio/vcp_central.c
+  src/audio/vcp_peripheral.c
   src/host/gap_central.c
   src/host/gap_peripheral.c
 )

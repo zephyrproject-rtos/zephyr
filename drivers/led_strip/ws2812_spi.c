@@ -198,30 +198,31 @@ static DEVICE_API(led_strip, ws2812_spi_api) = {
 /* Get the latch/reset delay from the "reset-delay" DT property. */
 #define WS2812_RESET_DELAY(idx) DT_INST_PROP(idx, reset_delay)
 
-#define WS2812_SPI_DEVICE(idx)						 \
-									 \
-	static uint8_t ws2812_spi_##idx##_px_buf[WS2812_SPI_BUFSZ(idx)]; \
-									 \
-	WS2812_COLOR_MAPPING(idx);					 \
-									 \
-	static const struct ws2812_spi_cfg ws2812_spi_##idx##_cfg = {	 \
-		.bus = SPI_DT_SPEC_INST_GET(idx, SPI_OPER(idx), 0),	 \
-		.px_buf = ws2812_spi_##idx##_px_buf,			 \
-		.one_frame = WS2812_SPI_ONE_FRAME(idx),			 \
-		.zero_frame = WS2812_SPI_ZERO_FRAME(idx),		 \
-		.num_colors = WS2812_NUM_COLORS(idx),			 \
-		.color_mapping = ws2812_spi_##idx##_color_mapping,	 \
-		.length = DT_INST_PROP(idx, chain_length),               \
-		.reset_delay = WS2812_RESET_DELAY(idx),			 \
-	};								 \
-									 \
-	DEVICE_DT_INST_DEFINE(idx,					 \
-			      ws2812_spi_init,				 \
-			      NULL,					 \
-			      NULL,					 \
-			      &ws2812_spi_##idx##_cfg,			 \
-			      POST_KERNEL,				 \
-			      CONFIG_LED_STRIP_INIT_PRIORITY,		 \
+#define WS2812_SPI_DEVICE(idx)							\
+										\
+	static uint8_t ws2812_spi_##idx##_px_buf[WS2812_SPI_BUFSZ(idx)]		\
+		IF_ENABLED(CONFIG_WS2812_STRIP_SPI_FORCE_NOCACHE, (__nocache)); \
+										\
+	WS2812_COLOR_MAPPING(idx);						\
+										\
+	static const struct ws2812_spi_cfg ws2812_spi_##idx##_cfg = {		\
+		.bus = SPI_DT_SPEC_INST_GET(idx, SPI_OPER(idx), 0),		\
+		.px_buf = ws2812_spi_##idx##_px_buf,				\
+		.one_frame = WS2812_SPI_ONE_FRAME(idx),				\
+		.zero_frame = WS2812_SPI_ZERO_FRAME(idx),			\
+		.num_colors = WS2812_NUM_COLORS(idx),				\
+		.color_mapping = ws2812_spi_##idx##_color_mapping,		\
+		.length = DT_INST_PROP(idx, chain_length),			\
+		.reset_delay = WS2812_RESET_DELAY(idx),				\
+	};									\
+										\
+	DEVICE_DT_INST_DEFINE(idx,						\
+			      ws2812_spi_init,					\
+			      NULL,						\
+			      NULL,						\
+			      &ws2812_spi_##idx##_cfg,				\
+			      POST_KERNEL,					\
+			      CONFIG_LED_STRIP_INIT_PRIORITY,			\
 			      &ws2812_spi_api);
 
 DT_INST_FOREACH_STATUS_OKAY(WS2812_SPI_DEVICE)

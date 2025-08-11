@@ -252,6 +252,107 @@ struct bt_conn_le_subrate_changed {
 	uint16_t supervision_timeout;
 };
 
+/** Read all remote features complete callback params */
+struct bt_conn_le_read_all_remote_feat_complete {
+	/** @brief  HCI Status from LE Read All Remote Features Complete event.
+	 *
+	 *  The remaining parameters will be unchanged if status is not @ref BT_HCI_ERR_SUCCESS.
+	 */
+	uint8_t status;
+	/** Number of pages supported by remote device. */
+	uint8_t max_remote_page;
+	/** Number of pages fetched from remote device. */
+	uint8_t max_valid_page;
+	/** @brief Pointer to array of size 248, with feature bits of remote supported features.
+	 *
+	 *  Page 0 being 8 bytes, with the following 10 pages of 24 bytes.
+	 *  Refer to BT_LE_FEAT_BIT_* for values.
+	 *  Refer to the BT_FEAT_LE_* macros for value comparison.
+	 *  See Bluetooth Core Specification, Vol 6, Part B, Section 4.6.
+	 */
+	const uint8_t *features;
+};
+
+#define BT_CONN_LE_FRAME_SPACE_TYPES_MASK_ACL_IFS                    \
+	(BT_HCI_LE_FRAME_SPACE_UPDATE_SPACING_TYPE_IFS_ACL_CP_MASK | \
+	 BT_HCI_LE_FRAME_SPACE_UPDATE_SPACING_TYPE_IFS_ACL_PC_MASK)
+
+#define BT_CONN_LE_FRAME_SPACE_TYPES_MASK_ACL                        \
+	(BT_HCI_LE_FRAME_SPACE_UPDATE_SPACING_TYPE_IFS_ACL_CP_MASK | \
+	 BT_HCI_LE_FRAME_SPACE_UPDATE_SPACING_TYPE_IFS_ACL_PC_MASK | \
+	 BT_HCI_LE_FRAME_SPACE_UPDATE_SPACING_TYPE_MCES_MASK)
+
+#define BT_CONN_LE_FRAME_SPACE_TYPES_MASK_CIS                     \
+	(BT_HCI_LE_FRAME_SPACE_UPDATE_SPACING_TYPE_IFS_CIS_MASK | \
+	 BT_HCI_LE_FRAME_SPACE_UPDATE_SPACING_TYPE_MSS_CIS_MASK)
+
+/** Maximum frame space in microseconds.
+ *  As defined in Bluetooth Core Specification, Vol 4, Part E, Section 7.8.151.
+ */
+#define BT_CONN_LE_FRAME_SPACE_MAX (10000U)
+
+/** Frame space update initiator. */
+enum bt_conn_le_frame_space_update_initiator {
+	/** Initiated by local host */
+	BT_CONN_LE_FRAME_SPACE_UPDATE_INITIATOR_LOCAL_HOST =
+		BT_HCI_LE_FRAME_SPACE_UPDATE_INITIATOR_LOCAL_HOST,
+	/** Initiated by local controller */
+	BT_CONN_LE_FRAME_SPACE_UPDATE_INITIATOR_LOCAL_CONTROLLER =
+		BT_HCI_LE_FRAME_SPACE_UPDATE_INITIATOR_LOCAL_CONTROLLER,
+	/** Initiated by peer */
+	BT_CONN_LE_FRAME_SPACE_UPDATE_INITIATOR_PEER =
+		BT_HCI_LE_FRAME_SPACE_UPDATE_INITIATOR_PEER
+};
+
+/** Frame space update params */
+struct bt_conn_le_frame_space_update_param {
+	/** Phy mask of the PHYs to be updated.
+	 *  Refer to BT_HCI_LE_FRAME_SPACE_UPDATE_PHY_* for values.
+	 */
+	uint8_t phys;
+	/** Spacing types mask of the spacing types to be updated.
+	 *  Refer to BT_HCI_LE_FRAME_SPACE_UPDATE_SPACING_TYPE_* and
+	 *  BT_CONN_LE_FRAME_SPACE_TYPES_MASK_* for values.
+	 */
+	uint16_t spacing_types;
+	/** Minimum frame space in microseconds.
+	 *  Bluetooth Core Specification, Vol 4, Part E, Section 7.8.151
+	 *  allows for a range of frame space from 0 to 10000 microseconds.
+	 *  The actual supported frame space values will be dependent on
+	 *  the controller's capabilities.
+	 */
+	uint16_t frame_space_min;
+	/** Maximum frame space in microseconds.
+	 *  Bluetooth Core Specification, Vol 4, Part E, Section 7.8.151
+	 *  allows for a range of frame space from 0 to 10000 microseconds.
+	 *  The actual supported frame space values will be dependent on
+	 *  the controller's capabilities.
+	 */
+	uint16_t frame_space_max;
+};
+
+/** Frame space updated callback params */
+struct bt_conn_le_frame_space_updated {
+	/** HCI Status from LE Frame Space Update Complete event.
+	 *  The remaining parameters will be invalid if status is not
+	 *  @ref BT_HCI_ERR_SUCCESS.
+	 */
+	uint8_t status;
+	/** Initiator of the frame space update. */
+	enum bt_conn_le_frame_space_update_initiator initiator;
+	/** Updated frame space in microseconds. */
+	uint16_t frame_space;
+	/** Phy mask of the PHYs updated.
+	 *  Refer to BT_HCI_LE_FRAME_SPACE_UPDATE_PHY_* for values.
+	 */
+	uint8_t phys;
+	/** Spacing types mask of the spacing types updated.
+	 *  Refer to BT_HCI_LE_FRAME_SPACE_UPDATE_SPACING_TYPE_* and
+	 *  BT_CONN_LE_FRAME_SPACE_TYPES_MASK_* for values.
+	 */
+	uint16_t spacing_types;
+};
+
 /** Connection Type */
 enum __packed bt_conn_type {
 	/** LE Connection Type */
@@ -1186,6 +1287,41 @@ int bt_conn_le_subrate_set_defaults(const struct bt_conn_le_subrate_param *param
 int bt_conn_le_subrate_request(struct bt_conn *conn,
 			       const struct bt_conn_le_subrate_param *params);
 
+/** @brief Read remote feature pages.
+ *
+ *  Request remote feature pages, from 0 up to pages_requested or the number
+ *  of pages supported by the peer. There is a maximum of 10 pages.
+ *  This function will trigger the read_all_remote_feat_complete callback
+ *  when the procedure is completed.
+ *
+ *  @kconfig_dep{CONFIG_BT_LE_EXTENDED_FEAT_SET}
+ *
+ *  @param conn @ref BT_CONN_TYPE_LE connection object.
+ *  @param pages_requested Number of feature pages to be requested from peer.
+ *                         There is a maximum of 10 pages.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection.
+ */
+int bt_conn_le_read_all_remote_features(struct bt_conn *conn, uint8_t pages_requested);
+
+/** @brief Update frame space.
+ *
+ *  Request a change to the frame space parameters of a connection.
+ *  This function will trigger the frame_space_updated callback when the
+ *  procedure is completed.
+ *
+ *  @kconfig_dep{CONFIG_BT_FRAME_SPACE_UPDATE}.
+ *
+ *  @param conn   @ref BT_CONN_TYPE_LE connection object.
+ *  @param params Frame Space Update parameters.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection.
+ */
+int bt_conn_le_frame_space_update(struct bt_conn *conn,
+				  const struct bt_conn_le_frame_space_update_param *params);
+
 /** @brief Update the connection parameters.
  *
  *  If the local device is in the peripheral role then updating the connection
@@ -1225,6 +1361,20 @@ int bt_conn_le_data_len_update(struct bt_conn *conn,
  */
 int bt_conn_le_phy_update(struct bt_conn *conn,
 			  const struct bt_conn_le_phy_param *param);
+
+/** @brief Update the default PHY parameters to be used for all subsequent
+ * connections over the LE transport.
+ *
+ *  Update the preferred transmit and receive PHYs of LE transport.
+ *  Use @ref BT_GAP_LE_PHY_NONE to indicate no preference.
+ *  For possible PHY values see @ref bt_gap_le_phy.
+ *
+ *  @param pref_tx_phy  Preferred transmitter phy prarameters.
+ *  @param pref_rx_phy  Preferred receiver phy prameters.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ */
+int bt_conn_le_set_default_phy(uint8_t pref_tx_phy, uint8_t pref_rx_phy);
 
 /** @brief Disconnect from a remote device or cancel pending connection.
  *
@@ -1877,6 +2027,45 @@ struct bt_conn_cb {
 				const struct bt_conn_le_subrate_changed *params);
 #endif /* CONFIG_BT_SUBRATING */
 
+#if defined(CONFIG_BT_LE_EXTENDED_FEAT_SET)
+	/** @brief Read all remote features complete event.
+	 *
+	 *  This callback notifies the application that a 'read all remote
+	 *  features' procedure of the connection is completed. The other params
+	 *  will not be populated if status is not @ref BT_HCI_ERR_SUCCESS.
+	 *
+	 *  This callback can be triggered by calling @ref
+	 *  bt_conn_le_read_all_remote_features or by the procedure running
+	 *  autonomously in the controller.
+	 *
+	 *  @param conn   Connection object.
+	 *  @param params Remote features.
+	 */
+	void (*read_all_remote_feat_complete)(
+		struct bt_conn *conn,
+		const struct bt_conn_le_read_all_remote_feat_complete *params);
+#endif /* CONFIG_BT_LE_EXTENDED_FEAT_SET */
+
+#if defined(CONFIG_BT_FRAME_SPACE_UPDATE)
+	/** @brief Frame Space Update Complete event.
+	 *
+	 *  This callback notifies the application that the frame space of
+	 *  the connection may have changed.
+	 *  The frame space update parameters will be invalid
+	 *  if status is not @ref BT_HCI_ERR_SUCCESS.
+	 *
+	 *  This callback can be triggered by calling @ref
+	 *  bt_conn_le_frame_space_update, by the procedure running
+	 *  autonomously in the controller or by the peer.
+	 *
+	 *  @param conn   Connection object.
+	 *  @param params New frame space update parameters.
+	 */
+	void (*frame_space_updated)(
+		struct bt_conn *conn,
+		const struct bt_conn_le_frame_space_updated *params);
+#endif /* CONFIG_BT_FRAME_SPACE_UPDATE */
+
 #if defined(CONFIG_BT_CHANNEL_SOUNDING)
 	/** @brief LE CS Read Remote Supported Capabilities Complete event.
 	 *
@@ -1975,8 +2164,21 @@ struct bt_conn_cb {
 
 #endif
 
+#if defined(CONFIG_BT_CLASSIC)
+	/** @brief The role of the connection has changed.
+	 *
+	 *  This callback notifies the application that the role switch procedure has completed.
+	 *
+	 *  @param conn Connection object.
+	 *  @param status HCI status of role change event.
+	 */
+	void (*role_changed)(struct bt_conn *conn, uint8_t status);
+#endif
+
+#if defined(CONFIG_BT_CONN_DYNAMIC_CALLBACKS)
 	/** @internal Internally used field for list handling */
 	sys_snode_t _node;
+#endif
 };
 
 /** @brief Register connection callbacks.
@@ -2676,6 +2878,29 @@ struct bt_conn *bt_conn_lookup_addr_br(const bt_addr_t *peer);
  *  @return Destination address if @p conn is a valid @ref BT_CONN_TYPE_BR connection
  */
 const bt_addr_t *bt_conn_get_dst_br(const struct bt_conn *conn);
+
+/** @brief Change the role of the conn.
+ *
+ *  @param conn Connection object.
+ *  @param role The role that want to switch as, the value is @ref BT_HCI_ROLE_CENTRAL and
+ *              @ref BT_HCI_ROLE_PERIPHERAL from hci_types.h.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ *  @return -ENOBUFS HCI command buffer is not available.
+ *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_BR connection
+ */
+int bt_conn_br_switch_role(const struct bt_conn *conn, uint8_t role);
+
+/** @brief Enable/disable role switch of the connection by setting the connection's link policy.
+ *
+ *  @param conn Connection object.
+ *  @param enable Value enable/disable role switch of controller.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ *  @return -ENOBUFS HCI command buffer is not available.
+ *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_BR connection.
+ */
+int bt_conn_br_set_role_switch_enable(const struct bt_conn *conn, bool enable);
 
 #ifdef __cplusplus
 }

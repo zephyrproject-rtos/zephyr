@@ -34,7 +34,7 @@
 #define CONF_STATUS0_SUPPORTS_DDR         BIT(5)
 #define CONF_STATUS0_SEC_MASTER           BIT(4)
 /* And it was replaced with a Dev Role mask */
-#define CONF_STATUS0_DEV_ROLE(x)          ((x) & GENMASK(5, 4) >> 4)
+#define CONF_STATUS0_DEV_ROLE(x)          (((x) & GENMASK(5, 4)) >> 4)
 #define CONF_STATUS0_DEV_ROLE_MAIN_MASTER 0
 #define CONF_STATUS0_DEV_ROLE_SEC_MASTER  1
 #define CONF_STATUS0_DEV_ROLE_SLAVE       2
@@ -3727,7 +3727,9 @@ static int cdns_i3c_bus_init(const struct device *dev)
 		/* Sleep to wait for bus idle. */
 		k_busy_wait(201);
 		/* Perform bus initialization */
-		ret = i3c_bus_init(dev, &config->common.dev_list);
+		if (config->common.dev_list.num_i3c > 0) {
+			ret = i3c_bus_init(dev, &config->common.dev_list);
+		}
 #ifdef CONFIG_I3C_USE_IBI
 		/* Bus Initialization Complete, allow HJ ACKs */
 		sys_write32(CTRL_HJ_ACK | sys_read32(config->base + CTRL), config->base + CTRL);

@@ -20,6 +20,19 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #define STACK_SIZE 1024
 #define THREAD_PRIORITY K_PRIO_COOP(8)
 
+/* Use a base value for socket options that are not implemented.
+ * This is used to check if the socket option is implemented or not.
+ */
+#define NOT_IMPLEMENTED_SOCKET_OPTION_BASE (INT32_MAX - 1000)
+
+#if !defined(SO_NET_MGMT_ETHERNET_GET_PRIORITY_QUEUES_NUM)
+#define SO_NET_MGMT_ETHERNET_GET_PRIORITY_QUEUES_NUM (NOT_IMPLEMENTED_SOCKET_OPTION_BASE + 1)
+#endif /* !defined(SO_NET_MGMT_ETHERNET_GET_PRIORITY_QUEUES_NUM) */
+
+#if !defined(SO_NET_MGMT_ETHERNET_SET_MAC_ADDRESS)
+#define SO_NET_MGMT_ETHERNET_SET_MAC_ADDRESS (NOT_IMPLEMENTED_SOCKET_OPTION_BASE + 2)
+#endif /* !defined(SO_NET_MGMT_ETHERNET_SET_MAC_ADDRESS) */
+
 static struct net_if *default_iface;
 
 static ZTEST_BMEM int fd;
@@ -74,6 +87,7 @@ static int eth_fake_send(const struct device *dev,
 
 static int eth_fake_get_total_bandwidth(struct eth_fake_context *ctx)
 {
+	ARG_UNUSED(ctx);
 	return 100 * 1000 * 1000 / 8;
 }
 
@@ -208,6 +222,7 @@ static int eth_fake_get_config(const struct device *dev,
 
 static enum ethernet_hw_caps eth_fake_get_capabilities(const struct device *dev)
 {
+	ARG_UNUSED(dev);
 	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE | ETHERNET_QAV |
 	       ETHERNET_PROMISC_MODE | ETHERNET_PRIORITY_QUEUES;
 }
@@ -250,8 +265,12 @@ ETH_NET_DEVICE_INIT(eth_fake, "eth_fake", eth_fake_init, NULL,
 		    &eth_fake_api_funcs, NET_ETH_MTU);
 
 /* A test thread that spits out events that we can catch and show to user */
-static void trigger_events(void)
+static void trigger_events(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	int operation = 0;
 	struct net_if_addr *ifaddr_v6, *ifaddr_v4;
 	struct net_if *iface;
@@ -483,7 +502,7 @@ static void test_ethernet_set_qav(void)
 	params.qav_param.enabled = true;
 
 	ret = zsock_setsockopt(fd, SOL_NET_MGMT_RAW,
-			       NET_REQUEST_ETHERNET_SET_QAV_PARAM,
+			       SO_NET_MGMT_ETHERNET_SET_QAV_PARAM,
 			       &params, sizeof(params));
 	zassert_equal(ret, 0, "Cannot set Qav parameters");
 }
@@ -510,7 +529,7 @@ static void test_ethernet_get_qav(void)
 	params.qav_param.type = ETHERNET_QAV_PARAM_TYPE_STATUS;
 
 	ret = zsock_getsockopt(fd, SOL_NET_MGMT_RAW,
-			       NET_REQUEST_ETHERNET_GET_QAV_PARAM,
+			       SO_NET_MGMT_ETHERNET_GET_QAV_PARAM,
 			       &params, &optlen);
 	zassert_equal(ret, 0, "Cannot get Qav parameters (%d)", ret);
 	zassert_equal(optlen, sizeof(params), "Invalid optlen (%d)", optlen);
@@ -537,7 +556,7 @@ static void test_ethernet_get_unknown_option(void)
 	memset(&params, 0, sizeof(params));
 
 	ret = zsock_getsockopt(fd, SOL_NET_MGMT_RAW,
-			       NET_REQUEST_ETHERNET_GET_PRIORITY_QUEUES_NUM,
+			       SO_NET_MGMT_ETHERNET_GET_PRIORITY_QUEUES_NUM,
 			       &params, &optlen);
 	zassert_equal(ret, -1, "Could get prio queue parameters (%d)", errno);
 	zassert_equal(errno, EINVAL, "prio queue get parameters");
@@ -562,7 +581,7 @@ static void test_ethernet_set_unknown_option(void)
 	memset(&params, 0, sizeof(params));
 
 	ret = zsock_setsockopt(fd, SOL_NET_MGMT_RAW,
-			       NET_REQUEST_ETHERNET_SET_MAC_ADDRESS,
+			       SO_NET_MGMT_ETHERNET_SET_MAC_ADDRESS,
 			       &params, optlen);
 	zassert_equal(ret, -1, "Could set promisc_mode parameters (%d)", errno);
 	zassert_equal(errno, EINVAL, "promisc_mode set parameters");

@@ -1,0 +1,36 @@
+# Copyright (c) 2025 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Generic fixed-rate clock provider
+
+compatible: "infineon,fixed-factor-clock"
+
+include: [base.yaml, clock-controller.yaml]
+
+properties:
+  clocks:
+    type: phandle-array
+    description: input clock source
+
+  clock-block:
+    type: int
+    description: Clock HW block number (refer to ifx_cat1_clock_block in clock_control_ifx_cat1.h)
+    required: true
+
+  clock-instance:
+    type: int
+    description: TEMP
+    required: true
+
+  clock-divider:
+    type: int
+    description: TEMP
+
+  source-path:
+    type: int
+    description: TEMP
+
+  "#clock-cells":
+    const: 0

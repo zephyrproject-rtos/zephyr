@@ -3,6 +3,9 @@
 # Copyright (c) 2021 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+config HW_STACK_PROTECTION
+	default ARCH_HAS_STACK_PROTECTION
+
 if BOARD_THINGY53_NRF5340_CPUAPP || BOARD_THINGY53_NRF5340_CPUAPP_NS
 
 # Code Partition:

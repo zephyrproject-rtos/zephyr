@@ -1,0 +1,121 @@
+/*
+ * Copyright (c) 2025 Ishraq Ibne Ashraf <ishraq.i.ashraf@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_k32l2b3.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+#include "frdm_k32l2b3-pinctrl.dtsi"
+
+/ {
+	model = "NXP FRDM-K32L2B3 board";
+	compatible = "nxp,k32l2b3", "nxp,k32lx";
+
+	aliases {
+		led0 = &led_green;
+		led1 = &led_red;
+		sw0 = &sw_1;
+		sw1 = &sw_3;
+		magn0 = &fxos8700;
+		accel0 = &fxos8700;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &lpuart0;
+		zephyr,shell-uart = &lpuart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_green: led_1 {
+			label = "Green LED";
+			gpios = <&gpiod 5 GPIO_ACTIVE_LOW>;
+		};
+
+		led_red: led_2 {
+			label = "Red LED";
+			gpios = <&gpioe 31 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		sw_1: button_1 {
+			label = "User Button 1 (SW1)";
+			zephyr,code = <INPUT_KEY_0>;
+			gpios = <&gpioa 4 GPIO_ACTIVE_LOW>;
+		};
+
+		sw_3: button_2 {
+			label = "User Button 2 (SW3)";
+			zephyr,code = <INPUT_KEY_1>;
+			gpios = <&gpioc 3 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <48000000>;
+};
+
+&sim {
+	er32k-select = <KINETIS_SIM_ER32KSEL_OSC32KCLK>;
+	pllfll-select = <KINETIS_SIM_PLLFLLSEL_MCGPLLCLK>;
+};
+
+&osc {
+	mode = "low-power";
+	clock-frequency = <32768>;
+};
+
+&ftfa {
+	status = "okay";
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&gpioe {
+	status = "okay";
+};
+
+&lpuart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&lpuart0_default>;
+	pinctrl-names = "default";
+};
+
+&i2c0 {
+	status = "okay";
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+
+	fxos8700: fxos8700@1c {
+		compatible = "nxp,fxos8700";
+		reg = <0x1c>;
+		int1-gpios = <&gpiod 1 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpioe 1 GPIO_ACTIVE_HIGH>;
+	};
+};

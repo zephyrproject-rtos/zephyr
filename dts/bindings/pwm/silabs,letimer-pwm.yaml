@@ -1,0 +1,22 @@
+title: Silicon Labs LETIMER (Low Energy Timer) PWM (Pulse Width Modulation)
+
+description: |
+  PWM controller using the LETIMER peripheral on Silicon Labs Series 2 SoCs.
+
+  The LETIMER can output PWM signals up to 16 kHz. It does not support input capture.
+
+compatible: "silabs,letimer-pwm"
+
+include: [pwm-controller.yaml, pinctrl-device.yaml, base.yaml]
+
+properties:
+  pinctrl-0:
+    required: true
+
+  "#pwm-cells":
+    const: 3
+
+pwm-cells:
+  - channel
+  - period
+  - flags

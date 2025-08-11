@@ -15,6 +15,7 @@ supported:
   - entropy
   - gpio
   - flash
+  - pwm
   - spi
   - uart
   - watchdog

@@ -34,6 +34,7 @@
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/crypto.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/classic/classic.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/slist.h>
@@ -71,11 +72,17 @@ extern "C" {
 #define BT_ID_DEFAULT 0
 
 /**
- * @brief Number of octets for local supported
+ * @brief Number of octets for local supported features
  *
- * The value of 8 correspond to page 0 in the LE Controller supported features
+ * The value of 8 correspond to page 0 in the LE Controller supported features.
+ * 24 bytes are required for all subsequent supported feature pages.
  */
-#define BT_LE_LOCAL_SUPPORTED_FEATURES_SIZE 8
+#define BT_LE_LOCAL_SUPPORTED_FEATURES_SIZE                         \
+	(BT_HCI_LE_BYTES_PAGE_0_FEATURE_PAGE +                      \
+	 COND_CODE_1(CONFIG_BT_LE_MAX_LOCAL_SUPPORTED_FEATURE_PAGE, \
+		(CONFIG_BT_LE_MAX_LOCAL_SUPPORTED_FEATURE_PAGE      \
+			* BT_HCI_LE_BYTES_PER_FEATURE_PAGE),        \
+		(0U)))
 
 /** Opaque type representing an advertiser. */
 struct bt_le_ext_adv;
@@ -1714,6 +1721,27 @@ int bt_le_ext_adv_delete(struct bt_le_ext_adv *adv);
  */
 uint8_t bt_le_ext_adv_get_index(struct bt_le_ext_adv *adv);
 
+/** Advertising states. */
+enum bt_le_ext_adv_state {
+	/** The advertising set has been created but not enabled. */
+	BT_LE_EXT_ADV_STATE_DISABLED,
+
+	/** The advertising set is enabled. */
+	BT_LE_EXT_ADV_STATE_ENABLED,
+};
+
+/** Periodic Advertising states. */
+enum bt_le_per_adv_state {
+	/** Not configured for periodic advertising. */
+	BT_LE_PER_ADV_STATE_NONE,
+
+	/** The advertising set has been configured for periodic advertising, but is not enabled. */
+	BT_LE_PER_ADV_STATE_DISABLED,
+
+	/** Periodic advertising is enabled. */
+	BT_LE_PER_ADV_STATE_ENABLED,
+};
+
 /** @brief Advertising set info structure. */
 struct bt_le_ext_adv_info {
 	/** Local identity handle. */
@@ -1724,15 +1752,22 @@ struct bt_le_ext_adv_info {
 
 	/** Current local advertising address used. */
 	const bt_addr_le_t         *addr;
+
+	/** Extended advertising state. */
+	enum bt_le_ext_adv_state ext_adv_state;
+
+	/** Periodic advertising state. */
+	enum bt_le_per_adv_state per_adv_state;
 };
 
 /**
  * @brief Get advertising set info
  *
  * @param adv Advertising set object
- * @param info Advertising set info object
+ * @param info Advertising set info object. The values in this object are only valid on success.
  *
- * @return Zero on success or (negative) error code on failure.
+ * @retval 0 Success.
+ * @retval -EINVAL @p adv is not valid advertising set or @p info is NULL.
  */
 int bt_le_ext_adv_get_info(const struct bt_le_ext_adv *adv,
 			   struct bt_le_ext_adv_info *info);

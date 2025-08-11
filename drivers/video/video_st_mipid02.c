@@ -189,7 +189,7 @@ static int mipid02_get_fmt(const struct device *dev, struct video_format *fmt)
 		}
 
 		desc = mipid02_get_format_desc(fmt->pixelformat);
-		if (desc) {
+		if (desc == NULL) {
 			LOG_ERR("Sensor format not supported by the ST-MIPID02");
 			return -EIO;
 		}

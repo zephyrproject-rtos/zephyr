@@ -824,6 +824,7 @@ static int cmd_net_link_speed(const struct shell *sh, size_t argc, char *argv[])
 	uint16_t user_input_spd;
 	struct net_if *iface;
 	uint16_t speed = 0U;
+	uint16_t flags = 0U;
 	int ret;
 
 	if (argc < 3) {
@@ -854,6 +855,10 @@ static int cmd_net_link_speed(const struct shell *sh, size_t argc, char *argv[])
 		user_input_spd = shell_strtoul(argv[k], 10, &ret);
 		switch (user_input_spd) {
 		case 0:
+			if (strcmp(argv[k], "no-autoneg") == 0) {
+				flags |= PHY_FLAG_AUTO_NEGOTIATION_DISABLED;
+				continue;
+			}
 			break;
 		case 10:
 			speed |= half_duplex ? LINK_HALF_10BASE : LINK_FULL_10BASE;
@@ -885,7 +890,7 @@ static int cmd_net_link_speed(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (speed != 0U) {
-		return phy_configure_link(phy_dev, speed);
+		return phy_configure_link(phy_dev, speed, flags);
 	}
 	PR_WARNING("No speed specified\n");
 	return -ENOEXEC;

@@ -9,6 +9,7 @@ menuconfig BMM350
 	default y
 	depends on DT_HAS_BOSCH_BMM350_ENABLED
 	select I2C
+	select I2C_RTIO
 	help
 	  Enable driver for BMM350 I2C-based Geomagnetic sensor.
 
@@ -18,5 +19,13 @@ module = BMM350
 thread_priority = 10
 thread_stack_size = 1024
 source "drivers/sensor/Kconfig.trigger_template"
+
+config BMM350_STREAM
+	bool "Streaming mode"
+	default y
+	depends on SENSOR_ASYNC_API
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_BOSCH_BMM350),drdy-gpios)
+	depends on !BMM350_TRIGGER
 
 endif # BMM350

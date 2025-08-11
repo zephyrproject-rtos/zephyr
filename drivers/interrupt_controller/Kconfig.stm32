@@ -1,16 +1,24 @@
 # STM32 EXTI configuration
 
 # Copyright (c) 2016 Open-RnD Sp. z o.o.
+# Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_FAMILY_STM32
 
 config EXTI_STM32
-	bool "External Interrupt/Event Controller (EXTI) Driver for STM32 family of MCUs"
+	bool "STM32 External Interrupt/Event Controller (EXTI) Driver"
 	default y
 	depends on DT_HAS_ST_STM32_EXTI_ENABLED
 	help
-	  Enable EXTI driver for STM32 line of MCUs
+	  Enable STM32 EXTI driver
+
+config GPIO_INTC_STM32
+	bool "STM32 GPIO Interrupt/Event Controller (EXTI) Driver"
+	default y
+	depends on EXTI_STM32
+	help
+	  Enable STM32 GPIO interrupt controller driver
 
 config GPIO_INTC_STM32WB0
 	bool "GPIO Interrupt Controller Driver for STM32WB0 series"

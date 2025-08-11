@@ -107,6 +107,8 @@ config X86
 config RISCV
 	bool
 	select ARCH_IS_SET
+	select ATOMIC_OPERATIONS_C if !RISCV_ISA_EXT_A
+	select ATOMIC_OPERATIONS_BUILTIN if RISCV_ISA_EXT_A
 	select ARCH_SUPPORTS_COREDUMP
 	select ARCH_SUPPORTS_COREDUMP_PRIV_STACKS
 	select ARCH_SUPPORTS_ROM_START if !SOC_FAMILY_ESPRESSIF_ESP32
@@ -470,6 +472,7 @@ config ISR_TABLES_LOCAL_DECLARATION
 
 config DYNAMIC_INTERRUPTS
 	bool "Installation of IRQs at runtime"
+	select SRAM_SW_ISR_TABLE
 	help
 	  Enable installation of interrupts at runtime, which will move some
 	  interrupt-related data structures to RAM instead of ROM, and
@@ -595,6 +598,12 @@ config SRAM_VECTOR_TABLE
 	help
 	  When XiP is enabled, this option will result in the vector table being
 	  relocated from Flash to SRAM.
+
+config SRAM_SW_ISR_TABLE
+	bool "Place the software ISR table in SRAM instead of flash"
+	help
+	  The option specifies that the software interrupts vector table will be
+	  placed inside SRAM instead of the flash.
 
 config IRQ_OFFLOAD_NESTED
 	bool "irq_offload() supports nested IRQs"
@@ -1179,3 +1188,9 @@ config ARCH_HAS_CUSTOM_CURRENT_IMPL
 	help
 	  Select when architecture implements arch_current_thread() &
 	  arch_current_thread_set().
+
+config ARCH_IPI_LAZY_COPROCESSORS_SAVE
+	bool
+	help
+	  Select when the architecture has multi-CPU lazy context switching
+	  of coprocessor registers.

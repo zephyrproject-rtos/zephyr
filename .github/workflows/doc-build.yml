@@ -15,8 +15,8 @@ permissions:
   contents: read
 
 env:
-  DOXYGEN_VERSION: 1.12.0
-  DOXYGEN_MD5SUM: fd96a5defa535dfe2e987b46540844a4
+  DOXYGEN_VERSION: 1.14.0
+  DOXYGEN_MD5SUM: e761a5097ae20ecccfd02041925f102a
   JOB_COUNT: 4
 
 jobs:

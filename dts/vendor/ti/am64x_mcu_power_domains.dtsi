@@ -1,0 +1,176 @@
+/*
+ * Copyright (c) 2025 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/ {
+	power-domains {
+		mcu_mcu_gpiomux_introuter0_pd:mcu_mcu_gpiomux_introuter0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <5>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		mcu_m4fss0_pd:mcu_m4fss0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <7>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		mcu_m4fss0_cbass_0_pd:mcu_m4fss0_cbass_0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <8>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		mcu_m4fss0_core0_pd:mcu_m4fss0_core0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <9>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		mcu_dcc0_pd:mcu_dcc0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <23>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		mcu_timer0_pd:mcu_timer0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <35>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		mcu_timer1_pd:mcu_timer1_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <48>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		mcu_timer2_pd:mcu_timer2_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <49>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		mcu_timer3_pd:mcu_timer3_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <50>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		mcu_esm0_pd:mcu_esm0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <64>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		mcu_gpio0_pd:mcu_gpio0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <79>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		mcu_mcrc64_0_pd:mcu_mcrc64_0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <100>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		mcu2main_vd_pd:mcu2main_vd_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <101>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		mcu_i2c0_pd:mcu_i2c0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <106>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		mcu_i2c1_pd:mcu_i2c1_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <107>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		mcu_rti0_pd:mcu_rti0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <132>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		mcu_psc0_pd:mcu_psc0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <140>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		mcu_mcspi0_pd:mcu_mcspi0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <147>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		mcu_mcspi1_pd:mcu_mcspi1_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <148>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		mcu_uart0_pd:mcu_uart0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <149>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		mcu_uart1_pd:mcu_uart1_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <160>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+	};
+};

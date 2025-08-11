@@ -28,6 +28,9 @@ function(zephyr_sdk_target_cmake)
   # temporarily had to use GNU objcopy instead
   find_program(CMAKE_OBJCOPY ${CROSS_COMPILE}objcopy PATHS ${ZEPHYR_SDK_INSTALL_DIR} NO_DEFAULT_PATH)
   message(STATUS "Found GNU objcopy helper for MWDT: ${CMAKE_OBJCOPY} (Zephyr SDK ${SDK_VERSION})")
+  # Needed for LLEXT
+  find_program(CMAKE_GNU_STRIP ${CROSS_COMPILE}strip PATHS ${ZEPHYR_SDK_INSTALL_DIR} NO_DEFAULT_PATH)
+  message(STATUS "Found GNU strip helper for MWDT: ${CMAKE_GNU_STRIP} (Zephyr SDK ${SDK_VERSION})")
 endfunction()
 
 zephyr_sdk_target_cmake()

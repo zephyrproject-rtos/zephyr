@@ -1,0 +1,53 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Demonstration of permitted and disallowed coding style for devicetree files.
+ */
+
+/* start-after-here */
+
+/dts-v1/;
+
+/ {
+	/* Node labels use the "_" separator, but node names use "-". */
+	psa_rng: psa-rng {
+		compatible = "zephyr,psa-crypto-rng";
+		status = "okay";
+	};
+
+	ramdisk0 {
+		compatible = "zephyr,ram-disk";
+		/* Property names use the "-" separator. */
+		disk-name = "RAM";
+		sector-size = <512>;
+		sector-count = <128>;
+	};
+
+	periph0 {
+		/* Wrap array values to conform with line lengths. Indent
+		 * continuation so that values align.
+		 */
+		pinctrl-0 = <&periph0_siga_px0_default &periph0_sigb_py7_default
+			     &periph0_sigc_pz1_default>;
+		pinctrl-names = "default";
+	};
+
+	mipi-dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+
+		lcd0: lcd@0 {
+			compatible = "sitronix,st7735r";
+			/* Split array values across multiple lines to help readability. */
+			gamctrp1 = [10 0E 02 03
+				    0E 07 02 07
+				    0A 12 27 37
+				    00 0D 0E 10];
+			gamctrn1 = [10 0E 03 03
+				    0F 06 02 08
+				    0A 13 26 36
+				    00 0D 0E 10];
+		};
+	};
+};

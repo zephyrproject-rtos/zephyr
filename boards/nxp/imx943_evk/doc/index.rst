@@ -62,6 +62,13 @@ Serial Port
 This board configuration uses a single serial communication channel with the
 CPU's UART1 for Cortex-A55, and UART8 for Cortex-M33.
 
+Ethernet
+--------
+
+NETC driver supports to manage the Physical Station Interface (PSI).
+The ENET0, ENETC1, ENETC2 ports could be enabled for M33 by west build option
+``-DEXTRA_DTC_OVERLAY_FILE=enetc.overlay``.
+
 Programming and Debugging (A55)
 *******************************
 
@@ -83,13 +90,9 @@ Setup
 
 The default runner for the board is JLink, connect the EVK board's JTAG connector to
 the host computer using a J-Link debugger, power up the board and stop the board at
-U-Boot command line, execute the following U-boot command to disable D-Cache:
+U-Boot command line.
 
-.. code-block:: console
-
-    dcache off
-
-then use "west flash" or "west debug" command to load the zephyr.bin
+Then use "west flash" or "west debug" command to load the zephyr.bin
 image from the host computer and start the Zephyr application on A55 core0.
 
 Flash and Run
@@ -168,7 +171,7 @@ Use the following command to boot Zephyr on the core0:
 
 .. code-block:: console
 
-    dcache off; icache flush; go 0xd0000000;
+    dcache flush; icache flush; go 0xd0000000;
 
 Then the following log could be found on UART1 console:
 

@@ -25,7 +25,7 @@ extern "C" {
  * @defgroup usbd_hid_device USBD HID device API
  * @ingroup usb
  * @since 3.7
- * @version 0.1.1
+ * @version 0.2.0
  * @{
  */
 

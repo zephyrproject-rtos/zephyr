@@ -27,11 +27,11 @@ static struct drv2605_rom_data rom_data = {
 	.sustain_pos_time = 0,
 	.trigger = DRV2605_MODE_INTERNAL_TRIGGER,
 	.seq_regs[0] = 1,
-	.seq_regs[1] = 10 | 0x80,
+	.seq_regs[1] = DRV2605_WAVEFORM_SEQUENCER_WAIT_MS(100),
 	.seq_regs[2] = 2,
-	.seq_regs[3] = 10 | 0x80,
+	.seq_regs[3] = DRV2605_WAVEFORM_SEQUENCER_WAIT_MS(100),
 	.seq_regs[4] = 3,
-	.seq_regs[5] = 10 | 0x80,
+	.seq_regs[5] = DRV2605_WAVEFORM_SEQUENCER_WAIT_MS(100),
 	.seq_regs[6] = 4,
 };
 

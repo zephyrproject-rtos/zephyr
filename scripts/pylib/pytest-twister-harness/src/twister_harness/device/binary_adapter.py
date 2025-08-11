@@ -81,7 +81,7 @@ class BinaryAdapterBase(DeviceAdapter, abc.ABC):
             return
         return_code: int | None = self._process.poll()
         if return_code is None:
-            terminate_process(self._process)
+            terminate_process(self._process, self.base_timeout)
             return_code = self._process.wait(self.base_timeout)
         self._process = None
         logger.debug('Running subprocess finished with return code %s', return_code)

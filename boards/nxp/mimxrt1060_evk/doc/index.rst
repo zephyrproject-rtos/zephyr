@@ -313,7 +313,7 @@ This board supports 3 debug host tools. Please install your preferred host
 tool, then follow the instructions in `Configuring a Debug Probe`_ to
 configure the board appropriately.
 
-* :ref:`jlink-debug-host-tools` (Default, Supported by NXP)
+* :ref:`jlink-debug-host-tools` (Supported by NXP)
 * :ref:`linkserver-debug-host-tools` (Supported by NXP)
 * :ref:`pyocd-debug-host-tools` (Not Supported by NXP)
 

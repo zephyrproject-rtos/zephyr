@@ -222,6 +222,7 @@ Artificially long but functional example:
                         help="""Flash device before attaching to serial port.
                         This is useful for devices that share the same port for programming
                         and serial console, or use soft-USB, where flash must come first.
+                        Also, it skips reading remaining logs from the old image run.
                         """)
 
     test_or_build.add_argument(
@@ -251,6 +252,12 @@ Artificially long but functional example:
         help="""Globally adjust tests timeouts by specified multiplier. The resulting test
         timeout would be multiplication of test timeout value, board-level timeout multiplier
         and global timeout multiplier (this parameter)""")
+
+    parser.add_argument(
+        "--test-pattern", action="append",
+        help="""Run only the tests matching the specified pattern. The pattern
+        can include regular expressions.
+        """)
 
     test_xor_subtest.add_argument(
         "-s", "--test", "--scenario", action="append", type = norm_path,
@@ -617,8 +624,8 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
              "and 'sleep.usleep' test Case (where 'sleep' is its Ztest suite name "
              "and 'usleep' is Ztest test name.")
 
-    # Include paths in names by default.
-    parser.set_defaults(detailed_test_id=True)
+    # Do not include paths in names by default.
+    parser.set_defaults(detailed_test_id=False)
 
     parser.add_argument(
         "--detailed-skipped-report", action="store_true",
@@ -671,6 +678,14 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
              "specified. If this option is not used, then platforms marked "
              "as default in the platform metadata file will be chosen "
              "to build and test. ")
+    parser.add_argument(
+        "--platform-pattern", action="append", default=[],
+        help="""Platform regular expression filter for testing. This option may be used multiple
+        times. Test suites will only be built/run on the platforms
+        matching the specified patterns. If this option is not used, then platforms marked
+        as default in the platform metadata file will be chosen
+        to build and test.
+        """)
 
     parser.add_argument(
         "--platform-reports", action="store_true",
@@ -969,10 +984,6 @@ def parse_arguments(
 
     if options.flash_before and options.device_flash_with_test:
         logger.error("--device-flash-with-test does not apply when --flash-before is used")
-        sys.exit(1)
-
-    if options.flash_before and options.device_serial_pty:
-        logger.error("--device-serial-pty cannot be used when --flash-before is set (for now)")
         sys.exit(1)
 
     if options.shuffle_tests and options.subset is None:

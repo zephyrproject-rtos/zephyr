@@ -2793,6 +2793,55 @@ static void le_set_phy(struct net_buf *buf, struct net_buf **evt)
 	*evt = cmd_status(status);
 }
 #endif /* CONFIG_BT_CTLR_PHY */
+
+
+#if defined(CONFIG_BT_CTLR_LE_PATH_LOSS_MONITORING)
+
+#define PATH_LOSS_FACTOR_INVALID 0xFF
+static void le_path_loss_set_parameters(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_set_path_loss_reporting_parameters *cmd = (void *)buf->data;
+	struct bt_hci_rp_le_set_path_loss_reporting_parameters *rp;
+
+	uint16_t handle = sys_le16_to_cpu(cmd->handle);
+	uint16_t min_time_spent = sys_le16_to_cpu(cmd->min_time_spent);
+
+	rp = hci_cmd_complete(evt, sizeof(*rp));
+	rp->handle = handle;
+
+	if (cmd->high_threshold + cmd->high_hysteresis > PATH_LOSS_FACTOR_INVALID ||
+	    cmd->low_threshold < cmd->low_hysteresis                              ||
+	    cmd->low_threshold > cmd->high_threshold                              ||
+	    cmd->low_threshold + cmd->low_hysteresis > cmd->high_threshold - cmd->high_hysteresis) {
+		rp->status = BT_HCI_ERR_INVALID_PARAM;
+		return;
+	}
+
+	rp->status = ll_conn_set_path_loss_parameters(handle, cmd->high_threshold,
+						      cmd->high_hysteresis, cmd->low_threshold,
+						      cmd->low_hysteresis, min_time_spent);
+}
+
+#define PATH_LOSS_ENABLED 0x01
+#define PATH_LOSS_DISABLED 0x00
+static void le_path_loss_enable(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_set_path_loss_reporting_enable *cmd = (void *)buf->data;
+	struct bt_hci_rp_le_set_path_loss_reporting_enable *rp;
+
+	uint16_t handle = sys_le16_to_cpu(cmd->handle);
+
+	rp = hci_cmd_complete(evt, sizeof(*rp));
+	rp->handle = handle;
+
+	if (cmd->enable != PATH_LOSS_ENABLED &&
+	    cmd->enable != PATH_LOSS_DISABLED) {
+		rp->status = BT_HCI_ERR_INVALID_PARAM;
+	}
+
+	rp->status = ll_conn_set_path_loss_reporting(handle, cmd->enable);
+}
+#endif /* CONFIG_BT_CTLR_LE_PATH_LOSS_MONITORING */
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
@@ -4767,6 +4816,17 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 		le_set_phy(cmd, evt);
 		break;
 #endif /* CONFIG_BT_CTLR_PHY */
+
+#if defined(CONFIG_BT_CTLR_LE_PATH_LOSS_MONITORING)
+	case BT_OCF(BT_HCI_OP_LE_SET_PATH_LOSS_REPORTING_PARAMETERS):
+		le_path_loss_set_parameters(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_LE_SET_PATH_LOSS_REPORTING_ENABLE):
+		le_path_loss_enable(cmd, evt);
+		break;
+
+#endif /* CONFIG_BT_CTLR_LE_PATH_LOSS_MONITORING */
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
@@ -8645,6 +8705,28 @@ static void le_req_peer_sca_complete(struct pdu_data *pdu, uint16_t handle,
 	sep->sca = scau->sca;
 }
 #endif /* CONFIG_BT_CTLR_SCA_UPDATE */
+#if defined(CONFIG_BT_CTLR_LE_PATH_LOSS_MONITORING)
+static void le_path_loss_threshold(struct pdu_data *pdu,
+				   uint16_t handle,
+				   struct net_buf *buf)
+{
+	struct bt_hci_evt_le_path_loss_threshold *sep;
+	struct node_rx_path_loss *pl_pdu;
+
+	pl_pdu = (void *)pdu;
+
+	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_PATH_LOSS_THRESHOLD)) {
+		return;
+	}
+
+	sep = meta_evt(buf, BT_HCI_EVT_LE_PATH_LOSS_THRESHOLD, sizeof(*sep));
+
+	sep->handle = sys_cpu_to_le16(handle);
+	sep->current_path_loss = pl_pdu->current_path_loss;
+	sep->zone_entered      = pl_pdu->zone_entered;
+}
+#endif /* CONFIG_BT_CTLR_LE_PATH_LOSS_MONITORING */
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
@@ -8847,6 +8929,12 @@ static void encode_control(struct node_rx_pdu *node_rx,
 #endif /* CONFIG_BT_CTLR_DF_VS_CONN_IQ_REPORT_16_BITS_IQ_SAMPLES */
 		return;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
+
+#if defined(CONFIG_BT_CTLR_LE_PATH_LOSS_MONITORING)
+	case NODE_RX_TYPE_PATH_LOSS:
+		le_path_loss_threshold(pdu_data, handle, buf);
+		return;
+#endif /* CONFIG_BT_CTLR_LE_PATH_LOSS_MONITORING */
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_CTLR_ADV_INDICATION)
@@ -9332,6 +9420,10 @@ uint8_t hci_get_class(struct node_rx_pdu *node_rx)
 #endif /* CONFIG_BT_CTLR_PHY */
 
 			return HCI_CLASS_EVT_CONNECTION;
+#if defined(CONFIG_BT_CTLR_LE_PATH_LOSS_MONITORING)
+		case NODE_RX_TYPE_PATH_LOSS:
+			return HCI_CLASS_EVT_REQUIRED;
+#endif /* CONFIG_BT_CTLR_LE_PATH_LOSS_MONITORING */
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_CTLR_SYNC_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)

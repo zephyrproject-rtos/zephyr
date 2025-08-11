@@ -11,8 +11,6 @@
 
 #include <esp_attr.h>
 
-#define WAKEUP_TIME_SEC		(5)
-
 #ifdef CONFIG_EXAMPLE_EXT1_WAKEUP
 #define EXT_WAKEUP_PIN_1	(2)
 #define EXT_WAKEUP_PIN_2	(4)
@@ -76,7 +74,7 @@ int main(void)
 
 	k_busy_wait(1000000);
 
-	const int wakeup_time_sec = WAKEUP_TIME_SEC;
+	const int wakeup_time_sec = CONFIG_EXAMPLE_WAKEUP_TIME_SEC;
 
 	printk("Enabling timer wakeup, %ds\n", wakeup_time_sec);
 	esp_sleep_enable_timer_wakeup(wakeup_time_sec * 1000000);

@@ -6,7 +6,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/drivers/mm/system_mm.h>
 
-ZTEST(sys_mm_drv_api, test_query_memory_region_sanity)
+ZTEST(sys_mm_drv_api, test_query_memory_region_coherence)
 {
 	const struct sys_mm_drv_region *regions, *region;
 

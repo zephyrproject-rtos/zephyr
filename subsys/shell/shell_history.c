@@ -42,7 +42,7 @@ struct shell_history_item {
 	sys_dnode_t dnode;
 	uint16_t len;
 	uint16_t padding;
-	char data[0];
+	char data[];
 };
 
 void z_shell_history_mode_exit(struct shell_history *history)

@@ -63,7 +63,7 @@ level to the Zephyr GitHub repository.
 
 You may nominate yourself, or another GitHub user, for promotion to the Triage
 permission level by creating a GitHub issue, using the :github:`nomination
-template <new?assignees=&labels=Role+Nomination&template=006_nomination.md&title=>`.
+template <new?assignees=&labels=Role+Nomination&template=006_nomination.yml>`.
 
 Contributors granted the Triage permission level are permitted to add reviewers
 to a pull request and can be added as a reviewer by other GitHub users.
@@ -137,7 +137,9 @@ in addition to those listed for Contributors and Collaborators:
   the TSC
 * Responsibility to ensure all contributions of the project have been reviewed
   within reasonable time.
-* Responsibility to enforce the code of conduct.
+* Responsibility to enforce the Code of Conduct. As leaders in the community,
+  maintainers are expected to be role models in upholding the project's code
+  of conduct and creating a welcoming and inclusive environment for everyone.
 * Responsibility to triage static analysis issues in their code area.
   See :ref:`static_analysis`.
 

@@ -17,7 +17,19 @@ static int32_t st_lis2duxs12_set_odr_raw(const struct device *dev, uint8_t odr)
 	struct lis2dux12_data *data = dev->data;
 	const struct lis2dux12_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
-	lis2duxs12_md_t mode = {.odr = odr, .fs = data->range};
+	lis2duxs12_md_t mode;
+
+	/* handle high performance mode */
+	if (cfg->pm == LIS2DUX12_OPER_MODE_HIGH_PERFORMANCE) {
+		if (odr < LIS2DUX12_DT_ODR_6Hz) {
+			odr = LIS2DUX12_DT_ODR_6Hz;
+		}
+
+		odr |= 0x10;
+	}
+
+	mode.odr = odr;
+	mode.fs = data->range;
 
 	data->odr = odr;
 	return lis2duxs12_mode_set(ctx, &mode);
@@ -151,11 +163,11 @@ static void st_lis2duxs12_stream_config_fifo(const struct device *dev,
 	const struct lis2dux12_config *config = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&config->ctx;
 	lis2duxs12_pin_int_route_t pin_int = { 0 };
-	lis2duxs12_fifo_mode_t fifo_mode;
+	lis2duxs12_fifo_mode_t fifo_mode = { 0 };
 
 	/* disable FIFO as first thing */
 	fifo_mode.store = LIS2DUXS12_FIFO_1X;
-	fifo_mode.xl_only = 1;
+	fifo_mode.xl_only = 0;
 	fifo_mode.watermark = 0;
 	fifo_mode.operation = LIS2DUXS12_BYPASS_MODE;
 	fifo_mode.batch.dec_ts = LIS2DUXS12_DEC_TS_OFF;
@@ -168,10 +180,38 @@ static void st_lis2duxs12_stream_config_fifo(const struct device *dev,
 		pin_int.fifo_th = (trig_cfg.int_fifo_th) ? PROPERTY_ENABLE : PROPERTY_DISABLE;
 		pin_int.fifo_full = (trig_cfg.int_fifo_full) ? PROPERTY_ENABLE : PROPERTY_DISABLE;
 
+		if (pin_int.fifo_th) {
+			fifo_mode.fifo_event = LIS2DUXS12_FIFO_EV_WTM;
+		} else if (pin_int.fifo_full) {
+			fifo_mode.fifo_event = LIS2DUXS12_FIFO_EV_FULL;
+		}
+
+		switch (config->fifo_mode_sel) {
+		case 0:
+			fifo_mode.store = LIS2DUXS12_FIFO_1X;
+			fifo_mode.xl_only = 0;
+			break;
+		case 1:
+			fifo_mode.store = LIS2DUXS12_FIFO_1X;
+			fifo_mode.xl_only = 1;
+			break;
+		case 2:
+			fifo_mode.store = LIS2DUXS12_FIFO_2X;
+			fifo_mode.xl_only = 1;
+			break;
+		}
+
 		fifo_mode.operation = LIS2DUXS12_STREAM_MODE;
 		fifo_mode.batch.dec_ts = config->ts_batch;
 		fifo_mode.batch.bdr_xl = config->accel_batch;
 		fifo_mode.watermark = config->fifo_wtm;
+
+		/* In case each FIFO word contains 2x accelerometer samples,
+		 * then watermark can be divided by two to match user expectation.
+		 */
+		if (config->fifo_mode_sel == 2) {
+			fifo_mode.watermark /= 2;
+		}
 	}
 
 	/*

@@ -17,12 +17,13 @@
 #define ZEPHYR_INCLUDE_ARCH_RX_ARCH_H_
 
 /* Add include for DTS generated information */
-#include <zephyr/arch/rx/exception.h>
+#include <zephyr/arch/exception.h>
 #include <zephyr/devicetree.h>
 
 #include <zephyr/arch/rx/thread.h>
 #include <zephyr/arch/rx/misc.h>
 #include <zephyr/arch/rx/arch_inlines.h>
+#include <zephyr/arch/rx/error.h>
 #include <zephyr/arch/common/sys_bitops.h>
 #include <zephyr/arch/common/sys_io.h>
 #include <zephyr/arch/common/ffs.h>

@@ -19,7 +19,7 @@
 #define POWER_DOMAIN_STATE_ON  0x00000000
 #define POWER_DOMAIN_STATE_OFF 0x40000000
 
-void soc_late_init_hook(void)
+void soc_early_init_hook(void)
 {
 #ifdef CONFIG_CACHE_MANAGEMENT
 	sys_cache_data_enable();

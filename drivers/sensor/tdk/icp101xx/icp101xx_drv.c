@@ -225,7 +225,7 @@ static int icp101xx_init(const struct device *dev)
 		LOG_ERR("Soft reset error %d", rc);
 		return rc;
 	}
-	inv_icp101xx_init(&data->icp_device);
+	rc = inv_icp101xx_init(&data->icp_device);
 	if (rc != 0) {
 		LOG_ERR("Init error %d", rc);
 		return rc;

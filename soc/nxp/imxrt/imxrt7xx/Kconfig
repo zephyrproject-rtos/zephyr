@@ -46,7 +46,12 @@ config SOC_MIMXRT798S_HIFI4
 	select XTENSA_GEN_HANDLERS
 	select XTENSA_SMALL_VECTOR_TABLE_ENTRY
 	select GEN_ISR_TABLES
+	select CLOCK_CONTROL
+	select SOC_EARLY_INIT_HOOK
+	select NXP_INPUTMUX
 	select HAS_MCUX
+	select HAS_MCUX_SYSCON
+	select HAS_MCUX_FLEXCOMM
 
 config SOC_MIMXRT798S_HIFI1
 	select XTENSA
@@ -76,5 +81,16 @@ config MCUX_CORE_SUFFIX
 	default "_cm33_core1" if SOC_MIMXRT798S_CM33_CPU1
 	default "_hifi4" if SOC_MIMXRT798S_HIFI4
 	default "_hifi1" if SOC_MIMXRT798S_HIFI1
+
+if SOC_MIMXRT798S_HIFI4
+
+config RT798_HIFI4_STACK_SIZE
+	hex "Boot time stack size"
+	default 0x1000
+	help
+	  Stack space is reserved at the end of the data region, starting at
+	  (data base - RT798_HIFI4_STACK_SIZE).
+
+endif # SOC_MIMXRT798S_HIFI4
 
 endif # SOC_SERIES_IMXRT7XX

@@ -9,3 +9,6 @@ ram: 20
 flash: 224
 supported:
   - gpio
+  - i2c
+  - pwm
+  - uart

@@ -513,6 +513,9 @@ void sys_trace_thread_info(struct k_thread *thread);
 #define sys_port_trace_k_msgq_put_enter(msgq, timeout)
 #define sys_port_trace_k_msgq_put_blocking(msgq, timeout)
 #define sys_port_trace_k_msgq_put_exit(msgq, timeout, ret)
+#define sys_port_trace_k_msgq_put_front_enter(msgq, timeout)
+#define sys_port_trace_k_msgq_put_front_blocking(msgq, timeout)
+#define sys_port_trace_k_msgq_put_front_exit(msgq, timeout, ret)
 #define sys_port_trace_k_msgq_get_enter(msgq, timeout)
 #define sys_port_trace_k_msgq_get_blocking(msgq, timeout)
 #define sys_port_trace_k_msgq_get_exit(msgq, timeout, ret)
@@ -628,7 +631,7 @@ void sys_trace_thread_info(struct k_thread *thread);
 #define sys_port_trace_k_mem_slab_free_enter(slab)                                                 \
 	SEGGER_SYSVIEW_RecordU32(TID_MSLAB_FREE, (uint32_t)(uintptr_t)slab)
 
-#define sys_port_trace_k_mem_slab_free_exit(slab) SEGGER_SYSVIEW_RecordEndCall(TID_MSLAB_ALLOC)
+#define sys_port_trace_k_mem_slab_free_exit(slab) SEGGER_SYSVIEW_RecordEndCall(TID_MSLAB_FREE)
 
 #define sys_port_trace_k_timer_init(timer)                                                         \
 	SEGGER_SYSVIEW_RecordU32(TID_TIMER_INIT, (uint32_t)(uintptr_t)timer)

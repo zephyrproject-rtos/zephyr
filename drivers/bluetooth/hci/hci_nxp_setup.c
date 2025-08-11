@@ -77,6 +77,10 @@ static void fw_upload_gen_crc32_table(void)
 	int i, j;
 	unsigned long crc_accum;
 
+	if (made_table) {
+		return;
+	}
+
 	for (i = 0; i < 256; i++) {
 		crc_accum = ((unsigned long)i << 24);
 		for (j = 0; j < 8; j++) {
@@ -88,6 +92,9 @@ static void fw_upload_gen_crc32_table(void)
 		}
 		crc_table[i] = crc_accum;
 	}
+
+	/* Mark CRC32 table generation complete */
+	made_table = true;
 }
 
 static unsigned char fw_upload_crc8(unsigned char *array, unsigned char len)
@@ -1281,7 +1288,7 @@ static int bt_nxp_set_calibration_data_annex55(void)
 	if (IS_ENABLED(CONFIG_BT_HCI_HOST)) {
 		struct net_buf *buf;
 
-		buf = bt_hci_cmd_create(opcode, HCI_CMD_STORE_BT_CAL_DATA_PARAM_LENGTH);
+		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (buf == NULL) {
 			LOG_ERR("Unable to allocate command buffer");
 			return -ENOMEM;
@@ -1346,7 +1353,7 @@ static int bt_nxp_set_calibration_data_annex100(void)
 	if (IS_ENABLED(CONFIG_BT_HCI_HOST)) {
 		struct net_buf *buf;
 
-		buf = bt_hci_cmd_create(opcode, HCI_CMD_STORE_BT_CAL_DATA_PARAM_ANNEX100_LENGTH);
+		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (buf == NULL) {
 			LOG_ERR("Unable to allocate command buffer");
 			return -ENOMEM;
@@ -1387,8 +1394,7 @@ static int bt_hci_baudrate_update(const struct device *dev, uint32_t baudrate)
 	int err;
 	struct net_buf *buf;
 
-	buf = bt_hci_cmd_create(BT_HCI_VSC_BAUDRATE_UPDATE_OPCODE,
-				BT_HCI_VSC_BAUDRATE_UPDATE_LENGTH);
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		LOG_ERR("Fail to allocate buffer");
 		return -ENOBUFS;

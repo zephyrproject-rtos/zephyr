@@ -80,7 +80,6 @@
 		led0 = &red_led_0;
 		led1 = &green_led_1;
 		led2 = &blue_led_2;
-		bootloader-led0 = &blue_led_2;
 		vcc1 = &cc1_buf;
 		vcc2 = &cc2_buf;
 		vbus = &vbus_read_buf;

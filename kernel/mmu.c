@@ -360,7 +360,7 @@ static void *virt_region_alloc(size_t size, size_t align)
 
 	/* Need to make sure this does not step into kernel memory */
 	if (dest_addr < POINTER_TO_UINT(Z_VIRT_REGION_START_ADDR)) {
-		(void)sys_bitarray_free(&virt_region_bitmap, size, offset);
+		(void)sys_bitarray_free(&virt_region_bitmap, num_bits, offset);
 		return NULL;
 	}
 

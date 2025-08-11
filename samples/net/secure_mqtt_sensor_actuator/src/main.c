@@ -30,7 +30,7 @@ static struct net_mgmt_event_callback net_l4_mgmt_cb;
 K_SEM_DEFINE(net_conn_sem, 0, 1);
 
 static void net_l4_evt_handler(struct net_mgmt_event_callback *cb,
-				uint32_t mgmt_event, struct net_if *iface)
+				uint64_t mgmt_event, struct net_if *iface)
 {
 	switch (mgmt_event) {
 	case NET_EVENT_L4_CONNECTED:
@@ -53,7 +53,7 @@ void log_mac_addr(struct net_if *iface)
 	mac = net_if_get_link_addr(iface);
 
 	LOG_INF("MAC Address: %02X:%02X:%02X:%02X:%02X:%02X",
-		mac->addr[0], mac->addr[1], mac->addr[3],
+		mac->addr[0], mac->addr[1], mac->addr[2],
 		mac->addr[3], mac->addr[4], mac->addr[5]);
 }
 

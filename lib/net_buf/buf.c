@@ -42,6 +42,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define WARN_ALLOC_INTERVAL K_FOREVER
 #endif
 
+#define GET_ALIGN(pool) MAX(sizeof(void *), pool->alloc->alignment)
+
 /* Linker-defined symbol bound to the static pool structs */
 STRUCT_SECTION_START_EXTERN(net_buf_pool);
 
@@ -95,9 +97,10 @@ void net_buf_reset(struct net_buf *buf)
 
 static uint8_t *generic_data_ref(struct net_buf *buf, uint8_t *data)
 {
+	struct net_buf_pool *buf_pool = net_buf_pool_get(buf->pool_id);
 	uint8_t *ref_count;
 
-	ref_count = data - sizeof(void *);
+	ref_count = data - GET_ALIGN(buf_pool);
 	(*ref_count)++;
 
 	return data;
@@ -109,9 +112,26 @@ static uint8_t *mem_pool_data_alloc(struct net_buf *buf, size_t *size,
 	struct net_buf_pool *buf_pool = net_buf_pool_get(buf->pool_id);
 	struct k_heap *pool = buf_pool->alloc->alloc_data;
 	uint8_t *ref_count;
+	void *b;
 
-	/* Reserve extra space for a ref-count (uint8_t) */
-	void *b = k_heap_alloc(pool, sizeof(void *) + *size, timeout);
+	if (buf_pool->alloc->alignment == 0) {
+		/* Reserve extra space for a ref-count (uint8_t) */
+		b = k_heap_alloc(pool, sizeof(void *) + *size, timeout);
+
+	} else {
+		if (*size < buf_pool->alloc->alignment) {
+			NET_BUF_DBG("Requested size %zu is smaller than alignment %zu",
+				    *size, buf_pool->alloc->alignment);
+			return NULL;
+		}
+
+		/* Reserve extra space for a ref-count (uint8_t) */
+		b = k_heap_aligned_alloc(pool,
+					 buf_pool->alloc->alignment,
+					 GET_ALIGN(buf_pool) +
+					 ROUND_UP(*size, buf_pool->alloc->alignment),
+					 timeout);
+	}
 
 	if (b == NULL) {
 		return NULL;
@@ -121,7 +141,7 @@ static uint8_t *mem_pool_data_alloc(struct net_buf *buf, size_t *size,
 	*ref_count = 1U;
 
 	/* Return pointer to the byte following the ref count */
-	return ref_count + sizeof(void *);
+	return ref_count + GET_ALIGN(buf_pool);
 }
 
 static void mem_pool_data_unref(struct net_buf *buf, uint8_t *data)
@@ -130,7 +150,7 @@ static void mem_pool_data_unref(struct net_buf *buf, uint8_t *data)
 	struct k_heap *pool = buf_pool->alloc->alloc_data;
 	uint8_t *ref_count;
 
-	ref_count = data - sizeof(void *);
+	ref_count = data - GET_ALIGN(buf_pool);
 	if (--(*ref_count)) {
 		return;
 	}
@@ -171,23 +191,25 @@ const struct net_buf_data_cb net_buf_fixed_cb = {
 static uint8_t *heap_data_alloc(struct net_buf *buf, size_t *size,
 			     k_timeout_t timeout)
 {
+	struct net_buf_pool *buf_pool = net_buf_pool_get(buf->pool_id);
 	uint8_t *ref_count;
 
-	ref_count = k_malloc(sizeof(void *) + *size);
+	ref_count = k_malloc(GET_ALIGN(buf_pool) + *size);
 	if (!ref_count) {
 		return NULL;
 	}
 
 	*ref_count = 1U;
 
-	return ref_count + sizeof(void *);
+	return ref_count + GET_ALIGN(buf_pool);
 }
 
 static void heap_data_unref(struct net_buf *buf, uint8_t *data)
 {
+	struct net_buf_pool *buf_pool = net_buf_pool_get(buf->pool_id);
 	uint8_t *ref_count;
 
-	ref_count = data - sizeof(void *);
+	ref_count = data - GET_ALIGN(buf_pool);
 	if (--(*ref_count)) {
 		return;
 	}

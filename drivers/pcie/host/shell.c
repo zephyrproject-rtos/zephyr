@@ -22,7 +22,7 @@ struct pcie_cap_id_to_str {
 	char *str;
 };
 
-static struct pcie_cap_id_to_str pcie_cap_list[] = {
+static const struct pcie_cap_id_to_str pcie_cap_list[] = {
 	{ PCI_CAP_ID_PM,     "Power Management" },
 	{ PCI_CAP_ID_AGP,    "Accelerated Graphics Port" },
 	{ PCI_CAP_ID_VPD,    "Vital Product Data" },
@@ -47,7 +47,7 @@ static struct pcie_cap_id_to_str pcie_cap_list[] = {
 	{ PCI_CAP_ID_NULL,   NULL },
 };
 
-static struct pcie_cap_id_to_str pcie_ext_cap_list[] = {
+static const struct pcie_cap_id_to_str pcie_ext_cap_list[] = {
 	{ PCIE_EXT_CAP_ID_ERR,     "Advanced Error Reporting" },
 	{ PCIE_EXT_CAP_ID_VC,      "Virtual Channel when no MFVC" },
 	{ PCIE_EXT_CAP_ID_DSN,     "Device Serial Number" },

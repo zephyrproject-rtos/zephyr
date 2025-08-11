@@ -151,7 +151,7 @@
 	pinctrl-names = "default";
 	status = "okay";
 	/* Select 64MHz clock for SPI3 */
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 (1 << 14)>,
+	clocks = <&rcc STM32_CLOCK(APB1, 14)>,
 		<&rcc STM32_SRC_SYSCLK SPI3_I2S3_SEL(3)>;
 };
 

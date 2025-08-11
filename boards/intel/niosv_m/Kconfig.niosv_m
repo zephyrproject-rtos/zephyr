@@ -4,5 +4,3 @@
 
 config BOARD_NIOSV_M
 	select SOC_NIOSV_M
-	help
-	  Intel FPGA NIOSV Microcontroller Core Processor

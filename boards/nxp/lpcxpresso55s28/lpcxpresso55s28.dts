@@ -126,6 +126,7 @@
 
 zephyr_udc0: &usbhs {
 	status = "okay";
+	phy-handle = <&usbphy1>;
 };
 
 zephyr_uhc0: &usbhfs {
@@ -138,7 +139,7 @@ zephyr_uhc1: &usbhhs {
 	pinctrl-0 = <&pinmux_usbhhs>;
 	pinctrl-names = "default";
 	status = "okay";
-	phy_handle = <&usbphy1>;
+	phy-handle = <&usbphy1>;
 };
 
 &usbphy1 {
@@ -146,4 +147,16 @@ zephyr_uhc1: &usbhhs {
 	tx-d-cal = <5>;
 	tx-cal-45-dp-ohms = <10>;
 	tx-cal-45-dm-ohms = <10>;
+};
+
+&sdif {
+	status = "okay";
+	pinctrl-0 = <&pinmux_sdif_default>;
+	pinctrl-names = "default";
+
+	mmc {
+		compatible = "zephyr,sdmmc-disk";
+		status = "okay";
+		disk-name = "SD";
+	};
 };

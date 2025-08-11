@@ -32,6 +32,13 @@ static const struct bt_data adv_ad_data[] = {
 };
 
 static struct bt_conn *default_conn;
+static struct k_sem conn_sem;
+static struct k_work advertise_work;
+
+void advertising_work_handler(struct k_work *work)
+{
+	bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, adv_ad_data, ARRAY_SIZE(adv_ad_data), NULL, 0);
+}
 
 static void ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
@@ -63,12 +70,14 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	}
 
 	default_conn = bt_conn_ref(conn);
+	k_sem_give(&conn_sem);
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	bt_conn_unref(conn);
 	default_conn = NULL;
+	k_work_submit(&advertise_work);
 }
 
 BT_CONN_CB_DEFINE(conn_callbacks) = {
@@ -86,7 +95,10 @@ void run_peripheral_sample(uint8_t *notify_data, size_t notify_data_size, uint16
 		return;
 	}
 
+	k_sem_init(&conn_sem, 0, 1);
 	bt_gatt_cb_register(&gatt_callbacks);
+
+	k_work_init(&advertise_work, advertising_work_handler);
 
 	struct bt_gatt_attr *notify_crch =
 		bt_gatt_find_by_uuid(mtu_test.attrs, 0xffff, &notify_characteristic_uuid.uuid);
@@ -96,6 +108,10 @@ void run_peripheral_sample(uint8_t *notify_data, size_t notify_data_size, uint16
 	bool infinite = seconds == 0;
 
 	for (int i = 0; (i < seconds) || infinite; i++) {
+		if (default_conn == NULL) {
+			k_sem_take(&conn_sem, K_FOREVER);
+		}
+
 		k_sleep(K_SECONDS(1));
 		if (default_conn == NULL) {
 			printk("Skipping notification since connection is not yet established\n");

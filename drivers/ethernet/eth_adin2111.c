@@ -173,8 +173,10 @@ static int eth_adin2111_reg_read_oa(const struct device *dev, const uint16_t reg
 				    uint32_t *val)
 {
 	struct adin2111_data *ctx = dev->data;
+	uint8_t rx_buf[ADIN2111_OA_CTL_LEN_PROT] = {0};
+	uint8_t tx_buf[ADIN2111_OA_CTL_LEN_PROT] = {0};
 	uint32_t pval;
-	uint32_t *hdr = (uint32_t *)ctx->oa_tx_buf;
+	uint32_t *hdr = (uint32_t *)tx_buf;
 	int len;
 	int ret;
 
@@ -188,16 +190,16 @@ static int eth_adin2111_reg_read_oa(const struct device *dev, const uint16_t reg
 
 	len = (ctx->oa_prot) ? ADIN2111_OA_CTL_LEN_PROT : ADIN2111_OA_CTL_LEN;
 
-	ret = eth_adin2111_oa_spi_xfer(dev, ctx->oa_rx_buf, ctx->oa_tx_buf, len);
+	ret = eth_adin2111_oa_spi_xfer(dev, rx_buf, tx_buf, len);
 	if (ret < 0) {
 		return ret;
 	}
 
-	*val = sys_be32_to_cpu(*(uint32_t *)&ctx->oa_rx_buf[8]);
+	*val = sys_be32_to_cpu(*(uint32_t *)&rx_buf[8]);
 
 	/* In protected mode read data is followed by its compliment value */
 	if (ctx->oa_prot) {
-		pval = sys_be32_to_cpu(*(uint32_t *)&ctx->oa_rx_buf[12]);
+		pval = sys_be32_to_cpu(*(uint32_t *)&rx_buf[12]);
 		if (*val != ~pval) {
 			LOG_ERR("OA protected mode rx error !");
 			return -1;
@@ -211,8 +213,10 @@ static int eth_adin2111_reg_write_oa(const struct device *dev, const uint16_t re
 				     uint32_t val)
 {
 	struct adin2111_data *ctx = dev->data;
+	uint8_t rx_buf[ADIN2111_OA_CTL_LEN_PROT] = {0};
+	uint8_t tx_buf[ADIN2111_OA_CTL_LEN_PROT] = {0};
 	uint32_t pval;
-	uint32_t *hdr = (uint32_t *)ctx->oa_tx_buf;
+	uint32_t *hdr = (uint32_t *)tx_buf;
 	int len;
 	int ret;
 
@@ -226,18 +230,18 @@ static int eth_adin2111_reg_write_oa(const struct device *dev, const uint16_t re
 
 	len = (ctx->oa_prot) ? ADIN2111_OA_CTL_LEN_PROT : ADIN2111_OA_CTL_LEN;
 
-	*(uint32_t *)&ctx->oa_tx_buf[4] = sys_cpu_to_be32(val);
+	*(uint32_t *)&tx_buf[4] = sys_cpu_to_be32(val);
 	if (ctx->oa_prot) {
-		*(uint32_t *)&ctx->oa_tx_buf[8] = sys_cpu_to_be32(~val);
+		*(uint32_t *)&tx_buf[8] = sys_cpu_to_be32(~val);
 	}
 
-	ret = eth_adin2111_oa_spi_xfer(dev, ctx->oa_rx_buf, ctx->oa_tx_buf, len);
+	ret = eth_adin2111_oa_spi_xfer(dev, rx_buf, tx_buf, len);
 	if (ret < 0) {
 		return ret;
 	}
 
 	if (ctx->oa_prot) {
-		pval = sys_be32_to_cpu(*(uint32_t *)&ctx->oa_rx_buf[12]);
+		pval = sys_be32_to_cpu(*(uint32_t *)&rx_buf[12]);
 		if (val != ~pval) {
 			LOG_ERR("OA protected mode tx error !");
 			return -1;

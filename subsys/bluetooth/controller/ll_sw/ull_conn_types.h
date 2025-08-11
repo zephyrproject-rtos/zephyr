@@ -301,3 +301,8 @@ struct node_rx_sca {
 	uint8_t status;
 	uint8_t sca;
 };
+
+struct node_rx_path_loss {
+	uint8_t current_path_loss;
+	uint8_t zone_entered;
+};

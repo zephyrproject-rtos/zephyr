@@ -474,6 +474,14 @@
 			num-bidir-endpoints = <25>;
 			disallow-iso-in-out-same-number;
 		};
+
+		wwdt: watchdog@40240000 {
+			compatible = "nuvoton,numaker-wwdt";
+			reg = <0x40240000 0x10>;
+			interrupts = <9 0>;
+			clocks = <&pcc NUMAKER_WWDT0_MODULE NUMAKER_CLK_WWDTSEL_WWDT0SEL_LIRC 0>;
+			status = "disabled";
+		};
 	};
 };
 

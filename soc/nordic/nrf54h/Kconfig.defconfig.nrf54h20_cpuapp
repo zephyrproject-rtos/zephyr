@@ -8,10 +8,10 @@ if SOC_NRF54H20_CPUAPP
 config NUM_IRQS
 	default 471
 
-config NRF_REGTOOL_GENERATE_UICR
-	default y
-
 config SHELL_BACKEND_SERIAL
 	default n if NRF_ETR_SHELL
+
+config POWER_DOMAIN
+	default y
 
 endif # SOC_NRF54H20_CPUAPP

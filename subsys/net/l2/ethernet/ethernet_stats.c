@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(net_ethernet_stats, CONFIG_NET_L2_ETHERNET_LOG_LEVEL);
 
 #if defined(CONFIG_NET_STATISTICS_USER_API)
 
-static int eth_stats_get(uint32_t mgmt_request, struct net_if *iface,
+static int eth_stats_get(uint64_t mgmt_request, struct net_if *iface,
 			 void *data, size_t len)
 {
 	size_t len_chk = 0;

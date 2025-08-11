@@ -48,7 +48,7 @@ int send_set_conn_cte_rx_params(uint16_t conn_handle,
 
 	uint8_t ant_ids_num = (params != NULL ? params->switch_pattern_len : 0);
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_CONN_CTE_RX_PARAMS, sizeof(*cp) + ant_ids_num);
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}

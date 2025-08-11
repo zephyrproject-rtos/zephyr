@@ -11,7 +11,7 @@
 	slow@0 {
 		compatible = "test-spi-loopback-slow";
 		reg = <0>;
-		spi-max-frequency = <128000>;
+		spi-max-frequency = <125000>;
 	};
 	fast@0 {
 		compatible = "test-spi-loopback-fast";

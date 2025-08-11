@@ -145,6 +145,12 @@ static NPF_IFACE_UNMATCH(unmatch_iface_b, &dummy_iface_b);
 static NPF_RULE(accept_iface_a, NET_OK, match_iface_a);
 static NPF_RULE(accept_all_but_iface_b, NET_OK, unmatch_iface_b);
 
+static NPF_ORIG_IFACE_MATCH(match_orig_iface_a, &dummy_iface_a);
+static NPF_ORIG_IFACE_UNMATCH(unmatch_orig_iface_b, &dummy_iface_b);
+
+static NPF_RULE(accept_orig_iface_a, NET_OK, match_orig_iface_a);
+static NPF_RULE(accept_all_but_orig_iface_b, NET_OK, unmatch_orig_iface_b);
+
 static void *test_npf_iface(void)
 {
 	struct net_pkt *pkt_iface_a, *pkt_iface_b;
@@ -193,6 +199,58 @@ static void *test_npf_iface(void)
 	net_pkt_unref(pkt_iface_b);
 
 	return NULL;
+}
+
+ZTEST(net_pkt_filter_test_suite, test_npf_orig_iface)
+{
+	struct net_pkt *pkt_iface_a, *pkt_iface_b;
+
+	pkt_iface_a = build_test_pkt(0, 200, &dummy_iface_a);
+	pkt_iface_b = build_test_pkt(0, 200, &dummy_iface_b);
+
+	/* Set orig_iface to different values to test orig_iface matching */
+	net_pkt_set_orig_iface(pkt_iface_a, &dummy_iface_a);
+	net_pkt_set_orig_iface(pkt_iface_b, &dummy_iface_b);
+
+	/* test with no rules */
+	zassert_true(net_pkt_filter_recv_ok(pkt_iface_a), "");
+	zassert_true(net_pkt_filter_recv_ok(pkt_iface_b), "");
+
+	/* install rules */
+	npf_append_recv_rule(&accept_orig_iface_a);
+	npf_append_recv_rule(&npf_default_drop);
+
+	/* test with rules in place */
+	zassert_true(net_pkt_filter_recv_ok(pkt_iface_a), "");
+	zassert_false(net_pkt_filter_recv_ok(pkt_iface_b), "");
+
+	/* remove first orig_iface rule */
+	zassert_true(npf_remove_recv_rule(&accept_orig_iface_a), "");
+
+	/* fails if removed a second time */
+	zassert_false(npf_remove_recv_rule(&accept_orig_iface_a), "");
+
+	/* test with only default drop rule in place */
+	zassert_false(net_pkt_filter_recv_ok(pkt_iface_a), "");
+	zassert_false(net_pkt_filter_recv_ok(pkt_iface_b), "");
+
+	/* insert second orig_iface rule */
+	npf_insert_recv_rule(&accept_all_but_orig_iface_b);
+
+	/* test with new rule in place */
+	zassert_true(net_pkt_filter_recv_ok(pkt_iface_a), "");
+	zassert_false(net_pkt_filter_recv_ok(pkt_iface_b), "");
+
+	/* remove all rules */
+	zassert_true(npf_remove_recv_rule(&accept_all_but_orig_iface_b), "");
+	zassert_true(npf_remove_recv_rule(&npf_default_drop), "");
+
+	/* should accept any packets again */
+	zassert_true(net_pkt_filter_recv_ok(pkt_iface_a), "");
+	zassert_true(net_pkt_filter_recv_ok(pkt_iface_b), "");
+
+	net_pkt_unref(pkt_iface_a);
+	net_pkt_unref(pkt_iface_b);
 }
 
 /*

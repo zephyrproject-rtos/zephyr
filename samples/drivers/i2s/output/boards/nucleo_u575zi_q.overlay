@@ -28,6 +28,6 @@
 	pinctrl-names = "default";
 	status = "okay";
 	mclk-enable;
-	mclk-div-enable;
+	mclk-divider = "div-256";
 	dma-names = "tx";
 };

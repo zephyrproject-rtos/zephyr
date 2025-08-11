@@ -276,6 +276,15 @@ int arch_float_enable(struct k_thread *thread, unsigned int options)
 }
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
+int arch_coprocessors_disable(struct k_thread *thread)
+{
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+	return arch_float_disable(thread);
+#else
+	return -ENOTSUP;
+#endif
+}
+
 #if !defined(CONFIG_MULTITHREADING)
 
 K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_MAX_NUM_CPUS, CONFIG_ISR_STACK_SIZE);

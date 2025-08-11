@@ -771,6 +771,17 @@ def dt_compat_enabled(kconf, _, compat):
     return "y" if compat in edt.compat2okay else "n"
 
 
+def dt_compat_enabled_num(kconf, _, compat):
+    """
+    This function takes a 'compat' and the returns number of status "okay"
+    compatible nodes in the EDT.
+    """
+    if doc_mode or edt is None:
+        return "0"
+
+    return str(len(edt.compat2okay[compat]))
+
+
 def dt_compat_on_bus(kconf, _, compat, bus):
     """
     This function takes a 'compat' and returns "y" if we find an enabled
@@ -983,8 +994,8 @@ def arith(kconf, name, *args):
     the operation on the first two arguments and operates the same operation as
     the result and the following argument.
     For interoperability with inc and dec,
-    if there is only one argument, it will be split with a comma and processed
-    as a sequence of numbers.
+    each argument can be a single number or a comma-separated list of numbers,
+    but all numbers are processed as if they were individual arguments.
 
     Examples in Kconfig:
 
@@ -1008,22 +1019,36 @@ def arith(kconf, name, *args):
     $(div, $(dec, 1, 1))   # Error (0 div 0)
     """
 
-    intarray = map(int, args if len(args) > 1 else args[0].split(","))
+    intarray = (int(val, base=0) for arg in args for val in arg.split(","))
 
     if name == "add":
         return str(int(functools.reduce(operator.add, intarray)))
+    elif name == "add_hex":
+        return hex(int(functools.reduce(operator.add, intarray)))
     elif name == "sub":
         return str(int(functools.reduce(operator.sub, intarray)))
+    elif name == "sub_hex":
+        return hex(int(functools.reduce(operator.sub, intarray)))
     elif name == "mul":
         return str(int(functools.reduce(operator.mul, intarray)))
+    elif name == "mul_hex":
+        return hex(int(functools.reduce(operator.mul, intarray)))
     elif name == "div":
         return str(int(functools.reduce(operator.truediv, intarray)))
+    elif name == "div_hex":
+        return hex(int(functools.reduce(operator.truediv, intarray)))
     elif name == "mod":
         return str(int(functools.reduce(operator.mod, intarray)))
+    elif name == "mod_hex":
+        return hex(int(functools.reduce(operator.mod, intarray)))
     elif name == "max":
         return str(int(functools.reduce(max, intarray)))
+    elif name == "max_hex":
+        return hex(int(functools.reduce(max, intarray)))
     elif name == "min":
         return str(int(functools.reduce(min, intarray)))
+    elif name == "min_hex":
+        return hex(int(functools.reduce(min, intarray)))
     else:
         assert False
 
@@ -1034,12 +1059,16 @@ def inc_dec(kconf, name, *args):
     Returns a string that concatenates numbers with a comma as a separator.
     """
 
-    intarray = map(int, args if len(args) > 1 else args[0].split(","))
+    intarray = (int(val, base=0) for arg in args for val in arg.split(","))
 
     if name == "inc":
         return ",".join(map(lambda a: str(a + 1), intarray))
+    if name == "inc_hex":
+        return ",".join(map(lambda a: hex(a + 1), intarray))
     elif name == "dec":
         return ",".join(map(lambda a: str(a - 1), intarray))
+    elif name == "dec_hex":
+        return ",".join(map(lambda a: hex(a - 1), intarray))
     else:
         assert False
 
@@ -1056,6 +1085,7 @@ def inc_dec(kconf, name, *args):
 functions = {
         "dt_has_compat": (dt_has_compat, 1, 1),
         "dt_compat_enabled": (dt_compat_enabled, 1, 1),
+        "dt_compat_enabled_num": (dt_compat_enabled_num, 1, 1),
         "dt_compat_on_bus": (dt_compat_on_bus, 2, 2),
         "dt_compat_any_has_prop": (dt_compat_any_has_prop, 2, 3),
         "dt_compat_any_not_has_prop": (dt_compat_any_not_has_prop, 2, 2),
@@ -1106,12 +1136,21 @@ functions = {
         "shields_list_contains": (shields_list_contains, 1, 1),
         "substring": (substring, 2, 3),
         "add": (arith, 1, 255),
+        "add_hex": (arith, 1, 255),
         "sub": (arith, 1, 255),
+        "sub_hex": (arith, 1, 255),
         "mul": (arith, 1, 255),
+        "mul_hex": (arith, 1, 255),
         "div": (arith, 1, 255),
+        "div_hex": (arith, 1, 255),
         "mod": (arith, 1, 255),
+        "mod_hex": (arith, 1, 255),
         "max": (arith, 1, 255),
+        "max_hex": (arith, 1, 255),
         "min": (arith, 1, 255),
+        "min_hex": (arith, 1, 255),
         "inc": (inc_dec, 1, 255),
+        "inc_hex": (inc_dec, 1, 255),
         "dec": (inc_dec, 1, 255),
+        "dec_hex": (inc_dec, 1, 255),
 }

@@ -31,6 +31,7 @@
 #define RZA2M_GPIO_DRIVE_STRENGTH_NORMAL 0x01
 #define RZA2M_DSCR_MASK                  0x03
 #define RZA2M_PDR_MASK                   0x03
+#define RZA2M_PDR_HIZ                    0x00
 #define RZA2M_PDR_INPUT                  0x02
 #define RZA2M_PDR_OUTPUT                 0x03
 #define RZA2M_PWPR_PFSWE_MASK            0x40

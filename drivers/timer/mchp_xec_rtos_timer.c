@@ -9,6 +9,7 @@
 #include <zephyr/init.h>
 #include <zephyr/devicetree.h>
 #include <soc.h>
+#include <zephyr/arch/common/sys_io.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/spinlock.h>
@@ -19,14 +20,32 @@ BUILD_ASSERT(!IS_ENABLED(CONFIG_SMP), "XEC RTOS timer doesn't support SMP");
 BUILD_ASSERT(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 32768,
 	     "XEC RTOS timer HW frequency is fixed at 32768");
 
+/* Microchip MEC 32-bit RTOS timer runs on the 32 KHz always on clock.
+ * It is a downcounter with auto-reload capability.
+ */
+#define TIMER_CNT_OFS       0  /* R/W counter */
+#define TIMER_PRLD_OFS      4u /* R/W preload value */
+#define TIMER_CR_OFS        8u /* R/W control */
+#define TIMER_CR_ACTV_POS   0  /* activate block */
+#define TIMER_CR_ARL_EN_POS 1  /* auto-reload enable */
+#define TIMER_CR_START_POS  2  /* start timer counting */
+#define TIMER_CR_HDBA_POS   3  /* Halt counting if debugger not in reset */
+#define TIMER_CR_HALT_POS   4  /* Halt if written to 1, unhalt by clearing */
+
+/* MEC GIRQ */
+#define GIRQ_SIZE       20u /* Each GIRQx is 5 32-bit registers */
+#define GIRQ_SRC_OFS    0   /* R/W1C latched status bits */
+#define GIRQ_ENSET_OFS  4u  /* read, write 1 to set enable bit(s) */
+#define GIRQ_RESULT_OFS 8u  /* R/O bitwise AND of SRC and ENSET */
+#define GIRQ_ENCLR_OFS  12u /* read, write 1 to clear enable bit(s) */
+
 #define DEBUG_RTOS_TIMER 0
 
 #if DEBUG_RTOS_TIMER != 0
 /* Enable feature to halt timer on JTAG/SWD CPU halt */
-#define TIMER_START_VAL (MCHP_RTMR_CTRL_BLK_EN | MCHP_RTMR_CTRL_START \
-			 | MCHP_RTMR_CTRL_HW_HALT_EN)
+#define TIMER_START_VAL (BIT(TIMER_CR_ACTV_POS) | BIT(TIMER_CR_START_POS) | BIT(TIMER_CR_HALT_POS))
 #else
-#define TIMER_START_VAL (MCHP_RTMR_CTRL_BLK_EN | MCHP_RTMR_CTRL_START)
+#define TIMER_START_VAL (BIT(TIMER_CR_ACTV_POS) | BIT(TIMER_CR_START_POS))
 #endif
 
 /*
@@ -50,46 +69,58 @@ BUILD_ASSERT(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 32768,
  * CONFIG_SYS_CLOCK_TICKS_PER_SEC=32768
  */
 
-#define CYCLES_PER_TICK \
-	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#define CYCLES_PER_TICK (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
-#define TIMER_REGS	\
-	((struct rtmr_regs *)DT_INST_REG_ADDR(0))
+#define TIMER_BASE        (mm_reg_t) DT_INST_REG_ADDR(0)
+#define TIMER_GIRQ_NUM    DT_INST_PROP_BY_IDX(0, girqs, 0)
+#define TIMER_GIRQ_BITPOS DT_INST_PROP_BY_IDX(0, girqs, 1)
+/* data sheet GIRQ numbers start at 8 */
+#define TIMER_GIRQ_BASE                                                                            \
+	(mm_reg_t)(DT_REG_ADDR(DT_NODELABEL(ecia)) + (GIRQ_SIZE * (TIMER_GIRQ_NUM - 8u)))
 
-#define ECIA_XEC_REGS	\
-	((struct ecia_regs *)DT_REG_ADDR(DT_NODELABEL(ecia)))
-
-#ifdef CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT
-#define PCR_XEC_REGS	\
-	((struct pcr_regs *)DT_REG_ADDR(DT_NODELABEL(pcr)))
-
-/*
- * pcrs property at index 0 is register index into array of 32-bit PCR SLP_EN,
- * CLK_REQ, or RST_EN registers. Property at index 1 is the bit position.
- */                              /*DT_PROP_BY_IDX(DT_NODELABEL(kbc0), girqs, 0)*/
-#define BTMR32_0_PCR_REG_IDX	(DT_PROP_BY_IDX(DT_NODELABEL(timer4), pcrs, 0))
-#define BTMR32_0_PCR_BITPOS	(DT_PROP_BY_IDX(DT_NODELABEL(timer4), pcrs, 1))
-
-#define BTMR32_0_REGS	\
-	((struct btmr_regs *)(DT_REG_ADDR(DT_NODELABEL(timer4))))
-#endif
+#define TIMER_NVIC_NO   DT_INST_IRQN(0)
+#define TIMER_NVIC_PRIO DT_INST_IRQ(0, priority)
 
 /* Mask off bits[31:28] of 32-bit count */
-#define TIMER_MAX		0x0fffffffu
-#define TIMER_COUNT_MASK	0x0fffffffu
-#define TIMER_STOPPED		0xf0000000u
+#define TIMER_MAX        0x0fffffffu
+#define TIMER_COUNT_MASK 0x0fffffffu
+#define TIMER_STOPPED    0xf0000000u
 
 /* Adjust cycle count programmed into timer for HW restart latency */
-#define TIMER_ADJUST_LIMIT	2
-#define TIMER_ADJUST_CYCLES	1
+#define TIMER_ADJUST_LIMIT  2
+#define TIMER_ADJUST_CYCLES 1
 
 /* max number of ticks we can load into the timer in one shot */
 #define MAX_TICKS (TIMER_MAX / CYCLES_PER_TICK)
 
-#define TIMER_GIRQ		DT_INST_PROP_BY_IDX(0, girqs, 0)
-#define TIMER_GIRQ_POS		DT_INST_PROP_BY_IDX(0, girqs, 1)
-#define TIMER_NVIC_NO		DT_INST_IRQN(0)
-#define TIMER_NVIC_PRIO		DT_INST_IRQ(0, priority)
+#ifdef CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT
+BUILD_ASSERT(DT_INST_NODE_HAS_PROP(0, busy_wait_timer),
+	     "Driver does not not have busy-wait-timer property!");
+
+#define BTMR_NODE DT_INST_PHANDLE(0, busy_wait_timer)
+
+BUILD_ASSERT(DT_PROP(BTMR_NODE, max_value) == UINT32_MAX, "Custom busy wait timer is not 32-bit!");
+
+#define BTMR_BASE (mm_reg_t) DT_REG_ADDR(BTMR_NODE)
+
+#define BTMR_CNT_OFS         0
+#define BTMR_PRLD_OFS        4u
+#define BTMR_SR_OFS          8u
+#define BTMR_IER_OFS         0xcu
+#define BTMR_CR_OFS          0x10u
+#define BTMR_CR_ACTV_POS     0
+#define BTMR_CR_CNT_UP_POS   2
+#define BTMR_CR_ARS_POS      3
+#define BTMR_CR_SOFT_RST_POS 4
+#define BTMR_CR_START_POS    5
+#define BTMR_CR_RLD_POS      6
+#define BTMR_CR_HALT_POS     7
+#define BTMR_CR_PS_POS       16
+#define BTMR_CR_PS_MSK       GENMASK(31, 16)
+#define BTMR_CR_PS_SET(n)    FIELD_PREP(BTMR_CR_PS_MSK, (n))
+#define BMTR_CR_PS_GET(n)    FIELD_GET(BTMR_CR_PS_MSK, (n))
+
+#endif
 
 /*
  * The spinlock protects all access to the RTMR registers, as well as
@@ -104,44 +135,12 @@ static struct k_spinlock lock;
 static uint32_t total_cycles;
 static uint32_t cached_icr = CYCLES_PER_TICK;
 
-/*
- * NOTE: using inline for speed instead of call to external SoC function.
- * MEC GIRQ numbers are documented as 8 to 26, check and convert to zero
- * based index.
- */
-static inline void girq_src_clr(int girq, int bitpos)
+static inline void timer_restart(uint32_t countdown)
 {
-	if ((girq < 8) || (girq > 26)) {
-		return;
-	}
-
-	ECIA_XEC_REGS->GIRQ[girq - 8].SRC = BIT(bitpos);
-}
-
-static inline void girq_src_en(int girq, int bitpos)
-{
-	if ((girq < 8) || (girq > 26)) {
-		return;
-	}
-
-	ECIA_XEC_REGS->GIRQ[girq - 8].EN_SET = BIT(bitpos);
-}
-
-static inline void girq_src_dis(int girq, int bitpos)
-{
-	if ((girq < 8) || (girq > 26)) {
-		return;
-	}
-
-	ECIA_XEC_REGS->GIRQ[girq - 8].EN_CLR = BIT(bitpos);
-}
-
-static void timer_restart(uint32_t countdown)
-{
-	TIMER_REGS->CTRL = 0U;
-	TIMER_REGS->CTRL = MCHP_RTMR_CTRL_BLK_EN;
-	TIMER_REGS->PRLD = countdown;
-	TIMER_REGS->CTRL = TIMER_START_VAL;
+	sys_write32(0, TIMER_BASE + TIMER_CR_OFS);
+	sys_write32(BIT(TIMER_CR_ACTV_POS), TIMER_BASE + TIMER_CR_OFS);
+	sys_write32(countdown, TIMER_BASE + TIMER_PRLD_OFS);
+	sys_write32(TIMER_START_VAL, TIMER_BASE + TIMER_CR_OFS);
 }
 
 /*
@@ -158,9 +157,9 @@ static void timer_restart(uint32_t countdown)
  */
 static inline uint32_t timer_count(void)
 {
-	uint32_t ccr = TIMER_REGS->CNT;
+	uint32_t ccr = sys_read32(TIMER_BASE + TIMER_CNT_OFS);
 
-	if ((ccr == 0) && (TIMER_REGS->CTRL & MCHP_RTMR_CTRL_START)) {
+	if ((ccr == 0) && sys_test_bit(TIMER_BASE + TIMER_CR_OFS, TIMER_CR_START_POS)) {
 		ccr = cached_icr;
 	}
 
@@ -169,7 +168,7 @@ static inline uint32_t timer_count(void)
 
 #ifdef CONFIG_TICKLESS_KERNEL
 
-static uint32_t last_announcement;	/* last time we called sys_clock_announce() */
+static uint32_t last_announcement; /* last time we called sys_clock_announce() */
 
 /*
  * Request a timeout n Zephyr ticks in the future from now.
@@ -188,16 +187,16 @@ void sys_clock_set_timeout(int32_t n, bool idle)
 	ARG_UNUSED(idle);
 
 	uint32_t ccr, temp;
-	int   full_ticks;	/* number of complete ticks we'll wait */
-	uint32_t full_cycles;	/* full_ticks represented as cycles */
-	uint32_t partial_cycles;	/* number of cycles to first tick boundary */
+	int full_ticks;          /* number of complete ticks we'll wait */
+	uint32_t full_cycles;    /* full_ticks represented as cycles */
+	uint32_t partial_cycles; /* number of cycles to first tick boundary */
 
 	if (idle && (n == K_TICKS_FOREVER)) {
 		/*
 		 * We are not in a locked section. Are writes to two
 		 * global objects safe from pre-emption?
 		 */
-		TIMER_REGS->CTRL = 0U; /* stop timer */
+		sys_write32(0, TIMER_BASE + TIMER_CR_OFS); /* stop timer */
 		cached_icr = TIMER_STOPPED;
 		return;
 	}
@@ -217,8 +216,8 @@ void sys_clock_set_timeout(int32_t n, bool idle)
 	ccr = timer_count();
 
 	/* turn off to clear any pending interrupt status */
-	TIMER_REGS->CTRL = 0u;
-	girq_src_clr(TIMER_GIRQ, TIMER_GIRQ_POS);
+	sys_write32(0, TIMER_BASE + TIMER_CR_OFS);
+	sys_write32(BIT(TIMER_GIRQ_BITPOS), TIMER_GIRQ_BASE + GIRQ_SRC_OFS);
 	NVIC_ClearPendingIRQ(TIMER_NVIC_NO);
 
 	temp = total_cycles;
@@ -278,7 +277,7 @@ static void xec_rtos_timer_isr(const void *arg)
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	girq_src_clr(TIMER_GIRQ, TIMER_GIRQ_POS);
+	sys_write32(BIT(TIMER_GIRQ_BITPOS), TIMER_GIRQ_BASE + GIRQ_SRC_OFS);
 
 	/* Restart the timer as early as possible to minimize drift... */
 	timer_restart(MAX_TICKS * CYCLES_PER_TICK);
@@ -310,7 +309,7 @@ static void xec_rtos_timer_isr(const void *arg)
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	girq_src_clr(TIMER_GIRQ, TIMER_GIRQ_POS);
+	sys_write32(BIT(TIMER_GIRQ_BITPOS), TIMER_GIRQ_BASE + GIRQ_SRC_OFS);
 
 	/* Restart the timer as early as possible to minimize drift... */
 	timer_restart(cached_icr);
@@ -365,7 +364,7 @@ void sys_clock_idle_exit(void)
 
 void sys_clock_disable(void)
 {
-	TIMER_REGS->CTRL = 0U;
+	sys_write32(0, TIMER_BASE + TIMER_CR_OFS);
 }
 
 #ifdef CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT
@@ -386,10 +385,10 @@ void arch_busy_wait(uint32_t usec_to_wait)
 		return;
 	}
 
-	uint32_t start = BTMR32_0_REGS->CNT;
+	uint32_t start = sys_read32(BTMR_BASE + BTMR_CNT_OFS);
 
 	for (;;) {
-		uint32_t curr = BTMR32_0_REGS->CNT;
+		uint32_t curr = sys_read32(BTMR_BASE + BTMR_CNT_OFS);
 
 		if ((curr - start) >= usec_to_wait) {
 			break;
@@ -400,43 +399,33 @@ void arch_busy_wait(uint32_t usec_to_wait)
 
 static int sys_clock_driver_init(void)
 {
-
 #ifdef CONFIG_TICKLESS_KERNEL
 	cached_icr = MAX_TICKS;
 #endif
 
-	TIMER_REGS->CTRL = 0u;
-	girq_src_clr(TIMER_GIRQ, TIMER_GIRQ_POS);
-	girq_src_dis(TIMER_GIRQ, TIMER_GIRQ_POS);
+	sys_write32(0, TIMER_BASE + TIMER_CR_OFS);
+	sys_write32(BIT(TIMER_GIRQ_BITPOS), TIMER_GIRQ_BASE + GIRQ_ENCLR_OFS);
+	sys_write32(BIT(TIMER_GIRQ_BITPOS), TIMER_GIRQ_BASE + GIRQ_SRC_OFS);
 	NVIC_ClearPendingIRQ(TIMER_NVIC_NO);
 
 	IRQ_CONNECT(TIMER_NVIC_NO, TIMER_NVIC_PRIO, xec_rtos_timer_isr, 0, 0);
 	irq_enable(TIMER_NVIC_NO);
-	girq_src_en(TIMER_GIRQ, TIMER_GIRQ_POS);
+	sys_write32(BIT(TIMER_GIRQ_BITPOS), TIMER_GIRQ_BASE + GIRQ_ENSET_OFS);
 
 #ifdef CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT
-	uint32_t btmr_ctrl = (MCHP_BTMR_CTRL_ENABLE
-			      | MCHP_BTMR_CTRL_AUTO_RESTART
-			      | MCHP_BTMR_CTRL_COUNT_UP
-			      | (47UL << MCHP_BTMR_CTRL_PRESCALE_POS));
+	uint32_t btmr_ctrl = (BIT(BTMR_CR_ACTV_POS) | BIT(BTMR_CR_ARS_POS) |
+			      BIT(BTMR_CR_CNT_UP_POS) | BTMR_CR_PS_SET(47u));
 
-#if CONFIG_SOC_SERIES_MEC15XX
-	mchp_pcr_periph_slp_ctrl(PCR_B32TMR0, 0);
-#else
-	PCR_XEC_REGS->SLP_EN[BTMR32_0_PCR_REG_IDX] &= ~BIT(BTMR32_0_PCR_BITPOS);
-#endif
-	BTMR32_0_REGS->CTRL = MCHP_BTMR_CTRL_SOFT_RESET;
-	BTMR32_0_REGS->CTRL = btmr_ctrl;
-	BTMR32_0_REGS->PRLD = UINT32_MAX;
-	btmr_ctrl |= MCHP_BTMR_CTRL_START;
+	sys_write32(BIT(BTMR_CR_SOFT_RST_POS), BTMR_BASE + BTMR_CR_OFS);
+	sys_write32(btmr_ctrl, BTMR_BASE + BTMR_CR_OFS);
+	sys_write32(UINT32_MAX, BTMR_BASE + BTMR_PRLD_OFS);
+	sys_set_bit(BTMR_BASE + BTMR_CR_OFS, BTMR_CR_START_POS);
 
 	timer_restart(cached_icr);
 	/* wait for RTOS timer to load count register from preload */
-	while (TIMER_REGS->CNT == 0) {
+	while (sys_read32(BTMR_BASE + BTMR_CNT_OFS) == 0) {
 		;
 	}
-
-	BTMR32_0_REGS->CTRL = btmr_ctrl;
 #else
 	timer_restart(cached_icr);
 #endif
@@ -444,5 +433,4 @@ static int sys_clock_driver_init(void)
 	return 0;
 }
 
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

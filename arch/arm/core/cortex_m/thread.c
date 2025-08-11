@@ -455,10 +455,21 @@ int arch_float_disable(struct k_thread *thread)
 
 int arch_float_enable(struct k_thread *thread, unsigned int options)
 {
+	ARG_UNUSED(thread);
+	ARG_UNUSED(options);
 	/* This is not supported in Cortex-M */
 	return -ENOTSUP;
 }
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
+
+int arch_coprocessors_disable(struct k_thread *thread)
+{
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+	return arch_float_disable(thread);
+#else
+	return -ENOTSUP;
+#endif
+}
 
 /* Internal function for Cortex-M initialization,
  * applicable to either case of running Zephyr
@@ -557,6 +568,10 @@ void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
 			 "ldr   r4, =z_thread_entry\n"
 			 /* We don’t intend to return, so there is no need to link. */
 			 "bx    r4\n"
+			 /* Force a literal pool placement for the addresses referenced above */
+#ifndef __IAR_SYSTEMS_ICC__
+			 ".ltorg\n"
+#endif
 			 :
 			 : "r"(_main), "r"(stack_ptr)
 			 : "r0", "r1", "r2", "r3", "r4", "ip", "lr", "memory");
@@ -623,6 +638,10 @@ FUNC_NORETURN void z_arm_switch_to_main_no_multithreading(k_thread_entry_t main_
 		"ldr r0, =arch_irq_lock_outlined\n"
 		"blx r0\n"
 		"loop: b loop\n\t" /* while (true); */
+		/* Force a literal pool placement for the addresses referenced above */
+#ifndef __IAR_SYSTEMS_ICC__
+		".ltorg\n"
+#endif
 		:
 		: [_p1] "r"(p1), [_p2] "r"(p2), [_p3] "r"(p3), [_psp] "r"(psp),
 		  [_main_entry] "r"(main_entry)

@@ -11,6 +11,7 @@
 
 #include <zephyr/posix/time.h>
 #include <zephyr/sys_clock.h>
+#include <zephyr/sys/timeutil.h>
 
 /* arbitrary magic numbers used for testing */
 #define BIOS_FOOD     0xb105f00d
@@ -20,12 +21,12 @@
 
 static inline void timespec_add_ms(struct timespec *ts, uint32_t ms)
 {
-	bool oflow;
+	struct timespec ms_as_ts = {
+		.tv_sec = ms / MSEC_PER_SEC,
+		.tv_nsec = (ms % MSEC_PER_SEC) * NSEC_PER_MSEC,
+	};
 
-	ts->tv_nsec += ms * NSEC_PER_MSEC;
-	oflow = ts->tv_nsec >= NSEC_PER_SEC;
-	ts->tv_sec += oflow;
-	ts->tv_nsec -= oflow * NSEC_PER_SEC;
+	(void)timespec_add(ts, &ms_as_ts);
 }
 
 #endif

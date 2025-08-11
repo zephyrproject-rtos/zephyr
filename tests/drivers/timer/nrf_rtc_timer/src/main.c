@@ -321,7 +321,11 @@ ZTEST(nrf_rtc_timer, test_resetting_cc)
 		struct test_data test_data = {
 			.target_time = now + 5,
 			.window = 0,
-			.delay = 0,
+			/* For lower bit width, target_time may be equal to maximum counter value.
+			 * In such case, due to PPI connection clearing the timer, counter value
+			 * read in the handler may be slightly off the set counter value.
+			 */
+			.delay = (CONFIG_NRF_RTC_COUNTER_BIT_WIDTH < 24) ? 2 : 0,
 			.err = -EINVAL
 		};
 
@@ -361,6 +365,11 @@ static void overflow_sched_handler(int32_t id, uint64_t expire_time,
  */
 ZTEST(nrf_rtc_timer, test_overflow)
 {
+	/* For bit width lower than default 24, overflow injection is not possible. */
+	if (CONFIG_NRF_RTC_COUNTER_BIT_WIDTH < 24) {
+		ztest_test_skip();
+	}
+
 	PRINT("RTC ticks before overflow injection: %u\r\n",
 	      (uint32_t)z_nrf_rtc_timer_read());
 

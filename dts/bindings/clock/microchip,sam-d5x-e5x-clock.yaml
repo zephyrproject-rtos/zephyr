@@ -1,0 +1,23 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip SAM_D5x_E5x SOC family clock
+
+description: |
+  Microchip SAM_D5x_E5x SOC family clock (OSCCTRL, OSC32KCTRL, GCLK, MCLK)
+
+include:
+  - name: base.yaml
+  - name: pinctrl-device.yaml
+
+compatible: "microchip,sam-d5x-e5x-clock"
+
+properties:
+  on-timeout-ms:
+    type: int
+    default: 5
+    description: |
+      Timeout in milliseconds for clock to be on.
+
+      Driver waits in clock on API to check if the clock is actually on,
+      so that the waiting time is not indefinite.

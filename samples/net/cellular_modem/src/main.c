@@ -88,6 +88,135 @@ static void print_cellular_info(void)
 	}
 }
 
+#ifdef CONFIG_SAMPLE_CELLULAR_MODEM_AUTO_APN
+
+struct apn_profile {
+	const char *apn;
+	const char *imsi_list;
+};
+
+/* Build the static table */
+static const struct apn_profile apn_profiles[] = {
+	{ CONFIG_SAMPLE_CELLULAR_APN_0, CONFIG_SAMPLE_CELLULAR_IMSI_LIST_0 },
+	{ CONFIG_SAMPLE_CELLULAR_APN_1, CONFIG_SAMPLE_CELLULAR_IMSI_LIST_1 },
+	{ CONFIG_SAMPLE_CELLULAR_APN_2, CONFIG_SAMPLE_CELLULAR_IMSI_LIST_2 },
+	{ CONFIG_SAMPLE_CELLULAR_APN_3, CONFIG_SAMPLE_CELLULAR_IMSI_LIST_3 },
+};
+
+
+/* Helper function to skip whitespace */
+static const char *skip_whitespace(const char *ptr)
+{
+	while (*ptr == ' ' || *ptr == '\t') {
+		++ptr;
+	}
+	return ptr;
+}
+
+/* Helper function to find the end of current profile entry */
+static bool list_matches_imsi(const char *list, const char *imsi)
+{
+	for (const char *p = list; *p; ) {
+		p = skip_whitespace(p);
+		if (!*p) {
+			break;
+		}
+
+		/* copy one token from the list */
+		char tok[7];
+		size_t len = 0;
+
+		while (*p && *p != ' ' && *p != '\t' && *p != ',' && len < sizeof(tok) - 1) {
+			tok[len++] = *p++;
+		}
+		tok[len] = '\0';
+
+		if (len >= 5 && len <= 6 && !strncmp(imsi, tok, len)) {
+			return true;    /* prefix matches */
+		}
+	}
+	return false;
+}
+
+static int modem_cellular_find_apn(char *dst, size_t dst_sz, const char *key)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(apn_profiles); i++) {
+		const struct apn_profile *p = &apn_profiles[i];
+
+		if (p->apn[0] == '\0') {
+			continue;
+		}
+
+		if (p->apn[0] && list_matches_imsi(p->imsi_list, key)) {
+			strncpy(dst, p->apn, dst_sz - 1);
+			dst[dst_sz - 1] = '\0';
+			return 0;
+		}
+	}
+
+	return -ENOENT;
+}
+
+static void modem_event_cb(const struct device *dev, enum cellular_event evt, const void *payload,
+			   void *user_data)
+{
+	ARG_UNUSED(user_data);
+
+	if (evt != CELLULAR_EVENT_MODEM_INFO_CHANGED) {
+		return;
+	}
+
+	const struct cellular_evt_modem_info *mi = payload;
+
+	if (!mi || mi->field != CELLULAR_MODEM_INFO_SIM_IMSI) {
+		return; /* not the IMSI notification */
+	}
+
+	char imsi[32] = {0};
+
+	if (cellular_get_modem_info(dev, CELLULAR_MODEM_INFO_SIM_IMSI, imsi, sizeof(imsi)) != 0) {
+		return;
+	}
+
+	/* Buffer for the APN we may discover */
+	char apn[32] = {0};
+
+	/* Try MCC+MNC with 6 digits first, then 5 digits */
+	for (size_t len = 6; len >= 5; len--) {
+		if (strlen(imsi) < len) {
+			continue;
+		}
+
+		char key[7] = {0};
+
+		memcpy(key, imsi, len);
+
+		if (modem_cellular_find_apn(apn, sizeof(apn), key) == 0) {
+			int rc = cellular_set_apn(dev, apn);
+
+			switch (rc) {
+			case 0:
+				printk("Auto-selected APN: %s\n", apn);
+				break;
+			case -EALREADY:
+				printk("APN %s already active\n", apn);
+				break;
+			case -EBUSY:
+				printk("Driver busy, cannot change APN now\n");
+				break;
+			default:
+				printk("Driver rejected APN %s (err %d)\n", apn, rc);
+				break;
+			}
+			return;
+		}
+	}
+
+	printk("No APN profile matches IMSI %s - waiting for manual APN\n", imsi);
+}
+
+#endif
+
 static void sample_dns_request_result(enum dns_resolve_status status, struct dns_addrinfo *info,
 				      void *user_data)
 {
@@ -283,6 +412,11 @@ int main(void)
 	uint16_t *port;
 	int ret;
 
+#ifdef CONFIG_SAMPLE_CELLULAR_MODEM_AUTO_APN
+	/* subscribe before powering the modem so we catch the IMSI event */
+	cellular_set_callback(modem, CELLULAR_EVENT_MODEM_INFO_CHANGED, modem_event_cb, NULL);
+#endif
+
 	init_sample_test_packet();
 
 	printk("Powering on modem\n");
@@ -295,20 +429,12 @@ int main(void)
 		return -1;
 	}
 
-	printk("Waiting for L4 connected\n");
-	ret = net_mgmt_event_wait_on_iface(iface, NET_EVENT_L4_CONNECTED, NULL, NULL, NULL,
-					   K_SECONDS(120));
+	printk("Waiting for L4 connected & DNS server added\n");
+	ret = net_mgmt_event_wait_on_iface(iface, NET_EVENT_L4_CONNECTED | NET_EVENT_DNS_SERVER_ADD,
+					   NULL, NULL, NULL, K_SECONDS(120));
 
 	if (ret != 0) {
 		printk("L4 was not connected in time\n");
-		return -1;
-	}
-
-	printk("Waiting for DNS server added\n");
-	ret = net_mgmt_event_wait_on_iface(iface, NET_EVENT_DNS_SERVER_ADD, NULL, NULL, NULL,
-					   K_SECONDS(10));
-	if (ret) {
-		printk("DNS server was not added in time\n");
 		return -1;
 	}
 

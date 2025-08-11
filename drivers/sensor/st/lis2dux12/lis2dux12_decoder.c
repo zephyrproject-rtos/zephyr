@@ -167,10 +167,6 @@ static int lis2dux12_decoder_get_frame_count(const uint8_t *buffer,
 	uint8_t tot_accel_fifo_words = 0;
 	uint8_t tot_ts_fifo_words = 0;
 
-#if defined(CONFIG_LIS2DUX12_ENABLE_TEMP)
-	uint8_t tot_temp_fifo_words = 0;
-#endif
-
 	buffer += sizeof(struct lis2dux12_fifo_data);
 	buffer_end = buffer + LIS2DUX12_FIFO_SIZE(edata->fifo_count);
 
@@ -205,9 +201,10 @@ static int lis2dux12_decoder_get_frame_count(const uint8_t *buffer,
 
 #if defined(CONFIG_LIS2DUX12_ENABLE_TEMP)
 	case SENSOR_CHAN_DIE_TEMP:
-		*frame_count = tot_temp_fifo_words;
+		*frame_count = (data->fifo_mode_sel == 0) ? tot_accel_fifo_words : 0;
 		break;
 #endif
+
 	default:
 		*frame_count = 0;
 		break;
@@ -227,11 +224,11 @@ static int lis2dux12_decode_fifo(const uint8_t *buffer, struct sensor_chan_spec 
 	int count = 0;
 	uint8_t fifo_tag;
 	uint16_t xl_count = 0;
-	uint16_t tot_chan_fifo_words = 0;
+	uint16_t tot_fifo_samples = 0;
 	int ret;
 
 	/* count total FIFO word for each tag */
-	ret = lis2dux12_decoder_get_frame_count(buffer, chan_spec, &tot_chan_fifo_words);
+	ret = lis2dux12_decoder_get_frame_count(buffer, chan_spec, &tot_fifo_samples);
 	if (ret < 0) {
 		return 0;
 	}
@@ -247,8 +244,15 @@ static int lis2dux12_decode_fifo(const uint8_t *buffer, struct sensor_chan_spec 
 	if (SENSOR_CHANNEL_IS_ACCEL(chan_spec.chan_type)) {
 		((struct sensor_data_header *)data_out)->base_timestamp_ns =
 			edata->header.timestamp -
-			(tot_chan_fifo_words - 1) *
+			(tot_fifo_samples - 1) *
 				accel_period_ns(edata->accel_odr, edata->accel_batch_odr);
+#if defined(CONFIG_LIS2DUX12_ENABLE_TEMP)
+	} else if (chan_spec.chan_type == SENSOR_CHAN_DIE_TEMP) {
+		((struct sensor_data_header *)data_out)->base_timestamp_ns =
+			edata->header.timestamp -
+			(tot_fifo_samples - 1) *
+				accel_period_ns(edata->accel_odr, edata->accel_batch_odr);
+#endif
 	}
 
 	while (count < max_count && buffer < buffer_end) {
@@ -261,12 +265,12 @@ static int lis2dux12_decode_fifo(const uint8_t *buffer, struct sensor_chan_spec 
 		fifo_tag = (buffer[0] >> 3);
 
 		switch (fifo_tag) {
-		case LIS2DUXXX_XL_TEMP_TAG: {
+		case LIS2DUXXX_XL_ONLY_2X_TAG: {
 			struct sensor_three_axis_data *out = data_out;
 			int16_t x, y, z;
 			const int32_t scale = accel_scaler[header->range];
 
-			xl_count++;
+			xl_count += 2;
 			if ((uintptr_t)buffer < *fit) {
 				/* This frame was already decoded, move on to the next frame */
 				buffer = frame_end;
@@ -278,19 +282,119 @@ static int lis2dux12_decode_fifo(const uint8_t *buffer, struct sensor_chan_spec 
 				continue;
 			}
 
+			out->shift = accel_range[header->range];
+
 			out->readings[count].timestamp_delta =
-				(xl_count - 1) * accel_period_ns(edata->accel_odr,
+				(xl_count - 2) * accel_period_ns(edata->accel_odr,
 								 edata->accel_batch_odr);
 
-			x = (int16_t)buffer[1] + (int16_t)buffer[2] * 256;
-			y = (int16_t)buffer[3] + (int16_t)buffer[4] * 256;
-			z = (int16_t)buffer[5] + (int16_t)buffer[6] * 256;
-
-			out->shift = accel_range[header->range];
+			x = *(int16_t *)&buffer[0];
+			y = *(int16_t *)&buffer[1];
+			z = *(int16_t *)&buffer[2];
 
 			out->readings[count].x = Q31_SHIFT_MICROVAL(scale * x, out->shift);
 			out->readings[count].y = Q31_SHIFT_MICROVAL(scale * y, out->shift);
 			out->readings[count].z = Q31_SHIFT_MICROVAL(scale * z, out->shift);
+			count++;
+
+			out->readings[count].timestamp_delta =
+				(xl_count - 1) * accel_period_ns(edata->accel_odr,
+								 edata->accel_batch_odr);
+
+			x = *(int16_t *)&buffer[3];
+			y = *(int16_t *)&buffer[4];
+			z = *(int16_t *)&buffer[5];
+			out->readings[count].x = Q31_SHIFT_MICROVAL(scale * x, out->shift);
+			out->readings[count].y = Q31_SHIFT_MICROVAL(scale * y, out->shift);
+			out->readings[count].z = Q31_SHIFT_MICROVAL(scale * z, out->shift);
+			break;
+		}
+
+		case LIS2DUXXX_XL_TEMP_TAG: {
+			struct sensor_three_axis_data *out = data_out;
+			int16_t x, y, z;
+#if defined(CONFIG_LIS2DUX12_ENABLE_TEMP)
+			struct sensor_q31_data *t_out = data_out;
+			int16_t  t;
+			int64_t t_uC;
+#endif
+			const int32_t scale = accel_scaler[header->range];
+
+			xl_count++;
+			if ((uintptr_t)buffer < *fit) {
+				/* This frame was already decoded, move on to the next frame */
+				buffer = frame_end;
+				continue;
+			}
+
+			if (edata->fifo_mode_sel == 1) {
+				out->readings[count].timestamp_delta =
+					(xl_count - 1) * accel_period_ns(edata->accel_odr,
+									edata->accel_batch_odr);
+
+				if (!SENSOR_CHANNEL_IS_ACCEL(chan_spec.chan_type)) {
+					buffer = frame_end;
+					continue;
+				}
+
+				x = (int16_t)buffer[1] + (int16_t)buffer[2] * 256;
+				y = (int16_t)buffer[3] + (int16_t)buffer[4] * 256;
+				z = (int16_t)buffer[5] + (int16_t)buffer[6] * 256;
+
+				out->shift = accel_range[header->range];
+
+				out->readings[count].x = Q31_SHIFT_MICROVAL(scale * x, out->shift);
+				out->readings[count].y = Q31_SHIFT_MICROVAL(scale * y, out->shift);
+				out->readings[count].z = Q31_SHIFT_MICROVAL(scale * z, out->shift);
+			} else {
+				if (!SENSOR_CHANNEL_IS_ACCEL(chan_spec.chan_type)
+#if defined(CONFIG_LIS2DUX12_ENABLE_TEMP)
+				   && (chan_spec.chan_type != SENSOR_CHAN_DIE_TEMP)
+#endif
+				   ) {
+					buffer = frame_end;
+					continue;
+				}
+
+				if (SENSOR_CHANNEL_IS_ACCEL(chan_spec.chan_type)) {
+					out->readings[count].timestamp_delta =
+						(xl_count - 1) * accel_period_ns(edata->accel_odr,
+									edata->accel_batch_odr);
+
+					x = (int16_t)buffer[1];
+					x = (x + (int16_t)buffer[2] * 256) * 16;
+					y = (int16_t)buffer[2] / 16;
+					y = (y + ((int16_t)buffer[3] * 16)) * 16;
+					z = (int16_t)buffer[4];
+					z = (z + (int16_t)buffer[5] * 256) * 16;
+
+					out->shift = accel_range[header->range];
+
+					out->readings[count].x = Q31_SHIFT_MICROVAL(scale * x,
+										    out->shift);
+					out->readings[count].y = Q31_SHIFT_MICROVAL(scale * y,
+										    out->shift);
+					out->readings[count].z = Q31_SHIFT_MICROVAL(scale * z,
+										    out->shift);
+#if defined(CONFIG_LIS2DUX12_ENABLE_TEMP)
+				} else {
+					t_out->readings[count].timestamp_delta =
+						(xl_count - 1) * accel_period_ns(edata->accel_odr,
+									edata->accel_batch_odr);
+
+					t = ((int16_t)buffer[5] / 16 +
+					     (int16_t)buffer[6] * 16) * 16;
+
+					t_out->shift = temp_range;
+
+					/* transform temperature LSB into micro-Celsius */
+					t_uC = SENSOR_TEMP_UCELSIUS(t);
+					t_out->readings[count].temperature =
+							Q31_SHIFT_MICROVAL(t_uC, t_out->shift);
+
+#endif /* CONFIG_LIS2DUX12_ENABLE_TEMP */
+				}
+			}
 			break;
 		}
 

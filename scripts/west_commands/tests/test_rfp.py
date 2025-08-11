@@ -95,7 +95,7 @@ EXPECTED_COMMANDS_WITH_RFP_CLI = [
 
 
 def require_patch(program):
-    assert program in ['rfp']
+    assert program in ['rfp', 'rfp-cli', TEST_RFP_USR_LOCAL_RFP_CLI]
 
 
 os_path_isfile = os.path.isfile
@@ -109,7 +109,8 @@ def os_path_isfile_patch(filename):
 
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
 @patch('runners.core.ZephyrBinaryRunner.check_call')
-def test_rfp_init(cc, req, runner_config, tmpdir):
+@patch('runners.rfp.RfpBinaryRunner.default_rfp')
+def test_rfp_init(dr, cc, req, runner_config, tmpdir):
     """
     Test commands using a runner created by constructor.
 
@@ -129,7 +130,8 @@ def test_rfp_init(cc, req, runner_config, tmpdir):
 
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
 @patch('runners.core.ZephyrBinaryRunner.check_call')
-def test_rfp_create(cc, req, runner_config, tmpdir):
+@patch('runners.rfp.RfpBinaryRunner.default_rfp')
+def test_rfp_create(dr, cc, req, runner_config, tmpdir):
     """
     Test commands using a runner created from command line parameters.
 
@@ -154,7 +156,8 @@ def test_rfp_create(cc, req, runner_config, tmpdir):
 
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
 @patch('runners.core.ZephyrBinaryRunner.check_call')
-def test_rfp_create_with_speed(cc, req, runner_config, tmpdir):
+@patch('runners.rfp.RfpBinaryRunner.default_rfp')
+def test_rfp_create_with_speed(dr, cc, req, runner_config, tmpdir):
     """
     Test commands using a runner created from command line parameters.
 
@@ -185,7 +188,8 @@ def test_rfp_create_with_speed(cc, req, runner_config, tmpdir):
 
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
 @patch('runners.core.ZephyrBinaryRunner.check_call')
-def test_rfp_create_with_erase(cc, req, runner_config, tmpdir):
+@patch('runners.rfp.RfpBinaryRunner.default_rfp')
+def test_rfp_create_with_erase(dr, cc, req, runner_config, tmpdir):
     """
     Test commands using a runner created from command line parameters.
 
@@ -207,7 +211,8 @@ def test_rfp_create_with_erase(cc, req, runner_config, tmpdir):
 
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
 @patch('runners.core.ZephyrBinaryRunner.check_call')
-def test_rfp_create_with_verify(cc, req, runner_config, tmpdir):
+@patch('runners.rfp.RfpBinaryRunner.default_rfp')
+def test_rfp_create_with_verify(dr, cc, req, runner_config, tmpdir):
     """
     Test commands using a runner created from command line parameters.
 
@@ -229,7 +234,8 @@ def test_rfp_create_with_verify(cc, req, runner_config, tmpdir):
 
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
 @patch('runners.core.ZephyrBinaryRunner.check_call')
-def test_rfp_create_with_rfp_cli(cc, req, runner_config, tmpdir):
+@patch('runners.rfp.RfpBinaryRunner.default_rfp')
+def test_rfp_create_with_rfp_cli(dr, cc, req, runner_config, tmpdir):
     """
     Test commands using a runner created from command line parameters.
 

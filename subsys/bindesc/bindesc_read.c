@@ -118,7 +118,7 @@ int bindesc_open_ram(struct bindesc_handle *handle, const uint8_t *address, size
 
 	if (*(uint64_t *)address != BINDESC_MAGIC) {
 		LOG_ERR("Magic not found in given address");
-		return -ENONET;
+		return -ENOENT;
 	}
 
 	handle->address = address;

@@ -13,6 +13,10 @@ zephyr_library_sources(
     power_down_cavs.S
     )
 
+zephyr_library_sources_ifdef(CONFIG_GDBSTUB
+    gdbstub.c
+    )
+
 if(CONFIG_SMP OR CONFIG_MP_MAX_NUM_CPUS GREATER 1)
     zephyr_library_sources(multiprocessing.c)
 endif()

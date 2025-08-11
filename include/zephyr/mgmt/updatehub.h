@@ -90,6 +90,15 @@ __syscall int updatehub_confirm(void);
  */
 __syscall int updatehub_reboot(void);
 
+/**
+ * @brief Report an update failure to the UpdateHub server.
+ *
+ * @details This sends an ERROR state (UPDATEHUB_STATE_ERROR) for the last package.
+ *
+ * @return 0 on success, negative errno on failure.
+ */
+__syscall int updatehub_report_error(void);
+
 #ifdef __cplusplus
 }
 #endif

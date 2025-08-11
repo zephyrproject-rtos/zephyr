@@ -38,6 +38,7 @@ set_property(TARGET bintools PROPERTY elfconvert_flag_outfile "-DOUTFILE=")
 #   disassembly_flag               : --disassemble
 #   disassembly_flag_final         : empty
 #   disassembly_flag_inline_source : --interleave=source
+#   disassembly_flag_no_aliases    : empty
 #   disassembly_flag_all           : empty, fromelf does not differentiate on this.
 #   disassembly_flag_infile        : empty, fromelf doesn't take arguments for filenames
 #   disassembly_flag_outfile       : --output
@@ -46,6 +47,7 @@ set_property(TARGET bintools PROPERTY disassembly_command ${CMAKE_FROMELF})
 set_property(TARGET bintools PROPERTY disassembly_flag --disassemble)
 set_property(TARGET bintools PROPERTY disassembly_flag_final "")
 set_property(TARGET bintools PROPERTY disassembly_flag_inline_source --interleave=source)
+set_property(TARGET bintools PROPERTY disassembly_flag_no_aliases "")
 set_property(TARGET bintools PROPERTY disassembly_flag_all "")
 
 set_property(TARGET bintools PROPERTY disassembly_flag_infile "")

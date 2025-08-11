@@ -1,0 +1,55 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/silabs/xg22-pinctrl.h>
+
+&pinctrl {
+	itm_default: itm_default {
+		group0 {
+			pins = <GPIO_SWV_PA3>;
+			drive-push-pull;
+			output-high;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group0 {
+			pins = <I2C0_SCL_PD2>, <I2C0_SDA_PD3>;
+			bias-pull-up;
+			drive-open-drain;
+		};
+	};
+
+	pti_default: pti_default {
+		group0 {
+			pins = <PTI_DOUT_PC4>, <PTI_DFRAME_PC5>;
+			drive-push-pull;
+			output-high;
+		};
+	};
+
+	timer0_default: timer0_default {
+		group0 {
+			pins = <TIMER0_CC0_PA4>;
+			drive-push-pull;
+			output-high;
+		};
+	};
+
+	usart1_default: usart1_default {
+		group0 {
+			pins = <USART1_TX_PA5>;
+			drive-push-pull;
+			output-high;
+		};
+
+		group1 {
+			pins = <USART1_RX_PA6>;
+			input-enable;
+			silabs,input-filter;
+		};
+	};
+};

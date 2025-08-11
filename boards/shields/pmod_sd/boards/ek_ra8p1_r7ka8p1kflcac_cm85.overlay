@@ -1,0 +1,75 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		/*
+		 * Need to use external uart console
+		 * when using this pmod_sd
+		 */
+		zephyr,console = &uart9;
+		zephyr,shell-uart = &uart9;
+	};
+};
+
+&pinctrl {
+	pmod_sd_default: pmod_sd_default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_SDHI, 3, 6)>, /* SDCD */
+				<RA_PSEL(RA_PSEL_SDHI, 3, 7)>, /* SDCMD */
+				<RA_PSEL(RA_PSEL_SDHI, 3, 4)>, /* SDDATA0 */
+				<RA_PSEL(RA_PSEL_SDHI, 13, 2)>, /* SDDATA1 */
+				<RA_PSEL(RA_PSEL_SDHI, 13, 1)>, /* SDDATA2 */
+				<RA_PSEL(RA_PSEL_SDHI, 1, 11)>, /* SDDATA3 */
+				<RA_PSEL(RA_PSEL_SDHI, 3, 5)>; /* SDWP */
+			drive-strength = "high";
+		};
+
+		group2 {
+			psels = <RA_PSEL(RA_PSEL_SDHI, 3, 8)>; /* SDCLK */
+			drive-strength = "highspeed-high";
+		};
+	};
+
+	sci9_default: sci9_default {
+		group1 {
+			/* tx */
+			psels = <RA_PSEL(RA_PSEL_SCI_9, 2, 9)>;
+			drive-strength = "medium";
+		};
+
+		group2 {
+			/* rx */
+			psels = <RA_PSEL(RA_PSEL_SCI_9, 2, 8)>;
+		};
+	};
+};
+
+&pmod_sd_shield {
+	interrupt-names = "accs", "card", "dma-req";
+	interrupts = <60 12>, <61 12>, <62 12>;
+	pinctrl-0 = <&pmod_sd_default>;
+};
+
+&sci9 {
+	pinctrl-0 = <&sci9_default>;
+	pinctrl-names = "default";
+	interrupts = <63 1>, <64 1>, <65 1>, <66 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+
+	uart9: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
+&sci8 {
+	status = "disabled";
+
+	uart {
+		status = "disabled";
+	};
+};

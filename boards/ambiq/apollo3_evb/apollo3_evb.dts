@@ -28,8 +28,8 @@
 		led2 = &led2;
 		sw0 = &button0;
 		sw1 = &button1;
-		bootloader-led0 = &led0;
 		mcuboot-led0 = &led0;
+		pwm-led0 = &pwm_led0;
 	};
 
 	leds {
@@ -72,6 +72,15 @@
 			gpios = <&gpio0_31 19 GPIO_ACTIVE_LOW>;
 			label = "BTN2";
 			zephyr,code = <INPUT_KEY_2>;
+		};
+	};
+
+	pwmleds: pwmleds {
+		compatible = "pwm-leds";
+		status = "disabled";
+		pwm_led0: pwm_led_0 {
+			pwms = <&pwm2 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "PWM_LED";
 		};
 	};
 };
@@ -159,8 +168,20 @@
 	};
 };
 
-&counter0 {
-	status = "disabled";
+&timer0 {
+	counter0: counter {
+		status = "disabled";
+	};
+};
+
+&timer2 {
+	pwm2: pwm {
+		timer-segment = "SEGMENT_B";
+		pwm-type = "PWM_REPEAT";
+		pinctrl-0 = <&pwm2_default>;
+		pinctrl-names = "default";
+		status = "disabled";
+	};
 };
 
 &rtc0 {

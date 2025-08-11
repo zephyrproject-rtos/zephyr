@@ -55,6 +55,19 @@ static int lis2dux12_freq_to_odr_val(const struct device *dev, uint16_t freq)
 	int odr;
 
 	for (odr = LIS2DUX12_DT_ODR_OFF; odr < LIS2DUX12_DT_ODR_END; odr++) {
+		/*
+		 * In case power-mode is HP, skip the ULP odrs in order to
+		 * avoid to erroneously break the loop sooner than expected.
+		 * In HP mode the correct ODRs must be found from
+		 * LIS2DUX12_DT_ODR_6Hz on.
+		 */
+		if ((cfg->pm == LIS2DUX12_OPER_MODE_HIGH_PERFORMANCE) &&
+		    ((odr == LIS2DUX12_DT_ODR_1Hz_ULP) ||
+		     (odr == LIS2DUX12_DT_ODR_3Hz_ULP) ||
+		     (odr == LIS2DUX12_DT_ODR_25Hz_ULP))) {
+			continue;
+		}
+
 		if (freq <= lis2dux12_odr_map[odr]) {
 			break;
 		}
@@ -67,15 +80,6 @@ static int lis2dux12_freq_to_odr_val(const struct device *dev, uint16_t freq)
 
 	if (unlikely(odr == LIS2DUX12_DT_ODR_OFF)) {
 		return LIS2DUX12_DT_ODR_OFF;
-	}
-
-	/* handle high performance mode */
-	if (cfg->pm == LIS2DUX12_OPER_MODE_HIGH_PERFORMANCE) {
-		if (odr < LIS2DUX12_DT_ODR_6Hz) {
-			odr = LIS2DUX12_DT_ODR_6Hz;
-		}
-
-		odr |= 0x10;
 	}
 
 	return odr;
@@ -277,6 +281,7 @@ static DEVICE_API(sensor, lis2dux12_driver_api) = {
 	.odr = DT_INST_PROP(inst, odr),							\
 	IF_ENABLED(CONFIG_LIS2DUX12_STREAM,						\
 		   (.fifo_wtm = DT_INST_PROP(inst, fifo_watermark),			\
+		    .fifo_mode_sel = DT_INST_PROP(inst, fifo_mode_sel),			\
 		    .accel_batch  = DT_INST_PROP(inst, accel_fifo_batch_rate),		\
 		    .ts_batch  = DT_INST_PROP(inst, timestamp_fifo_batch_rate),))	\
 	IF_ENABLED(UTIL_OR(DT_INST_NODE_HAS_PROP(inst, int1_gpios),			\

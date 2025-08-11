@@ -1,0 +1,26 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_MCHP_COMMON
+	bool
+	help
+	  Common options for Microchip clock control drivers.
+
+config CLOCK_CONTROL_MCHP_SAM_D5X_E5X
+	bool "Microchip SAM D5X/E5X clock controller Support"
+	depends on DT_HAS_MICROCHIP_SAM_D5X_E5X_CLOCK_ENABLED
+	default y
+	select CLOCK_CONTROL_MCHP_COMMON
+	help
+	  Enable clock controller driver for Microchip SAM D5X/E5X SoC family.
+
+if CLOCK_CONTROL_MCHP_COMMON
+
+config CLOCK_CONTROL_MCHP_GET_RATE
+	bool "Get clock rate"
+	default y
+	help
+	  Enable support for retrieving the clock rate. This may increase
+	  code size, depending on the depth of clock source hierarchy.
+
+endif # CLOCK_CONTROL_MCHP_COMMON

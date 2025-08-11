@@ -1,0 +1,55 @@
+# Copyright (c) 2025 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: infineon cat1 peripheral divider 8bit.
+
+compatible: "infineon,cat1-peri-div"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  clk-dst:
+    type: uint8-array
+    description: |
+      Clock Connections. PDL uses the target IP to identify the peri group
+
+  div-type:
+    type: int
+    description: |
+      Clock divider type.
+
+  div-num:
+    type: int
+    description: |
+     Programmable clock divider types: DIV_8_BIT, DIV_16_BIT, DIV_16_5_BIT, DIV_24_5_BIT
+
+  div-value:
+    type: int
+    description: |
+      For non-fractional clock dividers (div-type: DIV_8_BIT, DIV_16_BIT)
+      Causes integer division of (divider value + 1), or division by 1 to 256
+      (8-bit divider) or 1 to 65536 (16-bit divider).
+
+      For fractional clock dividers (div-type: DIV_16_5_BIT, DIV_24_5_BIT):
+      The integer divider value. The source of the divider is peri_clk, which is a
+      divided version of hf_clk[0]. The divider value causes integer division of
+      (divider value + 1), or division by 1 to 65536 (16-bit divider) or 1 to 16777216
+      (24-bit divider).
+
+  div-frac-value:
+    type: int
+    description: |
+      The fraction part of the divider. The fractional divider can be 0-31, thus
+      it divides the clock by 1/32 for each count. To divide the clock by 11/32nds
+      set this value to 11.
+
+  scb-block:
+    type: int
+    required: true
+    description: |
+      SCB device instance peripheral clock is assigned to:
+      &scb0 : scb-block = <0>
+      &scb3 : scb-block = <3>
+      &scb5 : scb-block = <5>

@@ -17,7 +17,6 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,console = &uart1;
-		rtimer-busy-wait-timer = &timer5;
 	};
 
 	power-states {
@@ -48,12 +47,6 @@
 
 /* Enable MCHP kernel timer driver using 32KHz RTOS timer and 1MHz basic timer */
 &rtimer {
-	compatible = "microchip,mec5-ktimer";
-	status = "okay";
-};
-
-/* We chose 32-bit basic timer 5 for use by ktimer */
-&timer5 {
 	status = "okay";
 };
 

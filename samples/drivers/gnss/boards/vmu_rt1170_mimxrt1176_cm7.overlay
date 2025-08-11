@@ -8,6 +8,9 @@
 	aliases {
 		gnss = &gnss;
 	};
+	chosen {
+		zephyr,rtk-serial = &lpuart1;
+	};
 };
 
 &lpuart3 {
@@ -16,7 +19,6 @@
 
 	gnss: gnss {
 		status = "okay";
-		compatible = "u-blox,m8";
-		initial-baudrate = <115200>;
+		compatible = "u-blox,f9p";
 	};
 };

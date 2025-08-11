@@ -136,10 +136,9 @@ ZTEST(min_heap_api, test_insert)
 ZTEST(min_heap_api, test_peek_and_pop)
 {
 	int ret;
-	uint8_t storage[HEAP_CAPACITY * sizeof(struct data)];
 
-	MIN_HEAP_DEFINE(runtime_heap, storage, HEAP_CAPACITY,
-			sizeof(struct data), compare_ls);
+	MIN_HEAP_DEFINE_STATIC(runtime_heap, HEAP_CAPACITY, sizeof(struct data),
+			       __alignof__(struct data), compare_ls);
 
 	for (int i = 0; i < ARRAY_SIZE(elements); i++) {
 

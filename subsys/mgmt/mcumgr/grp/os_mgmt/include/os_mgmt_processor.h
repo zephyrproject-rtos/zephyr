@@ -37,6 +37,16 @@ extern "C" {
 #else
 #define PROCESSOR_NAME "cortex-m33+nodsp"
 #endif
+#elif defined(CONFIG_CPU_CORTEX_M52)
+#if defined(CONFIG_ARMV8_1_M_MVEF)
+#define PROCESSOR_NAME "cortex-m52"
+#elif defined(CONFIG_ARMV8_1_M_MVEI)
+#define PROCESSOR_NAME "cortex-m52+nomve.fp"
+#elif defined(CONFIG_ARMV8_M_DSP)
+#define PROCESSOR_NAME "cortex-m52+nomve"
+#else
+#define PROCESSOR_NAME "cortex-m52+nodsp"
+#endif
 #elif defined(CONFIG_CPU_CORTEX_M55)
 #if defined(CONFIG_ARMV8_1_M_MVEF)
 #define PROCESSOR_NAME "cortex-m55"
@@ -152,6 +162,16 @@ extern "C" {
 #endif
 #elif defined(CONFIG_RISCV)
 #define PROCESSOR_NAME "riscv"
+#elif defined(CONFIG_RX)
+#if defined(CONFIG_CPU_RXV1)
+#define PROCESSOR_NAME "rxv1"
+#elif defined(CONFIG_CPU_RXV2)
+#define PROCESSOR_NAME "rxv2"
+#elif defined(CONFIG_CPU_RXV3)
+#define PROCESSOR_NAME "rxv3"
+#else
+#define PROCESSOR_NAME "rx"
+#endif
 #elif defined(CONFIG_XTENSA)
 #define PROCESSOR_NAME "xtensa"
 #elif defined(CONFIG_SPARC)

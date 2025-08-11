@@ -7,6 +7,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/arch/exception.h>
 #include <kernel_internal.h>
 #include <zephyr/arch/common/exc_handle.h>
 #include <zephyr/logging/log.h>
@@ -51,7 +52,7 @@ static void dump_debug_event(void)
 	uint32_t moe = (dbgdscr & DBGDSCR_MOE_Msk) >> DBGDSCR_MOE_Pos;
 
 	/* Print debug event information */
-	LOG_ERR("Debug Event (%s)", get_dbgdscr_moe_string(moe));
+	EXCEPTION_DUMP("Debug Event (%s)", get_dbgdscr_moe_string(moe));
 }
 
 static uint32_t dump_fault(uint32_t status, uint32_t addr)
@@ -65,27 +66,27 @@ static uint32_t dump_fault(uint32_t status, uint32_t addr)
 	switch (status) {
 	case FSR_FS_ALIGNMENT_FAULT:
 		reason = K_ERR_ARM_ALIGNMENT_FAULT;
-		LOG_ERR("Alignment Fault @ 0x%08x", addr);
+		EXCEPTION_DUMP("Alignment Fault @ 0x%08x", addr);
 		break;
 	case FSR_FS_PERMISSION_FAULT:
 		reason = K_ERR_ARM_PERMISSION_FAULT;
-		LOG_ERR("Permission Fault @ 0x%08x", addr);
+		EXCEPTION_DUMP("Permission Fault @ 0x%08x", addr);
 		break;
 	case FSR_FS_SYNC_EXTERNAL_ABORT:
 		reason = K_ERR_ARM_SYNC_EXTERNAL_ABORT;
-		LOG_ERR("Synchronous External Abort @ 0x%08x", addr);
+		EXCEPTION_DUMP("Synchronous External Abort @ 0x%08x", addr);
 		break;
 	case FSR_FS_ASYNC_EXTERNAL_ABORT:
 		reason = K_ERR_ARM_ASYNC_EXTERNAL_ABORT;
-		LOG_ERR("Asynchronous External Abort");
+		EXCEPTION_DUMP("Asynchronous External Abort");
 		break;
 	case FSR_FS_SYNC_PARITY_ERROR:
 		reason = K_ERR_ARM_SYNC_PARITY_ERROR;
-		LOG_ERR("Synchronous Parity/ECC Error @ 0x%08x", addr);
+		EXCEPTION_DUMP("Synchronous Parity/ECC Error @ 0x%08x", addr);
 		break;
 	case FSR_FS_ASYNC_PARITY_ERROR:
 		reason = K_ERR_ARM_ASYNC_PARITY_ERROR;
-		LOG_ERR("Asynchronous Parity/ECC Error");
+		EXCEPTION_DUMP("Asynchronous Parity/ECC Error");
 		break;
 	case FSR_FS_DEBUG_EVENT:
 		reason = K_ERR_ARM_DEBUG_EVENT;
@@ -94,73 +95,77 @@ static uint32_t dump_fault(uint32_t status, uint32_t addr)
 #if defined(CONFIG_AARCH32_ARMV8_R)
 	case FSR_FS_TRANSLATION_FAULT:
 		reason = K_ERR_ARM_TRANSLATION_FAULT;
-		LOG_ERR("Translation Fault @ 0x%08x", addr);
+		EXCEPTION_DUMP("Translation Fault @ 0x%08x", addr);
 		break;
 	case FSR_FS_UNSUPPORTED_EXCLUSIVE_ACCESS_FAULT:
 		reason = K_ERR_ARM_UNSUPPORTED_EXCLUSIVE_ACCESS_FAULT;
-		LOG_ERR("Unsupported Exclusive Access Fault @ 0x%08x", addr);
+		EXCEPTION_DUMP("Unsupported Exclusive Access Fault @ 0x%08x", addr);
 		break;
 #elif defined(CONFIG_ARMV7_A)
 	case FSR_FS_PERMISSION_FAULT_2ND_LEVEL:
 		reason = K_ERR_ARM_PERMISSION_FAULT_2ND_LEVEL;
-		LOG_ERR("2nd Level Permission Fault @ 0x%08x", addr);
+		EXCEPTION_DUMP("2nd Level Permission Fault @ 0x%08x", addr);
 		break;
 	case FSR_FS_ACCESS_FLAG_FAULT_1ST_LEVEL:
 		reason = K_ERR_ARM_ACCESS_FLAG_FAULT_1ST_LEVEL;
-		LOG_ERR("1st Level Access Flag Fault @ 0x%08x", addr);
+		EXCEPTION_DUMP("1st Level Access Flag Fault @ 0x%08x", addr);
 		break;
 	case FSR_FS_ACCESS_FLAG_FAULT_2ND_LEVEL:
 		reason = K_ERR_ARM_ACCESS_FLAG_FAULT_2ND_LEVEL;
-		LOG_ERR("2nd Level Access Flag Fault @ 0x%08x", addr);
+		EXCEPTION_DUMP("2nd Level Access Flag Fault @ 0x%08x", addr);
 		break;
 	case FSR_FS_CACHE_MAINTENANCE_INSTRUCTION_FAULT:
 		reason = K_ERR_ARM_CACHE_MAINTENANCE_INSTRUCTION_FAULT;
-		LOG_ERR("Cache Maintenance Instruction Fault @ 0x%08x", addr);
+		EXCEPTION_DUMP("Cache Maintenance Instruction Fault @ 0x%08x", addr);
 		break;
 	case FSR_FS_TRANSLATION_FAULT:
 		reason = K_ERR_ARM_TRANSLATION_FAULT;
-		LOG_ERR("1st Level Translation Fault @ 0x%08x", addr);
+		EXCEPTION_DUMP("1st Level Translation Fault @ 0x%08x", addr);
 		break;
 	case FSR_FS_TRANSLATION_FAULT_2ND_LEVEL:
 		reason = K_ERR_ARM_TRANSLATION_FAULT_2ND_LEVEL;
-		LOG_ERR("2nd Level Translation Fault @ 0x%08x", addr);
+		EXCEPTION_DUMP("2nd Level Translation Fault @ 0x%08x", addr);
 		break;
 	case FSR_FS_DOMAIN_FAULT_1ST_LEVEL:
 		reason = K_ERR_ARM_DOMAIN_FAULT_1ST_LEVEL;
-		LOG_ERR("1st Level Domain Fault @ 0x%08x", addr);
+		EXCEPTION_DUMP("1st Level Domain Fault @ 0x%08x", addr);
 		break;
 	case FSR_FS_DOMAIN_FAULT_2ND_LEVEL:
 		reason = K_ERR_ARM_DOMAIN_FAULT_2ND_LEVEL;
-		LOG_ERR("2nd Level Domain Fault @ 0x%08x", addr);
+		EXCEPTION_DUMP("2nd Level Domain Fault @ 0x%08x", addr);
 		break;
 	case FSR_FS_SYNC_EXTERNAL_ABORT_TRANSLATION_TABLE_1ST_LEVEL:
 		reason = K_ERR_ARM_SYNC_EXTERNAL_ABORT_TRANSLATION_TABLE_1ST_LEVEL;
-		LOG_ERR("1st Level Synchronous External Abort Translation Table @ 0x%08x", addr);
+		EXCEPTION_DUMP("1st Level Synchronous External Abort Translation Table @ 0x%08x",
+				addr);
 		break;
 	case FSR_FS_SYNC_EXTERNAL_ABORT_TRANSLATION_TABLE_2ND_LEVEL:
 		reason = K_ERR_ARM_SYNC_EXTERNAL_ABORT_TRANSLATION_TABLE_2ND_LEVEL;
-		LOG_ERR("2nd Level Synchronous External Abort Translation Table @ 0x%08x", addr);
+		EXCEPTION_DUMP("2nd Level Synchronous External Abort Translation Table @ 0x%08x",
+				addr);
 		break;
 	case FSR_FS_TLB_CONFLICT_ABORT:
 		reason = K_ERR_ARM_TLB_CONFLICT_ABORT;
-		LOG_ERR("TLB Conflict Abort @ 0x%08x", addr);
+		EXCEPTION_DUMP("TLB Conflict Abort @ 0x%08x", addr);
 		break;
 	case FSR_FS_SYNC_PARITY_ERROR_TRANSLATION_TABLE_1ST_LEVEL:
 		reason = K_ERR_ARM_SYNC_PARITY_ERROR_TRANSLATION_TABLE_1ST_LEVEL;
-		LOG_ERR("1st Level Synchronous Parity Error Translation Table @ 0x%08x", addr);
+		EXCEPTION_DUMP("1st Level Synchronous Parity Error Translation Table @ 0x%08x",
+				addr);
 		break;
 	case FSR_FS_SYNC_PARITY_ERROR_TRANSLATION_TABLE_2ND_LEVEL:
 		reason = K_ERR_ARM_SYNC_PARITY_ERROR_TRANSLATION_TABLE_2ND_LEVEL;
-		LOG_ERR("2nd Level Synchronous Parity Error Translation Table @ 0x%08x", addr);
+		EXCEPTION_DUMP("2nd Level Synchronous Parity Error Translation Table @ 0x%08x",
+				addr);
 		break;
 #else
 	case FSR_FS_BACKGROUND_FAULT:
 		reason = K_ERR_ARM_BACKGROUND_FAULT;
-		LOG_ERR("Background Fault @ 0x%08x", addr);
+		EXCEPTION_DUMP("Background Fault @ 0x%08x", addr);
 		break;
 #endif
 	default:
-		LOG_ERR("Unknown (%u)", status);
+		EXCEPTION_DUMP("Unknown (%u)", status);
 	}
 	return reason;
 }
@@ -280,7 +285,7 @@ bool z_arm_fault_undef_instruction(struct arch_esf *esf)
 #endif
 
 	/* Print fault information */
-	LOG_ERR("***** UNDEFINED INSTRUCTION ABORT *****");
+	EXCEPTION_DUMP("***** UNDEFINED INSTRUCTION ABORT *****");
 
 	uint32_t reason = IS_ENABLED(CONFIG_SIMPLIFIED_EXCEPTION_CODES) ?
 			  K_ERR_CPU_EXCEPTION :
@@ -325,7 +330,7 @@ bool z_arm_fault_prefetch(struct arch_esf *esf)
 	return false;
 #endif
 	/* Print fault information*/
-	LOG_ERR("***** PREFETCH ABORT *****");
+	EXCEPTION_DUMP("***** PREFETCH ABORT *****");
 	if (FAULT_DUMP_VERBOSE) {
 		reason = dump_fault(fs, ifar);
 	}
@@ -409,7 +414,7 @@ bool z_arm_fault_data(struct arch_esf *esf)
 #endif
 
 	/* Print fault information*/
-	LOG_ERR("***** DATA ABORT *****");
+	EXCEPTION_DUMP("***** DATA ABORT *****");
 	if (FAULT_DUMP_VERBOSE) {
 		reason = dump_fault(fs, dfar);
 	}

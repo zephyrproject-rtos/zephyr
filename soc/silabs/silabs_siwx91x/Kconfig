@@ -38,4 +38,28 @@ config SIWX91X_NWP_INIT_PRIORITY
 	  have a higher priority than services that depend on it, such as Bluetooth,
 	  Wi-Fi and crypto.
 
+config SIWX91X_SIGN_KEY
+	string "Signing key"
+	help
+	  Sign the firmware using this private key. This value is passed as-is
+	  to the command "commander rps convert". The value is usually a path to
+	  PEM formatted file.
+
+config SIWX91X_MIC_KEY
+	string "Integrity Code (MIC) key"
+	help
+	  Check integrity of the firmware using MIC (AES CBC-MAC) based
+	  integrity check instead of CRC based check.
+	  This value is passed as-is to the command "commander rps convert". The
+	  value is usually a string of 32 hexadecimal number representing the
+	  AES-256 key.
+
+config SIWX91X_ENCRYPT
+	bool "Also encrypt the firmware"
+	depends on SIWX91X_MIC_KEY != ""
+	help
+	  Encrypt the application image using AES ECB encryption.
+	  The key used is the value of CONFIG_SIWX91X_MIC_KEY. This value is
+	  passed as-is to the command "commander rps convert".
+
 endif # SOC_FAMILY_SILABS_SIWX91X

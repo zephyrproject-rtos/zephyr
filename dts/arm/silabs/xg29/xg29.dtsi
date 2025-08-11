@@ -5,11 +5,11 @@
  */
 
 #include <arm/armv8-m.dtsi>
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/i2c/i2c.h>
-#include <dt-bindings/adc/adc.h>
-#include <dt-bindings/clock/silabs/xg29-clock.h>
-#include <dt-bindings/dma/silabs/xg29-dma.h>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/clock/silabs/xg29-clock.h>
+#include <zephyr/dt-bindings/dma/silabs/xg29-dma.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <freq.h>
 
 / {
@@ -279,7 +279,7 @@
 		};
 
 		gpio: gpio@5003c000 {
-			compatible = "silabs,gecko-gpio";
+			compatible = "silabs,gpio";
 			reg = <0x5003C000 0x440>;
 			interrupts = <31 2>, <30 2>;
 			interrupt-names = "GPIO_EVEN", "GPIO_ODD";
@@ -289,7 +289,7 @@
 			#size-cells = <1>;
 
 			gpioa: gpio@5003c030 {
-				compatible = "silabs,gecko-gpio-port";
+				compatible = "silabs,gpio-port";
 				reg = <0x5003C030 0x30>;
 				gpio-controller;
 				#gpio-cells = <2>;
@@ -297,7 +297,7 @@
 			};
 
 			gpiob: gpio@5003c060 {
-				compatible = "silabs,gecko-gpio-port";
+				compatible = "silabs,gpio-port";
 				reg = <0x5003C060 0x30>;
 				gpio-controller;
 				#gpio-cells = <2>;
@@ -305,7 +305,7 @@
 			};
 
 			gpioc: gpio@5003c090 {
-				compatible = "silabs,gecko-gpio-port";
+				compatible = "silabs,gpio-port";
 				reg = <0x5003C090 0x30>;
 				gpio-controller;
 				#gpio-cells = <2>;
@@ -313,7 +313,7 @@
 			};
 
 			gpiod: gpio@5003c0c0 {
-				compatible = "silabs,gecko-gpio-port";
+				compatible = "silabs,gpio-port";
 				reg = <0x5003C0C0 0x30>;
 				gpio-controller;
 				#gpio-cells = <2>;
@@ -335,6 +335,86 @@
 			#dma-cells = <1>;
 			dma-channels = <8>;
 			status = "disabled";
+		};
+
+		timer0: timer@50048000 {
+			compatible = "silabs,series2-timer";
+			reg = <0x50048000 0x4000>;
+			channels = <3>;
+			clocks = <&cmu CLOCK_TIMER0 CLOCK_BRANCH_EM01GRPACLK>;
+			counter-size = <32>;
+			interrupts = <10 2>;
+			status = "disabled";
+
+			pwm {
+				compatible = "silabs,timer-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		timer1: timer@5004c000 {
+			compatible = "silabs,series2-timer";
+			reg = <0x5004c000 0x4000>;
+			channels = <3>;
+			clocks = <&cmu CLOCK_TIMER1 CLOCK_BRANCH_EM01GRPACLK>;
+			counter-size = <32>;
+			interrupts = <11 2>;
+			status = "disabled";
+
+			pwm {
+				compatible = "silabs,timer-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		timer2: timer@50050000 {
+			compatible = "silabs,series2-timer";
+			reg = <0x50050000 0x4000>;
+			channels = <3>;
+			clocks = <&cmu CLOCK_TIMER2 CLOCK_BRANCH_EM01GRPACLK>;
+			counter-size = <16>;
+			interrupts = <12 2>;
+			status = "disabled";
+
+			pwm {
+				compatible = "silabs,timer-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		timer3: timer@50054000 {
+			compatible = "silabs,series2-timer";
+			reg = <0x50054000 0x4000>;
+			channels = <3>;
+			clocks = <&cmu CLOCK_TIMER3 CLOCK_BRANCH_EM01GRPACLK>;
+			counter-size = <16>;
+			interrupts = <13 2>;
+			status = "disabled";
+
+			pwm {
+				compatible = "silabs,timer-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		timer4: timer@50058000 {
+			compatible = "silabs,series2-timer";
+			reg = <0x50058000 0x4000>;
+			channels = <3>;
+			clocks = <&cmu CLOCK_TIMER4 CLOCK_BRANCH_EM01GRPACLK>;
+			counter-size = <16>;
+			interrupts = <14 2>;
+			status = "disabled";
+
+			pwm {
+				compatible = "silabs,timer-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
 		};
 
 		usart0: usart@5005c000 {
@@ -433,6 +513,20 @@
 			interrupt-names = "wdog0";
 			clocks = <&cmu CLOCK_WDOG0 CLOCK_BRANCH_WDOG0CLK>;
 			status = "disabled";
+		};
+
+		letimer0: letimer@5a000000 {
+			compatible = "silabs,series2-letimer";
+			reg = <0x5a000000 0x4000>;
+			clocks = <&cmu CLOCK_LETIMER0 CLOCK_BRANCH_EM23GRPACLK>;
+			interrupts = <24 2>;
+			status = "disabled";
+
+			pwm {
+				compatible = "silabs,letimer-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
 		};
 
 		adc0: adc@5a004000 {

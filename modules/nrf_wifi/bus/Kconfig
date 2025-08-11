@@ -10,7 +10,7 @@ DT_COMPAT_NORDIC_NRF7001_QSPI := nordic,nrf7001-qspi
 DT_COMPAT_NORDIC_NRF7001_SPI := nordic,nrf7001-spi
 DT_COMPAT_NORDIC_NRF7000_QSPI := nordic,nrf7000-qspi
 DT_COMPAT_NORDIC_NRF7000_SPI := nordic,nrf7000-spi
-DT_COMPAT_NORDIC_WIFI71 := nordic,wifi71
+DT_COMPAT_NORDIC_WIFI71 := nordic,nrf7120
 
 menuconfig NRF70_BUSLIB
 	bool "NRF70 Bus Library"

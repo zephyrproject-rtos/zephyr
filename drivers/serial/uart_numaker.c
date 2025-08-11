@@ -231,6 +231,15 @@ static int uart_numaker_init(const struct device *dev)
 
 	UART_Open(config->uart, pData->ucfg.baudrate);
 
+	if (pData->ucfg.flow_ctrl == UART_CFG_FLOW_CTRL_NONE) {
+		UART_DisableFlowCtrl(config->uart);
+	} else if (pData->ucfg.flow_ctrl == UART_CFG_FLOW_CTRL_RTS_CTS) {
+		UART_EnableFlowCtrl(config->uart);
+	} else {
+		LOG_ERR("H/W flow control (%d) not support", pData->ucfg.flow_ctrl);
+		return -ENOTSUP;
+	}
+
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	config->irq_config_func(dev);
 #endif
@@ -439,6 +448,9 @@ static DEVICE_API(uart, uart_numaker_driver_api) = {
 		.ucfg =                                                                            \
 			{                                                                          \
 				.baudrate = DT_INST_PROP(inst, current_speed),                     \
+				.flow_ctrl = COND_CODE_1(DT_INST_PROP_OR(inst, hw_flow_control, 0),\
+							 (UART_CFG_FLOW_CTRL_RTS_CTS),             \
+							 (UART_CFG_FLOW_CTRL_NONE)),               \
 			},                                                                         \
 	};                                                                                         \
                                                                                                    \

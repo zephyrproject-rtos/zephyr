@@ -76,10 +76,6 @@ if (DEFINED CONFIG_SOC_RESET_HOOK)
   endif()
 endif()
 
-if(CONFIG_CPU_CORTEX_A)
-  include_driver_ifdef(CONFIG_HAS_MCUX_CACHE		cache/armv8-a	driver_cache_armv8a)
-endif()
-
 include(../mcux-sdk-ng/middleware/middleware.cmake)
 include(../mcux-sdk-ng/components/components.cmake)
 include(../mcux-sdk-ng/drivers/drivers.cmake)

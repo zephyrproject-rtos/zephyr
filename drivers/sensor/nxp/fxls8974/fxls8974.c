@@ -25,7 +25,7 @@ int fxls8974_transceive(const struct device *dev,
 {
 		const struct fxls8974_config *cfg = dev->config;
 		const struct spi_buf buf = { .buf = data, .len = length };
-		const struct spi_buf_set s = { .bufs = &buf, .count = 1 };
+		const struct spi_buf_set s = { .buffers = &buf, .count = 1 };
 
 		return spi_transceive_dt(&cfg->bus_cfg.spi, &s, &s);
 }
@@ -43,8 +43,8 @@ int fxls8974_read_spi(const struct device *dev,
 				{ .buf = reg_buf, .len = 3 },
 				{ .buf = data, .len = length }
 		};
-		const struct spi_buf_set tx = { .bufs = buf, .count = 1 };
-		const struct spi_buf_set rx = { .bufs = buf, .count = 2 };
+		const struct spi_buf_set tx = { .buffers = buf, .count = 1 };
+		const struct spi_buf_set rx = { .buffers = buf, .count = 2 };
 
 		return spi_transceive_dt(&cfg->bus_cfg.spi, &tx, &rx);
 }

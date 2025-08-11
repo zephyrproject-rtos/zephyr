@@ -16,6 +16,9 @@
 
 &ocram1 {
 	zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) )>;
+	transfer-delay = <100>;
+	pcs-sck-delay = <100>;
+	sck-pcs-delay = <100>;
 };
 
 &lpspi3 {

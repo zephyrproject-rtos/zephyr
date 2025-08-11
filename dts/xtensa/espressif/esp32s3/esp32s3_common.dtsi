@@ -335,7 +335,6 @@
 			interrupts = <SPI2_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			clocks = <&clock ESP32_SPI2_MODULE>;
-			dma-clk = <ESP32_GDMA_MODULE>;
 			dma-host = <0>;
 			status = "disabled";
 		};
@@ -346,7 +345,6 @@
 			interrupts = <SPI3_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			clocks = <&clock ESP32_SPI3_MODULE>;
-			dma-clk = <ESP32_GDMA_MODULE>;
 			dma-host = <1>;
 			status = "disabled";
 		};

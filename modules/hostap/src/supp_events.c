@@ -224,20 +224,24 @@ int supplicant_send_wifi_mgmt_conn_event(void *ctx, int status_code)
 int supplicant_send_wifi_mgmt_disc_event(void *ctx, int reason_code)
 {
 	struct wpa_supplicant *wpa_s = ctx;
-	int status = wpas_to_wifi_mgmt_disconn_status(reason_code);
 	enum net_event_wifi_cmd event;
+	int status;
 
 	if (!wpa_s || !wpa_s->current_ssid) {
 		return -EINVAL;
 	}
 
 	if (wpa_s->wpa_state >= WPA_COMPLETED) {
+		/* Disconnect event code & status */
+		status = wpas_to_wifi_mgmt_disconn_status(reason_code);
 		if (wpa_s->current_ssid->mode == WPAS_MODE_AP) {
 			event = NET_EVENT_WIFI_CMD_AP_DISABLE_RESULT;
 		} else {
 			event = NET_EVENT_WIFI_CMD_DISCONNECT_RESULT;
 		}
 	} else {
+		/* Connect event code & status */
+		status = WIFI_STATUS_CONN_FAIL;
 		if (wpa_s->current_ssid->mode == WPAS_MODE_AP) {
 			event = NET_EVENT_WIFI_CMD_AP_ENABLE_RESULT;
 		} else {
@@ -300,12 +304,14 @@ int supplicant_send_wifi_mgmt_ap_sta_event(void *ctx,
 {
 	struct sta_info *sta = data;
 	struct wpa_supplicant *ap_ctx = ctx;
-	char *ifname = ap_ctx->ifname;
+	char *ifname;
 	struct wifi_ap_sta_info sta_info = { 0 };
 
 	if (!ap_ctx || !sta) {
 		return -EINVAL;
 	}
+
+	ifname = ap_ctx->ifname;
 
 	memcpy(sta_info.mac, sta->addr, sizeof(sta_info.mac));
 

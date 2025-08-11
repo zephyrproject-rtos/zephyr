@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_SAM_E54_XPRO
+	select SOC_ATSAME54P20A

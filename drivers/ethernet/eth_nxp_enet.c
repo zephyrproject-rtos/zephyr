@@ -34,6 +34,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/hwinfo.h>
 
 #ifdef CONFIG_PTP_CLOCK
 #include <zephyr/drivers/ptp_clock.h>
@@ -458,49 +459,12 @@ static void eth_nxp_enet_rx_thread(struct k_work *work)
 	ENET_EnableInterrupts(data->base, kENET_RxFrameInterrupt);
 }
 
-static int nxp_enet_phy_configure(const struct device *phy, uint8_t phy_mode)
-{
-	enum phy_link_speed speeds = LINK_HALF_10BASE | LINK_FULL_10BASE |
-				     LINK_HALF_100BASE | LINK_FULL_100BASE;
-	int ret;
-	struct phy_link_state state;
-
-	if (COND_CODE_1(IS_ENABLED(CONFIG_ETH_NXP_ENET_1G),
-	   (phy_mode == NXP_ENET_RGMII_MODE), (0))) {
-		speeds |= (LINK_HALF_1000BASE | LINK_FULL_1000BASE);
-	}
-
-	/* Configure the PHY */
-	ret = phy_configure_link(phy, speeds);
-
-	if (ret == -ENOTSUP) {
-		phy_get_link_state(phy, &state);
-
-		if (state.is_up) {
-			LOG_WRN("phy_configure_link returned -ENOTSUP, but link is up. "
-				"Speed: %s, %s-duplex",
-				PHY_LINK_IS_SPEED_1000M(state.speed) ? "1 Gbits" :
-				PHY_LINK_IS_SPEED_100M(state.speed) ? "100 Mbits" : "10 Mbits",
-				PHY_LINK_IS_FULL_DUPLEX(state.speed) ? "full" : "half");
-		} else {
-			LOG_ERR("phy_configure_link returned -ENOTSUP and link is down.");
-			return -ENETDOWN;
-		}
-	} else if (ret) {
-		LOG_ERR("phy_configure_link failed with error: %d", ret);
-		return ret;
-	}
-
-	return 0;
-}
-
 static void nxp_enet_phy_cb(const struct device *phy,
 				struct phy_link_state *state,
 				void *eth_dev)
 {
 	const struct device *dev = eth_dev;
 	struct nxp_enet_mac_data *data = dev->data;
-	const struct nxp_enet_mac_config *config = dev->config;
 	enet_mii_speed_t speed;
 	enet_mii_duplex_t duplex;
 
@@ -524,16 +488,13 @@ static void nxp_enet_phy_cb(const struct device *phy,
 		}
 
 		ENET_SetMII(data->base, speed, duplex);
+
+		net_eth_carrier_on(data->iface);
+	} else {
+		net_eth_carrier_off(data->iface);
 	}
 
 	LOG_INF("Link is %s", state->is_up ? "up" : "down");
-
-	if (!state->is_up) {
-		net_eth_carrier_off(data->iface);
-		nxp_enet_phy_configure(phy, config->phy_mode);
-	} else {
-		net_eth_carrier_on(data->iface);
-	}
 }
 
 static void eth_nxp_enet_iface_init(struct net_if *iface)
@@ -641,12 +602,28 @@ static const struct device *eth_nxp_enet_get_phy(const struct device *dev)
 	return config->phy_dev;
 }
 
+/* we enable HWINFO from kconfig if the relevant DT prop is in the tree */
+#ifdef CONFIG_HWINFO
 /* Note this is not universally unique, it just is probably unique on a network */
 static inline void nxp_enet_unique_mac(uint8_t *mac_addr)
 {
-	uint32_t id = ETH_NXP_ENET_UNIQUE_ID;
+	uint8_t id_buf[3];
+	uint32_t id = 0;
+	int ret;
+
+	ret = hwinfo_get_device_id(id_buf, sizeof(id_buf));
+	if (ret == sizeof(id_buf)) {
+		id |= FIELD_PREP(0xFF0000, id_buf[2]);
+		id |= FIELD_PREP(0x00FF00, id_buf[1]);
+		id |= FIELD_PREP(0x0000FF, id_buf[0]);
+	} else {
+		/* Either implemented wrong, implemented insufficiently, or not at all */
+		/* This is fallback for platforms that don't have HWINFO properly */
+		id = ETH_NXP_ENET_UNIQUE_ID;
+	}
 
 	if (id == 0xFFFFFF) {
+		/* Allowed but should raise highest level error notice to user */
 		LOG_ERR("No unique MAC can be provided in this platform");
 	}
 
@@ -658,6 +635,9 @@ static inline void nxp_enet_unique_mac(uint8_t *mac_addr)
 	mac_addr[4] = FIELD_GET(0x00FF00, id);
 	mac_addr[5] = FIELD_GET(0x0000FF, id);
 }
+#else
+#define nxp_enet_unique_mac(...)
+#endif
 
 #ifdef CONFIG_SOC_FAMILY_NXP_IMXRT
 #include <fsl_ocotp.h>
@@ -718,8 +698,6 @@ static int eth_nxp_enet_init(const struct device *dev)
 	k_work_init(&data->rx_work, eth_nxp_enet_rx_thread);
 
 	switch (config->mac_addr_source) {
-	case MAC_ADDR_SOURCE_LOCAL:
-		break;
 	case MAC_ADDR_SOURCE_RANDOM:
 		gen_random_mac(data->mac_addr,
 			FREESCALE_OUI_B0, FREESCALE_OUI_B1, FREESCALE_OUI_B2);
@@ -731,7 +709,7 @@ static int eth_nxp_enet_init(const struct device *dev)
 		nxp_enet_fused_mac(data->mac_addr);
 		break;
 	default:
-		return -ENOTSUP;
+		break;
 	}
 
 	err = clock_control_get_rate(config->clock_dev, config->clock_subsys,
@@ -792,11 +770,6 @@ static int eth_nxp_enet_init(const struct device *dev)
 #endif
 
 	ENET_ActiveRead(data->base);
-
-	err = nxp_enet_phy_configure(config->phy_dev, config->phy_mode);
-	if (err) {
-		return err;
-	}
 
 	LOG_DBG("%s MAC %02x:%02x:%02x:%02x:%02x:%02x",
 		dev->name,
@@ -918,7 +891,7 @@ static const struct ethernet_api api_funcs = {
 	NXP_ENET_INVALID_MII_MODE))
 
 #ifdef CONFIG_PTP_CLOCK_NXP_ENET
-#define NXP_ENET_PTP_DEV(n) .ptp_clock = DEVICE_DT_GET(DT_INST_PHANDLE(n, nxp_ptp_clock)),
+#define NXP_ENET_PTP_DEV(n) .ptp_clock = DEVICE_DT_GET(DT_INST_PHANDLE(n, ptp_clock)),
 #define NXP_ENET_FRAMEINFO_ARRAY(n)							\
 	static enet_frame_info_t							\
 		nxp_enet_##n##_tx_frameinfo_array[CONFIG_ETH_NXP_ENET_TX_BUFFERS];
@@ -946,12 +919,12 @@ BUILD_ASSERT(NXP_ENET_PHY_MODE(DT_DRV_INST(n)) != NXP_ENET_RGMII_MODE ||		\
 			" and CONFIG_ETH_NXP_ENET_1G enabled");
 
 #define NXP_ENET_MAC_ADDR_SOURCE(n)							\
-	COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(n), local_mac_address),		\
-			(MAC_ADDR_SOURCE_LOCAL),					\
-	(COND_CODE_1(DT_INST_PROP(n, zephyr_random_mac_address),			\
+	COND_CODE_1(DT_INST_PROP(n, zephyr_random_mac_address),				\
 			(MAC_ADDR_SOURCE_RANDOM),					\
 	(COND_CODE_1(DT_INST_PROP(n, nxp_unique_mac), (MAC_ADDR_SOURCE_UNIQUE),		\
 	(COND_CODE_1(DT_INST_PROP(n, nxp_fused_mac), (MAC_ADDR_SOURCE_FUSED),		\
+	(COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(n), local_mac_address),		\
+			(MAC_ADDR_SOURCE_LOCAL),					\
 	(MAC_ADDR_SOURCE_INVALID))))))))
 
 #define NXP_ENET_MAC_INIT(n)								\

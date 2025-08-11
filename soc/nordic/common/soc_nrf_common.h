@@ -236,6 +236,19 @@
 		     DT_PINCTRL_HAS_NAME(node_id, sleep),		       \
 		     DT_NODE_PATH(node_id) " defined without sleep state")
 
+/**
+ * Error out the build if CONFIG_HAS_NORDIC_DMM=y and memory-regions property is not defined
+ * or the status of the selected memory region is not "okay"
+ *
+ * @param node Devicetree node.
+ */
+#define NRF_DT_CHECK_NODE_HAS_REQUIRED_MEMORY_REGIONS(node_id)					 \
+	IF_ENABLED(CONFIG_HAS_NORDIC_DMM,							 \
+		(BUILD_ASSERT((									 \
+			DT_NODE_HAS_PROP(node_id, memory_regions) &&				 \
+			DT_NODE_HAS_STATUS_OKAY(DT_PHANDLE_BY_IDX(node_id, memory_regions, 0))), \
+		DT_NODE_PATH(node_id) " defined without memory regions")))
+
 /** @brief Get clock frequency that is used for the given node.
  *
  * Macro checks if node has clock property and if yes then if clock has clock_frequency property
@@ -254,6 +267,52 @@
 			     (DT_PROP(DT_CLOCKS_CTLR(node), clock_frequency)),			\
 			     (DT_PROP_LAST(DT_CLOCKS_CTLR(node), supported_clock_frequency)))),	\
 		(NRFX_MHZ_TO_HZ(16)))
+
+/**
+ * @brief Utility macro to check if instance is fast by node, expands to 1 or 0.
+ *
+ * @param node_id Node identifier.
+ */
+#define NRF_DT_IS_FAST(node_id)									\
+	COND_CODE_1(										\
+		UTIL_AND(									\
+			DT_NODE_EXISTS(DT_PHANDLE(node_id, power_domains)),			\
+			DT_NODE_EXISTS(DT_NODELABEL(gdpwr_fast_active_1))			\
+		),										\
+		(										\
+			DT_SAME_NODE(								\
+				DT_PHANDLE(node_id, power_domains),				\
+				DT_NODELABEL(gdpwr_fast_active_1)				\
+			)									\
+		),										\
+		(0)										\
+	)
+
+/**
+ * @brief Utility macro to check if instance is fast by DT_DRV_INST, expands to 1 or 0.
+ *
+ * @param inst Driver instance
+ */
+#define NRF_DT_INST_IS_FAST(inst) \
+	NRF_DT_IS_FAST(DT_DRV_INST(inst))
+
+/**
+ * @brief Utility macro to check if instance is fast by DT_DRV_INST, expands to 1 or empty.
+ *
+ * @param inst Driver instance
+ */
+#define NRF_DT_INST_IS_FAST_OR_EMPTY(inst) \
+	IF_ENABLED(NRF_DT_INST_IS_FAST(inst), 1)
+
+/**
+ * @brief Utility macro to check if any instance with compat is fast. Expands to 1 or 0.
+ */
+#define NRF_DT_INST_ANY_IS_FAST									\
+	COND_CODE_0(										\
+		IS_EMPTY(DT_INST_FOREACH_STATUS_OKAY(NRF_DT_INST_IS_FAST_OR_EMPTY)),		\
+		(1),										\
+		(0)										\
+	)
 
 #endif /* !_ASMLANGUAGE */
 

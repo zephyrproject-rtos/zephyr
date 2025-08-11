@@ -31,7 +31,7 @@ config SAM_HSMCI_PWRSAVE_DIV
 	int "Divisor value of clock when in power-save mode"
 	default 7
 	help
-	  SD clock freqeuncy is divided by 2**(N+1) where N
+	  SD clock frequency is divided by 2**(N+1) where N
 	  is the divisor value. Valid values are 0 to 7.
 
 endif # SAM_HSMCI_PWRSAVE

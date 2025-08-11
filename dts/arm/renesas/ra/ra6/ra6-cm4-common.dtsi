@@ -343,13 +343,6 @@
 			};
 		};
 
-		id_code: id_code@100a150 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0100a150 0x10>;
-			zephyr,memory-region = "ID_CODE";
-			status = "okay";
-		};
-
 		port_irq0: external-interrupt@40006000 {
 			compatible = "renesas,ra-external-interrupt";
 			reg = <0x40006000 0x1>;
@@ -653,6 +646,14 @@
 			compatible = "renesas,ra-wdt";
 			reg = <0x40044200 0x200>;
 			clocks = <&pclkb 0 0>;
+			status = "disabled";
+		};
+
+		ctsu: ctsua@40081000 {
+			compatible = "renesas,ra-ctsu";
+			reg = <0x40081000 0x24>;
+			clocks = <&pclkb MSTPC 3>;
+			variant = "ctsua";
 			status = "disabled";
 		};
 	};

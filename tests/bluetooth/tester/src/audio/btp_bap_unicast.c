@@ -1340,6 +1340,8 @@ uint8_t btp_ascs_configure_codec(const void *cmd, uint16_t cmd_len, void *rsp, u
 
 	memset(&codec_cfg, 0, sizeof(codec_cfg));
 
+	codec_cfg.target_latency = BT_AUDIO_CODEC_CFG_TARGET_LATENCY_BALANCED;
+	codec_cfg.target_phy = BT_AUDIO_CODEC_CFG_TARGET_PHY_2M;
 	codec_cfg.id = cp->coding_format;
 	codec_cfg.vid = cp->vid;
 	codec_cfg.cid = cp->cid;

@@ -85,7 +85,7 @@ struct bt_att_info_128 {
 #define BT_ATT_OP_FIND_INFO_RSP			0x05
 struct bt_att_find_info_rsp {
 	uint8_t  format;
-	uint8_t  info[0];
+	uint8_t  info[];
 } __packed;
 
 /* Find By Type Value Request */
@@ -94,7 +94,7 @@ struct bt_att_find_type_req {
 	uint16_t start_handle;
 	uint16_t end_handle;
 	uint16_t type;
-	uint8_t  value[0];
+	uint8_t  value[];
 } __packed;
 
 struct bt_att_handle_group {
@@ -105,7 +105,7 @@ struct bt_att_handle_group {
 /* Find By Type Value Response */
 #define BT_ATT_OP_FIND_TYPE_RSP			0x07
 struct bt_att_find_type_rsp {
-	struct bt_att_handle_group list[0];
+	FLEXIBLE_ARRAY_DECLARE(struct bt_att_handle_group, list);
 } __packed;
 
 /* Read By Type Request */
@@ -113,19 +113,19 @@ struct bt_att_find_type_rsp {
 struct bt_att_read_type_req {
 	uint16_t start_handle;
 	uint16_t end_handle;
-	uint8_t  uuid[0];
+	uint8_t  uuid[];
 } __packed;
 
 struct bt_att_data {
 	uint16_t handle;
-	uint8_t  value[0];
+	uint8_t  value[];
 } __packed;
 
 /* Read By Type Response */
 #define BT_ATT_OP_READ_TYPE_RSP			0x09
 struct bt_att_read_type_rsp {
 	uint8_t  len;
-	struct bt_att_data data[0];
+	struct bt_att_data data[];
 } __packed;
 
 /* Read Request */
@@ -137,7 +137,7 @@ struct bt_att_read_req {
 /* Read Response */
 #define BT_ATT_OP_READ_RSP			0x0b
 struct bt_att_read_rsp {
-	uint8_t  value[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, value);
 } __packed;
 
 /* Read Blob Request */
@@ -150,7 +150,7 @@ struct bt_att_read_blob_req {
 /* Read Blob Response */
 #define BT_ATT_OP_READ_BLOB_RSP			0x0d
 struct bt_att_read_blob_rsp {
-	uint8_t  value[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, value);
 } __packed;
 
 /* Read Multiple Request */
@@ -158,13 +158,13 @@ struct bt_att_read_blob_rsp {
 
 #define BT_ATT_OP_READ_MULT_REQ			0x0e
 struct bt_att_read_mult_req {
-	uint16_t handles[0];
+	FLEXIBLE_ARRAY_DECLARE(uint16_t, handles);
 } __packed;
 
 /* Read Multiple Response */
 #define BT_ATT_OP_READ_MULT_RSP			0x0f
 struct bt_att_read_mult_rsp {
-	uint8_t  value[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, value);
 } __packed;
 
 /* Read by Group Type Request */
@@ -172,27 +172,27 @@ struct bt_att_read_mult_rsp {
 struct bt_att_read_group_req {
 	uint16_t start_handle;
 	uint16_t end_handle;
-	uint8_t  uuid[0];
+	uint8_t  uuid[];
 } __packed;
 
 struct bt_att_group_data {
 	uint16_t start_handle;
 	uint16_t end_handle;
-	uint8_t  value[0];
+	uint8_t  value[];
 } __packed;
 
 /* Read by Group Type Response */
 #define BT_ATT_OP_READ_GROUP_RSP		0x11
 struct bt_att_read_group_rsp {
 	uint8_t  len;
-	struct bt_att_group_data data[0];
+	struct bt_att_group_data data[];
 } __packed;
 
 /* Write Request */
 #define BT_ATT_OP_WRITE_REQ			0x12
 struct bt_att_write_req {
 	uint16_t handle;
-	uint8_t  value[0];
+	uint8_t  value[];
 } __packed;
 
 /* Write Response */
@@ -203,7 +203,7 @@ struct bt_att_write_req {
 struct bt_att_prepare_write_req {
 	uint16_t handle;
 	uint16_t offset;
-	uint8_t  value[0];
+	uint8_t  value[];
 } __packed;
 
 /* Prepare Write Respond */
@@ -211,7 +211,7 @@ struct bt_att_prepare_write_req {
 struct bt_att_prepare_write_rsp {
 	uint16_t handle;
 	uint16_t offset;
-	uint8_t  value[0];
+	uint8_t  value[];
 } __packed;
 
 /* Execute Write Request */
@@ -230,14 +230,14 @@ struct bt_att_exec_write_req {
 #define BT_ATT_OP_NOTIFY			0x1b
 struct bt_att_notify {
 	uint16_t handle;
-	uint8_t  value[0];
+	uint8_t  value[];
 } __packed;
 
 /* Handle Value Indication */
 #define BT_ATT_OP_INDICATE			0x1d
 struct bt_att_indicate {
 	uint16_t handle;
-	uint8_t  value[0];
+	uint8_t  value[];
 } __packed;
 
 /* Handle Value Confirm */
@@ -249,14 +249,14 @@ struct bt_att_signature {
 
 #define BT_ATT_OP_READ_MULT_VL_REQ		0x20
 struct bt_att_read_mult_vl_req {
-	uint16_t handles[0];
+	FLEXIBLE_ARRAY_DECLARE(uint16_t, handles);
 } __packed;
 
 /* Read Multiple Response */
 #define BT_ATT_OP_READ_MULT_VL_RSP		0x21
 struct bt_att_read_mult_vl_rsp {
 	uint16_t len;
-	uint8_t  value[0];
+	uint8_t  value[];
 } __packed;
 
 /* Handle Multiple Value Notification */
@@ -264,21 +264,21 @@ struct bt_att_read_mult_vl_rsp {
 struct bt_att_notify_mult {
 	uint16_t handle;
 	uint16_t len;
-	uint8_t  value[0];
+	uint8_t  value[];
 } __packed;
 
 /* Write Command */
 #define BT_ATT_OP_WRITE_CMD			0x52
 struct bt_att_write_cmd {
 	uint16_t handle;
-	uint8_t  value[0];
+	uint8_t  value[];
 } __packed;
 
 /* Signed Write Command */
 #define BT_ATT_OP_SIGNED_WRITE_CMD		0xd2
 struct bt_att_signed_write_cmd {
 	uint16_t handle;
-	uint8_t  value[0];
+	uint8_t  value[];
 } __packed;
 
 typedef void (*bt_att_func_t)(struct bt_conn *conn, int err,

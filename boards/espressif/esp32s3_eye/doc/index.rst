@@ -253,6 +253,9 @@ message in the monitor:
    ***** Booting Zephyr OS vx.x.x-xxx-gxxxxxxxxxxxx *****
    Hello World! esp32s3_eye/esp32s3/procpu
 
+.. include:: ../../../espressif/common/board-variants.rst
+   :start-after: espressif-board-variants
+
 Debugging
 *********
 

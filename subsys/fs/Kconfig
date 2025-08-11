@@ -119,6 +119,8 @@ source "subsys/logging/Kconfig.template.log_config"
 rsource "Kconfig.fatfs"
 rsource "Kconfig.littlefs"
 rsource "ext2/Kconfig"
+rsource "fuse_client/Kconfig"
+rsource "virtiofs/Kconfig"
 
 endif # FILE_SYSTEM_LIB_LINK
 

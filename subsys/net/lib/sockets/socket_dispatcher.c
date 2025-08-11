@@ -393,8 +393,10 @@ static int sock_dispatch_setsockopt_vmeth(void *obj, int level, int optname,
 	return zsock_setsockopt(fd, level, optname, optval, optlen);
 }
 
-static int sock_dispatch_close_vmeth(void *obj)
+static int sock_dispatch_close_vmeth(void *obj, int fd)
 {
+	ARG_UNUSED(fd);
+
 	dispatcher_ctx_free(obj);
 
 	return 0;
@@ -428,7 +430,7 @@ static const struct socket_op_vtable sock_dispatch_fd_op_vtable = {
 	.fd_vtable = {
 		.read = sock_dispatch_read_vmeth,
 		.write = sock_dispatch_write_vmeth,
-		.close = sock_dispatch_close_vmeth,
+		.close2 = sock_dispatch_close_vmeth,
 		.ioctl = sock_dispatch_ioctl_vmeth,
 	},
 	.shutdown = sock_dispatch_shutdown_vmeth,

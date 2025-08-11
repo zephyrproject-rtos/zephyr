@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/pinctrl/ti-k3-pinctrl.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <ti/k3-am62-main.dtsi>
 
 / {
 
@@ -82,6 +83,13 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		ngpios = <24>;
+		status = "disabled";
+	};
+
+	mcu_rti0: watchdog@4880000 {
+		compatible = "ti,j7-rti-wdt";
+		reg = <0x04880000 0x100>;
+		clock-frequency = <DT_FREQ_M(25)>;
 		status = "disabled";
 	};
 };

@@ -16,8 +16,8 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
-#include "stm32_hsem.h"
-
+#include <stm32_backup_domain.h>
+#include <stm32_hsem.h>
 
 /* Macros to fill up prescaler values */
 #if defined(CONFIG_SOC_SERIES_STM32H7RSX)
@@ -217,17 +217,12 @@ static uint32_t get_pllout_frequency(uint32_t pllsrc_freq,
 __unused
 static uint32_t get_pllsrc_frequency(void)
 {
-	switch (LL_RCC_PLL_GetSource()) {
-	case LL_RCC_PLLSOURCE_HSI:
-		return STM32_HSI_FREQ;
-	case LL_RCC_PLLSOURCE_CSI:
-		return STM32_CSI_FREQ;
-	case LL_RCC_PLLSOURCE_HSE:
-		return STM32_HSE_FREQ;
-	case LL_RCC_PLLSOURCE_NONE:
-	default:
-		return 0;
-	}
+/* M4 is not expected to call this function */
+#ifdef CONFIG_CPU_CORTEX_M7
+	return PLLSRC_FREQ;
+#else
+	return 0;
+#endif
 }
 
 __unused
@@ -715,8 +710,7 @@ static void set_up_fixed_clock_sources(void)
 	}
 
 	if (IS_ENABLED(STM32_LSE_ENABLED)) {
-		/* Enable backup domain */
-		LL_PWR_EnableBkUpAccess();
+		stm32_backup_domain_enable_access();
 
 		/* Configure driving capability */
 		LL_RCC_LSE_SetDriveCapability(STM32_LSE_DRIVING << RCC_BDCR_LSEDRV_Pos);
@@ -730,6 +724,8 @@ static void set_up_fixed_clock_sources(void)
 		LL_RCC_LSE_Enable();
 		while (LL_RCC_LSE_IsReady() != 1) {
 		}
+
+		stm32_backup_domain_disable_access();
 	}
 
 	if (IS_ENABLED(STM32_HSI48_ENABLED)) {
@@ -1015,14 +1011,14 @@ int stm32_clock_control_init(const struct device *dev)
 	/* Set up individual enabled clocks */
 	set_up_fixed_clock_sources();
 
+	/* Configure Voltage scale to comply with the desired system frequency */
+	prepare_regulator_voltage_scale();
+
 	/* Set up PLLs */
 	r = set_up_plls();
 	if (r < 0) {
 		return r;
 	}
-
-	/* Configure Voltage scale to comply with the desired system frequency */
-	prepare_regulator_voltage_scale();
 
 	/* Current hclk value */
 	old_hclk_freq = get_hclk_frequency();

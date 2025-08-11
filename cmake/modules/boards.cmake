@@ -218,10 +218,9 @@ elseif(BOARD_DIR)
 	  "Please run a pristine build."
   )
 else()
-  message("No board named '${BOARD}' found.\n\n"
-          "Please choose one of the following boards:\n"
-  )
-  execute_process(${list_boards_commands})
+  message("No board named '${BOARD}' found. Did you mean:\n")
+  execute_process(${list_boards_commands} --fuzzy-match ${BOARD})
+  message("\nRun 'west boards' for the full list.")
   unset(CACHED_BOARD CACHE)
   message(FATAL_ERROR "Invalid BOARD; see above.")
 endif()

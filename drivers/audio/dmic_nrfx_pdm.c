@@ -148,6 +148,7 @@ static void event_handler(const struct device *dev, const nrfx_pdm_evt_t *evt)
 						    drv_data->block_size, evt->buffer_released);
 			if (ret < 0) {
 				LOG_ERR("Failed to release buffer: %d", ret);
+				free_buffer(drv_data, mem_slab_buffer);
 				return;
 			}
 			free_buffer(drv_data, mem_slab_buffer);
@@ -172,6 +173,7 @@ static void event_handler(const struct device *dev, const nrfx_pdm_evt_t *evt)
 					    drv_data->block_size, evt->buffer_released);
 		if (ret < 0) {
 			LOG_ERR("Failed to release buffer: %d", ret);
+			free_buffer(drv_data, mem_slab_buffer);
 			stop_pdm(drv_data);
 			return;
 		}
@@ -728,6 +730,7 @@ static const struct _dmic_ops dmic_ops = {
 		.clk_src = PDM_CLK_SRC(idx),				     \
 		.mem_reg = DMM_DEV_TO_REG(PDM(idx)),			     \
 	};								     \
+	NRF_DT_CHECK_NODE_HAS_REQUIRED_MEMORY_REGIONS(PDM(idx));	     \
 	BUILD_ASSERT(PDM_CLK_SRC(idx) != ACLK ||			     \
 		     NRF_PDM_HAS_SELECTABLE_CLOCK,			     \
 		"Clock source ACLK is not available.");			     \

@@ -968,8 +968,8 @@ void ll_reset(void)
 uint8_t ll_rx_get(void **node_rx, uint16_t *handle)
 {
 	struct node_rx_pdu *rx;
-	memq_link_t *link;
 	uint8_t cmplt = 0U;
+	memq_link_t *link;
 
 #if defined(CONFIG_BT_CONN) || \
 	(defined(CONFIG_BT_OBSERVER) && defined(CONFIG_BT_CTLR_ADV_EXT)) || \
@@ -983,6 +983,20 @@ ll_rx_get_again:
 	*/
 
 	*node_rx = NULL;
+
+#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_CTLR_ADV_ISO)
+	/* Save the tx_ack FIFO's last index to avoid the value being changed if there were no
+	 * Rx PDUs and we were pre-empted before calling `tx_cmplt_get()`, that may advance the
+	 * first index beyond ack_last value recorded in node_rx enqueued by `ll_rx_put()` call
+	 * when we are in the `else` clause below.
+	 */
+	uint8_t tx_ack_last = mfifo_fifo_tx_ack.l;
+
+	/* Ensure that the value is fetched before call to memq_peek, i.e. compiler shall not
+	 * reorder memory write before above read.
+	 */
+	cpu_dmb();
+#endif /* CONFIG_BT_CONN || CONFIG_BT_CTLR_ADV_ISO */
 
 	link = memq_peek(memq_ll_rx.head, memq_ll_rx.tail, (void **)&rx);
 	if (link) {
@@ -1064,8 +1078,11 @@ ll_rx_get_again:
 #if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_CTLR_ADV_ISO)
 		}
 	} else {
-		cmplt = tx_cmplt_get(handle, &mfifo_fifo_tx_ack.f,
-				     mfifo_fifo_tx_ack.l);
+		/* Use the saved ack last value, before call was done to memq_peek, to ensure we
+		 * do not advance the first index `f` beyond the value that was the last index `l`
+		 * when memq_peek was called.
+		 */
+		cmplt = tx_cmplt_get(handle, &mfifo_fifo_tx_ack.f, tx_ack_last);
 #endif /* CONFIG_BT_CONN || CONFIG_BT_CTLR_ADV_ISO */
 	}
 
@@ -1392,6 +1409,7 @@ void ll_rx_dequeue(void)
 #if defined(CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT)
 	case NODE_RX_TYPE_DTM_IQ_SAMPLE_REPORT:
 #endif /* CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT */
+	case NODE_RX_TYPE_PATH_LOSS:
 
 	/* Ensure that at least one 'case' statement is present for this
 	 * code block.
@@ -1582,6 +1600,7 @@ void ll_rx_mem_release(void **node_rx)
 #if defined(CONFIG_BT_CTLR_ISO)
 		case NODE_RX_TYPE_ISO_PDU:
 #endif
+		case NODE_RX_TYPE_PATH_LOSS:
 
 		/* Ensure that at least one 'case' statement is present for this
 		 * code block.
@@ -2561,24 +2580,32 @@ static void rx_demux(void *param)
 	do {
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 		struct node_rx_hdr *rx;
-
-		link = memq_peek(memq_ull_rx.head, memq_ull_rx.tail,
-				 (void **)&rx);
-		if (link) {
 #if defined(CONFIG_BT_CONN)
-			struct node_tx *node_tx;
-			memq_link_t *link_tx;
-			uint16_t handle; /* Handle to Ack TX */
+		struct node_tx *tx;
+		memq_link_t *link_tx;
+		uint8_t ack_last;
+		uint16_t handle; /* Handle to Ack TX */
+
+		/* Save the ack_last, Tx Ack FIFO's last index to avoid the value being changed if
+		 * there were no Rx PDUs and we were pre-empted before calling
+		 * `rx_demux_conn_tx_ack()` in the `else` clause.
+		 */
+		link_tx = ull_conn_ack_peek(&ack_last, &handle, &tx);
+
+		/* Ensure that the value is fetched before call to memq_peek, i.e. compiler shall
+		 * not reorder memory write before above read.
+		 */
+		cpu_dmb();
 #endif /* CONFIG_BT_CONN */
 
+		link = memq_peek(memq_ull_rx.head, memq_ull_rx.tail, (void **)&rx);
+		if (link) {
 			LL_ASSERT(rx);
 
 #if defined(CONFIG_BT_CONN)
-			link_tx = ull_conn_ack_by_last_peek(rx->ack_last,
-							    &handle, &node_tx);
+			link_tx = ull_conn_ack_by_last_peek(rx->ack_last, &handle, &tx);
 			if (link_tx) {
-				rx_demux_conn_tx_ack(rx->ack_last, handle,
-						     link_tx, node_tx);
+				rx_demux_conn_tx_ack(rx->ack_last, handle, link_tx, tx);
 			} else
 #endif /* CONFIG_BT_CONN */
 			{
@@ -2590,21 +2617,14 @@ static void rx_demux(void *param)
 #endif /* !CONFIG_BT_CTLR_LOW_LAT_ULL */
 
 #if defined(CONFIG_BT_CONN)
-		} else {
-			struct node_tx *node_tx;
-			uint8_t ack_last;
-			uint16_t handle;
-
-			link = ull_conn_ack_peek(&ack_last, &handle, &node_tx);
-			if (link) {
-				rx_demux_conn_tx_ack(ack_last, handle,
-						      link, node_tx);
+		} else if (link_tx) {
+			rx_demux_conn_tx_ack(ack_last, handle, link_tx, tx);
 
 #if defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
-				rx_demux_yield();
-#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
-
-			}
+			rx_demux_yield();
+#else /* !CONFIG_BT_CTLR_LOW_LAT_ULL */
+			link = link_tx;
+#endif /* !CONFIG_BT_CTLR_LOW_LAT_ULL */
 #endif /* CONFIG_BT_CONN */
 		}
 
@@ -2965,6 +2985,7 @@ static inline void rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 #if defined(CONFIG_BT_CTLR_SCAN_INDICATION)
 	case NODE_RX_TYPE_SCAN_INDICATION:
 #endif /* CONFIG_BT_CTLR_SCAN_INDICATION */
+	case NODE_RX_TYPE_PATH_LOSS:
 
 	case NODE_RX_TYPE_RELEASE:
 	{

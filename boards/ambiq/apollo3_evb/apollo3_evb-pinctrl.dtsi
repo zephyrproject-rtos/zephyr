@@ -140,4 +140,10 @@
 				 <BLEIF_IRQ_P41>;
 		};
 	};
+
+	pwm2_default: pwm2_default{
+		group1 {
+			pinmux = <GPIO_P30>;
+		};
+	};
 };

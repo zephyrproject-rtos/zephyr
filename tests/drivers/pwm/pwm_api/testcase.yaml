@@ -8,27 +8,24 @@ tests:
       or dt_alias_exists("pwm-3") or dt_compat_enabled("st,stm32-pwm")
       or dt_compat_enabled("intel,blinky-pwm") or dt_compat_enabled("nordic,nrf-pwm")
     depends_on: pwm
-  drivers.pwm.ke1xz_pwm_flexio:
+  drivers.pwm.pwm_flexio:
     tags:
       - drivers
       - pwm
       - userspace
-    extra_args: DTC_OVERLAY_FILE="boards/frdm_ke1xz_flexio_pwm.overlay"
+
+    extra_args:
+      - platform:frdm_ke17z:DTC_OVERLAY_FILE="boards/frdm_ke1xz_flexio_pwm.overlay"
+      - platform:frdm_ke17z512:DTC_OVERLAY_FILE="boards/frdm_ke1xz_flexio_pwm.overlay"
+      - platform:mimxrt700_evk/mimxrt798s/cm33_cpu0:DTC_OVERLAY_FILE="boards/mimxrt700_evk_mimxrt798s_cm33_cpu0_flexio_pwm.overlay"
+      - platform:mimxrt1180_evk/mimxrt1189/cm33:DTC_OVERLAY_FILE="boards/mimxrt1180_evk_flexio_pwm.overlay"
+      - platform:mimxrt1180_evk/mimxrt1189/cm7:DTC_OVERLAY_FILE="boards/mimxrt1180_evk_flexio_pwm.overlay"
     platform_allow:
       - frdm_ke17z
       - frdm_ke17z512
-    filter: (dt_alias_exists("pwm-0") or dt_alias_exists("pwm-1") or dt_alias_exists("pwm-2")
-      or dt_alias_exists("pwm-3")) and CONFIG_DT_HAS_NXP_FLEXIO_ENABLED and
-      CONFIG_DT_HAS_NXP_FLEXIO_PWM_ENABLED
-    depends_on: pwm
-  drivers.pwm.mimxrt700_evk_mimxrt798s_cm33_cpu0_flexio_pwm:
-    tags:
-      - drivers
-      - pwm
-      - userspace
-    extra_args: DTC_OVERLAY_FILE="boards/mimxrt700_evk_mimxrt798s_cm33_cpu0_flexio_pwm.overlay"
-    platform_allow:
       - mimxrt700_evk/mimxrt798s/cm33_cpu0
+      - mimxrt1180_evk/mimxrt1189/cm33
+      - mimxrt1180_evk/mimxrt1189/cm7
     filter: (dt_alias_exists("pwm-0") or dt_alias_exists("pwm-1") or dt_alias_exists("pwm-2")
       or dt_alias_exists("pwm-3")) and CONFIG_DT_HAS_NXP_FLEXIO_ENABLED and
       CONFIG_DT_HAS_NXP_FLEXIO_PWM_ENABLED
@@ -53,3 +50,16 @@ tests:
       - native_sim
     integration_platforms:
       - native_sim
+  drivers.pwm.mcxw7x_flexio_pwm:
+    tags:
+      - drivers
+      - pwm
+      - userspace
+    extra_args: DTC_OVERLAY_FILE="boards/frdm_mcxw7x_flexio_pwm.overlay"
+    platform_allow:
+      - frdm_mcxw71
+      - frdm_mcxw72/mcxw727c/cpu0
+    filter: (dt_alias_exists("pwm-0") or dt_alias_exists("pwm-1") or dt_alias_exists("pwm-2")
+      or dt_alias_exists("pwm-3")) and CONFIG_DT_HAS_NXP_FLEXIO_ENABLED and
+      CONFIG_DT_HAS_NXP_FLEXIO_PWM_ENABLED
+    depends_on: pwm

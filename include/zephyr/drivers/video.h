@@ -7,6 +7,7 @@
 /*
  * Copyright (c) 2019 Linaro Limited.
  * Copyright 2025 NXP
+ * Copyright (c) 2025 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -143,12 +144,15 @@ struct video_caps {
  * Represent a video frame.
  */
 struct video_buffer {
+	/** Pointer to driver specific data. */
+	/* It must be kept as first field of the struct if used for @ref k_fifo APIs. */
+	void *driver_data;
 	/** type of the buffer */
 	enum video_buf_type type;
-	/** pointer to driver specific data. */
-	void *driver_data;
 	/** pointer to the start of the buffer. */
 	uint8_t *buffer;
+	/** index of the buffer, optionally set by the application */
+	uint8_t index;
 	/** size of the buffer in bytes. */
 	uint32_t size;
 	/** number of bytes occupied by the valid data in the buffer. */
@@ -235,6 +239,57 @@ enum video_signal_result {
 	VIDEO_BUF_DONE,
 	VIDEO_BUF_ABORTED,
 	VIDEO_BUF_ERROR,
+};
+
+/**
+ * @struct video_selection_target
+ * @brief Video selection target enum
+ *
+ * Used to indicate which selection to query or set on a video device
+ */
+enum video_selection_target {
+	/** Current crop setting */
+	VIDEO_SEL_TGT_CROP,
+	/** Crop bound (aka the maximum crop achievable) */
+	VIDEO_SEL_TGT_CROP_BOUND,
+	/** Native size of the input frame */
+	VIDEO_SEL_TGT_NATIVE_SIZE,
+	/** Current compose setting */
+	VIDEO_SEL_TGT_COMPOSE,
+	/** Compose bound (aka the maximum compose achievable) */
+	VIDEO_SEL_TGT_COMPOSE_BOUND,
+};
+
+/**
+ * @struct video_rect
+ * @brief Description of a rectangle area.
+ *
+ * Used for crop/compose and possibly within drivers as well
+ */
+struct video_rect {
+	/** left offset of selection rectangle */
+	uint32_t left;
+	/** top offset of selection rectangle */
+	uint32_t top;
+	/** width of selection rectangle */
+	uint32_t width;
+	/** height of selection rectangle */
+	uint32_t height;
+};
+
+/**
+ * @struct video_selection
+ * @brief Video selection (crop / compose) structure
+ *
+ * Used to describe the query and set selection target on a video device
+ */
+struct video_selection {
+	/** buffer type, allow to select for device having both input and output */
+	enum video_buf_type type;
+	/** selection target enum */
+	enum video_selection_target target;
+	/** selection target rectangle */
+	struct video_rect rect;
 };
 
 /**
@@ -327,6 +382,14 @@ typedef int (*video_api_get_caps_t)(const struct device *dev, struct video_caps 
  */
 typedef int (*video_api_set_signal_t)(const struct device *dev, struct k_poll_signal *sig);
 
+/**
+ * @typedef video_api_selection_t
+ * @brief Get/Set video selection (crop / compose)
+ *
+ * See @ref video_set_selection and @ref video_get_selection for argument descriptions.
+ */
+typedef int (*video_api_selection_t)(const struct device *dev, struct video_selection *sel);
+
 __subsystem struct video_driver_api {
 	/* mandatory callbacks */
 	video_api_format_t set_format;
@@ -343,6 +406,8 @@ __subsystem struct video_driver_api {
 	video_api_frmival_t set_frmival;
 	video_api_frmival_t get_frmival;
 	video_api_enum_frmival_t enum_frmival;
+	video_api_selection_t set_selection;
+	video_api_selection_t get_selection;
 };
 
 /**
@@ -708,14 +773,13 @@ struct video_ctrl_query;
  * difficult. Hence, the best way to enumerate all kinds of device's supported controls is to
  * iterate with VIDEO_CTRL_FLAG_NEXT_CTRL.
  *
- * @param dev Pointer to the device structure.
  * @param cq Pointer to the control query struct.
  *
  * @retval 0 If successful.
  * @retval -EINVAL If the control id is invalid.
  * @retval -ENOTSUP If the control id is not supported.
  */
-int video_query_ctrl(const struct device *dev, struct video_ctrl_query *cq);
+int video_query_ctrl(struct video_ctrl_query *cq);
 
 /**
  * @brief Print all the information of a control.
@@ -724,10 +788,9 @@ int video_query_ctrl(const struct device *dev, struct video_ctrl_query *cq);
  * menu (if any) and current value, i.e. by invoking the video_get_ctrl(), in a
  * human readble format.
  *
- * @param dev Pointer to the device structure.
  * @param cq Pointer to the control query struct.
  */
-void video_print_ctrl(const struct device *const dev, const struct video_ctrl_query *const cq);
+void video_print_ctrl(const struct video_ctrl_query *const cq);
 
 /**
  * @brief Register/Unregister k_poll signal for a video endpoint.
@@ -754,6 +817,72 @@ static inline int video_set_signal(const struct device *dev, struct k_poll_signa
 	}
 
 	return api->set_signal(dev, sig);
+}
+
+/**
+ * @brief Set video selection (crop/compose).
+ *
+ * Configure the optional crop and compose feature of a video device.
+ * Crop is first applied on the input frame, and the result of that crop is applied
+ * to the compose. The result of the compose (width/height) is equal to the format
+ * width/height given to the @ref video_set_format function.
+ *
+ * Some targets are inter-dependents. For instance, setting a @ref VIDEO_SEL_TGT_CROP will
+ * reset @ref VIDEO_SEL_TGT_COMPOSE to the same size.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param sel Pointer to a video selection structure
+ *
+ * @retval 0 Is successful.
+ * @retval -EINVAL If parameters are invalid.
+ * @retval -ENOTSUP If format is not supported.
+ * @retval -EIO General input / output error.
+ */
+static inline int video_set_selection(const struct device *dev, struct video_selection *sel)
+{
+	const struct video_driver_api *api;
+
+	__ASSERT_NO_MSG(dev != NULL);
+	__ASSERT_NO_MSG(sel != NULL);
+
+	api = (const struct video_driver_api *)dev->api;
+	if (api->set_selection == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->set_selection(dev, sel);
+}
+
+/**
+ * @brief Get video selection (crop/compose).
+ *
+ * Retrieve the current settings related to the crop and compose of the video device.
+ * This can also be used to read the native size of the input stream of the video
+ * device.
+ * This function can be used to read crop / compose capabilities of the device prior
+ * to performing configuration via the @ref video_set_selection api.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param sel Pointer to a video selection structure, @c type and @c target set by the caller
+ *
+ * @retval 0 Is successful.
+ * @retval -EINVAL If parameters are invalid.
+ * @retval -ENOTSUP If format is not supported.
+ * @retval -EIO General input / output error.
+ */
+static inline int video_get_selection(const struct device *dev, struct video_selection *sel)
+{
+	const struct video_driver_api *api;
+
+	__ASSERT_NO_MSG(dev != NULL);
+	__ASSERT_NO_MSG(sel != NULL);
+
+	api = (const struct video_driver_api *)dev->api;
+	if (api->get_selection == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->get_selection(dev, sel);
 }
 
 /**
@@ -1242,6 +1371,46 @@ int64_t video_get_csi_link_freq(const struct device *dev, uint8_t bpp, uint8_t l
 #define VIDEO_PIX_FMT_Y14P VIDEO_FOURCC('Y', '1', '4', 'P')
 
 /**
+ * Little endian, with the 6 most significant bits set to Zero.
+ * @code{.unparsed}
+ *   0                   1                   2                   3
+ * | yyyyyyyy 000000Yy | yyyyyyyy 000000Yy | yyyyyyyy 000000Yy | yyyyyyyy 000000Yy | ...
+ * | yyyyyyyy 000000Yy | yyyyyyyy 000000Yy | yyyyyyyy 000000Yy | yyyyyyyy 000000Yy | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_Y10 VIDEO_FOURCC('Y', '1', '0', ' ')
+
+/**
+ * Little endian, with the 4 most significant bits set to Zero.
+ * @code{.unparsed}
+ *   0                   1                   2                   3
+ * | yyyyyyyy 0000Yyyy | yyyyyyyy 0000Yyyy | yyyyyyyy 0000Yyyy | yyyyyyyy 0000Yyyy | ...
+ * | yyyyyyyy 0000Yyyy | yyyyyyyy 0000Yyyy | yyyyyyyy 0000Yyyy | yyyyyyyy 0000Yyyy | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_Y12 VIDEO_FOURCC('Y', '1', '2', ' ')
+
+/**
+ * Little endian, with the 2 most significant bits set to Zero.
+ * @code{.unparsed}
+ *   0                   1                   2                   3
+ * | yyyyyyyy 00Yyyyyy | yyyyyyyy 00Yyyyyy | yyyyyyyy 00Yyyyyy | yyyyyyyy 00Yyyyyy | ...
+ * | yyyyyyyy 00Yyyyyy | yyyyyyyy 00Yyyyyy | yyyyyyyy 00Yyyyyy | yyyyyyyy 00Yyyyyy | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_Y14 VIDEO_FOURCC('Y', '1', '4', ' ')
+
+/**
+ * Little endian.
+ * @code{.unparsed}
+ *   0                   1                   2                   3
+ * | yyyyyyyy Yyyyyyyy | yyyyyyyy Yyyyyyyy | yyyyyyyy Yyyyyyyy | yyyyyyyy Yyyyyyyy | ...
+ * | yyyyyyyy Yyyyyyyy | yyyyyyyy Yyyyyyyy | yyyyyyyy Yyyyyyyy | yyyyyyyy Yyyyyyyy | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_Y16 VIDEO_FOURCC('Y', '1', '6', ' ')
+
+/**
  * @}
  */
 
@@ -1456,6 +1625,10 @@ static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
 	case VIDEO_PIX_FMT_SGBRG16:
 	case VIDEO_PIX_FMT_SGRBG16:
 	case VIDEO_PIX_FMT_SRGGB16:
+	case VIDEO_PIX_FMT_Y10:
+	case VIDEO_PIX_FMT_Y12:
+	case VIDEO_PIX_FMT_Y14:
+	case VIDEO_PIX_FMT_Y16:
 		return 16;
 	case VIDEO_PIX_FMT_BGR24:
 	case VIDEO_PIX_FMT_RGB24:

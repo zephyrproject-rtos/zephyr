@@ -1,3 +1,5 @@
-&counter0 {
-	status = "okay";
+&timer0 {
+	counter0: counter {
+		status = "okay";
+	};
 };

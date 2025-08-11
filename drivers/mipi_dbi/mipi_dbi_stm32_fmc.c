@@ -9,6 +9,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/mipi_dbi.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/memc/memc_stm32.h>
 #include <zephyr/sys/barrier.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/byteorder.h>
@@ -38,6 +39,7 @@ int mipi_dbi_stm32_fmc_check_config(const struct device *dev,
 	const struct mipi_dbi_stm32_fmc_config *config = dev->config;
 	struct mipi_dbi_stm32_fmc_data *data = dev->data;
 	uint32_t fmc_write_cycles;
+	uint32_t fmc_freq;
 
 	if (data->dbi_config == dbi_config) {
 		return 0;
@@ -53,14 +55,16 @@ int mipi_dbi_stm32_fmc_check_config(const struct device *dev,
 		return -EINVAL;
 	}
 
-	uint32_t hclk_freq =
-		STM32_AHB_PRESCALER * DT_PROP(STM32_CLOCK_CONTROL_NODE, clock_frequency);
+	if (memc_stm32_fmc_clock_rate(&fmc_freq) < 0) {
+		LOG_ERR("Unable to get FMC frequency");
+		return -EINVAL;
+	}
 
 	/* According to the FMC documentation*/
 	fmc_write_cycles =
 		((config->fmc_address_setup_time + 1) + (config->fmc_data_setup_time + 1)) * 1;
 
-	if (hclk_freq / fmc_write_cycles > dbi_config->config.frequency) {
+	if (fmc_freq / fmc_write_cycles > dbi_config->config.frequency) {
 		LOG_ERR("Frequency is too high for the display controller");
 		return -EINVAL;
 	}
@@ -178,8 +182,9 @@ static DEVICE_API(mipi_dbi, mipi_dbi_stm32_fmc_driver_api) = {
 	.write_display = mipi_dbi_stm32_fmc_write_display,
 };
 
-#define MIPI_DBI_FMC_GET_ADDRESS(n) _CONCAT(FMC_BANK1_,                                            \
-					UTIL_INC(DT_REG_ADDR_RAW(DT_INST_PARENT(n))))
+#define MIPI_DBI_FMC_GET_ADDRESS(n)                                                                \
+	DT_INST_PROP_OR(n, bank_address,                                                           \
+			_CONCAT(FMC_BANK1_, UTIL_INC(DT_REG_ADDR_RAW(DT_INST_PARENT(n)))))
 
 #define MIPI_DBI_FMC_GET_DATA_ADDRESS(n)                                                           \
 	MIPI_DBI_FMC_GET_ADDRESS(n) + (1 << (DT_INST_PROP(n, register_select_pin) + 1))

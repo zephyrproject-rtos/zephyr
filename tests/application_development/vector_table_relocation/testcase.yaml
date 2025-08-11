@@ -9,4 +9,5 @@ tests:
     platform_exclude:
       - mps3/corstone310/an555
       - mps3/corstone310/fvp
+      - mps4/corstone315/fvp
       - mps4/corstone320/fvp

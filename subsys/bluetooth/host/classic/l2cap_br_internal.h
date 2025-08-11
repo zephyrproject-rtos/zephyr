@@ -34,7 +34,7 @@ struct bt_l2cap_sig_hdr {
 #define BT_L2CAP_CMD_REJECT             0x01
 struct bt_l2cap_cmd_reject {
 	uint16_t reason;
-	uint8_t  data[0];
+	uint8_t  data[];
 } __packed;
 
 struct bt_l2cap_cmd_reject_cid_data {
@@ -83,7 +83,7 @@ struct bt_l2cap_conn_rsp {
 struct bt_l2cap_conf_req {
 	uint16_t dcid;
 	uint16_t flags;
-	uint8_t  data[0];
+	uint8_t  data[];
 } __packed;
 
 #define BT_L2CAP_CONF_RSP               0x05
@@ -91,7 +91,7 @@ struct bt_l2cap_conf_rsp {
 	uint16_t scid;
 	uint16_t flags;
 	uint16_t result;
-	uint8_t  data[0];
+	uint8_t  data[];
 } __packed;
 
 /* Option type used by MTU config request data */
@@ -110,7 +110,7 @@ struct bt_l2cap_conf_rsp {
 struct bt_l2cap_conf_opt {
 	uint8_t type;
 	uint8_t len;
-	uint8_t data[0];
+	uint8_t data[];
 } __packed;
 
 struct bt_l2cap_conf_opt_mtu {
@@ -200,7 +200,7 @@ struct bt_l2cap_info_req {
 struct bt_l2cap_info_rsp {
 	uint16_t type;
 	uint16_t result;
-	uint8_t  data[0];
+	uint8_t  data[];
 } __packed;
 
 /* I Frame Standard Control Field Format definition */

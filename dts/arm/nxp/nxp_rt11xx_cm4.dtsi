@@ -8,7 +8,20 @@
 
 / {
 	cpus {
-		/delete-node/ cpu@0;
+		cpu1: cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4f";
+			reg = <1>;
+			d-cache-line-size = <32>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv7m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
 	};
 
 	/*
@@ -565,9 +578,4 @@
 		<&iomuxc_gpio_ad_30_gpio9_io29>,
 		<&iomuxc_gpio_ad_31_gpio9_io30>,
 		<&iomuxc_gpio_ad_32_gpio9_io31>;
-};
-
-/* CAAM currently does not work on M4 because of cache API issues */
-&caam {
-	status = "disabled";
 };

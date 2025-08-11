@@ -97,11 +97,11 @@ arduino_serial: &lpuart2 {
 	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(8)>;
 	is25lp064: is25lp064@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		size = <67108864>;
+		size = <DT_SIZE_M(8*8)>;
 		reg = <0>;
 		spi-max-frequency = <104000000>;
 		status = "okay";
-		jedec-id = [9d 70 17];
+		jedec-id = [9d 60 17];
 		erase-block-size = <4096>;
 		write-block-size = <1>;
 

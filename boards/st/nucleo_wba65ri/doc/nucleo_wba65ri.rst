@@ -168,10 +168,10 @@ Default Zephyr Peripheral Mapping:
 - I2C_1_SDA : PB1
 - USER_PB : PC13
 - LD1 : PD8
-- SPI_1_NSS : PA12 (arduino_spi)
-- SPI_1_SCK : PB4 (arduino_spi)
-- SPI_1_MISO : PB3 (arduino_spi)
-- SPI_1_MOSI : PA15 (arduino_spi)
+- SPI_2_NSS : PB9 (arduino_spi)
+- SPI_2_SCK : PB10 (arduino_spi)
+- SPI_2_MISO : PA9 (arduino_spi)
+- SPI_2_MOSI : PC3 (arduino_spi)
 
 System Clock
 ------------

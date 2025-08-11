@@ -5,8 +5,8 @@ CodeChecker support
 
 `CodeChecker <https://codechecker.readthedocs.io/>`__ is a static analysis infrastructure.
 It executes analysis tools available on the build system, such as
-`Clang-Tidy <http://clang.llvm.org/extra/clang-tidy/>`__,
-`Clang Static Analyzer <http://clang-analyzer.llvm.org/>`__ and
+`Clang-Tidy <https://clang.llvm.org/extra/clang-tidy/>`__,
+`Clang Static Analyzer <https://clang-analyzer.llvm.org/>`__ and
 `Cppcheck <https://cppcheck.sourceforge.io/>`__. Refer to the analyzer's websites for installation
 instructions.
 

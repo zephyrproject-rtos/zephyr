@@ -86,7 +86,7 @@ ZTEST(bt_id_set_adv_private_addr_invalid_cases, test_set_adv_address_set_adv_ran
 
 	bt_rand_fake.custom_fake = bt_rand_custom_fake;
 	/* This will make set_random_address() returns a negative number error code */
-	bt_hci_cmd_create_fake.return_val = NULL;
+	bt_hci_cmd_alloc_fake.return_val = NULL;
 
 	err = bt_id_set_adv_private_addr(&adv_param);
 
@@ -158,7 +158,7 @@ ZTEST(bt_id_set_adv_private_addr_invalid_cases, test_set_adv_address_if_set_adv_
 
 	/* This will make bt_id_set_adv_random_addr() returns a negative number error code */
 	atomic_set_bit(adv_param.flags, BT_ADV_PARAMS_SET);
-	bt_hci_cmd_create_fake.return_val = NULL;
+	bt_hci_cmd_alloc_fake.return_val = NULL;
 
 	err = bt_id_set_adv_private_addr(&adv_param);
 

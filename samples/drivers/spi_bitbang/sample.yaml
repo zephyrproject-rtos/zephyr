@@ -6,7 +6,14 @@ tests:
       - drivers
       - spi
       - gpio
-    platform_allow: nrf52840dk/nrf52840
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuapp
+    integration_platforms:
+      - nrf52840dk/nrf52840
+      - nrf54l15dk/nrf54l15/cpuapp
     depends_on: gpio
     harness: console
     harness_config:

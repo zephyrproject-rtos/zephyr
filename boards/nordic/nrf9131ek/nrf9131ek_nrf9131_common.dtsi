@@ -70,7 +70,6 @@
 		pwm-led1 = &pwm_led1;
 		pwm-led2 = &pwm_led2;
 		sw0 = &button0;
-		bootloader-led0 = &led0;
 		mcuboot-button0 = &button0;
 		mcuboot-led0 = &led0;
 		watchdog0 = &wdt0;

@@ -19,6 +19,7 @@
 
 	aliases {
 		backlight = &led1;
+		fuel-gauge0 = &max17048;
 	};
 
 	leds {

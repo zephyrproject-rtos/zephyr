@@ -23,7 +23,7 @@
 #define LPSPI_CHIP_SELECT_COUNT   4
 #define LPSPI_MIN_FRAME_SIZE_BITS 8
 
-#define LPSPI_INTERRUPT_BITS GENMASK(8, 13)
+#define LPSPI_INTERRUPT_BITS GENMASK(13, 8)
 
 /* Required by DEVICE_MMIO_NAMED_* macros */
 #define DEV_CFG(_dev)  ((const struct lpspi_config *)(_dev)->config)
@@ -47,14 +47,18 @@ struct lpspi_config {
 
 struct lpspi_data {
 	DEVICE_MMIO_NAMED_RAM(reg_base);
-	const struct device *dev;
 	struct spi_context ctx;
 	void *driver_data;
 	size_t transfer_len;
+	uint8_t major_version;
+	uint32_t clock_freq;
 };
 
-/* verifies spi_cfg validity and set up configuration of hardware for xfer */
-int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cfg);
+/* Verifies spi_cfg validity and set up configuration of hardware for xfer
+ * Unsets interrupt and watermark options, specific implementation should configure that.
+ * Sets bits in the TCR ONLY *directly* relating to what is in the spi_config struct.
+ */
+int lpspi_configure(const struct device *dev, const struct spi_config *spi_cfg);
 
 /* Does these things:
  * Set data.dev
@@ -68,7 +72,7 @@ int spi_nxp_init_common(const struct device *dev);
 /* common api function for now */
 int spi_lpspi_release(const struct device *dev, const struct spi_config *spi_cfg);
 
-void lpspi_wait_tx_fifo_empty(const struct device *dev);
+int lpspi_wait_tx_fifo_empty(const struct device *dev);
 
 #define SPI_LPSPI_IRQ_FUNC_LP_FLEXCOMM(n)                                                     \
 	nxp_lp_flexcomm_setirqhandler(DEVICE_DT_GET(DT_INST_PARENT(n)), DEVICE_DT_INST_GET(n),     \

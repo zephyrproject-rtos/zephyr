@@ -1,6 +1,8 @@
 # Copyright (c) 2024-2025 Henrik Brix Andersen <henrik@brixandersen.dk>
 # SPDX-License-Identifier: Apache-2.0
 
+CONFIG_BUILD_OUTPUT_HEX=y
+
 CONFIG_ARM_MPU=y
 CONFIG_CACHE_MANAGEMENT=y
 CONFIG_HW_STACK_PROTECTION=y

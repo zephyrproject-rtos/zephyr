@@ -295,7 +295,11 @@ static void vrt_hrslt_success(const struct device *dev,
 		if (xfer->buf != NULL) {
 			xfer->stage = UHC_CONTROL_STAGE_DATA;
 		} else {
-			xfer->stage = UHC_CONTROL_STAGE_STATUS;
+			if (xfer->no_status) {
+				finished = true;
+			} else {
+				xfer->stage = UHC_CONTROL_STAGE_STATUS;
+			}
 		}
 
 		break;
@@ -311,7 +315,7 @@ static void vrt_hrslt_success(const struct device *dev,
 			net_buf_pull(buf, length);
 			LOG_DBG("OUT chunk %zu out of %u", length, buf->len);
 			if (buf->len == 0) {
-				if (pkt->ep == USB_CONTROL_EP_OUT) {
+				if (pkt->ep == USB_CONTROL_EP_OUT && !xfer->no_status) {
 					xfer->stage = UHC_CONTROL_STAGE_STATUS;
 				} else {
 					finished = true;
@@ -327,7 +331,7 @@ static void vrt_hrslt_success(const struct device *dev,
 
 			LOG_DBG("IN chunk %zu out of %zu", length, net_buf_tailroom(buf));
 			if (pkt->length < xfer->mps || !net_buf_tailroom(buf)) {
-				if (pkt->ep == USB_CONTROL_EP_IN) {
+				if (pkt->ep == USB_CONTROL_EP_IN && !xfer->no_status) {
 					xfer->stage = UHC_CONTROL_STAGE_STATUS;
 				} else {
 					finished = true;

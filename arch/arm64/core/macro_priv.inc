@@ -25,7 +25,7 @@
  * Get CPU logic id by looking up cpu_node_list
  * returns
  *   xreg0: MPID
- *   xreg1: logic id (0 ~ CONFIG_MP_MAX_NUM_CPUS - 1)
+ *   xreg1: logic id (0 ~ DT_CHILD_NUM_STATUS_OKAY(DT_PATH(cpus)) - 1)
  * clobbers: xreg0, xreg1, xreg2, xreg3
  */
 .macro get_cpu_logic_id xreg0, xreg1, xreg2, xreg3
@@ -36,7 +36,7 @@
 	cmp	\xreg2, \xreg0
 	beq	2f
 	add	\xreg1, \xreg1, 1
-	cmp	\xreg1, #CONFIG_MP_MAX_NUM_CPUS
+	cmp	\xreg1, #DT_CHILD_NUM_STATUS_OKAY(DT_PATH(cpus))
 	bne	1b
 	b	.
 2:

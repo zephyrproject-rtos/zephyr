@@ -15,6 +15,8 @@ html {
     --side-nav-background: #333f67;
     --side-nav-foreground: #c3e3ff;
 
+    --page-outline-vis: #3b4978;
+
     --searchbar-background: var(--page-background-color);
     --searchbar-foreground: var(--page-foreground-color);
 
@@ -37,6 +39,8 @@ html {
 
         --side-nav-background: #252628;
         --side-nav-foreground: var(--page-foreground-color);
+
+        --page-outline-vis: #44568d;
 
         --param-color: #ef9a9a;
     }

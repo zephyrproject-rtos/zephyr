@@ -311,6 +311,8 @@
 				rx-delay-supported;
 				rx-delay = <1>;
 				status = "disabled";
+				default-gpio-port = <&gpio1>;
+				cross-domain-pins-supported;
 			};
 
 			uart20: uart@c6000 {
@@ -320,6 +322,8 @@
 				status = "disabled";
 				endtx-stoptx-supported;
 				frame-timeout-supported;
+				default-gpio-port = <&gpio1>;
+				cross-domain-pins-supported;
 			};
 
 			i2c21: i2c@c7000 {
@@ -350,6 +354,8 @@
 				rx-delay-supported;
 				rx-delay = <1>;
 				status = "disabled";
+				default-gpio-port = <&gpio1>;
+				cross-domain-pins-supported;
 			};
 
 			uart21: uart@c7000 {
@@ -359,6 +365,8 @@
 				status = "disabled";
 				endtx-stoptx-supported;
 				frame-timeout-supported;
+				default-gpio-port = <&gpio1>;
+				cross-domain-pins-supported;
 			};
 
 			i2c22: i2c@c8000 {

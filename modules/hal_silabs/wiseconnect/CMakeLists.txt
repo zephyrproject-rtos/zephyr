@@ -8,6 +8,7 @@ set(COMMON_DIR ${ZEPHYR_HAL_SILABS_MODULE_DIR}/simplicity_sdk/platform/common)
 # Keep these values sync with
 # components/device/silabs/si91x/mcu/core/chip/component/siwg917*.slcc
 zephyr_compile_definitions(
+  SL_SUPPRESS_DEPRECATION_WARNINGS_WISECONNECT_3_5
   SL_SI91X_ENABLE_LITTLE_ENDIAN
   SLI_SI91X_MCU_COMMON_FLASH_MODE
   SLI_SI91X_MCU_CONFIG_RADIO_BOARD_VER2
@@ -47,6 +48,7 @@ zephyr_include_directories(
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/cmsis_driver/config
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/cmsis_driver
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/cmsis_driver/CMSIS/Driver/Include
+  ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ahb_interface/inc
   ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/firmware_upgrade
 )
 
@@ -164,7 +166,6 @@ if(CONFIG_WISECONNECT_NETWORK_STACK)
     ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/sl_net/inc
     ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/socket/inc
     ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/asynchronous_socket/inc
-    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ahb_interface/inc
     ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/core/chip/config
     ${WISECONNECT_DIR}/components/protocol/wifi/inc
     ${WISECONNECT_DIR}/components/service/network_manager/inc

@@ -433,8 +433,7 @@ static int bt_ipm_set_addr(void)
 		return -ENOMSG;
 	}
 
-	buf = bt_hci_cmd_create(ACI_HAL_WRITE_CONFIG_DATA, sizeof(*param));
-
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -468,7 +467,7 @@ static int bt_ipm_ble_init(void)
 		LOG_ERR("Can't set BLE UID addr");
 	}
 	/* Send ACI_WRITE_SET_TX_POWER_LEVEL */
-	buf = bt_hci_cmd_create(ACI_WRITE_SET_TX_POWER_LEVEL, 3);
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}

@@ -247,6 +247,45 @@ void setup_broadcast_adv(struct bt_le_ext_adv **adv)
 	}
 }
 
+void start_broadcast_adv(struct bt_le_ext_adv *adv)
+{
+	char addr_str[BT_ADDR_LE_STR_LEN];
+	struct bt_le_ext_adv_info info;
+	int err;
+
+	err = bt_le_ext_adv_get_info(adv, &info);
+	if (err != 0) {
+		FAIL("Failed to get adv info: %d\n", err);
+		return;
+	}
+
+	if (info.per_adv_state == BT_LE_PER_ADV_STATE_NONE) {
+		FAIL("Cannot start periodic advertising for non-periodic advertising set");
+		return;
+	}
+
+	if (info.ext_adv_state == BT_LE_EXT_ADV_STATE_DISABLED) {
+		/* Start extended advertising */
+		err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
+		if (err != 0) {
+			FAIL("Failed to start extended advertising: %d\n", err);
+			return;
+		}
+	}
+
+	if (info.per_adv_state == BT_LE_PER_ADV_STATE_DISABLED) {
+		/* Enable Periodic Advertising */
+		err = bt_le_per_adv_start(adv);
+		if (err != 0) {
+			FAIL("Failed to enable periodic advertising: %d\n", err);
+			return;
+		}
+	}
+
+	bt_addr_le_to_str(info.addr, addr_str, sizeof(addr_str));
+	printk("Started advertising with addr %s\n", addr_str);
+}
+
 void test_tick(bs_time_t HW_device_time)
 {
 	if (bst_result != Passed) {

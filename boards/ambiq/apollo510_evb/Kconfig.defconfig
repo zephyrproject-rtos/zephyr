@@ -19,4 +19,18 @@ config MSPI_INIT_PRIORITY
 
 endif # MSPI
 
+if MEMC
+
+config MEMC_INIT_PRIORITY
+	default 50
+
+endif # MEMC
+
+if FLASH
+
+config FLASH_INIT_PRIORITY
+	default 50
+
+endif # FLASH
+
 endif # BOARD_APOLLO510_EVB

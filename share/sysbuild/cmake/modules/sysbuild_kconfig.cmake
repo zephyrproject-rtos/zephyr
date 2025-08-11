@@ -102,6 +102,17 @@ set(shield_conf_files)
 list(APPEND ZEPHYR_KCONFIG_MODULES_DIR BOARD=${BOARD})
 set(KCONFIG_NAMESPACE SB_CONFIG)
 
+foreach(module_name ${ZEPHYR_MODULE_NAMES})
+  zephyr_string(SANITIZE TOUPPER MODULE_NAME_UPPER ${module_name})
+
+  if(SYSBUILD_${MODULE_NAME_UPPER}_KCONFIG)
+    list(APPEND
+         ZEPHYR_KCONFIG_MODULES_DIR
+         "SYSBUILD_${MODULE_NAME_UPPER}_KCONFIG=${SYSBUILD_${MODULE_NAME_UPPER}_KCONFIG}"
+    )
+  endif()
+endforeach()
+
 if(EXISTS ${APP_DIR}/Kconfig.sysbuild)
   set(KCONFIG_ROOT ${APP_DIR}/Kconfig.sysbuild)
 endif()

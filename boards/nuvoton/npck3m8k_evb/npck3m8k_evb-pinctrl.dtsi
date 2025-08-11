@@ -1,0 +1,7 @@
+/*
+ * Copyright (c) 2025 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nuvoton/npck/npck3/npck3-pinctrl.dtsi>

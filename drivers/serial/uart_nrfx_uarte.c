@@ -118,23 +118,23 @@ LOG_MODULE_REGISTER(uart_nrfx_uarte, CONFIG_UART_LOG_LEVEL);
 #define UARTE_ANY_LOW_POWER 1
 #endif
 
-#ifdef CONFIG_SOC_NRF54H20_GPD
-#include <nrf/gpd.h>
-
-/* Macro must resolve to literal 0 or 1 */
-#define INSTANCE_IS_FAST_PD(unused, prefix, idx, _)						\
-	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(UARTE(idx)),					\
-		    (COND_CODE_1(DT_NODE_HAS_PROP(UARTE(idx), power_domains),			\
-			(IS_EQ(DT_PHA(UARTE(idx), power_domains, id), NRF_GPD_FAST_ACTIVE1)),	\
-			(0))), (0))
-
-#if UARTE_FOR_EACH_INSTANCE(INSTANCE_IS_FAST_PD, (||), (0))
-/* Instance in fast power domain (PD) requires special PM treatment and clock control, so
- * device runtime PM and clock control must be enabled.
+/* Only cores with access to GDFS can control clocks and power domains, so if a fast instance is
+ * used by other cores, treat the UART like a normal one. This presumes cores with access to GDFS
+ * have requested the clocks and power domains needed by the fast instance to be ACTIVE before
+ * other cores use the fast instance.
  */
-BUILD_ASSERT(IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME));
-BUILD_ASSERT(IS_ENABLED(CONFIG_CLOCK_CONTROL));
-#define UARTE_ANY_FAST_PD 1
+#if CONFIG_NRFS_GDFS_SERVICE_ENABLED
+#define INSTANCE_IS_FAST(unused, prefix, idx, _)						\
+	UTIL_AND(										\
+		UTIL_AND(									\
+			IS_ENABLED(CONFIG_HAS_HW_NRF_UARTE##prefix##idx),			\
+			NRF_DT_IS_FAST(UARTE(idx))						\
+		),										\
+		IS_ENABLED(CONFIG_CLOCK_CONTROL)						\
+	)
+
+#if UARTE_FOR_EACH_INSTANCE(INSTANCE_IS_FAST, (||), (0))
+#define UARTE_ANY_FAST 1
 #endif
 #endif
 
@@ -147,6 +147,27 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_CLOCK_CONTROL));
  * clock that is faster than 16 MHz).
  */
 #define UARTE_ANY_HIGH_SPEED (UARTE_FOR_EACH_INSTANCE(INSTANCE_IS_HIGH_SPEED, (||), (0)))
+
+#define UARTE_PINS_CROSS_DOMAIN(unused, prefix, idx, _)			\
+	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(UARTE(prefix##idx)),	\
+		   (UARTE_PROP(idx, cross_domain_pins_supported)),	\
+		   (0))
+
+#if UARTE_FOR_EACH_INSTANCE(UARTE_PINS_CROSS_DOMAIN, (||), (0))
+#include <hal/nrf_gpio.h>
+/* Certain UARTE instances support usage of cross domain pins in form of dedicated pins on
+ * a port different from the default one.
+ */
+#define UARTE_CROSS_DOMAIN_PINS_SUPPORTED 1
+#endif
+
+#if UARTE_CROSS_DOMAIN_PINS_SUPPORTED && defined(CONFIG_NRF_SYS_EVENT)
+#include <nrf_sys_event.h>
+/* To use cross domain pins, constant latency mode needs to be applied, which is
+ * handled via nrf_sys_event requests.
+ */
+#define UARTE_CROSS_DOMAIN_PINS_HANDLE 1
+#endif
 
 #ifdef UARTE_ANY_CACHE
 /* uart120 instance does not retain BAUDRATE register when ENABLE=0. When this instance
@@ -333,7 +354,7 @@ struct uarte_nrfx_data {
  * @retval false if device PM is not ISR safe.
  */
 #define IS_PM_ISR_SAFE(dev) \
-	(!IS_ENABLED(UARTE_ANY_FAST_PD) ||\
+	(!IS_ENABLED(UARTE_ANY_FAST) ||\
 	 COND_CODE_1(CONFIG_PM_DEVICE,\
 			((dev->pm_base->flags & BIT(PM_DEVICE_FLAG_ISR_SAFE))), \
 			(0)))
@@ -349,7 +370,7 @@ struct uarte_nrfx_config {
 #ifdef CONFIG_HAS_NORDIC_DMM
 	void *mem_reg;
 #endif
-#ifdef UARTE_ANY_FAST_PD
+#ifdef UARTE_ANY_FAST
 	const struct device *clk_dev;
 	struct nrf_clock_spec clk_spec;
 #endif
@@ -371,6 +392,10 @@ struct uarte_nrfx_config {
 #endif
 	uint8_t *poll_out_byte;
 	uint8_t *poll_in_byte;
+#if UARTE_CROSS_DOMAIN_PINS_SUPPORTED
+	bool cross_domain;
+	int8_t default_port;
+#endif
 };
 
 /* Using Macro instead of static inline function to handle NO_OPTIMIZATIONS case
@@ -419,6 +444,7 @@ static void endtx_isr(const struct device *dev)
 static void uarte_disable_locked(const struct device *dev, uint32_t dis_mask)
 {
 	struct uarte_nrfx_data *data = dev->data;
+	const struct uarte_nrfx_config *config = dev->config;
 
 	data->flags &= ~dis_mask;
 	if (data->flags & UARTE_FLAG_LOW_POWER) {
@@ -426,8 +452,6 @@ static void uarte_disable_locked(const struct device *dev, uint32_t dis_mask)
 	}
 
 #if defined(UARTE_ANY_ASYNC) && !defined(CONFIG_UART_NRFX_UARTE_ENHANCED_RX)
-	const struct uarte_nrfx_config *config = dev->config;
-
 	if (data->async && HW_RX_COUNTING_ENABLED(config)) {
 		nrfx_timer_disable(&config->timer);
 		/* Timer/counter value is reset when disabled. */
@@ -436,13 +460,35 @@ static void uarte_disable_locked(const struct device *dev, uint32_t dis_mask)
 	}
 #endif
 
-#ifdef CONFIG_SOC_NRF54H20_GPD
-	const struct uarte_nrfx_config *cfg = dev->config;
-
-	nrf_gpd_retain_pins_set(cfg->pcfg, true);
-#endif
 	nrf_uarte_disable(get_uarte_instance(dev));
+	(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
 }
+
+#if UARTE_CROSS_DOMAIN_PINS_SUPPORTED
+static bool uarte_has_cross_domain_connection(const struct uarte_nrfx_config *config)
+{
+	const struct pinctrl_dev_config *pcfg = config->pcfg;
+	const struct pinctrl_state *state;
+	int ret;
+
+	ret = pinctrl_lookup_state(pcfg, PINCTRL_STATE_DEFAULT, &state);
+	if (ret < 0) {
+		LOG_ERR("Unable to read pin state");
+		return false;
+	}
+
+	for (uint8_t i = 0U; i < state->pin_cnt; i++) {
+		uint32_t pin = NRF_GET_PIN(state->pins[i]);
+
+		if ((pin != NRF_PIN_DISCONNECTED) &&
+		    (nrf_gpio_pin_port_number_extract(&pin) != config->default_port)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+#endif
 
 #if defined(UARTE_ANY_NONE_ASYNC) && !defined(CONFIG_UART_NRFX_UARTE_NO_IRQ)
 /**
@@ -713,7 +759,7 @@ static void uarte_periph_enable(const struct device *dev)
 	struct uarte_nrfx_data *data = dev->data;
 
 	(void)data;
-#ifdef UARTE_ANY_FAST_PD
+#ifdef UARTE_ANY_FAST
 	if (config->clk_dev) {
 		int err;
 
@@ -723,10 +769,23 @@ static void uarte_periph_enable(const struct device *dev)
 	}
 #endif
 
+	(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	nrf_uarte_enable(uarte);
-#ifdef CONFIG_SOC_NRF54H20_GPD
-	nrf_gpd_retain_pins_set(config->pcfg, false);
+
+#if UARTE_CROSS_DOMAIN_PINS_SUPPORTED
+	if (config->cross_domain && uarte_has_cross_domain_connection(config)) {
+#if UARTE_CROSS_DOMAIN_PINS_HANDLE
+		int err;
+
+		err = nrf_sys_event_request_global_constlat();
+		(void)err;
+		__ASSERT_NO_MSG(err >= 0);
+#else
+		__ASSERT(false, "NRF_SYS_EVENT needs to be enabled to use cross domain pins.\n");
 #endif
+	}
+#endif
+
 #if UARTE_BAUDRATE_RETENTION_WORKAROUND
 	nrf_uarte_baudrate_set(uarte,
 		COND_CODE_1(CONFIG_UART_USE_RUNTIME_CONFIGURE,
@@ -1192,7 +1251,7 @@ static int uarte_nrfx_rx_enable(const struct device *dev, uint8_t *buf,
 
 	nrf_uarte_rx_buffer_set(uarte, buf, len);
 
-	if (IS_ENABLED(UARTE_ANY_FAST_PD) && (cfg->flags & UARTE_CFG_FLAG_CACHEABLE)) {
+	if (IS_ENABLED(UARTE_ANY_FAST) && (cfg->flags & UARTE_CFG_FLAG_CACHEABLE)) {
 		/* Spurious RXTO event was seen on fast instance (UARTE120) thus
 		 * RXTO interrupt is kept enabled only when RX is active.
 		 */
@@ -1611,11 +1670,11 @@ static void endrx_isr(const struct device *dev)
 		}
 
 		irq_unlock(key);
-		if (IS_ENABLED(UARTE_HAS_FRAME_TIMEOUT)) {
-			if (start_timeout && !K_TIMEOUT_EQ(async_rx->timeout, K_NO_WAIT)) {
-				k_timer_start(&async_rx->timer, async_rx->timeout, K_NO_WAIT);
-			}
+#ifdef UARTE_HAS_FRAME_TIMEOUT
+		if (start_timeout && !K_TIMEOUT_EQ(async_rx->timeout, K_NO_WAIT)) {
+			k_timer_start(&async_rx->timer, async_rx->timeout, K_NO_WAIT);
 		}
+#endif
 	}
 
 #if !defined(CONFIG_UART_NRFX_UARTE_ENHANCED_RX)
@@ -1713,7 +1772,7 @@ static void rxto_isr(const struct device *dev)
 
 #ifdef CONFIG_UART_NRFX_UARTE_ENHANCED_RX
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
-	if (IS_ENABLED(UARTE_ANY_FAST_PD) && (config->flags & UARTE_CFG_FLAG_CACHEABLE)) {
+	if (IS_ENABLED(UARTE_ANY_FAST) && (config->flags & UARTE_CFG_FLAG_CACHEABLE)) {
 		/* Spurious RXTO event was seen on fast instance (UARTE120) thus
 		 * RXTO interrupt is kept enabled only when RX is active.
 		 */
@@ -2332,9 +2391,8 @@ static void uarte_pm_resume(const struct device *dev)
 {
 	const struct uarte_nrfx_config *cfg = dev->config;
 
-	(void)pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
-
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) || !LOW_POWER_ENABLED(cfg)) {
+		(void)pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 		uarte_periph_enable(dev);
 	}
 }
@@ -2346,7 +2404,7 @@ static void uarte_pm_suspend(const struct device *dev)
 	struct uarte_nrfx_data *data = dev->data;
 
 	(void)data;
-#ifdef UARTE_ANY_FAST_PD
+#ifdef UARTE_ANY_FAST
 	if (cfg->clk_dev) {
 		int err;
 
@@ -2408,13 +2466,22 @@ static void uarte_pm_suspend(const struct device *dev)
 		wait_for_tx_stopped(dev);
 	}
 
-#ifdef CONFIG_SOC_NRF54H20_GPD
-	nrf_gpd_retain_pins_set(cfg->pcfg, true);
+#if UARTE_CROSS_DOMAIN_PINS_SUPPORTED
+	if (cfg->cross_domain && uarte_has_cross_domain_connection(cfg)) {
+#if UARTE_CROSS_DOMAIN_PINS_HANDLE
+		int err;
+
+		err = nrf_sys_event_release_global_constlat();
+		(void)err;
+		__ASSERT_NO_MSG(err >= 0);
+#else
+		__ASSERT(false, "NRF_SYS_EVENT needs to be enabled to use cross domain pins.\n");
+#endif
+	}
 #endif
 
-	nrf_uarte_disable(uarte);
-
 	(void)pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_SLEEP);
+	nrf_uarte_disable(uarte);
 }
 
 static int uarte_nrfx_pm_action(const struct device *dev, enum pm_device_action action)
@@ -2489,6 +2556,11 @@ static int uarte_instance_init(const struct device *dev,
 		/* For simulation the DT provided peripheral address needs to be corrected */
 		((struct pinctrl_dev_config *)cfg->pcfg)->reg = (uintptr_t)cfg->uarte_regs;
 	}
+
+	/* Apply sleep state by default.
+	 * If PM is disabled, the default state will be applied in pm_device_driver_init.
+	 */
+	(void)pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_SLEEP);
 
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	err = uarte_nrfx_configure(dev, &((struct uarte_nrfx_data *)dev->data)->uart_config);
@@ -2581,13 +2653,13 @@ static int uarte_instance_init(const struct device *dev,
  * which is using nrfs (IPC) are initialized later.
  */
 #define UARTE_INIT_LEVEL(idx) \
-	COND_CODE_1(INSTANCE_IS_FAST_PD(_, /*empty*/, idx, _), (POST_KERNEL), (PRE_KERNEL_1))
+	COND_CODE_1(INSTANCE_IS_FAST(_, /*empty*/, idx, _), (POST_KERNEL), (PRE_KERNEL_1))
 
 /* Get initialization priority of an instance. Instances that requires clock control
  * which is using nrfs (IPC) are initialized later.
  */
 #define UARTE_INIT_PRIO(idx)								\
-	COND_CODE_1(INSTANCE_IS_FAST_PD(_, /*empty*/, idx, _),				\
+	COND_CODE_1(INSTANCE_IS_FAST(_, /*empty*/, idx, _),				\
 		    (UTIL_INC(CONFIG_CLOCK_CONTROL_NRF_HSFLL_GLOBAL_INIT_PRIORITY)),	\
 		    (CONFIG_SERIAL_INIT_PRIORITY))
 
@@ -2618,12 +2690,28 @@ static int uarte_instance_init(const struct device *dev,
 			     : UART_CFG_FLOW_CTRL_NONE,			       \
 	}
 
-/* Macro determines if PM actions are interrupt safe. They are in case of
- * asynchronous API (except for instance in fast power domain) and non-asynchronous
- * API if RX is disabled. Macro must resolve to a literal 1 or 0.
+#define UARTE_ON_MANAGED_POWER_DOMAIN(idx)							\
+	UTIL_AND(										\
+		IS_ENABLED(CONFIG_PM_DEVICE_POWER_DOMAIN),					\
+		UTIL_AND(									\
+			DT_NODE_HAS_PROP(UARTE(idx), power_domains),				\
+			DT_NODE_HAS_STATUS_OKAY(DT_PHANDLE(UARTE(idx), power_domains))		\
+		)										\
+	)
+
+/* Macro determines if PM actions are interrupt safe.
+ *
+ * Requesting/releasing clocks or power domains is not necessarily ISR safe (we can't
+ * reliably know, its out of our control). UARTE_ON_MANAGED_POWER_DOMAIN() let's us check if we
+ * will be requesting/releasing power domains (and clocks for now since the only case where we
+ * need to request power domains happens to be the same criteria).
+ *
+ * Furthermore, non-asynchronous API if RX is disabled is not ISR safe.
+ *
+ * Macro must resolve to a literal 1 or 0.
  */
 #define UARTE_PM_ISR_SAFE(idx)						       \
-	COND_CODE_1(INSTANCE_IS_FAST_PD(_, /*empty*/, idx, _),		       \
+	COND_CODE_1(UARTE_ON_MANAGED_POWER_DOMAIN(idx),			       \
 		    (0),						       \
 		    (COND_CODE_1(CONFIG_UART_##idx##_ASYNC,		       \
 				 (PM_DEVICE_ISR_SAFE),			       \
@@ -2632,6 +2720,7 @@ static int uarte_instance_init(const struct device *dev,
 
 #define UART_NRF_UARTE_DEVICE(idx)					       \
 	NRF_DT_CHECK_NODE_HAS_PINCTRL_SLEEP(UARTE(idx));		       \
+	NRF_DT_CHECK_NODE_HAS_REQUIRED_MEMORY_REGIONS(UARTE(idx));	       \
 	UARTE_INT_DRIVEN(idx);						       \
 	PINCTRL_DT_DEFINE(UARTE(idx));					       \
 	IF_ENABLED(CONFIG_UART_##idx##_ASYNC, (				       \
@@ -2686,13 +2775,18 @@ static int uarte_instance_init(const struct device *dev,
 		IF_ENABLED(CONFIG_UART_##idx##_NRF_HW_ASYNC,		       \
 			(.timer = NRFX_TIMER_INSTANCE(			       \
 				CONFIG_UART_##idx##_NRF_HW_ASYNC_TIMER),))     \
-		IF_ENABLED(INSTANCE_IS_FAST_PD(_, /*empty*/, idx, _),	       \
-			(.clk_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(UARTE(idx))), \
+		IF_ENABLED(INSTANCE_IS_FAST(_, /*empty*/, idx, _),	       \
+			(.clk_dev = DEVICE_DT_GET_OR_NULL(DT_CLOCKS_CTLR(UARTE(idx))), \
 			 .clk_spec = {					       \
 				.frequency = NRF_PERIPH_GET_FREQUENCY(UARTE(idx)),\
 				.accuracy = 0,				       \
 				.precision = NRF_CLOCK_CONTROL_PRECISION_DEFAULT,\
 				},))					       \
+		IF_ENABLED(UARTE_PINS_CROSS_DOMAIN(_, /*empty*/, idx, _),      \
+			(.cross_domain = true,				       \
+			 .default_port =				       \
+				DT_PROP_OR(DT_PHANDLE(UARTE(idx),	       \
+					default_gpio_port), port, -1),))       \
 	};								       \
 	UARTE_DIRECT_ISR_DECLARE(idx)					       \
 	static int uarte_##idx##_init(const struct device *dev)		       \

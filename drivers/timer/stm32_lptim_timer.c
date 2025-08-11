@@ -244,6 +244,9 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		counter_get_value(stdby_timer, &stdby_timer_pre_stdby);
 		lptim_cnt_pre_stdby = z_clock_lptim_getcounter();
 
+		LL_LPTIM_DisableIT_ARROK(LPTIM);
+		LL_LPTIM_ClearFlag_ARROK(LPTIM);
+		NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
 		/* Stop clocks for LPTIM, since RTC is used instead */
 		clock_control_off(clk_ctrl, (clock_control_subsys_t) &lptim_clk[0]);
 
@@ -450,25 +453,21 @@ static int sys_clock_driver_init(void)
 	}
 #endif
 
-#if DT_INST_NODE_HAS_PROP(0, st_timeout)
-	/*
-	 * Check if prescaler corresponding to the DT_INST_PROP(0, st_timeout)
-	 * is matching the lptim_clock_presc calculated one from the lptim_clock_freq
-	 * max lptim period is 0xFFFF/(lptim_clock_freq/lptim_clock_presc)
-	 */
-	if (DT_INST_PROP(0, st_timeout) >
-		(lptim_clock_presc / lptim_clock_freq) * 0xFFFF) {
+#if DT_PROP(DT_NODELABEL(stm32_lp_tick_source), st_timeout)
+	uint32_t timeout = DT_PROP(DT_NODELABEL(stm32_lp_tick_source), st_timeout);
+
+	if (timeout > (lptim_clock_presc * 0xFFFF) / lptim_clock_freq) {
+		__ASSERT(0,
+			"st,timeout can't be higher than range defined by LPTIM presc and freq");
 		return -EIO;
 	}
 
+
 	/*
-	 * LPTIM is counting DT_INST_PROP(0, st_timeout),
-	 * seconds at lptim_clock_freq divided lptim_clock_presc) Hz",
-	 * lptim_time_base is the autoreload counter
+	 * Define the lptim_time_base that should be set to expire at "timeout" seconds
+	 * running counter at (lptim_clock_freq divided by lptim_clock_presc) Hz
 	 */
-	lptim_time_base = 2 * (lptim_clock_freq *
-		(uint32_t)DT_INST_PROP(0, st_timeout))
-		/ lptim_clock_presc;
+	lptim_time_base = (lptim_clock_freq * timeout) / lptim_clock_presc;
 #else
 	/* Set LPTIM time base based on clock source freq */
 	if (lptim_clock_freq == KHZ(32)) {
@@ -516,11 +515,9 @@ static int sys_clock_driver_init(void)
 	/* the LPTIM clock freq is affected by the prescaler */
 	LL_LPTIM_SetPrescaler(LPTIM, (__CLZ(__RBIT(lptim_clock_presc)) << LPTIM_CFGR_PRESC_Pos));
 
-#if defined(CONFIG_SOC_SERIES_STM32U5X) || \
-	defined(CONFIG_SOC_SERIES_STM32H5X) || \
-	defined(CONFIG_SOC_SERIES_STM32WBAX)
-	LL_LPTIM_OC_SetPolarity(LPTIM, LL_LPTIM_CHANNEL_CH1,
-				LL_LPTIM_OUTPUT_POLARITY_REGULAR);
+#if defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32H5X) ||                  \
+	defined(CONFIG_SOC_SERIES_STM32WBAX) || defined(CONFIG_SOC_SERIES_STM32U0X)
+	LL_LPTIM_OC_SetPolarity(LPTIM, LL_LPTIM_CHANNEL_CH1, LL_LPTIM_OUTPUT_POLARITY_REGULAR);
 #else
 	LL_LPTIM_SetPolarity(LPTIM, LL_LPTIM_OUTPUT_POLARITY_REGULAR);
 #endif
@@ -530,9 +527,8 @@ static int sys_clock_driver_init(void)
 	/* counting start is initiated by software */
 	LL_LPTIM_TrigSw(LPTIM);
 
-#if defined(CONFIG_SOC_SERIES_STM32U5X) || \
-	defined(CONFIG_SOC_SERIES_STM32H5X) || \
-	defined(CONFIG_SOC_SERIES_STM32WBAX)
+#if defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32H5X) ||                  \
+	defined(CONFIG_SOC_SERIES_STM32WBAX) || defined(CONFIG_SOC_SERIES_STM32U0X)
 	/* Enable the LPTIM before proceeding with configuration */
 	LL_LPTIM_Enable(LPTIM);
 
@@ -552,6 +548,7 @@ static int sys_clock_driver_init(void)
 	LL_LPTIM_ClearFLAG_ARRM(LPTIM);
 
 	/* ARROK bit validates the write operation to ARR register */
+	autoreload_ready = true;
 	LL_LPTIM_EnableIT_ARROK(LPTIM);
 	stm32_lptim_wait_ready();
 	LL_LPTIM_ClearFlag_ARROK(LPTIM);
@@ -627,7 +624,7 @@ void sys_clock_idle_exit(void)
 		stdby_timer_us = counter_ticks_to_us(stdby_timer, stdby_timer_diff);
 
 		/* Convert standby time in LPTIM cnt */
-		missed_lptim_cnt = (sys_clock_hw_cycles_per_sec() * stdby_timer_us) /
+		missed_lptim_cnt = (CONFIG_STM32_LPTIM_CLOCK * stdby_timer_us) /
 				   USEC_PER_SEC;
 		/* Add the LPTIM cnt pre standby */
 		missed_lptim_cnt += lptim_cnt_pre_stdby;

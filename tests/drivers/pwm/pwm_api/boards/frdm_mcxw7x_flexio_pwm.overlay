@@ -1,0 +1,30 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		pwm-0 = &flexio_pwm;
+	};
+};
+
+/* Conflicting gpio pins */
+&flexcan0 {
+	status = "disabled";
+};
+
+&flexio {
+	status = "okay";
+	flexio_pwm: flexio_pwm {
+		status = "okay";
+		pinctrl-0 = <&pinmux_flexio_pwm>;
+		pinctrl-names = "default";
+
+		pwm_0 {
+			pin-id = <20>;
+			prescaler = <1>;
+		};
+	};
+};

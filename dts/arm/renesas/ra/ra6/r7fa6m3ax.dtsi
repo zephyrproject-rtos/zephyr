@@ -137,6 +137,45 @@
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
+
+		option_setting_ofs_in_rom: option-setting-ofs-in-rom@400 {
+			reg = <0x00000400 0x3c>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			option_setting_ofs0: option-setting-ofs0@400 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x00000400 0x4>;
+				status = "okay";
+			};
+
+			option_setting_ofs1: option-setting-ofs1@404 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x00000404 0x4>;
+				status = "okay";
+			};
+
+			option_setting_secmpu: option-setting-secmpu@408 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x00000408 0x34>;
+				status = "okay";
+			};
+		};
+
+		option_setting_ofs_conf: option-setting-ofs-conf@100a150 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0100a150 0x18>;
+			zephyr,memory-region = "OFS_CONF_MEMORY";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+
+			option_setting_osis: option-setting-osis@100a150 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x0100a150 0x10>;
+				status = "okay";
+			};
+		};
 	};
 
 	clocks: clocks {

@@ -9,7 +9,7 @@
 #include <zephyr/drivers/sensor_clock.h>
 #include "adxl367.h"
 
-LOG_MODULE_DECLARE(ADXL362, CONFIG_SENSOR_LOG_LEVEL);
+LOG_MODULE_DECLARE(ADXL367, CONFIG_SENSOR_LOG_LEVEL);
 
 static void adxl367_sqe_done(const struct adxl367_dev_config *cfg,
 	struct rtio_iodev_sqe *iodev_sqe, int res)

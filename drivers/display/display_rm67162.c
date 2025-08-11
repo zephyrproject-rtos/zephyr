@@ -351,11 +351,15 @@ static int rm67162_init(const struct device *dev)
 
 /* Helper to write framebuffer data to rm67162 via MIPI interface. */
 static int rm67162_write_fb(const struct device *dev, bool first_write,
-			const uint8_t *src, uint32_t len)
+			const uint8_t *src, const struct display_buffer_descriptor *desc)
 {
 	const struct rm67162_config *config = dev->config;
+	struct rm67162_data *data = dev->data;
 	ssize_t wlen;
 	struct mipi_dsi_msg msg = {0};
+	uint8_t *local_src = (uint8_t *)src;
+	uint32_t len = desc->height * desc->width * data->bytes_per_pixel;
+	uint32_t len_sent = 0U;
 
 	/* Note- we need to set custom flags on the DCS message,
 	 * so we bypass the mipi_dsi_dcs_write API
@@ -367,15 +371,23 @@ static int rm67162_write_fb(const struct device *dev, bool first_write,
 	}
 	msg.type = MIPI_DSI_DCS_LONG_WRITE;
 	msg.flags = MCUX_DSI_2L_FB_DATA;
+	msg.user_data = (void *)desc;
+
 	while (len > 0) {
 		msg.tx_len = len;
-		msg.tx_buf = src;
+		msg.tx_buf = local_src;
 		wlen = mipi_dsi_transfer(config->mipi_dsi, config->channel, &msg);
 		if (wlen < 0) {
 			return (int)wlen;
 		}
 		/* Advance source pointer and decrement remaining */
-		src += wlen;
+		if (desc->pitch > desc->width) {
+			len_sent += wlen;
+			local_src += wlen + len_sent / (desc->width * data->bytes_per_pixel) *
+				((desc->pitch - desc->width) * data->bytes_per_pixel);
+		} else {
+			local_src += wlen;
+		}
 		len -= wlen;
 		/* All future commands should use WRITE_MEMORY_CONTINUE */
 		msg.cmd = MIPI_DCS_WRITE_MEMORY_CONTINUE;
@@ -391,7 +403,7 @@ static int rm67162_write(const struct device *dev, const uint16_t x,
 	const struct rm67162_config *config = dev->config;
 	struct rm67162_data *data = dev->data;
 	int ret;
-	uint16_t start, end, h_idx;
+	uint16_t start, end;
 	const uint8_t *src;
 	bool first_cmd;
 	uint8_t param[4];
@@ -450,20 +462,7 @@ static int rm67162_write(const struct device *dev, const uint16_t x,
 	src = buf;
 	first_cmd = true;
 
-	if (desc->pitch == desc->width) {
-		/* Buffer is contiguous, we can perform entire transfer */
-		rm67162_write_fb(dev, first_cmd, src,
-			desc->height * desc->width * data->bytes_per_pixel);
-	} else {
-		/* Buffer is not contiguous, we must write each line separately */
-		for (h_idx = 0; h_idx < desc->height; h_idx++) {
-			rm67162_write_fb(dev, first_cmd, src,
-				desc->width * data->bytes_per_pixel);
-			first_cmd = false;
-			/* The pitch is not equal to width, account for it here */
-			src += data->bytes_per_pixel * (desc->pitch - desc->width);
-		}
-	}
+	rm67162_write_fb(dev, first_cmd, src, desc);
 
 	return 0;
 }

@@ -156,7 +156,11 @@ int http_server_init(struct http_server_ctx *ctx)
 			proto = IPPROTO_TCP;
 		}
 
-		fd = zsock_socket(af, SOCK_STREAM, proto);
+		if (svc->config != NULL && svc->config->socket_create != NULL) {
+			fd = svc->config->socket_create(svc, af, proto);
+		} else {
+			fd = zsock_socket(af, SOCK_STREAM, proto);
+		}
 		if (fd < 0) {
 			LOG_ERR("socket: %d", errno);
 			failed++;
@@ -272,8 +276,9 @@ static int accept_new_client(int server_fd)
 		return new_socket;
 	}
 
-	LOG_DBG("New client from %s:%d",
-		net_sprint_addr(sa.ss_family, &net_sin((struct sockaddr *)&sa)->sin_addr),
+	const char * const addrstr =
+		net_sprint_addr(sa.ss_family, &net_sin((struct sockaddr *)&sa)->sin_addr);
+	LOG_DBG("New client from %s:%d", addrstr != NULL ? addrstr : "<unknown>",
 		ntohs(net_sin((struct sockaddr *)&sa)->sin_port));
 
 	return new_socket;
@@ -800,11 +805,10 @@ int http_server_find_file(char *fname, size_t fname_size, size_t *file_size,
 			  uint8_t supported_compression, enum http_compression *chosen_compression)
 {
 	struct fs_dirent dirent;
-	size_t len;
 	int ret;
 
-	len = strlen(fname);
 	if (IS_ENABLED(CONFIG_HTTP_SERVER_COMPRESSION)) {
+		const size_t len = strlen(fname);
 		*chosen_compression = HTTP_NONE;
 		if (IS_BIT_SET(supported_compression, HTTP_BR)) {
 			snprintk(fname + len, fname_size - len, ".br");
@@ -846,6 +850,8 @@ int http_server_find_file(char *fname, size_t fname_size, size_t *file_size,
 				goto return_filename;
 			}
 		}
+		/* No compressed file found, try the original filename */
+		fname[len] = '\0';
 	}
 	ret = fs_stat(fname, &dirent);
 	if (ret != 0) {

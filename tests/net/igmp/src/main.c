@@ -227,7 +227,7 @@ NET_DEVICE_INIT(net_test_igmp, "net_test_igmp",
 		127);
 
 static void group_joined(struct net_mgmt_event_callback *cb,
-			 uint32_t nm_event, struct net_if *iface)
+			 uint64_t nm_event, struct net_if *iface)
 {
 	if (nm_event != NET_EVENT_IPV4_MCAST_JOIN) {
 		/* Spurious callback. */
@@ -240,7 +240,7 @@ static void group_joined(struct net_mgmt_event_callback *cb,
 }
 
 static void group_left(struct net_mgmt_event_callback *cb,
-			 uint32_t nm_event, struct net_if *iface)
+			 uint64_t nm_event, struct net_if *iface)
 {
 	if (nm_event != NET_EVENT_IPV4_MCAST_LEAVE) {
 		/* Spurious callback. */
@@ -253,7 +253,7 @@ static void group_left(struct net_mgmt_event_callback *cb,
 }
 
 static struct mgmt_events {
-	uint32_t event;
+	uint64_t event;
 	net_mgmt_event_handler_t handler;
 	struct net_mgmt_event_callback cb;
 } mgmt_events[] = {

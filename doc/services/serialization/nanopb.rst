@@ -39,14 +39,6 @@ make sure the ``protoc`` executable is installed and available.
             choco install protoc
 
 
-Additionally, Nanopb is an optional module and needs to be added explicitly to the workspace:
-
-.. code-block:: shell
-
-   west config manifest.project-filter -- +nanopb
-   west update
-   west packages pip --install
-
 Configuration
 *************
 

@@ -91,6 +91,70 @@ properties:
     type: array
     description: Pins allow to assign port-irq15
 
+  port-irq16-pins:
+    type: array
+    description: Pins allow to assign port-irq16
+
+  port-irq17-pins:
+    type: array
+    description: Pins allow to assign port-irq17
+
+  port-irq18-pins:
+    type: array
+    description: Pins allow to assign port-irq18
+
+  port-irq19-pins:
+    type: array
+    description: Pins allow to assign port-irq19
+
+  port-irq20-pins:
+    type: array
+    description: Pins allow to assign port-irq20
+
+  port-irq21-pins:
+    type: array
+    description: Pins allow to assign port-irq21
+
+  port-irq22-pins:
+    type: array
+    description: Pins allow to assign port-irq22
+
+  port-irq23-pins:
+    type: array
+    description: Pins allow to assign port-irq23
+
+  port-irq24-pins:
+    type: array
+    description: Pins allow to assign port-irq24
+
+  port-irq25-pins:
+    type: array
+    description: Pins allow to assign port-irq25
+
+  port-irq26-pins:
+    type: array
+    description: Pins allow to assign port-irq26
+
+  port-irq27-pins:
+    type: array
+    description: Pins allow to assign port-irq27
+
+  port-irq28-pins:
+    type: array
+    description: Pins allow to assign port-irq28
+
+  port-irq29-pins:
+    type: array
+    description: Pins allow to assign port-irq29
+
+  port-irq30-pins:
+    type: array
+    description: Pins allow to assign port-irq30
+
+  port-irq31-pins:
+    type: array
+    description: Pins allow to assign port-irq31
+
   "#gpio-cells":
     const: 2
 
