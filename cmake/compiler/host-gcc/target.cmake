@@ -37,6 +37,16 @@ foreach(file_name include/stddef.h)
   list(APPEND NOSTDINC ${_OUTPUT})
 endforeach()
 
+if (CONFIG_64BIT)
+  set(LLEXT_APPEND_FLAGS
+    -m64
+  )
+else()
+  set(LLEXT_APPEND_FLAGS
+    -m32
+  )
+endif()
+
 list(APPEND LLEXT_EDK_REMOVE_FLAGS
     --sysroot=.*
     -fmacro-prefix-map=.*
