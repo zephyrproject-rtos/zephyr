@@ -281,7 +281,7 @@ manifest:
         - hal
     - name: hostap
       path: modules/lib/hostap
-      revision: 5abcff1c0ecff65f0f81e0cc086b7f766e5101bf
+      revision: f707b19c1733ebe401a50450494e5ebdd2e71b5f
     - name: liblc3
       revision: 48bbd3eacd36e99a57317a0a4867002e0b09e183
       path: modules/lib/liblc3
