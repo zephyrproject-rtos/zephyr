@@ -32,6 +32,26 @@
 
 #include <zephyr/toolchain/gcc.h>
 
+/* clear out common version. The build assert assert from gcc.h is defined to be empty */
+#undef BUILD_ASSERT
+
+#if defined(__cplusplus) && (__cplusplus >= 201103L)
+
+/* C++11 has static_assert built in */
+#define BUILD_ASSERT(EXPR, MSG...) static_assert(EXPR, "" MSG)
+
+#elif !defined(__cplusplus) && ((__STDC_VERSION__) >= 201100)
+
+/* C11 has static_assert built in */
+#define BUILD_ASSERT(EXPR, MSG...) _Static_assert((EXPR), "" MSG)
+
+#else
+
+/* Rely on that the C-library provides a static assertion function */
+#define BUILD_ASSERT(EXPR, MSG...) _Static_assert((EXPR), "" MSG)
+
+#endif
+
 #define TOOLCHAIN_WARNING_SIZEOF_ARRAY_DECAY            "-Wsizeof-array-decay"
 #define TOOLCHAIN_WARNING_UNNEEDED_INTERNAL_DECLARATION "-Wunneeded-internal-declaration"
 
