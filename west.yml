@@ -129,7 +129,7 @@ manifest:
       path: modules/lib/cmsis-nn
     - name: cmsis_6
       repo-path: CMSIS_6
-      revision: 06d952b6713a2ca41c9224a62075e4059402a151
+      revision: 30a859f44ef8ab4dc8f84b03ed586fd16ccf9d74
       path: modules/hal/cmsis_6
       groups:
         - hal
