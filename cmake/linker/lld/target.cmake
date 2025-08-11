@@ -128,6 +128,14 @@ macro(toolchain_linker_finalize)
  set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_CXX_COMPILER> <FLAGS> <CMAKE_CXX_LINK_FLAGS> ${common_link}")
 endmacro()
 
+# Function to map compiler flags into suitable linker flags
+# When using the compiler driver to run the linker, just pass
+# them all through
+
+function(toolchain_linker_add_compiler_options)
+  add_link_options(${ARGV})
+endfunction()
+
 # Load toolchain_ld-family macros
 include(${ZEPHYR_BASE}/cmake/linker/ld/target_relocation.cmake)
 include(${ZEPHYR_BASE}/cmake/linker/ld/target_configure.cmake)
