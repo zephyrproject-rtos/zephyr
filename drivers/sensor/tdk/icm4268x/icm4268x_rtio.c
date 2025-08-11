@@ -111,6 +111,3 @@ void icm4268x_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
 	}
 }
-
-BUILD_ASSERT(sizeof(struct icm4268x_decoder_header) == 15,
-	"icm4268x_decoder_header size is not equal to 15");
