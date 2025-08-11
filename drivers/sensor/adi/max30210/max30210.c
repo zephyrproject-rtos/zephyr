@@ -274,81 +274,80 @@ static int max30210_attr_set(const struct device *dev, enum sensor_channel chan,
 		}
 		break;
 
-    case SENSOR_ATTR_MAX30210_HI_NON_CONSECUTIVE_MODE:
-        if (val->val1 < 0 || val->val1 > 1) {
-            return -EINVAL; // Invalid consecutive mode value
-        }
+	case SENSOR_ATTR_MAX30210_HI_NON_CONSECUTIVE_MODE:
+		if (val->val1 < 0 || val->val1 > 1) {
+			return -EINVAL; // Invalid consecutive mode value
+		}
 
-        ret = max30210_reg_update(dev, TEMP_ALARM_HIGH_SETUP, TEMP_HI_ALARM_TRIP_MASK,
-                                  val->val1);
-        if (ret < 0) {
-            printf("Failed to set high consecutive mode: %d\n", ret);
-            return ret;
-        }
-        break;
-        
-    case SENSOR_ATTR_MAX30210_LO_NON_CONSECUTIVE_MODE:
-        if (val->val1 < 0 || val->val1 > 1) {
-            return -EINVAL; // Invalid consecutive mode value
-        }
+		ret = max30210_reg_update(dev, TEMP_ALARM_HIGH_SETUP, TEMP_HI_ALARM_TRIP_MASK,
+					  val->val1);
+		if (ret < 0) {
+			printf("Failed to set high consecutive mode: %d\n", ret);
+			return ret;
+		}
+		break;
 
-        ret = max30210_reg_update(dev, TEMP_ALARM_LOW_SETUP, TEMP_LO_ALARM_TRIP_MASK,
-                                  val->val1);
-        if (ret < 0) {
-            printf("Failed to set low consecutive mode: %d\n", ret);
-            return ret;
-        }
-        break;
+	case SENSOR_ATTR_MAX30210_LO_NON_CONSECUTIVE_MODE:
+		if (val->val1 < 0 || val->val1 > 1) {
+			return -EINVAL; // Invalid consecutive mode value
+		}
 
-    case SENSOR_ATTR_MAX30210_HI_TRIP_COUNT:
-        if (val->val1 < 1 || val->val1 > 4) {
-            return -EINVAL; // Invalid high trip count value
-        }
-        ret = max30210_reg_update(dev, TEMP_ALARM_HIGH_SETUP, TEMP_HI_TRIP_COUNTER_MASK,
-                                  (val->val1)-1);
-        if (ret < 0) {
-            printf("Failed to set high trip count: %d\n", ret);
-            return ret;
-        }
+		ret = max30210_reg_update(dev, TEMP_ALARM_LOW_SETUP, TEMP_LO_ALARM_TRIP_MASK,
+					  val->val1);
+		if (ret < 0) {
+			printf("Failed to set low consecutive mode: %d\n", ret);
+			return ret;
+		}
+		break;
 
-        break;
+	case SENSOR_ATTR_MAX30210_HI_TRIP_COUNT:
+		if (val->val1 < 1 || val->val1 > 4) {
+			return -EINVAL; // Invalid high trip count value
+		}
+		ret = max30210_reg_update(dev, TEMP_ALARM_HIGH_SETUP, TEMP_HI_TRIP_COUNTER_MASK,
+					  (val->val1) - 1);
+		if (ret < 0) {
+			printf("Failed to set high trip count: %d\n", ret);
+			return ret;
+		}
 
-    case SENSOR_ATTR_MAX30210_LO_TRIP_COUNT:
-        if (val->val1 < 1 || val->val1 > 4) {
-            return -EINVAL; // Invalid low trip count value
-        }
-        ret = max30210_reg_update(dev, TEMP_ALARM_LOW_SETUP, TEMP_LO_TRIP_COUNTER_MASK,
-                                    (val->val1)-1);
-        if (ret < 0) {
-            printf("Failed to set low trip count: %d\n", ret);
-            return ret;
-        }
-        break;
-    
-    case SENSOR_ATTR_MAX30210_HI_TRIP_COUNT_RESET:
-        if (val->val1 < 0 || val->val1 > 1) {
-            return -EINVAL; // Invalid high trip count reset value
-        }
-        ret = max30210_reg_update(dev, TEMP_ALARM_HIGH_SETUP, TEMP_RST_HI_COUNTER,
-                                  val->val1);
-        if (ret < 0) {
-            printf("Failed to set high trip count reset: %d\n", ret);
-            return ret;
-        }
-        break;
+		break;
 
-    case SENSOR_ATTR_MAX30210_LO_TRIP_COUNT_RESET:
-        if (val->val1 < 0 || val->val1 > 1) {
-            return -EINVAL; // Invalid low trip count reset value
-        }
-        ret = max30210_reg_update(dev, TEMP_ALARM_LOW_SETUP, TEMP_RST_LO_COUNTER,
-                                  val->val1);
-        if (ret < 0) {
-            printf("Failed to set low trip count reset: %d\n", ret);
-            return ret;
-        }
-        break;
+	case SENSOR_ATTR_MAX30210_LO_TRIP_COUNT:
+		if (val->val1 < 1 || val->val1 > 4) {
+			return -EINVAL; // Invalid low trip count value
+		}
+		ret = max30210_reg_update(dev, TEMP_ALARM_LOW_SETUP, TEMP_LO_TRIP_COUNTER_MASK,
+					  (val->val1) - 1);
+		if (ret < 0) {
+			printf("Failed to set low trip count: %d\n", ret);
+			return ret;
+		}
+		break;
 
+	case SENSOR_ATTR_MAX30210_HI_TRIP_COUNT_RESET:
+		if (val->val1 < 0 || val->val1 > 1) {
+			return -EINVAL; // Invalid high trip count reset value
+		}
+		ret = max30210_reg_update(dev, TEMP_ALARM_HIGH_SETUP, TEMP_RST_HI_COUNTER,
+					  val->val1);
+		if (ret < 0) {
+			printf("Failed to set high trip count reset: %d\n", ret);
+			return ret;
+		}
+		break;
+
+	case SENSOR_ATTR_MAX30210_LO_TRIP_COUNT_RESET:
+		if (val->val1 < 0 || val->val1 > 1) {
+			return -EINVAL; // Invalid low trip count reset value
+		}
+		ret = max30210_reg_update(dev, TEMP_ALARM_LOW_SETUP, TEMP_RST_LO_COUNTER,
+					  val->val1);
+		if (ret < 0) {
+			printf("Failed to set low trip count reset: %d\n", ret);
+			return ret;
+		}
+		break;
 
 	case SENSOR_ATTR_MAX30210_ALERT_MODE:
 		if (val->val1 < 0 || val->val1 > 1) {
@@ -456,9 +455,9 @@ static int max30210_sample_fetch(const struct device *dev, enum sensor_channel c
 
 	data->temp_data = (temp_data[0] << 8) | temp_data[1];
 #else
-	
+
 	/** FIFO MODE */
-	uint8_t fifo_data [MAX30210_FIFO_DEPTH * MAX30210_BYTES_PER_SAMPLE];
+	uint8_t fifo_data[MAX30210_FIFO_DEPTH * MAX30210_BYTES_PER_SAMPLE];
 	uint8_t fifo_count;
 	uint8_t fifo_ovf;
 	uint8_t num_bytes;
@@ -495,9 +494,8 @@ static int max30210_sample_fetch(const struct device *dev, enum sensor_channel c
 
 	for (int i = 0; i < fifo_count; i++) {
 		data->fifo_status_data[i] = fifo_data[i * MAX30210_BYTES_PER_SAMPLE];
-		data->fifo_temp_data[i] =
-			((fifo_data[i * MAX30210_BYTES_PER_SAMPLE + 1] << 8) |
-			 fifo_data[i * MAX30210_BYTES_PER_SAMPLE + 2]);
+		data->fifo_temp_data[i] = ((fifo_data[i * MAX30210_BYTES_PER_SAMPLE + 1] << 8) |
+					   fifo_data[i * MAX30210_BYTES_PER_SAMPLE + 2]);
 	}
 
 #endif

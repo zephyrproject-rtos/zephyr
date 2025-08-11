@@ -7,11 +7,11 @@
 #define ZEPHYR_INCLUDE_DRIVERS_SENSOR_MAX30210_H_
 
 enum sensor_attribute_max30210 {
-    SENSOR_ATTR_MAX30210_INTERRUPT_POLARITY = SENSOR_ATTR_PRIV_START,
-    SENSOR_ATTR_MAX30210_CONTINUOUS_CONVERSION_MODE,
-    SENSOR_ATTR_MAX30210_TEMP_INC_FAST_THRESH,
-    SENSOR_ATTR_MAX30210_TEMP_DEC_FAST_THRESH,
-    SENSOR_ATTR_MAX30210_RATE_CHG_FILTER,
+	SENSOR_ATTR_MAX30210_INTERRUPT_POLARITY = SENSOR_ATTR_PRIV_START,
+	SENSOR_ATTR_MAX30210_CONTINUOUS_CONVERSION_MODE,
+	SENSOR_ATTR_MAX30210_TEMP_INC_FAST_THRESH,
+	SENSOR_ATTR_MAX30210_TEMP_DEC_FAST_THRESH,
+	SENSOR_ATTR_MAX30210_RATE_CHG_FILTER,
 	SENSOR_ATTR_MAX30210_HI_TRIP_COUNT,
 	SENSOR_ATTR_MAX30210_LO_TRIP_COUNT,
 	SENSOR_ATTR_MAX30210_HI_TRIP_COUNT_RESET,
@@ -19,13 +19,13 @@ enum sensor_attribute_max30210 {
 	SENSOR_ATTR_MAX30210_HI_NON_CONSECUTIVE_MODE,
 	SENSOR_ATTR_MAX30210_LO_NON_CONSECUTIVE_MODE,
 	SENSOR_ATTR_MAX30210_UPPER_THRESH,
-    SENSOR_ATTR_MAX30210_ALERT_MODE,
+	SENSOR_ATTR_MAX30210_ALERT_MODE,
 	SENSOR_ATTR_MAX30210_SOFTWARE_RESET,
 	SENSOR_ATTR_MAX30210_TEMP_CONVERT,
-    SENSOR_ATTR_MAX30210_AUTO_MODE
+	SENSOR_ATTR_MAX30210_AUTO_MODE
 };
 
-enum sensor_sampling_rate_max30210{
+enum sensor_sampling_rate_max30210 {
 	SENSOR_SAMPLING_RATE_MAX30210_0_015625 = 0,
 	SENSOR_SAMPLING_RATE_MAX30210_0_03125,
 	SENSOR_SAMPLING_RATE_MAX30210_0_0625,
@@ -44,14 +44,14 @@ enum sensor_trigger_type_max30011 {
 	/** Trigger fires on temperature decrease beyond threshold */
 	SENSOR_TRIG_TEMP_DEC_FAST
 	/** Trigger fires on temperature configuration change */
-
 };
 
 int max30210_reg_read(const struct device *dev, uint8_t reg_addr, uint8_t *val, uint8_t length);
 
 // int max30210_reg_write(const struct device *dev, uint8_t reg_addr, uint8_t val, uint8_t length);
 
-int max30210_reg_write_multiple(const struct device *dev, uint8_t reg_addr, const uint8_t *val, uint8_t length);
+int max30210_reg_write_multiple(const struct device *dev, uint8_t reg_addr, const uint8_t *val,
+				uint8_t length);
 
 int max30210_reg_update(const struct device *dev, uint8_t reg_addr, uint8_t mask, uint8_t val);
 

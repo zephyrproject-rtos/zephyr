@@ -186,7 +186,7 @@
 
 #define MAX30210_BYTES_PER_SAMPLE 3 /* 2 bytes for temperature data, 1 byte for status */
 
-#define MAX30210_FIFO_DEPTH 64 
+#define MAX30210_FIFO_DEPTH 64
 
 struct max30210_config {
 	struct i2c_dt_spec i2c;
@@ -219,7 +219,7 @@ struct max30210_data {
 
 	sensor_trigger_handler_t a_fifo_full_handler;
 	sensor_trigger_handler_t temp_hi_handler;
-    sensor_trigger_handler_t temp_lo_handler;
+	sensor_trigger_handler_t temp_lo_handler;
 	sensor_trigger_handler_t temp_inc_fast_handler;
 	sensor_trigger_handler_t temp_dec_fast_handler;
 	sensor_trigger_handler_t temp_rdy_handler;
@@ -255,7 +255,7 @@ struct max30210_data {
 	uint8_t fifo_data_count;
 	uint8_t fifo_watermark_irq;
 	uint8_t fifo_data[MAX30210_FIFO_DEPTH * MAX30210_BYTES_PER_SAMPLE];
-	uint16_t fifo_temp_data [MAX30210_FIFO_DEPTH];
+	uint16_t fifo_temp_data[MAX30210_FIFO_DEPTH];
 	uint8_t fifo_status_data[MAX30210_FIFO_DEPTH];
 #endif
 };
