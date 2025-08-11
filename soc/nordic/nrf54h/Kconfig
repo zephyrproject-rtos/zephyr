@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_NRF54HX
+	select HAS_IRONSIDE_SE
 	select HAS_NRFS
 	select HAS_NRFX
 	select HAS_NORDIC_DRIVERS
@@ -71,7 +72,7 @@ config SOC_NRF54H20_CPURAD_ENABLE
 	bool "Boot the nRF54H20 Radio core"
 	default y if NRF_802154_SER_HOST || BT_HCI_HOST
 	depends on SOC_NRF54H20_CPUAPP
-	select NRF_IRONSIDE_CPUCONF_SERVICE
+	select IRONSIDE_SE_CALL
 	select SOC_LATE_INIT_HOOK
 	help
 	  This will at application boot time enable clock to the

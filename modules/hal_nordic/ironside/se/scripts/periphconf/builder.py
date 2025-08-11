@@ -130,7 +130,7 @@ class PeriphconfBuilder:
         source_lines.extend(
             [
                 "#include <zephyr/devicetree.h>",
-                "#include <uicr/uicr.h>",
+                "#include <ironside_zephyr/se/uicr_periphconf.h>",
                 "",
             ]
         )
@@ -270,7 +270,7 @@ class PeriphconfBuilder:
 
         self._macros.append(
             MacroCall(
-                "UICR_SPU_PERIPH_PERM_SET",
+                "PERIPHCONF_SPU_PERIPH_PERM",
                 [
                     Address(spu_address),
                     periph_slave_index,
@@ -318,7 +318,7 @@ class PeriphconfBuilder:
 
             self._macros.append(
                 MacroCall(
-                    "UICR_IRQMAP_IRQ_SINK_SET",
+                    "PERIPHCONF_IRQMAP_IRQ_SINK",
                     [
                         macro_irqn,
                         irq_processor.c_enum,
@@ -339,7 +339,7 @@ class PeriphconfBuilder:
         for num, secure in dt_split_channels_get(node):
             self._macros.append(
                 MacroCall(
-                    "UICR_SPU_FEATURE_GPIOTE_CH_SET",
+                    "PERIPHCONF_SPU_FEATURE_GPIOTE_CH",
                     [
                         Address(spu_address),
                         0,
@@ -370,7 +370,7 @@ class PeriphconfBuilder:
         for num, secure in channels:
             self._macros.append(
                 MacroCall(
-                    "UICR_SPU_FEATURE_DPPIC_CH_SET",
+                    "PERIPHCONF_SPU_FEATURE_DPPIC_CH",
                     [
                         Address(spu_address),
                         num,
@@ -384,7 +384,7 @@ class PeriphconfBuilder:
         for num, secure in channel_groups:
             self._macros.append(
                 MacroCall(
-                    "UICR_SPU_FEATURE_DPPIC_CHG_SET",
+                    "PERIPHCONF_SPU_FEATURE_DPPIC_CHG",
                     [
                         Address(spu_address),
                         num,
@@ -435,7 +435,7 @@ class PeriphconfBuilder:
 
         self._macros.append(
             MacroCall(
-                "UICR_PPIB_SUBSCRIBE_SEND_ENABLE",
+                "PERIPHCONF_PPIB_SUBSCRIBE_SEND",
                 [
                     Address(sub_ppib_addr),
                     sub_ppib_ch,
@@ -447,7 +447,7 @@ class PeriphconfBuilder:
         )
         self._macros.append(
             MacroCall(
-                "UICR_PPIB_PUBLISH_RECEIVE_ENABLE",
+                "PERIPHCONF_PPIB_PUBLISH_RECEIVE",
                 [
                     Address(pub_ppib_addr),
                     pub_ppib_ch,
@@ -470,7 +470,7 @@ class PeriphconfBuilder:
         for num, secure in dt_split_channels_get(node):
             self._macros.append(
                 MacroCall(
-                    "UICR_SPU_FEATURE_IPCT_CH_SET",
+                    "PERIPHCONF_SPU_FEATURE_IPCT_CH",
                     [
                         Address(spu_address),
                         num,
@@ -536,8 +536,18 @@ class PeriphconfBuilder:
 
         self._macros.append(
             MacroCall(
-                "UICR_IPCMAP_CHANNEL_CFG",
-                [self._ipcmap_idx, *link_args],
+                "PERIPHCONF_IPCMAP_CHANNEL_SOURCE",
+                [self._ipcmap_idx, source_domain.c_enum, source_ch],
+                comment=(
+                    f"{source_domain.name} IPCT ch. {source_ch} => "
+                    f"{sink_domain.name} IPCT ch. {sink_ch}"
+                ),
+            )
+        )
+        self._macros.append(
+            MacroCall(
+                "PERIPHCONF_IPCMAP_CHANNEL_SINK",
+                [self._ipcmap_idx, sink_domain.c_enum, sink_ch],
                 comment=(
                     f"{source_domain.name} IPCT ch. {source_ch} => "
                     f"{sink_domain.name} IPCT ch. {sink_ch}"
@@ -557,7 +567,7 @@ class PeriphconfBuilder:
         for num, secure in dt_split_channels_get(node):
             self._macros.append(
                 MacroCall(
-                    "UICR_SPU_FEATURE_GRTC_CC_SET",
+                    "PERIPHCONF_SPU_FEATURE_GRTC_CC",
                     [
                         Address(spu_address),
                         num,
@@ -679,7 +689,7 @@ class PeriphconfBuilder:
 
         self._macros.append(
             MacroCall(
-                "UICR_SPU_FEATURE_GPIO_PIN_SET",
+                "PERIPHCONF_SPU_FEATURE_GPIO_PIN",
                 [
                     Address(spu_address),
                     gpio_port,
@@ -695,7 +705,7 @@ class PeriphconfBuilder:
             ctrlsel_int = int(ctrlsel)
             self._macros.append(
                 MacroCall(
-                    "UICR_GPIO_PIN_CNF_CTRLSEL_SET",
+                    "PERIPHCONF_GPIO_PIN_CNF_CTRLSEL",
                     [
                         Address(gpio_addr),
                         num,
@@ -737,7 +747,8 @@ class MacroCall:
                 str_args.append(str(arg))
 
         comment = f"/* {self.comment} */\n" if self.comment else ""
-        return f"{comment}{self.name}({', '.join(str_args)});"
+        entry_macro = f"UICR_PERIPHCONF_ENTRY({self.name}({', '.join(str_args)}))"
+        return f"{comment}{entry_macro};"
 
 
 def c_hex_addr(address: int) -> str:

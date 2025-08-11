@@ -24,7 +24,7 @@
 #include <dmm.h>
 
 #if defined(CONFIG_SOC_NRF54H20_CPURAD_ENABLE)
-#include <nrf_ironside/cpuconf.h>
+#include <ironside/se/api.h>
 #endif
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
@@ -225,8 +225,8 @@ void soc_late_init_hook(void)
 
 	bool cpu_wait = IS_ENABLED(CONFIG_SOC_NRF54H20_CPURAD_ENABLE_DEBUG_WAIT);
 
-	err_cpuconf = ironside_cpuconf(NRF_PROCESSOR_RADIOCORE, radiocore_address, cpu_wait, msg,
-				       msg_size);
+	err_cpuconf = ironside_se_cpuconf(NRF_PROCESSOR_RADIOCORE, radiocore_address, cpu_wait, msg,
+					  msg_size);
 	__ASSERT(err_cpuconf == 0, "err_cpuconf was %d", err_cpuconf);
 #endif /* CONFIG_SOC_NRF54H20_CPURAD_ENABLE */
 }
