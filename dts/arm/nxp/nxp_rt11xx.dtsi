@@ -952,18 +952,6 @@
 			reg = <0x20200000 DT_SIZE_K(256)>;
 		};
 
-		ocram1: ocram@20240000 {
-			compatible = "zephyr,memory-region", "mmio-sram";
-			zephyr,memory-region = "OCRAM1";
-			reg = <0x20240000 DT_SIZE_K(512)>;
-		};
-
-		ocram2: ocram@202c0000 {
-			compatible = "zephyr,memory-region", "mmio-sram";
-			zephyr,memory-region = "OCRAM2";
-			reg = <0x202c0000 DT_SIZE_K(512)>;
-		};
-
 		lpadc1: adc@40050000 {
 			compatible = "nxp,lpc-lpadc";
 			reg = <0x40050000 0x304>;
