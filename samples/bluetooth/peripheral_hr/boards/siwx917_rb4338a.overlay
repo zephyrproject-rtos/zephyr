@@ -1,0 +1,12 @@
+/* Copyright (c) 2021 Cypress Semiconductor Corporation.
+* SPDX-License-Identifier: Apache-2.0
+*/
+
+&egpio0 {
+zephyr,pm-device-runtime-auto;
+};
+ 
+&nwp {
+   power-profile = "deep-sleep-with-ram-retention";
+   status = "okay";
+};
