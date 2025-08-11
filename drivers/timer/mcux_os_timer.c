@@ -55,6 +55,14 @@ static uint64_t mcux_lpc_ostick_get_compensated_timer_value(void)
 	return (OSTIMER_GetCurrentTimerValue(base) + cyc_sys_compensated);
 }
 
+void mcux_os_timer_set_next_tick_match(void)
+{
+	uint64_t adjustment = CYC_PER_TICK < MIN_DELAY ? 2 * CYC_PER_TICK : CYC_PER_TICK;
+	uint64_t next_tick_cycles_match = last_count + adjustment;
+
+	OSTIMER_SetMatchValue(base, next_tick_cycles_match, NULL);
+}
+
 static uint32_t mcux_os_timer_calc_elapsed_ticks(uint64_t current_cycles)
 {
 	uint64_t elapsed_cycles = current_cycles - last_count;
@@ -67,24 +75,21 @@ void mcux_lpc_ostick_isr(const void *arg)
 	ARG_UNUSED(arg);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	uint64_t now = mcux_lpc_ostick_get_compensated_timer_value();
-	uint32_t elapsed_ticks = mcux_os_timer_calc_elapsed_ticks(now);
 
 	/* Clear interrupt flag by writing 1. */
 	base->OSEVENT_CTRL &= ~OSTIMER_OSEVENT_CTRL_OSTIMER_INTENA_MASK;
 
-	last_count += elapsed_ticks * CYC_PER_TICK;
+	uint64_t now = mcux_lpc_ostick_get_compensated_timer_value();
+	uint32_t elapsed_ticks = mcux_os_timer_calc_elapsed_ticks(now);
+
+	last_count = now;
 
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		uint64_t next = last_count + CYC_PER_TICK;
-
-		if ((int64_t)(next - now) < MIN_DELAY) {
-			next += CYC_PER_TICK;
-		}
-		OSTIMER_SetMatchValue(base, next, NULL);
+		mcux_os_timer_set_next_tick_match();
 	}
 
 	k_spin_unlock(&lock, key);
+
 	sys_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? elapsed_ticks : 1);
 }
 
