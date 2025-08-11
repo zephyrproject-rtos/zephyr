@@ -403,6 +403,15 @@
 		clocks = <&ccm IMX_CCM_LPADC2_CLK 0 0>;
 	};
 
+	dac: dac@42e20000 {
+			compatible = "nxp,dac12";
+			reg = <0x42e20000 0x1000>;
+			interrupts = <193 0>;
+			voltage-reference = <2>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+	};
+
 	qtmr1: qtmr@2690000 {
 		compatible = "nxp,imx-qtmr";
 		reg = <0x2690000 0x4000>;
