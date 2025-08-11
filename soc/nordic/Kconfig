@@ -197,6 +197,25 @@ config NRF_SECURE_APPROTECT_USER_HANDLING
 
 endchoice
 
+config NRF_CONSTANT_LATENCY_WORKAROUND
+	bool "Constant latency mode for debugging purposes"
+	depends on SOC_NRF9120 && \
+		   !NRF_APPROTECT_LOCK && !NRF_SECURE_APPROTECT_LOCK
+	help
+	  This is only for debugging purposes. Do not enable this in production
+	  code.
+
+	  This option enables a workaround for the nRF9161 anomaly
+	  [36] Debug and Trace: Access port gets locked in WFI and WFE.
+
+	  When this option is selected, the SystemInit() function enables
+	  the constant latency mode by triggering the CONSTLAT task. This
+	  prevents WFI and WFE instructions from entering SYSTEM ON IDLE mode.
+	  As a result, anomaly is avoided with the cost of increased power
+	  consumption.
+
+	  Note: With multiple images, add this for the first image.
+
 config NRF_TRACE_PORT
 	bool "nRF TPIU"
 	depends on !SOC_SERIES_NRF51X

@@ -78,6 +78,8 @@ zephyr_compile_definitions_ifdef(CONFIG_NRF_SECURE_APPROTECT_LOCK
 zephyr_compile_definitions_ifdef(CONFIG_NRF_SECURE_APPROTECT_USER_HANDLING
                                  ENABLE_SECURE_APPROTECT_USER_HANDLING
                                  ENABLE_AUTHENTICATED_SECUREAPPROTECT)
+zephyr_compile_definitions_ifdef(CONFIG_NRF_CONSTANT_LATENCY_WORKAROUND
+                                 NRF_CONSTANT_LATENCY_WORKAROUND)
 zephyr_library_compile_definitions_ifdef(CONFIG_NRF_TRACE_PORT
                                  ENABLE_TRACE)
 
