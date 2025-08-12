@@ -35,6 +35,7 @@ DT_FLASH_PARENT_IS_XSPI := $(dt_node_has_compat,$(DT_CHOSEN_FLASH_PARENT),$(DT_C
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default "$(DT_STM32_RCC_CLOCK_FREQ)" if "$(dt_nodelabel_enabled,rcc)"
+	depends on !STM32_RADIO_TIMER
 
 config LOG_BACKEND_SWO_REF_FREQ_HZ
 	default "$(DT_STM32_RCC_CLOCK_FREQ)" if "$(dt_nodelabel_enabled,rcc)"
