@@ -5486,6 +5486,7 @@ West:
   status: maintained
   maintainers:
     - vaishnavachath
+    - ssekar15
   files: []
   labels:
     - "platform: TI"
