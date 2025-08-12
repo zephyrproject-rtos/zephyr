@@ -101,6 +101,7 @@ struct nxp_enet_qos_mac_config {
 	struct nxp_enet_qos_hw_info hw_info;
 	void (*irq_config_func)(void);
 	enum mac_address_source mac_addr_source;
+	const int max_speed;
 };
 
 struct nxp_enet_qos_tx_data {

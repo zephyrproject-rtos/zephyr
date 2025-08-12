@@ -509,8 +509,9 @@ static inline void enet_qos_mtl_config_init(enet_qos_t *base)
 		ENET_QOS_REG_PREP(MTL_QUEUE_MTL_RXQX_OP_MODE, FUP, 0b1);
 }
 
-static inline void enet_qos_mac_config_init(enet_qos_t *base,
-				struct nxp_enet_qos_mac_data *data, uint32_t clk_rate)
+static inline void enet_qos_mac_config_init(enet_qos_t *base, struct nxp_enet_qos_mac_data *data,
+					    const struct nxp_enet_qos_mac_config *config,
+					    uint32_t clk_rate)
 {
 	/* Set MAC address */
 	base->MAC_ADDRESS0_HIGH =
@@ -543,6 +544,11 @@ static inline void enet_qos_mac_config_init(enet_qos_t *base,
 		ENET_QOS_REG_PREP(MAC_CONFIGURATION, FES, 0b1) |
 		/* Don't talk unless no one else is talking */
 		ENET_QOS_REG_PREP(MAC_CONFIGURATION, ECRSFD, 0b1);
+
+	if (config->max_speed <= 10) {
+		/* reduce to 10 Mbps mode */
+		base->MAC_CONFIGURATION &= ~ENET_QOS_REG_PREP(MAC_CONFIGURATION, FES, 0b1);
+	}
 
 	/* Enable the MAC RX channel 0 */
 	base->MAC_RXQ_CTRL[0] |=
@@ -710,7 +716,7 @@ static int eth_nxp_enet_qos_mac_init(const struct device *dev)
 	enet_qos_mtl_config_init(base);
 
 	/* Configuration of the actual MAC hardware */
-	enet_qos_mac_config_init(base, data, clk_rate);
+	enet_qos_mac_config_init(base, data, config, clk_rate);
 
 	/* Current use of TX descriptor in the driver is such that
 	 * one packet is sent at a time, and each descriptor is used
@@ -847,6 +853,7 @@ static const struct ethernet_api api_funcs = {
 			},                                                                         \
 		.irq_config_func = nxp_enet_qos_##n##_irq_config_func,                             \
 		.mac_addr_source = NXP_ENET_QOS_MAC_ADDR_SOURCE(n),                                \
+		.max_speed = DT_INST_PROP(n, max_speed),                                           \
 	};                                                                                         \
 	static struct nxp_enet_qos_mac_data enet_qos_##n##_mac_data = {                            \
 		.mac_addr.addr = DT_INST_PROP_OR(n, local_mac_address, {0}),                       \
