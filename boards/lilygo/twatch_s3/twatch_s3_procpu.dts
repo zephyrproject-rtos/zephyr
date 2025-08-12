@@ -140,6 +140,7 @@
 	axp2101@34 {
 		compatible = "x-powers,axp2101";
 		reg = <0x34>;
+		int-gpios = <&gpio0 21 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 
 		charger {
 			compatible = "x-powers,axp2101-charger";
