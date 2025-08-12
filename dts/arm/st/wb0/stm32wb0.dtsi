@@ -297,6 +297,13 @@
 		compatible = "st,hci-stm32wb0";
 		status = "disabled";
 	};
+
+	radio_timer: radio_timer {
+		compatible = "st,stm32wb0-radio-timer";
+		compensated-timer-freq = <409600>;
+		max-hs-startup-time = <320>;
+		status = "disabled";
+	};
 };
 
 &nvic {
