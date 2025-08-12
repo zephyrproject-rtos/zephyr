@@ -200,7 +200,7 @@ static const struct video_reg8 ov767x_init_regtbl[] = {
 	/* Brightness Control, with signal -128 to +128, 0x00 is middle value */
 	{OV7670_BRIGHT, 0x2f},
 
-	/* Internal clock pre-scalar */
+	/* Internal clock pre-scalar,F(internal clock) = F(input clock)/(Bit[5:0]+1) */
 	{OV7670_CLKRC, 0x81}, /* Clock Div, Input/(n+1), bit6 set to 1 to disable divider */
 
 	/* SCALING_PCLK_DIV */
@@ -394,8 +394,8 @@ static const struct video_reg8 ov767x_regs_vga[] = {
 static const struct video_reg8 ov767x_regs_vga[] = {
     {OV7670_COM3,         0x00 },
     {OV7670_COM14,        0x00 },
-    { 0x72,               0x11 },     /* downsample by 4 */
-    { 0x73,               0xf0 },     /* divide by 4 */
+    { 0x72,               0x11 },     // downsample by 4
+    { 0x73,               0xf0 },     // divide by 4
     {OV7670_HSTART,       0x12 },
     {OV7670_HSTOP,        0x00 },
     {OV7670_HREF,         0xb6 },
@@ -406,9 +406,9 @@ static const struct video_reg8 ov767x_regs_vga[] = {
 
 static const struct video_reg8 ov767x_regs_qvga[] = {
     {OV7670_COM3,         COM3_DCW_EN },
-    {OV7670_COM14,        0x11 },      /* Divide by 2 */
-    { 0x72,               0x22 },      /* This has no effect on OV7675 */
-    { 0x73,               0xf2 },      /* This has no effect on OV7675 */
+    {OV7670_COM14,        0x11 },      // Divide by 2
+    { 0x72,               0x22 },      // This has no effect on OV7675
+    { 0x73,               0xf2 },      // This has no effect on OV7675
     {OV7670_HSTART,       0x15 },
     {OV7670_HSTOP,        0x03 },
     {OV7670_HREF,         0xC0 },
@@ -419,9 +419,9 @@ static const struct video_reg8 ov767x_regs_qvga[] = {
 
 static const struct video_reg8 ov767x_regs_qqvga[] = {
     {OV7670_COM3,         COM3_DCW_EN },
-    {OV7670_COM14,        0x11 },     /* Divide by 2 */
-    { 0x72,               0x22 },     /* This has no effect on OV7675*/
-    { 0x73,               0xf2 },     /* This has no effect on OV7675*/
+    {OV7670_COM14,        0x11 },     // Divide by 2
+    { 0x72,               0x22 },     // This has no effect on OV7675
+    { 0x73,               0xf2 },     // This has no effect on OV7675
     {OV7670_HSTART,       0x16 },
     {OV7670_HSTOP,        0x04 },
     {OV7670_HREF,         0xa4 },
@@ -462,7 +462,7 @@ static const struct video_reg8 ov767x_rgb565_regs[] = {
     {OV7670_COM13,        COM13_GAMMA_EN | COM13_UVSAT_AUTO },
 };
 
-/* TODO: These registers probably need to be fixed too. */
+// TODO: These registers probably need to be fixed too.
 static const struct video_reg8 ov767x_yuv422_regs[] = {
     {OV7670_COM7,         0x00 },           /* Selects YUV mode */
     {RGB444,              0x00 },           /* No RGB444 please */
@@ -509,9 +509,6 @@ static int ov767x_set_fmt(const struct device *dev, struct video_format *fmt)
     ret = video_write_cci_multiregs8(&config->bus, ov767x_rgb565_regs, ARRAY_SIZE(ov767x_rgb565_regs));
   } else if(fmt->pixelformat == VIDEO_PIX_FMT_YUYV) {
     ret = video_write_cci_multiregs8(&config->bus, ov767x_yuv422_regs, ARRAY_SIZE(ov767x_yuv422_regs));
-  } else {
-    LOG_ERROR("Formaat not supported");
-    ret = -ENOTSUP;
   }
   if (ret < 0) {
     LOG_ERR("Format not set!");
