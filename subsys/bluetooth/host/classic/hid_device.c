@@ -336,6 +336,21 @@ static void bt_hid_l2cap_ctrl_connected(struct bt_l2cap_chan *chan)
 	}
 
 	hid->state = BT_HID_STATE_CTRL_CONNECTED;
+
+	if (hid->role == BT_HID_ROLE_ACCEPTOR) {
+		/* Wait for INTR channel connection from remote */
+		LOG_DBG("HID wait for INTR channel connection from remote");
+		return;
+	}
+
+	err = bt_l2cap_chan_connect(hid->conn, &hid->intr_session.br_chan.chan,
+				    BT_L2CAP_PSM_HID_INT);
+	if (err) {
+		LOG_ERR("HID connect INTR failed");
+		hid->state = BT_HID_STATE_DISCONNECTING;
+		bt_l2cap_chan_disconnect(&hid->ctrl_session.br_chan.chan);
+		return;
+	}
 }
 
 static void bt_hid_l2cap_intr_connected(struct bt_l2cap_chan *chan)
@@ -394,6 +409,24 @@ static void bt_hid_l2cap_ctrl_disconnected(struct bt_l2cap_chan *chan)
 		LOG_ERR("HID invalid role:%d", role);
 		return;
 	}
+
+	/* if INTR session connected, it need to be disconnected */
+	if (hid->intr_session.br_chan.chan.conn) {
+		LOG_DBG("HID disconnect INTR channel");
+		bt_l2cap_chan_disconnect(&hid->intr_session.br_chan.chan);
+		return;
+	}
+
+	if (hid->pending_vc_unplug && hid_cb && hid_cb->vc_unplug) {
+		hid_cb->vc_unplug(hid);
+		hid->pending_vc_unplug = 0;
+	}
+
+	if (hid_cb && hid_cb->disconnected) {
+		hid_cb->disconnected(hid);
+	}
+
+	bt_hid_deinit(hid);
 }
 
 static void bt_hid_l2cap_intr_disconnected(struct bt_l2cap_chan *chan)
@@ -419,6 +452,24 @@ static void bt_hid_l2cap_intr_disconnected(struct bt_l2cap_chan *chan)
 	if (role != BT_HID_SESSION_ROLE_INTR) {
 		LOG_ERR("HID invalid role:%d", role);
 		return;
+	}
+
+	/* Local request disconnect(INTR channel), and it need to disconnect CTRL channel as well */
+	if (hid->state == BT_HID_STATE_DISCONNECTING) {
+		LOG_DBG("HID disconnect CTRL channel");
+		bt_l2cap_chan_disconnect(&hid->ctrl_session.br_chan.chan);
+		return;
+	}
+
+	/* Wait for remote disconnect CTRL channel */
+	if (hid->ctrl_session.br_chan.chan.conn) {
+		LOG_DBG("Wait for remote disconnect CTRL channel");
+		return;
+	}
+
+	if (hid->pending_vc_unplug && hid_cb && hid_cb->vc_unplug) {
+		hid_cb->vc_unplug(hid);
+		hid->pending_vc_unplug = 0;
 	}
 
 	if (hid_cb && hid_cb->disconnected) {
