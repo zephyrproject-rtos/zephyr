@@ -11,3 +11,52 @@
 &cpusec_bellboard {
 	status = "disabled";
 };
+
+
+&gdpwr {
+	status = "disabled";
+};
+
+&gdpwr_fast_active_0 {
+	status = "disabled";
+};
+
+&gdpwr_fast_active_1 {
+	status = "disabled";
+};
+
+&gdpwr_fast_main {
+	status = "disabled";
+};
+
+&gdpwr_slow_active {
+	status = "disabled";
+};
+
+&gdpwr_slow_main {
+	status = "disabled";
+};
+
+&gpio_pad_group0 {
+	status = "disabled";
+};
+
+&gpio_pad_group1 {
+	status = "disabled";
+};
+
+&gpio_pad_group2 {
+	status = "disabled";
+};
+
+&gpio_pad_group6 {
+	status = "disabled";
+};
+
+&gpio_pad_group7 {
+	status = "disabled";
+};
+
+&gpio_pad_group9 {
+	status = "disabled";
+};
