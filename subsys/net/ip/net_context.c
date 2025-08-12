@@ -2332,6 +2332,30 @@ static void set_pkt_txtime(struct net_pkt *pkt, const struct msghdr *msghdr)
 	}
 }
 
+static void set_pkt_hoplimit(struct net_pkt *pkt, const struct msghdr *msg_hdr)
+{
+	struct cmsghdr *cmsg;
+
+	for (cmsg = CMSG_FIRSTHDR(msg_hdr); cmsg != NULL;
+	     cmsg = CMSG_NXTHDR(msg_hdr, cmsg)) {
+		if (net_pkt_family(pkt) == AF_INET6) {
+			if (cmsg->cmsg_len == CMSG_LEN(sizeof(int)) &&
+			    cmsg->cmsg_level == IPPROTO_IPV6 &&
+			    cmsg->cmsg_type == IPV6_HOPLIMIT) {
+				net_pkt_set_ipv6_hop_limit(pkt, *(uint8_t *)CMSG_DATA(cmsg));
+				break;
+			}
+		} else {
+			if (cmsg->cmsg_len == CMSG_LEN(sizeof(int)) &&
+			    cmsg->cmsg_level == IPPROTO_IP &&
+			    cmsg->cmsg_type == IP_TTL) {
+				net_pkt_set_ipv4_ttl(pkt, *(uint8_t *)CMSG_DATA(cmsg));
+				break;
+			}
+		}
+	}
+}
+
 static int context_sendto(struct net_context *context,
 			  const void *buf,
 			  size_t len,
@@ -2650,6 +2674,9 @@ static int context_sendto(struct net_context *context,
 				set_pkt_txtime(pkt, msghdr);
 			}
 		}
+
+		set_pkt_hoplimit(pkt, msghdr);
+
 	}
 
 skip_alloc:
