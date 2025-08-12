@@ -37,6 +37,7 @@
 #include <stm32_ll_usart.h>
 #include <stm32_ll_lpuart.h>
 #if defined(CONFIG_PM) && defined(IS_UART_WAKEUP_FROMSTOP_INSTANCE)
+#include <stm32_ll_pwr.h>
 #include <stm32_ll_exti.h>
 #endif /* CONFIG_PM */
 
@@ -109,6 +110,25 @@ static void uart_stm32_pm_policy_state_lock_get_unconditional(void)
 	if (IS_ENABLED(CONFIG_PM_S2RAM)) {
 		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
 	}
+}
+
+static inline void uart_stm32_pm_enable_wakeup_line(uint32_t wakeup_line)
+{
+#if defined(CONFIG_SOC_SERIES_STM32WB0X)
+	ARG_UNUSED(wakeup_line);
+#if defined(PWR_CR3_EIWL2)
+	/**
+	 * If SoC is equipped with LPUART instance,
+	 * enable the associated wake-up line in PWRC.
+	 */
+	LL_PWR_EnableInternWU2();
+#endif /* PWR_CR3_EIWL2 */
+#elif defined(IS_UART_WAKEUP_FROMSTOP_INSTANCE)
+	if (wakeup_line != STM32_WAKEUP_LINE_NONE) {
+		/* Enable EXTI line associated to UART wake-up event */
+		LL_EXTI_EnableIT_0_31(BIT(wakeup_line));
+	}
+#endif /* CONFIG_SOC_SERIES_STM32WB0X */
 }
 
 static void uart_stm32_pm_policy_state_lock_get(const struct device *dev)
@@ -2160,12 +2180,12 @@ static int uart_stm32_registers_configure(const struct device *dev)
 		LL_USART_EnableIT_WKUP(usart);
 		LL_USART_ClearFlag_WKUP(usart);
 #endif
+#if !defined(CONFIG_SOC_SERIES_STM32WB0X) || defined(USART_CR1_UESM)
 		LL_USART_EnableInStopMode(usart);
+#endif /* !CONFIG_SOC_SERIES_STM32WB0X || USART_CR1_UESM */
 
-		if (config->wakeup_line != STM32_WAKEUP_LINE_NONE) {
-			/* Prepare the WAKEUP with the expected EXTI line */
-			LL_EXTI_EnableIT_0_31(BIT(config->wakeup_line));
-		}
+		/* Enable the wake-up line signal (if applicable to hardware) */
+		uart_stm32_pm_enable_wakeup_line(config->wakeup_line);
 	}
 #endif /* CONFIG_PM */
 
