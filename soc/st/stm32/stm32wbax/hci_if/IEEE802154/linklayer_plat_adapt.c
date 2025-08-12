@@ -8,6 +8,8 @@
 #include <zephyr/drivers/entropy.h>
 #include <zephyr/logging/log.h>
 
+#include <stm32_backup_domain.h>
+
 #include "app_conf.h"
 #include "bsp.h"
 
@@ -266,9 +268,6 @@ void LINKLAYER_PLAT_RCOStopClbr(void)
 }
 
 /* TODO: To do when porting the temperature measurement function and thread */
-void LINKLAYER_PLAT_RequestTemperature(void) {}
-
-void LINKLAYER_PLAT_SCHLDR_TIMING_UPDATE_NOT(Evnt_timing_t *p_evnt_timing) {}
 
 void LINKLAYER_PLAT_EnableOSContextSwitch(void)
 {
@@ -297,4 +296,14 @@ uint32_t LINKLAYER_PLAT_GetUDN(void)
 	uint32_t device_uid = LL_FLASH_GetUDN();
 
 	return device_uid;
+}
+
+void LINKLAYER_PLAT_EnableBackupDomainAccess(void)
+{
+	stm32_backup_domain_enable_access();
+}
+
+void LINKLAYER_PLAT_DisableBackupDomainAccess(void)
+{
+	stm32_backup_domain_disable_access();
 }
