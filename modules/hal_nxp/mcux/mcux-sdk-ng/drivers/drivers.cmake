@@ -52,6 +52,7 @@ set_variable_ifdef(CONFIG_CAN_MCUX_FLEXCAN      CONFIG_MCUX_COMPONENT_driver.fle
 set_variable_ifdef(CONFIG_CAN_MCUX_FLEXCAN_FD   CONFIG_MCUX_COMPONENT_driver.flexcan)
 set_variable_ifdef(CONFIG_COUNTER_NXP_PIT       CONFIG_MCUX_COMPONENT_driver.pit)
 set_variable_ifdef(CONFIG_COUNTER_MCUX_FTM      CONFIG_MCUX_COMPONENT_driver.ftm)
+set_variable_ifdef(CONFIG_COUNTER_MCUX_STM      CONFIG_MCUX_COMPONENT_driver.stm)
 set_variable_ifdef(CONFIG_COUNTER_MCUX_RTC      CONFIG_MCUX_COMPONENT_driver.rtc)
 set_variable_ifdef(CONFIG_DAC_MCUX_DAC          CONFIG_MCUX_COMPONENT_driver.dac)
 set_variable_ifdef(CONFIG_DAC_MCUX_DAC12        CONFIG_MCUX_COMPONENT_driver.dac12)
