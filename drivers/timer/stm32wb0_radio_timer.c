@@ -18,7 +18,7 @@
 LOG_MODULE_REGISTER(radio_timer_driver);
 
 /* Max HS startup time expressed in system time (1953 us / 2.4414 us) */
-#define MAX_HS_STARTUP_TIME	320
+#define MAX_HS_STARTUP_TIME	DT_PROP(DT_NODELABEL(radio_timer), max_hs_startup_time)
 #define BLE_WKUP_PRIO		0
 #define CPU_WKUP_PRIO		1
 #define RADIO_TIMER_ERROR_PRIO	3
