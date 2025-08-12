@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/drivers/pinctrl.h>
-#include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
 #include <soc.h>
 
@@ -135,9 +133,6 @@ static void amic_audadc_slot_config(void *audadc_handle)
 static int amic_ambiq_audadc_init(const struct device *dev)
 {
 	struct amic_ambiq_audadc_data *data = dev->data;
-	const struct amic_ambiq_audadc_cfg *config = dev->config;
-
-	int ret = 0;
 
 	amic_audadc_pga_init();
 
@@ -426,7 +421,6 @@ static const struct _amic_ops amic_ambiq_ops = {
 };
 
 #define AMBIQ_AUDADC_DEFINE(n)                                                                     \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
 	static void audadc_irq_config_func_##n(void)                                               \
 	{                                                                                          \
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), amic_ambiq_audadc_isr,      \

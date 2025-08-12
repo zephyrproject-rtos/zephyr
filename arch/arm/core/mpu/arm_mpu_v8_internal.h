@@ -279,15 +279,20 @@ static inline void mpu_region_set_limit(const uint32_t index, const uint32_t lim
 static inline void mpu_region_get_access_attr(const uint32_t index,
 	arm_mpu_region_attr_t *attr)
 {
+	uint32_t rlar;
+	arm_mpu_region_attr_t tmp = {0};
+
 	mpu_set_rnr(index);
 
 	attr->rbar = mpu_get_rbar() &
 		(MPU_RBAR_XN_Msk | MPU_RBAR_AP_Msk | MPU_RBAR_SH_Msk);
-	attr->mair_idx = (mpu_get_rlar() & MPU_RLAR_AttrIndx_Msk) >>
+	rlar = mpu_get_rlar();
+	tmp.mair_idx = (rlar & MPU_RLAR_AttrIndx_Msk) >>
 		MPU_RLAR_AttrIndx_Pos;
 #ifdef CONFIG_ARM_MPU_PXN
-	attr->pxn = (mpu_get_rlar() & MPU_RLAR_PXN_Msk) >> MPU_RLAR_PXN_Pos;
+	tmp.pxn = (rlar & MPU_RLAR_PXN_Msk) >> MPU_RLAR_PXN_Pos;
 #endif
+	*attr = tmp;
 }
 
 static inline void mpu_region_get_conf(const uint32_t index,
