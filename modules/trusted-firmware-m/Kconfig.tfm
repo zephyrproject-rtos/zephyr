@@ -23,11 +23,11 @@ config TFM_BOARD
 	default "arm/musca_b1" if BOARD_V2M_MUSCA_B1
 	default "arm/musca_s1" if BOARD_V2M_MUSCA_S1
 	default "adi/max32657" if BOARD_MAX32657EVKIT_MAX32657_NS
-	default "${ZEPHYR_BASE}/modules/trusted-firmware-m/nordic/nrf9160" if SOC_NRF9160
-	default "${ZEPHYR_BASE}/modules/trusted-firmware-m/nordic/nrf9120" if SOC_NRF9120
-	default "${ZEPHYR_BASE}/modules/trusted-firmware-m/nordic/nrf5340_cpuapp" if SOC_NRF5340_CPUAPP
-	default "${ZEPHYR_BASE}/modules/trusted-firmware-m/nordic/nrf54l15_cpuapp" if SOC_NRF54L15_CPUAPP
-	default "${ZEPHYR_BASE}/modules/trusted-firmware-m/nordic/nrf54l10_cpuapp" if SOC_NRF54L10_CPUAPP
+	default "$(ZEPHYR_BASE)/modules/trusted-firmware-m/nordic/nrf9160" if SOC_NRF9160
+	default "$(ZEPHYR_BASE)/modules/trusted-firmware-m/nordic/nrf9120" if SOC_NRF9120
+	default "$(ZEPHYR_BASE)/modules/trusted-firmware-m/nordic/nrf5340_cpuapp" if SOC_NRF5340_CPUAPP
+	default "$(ZEPHYR_BASE)/modules/trusted-firmware-m/nordic/nrf54l15_cpuapp" if SOC_NRF54L15_CPUAPP
+	default "$(ZEPHYR_BASE)/modules/trusted-firmware-m/nordic/nrf54l10_cpuapp" if SOC_NRF54L10_CPUAPP
 	help
 	  The board name used for building TFM. Building with TFM requires that
 	  TFM has been ported to the given board/SoC.
@@ -256,7 +256,7 @@ config TFM_BL2_SIGNING_KEY_PATH
 	string "Path to private key used to sign BL2 firmware images."
 	help
 	  Path to binary BL2 signing private key
-	  Default is ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/bl1/bl1_2/bl1_dummy_rotpk
+	  Default is $(ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR)/bl1/bl1_2/bl1_dummy_rotpk
 	  if it has not been changed on TF-M side for your board
 
 endif # TFM_BL1
@@ -281,7 +281,7 @@ config TFM_MCUBOOT_SIGNATURE_TYPE
 
 config TFM_KEY_FILE_S
 	string "Path to private key used to sign secure firmware images."
-	default "${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/bl2/ext/mcuboot/root-${CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE}.pem"
+	default "$(ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR)/bl2/ext/mcuboot/root-${CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE}.pem"
 	help
 	  The path and filename for the .pem file containing the private key
 	  that should be used by the BL2 bootloader when signing secure
@@ -290,7 +290,7 @@ config TFM_KEY_FILE_S
 
 config TFM_KEY_FILE_NS
 	string "Path to private key used to sign non-secure firmware images."
-	default "${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/bl2/ext/mcuboot/root-${CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE}_1.pem"
+	default "$(ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR)/bl2/ext/mcuboot/root-${CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE}_1.pem"
 	help
 	  The path and filename for the .pem file containing the private key
 	  that should be used by the BL2 bootloader when signing non-secure
@@ -334,7 +334,7 @@ endchoice
 config TFM_ETHOS_DRIVER_PATH_LOCAL
 	string "Path to a locally available Ethos-U driver or an empty string"
 	depends on SOC_SERIES_MPS3 || SOC_SERIES_MPS4
-	default "${ZEPHYR_HAL_ETHOS_U_MODULE_DIR}"
+	default "$(ZEPHYR_HAL_ETHOS_U_MODULE_DIR)"
 	help
 	  Path to a locally available Ethos-U driver to be used for TF-M builds or
 	  an empty string to allow TF-M to automatically fetch the Ethos-U
