@@ -814,6 +814,14 @@ int bt_avrcp_disconnect(struct bt_conn *conn)
 	return err;
 }
 
+struct net_buf *bt_avrcp_create_pdu(struct net_buf_pool *pool)
+{
+	return bt_conn_create_pdu(pool,
+				  sizeof(struct bt_l2cap_hdr) +
+				  sizeof(struct bt_avctp_header) +
+				  sizeof(struct bt_avrcp_header));
+}
+
 int bt_avrcp_ct_get_cap(struct bt_avrcp_ct *ct, uint8_t tid, uint8_t cap_id)
 {
 	struct net_buf *buf;
