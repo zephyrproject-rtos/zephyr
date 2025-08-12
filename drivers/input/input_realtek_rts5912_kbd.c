@@ -176,10 +176,91 @@ static int rts5912_kbd_init(const struct device *dev)
 	NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
 
 	/* Interrupts are enabled in the thread function */
-	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
-		    rts5912_kbd_isr, DEVICE_DT_INST_GET(0), 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), rts5912_kbd_isr,
+		    DEVICE_DT_INST_GET(0), 0);
 
 	return input_kbd_matrix_common_init(dev);
+}
+
+static void input_kbd_matrix_pm_action_suspend(const struct device *dev)
+{
+	volatile struct kbm_regs *inst = config->base;
+	const uint32_t kso_mask = BIT_MASK(common->col_size) & ~config->kso_ignore_mask;
+	const uint32_t ksi_mask = BIT_MASK(common->row_size);
+	uint32_t status;
+
+	status = clock_control_off(config->clk_dev, (clock_control_subsys_t)&config->sccon_cfg);
+	if (status != 0) {
+		LOG_ERR("kbd suspend clock power fail");
+		return status;
+	}
+	inst->int_en = 0; /* KSI interrupt */
+	rts5912_intc_isr_clear(dev);
+	/* Enable KSO 18 if COL Size more than 18*/
+	if (kso_mask & BIT(18)) {
+		inst->ctrl &= ~KBM_CTRL_KSO18EN_Msk;
+	}
+	/* Enable KSO 19 if COL Size more than 19*/
+	if (kso_mask & BIT(19)) {
+		inst->ctrl &= ~KBM_CTRL_KSO19EN_Msk;
+	}
+	/* KSO pins output low */
+	inst->scan_out = 0x00;
+	inst->ctrl &= ~KBM_CTRL_KSOTYPE_Msk;
+	status = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
+	if (status < 0) {
+		LOG_ERR("Suspend failed to configure KSI and KSO pins");
+		return status;
+	}
+}
+
+static void input_kbd_matrix_pm_action_resume(const struct device *dev)
+{
+	volatile struct kbm_regs *inst = config->base;
+	const uint32_t kso_mask = BIT_MASK(common->col_size) & ~config->kso_ignore_mask;
+	const uint32_t ksi_mask = BIT_MASK(common->row_size);
+	uint32_t status;
+
+	inst->ctrl |= KBM_CTRL_KSOTYPE_Msk;
+	status = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (status < 0) {
+		LOG_ERR("Resume failed to configure KSI and KSO pins");
+		return status;
+	}
+	/* KSO pins output low */
+	inst->scan_out = 0x00;
+	/* Enable KSO 18 if COL Size more than 18*/
+	if (kso_mask & BIT(18)) {
+		inst->ctrl |= KBM_CTRL_KSO18EN_Msk;
+	}
+	/* Enable KSO 19 if COL Size more than 19*/
+	if (kso_mask & BIT(19)) {
+		inst->ctrl |= KBM_CTRL_KSO19EN_Msk;
+	}
+	inst->int_en |= ksi_mask;
+	status = clock_control_on(config->clk_dev, (clock_control_subsys_t)&config->sccon_cfg);
+	if (status != 0) {
+		LOG_ERR("kbd resume clock power on fail");
+		return status;
+	}
+}
+
+int input_kbd_matrix_pm_action_rts5912(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		input_kbd_matrix_pm_action_resume(dev);
+		input_kbd_matrix_pm_action(dev, action);
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		input_kbd_matrix_pm_action_suspend(dev);
+		input_kbd_matrix_pm_action(dev, action);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
 }
 
 PINCTRL_DT_INST_DEFINE(0);
@@ -207,7 +288,7 @@ static const struct rts5912_kbd_config rts5912_kbd_cfg_0 = {
 
 static struct rts5912_kbd_data rts5912_kbd_data_0;
 
-PM_DEVICE_DT_INST_DEFINE(0, input_kbd_matrix_pm_action);
+PM_DEVICE_DT_INST_DEFINE(0, input_kbd_matrix_pm_action_rts5912);
 
 DEVICE_DT_INST_DEFINE(0, &rts5912_kbd_init, PM_DEVICE_DT_INST_GET(0), &rts5912_kbd_data_0,
 		      &rts5912_kbd_cfg_0, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
