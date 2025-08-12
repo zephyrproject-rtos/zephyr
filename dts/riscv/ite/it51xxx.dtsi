@@ -1404,7 +1404,7 @@
 			compatible = "ite,it51xxx-spi";
 			reg = <0x00f02600 0x24>;
 			interrupt-parent = <&intc>;
-			interrupts = <IT51XXX_IRQ_SPI IRQ_TYPE_EDGE_RISING>;
+			interrupts = <IT51XXX_IRQ_SPI IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&ecpm IT51XXX_ECPM_CGCTRL3R_OFF BIT(1)>;
 			status = "disabled";
 		};
