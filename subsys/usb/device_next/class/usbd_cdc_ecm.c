@@ -402,6 +402,7 @@ static void usbd_cdc_ecm_disable(struct usbd_class_data *const c_data)
 	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_ecm_eth_data *data = dev->data;
 
+	atomic_clear_bit(&data->state, CDC_ECM_DATA_IFACE_ENABLED);
 	atomic_clear_bit(&data->state, CDC_ECM_CLASS_SUSPENDED);
 	LOG_INF("Disabled %s", c_data->name);
 }
