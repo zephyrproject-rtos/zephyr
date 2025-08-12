@@ -47,11 +47,13 @@ class CanShellBus(BusABC): # pylint: disable=abstract-method
 
     def _retval(self):
         """Get return value of last shell command."""
+        self._shell.wait_for_prompt()
         return int(self._shell.get_filtered_output(self._shell.exec_command('retval'))[0])
 
     def _get_capabilities(self) -> list[str]:
         cmd = f'can show {self._device}'
 
+        self._shell.wait_for_prompt()
         lines = self._shell.get_filtered_output(self._shell.exec_command(cmd))
         regex_compiled = re.compile(r'capabilities:\s+(?P<caps>.*)')
         for line in lines:
@@ -62,18 +64,21 @@ class CanShellBus(BusABC): # pylint: disable=abstract-method
         raise CanOperationError('capabilities not found')
 
     def _set_mode(self, mode: str) -> None:
+        self._shell.wait_for_prompt()
         self._shell.exec_command(f'can mode {self._device} {mode}')
         retval = self._retval()
         if retval != 0:
             raise CanOperationError(f'failed to set mode "{mode}" (err {retval})')
 
     def _start(self):
+        self._shell.wait_for_prompt()
         self._shell.exec_command(f'can start {self._device}')
         retval = self._retval()
         if retval != 0:
             raise CanInitializationError(f'failed to start (err {retval})')
 
     def _stop(self):
+        self._shell.wait_for_prompt()
         self._shell.exec_command(f'can stop {self._device}')
 
     def send(self, msg: Message, timeout: Optional[float] = None) -> None:
@@ -93,6 +98,7 @@ class CanShellBus(BusABC): # pylint: disable=abstract-method
         if msg.data:
             cmd += ' ' + msg.data.hex(' ', 1)
 
+        self._shell.wait_for_prompt()
         lines = self._shell.exec_command(cmd)
         regex_compiled = re.compile(r'enqueuing\s+CAN\s+frame\s+#(?P<id>\d+)')
         frame_num = None
@@ -120,6 +126,7 @@ class CanShellBus(BusABC): # pylint: disable=abstract-method
             cmd += f' {can_id:03x}'
             cmd += f' {can_mask:03x}'
 
+        self._shell.wait_for_prompt()
         lines = self._shell.exec_command(cmd)
         regex_compiled = re.compile(r'filter\s+ID:\s+(?P<id>\d+)')
         for line in lines:
@@ -136,6 +143,7 @@ class CanShellBus(BusABC): # pylint: disable=abstract-method
         if filter_id in self._filter_ids:
             self._filter_ids.remove(filter_id)
 
+        self._shell.wait_for_prompt()
         self._shell.exec_command(f'can filter remove {self._device} {filter_id}')
         retval = self._retval()
         if retval != 0:

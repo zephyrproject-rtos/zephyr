@@ -39,6 +39,7 @@ def fixture_context(request, dut: DeviceAdapter) -> str:
 def fixture_chosen(shell: Shell) -> str:
     """Return the name of the zephyr,canbus devicetree chosen device."""
     chosen_regex = re.compile(r'zephyr,canbus:\s+(\S+)')
+    shell.wait_for_prompt()
     lines = shell.get_filtered_output(shell.exec_command('can_host chosen'))
 
     for line in lines:
