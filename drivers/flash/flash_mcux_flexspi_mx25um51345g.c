@@ -600,7 +600,8 @@ static DEVICE_API(flash, flash_flexspi_nor_api) = {
 
 #define FLASH_FLEXSPI_DEVICE_CONFIG(n)					\
 	{								\
-		.flexspiRootClk = MHZ(120),				\
+		.flexspiRootClk =					\
+			DT_INST_PROP_OR(n, spi_max_frequency, MHZ(200)),\
 		.flashSize = DT_INST_PROP(n, size) / 8 / KB(1),		\
 		.CSIntervalUnit =					\
 			CS_INTERVAL_UNIT(				\
