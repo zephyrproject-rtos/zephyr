@@ -345,15 +345,24 @@ class BoardYmlCheck(ComplianceTest):
 
     def run(self):
         path = resolve_path_hint(self.path_hint)
+        module_ymls = [path / "zephyr" / "module.yml", path / "zephyr" / "module.yaml"]
 
         vendor_prefixes = {"others"}
         # add vendor prefixes from the main zephyr repo
         vendor_prefixes |= get_vendor_prefixes(ZEPHYR_BASE / "dts" / "bindings" / "vendor-prefixes.txt", self.error)
-
         # add vendor prefixes from the current repo
-        dts_roots = get_module_setting_root('dts', path / "zephyr" / "module.yml")
-        for dts_root in dts_roots:
-            vendor_prefix_file = dts_root / "dts" / "bindings" / "vendor-prefixes.txt"
+        dts_root = None
+        for module_yml in module_ymls:
+            if module_yml.is_file():
+                with module_yml.open('r', encoding='utf-8') as f:
+                    meta = yaml.load(f.read(), Loader=SafeLoader)
+                    section = meta.get('build', dict())
+                    build_settings = section.get('settings', None)
+                    if build_settings:
+                        dts_root = build_settings.get('dts_root', None)
+
+        if dts_root:
+            vendor_prefix_file = Path(dts_root) / "dts" / "bindings" / "vendor-prefixes.txt"
             if vendor_prefix_file.exists():
                 vendor_prefixes |= get_vendor_prefixes(vendor_prefix_file, self.error)
 
