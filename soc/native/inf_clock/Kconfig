@@ -4,6 +4,7 @@
 config SOC_POSIX
 	select ARCH_POSIX
 	select CPU_HAS_FPU
+	select HAS_CPU_FREQ
 
 if SOC_POSIX
 
