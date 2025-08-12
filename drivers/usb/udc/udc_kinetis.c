@@ -326,10 +326,11 @@ static inline int work_handler_setup(const struct device *dev)
 	udc_ctrl_update_stage(dev, buf);
 
 	if (udc_ctrl_stage_is_data_out(dev)) {
+		size_t length = ROUND_UP(udc_data_stage_length(buf), USBFSOTG_EP0_SIZE);
+
 		/*  Allocate and feed buffer for data OUT stage */
 		LOG_DBG("s:%p|feed for -out-", buf);
-		err = usbfsotg_ctrl_feed_dout(dev, udc_data_stage_length(buf),
-					      false, true);
+		err = usbfsotg_ctrl_feed_dout(dev, length, false, true);
 		if (err == -ENOMEM) {
 			err = udc_submit_ep_event(dev, buf, err);
 		}
