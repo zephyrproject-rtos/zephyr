@@ -564,7 +564,8 @@ program ends, one could do:
 
    $ zephyr.exe --uart_attach_uart_cmd='ln -s %s /tmp/somename' ; rm /tmp/somename
 
-This driver supports poll mode, interrupt mode and async mode.
+This driver supports poll mode or async mode with :kconfig:option:`CONFIG_UART_ASYNC_API`.
+Interrupt mode is not supported.
 Neither runtime configuration or line control are supported.
 
 .. _native_tty_uart:
