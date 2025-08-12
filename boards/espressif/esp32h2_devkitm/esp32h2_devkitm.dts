@@ -60,3 +60,11 @@
 &coretemp {
 	status = "okay";
 };
+
+&spi2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim2_default>;
+	pinctrl-names = "default";
+};
