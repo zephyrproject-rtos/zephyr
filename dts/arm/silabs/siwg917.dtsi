@@ -304,6 +304,8 @@
 			clocks = <&clock0 SIWX91X_CLK_DMA0>;
 			#dma-cells = <1>;
 			dma-channels = <32>;
+			power-domains = <&siwx91x_soc_pd>;
+			zephyr,pm-device-runtime-auto;
 			status = "disabled";
 		};
 
@@ -318,6 +320,8 @@
 			silabs,sram-region = <&sram_dma1>;
 			#dma-cells = <1>;
 			dma-channels = <12>;
+			power-domains = <&siwx91x_soc_pd>;
+			zephyr,pm-device-runtime-auto;
 			status = "disabled";
 		};
 
