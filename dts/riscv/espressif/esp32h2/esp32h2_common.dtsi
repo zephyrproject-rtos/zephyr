@@ -5,7 +5,9 @@
  */
 #include <mem.h>
 #include <freq.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/interrupt-controller/esp-esp32h2-intmux.h>
 #include <zephyr/dt-bindings/clock/esp32h2_clock.h>
 #include <dt-bindings/pinctrl/esp32h2-pinctrl.h>
@@ -19,6 +21,7 @@
 	};
 
 	chosen {
+		zephyr,canbus = &twai;
 		zephyr,entropy = &trng0;
 		zephyr,flash-controller = &flash;
 	};
@@ -156,7 +159,7 @@
 
 		flash: flash-controller@60002000 {
 			compatible = "espressif,esp32-flash-controller";
-			reg = <0x60002000 0x1000>;
+			reg = <0x60002000 DT_SIZE_K(4)>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -206,6 +209,124 @@
 			interrupts = <UART1_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			clocks = <&clock ESP32_UART1_MODULE>;
+		};
+
+		usb_serial: uart@6000f000 {
+			compatible = "espressif,esp32-usb-serial";
+			reg = <0x6000F000 DT_SIZE_K(4)>;
+			status = "disabled";
+			interrupts = <USB_SERIAL_JTAG_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			clocks = <&clock ESP32_USB_DEVICE_MODULE>;
+		};
+
+		spi2: spi@60081000 {
+			compatible = "espressif,esp32-spi";
+			reg = <0x60081000 DT_SIZE_K(4)>;
+			interrupts = <GSPI2_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			clocks = <&clock ESP32_SPI2_MODULE>;
+			dma-host = <0>;
+			status = "disabled";
+		};
+
+		dma: dma@60080000 {
+			compatible = "espressif,esp32-gdma";
+			reg = <0x60080000 DT_SIZE_K(4)>;
+			#dma-cells = <1>;
+			interrupts =
+				<DMA_IN_CH0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+				<DMA_OUT_CH0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+				<DMA_IN_CH1_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+				<DMA_OUT_CH1_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+				<DMA_IN_CH2_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+				<DMA_OUT_CH2_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			clocks = <&clock ESP32_GDMA_MODULE>;
+			dma-channels = <6>;
+			dma-buf-addr-alignment = <4>;
+			status = "disabled";
+		};
+
+		i2c0: i2c@60004000 {
+			compatible = "espressif,esp32-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x60004000 DT_SIZE_K(4)>;
+			interrupts = <I2C_EXT0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			clocks = <&clock ESP32_I2C0_MODULE>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@60005000 {
+			compatible = "espressif,esp32-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x60005000 DT_SIZE_K(4)>;
+			interrupts = <I2C_EXT1_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			clocks = <&clock ESP32_I2C1_MODULE>;
+			status = "disabled";
+		};
+
+		i2s: i2s@6000d000 {
+			compatible = "espressif,esp32-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x6000D000 DT_SIZE_K(4)>;
+			interrupts = <I2S1_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			clocks = <&clock ESP32_I2S1_MODULE>;
+			unit = <0>;
+			status = "disabled";
+		};
+
+		adc0: adc@6000e000 {
+			compatible = "espressif,esp32-adc";
+			reg = <0x6000E000 0x4>;
+			clocks = <&clock ESP32_SARADC_MODULE>;
+			unit = <1>;
+			channel-count = <5>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		ledc0: ledc@60008000 {
+			compatible = "espressif,esp32-ledc";
+			pwm-controller;
+			#pwm-cells = <3>;
+			reg = <0x60008000 DT_SIZE_K(4)>;
+			clocks = <&clock ESP32_LEDC_MODULE>;
+			status = "disabled";
+		};
+
+		mcpwm0: mcpwm@60014000 {
+			compatible = "espressif,esp32-mcpwm";
+			reg = <0x60014000 DT_SIZE_K(4)>;
+			interrupts = <MCPWM0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			clocks = <&clock ESP32_MCPWM0_MODULE>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		twai: can@6000c000 {
+			compatible = "espressif,esp32-twai";
+			reg = <0x6000c000 DT_SIZE_K(4)>;
+			interrupts = <TWAI0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			clocks = <&clock ESP32_TWAI0_MODULE>;
+			status = "disabled";
+		};
+
+		pcnt: pcnt@60012000 {
+			compatible = "espressif,esp32-pcnt";
+			reg = <0x60012000 DT_SIZE_K(4)>;
+			interrupts = <PCNT_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			clocks = <&clock ESP32_PCNT_MODULE>;
+			status = "disabled";
 		};
 	};
 };
