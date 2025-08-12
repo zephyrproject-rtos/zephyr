@@ -38,7 +38,8 @@
 #include <stm32_ll_usart.h>
 #include <stm32_ll_lpuart.h>
 #if defined(CONFIG_PM) && defined(IS_UART_WAKEUP_FROMSTOP_INSTANCE)
-#include <stm32_ll_exti.h>
+#include <stm32_ll_pwr.h>
+#include <zephyr/drivers/interrupt_controller/intc_exti_stm32.h>
 #endif /* CONFIG_PM */
 
 #include <zephyr/linker/linker-defs.h>
@@ -110,6 +111,25 @@ static void uart_stm32_pm_policy_state_lock_get_unconditional(void)
 	if (IS_ENABLED(CONFIG_PM_S2RAM)) {
 		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
 	}
+}
+
+static inline void uart_stm32_pm_enable_wakeup_line(uint32_t wakeup_line)
+{
+#if defined(CONFIG_SOC_SERIES_STM32WB0X)
+	ARG_UNUSED(wakeup_line);
+#if defined(PWR_CR3_EIWL2)
+	/**
+	 * If SoC is equipped with LPUART instance,
+	 * enable the associated wake-up line in PWRC.
+	 */
+	LL_PWR_EnableInternWU2();
+#endif /* PWR_CR3_EIWL2 */
+#elif defined(IS_UART_WAKEUP_FROMSTOP_INSTANCE)
+	if (wakeup_line != STM32_WAKEUP_LINE_NONE) {
+		/* Enable EXTI line associated to UART wake-up event */
+		stm32_exti_enable(wakeup_line, STM32_EXTI_TRIG_NONE, STM32_EXTI_MODE_IT);
+	}
+#endif /* CONFIG_SOC_SERIES_STM32WB0X */
 }
 
 static void uart_stm32_pm_policy_state_lock_get(const struct device *dev)
@@ -2203,12 +2223,12 @@ static int uart_stm32_registers_configure(const struct device *dev)
 		LL_USART_EnableIT_WKUP(usart);
 		LL_USART_ClearFlag_WKUP(usart);
 #endif
+#if !defined(CONFIG_SOC_SERIES_STM32WB0X) || defined(USART_CR1_UESM)
 		LL_USART_EnableInStopMode(usart);
+#endif /* !CONFIG_SOC_SERIES_STM32WB0X || USART_CR1_UESM */
 
-		if (config->wakeup_line != STM32_WAKEUP_LINE_NONE) {
-			/* Prepare the WAKEUP with the expected EXTI line */
-			LL_EXTI_EnableIT_0_31(BIT(config->wakeup_line));
-		}
+		/* Enable the wake-up line signal (if applicable to hardware) */
+		uart_stm32_pm_enable_wakeup_line(config->wakeup_line);
 	}
 #if defined(CONFIG_SOC_SERIES_STM32U5X) && DT_HAS_COMPAT_STATUS_OKAY(st_stm32_lpuart)
 	if (config->wakeup_source) {
