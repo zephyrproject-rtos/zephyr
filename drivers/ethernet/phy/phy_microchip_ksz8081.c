@@ -73,8 +73,11 @@ static int phy_mc_ksz8081_read(const struct device *dev,
 
 	ret = mdio_read(config->mdio_dev, config->addr, reg_addr, (uint16_t *)data);
 	if (ret) {
+		LOG_WRN("Failed to read from %s reg %d", dev->name, reg_addr);
 		return ret;
 	}
+
+	LOG_DBG("Read %x from phy %d reg %d", *data, config->addr, reg_addr);
 
 	return 0;
 }
@@ -87,8 +90,11 @@ static int phy_mc_ksz8081_write(const struct device *dev,
 
 	ret = mdio_write(config->mdio_dev, config->addr, reg_addr, (uint16_t)data);
 	if (ret) {
+		LOG_WRN("Failed to write to %s reg %d", dev->name, reg_addr);
 		return ret;
 	}
+
+	LOG_DBG("Wrote %x to phy %d reg %d", data, config->addr, reg_addr);
 
 	return 0;
 }
@@ -96,7 +102,7 @@ static int phy_mc_ksz8081_write(const struct device *dev,
 static int phy_mc_ksz8081_autonegotiate(const struct device *dev)
 {
 	const struct mc_ksz8081_config *config = dev->config;
-	int ret;
+	int ret = 0, attempts = 0;
 	uint32_t bmcr = 0;
 	uint32_t bmsr = 0;
 	uint16_t timeout = CONFIG_PHY_AUTONEG_TIMEOUT_MS / 100;
@@ -122,7 +128,7 @@ static int phy_mc_ksz8081_autonegotiate(const struct device *dev)
 	/* TODO change this to GPIO interrupt driven */
 	do {
 		if (timeout-- == 0) {
-			LOG_DBG("PHY (%d) autonegotiation timed out", config->addr);
+			LOG_ERR("PHY (%d) autonegotiation timed out", config->addr);
 			/* The value -ETIMEDOUT can be returned by PHY read/write functions, so
 			 * return -ENETDOWN instead to distinguish link timeout from PHY timeout.
 			 */
@@ -135,9 +141,11 @@ static int phy_mc_ksz8081_autonegotiate(const struct device *dev)
 			LOG_ERR("Error reading phy (%d) basic status register", config->addr);
 			return ret;
 		}
+
+		attempts++;
 	} while (!(bmsr & MII_BMSR_AUTONEG_COMPLETE));
 
-	LOG_DBG("PHY (%d) autonegotiation completed", config->addr);
+	LOG_DBG("PHY (%d) autonegotiation completed after %d checks", config->addr, attempts);
 
 	return 0;
 }
@@ -156,14 +164,13 @@ static int phy_mc_ksz8081_get_link(const struct device *dev,
 	/* Lock mutex */
 	ret = k_mutex_lock(&data->mutex, K_FOREVER);
 	if (ret) {
-		LOG_ERR("PHY mutex lock error");
+		LOG_ERR("PHY %d mutex lock error", config->addr);
 		return ret;
 	}
 
 	/* Read link state */
 	ret = phy_mc_ksz8081_read(dev, MII_BMSR, &bmsr);
 	if (ret) {
-		LOG_ERR("Error reading phy (%d) basic status register", config->addr);
 		goto done;
 	}
 	state->is_up = bmsr & MII_BMSR_LINK_STATUS;
@@ -175,14 +182,12 @@ static int phy_mc_ksz8081_get_link(const struct device *dev,
 	/* Read currently configured advertising options */
 	ret = phy_mc_ksz8081_read(dev, MII_ANAR, &anar);
 	if (ret) {
-		LOG_ERR("Error reading phy (%d) advertising register", config->addr);
 		goto done;
 	}
 
 	/* Read link partner capability */
 	ret = phy_mc_ksz8081_read(dev, MII_ANLPAR, &anlpar);
 	if (ret) {
-		LOG_ERR("Error reading phy (%d) link partner register", config->addr);
 		goto done;
 	}
 
@@ -211,6 +216,9 @@ result:
 	}
 
 done:
+	if (ret) {
+		LOG_ERR("Failed to get %s state", dev->name);
+	}
 	k_mutex_unlock(&data->mutex);
 
 	return ret;
@@ -366,7 +374,6 @@ static int phy_mc_ksz8081_cfg_link(const struct device *dev, enum phy_link_speed
 
 	ret = phy_mii_set_anar_reg(dev, speeds);
 	if ((ret < 0) && (ret != -EALREADY)) {
-		LOG_ERR("Error setting ANAR register for phy (%d)", config->addr);
 		goto done;
 	}
 
@@ -396,6 +403,9 @@ static int phy_mc_ksz8081_cfg_link(const struct device *dev, enum phy_link_speed
 	}
 
 done:
+	if (ret) {
+		LOG_ERR("Failed to configure %s", dev->name);
+	}
 	/* Unlock mutex */
 	k_mutex_unlock(&data->mutex);
 
