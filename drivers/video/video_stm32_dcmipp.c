@@ -1661,7 +1661,7 @@ static void stm32_dcmipp_isr(const struct device *dev)
 						    vsync_active, 0) ?				\
 						    DCMIPP_VSPOLARITY_HIGH :			\
 						    DCMIPP_VSPOLARITY_LOW,			\
-		.parallel.hs_polarity = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(n, 0, 0),		\
+		.parallel.hs_polarity = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(inst, 0, 0),	        \
 						   hsync_active, 0) ?				\
 						    DCMIPP_HSPOLARITY_HIGH :			\
 						    DCMIPP_HSPOLARITY_LOW,			\
