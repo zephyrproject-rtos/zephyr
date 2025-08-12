@@ -37,6 +37,10 @@ LOG_MODULE_REGISTER(radio_timer_driver);
 BUILD_ASSERT(DT_NODE_HAS_STATUS(DT_NODELABEL(clk_lsi), disabled),
 	     "At the moment, LSI is not supported");
 
+#if (defined(CONFIG_SOC_STM32WB06) || defined(CONFIG_SOC_STM32WB07)) && defined(CONFIG_PM)
+#error "At the moment, PM is not supported for WB06 & WB07"
+#endif /* (CONFIG_SOC_STM32WB06 || CONFIG_SOC_STM32WB07) && CONFIG_PM */
+
 /* Translate STU to MTU and vice versa. It is implemented by using integer operations. */
 uint32_t blue_unit_conversion(uint32_t time, uint32_t period_freq, uint32_t thr);
 static uint64_t announced_cycles;

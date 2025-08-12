@@ -33,7 +33,26 @@
 		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "arm,cortex-m0+";
+			cpu-power-states = <&deepstop>;
 			reg = <0>;
+		};
+
+		power-states {
+			deepstop: state0 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-ram";
+				substate-id = <0>;
+
+				/* One milisecond seems reasonable for now. */
+				min-residency-us = <1000>;
+
+				/**
+				 * tWUDEEPSTOP value from datasheets:
+				 *  STM32WB06/WB07: typ. 110µs
+				 *  STM32WB05/WB09: typ. 170µs
+				 */
+				exit-latency-us = <550>;
+			};
 		};
 	};
 
