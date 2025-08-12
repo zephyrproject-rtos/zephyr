@@ -59,7 +59,19 @@
 		     &ksi2_gpio066 &ksi3_gpio067
 		     &ksi4_gpio068 &ksi5_gpio069
 		     &ksi6_gpio070 &ksi7_gpio071>;
-	pinctrl-names = "default";
+	pinctrl-1 = <&kso0_sleep_gpio041 &kso1_sleep_gpio042
+		     &kso2_sleep_gpio043 &kso3_sleep_gpio044
+		     &kso4_sleep_gpio045 &kso5_sleep_gpio046
+		     &kso6_sleep_gpio047 &kso7_sleep_gpio048
+		     &kso8_sleep_gpio049 &kso9_sleep_gpio050
+		     &kso10_sleep_gpio051 &kso11_sleep_gpio055
+		     &kso12_sleep_gpio056 &kso13_sleep_gpio057
+		     &kso14_sleep_gpio058 &kso15_sleep_gpio059
+		     &ksi0_gpio064 &ksi1_gpio065
+		     &ksi2_gpio066 &ksi3_gpio067
+		     &ksi4_gpio068 &ksi5_gpio069
+		     &ksi6_gpio070 &ksi7_gpio071>;
+	pinctrl-names = "default", "sleep";
 	row-size = <8>;
 	col-size = <16>;
 };
