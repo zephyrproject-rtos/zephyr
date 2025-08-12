@@ -17,6 +17,8 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include "clock_update.h"
 
 LOG_MODULE_REGISTER(spi_siwx91x_gspi, CONFIG_SPI_LOG_LEVEL);
@@ -209,6 +211,7 @@ static void gspi_siwx91x_dma_rx_callback(const struct device *dev, void *user_da
 
 	spi_context_cs_control(instance_ctx, false);
 	spi_context_complete(instance_ctx, spi_dev, status);
+	pm_device_runtime_put_async(spi_dev, K_NO_WAIT);
 }
 
 static int gspi_siwx91x_dma_config(const struct device *dev,
@@ -533,8 +536,15 @@ static int gspi_siwx91x_transceive(const struct device *dev, const struct spi_co
 	struct gspi_siwx91x_data *data = dev->data;
 	int ret = 0;
 
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
 	if (!spi_siwx91x_is_dma_enabled_instance(dev) && asynchronous) {
 		ret = -ENOTSUP;
+		pm_device_runtime_put(dev);
+		return ret;
 	}
 
 	spi_context_lock(&data->ctx, asynchronous, cb, userdata, config);
@@ -559,6 +569,7 @@ static int gspi_siwx91x_transceive(const struct device *dev, const struct spi_co
 		/* Perform synchronous polling transceive */
 		ret = gspi_siwx91x_transceive_polling_sync(dev, &data->ctx);
 		spi_context_unlock_unconditionally(&data->ctx);
+		pm_device_runtime_put(dev);
 	}
 
 	return ret;
@@ -592,33 +603,55 @@ static int gspi_siwx91x_release(const struct device *dev, const struct spi_confi
 	return 0;
 }
 
-static int gspi_siwx91x_init(const struct device *dev)
+static int gspi_siwx91x_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct gspi_siwx91x_config *cfg = dev->config;
 	struct gspi_siwx91x_data *data = dev->data;
 	int ret;
 
-	ret = clock_control_on(cfg->clock_dev, cfg->clock_subsys);
-	if (ret) {
-		return ret;
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		break;
+	case PM_DEVICE_ACTION_TURN_ON:
+		ret = clock_control_on(cfg->clock_dev, cfg->clock_subsys);
+		if (ret < 0 && ret != -EALREADY) {
+			return ret;
+		}
+
+		ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+		if (ret < 0 && ret != -ENOENT) {
+			return ret;
+		}
+
+		ret = spi_context_cs_configure_all(&data->ctx);
+		if (ret) {
+			return ret;
+		}
+
+		spi_context_unlock_unconditionally(&data->ctx);
+
+		cfg->reg->GSPI_BUS_MODE_b.SPI_HIGH_PERFORMANCE_EN = 1;
+		cfg->reg->GSPI_CONFIG1_b.GSPI_MANUAL_CSN = 0;
+		data->ctx.config = NULL;
+		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+		ret = clock_control_off(cfg->clock_dev, cfg->clock_subsys);
+		if (ret < 0 && ret != -EALREADY) {
+			return ret;
+		}
+		break;
+	default:
+		return -ENOTSUP;
 	}
-
-	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
-	if (ret) {
-		return ret;
-	}
-
-	ret = spi_context_cs_configure_all(&data->ctx);
-	if (ret) {
-		return ret;
-	}
-
-	spi_context_unlock_unconditionally(&data->ctx);
-
-	cfg->reg->GSPI_BUS_MODE_b.SPI_HIGH_PERFORMANCE_EN = 1;
-	cfg->reg->GSPI_CONFIG1_b.GSPI_MANUAL_CSN = 0;
 
 	return 0;
+}
+
+static int gspi_siwx91x_init(const struct device *dev)
+{
+	return pm_device_driver_init(dev, gspi_siwx91x_pm_action);
 }
 
 static DEVICE_API(spi, gspi_siwx91x_driver_api) = {
@@ -662,8 +695,9 @@ static DEVICE_API(spi, gspi_siwx91x_driver_api) = {
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
 		.mosi_overrun = (uint8_t)SPI_MOSI_OVERRUN_DT(inst),                                \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, &gspi_siwx91x_init, NULL, &gspi_data_##inst,                   \
-			      &gspi_config_##inst, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,          \
-			      &gspi_siwx91x_driver_api);
+	PM_DEVICE_DT_INST_DEFINE(inst, gspi_siwx91x_pm_action);                                    \
+	DEVICE_DT_INST_DEFINE(inst, &gspi_siwx91x_init, PM_DEVICE_DT_INST_GET(inst),               \
+			      &gspi_data_##inst, &gspi_config_##inst, POST_KERNEL,                 \
+			      CONFIG_SPI_INIT_PRIORITY, &gspi_siwx91x_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SIWX91X_GSPI_INIT)
