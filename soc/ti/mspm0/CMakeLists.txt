@@ -10,3 +10,4 @@ if(CONFIG_SOC_FAMILY_TI_MSPM0)
 endif()
 
 zephyr_sources_ifdef(CONFIG_PM common/power.c)
+zephyr_sources_ifdef(CONFIG_POWEROFF common/poweroff.c)
