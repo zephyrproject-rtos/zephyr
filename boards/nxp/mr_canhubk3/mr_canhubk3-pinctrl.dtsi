@@ -94,9 +94,9 @@
 	qspi0_default: qspi0_default {
 		group1 {
 			pinmux = <(PTD11_QUADSPI_IOFA0_O | PTD11_QUADSPI_IOFA0_I)>,
-				<(PTD7_QUADSPI_IOFA1_O | PTD7_QUADSPI_IOFA1_I)>,
-				<(PTD12_QUADSPI_IOFA2_O | PTD12_QUADSPI_IOFA2_I)>,
-				<(PTC2_QUADSPI_IOFA3_O | PTC2_QUADSPI_IOFA3_I)>;
+				 <(PTD7_QUADSPI_IOFA1_O | PTD7_QUADSPI_IOFA1_I)>,
+				 <(PTD12_QUADSPI_IOFA2_O | PTD12_QUADSPI_IOFA2_I)>,
+				 <(PTC2_QUADSPI_IOFA3_O | PTC2_QUADSPI_IOFA3_I)>;
 			output-enable;
 			input-enable;
 		};
@@ -180,7 +180,7 @@
 	lpi2c0_default: lpi2c0_default {
 		group1 {
 			pinmux = <(PTD13_LPI2C0_SDA_I | PTD13_LPI2C0_SDA_O)>,
-				<(PTD14_LPI2C0_SCL_I | PTD14_LPI2C0_SCL_O)>;
+				 <(PTD14_LPI2C0_SCL_I | PTD14_LPI2C0_SCL_O)>;
 			input-enable;
 			output-enable;
 		};
@@ -189,7 +189,7 @@
 	lpi2c1_default: lpi2c1_default {
 		group1 {
 			pinmux = <(PTD8_LPI2C1_SDA_I | PTD8_LPI2C1_SDA_O)>,
-				<(PTD9_LPI2C1_SCL_I | PTD9_LPI2C1_SCL_O)>;
+				 <(PTD9_LPI2C1_SCL_I | PTD9_LPI2C1_SCL_O)>;
 			input-enable;
 			output-enable;
 		};
@@ -198,7 +198,7 @@
 	lpspi1_default: lpspi1_default {
 		group1 {
 			pinmux = <PTA28_LPSPI1_SCK_O>, <PTA29_LPSPI1_SIN_O>,
-				<PTA21_LPSPI1_PCS0_O>, <PTE4_LPSPI1_PCS1_O>;
+				 <PTA21_LPSPI1_PCS0_O>, <PTE4_LPSPI1_PCS1_O>;
 			output-enable;
 		};
 		group2 {
@@ -210,7 +210,7 @@
 	lpspi2_default: lpspi2_default {
 		group1 {
 			pinmux = <PTB29_LPSPI2_SCK_O>, <PTB28_LPSPI2_SIN_O>,
-				<PTB25_LPSPI2_PCS0_O>, <PTC19_LPSPI2_PCS1_O>;
+				 <PTB25_LPSPI2_PCS0_O>, <PTC19_LPSPI2_PCS1_O>;
 			output-enable;
 		};
 		group2 {
@@ -222,7 +222,7 @@
 	lpspi3_default: lpspi3_default {
 		group1 {
 			pinmux = <PTD1_LPSPI3_SCK_O>, <PTE10_LPSPI3_SIN_O>,
-				<PTD17_LPSPI3_PCS0_O>;
+				 <PTD17_LPSPI3_PCS0_O>;
 			output-enable;
 		};
 		group2 {
@@ -234,7 +234,7 @@
 	lpspi4_default: lpspi4_default {
 		group1 {
 			pinmux = <PTB10_LPSPI4_SCK_O>, <PTB11_LPSPI4_SIN_O>,
-				<PTB8_LPSPI4_PCS0_O>;
+				 <PTB8_LPSPI4_PCS0_O>;
 			output-enable;
 		};
 		group2 {
@@ -257,16 +257,16 @@
 	emac0_default: emac0_default {
 		group1 {
 			pinmux = <PTC0_EMAC_MII_RMII_RXD0>,
-				<PTC1_EMAC_MII_RMII_RXD1>,
-				<PTC14_EMAC_MII_RMII_RX_ER>,
-				<PTC15_EMAC_MII_RMII_RX_DV>,
-				<PTD6_EMAC_MII_RMII_TX_CLK>;
+				 <PTC1_EMAC_MII_RMII_RXD1>,
+				 <PTC14_EMAC_MII_RMII_RX_ER>,
+				 <PTC15_EMAC_MII_RMII_RX_DV>,
+				 <PTD6_EMAC_MII_RMII_TX_CLK>;
 			input-enable;
 		};
 		group2 {
 			pinmux = <PTB5_EMAC_MII_RMII_TXD0>,
-				<PTB4_EMAC_MII_RMII_TXD1>,
-				<PTE9_EMAC_MII_RMII_TX_EN>;
+				 <PTB4_EMAC_MII_RMII_TXD1>,
+				 <PTE9_EMAC_MII_RMII_TX_EN>;
 		};
 	};
 
@@ -285,9 +285,9 @@
 	emios0_default: emios0_default {
 		group1 {
 			pinmux = <PTB12_EMIOS_0_CH0_X_O>, <PTB13_EMIOS_0_CH1_G_O>,
-				<PTB14_EMIOS_0_CH2_G_O>, <PTB15_EMIOS_0_CH3_G_O>,
-				<PTB16_EMIOS_0_CH4_G_O>, <PTB17_EMIOS_0_CH5_G_O>,
-				<PTE14_EMIOS_0_CH19_Y_O>;
+				 <PTB14_EMIOS_0_CH2_G_O>, <PTB15_EMIOS_0_CH3_G_O>,
+				 <PTB16_EMIOS_0_CH4_G_O>, <PTB17_EMIOS_0_CH5_G_O>,
+				 <PTE14_EMIOS_0_CH19_Y_O>;
 			output-enable;
 		};
 	};
@@ -295,7 +295,7 @@
 	emios1_default: emios1_default {
 		group1 {
 			pinmux = <PTA27_EMIOS_1_CH10_H_O>,
-					<PTE12_EMIOS_1_CH5_H_O>;
+				 <PTE12_EMIOS_1_CH5_H_O>;
 			output-enable;
 		};
 	};
@@ -310,9 +310,9 @@
 	qdec_s32: qdec_s32 {
 		group1 {
 			pinmux = <PTB2_TRGMUX_IN3>,
-				<PTB3_TRGMUX_IN2>,
-				<TRGMUX_INT_OUT37_EMIOS_0_CH6_G>,
-				<TRGMUX_INT_OUT38_EMIOS_0_CH7_G>;
+				 <PTB3_TRGMUX_IN2>,
+				 <TRGMUX_INT_OUT37_EMIOS_0_CH6_G>,
+				 <TRGMUX_INT_OUT38_EMIOS_0_CH7_G>;
 			input-enable;
 		};
 	};

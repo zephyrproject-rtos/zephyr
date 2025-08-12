@@ -6,7 +6,7 @@
 
 #include <zephyr/dt-bindings/display/panel.h>
 
-/{
+/ {
 	chosen {
 		zephyr,display = &zephyr_lcdif;
 		zephyr,touch = &ft5336_rk043fn02h_ct;
@@ -39,7 +39,7 @@
 		vsync-len = <10>;
 		vfront-porch = <4>;
 		vback-porch = <2>;
-		de-active= <1>;
+		de-active = <1>;
 		pixelclk-active = <1>;
 		hsync-active = <0>;
 		vsync-active = <0>;

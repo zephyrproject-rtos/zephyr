@@ -39,7 +39,7 @@
 
 	aliases {
 		led0 = &user_led;
-		sw0  = &user_button;
+		sw0 = &user_button;
 	};
 };
 

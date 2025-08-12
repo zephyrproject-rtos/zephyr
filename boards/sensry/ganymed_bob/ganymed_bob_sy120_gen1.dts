@@ -16,7 +16,6 @@
 
 		zephyr,console = &uart0;
 	};
-
 };
 
 &mdio0 {

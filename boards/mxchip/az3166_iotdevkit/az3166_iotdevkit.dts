@@ -90,7 +90,6 @@
 			zephyr,code = <INPUT_KEY_B>;
 		};
 	};
-
 };
 
 &clk_lsi {
@@ -125,7 +124,6 @@
 	current-speed = <115200>;
 	status = "okay";
 };
-
 
 &usart6 {
 	pinctrl-0 = <&usart6_tx_pa11 &usart6_rx_pa12>;

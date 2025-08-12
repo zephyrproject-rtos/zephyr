@@ -6,14 +6,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <nxp/kinetis/MK64FN1M0VDC12-pinctrl.h>
 
 &pinctrl {
 	ftm3_default: ftm3_default {
 		group0 {
 			pinmux = <FTM3_CH4_PTC8>,
-				<FTM3_CH0_PTD0>;
+				 <FTM3_CH0_PTD0>;
 			drive-strength = "low";
 			slew-rate = "fast";
 		};
@@ -22,7 +21,7 @@
 	i2c0_default: i2c0_default {
 		group0 {
 			pinmux = <I2C0_SCL_PTB0>,
-				<I2C0_SDA_PTB1>;
+				 <I2C0_SDA_PTB1>;
 			drive-strength = "low";
 			drive-open-drain;
 			slew-rate = "fast";
@@ -32,7 +31,7 @@
 	i2c1_default: i2c1_default {
 		group0 {
 			pinmux = <I2C1_SCL_PTC10>,
-				<I2C1_SDA_PTC11>;
+				 <I2C1_SDA_PTC11>;
 			drive-strength = "low";
 			drive-open-drain;
 			slew-rate = "fast";
@@ -42,7 +41,7 @@
 	uart0_default: uart0_default {
 		group0 {
 			pinmux = <UART0_RX_PTB16>,
-				<UART0_TX_PTB17>;
+				 <UART0_TX_PTB17>;
 			drive-strength = "low";
 			slew-rate = "fast";
 		};
@@ -51,10 +50,9 @@
 	uart4_default: uart4_default {
 		group0 {
 			pinmux = <UART4_RX_PTE25>,
-				<UART4_TX_PTE24>;
+				 <UART4_TX_PTE24>;
 			drive-strength = "low";
 			slew-rate = "fast";
 		};
 	};
-
 };

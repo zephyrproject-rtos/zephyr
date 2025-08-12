@@ -81,5 +81,4 @@
 			zephyr,code = <INPUT_KEY_3>;
 		};
 	};
-
 };

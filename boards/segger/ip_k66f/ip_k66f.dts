@@ -144,14 +144,11 @@
 		dsa-master-port = <&enet_mac>;
 		dsa-slave-ports = <3>;
 
-		lan3: lan_3 {
-		};
+		lan3: lan_3 {};
 
-		lan2: lan_2 {
-		};
+		lan2: lan_2 {};
 
-		lan1: lan_1 {
-		};
+		lan1: lan_1 {};
 	};
 };
 

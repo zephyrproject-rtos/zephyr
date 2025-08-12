@@ -109,8 +109,7 @@
 		     &kso02_gp17 /* KSO02 PIN17 */
 		     &kso03_gp16 /* KSO03 PIN16 */
 		     &kso04_gp15 /* KSO04 PIN15 */
-		     &kso05_gp14 /* KSO05 PIN14 */
-		     >;
+		     &kso05_gp14 /* KSO05 PIN14 */ >;
 	pinctrl-names = "default";
 	row-size = <8>;
 	col-size = <6>;

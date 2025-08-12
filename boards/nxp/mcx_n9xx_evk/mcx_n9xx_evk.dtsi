@@ -9,7 +9,7 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	aliases{
+	aliases {
 		led0 = &red_led;
 		led1 = &green_led;
 		led2 = &blue_led;
@@ -62,9 +62,9 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<9  0 &gpio4 6 0>,	/* Pin 9, LCD touch INT */
-				<10  0 &gpio1 11 0>,	/* Pin 10, LCD backlight control */
-				<11  0 &gpio4 7 0>;	/* Pin 11, LCD and touch reset */
+		gpio-map = <9 0 &gpio4 6 0>, /* Pin 9, LCD touch INT */
+			   <10 0 &gpio1 11 0>, /* Pin 10, LCD backlight control */
+			   <11 0 &gpio4 7 0>; /* Pin 11, LCD and touch reset */
 	};
 };
 

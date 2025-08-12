@@ -228,7 +228,7 @@ zephyr_i2c: &i2c0 {
 		spi-max-frequency = <6400000>;
 		chain-length = <1>;
 		spi-cpha;
-		spi-one-frame = <0xf0>;  /* 625 ns high and 625 ns low */
+		spi-one-frame = <0xf0>; /* 625 ns high and 625 ns low */
 		spi-zero-frame = <0xc0>; /* 312.5 ns high and 937.5 ns low */
 		color-mapping = <LED_COLOR_ID_GREEN
 				 LED_COLOR_ID_RED

@@ -38,7 +38,6 @@
 	aliases {
 		led0 = &green_led_1;
 		led1 = &red_led_2;
-
 	};
 };
 

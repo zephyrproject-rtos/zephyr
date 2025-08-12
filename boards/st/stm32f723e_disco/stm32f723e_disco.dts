@@ -122,8 +122,8 @@
 &quadspi {
 	pinctrl-names = "default";
 	pinctrl-0 = <&quadspi_clk_pb2 &quadspi_bk1_ncs_pb6
-		&quadspi_bk1_io0_pc9 &quadspi_bk1_io1_pc10
-		&quadspi_bk1_io2_pe2 &quadspi_bk1_io3_pd13>;
+		     &quadspi_bk1_io0_pc9 &quadspi_bk1_io1_pc10
+		     &quadspi_bk1_io2_pe2 &quadspi_bk1_io3_pd13>;
 	flash-id = <1>;
 	status = "okay";
 

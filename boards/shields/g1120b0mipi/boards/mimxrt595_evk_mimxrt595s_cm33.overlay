@@ -9,7 +9,7 @@
  */
 &suspend {
 	deep-sleep-config = <0xC800>,
-				<0x80030004>,
-				<0xFFFFFFFF>,
-				<0>;
+			    <0x80030004>,
+			    <0xFFFFFFFF>,
+			    <0>;
 };

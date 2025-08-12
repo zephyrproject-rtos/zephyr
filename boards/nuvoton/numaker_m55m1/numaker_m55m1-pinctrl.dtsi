@@ -48,7 +48,7 @@
 			pinmux = <PE10MFP_EMAC0_RMII_TXD0>,
 				 <PE11MFP_EMAC0_RMII_TXD1>,
 				 <PE12MFP_EMAC0_RMII_TXEN>;
-				 slew-rate = "fast";
+			slew-rate = "fast";
 		};
 	};
 

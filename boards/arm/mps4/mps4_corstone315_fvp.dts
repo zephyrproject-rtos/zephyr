@@ -59,25 +59,25 @@
 	/* We utilize the secure addresses, if you subtract 0x10000000
 	 * you'll get the non-secure alias
 	 */
-	itcm: itcm@10000000 {	/* alias @ 0x0 */
+	itcm: itcm@10000000 { /* alias @ 0x0 */
 		compatible = "zephyr,memory-region";
 		reg = <0x10000000 DT_SIZE_K(32)>;
 		zephyr,memory-region = "ITCM";
 	};
 
-	sram: sram@12000000 {	/* alias @ 0x01000000 */
+	sram: sram@12000000 { /* alias @ 0x01000000 */
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x12000000 DT_SIZE_M(2)>;
 		zephyr,memory-region = "SRAM";
 	};
 
-	dtcm: dtcm@30000000 {	/* alias @ 0x20000000 */
+	dtcm: dtcm@30000000 { /* alias @ 0x20000000 */
 		compatible = "zephyr,memory-region";
 		reg = <0x30000000 DT_SIZE_K(32)>;
 		zephyr,memory-region = "DTCM";
 	};
 
-	isram: sram@31000000 {	/* alias @ 0x21000000 */
+	isram: sram@31000000 { /* alias @ 0x21000000 */
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x31000000 DT_SIZE_M(4)>;
 		zephyr,memory-region = "ISRAM";

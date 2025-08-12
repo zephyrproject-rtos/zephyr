@@ -19,8 +19,8 @@
 			/* MOSI MISO RSPCK SSL */
 			psels = <RA_PSEL(RA_PSEL_SPI, 4, 11)>,
 				<RA_PSEL(RA_PSEL_SPI, 4, 10)>,
-				<RA_PSEL(RA_PSEL_SPI, 1,  2)>,
-				<RA_PSEL(RA_PSEL_SPI, 1,  3)>;
+				<RA_PSEL(RA_PSEL_SPI, 1, 2)>,
+				<RA_PSEL(RA_PSEL_SPI, 1, 3)>;
 		};
 	};
 };

@@ -170,7 +170,7 @@
 };
 
 &trng {
-	status ="okay";
+	status = "okay";
 };
 
 &flash1 {

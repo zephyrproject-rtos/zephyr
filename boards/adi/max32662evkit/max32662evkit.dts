@@ -139,11 +139,11 @@
 };
 
 &spi1a_mosi_p0_8 {
-	power-source=<MAX32_VSEL_VDDIOH>;
+	power-source = <MAX32_VSEL_VDDIOH>;
 };
 
 &spi1a_sck_p0_17 {
-	power-source=<MAX32_VSEL_VDDIOH>;
+	power-source = <MAX32_VSEL_VDDIOH>;
 };
 
 &spi1 {

@@ -16,7 +16,7 @@
 / {
 	model = "Infineon XMC4500 Relax Kit";
 	compatible = "infineon,xm4500-relax-kit", "infineon,xmc4500",
-						"infineon,xmc4xxx";
+		     "infineon,xmc4xxx";
 
 	aliases {
 		led0 = &led1;

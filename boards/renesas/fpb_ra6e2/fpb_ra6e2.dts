@@ -128,7 +128,7 @@
 };
 
 &trng {
-	status ="okay";
+	status = "okay";
 };
 
 &wdt {

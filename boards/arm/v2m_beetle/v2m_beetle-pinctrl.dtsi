@@ -42,7 +42,6 @@
 	/omit-if-no-ref/ spi1_default: spi1_default {
 		group1 {
 			pinmux = <SPI1_SCK_EXP>, <SPI1_SS_EXP>, <SPI0_MOSI_EXP>;
-
 		};
 		group2 {
 			pinmux = <SPI1_MISO_EXP>;

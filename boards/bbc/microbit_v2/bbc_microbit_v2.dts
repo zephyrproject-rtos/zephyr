@@ -66,7 +66,7 @@
 		col-gpios = <&gpio0 28 GPIO_ACTIVE_LOW>,
 			    <&gpio0 11 GPIO_ACTIVE_LOW>,
 			    <&gpio0 31 GPIO_ACTIVE_LOW>,
-			    <&gpio1  5 GPIO_ACTIVE_LOW>,
+			    <&gpio1 5 GPIO_ACTIVE_LOW>,
 			    <&gpio0 30 GPIO_ACTIVE_LOW>;
 		refresh-frequency = <50>;
 		timer = <&timer4>;
@@ -79,25 +79,25 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <0 0 &gpio0 2 0>,	/* P0 */
-			   <1 0 &gpio0 3 0>,	/* P1 */
-			   <2 0 &gpio0 4 0>,	/* P2 */
-			   <3 0 &gpio0 31 0>,	/* P3 */
-			   <4 0 &gpio0 28 0>,	/* P4 */
-			   <5 0 &gpio0 14 0>,	/* P5 */
-			   <6 0 &gpio1 5 0>,	/* P6 */
-			   <7 0 &gpio0 11 0>,	/* P7 */
-			   <8 0 &gpio0 10 0>,	/* P8 */
-			   <9 0 &gpio0 9 0>,	/* P9 */
-			   <10 0 &gpio0 30 0>,	/* P10 */
-			   <11 0 &gpio0 23 0>,	/* P11 */
-			   <12 0 &gpio0 12 0>,	/* P12 */
-			   <13 0 &gpio0 17 0>,	/* P13 */
-			   <14 0 &gpio0 1 0>,	/* P14 */
-			   <15 0 &gpio0 13 0>,	/* P15 */
-			   <16 0 &gpio1 2 0>,	/* P16 */
-			   <19 0 &gpio0 26 0>,	/* P19 */
-			   <20 0 &gpio1 0 0>;	/* P20 */
+		gpio-map = <0 0 &gpio0 2 0>, /* P0 */
+			   <1 0 &gpio0 3 0>, /* P1 */
+			   <2 0 &gpio0 4 0>, /* P2 */
+			   <3 0 &gpio0 31 0>, /* P3 */
+			   <4 0 &gpio0 28 0>, /* P4 */
+			   <5 0 &gpio0 14 0>, /* P5 */
+			   <6 0 &gpio1 5 0>, /* P6 */
+			   <7 0 &gpio0 11 0>, /* P7 */
+			   <8 0 &gpio0 10 0>, /* P8 */
+			   <9 0 &gpio0 9 0>, /* P9 */
+			   <10 0 &gpio0 30 0>, /* P10 */
+			   <11 0 &gpio0 23 0>, /* P11 */
+			   <12 0 &gpio0 12 0>, /* P12 */
+			   <13 0 &gpio0 17 0>, /* P13 */
+			   <14 0 &gpio0 1 0>, /* P14 */
+			   <15 0 &gpio0 13 0>, /* P15 */
+			   <16 0 &gpio1 2 0>, /* P16 */
+			   <19 0 &gpio0 26 0>, /* P19 */
+			   <20 0 &gpio1 0 0>; /* P20 */
 	};
 };
 
@@ -144,7 +144,7 @@
 		compatible = "st,lis2mdl", "st,lsm303agr-magn";
 		status = "okay";
 		reg = <0x1e>;
-		irq-gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;	/* A3 */
+		irq-gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>; /* A3 */
 	};
 
 	lsm303agr_accel: lsm303agr-accel@19 {

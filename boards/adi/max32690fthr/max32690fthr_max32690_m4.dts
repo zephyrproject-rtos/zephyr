@@ -58,34 +58,34 @@
 		led2 = &blue_led;
 		sw0 = &pb1;
 		sw1 = &pb2;
-	 };
+	};
 
 	feather_header: feather_connector {
 		compatible = "adafruit-feather-header";
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <0 0 &gpio3 0 0>,	/* A0 */
-			   <1 0 &gpio3 1 0>,	/* A1 */
-			   <2 0 &gpio3 4 0>,	/* A2 */
-			   <3 0 &gpio0 9 0>,	/* A3 */
-			   <4 0 &gpio0 10 0>,	/* A4 */
-			   <5 0 &gpio0 7 0>,	/* A5 */
-			   <6 0 &gpio2 29 0>,	/* SCK */
-			   <7 0 &gpio2 28 0>,	/* MOSI */
-			   <8 0 &gpio2 27 0>,	/* MISO */
-			   <9 0 &gpio1 9 0>,	/* RXD */
-			   <10 0 &gpio1 10 0>,	/* TXD */
+		gpio-map = <0 0 &gpio3 0 0>, /* A0 */
+			   <1 0 &gpio3 1 0>, /* A1 */
+			   <2 0 &gpio3 4 0>, /* A2 */
+			   <3 0 &gpio0 9 0>, /* A3 */
+			   <4 0 &gpio0 10 0>, /* A4 */
+			   <5 0 &gpio0 7 0>, /* A5 */
+			   <6 0 &gpio2 29 0>, /* SCK */
+			   <7 0 &gpio2 28 0>, /* MOSI */
+			   <8 0 &gpio2 27 0>, /* MISO */
+			   <9 0 &gpio1 9 0>, /* RXD */
+			   <10 0 &gpio1 10 0>, /* TXD */
 			   /* 11 (D2) not connected */
-			   <12 0 &gpio2 7 0>,	/* SDA */
-			   <13 0 &gpio2 8 0>,	/* SCL */
-			   <14 0 &gpio1 7 0>,	/* D5 */
-			   <15 0 &gpio1 8 0>,	/* D6 */
-			   <16 0 &gpio2 26 0>,	/* D9 */
-			   <17 0 &gpio0 23 0>,	/* D10 */
-			   <18 0 &gpio1 12 0>,	/* D11 */
-			   <19 0 &gpio1 11 0>,	/* D12 */
-			   <20 0 &gpio0 8 0>;	/* D13 */
+			   <12 0 &gpio2 7 0>, /* SDA */
+			   <13 0 &gpio2 8 0>, /* SCL */
+			   <14 0 &gpio1 7 0>, /* D5 */
+			   <15 0 &gpio1 8 0>, /* D6 */
+			   <16 0 &gpio2 26 0>, /* D9 */
+			   <17 0 &gpio0 23 0>, /* D10 */
+			   <18 0 &gpio1 12 0>, /* D11 */
+			   <19 0 &gpio1 11 0>, /* D12 */
+			   <20 0 &gpio0 8 0>; /* D13 */
 	};
 };
 

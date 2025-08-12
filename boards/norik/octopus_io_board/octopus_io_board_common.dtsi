@@ -38,7 +38,7 @@
 
 &spi3 {
 	status = "okay";
-	cs-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>,<&gpio0 5 GPIO_ACTIVE_LOW>;
+	cs-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>, <&gpio0 5 GPIO_ACTIVE_LOW>;
 
 	adxl362: adxl362@0 {
 		compatible = "adi,adxl362";

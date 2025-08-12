@@ -55,10 +55,10 @@
 	};
 
 	sdram1: sdram@68000000 {
-		    compatible = "zephyr,memory-region", "mmio-sram";
-		    reg = <0x68000000 DT_SIZE_M(32)>;
-		    zephyr,memory-region = "SDRAM";
-		    status = "okay";
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x68000000 DT_SIZE_M(32)>;
+		zephyr,memory-region = "SDRAM";
+		status = "okay";
 	};
 
 	aliases {
@@ -176,27 +176,27 @@
 };
 
 &sdram {
-	    pinctrl-0 = <&sdram_default>;
-	    pinctrl-names = "default";
-	    status = "okay";
-	    auto-refresh-interval = <SDRAM_AUTO_REFREDSH_INTERVEL_10CYCLES>;
-	    auto-refresh-count = <SDRAM_AUTO_REFREDSH_COUNT_8TIMES>;
-	    precharge-cycle-count = <SDRAM_AUTO_PRECHARGE_CYCLE_3CYCLES>;
-	    multiplex-addr-shift = "9-bit";
-	    edian-mode = "little-endian";
-	    continuous-access;
-	    bus-width = "16-bit";
+	pinctrl-0 = <&sdram_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	auto-refresh-interval = <SDRAM_AUTO_REFREDSH_INTERVEL_10CYCLES>;
+	auto-refresh-count = <SDRAM_AUTO_REFREDSH_COUNT_8TIMES>;
+	precharge-cycle-count = <SDRAM_AUTO_PRECHARGE_CYCLE_3CYCLES>;
+	multiplex-addr-shift = "9-bit";
+	edian-mode = "little-endian";
+	continuous-access;
+	bus-width = "16-bit";
 
-	    bank@0 {
-			reg = <0>;
-			renesas,ra-sdram-timing = <SDRAM_TRAS_4CYCLES
-			SDRAM_TRCD_2CYCLES
-			SDRAM_TRP_2CYCLES
-			SDRAM_TWR_2CYCLES
-			SDRAM_TCL_3CYCLES
-			937
-			SDRAM_TREFW_8CYCLES>;
-	    };
+	bank@0 {
+		reg = <0>;
+		renesas,ra-sdram-timing = <SDRAM_TRAS_4CYCLES
+					   SDRAM_TRCD_2CYCLES
+					   SDRAM_TRP_2CYCLES
+					   SDRAM_TWR_2CYCLES
+					   SDRAM_TCL_3CYCLES
+					   937
+					   SDRAM_TREFW_8CYCLES>;
+	};
 };
 
 &sdhc1 {

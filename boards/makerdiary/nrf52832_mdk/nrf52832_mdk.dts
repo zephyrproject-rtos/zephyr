@@ -73,8 +73,8 @@
 		led1 = &led1_red;
 		led2 = &led2_blue;
 		led0-green = &led0_green;
-		led1-red   = &led1_red;
-		led2-blue  = &led2_blue;
+		led1-red = &led1_red;
+		led2-blue = &led2_blue;
 		pwm-led0 = &pwm_led0_green;
 		pwm-led1 = &pwm_led1_red;
 		pwm-led2 = &pwm_led2_blue;
@@ -83,7 +83,6 @@
 		blue-pwm-led = &pwm_led2_blue;
 		watchdog0 = &wdt0;
 	};
-
 };
 
 &reg {

@@ -199,9 +199,9 @@
 	cs-gpios = <&gpiob 12 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	dmas = <&dmamux1 2 13 (STM32_DMA_MEMORY_TO_PERIPH | STM32_DMA_MEM_INC |
 		       STM32_DMA_MEM_8BITS | STM32_DMA_PERIPH_8BITS)>,
-		       <&dmamux1 3 12 (STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_MEM_INC |
+	       <&dmamux1 3 12 (STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_MEM_INC |
 		       STM32_DMA_MEM_8BITS | STM32_DMA_PERIPH_8BITS)>;
-		dma-names = "tx", "rx";
+	dma-names = "tx", "rx";
 	status = "okay";
 
 	adin1110: adin1110@0 {
@@ -215,7 +215,7 @@
 		spi-oa-protection;
 
 		port1 {
-			local-mac-address = [ 00 E0 22 FE DA C8 ];
+			local-mac-address = [00 E0 22 FE DA C8];
 		};
 		mdio {
 			compatible = "adi,adin2111-mdio";
@@ -276,7 +276,7 @@ zephyr_udc0: &usbotg_fs {
 		ospi-max-frequency = <DT_FREQ_M(26)>; /* for Voltage Range 2 */
 		spi-bus-width = <OSPI_QUAD_MODE>;
 		data-rate = <OSPI_STR_TRANSFER>;
-		writeoc="PP_1_4_4";
+		writeoc = "PP_1_4_4";
 
 		partitions {
 			compatible = "fixed-partitions";

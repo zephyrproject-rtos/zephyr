@@ -14,8 +14,8 @@
 		group2 {
 			/* rx, rts, cts */
 			psels = <RA_PSEL(RA_PSEL_SCI_0, 6, 10)>,
-					<RA_PSEL(RA_PSEL_SCI_0, 6, 12)>,
-					<RA_PSEL(RA_PSEL_SCI_0, 6, 13)>;
+				<RA_PSEL(RA_PSEL_SCI_0, 6, 12)>,
+				<RA_PSEL(RA_PSEL_SCI_0, 6, 13)>;
 		};
 	};
 };

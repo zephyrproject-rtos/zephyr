@@ -6,7 +6,7 @@
 
 #include <zephyr/dt-bindings/display/panel.h>
 
-/{
+/ {
 	chosen {
 		zephyr,display = &zephyr_lcdif;
 	};

@@ -22,7 +22,6 @@
 		zephyr,flash = &flash0;
 	};
 
-
 	leds: leds {
 		compatible = "gpio-leds";
 

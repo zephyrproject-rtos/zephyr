@@ -236,7 +236,6 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c1>;
 	pinctrl-names = "default";
-
 };
 
 &lpi2c2 {
@@ -261,7 +260,6 @@
 		status = "disabled";
 		reg = <0x10>;
 	};
-
 };
 
 &lpuart7 {
@@ -318,7 +316,6 @@
 	};
 };
 
-
 &lpspi3 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_lpspi3>;
@@ -345,42 +342,42 @@
 	nxp,prescaler = <64>;
 };
 
-&flexpwm2_pwm2	{
+&flexpwm2_pwm2 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_fmu_ch3>;
 	pinctrl-names = "default";
 	nxp,prescaler = <64>;
 };
 
-&flexpwm2_pwm3	{
+&flexpwm2_pwm3 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_fmu_ch4>;
 	pinctrl-names = "default";
 	nxp,prescaler = <64>;
 };
 
-&flexpwm3_pwm2	{
+&flexpwm3_pwm2 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_fmu_ch5>;
 	pinctrl-names = "default";
 	nxp,prescaler = <64>;
 };
 
-&flexpwm3_pwm0	{
+&flexpwm3_pwm0 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_fmu_ch6>;
 	pinctrl-names = "default";
 	nxp,prescaler = <64>;
 };
 
-&flexpwm4_pwm2	{
+&flexpwm4_pwm2 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_fmu_ch7>;
 	pinctrl-names = "default";
 	nxp,prescaler = <64>;
 };
 
-&flexpwm4_pwm0	{
+&flexpwm4_pwm0 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_fmu_ch8>;
 	pinctrl-names = "default";

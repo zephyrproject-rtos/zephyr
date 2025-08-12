@@ -28,7 +28,6 @@
 			label = "User LED2";
 		};
 	};
-
 };
 
 &arduino_spi {

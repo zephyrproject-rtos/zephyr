@@ -6,7 +6,7 @@
 
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
 
-/{
+/ {
 	chosen {
 		zephyr,display = &st7796s;
 		zephyr,touch = &gt911_lcd_par_s035;

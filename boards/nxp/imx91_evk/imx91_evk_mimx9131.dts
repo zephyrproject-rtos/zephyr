@@ -50,19 +50,18 @@
 	keys {
 		compatible = "gpio-keys";
 
-		btn_1: btn_1{
+		btn_1: btn_1 {
 			label = "BTN1";
 			gpios = <&gpio2 23 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
 
-		btn_2: btn_2{
+		btn_2: btn_2 {
 			label = "BTN2";
 			gpios = <&gpio2 24 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
-
 };
 
 &lpuart1 {
@@ -72,7 +71,7 @@
 	pinctrl-names = "default";
 };
 
-&gpio2{
+&gpio2 {
 	status = "okay";
 };
 

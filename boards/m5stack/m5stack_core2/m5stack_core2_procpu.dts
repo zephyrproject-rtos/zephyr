@@ -212,7 +212,7 @@
 	dma-enabled;
 	clock-frequency = <20000000>;
 	cs-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>,
-			   <&gpio0 4 GPIO_ACTIVE_LOW>;
+		   <&gpio0 4 GPIO_ACTIVE_LOW>;
 
 	sd0: sd@1 {
 		compatible = "zephyr,sdhc-spi-slot";
@@ -224,10 +224,8 @@
 			disk-name = "SD";
 			status = "okay";
 		};
-
 	};
 };
-
 
 &timer0 {
 	status = "okay";

@@ -137,9 +137,9 @@
 };
 
 &eeprom {
-		status = "okay";
+	status = "okay";
 };
 
 &iwdg {
-		status = "okay";
+	status = "okay";
 };

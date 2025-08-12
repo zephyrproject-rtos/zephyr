@@ -14,9 +14,9 @@
 
 &flash0 {
 	/*
-	* Disable the on-board flash until the jedec,spi-nor driver supports
-	* multiple instances.
-	*/
+	 * Disable the on-board flash until the jedec,spi-nor driver supports
+	 * multiple instances.
+	 */
 	status = "disabled";
 };
 
