@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-source "${ZEPHYR_BASE}/share/sysbuild/Kconfig"
+source "$(ZEPHYR_BASE)/share/sysbuild/Kconfig"
 
 config REMOTE_BOARD
 	string "The board used for remote target"
