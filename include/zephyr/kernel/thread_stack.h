@@ -113,14 +113,49 @@ static inline char *z_stack_ptr_align(char *ptr)
  */
 
 #ifdef CONFIG_HW_SHADOW_STACK
+/**
+ * @typedef k_thread_hw_shadow_stack_t
+ * @brief Typedef of arch_thread_hw_shadow_stack_t
+ *
+ * This is an opaque type that represents a hardware shadow stack.
+ * The architecture implementation defines the actual type.
+ */
 #define k_thread_hw_shadow_stack_t arch_thread_hw_shadow_stack_t
 
+/**
+ * @brief Calculate the size of a hardware shadow stack
+ *
+ * This macro calculates the size to be allocated for a hardware shadow
+ * stack. It accepts the indicated "size" as a parameter and pads some
+ * extra bytes (e.g. for alignment).
+ *
+ * @param size Size of the shadow stack memory region
+ */
 #define K_THREAD_HW_SHADOW_STACK_SIZE(size_) \
 	ARCH_THREAD_HW_SHADOW_STACK_SIZE(size_)
 
+/**
+ * @brief Declare a hardware shadow stack
+ *
+ * This macro declares the symbol of a hardware shadow stack defined
+ * elsewhere in the current scope.
+ *
+ * @param sym Hardware shadow stack symbol name
+ * @param size Size of the shadow stack memory region
+ */
 #define K_KERNEL_HW_SHADOW_STACK_DECLARE(sym, size) \
 	ARCH_THREAD_HW_SHADOW_STACK_DECLARE(__ ## sym ## _shstk, size)
 
+/**
+ * @brief Declare a hardware shadow stack array
+ *
+ * This macro declares the symbol of a hardware shadow stack array defined
+ * elsewhere in the current scope.
+ *
+ * @param sym Hardware shadow stack array symbol name
+ * @param nmemb Number of stacks defined
+ * @param size Size of the shadow stack memory region
+ */
 #define K_KERNEL_HW_SHADOW_STACK_ARRAY_DECLARE(sym, nmemb, size) \
 	ARCH_THREAD_HW_SHADOW_STACK_ARRAY_DECLARE(__ ## sym ## _shstk_arr, \
 						  nmemb, size)
@@ -131,6 +166,18 @@ struct _stack_to_hw_shadow_stack {
 	size_t size;
 };
 
+
+/**
+ * @brief Define a hardware shadow stack
+ *
+ * This macro defines a hardware shadow stack. Note that an application
+ * usually doesn't have to define a hardware shadow stack directly,
+ * as it is automatically defined by the kernel when a thread stack is
+ * defined with K_THREAD_STACK_DEFINE().
+ *
+ * @param sym Hardware shadow stack symbol name
+ * @param size Size of the shadow stack memory region
+ */
 #define K_THREAD_HW_SHADOW_STACK_DEFINE(sym, size_) \
 	ARCH_THREAD_HW_SHADOW_STACK_DEFINE(__ ## sym ## _shstk, size_); \
 	static const STRUCT_SECTION_ITERABLE(_stack_to_hw_shadow_stack, \
@@ -148,6 +195,18 @@ struct _stack_to_hw_shadow_stack_arr {
 	size_t nmemb;
 };
 
+/**
+ * @brief Define a hardware shadow stack array
+ *
+ * This macro defines a hardware shadow stack array. Note that an application
+ * usually doesn't have to define a hardware shadow stack array directly,
+ * as it is automatically defined by the kernel when a thread stack array is
+ * defined with K_THREAD_STACK_ARRAY_DEFINE().
+ *
+ * @param sym Hardware shadow stack array symbol name
+ * @param nmemb Number of stacks defined
+ * @param size Size of the shadow stack memory region
+ */
 #define K_THREAD_HW_SHADOW_STACK_ARRAY_DEFINE(sym, nmemb_, size_) \
 	ARCH_THREAD_HW_SHADOW_STACK_ARRAY_DEFINE(__ ## sym ## _shstk_arr, nmemb_, \
 			K_THREAD_HW_SHADOW_STACK_SIZE(size_)); \
@@ -160,6 +219,14 @@ struct _stack_to_hw_shadow_stack_arr {
 		.shstk_size = K_THREAD_HW_SHADOW_STACK_SIZE(size_), \
 	}
 
+/**
+ * @brief Attach a hardware shadow stack to a thread
+ *
+ * This macro attaches a hardware shadow stack to a thread. Note that an
+ * application usually doesn't have to attach a hardware shadow stack
+ * directly, as it is automatically attached by the kernel when a thread
+ * is created.
+ */
 #define k_thread_hw_shadow_stack_attach arch_thread_hw_shadow_stack_attach
 
 struct _thread_hw_shadow_stack_static {
@@ -168,6 +235,18 @@ struct _thread_hw_shadow_stack_static {
 	size_t size;
 };
 
+/**
+ * @brief Attach a hardware shadow stack to a thread
+ *
+ * This macro attaches a hardware shadow stack to a thread. Note that an
+ * application usually doesn't have to attach a hardware shadow stack
+ * directly, as it is automatically attached by the kernel when a thread
+ * is created.
+ *
+ * @param thread_ Thread to attach the hardware shadow stack to
+ * @param shstk_addr_ Address of the hardware shadow stack
+ * @param size_ Size of the hardware shadow stack memory region
+ */
 #define K_THREAD_HW_SHADOW_STACK_ATTACH(thread_, shstk_addr_, size_) \
 	static const STRUCT_SECTION_ITERABLE(_thread_hw_shadow_stack_static, \
 		thread ## _shstk_attach_static) = { \
