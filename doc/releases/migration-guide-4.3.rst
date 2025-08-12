@@ -58,6 +58,13 @@ Device Drivers and Devicetree
 
 .. zephyr-keep-sorted-start re(^\w)
 
+MFD
+===
+
+* Driver suppor for AXP2101 has been separated from the AXP192 one. As a consequence the
+  kconfig symbol ``MFD_AXP192_AXP2101`` is removed. :kconfig:option:`MFD_AXP192` is now to be
+  used for AXP192 device while :kconfig:option:`MFD_AXP2101` for the AXP2101 one.
+
 Phy
 ===
 
