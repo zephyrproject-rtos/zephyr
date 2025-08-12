@@ -222,6 +222,14 @@ New Drivers
 
    * STM32 EXTI interrupt/event controller (:dtcompatible:`st,stm32-exti`) has a dedicated driver and API now, separate from STM32 GPIO Interrupt Control driver.
 
+* MFD
+   * IRQ support has been added for X-Power AXP2101 MFD device. It gets automatically
+     enabled as soon as device-tree property ``int-gpios`` is defined on the device node.
+
+   * Support for the power button found on the X-Power AXP2101 MFD is added and can be enabled
+     via :kconfig:option:`MFD_AXP2101_POWER_BUTTON`. This feature requires interrupt support to
+     be enabled.
+
 * RTC
 
    * STM32 RTC driver has been updated to use the new STM32 EXTI interrupt controller API
