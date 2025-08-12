@@ -264,6 +264,19 @@ int bt_avrcp_connect(struct bt_conn *conn);
  */
 int bt_avrcp_disconnect(struct bt_conn *conn);
 
+/**
+ * @brief Allocate a net_buf for AVRCP PDU transmission, reserving headroom
+ *        for AVRCP, AVRCTP, L2CAP, and ACL headers.
+ *
+ * This function allocates a buffer from the specified pool and reserves
+ * sufficient headroom for protocol headers required by AVRCP over Bluetooth.
+ *
+ * @param pool The buffer pool to allocate from.
+ *
+ * @return A newly allocated net_buf with reserved headroom.
+ */
+struct net_buf *bt_avrcp_create_pdu(struct net_buf_pool *pool);
+
 /** @brief Register callback.
  *
  *  Register AVRCP callbacks to monitor the state and interact with the remote device.
