@@ -43,7 +43,6 @@ struct native_pty_status {
 	int out_fd;       /* File descriptor used for output */
 	int in_fd;        /* File descriptor used for input */
 	bool on_stdinout; /* This UART is connected to a PTY and not STDIN/OUT */
-	bool stdin_disconnected;
 
 	bool auto_attach;      /* For PTY, attach a terminal emulator automatically */
 	char *auto_attach_cmd; /* If auto_attach, which command to launch the terminal emulator */
@@ -65,18 +64,6 @@ struct native_pty_status {
 		K_KERNEL_STACK_MEMBER(rx_stack, CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE);
 	} async;
 #endif /* CONFIG_UART_ASYNC_API */
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	struct {
-		bool tx_enabled;
-		bool rx_enabled;
-		uart_irq_callback_user_data_t callback;
-		void *cb_data;
-		/* Instance-specific IRQ emulation thread. */
-		struct k_thread poll_thread;
-		/* Stack for IRQ emulation thread */
-		K_KERNEL_STACK_MEMBER(poll_stack, CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE);
-	} irq;
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
 static void np_uart_poll_out(const struct device *dev, unsigned char out_char);
@@ -94,22 +81,6 @@ static int np_uart_rx_enable(const struct device *dev, uint8_t *buf, size_t len,
 static int np_uart_rx_disable(const struct device *dev);
 #endif /* CONFIG_UART_ASYNC_API */
 
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static int np_uart_fifo_fill(const struct device *dev, const uint8_t *tx_data, int size);
-static int np_uart_fifo_read(const struct device *dev, uint8_t *rx_data, const int size);
-static void np_uart_irq_tx_enable(const struct device *dev);
-static void np_uart_irq_tx_disable(const struct device *dev);
-static int np_uart_irq_tx_ready(const struct device *dev);
-static int np_uart_irq_tx_complete(const struct device *dev);
-static void np_uart_irq_rx_enable(const struct device *dev);
-static void np_uart_irq_rx_disable(const struct device *dev);
-static int np_uart_irq_rx_ready(const struct device *dev);
-static int np_uart_irq_is_pending(const struct device *dev);
-static int np_uart_irq_update(const struct device *dev);
-static void np_uart_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
-				     void *cb_data);
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
-
 static DEVICE_API(uart, np_uart_driver_api) = {
 	.poll_out = np_uart_poll_out,
 	.poll_in = np_uart_poll_in,
@@ -121,20 +92,6 @@ static DEVICE_API(uart, np_uart_driver_api) = {
 	.rx_enable = np_uart_rx_enable,
 	.rx_disable = np_uart_rx_disable,
 #endif /* CONFIG_UART_ASYNC_API */
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	.fifo_fill        = np_uart_fifo_fill,
-	.fifo_read        = np_uart_fifo_read,
-	.irq_tx_enable    = np_uart_irq_tx_enable,
-	.irq_tx_disable	  = np_uart_irq_tx_disable,
-	.irq_tx_ready     = np_uart_irq_tx_ready,
-	.irq_tx_complete  = np_uart_irq_tx_complete,
-	.irq_rx_enable    = np_uart_irq_rx_enable,
-	.irq_rx_disable   = np_uart_irq_rx_disable,
-	.irq_rx_ready     = np_uart_irq_rx_ready,
-	.irq_is_pending   = np_uart_irq_is_pending,
-	.irq_update       = np_uart_irq_update,
-	.irq_callback_set = np_uart_irq_callback_set,
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
 #define NATIVE_PTY_INSTANCE(inst)                                        \
@@ -235,47 +192,59 @@ static void np_uart_poll_out(const struct device *dev, unsigned char out_char)
 }
 
 /**
- * @brief Poll the device for up to len input characters
+ * @brief Poll the device for input.
  *
  * @param dev UART device structure.
  * @param p_char Pointer to character.
  *
- * @retval > 0 If a character arrived and was stored in p_char
- * @retval == 0 If a character arrived but len was 0
+ * @retval 0 If a character arrived and was stored in p_char
  * @retval -1 If no character was available to read
  */
-static int np_uart_poll_in_n(const struct device *dev, unsigned char *p_char, int len)
+static int np_uart_stdin_poll_in(const struct device *dev, unsigned char *p_char)
 {
-	int rc = -1;
-	struct native_pty_status *data = (struct native_pty_status *)dev->data;
-	int in_f = data->in_fd;
+	int in_f = ((struct native_pty_status *)dev->data)->in_fd;
+	static bool disconnected;
+	int rc;
 
-	if (data->stdin_disconnected) {
+	if (disconnected == true) {
 		return -1;
 	}
 
-	if (data->on_stdinout) {
-		rc = np_uart_stdin_poll_in_bottom(in_f, p_char, len);
-
-		if (rc == -2) {
-			data->stdin_disconnected = true;
-			return -1;
-		}
-	} else {
-		rc = np_uart_pty_poll_in_bottom(in_f, p_char, len);
+	rc = np_uart_stdin_poll_in_bottom(in_f, p_char, 1);
+	if (rc == -2) {
+		disconnected = true;
 	}
+	return rc == 1 ? 0 : -1;
+}
 
-	return rc;
+/**
+ * @brief Poll the device for input.
+ *
+ * @param dev UART device structure.
+ * @param p_char Pointer to character.
+ *
+ * @retval 0 If a character arrived and was stored in p_char
+ * @retval -1 If no character was available to read
+ */
+static int np_uart_pty_poll_in(const struct device *dev, unsigned char *p_char)
+{
+	int n = -1;
+	int in_f = ((struct native_pty_status *)dev->data)->in_fd;
+
+	n = nsi_host_read(in_f, p_char, 1);
+	if (n == -1) {
+		return -1;
+	}
+	return 0;
 }
 
 static int np_uart_poll_in(const struct device *dev, unsigned char *p_char)
 {
-	int ret = np_uart_poll_in_n(dev, p_char, 1);
-
-	if (ret == -1) {
-		return -1;
+	if (((struct native_pty_status *)dev->data)->on_stdinout) {
+		return np_uart_stdin_poll_in(dev, p_char);
+	} else {
+		return np_uart_pty_poll_in(dev, p_char);
 	}
-	return 0;
 }
 
 #ifdef CONFIG_UART_ASYNC_API
@@ -368,7 +337,8 @@ static void native_pty_uart_async_poll_function(void *arg1, void *arg2, void *ar
 	ARG_UNUSED(arg3);
 
 	while (data->async.rx_len) {
-		rc = np_uart_poll_in_n(dev, data->async.rx_buf, data->async.rx_len);
+		rc = np_uart_stdin_poll_in_bottom(data->in_fd, data->async.rx_buf,
+						  data->async.rx_len);
 		if (rc > 0) {
 			/* Data received */
 			evt.type = UART_RX_RDY;
@@ -432,179 +402,6 @@ static int np_uart_rx_disable(const struct device *dev)
 }
 
 #endif /* CONFIG_UART_ASYNC_API */
-
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void np_uart_irq_handler(const struct device *dev)
-{
-	struct native_pty_status *data = dev->data;
-
-	if (data->irq.callback) {
-		data->irq.callback(dev, data->irq.cb_data);
-	} else {
-		WARN("No callback!\n");
-	}
-}
-
-/*
- * Emulate uart interrupts using a polling thread
- */
-static void np_uart_irq_thread(void *arg1, void *arg2, void *arg3)
-{
-	ARG_UNUSED(arg2);
-	ARG_UNUSED(arg3);
-
-	struct device *dev = (struct device *)arg1;
-	struct native_pty_status *data = dev->data;
-
-	while (1) {
-		if (data->irq.rx_enabled) {
-			int ret = np_uart_poll_in_n(dev, NULL, 0);
-
-			if (ret == 0) {
-				np_uart_irq_handler(dev);
-			} else if (ret == -1) {
-				k_sleep(K_MSEC(1));
-			} else {
-				WARN("Poll returned error %d\n", ret);
-			}
-		}
-		if (data->irq.tx_enabled) {
-			np_uart_irq_handler(dev);
-		}
-		if (!data->irq.tx_enabled && !data->irq.rx_enabled) {
-			break; /* No IRQs enabled, exit the thread */
-		}
-	}
-}
-
-static void np_uart_irq_thread_start(const struct device *dev)
-{
-	struct native_pty_status *data = dev->data;
-
-	/* Create a thread which will wait for data - replacement for IRQ */
-	k_thread_create(&data->irq.poll_thread, data->irq.poll_stack,
-			K_KERNEL_STACK_SIZEOF(data->irq.poll_stack),
-			np_uart_irq_thread,
-			(void *)dev, NULL, NULL,
-			K_HIGHEST_THREAD_PRIO, 0, K_NO_WAIT);
-}
-
-static void np_uart_irq_thread_stop(const struct device *dev)
-{
-	struct native_pty_status *data = dev->data;
-
-	/* Wait for IRQ thread to terminate */
-	k_thread_join(&data->irq.poll_thread, K_FOREVER);
-}
-
-static int np_uart_fifo_fill(const struct device *dev, const uint8_t *tx_data, int size)
-{
-	for (int i = 0; i < size; i++) {
-		np_uart_poll_out(dev, tx_data[i]);
-	}
-
-	return size;
-}
-
-static int np_uart_fifo_read(const struct device *dev, uint8_t *rx_data, const int size)
-{
-	return np_uart_poll_in_n(dev, rx_data, size);
-}
-
-static int np_uart_irq_tx_ready(const struct device *dev)
-{
-	struct native_pty_status *data = dev->data;
-
-	return data->irq.tx_enabled ? 1 : 0;
-}
-
-static int np_uart_irq_tx_complete(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 1;
-}
-
-static void np_uart_irq_tx_enable(const struct device *dev)
-{
-	struct native_pty_status *data = dev->data;
-
-	bool start_thread = !data->irq.rx_enabled && !data->irq.tx_enabled;
-
-	data->irq.tx_enabled = true;
-
-	if (start_thread) {
-		np_uart_irq_thread_start(dev);
-	}
-}
-
-static void np_uart_irq_tx_disable(const struct device *dev)
-{
-	struct native_pty_status *data = dev->data;
-
-	data->irq.tx_enabled = false;
-
-	if (!data->irq.rx_enabled && !data->irq.tx_enabled) {
-		np_uart_irq_thread_stop(dev);
-	}
-}
-
-static void np_uart_irq_rx_enable(const struct device *dev)
-{
-	struct native_pty_status *data = dev->data;
-
-	bool start_thread = !data->irq.rx_enabled && !data->irq.tx_enabled;
-
-	data->irq.rx_enabled = true;
-
-	if (start_thread) {
-		np_uart_irq_thread_start(dev);
-	}
-}
-
-static void np_uart_irq_rx_disable(const struct device *dev)
-{
-	struct native_pty_status *data = dev->data;
-
-	data->irq.rx_enabled = false;
-
-	if (!data->irq.rx_enabled && !data->irq.tx_enabled) {
-		np_uart_irq_thread_stop(dev);
-	}
-}
-
-static int np_uart_irq_rx_ready(const struct device *dev)
-{
-	struct native_pty_status *data = dev->data;
-
-	if (data->irq.rx_enabled && np_uart_poll_in_n(dev, NULL, 0) == 0) {
-		return 1;
-	}
-	return 0;
-}
-
-static int np_uart_irq_is_pending(const struct device *dev)
-{
-	return np_uart_irq_rx_ready(dev) ||
-		np_uart_irq_tx_ready(dev);
-}
-
-static int np_uart_irq_update(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 1;
-}
-
-static void np_uart_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
-				     void *cb_data)
-{
-	struct native_pty_status *data = dev->data;
-
-	data->irq.callback = cb;
-	data->irq.cb_data = cb_data;
-}
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 
 #define NATIVE_PTY_SET_AUTO_ATTACH_CMD(inst, cmd)      \
