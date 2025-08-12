@@ -110,3 +110,7 @@ zephyr_udc1: &usb2 {
 temp_sensor: &tmpsns {
 	status = "okay";
 };
+
+&sai1 {
+	status = "okay";
+};

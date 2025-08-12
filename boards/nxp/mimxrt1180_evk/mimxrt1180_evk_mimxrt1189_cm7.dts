@@ -104,3 +104,7 @@ zephyr_udc1: &usb2 {
 &kpp {
 	status = "okay";
 };
+
+&sai1 {
+	status = "okay";
+};
