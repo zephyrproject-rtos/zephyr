@@ -31,10 +31,22 @@ config SPI_NXP_LPSPI_CPU
 	bool "NXP LPSPI CPU-based driver"
 	default y
 	depends on $(dt_compat_any_not_has_prop,$(DT_COMPAT_NXP_LPSPI),dmas) || !SPI_NXP_LPSPI_DMA
+	depends on !SPI_NXP_LPSPI_CPU_RTIO
 	help
 	  Enable "normal" CPU based SPI driver for LPSPI.
 	  This has lower latency than DMA-based driver but over the
 	  longer transfers will likely have less bandwidth and use more CPU time.
+
+config SPI_NXP_LPSPI_CPU_RTIO
+	bool "NXP LPSPI RTIO-based driver"
+	default y
+	depends on $(dt_compat_any_not_has_prop,$(DT_COMPAT_NXP_LPSPI),dmas) || !SPI_NXP_LPSPI_DMA
+	depends on SPI_RTIO
+	help
+	  Enable native RTIO-based driver for LPSPI.
+	  This driver optimizes latency by starting/resuming transfers directly
+	  from the ISR context in a non-blocking and asynchronous fashion. However,
+	  it does not include DMA usage.
 
 config SPI_NXP_LPSPI_TXFIFO_WAIT_CYCLES
 	int "Number of CPU cycles to wait on TX fifo empty"
@@ -48,5 +60,20 @@ config SPI_NXP_LPSPI_TXFIFO_WAIT_CYCLES
 	  The special value of 0 means infinite, which can be useful for debugging
 	  for if there is some programming error that causes TX fifo not to empty.
 	  The default of 10000 is arbitrary.
+
+if SPI_NXP_LPSPI_CPU_RTIO
+
+config SPI_NXP_RTIO_SQ_SIZE
+	int "Number of available submission queue entries"
+	default 8 # Sensible default that covers most common spi transactions
+	help
+	  When RTIO is use with SPI each driver holds a context with which blocking
+	  API calls use to perform SPI transactions. This queue needs to be as deep
+	  as the longest set of spi_buf_sets used, where normal SPI operations are
+	  used (equal length buffers). It may need to be slightly deeper where the
+	  spi buffer sets for transmit/receive are not always matched equally in
+	  length as these are transformed into normal transceives.
+
+endif # SPI_NXP_LPSPI_CPU_RTIO
 
 endif # SPI_NXP_LPSPI
