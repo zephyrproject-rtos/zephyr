@@ -280,9 +280,54 @@ static void hid_disconnected_cb(struct bt_hid_device *hid)
 	default_hid = NULL;
 }
 
+void hid_set_report_cb(struct bt_hid_device *hid, uint8_t *data, uint16_t len)
+{
+	bt_shell_print("hid:%p set report, len:%d", hid, len);
+}
+
+void hid_get_report_cb(struct bt_hid_device *hid, uint8_t *data, uint16_t len)
+{
+	uint8_t buf[2] = {0};
+
+	bt_shell_print("hid:%p get report", hid);
+
+	/* Send responde with 0x0102 for test */
+	buf[0] = 0x01;
+	buf[1] = 0x02;
+	bt_hid_device_send_ctrl_data(hid, BT_HID_REPORT_TYPE_INPUT, buf, sizeof(buf));
+}
+
+void hid_set_protocol_cb(struct bt_hid_device *hid, uint8_t protocol)
+{
+	bt_shell_print("hid:%p set protocol:%d, ", hid, protocol);
+}
+
+void hid_get_protocol_cb(struct bt_hid_device *hid)
+{
+	uint8_t protocol = BT_HID_PROTOCOL_REPORT_MODE;
+
+	bt_shell_print("hid:%p get protocol", hid);
+	bt_hid_device_send_ctrl_data(hid, BT_HID_REPORT_TYPE_OTHER, &protocol, sizeof(protocol));
+}
+
+void hid_intr_data_cb(struct bt_hid_device *hid, uint8_t *data, uint16_t len)
+{
+	bt_shell_print("hid:%p inrt data len:%d", hid, len);
+}
+
+void hid_vc_unplug_cb(struct bt_hid_device *hid)
+{
+	bt_shell_print("hid:%p unplug", hid);
+}
+
 static struct bt_hid_device_cb hid_cb = {
 	.connected = hid_connect_cb,
 	.disconnected = hid_disconnected_cb,
+	.set_report = hid_set_report_cb,
+	.get_report = hid_get_report_cb,
+	.set_protocol = hid_set_protocol_cb,
+	.get_protocol = hid_get_protocol_cb,
+	.intr_data = hid_intr_data_cb,
 };
 
 static int cmd_hid_register(const struct shell *sh, int32_t argc, char *argv[])
@@ -306,9 +351,33 @@ static int cmd_hid_register(const struct shell *sh, int32_t argc, char *argv[])
 	return err;
 }
 
+static int cmd_hid_send_report(const struct shell *sh, size_t argc, char *argv[])
+{
+	uint8_t buf[5] = {0};
+
+	if (!hid_registered) {
+		bt_shell_print("hid connection callbacks not registered");
+		return -ENOEXEC;
+	}
+
+	if (!default_hid) {
+		bt_shell_print("hid device is not connected");
+		return -ENOEXEC;
+	}
+
+	buf[0] = 0x02; /* Mouse */
+	buf[1] = 0x00;
+	buf[2] = atoi(argv[1]); /* X Displacement */
+	buf[3] = atoi(argv[2]); /* Y Displacement */
+	bt_hid_device_send_intr_data(default_hid, BT_HID_REPORT_TYPE_INPUT, buf, sizeof(buf));
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	hid_device_cmds,
 	SHELL_CMD_ARG(register, NULL, "register hid device", cmd_hid_register, 1, 0),
+	SHELL_CMD_ARG(send, NULL, "send report mouse: [X] [Y]", cmd_hid_send_report, 3, 0),
 	SHELL_SUBCMD_SET_END);
 
 static int cmd_hid_device(const struct shell *sh, size_t argc, char **argv)
