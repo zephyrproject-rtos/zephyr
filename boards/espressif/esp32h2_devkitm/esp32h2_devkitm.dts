@@ -69,3 +69,25 @@
 	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
 };
+
+&i2c0 {
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+};
+
+&i2c1 {
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+};
+
+&i2s {
+	pinctrl-0 = <&i2s_default>;
+	pinctrl-names = "default";
+};
+
+&twai {
+	pinctrl-0 = <&twai_default>;
+	pinctrl-names = "default";
+};
