@@ -135,7 +135,7 @@ int main(void)
 #if CONFIG_USE_DMIC
 	cfg.channel.req_num_chan = 2;
 	cfg.channel.req_chan_map_lo = dmic_build_channel_map(0, 0, PDM_CHAN_LEFT) |
-				      dmic_build_channel_map(1, 0, PDM_CHAN_RIGHT);
+				      dmic_build_channel_map(1, 1, PDM_CHAN_RIGHT);
 	cfg.streams[0].pcm_rate = SAMPLE_FREQUENCY;
 	cfg.streams[0].block_size = BLOCK_SIZE;
 
