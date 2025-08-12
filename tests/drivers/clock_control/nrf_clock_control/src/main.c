@@ -395,7 +395,7 @@ ZTEST(nrf2_clock_control, test_auxpll_control)
 
 static void *setup(void)
 {
-#if defined(CONFIG_BOARD_NRF54H20DK_NRF54H20_CPUAPP)
+#if defined(CONFIG_BOARD_NRF54H20DK_NRF54H20_CPUAPP) && defined(CLOCK_CONTROL_NRF_IRON_HSFLL_LOCAL)
 	const struct device *clk_dev = DEVICE_DT_GET(DT_NODELABEL(cpuapp_hsfll));
 	const struct nrf_clock_spec clk_spec = {
 		.frequency = MHZ(64),
