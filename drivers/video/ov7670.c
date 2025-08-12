@@ -4,7 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if defined(CONFIG_VIDEO_OV7670)
 #define DT_DRV_COMPAT ovti_ov7670
+#else
+#define DT_DRV_COMPAT ovti_ov7675
+#endif
 
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
@@ -12,16 +16,17 @@
 #include <zephyr/drivers/video-controls.h>
 #include <zephyr/logging/log.h>
 
+#include "video_common.h"
 #include "video_ctrls.h"
 #include "video_device.h"
 
+#if defined(CONFIG_VIDEO_OV7670)
 LOG_MODULE_REGISTER(video_ov7670, CONFIG_VIDEO_LOG_LEVEL);
 
 /* Initialization register structure */
-struct ov7670_reg {
-	uint8_t reg;
-	uint8_t cmd;
-};
+#else
+LOG_MODULE_REGISTER(video_ov7675, CONFIG_VIDEO_LOG_LEVEL);
+#endif
 
 struct ov7670_config {
 	struct i2c_dt_spec bus;
@@ -43,6 +48,8 @@ struct ov7670_data {
 	struct video_format fmt;
 };
 
+
+#if defined(CONFIG_VIDEO_OV7670)
 struct ov7670_resolution_cfg {
 	uint8_t com7;
 	uint8_t com3;
@@ -98,7 +105,10 @@ const struct ov7670_resolution_cfg OV7670_RESOLUTION_VGA = {
 	.pclk_div = 0xf0,
 	.pclk_delay = 0x02
 };
+#endif
 
+
+#define OV7670_REG8(addr)	((addr) | VIDEO_REG_ADDR8_DATA8)
 
 /* OV7670 registers */
 #define OV7670_PID                0x0A
@@ -189,6 +199,32 @@ const struct ov7670_resolution_cfg OV7670_RESOLUTION_VGA = {
 #define OV7670_HAECC5             0xA8
 #define OV7670_HAECC6             0xA9
 
+#if defined(CONFIG_VIDEO_OV7675)
+#define RGB444                  0x8C /* REG444 */
+#define RGB444_RGB444_EN        0x02 /* RGB444 enable, effective only when COM15[4] is high */
+#define RGB444_RGB444_FMT       0x01 /* RGB444 word format. 0 = xR GB 1 = RG Bx */
+
+#define COM3_DCW_EN             0x04 /* DCW enable */
+#define OV7670_COM1             0x04 /*Com Cntrl1 */
+#define COM7_RESET              0x80 /* SCCB Register Reset      */
+#define COM7_RES_VGA            0x00 /* Resolution VGA           */
+#define COM7_RES_CIF            0x20 /* Resolution CIF           */
+#define COM7_RES_QVGA           0x10 /* Resolution QVGA          */
+#define COM7_RES_QCIF           0x08 /* Resolution QCIF          */
+#define COM7_RGB_FMT            0x04 /* Output format RGB        */
+#define COM7_CBAR_EN            0x02 /* Color bar selection      */
+#define COM7_FMT_RAW            0x01 /* Output format Bayer RAW  */
+#define COM13_GAMMA_EN          0x80 /* Gamma enable */
+#define COM13_UVSAT_AUTO        0x40 /* UV saturation level - UV auto adjustment. */
+#define COM13_UV_SWAP           0x01 /* UV swap */
+#define COM15_OUT_10_F0         0x00 /* Output data range 10 to F0  */
+#define COM15_OUT_01_FE         0x80 /* Output data range 01 to FE  */
+#define COM15_OUT_00_FF         0xC0 /* Output data range 00 to FF  */
+#define COM15_FMT_RGB_NORMAL    0x00 /* Normal RGB normal output    */
+#define COM15_FMT_RGB565        0x10 /* Normal RGB 565 output       */
+#define COM15_FMT_RGB555        0x30 /* Normal RGB 555 output       */
+#endif
+
 /* OV7670 definitions */
 #define OV7670_PROD_ID 0x76
 #define OV7670_MVFP_HFLIP 0x20
@@ -201,21 +237,24 @@ const struct ov7670_resolution_cfg OV7670_RESOLUTION_VGA = {
 	}
 
 static const struct video_format_cap fmts[] = {
+	OV7670_VIDEO_FORMAT_CAP(160, 240, VIDEO_PIX_FMT_RGB565), /* QQVGA  */
 	OV7670_VIDEO_FORMAT_CAP(176, 144, VIDEO_PIX_FMT_RGB565), /* QCIF  */
 	OV7670_VIDEO_FORMAT_CAP(320, 240, VIDEO_PIX_FMT_RGB565), /* QVGA  */
 	OV7670_VIDEO_FORMAT_CAP(352, 288, VIDEO_PIX_FMT_RGB565), /* CIF   */
 	OV7670_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_RGB565), /* VGA   */
+	OV7670_VIDEO_FORMAT_CAP(160, 240, VIDEO_PIX_FMT_RGB565), /* QQVGA  */
 	OV7670_VIDEO_FORMAT_CAP(176, 144, VIDEO_PIX_FMT_YUYV),   /* QCIF  */
 	OV7670_VIDEO_FORMAT_CAP(320, 240, VIDEO_PIX_FMT_YUYV),   /* QVGA  */
 	OV7670_VIDEO_FORMAT_CAP(352, 288, VIDEO_PIX_FMT_YUYV),   /* CIF   */
 	OV7670_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_YUYV),   /* VGA   */
-	{0}};
+	{0}
+};
 
 /*
  * This initialization table is based on the MCUX SDK driver for the OV7670.
  * Note that this table assumes the camera is fed a 6MHz XCLK signal
  */
-static const struct ov7670_reg ov7670_init_regtbl[] = {
+static const struct video_reg8 ov7670_init_regtbl[] = {
 	{OV7670_MVFP, 0x00}, /* MVFP: Mirror/VFlip,Normal image */
 
 	/* configure the output timing */
@@ -369,6 +408,79 @@ static const struct ov7670_reg ov7670_init_regtbl[] = {
 	{0xb8, 0x0a},
 };
 
+#if defined(CONFIG_VIDEO_OV7675)
+/* Initialization register structure */
+static const struct video_reg8 ov7675_rgb565_regs[] = {
+    {OV7670_COM7,         COM7_RGB_FMT },       /* Selects RGB mode */
+    {RGB444,              0x00 },       /* No RGB444 please */
+    {OV7670_COM1,         0x00 },       /* CCIR601 */
+    {OV7670_COM15,        COM15_OUT_00_FF | COM15_FMT_RGB565},
+    {OV7670_COM9,         0x38 },       /* 16x gain ceiling; 0x8 is reserved bit */
+    { 0x4f,               0xb3 },       /* "matrix coefficient 1" */
+    { 0x50,               0xb3 },       /* "matrix coefficient 2" */
+    { 0x51,               0x00 },       /* "matrix Coefficient 3" */
+    { 0x52,               0x3d },       /* "matrix coefficient 4" */
+    { 0x53,               0xa7 },       /* "matrix coefficient 5" */
+    { 0x54,               0xe4 },       /* "matrix coefficient 6" */
+    {OV7670_COM13,        COM13_GAMMA_EN | COM13_UVSAT_AUTO },
+};
+
+static const struct video_reg8 ov7675_vga_regs[] = {
+    {OV7670_COM3,         0x00 },
+    {OV7670_COM14,        0x00 },
+    { 0x72,               0x11 },     /* downsample by 4 */
+    { 0x73,               0xf0 },     /* divide by 4 */
+    {OV7670_HSTART,       0x12 },
+    {OV7670_HSTOP,        0x00 },
+    {OV7670_HREF,         0xb6 },
+    {OV7670_VSTRT,       0x02 },
+    {OV7670_VSTOP,        0x7a },
+    {OV7670_VREF,         0x00 },
+};
+
+static const struct video_reg8 ov7675_qvga_regs[] = {
+    {OV7670_COM3,         COM3_DCW_EN },
+    {OV7670_COM14,        0x11 },      /* Divide by 2 */
+    { 0x72,               0x22 },      /* This has no effect on OV7675 */
+    { 0x73,               0xf2 },      /* This has no effect on OV7675 */
+    {OV7670_HSTART,       0x15 },
+    {OV7670_HSTOP,        0x03 },
+    {OV7670_HREF,         0xC0 },
+    {OV7670_VSTRT,       0x03 },
+    {OV7670_VSTOP,        0x7B },
+    {OV7670_VREF,         0xF0 },
+};
+
+static const struct video_reg8 ov7675_qqvga_regs[] = {
+    {OV7670_COM3,         COM3_DCW_EN },
+    {OV7670_COM14,        0x11 },     /* Divide by 2 */
+    { 0x72,               0x22 },     /* This has no effect on OV7675*/
+    { 0x73,               0xf2 },     /* This has no effect on OV7675*/
+    {OV7670_HSTART,       0x16 },
+    {OV7670_HSTOP,        0x04 },
+    {OV7670_HREF,         0xa4 },
+    {OV7670_VSTRT,       0x22 },
+    {OV7670_VSTOP,        0x7a },
+    {OV7670_VREF,         0xfa },
+};
+
+// TODO: These registers probably need to be fixed too.
+static const struct video_reg8 ov7675_yuv422_regs[] = {
+    {OV7670_COM7,         0x00 },           /* Selects YUV mode */
+    {RGB444,              0x00 },           /* No RGB444 please */
+    {OV7670_COM1,         0x00 },           /* CCIR601 */
+    {OV7670_COM15,        COM15_OUT_00_FF },
+    {OV7670_COM9,         0x48 },           /* 32x gain ceiling; 0x8 is reserved bit */
+    { 0x4f,               0x80 },           /* "matrix coefficient 1" */
+    { 0x50,               0x80 },           /* "matrix coefficient 2" */
+    { 0x51,               0x00 },           /* vb */
+    { 0x52,               0x22 },           /* "matrix coefficient 4" */
+    { 0x53,               0x5e },           /* "matrix coefficient 5" */
+    { 0x54,               0x80 },           /* "matrix coefficient 6" */
+    {OV7670_COM13,        COM13_GAMMA_EN | COM13_UVSAT_AUTO },
+};
+#endif
+
 static int ov7670_get_caps(const struct device *dev, struct video_caps *caps)
 {
 	caps->format_caps = fmts;
@@ -379,7 +491,9 @@ static int ov7670_set_fmt(const struct device *dev, struct video_format *fmt)
 {
 	const struct ov7670_config *config = dev->config;
 	struct ov7670_data *data = dev->data;
+#if defined(CONFIG_VIDEO_OV7670)
 	const struct ov7670_resolution_cfg *resolution;
+#endif
 	int ret;
 	uint8_t i = 0U;
 
@@ -394,7 +508,23 @@ static int ov7670_set_fmt(const struct device *dev, struct video_format *fmt)
 	}
 
 	memcpy(&data->fmt, fmt, sizeof(data->fmt));
+  
+#if defined(CONFIG_VIDEO_OV7675)
+  // Set RGB Format
+  if(fmt->pixelformat == VIDEO_PIX_FMT_RGB565) {
+    ret = video_write_cci_multiregs8(&config->bus, ov7675_rgb565_regs, ARRAY_SIZE(ov7675_rgb565_regs));
+  } else {
+    ret = video_write_cci_multiregs8(&config->bus, ov7675_yuv422_regs, ARRAY_SIZE(ov7675_yuv422_regs));
+  }
+  if (ret < 0) {
+    LOG_ERR("Format not set!");
+    return ret;
+  }
+    
+  k_msleep(200);
+#endif
 
+#if defined(CONFIG_VIDEO_OV7670)
 	/* Set output resolution */
 	while (fmts[i].pixelformat) {
 		if (fmts[i].width_min == fmt->width && fmts[i].height_min == fmt->height &&
@@ -415,42 +545,45 @@ static int ov7670_set_fmt(const struct device *dev, struct video_format *fmt)
 				break;
 			}
 			/* Program resolution bytes settings */
-			ret = i2c_reg_write_byte_dt(&config->bus, OV7670_COM7,
+      ret = video_write_cci_reg(&config->bus, OV7670_COM7,
+               resolution->com7);
+      
+			ret = video_write_cci_reg(&config->bus, OV7670_COM7,
 						    resolution->com7);
 			if (ret < 0) {
 				return ret;
 			}
-			ret = i2c_reg_write_byte_dt(&config->bus, OV7670_COM3,
+			ret = video_write_cci_reg(&config->bus, OV7670_COM3,
 						    resolution->com3);
 			if (ret < 0) {
 				return ret;
 			}
-			ret = i2c_reg_write_byte_dt(&config->bus, OV7670_COM14,
+			ret = video_write_cci_reg(&config->bus, OV7670_COM14,
 						    resolution->com14);
 			if (ret < 0) {
 				return ret;
 			}
-			ret = i2c_reg_write_byte_dt(&config->bus, OV7670_SCALING_XSC,
+			ret = video_write_cci_reg(&config->bus, OV7670_SCALING_XSC,
 						    resolution->scaling_xsc);
 			if (ret < 0) {
 				return ret;
 			}
-			ret = i2c_reg_write_byte_dt(&config->bus, OV7670_SCALING_YSC,
+			ret = video_write_cci_reg(&config->bus, OV7670_SCALING_YSC,
 						    resolution->scaling_ysc);
 			if (ret < 0) {
 				return ret;
 			}
-			ret = i2c_reg_write_byte_dt(&config->bus, OV7670_SCALING_DCWCTR,
+			ret = video_write_cci_reg(&config->bus, OV7670_SCALING_DCWCTR,
 						    resolution->dcwctr);
 			if (ret < 0) {
 				return ret;
 			}
-			ret = i2c_reg_write_byte_dt(&config->bus, OV7670_SCALING_PCLK_DIV,
+			ret = video_write_cci_reg(&config->bus, OV7670_SCALING_PCLK_DIV,
 						    resolution->pclk_div);
 			if (ret < 0) {
 				return ret;
 			}
-			return i2c_reg_write_byte_dt(&config->bus, OV7670_SCALING_PCLK_DELAY,
+			return video_write_cci_reg(&config->bus,  OV7670_SCALING_PCLK_DELAY,
 						     resolution->pclk_delay);
 		}
 		i++;
@@ -458,6 +591,34 @@ static int ov7670_set_fmt(const struct device *dev, struct video_format *fmt)
 
 	LOG_ERR("Unsupported format");
 	return -ENOTSUP;
+#else
+	/* Set output resolution */
+	while (fmts[i].pixelformat) {
+		if (fmts[i].width_min == fmt->width && fmts[i].height_min == fmt->height && fmts[i].pixelformat == fmt->pixelformat) {
+			/* Set output format */
+			switch (fmts[i].width_min) {
+			case 160: /* QQVGA */
+        ret = video_write_cci_multiregs8(&config->bus, ov7675_qqvga_regs, ARRAY_SIZE(ov7675_qqvga_regs));
+				break;
+			case 320: /* QVGA */
+        ret = video_write_cci_multiregs8(&config->bus, ov7675_qvga_regs, ARRAY_SIZE(ov7675_qvga_regs));
+				break;
+			default: /* VGA */
+        ret = video_write_cci_multiregs8(&config->bus, ov7675_vga_regs, ARRAY_SIZE(ov7675_vga_regs));
+				break;
+			}
+			if (ret < 0) {
+        LOG_ERR("Resolution not set!");
+				return -ENOTSUP;
+			}
+		}
+		i++;
+	}
+
+  k_msleep(200);
+  return 1;
+#endif
+
 }
 
 static int ov7670_get_fmt(const struct device *dev, struct video_format *fmt)
@@ -487,15 +648,14 @@ static int ov7670_init_controls(const struct device *dev)
 static int ov7670_init(const struct device *dev)
 {
 	const struct ov7670_config *config = dev->config;
-	int ret, i;
-	uint8_t pid;
+	int ret;
+
 	struct video_format fmt = {
 		.pixelformat = VIDEO_PIX_FMT_RGB565,
 		.width = 320,
 		.height = 240,
 	};
-	const struct ov7670_reg *reg;
-
+  
 	if (!i2c_is_ready_dt(&config->bus)) {
 		/* I2C device is not ready, return */
 		return -ENODEV;
@@ -507,12 +667,13 @@ static int ov7670_init(const struct device *dev)
 		if (!gpio_is_ready_dt(&config->pwdn)) {
 			return -ENODEV;
 		}
-		ret = gpio_pin_configure_dt(&config->pwdn, GPIO_OUTPUT_INACTIVE);
-		if (ret < 0) {
+		ret = gpio_pin_configure_dt(&config->pwdn, GPIO_OUTPUT_ACTIVE);
+    		if (ret < 0) {
 			LOG_ERR("Could not clear power down pin: %d", ret);
 			return ret;
 		}
 	}
+  gpio_pin_set_dt(&config->pwdn, 1);
 #endif
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 	/* Reset camera module */
@@ -520,7 +681,7 @@ static int ov7670_init(const struct device *dev)
 		if (!gpio_is_ready_dt(&config->reset)) {
 			return -ENODEV;
 		}
-		ret = gpio_pin_configure_dt(&config->reset, GPIO_OUTPUT);
+		ret = gpio_pin_configure_dt(&config->reset, GPIO_OUTPUT_ACTIVE);
 		if (ret < 0) {
 			LOG_ERR("Could not set reset pin: %d", ret);
 			return ret;
@@ -529,6 +690,8 @@ static int ov7670_init(const struct device *dev)
 		gpio_pin_set_dt(&config->reset, 0);
 		k_msleep(1);
 		gpio_pin_set_dt(&config->reset, 1);
+		k_msleep(1);
+		gpio_pin_set_dt(&config->reset, 0);
 		k_msleep(1);
 	}
 #endif
@@ -541,15 +704,11 @@ static int ov7670_init(const struct device *dev)
 	 * registers.
 	 */
 	uint8_t cmd = OV7670_PID;
+	uint32_t pid;
 
-	ret = i2c_write_dt(&config->bus, &cmd, sizeof(cmd));
+	ret = video_read_cci_reg(&config->bus, OV7670_REG8(cmd), &pid);
 	if (ret < 0) {
 		LOG_ERR("Could not request product ID: %d", ret);
-		return ret;
-	}
-	ret = i2c_read_dt(&config->bus, &pid, sizeof(pid));
-	if (ret < 0) {
-		LOG_ERR("Could not read product ID: %d", ret);
 		return ret;
 	}
 
@@ -559,7 +718,7 @@ static int ov7670_init(const struct device *dev)
 	}
 
 	/* Reset camera registers */
-	ret = i2c_reg_write_byte_dt(&config->bus, OV7670_COM7, 0x80);
+	ret = video_write_cci_reg(&config->bus, OV7670_COM7, 0x80);
 	if (ret < 0) {
 		LOG_ERR("Could not reset camera: %d", ret);
 		return ret;
@@ -573,13 +732,11 @@ static int ov7670_init(const struct device *dev)
 	}
 
 	/* Write initialization values to OV7670 */
-	for (i = 0; i < ARRAY_SIZE(ov7670_init_regtbl); i++) {
-		reg = &ov7670_init_regtbl[i];
-		ret = i2c_reg_write_byte_dt(&config->bus, reg->reg, reg->cmd);
-		if (ret < 0) {
-			return ret;
-		}
-	}
+  ret = video_write_cci_multiregs8(&config->bus, ov7670_init_regtbl, ARRAY_SIZE(ov7670_init_regtbl));
+  if (ret < 0) {
+    return ret;
+  }
+
 
 	/* Initialize controls */
 	return ov7670_init_controls(dev);
@@ -640,3 +797,4 @@ static DEVICE_API(video, ov7670_api) = {
 	VIDEO_DEVICE_DEFINE(ov7670_##inst, DEVICE_DT_INST_GET(inst), NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(OV7670_INIT)
+
