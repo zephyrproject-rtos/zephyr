@@ -1,0 +1,6 @@
+shields:
+  - name: st_mb1835
+    full_name: ST MB1835
+    vendor: st
+    supported_features:
+      - display
