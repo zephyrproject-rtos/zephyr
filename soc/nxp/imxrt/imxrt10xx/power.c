@@ -148,10 +148,10 @@ static void lpm_drop_voltage(void)
 	CLOCK_SwitchOsc(kCLOCK_RcOsc);
 	CLOCK_DeinitExternalClk();
 	/*
-	 * Change to 1.075V SOC voltage. If you are experiencing issues with
+	 * Change to low power SOC voltage. If you are experiencing issues with
 	 * low power mode stability, try raising this voltage value.
 	 */
-	DCDC_AdjustRunTargetVoltage(DCDC, 0xB);
+	DCDC_AdjustRunTargetVoltage(DCDC, (CONFIG_DCDC_TARGET_LOW_POWER_VOLTAGE - 800) / 25);
 	/* Enable 2.5 and 1.1V weak regulators */
 	PMU_2P5EnableWeakRegulator(PMU, true);
 	PMU_1P1EnableWeakRegulator(PMU, true);
@@ -173,8 +173,8 @@ static void lpm_raise_voltage(void)
 	/* Disable weak LDOs */
 	PMU_2P5EnableWeakRegulator(PMU, false);
 	PMU_1P1EnableWeakRegulator(PMU, false);
-	/* Change to 1.275V SOC voltage */
-	DCDC_AdjustRunTargetVoltage(DCDC, 0x13);
+	/* Change to normal SOC voltage */
+	DCDC_AdjustRunTargetVoltage(DCDC, (CONFIG_DCDC_TARGET_NORMAL_VOLTAGE - 800) / 25);
 	/* Move to the external RC oscillator */
 	CLOCK_InitExternalClk(0);
 	/* Switch clock source to external OSC. */
