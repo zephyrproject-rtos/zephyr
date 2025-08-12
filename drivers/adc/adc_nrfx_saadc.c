@@ -639,6 +639,7 @@ static void event_handler(const nrfx_saadc_evt_t *event)
 		if (has_single_ended(&m_data.ctx.sequence)) {
 			correct_single_ended(&m_data.ctx.sequence, m_data.user_buffer);
 		}
+		nrfy_saadc_disable(NRF_SAADC);
 		adc_context_on_sampling_done(&m_data.ctx, DEVICE_DT_INST_GET(0));
 	} else if (event->type == NRFX_SAADC_EVT_CALIBRATEDONE) {
 		err = nrfx_saadc_mode_trigger();
