@@ -89,6 +89,7 @@ New APIs and options
   * Audio
 
     * :c:struct:`bt_audio_codec_cfg` now contains a target_latency and a target_phy option
+    * :c:func:`bt_bap_broadcast_source_foreach_stream`
 
 * Display
 
