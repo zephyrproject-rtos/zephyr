@@ -452,6 +452,12 @@ config BT_AVDTP_SIGNAL_SDU_MAX
 	  This option sets the maximum size of AVDTP signaling SDU.
 	  The default value is 512 bytes.
 
+config BT_AVDTP_DELAY_REPORT
+	bool "Bluetooth AVDTP Delay Report [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This option enables Bluetooth AVDTP Delay Report
+
 endif # BT_AVDTP
 
 if BT_A2DP
@@ -465,6 +471,13 @@ config BT_A2DP_SINK
 	bool "Bluetooth A2DP Profile Sink Function"
 	help
 	  This option enables the A2DP profile sink function
+
+config BT_A2DP_DELAY_REPORT
+	bool "Bluetooth A2DP Delay Report [EXPERIMENTAL]"
+	select BT_AVDTP_DELAY_REPORT
+	select EXPERIMENTAL
+	help
+	  This option enables Bluetooth A2DP Delay Report
 
 endif # BT_A2DP
 
