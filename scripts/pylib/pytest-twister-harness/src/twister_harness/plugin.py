@@ -103,6 +103,10 @@ def pytest_addoption(parser: pytest.Parser):
              'will translate to "west flash -- --board-id=foobar --erase".'
     )
     twister_harness_group.addoption(
+        '--flash-command',
+        help='Use a custom flash command for flashing.'
+    )
+    twister_harness_group.addoption(
         '--pre-script',
         metavar='PATH',
         help='Script executed before flashing and connecting to serial.'

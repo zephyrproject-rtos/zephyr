@@ -564,6 +564,7 @@ def test_pytest__generate_parameters_for_hardware(tmp_path, pty_value, hardware_
 
     options = handler.options
     options.west_flash = "args"
+    options.flash_command = "flash_command"
 
     hardware.probe_id = "123"
     hardware.product = "product"
@@ -597,6 +598,7 @@ def test_pytest__generate_parameters_for_hardware(tmp_path, pty_value, hardware_
         assert "--runner-params=--runner-param1" in command
         assert "--runner-params=runner-param2" in command
         assert "--west-flash-extra-args=args" in command
+        assert "--flash-command=flash_command" in command
         assert "--device-id=123" in command
         assert "--device-product=product" in command
         assert "--pre-script=pre_script" in command

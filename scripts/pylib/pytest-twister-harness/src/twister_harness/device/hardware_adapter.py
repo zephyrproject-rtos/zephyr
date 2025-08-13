@@ -38,8 +38,23 @@ class HardwareAdapter(DeviceAdapter):
         self.device_log_path: Path = device_config.build_dir / 'device.log'
         self._log_files.append(self.device_log_path)
 
+    def _generate_flash_command(self) -> None:
+        command = [self.device_config.flash_command[0]]
+        command.extend(['--build-dir', str(self.device_config.build_dir)])
+
+        if self.device_config.id:
+            command.extend(['--board-id', self.device_config.id])
+
+        command.extend(self.device_config.flash_command[1:])
+
+        self.command = command
+
     def generate_command(self) -> None:
         """Return command to flash."""
+        if self.device_config.flash_command:
+            self._generate_flash_command()
+            return
+
         command = [
             self.west,
             'flash',
