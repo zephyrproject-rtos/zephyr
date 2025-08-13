@@ -60,6 +60,11 @@ static void qdec_trigger_handler(const struct device *dev, const struct sensor_t
 
 static void qenc_emulate_work_handler(struct k_work *work)
 {
+	/* Check if emulation has been stopped after submitting this work item. */
+	if (loopback_currently_under_test == NULL) {
+		return;
+	}
+
 	if (toggle_a) {
 		gpio_pin_toggle_dt(&loopback_currently_under_test->qenc_phase_a);
 	} else {
@@ -113,6 +118,8 @@ static void qenc_emulate_stop(void)
 		k_timer_stop(&qenc_emulate_timer);
 		qenc_emulate_reset_pin(&loopback_currently_under_test->qenc_phase_a);
 		qenc_emulate_reset_pin(&loopback_currently_under_test->qenc_phase_b);
+
+		loopback_currently_under_test = NULL;
 	}
 }
 
@@ -218,6 +225,9 @@ static void sensor_trigger_set_and_disable(struct qdec_qenc_loopback *loopback)
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
 		pm_device_runtime_put(loopback->qdec);
 	}
+
+	qenc_emulate_stop();
+	k_sem_reset(&sem);
 }
 
 /**
@@ -270,8 +280,7 @@ static void sensor_trigger_set_test(struct qdec_qenc_loopback *loopback)
 	}
 
 	qenc_emulate_stop();
-	/* emulation not working, but there may be old trigger which needs to be cleaned up */
-	rc = k_sem_take(&sem, K_MSEC(200));
+	k_sem_reset(&sem);
 }
 
 /**
@@ -571,6 +580,7 @@ static void after(void *fixture)
 	ARG_UNUSED(fixture);
 
 	qenc_emulate_stop();
+	k_sem_reset(&sem);
 }
 
 ZTEST_SUITE(qdec_sensor, NULL, setup, before, after, NULL);
