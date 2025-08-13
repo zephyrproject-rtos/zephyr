@@ -121,6 +121,17 @@ def _parse_args():
 
     areas_parser.set_defaults(cmd_fn=Maintainers._areas_cmd)
 
+    hierarchy_parser = subparsers.add_parser(
+        "hierarchy",
+        help="Show hierarchy of areas with their sub-areas")
+    hierarchy_parser.add_argument(
+        "area",
+        metavar="AREA",
+        nargs="?",
+        help="Show only an area and its sub areas.")
+
+    hierarchy_parser.set_defaults(cmd_fn=Maintainers._hierarchy_cmd)
+
     orphaned_parser = subparsers.add_parser(
         "orphaned",
         help="List orphaned files (files that do not appear in any area)")
@@ -194,7 +205,9 @@ class Maintainers:
             self.filename = self._toplevel / "MAINTAINERS.yml"
 
         self.areas = {}
-        for area_name, area_dict in _load_maintainers(self.filename).items():
+        maintainers_data = _load_maintainers(self.filename)
+
+        for area_name, area_dict in maintainers_data.items():
             area = Area()
             area.name = area_name
             area.status = area_dict.get("status")
@@ -205,6 +218,8 @@ class Maintainers:
             area.tests = area_dict.get("tests", [])
             area.tags = area_dict.get("tags", [])
             area.description = area_dict.get("description")
+            area.sub_areas = []
+            area.parents = []
 
             # area._match_fn(path) tests if the path matches files and/or
             # files-regex
@@ -219,6 +234,27 @@ class Maintainers:
                               area_dict.get("files-regex-exclude"))
 
             self.areas[area_name] = area
+
+        for area_name, area_dict in maintainers_data.items():
+            if "parents" in area_dict:
+                parents = area_dict["parents"]
+                if isinstance(parents, str):
+                    parents = [parents]
+
+                child_area = self.areas[area_name]
+                for parent_name in parents:
+                    parent_area = self.areas[parent_name]
+                    parent_area.sub_areas.append(child_area)
+                    child_area.parents.append(parent_area)
+                    child_area.labels.extend(parent_area.labels)
+
+    def _add_all_parents(self, area, area_set):
+        """Recursively add all parent areas of the given area to the set"""
+        for parent in area.parents:
+            if parent not in area_set:
+                area_set.add(parent)
+                # Recursively add grandparents, etc.
+                self._add_all_parents(parent, area_set)
 
     def path2areas(self, path):
         """
@@ -239,8 +275,16 @@ class Maintainers:
         if is_dir:
             path += "/"
 
-        return [area for area in self.areas.values()
-                if area._contains(path)]
+        direct_matches = [area for area in self.areas.values()
+                    if area._contains(path)]
+
+        expanded_areas = set()
+        for area in direct_matches:
+            expanded_areas.add(area)
+            # Add all parent areas recursively
+            self._add_all_parents(area, expanded_areas)
+
+        return list(expanded_areas)
 
     def commits2areas(self, commits):
         """
@@ -393,6 +437,54 @@ class Maintainers:
             else:
                 print(path)  # We get here if we never hit the 'break'
 
+    def _hierarchy_cmd(self, args):
+        """Show area hierarchy recursively with ASCII tree graphics"""
+        def print_area_recursive(area, prefix="", is_last=True):
+            # Choose the appropriate tree characters
+            current_prefix = "└── " if is_last else "├── "
+            print(f"{prefix}{current_prefix}{area.name}")
+
+            # Prepare prefix for children
+            child_prefix = prefix + ("    " if is_last else "│   ")
+
+            # Recursively print sub-areas
+            if area.sub_areas:
+                sorted_sub_areas = sorted(area.sub_areas, key=lambda a: a.name)
+                for i, sub_area in enumerate(sorted_sub_areas):
+                    is_last_child = i == len(sorted_sub_areas) - 1
+                    print_area_recursive(sub_area, child_prefix, is_last_child)
+
+
+        if args.area:
+            if args.area not in self.areas:
+                _serr(f"Area '{args.area}' not found")
+            area = self.areas[args.area]
+            print(area.name)  # Print root without tree chars
+
+            # Print sub-areas with tree graphics
+            if area.sub_areas:
+                sorted_sub_areas = sorted(area.sub_areas, key=lambda a: a.name)
+                for i, sub_area in enumerate(sorted_sub_areas):
+                    is_last_child = i == len(sorted_sub_areas) - 1
+                    print_area_recursive(sub_area, "", is_last_child)
+        else:
+            # Show all root areas (areas with no parents) and their hierarchies
+            root_areas = [area for area in self.areas.values()
+                         if not any(area in parent.sub_areas
+                                  for parent in self.areas.values())]
+
+            for area in sorted(root_areas, key=lambda a: a.name):
+                print(area.name)  # Print root without tree chars
+
+                # Print sub-areas with tree graphics
+                if area.sub_areas:
+                    sorted_sub_areas = sorted(area.sub_areas, key=lambda a: a.name)
+                    for i, sub_area in enumerate(sorted_sub_areas):
+                        is_last_child = i == len(sorted_sub_areas) - 1
+                        print_area_recursive(sub_area, "", is_last_child)
+
+                print()  # Blank line between root hierarchies # Blank line between root hierarchies
+
 
 class Area:
     """
@@ -526,7 +618,7 @@ def _check_maintainers(maints_path, yaml):
 
     ok_keys = {"status", "maintainers", "collaborators", "inform", "files",
                "files-exclude", "files-regex", "files-regex-exclude",
-               "labels", "description", "tests", "tags"}
+               "labels", "description", "tests", "tags", "parents"}
 
     ok_status = {"maintained", "odd fixes", "unmaintained", "obsolete"}
     ok_status_s = ", ".join('"' + s + '"' for s in ok_status)  # For messages
@@ -550,7 +642,8 @@ def _check_maintainers(maints_path, yaml):
             ferr("either 'files' or 'files-regex' (or both) must be specified "
                  "for area '{}'".format(area_name))
 
-        if not area_dict.get("maintainers") and area_dict.get("status") == "maintained":
+        if not area_dict.get("maintainers") and area_dict.get("status") == "maintained" and \
+                len(area_dict["parents"]) == 0:
             ferr("maintained area '{}' with no maintainers".format(area_name))
 
         for list_name in "maintainers", "collaborators", "inform", "files", \
@@ -595,6 +688,24 @@ def _check_maintainers(maints_path, yaml):
            not isinstance(area_dict["description"], str):
             ferr("malformed 'description' value for area '{}' -- should be a "
                  "string".format(area_name))
+
+        if "parents" in area_dict:
+            parents = area_dict["parents"]
+
+            # Allow string or list
+            if isinstance(parents, str):
+                parents = [parents]
+            elif not isinstance(parents, list):
+                ferr("malformed 'parents' value for area '{}' -- should be a string or list of strings"
+                        .format(area_name))
+
+            for parent_name in parents:
+                if not isinstance(parent_name, str):
+                    ferr("malformed parent name in 'parents' for area '{}' -- should be a string"
+                            .format(area_name))
+                if parent_name not in yaml:
+                    ferr("parent area '{}' referenced by area '{}' does not exist"
+                            .format(parent_name, area_name))
 
 
 def _git(*args):
