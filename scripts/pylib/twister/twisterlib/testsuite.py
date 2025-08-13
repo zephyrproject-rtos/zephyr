@@ -149,7 +149,7 @@ def scan_file(inf_name):
                 )
             elif new_suite_regex_matches or new_suite_testcase_regex_matches:
                 ztest_suite_names = \
-                    _extract_ztest_suite_names(new_suite_regex_matches)
+                    _extract_ztest_suite_names(new_suite_regex_matches) + _extract_ztest_suite_names(new_suite_testcase_regex_matches)
                 testcase_names, warnings = \
                     _find_new_ztest_testcases(main_c)
             else:
