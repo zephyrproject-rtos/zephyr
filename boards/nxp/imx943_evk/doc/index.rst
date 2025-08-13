@@ -375,7 +375,27 @@ Connection as below,
   |         |       |                 |--GND----------------GND(J43-14)-|         |
   +---------+       +-----------------+                                 +---------+
 
-b. There will be 4 serial ports identified when connect USB cable to debug port.
+b. Please connect one additional usb2serial converter between Host PC and board's
+auduino interface with dupont cable for M33S in NETCMIX for debugging via JTAG.
+(LPUART8's pads reused by JTAG's pads, so change to use another UART3,
+then UART3 and JTAG can be used at the same time.)
+Connection as below,
+
+.. code-block:: text
+
+  +---------+  USB  +-----------------+                                           +---------+
+  | Host PC |<----->| USB-to-Serial c |--TX-->RX(J44-10, M1_LED_TP1, LPUART3_RX)--|  board  |
+  |         |       |                 |--RX<--TX(J51-18, M1_PWM_CX, LPUART3_TX)---|         |
+  |         |       |                 |--GND--GND(J45-12)-------------------------|         |
+  |         |       +-----------------+                                           |         |
+  |         |                                                                     |         |
+  |         |                                                                     |         |
+  |         |                                                                     |         |
+  |         |                                                                     |         |
+  |         |                                                                     |         |
+  +---------+                                                                     +---------+
+
+c. There will be 4 serial ports identified when connect USB cable to debug port.
 The first serial port will be UART8 for M33. As there is multiplexing between JTAG
 and UART8, below bcu (`bcu 1.1.113 download`_) configuration is needed to use UART8.
 
