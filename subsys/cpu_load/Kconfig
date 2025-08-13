@@ -1,0 +1,21 @@
+# Copyright (c) 2025 Analog Devices, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig CPU_LOAD_METRIC
+	bool "CPU Load Subsystem"
+	select EXPERIMENTAL
+	select THREAD_RUNTIME_STATS
+	select SCHED_THREAD_USAGE
+	select SCHED_THREAD_USAGE_ALL
+	select SCHED_THREAD_USAGE_AUTO_ENABLE
+	help
+	  CPU Load subsystem
+
+if CPU_LOAD_METRIC
+
+module = CPU_LOAD
+module-str = CPU Load Metric
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # CPU_LOAD_METRIC
