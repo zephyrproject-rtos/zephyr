@@ -40,7 +40,9 @@
 &uart0_wrapper {
 	status = "okay";
 	pinctrl-0 = <&uart_rx_gpio113 &uart_tx_gpio114>;
-	pinctrl-names = "default";
+	pinctrl-1 = <&uart_rx_gpio113_sleep>;
+	pinctrl-names = "default", "sleep";
+	rx-wakeup-pin = <113>;
 };
 
 &kbd {

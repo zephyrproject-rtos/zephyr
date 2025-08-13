@@ -53,8 +53,7 @@ static int rts5912_periph_clock_control(const struct device *dev, clock_control_
 	case RTS5912_SCCON_UART:
 		if (on_off) {
 			sys_reg->UARTCLK = BIT(clk_idx);
-		} else {
-			sys_reg->UARTCLK &= ~BIT(clk_idx);
+			sys_reg->UARTCLK |= SYSTEM_UARTCLK_SRC_Msk;
 		}
 
 		LOG_DBG("Turn UART0 clock <%s>", on_off ? "ON" : "OFF");

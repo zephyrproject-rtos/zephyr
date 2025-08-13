@@ -35,6 +35,9 @@ child-binding:
       type: int
       required: true
       description: Pinmux selection
+    interrupt-enable:
+      type: boolean
+      description: enable interrupt mode
     drive-strength:
       type: string
       enum:
@@ -51,3 +54,13 @@ child-binding:
       description: |
         "fast" — Fast Frequency Slew Rate
         "slow" — Slow Frequency Slew Rate
+    interrupt-trigger:
+      type: string
+      description: |
+        Interrupt trigger mode.
+      enum:
+        - positive-edge_trigger
+        - negative-edge_trigger
+        - dual-edge_trigger
+        - low-level_trigger
+        - high-level_trigger
