@@ -111,8 +111,10 @@ class CanShellBus(BusABC): # pylint: disable=abstract-method
         if frame_num is None:
             raise CanOperationError('frame not enqueued')
 
-        tx_regex = r'CAN\s+frame\s+#' + frame_num + r'\s+successfully\s+sent'
-        self._dut.readlines_until(regex=tx_regex, timeout=timeout)
+        regex_compiled = re.compile(r'CAN\s+frame\s+#' + frame_num + r'\s+successfully\s+sent')
+        regex_matched = any(regex_compiled.search(line) for line in lines)
+        if not regex_matched:
+            raise CanOperationError('sending failed')
 
     def _add_filter(self, can_id: int, can_mask: int, extended: bool) -> None:
         """Add RX filter."""

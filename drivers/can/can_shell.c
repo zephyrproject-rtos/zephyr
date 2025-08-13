@@ -44,16 +44,6 @@ static const struct can_shell_mode_mapping can_shell_mode_map[] = {
 	/* zephyr-keep-sorted-stop */
 };
 
-K_MSGQ_DEFINE(can_shell_tx_msgq, sizeof(struct can_shell_tx_event),
-	      CONFIG_CAN_SHELL_TX_QUEUE_SIZE, 4);
-const struct shell *can_shell_tx_msgq_sh;
-static struct k_work_poll can_shell_tx_msgq_work;
-static struct k_poll_event can_shell_tx_msgq_events[] = {
-	K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
-					K_POLL_MODE_NOTIFY_ONLY,
-					&can_shell_tx_msgq, 0)
-};
-
 K_MSGQ_DEFINE(can_shell_rx_msgq, sizeof(struct can_shell_rx_event),
 	      CONFIG_CAN_SHELL_RX_QUEUE_SIZE, 4);
 const struct shell *can_shell_rx_msgq_sh;
@@ -65,7 +55,6 @@ static struct k_poll_event can_shell_rx_msgq_events[] = {
 };
 
 /* Forward declarations */
-static void can_shell_tx_msgq_triggered_work_handler(struct k_work *work);
 static void can_shell_rx_msgq_triggered_work_handler(struct k_work *work);
 
 static bool can_device_check(const struct device *dev)
@@ -134,58 +123,6 @@ static void can_shell_print_frame(const struct shell *sh, const struct device *d
 #ifdef CONFIG_CAN_SHELL_SCRIPTING_FRIENDLY
 	shell_set_bypass(sh, NULL);
 #endif /* CONFIG_CAN_SHELL_SCRIPTING_FRIENDLY */
-}
-
-static int can_shell_tx_msgq_poll_submit(const struct shell *sh)
-{
-	int err;
-
-	if (can_shell_tx_msgq_sh == NULL) {
-		can_shell_tx_msgq_sh = sh;
-		k_work_poll_init(&can_shell_tx_msgq_work, can_shell_tx_msgq_triggered_work_handler);
-	}
-
-	err = k_work_poll_submit(&can_shell_tx_msgq_work, can_shell_tx_msgq_events,
-				 ARRAY_SIZE(can_shell_tx_msgq_events), K_FOREVER);
-	if (err != 0) {
-		shell_error(can_shell_tx_msgq_sh, "failed to submit tx msgq polling (err %d)",
-			    err);
-	}
-
-	return err;
-}
-
-static void can_shell_tx_msgq_triggered_work_handler(struct k_work *work)
-{
-	struct can_shell_tx_event event;
-
-	while (k_msgq_get(&can_shell_tx_msgq, &event, K_NO_WAIT) == 0) {
-		if (event.error == 0) {
-			shell_print(can_shell_tx_msgq_sh, "CAN frame #%u successfully sent",
-				    event.frame_no);
-		} else {
-			shell_error(can_shell_tx_msgq_sh, "failed to send CAN frame #%u (err %d)",
-				    event.frame_no, event.error);
-		}
-	}
-
-	(void)can_shell_tx_msgq_poll_submit(can_shell_tx_msgq_sh);
-}
-
-static void can_shell_tx_callback(const struct device *dev, int error, void *user_data)
-{
-	struct can_shell_tx_event event;
-	int err;
-
-	ARG_UNUSED(dev);
-
-	event.frame_no = POINTER_TO_UINT(user_data);
-	event.error = error;
-
-	err = k_msgq_put(&can_shell_tx_msgq, &event, K_NO_WAIT);
-	if (err != 0) {
-		LOG_ERR("CAN shell tx event queue full");
-	}
 }
 
 static void can_shell_rx_callback(const struct device *dev, struct can_frame *frame,
@@ -813,11 +750,6 @@ static int cmd_can_send(const struct shell *sh, size_t argc, char **argv)
 		frame.data[i] = val;
 	}
 
-	err = can_shell_tx_msgq_poll_submit(sh);
-	if (err != 0) {
-		return err;
-	}
-
 	frame_no = frame_counter++;
 
 	shell_print(sh, "enqueuing CAN frame #%u with %s (%d-bit) CAN ID 0x%0*x, "
@@ -830,11 +762,13 @@ static int cmd_can_send(const struct shell *sh, size_t argc, char **argv)
 		    (frame.flags & CAN_FRAME_BRS) != 0 ? 1 : 0,
 		    frame.dlc);
 
-	err = can_send(dev, &frame, K_NO_WAIT, can_shell_tx_callback, UINT_TO_POINTER(frame_no));
+	err = can_send(dev, &frame, K_NO_WAIT, NULL, UINT_TO_POINTER(frame_no));
 	if (err != 0) {
-		shell_error(sh, "failed to enqueue CAN frame #%u (err %d)", frame_no, err);
+		shell_error(sh, "failed to send CAN frame #%u (err %d)", frame_no, err);
 		return err;
 	}
+
+	shell_print(sh, "CAN frame #%u successfully sent", frame_no);
 
 	return 0;
 }
