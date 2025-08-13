@@ -87,11 +87,12 @@ New APIs and options
 
 * Display
 
-  * Added new pixel format :c:enum:`PIXEL_FORMAT_AL_88`
+  * :c:enumerator:`PIXEL_FORMAT_AL_88`
 
   * SDL
 
     * :kconfig:option:`CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_AL_88`
+    * :kconfig:option:`CONFIG_SDL_DISPLAY_COLOR_TINT`
 
 * Logging:
 
