@@ -86,6 +86,7 @@ foreach(loopkeytype ${keytypes})
 endforeach()
 
 if(SB_CONFIG_BOOT_ENCRYPTION)
+  set_config_bool(${image} CONFIG_BOOT_ENCRYPT_IMAGE y)
   set_config_string(${ZCMAKE_APPLICATION} CONFIG_BOOT_ENCRYPTION_KEY_FILE "${SB_CONFIG_BOOT_ENCRYPTION_KEY_FILE}")
   if(SB_CONFIG_BOOT_ENCRYPTION_ALG_AES_128)
     set_config_bool(${ZCMAKE_APPLICATION} CONFIG_BOOT_ENCRYPT_ALG_AES_128 y)
