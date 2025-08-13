@@ -124,20 +124,6 @@
 		reg = <0xa5000 0x1000>;
 	};
 
-	gpio0: gpio@100000 {
-		#gpio-cells = <2>;
-
-		reg = <0x100000 0x1000>;
-
-		interrupts = <9 0 0>, <10 0 0>;
-
-		nxp,kinetis-port = <&gpio0>;
-		gpio-controller;
-
-		compatible = "nxp,kinetis-gpio";
-		status = "disabled";
-	};
-
 	flexcomm0: flexcomm@110000 {
 		#address-cells = <1>;
 		#size-cells = <1>;

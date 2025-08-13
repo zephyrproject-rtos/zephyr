@@ -5,7 +5,7 @@
 
 config INTC_ESP32
 	bool "Interrupt allocator for Espressif SoCs"
-	default y
+	default y if !SOC_ESP32C6_LPCORE
 	depends on SOC_FAMILY_ESPRESSIF_ESP32
 	help
 	  Enable custom interrupt allocator for Espressif SoCs based on Xtensa

@@ -171,15 +171,15 @@ static int it8xxx2_kbd_init(const struct device *dev)
 		 *   Bit[7:6] = 00b: Select alternate KSO function
 		 *   Bit[2] = 1b: Enable the internal pull-up of KSO pin
 		 *
-		 * NOTE: Set input temporarily for gpio_pin_configure(), after
-		 * that pinctrl_apply_state() set to alternate function
-		 * immediately.
+		 * NOTE: Set (output | dt_flag) temporarily for kso16 and
+		 * kso17 pins, after that pinctrl_apply_state() set to
+		 * alternate function immediately.
 		 */
 		if (!(config->kso_ignore_mask & BIT(16))) {
-			gpio_pin_configure_dt(&config->kso16_gpios, GPIO_INPUT);
+			gpio_pin_configure_dt(&config->kso16_gpios, GPIO_OUTPUT);
 		}
 		if (common->col_size > 17 && !(config->kso_ignore_mask & BIT(17))) {
-			gpio_pin_configure_dt(&config->kso17_gpios, GPIO_INPUT);
+			gpio_pin_configure_dt(&config->kso17_gpios, GPIO_OUTPUT);
 		}
 	}
 	/*

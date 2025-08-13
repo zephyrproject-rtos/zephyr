@@ -8,11 +8,11 @@ config SOC_SERIES_SIM3U
 	help
 	  Enable support for SiM3U MCU series
 
-config SOC_PART_NUMBER_SIM3U167BGM
+config SOC_SIM3U167BGM
 	bool
 	select SOC_SERIES_SIM3U
 
-config SOC_PART_NUMBER_SIM3U167AGQ
+config SOC_SIM3U167AGQ
 	bool
 	select SOC_SERIES_SIM3U
 
@@ -20,5 +20,5 @@ config SOC_SERIES
 	default "sim3u" if SOC_SERIES_SIM3U
 
 config SOC
-	default "sim3u167" if SOC_PART_NUMBER_SIM3U167BGM
-	default "sim3u167" if SOC_PART_NUMBER_SIM3U167AGQ
+	default "sim3u167" if SOC_SIM3U167BGM
+	default "sim3u167" if SOC_SIM3U167AGQ

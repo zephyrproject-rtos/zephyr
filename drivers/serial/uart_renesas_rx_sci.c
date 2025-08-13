@@ -14,9 +14,12 @@
 #include <zephyr/spinlock.h>
 
 #include "r_sci_rx_if.h"
+#include "iodefine_sci.h"
 
 #if CONFIG_SOC_SERIES_RX130
 #include "r_sci_rx130_private.h"
+#elif CONFIG_SOC_SERIES_RX261
+#include "r_sci_rx261_private.h"
 #else
 #error Unknown SOC, not (yet) supported.
 #endif
@@ -68,7 +71,7 @@ struct uart_rx_sci_data {
 
 static int uart_rx_sci_poll_in(const struct device *dev, unsigned char *c)
 {
-	volatile struct st_sci0 *sci = (struct st_sci0 *)DEV_BASE(dev);
+	volatile struct st_sci *sci = (struct st_sci *)DEV_BASE(dev);
 
 	if (IS_ENABLED(CONFIG_UART_ASYNC_API) && sci->SCR.BIT.RIE) {
 		return -EBUSY;
@@ -86,7 +89,7 @@ static int uart_rx_sci_poll_in(const struct device *dev, unsigned char *c)
 
 static void uart_rx_sci_poll_out(const struct device *dev, unsigned char c)
 {
-	volatile struct st_sci0 *sci = (struct st_sci0 *)DEV_BASE(dev);
+	volatile struct st_sci *sci = (struct st_sci *)DEV_BASE(dev);
 
 	while (sci->SSR.BIT.TEND == 0U) {
 	}
@@ -96,7 +99,7 @@ static void uart_rx_sci_poll_out(const struct device *dev, unsigned char c)
 
 static int uart_rx_err_check(const struct device *dev)
 {
-	volatile struct st_sci0 *sci = (struct st_sci0 *)DEV_BASE(dev);
+	volatile struct st_sci *sci = (struct st_sci *)DEV_BASE(dev);
 
 	const uint32_t status = sci->SSR.BYTE;
 	int errors = 0;
@@ -227,7 +230,7 @@ static int uart_rx_config_get(const struct device *dev, struct uart_config *cfg)
 
 static int uart_rx_fifo_fill(const struct device *dev, const uint8_t *tx_data, int size)
 {
-	volatile struct st_sci0 *sci = (struct st_sci0 *)DEV_BASE(dev);
+	volatile struct st_sci *sci = (struct st_sci *)DEV_BASE(dev);
 	uint8_t num_tx = 0U;
 
 	if (size > 0 && sci->SSR.BIT.TDRE) {
@@ -240,7 +243,7 @@ static int uart_rx_fifo_fill(const struct device *dev, const uint8_t *tx_data, i
 
 static int uart_rx_fifo_read(const struct device *dev, uint8_t *rx_data, const int size)
 {
-	volatile struct st_sci0 *sci = (struct st_sci0 *)DEV_BASE(dev);
+	volatile struct st_sci *sci = (struct st_sci *)DEV_BASE(dev);
 	uint8_t num_rx = 0U;
 
 	if (size > 0 && sci->SSR.BIT.RDRF) {
@@ -254,7 +257,7 @@ static int uart_rx_fifo_read(const struct device *dev, uint8_t *rx_data, const i
 static void uart_rx_irq_tx_enable(const struct device *dev)
 {
 	struct uart_rx_sci_data *data = dev->data;
-	volatile struct st_sci0 *sci = (struct st_sci0 *)DEV_BASE(dev);
+	volatile struct st_sci *sci = (struct st_sci *)DEV_BASE(dev);
 
 	sci->SCR.BYTE |= (BIT(R_SCI_SCR_TIE_Pos) | BIT(R_SCI_SCR_TEIE_Pos));
 	irq_enable(data->tei_irq);
@@ -274,7 +277,7 @@ static void uart_rx_irq_tx_enable(const struct device *dev)
 static void uart_rx_irq_tx_disable(const struct device *dev)
 {
 	struct uart_rx_sci_data *data = dev->data;
-	volatile struct st_sci0 *sci = (struct st_sci0 *)DEV_BASE(dev);
+	volatile struct st_sci *sci = (struct st_sci *)DEV_BASE(dev);
 
 	sci->SCR.BYTE &= ~(BIT(R_SCI_SCR_TIE_Pos) | BIT(R_SCI_SCR_TEIE_Pos));
 	irq_disable(data->tei_irq);
@@ -282,7 +285,7 @@ static void uart_rx_irq_tx_disable(const struct device *dev)
 
 static int uart_rx_irq_tx_ready(const struct device *dev)
 {
-	volatile struct st_sci0 *sci = (struct st_sci0 *)DEV_BASE(dev);
+	volatile struct st_sci *sci = (struct st_sci *)DEV_BASE(dev);
 
 	return (sci->SCR.BIT.TIE == 1U) &&
 	       (sci->SSR.BYTE & (BIT(R_SCI_SSR_TDRE_Pos) | BIT(R_SCI_SSR_TEND_Pos)));
@@ -290,28 +293,28 @@ static int uart_rx_irq_tx_ready(const struct device *dev)
 
 static int uart_rx_irq_tx_complete(const struct device *dev)
 {
-	volatile struct st_sci0 *sci = (struct st_sci0 *)DEV_BASE(dev);
+	volatile struct st_sci *sci = (struct st_sci *)DEV_BASE(dev);
 
 	return (sci->SCR.BIT.TEIE == 1U) && (sci->SSR.BYTE & BIT(R_SCI_SSR_TEND_Pos));
 }
 
 static void uart_rx_irq_rx_enable(const struct device *dev)
 {
-	volatile struct st_sci0 *sci = (struct st_sci0 *)DEV_BASE(dev);
+	volatile struct st_sci *sci = (struct st_sci *)DEV_BASE(dev);
 
 	sci->SCR.BIT.RIE = 1U;
 }
 
 static void uart_rx_irq_rx_disable(const struct device *dev)
 {
-	volatile struct st_sci0 *sci = (struct st_sci0 *)DEV_BASE(dev);
+	volatile struct st_sci *sci = (struct st_sci *)DEV_BASE(dev);
 
 	sci->SCR.BIT.RIE = 0U;
 }
 
 static int uart_rx_irq_rx_ready(const struct device *dev)
 {
-	volatile struct st_sci0 *sci = (struct st_sci0 *)DEV_BASE(dev);
+	volatile struct st_sci *sci = (struct st_sci *)DEV_BASE(dev);
 
 	return (sci->SCR.BIT.RIE == 1U) && ((sci->SSR.BYTE & BIT(R_SCI_SSR_RDRF_Pos)));
 }
@@ -332,7 +335,7 @@ static void uart_rx_irq_err_disable(const struct device *dev)
 
 static int uart_rx_irq_is_pending(const struct device *dev)
 {
-	volatile struct st_sci0 *sci = (struct st_sci0 *)DEV_BASE(dev);
+	volatile struct st_sci *sci = (struct st_sci *)DEV_BASE(dev);
 	bool tx_pending = false;
 	bool rx_pending = false;
 
@@ -482,7 +485,6 @@ static void uart_rx_sci_eri_isr(const struct device *dev)
 #else
 #define UART_RX_SCI_IRQ_INIT(index)
 #endif
-
 
 #define UART_RX_INIT(index)                                                                        \
 	PINCTRL_DT_DEFINE(DT_INST_PARENT(index));                                                  \

@@ -1149,7 +1149,7 @@ DT_FOREACH_STATUS_OKAY(renesas_ra_canfd_global, CAN_RENESAS_RA_GLOBAL_DEFINE)
 				.tx_irq = DT_INST_IRQ_BY_NAME(index, tx, irq),                     \
 				.p_extend = &can_renesas_ra_data##index.fsp_canfd_extend,          \
 				.p_bit_timing = &can_renesas_ra_data##index.bit_timing,            \
-				.p_context = DEVICE_DT_INST_GET(index),                            \
+				.p_context = (void *)DEVICE_DT_INST_GET(index),                    \
 				.p_callback = can_renesas_ra_fsp_cb,                               \
 			},                                                                         \
 		.fsp_canfd_extend =                                                                \

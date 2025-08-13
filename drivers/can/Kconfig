@@ -38,6 +38,14 @@ config CAN_DEFAULT_BITRATE_DATA
 	  Default initial CAN data phase bitrate in bits/s. This can be overridden per CAN controller
 	  using the "bitrate-data" devicetree property.
 
+config CAN_SAMPLE_POINT_MARGIN
+	int "Maximum acceptable sample point location deviation"
+	default 50
+	range 0 1000
+	help
+	  Maximum acceptable deviation in sample point location (permille). A value of 50 means +/-
+	  5 percentage points margin allowed.
+
 config CAN_SHELL
 	bool "CAN shell"
 	depends on SHELL

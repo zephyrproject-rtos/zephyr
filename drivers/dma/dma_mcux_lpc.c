@@ -44,13 +44,13 @@ struct channel_data {
 	const struct device *dev;
 	void *user_data;
 	dma_callback_t dma_callback;
+	dma_descriptor_t *curr_descriptor;
+	uint32_t width;
 	enum dma_channel_direction dir;
 	uint8_t src_inc;
 	uint8_t dst_inc;
-	dma_descriptor_t *curr_descriptor;
 	uint8_t num_of_descriptors;
 	bool descriptors_queued;
-	uint32_t width;
 	bool busy;
 };
 
@@ -93,13 +93,19 @@ static void nxp_lpc_dma_callback(dma_handle_t *handle, void *param,
 
 	if (intmode == kDMA_IntError) {
 		DMA_AbortTransfer(handle);
+		data->busy = false;
 	} else if (intmode == kDMA_IntA) {
+		/* this is interrupt for a block that is not the
+		 * last so leave busy flag set.
+		 */
 		ret = DMA_STATUS_BLOCK;
 	} else {
+		/* this is interrupt for end of a block list
+		 * or a single transfer.
+		 */
+		data->busy = false;
 		ret = DMA_STATUS_COMPLETE;
 	}
-
-	data->busy = DMA_ChannelIsBusy(data->dma_handle.base, channel);
 
 	if (data->dma_callback) {
 		data->dma_callback(data->dev, data->user_data, channel, ret);
@@ -224,8 +230,9 @@ static int dma_mcux_lpc_queue_descriptors(struct channel_data *data,
 		 * address does not need to be change for these
 		 * transactions and the transfer width is 4 bytes
 		 */
-		if ((local_block.source_addr_adj == DMA_ADDR_ADJ_NO_CHANGE) &&
-			(local_block.dest_addr_adj == DMA_ADDR_ADJ_NO_CHANGE)) {
+		if ((data->dir == LPC_DMA_SPI_MCUX_FLEXCOMM_TX) &&
+		    (local_block.block_size == sizeof(uint32_t)) &&
+		    (local_block.next_block == NULL)) {
 			src_inc = 0;
 			dest_inc = 0;
 			width = sizeof(uint32_t);
@@ -237,7 +244,7 @@ static int dma_mcux_lpc_queue_descriptors(struct channel_data *data,
 			enable_b_interrupt = 0;
 		} else {
 			/* Use intB when this is the end of the block list and transfer */
-			if (last_block) {
+			if (last_block && !setup_extra_descriptor) {
 				enable_a_interrupt = 0;
 				enable_b_interrupt = 1;
 			} else {
@@ -335,6 +342,101 @@ static void dma_mcux_lpc_clear_channel_data(struct channel_data *data)
 	data->width = 0;
 }
 
+static int get_block_increments(const struct dma_config *config,
+				struct dma_block_config *block_config, uint8_t *src_inc_p,
+				uint8_t *dst_inc_p)
+{
+	uint8_t src_inc = 1;
+	uint8_t dst_inc = 1;
+
+	uint8_t width = config->dest_data_size;
+
+	if ((block_config->source_addr_adj == DMA_ADDR_ADJ_DECREMENT) ||
+	    (block_config->dest_addr_adj == DMA_ADDR_ADJ_DECREMENT)) {
+		LOG_ERR("DMA_ADDR_ADJ_DECREMENT not supported");
+		return -EINVAL;
+	}
+
+	switch (config->channel_direction) {
+	case MEMORY_TO_MEMORY:
+	case HOST_TO_MEMORY:
+	case MEMORY_TO_HOST:
+		if (block_config->source_gather_en && (block_config->source_gather_interval != 0)) {
+			src_inc = block_config->source_gather_interval / width;
+			/* The current controller only supports incrementing the
+			 * source and destination up to 4 time transfer width
+			 */
+			if ((src_inc > 4) || (src_inc == 3)) {
+				return -EINVAL;
+			}
+		}
+
+		if (block_config->dest_scatter_en && (block_config->dest_scatter_interval != 0)) {
+			dst_inc = block_config->dest_scatter_interval / width;
+			/* The current controller only supports incrementing the
+			 * source and destination up to 4 time transfer width
+			 */
+			if ((dst_inc > 4) || (dst_inc == 3)) {
+				return -EINVAL;
+			}
+		}
+		break;
+	case LPC_DMA_SPI_MCUX_FLEXCOMM_TX:
+	case MEMORY_TO_PERIPHERAL:
+		/* Set the source increment value */
+		if (block_config->source_gather_en) {
+			src_inc = block_config->source_gather_interval / width;
+			/* The current controller only supports incrementing the
+			 * source and destination up to 4 time transfer width
+			 */
+			if ((src_inc > 4) || (src_inc == 3)) {
+				return -EINVAL;
+			}
+		}
+
+		dst_inc = 0;
+		if (block_config->dest_addr_adj != DMA_ADDR_ADJ_NO_CHANGE) {
+			LOG_ERR("DMA to peripheral must set DMA_ADDR_ADJ_NO_CHANGE");
+			return -EINVAL;
+		}
+		break;
+	case PERIPHERAL_TO_MEMORY:
+		src_inc = 0;
+		if (block_config->source_addr_adj != DMA_ADDR_ADJ_NO_CHANGE) {
+			LOG_ERR("DMA from peripheral must set DMA_ADDR_ADJ_NO_CHANGE");
+			return -EINVAL;
+		}
+
+		/* Set the destination increment value */
+		if (block_config->dest_scatter_en) {
+			dst_inc = block_config->dest_scatter_interval / width;
+			/* The current controller only supports incrementing the
+			 * source and destination up to 4 time transfer width
+			 */
+			if ((dst_inc > 4) || (dst_inc == 3)) {
+				return -EINVAL;
+			}
+		}
+		break;
+	default:
+		LOG_ERR("not support transfer direction");
+		return -EINVAL;
+	}
+
+	/* Check if user does not want to increment address */
+	if (block_config->source_addr_adj == DMA_ADDR_ADJ_NO_CHANGE) {
+		src_inc = 0;
+	}
+	if (block_config->dest_addr_adj == DMA_ADDR_ADJ_NO_CHANGE) {
+		dst_inc = 0;
+	}
+
+	*src_inc_p = src_inc;
+	*dst_inc_p = dst_inc;
+
+	return 0;
+}
+
 /* Configure a channel */
 static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 				  struct dma_config *config)
@@ -347,8 +449,8 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 	struct dma_block_config *block_config;
 	uint32_t virtual_channel;
 	uint8_t otrig_index;
-	uint8_t src_inc = 1, dst_inc = 1;
-	bool is_periph = true;
+	uint8_t src_inc, dst_inc;
+	bool is_periph;
 	uint8_t width;
 	uint32_t max_xfer_bytes;
 	uint8_t reload = 0;
@@ -413,71 +515,15 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 		return -EINVAL;
 	}
 
-	switch (config->channel_direction) {
-	case MEMORY_TO_MEMORY:
-	case HOST_TO_MEMORY:
-	case MEMORY_TO_HOST:
+	if ((config->channel_direction == MEMORY_TO_PERIPHERAL) ||
+	    (config->channel_direction == PERIPHERAL_TO_MEMORY)) {
+		is_periph = true;
+	} else {
 		is_periph = false;
-		if (block_config->source_gather_en && (block_config->source_gather_interval != 0)) {
-			src_inc = block_config->source_gather_interval / width;
-			/* The current controller only supports incrementing the
-			 * source and destination up to 4 time transfer width
-			 */
-			if ((src_inc > 4) || (src_inc == 3)) {
-				return -EINVAL;
-			}
-		}
+	}
 
-		if (block_config->dest_scatter_en && (block_config->dest_scatter_interval != 0)) {
-			dst_inc = block_config->dest_scatter_interval / width;
-			/* The current controller only supports incrementing the
-			 * source and destination up to 4 time transfer width
-			 */
-			if ((dst_inc > 4) || (dst_inc == 3)) {
-				return -EINVAL;
-			}
-		}
-		break;
-	case MEMORY_TO_PERIPHERAL:
-		/* Set the source increment value */
-		if (block_config->source_gather_en) {
-			src_inc = block_config->source_gather_interval / width;
-			/* The current controller only supports incrementing the
-			 * source and destination up to 4 time transfer width
-			 */
-			if ((src_inc > 4) || (src_inc == 3)) {
-				return -EINVAL;
-			}
-		}
-
-		dst_inc = 0;
-		break;
-	case PERIPHERAL_TO_MEMORY:
-		src_inc = 0;
-
-		/* Set the destination increment value */
-		if (block_config->dest_scatter_en) {
-			dst_inc = block_config->dest_scatter_interval / width;
-			/* The current controller only supports incrementing the
-			 * source and destination up to 4 time transfer width
-			 */
-			if ((dst_inc > 4) || (dst_inc == 3)) {
-				return -EINVAL;
-			}
-		}
-		break;
-	default:
-		LOG_ERR("not support transfer direction");
+	if (get_block_increments(config, block_config, &src_inc, &dst_inc) != 0) {
 		return -EINVAL;
-	}
-
-	/* Check if user does not want to increment address */
-	if (block_config->source_addr_adj == DMA_ADDR_ADJ_NO_CHANGE) {
-		src_inc = 0;
-	}
-
-	if (block_config->dest_addr_adj == DMA_ADDR_ADJ_NO_CHANGE) {
-		dst_inc = 0;
 	}
 
 	/* If needed, allocate a slot to store dma channel data */
@@ -621,8 +667,8 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 					block_config->block_size);
 		}
 	} else {
-		/* Enable interrupt for the descriptor */
-		xfer_config = DMA_CHANNEL_XFER(0UL, 0UL, 1UL, 0UL,
+		/* Enable interrupt for the descriptor. Use int_b */
+		xfer_config = DMA_CHANNEL_XFER(0UL, 0UL, 0UL, 1UL,
 				width,
 				src_inc,
 				dst_inc,
@@ -680,6 +726,12 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 		block_config = block_config->next_block;
 
 		while (block_config != NULL) {
+			/* Each block can have a different configuration so update
+			 * src_inc/dst_inc based on the block_config.
+			 */
+			if (get_block_increments(config, block_config, &src_inc, &dst_inc) != 0) {
+				return -EINVAL;
+			}
 			block_config->source_reload_en = reload;
 
 			/* DMA controller requires that the address be aligned to transfer size */
@@ -750,11 +802,16 @@ static int dma_mcux_lpc_start(const struct device *dev, uint32_t channel)
 	struct dma_mcux_lpc_dma_data *dev_data = dev->data;
 	int8_t virtual_channel = dev_data->channel_index[channel];
 	struct channel_data *data = DEV_CHANNEL_DATA(dev, virtual_channel);
+	dma_handle_t *p_handle = DEV_DMA_HANDLE(dev, virtual_channel);
 
 	LOG_DBG("START TRANSFER");
 	LOG_DBG("DMA CTRL 0x%x", DEV_BASE(dev)->CTRL);
 	data->busy = true;
-	DMA_StartTransfer(DEV_DMA_HANDLE(dev, virtual_channel));
+	/* In case of a restart after a stop, reinstall the DMA callback
+	 * that was removed by the stop.
+	 */
+	DMA_SetCallback(p_handle, nxp_lpc_dma_callback, (void *)data);
+	DMA_StartTransfer(p_handle);
 	return 0;
 }
 
@@ -763,14 +820,28 @@ static int dma_mcux_lpc_stop(const struct device *dev, uint32_t channel)
 	struct dma_mcux_lpc_dma_data *dev_data = dev->data;
 	int8_t virtual_channel = dev_data->channel_index[channel];
 	struct channel_data *data = DEV_CHANNEL_DATA(dev, virtual_channel);
+	dma_handle_t *p_handle = DEV_DMA_HANDLE(dev, virtual_channel);
 
-	if (!data->busy) {
-		return 0;
-	}
-	DMA_AbortTransfer(DEV_DMA_HANDLE(dev, virtual_channel));
-	DMA_DisableChannel(DEV_BASE(dev), channel);
+	/* Abort/disable even if not busy. it's safe and avoids
+	 * any risk of data->busy not being accurate.
+	 */
+	DMA_AbortTransfer(p_handle);
+	DMA_DisableChannel(DEV_BASE(dev), p_handle->channel);
 
 	data->busy = false;
+
+	/* Handle race condition where if this is called from an ISR
+	 * and the DMA channel completion interrupt becomes pending
+	 * before we complete the abort and disable, then the DMA ISR
+	 * may run and invoke the callback may run after we return,
+	 * which is unexpected by user since from their perspective
+	 * the stop was already completed. We cannot just checking
+	 * and clear the pending IRQ since it is shared by other
+	 * channels. This way, the pending DMA ISR will still run,
+	 * but should just clear the interrupt and not invoke
+	 * the callback.
+	 */
+	DMA_SetCallback(p_handle, NULL, NULL);
 	return 0;
 }
 
@@ -791,8 +862,8 @@ static int dma_mcux_lpc_reload(const struct device *dev, uint32_t channel,
 
 		p_handle = DEV_DMA_HANDLE(dev, virtual_channel);
 
-		/* Only one buffer, enable interrupt */
-		xfer_config = DMA_CHANNEL_XFER(0UL, 0UL, 1UL, 0UL,
+		/* Only one buffer, enable interrupt b */
+		xfer_config = DMA_CHANNEL_XFER(0UL, 0UL, 0UL, 1UL,
 					data->width,
 					data->src_inc,
 					data->dst_inc,

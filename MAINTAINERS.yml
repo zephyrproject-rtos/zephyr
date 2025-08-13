@@ -513,6 +513,8 @@ Bluetooth HCI:
     - sjanc
     - HoZHel
     - cvinayak
+    - PavelVPV
+    - HaavardRei
   files:
     - include/zephyr/drivers/bluetooth/
     - include/zephyr/drivers/bluetooth.h
@@ -537,6 +539,8 @@ Bluetooth Host:
     - sjanc
     - Thalley
     - cvinayak
+    - PavelVPV
+    - HaavardRei
   files:
     - doc/connectivity/bluetooth/
     - include/zephyr/bluetooth/
@@ -5564,6 +5568,15 @@ West:
   labels:
     - "area: AMP"
 
+"West project: libsbc":
+  status: maintained
+  maintainers:
+    - MarkWangChinese
+  files:
+    - modules/libsbc/
+  labels:
+    - "area: Audio"
+
 "West project: littlefs":
   status: odd fixes
   files:
@@ -5675,8 +5688,7 @@ West:
   maintainers:
     - aescolar
   collaborators:
-    - wopu-ot
-    - thoh-ot
+    - rugeGerritsen
   files: []
   labels:
     - "area: native port"

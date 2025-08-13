@@ -343,3 +343,12 @@ void ll_coex_ticker_id_get(uint8_t * const instance_index,
 				uint8_t * const ticker_id);
 void ll_radio_state_abort(void);
 uint32_t ll_radio_state_is_idle(void);
+
+uint8_t ll_conn_set_path_loss_parameters(uint16_t handle,
+					 uint8_t  high_threshold,
+					 uint8_t  high_hysteresis,
+					 uint8_t  low_threshold,
+					 uint8_t  low_hysteresis,
+					 uint16_t min_time_spent);
+
+uint8_t ll_conn_set_path_loss_reporting(uint16_t handle, uint8_t enable);

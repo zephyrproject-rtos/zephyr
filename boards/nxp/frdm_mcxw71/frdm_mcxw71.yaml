@@ -12,6 +12,7 @@ supported:
   - can
   - counter
   - flash
+  - flexio
   - gpio
   - i2c
   - pinctrl

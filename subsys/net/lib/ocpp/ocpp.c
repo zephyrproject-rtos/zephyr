@@ -5,7 +5,10 @@
  */
 
 #include "ocpp_i.h"
-#include <sys/time.h>
+
+#include <time.h>
+
+#include <zephyr/sys/clock.h>
 
 LOG_MODULE_REGISTER(ocpp, CONFIG_OCPP_LOG_LEVEL);
 
@@ -68,11 +71,11 @@ int ocpp_find_pdu_from_literal(const char *msg)
 
 void ocpp_get_utc_now(char utc[CISTR25])
 {
-	struct timeval tv;
+	struct timespec ts;
 	struct tm htime = {0};
 
-	gettimeofday(&tv, NULL);
-	gmtime_r(&tv.tv_sec, &htime);
+	sys_clock_gettime(SYS_CLOCK_REALTIME, &ts);
+	gmtime_r(&ts.tv_sec, &htime);
 
 	snprintk(utc, CISTR25, "%04hu-%02hu-%02huT%02hu:%02hu:%02huZ",
 		htime.tm_year + 1900,
@@ -239,6 +242,7 @@ static void ocpp_internal_handler(void *p1, void *p2, void *p3)
 			break;
 
 		case PDU_METER_VALUES:
+		{
 			union ocpp_io_value io;
 			sys_snode_t *node;
 			struct ocpp_session *lsh;
@@ -270,7 +274,7 @@ static void ocpp_internal_handler(void *p1, void *p2, void *p3)
 			}
 			k_mutex_unlock(&ctx->ilock);
 			break;
-
+		}
 		case PDU_HEARTBEAT:
 			ocpp_heartbeat(sh);
 			/* adjust local time with cs time ! */
@@ -286,18 +290,15 @@ static void ocpp_internal_handler(void *p1, void *p2, void *p3)
 			break;
 
 		case PDU_REMOTE_START_TRANSACTION:
-			msg.msgtype = OCPP_USR_START_CHARGING;
-			ctx->cb(msg.msgtype, &msg.usr, ctx->user_data);
+			ctx->cb(OCPP_USR_START_CHARGING, &msg.usr, ctx->user_data);
 			break;
 
 		case PDU_REMOTE_STOP_TRANSACTION:
-			msg.msgtype = OCPP_USR_STOP_CHARGING;
-			ctx->cb(msg.msgtype, &msg.usr, ctx->user_data);
+			ctx->cb(OCPP_USR_STOP_CHARGING, &msg.usr, ctx->user_data);
 			break;
 
 		case PDU_UNLOCK_CONNECTOR:
-			msg.msgtype = OCPP_USR_UNLOCK_CONNECTOR;
-			ctx->cb(msg.msgtype, &msg.usr, ctx->user_data);
+			ctx->cb(OCPP_USR_UNLOCK_CONNECTOR, &msg.usr, ctx->user_data);
 			break;
 
 		default:
@@ -345,6 +346,7 @@ static int ocpp_process_server_msg(struct ocpp_info *ctx)
 	char skey[CISTR50];
 
 	case PDU_BOOTNOTIFICATION:
+	{
 		struct boot_notif binfo;
 
 		ret = fn(ui->recv_buf, &binfo);
@@ -353,9 +355,10 @@ static int ocpp_process_server_msg(struct ocpp_info *ctx)
 			ctx->hb_sec = binfo.interval;
 		}
 		break;
-
+	}
 	case PDU_AUTHORIZE:
 	case PDU_STOP_TRANSACTION:
+	{
 		struct ocpp_idtag_info idinfo = {0};
 
 		if (sh == NULL) {
@@ -367,8 +370,10 @@ static int ocpp_process_server_msg(struct ocpp_info *ctx)
 			sh->resp_status = idinfo.auth_status;
 		}
 		break;
-
+	}
 	case PDU_START_TRANSACTION:
+	{
+		struct ocpp_idtag_info idinfo = {0};
 		if (sh == NULL) {
 			break;
 		}
@@ -379,7 +384,7 @@ static int ocpp_process_server_msg(struct ocpp_info *ctx)
 			sh->resp_status = idinfo.auth_status;
 		}
 		break;
-
+	}
 	case PDU_GET_CONFIGURATION:
 		memset(skey, 0, sizeof(skey));
 
@@ -402,6 +407,7 @@ static int ocpp_process_server_msg(struct ocpp_info *ctx)
 		break;
 
 	case PDU_CHANGE_CONFIGURATION:
+	{
 		char sval[CISTR500] = {0};
 
 		memset(skey, 0, sizeof(skey));
@@ -412,7 +418,7 @@ static int ocpp_process_server_msg(struct ocpp_info *ctx)
 
 		ocpp_change_configuration(skey, ctx, sval, uid);
 		break;
-
+	}
 	case PDU_HEARTBEAT:
 		/* todo : sync time */
 		break;
@@ -471,7 +477,7 @@ static void ocpp_wsreader(void *p1, void *p2, void *p3)
 	struct ocpp_info *ctx = p1;
 	struct ocpp_upstream_info *ui = &ctx->ui;
 	struct zsock_pollfd tcpfd;
-	uint8_t ret;
+	int ret;
 	uint8_t retry_cnt = 0;
 
 	ctx->is_cs_offline = true;

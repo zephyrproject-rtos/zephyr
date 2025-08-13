@@ -53,4 +53,11 @@
 /* Used by driver to extract burstpower setting */
 #define LPC_DMA_GET_BURSTPOWER(slot) (((slot) & 0xE0) >> 5)
 
+/*
+ * Special channel_direction for SPI_MCUX_FLEXCOMM_TX so
+ * that DMA driver can configure the last descriptor
+ * to deassert CS.
+ */
+#define LPC_DMA_SPI_MCUX_FLEXCOMM_TX (DMA_CHANNEL_DIRECTION_PRIV_START)
+
 #endif /* ZEPHYR_INCLUDE_DRIVERS_DMA_DMA_MCUX_LPC_H_ */

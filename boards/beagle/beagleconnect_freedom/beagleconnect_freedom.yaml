@@ -15,4 +15,5 @@ supported:
   - hwinfo
   - adc
   - pwm
+  - flash
 vendor: beagle

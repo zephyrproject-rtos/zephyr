@@ -1,7 +1,7 @@
 .. _native_sim:
 
-Native simulator - native_sim
-#############################
+native_sim
+##########
 
 .. contents::
    :depth: 1
@@ -547,12 +547,22 @@ where :file:`/dev/{<ptyn>}` should be replaced with the actual PTY device.
 
 You may also chose to automatically attach a terminal emulator to any of these UARTs.
 To automatically attach one to all these UARTs, pass the command line option ``-attach_uart`` to the
-executable. To automatically attach one to a single UART use ``-<uart_name>_attach_uart``
+executable. To automatically attach one to a single UART use ``-<uart_name>_attach_uart``.
 The command used for attaching to the new shell can be set for all UARTs with the command line
 option ``-attach_uart_cmd=<"cmd">``, or for each individual UART with
 ``-<uart_name>_attach_uart_cmd``. Where the default command is given by
 :kconfig:option:`CONFIG_UART_NATIVE_PTY_AUTOATTACH_DEFAULT_CMD`.
 Note that the default command assumes both ``xterm`` and ``screen`` are installed in the system.
+
+Note that these ``uart_cmd`` commands can be effectively any shell command including lists of
+commands. Therefore it is possible to invoke any other script or program from it.
+Those commands will be run right after the PTY is created.
+For example, if one wanted to create a link to the newly created PTY, and have it removed when the
+program ends, one could do:
+
+.. code-block:: console
+
+   $ zephyr.exe --uart_attach_uart_cmd='ln -s %s /tmp/somename' ; rm /tmp/somename
 
 This driver supports poll mode or async mode with :kconfig:option:`CONFIG_UART_ASYNC_API`.
 Interrupt mode is not supported.

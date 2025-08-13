@@ -1187,7 +1187,7 @@ static DEVICE_API(i3c, i3c_renesas_ra_api) = {
 	static i3c_cfg_t i3c##index##_cfg = {                                                      \
 		.channel = DT_INST_PROP(index, channel),                                           \
 		.p_callback = &i3c_renesas_ra_hal_callback,                                        \
-		.p_context = DEVICE_DT_INST_GET(index),                                            \
+		.p_context = (void *)DEVICE_DT_INST_GET(index),                                    \
 		.p_extend = &i3c##index##_cfg_extend,                                              \
 	};                                                                                         \
 	static i3c_device_cfg_t i3c##index##_master_cfg = {0};                                     \

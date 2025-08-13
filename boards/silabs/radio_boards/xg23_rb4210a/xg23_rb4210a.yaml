@@ -21,6 +21,7 @@ supported:
   - dma
   - watchdog
   - comparator
+  - dac
 testing:
   ignore_tags:
     - pm

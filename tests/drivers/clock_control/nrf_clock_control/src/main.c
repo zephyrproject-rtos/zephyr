@@ -17,7 +17,8 @@ struct test_clk_context {
 	size_t clk_specs_size;
 };
 
-#if defined(CONFIG_CLOCK_CONTROL_NRF_HSFLL_LOCAL)
+#if defined(CONFIG_CLOCK_CONTROL_NRF_HSFLL_LOCAL) ||                                               \
+	defined(CONFIG_CLOCK_CONTROL_NRF_IRON_HSFLL_LOCAL)
 const struct nrf_clock_spec test_clk_specs_hsfll[] = {
 	{
 		.frequency = MHZ(128),

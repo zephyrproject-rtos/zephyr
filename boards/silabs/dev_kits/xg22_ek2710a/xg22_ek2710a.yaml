@@ -1,0 +1,24 @@
+identifier: xg22_ek2710a
+name: EFR32xG22 Explorer Kit (xG22-EK2710A, BRD2710A)
+type: mcu
+arch: arm
+ram: 32
+flash: 512
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - bluetooth
+  - counter
+  - gpio
+  - uart
+  - watchdog
+  - clock_control
+  - comparator
+  - i2c
+  - dma
+  - spi
+testing:
+  ignore_tags:
+    - pm
+vendor: silabs

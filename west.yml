@@ -195,7 +195,7 @@ manifest:
       groups:
         - hal
     - name: hal_microchip
-      revision: 415c92d3c8bd3d62db35980729df42be1f178023
+      revision: 2c5eb6b7b9ef3a442ff9d9536fbc63b2028c2d0e
       path: modules/hal/microchip
       groups:
         - hal
@@ -210,7 +210,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 2de68b601cc95417466707f1b99149820b0556ec
+      revision: 9b49fb1130209214a95d279b64e1efd5c87ec915
       path: modules/hal/nxp
       groups:
         - hal
@@ -226,7 +226,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 1ac809b55389ba3ce09dd1fbf2477a034134d112
+      revision: 1372089250bf0d8afc46a7efc3ecf080003ead22
       groups:
         - hal
     - name: hal_rpi_pico
@@ -235,7 +235,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: 295caf37909d2ff01688b1c4bd34c9b3584e8333
+      revision: 13343bccf850eb7b6541f6e71a8d2a880209850b
       path: modules/hal/silabs
       groups:
         - hal
@@ -293,6 +293,9 @@ manifest:
       path: modules/hal/libmetal
       groups:
         - hal
+    - name: libsbc
+      revision: 8e1beda02acb8972e29e6edbb423f7cafe16e445
+      path: modules/lib/libsbc
     - name: littlefs
       path: modules/fs/littlefs
       groups:
@@ -310,7 +313,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 4e108f702b5322fb59344ae4976e3d73c973ef12
+      revision: bf5321bb6906e9e75b4c85b7c98b71c06ae52e90
       path: bootloader/mcuboot
       groups:
         - bootloader
@@ -323,7 +326,7 @@ manifest:
       revision: 7307ce399b81ddcb3c3a5dc862c52d4754328d38
       path: modules/lib/nanopb
     - name: net-tools
-      revision: 64bf49ad9b6d1d1f9d24bf8b94d82d9bcb52f61a
+      revision: 2750d71e28e48865a6fd8a10413f978bb216c59e
       path: tools/net-tools
       groups:
         - tools

@@ -29,6 +29,8 @@ Kernel
 Boards
 ******
 
+* mimxrt11x0: renamed lpadc1 to lpadc2 and renamed lpadc0 to lpadc1.
+
 Device Drivers and Devicetree
 *****************************
 
@@ -51,6 +53,17 @@ Bluetooth
 *********
 
 .. zephyr-keep-sorted-start re(^\w)
+
+Bluetooth Audio
+===============
+
+* :c:struct:`bt_audio_codec_cfg` now requires setting the target latency and target PHY explicitly,
+  rather than always setting the target latency to "Balanced" and the target PHY to LE 2M.
+  To keep current functionality, set the ``target_latency`` to
+  :c:enumerator:`BT_AUDIO_CODEC_CFG_TARGET_LATENCY_BALANCED` and ``target_phy`` to
+  :c:enumerator:`BT_AUDIO_CODEC_CFG_TARGET_PHY_2M`.
+  The :c:macro:`BT_AUDIO_CODEC_CFG` macro defaults to these values.
+  (:github:`93825``)
 
 .. zephyr-keep-sorted-stop
 
@@ -80,6 +93,15 @@ Display
   This has now been fixed. Boards and applications that were tested or developed based on the
   previous sample may be affected by this change (see :github:`79996` for more information).
 
+PTP Clock
+*********
+
+* The doc of :c:func:`ptp_clock_rate_adjust` API didn't provide proper and clear function description.
+  Drivers implemented it to adjust rate ratio relatively based on current frequency.
+  Now PI servo is introduced in both PTP and gPTP, and this API function is changed to use for rate
+  ratio adjusting based on nominal frequency. Drivers implementing :c:func:`ptp_clock_rate_adjust`
+  should be adjusted to account for the new behavior.
+
 Other subsystems
 ****************
 
@@ -92,6 +114,21 @@ Modules
 
 * The TinyCrypt library was removed as the upstream version is no longer maintained.
   PSA Crypto API is now the recommended cryptographic library for Zephyr.
+
+Silabs
+======
+
+* Aligned the name of the Rail options with the other SiSDK related options:
+
+   * :kconfig:option:`CONFIG_RAIL_PA_CURVE_HEADER` to
+     :kconfig:option:`CONFIG_SILABS_SISDK_RAIL_PA_CURVE_HEADER`
+   * :kconfig:option:`CONFIG_RAIL_PA_CURVE_TYPES_HEADER` to
+     :kconfig:option:`CONFIG_SILABS_SISDK_RAIL_PA_CURVE_TYPES_HEADER`
+   * :kconfig:option:`CONFIG_RAIL_PA_ENABLE_CALIBRATION` to
+     :kconfig:option:`CONFIG_SILABS_SISDK_RAIL_PA_ENABLE_CALIBRATION`
+
+* Fixed name of the :kconfig:option:`CONFIG_SOC_*`. These option contained PART_NUMBER in their
+  while they shouldn't.
 
 Architectures
 *************

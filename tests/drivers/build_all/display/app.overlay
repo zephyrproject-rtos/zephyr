@@ -156,9 +156,15 @@
 				compatible = "solomon,ssd1322";
 				reg = <9>;
 				mipi-max-frequency = <16000000>;
-				width =	<128>;
+				width = <128>;
 				height = <64>;
-				column-offset =	<28>;
+				column-offset = <0>;
+				oscillator-freq = <0>;
+				precharge-voltage = <0>;
+				vcomh-voltage = <0>;
+				mux-ratio = <0>;
+				phase-length = <0>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
 			};
 
 			test_mipi_dbi_st75256: st75256@10 {

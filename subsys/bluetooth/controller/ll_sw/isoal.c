@@ -2461,7 +2461,7 @@ static uint16_t isoal_tx_framed_find_correct_tx_event(const struct isoal_source 
 					  (actual_event * session->burst_number));
 
 		ISOAL_LOG_DBGV("[%p] Final Evt=%llu (PL=%llu) Ref.=%lu Next PL=%llu",
-			       source, actual_event, (actual_event * session->burst_number),
+			       source_ctx, actual_event, (actual_event * session->burst_number),
 			       actual_grp_ref_point, next_payload_number);
 
 		/* Calculate the time offset */

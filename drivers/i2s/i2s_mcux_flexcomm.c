@@ -426,6 +426,7 @@ static void i2s_mcux_config_dma_blocks(const struct device *dev,
 	if (dir == I2S_DIR_RX) {
 
 		blk_cfg->source_address = (uint32_t)&base->FIFORD;
+		blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 		blk_cfg->dest_address = (uint32_t)buffer[0];
 		blk_cfg->block_size = block_size;
 		blk_cfg->next_block = &dev_data->rx_dma_blocks[1];
@@ -433,10 +434,12 @@ static void i2s_mcux_config_dma_blocks(const struct device *dev,
 
 		blk_cfg = &dev_data->rx_dma_blocks[1];
 		blk_cfg->source_address = (uint32_t)&base->FIFORD;
+		blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 		blk_cfg->dest_address = (uint32_t)buffer[1];
 		blk_cfg->block_size = block_size;
 	} else {
 		blk_cfg->dest_address = (uint32_t)&base->FIFOWR;
+		blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 		blk_cfg->source_address = (uint32_t)buffer;
 		blk_cfg->block_size = block_size;
 	}

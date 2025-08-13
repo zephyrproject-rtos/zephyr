@@ -14,6 +14,22 @@
 #define LLL_CONN_MIC_PASS 1
 #define LLL_CONN_MIC_FAIL 2
 
+
+struct path_loss_params {
+	uint16_t min_time_spent;
+	uint8_t  enabled;
+	uint8_t  high_threshold;
+	uint8_t  high_hysteresis;
+	uint8_t  low_threshold;
+	uint8_t  low_hysteresis;
+} __packed;
+
+struct path_loss_state {
+	uint16_t conn_handle;
+	uint16_t min_time_counter;
+	uint8_t  new_zone;
+} __packed;
+
 struct lll_tx {
 	uint16_t handle;
 	void *node;
@@ -157,6 +173,11 @@ struct lll_conn {
 	uint8_t  rssi_sample_count;
 #endif /* CONFIG_BT_CTLR_CONN_RSSI_EVENT */
 #endif /* CONFIG_BT_CTLR_CONN_RSSI */
+#if defined(CONFIG_BT_CTLR_LE_PATH_LOSS_MONITORING)
+	struct path_loss_params pl_params;
+	struct path_loss_state	pl_state;
+	uint8_t pl_current_zone;
+#endif /* CONFIG_BT_CTLR_LE_PATH_LOSS_MONITORING */
 
 #if defined(CONFIG_BT_CTLR_CONN_META)
 	struct lll_conn_meta conn_meta;

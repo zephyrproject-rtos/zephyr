@@ -18,4 +18,18 @@ config SPI_MCUX_FLEXCOMM_DMA
 	help
 	  Enable the SPI DMA mode for SPI instances
 	  that enable dma channels in their device tree node.
+
+config SPI_MCUX_FLEXCOMM_DMA_MAX_BLOCKS
+	int "MCUX FLEXCOMM SPI DMA Blocks Available"
+	range 2 100
+	depends on SPI_MCUX_FLEXCOMM_DMA
+	default 6
+	help
+	  Specifies the number of DMA blocks available for SPI transfer. Enough
+	  DMA blocks must be configured to handle all of the buffers in the
+	  transfer buffer set. If tx and rx buffers are not the same size, an
+	  additional block is needed for each set. A separate block is needed
+	  for the last word so that a final one word buffer can be used to set the
+	  end of transfer bit which will release the CS.
+
 endif # SPI_MCUX_FLEXCOMM

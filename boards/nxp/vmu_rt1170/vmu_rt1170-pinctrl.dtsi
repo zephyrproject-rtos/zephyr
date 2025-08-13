@@ -179,7 +179,7 @@
 		};
 	};
 
-	pinmux_lpadc1: pinmux_lpadc1 {
+	pinmux_lpadc2: pinmux_lpadc2 {
 		group0 {
 			pinmux = <&iomuxc_gpio_ad_10_adc1_ch2a>;
 			drive-strength = "normal";

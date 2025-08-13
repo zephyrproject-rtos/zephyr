@@ -813,7 +813,7 @@ static const struct udc_api udc_renesas_ra_api = {
 			.ipl = USB_RENESAS_RA_IRQ_GET(DT_INST_PARENT(n), usbfs_i, priority),       \
 			.ipl_r = USB_RENESAS_RA_IRQ_GET(DT_INST_PARENT(n), usbfs_r, priority),     \
 			.hsipl = USB_RENESAS_RA_IRQ_GET(DT_INST_PARENT(n), usbhs_ir, priority),    \
-			.p_context = DEVICE_DT_INST_GET(n),                                        \
+			.p_context = (void *)DEVICE_DT_INST_GET(n),                                \
 			.p_callback = udc_renesas_ra_event_handler,                                \
 		},                                                                                 \
 	};                                                                                         \

@@ -48,6 +48,7 @@ struct sw_config {
 	void *dnoe_reg;
 	struct gpio_dt_spec noe;
 	struct gpio_dt_spec reset;
+	bool keep_reset_deast;
 	uint32_t port_write_cycles;
 	void *clk_reg;
 };
@@ -668,7 +669,10 @@ static int sw_port_off(const struct device *dev)
 	}
 
 	if (config->reset.port) {
-		ret = gpio_pin_configure_dt(&config->reset, GPIO_DISCONNECTED);
+		ret = gpio_pin_configure_dt(&config->reset,
+					    config->keep_reset_deast
+						    ? GPIO_OUTPUT_ACTIVE
+						    : GPIO_DISCONNECTED);
 		if (ret) {
 			return ret;
 		}
@@ -729,6 +733,7 @@ static struct swdp_api swdp_bitbang_api = {
 		.dnoe_reg = SW_GPIOS_GET_REG(n, dnoe_gpios),				\
 		.noe = GPIO_DT_SPEC_INST_GET_OR(n, noe_gpios, {0}),			\
 		.reset = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),			\
+		.keep_reset_deast = DT_INST_PROP(n, keep_reset_deasserted),             \
 		.port_write_cycles = DT_INST_PROP(n, port_write_cycles),		\
 	};										\
 											\

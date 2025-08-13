@@ -41,32 +41,35 @@ config RTC_SHELL
 	help
 	  RTC Shell commands
 
+# zephyr-keep-sorted-start
 source "drivers/rtc/Kconfig.am1805"
 source "drivers/rtc/Kconfig.ambiq"
+source "drivers/rtc/Kconfig.bq32002"
 source "drivers/rtc/Kconfig.ds1307"
+source "drivers/rtc/Kconfig.ds1337"
 source "drivers/rtc/Kconfig.ds3231"
 source "drivers/rtc/Kconfig.emul"
 source "drivers/rtc/Kconfig.fake"
 source "drivers/rtc/Kconfig.ifx_cat1"
 source "drivers/rtc/Kconfig.mc146818"
+source "drivers/rtc/Kconfig.numaker"
+source "drivers/rtc/Kconfig.nxp_irtc"
 source "drivers/rtc/Kconfig.pcf2123"
 source "drivers/rtc/Kconfig.pcf8523"
 source "drivers/rtc/Kconfig.pcf8563"
 source "drivers/rtc/Kconfig.rpi_pico"
 source "drivers/rtc/Kconfig.rts5912"
 source "drivers/rtc/Kconfig.rv3028"
+source "drivers/rtc/Kconfig.rv8263"
+source "drivers/rtc/Kconfig.rv8803"
+source "drivers/rtc/Kconfig.rx8130ce"
 source "drivers/rtc/Kconfig.sam"
 source "drivers/rtc/Kconfig.sam0"
+source "drivers/rtc/Kconfig.siwx91x"
 source "drivers/rtc/Kconfig.smartbond"
 source "drivers/rtc/Kconfig.stm32"
-source "drivers/rtc/Kconfig.numaker"
-source "drivers/rtc/Kconfig.rv8263"
+source "drivers/rtc/Kconfig.ti_mspm0"
 source "drivers/rtc/Kconfig.xmc4xxx"
-source "drivers/rtc/Kconfig.nxp_irtc"
-source "drivers/rtc/Kconfig.rv8803"
-source "drivers/rtc/Kconfig.bq32002"
-source "drivers/rtc/Kconfig.rx8130ce"
-source "drivers/rtc/Kconfig.ds1337"
-source "drivers/rtc/Kconfig.siwx91x"
+# zephyr-keep-sorted-stop
 
 endif # RTC

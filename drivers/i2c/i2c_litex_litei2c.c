@@ -16,6 +16,11 @@ LOG_MODULE_REGISTER(i2c_litex_litei2c, CONFIG_I2C_LOG_LEVEL);
 
 #include <soc.h>
 
+#define I2C_LITEX_ANY_HAS_IRQ DT_ANY_INST_HAS_PROP_STATUS_OKAY(interrupts)
+#define I2C_LITEX_ALL_HAS_IRQ DT_ALL_INST_HAS_PROP_STATUS_OKAY(interrupts)
+
+#define I2C_LITEX_HAS_IRQ UTIL_OR(I2C_LITEX_ALL_HAS_IRQ, config->has_irq)
+
 #define MASTER_STATUS_TX_READY_OFFSET 0x0
 #define MASTER_STATUS_RX_READY_OFFSET 0x1
 #define MASTER_STATUS_NACK_OFFSET     0x8
@@ -28,10 +33,21 @@ struct i2c_litex_litei2c_config {
 	uint32_t master_rxtx_addr;
 	uint32_t master_status_addr;
 	uint32_t bitrate;
+#if I2C_LITEX_ANY_HAS_IRQ
+	uint32_t master_ev_pending_addr;
+	uint32_t master_ev_enable_addr;
+	void (*irq_config_func)(const struct device *dev);
+#if !I2C_LITEX_ALL_HAS_IRQ
+	bool has_irq;
+#endif /* !I2C_LITEX_ALL_HAS_IRQ */
+#endif /* I2C_LITEX_ANY_HAS_IRQ */
 };
 
 struct i2c_litex_litei2c_data {
 	struct k_mutex mutex;
+#if I2C_LITEX_ANY_HAS_IRQ
+	struct k_sem sem_rx_ready;
+#endif /* I2C_LITEX_ANY_HAS_IRQ */
 };
 
 static int i2c_litex_configure(const struct device *dev, uint32_t dev_config)
@@ -105,6 +121,26 @@ static int i2c_litex_write_settings(const struct device *dev, uint8_t len_tx, ui
 	return 0;
 }
 
+static void i2c_litex_wait_for_rx_ready(const struct device *dev)
+{
+	const struct i2c_litex_litei2c_config *config = dev->config;
+
+#if I2C_LITEX_ANY_HAS_IRQ
+	struct i2c_litex_litei2c_data *data = dev->data;
+
+	if (I2C_LITEX_HAS_IRQ) {
+		/* Wait for the RX ready event */
+		k_sem_take(&data->sem_rx_ready, K_FOREVER);
+		return;
+	}
+#endif /* I2C_LITEX_ANY_HAS_IRQ */
+
+	while (!(litex_read8(config->master_status_addr) &
+		BIT(MASTER_STATUS_RX_READY_OFFSET))) {
+		/* Wait until RX is ready */
+	}
+}
+
 static int i2c_litex_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
 			      uint16_t addr)
 {
@@ -129,6 +165,26 @@ static int i2c_litex_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 	k_mutex_lock(&data->mutex, K_FOREVER);
 
 	litex_write8(1, config->master_active_addr);
+
+	/* Flush RX buffer */
+	while ((litex_read8(config->master_status_addr) &
+		BIT(MASTER_STATUS_RX_READY_OFFSET))) {
+		rx_buf = litex_read32(config->master_rxtx_addr);
+		LOG_DBG("flushed rxd: 0x%x", rx_buf);
+	}
+
+	while (!(litex_read8(config->master_status_addr) &
+		BIT(MASTER_STATUS_TX_READY_OFFSET))) {
+		(void)litex_read32(config->master_rxtx_addr);
+	}
+
+#if I2C_LITEX_ANY_HAS_IRQ
+	if (I2C_LITEX_HAS_IRQ) {
+		litex_write8(BIT(0), config->master_ev_enable_addr);
+		litex_write8(BIT(0), config->master_ev_pending_addr);
+		k_sem_reset(&data->sem_rx_ready);
+	}
+#endif /* I2C_LITEX_ANY_HAS_IRQ */
 
 	LOG_DBG("addr: 0x%x", addr);
 	litex_write8((uint8_t)addr, config->master_addr_addr);
@@ -206,18 +262,10 @@ static int i2c_litex_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 			LOG_DBG("len_tx: %d, len_rx: %d", len_tx, len_rx);
 			i2c_litex_write_settings(dev, len_tx, len_rx, false);
 
-			while (!(litex_read8(config->master_status_addr) &
-				 BIT(MASTER_STATUS_TX_READY_OFFSET))) {
-				;
-			}
-
 			LOG_DBG("tx_buf: 0x%x", tx_buf);
 			litex_write32(tx_buf, config->master_rxtx_addr);
 
-			while (!(litex_read8(config->master_status_addr) &
-				 BIT(MASTER_STATUS_RX_READY_OFFSET))) {
-				;
-			}
+			i2c_litex_wait_for_rx_ready(dev);
 
 			if (litex_read16(config->master_status_addr) &
 			    BIT(MASTER_STATUS_NACK_OFFSET)) {
@@ -269,6 +317,12 @@ transfer_end:
 
 	litex_write8(0, config->master_active_addr);
 
+#if I2C_LITEX_ANY_HAS_IRQ
+	if (I2C_LITEX_HAS_IRQ) {
+		litex_write8(0, config->master_ev_enable_addr);
+	}
+#endif /* I2C_LITEX_ANY_HAS_IRQ */
+
 	k_mutex_unlock(&data->mutex);
 
 	return ret;
@@ -286,13 +340,13 @@ static int i2c_litex_recover_bus(const struct device *dev)
 	i2c_litex_write_settings(dev, 0, 0, true);
 
 	while (!(litex_read8(config->master_status_addr) & BIT(MASTER_STATUS_TX_READY_OFFSET))) {
-		;
+		/* Wait for TX ready */
 	}
 
 	litex_write32(0, config->master_rxtx_addr);
 
 	while (!(litex_read8(config->master_status_addr) & BIT(MASTER_STATUS_RX_READY_OFFSET))) {
-		;
+		/* Wait for RX data */
 	}
 
 	(void)litex_read32(config->master_rxtx_addr);
@@ -304,18 +358,39 @@ static int i2c_litex_recover_bus(const struct device *dev)
 	return 0;
 }
 
-static int i2c_litex_init(const struct device *dev)
+#if I2C_LITEX_ANY_HAS_IRQ
+static void i2c_litex_irq_handler(const struct device *dev)
 {
 	const struct i2c_litex_litei2c_config *config = dev->config;
 	struct i2c_litex_litei2c_data *data = dev->data;
-	int ret;
 
-	k_mutex_init(&data->mutex);
+	if (litex_read8(config->master_ev_pending_addr) & BIT(0)) {
+		k_sem_give(&data->sem_rx_ready);
+
+		/* ack reader irq */
+		litex_write8(BIT(0), config->master_ev_pending_addr);
+	}
+}
+#endif /* I2C_LITEX_ANY_HAS_IRQ */
+
+static int i2c_litex_init(const struct device *dev)
+{
+	const struct i2c_litex_litei2c_config *config = dev->config;
+	int ret;
 
 	ret = i2c_litex_configure(dev, I2C_MODE_CONTROLLER | i2c_map_dt_bitrate(config->bitrate));
 	if (ret != 0) {
 		LOG_ERR("failed to configure I2C: %d", ret);
 	}
+
+#if I2C_LITEX_ANY_HAS_IRQ
+	if (I2C_LITEX_HAS_IRQ) {
+		/* Disable interrupts initially */
+		litex_write8(0, config->master_ev_enable_addr);
+
+		config->irq_config_func(dev);
+	}
+#endif /* I2C_LITEX_ANY_HAS_IRQ */
 
 	return ret;
 }
@@ -332,8 +407,35 @@ static DEVICE_API(i2c, i2c_litex_litei2c_driver_api) = {
 
 /* Device Instantiation */
 
+#define I2C_LITEX_IRQ(n)									   \
+	BUILD_ASSERT(DT_INST_REG_HAS_NAME(n, master_ev_pending) &&				   \
+	DT_INST_REG_HAS_NAME(n, master_ev_enable), "registers for interrupts missing");		   \
+												   \
+	static void i2c_litex_irq_config##n(const struct device *dev)				   \
+	{											   \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), i2c_litex_irq_handler,	   \
+			    DEVICE_DT_INST_GET(n), 0);						   \
+												   \
+		irq_enable(DT_INST_IRQN(n));							   \
+	};
+
+#define I2C_LITEC_IRQ_DATA(n)									   \
+	.sem_rx_ready = Z_SEM_INITIALIZER(i2c_litex_litei2c_data_##n.sem_rx_ready, 0, 1),
+
+#define I2C_LITEC_IRQ_CONFIG(n)									   \
+	IF_DISABLED(I2C_LITEX_ALL_HAS_IRQ, (.has_irq = DT_INST_IRQ_HAS_IDX(n, 0),))		   \
+	.master_ev_pending_addr = DT_INST_REG_ADDR_BY_NAME_OR(n, master_ev_pending, 0),		   \
+	.master_ev_enable_addr = DT_INST_REG_ADDR_BY_NAME_OR(n, master_ev_enable, 0),		   \
+	.irq_config_func = COND_CODE_1(DT_INST_IRQ_HAS_IDX(n, 0),				   \
+			   (i2c_litex_irq_config##n), (NULL)),
+
 #define I2C_LITEX_INIT(n)                                                                          \
-	static struct i2c_litex_litei2c_data i2c_litex_litei2c_data_##n;                           \
+	IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 0), (I2C_LITEX_IRQ(n)))				   \
+												   \
+	static struct i2c_litex_litei2c_data i2c_litex_litei2c_data_##n = {			   \
+		.mutex = Z_MUTEX_INITIALIZER(i2c_litex_litei2c_data_##n.mutex),			   \
+		IF_ENABLED(I2C_LITEX_ANY_HAS_IRQ, (I2C_LITEC_IRQ_DATA(n)))			   \
+	};											   \
 												   \
 	static const struct i2c_litex_litei2c_config i2c_litex_litei2c_config_##n = {              \
 		.phy_speed_mode_addr = DT_INST_REG_ADDR_BY_NAME(n, phy_speed_mode),                \
@@ -343,6 +445,7 @@ static DEVICE_API(i2c, i2c_litex_litei2c_driver_api) = {
 		.master_rxtx_addr = DT_INST_REG_ADDR_BY_NAME(n, master_rxtx),                      \
 		.master_status_addr = DT_INST_REG_ADDR_BY_NAME(n, master_status),                  \
 		.bitrate = DT_INST_PROP(n, clock_frequency),                                       \
+		IF_ENABLED(I2C_LITEX_ANY_HAS_IRQ, (I2C_LITEC_IRQ_CONFIG(n)))                    \
 	};                                                                                         \
                                                                                                    \
 	I2C_DEVICE_DT_INST_DEFINE(n, i2c_litex_init, NULL, &i2c_litex_litei2c_data_##n,            \

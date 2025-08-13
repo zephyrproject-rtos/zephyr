@@ -722,6 +722,112 @@
 		status = "disabled";
 	};
 
+	lpit1: lpit@442f0000 {
+		compatible = "nxp,lpit";
+		reg = <0x442f0000 0x1000>;
+		interrupts = <15 0>;
+		clocks = <&ccm IMX_CCM_LPIT1_CLK 0x0 0>;
+		status = "disabled";
+		max-load-value = <0xffffffff>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		lpit1_channel0: lpit_channel@0 {
+			compatible = "nxp,lpit-channel";
+			reg = <0>;
+			status = "disabled";
+		};
+
+		lpit1_channel1: lpit_channel@1 {
+			compatible = "nxp,lpit-channel";
+			reg = <1>;
+			status = "disabled";
+		};
+
+		lpit1_channel2: lpit_channel@2 {
+			compatible = "nxp,lpit-channel";
+			reg = <2>;
+			status = "disabled";
+		};
+
+		lpit1_channel3: lpit_channel@3 {
+			compatible = "nxp,lpit-channel";
+			reg = <3>;
+			status = "disabled";
+		};
+	};
+
+	lpit2: lpit@424c0000 {
+		compatible = "nxp,lpit";
+		reg = <0x424c0000 0x1000>;
+		interrupts = <64 0>;
+		clocks = <&ccm IMX_CCM_LPIT2_CLK 0x0 0>;
+		status = "disabled";
+		max-load-value = <0xffffffff>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		lpit2_channel0: lpit_channel@0 {
+			compatible = "nxp,lpit-channel";
+			reg = <0>;
+			status = "disabled";
+		};
+
+		lpit2_channel1: lpit_channel@1 {
+			compatible = "nxp,lpit-channel";
+			reg = <1>;
+			status = "disabled";
+		};
+
+		lpit2_channel2: lpit_channel@2 {
+			compatible = "nxp,lpit-channel";
+			reg = <2>;
+			status = "disabled";
+		};
+
+		lpit2_channel3: lpit_channel@3 {
+			compatible = "nxp,lpit-channel";
+			reg = <3>;
+			status = "disabled";
+		};
+	};
+
+	lpit3: lpit@42cc0000 {
+		compatible = "nxp,lpit";
+		reg = <0x42cc0000 0x1000>;
+		interrupts = <149 0>;
+		clocks = <&ccm IMX_CCM_LPIT3_CLK 0x0 0>;
+		status = "disabled";
+		max-load-value = <0xffffffff>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		lpit3_channel0: lpit_channel@0 {
+			compatible = "nxp,lpit-channel";
+			reg = <0>;
+			status = "disabled";
+		};
+
+		lpit3_channel1: lpit_channel@1 {
+			compatible = "nxp,lpit-channel";
+			reg = <1>;
+			status = "disabled";
+		};
+
+		lpit3_channel2: lpit_channel@2 {
+			compatible = "nxp,lpit-channel";
+			reg = <2>;
+			status = "disabled";
+		};
+
+		lpit3_channel3: lpit_channel@3 {
+			compatible = "nxp,lpit-channel";
+			reg = <3>;
+			status = "disabled";
+		};
+	};
+
+
 	lptmr1: lptmr@4300000 {
 		compatible = "nxp,lptmr";
 		reg = <0x4300000 0x1000>;
@@ -752,6 +858,22 @@
 		prescaler = <1>;
 		clk-source = <0>;
 		resolution = <32>;
+		status = "disabled";
+	};
+
+	flexio1: flexio@25c0000{
+		compatible = "nxp,flexio";
+		reg = <0x25c0000 0x4000>;
+		interrupts = <53 0>;
+		clocks = <&ccm IMX_CCM_FLEXIO1_CLK 0 0>;
+		status = "disabled";
+	};
+
+	flexio2: flexio@25d0000 {
+		compatible = "nxp,flexio";
+		reg = <0x25d0000 0x4000>;
+		interrupts = <54 0>;
+		clocks = <&ccm IMX_CCM_FLEXIO2_CLK 0 0>;
 		status = "disabled";
 	};
 
@@ -1092,6 +1214,15 @@
 			 0x0C000000 0x0C000000 0x30000000 0x30000000
 			 0xC0000000 0xC0000000>;
 		status = "disabled";
+	};
+
+	ewm0: ewm@27b0000 {
+		compatible = "nxp,ewm";
+		reg = <0x27b0000 0x6>;
+		status = "disabled";
+		interrupts = <147 0>;
+		clk-sel = "lpo_clk[2]";
+		clk-divider = <0x2>;
 	};
 
 	lpspi1: spi@4360000 {

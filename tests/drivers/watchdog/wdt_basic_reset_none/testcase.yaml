@@ -15,9 +15,14 @@ tests:
     platform_allow:
       - frdm_mcxw71
       - frdm_mcxw72/mcxw727c/cpu0
+      - mimxrt1180_evk/mimxrt1189/cm33
+      - mimxrt1180_evk/mimxrt1189/cm7
     integration_platforms:
       - frdm_mcxw71
-    extra_args: DTC_OVERLAY_FILE="boards/mcxw7x_ewm.overlay"
+      - frdm_mcxw72/mcxw727c/cpu0
+      - mimxrt1180_evk/mimxrt1189/cm33
+      - mimxrt1180_evk/mimxrt1189/cm7
+    extra_args: DTC_OVERLAY_FILE="boards/app_ewm.overlay"
     extra_configs:
       - CONFIG_TEST_WDT_MAX_WINDOW_TIME=254
       - CONFIG_TEST_WDT_SLEEP_TIME=68

@@ -183,7 +183,6 @@
 };
 
 &gpio {
-	location-swo = <0>;
 	status = "okay";
 };
 
@@ -265,6 +264,14 @@
 			label = "storage";
 		};
 	};
+};
+
+&vdac0 {
+	status = "okay";
+};
+
+&vdac1 {
+	status = "okay";
 };
 
 &bt_hci_silabs {

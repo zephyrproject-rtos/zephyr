@@ -49,16 +49,16 @@ __weak void mimxrt798s_hifi4_irq_init(void)
 	 * - IRQ 6  (SEL 1):  FLEXCOMM0
 	 * - IRQ 7  (SEL 2):  FLEXCOMM2
 	 * - IRQ 8  (SEL 3):  WWDT1
-	 * - IRQ 9  (SEL 4):  PINT0
-	 * - IRQ 10 (SEL 5):  PINT1
-	 * - IRQ 11 (SEL 6):  PINT2
-	 * - IRQ 12 (SEL 7):  PINT3
-	 * - IRQ 13 (SEL 8):  PINT4
-	 * - IRQ 14 (SEL 9):  PINT5
-	 * - IRQ 15 (SEL 10): PINT6
+	 * - IRQ 9  (SEL 4):  Unmapped
+	 * - IRQ 10 (SEL 5):  Unmapped
+	 * - IRQ 11 (SEL 6):  Unmapped
+	 * - IRQ 12 (SEL 7):  Unmapped
+	 * - IRQ 13 (SEL 8):  Unmapped
+	 * - IRQ 14 (SEL 9):  Unmapped
+	 * - IRQ 15 (SEL 10): Unmapped
 	 *
 	 * L2:
-	 * - IRQ 16 (SEL 11): PINT7
+	 * - IRQ 16 (SEL 11): Unmapped
 	 * - IRQ 17 (SEL 12): LPSPI14
 	 * - IRQ 18 (SEL 13): MU2
 	 * - IRQ 19 (SEL 14): MU4
@@ -83,16 +83,6 @@ __weak void mimxrt798s_hifi4_irq_init(void)
 	INPUTMUX_AttachSignal(INPUTMUX0, 2, kINPUTMUX_Flexcomm2ToDspInterrupt);
 	INPUTMUX_AttachSignal(INPUTMUX0, 3, kINPUTMUX_Wdt1ToDspInterrupt);
 
-	INPUTMUX_AttachSignal(INPUTMUX0, 4, kINPUTMUX_Gpio0Irq0ToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX0, 5, kINPUTMUX_Gpio0Irq1ToDspInterrupt);
-
-	INPUTMUX_AttachSignal(INPUTMUX0, 6, kINPUTMUX_GpioInt2ToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX0, 7, kINPUTMUX_GpioInt3ToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX0, 8, kINPUTMUX_GpioInt4ToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX0, 9, kINPUTMUX_GpioInt5ToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX0, 10, kINPUTMUX_GpioInt6ToDspInterrupt);
-
-	INPUTMUX_AttachSignal(INPUTMUX0, 11, kINPUTMUX_GpioInt7ToDspInterrupt);
 	INPUTMUX_AttachSignal(INPUTMUX0, 12, kINPUTMUX_Spi14ToDspInterrupt);
 	INPUTMUX_AttachSignal(INPUTMUX0, 13, kINPUTMUX_Mu2AToDspInterrupt);
 	INPUTMUX_AttachSignal(INPUTMUX0, 14, kINPUTMUX_Mu4BToDspInterrupt);

@@ -1,0 +1,86 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <renesas/r5f52618bgfp.dtsi>
+#include <dt-bindings/gpio/gpio.h>
+#include "fpb_rx261-pinctrl.dtsi"
+
+/ {
+	model = "Renesas FPB-RX261";
+	compatible = "renesas,fpb_rx261";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &code_flash;
+		zephyr,console = &uart5;
+		zephyr,shell-uart = &uart5;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led1: led1 {
+			gpios = <&ioportj 1 GPIO_ACTIVE_LOW>;
+			label = "LED1";
+		};
+
+		led2: led2 {
+			gpios = <&ioportc 5 GPIO_ACTIVE_LOW>;
+			label = "LED2";
+		};
+	};
+
+	aliases {
+		led0 = &led1;
+		led1 = &led2;
+	};
+};
+
+&subclk {
+	status = "okay";
+};
+
+&cmt {
+	clock-frequency = <DT_FREQ_M(4)>;
+	status = "okay";
+};
+
+&pclkblock {
+	clocks = <&hoco>;
+};
+
+&clkout {
+	clocks = <&hoco>;
+};
+
+&uclk {
+	clocks = <&hoco>;
+};
+
+&ioport3 {
+	status = "okay";
+};
+
+&ioportc {
+	status = "okay";
+};
+
+&ioportj {
+	status = "okay";
+};
+
+&sci5 {
+	pinctrl-0 = <&sci5_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	uart5: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};

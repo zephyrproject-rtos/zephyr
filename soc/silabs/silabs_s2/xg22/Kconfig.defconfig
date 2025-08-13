@@ -10,7 +10,4 @@ config NUM_IRQS
 config PM
 	select UART_INTERRUPT_DRIVEN
 
-config GPIO_GECKO
-	default y
-
 endif

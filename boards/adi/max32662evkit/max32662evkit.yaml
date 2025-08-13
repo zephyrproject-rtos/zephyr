@@ -20,5 +20,5 @@ supported:
   - pwm
   - flash
   - can
-ram: 80
+ram: 16
 flash: 256

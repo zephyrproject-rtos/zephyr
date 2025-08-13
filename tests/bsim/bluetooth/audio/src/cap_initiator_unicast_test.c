@@ -761,7 +761,7 @@ static void unicast_audio_update(void)
 	WAIT_FOR_FLAG(flag_updated);
 }
 
-static void unicast_audio_stop(struct bt_cap_unicast_group *unicast_group)
+static void cap_initiator_unicast_audio_stop(struct bt_cap_unicast_group *unicast_group)
 {
 	struct bt_cap_unicast_audio_stop_param param;
 	int err;
@@ -897,7 +897,7 @@ static void test_main_cap_initiator_unicast(void)
 				backchannel_sync_wait_all();
 			}
 
-			unicast_audio_stop(unicast_group);
+			cap_initiator_unicast_audio_stop(unicast_group);
 		}
 
 		unicast_group_delete(unicast_group);
@@ -937,7 +937,7 @@ static void test_main_cap_initiator_unicast_inval(void)
 	/* Wait until acceptors have received expected data */
 	backchannel_sync_wait_all();
 
-	unicast_audio_stop(unicast_group);
+	cap_initiator_unicast_audio_stop(unicast_group);
 
 	unicast_group_delete_inval();
 	unicast_group_delete(unicast_group);
@@ -978,7 +978,7 @@ static void test_cap_initiator_unicast_timeout(void)
 
 		WAIT_FOR_FLAG(flag_start_timeout);
 
-		unicast_audio_stop(unicast_group);
+		cap_initiator_unicast_audio_stop(unicast_group);
 	}
 
 	unicast_group_delete(unicast_group);
@@ -1047,7 +1047,7 @@ static void test_cap_initiator_unicast_ase_error(void)
 	/* Wait until acceptors have received expected data */
 	backchannel_sync_wait_all();
 
-	unicast_audio_stop(unicast_group);
+	cap_initiator_unicast_audio_stop(unicast_group);
 
 	unicast_group_delete(unicast_group);
 	unicast_group = NULL;
@@ -1439,7 +1439,7 @@ static void test_cap_initiator_ac(const struct cap_initiator_ac_param *param)
 		WAIT_FOR_FLAG(flag_audio_received);
 	}
 
-	unicast_audio_stop(unicast_group);
+	cap_initiator_unicast_audio_stop(unicast_group);
 
 	unicast_group_delete(unicast_group);
 	unicast_group = NULL;

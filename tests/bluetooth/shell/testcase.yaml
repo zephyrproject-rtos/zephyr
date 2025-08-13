@@ -52,19 +52,6 @@ tests:
       - CONFIG_BT_CHANNEL_SOUNDING_TEST=y
       - CONFIG_BT_LL_SW_SPLIT=n
     build_only: true
-  bluetooth.shell.cdc_acm:
-    extra_args:
-      - EXTRA_CONF_FILE=cdc_acm.conf
-      - DTC_OVERLAY_FILE="usb.overlay"
-    depends_on: usbd
-    platform_allow:
-      - native_sim
-      - native_sim/native/64
-      - nrf52840dk/nrf52840
-    platform_exclude: nrf52dk/nrf52810
-    tags: bluetooth
-    harness: keyboard
-    min_flash: 350
   bluetooth.shell.shell_br:
     extra_configs:
       - CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT=y

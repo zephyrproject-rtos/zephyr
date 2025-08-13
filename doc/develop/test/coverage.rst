@@ -167,7 +167,7 @@ command line option, for example:
 
 .. code-block:: console
 
-   $ $ZEPHYR_BASE/scripts/twister --coverage -p native_sim --coverage_basedir $ZEPHYR_BASE -T your_project_dir
+   $ $ZEPHYR_BASE/scripts/twister --coverage -p native_sim --coverage-basedir $ZEPHYR_BASE -T your_project_dir
 
 .. note::
 

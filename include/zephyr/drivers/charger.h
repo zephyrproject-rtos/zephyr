@@ -121,6 +121,31 @@ enum charger_property {
 typedef uint16_t charger_prop_t;
 
 /**
+ * @typedef charger_custom_value_int_t
+ * @brief Type for custom signed integer property values.
+ *
+ * Used only by downstream custom properties (>= CHARGER_PROP_CUSTOM_BEGIN).
+ */
+typedef int32_t charger_custom_value_int_t;
+
+/**
+ * @typedef charger_custom_value_uint_t
+ * @brief Type for custom unsigned integer property values.
+ *
+ * Used only by downstream custom properties (>= CHARGER_PROP_CUSTOM_BEGIN).
+ */
+typedef uint32_t charger_custom_value_uint_t;
+
+/**
+ * @typedef charger_custom_value_bool_t
+ * @brief Type for custom boolean property values.
+ *
+ * Used only by downstream custom properties (>= CHARGER_PROP_CUSTOM_BEGIN),
+ * typically for feature/status flags (e.g. jeita_active).
+ */
+typedef bool charger_custom_value_bool_t;
+
+/**
  * @brief External supply states
  */
 enum charger_online {
@@ -297,6 +322,12 @@ union charger_propval {
 	charger_status_notifier_t status_notification;
 	/** CHARGER_PROP_ONLINE_NOTIFICATION */
 	charger_online_notifier_t online_notification;
+	/** Generic integer value for downstream custom properties */
+	charger_custom_value_int_t custom_int;
+	/** Generic unsigned value for downstream custom properties */
+	charger_custom_value_uint_t custom_uint;
+	/** Generic boolean value for downstream custom properties */
+	charger_custom_value_bool_t custom_bool;
 };
 
 /**

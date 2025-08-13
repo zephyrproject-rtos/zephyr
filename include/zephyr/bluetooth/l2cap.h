@@ -264,6 +264,8 @@ struct bt_l2cap_le_chan {
 	uint16_t			psm;
 	/** Helps match request context during CoC */
 	uint8_t				ident;
+	/** Opcode of the pending request. Used to match responses with requests. */
+	uint8_t                         pending_req;
 	bt_security_t			required_sec_level;
 
 	/* Response Timeout eXpired (RTX) timer */

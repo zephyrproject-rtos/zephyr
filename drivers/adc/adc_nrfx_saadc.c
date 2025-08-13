@@ -13,6 +13,7 @@
 #include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
+#include <dmm.h>
 
 LOG_MODULE_REGISTER(adc_nrfx_saadc, CONFIG_ADC_LOG_LEVEL);
 
@@ -97,34 +98,19 @@ BUILD_ASSERT((NRF_SAADC_AIN0 == NRF_SAADC_INPUT_AIN0) &&
 	     "Definitions from nrf-adc.h do not match those from nrf_saadc.h");
 #endif
 
-#if defined(CONFIG_NRF_PLATFORM_HALTIUM)
-#include <dmm.h>
-/* Haltium devices always use bounce buffers in RAM */
-static uint16_t adc_samples_buffer[SAADC_CH_NUM] DMM_MEMORY_SECTION(DT_NODELABEL(adc));
-
-#define ADC_BUFFER_IN_RAM
-
-#endif /* defined(CONFIG_NRF_PLATFORM_HALTIUM) */
-
 struct driver_data {
 	struct adc_context ctx;
 	uint8_t single_ended_channels;
-	nrf_saadc_value_t *buffer; /* Pointer to the buffer with converted samples. */
 	uint8_t active_channel_cnt;
-
-#if defined(ADC_BUFFER_IN_RAM)
-	void *samples_buffer;
+	void *mem_reg;
 	void *user_buffer;
-#endif
 };
 
 static struct driver_data m_data = {
 	ADC_CONTEXT_INIT_TIMER(m_data, ctx),
 	ADC_CONTEXT_INIT_LOCK(m_data, ctx),
 	ADC_CONTEXT_INIT_SYNC(m_data, ctx),
-#if defined(ADC_BUFFER_IN_RAM)
-	.samples_buffer = adc_samples_buffer,
-#endif
+	.mem_reg = DMM_DEV_TO_REG(DT_NODELABEL(adc)),
 };
 
 /* Forward declaration */
@@ -392,22 +378,29 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 
 		if (ret != NRFX_SUCCESS) {
 			LOG_ERR("Cannot start sampling: 0x%08x", ret);
-			adc_context_complete(&m_data.ctx, -EIO);
+			adc_context_complete(ctx, -EIO);
 		}
 	}
 }
 
 static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repeat)
 {
-	if (!repeat) {
-#if defined(ADC_BUFFER_IN_RAM)
-		m_data.user_buffer = (uint16_t *)m_data.user_buffer + m_data.active_channel_cnt;
-#else
-		nrf_saadc_value_t *buffer = (uint16_t *)m_data.buffer + m_data.active_channel_cnt;
+	void *samples_buffer;
 
-		nrfx_saadc_buffer_set(buffer, m_data.active_channel_cnt);
-#endif
+	if (!repeat) {
+		m_data.user_buffer = (uint16_t *)m_data.user_buffer + m_data.active_channel_cnt;
 	}
+
+	int error = dmm_buffer_in_prepare(
+		m_data.mem_reg, m_data.user_buffer,
+		NRFX_SAADC_SAMPLES_TO_BYTES(m_data.active_channel_cnt),
+		&samples_buffer);
+	if (error != 0) {
+		LOG_ERR("DMM buffer allocation failed err=%d", error);
+		adc_context_complete(ctx, -EIO);
+	}
+
+	nrfx_saadc_buffer_set(samples_buffer, m_data.active_channel_cnt);
 }
 
 static int get_resolution(const struct adc_sequence *sequence, nrf_saadc_resolution_t *resolution)
@@ -502,12 +495,12 @@ static bool has_single_ended(const struct adc_sequence *sequence)
 	return sequence->channels & m_data.single_ended_channels;
 }
 
-static void correct_single_ended(const struct adc_sequence *sequence)
+static void correct_single_ended(const struct adc_sequence *sequence, nrf_saadc_value_t *buffer)
 {
 	uint16_t channel_bit = BIT(0);
 	uint8_t selected_channels = sequence->channels;
 	uint8_t single_ended_channels = m_data.single_ended_channels;
-	int16_t *sample = (int16_t *)m_data.buffer;
+	int16_t *sample = (int16_t *)buffer;
 
 	while (channel_bit <= single_ended_channels) {
 		if (channel_bit & selected_channels) {
@@ -532,6 +525,7 @@ static int start_read(const struct device *dev,
 	nrf_saadc_oversample_t oversampling;
 	uint8_t active_channel_cnt = 0U;
 	uint8_t channel_id = 0U;
+	void *samples_buffer;
 
 	/* Signal an error if channel selection is invalid (no channels or
 	 * a non-existing one is selected).
@@ -582,16 +576,21 @@ static int start_read(const struct device *dev,
 	}
 
 	m_data.active_channel_cnt = active_channel_cnt;
-#if defined(ADC_BUFFER_IN_RAM)
 	m_data.user_buffer = sequence->buffer;
 
-	nrfx_saadc_buffer_set(m_data.samples_buffer, active_channel_cnt);
-#else
+	error = dmm_buffer_in_prepare(m_data.mem_reg,
+				      m_data.user_buffer,
+				      NRFX_SAADC_SAMPLES_TO_BYTES(active_channel_cnt),
+				      &samples_buffer);
+	if (error != 0) {
+		LOG_ERR("DMM buffer allocation failed err=%d", error);
+		return error;
+	}
+
 	/* Buffer is filled in chunks, each chunk composed of number of samples equal to number
 	 * of active channels. Buffer pointer is advanced and reloaded after each chunk.
 	 */
-	nrfx_saadc_buffer_set(sequence->buffer, active_channel_cnt);
-#endif
+	nrfx_saadc_buffer_set(samples_buffer, active_channel_cnt);
 
 	adc_context_start_read(&m_data.ctx, sequence);
 
@@ -632,17 +631,14 @@ static void event_handler(const nrfx_saadc_evt_t *event)
 	nrfx_err_t err;
 
 	if (event->type == NRFX_SAADC_EVT_DONE) {
-		m_data.buffer = event->data.done.p_buffer;
+		dmm_buffer_in_release(
+			m_data.mem_reg, m_data.user_buffer,
+			NRFX_SAADC_SAMPLES_TO_BYTES(m_data.active_channel_cnt),
+			event->data.done.p_buffer);
 
 		if (has_single_ended(&m_data.ctx.sequence)) {
-			correct_single_ended(&m_data.ctx.sequence);
+			correct_single_ended(&m_data.ctx.sequence, m_data.user_buffer);
 		}
-
-#if defined(ADC_BUFFER_IN_RAM)
-		memcpy(m_data.user_buffer, m_data.samples_buffer,
-		       NRFX_SAADC_SAMPLES_TO_BYTES(m_data.active_channel_cnt));
-#endif
-
 		adc_context_on_sampling_done(&m_data.ctx, DEVICE_DT_INST_GET(0));
 	} else if (event->type == NRFX_SAADC_EVT_CALIBRATEDONE) {
 		err = nrfx_saadc_mode_trigger();

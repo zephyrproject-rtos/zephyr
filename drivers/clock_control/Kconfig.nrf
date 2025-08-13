@@ -287,6 +287,26 @@ config CLOCK_CONTROL_NRF_HSFLL_LOCAL_NRFS_DVFS_TIMEOUT_MS
 
 endif # CLOCK_CONTROL_NRF_HSFLL_LOCAL
 
+config CLOCK_CONTROL_NRF_IRON_HSFLL_LOCAL
+	bool "NRF IronSide HSFLL LOCAL driver support"
+	depends on DT_HAS_NORDIC_NRF_IRON_HSFLL_LOCAL_ENABLED
+	select NRF_IRONSIDE_DVFS_SERVICE
+	select CLOCK_CONTROL_NRF2_COMMON
+	default y
+
+if CLOCK_CONTROL_NRF_IRON_HSFLL_LOCAL
+
+config CLOCK_CONTROL_NRF_IRON_HSFLL_LOCAL_REQ_LOW_FREQ
+	bool "Local domain scale down after init"
+	help
+	  Request the lowest operating point after DVFS initialization.
+
+config CLOCK_CONTROL_NRF_IRON_HSFLL_LOCAL_DVFS_TIMEOUT_MS
+	int "Timeout waiting for dvfs request to complete"
+	default 2000
+
+endif # CLOCK_CONTROL_NRF_IRON_HSFLL_LOCAL
+
 config CLOCK_CONTROL_NRF_LFCLK
 	bool "NRF LFCLK driver support"
 	depends on DT_HAS_NORDIC_NRF_LFCLK_ENABLED

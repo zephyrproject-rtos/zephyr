@@ -115,8 +115,15 @@ int scmi_status_to_errno(int scmi_status);
  *
  * @retval 0 if successful
  * @retval negative errno if failure
+ * @param use_polling Specifies the communication mechanism used by the scmi
+ * platform to interact with agents.
+ * - true: Polling mode — the platform actively checks the message status
+ *   to determine if it has been processed
+ * - false: Interrupt mode — the platform relies on SCMI interrupts to
+ *   detect when a message has been handled.
  */
 int scmi_send_message(struct scmi_protocol *proto,
-		      struct scmi_message *msg, struct scmi_message *reply);
+		      struct scmi_message *msg, struct scmi_message *reply,
+		      bool use_polling);
 
 #endif /* _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_PROTOCOL_H_ */

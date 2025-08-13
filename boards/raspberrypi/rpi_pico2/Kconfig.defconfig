@@ -6,4 +6,15 @@ if BOARD_RPI_PICO2
 config USB_SELF_POWERED
 	default n
 
+if WIFI_AIROC
+
+choice AIROC_PART
+	default CYW43439
+endchoice
+
+config WHD_DISABLE_SDIO_PULLUP_DURING_SPI_SLEEP
+	default y
+
+endif # WIFI_AIROC
+
 endif # BOARD_RPI_PICO2

@@ -49,6 +49,59 @@ endif
 
 rsource "Kconfig.misc"
 
+config LOG_RATELIMIT
+	bool "Rate-limited logging macros"
+	default y
+	help
+	  When enabled, provides rate-limited logging macros that prevent
+	  log flooding when messages are generated frequently. Rate limiting
+	  is per-macro-call-site, meaning each unique call has its own
+	  independent rate limit.
+
+if LOG_RATELIMIT
+
+config LOG_RATELIMIT_INTERVAL_MS
+	int "Default rate limit interval (milliseconds)"
+	default 5000
+	range 100 60000
+	help
+	  Default interval between rate-limited log messages.
+	  This is used by the convenience macros LOG_*_RATELIMIT
+	  when no explicit rate is provided. Can be overridden per call
+	  using LOG_*_RATELIMIT_RATE macros.
+
+endif # LOG_RATELIMIT
+
+if !LOG_RATELIMIT
+
+choice LOG_RATELIMIT_FALLBACK
+	prompt "Fallback behavior for rate-limited logging macros"
+	default LOG_RATELIMIT_FALLBACK_DROP
+	help
+	  Select fallback behavior for rate-limited logging macros when
+	  LOG_RATELIMIT is disabled.
+
+	  - "Log all prints": All log prints are output, i.e., rate limiting is ignored.
+	  - "Drop all prints": All log prints using rate-limited macros are dropped.
+
+	  This option allows you to control whether rate-limited log macros
+	  should always print or be completely suppressed when rate limiting
+	  is not available.
+
+config LOG_RATELIMIT_FALLBACK_LOG
+	bool "Log all prints (ignore rate limiting)"
+	help
+	  All log prints using rate-limited macros are output as normal logs.
+
+config LOG_RATELIMIT_FALLBACK_DROP
+	bool "Drop all prints"
+	help
+	  All log prints using rate-limited macros are dropped (no output).
+
+endchoice
+
+endif # !LOG_RATELIMIT
+
 endif # LOG
 
 config LOG_OUTPUT

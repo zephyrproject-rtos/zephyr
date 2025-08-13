@@ -6,14 +6,6 @@
 #include <zephyr/pm/pm.h>
 #include <fsl_power.h>
 #include <fsl_common.h>
-#include <fsl_io_mux.h>
-
-#define NON_AON_PINS_START      0
-#define NON_AON_PINS_BREAK      21
-#define NON_AON_PINS_RESTART    28
-#define NON_AON_PINS_END        63
-#define RF_CNTL_PINS_START      0
-#define RF_CNTL_PINS_END        3
 
 static void rdrw61x_power_init_config(void)
 {
@@ -50,21 +42,6 @@ void board_early_init_hook(void)
 	};
 
 	pm_notifier_register(&rdrw61x_pm_notifier);
-
-	int32_t i;
-
-	/* Set all non-AON pins output low level in sleep mode. */
-	for (i = NON_AON_PINS_START; i <= NON_AON_PINS_BREAK; i++) {
-		IO_MUX_SetPinOutLevelInSleep(i, IO_MUX_SleepPinLevelLow);
-	}
-	for (i = NON_AON_PINS_RESTART; i <= NON_AON_PINS_END; i++) {
-		IO_MUX_SetPinOutLevelInSleep(i, IO_MUX_SleepPinLevelLow);
-	}
-
-	/* Set RF_CNTL 0-3 output low level in sleep mode. */
-	for (i = RF_CNTL_PINS_START; i <= RF_CNTL_PINS_END; i++) {
-		IO_MUX_SetRfPinOutLevelInSleep(i, IO_MUX_SleepPinLevelLow);
-	}
 #endif
 
 #ifdef CONFIG_I2S_TEST_SEPARATE_DEVICES

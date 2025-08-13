@@ -248,7 +248,27 @@ enum bt_le_cs_test_override_8_cs_sync_payload_pattern {
 struct bt_le_cs_test_param {
 	/** CS mode to be used during the CS procedure. */
 	enum bt_conn_le_cs_main_mode main_mode;
-	/** CS sub-mode to be used during the CS procedure. */
+	/** CS sub-mode to be used during the CS procedure.
+	 *
+	 * Main_Mode and Sub_Mode combinations shall be selected from
+	 * the valid combinations defined below:
+	 *
+	 * +-----------+----------+
+	 * | Main_Mode | Sub_Mode |
+	 * +-----------+----------+
+	 * | Mode-1    | None     |
+	 * +-----------+----------+
+	 * | Mode-2    | None     |
+	 * +-----------+----------+
+	 * | Mode-3    | None     |
+	 * +-----------+----------+
+	 * | Mode-2    | Mode-1   |
+	 * +-----------+----------+
+	 * | Mode-2    | Mode-3   |
+	 * +-----------+----------+
+	 * | Mode-3    | Mode-2   |
+	 * +-----------+----------+
+	 */
 	enum bt_conn_le_cs_sub_mode sub_mode;
 	/** Number of main mode steps taken from the end of the last CS subevent
 	 * to be repeated at the beginning of the current CS subevent directly
@@ -483,7 +503,27 @@ struct bt_le_cs_create_config_params {
 	uint8_t id;
 	/** Main CS mode type */
 	enum bt_conn_le_cs_main_mode main_mode_type;
-	/** Sub CS mode type */
+	/** Sub CS mode type
+	 *
+	 * Main_Mode and Sub_Mode combinations shall be selected from
+	 * the valid combinations defined below:
+	 *
+	 * +-----------+----------+
+	 * | Main_Mode | Sub_Mode |
+	 * +-----------+----------+
+	 * | Mode-1    | None     |
+	 * +-----------+----------+
+	 * | Mode-2    | None     |
+	 * +-----------+----------+
+	 * | Mode-3    | None     |
+	 * +-----------+----------+
+	 * | Mode-2    | Mode-1   |
+	 * +-----------+----------+
+	 * | Mode-2    | Mode-3   |
+	 * +-----------+----------+
+	 * | Mode-3    | Mode-2   |
+	 * +-----------+----------+
+	 */
 	enum bt_conn_le_cs_sub_mode sub_mode_type;
 	/** Minimum number of CS main mode steps to be executed before a submode step is executed */
 	uint8_t min_main_mode_steps;

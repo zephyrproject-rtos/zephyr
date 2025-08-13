@@ -10,3 +10,5 @@ if(CONFIG_BT_HFP_HF OR CONFIG_BT_HFP_AG)
     hfp.c
     )
 endif()
+
+zephyr_library_sources_ifdef(CONFIG_BT_GOEP goep.c)

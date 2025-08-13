@@ -20,3 +20,7 @@ python-can>=4.3.0
 
 # used for SPDX files validation
 spdx-tools
+
+# for display test
+opencv-python>=4.9.0.80
+numpy>=1.26.4

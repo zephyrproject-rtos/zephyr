@@ -130,18 +130,23 @@ static int pwm_nxp_flexio_set_cycles(const struct device *dev,
 
 	pwm_info = &config->pulse_info->pwm_info[channel];
 
-	if ((flags & PWM_POLARITY_INVERTED) == 0) {
-		polarity = FLEXIO_PWM_ACTIVE_HIGH;
-	} else {
+	polarity = (flags & PWM_POLARITY_INVERTED) == 0 ?
+		FLEXIO_PWM_ACTIVE_HIGH : FLEXIO_PWM_ACTIVE_LOW;
+
+	/*
+	 * Adjusting the timer mode to either add modulation
+	 * or pull the GPIO pin HIGH/LOW to simulate
+	 * 0%  or 100% duty cycle.
+	 */
+	if (period_cycles == pulse_cycles) {
 		polarity = FLEXIO_PWM_ACTIVE_LOW;
-	}
-
-	if (polarity == FLEXIO_PWM_ACTIVE_HIGH) {
-		timerConfig.timerOutput = kFLEXIO_TimerOutputOneNotAffectedByReset;
+		timerConfig.timerMode = kFLEXIO_TimerModeDisabled;
+	} else if (period_cycles && pulse_cycles == 0) {
+		polarity = FLEXIO_PWM_ACTIVE_HIGH;
+		timerConfig.timerMode = kFLEXIO_TimerModeDisabled;
+	} else if (polarity == FLEXIO_PWM_ACTIVE_HIGH) {
 		timerConfig.timerMode = kFLEXIO_TimerModeDual8BitPWM;
-
 	} else {
-		timerConfig.timerOutput = kFLEXIO_TimerOutputZeroNotAffectedByReset;
 		timerConfig.timerMode = kFLEXIO_TimerModeDual8BitPWMLow;
 	}
 
@@ -151,6 +156,7 @@ static int pwm_nxp_flexio_set_cycles(const struct device *dev,
 		((uint8_t)(data->period_cycles[channel] - pulse_cycles - 1U)
 		 << FLEXIO_PWM_TIMCMP_CMP_UPPER_SHIFT);
 
+	timerConfig.timerOutput = kFLEXIO_TimerOutputZeroNotAffectedByReset;
 	timerConfig.timerDecrement = pwm_info->prescaler;
 	timerConfig.timerStop = kFLEXIO_TimerStopBitDisabled;
 	timerConfig.timerEnable = kFLEXIO_TimerEnabledAlways;

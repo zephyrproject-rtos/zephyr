@@ -1,0 +1,38 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_ATSAME53
+	bool
+	select SOC_FAMILY_MICROCHIP_SAM_D5X_E5X
+	help
+	  Enable support for Microchip SAME53 Cortex-M4F microcontrollers.
+
+config SOC_SERIES
+	default "atsame53" if SOC_SERIES_ATSAME53
+
+config SOC_ATSAME53J18A
+	bool
+	select SOC_SERIES_ATSAME53
+
+config SOC_ATSAME53J19A
+	bool
+	select SOC_SERIES_ATSAME53
+
+config SOC_ATSAME53J20A
+	bool
+	select SOC_SERIES_ATSAME53
+
+config SOC_ATSAME53N19A
+	bool
+	select SOC_SERIES_ATSAME53
+
+config SOC_ATSAME53N20A
+	bool
+	select SOC_SERIES_ATSAME53
+
+config SOC
+	default "atsame53j18a" if SOC_ATSAME53J18A
+	default "atsame53j19a" if SOC_ATSAME53J19A
+	default "atsame53j20a" if SOC_ATSAME53J20A
+	default "atsame53n19a" if SOC_ATSAME53N19A
+	default "atsame53n20a" if SOC_ATSAME53N20A

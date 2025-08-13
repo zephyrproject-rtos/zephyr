@@ -85,6 +85,27 @@ New APIs and options
 
     * :c:struct:`bt_audio_codec_cfg` now contains a target_latency and a target_phy option
 
+* Logging:
+
+  * Added rate-limited logging macros to prevent log flooding when messages are generated frequently.
+
+    * :c:macro:`LOG_ERR_RATELIMIT` - Rate-limited error logging macro (convenience)
+    * :c:macro:`LOG_WRN_RATELIMIT` - Rate-limited warning logging macro (convenience)
+    * :c:macro:`LOG_INF_RATELIMIT` - Rate-limited info logging macro (convenience)
+    * :c:macro:`LOG_DBG_RATELIMIT` - Rate-limited debug logging macro (convenience)
+    * :c:macro:`LOG_HEXDUMP_ERR_RATELIMIT` - Rate-limited error hexdump macro (convenience)
+    * :c:macro:`LOG_HEXDUMP_WRN_RATELIMIT` - Rate-limited warning hexdump macro (convenience)
+    * :c:macro:`LOG_HEXDUMP_INF_RATELIMIT` - Rate-limited info hexdump macro (convenience)
+    * :c:macro:`LOG_HEXDUMP_DBG_RATELIMIT` - Rate-limited debug hexdump macro (convenience)
+    * :c:macro:`LOG_ERR_RATELIMIT_RATE` - Rate-limited error logging macro (explicit rate)
+    * :c:macro:`LOG_WRN_RATELIMIT_RATE` - Rate-limited warning logging macro (explicit rate)
+    * :c:macro:`LOG_INF_RATELIMIT_RATE` - Rate-limited info logging macro (explicit rate)
+    * :c:macro:`LOG_DBG_RATELIMIT_RATE` - Rate-limited debug logging macro (explicit rate)
+    * :c:macro:`LOG_HEXDUMP_ERR_RATELIMIT_RATE` - Rate-limited error hexdump macro (explicit rate)
+    * :c:macro:`LOG_HEXDUMP_WRN_RATELIMIT_RATE` - Rate-limited warning hexdump macro (explicit rate)
+    * :c:macro:`LOG_HEXDUMP_INF_RATELIMIT_RATE` - Rate-limited info hexdump macro (explicit rate)
+    * :c:macro:`LOG_HEXDUMP_DBG_RATELIMIT_RATE` - Rate-limited debug hexdump macro (explicit rate)
+
 * Power management
 
    * :c:func:`pm_device_driver_deinit`
@@ -130,6 +151,20 @@ New Samples
 ..
   Same as above for boards and drivers, this will also be recomputed at the time of the release.
  Just link the sample, further details go in the sample documentation itself.
+
+Libraries / Subsystems
+**********************
+
+* Logging:
+
+  * Added hybrid rate-limited logging macros to prevent log flooding when messages are generated frequently.
+    The system provides both convenience macros (using default rate from :kconfig:option:`CONFIG_LOG_RATELIMIT_INTERVAL_MS`)
+    and explicit rate macros (with custom rate parameter). This follows Linux's ``printk_ratelimited`` pattern
+    while providing more flexibility. The rate limiting is per-macro-call-site, meaning that each unique call
+    to a rate-limited macro has its own independent rate limit. Rate-limited logging can be globally enabled/disabled
+    via :kconfig:option:`CONFIG_LOG_RATELIMIT`. When rate limiting is disabled, the behavior can be controlled
+    via :kconfig:option:`CONFIG_LOG_RATELIMIT_FALLBACK` to either log all messages or drop them completely.
+    For more details, see :ref:`logging_ratelimited`.
 
 Other notable changes
 *********************

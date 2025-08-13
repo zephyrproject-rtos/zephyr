@@ -18,6 +18,9 @@ static enum ironside_dvfs_oppoint current_dvfs_oppoint = IRONSIDE_DVFS_OPP_HIGH;
 #error "Unsupported SoC series for IronSide DVFS"
 #endif
 
+#define ABB_STATUSANA_CHECK_MAX_ATTEMPTS (CONFIG_NRF_IRONSIDE_ABB_STATUSANA_CHECK_MAX_ATTEMPTS)
+#define ABB_STATUSANA_CHECK_INTERVAL_US  (10U)
+
 struct dvfs_hsfll_data_t {
 	uint32_t new_f_mult;
 	uint32_t new_f_trim_entry;
@@ -128,6 +131,13 @@ static inline bool ironside_dvfs_is_abb_locked(NRF_ABB_Type *abb)
 	/* Check if ABB analog part is locked. */
 	/* Temporary workaround until STATUSANA register is visible. */
 	volatile const uint32_t *statusana = (uint32_t *)abb + ABB_STATUSANA_REG_OFFSET;
+
+	uint8_t status_read_attempts = ABB_STATUSANA_CHECK_MAX_ATTEMPTS;
+
+	while ((*statusana & ABB_STATUSANA_LOCKED_L_Msk) == 0 && status_read_attempts > 0) {
+		k_busy_wait(ABB_STATUSANA_CHECK_INTERVAL_US);
+		status_read_attempts--;
+	}
 
 	return ((*statusana & ABB_STATUSANA_LOCKED_L_Msk) != 0);
 }

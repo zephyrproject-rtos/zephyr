@@ -123,6 +123,69 @@
 			compatible = "renesas,ra-sce9-rng";
 			status = "disabled";
 		};
+
+		option_setting_ofs_conf: option-setting-ofs-conf@100a100 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0100a100 0x200>;
+			zephyr,memory-region = "OFS_CONF_MEMORY";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+
+			option_setting_ofs0: option-setting-ofs0@100a100 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x0100a100 0x4>;
+				status = "okay";
+			};
+
+			option_setting_dualsel: option-setting-dualsel@100a110 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x0100a110 0x4>;
+				status = "okay";
+			};
+
+			option_setting_ofs1_sec: option-setting-ofs1-sec@100a200 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x0100a200 0x4>;
+				status = "okay";
+			};
+
+			option_setting_banksel_sec: option-setting-banksel-sec@100a210 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x0100a210 0x4>;
+				status = "okay";
+			};
+
+			option_setting_bps_sec: option-setting-bps-sec@100a240 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x0100a240 0xc>;
+				status = "okay";
+			};
+
+			option_setting_pbps_sec: option-setting-pbps-sec@100a260 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x0100a260 0xc>;
+				status = "okay";
+			};
+
+			option_setting_ofs1_sel: option-setting-ofs1-sel@100a280 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x0100a280 0x4>;
+				status = "okay";
+			};
+
+			option_setting_banksel_sel: option-setting-banksel-sel@100a290 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x0100a290 0x4>;
+				status = "okay";
+			};
+
+			option_setting_bps_sel: option-setting-bps-sel@100a2c0 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x0100a2c0 0xc>;
+				status = "okay";
+			};
+		};
 	};
 
 	clocks: clocks {

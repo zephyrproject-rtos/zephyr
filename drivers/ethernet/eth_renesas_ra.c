@@ -27,13 +27,15 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "r_ether_phy.h"
 
 /* Additional configurations to use with hal_renesas */
-#define ETHER_DEFAULT               NULL
-#define ETHER_CHANNEL0              0
-#define ETHER_BUF_SIZE              1536
-#define ETHER_PADDING_OFFSET        1
-#define ETHER_BROADCAST_FILTER      0
-#define ETHER_TOTAL_BUF_NUM         (CONFIG_ETH_RENESAS_TX_BUF_NUM + CONFIG_ETH_RENESAS_RX_BUF_NUM)
-#define ETHER_EE_RECEIVE_EVENT_MASK (0x01070000)
+#define ETHER_DEFAULT          NULL
+#define ETHER_CHANNEL0         0
+#define ETHER_BUF_SIZE         1536
+#define ETHER_PADDING_OFFSET   1
+#define ETHER_BROADCAST_FILTER 0
+#define ETHER_TOTAL_BUF_NUM    (CONFIG_ETH_RENESAS_TX_BUF_NUM + CONFIG_ETH_RENESAS_RX_BUF_NUM)
+#define ETHER_EE_RECEIVE_EVENT_MASK                                                                \
+	(ETHER_EESR_EVENT_MASK_RFOF | ETHER_EESR_EVENT_MASK_RDE | ETHER_EESR_EVENT_MASK_FR |       \
+	 ETHER_EESR_EVENT_MASK_RFCOF)
 
 BUILD_ASSERT(DT_INST_ENUM_IDX(0, phy_connection_type) <= 1, "Invalid PHY connection setting");
 
@@ -79,8 +81,7 @@ LISTIFY(CONFIG_ETH_RENESAS_TX_BUF_NUM, DECLARE_ETHER_TX_BUFFER, (;));
 
 uint8_t *pp_g_ether0_ether_buffers[ETHER_TOTAL_BUF_NUM] = {
 	LISTIFY(CONFIG_ETH_RENESAS_RX_BUF_NUM, DECLARE_ETHER_RX_BUFFER_PTR, (,)),
-	LISTIFY(CONFIG_ETH_RENESAS_TX_BUF_NUM, DECLARE_ETHER_TX_BUFFER_PTR, (,))
-};
+		LISTIFY(CONFIG_ETH_RENESAS_TX_BUF_NUM, DECLARE_ETHER_TX_BUFFER_PTR, (,)) };
 
 static __aligned(16) ether_instance_descriptor_t
 	g_ether0_tx_descriptors[CONFIG_ETH_RENESAS_TX_BUF_NUM];
@@ -90,6 +91,7 @@ static __aligned(16) ether_instance_descriptor_t
 const ether_extended_cfg_t g_ether0_extended_cfg_t = {
 	.p_rx_descriptors = g_ether0_rx_descriptors,
 	.p_tx_descriptors = g_ether0_tx_descriptors,
+	.eesr_event_filter = ETHER_EE_RECEIVE_EVENT_MASK,
 };
 
 /* Dummy configuration for ether phy as hal layer require */
@@ -142,7 +144,7 @@ void renesas_ra_eth_callback(ether_callback_args_t *p_args)
 	struct device *dev = (struct device *)p_args->p_context;
 	struct renesas_ra_eth_context *ctx = dev->data;
 
-	if (p_args->status_eesr & ETHER_EE_RECEIVE_EVENT_MASK) {
+	if (p_args->event == ETHER_EVENT_RX_COMPLETE) {
 		k_sem_give(&ctx->rx_sem);
 	}
 }
@@ -251,7 +253,7 @@ static void renesas_ra_eth_initialize(struct net_if *iface)
 		LOG_ERR("Failed to init ether - R_ETHER_Open fail");
 	}
 
-	err = R_ETHER_CallbackSet(&ctx->ctrl, renesas_ra_eth_callback, dev, NULL);
+	err = R_ETHER_CallbackSet(&ctx->ctrl, renesas_ra_eth_callback, (void *const)dev, NULL);
 
 	if (err != FSP_SUCCESS) {
 		LOG_ERR("Failed to init ether - R_ETHER_CallbackSet fail");

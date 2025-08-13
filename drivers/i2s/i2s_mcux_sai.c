@@ -156,7 +156,7 @@ static void i2s_tx_stream_disable(const struct device *dev, bool drop)
 	}
 
 	/* Disable the channel FIFO */
-	dev_cfg->base->TCR3 &= ~I2S_TCR3_TCE_MASK;
+	SAI_TxSetChannelFIFOMask(dev_cfg->base, 0);
 
 	/* Disable Tx */
 	SAI_TxEnable(dev_cfg->base, false);
@@ -182,7 +182,7 @@ static void i2s_rx_stream_disable(const struct device *dev, bool in_drop, bool o
 	dma_stop(dev_dma, strm->dma_channel);
 
 	/* Disable the channel FIFO */
-	dev_cfg->base->RCR3 &= ~I2S_RCR3_RCE_MASK;
+	SAI_RxSetChannelFIFOMask(dev_cfg->base, 0);
 
 	/* Disable DMA enable bit */
 	SAI_RxEnableDMA(dev_cfg->base, kSAI_FIFORequestDMAEnable, false);
@@ -613,11 +613,18 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 		LOG_DBG("tx slab buffer = 0x%x", (uint32_t)i2s_cfg->mem_slab->buffer);
 
 		config.fifo.fifoWatermark = (uint32_t)FSL_FEATURE_SAI_FIFO_COUNTn(base) - 1;
+#if defined(FSL_FEATURE_SAI_HAS_FIFO_COMBINE_MODE) && FSL_FEATURE_SAI_HAS_FIFO_COMBINE_MODE
+		/*
+		 * TX FIFO combine on write. The value below has correct value and wrong name
+		 * because RX and TX definitions are different but MCUX uses the same for both.
+		 */
+		config.fifo.fifoCombine = kSAI_FifoCombineModeEnabledOnRead;
+#endif
 		/* set bit clock divider */
 		SAI_TxSetConfig(base, &config);
 		dev_data->tx.start_channel = config.startChannel;
 		/* Disable the channel FIFO */
-		base->TCR3 &= ~I2S_TCR3_TCE_MASK;
+		SAI_TxSetChannelFIFOMask(base, 0);
 		SAI_TxSetBitClockRate(base, mclk, i2s_cfg->frame_clk_freq, word_size_bits,
 				      i2s_cfg->channels);
 		LOG_DBG("tx start_channel = %d", dev_data->tx.start_channel);
@@ -631,6 +638,9 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 	} else {
 		/* For RX, DMA reads from FIFO whenever data present */
 		config.fifo.fifoWatermark = 0;
+#if defined(FSL_FEATURE_SAI_HAS_FIFO_COMBINE_MODE) && FSL_FEATURE_SAI_HAS_FIFO_COMBINE_MODE
+		config.fifo.fifoCombine = kSAI_FifoCombineModeEnabledOnRead;
+#endif
 
 		memcpy(&dev_data->rx.cfg, i2s_cfg, sizeof(struct i2s_config));
 		LOG_DBG("rx slab free_list = 0x%x", (uint32_t)i2s_cfg->mem_slab->free_list);
@@ -742,7 +752,7 @@ static int i2s_tx_stream_start(const struct device *dev)
 	SAI_TxEnableDMA(base, kSAI_FIFORequestDMAEnable, true);
 
 	/* Enable the channel FIFO */
-	base->TCR3 |= I2S_TCR3_TCE(1UL << strm->start_channel);
+	SAI_TxSetChannelFIFOMask(base, dev_cfg->tx_channel);
 
 	/* Enable SAI Tx clock */
 	SAI_TxEnable(base, true);
@@ -840,7 +850,7 @@ static int i2s_rx_stream_start(const struct device *dev)
 	SAI_RxEnableDMA(base, kSAI_FIFORequestDMAEnable, true);
 
 	/* Enable the channel FIFO */
-	base->RCR3 |= I2S_RCR3_RCE(1UL << strm->start_channel);
+	SAI_RxSetChannelFIFOMask(base, dev_cfg->tx_channel);
 
 	/* Enable SAI Rx clock */
 	SAI_RxEnable(base, true);

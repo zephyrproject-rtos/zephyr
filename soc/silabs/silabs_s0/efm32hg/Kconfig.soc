@@ -7,7 +7,7 @@ config SOC_SERIES_EFM32HG
 	help
 	  Silicon Labs EFM32HG (Happy Gecko) Series MCU
 
-config SOC_PART_NUMBER_EFM32HG322F64
+config SOC_EFM32HG322F64
 	bool
 	select SOC_SERIES_EFM32HG
 
@@ -15,4 +15,4 @@ config SOC_SERIES
 	default "efm32hg" if SOC_SERIES_EFM32HG
 
 config SOC
-	default "efm32hg322f64" if SOC_PART_NUMBER_EFM32HG322F64
+	default "efm32hg322f64" if SOC_EFM32HG322F64

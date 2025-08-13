@@ -9,6 +9,17 @@ config DEVICE_SHELL
 	help
 	  This shell provides access to basic device data.
 
+config DEVICE_SHELL_INIT_CMD
+	bool "Device shell init command"
+	depends on DEVICE_SHELL
+	default y if !SHELL_MINIMAL
+	help
+	  Add an 'init' command to the device shell module in order
+	  to initialize, at runtime and manually, the devices that
+	  own the 'zephyr,deferred-init' attribute. Note that if you
+	  enable CONFIG_DEVICE_DEPS, it will take dependencies into
+	  account.
+
 config DATE_SHELL
 	bool "Date shell"
 	default y if !SHELL_MINIMAL
@@ -21,5 +32,12 @@ config DEVMEM_SHELL
 	select POSIX_C_LIB_EXT
 	help
 	  This shell command provides read/write access to physical memory.
+
+config APP_VERSION_SHELL
+	bool "Application version information shell"
+	default y if !SHELL_MINIMAL
+	depends on "$(APP_VERSION_EXTENDED_STRING)" != ""
+	help
+	  This shell command provides read access to application version information.
 
 rsource "kernel_service/Kconfig"
