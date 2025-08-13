@@ -503,9 +503,14 @@ static int usbd_hid_init(struct usbd_class_data *const c_data)
 	const struct device *dev = usbd_class_get_private(c_data);
 	const struct hid_device_config *dcfg = dev->config;
 	struct usbd_hid_descriptor *const desc = dcfg->desc;
+	struct hid_device_data *const ddata = dev->data;
+
+	if (ddata->ops == NULL ||  ddata->rdesc == NULL || !ddata->rsize) {
+		LOG_ERR("HID device does not seem to be registered");
+		return -EINVAL;
+	}
 
 	LOG_DBG("HID class %s init", c_data->name);
-
 	if (dcfg->if_desc_data != NULL && desc->if0.iInterface == 0) {
 		if (usbd_add_descriptor(uds_ctx, dcfg->if_desc_data)) {
 			LOG_ERR("Failed to add interface string descriptor");
