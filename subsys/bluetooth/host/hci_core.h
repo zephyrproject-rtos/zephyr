@@ -130,10 +130,6 @@ enum {
 	BT_ADV_LIMITED,
 	/* Advertiser set is currently advertising in the controller. */
 	BT_ADV_ENABLED,
-	/* Advertiser should include name in advertising data */
-	BT_ADV_INCLUDE_NAME_AD,
-	/* Advertiser should include name in scan response data */
-	BT_ADV_INCLUDE_NAME_SD,
 	/* Advertiser set is connectable */
 	BT_ADV_CONNECTABLE,
 	/* Advertiser set is scannable */
