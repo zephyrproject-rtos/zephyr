@@ -16,7 +16,6 @@ adi_tmc2209: adi_tmc2209 {
 	en-gpios = <&test_gpio 0 0>;
 	step-gpios = <&test_gpio 0 0>;
 	dir-gpios = <&test_gpio 0 0>;
-	counter = <&counter0>;
 };
 
 allegro_a4979: allegro_a4979 {
@@ -29,7 +28,6 @@ allegro_a4979: allegro_a4979 {
 	en-gpios = <&test_gpio 0 0>;
 	m0-gpios = <&test_gpio 0 0>;
 	m1-gpios = <&test_gpio 0 0>;
-	counter = <&counter0>;
 };
 
 ti_drv84xx: ti_drv84xx {
@@ -42,7 +40,6 @@ ti_drv84xx: ti_drv84xx {
 	en-gpios  = <&test_gpio 0 0>;
 	m0-gpios = <&test_gpio 0 0>;
 	m1-gpios = <&test_gpio 0 0>;
-	counter = <&counter0>;
 };
 
 zephyr_h_bridge_stepper: zephyr_h_bridge_stepper {

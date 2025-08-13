@@ -3,25 +3,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/drivers/counter.h>
-#include "step_dir_stepper_common.h"
+#include "stepper_timing_source.h"
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_DECLARE(step_dir_stepper);
+LOG_MODULE_REGISTER(stepper_counter_timing, CONFIG_STEPPER_LOG_LEVEL);
 
 static void step_counter_top_interrupt(const struct device *dev, void *user_data)
 {
 	ARG_UNUSED(dev);
-	struct step_dir_stepper_common_data *data = user_data;
+	struct timing_source_data *data = user_data;
 
-	stepper_handle_timing_signal(data->dev);
+	data->stepper_handle_timing_signal_cb(data->motion_control_dev);
 }
 
-int step_counter_timing_source_update(const struct device *dev,
+int step_counter_timing_source_update(const struct timing_source_config *config,
+				      struct timing_source_data *data,
 				      const uint64_t microstep_interval_ns)
 {
-	const struct step_dir_stepper_common_config *config = dev->config;
-	struct step_dir_stepper_common_data *data = dev->data;
 	int ret;
 
 	if (microstep_interval_ns == 0) {
@@ -39,17 +37,17 @@ int step_counter_timing_source_update(const struct device *dev,
 	irq_unlock(key);
 
 	if (ret != 0) {
-		LOG_ERR("%s: Failed to set counter top value (error: %d)", dev->name, ret);
+		LOG_ERR("%s: Failed to set counter top value (error: %d)",
+			data->motion_control_dev->name, ret);
 		return ret;
 	}
 
 	return 0;
 }
 
-int step_counter_timing_source_start(const struct device *dev)
+int step_counter_timing_source_start(const struct timing_source_config *config,
+				     struct timing_source_data *data)
 {
-	const struct step_dir_stepper_common_config *config = dev->config;
-	struct step_dir_stepper_common_data *data = dev->data;
 	int ret;
 
 	ret = counter_start(config->counter);
@@ -63,10 +61,9 @@ int step_counter_timing_source_start(const struct device *dev)
 	return 0;
 }
 
-int step_counter_timing_source_stop(const struct device *dev)
+int step_counter_timing_source_stop(const struct timing_source_config *config,
+				    struct timing_source_data *data)
 {
-	const struct step_dir_stepper_common_config *config = dev->config;
-	struct step_dir_stepper_common_data *data = dev->data;
 	int ret;
 
 	ret = counter_stop(config->counter);
@@ -86,18 +83,15 @@ bool step_counter_timing_source_needs_reschedule(const struct device *dev)
 	return false;
 }
 
-bool step_counter_timing_source_is_running(const struct device *dev)
+bool step_counter_timing_source_is_running(const struct timing_source_config *config,
+					   struct timing_source_data *data)
 {
-	struct step_dir_stepper_common_data *data = dev->data;
-
 	return data->counter_running;
 }
 
-int step_counter_timing_source_init(const struct device *dev)
+int step_counter_timing_source_init(const struct timing_source_config *config,
+				    struct timing_source_data *data)
 {
-	const struct step_dir_stepper_common_config *config = dev->config;
-	struct step_dir_stepper_common_data *data = dev->data;
-
 	if (!device_is_ready(config->counter)) {
 		LOG_ERR("Counter device is not ready");
 		return -ENODEV;

@@ -25,6 +25,8 @@ struct tmc50xx_config {
 	const uint32_t gconf;
 	struct spi_dt_spec spi;
 	const uint32_t clock_frequency;
+	const struct device **steppers;
+	const uint8_t num_steppers;
 };
 
 struct tmc50xx_stepper_data {
@@ -35,6 +37,8 @@ struct tmc50xx_stepper_data {
 	const struct device *stepper;
 	stepper_event_callback_t callback;
 	void *event_cb_user_data;
+	stepper_drv_event_cb_t drv_event_cb;
+	void *drv_event_cb_user_data;
 };
 
 struct tmc50xx_stepper_config {
@@ -51,7 +55,8 @@ struct tmc50xx_stepper_config {
 #endif
 };
 
-static int read_actual_position(const struct tmc50xx_stepper_config *config, int32_t *position);
+static int read_actual_position(const struct device *controller, const uint8_t stepper_index,
+				int32_t *position);
 
 static int tmc50xx_write(const struct device *dev, const uint8_t reg_addr, const uint32_t reg_val)
 {
@@ -93,22 +98,44 @@ static int tmc50xx_read(const struct device *dev, const uint8_t reg_addr, uint32
 	return 0;
 }
 
-static int tmc50xx_stepper_set_event_callback(const struct device *dev,
-					      stepper_event_callback_t callback, void *user_data)
+static void check_stepper_idx(const struct device *controller, const uint8_t stepper_index)
 {
-	struct tmc50xx_stepper_data *data = dev->data;
+	__ASSERT_NO_MSG(controller != NULL);
+	__maybe_unused const struct tmc50xx_config *tmc50xx_config = controller->config;
 
+	CHECK_STEPPER_IDX(controller, stepper_index, tmc50xx_config->num_steppers);
+}
+
+static int tmc50xx_set_event_callback(const struct device *controller, const uint8_t stepper_index,
+				      stepper_event_callback_t callback, void *user_data)
+{
+	const struct tmc50xx_config *tmc50xx_config = controller->config;
+
+	check_stepper_idx(controller, stepper_index);
+	struct tmc50xx_stepper_data *data = tmc50xx_config->steppers[stepper_index]->data;
 	data->callback = callback;
 	data->event_cb_user_data = user_data;
 	return 0;
 }
 
-static int read_vactual(const struct tmc50xx_stepper_config *config, int32_t *actual_velocity)
+static int tmc50xx_set_stepper_drv_event_callback(const struct device *stepper,
+						  stepper_drv_event_cb_t callback, void *user_data)
+{
+	struct tmc50xx_stepper_data *data = stepper->data;
+
+	data->drv_event_cb = callback;
+	data->drv_event_cb_user_data = user_data;
+
+	return 0;
+}
+
+static int read_vactual(const struct device *controller, const uint8_t stepper_index,
+			int32_t *actual_velocity)
 {
 	__ASSERT(actual_velocity != NULL, "actual_velocity pointer must not be NULL");
 	int err;
 
-	err = tmc50xx_read(config->controller, TMC50XX_VACTUAL(config->index), actual_velocity);
+	err = tmc50xx_read(controller, TMC50XX_VACTUAL(stepper_index), actual_velocity);
 	if (err) {
 		LOG_ERR("Failed to read VACTUAL register");
 		return err;
@@ -121,13 +148,16 @@ static int read_vactual(const struct tmc50xx_stepper_config *config, int32_t *ac
 	return 0;
 }
 
-static int stallguard_enable(const struct device *dev, const bool enable)
+static int stallguard_enable(const struct device *controller, const uint8_t stepper_index,
+			     const bool enable)
 {
-	const struct tmc50xx_stepper_config *config = dev->config;
+	const struct tmc50xx_config *tmc50xx_config = controller->config;
+	const struct tmc50xx_stepper_config *config =
+		tmc50xx_config->steppers[stepper_index]->config;
 	uint32_t reg_value;
 	int err;
 
-	err = tmc50xx_read(config->controller, TMC50XX_SWMODE(config->index), &reg_value);
+	err = tmc50xx_read(controller, TMC50XX_SWMODE(stepper_index), &reg_value);
 	if (err) {
 		LOG_ERR("Failed to read SWMODE register");
 		return -EIO;
@@ -138,7 +168,7 @@ static int stallguard_enable(const struct device *dev, const bool enable)
 
 		int32_t actual_velocity;
 
-		err = read_vactual(config, &actual_velocity);
+		err = read_vactual(controller, stepper_index, &actual_velocity);
 		if (err) {
 			return -EIO;
 		}
@@ -148,7 +178,7 @@ static int stallguard_enable(const struct device *dev, const bool enable)
 	} else {
 		reg_value &= ~TMC5XXX_SW_MODE_SG_STOP_ENABLE;
 	}
-	err = tmc50xx_write(config->controller, TMC50XX_SWMODE(config->index), reg_value);
+	err = tmc50xx_write(controller, TMC50XX_SWMODE(stepper_index), reg_value);
 	if (err) {
 		LOG_ERR("Failed to write SWMODE register");
 		return -EIO;
@@ -166,7 +196,7 @@ static void stallguard_work_handler(struct k_work *work)
 	int err;
 	const struct tmc50xx_stepper_config *stepper_config = stepper_data->stepper->config;
 
-	err = stallguard_enable(stepper_data->stepper, true);
+	err = stallguard_enable(stepper_config->controller, stepper_config->index, true);
 	if (err == -EAGAIN) {
 		k_work_reschedule(dwork, K_MSEC(stepper_config->sg_velocity_check_interval_ms));
 	}
@@ -176,15 +206,28 @@ static void stallguard_work_handler(struct k_work *work)
 	}
 }
 
-static void execute_callback(const struct device *dev, const enum stepper_event event)
+static void execute_callback(const struct device *controller, const uint8_t stepper_index,
+			     const enum stepper_event event)
 {
-	struct tmc50xx_stepper_data *data = dev->data;
+	const struct tmc50xx_config *tmc50xx_config = controller->config;
+	struct tmc50xx_stepper_data *data = tmc50xx_config->steppers[stepper_index]->data;
 
 	if (!data->callback) {
 		LOG_WRN_ONCE("No callback registered");
 		return;
 	}
-	data->callback(dev, event, data->event_cb_user_data);
+	data->callback(controller, stepper_index, event, data->event_cb_user_data);
+}
+
+static void execute_stepper_drv_cb(const struct device *stepper, const enum stepper_drv_event event)
+{
+	struct tmc50xx_stepper_data *stepper_data = stepper->data;
+
+	if (stepper_data->drv_event_cb) {
+		stepper_data->drv_event_cb(stepper, event, stepper_data->drv_event_cb_user_data);
+	} else {
+		LOG_WRN_ONCE("%s: No callback registered", stepper->name);
+	}
 }
 
 #ifdef CONFIG_STEPPER_ADI_TMC50XX_RAMPSTAT_POLL_STALLGUARD_LOG
@@ -204,8 +247,8 @@ static void log_stallguard(struct tmc50xx_stepper_data *stepper_data, const uint
 	const uint8_t sg_result = FIELD_GET(TMC5XXX_DRV_STATUS_SG_RESULT_MASK, drv_status);
 	const bool sg_status = FIELD_GET(TMC5XXX_DRV_STATUS_SG_STATUS_MASK, drv_status);
 
-	LOG_DBG("%s position: %d | sg result: %3d status: %d",
-		stepper_data->stepper->name, position, sg_result, sg_status);
+	LOG_DBG("%s position: %d | sg result: %3d status: %d", stepper_data->stepper->name,
+		position, sg_result, sg_status);
 }
 
 #endif
@@ -213,7 +256,7 @@ static void log_stallguard(struct tmc50xx_stepper_data *stepper_data, const uint
 static void rampstat_work_reschedule(struct k_work_delayable *rampstat_callback_dwork)
 {
 	k_work_reschedule(rampstat_callback_dwork,
-		K_MSEC(CONFIG_STEPPER_ADI_TMC50XX_RAMPSTAT_POLL_INTERVAL_IN_MSEC));
+			  K_MSEC(CONFIG_STEPPER_ADI_TMC50XX_RAMPSTAT_POLL_INTERVAL_IN_MSEC));
 }
 
 static void rampstat_work_handler(struct k_work *work)
@@ -265,13 +308,13 @@ static void rampstat_work_handler(struct k_work *work)
 
 		case TMC5XXX_STOP_LEFT_EVENT:
 			LOG_DBG("RAMPSTAT %s:Left end-stop detected", stepper_data->stepper->name);
-			execute_callback(stepper_data->stepper,
+			execute_callback(stepper_config->controller, stepper_config->index,
 					 STEPPER_EVENT_LEFT_END_STOP_DETECTED);
 			break;
 
 		case TMC5XXX_STOP_RIGHT_EVENT:
 			LOG_DBG("RAMPSTAT %s:Right end-stop detected", stepper_data->stepper->name);
-			execute_callback(stepper_data->stepper,
+			execute_callback(stepper_config->controller, stepper_config->index,
 					 STEPPER_EVENT_RIGHT_END_STOP_DETECTED);
 			break;
 
@@ -279,13 +322,15 @@ static void rampstat_work_handler(struct k_work *work)
 		case TMC5XXX_POS_REACHED:
 		case TMC5XXX_POS_REACHED_AND_EVENT:
 			LOG_DBG("RAMPSTAT %s:Position reached", stepper_data->stepper->name);
-			execute_callback(stepper_data->stepper, STEPPER_EVENT_STEPS_COMPLETED);
+			execute_callback(stepper_config->controller, stepper_config->index,
+					 STEPPER_EVENT_STEPS_COMPLETED);
 			break;
 
 		case TMC5XXX_STOP_SG_EVENT:
 			LOG_DBG("RAMPSTAT %s:Stall detected", stepper_data->stepper->name);
-			stallguard_enable(stepper_data->stepper, false);
-			execute_callback(stepper_data->stepper, STEPPER_EVENT_STALL_DETECTED);
+			stallguard_enable(stepper_config->controller, stepper_config->index, false);
+			execute_stepper_drv_cb(stepper_data->stepper,
+					       STEPPER_DRV_EVENT_STALL_DETETCTED);
 			break;
 		default:
 			LOG_ERR("Illegal ramp stat bit field");
@@ -330,44 +375,49 @@ static int tmc50xx_stepper_disable(const struct device *dev)
 	return tmc50xx_write(config->controller, TMC50XX_CHOPCONF(config->index), reg_value);
 }
 
-static int tmc50xx_stepper_is_moving(const struct device *dev, bool *is_moving)
+static int tmc50xx_stepper_is_moving(const struct device *controller, const uint8_t stepper_index,
+				     bool *is_moving)
 {
-	const struct tmc50xx_stepper_config *config = dev->config;
+	check_stepper_idx(controller, stepper_index);
+
 	uint32_t reg_value;
 	int err;
 
-	err = tmc50xx_read(config->controller, TMC50XX_DRVSTATUS(config->index), &reg_value);
+	err = tmc50xx_read(controller, TMC50XX_DRVSTATUS(stepper_index), &reg_value);
 
 	if (err != 0) {
-		LOG_ERR("%s: Failed to read DRVSTATUS register", dev->name);
+		LOG_ERR("%s: Failed to read DRVSTATUS register", controller->name);
 		return -EIO;
 	}
 
 	*is_moving = (FIELD_GET(TMC5XXX_DRV_STATUS_STST_BIT, reg_value) != 1U);
-	LOG_DBG("Stepper motor controller %s is moving: %d", dev->name, *is_moving);
+	LOG_DBG("Stepper motor controller %s is moving: %d", controller->name, *is_moving);
 	return 0;
 }
 
-int tmc50xx_stepper_set_max_velocity(const struct device *dev, uint32_t velocity)
+int tmc50xx_stepper_set_max_velocity(const struct device *controller, const uint8_t stepper_index,
+				     uint32_t velocity)
 {
-	const struct tmc50xx_stepper_config *config = dev->config;
-	const struct tmc50xx_config *tmc50xx_config = config->controller->config;
+	const struct tmc50xx_config *tmc50xx_config = controller->config;
+
+	check_stepper_idx(controller, stepper_index);
+
 	const uint32_t clock_frequency = tmc50xx_config->clock_frequency;
 	uint32_t velocity_fclk;
 	int err;
 
 	velocity_fclk = tmc5xxx_calculate_velocity_from_hz_to_fclk(velocity, clock_frequency);
 
-	err = tmc50xx_write(config->controller, TMC50XX_VMAX(config->index), velocity_fclk);
+	err = tmc50xx_write(controller, TMC50XX_VMAX(stepper_index), velocity_fclk);
 	if (err != 0) {
-		LOG_ERR("%s: Failed to set max velocity", dev->name);
+		LOG_ERR("%s: Failed to set max velocity", controller->name);
 		return -EIO;
 	}
 	return 0;
 }
 
 static int tmc50xx_stepper_set_micro_step_res(const struct device *dev,
-					      enum stepper_micro_step_resolution res)
+					      enum stepper_drv_micro_step_resolution res)
 {
 	const struct tmc50xx_stepper_config *config = dev->config;
 	uint32_t reg_value;
@@ -379,7 +429,7 @@ static int tmc50xx_stepper_set_micro_step_res(const struct device *dev,
 	}
 
 	reg_value &= ~TMC5XXX_CHOPCONF_MRES_MASK;
-	reg_value |= ((MICRO_STEP_RES_INDEX(STEPPER_MICRO_STEP_256) - LOG2(res))
+	reg_value |= ((MICRO_STEP_RES_INDEX(STEPPER_DRV_MICRO_STEP_256) - LOG2(res))
 		      << TMC5XXX_CHOPCONF_MRES_SHIFT);
 
 	err = tmc50xx_write(config->controller, TMC50XX_CHOPCONF(config->index), reg_value);
@@ -393,7 +443,7 @@ static int tmc50xx_stepper_set_micro_step_res(const struct device *dev,
 }
 
 static int tmc50xx_stepper_get_micro_step_res(const struct device *dev,
-					      enum stepper_micro_step_resolution *res)
+					      enum stepper_drv_micro_step_resolution *res)
 {
 	const struct tmc50xx_stepper_config *config = dev->config;
 	uint32_t reg_value;
@@ -405,71 +455,82 @@ static int tmc50xx_stepper_get_micro_step_res(const struct device *dev,
 	}
 	reg_value &= TMC5XXX_CHOPCONF_MRES_MASK;
 	reg_value >>= TMC5XXX_CHOPCONF_MRES_SHIFT;
-	*res = (1 << (MICRO_STEP_RES_INDEX(STEPPER_MICRO_STEP_256) - reg_value));
+	*res = (1 << (MICRO_STEP_RES_INDEX(STEPPER_DRV_MICRO_STEP_256) - reg_value));
 	LOG_DBG("Stepper motor controller %s get micro step resolution: %d", dev->name, *res);
 	return 0;
 }
 
-static int tmc50xx_stepper_set_reference_position(const struct device *dev, const int32_t position)
+static int tmc50xx_stepper_set_reference_position(const struct device *controller,
+						  const uint8_t stepper_index,
+						  const int32_t position)
 {
-	const struct tmc50xx_stepper_config *config = dev->config;
+	check_stepper_idx(controller, stepper_index);
 	int err;
 
-	err = tmc50xx_write(config->controller, TMC50XX_RAMPMODE(config->index),
+	err = tmc50xx_write(controller, TMC50XX_RAMPMODE(stepper_index),
 			    TMC5XXX_RAMPMODE_HOLD_MODE);
 	if (err != 0) {
 		return -EIO;
 	}
 
-	err = tmc50xx_write(config->controller, TMC50XX_XACTUAL(config->index), position);
+	err = tmc50xx_write(controller, TMC50XX_XACTUAL(stepper_index), position);
 	if (err != 0) {
 		return -EIO;
 	}
-	LOG_DBG("Stepper motor controller %s set actual position to %d", dev->name, position);
+	LOG_DBG("Stepper motor controller %s set actual position to %d", controller->name,
+		position);
 	return 0;
 }
 
-static int read_actual_position(const struct tmc50xx_stepper_config *config, int32_t *position)
+static int read_actual_position(const struct device *controller, const uint8_t stepper_index,
+				int32_t *position)
 {
 	int err;
 
-	err = tmc50xx_read(config->controller, TMC50XX_XACTUAL(config->index), position);
+	err = tmc50xx_read(controller, TMC50XX_XACTUAL(stepper_index), position);
 	if (err != 0) {
 		return -EIO;
 	}
 	return 0;
 }
 
-static int tmc50xx_stepper_get_actual_position(const struct device *dev, int32_t *position)
+static int tmc50xx_stepper_get_actual_position(const struct device *controller,
+					       const uint8_t stepper_index, int32_t *position)
 {
-	const struct tmc50xx_stepper_config *config = dev->config;
+	check_stepper_idx(controller, stepper_index);
 	int err;
 
-	err = read_actual_position(config, position);
+	err = read_actual_position(controller, stepper_index, position);
 	if (err != 0) {
 		return -EIO;
 	}
-	LOG_DBG("%s actual position: %d", dev->name, *position);
+	LOG_DBG("%s actual position %d: %d", controller->name, stepper_index, *position);
 	return 0;
 }
 
-static int tmc50xx_stepper_move_to(const struct device *dev, const int32_t micro_steps)
+static int tmc50xx_stepper_move_to(const struct device *controller, const uint8_t stepper_index,
+				   const int32_t micro_steps)
 {
-	LOG_DBG("%s set target position to %d", dev->name, micro_steps);
-	const struct tmc50xx_stepper_config *config = dev->config;
-	struct tmc50xx_stepper_data *data = dev->data;
+	const struct tmc50xx_config *controller_config = controller->config;
+
+	check_stepper_idx(controller, stepper_index);
+	LOG_DBG("%s set target position to %d", controller->name, micro_steps);
+
+	const struct tmc50xx_stepper_config *config =
+		controller_config->steppers[stepper_index]->config;
+	struct tmc50xx_stepper_data *data = controller_config->steppers[stepper_index]->data;
 	int err;
 
 	if (config->is_sg_enabled) {
-		stallguard_enable(dev, false);
+		stallguard_enable(controller, stepper_index, false);
 	}
 
-	err = tmc50xx_write(config->controller, TMC50XX_RAMPMODE(config->index),
+	err = tmc50xx_write(controller, TMC50XX_RAMPMODE(stepper_index),
 			    TMC5XXX_RAMPMODE_POSITIONING_MODE);
 	if (err != 0) {
 		return -EIO;
 	}
-	err = tmc50xx_write(config->controller, TMC50XX_XTARGET(config->index), micro_steps);
+	err = tmc50xx_write(controller, TMC50XX_XTARGET(stepper_index), micro_steps);
 	if (err != 0) {
 		return -EIO;
 	}
@@ -484,31 +545,39 @@ static int tmc50xx_stepper_move_to(const struct device *dev, const int32_t micro
 	return 0;
 }
 
-static int tmc50xx_stepper_move_by(const struct device *dev, const int32_t micro_steps)
+static int tmc50xx_stepper_move_by(const struct device *controller, const uint8_t stepper_index,
+				   const int32_t micro_steps)
 {
-	int err;
+	check_stepper_idx(controller, stepper_index);
 	int32_t position;
+	int err;
 
-	err = stepper_get_actual_position(dev, &position);
+	err = stepper_get_actual_position(controller, stepper_index, &position);
 	if (err != 0) {
 		return -EIO;
 	}
 	int32_t target_position = position + micro_steps;
 
-	LOG_DBG("%s moved to %d by steps: %d", dev->name, target_position, micro_steps);
+	LOG_DBG("%s moved to %d by steps: %d", controller->name, target_position, micro_steps);
 
-	return tmc50xx_stepper_move_to(dev, target_position);
+	return tmc50xx_stepper_move_to(controller, stepper_index, target_position);
 }
 
-static int tmc50xx_stepper_run(const struct device *dev, const enum stepper_direction direction)
+static int tmc50xx_stepper_run(const struct device *controller, const uint8_t stepper_index,
+			       const enum stepper_direction direction)
 {
-	LOG_DBG("Stepper motor controller %s run", dev->name);
-	const struct tmc50xx_stepper_config *config = dev->config;
-	struct tmc50xx_stepper_data *data = dev->data;
+	const struct tmc50xx_config *tmc50xx_config = controller->config;
+
+	check_stepper_idx(controller, stepper_index);
+	LOG_DBG("Stepper motor controller %s run", controller->name);
+
+	const struct tmc50xx_stepper_config *config =
+		tmc50xx_config->steppers[stepper_index]->config;
+	struct tmc50xx_stepper_data *data = tmc50xx_config->steppers[stepper_index]->data;
 	int err;
 
 	if (config->is_sg_enabled) {
-		err = stallguard_enable(dev, false);
+		err = stallguard_enable(controller, stepper_index, false);
 		if (err != 0) {
 			return -EIO;
 		}
@@ -516,7 +585,7 @@ static int tmc50xx_stepper_run(const struct device *dev, const enum stepper_dire
 
 	switch (direction) {
 	case STEPPER_DIRECTION_POSITIVE:
-		err = tmc50xx_write(config->controller, TMC50XX_RAMPMODE(config->index),
+		err = tmc50xx_write(controller, TMC50XX_RAMPMODE(stepper_index),
 				    TMC5XXX_RAMPMODE_POSITIVE_VELOCITY_MODE);
 		if (err != 0) {
 			return -EIO;
@@ -524,7 +593,7 @@ static int tmc50xx_stepper_run(const struct device *dev, const enum stepper_dire
 		break;
 
 	case STEPPER_DIRECTION_NEGATIVE:
-		err = tmc50xx_write(config->controller, TMC50XX_RAMPMODE(config->index),
+		err = tmc50xx_write(controller, TMC50XX_RAMPMODE(stepper_index),
 				    TMC5XXX_RAMPMODE_NEGATIVE_VELOCITY_MODE);
 		if (err != 0) {
 			return -EIO;
@@ -542,18 +611,18 @@ static int tmc50xx_stepper_run(const struct device *dev, const enum stepper_dire
 	return 0;
 }
 
-static int tmc50xx_stepper_stop(const struct device *dev)
+static int tmc50xx_stepper_stop(const struct device *controller, const uint8_t stepper_index)
 {
-	const struct tmc50xx_stepper_config *config = dev->config;
+	check_stepper_idx(controller, stepper_index);
 	int err;
 
-	err = tmc50xx_write(config->controller, TMC50XX_RAMPMODE(config->index),
+	err = tmc50xx_write(controller, TMC50XX_RAMPMODE(stepper_index),
 			    TMC5XXX_RAMPMODE_POSITIVE_VELOCITY_MODE);
 	if (err != 0) {
 		return -EIO;
 	}
 
-	err = tmc50xx_write(config->controller, TMC50XX_VMAX(config->index), 0);
+	err = tmc50xx_write(controller, TMC50XX_VMAX(stepper_index), 0);
 	if (err != 0) {
 		return -EIO;
 	}
@@ -563,61 +632,57 @@ static int tmc50xx_stepper_stop(const struct device *dev)
 
 #ifdef CONFIG_STEPPER_ADI_TMC50XX_RAMP_GEN
 
-int tmc50xx_stepper_set_ramp(const struct device *dev,
+int tmc50xx_stepper_set_ramp(const struct device *controller, const uint8_t stepper_index,
 			     const struct tmc_ramp_generator_data *ramp_data)
 {
-	LOG_DBG("Stepper motor controller %s set ramp", dev->name);
-	const struct tmc50xx_stepper_config *config = dev->config;
+	LOG_DBG("Stepper motor controller %s set ramp", controller->name);
 	int err;
 
-	err = tmc50xx_write(config->controller, TMC50XX_VSTART(config->index), ramp_data->vstart);
+	err = tmc50xx_write(controller, TMC50XX_VSTART(stepper_index), ramp_data->vstart);
 	if (err != 0) {
 		return -EIO;
 	}
-	err = tmc50xx_write(config->controller, TMC50XX_A1(config->index), ramp_data->a1);
+	err = tmc50xx_write(controller, TMC50XX_A1(stepper_index), ramp_data->a1);
 	if (err != 0) {
 		return -EIO;
 	}
-	err = tmc50xx_write(config->controller, TMC50XX_AMAX(config->index), ramp_data->amax);
+	err = tmc50xx_write(controller, TMC50XX_AMAX(stepper_index), ramp_data->amax);
 	if (err != 0) {
 		return -EIO;
 	}
-	err = tmc50xx_write(config->controller, TMC50XX_D1(config->index), ramp_data->d1);
+	err = tmc50xx_write(controller, TMC50XX_D1(stepper_index), ramp_data->d1);
 	if (err != 0) {
 		return -EIO;
 	}
-	err = tmc50xx_write(config->controller, TMC50XX_DMAX(config->index), ramp_data->dmax);
+	err = tmc50xx_write(controller, TMC50XX_DMAX(stepper_index), ramp_data->dmax);
 	if (err != 0) {
 		return -EIO;
 	}
-	err = tmc50xx_write(config->controller, TMC50XX_V1(config->index), ramp_data->v1);
+	err = tmc50xx_write(controller, TMC50XX_V1(stepper_index), ramp_data->v1);
 	if (err != 0) {
 		return -EIO;
 	}
-	err = tmc50xx_write(config->controller, TMC50XX_VMAX(config->index), ramp_data->vmax);
+	err = tmc50xx_write(controller, TMC50XX_VMAX(stepper_index), ramp_data->vmax);
 	if (err != 0) {
 		return -EIO;
 	}
-	err = tmc50xx_write(config->controller, TMC50XX_VSTOP(config->index), ramp_data->vstop);
+	err = tmc50xx_write(controller, TMC50XX_VSTOP(stepper_index), ramp_data->vstop);
 	if (err != 0) {
 		return -EIO;
 	}
-	err = tmc50xx_write(config->controller, TMC50XX_TZEROWAIT(config->index),
-			    ramp_data->tzerowait);
+	err = tmc50xx_write(controller, TMC50XX_TZEROWAIT(stepper_index), ramp_data->tzerowait);
 	if (err != 0) {
 		return -EIO;
 	}
-	err = tmc50xx_write(config->controller, TMC50XX_VHIGH(config->index), ramp_data->vhigh);
+	err = tmc50xx_write(controller, TMC50XX_VHIGH(stepper_index), ramp_data->vhigh);
 	if (err != 0) {
 		return -EIO;
 	}
-	err = tmc50xx_write(config->controller, TMC50XX_VCOOLTHRS(config->index),
-			    ramp_data->vcoolthrs);
+	err = tmc50xx_write(controller, TMC50XX_VCOOLTHRS(stepper_index), ramp_data->vcoolthrs);
 	if (err != 0) {
 		return -EIO;
 	}
-	err = tmc50xx_write(config->controller, TMC50XX_IHOLD_IRUN(config->index),
-			    ramp_data->iholdrun);
+	err = tmc50xx_write(controller, TMC50XX_IHOLD_IRUN(stepper_index), ramp_data->iholdrun);
 	if (err != 0) {
 		return -EIO;
 	}
@@ -628,11 +693,11 @@ int tmc50xx_stepper_set_ramp(const struct device *dev,
 
 static int tmc50xx_init(const struct device *dev)
 {
-	LOG_DBG("TMC50XX stepper motor controller %s initialized", dev->name);
 	struct tmc50xx_data *data = dev->data;
 	const struct tmc50xx_config *config = dev->config;
 	int err;
 
+	LOG_DBG("Initializing TMC50XX stepper motor controller %s", dev->name);
 	k_sem_init(&data->sem, 1, 1);
 
 	if (!spi_is_ready_dt(&config->spi)) {
@@ -696,14 +761,14 @@ static int tmc50xx_stepper_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_STEPPER_ADI_TMC50XX_RAMP_GEN
-	err = tmc50xx_stepper_set_ramp(dev, &stepper_config->default_ramp_config);
+	err = tmc50xx_stepper_set_ramp(stepper_config->controller, stepper_config->index,
+				       &stepper_config->default_ramp_config);
 	if (err != 0) {
 		return -EIO;
 	}
 #endif
 
 	k_work_init_delayable(&data->rampstat_callback_dwork, rampstat_work_handler);
-	rampstat_work_reschedule(&data->rampstat_callback_dwork);
 	err = tmc50xx_stepper_set_micro_step_res(dev, stepper_config->default_micro_step_res);
 	if (err != 0) {
 		return -EIO;
@@ -711,20 +776,26 @@ static int tmc50xx_stepper_init(const struct device *dev)
 	return 0;
 }
 
-static DEVICE_API(stepper, tmc50xx_stepper_api) = {
+static DEVICE_API(stepper_drv, tmc50xx_stepper_drv_api) = {
 	.enable = tmc50xx_stepper_enable,
 	.disable = tmc50xx_stepper_disable,
-	.is_moving = tmc50xx_stepper_is_moving,
-	.move_by = tmc50xx_stepper_move_by,
 	.set_micro_step_res = tmc50xx_stepper_set_micro_step_res,
 	.get_micro_step_res = tmc50xx_stepper_get_micro_step_res,
+	.set_event_cb = tmc50xx_set_stepper_drv_event_callback,
+};
+
+static DEVICE_API(stepper, tmc50xx_stepper_api) = {
+	.is_moving = tmc50xx_stepper_is_moving,
+	.move_by = tmc50xx_stepper_move_by,
 	.set_reference_position = tmc50xx_stepper_set_reference_position,
 	.get_actual_position = tmc50xx_stepper_get_actual_position,
 	.move_to = tmc50xx_stepper_move_to,
 	.run = tmc50xx_stepper_run,
 	.stop = tmc50xx_stepper_stop,
-	.set_event_callback = tmc50xx_stepper_set_event_callback,
+	.set_event_callback = tmc50xx_set_event_callback,
 };
+
+#define TMC50XX_STEPPER_PTRS(child) DEVICE_DT_GET(child),
 
 #define TMC50XX_SHAFT_CONFIG(child)								\
 	(DT_PROP(child, invert_direction) << TMC50XX_GCONF_SHAFT_SHIFT(DT_REG_ADDR(child))) |
@@ -740,20 +811,21 @@ static DEVICE_API(stepper, tmc50xx_stepper_api) = {
 		.index = DT_REG_ADDR(child),							\
 		.sg_threshold = DT_PROP(child, stallguard2_threshold),				\
 		.sg_threshold_velocity = DT_PROP(child, stallguard_threshold_velocity),		\
-		.sg_velocity_check_interval_ms = DT_PROP(child,					\
-						stallguard_velocity_check_interval_ms),		\
+		.sg_velocity_check_interval_ms =						\
+			DT_PROP(child, stallguard_velocity_check_interval_ms),			\
 		.is_sg_enabled = DT_PROP(child, activate_stallguard2),				\
 		IF_ENABLED(CONFIG_STEPPER_ADI_TMC50XX_RAMP_GEN,					\
 		(.default_ramp_config = TMC_RAMP_DT_SPEC_GET_TMC50XX(child))) };
 
 #define TMC50XX_STEPPER_DATA_DEFINE(child)							\
 	static struct tmc50xx_stepper_data tmc50xx_stepper_data_##child = {			\
-		.stepper = DEVICE_DT_GET(child),};
+		.stepper = DEVICE_DT_GET(child),						\
+	};
 
 #define TMC50XX_STEPPER_DEFINE(child)								\
 	DEVICE_DT_DEFINE(child, tmc50xx_stepper_init, NULL, &tmc50xx_stepper_data_##child,	\
 			 &tmc50xx_stepper_config_##child, POST_KERNEL,				\
-			 CONFIG_STEPPER_INIT_PRIORITY, &tmc50xx_stepper_api);
+			 CONFIG_STEPPER_INIT_PRIORITY, &tmc50xx_stepper_drv_api);
 
 #define TMC50XX_DEFINE(inst)									\
 	BUILD_ASSERT(DT_INST_CHILD_NUM(inst) <= 2, "tmc50xx can drive two steppers at max");	\
@@ -761,19 +833,25 @@ static DEVICE_API(stepper, tmc50xx_stepper_api) = {
 		     "clock frequency must be non-zero positive value");			\
 	static struct tmc50xx_data tmc50xx_data_##inst;						\
 	static const struct tmc50xx_config tmc50xx_config_##inst = {				\
-		.gconf = (									\
-		(DT_INST_PROP(inst, poscmp_enable) << TMC50XX_GCONF_POSCMP_ENABLE_SHIFT) |	\
-		(DT_INST_PROP(inst, test_mode) << TMC50XX_GCONF_TEST_MODE_SHIFT) |		\
-		DT_INST_FOREACH_CHILD(inst, TMC50XX_SHAFT_CONFIG)				\
-		(DT_INST_PROP(inst, lock_gconf) << TMC50XX_LOCK_GCONF_SHIFT)),			\
-		.spi = SPI_DT_SPEC_INST_GET(inst, (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB |	\
-					SPI_MODE_CPOL | SPI_MODE_CPHA |	SPI_WORD_SET(8)), 0),	\
-		.clock_frequency = DT_INST_PROP(inst, clock_frequency),};			\
+		.gconf = ((DT_INST_PROP(inst, poscmp_enable)					\
+			   << TMC50XX_GCONF_POSCMP_ENABLE_SHIFT) |				\
+			  (DT_INST_PROP(inst, test_mode) << TMC50XX_GCONF_TEST_MODE_SHIFT) |	\
+			  DT_INST_FOREACH_CHILD(inst, TMC50XX_SHAFT_CONFIG)(			\
+				  DT_INST_PROP(inst, lock_gconf) << TMC50XX_LOCK_GCONF_SHIFT)),	\
+		.spi = SPI_DT_SPEC_INST_GET(inst,						\
+					    (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB |		\
+					     SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8)),	\
+					    0),							\
+		.steppers = (const struct device *[]){DT_INST_FOREACH_CHILD(			\
+			inst, TMC50XX_STEPPER_PTRS)},						\
+		.num_steppers = DT_INST_CHILD_NUM(inst),					\
+		.clock_frequency = DT_INST_PROP(inst, clock_frequency),				\
+	};											\
 	DT_INST_FOREACH_CHILD(inst, TMC50XX_STEPPER_CONFIG_DEFINE);				\
 	DT_INST_FOREACH_CHILD(inst, TMC50XX_STEPPER_DATA_DEFINE);				\
 	DT_INST_FOREACH_CHILD(inst, TMC50XX_STEPPER_DEFINE);					\
 	DEVICE_DT_INST_DEFINE(inst, tmc50xx_init, NULL, &tmc50xx_data_##inst,			\
 			      &tmc50xx_config_##inst, POST_KERNEL, CONFIG_STEPPER_INIT_PRIORITY,\
-			      NULL);
+			      &tmc50xx_stepper_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TMC50XX_DEFINE)

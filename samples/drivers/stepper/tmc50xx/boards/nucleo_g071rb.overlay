@@ -1,6 +1,7 @@
 / {
 	aliases {
 		stepper = &tmc_stepper;
+		stepper-motion-control = &tmc50xx;
 	};
 };
 
