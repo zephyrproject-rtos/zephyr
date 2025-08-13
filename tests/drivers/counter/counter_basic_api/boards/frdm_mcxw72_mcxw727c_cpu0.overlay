@@ -4,10 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&lptmr1 {
-	status = "okay";
-};
-
 &lpit0 {
 	status = "okay";
 };
