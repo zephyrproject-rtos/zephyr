@@ -77,29 +77,29 @@ zephyr_library_sources(
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/core/chip/src/iPMU_prog/iPMU_dotc/rsi_system_config_917.c
 )
 
-zephyr_library_sources_ifdef(CONFIG_ENTROPY_SILABS_SIWX91X
-  ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_rng.c
-)
-
 zephyr_library_sources_ifdef(CONFIG_ADC_SILABS_SIWX91X
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/aux_reference_volt_config.c
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_bod.c
-)
-
-zephyr_compile_definitions_ifdef(CONFIG_DMA_SILABS_SIWX91X
-  UDMA_ROMDRIVER_PRESENT
 )
 
 zephyr_compile_definitions_ifdef(CONFIG_ADC_SILABS_SIWX91X
   ADC_CONTEXT_USES_KERNEL_TIMER
 )
 
+zephyr_library_sources_ifdef(CONFIG_DMA_SILABS_SIWX91X
+  ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/rom_driver/src/rsi_rom_table_si91x.c
+)
+
+zephyr_compile_definitions_ifdef(CONFIG_DMA_SILABS_SIWX91X
+  UDMA_ROMDRIVER_PRESENT
+)
+
 zephyr_compile_definitions_ifdef(CONFIG_DMA_SILABS_SIWX91X_GPDMA
   GPDMA_ROMDRIVER_PRESENT
 )
 
-zephyr_library_sources_ifdef(CONFIG_DMA_SILABS_SIWX91X
-  ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/rom_driver/src/rsi_rom_table_si91x.c
+zephyr_library_sources_ifdef(CONFIG_ENTROPY_SILABS_SIWX91X
+  ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_rng.c
 )
 
 zephyr_library_sources_ifdef(CONFIG_MEMC_SILABS_SIWX91X_QSPI
