@@ -89,6 +89,10 @@ New APIs and options
 
   * Added new pixel format :c:enum:`PIXEL_FORMAT_AL_88`
 
+  * SDL
+
+    * :kconfig:option:`CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_AL_88`
+
 * Logging:
 
   * Added rate-limited logging macros to prevent log flooding when messages are generated frequently.
