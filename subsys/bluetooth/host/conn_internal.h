@@ -324,7 +324,6 @@ struct bt_conn {
 	 * This will be used by the TX processor to then fetch HCI frags from it.
 	 */
 	sys_snode_t		_conn_ready;
-	atomic_t		_conn_ready_lock;
 
 	/* Holds the number of packets that have been sent to the controller but
 	 * not yet ACKd (by receiving an Number of Completed Packets). This
