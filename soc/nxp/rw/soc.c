@@ -261,20 +261,20 @@ __weak __ramfunc void clock_init(void)
 	RESET_PeripheralReset(kLCDIC_RST_SHIFT_RSTn);
 #endif
 
-#ifdef CONFIG_COUNTER_MCUX_CTIMER
-#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ctimer0), nxp_lpc_ctimer, okay))
+#if defined(CONFIG_COUNTER_MCUX_CTIMER) || defined(CONFIG_PWM_MCUX_CTIMER)
+#if (DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer0), okay))
 	CLOCK_AttachClk(kSFRO_to_CTIMER0);
 #endif
-#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ctimer1), nxp_lpc_ctimer, okay))
+#if (DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer1), okay))
 	CLOCK_AttachClk(kSFRO_to_CTIMER1);
 #endif
-#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ctimer2), nxp_lpc_ctimer, okay))
+#if (DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer2), okay))
 	CLOCK_AttachClk(kSFRO_to_CTIMER2);
 #endif
-#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ctimer3), nxp_lpc_ctimer, okay))
+#if (DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer3), okay))
 	CLOCK_AttachClk(kSFRO_to_CTIMER3);
 #endif
-#endif /* CONFIG_COUNTER_MCUX_CTIMER */
+#endif /* CONFIG_COUNTER_MCUX_CTIMER || CONFIG_PWM_MCUX_CTIMER */
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb_otg)) && \
 	(CONFIG_USB_DC_NXP_EHCI || CONFIG_UDC_NXP_EHCI)
