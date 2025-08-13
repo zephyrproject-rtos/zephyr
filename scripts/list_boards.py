@@ -26,7 +26,8 @@ with open(BOARD_SCHEMA_PATH) as f:
 
 BOARD_VALIDATOR = pykwalify.core.Core(schema_data=board_schema, source_data={})
 
-BOARD_YML = 'board.yml'
+def BOARD_YML(yaml_suffix: bool) -> str:
+    return f'board.y{'a' if yaml_suffix else ''}ml'
 
 #
 # This is shared code between the build system's 'boards' target
@@ -216,7 +217,9 @@ def find_arch2board_set_in(root, arches, board_dir):
                 continue
             for maybe_defconfig in maybe_board.iterdir():
                 file_name = maybe_defconfig.name
-                if file_name.endswith('_defconfig') and not (maybe_board / BOARD_YML).is_file():
+                if (file_name.endswith('_defconfig')
+                    and not (maybe_board / BOARD_YML(False)).is_file()
+                    and not (maybe_board / BOARD_YML(True)).is_file()):
                     board_name = file_name[:-len('_defconfig')]
                     ret[arch].add(Board(board_name, maybe_board, 'v1', arch=arch))
 
@@ -307,9 +310,9 @@ def extend_v2_boards(boards, board_extensions):
         for v in e.get('variants', []):
             node = board.from_qualifier(v['qualifier'])
             if str(v['qualifier'] + '/' + v['name']) in board_v2_qualifiers(board):
-                board_yml = e['dir'] / BOARD_YML
                 sys.exit(f'ERROR: Variant: {v["name"]}, defined multiple times for board: '
-                         f'{board.name}.\nLast defined in {board_yml}')
+                         f'{board.name}.\nLast defined in {e['dir'] / BOARD_YML(False)} or '
+                         f'{e['dir'] / BOARD_YML(True)}')
             node.variants.append(Variant.from_dict(v))
 
 
@@ -318,7 +321,8 @@ def find_v2_board_dirs(args):
     dirs = []
     board_files = []
     for root in unique_paths(args.board_roots):
-        board_files.extend((root / 'boards').rglob(BOARD_YML))
+        board_files.extend((root / 'boards').rglob(BOARD_YML(False)))
+        board_files.extend((root / 'boards').rglob(BOARD_YML(True)))
 
     dirs = [board_yml.parent for board_yml in board_files if board_yml.is_file()]
     return dirs
@@ -332,10 +336,14 @@ def find_v2_boards(args):
     board_extensions = []
     board_files = []
     if args.board_dir:
-        board_files = [d / BOARD_YML for d in args.board_dir]
+        for d in args.board_dir:
+            board_files.append(d / BOARD_YML(False))
+            board_files.append(d / BOARD_YML(True))
     else:
         for root in unique_paths(args.board_roots):
-            board_files.extend((root / 'boards').rglob(BOARD_YML))
+            board_files.extend((root / 'boards').rglob(BOARD_YML(False)))
+            board_files.extend((root / 'boards').rglob(BOARD_YML(True)))
+
 
     for board_yml in board_files:
         b, e = load_v2_boards(args.board, board_yml, systems)
