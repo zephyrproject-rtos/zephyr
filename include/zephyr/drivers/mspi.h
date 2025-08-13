@@ -124,6 +124,7 @@ enum mspi_bus_event {
 	MSPI_BUS_RESET              = 0,
 	MSPI_BUS_ERROR              = 1,
 	MSPI_BUS_XFER_COMPLETE      = 2,
+	MSPI_BUS_XFER_TIMEOUT       = 3,
 	MSPI_BUS_EVENT_MAX,
 };
 
