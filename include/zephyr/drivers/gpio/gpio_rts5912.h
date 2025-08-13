@@ -30,7 +30,7 @@ static ALWAYS_INLINE void gpio_rts5912_set_wakeup_pin(uint32_t pin_num)
 
 int gpio_rts5912_get_pin_num(const struct gpio_dt_spec *gpio);
 
-uint32_t gpio_rts5912_get_port_address(const struct gpio_dt_spec *gpio);
+uint32_t *gpio_rts5912_get_port_address(const struct gpio_dt_spec *gpio);
 
 #ifdef __cplusplus
 }
