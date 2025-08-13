@@ -89,11 +89,13 @@ static void exec_sdl_task(const struct device *dev, const struct sdl_display_tas
 					 disp_data->mutex, disp_data->texture,
 					 disp_data->background_texture, disp_data->buf,
 					 disp_data->display_on,
-					 task->write.desc->frame_incomplete);
+					 task->write.desc->frame_incomplete,
+					 CONFIG_SDL_DISPLAY_COLOR_TINT);
 		break;
 	case SDL_BLANKING_OFF:
 		sdl_display_blanking_off_bottom(disp_data->renderer, disp_data->texture,
-						disp_data->background_texture);
+						disp_data->background_texture,
+						CONFIG_SDL_DISPLAY_COLOR_TINT);
 		break;
 	case SDL_BLANKING_ON:
 		sdl_display_blanking_on_bottom(disp_data->renderer);
