@@ -103,6 +103,40 @@ class Packages(WestCommand):
             "in a CI environment where the virtual environment is not set up.",
         )
 
+        uv_parser = subparsers_gen.add_parser(
+            "uv",
+            help="manage uv packages",
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+            epilog=textwrap.dedent(
+                """
+            Manage uv packages:
+
+                Run 'west packages uv' to print all requirement files needed by
+                Zephyr and modules.
+
+                The output is compatible with the requirements file format itself.
+            """
+            ),
+        )
+
+        uv_parser.add_argument(
+            "--install",
+            action="store_true",
+            help="Install uv requirements instead of listing them. "
+            "A single 'uv pip install' command is built and executed. "
+            "Additional uv arguments can be passed after a -- separator "
+            "from the original 'west packages uv --install' command. For example pass "
+            "'--dry-run' to uv not to actually install anything, but print what would be.",
+        )
+
+        uv_parser.add_argument(
+            "--ignore-venv-check",
+            action="store_true",
+            help="Ignore the virtual environment check. "
+            "This is useful when running 'west packages uv --install' "
+            "in a CI environment where the virtual environment is not set up.",
+        )
+
         return parser
 
     def do_run(self, args, unknown):
@@ -125,6 +159,8 @@ class Packages(WestCommand):
 
         if args.manager == "pip":
             return self.do_run_pip(args, unknown[1:])
+        if args.manager == "uv":
+            return self.do_run_uv(args, unknown[1:])
 
         # Unreachable but print an error message if an implementation is missing.
         self.die(f'Unsupported package manager: "{args.manager}"')
@@ -168,5 +204,48 @@ class Packages(WestCommand):
 
         if len(manager_args) > 0:
             self.die(f'west packages pip does not support unknown arguments: "{manager_args}"')
+
+        self.inf("\n".join([f"-r {r}" for r in requirements]))
+
+    def do_run_uv(self, args, manager_args):
+        requirements = []
+
+        if not args.modules or "zephyr" in args.modules:
+            requirements.append(ZEPHYR_BASE / "scripts/requirements.txt")
+
+        for module in self.zephyr_modules:
+            module_name = module.meta.get("name")
+            if args.modules and module_name not in args.modules:
+                if args.install:
+                    self.dbg(f"Skipping module {module_name}")
+                continue
+
+            # Get the optional pip section from the package managers,
+            # uv is compatible with pip.
+            pip = module.meta.get("package-managers", {}).get("pip")
+            if pip is None:
+                if args.install:
+                    self.dbg(f"Nothing to install for {module_name}")
+                continue
+
+            # Add requirements files
+            requirements += [Path(module.project) / r for r in pip.get("requirement-files", [])]
+
+        if args.install:
+            if not in_venv() and not args.ignore_venv_check:
+                self.die("Running uv pip install outside of a virtual environment")
+
+            if len(requirements) > 0:
+                subprocess.check_call(
+                    ["uv", "pip", "install"]
+                    + list(chain.from_iterable([("-r", r) for r in requirements]))
+                    + manager_args
+                )
+            else:
+                self.inf("Nothing to install")
+            return
+
+        if len(manager_args) > 0:
+            self.die(f'west packages uv does not support unknown arguments: "{manager_args}"')
 
         self.inf("\n".join([f"-r {r}" for r in requirements]))
