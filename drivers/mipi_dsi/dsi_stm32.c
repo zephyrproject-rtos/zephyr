@@ -56,6 +56,28 @@ struct mipi_dsi_stm32_data {
 	uint32_t pixel_clk_khz;
 };
 
+#ifdef CONFIG_SOC_SERIES_STM32U5X
+/* Configures DSI PHY as DSI clock source (STM32U5 specific) */
+static int stm32_dsi_clock_source_config(void)
+{
+	RCC_PeriphCLKInitTypeDef DSIPHYInitPeriph = {0};
+
+	/* Switch to DSI PHY PLL clock */
+	DSIPHYInitPeriph.PeriphClockSelection = RCC_PERIPHCLK_DSI;
+	DSIPHYInitPeriph.DsiClockSelection = RCC_DSICLKSOURCE_DSIPHY;
+
+	if (HAL_RCCEx_PeriphCLKConfig(&DSIPHYInitPeriph) != HAL_OK) {
+		LOG_ERR("Failed to configure DSI PHY as DSI clock source");
+		return -EIO;
+	}
+
+	LOG_DBG("DSI kernel clock source selection, RCC_CCIPR2_DSIHOSTSEL: %u",
+		__HAL_RCC_GET_DSI_SOURCE() == RCC_DSICLKSOURCE_DSIPHY);
+
+	return 0;
+}
+#endif
+
 static void mipi_dsi_stm32_log_config(const struct device *dev)
 {
 	const struct mipi_dsi_stm32_config *config = dev->config;
@@ -66,9 +88,20 @@ static void mipi_dsi_stm32_log_config(const struct device *dev)
 	LOG_DBG("  AutomaticClockLaneControl 0x%x", data->hdsi.Init.AutomaticClockLaneControl);
 	LOG_DBG("  TXEscapeCkdiv %u", data->hdsi.Init.TXEscapeCkdiv);
 	LOG_DBG("  NumberOfLanes %u", data->hdsi.Init.NumberOfLanes);
+#ifdef CONFIG_SOC_SERIES_STM32U5X
+	LOG_DBG("  PHYFrequencyRange 0x%x", data->hdsi.Init.PHYFrequencyRange);
+	LOG_DBG("  PHYLowPowerOffset 0x%x", data->hdsi.Init.PHYLowPowerOffset);
+#endif
+
+	LOG_DBG("PLLInit configuration:");
 	LOG_DBG("  PLLNDIV %u", data->pll_init.PLLNDIV);
 	LOG_DBG("  PLLIDF %u", data->pll_init.PLLIDF);
 	LOG_DBG("  PLLODF %u", data->pll_init.PLLODF);
+#ifdef CONFIG_SOC_SERIES_STM32U5X
+	LOG_DBG("  PLLVCORange 0x%x", data->pll_init.PLLVCORange);
+	LOG_DBG("  PLLChargePump 0x%x", data->pll_init.PLLChargePump);
+	LOG_DBG("  PLLTuning 0x%x", data->pll_init.PLLTuning);
+#endif
 
 	LOG_DBG("HAL_DSI_ConfigVideoMode setup:");
 	LOG_DBG("  VirtualChannelID %u", data->vid_cfg.VirtualChannelID);
@@ -167,9 +200,15 @@ static int mipi_dsi_stm32_host_init(const struct device *dev)
 		return ret;
 	}
 
+#ifdef CONFIG_SOC_SERIES_STM32U5X
+	/* LANE_BYTE_CLOCK = CLK_IN / PLLIDF * 2 * PLLNDIV / PLLODF / 8 */
+	data->lane_clk_khz = hse_clock / data->pll_init.PLLIDF * 2 * data->pll_init.PLLNDIV /
+			     data->pll_init.PLLODF / 8 / 1000;
+#else
 	/* LANE_BYTE_CLOCK = CLK_IN / PLLIDF * 2 * PLLNDIV / 2 / PLLODF / 8 */
 	data->lane_clk_khz = hse_clock / data->pll_init.PLLIDF * 2 * data->pll_init.PLLNDIV / 2 /
 			     (1UL << data->pll_init.PLLODF) / 8 / 1000;
+#endif
 
 	/* stm32x_hal_dsi: The values 0 and 1 stop the TX_ESC clock generation */
 	data->hdsi.Init.TXEscapeCkdiv = 0;
@@ -212,6 +251,10 @@ static int mipi_dsi_stm32_host_init(const struct device *dev)
 		return -ret;
 	}
 
+#ifdef CONFIG_SOC_SERIES_STM32U5X
+#warning "HAL_DSI_SetLowPowerRXFilter is not implemented for STM32U5"
+#else
+
 	if (config->lp_rx_filter_freq) {
 		ret = HAL_DSI_SetLowPowerRXFilter(&data->hdsi, config->lp_rx_filter_freq);
 		if (ret != HAL_OK) {
@@ -219,6 +262,7 @@ static int mipi_dsi_stm32_host_init(const struct device *dev)
 			return -ret;
 		}
 	}
+#endif
 
 	ret = HAL_DSI_ConfigErrorMonitor(&data->hdsi, config->active_errors);
 	if (ret != HAL_OK) {
@@ -288,6 +332,14 @@ static int mipi_dsi_stm32_attach(const struct device *dev, uint8_t channel,
 		LOG_ERR("Setup DSI video mode failed! (%d)", ret);
 		return -ret;
 	}
+
+#ifdef CONFIG_SOC_SERIES_STM32U5X
+	ret = stm32_dsi_clock_source_config();
+	if (ret < 0) {
+		LOG_ERR("Failed to configure DSI clock source");
+		return ret;
+	}
+#endif
 
 	if (IS_ENABLED(CONFIG_MIPI_DSI_LOG_LEVEL_DBG)) {
 		mipi_dsi_stm32_log_config(dev);
@@ -479,6 +531,13 @@ static int mipi_dsi_stm32_init(const struct device *dev)
 					DT_INST_PROP(inst, non_continuous) ?			\
 						DSI_AUTO_CLK_LANE_CTRL_ENABLE :			\
 						DSI_AUTO_CLK_LANE_CTRL_DISABLE,			\
+				COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, phy_freq_range),	\
+					(.PHYFrequencyRange = DT_INST_PROP(inst, phy_freq_range),),\
+					())							\
+				COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, phy_low_power_offset),	\
+					(.PHYLowPowerOffset =					\
+						DT_INST_PROP(inst, phy_low_power_offset),),	\
+					())							\
 			},									\
 		},										\
 		.host_timeouts = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, host_timeouts),	\
@@ -494,15 +553,25 @@ static int mipi_dsi_stm32_init(const struct device *dev)
 				      DSI_DATA_ENABLE_ACTIVE_HIGH : DSI_DATA_ENABLE_ACTIVE_LOW, \
 			.LooselyPacked = DT_INST_PROP(inst, loosely_packed) ? \
 				      DSI_LOOSELY_PACKED_ENABLE : DSI_LOOSELY_PACKED_DISABLE,	\
-			.LPLargestPacketSize =  DT_INST_PROP_OR(inst, largest_packet_size, 4), \
+			.LPLargestPacketSize =  DT_INST_PROP_OR(inst, largest_packet_size, 4),	\
 			.LPVACTLargestPacketSize = DT_INST_PROP_OR(inst, largest_packet_size, 4), \
 			.FrameBTAAcknowledgeEnable = DT_INST_PROP(inst, bta_ack_disable) ?	\
-					  DSI_FBTAA_DISABLE : DSI_FBTAA_ENABLE,	\
+					  DSI_FBTAA_DISABLE : DSI_FBTAA_ENABLE,			\
 		},										\
 		.pll_init = {									\
 			.PLLNDIV = DT_INST_PROP(inst, pll_ndiv),				\
 			.PLLIDF = DT_INST_PROP(inst, pll_idf),					\
 			.PLLODF = DT_INST_PROP(inst, pll_odf),					\
+			COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, pll_vco_range),			\
+					(.PLLVCORange = DT_INST_PROP(inst, pll_vco_range),),	\
+					())							\
+			COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, pll_charge_pump),		\
+					(.PLLChargePump =					\
+						DT_INST_PROP(inst, pll_charge_pump),),		\
+					())							\
+			COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, pll_tuning),			\
+					(.PLLTuning = DT_INST_PROP(inst, pll_tuning),),		\
+					())							\
 		},										\
 	};											\
 	DEVICE_DT_INST_DEFINE(inst, &mipi_dsi_stm32_init, NULL,					\
