@@ -812,6 +812,32 @@ int bt_cap_initiator_broadcast_audio_delete(struct bt_cap_broadcast_source *broa
 int bt_cap_initiator_broadcast_get_base(struct bt_cap_broadcast_source *broadcast_source,
 					struct net_buf_simple *base_buf);
 
+/** Callback function for bt_cap_initiator_broadcast_foreach_stream()
+ *
+ * @param stream     The audio stream
+ * @param user_data  User data
+ *
+ * @retval true Stop iterating.
+ * @retval false Continue iterating.
+ */
+typedef bool (*bt_cap_initiator_broadcast_foreach_stream_func_t)(struct bt_cap_stream *stream,
+								 void *user_data);
+
+/**
+ * @brief Iterate through all streams in a broadcast source
+ *
+ * @param broadcast_source  The broadcast source.
+ * @param func              The callback function.
+ * @param user_data         User specified data that is sent to the callback function.
+ *
+ * @retval 0          Success (even if no streams exists in the group).
+ * @retval -ECANCELED The @p func returned true.
+ * @retval -EINVAL    @p broadcast_source or @p func were NULL.
+ */
+int bt_cap_initiator_broadcast_foreach_stream(struct bt_cap_broadcast_source *broadcast_source,
+					      bt_cap_initiator_broadcast_foreach_stream_func_t func,
+					      void *user_data);
+
 /** Parameters for  bt_cap_handover_unicast_to_broadcast() */
 struct bt_cap_handover_unicast_to_broadcast_param {
 	/** The type of the set. */

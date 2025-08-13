@@ -443,6 +443,46 @@ int bt_cap_initiator_broadcast_get_base(struct bt_cap_broadcast_source *broadcas
 	return bt_bap_broadcast_source_get_base(broadcast_source->bap_broadcast, base_buf);
 }
 
+struct cap_broadcast_source_foreach_stream_data {
+	bt_cap_initiator_broadcast_foreach_stream_func_t func;
+	void *user_data;
+};
+
+static bool cap_broadcast_source_foreach_stream_cb(struct bt_bap_stream *bap_stream,
+						   void *user_data)
+{
+	struct cap_broadcast_source_foreach_stream_data *data = user_data;
+
+	/* Since we are iterating on a CAP broadcast source, we can assume that all streams are CAP
+	 * streams
+	 */
+	return data->func(CONTAINER_OF(bap_stream, struct bt_cap_stream, bap_stream),
+			  data->user_data);
+}
+
+int bt_cap_initiator_broadcast_foreach_stream(struct bt_cap_broadcast_source *broadcast_source,
+					      bt_cap_initiator_broadcast_foreach_stream_func_t func,
+					      void *user_data)
+{
+	struct cap_broadcast_source_foreach_stream_data data = {
+		.func = func,
+		.user_data = user_data,
+	};
+
+	if (broadcast_source == NULL) {
+		LOG_DBG("source is NULL");
+		return -EINVAL;
+	}
+
+	if (func == NULL) {
+		LOG_DBG("func is NULL");
+		return -EINVAL;
+	}
+
+	return bt_bap_broadcast_source_foreach_stream(
+		broadcast_source->bap_broadcast, cap_broadcast_source_foreach_stream_cb, &data);
+}
+
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
