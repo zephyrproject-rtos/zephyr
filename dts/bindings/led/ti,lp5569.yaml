@@ -30,3 +30,10 @@ properties:
       Internal 32kHz clock-enable select. Default disabled on reset.
       Disabled: External 32-kHz clock is used from CLK input pin
       Enabled:  Internal 32-kHz oscillator is enabled
+
+  cp-return-1x:
+    type: boolean
+    description: |
+      Charge-pump return to 1× mode select. Default disabled on reset.
+      Disabled: Charge-pump mode is not affected during shutdown or power-save entry
+      Enabled:  Charge-pump mode is forced to 1x mode during shutdown or power-save entry
