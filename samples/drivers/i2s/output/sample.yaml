@@ -10,6 +10,13 @@ tests:
     filter: dt_alias_exists("i2s-tx")
     integration_platforms:
       - mimxrt1060_evk@B/mimxrt1062/qspi
+      - mimxrt1060_evk@C/mimxrt1062/qspi
+      - mimxrt700_evk/mimxrt798s/cm33_cpu0
+      - mimxrt1170_evk/mimxrt1176/cm7
+      - mimxrt1180_evk/mimxrt1189/cm33
+      - mimxrt1180_evk/mimxrt1189/cm7
+    extra_configs:
+      - CONFIG_DMA_TCD_QUEUE_SIZE=4
     harness: console
     harness_config:
       type: one_line
