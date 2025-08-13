@@ -140,13 +140,11 @@ if(CONFIG_BT_SILABS_SIWX91X)
   zephyr_compile_definitions(
     SLI_SI91X_ENABLE_BLE
   )
-  zephyr_include_directories(
-    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ble/inc
-  )
   zephyr_library_sources(
     ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ble/src/rsi_bt_ble.c
     ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ble/src/rsi_common_apis.c
     ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ble/src/rsi_utils.c
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ble/src/sl_si91x_ble.c
   )
 endif() # CONFIG_BT_SILABS_SIWX91X
 
@@ -167,6 +165,7 @@ if(CONFIG_WISECONNECT_NETWORK_STACK)
     ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/socket/inc
     ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/asynchronous_socket/inc
     ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/core/chip/config
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ble/inc
     ${WISECONNECT_DIR}/components/protocol/wifi/inc
     ${WISECONNECT_DIR}/components/service/network_manager/inc
     ${WISECONNECT_DIR}/components/sli_wifi_command_engine/inc
