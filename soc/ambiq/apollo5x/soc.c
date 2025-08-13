@@ -16,6 +16,10 @@
 #include <zephyr/linker/linker-defs.h>
 #endif /* CONFIG_NOCACHE_MEMORY */
 
+#if (CONFIG_COREMARK == 1)
+#include "icache_prefill.h"
+#endif
+
 #include <soc.h>
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
@@ -66,6 +70,9 @@ void soc_early_init_hook(void)
 
 	am_hal_pwrctrl_pwrmodctl_cpdlp_config(sDefaultCpdlpConfig);
 
+	/* Clear 64KB of iCache before starting Coremark */
+	icache_prefill();
+
 	/* Use LFRC instead of XT */
 	am_hal_rtc_osc_select(AM_HAL_RTC_OSC_LFRC);
 
@@ -93,7 +100,7 @@ void soc_early_init_hook(void)
 	am_hal_pwrctrl_mcu_memory_config_t McuMemCfg = {
 		.eROMMode = AM_HAL_PWRCTRL_ROM_AUTO,
 		.eDTCMCfg = AM_HAL_PWRCTRL_ITCM32K_DTCM128K,
-		.eRetainDTCM = AM_HAL_PWRCTRL_MEMRETCFG_TCMPWDSLP_NORETAIN,
+		.eRetainDTCM = AM_HAL_PWRCTRL_MEMRETCFG_TCMPWDSLP_RETAIN,
 		.eNVMCfg = AM_HAL_PWRCTRL_NVM0_ONLY,
 		.bKeepNVMOnInDeepSleep = false};
 

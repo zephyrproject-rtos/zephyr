@@ -9,8 +9,17 @@ tests:
     platform_allow: apollo510_evb
     integration_platforms:
       - apollo510_evb
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "Coremark started"
+        - "Correct operation validated"
+        - "Coremark finished"
+
   sample.benchmark.coremark.sysbuild:
-    platform_allow: apollo510_evb
+    platform_allow: nrf52840dk/nrf52840
     extra_args: --sysbuild
     integration_platforms:
-      - apollo510_evb
+      - nrf52840dk/nrf52840

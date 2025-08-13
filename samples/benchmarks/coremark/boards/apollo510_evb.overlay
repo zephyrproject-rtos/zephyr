@@ -18,7 +18,7 @@
 };
 
 &stimer0 {
-	status = "disabled";
+	clk-source = <6>;
 };
 
 &trng {
@@ -46,5 +46,5 @@ zephyr_udc0: &usb {
 };
 
 &uart0 {
-	status = "disabled";
+	zephyr,pm-device-runtime-auto;
 };

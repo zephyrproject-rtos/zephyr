@@ -561,9 +561,11 @@ static int uart_ambiq_pm_action(const struct device *dev, enum pm_device_action 
 		if (err < 0) {
 			return err;
 		}
+		k_busy_wait(100);
 		status = AM_HAL_SYSCTRL_WAKE;
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
+		am_hal_uart_tx_flush(data->uart_handler);
 		/* Move pins to sleep state */
 		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_SLEEP);
 		if ((err < 0) && (err != -ENOENT)) {
