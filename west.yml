@@ -139,7 +139,7 @@ manifest:
       groups:
         - tools
     - name: fatfs
-      revision: 18ad3932f7f18b59abf99cb2f8a6cd5d6746cfe0
+      revision: 16245c7c41d2b79e74984f49b5202551786b8a9b
       path: modules/fs/fatfs
       groups:
         - fs
@@ -154,7 +154,7 @@ manifest:
       groups:
         - hal
     - name: hal_ambiq
-      revision: e9212585cd7c4e1cc189f7d530b8a028d5e8ecf5
+      revision: 84ccbfc0b6041ba9f5688337c78bad99da5448ce
       path: modules/hal/ambiq
       groups:
         - hal
@@ -169,7 +169,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 883b9e84c86bab3ffef8572330cdaad8c1b289bc
+      revision: f3453bdeced28642424692aae32cce4eec3f2d7f
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -195,7 +195,7 @@ manifest:
       groups:
         - hal
     - name: hal_microchip
-      revision: 2c5eb6b7b9ef3a442ff9d9536fbc63b2028c2d0e
+      revision: 32a79d481c056b2204a5701d5a5799f9e5130dd7
       path: modules/hal/microchip
       groups:
         - hal
@@ -226,7 +226,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 1372089250bf0d8afc46a7efc3ecf080003ead22
+      revision: 1ac809b55389ba3ce09dd1fbf2477a034134d112
       groups:
         - hal
     - name: hal_rpi_pico
@@ -235,7 +235,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: 13343bccf850eb7b6541f6e71a8d2a880209850b
+      revision: 190a144a16bed9a938a94543ed5bbc70c0552e0f
       path: modules/hal/silabs
       groups:
         - hal
@@ -245,7 +245,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 1e753266ddfb4b07a8a0b1ec566e9637ea45d5ef
+      revision: pull/305/head
       path: modules/hal/stm32
       groups:
         - hal
@@ -310,7 +310,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: bf5321bb6906e9e75b4c85b7c98b71c06ae52e90
+      revision: 461e060e8687c9a75074effcc61d7f68c5112cfd
       path: bootloader/mcuboot
       groups:
         - bootloader
@@ -323,12 +323,12 @@ manifest:
       revision: 7307ce399b81ddcb3c3a5dc862c52d4754328d38
       path: modules/lib/nanopb
     - name: net-tools
-      revision: 2750d71e28e48865a6fd8a10413f978bb216c59e
+      revision: 64bf49ad9b6d1d1f9d24bf8b94d82d9bcb52f61a
       path: tools/net-tools
       groups:
         - tools
     - name: nrf_hw_models
-      revision: 40403f5f2805cca210d2a47c8717d89c4e816cda
+      revision: 8b6001d6bdd9e2c8bb858fdb26f696f6d5f73db5
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
       revision: 787eea1a3c8dd13c86214e204a919e6f9bcebf91
