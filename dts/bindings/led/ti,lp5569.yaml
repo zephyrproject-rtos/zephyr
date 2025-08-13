@@ -23,3 +23,10 @@ properties:
       register. This can be useful to supply a higher voltage to the LEDs, than
       what the lp5569 is being supplied.
       The default corresponds to the reset value of the register.
+
+  int-clk-en:
+    type: boolean
+    description: |
+      Internal 32kHz clock-enable select. Default disabled on reset.
+      Disabled: External 32-kHz clock is used from CLK input pin
+      Enabled:  Internal 32-kHz oscillator is enabled
