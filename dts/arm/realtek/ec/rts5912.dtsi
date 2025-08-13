@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <mem.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <freq.h>
 
 / {
 	cpus {
@@ -21,7 +22,7 @@
 		cpu0: cpu@0 {
 			compatible = "arm,cortex-m33f";
 			reg = <0>;
-			cpu-power-states = <&idle &suspend_to_ram>;
+			cpu-power-states = <&idle>;
 		};
 
 		power-states {
@@ -31,11 +32,6 @@
 				min-residency-us = <100000000>;
 			};
 
-			suspend_to_ram: suspend_to_ram {
-				compatible = "zephyr,power-state";
-				power-state-name = "suspend-to-ram";
-				min-residency-us = <250000000>;
-			};
 		};
 	};
 
