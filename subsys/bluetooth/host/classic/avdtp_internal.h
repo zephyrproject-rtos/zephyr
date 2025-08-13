@@ -175,6 +175,7 @@ struct bt_avdtp_set_configuration_params {
 	uint8_t media_codec_type;
 	uint8_t codec_specific_ie_len;
 	uint8_t *codec_specific_ie;
+	bool delay_report;
 };
 
 /* avdtp_open, avdtp_close, avdtp_start, avdtp_suspend */
@@ -182,6 +183,13 @@ struct bt_avdtp_ctrl_params {
 	struct bt_avdtp_req req;
 	struct bt_avdtp_sep *sep;
 	uint8_t acp_stream_ep_id;
+};
+
+struct bt_avdtp_delay_report_params {
+	struct bt_avdtp_req req;
+	struct bt_avdtp_sep *sep;
+	uint8_t acp_stream_ep_id;
+	uint16_t delay_report;
 };
 
 struct bt_avdtp_generic_service_cap {
@@ -259,6 +267,9 @@ struct bt_avdtp_ops_cb {
 	int (*suspend_ind)(struct bt_avdtp *session, struct bt_avdtp_sep *sep, uint8_t *errcode);
 
 	int (*abort_ind)(struct bt_avdtp *session, struct bt_avdtp_sep *sep, uint8_t *errcode);
+
+	int (*delay_report_ind)(struct bt_avdtp *session, struct bt_avdtp_sep *sep,
+				struct net_buf *buf, uint8_t *errcode);
 };
 
 /** @brief Global AVDTP session structure. */
@@ -307,7 +318,8 @@ int bt_avdtp_get_capabilities(struct bt_avdtp *session,
 
 /* Parse the codec type of capabilities */
 int bt_avdtp_parse_capability_codec(struct net_buf *buf, uint8_t *codec_type,
-				    uint8_t **codec_info_element, uint16_t *codec_info_element_len);
+				    uint8_t **codec_info_element, uint16_t *codec_info_element_len,
+				    bool *delay_report);
 
 /* AVDTP Set Configuration */
 int bt_avdtp_set_configuration(struct bt_avdtp *session,
@@ -330,6 +342,9 @@ int bt_avdtp_suspend(struct bt_avdtp *session, struct bt_avdtp_ctrl_params *para
 
 /* AVDTP ABORT */
 int bt_avdtp_abort(struct bt_avdtp *session, struct bt_avdtp_ctrl_params *param);
+
+/* AVDTP send delay report */
+int bt_avdtp_delay_report(struct bt_avdtp *session, struct bt_avdtp_delay_report_params *param);
 
 /* AVDTP send data */
 int bt_avdtp_send_media_data(struct bt_avdtp_sep *sep, struct net_buf *buf);
