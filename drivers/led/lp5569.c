@@ -45,6 +45,7 @@ struct lp5569_config {
 	const uint8_t cp_mode;
 	const bool int_clk_en;
 	const bool cp_return_1x;
+	const bool powersave_en;
 };
 
 static int lp5569_led_set_brightness(const struct device *dev, uint32_t led, uint8_t brightness)
@@ -115,10 +116,11 @@ static int lp5569_enable(const struct device *dev)
 
 	/* datasheet 8.6.1.31: only set int_clk_en if CONFIG.CHIP_EN=0 */
 	ret = i2c_reg_write_byte_dt(&config->bus, LP5569_MISC,
-				    LP5569_POWERSAVE_EN | LP5569_EN_AUTO_INCR |
+				    LP5569_EN_AUTO_INCR |
 					    (config->cp_mode << LP5569_CP_MODE_SHIFT) |
 					    (config->int_clk_en ? LP5569_INT_CLK_EN : 0) |
-					    (config->cp_return_1x ? LP5569_CP_RETURN_1X : 0));
+					    (config->cp_return_1x ? LP5569_CP_RETURN_1X : 0) |
+					    (config->powersave_en ? LP5569_POWERSAVE_EN : 0));
 	if (ret < 0) {
 		LOG_ERR("LED reg update failed");
 		return ret;
@@ -191,7 +193,8 @@ static DEVICE_API(led, lp5569_led_api) = {
 		.enable_gpio = GPIO_DT_SPEC_INST_GET_OR(id, enable_gpios, {0}),                    \
 		.cp_mode = DT_ENUM_IDX(DT_DRV_INST(id), charge_pump_mode),                         \
 		.int_clk_en = DT_INST_PROP_OR(id, int_clk_en, false),                              \
-		.cp_return_1x = DT_INST_PROP_OR(id, cp_return_1x, false)};                         \
+		.cp_return_1x = DT_INST_PROP_OR(id, cp_return_1x, false),                          \
+		.powersave_en = DT_INST_PROP_OR(id, powersave_en, false)};                         \
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(id, lp5569_pm_action);                                            \
                                                                                                    \
