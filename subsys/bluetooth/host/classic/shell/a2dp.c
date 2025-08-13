@@ -454,6 +454,22 @@ void stream_recv(struct bt_a2dp_stream *stream,
 	sink_sbc_streamer_data(stream, buf, seq_num, ts);
 }
 
+int app_delay_report_req(struct bt_a2dp_stream *stream, uint16_t value, uint8_t *rsp_err_code)
+{
+	*rsp_err_code = 0;
+	bt_shell_print("receive delay report and accept");
+	return 0;
+}
+
+void app_delay_report_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
+{
+	if (rsp_err_code == 0) {
+		bt_shell_print("success to send report delay");
+	} else {
+		bt_shell_print("fail to send report delay");
+	}
+}
+
 struct bt_a2dp_cb a2dp_cb = {
 	.connected = app_connected,
 	.disconnected = app_disconnected,
@@ -468,6 +484,12 @@ struct bt_a2dp_cb a2dp_cb = {
 	.suspend_req = app_suspend_req,
 	.suspend_rsp = app_suspend_rsp,
 	.reconfig_req = app_reconfig_req,
+#if defined(CONFIG_BT_A2DP_SOURCE)
+	.delay_report_req = app_delay_report_req,
+#endif
+#if defined(CONFIG_BT_A2DP_SINK)
+	.delay_report_rsp = app_delay_report_rsp,
+#endif
 };
 
 static int cmd_register_cb(const struct shell *sh, int32_t argc, char *argv[])
@@ -584,6 +606,11 @@ void app_configured(int err)
 	}
 }
 
+void delay_report(struct bt_a2dp_stream *stream, uint16_t value)
+{
+	bt_shell_print("received delay report: %d 1/10ms", value);
+}
+
 static struct bt_a2dp_stream_ops stream_ops = {
 	.configured = stream_configured,
 	.established = stream_established,
@@ -595,6 +622,7 @@ static struct bt_a2dp_stream_ops stream_ops = {
 #endif
 #if defined(CONFIG_BT_A2DP_SOURCE)
 	.sent = NULL,
+	.delay_report = delay_report,
 #endif
 };
 
@@ -795,6 +823,23 @@ static int cmd_send_media(const struct shell *sh, int32_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_send_delay_report(const struct shell *sh, int32_t argc, char *argv[])
+{
+	int err;
+
+	if (a2dp_initied == 0) {
+		shell_print(sh, "need to register a2dp connection callbacks");
+		return -ENOEXEC;
+	}
+
+	err = bt_a2dp_stream_delay_report(&sbc_stream, 1);
+	if (err < 0) {
+		shell_print(sh, "fail to send delay report (%d)\n", err);
+	}
+
+	return 0;
+}
+
 #define HELP_NONE "[none]"
 
 SHELL_STATIC_SUBCMD_SET_CREATE(a2dp_cmds,
@@ -813,6 +858,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(a2dp_cmds,
 	SHELL_CMD_ARG(suspend, NULL, "\"suspend the stream\"", cmd_suspend, 1, 0),
 	SHELL_CMD_ARG(abort, NULL, "\"abort the stream\"", cmd_abort, 1, 0),
 	SHELL_CMD_ARG(send_media, NULL, HELP_NONE, cmd_send_media, 1, 0),
+	SHELL_CMD_ARG(send_delay_report, NULL, HELP_NONE, cmd_send_delay_report, 1, 0),
 	SHELL_SUBCMD_SET_END
 );
 

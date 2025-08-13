@@ -40,6 +40,7 @@
 	CONTAINER_OF(_set_conf_param, struct bt_a2dp, set_config_param)
 #define CTRL_REQ(_req)          CONTAINER_OF(_req, struct bt_avdtp_ctrl_params, req)
 #define CTRL_PARAM(_ctrl_param) CONTAINER_OF(_ctrl_param, struct bt_a2dp, ctrl_param)
+#define DELAY_REPORT_REQ(_req)  CONTAINER_OF(_req, struct bt_avdtp_delay_report_params, req)
 
 #include "host/hci_core.h"
 #include "host/conn_internal.h"
@@ -65,6 +66,7 @@ struct bt_a2dp {
 	struct bt_avdtp_get_capabilities_params get_capabilities_param;
 	struct bt_avdtp_set_configuration_params set_config_param;
 	struct bt_avdtp_ctrl_params ctrl_param;
+	struct bt_avdtp_delay_report_params delay_report_param;
 	uint8_t get_cap_index;
 	enum bt_a2dp_internal_state a2dp_state;
 	uint8_t peer_seps_count;
@@ -127,11 +129,9 @@ static int a2dp_discovery_ind(struct bt_avdtp *session, uint8_t *errcode)
 static int a2dp_get_capabilities_ind(struct bt_avdtp *session, struct bt_avdtp_sep *sep,
 				     struct net_buf *rsp_buf, bool get_all_caps, uint8_t *errcode)
 {
-	/* The Reporting, Recovery, Content Protection, Header Compression, Multiplexing and
-	 * Delay Reporting services are not supported, so the same response is replied as
-	 * get_capabilities.
+	/* The Reporting, Recovery, Content Protection, Header Compression and Multiplexing
+	 * are not supported.
 	 */
-	ARG_UNUSED(get_all_caps);
 	struct bt_a2dp_ep *ep;
 
 	__ASSERT(sep, "Invalid sep");
@@ -150,6 +150,12 @@ static int a2dp_get_capabilities_ind(struct bt_avdtp *session, struct bt_avdtp_s
 	net_buf_add_u8(rsp_buf, ep->codec_type);
 	/* Codec Info Element */
 	net_buf_add_mem(rsp_buf, &ep->codec_cap->codec_ie[0], ep->codec_cap->len);
+
+	if (get_all_caps && ep->delay_report) {
+		net_buf_add_u8(rsp_buf, BT_AVDTP_SERVICE_DELAY_REPORTING);
+		net_buf_add_u8(rsp_buf, 0);
+	}
+
 	return 0;
 }
 
@@ -270,6 +276,7 @@ static int a2dp_process_config_ind(struct bt_avdtp *session, struct bt_avdtp_sep
 	struct bt_a2dp_codec_ie codec_config;
 	uint8_t rsp_err_code;
 	int err;
+	bool delay_report;
 
 	*errcode = 0;
 
@@ -280,7 +287,7 @@ static int a2dp_process_config_ind(struct bt_avdtp *session, struct bt_avdtp_sep
 	/* parse the configuration */
 	codec_info_element_len = 4U;
 	err = bt_avdtp_parse_capability_codec(buf, &codec_type, &codec_info_element,
-					      &codec_info_element_len);
+					      &codec_info_element_len, &delay_report);
 	if (err) {
 		*errcode = BT_AVDTP_BAD_ACP_SEID;
 		return -EINVAL;
@@ -308,6 +315,7 @@ static int a2dp_process_config_ind(struct bt_avdtp *session, struct bt_avdtp_sep
 			return -EINVAL;
 		}
 	}
+
 	/* For reconfig, ep->stream must already be valid, callback can be NULL as default accept.
 	 * For !reconfig, config_req must be set to get stream from upper layer
 	 */
@@ -326,6 +334,7 @@ static int a2dp_process_config_ind(struct bt_avdtp *session, struct bt_avdtp_sep
 		return -EINVAL;
 	}
 
+	cfg.delay_report = delay_report;
 	cfg.codec_config = &codec_config;
 	cfg.codec_config->len = codec_info_element_len;
 	memcpy(&cfg.codec_config->codec_ie[0], codec_info_element,
@@ -339,6 +348,7 @@ static int a2dp_process_config_ind(struct bt_avdtp *session, struct bt_avdtp_sep
 			stream->remote_ep_id = int_seid;
 			stream->remote_ep = NULL;
 			stream->codec_config = *cfg.codec_config;
+			stream->delay_report = cfg.delay_report;
 			ep->stream = stream;
 		} else {
 			*errcode = rsp_err_code != 0 ? rsp_err_code : BT_AVDTP_BAD_ACP_SEID;
@@ -414,7 +424,7 @@ static int a2dp_ctrl_ind(struct bt_avdtp *session, struct bt_avdtp_sep *sep, uin
 	*errcode = 0;
 	ep = CONTAINER_OF(sep, struct bt_a2dp_ep, sep);
 	if (ep->stream == NULL) {
-		*errcode = BT_AVDTP_BAD_ACP_SEID;
+		*errcode = BT_AVDTP_ERR_SEP_NOT_IN_USE;
 		return -EINVAL;
 	}
 
@@ -497,6 +507,51 @@ static int a2dp_abort_ind(struct bt_avdtp *session, struct bt_avdtp_sep *sep, ui
 	return a2dp_ctrl_ind(session, sep, errcode, req_cb, NULL);
 }
 
+#ifdef CONFIG_BT_A2DP_SOURCE
+int a2dp_delay_report_ind(struct bt_avdtp *session, struct bt_avdtp_sep *sep, struct net_buf *buf,
+			  uint8_t *errcode)
+{
+	struct bt_a2dp_ep *ep;
+	struct bt_a2dp_stream *stream;
+	uint16_t value;
+
+	__ASSERT(sep, "Invalid sep");
+
+	/* delay report value is 2 bytes */
+	if (buf->len != sizeof(value)) {
+		*errcode = BT_AVDTP_BAD_LENGTH;
+		return -EINVAL;
+	}
+
+	ep = CONTAINER_OF(sep, struct bt_a2dp_ep, sep);
+	if (ep->stream == NULL) {
+		*errcode = BT_AVDTP_SEP_NOT_IN_USE;
+		return -EINVAL;
+	}
+
+	value = net_buf_pull_be16(buf);
+	stream = ep->stream;
+	*errcode = 0;
+
+	if (a2dp_cb != NULL && a2dp_cb->delay_report_req != NULL) {
+		int err;
+
+		err = a2dp_cb->delay_report_req(stream, value, errcode);
+		if (err != 0 && *errcode == 0) {
+			*errcode = BT_AVDTP_BAD_ACP_SEID;
+		}
+	}
+
+	if (*errcode == 0) {
+		if (stream->ops != NULL && stream->ops->delay_report != NULL) {
+			stream->ops->delay_report(stream, value);
+		}
+	}
+
+	return (*errcode == 0) ? 0 : -EINVAL;
+}
+#endif
+
 static int bt_a2dp_set_config_cb(struct bt_avdtp_req *req, struct net_buf *buf)
 {
 	struct bt_a2dp *a2dp = SET_CONF_PARAM(SET_CONF_REQ(req));
@@ -532,6 +587,7 @@ static int bt_a2dp_get_capabilities_cb(struct bt_avdtp_req *req, struct net_buf 
 	uint16_t codec_info_element_len;
 	uint8_t codec_type;
 	uint8_t user_ret;
+	bool delay_report;
 
 	if (GET_CAP_REQ(req) != &a2dp->get_capabilities_param) {
 		return -EINVAL;
@@ -546,8 +602,9 @@ static int bt_a2dp_get_capabilities_cb(struct bt_avdtp_req *req, struct net_buf 
 		return 0;
 	}
 
-	err = bt_avdtp_parse_capability_codec(buf, &codec_type, &codec_info_element,
-					      &codec_info_element_len);
+	err = bt_avdtp_parse_capability_codec(buf, &codec_type,
+					      &codec_info_element, &codec_info_element_len,
+					      &delay_report);
 	if (err) {
 		LOG_DBG("codec capability parsing fail");
 		return 0;
@@ -565,12 +622,15 @@ static int bt_a2dp_get_capabilities_cb(struct bt_avdtp_req *req, struct net_buf 
 		info->sep_info = &a2dp->discover_cb_param->seps_info[a2dp->get_cap_index];
 		memcpy(&info->codec_cap.codec_ie, codec_info_element, codec_info_element_len);
 		info->codec_cap.len = codec_info_element_len;
+		info->delay_report = delay_report;
+
 		user_ret = a2dp->discover_cb_param->cb(a2dp, info, &ep);
 
 		if (ep != NULL) {
 			ep->codec_type = info->codec_type;
 			ep->sep.sep_info = *info->sep_info;
 			*ep->codec_cap = info->codec_cap;
+			ep->delay_report = info->delay_report;
 			ep->stream = NULL;
 		}
 
@@ -758,6 +818,10 @@ int bt_a2dp_stream_config(struct bt_a2dp *a2dp, struct bt_a2dp_stream *stream,
 		return -EINVAL;
 	}
 
+	if (config->delay_report && (!local_ep->delay_report || !remote_ep->delay_report)) {
+		return -EINVAL;
+	}
+
 	stream->local_ep = local_ep;
 	stream->remote_ep = remote_ep;
 	stream->remote_ep_id = remote_ep->sep.sep_info.id;
@@ -767,6 +831,9 @@ int bt_a2dp_stream_config(struct bt_a2dp *a2dp, struct bt_a2dp_stream *stream,
 	bt_a2dp_stream_config_set_param(a2dp, config, bt_a2dp_set_config_cb,
 					remote_ep->sep.sep_info.id, local_ep->sep.sep_info.id,
 					local_ep->codec_type, &local_ep->sep);
+	a2dp->set_config_param.delay_report = config->delay_report;
+	stream->delay_report = config->delay_report;
+
 	return bt_avdtp_set_configuration(&a2dp->session, &a2dp->set_config_param);
 }
 
@@ -842,6 +909,23 @@ static int bt_a2dp_abort_cb(struct bt_avdtp_req *req, struct net_buf *buf)
 	/* When stream is released, the `stream->ops->released` will be called. */
 	return bt_a2dp_ctrl_cb(req, rsp_cb, NULL);
 }
+
+#ifdef CONFIG_BT_A2DP_SINK
+static int bt_a2dp_delay_report_cb(struct bt_avdtp_req *req, struct net_buf *buf)
+{
+	struct bt_a2dp_ep *ep = CONTAINER_OF(DELAY_REPORT_REQ(req)->sep, struct bt_a2dp_ep, sep);
+
+	if (ep->stream == NULL) {
+		return -EINVAL;
+	}
+
+	if (a2dp_cb != NULL && a2dp_cb->delay_report_rsp != NULL) {
+		a2dp_cb->delay_report_rsp(ep->stream, req->status);
+	}
+
+	return 0;
+}
+#endif
 
 static int bt_a2dp_stream_ctrl_pre(struct bt_a2dp_stream *stream, bt_avdtp_func_t cb)
 {
@@ -999,6 +1083,37 @@ int bt_a2dp_stream_send(struct bt_a2dp_stream *stream, struct net_buf *buf, uint
 }
 #endif
 
+#if defined(CONFIG_BT_A2DP_SINK)
+int bt_a2dp_stream_delay_report(struct bt_a2dp_stream *stream, uint16_t delay)
+{
+	struct bt_a2dp *a2dp;
+
+	CHECKIF(stream == NULL) {
+		return -EINVAL;
+	}
+
+	if (stream->local_ep == NULL || stream->a2dp == NULL) {
+		return -EINVAL;
+	}
+
+	if (stream->local_ep->sep.sep_info.tsep != BT_AVDTP_SINK) {
+		LOG_ERR("Delay report is only supported for sink endpoint");
+		return -ENOTSUP;
+	}
+
+	a2dp = stream->a2dp;
+	memset(&a2dp->delay_report_param, 0U, sizeof(a2dp->delay_report_param));
+	a2dp->delay_report_param.req.func = bt_a2dp_delay_report_cb;
+	a2dp->delay_report_param.sep = &stream->local_ep->sep;
+	a2dp->delay_report_param.delay_report = delay;
+	a2dp->delay_report_param.acp_stream_ep_id = stream->remote_ep != NULL
+						    ? stream->remote_ep->sep.sep_info.id
+						    : stream->remote_ep_id;
+
+	return bt_avdtp_delay_report(&a2dp->session, &a2dp->delay_report_param);
+}
+#endif
+
 int a2dp_endpoint_released(struct bt_avdtp_sep *sep)
 {
 	struct bt_a2dp_ep *ep;
@@ -1038,6 +1153,9 @@ static const struct bt_avdtp_ops_cb signaling_avdtp_ops = {
 	.close_ind = a2dp_close_ind,
 	.suspend_ind = a2dp_suspend_ind,
 	.abort_ind = a2dp_abort_ind,
+#ifdef CONFIG_BT_A2DP_SOURCE
+	.delay_report_ind = a2dp_delay_report_ind,
+#endif
 };
 
 int a2dp_accept(struct bt_conn *conn, struct bt_avdtp **session)
