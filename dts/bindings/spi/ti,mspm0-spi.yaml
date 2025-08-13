@@ -1,0 +1,18 @@
+# Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+   TEXAS INSTRUMENTS MSPM0 SERIAL PERIPHERAL INTERFACE (SPI).
+
+compatible: "ti,mspm0-spi"
+include: [spi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  clocks:
+    required: true
