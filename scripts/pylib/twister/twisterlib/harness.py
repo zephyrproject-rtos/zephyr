@@ -479,6 +479,9 @@ class Pytest(Harness):
         if options.west_flash and options.west_flash != []:
             command.append(f'--west-flash-extra-args={options.west_flash}')
 
+        if options.flash_command:
+            command.append(f'--flash-command={options.flash_command}')
+
         if board_id := hardware.probe_id or hardware.id:
             command.append(f'--device-id={board_id}')
 
