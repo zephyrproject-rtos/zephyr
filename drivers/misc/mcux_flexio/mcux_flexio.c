@@ -132,7 +132,10 @@ static int mcux_flexio_init(const struct device *dev)
 	k_mutex_init(&data->lock);
 
 	FLEXIO_GetDefaultConfig(&flexio_config);
+#if !(defined(FSL_FEATURE_FLEXIO_HAS_DOZE_MODE_SUPPORT) && \
+		(FSL_FEATURE_FLEXIO_HAS_DOZE_MODE_SUPPORT == 0))
 	flexio_config.enableInDoze = true;
+#endif
 
 	FLEXIO_Init(config->base, &flexio_config);
 	config->irq_config_func(dev);
