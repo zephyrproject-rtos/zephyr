@@ -20,3 +20,6 @@ config USE_MSPM0_DL_MCAN
 
 config USE_MSPM0_DL_DAC12
 	bool
+
+config USE_MSPM0_DL_SPI
+	bool
