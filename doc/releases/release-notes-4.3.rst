@@ -100,6 +100,7 @@ New APIs and options
 
     * :c:struct:`bt_audio_codec_cfg` now contains a target_latency and a target_phy option
     * :c:func:`bt_bap_broadcast_source_foreach_stream`
+    * :c:func:`bt_cap_initiator_broadcast_foreach_stream`
     * :c:struct:`bt_bap_stream` now contains an ``iso`` field as a reference to the ISO channel
 
   * Host
