@@ -1,0 +1,26 @@
+# Copyright 2024-2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_MIMXRT798S_HIFI4
+	select XTENSA
+	select XTENSA_HAL if ("$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xcc" && "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xt-clang")
+	select XTENSA_RESET_VECTOR
+	select XTENSA_USE_CORE_CRT1
+	select XTENSA_GEN_HANDLERS
+	select XTENSA_SMALL_VECTOR_TABLE_ENTRY
+	select GEN_ISR_TABLES
+	select CLOCK_CONTROL
+	select SOC_EARLY_INIT_HOOK
+	select NXP_INPUTMUX
+	select HAS_MCUX
+
+config MCUX_CORE_SUFFIX
+	default "_hifi4"
+
+config RT798_HIFI4_STACK_SIZE
+	hex "Boot time stack size"
+	default 0x1000
+	depends on SOC_MIMXRT798S_HIFI4
+	help
+	  Stack space is reserved at the end of the data region, starting at
+	  (data base - RT798_HIFI4_STACK_SIZE).
