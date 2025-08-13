@@ -1281,3 +1281,34 @@ int bt_bap_broadcast_source_unregister_cb(struct bt_bap_broadcast_source_cb *cb)
 
 	return 0;
 }
+
+int bt_bap_broadcast_source_foreach_stream(struct bt_bap_broadcast_source *source,
+					   bt_bap_broadcast_source_foreach_stream_func_t func,
+					   void *user_data)
+{
+	struct bt_bap_broadcast_subgroup *subgroup, *next_subgroup;
+
+	if (source == NULL) {
+		LOG_DBG("source is NULL");
+		return -EINVAL;
+	}
+
+	if (func == NULL) {
+		LOG_DBG("func is NULL");
+		return -EINVAL;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&source->subgroups, subgroup, next_subgroup, _node) {
+		struct bt_bap_stream *stream, *next_stream;
+
+		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&subgroup->streams, stream, next_stream, _node) {
+			const bool stop = func(stream, user_data);
+
+			if (stop) {
+				return -ECANCELED;
+			}
+		}
+	}
+
+	return 0;
+}
