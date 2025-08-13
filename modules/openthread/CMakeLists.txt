@@ -207,6 +207,13 @@ target_compile_options(ot-config INTERFACE
     -imacros ${AUTOCONF_H}
 )
 
+# FIXME Temporary suppress -Wundef option to avoid warning about
+# MBEDTLS_SSL_DTLS_CONNECTION_ID_COMPAT undefined option. To be removed
+# when the issue is resolved in mbed TLS (the faulty option is already removed
+# on the development branch or there is a pending bugfix for the 3.6 branch
+# https://github.com/Mbed-TLS/mbedtls/pull/10112).
+target_compile_options(ot-config INTERFACE -Wno-undef)
+
 # Openthread depends on errno.h, which includes errno_private.h in minimal libc.
 # errno_private.h is generated as part of ${SYSCALL_LIST_H_TARGET} target.
 add_dependencies(ot-config ${SYSCALL_LIST_H_TARGET})
