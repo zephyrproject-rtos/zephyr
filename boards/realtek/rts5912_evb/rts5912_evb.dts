@@ -41,6 +41,7 @@
 	status = "okay";
 	pinctrl-0 = <&uart_rx_gpio113 &uart_tx_gpio114>;
 	pinctrl-names = "default";
+	gpios = <&gpioh 1 0>;
 };
 
 &kbd {
