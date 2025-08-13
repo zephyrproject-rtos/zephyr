@@ -101,6 +101,7 @@ BUILD_ASSERT((NRF_SAADC_AIN0 == NRF_SAADC_INPUT_AIN0) &&
 struct driver_data {
 	struct adc_context ctx;
 	uint8_t single_ended_channels;
+	uint8_t divide_single_ended_value;
 	uint8_t active_channel_cnt;
 	void *mem_reg;
 	void *user_buffer;
@@ -187,7 +188,6 @@ static int input_assign(nrf_saadc_input_t *pin_p,
 
 	if (channel_cfg->differential) {
 		if (channel_cfg->input_negative > ARRAY_SIZE(saadc_psels) ||
-		    channel_cfg->input_negative < NRF_SAADC_AIN0 ||
 		    (IS_ENABLED(CONFIG_NRF_PLATFORM_HALTIUM) &&
 		     (channel_cfg->input_positive > NRF_SAADC_AIN7) !=
 		     (channel_cfg->input_negative > NRF_SAADC_AIN7))) {
@@ -195,14 +195,17 @@ static int input_assign(nrf_saadc_input_t *pin_p,
 				channel_cfg->input_negative);
 			return -EINVAL;
 		}
-		*pin_n = saadc_psels[channel_cfg->input_negative];
+		*pin_n = channel_cfg->input_negative == NRF_SAADC_GND ?
+			 NRF_SAADC_INPUT_DISABLED :
+			 saadc_psels[channel_cfg->input_negative];
 	} else {
 		*pin_n = NRF_SAADC_INPUT_DISABLED;
 	}
 #else
 	*pin_p = channel_cfg->input_positive;
-	*pin_n = channel_cfg->differential ? channel_cfg->input_negative
-					   : NRF_SAADC_INPUT_DISABLED;
+	*pin_n = (channel_cfg->differential && (channel_cfg->input_negative != NRF_SAADC_GND))
+			 ? channel_cfg->input_negative
+			 : NRF_SAADC_INPUT_DISABLED;
 #endif
 	LOG_DBG("ADC positive input: %d", *pin_p);
 	LOG_DBG("ADC negative input: %d", *pin_n);
@@ -352,8 +355,14 @@ static int adc_nrfx_channel_setup(const struct device *dev,
 	 * after ADC sequence ends.
 	 */
 	if (channel_cfg->differential) {
-		ch_cfg->mode = NRF_SAADC_MODE_DIFFERENTIAL;
-		m_data.single_ended_channels &= ~BIT(channel_cfg->channel_id);
+		if (channel_cfg->input_negative == NRF_SAADC_GND) {
+			ch_cfg->mode = NRF_SAADC_MODE_SINGLE_ENDED;
+			m_data.single_ended_channels |= BIT(channel_cfg->channel_id);
+			m_data.divide_single_ended_value |= BIT(channel_cfg->channel_id);
+		} else {
+			ch_cfg->mode = NRF_SAADC_MODE_DIFFERENTIAL;
+			m_data.single_ended_channels &= ~BIT(channel_cfg->channel_id);
+		}
 	} else {
 		ch_cfg->mode = NRF_SAADC_MODE_SINGLE_ENDED;
 		m_data.single_ended_channels |= BIT(channel_cfg->channel_id);
@@ -500,11 +509,14 @@ static void correct_single_ended(const struct adc_sequence *sequence, nrf_saadc_
 	uint16_t channel_bit = BIT(0);
 	uint8_t selected_channels = sequence->channels;
 	uint8_t single_ended_channels = m_data.single_ended_channels;
+	uint8_t divide_single_ended_value = m_data.divide_single_ended_value;
 	int16_t *sample = (int16_t *)buffer;
 
 	while (channel_bit <= single_ended_channels) {
-		if (channel_bit & selected_channels) {
-			if ((channel_bit & single_ended_channels) && (*sample < 0)) {
+		if ((channel_bit & selected_channels) && (channel_bit & single_ended_channels)) {
+			if (channel_bit & divide_single_ended_value) {
+				*sample /= 2;
+			} else if (*sample < 0) {
 				*sample = 0;
 			}
 
