@@ -21,6 +21,8 @@
 
 #define SCMI_PROTOCOL_CPU_DOMAIN 130
 
+#define SCMI_CPU_MAX_PDCONFIGS_T 7U
+
 /**
  * @struct scmi_cpu_sleep_mode_config
  *
@@ -31,6 +33,23 @@ struct scmi_cpu_sleep_mode_config {
 	uint32_t cpu_id;
 	uint32_t flags;
 	uint32_t sleep_mode;
+};
+
+struct scmi_pd_lpm_settings {
+	uint32_t domain_id;
+	uint32_t lpm_setting;
+	uint32_t ret_mask;
+};
+
+/**
+ * @struct scmi_cpu_pd_lpm_config
+ *
+ * @brief Describes cpu power domain low power mode setting
+ */
+struct scmi_cpu_pd_lpm_config {
+	uint32_t cpu_id;
+	uint32_t num_cfg;
+	struct scmi_pd_lpm_settings cfgs[SCMI_CPU_MAX_PDCONFIGS_T];
 };
 
 /**
@@ -64,4 +83,14 @@ enum scmi_cpu_domain_message {
  */
 int scmi_cpu_sleep_mode_set(struct scmi_cpu_sleep_mode_config *cfg);
 
+/**
+ * @brief Send the SCMI_CPU_DOMAIN_MSG_CPU_PD_LPM_CONFIG_SET command and get its reply
+ *
+ * @param cfg pointer to structure containing configuration
+ * to be set
+ *
+ * @retval 0 if successful
+ * @retval negative errno if failure
+ */
+int scmi_cpu_pd_lpm_set(struct scmi_cpu_pd_lpm_config *cfg);
 #endif /* _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_CPU_H_ */

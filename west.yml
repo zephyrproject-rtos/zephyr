@@ -210,7 +210,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 2de68b601cc95417466707f1b99149820b0556ec
+      revision: 9b49fb1130209214a95d279b64e1efd5c87ec915
       path: modules/hal/nxp
       groups:
         - hal
@@ -293,6 +293,9 @@ manifest:
       path: modules/hal/libmetal
       groups:
         - hal
+    - name: libsbc
+      revision: 8e1beda02acb8972e29e6edbb423f7cafe16e445
+      path: modules/lib/libsbc
     - name: littlefs
       path: modules/fs/littlefs
       groups:
