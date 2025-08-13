@@ -75,7 +75,7 @@ static void ipc0A_entry(void *dummy0, void *dummy1, void *dummy2)
 
 	ret = ipc_service_register_endpoint(ipc0_instance, &ipc0A_ept, &ipc0A_ept_cfg);
 	if (ret < 0) {
-		printf("ipc_service_register_endpoint() failure\n");
+		printf("ipc_service_register_endpoint() failure ret: %d\n", ret);
 		return;
 	}
 
@@ -154,7 +154,7 @@ static void ipc0B_entry(void *dummy0, void *dummy1, void *dummy2)
 
 	ret = ipc_service_register_endpoint(ipc0_instance, &ipc0B_ept, &ipc0B_ept_cfg);
 	if (ret < 0) {
-		printf("ipc_service_register_endpoint() failure\n");
+		printf("ipc_service_register_endpoint() failure ret: %d\n", ret);
 		return;
 	}
 
@@ -241,7 +241,7 @@ static void ipc1_entry(void *dummy0, void *dummy1, void *dummy2)
 
 	ret = ipc_service_register_endpoint(ipc1_instance, &ipc1_ept, &ipc1_ept_cfg);
 	if (ret < 0) {
-		printf("ipc_service_register_endpoint() failure\n");
+		printf("ipc_service_register_endpoint() failure ret: %d\n", ret);
 		return;
 	}
 
