@@ -326,4 +326,9 @@ config USE_RX_RDP_FLASH
 	help
 	  Enable RX RDP Flash driver
 
+config USE_RX_RDP_LVD
+	bool
+	help
+	  Enable RX RDP LVD driver
+
 endif # HAS_RENESAS_RX_RDP
