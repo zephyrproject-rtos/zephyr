@@ -1044,9 +1044,8 @@ static bool bap_unicast_group_foreach_stream_cb(struct bt_bap_stream *bap_stream
 	/* Since we are iterating on a CAP unicast group, we can assume that all streams are CAP
 	 * streams
 	 */
-	data->func(CONTAINER_OF(bap_stream, struct bt_cap_stream, bap_stream), data->user_data);
-
-	return false;
+	return data->func(CONTAINER_OF(bap_stream, struct bt_cap_stream, bap_stream),
+			  data->user_data);
 }
 
 int bt_cap_unicast_group_foreach_stream(struct bt_cap_unicast_group *unicast_group,
