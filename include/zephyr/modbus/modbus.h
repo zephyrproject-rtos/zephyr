@@ -383,6 +383,9 @@ struct modbus_user_callbacks {
 
 	/** Floating Point Holding Register write callback */
 	int (*holding_reg_wr_fp)(uint16_t addr, float reg);
+
+	/** Prepare register callback */
+	int (*prepare_regs)(uint8_t fc, uint16_t start_addr, uint16_t num_regs);
 };
 
 /**
