@@ -1,0 +1,27 @@
+# Copyright 2024-2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MIMXRT798S_HIFI4
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+config XTENSA_TIMER
+	default y
+
+config XTENSA_CCOUNT_HZ
+	default SYS_CLOCK_HW_CYCLES_PER_SEC
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 1000
+
+config GEN_IRQ_VECTOR_TABLE
+	default n
+
+config NXP_IMXRT_BOOT_HEADER
+	default n
+
+config I2S_HAS_PLL_SETTING
+	default n
+
+endif # SOC_MIMXRT798S_HIFI4

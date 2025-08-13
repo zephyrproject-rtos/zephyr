@@ -1,0 +1,35 @@
+# Copyright 2024-2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config NUM_IRQS
+	default 158 if SOC_MIMXRT798S_CM33_CPU0
+	default 93 if SOC_MIMXRT798S_CM33_CPU1
+
+if SOC_MIMXRT798S_CM33_CPU0
+
+config ROM_START_OFFSET
+	default 0x4000 if NXP_IMXRT_BOOT_HEADER
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 237500000 if CORTEX_M_SYSTICK
+	default 1000000 if MCUX_OS_TIMER
+
+choice CACHE_TYPE
+	default EXTERNAL_CACHE
+endchoice
+
+# The existing SAI diver cannot initialize the PLL on the board,
+# so the PLL settings will not be performed in the driver.
+config I2S_HAS_PLL_SETTING
+	default n
+
+endif # SOC_MIMXRT798S_CM33_CPU0
+
+
+if SOC_MIMXRT798S_CM33_CPU1
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 100000000 if CORTEX_M_SYSTICK
+	default 1000000 if MCUX_OS_TIMER
+
+endif # SOC_MIMXRT798S_CM33_CPU1
