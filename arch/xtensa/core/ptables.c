@@ -613,16 +613,21 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 }
 
 /**
- * @return True if page is executable (thus need to invalidate ITLB),
- *         false if not.
+ * @brief Unmap an entry from L2 table.
+ *
+ * @param[in] l1_table Pointer to L1 page table.
+ * @param[in] vaddr Address to be unmapped.
+ *
+ * @note If all L2 PTEs in the L2 table are illegal, the L2 table will be
+ *       unmapped from L1 and is returned to the pool.
  */
-static bool l2_page_table_unmap(uint32_t *l1_table, void *vaddr)
+static void l2_page_table_unmap(uint32_t *l1_table, void *vaddr)
 {
 	uint32_t l1_pos = XTENSA_MMU_L1_POS((uint32_t)vaddr);
 	uint32_t l2_pos = XTENSA_MMU_L2_POS((uint32_t)vaddr);
 	uint32_t *l2_table;
 	uint32_t table_trk_pos;
-	bool exec;
+	bool exec = false;
 
 	sys_cache_data_invd_range((void *)&l1_table[l1_pos], sizeof(l1_table[0]));
 
@@ -630,14 +635,14 @@ static bool l2_page_table_unmap(uint32_t *l1_table, void *vaddr)
 		/* We shouldn't be unmapping an illegal entry.
 		 * Return true so that we can invalidate ITLB too.
 		 */
-		return true;
+		return;
 	}
-
-	exec = l1_table[l1_pos] & XTENSA_MMU_PERM_X;
 
 	l2_table = (uint32_t *)(l1_table[l1_pos] & XTENSA_MMU_PTE_PPN_MASK);
 
 	sys_cache_data_invd_range((void *)&l2_table[l2_pos], sizeof(l2_table[0]));
+
+	exec = (l2_table[l2_pos] & XTENSA_MMU_PERM_X) == XTENSA_MMU_PERM_X;
 
 	/* Restore the PTE to previous ring and attributes. */
 	l2_table[l2_pos] = restore_pte(l2_table[l2_pos]);
@@ -663,14 +668,15 @@ static bool l2_page_table_unmap(uint32_t *l1_table, void *vaddr)
 	atomic_clear_bit(l2_page_tables_track, table_trk_pos);
 
 end:
-	/* Need to invalidate L2 page table as it is no longer valid. */
-	xtensa_tlb_autorefill_invalidate();
-	return exec;
+	/* Need to invalidate TLB associated with the unmapped address. */
+	xtensa_dtlb_vaddr_invalidate(vaddr);
+	if (exec) {
+		xtensa_itlb_vaddr_invalidate(vaddr);
+	}
 }
 
 static inline void __arch_mem_unmap(void *va)
 {
-	bool is_exec;
 	void *vaddr, *vaddr_uc;
 
 	if (IS_ENABLED(CONFIG_XTENSA_MMU_DOUBLE_MAP)) {
@@ -685,7 +691,7 @@ static inline void __arch_mem_unmap(void *va)
 		vaddr = va;
 	}
 
-	is_exec = l2_page_table_unmap(xtensa_kernel_ptables, (void *)vaddr);
+	l2_page_table_unmap(xtensa_kernel_ptables, (void *)vaddr);
 
 	if (IS_ENABLED(CONFIG_XTENSA_MMU_DOUBLE_MAP)) {
 		(void)l2_page_table_unmap(xtensa_kernel_ptables, (void *)vaddr_uc);
