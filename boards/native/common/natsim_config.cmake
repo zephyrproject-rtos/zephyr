@@ -13,6 +13,10 @@ if(SYSROOT_DIR)
   target_link_options(native_simulator INTERFACE "--sysroot=${SYSROOT_DIR}")
 endif()
 
+if("${LINKER}" STREQUAL "lld")
+  target_link_options(native_simulator INTERFACE "-fuse-ld=lld")
+endif()
+
 set(nsi_config_content
   ${nsi_config_content}
   "NSI_AR:=${CMAKE_AR}"
