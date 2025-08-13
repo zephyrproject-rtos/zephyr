@@ -10,6 +10,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <kernel_internal.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/cache.h>
@@ -48,6 +49,29 @@ static int stm32h7_m4_wakeup(void)
 	return 0;
 }
 #endif /* CONFIG_STM32H7_DUAL_CORE */
+
+void soc_reset_hook(void)
+{
+	/* If the device tree has a chosen ITCM or DTCM node with
+	 * status okay, we need to initialize the values in the ECC
+	 * controller. To do so, we write all the locations with an arbitrary
+	 * value (0 in this case). This will prevent ECC error when
+	 * reading memory locations that have not been written yet.
+	 * This procedure is suggested in ST's AN5342 - How to use error
+	 * correction code (ECC) management for internal memories protection on
+	 * STM32 MCUs, section 3.1.1, Step 1
+	 */
+#if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_itcm)) && \
+	!DT_SAME_NODE(DT_CHOSEN(zephyr_itcm), DT_CHOSEN(zephyr_flash))
+	z_early_memset((void *)DT_REG_ADDR(DT_CHOSEN(zephyr_itcm)), 0,
+		       DT_REG_SIZE(DT_CHOSEN(zephyr_itcm)));
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm)) && \
+	!DT_SAME_NODE(DT_CHOSEN(zephyr_dtcm), DT_CHOSEN(zephyr_sram))
+	z_early_memset((void *)DT_REG_ADDR(DT_CHOSEN(zephyr_dtcm)), 0,
+		       DT_REG_SIZE(DT_CHOSEN(zephyr_dtcm)));
+#endif
+}
 
 /**
  * @brief Perform basic hardware initialization at boot.
