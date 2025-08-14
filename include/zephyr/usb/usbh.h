@@ -84,28 +84,43 @@ struct usbh_code_triple {
 	uint8_t proto;
 };
 
+struct usbh_class_data;
+
 /**
- * @brief USB host class data and class instance API
+ * @brief USB host class instance API
+ */
+struct usbh_class_api {
+	/** Initialization of the class implementation */
+	int (*init)(struct usbh_class_data *const c_data);
+	/** Request completion event handler */
+	int (*request)(struct usbh_class_data *const c_data,
+		       struct uhc_transfer *const xfer, int err);
+	/** Device connected handler */
+	int (*connected)(struct usbh_class_data *const c_data,
+			 void *const desc_start_addr,
+			 void *const desc_end_addr);
+	/** Device removed handler */
+	int (*removed)(struct usbh_class_data *const c_data);
+	/** Bus suspended handler (optional) */
+	int (*suspended)(struct usbh_class_data *const c_data);
+	/** Bus resumed handler (optional) */
+	int (*resumed)(struct usbh_class_data *const c_data);
+};
+
+/**
+ * @brief USB host class instance data
  */
 struct usbh_class_data {
+	/** Name of the USB host class instance */
+	const char *name;
+	/** Pointer to USB host stack context structure */
+	struct usbh_context *uhs_ctx;
 	/** Class code supported by this instance */
 	struct usbh_code_triple code;
-
-	/** Initialization of the class implementation */
-	/* int (*init)(struct usbh_context *const uhs_ctx); */
-	/** Request completion event handler */
-	int (*request)(struct usbh_context *const uhs_ctx,
-			struct uhc_transfer *const xfer, int err);
-	/** Device connected handler  */
-	int (*connected)(struct usbh_context *const uhs_ctx);
-	/** Device removed handler  */
-	int (*removed)(struct usbh_context *const uhs_ctx);
-	/** Bus remote wakeup handler  */
-	int (*rwup)(struct usbh_context *const uhs_ctx);
-	/** Bus suspended handler  */
-	int (*suspended)(struct usbh_context *const uhs_ctx);
-	/** Bus resumed handler  */
-	int (*resumed)(struct usbh_context *const uhs_ctx);
+	/** Pointer to host support class API */
+	struct usbh_class_api *api;
+	/** Pointer to private data */
+	void *priv;
 };
 
 /**
