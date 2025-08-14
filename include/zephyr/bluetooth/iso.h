@@ -1081,6 +1081,12 @@ struct bt_iso_unicast_tx_info {
 
 /** @brief ISO Unicast Info Structure */
 struct bt_iso_unicast_info {
+	/** Connected Isochronous Group ID */
+	uint8_t cig_id;
+
+	/** Connected Isochronous Stream ID */
+	uint8_t cis_id;
+
 	/** The maximum time in us for all PDUs of all CIS in a CIG event */
 	uint32_t cig_sync_delay;
 
@@ -1104,6 +1110,12 @@ struct bt_iso_unicast_info {
 
 /** @brief ISO Broadcaster Info Structure */
 struct bt_iso_broadcaster_info {
+	/** Broadcast Isochronous Group Handle */
+	uint8_t big_handle;
+
+	/** Broadcast Isochronous Stream number */
+	uint8_t bis_number;
+
 	/** The maximum time in us for all PDUs of all BIS in a BIG event */
 	uint32_t sync_delay;
 
@@ -1128,6 +1140,12 @@ struct bt_iso_broadcaster_info {
 
 /** @brief ISO Synchronized Receiver Info Structure */
 struct bt_iso_sync_receiver_info {
+	/** Broadcast Isochronous Group handle */
+	uint8_t big_handle;
+
+	/** Broadcast Isochronous Stream number */
+	uint8_t bis_number;
+
 	/** The transport latency in us */
 	uint32_t latency;
 
