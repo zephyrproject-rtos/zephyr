@@ -503,10 +503,6 @@ static void isr_rx_estab(void *param)
 	uint8_t trx_done;
 	uint8_t crc_ok;
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
-		lll_prof_latency_capture();
-	}
-
 	/* Read radio status and events */
 	trx_done = radio_is_done();
 	if (trx_done) {
@@ -549,10 +545,6 @@ static void isr_rx_estab(void *param)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
-		lll_prof_cputime_capture();
-	}
-
 	/* Calculate and place the drift information in done event */
 	e = ull_event_done_extra_get();
 	LL_ASSERT_ERR(e);
@@ -575,10 +567,6 @@ static void isr_rx_estab(void *param)
 	}
 
 	lll_isr_cleanup(param);
-
-	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
-		lll_prof_send();
-	}
 }
 
 static void isr_rx(void *param)
@@ -773,10 +761,6 @@ static void isr_rx(void *param)
 	}
 
 isr_rx_done:
-	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
-		lll_prof_cputime_capture();
-	}
-
 	uint8_t bis_idx_old = bis_idx;
 
 	new_burst = 0U;
@@ -1176,10 +1160,6 @@ isr_rx_ctrl:
 isr_rx_mic_failure:
 	isr_rx_done(param);
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
-		lll_prof_send();
-	}
-
 	return;
 
 isr_rx_next_subevent:
@@ -1451,7 +1431,7 @@ isr_rx_next_subevent:
 		LL_ASSERT_DBG(false);
 	}
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR) && (trx_done != 0U)) {
 		lll_prof_send();
 	}
 }
@@ -1605,21 +1585,9 @@ isr_done_cleanup:
 
 static void isr_done(void *param)
 {
-	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
-		lll_prof_latency_capture();
-	}
-
 	lll_isr_status_reset();
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
-		lll_prof_cputime_capture();
-	}
-
 	isr_rx_done(param);
-
-	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
-		lll_prof_send();
-	}
 }
 
 static uint16_t payload_index_get(const struct lll_sync_iso *lll)

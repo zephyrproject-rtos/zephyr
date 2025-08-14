@@ -86,6 +86,8 @@
 #include "ll_test.h"
 #include "ll_settings.h"
 
+#include "lll/lll_prof_internal.h"
+
 #include "hal/debug.h"
 
 #define TEST_TICKER_NODES         (TICKER_NODES)
@@ -563,6 +565,7 @@ static void *mark_disable;
 
 #if defined(CONFIG_BT_CTLR_TEST)
 static struct k_sem sem_test_ticker;
+static uint32_t test_ticker_latency_ticks;
 static void test_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift, uint32_t remainder,
 			   uint16_t lazy, uint8_t force, void *context);
 #if defined(CONFIG_BT_TICKER_EXT)
@@ -846,6 +849,12 @@ int ll_init(struct k_sem *sem_rx)
 				  NULL,
 				  NULL);
 		LL_ASSERT_ERR(ret == TICKER_STATUS_SUCCESS);
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		printk("%s: Radio %u, LLL %u, ULL_HIGH %u, ULL_LOW %u, Latency %u.\n",
+		       __func__, lll_prof_radio_get(), lll_prof_lll_get(), lll_prof_ull_high_get(),
+		       lll_prof_ull_low_get(), HAL_TICKER_TICKS_TO_US(test_ticker_latency_ticks));
 	}
 
 #if defined(CONFIG_BT_CTLR_CHAN_SEL_2)
@@ -2450,6 +2459,22 @@ void ull_drift_ticks_get(struct node_rx_event_done *done,
 static void test_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift, uint32_t remainder,
 			   uint16_t lazy, uint8_t force, void *context)
 {
+	uint32_t ticks_latency;
+	uint32_t ticks_now;
+
+	ticks_now = ticker_ticks_now_get();
+	ticks_latency = ticker_ticks_diff_get(ticks_now, ticks_at_expire);
+	if (ticks_latency > test_ticker_latency_ticks) {
+		test_ticker_latency_ticks = ticks_latency;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR) && IS_ENABLED(CONFIG_LOG_PRINTK)) {
+		printk("%s: %u/%u at %u + %u + %u us (ULL_LOW %u us)\n", __func__,
+		       (uint32_t)context, TEST_TICKER_NODES,
+		       HAL_TICKER_TICKS_TO_US(ticks_at_expire), HAL_TICKER_TICKS_TO_US(ticks_drift),
+		       HAL_TICKER_TICKS_TO_US(ticks_latency), lll_prof_ull_low_get());
+	}
+
 	k_sem_give(&sem_test_ticker);
 }
 #endif /* CONFIG_BT_CTLR_TEST */
