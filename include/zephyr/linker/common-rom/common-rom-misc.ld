@@ -85,7 +85,15 @@
 		_clk_root_list_start = .;
 		*(SORT(.clk_node_root*))
 		_clk_root_list_end = .;
-		*(SORT(.clk_node*))
+		_clk_standard_list_start = .;
+		*(SORT(.clk_node_standard*))
+		_clk_standard_list_end = .;
+		_clk_mux_list_start = .;
+		*(SORT(.clk_node_mux*))
+		_clk_mux_list_end = .;
+		_clk_leaf_list_start = .;
+		*(SORT(.clk_node_leaf*))
+		_clk_leaf_list_end = .;
 		_clk_list_end = .;
 		DT_FOREACH_STATUS_OKAY(clock_output, DT_CLOCK_OUTPUT_SECTION)
 	} GROUP_LINK_IN(ROMABLE_REGION)
