@@ -7,6 +7,8 @@
 #ifndef INTERRUPT_UTIL_H_
 #define INTERRUPT_UTIL_H_
 
+#define k_str_out_count(s) k_str_out((s), sizeof(s) - 1);
+
 #if defined(CONFIG_CPU_CORTEX_M)
 #include <cmsis_core.h>
 
@@ -57,7 +59,7 @@ static inline uint32_t get_available_nvic_line(uint32_t initial_offset)
 
 static inline void trigger_irq(int irq)
 {
-	printk("Triggering irq : %d\n", irq);
+	k_str_out_count("Triggering irq\n");
 #if defined(CONFIG_SOC_TI_LM3S6965_QEMU) || defined(CONFIG_CPU_CORTEX_M0) ||                       \
 	defined(CONFIG_CPU_CORTEX_M0PLUS) || defined(CONFIG_CPU_CORTEX_M1) ||                      \
 	defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
@@ -74,7 +76,7 @@ static inline void trigger_irq(int irq)
 
 static inline void trigger_irq(int irq)
 {
-	printk("Triggering irq : %d\n", irq);
+	k_str_out_count("Triggering irq\n");
 
 	/* Ensure that the specified IRQ number is a valid SGI interrupt ID */
 	zassert_true(irq <= 15, "%u is not a valid SGI interrupt ID", irq);
@@ -96,7 +98,7 @@ static inline void trigger_irq(int irq)
 #elif defined(CONFIG_ARC)
 static inline void trigger_irq(int irq)
 {
-	printk("Triggering irq : %d\n", irq);
+	k_str_out_count("Triggering irq\n");
 	z_arc_v2_aux_reg_write(_ARC_V2_AUX_IRQ_HINT, irq);
 }
 
