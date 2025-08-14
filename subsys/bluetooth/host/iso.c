@@ -1243,6 +1243,8 @@ static void store_cis_info(const struct bt_hci_evt_le_cis_established *evt, stru
 
 	unicast_info->cig_sync_delay = sys_get_le24(evt->cig_sync_delay);
 	unicast_info->cis_sync_delay = sys_get_le24(evt->cis_sync_delay);
+	unicast_info->cig_id = iso_conn->info.unicast.cig_id;
+	unicast_info->cis_id = iso_conn->info.unicast.cis_id;
 
 	central->bn = evt->c_bn;
 	central->phy = bt_get_phy(evt->c_phy);
@@ -1476,8 +1478,8 @@ static int iso_accept(struct bt_conn *acl, struct bt_conn *iso)
 	LOG_DBG("%p", iso);
 
 	accept_info.acl = acl;
-	accept_info.cig_id = iso->iso.cig_id;
-	accept_info.cis_id = iso->iso.cis_id;
+	accept_info.cig_id = iso->iso.info.unicast.cig_id;
+	accept_info.cis_id = iso->iso.info.unicast.cis_id;
 
 	err = iso_server->accept(&accept_info, &chan);
 	if (err < 0) {
@@ -1616,8 +1618,8 @@ void hci_le_cis_req(struct net_buf *buf)
 	}
 
 	iso->iso.info.type = BT_ISO_CHAN_TYPE_PERIPHERAL;
-	iso->iso.cig_id = evt->cig_id;
-	iso->iso.cis_id = evt->cis_id;
+	iso->iso.info.unicast.cig_id = evt->cig_id;
+	iso->iso.info.unicast.cis_id = evt->cis_id;
 
 	/* Request application to accept */
 	err = iso_accept(acl, iso);
@@ -1748,7 +1750,7 @@ static struct net_buf *hci_le_set_cig_params(const struct bt_iso_cig *cig,
 
 		memset(cis_param, 0, sizeof(*cis_param));
 
-		cis_param->cis_id = cis->iso->iso.cis_id;
+		cis_param->cis_id = cis->iso->iso.info.unicast.cis_id;
 
 		if (!qos->tx && !qos->rx) {
 			LOG_ERR("Both TX and RX QoS are disabled");
@@ -1837,7 +1839,7 @@ static struct net_buf *hci_le_set_cig_test_params(const struct bt_iso_cig *cig,
 
 		memset(cis_param, 0, sizeof(*cis_param));
 
-		cis_param->cis_id = cis->iso->iso.cis_id;
+		cis_param->cis_id = cis->iso->iso.info.unicast.cis_id;
 		cis_param->nse = qos->num_subevents;
 
 		if (!qos->tx && !qos->rx) {
@@ -1923,10 +1925,10 @@ static struct bt_iso_cig *get_cig(const struct bt_iso_chan *iso_chan)
 		return NULL;
 	}
 
-	__ASSERT(iso_chan->iso->iso.cig_id < ARRAY_SIZE(cigs), "Invalid cig_id %u",
-		 iso_chan->iso->iso.cig_id);
+	__ASSERT(iso_chan->iso->iso.info.unicast.cig_id < ARRAY_SIZE(cigs), "Invalid cig_id %u",
+		 iso_chan->iso->iso.info.unicast.cig_id);
 
-	return &cigs[iso_chan->iso->iso.cig_id];
+	return &cigs[iso_chan->iso->iso.info.unicast.cig_id];
 }
 
 static struct bt_iso_cig *get_free_cig(void)
@@ -1953,7 +1955,7 @@ static bool cis_is_in_cig(const struct bt_iso_cig *cig, const struct bt_iso_chan
 		return false;
 	}
 
-	return cig->id == cis->iso->iso.cig_id;
+	return cig->id == cis->iso->iso.info.unicast.cig_id;
 }
 
 static int cig_init_cis(struct bt_iso_cig *cig, const struct bt_iso_cig_param *param)
@@ -1971,9 +1973,9 @@ static int cig_init_cis(struct bt_iso_cig *cig, const struct bt_iso_cig_param *p
 			}
 			iso_conn = &cis->iso->iso;
 
-			iso_conn->cig_id = cig->id;
+			iso_conn->info.unicast.cig_id = cig->id;
 			iso_conn->info.type = BT_ISO_CHAN_TYPE_CENTRAL;
-			iso_conn->cis_id = cig->num_cis++;
+			iso_conn->info.unicast.cis_id = cig->num_cis++;
 
 			bt_iso_chan_add(cis->iso, cis);
 
@@ -2228,7 +2230,7 @@ static void restore_cig(struct bt_iso_cig *cig, uint8_t existing_num_cis)
 		 * of CIS that was previously added before
 		 * bt_iso_cig_reconfigure was called
 		 */
-		if (cis->iso != NULL && cis->iso->iso.cis_id >= existing_num_cis) {
+		if (cis->iso != NULL && cis->iso->iso.info.unicast.cis_id >= existing_num_cis) {
 			bt_conn_unref(cis->iso);
 			cis->iso = NULL;
 
@@ -2744,10 +2746,20 @@ static int big_init_bis(struct bt_iso_big *big, struct bt_iso_chan *bis, uint8_t
 
 	iso_conn = &bis->iso->iso;
 
-	iso_conn->big_handle = big->handle;
-	iso_conn->info.type =
-		broadcaster ? BT_ISO_CHAN_TYPE_BROADCASTER : BT_ISO_CHAN_TYPE_SYNC_RECEIVER;
-	iso_conn->bis_number = bis_number;
+#if defined(CONFIG_BT_ISO_BROADCASTER)
+	if (broadcaster) {
+		iso_conn->info.type = BT_ISO_CHAN_TYPE_BROADCASTER;
+		iso_conn->info.broadcaster.big_handle = big->handle;
+		iso_conn->info.broadcaster.bis_number = bis_number;
+	}
+#endif /* CONFIG_BT_ISO_BROADCASTER */
+#if defined(CONFIG_BT_ISO_SYNC_RECEIVER)
+	if (!broadcaster) {
+		iso_conn->info.type = BT_ISO_CHAN_TYPE_SYNC_RECEIVER;
+		iso_conn->info.sync_receiver.big_handle = big->handle;
+		iso_conn->info.sync_receiver.bis_number = bis_number;
+	}
+#endif /* CONFIG_BT_ISO_SYNC_RECEIVER */
 
 	bt_iso_chan_add(bis->iso, bis);
 
@@ -3109,8 +3121,10 @@ int bt_iso_big_create(struct bt_le_ext_adv *padv, struct bt_iso_big_create_param
 }
 
 static void store_bis_broadcaster_info(const struct bt_hci_evt_le_big_complete *evt,
-				       struct bt_iso_info *info)
+				       struct bt_conn *iso)
 {
+	struct bt_conn_iso *iso_conn = &iso->iso;
+	struct bt_iso_info *info = &iso_conn->info;
 	struct bt_iso_broadcaster_info *broadcaster_info = &info->broadcaster;
 
 	info->iso_interval = sys_le16_to_cpu(evt->iso_interval);
@@ -3124,6 +3138,8 @@ static void store_bis_broadcaster_info(const struct bt_hci_evt_le_big_complete *
 	/* Transform to n * 1.25ms */
 	broadcaster_info->pto = info->iso_interval * evt->pto;
 	broadcaster_info->max_pdu = sys_le16_to_cpu(evt->max_pdu);
+	broadcaster_info->big_handle = iso_conn->info.broadcaster.big_handle;
+	broadcaster_info->bis_number = iso_conn->info.broadcaster.bis_number;
 
 	info->can_send = true;
 	info->can_recv = false;
@@ -3170,7 +3186,7 @@ void hci_le_big_complete(struct net_buf *buf)
 		struct bt_conn *iso_conn = bis->iso;
 
 		iso_conn->handle = sys_le16_to_cpu(handle);
-		store_bis_broadcaster_info(evt, &iso_conn->iso.info);
+		store_bis_broadcaster_info(evt, iso_conn);
 		bt_conn_set_state(iso_conn, BT_CONN_CONNECTED);
 	}
 
@@ -3302,8 +3318,10 @@ int bt_iso_big_terminate(struct bt_iso_big *big)
 
 #if defined(CONFIG_BT_ISO_SYNC_RECEIVER)
 static void store_bis_sync_receiver_info(const struct bt_hci_evt_le_big_sync_established *evt,
-					 struct bt_iso_info *info)
+					 struct bt_conn *iso)
 {
+	struct bt_conn_iso *iso_conn = &iso->iso;
+	struct bt_iso_info *info = &iso_conn->info;
 	struct bt_iso_sync_receiver_info *receiver_info = &info->sync_receiver;
 
 	info->max_subevent = evt->nse;
@@ -3315,6 +3333,8 @@ static void store_bis_sync_receiver_info(const struct bt_hci_evt_le_big_sync_est
 	/* Transform to n * 1.25ms */
 	receiver_info->pto = info->iso_interval * evt->pto;
 	receiver_info->max_pdu = sys_le16_to_cpu(evt->max_pdu);
+	receiver_info->big_handle = iso_conn->info.sync_receiver.big_handle;
+	receiver_info->bis_number = iso_conn->info.sync_receiver.bis_number;
 
 	info->can_send = false;
 	info->can_recv = true;
@@ -3360,7 +3380,7 @@ void hci_le_big_sync_established(struct net_buf *buf)
 		struct bt_conn *iso_conn = bis->iso;
 
 		iso_conn->handle = sys_le16_to_cpu(handle);
-		store_bis_sync_receiver_info(evt, &iso_conn->iso.info);
+		store_bis_sync_receiver_info(evt, iso_conn);
 		bt_conn_set_state(iso_conn, BT_CONN_CONNECTED);
 	}
 
