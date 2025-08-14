@@ -217,6 +217,10 @@ typedef int (*counter_api_get_value)(const struct device *dev,
 typedef int (*counter_api_get_value_64)(const struct device *dev,
 			uint64_t *ticks);
 typedef int (*counter_api_reset)(const struct device *dev);
+typedef int (*counter_api_set_value)(const struct device *dev,
+				     uint32_t ticks);
+typedef int (*counter_api_set_value_64)(const struct device *dev,
+					uint64_t ticks);
 typedef int (*counter_api_set_alarm)(const struct device *dev,
 				     uint8_t chan_id,
 				     const struct counter_alarm_cfg *alarm_cfg);
@@ -239,6 +243,8 @@ __subsystem struct counter_driver_api {
 	counter_api_get_value get_value;
 	counter_api_get_value_64 get_value_64;
 	counter_api_reset reset;
+	counter_api_set_value set_value;
+	counter_api_set_value_64 set_value_64;
 	counter_api_set_alarm set_alarm;
 	counter_api_cancel_alarm cancel_alarm;
 	counter_api_set_top_value set_top_value;
@@ -469,6 +475,52 @@ static inline int z_impl_counter_reset(const struct device *dev)
 	}
 
 	return api->reset(dev);
+}
+
+/**
+ * @brief Set current counter value.
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param ticks Tick value to set
+ *
+ * @retval 0 If successful.
+ * @retval Negative error code on failure setting the counter value
+ */
+__syscall int counter_set_value(const struct device *dev, uint32_t ticks);
+
+static inline int z_impl_counter_set_value(const struct device *dev,
+					   uint32_t ticks)
+{
+	const struct counter_driver_api *api =
+				(struct counter_driver_api *)dev->api;
+
+	if (!api->set_value) {
+		return -ENOSYS;
+	}
+
+	return api->set_value(dev, ticks);
+}
+
+/**
+ * @brief Set current counter 64-bit value.
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param ticks Tick value to set
+ *
+ * @retval 0 If successful.
+ * @retval Negative error code on failure setting the counter value
+ */
+__syscall int counter_set_value_64(const struct device *dev, uint64_t ticks);
+
+static inline int z_impl_counter_set_value_64(const struct device *dev,
+					      uint64_t ticks)
+{
+	const struct counter_driver_api *api =
+				(struct counter_driver_api *)dev->api;
+
+	if (!api->set_value_64) {
+		return -ENOSYS;
+	}
+
+	return api->set_value_64(dev, ticks);
 }
 
 /**
