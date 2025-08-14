@@ -6,6 +6,15 @@ tests:
       - stm32f3_disco
       - mimxrt700_evk/mimxrt798s/cm33_cpu0
       - mimxrt700_evk/mimxrt798s/cm33_cpu1
+      - frdm_k22f
+      - frdm_k32l2b3
+      - frdm_k64f
+      - frdm_k82f
+      - frdm_ke15z
+      - frdm_mcxc242
+      - frdm_mcxc444
+      - frdm_mcxw71
+      - frdm_mcxw72/mcxw727c/cpu0
     integration_platforms:
       - stm32f3_disco
     tags:
