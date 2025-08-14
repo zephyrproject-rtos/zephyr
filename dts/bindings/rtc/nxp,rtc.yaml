@@ -1,12 +1,14 @@
 # Copyright (c) 2018, blik GmbH
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: NXP Real Time Clock (RTC)
 
 compatible: "nxp,rtc"
 
-include: rtc.yaml
+include:
+  - name: rtc.yaml
+  - name: rtc-device.yaml
 
 properties:
   reg:
@@ -24,3 +26,58 @@ properties:
         * LPO: RTC prescaler increments using 1 kHz LPO.
       The default corresponds to the reset value of the register field,
       and there is no additional code configuration in the driver.
+
+  clock-output:
+    type: boolean
+    description: |
+      Enable the 32kHz clock to other peripherals to use.
+
+  time-seconds-frequency:
+    type: int
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+    description: |
+      Configure the frequency of the RTC Seconds interrupt.
+      0 means 1 Hz, 1 means 2 Hz, and so on up to 7 which means 128 Hz.
+
+  enable-wakeup:
+    type: boolean
+    description: |
+      Enable wakeup pin asserts if the RTC interrupt asserts or
+      if the wakeup pin is forced on.
+
+  enable-update-mode:
+    type: boolean
+    description: |
+      Enable update mode for the RTC. When enabled, registers can be written
+      when locked under limited conditions.
+
+  supervisor-access:
+    type: boolean
+    description: |
+      Enable supervisor access for the RTC. When enabled, non-supervisor mode
+      write accesses are supported, otherwise not.
+
+  compensation-interval:
+    type: int
+    default: 1
+    description: |
+      Configures the compensation interval in seconds from 1 to 256 to control how
+      frequently the TCR should adjust the number of 32.768 kHz cycles in each second.
+      Default is 1 second.
+
+  compensation-time:
+    type: int
+    default: 0
+    description: |
+      Configures the number of clock cycles adjustment in each second, equal to
+      base_cycles - TCR (where TCR is a two's complement sign extended value).
+      This works for both RTC clock (32,768 cycles) and LPO clock (1024 cycles) sources.
+      Default is 0 clock cycle.
