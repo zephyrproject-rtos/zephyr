@@ -355,6 +355,13 @@ int openthread_init(void)
 		}
 	}
 
+	/* Configure Child Supervision and MLE Child timeouts. */
+	otChildSupervisionSetInterval(openthread_instance,
+				      CONFIG_OPENTHREAD_CHILD_SUPERVISION_INTERVAL);
+	otChildSupervisionSetCheckTimeout(openthread_instance,
+					  CONFIG_OPENTHREAD_CHILD_SUPERVISION_CHECK_TIMEOUT);
+	otThreadSetChildTimeout(openthread_instance, CONFIG_OPENTHREAD_MLE_CHILD_TIMEOUT);
+
 	if (IS_ENABLED(CONFIG_OPENTHREAD_ROUTER_SELECTION_JITTER_OVERRIDE)) {
 		otThreadSetRouterSelectionJitter(openthread_instance, OT_ROUTER_SELECTION_JITTER);
 	}
@@ -405,13 +412,6 @@ int openthread_run(void)
 			goto exit;
 		}
 	}
-
-	/* Configure Child Supervision and MLE Child timeouts. */
-	otChildSupervisionSetInterval(openthread_instance,
-				      CONFIG_OPENTHREAD_CHILD_SUPERVISION_INTERVAL);
-	otChildSupervisionSetCheckTimeout(openthread_instance,
-					  CONFIG_OPENTHREAD_CHILD_SUPERVISION_CHECK_TIMEOUT);
-	otThreadSetChildTimeout(openthread_instance, CONFIG_OPENTHREAD_MLE_CHILD_TIMEOUT);
 
 	if (otDatasetIsCommissioned(openthread_instance)) {
 		/* OpenThread already has dataset stored - skip the
