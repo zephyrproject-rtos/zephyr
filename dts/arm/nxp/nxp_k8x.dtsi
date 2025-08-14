@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 SEAL AG
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -332,6 +333,7 @@
 			interrupt-names = "alarm", "seconds";
 			clock-frequency = <32768>;
 			prescaler = <32768>;
+			status = "disabled";
 		};
 
 		spi0: spi@4002c000 {
