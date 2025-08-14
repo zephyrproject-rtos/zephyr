@@ -52,12 +52,6 @@ config HAS_MCUX_RCM
 	  Set if the Reset Control Module (RCM) module is present in
 	  the SoC.
 
-config HAS_MCUX_MCX_CMC
-	bool
-	help
-	  Set if the Core Mode Controller (CMC) module is present in
-	  the SoC.
-
 config HAS_MCUX_XCACHE
 	bool
 	help

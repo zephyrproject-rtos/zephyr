@@ -23,6 +23,10 @@
 		};
 	};
 
+	cmc {
+		compatible = "nxp,cmc-reset-cause";
+	};
+
 	/* Dummy pinctrl node, filled with pin mux options at board level */
 	pinctrl: pinctrl {
 		compatible = "nxp,port-pinctrl";

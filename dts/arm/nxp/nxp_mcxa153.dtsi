@@ -29,6 +29,10 @@
 		status = "okay";
 	};
 
+	cmc {
+		compatible = "nxp,cmc-reset-cause";
+	};
+
 	soc {
 		ctimer0: ctimer@40004000 {
 			compatible = "nxp,lpc-ctimer";
