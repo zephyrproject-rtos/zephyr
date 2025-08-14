@@ -18,6 +18,7 @@
 		green-pwm-led = &green_pwm_led;
 		red-pwm-led = &red_pwm_led;
 		sw0 = &user_button_0;
+		rtc = &rtc;
 	};
 
 	chosen {
@@ -184,4 +185,8 @@
 		compatible = "nxp,fxls8974";
 		reg = <0x19>;
 	};
+};
+
+&rtc {
+	status = "okay";
 };

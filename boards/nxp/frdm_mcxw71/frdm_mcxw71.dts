@@ -18,6 +18,7 @@
 		blue-pwm-led = &blue_pwm_led;
 		green-pwm-led = &green_pwm_led;
 		red-pwm-led = &red_pwm_led;
+		rtc = &rtc;
 	};
 
 	chosen {
