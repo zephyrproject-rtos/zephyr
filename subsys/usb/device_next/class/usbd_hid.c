@@ -632,6 +632,56 @@ static int hid_dev_submit_report(const struct device *dev,
 	return 0;
 }
 
+static inline int hid_dev_set_out_polling(const struct device *dev,
+					  const unsigned int period_us)
+{
+	const struct hid_device_config *const dcfg = dev->config;
+	struct hid_device_data *const ddata = dev->data;
+	struct usbd_hid_descriptor *const desc = dcfg->desc;
+
+	if (atomic_test_bit(&ddata->state, HID_DEV_CLASS_INITIALIZED)) {
+		return -EBUSY;
+	}
+
+	if (USBD_SUPPORTS_HIGH_SPEED) {
+		if (desc->hs_out_ep.bLength == 0) {
+			/* This device does not have output reports. */
+			return -ENOTSUP;
+		}
+
+		desc->hs_out_ep.bInterval = USB_HS_INT_EP_INTERVAL(period_us);
+	}
+
+	if (desc->out_ep.bLength == 0) {
+		/* This device does not have output reports. */
+		return -ENOTSUP;
+	}
+
+	desc->out_ep.bInterval = USB_FS_INT_EP_INTERVAL(period_us);
+
+	return 0;
+}
+
+static inline int hid_dev_set_in_polling(const struct device *dev,
+					 const unsigned int period_us)
+{
+	const struct hid_device_config *const dcfg = dev->config;
+	struct hid_device_data *const ddata = dev->data;
+	struct usbd_hid_descriptor *const desc = dcfg->desc;
+
+	if (atomic_test_bit(&ddata->state, HID_DEV_CLASS_INITIALIZED)) {
+		return -EBUSY;
+	}
+
+	if (USBD_SUPPORTS_HIGH_SPEED) {
+		desc->hs_in_ep.bInterval = USB_HS_INT_EP_INTERVAL(period_us);
+	}
+
+	desc->in_ep.bInterval = USB_FS_INT_EP_INTERVAL(period_us);
+
+	return 0;
+}
+
 static int hid_dev_register(const struct device *dev,
 			    const uint8_t *const rdesc, const uint16_t rsize,
 			    const struct hid_device_ops *const ops)
@@ -706,6 +756,10 @@ struct usbd_class_api usbd_hid_api = {
 static const struct hid_device_driver_api hid_device_api = {
 	.submit_report = hid_dev_submit_report,
 	.dev_register = hid_dev_register,
+#if CONFIG_USBD_HID_SET_POLLING_PERIOD
+	.set_out_polling = hid_dev_set_out_polling,
+	.set_in_polling = hid_dev_set_in_polling,
+#endif
 };
 
 #include "usbd_hid_macros.h"
