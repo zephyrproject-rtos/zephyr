@@ -91,6 +91,15 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 		flags |= RESET_BROWNOUT;
 	}
 
+	if (reset_register & (POWMAN_CHIP_RESET_HAD_HZD_SYS_RESET_REQ_BITS |
+			      POWMAN_CHIP_RESET_HAD_RESCUE_BITS)) {
+		flags |= RESET_DEBUG;
+	}
+
+	if (reset_register & POWMAN_CHIP_RESET_HAD_GLITCH_DETECT_BITS) {
+		flags |= RESET_SECURITY;
+	}
+
 	if (reset_register & (POWMAN_CHIP_RESET_HAD_WATCHDOG_RESET_RSM_BITS |
 			      POWMAN_CHIP_RESET_HAD_WATCHDOG_RESET_SWCORE_BITS |
 			      POWMAN_CHIP_RESET_HAD_WATCHDOG_RESET_POWMAN_BITS |
@@ -114,7 +123,7 @@ int z_impl_hwinfo_get_supported_reset_cause(uint32_t *supported)
 {
 	*supported = RESET_PIN | RESET_DEBUG | RESET_POR;
 #if defined(CONFIG_SOC_SERIES_RP2350)
-	*supported |= RESET_BROWNOUT | RESET_WATCHDOG;
+	*supported |= RESET_BROWNOUT | RESET_WATCHDOG | RESET_SECURITY;
 #endif
 
 	return 0;
