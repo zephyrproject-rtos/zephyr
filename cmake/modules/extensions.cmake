@@ -449,6 +449,9 @@ macro(zephyr_library_get_current_dir_lib_name base lib_name)
   # Replace : with __ (C:/zephyrproject => C____zephyrproject)
   string(REGEX REPLACE ":" "__" name ${name})
 
+  # Replace ~ with - (driver~serial => driver-serial)
+  string(REGEX REPLACE "~" "-" name ${name})
+
   set(${lib_name} ${name})
 endmacro()
 
