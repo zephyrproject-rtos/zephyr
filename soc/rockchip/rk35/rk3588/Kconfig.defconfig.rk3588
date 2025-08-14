@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Syswonder
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_RK3588
+
+config FLASH_SIZE
+	default 0
+
+config FLASH_BASE_ADDRESS
+	default 0
+
+config NUM_IRQS
+	default 370
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+endif
