@@ -519,26 +519,26 @@ struct bt_conn_le_cs_fae_table {
 	int8_t *remote_fae_table;
 };
 
-/** Channel sounding main mode */
-enum bt_conn_le_cs_main_mode {
-	/** Mode-1 (RTT) */
-	BT_CONN_LE_CS_MAIN_MODE_1 = BT_HCI_OP_LE_CS_MAIN_MODE_1,
-	/** Mode-2 (PBR) */
-	BT_CONN_LE_CS_MAIN_MODE_2 = BT_HCI_OP_LE_CS_MAIN_MODE_2,
-	/** Mode-3 (RTT and PBR) */
-	BT_CONN_LE_CS_MAIN_MODE_3 = BT_HCI_OP_LE_CS_MAIN_MODE_3,
-};
+#define BT_CONN_LE_CS_MODE_MAIN_MODE_PART(x) ((x) & 0x3)
+#define BT_CONN_LE_CS_MODE_SUB_MODE_PART(x)  (((x) >> 4) & 0x3)
 
-/** Channel sounding sub mode */
-enum bt_conn_le_cs_sub_mode {
-	/** Unused */
-	BT_CONN_LE_CS_SUB_MODE_UNUSED = BT_HCI_OP_LE_CS_SUB_MODE_UNUSED,
-	/** Mode-1 (RTT) */
-	BT_CONN_LE_CS_SUB_MODE_1 = BT_HCI_OP_LE_CS_SUB_MODE_1,
-	/** Mode-2 (PBR) */
-	BT_CONN_LE_CS_SUB_MODE_2 = BT_HCI_OP_LE_CS_SUB_MODE_2,
-	/** Mode-3 (RTT and PBR) */
-	BT_CONN_LE_CS_SUB_MODE_3 = BT_HCI_OP_LE_CS_SUB_MODE_3,
+/** Channel sounding main and sub mode */
+enum bt_conn_le_cs_mode {
+	/** Mode-1 (RTT) Main Mode, Unused Sub Mode */
+	BT_CONN_LE_CS_MAIN_MODE_1_NO_SUB_MODE = BT_HCI_OP_LE_CS_MAIN_MODE_1,
+	/** Mode-2 (PBR) Main Mode, Unused Sub Mode */
+	BT_CONN_LE_CS_MAIN_MODE_2_NO_SUB_MODE = BT_HCI_OP_LE_CS_MAIN_MODE_2,
+	/** Mode-3 (RTT and PBR) Main Mode, Unused Sub Mode */
+	BT_CONN_LE_CS_MAIN_MODE_3_NO_SUB_MODE = BT_HCI_OP_LE_CS_MAIN_MODE_3,
+	/** Mode-2 (PBR) Main Mode, Mode-1 (RTT) Sub Mode */
+	BT_CONN_LE_CS_MAIN_MODE_2_SUB_MODE_1 = BT_HCI_OP_LE_CS_MAIN_MODE_2 |
+					      (BT_HCI_OP_LE_CS_SUB_MODE_1 << 4),
+	/** Mode-2 (PBR) Main Mode, Mode-3 (RTT and PBR) Sub Mode */
+	BT_CONN_LE_CS_MAIN_MODE_2_SUB_MODE_3 = BT_HCI_OP_LE_CS_MAIN_MODE_2 |
+					      (BT_HCI_OP_LE_CS_SUB_MODE_3 << 4),
+	/** Mode-3 (RTT and PBR) Main Mode, Mode-2 (PBR) Sub Mode  */
+	BT_CONN_LE_CS_MAIN_MODE_3_SUB_MODE_2 = BT_HCI_OP_LE_CS_MAIN_MODE_3 |
+					      (BT_HCI_OP_LE_CS_SUB_MODE_2 << 4),
 };
 
 /** Channel sounding role */
@@ -597,10 +597,8 @@ enum bt_conn_le_cs_ch3c_shape {
 struct bt_conn_le_cs_config {
 	/** CS configuration ID */
 	uint8_t id;
-	/** Main CS mode type */
-	enum bt_conn_le_cs_main_mode main_mode_type;
-	/** Sub CS mode type */
-	enum bt_conn_le_cs_sub_mode sub_mode_type;
+	/** CS main and sub mode */
+	enum bt_conn_le_cs_mode mode;
 	/** Minimum number of CS main mode steps to be executed before a submode step is executed */
 	uint8_t min_main_mode_steps;
 	/** Maximum number of CS main mode steps to be executed before a submode step is executed */
