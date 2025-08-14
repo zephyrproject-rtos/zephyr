@@ -210,6 +210,7 @@
 
 /* Channel Map Unused channels count minimum */
 #define CHM_USED_COUNT_MIN     2U
+#define CHM_USED_COUNT_MAX     37U
 
 /* Channel Map hop count minimum and maximum */
 #define CHM_HOP_COUNT_MIN      5U
