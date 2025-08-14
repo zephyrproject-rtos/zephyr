@@ -140,38 +140,50 @@ config RISCV_ISA_EXT_ZLRSC
 
 	  The Zlrsc extension enables support for LR.W/D and SC.W/D-style instructions.
 
-config RISCV_ISA_EXT_ZBA
-	bool
+
+config RISCV_ISA_EXT_ZFH
+	bool "Zfh: scalar half-precision floating point"
+	depends on RISCV_ISA_EXT_F
 	help
-	  (Zba) - Zba BitManip Extension
+	  Standard half-precision (IEEE 754 binary16) for the scalar FP unit:
+	  arithmetic, compares, classify, sign-inject, conversions, and FLH/FSH.
+	  Requires the single-precision F extension.
 
-	  The Zba instructions can be used to accelerate the generation of
-	  addresses that index into arrays of basic types (halfword, word,
-	  doubleword) using both unsigned word-sized and XLEN-sized indices: a
-	  shifted index is added to a base address.
-
-config RISCV_ISA_EXT_ZBB
-	bool
+config RISCV_ISA_EXT_ZFHMIN
+	bool "Zfhmin: scalar half-precision (minimal)"
+	depends on RISCV_ISA_EXT_F
 	help
-	  (Zbb) - Zbb BitManip Extension (Basic bit-manipulation)
+	  Minimal half-precision subset: storage/interchange and conversions
+	  (FLH/FSH + fcvt.*), but no half-precision arithmetic. Requires F.
 
-	  The Zbb instructions can be used for basic bit-manipulation (logical
-	  with negate, count leading / trailing zero bits, count population,
-	  etc...).
-
-config RISCV_ISA_EXT_ZBC
-	bool
+config RISCV_ISA_EXT_ZFBFMIN
+	bool "Zfbfmin: scalar BFloat16 (minimal)"
+	depends on RISCV_ISA_EXT_F
 	help
-	  (Zbc) - Zbc BitManip Extension (Carry-less multiplication)
+	  Minimal scalar BFloat16 subset (storage/interchange and conversions
+	  with single-precision). Arithmetic is not included in this minimal set.
+	  Requires F.
 
-	  The Zbc instructions can be used for carry-less multiplication that
-	  is the multiplication in the polynomial ring over GF(2).
-
-config RISCV_ISA_EXT_ZBS
-	bool
+config RISCV_ISA_EXT_ZVFH
+	bool "Zvfh: vector half-precision floating point"
+	depends on RISCV_ISA_EXT_V
+	depends on RISCV_ISA_EXT_F
 	help
-	  (Zbs) - Zbs BitManip Extension (Single-bit instructions)
+	  Vector support for IEEE 754 binary16 (loads/stores, conversions,
+	  arithmetic) in the vector unit. Requires V and F.
 
-	  The Zbs instructions can be used for single-bit instructions that
-	  provide a mechanism to set, clear, invert, or extract a single bit in
-	  a register.
+config RISCV_ISA_EXT_ZVFHMIN
+	bool "Zvfhmin: vector half-precision (minimal)"
+	depends on RISCV_ISA_EXT_V
+	depends on RISCV_ISA_EXT_F
+	help
+	  Minimal vector half-precision subset: storage/interchange and
+	  conversions only (no vector half arithmetic). Requires V and F.
+
+config RISCV_ISA_EXT_ZVFBFMIN
+	bool "Zvfbfmin: vector BFloat16 (minimal)"
+	depends on RISCV_ISA_EXT_V
+	depends on RISCV_ISA_EXT_F
+	help
+	  Minimal vector BF16 subset (storage/interchange and conversions
+	  with single-precision). Arithmetic is not included. Requires V and F.
