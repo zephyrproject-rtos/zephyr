@@ -94,6 +94,7 @@ const struct ov7670_resolution_cfg OV7670_RESOLUTION_VGA = {
 	.pclk_delay = 0x02
 };
 
+#define OV7670_REG8(addr)   ((addr) | VIDEO_REG_ADDR8_DATA8)
 /* OV7670 registers */
 #define OV7670_PID                0x0A
 #define OV7670_COM7               0x12
@@ -445,8 +446,9 @@ static int ov7670_set_fmt(const struct device *dev, struct video_format *fmt)
 			if (ret < 0) {
 				return ret;
 			}
-			return video_write_cci_reg(&config->bus, OV7670_REG8(OV7670_SCALING_PCLK_DELAY),
+			ret = ideo_write_cci_reg(&config->bus, OV7670_REG8(OV7670_SCALING_PCLK_DELAY),
 						     resolution->pclk_delay);
+      return ret;
 		}
 		i++;
 	}
@@ -561,7 +563,8 @@ static int ov7670_init(const struct device *dev)
 	}
 
 	/* Write initialization values to OV7670 */
-  ret = video_write_cci_multiregs8(&config->bus, ov7670_init_regtbl, ARRAY_SIZE(ov7670_init_regtbl));
+	ret = video_write_cci_multiregs8(&config->bus, ov7670_init_regtbl,
+        ARRAY_SIZE(ov7670_init_regtbl));
   if (ret < 0) {
     return ret;
   }
