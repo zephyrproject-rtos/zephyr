@@ -102,9 +102,7 @@ struct cmsis_rtos_msgq_cb {
  * event flag control block. Control block is initiazed within `osEventFlagsNew()`.
  */
 struct cmsis_rtos_event_cb {
-	struct k_poll_signal poll_signal;
-	struct k_poll_event poll_event;
-	uint32_t signal_results;
+	struct k_event z_event;
 	bool is_cb_dynamic_allocation;
 	const char *name;
 };

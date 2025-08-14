@@ -43,13 +43,9 @@ osEventFlagsId_t osEventFlagsNew(const osEventFlagsAttr_t *attr)
 		return NULL;
 	}
 	memset(events, 0, sizeof(struct cmsis_rtos_event_cb));
-	events->is_cb_dynamic_allocation = attr->cb_mem == NULL;
 
-	k_poll_signal_init(&events->poll_signal);
-	k_poll_event_init(&events->poll_event, K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY,
-			  &events->poll_signal);
-	events->signal_results = 0U;
-
+	k_event_init(&events->z_event);
+	events->is_cb_dynamic_allocation = (attr->cb_mem == NULL);
 	events->name = (attr->name == NULL) ? init_event_flags_attrs.name : attr->name;
 
 	return (osEventFlagsId_t)events;
@@ -61,19 +57,13 @@ osEventFlagsId_t osEventFlagsNew(const osEventFlagsAttr_t *attr)
 uint32_t osEventFlagsSet(osEventFlagsId_t ef_id, uint32_t flags)
 {
 	struct cmsis_rtos_event_cb *events = (struct cmsis_rtos_event_cb *)ef_id;
-	unsigned int key;
-
 	if ((ef_id == NULL) || (flags & osFlagsError)) {
 		return osFlagsErrorParameter;
 	}
 
-	key = irq_lock();
-	events->signal_results |= flags;
-	irq_unlock(key);
+	k_event_post(&events->z_event, flags);
 
-	k_poll_signal_raise(&events->poll_signal, DONT_CARE);
-
-	return events->signal_results;
+	return k_event_test(&events->z_event, 0xFFFFFFFF);
 }
 
 /**
@@ -82,19 +72,16 @@ uint32_t osEventFlagsSet(osEventFlagsId_t ef_id, uint32_t flags)
 uint32_t osEventFlagsClear(osEventFlagsId_t ef_id, uint32_t flags)
 {
 	struct cmsis_rtos_event_cb *events = (struct cmsis_rtos_event_cb *)ef_id;
-	unsigned int key;
-	uint32_t sig;
+	uint32_t rv;
 
 	if ((ef_id == NULL) || (flags & osFlagsError)) {
 		return osFlagsErrorParameter;
 	}
 
-	key = irq_lock();
-	sig = events->signal_results;
-	events->signal_results &= ~(flags);
-	irq_unlock(key);
+	rv = k_event_test(&events->z_event, 0xFFFFFFFF);
+	k_event_clear(&events->z_event, flags);
 
-	return sig;
+	return rv;
 }
 
 /**
@@ -104,14 +91,14 @@ uint32_t osEventFlagsWait(osEventFlagsId_t ef_id, uint32_t flags, uint32_t optio
 			  uint32_t timeout)
 {
 	struct cmsis_rtos_event_cb *events = (struct cmsis_rtos_event_cb *)ef_id;
-	int retval, key;
-	uint32_t sig;
-	k_timeout_t poll_timeout;
-	uint64_t time_stamp_start, ticks_elapsed;
-	bool flags_are_set;
+	uint32_t rv;
+	k_timeout_t event_timeout;
 
-	/* Can be called from ISRs only if timeout is set to 0 */
-	if (timeout > 0 && k_is_in_isr()) {
+	/*
+	 * Return unknown error if called from ISR with a non-zero timeout
+	 * or if flags is zero.
+	 */
+	if (((timeout > 0U) && k_is_in_isr()) || (flags == 0U)) {
 		return osFlagsErrorUnknown;
 	}
 
@@ -119,86 +106,29 @@ uint32_t osEventFlagsWait(osEventFlagsId_t ef_id, uint32_t flags, uint32_t optio
 		return osFlagsErrorParameter;
 	}
 
-	time_stamp_start = (uint64_t)k_uptime_ticks();
-
-	for (;;) {
-
-		flags_are_set = false;
-
-		key = irq_lock();
-
-		if (options & osFlagsWaitAll) {
-			/* Check if all events we are waiting on have
-			 * been signalled
-			 */
-			if ((events->signal_results & flags) == flags) {
-				flags_are_set = true;
-			}
-		} else {
-			/* Check if any of events we are waiting on have
-			 * been signalled
-			 */
-			if (events->signal_results & flags) {
-				flags_are_set = true;
-			}
-		}
-
-		if (flags_are_set) {
-			sig = events->signal_results;
-
-			if (!(options & osFlagsNoClear)) {
-				/* Clear signal flags as the thread is ready now */
-				events->signal_results &= ~(flags);
-			}
-
-			irq_unlock(key);
-
-			break;
-		}
-
-		/* Reset the states to facilitate the next trigger */
-		events->poll_event.signal->signaled = 0U;
-		events->poll_event.state = K_POLL_STATE_NOT_READY;
-
-		irq_unlock(key);
-
-		if (timeout == 0) {
-			return osFlagsErrorTimeout;
-		} else if (timeout == osWaitForever) {
-			poll_timeout = Z_FOREVER;
-		} else {
-			/* If we need to wait on more signals, we need to
-			 * adjust the timeout value accordingly based on
-			 * the time that has already elapsed.
-			 */
-			ticks_elapsed = (uint64_t)k_uptime_ticks() - time_stamp_start;
-
-			if (ticks_elapsed < (uint64_t)timeout) {
-				poll_timeout = Z_TIMEOUT_TICKS(
-					(k_ticks_t)(timeout - (uint32_t)ticks_elapsed));
-			} else {
-				return osFlagsErrorTimeout;
-			}
-		}
-
-		retval = k_poll(&events->poll_event, 1, poll_timeout);
-
-		if (retval == -EAGAIN) {
-			/* k_poll signaled timeout. */
-			return osFlagsErrorTimeout;
-		} else if (retval != 0) {
-			return osFlagsErrorUnknown;
-		}
-
-		/* retval is zero.
-		 * k_poll found some raised signal then loop again and check flags.
-		 */
-		__ASSERT(events->poll_event.state == K_POLL_STATE_SIGNALED,
-			 "event state not signalled!");
-		__ASSERT(events->poll_event.signal->signaled == 1U, "event signaled is not 1");
+	if (timeout == osWaitForever) {
+		event_timeout = K_FOREVER;
+	} else if (timeout == 0U) {
+		event_timeout = K_NO_WAIT;
+	} else {
+		event_timeout = K_TICKS(timeout);
 	}
 
-	return sig;
+	if ((options & osFlagsWaitAll) != 0) {
+		rv = k_event_wait_all(&events->z_event, flags, false, event_timeout);
+	} else {
+		rv = k_event_wait(&events->z_event, flags, false, event_timeout);
+	}
+
+	if ((options & osFlagsNoClear) == 0) {
+		k_event_clear(&events->z_event, flags);
+	}
+
+	if (rv != 0U) {
+		return rv;
+	}
+
+	return (timeout == 0U) ? osFlagsErrorResource : osFlagsErrorTimeout;
 }
 
 /**
@@ -226,7 +156,7 @@ uint32_t osEventFlagsGet(osEventFlagsId_t ef_id)
 		return 0;
 	}
 
-	return events->signal_results;
+	return k_event_test(&events->z_event, 0xFFFFFFFF);
 }
 
 /**
