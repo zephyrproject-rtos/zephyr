@@ -214,8 +214,12 @@ static int slz_bt_send(const struct device *dev, struct net_buf *buf)
 
 	rv = hci_common_transport_receive(buf->data, buf->len, true);
 
+	if (rv != 0) {
+		return rv;
+	}
+
 	net_buf_unref(buf);
-	return rv;
+	return 0;
 }
 
 /**
