@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,6 +28,7 @@
 		sw1 = &user_button_3;
 		accel0 = &fxls8974;
 		pwm-0 = &tpm0;
+		rtc = &rtc;
 	};
 
 	chosen {
