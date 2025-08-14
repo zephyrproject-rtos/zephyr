@@ -1,0 +1,7 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config RTC_NXP_RTC
+	bool "NXP Real Time Clock driver"
+	default y
+	depends on DT_HAS_NXP_RTC_ENABLED
