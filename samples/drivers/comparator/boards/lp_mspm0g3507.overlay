@@ -1,0 +1,28 @@
+&comp0 {
+	status = "okay";
+	positive-inputs = <2>;
+	negative-inputs = <0>;
+	pinctrl-0 = <&comp0_out_pa7>;
+	pinctrl-names = "default";
+	mode = "fast";
+	reference-source = "int_vref";
+	reference-terminal = "neg";
+	filter-enable;
+	filter-delay = <2700>;
+	window-mode-enable;
+	window-companion =<&comp1>;
+	window-signal-input = <0>;
+	window-upper-threshold = <2>;
+	window-lower-threshold = <2>;
+	vref = <&vref0>;
+};
+
+&comp1 {
+	status = "okay";
+	pinctrl-0 = <&comp1_out_pa3>;
+	pinctrl-names = "default";
+};
+
+&vref0 {
+	status = "okay";
+};

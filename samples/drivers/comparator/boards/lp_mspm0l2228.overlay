@@ -1,0 +1,16 @@
+&comp0 {
+	status = "okay";
+	positive-inputs = <1>;
+	negative-inputs = <0>;
+	pinctrl-0 = <&comp0_out_pa03>;
+	pinctrl-names = "default";
+	mode = "fast";
+	reference-source = "int_vref";
+	reference-terminal = "neg";
+	filter-enable;
+	filter-delay = <2700>;
+	vref = <&vref0>;
+};
+&vref0 {
+	status = "okay";
+};
