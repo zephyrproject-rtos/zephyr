@@ -2304,6 +2304,16 @@ static uint16_t adv_time_get(struct pdu_adv *pdu, struct pdu_adv *pdu_scan,
 	if (pdu->type == PDU_ADV_TYPE_EXT_IND) {
 		time_us += PDU_AC_US(pdu->len, phy, phy_flags) * adv_chn_cnt +
 			   EVENT_RX_TX_TURNAROUND(phy) * (adv_chn_cnt - 1);
+
+		/* Auxiliary PDU radio event can be scheduled back-to-back to
+		 * this reservation, its air start is then at least
+		 * EVENT_OVERHEAD_START_US after the reservation end. Reserve
+		 * sufficient time so that the auxiliary PDU is T_MAFS after
+		 * the last primary channel PDU.
+		 */
+		time_us += MAX(EVENT_MAFS_US,
+			       (EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US)) -
+			   (EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US);
 	} else
 #endif
 	{
