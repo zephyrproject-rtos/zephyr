@@ -1,5 +1,6 @@
 /*
  * Copyright 2024 NXP
+ * Copyright 2025 Tenstorrent AI ULC
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,57 +13,28 @@ struct fixed_clock_data {
 	int clock_rate;
 };
 
-static int clock_source_get_rate(const struct clk *clk_hw)
+static int clock_source_get_rate(const struct clk *clk_hw, uint32_t *out_rate)
 {
-	return ((struct fixed_clock_data *)clk_hw->hw_data)->clock_rate;
+	*out_rate = ((struct fixed_clock_data *)clk_hw->hw_data)->clock_rate;
+	return 0;
 }
 
-#if defined(CONFIG_CLOCK_MANAGEMENT_RUNTIME)
-static int clock_source_notify(const struct clk *clk_hw, const struct clk *parent,
-			       const struct clock_management_event *event)
+#ifdef CONFIG_CLOCK_MANAGEMENT_SET_RATE
+static int clock_source_request_rate(const struct clk *clk_hw, uint32_t rate_req,
+				     uint32_t *out_rate)
 {
-	const struct fixed_clock_data *data = clk_hw->hw_data;
-	const struct clock_management_event notify_event = {
-		/*
-		 * Use QUERY type, no need to forward this notification to
-		 * consumers
-		 */
-		.type = CLOCK_MANAGEMENT_QUERY_RATE_CHANGE,
-		.old_rate = data->clock_rate,
-		.new_rate = data->clock_rate,
-	};
-
-	ARG_UNUSED(event);
-	return clock_notify_children(clk_hw, &notify_event);
+	/* Clock isn't reconfigurable, just return current rate */
+	ARG_UNUSED(rate_req);
+	*out_rate = ((struct fixed_clock_data *)clk_hw->hw_data)->clock_rate;
+	return 0;
 }
 #endif
 
-#if defined(CONFIG_CLOCK_MANAGEMENT_SET_RATE)
-
-static int clock_source_round_rate(const struct clk *clk_hw, uint32_t rate_req)
-{
-	const struct fixed_clock_data *data = clk_hw->hw_data;
-
-	return data->clock_rate;
-}
-
-static int clock_source_set_rate(const struct clk *clk_hw, uint32_t rate_req)
-{
-	const struct fixed_clock_data *data = clk_hw->hw_data;
-
-	return data->clock_rate;
-}
-
-#endif
-
-const struct clock_management_driver_api fixed_clock_source_api = {
+const struct clock_management_root_api fixed_clock_source_api = {
 	.get_rate = clock_source_get_rate,
-#if defined(CONFIG_CLOCK_MANAGEMENT_RUNTIME)
-	.notify = clock_source_notify,
-#endif
-#if defined(CONFIG_CLOCK_MANAGEMENT_SET_RATE)
-	.round_rate = clock_source_round_rate,
-	.set_rate = clock_source_set_rate,
+#ifdef CONFIG_CLOCK_MANAGEMENT_SET_RATE
+	.root_round_rate = clock_source_request_rate,
+	.root_set_rate = clock_source_request_rate,
 #endif
 };
 
