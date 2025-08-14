@@ -598,7 +598,6 @@ static int sdl_display_clear(const struct device *dev)
 	switch (disp_data->current_pixel_format) {
 	case PIXEL_FORMAT_ARGB_8888:
 		size = config->width * config->height * 4U;
-		bgcolor = 0xFFu;
 		break;
 	case PIXEL_FORMAT_RGB_888:
 		size = config->width * config->height * 3U;
