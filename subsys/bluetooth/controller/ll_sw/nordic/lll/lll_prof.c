@@ -32,16 +32,21 @@
  * 3 extended advertising sets, scanning on 2M PHY, scanning on Coded PHY, and
  * 2 auxiliary scan set.
  */
-#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
-#define LLL_PROF_RADIO_MAX_US    103 /* Max. Radio Rx/Tx ISR, O(1)*/
-#define LLL_PROF_LLL_MAX_US      105 /* Max. LLL prepare, O(1) */
-#define LLL_PROF_ULL_HIGH_MAX_US 260 /* Max. Radio + LLL + ULL High, O(1) */
-#define LLL_PROF_ULL_LOW_MAX_US  306 /* Max. ULL Low, O(n) n is ticker nodes */
+#if defined(CONFIG_SOC_SERIES_NRF54H)
+#define LLL_PROF_RADIO_MAX_US    153  /* Max. Radio Rx/Tx ISR, O(1)*/
+#define LLL_PROF_LLL_MAX_US      214  /* Max. LLL prepare, O(1) */
+#define LLL_PROF_ULL_HIGH_MAX_US 306  /* Max. Radio + LLL + ULL High, O(1) */
+#define LLL_PROF_ULL_LOW_MAX_US  733  /* Max. ULL Low, O(n) n is ticker nodes */
+#elif defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#define LLL_PROF_RADIO_MAX_US    92   /* Max. Radio Rx/Tx ISR, O(1)*/
+#define LLL_PROF_LLL_MAX_US      92   /* Max. LLL prepare, O(1) */
+#define LLL_PROF_ULL_HIGH_MAX_US 214  /* Max. Radio + LLL + ULL High, O(1) */
+#define LLL_PROF_ULL_LOW_MAX_US  733  /* Max. ULL Low, O(n) n is ticker nodes */
 #else /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
-#define LLL_PROF_RADIO_MAX_US    184 /* Max. Radio Rx/Tx ISR, O(1)*/
-#define LLL_PROF_LLL_MAX_US      245 /* Max. LLL prepare, O(1) */
-#define LLL_PROF_ULL_HIGH_MAX_US 458 /* Max. Radio + LLL + ULL High, O(1) */
-#define LLL_PROF_ULL_LOW_MAX_US  733 /* Max. ULL Low, O(n) n is ticker nodes */
+#define LLL_PROF_RADIO_MAX_US    153  /* Max. Radio Rx/Tx ISR, O(1)*/
+#define LLL_PROF_LLL_MAX_US      123  /* Max. LLL prepare, O(1) */
+#define LLL_PROF_ULL_HIGH_MAX_US 367  /* Max. Radio + LLL + ULL High, O(1) */
+#define LLL_PROF_ULL_LOW_MAX_US  1374 /* Max. ULL Low, O(n) n is ticker nodes */
 #endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
 
 #define LLL_PROF_ASSERT(_val, _max) \
