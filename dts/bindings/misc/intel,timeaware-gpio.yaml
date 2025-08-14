@@ -20,3 +20,11 @@ properties:
     type: int
     required: true
     description: Total number of available pins
+
+  artv-ctrl:
+    type: boolean
+    description: |
+      Some platforms have ARTV_CTRL which is required for
+      reading the ART timestamp. This property is used to
+      indicate if the support of ARTV_CTRL is available
+      or not.
