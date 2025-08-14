@@ -88,6 +88,13 @@
 		onoff-power-states = <&standby>;
 		#power-domain-cells = <0>;
 	};
+
+	xtal32: xtal32 {
+		compatible = "fixed-clock";
+		clock-frequency = <32768>;
+		#clock-cells = <0>;
+		status = "disabled";
+	};
 };
 
 &sram {
