@@ -22,6 +22,8 @@
 
 #if CONFIG_SOC_SERIES_RX130
 #include "r_sci_rx130_private.h"
+#elif CONFIG_SOC_SERIES_RX140
+#include "r_sci_rx140_private.h"
 #elif CONFIG_SOC_SERIES_RX261
 #include "r_sci_rx261_private.h"
 #elif CONFIG_SOC_SERIES_RX26T
