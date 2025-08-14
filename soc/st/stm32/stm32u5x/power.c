@@ -128,9 +128,11 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 			LOG_DBG("Unsupported power substate-id %u",
 							substate_id);
 		}
+		break;
 	case PM_STATE_STANDBY:
 		/* To be tested */
 		LL_LPM_EnableSleep();
+		break;
 	case PM_STATE_SUSPEND_TO_RAM:
 		__fallthrough;
 	case PM_STATE_SUSPEND_TO_DISK:
