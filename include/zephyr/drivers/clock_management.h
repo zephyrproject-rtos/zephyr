@@ -414,8 +414,6 @@ struct clock_output {
  *     CLOCK_MANAGEMENT_DT_GET_STATE(DT_NODELABEL(my_dev), low_power, sleep)
  *     // Get identifier to apply "hsclk_state0" (highspeed clock, active state)
  *     CLOCK_MANAGEMENT_DT_GET_STATE(DT_NODELABEL(my_dev), highspeed, active)
- *     #define Z_CLOCK_MANAGEMENT_VND_MUX_DATA_DEFINE(node_id, prop, idx)
- *     #define Z_CLOCK_MANAGEMENT_VND_DIV_DATA_DEFINE(node_id, prop, idx)
  * @endcode
  * @param dev_id Node identifier for device with "clock-outputs" property
  * @param output_name Name of clock output to read state for
