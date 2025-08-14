@@ -55,6 +55,19 @@ if PM
 # footprint. Hence increase the size when PM is enabled.
 config IDLE_STACK_SIZE
 	default 640
+
+# Enable pm cpu shell and pm status
+config SHELL
+	default y
+
+config PM_CPU_SHELL
+	default y
+
+config STATS
+	default y
+
+config PM_STATS
+	default y
 endif
 
 endif # SOC_MIMX9596_M7
