@@ -201,6 +201,26 @@ static inline void pm_system_resume(void)
 
 #endif /* CONFIG_PM */
 
+#if defined(CONFIG_PM_CPU_SHELL) || defined(__DOXYGEN__)
+/**
+ * @brief Check if shell-forced CPU idle mode is active.
+ *
+ * This function indicates whether the CPU idle mode was explicitly
+ * triggered and forced by a shell command, instead of being decided
+ * by the regular power management policy. If true, the system should
+ * enter only CPU idle and not SoC-level low power states.
+ *
+ * @retval true  Shell is forcing CPU idle mode.
+ * @retval false Normal power management policy is in effect.
+ */
+bool pm_cpu_shell_forced_idle(void);
+#else
+static inline bool pm_cpu_shell_forced_idle(void)
+{
+	return false;
+}
+#endif /* CONFIG_PM_CPU_SHELL */
+
 #ifdef __cplusplus
 }
 #endif
