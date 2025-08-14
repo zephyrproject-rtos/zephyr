@@ -18,15 +18,15 @@ extern "C" {
 /* Macro definitions for emulated clock drivers */
 
 /* No data structure needed for clock mux */
-#define Z_CLOCK_MANAGEMENT_VND_EMUL_CLOCK_MUX_DATA_DEFINE(node_id, prop, idx)
+#define Z_CLOCK_MANAGEMENT_DATA_DEFINE_vnd_emul_clock_mux(node_id, prop, idx)
 /* Get clock mux selector value */
-#define Z_CLOCK_MANAGEMENT_VND_EMUL_CLOCK_MUX_DATA_GET(node_id, prop, idx)           \
+#define Z_CLOCK_MANAGEMENT_DATA_GET_vnd_emul_clock_mux(node_id, prop, idx)           \
 	DT_PHA_BY_IDX(node_id, prop, idx, multiplexer)
 
 /* No data structure needed for clock mux */
-#define Z_CLOCK_MANAGEMENT_VND_EMUL_CLOCK_DIV_DATA_DEFINE(node_id, prop, idx)
+#define Z_CLOCK_MANAGEMENT_DATA_DEFINE_vnd_emul_clock_div(node_id, prop, idx)
 /* Get clock mux selector value */
-#define Z_CLOCK_MANAGEMENT_VND_EMUL_CLOCK_DIV_DATA_GET(node_id, prop, idx)           \
+#define Z_CLOCK_MANAGEMENT_DATA_GET_vnd_emul_clock_div(node_id, prop, idx)           \
 	DT_PHA_BY_IDX(node_id, prop, idx, divider)
 
 /** @endcond */
