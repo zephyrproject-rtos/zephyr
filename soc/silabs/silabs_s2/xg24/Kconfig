@@ -1,5 +1,6 @@
 # Copyright (c) 2020 TriaGnoSys GmbH
 # Copyright (c) 2025 Silicon Laboratories Inc.
+# Copyright (c) 2025 Ephraim Westenberger
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SILABS_XG24
@@ -23,5 +24,9 @@ config SOC_SERIES_EFR32MG24
 	select SOC_GECKO_HAS_RADIO
 
 config SOC_SERIES_MGM24
+	select SILABS_DEVICE_IS_MODULE
+	select SOC_GECKO_HAS_RADIO
+
+config SOC_SERIES_BGM24
 	select SILABS_DEVICE_IS_MODULE
 	select SOC_GECKO_HAS_RADIO
