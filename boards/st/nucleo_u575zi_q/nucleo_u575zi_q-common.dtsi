@@ -35,7 +35,7 @@
 
 		user_button: button {
 			label = "User";
-			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpioc 13 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
