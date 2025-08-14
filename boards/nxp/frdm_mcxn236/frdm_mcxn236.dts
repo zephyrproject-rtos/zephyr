@@ -404,3 +404,15 @@ p3t1755dp_ard_i2c_interface: &flexcomm5_lpi2c5 {};
 
 dvp_20pin_i2c: &flexcomm2_lpi2c2 {};
 dvp_20pin_interface: &video_sdma {};
+
+&sai0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_sai0>;
+	pinctrl-names = "default";
+};
+
+&sai1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_sai1>;
+	pinctrl-names = "default";
+};
