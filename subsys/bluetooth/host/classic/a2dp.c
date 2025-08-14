@@ -260,11 +260,11 @@ static int a2dp_set_config_ind(struct bt_avdtp *session, struct bt_avdtp_sep *se
 	return a2dp_process_config_ind(session, sep, int_seid, buf, errcode, false);
 }
 
-static int a2dp_re_config_ind(struct bt_avdtp *session, struct bt_avdtp_sep *sep, uint8_t int_seid,
+static int a2dp_re_config_ind(struct bt_avdtp *session, struct bt_avdtp_sep *sep,
 			      struct net_buf *buf, uint8_t *errcode)
 {
 	__ASSERT(sep, "Invalid sep");
-	return a2dp_process_config_ind(session, sep, int_seid, buf, errcode, true);
+	return a2dp_process_config_ind(session, sep, 0, buf, errcode, true);
 }
 
 #if defined(CONFIG_BT_A2DP_SINK)
@@ -447,8 +447,8 @@ static int bt_a2dp_get_capabilities_cb(struct bt_avdtp_req *req, struct net_buf 
 		return 0;
 	}
 
-	err = bt_avdtp_parse_capability_codec(buf, &codec_type,
-					      &codec_info_element, &codec_info_element_len);
+	err = bt_avdtp_parse_capability_codec(buf, &codec_type, &codec_info_element,
+					      &codec_info_element_len);
 	if (err) {
 		LOG_DBG("codec capability parsing fail");
 		return 0;
