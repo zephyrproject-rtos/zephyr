@@ -1,5 +1,6 @@
 /*
  * Copyright 2024 NXP
+ * Copyright (c) 2025 Tenstorrent AI ULC
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -24,6 +25,45 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief Clock management event types
+ *
+ * Types of events the clock management framework can generate for consumers.
+ */
+enum clock_management_event_type {
+	/**
+	 * Clock is about to change from frequency given by
+	 * `old_rate` to `new_rate`
+	 */
+	CLOCK_MANAGEMENT_PRE_RATE_CHANGE,
+	/**
+	 * Clock has just changed from frequency given by
+	 * `old_rate` to `new_rate`
+	 */
+	CLOCK_MANAGEMENT_POST_RATE_CHANGE,
+	/**
+	 * Used internally by the clock framework to check if
+	 * a clock can accept a frequency given by `new_rate`
+	 */
+	CLOCK_MANAGEMENT_QUERY_RATE_CHANGE
+};
+
+/**
+ * @brief Clock notification event structure
+ *
+ * Notification of clock rate change event. Consumers may examine this
+ * structure to determine what rate a clock will change to, as
+ * well as to determine if a clock is about to change rate or has already
+ */
+struct clock_management_event {
+	/** Type of event */
+	enum clock_management_event_type type;
+	/** Old clock rate */
+	clock_freq_t old_rate;
+	/** New clock rate */
+	clock_freq_t new_rate;
+};
 
 /**
  * @typedef clock_management_callback_handler_t
@@ -63,9 +103,9 @@ struct clock_management_callback {
  */
 struct clock_management_rate_req {
 	/** Minimum acceptable frequency */
-	int min_freq;
+	clock_freq_t min_freq;
 	/** Maximum acceptable frequency */
-	int max_freq;
+	clock_freq_t max_freq;
 };
 
 /**
@@ -519,27 +559,39 @@ static inline int clock_management_set_callback(const struct clock_output *clk,
 /**
  * @brief Disable unused clocks within the system
  *
- * Disable unused clocks within the system. This API will notify all clocks
- * of a configuration event, and clocks that are no longer in use
- * will gate themselves automatically
+ * Disable unused clocks within the system. This API will gate all clocks in
+ * the system with a usage count of zero, when CONFIG_CLOCK_MANAGEMENT_RUNTIME
+ * is enabled.
  */
-static inline void clock_management_disable_unused(void)
-{
-#ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
-	const struct clock_management_event event = {
-		.type = CLOCK_MANAGEMENT_QUERY_RATE_CHANGE,
-		.old_rate = 0,
-		.new_rate = 0,
-	};
-	STRUCT_SECTION_FOREACH_ALTERNATE(clk_root, clk, clk) {
-		/* Call clock_notify on each root clock. Clocks can use this
-		 * notification event to determine if they are able
-		 * to gate themselves
-		 */
-		clock_notify(clk, NULL, &event);
-	}
-#endif
-}
+void clock_management_disable_unused(void);
+
+/**
+ * @brief Enable a clock output and its sources
+ *
+ * Turns a clock output and its sources on. This function will
+ * unconditionally enable the clock and its sources.
+ * @param clk clock output to turn off
+ * @return -ENOSYS if clock does not implement on_off API
+ * @return -EIO if clock could not be turned off
+ * @return -EBUSY if clock cannot be modified at this time
+ * @return negative errno for other error turning clock on or off
+ * @return 0 on success
+ */
+int clock_management_on(const struct clock_output *clk);
+
+/**
+ * @brief Disable a clock output and its sources
+ *
+ * Turns a clock output and its sources off. This function will
+ * unconditionally disable the output and its sources.
+ * @param clk clock output to turn off
+ * @return -ENOSYS if clock does not implement on_off API
+ * @return -EIO if clock could not be turned off
+ * @return -EBUSY if clock cannot be modified at this time
+ * @return negative errno for other error turning clock on or off
+ * @return 0 on success
+ */
+int clock_management_off(const struct clock_output *clk);
 
 #ifdef __cplusplus
 }
