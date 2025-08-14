@@ -15,26 +15,33 @@
 			compatible = "zephyr,memory-region", "nxp,imx-itcm";
 			reg = <0x1ffe0000 DT_SIZE_K(128)>;
 			zephyr,memory-region = "ITCM";
+			zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_FLASH)>;
 		};
 
 		dtcm: memory@30000000 {
 			compatible = "zephyr,memory-region", "nxp,imx-dtcm";
 			reg = <0x30000000 DT_SIZE_K(128)>;
 			zephyr,memory-region = "DTCM";
+			zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
 		};
 
-		memory: memory@30484000 {
-			ranges = <0x0 0x30484000 0x10000000>;
+		memory: memory@30480000 {
+			ranges = <0x0 0x30480000 0x10000000>;
 		};
 
 		m7_itcm: memory@303c0000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
 			zephyr,memory-region = "M7_ITCM";
 			reg = <0x303c0000 DT_SIZE_K(256)>;
+			zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
 		};
 
 		peripheral: peripheral@50000000 {
-			ranges = <0x0 0x50000000 0x10000000>;
+			compatible = "zephyr,memory-region";
+			ranges = <0x0 0x50000000 0x40000000>;
+			reg = <0x50000000 0x40000000>;
+			zephyr,memory-region = "PERIPHERAL";
+			zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_DEVICE)>;
 		};
 
 		flexspi: memory-controller@525e0000 {
@@ -77,6 +84,14 @@
 
 &nvic {
 	arm,num-irq-priority-bits = <3>;
+};
+
+&ocram1 {
+	zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
+};
+
+&ocram2 {
+	zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
 };
 
 /*
