@@ -36,6 +36,8 @@ static int nsi_fcntl_to_mid_(int flags, bool strict)
 	TO_MID(O_WRONLY);
 	TO_MID(O_RDWR);
 
+	TO_MID(O_CREAT);
+	TO_MID(O_TRUNC);
 	TO_MID(O_APPEND);
 	TO_MID(O_EXCL);
 	TO_MID(O_NONBLOCK);
@@ -73,6 +75,8 @@ int nsi_fcntl_from_mid(int flags_mid)
 	FROM_MID(O_WRONLY);
 	FROM_MID(O_RDWR);
 
+	FROM_MID(O_CREAT);
+	FROM_MID(O_TRUNC);
 	FROM_MID(O_APPEND);
 	FROM_MID(O_EXCL);
 	FROM_MID(O_NONBLOCK);
