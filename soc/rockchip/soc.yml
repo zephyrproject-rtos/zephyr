@@ -9,3 +9,4 @@ family:
           - name: rk3588
           - name: rk3588s
           - name: rk3568
+          - name: rk3588

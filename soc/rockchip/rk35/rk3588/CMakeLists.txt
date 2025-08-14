@@ -1,5 +1,5 @@
+# Copyright (c) 2025 Syswonder
 # SPDX-License-Identifier: Apache-2.0
-# Copyright The Zephyr Project Contributors
 
 zephyr_sources_ifdef(CONFIG_ARM_MMU mmu_regions.c)
 

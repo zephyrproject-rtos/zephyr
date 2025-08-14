@@ -1,24 +1,22 @@
 /*
- * Copyright 2024 Université Gustave Eiffel
+ * Copyright (c) 2025 Syswonder
+ *
  * SPDX-License-Identifier: Apache-2.0
- * Copyright The Zephyr Project Contributors
  */
-
 #include <zephyr/devicetree.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/arch/arm64/arm_mmu.h>
 
 static const struct arm_mmu_region mmu_regions[] = {
 
-	MMU_REGION_FLAT_ENTRY("GIC",
-			      DT_REG_ADDR_BY_IDX(DT_INST(0, arm_gic), 0),
-			      DT_REG_SIZE_BY_IDX(DT_INST(0, arm_gic), 0),
-			      MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_DEFAULT_SECURE_STATE),
+	MMU_REGION_FLAT_ENTRY("GIC", DT_REG_ADDR_BY_IDX(DT_NODELABEL(gic), 0),
+			      DT_REG_SIZE_BY_IDX(DT_NODELABEL(gic), 0),
+			      MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_NS),
 
-	MMU_REGION_FLAT_ENTRY("GIC",
-			      DT_REG_ADDR_BY_IDX(DT_INST(0, arm_gic), 1),
-			      DT_REG_SIZE_BY_IDX(DT_INST(0, arm_gic), 1),
-			      MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_DEFAULT_SECURE_STATE),
+	MMU_REGION_FLAT_ENTRY("GIC", DT_REG_ADDR_BY_IDX(DT_NODELABEL(gic), 1),
+			      DT_REG_SIZE_BY_IDX(DT_NODELABEL(gic), 1),
+			      MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_NS),
+
 };
 
 const struct arm_mmu_config mmu_config = {
