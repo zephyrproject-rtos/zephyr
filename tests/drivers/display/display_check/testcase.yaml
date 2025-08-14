@@ -5,7 +5,7 @@ common:
   harness: display_capture
   harness_config:
     pytest_dut_scope: session
-    display_capture_config: "display_config.yaml"
+    display_capture_config: "${DISPLAY_TEST_DIR}/display_config.yaml"
 tests:
   tests.drivers.display.check.g1120b0mipi:
     platform_allow:
@@ -20,7 +20,7 @@ tests:
     harness_config:
       pytest_dut_scope: session
       fixture: fixture_display_g1120b0mipi
-      display_capture_config: "display_config.yaml"
+      display_capture_config: "${DISPLAY_TEST_DIR}/display_config.yaml"
   tests.drivers.display.check.st_b_lcd40_dsi1_mb1166_a09:
     filter: dt_compat_enabled("frida,nt35510")
     platform_allow: stm32h747i_disco/stm32h747xx/m7
@@ -28,7 +28,7 @@ tests:
     harness_config:
       fixture: fixture_display
       pytest_dut_scope: session
-      display_capture_config: "display_config.yaml"
+      display_capture_config: "${DISPLAY_TEST_DIR}/display_config.yaml"
   tests.drivers.display.check.rk043fn02h_ct:
     platform_allow:
       - mimxrt1064_evk
@@ -43,7 +43,7 @@ tests:
     harness_config:
       fixture: fixture_display
       pytest_dut_scope: session
-      display_capture_config: "display_config.yaml"
+      display_capture_config: "${DISPLAY_TEST_DIR}/display_config.yaml"
   tests.drivers.display.check.shield:
     # This test case is intended to verify support for shields on boards
     # known to support them. It is not intended to cover all combinations
@@ -54,7 +54,7 @@ tests:
     harness_config:
       fixture: fixture_display
       pytest_dut_scope: session
-      display_capture_config: "display_config.yaml"
+      display_capture_config: "${DISPLAY_TEST_DIR}/display_config.yaml"
     extra_args:
       - platform:lpcxpresso55s69/lpc55s69/cpu0:SHIELD=adafruit_2_8_tft_touch_v2
       - platform:nrf52840dk/nrf52840:SHIELD=ssd1306_128x32
