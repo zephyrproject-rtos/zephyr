@@ -906,14 +906,12 @@ struct bt_bap_stream {
 	/** Stream user data */
 	void *user_data;
 
-#if defined(CONFIG_BT_BAP_UNICAST_CLIENT) || defined(__DOXYGEN__)
-	/**
-	 * @brief Audio ISO reference
+	/** ISO channel reference
 	 *
-	 * This is only used for Unicast Client streams, and is handled internally.
+	 * This will become valid once the stream is added to a group (bt_bap_unicast_group,
+	 * bt_bap_broadcast_source or bt_bap_broadcast_sink).
 	 */
-	struct bt_bap_iso *bap_iso;
-#endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
+	struct bt_iso_chan *iso;
 
 	/** Unicast or Broadcast group - Used internally */
 	void *group;
