@@ -31,7 +31,7 @@
 	};
 
 	soc {
-		sram: sram@10000000 {
+		sram: memory@10000000 {
 			ranges = <0x0 0x10000000 0x780000
 				0x20000000 0x30000000 0x780000>;
 		};
@@ -40,7 +40,7 @@
 			ranges = <0x0 0x50000000 0x10000000>;
 		};
 
-		xspi2: spi@50411000 {
+		xspi2: memory@50411000 {
 			reg = <0x50411000 0x1000>, <0x70000000 DT_SIZE_M(128)>;
 		};
 
@@ -107,25 +107,25 @@
 		clocks = <&clkctl3 MCUX_LPADC1_CLK>;
 	};
 
-	rstctl1: reset@40000 {
+	rstctl1: reset-controller@40000 {
 		compatible = "nxp,rstctl";
 		reg = <0x40000 0x1000>;
 		#reset-cells = <1>;
 	};
 
-	rstctl2: reset@67000 {
+	rstctl2: reset-controller@67000 {
 		compatible = "nxp,rstctl";
 		reg = <0x67000 0x1000>;
 		#reset-cells = <1>;
 	};
 
-	rstctl3: reset@60000 {
+	rstctl3: reset-controller@60000 {
 		compatible = "nxp,rstctl";
 		reg = <0x60000 0x1000>;
 		#reset-cells = <1>;
 	};
 
-	rstctl4: reset@a0000 {
+	rstctl4: reset-controller@a0000 {
 		compatible = "nxp,rstctl";
 		reg = <0xa0000 0x1000>;
 		#reset-cells = <1>;
@@ -142,31 +142,31 @@
 		status = "disabled";
 	};
 
-	clkctl1: clkctl@41000 {
+	clkctl1: clock-controller@41000 {
 		compatible = "nxp,lpc-syscon";
 		reg = <0x41000 0x1000>;
 		#clock-cells = <1>;
 	};
 
-	clkctl2: clkctl@65000 {
+	clkctl2: clock-controller@65000 {
 		compatible = "nxp,lpc-syscon";
 		reg = <0x65000 0x1000>;
 		#clock-cells = <1>;
 	};
 
-	clkctl3: clkctl@61000 {
+	clkctl3: clock-controller@61000 {
 		compatible = "nxp,lpc-syscon";
 		reg = <0x61000 0x1000>;
 		#clock-cells = <1>;
 	};
 
-	clkctl4: clkctl@a1000 {
+	clkctl4: clock-controller@a1000 {
 		compatible = "nxp,lpc-syscon";
 		reg = <0xa1000 0x1000>;
 		#clock-cells = <1>;
 	};
 
-	ctimer5: ctimer@48000 {
+	ctimer5: timer@48000 {
 		compatible = "nxp,lpc-ctimer";
 		reg = <0x48000 0x1000>;
 		interrupts = <7 0>;
@@ -178,7 +178,7 @@
 		prescale = <0>;
 	};
 
-	ctimer6: ctimer@49000 {
+	ctimer6: timer@49000 {
 		compatible = "nxp,lpc-ctimer";
 		reg = <0x49000 0x1000>;
 		interrupts = <8 0>;
@@ -190,7 +190,7 @@
 		prescale = <0>;
 	};
 
-	ctimer7: ctimer@4a000 {
+	ctimer7: timer@4a000 {
 		compatible = "nxp,lpc-ctimer";
 		reg = <0x4a000 0x1000>;
 		interrupts = <9 0>;
@@ -226,13 +226,13 @@
 		#clock-cells = <1>;
 	};
 
-	iocon1: iocon@64000 {
+	iocon1: pinctrl@64000 {
 		compatible = "nxp,lpc-iocon";
 		reg = <0x64000 0x1000>;
 		status = "okay";
 	};
 
-	iocon2: iocon@a5000 {
+	iocon2: pinctrl@a5000 {
 		compatible = "nxp,lpc-iocon";
 		reg = <0xa5000 0x1000>;
 		status = "okay";
@@ -308,13 +308,13 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		flexcomm17_lpuart17: uart@326000 {
+		flexcomm17_lpuart17: serial@326000 {
 			compatible = "nxp,lpuart";
 			reg = <0x326000 0x1000>;
 			clocks = <&clkctl1 MCUX_FLEXCOMM17_CLK>;
 			status = "disabled";
 		};
-		flexcomm17_lpspi17: lpspi@326000 {
+		flexcomm17_lpspi17: spi@326000 {
 			compatible = "nxp,lpspi";
 			reg = <0x326000 0x1000>;
 			clocks = <&clkctl1 MCUX_FLEXCOMM17_CLK>;
@@ -324,7 +324,7 @@
 			rx-fifo-size = <8>;
 			status = "disabled";
 		};
-		flexcomm17_lpi2c17: lpi2c@326800 {
+		flexcomm17_lpi2c17: i2c@326800 {
 			compatible = "nxp,lpi2c";
 			reg = <0x326800 0x1000>;
 			clocks = <&clkctl1 MCUX_FLEXCOMM17_CLK>;
@@ -345,13 +345,13 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		flexcomm18_lpuart18: uart@327000 {
+		flexcomm18_lpuart18: serial@327000 {
 			compatible = "nxp,lpuart";
 			reg = <0x327000 0x1000>;
 			clocks = <&clkctl1 MCUX_FLEXCOMM18_CLK>;
 			status = "disabled";
 		};
-		flexcomm18_lpspi18: lpspi@327000 {
+		flexcomm18_lpspi18: spi@327000 {
 			compatible = "nxp,lpspi";
 			reg = <0x327000 0x1000>;
 			clocks = <&clkctl1 MCUX_FLEXCOMM18_CLK>;
@@ -361,7 +361,7 @@
 			rx-fifo-size = <8>;
 			status = "disabled";
 		};
-		flexcomm18_lpi2c18: lpi2c@327800 {
+		flexcomm18_lpi2c18: i2c@327800 {
 			compatible = "nxp,lpi2c";
 			reg = <0x327800 0x1000>;
 			clocks = <&clkctl1 MCUX_FLEXCOMM18_CLK>;
@@ -382,13 +382,13 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		flexcomm19_lpuart19: uart@328000 {
+		flexcomm19_lpuart19: serial@328000 {
 			compatible = "nxp,lpuart";
 			reg = <0x328000 0x1000>;
 			clocks = <&clkctl1 MCUX_FLEXCOMM19_CLK>;
 			status = "disabled";
 		};
-		flexcomm19_lpspi19: lpspi@328000 {
+		flexcomm19_lpspi19: spi@328000 {
 			compatible = "nxp,lpspi";
 			reg = <0x328000 0x1000>;
 			clocks = <&clkctl1 MCUX_FLEXCOMM19_CLK>;
@@ -398,7 +398,7 @@
 			rx-fifo-size = <8>;
 			status = "disabled";
 		};
-		flexcomm19_lpi2c19: lpi2c@328800 {
+		flexcomm19_lpi2c19: i2c@328800 {
 			compatible = "nxp,lpi2c";
 			reg = <0x328800 0x1000>;
 			clocks = <&clkctl1 MCUX_FLEXCOMM19_CLK>;
@@ -419,13 +419,13 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		flexcomm20_lpuart20: uart@329000 {
+		flexcomm20_lpuart20: serial@329000 {
 			compatible = "nxp,lpuart";
 			reg = <0x329000 0x1000>;
 			clocks = <&clkctl1 MCUX_FLEXCOMM20_CLK>;
 			status = "disabled";
 		};
-		flexcomm20_lpspi20: lpspi@329000 {
+		flexcomm20_lpspi20: spi@329000 {
 			compatible = "nxp,lpspi";
 			reg = <0x329000 0x1000>;
 			clocks = <&clkctl1 MCUX_FLEXCOMM20_CLK>;
@@ -435,7 +435,7 @@
 			rx-fifo-size = <8>;
 			status = "disabled";
 		};
-		flexcomm20_lpi2c20: lpi2c@329800 {
+		flexcomm20_lpi2c20: i2c@329800 {
 			compatible = "nxp,lpi2c";
 			reg = <0x329800 0x1000>;
 			clocks = <&clkctl1 MCUX_FLEXCOMM20_CLK>;
@@ -456,14 +456,14 @@
 		status = "disabled";
 	};
 
-	os_timer_cpu1: timers@209000 {
+	os_timer_cpu1: timer@209000 {
 		compatible = "nxp,os-timer";
 		reg = <0x209000 0x1000>;
 		interrupts = <30 0>;
 		status = "disabled";
 	};
 
-	acmp: acmp@20b000 {
+	acmp: comparator@20b000 {
 		compatible = "nxp,kinetis-acmp";
 		reg = <0x20b000 0x1000>;
 		interrupts = <18 0>;
