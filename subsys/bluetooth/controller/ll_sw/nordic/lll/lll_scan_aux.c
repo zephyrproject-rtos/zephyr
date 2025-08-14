@@ -170,7 +170,8 @@ uint8_t lll_scan_aux_setup(struct pdu_adv *pdu, uint8_t pdu_phy,
 	/* No need to scan further if no aux_ptr filled */
 	aux_ptr = (void *)pri_dptr;
 	if (unlikely(!pri_hdr->aux_ptr || !PDU_ADV_AUX_PTR_OFFSET_GET(aux_ptr) ||
-		     (PDU_ADV_AUX_PTR_PHY_GET(aux_ptr) > EXT_ADV_AUX_PHY_LE_CODED))) {
+		     (PDU_ADV_AUX_PTR_PHY_GET(aux_ptr) > EXT_ADV_AUX_PHY_LE_CODED) ||
+		     (aux_ptr->chan_idx >= CHM_USED_COUNT_MAX))) {
 		return 0;
 	}
 

@@ -584,8 +584,9 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 	 */
 	if (!aux_ptr || !PDU_ADV_AUX_PTR_OFFSET_GET(aux_ptr) || is_scan_req ||
 	    (PDU_ADV_AUX_PTR_PHY_GET(aux_ptr) > EXT_ADV_AUX_PHY_LE_CODED) ||
-		(!IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED) &&
-		  PDU_ADV_AUX_PTR_PHY_GET(aux_ptr) == EXT_ADV_AUX_PHY_LE_CODED)) {
+	    (!IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED) &&
+	     PDU_ADV_AUX_PTR_PHY_GET(aux_ptr) == EXT_ADV_AUX_PHY_LE_CODED) ||
+	    (aux_ptr->chan_idx >= CHM_USED_COUNT_MAX)) {
 		if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) && sync_lll) {
 			struct ll_sync_set *sync_set;
 
@@ -1988,9 +1989,9 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 	 */
 	if (!aux_ptr || !PDU_ADV_AUX_PTR_OFFSET_GET(aux_ptr) || is_scan_req ||
 	    (PDU_ADV_AUX_PTR_PHY_GET(aux_ptr) > EXT_ADV_AUX_PHY_LE_CODED) ||
-		(!IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED) &&
-		  PDU_ADV_AUX_PTR_PHY_GET(aux_ptr) == EXT_ADV_AUX_PHY_LE_CODED)) {
-
+	    (!IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED) &&
+	     PDU_ADV_AUX_PTR_PHY_GET(aux_ptr) == EXT_ADV_AUX_PHY_LE_CODED) ||
+	    (aux_ptr->chan_idx >= CHM_USED_COUNT_MAX)) {
 		if (is_scan_req) {
 			LL_ASSERT(chain && chain->rx_last);
 
