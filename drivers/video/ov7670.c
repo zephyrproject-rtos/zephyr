@@ -410,45 +410,42 @@ static int ov7670_set_fmt(const struct device *dev, struct video_format *fmt)
 				break;
 			}
 			/* Program resolution bytes settings */
-      ret = video_write_cci_reg(&config->bus, OV7670_COM7,
+      ret = video_write_cci_reg(&config->bus, OV7670_REG8(OV7670_COM7),
                resolution->com7);
-      
-			ret = video_write_cci_reg(&config->bus, OV7670_COM7,
-						    resolution->com7);
 			if (ret < 0) {
 				return ret;
 			}
-			ret = video_write_cci_reg(&config->bus, OV7670_COM3,
+			ret = video_write_cci_reg(&config->bus, OV7670_REG8(OV7670_COM3),
 						    resolution->com3);
 			if (ret < 0) {
 				return ret;
 			}
-			ret = video_write_cci_reg(&config->bus, OV7670_COM14,
+			ret = video_write_cci_reg(&config->bus, OV7670_REG8(OV7670_COM14),
 						    resolution->com14);
 			if (ret < 0) {
 				return ret;
 			}
-			ret = video_write_cci_reg(&config->bus, OV7670_SCALING_XSC,
+			ret = video_write_cci_reg(&config->bus, OV7670_REG8(OV7670_SCALING_XSC),
 						    resolution->scaling_xsc);
 			if (ret < 0) {
 				return ret;
 			}
-			ret = video_write_cci_reg(&config->bus, OV7670_SCALING_YSC,
+			ret = video_write_cci_reg(&config->bus, OV7670_REG8(OV7670_SCALING_YSC),
 						    resolution->scaling_ysc);
 			if (ret < 0) {
 				return ret;
 			}
-			ret = video_write_cci_reg(&config->bus, OV7670_SCALING_DCWCTR,
+			ret = video_write_cci_reg(&config->bus, OV7670_REG8(OV7670_SCALING_DCWCTR),
 						    resolution->dcwctr);
 			if (ret < 0) {
 				return ret;
 			}
-			ret = video_write_cci_reg(&config->bus, OV7670_SCALING_PCLK_DIV,
+			ret = video_write_cci_reg(&config->bus, OV7670_REG8(OV7670_SCALING_PCLK_DIV),
 						    resolution->pclk_div);
 			if (ret < 0) {
 				return ret;
 			}
-			return video_write_cci_reg(&config->bus, OV7670_SCALING_PCLK_DELAY,
+			return video_write_cci_reg(&config->bus, OV7670_REG8(OV7670_SCALING_PCLK_DELAY),
 						     resolution->pclk_delay);
 		}
 		i++;
@@ -537,10 +534,8 @@ static int ov7670_init(const struct device *dev)
 	 * To work around this, use a write then a read to interface with
 	 * registers.
 	 */
-	uint8_t cmd = OV7670_PID;
 
-
-	ret = video_read_cci_reg(&config->bus, cmd, &pid);
+	ret = video_read_cci_reg(&config->bus, OV7670_REG8(OV7670_PID), &pid);
 	if (ret < 0) {
 		LOG_ERR("Could not request product ID: %d", ret);
 		return ret;
@@ -552,8 +547,7 @@ static int ov7670_init(const struct device *dev)
 	}
 
 	/* Reset camera registers */
-	ret = video_write_cci_reg(&config->bus, OV7670_COM7, 0x80);
-
+	ret = video_write_cci_reg(&config->bus, OV7670_REG8(OV7670_COM7), 0x80);
 	if (ret < 0) {
 		LOG_ERR("Could not reset camera: %d", ret);
 		return ret;
@@ -589,10 +583,10 @@ static int ov7670_set_ctrl(const struct device *dev, uint32_t id)
 
 	switch (id) {
 	case VIDEO_CID_HFLIP:
-		return video_modify_cci_reg(&config->bus, OV7670_MVFP, OV7670_MVFP_HFLIP,
+		return video_modify_cci_reg(&config->bus, OV7670_REG8(OV7670_MVFP), OV7670_MVFP_HFLIP,
 					      ctrls->hflip.val ? OV7670_MVFP_HFLIP : 0);
 	case VIDEO_CID_VFLIP:
-		return video_modify_cci_reg(&config->bus, OV7670_MVFP, OV7670_MVFP_VFLIP,
+		return video_modify_cci_reg(&config->bus, OV7670_REG8(OV7670_MVFP), OV7670_MVFP_VFLIP,
 					      ctrls->vflip.val ? OV7670_MVFP_VFLIP : 0);
 	default:
 		return -ENOTSUP;
