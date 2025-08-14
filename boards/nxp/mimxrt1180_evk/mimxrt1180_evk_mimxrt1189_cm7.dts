@@ -25,10 +25,10 @@
 		nxp,m7-partition = &slot1_partition;
 	};
 
-	hyperram0: memory@04000000 {
+	hyperram0: memory@4000000 {
 		/* Winbond W957A8MFYA5K */
 		device_type = "memory";
-		reg = <0x04000000 DT_SIZE_M(8)>;
+		reg = <0x4000000 DT_SIZE_M(8)>;
 	};
 };
 
