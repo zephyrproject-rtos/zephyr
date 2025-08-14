@@ -22,12 +22,13 @@
 			zephyr,memory-region = "DTCM";
 		};
 
-		memory: memory@20484000 {
-			ranges = <0x0 0x20484000 0x10000000>;
+		memory: memory@20480000 {
+			ranges = <0x0 0x20480000 0x10000000>;
 		};
 
 		peripheral: peripheral@40000000 {
-			ranges = <0x0 0x40000000 0x10000000>;
+			ranges = <0x0 0x40000000 0x40000000>;
+			reg = <0x40000000 0x40000000>;
 		};
 
 		flexspi: memory-controller@425e0000 {

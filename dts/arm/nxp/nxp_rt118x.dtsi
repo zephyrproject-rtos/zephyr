@@ -1610,13 +1610,18 @@
 	ocram1: memory@0 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		zephyr,memory-region = "OCRAM1";
-		/* OCRAM1 first 16K access is blocked by TRDC */
-		reg = <0x0 DT_SIZE_K(496)>;
+		reg = <0x0 DT_SIZE_K(512)>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ocram1_available: memory@4000 {
+			/* OCRAM1 first 16K access is blocked by TRDC */
+			reg = <0x0 DT_SIZE_K(496)>;
+		};
 	};
 
-	ocram2: memory@7c000 {
+	ocram2: memory@80000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		zephyr,memory-region = "OCRAM2";
-		reg = <0x7c000 DT_SIZE_K(256)>;
+		reg = <0x80000 DT_SIZE_K(256)>;
 	};
 };
