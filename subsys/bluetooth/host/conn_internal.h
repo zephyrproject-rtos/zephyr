@@ -187,8 +187,8 @@ struct bt_conn_iso {
 		/* CIS ID within the CIG */
 		uint8_t			cis_id;
 
-		/* BIS ID within the BIG*/
-		uint8_t			bis_id;
+		/* BIS number within the BIG */
+		uint8_t			bis_number;
 	};
 
 	/** Stored information about the ISO stream */

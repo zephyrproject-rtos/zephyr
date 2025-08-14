@@ -13,6 +13,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <zephyr/arch/common/ffs.h>
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/gap.h>
@@ -2730,30 +2731,27 @@ static void big_disconnect(struct bt_iso_big *big, uint8_t reason)
 	}
 }
 
-static int big_init_bis(struct bt_iso_big *big, struct bt_iso_chan **bis_channels, uint8_t num_bis,
+static int big_init_bis(struct bt_iso_big *big, struct bt_iso_chan *bis, uint8_t bis_number,
 			bool broadcaster)
 {
-	for (uint8_t i = 0; i < num_bis; i++) {
-		struct bt_iso_chan *bis = bis_channels[i];
-		struct bt_conn_iso *iso_conn;
+	struct bt_conn_iso *iso_conn;
 
-		bis->iso = iso_new();
-
-		if (!bis->iso) {
-			LOG_ERR("Unable to allocate BIS connection");
-			return -ENOMEM;
-		}
-		iso_conn = &bis->iso->iso;
-
-		iso_conn->big_handle = big->handle;
-		iso_conn->info.type =
-			broadcaster ? BT_ISO_CHAN_TYPE_BROADCASTER : BT_ISO_CHAN_TYPE_SYNC_RECEIVER;
-		iso_conn->bis_id = bt_conn_index(bis->iso);
-
-		bt_iso_chan_add(bis->iso, bis);
-
-		sys_slist_append(&big->bis_channels, &bis->node);
+	bis->iso = iso_new();
+	if (bis->iso == NULL) {
+		LOG_ERR("Unable to allocate BIS connection");
+		return -ENOMEM;
 	}
+
+	iso_conn = &bis->iso->iso;
+
+	iso_conn->big_handle = big->handle;
+	iso_conn->info.type =
+		broadcaster ? BT_ISO_CHAN_TYPE_BROADCASTER : BT_ISO_CHAN_TYPE_SYNC_RECEIVER;
+	iso_conn->bis_number = bis_number;
+
+	bt_iso_chan_add(bis->iso, bis);
+
+	sys_slist_append(&big->bis_channels, &bis->node);
 
 	return 0;
 }
@@ -3034,6 +3032,7 @@ static bool valid_big_param(const struct bt_iso_big_create_param *param, bool ad
 int bt_iso_big_create(struct bt_le_ext_adv *padv, struct bt_iso_big_create_param *param,
 		      struct bt_iso_big **out_big)
 {
+	struct bt_iso_chan **bis_channels;
 	int err;
 	struct bt_iso_big *big;
 	bool advanced = false;
@@ -3074,12 +3073,20 @@ int bt_iso_big_create(struct bt_le_ext_adv *padv, struct bt_iso_big_create_param
 		return -ENOMEM;
 	}
 
-	err = big_init_bis(big, param->bis_channels, param->num_bis, true);
-	if (err) {
-		LOG_DBG("Could not init BIG %d", err);
-		cleanup_big(big);
-		return err;
+	bis_channels = param->bis_channels;
+	for (uint8_t i = 0; i < param->num_bis; i++) {
+		/* BIS numbers start from 1, so the first BIS will get BIS Number = 1 */
+		const uint8_t bis_number = i + 1U;
+
+		err = big_init_bis(big, bis_channels[i], bis_number, true);
+		if (err != 0) {
+			LOG_DBG("Could not init BIS[%u]: %d", i, err);
+			cleanup_big(big);
+
+			return err;
+		}
 	}
+
 	big->num_bis = param->num_bis;
 
 	if (!advanced) {
@@ -3438,9 +3445,11 @@ static int hci_le_big_create_sync(const struct bt_le_per_adv_sync *sync, struct 
 int bt_iso_big_sync(struct bt_le_per_adv_sync *sync, struct bt_iso_big_sync_param *param,
 		    struct bt_iso_big **out_big)
 {
+	struct bt_iso_chan **bis_channels;
 	int err;
 	struct bt_iso_chan *bis;
 	struct bt_iso_big *big;
+	uint32_t bitfield_copy;
 
 	CHECKIF(sync == NULL) {
 		LOG_DBG("sync is NULL");
@@ -3518,12 +3527,29 @@ int bt_iso_big_sync(struct bt_le_per_adv_sync *sync, struct bt_iso_big_sync_para
 		return -ENOMEM;
 	}
 
-	err = big_init_bis(big, param->bis_channels, param->num_bis, false);
-	if (err) {
-		LOG_DBG("Could not init BIG %d", err);
-		cleanup_big(big);
-		return err;
+	bitfield_copy = param->bis_bitfield;
+	bis_channels = param->bis_channels;
+	for (uint8_t i = 0; i < param->num_bis; i++) {
+		const uint8_t bis_number = find_lsb_set(bitfield_copy);
+
+		/* pop the least significant bit from the bitfield */
+		bitfield_copy &= ~BIT(bis_number - 1U);
+
+		/* The least significant bit will be the bis_number, so that if the bitfield is
+		 * 0b0101 then the first pop will be 1 and the bitfield_copy will be 0b0100 and
+		 * then the second pop will be 3 and the bitfield_copy will be 0b0000
+		 * Since find_lsb_set returns the index starting from 1 we can use the result
+		 * directly as the bis_numbers also start from 1.
+		 */
+		err = big_init_bis(big, bis_channels[i], bis_number, false);
+		if (err != 0) {
+			LOG_DBG("Could not init BIS[%u]: %d", i, err);
+			cleanup_big(big);
+
+			return err;
+		}
 	}
+
 	big->num_bis = param->num_bis;
 
 	err = hci_le_big_create_sync(sync, big, param);
