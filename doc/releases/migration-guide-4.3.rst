@@ -63,6 +63,12 @@ Stepper
 Bluetooth
 *********
 
+* :c:struct:`bt_le_cs_test_param` and :c:struct:`bt_le_cs_create_config_params` now require
+  providing both the main and sub mode as a single parameter.
+* :c:struct:`bt_conn_le_cs_config` now reports both the main and sub mode as a single parameter.
+* :c:struct:`bt_conn_le_cs_main_mode` and :c:struct:`bt_conn_le_cs_sub_mode` have been replaced
+  with :c:struct:`bt_conn_le_cs_mode`.
+
 .. zephyr-keep-sorted-start re(^\w)
 
 Bluetooth Audio
