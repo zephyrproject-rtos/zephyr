@@ -206,6 +206,18 @@ int main(void)
 		return ret;
 	}
 
+	if (IS_ENABLED(CONFIG_USBD_HID_SET_POLLING_PERIOD)) {
+		ret = hid_device_set_in_polling(hid_dev, 1000);
+		if (ret) {
+			LOG_WRN("Failed to set IN report polling period, %d", ret);
+		}
+
+		ret = hid_device_set_out_polling(hid_dev, 1000);
+		if (ret != 0 && ret != -ENOTSUP) {
+			LOG_WRN("Failed to set OUT report polling period, %d", ret);
+		}
+	}
+
 	sample_usbd = sample_usbd_init_device(msg_cb);
 	if (sample_usbd == NULL) {
 		LOG_ERR("Failed to initialize USB device");
