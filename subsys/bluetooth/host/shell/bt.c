@@ -1175,10 +1175,12 @@ static void le_cs_config_created(struct bt_conn *conn,
 	const char *chsel_type_str[3] = {"Algorithm #3b", "Algorithm #3c", "Invalid"};
 	const char *ch3c_shape_str[3] = {"Hat shape", "X shape", "Invalid"};
 
-	uint8_t main_mode_idx = config->main_mode_type > 0 && config->main_mode_type < 4
-					? config->main_mode_type
+	uint8_t main_mode_type = BT_CONN_LE_CS_MODE_MAIN_MODE_PART(config->mode);
+	uint8_t sub_mode_type = BT_CONN_LE_CS_MODE_SUB_MODE_PART(config->mode);
+	uint8_t main_mode_idx = main_mode_type > 0 && main_mode_type < 4
+					? main_mode_type
 					: 4;
-	uint8_t sub_mode_idx = config->sub_mode_type < 4 ? config->sub_mode_type : 0;
+	uint8_t sub_mode_idx = sub_mode_type;
 	uint8_t role_idx = MIN(config->role, 2);
 	uint8_t rtt_type_idx = MIN(config->rtt_type, 7);
 	uint8_t phy_idx =
