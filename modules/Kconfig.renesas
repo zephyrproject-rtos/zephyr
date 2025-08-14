@@ -307,6 +307,11 @@ config USE_RZ_FSP_CPG
 	help
 	  Enable RZ FSP CLOCK CONTROL driver
 
+config USE_RZ_FSP_CGC
+	bool
+	help
+	  Enable RZ FSP CGC driver
+
 config USE_RZ_FSP_RSPI_SPI
 	bool
 	help
