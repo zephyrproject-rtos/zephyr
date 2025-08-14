@@ -296,6 +296,7 @@ static int phy_mc_vsc8541_cfg_link(const struct device *dev, enum phy_link_speed
 static int phy_mc_vsc8541_init(const struct device *dev)
 {
 	struct mc_vsc8541_data *data = dev->data;
+	const struct mc_vsc8541_config *cfg = dev->config;
 	int ret;
 
 	data->active_page = -1;
