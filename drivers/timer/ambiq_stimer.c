@@ -54,36 +54,34 @@ const int32_t z_sys_timer_irq_for_test = COMPAREA_IRQ;
 
 /* Elapsed ticks since the previous kernel tick was announced, It will get accumulated every time
  * stimer_isr is triggered, or sys_clock_set_timeout/sys_clock_elapsed API is called.
- * It will be cleared after sys_clock_announce is called,.
+ * It will be cleared after sys_clock_announce is called.
  */
-static uint32_t g_tick_elapsed;
+static volatile uint32_t g_tick_elapsed;
 
-/* Value of STIMER counter when the previous timer API is called, this value is
- * aligned to tick boundary. It is updated along with the g_tick_elapsed value.
- */
-static uint32_t g_last_time_stamp;
+/* Value of STIMER counter when the previous timer API is called */
+static volatile uint32_t g_last_time_stamp;
+
+/* Value of g_last_time_stamp from a whole tick */
+static volatile uint32_t g_remainder;
 
 /* Spinlock to sync between Compare ISR and update of Compare register */
 static struct k_spinlock g_lock;
 
-static void update_tick_counter(void)
+static void update_tick_counter_with_now(uint32_t now)
 {
-	/* Read current cycle count. */
-	uint32_t now = am_hal_stimer_counter_get();
+	/* unsigned subtraction handles HW wrap modulo 2^32 */
+	uint32_t elapsed = now - g_last_time_stamp;
 
-	/* If current cycle count is smaller than the last time stamp, a counter overflow happened.
-	 * We need to extend the current counter value to 64 bits and add it with 0xFFFFFFFF
-	 * to get the correct elapsed cycles.
-	 */
-	uint64_t now_64 = (g_last_time_stamp <= now) ? (uint64_t)now : (uint64_t)now + COUNTER_MAX;
+	/* do the sum in 64-bit to avoid wrapping */
+	uint64_t total_cycles = (uint64_t)elapsed + (uint64_t)g_remainder;
 
-	/* Get elapsed cycles */
-	uint32_t elapsed_cycle = (now_64 - g_last_time_stamp);
+	/* fold into ticks and keep remainder < CYC_PER_TICK */
+	uint32_t dticks = (uint32_t)(total_cycles / (uint64_t)CYC_PER_TICK);
 
-	/* Get elapsed ticks. */
-	uint32_t dticks = elapsed_cycle / CYC_PER_TICK;
+	g_remainder = (uint32_t)(total_cycles % (uint64_t)CYC_PER_TICK);
 
-	g_last_time_stamp += dticks * CYC_PER_TICK;
+	/* update state */
+	g_last_time_stamp = now;
 	g_tick_elapsed += dticks;
 }
 
@@ -99,41 +97,34 @@ void stimer_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
-	uint32_t irq_status = am_hal_stimer_int_status_get(false);
+	uint32_t irq_status = am_hal_stimer_int_status_get(true);
 
 	if (irq_status & COMPARE_INTERRUPT) {
 		am_hal_stimer_int_clear(COMPARE_INTERRUPT);
 
 		k_spinlock_key_t key = k_spin_lock(&g_lock);
 
+		/* Read current cycle count. */
+		uint32_t now = am_hal_stimer_counter_get();
+
 		/*Calculate the elapsed ticks based on the current cycle count*/
-		update_tick_counter();
+		update_tick_counter_with_now(now);
+
+		uint32_t ticks_to_announce = g_tick_elapsed;
+
+		g_tick_elapsed = 0;
 
 		if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+			uint32_t delta = CYC_PER_TICK < MIN_DELAY ? MIN_DELAY : CYC_PER_TICK;
 
-			/* Get the counter value to trigger the next tick interrupt. */
-			uint64_t next = (uint64_t)g_last_time_stamp + CYC_PER_TICK;
-
-			/* Read current cycle count. */
-			uint32_t now = am_hal_stimer_counter_get();
-
-			/* If current cycle count is smaller than the last time stamp, a counter
-			 * overflow happened. We need to extend the current counter value to 64 bits
-			 * and add 0xFFFFFFFF to get the correct elapsed cycles.
-			 */
-			uint64_t now_64 = (g_last_time_stamp <= now) ? (uint64_t)now
-								     : (uint64_t)now + COUNTER_MAX;
-
-			uint32_t delta = (now_64 + MIN_DELAY < next) ? (next - now_64) : MIN_DELAY;
-
-			/* Set delta. */
 			ambiq_stimer_delta_set(delta);
 		}
 
 		k_spin_unlock(&g_lock, key);
 
-		sys_clock_announce(g_tick_elapsed);
-		g_tick_elapsed = 0;
+		sys_clock_announce(ticks_to_announce);
+	} else {
+		am_hal_stimer_int_clear(irq_status);
 	}
 }
 
@@ -150,28 +141,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	ticks = CLAMP(ticks, 1, (int32_t)MAX_TICKS);
 
 	k_spinlock_key_t key = k_spin_lock(&g_lock);
-
-	/* Update the internal tick counter*/
-	update_tick_counter();
-
-	/* Get current hardware counter value.*/
-	uint32_t now = am_hal_stimer_counter_get();
-
-	/* last: the last recorded counter value.
-	 * now_64: current counter value. Extended to uint64_t to easy the handing of hardware
-	 *         counter overflow.
-	 * next: counter values where to trigger the scheduled timeout.
-	 * last < now_64 < next
-	 */
-	uint64_t last = (uint64_t)g_last_time_stamp;
-	uint64_t now_64 = (g_last_time_stamp <= now) ? (uint64_t)now : (uint64_t)now + COUNTER_MAX;
-	uint64_t next = now_64 + ticks * CYC_PER_TICK;
-
-	uint32_t gap = next - last;
-	uint32_t gap_aligned = (gap / CYC_PER_TICK) * CYC_PER_TICK;
-	uint64_t next_aligned = last + gap_aligned;
-
-	uint32_t delta = next_aligned - now_64;
+	uint32_t delta = ticks * CYC_PER_TICK;
 
 	if (delta <= MIN_DELAY) {
 		/*If the delta value is smaller than MIN_DELAY, trigger a interrupt immediately*/
@@ -190,10 +160,16 @@ uint32_t sys_clock_elapsed(void)
 	}
 
 	k_spinlock_key_t key = k_spin_lock(&g_lock);
-	update_tick_counter();
+
+	uint32_t now = am_hal_stimer_counter_get();
+
+	update_tick_counter_with_now(now);
+
+	uint32_t elapsed = g_tick_elapsed;
+
 	k_spin_unlock(&g_lock, key);
 
-	return g_tick_elapsed;
+	return elapsed;
 }
 
 uint32_t sys_clock_cycle_get_32(void)
@@ -221,6 +197,7 @@ static int stimer_init(void)
 			     TIMER_CLKSRC | AM_HAL_STIMER_CFG_COMPARE_A_ENABLE);
 #endif
 	g_last_time_stamp = am_hal_stimer_counter_get();
+	g_remainder = 0;
 
 	/* A Possible clock glitch could rarely cause the Stimer interrupt to be lost.
 	 * Set up a backup comparator to handle this case
