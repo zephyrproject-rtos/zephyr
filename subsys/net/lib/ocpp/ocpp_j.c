@@ -114,7 +114,7 @@ static int frame_authorize_msg(char *buf, int len,
 	}
 
 	ret = frame_rpc_call_req(buf, len, PDU_AUTHORIZE,
-				 (uint32_t)ses, auth_obj);
+				 (uintptr_t)ses, auth_obj);
 	if (ret < 0) {
 		return ret;
 	}
@@ -128,7 +128,7 @@ static int frame_heartbeat_msg(char *buf, int len, struct ocpp_session *ses)
 	char tmp_buf[8] = "{}";
 
 	ret = frame_rpc_call_req(buf, len, PDU_HEARTBEAT,
-				 (uint32_t)ses, tmp_buf);
+				 (uintptr_t)ses, tmp_buf);
 	if (ret < 0) {
 		return ret;
 	}
@@ -212,7 +212,7 @@ static int frame_bootnotif_msg(char *buf, int len,
 	}
 
 	ret = frame_rpc_call_req(buf, len, PDU_BOOTNOTIFICATION,
-				 (uint32_t)ses, tmp_buf);
+				 (uintptr_t)ses, tmp_buf);
 	if (ret < 0) {
 		return ret;
 	}
@@ -283,7 +283,7 @@ static int frame_meter_val_msg(char *buf, int len, struct ocpp_session *ses, cha
 	}
 
 	ret = frame_rpc_call_req(buf, len, PDU_METER_VALUES,
-				 (uint32_t)ses, tmp_buf);
+				 (uintptr_t)ses, tmp_buf);
 	if (ret < 0) {
 		return ret;
 	}
@@ -334,7 +334,7 @@ static int frame_stop_txn_msg(char *buf, int len, struct ocpp_session *ses,
 	}
 
 	ret = frame_rpc_call_req(buf, len, PDU_STOP_TRANSACTION,
-				 (uint32_t)ses, tmp_buf);
+				 (uintptr_t)ses, tmp_buf);
 	if (ret < 0) {
 		return ret;
 	}
@@ -381,7 +381,7 @@ static int frame_start_txn_msg(char *buf, int len, struct ocpp_session *ses,
 	}
 
 	ret = frame_rpc_call_req(buf, len, PDU_START_TRANSACTION,
-				 (uint32_t)ses, tmp_buf);
+				 (uintptr_t)ses, tmp_buf);
 	if (ret < 0) {
 		return ret;
 	}
