@@ -5,8 +5,10 @@
 
 #include <mem.h>
 #include <arm/armv8-r.dtsi>
+#include <freq.h>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/clock/renesas_rztn_clock.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
@@ -32,6 +34,12 @@
 			     <GIC_PPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 			     <GIC_PPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
+	};
+
+	osc: osc {
+		compatible = "fixed-clock";
+		clock-frequency = <DT_FREQ_M(25)>;
+		#clock-cells = <0>;
 	};
 
 	soc {
@@ -87,6 +95,111 @@
 					reg = <0x0000E000 (DT_SIZE_M(64) - DT_SIZE_K(56))>;
 					read-only;
 				};
+			};
+		};
+
+		cgc: clock-controller@80280000 {
+			compatible = "renesas,rz-cgc";
+			reg = <0x80280000 0x314>, <0x81280000 0x324>;
+			clocks = <&osc>;
+			#clock-cells = <1>;
+			status = "okay";
+
+			loco: loco {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_K(240)>;
+				#clock-cells = <0>;
+				status = "okay";
+			};
+
+			pll1: pll1 {
+				compatible = "renesas,rz-cgc-pll";
+				state = "initial";
+			};
+
+			iclk: iclk {
+				compatible = "renesas,rz-cgc-sys-clock";
+				clock-frequency = <DT_FREQ_M(200)>;
+
+				cpu0clk: cpu0clk {
+					compatible = "renesas,rz-cgc-sys-clock";
+					mul = <1>;
+				};
+
+				ckio: ckio {
+					compatible = "renesas,rz-cgc-sys-clock";
+					div = <4>;
+				};
+			};
+
+			eth_refclk: eth_refclk {
+				compatible = "renesas,rz-cgc-subclk";
+				eth-phy-source = "main";
+			};
+
+			canfdclk: canfdclk {
+				compatible = "renesas,rz-cgc-subclk";
+				canfd-source = <1>;
+			};
+
+			xspi_clk0: xspi_clk0 {
+				compatible = "renesas,rz-cgc-subclk";
+				xspi-clk-frequency = <12500000>;
+			};
+
+			xspi_clk1: xspi_clk1 {
+				compatible = "renesas,rz-cgc-subclk";
+				xspi-clk-frequency = <12500000>;
+			};
+
+			sci0asyncclk: sci0asyncclk {
+				compatible = "renesas,rz-cgc-subclk";
+				clock-frequency = <DT_FREQ_M(96)>;
+			};
+
+			sci1asyncclk: sci1asyncclk {
+				compatible = "renesas,rz-cgc-subclk";
+				clock-frequency = <DT_FREQ_M(96)>;
+			};
+
+			sci2asyncclk: sci2asyncclk {
+				compatible = "renesas,rz-cgc-subclk";
+				clock-frequency = <DT_FREQ_M(96)>;
+			};
+
+			sci3asyncclk: sci3asyncclk {
+				compatible = "renesas,rz-cgc-subclk";
+				clock-frequency = <DT_FREQ_M(96)>;
+			};
+
+			sci4asyncclk: sci4asyncclk {
+				compatible = "renesas,rz-cgc-subclk";
+				clock-frequency = <DT_FREQ_M(96)>;
+			};
+
+			sci5asyncclk: sci5asyncclk {
+				compatible = "renesas,rz-cgc-subclk";
+				clock-frequency = <DT_FREQ_M(96)>;
+			};
+
+			spi0asyncclk: spi0asyncclk {
+				compatible = "renesas,rz-cgc-subclk";
+				clock-frequency = <DT_FREQ_M(96)>;
+			};
+
+			spi1asyncclk: spi1asyncclk {
+				compatible = "renesas,rz-cgc-subclk";
+				clock-frequency = <DT_FREQ_M(96)>;
+			};
+
+			spi2asyncclk: spi2asyncclk {
+				compatible = "renesas,rz-cgc-subclk";
+				clock-frequency = <DT_FREQ_M(96)>;
+			};
+
+			spi3asyncclk: spi3asyncclk {
+				compatible = "renesas,rz-cgc-subclk";
+				clock-frequency = <DT_FREQ_M(96)>;
 			};
 		};
 
