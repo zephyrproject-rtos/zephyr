@@ -1978,14 +1978,14 @@ int bt_bap_unicast_client_ep_qos(struct bt_bap_ep *ep, struct net_buf_simple *bu
 
 	LOG_DBG("id 0x%02x cig 0x%02x cis 0x%02x interval %u framing 0x%02x "
 		"phy 0x%02x sdu %u rtn %u latency %u pd %u",
-		ep->status.id, conn_iso->cig_id, conn_iso->cis_id, qos->interval, qos->framing,
-		qos->phy, qos->sdu, qos->rtn, qos->latency, qos->pd);
+		ep->status.id, conn_iso->info.unicast.cig_id, conn_iso->info.unicast.cis_id,
+		qos->interval, qos->framing, qos->phy, qos->sdu, qos->rtn, qos->latency, qos->pd);
 
 	req = net_buf_simple_add(buf, sizeof(*req));
 	req->ase = ep->status.id;
 	/* TODO: don't hardcode CIG and CIS, they should come from ISO */
-	req->cig = conn_iso->cig_id;
-	req->cis = conn_iso->cis_id;
+	req->cig = conn_iso->info.unicast.cig_id;
+	req->cis = conn_iso->info.unicast.cis_id;
 	sys_put_le24(qos->interval, req->interval);
 	req->framing = qos->framing;
 	req->phy = qos->phy;
