@@ -62,38 +62,79 @@ static inline void DBG(char *msg, struct k_thread *t)
 
 #endif /* FPU_DEBUG */
 
+
+/* caps.h (or a small block in fpu.c if you prefer) */
+struct riscv_cpu_caps {
+	bool has_v;
+};
+
+extern struct riscv_cpu_caps z_riscv_cpu_caps[CONFIG_MP_MAX_NUM_CPUS];
+
+static inline unsigned long read_csr_misa(void)
+{
+	unsigned long x; __asm__ volatile("csrr %0, misa" : "=r"(x));
+	return x;
+}
+#define MISA_EXT_BIT(ch) (1UL << ((ch) - 'A'))
+
+static inline bool this_cpu_has_v(void)
+{
+	return z_riscv_cpu_caps[_current_cpu->id].has_v;
+}
+
+static inline void detect_this_cpu_caps(void)
+{
+	unsigned long misa = read_csr_misa();
+	bool v = (misa != 0) && ((misa & MISA_EXT_BIT('V')) != 0);
+	/* Optional sanity read (safe only if misa.V says yes) */
+	if (v) {
+		unsigned long vlenb = 0;
+		__asm__ volatile(
+			".option push\n\t"
+			".option arch, +v\n\t"
+			"csrr %0, vlenb\n\t"
+			".option pop\n\t"
+			: "=r"(vlenb));
+		if (vlenb == 0) v = false;      /* paranoia */
+	}
+	z_riscv_cpu_caps[_current_cpu->id].has_v = v;
+}
+
+#define HAS_V() (IS_ENABLED(CONFIG_RISCV_ISA_EXT_V) && (read_csr_misa() & MISA_EXT_BIT('V')))
+
+
 #ifdef CONFIG_RISCV_ISA_EXT_V
 
 void z_riscv_vstate_csr_save(struct z_riscv_v_context *dest)
 {
+	if (!HAS_V()) return;
 	__asm volatile(".option push\n\t"
-		       ".option arch, +v\n\t"
-		       "csrr	%0, vstart\n\t"
-		       "csrr	%1, vl\n\t"
-		       "csrr	%2, vtype\n\t"
-		       "csrr	%3, vcsr\n\t"
-		       ".option pop\n\t"
-		       : "=r"(dest->vstart), "=r"(dest->vl), "=r"(dest->vtype), "=r"(dest->vcsr)
-		       :
-		       :);
+	               ".option arch, +v\n\t"
+	               "csrr %0, vstart\n\t"
+	               "csrr %1, vl\n\t"
+	               "csrr %2, vtype\n\t"
+	               "csrr %3, vcsr\n\t"
+	               ".option pop\n\t"
+	               : "=r"(dest->vstart), "=r"(dest->vl), "=r"(dest->vtype), "=r"(dest->vcsr));
 }
 
 void z_riscv_vstate_csr_restore(struct z_riscv_v_context *src)
 {
+	if (!HAS_V()) return;
 	__asm volatile(".option push\n\t"
-		       ".option arch, +v\n\t"
-			   "vsetvl	 x0, %1, %2\n\t"
-		       "csrw	vstart, %0\n\t"
-		       "csrw	vcsr, %3\n\t"
-		       ".option pop\n\t"
-		       :
-		       : "r"(src->vstart), "r"(src->vl), "r"(src->vtype), "r"(src->vcsr)
-		       :);
+	               ".option arch, +v\n\t"
+	               "vsetvl x0, %1, %2\n\t"
+	               "csrw   vstart, %0\n\t"
+	               "csrw   vcsr, %3\n\t"
+	               ".option pop\n\t"
+	               :: "r"(src->vstart), "r"(src->vl), "r"(src->vtype), "r"(src->vcsr));
 }
 
 #ifndef CONFIG_RISCV_ISA_EXT_V_LAZY
 void z_riscv_vstate_save_thread(struct k_thread *thread)
 {
+	if (!HAS_V()) return;
+
 	struct z_riscv_v_context *save_to = &thread->arch.saved_v_context;
 
 	size_t mstatus = csr_read(mstatus);
@@ -127,11 +168,13 @@ void z_riscv_vstate_save_thread(struct k_thread *thread)
 }
 void z_riscv_vstate_save()
 {
+	if (!HAS_V()) return;
 	z_riscv_vstate_save_thread(_current);
 }
 
 
 void z_riscv_vstate_restore_thread(struct k_thread *thread){
+	if (!HAS_V()) return;
 	struct z_riscv_v_context *restore_from = &thread->arch.saved_v_context;
 	csr_set(mstatus, MSTATUS_VS_CLEAN);
 	if (!restore_from->is_dirty) {
@@ -163,6 +206,7 @@ void z_riscv_vstate_restore_thread(struct k_thread *thread){
 
 void z_riscv_vstate_restore()
 {
+	if (!HAS_V()) return;
 	z_riscv_vstate_restore_thread(_current);
 }
 #endif /* CONFIG_RISCV_ISA_EXT_V_LAZY */
@@ -171,6 +215,7 @@ void z_riscv_vstate_restore()
 
 void z_riscv_vstate_save(struct z_riscv_v_context *save_to)
 {
+	if (!HAS_V()) return;
 	unsigned long vl;
 	// printk("vstate save\n");
 
@@ -195,6 +240,7 @@ void z_riscv_vstate_save(struct z_riscv_v_context *save_to)
 
 void z_riscv_vstate_restore(struct z_riscv_v_context *restore_from)
 {
+	if (!HAS_V()) return;
 	unsigned long vl;
 
 	__asm volatile(".option push\n\t"

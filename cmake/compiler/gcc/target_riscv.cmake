@@ -86,6 +86,36 @@ if(CONFIG_RISCV_ISA_EXT_ZBS)
     string(CONCAT riscv_march ${riscv_march} "_zbs")
 endif()
 
+# --- Half-precision scalar FP (requires F; D implies F) ---
+# Full Zfh = arithmetic + loads/stores/conversions
+# Zfhmin   = loads/stores/conversions only (no .h arithmetic)
+if(CONFIG_RISCV_ISA_EXT_ZFH)
+  if(NOT CONFIG_FPU)
+    message(FATAL_ERROR "CONFIG_RISCV_ISA_EXT_ZFH requires CONFIG_FPU (at least single-precision).")
+  endif()
+  string(CONCAT riscv_march ${riscv_march} "_zfh")
+elseif(CONFIG_RISCV_ISA_EXT_ZFHMIN)
+  if(NOT CONFIG_FPU)
+    message(FATAL_ERROR "CONFIG_RISCV_ISA_EXT_ZFHMIN requires CONFIG_FPU (at least single-precision).")
+  endif()
+  string(CONCAT riscv_march ${riscv_march} "_zfhmin")
+endif()
+
+# --- BFloat16 scalar (storage/convert); arithmetic needs toolchain + HW support
+if(CONFIG_RISCV_ISA_EXT_ZFBFMIN)
+  string(CONCAT riscv_march ${riscv_march} "_zfbfmin")
+endif()
+
+# Vector half/BF16 (only if you actually use V-paths; your sample is scalar):
+if(CONFIG_RISCV_ISA_EXT_ZVFH)
+  string(CONCAT riscv_march ${riscv_march} "_zvfh")
+elseif(CONFIG_RISCV_ISA_EXT_ZVFHMIN)
+  string(CONCAT riscv_march ${riscv_march} "_zvfhmin")
+endif()
+if(CONFIG_RISCV_ISA_EXT_ZVFBFMIN)
+  string(CONCAT riscv_march ${riscv_march} "_zvfbfmin")
+endif()
+
 list(APPEND TOOLCHAIN_C_FLAGS -mabi=${riscv_mabi} -march=${riscv_march})
 list(APPEND TOOLCHAIN_C_FLAGS -fno-tree-vectorize -fno-tree-loop-vectorize -fno-tree-slp-vectorize)
 list(APPEND TOOLCHAIN_LD_FLAGS NO_SPLIT -mabi=${riscv_mabi} -march=${riscv_march})
