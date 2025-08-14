@@ -269,6 +269,7 @@ static void broadcast_sink_set_ep_state(struct bt_bap_ep *ep, uint8_t state)
 
 		if (stream != NULL) {
 			bt_bap_iso_unbind_ep(ep->iso, ep);
+			stream->iso = NULL;
 			stream->ep = NULL;
 			stream->codec_cfg = NULL;
 			stream->group = NULL;
@@ -992,6 +993,7 @@ static int bt_bap_broadcast_sink_setup_stream(struct bt_bap_broadcast_sink *sink
 
 	bt_bap_iso_init(iso, &broadcast_sink_iso_ops);
 	bt_bap_iso_bind_ep(iso, ep);
+	stream->iso = &iso->chan;
 
 	bt_bap_qos_cfg_to_iso_qos(iso->chan.qos->rx, &sink->qos_cfg);
 
@@ -1011,6 +1013,7 @@ static void broadcast_sink_cleanup_streams(struct bt_bap_broadcast_sink *sink)
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&sink->streams, stream, next, _node) {
 		if (stream->ep != NULL) {
 			bt_bap_iso_unbind_ep(stream->ep->iso, stream->ep);
+			stream->iso = NULL;
 			stream->ep->stream = NULL;
 			stream->ep->broadcast_sink = NULL;
 			stream->ep = NULL;

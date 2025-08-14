@@ -317,6 +317,7 @@ static void ase_enter_state_idle(struct bt_ascs_ase *ase)
 	__ASSERT_NO_MSG(stream != NULL);
 
 	ase->ep.receiver_ready = false;
+	stream->iso = NULL;
 
 	bt_bap_stream_detach(stream);
 
@@ -336,6 +337,7 @@ static void ase_enter_state_codec_configured(struct bt_ascs_ase *ase)
 	__ASSERT_NO_MSG(stream != NULL);
 
 	ase->ep.receiver_ready = false;
+	stream->iso = NULL;
 
 	ops = stream->ops;
 	if (ops != NULL && ops->configured != NULL) {
@@ -1977,6 +1979,7 @@ static void ase_qos(struct bt_ascs_ase *ase, uint8_t cig_id, uint8_t cis_id,
 	/* QoS->QoS transition. Unbind ISO if CIG/CIS changed. */
 	if (ep->iso != NULL && (ep->cig_id != cig_id || ep->cis_id != cis_id)) {
 		bt_bap_iso_unbind_ep(ep->iso, ep);
+		stream->iso = NULL;
 	}
 
 	if (ep->iso == NULL) {
@@ -2000,6 +2003,7 @@ static void ase_qos(struct bt_ascs_ase *ase, uint8_t cig_id, uint8_t cis_id,
 		}
 
 		bt_bap_iso_bind_ep(iso, ep);
+		stream->iso = &iso->chan;
 		bt_bap_iso_unref(iso);
 	}
 
