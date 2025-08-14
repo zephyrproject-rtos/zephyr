@@ -39,9 +39,6 @@
 };
 
 /* XTAL is disconnected */
-/* TODO: this should be uncommented once it is added */
-/*
- * &rtc {
- *	status = "disabled";
- * };
- */
+&xtal32 {
+	status = "disabled";
+};
