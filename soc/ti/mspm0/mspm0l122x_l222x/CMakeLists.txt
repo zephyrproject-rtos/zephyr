@@ -2,6 +2,8 @@
 
 if(CONFIG_SOC_MSPM0L222X)
     zephyr_compile_definitions(-D__MSPM0L2228__)
+elseif(CONFIG_SOC_MSPM0L122X)
+    zephyr_compile_definitions(-D__MSPM0L1228__)
 endif()
 zephyr_sources(soc.c)
 zephyr_include_directories(.)
