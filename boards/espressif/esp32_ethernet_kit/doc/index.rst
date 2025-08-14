@@ -92,7 +92,7 @@ corner and going clockwise.
       GPIOs of ESP32. For details, see `GPIO Header 2`_.
   * - Function Switch
     - A 4-bit DIP switch used to configure the functionality of selected GPIOs
-      of ESP32. For details see `Function Switch`_.
+      of ESP32. For details see :ref:`function_switch_node`.
   * - Tx/Rx LEDs
     - Two LEDs to show the status of UART transmission.
   * - FT2232H
@@ -193,6 +193,8 @@ Setup Options
 
 This section describes options to configure the ESP32-Ethernet-Kit hardware.
 
+
+.. _function_switch_node
 
 Function Switch
 ---------------
@@ -358,7 +360,7 @@ No.   ESP32 Pin   Comments
        to use these pins, please solder a module without PSRAM memory inside,
        e.g. the ESP32-WROOM-32D or ESP32-SOLO-1.
 
-    2. Functionality depends on the settings of the `Function Switch`_.
+    2. Functionality depends on the settings of the :ref:`function_switch_node`.
 
 
 GPIO Allocation Summary
