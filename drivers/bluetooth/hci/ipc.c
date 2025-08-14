@@ -282,12 +282,12 @@ static int bt_ipc_send(const struct device *dev, struct net_buf *buf)
 
 	if (err < 0) {
 		LOG_ERR("Failed to send (err %d)", err);
-	} else {
-		err = 0;
+		return err;
 	}
 
 	net_buf_unref(buf);
-	return err;
+
+	return 0;
 }
 
 static void hci_ept_bound(void *priv)

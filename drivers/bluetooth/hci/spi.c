@@ -347,17 +347,16 @@ static int bt_spi_send(const struct device *dev, struct net_buf *buf)
 
 	k_sem_give(&sem_busy);
 
-	if (ret) {
+	if (ret != 0) {
 		LOG_ERR("Error %d", ret);
-		goto out;
+		return ret;
 	}
 
 	LOG_HEXDUMP_DBG(buf->data, buf->len, "SPI TX");
 
-out:
 	net_buf_unref(buf);
 
-	return ret;
+	return 0;
 }
 
 static int bt_spi_open(const struct device *dev, bt_hci_recv_t recv)
