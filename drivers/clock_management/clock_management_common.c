@@ -5,7 +5,9 @@
  */
 
 #include <zephyr/drivers/clock_management.h>
+#include <zephyr/drivers/clock_management/clock_helpers.h>
 #include <string.h>
+#include <stdlib.h>
 #include <zephyr/logging/log.h>
 #include "clock_management_common.h"
 LOG_MODULE_REGISTER(clock_management, CONFIG_CLOCK_MANAGEMENT_LOG_LEVEL);
@@ -43,7 +45,7 @@ struct clock_output_state {
 	/* Number of clock nodes to configure */
 	const uint8_t num_clocks;
 	/* Frequency resulting from this setting */
-	const uint32_t frequency;
+	const clock_freq_t frequency;
 #if defined(CONFIG_CLOCK_MANAGEMENT_RUNTIME) || defined(__DOXYGEN__)
 	/* Should this state lock the clock configuration? */
 	const bool locking;
@@ -70,20 +72,36 @@ struct clock_output_data {
 #endif
 };
 
+/* Section used to identify clock types */
+TYPE_SECTION_START_EXTERN(struct clk, clk);
+TYPE_SECTION_END_EXTERN(struct clk, clk_root);
+TYPE_SECTION_END_EXTERN(struct clk, clk_mux);
+TYPE_SECTION_END_EXTERN(struct clk, clk_leaf);
+TYPE_SECTION_END_EXTERN(struct clk, clk_standard);
+
 /*
- * Internal API definition for clock outputs
- *
- * Since clock outputs only need to implement the "notify" API, we use a reduced
- * API pointer. Since the notify field is the first entry in both structures, we
- * can still receive callbacks via this API structure.
+ * Helper function to get the type of a clock.
+ * Uses the section location to determine clock type.
  */
-struct clock_management_output_api {
-#if defined(CONFIG_CLOCK_MANAGEMENT_RUNTIME) || defined(__DOXYGEN__)
-	/* Notify clock consumer of rate change */
-	int (*notify)(const struct clk *clk_hw, const struct clk *parent,
-		      const struct clock_management_event *event);
-#endif
-};
+static uint8_t clock_get_type(const struct clk *clk_hw)
+{
+	/*
+	 * Since all these sections are contiguous in ROM, we only need to check
+	 * if a clock is within the clk section, and then just which section it
+	 * lies before
+	 */
+	if (clk_hw >= TYPE_SECTION_START(clk) &&
+	    clk_hw < TYPE_SECTION_END(clk_root)) {
+		return CLK_TYPE_ROOT;
+	} else if (clk_hw < TYPE_SECTION_END(clk_standard)) {
+		return CLK_TYPE_STANDARD;
+	} else if (clk_hw < TYPE_SECTION_END(clk_mux)) {
+		return CLK_TYPE_MUX;
+	} else if (clk_hw < TYPE_SECTION_END(clk_leaf)) {
+		return CLK_TYPE_LEAF;
+	}
+	__builtin_unreachable();
+}
 
 #ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
 
@@ -139,6 +157,620 @@ static void clock_remove_constraint(const struct clk *clk_hw,
 #endif
 
 /**
+ * @brief Check the rate of a given clock
+ *
+ * This function is primarily used by the clock subsystem but drivers can call
+ * into it as well where needed. It recursively calls itself until it encounters
+ * clock whose rate is known or can be calculated, then calls recalc_rate on
+ * children clocks to determine a final rate
+ *
+ * @param clk_hw Clock to check the rate for
+ * @return clock rate on success, or negative value on error
+ */
+clock_freq_t clock_management_clk_rate(const struct clk *clk_hw)
+{
+	clock_freq_t current_rate, ret;
+
+#ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
+	if (clk_hw->subsys_data->rate != 0) {
+		return clk_hw->subsys_data->rate;
+	}
+#endif
+
+	if (clock_get_type(clk_hw) == CLK_TYPE_ROOT) {
+		/* Base case- just get the rate of this clock */
+		current_rate = clock_get_rate(clk_hw);
+	} else if (clock_get_type(clk_hw) == CLK_TYPE_STANDARD) {
+		/* Recursive. Single parent clock, use recalc_rate */
+		ret = clock_management_clk_rate(GET_CLK_PARENT(clk_hw));
+		if (ret < 0) {
+			return ret;
+		}
+		current_rate = clock_recalc_rate(clk_hw, ret);
+	} else {
+		/* Recursive. Multi parent clock, get the parent and return its rate */
+		ret = clock_get_parent(clk_hw);
+		if (ret == -ENOTCONN) {
+			/* Clock has no parent, it is disconnected */
+			return 0;
+		} else if (ret < 0) {
+			/* Error getting parent */
+			return ret;
+		}
+		current_rate = clock_management_clk_rate(GET_CLK_PARENTS(clk_hw)[ret]);
+	}
+
+	IF_ENABLED(CONFIG_CLOCK_MANAGEMENT_CLK_NAME, (
+		if (current_rate >= 0) {
+			LOG_DBG("Clock %s returns rate %d", clk_hw->clk_name, current_rate);
+		}
+	))
+#ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
+	if (current_rate >= 0) {
+		/* Cache rate */
+		clk_hw->subsys_data->rate = current_rate;
+	}
+#endif
+	return current_rate;
+}
+
+#ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
+
+/**
+ * Helper function to recursively disable children of a given clock
+ *
+ * This function will disable all children of the specified clock with a usage
+ * count of zero, as well as the current clock if it is unused.
+ */
+static void clk_disable_unused(const struct clk *clk_hw)
+{
+	const clock_handle_t *handle = clk_hw->children;
+	const struct clk *child;
+
+	/* Recursively disable unused children */
+	while (*handle != CLOCK_LIST_END) {
+		child = clk_from_handle(*handle);
+		clk_disable_unused(child);
+		handle++;
+	}
+
+	/* Check if the current clock is unused */
+	if (clk_hw->subsys_data->usage_cnt == 0) {
+		/* Disable the clock */
+		clock_onoff(clk_hw, false);
+	}
+}
+
+#endif
+
+/**
+ * @brief Disable unused clocks within the system
+ *
+ * Disable unused clocks within the system. This API will gate all clocks in
+ * the system with a usage count of zero, when CONFIG_CLOCK_MANAGEMENT_RUNTIME
+ * is enabled.
+ */
+void clock_management_disable_unused(void)
+{
+#ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
+	STRUCT_SECTION_FOREACH_ALTERNATE(clk_root, clk, clk) {
+		clk_disable_unused(clk);
+	}
+#endif
+}
+
+#ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
+
+/**
+ * Helper function to notify clock of reconfiguration event
+ *
+ * @param clk_hw Clock which will have rate reconfigured
+ * @param old_freq Current frequency of clock
+ * @param new_freq New frequency that clock will configure to
+ * @return 0 if notification chain succeeded, or error if not
+ */
+static int clock_notify_children(const struct clk *clk_hw,
+				 clock_freq_t old_freq,
+				 clock_freq_t new_freq,
+				 enum clock_management_event_type ev_type)
+{
+	const struct clock_management_event event = {
+		.type = ev_type,
+		.old_rate = old_freq,
+		.new_rate = new_freq
+	};
+	const clock_handle_t *handle = clk_hw->children;
+	const struct clock_output_data *data;
+	const struct clock_output *consumer;
+	struct clock_management_callback *cb;
+	const struct clk *child;
+	int ret, parent_idx;
+	clock_freq_t child_newrate, child_oldrate;
+
+	if (*handle == CLOCK_LIST_END) {
+		/* Base case- clock leaf (output node) */
+		data = clk_hw->hw_data;
+		/* Check if the new rate is permitted given constraints */
+		if ((data->combined_req->min_freq > event.new_rate) ||
+		    (data->combined_req->max_freq < event.new_rate)) {
+			IF_ENABLED(CONFIG_CLOCK_MANAGEMENT_CLK_NAME,
+				   (LOG_DBG("Clock %s rejected frequency %d",
+				    clk_hw->clk_name, event.new_rate)));
+			return -ENOTSUP;
+		}
+		if (ev_type != CLOCK_MANAGEMENT_QUERY_RATE_CHANGE) {
+			/* Notify consumers */
+			for (consumer = data->consumer_start;
+			     consumer < data->consumer_end; consumer++) {
+				cb = consumer->cb;
+				if (cb->clock_callback) {
+					ret = cb->clock_callback(&event,
+							   cb->user_data);
+					if (ret) {
+						/* Consumer rejected new rate */
+						return ret;
+					}
+				}
+			}
+		}
+	} else {
+		/* Recursive case- clock with children */
+		for (handle = clk_hw->children; *handle != CLOCK_LIST_END; handle++) {
+			/* Recalculate rate of this child */
+			child = clk_from_handle(*handle);
+			if (clock_get_type(child) == CLK_TYPE_LEAF) {
+				/* Child is a clock output node, just notify it */
+				child_oldrate = old_freq;
+				child_newrate = new_freq;
+			} else if (clock_get_type(child) == CLK_TYPE_STANDARD) {
+				/* Single parent clock, use recalc */
+				child_newrate = clock_recalc_rate(child, new_freq);
+				if (child_newrate < 0) {
+					IF_ENABLED(CONFIG_CLOCK_MANAGEMENT_CLK_NAME, (
+						LOG_DBG("Clock %s rejected rate %u",
+							clk_hw->clk_name, new_freq);
+					))
+					return child_newrate;
+				}
+				child_oldrate = clock_recalc_rate(child, old_freq);
+				if (child_oldrate < 0) {
+					return child_oldrate;
+				}
+			} else {
+				/* Multi parent clock, see if it is connected */
+				parent_idx = clock_get_parent(child);
+				if (parent_idx == -ENOTCONN) {
+					/* Clock has no parent, it is disconnected */
+					continue;
+				} else if (parent_idx < 0) {
+					/* Error getting parent */
+					return parent_idx;
+				}
+				if (GET_CLK_PARENTS(child)[parent_idx] != clk_hw) {
+					/* Disconnected */
+					continue;
+				}
+				ret = clock_mux_validate_parent(child, new_freq, parent_idx);
+				if (ret < 0) {
+					IF_ENABLED(CONFIG_CLOCK_MANAGEMENT_CLK_NAME, (
+						LOG_DBG("Mux %s rejected rate %u, parent %s",
+							child->clk_name, new_freq,
+							GET_CLK_PARENTS(child)
+							[parent_idx]->clk_name);
+					))
+					return ret;
+				}
+				/* Clock is connected. Child rate will match parent */
+				child_newrate = new_freq;
+				child_oldrate = old_freq;
+			}
+			/* Notify its children of new rate */
+			ret = clock_notify_children(child,
+						    child_oldrate,
+						    child_newrate,
+						    ev_type);
+			if (ret < 0) {
+				return ret;
+			}
+		}
+	}
+	if (ev_type == CLOCK_MANAGEMENT_POST_RATE_CHANGE) {
+		/* Update the clock's shared data */
+		clk_hw->subsys_data->rate = new_freq;
+	}
+
+	return 0;
+}
+
+/**
+ * Helper function to handle reconfiguration process for clock
+ *
+ * @param clk_hw Clock which will have rate reconfigured
+ * @param cfg_param Configuration parameter to pass into clock_configure
+ * @return 0 if change was applied successfully, or error if not
+ */
+static int clock_tree_configure(const struct clk *clk_hw,
+				const void *cfg_param)
+{
+	clock_freq_t current_rate, new_rate, parent_rate;
+	int ret, parent_idx;
+
+	if (clock_get_type(clk_hw) == CLK_TYPE_ROOT) {
+		current_rate =  clock_get_rate(clk_hw);
+		if (current_rate < 0) {
+			return current_rate;
+		}
+		new_rate = clock_root_configure_recalc(clk_hw,
+					cfg_param);
+		if (new_rate < 0) {
+			return new_rate;
+		}
+	} else if (clock_get_type(clk_hw) == CLK_TYPE_STANDARD) {
+		/* Single parent clock */
+		parent_rate = clock_management_clk_rate(
+			GET_CLK_PARENT(clk_hw));
+		if (parent_rate < 0) {
+			return parent_rate;
+		}
+		current_rate = clock_recalc_rate(clk_hw, parent_rate);
+		if (current_rate < 0) {
+			return current_rate;
+		}
+		new_rate = clock_configure_recalc(clk_hw, cfg_param,
+					     parent_rate);
+		if (new_rate < 0) {
+			return new_rate;
+		}
+	} else {
+		/* Multi parent clock */
+		current_rate = clock_management_clk_rate(clk_hw);
+		if (current_rate < 0) {
+			return current_rate;
+		}
+		/* Get new parent rate */
+		parent_idx = clock_mux_configure_recalc(clk_hw, cfg_param);
+		if (parent_idx < 0) {
+			return parent_idx;
+		}
+		new_rate = clock_management_clk_rate(GET_CLK_PARENTS(clk_hw)[parent_idx]);
+		if (new_rate < 0) {
+			return new_rate;
+		}
+		ret = clock_mux_validate_parent(clk_hw, new_rate, parent_idx);
+		if (ret < 0) {
+			IF_ENABLED(CONFIG_CLOCK_MANAGEMENT_CLK_NAME, (
+				LOG_DBG("Mux %s rejected rate %u, parent %s",
+					clk_hw->clk_name, new_rate,
+					GET_CLK_PARENTS(clk_hw)[parent_idx]->clk_name);
+			))
+			return ret;
+		}
+	}
+
+	/* Validate children can accept rate */
+	ret = clock_notify_children(clk_hw, current_rate, new_rate,
+				    CLOCK_MANAGEMENT_QUERY_RATE_CHANGE);
+	if (ret < 0) {
+		return ret;
+	}
+	/* Now, notify children rates will change */
+	ret = clock_notify_children(clk_hw, current_rate, new_rate,
+				    CLOCK_MANAGEMENT_PRE_RATE_CHANGE);
+	if (ret < 0) {
+		return ret;
+	}
+	/* Apply the new rate */
+	ret = clock_configure(clk_hw, cfg_param);
+	if (ret < 0) {
+		return ret;
+	}
+	/* Now, notify children rates have changed */
+	ret = clock_notify_children(clk_hw, current_rate, new_rate,
+				    CLOCK_MANAGEMENT_POST_RATE_CHANGE);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return 0;
+}
+
+/**
+ * @brief Checks the children of a clock to validate they can support a given rate
+ *
+ * This function will validate that children of the provided clock can support
+ * the new rate proposed. Some clock implementations may need to call this if
+ * they will reconfigure into intermediate states in the process of changing
+ * their rate, to make sure the clock tree can also support those rates.
+ *
+ * @param clk_hw Clock to check children for
+ * @param new_rate Proposed new rate of the clock
+ * @return 0 if all children can support the new rate, or negative value on error
+ */
+int clock_children_check_rate(const struct clk *clk_hw, clock_freq_t new_rate)
+{
+	clock_freq_t current_rate;
+
+	current_rate = clock_management_clk_rate(clk_hw);
+	if (current_rate < 0) {
+		return current_rate;
+	}
+	return clock_notify_children(clk_hw, current_rate,
+				     new_rate, CLOCK_MANAGEMENT_QUERY_RATE_CHANGE);
+}
+
+#else /* CONFIG_CLOCK_MANAGEMENT_RUNTIME */
+
+/**
+ * @brief Checks the children of a clock to validate they can support a given rate
+ *
+ * This function will validate that children of the provided clock can support
+ * the new rate proposed. Some clock implementations may need to call this if
+ * they will reconfigure into intermediate states in the process of changing
+ * their rate, to make sure the clock tree can also support those rates.
+ *
+ * @param clk_hw Clock to check children for
+ * @param new_rate Proposed new rate of the clock
+ * @return 0 if all children can support the new rate, or negative value on error
+ */
+int clock_children_check_rate(const struct clk *clk_hw, clock_freq_t new_rate)
+{
+	/* No-op */
+	return 0;
+}
+
+/**
+ * Helper function to handle reconfiguration process for clock
+ *
+ * @param clk_hw Clock which will have rate reconfigured
+ * @param cfg_param Configuration parameter to pass into clock_configure
+ * @return 0 if change was applied successfully, or error if not
+ */
+static int clock_tree_configure(const struct clk *clk_hw,
+				const void *cfg_param)
+{
+	return -ENOTSUP;
+}
+
+#endif
+
+#if defined(CONFIG_CLOCK_MANAGEMENT_SET_RATE)
+
+/**
+ * Helper function to find the best parent of a multiplexer for a requested rate.
+ * This is needed both in the round_rate and set_rate phases of clock configuration.
+ *
+ * @param clk_hw Multiplexer to find best parent for
+ * @param rate_req Requested rate to find best parent for
+ * @param best_rate Best rate found
+ * @param best_parent Index of best parent clock
+ * @return best possible rate on success, or negative value on error
+ */
+static clock_freq_t clock_management_best_parent(const struct clk *clk_hw,
+						 clock_freq_t rate_req,
+						 int *best_parent)
+{
+	int ret;
+	uint32_t best_delta = UINT32_MAX, delta;
+	clock_freq_t cand_rate, current_rate, best_rate;
+	const struct clk *cand_parent;
+	const struct clk_mux_subsys_data *mux_data = clk_hw->hw_data;
+
+	/* Evaluate each parent clock. If one fails for any reason, just skip it */
+	for (int i = 0; i < mux_data->parent_cnt; i++) {
+		cand_parent = mux_data->parents[i];
+		cand_rate = clock_management_round_rate(cand_parent, rate_req);
+		if (cand_rate < 0) {
+			continue; /* Not a candidate */
+		}
+		ret = clock_mux_validate_parent(clk_hw, cand_rate, i);
+		if (ret < 0) {
+			continue; /* Not a candidate */
+		}
+		current_rate = clock_management_clk_rate(clk_hw);
+		if (current_rate < 0) {
+			continue; /* Not a candidate */
+		}
+		IF_ENABLED(CONFIG_CLOCK_MANAGEMENT_CLK_NAME, (
+			LOG_DBG("Mux %s offers rate %u from parent %s",
+				clk_hw->clk_name, cand_rate, cand_parent->clk_name);
+		))
+		/* Validate that this rate can work for the children */
+		ret = clock_notify_children(clk_hw, current_rate, cand_rate,
+					    CLOCK_MANAGEMENT_QUERY_RATE_CHANGE);
+		if (ret < 0) {
+			/* Clock won't be able to reconfigure for this rate */
+			continue;
+		}
+		if (cand_rate > rate_req) {
+			delta = cand_rate - rate_req;
+		} else {
+			delta = rate_req - cand_rate;
+		}
+		if (delta < best_delta) {
+			best_delta = delta;
+			best_rate = cand_rate;
+			*best_parent = i;
+		}
+		if (best_delta == 0) {
+			/* Exact match found, no need to search further */
+			break;
+		}
+	}
+	/* If we didn't find a suitable clock, indicate error here */
+	return (best_delta == UINT32_MAX) ? -ENOTSUP : best_rate;
+}
+
+/**
+ * @brief Determine the best rate a clock can produce
+ *
+ * This function is used to determine the best rate a clock can produce using
+ * its parents.
+ *
+ * @param clk_hw Clock to round rate for
+ * @param rate_req Requested rate to round
+ * @return best possible rate on success, or negative value on error
+ */
+clock_freq_t clock_management_round_rate(const struct clk *clk_hw, int rate_req)
+{
+	int ret;
+	clock_freq_t parent_rate, current_rate, best_rate;
+	int best_parent;
+
+	if (clock_get_type(clk_hw) == CLK_TYPE_MUX) {
+		/* Mux clocks don't support round_rate, we implement it generically */
+		best_rate = clock_management_best_parent(clk_hw, rate_req,
+							&best_parent);
+	} else if (clock_get_type(clk_hw) == CLK_TYPE_ROOT) {
+		/* No need to check parents */
+		current_rate = clock_get_rate(clk_hw);
+		if (current_rate < 0) {
+			return current_rate;
+		}
+		best_rate = clock_root_round_rate(clk_hw, rate_req);
+		if (best_rate < 0) {
+			/* Clock can't reconfigure, use the current rate */
+			best_rate = current_rate;
+		}
+		ret = clock_notify_children(clk_hw, current_rate, best_rate,
+					     CLOCK_MANAGEMENT_QUERY_RATE_CHANGE);
+		if (ret < 0) {
+			return ret;
+		}
+	} else {
+		/* Standard clock, check what rate the parent can offer */
+		parent_rate = clock_management_round_rate(GET_CLK_PARENT(clk_hw), rate_req);
+		if (parent_rate < 0) {
+			return parent_rate;
+		}
+		current_rate = clock_management_clk_rate(clk_hw);
+		if (current_rate < 0) {
+			return current_rate;
+		}
+		/* Check what rate this clock can offer with its parent offering */
+		best_rate = clock_round_rate(clk_hw, rate_req, parent_rate);
+		if (best_rate < 0) {
+			/* Clock can't reconfigure, use the current rate */
+			best_rate = current_rate;
+		}
+		ret = clock_notify_children(clk_hw, current_rate, best_rate,
+					     CLOCK_MANAGEMENT_QUERY_RATE_CHANGE);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	return best_rate;
+}
+
+/**
+ * @brief Set the rate of a clock
+ *
+ * This function is used to set the rate of a clock.
+ *
+ * @param clk_hw Clock to set rate for
+ * @param rate_req Requested rate to set
+ * @return rate clock is set to on success, or negative value on error
+ */
+clock_freq_t clock_management_set_rate(const struct clk *clk_hw, clock_freq_t rate_req)
+{
+	int ret;
+	clock_freq_t parent_rate, current_rate, new_rate, best_rate;
+	int best_parent;
+
+	current_rate = clock_management_clk_rate(clk_hw);
+	if (current_rate < 0) {
+		return current_rate;
+	}
+	if (clock_get_type(clk_hw) == CLK_TYPE_MUX) {
+		/* Find the best parent and select that one */
+		best_rate = clock_management_best_parent(clk_hw, rate_req,
+						  &best_parent);
+		if (best_rate < 0) {
+			return best_rate;
+		}
+		/* Set the parent's rate */
+		new_rate = clock_management_set_rate(GET_CLK_PARENTS(clk_hw)[best_parent],
+						best_rate);
+		if (new_rate < 0) {
+			return new_rate;
+		}
+		ret = clock_notify_children(clk_hw, current_rate, new_rate,
+					     CLOCK_MANAGEMENT_PRE_RATE_CHANGE);
+		if (ret < 0) {
+			return ret;
+		}
+		ret = clock_set_parent(clk_hw, best_parent);
+		if (ret < 0) {
+			return ret;
+		}
+		ret = clock_notify_children(clk_hw, current_rate, new_rate,
+					     CLOCK_MANAGEMENT_POST_RATE_CHANGE);
+		if (ret < 0) {
+			return ret;
+		}
+	} else if (clock_get_type(clk_hw) == CLK_TYPE_ROOT) {
+		best_rate = clock_management_round_rate(clk_hw, rate_req);
+		if (best_rate < 0) {
+			return best_rate;
+		}
+		ret = clock_notify_children(clk_hw, current_rate, best_rate,
+					     CLOCK_MANAGEMENT_PRE_RATE_CHANGE);
+		if (ret < 0) {
+			return ret;
+		}
+		/* Root clock parent can be set directly (base case) */
+		new_rate = clock_root_set_rate(clk_hw, best_rate);
+		if (new_rate < 0) {
+			return new_rate;
+		}
+		ret = clock_notify_children(clk_hw, current_rate, new_rate,
+					     CLOCK_MANAGEMENT_POST_RATE_CHANGE);
+		if (ret < 0) {
+			return ret;
+		}
+	} else {
+		/* Set parent rate, then child rate */
+		parent_rate = clock_management_set_rate(GET_CLK_PARENT(clk_hw), rate_req);
+		if (parent_rate < 0) {
+			return parent_rate;
+		}
+		best_rate = clock_management_round_rate(clk_hw, rate_req);
+		if (best_rate < 0) {
+			return best_rate;
+		}
+		ret = clock_notify_children(clk_hw, current_rate, best_rate,
+					     CLOCK_MANAGEMENT_PRE_RATE_CHANGE);
+		if (ret < 0) {
+			return ret;
+		}
+		new_rate = clock_set_rate(clk_hw, best_rate, parent_rate);
+		if (new_rate < 0) {
+			return new_rate;
+		}
+		ret = clock_notify_children(clk_hw, current_rate, new_rate,
+					     CLOCK_MANAGEMENT_POST_RATE_CHANGE);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+	return new_rate;
+}
+
+#else
+
+clock_freq_t clock_management_round_rate(const struct clk *clk_hw, clock_freq_t rate_req)
+{
+	return -ENOTSUP;
+}
+
+clock_freq_t clock_management_set_rate(const struct clk *clk_hw, clock_freq_t rate_req)
+{
+	return -ENOTSUP;
+}
+
+#endif /* CONFIG_CLOCK_MANAGEMENT_SET_RATE */
+
+/**
  * Helper function to apply a clock state
  *
  * @param clk_hw Clock output to apply clock state for
@@ -150,18 +782,17 @@ static int clock_apply_state(const struct clk *clk_hw,
 			     const struct clock_output_state *clk_state)
 {
 	const struct clock_output_data *data = clk_hw->hw_data;
+	clock_freq_t new_rate = 0;
 	int ret;
 
 	if (clk_state->num_clocks == 0) {
 		/* Use runtime clock setting */
-		ret = clock_round_rate(data->parent, clk_state->frequency);
+		new_rate = clock_management_set_rate(data->parent, clk_state->frequency);
 
-		if (ret != clk_state->frequency) {
-			return -ENOTSUP;
+		if (new_rate < 0) {
+			return new_rate;
 		}
-
-		ret = clock_set_rate(data->parent, clk_state->frequency);
-		if (ret != clk_state->frequency) {
+		if (new_rate != clk_state->frequency) {
 			return -ENOTSUP;
 		}
 
@@ -172,7 +803,12 @@ static int clock_apply_state(const struct clk *clk_hw,
 	for (uint8_t i = 0; i < clk_state->num_clocks; i++) {
 		const struct clock_setting *cfg = &clk_state->clock_settings[i];
 
-		ret = clock_configure(cfg->clock, cfg->clock_config_data);
+		if (IS_ENABLED(CONFIG_CLOCK_MANAGEMENT_RUNTIME)) {
+			ret = clock_tree_configure(cfg->clock, cfg->clock_config_data);
+		} else {
+			ret = clock_configure(cfg->clock, cfg->clock_config_data);
+		}
+
 		if (ret < 0) {
 			/* Configure failed, exit */
 			return ret;
@@ -202,7 +838,95 @@ int clock_management_get_rate(const struct clock_output *clk)
 	data = GET_CLK_CORE(clk)->hw_data;
 
 	/* Read rate */
-	return clock_get_rate(data->parent);
+	return clock_management_clk_rate(data->parent);
+}
+
+static int clock_management_onoff(const struct clk *clk_hw, bool on)
+{
+	const struct clk *child = clk_hw, *parent;
+	int ret = 0;
+
+	/* Walk up parents tree, turning on clocks as we go */
+	while (true) {
+#ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
+		if ((child->subsys_data->usage_cnt == 1) && (!on)) {
+			/* Turn off the clock */
+			ret = clock_onoff(child, on);
+		} else if ((child->subsys_data->usage_cnt == 0) && (on)) {
+			/* Turn on the clock */
+			ret = clock_onoff(child, on);
+		}
+		if (ret < 0) {
+			return ret;
+		}
+		child->subsys_data->usage_cnt += on ? (1) : (-1);
+#else
+		ret = clock_onoff(child, on);
+		if (ret < 0) {
+			return ret;
+		}
+#endif
+		/* Get parent clock */
+		if (clock_get_type(child) == CLK_TYPE_ROOT) {
+			/* No parent clock, we're done */
+			break;
+		} else if (clock_get_type(child) == CLK_TYPE_STANDARD) {
+			/* Single parent clock */
+			parent = GET_CLK_PARENT(child);
+		} else {
+			/* Multi parent clock */
+			ret = clock_get_parent(child);
+			if (ret == -ENOTCONN) {
+				/* Clock has no parent, it is disconnected */
+				return 0;
+			} else if (ret < 0) {
+				/* Error getting parent */
+				return ret;
+			}
+			parent = GET_CLK_PARENTS(child)[ret];
+		}
+		child = parent;
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Enable a clock output and its sources
+ *
+ * Turns a clock output and its sources on. This function will
+ * unconditionally enable the clock and its sources.
+ * @param clk clock output to turn off
+ * @return -ENOSYS if clock does not implement on_off API
+ * @return -EIO if clock could not be turned off
+ * @return -EBUSY if clock cannot be modified at this time
+ * @return negative errno for other error turning clock on or off
+ * @return 0 on success
+ */
+int clock_management_on(const struct clock_output *clk)
+{
+	const struct clock_output_data *data = GET_CLK_CORE(clk)->hw_data;
+
+	return clock_management_onoff(data->parent, true);
+}
+
+/**
+ * @brief Disable a clock output and its sources
+ *
+ * Turns a clock output and its sources off. This function will
+ * unconditionally disable the output and its sources.
+ * @param clk clock output to turn off
+ * @return -ENOSYS if clock does not implement on_off API
+ * @return -EIO if clock could not be turned off
+ * @return -EBUSY if clock cannot be modified at this time
+ * @return negative errno for other error turning clock on or off
+ * @return 0 on success
+ */
+int clock_management_off(const struct clock_output *clk)
+{
+	const struct clock_output_data *data = GET_CLK_CORE(clk)->hw_data;
+
+	return clock_management_onoff(data->parent, false);
 }
 
 /**
@@ -227,7 +951,7 @@ int clock_management_req_rate(const struct clock_output *clk,
 			const struct clock_management_rate_req *req)
 {
 	const struct clock_output_data *data;
-	int ret = -ENOENT;
+	clock_freq_t ret = -ENOENT;
 	const struct clock_output_state *best_state = NULL;
 	int best_delta = INT32_MAX;
 	struct clock_management_rate_req *combined_req;
@@ -261,7 +985,7 @@ int clock_management_req_rate(const struct clock_output *clk,
 	 * producer may not be compatible with the new constraint. If we
 	 * added the new constraint now then the clock would fail to
 	 * reconfigure to an otherwise valid state, because the rates
-	 * passed to clock_output_notify_consumer() would be rejected
+	 * passed to clock_notify_children() would be rejected
 	 */
 	memcpy(data->combined_req, &new_req, sizeof(*data->combined_req));
 	/*
@@ -318,7 +1042,10 @@ int clock_management_req_rate(const struct clock_output *clk,
 		}
 	}
 	/* No best setting was found, try runtime clock setting */
-	ret = clock_round_rate(data->parent, combined_req->max_freq);
+	ret = clock_management_round_rate(data->parent, combined_req->max_freq);
+	if (ret < 0) {
+		return ret;
+	}
 out:
 	if (ret >= 0) {
 		/* A frequency was returned, check if it satisfies constraints */
@@ -328,11 +1055,7 @@ out:
 		}
 	}
 #ifdef CONFIG_CLOCK_MANAGEMENT_SET_RATE
-	/* Apply the clock state */
-	ret = clock_set_rate(data->parent, combined_req->max_freq);
-	if (ret < 0) {
-		return ret;
-	}
+	ret = clock_management_set_rate(data->parent, ret);
 #endif
 #ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
 	/* New clock state applied. Save the new combined constraint set. */
@@ -413,58 +1136,6 @@ int clock_management_apply_state(const struct clock_output *clk,
 	return clk_state->frequency;
 }
 
-#if defined(CONFIG_CLOCK_MANAGEMENT_RUNTIME)
-
-/*
- * This function passes clock notification callbacks from parent
- * clocks of this output on to any clock consumers that
- * have registered for callbacks
- */
-static int clock_output_notify_consumer(const struct clk *clk_hw,
-					const struct clk *parent,
-					const struct clock_management_event *event)
-{
-	const struct clock_output_data *data;
-	int ret;
-
-	data = clk_hw->hw_data;
-
-	/* Check if the new rate is permitted given constraints */
-	if ((data->combined_req->min_freq > event->new_rate) ||
-	    (data->combined_req->max_freq < event->new_rate)) {
-#ifdef CONFIG_CLOCK_MANAGEMENT_CLK_NAME
-		LOG_DBG("Clock %s rejected frequency %d",
-			clk_hw->clk_name, event->new_rate);
-#endif
-		return -ENOTSUP;
-	}
-
-	if (event->type == CLOCK_MANAGEMENT_QUERY_RATE_CHANGE) {
-		/* No need to forward to consumers */
-		return 0;
-	}
-
-	for (const struct clock_output *consumer = data->consumer_start;
-	     consumer < data->consumer_end; consumer++) {
-		if (consumer->cb->clock_callback) {
-			ret = consumer->cb->clock_callback(event,
-						consumer->cb->user_data);
-			if (ret) {
-				/* Consumer rejected new rate */
-				return ret;
-			}
-		}
-	}
-	return 0;
-}
-#endif
-
-const struct clock_management_output_api clock_output_api = {
-#if defined(CONFIG_CLOCK_MANAGEMENT_RUNTIME)
-	.notify = clock_output_notify_consumer,
-#endif
-};
-
 #define CLOCK_STATE_NAME(node)                                                 \
 	CONCAT(clock_state_, DT_DEP_ORD(DT_PARENT(node)), _,                   \
 	       DT_NODE_CHILD_IDX(node))
@@ -532,48 +1203,7 @@ const struct clock_management_output_api clock_output_api = {
 		.output_states = output_states_##inst,                         \
 		CLOCK_OUTPUT_RUNTIME_INIT(inst)                                \
 	};                                                                     \
-	CLOCK_DT_INST_DEFINE(inst,                                             \
-			     &CONCAT(clock_output_, DT_INST_DEP_ORD(inst)),    \
-			     (struct clock_management_driver_api *)&clock_output_api);
+	LEAF_CLOCK_DT_INST_DEFINE(inst,                                        \
+			     &CONCAT(clock_output_, DT_INST_DEP_ORD(inst)));
 
 DT_INST_FOREACH_STATUS_OKAY(CLOCK_OUTPUT_DEFINE)
-
-#ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
-/**
- * @brief Helper to issue a clock callback to all children nodes
- *
- * Helper function to issue a callback to all children of a given clock, with
- * a new clock rate. This function will call clock_notify on all children of
- * the given clock, with the provided rate as the parent rate
- *
- * @param clk_hw Clock object to issue callbacks for
- * @param event Clock reconfiguration event
- * @return 0 on success
- * @return CLK_NO_CHILDREN to indicate clock has no children actively using it,
- *         and may safely shut down.
- * @return -errno from @ref clock_notify on any other failure
- */
-int clock_notify_children(const struct clk *clk_hw,
-			  const struct clock_management_event *event)
-{
-	const clock_handle_t *handle = clk_hw->children;
-	int ret;
-	bool children_disconnected = true;
-
-	while (*handle != CLOCK_LIST_END) {
-		ret = clock_notify(clk_from_handle(*handle), clk_hw, event);
-		if (ret == 0) {
-			/* At least one child is using this clock */
-			children_disconnected = false;
-		} else if ((ret < 0) && (ret != -ENOTCONN)) {
-			/* ENOTCONN simply means MUX is disconnected.
-			 * other return codes should be propagated.
-			 */
-			return ret;
-		}
-		handle++;
-	}
-	return children_disconnected ? CLK_NO_CHILDREN : 0;
-}
-
-#endif /* CONFIG_CLOCK_MANAGEMENT_RUNTIME */
