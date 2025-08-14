@@ -33,6 +33,7 @@ LOG_MODULE_REGISTER(net_openthread_platform, CONFIG_OPENTHREAD_PLATFORM_LOG_LEVE
 #include <openthread/platform/diag.h>
 #include <openthread/tasklet.h>
 #include <openthread/thread.h>
+#include <openthread/thread_ftd.h>
 #include <openthread/dataset.h>
 #include <openthread/joiner.h>
 #include <openthread-system.h>
@@ -96,6 +97,12 @@ LOG_MODULE_REGISTER(net_openthread_platform, CONFIG_OPENTHREAD_PLATFORM_LOG_LEVE
 #define OT_POLL_PERIOD CONFIG_OPENTHREAD_POLL_PERIOD
 #else
 #define OT_POLL_PERIOD 0
+#endif
+
+#if defined(CONFIG_OPENTHREAD_ROUTER_SELECTION_JITTER)
+#define OT_ROUTER_SELECTION_JITTER CONFIG_OPENTHREAD_ROUTER_SELECTION_JITTER
+#else
+#define OT_ROUTER_SELECTION_JITTER 0
 #endif
 
 #define ZEPHYR_PACKAGE_NAME "Zephyr"
@@ -346,6 +353,10 @@ int openthread_init(void)
 			LOG_ERR("Could not set state changed callback: %d", error);
 			return -EIO;
 		}
+	}
+
+	if (IS_ENABLED(CONFIG_OPENTHREAD_ROUTER_SELECTION_JITTER_OVERRIDE)) {
+		otThreadSetRouterSelectionJitter(openthread_instance, OT_ROUTER_SELECTION_JITTER);
 	}
 
 	openthread_mutex_unlock();
