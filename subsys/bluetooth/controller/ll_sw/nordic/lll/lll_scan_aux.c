@@ -356,8 +356,17 @@ void lll_scan_aux_isr_aux_setup(void *param)
 	aux_start_us -= EVENT_JITTER_US;
 
 	start_us = radio_tmr_start_us(0, aux_start_us);
-	LL_ASSERT_MSG(start_us == (aux_start_us + 1U), "aux_offset %u us, start_us %u != %u",
-		      aux_offset_us, start_us, (aux_start_us + 1U));
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_cputime_capture();
+
+		LL_ASSERT_MSG((start_us == (aux_start_us + 1U)),
+			      "%s: Radio ISR latency: %u us, CPU usage: %u"
+			      " aux_offset %u us, start_us %u != %u",
+			      __func__, lll_prof_latency_get(), lll_prof_cputime_get(),
+			      aux_offset_us, start_us, (aux_start_us + 1U));
+	} else {
+		LL_ASSERT_ERR(start_us == (aux_start_us + 1U));
+	}
 
 	/* Setup header complete timeout */
 	hcto = start_us;
@@ -896,10 +905,6 @@ static void isr_rx(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 			 devmatch_ok, devmatch_id, irkmatch_ok, irkmatch_ok,
 			 rl_idx, rssi_ready);
 	if (!err) {
-		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
-			lll_prof_send();
-		}
-
 		return;
 	}
 
@@ -1151,6 +1156,10 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 			trx_cnt++;
 		}
 
+		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+			lll_prof_send();
+		}
+
 		return 0;
 
 	/* Active scanner */
@@ -1287,6 +1296,10 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 
 		ull_rx_put_sched(node_rx->hdr.link, node_rx);
 
+		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+			lll_prof_send();
+		}
+
 		return 0;
 
 	/* Passive scanner or scan responses */
@@ -1388,10 +1401,6 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 				lll->is_aux_sched = 1U;
 			}
 
-			if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
-				lll_prof_cputime_capture();
-			}
-
 			return 0;
 		}
 
@@ -1406,22 +1415,27 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 	return -EINVAL;
 }
 
-static void isr_tx(struct lll_scan_aux *lll_aux, void *pdu_rx,
-		   void (*isr)(void *), void *param)
+static void isr_tx(struct lll_scan_aux *lll_aux, void (*isr)(void *), void *param)
 {
+	struct node_rx_pdu *node_rx_prof;
+	struct node_rx_pdu *node_rx;
 	uint32_t hcto;
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_latency_capture();
+		node_rx_prof = lll_prof_reserve();
 	}
 
 	/* Clear radio tx status and events */
 	lll_isr_tx_status_reset();
 
+	node_rx = ull_pdu_rx_alloc_peek(1);
+	LL_ASSERT_DBG(node_rx);
+
+	radio_pkt_rx_set(node_rx->pdu);
+
 	/* complete the reception and disable radio  */
 	radio_switch_complete_and_disable();
-
-	radio_pkt_rx_set(pdu_rx);
 
 	/* assert if radio packet ptr is not set and radio started rx */
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
@@ -1479,46 +1493,29 @@ static void isr_tx(struct lll_scan_aux *lll_aux, void *pdu_rx,
 	radio_isr_set(isr, param);
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
-		/* NOTE: as scratch packet is used to receive, it is safe to
-		 * generate profile event using rx nodes.
-		 */
-		lll_prof_send();
+		lll_prof_reserve_send(node_rx_prof);
 	}
 }
 
 static void isr_tx_scan_req_ull_schedule(void *param)
 {
-	struct node_rx_pdu *node_rx;
-
-	node_rx = ull_pdu_rx_alloc_peek(1);
-	LL_ASSERT_DBG(node_rx);
-
-	isr_tx(param, node_rx->pdu, isr_rx_ull_schedule, param);
+	isr_tx(param, isr_rx_ull_schedule, param);
 }
 
 static void isr_tx_scan_req_lll_schedule(void *param)
 {
 	struct node_rx_pdu *node_rx_adv = param;
-	struct node_rx_pdu *node_rx;
 	struct lll_scan *lll;
 
 	lll = node_rx_adv->rx_ftr.param;
 
-	node_rx = ull_pdu_rx_alloc_peek(1);
-	LL_ASSERT_DBG(node_rx);
-
-	isr_tx(lll->lll_aux, node_rx->pdu, isr_rx_lll_schedule, param);
+	isr_tx(lll->lll_aux, isr_rx_lll_schedule, param);
 }
 
 #if defined(CONFIG_BT_CENTRAL)
 static void isr_tx_connect_req(void *param)
 {
-	struct node_rx_pdu *node_rx;
-
-	node_rx = ull_pdu_rx_alloc_peek(1);
-	LL_ASSERT_DBG(node_rx);
-
-	isr_tx(param, (void *)node_rx->pdu, isr_rx_connect_rsp, param);
+	isr_tx(param, isr_rx_connect_rsp, param);
 }
 
 static void isr_rx_connect_rsp(void *param)
@@ -1533,10 +1530,6 @@ static void isr_rx_connect_rsp(void *param)
 	uint8_t trx_done;
 	uint8_t rl_idx;
 	uint8_t crc_ok;
-
-	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
-		lll_prof_latency_capture();
-	}
 
 	/* Read radio status */
 	trx_done = radio_is_done();
@@ -1651,10 +1644,6 @@ static void isr_rx_connect_rsp(void *param)
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
 isr_rx_connect_rsp_do_close:
-	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
-		lll_prof_cputime_capture();
-	}
-
 	ull_rx_put_sched(rx->hdr.link, rx);
 
 	/* Check if LLL scheduled auxiliary PDU reception by scan
@@ -1682,10 +1671,6 @@ isr_rx_connect_rsp_do_close:
 	}
 
 	radio_disable();
-
-	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
-		lll_prof_send();
-	}
 }
 
 static bool isr_rx_connect_rsp_check(struct lll_scan *lll,
