@@ -1,0 +1,23 @@
+/ {
+	chosen {
+		zephyr,display = &ssd1306_ssd1306_128x64;
+	};
+};
+
+&i2c0 {
+	status = "okay";
+
+	ssd1306_ssd1306_128x64: ssd1306@3c {
+		compatible = "solomon,ssd1306fb";
+		reg = <0x3c>;
+		width = <128>;
+		height = <64>;
+		segment-offset = <0>;
+		page-offset = <0>;
+		display-offset = <0>;
+		multiplex-ratio = <63>;
+		segment-remap;
+		com-invdir;
+		prechargep = <0x22>;
+	};
+};
