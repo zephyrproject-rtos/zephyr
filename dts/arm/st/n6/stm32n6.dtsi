@@ -853,6 +853,14 @@
 			resets = <&rctl STM32_RESET(APB5, 1)>;
 			status = "disabled";
 		};
+
+		rng: rng@54020000 {
+			compatible = "st,stm32-rng";
+			reg = <0x54020000 0x400>;
+			interrupts = <40 0>;
+			clocks = <&rcc STM32_CLOCK(AHB3, 0)>;
+			status = "disabled";
+		};
 	};
 };
 
