@@ -236,6 +236,63 @@ static int bt_spp_accept(struct bt_conn *conn, struct bt_rfcomm_server *server,
 	return 0;
 }
 
+static uint8_t bt_spp_sdp_recv(struct bt_conn *conn, struct bt_sdp_client_result *response,
+			       const struct bt_sdp_discover_params *params)
+{
+	struct bt_spp *spp;
+	uint16_t channel;
+	int err;
+
+	if (response == NULL) {
+		LOG_WRN("SPP response is  null");
+		return BT_SDP_DISCOVER_UUID_CONTINUE;
+	}
+
+	spp = spp_find_service_by_conn(conn);
+	if (spp == NULL) {
+		LOG_ERR("SPP conn is  invalid");
+		goto exit;
+	}
+
+	if (response->resp_buf == NULL) {
+		LOG_ERR("SPP sdp resp_buf is null");
+		goto exit;
+	}
+
+	err = bt_sdp_get_proto_param(response->resp_buf, BT_SDP_PROTO_RFCOMM, &channel);
+	if (err < 0) {
+		LOG_ERR("SPP sdp get proto fail");
+		goto exit;
+	}
+
+	spp->rfcomm_server.accept = NULL;
+	spp->rfcomm_dlc.ops = &spp_rfcomm_ops;
+	spp->rfcomm_dlc.mtu = SPP_RFCOMM_MTU;
+	spp->channel = channel;
+
+	err = bt_rfcomm_dlc_connect(conn, &spp->rfcomm_dlc, channel);
+	if (err < 0) {
+		LOG_ERR("SPP rfconn connect fail, err:%d", err);
+		goto exit;
+	}
+
+	return BT_SDP_DISCOVER_UUID_STOP;
+
+exit:
+	if (spp_cb && spp_cb->disconnected) {
+		spp_cb->disconnected(spp, spp->channel);
+	}
+
+	spp_free_service(spp);
+	return BT_SDP_DISCOVER_UUID_STOP;
+}
+
+static struct bt_sdp_discover_params sdp_discover = {
+	.type = BT_SDP_DISCOVER_SERVICE_SEARCH_ATTR,
+	.func = bt_spp_sdp_recv,
+	.pool = &sdp_pool,
+};
+
 int bt_spp_register_cb(struct bt_spp_cb *cb)
 {
 	if (!cb) {
@@ -271,15 +328,85 @@ exit:
 
 int bt_spp_connect(struct bt_conn *conn, struct bt_spp **spp, const struct bt_uuid *uuid)
 {
-	return -EOPNOTSUPP;
+	struct bt_spp *new_spp;
+	int err;
+
+	if (conn == NULL || spp == NULL || uuid == NULL) {
+		LOG_ERR("Invalid parameter");
+		return -EINVAL;
+	}
+
+	new_spp = spp_get_connection(conn);
+	if (new_spp == NULL) {
+		LOG_ERR("SPP get conn fail");
+		return -ECONNREFUSED;
+	}
+
+	if (new_spp->acl_conn != NULL) {
+		LOG_ERR("SPP conn exist");
+		return -EALREADY;
+	}
+
+	sdp_discover.uuid = uuid;
+
+	err = bt_sdp_discover(conn, &sdp_discover);
+	if (err < 0) {
+		LOG_ERR("SPP sdp discover fail");
+		return err;
+	}
+
+	new_spp->acl_conn = bt_conn_ref(conn);
+	*spp = new_spp;
+
+	return err;
 }
 
 int bt_spp_send(struct bt_spp *spp, const uint8_t *data, uint16_t len)
 {
-	return -EOPNOTSUPP;
+	struct net_buf *buf;
+	int err;
+
+	if (spp == NULL || spp->acl_conn == NULL) {
+		LOG_ERR("SPP or conn invalid");
+		err = -EINVAL;
+		goto exit;
+	}
+
+	buf = bt_rfcomm_create_pdu(&tx_pool);
+	if (buf == NULL) {
+		LOG_ERR("SPP malloc pdu fail");
+		err = -ENOMEM;
+		goto exit;
+	}
+
+	net_buf_add_mem(buf, data, len);
+
+	err = bt_rfcomm_dlc_send(&spp->rfcomm_dlc, buf);
+	if (err < 0) {
+		LOG_ERR("rfcomm unable to send: %d", err);
+		net_buf_unref(buf);
+		goto exit;
+	}
+
+exit:
+	return err;
 }
 
 int bt_spp_disconnect(struct bt_spp *spp)
 {
-	return -EOPNOTSUPP;
+	int err;
+
+	if (spp == NULL || spp->acl_conn == NULL) {
+		LOG_ERR("SPP or conn invalid");
+		err = -EINVAL;
+		goto exit;
+	}
+
+	err = bt_rfcomm_dlc_disconnect(&spp->rfcomm_dlc);
+	if (err < 0) {
+		LOG_ERR("bt rfcomm disconnect err:%d", err);
+	}
+
+exit:
+	return err;
 }
