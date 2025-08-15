@@ -215,6 +215,24 @@ int mfd_npm13xx_reg_write2(const struct device *dev, uint8_t base, uint8_t offse
 	return i2c_write_dt(&config->i2c, buff, sizeof(buff));
 }
 
+int mfd_npm13xx_reg_write_burst(const struct device *dev, uint8_t base, uint8_t offset, size_t len,
+				...)
+{
+	const struct mfd_npm13xx_config *config = dev->config;
+	uint8_t buff[2 + len];
+	va_list args;
+
+	buff[0] = base;
+	buff[1] = offset;
+	va_start(args, len);
+	for (size_t i = 0; i < len; i++) {
+		buff[2 + i] = (uint8_t)va_arg(args, int);
+	}
+	va_end(args);
+
+	return i2c_write_dt(&config->i2c, buff, sizeof(buff));
+}
+
 int mfd_npm13xx_reg_update(const struct device *dev, uint8_t base, uint8_t offset, uint8_t data,
 			   uint8_t mask)
 {
