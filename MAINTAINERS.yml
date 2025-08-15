@@ -597,7 +597,7 @@ Bluetooth Host:
     - tests/bsim/bluetooth/hci_uart/
     - tests/bsim/bluetooth/ll/
     - tests/bsim/bluetooth/mesh/
-    - tests/bsim/bluetooth/tester/src/audio/
+    - tests/bsim/bluetooth/tester/
   labels:
     - "area: Bluetooth Host"
     - "area: Bluetooth"
@@ -662,6 +662,7 @@ Bluetooth Qualification:
     - doc/connectivity/bluetooth/autopts/
     - tests/bluetooth/qualification/
     - tests/bluetooth/tester/
+    - tests/bsim/bluetooth/tester/
   labels:
     - "area: Bluetooth Qualification"
     - "area: Bluetooth"
