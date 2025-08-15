@@ -84,6 +84,47 @@ resume:
 	HAL_DCMI_Resume(hdcmi);
 }
 
+void HAL_DCMI_VsyncEventCallback(DCMI_HandleTypeDef *hdcmi)
+{
+	struct video_stm32_dcmi_data *dev_data =
+			CONTAINER_OF(hdcmi, struct video_stm32_dcmi_data, hdcmi);
+	struct video_buffer *vbuf;
+
+	if (dev_data->fmt.pixelformat != VIDEO_PIX_FMT_JPEG) {
+		return;
+	}
+
+	HAL_DCMI_Suspend(hdcmi);
+
+	vbuf = k_fifo_get(&dev_data->fifo_in, K_NO_WAIT);
+
+	if (vbuf == NULL) {
+		LOG_DBG("Failed to get buffer from fifo");
+		goto resume;
+	}
+
+	vbuf->bytesused = vbuf->size - __HAL_DMA_GET_COUNTER(dev_data->hdcmi.DMA_Handle);
+
+	vbuf->timestamp = k_uptime_get_32();
+	memcpy(vbuf->buffer, dev_data->vbuf->buffer, vbuf->bytesused);
+
+	k_fifo_put(&dev_data->fifo_out, vbuf);
+
+resume:
+#if defined(CONFIG_SOC_SERIES_STM32U5X)
+	// Stop DMA as in JPEG mode it may be still waiting for more data to come, so we can't restart it directly
+	HAL_DCMI_Stop(&dev_data->hdcmi);
+	int err = HAL_DCMI_Start_DMA(&dev_data->hdcmi, DCMI_MODE_SNAPSHOT,
+			(uint32_t)dev_data->vbuf->buffer, dev_data->vbuf->bytesused / 4);
+	if (err != HAL_OK) {
+		LOG_ERR("Failed to start DCMI DMA");
+	}
+#else
+
+	HAL_DCMI_Resume(hdcmi);
+#endif
+}
+
 static void stm32_dcmi_isr(const struct device *dev)
 {
 	struct video_stm32_dcmi_data *data = dev->data;
@@ -108,6 +149,47 @@ void HAL_DMA_ErrorCallback(DMA_HandleTypeDef *hdma)
 {
 	LOG_WRN("%s", __func__);
 }
+
+#if defined(CONFIG_SOC_SERIES_STM32U5X)
+static int stm32_dma_list_init(DMA_HandleTypeDef *hdma)
+{
+	static DMA_NodeTypeDef Node;
+	static DMA_QListTypeDef Queue;
+
+	HAL_StatusTypeDef ret = HAL_OK;
+	/* DMA node configuration declaration */
+	DMA_NodeConfTypeDef pNodeConfig;
+
+	/* Set node configuration ################################################*/
+	pNodeConfig.NodeType 					= DMA_GPDMA_LINEAR_NODE;
+	pNodeConfig.Init.Request 				= GPDMA1_REQUEST_DCMI_PSSI;
+	pNodeConfig.Init.BlkHWRequest 			= DMA_BREQ_SINGLE_BURST;
+	pNodeConfig.Init.Direction 				= DMA_PERIPH_TO_MEMORY;
+	pNodeConfig.Init.SrcInc 				= DMA_SINC_FIXED;
+	pNodeConfig.Init.DestInc 				= DMA_DINC_INCREMENTED;
+	pNodeConfig.Init.SrcDataWidth 			= DMA_SRC_DATAWIDTH_WORD;
+	pNodeConfig.Init.DestDataWidth 			= DMA_DEST_DATAWIDTH_WORD;
+	pNodeConfig.Init.SrcBurstLength 		= 1;
+	pNodeConfig.Init.DestBurstLength 		= 1;
+	pNodeConfig.Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0|DMA_DEST_ALLOCATED_PORT0;
+	pNodeConfig.Init.TransferEventMode 		= DMA_TCEM_BLOCK_TRANSFER;
+	pNodeConfig.TriggerConfig.TriggerPolarity = DMA_TRIG_POLARITY_MASKED;
+	pNodeConfig.DataHandlingConfig.DataExchange = DMA_EXCHANGE_NONE;
+	pNodeConfig.DataHandlingConfig.DataAlignment = DMA_DATA_RIGHTALIGN_ZEROPADDED;
+	pNodeConfig.SrcAddress 					= 0;
+	pNodeConfig.DstAddress 					= 0;
+	pNodeConfig.DataSize 					= 0;
+
+	/* Build Node1 Node */
+	ret |= HAL_DMAEx_List_BuildNode(&pNodeConfig, &Node);
+	/* Insert Node1 to Queue */
+	ret |= HAL_DMAEx_List_InsertNode_Tail(&Queue, &Node);
+	ret |= HAL_DMAEx_List_SetCircularMode(&Queue);
+	ret |= HAL_DMAEx_List_LinkQ(hdma, &Queue);
+
+	return ret;
+}
+#endif /* !defined(CONFIG_SOC_SERIES_STM32U5X) */
 
 static int stm32_dma_init(const struct device *dev)
 {
@@ -147,6 +229,30 @@ static int stm32_dma_init(const struct device *dev)
 
 	/*** Configure the DMA ***/
 	/* Set the parameters to be configured */
+
+#if defined(CONFIG_SOC_SERIES_STM32U5X)
+	hdma.Init.Request 		= GPDMA1_REQUEST_DCMI_PSSI;
+	hdma.Init.BlkHWRequest 	= DMA_BREQ_SINGLE_BURST;
+	hdma.Init.Direction 	= DMA_PERIPH_TO_MEMORY;
+	hdma.Init.SrcInc 		= DMA_SINC_FIXED;
+	hdma.Init.DestInc 		= DMA_DINC_INCREMENTED;
+	hdma.Init.SrcDataWidth 	= DMA_SRC_DATAWIDTH_WORD;
+	hdma.Init.DestDataWidth = DMA_DEST_DATAWIDTH_WORD;
+
+	hdma.Init.Priority 		= DMA_LOW_PRIORITY_HIGH_WEIGHT;
+	hdma.Init.SrcBurstLength = 1;
+	hdma.Init.DestBurstLength = 1;
+	hdma.Init.TransferAllocatedPort =
+		DMA_SRC_ALLOCATED_PORT0 | DMA_DEST_ALLOCATED_PORT1;
+	hdma.Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
+	hdma.Init.Mode 			= DMA_NORMAL;
+
+	hdma.InitLinkedList.Priority 		= DMA_LOW_PRIORITY_LOW_WEIGHT;
+	hdma.InitLinkedList.LinkStepMode 	= DMA_LSM_FULL_EXECUTION;
+	hdma.InitLinkedList.LinkAllocatedPort = DMA_LINK_ALLOCATED_PORT0 | DMA_LINK_ALLOCATED_PORT1;
+	hdma.InitLinkedList.TransferEventMode = DMA_TCEM_LAST_LL_ITEM_TRANSFER;
+	hdma.InitLinkedList.LinkedListMode 	= DMA_LINKEDLIST_CIRCULAR;
+#else /* ! defined(CONFIG_SOC_SERIES_STM32U5X) */
 	hdma.Init.Request		= DMA_REQUEST_DCMI;
 	hdma.Init.Direction		= DMA_PERIPH_TO_MEMORY;
 	hdma.Init.PeriphInc		= DMA_PINC_DISABLE;
@@ -155,6 +261,8 @@ static int stm32_dma_init(const struct device *dev)
 	hdma.Init.MemDataAlignment	= DMA_MDATAALIGN_WORD;
 	hdma.Init.Mode			= DMA_CIRCULAR;
 	hdma.Init.Priority		= DMA_PRIORITY_HIGH;
+#endif /* defined(CONFIG_SOC_SERIES_STM32U5X) */
+
 #if defined(CONFIG_SOC_SERIES_STM32F7X) || defined(CONFIG_SOC_SERIES_STM32H7X)
 	hdma.Init.FIFOMode		= DMA_FIFOMODE_DISABLE;
 #endif
@@ -164,6 +272,9 @@ static int stm32_dma_init(const struct device *dev)
 						config->dma.channel);
 #elif defined(CONFIG_SOC_SERIES_STM32L4X)
 	hdma.Instance = __LL_DMA_GET_CHANNEL_INSTANCE(config->dma.reg, config->dma.channel);
+#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+	hdma.Instance = LL_DMA_GET_CHANNEL_INSTANCE(
+		config->dma.reg, config->dma.channel);
 #endif
 
 	/* Initialize DMA HAL */
@@ -174,6 +285,20 @@ static int stm32_dma_init(const struct device *dev)
 		return -EIO;
 	}
 
+#if defined(CONFIG_SOC_SERIES_STM32U5X)
+	if (HAL_DMAEx_List_Init(&hdma) != HAL_OK) {
+		LOG_ERR("HAL_DMAEx_List_Init Failed");
+		return -EINVAL;
+	}
+	if (stm32_dma_list_init(&hdma) != HAL_OK) {
+		LOG_ERR("stm32_dma_list_init Failed");
+		return -EINVAL;
+	}
+	if (HAL_DMA_ConfigChannelAttributes(&hdma, DMA_CHANNEL_NPRIV) != HAL_OK) {
+		LOG_ERR("HAL_DMA_ConfigChannelAttributes Failed");
+		return -EINVAL;
+	}
+#endif
 	return 0;
 }
 
@@ -270,7 +395,13 @@ static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable,
 	data->hdcmi.Instance->CR &= ~(DCMI_CR_FCRC_0 | DCMI_CR_FCRC_1);
 	data->hdcmi.Instance->CR |= STM32_DCMI_GET_CAPTURE_RATE(data->capture_rate);
 
-	err = HAL_DCMI_Start_DMA(&data->hdcmi, DCMI_MODE_CONTINUOUS,
+	if (data->fmt.pixelformat == VIDEO_PIX_FMT_JPEG) {
+		data->hdcmi.Instance->CR |= DCMI_CR_JPEG;
+	}
+
+	uint32_t dcmi_mode = DCMI_MODE_CONTINUOUS;
+
+	err = HAL_DCMI_Start_DMA(&data->hdcmi, dcmi_mode,
 			(uint32_t)data->vbuf->buffer, data->vbuf->bytesused / 4);
 	if (err != HAL_OK) {
 		LOG_ERR("Failed to start DCMI DMA");
@@ -283,9 +414,13 @@ static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable,
 static int video_stm32_dcmi_enqueue(const struct device *dev, struct video_buffer *vbuf)
 {
 	struct video_stm32_dcmi_data *data = dev->data;
-	const uint32_t buffer_size = data->fmt.pitch * data->fmt.height;
+	uint32_t buffer_size = data->fmt.pitch * data->fmt.height;
 
-	if (buffer_size > vbuf->size) {
+	if (data->fmt.pixelformat == VIDEO_PIX_FMT_JPEG) {
+		buffer_size = vbuf->size;
+	}
+
+	if (0 == buffer_size || buffer_size > vbuf->size) {
 		return -EINVAL;
 	}
 
