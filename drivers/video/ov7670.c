@@ -446,9 +446,9 @@ static int ov7670_set_fmt(const struct device *dev, struct video_format *fmt)
 			if (ret < 0) {
 				return ret;
 			}
-			ret = ideo_write_cci_reg(&config->bus, OV7670_REG8(OV7670_SCALING_PCLK_DELAY),
+			ret = video_write_cci_reg(&config->bus, OV7670_REG8(OV7670_SCALING_PCLK_DELAY),
 						     resolution->pclk_delay);
-      return ret;
+			return ret;
 		}
 		i++;
 	}
@@ -565,9 +565,9 @@ static int ov7670_init(const struct device *dev)
 	/* Write initialization values to OV7670 */
 	ret = video_write_cci_multiregs8(&config->bus, ov7670_init_regtbl,
         ARRAY_SIZE(ov7670_init_regtbl));
-  if (ret < 0) {
-    return ret;
-  }
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Initialize controls */
 	return ov7670_init_controls(dev);
