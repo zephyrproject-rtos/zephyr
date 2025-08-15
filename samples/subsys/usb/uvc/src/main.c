@@ -59,7 +59,7 @@ static void app_add_format(uint32_t pixfmt, uint16_t width, uint16_t height, boo
 	}
 
 	/* Set the format to get the pitch */
-	ret = video_set_format(video_dev, &fmt);
+	ret = video_set_compose_format(video_dev, &fmt);
 	if (ret != 0) {
 		LOG_ERR("Could not set the format of %s", video_dev->name);
 		return;
@@ -157,7 +157,7 @@ int main(void)
 
 	fmt.type = VIDEO_BUF_TYPE_OUTPUT;
 
-	ret = video_set_format(video_dev, &fmt);
+	ret = video_set_compose_format(video_dev, &fmt);
 	if (ret != 0) {
 		LOG_WRN("Could not set the format of %s", video_dev->name);
 	}
