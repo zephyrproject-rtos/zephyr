@@ -90,16 +90,17 @@ struct usbh_class_data;
  * @brief USB host class instance API
  */
 struct usbh_class_api {
-	/** Initialization of the class implementation */
-	int (*init)(struct usbh_class_data *const c_data);
+	/** Host init handler, before any device is connected */
+	int (*init)(struct usbh_class_data *const c_data,
+		    struct usbh_context *const uhs_ctx);
 	/** Request completion event handler */
-	int (*request)(struct usbh_class_data *const c_data,
-		       struct uhc_transfer *const xfer, int err);
-	/** Device connected handler */
-	int (*connected)(struct usbh_class_data *const c_data,
-			 void *const desc_start_addr,
-			 void *const desc_end_addr);
-	/** Device removed handler */
+	int (*completion_cb)(struct usbh_class_data *const c_data,
+			     struct uhc_transfer *const xfer);
+	/** Device connection handler */
+	int (*probe)(struct usbh_class_data *const c_data,
+		     struct usb_device *const udev,
+		     const uint8_t iface);
+	/** Device removal handler */
 	int (*removed)(struct usbh_class_data *const c_data);
 	/** Bus suspended handler (optional) */
 	int (*suspended)(struct usbh_class_data *const c_data);
@@ -115,8 +116,10 @@ struct usbh_class_data {
 	const char *name;
 	/** Pointer to USB host stack context structure */
 	struct usbh_context *uhs_ctx;
-	/** Class code supported by this instance */
-	struct usbh_code_triple code;
+	/** Pointer to USB device this class is used for */
+	struct usb_device *udev;
+	/** Interface number for which this class matched */
+	uint8_t iface;
 	/** Pointer to host support class API */
 	struct usbh_class_api *api;
 	/** Pointer to private data */
