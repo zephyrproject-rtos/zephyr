@@ -225,7 +225,7 @@ manifest:
       groups:
         - hal
     - name: hal_renesas
-      path: modules/hal/renesas
+      path: pull/127/head
       revision: ad1ae61b2d5ac065c3277acefdb5782de64ba14f
       groups:
         - hal
