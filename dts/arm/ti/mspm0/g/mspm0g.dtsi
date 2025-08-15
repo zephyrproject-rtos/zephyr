@@ -28,7 +28,7 @@
 	};
 
 	soc {
-		timg0: timg@40084000 {
+		timg0: timg0@40084000 {
 			compatible = "ti,mspm0-timer";
 			reg = <0x40084000 0x2000>;
 			clocks = <&ckm MSPM0_CLOCK_LFCLK>;
@@ -37,13 +37,14 @@
 			ti,clk-div = <1>;
 			status = "disabled";
 
-			counter0: counter {
+			counterg0: counterg0 {
 				compatible = "ti,mspm0-timer-counter";
 				resolution = <16>;
+				status = "disabled";
 			};
 		};
 
-		tima0: tima@40860000 {
+		tima0: tima0@40860000 {
 			compatible = "ti,mspm0-timer";
 			reg = <0x40860000 0x2000>;
 			clocks = <&ckm MSPM0_CLOCK_MCLK>;
@@ -59,7 +60,7 @@
 			};
 		};
 
-		tima1: tima@40862000 {
+		tima1: tima1@40862000 {
 			compatible = "ti,mspm0-timer";
 			reg = <0x40862000 0x2000>;
 			clocks = <&ckm MSPM0_CLOCK_MCLK>;
