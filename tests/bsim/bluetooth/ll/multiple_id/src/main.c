@@ -164,7 +164,7 @@ exit:
 
 static void test_multiple_init(void)
 {
-	bst_ticker_set_next_tick_absolute(1800e6);
+	bst_ticker_set_next_tick_absolute(2400e6);
 	bst_result = In_progress;
 }
 
