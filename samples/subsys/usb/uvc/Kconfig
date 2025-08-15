@@ -6,4 +6,16 @@
 # tree, you cannot use them in your own application.
 source "samples/subsys/usb/common/Kconfig.sample_usbd"
 
+menu "UVC specific configuration"
+
+config VIDEO_MAX_RANGE_RESOLUTIONS
+	int "Maximum number of intermediate resolutions"
+	default 5
+	help
+	   Control the maximum number of resolution that will be advertised
+	   to the USB client in case of the video capture supports a range
+	   of resolutions.
+
+endmenu
+
 source "Kconfig.zephyr"
