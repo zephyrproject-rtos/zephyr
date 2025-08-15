@@ -6,3 +6,10 @@ description: WCH CH32V00x HSE Clock
 compatible: "wch,ch32v00x-hse-clock"
 
 include: [fixed-clock.yaml]
+
+properties:
+  hse-bypass:
+    type: boolean
+    description: |
+      HSE crystal oscillator bypass
+      Set the property to bypass the oscillator with an external clock.
