@@ -887,6 +887,21 @@
 			};
 		};
 
+		#define GPDMA1_REQUEST_DCMI_PSSI     86U
+		#define   DCMI_PSSI_IRQn             119
+
+		dcmi: dcmi@4202C000 {
+			compatible = "st,stm32-dcmi";
+			reg = <0x4202C000 0x400>;
+			interrupts = <DCMI_PSSI_IRQn 0>;
+			interrupt-names = "dcmi";
+			clocks = <&rcc STM32_CLOCK(AHB2, 12U)>;
+
+			dmas = <&gpdma1 5 GPDMA1_REQUEST_DCMI_PSSI (STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_PERIPH_NO_INC |
+				STM32_DMA_MEM_INC | STM32_DMA_PERIPH_8BITS | STM32_DMA_MEM_32BITS |
+				STM32_DMA_PRIORITY_HIGH) STM32_DMA_FIFO_1_4>;
+			status = "okay";
+		};
 	};
 
 	swj_port: swj_port {
