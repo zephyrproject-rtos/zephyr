@@ -397,6 +397,14 @@ static void stream_started_cb(struct bt_bap_stream *stream)
 {
 	struct broadcast_source_stream *source_stream =
 		CONTAINER_OF(stream, struct broadcast_source_stream, stream);
+	struct bt_iso_info info;
+	int err;
+
+	err = bt_iso_chan_get_info(stream->iso, &info);
+	__ASSERT(err == 0, "Failed to get ISO chan info: %d", err);
+
+	printk("Stream %p started with BIG_Handle %u and BIS_Number %u\n", stream,
+	       info.broadcaster.big_handle, info.broadcaster.bis_number);
 
 	source_stream->seq_num = 0U;
 	source_stream->sent_cnt = 0U;
