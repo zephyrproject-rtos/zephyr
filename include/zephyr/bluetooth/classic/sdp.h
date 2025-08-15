@@ -310,7 +310,7 @@ struct bt_sdp_record {
 	struct bt_sdp_attribute     *attrs;       /**< Base addr of attr array */
 	size_t                      attr_count;   /**< Number of attributes */
 	uint8_t                     index;        /**< Index of the record in LL */
-	struct bt_sdp_record        *next;        /**< Next service record */
+	sys_snode_t                 node;
 };
 
 /*
