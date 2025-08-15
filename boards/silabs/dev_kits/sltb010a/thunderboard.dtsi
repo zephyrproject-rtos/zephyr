@@ -73,10 +73,6 @@
 	swo-ref-frequency = <DT_FREQ_K(76800)>;
 };
 
-&pstate_em3 {
-	status = "disabled";
-};
-
 &usart0 {
 	pinctrl-0 = <&usart0_default>;
 	pinctrl-names = "default";

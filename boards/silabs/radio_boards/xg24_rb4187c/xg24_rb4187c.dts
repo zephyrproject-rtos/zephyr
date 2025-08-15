@@ -82,10 +82,6 @@
 	swo-ref-frequency = <DT_FREQ_M(78)>;
 };
 
-&pstate_em3 {
-	status = "disabled";
-};
-
 &hfxo {
 	ctune = <95>;
 	precision = <50>;
