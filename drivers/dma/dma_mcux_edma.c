@@ -66,7 +66,6 @@ struct dma_mcux_channel_transfer_edma_settings {
 	uint32_t source_data_size;
 	uint32_t dest_data_size;
 	uint32_t source_burst_length;
-	uint32_t dest_burst_length;
 	enum dma_channel_direction direction;
 	edma_transfer_type_t transfer_type;
 	bool valid;
@@ -462,6 +461,7 @@ static int dma_mcux_edma_configure_basic(const struct device *dev,
 {
 	edma_handle_t *p_handle = DEV_EDMA_HANDLE(dev, channel);
 	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
+	struct dma_mcux_channel_transfer_edma_settings *xfer_settings = &data->transfer_settings;
 	struct dma_block_config *block_config = config->head_block;
 	uint32_t hw_channel;
 	int ret = 0;
@@ -473,7 +473,7 @@ static int dma_mcux_edma_configure_basic(const struct device *dev,
 			     config->source_data_size,
 			     (void *)block_config->dest_address,
 			     config->dest_data_size,
-			     config->source_burst_length,
+			     xfer_settings->source_burst_length,
 			     block_config->block_size, transfer_type);
 
 	const status_t submit_status = EDMA_SubmitTransfer(p_handle, &(data->transferConfig));
@@ -488,7 +488,7 @@ static int dma_mcux_edma_configure_basic(const struct device *dev,
 	return ret;
 }
 
-static void dma_mcux_edma_configure_hardware(const struct device *dev, uint32_t channel,
+static int dma_mcux_edma_configure_hardware(const struct device *dev, uint32_t channel,
 					     struct dma_config *config)
 {
 	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
@@ -498,6 +498,14 @@ static void dma_mcux_edma_configure_hardware(const struct device *dev, uint32_t 
 	uint32_t hw_channel = dma_mcux_edma_add_channel_gap(dev, channel);
 
 	dma_mcux_edma_configure_muxes(dev, channel, config);
+
+#if defined(CONFIG_DMA_MCUX_EDMA_V3) && \
+	(!defined(FSL_FEATURE_SOC_DMAMUX_COUNT) || (FSL_FEATURE_SOC_DMAMUX_COUNT == 0))
+	if (transfer_type == kEDMA_MemoryToMemory && (sg_mode || config->block_count > 1)) {
+		LOG_WRN("mem2mem xfer scatter gather not supported");
+		return -ENOTSUP;
+	}
+#endif
 
 	if (sg_mode && config->cyclic) {
 		dma_mcux_edma_configure_sg_loop(dev, channel, config, transfer_type);
@@ -519,6 +527,8 @@ static void dma_mcux_edma_configure_hardware(const struct device *dev, uint32_t 
 	}
 
 	EDMA_EnableChannelInterrupts(DEV_BASE(dev), hw_channel, kEDMA_ErrorInterruptEnable);
+
+	return 0;
 }
 
 static inline int dma_mcux_edma_validate_cfg(const struct device *dev,
@@ -594,7 +604,15 @@ static inline void dma_mcux_edma_set_xfer_settings(const struct device *dev, uin
 	struct dma_mcux_channel_transfer_edma_settings *xfer_settings = &data->transfer_settings;
 
 	xfer_settings->source_burst_length = config->source_burst_length;
-	xfer_settings->dest_burst_length = config->dest_burst_length;
+#if defined(CONFIG_DMA_MCUX_EDMA_V3) && \
+	(!defined(FSL_FEATURE_SOC_DMAMUX_COUNT) || (FSL_FEATURE_SOC_DMAMUX_COUNT == 0))
+	struct dma_block_config *block_config = config->head_block;
+
+	if (xfer_settings->transfer_type == kEDMA_MemoryToMemory) {
+		xfer_settings->source_burst_length = block_config->block_size;
+
+	}
+#endif
 	xfer_settings->source_data_size = config->source_data_size;
 	xfer_settings->dest_data_size = config->dest_data_size;
 	xfer_settings->direction = config->channel_direction;
@@ -644,7 +662,10 @@ static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 		       sizeof(DEV_CFG(dev)->tcdpool[channel][i]));
 	}
 
-	dma_mcux_edma_configure_hardware(dev, channel, config);
+	ret = dma_mcux_edma_configure_hardware(dev, channel, config);
+	if (ret) {
+		return ret;
+	}
 
 	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
 
@@ -675,6 +696,14 @@ static int dma_mcux_edma_start(const struct device *dev, uint32_t channel)
 #endif
 	data->busy = true;
 	EDMA_StartTransfer(DEV_EDMA_HANDLE(dev, channel));
+#if defined(CONFIG_DMA_MCUX_EDMA_V3) && \
+	(!defined(FSL_FEATURE_SOC_DMAMUX_COUNT) || (FSL_FEATURE_SOC_DMAMUX_COUNT == 0))
+	struct dma_mcux_channel_transfer_edma_settings *xfer_settings = &data->transfer_settings;
+
+	if (xfer_settings->transfer_type == kEDMA_MemoryToMemory) {
+		EDMA_TriggerChannelStart(DEV_BASE(dev), channel);
+	}
+#endif
 	return 0;
 }
 
@@ -703,6 +732,16 @@ static int dma_mcux_edma_stop(const struct device *dev, uint32_t channel)
 static int dma_mcux_edma_suspend(const struct device *dev, uint32_t channel)
 {
 	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
+
+#if defined(CONFIG_DMA_MCUX_EDMA_V3) && \
+	(!defined(FSL_FEATURE_SOC_DMAMUX_COUNT) || (FSL_FEATURE_SOC_DMAMUX_COUNT == 0))
+	struct dma_mcux_channel_transfer_edma_settings *xfer_settings = &data->transfer_settings;
+
+	if (xfer_settings->transfer_type == kEDMA_MemoryToMemory) {
+		/* can't suspend this transfer, effectively a not implemented function */
+		return -ENOSYS;
+	}
+#endif
 
 	if (!data->busy) {
 		return -EINVAL;
