@@ -1,0 +1,49 @@
+/*
+ * Copyright 2025 Leica Geosystem AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	reserved_memory: reserved-memory@28000000 {
+		compatible = "soc-nv-flash";
+		reg = <0x28000000 DT_SIZE_M(8)>;
+		erase-block-size = <65536>;
+		write-block-size = <4>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* This code memory region must match what the TF-M
+			 * project has defined for that board - the milti image
+			 * boot is used in Zephyr. See memory layout details in:
+			 *
+			 * https://git.trustedfirmware.org/plugins/gitiles/TF-M/trusted-firmware-m.git/+/refs/heads/main/platform/ext/target/arm/mps3/corstone300/common/partition/flash_layout.h
+			 * https://git.trustedfirmware.org/plugins/gitiles/TF-M/trusted-firmware-m.git/+/refs/heads/main/platform/ext/target/arm/mps3/corstone310/common/partition/flash_layout.h
+			 */
+			slot0_partition: partition@0 {
+				reg = <0x00000000 DT_SIZE_K(512)>;
+			};
+
+			slot0_ns_partition: partition@80000 {
+				reg = <0x00080000 DT_SIZE_M(3)>;
+			};
+
+			slot1_partition: partition@380000 {
+				reg = <0x00380000 DT_SIZE_K(512)>;
+			};
+
+			slot1_ns_partition: partition@400000 {
+				reg = <0x00400000 DT_SIZE_M(3)>;
+			};
+
+			scratch_partition: partition@700000 {
+				reg = <0x00700000 DT_SIZE_K(512)>;
+			};
+		};
+	};
+};
