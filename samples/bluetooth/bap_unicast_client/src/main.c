@@ -223,7 +223,14 @@ static void stream_configured(struct bt_bap_stream *stream, const struct bt_bap_
 
 static void stream_qos_set(struct bt_bap_stream *stream)
 {
-	printk("Audio Stream %p QoS set\n", stream);
+	struct bt_iso_info info;
+	int err;
+
+	err = bt_iso_chan_get_info(stream->iso, &info);
+	__ASSERT(err == 0, "Failed to get ISO chan info: %d", err);
+
+	printk("Audio Stream %p QoS set with CIG_ID %u and CIS_ID %u\n", stream,
+	       info.unicast.cig_id, info.unicast.cis_id);
 
 	k_sem_give(&sem_stream_qos);
 }
