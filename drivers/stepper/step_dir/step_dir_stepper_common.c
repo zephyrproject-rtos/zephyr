@@ -243,6 +243,12 @@ int step_dir_stepper_common_move_by(const struct device *dev, const int32_t micr
 		return -EINVAL;
 	}
 
+	if (micro_steps == 0) {
+		stepper_trigger_callback(data->dev, STEPPER_EVENT_STEPS_COMPLETED);
+		config->timing_source->stop(dev);
+		return 0;
+	}
+
 	K_SPINLOCK(&data->lock) {
 		data->run_mode = STEPPER_RUN_MODE_POSITION;
 		data->step_count = micro_steps;
