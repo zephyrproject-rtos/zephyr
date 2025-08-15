@@ -94,10 +94,6 @@
 	clock-frequency = <78000000>;
 };
 
-&pstate_em3 {
-	status = "disabled";
-};
-
 &hfxo {
 	status = "okay";
 	ctune = <106>;
