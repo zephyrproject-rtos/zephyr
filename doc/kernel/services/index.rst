@@ -53,33 +53,35 @@ threads and ISRs.
 
 The following table summarizes their high-level features.
 
-===============   ==============      ===================    ==============      ==============   =================  ==============  ===============================
-Object            Bidirectional?      Data structure         Data item size      Data Alignment   ISRs can receive?  ISRs can send?  Overrun handling
-===============   ==============      ===================    ==============      ==============   =================  ==============  ===============================
-FIFO              No                  Queue                  Arbitrary [1]              4 B [2]   Yes [3]            Yes             N/A
-LIFO              No                  Queue                  Arbitrary [1]              4 B [2]   Yes [3]            Yes             N/A
-Stack             No                  Array                  Word                          Word   Yes [3]            Yes             Undefined behavior
-Message queue     No                  Ring buffer            Arbitrary [6]         Power of two   Yes [3]            Yes             Pend thread or return -errno
-Mailbox           Yes                 Queue                  Arbitrary [1]            Arbitrary   No                 No              N/A
-Pipe              No                  Ring buffer [4]        Arbitrary                Arbitrary   Yes [5]            Yes [5]         Pend thread or return -errno
-===============   ==============      ===================    ==============      ==============   =================  ==============  ===============================
+===============   ==============      ===================    ================    =================   =================  ==============  ===============================
+Object            Bidirectional?      Data structure         Data item size      Data Alignment      ISRs can receive?  ISRs can send?  Overrun handling
+===============   ==============      ===================    ================    =================   =================  ==============  ===============================
+FIFO              No                  Queue                  Arbitrary [#f1]_    4 B [#f2]_          Yes [#f3]_         Yes             N/A
+LIFO              No                  Queue                  Arbitrary [#f1]_    4 B [#f2]_          Yes [#f3]_         Yes             N/A
+Stack             No                  Array                  Word                Word                Yes [#f3]_         Yes             Undefined behavior
+Message queue     No                  Ring buffer            Arbitrary [#f6]_    Power of two        Yes [#f3]_         Yes             Pend thread or return -errno
+Mailbox           Yes                 Queue                  Arbitrary [#f1]_    Arbitrary           No                 No              N/A
+Pipe              No                  Ring buffer [#f4]_     Arbitrary           Arbitrary           Yes [#f5]_         Yes [#f5]_      Pend thread or return -errno
+===============   ==============      ===================    ================    =================   =================  ==============  ===============================
 
-[1] Callers allocate space for queue overhead in the data
-elements themselves.
+.. rubric:: Footnotes
 
-[2] Objects added with k_fifo_alloc_put() and k_lifo_alloc_put()
-do not have alignment constraints, but use temporary memory from the
-calling thread's resource pool.
+.. [#f1] Callers allocate space for queue overhead in the data
+         elements themselves.
 
-[3] ISRs can receive only when passing K_NO_WAIT as the timeout
-argument.
+.. [#f2] Objects added with :c:func:`k_fifo_alloc_put()` and :c:func:`k_lifo_alloc_put()`
+         do not have alignment constraints, but use temporary memory from the
+         calling thread's resource pool.
 
-[4] Optional.
+.. [#f3] ISRs can receive only when passing K_NO_WAIT as the timeout
+         argument.
 
-[5] ISRS can send and/or receive only when passing K_NO_WAIT as the
-timeout argument.
+.. [#f4] Optional.
 
-[6] Data item size must be a multiple of the data alignment.
+.. [#f5] ISRs can send and/or receive only when passing K_NO_WAIT as the
+         timeout argument.
+
+.. [#f6] Data item size must be a multiple of the data alignment.
 
 .. toctree::
    :maxdepth: 1
