@@ -46,6 +46,10 @@ choice NULL_POINTER_EXCEPTION_DETECTION
 
 endchoice
 
+# Get flash configuration for NS image from dts flash partition
+config USE_DT_CODE_PARTITION
+	default y if TRUSTED_EXECUTION_NONSECURE
+
 # By default, if we build for a Non-Secure version of the board,
 # force building with TF-M as the Secure Execution Environment.
 config BUILD_WITH_TFM
