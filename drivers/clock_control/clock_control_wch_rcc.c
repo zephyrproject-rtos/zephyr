@@ -133,6 +133,18 @@ static int clock_control_wch_rcc_fv2x_v3x_pll_init(const struct device *dev)
 		    config->div == 2) {
 			RCC->CFGR0 |= RCC_PLLXTPRE;
 		}
+		if (IS_ENABLED(CONFIG_DT_HAS_WCH_CH32FV208_PLL_CLOCK_ENABLED)) {
+			if (config->div == 1) {
+				/* TODO: report error */
+			} else if (config->div == 2) {
+				/* TODO: check USB prescaler is set to 5 */
+				RCC->CFGR0 |= RCC_USBPRE;
+			} else if (config->div == 8) {
+				RCC->CFGR0 |= RCC_PLLXTPRE;
+			} else {
+				/* /4 already the chip default */
+			}
+		}
 		RCC->CFGR0 |= RCC_PLLSRC;
 	} else if (IS_ENABLED(WCH_RCC_PLL_SRC_IS_HSI)) {
 		/* EXTEN_PLL_HSI_PRE defaults to 0 which is /2 */
