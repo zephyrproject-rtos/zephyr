@@ -10,4 +10,5 @@ supported:
   - pwm
   - adc
   - i2c
+  - counter
 vendor: renesas
