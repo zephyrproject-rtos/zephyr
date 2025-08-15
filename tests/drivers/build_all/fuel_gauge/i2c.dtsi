@@ -19,6 +19,12 @@ bq27z746@1 {
 	status = "okay";
 };
 
+hy4245:hy4245@55 {
+	compatible = "hycon,hy4245";
+	status = "ok";
+	reg = <0x55>;
+};
+
 sbs-gauge-new-api@2 {
 	compatible = "sbs,sbs-gauge-new-api";
 	reg = <0x2>;
