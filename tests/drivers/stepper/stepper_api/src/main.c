@@ -72,6 +72,9 @@ static void *stepper_setup(void)
 			  &stepper_signal);
 
 	zassert_not_null(fixture.dev);
+	zassert_equal(
+		stepper_set_event_callback(fixture.dev, fixture.callback, (void *)fixture.dev), 0,
+		"Failed to set event callback");
 	(void)stepper_enable(fixture.dev);
 	return &fixture;
 }
@@ -131,12 +134,9 @@ ZTEST_F(stepper, test_target_position_w_fixed_step_interval)
 	int ret;
 
 	ret = stepper_set_microstep_interval(fixture->dev, 100 * USEC_PER_SEC);
-
 	if (ret == -ENOSYS) {
 		ztest_test_skip();
 	}
-	/* Pass the function name as user data */
-	(void)stepper_set_event_callback(fixture->dev, fixture->callback, (void *)fixture->dev);
 
 	(void)stepper_move_to(fixture->dev, pos);
 
@@ -154,7 +154,6 @@ ZTEST_F(stepper, test_move_by_positive_step_count)
 	int32_t steps = 20;
 
 	(void)stepper_set_microstep_interval(fixture->dev, 100 * USEC_PER_SEC);
-	(void)stepper_set_event_callback(fixture->dev, fixture->callback, (void *)fixture->dev);
 	(void)stepper_move_by(fixture->dev, steps);
 
 	POLL_AND_CHECK_SIGNAL(
@@ -169,7 +168,6 @@ ZTEST_F(stepper, test_move_by_negative_step_count)
 	int32_t steps = -20;
 
 	(void)stepper_set_microstep_interval(fixture->dev, 100 * USEC_PER_SEC);
-	(void)stepper_set_event_callback(fixture->dev, fixture->callback, (void *)fixture->dev);
 	(void)stepper_move_by(fixture->dev, steps);
 
 	POLL_AND_CHECK_SIGNAL(
@@ -181,8 +179,6 @@ ZTEST_F(stepper, test_move_by_negative_step_count)
 
 ZTEST_F(stepper, test_stop)
 {
-	(void)stepper_set_event_callback(fixture->dev, fixture->callback, (void *)fixture->dev);
-
 	/* Run the stepper in positive direction */
 	(void)stepper_run(fixture->dev, STEPPER_DIRECTION_POSITIVE);
 
@@ -205,4 +201,23 @@ ZTEST_F(stepper, test_stop)
 	} else {
 		zassert_unreachable("Stepper stop failed");
 	}
+}
+
+ZTEST_F(stepper, test_move_by_zero_steps)
+{
+	bool is_moving;
+	int err;
+
+	err = stepper_set_microstep_interval(fixture->dev, 100 * USEC_PER_SEC);
+	if (err == -ENOSYS) {
+		ztest_test_skip();
+	}
+	zassert_equal(err, 0, "Failed to set microstep interval");
+
+	zassert_equal(stepper_move_by(fixture->dev, 0), 0, "Failed to move by zero steps");
+	POLL_AND_CHECK_SIGNAL(stepper_signal, stepper_event, STEPPER_EVENT_STEPS_COMPLETED,
+			      K_NO_WAIT);
+	zassert_equal(stepper_is_moving(fixture->dev, &is_moving), 0,
+		      "Failed to check if stepper is moving");
+	zassert_equal(is_moving, false, "Stepper is still moving");
 }
