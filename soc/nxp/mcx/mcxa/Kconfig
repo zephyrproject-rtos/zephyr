@@ -13,7 +13,6 @@ config SOC_FAMILY_MCXA
 config SOC_MCXA153
 	select CPU_CORTEX_M33
 	select HAS_MCUX_CACHE
-	select HAS_MCUX_MCX_CMC
 	select HAS_MCUX_OS_TIMER
 
 config SOC_MCXA156
@@ -21,7 +20,6 @@ config SOC_MCXA156
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
 	select HAS_MCUX_CACHE
-	select HAS_MCUX_MCX_CMC
 	select HAS_MCUX_OS_TIMER
 
 config SOC_MCXA166
@@ -30,7 +28,6 @@ config SOC_MCXA166
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
 	select HAS_MCUX_CACHE
-	select HAS_MCUX_MCX_CMC
 
 config SOC_MCXA276
 	select CPU_CORTEX_M33
@@ -38,4 +35,3 @@ config SOC_MCXA276
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
 	select HAS_MCUX_CACHE
-	select HAS_MCUX_MCX_CMC
