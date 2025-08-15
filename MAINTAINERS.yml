@@ -3312,7 +3312,7 @@ NEORV32 platform:
   tests:
     - boards.neorv32
 
-NXP Platform Drivers:
+NXP Drivers:
   status: maintained
   maintainers:
     - dleach02
@@ -3343,29 +3343,21 @@ NXP Platform Drivers:
     - include/zephyr/drivers/*/*mcux*
     - arch/arm/core/mpu/nxp_mpu.c
     - dts/bindings/*/nxp*
-  files-exclude:
-    - drivers/wifi/
-    - drivers/bluetooth/
-    - drivers/usb/
   files-regex-exclude:
     - .*s32.*
-  labels:
-    - "platform: NXP Drivers"
   description: NXP Drivers
 
-NXP Platform MCUX USB:
+NXP MCUX USB Driver:
   status: maintained
   maintainers:
     - mmahadevan108
     - MarkWangChinese
   files:
     - drivers/usb/*/*mcux*
-    - boards/nxp/usb_kw24d512/
-  labels:
-    - "platform: NXP Drivers"
   description: NXP MCUX USB shim drivers
+  parents: ["NXP Drivers", "USB"]
 
-NXP Platform Wireless:
+NXP Wireless MCUs:
   status: maintained
   maintainers:
     - dleach02
@@ -3376,19 +3368,39 @@ NXP Platform Wireless:
   files:
     - boards/nxp/*mcxw*/
     - boards/nxp/*rw*/
-    - drivers/*/*mcxw*.c
-    - drivers/bluetooth/hci/*nxp*
-    - drivers/hdlc_rcp_if/*nxp*
-    - drivers/ieee802154/ieee802154_kw41z.c
-    - drivers/wifi/nxp/
-    - samples/bluetooth/**/*rw*
+    - soc/nxp/mcx/mcxw/
+    - soc/nxp/rw/
     - samples/net/**/*mcxw*
     - samples/net/**/*nxp*
     - samples/net/**/*rw*
-    - soc/nxp/mcx/mcxw/
-    - soc/nxp/rw/
-  labels:
-    - "platform: NXP Drivers"
+    - samples/bluetooth/**/*rw*
+  parents: "NXP Platforms (MCU)"
+
+NXP Wifi Drivers:
+  status: maintained
+  maintainers:
+    - MaochenWang1
+  files:
+    - drivers/wifi/nxp/
+  parents: NXP Drivers
+
+NXP BLE Drivers:
+  status: maintained
+  maintainers:
+    - axelnxp
+  collaborators:
+    - yeaissa
+  files:
+    - drivers/*/*mcxw*.c
+    - drivers/bluetooth/hci/*nxp*
+  parents: NXP Drivers
+
+NXP IEEE802154:
+  status: maintained
+  files:
+    - drivers/hdlc_rcp_if/*nxp*
+    - drivers/ieee802154/ieee802154_kw41z.c
+  parents: NXP Drivers
 
 NXP Platforms (MCU):
   status: maintained
@@ -3403,27 +3415,65 @@ NXP Platforms (MCU):
   files:
     - boards/nxp/mimxrt*/
     - boards/nxp/frdm*/
-    - boards/nxp/lpcxpress*/
     - boards/nxp/twr_*/
-    - boards/nxp/*rw*/
     - boards/nxp/hexiwear/
     - boards/nxp/common/
     - boards/nxp/*
     - soc/nxp/common/
     - soc/nxp/imxrt/
-    - soc/nxp/kinetis/
-    - soc/nxp/lpc/
-    - soc/nxp/rw/
     - soc/nxp/mcx/
     - dts/arm/nxp/
     - samples/boards/nxp*/
   files-exclude:
     - dts/arm/nxp/nxp_imx*
+    - samples/net/**/*mcxw*
+    - samples/net/**/*nxp*
+    - samples/net/**/*rw*
   files-regex-exclude:
     - .*s32.*
   labels:
-    - "platform: NXP"
+    - "platform: NXP (Microcontrollers)"
   description: NXP MCU Platforms supported by MCUXpresso suite
+
+NXP Kinetis Platforms:
+  status: maintained
+  maintainers:
+    - mmahadevan108
+  collaborators:
+    - DerekSnell
+    - EmilioCBen
+    - butok
+  files:
+    - soc/nxp/kinetis/
+    - boards/nxp/frdm_k*/
+  parents: NXP Platforms (MCU)
+
+NXP LPC Platforms:
+  status: maintained
+  maintainers:
+    - mmahadevan108
+  collaborators:
+    - DerekSnell
+    - EmilioCBen
+    - butok
+  files:
+    - boards/nxp/lpcxpress*/
+    - soc/nxp/lpc/
+  parents: NXP Platforms (MCU)
+
+NXP MCU Documentation:
+  status: maintained
+  maintainers:
+    - DerekSnell
+  collaborators:
+    - jacob-wienecke-nxp
+  files:
+    - boards/nxp/mimxrt*/doc/
+    - boards/nxp/frdm*/doc/
+    - boards/nxp/lpcxpress*/doc/
+    - boards/nxp/twr_*/doc/
+    - boards/nxp/*rw*/doc/
+  parents: NXP Platforms (MCU)
 
 NXP Platforms (MPU):
   status: maintained
@@ -3444,8 +3494,8 @@ NXP Platforms (MPU):
   files-regex:
     - boards/nxp/m?imx[^(rt)].*/
   labels:
-    - "platform: NXP MPU"
-  description: NXP MPU platforms
+    - "platform: NXP I.MX"
+  description: NXP I.MX platforms
 
 NXP Platforms (Robotics Products):
   status: maintained
@@ -3459,9 +3509,8 @@ NXP Platforms (Robotics Products):
     - boards/nxp/rddrone_fmuk66/
     - boards/nxp/mr_canhubk3/
     - boards/nxp/ucans32k1sic/
-  labels:
-    - "platform: NXP Robotics"
   description: NXP Robotics Module Platform Products
+  parents: ["NXP Platforms (S32)", "NXP Platforms (MCU)"]
 
 NXP Platforms (S32):
   status: maintained
@@ -3501,9 +3550,8 @@ NXP Platforms (Xtensa):
     - soc/nxp/imxrt/*/hifi4/
     - soc/nxp/imxrt/imxrt[567]xx/CMakeLists.txt
     - soc/nxp/imxrt/imxrt[567]xx/Kconfig*
-  labels:
-    - "platform: NXP Xtensa"
   description: NXP Xtensa platforms
+  parents: ["NXP Platforms (MPU)", "NXP Platforms (MCU)"]
 
 Native_sim and POSIX arch:
   status: maintained
