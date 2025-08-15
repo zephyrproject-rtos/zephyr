@@ -127,10 +127,36 @@ struct usbh_class_data {
 };
 
 /**
+ * @cond INTERNAL_HIDDEN
+ *
+ * Variables used by the USB host stack but not exposed to the class
+ * through the class API.
  */
-#define USBH_DEFINE_CLASS(name) \
-	static STRUCT_SECTION_ITERABLE(usbh_class_data, name)
+struct usbh_class_node {
+	/** Class information exposed to host class implementations (drivers). */
+	struct usbh_class_data *const c_data;
+};
+/* @endcond */
 
+/**
+ * @brief Define USB host support class data
+ *
+ * Macro defines class (function) data, as well as corresponding node
+ * structures used internally by the stack.
+ *
+ * @param[in] class_name Class name
+ * @param[in] class_api  Pointer to struct usbh_class_api
+ * @param[in] class_priv Class private data
+ */
+#define USBH_DEFINE_CLASS(class_name, class_api, class_priv)			\
+	static struct usbh_class_data class_data_##class_name = {		\
+		.name = STRINGIFY(class_name),					\
+		.api = class_api,						\
+		.priv = class_priv,						\
+	};									\
+	static STRUCT_SECTION_ITERABLE(usbh_class_node, class_name) = {		\
+		.c_data = &class_data_##class_name,				\
+	};
 
 /**
  * @brief Initialize the USB host support;
