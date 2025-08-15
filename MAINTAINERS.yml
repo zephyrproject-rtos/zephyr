@@ -1079,21 +1079,49 @@ Disk:
     - decsny
   files:
     - include/zephyr/storage/disk_access.h
-    - include/zephyr/drivers/disk.h
-    - drivers/disk/
     - subsys/disk/
-    - subsys/sd/
-    - tests/subsys/sd/
-    - tests/drivers/disk/
-    - tests/drivers/build_all/disk/
-    - include/zephyr/sd/
-    - dts/bindings/sd/
-    - dts/bindings/mmc/
     - dts/bindings/disk/
   labels:
     - "area: Disk Access"
   tests:
     - drivers.disk
+
+"Drivers: Disk":
+  status: maintained
+  maintainers:
+    - danieldegrasse
+  collaborators:
+    - jfischer-no
+  files:
+    - include/zephyr/drivers/disk.h
+    - drivers/disk/
+    - tests/drivers/disk/
+    - tests/drivers/build_all/disk/
+  parents: Disk
+
+SD:
+  status: maintained
+  maintainers:
+    - danieldegrasse
+  collaborators:
+    - decsny
+  files:
+    - subsys/sd/
+    - tests/subsys/sd/
+    - include/zephyr/sd/
+    - dts/bindings/sd/
+  parents: Disk
+
+MMC:
+  status: maintained
+  maintainers:
+    - decsny
+  files:
+    - dts/bindings/mmc/
+    - subsys/sd/mmc.c
+    - drivers/disk/mmc_subsys.c
+    - drivers/disk/Kconfig.mmc
+  parents: SD
 
 Display drivers:
   status: odd fixes
@@ -2193,9 +2221,10 @@ Documentation Infrastructure:
     - dts/bindings/sdhc/
     - doc/hardware/peripherals/sdhc.rst
   labels:
-    - "area: Disk Access"
+    - "area: SDHC"
   tests:
     - drivers.sdhc
+  parents: SD
 
 "Drivers: SENT":
   status: maintained
