@@ -73,6 +73,23 @@ static void app_add_format(uint32_t pixfmt, uint16_t width, uint16_t height, boo
 	uvc_add_format(uvc_dev, &fmt);
 }
 
+struct video_resolution {
+	uint16_t width;
+	uint16_t height;
+};
+
+static struct video_resolution video_common_fmts[] = {
+	{ .width = 3840,	.height = 2160,	},	/* UHD */
+	{ .width = 1920,	.height = 1080,	},	/* FHD */
+	{ .width = 1280,	.height = 1024,	},	/* SXGA */
+	{ .width = 1280,	.height = 720,	},	/* HD */
+	{ .width = 800,		.height = 600,	},	/* SVGA */
+	{ .width = 854,		.height = 480,	},	/* WVGA */
+	{ .width = 640,		.height = 480,	},	/* VGA */
+	{ .width = 320,		.height = 240,	},	/* QVGA */
+	{ .width = 160,		.height = 120,	},	/* QQVGA */
+};
+
 /* Submit to UVC only the formats expected to be working (enough memory for the size, etc.) */
 static void app_add_filtered_formats(void)
 {
@@ -80,12 +97,37 @@ static void app_add_filtered_formats(void)
 
 	for (int i = 0; video_caps.format_caps[i].pixelformat != 0; i++) {
 		const struct video_format_cap *vcap = &video_caps.format_caps[i];
+		int range_count = 0;
 
 		app_add_format(vcap->pixelformat, vcap->width_min, vcap->height_min, has_std_fmts);
 
 		if (vcap->width_min != vcap->width_max || vcap->height_min != vcap->height_max) {
 			app_add_format(vcap->pixelformat, vcap->width_max, vcap->height_max,
 				       has_std_fmts);
+		}
+
+		if (vcap->width_step == 0 && vcap->height_step == 0) {
+			continue;
+		}
+
+		/* RANGE Resolution processing */
+		for (int j = 0; j < ARRAY_SIZE(video_common_fmts); j++) {
+			if (range_count >= CONFIG_VIDEO_MAX_RANGE_RESOLUTIONS) {
+				break;
+			}
+			if (!IN_RANGE(video_common_fmts[j].width,
+				      vcap->width_min, vcap->width_max) ||
+			    !IN_RANGE(video_common_fmts[j].height,
+				      vcap->height_min, vcap->height_max)) {
+				continue;
+			}
+			if ((video_common_fmts[j].width - vcap->width_min) % vcap->width_step ||
+			    (video_common_fmts[j].height - vcap->height_min) % vcap->height_step) {
+				continue;
+			}
+
+			app_add_format(vcap->pixelformat, video_common_fmts[j].width,
+				       video_common_fmts[j].height, has_std_fmts);
 		}
 	}
 }
