@@ -812,6 +812,10 @@ int ll_init(struct k_sem *sem_rx)
 						(TEST_TICKER_TICKS_SLOT_US));
 #endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
 
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+		test_ticker_ext[ticker_id].expire_info_id = TICKER_NULL;
+#endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+
 		ret = ticker_start_ext(
 #else /* !CONFIG_BT_TICKER_EXT */
 		ret = ticker_start(
