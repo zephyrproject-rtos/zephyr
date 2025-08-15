@@ -183,7 +183,7 @@ int main(void)
 	LOG_INF("Preparing %u buffers of %u bytes", CONFIG_VIDEO_BUFFER_POOL_NUM_MAX, bsize);
 
 	for (int i = 0; i < CONFIG_VIDEO_BUFFER_POOL_NUM_MAX; i++) {
-		vbuf = video_buffer_alloc(bsize, K_NO_WAIT);
+		vbuf = video_buffer_aligned_alloc(bsize, CONFIG_VIDEO_BUFFER_POOL_ALIGN, K_NO_WAIT);
 		if (vbuf == NULL) {
 			LOG_ERR("Could not allocate the video buffer");
 			return -ENOMEM;
