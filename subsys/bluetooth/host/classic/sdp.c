@@ -68,7 +68,7 @@ struct bt_sdp {
 	/* TODO: Allow more than one pending request */
 };
 
-static struct bt_sdp_record *db;
+static sys_slist_t sdp_db = SYS_SLIST_STATIC_INIT(&sdp_db);
 static uint8_t num_services;
 
 static struct bt_sdp bt_sdp_pool[CONFIG_BT_MAX_CONN];
@@ -437,17 +437,14 @@ static uint32_t search_uuid(struct bt_sdp_data_elem *elem, struct bt_uuid *uuid,
  * @return Pointer to the record where the iterator stopped, or NULL if all
  *  records are covered
  */
-static struct bt_sdp_record *bt_sdp_foreach_svc(bt_sdp_svc_func_t func,
-						void *user_data)
+static struct bt_sdp_record *bt_sdp_foreach_svc(bt_sdp_svc_func_t func, void *user_data)
 {
-	struct bt_sdp_record *rec = db;
+	struct bt_sdp_record *rec, *next;
 
-	while (rec) {
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&sdp_db, rec, next, node) {
 		if (func(rec, user_data) == BT_SDP_ITER_STOP) {
 			break;
 		}
-
-		rec = rec->next;
 	}
 	return rec;
 }
@@ -1655,11 +1652,16 @@ void bt_sdp_init(void)
 
 int bt_sdp_register_service(struct bt_sdp_record *service)
 {
-	uint32_t handle = SDP_SERVICE_HANDLE_BASE;
+	uint8_t index = 0;
 
 	if (!service) {
 		LOG_ERR("No service record specified");
 		return 0;
+	}
+
+	if (sys_slist_find(&sdp_db, &service->node, NULL)) {
+		LOG_ERR("Service already registered");
+		return -EEXIST;
 	}
 
 	if (num_services == BT_SDP_MAX_SERVICES) {
@@ -1667,17 +1669,27 @@ int bt_sdp_register_service(struct bt_sdp_record *service)
 		return -ENOMEM;
 	}
 
-	if (db) {
-		handle = db->handle + 1;
+	if (!sys_slist_is_empty(&sdp_db)) {
+		struct bt_sdp_record *last;
+
+		last = CONTAINER_OF(sys_slist_peek_tail(&sdp_db), struct bt_sdp_record, node);
+		index = last->index + 1;
+
+		if (last->index > index) {
+			LOG_ERR("Registered record is full");
+			return -EOVERFLOW;
+		}
 	}
 
-	service->next = db;
-	service->index = num_services++;
-	service->handle = handle;
-	*((uint32_t *)(service->attrs[0].val.data)) = handle;
-	db = service;
+	service->index = index;
+	service->handle = SDP_SERVICE_HANDLE_BASE + index;
+	*((uint32_t *)(service->attrs[0].val.data)) = service->handle;
 
-	LOG_DBG("Service registered at %u", handle);
+	sys_slist_append(&sdp_db, &service->node);
+
+	num_services++;
+
+	LOG_DBG("Service registered at %u", service->handle);
 
 	return 0;
 }
