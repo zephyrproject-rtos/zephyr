@@ -148,7 +148,7 @@ config NXP_IMX_EXTERNAL_HYPERRAM
 
 config SECOND_CORE_MCUX
 	bool "Dual core operation on the RT11xx series"
-	depends on SOC_SERIES_IMXRT11XX || SOC_SERIES_IMXRT118X
+	depends on SOC_SERIES_IMXRT11XX || SOC_SERIES_IMXRT118X || SOC_SERIES_IMXRT7XX
 	help
 	  Indicates the second core will be enabled, and the part will run
 	  in dual core mode. Enables dual core operation on the RT11xx series,

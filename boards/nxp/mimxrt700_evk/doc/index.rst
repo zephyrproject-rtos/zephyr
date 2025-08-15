@@ -128,6 +128,18 @@ To build the hello_world sample for the i.MX RT700 HiFi 4 DSP core:
    :board: mimxrt700_evk/mimxrt798s/hifi4
    :goals: build
 
+Multicore Core Operation
+************************
+
+The MIMXRT700-EVK supports multicore core operation with all cores, the Cortex-M33 CPU0, Cortex-M33 CPU1,
+HiFi1 DSP and HiFi4 DSP.
+By default, the CM33 CPU0 core is the boot core and is responsible for initializing the system and
+starting the CM33 CPU1 core and/or HiFi4 DSP.
+The CM33 CPU1 is responsible to boot the HiFi1 DSP.
+
+Usually boot process is that core responsible for booting the secondary core(s) will copy its firmware/image
+to the designated memory location and then release the secondary core from reset.
+
 Programming and Debugging
 *************************
 

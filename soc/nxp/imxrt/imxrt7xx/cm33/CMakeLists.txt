@@ -13,6 +13,10 @@ zephyr_include_directories(.)
 
 zephyr_sources(soc.c)
 
+if(CONFIG_SOC_MIMXRT798S_CM33_CPU0)
+  zephyr_sources(mpu_regions.c)
+endif()
+
 if(CONFIG_FLASH_MCUX_XSPI_XIP)
   zephyr_sources(flash_clock_setup.c)
   zephyr_code_relocate(FILES flash_clock_setup.c LOCATION ${CONFIG_FLASH_MCUX_XSPI_XIP_MEM}_TEXT)
