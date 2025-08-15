@@ -119,6 +119,8 @@ struct usbh_class_data {
 	const char *name;
 	/** Pointer to USB host stack context structure */
 	struct usbh_context *uhs_ctx;
+	/** System linked list node for registered classes */
+	sys_snode_t node;
 	/** Class code supported by this instance */
 	struct usbh_code_triple code;
 	/** Pointer to host support class API */

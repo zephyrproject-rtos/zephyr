@@ -10,9 +10,11 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/init.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/usb/usbh.h>
 
 #include "usbh_internal.h"
 #include "usbh_device.h"
+#include "usbh_class.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uhs, CONFIG_USBH_LOG_LEVEL);
@@ -193,13 +195,18 @@ int usbh_init_device_intl(struct usbh_context *const uhs_ctx)
 	}
 
 	sys_dlist_init(&uhs_ctx->udevs);
+	sys_slist_init(&uhs_ctx->class_list);
 
-	STRUCT_SECTION_FOREACH(usbh_class_data, cdata) {
-		/*
-		 * For now, we have not implemented any class drivers,
-		 * so just keep it as placeholder.
-		 */
-		break;
+	ret = usbh_register_all_classes(uhs_ctx);
+	if (ret != 0) {
+		LOG_ERR("Failed to auto-register class instances");
+		return ret;
+	}
+
+	ret = usbh_init_registered_classes(uhs_ctx);
+	if (ret != 0) {
+		LOG_ERR("Failed to initialize all registered class instances");
+		return ret;
 	}
 
 	return 0;
