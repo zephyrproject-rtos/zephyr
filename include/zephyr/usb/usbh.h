@@ -90,23 +90,30 @@ struct usbh_class_data;
  * @brief USB host class instance API
  */
 struct usbh_class_api {
-	/** Initialization of the class implementation */
-	int (*init)(struct usbh_class_data *const c_data);
+	/** Host init handler, before any device is connected */
+	int (*init)(struct usbh_class_data *const c_data,
+		    struct usbh_context *const uhs_ctx);
 	/** Request completion event handler */
-	int (*request)(struct usbh_class_data *const c_data,
-		       struct uhc_transfer *const xfer, int err);
-	/** Device connected handler */
-	int (*connected)(struct usbh_class_data *const c_data,
-			 void *const desc_start_addr,
-			 void *const desc_end_addr);
-	/** Device removed handler */
-	int (*removed)(struct usbh_class_data *const c_data);
+	int (*completion_cb)(struct usbh_class_data *const c_data,
+			     struct usb_device *const udev,
+			     struct uhc_transfer *const xfer);
+	/** Device connection handler */
+	int (*probe)(struct usbh_class_data *const c_data,
+		     struct usb_device *const udev,
+		     void *const desc_start_addr,
+		     void *const desc_end_addr);
+	/** Device removal handler */
+	int (*removed)(struct usbh_class_data *const c_data,
+		       struct usb_device *const udev);
 	/** Bus remote wakeup handler */
-	int (*rwup)(struct usbh_class_data *const c_data);
+	int (*rwup)(struct usbh_class_data *const c_data,
+		    struct usb_device *const udev);
 	/** Bus suspended handler */
-	int (*suspended)(struct usbh_class_data *const c_data);
+	int (*suspended)(struct usbh_class_data *const c_data,
+			 struct usb_device *const udev);
 	/** Bus resumed handler */
-	int (*resumed)(struct usbh_class_data *const c_data);
+	int (*resumed)(struct usbh_class_data *const c_data,
+		       struct usb_device *const udev);
 };
 
 /**
