@@ -26,9 +26,20 @@ typedef enum __packed {
 	BT_AVCTP_PKT_TYPE_END = 0b11,
 } bt_avctp_pkt_type_t;
 
+struct bt_avctp_header_common {
+	uint8_t byte0;  /** [7:4]: Transaction label, [3:2]: Packet_type, [1]: C/R, [0]: IPID */
+} __packed;
+
 struct bt_avctp_header {
-	uint8_t byte0; /** [7:4]: Transaction label, [3:2]: Packet_type, [1]: C/R, [0]: IPID */
-	uint16_t pid;  /** Profile Identifier */
+	struct bt_avctp_header_common common; /** Common header */
+
+	union {
+		uint16_t pid;  /** Profile Identifier */
+		struct __packed {
+			uint8_t number_packet; /** Number of packets */
+			uint16_t pid;  /** Profile Identifier */
+		} fragmented;
+	};
 } __packed;
 
 /** Transaction label provided by the application and is replicated by the sender of the message in
@@ -74,13 +85,47 @@ struct bt_avctp;
 struct bt_avctp_ops_cb {
 	void (*connected)(struct bt_avctp *session);
 	void (*disconnected)(struct bt_avctp *session);
-	int (*recv)(struct bt_avctp *session, struct net_buf *buf);
+	int (*recv)(struct bt_avctp *session, struct net_buf *buf, bt_avctp_cr_t cr, uint8_t tid);
+};
+
+struct bt_avctp_frag_rx {
+	sys_snode_t node;
+
+    struct net_buf *reassembly_buf;
+    uint16_t pid;
+    uint8_t number_packet;
+    uint8_t tid;
+    uint8_t cr;
+};
+
+struct bt_avctp_tx {
+	sys_snode_t node;
+
+	struct net_buf *buf;
+	uint16_t total_len;
+	uint16_t sent_len;
+	uint8_t pkt_type;
+	uint8_t tid;
+	uint8_t cr;
+	uint8_t ipid;
 };
 
 struct bt_avctp {
 	struct bt_l2cap_br_chan br_chan;
 	const struct bt_avctp_ops_cb *ops;
 	uint16_t pid;  /** Profile Identifier */
+
+	/* AVCTP TX pending */
+	sys_slist_t tx_pending;
+
+	/* AVCTP RX pending */
+	sys_slist_t rx_pending;
+
+	/* Critical locker */
+	struct k_sem lock;
+
+	/* TX work */
+	struct k_work_delayable tx_work;
 };
 
 /**
@@ -145,14 +190,12 @@ int bt_avctp_connect(struct bt_conn *conn, uint16_t psm, struct bt_avctp *sessio
 int bt_avctp_disconnect(struct bt_avctp *session);
 
 /* Create AVCTP PDU */
-struct net_buf *bt_avctp_create_pdu(struct bt_avctp *session, bt_avctp_cr_t cr,
-				    bt_avctp_pkt_type_t pkt_type, bt_avctp_ipid_t ipid,
-				    uint8_t tid, uint16_t pid);
-
-/* Set AVCTP header */
-void bt_avctp_set_header(struct bt_avctp_header *avctp_hdr, bt_avctp_cr_t cr,
-			 bt_avctp_pkt_type_t pkt_type, bt_avctp_ipid_t ipid,
-			 uint8_t tid, uint16_t pid);
+struct net_buf *bt_avctp_create_pdu(struct net_buf_pool *pool);
 
 /* Send AVCTP PDU */
-int bt_avctp_send(struct bt_avctp *session, struct net_buf *buf);
+int bt_avctp_send(struct bt_avctp *session, struct net_buf *buf, bt_avctp_cr_t cr,
+		  uint8_t tid);
+
+/* Send AVCTP PDU for single packet only*/
+int bt_avctp_send_single(struct bt_avctp *session, struct net_buf *buf, bt_avctp_cr_t cr,
+			 uint8_t tid);

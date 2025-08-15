@@ -466,6 +466,34 @@ config BT_AVCTP
 	help
 	  This option enables Bluetooth AVCTP support
 
+if BT_AVCTP
+
+config BT_AVCTP_RX_DATA_BUF_SIZE
+	int "AVCTP RX Data Buffer Size"
+	default 1024
+	help
+	  Size of the AVCTP receive data buffer in bytes.
+
+config BT_AVCTP_RX_DATA_BUF_CNT
+	int "AVCTP RX Data Buffer Count"
+	default 3
+	help
+	  Number of receive data buffers used by AVCTP.
+
+config BT_AVCTP_TX_DATA_BUF_SIZE
+	int "AVCTP TX Data Buffer Size"
+	default 540
+	help
+	  Size of the AVCTP transmit data buffer in bytes.
+
+config BT_AVCTP_TX_DATA_BUF_CNT
+	int "AVCTP TX Data Buffer Count"
+	default 3
+	help
+	  Number of transmit data buffers used by AVCTP.
+
+endif # BT_AVCTP
+
 config BT_AVRCP
 	bool "Bluetooth AVRCP Profile [EXPERIMENTAL]"
 	select BT_AVCTP
