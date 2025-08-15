@@ -60,7 +60,7 @@ static int app_add_format(uint32_t pixfmt, uint32_t width, uint32_t height, bool
 	}
 
 	/* Set the format to get the size */
-	ret = video_set_format(video_dev, &fmt);
+	ret = video_set_compose_format(video_dev, &fmt);
 	if (ret != 0) {
 		LOG_ERR("Could not set the format of %s to %s %ux%u (size %u)",
 			video_dev->name, VIDEO_FOURCC_TO_STR(fmt.pixelformat),
@@ -178,7 +178,7 @@ int main(void)
 
 	fmt.type = VIDEO_BUF_TYPE_OUTPUT;
 
-	ret = video_set_format(video_dev, &fmt);
+	ret = video_set_compose_format(video_dev, &fmt);
 	if (ret != 0) {
 		LOG_ERR("Could not set the format of %s to %s %ux%u (size %u)",
 			video_dev->name, VIDEO_FOURCC_TO_STR(fmt.pixelformat),
