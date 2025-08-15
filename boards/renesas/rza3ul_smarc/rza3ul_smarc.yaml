@@ -8,6 +8,7 @@ toolchain:
 supported:
   - uart
   - gpio
+  - adc
 testing:
   ignore_tags:
     - bluetooth
