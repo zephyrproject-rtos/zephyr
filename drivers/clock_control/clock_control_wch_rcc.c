@@ -13,6 +13,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/math/ilog2.h>
 
 #include <hal_ch32fun.h>
 
@@ -38,6 +39,7 @@ struct clock_control_wch_rcc_config {
 	RCC_TypeDef *regs;
 	uint8_t mul;
 	uint8_t div;
+	uint16_t hb_pre;
 };
 
 static int clock_control_wch_rcc_on(const struct device *dev, clock_control_subsys_t sys)
@@ -158,10 +160,22 @@ static int clock_control_wch_rcc_fv2x_v3x_pll_init(const struct device *dev)
 	return 0;
 }
 
-static int clock_control_wch_rcc_init(const struct device *dev)
+static void clock_control_wch_prescaler_v003_init(const struct device *dev)
 {
 	const struct clock_control_wch_rcc_config *config = dev->config;
+	uint32_t hpre = 0;
 
+	if (config->hb_pre <= 8) {
+		hpre = config->hb_pre - 1;
+	} else {
+		hpre = ilog2(config->hb_pre - 1) | 0b1000;
+	}
+
+	RCC->CFGR0 = (RCC->CFGR0 & ~RCC_HPRE) | (hpre << 4);
+}
+
+static int clock_control_wch_rcc_init(const struct device *dev)
+{
 	clock_control_wch_rcc_setup_flash();
 
 	if (IS_ENABLED(CONFIG_DT_HAS_WCH_CH32V00X_PLL_CLOCK_ENABLED) ||
@@ -209,8 +223,8 @@ static int clock_control_wch_rcc_init(const struct device *dev)
 
 	/* Clear the interrupt flags. */
 	RCC->INTR = RCC_CSSC | RCC_PLLRDYC | RCC_HSERDYC | RCC_LSIRDYC;
-	/* HCLK = SYSCLK = APB1 */
-	RCC->CFGR0 = (RCC->CFGR0 & ~RCC_HPRE) | RCC_HPRE_DIV1;
+	/* setup HCLK and PCLKx */
+	clock_control_wch_prescaler_v003_init(dev);
 
 	return 0;
 }
@@ -220,6 +234,7 @@ static int clock_control_wch_rcc_init(const struct device *dev)
 		.regs = (RCC_TypeDef *)DT_INST_REG_ADDR(idx),                                      \
 		.mul = DT_PROP_OR(DT_INST_CLOCKS_CTLR(idx), mul, 1),                               \
 		.div = DT_PROP_OR(DT_INST_CLOCKS_CTLR(idx), div, 1),                               \
+		.hb_pre = DT_INST_PROP(idx, hb_prescaler),                                         \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(idx, clock_control_wch_rcc_init, NULL, NULL,                         \
 			      &clock_control_wch_rcc_##idx##_config, PRE_KERNEL_1,                 \
