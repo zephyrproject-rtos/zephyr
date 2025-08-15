@@ -36,7 +36,7 @@
 
 		pll: pll {
 			#clock-cells = <0>;
-			compatible = "wch,ch32v20x_30x-pll-clock";
+			compatible = "wch,ch32fv2x_v3x-pll-clock";
 			mul = <15>;
 			status = "disabled";
 		};

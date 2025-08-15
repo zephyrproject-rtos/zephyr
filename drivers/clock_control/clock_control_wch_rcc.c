@@ -21,7 +21,7 @@
 #define WCH_RCC_SYSCLK              DT_PROP(DT_NODELABEL(cpu0), clock_frequency)
 
 #if DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR(0), wch_ch32v00x_pll_clock) ||                          \
-	DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR(0), wch_ch32v20x_30x_pll_clock)
+	DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR(0), wch_ch32fv2x_v3x_pll_clock)
 #define WCH_RCC_SRC_IS_PLL 1
 #if DT_NODE_HAS_COMPAT(DT_CLOCKS_CTLR(DT_INST_CLOCKS_CTLR(0)), wch_ch32v00x_hse_clock)
 #define WCH_RCC_PLL_SRC_IS_HSE 1
@@ -37,6 +37,7 @@
 struct clock_control_wch_rcc_config {
 	RCC_TypeDef *regs;
 	uint8_t mul;
+	uint8_t div;
 };
 
 static int clock_control_wch_rcc_on(const struct device *dev, clock_control_subsys_t sys)
@@ -110,14 +111,51 @@ static DEVICE_API(clock_control, clock_control_wch_rcc_api) = {
 	.get_rate = clock_control_wch_rcc_get_rate,
 };
 
-static int clock_control_wch_rcc_init(const struct device *dev)
+#if DT_HAS_COMPAT_STATUS_OKAY(wch_ch32v00x_pll_clock)
+/* Initialize the PLL source for the ch32v003 */
+static int clock_control_wch_pll_init(const struct device *dev)
+{
+	if (IS_ENABLED(WCH_RCC_PLL_SRC_IS_HSE)) {
+		RCC->CFGR0 |= RCC_PLLSRC;
+	} else if (IS_ENABLED(WCH_RCC_PLL_SRC_IS_HSI)) {
+		RCC->CFGR0 &= ~RCC_PLLSRC;
+	}
+	return 0;
+}
+#elif DT_HAS_COMPAT_STATUS_OKAY(wch_ch32fv2x_v3x_pll_clock)
+/* Initialize the PLL source, prescaler and multiplier for the ch32f20x, ch32v20x and ch32v30x */
+static int clock_control_wch_pll_init(const struct device *dev)
 {
 	const struct clock_control_wch_rcc_config *config = dev->config;
 
+	if (IS_ENABLED(WCH_RCC_PLL_SRC_IS_HSE)) {
+		/* PPLXTPRE defaults to 0 which is divide by /1 */
+		if (IS_ENABLED(CONFIG_DT_HAS_WCH_CH32FV203_V303_PLL_CLOCK_ENABLED) &&
+		    config->div == 2) {
+			RCC->CFGR0 |= RCC_PLLXTPRE;
+		}
+		RCC->CFGR0 |= RCC_PLLSRC;
+	} else if (IS_ENABLED(WCH_RCC_PLL_SRC_IS_HSI)) {
+		/* EXTEN_PLL_HSI_PRE defaults to 0 which is /2 */
+		if (config->div == 1) {
+			EXTEN->EXTEN_CTR |= EXTEN_PLL_HSI_PRE;
+		}
+		RCC->CFGR0 &= ~RCC_PLLSRC;
+	}
+	RCC->CFGR0 |= (config->mul == 18 ? 0xF : (config->mul - 2)) << 0x12;
+	RCC->CTLR |= RCC_PLLON;
+	return 0;
+}
+#else
+#error "Unknown PLL for WCH chip"
+#endif
+
+static int clock_control_wch_rcc_init(const struct device *dev)
+{
 	clock_control_wch_rcc_setup_flash();
 
 	if (IS_ENABLED(CONFIG_DT_HAS_WCH_CH32V00X_PLL_CLOCK_ENABLED) ||
-	    IS_ENABLED(CONFIG_DT_HAS_WCH_CH32V20X_30X_PLL_CLOCK_ENABLED)) {
+	    IS_ENABLED(CONFIG_DT_HAS_WCH_CH32FV2X_V3X_PLL_CLOCK_ENABLED)) {
 		/* Disable the PLL before potentially changing the input clocks. */
 		RCC->CTLR &= ~RCC_PLLON;
 	}
@@ -139,26 +177,13 @@ static int clock_control_wch_rcc_init(const struct device *dev)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_DT_HAS_WCH_CH32V00X_PLL_CLOCK_ENABLED)) {
-		if (IS_ENABLED(WCH_RCC_PLL_SRC_IS_HSE)) {
-			RCC->CFGR0 |= RCC_PLLSRC;
-		} else if (IS_ENABLED(WCH_RCC_PLL_SRC_IS_HSI)) {
-			RCC->CFGR0 &= ~RCC_PLLSRC;
-		}
-		RCC->CTLR |= RCC_PLLON;
-		while ((RCC->CTLR & RCC_PLLRDY) == 0) {
-		}
+	if (IS_ENABLED(CONFIG_DT_HAS_WCH_CH32V00X_PLL_CLOCK_ENABLED) ||
+	    IS_ENABLED(CONFIG_DT_HAS_WCH_CH32FV2X_V3X_PLL_CLOCK_ENABLED)) {
+		clock_control_wch_pll_init(dev);
 	}
-	if (IS_ENABLED(CONFIG_DT_HAS_WCH_CH32V20X_30X_PLL_CLOCK_ENABLED)) {
-		if (IS_ENABLED(WCH_RCC_PLL_SRC_IS_HSE)) {
-			RCC->CFGR0 |= RCC_PLLSRC;
-		} else if (IS_ENABLED(WCH_RCC_PLL_SRC_IS_HSI)) {
-			RCC->CFGR0 &= ~RCC_PLLSRC;
-		}
-		RCC->CFGR0 |= (config->mul == 18 ? 0xF : (config->mul - 2)) << 0x12;
-		RCC->CTLR |= RCC_PLLON;
-		while ((RCC->CTLR & RCC_PLLRDY) == 0) {
-		}
+	/* enable PLL and spinwait until ready */
+	RCC->CTLR |= RCC_PLLON;
+	while ((RCC->CTLR & RCC_PLLRDY) == 0) {
 	}
 
 	if (IS_ENABLED(WCH_RCC_SRC_IS_HSI)) {
@@ -182,6 +207,7 @@ static int clock_control_wch_rcc_init(const struct device *dev)
 	static const struct clock_control_wch_rcc_config clock_control_wch_rcc_##idx##_config = {  \
 		.regs = (RCC_TypeDef *)DT_INST_REG_ADDR(idx),                                      \
 		.mul = DT_PROP_OR(DT_INST_CLOCKS_CTLR(idx), mul, 1),                               \
+		.div = DT_PROP_OR(DT_INST_CLOCKS_CTLR(idx), div, 1),                               \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(idx, clock_control_wch_rcc_init, NULL, NULL,                         \
 			      &clock_control_wch_rcc_##idx##_config, PRE_KERNEL_1,                 \
