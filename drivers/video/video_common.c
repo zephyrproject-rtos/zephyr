@@ -443,3 +443,24 @@ fallback:
 	/* CSI D-PHY is using a DDR data bus so bitrate is twice the frequency */
 	return ctrl.val64 * bpp / (2 * lane_nb);
 }
+
+int video_set_compose_format(const struct device *dev, struct video_format *fmt)
+{
+	struct video_selection sel = {
+		.type = fmt->type,
+		.target = VIDEO_SEL_TGT_COMPOSE,
+		.rect.left = 0,
+		.rect.top = 0,
+		.rect.width = fmt->width,
+		.rect.height = fmt->height,
+	};
+	int ret;
+
+	ret = video_set_selection(dev, &sel);
+	if (ret < 0 && ret != -ENOSYS) {
+		LOG_ERR("Unable to set selection compose");
+		return ret;
+	}
+
+	return video_set_format(dev, fmt);
+}
