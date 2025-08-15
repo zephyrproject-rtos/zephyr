@@ -63,8 +63,18 @@ static int nxp_imx_mu_send(const struct device *dev, uint32_t channel, const str
 	if (msg == NULL) {
 		if (MU_TriggerInterrupts(cfg->base, g_gen_int_trig_mask[channel]) !=
 		    kStatus_Success) {
-			/* interrupt already pending, cannot trigger again */
-			return -EAGAIN;
+			/* Ignore any error returned by MU_TriggerInterrupts().
+			 * It can return failure if the interrupt is already pending, but
+			 * don't return that as an error otherwise the ipc service
+			 * using it might assert or fail. Since ipc uses mailbox
+			 * interrupts only as notifications, and the data transfer
+			 * is via shared memory, as long as the interrupt is pending,
+			 * the other processor should read all the data when it
+			 * handles the interrupt. As long as the interrupt is cleared
+			 * before data is processed, which it is. Just LOG_DBG the
+			 * occurrence.
+			 */
+			LOG_DBG("Interrupt already pending on channel %u", channel);
 		}
 		return 0;
 	}
