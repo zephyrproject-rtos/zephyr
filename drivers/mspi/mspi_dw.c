@@ -45,7 +45,9 @@ struct mspi_dw_data {
 	uint32_t ctrlr0;
 	uint32_t spi_ctrlr0;
 	uint32_t baudr;
+#if defined(CONFIG_MSPI_DW_DMA)
 	uint32_t dma_cr;
+#endif
 
 #if defined(CONFIG_MSPI_XIP)
 	uint32_t xip_freq;
@@ -70,7 +72,10 @@ struct mspi_dw_data {
 	/* For locking of controller configuration. */
 	struct k_sem cfg_lock;
 	struct mspi_xfer xfer;
+#if defined(CONFIG_MSPI_DW_DMA)
+
 	void * dma_transfer_list;
+#endif
 	/* Flag to track if async transfer is in progress */
 	/* TODO: Change to atomic variable when concurrent transactions are supported*/
 	volatile bool async_in_progress;
@@ -96,9 +101,11 @@ DEFINE_MM_REG_RD(isr,		0x30)
 DEFINE_MM_REG_RD(risr,		0x34)
 DEFINE_MM_REG_RD_WR(dr,		0x60)
 DEFINE_MM_REG_WR(spi_ctrlr0,	0xf4)
+#if defined(CONFIG_MSPI_DW_DMA)
 DEFINE_MM_REG_WR(dmacr,		0x4C)
 DEFINE_MM_REG_WR(dmatdlr,	0x50)
 DEFINE_MM_REG_WR(dmardlr,	0x54)
+#endif
 
 #if defined(CONFIG_MSPI_XIP)
 DEFINE_MM_REG_WR(xip_incr_inst,		0x100)
@@ -271,16 +278,18 @@ static void mspi_dw_isr(const struct device *dev)
 		&dev_data->xfer.packets[dev_data->packets_done];
 	bool finished = false;
 	int rc;
-	bool dma_irq = vendor_specific_read_dma_irq(dev, dev->config);
 
 	uint32_t int_status = read_isr(dev);
-
+#if defined(CONFIG_MSPI_DW_DMA)
+	bool dma_irq = vendor_specific_read_dma_irq(dev, dev->config);
 	if(xfer.xfer_mode == MSPI_DMA && dma_irq) {
 		/* No need to read FIFO by CPU */
 		finished = true;
 	}
 	else {
-
+#else
+	{
+#endif
 		if (packet->dir == MSPI_TX) {
 			if (dev_data->buf_pos < dev_data->buf_end) {
 				if (int_status & ISR_TXEIS_BIT) {
@@ -373,7 +382,7 @@ static void mspi_dw_isr(const struct device *dev)
 			k_sem_give(&dev_data->finished);
 		}
 
-
+#if defined(CONFIG_MSPI_DW_DMA)
 		/* Free transfer list saved to heap */
 		if (dev_data->xfer.xfer_mode == MSPI_DMA && dev_data->dma_transfer_list){
 			vendor_specific_free_dma_transfer_list(dev, dev_data);
@@ -381,6 +390,7 @@ static void mspi_dw_isr(const struct device *dev)
 		}
 
 	}
+#endif
 
 	vendor_specific_irq_clear(dev, dev->config);
 }
@@ -844,6 +854,7 @@ static void tx_control_field(const struct device *dev,
 	} while (shift);
 }
 
+#if defined(CONFIG_MSPI_DW_DMA)
 static int start_next_packet_dma(const struct device *dev, k_timeout_t timeout)
 {
 	const struct mspi_dw_config *dev_config = dev->config;
@@ -978,6 +989,7 @@ static int start_next_packet_dma(const struct device *dev, k_timeout_t timeout)
 
 	return rc;
 }
+#endif /* CONFIG_MSPI_DW_DMA */
 
 static int start_next_packet_pio(const struct device *dev, k_timeout_t timeout)
 {
@@ -1260,7 +1272,12 @@ static int start_next_packet(const struct device *dev, k_timeout_t timeout)
 	struct mspi_dw_data * dev_data = dev->data;
     switch (dev_data->xfer.xfer_mode) {
     case MSPI_DMA:
+#ifdef CONFIG_MSPI_DW_DMA
         return start_next_packet_dma(dev, timeout);
+#else
+        LOG_ERR("CONFIG_MSPI_DW_DMA not enabled");
+        return -ENOTSUP;
+#endif
     case MSPI_PIO:
         return start_next_packet_pio(dev, timeout);
     default:
@@ -1702,11 +1719,12 @@ static DEVICE_API(mspi, drv_api) = {
 				7 * TX_FIFO_DEPTH(inst) / 8 - 1),	\
 	.rx_fifo_threshold =						\
 		DT_INST_PROP_OR(inst, rx_fifo_threshold,		\
-				1 * RX_FIFO_DEPTH(inst) / 8 - 1),	\
+				1 * RX_FIFO_DEPTH(inst) / 8 - 1)	\
+	IF_ENABLED(CONFIG_MSPI_DW_DMA, (,				\
 	.dma_tx_data_level =						\
 		DT_INST_PROP_OR(inst, dma_transmit_data_level, 0),	\
 	.dma_rx_data_level =						\
-		DT_INST_PROP_OR(inst, dma_recieve_data_level, 0)
+		DT_INST_PROP_OR(inst, dma_recieve_data_level, 0)))
 #define MSPI_DW_INST(inst)						\
 	PM_DEVICE_DT_INST_DEFINE(inst, dev_pm_action_cb);		\
 	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_INST_DEFINE(inst);))	\

@@ -273,8 +273,10 @@ struct mspi_dw_config {
 	uint8_t max_queued_dummy_bytes;
 	uint8_t tx_fifo_threshold;
 	uint8_t rx_fifo_threshold;
+#ifdef CONFIG_MSPI_DW_DMA
 	uint8_t dma_tx_data_level;
 	uint8_t dma_rx_data_level;
+#endif
 	DECLARE_REG_ACCESS();
 	bool sw_multi_periph;
 	enum mspi_op_mode op_mode;

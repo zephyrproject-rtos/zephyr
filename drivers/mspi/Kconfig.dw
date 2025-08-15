@@ -6,3 +6,8 @@ config MSPI_DW
 	default y
 	depends on DT_HAS_SNPS_DESIGNWARE_SSI_ENABLED
 	select PINCTRL if $(dt_compat_any_has_prop,$(DT_COMPAT_SNPS_DESIGNWARE_SSI),pinctrl-0)
+
+config MSPI_DW_DMA
+	bool "DesignWare SSI controller DMA support"
+	default n
+	depends on MSPI_DW
