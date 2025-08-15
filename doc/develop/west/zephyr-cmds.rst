@@ -217,7 +217,7 @@ parameter.
 The argument ``--allow-regex`` can be passed ``west blobs fetch`` to restrict
 the specific blobs that are fetched, by passing a regular expression:
 
-  # only download esp32 blobs, skip the other variants
+  # For example, only download esp32 blobs, skip the other variants
   west blobs fetch hal_espressif --allow-regex 'lib/esp32/.*'
 
 .. _west-twister:
