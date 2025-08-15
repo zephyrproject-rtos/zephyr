@@ -1106,5 +1106,43 @@
 			interrupt-names = "eri", "rxi", "txi", "tei";
 			status = "disabled";
 		};
+
+		cmtw0: cmtw@80041000 {
+			compatible = "renesas,rz-cmtw";
+			reg = <0x80041000 0x400>;
+			channel = <0>;
+			interrupts = <GIC_SPI 59 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 60 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 61 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 62 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 63 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "cmwi", "ic0i", "ic01", "oc0i", "oc1i";
+			prescaler = <8>;
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,rz-cmtw-counter";
+				status = "disabled";
+			};
+		};
+
+		cmtw1: cmtw@80041400 {
+			compatible = "renesas,rz-cmtw";
+			reg = <0x80041400 0x400>;
+			channel = <1>;
+			interrupts = <GIC_SPI 64 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 65 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 66 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 67 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 68 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "cmwi", "ic0i", "ic01", "oc0i", "oc1i";
+			prescaler = <8>;
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,rz-cmtw-counter";
+				status = "disabled";
+			};
+		};
 	};
 };
