@@ -21,7 +21,8 @@
 #define WCH_RCC_SYSCLK              DT_PROP(DT_NODELABEL(cpu0), clock_frequency)
 
 #if DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR(0), wch_ch32v00x_pll_clock) ||                          \
-	DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR(0), wch_ch32fv2x_v3x_pll_clock)
+	DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR(0), wch_ch32fv2x_v3x_pll_clock) ||                  \
+	DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR(0), wch_ch32fv208_pll_clock)
 #define WCH_RCC_SRC_IS_PLL 1
 #if DT_NODE_HAS_COMPAT(DT_CLOCKS_CTLR(DT_INST_CLOCKS_CTLR(0)), wch_ch32v00x_hse_clock)
 #define WCH_RCC_PLL_SRC_IS_HSE 1
@@ -122,7 +123,8 @@ static int clock_control_wch_pll_init(const struct device *dev)
 	}
 	return 0;
 }
-#elif DT_HAS_COMPAT_STATUS_OKAY(wch_ch32fv2x_v3x_pll_clock)
+#elif DT_HAS_COMPAT_STATUS_OKAY(wch_ch32fv2x_v3x_pll_clock) ||                                     \
+	DT_HAS_COMPAT_STATUS_OKAY(wch_ch32fv208_pll_clock)
 /* Initialize the PLL source, prescaler and multiplier for the ch32f20x, ch32v20x and ch32v30x */
 static int clock_control_wch_pll_init(const struct device *dev)
 {
@@ -133,6 +135,18 @@ static int clock_control_wch_pll_init(const struct device *dev)
 		if (IS_ENABLED(CONFIG_DT_HAS_WCH_CH32FV203_V303_PLL_CLOCK_ENABLED) &&
 		    config->div == 2) {
 			RCC->CFGR0 |= RCC_PLLXTPRE;
+		}
+		if (IS_ENABLED(CONFIG_DT_HAS_WCH_CH32FV208_PLL_CLOCK_ENABLED)) {
+			if (config->div == 1) {
+				/* TODO: report error */
+			} else if (config->div == 2) {
+				/* TODO: check USB prescaler is set to 5 */
+				RCC->CFGR0 |= RCC_USBPRE;
+			} else if (config->div == 8) {
+				RCC->CFGR0 |= RCC_PLLXTPRE;
+			} else {
+				/* /4 already the chip default */
+			}
 		}
 		RCC->CFGR0 |= RCC_PLLSRC;
 	} else if (IS_ENABLED(WCH_RCC_PLL_SRC_IS_HSI)) {
@@ -155,7 +169,8 @@ static int clock_control_wch_rcc_init(const struct device *dev)
 	clock_control_wch_rcc_setup_flash();
 
 	if (IS_ENABLED(CONFIG_DT_HAS_WCH_CH32V00X_PLL_CLOCK_ENABLED) ||
-	    IS_ENABLED(CONFIG_DT_HAS_WCH_CH32FV2X_V3X_PLL_CLOCK_ENABLED)) {
+	    IS_ENABLED(CONFIG_DT_HAS_WCH_CH32FV2X_V3X_PLL_CLOCK_ENABLED) ||
+	    IS_ENABLED(CONFIG_DT_HAS_WCH_CH32FV208_PLL_CLOCK_ENABLED)) {
 		/* Disable the PLL before potentially changing the input clocks. */
 		RCC->CTLR &= ~RCC_PLLON;
 	}
@@ -178,7 +193,8 @@ static int clock_control_wch_rcc_init(const struct device *dev)
 	}
 
 	if (IS_ENABLED(CONFIG_DT_HAS_WCH_CH32V00X_PLL_CLOCK_ENABLED) ||
-	    IS_ENABLED(CONFIG_DT_HAS_WCH_CH32FV2X_V3X_PLL_CLOCK_ENABLED)) {
+	    IS_ENABLED(CONFIG_DT_HAS_WCH_CH32FV2X_V3X_PLL_CLOCK_ENABLED) ||
+	    IS_ENABLED(CONFIG_DT_HAS_WCH_CH32FV208_PLL_CLOCK_ENABLED)) {
 		clock_control_wch_pll_init(dev);
 	}
 	/* enable PLL and spinwait until ready */
