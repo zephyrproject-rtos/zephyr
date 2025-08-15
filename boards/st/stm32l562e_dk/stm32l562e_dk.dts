@@ -55,3 +55,15 @@
 		};
 	};
 };
+
+&mx25lm51245 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			reg = <0x00000000 DT_SIZE_M(64)>;
+		};
+	};
+};
