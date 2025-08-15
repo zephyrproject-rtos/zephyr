@@ -81,6 +81,23 @@ static int app_add_format(uint32_t pixfmt, uint32_t width, uint32_t height, bool
 	return ret;
 }
 
+struct video_resolution {
+	uint16_t width;
+	uint16_t height;
+};
+
+static struct video_resolution video_common_fmts[] = {
+	{ .width = 160,		.height = 120,	},	/* QQVGA */
+	{ .width = 320,		.height = 240,	},	/* QVGA */
+	{ .width = 640,		.height = 480,	},	/* VGA */
+	{ .width = 854,		.height = 480,	},	/* WVGA */
+	{ .width = 800,		.height = 600,	},	/* SVGA */
+	{ .width = 1280,	.height = 720,	},	/* HD */
+	{ .width = 1280,	.height = 1024,	},	/* SXGA */
+	{ .width = 1920,	.height = 1080,	},	/* FHD */
+	{ .width = 3840,	.height = 2160,	},	/* UHD */
+};
+
 /* Submit to UVC only the formats expected to be working (enough memory for the size, etc.) */
 static int app_add_filtered_formats(void)
 {
@@ -89,6 +106,7 @@ static int app_add_filtered_formats(void)
 
 	for (int i = 0; video_caps.format_caps[i].pixelformat != 0; i++) {
 		const struct video_format_cap *vcap = &video_caps.format_caps[i];
+		int count = 1;
 
 		ret = app_add_format(vcap->pixelformat, vcap->width_min, vcap->height_min,
 				     has_sup_fmts);
@@ -102,6 +120,39 @@ static int app_add_filtered_formats(void)
 			if (ret != 0) {
 				return ret;
 			}
+
+			count++;
+		}
+
+		if (vcap->width_step == 0 && vcap->height_step == 0) {
+			continue;
+		}
+
+		/* RANGE Resolution processing */
+		for (int j = 0; j < ARRAY_SIZE(video_common_fmts); j++) {
+			if (count >= CONFIG_APP_VIDEO_MAX_RESOLUTIONS) {
+				break;
+			}
+
+			if (!IN_RANGE(video_common_fmts[j].width,
+				      vcap->width_min, vcap->width_max) ||
+			    !IN_RANGE(video_common_fmts[j].height,
+				      vcap->height_min, vcap->height_max)) {
+				continue;
+			}
+
+			if ((video_common_fmts[j].width - vcap->width_min) % vcap->width_step ||
+			    (video_common_fmts[j].height - vcap->height_min) % vcap->height_step) {
+				continue;
+			}
+
+			ret = app_add_format(vcap->pixelformat, video_common_fmts[j].width,
+					     video_common_fmts[j].height, has_sup_fmts);
+			if (ret != 0) {
+				return ret;
+			}
+
+			count++;
 		}
 	}
 
