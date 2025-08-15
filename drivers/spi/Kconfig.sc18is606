@@ -11,7 +11,6 @@ config SPI_SC18IS606
 
 if SPI_SC18IS606
 
-
 config SPI_SC18IS606_INIT_PRIORITY
 	int "SC18IS606 SPI init priority"
 	default 59
@@ -21,5 +20,3 @@ config SPI_SC18IS606_INIT_PRIORITY
 	  Note: Has to be greater than the I2C initialization priority.
 
 endif
-
-

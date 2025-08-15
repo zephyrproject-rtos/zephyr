@@ -4,6 +4,11 @@ common:
     - drivers
     - mfd
 tests:
+  drivers.mfd.build.sc18is606:
+    platform_allow: native_sim
+    tags: spi_nxp_sc18is606
+    extra_args: "CONFIG_GPIO=y"
+
   drivers.mfd.build:
     platform_allow:
       - native_sim

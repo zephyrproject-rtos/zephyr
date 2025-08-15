@@ -13,7 +13,7 @@ description: |
     pinctrl-names = "default";
 
     sc18is606: sc18is606 {
-      compatible ="nxp, sc18is606";
+      compatible ="nxp,sc18is606";
       status = "okay";
 
 
