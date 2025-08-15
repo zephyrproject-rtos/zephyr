@@ -1683,7 +1683,12 @@ static int udc_numaker_init(const struct device *dev)
 	/* Enable VBUS detect early */
 	if (data->caps.can_detect_vbus) {
 		base->INTEN = USBD_INT_FLDET;
+	} else {
+		base->INTEN = 0;
 	}
+
+	/* Enable USB wake-up early */
+	base->INTEN |= USBD_INT_WAKEUP;
 
 	return 0;
 }
