@@ -6,6 +6,7 @@ zephyr_library_include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 zephyr_library_sources(
   usbh_ch9.c
+  usbh_class.c
   usbh_core.c
   usbh_api.c
   usbh_device.c
