@@ -191,11 +191,11 @@ static int h_bridge_stepper_move_by(const struct device *dev, int32_t micro_step
 	}
 
 	if (micro_steps == 0) {
+		(void)k_work_cancel_delayable(&data->stepper_dwork);
 		if (data->callback) {
 			data->callback(data->dev, STEPPER_EVENT_STEPS_COMPLETED,
 				       data->event_cb_user_data);
 		}
-		(void)k_work_cancel_delayable(&data->stepper_dwork);
 		return 0;
 	}
 	K_SPINLOCK(&data->lock) {
