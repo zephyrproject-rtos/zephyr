@@ -149,7 +149,7 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-m33";
 			reg = <0>;
-			cpu-power-states = <&pstate_em1 &pstate_em2 &pstate_em3>;
+			cpu-power-states = <&pstate_em1 &pstate_em2>;
 			/*
 			 * The minimum residency and exit latency is
 			 * managed by sl_power_manager on S2 devices.
@@ -181,17 +181,6 @@
 			pstate_em2: em2 {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
-			};
-
-			/*
-			 * EM3 seems to be exactly the same as EM2 except that
-			 * LFXO & LFRCO should be disabled, so you must use ULFRCO
-			 * as BURTC clock for the system to not lose track of time and
-			 * wake up.
-			 */
-			pstate_em3: em3 {
-				compatible = "zephyr,power-state";
-				power-state-name = "standby";
 			};
 		};
 	};

@@ -144,5 +144,8 @@ Silabs
 * Fixed name of the :kconfig:option:`CONFIG_SOC_*`. These option contained PART_NUMBER in their
   while they shouldn't.
 
+* The separate ``em3`` power state was removed from Series 2 SoCs. The system automatically
+  transitions to EM2 or EM3 depending on hardware peripheral requests for the oscillators.
+
 Architectures
 *************
