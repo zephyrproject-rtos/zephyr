@@ -18,7 +18,7 @@ static const unsigned char extension_llext[] = {
 static const size_t extension_llext_len = ARRAY_SIZE(extension_llext);
 #endif
 
-#define STACK_SIZE 1024
+#define STACK_SIZE 1024 + CONFIG_TEST_EXTRA_STACK_SIZE
 #define HEAP_SIZE 1024
 
 #ifdef LOAD_AND_RUN_EXTENSION
