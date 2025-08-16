@@ -38,8 +38,8 @@ properties:
     type: int
     default: 1
     description: |
-        bus width for SDMMC access, defaults to the minimum necessary
-        number of bus lines
+      bus width for SDMMC access, defaults to the minimum necessary
+      number of bus lines
     enum:
       - 1
       - 4
@@ -49,8 +49,17 @@ properties:
     type: int
     default: 0
     description: |
-        Clock division factor for SDMMC. Typically the clock operates at 25MHz so
-        a division factor of 2 would be 25MHz / 2 = 12.5MHz.
+      Clock division factor for SDMMC. The relationship between this value
+      and the output bus frequency is FREQ_BUS = SDMMMC_CLK / [CLKDIV + 2].
+      Therefore an input clock of 25MHz and a division factor of 0 would
+      result in a bus frequency of 25MHz / [0 + 2] = 12.5MHz.
+
+  clk-bypass:
+    type: boolean
+    description: |
+      Bypass the clock divider configured in `clk-div`, which results in the
+      output bus frequency matching the input SDMMC_CLK. Not supported on
+      all part numbers.
 
   idma:
     type: boolean
