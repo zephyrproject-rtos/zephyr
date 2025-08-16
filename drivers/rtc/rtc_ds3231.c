@@ -59,13 +59,11 @@ struct rtc_ds3231_conf {
 static int rtc_ds3231_modify_register(const struct device *dev, uint8_t reg, uint8_t *buf,
 				      const uint8_t bitmask)
 {
-	int err;
 	const struct rtc_ds3231_conf *config = dev->config;
 
 	if (bitmask != 255) {
 		uint8_t og_buf = 0;
-
-		err = mfd_ds3231_i2c_get_registers(config->mfd, reg, &og_buf, 1);
+		int err = mfd_ds3231_i2c_get_registers(config->mfd, reg, &og_buf, 1);
 		if (err != 0) {
 			return err;
 		}
@@ -74,11 +72,8 @@ static int rtc_ds3231_modify_register(const struct device *dev, uint8_t reg, uin
 		og_buf |= *buf;
 		*buf = og_buf;
 	}
-	if (err != 0) {
-		return err;
-	}
-	err = mfd_ds3231_i2c_set_registers(config->mfd, reg, buf, 1);
-	return err;
+
+	return mfd_ds3231_i2c_set_registers(config->mfd, reg, buf, 1);
 }
 
 enum rtc_ds3231_freq {
