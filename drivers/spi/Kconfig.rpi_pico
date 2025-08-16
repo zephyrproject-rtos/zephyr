@@ -9,4 +9,13 @@ config SPI_RPI_PICO_PIO
 	select PICOSDK_USE_CLAIM
 	select PINCTRL
 	help
-	  Enable driving SPI via PIO on the Pico
+	  Enable driving SPI via PIO on the Raspberry Pi Pico
+
+if SPI_RPI_PICO_PIO
+
+config SPI_RPI_PICO_PIO_DMA
+	bool "Raspberry Pi Pico PIO SPI DMA mode"
+	select DMA
+	help
+	  Enables DMA support for Raspberry Pi Pico PIO SPI driver.
+endif

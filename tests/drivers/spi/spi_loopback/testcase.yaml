@@ -192,6 +192,14 @@ tests:
       - DTC_OVERLAY_FILE="boards/rpi_pico_pio.overlay"
       - EXTRA_CONF_FILE="overlay-rpi-pico-pio.conf"
     platform_allow: rpi_pico
+  drivers.spi.pio_spi_dma.loopback:
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/rpi_pico_pio.overlay"
+      - EXTRA_DTC_OVERLAY_FILE="boards/rpi_pico_pio_dma.overlay"
+      - EXTRA_CONF_FILE="overlay-rpi-pico-pio.conf"
+    extra_configs:
+      - CONFIG_SPI_RPI_PICO_PIO_DMA=y
+    platform_allow: rpi_pico
   drivers.spi.flexio_spi.loopback:
     extra_args:
       - platform:mimxrt1170_evk/mimxrt1176/cm7:DTC_OVERLAY_FILE="boards/mimxrt1170_evk_mimxrt1176_cm7_flexio_spi.overlay"
