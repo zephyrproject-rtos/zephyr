@@ -11,6 +11,43 @@
 #include <zephyr/usb/usbh.h>
 
 /**
+ * @brief Information about a device, which is relevant for matching a particular class.
+ */
+struct usbh_class_filter {
+	/** Vendor ID */
+	uint16_t vid;
+	/** Product ID */
+	uint16_t pid;
+	/** Device Class Code */
+	uint8_t dclass;
+	/** Class Subclass Code */
+	uint8_t sub;
+	/** Class Protocol Code */
+	uint8_t proto;
+	/** Flags that tell which field to match */
+	uint8_t flags;
+};
+
+/** Match a device's vendor ID */
+#define USBH_CLASS_MATCH_VID BIT(1)
+
+/** Match a device's product ID */
+#define USBH_CLASS_MATCH_PID BIT(2)
+
+/** Match a class code */
+#define USBH_CLASS_MATCH_DCLASS BIT(3)
+
+/** Match a subclass code */
+#define USBH_CLASS_MATCH_SUB BIT(4)
+
+/** Match a protocol code */
+#define USBH_CLASS_MATCH_PROTO BIT(5)
+
+/** Match a code triple */
+#define USBH_CLASS_MATCH_CODE_TRIPLE \
+	(USBH_CLASS_MATCH_DCLASS | USBH_CLASS_MATCH_SUB | USBH_CLASS_MATCH_PROTO)
+
+/**
  * @brief Match an USB host class (a driver) against a device descriptor.
  *
  * @param[in] filters Array of filter rules to match
