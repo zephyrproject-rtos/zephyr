@@ -87,6 +87,42 @@ properties:
     type: int
     description: See divider-frac-0 for help
 
+  divider-int-8:
+    type: int
+    description: |
+      See divider-int-0 for help, however this PWM slice is not available on
+      RP2040.
+
+  divider-frac-8:
+    type: int
+    description: |
+      See divider-frac-0 for help, however this PWM slice is not available on
+      RP2040.
+
+  divider-int-9:
+    type: int
+    description: See divider-int-8 for help
+
+  divider-frac-9:
+    type: int
+    description: See divider-frac-8 for help
+
+  divider-int-10:
+    type: int
+    description: See divider-int-8 for help
+
+  divider-frac-10:
+    type: int
+    description: See divider-frac-8 for help
+
+  divider-int-11:
+    type: int
+    description: See divider-int-8 for help
+
+  divider-frac-11:
+    type: int
+    description: See divider-frac-8 for help
+
   "#pwm-cells":
     const: 3
 
