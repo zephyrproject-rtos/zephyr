@@ -43,7 +43,7 @@ config NRF71_ON_IPC
 module = WIFI_NRF70_BUSLIB
 module-dep = LOG
 module-str = Log level for Wi-Fi nRF70 bus library
-source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
+source "$(ZEPHYR_BASE)/subsys/logging/Kconfig.template.log_config"
 
 config WIFI_NRF70_BUSLIB_LOG_LEVEL
 	# Enable error by default
