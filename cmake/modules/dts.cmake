@@ -109,6 +109,8 @@ set(GEN_EDT_SCRIPT              ${DT_SCRIPTS}/gen_edt.py)
 set(GEN_DEFINES_SCRIPT          ${DT_SCRIPTS}/gen_defines.py)
 # The edtlib.EDT object in pickle format.
 set(EDT_PICKLE                  ${PROJECT_BINARY_DIR}/edt.pickle)
+# The edtlib.EDT object in json format.
+set(EDT_JSON                    ${PROJECT_BINARY_DIR}/edt.json)
 # The generated file containing the final DTS, for debugging.
 set(ZEPHYR_DTS                  ${PROJECT_BINARY_DIR}/zephyr.dts)
 # The generated C header needed by <zephyr/devicetree.h>
@@ -300,6 +302,7 @@ set(CMD_GEN_EDT ${PYTHON_EXECUTABLE} ${GEN_EDT_SCRIPT}
 --workspace-dir ${GEN_EDT_WORKSPACE_DIR}
 --dts-out ${ZEPHYR_DTS}.new # for debugging and dtc
 --edt-pickle-out ${EDT_PICKLE}.new
+--edt-json-out ${EDT_JSON}.new
 ${EXTRA_GEN_EDT_ARGS}
 )
 
@@ -310,9 +313,11 @@ execute_process(
   )
 zephyr_file_copy(${ZEPHYR_DTS}.new ${ZEPHYR_DTS} ONLY_IF_DIFFERENT)
 zephyr_file_copy(${EDT_PICKLE}.new ${EDT_PICKLE} ONLY_IF_DIFFERENT)
-file(REMOVE ${ZEPHYR_DTS}.new ${EDT_PICKLE}.new)
+zephyr_file_copy(${EDT_JSON}.new   ${EDT_JSON} ONLY_IF_DIFFERENT)
+file(REMOVE ${ZEPHYR_DTS}.new ${EDT_PICKLE}.new ${EDT_JSON}.new)
 message(STATUS "Generated zephyr.dts: ${ZEPHYR_DTS}")
 message(STATUS "Generated pickled edt: ${EDT_PICKLE}")
+message(STATUS "Generated json edt: ${EDT_JSON}")
 
 #
 # Run GEN_DEFINES_SCRIPT.
