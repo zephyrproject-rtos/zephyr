@@ -57,3 +57,39 @@ int usbh_init_registered_classes(struct usbh_context *uhs_ctx)
 
 	return 0;
 }
+
+bool usbh_class_is_matching(struct usbh_class_data *cdata,
+			    struct usbh_class_filter *device_info)
+{
+	/* Traverse the filter table until a terminator (empty flags) is found */
+	for (int i = 0; cdata->filters[i].flags != 0; i++) {
+		const struct usbh_class_filter *filter = &cdata->filters[i];
+
+		if (filter->flags & USBH_CLASS_FILTER_VID) {
+			if (filter->vid != device_info->vid) {
+				continue;
+			}
+		}
+
+		if (filter->flags & USBH_CLASS_FILTER_VID) {
+			if (filter->vid == device_info->vid) {
+				continue;
+			}
+		}
+
+		if (filter->flags & USBH_CLASS_FILTER_CODE_TRIPLE) {
+			if (filter->code_triple.dclass != device_info->code_triple.dclass ||
+			    (filter->code_triple.sub != 0xFF &&
+			     filter->code_triple.sub != device_info->code_triple.sub) ||
+			    (filter->code_triple.proto != 0x00 &&
+			     filter->code_triple.proto != device_info->code_triple.proto)) {
+				continue;
+			}
+		}
+
+		/* All the filters enabled did match */
+		return true;
+	}
+
+	return false;
+}

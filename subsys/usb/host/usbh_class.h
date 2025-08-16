@@ -20,4 +20,15 @@ int usbh_register_all_classes(struct usbh_context *uhs_ctx);
  */
 int usbh_init_registered_classes(struct usbh_context *uhs_ctx);
 
+/**
+ * @brief Check if a device's descriptor information matches a host class instance
+ *
+ * @param cdata Pointer to class driver data
+ * @param device_info Information from the device descriptors
+ *
+ * @return true if matched, false otherwise
+ */
+bool usbh_class_is_matching(struct usbh_class_data *cdata,
+			    struct usbh_class_filter *device_info);
+
 #endif /* ZEPHYR_INCLUDE_USBD_CLASS_H */
