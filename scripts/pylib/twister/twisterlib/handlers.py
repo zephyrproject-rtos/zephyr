@@ -544,7 +544,19 @@ class DeviceHandler(Handler):
                 proc.communicate()
                 logger.error(f"{script} timed out")
 
+    def _create_flash_command(self, hardware):
+        command = self.options.flash_command.split(',')
+        command.extend(['--build-dir', self.build_dir])
+
+        board_id = hardware.probe_id or hardware.id
+        if board_id:
+            command.extend(['--board-id', board_id])
+        return command
+
     def _create_command(self, runner, hardware):
+        if self.options.flash_command:
+            return self._create_flash_command(hardware)
+
         command = ["west", "flash", "--skip-rebuild", "-d", self.build_dir]
         command_extra_args = []
 
