@@ -174,7 +174,7 @@
 	};
 
 	rstctl3: reset@60000 {
-		compatible = "nxp,rstctl";
+		compatible = "nxp,rstctl", "nxp,rstctl-hwinfo";
 		reg = <0x60000 0x1000>;
 		#reset-cells = <1>;
 	};

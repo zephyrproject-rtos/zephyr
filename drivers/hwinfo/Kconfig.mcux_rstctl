@@ -1,0 +1,10 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config HWINFO_MCUX_RSTCTL
+	bool "NXP RSTCTL reset cause"
+	default y
+	depends on DT_HAS_NXP_RSTCTL_HWINFO_ENABLED
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable NXP mcux RSTCTL hwinfo driver.
