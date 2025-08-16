@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025 Christoph Jans
+ * Copyright (c) 2025 Shontal Biton
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -185,7 +186,9 @@
 			pstate_em1: em1 {
 				compatible = "zephyr,power-state";
 				power-state-name = "runtime-idle";
+				min-residency-us = <4>;
 				/* HFXO remains active */
+				exit-latency-us = <2>;
 			};
 
 			/*
@@ -195,6 +198,8 @@
 			pstate_em2: em2 {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
+				min-residency-us = <260>;
+				exit-latency-us = <250>;
 			};
 
 			/*
@@ -206,6 +211,8 @@
 			pstate_em3: em3 {
 				compatible = "zephyr,power-state";
 				power-state-name = "standby";
+				min-residency-us = <20000>;
+				exit-latency-us = <2000>;
 			};
 		};
 	};
