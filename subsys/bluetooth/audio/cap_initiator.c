@@ -1826,6 +1826,14 @@ void bt_cap_initiator_started(struct bt_cap_stream *cap_stream)
 			active_proc->proc_done_cnt, active_proc->proc_cnt);
 	}
 
+	if (bt_cap_common_proc_is_aborted()) {
+		if (bt_cap_common_proc_all_handled()) {
+			cap_initiator_unicast_audio_proc_complete();
+		}
+
+		return;
+	}
+
 	if (!bt_cap_common_proc_is_done()) {
 		struct bt_cap_initiator_proc_param *proc_param;
 		struct bt_cap_stream *next_cap_stream;
