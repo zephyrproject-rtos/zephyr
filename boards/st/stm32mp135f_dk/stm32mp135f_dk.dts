@@ -188,20 +188,14 @@ csi_interface: &dcmipp {
 		     &dcmipp_pixclk_pb7 &dcmipp_vsync_pg9 &dcmipp_hsync_ph8>;
 	pinctrl-names = "default";
 
-	ports {
-		port@0 {
-			dcmipp_ep_in: endpoint {
-				bus-width = <8>;
-				hsync-active = <0>;
-				vsync-active = <0>;
-				pclk-sample = <0>;
-				bus-type = <VIDEO_BUS_TYPE_PARALLEL>;
-				remote-endpoint-label = "mipid02_2";
-			};
-		};
-
-		port@1 {
-			csi_capture_port: endpoint { };
+	port {
+		dcmipp_ep_in: endpoint {
+			bus-width = <8>;
+			hsync-active = <0>;
+			vsync-active = <0>;
+			pclk-sample = <0>;
+			bus-type = <VIDEO_BUS_TYPE_PARALLEL>;
+			remote-endpoint-label = "mipid02_2";
 		};
 	};
 };
