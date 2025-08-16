@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Psicontrol N.V.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Texas Instruments HDC3022 Temperature and Humidity Sensor
+
+compatible: "ti,hdc3022"
+
+include: ti,hdc302x.yaml
