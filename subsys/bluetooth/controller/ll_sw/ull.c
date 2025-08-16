@@ -335,9 +335,19 @@ static struct k_sem sem_ticker_api_cb;
 static struct k_sem *sem_recv;
 
 /* Declare prepare-event FIFO: mfifo_prep.
- * Queue of struct node_rx_event_done
  */
-static MFIFO_DEFINE(prep, sizeof(struct lll_event), EVENT_PIPELINE_MAX);
+#define EVENT_PIPELINE_MAX (7U + (EVENT_DEFER_MAX))
+
+#define EVENT_PIPELINE_EVENT_SIZE (sizeof(struct lll_event) + sizeof(void *))
+
+static struct {
+	struct {
+		void *free;
+		uint8_t pool[EVENT_PIPELINE_MAX * EVENT_PIPELINE_EVENT_SIZE];
+	} mem;
+	void **head;
+	void **tail;
+} pipeline;
 
 /* Declare done-event RXFIFO. This is a composite pool-backed MFIFO for rx_nodes.
  * The declaration constructs the following data structures:
@@ -371,12 +381,12 @@ static MFIFO_DEFINE(prep, sizeof(struct lll_event), EVENT_PIPELINE_MAX);
 #if !defined(VENDOR_EVENT_DONE_MAX)
 #if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_OBSERVER)
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-#define EVENT_DONE_MAX 6
+#define EVENT_DONE_MAX (6U + EVENT_DEFER_MAX)
 #else /* !CONFIG_BT_CTLR_PHY_CODED */
-#define EVENT_DONE_MAX 5
+#define EVENT_DONE_MAX (5U + EVENT_DEFER_MAX)
 #endif /* !CONFIG_BT_CTLR_PHY_CODED */
 #else /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_OBSERVER */
-#define EVENT_DONE_MAX 4
+#define EVENT_DONE_MAX (4U + EVENT_DEFER_MAX)
 #endif /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_OBSERVER */
 #else
 #define EVENT_DONE_MAX VENDOR_EVENT_DONE_MAX
@@ -875,9 +885,6 @@ void ll_reset(void)
 	}
 
 	/* Re-initialize ULL internals */
-
-	/* Re-initialize the prep mfifo */
-	MFIFO_INIT(prep);
 
 	/* Re-initialize the free rx mfifo */
 	MFIFO_INIT(pdu_rx_free);
@@ -2112,12 +2119,15 @@ struct lll_event *ull_prepare_enqueue(lll_is_abort_cb_t is_abort_cb,
 				      uint8_t is_resume)
 {
 	struct lll_event *e;
-	uint8_t idx;
+	void **next;
 
-	idx = MFIFO_ENQUEUE_GET(prep, (void **)&e);
-	if (!e) {
+	/* Allocate lll_event */
+	next = mem_acquire(&pipeline.mem.free);
+	if (!next) {
 		return NULL;
 	}
+
+	e = (void *)((uint8_t *)next + sizeof(void *));
 
 	memcpy(&e->prepare_param, prepare_param, sizeof(e->prepare_param));
 	e->prepare_cb = prepare_cb;
@@ -2126,28 +2136,124 @@ struct lll_event *ull_prepare_enqueue(lll_is_abort_cb_t is_abort_cb,
 	e->is_resume = is_resume;
 	e->is_aborted = 0U;
 
-	MFIFO_ENQUEUE(prep, idx);
+	/* Enqueue lll_event */
+	*next = NULL;
+	if (pipeline.tail) {
+		struct lll_event *e_curr;
+		uint32_t diff;
+
+		/* Should the prepare be placed as the tail? */
+		e_curr = (void *)((uint8_t *)pipeline.tail + sizeof(void *));
+		diff = ticker_ticks_diff_get(prepare_param->ticks_at_expire,
+					     e_curr->prepare_param.ticks_at_expire);
+		if (is_resume ||
+		    (!e_curr->is_aborted && !e_curr->is_resume &&
+		     ((diff & BIT(HAL_TICKER_CNTR_MSBIT)) == 0U))) {
+			*pipeline.tail = next;
+			pipeline.tail = next;
+		} else {
+			/* Should the prepare be placed as the head? */
+			e_curr = (void *)((uint8_t *)pipeline.head + sizeof(void *));
+			diff = ticker_ticks_diff_get(e_curr->prepare_param.ticks_at_expire,
+						     prepare_param->ticks_at_expire);
+			if (!e_curr->is_aborted &&
+			    (e_curr->is_resume ||
+			     (diff && ((diff & BIT(HAL_TICKER_CNTR_MSBIT)) == 0U)))) {
+				*next = pipeline.head;
+				pipeline.head = next;
+			} else {
+				void **prev;
+				void **curr;
+
+				prev = NULL;
+				curr = pipeline.head;
+				e_curr = (void *)((uint8_t *)curr + sizeof(void *));
+				do {
+					if (!e_curr->is_aborted && !e_curr->is_resume) {
+						prev = curr;
+					}
+
+					curr = *curr;
+					if (!curr) {
+						break;
+					}
+
+					e_curr = (void *)((uint8_t *)curr + sizeof(void *));
+					diff = ticker_ticks_diff_get(
+							prepare_param->ticks_at_expire,
+							e_curr->prepare_param.ticks_at_expire);
+				} while (!e_curr->is_resume &&
+					 (e_curr->is_aborted ||
+					  ((diff & BIT(HAL_TICKER_CNTR_MSBIT)) == 0U)));
+
+				if (!prev) {
+					*next = pipeline.head;
+					pipeline.head = next;
+					if (!*next) {
+						pipeline.tail = next;
+					}
+				} else {
+					*next = *prev;
+					*prev = next;
+					if (!*next) {
+						pipeline.tail = next;
+					}
+				}
+			}
+		}
+	} else {
+		pipeline.head = next;
+		pipeline.tail = next;
+	}
 
 	return e;
 }
 
 void *ull_prepare_dequeue_get(void)
 {
-	return MFIFO_DEQUEUE_GET(prep);
+	void *e;
+
+	/* peak lll_event */
+	if (pipeline.head) {
+		e = (uint8_t *)pipeline.head + sizeof(void *);
+	} else {
+		e = NULL;
+	}
+
+	return e;
 }
 
-void *ull_prepare_dequeue_iter(uint8_t *idx)
+void *ull_prepare_dequeue_iter(void **idx)
 {
-	return MFIFO_DEQUEUE_ITER_GET(prep, idx);
+	void *e;
+
+	/* Start at the head */
+	if (!*idx) {
+		*idx = pipeline.head;
+	}
+
+	/* No more in the list */
+	if (!*idx) {
+		return NULL;
+	}
+
+	/* Peak lll_event */
+	e = (uint8_t *)*idx + sizeof(void *);
+
+	/* Proceed to next */
+	*idx = *((void **)*idx);
+
+	return e;
 }
 
 void ull_prepare_dequeue(uint8_t caller_id)
 {
-	void *param_normal_head = NULL;
-	void *param_normal_next = NULL;
-	void *param_resume_head = NULL;
-	void *param_resume_next = NULL;
-	struct lll_event *next;
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, lll_resume};
+	uint8_t enqueued_loop = 2U;
+	uint8_t is_enqueued = 0U;
+	void **e_prev;
+	void **e_curr;
 	uint8_t loop;
 
 	/* Development assertion check to ensure the below loop processing
@@ -2177,85 +2283,86 @@ void ull_prepare_dequeue(uint8_t caller_id)
 	 */
 	loop = (EVENT_PIPELINE_MAX + 3U);
 
-	next = ull_prepare_dequeue_get();
-	while (next) {
-		void *param = next->prepare_param.param;
-		uint8_t is_aborted = next->is_aborted;
-		uint8_t is_resume = next->is_resume;
+	e_prev = NULL;
+	e_curr = pipeline.head;
+	while (e_curr) {
+		struct lll_event *e;
+		uint8_t is_aborted;
 
 		/* Assert if we exceed iterations processing the prepare queue
 		 */
 		LL_ASSERT(loop);
 		loop--;
 
-		/* Let LLL invoke the `prepare` interface if radio not in active
-		 * use. Otherwise, enqueue at end of the prepare pipeline queue.
-		 */
-		if (!is_aborted) {
-			static memq_link_t link;
-			static struct mayfly mfy = {0, 0, &link, NULL,
-						    lll_resume};
-			uint32_t ret;
+		e = (void *)((uint8_t *)e_curr + sizeof(void *));
 
-			mfy.param = next;
-			ret = mayfly_enqueue(caller_id, TICKER_USER_ID_LLL, 0,
-					     &mfy);
-			LL_ASSERT(!ret);
-		}
+		is_aborted = !!e->is_aborted;
 
-		MFIFO_DEQUEUE(prep);
+		if (is_aborted || (!is_enqueued && !e->is_resume)) {
+			void **head = e_curr;
 
-		/* Check for anymore more prepare elements in queue */
-		next = ull_prepare_dequeue_get();
-		if (!next) {
-			break;
-		}
-
-		/* A valid prepare element has its `prepare` invoked or was
-		 * enqueued back into prepare pipeline.
-		 */
-		if (!is_aborted) {
-			/* The prepare element was not a resume event, it would
-			 * use the radio or was enqueued back into prepare
-			 * pipeline with a preempt timeout being set.
-			 *
-			 * Remember the first encountered and the next element
-			 * in the prepare pipeline so that we do not infinitely
-			 * loop through the resume events in prepare pipeline.
-			 */
-			if (!is_resume) {
-				if (!param_normal_head) {
-					param_normal_head = param;
-				} else if (!param_normal_next) {
-					param_normal_next = param;
+			if (!e_prev) {
+				pipeline.head = *pipeline.head;
+				if (!pipeline.head) {
+					pipeline.tail = NULL;
 				}
+				e_curr = pipeline.head;
 			} else {
-				if (!param_resume_head) {
-					param_resume_head = param;
-				} else if (!param_resume_next) {
-					param_resume_next = param;
+				*e_prev = *e_curr;
+				if (!*e_prev) {
+					pipeline.tail = e_prev;
 				}
+				e_curr = *e_prev;
 			}
 
-			/* Stop traversing the prepare pipeline when we reach
-			 * back to the first or next event where we
-			 * initially started processing the prepare pipeline.
-			 */
-			if (!next->is_aborted &&
-			    ((!next->is_resume &&
-			      ((next->prepare_param.param ==
-				param_normal_head) ||
-			       (next->prepare_param.param ==
-				param_normal_next))) ||
-			     (next->is_resume &&
-			      !param_normal_next &&
-			      ((next->prepare_param.param ==
-				param_resume_head) ||
-			       (next->prepare_param.param ==
-				param_resume_next))))) {
-				break;
+			if (!is_aborted) {
+				uint32_t ret;
+
+				if (enqueued_loop) {
+					enqueued_loop--;
+				}
+
+				if (!enqueued_loop) {
+					is_enqueued = 1U;
+				}
+
+				/* Trigger the LLL resume */
+				mfy.param = e;
+				ret = mayfly_enqueue(caller_id, TICKER_USER_ID_LLL, 0, &mfy);
+				LL_ASSERT(!ret);
+
+				e_prev = NULL;
+				e_curr = pipeline.head;
 			}
+
+			/* Free event memory */
+			mem_release(head, &pipeline.mem.free);
+
+		} else {
+			e_prev = e_curr;
+			e_curr = *e_curr;
 		}
+	}
+
+	if (!is_enqueued && pipeline.head) {
+		void **head = pipeline.head;
+		struct lll_event *e;
+		uint32_t ret;
+
+		pipeline.head = *pipeline.head;
+		if (!pipeline.head) {
+			pipeline.tail = NULL;
+		}
+
+		e = (void *)((uint8_t *)head + sizeof(void *));
+		LL_ASSERT(!e->is_aborted && e->is_resume);
+
+		/* Trigger the LLL resume */
+		mfy.param = e;
+		ret = mayfly_enqueue(caller_id, TICKER_USER_ID_LLL, 0, &mfy);
+		LL_ASSERT(!ret);
+
+		mem_release(head, &pipeline.mem.free);
 	}
 }
 
@@ -2364,6 +2471,11 @@ void ull_drift_ticks_get(struct node_rx_event_done *done,
 static inline int init_reset(void)
 {
 	memq_link_t *link;
+
+	/* Initialize prepare pipeline list */
+	mem_init(pipeline.mem.pool, EVENT_PIPELINE_EVENT_SIZE,
+		 sizeof(pipeline.mem.pool) / EVENT_PIPELINE_EVENT_SIZE,
+		 &pipeline.mem.free);
 
 	/* Initialize and allocate done pool */
 	RXFIFO_INIT_ALLOC(done);
