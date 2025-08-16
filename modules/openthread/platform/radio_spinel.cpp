@@ -91,7 +91,7 @@ static void openthread_handle_frame_to_send(otInstance *instance, struct net_pkt
 	NET_DBG("Sending Ip6 packet to ot stack");
 
 	settings.mPriority = OT_MESSAGE_PRIORITY_NORMAL;
-	settings.mLinkSecurityEnabled = true;
+	settings.mLinkSecurityEnabled = otThreadGetDeviceRole(instance) != OT_DEVICE_ROLE_DISABLED;
 	message = otIp6NewMessage(instance, &settings);
 	if (message == NULL) {
 		goto exit;
