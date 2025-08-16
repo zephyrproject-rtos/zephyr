@@ -192,8 +192,7 @@ static int cmd_cs_test_simple(const struct shell *sh, size_t argc, char *argv[])
 	int err = 0;
 	struct bt_le_cs_test_param params;
 
-	params.main_mode = BT_CONN_LE_CS_MAIN_MODE_1;
-	params.sub_mode = BT_CONN_LE_CS_SUB_MODE_UNUSED;
+	params.mode = BT_CONN_LE_CS_MAIN_MODE_1_NO_SUB_MODE;
 	params.main_mode_repetition = 0;
 	params.mode_0_steps = 2;
 
@@ -313,8 +312,7 @@ static int cmd_create_config(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	/* Set the default values */
-	params.main_mode_type = BT_CONN_LE_CS_MAIN_MODE_2;
-	params.sub_mode_type = BT_CONN_LE_CS_SUB_MODE_1;
+	params.mode = BT_CONN_LE_CS_MAIN_MODE_2_SUB_MODE_1;
 	params.min_main_mode_steps = 0x05;
 	params.max_main_mode_steps = 0x0A;
 	params.main_mode_repetition = 0;
@@ -330,23 +328,17 @@ static int cmd_create_config(const struct shell *sh, size_t argc, char *argv[])
 
 	for (int j = 4; j < argc; j++) {
 		if (!strcmp(argv[j], "rtt-none")) {
-			params.main_mode_type = BT_CONN_LE_CS_MAIN_MODE_1;
-			params.sub_mode_type = BT_CONN_LE_CS_SUB_MODE_UNUSED;
+			params.mode = BT_CONN_LE_CS_MAIN_MODE_1_NO_SUB_MODE;
 		} else if (!strcmp(argv[j], "pbr-none")) {
-			params.main_mode_type = BT_CONN_LE_CS_MAIN_MODE_2;
-			params.sub_mode_type = BT_CONN_LE_CS_SUB_MODE_UNUSED;
+			params.mode = BT_CONN_LE_CS_MAIN_MODE_2_NO_SUB_MODE;
 		} else if (!strcmp(argv[j], "both-none")) {
-			params.main_mode_type = BT_CONN_LE_CS_MAIN_MODE_3;
-			params.sub_mode_type = BT_CONN_LE_CS_SUB_MODE_UNUSED;
+			params.mode = BT_CONN_LE_CS_MAIN_MODE_3_NO_SUB_MODE;
 		} else if (!strcmp(argv[j], "pbr-rtt")) {
-			params.main_mode_type = BT_CONN_LE_CS_MAIN_MODE_2;
-			params.sub_mode_type = BT_CONN_LE_CS_SUB_MODE_1;
+			params.mode = BT_CONN_LE_CS_MAIN_MODE_2_SUB_MODE_1;
 		} else if (!strcmp(argv[j], "pbr-both")) {
-			params.main_mode_type = BT_CONN_LE_CS_MAIN_MODE_2;
-			params.sub_mode_type = BT_CONN_LE_CS_SUB_MODE_3;
+			params.mode = BT_CONN_LE_CS_MAIN_MODE_2_SUB_MODE_3;
 		} else if (!strcmp(argv[j], "both-pbr")) {
-			params.main_mode_type = BT_CONN_LE_CS_MAIN_MODE_3;
-			params.sub_mode_type = BT_CONN_LE_CS_SUB_MODE_2;
+			params.mode = BT_CONN_LE_CS_MAIN_MODE_3_SUB_MODE_2;
 		} else if (!strcmp(argv[j], "steps")) {
 			if (++j == argc) {
 				shell_help(sh);
