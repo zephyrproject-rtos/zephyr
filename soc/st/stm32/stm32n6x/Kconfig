@@ -23,3 +23,8 @@ config SOC_SERIES_STM32N6X
 
 config STM32N6_BOOT_SERIAL
 	bool "Serial boot target (USB)"
+
+config STM32N6_NPU
+	bool "Neural-ART accelerator (NPU)"
+	select USE_STM32_HAL_RIF
+	default y if DT_HAS_ST_STM32_NPU_ENABLED
