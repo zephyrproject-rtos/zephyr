@@ -1,22 +1,20 @@
 /*
- * Copyright (c) 2021 Andes Technology Corporation
- *
+ * Copyright (c) 2025 Andes Technology Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "soc_v5.h"
-
+#include <andes_csr.h>
 #include <zephyr/toolchain.h>
 
 /* exports */
-GTEXT(entry)
+GTEXT(__reset)
 
-SECTION_FUNC(init, entry)
-	/* Disable linker relaxation before GP register initialization. */
-	.option push
-	.option norelax
+/* imports */
+GTEXT(__initialize)
 
-#ifdef CONFIG_SOC_ANDES_V5_EXECIT
+SECTION_FUNC(reset, __reset)
+
+#ifdef CONFIG_RISCV_CUSTOM_CSR_ANDES_EXECIT
 	/* Initialize EXECIT table */
 	la t0, _ITB_BASE_
 	csrw NDS_UITB, t0
@@ -58,6 +56,5 @@ cache_enable_finish:
 	li t0, (1 << 8) | (1 << 6)
 	csrs NDS_MMISC_CTL, t0
 
-	j __start
-
-	.option pop
+	/* Jump to __initialize */
+	call __initialize
