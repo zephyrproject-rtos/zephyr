@@ -1,0 +1,43 @@
+# Copyright 2025 Christoph Schnetzler
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  MIPI-DBI Mode B controller. This driver emulates MIPI DBI mode B
+  (8080 parallel interface) using PIO peripherals.
+
+compatible: "raspberrypi,pico-mipi-dbi-pio"
+
+include: ["mipi-dbi-controller.yaml", "pinctrl-device.yaml"]
+
+properties:
+
+  dc-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Data/command GPIO pin. Set to low when sending a command, or high when sending data.
+
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Reset GPIO pin. Set high to reset the display.
+
+  wr-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Write GPIO pin for type B (Intel 8080) mode.
+
+  cs-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Chip-select GPIO pin.
+
+  data-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO pins used for the parallel data bus. This must have as many entries as
+      bits specified in the selected mipi-mode.
