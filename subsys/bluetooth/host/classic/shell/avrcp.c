@@ -29,6 +29,10 @@
 #include "host/shell/bt.h"
 #include "common/bt_shell_private.h"
 
+NET_BUF_POOL_DEFINE(avrcp_tx_pool, CONFIG_BT_MAX_CONN,
+		    BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_TX_MTU),
+		    CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
+
 struct bt_avrcp_ct *default_ct;
 struct bt_avrcp_tg *default_tg;
 static bool avrcp_ct_registered;
@@ -58,6 +62,16 @@ static void avrcp_ct_disconnected(struct bt_avrcp_ct *ct)
 	bt_shell_print("AVRCP CT disconnected");
 	local_tid = 0;
 	default_ct = NULL;
+}
+
+static void avrcp_ct_browsing_connected(struct bt_conn *conn, struct bt_avrcp_ct *ct)
+{
+	bt_shell_print("AVRCP CT browsing connected");
+}
+
+static void avrcp_ct_browsing_disconnected(struct bt_avrcp_ct *ct)
+{
+	bt_shell_print("AVRCP CT browsing disconnected");
 }
 
 static void avrcp_get_cap_rsp(struct bt_avrcp_ct *ct, uint8_t tid,
@@ -115,13 +129,53 @@ static void avrcp_passthrough_rsp(struct bt_avrcp_ct *ct, uint8_t tid, bt_avrcp_
 	}
 }
 
+static void avrcp_browsed_player_rsp(struct bt_avrcp_ct *ct, uint8_t tid,
+				     struct net_buf *buf)
+{
+	uint8_t status;
+	uint8_t folder_depth;
+	uint16_t charset_id;
+	struct bt_avrcp_folder_name *folder_names;
+
+	status = net_buf_pull_u8(buf);
+	if (status != BT_AVRCP_STATUS_OPERATION_COMPLETED) {
+		bt_shell_print("AVRCP set browsed player failed, tid = %d, status = 0x%02x",
+			       tid, status);
+		return;
+	}
+
+	bt_shell_print("AVRCP set browsed player success, tid = %d", tid);
+	bt_shell_print("  UID Counter: %u", net_buf_pull_be16(buf));
+	bt_shell_print("  Number of Items: %u", net_buf_pull_be32(buf));
+	charset_id = net_buf_pull_be16(buf);
+	bt_shell_print("  Charset ID: 0x%04X", charset_id);
+	folder_depth = net_buf_pull_u8(buf);
+	bt_shell_print("  Folder Depth: %u", folder_depth);
+	folder_names = (struct bt_avrcp_folder_name *)buf->data;
+	if (charset_id == 0x006AU) {
+		for (size_t index = 0; index < folder_depth; index++) {
+			bt_shell_print("Get folder Name: %s",
+				      (char *)folder_names[index].folder_name);
+		}
+	} else {
+		for (size_t index = 0; index < folder_depth; index++) {
+			bt_shell_print(" Get folder Name : ");
+			bt_shell_hexdump(folder_names[index].folder_name,
+					 sys_cpu_to_be16(folder_names[index].folder_name_len));
+		}
+	}
+}
+
 static struct bt_avrcp_ct_cb app_avrcp_ct_cb = {
 	.connected = avrcp_ct_connected,
 	.disconnected = avrcp_ct_disconnected,
+	.browsing_connected = avrcp_ct_browsing_connected,
+	.browsing_disconnected = avrcp_ct_browsing_disconnected,
 	.get_cap_rsp = avrcp_get_cap_rsp,
 	.unit_info_rsp = avrcp_unit_info_rsp,
 	.subunit_info_rsp = avrcp_subunit_info_rsp,
 	.passthrough_rsp = avrcp_passthrough_rsp,
+	.browsed_player_rsp = avrcp_browsed_player_rsp,
 };
 
 static void avrcp_tg_connected(struct bt_conn *conn, struct bt_avrcp_tg *tg)
@@ -136,16 +190,36 @@ static void avrcp_tg_disconnected(struct bt_avrcp_tg *tg)
 	default_tg = NULL;
 }
 
+static void avrcp_tg_browsing_connected(struct bt_conn *conn, struct bt_avrcp_tg *tg)
+{
+	bt_shell_print("AVRCP TG browsing connected");
+}
+
 static void avrcp_unit_info_req(struct bt_avrcp_tg *tg, uint8_t tid)
 {
 	bt_shell_print("AVRCP unit info request received");
 	tg_tid = tid;
 }
 
+static void avrcp_tg_browsing_disconnected(struct bt_avrcp_tg *tg)
+{
+	bt_shell_print("AVRCP TG browsing disconnected");
+}
+
+static void avrcp_set_browsed_player_req(struct bt_avrcp_tg *tg, uint8_t tid,
+					 uint16_t player_id)
+{
+	bt_shell_print("AVRCP set browsed player request received, player_id = %u", player_id);
+	tg_tid = tid;
+}
+
 static struct bt_avrcp_tg_cb app_avrcp_tg_cb = {
 	.connected = avrcp_tg_connected,
 	.disconnected = avrcp_tg_disconnected,
+	.browsing_connected = avrcp_tg_browsing_connected,
+	.browsing_disconnected = avrcp_tg_browsing_disconnected,
 	.unit_info_req = avrcp_unit_info_req,
+	.set_browsed_player_req = avrcp_set_browsed_player_req,
 };
 
 static int register_ct_cb(const struct shell *sh)
@@ -256,6 +330,53 @@ static int cmd_disconnect(const struct shell *sh, int32_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_browsing_connect(const struct shell *sh, int32_t argc, char *argv[])
+{
+	int err;
+
+	if (!avrcp_ct_registered && register_ct_cb(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	if (!default_conn) {
+		shell_error(sh, "BR/EDR not connected");
+		return -ENOEXEC;
+	}
+
+	err = bt_avrcp_browsing_connect(default_conn);
+	if (err) {
+		shell_error(sh, "fail to connect AVRCP browsing");
+	} else {
+		shell_print(sh, "AVRCP browsing connect request sent");
+	}
+
+	return err;
+}
+
+static int cmd_browsing_disconnect(const struct shell *sh, int32_t argc, char *argv[])
+{
+	int err;
+
+	if (!default_conn) {
+		shell_print(sh, "Not connected");
+		return -ENOEXEC;
+	}
+
+	if (default_ct != NULL) {
+		err = bt_avrcp_browsing_disconnect(default_conn);
+		if (err) {
+			shell_error(sh, "fail to disconnect AVRCP browsing");
+		} else {
+			shell_print(sh, "AVRCP browsing disconnect request sent");
+		}
+	} else {
+		shell_error(sh, "AVRCP is not connected");
+		err = -ENOEXEC;
+	}
+
+	return err;
+}
+
 static int cmd_get_unit_info(const struct shell *sh, int32_t argc, char *argv[])
 {
 	if (!avrcp_ct_registered && register_ct_cb(sh) != 0) {
@@ -364,6 +485,130 @@ static int cmd_get_cap(const struct shell *sh, int32_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_set_browsed_player(const struct shell *sh, int32_t argc, char *argv[])
+{
+	uint16_t player_id;
+	int err;
+
+	if (!avrcp_ct_registered && register_ct_cb(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	if (default_ct == NULL) {
+		shell_error(sh, "AVRCP is not connected");
+		return -ENOEXEC;
+	}
+
+	player_id = (uint16_t)strtoul(argv[1], NULL, 0);
+
+	err = bt_avrcp_ct_set_browsed_player(default_ct, get_next_tid(), player_id);
+	if (err) {
+		shell_error(sh, "fail to set browsed player");
+	} else {
+		shell_print(sh, "AVRCP send set browsed player req");
+	}
+
+	return 0;
+}
+
+static int cmd_send_set_browsed_player_rsp(const struct shell *sh, int32_t argc, char *argv[])
+{
+	uint8_t status = BT_AVRCP_STATUS_OPERATION_COMPLETED;
+	uint16_t uid_counter = 0x0001U;
+	uint32_t num_items = 100U;
+	uint16_t charset_id = 0x006AU; /* UTF-8 */
+	char *folder_name = "Music";
+	uint8_t folder_name_hex[100];
+	uint16_t folder_name_len = 0;
+	struct net_buf *buf;
+	uint16_t param_len;
+	int err;
+
+	if (!avrcp_tg_registered && register_tg_cb(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	if (default_tg == NULL) {
+		shell_error(sh, "AVRCP TG is not connected");
+		return -ENOEXEC;
+	}
+
+	/* Parse command line arguments or use default values */
+	if (argc >= 2) {
+		status = (uint8_t)strtoul(argv[1], NULL, 0);
+	}
+
+	if (argc >= 3) {
+		uid_counter = (uint16_t)strtoul(argv[2], NULL, 0);
+	}
+
+	if (argc >= 4) {
+		num_items = (uint32_t)strtoul(argv[3], NULL, 0);
+	}
+
+	if (argc >= 5) {
+		charset_id = (uint16_t)strtoul(argv[4], NULL, 0);
+	}
+
+	if (charset_id == 0x006AU) {
+		if (argc >= 6) {
+			folder_name = argv[5];
+		}
+		folder_name_len = strlen(folder_name);
+	} else {
+		if (argc >= 6) {
+			folder_name_len = hex2bin(argv[5], strlen(argv[5]), folder_name_hex,
+						  sizeof(folder_name_hex));
+			if (folder_name_len == 0) {
+				shell_error(sh, "Failed to get folder_name from  %s", argv[5]);
+			}
+		} else {
+			shell_error(sh, "Please input hex string for folder_name");
+		}
+	}
+
+	buf = bt_avrcp_create_pdu(&avrcp_tx_pool);
+	if (buf == NULL) {
+		shell_error(sh, "Failed to allocate buffer for AVRCP browsing response");
+		return -ENOMEM;
+	}
+
+	param_len = sizeof(uint8_t) + sizeof(uint16_t) + sizeof(uint32_t) +
+		    sizeof(uint16_t) + sizeof(uint8_t) + folder_name_len + sizeof(uint16_t);
+
+	if (net_buf_tailroom(buf) < param_len) {
+		shell_error(sh, "Not enough tailroom in buffer for parameter");
+		net_buf_unref(buf);
+		return -ENOMEM;
+	}
+
+	net_buf_add_u8(buf, status);
+	net_buf_add_be16(buf, uid_counter);
+	net_buf_add_be32(buf, num_items);
+	net_buf_add_be16(buf, charset_id);
+	net_buf_add_u8(buf, 1);
+	net_buf_add_be16(buf, folder_name_len);
+	if (charset_id == 0x006AU) {
+		net_buf_add_mem(buf, folder_name, folder_name_len);
+	} else {
+		net_buf_add_mem(buf, folder_name_hex, folder_name_len);
+	}
+
+	err = bt_avrcp_tg_send_set_browsed_player_rsp(default_tg, tg_tid, buf);
+	if (!err) {
+		shell_print(sh, "AVRCP send set browsed player response, status = 0x%02x", status);
+	} else {
+		shell_error(sh, "Failed to send set browsed player response, err = %d", err);
+	}
+
+	return err;
+}
+
+#define HELP_BROWSED_PLAYER_RSP                                                      \
+	"Send SetBrowsedPlayer response\n"					     \
+	"Usage: send_browsed_player_rsp [status] [uid_counter] [num_items] "         \
+	"[charset_id] [folder_name]"
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	ct_cmds,
 	SHELL_CMD_ARG(register_cb, NULL, "register avrcp ct callbacks", cmd_register_ct_cb, 1, 0),
@@ -373,12 +618,16 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      0),
 	SHELL_CMD_ARG(play, NULL, "request a play at the remote player", cmd_play, 1, 0),
 	SHELL_CMD_ARG(pause, NULL, "request a pause at the remote player", cmd_pause, 1, 0),
+	SHELL_CMD_ARG(set_browsed_player, NULL, "set browsed player <player_id>",
+		      cmd_set_browsed_player, 2, 0),
 	SHELL_SUBCMD_SET_END);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	tg_cmds,
 	SHELL_CMD_ARG(register_cb, NULL, "register avrcp tg callbacks", cmd_register_tg_cb, 1, 0),
 	SHELL_CMD_ARG(send_unit_rsp, NULL, "send unit info response", cmd_send_unit_info_rsp, 1, 0),
+	SHELL_CMD_ARG(send_browsed_player_rsp, NULL, HELP_BROWSED_PLAYER_RSP,
+		      cmd_send_set_browsed_player_rsp, 1, 5),
 	SHELL_SUBCMD_SET_END);
 
 static int cmd_avrcp(const struct shell *sh, size_t argc, char **argv)
@@ -398,6 +647,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	avrcp_cmds,
 	SHELL_CMD_ARG(connect, NULL, "connect AVRCP", cmd_connect, 1, 0),
 	SHELL_CMD_ARG(disconnect, NULL, "disconnect AVRCP", cmd_disconnect, 1, 0),
+	SHELL_CMD_ARG(browsing_connect, NULL, "connect browsing AVRCP", cmd_browsing_connect, 1, 0),
+	SHELL_CMD_ARG(browsing_disconnect, NULL, "disconnect browsing AVRCP",
+		      cmd_browsing_disconnect, 1, 0),
 	SHELL_CMD(ct, &ct_cmds, "AVRCP CT shell commands", cmd_avrcp),
 	SHELL_CMD(tg, &tg_cmds, "AVRCP TG shell commands", cmd_avrcp),
 	SHELL_SUBCMD_SET_END);
