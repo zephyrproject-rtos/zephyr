@@ -2,6 +2,8 @@ sample:
   name: PSA Crypto persistent key sample
   description: Demonstration of persistent key usage in the PSA Crypto API.
 common:
+  integration_platforms:
+    - native_sim
   tags:
     - psa.secure_storage
   timeout: 10

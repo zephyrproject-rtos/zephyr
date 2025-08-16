@@ -107,6 +107,17 @@ Other subsystems
 
 .. zephyr-keep-sorted-start re(^\w)
 
+Secure storage
+==============
+
+* The size of :c:type:`psa_storage_uid_t`, used to identify storage entries, was changed from 64 to
+  30 bits.
+  This change breaks backward compatibility with previously stored entries for which authentication
+  will start failing.
+  Enable :kconfig:option:`CONFIG_SECURE_STORAGE_64_BIT_UID` if you are updating an existing
+  installation from an earlier version of Zephyr and want to keep the pre-existing entries.
+  (:github:`94171`)
+
 .. zephyr-keep-sorted-stop
 
 Modules
