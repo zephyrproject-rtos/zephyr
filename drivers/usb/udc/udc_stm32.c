@@ -41,26 +41,39 @@ LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
 #define UDC_STM32_IRQ		DT_INST_IRQ_BY_NAME(0, UDC_STM32_IRQ_NAME, irq)
 #define UDC_STM32_IRQ_PRI	DT_INST_IRQ_BY_NAME(0, UDC_STM32_IRQ_NAME, priority)
 
-#define USB_OTG_HS_EMB_PHY (DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usbphyc) && \
+#define USB_OTG_HS_EMB_PHYC (DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usbphyc) && \
+			     DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs))
+
+#define USB_OTG_HS_EMB_PHY (DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_otghs_phy) && \
 			    DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs))
 
 #define USB_OTG_HS_ULPI_PHY (DT_HAS_COMPAT_STATUS_OKAY(usb_ulpi_phy) && \
 			    DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs))
 
 /**
- * The following defines are used to map the value of the "maxiumum-speed"
- * DT property to the corresponding definition used by the STM32 HAL.
+ * Select the desired speed based on enabled high speed support and phy.
+ *
+ * 1.  high speed support enabled and hs phy is used
+ * 1.1 maximum speed is reduced by devicetree configuration
+ * 1.2 maximum speed is high speed
+ * 2.  high speed phy is used, but high speed support is not enabled
+ * 3.  non-hs capable hardware, but with st_stm32_usb compatible
+ * 4.  everything else
  */
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || USB_OTG_HS_EMB_PHY
-#define UDC_STM32_HIGH_SPEED             USB_OTG_SPEED_HIGH_IN_FULL
+#if CONFIG_UDC_DRIVER_HIGH_SPEED_SUPPORT_ENABLED && \
+	(USB_OTG_HS_EMB_PHYC || USB_OTG_HS_EMB_PHY || USB_OTG_HS_ULPI_PHY)
+/* 'maximum_speed': idx == 2 means 'high-speed' */
+#if DT_ENUM_IDX_OR(DT_DRV_INST(0), maximum_speed, 2) != 2
+#define UDC_STM32_SPEED                  USB_OTG_SPEED_HIGH_IN_FULL
 #else
-#define UDC_STM32_HIGH_SPEED             USB_OTG_SPEED_HIGH
+#define UDC_STM32_SPEED                  USB_OTG_SPEED_HIGH
 #endif
-
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb)
-#define UDC_STM32_FULL_SPEED             PCD_SPEED_FULL
+#elif USB_OTG_HS_EMB_PHYC || USB_OTG_HS_EMB_PHY || USB_OTG_HS_ULPI_PHY
+#define UDC_STM32_SPEED                  USB_OTG_SPEED_HIGH_IN_FULL
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb)
+#define UDC_STM32_SPEED                  PCD_SPEED_FULL
 #else
-#define UDC_STM32_FULL_SPEED             USB_OTG_SPEED_FULL
+#define UDC_STM32_SPEED                  USB_OTG_SPEED_FULL
 #endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
@@ -85,7 +98,6 @@ struct udc_stm32_config {
 	uint32_t dram_size;
 	uint16_t ep0_mps;
 	uint16_t ep_mps;
-	int speed_idx;
 };
 
 enum udc_stm32_msg_type {
@@ -986,7 +998,6 @@ static const struct udc_stm32_config udc0_cfg  = {
 	.pma_offset = USB_BTABLE_SIZE,
 	.ep0_mps = EP0_MPS,
 	.ep_mps = EP_MPS,
-	.speed_idx = DT_ENUM_IDX_OR(DT_DRV_INST(0), maximum_speed, 1),
 };
 
 static void priv_pcd_prepare(const struct device *dev)
@@ -999,7 +1010,7 @@ static void priv_pcd_prepare(const struct device *dev)
 	/* Default values */
 	priv->pcd.Init.dev_endpoints = cfg->num_endpoints;
 	priv->pcd.Init.ep0_mps = cfg->ep0_mps;
-	priv->pcd.Init.speed = UTIL_CAT(UDC_STM32_, DT_INST_STRING_UPPER_TOKEN(0, maximum_speed));
+	priv->pcd.Init.speed = UDC_STM32_SPEED;
 
 	/* Per controller/Phy values */
 #if defined(USB)
@@ -1010,13 +1021,13 @@ static void priv_pcd_prepare(const struct device *dev)
 	priv->pcd.Instance = (USB_OTG_GlobalTypeDef *)UDC_STM32_BASE_ADDRESS;
 #endif /* USB */
 
-#if USB_OTG_HS_EMB_PHY
+#if USB_OTG_HS_EMB_PHYC || USB_OTG_HS_EMB_PHY
 	priv->pcd.Init.phy_itface = USB_OTG_HS_EMBEDDED_PHY;
 #elif USB_OTG_HS_ULPI_PHY
 	priv->pcd.Init.phy_itface = USB_OTG_ULPI_PHY;
 #else
 	priv->pcd.Init.phy_itface = PCD_PHY_EMBEDDED;
-#endif /* USB_OTG_HS_EMB_PHY */
+#endif /* USB_OTG_HS_EMB_PHYC || USB_OTG_HS_EMB_PHY */
 }
 
 static const struct stm32_pclken pclken[] = STM32_DT_INST_CLOCKS(0);
@@ -1159,7 +1170,7 @@ static int priv_clock_enable(void)
 	LL_AHB1_GRP1_DisableClockLowPower(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
 #endif /* defined(CONFIG_SOC_SERIES_STM32H7X) */
 
-#if USB_OTG_HS_EMB_PHY
+#if USB_OTG_HS_EMB_PHYC
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_OTGPHYC);
 #endif
@@ -1257,9 +1268,9 @@ static int udc_stm32_driver_init0(const struct device *dev)
 	data->caps.rwup = true;
 	data->caps.out_ack = false;
 	data->caps.mps0 = UDC_MPS0_64;
-	if (cfg->speed_idx == 2) {
-		data->caps.hs = true;
-	}
+#if UDC_STM32_SPEED == USB_OTG_SPEED_HIGH
+	data->caps.hs = true;
+#endif
 
 	priv->dev = dev;
 	priv->irq = UDC_STM32_IRQ;
