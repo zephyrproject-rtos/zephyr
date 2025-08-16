@@ -1,0 +1,43 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP Fast slew rate Operational Amplifier (opamp_fast)
+
+include:
+  - name: opamp-controller.yaml
+  - name: pinctrl-device.yaml
+
+compatible: "nxp,opamp_fast"
+
+properties:
+  bias-current:
+    type: int
+    enum:
+      - 0 # Default value. Keep power consumption constant
+      - 1 # Reduce power consumption to 1/4
+      - 2 # Reduce power consumption to 1/2
+      - 3 # Double the power consumption
+    default: 0
+    description: |
+      Bias current config selection, change power consumption.
+      Reasons why set default value to 0:
+      1. Matches the value after register reset.
+      2. If there is no special power consumption requirement,
+      there is no need to change the bias current.
+
+  is-reference-source:
+    type: boolean
+    description: |
+      Indicates whether works as other OPAMPs' reference source.
+
+  io-channels:
+    type: phandle-array
+    description: |
+      Consumers of opamp output, such as adc, cmp, etc.
+
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - output

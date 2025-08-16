@@ -1,5 +1,5 @@
 /*
- * Copyright 2024  NXP
+ * Copyright 2024-2025 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/init.h>
@@ -349,6 +349,21 @@ void board_early_init_hook(void)
 	CLOCK_SetClkDiv(kCLOCK_DivCmp0FClk, 1U);
 	CLOCK_AttachClk(kFRO12M_to_CMP0F);
 	SPC_EnableActiveModeAnalogModules(SPC0, (kSPC_controlCmp0 | kSPC_controlCmp0Dac));
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(opamp0))
+	CLOCK_EnableClock(kCLOCK_Opamp0);
+	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlOpamp0);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(opamp1))
+	CLOCK_EnableClock(kCLOCK_Opamp1);
+	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlOpamp1);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(opamp2))
+	CLOCK_EnableClock(kCLOCK_Opamp2);
+	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlOpamp2);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lptmr0))
