@@ -30,7 +30,7 @@ tests:
     # but the RT595 uses external PSRAM for the display buffer
     min_ram: 32
     harness: none
-    extra_args: SHIELD="rk055hdmipi4m"
+    extra_args: SHIELD="rk055hdmipi4ma0"
     platform_allow:
       - mimxrt1170_evk/mimxrt1176/cm7
       - mimxrt595_evk/mimxrt595s/cm33
