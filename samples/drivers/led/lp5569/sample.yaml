@@ -5,3 +5,11 @@ tests:
   sample.drivers.led.lp5569:
     platform_allow: nrf52840dk/nrf52840
     tags: led
+    harness: console
+    harness_config:
+      fixture: fixture_led_lp5569
+      type: multi_line
+      ordered: true
+      regex:
+        - "Found LED device"
+        - "Testing 9 LEDs"
