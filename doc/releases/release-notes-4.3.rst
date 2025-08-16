@@ -100,6 +100,10 @@ New APIs and options
     * :kconfig:option:`CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_AL_88`
     * :kconfig:option:`CONFIG_SDL_DISPLAY_COLOR_TINT`
 
+* Flash
+
+   * :kconfig:option:`CONFIG_FLASH_STM32_ASYNC`
+
 * Logging:
 
   * Added rate-limited logging macros to prevent log flooding when messages are generated frequently.
