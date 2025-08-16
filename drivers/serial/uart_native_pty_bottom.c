@@ -19,59 +19,12 @@
 #include <string.h>
 #include <pty.h>
 #include <fcntl.h>
-#include <sys/select.h>
 #include <unistd.h>
 #include <poll.h>
 #include <nsi_tracing.h>
 
 #define ERROR nsi_print_error_and_exit
 #define WARN nsi_print_warning
-
-/**
- * @brief Poll the device for input.
- *
- * @param in_f   Input file descriptor
- * @param p_char Pointer to character.
- * @param len    Maximum number of characters to read.
- *
- * @retval >0 Number of characters actually read
- * @retval -1 If no character was available to read
- * @retval -2 if the stdin is disconnected
- */
-int np_uart_stdin_poll_in_bottom(int in_f, unsigned char *p_char, int len)
-{
-	if (feof(stdin)) {
-		/*
-		 * The stdinput is fed from a file which finished or the user
-		 * pressed Ctrl+D
-		 */
-		return -2;
-	}
-
-	int n = -1;
-
-	int ready;
-	fd_set readfds;
-	static struct timeval timeout; /* just zero */
-
-	FD_ZERO(&readfds);
-	FD_SET(in_f, &readfds);
-
-	ready = select(in_f+1, &readfds, NULL, NULL, &timeout);
-
-	if (ready == 0) {
-		return -1;
-	} else if (ready == -1) {
-		ERROR("%s: Error on select ()\n", __func__);
-	}
-
-	n = read(in_f, p_char, len);
-	if ((n == -1) || (n == 0)) {
-		return -1;
-	}
-
-	return n;
-}
 
 /**
  * @brief Check if the output descriptor has something connected to the slave side
@@ -126,6 +79,25 @@ static void attach_to_pty(const char *slave_pty, const char *auto_attach_cmd)
 		WARN("The command returned %i\n", WEXITSTATUS(ret));
 	}
 }
+
+static int setup_nonblocking(int fd)
+{
+	int ret;
+	int flags;
+
+	flags = fcntl(fd, F_GETFL);
+	if (flags == -1) {
+		return -errno;
+	}
+
+	ret = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+	if (ret == -1) {
+		return -errno;
+	}
+
+	return 0;
+}
+
 /**
  * Attempt to allocate and open a new pseudoterminal
  *
@@ -141,7 +113,6 @@ int np_uart_open_pty(const char *uart_name, const char *auto_attach_cmd,
 	struct termios ter;
 	int err_nbr;
 	int ret;
-	int flags;
 
 	master_pty = posix_openpt(O_RDWR | O_NOCTTY);
 	if (master_pty == -1) {
@@ -167,23 +138,12 @@ int np_uart_open_pty(const char *uart_name, const char *auto_attach_cmd,
 		ERROR("Error getting slave PTY device name (%i)\n", err_nbr);
 	}
 	/* Set the master PTY as non blocking */
-	flags = fcntl(master_pty, F_GETFL);
-	if (flags == -1) {
-		err_nbr = errno;
-		close(master_pty);
-		ERROR("Could not read the master PTY file status flags (%i)\n",
-			err_nbr);
-	}
-
-	ret = fcntl(master_pty, F_SETFL, flags | O_NONBLOCK);
-	if (ret == -1) {
-		err_nbr = errno;
+	err_nbr = setup_nonblocking(master_pty);
+	if (err_nbr < 0) {
 		close(master_pty);
 		ERROR("Could not set the master PTY as non-blocking (%i)\n",
-			err_nbr);
+			-err_nbr);
 	}
-
-	(void) err_nbr;
 
 	/*
 	 * Set terminal in "raw" mode:
@@ -240,10 +200,28 @@ int np_uart_open_pty(const char *uart_name, const char *auto_attach_cmd,
 
 int np_uart_pty_get_stdin_fileno(void)
 {
+	/* Set stdin as non blocking */
+	int rc;
+
+	rc = setup_nonblocking(STDIN_FILENO);
+	if (rc < 0) {
+		ERROR("Could not set stdin as non-blocking (%i)\n",
+			-rc);
+	}
+
 	return STDIN_FILENO;
 }
 
 int np_uart_pty_get_stdout_fileno(void)
 {
+	/* Set stdout as non blocking */
+	int rc;
+
+	rc = setup_nonblocking(STDOUT_FILENO);
+	if (rc < 0) {
+		ERROR("Could not set stdout as non-blocking (%i)\n",
+			-rc);
+	}
+
 	return STDOUT_FILENO;
 }
