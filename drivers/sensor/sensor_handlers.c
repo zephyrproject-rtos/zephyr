@@ -68,6 +68,15 @@ static inline int z_vrfy_sensor_get_decoder(const struct device *dev,
 }
 #include <zephyr/syscalls/sensor_get_decoder_mrsh.c>
 
+static inline int z_vrfy_sensor_upload_fw(const struct device *dev,
+					  const void *fw_buf, size_t fw_len)
+{
+	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_SENSOR));
+	K_OOPS(K_SYSCALL_MEMORY_READ(fw_buf, fw_len));
+	return z_impl_sensor_upload_fw(dev, fw_buf, fw_len);
+}
+#include <zephyr/syscalls/sensor_upload_fw_mrsh.c>
+
 static inline int z_vrfy_sensor_reconfigure_read_iodev(struct rtio_iodev *iodev,
 						       const struct device *sensor,
 						       const struct sensor_chan_spec *channels,
