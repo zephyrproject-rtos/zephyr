@@ -678,6 +678,10 @@ skip_checks:
 		if (reason != K_ERR_KERNEL_OOPS) {
 			print_fatal_exception(print_stack, cause, is_dblexc, depc);
 		}
+#if defined(CONFIG_GDBSTUB)
+		extern void z_gdb_isr(struct arch_esf *esf);
+		z_gdb_isr((void *)print_stack);
+#endif
 
 		/* FIXME: legacy xtensa port reported "HW" exception
 		 * for all unhandled exceptions, which seems incorrect
