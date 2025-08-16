@@ -49,3 +49,12 @@ if(CONFIG_NEWLIB_LIBC_NANO)
     -specs=nano.specs
     )
 endif()
+
+if(CONFIG_POSIX_API)
+  set(POSIX_VERSION 200809L)
+  zephyr_compile_options(
+    -U_POSIX_C_SOURCE -D_POSIX_C_SOURCE=${POSIX_VERSION}
+    -U_POSIX_TIMERS -D_POSIX_TIMERS=${POSIX_VERSION}
+    -U__POSIX_VISIBLE -D__POSIX_VISIBLE=${POSIX_VERSION}
+  )
+endif()

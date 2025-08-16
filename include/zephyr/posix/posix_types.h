@@ -76,7 +76,13 @@ typedef unsigned long blkcnt_t;
 #endif
 
 #if !defined(CONFIG_ARCMWDT_LIBC)
-typedef int pid_t;
+
+#if (!defined(_PID_T_DECLARED) && !defined(__pid_t_defined)) || defined(__DOXYGEN__)
+typedef long pid_t;
+#define _PID_T_DECLARED
+#define __pid_t_defined
+#endif
+
 #endif
 
 #ifndef __useconds_t_defined

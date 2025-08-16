@@ -4,7 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
 #include <time.h>
+
 #include <zephyr/sys/libc-hooks.h>
 
 #ifdef CONFIG_MINIMAL_LIBC_NON_REENTRANT_FUNCTIONS
