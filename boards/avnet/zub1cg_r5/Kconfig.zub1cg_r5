@@ -1,0 +1,5 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ZUB1CG_R5
+	select SOC_XILINX_ZYNQMP_RPU
