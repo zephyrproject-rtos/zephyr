@@ -1,7 +1,7 @@
 # Copyright (c) 2024 Synopsys, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_RMX
+config SOC_SERIES_NSIM_ARC_V_RMX
 	bool
 
 	select RISCV
