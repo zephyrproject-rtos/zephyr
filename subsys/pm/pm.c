@@ -230,7 +230,8 @@ bool pm_system_suspend(int32_t kernel_ticks)
 
 	if (IS_ENABLED(CONFIG_PM_STATS)) {
 		pm_stats_stop();
-		pm_stats_update(z_cpus_pm_state[id]->state);
+		pm_stats_update(z_cpus_pm_state[id] ?
+				z_cpus_pm_state[id]->state : PM_STATE_ACTIVE);
 	}
 
 	pm_system_resume();
