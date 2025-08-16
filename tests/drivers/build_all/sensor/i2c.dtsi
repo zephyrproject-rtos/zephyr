@@ -1389,3 +1389,8 @@ test_i2c_mb7040: mb7040@ba {
 	reg = <0xba>;
 	status-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_als31300: als31300@bb {
+	compatible = "allegro,als31300";
+	reg = <0xbb>;
+};
