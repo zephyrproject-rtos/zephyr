@@ -242,6 +242,14 @@ int enabled_clock(uint32_t src_clk)
 		}
 		break;
 #endif
+#if defined(STM32_SRC_TIMPCLK1)
+	case STM32_SRC_TIMPCLK1:
+		break;
+#endif /* STM32_SRC_TIMPCLK1 */
+#if defined(STM32_SRC_TIMPCLK2)
+	case STM32_SRC_TIMPCLK2:
+		break;
+#endif /* STM32_SRC_TIMPCLK2 */
 	default:
 		return -ENOTSUP;
 	}
@@ -479,6 +487,34 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 		*rate = get_ck48_frequency();
 		break;
 #endif /* STM32_CK48_ENABLED */
+#if defined(STM32_SRC_TIMPCLK1)
+	case STM32_SRC_TIMPCLK1:
+#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), timpre) && \
+	(defined(RCC_DCKCFGR_TIMPRE) || defined(RCC_DCKCFGR1_TIMPRE))
+		*rate = STM32_APB1_PRESCALER <= 4 ? ahb_clock : apb1_clock * 4;
+#else /* PROP(timpre) && (RCC_DCKCFGR_TIMPRE || RCC_DCKCFGR1_TIMPRE) */
+		*rate = STM32_APB1_PRESCALER <= 2 ? ahb_clock : apb1_clock * 2;
+#endif /* PROP(timpre) && (RCC_DCKCFGR_TIMPRE || RCC_DCKCFGR1_TIMPRE) */
+		break;
+#endif /* STM32_SRC_TIMPCLK1 */
+#if defined(STM32_SRC_TIMPCLK2)
+	case STM32_SRC_TIMPCLK2:
+#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), timpre) && \
+	(defined(RCC_DCKCFGR_TIMPRE) || defined(RCC_DCKCFGR1_TIMPRE))
+		*rate = STM32_APB2_PRESCALER <= 4 ? ahb_clock : apb2_clock * 4;
+#else /* PROP(timpre) && (RCC_DCKCFGR_TIMPRE || RCC_DCKCFGR1_TIMPRE) */
+		*rate = STM32_APB2_PRESCALER <= 2 ? ahb_clock : apb2_clock * 2;
+#endif /* PROP(timpre) && (RCC_DCKCFGR_TIMPRE || RCC_DCKCFGR1_TIMPRE) */
+		break;
+#endif /* STM32_SRC_TIMPCLK2 */
+#if defined(STM32_SRC_TIMPLLCLK)
+	case STM32_SRC_TIMPLLCLK:
+		*rate = get_pllout_frequency() * 2;
+		if (*rate == 0) {
+			return -EIO;
+		}
+		break;
+#endif /* STM32_SRC_TIMPLLCLK */
 
 	default:
 		return -ENOTSUP;
@@ -885,6 +921,13 @@ int stm32_clock_control_init(const struct device *dev)
 #endif
 #if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), adc34_prescaler)
 	LL_RCC_SetADCClockSource(adc34_prescaler(STM32_ADC34_PRESCALER));
+#endif
+#if defined(RCC_DCKCFGR_TIMPRE) || defined(RCC_DCKCFGR1_TIMPRE)
+#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), timpre)
+	LL_RCC_SetTIMPrescaler(LL_RCC_TIM_PRESCALER_FOUR_TIMES);
+#else
+	LL_RCC_SetTIMPrescaler(LL_RCC_TIM_PRESCALER_TWICE);
+#endif
 #endif
 
 	return 0;
