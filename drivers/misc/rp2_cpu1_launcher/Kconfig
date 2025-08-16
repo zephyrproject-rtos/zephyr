@@ -1,0 +1,26 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# Copyright (c) 2025 Dmitrii Sharshakov <d3dx12.xx@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config RP2_CPU1_LAUNCHER
+	bool "RP2 series secondary CPU launcher"
+	default y
+	depends on DT_HAS_RASPBERRYPI_RP2_CPU1_ENABLED && \
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_RASPBERRYPI_RP2_CPU1),execution-memory)
+	help
+	  When enabled, the secondary processors will be automatically launched
+	  during system initialization.
+
+if RP2_CPU1_LAUNCHER
+
+module = RP2_CPU1_LAUNCHER
+module-str = RP2 series CPU1 Launcher
+source "subsys/logging/Kconfig.template.log_config"
+
+config RP2_CPU1_LAUNCHER_INIT_PRIORITY
+	int "RP2 series CPU1 Launcher init priority"
+	default 0
+	help
+	  The init priority of the CPU1 Launcher.
+
+endif # RP2_CPU1_LAUNCHER
