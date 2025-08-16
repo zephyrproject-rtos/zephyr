@@ -1,0 +1,7 @@
+tests:
+  cpu_freq.policies.on_demand:
+    platform_allow:
+      - native_sim
+    tags: cpu_freq
+    integration_platforms:
+      - native_sim
