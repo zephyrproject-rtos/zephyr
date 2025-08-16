@@ -16,6 +16,8 @@
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 
+#include "led_blink.h"
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(led_gpio, CONFIG_LED_LOG_LEVEL);
 
@@ -24,9 +26,28 @@ struct led_gpio_config {
 	const struct gpio_dt_spec *led;
 };
 
+struct led_gpio_data {
+#ifdef CONFIG_LED_BLINK_SOFTWARE
+	struct led_blink_software_data *blink_data;
+#endif
+};
+
+#ifdef CONFIG_LED_BLINK_SOFTWARE
+struct led_blink_software_data *led_gpio_blink_data(const struct device *dev, uint32_t led)
+{
+	const struct led_gpio_config *config = dev->config;
+	struct led_gpio_data *data = dev->data;
+
+	if (led >= config->num_leds) {
+		return NULL;
+	}
+
+	return &data->blink_data[led];
+}
+#endif
+
 static int led_gpio_set_brightness(const struct device *dev, uint32_t led, uint8_t value)
 {
-
 	const struct led_gpio_config *config = dev->config;
 	const struct gpio_dt_spec *led_gpio;
 
@@ -69,6 +90,9 @@ static int led_gpio_init(const struct device *dev)
 
 static DEVICE_API(led, led_gpio_api) = {
 	.set_brightness	= led_gpio_set_brightness,
+#ifdef CONFIG_LED_BLINK_SOFTWARE
+	.get_blink_data	= led_gpio_blink_data,
+#endif
 };
 
 #define LED_GPIO_DEVICE(i)					\
@@ -78,12 +102,17 @@ static const struct gpio_dt_spec gpio_dt_spec_##i[] = {		\
 };								\
 								\
 static const struct led_gpio_config led_gpio_config_##i = {	\
-	.num_leds	= ARRAY_SIZE(gpio_dt_spec_##i),	\
+	.num_leds	= ARRAY_SIZE(gpio_dt_spec_##i),		\
 	.led		= gpio_dt_spec_##i,			\
 };								\
 								\
+static struct led_gpio_data led_gpio_data_##i = {		\
+	LED_BLINK_SOFTWARE_DATA(i, blink_data)			\
+};								\
+								\
 DEVICE_DT_INST_DEFINE(i, &led_gpio_init, NULL,			\
-		      NULL, &led_gpio_config_##i,		\
+				 (&led_gpio_data_##i),		\
+		      &led_gpio_config_##i,			\
 		      POST_KERNEL, CONFIG_LED_INIT_PRIORITY,	\
 		      &led_gpio_api);
 
