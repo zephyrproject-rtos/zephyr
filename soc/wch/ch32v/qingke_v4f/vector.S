@@ -22,11 +22,16 @@ SECTION_FUNC(vectors, ivt)
 	lui	x5, 0x8000
 	jr	0x8(x5)
 	j       __start
+_irq_vector_table:
 	.rept   CONFIG_VECTOR_TABLE_SIZE
 	.word	_isr_wrapper
 	.endr
 
 SECTION_FUNC(vectors, __start)
-	li 	a0, 0xf
+	li      a0, 0x1f
+	csrw    0xbc0, a0
+	li      a0, 0x1e
+	csrw    0x804, a0
+	li      a0, 0xf
 	csrw	mtvec, a0
 	j	__initialize

@@ -154,6 +154,9 @@ static int clock_control_wch_rcc_init(const struct device *dev)
 			RCC->CFGR0 |= RCC_PLLSRC;
 		} else if (IS_ENABLED(WCH_RCC_PLL_SRC_IS_HSI)) {
 			RCC->CFGR0 &= ~RCC_PLLSRC;
+#if defined(EXTEN_PLL_HSI_PRE)
+			EXTEN->EXTEN_CTR |= EXTEN_PLL_HSI_PRE;
+#endif
 		}
 		RCC->CFGR0 |= (config->mul == 18 ? 0xF : (config->mul - 2)) << 0x12;
 		RCC->CTLR |= RCC_PLLON;
