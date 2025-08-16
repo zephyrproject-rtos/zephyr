@@ -76,6 +76,8 @@ struct npm13xx_charger_data {
 #define ADC_OFFSET_RESULTS   0x10U
 #define ADC_OFFSET_IBAT_EN   0x24U
 
+#define ADC_CONV_TIME_US 250U
+
 /* nPM13xx VBUS register offsets */
 #define VBUS_OFFSET_ILIMUPDATE  0x00U
 #define VBUS_OFFSET_ILIM        0x01U
@@ -302,6 +304,17 @@ int npm13xx_charger_sample_fetch(const struct device *dev, enum sensor_channel c
 	struct npm13xx_charger_data *data = dev->data;
 	struct adc_results_t results;
 	int ret;
+	k_timepoint_t conv_done;
+
+	/* Trigger current+voltage, NTC and die temp measurements (four in total) */
+	ret = mfd_npm13xx_reg_write_burst(config->mfd, ADC_BASE, ADC_OFFSET_TASK_VBAT, 3, 1U, 1U,
+					  1U);
+	if (ret != 0) {
+		return ret;
+	}
+
+	/* Set timepoint for conversion and read status registers in the meantime */
+	conv_done = sys_timepoint_calc(K_USEC(ADC_CONV_TIME_US * 4));
 
 	/* Read charge status and error reason */
 	ret = mfd_npm13xx_reg_read(config->mfd, CHGR_BASE, CHGR_OFFSET_CHG_STAT, &data->status);
@@ -313,6 +326,14 @@ int npm13xx_charger_sample_fetch(const struct device *dev, enum sensor_channel c
 	if (ret != 0) {
 		return ret;
 	}
+
+	/* Read vbus status */
+	ret = mfd_npm13xx_reg_read(config->mfd, VBUS_BASE, VBUS_OFFSET_STATUS, &data->vbus_stat);
+	if (ret != 0) {
+		return ret;
+	}
+
+	k_sleep(sys_timepoint_timeout(conv_done));
 
 	/* Read adc results */
 	ret = mfd_npm13xx_reg_read_burst(config->mfd, ADC_BASE, ADC_OFFSET_RESULTS, &results,
@@ -326,21 +347,6 @@ int npm13xx_charger_sample_fetch(const struct device *dev, enum sensor_channel c
 	data->dietemp = adc_get_res(results.msb_die, results.lsb_a, ADC_LSB_DIE_SHIFT);
 	data->current = adc_get_res(results.msb_ibat, results.lsb_b, ADC_LSB_IBAT_SHIFT);
 	data->ibat_stat = results.ibat_stat;
-
-	/* Trigger ntc and die temperature measurements */
-	ret = mfd_npm13xx_reg_write2(config->mfd, ADC_BASE, ADC_OFFSET_TASK_TEMP, 1U, 1U);
-	if (ret != 0) {
-		return ret;
-	}
-
-	/* Trigger current and voltage measurement */
-	ret = mfd_npm13xx_reg_write(config->mfd, ADC_BASE, ADC_OFFSET_TASK_VBAT, 1U);
-	if (ret != 0) {
-		return ret;
-	}
-
-	/* Read vbus status */
-	ret = mfd_npm13xx_reg_read(config->mfd, VBUS_BASE, VBUS_OFFSET_STATUS, &data->vbus_stat);
 
 	return ret;
 }
@@ -624,18 +630,6 @@ int npm13xx_charger_init(const struct device *dev)
 
 	/* Enable current measurement */
 	ret = mfd_npm13xx_reg_write(config->mfd, ADC_BASE, ADC_OFFSET_IBAT_EN, 1U);
-	if (ret != 0) {
-		return ret;
-	}
-
-	/* Trigger current and voltage measurement */
-	ret = mfd_npm13xx_reg_write(config->mfd, ADC_BASE, ADC_OFFSET_TASK_VBAT, 1U);
-	if (ret != 0) {
-		return ret;
-	}
-
-	/* Trigger ntc and die temperature measurements */
-	ret = mfd_npm13xx_reg_write2(config->mfd, ADC_BASE, ADC_OFFSET_TASK_TEMP, 1U, 1U);
 	if (ret != 0) {
 		return ret;
 	}
