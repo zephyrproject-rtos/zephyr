@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 STMicroelectronics
+ * Copyright (c) 2025 Mario Paja
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +17,7 @@
 #include <zephyr/dt-bindings/memory-attr/memory-attr.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/flash_controller/xspi.h>
+#include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <freq.h>
 
 /*
@@ -813,6 +815,43 @@
 			phys = <&otgfs_phy>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 27U)>,
 				 <&rcc STM32_SRC_HSI48 OTGFS_SEL(0)>;
+			status = "disabled";
+		};
+
+		gpdma1: dma@40021000 {
+			compatible = "st,stm32u5-dma";
+			#dma-cells = <3>;
+			reg = <0x40021000 0x1000>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 4)>;
+			interrupts = <39 0 40 0 41 0 42 0 43 0 44 0 45 0 46 0
+				      133 0 134 0 135 0 136 0 137 0 138 0 139 0 140 0>;
+			dma-channels = <16>;
+			dma-requests = <109>;
+			dma-offset = <0>;
+			status = "disabled";
+		};
+
+		sai1_a: sai1@42005804 {
+			compatible = "st,stm32-sai";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x42005804 0x20>;
+			clocks = <&rcc STM32_CLOCK(APB2, 22)>,
+				 <&rcc STM32_SRC_PLL3_P SAI1_SEL(2)>;
+			dmas = <&gpdma1 1 63 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
+				STM32_DMA_16BITS)>;
+			status = "disabled";
+		};
+
+		sai1_b: sai1@42005824 {
+			compatible = "st,stm32-sai";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x42005824 0x20>;
+			clocks = <&rcc STM32_CLOCK(APB2, 22)>,
+				 <&rcc STM32_SRC_PLL3_P SAI1_SEL(2)>;
+			dmas = <&gpdma1 0 64 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
+				STM32_DMA_16BITS)>;
 			status = "disabled";
 		};
 	};
