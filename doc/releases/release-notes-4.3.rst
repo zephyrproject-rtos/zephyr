@@ -155,6 +155,12 @@ New Drivers
 
    * STM32 EXTI interrupt/event controller (:dtcompatible:`st,stm32-exti`) has a dedicated driver and API now, separate from STM32 GPIO Interrupt Control driver.
 
+* MFD
+
+   * Support for the power button found on the AXP2101 MFD is added and can be enabled
+     via :kconfig:option:`MFD_AXP2101_POWER_BUTTON`. This Kconfig is enabled by default
+     once :kconfig:option:`MFD_AXP2101_INTERRUPT` is also enabled.
+
 * RTC
 
    * STM32 RTC driver has been updated to use the new STM32 EXTI interrupt controller API
