@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -111,6 +112,29 @@ struct usbh_class_api {
 	int (*resumed)(struct usbh_class_data *cdata);
 };
 
+/** Match a class code triple */
+#define USBH_CLASS_FILTER_CODE_TRIPLE BIT(0)
+
+/** Match a device's vendor ID */
+#define USBH_CLASS_FILTER_VID BIT(1)
+
+/** Match a device's product ID */
+#define USBH_CLASS_FILTER_PID BIT(2)
+
+/**
+ * @brief Filter rule for matching a host class instance to a device class
+ */
+struct usbh_class_filter {
+	/** Mask of match types for selecting which rules to apply */
+	uint32_t flags;
+	/** The device's class code, subclass code, protocol code. */
+	struct usbh_code_triple code_triple;
+	/** Vendor ID */
+	uint16_t vid;
+	/** Product ID */
+	uint16_t pid;
+};
+
 /**
  * @brief USB host class instance data
  */
@@ -121,8 +145,8 @@ struct usbh_class_data {
 	struct usbh_context *uhs_ctx;
 	/** System linked list node for registered classes */
 	sys_snode_t node;
-	/** Class code supported by this instance */
-	struct usbh_code_triple code;
+	/** Table of filter rules used to match device classes */
+	const struct usbh_class_filter *filters;
 	/** Pointer to host support class API */
 	struct usbh_class_api *api;
 	/** Pointer to private data */
