@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+ */
+
+&cpuflpr_rram {
+	reg = <0x15D000 DT_SIZE_K(128)>;
+};
+
+&cpuflpr_code_partition {
+	reg = <0x0 DT_SIZE_K(128)>;
+};
+
+&cpuflpr_sram {
+	reg = <0x20020000 DT_SIZE_K(128)>;
+	ranges = <0x0 0x20020000 0x20000>;
+};
