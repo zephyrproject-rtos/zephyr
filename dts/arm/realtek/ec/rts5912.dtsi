@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <mem.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <freq.h>
 
 / {
 	cpus {
@@ -21,7 +22,7 @@
 		cpu0: cpu@0 {
 			compatible = "arm,cortex-m33f";
 			reg = <0>;
-			cpu-power-states = <&idle &suspend_to_ram>;
+			cpu-power-states = <&idle>;
 		};
 
 		power-states {
@@ -31,11 +32,6 @@
 				min-residency-us = <100000000>;
 			};
 
-			suspend_to_ram: suspend_to_ram {
-				compatible = "zephyr,power-state";
-				power-state-name = "suspend-to-ram";
-				min-residency-us = <250000000>;
-			};
 		};
 	};
 
@@ -189,11 +185,12 @@
 				0x400820C0 0x14			/* EMI6 */
 				0x400820E0 0x14			/* EMI7 */
 				0x400a0100 0x1c			/* KBC */
-				0x400B1600 0xd0>;		/* MBX */
+				0x400B1600 0xd0			/* MBX */
+				0x40090010 0x04>;		/* CS pin */
 
 			reg-names = "espi_target", "port80", "acpi", "promt0", "promt1", "promt2",
 				"promt3", "emi0", "emi1", "emi2", "emi3", "emi4", "emi5",
-				"emi6", "emi7", "kbc", "mbx";
+				"emi6", "emi7", "kbc", "mbx", "cs_low";
 
 			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_ESPI_CLKPWR>,
 				<&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_P80_CLKPWR>,
@@ -229,7 +226,7 @@
 				<216 0>, <217 0>, <218 0>,
 				<219 0>, <147 0>, <148 0>,
 				<149 0>, <152 0>, <153 0>,
-				<166 0>, <220 0>;
+				<166 0>, <220 0>, <4 0>;
 
 			interrupt-names = "bus-rst", "periph-ch", "vw-ch",
 				"vw-idx2", "vw-idx3", "vw-idx7",
@@ -244,7 +241,7 @@
 				"emi4", "emi5", "emi6",
 				"emi7", "oob_tx", "oob_rx",
 				"oob_chg", "maf_tr", "flash_chg",
-				"port80", "mbx";
+				"port80", "mbx", "cs_low";
 
 		};
 
@@ -280,7 +277,7 @@
 			compatible = "ns16550";
 			reg = <0x40010100 0x100>;
 			reg-shift = <2>;
-			clock-frequency = <25000000>;
+			clock-frequency = <DT_FREQ_M(100)>;
 			interrupts = <191 0>;
 			status = "disabled";
 		};

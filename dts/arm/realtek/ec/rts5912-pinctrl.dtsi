@@ -638,6 +638,13 @@
 			input-enable;
 			input-schmitt-enable;
 	};
+	/omit-if-no-ref/ uart_rx_gpio113_sleep: uart_rx_gpio113_sleep {
+			pinmux = <REALTEK_RTS5912_PINMUX(113, FUNC0)>;
+			input-enable;
+			input-schmitt-enable;
+			interrupt-enable;
+			interrupt-trigger = "negative-edge_trigger";
+	};
 	/omit-if-no-ref/ uart_tx_gpio114: uart0_tx_gpio114 {
 			pinmux = <REALTEK_RTS5912_PINMUX(114, FUNC1)>;
 			input-enable;

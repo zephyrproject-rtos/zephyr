@@ -8,10 +8,18 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
+#include <zephyr/pm/policy.h>
 #include <zephyr/logging/log.h>
 #include "debug_swj.h"
+#include <reg/reg_system.h>
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
+
+#define RTS5912_PUF_ADDRESS 0x40010800UL
+#define RTS5912_TRNG_OFFSET 0x600UL
+#define RTS5912_OTP_OFFSET  0x680UL
+#define RTS5912_CFG_PDSTB   0x0024UL
+#define RTS5912_RNG_RUN     0x0020UL
 
 #if defined(CONFIG_RTS5912_ON_ENTER_CPU_IDLE_HOOK)
 bool z_arm_on_enter_cpu_idle(void)
@@ -28,15 +36,23 @@ bool z_arm_on_enter_cpu_idle(void)
  */
 void soc_early_init_hook(void)
 {
-	if (!IS_ENABLED(CONFIG_RTS5912_DEBUG_SWJ)) {
-		return;
-	}
-
+	SYSTEM_Type *sys_reg = RTS5912_SCCON_REG_BASE;
 	int ret;
 
 	/* Apply device related preinit configuration */
-	ret = swj_connector_init();
-	if (ret < 0) {
-		LOG_ERR("SWJ init failed");
+	if (IS_ENABLED(CONFIG_RTS5912_DEBUG_SWJ)) {
+		ret = swj_connector_init();
+		if (ret < 0) {
+			LOG_ERR("SWJ init failed");
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_PM)) {
+		/* turn off TRNG/ OTP/ LDO3 power */
+		*(volatile uint32_t *)(RTS5912_PUF_ADDRESS + RTS5912_TRNG_OFFSET +
+				       RTS5912_RNG_RUN) = 0ul;
+		*(volatile uint32_t *)(RTS5912_PUF_ADDRESS + RTS5912_OTP_OFFSET +
+				       RTS5912_CFG_PDSTB) = 0ul;
+		sys_reg->LDOCTRL &= ~SYSTEM_LDOCTRL_LDO3EN_Msk;
 	}
 }

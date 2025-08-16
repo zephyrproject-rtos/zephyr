@@ -42,6 +42,8 @@ typedef uint32_t pinctrl_soc_pin_t;
 	 (DT_PROP(node_id, output_enable) << REALTEK_RTS5912_INPUT_OUTPUT_POS) |                   \
 	 (DT_PROP(node_id, input_schmitt_enable) << REALTEK_RTS5912_SCHMITTER_POS) |               \
 	 (DT_PROP(node_id, input_enable) << REALTEK_RTS5912_INPUT_DETECTION_POS) |                 \
+	 (DT_PROP(node_id, interrupt_enable) << REALTEK_RTS5912_INT_EN_POS) |                      \
+	 (DT_ENUM_IDX_OR(node_id, power_source, 0x0) << REALTEK_RTS5912_TRIGGER_POS) |             \
 	 (DT_ENUM_IDX_OR(node_id, slew_rate, 0x0) << REALTEK_RTS5912_SLEW_RATE_POS) |              \
 	 (DT_ENUM_IDX_OR(node_id, drive_strength, 0x0) << REALTEK_RTS5912_DRV_STR_POS))
 
@@ -50,9 +52,7 @@ typedef uint32_t pinctrl_soc_pin_t;
 	 Z_PINCTRL_STATE_PINCFG_INIT(DT_PROP_BY_IDX(node_id, state_prop, idx))),
 
 #define Z_PINCTRL_STATE_PINS_INIT(node_id, prop)                                                   \
-	{                                                                                          \
-		DT_FOREACH_PROP_ELEM(node_id, prop, Z_PINCTRL_STATE_PIN_INIT)                      \
-	}
+	{DT_FOREACH_PROP_ELEM(node_id, prop, Z_PINCTRL_STATE_PIN_INIT)}
 
 /** @endcond */
 

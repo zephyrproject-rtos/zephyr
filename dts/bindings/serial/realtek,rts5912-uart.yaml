@@ -22,3 +22,6 @@ properties:
 
   pinctrl-names:
     required: true
+
+  rx-wakeup-pin:
+    type: int
