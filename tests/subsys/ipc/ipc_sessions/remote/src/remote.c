@@ -226,7 +226,6 @@ static void ep_recv(const void *data, size_t len, void *priv)
 	case IPC_TEST_CMD_RXGET: {
 		LOG_INF("Command processing: RXGET");
 
-		int ret;
 		struct ipc_test_cmd_xstat cmd_stat = {
 			.base.cmd = IPC_TEST_CMD_XSTAT,
 			.blk_cnt = ipc_rx_params.blk_cnt,
@@ -242,7 +241,6 @@ static void ep_recv(const void *data, size_t len, void *priv)
 	case IPC_TEST_CMD_TXGET: {
 		LOG_INF("Command processing: TXGET");
 
-		int ret;
 		struct ipc_test_cmd_xstat cmd_stat = {
 			.base.cmd = IPC_TEST_CMD_XSTAT,
 			.blk_cnt = ipc_tx_params.blk_cnt,
