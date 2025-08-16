@@ -116,7 +116,6 @@ void pm_state_before(void)
 	scmi_cpu_pd_lpm_set(&cpu_pd_lpm_cfg);
 }
 
-
 void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
 	struct scmi_cpu_sleep_mode_config cpu_cfg = {0};
@@ -135,6 +134,9 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 	/* Set BASEPRI to 0 */
 	irq_unlock(0);
 
+#ifdef CONFIG_PM_CPU_SHELL
+	NVIC_DisableIRQ(LPUART3_IRQn);
+#endif
 	switch (state) {
 	case PM_STATE_RUNTIME_IDLE:
 		cpu_cfg.cpu_id = CPU_IDX_M7P;
@@ -175,6 +177,10 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 
 	/* Clear PRIMASK */
 	__enable_irq();
+
+#ifdef CONFIG_PM_CPU_SHELL
+	NVIC_EnableIRQ(LPUART3_IRQn);
+#endif
 }
 
 /*
