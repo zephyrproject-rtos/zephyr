@@ -1,0 +1,9 @@
+# Copyright (C) 2024-2025, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_HC32
+	bool "Pin controller driver for xhsc hc32 processors"
+	default y
+	depends on DT_HAS_XHSC_HC32_PINCTRL_ENABLED
+	help
+	  Enable pin controller driver for xhsc hc32 processors.
