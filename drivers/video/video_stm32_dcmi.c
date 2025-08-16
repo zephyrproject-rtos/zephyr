@@ -81,7 +81,15 @@ void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *hdcmi)
 	k_fifo_put(&dev_data->fifo_out, vbuf);
 
 resume:
+#if defined(CONFIG_SOC_SERIES_STM32U5X)
+	int err = HAL_DCMI_Start_DMA(&dev_data->hdcmi, DCMI_MODE_SNAPSHOT,
+			(uint32_t)dev_data->vbuf->buffer, dev_data->vbuf->bytesused / 4);
+	if (err != HAL_OK) {
+		LOG_ERR("Failed to start DCMI DMA");
+	}
+#else
 	HAL_DCMI_Resume(hdcmi);
+#endif
 }
 
 static void stm32_dcmi_isr(const struct device *dev)
@@ -147,6 +155,26 @@ static int stm32_dma_init(const struct device *dev)
 
 	/*** Configure the DMA ***/
 	/* Set the parameters to be configured */
+
+#if defined(CONFIG_SOC_SERIES_STM32U5X)
+	hdma.Instance = (DMA_Channel_TypeDef *)LL_DMA_GET_CHANNEL_INSTANCE(
+		config->dma.reg, config->dma.channel);
+	hdma.Init.Request = GPDMA1_REQUEST_DCMI_PSSI;
+	hdma.Init.BlkHWRequest = DMA_BREQ_SINGLE_BURST;
+	hdma.Init.Direction = DMA_PERIPH_TO_MEMORY;
+	hdma.Init.SrcInc = DMA_SINC_FIXED;
+	hdma.Init.DestInc = DMA_DINC_INCREMENTED;
+	hdma.Init.SrcDataWidth = DMA_SRC_DATAWIDTH_WORD;
+	hdma.Init.DestDataWidth = DMA_DEST_DATAWIDTH_WORD;
+
+	hdma.Init.Priority = DMA_LOW_PRIORITY_HIGH_WEIGHT;
+	hdma.Init.SrcBurstLength = 1;
+	hdma.Init.DestBurstLength = 1;
+	hdma.Init.TransferAllocatedPort =
+		DMA_SRC_ALLOCATED_PORT0 | DMA_DEST_ALLOCATED_PORT1;
+	hdma.Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
+	hdma.Init.Mode = DMA_NORMAL;
+#else /* ! defined(CONFIG_SOC_SERIES_STM32U5X) */
 	hdma.Init.Request		= DMA_REQUEST_DCMI;
 	hdma.Init.Direction		= DMA_PERIPH_TO_MEMORY;
 	hdma.Init.PeriphInc		= DMA_PINC_DISABLE;
@@ -155,6 +183,8 @@ static int stm32_dma_init(const struct device *dev)
 	hdma.Init.MemDataAlignment	= DMA_MDATAALIGN_WORD;
 	hdma.Init.Mode			= DMA_CIRCULAR;
 	hdma.Init.Priority		= DMA_PRIORITY_HIGH;
+#endif /* defined(CONFIG_SOC_SERIES_STM32U5X) */
+
 #if defined(CONFIG_SOC_SERIES_STM32F7X) || defined(CONFIG_SOC_SERIES_STM32H7X)
 	hdma.Init.FIFOMode		= DMA_FIFOMODE_DISABLE;
 #endif
@@ -174,6 +204,12 @@ static int stm32_dma_init(const struct device *dev)
 		return -EIO;
 	}
 
+#if defined(CONFIG_SOC_SERIES_STM32U5X)
+	if (HAL_DMA_ConfigChannelAttributes(&hdma, DMA_CHANNEL_NPRIV) != HAL_OK) {
+		LOG_ERR("HAL_DMA_ConfigChannelAttributes Failed");
+		return -EINVAL;
+	}
+#endif
 	return 0;
 }
 
@@ -270,7 +306,12 @@ static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable,
 	data->hdcmi.Instance->CR &= ~(DCMI_CR_FCRC_0 | DCMI_CR_FCRC_1);
 	data->hdcmi.Instance->CR |= STM32_DCMI_GET_CAPTURE_RATE(data->capture_rate);
 
-	err = HAL_DCMI_Start_DMA(&data->hdcmi, DCMI_MODE_CONTINUOUS,
+	uint32_t dcmi_mode = DCMI_MODE_CONTINUOUS;
+#if defined(CONFIG_SOC_SERIES_STM32U5X)
+	dcmi_mode = DCMI_MODE_SNAPSHOT;
+#endif
+
+	err = HAL_DCMI_Start_DMA(&data->hdcmi, dcmi_mode,
 			(uint32_t)data->vbuf->buffer, data->vbuf->bytesused / 4);
 	if (err != HAL_OK) {
 		LOG_ERR("Failed to start DCMI DMA");
