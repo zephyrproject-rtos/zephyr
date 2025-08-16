@@ -4,6 +4,7 @@ board:
   vendor: beagle
   socs:
     - name: am6232
+    - name: mspm0l1105
   revision:
     format: custom
     exact: true

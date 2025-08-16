@@ -6,8 +6,6 @@ Overview
 PocketBeagle 2 is a computational platform powered by TI AM62x SoC (there are two
 revisions, AM6232 and AM6254).
 
-The board configuration provides support for the ARM Cortex-M4F MCU core.
-
 See the `PocketBeagle 2 Product Page`_ for details.
 
 Hardware
@@ -17,7 +15,13 @@ cluster with an Arm Cortex-M4F microcontroller, Imagination Technologies AXE-1-1
 graphics processor (from revision A1) and TI programmable real-time unit subsystem
 microcontroller cluster coprocessors.
 
-Zephyr is ported to run on the both A53 cores and/or M4F core.
+Additionally, PocketBeagle 2 also contains an MSPM0L1105 SoC which serves as EEPROM and ADC.
+
+Zephyr is enabled to run on:
+
+- Arm Cortex-A53 cores on AM62x,
+- Arm Cortex-M4F core on AM62x, and
+- Arm Cortex-M0+ core on MSPM0L1105.
 
 The following listed hardware specifications are used:
 
@@ -82,6 +86,14 @@ Download BeagleBoard.org's official `BeagleBoard Imaging Utility`_ to create boo
 SD-card with the Linux distro image. This will boot Linux on the A53 application
 cores. These cores will then load the Zephyr binary on the M4 core using remoteproc.
 
+MSPM0L1105
+==========
+
+Download BeagleBoard.org's official `BeagleBoard Imaging Utility`_ to create bootable
+SD-card with the Linux distro image. This will boot Linux on the A53 application
+cores. We can then flash MSPM0L1105 firmware from Linux using BSL over I2C. The BeagleBoard.org
+distro images ship with a driver that supports `Firmware Upload API`_ for MSPM0L1105.
+
 Flashing
 ********
 
@@ -142,6 +154,35 @@ The SD card can now be used for booting. The binary will now be loaded onto the 
 
 The binary will run and print Hello world to the MCU_UART0 port.
 
+MSPM0L1105
+==========
+
+.. note::
+   On PocketBeagle 2 MSPM0L1105 is used as EEPROM and ADC. So flashing any custom firmware will
+   break this functionality.
+
+.. note::
+   Flashing new firmware will also clear the EEPROM contents. So please make backup of EEPROM data
+   before attempting to flash firmware to MSPM0L1105.
+
+To test the A53 cores, we build the :zephyr:code-sample:`minimal` sample with the following command.
+
+.. zephyr-app-commands::
+   :board: pocketbeagle_2/mspm0l1105
+   :zephyr-app: samples/basic/minimal
+   :goals: build
+
+This builds the program and the binary is present in the :file:`build/zephyr` directory as
+:file:`zephyr.bin`.
+
+We now flash this binary using FW Upload API.
+
+.. code-block:: console
+
+   echo 1 > /sys/class/firmware/mspm0l1105/loading
+   dd if=zephyr.bin of=/sys/class/firmware/mspm0l1105/data
+   echo 0 > /sys/class/firmware/mspm0l1105/loading
+
 Debugging
 *********
 
@@ -176,3 +217,6 @@ References
 
 .. _bb-zephyr-images:
    https://github.com/beagleboard/bb-zephyr-images/releases
+
+.. _Firmware Upload API:
+   https://www.kernel.org/doc/html/latest/driver-api/firmware/fw_upload.html
