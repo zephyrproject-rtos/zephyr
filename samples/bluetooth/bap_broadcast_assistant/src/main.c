@@ -52,6 +52,7 @@ struct scan_recv_info {
 };
 
 static struct bt_conn *broadcast_sink_conn;
+static uint8_t remote_recv_state_count;
 static uint32_t selected_broadcast_id;
 static uint8_t selected_sid;
 static uint16_t selected_pa_interval;
@@ -71,6 +72,7 @@ static K_SEM_DEFINE(sem_sink_connected, 0, 1);
 static K_SEM_DEFINE(sem_sink_disconnected, 0, 1);
 static K_SEM_DEFINE(sem_security_updated, 0, 1);
 static K_SEM_DEFINE(sem_bass_discovered, 0, 1);
+static K_SEM_DEFINE(sem_recv_state_read, 0, 1);
 static K_SEM_DEFINE(sem_pa_synced, 0, 1);
 static K_SEM_DEFINE(sem_pa_sync_terminted, 0, 1);
 static K_SEM_DEFINE(sem_received_base_subgroups, 0, 1);
@@ -511,6 +513,7 @@ static void bap_broadcast_assistant_discover_cb(struct bt_conn *conn, int err,
 	if (err == 0) {
 		printk("BASS discover done with %u recv states\n",
 		       recv_state_count);
+		remote_recv_state_count = recv_state_count;
 		k_sem_give(&sem_bass_discovered);
 	} else {
 		printk("BASS discover failed (%d)\n", err);
@@ -524,6 +527,35 @@ static void bap_broadcast_assistant_add_src_cb(struct bt_conn *conn, int err)
 	} else {
 		printk("BASS add source failed (%d)\n", err);
 	}
+}
+
+static void
+bap_broadcast_assistant_recv_state_read_cb(struct bt_conn *conn, int err,
+					   const struct bt_bap_scan_delegator_recv_state *state)
+{
+	if (err != 0) {
+		printk("BASS recv state read failed (%d)\n", err);
+		return;
+	}
+
+	if (state != NULL) {
+		char le_addr[BT_ADDR_LE_STR_LEN];
+
+		bt_addr_le_to_str(&state->addr, le_addr, sizeof(le_addr));
+		printk("BASS recv state: src_id %u, addr %s, sid %u, sync_state %u, encrypt_state "
+		       "%u, num_subgroups %u\n",
+		       state->src_id, le_addr, state->adv_sid, state->pa_sync_state,
+		       state->encrypt_state, state->num_subgroups);
+
+		for (uint8_t i = 0; i < state->num_subgroups; i++) {
+			const struct bt_bap_bass_subgroup *subgroup = &state->subgroups[i];
+
+			printk("\t[%d]: BIS sync %u, metadata_len %u\n", i, subgroup->bis_sync,
+			       subgroup->metadata_len);
+		}
+	} /* else empty receive state */
+
+	k_sem_give(&sem_recv_state_read);
 }
 
 static void pa_sync_synced_cb(struct bt_le_per_adv_sync *sync,
@@ -550,6 +582,7 @@ static void pa_sync_term_cb(struct bt_le_per_adv_sync *sync,
 static struct bt_bap_broadcast_assistant_cb ba_cbs = {
 	.discover = bap_broadcast_assistant_discover_cb,
 	.add_src = bap_broadcast_assistant_add_src_cb,
+	.recv_state = bap_broadcast_assistant_recv_state_read_cb,
 };
 
 static struct bt_le_per_adv_sync_cb pa_synced_cb = {
@@ -618,6 +651,31 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.security_changed = security_changed_cb
 };
 
+static int read_recv_states(void)
+{
+	/* Attempts to read all found receive states - Some or all may be empty */
+	for (uint8_t i = 0U; i < remote_recv_state_count; i++) {
+		int err;
+
+		err = bt_bap_broadcast_assistant_read_recv_state(broadcast_sink_conn, i);
+
+		if (err != 0) {
+			printk("Failed to read receive state[%u]: %d\n", i, err);
+
+			return err;
+		}
+
+		err = k_sem_take(&sem_recv_state_read, SEM_TIMEOUT);
+		if (err != 0) {
+			printk("Failed to take sem_recv_state_read: %d\n", err);
+
+			return err;
+		}
+	}
+
+	return 0;
+}
+
 int main(void)
 {
 	int err;
@@ -664,6 +722,12 @@ int main(void)
 		err = k_sem_take(&sem_bass_discovered, SEM_TIMEOUT);
 		if (err != 0) {
 			printk("Failed to take sem_bass_discovered (err %d)\n", err);
+			continue;
+		}
+
+		err = read_recv_states();
+		if (err != 0) {
+			printk("Failed to read receive states\n");
 			continue;
 		}
 
