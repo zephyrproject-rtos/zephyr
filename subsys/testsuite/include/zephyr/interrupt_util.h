@@ -242,6 +242,17 @@ static inline void trigger_irq(int irq)
 		_sw_isr_table[irq - CONFIG_GEN_IRQ_START_VECTOR].arg);
 }
 
+#elif defined(CONFIG_CPU_CORTEX_R5) && defined(CONFIG_TIC)
+
+#include <zephyr/dt-bindings/interrupt-controller/tcc-tic.h>
+
+extern void z_tic_arm_enter_irq(int);
+
+static inline void trigger_irq(int irq)
+{
+	z_tic_arm_enter_irq(irq);
+}
+
 #else
 #define NO_TRIGGER_FROM_SW
 #endif

@@ -1,0 +1,11 @@
+# Copyright 2024 Hounjoung Rim <hounjoung@tsnlab.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_TCCVCP
+	bool "Telechips TCC VCP serial driver"
+	default y
+	depends on DT_HAS_TCC_TCCVCP_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  This option enables the UART driver for Telechips VCP platforms.
