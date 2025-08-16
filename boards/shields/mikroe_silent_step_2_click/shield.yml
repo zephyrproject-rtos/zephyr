@@ -1,0 +1,6 @@
+shield:
+  name: mikroe_silent_step_2_click
+  full_name: Silent Step 2 Click
+  vendor: mikroe
+  supported_features:
+    - stepper
