@@ -29,7 +29,7 @@ For example:
 QEMU example with Xen
 ***********************
 
-Overlay for qemu_cortex_a53 board, that is present in :zephyr_file:`snippets/xen_dom0/boards/`
+Overlay for qemu_cortex_a53 board, that is present in :zephyr_file:`snippets/generic/xen_dom0/boards/`
 directory of this snippet is QEMU Xen control domain example.
 
 To run such setup, you need to:
