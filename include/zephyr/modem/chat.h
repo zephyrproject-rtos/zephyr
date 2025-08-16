@@ -19,6 +19,15 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Modem Chat
+ * @defgroup modem_chat Modem Chat
+ * @since 3.5
+ * @version 1.0.0
+ * @ingroup modem
+ * @{
+ */
+
 struct modem_chat;
 
 /**
@@ -519,6 +528,10 @@ void modem_chat_script_set_callback(struct modem_chat_script *script,
  * @param timeout_s Timeout in seconds
  */
 void modem_chat_script_set_timeout(struct modem_chat_script *script, uint32_t timeout_s);
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }
