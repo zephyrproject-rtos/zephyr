@@ -12,3 +12,7 @@
 &dut_spis {
 	memory-regions = <&cpurad_dma_region>;
 };
+
+&uart135 {
+	zephyr,pm-device-runtime-auto;
+};
