@@ -7,6 +7,153 @@ Zephyr development and evolution is a group effort, and to simplify
 maintenance and enhancements there are some general policies that should
 be followed when developing a new capability or interface.
 
+Doxygen guidelines
+******************
+
+The Zephyr Project uses `Doxygen`_ to generate documentation from source code comments. A high-level
+summary of the Doxygen guidelines for all public API is as follows:
+
+- Each public header file, function declaration, type definition, typedef, define, macro and global
+  variable declaration SHALL be fully documented.
+
+- Each public header file, function declaration, type definition, typedef, define, macro and global
+  variable declaration SHALL belong to at least one Doxygen group. See
+  :ref:`doxygen_guidelines_groups` for more details.
+
+- Each public header file SHALL have an ``@file`` block at the top of the file after the SPDX
+  License Identifier. See :ref:`doxygen_guidelines_files` for more details.
+
+- Each construct that is defined in a public header file but only meant for internal use SHALL be
+  enclosed in ``@cond INTERNAL_HIDDEN`` / ``@endcond`` sections.
+  See :ref:`doxygen_guidelines_internals` for more details.
+
+- All documentation SHALL use grammatically correct sentences with proper punctuation.
+
+.. _Doxygen: https://www.doxygen.nl/
+.. _Doxygen commands: https://www.doxygen.nl/manual/commands.html
+
+General Doxygen considerations
+==============================
+
+- Using the ``@brief`` command is optional. If omitted, the first sentence of the comment block
+  (ending with a period) is treated as the brief description.
+
+.. _doxygen_guidelines_groups:
+
+Groups
+======
+
+- Doxygen group names shall use `snake case <https://en.wikipedia.org/wiki/Snake_case>`_.
+
+- Use ``@defgroup`` and ``@addtogroup`` with ``@{`` and ``@}`` brackets to add members to a group.
+
+- A group shall be defined at most once.
+
+- Each group shall be documented with a brief description and an optional detailed description.
+
+.. _doxygen_guidelines_files:
+
+Files
+=====
+
+- ``@file`` blocks shall have a brief description and an optional detailed description.
+
+  - The brief description should concisely state what the file provides, e.g.:
+
+    - This header file provides the API of the ABC subsystem.
+    - This file defines helper macros for the XYZ module.
+
+  - The optional detailed description should explain the context or grouping logic of the file
+    contents.
+
+- Avoid repeating content that should be in group or individual symbol documentation.
+
+Type Definitions
+================
+
+- Each type (``typedef``, ``struct``, ``enum``) and type member shall be documented with a brief
+  description and an optional detailed description.
+
+- For the brief description of types, use phrases like this:
+
+  - This type represents ... and so on.
+  - This structure represents ... and so on.
+  - This structure provides ... and so on.
+  - This enumeration represents ... and so on.
+  - The XYZ represents ... and so on.
+
+- For the brief description of type members, use phrases like this:
+
+  - This member represents ... and so on.
+  - This member contains ... and so on.
+  - This member references ... and so on.
+  - The XYZ lock protects ... and so on.
+
+Function Declarations
+=====================
+
+- Each function declaration or function-like macro in a header file shall be documented with a brief
+  description and an optional detailed description.
+
+- For the brief description, use descriptive-style, for example "Creates a thread." or "Sends the
+  events to the thread." or "Obtains the semaphore.".
+
+Parameters
+----------
+
+- Each parameter shall be documented with an ``@param`` entry. List the ``@param`` entries in the
+  order of the function parameters.
+
+- For non-``const`` pointer parameters:
+
+  - Use ``@param[out]``, if the function *writes* to the pointed data.
+  - Use ``@param[in, out]``, if the function both *reads* and *writes* to it.
+
+- Do not use ``[in]``, ``[out]`` or ``[in, out]`` specifiers for const pointers or scalars.
+
+- Parameter descriptions should clarify unit, constraints, and purpose.
+
+Return Values
+-------------
+
+- Return values shall be documented with ``@retval`` (for distinctive values) and ``@return``
+  (for non-distinctive values) paragraphs.
+
+- Place ``@retval`` descriptions before the ``@return`` description, starting with the most common
+  return value.
+
+- For functions returning a boolean value, use ``@return`` and a phrase like this: "Returns true,
+  if some condition is satisfied, otherwise false."
+
+.. _doxygen_guidelines_internals:
+
+Hiding internals
+================
+
+- Use ``@cond INTERNAL_HIDDEN`` / ``@endcond`` sections to hide internal details from the generated
+  documentation.
+
+- It is good practice to still document internal symbols for developer understanding.
+
+Example:
+
+.. code-block:: c
+
+   /**
+    * @brief This structure represents a foo.
+    *
+    * Opaque structure that holds the state of a foo.
+    */
+    struct foo {
+      /**
+       * @cond INTERNAL_HIDDEN
+       */
+      int bar;
+      /**
+       * @endcond
+       */
+    };
+
 Using Callbacks
 ***************
 
