@@ -1,0 +1,21 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_BL70X
+
+# On BL702, BL704 and BL706, not all values work, here is a list of some that work:
+# 2000, 1000, 100, 10, 1
+config SYS_CLOCK_TICKS_PER_SEC
+	default 2000
+
+config NUM_IRQS
+	default 80
+
+config ARCH_SW_ISR_TABLE_ALIGN
+	default 64
+
+config RISCV_MCAUSE_EXCEPTION_MASK
+	default 0x3FF
+
+endif # SOC_SERIES_BL70X
