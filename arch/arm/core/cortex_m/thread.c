@@ -649,7 +649,7 @@ FUNC_NORETURN void z_arm_switch_to_main_no_multithreading(k_thread_entry_t main_
 			  ,
 		  [_psplim] "r"(psplim)
 #endif
-		: "r0", "r1", "r2", "ip", "lr");
+		: "r0", "r1", "r2", "ip", "lr", "memory");
 
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }

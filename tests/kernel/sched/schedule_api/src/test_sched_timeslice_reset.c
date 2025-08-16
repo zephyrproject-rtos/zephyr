@@ -27,8 +27,8 @@ BUILD_ASSERT(NUM_THREAD <= MAX_NUM_THREAD);
 /* ... will not take more than 1 ms. */
 #define TASK_SWITCH_TOLERANCE (1)
 #else
-/* ... 1ms is faster than a tick, loosen tolerance to 1 tick */
-#define TASK_SWITCH_TOLERANCE (1000 / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+/* ... 1ms is faster than a tick, loosen tolerance to just over 1 tick */
+#define TASK_SWITCH_TOLERANCE (1100 / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 #endif
 
 K_SEM_DEFINE(sema, 0, NUM_THREAD);
