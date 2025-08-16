@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/clock/stm32mp2_clock.h>
 #include <zephyr/dt-bindings/reset/stm32mp2_reset.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	cpus {
@@ -158,6 +159,14 @@
 				reg = <0x442e0000 DT_SIZE_K(1)>;
 				status = "disabled";
 			};
+
+			gpioz: gpio@46200000 {
+				compatible = "st,stm32mp2-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x46200000 DT_SIZE_K(1)>;
+				status = "disabled";
+			};
 		};
 
 		usart1: serial@40330000 {
@@ -238,6 +247,102 @@
 			clocks = <&rcc STM32_CLOCK(UART9, STM32_CLK)>;
 			resets = <&rctl STM32_RESET(UART9, STM32_RST)>;
 			interrupts = <150 0>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@40120000 {
+			compatible = "st,stm32-i2c-v2";
+			reg = <0x40120000 DT_SIZE_K(1)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(I2C1, STM32_CLK)>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <108 0>;
+			interrupt-names = "combined";
+			status = "disabled";
+		};
+
+		i2c2: i2c@40130000 {
+			compatible = "st,stm32-i2c-v2";
+			reg = <0x40130000 DT_SIZE_K(1)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(I2C2, STM32_CLK)>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <110 0>;
+			interrupt-names = "combined";
+			status = "disabled";
+		};
+
+		i2c3: i2c@40140000 {
+			compatible = "st,stm32-i2c-v2";
+			reg = <0x40140000 DT_SIZE_K(1)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(I2C3, STM32_CLK)>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <137 0>;
+			interrupt-names = "combined";
+			status = "disabled";
+		};
+
+		i2c4: i2c@40150000 {
+			compatible = "st,stm32-i2c-v2";
+			reg = <0x40150000 DT_SIZE_K(1)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(I2C4, STM32_CLK)>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <168 0>;
+			interrupt-names = "combined";
+			status = "disabled";
+		};
+
+		i2c5: i2c@40160000 {
+			compatible = "st,stm32-i2c-v2";
+			reg = <0x40160000 DT_SIZE_K(1)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(I2C5, STM32_CLK)>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <181 0>;
+			interrupt-names = "combined";
+			status = "disabled";
+		};
+
+		i2c6: i2c@40170000 {
+			compatible = "st,stm32-i2c-v2";
+			reg = <0x40170000 DT_SIZE_K(1)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(I2C6, STM32_CLK)>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <208 0>;
+			interrupt-names = "combined";
+			status = "disabled";
+		};
+
+		i2c7: i2c@40180000 {
+			compatible = "st,stm32-i2c-v2";
+			reg = <0x40180000 DT_SIZE_K(1)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(I2C7, STM32_CLK)>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <210 0>;
+			interrupt-names = "combined";
+			status = "disabled";
+		};
+
+		i2c8: i2c@46040000 {
+			compatible = "st,stm32-i2c-v2";
+			reg = <0x46040000 DT_SIZE_K(1)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(I2C8, STM32_CLK)>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <212 0>;
+			interrupt-names = "combined";
 			status = "disabled";
 		};
 	};
