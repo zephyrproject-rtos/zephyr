@@ -68,31 +68,33 @@ if(CONFIG_HAS_RPI_PICO)
   )
 
   zephyr_include_directories(
+    ${CMAKE_CURRENT_LIST_DIR}
+    ${common_dir}/boot_picobin_headers/include
+    ${common_dir}/boot_picoboot_headers/include
     ${common_dir}/pico_base_headers/include
     ${rp2_common_dir}/boot_bootrom_headers/include
     ${rp2_common_dir}/hardware_base/include
+    ${rp2_common_dir}/hardware_boot_lock/include
     ${rp2_common_dir}/hardware_clocks/include
+    ${rp2_common_dir}/hardware_irq/include
+    ${rp2_common_dir}/hardware_pll/include
+    ${rp2_common_dir}/hardware_rcp/include
+    ${rp2_common_dir}/hardware_resets/include
+    ${rp2_common_dir}/hardware_sync_spin_lock/include
+    ${rp2_common_dir}/hardware_sync/include
+    ${rp2_common_dir}/hardware_ticks/include
+    ${rp2_common_dir}/hardware_timer/include
     ${rp2_common_dir}/hardware_watchdog/include
     ${rp2_common_dir}/hardware_xosc/include
-    ${rp2_common_dir}/hardware_pll/include
-    ${rp2_common_dir}/hardware_irq/include
-    ${rp2_common_dir}/hardware_sync/include
-    ${rp2_common_dir}/hardware_timer/include
-    ${rp2_common_dir}/hardware_resets/include
-    ${rp2_common_dir}/hardware_boot_lock/include
-    ${rp2_common_dir}/hardware_ticks/include
-    ${rp2_common_dir}/hardware_sync_spin_lock/include
     ${rp2_common_dir}/pico_bootrom/include
     ${rp2_common_dir}/pico_flash/include
+    ${rp2_common_dir}/pico_platform_common/include
     ${rp2_common_dir}/pico_platform_compiler/include
-    ${rp2_common_dir}/pico_platform_sections/include
     ${rp2_common_dir}/pico_platform_panic/include
-    ${common_dir}/boot_picoboot_headers/include
-    ${common_dir}/boot_picobin_headers/include
+    ${rp2_common_dir}/pico_platform_sections/include
     ${rp2xxx_dir}/hardware_regs/include
     ${rp2xxx_dir}/hardware_structs/include
     ${rp2xxx_dir}/pico_platform/include
-    ${CMAKE_CURRENT_LIST_DIR}
   )
 
   zephyr_library_sources_ifdef(CONFIG_PICOSDK_USE_GPIO
