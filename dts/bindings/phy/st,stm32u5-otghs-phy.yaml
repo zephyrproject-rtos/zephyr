@@ -36,3 +36,29 @@ properties:
         /* PLL1_P_CK/2 */
         clocks = <&rcc STM32_CLOCK(AHB2, 15U)>,
                  <&rcc (STM32_SRC_PLL1_P | STM32_CLOCK_DIV(2)) OTGHS_SEL(3)>;
+
+  clock-reference:
+    type: int
+    required: true
+    enum:
+      - 0x03
+      - 0x08
+      - 0x09
+      - 0x0a
+      - 0x0e
+      - 0x0b
+    description: |
+      OTG_HS PHY reference clock frequency selection.
+
+      This value selects the reference clock frequency to be used in the OTG_HS PHY PLL
+      in the SYSCFG OTG_HS PHY register (SYSCFG_OTGHSPHYCR). The selection of this value
+      should take in consideration the OTGHSSEL dependency to avoid miss configurations.
+
+      The valid values are:
+        CLKSEL[3:0] Frequency (MHz)
+          0x03:        16
+          0x08:        19.2
+          0x09:        20
+          0x0a:        24
+          0x0e:        26
+          0x0b:        32
