@@ -90,6 +90,13 @@ New APIs and options
 
     * :c:struct:`bt_audio_codec_cfg` now contains a target_latency and a target_phy option
     * :c:func:`bt_bap_broadcast_source_foreach_stream`
+    * :c:struct:`bt_bap_stream` now contains a ``iso`` field as a reference to the ISO channel
+
+  * Host
+
+    * :c:struct:`bt_iso_unicast_info` now contains a ``cig_id`` and a ``cis_id`` field
+    * :c:struct:`bt_iso_broadcaster_info` now contains a ``big_handle`` and a ``bis_number`` field
+    * :c:struct:`bt_iso_sync_receiver_info` now contains a ``big_handle`` and a ``bis_number`` field
 
 * Display
 

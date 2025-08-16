@@ -176,21 +176,6 @@ struct bt_conn_iso {
 	/* Reference to the struct bt_iso_chan */
 	struct bt_iso_chan      *chan;
 
-	union {
-		/* CIG ID */
-		uint8_t			cig_id;
-		/* BIG handle */
-		uint8_t			big_handle;
-	};
-
-	union {
-		/* CIS ID within the CIG */
-		uint8_t			cis_id;
-
-		/* BIS ID within the BIG*/
-		uint8_t			bis_id;
-	};
-
 	/** Stored information about the ISO stream */
 	struct bt_iso_info info;
 

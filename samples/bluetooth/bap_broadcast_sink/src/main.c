@@ -25,6 +25,7 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
@@ -159,9 +160,14 @@ static void stream_disconnected_cb(struct bt_bap_stream *bap_stream, uint8_t rea
 
 static void stream_started_cb(struct bt_bap_stream *bap_stream)
 {
+	struct bt_iso_info info;
 	int err;
 
-	printk("Stream %p started\n", bap_stream);
+	err = bt_iso_chan_get_info(bap_stream->iso, &info);
+	__ASSERT(err == 0, "Failed to get ISO chan info: %d", err);
+
+	printk("Stream %p started with BIG_Handle %u and BIS_Number %u\n", bap_stream,
+	       info.sync_receiver.big_handle, info.sync_receiver.bis_number);
 
 	err = stream_rx_started(bap_stream);
 	if (err != 0) {
