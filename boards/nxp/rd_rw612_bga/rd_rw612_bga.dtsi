@@ -87,6 +87,10 @@
 	};
 };
 
+&xtal32 {
+	status = "okay";
+};
+
 &wwdt {
 	status = "okay";
 };
