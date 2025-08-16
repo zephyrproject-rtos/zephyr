@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2024 Arduino SA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&timers3 {
+	status = "okay";
+	st,prescaler = <1000>;
+
+	pwm3: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim3_ch1_pc6 &tim3_ch2_pc7>;
+		pinctrl-names = "default";
+	};
+};
+
+/ {
+	aliases {
+		pwm-led0 = &pwm_led0;
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		pwm_led0: pwm_led_0 {
+			pwms = <&pwm3 2 PWM_HZ(1000) PWM_POLARITY_NORMAL>;
+        	label = "PWM LED Arduino PIN D4";
+		};
+	};
+};
