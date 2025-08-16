@@ -15,7 +15,7 @@
 /* @brief gives the first DMA channel : 0 or 1 in the register map
  * when counting channels from 1 to N or from 0 to N-1
  */
-#if defined(CONFIG_DMA_STM32U5)
+#if defined(CONFIG_DMA_STM32U5) || defined(CONFIG_DMA_STM32_V3)
 /* from DTS the dma stream id is in range 0..N-1 */
 #define STM32_DMA_STREAM_OFFSET 0
 #elif !defined(CONFIG_DMA_STM32_V1)
@@ -84,5 +84,18 @@
 #else
 #define STM32_DMA_FEATURES_FIFO_THRESHOLD(features)	0
 #endif
+
+/* macros to extract HPDMA-specific configurations */
+#if defined(CONFIG_DMA_STM32_V3)
+#define STM32_DMA_CONFIG_SOURCE_BURST_INC(config)      ((config >> 18) & 0x1)
+#define STM32_DMA_CONFIG_SOURCE_PORT(config)           ((config >> 19) & 0x1)
+#define STM32_DMA_CONFIG_DEST_BURST_INC(config)        ((config >> 20) & 0x1)
+#define STM32_DMA_CONFIG_DEST_PORT(config)             ((config >> 21) & 0x1)
+#define STM32_DMA_CONFIG_HW_REQUEST_MODE(config)       ((config >> 22) & 0x1)
+#define STM32_DMA_CONFIG_CTRL_MODE(config)             ((config >> 23) & 0x1)
+#define STM32_DMA_CONFIG_TC_EVENT_MODE(config)         ((config >> 24) & 0x3)
+#define STM32_DMA_CONFIG_PREVENT_PACKING(config)       ((config >> 26) & 0x1)
+#define STM32_DMA_CONFIG_PREVENT_ADD_XFERS(config)     ((config >> 27) & 0x1)
+#endif /* CONFIG_DMA_STM32_V3 */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_DMA_STM32_H_ */
