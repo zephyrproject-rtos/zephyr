@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -72,18 +73,6 @@ struct usbh_context {
 		.addr_ba = &ba_##device_name,				\
 	}
 
-/**
- * @brief USB Class Code triple
- */
-struct usbh_code_triple {
-	/** Device Class Code */
-	uint8_t dclass;
-	/** Class Subclass Code */
-	uint8_t sub;
-	/** Class Protocol Code */
-	uint8_t proto;
-};
-
 struct usbh_class_data;
 
 /**
@@ -124,8 +113,6 @@ struct usbh_class_data {
 	const char *name;
 	/** Pointer to USB host stack context structure */
 	struct usbh_context *uhs_ctx;
-	/** Class code supported by this instance */
-	struct usbh_code_triple code;
 	/** Pointer to host support class API */
 	struct usbh_class_api *api;
 	/** Pointer to private data */
