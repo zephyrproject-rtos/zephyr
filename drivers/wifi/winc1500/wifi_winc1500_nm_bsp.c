@@ -14,7 +14,7 @@
 #include "wifi_winc1500_config.h"
 
 const struct winc1500_cfg winc1500_config = {
-	.spi = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0),
+	.spi = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8) | SPI_TRANSFER_MSB),
 	.chip_en_gpio = GPIO_DT_SPEC_INST_GET(0, enable_gpios),
 	.irq_gpio = GPIO_DT_SPEC_INST_GET(0, irq_gpios),
 	.reset_gpio = GPIO_DT_SPEC_INST_GET(0, reset_gpios),

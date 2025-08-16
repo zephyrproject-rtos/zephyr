@@ -115,7 +115,7 @@ static DEVICE_API(dac, ltc166x_driver_api) = {
 	static const struct ltc166x_config ltc##t##_config_##n = { \
 		.bus = SPI_DT_SPEC_GET(INST_DT_LTC166X(n, t), \
 			SPI_OP_MODE_MASTER | \
-			SPI_WORD_SET(8), 0), \
+			SPI_WORD_SET(8)), \
 		.resolution = res, \
 		.nchannels = nchan, \
 	}; \

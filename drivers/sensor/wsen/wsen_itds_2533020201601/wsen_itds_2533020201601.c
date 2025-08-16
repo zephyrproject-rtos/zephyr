@@ -661,7 +661,7 @@ int itds_2533020201601_init(const struct device *dev)
 #define ITDS_2533020201601_CONFIG_SPI(inst)                                                        \
 	{.bus_cfg =                                                                                \
 		 {                                                                                 \
-			 .spi = SPI_DT_SPEC_INST_GET(inst, ITDS_2533020201601_SPI_OPERATION, 0),   \
+			 .spi = SPI_DT_SPEC_INST_GET(inst, ITDS_2533020201601_SPI_OPERATION),      \
 		 },                                                                                \
 	 ITDS_2533020201601_CONFIG_COMMON(inst)}
 

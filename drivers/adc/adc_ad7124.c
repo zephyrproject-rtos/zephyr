@@ -1437,7 +1437,7 @@ static DEVICE_API(adc, adc_ad7124_api) = {
 	static const struct adc_ad7124_config adc_ad7124_config##inst = {                          \
 		.bus = SPI_DT_SPEC_INST_GET(                                                       \
 			inst,                                                                      \
-			SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8), 0),  \
+			SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8)),     \
 		.resolution = AD7124_RESOLUTION,                                                   \
 		.filter_type_mask = DT_INST_PROP(inst, filter_type_mask),                          \
 		.bipolar_mask = DT_INST_PROP(inst, bipolar_mask),                                  \
