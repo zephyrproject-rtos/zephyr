@@ -125,8 +125,13 @@ static int a2dp_discovery_ind(struct bt_avdtp *session, uint8_t *errcode)
 }
 
 static int a2dp_get_capabilities_ind(struct bt_avdtp *session, struct bt_avdtp_sep *sep,
-				     struct net_buf *rsp_buf, uint8_t *errcode)
+				     struct net_buf *rsp_buf, bool get_all_caps, uint8_t *errcode)
 {
+	/* The Reporting, Recovery, Content Protection, Header Compression, Multiplexing and
+	 * Delay Reporting services are not supported, so the same response is replied as
+	 * get_capabilities.
+	 */
+	ARG_UNUSED(get_all_caps);
 	struct bt_a2dp_ep *ep;
 
 	__ASSERT(sep, "Invalid sep");
@@ -613,6 +618,19 @@ static int bt_a2dp_get_sep_caps(struct bt_a2dp *a2dp)
 			a2dp->get_capabilities_param.req.func = bt_a2dp_get_capabilities_cb;
 			a2dp->get_capabilities_param.stream_endpoint_id =
 				a2dp->discover_cb_param->seps_info[a2dp->get_cap_index].id;
+
+			/* The legacy Get Capabilities procedure is deprecated in cases
+			 * where backwards compatibility with AVDTP 1.2 and earlier is irrelevant.
+			 */
+#if (AVDTP_VERSION >= AVDTP_VERSION_1_3)
+			if (a2dp->discover_cb_param->avdtp_version >= AVDTP_VERSION_1_3) {
+				a2dp->get_capabilities_param.get_all_caps = true;
+			} else {
+#endif /* AVDTP_VERSION >= AVDTP_VERSION_1_3 */
+				a2dp->get_capabilities_param.get_all_caps = false;
+#if (AVDTP_VERSION >= AVDTP_VERSION_1_3)
+			}
+#endif /* AVDTP_VERSION >= AVDTP_VERSION_1_3 */
 			err = bt_avdtp_get_capabilities(&a2dp->session,
 							&a2dp->get_capabilities_param);
 
@@ -699,12 +717,11 @@ int bt_a2dp_discover(struct bt_a2dp *a2dp, struct bt_a2dp_discover_param *param)
 		return -EBUSY;
 	}
 
-	memset(&a2dp->discover_cb_param, 0U, sizeof(a2dp->discover_cb_param));
 	a2dp->discover_cb_param = param;
 	a2dp->discover_param.req.func = bt_a2dp_discover_cb;
 
 	err = bt_avdtp_discover(&a2dp->session, &a2dp->discover_param);
-	if (err) {
+	if (err != 0) {
 		if (a2dp->discover_cb_param->cb != NULL) {
 			a2dp->discover_cb_param->cb(a2dp, NULL, NULL);
 		}
