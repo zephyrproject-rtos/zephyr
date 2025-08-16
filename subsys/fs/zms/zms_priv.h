@@ -28,22 +28,21 @@
 #endif
 
 #define ZMS_LOOKUP_CACHE_NO_ADDR GENMASK64(63, 0)
-#define ZMS_HEAD_ID              GENMASK(31, 0)
 
 #define ZMS_VERSION_MASK        GENMASK(7, 0)
 #define ZMS_GET_VERSION(x)      FIELD_GET(ZMS_VERSION_MASK, x)
 #define ZMS_DEFAULT_VERSION     1
-#define ZMS_MAGIC_NUMBER        0x42 /* murmur3a hash of "ZMS" (MSB) */
 #define ZMS_MAGIC_NUMBER_MASK   GENMASK(15, 8)
 #define ZMS_GET_MAGIC_NUMBER(x) FIELD_GET(ZMS_MAGIC_NUMBER_MASK, x)
 #define ZMS_MIN_ATE_NUM         5
 
 #define ZMS_INVALID_SECTOR_NUM -1
-#define ZMS_DATA_IN_ATE_SIZE   8
 
 /**
  * @ingroup zms_data_structures
  * ZMS Allocation Table Entry (ATE) structure
+ *
+ * @note This structure depends on @kconfig{CONFIG_ZMS_ID_64BIT}.
  */
 struct zms_ate {
 	/** crc8 check of the entry */
@@ -52,6 +51,8 @@ struct zms_ate {
 	uint8_t cycle_cnt;
 	/** data len within sector */
 	uint16_t len;
+
+#if !defined(CONFIG_ZMS_ID_64BIT)
 	/** data id */
 	uint32_t id;
 	union {
@@ -75,6 +76,31 @@ struct zms_ate {
 			};
 		};
 	};
+#else
+	/** data id */
+	uint64_t id;
+	union {
+		/** data field used to store small sized data */
+		uint8_t data[4];
+		/** data offset within sector */
+		uint32_t offset;
+		/** Used to store metadata information such as storage version. */
+		uint32_t metadata;
+	};
+#endif /* CONFIG_ZMS_ID_64BIT */
+
 } __packed;
+
+#define ZMS_DATA_IN_ATE_SIZE SIZEOF_FIELD(struct zms_ate, data)
+
+#if !defined(CONFIG_ZMS_ID_64BIT)
+#define ZMS_HEAD_ID      GENMASK(31, 0)
+#define ZMS_MAGIC_NUMBER 0x42 /* murmur3a hash of "ZMS" (MSB) */
+
+#else
+#define ZMS_HEAD_ID      GENMASK64(63, 0)
+#define ZMS_MAGIC_NUMBER 0xb8 /* murmur3a hash of "ZMS64" (MSB) */
+
+#endif /* CONFIG_ZMS_ID_64BIT */
 
 #endif /* __ZMS_PRIV_H_ */
