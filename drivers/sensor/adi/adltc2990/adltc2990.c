@@ -18,6 +18,44 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adltc2990, CONFIG_SENSOR_LOG_LEVEL);
 
+static int adltc2990_reg_write_byte_dt(const struct device *dev, uint8_t reg, uint8_t value)
+{
+	const struct adltc2990_config *cfg = dev->config;
+	struct adltc2990_data *data = dev->data;
+	int err;
+
+	k_sem_take(&data->sem, K_FOREVER);
+
+	err = i2c_reg_write_byte_dt(&cfg->bus, reg, value);
+
+	k_sem_give(&data->sem);
+
+	if (err != 0) {
+		LOG_ERR("Failed to write register 0x%02x", reg);
+	}
+
+	return err;
+}
+
+static int adltc2990_reg_read_byte_dt(const struct device *dev, uint8_t reg, uint8_t *value)
+{
+	const struct adltc2990_config *cfg = dev->config;
+	struct adltc2990_data *data = dev->data;
+	int err;
+
+	k_sem_take(&data->sem, K_FOREVER);
+
+	err = i2c_reg_read_byte_dt(&cfg->bus, reg, value);
+
+	k_sem_give(&data->sem);
+
+	if (err != 0) {
+		LOG_ERR("Failed to read register 0x%02x", reg);
+	}
+
+	return err;
+}
+
 static enum adltc2990_monitoring_type adltc2990_get_v1_v2_measurement_modes(uint8_t mode_4_3,
 									    uint8_t mode_2_0)
 {
@@ -96,10 +134,9 @@ static enum adltc2990_monitoring_type adltc2990_get_v3_v4_measurement_modes(uint
 
 int adltc2990_is_busy(const struct device *dev, bool *is_busy)
 {
-	const struct adltc2990_config *cfg = dev->config;
 	uint8_t status_reg = 0;
 
-	if (i2c_reg_read_byte_dt(&cfg->bus, ADLTC2990_REG_STATUS, &status_reg)) {
+	if (adltc2990_reg_read_byte_dt(dev, ADLTC2990_REG_STATUS, &status_reg)) {
 		return -EIO;
 	}
 
@@ -136,7 +173,6 @@ static void adltc2990_get_v3_v4_val(const struct device *dev, struct sensor_valu
 int adltc2990_trigger_measurement(const struct device *dev,
 				  enum adltc2990_acquisition_format format)
 {
-	const struct adltc2990_config *cfg = dev->config;
 	struct adltc2990_data *data = dev->data;
 
 	if (data->acq_format == format) {
@@ -146,20 +182,18 @@ int adltc2990_trigger_measurement(const struct device *dev,
 	data->acq_format = format;
 	uint8_t ctrl_reg_setting;
 
-	if (i2c_reg_read_byte_dt(&cfg->bus, ADLTC2990_REG_CONTROL, &ctrl_reg_setting)) {
-		LOG_ERR("reading control register failed.");
+	if (adltc2990_reg_read_byte_dt(dev, ADLTC2990_REG_CONTROL, &ctrl_reg_setting)) {
 		return -EIO;
 	}
 
 	WRITE_BIT(ctrl_reg_setting, ADLTC2990_ACQUISITION_BIT_POS, format);
 
-	if (i2c_reg_write_byte_dt(&cfg->bus, ADLTC2990_REG_CONTROL, ctrl_reg_setting)) {
-		LOG_ERR("configuring for single bus failed.");
+	if (adltc2990_reg_write_byte_dt(dev, ADLTC2990_REG_CONTROL, ctrl_reg_setting)) {
 		return -EIO;
 	}
 
 trigger_conversion:
-	return i2c_reg_write_byte_dt(&cfg->bus, ADLTC2990_REG_TRIGGER, 0x1);
+	return adltc2990_reg_write_byte_dt(dev, ADLTC2990_REG_TRIGGER, 0x1);
 }
 
 static int adltc2990_fetch_property_value(const struct device *dev,
@@ -207,11 +241,11 @@ static int adltc2990_fetch_property_value(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (i2c_reg_read_byte_dt(&cfg->bus, msb_address, &msb_value)) {
+	if (adltc2990_reg_read_byte_dt(dev, msb_address, &msb_value)) {
 		return -EIO;
 	}
 
-	if (i2c_reg_read_byte_dt(&cfg->bus, lsb_address, &lsb_value)) {
+	if (adltc2990_reg_read_byte_dt(dev, lsb_address, &lsb_value)) {
 		return -EIO;
 	}
 
@@ -529,7 +563,7 @@ static int adltc2990_channel_get(const struct device *dev, enum sensor_channel c
 			LOG_DBG("Getting V1,V2");
 			num_values_v1_v2 = ADLTC2990_VOLTAGE_SINGLE_ENDED_VALUES;
 		} else if (mode_v1_v2 == VOLTAGE_DIFFERENTIAL) {
-			LOG_DBG("Getting V3-V4");
+			LOG_DBG("Getting V1-V2");
 			num_values_v1_v2 = ADLTC2990_VOLTAGE_DIFF_VALUES;
 		}
 		if (mode_v3_v4 == VOLTAGE_SINGLEENDED) {
@@ -595,6 +629,8 @@ static int adltc2990_init(const struct device *dev)
 	struct adltc2990_data *data = dev->data;
 	int err;
 
+	k_sem_init(&data->sem, 1, 1);
+
 	if (!i2c_is_ready_dt(&cfg->bus)) {
 		LOG_ERR("I2C bus %s not ready", cfg->bus.bus->name);
 		return -ENODEV;
@@ -604,8 +640,7 @@ static int adltc2990_init(const struct device *dev)
 					 cfg->measurement_mode[1] << 3 | cfg->measurement_mode[0];
 
 	LOG_DBG("Setting Control Register to: 0x%x", ctrl_reg_setting);
-	if (i2c_reg_write_byte_dt(&cfg->bus, ADLTC2990_REG_CONTROL, ctrl_reg_setting)) {
-		LOG_ERR("configuring for single bus failed.");
+	if (adltc2990_reg_write_byte_dt(dev, ADLTC2990_REG_CONTROL, ctrl_reg_setting)) {
 		return -EIO;
 	}
 
