@@ -139,6 +139,41 @@
 		clocks = <&scg SCG_K4_SLOW_CLK 0>;
 	};
 
+	lpit0: timer@2f000 {
+		compatible = "nxp,lpit";
+		reg = <0x2f000 0x60>;
+		interrupts = <36 0>;
+		clocks = <&scg SCG_K4_FIRC_CLK 0xbc>;
+		status = "disabled";
+		max-load-value = <0xffffffff>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		lpit1_channel0: lpit_channel@0 {
+			compatible = "nxp,lpit-channel";
+			reg = <0>;
+			status = "disabled";
+		};
+
+		lpit1_channel1: lpit_channel@1 {
+			compatible = "nxp,lpit-channel";
+			reg = <1>;
+			status = "disabled";
+		};
+
+		lpit1_channel2: lpit_channel@2 {
+			compatible = "nxp,lpit-channel";
+			reg = <2>;
+			status = "disabled";
+		};
+
+		lpit1_channel3: lpit_channel@3 {
+			compatible = "nxp,lpit-channel";
+			reg = <3>;
+			status = "disabled";
+		};
+	};
+
 	lpuart0: serial@38000 {
 		compatible = "nxp,lpuart";
 		reg = <0x38000 0x34>;
