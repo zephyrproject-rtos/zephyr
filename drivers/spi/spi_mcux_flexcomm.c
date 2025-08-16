@@ -61,7 +61,6 @@ struct stream {
 	uint32_t channel; /* stores the channel for dma */
 	struct dma_config dma_cfg;
 	struct dma_block_config dma_blk_cfg[CONFIG_SPI_MCUX_FLEXCOMM_DMA_MAX_BLOCKS];
-	int wait_for_dma_status;
 };
 #endif
 
@@ -330,9 +329,6 @@ static void spi_mcux_dma_callback(const struct device *dev, void *arg,
 	} else {
 		/* identify the origin of this callback */
 		if (channel == data->dma_tx.channel) {
-			if (status != data->dma_tx.wait_for_dma_status) {
-				return;
-			}
 			/* this part of the transfer ends */
 			data->status_flags |= SPI_MCUX_FLEXCOMM_DMA_TX_DONE_FLAG;
 		} else if (channel == data->dma_rx.channel) {
@@ -409,7 +405,6 @@ static int spi_mcux_dma_tx_load(const struct device *dev, const struct spi_confi
 		blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 		blk_cfg->block_size = sizeof(uint32_t);
 		blk_cfg->next_block = NULL;
-		data->dma_tx.wait_for_dma_status = DMA_STATUS_COMPLETE;
 	} else {
 		blk_cfg->block_size = len;
 		blk_cfg->next_block = blk_cfg + 1;
@@ -421,7 +416,6 @@ static int spi_mcux_dma_tx_load(const struct device *dev, const struct spi_confi
 			blk_cfg->source_address = (uint32_t)&data->dummy_tx_buffer;
 			blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 		}
-		data->dma_tx.wait_for_dma_status = DMA_STATUS_BLOCK;
 	}
 	return EXIT_SUCCESS;
 }
@@ -917,7 +911,6 @@ static DEVICE_API(spi, spi_mcux_driver_api) = {
 		.dma_cfg = {						\
 			.channel_direction = LPC_DMA_SPI_MCUX_FLEXCOMM_TX,	\
 			.dma_callback = spi_mcux_dma_callback,		\
-			.complete_callback_en = true,			\
 			.block_count = 2,				\
 		}							\
 	},								\
