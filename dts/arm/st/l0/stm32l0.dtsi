@@ -56,8 +56,9 @@
 
 		clk_hsi: clk-hsi {
 			#clock-cells = <0>;
-			compatible = "fixed-clock";
+			compatible = "st,stm32l0-hsi-clock";
 			clock-frequency = <DT_FREQ_M(16)>;
+			hsi-div = <1>;
 			status = "disabled";
 		};
 
