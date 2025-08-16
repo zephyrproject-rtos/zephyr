@@ -31,4 +31,10 @@ config I2S_ESP32_DMA_DESC_NUM_MAX
 	help
 	  Max number of link descriptor available for DMA transfers on each I2S channel
 
+config I2S_ESP32_ALLOWED_EMPTY_TX_QUEUE_DEFERRAL_TIME_MS
+	int "ESP32 I2S number of link descriptors"
+	default 0
+	help
+	  Allowed deferral time for processing an empty tx queue in milliseconds
+
 endif

@@ -28,3 +28,8 @@ properties:
     required: true
     description: I2S unit number.
       Possible values are 0,1,.. depending on chip.
+
+  full-duplex:
+    type: boolean
+    description: |
+      Indicates whether tx and rx channels must share WS and BCK lines.
