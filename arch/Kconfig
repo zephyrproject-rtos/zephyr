@@ -230,6 +230,16 @@ config SRAM_BASE_ADDRESS
 	  /chosen/zephyr,sram in devicetree. The user should generally avoid
 	  changing it via menuconfig or in configuration files.
 
+config XIP
+	bool "Execute in place"
+	help
+	  This option allows zephyr to operate with its text and read-only
+	  sections residing in ROM (or similar read-only memory). Not all boards
+	  support this option so it must be used with care; you must also
+	  supply a linker command file when building your image. Enabling this
+	  option increases both the code and data footprint of the image.
+
+
 if ARC || ARM || ARM64 || X86 || RISCV || RX
 
 # Workaround for not being able to have commas in macro arguments
