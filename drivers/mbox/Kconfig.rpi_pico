@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Igalia S.L.
+# Author: Ricardo Cañuelo Navarro <rcn@igalia.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config MBOX_RPI_PICO
+	bool "Inter-processor mailbox driver for Raspberry Pi Pico SoCs"
+	default y
+	depends on DT_HAS_RASPBERRYPI_PICO_MBOX_ENABLED
+	help
+	  Raspberry Pi Pico mailbox driver based on the RP2350/RP2040
+	  inter-processor FIFOs.
