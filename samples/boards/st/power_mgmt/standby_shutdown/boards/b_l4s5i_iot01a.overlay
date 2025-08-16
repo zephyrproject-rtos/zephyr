@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	cpus {
+		cpu@0 {
+			cpu-power-states = <&stop0 &stop1 &stop2 &standby>;
+		};
+
+		power-states {
+			standby: state3 {
+				compatible = "zephyr,power-state";
+				power-state-name = "standby";
+				min-residency-us = <3000>;
+				exit-latency-us = <200>;
+				status = "disabled";
+			};
+		};
+	};
+};
+
+&lptim1 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
+		 <&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
+	status = "okay";
+};

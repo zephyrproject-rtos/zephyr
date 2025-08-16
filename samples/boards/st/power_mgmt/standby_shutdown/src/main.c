@@ -81,7 +81,9 @@ void thread_poweroff_standby_mode(void)
 #ifdef CONFIG_LOG
 		k_msleep(2000);
 #endif /* CONFIG_LOG */
-		pm_state_force(0u, &(struct pm_state_info) {PM_STATE_STANDBY, 0, 0});
+		if (!pm_state_force(0u, &(struct pm_state_info) {PM_STATE_STANDBY, 0, 0})) {
+			printk("Error: PM_STATE_STANDBY is not supported\n");
+		}
 		/* stay in Standby mode until wakeup line activated */
 	}
 }
