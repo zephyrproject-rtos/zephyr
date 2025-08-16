@@ -47,11 +47,11 @@ compatible: "arm,scmi"
 include: [base.yaml]
 
 properties:
-  shmem:
-    type: phandle
+  shmems:
+    type: phandle-array
     required: true
     description: |
-      Phandle to node describing TX channel shared memory area.
+      Phandle to node describing TX/RX channel shared memory area.
       This translates to a **single** SCMI transmit channel.
 
   mboxes:

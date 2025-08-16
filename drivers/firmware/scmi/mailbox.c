@@ -6,8 +6,57 @@
 
 #include <zephyr/logging/log.h>
 #include "mailbox.h"
+#if defined(CONFIG_NXP_SCMI_BBM_HELPERS)
+#include "zephyr/drivers/firmware/scmi/nxp/bbm.h"
+#endif
+#include "zephyr/drivers/firmware/scmi/protocol.h"
 
 LOG_MODULE_REGISTER(scmi_mbox);
+
+static int scmi_mbox_p2a_pending(const struct device *transport,
+				struct scmi_channel *chan)
+{
+	struct scmi_message p2amsg;
+	uint32_t context = 0x0;
+	int ret;
+	uint32_t protocolId, messageId;
+	struct scmi_mbox_channel *mbox_chan;
+
+	mbox_chan = chan->data;
+
+	p2amsg.hdr = 0x0;
+	p2amsg.len = sizeof(uint32_t);
+	p2amsg.content = &context;
+
+	ret = scmi_shmem_read_hdr(mbox_chan->shmem, &p2amsg);
+	if (ret < 0) {
+		LOG_ERR("failed to read message to shmem: %d", ret);
+		return ret;
+	}
+
+	/* extract header protocol and message ID according into head */
+	protocolId = SCMI_HEADER_PROTOCOL_EX(p2amsg.hdr);
+	messageId = SCMI_HEADER_MSG_EX(p2amsg.hdr);
+
+#if defined(CONFIG_NXP_SCMI_BBM_HELPERS)
+	uint32_t flags;
+
+	if (protocolId == SCMI_PROTOCOL_BBM) {
+		if (messageId == SCMI_PROTO_BBM_PROTOCOL_BUTTON_EVENT) {
+			ret = scmi_bbm_button_event(&flags);
+			if (ret < 0) {
+				LOG_ERR("failed to read bbm button event to shmem: %d", ret);
+				return ret;
+			}
+			printf("SCMI BBM BUTTON notification: flags=0x%08X\n", flags);
+		} else {
+			/* To do: add other BBM protocol notification message */
+		}
+	}
+#endif
+
+	return 0;
+}
 
 static void scmi_mbox_cb(const struct device *mbox,
 			 mbox_channel_id_t channel_id,
@@ -19,6 +68,9 @@ static void scmi_mbox_cb(const struct device *mbox,
 	if (scmi_chan->cb) {
 		scmi_chan->cb(scmi_chan);
 	}
+
+	/* Check and handle whether there is any p2a pending notification information */
+	scmi_mbox_p2a_pending(mbox, scmi_chan);
 }
 
 static int scmi_mbox_send_message(const struct device *transport,
@@ -27,8 +79,12 @@ static int scmi_mbox_send_message(const struct device *transport,
 {
 	struct scmi_mbox_channel *mbox_chan;
 	int ret;
+	struct mbox_dt_spec tx;
+	uint8_t msg_type;
 
+	msg_type = SCMI_HEADER_TYPE_EX(msg->hdr);
 	mbox_chan = chan->data;
+	tx = (msg_type == SCMI_COMMAND) ? mbox_chan->tx : mbox_chan->rx;
 
 	ret = scmi_shmem_write_message(mbox_chan->shmem, msg);
 	if (ret < 0) {
@@ -36,7 +92,7 @@ static int scmi_mbox_send_message(const struct device *transport,
 		return ret;
 	}
 
-	ret = mbox_send_dt(&mbox_chan->tx, NULL);
+	ret = mbox_send_dt(&tx, NULL);
 	if (ret < 0) {
 		LOG_ERR("failed to ring doorbell: %d", ret);
 		return ret;
@@ -71,29 +127,29 @@ static int scmi_mbox_setup_chan(const struct device *transport,
 {
 	int ret;
 	struct scmi_mbox_channel *mbox_chan;
-	struct mbox_dt_spec *tx_reply;
+	struct mbox_dt_spec *mbox_spec;
 
 	mbox_chan = chan->data;
 
-	if (!tx) {
-		return -ENOTSUP;
-	}
-
-	if (mbox_chan->tx_reply.dev) {
-		tx_reply = &mbox_chan->tx_reply;
+	if (tx) {
+		mbox_spec = mbox_chan->tx_reply.dev ? &mbox_chan->tx_reply : &mbox_chan->tx;
 	} else {
-		tx_reply = &mbox_chan->tx;
+		if (!mbox_chan->rx.dev) {
+			LOG_ERR("RX channel not defined");
+			return -ENOTSUP;
+		}
+		mbox_spec = &mbox_chan->rx;
 	}
 
-	ret = mbox_register_callback_dt(tx_reply, scmi_mbox_cb, chan);
+	ret = mbox_register_callback_dt(mbox_spec, scmi_mbox_cb, chan);
 	if (ret < 0) {
-		LOG_ERR("failed to register tx reply cb");
+		LOG_ERR("failed to register %s cb", tx ? "tx" : "rx");
 		return ret;
 	}
 
-	ret = mbox_set_enabled_dt(tx_reply, true);
+	ret = mbox_set_enabled_dt(mbox_spec, true);
 	if (ret < 0) {
-		LOG_ERR("failed to enable tx reply dbell");
+		LOG_ERR("failed to enable %s dbell", tx ? "tx" : "rx");
 	}
 
 	/* enable interrupt-based communication */
