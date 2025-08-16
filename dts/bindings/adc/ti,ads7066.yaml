@@ -1,0 +1,44 @@
+# Copyright (c) 2025 GE Healthcare Technologies, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Texas Instruments ADS7066 16-bit 8-channel SPI ADC
+
+compatible: "ti,ads7066"
+
+include: [spi-device.yaml, adc-controller.yaml]
+
+properties:
+  mode:
+    type: string
+    default: "ADS7066_MODE_MANUAL"
+    description: |
+      Channel selection mode:
+      - ADS7066_MODE_MANUAL
+      - ADS7066_MODE_OTF
+      - ADS7066_MODE_AUTO
+    enum:
+      - "ADS7066_MODE_MANUAL"
+      - "ADS7066_MODE_OTF"
+      - "ADS7066_MODE_AUTO"
+
+  reference:
+    type: string
+    required: true
+    description: |
+      Reference selection:
+      - ADC_REF_INTERNAL:  Internal
+      - ADC_REF_EXTERNAL0: External, input 0
+    enum:
+      - "ADC_REF_VDD_1"     # unsupported
+      - "ADC_REF_VDD_1_2"   # unsupported
+      - "ADC_REF_VDD_1_3"   # unsupported
+      - "ADC_REF_VDD_1_4"   # unsupported
+      - "ADC_REF_INTERNAL"
+      - "ADC_REF_EXTERNAL0"
+      - "ADC_REF_EXTERNAL1" # unsupported
+
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input
