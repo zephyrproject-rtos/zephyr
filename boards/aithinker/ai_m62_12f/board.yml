@@ -1,0 +1,6 @@
+board:
+  name: ai_m62_12f
+  full_name: Ai-Thinker M62-12F development board
+  vendor: aithinker
+  socs:
+    - name: bl616c50q2i
