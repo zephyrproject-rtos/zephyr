@@ -1,0 +1,14 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP PCA9422
+
+compatible: "nxp,pca9422"
+
+include: i2c-device.yaml
+
+properties:
+  reg:
+    required: true
+  interrupts:
+    required: true
