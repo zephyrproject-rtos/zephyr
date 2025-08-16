@@ -2593,6 +2593,22 @@ static int uarte_instance_init(const struct device *dev,
 	return pm_device_driver_init(dev, uarte_nrfx_pm_action);
 }
 
+static int uarte_instance_deinit(const struct device *dev)
+{
+	if (IS_ENABLED(CONFIG_PM_DEVICE)) {
+		enum pm_device_state state;
+
+		/* PM must have suspended the device before driver can be deinitialized. */
+		(void)pm_device_state_get(dev, &state);
+		return (state == PM_DEVICE_STATE_SUSPENDED) || (state == PM_DEVICE_STATE_OFF) ?
+		       0 : -EBUSY;
+	}
+
+	uarte_pm_suspend(dev);
+
+	return 0;
+}
+
 #define UARTE_GET_ISR(idx) \
 	COND_CODE_1(CONFIG_UART_##idx##_ASYNC, (uarte_nrfx_isr_async), (uarte_nrfx_isr_int))
 
@@ -2800,8 +2816,10 @@ static int uarte_instance_init(const struct device *dev,
 	PM_DEVICE_DT_DEFINE(UARTE(idx), uarte_nrfx_pm_action,		       \
 			    UARTE_PM_ISR_SAFE(idx));			       \
 									       \
-	DEVICE_DT_DEFINE(UARTE(idx),					       \
+	DEVICE_DT_DEINIT_DEFINE(UARTE(idx),				       \
 		      uarte_##idx##_init,				       \
+		      IS_ENABLED(CONFIG_UART_NRFX_UARTE_DEINIT) ?	       \
+		       uarte_instance_deinit : NULL,			       \
 		      PM_DEVICE_DT_GET(UARTE(idx)),			       \
 		      &uarte_##idx##_data,				       \
 		      &uarte_##idx##z_config,				       \
