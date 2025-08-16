@@ -93,6 +93,8 @@ Display
   This has now been fixed. Boards and applications that were tested or developed based on the
   previous sample may be affected by this change (see :github:`79996` for more information).
 
+* SSD1363's properties using 'greyscale' now use 'grayscale'.
+
 PTP Clock
 *********
 
