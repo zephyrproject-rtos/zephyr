@@ -30,4 +30,5 @@ supported:
   - watchdog
   - usbd
   - sdhc
+  - i2s
 vendor: nxp

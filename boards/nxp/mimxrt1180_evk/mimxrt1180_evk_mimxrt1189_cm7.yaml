@@ -27,4 +27,5 @@ supported:
   - sdhc
   - spi
   - uart
+  - i2s
 vendor: nxp
