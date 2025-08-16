@@ -99,6 +99,17 @@ config RISCV_ISA_EXT_C
 	  which reduces static and dynamic code size by adding short 16-bit
 	  instruction encodings for common operations.
 
+config RISCV_ISA_EXT_SMRNMI
+	bool
+	help
+	  (Smrnmi) - Standard Extension for Resumable Non-Maskable Interrupts
+
+	  The Smrnmi extension adds support for resumable non-maskable
+	  interrupts (RNMIs) to RISC-V. This extension provides architectural
+	  support for hardware error conditions, watchdog timers, and other
+	  critical events that require immediate attention while preserving
+	  the ability to resume execution after handling.
+
 config RISCV_ISA_EXT_ZICNTR
 	bool
 	depends on RISCV_ISA_EXT_ZICSR
