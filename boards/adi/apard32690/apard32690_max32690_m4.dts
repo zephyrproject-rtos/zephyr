@@ -58,8 +58,8 @@
 	arduino_header: connector {
 		compatible = "arduino-header-r3";
 		#gpio-cells = <2>;
-		gpio-map-mask = <0xffffffff 0xffffffc0>;
-		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map-mask = <0xffffffff 0xfffffe00>;
+		gpio-map-pass-thru = <0 0x1ff>;
 		gpio-map = <0 0 &gpio3 0 0>,	/* A0 */
 			   <1 0 &gpio3 1 0>,	/* A1 */
 			   <2 0 &gpio3 2 0>,	/* A2 */
