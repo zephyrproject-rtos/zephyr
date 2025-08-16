@@ -1,0 +1,14 @@
+common:
+  tags:
+    - arm
+tests:
+  arch.arm.user.stack:
+    filter: CONFIG_CPU_CORTEX_M
+    extra_configs:
+      - CONFIG_USERSPACE=y
+  arch.arm.user.stack.float:
+    filter: CONFIG_CPU_CORTEX_M and CONFIG_CPU_HAS_FPU
+    extra_configs:
+      - CONFIG_USERSPACE=y
+      - CONFIG_FPU=y
+      - CONFIG_FPU_SHARING=y
