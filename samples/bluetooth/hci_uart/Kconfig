@@ -1,0 +1,21 @@
+# Copyright (c) 2025 Zephyr Project members and individual contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+
+mainmenu "Bluetooth: HCI UART"
+
+menu "HCI UART"
+
+config HCI_UART_APP_DEFAULT_FEATURES
+	bool "Enable default HCI UART features"
+	select BT_CTLR_ASSERT_HANDLER
+	select BT_CTLR_DTM_HCI
+	select BT_CTLR_DTM_HCI_SUPPORT
+	select BT_CTLR_CRYPTO_SUPPORT
+	default y
+
+endmenu
+
+menu "Zephyr"
+source "Kconfig.zephyr"
+endmenu
