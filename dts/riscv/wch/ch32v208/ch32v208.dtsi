@@ -190,7 +190,7 @@
 		};
 
 		rcc: rcc@40021000 {
-			compatible = "wch,ch32v00x-rcc";
+			compatible = "wch,ch32fv2x_v3x-rcc";
 			reg = <0x40021000 16>;
 			hb-prescaler = <1>;
 			#clock-cells = <1>;

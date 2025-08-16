@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT wch_ch32v00x_rcc
-
 #include <stdint.h>
 
 #include <zephyr/arch/cpu.h>
@@ -16,6 +14,15 @@
 #include <zephyr/math/ilog2.h>
 
 #include <hal_ch32fun.h>
+
+#if DT_HAS_COMPAT_STATUS_OKAY(wch_ch32fv2x_v3x_rcc)
+#define DT_DRV_COMPAT            wch_ch32fv2x_v3x_rcc
+#define WCH_RCC_HAS_PB_PRESCALER 1
+#elif DT_HAS_COMPAT_STATUS_OKAY(wch_ch32v00x_rcc)
+#define DT_DRV_COMPAT wch_ch32v00x_rcc
+#else
+#error "Unknown WCH RCC"
+#endif
 
 #define WCH_RCC_CLOCK_ID_OFFSET(id) (((id) >> 5) & 0xFF)
 #define WCH_RCC_CLOCK_ID_BIT(id)    ((id) & 0x1F)
@@ -66,6 +73,18 @@ static int clock_control_wch_rcc_get_rate(const struct device *dev, clock_contro
 	uint32_t sysclk = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
 	uint32_t ahbclk = sysclk;
 
+#if DT_HAS_COMPAT_STATUS_OKAY(wch_ch32fv2x_v3x_rcc)
+	if ((cfgr0 & RCC_HPRE_3) != 0) {
+		if ((cfgr0 & RCC_HPRE_2) == 0) {
+			/* Range 0b1000 divides by a power of 2 */
+			ahbclk /= 2 << ((cfgr0 & (RCC_HPRE_0 | RCC_HPRE_1)) >> 4);
+		} else {
+			/* Range 0b11 divides by a power of 2 but is shifted one mor */
+			ahbclk /= 2
+				  << (((cfgr0 & (RCC_HPRE_0 | RCC_HPRE_1 | RCC_HPRE_2)) >> 4) + 1);
+		}
+	}
+#elif DT_HAS_COMPAT_STATUS_OKAY(wch_ch32v00x_rcc)
 	if ((cfgr0 & RCC_HPRE_3) != 0) {
 		/* The range 0b1000 divides by a power of 2, where 0b1000 is /2, 0b1001 is /4, etc.
 		 */
@@ -74,6 +93,9 @@ static int clock_control_wch_rcc_get_rate(const struct device *dev, clock_contro
 		/* The range 0b0nnn divides by n + 1, where 0b0000 is /1, 0b001 is /2, etc. */
 		ahbclk /= ((cfgr0 & (RCC_HPRE_0 | RCC_HPRE_1 | RCC_HPRE_2)) >> 4) + 1;
 	}
+#else
+#error "Unsupported WCH RCC"
+#endif
 
 	/* The datasheet says that AHB == APB1 == APB2, but the registers imply that APB1 and APB2
 	 * can be divided from the AHB clock. Assume that the clock tree diagram is correct and
@@ -166,10 +188,27 @@ static int clock_control_wch_pll_init(const struct device *dev)
 #error "Unknown PLL for WCH chip"
 #endif
 
+#if DT_HAS_COMPAT_STATUS_OKAY(wch_ch32fv2x_v3x_rcc)
 static void clock_control_wch_prescaler_init(const struct device *dev)
 {
 	const struct clock_control_wch_rcc_config *config = dev->config;
-	uint32_t hpre = 0;
+	uint8_t hpre = 0;
+
+	if (config->hb_pre == 1) {
+		hpre = 0;
+	} else if (config->hb_pre <= 16) {
+		hpre = ilog2(config->hb_pre - 1) | 0b1000;
+	} else {
+		hpre = ilog2((config->hb_pre >> 1) - 1) | 0b1000;
+	}
+
+	RCC->CFGR0 = (RCC->CFGR0 & ~RCC_HPRE) | (hpre << 4);
+}
+#elif DT_HAS_COMPAT_STATUS_OKAY(wch_ch32v00x_rcc)
+static void clock_control_wch_prescaler_init(const struct device *dev)
+{
+	const struct clock_control_wch_rcc_config *config = dev->config;
+	uint8_t hpre = 0;
 
 	if (config->hb_pre <= 8) {
 		hpre = config->hb_pre - 1;
@@ -179,6 +218,9 @@ static void clock_control_wch_prescaler_init(const struct device *dev)
 
 	RCC->CFGR0 = (RCC->CFGR0 & ~RCC_HPRE) | (hpre << 4);
 }
+#else
+#error "Unsupported WCH RCC"
+#endif
 
 static int clock_control_wch_rcc_init(const struct device *dev)
 {
