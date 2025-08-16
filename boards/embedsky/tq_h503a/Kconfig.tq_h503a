@@ -1,0 +1,5 @@
+# Copyright (c) 2025 MA Junyi
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_TQ_H503A
+	select SOC_STM32H503XX
