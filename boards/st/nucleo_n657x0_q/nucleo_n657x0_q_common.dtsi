@@ -23,17 +23,17 @@
 		compatible = "gpio-leds";
 
 		green_led: led_1 {
-			gpios = <&gpiog 0 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpiog 0 GPIO_ACTIVE_LOW>;
 			label = "User LD6";
 		};
 
 		blue_led: led_2 {
-			gpios = <&gpiog 8 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpiog 8 GPIO_ACTIVE_LOW>;
 			label = "User LD7";
 		};
 
 		red_led: led_3 {
-			gpios = <&gpiog 10 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpiog 10 GPIO_ACTIVE_LOW>;
 			label = "User LD5";
 		};
 	};
