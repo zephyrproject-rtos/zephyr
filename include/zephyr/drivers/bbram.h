@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @ingroup bbram_interface
+ * @brief Main header file for Battery-Backed RAM (BBRAM) driver API.
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_BBRAM_H
 #define ZEPHYR_INCLUDE_DRIVERS_BBRAM_H
 
