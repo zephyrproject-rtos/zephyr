@@ -36,6 +36,14 @@ Device Drivers and Devicetree
 
 .. zephyr-keep-sorted-start re(^\w)
 
+PWM
+===
+
+* :dtcompatible:`nxp,pca9685` ``invert`` property has been removed and you can now use the
+  :c:macro:`PWM_POLARITY_INVERTED` or :c:macro:`PWM_POLARITY_NORMAL` flags as specifier cells for
+  space "pwm" are now named: ``['channel', 'period', 'flags']`` (old value:
+  ``['channel', 'period']``) and ``#pwm-cells`` const value changed from 2 to 3.
+
 Sensors
 =======
 
