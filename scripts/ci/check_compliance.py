@@ -1278,8 +1278,12 @@ flagged.
         "MCUBOOT_SERIAL",           # Used in (sysbuild-based) test/
                                     # documentation
         "MCUMGR_GRP_EXAMPLE_OTHER_HOOK", # Used in documentation
+        "MCUX_HW_CORE", # Used in modules/hal_nxp/mcux/mcux-sdk-ng/device/device.cmake.
+                        # It is a variable used by MCUX SDK CMake.
         "MCUX_HW_DEVICE_CORE", # Used in modules/hal_nxp/mcux/mcux-sdk-ng/device/device.cmake.
                                # It is a variable used by MCUX SDK CMake.
+        "MCUX_HW_FPU_TYPE", # Used in modules/hal_nxp/mcux/mcux-sdk-ng/device/device.cmake.
+                            # It is a variable used by MCUX SDK CMake.
         "MISSING",
         "MODULES",
         "MODVERSIONS",        # Linux, in boards/xtensa/intel_adsp_cavs25/doc
