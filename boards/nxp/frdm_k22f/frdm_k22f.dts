@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 Prevas A/S
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,6 +29,7 @@
 		magn0 = &fxos8700;
 		accel0 = &fxos8700;
 		mcuboot-button0 = &user_button_3;
+		rtc = &rtc;
 	};
 
 	chosen {
@@ -231,4 +232,8 @@ zephyr_uhc0: &usbh {
 		};
 
 	};
+};
+
+&rtc {
+	status = "okay";
 };

@@ -1,4 +1,8 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /dts-v1/;
 
@@ -19,6 +23,7 @@
 		magn0 = &fxos8700;
 		accel0 = &fxos8700;
 		mcuboot-button0 = &user_button_2;
+		rtc = &rtc;
 	};
 
 	chosen {
@@ -296,5 +301,9 @@ zephyr_udc0: &usbotg {
 };
 
 &pit0 {
+	status = "okay";
+};
+
+&rtc {
 	status = "okay";
 };
