@@ -72,9 +72,10 @@ config COVERAGE_GCOV
 
 endchoice
 
+if COVERAGE_GCOV
+
 config COVERAGE_GCOV_HEAP_SIZE
 	int "Size of heap allocated for gcov coverage data dump"
-	depends on COVERAGE_GCOV
 	default 32768 if X86 || SOC_SERIES_MPS2
 	default 16384
 	help
@@ -84,9 +85,19 @@ config COVERAGE_GCOV_HEAP_SIZE
 
 config COVERAGE_DUMP
 	bool "Dump coverage data on exit"
-	depends on COVERAGE_GCOV
 	help
 	  Dump collected coverage information to console on exit.
+
+config COVERAGE_DUMP_PATH_EXCLUSIVE
+	string "Only files matching this pattern are dumped in coverage data"
+	default ""
+	help
+	  Filenames are matched against the pattern using the posix fnmatch
+	  function. Filenames are based on their path in the build folder, not the
+	  original source tree. To only include files in a given west module, use
+	  the module name from `module.yml`.
+
+endif # COVERAGE_GCOV
 
 config FORCE_COVERAGE
 	bool "Force coverage"
