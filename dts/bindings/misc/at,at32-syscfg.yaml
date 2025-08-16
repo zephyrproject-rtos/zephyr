@@ -1,0 +1,15 @@
+# Copyright (c) 2021 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+description: AT32 System Configuration Registers
+
+compatible: "at,at32-syscfg"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
