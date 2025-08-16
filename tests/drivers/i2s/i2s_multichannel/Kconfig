@@ -1,0 +1,32 @@
+#
+# Copyright (c) 2021, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+mainmenu "I2S multi-channel Test"
+
+source "Kconfig.zephyr"
+
+config I2S_TEST_MULTI_CHANNEL
+	bool "multi channel testing"
+	help
+	  Use separate I2S test for multichannel.
+
+config I2S_TEST_ALLOWED_MULTI_CHANNEL_RX
+	bool "Allowed i2s multichannel read"
+	default n
+	help
+	  allow multichannel read test
+
+config I2S_TEST_ALLOWED_MULTI_CHANNEL_TX
+	bool "Allowed i2s multichannel read"
+	default n
+	help
+	  allow multichannel read test
+
+config I2S_TEST_SKIP_RX_VERIFY
+	bool "skip rx verification if the rx is connect to codec already"
+	default n
+	help
+	  skip rx verification
