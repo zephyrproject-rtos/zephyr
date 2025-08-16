@@ -104,6 +104,7 @@ family:
   - name: stm32h5x
     socs:
     - name: stm32h503xx
+    - name: stm32h523xx
     - name: stm32h533xx
     - name: stm32h562xx
     - name: stm32h563xx
