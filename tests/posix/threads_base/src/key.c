@@ -9,7 +9,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
 
-#define N_THR 2
+#define N_THR  2
 #define N_KEY  2
 #define BUFFSZ 48
 
@@ -74,7 +74,7 @@ static void make_keys(void)
  * multiple keys.
  */
 
-ZTEST(key, test_key_1toN_thread)
+ZTEST(posix_threads_base, test_key_1toN_thread)
 {
 	void *retval;
 	pthread_t newthread[N_THR];
@@ -95,7 +95,7 @@ ZTEST(key, test_key_1toN_thread)
 	zassert_ok(pthread_key_delete(key), "attempt to delete key failed");
 }
 
-ZTEST(key, test_key_Nto1_thread)
+ZTEST(posix_threads_base, test_key_Nto1_thread)
 {
 	pthread_t newthread;
 
@@ -113,7 +113,7 @@ ZTEST(key, test_key_Nto1_thread)
 	}
 }
 
-ZTEST(key, test_key_resource_leak)
+ZTEST(posix_threads_base, test_key_resource_leak)
 {
 	pthread_key_t key;
 
@@ -123,7 +123,7 @@ ZTEST(key, test_key_resource_leak)
 	}
 }
 
-ZTEST(key, test_correct_key_is_deleted)
+ZTEST(posix_threads_base, test_correct_key_is_deleted)
 {
 	pthread_key_t key;
 	size_t j = CONFIG_POSIX_THREAD_KEYS_MAX - 1;
@@ -162,34 +162,21 @@ static void *setspecific_thread(void *count)
 	return NULL;
 }
 
-ZTEST(key, test_thread_specific_data_deallocation)
+ZTEST(posix_threads_base, test_thread_specific_data_deallocation)
 {
 	pthread_t thread;
 	static int alloc_count_t0;
 	static int alloc_count_t1;
 
 	zassert_ok(pthread_create(&thread, NULL, setspecific_thread, &alloc_count_t0),
-		"attempt to create thread failed");
+		   "attempt to create thread failed");
 	zassert_ok(pthread_join(thread, NULL), "failed to join thread");
 	printk("first thread allocated %d keys", alloc_count_t0);
 
 	zassert_ok(pthread_create(&thread, NULL, setspecific_thread, &alloc_count_t1),
-		"attempt to create thread failed");
+		   "attempt to create thread failed");
 	zassert_ok(pthread_join(thread, NULL), "failed to join thread");
 	printk("second thread allocated %d keys", alloc_count_t1);
 
-	zassert_equal(alloc_count_t0, alloc_count_t1,
-		"failed to deallocate thread specific data");
+	zassert_equal(alloc_count_t0, alloc_count_t1, "failed to deallocate thread specific data");
 }
-
-static void before(void *arg)
-{
-	ARG_UNUSED(arg);
-
-	if (!IS_ENABLED(CONFIG_DYNAMIC_THREAD)) {
-		/* skip redundant testing if there is no thread pool / heap allocation */
-		ztest_test_skip();
-	}
-}
-
-ZTEST_SUITE(key, NULL, NULL, before, NULL, NULL);
