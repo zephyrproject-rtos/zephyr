@@ -1,0 +1,21 @@
+# CPU Frequency configuration options
+
+# Copyright (c) 2025 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config CPU_FREQ
+	bool "Dynamic selection of CPU frequency"
+	default n
+	help
+	  This option allows an application to select at runtime the CPU
+	  frequency from a predetermined set of CPU frequencies defined
+	  in the device tree.
+
+if CPU_FREQ
+config CPU_FREQ_INIT_PRIORITY
+	int "Priority of routine to initialize CPU Frequency"
+	default 50
+	help
+	  This option specifies the initialization priority of the
+	  CPU frequency.
+endif # CPU_FREQ
