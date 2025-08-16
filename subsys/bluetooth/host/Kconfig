@@ -278,6 +278,15 @@ config BT_SETTINGS_CCC_STORE_MAX
 	  Defines the max number of Client Characteristic Configuration (CCC)
 	  that the stack can handle
 
+config BT_SETTINGS_BT_NAME_STORE
+	bool "Store the BT name as setting"
+	depends on BT_DEVICE_NAME_DYNAMIC
+	default y
+	help
+	  When selected, the name that is set when calling @ref bt_set_name
+	  will be stored persistently and automatically set as BT name at
+	  each boot
+
 endif # BT_SETTINGS
 
 config BT_FILTER_ACCEPT_LIST
