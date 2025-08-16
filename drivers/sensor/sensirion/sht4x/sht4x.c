@@ -38,6 +38,40 @@ static int sht4x_write_command(const struct device *dev, uint8_t cmd)
 	return i2c_write_dt(&cfg->bus, tx_buf, sizeof(tx_buf));
 }
 
+static int sht4x_read_unique_id(const struct device *dev, uint32_t *uid)
+{
+	const struct sht4x_config *cfg = dev->config;
+	uint8_t rx[6];
+	int rc;
+
+	rc = sht4x_write_command(dev, SHT4X_CMD_READ_SERIAL);
+	if (rc) {
+		LOG_ERR("Failed to write the serial command.");
+		return rc;
+	}
+
+	k_sleep(K_MSEC(SHT4X_CMD_WAIT_MS));
+
+	rc = i2c_read_dt(&cfg->bus, rx, sizeof(rx));
+	if (rc) {
+		LOG_ERR("Failed to read the serial number.");
+		return rc;
+	}
+
+	uint16_t w0 = sys_get_be16(&rx[0]);   /* bytes 0..1 */
+	uint16_t w1 = sys_get_be16(&rx[3]);   /* bytes 3..4 (skip CRC0) */
+
+	if (sht4x_compute_crc(w0) != rx[2] || sht4x_compute_crc(w1) != rx[5]) {
+		LOG_ERR("Invalid CRC for UID.");
+		return -EIO;
+	}
+
+	/* Pack big-endian bytes 0,1,3,4 into host order */
+	*uid = ((uint32_t)rx[0] << 24) | (rx[1] << 16) | (rx[3] <<  8) |  rx[4];
+
+	return 0;
+}
+
 static int sht4x_read_sample(const struct device *dev,
 		uint16_t *t_sample,
 		uint16_t *rh_sample)
@@ -181,8 +215,28 @@ static int sht4x_attr_set(const struct device *dev,
 	return 0;
 }
 
+static int sht4x_attr_get(const struct device *dev,
+				enum sensor_channel chan,
+				enum sensor_attribute attr,
+				struct sensor_value *val)
+{
+	struct sht4x_data *data = dev->data;
+
+	if (chan != SENSOR_CHAN_ALL) {
+		return -ENOTSUP;
+	}
+
+	if (attr == SENSOR_ATTR_UNIQUE_ID) {
+		sensor_value_from_uid(val, data->unique_id);
+		return 0;
+	}
+
+	return -ENOTSUP;
+}
+
 static int sht4x_init_chip(const struct device *dev)
 {
+	struct sht4x_data *data = dev->data;
 	int rc;
 
 	/* 1 ms (max) power up time according to datasheet */
@@ -195,6 +249,13 @@ static int sht4x_init_chip(const struct device *dev)
 	}
 
 	k_sleep(K_MSEC(SHT4X_RESET_WAIT_MS));
+
+	rc = sht4x_read_unique_id(dev, &data->unique_id);
+	if (rc < 0) {
+		return rc;
+	}
+	LOG_DBG("Serial Number: 0x%08x", data->unique_id);
+
 	return 0;
 }
 
@@ -236,6 +297,7 @@ static DEVICE_API(sensor, sht4x_api) = {
 	.sample_fetch = sht4x_sample_fetch,
 	.channel_get = sht4x_channel_get,
 	.attr_set = sht4x_attr_set,
+	.attr_get = sht4x_attr_get,
 };
 
 #define SHT4X_INIT(n)						\
