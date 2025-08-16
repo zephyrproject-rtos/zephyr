@@ -253,7 +253,10 @@ static int bt_esp32_send(const struct device *dev, struct net_buf *buf)
 		err = -ETIMEDOUT;
 	}
 
-	net_buf_unref(buf);
+	if (!err) {
+		net_buf_unref(buf);
+	}
+
 	k_sem_give(&hci_send_sem);
 
 	return err;
