@@ -147,6 +147,29 @@
 		};
 	};
 
+	performance-states {
+		pstate0: pstate0 {
+			compatible = "nordic,nrf54h-pstate";
+			load-threshold = <50>;
+			cpu-clock = <&cpuapp_hsfll>;
+			cpu-min-frequency = <320000000>;
+		};
+
+		pstate1: pstate1 {
+			compatible = "nordic,nrf54h-pstate";
+			load-threshold = <20>;
+			cpu-clock = <&cpuapp_hsfll>;
+			cpu-min-frequency = <128000000>;
+		};
+
+		pstate2: pstate2 {
+			compatible = "nordic,nrf54h-pstate";
+			load-threshold = <0>;
+			cpu-clock = <&cpuapp_hsfll>;
+			cpu-min-frequency = <64000000>;
+		};
+	};
+
 	reserved-memory {
 		#address-cells = <1>;
 		#size-cells = <1>;

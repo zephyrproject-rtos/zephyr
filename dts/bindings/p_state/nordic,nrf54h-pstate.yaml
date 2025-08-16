@@ -1,0 +1,17 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic nRF54H series P-State
+
+compatible: "nordic,nrf54h-pstate"
+
+include: zephyr,pstate.yaml
+
+properties:
+  cpu-clock:
+    type: phandle
+    description: CPU clock to clamp frequency of.
+
+  cpu-min-frequency:
+    type: int
+    description: Minimum frequency to clamp the clock to.
