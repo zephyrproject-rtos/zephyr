@@ -167,6 +167,8 @@ struct bt_conn_sco {
 	uint16_t                pkt_type;
 	uint8_t                 dev_class[3];
 	uint8_t                 link_type;
+	/* Reference to BT_HCI_CODING_FORMAT_* */
+	uint8_t                 air_mode;
 };
 
 struct bt_conn_iso {
