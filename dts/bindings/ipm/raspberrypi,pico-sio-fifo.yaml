@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Dmitrii Sharshakov <d3dx12.xx@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: RP2 SIO FIFO mailbox driver
+
+compatible: "raspberrypi,pico-sio-fifo"
+
+include: base.yaml
+
+properties:
+  interrupts:
+    required: true
+
+  reg:
+    required: true

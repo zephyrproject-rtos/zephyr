@@ -453,6 +453,23 @@
 			interrupt-names = "irq0", "irq1";
 			status = "disabled";
 		};
+
+		ipm0: sio-fifo@d0000000 {
+			compatible = "raspberrypi,pico-sio-fifo";
+			reg = <0xd0000050 0xc>;
+			reg-names = "sio";
+			interrupts = <25 RPI_PICO_DEFAULT_IRQ_PRIORITY>,
+						 <26 RPI_PICO_DEFAULT_IRQ_PRIORITY>,
+						 <27 RPI_PICO_DEFAULT_IRQ_PRIORITY>,
+						 <28 RPI_PICO_DEFAULT_IRQ_PRIORITY>,
+						 <29 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
+			interrupt-names = "sio_irq_fifo", "sio_irq_bell",
+						      "sio_irq_fifo_ns", "sio_irq_bell_ns",
+							  "sio_irq_mtimecmp";
+			// Accesses go through a bus interface paired to the core,
+			// so SIO can be shared between cores.
+			status = "okay";
+		};
 	};
 
 	pinctrl: pin-controller {
