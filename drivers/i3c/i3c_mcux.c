@@ -17,7 +17,6 @@
 
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/i3c.h>
-
 #include <zephyr/drivers/pinctrl.h>
 
 /*
@@ -140,10 +139,9 @@ static int reg32_poll_timeout(volatile uint32_t *reg,
 {
 	/*
 	 * These polling checks are typically satisfied
-	 * quickly (some sub-microseconds) so no extra
-	 * delay between checks.
+	 * quickly. Add a small delay between checks
 	 */
-	if (!WAIT_FOR((sys_read32((mm_reg_t)reg) & mask) == match, timeout_us, /*nop*/)) {
+	if (!WAIT_FOR((sys_read32((mm_reg_t)reg) & mask) == match, timeout_us, k_usleep(1))) {
 		return -ETIMEDOUT;
 	}
 	return 0;
