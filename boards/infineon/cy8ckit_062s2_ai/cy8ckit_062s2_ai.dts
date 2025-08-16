@@ -18,12 +18,14 @@
 		zephyr,shell-uart = &uart5;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,bt-hci = &bt_hci_uart;
 	};
 
 	aliases {
 		led0 = &user_led0;
 		sw0 = &user_bt;
 		watchdog0 = &watchdog0;
+		sdhc0 = &sdhc0;
 	};
 
 	leds {
@@ -45,6 +47,60 @@
 			gpios = <&gpio_prt5 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+	};
+};
+
+uart2: &scb2 {
+	compatible = "infineon,cat1-uart";
+	status = "okay";
+
+	/* The UART bus speed (current_speed) for zephyr_bt_uart should be the same
+	 * as the default baudrate defined in CYW43xx firmware (default 115200).
+	 */
+	current-speed = <115200>;
+
+	/* HCI-UART pins */
+	pinctrl-0 = <&p3_1_scb2_uart_tx &p3_0_scb2_uart_rx &p3_2_scb2_uart_rts &p3_3_scb2_uart_cts>;
+	pinctrl-names = "default";
+
+	/* HW Flow control must be enabled for HCI H4 */
+	hw-flow-control;
+
+	bt_hci_uart: bt_hci_uart {
+		compatible = "zephyr,bt-hci-uart";
+
+		murata-1yn {
+			status = "okay";
+			compatible = "infineon,cyw43xxx-bt-hci";
+			bt-reg-on-gpios = <&gpio_prt3 4 (GPIO_ACTIVE_HIGH)>;
+
+			/* Configuration UART speeds for firmware download (fw-download-speed)
+			 * and HCI operation (hci-operation-speed).
+			 * If hci-operation-speed or fw-download-speed are not defined in
+			 * bt-hci{...} node, cyw43xx driver will use bus/current-speed as
+			 * default speed.
+			 */
+			fw-download-speed = <3000000>;
+		};
+	};
+};
+
+&sdhc0 {
+	status = "okay";
+
+	/* SDIO pins */
+	pinctrl-0 = <&p2_4_sdio_cmd &p2_5_sdio_clk &p2_0_sdio_data0
+		     &p2_1_sdio_data1 &p2_2_sdio_data2 &p2_3_sdio_data3>;
+	pinctrl-names = "default";
+
+	/* Wi-Fi configuration */
+	airoc-wifi {
+		status = "okay";
+		compatible = "infineon,airoc-wifi";
+
+		/* Wi-Fi control gpios */
+		wifi-reg-on-gpios    = <&gpio_prt2 6 GPIO_ACTIVE_HIGH>;
+		wifi-host-wake-gpios = <&gpio_prt0 4 GPIO_ACTIVE_HIGH>;
 	};
 };
 
@@ -79,6 +135,18 @@
 	clock-div = <1>;
 };
 
+&gpio_prt0 {
+	status = "okay";
+};
+
+&gpio_prt2 {
+	status = "okay";
+};
+
+&gpio_prt3 {
+	status = "okay";
+};
+
 &gpio_prt5 {
 	status = "okay";
 };
@@ -104,6 +172,22 @@ uart1: &scb1 {
 	pinctrl-names = "default";
 };
 
+&p3_1_scb2_uart_tx {
+	drive-push-pull;
+};
+
+&p3_0_scb2_uart_rx {
+	input-enable;
+};
+
+&p3_2_scb2_uart_rts {
+	drive-push-pull;
+};
+
+&p3_3_scb2_uart_cts {
+	input-enable;
+};
+
 &p5_1_scb5_uart_tx {
 	drive-push-pull;
 };
@@ -118,6 +202,45 @@ uart1: &scb1 {
 
 &p10_0_scb1_uart_rx {
 	input-enable;
+};
+
+&pinctrl {
+	/* Configure pin control bias mode for SDIO */
+	p2_5_sdio_clk: p2_5_sdio_clk {
+		pinmux = <DT_CAT1_PINMUX(2, 5, HSIOM_SEL_ACT_14)>;
+		drive-push-pull;
+		input-enable;
+	};
+
+	p2_4_sdio_cmd: p2_4_sdio_cmd  {
+		pinmux = <DT_CAT1_PINMUX(2, 4, HSIOM_SEL_ACT_14)>;
+		drive-push-pull;
+		input-enable;
+	};
+
+	p2_0_sdio_data0: p2_0_sdio_data0 {
+		pinmux = <DT_CAT1_PINMUX(2, 0, HSIOM_SEL_ACT_14)>;
+		drive-push-pull;
+		input-enable;
+	};
+
+	p2_1_sdio_data1: p2_1_sdio_data1 {
+		pinmux = <DT_CAT1_PINMUX(2, 1, HSIOM_SEL_ACT_14)>;
+		drive-push-pull;
+		input-enable;
+	};
+
+	p2_2_sdio_data2: p2_2_sdio_data2 {
+		pinmux = <DT_CAT1_PINMUX(2, 2, HSIOM_SEL_ACT_14)>;
+		drive-push-pull;
+		input-enable;
+	};
+
+	p2_3_sdio_data3: p2_3_sdio_data3 {
+		pinmux = <DT_CAT1_PINMUX(2, 3, HSIOM_SEL_ACT_14)>;
+		drive-push-pull;
+		input-enable;
+	};
 };
 
 &watchdog0 {
