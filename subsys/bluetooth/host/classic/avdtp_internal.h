@@ -125,6 +125,16 @@ struct bt_avdtp_single_sig_hdr {
 	uint8_t signal_id;
 } __packed;
 
+struct bt_avdtp_start_sig_hdr {
+	uint8_t hdr;
+	uint8_t num_of_signal_pkts;
+	uint8_t signal_id;
+} __packed;
+
+struct bt_avdtp_continue_end_sig_hdr {
+	uint8_t hdr;
+} __packed;
+
 struct bt_avdtp_media_hdr {
 #ifdef CONFIG_LITTLE_ENDIAN
 	uint8_t CSRC_count: 4;
@@ -153,6 +163,7 @@ struct bt_avdtp_discover_params {
 struct bt_avdtp_get_capabilities_params {
 	struct bt_avdtp_req req;
 	uint8_t stream_endpoint_id;
+	bool get_all_caps;
 };
 
 struct bt_avdtp_set_configuration_params {
@@ -183,7 +194,7 @@ struct bt_avdtp_ops_cb {
 	int (*discovery_ind)(struct bt_avdtp *session, uint8_t *errcode);
 
 	int (*get_capabilities_ind)(struct bt_avdtp *session, struct bt_avdtp_sep *sep,
-				    struct net_buf *rsp_buf, uint8_t *errcode);
+				    struct net_buf *rsp_buf, bool get_all_caps, uint8_t *errcode);
 
 	int (*set_configuration_ind)(struct bt_avdtp *session, struct bt_avdtp_sep *sep,
 				     uint8_t int_seid, struct net_buf *buf, uint8_t *errcode);
@@ -214,6 +225,9 @@ struct bt_avdtp {
 	struct k_work_delayable timeout_work;
 	/* semaphore for lock/unlock */
 	struct k_sem sem_lock;
+	struct net_buf *reasm_buf;
+	uint8_t num_of_signal_pkts;
+	uint8_t tid_sent;
 };
 
 struct bt_avdtp_event_cb {
