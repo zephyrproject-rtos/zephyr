@@ -5,6 +5,8 @@
  */
 
 &agt0 {
+	interrupts = <94 12>, <95 12>;
+	interrupt-names = "agti", "agtcmai";
 	status = "okay";
 	renesas,prescaler = <4>;
 	counter0: counter {
