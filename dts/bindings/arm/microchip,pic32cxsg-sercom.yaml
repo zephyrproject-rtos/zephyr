@@ -1,0 +1,17 @@
+description: Microchip PIC32CXSG multi-protocol (UART, SPI, I2C) SERCOM unit
+
+compatible: "microchip,pic32cxsg-sercom"
+
+include:
+  - name: base.yaml
+  - name: atmel,assigned-clocks.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
