@@ -438,7 +438,9 @@ static void lp_cu_send_conn_update_ind_finalize(struct ll_conn *conn, struct pro
 static void lp_cu_send_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				       void *param)
 {
-	if (llcp_lr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
+	if (llcp_lr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx) ||
+	    (ull_tx_q_peek(&conn->tx_q) != NULL) || !ull_conn_lll_tx_queue_is_empty(conn)) {
+		llcp_tx_pause_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_CONN_UPD);
 		ctx->state = LP_CU_STATE_WAIT_TX_CONN_UPDATE_IND;
 	} else {
 		/* ensure alloc of TX node, before possibly waiting for NTF node */
@@ -448,6 +450,7 @@ static void lp_cu_send_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ct
 			ctx->state = LP_CU_STATE_WAIT_NTF_AVAIL;
 		} else {
 			lp_cu_send_conn_update_ind_finalize(conn, ctx, evt, param);
+			llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_CONN_UPD);
 		}
 	}
 }
@@ -459,6 +462,7 @@ static void lp_cu_st_wait_ntf_avail(struct ll_conn *conn, struct proc_ctx *ctx, 
 	case LP_CU_EVT_RUN:
 		if (llcp_ntf_alloc_is_available()) {
 			lp_cu_send_conn_update_ind_finalize(conn, ctx, evt, param);
+			llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_CONN_UPD);
 		}
 		break;
 	default:
@@ -915,7 +919,9 @@ static void rp_cu_send_conn_update_ind_finalize(struct ll_conn *conn, struct pro
 static void rp_cu_send_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				       void *param)
 {
-	if (llcp_rr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
+	if (llcp_rr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx) ||
+	    (ull_tx_q_peek(&conn->tx_q) != NULL) || !ull_conn_lll_tx_queue_is_empty(conn)) {
+		llcp_tx_pause_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_CONN_UPD);
 		ctx->state = RP_CU_STATE_WAIT_TX_CONN_UPDATE_IND;
 	} else {
 		/* ensure alloc of TX node, before possibly waiting for NTF node */
@@ -925,6 +931,7 @@ static void rp_cu_send_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ct
 			ctx->state = RP_CU_STATE_WAIT_NTF_AVAIL;
 		} else {
 			rp_cu_send_conn_update_ind_finalize(conn, ctx, evt, param);
+			llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_CONN_UPD);
 		}
 	}
 }
@@ -937,6 +944,7 @@ static void rp_cu_st_wait_ntf_avail(struct ll_conn *conn, struct proc_ctx *ctx, 
 		if (llcp_ntf_alloc_is_available()) {
 			/* If NTF node is now avail, so pick it up and continue */
 			rp_cu_send_conn_update_ind_finalize(conn, ctx, evt, param);
+			llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_CONN_UPD);
 		}
 		break;
 	default:
@@ -1219,11 +1227,9 @@ static void rp_cu_st_wait_tx_conn_update_ind(struct ll_conn *conn, struct proc_c
 	}
 }
 
-static void rp_cu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
-				void *param)
+static void rp_cu_check_instant_by_counter(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+					   uint16_t event_counter, void *param)
 {
-	uint16_t event_counter = ull_conn_event_counter_at_prepare(conn);
-
 	if (is_instant_reached_or_passed(ctx->data.cu.instant, event_counter)) {
 		bool notify;
 
@@ -1252,6 +1258,22 @@ static void rp_cu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 	}
 }
 
+static void rp_cu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				void *param)
+{
+	uint16_t event_counter = ull_conn_event_counter_at_prepare(conn);
+
+	rp_cu_check_instant_by_counter(conn, ctx, evt, event_counter, param);
+}
+
+static void rp_cu_check_instant_rx_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ctx,
+						   uint8_t evt, void *param)
+{
+	uint16_t event_counter = ull_conn_event_counter(conn);
+
+	rp_cu_check_instant_by_counter(conn, ctx, evt, event_counter, param);
+}
+
 static void rp_cu_st_wait_rx_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ctx,
 					     uint8_t evt, void *param)
 {
@@ -1267,15 +1289,17 @@ static void rp_cu_st_wait_rx_conn_update_ind(struct ll_conn *conn, struct proc_c
 
 			/* Valid PDU */
 			if (cu_check_conn_ind_parameters(conn, ctx)) {
-				if (is_instant_not_passed(ctx->data.cu.instant,
-							  ull_conn_event_counter(conn))) {
+				uint16_t event_counter = ull_conn_event_counter(conn);
+
+				if (is_instant_not_passed(ctx->data.cu.instant, event_counter)) {
 					/* Keep RX node to use for NTF */
 					llcp_rx_node_retain(ctx);
 
 					ctx->state = RP_CU_STATE_WAIT_INSTANT;
 
 					/* In case we only just received it in time */
-					rp_cu_check_instant(conn, ctx, evt, param);
+					rp_cu_check_instant_rx_conn_update_ind(conn, ctx, evt,
+									       param);
 					break;
 				}
 
