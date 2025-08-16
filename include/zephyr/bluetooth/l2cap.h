@@ -275,8 +275,6 @@ struct bt_l2cap_le_chan {
 
 	/** @internal To be used with @ref bt_conn.upper_data_ready */
 	sys_snode_t			_pdu_ready;
-	/** @internal To be used with @ref bt_conn.upper_data_ready */
-	atomic_t			_pdu_ready_lock;
 	/** @internal Holds the length of the current PDU/segment */
 	size_t				_pdu_remaining;
 };
