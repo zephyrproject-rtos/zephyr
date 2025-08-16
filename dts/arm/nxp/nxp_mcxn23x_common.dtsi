@@ -523,6 +523,11 @@
 			/* MCXN23x ROM Flash API supports writing of 128B pages. */
 			write-block-size = <128>;
 		};
+
+		uuid: uuid@1100000 {
+			compatible = "nxp,lpc-uid";
+			reg = <0x1100000 0x10>;
+		};
 	};
 
 	os_timer: timers@49000 {
@@ -910,6 +915,48 @@
 		interrupts = <53 0>;
 		program-mem = <0x4000000>;
 		#dma-cells = <0>;
+	};
+
+	ewm0: ewm@C0000 {
+		compatible = "nxp,ewm";
+		reg = <0xC0000 0x6>;
+		status = "disabled";
+		interrupts = <100 0>;
+		clk-divider = <0x0>;
+	};
+
+	sai0: sai@106000 {
+		compatible = "nxp,mcux-i2s";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		#pinmux-cells = <2>;
+		reg = < 0x106000 0x1000>;
+		clocks = <&syscon MCUX_SAI0_CLK>;
+		pinmuxes = <&sai0 0x100 0x40000000>;
+		interrupts = <59 0>;
+		dmas = <&edma0 0 99>, <&edma0 0 100>;
+		dma-names = "rx", "tx";
+		nxp,tx-channel = <1>;
+		nxp,tx-dma-channel = <0>;
+		nxp,rx-dma-channel = <1>;
+		status = "disabled";
+	};
+
+	sai1: sai@107000 {
+		compatible = "nxp,mcux-i2s";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		#pinmux-cells = <2>;
+		reg = < 0x107000 0x1000>;
+		clocks = <&syscon MCUX_SAI1_CLK>;
+		pinmuxes = <&sai1 0x100 0x40000000>;
+		interrupts = <60 0>;
+		dmas = <&edma0 0 101>, <&edma0 0 102>;
+		dma-names = "rx", "tx";
+		nxp,tx-channel = <1>;
+		nxp,tx-dma-channel = <2>;
+		nxp,rx-dma-channel = <3>;
+		status = "disabled";
 	};
 };
 
