@@ -129,6 +129,11 @@ static void process(const struct log_backend *const backend,
 	const struct lbu_cb_ctx *ctx = backend->cb->ctx;
 	struct lbu_data *data = ctx->data;
 	uint32_t flags = log_backend_std_get_flags();
+	if (IS_ENABLED(CONFIG_LOG_BACKEND_UART_OUTPUT_MINIMAL)) {
+		flags &= !LOG_OUTPUT_FLAG_LEVEL;
+		flags &= !LOG_OUTPUT_FLAG_TIMESTAMP;
+		flags &= !LOG_OUTPUT_FLAG_COLORS;
+	}
 	log_format_func_t log_output_func = log_format_func_t_get(data->log_format_current);
 
 	log_output_func(ctx->output, &msg->log, flags);
