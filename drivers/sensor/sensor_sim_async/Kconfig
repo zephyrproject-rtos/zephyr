@@ -1,0 +1,26 @@
+# Sensor data simulator
+
+# Copyright (c) 2025 COGNID Telematik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_SENSOR_SIM_ASYNC := zephyr,sensor-sim-async
+
+config SENSOR_SIM_ASYNC
+	bool "Simple sensor simulator with Async API"
+	default y if $(dt_compat_enabled,$(DT_COMPAT_SENSOR_SIM_ASYNC))
+	select RING_BUFFER
+	select SENSOR_ASYNC_API
+	help
+	  Enable the sensor simulator.
+
+if SENSOR_SIM_ASYNC
+
+config SENSOR_SIM_ASYNC_SCALE
+	int "Internal scaling of the values"
+	default 1024
+	help
+	  Sensor values are internally saved as 16-bit integers with 1 LSB = 1 / SENSOR_SIM_ASYNC_SCALE.
+	  Default value is 1024 as it allows for a range of +/- 32 and a ~0.001 accuracy, which is a good compromise for
+	  sensors like accelerometers.
+
+endif
