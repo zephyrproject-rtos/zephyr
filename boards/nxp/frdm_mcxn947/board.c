@@ -1,5 +1,5 @@
 /*
- * Copyright 2024  NXP
+ * Copyright 2024-2025 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/init.h>
@@ -8,6 +8,10 @@
 #include <fsl_clock.h>
 #include <fsl_spc.h>
 #include <soc.h>
+#if defined(CONFIG_PM) || defined(CONFIG_POWEROFF)
+#include <fsl_vbat.h>
+#endif
+
 #if CONFIG_USB_DC_NXP_EHCI
 #include "usb_phy.h"
 #include "usb.h"
@@ -365,6 +369,9 @@ void board_early_init_hook(void)
 	CLOCK_SetupClockCtrl(kCLOCK_FRO12MHZ_ENA);
 #elif DT_PROP(DT_NODELABEL(lptmr0), clk_source) == 0x1
 	CLOCK_SetupClk16KClocking(kCLOCK_Clk16KToVsys);
+#if defined(CONFIG_PM) || defined(CONFIG_POWEROFF)
+	VBAT_EnableFRO16k(VBAT0, true);
+#endif
 #elif DT_PROP(DT_NODELABEL(lptmr0), clk_source) == 0x2
 	CLOCK_SetupOsc32KClocking(kCLOCK_Osc32kToVsys);
 #elif DT_PROP(DT_NODELABEL(lptmr0), clk_source) == 0x3

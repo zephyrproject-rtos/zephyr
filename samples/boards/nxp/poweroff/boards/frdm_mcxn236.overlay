@@ -1,0 +1,17 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		poweroff-wakeup-source = &user_button_2;
+	};
+};
+
+&gpio0 {
+	wakeup-source;
+	wakeup-line = <20 4>; /* GPIO0_20 is connect to on-board SW2 */
+	wakeup-signal-edge = <2>;
+};
