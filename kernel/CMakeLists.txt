@@ -190,6 +190,9 @@ if(${CONFIG_KERNEL_MEM_POOL})
   endif()
 
   zephyr_compile_definitions(K_HEAP_MEM_POOL_SIZE=${final_heap_size})
+  set_linker_property(TARGET linker PROPERTY heap_mem_pool_size
+                      ${final_heap_size}
+  )
 endif()
 
 # The last 2 files inside the target_sources_ifdef should be
