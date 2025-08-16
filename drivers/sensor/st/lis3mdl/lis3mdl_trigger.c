@@ -7,7 +7,6 @@
 #define DT_DRV_COMPAT st_lis3mdl_magn
 
 #include <zephyr/device.h>
-#include <zephyr/drivers/i2c.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>
@@ -17,8 +16,7 @@
 
 LOG_MODULE_DECLARE(LIS3MDL, CONFIG_SENSOR_LOG_LEVEL);
 
-int lis3mdl_trigger_set(const struct device *dev,
-			const struct sensor_trigger *trig,
+int lis3mdl_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler)
 {
 	struct lis3mdl_data *drv_data = dev->data;
@@ -33,8 +31,7 @@ int lis3mdl_trigger_set(const struct device *dev,
 	__ASSERT_NO_MSG(trig->type == SENSOR_TRIG_DATA_READY);
 
 	/* dummy read: re-trigger interrupt */
-	ret = i2c_burst_read_dt(&config->i2c, LIS3MDL_REG_SAMPLE_START,
-				(uint8_t *)buf, 6);
+	ret = config->read(dev, LIS3MDL_REG_SAMPLE_START, (uint8_t *)buf, 6);
 	if (ret != 0) {
 		return ret;
 	}
@@ -48,17 +45,14 @@ int lis3mdl_trigger_set(const struct device *dev,
 
 	drv_data->data_ready_trigger = trig;
 
-	gpio_pin_interrupt_configure_dt(&config->irq_gpio,
-					GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(&config->irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 
 	return 0;
 }
 
-static void lis3mdl_gpio_callback(const struct device *dev,
-				  struct gpio_callback *cb, uint32_t pins)
+static void lis3mdl_gpio_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
-	struct lis3mdl_data *drv_data =
-		CONTAINER_OF(cb, struct lis3mdl_data, gpio_cb);
+	struct lis3mdl_data *drv_data = CONTAINER_OF(cb, struct lis3mdl_data, gpio_cb);
 	const struct lis3mdl_config *config = drv_data->dev->config;
 
 	ARG_UNUSED(pins);
@@ -78,12 +72,10 @@ static void lis3mdl_thread_cb(const struct device *dev)
 	const struct lis3mdl_config *config = dev->config;
 
 	if (drv_data->data_ready_handler != NULL) {
-		drv_data->data_ready_handler(dev,
-					     drv_data->data_ready_trigger);
+		drv_data->data_ready_handler(dev, drv_data->data_ready_trigger);
 	}
 
-	gpio_pin_interrupt_configure_dt(&config->irq_gpio,
-					GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(&config->irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 }
 
 #ifdef CONFIG_LIS3MDL_TRIGGER_OWN_THREAD
@@ -104,8 +96,7 @@ static void lis3mdl_thread(void *p1, void *p2, void *p3)
 #ifdef CONFIG_LIS3MDL_TRIGGER_GLOBAL_THREAD
 static void lis3mdl_work_cb(struct k_work *work)
 {
-	struct lis3mdl_data *drv_data =
-		CONTAINER_OF(work, struct lis3mdl_data, work);
+	struct lis3mdl_data *drv_data = CONTAINER_OF(work, struct lis3mdl_data, work);
 
 	lis3mdl_thread_cb(drv_data->dev);
 }
@@ -123,9 +114,7 @@ int lis3mdl_init_interrupt(const struct device *dev)
 
 	gpio_pin_configure_dt(&config->irq_gpio, GPIO_INPUT);
 
-	gpio_init_callback(&drv_data->gpio_cb,
-			   lis3mdl_gpio_callback,
-			   BIT(config->irq_gpio.pin));
+	gpio_init_callback(&drv_data->gpio_cb, lis3mdl_gpio_callback, BIT(config->irq_gpio.pin));
 
 	if (gpio_add_callback(config->irq_gpio.port, &drv_data->gpio_cb) < 0) {
 		LOG_DBG("Could not set gpio callback.");
@@ -143,17 +132,14 @@ int lis3mdl_init_interrupt(const struct device *dev)
 #if defined(CONFIG_LIS3MDL_TRIGGER_OWN_THREAD)
 	k_sem_init(&drv_data->gpio_sem, 0, K_SEM_MAX_LIMIT);
 
-	k_thread_create(&drv_data->thread, drv_data->thread_stack,
-			CONFIG_LIS3MDL_THREAD_STACK_SIZE,
-			lis3mdl_thread, drv_data,
-			NULL, NULL, K_PRIO_COOP(CONFIG_LIS3MDL_THREAD_PRIORITY),
-			0, K_NO_WAIT);
+	k_thread_create(&drv_data->thread, drv_data->thread_stack, CONFIG_LIS3MDL_THREAD_STACK_SIZE,
+			lis3mdl_thread, drv_data, NULL, NULL,
+			K_PRIO_COOP(CONFIG_LIS3MDL_THREAD_PRIORITY), 0, K_NO_WAIT);
 #elif defined(CONFIG_LIS3MDL_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = lis3mdl_work_cb;
 #endif
 
-	gpio_pin_interrupt_configure_dt(&config->irq_gpio,
-					GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(&config->irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 
 	return 0;
 }
