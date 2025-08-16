@@ -14,7 +14,7 @@
 		dac1: dac@40007400 {
 			compatible = "st,stm32-dac";
 			reg = <0x40007400 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 29U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 29)>;
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};
@@ -24,7 +24,7 @@
 			reg = <0x40016800 0x200>;
 			interrupts = <88 0>, <89 0>;
 			interrupt-names = "ltdc", "ltdc_er";
-			clocks = <&rcc STM32_CLOCK(APB2, 26U)>;
+			clocks = <&rcc STM32_CLOCK(APB2, 26)>;
 			resets = <&rctl STM32_RESET(APB2, 26U)>;
 			status = "disabled";
 		};
