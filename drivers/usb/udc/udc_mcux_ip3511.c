@@ -894,12 +894,16 @@ static usb_phy_config_struct_t phy_config_##n = {					\
 #define USB_MCUX_IP3511_DEVICE_DEFINE(n)						\
 	UDC_MCUX_PHY_DEFINE_OR(n);							\
 											\
+	ISR_DIRECT_DECLARE(udc_mcux_isr##n)						\
+	{										\
+		udc_mcux_isr(DEVICE_DT_INST_GET(n));					\
+		return 1;								\
+	}										\
+											\
 	static void udc_irq_enable_func##n(const struct device *dev)			\
 	{										\
-		IRQ_CONNECT(DT_INST_IRQN(n),						\
-			    DT_INST_IRQ(n, priority),					\
-			    udc_mcux_isr,						\
-			    DEVICE_DT_INST_GET(n), 0);					\
+		IRQ_DIRECT_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),		\
+				   udc_mcux_isr##n, 0);					\
 											\
 		irq_enable(DT_INST_IRQN(n));						\
 	}										\
