@@ -85,6 +85,7 @@ set_variable_ifdef(CONFIG_MCUX_FLEXIO           CONFIG_MCUX_COMPONENT_driver.fle
 set_variable_ifdef(CONFIG_SPI_MCUX_FLEXIO       CONFIG_MCUX_COMPONENT_driver.flexio_spi)
 set_variable_ifdef(CONFIG_UART_MCUX             CONFIG_MCUX_COMPONENT_driver.uart)
 set_variable_ifdef(CONFIG_UART_MCUX_LPSCI       CONFIG_MCUX_COMPONENT_driver.lpsci)
+set_variable_ifdef(CONFIG_WDT_NXP_EWM           CONFIG_MCUX_COMPONENT_driver.ewm)
 set_variable_ifdef(CONFIG_WDT_MCUX_WDOG         CONFIG_MCUX_COMPONENT_driver.wdog)
 set_variable_ifdef(CONFIG_WDT_MCUX_WDOG32       CONFIG_MCUX_COMPONENT_driver.wdog32)
 set_variable_ifdef(CONFIG_COUNTER_MCUX_GPT      CONFIG_MCUX_COMPONENT_driver.gpt)
