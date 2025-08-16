@@ -24,8 +24,8 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/usb/usb_ch9.h>
 #include <zephyr/usb/class/usbd_uvc.h>
+#include <zephyr/usb/class/usb_uvc.h>
 
-#include "usbd_uvc.h"
 #include "../../../drivers/video/video_ctrls.h"
 #include "../../../drivers/video/video_device.h"
 
