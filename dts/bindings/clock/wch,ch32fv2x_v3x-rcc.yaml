@@ -1,16 +1,16 @@
-# Copyright (c) 2024 Michael Hope
+# Copyright (c) 2025 Fiona Behrens
 # SPDX-License-Identifier: Apache-2.0
 
-description: WCH CH32V00x Reset and Clock Control (RCC)
+description: WCH CH32FV2x CH32V3x Reset and Clock Control (RCC)
 
-compatible: "wch,rcc"
+compatible: "wch,ch32fv2x_v3x-rcc"
 
 include: [clock-controller.yaml, base.yaml]
 
 properties:
   "#clock-cells":
     const: 1
-
+    
   hb-prescaler:
     type: int
     required: true
@@ -19,17 +19,13 @@ properties:
     enum:
       - 1 # Off
       - 2 # /2
-      - 3 # /3
       - 4 # /4
-      - 5 # /5
-      - 6 # /6
-      - 7 # /7
       - 8 # /8
       - 16 # /16
-      - 32 # /32
       - 64 # /64
       - 128 # /128
       - 256 # /256
+      - 512 # /512
 
 clock-cells:
   - id

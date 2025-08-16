@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT wch_rcc
-
 #include <stdint.h>
 
 #include <zephyr/arch/cpu.h>
@@ -13,8 +11,16 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/math/ilog2.h>
 
 #include <hal_ch32fun.h>
+
+#if DT_HAS_COMPAT_STATUS_OKAY(wch_ch32fv2x_v3x_rcc)
+#define DT_DRV_COMPAT            wch_ch32fv2x_v3x_rcc
+#define WCH_RCC_HAS_PB_PRESCALER 1
+#else
+#define DT_DRV_COMPAT wch_rcc
+#endif
 
 #define WCH_RCC_CLOCK_ID_OFFSET(id) (((id) >> 5) & 0xFF)
 #define WCH_RCC_CLOCK_ID_BIT(id)    ((id) & 0x1F)
@@ -37,6 +43,8 @@
 struct clock_control_wch_rcc_config {
 	RCC_TypeDef *regs;
 	uint8_t mul;
+	uint8_t div;
+	uint16_t hb_pre;
 };
 
 static int clock_control_wch_rcc_on(const struct device *dev, clock_control_subsys_t sys)
@@ -62,6 +70,18 @@ static int clock_control_wch_rcc_get_rate(const struct device *dev, clock_contro
 	uint32_t sysclk = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
 	uint32_t ahbclk = sysclk;
 
+#if DT_HAS_COMPAT_STATUS_OKAY(wch_ch32fv2x_v3x_rcc)
+	if ((cfgr0 & RCC_HPRE_3) != 0) {
+		if ((cfgr0 & RCC_HPRE_2) == 0) {
+			/* Range 0b1000 divides by a power of 2 */
+			ahbclk /= 2 << ((cfgr0 & (RCC_HPRE_0 | RCC_HPRE_1)) >> 4);
+		} else {
+			/* Range 0b11 divides by a power of 2 but is shifted one mor */
+			ahbclk /= 2
+				  << (((cfgr0 & (RCC_HPRE_0 | RCC_HPRE_1 | RCC_HPRE_2)) >> 4) + 1);
+		}
+	}
+#else
 	if ((cfgr0 & RCC_HPRE_3) != 0) {
 		/* The range 0b1000 divides by a power of 2, where 0b1000 is /2, 0b1001 is /4, etc.
 		 */
@@ -70,6 +90,7 @@ static int clock_control_wch_rcc_get_rate(const struct device *dev, clock_contro
 		/* The range 0b0nnn divides by n + 1, where 0b0000 is /1, 0b001 is /2, etc. */
 		ahbclk /= ((cfgr0 & (RCC_HPRE_0 | RCC_HPRE_1 | RCC_HPRE_2)) >> 4) + 1;
 	}
+#endif
 
 	/* The datasheet says that AHB == APB1 == APB2, but the registers imply that APB1 and APB2
 	 * can be divided from the AHB clock. Assume that the clock tree diagram is correct and
@@ -110,10 +131,87 @@ static DEVICE_API(clock_control, clock_control_wch_rcc_api) = {
 	.get_rate = clock_control_wch_rcc_get_rate,
 };
 
-static int clock_control_wch_rcc_init(const struct device *dev)
+/* Initialize the PLL source for the ch32v003 */
+static int clock_control_wch_rcc_v003_pll_init(const struct device *dev)
+{
+	if (IS_ENABLED(WCH_RCC_PLL_SRC_IS_HSE)) {
+		RCC->CFGR0 |= RCC_PLLSRC;
+	} else if (IS_ENABLED(WCH_RCC_PLL_SRC_IS_HSI)) {
+		RCC->CFGR0 &= ~RCC_PLLSRC;
+	}
+	return 0;
+}
+
+/* Initialize the PLL source, prescaler and multiplier for the ch32f20x, ch32v20x and ch32v30x */
+static int clock_control_wch_rcc_fv2x_v3x_pll_init(const struct device *dev)
 {
 	const struct clock_control_wch_rcc_config *config = dev->config;
 
+	if (IS_ENABLED(WCH_RCC_PLL_SRC_IS_HSE)) {
+		/* PPLXTPRE defaults to 0 which is divide by /1 */
+		if (IS_ENABLED(CONFIG_DT_HAS_WCH_CH32FV203_V303_PLL_CLOCK_ENABLED) &&
+		    config->div == 2) {
+			RCC->CFGR0 |= RCC_PLLXTPRE;
+		}
+		if (IS_ENABLED(CONFIG_DT_HAS_WCH_CH32FV208_PLL_CLOCK_ENABLED)) {
+			if (config->div == 1) {
+				/* TODO: report error */
+			} else if (config->div == 2) {
+				/* TODO: check USB prescaler is set to 5 */
+				RCC->CFGR0 |= RCC_USBPRE;
+			} else if (config->div == 8) {
+				RCC->CFGR0 |= RCC_PLLXTPRE;
+			} else {
+				/* /4 already the chip default */
+			}
+		}
+		RCC->CFGR0 |= RCC_PLLSRC;
+	} else if (IS_ENABLED(WCH_RCC_PLL_SRC_IS_HSI)) {
+		/* EXTEN_PLL_HSI_PRE defaults to 0 which is /2 */
+		if (config->div == 1) {
+			EXTEN->EXTEN_CTR |= EXTEN_PLL_HSI_PRE;
+		}
+		RCC->CFGR0 &= ~RCC_PLLSRC;
+	}
+	RCC->CFGR0 |= (config->mul == 18 ? 0xF : (config->mul - 2)) << 0x12;
+	RCC->CTLR |= RCC_PLLON;
+	return 0;
+}
+
+#if DT_HAS_COMPAT_STATUS_OKAY(wch_ch32fv2x_v3x_rcc)
+static void clock_control_wch_prescaler_init(const struct device *dev)
+{
+	const struct clock_control_wch_rcc_config *config = dev->config;
+	uint8_t hpre = 0;
+
+	if (config->hb_pre == 1) {
+		hpre = 0;
+	} else if (config->hb_pre <= 16) {
+		hpre = ilog2(config->hb_pre - 1) | 0b1000;
+	} else {
+		hpre = ilog2((config->hb_pre >> 1) - 1) | 0b1000;
+	}
+
+	RCC->CFGR0 = (RCC->CFGR0 & ~RCC_HPRE) | (hpre << 4);
+}
+#else
+static void clock_control_wch_prescaler_init(const struct device *dev)
+{
+	const struct clock_control_wch_rcc_config *config = dev->config;
+	uint8_t hpre = 0;
+
+	if (config->hb_pre <= 8) {
+		hpre = config->hb_pre - 1;
+	} else {
+		hpre = ilog2(config->hb_pre - 1) | 0b1000;
+	}
+
+	RCC->CFGR0 = (RCC->CFGR0 & ~RCC_HPRE) | (hpre << 4);
+}
+#endif
+
+static int clock_control_wch_rcc_init(const struct device *dev)
+{
 	clock_control_wch_rcc_setup_flash();
 
 	if (IS_ENABLED(CONFIG_DT_HAS_WCH_CH32V00X_PLL_CLOCK_ENABLED) ||
@@ -140,25 +238,14 @@ static int clock_control_wch_rcc_init(const struct device *dev)
 	}
 
 	if (IS_ENABLED(CONFIG_DT_HAS_WCH_CH32V00X_PLL_CLOCK_ENABLED)) {
-		if (IS_ENABLED(WCH_RCC_PLL_SRC_IS_HSE)) {
-			RCC->CFGR0 |= RCC_PLLSRC;
-		} else if (IS_ENABLED(WCH_RCC_PLL_SRC_IS_HSI)) {
-			RCC->CFGR0 &= ~RCC_PLLSRC;
-		}
-		RCC->CTLR |= RCC_PLLON;
-		while ((RCC->CTLR & RCC_PLLRDY) == 0) {
-		}
+		clock_control_wch_rcc_v003_pll_init(dev);
 	}
 	if (IS_ENABLED(CONFIG_DT_HAS_WCH_CH32V20X_30X_PLL_CLOCK_ENABLED)) {
-		if (IS_ENABLED(WCH_RCC_PLL_SRC_IS_HSE)) {
-			RCC->CFGR0 |= RCC_PLLSRC;
-		} else if (IS_ENABLED(WCH_RCC_PLL_SRC_IS_HSI)) {
-			RCC->CFGR0 &= ~RCC_PLLSRC;
-		}
-		RCC->CFGR0 |= (config->mul == 18 ? 0xF : (config->mul - 2)) << 0x12;
-		RCC->CTLR |= RCC_PLLON;
-		while ((RCC->CTLR & RCC_PLLRDY) == 0) {
-		}
+		clock_control_wch_rcc_fv2x_v3x_pll_init(dev);
+	}
+	/* enable PLL and spinwait until ready */
+	RCC->CTLR |= RCC_PLLON;
+	while ((RCC->CTLR & RCC_PLLRDY) == 0) {
 	}
 
 	if (IS_ENABLED(WCH_RCC_SRC_IS_HSI)) {
@@ -172,8 +259,8 @@ static int clock_control_wch_rcc_init(const struct device *dev)
 
 	/* Clear the interrupt flags. */
 	RCC->INTR = RCC_CSSC | RCC_PLLRDYC | RCC_HSERDYC | RCC_LSIRDYC;
-	/* HCLK = SYSCLK = APB1 */
-	RCC->CFGR0 = (RCC->CFGR0 & ~RCC_HPRE) | RCC_HPRE_DIV1;
+	/* setup HCLK and PCLKx */
+	clock_control_wch_prescaler_init(dev);
 
 	return 0;
 }
@@ -182,6 +269,8 @@ static int clock_control_wch_rcc_init(const struct device *dev)
 	static const struct clock_control_wch_rcc_config clock_control_wch_rcc_##idx##_config = {  \
 		.regs = (RCC_TypeDef *)DT_INST_REG_ADDR(idx),                                      \
 		.mul = DT_PROP_OR(DT_INST_CLOCKS_CTLR(idx), mul, 1),                               \
+		.div = DT_PROP_OR(DT_INST_CLOCKS_CTLR(idx), div, 1),                               \
+		.hb_pre = DT_INST_PROP(idx, hb_prescaler),                                         \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(idx, clock_control_wch_rcc_init, NULL, NULL,                         \
 			      &clock_control_wch_rcc_##idx##_config, PRE_KERNEL_1,                 \

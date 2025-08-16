@@ -37,3 +37,12 @@ properties:
       - 15  # x15
       - 16  # x16
       - 18  # x18
+
+  div:
+    type: int
+    required: false
+    description: |
+      PLL divider factor applied before the multiplication. Currently only affects the HSI
+    enum:
+      - 1 # /1
+      - 2 # /2
