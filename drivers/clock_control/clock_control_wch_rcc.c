@@ -37,6 +37,7 @@
 struct clock_control_wch_rcc_config {
 	RCC_TypeDef *regs;
 	uint8_t mul;
+	uint8_t div;
 };
 
 static int clock_control_wch_rcc_on(const struct device *dev, clock_control_subsys_t sys)
@@ -110,6 +111,53 @@ static DEVICE_API(clock_control, clock_control_wch_rcc_api) = {
 	.get_rate = clock_control_wch_rcc_get_rate,
 };
 
+/* Initialize the PLL source for the ch32v003 */
+static int clock_control_wch_rcc_v003_pll_init(const struct device *dev)
+{
+	if (IS_ENABLED(WCH_RCC_PLL_SRC_IS_HSE)) {
+		RCC->CFGR0 |= RCC_PLLSRC;
+	} else if (IS_ENABLED(WCH_RCC_PLL_SRC_IS_HSI)) {
+		RCC->CFGR0 &= ~RCC_PLLSRC;
+	}
+	return 0;
+}
+
+/* Initialize the PLL source, prescaler and multiplier for the ch32f20x, ch32v20x and ch32v30x */
+static int clock_control_wch_rcc_fv2x_v3x_pll_init(const struct device *dev)
+{
+	const struct clock_control_wch_rcc_config *config = dev->config;
+
+	if (IS_ENABLED(WCH_RCC_PLL_SRC_IS_HSE)) {
+		/* PPLXTPRE defaults to 0 which is divide by /1 */
+		if (IS_ENABLED(CONFIG_DT_HAS_WCH_CH32FV203_V303_PLL_CLOCK_ENABLED) &&
+		    config->div == 2) {
+			RCC->CFGR0 |= RCC_PLLXTPRE;
+		}
+		if (IS_ENABLED(CONFIG_DT_HAS_WCH_CH32FV208_PLL_CLOCK_ENABLED)) {
+			if (config->div == 1) {
+				/* TODO: report error */
+			} else if (config->div == 2) {
+				/* TODO: check USB prescaler is set to 5 */
+				RCC->CFGR0 |= RCC_USBPRE;
+			} else if (config->div == 8) {
+				RCC->CFGR0 |= RCC_PLLXTPRE;
+			} else {
+				/* /4 already the chip default */
+			}
+		}
+		RCC->CFGR0 |= RCC_PLLSRC;
+	} else if (IS_ENABLED(WCH_RCC_PLL_SRC_IS_HSI)) {
+		/* EXTEN_PLL_HSI_PRE defaults to 0 which is /2 */
+		if (config->div == 1) {
+			EXTEN->EXTEN_CTR |= EXTEN_PLL_HSI_PRE;
+		}
+		RCC->CFGR0 &= ~RCC_PLLSRC;
+	}
+	RCC->CFGR0 |= (config->mul == 18 ? 0xF : (config->mul - 2)) << 0x12;
+	RCC->CTLR |= RCC_PLLON;
+	return 0;
+}
+
 static int clock_control_wch_rcc_init(const struct device *dev)
 {
 	const struct clock_control_wch_rcc_config *config = dev->config;
@@ -140,25 +188,14 @@ static int clock_control_wch_rcc_init(const struct device *dev)
 	}
 
 	if (IS_ENABLED(CONFIG_DT_HAS_WCH_CH32V00X_PLL_CLOCK_ENABLED)) {
-		if (IS_ENABLED(WCH_RCC_PLL_SRC_IS_HSE)) {
-			RCC->CFGR0 |= RCC_PLLSRC;
-		} else if (IS_ENABLED(WCH_RCC_PLL_SRC_IS_HSI)) {
-			RCC->CFGR0 &= ~RCC_PLLSRC;
-		}
-		RCC->CTLR |= RCC_PLLON;
-		while ((RCC->CTLR & RCC_PLLRDY) == 0) {
-		}
+		clock_control_wch_rcc_v003_pll_init(dev);
 	}
 	if (IS_ENABLED(CONFIG_DT_HAS_WCH_CH32V20X_30X_PLL_CLOCK_ENABLED)) {
-		if (IS_ENABLED(WCH_RCC_PLL_SRC_IS_HSE)) {
-			RCC->CFGR0 |= RCC_PLLSRC;
-		} else if (IS_ENABLED(WCH_RCC_PLL_SRC_IS_HSI)) {
-			RCC->CFGR0 &= ~RCC_PLLSRC;
-		}
-		RCC->CFGR0 |= (config->mul == 18 ? 0xF : (config->mul - 2)) << 0x12;
-		RCC->CTLR |= RCC_PLLON;
-		while ((RCC->CTLR & RCC_PLLRDY) == 0) {
-		}
+		clock_control_wch_rcc_fv2x_v3x_pll_init(dev);
+	}
+	/* enable PLL and spinwait until ready */
+	RCC->CTLR |= RCC_PLLON;
+	while ((RCC->CTLR & RCC_PLLRDY) == 0) {
 	}
 
 	if (IS_ENABLED(WCH_RCC_SRC_IS_HSI)) {
@@ -182,6 +219,7 @@ static int clock_control_wch_rcc_init(const struct device *dev)
 	static const struct clock_control_wch_rcc_config clock_control_wch_rcc_##idx##_config = {  \
 		.regs = (RCC_TypeDef *)DT_INST_REG_ADDR(idx),                                      \
 		.mul = DT_PROP_OR(DT_INST_CLOCKS_CTLR(idx), mul, 1),                               \
+		.div = DT_PROP_OR(DT_INST_CLOCKS_CTLR(idx), div, 1),                               \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(idx, clock_control_wch_rcc_init, NULL, NULL,                         \
 			      &clock_control_wch_rcc_##idx##_config, PRE_KERNEL_1,                 \

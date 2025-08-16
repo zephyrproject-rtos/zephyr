@@ -30,14 +30,16 @@
 		clk_lsi: clk-lsi {
 			#clock-cells = <0>;
 			compatible = "fixed-clock";
-			clock-frequency = <DT_FREQ_K(32)>;
+			clock-frequency = <DT_FREQ_K(40)>;
 			status = "disabled";
 		};
 
 		pll: pll {
 			#clock-cells = <0>;
-			compatible = "wch,ch32v20x_30x-pll-clock";
+			compatible = "wch,ch32v20x_30x-pll-clock",
+				     "wch,ch32fv203_v303-pll-clock";
 			mul = <15>;
+			div = <1>;
 			status = "disabled";
 		};
 	};
