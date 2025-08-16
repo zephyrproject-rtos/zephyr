@@ -27,4 +27,5 @@ supported:
   - sdhc
   - spi
   - uart
+  - kpp
 vendor: nxp
