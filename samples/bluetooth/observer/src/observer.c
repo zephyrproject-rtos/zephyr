@@ -99,13 +99,27 @@ int observer_start(void)
 #if defined(CONFIG_BT_EXT_ADV)
 	bt_le_scan_cb_register(&scan_callbacks);
 	printk("Registered scan callbacks\n");
+
+	scan_param.options |= BT_LE_SCAN_OPT_CODED;
 #endif /* CONFIG_BT_EXT_ADV */
 
+scan_start_retry:
 	err = bt_le_scan_start(&scan_param, device_found);
 	if (err) {
+		if ((scan_param.options & BT_LE_SCAN_OPT_CODED) != 0U) {
+			printk("Failed to start scanning with Coded PHY (err %d), retrying "
+			       "without...\n", err);
+
+			scan_param.options &= ~BT_LE_SCAN_OPT_CODED;
+
+			goto scan_start_retry;
+		}
+
 		printk("Start scanning failed (err %d)\n", err);
+
 		return err;
 	}
+
 	printk("Started scanning...\n");
 
 	return 0;

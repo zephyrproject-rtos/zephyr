@@ -24,6 +24,6 @@ Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_samples_bap_unicast_client_p
   -testid=unicast_client
 
 Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} \
-  -D=2 -sim_length=20e6 $@ -argschannel -at=40
+  -D=2 -sim_length=21e6 $@ -argschannel -at=40
 
 wait_for_background_jobs #Wait for all programs in background and return != 0 if any fails

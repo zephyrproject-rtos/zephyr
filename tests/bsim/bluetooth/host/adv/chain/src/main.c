@@ -27,6 +27,11 @@
 				      BT_AD_DATA_MFG_DATA_SIZE + BT_AD_DATA_MFG_DATA_SIZE), \
 				     CONFIG_BT_CTLR_ADV_DATA_LEN_MAX)
 
+/* One less extended advertising set as first one is legacy advertising in the broadcaster_multiple
+ * sample.
+ */
+#define BT_EXT_ADV_MAX_ADV_SET (CONFIG_BT_EXT_ADV_MAX_ADV_SET - 1)
+
 static K_SEM_DEFINE(sem_recv, 0, 1);
 
 static void test_adv_main(void)
@@ -76,7 +81,7 @@ static bool data_cb(struct bt_data *data, void *user_data)
 static void scan_recv(const struct bt_le_scan_recv_info *info,
 		      struct net_buf_simple *buf)
 {
-	static uint8_t sid[CONFIG_BT_EXT_ADV_MAX_ADV_SET];
+	static uint8_t sid[BT_EXT_ADV_MAX_ADV_SET];
 	static uint8_t sid_count;
 	char name[NAME_LEN];
 	uint8_t data_status;
@@ -110,7 +115,7 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 
 	sid[sid_count++] = info->sid;
 
-	if (sid_count < CONFIG_BT_EXT_ADV_MAX_ADV_SET) {
+	if (sid_count < BT_EXT_ADV_MAX_ADV_SET) {
 		printk("Received advertising sets: %d\n", sid_count);
 		return;
 	}
