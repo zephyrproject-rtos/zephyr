@@ -35,6 +35,7 @@ struct sy24561_emul_cfg {
 
 static int emul_sy24561_reg_write(const struct emul *target, uint8_t reg, uint16_t val)
 {
+	LOG_DBG("0x%02x 0x%04x", reg, val);
 	return 0;
 }
 
@@ -84,28 +85,28 @@ static int sy24561_emul_transfer_i2c(const struct emul *target, struct i2c_msg *
 	i2c_dump_msgs_rw(target->dev, msgs, num_msgs, addr, false);
 	switch (num_msgs) {
 	case 1:
-		if (msgs->flags & I2C_MSG_READ) {
+		if (msgs[0].flags & I2C_MSG_READ) {
 			LOG_ERR("Unexpected read");
 			return -EIO;
 		}
 
-		if (msgs->len != 3) {
+		if (msgs[0].len != 3) {
 			LOG_ERR("Unexpected msg0 length %d", msgs->len);
 			return -EIO;
 		}
 
-		ret = emul_sy24561_reg_write(target, *msgs->buf, sys_get_be16(msgs->buf + 1));
+		ret = emul_sy24561_reg_write(target, *msgs[0].buf, sys_get_be16(msgs[0].buf + 1));
 		if (ret) {
 			LOG_ERR("emul_sy24561_reg_write returned %d", ret);
 		}
 		break;
 	case 2:
-		if (msgs->flags & I2C_MSG_READ) {
+		if (msgs[0].flags & I2C_MSG_READ) {
 			LOG_ERR("Unexpected read");
 			return -EIO;
 		}
-		if (msgs->len != 1) {
-			LOG_ERR("Unexpected msg0 length %d", msgs->len);
+		if (msgs[0].len != 1) {
+			LOG_ERR("Unexpected msg0 length %d", msgs[0].len);
 			return -EIO;
 		}
 
@@ -120,13 +121,13 @@ static int sy24561_emul_transfer_i2c(const struct emul *target, struct i2c_msg *
 
 		uint16_t val;
 
-		ret = emul_sy24561_reg_read(target, *msgs->buf, &val);
+		ret = emul_sy24561_reg_read(target, *msgs[0].buf, &val);
 		if (ret) {
 			LOG_ERR("emul_sy24561_reg_read returned %d", ret);
 			return ret;
 		}
 
-		sys_put_be16(val, msgs->buf);
+		sys_put_be16(val, msgs[1].buf);
 		break;
 	default:
 		LOG_ERR("Invalid number of messages: %d", num_msgs);
