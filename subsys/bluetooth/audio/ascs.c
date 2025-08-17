@@ -1447,6 +1447,11 @@ static struct bt_ascs_ase *ase_find(struct bt_conn *conn, uint8_t id)
 	return NULL;
 }
 
+bool bt_ascs_is_ase_ep(const struct bt_bap_ep *ep)
+{
+	return PART_OF_ARRAY(ascs.ase_pool, ep);
+}
+
 static ssize_t ascs_ase_read(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
 			     uint16_t len, uint16_t offset)
