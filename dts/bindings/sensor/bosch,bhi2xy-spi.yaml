@@ -1,0 +1,3 @@
+compatible: "bosch,bhi2xy"
+
+include: [spi-device.yaml, "bosch,bhi2xy.yaml"]
