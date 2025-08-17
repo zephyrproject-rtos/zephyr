@@ -5,6 +5,10 @@ common:
     - spi
 tests:
   drivers.spi.build:
+    # will cover drivers i2c based drivers
+    platform_allow: native_sim
+    tags: spi_nxp_sc18is606
+    extra_args: "CONFIG_GPIO=y"
     # will cover drivers without in-tree boards
     platform_allow: qemu_cortex_m3
     tags: spi_cdns
