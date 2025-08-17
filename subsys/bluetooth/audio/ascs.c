@@ -178,7 +178,7 @@ static bool is_valid_ase_id(uint8_t ase_id)
 	return IN_RANGE(ase_id, 1, ASE_COUNT);
 }
 
-static enum bt_bap_ep_state ascs_ep_get_state(struct bt_bap_ep *ep)
+static enum bt_bap_ep_state ascs_ep_get_state(const struct bt_bap_ep *ep)
 {
 	return ep->status.state;
 }
@@ -270,7 +270,7 @@ static void ascs_disconnect_stream_work_handler(struct k_work *work)
 		__ASSERT(pair_stream->ep != NULL, "Invalid pair_stream %p",
 			 pair_stream);
 
-		if (pair_stream->ep->status.state == BT_BAP_EP_STATE_STREAMING) {
+		if (ascs_ep_get_state(pair_stream->ep) == BT_BAP_EP_STATE_STREAMING) {
 			/* Should not disconnect ISO if the stream is paired
 			 * with another one in the streaming state
 			 */
@@ -609,7 +609,7 @@ static void state_transition_work_handler(struct k_work *work)
 int ascs_ep_set_state(struct bt_bap_ep *ep, uint8_t state)
 {
 	struct bt_ascs_ase *ase = CONTAINER_OF(ep, struct bt_ascs_ase, ep);
-	const enum bt_bap_ep_state old_state = ascs_ep_get_state(&ase->ep);
+	const enum bt_bap_ep_state old_state = ascs_ep_get_state(ep);
 	bool valid_state_transition = false;
 	int err;
 
@@ -798,14 +798,14 @@ static int ascs_ep_get_status(struct bt_bap_ep *ep, struct net_buf_simple *buf)
 	}
 
 	LOG_DBG("ep %p id 0x%02x state %s", ep, ep->status.id,
-		bt_bap_ep_state_str(ep->status.state));
+		bt_bap_ep_state_str(ascs_ep_get_state(ep)));
 
 	/* Reset if buffer before using */
 	net_buf_simple_reset(buf);
 
 	(void)net_buf_simple_add_mem(buf, &ep->status, sizeof(ep->status));
 
-	switch (ep->status.state) {
+	switch (ascs_ep_get_state(ep)) {
 	case BT_BAP_EP_STATE_IDLE:
 	/* Fallthrough */
 	case BT_BAP_EP_STATE_RELEASING:
@@ -898,10 +898,10 @@ static void ascs_iso_recv(struct bt_iso_chan *chan,
 		return;
 	}
 
-	if (ep->status.state != BT_BAP_EP_STATE_STREAMING) {
+	if (ascs_ep_get_state(ep) != BT_BAP_EP_STATE_STREAMING) {
 		if (IS_ENABLED(CONFIG_BT_BAP_DEBUG_STREAM_DATA)) {
 			LOG_DBG("ep %p is not in the streaming state: %s", ep,
-				bt_bap_ep_state_str(ep->status.state));
+				bt_bap_ep_state_str(ascs_ep_get_state(ep)));
 		}
 
 		return;
@@ -982,9 +982,9 @@ static void ascs_ep_iso_connected(struct bt_bap_ep *ep)
 	const struct bt_bap_stream_ops *stream_ops;
 	struct bt_bap_stream *stream;
 
-	if (ep->status.state != BT_BAP_EP_STATE_ENABLING) {
+	if (ascs_ep_get_state(ep) != BT_BAP_EP_STATE_ENABLING) {
 		LOG_DBG("ep %p not in enabling state: %s", ep,
-			bt_bap_ep_state_str(ep->status.state));
+			bt_bap_ep_state_str(ascs_ep_get_state(ep)));
 		return;
 	}
 
@@ -1056,7 +1056,7 @@ static void ascs_ep_iso_disconnected(struct bt_bap_ep *ep, uint8_t reason)
 	}
 
 	LOG_DBG("stream %p ep %p state %s reason 0x%02x", stream, stream->ep,
-		bt_bap_ep_state_str(ep->status.state), reason);
+		bt_bap_ep_state_str(ascs_ep_get_state(ep)), reason);
 
 	stream_ops = stream->ops;
 	if (stream_ops != NULL && stream_ops->disconnected != NULL) {
@@ -1067,10 +1067,10 @@ static void ascs_ep_iso_disconnected(struct bt_bap_ep *ep, uint8_t reason)
 	(void)k_work_cancel_delayable(&ase->disconnect_work);
 	ep->reason = reason;
 
-	if (ep->status.state == BT_BAP_EP_STATE_RELEASING) {
+	if (ascs_ep_get_state(ep) == BT_BAP_EP_STATE_RELEASING) {
 		ascs_ep_set_state(ep, BT_BAP_EP_STATE_IDLE);
-	} else if (ep->status.state == BT_BAP_EP_STATE_STREAMING ||
-		   ep->status.state == BT_BAP_EP_STATE_DISABLING) {
+	} else if (ascs_ep_get_state(ep) == BT_BAP_EP_STATE_STREAMING ||
+		   ascs_ep_get_state(ep) == BT_BAP_EP_STATE_DISABLING) {
 		/* ASCS_v1.0 3.2 ASE state machine transitions
 		 *
 		 * If the server detects link loss of a CIS for an ASE in the Streaming
@@ -1216,7 +1216,7 @@ static int ase_release(struct bt_ascs_ase *ase, uint8_t reason, struct bt_bap_as
 int bt_ascs_release_ase(struct bt_bap_ep *ep)
 {
 	struct bt_ascs_ase *ase = CONTAINER_OF(ep, struct bt_ascs_ase, ep);
-	const enum bt_bap_ep_state state = ascs_ep_get_state(&ase->ep);
+	const enum bt_bap_ep_state state = ascs_ep_get_state(ep);
 
 	if (state == BT_BAP_EP_STATE_IDLE) {
 		ase_free(ase);
@@ -1236,14 +1236,15 @@ static int ase_disable(struct bt_ascs_ase *ase, uint8_t reason, struct bt_bap_as
 
 	ep = &ase->ep;
 
-	switch (ep->status.state) {
+	switch (ascs_ep_get_state(ep)) {
 	/* Valid only if ASE_State field = 0x03 (Enabling) */
 	case BT_BAP_EP_STATE_ENABLING:
 		/* or 0x04 (Streaming) */
 	case BT_BAP_EP_STATE_STREAMING:
 		break;
 	default:
-		LOG_WRN("Invalid operation in state: %s", bt_bap_ep_state_str(ep->status.state));
+		LOG_WRN("Invalid operation in state: %s",
+			bt_bap_ep_state_str(ascs_ep_get_state(ep)));
 		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_INVALID_ASE_STATE,
 				       BT_BAP_ASCS_REASON_NONE);
 		return -EBADMSG;
@@ -1921,14 +1922,15 @@ static void ase_qos(struct bt_ascs_ase *ase, uint8_t cig_id, uint8_t cis_id,
 		"latency %u pd %u", ase, cig_id, cis_id, qos->interval, qos->framing, qos->phy,
 		qos->sdu, qos->rtn, qos->latency, qos->pd);
 
-	switch (ep->status.state) {
+	switch (ascs_ep_get_state(ep)) {
 	/* Valid only if ASE_State field = 0x01 (Codec Configured) */
 	case BT_BAP_EP_STATE_CODEC_CONFIGURED:
 	/* or 0x02 (QoS Configured) */
 	case BT_BAP_EP_STATE_QOS_CONFIGURED:
 		break;
 	default:
-		LOG_WRN("Invalid operation in state: %s", bt_bap_ep_state_str(ep->status.state));
+		LOG_WRN("Invalid operation in state: %s",
+			bt_bap_ep_state_str(ascs_ep_get_state(ep)));
 		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_INVALID_ASE_STATE,
 				       BT_BAP_ASCS_REASON_NONE);
 		return;
@@ -2268,7 +2270,7 @@ static void ase_metadata(struct bt_ascs_ase *ase, struct bt_ascs_metadata *meta)
 	LOG_DBG("ase %p meta->len %u", ase, meta->len);
 
 	ep = &ase->ep;
-	state = ep->status.state;
+	state = ascs_ep_get_state(ep);
 
 	switch (state) {
 	/* Valid for an ASE only if ASE_State field = 0x03 (Enabling) */
@@ -2315,7 +2317,7 @@ static void ase_metadata(struct bt_ascs_ase *ase, struct bt_ascs_metadata *meta)
 	(void)memcpy(ep->codec_cfg.meta, meta->data, meta->len);
 
 	/* Set the state to the same state to trigger the notifications */
-	ascs_ep_set_state(ep, ep->status.state);
+	ascs_ep_set_state(ep, ascs_ep_get_state(ep));
 	ascs_cp_rsp_success(ASE_ID(ase));
 }
 
@@ -2332,9 +2334,10 @@ static int ase_enable(struct bt_ascs_ase *ase, struct bt_ascs_metadata *meta)
 	ep = &ase->ep;
 
 	/* Valid for an ASE only if ASE_State field = 0x02 (QoS Configured) */
-	if (ep->status.state != BT_BAP_EP_STATE_QOS_CONFIGURED) {
+	if (ascs_ep_get_state(ep) != BT_BAP_EP_STATE_QOS_CONFIGURED) {
 		err = -EBADMSG;
-		LOG_WRN("Invalid operation in state: %s", bt_bap_ep_state_str(ep->status.state));
+		LOG_WRN("Invalid operation in state: %s",
+			bt_bap_ep_state_str(ascs_ep_get_state(ep)));
 		ascs_cp_rsp_add(ASE_ID(ase), BT_BAP_ASCS_RSP_CODE_INVALID_ASE_STATE,
 				BT_BAP_ASCS_REASON_NONE);
 		return err;
@@ -2475,8 +2478,9 @@ static void ase_start(struct bt_ascs_ase *ase)
 	ep = &ase->ep;
 
 	/* Valid for an ASE only if ASE_State field = 0x02 (QoS Configured) */
-	if (ep->status.state != BT_BAP_EP_STATE_ENABLING) {
-		LOG_WRN("Invalid operation in state: %s", bt_bap_ep_state_str(ep->status.state));
+	if (ascs_ep_get_state(ep) != BT_BAP_EP_STATE_ENABLING) {
+		LOG_WRN("Invalid operation in state: %s",
+			bt_bap_ep_state_str(ascs_ep_get_state(ep)));
 		ascs_cp_rsp_add(ASE_ID(ase), BT_BAP_ASCS_RSP_CODE_INVALID_ASE_STATE,
 				BT_BAP_ASCS_REASON_NONE);
 		return;
@@ -2686,8 +2690,9 @@ static void ase_stop(struct bt_ascs_ase *ase)
 
 	ep = &ase->ep;
 
-	if (ep->status.state != BT_BAP_EP_STATE_DISABLING) {
-		LOG_WRN("Invalid operation in state: %s", bt_bap_ep_state_str(ep->status.state));
+	if (ascs_ep_get_state(ep) != BT_BAP_EP_STATE_DISABLING) {
+		LOG_WRN("Invalid operation in state: %s",
+			bt_bap_ep_state_str(ascs_ep_get_state(ep)));
 		ascs_cp_rsp_add(ASE_ID(ase), BT_BAP_ASCS_RSP_CODE_INVALID_ASE_STATE,
 				BT_BAP_ASCS_REASON_NONE);
 		return;
