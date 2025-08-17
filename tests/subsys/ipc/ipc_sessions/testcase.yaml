@@ -43,6 +43,13 @@ tests:
     extra_args:
       - CONFIG_IPC_TEST_SKIP_CORE_RESET=y
       - CONFIG_SOC_NRF54H20_CPURAD_ENABLE=y
+  sample.ipc.ipc_sessions.rp2350:
+    platform_allow:
+      - rpi_pico2/rp2350a/m33/cpu0
+    integration_platforms:
+      - rpi_pico2/rp2350a/m33/cpu0
+    extra_args:
+      - CONFIG_IPC_TEST_SKIP_CORE_RESET=y
   test.ipc.ipc_sessions.nrf54h20dk_cpuapp_cpuppr:
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp
