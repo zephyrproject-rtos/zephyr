@@ -126,8 +126,8 @@ class Sign(Forceable):
 
         # general options
         group = parser.add_argument_group('tool control options')
-        group.add_argument('-t', '--tool', choices=['imgtool', 'rimage', 'silabs_commander'],
-                           help='''image signing tool name; imgtool, rimage and silabs_commander
+        group.add_argument('-t', '--tool', choices=['imgtool', 'rimage', 'silabs_commander', 'picotool'],
+                           help='''image signing tool name; imgtool, rimage, silabs_commander and picotool
                            are currently supported (imgtool is deprecated)''')
         group.add_argument('-p', '--tool-path', default=None,
                            help='''path to the tool itself, if needed''')
@@ -209,6 +209,8 @@ schema (rimage "target") is not defined in board.cmake.''')
             signer = RimageSigner()
         elif args.tool == 'silabs_commander':
             signer = CommanderSigner()
+        elif args.tool == 'picotool':
+            signer = PicotoolSigner()
         # (Add support for other signers here in elif blocks)
         else:
             if args.tool is None:
@@ -716,6 +718,30 @@ class CommanderSigner(Signer):
             commandline.extend(["--encrypt", encrypt_key])
         if sign_key:
             commandline.extend(["--sign", sign_key])
+        commandline.extend(command.args.tool_args)
+
+        if not command.args.quiet:
+            command.inf("Signing with:", ' '.join(commandline))
+        subprocess.run(commandline, check=True)
+
+class PicotoolSigner(Signer):
+    @staticmethod
+    def get_input_output(command, build_dir, build_conf):
+        kernel_prefix = get_kernel_filename_stem(build_dir, build_conf)
+        in_file = f'{kernel_prefix}.elf'
+        out_file = command.args.sbin or f'{kernel_prefix}.signed.elf'
+        return (in_file, out_file)
+
+    def sign(self, command, build_dir, build_conf, formats):
+        tool = get_tool_path(command, 'picotool')
+        in_file, out_file = self.get_input_output(command, build_dir, build_conf)
+        key_file = getattr(command.args, 'key',
+                           build_conf.get('CONFIG_RP2350_SIGNING_KEY', None))
+
+        if not key_file:
+            command.die('Please provide a key file using RP2350_SIGNING_KEY Kconfig option')
+
+        commandline = [ tool, "seal", "--sign", in_file, out_file, key_file ]
         commandline.extend(command.args.tool_args)
 
         if not command.args.quiet:
