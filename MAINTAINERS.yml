@@ -4675,6 +4675,23 @@ Task Watchdog:
   tests:
     - sample.task_wdt
 
+Test Configuration Files:
+  status: odd fixes
+  collaborators:
+    - gchwier
+    - golowanow
+    - hakehuang
+    - JarmouniA
+    - KamilxPaszkiet
+    - LukaszMrugala
+    - nashif
+    - PerMac
+  files-regex:
+    - ^samples/.*/sample.yaml$
+    - ^tests/.*/testcase.yaml$
+  labels:
+    - "area: Testing"
+
 Test Framework (Ztest):
   status: maintained
   maintainers:
