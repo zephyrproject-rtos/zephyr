@@ -131,7 +131,7 @@
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00200000>,
+	clocks = <&rcc STM32_CLOCK(APB3, 21)>,
 		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	status = "okay";
 };
@@ -156,7 +156,7 @@
 };
 
 &adc1 {
-	clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000400>,
+	clocks = <&rcc STM32_CLOCK(AHB2, 10)>,
 		 <&rcc STM32_SRC_HCLK ADCDAC_SEL(0)>;
 	pinctrl-0 = <&adc1_inp3_pa6 &adc1_inp15_pa3>; /* Zio A0, Zio D35 */
 	pinctrl-names = "default";
@@ -168,7 +168,7 @@
 &fdcan1 {
 	pinctrl-0 = <&fdcan1_rx_pd0 &fdcan1_tx_pd1>;
 	pinctrl-names = "default";
-	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000200>,
+	clocks = <&rcc STM32_CLOCK(APB1_2, 9)>,
 		 <&rcc STM32_SRC_PLL1_Q FDCAN_SEL(1)>;
 	clk-divider = <2>;
 	status = "okay";
@@ -221,7 +221,7 @@ zephyr_udc0: &usb {
 };
 
 stm32_lp_tick_source: &lptim4 {
-	clocks = <&rcc STM32_CLOCK_BUS_APB3 0x2000>,
+	clocks = <&rcc STM32_CLOCK(APB3, 13)>,
 		 <&rcc STM32_SRC_LSI LPTIM4_SEL(4)>;
 	status = "okay";
 };
