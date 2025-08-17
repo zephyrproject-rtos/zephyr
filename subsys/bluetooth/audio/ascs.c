@@ -182,7 +182,7 @@ static void ase_free(struct bt_ascs_ase *ase)
 {
 	__ASSERT(ase && ase->conn, "Non-existing ASE");
 
-	LOG_DBG("conn %p ase %p id 0x%02x", (void *)ase->conn, ase, ase->ep.id);
+	LOG_DBG("conn %p ase %p id 0x%02x", (void *)ase->conn, ase, ASE_ID(ase));
 
 	if (ase->ep.iso != NULL) {
 		bt_bap_iso_unbind_ep(ase->ep.iso, &ase->ep);
@@ -550,7 +550,7 @@ static void state_transition_work_handler(struct k_work *work)
 		}
 	}
 
-	LOG_DBG("ase %p ep %p id 0x%02x %s -> %s", ase, &ase->ep, ase->ep.id,
+	LOG_DBG("ase %p ep %p id 0x%02x %s -> %s", ase, &ase->ep, ASE_ID(ase),
 		bt_bap_ep_state_str(old_state), bt_bap_ep_state_str(new_state));
 
 	if (old_state == new_state) {
@@ -1372,7 +1372,7 @@ static uint8_t ase_attr_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 {
 	struct bt_ascs_ase *ase = user_data;
 
-	if (ase->ep.id == POINTER_TO_UINT(BT_AUDIO_CHRC_USER_DATA(attr))) {
+	if (ASE_ID(ase) == POINTER_TO_UINT(BT_AUDIO_CHRC_USER_DATA(attr))) {
 		ase->attr = attr;
 
 		return BT_GATT_ITER_STOP;
@@ -1437,7 +1437,7 @@ static struct bt_ascs_ase *ase_find(struct bt_conn *conn, uint8_t id)
 	for (size_t i = 0; i < ARRAY_SIZE(ascs.ase_pool); i++) {
 		struct bt_ascs_ase *ase = &ascs.ase_pool[i];
 
-		if (ase->conn == conn && ase->ep.id == id) {
+		if (ase->conn == conn && ASE_ID(ase) == id) {
 			return ase;
 		}
 	}
