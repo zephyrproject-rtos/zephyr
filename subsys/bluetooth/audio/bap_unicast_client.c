@@ -147,8 +147,7 @@ static int unicast_client_ep_set_metadata(struct bt_bap_ep *ep, void *data, uint
 static int unicast_client_ep_set_codec_cfg(struct bt_bap_ep *ep, uint8_t id, uint16_t cid,
 					   uint16_t vid, void *data, uint8_t len,
 					   struct bt_audio_codec_cfg *codec_cfg);
-static int unicast_client_ep_start(struct bt_bap_ep *ep,
-				   struct net_buf_simple *buf);
+static int unicast_client_ep_start(struct bt_bap_ep *ep, struct net_buf_simple *buf);
 
 static int unicast_client_ase_discover(struct bt_conn *conn, uint16_t start_handle);
 
@@ -160,8 +159,7 @@ static void unicast_client_ep_set_status(struct bt_bap_ep *ep, struct net_buf_si
 static int unicast_client_send_start(struct bt_bap_ep *ep)
 {
 	if (ep->receiver_ready != true || ep->dir != BT_AUDIO_DIR_SOURCE) {
-		LOG_DBG("Invalid ep %p %u %s",
-			ep, ep->receiver_ready, bt_audio_dir_str(ep->dir));
+		LOG_DBG("Invalid ep %p %u %s", ep, ep->receiver_ready, bt_audio_dir_str(ep->dir));
 
 		return -EINVAL;
 	}
@@ -181,8 +179,7 @@ static int unicast_client_send_start(struct bt_bap_ep *ep)
 
 	err = unicast_client_ep_start(ep, buf);
 	if (err != 0) {
-		LOG_DBG("unicast_client_ep_start failed: %d",
-			err);
+		LOG_DBG("unicast_client_ep_start failed: %d", err);
 
 		return err;
 	}
@@ -199,8 +196,7 @@ static int unicast_client_send_start(struct bt_bap_ep *ep)
 
 static void unicast_client_ep_idle_state(struct bt_bap_ep *ep);
 
-static struct bt_bap_stream *audio_stream_by_ep_id(const struct bt_conn *conn,
-						     uint8_t id)
+static struct bt_bap_stream *audio_stream_by_ep_id(const struct bt_conn *conn, uint8_t id)
 {
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 || CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
 	const uint8_t conn_index = bt_conn_index(conn);
@@ -213,7 +209,7 @@ static struct bt_bap_stream *audio_stream_by_ep_id(const struct bt_conn *conn,
 		const struct bt_bap_unicast_client_ep *client_ep =
 			&uni_cli_insts[conn_index].snks[i];
 
-		if (client_ep->ep.status.id == id) {
+		if (client_ep->ep.id == id) {
 			return client_ep->ep.stream;
 		}
 	}
@@ -224,7 +220,7 @@ static struct bt_bap_stream *audio_stream_by_ep_id(const struct bt_conn *conn,
 		const struct bt_bap_unicast_client_ep *client_ep =
 			&uni_cli_insts[conn_index].srcs[i];
 
-		if (client_ep->ep.status.id == id) {
+		if (client_ep->ep.id == id) {
 			return client_ep->ep.stream;
 		}
 	}
@@ -265,10 +261,10 @@ static void unicast_client_ep_iso_recv(struct bt_iso_chan *chan,
 		return;
 	}
 
-	if (ep->status.state != BT_BAP_EP_STATE_STREAMING) {
+	if (ep->state != BT_BAP_EP_STATE_STREAMING) {
 		if (IS_ENABLED(CONFIG_BT_BAP_DEBUG_STREAM_DATA)) {
 			LOG_DBG("ep %p is not in the streaming state: %s", ep,
-				bt_bap_ep_state_str(ep->status.state));
+				bt_bap_ep_state_str(ep->state));
 		}
 
 		return;
@@ -331,9 +327,8 @@ static void unicast_client_ep_iso_connected(struct bt_bap_ep *ep)
 		ep->unicast_group->has_been_connected = true;
 	}
 
-	if (ep->status.state != BT_BAP_EP_STATE_ENABLING) {
-		LOG_DBG("endpoint not in enabling state: %s",
-			bt_bap_ep_state_str(ep->status.state));
+	if (ep->state != BT_BAP_EP_STATE_ENABLING) {
+		LOG_DBG("endpoint not in enabling state: %s", bt_bap_ep_state_str(ep->state));
 		return;
 	}
 
@@ -343,8 +338,8 @@ static void unicast_client_ep_iso_connected(struct bt_bap_ep *ep)
 		return;
 	}
 
-	LOG_DBG("stream %p ep %p dir %s receiver_ready %u",
-		stream, ep, bt_audio_dir_str(ep->dir), ep->receiver_ready);
+	LOG_DBG("stream %p ep %p dir %s receiver_ready %u", stream, ep, bt_audio_dir_str(ep->dir),
+		ep->receiver_ready);
 
 #if defined(CONFIG_BT_BAP_DEBUG_STREAM_SEQ_NUM)
 	/* reset sequence number */
@@ -398,7 +393,7 @@ static void unicast_client_ep_iso_disconnected(struct bt_bap_ep *ep, uint8_t rea
 	 * then we need to call unicast_client_ep_idle_state again when
 	 * the ISO has finalized the disconnection
 	 */
-	if (ep->status.state == BT_BAP_EP_STATE_IDLE) {
+	if (ep->state == BT_BAP_EP_STATE_IDLE) {
 
 		unicast_client_ep_idle_state(ep);
 
@@ -475,7 +470,7 @@ static void unicast_client_ep_init(struct bt_bap_ep *ep, uint16_t handle, uint8_
 
 	(void)memset(ep, 0, sizeof(*ep));
 	client_ep->handle = handle;
-	ep->status.id = 0U;
+	ep->id = 0U;
 	ep->dir = dir;
 	ep->reason = BT_HCI_ERR_SUCCESS;
 	k_work_init_delayable(&client_ep->ase_read_work, delayed_ase_read_handler);
@@ -580,7 +575,7 @@ static struct bt_bap_ep *unicast_client_ep_get(struct bt_conn *conn, enum bt_aud
 static void unicast_client_ep_set_local_idle_state(struct bt_bap_ep *ep)
 {
 	struct bt_ascs_ase_status status = {
-		.id = ep->status.id,
+		.id = ep->id,
 		.state = BT_BAP_EP_STATE_IDLE,
 	};
 	struct net_buf_simple buf;
@@ -1266,9 +1261,10 @@ static void unicast_client_ep_set_status(struct bt_bap_ep *ep, struct net_buf_si
 
 	status = net_buf_simple_pull_mem(buf, sizeof(*status));
 
-	old_state = ep->status.state;
-	ep->status = *status;
-	state_changed = old_state != ep->status.state;
+	old_state = ep->state;
+	ep->id = status->id;
+	ep->state = status->state;
+	state_changed = old_state != ep->state;
 
 	if (state_changed && old_state == BT_BAP_EP_STATE_STREAMING) {
 		/* We left the streaming state, let the upper layers know that the stream is stopped
@@ -1323,8 +1319,7 @@ static void unicast_client_ep_set_status(struct bt_bap_ep *ep, struct net_buf_si
 			break;
 		default:
 			LOG_WRN("Invalid state transition: %s -> %s",
-				bt_bap_ep_state_str(old_state),
-				bt_bap_ep_state_str(ep->status.state));
+				bt_bap_ep_state_str(old_state), bt_bap_ep_state_str(ep->state));
 			return;
 		}
 
@@ -1346,7 +1341,7 @@ static void unicast_client_ep_set_status(struct bt_bap_ep *ep, struct net_buf_si
 			default:
 				LOG_WRN("Invalid state transition: %s -> %s",
 					bt_bap_ep_state_str(old_state),
-					bt_bap_ep_state_str(ep->status.state));
+					bt_bap_ep_state_str(ep->state));
 				return;
 			}
 		} else {
@@ -1363,7 +1358,7 @@ static void unicast_client_ep_set_status(struct bt_bap_ep *ep, struct net_buf_si
 			default:
 				LOG_WRN("Invalid state transition: %s -> %s",
 					bt_bap_ep_state_str(old_state),
-					bt_bap_ep_state_str(ep->status.state));
+					bt_bap_ep_state_str(ep->state));
 				return;
 			}
 		}
@@ -1379,8 +1374,7 @@ static void unicast_client_ep_set_status(struct bt_bap_ep *ep, struct net_buf_si
 			break;
 		default:
 			LOG_WRN("Invalid state transition: %s -> %s",
-				bt_bap_ep_state_str(old_state),
-				bt_bap_ep_state_str(ep->status.state));
+				bt_bap_ep_state_str(old_state), bt_bap_ep_state_str(ep->state));
 			return;
 		}
 
@@ -1395,8 +1389,7 @@ static void unicast_client_ep_set_status(struct bt_bap_ep *ep, struct net_buf_si
 			break;
 		default:
 			LOG_WRN("Invalid state transition: %s -> %s",
-				bt_bap_ep_state_str(old_state),
-				bt_bap_ep_state_str(ep->status.state));
+				bt_bap_ep_state_str(old_state), bt_bap_ep_state_str(ep->state));
 			return;
 		}
 
@@ -1413,14 +1406,13 @@ static void unicast_client_ep_set_status(struct bt_bap_ep *ep, struct net_buf_si
 			default:
 				LOG_WRN("Invalid state transition: %s -> %s",
 					bt_bap_ep_state_str(old_state),
-					bt_bap_ep_state_str(ep->status.state));
+					bt_bap_ep_state_str(ep->state));
 				return;
 			}
 		} else {
 			/* Sinks cannot go into the disabling state */
 			LOG_WRN("Invalid state transition: %s -> %s",
-				bt_bap_ep_state_str(old_state),
-				bt_bap_ep_state_str(ep->status.state));
+				bt_bap_ep_state_str(old_state), bt_bap_ep_state_str(ep->state));
 			return;
 		}
 
@@ -1446,8 +1438,7 @@ static void unicast_client_ep_set_status(struct bt_bap_ep *ep, struct net_buf_si
 			/* fall through */
 		default:
 			LOG_WRN("Invalid state transition: %s -> %s",
-				bt_bap_ep_state_str(old_state),
-				bt_bap_ep_state_str(ep->status.state));
+				bt_bap_ep_state_str(old_state), bt_bap_ep_state_str(ep->state));
 			return;
 		}
 
@@ -1627,10 +1618,10 @@ static uint8_t unicast_client_cp_notify(struct bt_conn *conn,
 		ase_rsp = net_buf_simple_pull_mem(&buf, sizeof(*ase_rsp));
 
 		LOG_DBG("op %s (0x%02x) id 0x%02x code %s (0x%02x) "
-			"reason %s (0x%02x)", bt_ascs_op_str(rsp->op), rsp->op,
-			ase_rsp->id, bt_ascs_rsp_str(ase_rsp->code),
-			ase_rsp->code, bt_ascs_reason_str(ase_rsp->reason),
-			ase_rsp->reason);
+			"reason %s (0x%02x)",
+			bt_ascs_op_str(rsp->op), rsp->op, ase_rsp->id,
+			bt_ascs_rsp_str(ase_rsp->code), ase_rsp->code,
+			bt_ascs_reason_str(ase_rsp->reason), ase_rsp->reason);
 
 		stream = audio_stream_by_ep_id(conn, ase_rsp->id);
 		if (stream == NULL) {
@@ -1985,7 +1976,7 @@ static int unicast_client_ep_config(struct bt_bap_ep *ep, struct net_buf_simple 
 		return -EINVAL;
 	}
 
-	switch (ep->status.state) {
+	switch (ep->state) {
 	/* Valid only if ASE_State field = 0x00 (Idle) */
 	case BT_BAP_EP_STATE_IDLE:
 		/* or 0x01 (Codec Configured) */
@@ -1994,15 +1985,14 @@ static int unicast_client_ep_config(struct bt_bap_ep *ep, struct net_buf_simple 
 	case BT_BAP_EP_STATE_QOS_CONFIGURED:
 		break;
 	default:
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->status.state));
+		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
 		return -EINVAL;
 	}
 
-	LOG_DBG("id 0x%02x dir %s codec 0x%02x", ep->status.id, bt_audio_dir_str(ep->dir),
-		codec_cfg->id);
+	LOG_DBG("id 0x%02x dir %s codec 0x%02x", ep->id, bt_audio_dir_str(ep->dir), codec_cfg->id);
 
 	req = net_buf_simple_add(buf, sizeof(*req));
-	req->ase = ep->status.id;
+	req->ase = ep->id;
 	req->latency = codec_cfg->target_latency;
 	req->phy = codec_cfg->target_phy;
 	req->codec.id = codec_cfg->id;
@@ -2029,14 +2019,14 @@ int bt_bap_unicast_client_ep_qos(struct bt_bap_ep *ep, struct net_buf_simple *bu
 		return -EINVAL;
 	}
 
-	switch (ep->status.state) {
+	switch (ep->state) {
 	/* Valid only if ASE_State field = 0x01 (Codec Configured) */
 	case BT_BAP_EP_STATE_CODEC_CONFIGURED:
 		/* or 0x02 (QoS Configured) */
 	case BT_BAP_EP_STATE_QOS_CONFIGURED:
 		break;
 	default:
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->status.state));
+		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
 		return -EINVAL;
 	}
 
@@ -2044,11 +2034,11 @@ int bt_bap_unicast_client_ep_qos(struct bt_bap_ep *ep, struct net_buf_simple *bu
 
 	LOG_DBG("id 0x%02x cig 0x%02x cis 0x%02x interval %u framing 0x%02x "
 		"phy 0x%02x sdu %u rtn %u latency %u pd %u",
-		ep->status.id, conn_iso->info.unicast.cig_id, conn_iso->info.unicast.cis_id,
-		qos->interval, qos->framing, qos->phy, qos->sdu, qos->rtn, qos->latency, qos->pd);
+		ep->id, conn_iso->info.unicast.cig_id, conn_iso->info.unicast.cis_id, qos->interval,
+		qos->framing, qos->phy, qos->sdu, qos->rtn, qos->latency, qos->pd);
 
 	req = net_buf_simple_add(buf, sizeof(*req));
-	req->ase = ep->status.id;
+	req->ase = ep->id;
 	/* TODO: don't hardcode CIG and CIS, they should come from ISO */
 	req->cig = conn_iso->info.unicast.cig_id;
 	req->cis = conn_iso->info.unicast.cis_id;
@@ -2074,15 +2064,15 @@ static int unicast_client_ep_enable(struct bt_bap_ep *ep, struct net_buf_simple 
 		return -EINVAL;
 	}
 
-	if (ep->status.state != BT_BAP_EP_STATE_QOS_CONFIGURED) {
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->status.state));
+	if (ep->state != BT_BAP_EP_STATE_QOS_CONFIGURED) {
+		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
 		return -EINVAL;
 	}
 
-	LOG_DBG("id 0x%02x", ep->status.id);
+	LOG_DBG("id 0x%02x", ep->id);
 
 	req = net_buf_simple_add(buf, sizeof(*req));
-	req->ase = ep->status.id;
+	req->ase = ep->id;
 
 	req->len = meta_len;
 	net_buf_simple_add_mem(buf, meta, meta_len);
@@ -2101,21 +2091,21 @@ static int unicast_client_ep_metadata(struct bt_bap_ep *ep, struct net_buf_simpl
 		return -EINVAL;
 	}
 
-	switch (ep->status.state) {
+	switch (ep->state) {
 	/* Valid for an ASE only if ASE_State field = 0x03 (Enabling) */
 	case BT_BAP_EP_STATE_ENABLING:
 	/* or 0x04 (Streaming) */
 	case BT_BAP_EP_STATE_STREAMING:
 		break;
 	default:
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->status.state));
+		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
 		return -EINVAL;
 	}
 
-	LOG_DBG("id 0x%02x", ep->status.id);
+	LOG_DBG("id 0x%02x", ep->id);
 
 	req = net_buf_simple_add(buf, sizeof(*req));
-	req->ase = ep->status.id;
+	req->ase = ep->id;
 
 	req->len = meta_len;
 	net_buf_simple_add_mem(buf, meta, meta_len);
@@ -2131,15 +2121,14 @@ static int unicast_client_ep_start(struct bt_bap_ep *ep, struct net_buf_simple *
 		return -EINVAL;
 	}
 
-	if (ep->status.state != BT_BAP_EP_STATE_ENABLING &&
-	    ep->status.state != BT_BAP_EP_STATE_DISABLING) {
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->status.state));
+	if (ep->state != BT_BAP_EP_STATE_ENABLING && ep->state != BT_BAP_EP_STATE_DISABLING) {
+		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
 		return -EINVAL;
 	}
 
-	LOG_DBG("id 0x%02x", ep->status.id);
+	LOG_DBG("id 0x%02x", ep->id);
 
-	net_buf_simple_add_u8(buf, ep->status.id);
+	net_buf_simple_add_u8(buf, ep->id);
 
 	return 0;
 }
@@ -2152,20 +2141,20 @@ static int unicast_client_ep_disable(struct bt_bap_ep *ep, struct net_buf_simple
 		return -EINVAL;
 	}
 
-	switch (ep->status.state) {
+	switch (ep->state) {
 	/* Valid only if ASE_State field = 0x03 (Enabling) */
 	case BT_BAP_EP_STATE_ENABLING:
 		/* or 0x04 (Streaming) */
 	case BT_BAP_EP_STATE_STREAMING:
 		break;
 	default:
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->status.state));
+		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
 		return -EINVAL;
 	}
 
-	LOG_DBG("id 0x%02x", ep->status.id);
+	LOG_DBG("id 0x%02x", ep->id);
 
-	net_buf_simple_add_u8(buf, ep->status.id);
+	net_buf_simple_add_u8(buf, ep->id);
 
 	return 0;
 }
@@ -2179,14 +2168,14 @@ static int unicast_client_ep_stop(struct bt_bap_ep *ep, struct net_buf_simple *b
 	}
 
 	/* Valid only if ASE_State field value = 0x05 (Disabling). */
-	if (ep->status.state != BT_BAP_EP_STATE_DISABLING) {
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->status.state));
+	if (ep->state != BT_BAP_EP_STATE_DISABLING) {
+		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
 		return -EINVAL;
 	}
 
-	LOG_DBG("id 0x%02x", ep->status.id);
+	LOG_DBG("id 0x%02x", ep->id);
 
-	net_buf_simple_add_u8(buf, ep->status.id);
+	net_buf_simple_add_u8(buf, ep->id);
 
 	return 0;
 }
@@ -2199,7 +2188,7 @@ static int unicast_client_ep_release(struct bt_bap_ep *ep, struct net_buf_simple
 		return -EINVAL;
 	}
 
-	switch (ep->status.state) {
+	switch (ep->state) {
 	/* Valid only if ASE_State field = 0x01 (Codec Configured) */
 	case BT_BAP_EP_STATE_CODEC_CONFIGURED:
 		/* or 0x02 (QoS Configured) */
@@ -2212,13 +2201,13 @@ static int unicast_client_ep_release(struct bt_bap_ep *ep, struct net_buf_simple
 	case BT_BAP_EP_STATE_DISABLING:
 		break;
 	default:
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->status.state));
+		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
 		return -EINVAL;
 	}
 
-	LOG_DBG("id 0x%02x", ep->status.id);
+	LOG_DBG("id 0x%02x", ep->id);
 
-	net_buf_simple_add_u8(buf, ep->status.id);
+	net_buf_simple_add_u8(buf, ep->id);
 
 	return 0;
 }
@@ -2344,7 +2333,7 @@ static void unicast_client_ep_reset(struct bt_conn *conn, uint8_t reason)
 }
 
 static void bt_bap_qos_cfg_to_cig_param(struct bt_iso_cig_param *cig_param,
-					    const struct bt_bap_unicast_group *group)
+					const struct bt_bap_unicast_group *group)
 {
 	cig_param->framing = group->cig_param.framing;
 	cig_param->c_to_p_interval = group->cig_param.c_to_p_interval;
@@ -2446,8 +2435,7 @@ static int bt_audio_cig_reconfigure(struct bt_bap_unicast_group *group)
 	return 0;
 }
 
-static void audio_stream_qos_cleanup(const struct bt_conn *conn,
-				     struct bt_bap_unicast_group *group)
+static void audio_stream_qos_cleanup(const struct bt_conn *conn, struct bt_bap_unicast_group *group)
 {
 	struct bt_bap_stream *stream;
 
@@ -2566,8 +2554,7 @@ static void unicast_client_qos_cfg_to_iso_qos(struct bt_bap_iso *iso,
 }
 
 static void unicast_group_set_iso_stream_param(struct bt_bap_unicast_group *group,
-					       struct bt_bap_iso *iso,
-					       struct bt_bap_qos_cfg *qos,
+					       struct bt_bap_iso *iso, struct bt_bap_qos_cfg *qos,
 					       enum bt_audio_dir dir)
 {
 	/* Store the stream Codec QoS in the bap_iso */
@@ -2741,14 +2728,12 @@ static void unicast_group_free(struct bt_bap_unicast_group *group)
 
 static int stream_param_check(const struct bt_bap_unicast_group_stream_param *param)
 {
-	CHECKIF(param->stream == NULL)
-	{
+	CHECKIF(param->stream == NULL) {
 		LOG_DBG("param->stream is NULL");
 		return -EINVAL;
 	}
 
-	CHECKIF(param->qos == NULL)
-	{
+	CHECKIF(param->qos == NULL) {
 		LOG_DBG("param->qos is NULL");
 		return -EINVAL;
 	}
@@ -2758,8 +2743,7 @@ static int stream_param_check(const struct bt_bap_unicast_group_stream_param *pa
 		return -EALREADY;
 	}
 
-	CHECKIF(bt_audio_verify_qos(param->qos) != BT_BAP_ASCS_REASON_NONE)
-	{
+	CHECKIF(bt_audio_verify_qos(param->qos) != BT_BAP_ASCS_REASON_NONE) {
 		LOG_DBG("Invalid QoS");
 		return -EINVAL;
 	}
@@ -2771,8 +2755,7 @@ static int stream_pair_param_check(const struct bt_bap_unicast_group_stream_pair
 {
 	int err;
 
-	CHECKIF(param->rx_param == NULL && param->tx_param == NULL)
-	{
+	CHECKIF(param->rx_param == NULL && param->tx_param == NULL) {
 		LOG_DBG("Invalid stream parameters");
 		return -EINVAL;
 	}
@@ -2943,13 +2926,12 @@ static bool valid_unicast_group_param(struct bt_bap_unicast_group *unicast_group
 }
 
 int bt_bap_unicast_group_create(struct bt_bap_unicast_group_param *param,
-				  struct bt_bap_unicast_group **out_unicast_group)
+				struct bt_bap_unicast_group **out_unicast_group)
 {
 	struct bt_bap_unicast_group *unicast_group;
 	int err;
 
-	CHECKIF(out_unicast_group == NULL)
-	{
+	CHECKIF(out_unicast_group == NULL) {
 		LOG_DBG("out_unicast_group is NULL");
 		return -EINVAL;
 	}
@@ -3098,8 +3080,8 @@ int bt_bap_unicast_group_reconfig(struct bt_bap_unicast_group *unicast_group,
 }
 
 int bt_bap_unicast_group_add_streams(struct bt_bap_unicast_group *unicast_group,
-				       struct bt_bap_unicast_group_stream_pair_param params[],
-				       size_t num_param)
+				     struct bt_bap_unicast_group_stream_pair_param params[],
+				     size_t num_param)
 {
 	struct bt_bap_stream *tmp_stream;
 	size_t total_stream_cnt;
@@ -3107,8 +3089,7 @@ int bt_bap_unicast_group_add_streams(struct bt_bap_unicast_group *unicast_group,
 	size_t num_added;
 	int err;
 
-	CHECKIF(unicast_group == NULL)
-	{
+	CHECKIF(unicast_group == NULL) {
 		LOG_DBG("unicast_group is NULL");
 		return -EINVAL;
 	}
@@ -3118,14 +3099,12 @@ int bt_bap_unicast_group_add_streams(struct bt_bap_unicast_group *unicast_group,
 		return -EINVAL;
 	}
 
-	CHECKIF(params == NULL)
-	{
+	CHECKIF(params == NULL) {
 		LOG_DBG("params is NULL");
 		return -EINVAL;
 	}
 
-	CHECKIF(num_param == 0)
-	{
+	CHECKIF(num_param == 0) {
 		LOG_DBG("num_param is 0");
 		return -EINVAL;
 	}
@@ -3194,8 +3173,7 @@ int bt_bap_unicast_group_delete(struct bt_bap_unicast_group *unicast_group)
 {
 	struct bt_bap_stream *stream;
 
-	CHECKIF(unicast_group == NULL)
-	{
+	CHECKIF(unicast_group == NULL) {
 		LOG_DBG("unicast_group is NULL");
 		return -EINVAL;
 	}
@@ -3387,12 +3365,12 @@ int bt_bap_unicast_client_qos(struct bt_conn *conn, struct bt_bap_unicast_group 
 		/* Can only be done if all the streams are in the codec
 		 * configured state or the QoS configured state
 		 */
-		switch (ep->status.state) {
+		switch (ep->state) {
 		case BT_BAP_EP_STATE_CODEC_CONFIGURED:
 		case BT_BAP_EP_STATE_QOS_CONFIGURED:
 			break;
 		default:
-			LOG_DBG("Invalid state: %s", bt_bap_ep_state_str(stream->ep->status.state));
+			LOG_DBG("Invalid state: %s", bt_bap_ep_state_str(stream->ep->state));
 			return -EINVAL;
 		}
 
@@ -3762,7 +3740,7 @@ int bt_bap_unicast_client_release(struct bt_bap_stream *stream)
 	len = buf->len;
 
 	/* Only attempt to release if not IDLE already */
-	if (stream->ep->status.state == BT_BAP_EP_STATE_IDLE) {
+	if (stream->ep->state == BT_BAP_EP_STATE_IDLE) {
 		bt_bap_stream_reset(stream);
 	} else {
 		err = unicast_client_ep_release(ep, buf);
@@ -3932,8 +3910,7 @@ static bool any_ases_found(const struct unicast_client *client)
 	return true;
 }
 
-static uint8_t unicast_client_ase_discover_cb(struct bt_conn *conn,
-					      const struct bt_gatt_attr *attr,
+static uint8_t unicast_client_ase_discover_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 					      struct bt_gatt_discover_params *discover)
 {
 	struct unicast_client *client;
@@ -4513,38 +4490,36 @@ static uint8_t unicast_client_read_func(struct bt_conn *conn, uint8_t err,
 		LOG_DBG("pac #%u/%u", i + 1, rsp->num_pac);
 
 		if (buf->len < sizeof(*pac_codec)) {
-			LOG_ERR("Malformed PAC: remaining len %u expected %zu",
-				buf->len, sizeof(*pac_codec));
+			LOG_ERR("Malformed PAC: remaining len %u expected %zu", buf->len,
+				sizeof(*pac_codec));
 			break;
 		}
 
 		pac_codec = net_buf_simple_pull_mem(buf, sizeof(*pac_codec));
 
 		if (buf->len < sizeof(*cc)) {
-			LOG_ERR("Malformed PAC: remaining len %u expected %zu",
-				buf->len, sizeof(*cc));
+			LOG_ERR("Malformed PAC: remaining len %u expected %zu", buf->len,
+				sizeof(*cc));
 			break;
 		}
 
 		cc = net_buf_simple_pull_mem(buf, sizeof(*cc));
 		if (buf->len < cc->len) {
-			LOG_ERR("Malformed PAC: remaining len %u expected %zu",
-				buf->len, cc->len);
+			LOG_ERR("Malformed PAC: remaining len %u expected %zu", buf->len, cc->len);
 			break;
 		}
 
 		cc_ltv = net_buf_simple_pull_mem(buf, cc->len);
 
 		if (buf->len < sizeof(*meta)) {
-			LOG_ERR("Malformed PAC: remaining len %u expected %zu",
-				buf->len, sizeof(*meta));
+			LOG_ERR("Malformed PAC: remaining len %u expected %zu", buf->len,
+				sizeof(*meta));
 			break;
 		}
 
 		meta = net_buf_simple_pull_mem(buf, sizeof(*meta));
 		if (buf->len < meta->len) {
-			LOG_ERR("Malformed PAC: remaining len %u expected %u",
-				buf->len, meta->len);
+			LOG_ERR("Malformed PAC: remaining len %u expected %u", buf->len, meta->len);
 			break;
 		}
 
@@ -4585,8 +4560,7 @@ fail:
 	return BT_GATT_ITER_STOP;
 }
 
-static uint8_t unicast_client_pac_discover_cb(struct bt_conn *conn,
-					      const struct bt_gatt_attr *attr,
+static uint8_t unicast_client_pac_discover_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 					      struct bt_gatt_discover_params *discover)
 {
 	struct unicast_client *client = &uni_cli_insts[bt_conn_index(conn)];

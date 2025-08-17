@@ -173,7 +173,7 @@ int bt_bap_unicast_server_metadata(struct bt_bap_stream *stream, const uint8_t m
 	(void)memcpy(ep->codec_cfg.meta, meta, meta_len);
 
 	/* Set the state to the same state to trigger the notifications */
-	return ascs_ep_set_state(ep, ep->status.state);
+	return ascs_ep_set_state(ep, ep->state);
 }
 
 int bt_bap_unicast_server_disable(struct bt_bap_stream *stream)
