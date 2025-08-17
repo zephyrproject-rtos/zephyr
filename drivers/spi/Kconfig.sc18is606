@@ -1,5 +1,5 @@
-#Copyright (c) 2025, tinyvision.ai
-#SPDX-License-Indentifier: Apache 2.0
+# Copyright (c) 2025, tinyvision.ai
+# SPDX-License-Identifier: Apache-2.0
 
 config SPI_SC18IS606
 	bool  "NXP SC18IS606 SPI controller driver"
@@ -10,7 +10,6 @@ config SPI_SC18IS606
 	  Enable driver for the NXP SC18IS606 SPI controller driver
 
 if SPI_SC18IS606
-
 
 config SPI_SC18IS606_INIT_PRIORITY
 	int "SC18IS606 SPI init priority"
