@@ -1,24 +1,22 @@
 description: |
-  SC18IS60S6 I2C to SPI Bridge with Selectable GPIOs
+  SPI device through NXP SC18IS606 I2C to SPI Bridge.
 
 compatible: "nxp,sc18is606-spi"
 include: spi-controller.yaml
 properties:
-  spi-clock-frequency:
+  frequency:
     type: int
-    required: false
-    default: 1875000
+    default: 1875
     enum:
-      - 1875000
-      - 455000
-      - 115000
-      - 58000
+      - 1875
+      - 455
+      - 115
+      - 58
 
-    description: SPI Clock frequency in Hz
+    description: SPI Clock frequency in KHz
 
   spi-mode:
     type: int
-    required: false
     default: 0
     enum:
       - 0
