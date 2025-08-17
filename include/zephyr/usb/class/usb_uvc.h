@@ -422,7 +422,11 @@ struct uvc_frame_discrete_descriptor {
 	uint32_t dwMaxVideoFrameBufferSize;
 	uint32_t dwDefaultFrameInterval;
 	uint8_t bFrameIntervalType;
+#ifdef CONFIG_USBD_VIDEO_MAX_FRMIVAL
 	uint32_t dwFrameInterval[CONFIG_USBD_VIDEO_MAX_FRMIVAL];
+#else
+	uint32_t dwFrameInterval[1];
+#endif
 } __packed;
 
 struct uvc_color_descriptor {
