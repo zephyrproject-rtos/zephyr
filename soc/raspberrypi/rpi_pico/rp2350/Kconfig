@@ -59,6 +59,23 @@ config RP2_REQUIRES_IMAGE_DEFINITION_BLOCK
 	  Include an Image Definition Block (IMAGE_DEF) to enable the bootroom in
 	  RP23XX devices to consider this a valid image in flash.
 
+config SOC_RP2350_CPU1_ENABLE
+	bool "Boot the RP2350 CPU1"
+	default y if IPM || MBOX
+	depends on SOC_RP2350A_M33_CPU0
+	depends on $(dt_nodelabel_enabled,sram0_cpu1)
+	select SOC_LATE_INIT_HOOK
+	help
+	  If enabled, the second CPU will be powered up and pointed to its application
+	  entrypoint during SoC late init hook.
+
+config SOC_RP2350_CPU1_ENABLE_CHECK_VTOR
+	bool "Check VTOR before booting the second core"
+	default y
+	depends on SOC_RP2350_CPU1_ENABLE
+	help
+	  Verify that VTOR pointers are valid before booting the second CPU.
+
 if SOC_RP2350A_M33_CPU1
 
 # If a code partition is defined for the CPU1 core,
