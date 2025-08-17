@@ -177,7 +177,7 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB4 0x00010000>,
+	clocks = <&rcc STM32_CLOCK(APB4, 16)>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
@@ -213,7 +213,7 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &fdcan1 {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>,
+	clocks = <&rcc STM32_CLOCK(APB1_2, 8)>,
 		 <&rcc STM32_SRC_PLL2_Q FDCAN_SEL(2)>;
 	pinctrl-0 = <&fdcan1_tx_ph13 &fdcan1_rx_ph14>;
 	pinctrl-names = "default";
@@ -221,7 +221,7 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &fdcan2 {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>,
+	clocks = <&rcc STM32_CLOCK(APB1_2, 8)>,
 		 <&rcc STM32_SRC_PLL2_Q FDCAN_SEL(2)>;
 	pinctrl-0 = <&fdcan2_rx_pb12 &fdcan2_tx_pb13>;
 	pinctrl-names = "default";
@@ -312,7 +312,7 @@ zephyr_udc0: &usbotg_fs {
 	ext-sdram = <&sdram1>;
 	status = "okay";
 
-	clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000008>,
+	clocks = <&rcc STM32_CLOCK(APB3, 3)>,
 		<&rcc STM32_SRC_PLL3_R NO_SEL>;
 
 	width = <480>;
