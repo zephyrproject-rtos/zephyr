@@ -23,7 +23,7 @@
 		compatible = "clock-state";
 		/* Enable PLL1 and switch clkout to use it */
 		clocks = <&xtal32m 1 &clk_in_en 1 &pll1clksel 1 &pll1_pdec 2
-			&pll1_directo 0 &pll1 300000000 4 75 0 39 19
+			&pll1_directo 0 &pll1 4 75 0 39 19
 			&pll1_bypass 0 &clkoutsel 5 &clkoutdiv 2>;
 		clock-frequency = <75000000>;
 	};

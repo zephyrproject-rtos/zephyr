@@ -4,8 +4,6 @@
 description: |
   LPC SYSCON LPC55Sxx PLL1. The node configures PLL1 on the LPC55Sxx series.
   The node accepts six specifiers, which have the following meanings:
-  - frequency: output frequency (before postdiv) this PLL will generate.
-    Set to 0 to power down.
   - ndec: PLL pre divider setting
   - mdec: PLL multiplier setting
   - selr: Bandwidth select R value. Should be 0 for normal applications
@@ -24,10 +22,9 @@ properties:
     description: PLL1CTRL register address for this block
 
   "#clock-cells":
-    const: 6
+    const: 5
 
 clock-cells:
-  - frequency
   - ndec
   - mdec
   - selr
