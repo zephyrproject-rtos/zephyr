@@ -9,7 +9,9 @@
 
 /* Return code used by syscon MUX to indicate to parents that it is using
  * the clock input, and therefore the clock cannot be gated.
+ * Deliberately use a somewhat esoteric error code to avoid
+ * collisions with other error codes.
  */
-#define NXP_SYSCON_MUX_ERR_SAFEGATE -EIO
+#define NXP_SYSCON_MUX_ERR_SAFEGATE -ECONNABORTED
 
 #endif /* ZEPHYR_DRIVERS_CLOCK_MANAGEMENT_NXP_SYSCON_NXP_SYSCON_INTERNAL_H_ */
