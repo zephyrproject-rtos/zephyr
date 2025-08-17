@@ -25,6 +25,7 @@
 #include <zephyr/usb/usb_ch9.h>
 #include <zephyr/usb/class/usbd_uvc.h>
 
+#include "usb_common_uvc.h"
 #include "usb_uvc.h"
 
 #include "../../../drivers/video/video_ctrls.h"
@@ -61,11 +62,6 @@ enum uvc_unit_id {
 	UVC_UNIT_ID_PU,
 	UVC_UNIT_ID_XU,
 	UVC_UNIT_ID_OT,
-};
-
-enum uvc_control_type {
-	UVC_CONTROL_SIGNED,
-	UVC_CONTROL_UNSIGNED,
 };
 
 union uvc_fmt_desc {
@@ -155,29 +151,6 @@ struct uvc_buf_info {
 	struct video_buffer *vbuf;
 } __packed;
 
-/* Mapping between UVC controls and Video controls */
-struct uvc_control_map {
-	/* Video CID to use for this control */
-	uint32_t cid;
-	/* Size to write out */
-	uint8_t size;
-	/* Bit position in the UVC control */
-	uint8_t bit;
-	/* UVC selector identifying this control */
-	uint8_t selector;
-	/* Whether the UVC value is signed, always false for bitmaps and boolean */
-	enum uvc_control_type type;
-};
-
-struct uvc_guid_quirk {
-	/* A Video API format identifier, for which the UVC format GUID is not standard. */
-	uint32_t fourcc;
-	/* GUIDs are 16-bytes long, with the first four bytes being the Four Character Code of the
-	 * format and the rest constant, except for some exceptions listed in this table.
-	 */
-	uint8_t guid[16];
-};
-
 #define UVC_TOTAL_BUFS (DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) * CONFIG_USBD_VIDEO_NUM_BUFS)
 
 UDC_BUF_POOL_VAR_DEFINE(uvc_buf_pool, UVC_TOTAL_BUFS, UVC_TOTAL_BUFS * USBD_MAX_BULK_MPS,
@@ -186,202 +159,6 @@ UDC_BUF_POOL_VAR_DEFINE(uvc_buf_pool, UVC_TOTAL_BUFS, UVC_TOTAL_BUFS * USBD_MAX_
 static void uvc_flush_queue(const struct device *dev);
 
 /* UVC helper functions */
-
-static const struct uvc_guid_quirk uvc_guid_quirks[] = {
-	{
-		.fourcc = VIDEO_PIX_FMT_YUYV,
-		.guid = UVC_FORMAT_GUID("YUY2"),
-	},
-	{
-		.fourcc = VIDEO_PIX_FMT_GREY,
-		.guid = UVC_FORMAT_GUID("Y800"),
-	},
-};
-
-static void uvc_fourcc_to_guid(uint8_t guid[16], const uint32_t fourcc)
-{
-	uint32_t fourcc_le;
-
-	/* Lookup in the "quirk table" if the UVC format GUID is custom */
-	for (int i = 0; i < ARRAY_SIZE(uvc_guid_quirks); i++) {
-		if (uvc_guid_quirks[i].fourcc == fourcc) {
-			memcpy(guid, uvc_guid_quirks[i].guid, 16);
-			return;
-		}
-	}
-
-	/* By default, UVC GUIDs are the four character code followed by a common suffix */
-	fourcc_le = sys_cpu_to_le32(fourcc);
-	/* Copy the common suffix with the GUID set to 'XXXX' */
-	memcpy(guid, UVC_FORMAT_GUID("XXXX"), 16);
-	/* Replace the 'XXXX' by the actual GUID of the format */
-	memcpy(guid, &fourcc_le, 4);
-}
-
-static uint32_t uvc_guid_to_fourcc(const uint8_t guid[16])
-{
-	uint32_t fourcc;
-
-	/* Lookup in the "quirk table" if the UVC format GUID is custom */
-	for (int i = 0; i < ARRAY_SIZE(uvc_guid_quirks); i++) {
-		if (memcmp(guid, uvc_guid_quirks[i].guid, 16) == 0) {
-			return uvc_guid_quirks[i].fourcc;
-		}
-	}
-
-	/* Extract the four character code out of the leading 4 bytes of the GUID */
-	memcpy(&fourcc, guid, 4);
-	fourcc = sys_le32_to_cpu(fourcc);
-
-	return fourcc;
-}
-
-/* UVC control handling */
-
-static const struct uvc_control_map uvc_control_map_ct[] = {
-	{
-		.size = 1,
-		.bit = 1,
-		.selector = UVC_CT_AE_MODE_CONTROL,
-		.cid = VIDEO_CID_EXPOSURE_AUTO,
-		.type = UVC_CONTROL_UNSIGNED,
-	},
-	{
-		.size = 1,
-		.bit = 2,
-		.selector = UVC_CT_AE_PRIORITY_CONTROL,
-		.cid = VIDEO_CID_EXPOSURE_AUTO_PRIORITY,
-		.type = UVC_CONTROL_UNSIGNED,
-	},
-	{
-		.size = 4,
-		.bit = 3,
-		.selector = UVC_CT_EXPOSURE_TIME_ABS_CONTROL,
-		.cid = VIDEO_CID_EXPOSURE,
-		.type = UVC_CONTROL_UNSIGNED,
-	},
-	{
-		.size = 2,
-		.bit = 5,
-		.selector = UVC_CT_FOCUS_ABS_CONTROL,
-		.cid = VIDEO_CID_FOCUS_ABSOLUTE,
-		.type = UVC_CONTROL_UNSIGNED,
-	},
-	{
-		.size = 2,
-		.bit = 6,
-		.selector = UVC_CT_FOCUS_REL_CONTROL,
-		.cid = VIDEO_CID_FOCUS_RELATIVE,
-		.type = UVC_CONTROL_SIGNED,
-	},
-	{
-		.size = 2,
-		.bit = 7,
-		.selector = UVC_CT_IRIS_ABS_CONTROL,
-		.cid = VIDEO_CID_IRIS_ABSOLUTE,
-		.type = UVC_CONTROL_UNSIGNED,
-	},
-	{
-		.size = 1,
-		.bit = 8,
-		.selector = UVC_CT_IRIS_REL_CONTROL,
-		.cid = VIDEO_CID_IRIS_RELATIVE,
-		.type = UVC_CONTROL_SIGNED,
-	},
-	{
-		.size = 2,
-		.bit = 9,
-		.selector = UVC_CT_ZOOM_ABS_CONTROL,
-		.cid = VIDEO_CID_ZOOM_ABSOLUTE,
-		.type = UVC_CONTROL_UNSIGNED,
-	},
-	{
-		.size = 3,
-		.bit = 10,
-		.selector = UVC_CT_ZOOM_REL_CONTROL,
-		.cid = VIDEO_CID_ZOOM_RELATIVE,
-		.type = UVC_CONTROL_SIGNED,
-	},
-};
-
-static const struct uvc_control_map uvc_control_map_pu[] = {
-	{
-		.size = 2,
-		.bit = 0,
-		.selector = UVC_PU_BRIGHTNESS_CONTROL,
-		.cid = VIDEO_CID_BRIGHTNESS,
-		.type = UVC_CONTROL_SIGNED,
-	},
-	{
-		.size = 1,
-		.bit = 1,
-		.selector = UVC_PU_CONTRAST_CONTROL,
-		.cid = VIDEO_CID_CONTRAST,
-		.type = UVC_CONTROL_UNSIGNED,
-	},
-	{
-		.size = 2,
-		.bit = 9,
-		.selector = UVC_PU_GAIN_CONTROL,
-		.cid = VIDEO_CID_GAIN,
-		.type = UVC_CONTROL_UNSIGNED,
-	},
-	{
-		.size = 2,
-		.bit = 3,
-		.selector = UVC_PU_SATURATION_CONTROL,
-		.cid = VIDEO_CID_SATURATION,
-		.type = UVC_CONTROL_UNSIGNED,
-	},
-	{
-		.size = 2,
-		.bit = 6,
-		.selector = UVC_PU_WHITE_BALANCE_TEMP_CONTROL,
-		.cid = VIDEO_CID_WHITE_BALANCE_TEMPERATURE,
-		.type = UVC_CONTROL_UNSIGNED,
-	},
-};
-
-static const struct uvc_control_map uvc_control_map_su[] = {
-	{
-		.size = 1,
-		.bit = 0,
-		.selector = UVC_SU_INPUT_SELECT_CONTROL,
-		.cid = VIDEO_CID_TEST_PATTERN,
-		.type = UVC_CONTROL_UNSIGNED,
-	},
-};
-
-static const struct uvc_control_map uvc_control_map_xu[] = {
-	{
-		.size = 4,
-		.bit = 0,
-		.selector = UVC_XU_BASE_CONTROL + 0,
-		.cid = VIDEO_CID_PRIVATE_BASE + 0,
-		.type = UVC_CONTROL_UNSIGNED,
-	},
-	{
-		.size = 4,
-		.bit = 1,
-		.selector = UVC_XU_BASE_CONTROL + 1,
-		.cid = VIDEO_CID_PRIVATE_BASE + 1,
-		.type = UVC_CONTROL_UNSIGNED,
-	},
-	{
-		.size = 4,
-		.bit = 2,
-		.selector = UVC_XU_BASE_CONTROL + 2,
-		.cid = VIDEO_CID_PRIVATE_BASE + 2,
-		.type = UVC_CONTROL_UNSIGNED,
-	},
-	{
-		.size = 4,
-		.bit = 3,
-		.selector = UVC_XU_BASE_CONTROL + 3,
-		.cid = VIDEO_CID_PRIVATE_BASE + 3,
-		.type = UVC_CONTROL_UNSIGNED,
-	},
-};
 
 /* Get the format and frame descriptors selected for the given VideoStreaming interface. */
 static void uvc_get_vs_fmtfrm_desc(const struct device *dev,
@@ -1168,6 +945,7 @@ static int uvc_get_control_op(const struct device *dev, const struct usb_setup_p
 	uint8_t unit_id = setup->wIndex >> 8;
 	uint8_t selector = setup->wValue >> 8;
 	uint8_t subtype = 0;
+	int ret;
 
 	/* VideoStreaming operation */
 
@@ -1200,44 +978,22 @@ static int uvc_get_control_op(const struct device *dev, const struct usb_setup_p
 	for (int i = UVC_IDX_VC_UNIT;; i++) {
 		struct uvc_unit_descriptor *desc = (void *)cfg->fs_desc[i];
 
-		if (desc->bDescriptorType != USB_DESC_CS_INTERFACE ||
-		    (desc->bDescriptorSubtype != UVC_VC_INPUT_TERMINAL &&
-		     desc->bDescriptorSubtype != UVC_VC_ENCODING_UNIT &&
-		     desc->bDescriptorSubtype != UVC_VC_SELECTOR_UNIT &&
-		     desc->bDescriptorSubtype != UVC_VC_EXTENSION_UNIT &&
-		     desc->bDescriptorSubtype != UVC_VC_PROCESSING_UNIT)) {
+		if (desc->bDescriptorType != USB_DESC_CS_INTERFACE) {
 			break;
 		}
 
+		ret = uvc_get_control_map(desc->bDescriptorSubtype, &list, &list_sz);
+		if (ret != 0) {
+			goto err;
+		}
+
 		if (unit_id == desc->bUnitID) {
-			subtype = desc->bDescriptorSubtype;
 			break;
 		}
 	}
 
 	if (subtype == 0) {
 		goto err;
-	}
-
-	switch (subtype) {
-	case UVC_VC_INPUT_TERMINAL:
-		list = uvc_control_map_ct;
-		list_sz = ARRAY_SIZE(uvc_control_map_ct);
-		break;
-	case UVC_VC_SELECTOR_UNIT:
-		list = uvc_control_map_su;
-		list_sz = ARRAY_SIZE(uvc_control_map_su);
-		break;
-	case UVC_VC_PROCESSING_UNIT:
-		list = uvc_control_map_pu;
-		list_sz = ARRAY_SIZE(uvc_control_map_pu);
-		break;
-	case UVC_VC_EXTENSION_UNIT:
-		list = uvc_control_map_xu;
-		list_sz = ARRAY_SIZE(uvc_control_map_xu);
-		break;
-	default:
-		CODE_UNREACHABLE;
 	}
 
 	*map = NULL;
@@ -1763,7 +1519,9 @@ void uvc_set_video_dev(const struct device *const dev, const struct device *cons
 {
 	struct uvc_data *data = dev->data;
 	const struct uvc_config *cfg = dev->config;
+	const struct uvc_control_map *map = NULL;
 	uint32_t mask = 0;
+	size_t map_sz = 0;
 
 	data->video_dev = video_dev;
 
@@ -1771,17 +1529,20 @@ void uvc_set_video_dev(const struct device *const dev, const struct device *cons
 
 	cfg->desc->if0_hdr.baInterfaceNr[0] = cfg->desc->if1.bInterfaceNumber;
 
-	mask = uvc_get_mask(data->video_dev, uvc_control_map_ct, ARRAY_SIZE(uvc_control_map_ct));
+	uvc_get_control_map(UVC_VC_INPUT_TERMINAL, &map, &map_sz);
+	mask = uvc_get_mask(data->video_dev, map, map_sz);
 	cfg->desc->if0_ct.bmControls[0] = mask >> 0;
 	cfg->desc->if0_ct.bmControls[1] = mask >> 8;
 	cfg->desc->if0_ct.bmControls[2] = mask >> 16;
 
-	mask = uvc_get_mask(data->video_dev, uvc_control_map_pu, ARRAY_SIZE(uvc_control_map_pu));
+	uvc_get_control_map(UVC_VC_PROCESSING_UNIT, &map, &map_sz);
+	mask = uvc_get_mask(data->video_dev, map, map_sz);
 	cfg->desc->if0_pu.bmControls[0] = mask >> 0;
 	cfg->desc->if0_pu.bmControls[1] = mask >> 8;
 	cfg->desc->if0_pu.bmControls[2] = mask >> 16;
 
-	mask = uvc_get_mask(data->video_dev, uvc_control_map_xu, ARRAY_SIZE(uvc_control_map_xu));
+	uvc_get_control_map(UVC_VC_EXTENSION_UNIT, &map, &map_sz);
+	mask = uvc_get_mask(data->video_dev, map, map_sz);
 	cfg->desc->if0_xu.bmControls[0] = mask >> 0;
 	cfg->desc->if0_xu.bmControls[1] = mask >> 8;
 	cfg->desc->if0_xu.bmControls[2] = mask >> 16;
