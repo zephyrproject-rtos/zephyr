@@ -1,0 +1,33 @@
+description: |
+  NXP SC18IS606 I2C to SPI/GPIO bridge.
+
+  The SC18IS606 is supports both an external SPI and GPIO controller.
+  These controllers have to be added  to the Device Tree as children, While
+  the device itself has to be a child of a I2C controller.
+
+  An example configuration:
+
+  &i2c0 {
+    status = "okay";
+    pinctrl-0 = <&i2c0_default>;
+    pinctrl-names = "default";
+
+    sc18is606: sc18is606 {
+      compatible ="nxp, sc18is606";
+      status = "okay";
+
+
+      spi_ext: sc18is606_spi {
+        compatible = "nxp,sc18is606-spi";
+        status = "okay";
+        #address-cells = <1>;
+        #size-cells = <0>;
+      };
+    };
+  };
+
+
+compatible: "nxp,sc18is606"
+include: i2c-device.yaml
+
+bus: nxp,sc18is606
