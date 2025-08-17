@@ -81,3 +81,11 @@ tests:
       - max32655evkit/max32655/m4
       - max32690evkit/max32690/m4
       - max78002evkit/max78002/m4
+  ipc.ipc_sessions.rp2350:
+    platform_allow:
+      - rpi_pico2/rp2350a/m33
+    integration_platforms:
+      - rpi_pico2/rp2350a/m33
+    extra_args:
+      - ipc_sessions_SNIPPET=rp2xxx-cpu1
+      - CONFIG_IPC_TEST_SKIP_CORE_RESET=y
