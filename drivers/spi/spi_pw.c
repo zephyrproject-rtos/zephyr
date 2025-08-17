@@ -20,6 +20,11 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "DT need CONFIG_PCIE");
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_pw, CONFIG_SPI_LOG_LEVEL);
 
+#if defined(CONFIG_SPI_PW_LPSS_DMA)
+#include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/dma/dma_intel_lpss.h>
+#endif
+
 #include "spi_pw.h"
 
 static uint32_t spi_pw_reg_read(const struct device *dev, uint32_t offset)
@@ -207,12 +212,16 @@ static void spi_pw_rx_thld_set(const struct device *dev,
 {
 	uint32_t reg_data;
 
-	/* Rx threshold */
-	reg_data = spi_pw_reg_read(dev, PW_SPI_REG_SIRF);
-	reg_data &= (uint32_t) ~(PW_SPI_WM_MASK);
-	reg_data |= PW_SPI_SIRF_WM_DFLT;
-	if (spi->ctx.rx_len && spi->ctx.rx_len < spi->fifo_depth) {
-		reg_data = spi->ctx.rx_len - 1;
+	if (IS_ENABLED(CONFIG_SPI_PW_LPSS_DMA)) {
+		reg_data = 0;
+	} else {
+		/* Rx threshold */
+		reg_data = spi_pw_reg_read(dev, PW_SPI_REG_SIRF);
+		reg_data &= (uint32_t) ~(PW_SPI_WM_MASK);
+		reg_data |= PW_SPI_SIRF_WM_DFLT;
+		if (spi->ctx.rx_len && spi->ctx.rx_len < spi->fifo_depth) {
+			reg_data = spi->ctx.rx_len - 1;
+		}
 	}
 	spi_pw_reg_write(dev, PW_SPI_REG_SIRF, reg_data);
 }
@@ -320,6 +329,181 @@ static void spi_pw_config_clk(const struct device *dev,
 	ctrlr0 |= (scr << PW_SPI_SCR_SHIFT);
 	spi_pw_reg_write(dev, PW_SPI_REG_CTRLR0, ctrlr0);
 }
+
+#ifdef CONFIG_SPI_PW_LPSS_DMA
+static void spi_pw_idma_intr_enable(const struct device *dev, bool enable)
+{
+	uint32_t reg;
+
+	reg = spi_pw_reg_read(dev, PW_SPI_REG_CTRLR1);
+
+	if (enable) {
+		reg |= PW_SPI_IDMA_INTR;
+		spi_pw_reg_write(dev, PW_SPI_REG_CTRLR1, reg);
+	} else {
+		reg &= ~(PW_SPI_IDMA_INTR);
+		spi_pw_reg_write(dev, PW_SPI_REG_CTRLR1, reg);
+	}
+}
+
+static void cb_idma_transfer(const struct device *dma, void *user_data,
+			 uint32_t channel, int status)
+{
+	const struct device *dev = (const struct device *)user_data;
+	struct spi_pw_data *spi = dev->data;
+	const struct spi_pw_config *info = dev->config;
+
+	dma_stop(info->dma_dev, channel);
+	/* See tx or rx finished */
+	if (channel == DMA_INTEL_LPSS_TX_CHAN) {
+		spi->dma_tx_finished = true;
+
+		/* Waiting for TX FIFO empty */
+		while (is_pw_ssp_busy(dev)) {
+		}
+	} else if (channel == DMA_INTEL_LPSS_RX_CHAN) {
+		spi->dma_rx_finished = true;
+	}
+	/* All tx and rx finished */
+	if ((spi->dma_tx_finished == true) &&
+	    (spi->dma_rx_finished == true)) {
+		spi_pw_idma_intr_enable(dev, false);
+		spi_pw_intr_disable(dev);
+		spi_pw_ssp_disable(dev);
+		spi_pw_cs_ctrl_enable(dev, false);
+		spi_context_complete(&spi->ctx, dev, status);
+	}
+}
+
+static inline void *spi_pw_dr_phy_addr(const struct device *dev)
+{
+	struct spi_pw_data *spi = dev->data;
+	/* Physical FIFO addr */
+	return (void *) (spi->phy_addr + PW_SPI_REG_SSDR);
+}
+
+static int32_t spi_pw_idma_transfer(const struct device *dev,
+				    const struct spi_buf_set *tx_bufs,
+				    const struct spi_buf_set *rx_bufs)
+{
+	struct spi_pw_data *spi = dev->data;
+	const struct spi_pw_config *info = dev->config;
+	struct dma_config dma_cfg_tx = { 0 };
+	struct dma_config dma_cfg_rx = { 0 };
+	struct dma_block_config *dma_blocks_tx = NULL;
+	struct dma_block_config *dma_blocks_rx = NULL;
+	size_t tx_count = tx_bufs ? tx_bufs->count : 0;
+	size_t rx_count = rx_bufs ? rx_bufs->count : 0;
+	size_t i;
+
+	spi->dma_tx_finished = false;
+	spi->dma_rx_finished = false;
+
+	if (!device_is_ready(info->dma_dev)) {
+		LOG_DBG("DMA device is not ready");
+		return  -ENODEV;
+	}
+
+	if (tx_count > 0) {
+		dma_blocks_tx = k_calloc(tx_count, sizeof(struct dma_block_config));
+		if (!dma_blocks_tx) {
+			LOG_ERR("Failed to allocate TX dma_block_config");
+			return -ENOMEM;
+		}
+		for (i = 0; i < tx_count; i++) {
+			dma_blocks_tx[i].block_size = tx_bufs->buffers[i].len;
+			dma_blocks_tx[i].source_address = (uint64_t)tx_bufs->buffers[i].buf;
+			dma_blocks_tx[i].dest_address = (uint64_t)spi_pw_dr_phy_addr(dev);
+			dma_blocks_tx[i].next_block =
+				       (i + 1 < tx_count) ? &dma_blocks_tx[i + 1] : NULL;
+		}
+		dma_cfg_tx.dma_slot = 0U;
+		dma_cfg_tx.channel_direction = MEMORY_TO_PERIPHERAL;
+		dma_cfg_tx.source_data_size = 1U;
+		dma_cfg_tx.dest_data_size = 1U;
+		dma_cfg_tx.source_burst_length = 1U;
+		dma_cfg_tx.dest_burst_length = 1U;
+		dma_cfg_tx.dma_callback = cb_idma_transfer;
+		dma_cfg_tx.user_data = (void *)dev;
+		dma_cfg_tx.complete_callback_en = 0U;
+		dma_cfg_tx.error_callback_dis = 1U;
+		dma_cfg_tx.block_count = tx_count;
+		dma_cfg_tx.head_block = &dma_blocks_tx[0];
+		if (dma_config(info->dma_dev, DMA_INTEL_LPSS_TX_CHAN, &dma_cfg_tx)) {
+			LOG_DBG("Error TX transfer");
+			k_free(dma_blocks_tx);
+			return  -EIO;
+		}
+		if (dma_start(info->dma_dev, DMA_INTEL_LPSS_TX_CHAN)) {
+			LOG_DBG("Error TX transfer");
+			k_free(dma_blocks_tx);
+			return  -EIO;
+		}
+	}
+
+	if (rx_count > 0) {
+		dma_blocks_rx = k_calloc(rx_count, sizeof(struct dma_block_config));
+		if (!dma_blocks_rx) {
+			LOG_ERR("Failed to allocate RX dma_block_config");
+			if (dma_blocks_tx) {
+				k_free(dma_blocks_tx);
+			}
+			return -ENOMEM;
+		}
+		for (i = 0; i < rx_count; i++) {
+			dma_blocks_rx[i].block_size = rx_bufs->buffers[i].len;
+			dma_blocks_rx[i].dest_address = (uint64_t)rx_bufs->buffers[i].buf;
+			dma_blocks_rx[i].source_address = (uint64_t)spi_pw_dr_phy_addr(dev);
+			dma_blocks_rx[i].next_block =
+				       (i + 1 < rx_count) ? &dma_blocks_rx[i + 1] : NULL;
+		}
+		dma_cfg_rx.dma_slot = 1U;
+		dma_cfg_rx.channel_direction = PERIPHERAL_TO_MEMORY;
+		dma_cfg_rx.source_data_size = 1U;
+		dma_cfg_rx.dest_data_size = 1U;
+		dma_cfg_rx.source_burst_length = 1U;
+		dma_cfg_rx.dest_burst_length = 1U;
+		dma_cfg_rx.dma_callback = cb_idma_transfer;
+		dma_cfg_rx.user_data = (void *)dev;
+		dma_cfg_rx.complete_callback_en = 0U;
+		dma_cfg_rx.error_callback_dis = 1U;
+		dma_cfg_rx.block_count = rx_count;
+		dma_cfg_rx.head_block = &dma_blocks_rx[0];
+		if (dma_config(info->dma_dev, DMA_INTEL_LPSS_RX_CHAN, &dma_cfg_rx)) {
+			LOG_DBG("Error RX transfer");
+			if (dma_blocks_tx) {
+				k_free(dma_blocks_tx);
+			}
+			k_free(dma_blocks_rx);
+			return  -EIO;
+		}
+		if (dma_start(info->dma_dev, DMA_INTEL_LPSS_RX_CHAN)) {
+			LOG_DBG("Error RX transfer");
+			if (dma_blocks_tx) {
+				k_free(dma_blocks_tx);
+			}
+			k_free(dma_blocks_rx);
+			return  -EIO;
+		}
+	}
+
+	/* enable ssp interrupts */
+	spi_pw_intr_enable(dev, true);
+
+	/* Enable dma intr */
+	spi_pw_idma_intr_enable(dev, true);
+
+	if (dma_blocks_tx) {
+		k_free(dma_blocks_tx);
+	}
+	if (dma_blocks_rx) {
+		k_free(dma_blocks_rx);
+	}
+
+	return 0;
+}
+
+#else
 
 static void spi_pw_completed(const struct device *dev, int err)
 {
@@ -539,6 +723,7 @@ out:
 
 	return err;
 }
+#endif
 
 static int spi_pw_configure(const struct device *dev,
 			    const struct spi_pw_config *info,
@@ -658,6 +843,16 @@ static int transceive(const struct device *dev,
 	spi_pw_ssp_enable(dev);
 
 #ifdef CONFIG_SPI_PW_INTERRUPT
+#ifdef CONFIG_SPI_PW_LPSS_DMA
+
+	LOG_DBG("DMA Mode");
+	err = spi_pw_idma_transfer(dev, tx_bufs, rx_bufs);
+	if (err) {
+		goto out;
+	}
+
+	err = spi_context_wait_for_completion(&spi->ctx);
+#else
 	LOG_DBG("Interrupt Mode");
 
 	/* Enable interrupts */
@@ -668,6 +863,7 @@ static int transceive(const struct device *dev,
 	}
 
 	err = spi_context_wait_for_completion(&spi->ctx);
+#endif
 #else
 	LOG_DBG("Polling Mode");
 
@@ -727,10 +923,16 @@ static int spi_pw_release(const struct device *dev,
 static void spi_pw_isr(const void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
+#ifdef CONFIG_SPI_PW_LPSS_DMA
+	const struct spi_pw_config *info = dev->config;
+
+	dma_intel_lpss_isr(info->dma_dev);
+#else
 	int err;
 
 	err = spi_pw_transfer(dev);
 	spi_pw_completed(dev, err);
+#endif
 }
 #endif
 
@@ -774,7 +976,23 @@ static int spi_pw_init(const struct device *dev)
 		pcie_set_cmd(info->pcie->bdf,
 			     PCIE_CONF_CMDSTAT_MASTER,
 			     true);
+#if defined(CONFIG_SPI_PW_LPSS_DMA)
+		uintptr_t base;
 
+		base = DEVICE_MMIO_GET(dev) + DMA_INTEL_LPSS_OFFSET;
+		dma_intel_lpss_set_base(info->dma_dev, base);
+
+		pcie_set_cmd(info->pcie->bdf, PCIE_CONF_CMDSTAT_MASTER, true);
+		/* Assign physical & virtual address to dma instance */
+		spi->phy_addr = mbar.phys_addr;
+		spi->base_addr = (uint32_t)(DEVICE_MMIO_GET(dev) + PW_SPI_IDMA_OFFSET);
+		sys_write32((uint32_t)spi->phy_addr,
+			    DEVICE_MMIO_GET(dev) + DMA_INTEL_LPSS_REMAP_LOW);
+		sys_write32((uint32_t)(spi->phy_addr >> DMA_INTEL_LPSS_ADDR_RIGHT_SHIFT),
+			    DEVICE_MMIO_GET(dev) + DMA_INTEL_LPSS_REMAP_HI);
+		LOG_DBG("spi inst phy addr: [0x%lx], mmio addr: [0x%lx]",
+				spi->phy_addr, spi->base_addr);
+#endif
 	} else {
 		DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 	}
@@ -785,6 +1003,10 @@ static int spi_pw_init(const struct device *dev)
 	/* Bring ssp out of reset */
 	spi_pw_ssp_reset(dev);
 
+#if defined(CONFIG_SPI_PW_LPSS_DMA)
+	/* Enable DMA controller */
+	dma_intel_lpss_setup(info->dma_dev);
+#endif
 	/* Disable ssp operation */
 	spi_pw_ssp_disable(dev);
 
@@ -823,6 +1045,12 @@ static int spi_pw_init(const struct device *dev)
 #define SPI_PCIE_DEFINE(n) _CONCAT(DEFINE_PCIE, DT_INST_ON_BUS(n, pcie))(n)
 
 #ifdef CONFIG_SPI_PW_INTERRUPT
+
+#define SPI_CONFIG_DMA_INIT(n)                                          \
+	COND_CODE_1(CONFIG_SPI_PW_LPSS_DMA,                             \
+	(COND_CODE_1(DT_INST_NODE_HAS_PROP(n, dmas),                    \
+	(.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_IDX(n, 0)),),    \
+	())), ())
 
 #define SPI_INTEL_IRQ_FLAGS_SENSE0(n) 0
 #define SPI_INTEL_IRQ_FLAGS_SENSE1(n) DT_INST_IRQ(n, sense)
@@ -870,6 +1098,7 @@ static int spi_pw_init(const struct device *dev)
 		.irq_config = spi_##n##_irq_init,		     \
 		.clock_freq = DT_INST_PROP(n, clock_frequency),	     \
 		INIT_PCIE(n)					     \
+		SPI_CONFIG_DMA_INIT(n)			             \
 	};							     \
 	SPI_DEVICE_DT_INST_DEFINE(n, spi_pw_init, NULL,		     \
 			      &spi_##n##_data, &spi_##n##_config,    \
