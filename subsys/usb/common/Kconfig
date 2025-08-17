@@ -1,0 +1,7 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config USB_COMMON_UVC
+	bool
+	help
+	  Enable resources used by both UVC device and host

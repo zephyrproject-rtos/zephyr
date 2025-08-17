@@ -6,6 +6,7 @@ config USBD_VIDEO_CLASS
 	bool "USB Video Class implementation [EXPERIMENTAL]"
 	depends on DT_HAS_ZEPHYR_UVC_DEVICE_ENABLED
 	select EXPERIMENTAL
+	select USB_COMMON_UVC
 	help
 	  USB Device Video Class (UVC) implementation.
 
