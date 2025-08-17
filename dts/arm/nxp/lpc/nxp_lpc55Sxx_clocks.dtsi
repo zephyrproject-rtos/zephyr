@@ -290,7 +290,7 @@
 		pll0: pll0@40000580 {
 			compatible = "nxp,lpc55sxx-pll0";
 			reg = <0x40000580 0x20>;
-			#clock-cells = <9>;
+			#clock-cells = <8>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -344,7 +344,7 @@
 		pll1: pll1@40000560 {
 			compatible = "nxp,lpc55sxx-pll1";
 			reg = <0x40000560 0x20>;
-			#clock-cells = <6>;
+			#clock-cells = <5>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
