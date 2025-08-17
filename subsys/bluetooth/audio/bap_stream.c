@@ -126,8 +126,8 @@ int bt_bap_ep_get_info(const struct bt_bap_ep *ep, struct bt_bap_ep_info *info)
 
 	dir = ep->dir;
 
-	info->id = ep->status.id;
-	info->state = ep->status.state;
+	info->id = ep->id;
+	info->state = ep->state;
 	info->dir = dir;
 	info->qos_pref = &ep->qos_pref;
 
@@ -380,9 +380,9 @@ static int bap_stream_send(struct bt_bap_stream *stream, struct net_buf *buf, ui
 
 	ep = stream->ep;
 
-	if (ep->status.state != BT_BAP_EP_STATE_STREAMING) {
+	if (ep->state != BT_BAP_EP_STATE_STREAMING) {
 		LOG_DBG("Channel %p not ready for streaming (state: %s)", stream,
-			bt_bap_ep_state_str(ep->status.state));
+			bt_bap_ep_state_str(ep->state));
 		return -EBADMSG;
 	}
 
@@ -486,8 +486,8 @@ bool bt_bap_stream_can_disconnect(const struct bt_bap_stream *stream)
 		/* If there are no paired endpoint, or the paired endpoint is in the QoS Configured
 		 * or Codec Configured state, we can disconnect the CIS
 		 */
-		if (pair_ep == NULL || pair_ep->status.state == BT_BAP_EP_STATE_QOS_CONFIGURED ||
-			pair_ep->status.state == BT_BAP_EP_STATE_CODEC_CONFIGURED) {
+		if (pair_ep == NULL || pair_ep->state == BT_BAP_EP_STATE_QOS_CONFIGURED ||
+		    pair_ep->state == BT_BAP_EP_STATE_CODEC_CONFIGURED) {
 			return true;
 		}
 	}
@@ -619,7 +619,7 @@ int bt_bap_stream_config(struct bt_conn *conn, struct bt_bap_stream *stream, str
 		return -EINVAL;
 	}
 
-	switch (ep->status.state) {
+	switch (ep->state) {
 	/* Valid only if ASE_State field = 0x00 (Idle) */
 	case BT_BAP_EP_STATE_IDLE:
 		/* or 0x01 (Codec Configured) */
@@ -628,7 +628,7 @@ int bt_bap_stream_config(struct bt_conn *conn, struct bt_bap_stream *stream, str
 	case BT_BAP_EP_STATE_QOS_CONFIGURED:
 		break;
 	default:
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->status.state));
+		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
 		return -EBADMSG;
 	}
 
@@ -699,8 +699,8 @@ int bt_bap_stream_enable(struct bt_bap_stream *stream, const uint8_t meta[], siz
 	}
 
 	/* Valid for an ASE only if ASE_State field = 0x02 (QoS Configured) */
-	if (stream->ep->status.state != BT_BAP_EP_STATE_QOS_CONFIGURED) {
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(stream->ep->status.state));
+	if (stream->ep->state != BT_BAP_EP_STATE_QOS_CONFIGURED) {
+		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(stream->ep->state));
 		return -EBADMSG;
 	}
 
@@ -732,12 +732,12 @@ int bt_bap_stream_stop(struct bt_bap_stream *stream)
 
 	ep = stream->ep;
 
-	switch (ep->status.state) {
+	switch (ep->state) {
 	/* Valid only if ASE_State field = 0x03 (Disabling) */
 	case BT_BAP_EP_STATE_DISABLING:
 		break;
 	default:
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->status.state));
+		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
 		return -EBADMSG;
 	}
 
@@ -754,7 +754,7 @@ int bt_bap_stream_stop(struct bt_bap_stream *stream)
 int bt_bap_stream_reconfig(struct bt_bap_stream *stream,
 			     struct bt_audio_codec_cfg *codec_cfg)
 {
-	uint8_t state;
+	enum bt_bap_ep_state state;
 	uint8_t role;
 	int err;
 
@@ -770,7 +770,7 @@ int bt_bap_stream_reconfig(struct bt_bap_stream *stream,
 		return -EINVAL;
 	}
 
-	state = stream->ep->status.state;
+	state = stream->ep->state;
 	switch (state) {
 	/* Valid only if ASE_State field = 0x00 (Idle) */
 	case BT_BAP_EP_STATE_IDLE:
@@ -805,7 +805,7 @@ int bt_bap_stream_reconfig(struct bt_bap_stream *stream,
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 int bt_bap_stream_connect(struct bt_bap_stream *stream)
 {
-	uint8_t state;
+	enum bt_bap_ep_state state;
 
 	LOG_DBG("stream %p ep %p", stream, stream == NULL ? NULL : stream->ep);
 
@@ -817,7 +817,7 @@ int bt_bap_stream_connect(struct bt_bap_stream *stream)
 	/* Valid only after the CIS ID has been assigned in QoS configured state and while we are
 	 * not streaming
 	 */
-	state = stream->ep->status.state;
+	state = stream->ep->state;
 	switch (state) {
 	case BT_BAP_EP_STATE_QOS_CONFIGURED:
 	case BT_BAP_EP_STATE_ENABLING:
@@ -838,7 +838,7 @@ int bt_bap_stream_connect(struct bt_bap_stream *stream)
 
 int bt_bap_stream_start(struct bt_bap_stream *stream)
 {
-	uint8_t state;
+	enum bt_bap_ep_state state;
 	uint8_t role;
 	int err;
 
@@ -849,7 +849,7 @@ int bt_bap_stream_start(struct bt_bap_stream *stream)
 		return -EINVAL;
 	}
 
-	state = stream->ep->status.state;
+	state = stream->ep->state;
 	switch (state) {
 	/* Valid only if ASE_State field = 0x03 (Enabling) */
 	case BT_BAP_EP_STATE_ENABLING:
@@ -878,7 +878,7 @@ int bt_bap_stream_start(struct bt_bap_stream *stream)
 
 int bt_bap_stream_metadata(struct bt_bap_stream *stream, const uint8_t meta[], size_t meta_len)
 {
-	uint8_t state;
+	enum bt_bap_ep_state state;
 	uint8_t role;
 	int err;
 
@@ -894,7 +894,7 @@ int bt_bap_stream_metadata(struct bt_bap_stream *stream, const uint8_t meta[], s
 		return -EINVAL;
 	}
 
-	state = stream->ep->status.state;
+	state = stream->ep->state;
 	switch (state) {
 	/* Valid for an ASE only if ASE_State field = 0x03 (Enabling) */
 	case BT_BAP_EP_STATE_ENABLING:
@@ -925,7 +925,7 @@ int bt_bap_stream_metadata(struct bt_bap_stream *stream, const uint8_t meta[], s
 
 int bt_bap_stream_disable(struct bt_bap_stream *stream)
 {
-	uint8_t state;
+	enum bt_bap_ep_state state;
 	uint8_t role;
 	int err;
 
@@ -936,7 +936,7 @@ int bt_bap_stream_disable(struct bt_bap_stream *stream)
 		return -EINVAL;
 	}
 
-	state = stream->ep->status.state;
+	state = stream->ep->state;
 	switch (state) {
 	/* Valid only if ASE_State field = 0x03 (Enabling) */
 	case BT_BAP_EP_STATE_ENABLING:
@@ -967,7 +967,7 @@ int bt_bap_stream_disable(struct bt_bap_stream *stream)
 
 int bt_bap_stream_release(struct bt_bap_stream *stream)
 {
-	uint8_t state;
+	enum bt_bap_ep_state state;
 	uint8_t role;
 	int err;
 
@@ -978,7 +978,7 @@ int bt_bap_stream_release(struct bt_bap_stream *stream)
 		return -EINVAL;
 	}
 
-	state = stream->ep->status.state;
+	state = stream->ep->state;
 	switch (state) {
 	/* Valid only if ASE_State field = 0x01 (Codec Configured) */
 	case BT_BAP_EP_STATE_CODEC_CONFIGURED:
