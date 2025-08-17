@@ -228,13 +228,13 @@ static struct bt_bap_broadcast_sink *broadcast_sink_lookup_iso_chan(
 	return NULL;
 }
 
-static void broadcast_sink_set_ep_state(struct bt_bap_ep *ep, uint8_t state)
+static void broadcast_sink_set_ep_state(struct bt_bap_ep *ep, enum bt_bap_ep_state state)
 {
 	uint8_t old_state;
 
-	old_state = ep->status.state;
+	old_state = ep->state;
 
-	LOG_DBG("ep %p id 0x%02x %s -> %s", ep, ep->status.id, bt_bap_ep_state_str(old_state),
+	LOG_DBG("ep %p id 0x%02x %s -> %s", ep, ep->id, bt_bap_ep_state_str(old_state),
 		bt_bap_ep_state_str(state));
 
 	switch (old_state) {
@@ -262,7 +262,7 @@ static void broadcast_sink_set_ep_state(struct bt_bap_ep *ep, uint8_t state)
 		return;
 	}
 
-	ep->status.state = state;
+	ep->state = state;
 
 	if (state == BT_BAP_EP_STATE_IDLE) {
 		struct bt_bap_stream *stream = ep->stream;
@@ -337,7 +337,7 @@ static bool broadcast_sink_is_in_state(struct bt_bap_broadcast_sink *sink,
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&sink->streams, stream, _node) {
-		if (stream->ep != NULL && stream->ep->status.state != state) {
+		if (stream->ep != NULL && stream->ep->state != state) {
 			return false;
 		}
 	}

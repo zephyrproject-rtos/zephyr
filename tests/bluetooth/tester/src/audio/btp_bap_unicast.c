@@ -157,13 +157,14 @@ struct bt_bap_ep *btp_bap_unicast_end_point_find(struct btp_bap_unicast_connecti
 	return NULL;
 }
 
-static void btp_send_ascs_ase_state_changed_ev(struct bt_conn *conn, uint8_t ase_id, uint8_t state)
+static void btp_send_ascs_ase_state_changed_ev(struct bt_conn *conn, uint8_t ase_id,
+					       enum bt_bap_ep_state state)
 {
 	struct btp_ascs_ase_state_changed_ev ev;
 
 	bt_addr_le_copy(&ev.address, bt_conn_get_dst(conn));
 	ev.ase_id = ase_id;
-	ev.state = state;
+	ev.state = (uint8_t)state;
 
 	tester_event(BTP_SERVICE_ID_ASCS, BTP_ASCS_EV_ASE_STATE_CHANGED, &ev, sizeof(ev));
 }
