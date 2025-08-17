@@ -1,10 +1,12 @@
 /*
  * Copyright 2024 NXP
+ * Copyright 2025 Tenstorrent AI ULC
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr/drivers/clock_management.h>
+#include <zephyr/drivers/clock_management/clock_helpers.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 #include <soc.h>
@@ -35,27 +37,28 @@ struct lpc55sxx_pll1_regs {
 	volatile uint32_t PDEC;
 };
 
-union lpc55sxx_pll_regs {
-	struct lpc55sxx_pllx_regs *common;
-	struct lpc55sxx_pll0_regs *pll0;
-	struct lpc55sxx_pll1_regs *pll1;
+struct lpc55sxx_pll0_data {
+	STANDARD_CLK_SUBSYS_DATA_DEFINE
+	struct lpc55sxx_pll0_regs *regs;
 };
 
-struct lpc55sxx_pll_data {
-	uint32_t output_freq;
-	const struct clk *parent;
-	const union lpc55sxx_pll_regs regs;
-	uint8_t idx;
-#ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
-	uint32_t parent_rate;
-#endif
+struct lpc55sxx_pll1_data {
+	STANDARD_CLK_SUBSYS_DATA_DEFINE
+	struct lpc55sxx_pll1_regs *regs;
 };
+
+/**
+ * Multiplier to enable performing fixed point math for spread spectrum
+ * mode on PLL0. The most significant multiplier value we can represent is
+ * (1 / (1 << 25)), so if we shift by that we will be in fixed point
+ */
+#define SSCG_FIXED_POINT_SHIFT (25U)
 
 /* Helper function to wait for PLL lock */
 static void syscon_lpc55sxx_pll_waitlock(const struct clk *clk_hw, uint32_t ctrl,
-				  uint32_t ndec)
+				  int ndec, bool sscg_mode)
 {
-	struct lpc55sxx_pll_data *clk_data = clk_hw->hw_data;
+	struct lpc55sxx_pll0_data *clk_data = clk_hw->hw_data;
 	int input_clk;
 
 	/*
@@ -65,184 +68,143 @@ static void syscon_lpc55sxx_pll_waitlock(const struct clk *clk_hw, uint32_t ctrl
 	 */
 
 	/* We don't allow setting BYPASSPREDIV bit, input always uses prediv */
-	input_clk = clock_get_rate(clk_data->parent) / ndec;
+	input_clk = clock_management_clk_rate(GET_CLK_PARENT(clk_hw));
+	input_clk /= ndec;
 
-	if (((clk_data->idx == 0) &&
-	    (clk_data->regs.pll0->SSCG0 & SYSCON_PLL0SSCG1_SEL_EXT_MASK)) ||
-	    ((input_clk < MHZ(20)) && (input_clk > KHZ(100)))) {
-		/* Normal mode, use lock bit*/
-		while ((clk_data->regs.common->STAT & SYSCON_PLL0STAT_LOCK_MASK) == 0) {
-			/* Spin */
-		}
-	} else {
-		/* Spread spectrum mode/out of range input frequency.
+	if (sscg_mode || (input_clk > MHZ(20)) || (input_clk < KHZ(100))) {
+		/* Spread spectrum mode or out of range input frequency.
 		 * RM suggests waiting at least 6ms in this case.
 		 */
 		SDK_DelayAtLeastUs(6000, SDK_DEVICE_MAXIMUM_CPU_CLOCK_FREQUENCY);
-	}
-}
-
-static int syscon_lpc55sxx_pll_get_rate(const struct clk *clk_hw)
-{
-	struct lpc55sxx_pll_data *data = clk_hw->hw_data;
-
-	/* Return stored frequency */
-	return data->output_freq;
-}
-
-static int syscon_lpc55sxx_pll_configure(const struct clk *clk_hw, const void *data)
-{
-	struct lpc55sxx_pll_data *clk_data = clk_hw->hw_data;
-	const struct lpc55sxx_pll_config_input *input = data;
-	uint32_t ctrl, ndec;
-	int ret;
-
-	/* Notify children clock is about to gate */
-	ret = clock_children_check_rate(clk_hw, 0);
-	if (ret == NXP_SYSCON_MUX_ERR_SAFEGATE) {
-		if (input->output_freq == 0) {
-			/* Safe mux is using this source, so we cannot
-			 * gate the PLL safely. Note that if the
-			 * output frequency is nonzero, we can safely gate
-			 * and then reenable the PLL.
-			 */
-			return -ENOTSUP;
+	} else {
+		/* Normal mode, use lock bit*/
+		while ((clk_data->regs->STAT & SYSCON_PLL0STAT_LOCK_MASK) == 0) {
+			/* Spin */
 		}
-	} else if (ret < 0) {
-		return ret;
+	}
+}
+
+static int syscon_lpc55sxx_pll0_onoff(const struct clk *clk_hw, bool on)
+{
+	if (on) {
+		/* Power up PLL */
+		PMC->PDRUNCFGCLR0 = (PMC_PDRUNCFG0_PDEN_PLL0_SSCG_MASK |
+				     PMC_PDRUNCFG0_PDEN_PLL0_MASK);
+	} else {
+		/* Power down PLL */
+		PMC->PDRUNCFGSET0 = (PMC_PDRUNCFG0_PDEN_PLL0_SSCG_MASK |
+				     PMC_PDRUNCFG0_PDEN_PLL0_MASK);
 	}
 
-	ret = clock_children_notify_pre_change(clk_hw, clk_data->output_freq, 0);
-	if (ret < 0) {
-		return ret;
-	}
+	return 0;
+}
+
+static int syscon_lpc55sxx_pll0_configure(const struct clk *clk_hw, const void *data)
+{
+	struct lpc55sxx_pll0_data *clk_data = clk_hw->hw_data;
+	const struct lpc55sxx_pll0_cfg *input = data;
+	uint32_t ctrl, ndec;
 
 	/* Power off PLL during setup changes */
-	if (clk_data->idx == 0) {
-		PMC->PDRUNCFGSET0 = PMC_PDRUNCFG0_PDEN_PLL0_SSCG_MASK;
-		PMC->PDRUNCFGSET0 = PMC_PDRUNCFG0_PDEN_PLL0_MASK;
-	} else {
-		PMC->PDRUNCFGSET0 = PMC_PDRUNCFG0_PDEN_PLL1_MASK;
-	}
+	syscon_lpc55sxx_pll0_onoff(clk_hw, false);
 
-	ret = clock_children_notify_post_change(clk_hw, clk_data->output_freq, 0);
-	if (ret < 0) {
-		return ret;
-	}
+	ndec = input->NDEC;
+	ctrl = input->CTRL;
 
-	if (input->output_freq == 0) {
-		/* Keep PLL powered off, return here */
-		clk_data->output_freq = input->output_freq;
-		return 0;
-	}
-
-	/* Check new frequency will be valid */
-	ret = clock_children_check_rate(clk_hw, input->output_freq);
-	if (ret < 0) {
-		return ret;
-	}
-
-	/* Store new output frequency */
-	clk_data->output_freq = input->output_freq;
-
-	/* Notify children of new clock frequency we will set */
-	ret = clock_children_notify_pre_change(clk_hw, 0, clk_data->output_freq);
-	if (ret < 0) {
-		return ret;
-	}
-
-#ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
-	/* Record parent rate */
-	clk_data->parent_rate = clock_get_rate(clk_data->parent);
-#endif
-
-	ctrl = input->cfg.common->CTRL;
-	ndec = input->cfg.common->NDEC;
-
-	clk_data->regs.common->CTRL = ctrl;
-	clk_data->regs.common->NDEC = ndec;
+	clk_data->regs->CTRL = ctrl;
 	/* Request NDEC change */
-	clk_data->regs.common->NDEC = ndec | SYSCON_PLL0NDEC_NREQ_MASK;
-	if (clk_data->idx == 0) {
-		/* Setup SSCG parameters */
-		clk_data->regs.pll0->SSCG0 = input->cfg.pll0->SSCG0;
-		clk_data->regs.pll0->SSCG1 = input->cfg.pll0->SSCG1;
-		/* Request MD change */
-		clk_data->regs.pll0->SSCG1 = input->cfg.pll0->SSCG1 |
-			(SYSCON_PLL0SSCG1_MD_REQ_MASK | SYSCON_PLL0SSCG1_MREQ_MASK);
-	} else {
-		clk_data->regs.pll1->MDEC = input->cfg.pll1->MDEC;
-		/* Request MDEC change */
-		clk_data->regs.pll1->MDEC = input->cfg.pll1->MDEC |
-					SYSCON_PLL1MDEC_MREQ_MASK;
-	}
+	clk_data->regs->NDEC = ndec | SYSCON_PLL0NDEC_NREQ_MASK;
+	/* Setup SSCG parameters */
+	clk_data->regs->SSCG0 = input->SSCG0;
+	clk_data->regs->SSCG1 = input->SSCG1;
+	/* Request MD change */
+	clk_data->regs->SSCG1 = input->SSCG1 |
+		(SYSCON_PLL0SSCG1_MD_REQ_MASK | SYSCON_PLL0SSCG1_MREQ_MASK);
 
 	/* Power PLL on */
-	if (clk_data->idx == 0) {
-		PMC->PDRUNCFGCLR0 = PMC_PDRUNCFG0_PDEN_PLL0_SSCG_MASK;
-		PMC->PDRUNCFGCLR0 = PMC_PDRUNCFG0_PDEN_PLL0_MASK;
-	} else {
-		PMC->PDRUNCFGCLR0 = PMC_PDRUNCFG0_PDEN_PLL1_MASK;
-	}
+	syscon_lpc55sxx_pll0_onoff(clk_hw, true);
 
-	/* Notify children of new clock frequency we just set */
-	ret = clock_children_notify_post_change(clk_hw, 0, clk_data->output_freq);
-	if (ret < 0) {
-		return ret;
-	}
-
-	syscon_lpc55sxx_pll_waitlock(clk_hw, ctrl, ndec);
+	syscon_lpc55sxx_pll_waitlock(clk_hw, ctrl, ndec,
+		clk_data->regs->SSCG1 & SYSCON_PLL0SSCG1_SEL_EXT_MASK);
 	return 0;
+}
+
+/* Recalc helper for PLL0 */
+static clock_freq_t syscon_lpc55sxx_pll0_recalc_internal(const struct clk *clk_hw,
+						const struct lpc55sxx_pll0_cfg *input,
+						clock_freq_t  parent_rate)
+{
+	uint64_t prediv, multiplier, fout, fin = parent_rate;
+
+	prediv = input->NDEC;
+	if (input->SSCG1 & SYSCON_PLL0SSCG1_SEL_EXT_MASK) {
+		/*
+		 * Non-SSCG mode. PLL output frequency is
+		 * Fout = MDEC / NDEC * Fin.
+		 */
+		/* Read MDEC from SSCG0 */
+		multiplier = (input->SSCG1 & SYSCON_PLL0SSCG1_MDIV_EXT_MASK) >>
+			      SYSCON_PLL0SSCG1_MDIV_EXT_SHIFT;
+		fin /= prediv;
+		fout = (multiplier * fin);
+	} else {
+		/*
+		 * Using spread spectrum mode. Frequency is calculated as:
+		 * Fout = (md[32:25] + (md[24:0] * 2 ** (-25))) * Fin / NDEC,
+		 * where md[32] is stored in SSCG1 reg and md[31:0] == SSCG0.
+		 * We use fixed point math to perform the calculation.
+		 */
+		fin /= prediv;
+		/* Set upper bit of md */
+		multiplier = ((uint64_t)(input->SSCG1 & SYSCON_PLL0SSCG1_MD_MBS_MASK)) << 32;
+		/* Set lower 32 bits of md from SSCG0 */
+		multiplier |= (input->SSCG0 & SYSCON_PLL0SSCG0_MD_LBS_MASK);
+		/* Calculate output frequency */
+		fout = (multiplier * fin) >> SSCG_FIXED_POINT_SHIFT;
+	}
+	return fout;
+}
+
+static clock_freq_t syscon_lpc55sxx_pll0_recalc_rate(const struct clk *clk_hw,
+					   clock_freq_t  parent_rate)
+{
+	struct lpc55sxx_pll0_data *clk_data = clk_hw->hw_data;
+	struct lpc55sxx_pll0_regs *regs = clk_data->regs;
+	struct lpc55sxx_pll0_cfg input;
+
+	input.CTRL = regs->CTRL;
+	input.NDEC = (regs->NDEC & SYSCON_PLL0NDEC_NDIV_MASK);
+	input.SSCG0 = regs->SSCG0;
+	input.SSCG1 = regs->SSCG1;
+
+	return syscon_lpc55sxx_pll0_recalc_internal(clk_hw, &input, parent_rate);
 }
 
 #if defined(CONFIG_CLOCK_MANAGEMENT_RUNTIME)
 
-static int syscon_lpc55sxx_pll_notify(const struct clk *clk_hw, const struct clk *parent,
-				      const struct clock_management_event *event)
+static clock_freq_t syscon_lpc55sxx_pll0_configure_recalc(const struct clk *clk_hw,
+						const void *data,
+						clock_freq_t  parent_rate)
 {
-	struct lpc55sxx_pll_data *clk_data = clk_hw->hw_data;
-	struct clock_management_event notify_event;
 	int ret;
+	const struct lpc55sxx_pll0_cfg *input = data;
 
-	/*
-	 * We only allow the parent rate to be updated when configuring
-	 * the clock- this allows us to avoid runtime rate calculations
-	 * unless CONFIG_CLOCK_MANAGEMENT_SET_RATE is enabled.
-	 * Here we reject the rate unless the parent is gating, or it matches
-	 * our current parent rate.
+	/* First, make sure that children can gate since PLL will power off
+	 * to reconfigure.
 	 */
-	notify_event.type = event->type;
-	if (event->new_rate == 0 || clk_data->output_freq == 0) {
-		/*
-		 * Parent is gating, or PLL is gated. No rate calculation is
-		 * needed, we can accept this rate.
-		 */
-		clk_data->parent_rate = 0;
-		notify_event.old_rate = clk_data->output_freq;
-		notify_event.new_rate = 0;
-		clk_data->output_freq = 0;
-	} else if (clk_data->parent_rate == event->new_rate) {
-		/* Same clock rate for parent, we can handle this */
-		notify_event.old_rate = clk_data->output_freq;
-		notify_event.new_rate = clk_data->output_freq;
-	} else {
-		/*
-		 * Parent rate has changed, and would require recalculation.
-		 * reject this.
-		 */
-		return -ENOTSUP;
+	ret = clock_children_check_rate(clk_hw, 0);
+	/*
+	 * If SAFEGATE is returned, a "safe mux" in the tree is just indicating
+	 * it can't switch to a gated clock source. We can ignore this
+	 * because we will be powering on the PLL directly after powering
+	 * it off.
+	 */
+	if ((ret < 0) && (ret != NXP_SYSCON_MUX_ERR_SAFEGATE)) {
+		/* Some clock in the tree can't gate */
+		return ret;
 	}
-	ret = clock_notify_children(clk_hw, &notify_event);
-	if (ret == CLK_NO_CHILDREN) {
-		/* We can power down the PLL */
-		if (clk_data->idx == 0) {
-			PMC->PDRUNCFGSET0 = PMC_PDRUNCFG0_PDEN_PLL0_SSCG_MASK;
-			PMC->PDRUNCFGSET0 = PMC_PDRUNCFG0_PDEN_PLL0_MASK;
-		} else {
-			PMC->PDRUNCFGSET0 = PMC_PDRUNCFG0_PDEN_PLL1_MASK;
-		}
-	}
-	return 0;
+
+	return syscon_lpc55sxx_pll0_recalc_internal(clk_hw, input, parent_rate);
 }
 
 #endif
@@ -264,23 +226,22 @@ static void syscon_lpc55sxx_pll_calc_selx(uint32_t mdiv, uint32_t *selp,
 	*seli = MIN(*seli, 63);
 }
 
-static int syscon_lpc55sxx_pll0_round_rate(const struct clk *clk_hw,
-					   uint32_t rate_req)
+static clock_freq_t syscon_lpc55sxx_pll0_round_rate(const struct clk *clk_hw,
+						    clock_freq_t rate_req,
+						    clock_freq_t parent_rate)
 {
-	struct lpc55sxx_pll_data *clk_data = clk_hw->hw_data;
 	int ret;
-	uint32_t mdiv_int, mdiv_frac;
-	float mdiv, prediv_clk;
-	float rate = MIN(MHZ(550), rate_req);
-	int output_rate;
+	uint64_t ndec, md, pre_mult;
+	uint64_t rate = MIN(MHZ(550), rate_req);
+	uint64_t fout;
+	clock_freq_t output_rate;
 
 	/* Check if we will be able to gate the PLL for reconfiguration,
 	 * by notifying children will are going to change rate
 	 */
 	ret = clock_children_check_rate(clk_hw, 0);
 	if ((ret < 0) && (ret != NXP_SYSCON_MUX_ERR_SAFEGATE)) {
-		/* Return current frequency */
-		return clk_data->output_freq;
+		return ret;
 	}
 
 	/* PLL only supports outputs between 275-550 MHZ */
@@ -290,141 +251,132 @@ static int syscon_lpc55sxx_pll0_round_rate(const struct clk *clk_hw,
 		return MHZ(550);
 	}
 
-	/* PLL0 supports fractional rate setting via the spread
+	/*
+	 * PLL0 supports fractional rate setting via the spread
 	 * spectrum generator, so we can use this to achieve the
 	 * requested rate.
-	 * MD[32:0] is used to set fractional multiplier, like so:
-	 * mult = MD[32:25] + (MD[24:0] * 2 ** (-25))
-	 *
-	 * Input clock for PLL must be between 3 and 5 MHz per RM.
-	 * Request input clock of 16 MHz, we can divide this to 4 MHz.
+	 * md[32:0] is used to set fractional multiplier, like so:
+	 * mult = md[32:25] + (md[24:0] * 2 ** (-25))
+	 * Fout = mult * Fin / NDEC
 	 */
-	ret = clock_round_rate(clk_data->parent, MHZ(16));
-	if (ret <= 0) {
+
+	/* Input clock for PLL must be between 3 and 5 MHz, per RM. */
+	ndec = parent_rate / MHZ(4);
+	/* Calculate input clock before multiplier */
+	pre_mult = parent_rate / ndec;
+	/* Use fixed point division to calculate md */
+	rate <<= SSCG_FIXED_POINT_SHIFT;
+	md = rate / pre_mult;
+
+	/* Calculate actual output rate */
+	fout = md * pre_mult;
+	output_rate = (fout >> SSCG_FIXED_POINT_SHIFT);
+
+	/* Fixed point division will round down. If this has occurred,
+	 * return the exact frequency the framework requested, since the PLL
+	 * will always have some fractional component to its frequency and
+	 * fixed clock states expect an exact match
+	 */
+	if (rate_req - 1 == output_rate) {
+		output_rate = rate_req;
+	}
+
+	return output_rate;
+}
+
+static clock_freq_t syscon_lpc55sxx_pll0_set_rate(const struct clk *clk_hw,
+					clock_freq_t rate_req,
+					clock_freq_t parent_rate)
+{
+	int ret;
+	uint64_t ndec, md, pre_mult;
+	uint64_t fout, rate = rate_req;
+	uint32_t ctrl, seli, selp;
+	struct lpc55sxx_pll0_data *clk_data = clk_hw->hw_data;
+	clock_freq_t output_rate;
+
+	/*
+	 * Check if we will be able to gate the PLL for reconfiguration,
+	 * by notifying children will are going to change rate
+	 */
+	ret = clock_children_check_rate(clk_hw, 0);
+	if ((ret < 0) && (ret != NXP_SYSCON_MUX_ERR_SAFEGATE)) {
 		return ret;
 	}
-	/* Calculate actual clock after prediv */
-	prediv_clk = ((float)ret) / ((float)(ret / MHZ(4)));
-	/* Desired multiplier value */
-	mdiv = rate / prediv_clk;
-	/* MD integer portion */
-	mdiv_int = (uint32_t)mdiv;
-	/* MD factional portion */
-	mdiv_frac = (uint32_t)((mdiv - mdiv_int) * ((float)(1 << 25)));
+
+	/*
+	 * PLL only supports outputs between 275-550 MHZ Per RM.
+	 * Restrict to 1 Hz away from maximum in either direction,
+	 * because PLL fails to lock when md is set to produce exactly
+	 * 275 MHz
+	 */
+	if (rate <= MHZ(275)) {
+		rate = MHZ(276);
+	} else if (rate >= MHZ(550)) {
+		rate = MHZ(549);
+	}
+
+	/*
+	 * PLL0 supports fractional rate setting via the spread
+	 * spectrum generator, so we can use this to achieve the
+	 * requested rate.
+	 * md[32:0] is used to set fractional multiplier, like so:
+	 * mult = md[32:25] + (md[24:0] * 2 ** (-25))
+	 * Fout = mult * Fin / NDEC
+	 */
+
+	/* Input clock for PLL must be between 3 and 5 MHz, per RM. */
+	ndec = parent_rate / MHZ(4);
+	/* Calculate input clock before multiplier */
+	pre_mult = parent_rate / ndec;
+	/* Use fixed point division to calculate md */
+	rate <<= SSCG_FIXED_POINT_SHIFT;
+	md = rate / pre_mult;
+
 	/* Calculate actual output rate */
-	output_rate = prediv_clk * mdiv_int +
-		(prediv_clk * (((float)mdiv_frac) / ((float)(1 << 25))));
-	ret = clock_children_check_rate(clk_hw, output_rate);
-	if (ret < 0) {
-		return ret;
+	fout = md * pre_mult;
+
+	/* Power off PLL during setup changes */
+	syscon_lpc55sxx_pll0_onoff(clk_hw, false);
+
+	/* Set prediv and MD values */
+	syscon_lpc55sxx_pll_calc_selx(md >> SSCG_FIXED_POINT_SHIFT, &selp, &seli);
+	ctrl = SYSCON_PLL0CTRL_LIMUPOFF_MASK | SYSCON_PLL0CTRL_CLKEN_MASK |
+		SYSCON_PLL0CTRL_SELI(seli) | SYSCON_PLL0CTRL_SELP(selp);
+	clk_data->regs->CTRL = ctrl;
+	/* Request ndec change */
+	clk_data->regs->NDEC = ndec | SYSCON_PLL0NDEC_NREQ_MASK;
+	clk_data->regs->SSCG0 = SYSCON_PLL0SSCG0_MD_LBS(md);
+	/* Request MD change */
+	clk_data->regs->SSCG1 = SYSCON_PLL0SSCG1_MD_MBS(md >> 32) |
+			(SYSCON_PLL0SSCG1_MD_REQ_MASK | SYSCON_PLL0SSCG1_MREQ_MASK);
+
+	/* Power on PLL */
+	syscon_lpc55sxx_pll0_onoff(clk_hw, true);
+
+	syscon_lpc55sxx_pll_waitlock(clk_hw, ctrl, ndec, true);
+
+	output_rate = fout >> SSCG_FIXED_POINT_SHIFT;
+
+	/* Fixed point division will round down. If this has occurred,
+	 * return the exact frequency the framework requested, since the PLL
+	 * will always have some fractional component to its frequency and
+	 * fixed clock states expect an exact match
+	 */
+	if (rate_req - 1 == output_rate) {
+		output_rate = rate_req;
 	}
 	return output_rate;
 }
 
-static int syscon_lpc55sxx_pll0_set_rate(const struct clk *clk_hw,
-					 uint32_t rate_req)
-{
-	struct lpc55sxx_pll_data *clk_data = clk_hw->hw_data;
-	int input_clk, output_clk, ret;
-	uint32_t mdiv_int, mdiv_frac, prediv_val, seli, selp, ctrl;
-	float mdiv, prediv_clk;
-	float rate = MIN(MHZ(550), rate_req);
-
-	/* PLL only supports outputs between 275-550 MHZ */
-	if (rate_req < MHZ(275)) {
-		return MHZ(275);
-	} else if (rate_req > MHZ(550)) {
-		return MHZ(550);
-	}
-
-	if (rate == clk_data->output_freq) {
-		/* Return current frequency */
-		return clk_data->output_freq;
-	}
-
-#ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
-	/* Set 16 MHz as expected parent rate */
-	clk_data->parent_rate = MHZ(16);
-#endif
-	/* PLL0 supports fractional rate setting via the spread
-	 * spectrum generator, so we can use this to achieve the
-	 * requested rate.
-	 * MD[32:0] is used to set fractional multiplier, like so:
-	 * mult = MD[32:25] + (MD[24:0] * 2 ** (-25))
-	 *
-	 * Input clock for PLL must be between 3 and 5 MHz per RM.
-	 * Request input clock of 16 MHz, we can divide this to 4 MHz.
-	 */
-	input_clk = clock_set_rate(clk_data->parent, MHZ(16));
-	if (input_clk <= 0) {
-		return input_clk;
-	}
-	/* Calculate prediv value */
-	prediv_val = (input_clk / MHZ(4));
-	/* Calculate actual clock after prediv */
-	prediv_clk = ((float)input_clk) / ((float)prediv_val);
-	/* Desired multiplier value */
-	mdiv = rate / prediv_clk;
-	/* MD integer portion */
-	mdiv_int = (uint32_t)mdiv;
-	/* MD factional portion */
-	mdiv_frac = (uint32_t)((mdiv - mdiv_int) * ((float)(1 << 25)));
-	/* Calculate actual output rate */
-	output_clk = prediv_clk * mdiv_int +
-		(prediv_clk * (((float)mdiv_frac) / ((float)(1 << 25))));
-	/* Notify children clock is about to gate */
-	ret = clock_children_notify_pre_change(clk_hw, clk_data->output_freq, 0);
-	if (ret == NXP_SYSCON_MUX_ERR_SAFEGATE) {
-		if (output_clk == 0) {
-			/* Safe mux is using this source, so we cannot
-			 * gate the PLL safely. Note that if the
-			 * output frequency is nonzero, we can safely gate
-			 * and then reenable the PLL.
-			 */
-			return -ENOTSUP;
-		}
-	} else if (ret < 0) {
-		return ret;
-	}
-	/* Power off PLL before setup changes */
-	PMC->PDRUNCFGSET0 = PMC_PDRUNCFG0_PDEN_PLL0_SSCG_MASK;
-	PMC->PDRUNCFGSET0 = PMC_PDRUNCFG0_PDEN_PLL0_MASK;
-	ret = clock_children_notify_post_change(clk_hw, clk_data->output_freq, 0);
-	if (ret < 0) {
-		return ret;
-	}
-	/* Notify children of new frequency */
-	ret = clock_children_notify_pre_change(clk_hw, 0, output_clk);
-	if (ret < 0) {
-		return ret;
-	}
-	/* Set prediv and MD values */
-	syscon_lpc55sxx_pll_calc_selx(mdiv_int, &selp, &seli);
-	ctrl = SYSCON_PLL0CTRL_LIMUPOFF_MASK | SYSCON_PLL0CTRL_CLKEN_MASK |
-		SYSCON_PLL0CTRL_SELI(seli) | SYSCON_PLL0CTRL_SELP(selp);
-	clk_data->regs.common->CTRL = ctrl;
-	clk_data->regs.common->NDEC = prediv_val | SYSCON_PLL0NDEC_NREQ_MASK;
-	clk_data->regs.pll0->SSCG0 = SYSCON_PLL0SSCG0_MD_LBS((mdiv_int << 25) | mdiv_frac);
-	clk_data->regs.pll0->SSCG1 = SYSCON_PLL0SSCG1_MD_MBS(mdiv_int >> 7);
-	clk_data->output_freq = output_clk;
-	/* Power on PLL */
-	PMC->PDRUNCFGCLR0 = PMC_PDRUNCFG0_PDEN_PLL0_SSCG_MASK;
-	PMC->PDRUNCFGCLR0 = PMC_PDRUNCFG0_PDEN_PLL0_MASK;
-	ret = clock_children_notify_post_change(clk_hw, 0, output_clk);
-	if (ret < 0) {
-		return ret;
-	}
-	syscon_lpc55sxx_pll_waitlock(clk_hw, ctrl, prediv_val);
-	return output_clk;
-}
-
 #endif
 
-const struct clock_management_driver_api nxp_syscon_pll0_api = {
-	.get_rate = syscon_lpc55sxx_pll_get_rate,
-	.configure = syscon_lpc55sxx_pll_configure,
+const struct clock_management_standard_api nxp_syscon_pll0_api = {
+	.shared.on_off = syscon_lpc55sxx_pll0_onoff,
+	.shared.configure = syscon_lpc55sxx_pll0_configure,
+	.recalc_rate = syscon_lpc55sxx_pll0_recalc_rate,
 #if defined(CONFIG_CLOCK_MANAGEMENT_RUNTIME)
-	.notify = syscon_lpc55sxx_pll_notify,
+	.configure_recalc = syscon_lpc55sxx_pll0_configure_recalc,
 #endif
 #if defined(CONFIG_CLOCK_MANAGEMENT_SET_RATE)
 	.round_rate = syscon_lpc55sxx_pll0_round_rate,
@@ -436,36 +388,119 @@ const struct clock_management_driver_api nxp_syscon_pll0_api = {
 #define DT_DRV_COMPAT nxp_lpc55sxx_pll0
 
 #define NXP_LPC55SXX_PLL0_DEFINE(inst)                                         \
-	struct lpc55sxx_pll_data nxp_lpc55sxx_pll0_data_##inst = {             \
-		.parent = CLOCK_DT_GET(DT_INST_PARENT(inst)),                  \
-		.regs.pll0 = ((struct lpc55sxx_pll0_regs *)                    \
+	const struct lpc55sxx_pll0_data nxp_lpc55sxx_pll0_data_##inst = {      \
+		STANDARD_CLK_SUBSYS_DATA_INIT(CLOCK_DT_GET(DT_INST_PARENT(inst))) \
+		.regs = ((struct lpc55sxx_pll0_regs *)                         \
 			DT_INST_REG_ADDR(inst)),                               \
-		.idx = 0,                                                      \
 	};                                                                     \
 	                                                                       \
 	CLOCK_DT_INST_DEFINE(inst, &nxp_lpc55sxx_pll0_data_##inst,             \
 			     &nxp_syscon_pll0_api);
 
+
 DT_INST_FOREACH_STATUS_OKAY(NXP_LPC55SXX_PLL0_DEFINE)
+
+/* PLL1 driver */
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT nxp_lpc55sxx_pll1
+
+static int syscon_lpc55sxx_pll1_onoff(const struct clk *clk_hw, bool on)
+{
+	if (on) {
+		/* Power up PLL */
+		PMC->PDRUNCFGCLR0 = PMC_PDRUNCFG0_PDEN_PLL1_MASK;
+	} else {
+		/* Power down PLL */
+		PMC->PDRUNCFGSET0 = PMC_PDRUNCFG0_PDEN_PLL1_MASK;
+	}
+
+	return 0;
+}
+
+static int syscon_lpc55sxx_pll1_configure(const struct clk *clk_hw, const void *data)
+{
+	struct lpc55sxx_pll1_data *clk_data = clk_hw->hw_data;
+	const struct lpc55sxx_pll1_cfg *input = data;
+
+	/* Power off PLL during setup changes */
+	syscon_lpc55sxx_pll1_onoff(clk_hw, false);
+
+	clk_data->regs->CTRL = input->CTRL;
+	/* Request MDEC change */
+	clk_data->regs->MDEC = input->MDEC | SYSCON_PLL1MDEC_MREQ_MASK;
+
+	/* Request NDEC change */
+	clk_data->regs->NDEC = input->NDEC | SYSCON_PLL1NDEC_NREQ_MASK;
+
+	/* Power PLL on */
+	syscon_lpc55sxx_pll1_onoff(clk_hw, true);
+
+	syscon_lpc55sxx_pll_waitlock(clk_hw, input->CTRL, input->NDEC, false);
+	return 0;
+}
+
+static clock_freq_t syscon_lpc55sxx_pll1_recalc_rate(const struct clk *clk_hw,
+						     clock_freq_t parent_rate)
+{
+	struct lpc55sxx_pll1_data *clk_data = clk_hw->hw_data;
+	struct lpc55sxx_pll1_regs *regs = clk_data->regs;
+	uint32_t mdec = regs->MDEC & SYSCON_PLL1MDEC_MDIV_MASK;
+	uint32_t ndec = regs->NDEC & SYSCON_PLL1NDEC_NDIV_MASK;
+
+	if (ndec == 0) {
+		/* PLL isn't configured yet */
+		return -ENOTCONN;
+	}
+	return (parent_rate * mdec) / ndec;
+}
+
+#if defined(CONFIG_CLOCK_MANAGEMENT_RUNTIME)
+
+static clock_freq_t syscon_lpc55sxx_pll1_configure_recalc(const struct clk *clk_hw,
+							  const void *data,
+							  clock_freq_t parent_rate)
+{
+	int ret;
+	const struct lpc55sxx_pll1_cfg *input = data;
+
+	/* First, make sure that children can gate since PLL will power off
+	 * to reconfigure.
+	 */
+	ret = clock_children_check_rate(clk_hw, 0);
+	/*
+	 * If SAFEGATE is returned, a "safe mux" in the tree is just indicating
+	 * it can't switch to a gated clock source. We can ignore this
+	 * because we will be powering on the PLL directly after powering
+	 * it off.
+	 */
+	if ((ret < 0) && (ret != NXP_SYSCON_MUX_ERR_SAFEGATE)) {
+		/* Some clock in the tree can't gate */
+		return ret;
+	}
+
+	return (parent_rate * input->MDEC) / input->NDEC;
+}
+
+#endif /* CONFIG_CLOCK_MANAGEMENT_RUNTIME */
 
 #if defined(CONFIG_CLOCK_MANAGEMENT_SET_RATE)
 /* PLL1 specific implementations */
 
-static int syscon_lpc55sxx_pll1_round_rate(const struct clk *clk_hw,
-					   uint32_t rate_req)
+static clock_freq_t syscon_lpc55sxx_pll1_round_rate(const struct clk *clk_hw,
+						    clock_freq_t rate_req,
+						    clock_freq_t parent_rate)
 {
-	struct lpc55sxx_pll_data *clk_data = clk_hw->hw_data;
-	int ret, output_rate, target_rate;
-	uint32_t best_div, best_mult, best_diff, best_out, test_div, test_mult;
+	int ret;
+	uint32_t best_div, best_mult, best_diff, test_div, test_mult;
 	float postdiv_clk;
+	clock_freq_t best_out, cand_rate, target_rate;
 
 	/* Check if we will be able to gate the PLL for reconfiguration,
 	 * by notifying children will are going to change rate
 	 */
 	ret = clock_children_check_rate(clk_hw, 0);
 	if ((ret < 0) && (ret != NXP_SYSCON_MUX_ERR_SAFEGATE)) {
-		/* Return current frequency */
-		return clk_data->output_freq;
+		return ret;
 	}
 
 	/* PLL only supports outputs between 275-550 MHZ */
@@ -475,15 +510,6 @@ static int syscon_lpc55sxx_pll1_round_rate(const struct clk *clk_hw,
 		return MHZ(550);
 	}
 
-	/* Request the same frequency from the parent. We likely won't get
-	 * the requested frequency, but this handles the case where the
-	 * requested frequency is low (and the best output is the 32KHZ
-	 * oscillator)
-	 */
-	ret = clock_round_rate(clk_data->parent, rate_req);
-	if (ret <= 0) {
-		return ret;
-	}
 	/* In order to get the best output, we will test with each PLL
 	 * prediv value. If we can achieve the requested frequency within
 	 * 1%, we will return immediately. Otherwise, we will keep
@@ -492,68 +518,56 @@ static int syscon_lpc55sxx_pll1_round_rate(const struct clk *clk_hw,
 	best_div = best_mult = best_out = 0;
 	best_diff = UINT32_MAX;
 	target_rate = MIN(MHZ(550), rate_req);
-	for (test_div = 1; test_div < SYSCON_PLL0NDEC_NDIV_MASK; test_div++) {
+	for (test_div = 1; test_div < SYSCON_PLL1NDEC_NDIV_MASK; test_div++) {
 		/* Find the best multiplier value for this div */
-		postdiv_clk = ((float)ret)/((float)test_div);
+		postdiv_clk = ((float)parent_rate)/((float)test_div);
 		test_mult = ((float)target_rate)/postdiv_clk;
-		output_rate = postdiv_clk * test_mult;
+		cand_rate = postdiv_clk * test_mult;
 
-		if (abs(output_rate - target_rate) <= (target_rate / 100)) {
+		if (abs(cand_rate - target_rate) <= (target_rate / 100)) {
 			/* 1% or better match found, break */
 			best_div = test_div;
 			best_mult = test_mult;
-			best_out = output_rate;
+			best_out = cand_rate;
 			break;
-		} else if (abs(output_rate - target_rate) < best_diff) {
-			best_diff = abs(output_rate - target_rate);
+		} else if (abs(cand_rate - target_rate) < best_diff) {
+			best_diff = abs(cand_rate - target_rate);
 			best_div = test_div;
 			best_mult = test_mult;
-			best_out = output_rate;
+			best_out = cand_rate;
 		}
-	}
-	ret = clock_children_check_rate(clk_hw, output_rate);
-	if (ret < 0) {
-		return ret;
 	}
 
 	/* Return best output rate */
-	return output_rate;
+	return best_out;
 }
 
-static int syscon_lpc55sxx_pll1_set_rate(const struct clk *clk_hw,
-					 uint32_t rate_req)
+static clock_freq_t syscon_lpc55sxx_pll1_set_rate(const struct clk *clk_hw,
+					 clock_freq_t rate_req,
+					 clock_freq_t parent_rate)
 {
-	struct lpc55sxx_pll_data *clk_data = clk_hw->hw_data;
-	int output_rate, ret, target_rate;
-	uint32_t best_div, best_mult, best_diff, best_out, test_div, test_mult;
+	struct lpc55sxx_pll1_data *clk_data = clk_hw->hw_data;
+	int ret;
+	uint32_t best_div, best_mult, best_diff, test_div, test_mult;
 	uint32_t seli, selp, ctrl;
 	float postdiv_clk;
+	clock_freq_t target_rate, cand_rate, best_out;
 
 	/* PLL only supports outputs between 275-550 MHZ */
 	if (rate_req < MHZ(275)) {
-		return MHZ(275);
+		rate_req = MHZ(275);
 	} else if (rate_req > MHZ(550)) {
-		return MHZ(550);
+		rate_req = MHZ(550);
 	}
 
-	if (rate_req == clk_data->output_freq) {
-		/* Return current frequency */
-		return clk_data->output_freq;
-	}
-
-#ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
-	/* Record new parent rate we expect */
-	clk_data->parent_rate = clock_round_rate(clk_data->parent, rate_req);
-#endif
-	/* Request the same frequency from the parent. We likely won't get
-	 * the requested frequency, but this handles the case where the
-	 * requested frequency is low (and the best output is the 32KHZ
-	 * oscillator)
+	/* Check if we will be able to gate the PLL for reconfiguration,
+	 * by notifying children will are going to change rate
 	 */
-	ret = clock_set_rate(clk_data->parent, rate_req);
-	if (ret <= 0) {
+	ret = clock_children_check_rate(clk_hw, 0);
+	if ((ret < 0) && (ret != NXP_SYSCON_MUX_ERR_SAFEGATE)) {
 		return ret;
 	}
+
 	/* In order to get the best output, we will test with each PLL
 	 * prediv value. If we can achieve the requested frequency within
 	 * 1%, we will return immediately. Otherwise, we will keep
@@ -562,80 +576,56 @@ static int syscon_lpc55sxx_pll1_set_rate(const struct clk *clk_hw,
 	best_div = best_mult = best_out = 0;
 	best_diff = UINT32_MAX;
 	target_rate = MIN(MHZ(550), rate_req);
-	for (test_div = 1; test_div < SYSCON_PLL0NDEC_NDIV_MASK; test_div++) {
+	for (test_div = 1; test_div < SYSCON_PLL1NDEC_NDIV_MASK; test_div++) {
 		/* Find the best multiplier value for this div */
-		postdiv_clk = ((float)ret)/((float)test_div);
+		postdiv_clk = ((float)parent_rate)/((float)test_div);
 		test_mult = ((float)target_rate)/postdiv_clk;
-		output_rate = postdiv_clk * test_mult;
+		cand_rate = postdiv_clk * test_mult;
 
-		if (abs(output_rate - target_rate) <= (target_rate / 100)) {
+		if (abs(cand_rate - target_rate) <= (target_rate / 100)) {
 			/* 1% or better match found, break */
 			best_div = test_div;
 			best_mult = test_mult;
-			best_out = output_rate;
+			best_out = cand_rate;
 			break;
-		} else if (abs(output_rate - target_rate) < best_diff) {
-			best_diff = abs(output_rate - target_rate);
+		} else if (abs(cand_rate - target_rate) < best_diff) {
+			best_diff = abs(cand_rate - target_rate);
 			best_div = test_div;
 			best_mult = test_mult;
-			best_out = output_rate;
+			best_out = cand_rate;
 		}
 	}
 
 	syscon_lpc55sxx_pll_calc_selx(best_mult, &selp, &seli);
-	/* Notify children clock is about to gate */
-	ret = clock_children_notify_pre_change(clk_hw, clk_data->output_freq, 0);
-	if (ret == NXP_SYSCON_MUX_ERR_SAFEGATE) {
-		if (output_rate == 0) {
-			/* Safe mux is using this source, so we cannot
-			 * gate the PLL safely. Note that if the
-			 * output frequency is nonzero, we can safely gate
-			 * and then reenable the PLL.
-			 */
-			return -ENOTSUP;
-		}
-	} else if (ret < 0) {
-		return ret;
-	}
+
 	/* Power off PLL during setup changes */
-	PMC->PDRUNCFGSET0 = PMC_PDRUNCFG0_PDEN_PLL1_MASK;
-	ret = clock_children_notify_post_change(clk_hw, clk_data->output_freq, 0);
-	if (ret < 0) {
-		return ret;
-	}
-	ret = clock_children_notify_pre_change(clk_hw, 0, output_rate);
-	if (ret < 0) {
-		return ret;
-	}
+	syscon_lpc55sxx_pll1_onoff(clk_hw, false);
+
 	/* Program PLL settings */
 	ctrl = SYSCON_PLL0CTRL_CLKEN_MASK | SYSCON_PLL0CTRL_SELI(seli) |
 		SYSCON_PLL0CTRL_SELP(selp);
-	clk_data->regs.common->CTRL = ctrl;
+	clk_data->regs->CTRL = ctrl;
 	/* Request NDEC change */
-	clk_data->regs.common->NDEC = best_div;
-	clk_data->regs.common->NDEC = best_div | SYSCON_PLL0NDEC_NREQ_MASK;
-	clk_data->regs.pll1->MDEC = best_mult;
+	clk_data->regs->NDEC = best_div;
+	clk_data->regs->NDEC = best_div | SYSCON_PLL1NDEC_NREQ_MASK;
+	clk_data->regs->MDEC = best_mult;
 	/* Request MDEC change */
-	clk_data->regs.pll1->MDEC = best_mult | SYSCON_PLL1MDEC_MREQ_MASK;
-	clk_data->output_freq = output_rate;
+	clk_data->regs->MDEC = best_mult | SYSCON_PLL1MDEC_MREQ_MASK;
 	/* Power PLL on */
-	PMC->PDRUNCFGCLR0 = PMC_PDRUNCFG0_PDEN_PLL1_MASK;
-	syscon_lpc55sxx_pll_waitlock(clk_hw, ctrl, best_div);
-	ret = clock_children_notify_post_change(clk_hw, 0, output_rate);
-	if (ret < 0) {
-		return ret;
-	}
+	syscon_lpc55sxx_pll1_onoff(clk_hw, true);
+	syscon_lpc55sxx_pll_waitlock(clk_hw, ctrl, best_div, false);
 
-	return output_rate;
+	return best_out;
 }
 
 #endif
 
-const struct clock_management_driver_api nxp_syscon_pll1_api = {
-	.get_rate = syscon_lpc55sxx_pll_get_rate,
-	.configure = syscon_lpc55sxx_pll_configure,
+const struct clock_management_standard_api nxp_syscon_pll1_api = {
+	.shared.on_off = syscon_lpc55sxx_pll1_onoff,
+	.shared.configure = syscon_lpc55sxx_pll1_configure,
+	.recalc_rate = syscon_lpc55sxx_pll1_recalc_rate,
 #if defined(CONFIG_CLOCK_MANAGEMENT_RUNTIME)
-	.notify = syscon_lpc55sxx_pll_notify,
+	.configure_recalc = syscon_lpc55sxx_pll1_configure_recalc,
 #endif
 #if defined(CONFIG_CLOCK_MANAGEMENT_SET_RATE)
 	.round_rate = syscon_lpc55sxx_pll1_round_rate,
@@ -645,19 +635,15 @@ const struct clock_management_driver_api nxp_syscon_pll1_api = {
 
 
 #define NXP_LPC55SXX_PLL1_DEFINE(inst)                                         \
-	struct lpc55sxx_pll_data nxp_lpc55sxx_pll1_data_##inst = {             \
-		.parent = CLOCK_DT_GET(DT_INST_PARENT(inst)),                  \
-		.regs.pll1 = ((struct lpc55sxx_pll1_regs *)                    \
+	const struct lpc55sxx_pll1_data nxp_lpc55sxx_pll1_data_##inst = {      \
+		STANDARD_CLK_SUBSYS_DATA_INIT(CLOCK_DT_GET(DT_INST_PARENT(inst))) \
+		.regs = ((struct lpc55sxx_pll1_regs *)                         \
 			DT_INST_REG_ADDR(inst)),                               \
-		.idx = 1,                                                      \
 	};                                                                     \
 	                                                                       \
 	CLOCK_DT_INST_DEFINE(inst, &nxp_lpc55sxx_pll1_data_##inst,             \
 			     &nxp_syscon_pll1_api);
 
-/* PLL1 driver */
-#undef DT_DRV_COMPAT
-#define DT_DRV_COMPAT nxp_lpc55sxx_pll1
 
 DT_INST_FOREACH_STATUS_OKAY(NXP_LPC55SXX_PLL1_DEFINE)
 
@@ -666,22 +652,18 @@ DT_INST_FOREACH_STATUS_OKAY(NXP_LPC55SXX_PLL1_DEFINE)
 #define DT_DRV_COMPAT nxp_lpc55sxx_pll_pdec
 
 struct lpc55sxx_pll_pdec_config {
-	const struct clk *parent;
+	STANDARD_CLK_SUBSYS_DATA_DEFINE
 	volatile uint32_t *reg;
 };
 
-static int syscon_lpc55sxx_pll_pdec_get_rate(const struct clk *clk_hw)
+static clock_freq_t syscon_lpc55sxx_pll_pdec_recalc_rate(const struct clk *clk_hw,
+							clock_freq_t parent_rate)
 {
 	const struct lpc55sxx_pll_pdec_config *config = clk_hw->hw_data;
-	int parent_rate = clock_get_rate(config->parent);
-	int div_val = (((*config->reg) & SYSCON_PLL0PDEC_PDIV_MASK)) * 2;
-
-	if (parent_rate <= 0) {
-		return parent_rate;
-	}
+	int div_val = (((*config->reg) & SYSCON_PLL0PDEC_PDIV_MASK) * 2);
 
 	if (div_val == 0) {
-		return -EIO;
+		return -ENOTCONN;
 	}
 
 	return parent_rate / div_val;
@@ -691,65 +673,36 @@ static int syscon_lpc55sxx_pll_pdec_configure(const struct clk *clk_hw, const vo
 
 {
 	const struct lpc55sxx_pll_pdec_config *config = clk_hw->hw_data;
-	int parent_rate = clock_get_rate(config->parent);
 	uint32_t div_val = FIELD_PREP(SYSCON_PLL0PDEC_PDIV_MASK, (((uint32_t)data) / 2));
-	uint32_t cur_div = MAX((((*config->reg) & SYSCON_PLL0PDEC_PDIV_MASK)) * 2, 1);
-	int ret;
-	uint32_t cur_rate = 0;
-	uint32_t new_rate = 0;
 
-	if (parent_rate > 0) {
-		cur_rate = parent_rate / cur_div;
-		new_rate = parent_rate / ((uint32_t)data);
-	}
-
-	ret = clock_children_check_rate(clk_hw, new_rate);
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = clock_children_notify_pre_change(clk_hw, cur_rate, new_rate);
-	if (ret < 0) {
-		return ret;
-	}
 	*config->reg = div_val | SYSCON_PLL0PDEC_PREQ_MASK;
-	ret = clock_children_notify_post_change(clk_hw, cur_rate, new_rate);
-	if (ret < 0) {
-		return ret;
-	}
 
 	return 0;
 }
 
 #if defined(CONFIG_CLOCK_MANAGEMENT_RUNTIME)
-static int syscon_lpc55sxx_pll_pdec_notify(const struct clk *clk_hw, const struct clk *parent,
-					   const struct clock_management_event *event)
+static clock_freq_t syscon_lpc55sxx_pll_pdec_configure_recalc(const struct clk *clk_hw,
+						     const void *data,
+						     clock_freq_t parent_rate)
 {
-	const struct lpc55sxx_pll_pdec_config *config = clk_hw->hw_data;
-	int div_val = (((*config->reg) & SYSCON_PLL0PDEC_PDIV_MASK)) * 2;
-	struct clock_management_event notify_event;
+	int div_val = (uint32_t)data;
 
 	if (div_val == 0) {
-		/* PDEC isn't configured yet, don't notify children */
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
-	notify_event.type = event->type;
-	notify_event.old_rate = (event->old_rate / div_val);
-	notify_event.new_rate = (event->new_rate / div_val);
-
-	return clock_notify_children(clk_hw, &notify_event);
+	return parent_rate / div_val;
 }
 #endif
 
 #if defined(CONFIG_CLOCK_MANAGEMENT_SET_RATE)
-static int syscon_lpc55sxx_pll_pdec_round_rate(const struct clk *clk_hw,
-					       uint32_t rate_req)
+static clock_freq_t syscon_lpc55sxx_pll_pdec_round_rate(const struct clk *clk_hw,
+					       clock_freq_t rate_req,
+					       clock_freq_t parent_rate)
 {
-	const struct lpc55sxx_pll_pdec_config *config = clk_hw->hw_data;
-	int input_clk, last_clk, output_clk, target_rate, ret;
-	uint32_t best_div, best_diff, best_out, test_div;
-	uint32_t parent_req = rate_req;
+	uint32_t best_div, best_diff, test_div;
+	clock_freq_t parent_req = rate_req;
+	clock_freq_t output_clk, last_clk, input_clk, target_rate, best_clk;
 
 	/* First attempt to request double the requested freq from the parent
 	 * If the parent's frequency plus our divider setting can't satisfy
@@ -759,7 +712,6 @@ static int syscon_lpc55sxx_pll_pdec_round_rate(const struct clk *clk_hw,
 	target_rate = rate_req;
 	best_diff = UINT32_MAX;
 	best_div = 0;
-	best_out = 0;
 	last_clk = 0;
 	/* PLL cannot output rate under 275 MHz, so raise requested rate
 	 * by factor of 2 until we hit that minimum
@@ -769,11 +721,11 @@ static int syscon_lpc55sxx_pll_pdec_round_rate(const struct clk *clk_hw,
 	}
 	do {
 		/* Request input clock */
-		input_clk = clock_round_rate(config->parent, parent_req);
-		if (input_clk == last_clk) {
-			/* Parent clock rate is locked */
-			return input_clk / 2;
+		input_clk = clock_management_round_rate(GET_CLK_PARENT(clk_hw), parent_req);
+		if (input_clk < 0) {
+			return input_clk;
 		}
+
 		/* Check rate we can produce with the input clock */
 		test_div = (CLAMP((input_clk / target_rate), 2, 62) & ~BIT(0));
 		output_clk = input_clk / test_div;
@@ -781,12 +733,16 @@ static int syscon_lpc55sxx_pll_pdec_round_rate(const struct clk *clk_hw,
 		if (abs(output_clk - target_rate) <= (target_rate / 100)) {
 			/* 1% or better match found, break */
 			best_div = test_div;
-			best_out = output_clk;
+			best_clk = output_clk;
 			break;
 		} else if (abs(output_clk - target_rate) < best_diff) {
 			best_diff = abs(output_clk - target_rate);
 			best_div = test_div;
-			best_out = output_clk;
+			best_clk = output_clk;
+		}
+		if (input_clk == last_clk) {
+			/* Parent clock is locked */
+			break;
 		}
 
 		/* Raise parent request by factor of 2,
@@ -796,33 +752,27 @@ static int syscon_lpc55sxx_pll_pdec_round_rate(const struct clk *clk_hw,
 		last_clk = input_clk;
 	} while ((test_div < 62) && (last_clk < MHZ(550))); /* Max divider possible */
 
-	ret = clock_children_check_rate(clk_hw, best_out);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return best_out;
+	return best_clk;
 }
 
-static int syscon_lpc55sxx_pll_pdec_set_rate(const struct clk *clk_hw,
-					     uint32_t rate_req)
+static clock_freq_t syscon_lpc55sxx_pll_pdec_set_rate(const struct clk *clk_hw,
+					     clock_freq_t rate_req,
+					     clock_freq_t parent_rate)
 {
 	const struct lpc55sxx_pll_pdec_config *config = clk_hw->hw_data;
-	int input_clk, last_clk, output_clk, ret, target_rate;
-	uint32_t best_div, best_diff, best_out, best_parent, test_div;
-	uint32_t cur_div = MAX((((*config->reg) & SYSCON_PLL0PDEC_PDIV_MASK)) * 2, 1);
-	uint32_t parent_req = rate_req;
+	uint32_t best_div, best_diff, test_div;
+	clock_freq_t parent_req = rate_req;
+	clock_freq_t output_clk, last_clk, input_clk, target_rate, best_clk;
 
 	/* First attempt to request double the requested freq from the parent
 	 * If the parent's frequency plus our divider setting can't satisfy
 	 * the request, increase the requested frequency and try again with
 	 * a higher divider target
 	 */
+	target_rate = rate_req;
 	best_diff = UINT32_MAX;
 	best_div = 0;
-	best_out = 0;
 	last_clk = 0;
-	target_rate = rate_req;
 	/* PLL cannot output rate under 275 MHz, so raise requested rate
 	 * by factor of 2 until we hit that minimum
 	 */
@@ -831,11 +781,11 @@ static int syscon_lpc55sxx_pll_pdec_set_rate(const struct clk *clk_hw,
 	}
 	do {
 		/* Request input clock */
-		input_clk = clock_round_rate(config->parent, parent_req);
-		if (input_clk == last_clk) {
-			/* Parent clock rate is locked */
-			return input_clk / 2;
+		input_clk = clock_management_round_rate(GET_CLK_PARENT(clk_hw), parent_req);
+		if (input_clk < 0) {
+			return input_clk;
 		}
+
 		/* Check rate we can produce with the input clock */
 		test_div = (CLAMP((input_clk / target_rate), 2, 62) & ~BIT(0));
 		output_clk = input_clk / test_div;
@@ -843,14 +793,16 @@ static int syscon_lpc55sxx_pll_pdec_set_rate(const struct clk *clk_hw,
 		if (abs(output_clk - target_rate) <= (target_rate / 100)) {
 			/* 1% or better match found, break */
 			best_div = test_div;
-			best_out = output_clk;
-			best_parent = input_clk;
+			best_clk = output_clk;
 			break;
 		} else if (abs(output_clk - target_rate) < best_diff) {
 			best_diff = abs(output_clk - target_rate);
 			best_div = test_div;
-			best_out = output_clk;
-			best_parent = input_clk;
+			best_clk = output_clk;
+		}
+		if (input_clk == last_clk) {
+			/* Parent clock is locked */
+			break;
 		}
 
 		/* Raise parent request by factor of 2,
@@ -861,33 +813,23 @@ static int syscon_lpc55sxx_pll_pdec_set_rate(const struct clk *clk_hw,
 	} while ((test_div < 62) && (last_clk < MHZ(550))); /* Max divider possible */
 
 	/* Set rate for parent */
-	input_clk = clock_set_rate(config->parent, parent_req);
-	if (input_clk <= 0) {
+	input_clk = clock_management_set_rate(GET_CLK_PARENT(clk_hw), parent_req);
+	if (input_clk < 0) {
 		return input_clk;
 	}
 
-	ret = clock_children_notify_pre_change(clk_hw, input_clk / cur_div,
-					       best_out);
-	if (ret < 0) {
-		return ret;
-	}
 	*config->reg = (best_div / 2) | SYSCON_PLL0PDEC_PREQ_MASK;
-	ret = clock_children_notify_post_change(clk_hw, input_clk / cur_div,
-						best_out);
-	if (ret < 0) {
-		return ret;
-	}
 
-	return best_out;
+	return best_clk;
 }
 #endif
 
 
-const struct clock_management_driver_api nxp_syscon_pdec_api = {
-	.get_rate = syscon_lpc55sxx_pll_pdec_get_rate,
-	.configure = syscon_lpc55sxx_pll_pdec_configure,
+const struct clock_management_standard_api nxp_syscon_pdec_api = {
+	.shared.configure = syscon_lpc55sxx_pll_pdec_configure,
+	.recalc_rate = syscon_lpc55sxx_pll_pdec_recalc_rate,
 #if defined(CONFIG_CLOCK_MANAGEMENT_RUNTIME)
-	.notify = syscon_lpc55sxx_pll_pdec_notify,
+	.configure_recalc = syscon_lpc55sxx_pll_pdec_configure_recalc,
 #endif
 #if defined(CONFIG_CLOCK_MANAGEMENT_SET_RATE)
 	.round_rate = syscon_lpc55sxx_pll_pdec_round_rate,
@@ -897,7 +839,7 @@ const struct clock_management_driver_api nxp_syscon_pdec_api = {
 
 #define NXP_LPC55SXX_PDEC_DEFINE(inst)                                         \
 	const struct lpc55sxx_pll_pdec_config lpc55sxx_pdec_cfg_##inst = {     \
-		.parent = CLOCK_DT_GET(DT_INST_PARENT(inst)),                  \
+		STANDARD_CLK_SUBSYS_DATA_INIT(CLOCK_DT_GET(DT_INST_PARENT(inst))) \
 		.reg = (volatile uint32_t *)DT_INST_REG_ADDR(inst),            \
 	};                                                                     \
 	                                                                       \

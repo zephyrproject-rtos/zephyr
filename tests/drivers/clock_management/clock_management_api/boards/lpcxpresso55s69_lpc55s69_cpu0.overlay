@@ -30,7 +30,7 @@
 		/* Expect a clock frequency of 500 KHz */
 		clocks = <&xtal32m 1 &clk_in_en 1 &pll0clksel 1
 			&pll0_pdec 4 &pll0_directo 0
-			&pll0 512000000 8 256 0 31 31 0 0 0
+			&pll0 8 256 0 31 31 0 0 0
 			&pll1_bypass 0 &clkoutsel 1
 			&clkoutdiv 256>;
 		clock-frequency = <DT_FREQ_K(500)>;
@@ -50,7 +50,7 @@
 		 * After reconfiguring PLL0 from emul_dev2, output
 		 * frequency will be 25.5 MHz
 		 */
-		clocks = <&pll0_pdec 8 &pll0 401000000 4 0
+		clocks = <&pll0_pdec 8 &pll0 4 0
 				0 4 3 1 3363831808 0 &clkoutdiv 2>;
 		clock-frequency = <DT_FREQ_K(25500)>;
 	};
@@ -62,7 +62,7 @@
 		 * this way, the SDIO locking state will fail to apply,
 		 * as it reconfigures PLL0
 		 */
-		clocks = <&pll0_pdec 8 &pll0 401000000 4 0
+		clocks = <&pll0_pdec 8 &pll0 4 0
 				0 4 3 1 3363831808 0 &clkoutdiv 2>;
 		clock-frequency = <DT_FREQ_K(25500)>;
 		locking-state;
@@ -76,7 +76,7 @@
 		/* Expect a clock frequency of 48 MHz */
 		clocks = <&fro_12m 1 &pll1clksel 0
 			&pll1_pdec 4 &pll1_directo 0
-			&pll1 384000000 4 128 0 62 31
+			&pll1 4 128 0 62 31
 			&pll1_bypass 0 &sdioclksel 5
 			&sdioclkdiv 2>;
 		clock-frequency = <DT_FREQ_M(48)>;
@@ -94,7 +94,7 @@
 		/* Expect notification on both devices with this state.
 		 * frequency should be 25.5 MHz for each
 		 */
-		clocks = <&pll0_pdec 8 &pll0 408000000 4 0
+		clocks = <&pll0_pdec 8 &pll0 4 0
 			0 4 3 1 3422552064 0 &sdioclkdiv 2
 			&sdioclksel 1>;
 		clock-frequency = <DT_FREQ_K(25500)>;
@@ -106,12 +106,26 @@
 		 * and the first consumer currently has a locking frequency
 		 * constraint on the PLL0 frequency
 		 */
-		clocks = <&pll0_pdec 10 &pll0 408000000 4 0
+		clocks = <&pll0_pdec 10 &pll0 4 0
 			0 4 3 1 3422552064 0 &sdioclkdiv 2
 			&sdioclksel 1>;
 		clock-frequency = <DT_FREQ_K(20400)>;
 		locking-state;
 	};
+};
+
+/*
+ * Replace the compatible for fro_1m with a generic driver.  this makes us use a
+ * bit more flash (which is why it isn't the default setting), but lets us
+ * test the driver
+ */
+&fro_1m {
+	compatible = "clock-source";
+	/delete-property/ pdown-mask;
+	/delete-property/ offset;
+	/delete-property/ frequency;
+	clock-frequency = <DT_FREQ_M(1)>;
+	gate-offset = <0x6>;
 };
 
 / {

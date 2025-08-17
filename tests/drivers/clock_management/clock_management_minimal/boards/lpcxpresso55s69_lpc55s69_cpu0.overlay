@@ -32,7 +32,7 @@
 		/* Expect a clock frequency of 16 MHz */
 		clocks = <&xtal32m 1 &clk_in_en 1 &pll0clksel 1
 			&pll0_pdec 4 &pll0_directo 0
-			&pll0 512000000 8 256 0 31 31 0 0 0
+			&pll0 8 256 0 31 31 0 0 0
 			&pll1_bypass 0 &clkoutsel 1
 			&clkoutdiv 8>;
 		clock-frequency = <DT_FREQ_M(16)>;
@@ -50,7 +50,7 @@
 		/* Expect a clock frequency of 500 KHz */
 		clocks = <&xtal32m 1 &clk_in_en 1 &pll0clksel 1
 			&pll0_pdec 4 &pll0_directo 0
-			&pll0 512000000 8 256 0 31 31 0 0 0
+			&pll0 8 256 0 31 31 0 0 0
 			&pll1_bypass 0 &clkoutsel 1
 			&clkoutdiv 256>;
 		clock-frequency = <DT_FREQ_K(500)>;
@@ -64,7 +64,7 @@
 		/* Expect a clock frequency of 48 MHz */
 		clocks = <&fro_12m 1 &pll1clksel 0
 			&pll1_pdec 4 &pll1_directo 0
-			&pll1 384000000 4 128 0 62 31
+			&pll1 4 128 0 62 31
 			&pll1_bypass 0 &sdioclksel 5
 			&sdioclkdiv 2>;
 		clock-frequency = <DT_FREQ_M(48)>;
@@ -75,7 +75,7 @@
 		/* Expect a clock frequency of 24 MHz */
 		clocks = <&fro_12m 1 &pll1clksel 0
 			&pll1_pdec 4 &pll1_directo 0
-			&pll1 384000000 4 128 0 62 31
+			&pll1 4 128 0 62 31
 			&pll1_bypass 0 &sdioclksel 5
 			&sdioclkdiv 4>;
 		clock-frequency = <DT_FREQ_M(24)>;
