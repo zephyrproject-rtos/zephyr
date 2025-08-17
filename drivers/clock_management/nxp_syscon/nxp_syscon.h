@@ -19,29 +19,29 @@ extern "C" {
 #endif
 
 /* No data structure needed for mux */
-#define Z_CLOCK_MANAGEMENT_NXP_SYSCON_CLOCK_MUX_DATA_DEFINE(node_id, prop, idx)
+#define Z_CLOCK_MANAGEMENT_DATA_DEFINE_nxp_syscon_clock_mux(node_id, prop, idx)
 /* Get mux configuration value */
-#define Z_CLOCK_MANAGEMENT_NXP_SYSCON_CLOCK_MUX_DATA_GET(node_id, prop, idx)         \
+#define Z_CLOCK_MANAGEMENT_DATA_GET_nxp_syscon_clock_mux(node_id, prop, idx)         \
 	DT_PHA_BY_IDX(node_id, prop, idx, multiplexer)
 
 /* No data structure needed for frgmult */
-#define Z_CLOCK_MANAGEMENT_NXP_SYSCON_FLEXFRG_DATA_DEFINE(node_id, prop, idx)
+#define Z_CLOCK_MANAGEMENT_DATA_DEFINE_nxp_syscon_flexfrg(node_id, prop, idx)
 /* Get numerator configuration value */
-#define Z_CLOCK_MANAGEMENT_NXP_SYSCON_FLEXFRG_DATA_GET(node_id, prop, idx)           \
+#define Z_CLOCK_MANAGEMENT_DATA_GET_nxp_syscon_flexfrg(node_id, prop, idx)           \
 	DT_PHA_BY_IDX(node_id, prop, idx, numerator)
 
 /* No data structure needed for div */
-#define Z_CLOCK_MANAGEMENT_NXP_SYSCON_CLOCK_DIV_DATA_DEFINE(node_id, prop, idx)
+#define Z_CLOCK_MANAGEMENT_DATA_DEFINE_nxp_syscon_clock_div(node_id, prop, idx)
 /* Get div configuration value */
-#define Z_CLOCK_MANAGEMENT_NXP_SYSCON_CLOCK_DIV_DATA_GET(node_id, prop, idx)         \
+#define Z_CLOCK_MANAGEMENT_DATA_GET_nxp_syscon_clock_div(node_id, prop, idx)         \
 	DT_PHA_BY_IDX(node_id, prop, idx, divider)
 
-#define Z_CLOCK_MANAGEMENT_NXP_SYSCON_CLOCK_GATE_DATA_DEFINE(node_id, prop, idx)
-#define Z_CLOCK_MANAGEMENT_NXP_SYSCON_CLOCK_GATE_DATA_GET(node_id, prop, idx)        \
+#define Z_CLOCK_MANAGEMENT_DATA_DEFINE_nxp_syscon_clock_gate(node_id, prop, idx)
+#define Z_CLOCK_MANAGEMENT_DATA_GET_nxp_syscon_clock_gate(node_id, prop, idx)        \
 	DT_PHA_BY_IDX(node_id, prop, idx, gate)
 
-#define Z_CLOCK_MANAGEMENT_NXP_SYSCON_CLOCK_SOURCE_DATA_DEFINE(node_id, prop, idx)
-#define Z_CLOCK_MANAGEMENT_NXP_SYSCON_CLOCK_SOURCE_DATA_GET(node_id, prop, idx)      \
+#define Z_CLOCK_MANAGEMENT_DATA_DEFINE_nxp_syscon_clock_source(node_id, prop, idx)
+#define Z_CLOCK_MANAGEMENT_DATA_GET_nxp_syscon_clock_source(node_id, prop, idx)      \
 	DT_PHA_BY_IDX(node_id, prop, idx, gate)
 
 /** @endcond */

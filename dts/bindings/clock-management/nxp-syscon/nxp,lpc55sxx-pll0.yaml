@@ -5,8 +5,6 @@ description: |
   LPC SYSCON LPC55Sxx PLL0. The node configures PLL0 on the LPC55Sxx series,
   which offers a spread spectrum generator. The node accepts nine specifiers,
   which have the following meanings:
-  - frequency: output frequency (before postdiv) this PLL will generate.
-    Set to 0 to power down.
   - ndec: PLL pre divider setting
   - mdec: If nonzero, sets PLL0 to use provided MDEC value in normal mode
   - selr: Bandwidth select R value. Should be 0 for normal applications
@@ -29,10 +27,9 @@ properties:
     description: PLL0CTRL register address for this block
 
   "#clock-cells":
-    const: 9
+    const: 8
 
 clock-cells:
-  - frequency
   - ndec
   - mdec
   - selr
