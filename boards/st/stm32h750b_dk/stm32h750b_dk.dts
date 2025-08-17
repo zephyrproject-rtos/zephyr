@@ -111,7 +111,7 @@
 	ext-sdram = <&sdram2>;
 	status = "okay";
 
-	clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000008>,
+	clocks = <&rcc STM32_CLOCK(APB3, 3)>,
 		<&rcc STM32_SRC_PLL3_R NO_SEL>;
 
 	width = <480>;
@@ -265,7 +265,7 @@
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB4 0x00010000>,
+	clocks = <&rcc STM32_CLOCK(APB4, 16)>,
 		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	status = "okay";
 };
