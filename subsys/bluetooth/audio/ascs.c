@@ -1077,6 +1077,8 @@ static void ascs_ep_iso_disconnected(struct bt_bap_ep *ep, uint8_t reason)
 		ase->unexpected_iso_link_loss = true;
 
 		ascs_ep_set_state(ep, BT_BAP_EP_STATE_QOS_CONFIGURED);
+	} else {
+		/* no op */
 	}
 }
 
