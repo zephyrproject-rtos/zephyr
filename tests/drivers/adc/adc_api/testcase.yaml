@@ -3,20 +3,14 @@ common:
     - adc
     - drivers
     - userspace
+  depends_on: adc
+  filter: dt_node_has_prop("/zephyr,user","io-channels")
 tests:
   drivers.adc:
-    depends_on: adc
     min_flash: 40
-    platform_exclude:
-      - nucleo_u031r8
-      - panb511evb/nrf54l15/cpuapp
-      - panb511evb/nrf54l15/cpuapp/ns
-      - nrf54l15dk/nrf54l15/cpuapp/ns
-      - nrf54l15dk/nrf54l10/cpuapp/ns
-      - bl54l15_dvk/nrf54l10/cpuapp/ns
-      - bl54l15_dvk/nrf54l15/cpuapp/ns
-      - bl54l15u_dvk/nrf54l15/cpuapp/ns
-      - raytac_an54l15q_db/nrf54l15/cpuapp/ns
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
   drivers.adc.b_u585i_iot02a_adc4:
     extra_args:
       - DTC_OVERLAY_FILE="boards/b_u585i_iot02a_adc4.overlay"
@@ -32,7 +26,6 @@ tests:
     extra_args:
       - EXTRA_CONF_FILE="overlay-dma-stm32.conf"
     depends_on:
-      - adc
       - dma
     min_flash: 40
     platform_allow:
@@ -67,7 +60,6 @@ tests:
     extra_args:
       - EXTRA_CONF_FILE="overlay-dma-kinetis.conf"
     depends_on:
-      - adc
       - dma
     min_flash: 40
     platform_allow:
@@ -80,7 +72,6 @@ tests:
       - DTC_OVERLAY_FILE="boards/esp32s3_devkitc_procpu.overlay"
       - EXTRA_CONF_FILE="overlay-dma-esp32.conf"
     depends_on:
-      - adc
       - dma
     platform_allow:
       - esp32s3_devkitc/esp32s3/procpu
