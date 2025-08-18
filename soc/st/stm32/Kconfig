@@ -26,6 +26,7 @@ config USE_STM32_ASSERT
 
 config STM32_BACKUP_SRAM
 	bool "STM32 Backup SRAM"
+	default y
 	depends on DT_HAS_ST_STM32_BACKUP_SRAM_ENABLED
 	help
 	  Enable support for STM32 backup SRAM.
