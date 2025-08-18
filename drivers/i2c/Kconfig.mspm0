@@ -1,0 +1,37 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Texas Instruments Incorporated
+
+config I2C_MSPM0
+	bool "MSPM0 I2C driver"
+	default y
+	depends on DT_HAS_TI_MSPM0_I2C_ENABLED
+	select PINCTRL
+	select I2C_TRANSFER_TIMEOUT_SUPPORTED
+	help
+	  This option enables the TI MSPM0 I2C driver.
+
+if I2C_MSPM0
+
+config MSPM0_I2C_SCL_LOW_TIMEOUT_MS
+	int "I2C SCL Timeout"
+	default 1000
+	help
+	  Timeout in milliseconds that reflects acceptable
+	  cumulative low period in a transaction. Note this
+	  can be a restriction on very long SCL stretch
+
+config MSPM0_I2C_FIFO_DEPTH
+	int "TX/RX FIFO depth; can be overridden by SoC defconfig"
+	default 8
+
+config MSPM0_I2C_MAX_DISPATCH_MSGS
+	int "Upper bound on number of dispatchable messages"
+	default 8
+	help
+	  Dispatchable messages are created by combining continuous
+	  messages that have the same direction and no STOP/RESTART
+	  conditions in between. This is a configurable upper limit
+	  on the number of dispatchable messages supported by the
+	  driver.
+
+endif # I2C_MSPM0
