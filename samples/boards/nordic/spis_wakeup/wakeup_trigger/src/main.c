@@ -42,6 +42,7 @@ int main(void)
 		k_busy_wait(500000);
 		LOG_INF("SPIM: transferring the CONFIG_BOARD_QUALIFIERS: '%s'", tx_buffer);
 		spi_write_dt(&spim, &tx_spi_buf_set);
+		k_busy_wait(1000);
 	}
 
 	return 0;
