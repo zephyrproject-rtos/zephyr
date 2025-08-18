@@ -81,6 +81,9 @@ Bluetooth Audio
   :c:enumerator:`BT_AUDIO_CODEC_CFG_TARGET_PHY_2M`.
   The :c:macro:`BT_AUDIO_CODEC_CFG` macro defaults to these values.
   (:github:`93825``)
+* Setting the BGS role for GMAP now requires also supporting and implementing the
+  :kconfig:option:`CONFIG_BT_BAP_BROADCAST_ASSISTANT`.
+  See the :zephyr:code-sample:`bluetooth_bap_broadcast_assistant` sample as a reference.
 
 .. zephyr-keep-sorted-stop
 
