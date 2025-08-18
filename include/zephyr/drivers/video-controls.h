@@ -17,7 +17,7 @@
 /**
  * @brief Video controls
  * @defgroup video_controls Video Controls
- * @ingroup io_interfaces
+ * @ingroup video_interface
  *
  * The Video control IDs (CIDs) are introduced with the same name as
  * Linux V4L2 subsystem and under the same class. This facilitates
