@@ -125,3 +125,9 @@
 	ti,pwm-mode = "EDGE_ALIGN";
 	ti,period = <1000>;
 };
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pa17 &i2c1_sda_pa16>;
+	pinctrl-names = "default";
+	status = "okay";
+};
