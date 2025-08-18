@@ -19,7 +19,7 @@
 _ASM_FILE_PROLOGUE
 
 GTEXT(z_arm_reset)
-GTEXT(z_early_memset)
+GTEXT(arch_early_memset)
 GDATA(z_interrupt_stacks)
 GDATA(z_main_stack)
 #if defined(CONFIG_DEBUG_THREAD_INFO)
@@ -177,7 +177,7 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
     ldr r0, =z_interrupt_stacks
     ldr r1, =0xaa
     ldr r2, =CONFIG_ISR_STACK_SIZE + MPU_GUARD_ALIGN_AND_SIZE
-    bl z_early_memset
+    bl arch_early_memset
 #endif
 
     /*
