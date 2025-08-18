@@ -59,4 +59,4 @@ static const struct stm32_backup_sram_config config = {
 };
 
 DEVICE_DT_INST_DEFINE(0, stm32_backup_sram_init, NULL, NULL, &config,
-		      POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY, NULL);
+		      POST_KERNEL, CONFIG_STM32_BACKUP_SRAM_INIT_PRIORITY, NULL);
