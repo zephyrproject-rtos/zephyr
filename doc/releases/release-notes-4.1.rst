@@ -42,6 +42,21 @@ The following CVEs are addressed by this release:
   <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-03-1/>`_
 * :cve:`2025-27810` `Potential authentication bypass in TLS handshake
   <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-03-2/>`_
+* :cve:`2025-47917` `Misleading memory management in mbedtls_x509_string_to_names()
+  <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-06-7/>`_
+* :cve:`2025-48965` `NULL pointer dereference after using mbedtls_asn1_store_named_data()
+  <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-06-6/>`_
+* :cve:`2025-49087` `Timing side-channel in block cipher decryption with PKCS#7 padding
+  <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-06-5/>`_
+* :cve:`2025-49600` `Unchecked return value in LMS verification allows signature bypass
+  <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-06-3/>`_
+* :cve:`2025-49601` `Out-of-bounds read in mbedtls_lms_import_public_key()
+  <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-06-4/>`_
+* :cve:`2025-52496` `Race condition in AESNI support detection
+  <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-06-1/>`_
+* :cve:`2025-52497` `Heap buffer under-read when parsing PEM-encrypted material
+  <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-06-2/>`_
+
 
 More detailed information can be found in:
 https://docs.zephyrproject.org/latest/security/vulnerabilities.html
@@ -54,7 +69,8 @@ These GitHub issues were addressed since the previous 4.1.0 tagged release:
 Mbed TLS
 ********
 
-Mbed TLS was updated to version 3.6.3 (from 3.6.2). The release notes can be found at:
+Mbed TLS was updated to version 3.6.4 (from 3.6.2). The release notes can be found at:
+https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.4
 https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.3
 
 Mbed TLS 3.6 is an LTS release that will be supported
