@@ -12,9 +12,9 @@
  * @brief Main header file for sensor driver API.
  */
 
- /**
- * @brief Sensor Interface
- * @defgroup sensor_interface Sensor Interface
+/**
+ * @brief Interfaces for sensors.
+ * @defgroup sensor_interface Sensor
  * @since 1.2
  * @version 1.0.0
  * @ingroup io_interfaces

@@ -18,7 +18,8 @@
 #include <sys/types.h>
 
 /**
- * @defgroup edac_interface EDAC API
+ * @brief Interfaces for Error Detection and Correction (EDAC) controllers.
+ * @defgroup edac_interface EDAC
  * @since 2.5
  * @version 0.8.0
  * @ingroup io_interfaces

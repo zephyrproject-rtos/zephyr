@@ -23,8 +23,8 @@
 #define ZEPHYR_INCLUDE_DRIVERS_MIPI_DBI_H_
 
 /**
- * @brief MIPI-DBI driver APIs
- * @defgroup mipi_dbi_interface MIPI-DBI driver APIs
+ * @brief Interfaces for MIPI-DBI (Display Bus Interface).
+ * @defgroup mipi_dbi_interface MIPI-DBI
  * @since 3.6
  * @version 0.8.0
  * @ingroup display_interface

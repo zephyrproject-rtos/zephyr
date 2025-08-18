@@ -14,11 +14,11 @@
 #define ZEPHYR_INCLUDE_DRIVERS_DAI_H_
 
 /**
- * @defgroup dai_interface DAI Interface
+ * @defgroup dai_interface DAI
  * @since 3.1
  * @version 0.1.0
  * @ingroup io_interfaces
- * @brief DAI Interface
+ * @brief Interfaces for Digital Audio Interfaces.
  *
  * The DAI API provides support for the standard I2S (SSP) and its common variants.
  * It supports also DMIC, HDA and SDW backends. The API has a config function

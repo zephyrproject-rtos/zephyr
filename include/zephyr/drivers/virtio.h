@@ -20,8 +20,8 @@ extern "C" {
 #endif
 
 /**
- * @brief Virtio Interface
- * @defgroup virtio_interface Virtio Interface
+ * @brief Interfaces for Virtual I/O (VIRTIO) devices.
+ * @defgroup virtio_interface VIRTIO
  * @ingroup io_interfaces
  * @{
  */

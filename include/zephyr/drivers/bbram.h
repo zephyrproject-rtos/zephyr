@@ -18,8 +18,8 @@
 #include <zephyr/device.h>
 
 /**
- * @brief BBRAM Interface
- * @defgroup bbram_interface BBRAM Interface
+ * @brief Interfaces for Battery-Backed RAM (BBRAM).
+ * @defgroup bbram_interface BBRAM
  * @ingroup io_interfaces
  * @{
  */

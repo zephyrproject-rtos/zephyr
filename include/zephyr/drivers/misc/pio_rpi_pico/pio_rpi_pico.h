@@ -16,8 +16,8 @@
 #define ZEPHYR_DRIVERS_MISC_PIO_PICO_RPI_PIO_PICO_RPI_H_
 
 /**
- * @brief Raspberry Pi Pico PIO driver APIs
- * @defgroup pio_rpi_pico_interface Raspberry Pi Pico PIO Driver APIs
+ * @brief Interfaces for Raspberry Pi Pico Programmable I/O (PIO).
+ * @defgroup pio_rpi_pico_interface Raspberry Pi Pico PIO
  * @ingroup misc_interfaces
  *
  * @{

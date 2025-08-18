@@ -14,8 +14,8 @@
 #define ZEPHYR_INCLUDE_INPUT_H_
 
 /**
- * @brief Input Interface
- * @defgroup input_interface Input Interface
+ * @brief Interfaces for input devices.
+ * @defgroup input_interface Input
  * @since 3.4
  * @version 0.1.0
  * @ingroup io_interfaces

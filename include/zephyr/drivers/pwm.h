@@ -15,8 +15,8 @@
 #define ZEPHYR_INCLUDE_DRIVERS_PWM_H_
 
 /**
- * @brief PWM Interface
- * @defgroup pwm_interface PWM Interface
+ * @brief Interfaces for Pulse Width Modulation (PWM) controllers.
+ * @defgroup pwm_interface PWM
  * @since 1.0
  * @version 1.0.0
  * @ingroup io_interfaces

@@ -14,8 +14,8 @@
 #define ZEPHYR_INCLUDE_DRIVERS_SMBUS_H_
 
 /**
- * @brief SMBus Interface
- * @defgroup smbus_interface SMBus Interface
+ * @brief Interfaces for System Management Bus (SMBus).
+ * @defgroup smbus_interface SMBus
  * @since 3.4
  * @version 0.1.0
  * @ingroup io_interfaces

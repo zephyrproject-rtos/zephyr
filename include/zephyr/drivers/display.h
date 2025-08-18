@@ -14,8 +14,8 @@
 #define ZEPHYR_INCLUDE_DRIVERS_DISPLAY_H_
 
 /**
- * @brief Display Interface
- * @defgroup display_interface Display Interface
+ * @brief Interfaces for display controllers.
+ * @defgroup display_interface Display
  * @since 1.14
  * @version 0.8.0
  * @ingroup io_interfaces

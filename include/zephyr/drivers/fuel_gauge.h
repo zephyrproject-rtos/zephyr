@@ -16,8 +16,8 @@
 #define ZEPHYR_INCLUDE_DRIVERS_BATTERY_H_
 
 /**
- * @brief Fuel Gauge Interface
- * @defgroup fuel_gauge_interface Fuel Gauge Interface
+ * @brief Interfaces for fuel gauges.
+ * @defgroup fuel_gauge_interface Fuel Gauge
  * @since 3.3
  * @version 0.1.0
  * @ingroup io_interfaces

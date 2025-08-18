@@ -15,8 +15,9 @@
 #define ZEPHYR_INCLUDE_DRIVERS_UART_H_
 
 /**
- * @brief UART Interface
- * @defgroup uart_interface UART Interface
+ * @brief Interfaces for Universal Asynchronous Receiver/Transmitter (UART)
+ *        controllers.
+ * @defgroup uart_interface UART
  * @since 1.0
  * @version 1.0.0
  * @ingroup io_interfaces
