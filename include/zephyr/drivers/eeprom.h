@@ -18,8 +18,9 @@
 #define ZEPHYR_INCLUDE_DRIVERS_EEPROM_H_
 
 /**
- * @brief EEPROM Interface
- * @defgroup eeprom_interface EEPROM Interface
+ * @brief Interfaces to Electrically Erasable Programmable Read-Only Memory
+ *        devices.
+ * @defgroup eeprom_interface EEPROM
  * @since 2.1
  * @version 1.0.0
  * @ingroup io_interfaces

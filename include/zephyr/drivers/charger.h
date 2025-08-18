@@ -14,8 +14,8 @@
 #define ZEPHYR_INCLUDE_DRIVERS_CHARGER_H_
 
 /**
- * @brief Charger Interface
- * @defgroup charger_interface Charger Interface
+ * @brief Interfaces to battery chargers.
+ * @defgroup charger_interface Battery Charger
  * @ingroup io_interfaces
  * @{
  */

@@ -14,8 +14,8 @@
 #define ZEPHYR_INCLUDE_DRIVERS_GNSS_H_
 
 /**
- * @brief GNSS Interface
- * @defgroup gnss_interface GNSS Interface
+ * @brief Interfaces to Global Navigation Satellite Systems (GNSS).
+ * @defgroup gnss_interface GNSS
  * @since 3.6
  * @version 0.1.0
  * @ingroup io_interfaces

@@ -16,8 +16,8 @@
 #define ZEPHYR_INCLUDE_DRIVERS_ENTROPY_H_
 
 /**
- * @brief Entropy Interface
- * @defgroup entropy_interface Entropy Interface
+ * @brief Interfaces to entropy hardware.
+ * @defgroup entropy_interface Entropy
  * @since 1.10
  * @version 1.0.0
  * @ingroup io_interfaces

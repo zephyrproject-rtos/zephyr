@@ -14,8 +14,8 @@
  */
 
 /**
- * @brief Comparator Interface
- * @defgroup comparator_interface Comparator Interface
+ * @brief Interfaces to comparators.
+ * @defgroup comparator_interface Comparator
  * @since 4.0
  * @version 0.1.0
  * @ingroup io_interfaces
