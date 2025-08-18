@@ -9,6 +9,7 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/storage/flash_map.h>
+#include <zephyr/drivers/gpio.h>
 
 #if defined(CONFIG_NORDIC_QSPI_NOR)
 #define TEST_AREA_DEV_NODE	DT_INST(0, nordic_qspi_nor)
@@ -320,6 +321,72 @@ ZTEST(flash_driver, test_flash_erase)
 	 * doesn't contain erase_value
 	 */
 	zassert_not_equal(expected[0], erase_value, "These values shall be different");
+}
+
+ZTEST(flash_driver, test_flash_erase_different_block_sizes)
+{
+	if (!IS_ENABLED(CONFIG_SOC_NRF54H20)) {
+		ztest_test_skip();
+	}
+
+	int rc;
+
+	/* There is not enough RAM memory
+	 * to allocate the read buffer
+	 * for the entire erase sector size
+	 */
+	uint8_t read_buffer[EXPECTED_SIZE];
+	uint32_t offset;
+	uint32_t erase_block_size_to_expected_size_ratio;
+	const uint8_t erase_block_size_kB[] = {4, 64};
+	const struct flash_parameters *fparams = flash_get_parameters(flash_dev);
+
+	for (int i = 0; i < ARRAY_SIZE(erase_block_size_kB); i++) {
+
+		TC_PRINT("Flash erase with erase size = %ukB\n", erase_block_size_kB[i]);
+		offset = 0;
+
+		rc = flash_erase(flash_dev, page_info.start_offset, erase_block_size_kB[i] * 1024);
+		zassert_equal(rc, 0, "Flash memory not properly erased: %d", rc);
+
+		erase_block_size_to_expected_size_ratio =
+			(erase_block_size_kB[i] * 1024) / EXPECTED_SIZE;
+		TC_PRINT("Erase block is %u times %uB\n", erase_block_size_to_expected_size_ratio,
+			 EXPECTED_SIZE);
+
+		for (int block_num = 0; block_num < erase_block_size_to_expected_size_ratio;
+		     block_num++) {
+			rc = flash_read(flash_dev, page_info.start_offset + offset, read_buffer,
+					EXPECTED_SIZE);
+			zassert_equal(rc, 0, "Cannot read flash");
+
+			for (int i = 0; i < EXPECTED_SIZE; i++) {
+				if (read_buffer[i] != fparams->erase_value) {
+					zassert_equal(read_buffer[i], fparams->erase_value,
+						      "Erase value != expected erase value, "
+						      "address offset = 0x%x\n",
+						      offset + i);
+				}
+			}
+			offset += EXPECTED_SIZE;
+		}
+	}
+}
+
+ZTEST(flash_driver, test_supply_gpios_control)
+{
+	if (!DT_NODE_HAS_PROP(TEST_AREA_DEV_NODE, supply_gpios)) {
+		ztest_test_skip();
+	}
+
+#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), test_gpios)
+	const struct gpio_dt_spec test_gpio =
+		GPIO_DT_SPEC_GET(DT_PATH(zephyr_user), test_gpios);
+	zassert_true(gpio_is_ready_dt(&test_gpio), "Test GPIO is not ready\n");
+	zassert_ok(gpio_pin_configure_dt(&test_gpio, GPIO_INPUT | GPIO_PULL_DOWN),
+		   "Failed to configure test pin\n");
+	zassert_equal(gpio_pin_get(test_gpio.port, test_gpio.pin), 1, "Supply GPIO is not set\n");
+#endif
 }
 
 struct test_cb_data_type {
