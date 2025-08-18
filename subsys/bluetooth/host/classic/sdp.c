@@ -2051,10 +2051,11 @@ static uint16_t get_record_len(struct bt_sdp_client *session)
 enum uuid_state {
 	UUID_NOT_RESOLVED,
 	UUID_RESOLVED,
+	UUID_PARTIAL_RESOLVED,
 };
 
-static void sdp_client_notify_result(struct bt_sdp_client *session,
-				     enum uuid_state state)
+static int sdp_client_notify_result(struct bt_sdp_client *session,
+				    enum uuid_state state)
 {
 	struct bt_conn *conn = session->chan.chan.conn;
 	struct bt_sdp_client_result result;
@@ -2065,17 +2066,61 @@ static void sdp_client_notify_result(struct bt_sdp_client *session,
 		result.resp_buf = NULL;
 		result.next_record_hint = false;
 		session->param->func(conn, &result, session->param);
-		return;
+		return 0;
 	}
 
 	while (session->rec_buf->len) {
 		struct net_buf_simple_state buf_state;
 
+		net_buf_simple_save(&session->rec_buf->b, &buf_state);
 		rec_len = get_record_len(session);
 		/* tell the user about multi record resolution */
 		if (session->rec_buf->len > rec_len) {
 			result.next_record_hint = true;
 		} else {
+			if (state == UUID_PARTIAL_RESOLVED) {
+				struct net_buf *buf;
+				uint8_t *src, *dst;
+				uint16_t len;
+
+				net_buf_simple_restore(&session->rec_buf->b, &buf_state);
+				/* Partial resolution, continue processing */
+				src = session->rec_buf->data;
+				len = session->rec_buf->len;
+
+				/* The allocated buffer is full. Try to allocate a new buffer from
+				 * the same pool. Use allocated buffer to continue the SDP
+				 * discovery if the new buffer allocated. Otherwise, use the
+				 * current allocated to continue the SDP discovery.
+				 */
+				buf = net_buf_alloc(session->param->pool, K_NO_WAIT);
+				if (buf != NULL) {
+					if (net_buf_tailroom(buf) < len) {
+						LOG_ERR("No more buffer space for SDP discover. "
+							"Need to increase buffer size of the "
+							"receiving pool.");
+						net_buf_unref(buf);
+						return -ENOMEM;
+					}
+					net_buf_add_mem(buf, src, len);
+					net_buf_unref(session->rec_buf);
+					session->rec_buf = buf;
+					LOG_DBG("Continue discovery with new buf %p", buf);
+					return 0;
+				}
+
+				net_buf_reset(session->rec_buf);
+				dst = net_buf_add(session->rec_buf, len);
+				if (dst == src) {
+					LOG_ERR("No more buffer space for SDP discover. Need to "
+						"increase buffer size of the receiving pool.");
+					return -ENOMEM;
+				}
+
+				memmove(dst, src, len);
+				LOG_DBG("Continue discovery with current buf");
+				return 0;
+			}
 			result.next_record_hint = false;
 		}
 
@@ -2100,9 +2145,11 @@ static void sdp_client_notify_result(struct bt_sdp_client *session,
 		 */
 		net_buf_pull(session->rec_buf, rec_len);
 		if (user_ret == BT_SDP_DISCOVER_UUID_STOP) {
-			break;
+			return -ECANCELED;
 		}
 	}
+
+	return 0;
 }
 
 static int sdp_client_discover(struct bt_sdp_client *session)
@@ -2264,6 +2311,11 @@ static int sdp_client_receive_ss(struct bt_sdp_client *session, struct net_buf *
 	return 0;
 }
 
+static int sdp_client_ssa_sa_notify(struct bt_sdp_client *session)
+{
+	return sdp_client_notify_result(session, UUID_PARTIAL_RESOLVED);
+}
+
 static int sdp_client_receive_ssa_sa(struct bt_sdp_client *session, struct net_buf *buf)
 {
 	struct bt_sdp_pdu_cstate *cstate;
@@ -2284,7 +2336,7 @@ static int sdp_client_receive_ssa_sa(struct bt_sdp_client *session, struct net_b
 		return -EINVAL;
 	}
 	/* Check valid range of attributes length */
-	if (((session->cstate.length == 0) && (frame_len < 2)) || (frame_len == 0)) {
+	if ((session->cstate.length == 0) && (frame_len < 2)) {
 		LOG_ERR("Invalid attributes data length");
 		return -EINVAL;
 	}
@@ -2300,6 +2352,22 @@ static int sdp_client_receive_ssa_sa(struct bt_sdp_client *session, struct net_b
 	if ((frame_len + SDP_CONT_STATE_LEN_SIZE + cstate->length) > buf->len) {
 		LOG_ERR("Invalid frame payload length");
 		return -EINVAL;
+	}
+
+	/* No more data found for given UUID and Continuation State length is not zero.
+	 * It means the remaining tailroom of the RX buffer is not enough to store the data.
+	 * Try to notify the received data, and request the next portion of data by sending a
+	 * continuation request.
+	 */
+	if (frame_len == 0 && cstate->length != 0) {
+		/* Notify current received data */
+		int err;
+
+		err = sdp_client_ssa_sa_notify(session);
+		if (err != 0) {
+			LOG_ERR("Failed to notify received data: %d", err);
+			return err;
+		}
 	}
 
 	/*
