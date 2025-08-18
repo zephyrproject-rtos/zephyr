@@ -82,6 +82,7 @@ menuconfig SMBUS_STM32
 	default y
 	depends on DT_HAS_ST_STM32_SMBUS_ENABLED
 	depends on I2C_STM32
+	select PINCTRL
 	help
 	  Enable STM32 SMBus driver.
 
