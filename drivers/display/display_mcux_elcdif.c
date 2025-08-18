@@ -54,7 +54,9 @@ struct mcux_elcdif_data {
 	struct k_sem sem;
 	/* Tracks index of next active driver framebuffer */
 	uint8_t next_idx;
+#ifndef CONFIG_MCUX_ELCDIF_START_ON_INIT
 	bool running;
+#endif
 #ifdef CONFIG_MCUX_ELCDIF_PXP
 	/* Given to when PXP completes operation */
 	struct k_sem pxp_done;
@@ -217,10 +219,12 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x, const u
 	dev_data->next_idx = (dev_data->next_idx + 1) % CONFIG_MCUX_ELCDIF_FB_NUM;
 #endif
 
+#ifndef CONFIG_MCUX_ELCDIF_START_ON_INIT
 	if (unlikely(!dev_data->running)) {
 		ELCDIF_RgbModeStart(config->base);
 		dev_data->running = true;
 	}
+#endif
 
 	/* Enable frame buffer completion interrupt */
 	ELCDIF_EnableInterrupts(config->base, kELCDIF_CurFrameDoneInterruptEnable);
@@ -370,9 +374,13 @@ static int mcux_elcdif_init(const struct device *dev)
 
 #if CONFIG_MCUX_ELCDIF_FB_NUM != 0
 	dev_data->active_fb = dev_data->fb[0];
+	dev_data->rgb_mode.bufferAddr = (uint32_t)dev_data->active_fb;
 #endif
 
 	ELCDIF_RgbModeInit(config->base, &dev_data->rgb_mode);
+#ifdef CONFIG_MCUX_ELCDIF_START_ON_INIT
+	ELCDIF_RgbModeStart(config->base);
+#endif
 
 	return 0;
 }
