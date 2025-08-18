@@ -17,7 +17,7 @@
 /**
  * @brief USB Power Delivery
  * @defgroup usb_power_delivery USB Power Delivery
- * @ingroup io_interfaces
+ * @ingroup usb_type_c
  * @{
  */
 
