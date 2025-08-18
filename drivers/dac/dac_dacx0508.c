@@ -373,7 +373,7 @@ static DEVICE_API(dac, dacx0508_driver_api) = {
 	static const struct dacx0508_config dac##t##_config_##n = { \
 		.bus = SPI_DT_SPEC_GET(INST_DT_DACX0508(n, t), \
 			SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | \
-			SPI_WORD_SET(8) | SPI_MODE_CPHA, 0), \
+			SPI_WORD_SET(8) | SPI_MODE_CPHA), \
 		.resolution = res, \
 		.reference = DT_PROP(INST_DT_DACX0508(n, t), \
 					     voltage_reference), \

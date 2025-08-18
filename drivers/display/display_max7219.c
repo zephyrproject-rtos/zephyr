@@ -332,7 +332,7 @@ static int max7219_init(const struct device *dev)
 	};                                                                     \
 	static const struct max7219_config max7219_config_##n = {              \
 		.spi = SPI_DT_SPEC_INST_GET(                                   \
-			n, SPI_OP_MODE_MASTER | SPI_WORD_SET(8U), 0U),         \
+			n, SPI_OP_MODE_MASTER | SPI_WORD_SET(8U)),             \
 		.num_cascading = DT_INST_PROP(n, num_cascading),               \
 		.intensity = DT_INST_PROP(n, intensity),                       \
 		.scan_limit = DT_INST_PROP(n, scan_limit),                     \
