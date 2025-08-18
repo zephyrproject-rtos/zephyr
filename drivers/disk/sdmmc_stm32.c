@@ -8,6 +8,7 @@
 
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/disk.h>
+#include <zephyr/drivers/disks/sdmmc_stm32.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -814,6 +815,13 @@ err_card_detect:
 	stm32_sdmmc_card_detect_uninit(priv);
 #endif
 	return err;
+}
+
+void stm32_sdmmc_get_card_cid(const struct device *dev, uint32_t cid[4])
+{
+	const struct stm32_sdmmc_priv *priv = dev->data;
+
+	memcpy(cid, &priv->hsd.CID, sizeof(priv->hsd.CID));
 }
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(0))
