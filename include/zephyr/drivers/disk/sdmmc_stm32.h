@@ -28,4 +28,22 @@
  */
 void stm32_sdmmc_get_card_cid(const struct device *dev, uint32_t cid[4]);
 
+/**
+ * @brief Get the CSD (Card Specific Data) information from the SD/MMC card.
+ *
+ * This function copies the Card Specific Data (CSD) from the internal
+ * HAL SD/MMC struct populated during device initialization. It does not check
+ * the current presence or status of the card. If the card was removed after
+ * initialization (or initialization failed), the returned CSD may be stale or
+ * all zeroes.
+ *
+ * It is the caller's responsibility to verify that the card is present and
+ * initialized (e.g., by calling @ref disk_access_status) before invoking this
+ * function.
+ *
+ * @param dev Pointer to the device structure representing the SD/MMC card.
+ * @param csd Pointer to an array where the CSD data will be stored.
+ */
+void stm32_sdmmc_get_card_csd(const struct device *dev, uint32_t csd[4]);
+
 #endif /* ZEPHYR_INCLUDE_DRIVERS_DISK_SDMMC_STM32_H_ */
