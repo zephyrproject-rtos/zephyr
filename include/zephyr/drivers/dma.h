@@ -20,10 +20,9 @@
 extern "C" {
 #endif
 
-
 /**
- * @brief DMA Interface
- * @defgroup dma_interface DMA Interface
+ * @brief Interfaces for DMA (Direct Memory Access) controllers.
+ * @defgroup dma_interface DMA
  * @since 1.5
  * @version 1.0.0
  * @ingroup io_interfaces

@@ -16,8 +16,8 @@
 #define ZEPHYR_INCLUDE_DRIVERS_BLUETOOTH_H_
 
 /**
- * @brief Bluetooth HCI APIs
- * @defgroup bt_hci_api Bluetooth HCI APIs
+ * @brief Interfaces for Bluetooth Host Controller Interface (HCI).
+ * @defgroup bt_hci_api Bluetooth HCI
  *
  * @since 3.7
  * @version 0.2.0

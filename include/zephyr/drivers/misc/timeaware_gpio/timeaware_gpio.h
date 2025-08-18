@@ -7,13 +7,14 @@
 /**
  * @file
  * @brief Public APIs for Time-aware GPIO drivers
+ * @ingroup tgpio_interface
  */
 #ifndef ZEPHYR_DRIVERS_MISC_TIMEAWARE_GPIO_TIMEAWARE_GPIO
 #define ZEPHYR_DRIVERS_MISC_TIMEAWARE_GPIO_TIMEAWARE_GPIO
 
 /**
- * @brief Time-aware GPIO Interface
- * @defgroup tgpio_interface Time-aware GPIO Interface
+ * @brief Interfaces for time-aware GPIO controllers.
+ * @defgroup tgpio_interface Time-aware GPIO
  * @since 3.5
  * @version 0.1.0
  * @ingroup io_interfaces

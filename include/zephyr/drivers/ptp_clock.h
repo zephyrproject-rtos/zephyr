@@ -14,8 +14,8 @@
 #define ZEPHYR_INCLUDE_DRIVERS_PTP_CLOCK_H_
 
 /**
- * @brief PTP Clock Interface
- * @defgroup ptp_clock_interface PTP Clock Interface
+ * @brief Interfaces for Precision Time Protocol (PTP) clocks.
+ * @defgroup ptp_clock_interface PTP Clock
  * @ingroup io_interfaces
  * @{
  */

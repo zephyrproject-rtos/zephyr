@@ -25,8 +25,8 @@ extern "C" {
 #endif
 
 /**
- * @brief 1-Wire Interface
- * @defgroup w1_interface 1-Wire Interface
+ * @brief Interfaces for 1-Wire devices.
+ * @defgroup w1_interface 1-Wire
  * @since 3.2
  * @version 0.1.0
  * @ingroup io_interfaces

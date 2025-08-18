@@ -14,8 +14,8 @@
 #define ZEPHYR_DRIVERS_MISC_NXP_FLEXIO_NXP_FLEXIO_H_
 
 /**
- * @brief NXP FlexIO driver APIs
- * @defgroup nxp_flexio_interface NXP FlexIO driver APIs
+ * @brief Interfaces for NXP FlexIO.
+ * @defgroup nxp_flexio_interface NXP FlexIO
  * @ingroup misc_interfaces
  *
  * @{

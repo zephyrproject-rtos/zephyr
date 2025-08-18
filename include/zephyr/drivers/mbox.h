@@ -24,8 +24,8 @@ extern "C" {
 #endif
 
 /**
- * @brief MBOX Interface
- * @defgroup mbox_interface MBOX Interface
+ * @brief Interfaces for mailbox (MBOX) devices.
+ * @defgroup mbox_interface MBOX
  * @since 1.0
  * @version 0.1.0
  * @ingroup io_interfaces
