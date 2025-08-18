@@ -23,8 +23,8 @@ extern "C" {
 #endif
 
 /**
- * @brief PS/2 Driver APIs
- * @defgroup ps2_interface PS/2 Driver APIs
+ * @brief Interfaces for PS/2 devices.
+ * @defgroup ps2_interface PS/2
  * @ingroup io_interfaces
  *
  * Callers of this API are responsible for setting the typematic rate

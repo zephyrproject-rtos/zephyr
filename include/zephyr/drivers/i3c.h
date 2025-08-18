@@ -15,8 +15,8 @@
 #define ZEPHYR_INCLUDE_DRIVERS_I3C_H_
 
 /**
- * @brief I3C Interface
- * @defgroup i3c_interface I3C Interface
+ * @brief Interfaces for Improved Inter-Integrated Circuit (I3C) controllers.
+ * @defgroup i3c_interface I3C
  * @since 3.2
  * @version 0.1.0
  * @ingroup io_interfaces

@@ -15,8 +15,8 @@
 #define ZEPHYR_INCLUDE_DRIVERS_CELLULAR_H_
 
 /**
- * @brief Cellular interface
- * @defgroup cellular_interface Cellular Interface
+ * @brief Interfaces for cellular modems.
+ * @defgroup cellular_interface Cellular
  * @ingroup io_interfaces
  * @{
  */

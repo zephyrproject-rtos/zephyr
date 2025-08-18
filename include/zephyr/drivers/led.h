@@ -14,8 +14,8 @@
 #define ZEPHYR_INCLUDE_DRIVERS_LED_H_
 
 /**
- * @brief LED Interface
- * @defgroup led_interface LED Interface
+ * @brief Interfaces for Light-Emitting Diode (LED) controllers.
+ * @defgroup led_interface LED
  * @since 1.12
  * @version 1.0.0
  * @ingroup io_interfaces

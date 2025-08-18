@@ -26,8 +26,9 @@ extern "C" {
 #endif
 
 /**
- * @brief MSPI Driver APIs
- * @defgroup mspi_interface MSPI Driver APIs
+ * @brief Interfaces for Multi-bit Serial Peripheral Interface (MSPI)
+ *        controllers.
+ * @defgroup mspi_interface MSPI
  * @since 3.7
  * @version 0.1.0
  * @ingroup io_interfaces

@@ -14,8 +14,8 @@
 #define ZEPHYR_INCLUDE_DRIVERS_IPM_H_
 
 /**
- * @brief IPM Interface
- * @defgroup ipm_interface IPM Interface
+ * @brief Interfaces for Inter-Processor Mailbox (IPM) controllers.
+ * @defgroup ipm_interface IPM
  * @since 1.0
  * @version 1.0.0
  * @ingroup io_interfaces

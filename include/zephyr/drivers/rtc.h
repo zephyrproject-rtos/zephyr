@@ -15,8 +15,8 @@
 #define ZEPHYR_INCLUDE_DRIVERS_RTC_H_
 
 /**
- * @brief RTC Interface
- * @defgroup rtc_interface RTC Interface
+ * @brief Interfaces for real-time clocks (RTC).
+ * @defgroup rtc_interface RTC
  * @since 3.4
  * @version 0.1.0
  * @ingroup io_interfaces

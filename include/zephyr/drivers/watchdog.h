@@ -15,8 +15,8 @@
 #define ZEPHYR_INCLUDE_DRIVERS_WATCHDOG_H_
 
 /**
- * @brief Watchdog Interface
- * @defgroup watchdog_interface Watchdog Interface
+ * @brief Interfaces for watchdog devices.
+ * @defgroup watchdog_interface Watchdog
  * @since 1.0
  * @version 1.0.0
  * @ingroup io_interfaces

@@ -14,8 +14,8 @@
 #define ZEPHYR_INCLUDE_DRIVERS_HAPTICS_H_
 
 /**
- * @brief Haptics Interface
- * @defgroup haptics_interface Haptics Interface
+ * @brief Interfaces for haptic devices.
+ * @defgroup haptics_interface Haptics
  * @ingroup io_interfaces
  * @{
  *

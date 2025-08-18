@@ -16,8 +16,8 @@
 #define ZEPHYR_INCLUDE_VIDEO_H_
 
 /**
- * @brief Video Interface
- * @defgroup video_interface Video Interface
+ * @brief Interfaces for video devices.
+ * @defgroup video_interface Video
  * @since 2.1
  * @version 1.1.0
  * @ingroup io_interfaces
