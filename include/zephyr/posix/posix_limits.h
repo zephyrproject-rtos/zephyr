@@ -4,18 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_LIB_LIBC_COMMON_INCLUDE_LIMITS_H_
-#define ZEPHYR_LIB_LIBC_COMMON_INCLUDE_LIMITS_H_
-
-#include_next <limits.h>
-
-#if !defined(CONFIG_TC_PROVIDES_POSIX_LIMIT_DEFS)
-
-#if defined(_POSIX_C_SOURCE) || defined(__DOXYGEN__)
+#ifndef ZEPHYR_INCLUDE_ZEPHYR_POSIX_POSIX_LIMITS_H_
+#define ZEPHYR_INCLUDE_ZEPHYR_POSIX_POSIX_LIMITS_H_
 
 /*
- * clang-format and checkpatch disagree on formatting here, so use rely and checkpatch and disable
- * clang-format since the checkpatch cannot be selectively disabled.
+ * clang-format and checkpatch disagree on formatting here, so rely on checkpatch and disable
+ * clang-format since checkpatch cannot be selectively disabled.
  */
 
 /* clang-format off */
@@ -97,7 +91,6 @@
 #define OPEN_MAX                      CONFIG_POSIX_OPEN_MAX
 #define PAGE_SIZE                     CONFIG_POSIX_PAGE_SIZE
 #define PAGESIZE                      CONFIG_POSIX_PAGE_SIZE
-#undef PATH_MAX
 #define PATH_MAX                      _POSIX_PATH_MAX
 #define PTHREAD_DESTRUCTOR_ITERATIONS _POSIX_THREAD_DESTRUCTOR_ITERATIONS
 #define PTHREAD_KEYS_MAX \
@@ -129,8 +122,4 @@
 
 /* clang-format on */
 
-#endif /* defined(_POSIX_C_SOURCE) || defined(__DOXYGEN__) */
-
-#endif /* !defined(CONFIG_TC_PROVIDES_POSIX_LIMIT_DEFS) */
-
-#endif /* ZEPHYR_LIB_LIBC_COMMON_INCLUDE_LIMITS_H_ */
+#endif /* ZEPHYR_INCLUDE_ZEPHYR_POSIX_POSIX_LIMITS_H_ */

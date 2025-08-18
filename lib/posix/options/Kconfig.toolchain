@@ -13,9 +13,6 @@
 #
 # https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_subprofiles.html
 
-config TC_PROVIDES_POSIX_LIMIT_DEFS
-	bool
-
 config TC_PROVIDES_POSIX_ASYNCHRONOUS_IO
 	bool
 
