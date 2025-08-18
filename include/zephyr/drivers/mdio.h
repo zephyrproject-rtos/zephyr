@@ -15,8 +15,8 @@
 #define ZEPHYR_INCLUDE_DRIVERS_MDIO_H_
 
 /**
- * @brief MDIO Interface
- * @defgroup mdio_interface MDIO Interface
+ * @brief Interfaces for Management Data Input/Output (MDIO) controllers.
+ * @defgroup mdio_interface MDIO
  * @ingroup io_interfaces
  * @{
  */

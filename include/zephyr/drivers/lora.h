@@ -13,8 +13,7 @@
 #define ZEPHYR_INCLUDE_DRIVERS_LORA_H_
 
 /**
- * @file
- * @brief Public LoRa APIs
+ * @brief Interfaces for LoRa transceivers.
  * @defgroup lora_interface LoRa
  * @since 2.2
  * @version 0.1.0

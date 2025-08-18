@@ -25,8 +25,9 @@ extern "C" {
 #endif
 
 /**
- * @brief eSPI Driver APIs
- * @defgroup espi_interface ESPI Driver APIs
+ * @brief Interfaces for Enhanced Serial Peripheral Interface (eSPI)
+ *        controllers.
+ * @defgroup espi_interface ESPI
  * @ingroup io_interfaces
  * @{
  */

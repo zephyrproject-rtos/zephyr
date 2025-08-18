@@ -21,8 +21,8 @@ extern "C" {
 #endif
 
 /**
- * @brief Coredump pseudo-device driver APIs
- * @defgroup coredump_device_interface Coredump pseudo-device driver APIs
+ * @brief Interfaces for coredump pseudo-device.
+ * @defgroup coredump_device_interface Coredump pseudo-device
  * @ingroup io_interfaces
  * @{
  */

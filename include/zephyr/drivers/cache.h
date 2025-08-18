@@ -16,8 +16,8 @@
 #include <stddef.h>
 
 /**
- * @brief External Cache Controller Interface
- * @defgroup cache_external_interface External Cache Controller Interface
+ * @brief Interfaces for external cache controllers.
+ * @defgroup cache_external_interface External Cache Controller
  * @ingroup io_interfaces
  * @{
  */
