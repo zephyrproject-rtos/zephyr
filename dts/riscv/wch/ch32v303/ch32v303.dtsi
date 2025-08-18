@@ -194,7 +194,7 @@
 		};
 
 		rcc: rcc@40021000 {
-			compatible = "wch,rcc";
+			compatible = "wch,ch32v00x-rcc";
 			reg = <0x40021000 16>;
 			#clock-cells = <1>;
 			status = "okay";

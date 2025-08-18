@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT wch_rcc
+#define DT_DRV_COMPAT wch_ch32v00x_rcc
 
 #include <stdint.h>
 

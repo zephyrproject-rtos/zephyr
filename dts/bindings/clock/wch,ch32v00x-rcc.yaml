@@ -3,7 +3,7 @@
 
 description: WCH CH32V00x Reset and Clock Control (RCC)
 
-compatible: "wch,rcc"
+compatible: "wch,ch32v00x-rcc"
 
 include: [clock-controller.yaml, base.yaml]
 
