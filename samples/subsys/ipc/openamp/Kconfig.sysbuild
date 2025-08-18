@@ -19,4 +19,5 @@ string
 	default "esp32s3_devkitm/esp32s3/appcpu" if $(BOARD) = "esp32s3_devkitm"
 	default "esp32s3_devkitc/esp32s3/appcpu" if $(BOARD) = "esp32s3_devkitc"
 	default "esp32_devkitc/esp32/appcpu" if $(BOARD) = "esp32_devkitc"
-	default "esp_wrover_kit/esp32/appcpu" if $(BOARD) = "esp_wrover_kitc"
+	default "esp_wrover_kit/esp32/appcpu" if $(BOARD) = "esp_wrover_kit"
+	default "esp32_ethernet_kit/esp32/appcpu" if $(BOARD) = "esp32_ethernet_kit"
