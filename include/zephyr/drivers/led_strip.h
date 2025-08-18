@@ -18,8 +18,8 @@
 #define ZEPHYR_INCLUDE_DRIVERS_LED_STRIP_H_
 
 /**
- * @brief LED Strip Interface
- * @defgroup led_strip_interface LED Strip Interface
+ * @brief Interfaces for LED strips.
+ * @defgroup led_strip_interface LED Strip
  * @ingroup io_interfaces
  * @{
  */

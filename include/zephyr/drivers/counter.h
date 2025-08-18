@@ -15,8 +15,8 @@
 #define ZEPHYR_INCLUDE_DRIVERS_COUNTER_H_
 
 /**
- * @brief Counter Interface
- * @defgroup counter_interface Counter Interface
+ * @brief Interfaces for counters.
+ * @defgroup counter_interface Counter
  * @since 1.14
  * @version 0.8.0
  * @ingroup io_interfaces

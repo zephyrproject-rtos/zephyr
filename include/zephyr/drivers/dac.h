@@ -20,8 +20,8 @@ extern "C" {
 #endif
 
 /**
- * @brief DAC driver APIs
- * @defgroup dac_interface DAC driver APIs
+ * @brief Interfaces for Digital-to-Analog Converters.
+ * @defgroup dac_interface DAC
  * @since 2.3
  * @version 0.8.0
  * @ingroup io_interfaces

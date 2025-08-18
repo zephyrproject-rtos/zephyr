@@ -14,8 +14,8 @@
 #define ZEPHYR_INCLUDE_DRIVERS_RESET_H_
 
 /**
- * @brief Reset Controller Interface
- * @defgroup reset_controller_interface Reset Controller Interface
+ * @brief Interfaces for reset controllers.
+ * @defgroup reset_controller_interface Reset Controller
  * @since 3.1
  * @version 0.2.0
  * @ingroup io_interfaces

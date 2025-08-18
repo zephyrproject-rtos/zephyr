@@ -32,8 +32,9 @@ extern "C" {
 #endif
 
 /**
- * @brief GPIO Driver APIs
- * @defgroup gpio_interface GPIO Driver APIs
+ * @brief Interfaces for General Purpose Input/Output (GPIO)
+ *        controllers.
+ * @defgroup gpio_interface GPIO
  * @since 1.0
  * @version 1.0.0
  * @ingroup io_interfaces

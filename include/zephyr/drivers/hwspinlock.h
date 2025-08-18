@@ -14,8 +14,8 @@
 #define ZEPHYR_INCLUDE_DRIVERS_HWSPINLOCK_H_
 
 /**
- * @brief HW spinlock Interface
- * @defgroup hwspinlock_interface HW spinlock Interface
+ * @brief Interfaces for hardware spinlocks.
+ * @defgroup hwspinlock_interface Hardware Spinlock
  * @ingroup io_interfaces
  * @{
  */
