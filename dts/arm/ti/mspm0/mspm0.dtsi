@@ -8,6 +8,7 @@
 #include <arm/armv6-m.dtsi>
 #include <zephyr/dt-bindings/clock/mspm0_clock.h>
 #include <zephyr/dt-bindings/regulator/mspm0_vref.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <freq.h>
 
 / {
@@ -233,6 +234,17 @@
 				erase-block-size = <1024>;
 				write-block-size = <8>;
 			};
+		};
+
+		i2c0: i2c@400f0000 {
+			compatible = "ti,mspm0-i2c";
+			reg = <0x400f0000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <24 0>;
+			status = "disabled";
 		};
 
 		uart0: uart@40108000 {
