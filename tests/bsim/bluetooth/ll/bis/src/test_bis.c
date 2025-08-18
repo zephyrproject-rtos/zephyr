@@ -148,8 +148,11 @@ bool ll_data_path_sink_create(uint16_t handle, struct ll_iso_datapath *datapath,
 }
 #endif /* CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH */
 
-/* Have timeout unit sufficient to wait for all enqueued SDU to be transmitted.
- * We retry allocation by yielding out of the system work queue to mitigate
+/* We use a dedicated work queue thread to avoid blocking on the system work
+ * queue, since the system work queue is used to process much of the bluetooth
+ * HCI responses now.
+ * Have timeout unit sufficient to wait for all enqueued SDU to be transmitted.
+ * We retry allocation by yielding out of the dedicated work queue to mitigate
  * deadlock.
  */
 #define BUF_ALLOC_TIMEOUT_MS       (10)   /* milliseconds */
@@ -161,6 +164,9 @@ NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 static struct k_work_delayable iso_send_work;
+
+static struct k_work_q iso_tx_workq;
+static K_KERNEL_STACK_DEFINE(iso_tx_workq_thread_stack, 1024);
 
 BUILD_ASSERT(sizeof(seq_num) <= CONFIG_BT_ISO_TX_MTU);
 
@@ -188,8 +194,8 @@ static void iso_send(struct k_work *work)
 		 */
 		if (retry_yield_wq) {
 			retry_yield_wq--;
-
-			k_work_schedule(&iso_send_work, K_USEC(BUF_ALLOC_RETRY_TIMEOUT_US));
+			k_work_schedule_for_queue(&iso_tx_workq, &iso_send_work,
+						  K_USEC(BUF_ALLOC_RETRY_TIMEOUT_US));
 		} else {
 			FAIL("Data buffer allocate timeout on channel\n");
 		}
@@ -222,7 +228,7 @@ static void iso_send(struct k_work *work)
 	 * of next buffer, sending early will eventually get sync-ed with the
 	 * interval at which the Controller is sending the SDU on-air.
 	 */
-	k_work_schedule(&iso_send_work, K_USEC(9900));
+	k_work_schedule_for_queue(&iso_tx_workq, &iso_send_work, K_USEC(9900));
 }
 #endif /* !CONFIG_TEST_LL_INTERFACE */
 
@@ -460,7 +466,19 @@ static void test_iso_main(void)
 	create_big(adv, &big);
 
 	k_work_init_delayable(&iso_send_work, iso_send);
-	k_work_schedule(&iso_send_work, K_NO_WAIT);
+
+	const struct k_work_queue_config cfg = {
+		.name = "ISO TX WQ",
+		.no_yield = false,
+		.essential = false,
+	};
+
+	k_work_queue_init(&iso_tx_workq);
+	k_work_queue_start(&iso_tx_workq, iso_tx_workq_thread_stack,
+			   K_THREAD_STACK_SIZEOF(iso_tx_workq_thread_stack),
+			   K_PRIO_COOP(2), &cfg);
+
+	k_work_schedule_for_queue(&iso_tx_workq, &iso_send_work, K_NO_WAIT);
 #endif /* !CONFIG_TEST_LL_INTERFACE */
 
 	k_sleep(K_MSEC(5000));
