@@ -303,7 +303,7 @@ static int dispatcher_cb(struct dns_socket_dispatcher *my_ctx, int sock,
 
 	/* Query again if we got CNAME */
 	if (ret == DNS_EAI_AGAIN) {
-		int failure = 0;
+		int ntry = 0, nfail = 0;
 		int j;
 
 		i = get_slot_by_id(ctx, dns_id, query_hash);
@@ -316,21 +316,22 @@ static int dispatcher_cb(struct dns_socket_dispatcher *my_ctx, int sock,
 				continue;
 			}
 
+			ntry++;
 			ret = dns_write(ctx, j, i, dns_data->data, len,
 					net_buf_max_len(dns_data),
 					dns_cname, 0);
 			if (ret < 0) {
-				failure++;
+				nfail++;
 			}
 		}
 
-		if (failure) {
-			NET_DBG("DNS cname query failed %d times", failure);
-
-			if (failure == j) {
-				ret = DNS_EAI_SYSTEM;
-				goto quit;
-			}
+		if (nfail > 0) {
+			NET_DBG("DNS cname query %d fails on %d attempts",
+				nfail, ntry);
+		}
+		if ((ntry == 0) || (ntry == nfail)) {
+			ret = DNS_EAI_SYSTEM;
+			goto quit;
 		}
 
 		goto free_buf;
@@ -1739,7 +1740,7 @@ int dns_resolve_name_internal(struct dns_resolve_context *ctx,
 	struct net_buf *dns_qname = NULL;
 	struct sockaddr addr;
 	int ret, i = -1, j = 0;
-	int failure = 0;
+	int ntry = 0, nfail = 0;
 	bool mdns_query = false;
 	uint8_t hop_limit;
 #ifdef CONFIG_DNS_RESOLVER_CACHE
@@ -2021,12 +2022,13 @@ try_resolve:
 			hop_limit = 1U;
 		}
 
+		ntry++;
 		ret = dns_write(ctx, j, i, dns_data->data,
 				net_buf_max_len(dns_data),
 				net_buf_max_len(dns_data),
 				dns_qname, hop_limit);
 		if (ret < 0) {
-			failure++;
+			nfail++;
 			continue;
 		}
 
@@ -2037,13 +2039,12 @@ try_resolve:
 		break;
 	}
 
-	if (failure) {
-		NET_DBG("DNS query failed %d times", failure);
-
-		if (failure == j) {
-			ret = -ENOENT;
-			goto quit;
-		}
+	if (nfail > 0) {
+		NET_DBG("DNS query %d fails on %d attempts", nfail, ntry);
+	}
+	if ((ntry == 0) || (ntry == nfail)) {
+		ret = -ENOENT;
+		goto quit;
 	}
 
 	ret = 0;
