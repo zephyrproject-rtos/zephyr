@@ -3228,8 +3228,11 @@ Microchip SAM Platforms:
     - stephanosio
   files:
     - boards/atmel/
+    - boards/microchip/sam/
     - dts/arm/atmel/
+    - dts/arm/microchip/sam/
     - soc/atmel/
+    - soc/microchip/sam/
     - drivers/*/*sam*.c
     - dts/bindings/*/atmel,*
   labels:
@@ -5314,6 +5317,7 @@ West:
     - jvasanth1
     - AzharMCHP
     - scottwcpg
+    - nandojve
   collaborators:
     - VenkatKotakonda
     - albertofloyd
