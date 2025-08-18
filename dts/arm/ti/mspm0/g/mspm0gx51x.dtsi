@@ -65,6 +65,17 @@
 			};
 		};
 
+		i2c2: i2c@400f4000 {
+			compatible = "ti,mspm0-i2c";
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x400f4000 0x2000>;
+			interrupts = <26 0>;
+			status = "disabled";
+		};
+
 		canfd0: can@40508000 {
 			compatible = "ti,mspm0-canfd";
 			reg = <0x40508000 0x8000>, <0x4050f000 0x1000>, <0x40508000 0x400>;
