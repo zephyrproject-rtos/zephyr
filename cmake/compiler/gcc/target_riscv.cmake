@@ -129,17 +129,13 @@ if(NOT CONFIG_RISCV_ISA_EXT_M AND
   string(CONCAT riscv_march ${riscv_march} "_zmmul")
 endif()
 
-list(APPEND TOOLCHAIN_C_FLAGS
+list(APPEND RISCV_C_FLAGS
      -mabi=${riscv_mabi}
      -march=${riscv_march}
      -mcmodel=${riscv_mcmodel}
      )
-
-list(APPEND TOOLCHAIN_LD_FLAGS NO_SPLIT
-     -mabi=${riscv_mabi}
-     -march=${riscv_march}
-     -mcmodel=${riscv_mcmodel}
-     )
+list(APPEND TOOLCHAIN_C_FLAGS ${RISCV_C_FLAGS})
+list(APPEND TOOLCHAIN_GROUPED_LD_FLAGS RISCV_C_FLAGS)
 
 # Flags not supported by llext linker
 # (regexps are supported and match whole word)
