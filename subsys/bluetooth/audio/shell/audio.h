@@ -115,13 +115,13 @@ struct shell_stream {
 			size_t lc3_sdu_cnt;
 			lc3_encoder_mem_48k_t lc3_encoder_mem;
 			lc3_encoder_t lc3_encoder;
-#if defined(CONFIG_USB_DEVICE_AUDIO)
+#if defined(CONFIG_USBD_AUDIO2_CLASS)
 			/* Indicates where to read left USB data in the ring buffer */
 			size_t left_read_idx;
 			/* Indicates where to read right USB data in the ring buffer */
 			size_t right_read_idx;
 			size_t right_ring_buf_fail_cnt;
-#endif /* CONFIG_USB_DEVICE_AUDIO */
+#endif /* CONFIG_USBD_AUDIO2_CLASS */
 #endif /* CONFIG_LIBLC3 */
 		} tx;
 #endif /* CONFIG_BT_AUDIO_TX */
