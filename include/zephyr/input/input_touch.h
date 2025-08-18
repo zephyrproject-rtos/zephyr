@@ -26,19 +26,18 @@ extern "C" {
  *
  * This structure **must** be placed first in the driver's config structure.
  *
- * @param screen_width Horizontal resolution of touchscreen
- * @param screen_height Vertical resolution of touchscreen
- * @param inverted_x  X axis is inverted
- * @param inverted_y Y axis is inverted
- * @param swapped_x_y X and Y axes are swapped
- *
  * see touchscreem-common.yaml for more details
  */
 struct input_touchscreen_common_config {
+	/** Horizontal resolution of touchscreen */
 	uint32_t screen_width;
+	/** Vertical resolution of touchscreen */
 	uint32_t screen_height;
+	/** X axis is inverted */
 	bool inverted_x;
+	/** Y axis is inverted */
 	bool inverted_y;
+	/** X and Y axes are swapped */
 	bool swapped_x_y;
 };
 
