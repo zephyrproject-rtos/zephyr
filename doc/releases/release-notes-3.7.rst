@@ -20,6 +20,27 @@ The following CVEs are addressed by this release:
 * `CVE-2025-27810 <https://www.cve.org/CVERecord?id=CVE-2025-27810>`_
   `Potential authentication bypass in TLS handshake
   <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-03-2/>`_
+* `CVE-2025-47917 <https://www.cve.org/CVERecord?id=CVE-2025-47917>`_
+  `Misleading memory management in mbedtls_x509_string_to_names()
+  <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-06-7/>`_
+* `CVE-2025-48965 <https://www.cve.org/CVERecord?id=CVE-2025-48965>`_
+  `NULL pointer dereference after using mbedtls_asn1_store_named_data()
+  <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-06-6/>`_
+* `CVE-2025-49087 <https://www.cve.org/CVERecord?id=CVE-2025-49087>`_
+  `Timing side-channel in block cipher decryption with PKCS#7 padding
+  <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-06-5/>`_
+* `CVE-2025-49600 <https://www.cve.org/CVERecord?id=CVE-2025-49600>`_
+  `Unchecked return value in LMS verification allows signature bypass
+  <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-06-3/>`_
+* `CVE-2025-49601 <https://www.cve.org/CVERecord?id=CVE-2025-49601>`_
+  `Out-of-bounds read in mbedtls_lms_import_public_key()
+  <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-06-4/>`_
+* `CVE-2025-52496 <https://www.cve.org/CVERecord?id=CVE-2025-52496>`_
+  `Race condition in AESNI support detection
+  <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-06-1/>`_
+* `CVE-2025-52497 <https://www.cve.org/CVERecord?id=CVE-2025-52497>`_
+  `Heap buffer under-read when parsing PEM-encrypted material
+  <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-06-2/>`_
 
 More detailed information can be found in:
 https://docs.zephyrproject.org/latest/security/vulnerabilities.html
@@ -32,7 +53,8 @@ These GitHub issues were addressed since the previous 3.7.1 tagged release:
 Mbed TLS
 ********
 
-Mbed TLS was updated to version 3.6.3 (from 3.6.2). The release notes can be found at:
+Mbed TLS was updated to version 3.6.4 (from 3.6.2). The release notes can be found at:
+https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.4
 https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.3
 
 Mbed TLS 3.6 is an LTS release that will be supported
