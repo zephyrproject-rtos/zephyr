@@ -9,4 +9,7 @@ if SOC_SERIES_MSPM0L
 config NUM_IRQS
 	default 32
 
+config MSPM0_I2C_FIFO_DEPTH
+	default 4 if SOC_MSPM0L1117
+
 endif # SOC_SERIES_MSPM0L
