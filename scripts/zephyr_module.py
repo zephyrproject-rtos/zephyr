@@ -763,8 +763,10 @@ def parse_modules(zephyr_base, manifest=None, west_projs=None, modules=None,
     if extra_modules is None:
         extra_modules = []
         for var in ['EXTRA_ZEPHYR_MODULES', 'ZEPHYR_EXTRA_MODULES']:
-            if var in os.environ:
-                extra_modules.extend(PurePosixPath(p) for p in os.environ[var].split(';'))
+            extra_module = os.environ.get(var, None)
+            if not extra_module:
+                continue
+            extra_modules.extend(PurePosixPath(p) for p in extra_module.split(';'))
 
     Module = namedtuple('Module', ['project', 'meta', 'depends'])
 
