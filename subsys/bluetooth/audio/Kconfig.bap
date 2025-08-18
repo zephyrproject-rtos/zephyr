@@ -1,7 +1,7 @@
 # Bluetooth Audio - Basic Audio Profile configuration options
 #
 # Copyright (c) 2020 Intel Corporation
-# Copyright (c) 2022-2023 Nordic Semiconductor ASA
+# Copyright (c) 2022-2025 Nordic Semiconductor ASA
 
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -282,6 +282,52 @@ config BT_BAP_DEBUG_STREAM_SEQ_NUM
 
 config BT_BAP_BASE
 	def_bool BT_BAP_BROADCAST_SINK || BT_BAP_BROADCAST_ASSISTANT || BT_BAP_SCAN_DELEGATOR
+
+# We use BT_BAP_STREAM as a common ground for audio, as that is set whenever
+# any audio stream functionality is enabled.
+if LIBLC3 && USBD_AUDIO2_CLASS && BT_SHELL && BT_BAP_STREAM
+config BT_BAP_SHELL_USB_PRODUCT
+	string "USB device sample product string"
+	default "Zephyr Audio Shell"
+	help
+	  USB device sample product string.
+
+config BT_BAP_SHELL_USB_VID
+	hex "USB device sample Vendor ID"
+	default 0x2fe3
+	help
+	  USB device sample Vendor ID. Defaults to the Zephyr Project.
+
+config BT_BAP_SHELL_USB_PID
+	hex "USB device sample Product ID"
+	default 0x0001
+	help
+	  USB device sample Product ID.
+
+config BT_BAP_SHELL_USB_SELF_POWERED
+	bool "USB device sample Self-powered attribute"
+	default y
+	help
+	  Set the Self-powered attribute in the sample configuration.
+
+config BT_BAP_SHELL_USB_REMOTE_WAKEUP
+	bool "USB device sample Remote Wakeup attribute"
+	help
+	  Set the Remote Wakeup attribute in the sample configuration.
+
+config BT_BAP_SHELL_USB_MAX_POWER
+	int "USB device sample bMaxPower value"
+	default 125
+	range 0 250
+	help
+	  bMaxPower value in the sample configuration in 2 mA units.
+
+config BT_BAP_SHELL_USB_20_EXTENSION_DESC
+	bool "Use default USB 2.0 Extension Descriptor"
+	depends on USBD_BOS_SUPPORT
+	help
+	  Set bcdUSB value to 0201 and use default USB 2.0 Extension Descriptor.
+endif # LIBLC3 && USBD_AUDIO2_CLASS && BT_SHELL && BT_BAP_STREAM
 
 rsource "Kconfig.pacs"
 rsource "Kconfig.ascs"
