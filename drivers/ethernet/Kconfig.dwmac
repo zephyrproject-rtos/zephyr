@@ -31,6 +31,7 @@ config ETH_DWMAC_STM32H7X
 	bool
 	depends on SOC_SERIES_STM32H7X
 	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	select PINCTRL
 	default y
 
 config ETH_DWMAC_MMU
