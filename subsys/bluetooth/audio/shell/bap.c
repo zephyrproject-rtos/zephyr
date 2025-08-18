@@ -57,7 +57,7 @@
 #define IS_BAP_INITIATOR                                                                           \
 	(IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SOURCE) || IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT))
 
-#define GENERATE_SINE_SUPPORTED (IS_ENABLED(CONFIG_LIBLC3) && !IS_ENABLED(CONFIG_USB_DEVICE_AUDIO))
+#define GENERATE_SINE_SUPPORTED (IS_ENABLED(CONFIG_LIBLC3) && !IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS))
 
 #if defined(CONFIG_BT_BAP_UNICAST)
 
@@ -318,7 +318,7 @@ static int init_lc3_encoder(struct shell_stream *sh_stream)
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_USB_DEVICE_AUDIO)) {
+	if (IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS)) {
 		const size_t frame_size = bap_usb_get_frame_size(sh_stream);
 
 		if (frame_size > sizeof(lc3_tx_buf)) {
@@ -337,7 +337,7 @@ static int init_lc3_encoder(struct shell_stream *sh_stream)
 
 	sh_stream->tx.lc3_encoder =
 		lc3_setup_encoder(sh_stream->lc3_frame_duration_us, sh_stream->lc3_freq_hz,
-				  IS_ENABLED(CONFIG_USB_DEVICE_AUDIO) ? USB_SAMPLE_RATE : 0,
+				  IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS) ? USB_SAMPLE_RATE : 0,
 				  &sh_stream->tx.lc3_encoder_mem);
 	if (sh_stream->tx.lc3_encoder == NULL) {
 		bt_shell_error("Failed to setup LC3 encoder - wrong parameters?\n");
@@ -375,7 +375,7 @@ static bool encode_frame(struct shell_stream *sh_stream, uint8_t index, size_t f
 	const uint16_t octets_per_frame = sh_stream->lc3_octets_per_frame;
 	int lc3_ret;
 
-	if (IS_ENABLED(CONFIG_USB_DEVICE_AUDIO)) {
+	if (IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS)) {
 		enum bt_audio_location chan_alloc;
 		int err;
 
@@ -432,7 +432,7 @@ static size_t encode_frame_block(struct shell_stream *sh_stream, size_t frame_cn
 
 static void do_lc3_encode(struct shell_stream *sh_stream, struct net_buf *out_buf)
 {
-	if (IS_ENABLED(CONFIG_USB_DEVICE_AUDIO) && !bap_usb_can_get_full_sdu(sh_stream)) {
+	if (IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS) && !bap_usb_can_get_full_sdu(sh_stream)) {
 		/* No op - Will just send empty SDU */
 	} else {
 		size_t frame_cnt = 0U;
@@ -2633,7 +2633,7 @@ static int init_lc3_decoder(struct shell_stream *sh_stream)
 	/* Create the decoder instance. This shall complete before stream_started() is called. */
 	sh_stream->rx.lc3_decoder =
 		lc3_setup_decoder(sh_stream->lc3_frame_duration_us, sh_stream->lc3_freq_hz,
-				  IS_ENABLED(CONFIG_USB_DEVICE_AUDIO) ? USB_SAMPLE_RATE : 0,
+				  IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS) ? USB_SAMPLE_RATE : 0,
 				  &sh_stream->rx.lc3_decoder_mem);
 	if (sh_stream->rx.lc3_decoder == NULL) {
 		bt_shell_error("Failed to setup LC3 decoder - wrong parameters?\n");
@@ -2694,7 +2694,7 @@ static size_t decode_frame_block(struct lc3_data *data, size_t frame_cnt)
 		if (decode_frame(data, frame_cnt + decoded_frames)) {
 			decoded_frames++;
 
-			if (IS_ENABLED(CONFIG_USB_DEVICE_AUDIO)) {
+			if (IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS)) {
 				enum bt_audio_location chan_alloc;
 				int err;
 
@@ -2722,7 +2722,7 @@ static size_t decode_frame_block(struct lc3_data *data, size_t frame_cnt)
 			/* If decoding failed, we clear the data to USB as it would contain
 			 * invalid data
 			 */
-			if (IS_ENABLED(CONFIG_USB_DEVICE_AUDIO)) {
+			if (IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS)) {
 				bap_usb_clear_frames_to_usb();
 			}
 
@@ -3008,7 +3008,7 @@ static void stream_started_cb(struct bt_bap_stream *bap_stream)
 				return;
 			}
 
-			if (IS_ENABLED(CONFIG_USB_DEVICE_AUDIO)) {
+			if (IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS)) {
 				/* Always mark as active when using USB */
 				sh_stream->tx.active = true;
 			}
@@ -3029,7 +3029,7 @@ static void stream_started_cb(struct bt_bap_stream *bap_stream)
 
 			sh_stream->rx.decoded_cnt = 0U;
 
-			if (IS_ENABLED(CONFIG_USB_DEVICE_AUDIO)) {
+			if (IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS)) {
 				if ((sh_stream->lc3_chan_allocation &
 				     BT_AUDIO_LOCATION_FRONT_LEFT) != 0) {
 					if (usb_left_stream == NULL) {
@@ -3148,7 +3148,7 @@ static void clear_stream_data(struct shell_stream *sh_stream)
 	sh_stream->is_rx = sh_stream->is_tx = false;
 
 #if defined(CONFIG_LIBLC3)
-	if (IS_ENABLED(CONFIG_USB_DEVICE_AUDIO)) {
+	if (IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS)) {
 		update_usb_streams(sh_stream);
 	}
 #endif /* CONFIG_LIBLC3 */
@@ -3931,7 +3931,7 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 
 #endif /* CONFIG_BT_AUDIO_TX */
 
-	if (IS_ENABLED(CONFIG_USB_DEVICE_AUDIO) &&
+	if (IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS) &&
 	    (IS_ENABLED(CONFIG_BT_AUDIO_RX) || IS_ENABLED(CONFIG_BT_AUDIO_TX))) {
 		err = bap_usb_init();
 		__ASSERT(err == 0, "Failed to enable USB: %d", err);
