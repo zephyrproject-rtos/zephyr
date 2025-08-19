@@ -32,6 +32,13 @@ config ZBUS_PROXY_AGENT_PRIORITY
 	help
 	  Configures the priority of the ZBus proxy agent thread.
 
+config ZBUS_PROXY_AGENT_UART
+	bool "ZBus proxy agent UART backend"
+	select UART_ASYNC_API
+	select CRC
+	help
+	  Enables the ZBus proxy agent UART backend, allowing for ZBus between domains over UART.
+
 module = ZBUS_PROXY_AGENT
 module-str = zbus_proxy_agent
 source "subsys/logging/Kconfig.template.log_config"
