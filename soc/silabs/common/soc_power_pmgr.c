@@ -87,6 +87,7 @@ bool sl_power_manager_is_ok_to_sleep(void)
 	return true;
 }
 
+#if !defined(CONFIG_SOC_SILABS_PM_LOW_INTERRUPT_LATENCY)
 /* This function is called by sl_power_manager_sleep() right after it was woken up from WFI. */
 void sli_power_manager_on_wakeup(void)
 {
@@ -98,6 +99,7 @@ void sli_power_manager_on_wakeup(void)
 	sl_power_manager_add_em_requirement(SL_POWER_MANAGER_EM1);
 	sl_power_manager_remove_em_requirement(SL_POWER_MANAGER_EM1);
 }
+#endif
 
 /**
  * Some SiLabs blobs, such as RAIL, call directly into sl_power_manager, and
