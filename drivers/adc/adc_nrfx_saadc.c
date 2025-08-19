@@ -541,7 +541,7 @@ static inline void single_ended_channel_cut_negative_sample(uint16_t channel_bit
 							    uint8_t single_ended_channels,
 							    int16_t **sample)
 {
-	if ((channel_bit & single_ended_channels) && (**sample < 0)) {
+	if ((channel_bit & single_ended_channels) && (*sample < 0)) {
 		**sample = 0;
 	}
 
