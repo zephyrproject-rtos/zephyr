@@ -1116,7 +1116,7 @@ static void le_conn_param_update_req(struct bt_l2cap *l2cap, uint8_t ident,
 		return;
 	}
 
-	accepted = le_param_req(conn, &param);
+	accepted = bt_conn_le_param_req(conn, &param);
 
 	rsp = net_buf_add(buf, sizeof(*rsp));
 	if (accepted) {

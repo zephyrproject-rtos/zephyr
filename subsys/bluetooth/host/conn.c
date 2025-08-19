@@ -1930,7 +1930,7 @@ static void notify_disconnected(struct bt_conn *conn)
 }
 
 #if defined(CONFIG_BT_REMOTE_INFO)
-void notify_remote_info(struct bt_conn *conn)
+void bt_conn_notify_remote_info(struct bt_conn *conn)
 {
 	struct bt_conn_remote_info remote_info;
 	int err;
@@ -1955,7 +1955,7 @@ void notify_remote_info(struct bt_conn *conn)
 }
 #endif /* defined(CONFIG_BT_REMOTE_INFO) */
 
-void notify_le_param_updated(struct bt_conn *conn)
+void bt_conn_notify_le_param_updated(struct bt_conn *conn)
 {
 	/* If new connection parameters meet requirement of pending
 	 * parameters don't send peripheral conn param request anymore on timeout
@@ -1986,7 +1986,7 @@ void notify_le_param_updated(struct bt_conn *conn)
 }
 
 #if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
-void notify_le_data_len_updated(struct bt_conn *conn)
+void bt_conn_notify_le_data_len_updated(struct bt_conn *conn)
 {
 	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
 		if (callback->le_data_len_updated) {
@@ -2003,7 +2003,7 @@ void notify_le_data_len_updated(struct bt_conn *conn)
 #endif
 
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
-void notify_le_phy_updated(struct bt_conn *conn)
+void bt_conn_notify_le_phy_updated(struct bt_conn *conn)
 {
 	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
 		if (callback->le_phy_updated) {
@@ -2019,7 +2019,7 @@ void notify_le_phy_updated(struct bt_conn *conn)
 }
 #endif
 
-bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
+bool bt_conn_le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
 {
 	if (!bt_le_conn_params_valid(param)) {
 		return false;
@@ -2977,8 +2977,7 @@ static int bt_conn_get_tx_power_level(struct bt_conn *conn, uint8_t type,
 }
 
 #if defined(CONFIG_BT_TRANSMIT_POWER_CONTROL)
-void notify_tx_power_report(struct bt_conn *conn,
-			    struct bt_conn_le_tx_power_report report)
+void bt_conn_notify_tx_power_report(struct bt_conn *conn, struct bt_conn_le_tx_power_report report)
 {
 	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
 		if (callback->tx_power_report) {
@@ -3120,8 +3119,8 @@ int bt_conn_le_get_tx_power_level(struct bt_conn *conn,
 }
 
 #if defined(CONFIG_BT_PATH_LOSS_MONITORING)
-void notify_path_loss_threshold_report(struct bt_conn *conn,
-				       struct bt_conn_le_path_loss_threshold_report report)
+void bt_conn_notify_path_loss_threshold_report(struct bt_conn *conn,
+					       struct bt_conn_le_path_loss_threshold_report report)
 {
 	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
 		if (callback->path_loss_threshold_report) {
@@ -3189,8 +3188,8 @@ int bt_conn_le_set_path_loss_mon_enable(struct bt_conn *conn, bool reporting_ena
 #endif /* CONFIG_BT_PATH_LOSS_MONITORING */
 
 #if defined(CONFIG_BT_SUBRATING)
-void notify_subrate_change(struct bt_conn *conn,
-			   const struct bt_conn_le_subrate_changed params)
+void bt_conn_notify_subrate_change(struct bt_conn *conn,
+				   const struct bt_conn_le_subrate_changed params)
 {
 	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
 		if (callback->subrate_changed) {
@@ -3295,8 +3294,8 @@ int bt_conn_le_subrate_request(struct bt_conn *conn,
 #endif /* CONFIG_BT_SUBRATING */
 
 #if defined(CONFIG_BT_LE_EXTENDED_FEAT_SET)
-void notify_read_all_remote_feat_complete(struct bt_conn *conn,
-					  struct bt_conn_le_read_all_remote_feat_complete *params)
+void bt_conn_notify_read_all_remote_feat_complete(struct bt_conn *conn,
+					struct bt_conn_le_read_all_remote_feat_complete *params)
 {
 	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
 		if (callback->read_all_remote_feat_complete != NULL) {
@@ -3340,8 +3339,8 @@ int bt_conn_le_read_all_remote_features(struct bt_conn *conn, uint8_t pages_requ
 #endif /* CONFIG_BT_LE_EXTENDED_FEAT_SET */
 
 #if defined(CONFIG_BT_FRAME_SPACE_UPDATE)
-void notify_frame_space_update_complete(struct bt_conn *conn,
-					struct bt_conn_le_frame_space_updated *params)
+void bt_conn_notify_frame_space_update_complete(struct bt_conn *conn,
+						struct bt_conn_le_frame_space_updated *params)
 {
 	if (IS_ENABLED(CONFIG_BT_CONN_DYNAMIC_CALLBACKS)) {
 		struct bt_conn_cb *callback;
@@ -3412,8 +3411,8 @@ int bt_conn_le_frame_space_update(struct bt_conn *conn,
 #endif /* CONFIG_BT_FRAME_SPACE_UPDATE */
 
 #if defined(CONFIG_BT_CHANNEL_SOUNDING)
-void notify_remote_cs_capabilities(struct bt_conn *conn, uint8_t status,
-				   struct bt_conn_le_cs_capabilities *params)
+void bt_conn_notify_remote_cs_capabilities(struct bt_conn *conn, uint8_t status,
+					   struct bt_conn_le_cs_capabilities *params)
 {
 	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
 		if (callback->le_cs_read_remote_capabilities_complete) {
@@ -3429,8 +3428,8 @@ void notify_remote_cs_capabilities(struct bt_conn *conn, uint8_t status,
 	}
 }
 
-void notify_remote_cs_fae_table(struct bt_conn *conn, uint8_t status,
-				struct bt_conn_le_cs_fae_table *params)
+void bt_conn_notify_remote_cs_fae_table(struct bt_conn *conn, uint8_t status,
+					struct bt_conn_le_cs_fae_table *params)
 {
 	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
 		if (callback->le_cs_read_remote_fae_table_complete) {
@@ -3446,8 +3445,8 @@ void notify_remote_cs_fae_table(struct bt_conn *conn, uint8_t status,
 	}
 }
 
-void notify_cs_config_created(struct bt_conn *conn, uint8_t status,
-			      struct bt_conn_le_cs_config *params)
+void bt_conn_notify_cs_config_created(struct bt_conn *conn, uint8_t status,
+				      struct bt_conn_le_cs_config *params)
 {
 	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
 		if (callback->le_cs_config_complete) {
@@ -3462,7 +3461,7 @@ void notify_cs_config_created(struct bt_conn *conn, uint8_t status,
 	}
 }
 
-void notify_cs_config_removed(struct bt_conn *conn, uint8_t config_id)
+void bt_conn_notify_cs_config_removed(struct bt_conn *conn, uint8_t config_id)
 {
 	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
 		if (callback->le_cs_config_removed) {
@@ -3477,7 +3476,7 @@ void notify_cs_config_removed(struct bt_conn *conn, uint8_t config_id)
 	}
 }
 
-void notify_cs_security_enable_available(struct bt_conn *conn, uint8_t status)
+void bt_conn_notify_cs_security_enable_available(struct bt_conn *conn, uint8_t status)
 {
 	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
 		if (callback->le_cs_security_enable_complete) {
@@ -3492,8 +3491,8 @@ void notify_cs_security_enable_available(struct bt_conn *conn, uint8_t status)
 	}
 }
 
-void notify_cs_procedure_enable_available(struct bt_conn *conn, uint8_t status,
-					  struct bt_conn_le_cs_procedure_enable_complete *params)
+void bt_conn_notify_cs_procedure_enable_available(struct bt_conn *conn, uint8_t status,
+					struct bt_conn_le_cs_procedure_enable_complete *params)
 {
 	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
 		if (callback->le_cs_procedure_enable_complete) {
@@ -3508,7 +3507,8 @@ void notify_cs_procedure_enable_available(struct bt_conn *conn, uint8_t status,
 	}
 }
 
-void notify_cs_subevent_result(struct bt_conn *conn, struct bt_conn_le_cs_subevent_result *result)
+void bt_conn_notify_cs_subevent_result(struct bt_conn *conn,
+				       struct bt_conn_le_cs_subevent_result *result)
 {
 	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
 		if (callback->le_cs_subevent_data_available) {
