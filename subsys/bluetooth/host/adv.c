@@ -888,7 +888,7 @@ static void le_adv_stop_free_conn(const struct bt_le_ext_adv *adv, uint8_t statu
 	}
 }
 
-static int bt_le_adv_start_legacy(struct bt_le_ext_adv *adv,
+static int adv_start_legacy(struct bt_le_ext_adv *adv,
 			   const struct bt_le_adv_param *param,
 			   const struct bt_data *ad, size_t ad_len,
 			   const struct bt_data *sd, size_t sd_len)
@@ -1309,7 +1309,7 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 	    BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
 		err = bt_le_adv_start_ext(adv, param, ad, ad_len, sd, sd_len);
 	} else {
-		err = bt_le_adv_start_legacy(adv, param, ad, ad_len, sd, sd_len);
+		err = adv_start_legacy(adv, param, ad, ad_len, sd, sd_len);
 	}
 
 	if (err) {

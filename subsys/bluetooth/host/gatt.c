@@ -1118,9 +1118,9 @@ static bool is_host_managed_ccc(const struct bt_gatt_attr *attr)
 }
 
 #if defined(CONFIG_BT_SETTINGS)
-static int bt_gatt_store_ccc(uint8_t id, const bt_addr_le_t *addr);
+static int gatt_store_ccc(uint8_t id, const bt_addr_le_t *addr);
 #else
-static int bt_gatt_store_ccc(uint8_t id, const bt_addr_le_t *addr)
+static int gatt_store_ccc(uint8_t id, const bt_addr_le_t *addr)
 {
 	/* This function shall never be used without CONFIG_BT_SETTINGS. */
 	__ASSERT_NO_MSG(false);
@@ -1178,7 +1178,7 @@ static void bt_gatt_identity_resolved(struct bt_conn *conn, const bt_addr_le_t *
 
 	/* Store the ccc */
 	if (is_bonded) {
-		bt_gatt_store_ccc(conn->id, &conn->le.dst);
+		gatt_store_ccc(conn->id, &conn->le.dst);
 	}
 
 	/* Update the cf addresses and store it if we get a match */
@@ -1196,7 +1196,7 @@ static void bt_gatt_pairing_complete(struct bt_conn *conn, bool bonded)
 {
 	if (bonded) {
 		/* Store the ccc and cf data */
-		bt_gatt_store_ccc(conn->id, &(conn->le.dst));
+		gatt_store_ccc(conn->id, &(conn->le.dst));
 		bt_gatt_store_cf(conn->id, &conn->le.dst);
 	}
 }
@@ -1511,7 +1511,7 @@ static void gatt_store_ccc_cf(uint8_t id, const bt_addr_le_t *peer_addr)
 		if (!IS_ENABLED(CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE) ||
 		    (IS_ENABLED(CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE) && el &&
 		     atomic_test_and_clear_bit(el->flags, DELAYED_STORE_CCC))) {
-			bt_gatt_store_ccc(id, peer_addr);
+			gatt_store_ccc(id, peer_addr);
 		}
 
 		if (!IS_ENABLED(CONFIG_BT_SETTINGS_CF_STORE_ON_WRITE) ||
@@ -1696,7 +1696,7 @@ static void gatt_unregister_ccc(struct bt_gatt_ccc_managed_user_data *ccc)
 
 			if (IS_ENABLED(CONFIG_BT_SETTINGS) && store &&
 			    bt_le_bond_exists(cfg->id, &cfg->peer)) {
-				bt_gatt_store_ccc(cfg->id, &cfg->peer);
+				gatt_store_ccc(cfg->id, &cfg->peer);
 			}
 
 			clear_ccc_cfg(cfg);
@@ -6166,7 +6166,7 @@ static uint8_t ccc_save(const struct bt_gatt_attr *attr, uint16_t handle,
 	return BT_GATT_ITER_CONTINUE;
 }
 
-static int bt_gatt_store_ccc(uint8_t id, const bt_addr_le_t *addr)
+static int gatt_store_ccc(uint8_t id, const bt_addr_le_t *addr)
 {
 	struct ccc_save save;
 	size_t len;
