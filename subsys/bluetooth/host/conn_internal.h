@@ -477,52 +477,47 @@ void bt_conn_role_changed(struct bt_conn *conn, uint8_t status);
 int bt_conn_le_conn_update(struct bt_conn *conn,
 			   const struct bt_le_conn_param *param);
 
-void notify_remote_info(struct bt_conn *conn);
+void bt_conn_notify_remote_info(struct bt_conn *conn);
 
-void notify_le_param_updated(struct bt_conn *conn);
+void bt_conn_notify_le_param_updated(struct bt_conn *conn);
 
-void notify_le_data_len_updated(struct bt_conn *conn);
+void bt_conn_notify_le_data_len_updated(struct bt_conn *conn);
 
-void notify_le_phy_updated(struct bt_conn *conn);
+void bt_conn_notify_le_phy_updated(struct bt_conn *conn);
 
-bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param);
+bool bt_conn_le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param);
 
-void notify_tx_power_report(struct bt_conn *conn,
-			    struct bt_conn_le_tx_power_report report);
+void bt_conn_notify_tx_power_report(struct bt_conn *conn, struct bt_conn_le_tx_power_report report);
 
-void notify_path_loss_threshold_report(struct bt_conn *conn,
-				       struct bt_conn_le_path_loss_threshold_report report);
+void bt_conn_notify_path_loss_threshold_report(struct bt_conn *conn,
+					       struct bt_conn_le_path_loss_threshold_report report);
 
-void notify_subrate_change(struct bt_conn *conn,
-			   struct bt_conn_le_subrate_changed params);
+void bt_conn_notify_subrate_change(struct bt_conn *conn, struct bt_conn_le_subrate_changed params);
 
-void notify_read_all_remote_feat_complete(struct bt_conn *conn,
-					  struct bt_conn_le_read_all_remote_feat_complete *params);
+void bt_conn_notify_read_all_remote_feat_complete(struct bt_conn *conn,
+					struct bt_conn_le_read_all_remote_feat_complete *params);
 
-void notify_frame_space_update_complete(struct bt_conn *conn,
-					struct bt_conn_le_frame_space_updated *params);
+void bt_conn_notify_frame_space_update_complete(struct bt_conn *conn,
+						struct bt_conn_le_frame_space_updated *params);
 
-void notify_remote_cs_capabilities(struct bt_conn *conn,
-				   uint8_t status,
-				   struct bt_conn_le_cs_capabilities *params);
+void bt_conn_notify_remote_cs_capabilities(struct bt_conn *conn, uint8_t status,
+					  struct bt_conn_le_cs_capabilities *params);
 
-void notify_remote_cs_fae_table(struct bt_conn *conn,
-				uint8_t status,
-				struct bt_conn_le_cs_fae_table *params);
+void bt_conn_notify_remote_cs_fae_table(struct bt_conn *conn, uint8_t status,
+					struct bt_conn_le_cs_fae_table *params);
 
-void notify_cs_config_created(struct bt_conn *conn,
-			      uint8_t status,
-			      struct bt_conn_le_cs_config *params);
+void bt_conn_notify_cs_config_created(struct bt_conn *conn, uint8_t status,
+				      struct bt_conn_le_cs_config *params);
 
-void notify_cs_config_removed(struct bt_conn *conn, uint8_t config_id);
+void bt_conn_notify_cs_config_removed(struct bt_conn *conn, uint8_t config_id);
 
-void notify_cs_subevent_result(struct bt_conn *conn, struct bt_conn_le_cs_subevent_result *result);
+void bt_conn_notify_cs_subevent_result(struct bt_conn *conn,
+				       struct bt_conn_le_cs_subevent_result *result);
 
-void notify_cs_security_enable_available(struct bt_conn *conn, uint8_t status);
+void bt_conn_notify_cs_security_enable_available(struct bt_conn *conn, uint8_t status);
 
-void notify_cs_procedure_enable_available(struct bt_conn *conn,
-					  uint8_t status,
-					  struct bt_conn_le_cs_procedure_enable_complete *params);
+void bt_conn_notify_cs_procedure_enable_available(struct bt_conn *conn, uint8_t status,
+					struct bt_conn_le_cs_procedure_enable_complete *params);
 
 /* If role specific LTK is present */
 bool bt_conn_ltk_present(const struct bt_conn *conn);
