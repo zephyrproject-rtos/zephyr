@@ -1115,6 +1115,19 @@ static bool is_host_managed_ccc(const struct bt_gatt_attr *attr)
 	return (attr->write == bt_gatt_attr_write_ccc);
 }
 
+#if defined(CONFIG_BT_SETTINGS)
+static int bt_gatt_store_ccc(uint8_t id, const bt_addr_le_t *addr);
+#else
+static int bt_gatt_store_ccc(uint8_t id, const bt_addr_le_t *addr)
+{
+	/* This function shall never be used without CONFIG_BT_SETTINGS. */
+	__ASSERT_NO_MSG(false);
+
+	return -ENOTSUP;
+}
+#endif /* CONFIG_BT_SETTINGS */
+
+
 #if defined(CONFIG_BT_SETTINGS) && defined(CONFIG_BT_SMP)
 /** Struct used to store both the id and the random address of a device when replacing
  * random addresses in the ccc attribute's cfg array with the device's id address after
@@ -6151,7 +6164,7 @@ static uint8_t ccc_save(const struct bt_gatt_attr *attr, uint16_t handle,
 	return BT_GATT_ITER_CONTINUE;
 }
 
-int bt_gatt_store_ccc(uint8_t id, const bt_addr_le_t *addr)
+static int bt_gatt_store_ccc(uint8_t id, const bt_addr_le_t *addr)
 {
 	struct ccc_save save;
 	size_t len;
