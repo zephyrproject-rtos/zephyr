@@ -17,6 +17,19 @@
 #include <stdint.h>
 #include <errno.h>
 
+/* The composition and offset of scmi messages */
+#define SCMI_MSGID_SHIFT       0
+#define SCMI_MSGID_MASK        GENMASK(7, 0)
+
+#define SCMI_TYPE_SHIFT        8
+#define SCMI_TYPE_MASK         GENMASK(1, 0)
+
+#define SCMI_PROTOCOL_SHIFT    10
+#define SCMI_PROTOCOL_MASK     GENMASK(7, 0)
+
+#define SCMI_TOKEN_SHIFT       18
+#define SCMI_TOKEN_MASK        GENMASK(9, 0)
+
 /**
  * @brief Build an SCMI message header
  *
@@ -28,20 +41,24 @@
  * @param proto protocol ID
  * @param token message token
  */
-#define SCMI_MESSAGE_HDR_MAKE(id, type, proto, token)	\
-	(SCMI_FIELD_MAKE(id, GENMASK(7, 0), 0)     |	\
-	 SCMI_FIELD_MAKE(type, GENMASK(1, 0), 8)   |	\
-	 SCMI_FIELD_MAKE(proto, GENMASK(7, 0), 10) |	\
-	 SCMI_FIELD_MAKE(token, GENMASK(9, 0), 18))
+#define SCMI_MESSAGE_HDR_MAKE(id, type, proto, token)						\
+	(SCMI_FIELD_MAKE((id),		SCMI_MSGID_MASK,    SCMI_MSGID_SHIFT)		|	\
+	SCMI_FIELD_MAKE((type),		SCMI_TYPE_MASK,     SCMI_TYPE_SHIFT)		|	\
+	SCMI_FIELD_MAKE((proto),	SCMI_PROTOCOL_MASK, SCMI_PROTOCOL_SHIFT)	|	\
+	SCMI_FIELD_MAKE((token),	SCMI_TOKEN_MASK,    SCMI_TOKEN_SHIFT))
 
 /**
- * @brief SCMI header extraction
- *
+ * @brief Extract a field from SCMI message header
+ * @param hdr   the 32-bit SCMI message header
+ * @param FIELD one of: MSGID, TYPE, PROTOCOL, TOKEN
  */
-#define SCMI_HEADER_MSG_EX(header)  (((header) & 0xFFU) >> 0U)
-#define SCMI_HEADER_TYPE_EX(header)  (((header) & 0x300U) >> 8U)
-#define SCMI_HEADER_PROTOCOL_EX(header)  (((header) & 0x3FC00U) >> 10U)
-#define SCMI_HEADER_TOKEN_EX(header)  (((header) & 0x0FFC0000U) >> 18U)
+#define SCMI_MESSAGE_HDR_EX(hdr, FIELD) \
+	SCMI_FIELD_EX((hdr), SCMI_##FIELD##_MASK, SCMI_##FIELD##_SHIFT)
+
+#define SCMI_MESSAGE_HDR_EX_MSGID(hdr)    SCMI_MESSAGE_HDR_EX(hdr, MSGID)
+#define SCMI_MESSAGE_HDR_EX_TYPE(hdr)     SCMI_MESSAGE_HDR_EX(hdr, TYPE)
+#define SCMI_MESSAGE_HDR_EX_PROTOCOL(hdr) SCMI_MESSAGE_HDR_EX(hdr, PROTOCOL)
+#define SCMI_MESSAGE_HDR_EX_TOKEN(hdr)    SCMI_MESSAGE_HDR_EX(hdr, TOKEN)
 
 struct scmi_channel;
 
