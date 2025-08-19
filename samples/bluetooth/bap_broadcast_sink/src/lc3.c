@@ -408,7 +408,7 @@ int lc3_disable(struct stream_rx *stream)
 
 	stream->lc3_decoder = NULL;
 
-	if (IS_ENABLED(CONFIG_USB_DEVICE_AUDIO)) {
+	if (IS_ENABLED(CONFIG_USE_USB_AUDIO_OUTPUT)) {
 		if (usb_left_stream == stream) {
 			usb_left_stream = NULL;
 		}
