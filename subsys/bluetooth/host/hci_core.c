@@ -1800,7 +1800,7 @@ static void le_remote_feat_complete(struct net_buf *buf)
 	if (IS_ENABLED(CONFIG_BT_REMOTE_INFO) &&
 	    (!IS_ENABLED(CONFIG_BT_REMOTE_VERSION) ||
 	     atomic_test_bit(conn->flags, BT_CONN_AUTO_VERSION_INFO))) {
-		notify_remote_info(conn);
+		bt_conn_notify_remote_info(conn);
 	}
 
 	bt_conn_unref(conn);
@@ -1831,7 +1831,7 @@ static void le_read_all_remote_feat_complete(struct net_buf *buf)
 		params.features = evt->features;
 	}
 
-	notify_read_all_remote_feat_complete(conn, &params);
+	bt_conn_notify_read_all_remote_feat_complete(conn, &params);
 
 	bt_conn_unref(conn);
 }
@@ -1860,7 +1860,7 @@ static void le_frame_space_update_complete(struct net_buf *buf)
 		params.initiator = evt->initiator;
 	}
 
-	notify_frame_space_update_complete(conn, &params);
+	bt_conn_notify_frame_space_update_complete(conn, &params);
 }
 #endif /* CONFIG_BT_FRAME_SPACE_UPDATE */
 
@@ -1903,7 +1903,7 @@ static void le_data_len_change(struct net_buf *buf)
 	conn->le.data_len.tx_max_time = max_tx_time;
 	conn->le.data_len.rx_max_len = max_rx_octets;
 	conn->le.data_len.rx_max_time = max_rx_time;
-	notify_le_data_len_updated(conn);
+	bt_conn_notify_le_data_len_updated(conn);
 #endif
 
 	bt_conn_unref(conn);
@@ -1930,7 +1930,7 @@ static void le_phy_update_complete(struct net_buf *buf)
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
 	conn->le.phy.tx_phy = bt_get_phy(evt->tx_phy);
 	conn->le.phy.rx_phy = bt_get_phy(evt->rx_phy);
-	notify_le_phy_updated(conn);
+	bt_conn_notify_le_phy_updated(conn);
 #endif
 
 	bt_conn_unref(conn);
@@ -2024,7 +2024,7 @@ static void le_conn_param_req(struct net_buf *buf)
 		return;
 	}
 
-	if (!le_param_req(conn, &param)) {
+	if (!bt_conn_le_param_req(conn, &param)) {
 		le_conn_param_neg_reply(handle, BT_HCI_ERR_INVALID_LL_PARAM);
 	} else {
 		le_conn_param_req_reply(handle, &param);
@@ -2103,7 +2103,7 @@ static void le_conn_update_complete(struct net_buf *buf)
 
 		}
 
-		notify_le_param_updated(conn);
+		bt_conn_notify_le_param_updated(conn);
 	}
 
 	bt_conn_unref(conn);
@@ -2440,7 +2440,7 @@ static void bt_hci_evt_read_remote_version_complete(struct net_buf *buf)
 	if (IS_ENABLED(CONFIG_BT_REMOTE_INFO) &&
 	    atomic_test_bit(conn->flags, BT_CONN_LE_FEATURES_EXCHANGED)) {
 		/* Remote features is already present */
-		notify_remote_info(conn);
+		bt_conn_notify_remote_info(conn);
 	}
 
 	bt_conn_unref(conn);
@@ -2714,7 +2714,7 @@ void bt_hci_le_transmit_power_report(struct net_buf *buf)
 	report.tx_power_level_flag = evt->tx_power_level_flag;
 	report.delta = evt->delta;
 
-	notify_tx_power_report(conn, report);
+	bt_conn_notify_tx_power_report(conn, report);
 
 	bt_conn_unref(conn);
 }
@@ -2750,7 +2750,7 @@ void bt_hci_le_path_loss_threshold_event(struct net_buf *buf)
 		report.path_loss = evt->current_path_loss;
 	}
 
-	notify_path_loss_threshold_report(conn, report);
+	bt_conn_notify_path_loss_threshold_report(conn, report);
 
 	bt_conn_unref(conn);
 }
@@ -2806,7 +2806,7 @@ void bt_hci_le_subrate_change_event(struct net_buf *buf)
 	params.peripheral_latency = conn->le.latency;
 	params.supervision_timeout = conn->le.timeout;
 
-	notify_subrate_change(conn, params);
+	bt_conn_notify_subrate_change(conn, params);
 
 	bt_conn_unref(conn);
 }
