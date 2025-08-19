@@ -73,14 +73,14 @@ static inline int usbh_class_request(struct usbh_class_data *const c_data,
  *
  * @return 0 on success, negative error code on failure.
  */
-static inline int usbh_class_connected(struct usbh_class_data *const c_data,
+static inline int usbh_class_connected(struct usb_device *udev, struct usbh_class_data *const c_data,
 				       void *const desc_start_addr,
 				       void *const desc_end_addr)
 {
 	const struct usbh_class_api *api = c_data->api;
 
 	if (api->connected != NULL) {
-		return api->connected(c_data, desc_start_addr, desc_end_addr);
+		return api->connected(udev, c_data, desc_start_addr, desc_end_addr);
 	}
 
 	return -ENOTSUP;
@@ -96,12 +96,12 @@ static inline int usbh_class_connected(struct usbh_class_data *const c_data,
  *
  * @return 0 on success, negative error code on failure.
  */
-static inline int usbh_class_removed(struct usbh_class_data *const c_data)
+static inline int usbh_class_removed(struct usb_device *udev, struct usbh_class_data *const c_data)
 {
 	const struct usbh_class_api *api = c_data->api;
 
 	if (api->removed != NULL) {
-		return api->removed(c_data);
+		return api->removed(udev, c_data);
 	}
 
 	return -ENOTSUP;

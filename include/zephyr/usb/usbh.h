@@ -116,11 +116,11 @@ struct usbh_class_api {
 	int (*request)(struct usbh_class_data *cdata,
 		       struct uhc_transfer *const xfer, int err);
 	/** Device connected handler  */
-	int (*connected)(struct usbh_class_data *cdata,
+	int (*connected)(struct usb_device *udev, struct usbh_class_data *cdata,
 			 void *desc_start_addr,
 			 void *desc_end_addr);
 	/** Device removed handler  */
-	int (*removed)(struct usbh_class_data *cdata);
+	int (*removed)(struct usb_device *udev, struct usbh_class_data *cdata);
 	/** Bus remote wakeup handler  */
 	int (*rwup)(struct usbh_class_data *cdata);
 	/** Bus suspended handler  */
