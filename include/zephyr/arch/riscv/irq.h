@@ -123,7 +123,7 @@ static inline void arch_isr_direct_footer(int swap)
 
 	/* Get the IRQ number */
 	__asm__ volatile("csrr %0, mcause" : "=r" (mcause));
-	mcause &= CONFIG_RISCV_MCAUSE_EXCEPTION_MASK;
+	mcause &= RISCV_MCAUSE_EXC_MASK;
 
 	/* Clear the pending IRQ */
 	__soc_handle_irq(mcause);

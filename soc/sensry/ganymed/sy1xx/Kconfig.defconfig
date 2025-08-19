@@ -46,9 +46,6 @@ config DYNAMIC_INTERRUPTS
 config GEN_ISR_TABLES
 	default y
 
-config RISCV_MCAUSE_EXCEPTION_MASK
-	default 0x1F
-
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 32768
 
