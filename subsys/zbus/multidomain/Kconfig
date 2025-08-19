@@ -66,6 +66,25 @@ config ZBUS_MULTIDOMAIN_MAX_TRANSMIT_ATTEMPTS
 	  proxy agent. If an acknowledgment is not received after this many attempts, the message
 	  will be dropped. Setting this to 1 means no retransmissions will be attempted.
 
+config ZBUS_MULTIDOMAIN_UART
+	bool "ZBus multidomain UART backend"
+	depends on UART_ASYNC_API
+	help
+	  Enables the ZBus multidomain UART backend, allowing for ZBus between domains over UART.
+	  This feature is useful for systems that require inter-domain communication via UART.
+
+if ZBUS_MULTIDOMAIN_UART
+
+config ZBUS_MULTIDOMAIN_UART_BUF_COUNT
+	int "ZBus multidomain UART buffer count"
+	default 2
+	range 2 128
+	help
+	  Configures the number of buffers used for the ZBus multidomain UART backend.
+	  A minimum of 2 buffers is required for proper operation.
+
+endif # ZBUS_MULTIDOMAIN_UART
+
 module = ZBUS_MULTIDOMAIN
 module-str = zbus_multidomain
 source "subsys/logging/Kconfig.template.log_config"

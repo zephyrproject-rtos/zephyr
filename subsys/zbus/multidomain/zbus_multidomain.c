@@ -69,16 +69,30 @@ static int zbus_proxy_agent_sent_ack_timeout_stop(struct zbus_proxy_agent_config
 			struct zbus_proxy_agent_tracked_msg *data =
 				(struct zbus_proxy_agent_tracked_msg *)buf->data;
 
-			/* Cancel the delayed work if not in the work queue context
-			 * If we are in the work queue context, the work item is
-			 * already being processed, and will finish naturally.
-			 */
-			if (k_current_get() != &k_sys_work_q.thread) {
+			/* Check if we're in ISR context - cannot use sync work operations */
+			if (k_is_in_isr()) {
+				/* In ISR context: Mark config as NULL and remove from list
+				 * Cannot cancel work synchronously, but work handler will see NULL
+				 * config
+				 */
+				data->config = NULL;
+				sys_slist_remove(&config->sent_msg_list,
+						 prev_buf ? &prev_buf->node : NULL, &buf->node);
+				net_buf_unref(buf);
+				irq_unlock(key);
+				LOG_DBG("ACK received in ISR context for message ID %d, removed "
+					"from tracking",
+					msg_id);
+				return 0;
+			} else if (k_current_get() != &k_sys_work_q.thread) {
+				/* In thread context (not work queue): Safe to cancel work
+				 * synchronously
+				 */
 				struct k_work_sync sync;
 
 				k_work_cancel_delayable_sync(&data->work, &sync);
 			} else {
-				/* Mark as NULL to prevent retransmission from work context */
+				/* In work queue context: Mark as NULL to prevent retransmission */
 				data->config = NULL;
 			}
 
