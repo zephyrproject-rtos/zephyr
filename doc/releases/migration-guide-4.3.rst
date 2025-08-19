@@ -489,5 +489,26 @@ LED Strip
 
 * Renamed ``arduino,modulino-smartleds`` to :dtcompatible:`arduino,modulino-pixels`
 
+Trusted Firmware-M
+==================
+
+* The signing process for BL2 (MCUboot) was updated. The boards that run using
+  TF-M NS and require BL2 must have their flash layout with the flash controller
+  information. This will ensure that when signing the hex/bin files all the
+  details will be present in the S and NS images. The image now has the details
+  to allow the FWU state machine be correct and allow FOTA.
+  (:github:`94470`)
+
+    * The ``--align`` parameter was fixed to 1. Now, it's set to the flash DT ``write_block_size``
+      property, but still provides 1 as a fallback for specific vendors.
+    * The ``--max-sectors`` value is now calculated based on the number of images, taking into
+      consideration the largest image size.
+    * The ``--confirm`` option now confirms both S and NS HEX images, ensuring that any image
+      that runs is valid for production and development.
+    * S and NS BIN images are now available. These are the correct images to be used in FOTA. Note
+      that S and NS images are unconfirmed by default, and the application is responsible for
+      confirming them with ``psa_fwu_accept()``. Otherwise, the images will roll back on the next
+      reboot.
+
 Architectures
 *************
