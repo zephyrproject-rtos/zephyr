@@ -32,6 +32,14 @@ config ZBUS_PROXY_AGENT_PRIORITY
 	help
 	  Configures the priority of the ZBus proxy agent proxy agent thread.
 
+config ZBUS_PROXY_AGENT_UART
+	bool "ZBus proxy agent UART backend"
+	depends on UART_ASYNC_API
+	depends on CRC
+	help
+	  Enables the ZBus proxy agent UART backend, allowing for ZBus between domains over UART.
+
+
 config ZBUS_PROXY_AGENT_IPC
 	bool "ZBus proxy agent IPC backend"
 	depends on IPC_SERVICE
