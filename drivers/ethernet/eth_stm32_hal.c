@@ -815,6 +815,12 @@ static void generate_mac(uint8_t *mac_addr)
 	result_mac_32_bits = crc32_ieee((uint8_t *)unique_device_ID_12_bytes, 12);
 	memcpy(&mac_addr[3], &result_mac_32_bits, 3);
 
+	/**
+	 * Set MAC address locally administered bit (LAA) as this is not assigned by the
+	 * manufacturer
+	 */
+	mac_addr[0] |= 0x02;
+
 #endif /* NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(0))) */
 #endif
 }
