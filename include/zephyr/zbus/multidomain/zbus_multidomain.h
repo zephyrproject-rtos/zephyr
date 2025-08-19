@@ -14,6 +14,10 @@
 #include <zephyr/zbus/zbus.h>
 #include <zephyr/zbus/multidomain/zbus_multidomain_types.h>
 
+#if defined(CONFIG_ZBUS_MULTIDOMAIN_UART)
+#include <zephyr/zbus/multidomain/zbus_multidomain_uart.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
