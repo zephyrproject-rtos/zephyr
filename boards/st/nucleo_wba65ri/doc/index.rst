@@ -64,12 +64,11 @@ Energy specification 5.4.
   - 1.71 to 3.6 V power supply
   - - 40 °C to 85 °C temperature range
   - Autonomous peripherals with DMA, functional down to Stop 1 mode
-  - TBD nA Standby mode (16 wake-up pins)
-  - TBD nA Standby mode with RTC
-  - TBD µA Standby mode with 64 KB SRAM
-  - TBD µA Stop 2 mode with 64 KB SRAM
-  - TBD µA/MHz Run mode at 3.3 V
-  - Radio: Rx TBD mA / Tx at 0 dBm TBD mA
+  - 120 nA Standby mode (16 wake-up pins)
+  - 1.68 |micro| A Standby mode with 64 KB SRAM with RTC
+  - 5.58 |micro| A Stop 2 mode with 64 KB SRAM with RTC
+  - 28.75 |micro| A/MHz Run mode at 3.3 V
+  - Radio: Rx 4.26 mA / Tx at 0 dBm 5.94 mA
 
 - ART Accelerator |trade|: 8-Kbyte instruction cache allowing 0-wait-state execution
   from flash memory (frequency up to 100 MHz, 150 DMIPS)
