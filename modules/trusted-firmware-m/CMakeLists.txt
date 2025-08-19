@@ -496,45 +496,67 @@ if (CONFIG_BUILD_WITH_TFM)
     endif()
   endif()
 
-  function(tfm_sign OUT_ARG SUFFIX HEADER TRAILER CONFIRM MAX_SECTORS INPUT_FILE OUTPUT_FILE)
-    if(HEADER AND TRAILER)
+  function(tfm_sign OUT_ARG)
+    set(options HEADER TRAILER CONFIRM)
+    set(oneValueArgs SUFFIX MAX_SECTORS INPUT_FILE OUTPUT_FILE)
+    set(multiValueArgs "")
+
+    cmake_parse_arguments(
+      TFM_SIGN_ARG
+      "${options}"
+      "${oneValueArgs}"
+      "${multiValueArgs}"
+      ${ARGN}
+    )
+
+    if(NOT DEFINED TFM_SIGN_ARG_SUFFIX OR
+      NOT DEFINED TFM_SIGN_ARG_INPUT_FILE OR
+      NOT DEFINED TFM_SIGN_ARG_OUTPUT_FILE)
+        message(FATAL_ERROR "SUFFIX, INPUT_FILE and OUTPUT_FILE are required arguments")
+    endif()
+
+    set(pad_args "")
+    if(TFM_SIGN_ARG_HEADER AND TFM_SIGN_ARG_TRAILER)
       set(pad_args --pad --pad-header)
-    elseif(HEADER)
+    elseif(TFM_SIGN_ARG_HEADER)
       set(pad_args --pad-header)
-    elseif(TRAILER)
+    elseif(TFM_SIGN_ARG_TRAILER)
       set(pad_args --pad)
     endif()
-    if(CONFIRM)
-      # --confirm imply PAD
+
+    set(confirm "")
+    if(TFM_SIGN_ARG_CONFIRM)
       set(confirm --confirm)
     endif()
+
     # Secure + Non-secure images are signed the same way as a secure only
     # build, but with a different layout file.
-    set(layout_file ${PREPROCESSED_FILE_${SUFFIX}})
-    if(SUFFIX STREQUAL "S_NS")
-      set(SUFFIX "S")
+    set(layout_file ${PREPROCESSED_FILE_${TFM_SIGN_ARG_SUFFIX}})
+    if(TFM_SIGN_ARG_SUFFIX STREQUAL "S_NS")
+      set(TFM_SIGN_ARG_SUFFIX "S")
     endif()
-    set (${OUT_ARG}
+
+    set(${OUT_ARG}
       # Add the MCUBoot script to the path so that if there is a version of imgtool in there then
       # it gets used over the system imgtool. Used so that imgtool from upstream
       # mcuboot is preferred over system imgtool
       ${CMAKE_COMMAND} -E env PYTHONPATH=${ZEPHYR_MCUBOOT_MODULE_DIR}/scripts
       ${PYTHON_EXECUTABLE} ${TFM_MCUBOOT_DIR}/scripts/wrapper/wrapper.py
       --layout ${layout_file}
-      -k ${CONFIG_TFM_KEY_FILE_${SUFFIX}}
+      -k ${CONFIG_TFM_KEY_FILE_${TFM_SIGN_ARG_SUFFIX}}
       --public-key-format ${TFM_PUBLIC_KEY_FORMAT}
       --align ${image_alignment}
-      --max-sectors ${MAX_SECTORS}
-      -v ${CONFIG_TFM_IMAGE_VERSION_${SUFFIX}}
+      --max-sectors ${TFM_SIGN_ARG_MAX_SECTORS}
+      -v ${CONFIG_TFM_IMAGE_VERSION_${TFM_SIGN_ARG_SUFFIX}}
       ${pad_args}
       ${confirm}
-      ${HEX_ADDR_ARGS_${SUFFIX}}
-      ${ADD_${SUFFIX}_IMAGE_MIN_VER}
+      ${HEX_ADDR_ARGS_${TFM_SIGN_ARG_SUFFIX}}
+      ${ADD_${TFM_SIGN_ARG_SUFFIX}_IMAGE_MIN_VER}
       -s ${CONFIG_TFM_IMAGE_SECURITY_COUNTER}
       --measured-boot-record
       -H ${CONFIG_ROM_START_OFFSET}
-      ${INPUT_FILE}
-      ${OUTPUT_FILE}
+      ${TFM_SIGN_ARG_INPUT_FILE}
+      ${TFM_SIGN_ARG_OUTPUT_FILE}
       PARENT_SCOPE)
   endfunction()
 
@@ -570,8 +592,9 @@ if (CONFIG_BUILD_WITH_TFM)
     )
 
   elseif(CONFIG_TFM_MCUBOOT_IMAGE_NUMBER STREQUAL "1")
-    tfm_sign(sign_cmd_s_ns_hex S_NS TRUE TRUE TRUE ${S_NS_MAX_SECTORS} ${S_NS_HEX_FILE}
-      ${S_NS_SIGNED_HEX_FILE})
+    tfm_sign(sign_cmd_s_ns_hex SUFFIX "S_NS"
+      HEADER TRAILER CONFIRM MAX_SECTORS ${S_NS_MAX_SECTORS}
+      INPUT_FILE ${S_NS_HEX_FILE} OUTPUT_FILE ${S_NS_SIGNED_HEX_FILE})
 
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
       COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/mergehex.py
@@ -596,21 +619,33 @@ if (CONFIG_BUILD_WITH_TFM)
 
   else()
     if (CONFIG_TFM_USE_NS_APP)
-      tfm_sign(sign_cmd_ns_hex NS TRUE TRUE TRUE ${S_NS_MAX_SECTORS} ${NS_HEX_APP_FILE}
-        ${NS_SIGNED_HEX_FILE})
-      tfm_sign(sign_cmd_ns_bin NS TRUE TRUE FALSE ${S_NS_MAX_SECTORS} ${NS_BIN_APP_FILE}
-        ${NS_SIGNED_BIN_FILE})
+      tfm_sign(sign_cmd_ns_hex SUFFIX "NS"
+        HEADER TRAILER CONFIRM MAX_SECTORS ${S_NS_MAX_SECTORS}
+        INPUT_FILE ${NS_HEX_APP_FILE}
+	OUTPUT_FILE ${NS_SIGNED_HEX_FILE})
+      tfm_sign(sign_cmd_ns_bin SUFFIX "NS"
+        HEADER TRAILER MAX_SECTORS ${S_NS_MAX_SECTORS}
+        INPUT_FILE ${NS_BIN_APP_FILE}
+	OUTPUT_FILE ${NS_SIGNED_BIN_FILE})
     else()
-      tfm_sign(sign_cmd_ns NS FALSE TRUE TRUE ${S_NS_MAX_SECTORS} ${NS_HEX_APP_FILE}
-        ${NS_SIGNED_HEX_FILE})
-      tfm_sign(sign_cmd_ns_bin NS FALSE FALSE FALSE ${S_NS_MAX_SECTORS} ${NS_BIN_APP_FILE}
-        ${NS_SIGNED_BIN_FILE})
+      tfm_sign(sign_cmd_ns_hex SUFFIX "NS"
+        TRAILER CONFIRM MAX_SECTORS ${S_NS_MAX_SECTORS}
+        INPUT_FILE ${NS_HEX_APP_FILE}
+	OUTPUT_FILE ${NS_SIGNED_HEX_FILE})
+      tfm_sign(sign_cmd_ns_bin SUFFIX "NS"
+        MAX_SECTORS ${S_NS_MAX_SECTORS}
+        INPUT_FILE ${NS_BIN_APP_FILE}
+	OUTPUT_FILE ${NS_SIGNED_BIN_FILE})
     endif()
 
-    tfm_sign(sign_cmd_s_hex S TRUE TRUE TRUE ${S_NS_MAX_SECTORS}
-      $<TARGET_PROPERTY:tfm,TFM_S_HEX_FILE> ${S_SIGNED_HEX_FILE})
-    tfm_sign(sign_cmd_s_bin S TRUE TRUE FALSE ${S_NS_MAX_SECTORS}
-      $<TARGET_PROPERTY:tfm,TFM_S_BIN_FILE> ${S_SIGNED_BIN_FILE})
+    tfm_sign(sign_cmd_s_hex SUFFIX "S"
+      HEADER TRAILER CONFIRM MAX_SECTORS ${S_NS_MAX_SECTORS}
+      INPUT_FILE $<TARGET_PROPERTY:tfm,TFM_S_HEX_FILE>
+      OUTPUT_FILE ${S_SIGNED_HEX_FILE})
+    tfm_sign(sign_cmd_s_bin SUFFIX "S"
+      HEADER TRAILER MAX_SECTORS ${S_NS_MAX_SECTORS}
+      INPUT_FILE $<TARGET_PROPERTY:tfm,TFM_S_BIN_FILE>
+      OUTPUT_FILE ${S_SIGNED_BIN_FILE})
 
     #Create and sign for concatenated binary image, should align with the TF-M BL2
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
