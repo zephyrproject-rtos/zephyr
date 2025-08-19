@@ -1,0 +1,92 @@
+# Copyright (c) 2025, STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  PLLSAI node binding for STM32F4 and STM32F7 device
+
+  Takes one of clk_hse or clk_hsi as input clock.
+
+  The PLL can have up to 3 output clocks and for each output clock, the
+  frequency can be computed with the following formulae:
+
+    f(PLLSAI_P) = f(VCO clock) / PLLSAIP
+    f(PLLSAI_Q) = f(VCO clock) / PLLSAIQ
+    f(PLLSAI_R) = f(VCO clock) / PLLSAIR
+
+      with f(VCO clock) = f(PLL clock input) × (PLLSAIN / PLLSAIM)
+
+  The PLL clock input is shared with other PLLs (PLL / PLLI2S) of the
+  SoC hence all PLLs must have the same source set.
+
+compatible: "st,stm32fx-pllsai-clock"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  "#clock-cells":
+    const: 0
+
+  clocks:
+    required: true
+
+  div-m:
+    type: int
+    required: true
+    description: |
+        Division factor for PLLSAI input clock.
+        On STM32F446xx, the division M factor is independent from
+        other PLLs.
+        On all other SoCs, the division factor M is shared between
+        PLL, PLLSAI and PLLI2S, hence same value should be used
+        for those PLLs when used together.
+        Valid range: 2 - 63
+
+  mul-n:
+    type: int
+    required: true
+    description: |
+        Multiplication factor for VCO.
+        Valid range: 50 - 432
+
+  div-p:
+    type: int
+    description: |
+        Division factor for PLLSAI_P.
+        Only available on STM32F446/STM32F469/STM32F479 and STM32F7 series.
+    enum:
+      - 2
+      - 4
+      - 6
+      - 8
+
+  div-q:
+    type: int
+    description: |
+        Division factor for PLLSAI_Q
+        Valid range: 2 - 15
+
+  div-divq:
+    type: int
+    description: |
+        Division factor after PLLSAI_Q for the SAI1 clock.
+        Valid range: 1 - 32
+
+  div-r:
+    type: int
+    description: |
+        Division factor for PLLSAI_R.
+        Only available on STM32F42x / STM32F43x / STM32F469 / STM32F479
+        and on STM32F74x and higher.
+        Valid range: 2 - 7
+
+  div-divr:
+    type: int
+    description: |
+        Division factor after PLLSAI_R for the LTDC pixel clock.
+        Only available on STM32F42x / STM32F43x / STM32F469 / STM32F479
+        and on STM32F74x and higher.
+    enum:
+      - 2
+      - 4
+      - 8
+      - 16
