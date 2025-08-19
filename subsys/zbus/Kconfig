@@ -116,6 +116,12 @@ config ZBUS_MULTIDOMAIN
 	  Enables support for ZBus multidomain. This feature allows the ZBus to work with multiple domains,
 	  enabling communication between them.
 
+if ZBUS_MULTIDOMAIN
+
+rsource "multidomain/Kconfig"
+
+endif # ZBUS_MULTIDOMAIN
+
 config HEAP_MEM_POOL_ADD_SIZE_ZBUS
 	int "ZBus requested heap pool size."
 	default 2048 if ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC && !ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_DYNAMIC
