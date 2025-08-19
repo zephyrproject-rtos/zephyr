@@ -60,47 +60,6 @@ static const struct usbh_device_code_table uvc_device_code[] = {
 };
 
 /**
- * @brief UVC GUID to pixel format mapping table
- *
- * Maps UVC format GUIDs to Zephyr video pixel formats.
- * Each entry contains the 16-byte GUID, corresponding pixel format,
- * and human-readable format name.
- */
-static const struct {
-	/** UVC format GUID */
-	uint8_t guid[16];
-	/** Zephyr pixel format (\ref video_pixel_formats) */
-	uint32_t pixelformat;
-	/** Format name string */
-	const char *name;
-} uvc_guid_map[] = {
-	/** YUY2 format GUID */
-	{{0x59, 0x55, 0x59, 0x32, 0x00, 0x00, 0x10, 0x00,
-	  0x80, 0x00, 0x00, 0xAA, 0x00, 0x38, 0x9B, 0x71},
-	  VIDEO_PIX_FMT_YUYV, "YUYV"},
-
-	/** Y800 grayscale format GUID */
-	{{0x59, 0x38, 0x30, 0x30, 0x00, 0x00, 0x10, 0x00,
-	  0x80, 0x00, 0x00, 0xAA, 0x00, 0x38, 0x9B, 0x71},
-	  VIDEO_PIX_FMT_GREY, "GREY"},
-
-	/** RGBP format GUID */
-	{{0x52, 0x47, 0x42, 0x50, 0x00, 0x00, 0x10, 0x00,
-	  0x80, 0x00, 0x00, 0xAA, 0x00, 0x38, 0x9B, 0x71},
-	  VIDEO_PIX_FMT_RGB565, "RGB565"},
-
-	/** UYVY format GUID (unsupported) */
-	{{0x55, 0x59, 0x56, 0x59, 0x00, 0x00, 0x10, 0x00,
-	  0x80, 0x00, 0x00, 0xAA, 0x00, 0x38, 0x9B, 0x71},
-	  0, "UYVY (unsupported)"},
-
-	/** NV12 format GUID (unsupported) */
-	{{0x4E, 0x56, 0x31, 0x32, 0x00, 0x00, 0x10, 0x00,
-	  0x80, 0x00, 0x00, 0xAA, 0x00, 0x38, 0x9B, 0x71},
-	  0, "NV12 (unsupported)"},
-};
-
-/**
  * @brief USB UVC camera control parameters structure
  *
  * This structure defines all the video control parameters supported by
@@ -162,6 +121,8 @@ struct uvc_device {
 	struct k_fifo fifo_out;
 	/** Device connection status */
 	bool connected;
+	/** Device streaming status */
+	bool streaming;
 	/** Signal to alert video devices of buffer-related events */
 	struct k_poll_signal *sig;
 	/** Byte offset within the currently transmitted video buffer */
@@ -208,57 +169,7 @@ struct uvc_device {
     struct uvc_probe_commit video_probe;
 };
 
-static void uvc_host_flush_queue(struct uvc_device *uvc_dev, struct video_buffer *vbuf);
-
-/**
- * @brief Convert pixel format to UVC GUID
- *
- * Converts Zephyr video pixel format to corresponding UVC GUID.
- *
- * @param pixelformat Zephyr pixel format value
- * @param guid Output buffer for 16-byte GUID
- * @return 0 on success, negative error code if format not supported
- */
-int uvc_host_pixelformat_to_guid(uint32_t pixelformat, uint8_t *guid)
-{
-	if (!guid) {
-		return -EINVAL;
-	}
-
-	for (int i = 0; i < ARRAY_SIZE(uvc_guid_map); i++) {
-		if (uvc_guid_map[i].pixelformat == pixelformat) {
-			memcpy(guid, uvc_guid_map[i].guid, 16);
-			return 0;
-		}
-	}
-
-	return -ENOTSUP;
-}
-
-/**
- * @brief Convert UVC format GUID to Zephyr pixel format
- *
- * This function searches the UVC GUID mapping table to find the corresponding
- * Zephyr video pixel format for a given UVC format GUID.
- *
- * @param guid Pointer to 16-byte UVC format GUID array
- * @return Zephyr pixel format constant (VIDEO_PIX_FMT_*) on success,
- *         0 if GUID is not found or unsupported
- */
-uint32_t uvc_host_guid_to_pixelformat(const uint8_t *guid)
-{
-	if (!guid) {
-		return 0;
-	}
-
-	for (int i = 0; i < ARRAY_SIZE(uvc_guid_map); i++) {
-		if (memcmp(guid, uvc_guid_map[i].guid, 16) == 0) {
-			return uvc_guid_map[i].pixelformat;
-		}
-	}
-
-	return 0;
-}
+static int uvc_host_flush_queue(struct uvc_device *uvc_dev, struct video_buffer *vbuf);
 
 /**
  * @brief Select default video format for UVC device
@@ -285,7 +196,7 @@ static int uvc_host_select_default_format(struct uvc_device *uvc_dev)
 		struct uvc_vs_format_uncompressed *format = uncompressed_info->uncompressed_format[0];
 
 		/* Get pixel format from GUID */
-		uint32_t pixelformat = uvc_host_guid_to_pixelformat(format->guidFormat);
+		uint32_t pixelformat = uvc_guid_to_fourcc(format->guidFormat);
 		if (pixelformat == 0) {
 			LOG_WRN("First uncompressed format has unsupported GUID");
 			goto try_mjpeg;
@@ -1317,29 +1228,62 @@ static int uvc_host_parse_descriptors(struct uvc_device *uvc_dev)
 }
 
 /**
- * @brief Parse frame intervals from descriptor
+ * @brief Parse default frame interval from descriptor
  *
- * Extracts frame interval information from frame descriptor and
- * returns the maximum supported interval value.
+ * Extracts the default frame interval from frame descriptor. If default
+ * interval is invalid (0), falls back to maximum supported interval.
  *
  * @param desc_buf Pointer to frame descriptor buffer
- * @return Maximum frame interval in 100ns units
+ * @param frame_subtype Frame descriptor subtype (UVC_VS_FRAME_UNCOMPRESSED or UVC_VS_FORMAT_MJPEG)
+ * @return Default or maximum frame interval in 100ns units
  */
-static uint32_t uvc_host_parse_frame_intervals(uint8_t *desc_buf)
+static uint32_t uvc_host_parse_frame_default_intervals(uint8_t *desc_buf, uint8_t frame_subtype)
 {
-	uint32_t max_interval = 333333; /* Default 30fps */
-	uint8_t interval_type = desc_buf[25]; /* bFrameIntervalType */
-	uint8_t *interval_data = desc_buf + 26;
+    uint32_t default_interval = 0;
+    uint8_t interval_type;
+    uint8_t *interval_data;
 
-	if (interval_type == 0) {
-		/* Continuous/stepwise frame intervals: take maximum value */
-		max_interval = sys_le32_to_cpu(*(uint32_t*)(interval_data + 4));
-	} else if (interval_type > 0) {
-		/* Discrete frame intervals: take last (maximum) value */
-		max_interval = sys_le32_to_cpu(*(uint32_t*)(interval_data + (interval_type - 1) * 4));
-	}
+    if (frame_subtype == UVC_VS_FRAME_UNCOMPRESSED) {
+        struct uvc_vs_frame_uncompressed *frame_desc = 
+            (struct uvc_vs_frame_uncompressed *)desc_buf;
+        default_interval = sys_le32_to_cpu(frame_desc->dwDefaultFrameInterval);
+        interval_type = frame_desc->bFrameIntervalType;
+        /* Interval data follows immediately after bFrameIntervalType field */
+        interval_data = &(frame_desc->bFrameIntervalType) + 1;
+    } else if (frame_subtype == UVC_VS_FORMAT_MJPEG) {
+        struct uvc_vs_frame_mjpeg *frame_desc = 
+            (struct uvc_vs_frame_mjpeg *)desc_buf;
+        default_interval = sys_le32_to_cpu(frame_desc->dwDefaultFrameInterval);
+        interval_type = frame_desc->bFrameIntervalType;
+        /* Interval data follows immediately after bFrameIntervalType field */
+        interval_data = &(frame_desc->bFrameIntervalType) + 1;
+    } else {
+        /* Unsupported frame subtype, use hardcoded fallback */
+        return 333333; /* 30fps */
+    }
 
-	return max_interval;
+    /* If default interval is valid, use it */
+    if (default_interval != 0) {
+        return default_interval;
+    }
+
+    /* Default interval is invalid, find maximum supported interval */
+    uint32_t max_interval = 333333; /* Fallback to 30fps */
+
+    if (interval_type == 0) {
+        /* Continuous/stepwise intervals: dwMin, dwMax, dwStep */
+        if (interval_data + 8 <= desc_buf + desc_buf[0]) { /* Bounds check */
+            max_interval = sys_le32_to_cpu(*(uint32_t*)(interval_data + 4));
+        }
+    } else if (interval_type > 0) {
+        /* Discrete intervals: take the last (typically maximum) value */
+        uint32_t last_interval_offset = (interval_type - 1) * 4;
+        if (interval_data + last_interval_offset + 4 <= desc_buf + desc_buf[0]) { /* Bounds check */
+            max_interval = sys_le32_to_cpu(*(uint32_t*)(interval_data + last_interval_offset));
+        }
+    }
+
+    return max_interval;
 }
 
 /**
@@ -1385,7 +1329,7 @@ static int uvc_host_find_frame_in_format(struct uvc_format_header *format_header
 					*found_frame = frame_header;
 					/* Parse frame interval from descriptor */
 					*found_interval = (frame_header->bLength >= 26) ?
-									 uvc_host_parse_frame_intervals(desc_buf) : 333333;
+									 uvc_host_parse_frame_default_intervals(desc_buf, expected_frame_subtype) : 333333;
 					return 0;
 				}
 				frames_found++;
@@ -1441,7 +1385,7 @@ static int uvc_host_find_format(struct uvc_device *uvc_dev,
 		if (!format_desc) continue;
 
 		/* Convert GUID to pixel format for comparison */
-		uint32_t desc_pixelformat = uvc_host_guid_to_pixelformat(format_desc->guidFormat);
+		uint32_t desc_pixelformat = uvc_guid_to_fourcc(format_desc->guidFormat);
 
 		if (desc_pixelformat == pixelformat) {
 			LOG_DBG("Found matching uncompressed format: index=%u", format_desc->bFormatIndex);
@@ -1486,7 +1430,6 @@ static int uvc_host_find_format(struct uvc_device *uvc_dev,
 	return -ENOTSUP;
 }
 
-#if 0
 /**
  * @brief Select streaming alternate setting based on bandwidth
  *
@@ -1499,14 +1442,16 @@ static int uvc_host_find_format(struct uvc_device *uvc_dev,
  */
 static int uvc_host_select_streaming_alternate(struct uvc_device *uvc_dev, uint32_t required_bandwidth)
 {
-	struct usb_if_descriptor *best_interface = NULL;
-	struct usb_ep_descriptor *best_endpoint = NULL;
-	uint32_t min_suitable_bandwidth = UINT32_MAX;
-	uint32_t best_ep_mps_mult = 0;
+	struct usb_if_descriptor *selected_interface = NULL;
+	struct usb_ep_descriptor *selected_endpoint = NULL;
+	uint32_t optimal_bandwidth = UINT32_MAX;
+	uint32_t selected_payload_size = 0;
 	bool found_suitable = false;
 	enum usbh_speed device_speed = uvc_dev->udev->speed;
-
-	LOG_DBG("Required bandwidth: %u bytes/sec (device speed: %s)", required_bandwidth,
+	uint32_t max_payload_transfer_size = sys_le32_to_cpu(uvc_dev->video_probe.dwMaxPayloadTransferSize);
+	
+	LOG_DBG("Required bandwidth: %u bytes/sec, Max payload: %u bytes (device speed: %s)", 
+			required_bandwidth, max_payload_transfer_size,
 			(device_speed == USB_SPEED_SPEED_HS) ? "High Speed" : "Full Speed");
 
 	/* Iterate through all alternate setting interfaces */
@@ -1534,155 +1479,70 @@ static int uvc_host_select_streaming_alternate(struct uvc_device *uvc_dev, uint3
 
 				uint16_t max_packet_size = sys_le16_to_cpu(ep_desc->wMaxPacketSize) & 0x07FF;
 				uint32_t ep_bandwidth;
-				uint32_t current_ep_mps_mult;
+				uint32_t ep_payload_size;
 
 				/* Calculate endpoint bandwidth based on USB speed */
 				if (device_speed == USB_SPEED_SPEED_HS) {
 					uint8_t mult = ((sys_le16_to_cpu(ep_desc->wMaxPacketSize) >> 11) & 0x03) + 1;
 					uint32_t interval_uframes = 1 << (ep_desc->bInterval - 1);
-					current_ep_mps_mult = max_packet_size * mult;
-					ep_bandwidth = (current_ep_mps_mult * 8000) / interval_uframes;
+					ep_payload_size = max_packet_size * mult;
+					ep_bandwidth = (ep_payload_size * 8000) / interval_uframes;
 				} else {
-					current_ep_mps_mult = max_packet_size;
+					ep_payload_size = max_packet_size;
 					ep_bandwidth = (max_packet_size * 1000) / ep_desc->bInterval;
 				}
 
-				LOG_DBG("  Interface %u Alt %u EP[%d]: addr=0x%02x, maxpkt=%u, mps_mult=%u, bandwidth=%u",
+				LOG_DBG("  Interface %u Alt %u EP[%d]: addr=0x%02x, maxpkt=%u, payload=%u, bandwidth=%u",
 						if_desc->bInterfaceNumber, if_desc->bAlternateSetting, ep,
-						ep_desc->bEndpointAddress, max_packet_size, current_ep_mps_mult, ep_bandwidth);
+						ep_desc->bEndpointAddress, max_packet_size, ep_payload_size, ep_bandwidth);
 
-				/* Check if endpoint satisfies bandwidth requirement and is optimal */
-				if (ep_bandwidth >= required_bandwidth && ep_bandwidth < min_suitable_bandwidth) {
-					min_suitable_bandwidth = ep_bandwidth;
-					best_interface = if_desc;
-					best_endpoint = ep_desc;
-					best_ep_mps_mult = current_ep_mps_mult;
+				/* Check if endpoint satisfies requirements and is optimal */
+				if (ep_bandwidth >= required_bandwidth && 
+					ep_payload_size >= max_payload_transfer_size &&
+					ep_bandwidth < optimal_bandwidth) {
+
+					optimal_bandwidth = ep_bandwidth;
+					selected_interface = if_desc;
+					selected_endpoint = ep_desc;
+					selected_payload_size = ep_payload_size;
 					found_suitable = true;
 
-					LOG_DBG("Found better endpoint: interface %u alt %u EP 0x%02x, bandwidth=%u, mps_mult=%u",
+					LOG_DBG("Selected optimal endpoint: interface %u alt %u EP 0x%02x, bandwidth=%u, payload=%u",
 							if_desc->bInterfaceNumber, if_desc->bAlternateSetting,
-							ep_desc->bEndpointAddress, ep_bandwidth, current_ep_mps_mult);
+							ep_desc->bEndpointAddress, ep_bandwidth, ep_payload_size);
+				} else {
+					if (ep_bandwidth < required_bandwidth) {
+						LOG_DBG("  Endpoint rejected: insufficient bandwidth (%u < %u)", 
+								ep_bandwidth, required_bandwidth);
+					}
+					if (ep_payload_size < max_payload_transfer_size) {
+						LOG_DBG("  Endpoint rejected: insufficient payload size (%u < %u)", 
+								ep_payload_size, max_payload_transfer_size);
+					}
 				}
 			}
 
 			ep_buf += ep_desc->bLength;
 		}
 	}
-
+	
 	if (!found_suitable) {
-		LOG_ERR("No endpoint can satisfy bandwidth requirement %u", required_bandwidth);
+		LOG_ERR("No endpoint satisfies bandwidth requirement %u and payload size %u", 
+				required_bandwidth, max_payload_transfer_size);
 		return -ENOTSUP;
 	}
 
 	/* Update current streaming interface and endpoint */
-	uvc_dev->current_stream_iface_info.current_stream_iface = best_interface;
-	uvc_dev->current_stream_iface_info.current_stream_ep = best_endpoint;
-	uvc_dev->current_stream_iface_info.cur_ep_mps_mult = best_ep_mps_mult;
+	uvc_dev->current_stream_iface_info.current_stream_iface = selected_interface;
+	uvc_dev->current_stream_iface_info.current_stream_ep = selected_endpoint;
+	uvc_dev->current_stream_iface_info.cur_ep_mps_mult = selected_payload_size;
 
-	LOG_INF("Selected interface %u alternate %u endpoint 0x%02x with bandwidth %u, mps_mult=%u for requirement %u",
-			best_interface->bInterfaceNumber, best_interface->bAlternateSetting,
-			best_endpoint->bEndpointAddress, min_suitable_bandwidth, best_ep_mps_mult, required_bandwidth);
-
-	return 0;
-}
-
-#endif
-
-
-/* TODO: this function forces to use interface 1 and alternate setting 11 to work with one Logith Camera.
-*        In the future, the above commented implementation should be used for generic device support
-*/
-/**
- * @brief Select streaming alternate setting 6 on interface 1
- *
- * Directly selects interface 1 alternate setting 6 and finds its ISO IN endpoint.
- *
- * @param uvc_dev Pointer to UVC device structure
- * @param required_bandwidth Required bandwidth (unused in this simplified version)
- * @return 0 on success, negative error code if interface/endpoint not found
- */
-static int uvc_host_select_streaming_alternate(struct uvc_device *uvc_dev, uint32_t required_bandwidth)
-{
-	struct usb_if_descriptor *target_interface = NULL;
-	struct usb_ep_descriptor *target_endpoint = NULL;
-	uint32_t ep_mps_mult = 0;
-	enum usbh_speed device_speed = uvc_dev->udev->speed;
-
-	ARG_UNUSED(required_bandwidth);  /* Not used in direct selection */
-
-	LOG_INF("Directly selecting interface 1 alternate setting 6 (device speed: %s)",
-			(device_speed == USB_SPEED_SPEED_HS) ? "High Speed" : "Full Speed");
-
-	/* Search for interface 1 alternate setting 6 */
-	for (int i = 0; i < UVC_STREAM_INTERFACES_MAX_ALT && uvc_dev->stream_ifaces[i]; i++) {
-		struct usb_if_descriptor *if_desc = uvc_dev->stream_ifaces[i];
-
-		/* Check if this is interface 1 alternate setting 6 */
-		if (if_desc->bInterfaceNumber == 1 && if_desc->bAlternateSetting == 11) {
-			target_interface = if_desc;
-
-			LOG_INF("Found target interface %u alt %u (%u endpoints)",
-					if_desc->bInterfaceNumber, if_desc->bAlternateSetting, if_desc->bNumEndpoints);
-
-			/* Find ISO IN endpoint in this interface */
-			uint8_t *ep_buf = (uint8_t *)if_desc + if_desc->bLength;
-
-			for (int ep = 0; ep < if_desc->bNumEndpoints; ep++) {
-				struct usb_ep_descriptor *ep_desc = (struct usb_ep_descriptor *)ep_buf;
-
-				/* Check if this is ISO IN endpoint */
-				if (ep_desc->bDescriptorType == USB_DESC_ENDPOINT &&
-					(ep_desc->bmAttributes & USB_EP_TRANSFER_TYPE_MASK) == USB_EP_TYPE_ISO &&
-					(ep_desc->bEndpointAddress & USB_EP_DIR_MASK) == USB_EP_DIR_IN) {
-
-					uint16_t max_packet_size = sys_le16_to_cpu(ep_desc->wMaxPacketSize) & 0x07FF;
-					uint32_t ep_bandwidth;
-
-					/* Calculate endpoint parameters based on USB speed */
-					if (device_speed == USB_SPEED_SPEED_HS) {
-						uint8_t mult = ((sys_le16_to_cpu(ep_desc->wMaxPacketSize) >> 11) & 0x03) + 1;
-						uint32_t interval_uframes = 1 << (ep_desc->bInterval - 1);
-						ep_mps_mult = max_packet_size * mult;
-						ep_bandwidth = (ep_mps_mult * 8000) / interval_uframes;
-					} else {
-						ep_mps_mult = max_packet_size;
-						ep_bandwidth = (max_packet_size * 1000) / ep_desc->bInterval;
-					}
-
-					target_endpoint = ep_desc;
-
-					LOG_INF("Selected endpoint: addr=0x%02x, maxpkt=%u, mps_mult=%u, bandwidth=%u",
-							ep_desc->bEndpointAddress, max_packet_size, ep_mps_mult, ep_bandwidth);
-					break;
-				}
-
-				ep_buf += ep_desc->bLength;
-			}
-			break;  /* Found target interface, stop searching */
-		}
-	}
-
-	if (!target_interface) {
-		LOG_ERR("Interface 1 alternate setting 6 not found");
-		return -ENOENT;
-	}
-
-	if (!target_endpoint) {
-		LOG_ERR("No ISO IN endpoint found in interface 1 alternate setting 6");
-		return -ENOENT;
-	}
-
-	/* Update current streaming interface and endpoint */
-	uvc_dev->current_stream_iface_info.current_stream_iface = target_interface;
-	uvc_dev->current_stream_iface_info.current_stream_ep = target_endpoint;
-	uvc_dev->current_stream_iface_info.cur_ep_mps_mult = ep_mps_mult;
-
-	LOG_INF("Successfully selected interface 1 alternate setting 6 endpoint 0x%02x with mps_mult=%u",
-			target_endpoint->bEndpointAddress, ep_mps_mult);
+	LOG_INF("Selected interface %u alternate %u endpoint 0x%02x (bandwidth=%u, payload=%u)",
+			selected_interface->bInterfaceNumber, selected_interface->bAlternateSetting,
+			selected_endpoint->bEndpointAddress, optimal_bandwidth, selected_payload_size);
 
 	return 0;
 }
-
 
 /**
  * @brief Calculate required bandwidth for current video format
@@ -1737,7 +1597,7 @@ static uint32_t uvc_host_calculate_required_bandwidth(struct uvc_device *uvc_dev
 	}
 
 	/* Add 10% margin to ensure stable transmission */
-	bandwidth = (bandwidth * 110) / 100;
+	bandwidth = (bandwidth * 110 + 99) / 100;
 
 	LOG_DBG("Calculated bandwidth: %u bytes/sec for %s %ux%u@%ufps",
 			bandwidth, VIDEO_FOURCC_TO_STR(pixelformat), width, height, fps);
@@ -2022,6 +1882,7 @@ static int uvc_host_set_frame_rate(struct uvc_device *uvc_dev, uint32_t fps)
 	uint32_t target_frame_interval;
 	uint32_t best_frame_interval;
 	uint32_t min_diff = UINT32_MAX;
+	uint32_t required_bandwidth;
 	bool found_exact_match = false;
 	int ret;
 
@@ -2175,6 +2036,37 @@ static int uvc_host_set_frame_rate(struct uvc_device *uvc_dev, uint32_t fps)
 
 	LOG_INF("Frame rate successfully set to %u fps", uvc_dev->current_format.fps);
 
+	/* Calculate required bandwidth for streaming */
+	required_bandwidth = uvc_host_calculate_required_bandwidth(uvc_dev);
+	if (required_bandwidth == 0) {
+		LOG_ERR("Cannot calculate required bandwidth");
+		return -EINVAL;
+	}
+
+	/* Select appropriate streaming interface alternate setting */
+	ret = uvc_host_select_streaming_alternate(uvc_dev, required_bandwidth);
+	if (ret) {
+		LOG_ERR("Failed to select streaming alternate: %d", ret);
+		return ret;
+	}
+
+	/* Configure streaming interface with selected alternate setting */
+	ret = usbh_device_interface_set(uvc_dev->udev, 
+									uvc_dev->current_stream_iface_info.current_stream_iface->bInterfaceNumber, 
+									uvc_dev->current_stream_iface_info.current_stream_iface->bAlternateSetting, 
+									false);
+	if (ret) {
+		LOG_ERR("Failed to set streaming interface %u alternate %u: %d",
+				uvc_dev->current_stream_iface_info.current_stream_iface->bInterfaceNumber,
+				uvc_dev->current_stream_iface_info.current_stream_iface->bAlternateSetting,
+				ret);
+		return ret;
+	}
+
+	LOG_INF("Set streaming interface %u alternate %u successfully", 
+			uvc_dev->current_stream_iface_info.current_stream_iface->bInterfaceNumber,
+			uvc_dev->current_stream_iface_info.current_stream_iface->bAlternateSetting);
+	
 	return 0;
 }
 
@@ -2237,7 +2129,7 @@ static struct video_format_cap* uvc_host_create_format_caps(struct uvc_device *u
 		if (!format) continue;
 
 		/* Get pixel format from GUID */
-		uint32_t pixelformat = uvc_host_guid_to_pixelformat(format->guidFormat);
+		uint32_t pixelformat = uvc_guid_to_fourcc(format->guidFormat);
 		if (pixelformat == 0) {
 			LOG_WRN("Unsupported GUID format in format index %u", format->bFormatIndex);
 			continue;
@@ -2352,7 +2244,7 @@ static int uvc_host_get_device_caps(struct uvc_device *uvc_dev, struct video_cap
 	}
 
 	/* Set basic capabilities */
-	caps->min_vbuf_count = 2;			/* UVC typically needs 2 buffers */
+	caps->min_vbuf_count = 1;			/* UVC typically needs 1 buffers */
 	caps->min_line_count = LINE_COUNT_HEIGHT;  /* Only support complete frames */
 	caps->max_line_count = LINE_COUNT_HEIGHT;  /* Maximum one complete frame */
 
@@ -2453,7 +2345,7 @@ static int uvc_host_remove_payload_header(struct net_buf *buf, struct video_buff
 
 	/* Copy payload data to video buffer if present */
 	if (payload_len > 0) {
-		memmove(vbuf->buffer + vbuf->bytesused, buf->data + header_len, payload_len);
+		memcpy(vbuf->buffer + vbuf->bytesused, buf->data + header_len, payload_len);
 	}
 
 	/* Return number of payload bytes processed */
@@ -2577,14 +2469,13 @@ static struct uhc_transfer *uvc_host_initiate_transfer(struct uvc_device *uvc_de
 	}
 
 	/* Allocate transfer buffer with maximum packet size */
-	buf = net_buf_alloc_with_data(&uvc_host_pool, vbuf->buffer, uvc_dev->current_stream_iface_info.cur_ep_mps_mult, K_NO_WAIT);
-	buf->len = 0;
-
+	buf = usbh_xfer_buf_alloc(&uvc_dev->udev, uvc_dev->current_stream_iface_info.cur_ep_mps_mult);
 	if (!buf) {
 		LOG_ERR("Failed to allocate buffer");
 		usbh_xfer_free(uvc_dev->udev, xfer);
 		return NULL;
-	}
+	}	
+	buf->len = 0;
 
 	/* Reset buffer offset and associate video buffer with transfer */
 	uvc_dev->vbuf_offset = 0;
@@ -2615,9 +2506,9 @@ static struct net_buf *uvc_host_continue_transfer(struct uvc_device *uvc_dev,
 	struct net_buf *buf;
 
 	/* Allocate buffer at offset position for continuation */
-	buf = net_buf_alloc_with_data(&uvc_host_pool, vbuf->buffer + vbuf->bytesused, uvc_dev->current_stream_iface_info.cur_ep_mps_mult, K_NO_WAIT);
+	buf = usbh_xfer_buf_alloc(&uvc_dev->udev, uvc_dev->current_stream_iface_info.cur_ep_mps_mult);
 	if (buf == NULL) {
-		LOG_DBG("Cannot allocate continuation USB buffer for now");
+		LOG_ERR("Failed to allocate buffer");
 		return NULL;
 	}
 	buf->len = 0;
@@ -2672,19 +2563,28 @@ static int uvc_host_flush_vbuf(struct uvc_device *uvc_dev, struct video_buffer *
  * Thread-safe processing of video buffers waiting for USB transfer.
  *
  * @param uvc_dev Pointer to uvc class
+ * @param vbuf Pointer to video buffer to flush
+ * @return 0 on success, negative error code on failure
  */
-static void uvc_host_flush_queue(struct uvc_device *uvc_dev, struct video_buffer *vbuf)
+static int uvc_host_flush_queue(struct uvc_device *uvc_dev, struct video_buffer *vbuf)
 {
-	int ret;
+	int ret = 0;
 
 	/* Lock to ensure atomic processing of buffer queue */
 	LOG_DBG("Locking the UVC stream");
 	k_mutex_lock(&uvc_dev->lock, K_FOREVER);
 
-	ret = uvc_host_flush_vbuf(uvc_dev, vbuf);
+	if (uvc_dev->streaming) {
+		ret = uvc_host_flush_vbuf(uvc_dev, vbuf);
+		if (ret) {
+			LOG_ERR("Failed to flush video buffer: %d", ret);
+		}
+	}
 
 	LOG_DBG("Unlocking the UVC stream");
 	k_mutex_unlock(&uvc_dev->lock);
+
+	return ret;
 }
 
 /**
@@ -2795,8 +2695,9 @@ static int uvc_host_get_current_gain(struct uvc_device *uvc_dev, int32_t *gain_v
 
 	/* Send GET_CUR control request to retrieve current gain */
 	ret = usbh_req_setup(uvc_dev->udev,
-				 USB_REQTYPE_DIR_TO_HOST | USB_REQTYPE_TYPE_CLASS |
-				 USB_REQTYPE_RECIPIENT_INTERFACE,
+				(USB_REQTYPE_DIR_TO_HOST << 7) |
+				(USB_REQTYPE_TYPE_CLASS << 5) |
+				(USB_REQTYPE_RECIPIENT_INTERFACE << 0),
 				 UVC_GET_CUR,
 				 (UVC_PU_GAIN_CONTROL << 8),
 				 uvc_dev->current_control_interface->bInterfaceNumber,
@@ -2965,12 +2866,12 @@ cleanup:
 	return ret;
 }
 
-static int uvc_host_init(struct usbh_context *const uhs_ctx, struct usbh_class_data *cdata)
+static int uvc_host_init(struct usbh_class_data *cdata)
 {
 	const struct device *dev = cdata->priv;
 	struct uvc_device *uvc_dev = (struct uvc_device *)dev->data;
 
-	if (!uhs_ctx || !cdata || !dev || !uvc_dev) {
+	if (!cdata || !dev || !uvc_dev) {
 		LOG_ERR("Invalid parameters for UVC host init");
 		return -EINVAL;
 	}
@@ -3019,7 +2920,10 @@ static int uvc_host_init(struct usbh_context *const uhs_ctx, struct usbh_class_d
 
 	/** Initialize format information */
 	memset(&uvc_dev->formats, 0, sizeof(struct uvc_vs_format_info));
-	uvc_dev->video_format_caps = NULL;
+	if (uvc_dev->video_format_caps) {
+		k_free(uvc_dev->video_format_caps);
+		uvc_dev->video_format_caps = NULL;
+	}
 
 	/** Initialize current format information */
 	memset(&uvc_dev->current_format, 0, sizeof(struct uvc_vs_format));
@@ -3036,9 +2940,11 @@ static int uvc_host_init(struct usbh_context *const uhs_ctx, struct usbh_class_d
  *
  * @param udev USB device
  * @param cdata USB host class data
+ * @param desc_start_addr Start of descriptor segment
+ * @param desc_end_addr End of descriptor segment  
  * @return 0 on success, negative error code on failure
  */
-static int uvc_host_connected(struct usb_device *udev, void *desc_start_addr, void *desc_end_addr, struct usbh_class_data *cdata)
+static int uvc_host_connected(struct usb_device *udev, struct usbh_class_data *cdata, void *desc_start_addr, void *desc_end_addr)
 {
 	const struct device *dev = cdata->priv;
 	struct uvc_device *uvc_dev = (struct uvc_device *)dev->data;
@@ -3123,10 +3029,101 @@ error:
 	return ret;
 }
 
-/** TODO */
-static int uvc_host_removed(struct usbh_context *const uhs_ctx,
-				struct usbh_class_data *c_data)
+/**
+ * @brief Handle UVC device disconnection
+ *
+ * Called when a UVC device is disconnected. Stops streaming,
+ * cleans up resources, and resets device state.
+ *
+ * @param udev USB device
+ * @param cdata USB host class data
+ * @return 0 on success, negative error code on failure
+ */
+static int uvc_host_removed(struct usb_device *udev, struct usbh_class_data *cdata)
 {
+	const struct device *dev = cdata->priv;
+	struct uvc_device *uvc_dev = (struct uvc_device *)dev->data;
+	int ret = 0;
+
+	if (!uvc_dev) {
+		LOG_ERR("No UVC device instance available");
+		return -ENODEV;
+	}
+
+	k_mutex_lock(&uvc_dev->lock, K_FOREVER);
+
+	/* Check if device was actually connected */
+	if (!uvc_dev->connected || uvc_dev->udev != udev) {
+		k_mutex_unlock(&uvc_dev->lock);
+		LOG_WRN("UVC device was not connected or different device");
+		cdata->class_matched = 0;
+		return -ENODEV;
+	}
+
+	/* Reset video buffer state */
+	uvc_dev->vbuf_offset = 0;
+	uvc_dev->transfer_count = 0;
+
+	/* Clean up USB camera controls */
+	LOG_DBG("Cleaning up camera controls");
+	memset(&uvc_dev->ctrls, 0, sizeof(uvc_dev->ctrls));
+
+	/* Clear streaming interface information */
+	uvc_dev->streaming = false;
+	memset(uvc_dev->stream_ifaces, 0, sizeof(uvc_dev->stream_ifaces));
+	uvc_dev->current_control_interface = NULL;
+	memset(&uvc_dev->current_stream_iface_info, 0, sizeof(uvc_dev->current_stream_iface_info));
+
+	/* Clear Video Control descriptors */
+	LOG_DBG("Clearing Video Control descriptors");
+	uvc_dev->vc_header = NULL;
+	uvc_dev->vc_itd = NULL;
+	uvc_dev->vc_otd = NULL;
+	uvc_dev->vc_ctd = NULL;
+	uvc_dev->vc_sud = NULL;
+	uvc_dev->vc_pud = NULL;
+	uvc_dev->vc_encoding_unit = NULL;
+	uvc_dev->vc_extension_unit = NULL;
+
+	/* Clear Video Streaming descriptors */
+	LOG_DBG("Clearing Video Streaming descriptors");
+	uvc_dev->vs_input_header = NULL;
+	uvc_dev->vs_output_header = NULL;
+
+	/* Clear format information */
+	memset(&uvc_dev->formats, 0, sizeof(uvc_dev->formats));
+	memset(&uvc_dev->current_format, 0, sizeof(uvc_dev->current_format));
+
+	/* Free video format capabilities if allocated */
+	if (uvc_dev->video_format_caps) {
+		LOG_DBG("Freeing video format capabilities");
+		k_free(uvc_dev->video_format_caps);
+		uvc_dev->video_format_caps = NULL;
+	}
+
+	/* Clear probe/commit buffer */
+	memset(&uvc_dev->video_probe, 0, sizeof(uvc_dev->video_probe));
+
+	/* Clear device association */
+	uvc_dev->udev = NULL;
+	uvc_dev->desc_start = NULL;
+	uvc_dev->desc_end = NULL;
+
+	/* Mark as disconnected */
+	uvc_dev->connected = false;
+
+	/* Reset class matched flag */
+	cdata->class_matched = 0;
+
+	/* Trigger device disconnection event signal */
+#ifdef CONFIG_POLL
+	if (uvc_dev->sig) {
+		k_poll_signal_raise(uvc_dev->sig, USBH_DEVICE_DISCONNECTED);
+		LOG_DBG("UVC device disconnected signal raised");
+	}
+#endif
+
+	k_mutex_unlock(&uvc_dev->lock);
 	return 0;
 }
 
@@ -3309,7 +3306,6 @@ static int video_usb_uvc_host_get_frmival(const struct device *dev, struct video
 
 	return 0;
 }
-
 
 /**
  * @brief Enumerate supported frame intervals
@@ -3719,28 +3715,55 @@ static int video_usb_uvc_host_set_ctrl(const struct device *dev, struct video_co
  * the previously negotiated alternate setting.
  *
  * @param dev Pointer to video device
- * @param enable Enbale or disable the video stream
+ * @param enable Enable or disable the video stream
  * @param type Buffer type (unused)
  * @return 0 on success, negative error code on failure
  */
 static int video_usb_uvc_host_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
 {
-	struct uvc_device *uvc_dev = dev->data;
-	uint8_t alt;
-	int ret;
+    struct uvc_device *uvc_dev;
+    uint8_t alt;
+    uint8_t interface_num;
+    int ret;
 
-	if (enable) {
-		alt = uvc_dev->current_stream_iface_info.current_stream_iface->bAlternateSetting;
-	}
-	else {
-		alt = 0;
-	}
-	/* Activate streaming interface with negotiated alternate setting */
-	ret = usbh_device_interface_set(uvc_dev->udev,
-									uvc_dev->current_stream_iface_info.current_stream_iface->bInterfaceNumber,
-									alt,
-									false);
-	return ret;
+    if (!dev) {
+        return -EINVAL;
+    }
+    
+    uvc_dev = dev->data;
+    if (!uvc_dev || !uvc_dev->connected) {
+        return -ENODEV;
+    }
+
+    if (enable) {
+        if (!uvc_dev->current_stream_iface_info.current_stream_iface) {
+            LOG_ERR("No streaming interface configured");
+            return -EINVAL;
+        }
+        alt = uvc_dev->current_stream_iface_info.current_stream_iface->bAlternateSetting;
+        interface_num = uvc_dev->current_stream_iface_info.current_stream_iface->bInterfaceNumber;
+    } else {
+        /* For disable, we need a valid interface to set alt setting to 0 */
+        if (!uvc_dev->current_stream_iface_info.current_stream_iface) {
+            LOG_WRN("No interface configured, cannot disable streaming");
+            return -EINVAL;
+        }
+        alt = 0;
+        interface_num = uvc_dev->current_stream_iface_info.current_stream_iface->bInterfaceNumber;
+    }
+
+    /* Activate streaming interface with negotiated alternate setting */
+    ret = usbh_device_interface_set(uvc_dev->udev, interface_num, alt, false);
+    if (ret) {
+        LOG_ERR("Failed to set interface %d alt setting %d: %d", interface_num, alt, ret);
+        return ret;
+    }
+
+    /* Update streaming state only after successful USB operation */
+    uvc_dev->streaming = enable;
+
+    LOG_DBG("UVC streaming %s successfully", enable ? "enabled" : "disabled");
+    return 0;
 }
 
 /**
@@ -3754,7 +3777,17 @@ static int video_usb_uvc_host_set_stream(const struct device *dev, bool enable, 
  */
 static int video_usb_uvc_host_enqueue(const struct device *dev, struct video_buffer *vbuf)
 {
-	struct uvc_device *uvc_dev = (struct uvc_device *)dev->data;
+	struct uvc_device *uvc_dev;
+    int ret;
+
+    if (!dev) {
+        return -EINVAL;
+    }
+
+    uvc_dev = dev->data;
+    if (!uvc_dev || !uvc_dev->connected) {
+        return -ENODEV;
+    }
 
 	/* Initialize buffer state for new capture */
 	vbuf->bytesused = 0;
@@ -3762,7 +3795,10 @@ static int video_usb_uvc_host_enqueue(const struct device *dev, struct video_buf
 	vbuf->line_offset = 0;
 
 	k_fifo_put(&uvc_dev->fifo_in, vbuf);
-	uvc_host_flush_queue(uvc_dev, vbuf);
+	ret = uvc_host_flush_queue(uvc_dev, vbuf);
+	if (ret) {
+		return ret;
+	}
 }
 
 /**
@@ -3778,13 +3814,32 @@ static int video_usb_uvc_host_enqueue(const struct device *dev, struct video_buf
 static int video_usb_uvc_host_dequeue(const struct device *dev, struct video_buffer **vbuf,
 				k_timeout_t timeout)
 {
-	struct uvc_device *uvc_dev = dev->data;
+	struct uvc_device *uvc_dev;
+	struct uhc_transfer *xfer;
+	int ret;
+
+    if (!dev) {
+        return -EINVAL;
+    }
+
+    uvc_dev = dev->data;
+    if (!uvc_dev) {
+        return -ENODEV;
+    }
 
 	*vbuf = k_fifo_get(&uvc_dev->fifo_out, timeout);
 	if (*vbuf == NULL) {
 		return -EAGAIN;
 	}
 
+	if (!uvc_dev->connected) {
+		xfer = (*vbuf)->driver_data;
+		ret = usbh_xfer_dequeue(uvc_dev->udev, xfer);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+	
 	return 0;
 }
 
