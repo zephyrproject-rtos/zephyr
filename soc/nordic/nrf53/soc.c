@@ -53,23 +53,23 @@
 #define LFXO_NODE DT_NODELABEL(lfxo)
 #define HFXO_NODE DT_NODELABEL(hfxo)
 
-/* LFXO config from DT */
+/* LFXO config from DT - if the LFXO node has a status of okay, we can assign
+ * P0.00 and P0.01 to the peripheral and use the load_capacitors property set
+ * (or default to external if not present). If the LFXO node does not have a
+ * status of okay, assign the pins for use by the app core.
+ */
+#if DT_NODE_HAS_STATUS_OKAY(LFXO_NODE)
+#define LFXO_PIN_SEL NRF_GPIO_PIN_SEL_PERIPHERAL
+#if DT_NODE_HAS_PROP(LFXO_NODE, load_capacitors)
 #if DT_ENUM_HAS_VALUE(LFXO_NODE, load_capacitors, external)
 #define LFXO_CAP NRF_OSCILLATORS_LFXO_CAP_EXTERNAL
 #elif DT_ENUM_HAS_VALUE(LFXO_NODE, load_capacitors, internal)
 #define LFXO_CAP (DT_ENUM_IDX(LFXO_NODE, load_capacitance_picofarad) + 1U)
-#else
-/* LFXO config from legacy Kconfig */
-#if defined(CONFIG_SOC_LFXO_CAP_INT_6PF)
-#define LFXO_CAP NRF_OSCILLATORS_LFXO_CAP_6PF
-#elif defined(CONFIG_SOC_LFXO_CAP_INT_7PF)
-#define LFXO_CAP NRF_OSCILLATORS_LFXO_CAP_7PF
-#elif defined(CONFIG_SOC_LFXO_CAP_INT_9PF)
-#define LFXO_CAP NRF_OSCILLATORS_LFXO_CAP_9PF
+#endif /*DT_ENUM_HAS_VALUE(LFXO_NODE, load_capacitors, external) */
 #else
 #define LFXO_CAP NRF_OSCILLATORS_LFXO_CAP_EXTERNAL
-#endif
-#endif
+#endif /* DT_NODE_HAS_PROP(LFXO_NODE, load_capacitors) */
+#endif /* DT_NODE_HAS_STATUS_OKAY(LFXO_NODE) */
 
 /* HFXO config from DT */
 #if DT_ENUM_HAS_VALUE(HFXO_NODE, load_capacitors, internal)
@@ -496,17 +496,17 @@ void soc_early_init_hook(void)
 #endif
 
 #ifdef CONFIG_SOC_NRF5340_CPUAPP
-#if defined(LFXO_CAP)
+#if DT_NODE_HAS_STATUS_OKAY(LFXO_NODE)
 	nrf_oscillators_lfxo_cap_set(NRF_OSCILLATORS, LFXO_CAP);
 #if !defined(CONFIG_BUILD_WITH_TFM)
 	/* This can only be done from secure code.
 	 * This is handled by the TF-M platform so we skip it when TF-M is
 	 * enabled.
 	 */
-	nrf_gpio_pin_control_select(PIN_XL1, NRF_GPIO_PIN_SEL_PERIPHERAL);
-	nrf_gpio_pin_control_select(PIN_XL2, NRF_GPIO_PIN_SEL_PERIPHERAL);
+	nrf_gpio_pin_control_select(PIN_XL1, LFXO_PIN_SEL);
+	nrf_gpio_pin_control_select(PIN_XL2, LFXO_PIN_SEL);
 #endif /* !defined(CONFIG_BUILD_WITH_TFM) */
-#endif /* defined(LFXO_CAP) */
+#endif /* DT_NODE_HAS_STATUS_OKAY(LFXO_NODE) */
 #if defined(HFXO_CAP_VAL_X2)
 	/* This register is only accessible from secure code. */
 	uint32_t xosc32mtrim = soc_secure_read_xosc32mtrim();
