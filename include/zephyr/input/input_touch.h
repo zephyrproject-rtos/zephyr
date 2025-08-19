@@ -3,15 +3,21 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief Header file for touch events API.
+ * @ingroup touch_events
+ */
+
 #ifndef ZEPHYR_INCLUDE_INPUT_TOUCH_H_
 #define ZEPHYR_INCLUDE_INPUT_TOUCH_H_
 
 /**
- * @brief Touch Events API
- * @defgroup touch_events Touchscreen Event Report API
+ * @defgroup touch_events Touchscreen Events
  * @since 3.7
  * @version 0.1.0
- * @ingroup io_interfaces
+ * @ingroup input_interface
  * @{
  */
 
