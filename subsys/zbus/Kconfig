@@ -122,6 +122,20 @@ config ZBUS_ASSERT_MOCK
 	  enabled, _ZBUS_ASSERT returns -EFAULT instead of assert. It makes it more straightforward to test invalid
 	  parameters.
 
+config ZBUS_PROXY_AGENT
+	bool "ZBus proxy agent support"
+	select ZBUS_MSG_SUBSCRIBER
+	select ZBUS_CHANNEL_NAME
+	select POLL
+	help
+	  Enables support for ZBus proxy agents. This feature allows the ZBus to work with multiple domains,
+	  enabling communication between them using proxy agents.
+
+if ZBUS_PROXY_AGENT
+
+rsource "proxy_agent/Kconfig"
+
+endif # ZBUS_PROXY_AGENT
 
 config HEAP_MEM_POOL_ADD_SIZE_ZBUS
 	int "ZBus requested heap pool size."
