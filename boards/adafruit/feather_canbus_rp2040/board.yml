@@ -1,0 +1,6 @@
+board:
+  name: adafruit_feather_canbus_rp2040
+  full_name: Feather RP2040 CAN bus
+  vendor: adafruit
+  socs:
+  - name: rp2040
