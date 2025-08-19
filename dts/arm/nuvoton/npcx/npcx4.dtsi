@@ -392,6 +392,7 @@
 		/* FIU0 configuration in npcx4 series */
 		qspi_fiu0: quadspi@40020000 {
 			clocks = <&pcc NPCX_CLOCK_BUS_FIU0 NPCX_PWDWN_CTL8 5>;
+			support-npcxn-v2;
 		};
 
 		/* FIU1 configuration in npcx4 series */
@@ -401,6 +402,7 @@
 			#size-cells = <0>;
 			reg = <0x40021000 0x1000>;
 			clocks = <&pcc NPCX_CLOCK_BUS_FIU0 NPCX_PWDWN_CTL8 6>;
+			support-npcxn-v2;
 		};
 
 		sha0: sha@148 {
