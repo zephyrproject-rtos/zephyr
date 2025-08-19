@@ -269,40 +269,10 @@ static bool ep_check_config(const struct device *dev,
 	return true;
 }
 
-static void ep_update_mps(const struct device *dev,
-			  const struct udc_ep_config *const cfg,
-			  const uint8_t attributes,
-			  uint16_t *const mps)
-{
-	struct udc_device_caps caps = udc_caps(dev);
-	const uint16_t spec_int_mps = caps.hs ? 1024 : 64;
-	const uint16_t spec_bulk_mps = caps.hs ? 512 : 64;
-
-	/*
-	 * TODO: It does not take into account the actual speed of the
-	 * bus after the RESET. Should be fixed/improved when the driver
-	 * for high speed controller are ported.
-	 */
-	switch (ep_attrib_get_transfer(attributes)) {
-	case USB_EP_TYPE_BULK:
-		*mps = MIN(cfg->caps.mps, spec_bulk_mps);
-		break;
-	case USB_EP_TYPE_INTERRUPT:
-		*mps = MIN(cfg->caps.mps, spec_int_mps);
-		break;
-	case USB_EP_TYPE_CONTROL:
-		__fallthrough;
-	case USB_EP_TYPE_ISO:
-		__fallthrough;
-	default:
-		return;
-	}
-}
-
 int udc_ep_try_config(const struct device *dev,
 		      const uint8_t ep,
 		      const uint8_t attributes,
-		      uint16_t *const mps,
+		      const uint16_t mps,
 		      const uint8_t interval)
 {
 	const struct udc_api *api = dev->api;
@@ -316,10 +286,7 @@ int udc_ep_try_config(const struct device *dev,
 
 	api->lock(dev);
 
-	ret = ep_check_config(dev, cfg, ep, attributes, *mps, interval);
-	if (ret == true && *mps == 0U) {
-		ep_update_mps(dev, cfg, attributes, mps);
-	}
+	ret = ep_check_config(dev, cfg, ep, attributes, mps, interval);
 
 	api->unlock(dev);
 
