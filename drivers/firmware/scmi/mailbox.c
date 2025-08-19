@@ -6,8 +6,29 @@
 
 #include <zephyr/logging/log.h>
 #include "mailbox.h"
+#include "zephyr/drivers/firmware/scmi/protocol.h"
 
 LOG_MODULE_REGISTER(scmi_mbox);
+
+static int scmi_mbox_get_pending_msg(struct scmi_channel *chan,
+				struct scmi_message *msg)
+{
+	uint32_t context;
+	int ret;
+	struct scmi_mbox_channel *mbox_chan = chan->data;
+
+	msg->hdr = 0x0;
+	msg->len = sizeof(uint32_t);
+	msg->content = &context;
+
+	ret = scmi_shmem_read_hdr(mbox_chan->shmem, msg);
+	if (ret < 0) {
+		LOG_ERR("failed to read message to shmem: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
 
 /* tx scmi channel call back: handle scmi command and delayed reply */
 static void scmi_mbox_tx_reply_cb(const struct device *mbox,

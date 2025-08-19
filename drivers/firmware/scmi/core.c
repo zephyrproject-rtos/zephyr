@@ -15,6 +15,8 @@ LOG_MODULE_REGISTER(scmi_core);
 #define SCMI_CHAN_LOCK_TIMEOUT_USEC 500
 #define SCMI_CHAN_SEM_TIMEOUT_USEC 500
 
+static sys_slist_t scmi_event_list;
+
 int scmi_status_to_errno(int scmi_status)
 {
 	switch (scmi_status) {
@@ -43,10 +45,26 @@ int scmi_status_to_errno(int scmi_status)
 	}
 }
 
-static void scmi_core_reply_cb(struct scmi_channel *chan, struct scmi_message *msg)
+static void scmi_core_reply_cb(struct scmi_channel *chan, struct scmi_message msg)
 {
+	uint32_t protocol_id, msg_id;
+	struct scmi_protocol_event *event;
+
 	if (!k_is_pre_kernel()) {
 		k_sem_give(&chan->sem);
+	}
+
+	protocol_id = SCMI_MESSAGE_HDR_EX_PROTOCOL(msg.hdr);
+	msg_id = SCMI_MESSAGE_HDR_EX_MSGID(msg.hdr);
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&scmi_event_list, event, node) {
+		if (protocol_id == event->id) {
+			for (uint32_t num = 0; num < event->num_events; num++) {
+				if (msg_id == event->evts[num]) {
+					event->cb(chan, msg);
+				}
+			}
+		}
 	}
 }
 
@@ -231,6 +249,18 @@ int scmi_read_message(struct scmi_protocol *proto, struct scmi_message *msg)
 	ret = scmi_transport_read_message(proto->transport, proto->rx, msg);
 
 	return ret;
+}
+
+int scmi_register_protocol_event_handler(struct scmi_protocol_event *event)
+{
+	if (!event || !event->cb || !event->evts || event->num_events == 0U) {
+		return -EINVAL;
+	}
+
+	/* Append the protocol event node to the global SCMI event handler list */
+	sys_slist_append(&scmi_event_list, &event->node);
+
+	return 0;
 }
 
 static int scmi_core_protocol_setup(const struct device *transport)
