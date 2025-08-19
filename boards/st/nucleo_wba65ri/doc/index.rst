@@ -3,23 +3,24 @@
 Overview
 ********
 
-NUCLEO-WBA65RI is a Bluetooth® Low Energy, 802.15.4 and Zigbee® wireless
-and ultra-low-power board embedding a powerful and ultra-low-power radio
-compliant with the Bluetooth® Low Energy SIG specification v5.4
-with IEEE 802.15.4-2015 and Zigbee® specifications.
+NUCLEO-WBA65RI is a Bluetooth |reg| Low Energy, 802.15.4 and Zigbee |reg|
+wireless and ultra-low-power board embedding a powerful and ultra-low-power
+radio compliant with the Bluetooth |reg| Low Energy SIG specification v5.4
+with IEEE 802.15.4-2015 and Zigbee |reg| specifications.
 
-The ARDUINO® Uno V3 connectivity support and the ST morpho headers allow the
-easy expansion of the functionality of the STM32 Nucleo open development
+The ARDUINO |reg| Uno V3 connectivity support and the ST morpho headers allow
+the easy expansion of the functionality of the STM32 Nucleo open development
 platform with a wide choice of specialized shields.
 
-- Ultra-low-power wireless STM32WBA65RI microcontroller based on the Arm®
-  Cortex®‑M33 core, featuring 2 Mbyte of flash memory and 512 Kbytes of SRAM in
-  a VFQFPN68 package
+- Ultra-low-power wireless STM32WBA65RI microcontroller based on the Arm |reg|
+  Cortex |reg| ‑M33 core with TrustZone |reg|, MPU, DSP, and FPU, that operates
+  at a frequency of up to 100 MHz, featuring 2 Mbyte of flash memory and 512
+  Kbytes of SRAM in a VFQFPN68 package
 
 - MCU RF board (MB2130):
 
-  - 2.4 GHz RF transceiver supporting Bluetooth® specification v5.4
-  - Arm® Cortex® M33 CPU with TrustZone®, MPU, DSP, and FPU
+  - 2.4 GHz RF transceiver supporting Bluetooth |reg| specification v5.4
+  - Arm |reg| Cortex |reg| M33 CPU with TrustZone |reg|, MPU, DSP, and FPU
   - Integrated PCB antenna
 
 - Three user LEDs
@@ -28,7 +29,7 @@ platform with a wide choice of specialized shields.
 - Board connectors:
 
   - 2 USB Type-C
-  - ARDUINO® Uno V3 expansion connector
+  - ARDUINO |reg| Uno V3 expansion connector
   - ST morpho headers for full access to all STM32 I/Os
 
 - Flexible power-supply options: ST-LINK USB VBUS or external sources
@@ -39,19 +40,18 @@ Hardware
 ********
 
 The STM32WBA65xx multiprotocol wireless and ultralow power devices embed a
-powerful and ultralow power radio compliant with the Bluetooth® SIG Low Energy
-specification 5.4. They contain a high-performance Arm Cortex-M33 32-bit RISC
-core. They operate at a frequency of up to 100 MHz.
+powerful and ultralow power radio compliant with the Bluetooth |reg| SIG Low
+Energy specification 5.4.
 
 - Includes ST state-of-the-art patented technology
 
 - Ultra low power radio:
 
   - 2.4 GHz radio
-  - RF transceiver supporting Bluetooth® Low Energy 5.4 specification
-    IEEE 802.15.4-2015 PHY and MAC, supporting Thread, Matter and Zigbee®
+  - RF transceiver supporting Bluetooth |reg| Low Energy 5.4 specification
+    IEEE 802.15.4-2015 PHY and MAC, supporting Thread, Matter and Zigbee |reg|
   - Proprietary protocols
-  - RX sensitivity: -96 dBm (Bluetooth® Low Energy at 1 Mbps)
+  - RX sensitivity: -96 dBm (Bluetooth |reg| Low Energy at 1 Mbps)
     and -100 dBm (IEEE 802.15.4 at 250 kbps)
   - Programmable output power, up to +10 dBm with 1 dB steps
   - Support for external PA
@@ -71,8 +71,7 @@ core. They operate at a frequency of up to 100 MHz.
   - TBD µA/MHz Run mode at 3.3 V
   - Radio: Rx TBD mA / Tx at 0 dBm TBD mA
 
-- Core: Arm® 32-bit Cortex®-M33 CPU with TrustZone®, MPU, DSP, and FPU
-- ART Accelerator™: 8-Kbyte instruction cache allowing 0-wait-state execution
+- ART Accelerator |trade|: 8-Kbyte instruction cache allowing 0-wait-state execution
   from flash memory (frequency up to 100 MHz, 150 DMIPS)
 - Power management: embedded regulator LDO and SMPS step-down converter
 - Supporting switch on-the-fly and voltage scaling
@@ -80,7 +79,7 @@ core. They operate at a frequency of up to 100 MHz.
 - Benchmarks:
 
   - 1.5 DMIPS/MHz (Drystone 2.1)
-  - 410 CoreMark® (4.10 CoreMark/MHz)
+  - 410 CoreMark |reg| (4.10 CoreMark/MHz)
 
 - Clock sources:
 
@@ -104,7 +103,7 @@ core. They operate at a frequency of up to 100 MHz.
 
   - Four UARTs (ISO 7816, IrDA, modem)
   - Three SPIs
-  - Four I2C Fm+ (1 Mbit/s), SMBus/PMBus®
+  - Four I2C Fm+ (1 Mbit/s), SMBus/PMBus |reg|
 
 - System peripherals:
 
@@ -121,7 +120,7 @@ core. They operate at a frequency of up to 100 MHz.
 
 - Security and cryptography:
 
-  - Arm® TrustZone® and securable I/Os, memories, and peripherals
+  - Arm |reg| TrustZone |reg| and securable I/Os, memories, and peripherals
   - Flexible life cycle scheme with RDP and password protected debug
   - Root of trust thanks to unique boot entry and secure hide protection area (HDP)
   - SFI (secure firmware installation) thanks to embedded RSS (root secure services)
@@ -139,7 +138,7 @@ core. They operate at a frequency of up to 100 MHz.
 
 - Development support:
 
-  - Serial wire debug (SWD), JTAG
+  - Serial wire debug (SWD), JTAG, Embedded Trace Macrocell |trade|
 
 - ECOPACK2 compliant package
 
@@ -213,7 +212,7 @@ Flashing
 The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
 so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
 
-Alternatively, openocd can also be used to flash the board using
+Alternatively, OpenOCD can also be used to flash the board using
 the ``--runner`` (or ``-r``) option:
 
 .. code-block:: console
