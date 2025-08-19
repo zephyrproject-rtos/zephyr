@@ -11,7 +11,6 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/pm/pm.h>
-#include <zephyr/sys/poweroff.h>
 #include <stm32_ll_pwr.h>
 
 #if !defined(CONFIG_SOC_SERIES_STM32L4X)
@@ -30,13 +29,8 @@
 /* Semaphore used to control button pressed value */
 static struct k_sem button_sem;
 
-static int led_is_on;
-
 static const struct gpio_dt_spec button =
 	GPIO_DT_SPEC_GET_OR(SW0_NODE, gpios, {0});
-
-static const struct gpio_dt_spec led =
-	GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
 
 static struct gpio_callback button_cb_data;
 
@@ -64,28 +58,19 @@ void thread_poweroff_standby_mode(void)
 {
 	k_sem_init(&button_sem, 0, 1);
 	k_sem_take(&button_sem, K_FOREVER);
-	gpio_pin_configure(led.port, led.pin, GPIO_DISCONNECTED);
 	printk("User button pressed\n");
 	config_wakeup_features();
-	if (led_is_on == false) {
-		printk("Powering off\n");
-		printk("Release the user button to wake-up\n\n");
+
+	printk("Standby Mode requested\n");
+	printk("Release the user button to exit from Standby Mode\n\n");
 #ifdef CONFIG_LOG
-		k_msleep(2000);
+	k_msleep(2000);
 #endif /* CONFIG_LOG */
-		sys_poweroff();
-		/* powered off until wakeup line activated */
-	} else {
-		printk("Standby Mode requested\n");
-		printk("Release the user button to exit from Standby Mode\n\n");
-#ifdef CONFIG_LOG
-		k_msleep(2000);
-#endif /* CONFIG_LOG */
-		if (!pm_state_force(0u, &(struct pm_state_info) {PM_STATE_STANDBY, 0, 0})) {
-			printk("Error: PM_STATE_STANDBY is not supported\n");
-		}
-		/* stay in Standby mode until wakeup line activated */
+
+	if (!pm_state_force(0u, &(struct pm_state_info) {PM_STATE_STANDBY, 0, 0})) {
+		printk("Error: PM_STATE_STANDBY is not supported\n");
 	}
+	/* stay in Standby mode until wakeup line activated */
 }
 
 K_THREAD_DEFINE(thread_poweroff_standby_mode_id, STACKSIZE, thread_poweroff_standby_mode,
@@ -112,8 +97,6 @@ int main(void)
 		printk("\nReset cause: Reset pin\n\n");
 	}
 
-
-	__ASSERT_NO_MSG(gpio_is_ready_dt(&led));
 	if (!gpio_is_ready_dt(&button)) {
 		printk("Error: button device %s is not ready\n",
 			button.port->name);
@@ -140,16 +123,10 @@ int main(void)
 
 	printk("Device ready: %s\n\n\n", CONFIG_BOARD);
 
-	printk("Press and hold the user button:\n");
-	printk("  when LED2 is OFF to power off\n");
-	printk("  when LED2 is ON to enter to Standby Mode\n\n");
+	printk("Press and hold the user button to enter Standby Mode\n\n");
 
-	led_is_on = true;
 	while (true) {
-		gpio_pin_configure_dt(&led, GPIO_OUTPUT_ACTIVE);
-		gpio_pin_set(led.port, led.pin, (int)led_is_on);
 		k_msleep(SLEEP_TIME_MS);
-		led_is_on = !led_is_on;
 	}
 
 	return 0;
