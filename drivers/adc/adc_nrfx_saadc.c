@@ -191,6 +191,7 @@ static int input_assign(nrf_saadc_input_t *pin_p,
 
 	if (channel_cfg->differential) {
 		if (channel_cfg->input_negative > ARRAY_SIZE(saadc_psels) ||
+		    channel_cfg->input_negative < NRF_SAADC_AIN0 ||
 		    (IS_ENABLED(CONFIG_NRF_PLATFORM_HALTIUM) &&
 		     (channel_cfg->input_positive > NRF_SAADC_AIN7) !=
 		     (channel_cfg->input_negative > NRF_SAADC_AIN7))) {
@@ -198,17 +199,14 @@ static int input_assign(nrf_saadc_input_t *pin_p,
 				channel_cfg->input_negative);
 			return -EINVAL;
 		}
-		*pin_n = channel_cfg->input_negative == NRF_SAADC_GND ?
-			 NRF_SAADC_INPUT_DISABLED :
-			 saadc_psels[channel_cfg->input_negative];
+		*pin_n = saadc_psels[channel_cfg->input_negative];
 	} else {
 		*pin_n = NRF_SAADC_INPUT_DISABLED;
 	}
 #else
 	*pin_p = channel_cfg->input_positive;
-	*pin_n = (channel_cfg->differential && (channel_cfg->input_negative != NRF_SAADC_GND))
-			 ? channel_cfg->input_negative
-			 : NRF_SAADC_INPUT_DISABLED;
+	*pin_n = channel_cfg->differential ? channel_cfg->input_negative
+					   : NRF_SAADC_INPUT_DISABLED;
 #endif
 	LOG_DBG("ADC positive input: %d", *pin_p);
 	LOG_DBG("ADC negative input: %d", *pin_n);
@@ -358,14 +356,8 @@ static int adc_nrfx_channel_setup(const struct device *dev,
 	 * after ADC sequence ends.
 	 */
 	if (channel_cfg->differential) {
-		if (channel_cfg->input_negative == NRF_SAADC_GND) {
-			ch_cfg->mode = NRF_SAADC_MODE_SINGLE_ENDED;
-			/* Do not mark as single-ended to not correct negative values. */
-			m_data.single_ended_channels &= ~BIT(channel_cfg->channel_id);
-		} else {
-			ch_cfg->mode = NRF_SAADC_MODE_DIFFERENTIAL;
-			m_data.single_ended_channels &= ~BIT(channel_cfg->channel_id);
-		}
+		ch_cfg->mode = NRF_SAADC_MODE_DIFFERENTIAL;
+		m_data.single_ended_channels &= ~BIT(channel_cfg->channel_id);
 	} else {
 		ch_cfg->mode = NRF_SAADC_MODE_SINGLE_ENDED;
 		m_data.single_ended_channels |= BIT(channel_cfg->channel_id);
