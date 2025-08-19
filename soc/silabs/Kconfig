@@ -153,6 +153,13 @@ config SOC_GECKO_PM_BACKEND_EMU
 	help
 	  Implement PM using direct calls to EMU driver in emlib
 
+config SOC_SILABS_PM_LOW_INTERRUPT_LATENCY
+	bool "Low interrupt latency mode"
+	default y if SOC_GECKO_PM_BACKEND_PMGR
+	help
+	  Enabling low interrupt latency allows interrupts to be executed
+	  before the high frequency clock is restored after sleep.
+
 endif # PM
 
 config SOC_GECKO_EMU_DCDC
