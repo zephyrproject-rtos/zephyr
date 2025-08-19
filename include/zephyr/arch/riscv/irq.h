@@ -26,8 +26,30 @@ extern "C" {
 #include <stdbool.h>
 #endif /* !_ASMLANGUAGE */
 
+/* MCAUSE */
+
+/* Interrupt bit */
+#ifdef CONFIG_64BIT
+#define RISCV_MCAUSE_IRQ_POS          63U
+#define RISCV_MCAUSE_IRQ_BIT          BIT64(RISCV_MCAUSE_IRQ_POS)
+#else
+#define RISCV_MCAUSE_IRQ_POS          31U
+#define RISCV_MCAUSE_IRQ_BIT          BIT(RISCV_MCAUSE_IRQ_POS)
+#endif
+
+/* Exception code mask */
+#ifdef CONFIG_RISCV_HAS_CLIC
+#define RISCV_MCAUSE_EXC_MASK 0xFFFU
+#elif CONFIG_SOC_OPENISA_RV32M1 || CONFIG_SOC_SERIES_SY1XX
+#define RISCV_MCAUSE_EXC_MASK 0x1FU
+#else
+#define RISCV_MCAUSE_EXC_MASK ~RISCV_MCAUSE_IRQ_BIT
+#endif
+
 /* Exceptions 0-15 (MCAUSE interrupt=0) */
 
+/* Breakpoint */
+#define RISCV_EXC_BREAK  3
 /* Environment Call from U-mode */
 #define RISCV_EXC_ECALLU 8
 /** Environment Call from M-mode */
@@ -39,14 +61,6 @@ extern "C" {
 #define RISCV_IRQ_MSOFT 3
 /** Machine External Interrupt */
 #define RISCV_IRQ_MEXT  11
-
-#ifdef CONFIG_64BIT
-#define RISCV_MCAUSE_IRQ_POS          63U
-#define RISCV_MCAUSE_IRQ_BIT          BIT64(RISCV_MCAUSE_IRQ_POS)
-#else
-#define RISCV_MCAUSE_IRQ_POS          31U
-#define RISCV_MCAUSE_IRQ_BIT          BIT(RISCV_MCAUSE_IRQ_POS)
-#endif
 
 #ifndef _ASMLANGUAGE
 
