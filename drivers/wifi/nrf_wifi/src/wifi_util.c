@@ -973,6 +973,7 @@ unlock:
 }
 #endif /* CONFIG_NRF_WIFI_RPU_RECOVERY */
 
+#ifndef CONFIG_NRF71_ON_IPC
 static int nrf_wifi_dump_stats(const struct shell *sh,
 				   struct nrf_wifi_hal_dev_ctx *hal_dev_ctx,
 				   const char *name,
@@ -1009,6 +1010,7 @@ static int nrf_wifi_dump_stats(const struct shell *sh,
 
 	return ret;
 }
+
 
 static int nrf_wifi_util_dump_rpu_stats_mem(const struct shell *sh,
 					size_t argc,
@@ -1095,6 +1097,7 @@ unlock:
 	k_mutex_unlock(&ctx->rpu_lock);
 	return ret;
 }
+#endif /* !CONFIG_NRF71_ON_IPC */
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	nrf70_util,
@@ -1199,6 +1202,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      1,
 		      0),
 #endif /* CONFIG_NRF_WIFI_RPU_RECOVERY */
+#ifndef CONFIG_NRF71_ON_IPC
 	SHELL_CMD_ARG(rpu_stats_mem,
 		      NULL,
 		      "Display RPU stats by reading from memory "
@@ -1206,6 +1210,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      nrf_wifi_util_dump_rpu_stats_mem,
 		      1,
 		      1),
+#endif /* !CONFIG_NRF71_ON_IPC */
 	SHELL_SUBCMD_SET_END);
 
 
