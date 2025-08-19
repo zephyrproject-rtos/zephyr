@@ -888,7 +888,7 @@ static void le_adv_stop_free_conn(const struct bt_le_ext_adv *adv, uint8_t statu
 	}
 }
 
-int bt_le_adv_start_legacy(struct bt_le_ext_adv *adv,
+static int bt_le_adv_start_legacy(struct bt_le_ext_adv *adv,
 			   const struct bt_le_adv_param *param,
 			   const struct bt_data *ad, size_t ad_len,
 			   const struct bt_data *sd, size_t sd_len)
