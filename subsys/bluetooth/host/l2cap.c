@@ -200,7 +200,10 @@ const char *bt_l2cap_chan_state_str(bt_l2cap_chan_state_t state)
 
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 #if defined(CONFIG_BT_L2CAP_LOG_LEVEL_DBG)
-void bt_l2cap_chan_set_state_debug(struct bt_l2cap_chan *chan,
+#define bt_l2cap_chan_set_state(_chan, _state) \
+	bt_l2cap_chan_set_state_debug(_chan, _state, __func__, __LINE__)
+
+static void bt_l2cap_chan_set_state_debug(struct bt_l2cap_chan *chan,
 				   bt_l2cap_chan_state_t state,
 				   const char *func, int line)
 {
@@ -244,7 +247,7 @@ void bt_l2cap_chan_set_state_debug(struct bt_l2cap_chan *chan,
 	le_chan->state = state;
 }
 #else
-void bt_l2cap_chan_set_state(struct bt_l2cap_chan *chan,
+static void bt_l2cap_chan_set_state(struct bt_l2cap_chan *chan,
 			     bt_l2cap_chan_state_t state)
 {
 	BT_L2CAP_LE_CHAN(chan)->state = state;
@@ -254,7 +257,7 @@ void bt_l2cap_chan_set_state(struct bt_l2cap_chan *chan,
 
 static void cancel_data_ready(struct bt_l2cap_le_chan *lechan);
 static bool chan_has_data(struct bt_l2cap_le_chan *lechan);
-void bt_l2cap_chan_del(struct bt_l2cap_chan *chan)
+static void bt_l2cap_chan_del(struct bt_l2cap_chan *chan)
 {
 	const struct bt_l2cap_chan_ops *ops = chan->ops;
 	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
