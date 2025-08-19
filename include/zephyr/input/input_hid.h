@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for input code to HID code/modifier conversion utilities.
+ * @ingroup input_interface
+ */
+
 #ifndef ZEPHYR_INCLUDE_INPUT_HID_H_
 #define ZEPHYR_INCLUDE_INPUT_HID_H_
 
