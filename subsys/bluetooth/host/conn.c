@@ -137,7 +137,7 @@ static struct bt_conn sco_conns[CONFIG_BT_MAX_SCO_CONN];
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_CONN_TX)
-void frag_destroy(struct net_buf *buf);
+static void frag_destroy(struct net_buf *buf);
 
 /* Storage for fragments (views) into the upper layers' PDUs. */
 /* TODO: remove user-data requirements */
@@ -147,14 +147,14 @@ NET_BUF_POOL_FIXED_DEFINE(fragments, CONFIG_BT_CONN_FRAG_COUNT, 0,
 struct frag_md {
 	struct bt_buf_view_meta view_meta;
 };
-struct frag_md frag_md_pool[CONFIG_BT_CONN_FRAG_COUNT];
+static struct frag_md frag_md_pool[CONFIG_BT_CONN_FRAG_COUNT];
 
-struct frag_md *get_frag_md(struct net_buf *fragment)
+static struct frag_md *get_frag_md(struct net_buf *fragment)
 {
 	return &frag_md_pool[net_buf_id(fragment)];
 }
 
-void frag_destroy(struct net_buf *frag)
+static void frag_destroy(struct net_buf *frag)
 {
 	/* allow next view to be allocated (and unlock the parent buf) */
 	bt_buf_destroy_view(frag, &get_frag_md(frag)->view_meta);
@@ -935,7 +935,7 @@ __maybe_unused static bool dont_have_methods(struct bt_conn *conn)
 		(conn->has_data == NULL);
 }
 
-struct bt_conn *get_conn_ready(void)
+static struct bt_conn *get_conn_ready(void)
 {
 	struct bt_conn *conn, *tmp;
 	sys_snode_t *prev = NULL;
@@ -1125,8 +1125,8 @@ static void process_unack_tx(struct bt_conn *conn)
 	}
 }
 
-struct bt_conn *conn_lookup_handle(struct bt_conn *conns, size_t size,
-				   uint16_t handle)
+static struct bt_conn *conn_lookup_handle(struct bt_conn *conns, size_t size,
+					  uint16_t handle)
 {
 	int i;
 
