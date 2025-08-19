@@ -120,6 +120,8 @@ Applications for the ``tq_h503a`` board can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
+One can use either ``ST-LINK`` with OpenOCD or ``Black Magic Probe`` to program the device.
+
 OpenOCD Support
 ===============
 
