@@ -45,6 +45,33 @@ config ZBUS_PROXY_AGENT_ACK_TIMEOUT_MAX_MS
 	  sent by the ZBus proxy agent. This is the upper limit for the
 	  exponential backoff used when waiting for acknowledgments.
 
+menuconfig ZBUS_PROXY_AGENT_UART
+	bool "ZBus proxy agent UART backend"
+	select UART_ASYNC_API
+	select CRC
+	help
+	  Enables the ZBus proxy agent UART backend, allowing for ZBus between domains over UART.
+
+if ZBUS_PROXY_AGENT_UART
+
+config ZBUS_PROXY_AGENT_RX_BUF_COUNT
+	int "ZBus proxy agent UART RX buffer count"
+	default 2
+	help
+	  Configures the number of RX buffers used by the ZBus proxy agent UART backend.
+
+config ZBUS_PROXY_AGENT_RX_CHUNK_SIZE
+	int "ZBus proxy agent UART RX chunk size"
+	default 32
+	help
+	  Configures the size of the RX chunks used by the ZBus proxy agent UART backend. Smaller
+	  chunk sizes reduce overhead but may impact performance and need more rx buffers.
+
+module = ZBUS_PROXY_AGENT_UART
+module-str = zbus_proxy_agent_uart
+source "subsys/logging/Kconfig.template.log_config"
+endif # ZBUS_PROXY_AGENT_UART
+
 module = ZBUS_PROXY_AGENT
 module-str = zbus_proxy_agent
 source "subsys/logging/Kconfig.template.log_config"
