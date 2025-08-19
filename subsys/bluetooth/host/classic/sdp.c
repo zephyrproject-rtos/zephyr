@@ -1081,31 +1081,6 @@ out:
 		break;
 	}
 
-	/* If the attribute ID is out of range, the continuation state should be updated. */
-	if (attr_size == 0) {
-		sad->state->last_att = att_idx + 1;
-		sad->state->last_att_index = 0;
-	}
-
-	/* If the attribute index is out of range, increase the service
-	 * index and reset attribute index.
-	 */
-	if (sad->state->last_att >= sad->rec->attr_count) {
-		sad->state->current_svc++;
-		sad->state->last_att = 0;
-	}
-
-	/* End the search if:
-	 * 1. We have exhausted the packet
-	 * AND
-	 * 2. This packet doesn't contain the service element declaration header
-	 * AND
-	 * 3. This is not a dry-run (then we look for other attrs that match)
-	 */
-	if (sad->state->pkt_full && !sad->seq && sad->rsp_buf) {
-		return BT_SDP_ITER_STOP;
-	}
-
 	return BT_SDP_ITER_CONTINUE;
 }
 
@@ -1475,6 +1450,15 @@ static uint16_t sdp_svc_search_att_req(struct bt_sdp *sdp, struct net_buf *buf,
 
 		if (!record) {
 			continue;
+		}
+
+		/* reset the `state.last_att` and `state.last_att_index`
+		 * if the index of current record is not same with `state.current_svc`.
+		 */
+		if (state.current_svc != record->index) {
+			state.current_svc = record->index;
+			state.last_att = 0;
+			state.last_att_index = 0;
 		}
 
 		sending_len = create_attr_list(sdp, record, filter, num_filters, max_att_len,
