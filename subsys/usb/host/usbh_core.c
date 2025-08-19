@@ -90,7 +90,7 @@ static int usbh_match_classes(struct usbh_context *const ctx,
 		/* Step 1: Find first IAD or interface descriptor from start_addr */
 		mask = BIT(USB_DESC_INTERFACE) | BIT(USB_DESC_INTERFACE_ASSOC);
 
-		desc = usbh_desc_get_by_type(start_addr, end_addr, mask);
+		desc = usbh_desc_get_by_type(start_addr, desc_buf_end, mask);
 		if (desc == NULL) {
 			LOG_ERR("No IAD or interface descriptor found - error condition");
 			break;
@@ -99,6 +99,7 @@ static int usbh_match_classes(struct usbh_context *const ctx,
 
 		if (desc->bDescriptorType == USB_DESC_INTERFACE_ASSOC) {
 			found_iad = true;
+			iad_desc = desc;
 		}
 
 		if (desc->bDescriptorType == USB_DESC_INTERFACE) {
@@ -111,11 +112,11 @@ static int usbh_match_classes(struct usbh_context *const ctx,
 		}
 
 		/* Step 2: Continue searching for subsequent descriptors to determine end_addr */
-		start_addr += ((struct usb_desc_header *)start_addr)->bLength;
+		uint8_t *search_start = start_addr + ((struct usb_desc_header *)start_addr)->bLength;
 
 		/* Find next IAD */
 		mask = BIT(USB_DESC_INTERFACE_ASSOC);
-		desc = usbh_desc_get_by_type(start_addr, end_addr, mask);
+		desc = usbh_desc_get_by_type(search_start, desc_buf_end, mask);
 		next_iad_addr = (uint8_t *)desc;
 
 		/* Handle different cases and determine end_addr and device_info. */
@@ -130,11 +131,10 @@ static int usbh_match_classes(struct usbh_context *const ctx,
 		} else if (found_iad && next_iad_addr) {
 			/* Case 2c: Found IAD in step 1, found new IAD in subsequent descriptors */
 			end_addr = next_iad_addr;
-			start_addr += iad_desc->bLength;
 
 			/* Get class code from first interface after IAD */
-			mask = BIT(USB_DESC_INTERFACE_ASSOC);
-			desc = usbh_desc_get_by_type(start_addr, end_addr, mask);
+			mask = BIT(USB_DESC_INTERFACE);
+			desc = usbh_desc_get_by_type(search_start, end_addr, mask);
 			if (desc != NULL) {
 				struct usb_if_descriptor *if_desc = (void *)desc;
 
@@ -145,28 +145,33 @@ static int usbh_match_classes(struct usbh_context *const ctx,
 		} else if (found_iad && !next_iad_addr) {
 			/* Case 2d: Found IAD in step 1, no new IAD in subsequent descriptors */
 			/* Get class code from first interface after IAD */
-			start_addr += iad_desc->bLength;
 			mask = BIT(USB_DESC_INTERFACE);
-			desc = usbh_desc_get_by_type(start_addr, end_addr, mask);
+			desc = usbh_desc_get_by_type(search_start, desc_buf_end, mask);
 			if (desc != NULL) {
-				struct usb_if_descriptor *if_desc = (void *)start_addr;
+				struct usb_if_descriptor *if_desc = (void *)desc;
 
 				device_info.code_triple.dclass = if_desc->bInterfaceClass;
 				device_info.code_triple.sub = if_desc->bInterfaceSubClass;
 				device_info.code_triple.proto = if_desc->bInterfaceProtocol;
-			}
 
-			/* Search for interface descriptor with different class code after IAD */
-			start_addr += iad_desc->bLength;
-			mask = BIT(USB_DESC_INTERFACE);
-			desc = usbh_desc_get_by_type(start_addr, desc_buf_end, mask);
-			if (desc != NULL) {
-				struct usb_if_descriptor *if_desc = (void *)desc;
+				/* Search for interface descriptor with different class code after IAD */
+				uint8_t *next_search = (uint8_t *)desc + desc->bLength;
+				mask = BIT(USB_DESC_INTERFACE);
+				desc = usbh_desc_get_by_type(next_search, desc_buf_end, mask);
+				if (desc != NULL) {
+					struct usb_if_descriptor *if_desc = (void *)desc;
 
-				/* Only compare class code */
-				if (if_desc->bInterfaceClass != device_info.code_triple.dclass) {
+					/* Only compare class code */
+					if (if_desc->bInterfaceClass != device_info.code_triple.dclass) {
+						end_addr = (uint8_t *)desc;
+					} else {
+						end_addr = desc_buf_end;
+					}
+				} else {
 					end_addr = desc_buf_end;
 				}
+			} else {
+				end_addr = desc_buf_end;
 			}
 		}
 
@@ -185,7 +190,7 @@ static int usbh_match_classes(struct usbh_context *const ctx,
 					cdata->name, device_info.code_triple.dclass);
 
 				/* Step 4: Call connected handler */
-				int ret = usbh_class_connected(cdata, start_addr, end_addr);
+				int ret = usbh_class_connected(udev, cdata, start_addr, end_addr);
 				if (ret == 0) {
 					LOG_INF("Class driver %s successfully claimed device", cdata->name);
 					matched = true;
@@ -256,6 +261,22 @@ static void dev_connected_handler(struct usbh_context *const ctx,
 static void dev_removed_handler(struct usbh_context *const ctx)
 {
 	if (ctx->root != NULL) {
+		LOG_DBG("Device removed - notifying class drivers");
+
+		/* Notify all relevant class drivers that device is disconnected */
+		struct usbh_class_data *cdata;
+		SYS_SLIST_FOR_EACH_CONTAINER(&ctx->class_list, cdata, node) {
+			LOG_DBG("Calling disconnected for class driver: %s", cdata->name);
+			int ret = usbh_class_removed(ctx->root, cdata);
+			if (ret != 0) {
+				LOG_WRN("Class driver %s disconnected callback failed: %d", 
+					cdata->name, ret);
+			} else {
+				LOG_INF("Class driver %s successfully disconnected", cdata->name);
+			}
+		}
+
+		/* Free device resources */
 		usbh_device_free(ctx->root);
 		ctx->root = NULL;
 		LOG_DBG("Device removed");
