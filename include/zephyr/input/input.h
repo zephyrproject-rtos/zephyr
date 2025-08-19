@@ -20,6 +20,11 @@
  * @version 0.1.0
  * @ingroup io_interfaces
  * @{
+ *
+ * @defgroup input_interface_ext Device-specific Input API extensions
+ * @brief Interfaces for input devices with extended functionality beyond the standard Input API.
+ * @{
+ * @}
  */
 
 #include <stdint.h>
