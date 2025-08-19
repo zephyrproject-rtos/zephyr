@@ -1,0 +1,6 @@
+board:
+  name: adafruit_feather_rfm95_rp2040
+  full_name: Feather RP2040 RFM95 Lora
+  vendor: adafruit
+  socs:
+  - name: rp2040
