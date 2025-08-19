@@ -4,13 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @ingroup input_kbd_matrix
+ * @brief Main header file for keyboard matrix input devices.
+ */
+
 #ifndef ZEPHYR_INCLUDE_INPUT_KBD_MATRIX_H_
 #define ZEPHYR_INCLUDE_INPUT_KBD_MATRIX_H_
 
 /**
- * @brief Keyboard Matrix API
- * @defgroup input_kbd_matrix Keyboard Matrix API
- * @ingroup io_interfaces
+ * @defgroup input_kbd_matrix Keyboard Matrix
+ * @ingroup input_interface
  * @{
  */
 
