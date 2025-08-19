@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Main header file for Input driver API
+ * @ingroup input_interface
+ */
+
 #ifndef ZEPHYR_INCLUDE_INPUT_H_
 #define ZEPHYR_INCLUDE_INPUT_H_
 
