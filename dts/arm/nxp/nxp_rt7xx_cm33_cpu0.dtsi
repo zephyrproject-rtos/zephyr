@@ -204,7 +204,26 @@
 	iocon: pinctrl@4000 {
 		compatible = "nxp,lpc-iocon";
 		reg = <0x4000 0x1000>;
+		ranges = <0x0 0x4000 0x200>;
 		status = "okay";
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+		port0: pinctrl@0 {
+			reg = <0x0 0x80>;
+		};
+
+		port1: pinctrl@80 {
+			reg = <0x80 0x80>;
+		};
+
+		port2: pinctrl@100 {
+			reg = <0x100 0x80>;
+		};
+
+		port3: pinctrl@180 {
+			reg = <0x180 0x80>;
+		};
 	};
 
 	gpio0: gpio@100000 {
@@ -214,7 +233,7 @@
 		interrupts = <91 0>, <92 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
-		nxp,kinetis-port = <&gpio0>;
+		nxp,kinetis-port = <&port0>;
 	};
 
 	gpio1: gpio@102000 {
@@ -224,7 +243,7 @@
 		interrupts = <93 0>, <94 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
-		nxp,kinetis-port = <&gpio1>;
+		nxp,kinetis-port = <&port1>;
 	};
 
 	gpio2: gpio@104000 {
@@ -234,7 +253,7 @@
 		interrupts = <95 0>, <96 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
-		nxp,kinetis-port = <&gpio2>;
+		nxp,kinetis-port = <&port2>;
 	};
 
 	gpio3: gpio@106000 {
@@ -244,7 +263,7 @@
 		interrupts = <97 0>, <98 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
-		nxp,kinetis-port = <&gpio3>;
+		nxp,kinetis-port = <&port3>;
 	};
 
 	gpio4: gpio@108000 {
@@ -254,7 +273,7 @@
 		interrupts = <99 0>, <100 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
-		nxp,kinetis-port = <&gpio4>;
+		nxp,kinetis-port = <&port4>;
 	};
 
 	gpio5: gpio@10a000 {
@@ -264,7 +283,7 @@
 		interrupts = <101 0>, <102 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
-		nxp,kinetis-port = <&gpio5>;
+		nxp,kinetis-port = <&port5>;
 	};
 
 	gpio6: gpio@10c000 {
@@ -274,7 +293,7 @@
 		interrupts = <103 0>, <104 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
-		nxp,kinetis-port = <&gpio6>;
+		nxp,kinetis-port = <&port6>;
 	};
 
 	gpio7: gpio@10e000 {
@@ -284,7 +303,7 @@
 		interrupts = <105 0>, <106 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
-		nxp,kinetis-port = <&gpio7>;
+		nxp,kinetis-port = <&port7>;
 	};
 
 	flexcomm0: flexcomm@110000 {
