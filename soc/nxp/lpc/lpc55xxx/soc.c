@@ -141,7 +141,7 @@ static void core_clock_init(void)
 	change_core_clock(new_rate);
 	clock_management_disable_unused();
 }
-#else /* !CONFIG_CLOCK_MANAGEMENT */
+#else /* !defined(CONFIG_CLOCK_MANAGEMENT) */
 #if defined(CONFIG_SOC_LPC55S06) || defined(CONFIG_SOC_LPC55S16) || \
 	defined(CONFIG_SOC_LPC55S26) || defined(CONFIG_SOC_LPC55S28) || \
 	defined(CONFIG_SOC_LPC55S36) || defined(CONFIG_SOC_LPC55S69_CPU0)
@@ -235,7 +235,7 @@ static void core_clock_init(void)
 	/* Set up dividers */
 	CLOCK_SetClkDiv(kCLOCK_DivAhbClk, 1U, false);
 }
-#endif /* !CONFIG_CLOCK_MANAGEMENT */
+#endif /* !defined(CONFIG_CLOCK_MANAGEMENT) */
 
 #endif
 /**
@@ -266,7 +266,7 @@ __weak void clock_init(void)
 	(DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm0), nxp_lpc_spi, okay) && \
 	CONFIG_SPI_MCUX_FLEXCOMM) || \
 	(DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm0), nxp_lpc_usart, okay) && \
-	CONFIG_UART_MCUX_FLEXCOMM)
+	(CONFIG_UART_MCUX_FLEXCOMM && !defined(CONFIG_CLOCK_MANAGEMENT)))
 	CLOCK_AttachClk(kFRO_HF_DIV_to_FLEXCOMM0);
 #endif
 
@@ -275,7 +275,7 @@ __weak void clock_init(void)
 	(DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm1), nxp_lpc_spi, okay) && \
 	CONFIG_SPI_MCUX_FLEXCOMM) || \
 	(DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm1), nxp_lpc_usart, okay) && \
-	CONFIG_UART_MCUX_FLEXCOMM)
+	(CONFIG_UART_MCUX_FLEXCOMM && !defined(CONFIG_CLOCK_MANAGEMENT)))
 	CLOCK_AttachClk(kFRO_HF_DIV_to_FLEXCOMM1);
 #endif
 
@@ -284,7 +284,7 @@ __weak void clock_init(void)
 	(DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm2), nxp_lpc_spi, okay) && \
 	CONFIG_SPI_MCUX_FLEXCOMM) || \
 	(DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm2), nxp_lpc_usart, okay) && \
-	CONFIG_UART_MCUX_FLEXCOMM)
+	(CONFIG_UART_MCUX_FLEXCOMM && !defined(CONFIG_CLOCK_MANAGEMENT)))
 #if defined(CONFIG_SOC_LPC55S36)
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom2Clk, 0U, true);
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom2Clk, 1U, false);
@@ -297,7 +297,7 @@ __weak void clock_init(void)
 	(DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm3), nxp_lpc_spi, okay) && \
 	CONFIG_SPI_MCUX_FLEXCOMM) || \
 	(DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm3), nxp_lpc_usart, okay) && \
-	CONFIG_UART_MCUX_FLEXCOMM)
+	(CONFIG_UART_MCUX_FLEXCOMM && !defined(CONFIG_CLOCK_MANAGEMENT)))
 	CLOCK_AttachClk(kFRO_HF_DIV_to_FLEXCOMM3);
 #endif
 
@@ -306,7 +306,7 @@ __weak void clock_init(void)
 	(DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm4), nxp_lpc_spi, okay) && \
 	CONFIG_SPI_MCUX_FLEXCOMM) || \
 	(DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm4), nxp_lpc_usart, okay) && \
-	CONFIG_UART_MCUX_FLEXCOMM)
+	(CONFIG_UART_MCUX_FLEXCOMM && !defined(CONFIG_CLOCK_MANAGEMENT)))
 #if defined(CONFIG_SOC_LPC55S36)
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom4Clk, 0U, true);
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom4Clk, 1U, false);
@@ -319,7 +319,7 @@ __weak void clock_init(void)
 	(DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm5), nxp_lpc_spi, okay) && \
 	CONFIG_SPI_MCUX_FLEXCOMM) || \
 	(DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm5), nxp_lpc_usart, okay) && \
-	CONFIG_UART_MCUX_FLEXCOMM)
+	(CONFIG_UART_MCUX_FLEXCOMM && !defined(CONFIG_CLOCK_MANAGEMENT)))
 	CLOCK_AttachClk(kFRO_HF_DIV_to_FLEXCOMM5);
 #endif
 
@@ -328,7 +328,7 @@ __weak void clock_init(void)
 	(DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm6), nxp_lpc_spi, okay) && \
 	CONFIG_SPI_MCUX_FLEXCOMM) || \
 	(DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm6), nxp_lpc_usart, okay) && \
-	CONFIG_UART_MCUX_FLEXCOMM)
+	(CONFIG_UART_MCUX_FLEXCOMM && !defined(CONFIG_CLOCK_MANAGEMENT)))
 	CLOCK_AttachClk(kFRO_HF_DIV_to_FLEXCOMM6);
 #endif
 
@@ -337,7 +337,7 @@ __weak void clock_init(void)
 	(DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm7), nxp_lpc_spi, okay) && \
 	CONFIG_SPI_MCUX_FLEXCOMM) || \
 	(DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm7), nxp_lpc_usart, okay) && \
-	CONFIG_UART_MCUX_FLEXCOMM)
+	(CONFIG_UART_MCUX_FLEXCOMM && !defined(CONFIG_CLOCK_MANAGEMENT)))
 	CLOCK_AttachClk(kFRO_HF_DIV_to_FLEXCOMM7);
 #endif
 
