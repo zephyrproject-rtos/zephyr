@@ -16,10 +16,19 @@
 
 /* Supported flash interfaces for UMA transactions */
 #define NPCX_QSPI_SEC_FLASH_SL	BIT(4)
+#define NPCX_QSPI_PVT_FLASH_SL	BIT(5)
+#define NPCX_QSPI_SHD_FLASH_SL	BIT(6)
+#define NPCX_QSPI_BKP_FLASH_SL	BIT(7)
 
 /* Supported read mode for Direct Read Access */
 #define NPCX_RD_MODE_NORMAL	0
 #define NPCX_RD_MODE_FAST	1
 #define NPCX_RD_MODE_FAST_DUAL	3
+
+#if defined(CONFIG_NPCX_SOC_VARIANT_NPCKN)
+/* Maximum length of a valid read burst */
+#define NPCX_BURST_MODE_1_BYTE  0
+#define NPCX_BURST_MODE_16_BYTE 3
+#endif
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_FLASH_CONTROLLER_NPCX_FIU_QSPI_H_ */
