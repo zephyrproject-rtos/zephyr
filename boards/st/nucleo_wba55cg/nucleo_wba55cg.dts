@@ -90,17 +90,12 @@
 	};
 };
 
-&clk_lsi {
-	status = "okay";
-};
-
 &clk_lse {
 	status = "okay";
 };
 
 &clk_hse {
 	status = "okay";
-	hse-div2;
 };
 
 &clk_hsi {
@@ -109,9 +104,9 @@
 
 &rcc {
 	clocks = <&clk_hse>;
-	clock-frequency = <DT_FREQ_M(16)>;
+	clock-frequency = <DT_FREQ_M(32)>; /* Lowest value to manage radio events */
 	ahb-prescaler = <1>;
-	ahb5-prescaler = <2>;
+	ahb5-prescaler = <1>;
 	apb1-prescaler = <1>;
 	apb2-prescaler = <2>;
 	apb7-prescaler = <1>;
