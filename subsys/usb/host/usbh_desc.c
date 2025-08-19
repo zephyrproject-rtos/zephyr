@@ -23,6 +23,7 @@ struct usb_desc_header *usbh_desc_get_by_type(const uint8_t *const start_addr,
 		if ((BIT(desc->bDescriptorType) & type_mask) != 0) {
 			return desc;
 		}
+		curr_addr += desc->bLength;
 	}
 
 	return NULL;
