@@ -272,7 +272,7 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio8>;
-		gpio-port-offest = <8>;
+		gpio-port = <8>;
 	};
 
 	gpio9: gpio@322000 {
@@ -283,7 +283,7 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio9>;
-		gpio-port-offest = <8>;
+		gpio-port = <9>;
 	};
 
 	gpio10: gpio@324000 {
@@ -294,7 +294,7 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio10>;
-		gpio-port-offest = <8>;
+		gpio-port = <10>;
 	};
 
 	flexcomm17: flexcomm@326000 {

@@ -360,6 +360,7 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio0>;
+		gpio-port = <0>;
 	};
 
 	gpio1: gpio@102000 {
@@ -370,6 +371,7 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio1>;
+		gpio-port = <1>;
 	};
 
 	gpio2: gpio@104000 {
@@ -380,6 +382,7 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio2>;
+		gpio-port = <2>;
 	};
 
 	gpio3: gpio@106000 {
@@ -390,6 +393,7 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio3>;
+		gpio-port = <3>;
 	};
 
 	gpio4: gpio@108000 {
@@ -400,6 +404,7 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio4>;
+		gpio-port = <4>;
 	};
 
 	gpio5: gpio@10a000 {
@@ -410,6 +415,7 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio5>;
+		gpio-port = <5>;
 	};
 
 	gpio6: gpio@10c000 {
@@ -420,6 +426,7 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio6>;
+		gpio-port = <6>;
 	};
 
 	gpio7: gpio@10e000 {
@@ -430,6 +437,7 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio7>;
+		gpio-port = <7>;
 	};
 
 	flexcomm0: flexcomm@110000 {
