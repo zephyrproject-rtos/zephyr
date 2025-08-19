@@ -2,7 +2,6 @@ common:
   integration_platforms:
     - native_sim
     - nrf54l15dk/nrf54l15/cpuapp
-    - ophelia4ev/nrf54l15/cpuapp
   platform_exclude:
     - qemu_cortex_m0 # settings subsystem initialization fails
   timeout: 600
@@ -10,10 +9,9 @@ common:
     - psa.secure_storage
 tests:
   secure_storage.psa.its.secure_storage.store.zms:
-    filter: CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_ZMS
     # DT-based filtering is not possible for this test scenario.
     # Platforms with a storage_partition must be manually added here.
-    platform_allow:
+    platform_allow: &zms_platform_allow
       - native_sim
       - mps2/an385
       - qemu_x86/atom
@@ -25,14 +23,29 @@ tests:
       - nrf9160dk/nrf9160
       - nrf9161dk/nrf9161
       - ophelia4ev/nrf54l15/cpuapp
-    extra_args:
+    extra_args: &zms_extra_args
       - EXTRA_DTC_OVERLAY_FILE=zms.overlay
-      - EXTRA_CONF_FILE=overlay-secure_storage.conf;overlay-store_zms.conf;overlay-transform_default.conf
+      - EXTRA_CONF_FILE=\
+        overlay-secure_storage.conf;overlay-store_zms.conf;overlay-transform_default.conf
+
+  secure_storage.psa.its.secure_storage.store.zms.64-bit_uids:
+    platform_allow: *zms_platform_allow
+    extra_args: *zms_extra_args
+    extra_configs:
+      - CONFIG_SECURE_STORAGE_64_BIT_UID=y
 
   secure_storage.psa.its.secure_storage.store.settings:
-    filter: CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_SETTINGS
-    extra_args: "EXTRA_CONF_FILE=\
-      overlay-secure_storage.conf;overlay-transform_default.conf;overlay-store_settings.conf"
+    filter: &settings_filter
+      CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_SETTINGS
+    extra_args: &settings_extra_args
+      "EXTRA_CONF_FILE=\
+       overlay-secure_storage.conf;overlay-transform_default.conf;overlay-store_settings.conf"
+
+  secure_storage.psa.its.secure_storage.store.settings.64-bit_uids:
+    filter: *settings_filter
+    extra_args: *settings_extra_args
+    extra_configs:
+      - CONFIG_SECURE_STORAGE_64_BIT_UID=y
 
   secure_storage.psa.its.secure_storage.custom.transform:
     filter: CONFIG_SECURE_STORAGE and not CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_NONE
