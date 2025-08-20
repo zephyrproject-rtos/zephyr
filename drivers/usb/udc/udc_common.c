@@ -287,10 +287,125 @@ int udc_ep_claim_config(const struct device *dev,
 	api->lock(dev);
 
 	ret = ep_check_config(dev, cfg, ep, attributes, mps, interval);
+	if (ret) {
+		cfg->m_mps = MAX(cfg->m_mps, mps);
+		cfg->stat.claimed = 1;
+	}
 
 	api->unlock(dev);
 
 	return (ret == false) ? -ENOTSUP : 0;
+}
+
+void udc_get_eps_fifo_size(const struct device *dev,
+			   size_t *const rx_size,
+			   size_t *const tx_size,
+			   uint16_t *const out_mps,
+			   uint16_t *const in_mps)
+{
+	struct udc_data *const data = dev->data;
+	uint16_t t_out_mps = 0;
+	uint16_t t_in_mps = 0;
+	size_t t_rx_size = 0;
+	size_t t_tx_size = 0;
+
+	for (unsigned int i = 0; i < ARRAY_SIZE(data->ep_lut); i++) {
+		struct udc_ep_config *const cfg = data->ep_lut[i];
+		uint16_t tpl;
+
+		if (cfg == NULL || !cfg->stat.claimed) {
+			continue;
+		}
+
+		tpl = USB_MPS_TO_TPL(cfg->m_mps);
+
+		if (USB_EP_DIR_IS_IN(cfg->addr)) {
+			t_tx_size += ROUND_UP(tpl, 4);
+			if (tpl > USB_MPS_TO_TPL(t_in_mps)) {
+				t_in_mps = cfg->m_mps;
+			}
+		} else {
+			t_rx_size += ROUND_UP(tpl, 4);
+			if (tpl > USB_MPS_TO_TPL(t_out_mps)) {
+				t_out_mps = cfg->m_mps;
+			}
+		}
+	}
+
+	if (rx_size != NULL) {
+		*rx_size = t_rx_size;
+	}
+
+	if (tx_size != NULL) {
+		*tx_size = t_tx_size;
+	}
+
+	if (out_mps != NULL) {
+		*out_mps = t_out_mps;
+	}
+
+	if (in_mps != NULL) {
+		*in_mps = t_in_mps;
+	}
+}
+
+void udc_get_claimed_eps(const struct device *dev,
+			 uint8_t *const out_eps, uint8_t *const in_eps)
+{
+	struct udc_data *const data = dev->data;
+	uint16_t t_out_eps = 0;
+	uint16_t t_in_eps = 0;
+
+	for (unsigned int i = 0; i < ARRAY_SIZE(data->ep_lut); i++) {
+		struct udc_ep_config *const cfg = data->ep_lut[i];
+
+		if (cfg == NULL || !cfg->stat.claimed) {
+			continue;
+		}
+
+		if (USB_EP_DIR_IS_IN(cfg->addr)) {
+			t_in_eps++;
+		} else {
+			t_out_eps++;
+		}
+	}
+
+	if (out_eps != NULL) {
+		*out_eps = t_out_eps;
+	}
+
+	if (in_eps != NULL) {
+		*in_eps = t_in_eps;
+	}
+}
+
+static void udc_release_eps(const struct device *dev)
+{
+	struct udc_data *const data = dev->data;
+
+	for (unsigned int i = 0; i < ARRAY_SIZE(data->ep_lut); i++) {
+		struct udc_ep_config *const cfg = data->ep_lut[i];
+
+		if (cfg != NULL) {
+			cfg->stat.claimed = 0;
+			cfg->m_mps = 0;
+			cfg->mps = 0;
+		}
+	}
+}
+
+static inline void udc_log_fifo_size(const struct device *dev)
+{
+	size_t rx_size, tx_size;
+	uint16_t out_mps, in_mps;
+	uint8_t out_eps, in_eps;
+
+	udc_get_eps_fifo_size(dev, &rx_size, &tx_size, &out_mps, &in_mps);
+	LOG_DBG("FIFO size RX %u TX %u, MPS OUT 0x%04x IN 0x%04x",
+		rx_size, tx_size, out_mps, in_mps);
+
+	udc_get_claimed_eps(dev, &out_eps, &in_eps);
+	LOG_DBG("Number of used endpoints OUT %u IN %u", out_eps, in_eps);
 }
 
 int udc_ep_enable_internal(const struct device *dev,
@@ -316,6 +431,11 @@ int udc_ep_enable_internal(const struct device *dev,
 	if (!ep_check_config(dev, cfg, ep, attributes, mps, interval)) {
 		LOG_ERR("Endpoint 0x%02x validation failed", cfg->addr);
 		return -ENODEV;
+	}
+
+	if (USB_EP_GET_IDX(ep) && USB_MPS_TO_TPL(mps) > USB_MPS_TO_TPL(cfg->m_mps)) {
+		LOG_ERR("Endpoint 0x%02x MPS %u is too large", cfg->addr, mps);
+		return -EINVAL;
 	}
 
 	cfg->attributes = attributes;
@@ -681,6 +801,9 @@ int udc_enable(const struct device *dev)
 	}
 
 	data->stage = CTRL_PIPE_STAGE_SETUP;
+	if (UDC_COMMON_LOG_LEVEL == LOG_LEVEL_DBG) {
+		udc_log_fifo_size(dev);
+	}
 
 	ret = api->enable(dev);
 	if (ret == 0) {
@@ -733,6 +856,7 @@ int udc_init(const struct device *dev,
 		goto udc_init_error;
 	}
 
+	udc_release_eps(dev);
 	data->event_cb = event_cb;
 	data->event_ctx = event_ctx;
 
