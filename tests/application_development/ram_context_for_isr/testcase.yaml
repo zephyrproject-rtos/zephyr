@@ -1,6 +1,7 @@
 common:
   tags: linker
   arch_allow: arm
+  min_ram: 7
   filter: CONFIG_CPU_CORTEX_M_HAS_VTOR
 tests:
   application_development.ram_context_for_isr:
