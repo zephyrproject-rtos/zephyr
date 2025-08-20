@@ -72,6 +72,20 @@ module-str = zbus_proxy_agent_uart
 source "subsys/logging/Kconfig.template.log_config"
 endif # ZBUS_PROXY_AGENT_UART
 
+menuconfig ZBUS_PROXY_AGENT_IPC
+	bool "ZBus proxy agent IPC backend"
+	select IPC_SERVICE
+	select MBOX
+	select CRC
+	help
+	  Enables the ZBus proxy agent IPC backend, allowing communication between domains over IPC.
+
+if ZBUS_PROXY_AGENT_IPC
+module = ZBUS_PROXY_AGENT_IPC
+module-str = zbus_proxy_agent_ipc
+source "subsys/logging/Kconfig.template.log_config"
+endif # ZBUS_PROXY_AGENT_IPC
+
 module = ZBUS_PROXY_AGENT
 module-str = zbus_proxy_agent
 source "subsys/logging/Kconfig.template.log_config"
