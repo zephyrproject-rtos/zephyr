@@ -177,7 +177,7 @@ static int clock_mspm0_init(const struct device *dev)
 	uint32_t hfxt_freq = DT_PROP(DT_NODELABEL(hfxt),
 				     clock_frequency)  / MHZ(1);
 	uint32_t xtal_startup_delay = DT_PROP_OR(DT_NODELABEL(hfxt),
-					 ti_xtal_startup_delay_us, 0);
+						 ti_xtal_startup_delay_us, 0);
 
 	if (hfxt_freq >= 4 &&
 	    hfxt_freq <= 8) {
@@ -197,8 +197,8 @@ static int clock_mspm0_init(const struct device *dev)
 
 	/* startup time in 64us resolution */
 	DL_SYSCTL_setHFCLKSourceHFXTParams(hf_range,
-				mspm0_hfclk_cfg.xtal_startup_delay / 64,
-				true);
+					   xtal_startup_delay / 64,
+					   true);
 #else
 	DL_SYSCTL_setHFCLKSourceHFCLKIN();
 #endif
