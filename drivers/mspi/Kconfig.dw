@@ -8,6 +8,7 @@ config MSPI_DW
 	depends on DT_HAS_SNPS_DESIGNWARE_SSI_ENABLED
 	select PINCTRL if $(dt_compat_any_has_prop,$(DT_COMPAT_SNPS_DESIGNWARE_SSI),pinctrl-0)
 	imply MSPI_XIP
+	imply MSPI_TIMING
 
 if MSPI_DW
 
