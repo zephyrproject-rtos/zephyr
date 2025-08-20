@@ -20,8 +20,37 @@ config USBH_VIDEO_NUM_BUFS
 	default 16
 	help
 	  Control the number of buffer UVC can allocate in parallel.
-	  The default is a compromise to allow enough concurrent buffers 
+	  The default is a compromise to allow enough concurrent buffers
 	  but not too much memory usage.
+
+config USBH_VIDEO_MAX_FRMIVAL
+	int "Max number of video input stream per USB Video interface"
+	range 1 255
+	default 8
+	help
+	  Max number of Frame Interval listed on a frame descriptor. The
+	  default value is selected arbitrarily to fit most situations without
+	  requiring too much RAM.
+
+config USBH_VIDEO_MAX_STREAM_INTERFACE
+	int "Max number of USB Video stream interface"
+	range 1 255
+	default 32
+	help
+	  Max number of Video stream interface listed on descriptors. The default
+	  value is selected arbitrarily to fit most situations without requiring
+	  too much RAM.
+
+config USBH_VIDEO_MAX_FORMATS
+	int "Max number of format descriptors"
+	range 1 254
+	default 8
+	help
+	  The table of format descriptors are generated at runtime. This options plans the
+	  storage at build time to allow enough descriptors to be generated. The default value
+	  aims a compromise between enough descriptors for most devices, but not too much memory
+	  being used. TThe maximum count for each format type (e.g., MJPEG, uncompressed), not the
+	  total number of all formats.
 
 module = USBH_VIDEO
 module-str = usbh uvc
