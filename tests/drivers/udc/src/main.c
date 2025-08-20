@@ -101,9 +101,9 @@ static void test_udc_ep_try_config(const struct device *dev,
 	uint16_t mps = sys_le16_to_cpu(ed->wMaxPacketSize);
 	int err;
 
-	err = udc_ep_try_config(dev, ed->bEndpointAddress,
-				ed->bmAttributes, mps,
-				ed->bInterval);
+	err = udc_ep_claim_config(dev, ed->bEndpointAddress,
+				  ed->bmAttributes, mps,
+				  ed->bInterval);
 	zassert_equal(err, 0, "Failed to test endpoint configuration");
 }
 
@@ -385,9 +385,9 @@ static void test_udc_ep_mps(uint8_t type)
 	}
 
 	for (uint8_t i = 1; i < 16U; i++) {
-		err = udc_ep_try_config(dev, i,
-					ed.bmAttributes, supported,
-					ed.bInterval);
+		err = udc_ep_claim_config(dev, i,
+					  ed.bmAttributes, supported,
+					  ed.bInterval);
 		if (!err) {
 			ed.bEndpointAddress = i;
 			break;
@@ -406,9 +406,9 @@ static void test_udc_ep_mps(uint8_t type)
 	}
 
 	for (uint8_t i = 1; i < 16U; i++) {
-		err = udc_ep_try_config(dev, i | USB_EP_DIR_IN,
-					ed.bmAttributes, supported,
-					ed.bInterval);
+		err = udc_ep_claim_config(dev, i | USB_EP_DIR_IN,
+					  ed.bmAttributes, supported,
+					  ed.bInterval);
 		if (!err) {
 			ed.bEndpointAddress = i | USB_EP_DIR_IN;
 			break;
