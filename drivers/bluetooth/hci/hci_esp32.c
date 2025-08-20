@@ -28,21 +28,24 @@ struct bt_esp32_data {
 /* VHCI notifies when exactly one more HCI packet can be sent */
 static K_SEM_DEFINE(hci_send_sem, 0, 1);
 
-static bool is_hci_event_discardable(const uint8_t *evt_data)
+static bool is_hci_event_discardable(uint8_t evt_code, const uint8_t *payload, size_t plen)
 {
-	uint8_t evt_type = evt_data[0];
-
-	switch (evt_type) {
+	switch (evt_code) {
 #if defined(CONFIG_BT_CLASSIC)
 	case BT_HCI_EVT_INQUIRY_RESULT_WITH_RSSI:
 	case BT_HCI_EVT_EXTENDED_INQUIRY_RESULT:
 		return true;
 #endif
 	case BT_HCI_EVT_LE_META_EVENT: {
-		uint8_t subevt_type = evt_data[sizeof(struct bt_hci_evt_hdr)];
+		/* Need at least 1 byte to read LE subevent safely */
+		if (plen < 1U) {
+			return false;
+		}
+		uint8_t subevt_type = payload[0];
 
 		switch (subevt_type) {
 		case BT_HCI_EVT_LE_ADVERTISING_REPORT:
+		case BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT:
 			return true;
 		default:
 			return false;
@@ -65,8 +68,6 @@ static struct net_buf *bt_esp_evt_recv(uint8_t *data, size_t remaining)
 		return NULL;
 	}
 
-	discardable = is_hci_event_discardable(data, remaining);
-
 	memcpy((void *)&hdr, data, sizeof(hdr));
 	data += sizeof(hdr);
 	remaining -= sizeof(hdr);
@@ -76,6 +77,8 @@ static struct net_buf *bt_esp_evt_recv(uint8_t *data, size_t remaining)
 		return NULL;
 	}
 	LOG_DBG("len %u", hdr.len);
+
+	discardable = is_hci_event_discardable(hdr.evt, data, remaining);
 
 	buf = bt_buf_get_evt(hdr.evt, discardable, K_NO_WAIT);
 	if (!buf) {
