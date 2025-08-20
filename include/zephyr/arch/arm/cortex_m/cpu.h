@@ -26,6 +26,41 @@
 #define _EXC_RETURN_SPSEL_Msk (1 << 2)
 #define _EXC_RETURN_FTYPE_Msk (1 << 4)
 
+/*
+ * Cortex-M Exception Stack Frame Layouts
+ *
+ * When an exception is taken, the processor automatically pushes
+ * registers to the current stack. The layout depends on whether
+ * the FPU is active.
+ */
+
+/* Basic hardware-saved exception stack frame (no FPU context):
+ *	R0-R3		(4 x 4B = 16B)
+ *	R12		(4B)
+ *	LR		(4B)
+ *	Return address	(4B)
+ *	RETPSR		(4B)
+ *--------------------------
+ *      Total: 32 bytes
+ */
+#define _EXC_HW_SAVED_BASIC_SF_SIZE		(32)
+#define _EXC_HW_SAVED_BASIC_SF_RETADDR_OFFSET	(24)
+#define _EXC_HW_SAVED_BASIC_SF_XPSR_OFFSET	(28)
+
+/* Extended hardware saved stack frame consists of:
+ *	R0-R3		(16B)
+ *	R12		(4B)
+ *	LR (R14)	(4B)
+ *	Return address	(4B)
+ *	RETPSR		(4B)
+ *	S0-S15		(16 x 4B = 64B)
+ *	FPSCR		(4B)
+ *	Reserved	(4B)
+ *--------------------------
+ *      Total: 104 bytes
+ */
+#define _EXC_HW_SAVED_EXTENDED_SF_SIZE	(104)
+
 #else
 #include <stdint.h>
 
