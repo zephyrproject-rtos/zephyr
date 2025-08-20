@@ -732,6 +732,22 @@ static int cmd_page_info(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+#define FLASH_NODE DT_NODELABEL(flash0)
+#define PRINT_PART(part) printk("%-15s 0x%08x %d Kb\n", DT_PROP(part, label), \
+				DT_REG_ADDR(part), \
+				DT_REG_SIZE(part)/1024);
+
+static int cmd_partitions(const struct shell *sh, size_t argc, char *argv[])
+{
+#if DT_NODE_EXISTS(DT_CHILD(FLASH_NODE, partitions))
+	DT_FOREACH_CHILD(DT_CHILD(FLASH_NODE, partitions), PRINT_PART);
+#else
+	printk("Node `flash0/partitions` is missing, can't read partitions.\n");
+#endif
+
+	return 0;
+}
+
 static void device_name_get(size_t idx, struct shell_static_entry *entry);
 
 SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
@@ -773,6 +789,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(flash_cmds,
 	SHELL_CMD_ARG(page_info, &dsub_device_name,
 		"[<device>] <address>",
 		cmd_page_info, 2, 1),
+	SHELL_CMD_ARG(partitions, &dsub_device_name,
+		"[<device>]",
+		cmd_partitions, 1, 1),
 
 #ifdef CONFIG_FLASH_SHELL_TEST_COMMANDS
 	SHELL_CMD_ARG(read_test, &dsub_device_name,
