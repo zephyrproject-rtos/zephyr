@@ -9,7 +9,10 @@
 #include <dt-bindings/pinctrl/bflb-common-pinctrl.h>
 #include <dt-bindings/pinctrl/bl70x-pinctrl.h>
 #include <dt-bindings/clock/bflb_bl70x_clock.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/spi/spi.h>
 
 / {
 	#address-cells = <1>;
@@ -179,6 +182,17 @@
 			status = "disabled";
 
 			interrupts = <48 0>;
+			interrupt-parent = <&clic>;
+		};
+
+		spi0: spi@4000a200 {
+			compatible = "bflb,spi";
+			reg = <0x4000a200 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			interrupts = <43 0>;
 			interrupt-parent = <&clic>;
 		};
 
