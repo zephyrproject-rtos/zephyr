@@ -10,7 +10,10 @@
 #include <dt-bindings/pinctrl/bflb-common-pinctrl.h>
 #include <dt-bindings/pinctrl/bl60x-pinctrl.h>
 #include <dt-bindings/clock/bflb_bl60x_clock.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/spi/spi.h>
 
 / {
 	#address-cells = <1>;

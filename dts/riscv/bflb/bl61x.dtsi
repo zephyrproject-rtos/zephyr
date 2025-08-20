@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/spi/spi.h>
 
 / {
 	#address-cells = <1>;
@@ -200,6 +201,17 @@
 			status = "disabled";
 
 			interrupts = <55 1>;
+			interrupt-parent = <&clic>;
+		};
+
+		spi0: spi@2000a200 {
+			compatible = "bflb,spi";
+			reg = <0x2000a200 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			interrupts = <43 1>;
 			interrupt-parent = <&clic>;
 		};
 
