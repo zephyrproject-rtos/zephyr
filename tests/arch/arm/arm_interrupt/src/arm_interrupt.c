@@ -16,7 +16,7 @@ static volatile int expected_reason = -1;
 static volatile int run_esf_validation;
 static volatile int esf_validation_rv;
 static volatile uint32_t expected_msp;
-static K_THREAD_STACK_DEFINE(esf_collection_stack, 2048);
+static K_THREAD_STACK_DEFINE(esf_collection_stack, 2048 + CONFIG_TEST_EXTRA_STACK_SIZE);
 static struct k_thread esf_collection_thread;
 #define MAIN_PRIORITY 7
 #define PRIORITY      5

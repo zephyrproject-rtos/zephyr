@@ -39,7 +39,7 @@
 extern void z_move_thread_to_end_of_prio_q(struct k_thread *thread);
 
 static struct k_thread alt_thread;
-static K_THREAD_STACK_DEFINE(alt_thread_stack, 1024);
+static K_THREAD_STACK_DEFINE(alt_thread_stack, 1024 + CONFIG_TEST_EXTRA_STACK_SIZE);
 
 /* Status variable to indicate that context-switch has occurred. */
 bool volatile switch_flag;

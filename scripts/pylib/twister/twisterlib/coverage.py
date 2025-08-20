@@ -105,6 +105,7 @@ class CoverageTool:
             merge_tool = self.gcov_tool + '-tool'
             for d1, d2 in zip(dirs[:-1], dirs[1:], strict=False):
                 cmd = [merge_tool, 'merge', d1, d2, '--output', d2]
+                print(f"Running command: {' '.join(cmd)}")
                 subprocess.call(cmd)
 
             # Read back the final output file
