@@ -170,6 +170,14 @@ int dns_unpack_answer(struct dns_msg_t *dns_msg, int dname_ptr, uint32_t *ttl,
 		set_dns_msg_response(dns_msg, DNS_RESPONSE_DATA, pos, len);
 		return 0;
 
+	case DNS_RR_TYPE_TXT:
+		set_dns_msg_response(dns_msg, DNS_RESPONSE_TXT, pos, len);
+		return 0;
+
+	case DNS_RR_TYPE_SRV:
+		set_dns_msg_response(dns_msg, DNS_RESPONSE_SRV, pos, len);
+		return 0;
+
 	case DNS_RR_TYPE_CNAME:
 		set_dns_msg_response(dns_msg, DNS_RESPONSE_CNAME_NO_IP,
 				     pos, len);
