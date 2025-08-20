@@ -185,7 +185,7 @@ Let's now have a look at some extended advertising features. To enable extended 
 
 .. code-block:: console
 
-        uart:~$ bt adv-create conn-nscan ext-adv name-ad
+        uart:~$ bt adv-create conn-nscan ext-adv
         Created adv id: 0, adv: 0x200022f0
         uart:~$ bt adv-start
         Advertiser[0] 0x200022f0 set started
