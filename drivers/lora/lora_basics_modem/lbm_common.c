@@ -79,7 +79,7 @@ int lbm_lora_config(const struct device *dev, struct lora_modem_config *lora_con
 			.preamble_len_in_symb = lora_config->preamble_len,
 			.header_type = RAL_LORA_PKT_EXPLICIT,
 			.pld_len_in_bytes = UINT8_MAX,
-			.crc_is_on = true,
+			.crc_is_on = !lora_config->packet_crc_disable,
 			.invert_iq_is_on = lora_config->iq_inverted,
 		},
 		.rf_freq_in_hz = lora_config->frequency,
