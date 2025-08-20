@@ -381,6 +381,21 @@ void board_early_init_hook(void)
 	SPC_EnableActiveModeAnalogModules(SPC0, (kSPC_controlCmp0 | kSPC_controlCmp0Dac));
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(opamp0))
+	CLOCK_EnableClock(kCLOCK_Opamp0);
+	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlOpamp0);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(opamp1))
+	CLOCK_EnableClock(kCLOCK_Opamp1);
+	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlOpamp1);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(opamp2))
+	CLOCK_EnableClock(kCLOCK_Opamp2);
+	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlOpamp2);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lptmr0))
 
 /*
