@@ -13,8 +13,9 @@ extern "C" {
 #endif
 
 /**
- * @brief MCUmgr fs_mgmt callback API
- * @defgroup mcumgr_callback_api_fs_mgmt MCUmgr fs_mgmt callback API
+ * @brief MCUmgr File System Management Callbacks API
+ * @defgroup mcumgr_callback_api_fs_mgmt File System Management Callbacks
+ * @ingroup mcumgr_fs_mgmt
  * @ingroup mcumgr_callback_api
  * @{
  */

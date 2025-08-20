@@ -15,9 +15,7 @@ extern "C" {
 #endif
 
 /**
- * @brief MCUmgr mgmt API
- * @defgroup mcumgr_mgmt_api MCUmgr mgmt API
- * @ingroup mcumgr
+ * @addtogroup mcumgr_mgmt_api
  * @{
  */
 
