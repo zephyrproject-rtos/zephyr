@@ -2,6 +2,9 @@
 #
 # Copyright 2022 NXP
 
+# Only add the remote project if a remote board is defined
+if(DEFINED SB_CONFIG_OPENAMP_REMOTE_BOARD AND NOT "${SB_CONFIG_OPENAMP_REMOTE_BOARD}" STREQUAL "")
+
 # Add external project
 ExternalZephyrProject_Add(
     APPLICATION openamp_remote
@@ -18,4 +21,14 @@ sysbuild_add_dependencies(CONFIGURE ${DEFAULT_IMAGE} openamp_remote)
 if(SB_CONFIG_BOOTLOADER_MCUBOOT)
   # Make sure MCUboot is flashed first
   sysbuild_add_dependencies(FLASH openamp_remote mcuboot)
+endif()
+
+else()
+
+  message(NOTICE "
+   ****************************************
+   * Remote board not set, skipping build *
+   ****************************************"
+  )
+
 endif()
