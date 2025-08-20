@@ -49,13 +49,13 @@ extern "C" {
  * and the codec.
  */
 enum dai_clock_provider {
-	/**< codec BLCK provider, codec FSYNC provider */
+	/** codec BCLK provider, codec FSYNC provider */
 	DAI_CBP_CFP = (0 << 12),
-	/**< codec BCLK consumer, codec FSYNC provider */
+	/** codec BCLK consumer, codec FSYNC provider */
 	DAI_CBC_CFP = (2 << 12),
-	/**< codec BCLK provider, codec FSYNC consumer */
+	/** codec BCLK provider, codec FSYNC consumer */
 	DAI_CBP_CFC = (3 << 12),
-	/**< codec BCLK consumer, codec FSYNC consumer */
+	/** codec BCLK consumer, codec FSYNC consumer */
 	DAI_CBC_CFC = (4 << 12),
 };
 
@@ -80,13 +80,13 @@ enum dai_protocol {
  * the default one chosen based on the protocol.
  */
 enum dai_clock_inversion {
-	/**< no BCLK inversion, no FSYNC inversion */
+	/** no BCLK inversion, no FSYNC inversion */
 	DAI_INVERSION_NB_NF = 0,
-	/**< no BCLK inversion, FSYNC inversion */
+	/** no BCLK inversion, FSYNC inversion */
 	DAI_INVERSION_NB_IF = (2 << 8),
-	 /**< BCLK inversion, no FSYNC inversion */
+	/** BCLK inversion, no FSYNC inversion */
 	DAI_INVERSION_IB_NF = (3 << 8),
-	/**< BCLK inversion, FSYNC inversion */
+	/** BCLK inversion, FSYNC inversion */
 	DAI_INVERSION_IB_IF = (4 << 8),
 };
 
@@ -269,7 +269,7 @@ struct dai_config {
 	size_t block_size;
 	/** DAI specific link configuration. */
 	uint16_t link_config;
-	/**< tdm slot group number*/
+	/** tdm slot group number*/
 	uint32_t  tdm_slot_group;
 };
 
