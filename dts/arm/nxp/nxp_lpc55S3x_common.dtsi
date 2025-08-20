@@ -303,6 +303,63 @@
 		clocks = <&syscon MCUX_LPADC1_CLK>;
 	};
 
+	opamp0: opamp@400b4000 {
+		compatible = "nxp,opamp";
+		reg = <0x400b4000 0x1000>;
+		status = "disabled";
+		operation-mode = "low_noise";
+		#io-channel-cells = <1>;
+		functional-mode = "inverting";
+		enable-measure-output;
+		enable-non-inverting-reference;
+		support-programmable-gain;
+		programmable-gain = "OPAMP_GAIN_1",
+							"OPAMP_GAIN_2",
+							"OPAMP_GAIN_4",
+							"OPAMP_GAIN_8",
+							"OPAMP_GAIN_16",
+							"OPAMP_GAIN_33",
+							"OPAMP_GAIN_64";
+	};
+
+	opamp1: opamp@400b8000 {
+		compatible = "nxp,opamp";
+		reg = <0x400b8000 0x1000>;
+		status = "disabled";
+		operation-mode = "low_noise";
+		#io-channel-cells = <1>;
+		functional-mode = "inverting";
+		enable-measure-output;
+		enable-non-inverting-reference;
+		support-programmable-gain;
+		programmable-gain = "OPAMP_GAIN_1",
+							"OPAMP_GAIN_2",
+							"OPAMP_GAIN_4",
+							"OPAMP_GAIN_8",
+							"OPAMP_GAIN_16",
+							"OPAMP_GAIN_33",
+							"OPAMP_GAIN_64";
+	};
+
+	opamp2: opamp@400bb000 {
+		compatible = "nxp,opamp";
+		reg = <0x400bb000 0x1000>;
+		status = "disabled";
+		operation-mode = "low_noise";
+		#io-channel-cells = <1>;
+		functional-mode = "inverting";
+		enable-measure-output;
+		enable-non-inverting-reference;
+		support-programmable-gain;
+		programmable-gain = "OPAMP_GAIN_1",
+							"OPAMP_GAIN_2",
+							"OPAMP_GAIN_4",
+							"OPAMP_GAIN_8",
+							"OPAMP_GAIN_16",
+							"OPAMP_GAIN_33",
+							"OPAMP_GAIN_64";
+	};
+
 	dac0: dac@b2000 {
 		compatible = "nxp,lpdac";
 		reg = < 0xb2000 0x1000>;
