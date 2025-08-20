@@ -44,24 +44,27 @@ struct virtio_pci_notify_cap {
 
 struct virtio_pci_common_cfg {
 	uint32_t device_feature_select; /* read-write */
-	uint32_t device_feature; /* read-only for driver */
+	uint32_t device_feature;        /* read-only for driver */
 	uint32_t driver_feature_select; /* read-write */
-	uint32_t driver_feature; /* read-write */
-	uint16_t config_msix_vector; /* read-write */
-	uint16_t num_queues; /* read-only for driver */
-	uint8_t device_status; /* read-write */
-	uint8_t config_generation; /* read-only for driver */
+	uint32_t driver_feature;        /* read-write */
+	uint16_t config_msix_vector;    /* read-write */
+	uint16_t num_queues;            /* read-only for driver */
+	uint8_t device_status;          /* read-write */
+	uint8_t config_generation;      /* read-only for driver */
 
-	uint16_t queue_select; /* read-write */
-	uint16_t queue_size; /* read-write */
+	uint16_t queue_select;      /* read-write */
+	uint16_t queue_size;        /* read-write */
 	uint16_t queue_msix_vector; /* read-write */
-	uint16_t queue_enable; /* read-write */
-	uint16_t queue_notify_off; /* read-only for driver */
-	uint64_t queue_desc; /* read-write */
-	uint64_t queue_driver; /* read-write */
-	uint64_t queue_device; /* read-write */
+	uint16_t queue_enable;      /* read-write */
+	uint16_t queue_notify_off;  /* read-only for driver */
+	uint64_t queue_desc;        /* read-write */
+	uint64_t queue_driver;      /* read-write */
+	uint64_t queue_device;      /* read-write */
 	uint16_t queue_notify_data; /* read-only for driver */
-	uint16_t queue_reset; /* read-write */
+	uint16_t queue_reset;       /* read-write */
+
+	uint16_t admin_queue_index; /* read-only for driver */
+	uint16_t admin_queue_num;   /* read-only for driver */
 };
 
 #define VIRTIO_PCI_CAP_COMMON_CFG 1
@@ -341,6 +344,15 @@ static uint32_t virtio_pci_read_device_feature_word(const struct device *dev, ui
 	return sys_le32_to_cpu(data->common_cfg->device_feature);
 }
 
+static uint32_t virtio_pci_read_driver_feature_word(const struct device *dev, uint32_t word_n)
+{
+	struct virtio_pci_data *data = dev->data;
+
+	data->common_cfg->driver_feature_select = sys_cpu_to_le32(word_n);
+	barrier_dmem_fence_full();
+	return sys_le32_to_cpu(data->common_cfg->driver_feature);
+}
+
 static void virtio_pci_write_driver_feature_word(
 	const struct device *dev, uint32_t word_n, uint32_t val)
 {
@@ -363,7 +375,7 @@ static void virtio_pci_write_driver_feature_bit(const struct device *dev, int bi
 {
 	uint32_t word_n = bit / 32;
 	uint32_t mask = BIT(bit % 32);
-	uint32_t word = virtio_pci_read_device_feature_word(dev, word_n);
+	uint32_t word = virtio_pci_read_driver_feature_word(dev, word_n);
 
 	virtio_pci_write_driver_feature_word(dev, word_n, value ? word | mask : word & ~mask);
 }
@@ -371,8 +383,8 @@ static void virtio_pci_write_driver_feature_bit(const struct device *dev, int bi
 static int virtio_pci_write_driver_feature_bit_range_check(
 	const struct device *dev, int bit, bool value)
 {
-	if (!IN_RANGE(bit, DEV_TYPE_FEAT_RANGE_0_BEGIN, DEV_TYPE_FEAT_RANGE_0_END)
-		|| !IN_RANGE(bit, DEV_TYPE_FEAT_RANGE_1_BEGIN, DEV_TYPE_FEAT_RANGE_1_END)) {
+	if (!IN_RANGE(bit, DEV_TYPE_FEAT_RANGE_0_BEGIN, DEV_TYPE_FEAT_RANGE_0_END) &&
+	    !IN_RANGE(bit, DEV_TYPE_FEAT_RANGE_1_BEGIN, DEV_TYPE_FEAT_RANGE_1_END)) {
 		return -EINVAL;
 	}
 
