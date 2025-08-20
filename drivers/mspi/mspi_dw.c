@@ -691,7 +691,6 @@ static int _api_dev_config(const struct device *dev,
 	}
 
 	if (param_mask & MSPI_DEVICE_CONFIG_DATA_RATE) {
-		/* TODO: add support for DDR */
 		dev_data->spi_ctrlr0 &= ~(SPI_CTRLR0_SPI_DDR_EN_BIT |
 					  SPI_CTRLR0_INST_DDR_EN_BIT);
 		switch (cfg->data_rate) {
@@ -712,10 +711,10 @@ static int _api_dev_config(const struct device *dev,
 	}
 
 	if (param_mask & MSPI_DEVICE_CONFIG_DQS) {
-		/* TODO: add support for DQS */
+		dev_data->spi_ctrlr0 &= ~SPI_CTRLR0_SPI_RXDS_EN_BIT;
+
 		if (cfg->dqs_enable) {
-			LOG_ERR("DQS line is not supported.");
-			return -ENOTSUP;
+			dev_data->spi_ctrlr0 |= SPI_CTRLR0_SPI_RXDS_EN_BIT;
 		}
 	}
 
