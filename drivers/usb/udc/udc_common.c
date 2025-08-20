@@ -269,11 +269,11 @@ static bool ep_check_config(const struct device *dev,
 	return true;
 }
 
-int udc_ep_try_config(const struct device *dev,
-		      const uint8_t ep,
-		      const uint8_t attributes,
-		      const uint16_t mps,
-		      const uint8_t interval)
+int udc_ep_claim_config(const struct device *dev,
+			const uint8_t ep,
+			const uint8_t attributes,
+			const uint16_t mps,
+			const uint8_t interval)
 {
 	const struct udc_api *api = dev->api;
 	struct udc_ep_config *cfg;
