@@ -85,6 +85,13 @@ config ZBUS_MULTIDOMAIN_UART_BUF_COUNT
 
 endif # ZBUS_MULTIDOMAIN_UART
 
+config ZBUS_MULTIDOMAIN_IPC
+	bool "ZBus multidomain IPC backend"
+	depends on IPC_SERVICE
+	help
+	  Enables the ZBus multidomain IPC backend, allowing communication between domains over IPC.
+	  This feature is useful for systems that require inter-domain communication via IPC.
+
 module = ZBUS_MULTIDOMAIN
 module-str = zbus_multidomain
 source "subsys/logging/Kconfig.template.log_config"

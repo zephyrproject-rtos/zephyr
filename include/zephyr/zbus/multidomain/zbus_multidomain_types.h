@@ -32,7 +32,8 @@ extern "C" {
  * Zbus setup. Each type corresponds to a different communication backend.
  */
 enum zbus_multidomain_type {
-	ZBUS_MULTIDOMAIN_TYPE_UART
+	ZBUS_MULTIDOMAIN_TYPE_UART,
+	ZBUS_MULTIDOMAIN_TYPE_IPC
 };
 
 /**

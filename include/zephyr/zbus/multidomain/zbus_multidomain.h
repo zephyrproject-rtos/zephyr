@@ -18,6 +18,9 @@
 #if defined(CONFIG_ZBUS_MULTIDOMAIN_UART)
 #include <zephyr/zbus/multidomain/zbus_multidomain_uart.h>
 #endif
+#if defined(CONFIG_ZBUS_MULTIDOMAIN_IPC)
+#include <zephyr/zbus/multidomain/zbus_multidomain_ipc.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
