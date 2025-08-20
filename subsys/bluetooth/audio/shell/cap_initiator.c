@@ -1446,6 +1446,7 @@ static size_t nonconnectable_ad_data_add(struct bt_data *data_array, const size_
 
 			return 0;
 		}
+		bt_shell_print("Generated broadcast_id 0x%06X", broadcast_id);
 
 		sys_put_le24(broadcast_id, &ad_cap_broadcast_announcement[2]);
 		data_array[0].type = BT_DATA_SVC_DATA16;
