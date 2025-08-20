@@ -156,9 +156,9 @@
 			status = "disabled";
 		};
 
-		uart1: uart@4000a100 {
+		uart1: uart@2000a100 {
 			compatible = "bflb,uart";
-			reg = <0x4000a100 0x100>;
+			reg = <0x2000a100 0x100>;
 			interrupts = <45 1>;
 			interrupt-parent = <&clic>;
 			status = "disabled";
