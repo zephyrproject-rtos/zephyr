@@ -2291,13 +2291,9 @@ static uint8_t att_prep_write_rsp(struct bt_att_chan *chan, uint16_t handle,
 
 	return 0;
 }
-#endif /* CONFIG_BT_ATT_PREPARE_COUNT */
 
 static uint8_t att_prepare_write_req(struct bt_att_chan *chan, struct net_buf *buf)
 {
-#if CONFIG_BT_ATT_PREPARE_COUNT == 0
-	return BT_ATT_ERR_NOT_SUPPORTED;
-#else
 	struct bt_att_prepare_write_req *req;
 	uint16_t handle, offset;
 
@@ -2309,10 +2305,8 @@ static uint8_t att_prepare_write_req(struct bt_att_chan *chan, struct net_buf *b
 	LOG_DBG("handle 0x%04x offset %u", handle, offset);
 
 	return att_prep_write_rsp(chan, handle, offset, buf->data, buf->len);
-#endif /* CONFIG_BT_ATT_PREPARE_COUNT */
 }
 
-#if CONFIG_BT_ATT_PREPARE_COUNT > 0
 static uint8_t exec_write_reassemble(uint16_t handle, uint16_t offset,
 				     sys_slist_t *list,
 				     struct net_buf_simple *buf)
@@ -2432,14 +2426,9 @@ static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
 
 	return 0;
 }
-#endif /* CONFIG_BT_ATT_PREPARE_COUNT */
-
 
 static uint8_t att_exec_write_req(struct bt_att_chan *chan, struct net_buf *buf)
 {
-#if CONFIG_BT_ATT_PREPARE_COUNT == 0
-	return BT_ATT_ERR_NOT_SUPPORTED;
-#else
 	struct bt_att_exec_write_req *req;
 
 	req = (void *)buf->data;
@@ -2447,8 +2436,8 @@ static uint8_t att_exec_write_req(struct bt_att_chan *chan, struct net_buf *buf)
 	LOG_DBG("flags 0x%02x", req->flags);
 
 	return att_exec_write_rsp(chan, req->flags);
-#endif /* CONFIG_BT_ATT_PREPARE_COUNT */
 }
+#endif /* CONFIG_BT_ATT_PREPARE_COUNT > 0 */
 
 static uint8_t att_write_cmd(struct bt_att_chan *chan, struct net_buf *buf)
 {
@@ -2806,6 +2795,7 @@ static const struct att_handler {
 		sizeof(struct bt_att_write_req),
 		ATT_REQUEST,
 		att_write_req },
+#if CONFIG_BT_ATT_PREPARE_COUNT > 0
 	{ BT_ATT_OP_PREPARE_WRITE_REQ,
 		sizeof(struct bt_att_prepare_write_req),
 		ATT_REQUEST,
@@ -2814,6 +2804,7 @@ static const struct att_handler {
 		sizeof(struct bt_att_exec_write_req),
 		ATT_REQUEST,
 		att_exec_write_req },
+#endif /* CONFIG_BT_ATT_PREPARE_COUNT > 0 */
 	{ BT_ATT_OP_CONFIRM,
 		0,
 		ATT_CONFIRMATION,
