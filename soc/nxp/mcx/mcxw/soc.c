@@ -204,6 +204,7 @@ __weak void clock_init(void)
 
 	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexio), nxp_flexio, okay)) {
 		CLOCK_EnableClock(kCLOCK_Flexio0);
+	}
 
 	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(i3c0), nxp_mcux_i3c, okay)) {
 		CLOCK_EnableClock(kCLOCK_I3c0);
