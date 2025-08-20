@@ -545,7 +545,10 @@ int dns_unpack_name(const uint8_t *msg, int maxlen, const uint8_t *src,
 
 			loop_check += label_len + 1;
 
-			net_buf_add_u8(buf, '.');
+			/* separate labels by periods */
+			if (buf->len > 0) {
+				net_buf_add_u8(buf, '.');
+			}
 			net_buf_add_mem(buf, curr_src, label_len);
 
 			curr_src += label_len;
