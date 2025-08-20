@@ -1358,6 +1358,16 @@ static void uart_stm32_isr(const struct device *dev)
 #endif
 
 #ifdef CONFIG_UART_ASYNC_API
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	/* If both ASYNC and INTERRUPT modes are supported in this build,
+	 * check whether this instance is currently being used via the
+	 * interrupt-driven API. If it is, do not process interrupt flags
+	 * as the user callback invoked earlier is responsible for that.
+	 */
+	if (data->user_cb) {
+		return;
+	}
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 	if (LL_USART_IsEnabledIT_IDLE(usart) &&
 			LL_USART_IsActiveFlag_IDLE(usart)) {
 
