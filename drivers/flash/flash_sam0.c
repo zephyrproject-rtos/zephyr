@@ -224,7 +224,7 @@ static int flash_sam0_commit(const struct device *dev, off_t base)
 	for (page = 0; page < PAGES_PER_ROW; page++) {
 		err = flash_sam0_write_page(
 			dev, base + page * FLASH_PAGE_SIZE,
-			&ctx->buf[page * FLASH_PAGE_SIZE], ROW_SIZE);
+			&ctx->buf[page * FLASH_PAGE_SIZE], FLASH_PAGE_SIZE);
 		if (err != 0) {
 			return err;
 		}
