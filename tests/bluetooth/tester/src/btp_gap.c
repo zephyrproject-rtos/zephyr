@@ -66,17 +66,46 @@ static struct bt_le_oob oob_sc_remote = { 0 };
 #define REJECT_LATENCY 0x0000
 #define REJECT_SUPERVISION_TIMEOUT 0x0C80
 
+/* Used to store CAR support status of peer devices. */
 static struct {
 	bt_addr_le_t addr;
+	bool paired;
 	bool supported;
-} cars[CONFIG_BT_MAX_PAIRED];
+} peers_with_car[CONFIG_BT_MAX_PAIRED];
+
+static void add_to_peers_with_car(const bt_addr_le_t *addr, bool supported)
+{
+
+	for (int i = 0; i < CONFIG_BT_MAX_PAIRED; i++) {
+		if (!peers_with_car[i].paired) {
+			peers_with_car[i].paired = true;
+			peers_with_car[i].supported = supported;
+			bt_addr_le_copy(&peers_with_car[i].addr, addr);
+			return;
+		}
+	}
+}
+
+static void remove_from_peers_with_car(const bt_addr_le_t *addr)
+{
+
+	for (int i = 0; i < CONFIG_BT_MAX_PAIRED; i++) {
+		if (peers_with_car[i].paired && bt_addr_le_cmp(addr, &peers_with_car[i].addr)) {
+			peers_with_car[i].paired = false;
+			return;
+		}
+	}
+}
 
 static uint8_t read_car_cb(struct bt_conn *conn, uint8_t err,
 			  struct bt_gatt_read_params *params, const void *data,
 			  uint16_t length)
 {
+	struct btp_gap_peer_car_status_ev ev;
 	struct bt_conn_info info;
 	bool supported = false;
+
+	ev.car = 0x00;
 
 	if (!err && data && length == 1) {
 		const uint8_t *tmp = data;
@@ -84,17 +113,16 @@ static uint8_t read_car_cb(struct bt_conn *conn, uint8_t err,
 		/* only 0 or 1 are valid values */
 		if (tmp[0] == 1) {
 			supported = true;
+			ev.car = 0x01;
 		}
 	}
 
 	bt_conn_get_info(conn, &info);
 
-	for (int i = 0; i < CONFIG_BT_MAX_PAIRED; i++) {
-		if (bt_addr_le_eq(info.le.dst, &cars[i].addr)) {
-			cars[i].supported = supported;
-			break;
-		}
-	}
+	add_to_peers_with_car(info.le.dst, supported);
+
+	bt_addr_le_copy(&ev.address, info.le.dst);
+	tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_PEER_CAR_RECEIVED, &ev, sizeof(ev));
 
 	return BT_GATT_ITER_STOP;
 }
@@ -165,6 +193,7 @@ static void le_disconnected(struct bt_conn *conn, uint8_t reason)
 		addr = bt_conn_get_dst(conn);
 		(void)bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
 		bt_addr_le_copy(&ev.address, addr);
+		remove_from_peers_with_car(addr);
 	} else if (IS_ENABLED(CONFIG_BT_CLASSIC) && bt_conn_is_type(conn, BT_CONN_TYPE_BR)) {
 		const bt_addr_t *br_addr;
 
@@ -972,25 +1001,32 @@ static uint8_t start_directed_advertising(const void *cmd, uint16_t cmd_len,
 {
 	const struct btp_gap_start_directed_adv_cmd *cp = cmd;
 	struct btp_gap_start_directed_adv_rp *rp = rsp;
-	struct bt_le_adv_param adv_param;
+	struct bt_le_adv_param adv_param = BT_LE_ADV_PARAM_INIT(
+		BT_LE_ADV_OPT_CONN, BT_GAP_ADV_FAST_INT_MIN_2, BT_GAP_ADV_FAST_INT_MAX_2, NULL);
 	uint16_t options = sys_le16_to_cpu(cp->options);
 
-	adv_param = *BT_LE_ADV_CONN_DIR(&cp->address);
-
-	if (!(options & BTP_GAP_START_DIRECTED_ADV_HD)) {
-		adv_param.options |= BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY;
-		adv_param.interval_max = BT_GAP_ADV_FAST_INT_MAX_2;
-		adv_param.interval_min = BT_GAP_ADV_FAST_INT_MIN_2;
-	}
-
 	if (IS_ENABLED(CONFIG_BT_PRIVACY) && (options & BTP_GAP_START_DIRECTED_ADV_PEER_RPA)) {
-		/* check if peer supports Central Address Resolution */
+		/*
+		 * Check if peer supports Central Address Resolution.
+		 * if not supported the advertisement will be started as undirected
+		 */
 		for (int i = 0; i < CONFIG_BT_MAX_PAIRED; i++) {
-			if (bt_addr_le_eq(&cp->address, &cars[i].addr)) {
-				if (cars[i].supported) {
+			if (bt_addr_le_eq(&cp->address, &peers_with_car[i].addr)) {
+				if (peers_with_car[i].supported) {
 					adv_param.options |= BT_LE_ADV_OPT_DIR_ADDR_RPA;
+					adv_param.peer = &cp->address;
+					if (!(options & BTP_GAP_START_DIRECTED_ADV_HD)) {
+						adv_param.options |=
+							BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY;
+					}
+					break;
 				}
 			}
+		}
+	} else {
+		adv_param.peer = &cp->address;
+		if (!(options & BTP_GAP_START_DIRECTED_ADV_HD)) {
+			adv_param.options |= BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY;
 		}
 	}
 
