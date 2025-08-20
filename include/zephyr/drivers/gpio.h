@@ -37,6 +37,11 @@ extern "C" {
  * @version 1.0.0
  * @ingroup io_interfaces
  * @{
+ *
+ * @defgroup gpio_interface_ext Device-specific GPIO API extensions
+ *
+ * @{
+ * @}
  */
 
 /**
