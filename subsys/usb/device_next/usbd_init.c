@@ -43,9 +43,9 @@ static int assign_ep_addr(const struct device *dev,
 		}
 
 
-		ret = udc_ep_try_config(dev, ep,
-					ed->bmAttributes, mps,
-					ed->bInterval);
+		ret = udc_ep_claim_config(dev, ep,
+					  ed->bmAttributes, mps,
+					  ed->bInterval);
 
 		if (ret == 0) {
 			LOG_DBG("ep 0x%02x -> 0x%02x", ed->bEndpointAddress, ep);

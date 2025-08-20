@@ -112,9 +112,9 @@ static void test_udc_ep_try_config(const struct device *dev,
 			ep = USB_EP_DIR_OUT | idx;
 		}
 
-		err = udc_ep_try_config(dev, ep,
-					ed->bmAttributes, mps,
-					ed->bInterval);
+		err = udc_ep_claim_config(dev, ep,
+					  ed->bmAttributes, mps,
+					  ed->bInterval);
 
 		if (!err) {
 			ed->bEndpointAddress = ep;
@@ -404,9 +404,9 @@ static void test_udc_ep_mps(uint8_t type)
 	}
 
 	for (uint8_t i = 1; i < 16U; i++) {
-		err = udc_ep_try_config(dev, i,
-					ed.bmAttributes, supported,
-					ed.bInterval);
+		err = udc_ep_claim_config(dev, i,
+					  ed.bmAttributes, supported,
+					  ed.bInterval);
 		if (!err) {
 			out_ep = i;
 			break;
@@ -416,9 +416,9 @@ static void test_udc_ep_mps(uint8_t type)
 	zassert_ok(err, "Failed to determine OUT MPS");
 
 	for (uint8_t i = 1; i < 16U; i++) {
-		err = udc_ep_try_config(dev, i | USB_EP_DIR_IN,
-					ed.bmAttributes, supported,
-					ed.bInterval);
+		err = udc_ep_claim_config(dev, i | USB_EP_DIR_IN,
+					  ed.bmAttributes, supported,
+					  ed.bInterval);
 		if (!err) {
 			in_ep = i | USB_EP_DIR_IN;
 			break;
