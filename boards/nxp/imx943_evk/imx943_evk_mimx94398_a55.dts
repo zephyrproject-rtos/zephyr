@@ -51,13 +51,13 @@
 	pinctrl-names = "default";
 	status = "okay";
 
-	phy0: phy@f {
+	phy0: phy@2 {
 		compatible = "ethernet-phy";
 		reg = <0xf>;
 		status = "disabled";
 	};
 
-	phy1: phy@10 {
+	phy1: phy@3 {
 		compatible = "ethernet-phy";
 		reg = <0x10>;
 		status = "disabled";
@@ -108,4 +108,28 @@
 
 &netc_ptp_clock0 {
 	status = "okay";
+};
+
+&switch_port0 {
+	zephyr,random-mac-address;
+	pinctrl-0 = <&eth0_default>;
+	pinctrl-names = "default";
+	phy-handle = <&phy0>;
+	phy-connection-type = "mii";
+	status = "disabled";
+};
+
+&switch_port1 {
+	zephyr,random-mac-address;
+	pinctrl-0 = <&eth1_default>;
+	pinctrl-names = "default";
+	phy-handle = <&phy1>;
+	phy-connection-type = "mii";
+	status = "disabled";
+};
+
+/* Internal port */
+&switch_port3 {
+	zephyr,random-mac-address;
+	status = "disabled";
 };
