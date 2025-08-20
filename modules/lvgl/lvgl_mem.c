@@ -29,7 +29,11 @@ void *lvgl_malloc(size_t size)
 	void *ret;
 
 	key = k_spin_lock(&lvgl_heap_lock);
-	ret = sys_heap_alloc(&lvgl_heap, size);
+	if (CONFIG_LV_Z_MEMORY_POOL_ALLOC_ALIGN > 0) {
+		ret = sys_heap_aligned_alloc(&lvgl_heap, CONFIG_LV_Z_MEMORY_POOL_ALLOC_ALIGN, size);
+	} else {
+		ret = sys_heap_alloc(&lvgl_heap, size);
+	}
 	k_spin_unlock(&lvgl_heap_lock, key);
 
 	return ret;
@@ -41,7 +45,12 @@ void *lvgl_realloc(void *ptr, size_t size)
 	void *ret;
 
 	key = k_spin_lock(&lvgl_heap_lock);
-	ret = sys_heap_realloc(&lvgl_heap, ptr, size);
+	if (CONFIG_LV_Z_MEMORY_POOL_ALLOC_ALIGN > 0) {
+		ret = sys_heap_aligned_realloc(&lvgl_heap, ptr, CONFIG_LV_Z_MEMORY_POOL_ALLOC_ALIGN,
+					       size);
+	} else {
+		ret = sys_heap_realloc(&lvgl_heap, ptr, size);
+	}
 	k_spin_unlock(&lvgl_heap_lock, key);
 
 	return ret;

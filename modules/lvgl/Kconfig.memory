@@ -36,21 +36,31 @@ choice LV_Z_MEMORY_POOL
 
 endchoice
 
+if LV_Z_MEM_POOL_SYS_HEAP
+
 config LV_Z_MEM_POOL_SIZE
 	int "Memory pool size"
 	default 2048
-	depends on LV_Z_MEM_POOL_SYS_HEAP
 	help
 	  Size of the memory pool in bytes
 
 config LV_Z_MEMORY_POOL_CUSTOM_SECTION
 	bool "Link memory pool to custom section"
-	depends on LV_Z_MEM_POOL_SYS_HEAP
 	help
 	  Place LVGL memory pool in custom section, with tag ".lvgl_heap".
 	  This can be used by custom linker scripts to relocate the LVGL
 	  memory pool to a custom location, such as tightly coupled or
 	  external memory.
+
+config LV_Z_MEMORY_POOL_ALLOC_ALIGN
+	int "Align allocated buffers"
+	default 32 if LV_USE_PXP
+	default 0
+	help
+	  Alignment of the buffers allocated from the LVGL memory pool.
+	  Set to zero for no alignment restrictions.
+
+endif
 
 config LV_Z_VDB_SIZE
 	int "Rendering buffer size"
