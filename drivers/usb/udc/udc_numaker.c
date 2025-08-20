@@ -11,6 +11,7 @@
 #include <zephyr/drivers/clock_control/clock_control_numaker.h>
 #include <zephyr/drivers/reset.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/cache.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(udc_numaker, CONFIG_UDC_DRIVER_LOG_LEVEL);
@@ -64,8 +65,14 @@ BUILD_ASSERT(!(DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd) &&
 
 /* USBD controller does not support DMA, and PHY does not require a delay after reset. */
 
+#if defined(CONFIG_SOC_SERIES_M46X)
 #if !defined(USBD_ATTR_PWRDN_Msk)
 #define USBD_ATTR_PWRDN_Msk BIT(9)
+#endif
+#elif defined(CONFIG_SOC_SERIES_M55M1X)
+#if !defined(SYS_USBPHY_USBROLE_STD_USBD)
+#define SYS_USBPHY_USBROLE_STD_USBD (0x0 << SYS_USBPHY_USBROLE_Pos)
+#endif
 #endif
 
 #elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
@@ -84,6 +91,15 @@ BUILD_ASSERT(!(DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd) &&
 
 /* Wait for USB/PHY stable timeout 100 ms */
 #define NUMAKER_HSUSBD_PHY_STABLE_TIMEOUT_US 100000
+
+#if defined(CONFIG_SOC_SERIES_M46X)
+#define CEPBUFSTART CEPBUFST
+#define EPBUFSTART  EPBUFST
+#elif defined(CONFIG_SOC_SERIES_M55M1X)
+#if !defined(SYS_USBPHY_HSUSBROLE_STD_USBD)
+#define SYS_USBPHY_HSUSBROLE_STD_USBD (0x0 << SYS_USBPHY_HSUSBROLE_Pos)
+#endif
+#endif
 
 #endif
 
@@ -257,6 +273,16 @@ static inline void numaker_usbd_sw_connect(const struct device *dev)
 	base->CEPINTEN = HSUSBD_CEPINTEN_STSDONEIEN_Msk | HSUSBD_CEPINTEN_ERRIEN_Msk |
 			 HSUSBD_CEPINTEN_STALLIEN_Msk | HSUSBD_CEPINTEN_SETUPPKIEN_Msk |
 			 HSUSBD_CEPINTEN_SETUPTKIEN_Msk;
+
+	/* Enable USB handshake
+	 *
+	 * Being unset, USB handshake won't start, including bus events
+	 * reset/suspend/resume. Per test, this bit also takes effect
+	 * for full-speed;
+	 */
+#if defined(HSUSBD_OPER_HISHSEN_Msk)
+	base->OPER |= HSUSBD_OPER_HISHSEN_Msk;
+#endif
 
 	/* Clear SE0 for connect */
 	base->PHYCTL |= HSUSBD_PHYCTL_DPPUEN_Msk;
@@ -452,14 +478,23 @@ static int numaker_usbd_hw_setup(const struct device *dev)
 		      (SYS_USBPHY_USBROLE_STD_USBD | SYS_USBPHY_USBEN_Msk | SYS_USBPHY_SBO_Msk);
 #elif defined(CONFIG_SOC_SERIES_M55M1X)
 	SYS->USBPHY = (SYS->USBPHY & ~SYS_USBPHY_USBROLE_Msk) |
-		      ((0 << SYS_USBPHY_USBROLE_Pos) | SYS_USBPHY_OTGPHYEN_Msk);
+		      (SYS_USBPHY_USBROLE_STD_USBD | SYS_USBPHY_OTGPHYEN_Msk);
 #endif
 #elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
+#if defined(CONFIG_SOC_SERIES_M46X)
 	/* Configure HSUSB role as USB Device and enable HSUSB/PHY */
 	SYS->USBPHY = (SYS->USBPHY & ~(SYS_USBPHY_HSUSBROLE_Msk | SYS_USBPHY_HSUSBACT_Msk)) |
 		      (SYS_USBPHY_HSUSBROLE_STD_USBD | SYS_USBPHY_HSUSBEN_Msk | SYS_USBPHY_SBO_Msk);
 	k_sleep(K_USEC(NUMAKER_HSUSBD_PHY_RESET_US));
 	SYS->USBPHY |= SYS_USBPHY_HSUSBACT_Msk;
+#elif defined(CONFIG_SOC_SERIES_M55M1X)
+	/* Configure HSUSB role as USB Device and enable HSUSB/PHY */
+	SYS->USBPHY = (SYS->USBPHY & ~(SYS_USBPHY_HSUSBROLE_Msk | SYS_USBPHY_HSUSBACT_Msk)) |
+		      (SYS_USBPHY_HSUSBROLE_STD_USBD | SYS_USBPHY_HSOTGPHYEN_Msk);
+	k_sleep(K_USEC(NUMAKER_HSUSBD_PHY_RESET_US));
+	SYS->USBPHY |= SYS_USBPHY_HSUSBACT_Msk;
+#endif
+
 #endif
 
 	/* Invoke Clock controller to enable module clock */
@@ -536,7 +571,6 @@ static int numaker_usbd_hw_setup(const struct device *dev)
 
 	/* Initialize IRQ */
 	config->irq_config_func(dev);
-
 cleanup:
 
 	SYS_LockReg();
@@ -1013,6 +1047,13 @@ static int numaker_hsusbd_ep_xfer_user_dma(struct numaker_usbd_ep *ep_cur, uint8
 			       : 0;
 	base->DMACTL |= USB_EP_GET_IDX(ep_cur->addr) << HSUSBD_DMACTL_EPNUM_Pos;
 
+	/* Cache coherency */
+	if (USB_EP_DIR_IS_IN(ep_cur->addr)) {
+		sys_cache_data_flush_range(usrbuf, *size);
+	} else {
+		sys_cache_data_invd_range(usrbuf, *size);
+	}
+
 	/* Start DMA */
 	base->DMACTL |= HSUSBD_DMACTL_DMAEN_Msk;
 
@@ -1228,10 +1269,10 @@ static void numaker_usbd_ep_config_dmabuf(struct numaker_usbd_ep *ep_cur, uint32
 	ep_base->BUFSEG = dmabuf_base;
 #elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
 	if (ep_cur->ep_hw_idx == CEP) {
-		base->CEPBUFST = dmabuf_base;
+		base->CEPBUFSTART = dmabuf_base;
 		base->CEPBUFEND = dmabuf_base + dmabuf_size - 1ul;
 	} else {
-		ep_base->EPBUFST = dmabuf_base;
+		ep_base->EPBUFSTART = dmabuf_base;
 		ep_base->EPBUFEND = dmabuf_base + dmabuf_size - 1ul;
 	}
 #endif
@@ -2380,6 +2421,19 @@ static void numaker_usbd_isr(const struct device *dev)
 			/* USB unplug */
 			numaker_usbd_vbus_unplug_th(dev);
 		}
+	}
+
+	/* Managed USB suspend interrupt
+	 *
+	 * For HSUSBD, on some chips e.g. M55M1, the semantics of USB suspend flag
+	 * is state rather than event. To prevent CPU from overwhelming by this
+	 * interrupt continuously, make it alarm one-shot instead of continuous.
+	 */
+	if (busintsts & (HSUSBD_BUSINTSTS_RSTIF_Msk | HSUSBD_BUSINTSTS_RESUMEIF_Msk)) {
+		busintsts &= ~HSUSBD_BUSINTSTS_SUSPENDIF_Msk;
+		base->BUSINTEN |= HSUSBD_BUSINTEN_SUSPENDIEN_Msk;
+	} else if (busintsts & HSUSBD_BUSINTSTS_SUSPENDIF_Msk) {
+		base->BUSINTEN &= ~HSUSBD_BUSINTEN_SUSPENDIEN_Msk;
 	}
 
 	/* USB reset */
