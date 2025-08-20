@@ -39,6 +39,14 @@ config ZBUS_PROXY_AGENT_UART
 	help
 	  Enables the ZBus proxy agent UART backend, allowing for ZBus between domains over UART.
 
+config ZBUS_PROXY_AGENT_IPC
+	bool "ZBus proxy agent IPC backend"
+	select IPC_SERVICE
+	select MBOX
+	select CRC
+	help
+	  Enables the ZBus proxy agent IPC backend, allowing communication between domains over IPC.
+
 module = ZBUS_PROXY_AGENT
 module-str = zbus_proxy_agent
 source "subsys/logging/Kconfig.template.log_config"
