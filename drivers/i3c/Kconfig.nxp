@@ -17,3 +17,12 @@ config I3C_MCUX
 	default y
 	help
 	  Enable mcux I3C driver.
+
+config I3C_NXP_TRANSFER_TIMEOUT
+	int "Transfer timeout [ms]"
+	default 500
+	depends on I3C_MCUX
+	help
+	  Timeout in milliseconds used for each I3C transfer.
+	  0 means that the driver should use the K_FOREVER value,
+	  i.e. it should wait as long as necessary.
