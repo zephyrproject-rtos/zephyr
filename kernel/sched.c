@@ -999,13 +999,9 @@ static inline void z_vrfy_k_thread_priority_set(k_tid_t thread, int prio)
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_SCHED_DEADLINE
-void z_impl_k_thread_deadline_set(k_tid_t tid, int deadline)
+void z_impl_k_thread_absolute_deadline_set(k_tid_t tid, int deadline)
 {
-
-	deadline = CLAMP(deadline, 0, INT_MAX);
-
 	struct k_thread *thread = tid;
-	int32_t newdl = k_cycle_get_32() + deadline;
 
 	/* The prio_deadline field changes the sorting order, so can't
 	 * change it while the thread is in the run queue (dlists
@@ -1016,15 +1012,35 @@ void z_impl_k_thread_deadline_set(k_tid_t tid, int deadline)
 	K_SPINLOCK(&_sched_spinlock) {
 		if (z_is_thread_queued(thread)) {
 			dequeue_thread(thread);
-			thread->base.prio_deadline = newdl;
+			thread->base.prio_deadline = deadline;
 			queue_thread(thread);
 		} else {
-			thread->base.prio_deadline = newdl;
+			thread->base.prio_deadline = deadline;
 		}
 	}
 }
 
+void z_impl_k_thread_deadline_set(k_tid_t tid, int deadline)
+{
+
+	deadline = CLAMP(deadline, 0, INT_MAX);
+
+	int32_t newdl = k_cycle_get_32() + deadline;
+
+	z_impl_k_thread_absolute_deadline_set(tid, newdl);
+}
+
 #ifdef CONFIG_USERSPACE
+static inline void z_vrfy_k_thread_absolute_deadline_set(k_tid_t tid, int deadline)
+{
+	struct k_thread *thread = tid;
+
+	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+
+	z_impl_k_thread_absolute_deadline_set((k_tid_t)thread, deadline);
+}
+#include <zephyr/syscalls/k_thread_absolute_deadline_set_mrsh.c>
+
 static inline void z_vrfy_k_thread_deadline_set(k_tid_t tid, int deadline)
 {
 	struct k_thread *thread = tid;
