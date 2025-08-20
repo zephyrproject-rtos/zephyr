@@ -26,10 +26,10 @@ typedef bool (*timer_isr_t)(void *);
 
 struct counter_esp32_top_data {
 	counter_top_callback_t callback;
-	uint32_t ticks;
+	counter_ticks_t ticks;
 	void *user_data;
 	bool auto_reload;
-	uint32_t guard_period;
+	counter_ticks_t guard_period;
 };
 
 struct counter_esp32_config {
@@ -47,7 +47,7 @@ struct counter_esp32_config {
 struct counter_esp32_data {
 	struct counter_alarm_cfg alarm_cfg;
 	struct counter_esp32_top_data top_data;
-	uint32_t ticks;
+	counter_ticks_t ticks;
 	uint32_t clock_src_hz;
 	timer_hal_context_t hal_ctx;
 };
@@ -120,17 +120,7 @@ static int counter_esp32_stop(const struct device *dev)
 	return 0;
 }
 
-static int counter_esp32_get_value(const struct device *dev, uint32_t *ticks)
-{
-	struct counter_esp32_data *data = dev->data;
-
-	timer_ll_trigger_soft_capture(data->hal_ctx.dev, data->hal_ctx.timer_id);
-	*ticks = (uint32_t)timer_ll_get_counter_value(data->hal_ctx.dev, data->hal_ctx.timer_id);
-
-	return 0;
-}
-
-static int counter_esp32_get_value_64(const struct device *dev, uint64_t *ticks)
+static int counter_esp32_get_value_64(const struct device *dev, counter_ticks_t *ticks)
 {
 	struct counter_esp32_data *data = dev->data;
 
@@ -146,12 +136,12 @@ static int counter_esp32_set_alarm(const struct device *dev, uint8_t chan_id,
 	ARG_UNUSED(chan_id);
 	struct counter_esp32_data *data = dev->data;
 	bool absolute = alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE;
-	uint32_t ticks = alarm_cfg->ticks;
-	uint32_t top = data->top_data.ticks;
-	uint32_t max_rel_val = data->top_data.ticks;
-	uint64_t now;
+	counter_ticks_t ticks = alarm_cfg->ticks;
+	counter_ticks_t top = data->top_data.ticks;
+	counter_ticks_t max_rel_val = data->top_data.ticks;
+	counter_ticks_t now;
 	uint64_t target;
-	uint32_t diff;
+	uint64_t diff;
 	int err = 0;
 	bool irq_on_late = 0;
 
@@ -177,7 +167,7 @@ static int counter_esp32_set_alarm(const struct device *dev, uint8_t chan_id,
 
 	timer_ll_set_alarm_value(data->hal_ctx.dev, data->hal_ctx.timer_id, target);
 
-	diff = (alarm_cfg->ticks - (uint32_t)now);
+	diff = (alarm_cfg->ticks - now);
 	if (diff > max_rel_val) {
 		if (absolute) {
 			err = -ETIME;
@@ -220,7 +210,7 @@ static int counter_esp32_set_top_value(const struct device *dev, const struct co
 {
 	const struct counter_esp32_config *config = dev->config;
 	struct counter_esp32_data *data = dev->data;
-	uint32_t now;
+	counter_ticks_t now;
 
 	if (data->alarm_cfg.callback) {
 		return -EBUSY;
@@ -230,7 +220,7 @@ static int counter_esp32_set_top_value(const struct device *dev, const struct co
 		return -ENOTSUP;
 	}
 
-	counter_esp32_get_value(dev, &now);
+	counter_esp32_get_value_64(dev, &now);
 
 	if (!(cfg->flags & COUNTER_TOP_CFG_DONT_RESET)) {
 		timer_hal_set_counter_value(&data->hal_ctx, 0);
@@ -267,7 +257,7 @@ static uint32_t counter_esp32_get_pending_int(const struct device *dev)
 	return timer_ll_get_intr_status(data->hal_ctx.dev);
 }
 
-static uint32_t counter_esp32_get_top_value(const struct device *dev)
+static counter_ticks_t counter_esp32_get_top_value(const struct device *dev)
 {
 	struct counter_esp32_data *data = dev->data;
 
@@ -291,7 +281,7 @@ static int counter_esp32_reset(const struct device *dev)
 	return 0;
 }
 
-static uint32_t counter_esp32_get_guard_period(const struct device *dev, uint32_t flags)
+static counter_ticks_t counter_esp32_get_guard_period(const struct device *dev, uint32_t flags)
 {
 	struct counter_esp32_data *data = dev->data;
 
@@ -300,7 +290,8 @@ static uint32_t counter_esp32_get_guard_period(const struct device *dev, uint32_
 	return data->top_data.guard_period;
 }
 
-static int counter_esp32_set_guard_period(const struct device *dev, uint32_t ticks, uint32_t flags)
+static int counter_esp32_set_guard_period(const struct device *dev, counter_ticks_t ticks,
+					  uint32_t flags)
 {
 	struct counter_esp32_data *data = dev->data;
 
@@ -317,9 +308,8 @@ static int counter_esp32_set_guard_period(const struct device *dev, uint32_t tic
 static DEVICE_API(counter, counter_api) = {
 	.start = counter_esp32_start,
 	.stop = counter_esp32_stop,
-	.get_value = counter_esp32_get_value,
 	.reset = counter_esp32_reset,
-	.get_value_64 = counter_esp32_get_value_64,
+	.get_value = counter_esp32_get_value_64,
 	.set_alarm = counter_esp32_set_alarm,
 	.cancel_alarm = counter_esp32_cancel_alarm,
 	.set_top_value = counter_esp32_set_top_value,
@@ -336,9 +326,9 @@ static void counter_esp32_isr(void *arg)
 	struct counter_esp32_data *data = dev->data;
 	counter_alarm_callback_t cb = data->alarm_cfg.callback;
 	void *cb_data = data->alarm_cfg.user_data;
-	uint32_t now;
+	counter_ticks_t now;
 
-	counter_esp32_get_value(dev, &now);
+	counter_esp32_get_value_64(dev, &now);
 
 	if (cb) {
 		timer_ll_enable_intr(data->hal_ctx.dev,
@@ -374,7 +364,7 @@ static void counter_esp32_isr(void *arg)
 	static struct counter_esp32_data counter_data_##idx;                                       \
                                                                                                    \
 	static const struct counter_esp32_config counter_config_##idx = {                          \
-		.counter_info = {.max_top_value = UINT32_MAX,                                      \
+		.counter_info = {.max_top_value = UINT64_MAX,                                      \
 				 .flags = COUNTER_CONFIG_INFO_COUNT_UP,                            \
 				 .channels = 1},                                                   \
 		.config =                                                                          \

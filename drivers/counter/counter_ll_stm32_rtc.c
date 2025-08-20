@@ -85,12 +85,6 @@ LOG_MODULE_REGISTER(counter_rtc_stm32, CONFIG_COUNTER_LOG_LEVEL);
 /* Adjust the second sync prescaler to get 1Hz on ck_spre */
 #define RTC_SYNCPRE ((RTCCLK_FREQ / (1 + RTC_ASYNCPRE)) - 1)
 
-#ifndef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
-typedef uint32_t tick_t;
-#else
-typedef uint64_t tick_t;
-#endif
-
 struct rtc_stm32_config {
 	struct counter_config_info counter_info;
 	LL_RTC_InitTypeDef ll_rtc_config;
@@ -237,12 +231,12 @@ static int rtc_stm32_stop(const struct device *dev)
 }
 
 #if !defined(COUNTER_NO_DATE)
-tick_t rtc_stm32_read(const struct device *dev)
+counter_ticks_t rtc_stm32_read(const struct device *dev)
 {
 	struct tm now = { 0 };
 	time_t ts;
 	uint32_t rtc_date, rtc_time;
-	tick_t ticks;
+	counter_ticks_t ticks;
 #ifdef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
 	uint32_t rtc_subseconds;
 #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
@@ -297,7 +291,7 @@ tick_t rtc_stm32_read(const struct device *dev)
 	return ticks;
 }
 #else /* defined(COUNTER_NO_DATE) */
-tick_t rtc_stm32_read(const struct device *dev)
+counter_ticks_t rtc_stm32_read(const struct device *dev)
 {
 	uint32_t ticks;
 
@@ -309,19 +303,11 @@ tick_t rtc_stm32_read(const struct device *dev)
 }
 #endif /* !defined(COUNTER_NO_DATE) */
 
-static int rtc_stm32_get_value(const struct device *dev, uint32_t *ticks)
-{
-	*ticks = (uint32_t)rtc_stm32_read(dev);
-	return 0;
-}
-
-#ifdef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
-static int rtc_stm32_get_value_64(const struct device *dev, uint64_t *ticks)
+static int rtc_stm32_get_value(const struct device *dev, counter_ticks_t *ticks)
 {
 	*ticks = rtc_stm32_read(dev);
 	return 0;
 }
-#endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
 
 #ifdef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
 static void rtc_stm32_set_int_pending(void)
@@ -345,8 +331,8 @@ static int rtc_stm32_set_alarm(const struct device *dev, uint8_t chan_id,
 	LL_RTC_AlarmTypeDef rtc_alarm;
 	struct rtc_stm32_data *data = dev->data;
 
-	tick_t now = rtc_stm32_read(dev);
-	tick_t ticks = alarm_cfg->ticks;
+	counter_ticks_t now = rtc_stm32_read(dev);
+	counter_ticks_t ticks = alarm_cfg->ticks;
 
 	if (data->callback != NULL) {
 		LOG_DBG("Alarm busy\n");
@@ -482,7 +468,7 @@ static uint32_t rtc_stm32_get_pending_int(const struct device *dev)
 }
 
 
-static uint32_t rtc_stm32_get_top_value(const struct device *dev)
+static counter_ticks_t rtc_stm32_get_top_value(const struct device *dev)
 {
 	const struct counter_config_info *info = dev->config;
 
@@ -670,7 +656,11 @@ static const struct stm32_pclken rtc_clk[] = STM32_DT_INST_CLOCKS(0);
 
 static const struct rtc_stm32_config rtc_config = {
 	.counter_info = {
+#ifdef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
+		.max_top_value = UINT64_MAX,
+#else
 		.max_top_value = UINT32_MAX,
+#endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
 #ifndef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
 		/* freq = 1Hz for not subsec based driver */
 		.freq = RTCCLK_FREQ / ((RTC_ASYNCPRE + 1) * (RTC_SYNCPRE + 1)),
@@ -739,9 +729,6 @@ static DEVICE_API(counter, rtc_stm32_driver_api) = {
 	.start = rtc_stm32_start,
 	.stop = rtc_stm32_stop,
 	.get_value = rtc_stm32_get_value,
-#ifdef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
-	.get_value_64 = rtc_stm32_get_value_64,
-#endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
 	.set_alarm = rtc_stm32_set_alarm,
 	.cancel_alarm = rtc_stm32_cancel_alarm,
 	.set_top_value = rtc_stm32_set_top_value,
