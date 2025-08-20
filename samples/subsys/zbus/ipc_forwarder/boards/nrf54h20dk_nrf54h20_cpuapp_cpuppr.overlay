@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+ /* Setup for cpuapp_cpuppr_ipc */
+&cpuapp_bellboard {
+	status = "okay";
+};
+
+/delete-node/ &cpuapp_cpurad_ipc;
+
+ipc0: &cpuapp_cpuppr_ipc {
+	status = "okay";
+};
+
+&cpuppr_vevif {
+	status = "okay";
+};
+
+/ {
+	chosen {
+		/delete-property/ zephyr,bt-hci;
+	};
+};
+
+/* Necessary for the cpuppr to work */
+&cpuppr_vpr {
+	status = "okay";
+};
+
+&uart135 {
+	status = "reserved";
+};
