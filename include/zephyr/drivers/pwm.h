@@ -20,6 +20,11 @@
  * @version 1.0.0
  * @ingroup io_interfaces
  * @{
+ *
+ * @defgroup pwm_interface_ext Device-specific PWM API extensions
+ *
+ * @{
+ * @}
  */
 
 #include <errno.h>
