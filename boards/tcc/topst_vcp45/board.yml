@@ -1,0 +1,5 @@
+board:
+  name: topst_vcp45
+  vendor: tcc
+  socs:
+  - name: tcc7045

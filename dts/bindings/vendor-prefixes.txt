@@ -669,6 +669,7 @@ syna	Synaptics Inc.
 synology	Synology, Inc.
 tbs	TBS Technologies
 tbs-biometrics	Touchless Biometric Systems AG
+tcc	TELECHIPS INC.
 tcg	Trusted Computing Group
 tcl	Toby Churchill Ltd.
 tcs	Shenzhen City Tang Cheng Technology Co., Ltd.
