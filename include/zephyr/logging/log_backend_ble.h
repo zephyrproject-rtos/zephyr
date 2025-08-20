@@ -4,8 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the Bluetooth log backend API
+ * @ingroup log_backend_ble
+ */
+
 #ifndef ZEPHYR_LOG_BACKEND_BLE_H_
 #define ZEPHYR_LOG_BACKEND_BLE_H_
+
+/**
+ * @brief Bluetooth log backend API
+ * @defgroup log_backend_ble Bluetooth log backend API
+ * @ingroup log_backend
+ * @{
+ */
 
 #include <stdbool.h>
 /**
@@ -38,5 +51,7 @@ typedef void (*logger_backend_ble_hook)(bool backend_status, void *ctx);
  * @param ctx User context for whenever the hook is called
  */
 void logger_backend_ble_set_hook(logger_backend_ble_hook hook, void *ctx);
+
+/** @} */
 
 #endif /* ZEPHYR_LOG_BACKEND_BLE_H_ */

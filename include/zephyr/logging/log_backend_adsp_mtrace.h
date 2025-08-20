@@ -4,8 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the Intel ADSP mtrace log backend API
+ * @ingroup log_backend_adsp_mtrace
+ */
+
 #ifndef ZEPHYR_LOG_BACKEND_ADSP_MTRACE_H_
 #define ZEPHYR_LOG_BACKEND_ADSP_MTRACE_H_
+
+/**
+ * @brief Intel ADSP mtrace log backend API
+ * @defgroup log_backend_adsp_mtrace Intel ADSP mtrace log backend API
+ * @ingroup log_backend
+ * @{
+ */
 
 #include <stdint.h>
 #include <stddef.h>
@@ -28,5 +41,7 @@ typedef void(*adsp_mtrace_log_hook_t)(size_t written, size_t space_left);
 void adsp_mtrace_log_init(adsp_mtrace_log_hook_t hook);
 
 const struct log_backend *log_backend_adsp_mtrace_get(void);
+
+/** @} */
 
 #endif /* ZEPHYR_LOG_BACKEND_ADSP_MTRACE_H_ */
