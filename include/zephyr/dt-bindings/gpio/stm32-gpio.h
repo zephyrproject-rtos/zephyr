@@ -16,7 +16,7 @@
  * - Bit 8: Configure a GPIO pin to power on the system after Poweroff.
  * - Bit 10..9: Configure the output speed of a GPIO pin.
  *
- * @ingroup gpio_interface
+ * @ingroup gpio_interface_ext
  * @{
  */
 
