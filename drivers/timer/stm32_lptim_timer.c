@@ -101,7 +101,7 @@ static bool timeout_stdby;
 static cycle_t lptim_cnt_pre_stdby;
 
 /* Standby timer value before entering the standby state. */
-static uint32_t stdby_timer_pre_stdby;
+static counter_ticks_t stdby_timer_pre_stdby;
 
 /* Standby timer used for timer while entering the standby state */
 static const struct device *stdby_timer = DEVICE_DT_GET(DT_CHOSEN(st_lptim_stdby_timer));
@@ -602,7 +602,7 @@ void sys_clock_idle_exit(void)
 #ifdef CONFIG_STM32_LPTIM_STDBY_TIMER
 	if (timeout_stdby) {
 		cycle_t missed_lptim_cnt;
-		uint32_t stdby_timer_diff, stdby_timer_post, dticks;
+		counter_ticks_t stdby_timer_diff, stdby_timer_post, dticks;
 		uint64_t stdby_timer_us;
 
 		/* Get current value for standby timer and reset LPTIM counter value

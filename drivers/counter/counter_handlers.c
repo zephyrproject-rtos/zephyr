@@ -46,7 +46,7 @@ static inline uint32_t z_vrfy_counter_get_frequency(const struct device *dev)
 }
 #include <zephyr/syscalls/counter_get_frequency_mrsh.c>
 
-static inline uint32_t z_vrfy_counter_us_to_ticks(const struct device *dev,
+static inline counter_ticks_t z_vrfy_counter_us_to_ticks(const struct device *dev,
 					       uint64_t us)
 {
 	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_COUNTER));
@@ -56,31 +56,22 @@ static inline uint32_t z_vrfy_counter_us_to_ticks(const struct device *dev,
 #include <zephyr/syscalls/counter_us_to_ticks_mrsh.c>
 
 static inline uint64_t z_vrfy_counter_ticks_to_us(const struct device *dev,
-					       uint32_t ticks)
+					       counter_ticks_t ticks)
 {
 	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_COUNTER));
 	return z_impl_counter_ticks_to_us((const struct device *)dev,
-					  (uint32_t)ticks);
+					  (counter_ticks_t)ticks);
 }
 #include <zephyr/syscalls/counter_ticks_to_us_mrsh.c>
 
 static inline int z_vrfy_counter_get_value(const struct device *dev,
-					   uint32_t *ticks)
+					   counter_ticks_t *ticks)
 {
 	K_OOPS(K_SYSCALL_DRIVER_COUNTER(dev, get_value));
 	K_OOPS(K_SYSCALL_MEMORY_WRITE(ticks, sizeof(*ticks)));
 	return z_impl_counter_get_value((const struct device *)dev, ticks);
 }
 #include <zephyr/syscalls/counter_get_value_mrsh.c>
-
-static inline int z_vrfy_counter_get_value_64(const struct device *dev,
-					   uint64_t *ticks)
-{
-	K_OOPS(K_SYSCALL_DRIVER_COUNTER(dev, get_value_64));
-	K_OOPS(K_SYSCALL_MEMORY_WRITE(ticks, sizeof(*ticks)));
-	return z_impl_counter_get_value_64((const struct device *)dev, ticks);
-}
-#include <zephyr/syscalls/counter_get_value_64_mrsh.c>
 
 static inline int z_vrfy_counter_set_channel_alarm(const struct device *dev,
 						   uint8_t chan_id,
@@ -124,21 +115,21 @@ static inline int z_vrfy_counter_set_top_value(const struct device *dev,
 }
 #include <zephyr/syscalls/counter_set_top_value_mrsh.c>
 
-static inline uint32_t z_vrfy_counter_get_top_value(const struct device *dev)
+static inline counter_ticks_t z_vrfy_counter_get_top_value(const struct device *dev)
 {
 	K_OOPS(K_SYSCALL_DRIVER_COUNTER(dev, get_top_value));
 	return z_impl_counter_get_top_value((const struct device *)dev);
 }
 #include <zephyr/syscalls/counter_get_top_value_mrsh.c>
 
-static inline uint32_t z_vrfy_counter_get_max_top_value(const struct device *dev)
+static inline counter_ticks_t z_vrfy_counter_get_max_top_value(const struct device *dev)
 {
 	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_COUNTER));
 	return z_impl_counter_get_max_top_value((const struct device *)dev);
 }
 #include <zephyr/syscalls/counter_get_max_top_value_mrsh.c>
 
-static inline uint32_t z_vrfy_counter_get_guard_period(const struct device *dev,
+static inline counter_ticks_t z_vrfy_counter_get_guard_period(const struct device *dev,
 							uint32_t flags)
 {
 	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_COUNTER));
@@ -148,7 +139,7 @@ static inline uint32_t z_vrfy_counter_get_guard_period(const struct device *dev,
 #include <zephyr/syscalls/counter_get_guard_period_mrsh.c>
 
 static inline int z_vrfy_counter_set_guard_period(const struct device *dev,
-						   uint32_t ticks, uint32_t flags)
+						   counter_ticks_t ticks, uint32_t flags)
 {
 	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_COUNTER));
 	return z_impl_counter_set_guard_period((const struct device *)dev,

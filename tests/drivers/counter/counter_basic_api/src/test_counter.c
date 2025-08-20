@@ -270,8 +270,8 @@ static void top_handler(const struct device *dev, void *user_data)
 static void test_set_top_value_with_alarm_instance(const struct device *dev)
 {
 	int err;
-	uint32_t cnt;
-	uint32_t top_value;
+	counter_ticks_t cnt;
+	counter_ticks_t top_value;
 	uint32_t counter_period_us;
 	uint32_t top_handler_cnt;
 	struct counter_top_cfg top_cfg = {
@@ -323,8 +323,8 @@ ZTEST(counter_basic, test_set_top_value_with_alarm)
 static void test_set_top_value_without_alarm_instance(const struct device *dev)
 {
 	int err;
-	uint32_t cnt;
-	uint32_t top_value;
+	counter_ticks_t cnt;
+	counter_ticks_t top_value;
 	uint32_t counter_period_us;
 	struct counter_top_cfg top_cfg = {
 		.callback = NULL,
@@ -366,17 +366,17 @@ ZTEST_USER(counter_no_callback, test_set_top_value_without_alarm)
 }
 
 static void alarm_handler(const struct device *dev, uint8_t chan_id,
-			  uint32_t counter,
+			  counter_ticks_t counter,
 			  void *user_data)
 {
 	/* Arbitrary limit for alarm processing - time between hw expiration
 	 * and read-out from counter in the handler.
 	 */
 	static const uint64_t processing_limit_us = 1000;
-	uint32_t now;
+	counter_ticks_t now;
 	int err;
-	uint32_t top;
-	uint32_t diff;
+	counter_ticks_t top;
+	counter_ticks_t diff;
 
 	err = counter_get_value(dev, &now);
 	zassert_true(err == 0, "%s: Counter read failed (err: %d)",
@@ -528,7 +528,7 @@ ZTEST(counter_basic, test_single_shot_alarm_top)
 static void *clbk_data[10];
 
 static void alarm_handler2(const struct device *dev, uint8_t chan_id,
-			   uint32_t counter,
+			   counter_ticks_t counter,
 			   void *user_data)
 {
 	if (IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS)) {
@@ -703,10 +703,10 @@ ZTEST(counter_basic, test_all_channels)
 static void test_valid_function_without_alarm(const struct device *dev)
 {
 	int err;
-	uint32_t ticks;
-	uint32_t ticks_expected;
-	uint32_t tick_current;
-	uint32_t ticks_tol;
+	counter_ticks_t ticks;
+	counter_ticks_t ticks_expected;
+	counter_ticks_t tick_current;
+	counter_ticks_t ticks_tol;
 	uint32_t wait_for_us;
 	uint32_t freq = counter_get_frequency(dev);
 

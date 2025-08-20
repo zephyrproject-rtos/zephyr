@@ -309,19 +309,11 @@ tick_t rtc_stm32_read(const struct device *dev)
 }
 #endif /* !defined(COUNTER_NO_DATE) */
 
-static int rtc_stm32_get_value(const struct device *dev, uint32_t *ticks)
+static int rtc_stm32_get_value(const struct device *dev, counter_ticks_t *ticks)
 {
-	*ticks = (uint32_t)rtc_stm32_read(dev);
+	*ticks = (counter_ticks_t)rtc_stm32_read(dev);
 	return 0;
 }
-
-#ifdef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
-static int rtc_stm32_get_value_64(const struct device *dev, uint64_t *ticks)
-{
-	*ticks = rtc_stm32_read(dev);
-	return 0;
-}
-#endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
 
 #ifdef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
 static void rtc_stm32_set_int_pending(void)
@@ -482,7 +474,7 @@ static uint32_t rtc_stm32_get_pending_int(const struct device *dev)
 }
 
 
-static uint32_t rtc_stm32_get_top_value(const struct device *dev)
+static counter_ticks_t rtc_stm32_get_top_value(const struct device *dev)
 {
 	const struct counter_config_info *info = dev->config;
 
@@ -727,9 +719,6 @@ static DEVICE_API(counter, rtc_stm32_driver_api) = {
 	.start = rtc_stm32_start,
 	.stop = rtc_stm32_stop,
 	.get_value = rtc_stm32_get_value,
-#ifdef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
-	.get_value_64 = rtc_stm32_get_value_64,
-#endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
 	.set_alarm = rtc_stm32_set_alarm,
 	.cancel_alarm = rtc_stm32_cancel_alarm,
 	.set_top_value = rtc_stm32_set_top_value,

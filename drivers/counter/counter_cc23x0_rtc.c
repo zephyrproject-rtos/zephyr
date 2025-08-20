@@ -31,16 +31,6 @@ struct counter_cc23x0_data {
 	struct counter_alarm_cfg alarm_cfg0;
 };
 
-static int counter_cc23x0_get_value(const struct device *dev, uint32_t *ticks)
-{
-	/* Resolution is 8us and max timeout ~9.5h */
-	const struct counter_cc23x0_config *config = dev->config;
-
-	*ticks = HWREG(config->base + RTC_O_TIME8U);
-
-	return 0;
-}
-
 static int counter_cc23x0_get_value_64(const struct device *dev, uint64_t *ticks)
 {
 	const struct counter_cc23x0_config *config = dev->config;
@@ -211,8 +201,7 @@ static int counter_cc23x0_init(const struct device *dev)
 static DEVICE_API(counter, rtc_cc23x0_api) = {
 	.start = counter_cc23x0_start,
 	.stop = counter_cc23x0_stop,
-	.get_value = counter_cc23x0_get_value,
-	.get_value_64 = counter_cc23x0_get_value_64,
+	.get_value = counter_cc23x0_get_value_64,
 	.set_alarm = counter_cc23x0_set_alarm,
 	.cancel_alarm = counter_cc23x0_cancel_alarm,
 	.get_top_value = counter_cc23x0_get_top_value,
